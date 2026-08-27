@@ -1,0 +1,70 @@
+{
+  "schema": "pomaster.vnext.selfhosting-benchmark-results/1",
+  "run_id": "bench-0002",
+  "seq": 2,
+  "ok": true,
+  "summary": {
+    "total": 2,
+    "passed": 2,
+    "failed": 0
+  },
+  "entries": [
+    {
+      "tier": "tiny",
+      "scenario": "README badge 文案调整",
+      "expected": "MINIMAL",
+      "profile": "MINIMAL",
+      "matched_rule": "F_COPY_STYLE_ONLY",
+      "evidence_grade": "MEASURED",
+      "matched_keywords": [
+        "文案"
+      ],
+      "durationMs": 111,
+      "ok": true,
+      "assertions": [
+        {
+          "name": "envelope-ok",
+          "ok": true,
+          "detail": "ok=true"
+        },
+        {
+          "name": "profile-minimal",
+          "ok": true,
+          "detail": "profile=MINIMAL (rule F_COPY_STYLE_ONLY)"
+        },
+        {
+          "name": "no-architect-research-spawn-words",
+          "ok": true,
+          "detail": "raw 输出无禁入字样"
+        }
+      ]
+    },
+    {
+      "tier": "normal",
+      "scenario": "新增一个 CLI capability（如 pomaster explain）",
+      "expected": [
+        "LIGHT",
+        "STANDARD"
+      ],
+      "profile": "LIGHT",
+      "matched_rule": "DEFAULT_NO_SIGNAL",
+      "evidence_grade": "NOT_CONFIGURED",
+      "matched_keywords": [],
+      "durationMs": 112,
+      "ok": true,
+      "assertions": [
+        {
+          "name": "envelope-ok",
+          "ok": true,
+          "detail": "ok=true"
+        },
+        {
+          "name": "profile-in-light-standard",
+          "ok": true,
+          "detail": "profile=LIGHT (rule DEFAULT_NO_SIGNAL)，期望 ∈ [LIGHT, STANDARD]"
+        }
+      ]
+    }
+  ],
+  "note": "timestamp 禁入：运行序以 seq/run_id 标识（seq 即 C7 校准轮代号，见 calibration-template.md）。"
+}
