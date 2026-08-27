@@ -1,0 +1,487 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://pomaster.dev/schemas/evidence-records/v1-draft.json",
+  "$comment": "POMaster vNext / 07-evidence-records。铸造依据：schema-drafts/vocab-lock.draft.yaml@v0.1-resolved（词表/前缀闭包/digest_ethics 唯一来源）＋ research/design-thread-A-ir-schema.md §5（claim → evidence → verification 三记录）＋ research/design-synthesis-decisions.md（A4/A8/D20/D24 ＋ Q3 裁决）。组合加载：gate_result_binding 的 inline 分支 $ref 到 03-gate-result 的 $id——消费方须 ajv.addSchema 同时注册两文件后方可校验 inline 形态。注：任务书所称 $definitions 在 draft-07 的规范拼法为 definitions；为 ajv 原生可解析按 draft-07 落地。与 03 存在刻意 definitions 镜像（object_id/id_prefix/sha256_digest/actor/seq/run_trigger/grn_id），单一事实源是 vocab-lock ＋ build 期 vocab codegen（thread A §6）。",
+  "title": "Evidence Plane Records 证据平面记录（claims CLM-* / runs GRN-* / blobs 内容寻址）",
+  "description": "证据平面的两类一等记录：claim（CLM-*：断言＋evidence_refs[]＋verification 判定块）与 run（GRN-*：工具运行快照，GateResult 以 inline 全文或 digest_ref 内容寻址轻引用内嵌）。blob 引用一律内容寻址（sha256 即身份，物理路径纯派生）。A8：一切运行产物不入 truth-index（vocab-lock kinds_registry.forbidden_in_index：gate_results→evidence/runs/、claims→evidence/claims/），本平面自持 evidence/index.json 轻量倒排。",
+  "type": "object",
+  "oneOf": [
+    { "$ref": "#/definitions/claim_record" },
+    { "$ref": "#/definitions/run_record" }
+  ],
+  "x-index-policy": {
+    "admitted_to_truth_index": false,
+    "storage_plane": "evidence/（claims/ 与 runs/ 子目录）",
+    "light_inverted_index": "evidence/index.json（thread A §1 平面自有轻量倒排）",
+    "source": "vocab-lock@v0.1-resolved kinds_registry.forbidden_in_index ＋ synthesis A8：判卷产物与声称记录都不是治理事实"
+  },
+  "x-plane-time-policy": {
+    "wall_clock": "允许（evidence 平面墙钟时间=事实非身份，thread A §1.1）",
+    "rule": "一切 *_at_utc 必须 x-digest-excluded=true 且不参与内容 digest；排序与身份一律用 seq/rev（A4 单调序号，DEF-POM-002 教训）"
+  },
+  "definitions": {
+    "clm_id": {
+      "type": "string",
+      "pattern": "^CLM-[0-9]+$",
+      "description": "Claim 记录 id 词形（evidence/claims/CLM-*.json）。structural 词形，非 vocab-lock 管辖"
+    },
+    "grn_id": {
+      "type": "string",
+      "pattern": "^GRN-[0-9]+$",
+      "description": "Gate Run 记录 id 词形（evidence/runs/GRN-*.json）。structural 词形，非 vocab-lock 管辖"
+    },
+    "vrf_id": {
+      "type": "string",
+      "pattern": "^VRF-[0-9]+$",
+      "description": "独立 Verification 记录 id 词形（thread A §5 三记录形态的兼容引用）。structural 词形，非 vocab-lock 管辖"
+    },
+    "sha256_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "x-digest-ethics": { "write_blocking": false, "side": "read_only_service", "human_touch": "forbidden" },
+      "description": "内容指纹。D24 哈希伦理（source: vocab-lock@v0.1-resolved digest_ethics）：write_blocking=false 永不作写入门闸；side=read_only_service（identity / rerun-shortcut / tamper-audit）；human_touch=forbidden——人不可计算/核对/传递任何 sha，事务自动维护；违规处置 WARN ＋ auto-regen hint"
+    },
+    "object_id": {
+      "type": "string",
+      "pattern": "^(PAGE|CAPABILITY|COMPONENT|API_REQ|ERR|FIELD|KNOWLEDGE|CHANGE|TASK|DENOMINATOR|KEYBINDING|POLICY|PROFILE|AUTHORITY|TEST)\\.[A-Z][A-Z0-9_]{0,31}(\\.[A-Z][A-Z0-9_]{0,31})*(\\.[0-9]+)?$",
+      "x-vocab-source": "vocab-lock@v0.1-resolved id_namespace.prefixes_v0 ＋ rules（separator=. / SCREAMING_SNAKE / unknown_prefix=FATAL，A5 closed-world）",
+      "description": "治理对象 canonical id。文法：PREFIX '.' SEGMENT('.' SEGMENT)*['.' SEQ]。pattern 与 definitions/id_prefix 枚举同源闭包；未知前缀 = 解析即 FATAL（A5）"
+    },
+    "id_prefix": {
+      "enum": ["PAGE.", "CAPABILITY.", "COMPONENT.", "API_REQ.", "ERR.", "FIELD.", "KNOWLEDGE.", "CHANGE.", "TASK.", "DENOMINATOR.", "KEYBINDING.", "POLICY.", "PROFILE.", "AUTHORITY.", "TEST."],
+      "x-vocab-source": "vocab-lock@v0.1-resolved id_namespace.prefixes_v0（P0 最小闭包；扩展走词汇表 PR 流程）",
+      "description": "closed-world 前缀注册表镜像（A5）。与 object_id 的 pattern 保持同一闭包（G-vocab-2 黄金快照纪律）。TEST. = fixture 专用域（Q3 已决）"
+    },
+    "actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["actor_type", "actor"],
+      "properties": {
+        "actor_type": {
+          "enum": ["agent", "human", "tool", "kernel"],
+          "x-vocab-source": "structural（非 vocab-lock 管辖）",
+          "description": "主体类型"
+        },
+        "actor": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "主体标识（如 claude/session-93、gauntlet:dom_probe@0.2.0）"
+        },
+        "self_attested": {
+          "type": "boolean",
+          "default": false,
+          "description": "true = 自报值（C5 纪律：自报永不单独作为判卷依据）"
+        }
+      },
+      "description": "行为主体（谁声称 / 谁重算）。structural 词表，非 vocab-lock 管辖"
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "全局事件序号（A4：单调序号取代墙钟作为排序/身份）"
+    },
+    "source_pin": {
+      "type": "object",
+      "additionalProperties": false,
+      "anyOf": [
+        { "required": ["baseline"] },
+        { "required": ["version"] },
+        { "required": ["digest"] }
+      ],
+      "properties": {
+        "baseline": {
+          "type": "string",
+          "minLength": 1,
+          "description": "基线锚（如 20260814）"
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "description": "版本锚（如 catalog-lock 钉死版本，D5）"
+        },
+        "digest": {
+          "$ref": "#/definitions/sha256_digest",
+          "x-digest-ethics": { "write_blocking": false, "side": "read_only_service", "human_touch": "forbidden" }
+        }
+      },
+      "description": "引用钉扎（防基线漂移重演——原型 20260722→20260814 换版整批人肉重对齐的教训）：baseline/version/digest 至少其一；REF_INTEGRITY 层缺失即 FATAL"
+    },
+    "blob_ref": {
+      "title": "Blob 内容寻址引用（content-addressed reference）",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sha256", "media"],
+      "properties": {
+        "sha256": {
+          "$ref": "#/definitions/sha256_digest",
+          "x-digest-ethics": { "write_blocking": false, "side": "read_only_service", "human_touch": "forbidden" }
+        },
+        "media": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "逻辑类型（开放词：diff | screenshot | network_log | json | text | binary…）；structural，非 vocab-lock 管辖"
+        },
+        "byte_size": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "storage_path": {
+          "type": "string",
+          "pattern": "^blobs/sha256/[0-9a-f]{2}/[0-9a-f]{62}$",
+          "description": "内容寻址相对路径 evidence/blobs/sha256/<aa>/<rest>；由 sha256 机械派生，消费方必须重算校验而非信任（D24：digest 是 read_only_service）"
+        }
+      },
+      "description": "大对象（截图/network log/diff）引用形态：sha256 即身份，路径纯派生——绝不内嵌外部大文本（thread A §3.5 原则）"
+    },
+    "evidence_ref": {
+      "title": "Claim 的证据引用（三分支）",
+      "description": "blob = 内容寻址大对象；gate_result = 运行记录引用（可附 digest 做 tamper-audit）；truth_object = 治理对象引用（必须带 pin 防漂移）",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ref_type", "blob"],
+          "properties": {
+            "ref_type": { "const": "blob" },
+            "blob": { "$ref": "#/definitions/blob_ref" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ref_type", "grn"],
+          "properties": {
+            "ref_type": { "const": "gate_result" },
+            "grn": { "$ref": "#/definitions/grn_id" },
+            "digest": {
+              "$ref": "#/definitions/sha256_digest",
+              "x-digest-ethics": { "write_blocking": false, "side": "read_only_service", "human_touch": "forbidden" }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ref_type", "object_id"],
+          "properties": {
+            "ref_type": { "const": "truth_object" },
+            "object_id": { "$ref": "#/definitions/object_id" },
+            "pin": { "$ref": "#/definitions/source_pin" }
+          }
+        }
+      ]
+    },
+    "claim_verdict": {
+      "enum": ["VERIFIED", "PARTIALLY_VERIFIED", "UNVERIFIED", "REJECTED"],
+      "x-vocab-source": "任务规约 07 四值 ＋ thread A §5；vocab-lock@v0.1-resolved 尚无 claim-verdict 词轴——本 const 数组即该轴的候选冻结来源，扩值必须走词汇表 PR，禁止就地添加",
+      "description": "判卷四值：VERIFIED = 重算吻合；PARTIALLY_VERIFIED = 断言正确但不完整；UNVERIFIED = 尚无有效验证；REJECTED = 重算否决"
+    },
+    "verification_method": {
+      "enum": ["recompute", "independent_probe", "human_attest"],
+      "x-vocab-source": "structural（thread A §5；非 vocab-lock 管辖）",
+      "description": "recompute = 重算；independent_probe = 独立探针；human_attest = 人审（仅限 SYS 词表 human_attestable 白名单字段合法——attestation 白名单外的人审直接校验失败）"
+    },
+    "verification": {
+      "title": "Verification 判定块（由验证侧主体书写）",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["verdict", "recomputed_by"],
+      "properties": {
+        "verdict": { "$ref": "#/definitions/claim_verdict" },
+        "method": { "$ref": "#/definitions/verification_method" },
+        "recomputed_by": {
+          "$ref": "#/definitions/actor",
+          "description": "重算主体（工具/独立探针/人审）。D20 对抗姿态：不得与 asserted_by 同主体自填——同主体自填 VERIFIED 是 doctor 违规探针的目标（draft-07 无法表达跨记录主体比较，故为执行层职责）"
+        },
+        "recomputed_value": {
+          "type": ["object", "null"],
+          "description": "重算所得（结构随 method 自定）——与 claim 的断言物理分离、写方不同（thread A §5 结构分流：asserted 与 recomputed 是不同记录的不同字段）"
+        },
+        "delta_vs_asserted": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "description": "与断言的差异摘要（如 assertion_correct_but_partial）"
+        },
+        "at_seq": { "$ref": "#/definitions/seq" },
+        "vrf_ref": {
+          "$ref": "#/definitions/vrf_id",
+          "description": "独立 VRF 记录 id（thread A §5 三记录形态的兼容引用，可选）"
+        }
+      }
+    },
+    "gate_result_binding": {
+      "title": "GateResult 内嵌引用（inline 全文 / digest_ref 轻引用）",
+      "description": "inline = 全文内嵌（thread A：evidence/runs/GRN-*.json 含 GateResult 全文；跨文件 $ref 指向 03-gate-result 的 $id，组合加载须注册 03）；digest_ref = 内容寻址轻引用（正文留 GRN 文件，此处仅 grn＋内容指纹，供 rerun-shortcut / tamper-audit，D24）",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode", "result"],
+          "properties": {
+            "mode": { "const": "inline" },
+            "result": {
+              "$ref": "https://pomaster.dev/schemas/gate-result/v1-draft.json"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode", "grn", "digest"],
+          "properties": {
+            "mode": { "const": "digest_ref" },
+            "grn": { "$ref": "#/definitions/grn_id" },
+            "digest": {
+              "$ref": "#/definitions/sha256_digest",
+              "x-digest-ethics": { "write_blocking": false, "side": "read_only_service", "human_touch": "forbidden" }
+            }
+          }
+        }
+      ]
+    },
+    "run_trigger": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "enum": ["pre_closeout", "pre_commit", "post_edit", "on_demand", "scheduled"],
+          "x-vocab-source": "structural（thread A §4.5；非 vocab-lock 管辖，扩值须同步 Kernel GateRunner）",
+          "description": "触发方式"
+        },
+        "task_ref": {
+          "type": "string",
+          "minLength": 1,
+          "description": "触发任务引用（task id 现存形态不强制 object_id 文法）"
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "claim_record": {
+      "title": "Claim 记录（evidence/claims/CLM-*.json）",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["record_type", "clm", "subject", "assertion", "asserted_by", "evidence_refs", "verification", "rev"],
+      "properties": {
+        "record_type": {
+          "const": "claim",
+          "description": "判别字段（root oneOf 分流）"
+        },
+        "clm": { "$ref": "#/definitions/clm_id" },
+        "subject": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["object_id"],
+          "properties": {
+            "object_id": {
+              "$ref": "#/definitions/object_id",
+              "description": "被声称的治理对象（closed-world 前缀，A5）"
+            },
+            "acceptance_index": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "映射到对象验收条目序号（task COMPLETED 的 DoD 硬绑：每条 acceptance 必须映射 VERIFIED claim，§47/§22.1）"
+            }
+          }
+        },
+        "is_fixture": {
+          "type": "boolean",
+          "default": false,
+          "description": "Q3 裁决：subject.object_id 前缀 TEST.* 时必须为 true；生产账本按 TEST. 前缀过滤 fixture claim"
+        },
+        "assertion": {
+          "type": "string",
+          "minLength": 1,
+          "description": "断言正文（声称方书写）：结构化断言码＋人类可读句，如 FORMULA_PARSER_STYLE_COMPLETE：empty-header 全选框已移除"
+        },
+        "asserted_by": { "$ref": "#/definitions/actor" },
+        "recorded_at_utc": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "x-digest-excluded": true,
+          "description": "墙钟时间 = 证据平面事实非身份（见 root x-plane-time-policy）；必须排除在内容 digest 之外"
+        },
+        "evidence_refs": {
+          "type": "array",
+          "minItems": 0,
+          "items": { "$ref": "#/definitions/evidence_ref" },
+          "description": "证据引用（blob / gate_result / truth_object 三分支）。允许先立后证：空数组合法，但此时 verification 不得为 VERIFIED（执行层规则）"
+        },
+        "verification": { "$ref": "#/definitions/verification" },
+        "rev": {
+          "$ref": "#/definitions/seq",
+          "description": "单调修订序号（A4）"
+        },
+        "notes_md": {
+          "type": ["string", "null"],
+          "description": "人类散文唯一合法入口；机器不得解析其内容做判卷（P9 教训）"
+        }
+      },
+      "allOf": [
+        {
+          "$comment": "Q3 fixture 隔离·正向：subject.object_id 前缀 TEST.* ⇒ is_fixture 必须为 true",
+          "if": {
+            "required": ["subject"],
+            "properties": {
+              "subject": {
+                "required": ["object_id"],
+                "properties": { "object_id": { "type": "string", "pattern": "^TEST\\." } }
+              }
+            }
+          },
+          "then": {
+            "required": ["is_fixture"],
+            "properties": { "is_fixture": { "const": true } }
+          }
+        },
+        {
+          "$comment": "Q3 fixture 隔离·反向：is_fixture=true ⇒ subject.object_id 必须是 TEST.* 前缀",
+          "if": {
+            "required": ["is_fixture"],
+            "properties": { "is_fixture": { "const": true } }
+          },
+          "then": {
+            "properties": {
+              "subject": {
+                "properties": { "object_id": { "type": "string", "pattern": "^TEST\\." } }
+              }
+            }
+          }
+        }
+      ],
+      "x-actor-discipline": "D20 对抗姿态：verification.recomputed_by 必须由验证侧主体书写（与 asserted_by 不同主体/不同工具）；同主体自填 VERIFIED 属违规，doctor 探针负责检出（draft-07 无法表达跨记录主体比较）。structures 分流本身即 thread A §5 的『永不信任自报值』固化之一"
+    },
+    "run_record": {
+      "title": "Tool Run 快照（evidence/runs/GRN-*.json 信封）",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["record_type", "grn", "ran_at_seq", "gate_result"],
+      "properties": {
+        "record_type": {
+          "const": "run",
+          "description": "判别字段（root oneOf 分流）"
+        },
+        "grn": {
+          "$ref": "#/definitions/grn_id",
+          "description": "运行 id；inline 模式下须与 gate_result.result.grn 一致（执行层一致性校验）"
+        },
+        "ran_at_seq": { "$ref": "#/definitions/seq" },
+        "ran_at_utc": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "x-digest-excluded": true,
+          "description": "墙钟时间 = 证据平面事实非身份；不参与内容 digest"
+        },
+        "trigger": { "$ref": "#/definitions/run_trigger" },
+        "tool_snapshot": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "tool": { "type": "string", "minLength": 1 },
+            "tool_version": { "type": "string", "minLength": 1 },
+            "metric_dialect": { "type": "string", "minLength": 1, "description": "度量口径声明（与 03-gate-result.metric_dialect 同义）" }
+          },
+          "description": "digest_ref 模式下的工具口径冗余快照（inline 模式可省，以 GateResult 内字段为准）"
+        },
+        "gate_result": {
+          "$ref": "#/definitions/gate_result_binding"
+        },
+        "digest_excluded_fields": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "本记录不参与内容 digest 的字段路径（如 gate_result.result.duration_ms、ran_at_utc）——tamper-audit 按此清单重算"
+        }
+      }
+    }
+  },
+  "x-examples-note": "examples[0..1] 为正例（可被本 schema 校验通过；ex1=claim 全字段形态含 PARTIALLY_VERIFIED，ex2=run 快照 inline 内嵌 GateResult，验证跨文件组合加载）；examples[2] 为反例（故意非法：subject 前缀 TEST.* 却缺 is_fixture=true【违反 Q3】且 verification.verdict 用了词表外值 PASSED【违反枚举闭包】）",
+  "examples": [
+    {
+      "record_type": "claim",
+      "clm": "CLM-0512",
+      "subject": { "object_id": "TASK.T0087", "acceptance_index": 0 },
+      "is_fixture": false,
+      "assertion": "FORMULA_PARSER_STYLE_COMPLETE：empty-header 全选框已移除",
+      "asserted_by": { "actor_type": "agent", "actor": "claude/session-93", "self_attested": true },
+      "recorded_at_utc": "2026-08-27T12:00:00Z",
+      "evidence_refs": [
+        {
+          "ref_type": "blob",
+          "blob": {
+            "sha256": "sha256:3fd9e1b7c2a4f56890bd1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b",
+            "media": "diff",
+            "byte_size": 2048,
+            "storage_path": "blobs/sha256/3f/d9e1b7c2a4f56890bd1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b"
+          }
+        },
+        { "ref_type": "gate_result", "grn": "GRN-0842" }
+      ],
+      "verification": {
+        "verdict": "PARTIALLY_VERIFIED",
+        "method": "recompute",
+        "recomputed_by": { "actor_type": "tool", "actor": "gauntlet:dom_probe@0.2.0", "self_attested": false },
+        "recomputed_value": { "selectAllRendered": false, "checkboxColumnRendered": true },
+        "delta_vs_asserted": "assertion_correct_but_partial",
+        "at_seq": 122,
+        "vrf_ref": "VRF-0388"
+      },
+      "rev": 87,
+      "notes_md": null
+    },
+    {
+      "record_type": "run",
+      "grn": "GRN-0901",
+      "ran_at_seq": 130,
+      "ran_at_utc": "2026-08-27T13:30:00Z",
+      "trigger": { "type": "post_edit", "task_ref": "TASK.T0087" },
+      "tool_snapshot": {
+        "tool": "gauntlet:dom_probe",
+        "tool_version": "0.2.0",
+        "metric_dialect": "dom:select_all_checkbox_presence"
+      },
+      "gate_result": {
+        "mode": "inline",
+        "result": {
+          "grn": "GRN-0901",
+          "gate": "DOM_PROBE",
+          "gate_def": "POLICY.GATE.DOM_PROBE@0.3.1",
+          "tool": "gauntlet:dom_probe",
+          "tool_version": "0.2.0",
+          "metric_dialect": "dom:select_all_checkbox_presence",
+          "ran_at_seq": 130,
+          "verdict": "passed",
+          "subject_id": "TEST.GRID.SELECT_ALL_HEADER",
+          "is_fixture": true,
+          "denominator_refs": [],
+          "counts": { "scanned": 1, "applicable_scanned": 1, "violations": 0, "not_applicable": 0 },
+          "blindspot": { "scanned": 1, "produced": 1, "escape_ratio": 0 },
+          "items": [],
+          "trust": {
+            "asserted": null,
+            "recomputed": { "violations": 0, "matches_asserted": true }
+          },
+          "duration_ms": { "self": 120, "external": 0 }
+        }
+      },
+      "digest_excluded_fields": ["gate_result.result.duration_ms", "ran_at_utc"]
+    },
+    {
+      "record_type": "claim",
+      "clm": "CLM-0777",
+      "subject": { "object_id": "TEST.GRID.FAKE_GREEN" },
+      "assertion": "声称全部通过（无证据自报）",
+      "asserted_by": { "actor_type": "agent", "actor": "agent/session-x", "self_attested": true },
+      "evidence_refs": [],
+      "verification": {
+        "verdict": "PASSED",
+        "recomputed_by": { "actor_type": "agent", "actor": "agent/session-x", "self_attested": true }
+      },
+      "rev": 1
+    }
+  ]
+}

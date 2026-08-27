@@ -1,0 +1,288 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://pomaster.dev/schemas/denominator/v1-draft.json",
+  "title": "DENOMINATOR 覆盖分母（Coverage Denominator · 一等公民，C2）",
+  "description": "覆盖度度量的分母对象。分母不是 gate 的私有配置，而是独立一等公民：application-page-registry 被删后分母静默消失（GAP-POM-001）、write-gate 硬编码 15 旧分母致 20 漏判 + 12 误判——两次事故的共同根因是『分母无身份、无版本、无权威』。\n本对象把分母变成有 id、有 version、有 authority 的 Governed Object：\n- 只许 supersede 不许删除（x-pomaster-semantic.delete=forbidden，删除请求 FATAL 并引导 supersede 流程）；\n- gate 引用分母必须钉 (id, version_seen) 二元组（C2）；\n- 成员集合经 member_selector 从绑定表机械派生，手抄清单在本 schema 无位置（防漂移）。",
+  "x-pomaster-file-role": "05-denominator.schema.json —— DENOMINATOR 一等公民（C2）。条目住 truth-index.json 控制面（vocab-lock kinds_registry.control_plane_inline.denominators[]，append-only 版本化数组）；01-truth-index.denominators[].items 以绝对 $id $ref 本文件 $id #/definitions/denominator_entry。",
+  "x-pomaster-vocab-source": "vocab-lock@v0.1-resolved",
+  "x-pomaster-contract": {
+    "external_refs": "01-truth-index.schema.json denominators[].items → 本文件 $id #/definitions/denominator_entry（绝对 $id 形态，2026-08-27 修复；definitions.denominator_entry = $ref '#' 自引用导出，条目 schema 与根单例同一定义）",
+    "reconciliation_notes": [
+      "01 全文示例 denominators[0].status 已回改为 'CURRENT'（2026-08-27 修复，原小写 'current' 违例已消除）——vocab-lock@v0.1-resolved state_axes.lifecycle 为大写枚举，本文件为 canonical（01 文件头声明冲突时以 05/06 为准）",
+      "gate 引用契约：coverage 型 gate 必须携带 (id, version_seen)；version_seen 落后于现行 version ⇒ 覆盖缺口如实呈现（thread A §4.5 applicable_scanned == size_expected_from_denominator 校验）"
+    ],
+    "delete_semantics": "delete=forbidden；唯一离场=supersede（见 x-pomaster-semantic）"
+  },
+  "x-pomaster-definitions-note": "$definitions 复用以 draft-07 关键字 definitions 承载（2019-09 的 $definitions 之 draft-07 等价物，ajv 原生支持）。",
+  "x-pomaster-digest-ethics-policy": "本对象当前不含 sha256/digest 字段。未来任何 digest/sha256 字段加入时必须携带 x-digest-ethics 注记 {\"write_blocking\": false, \"side\": \"read_only_service\", \"human_touch\": \"forbidden\"}（D24 / vocab-lock digest_ethics）。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "version", "members_count", "member_selector", "authority", "status"],
+  "properties": {
+    "id": {
+      "$ref": "#/definitions/denominator_id"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "title": "版本（version，严格递增）",
+      "description": "同一 id 每次成员口径变化 version+1；只增不减、旧 version 不复用（append-only 版本化数组，vocab-lock kinds_registry.control_plane_inline.denominators[]）。任何 gate/对象引用分母必须钉 (id, version_seen)（C2）；version 漂移时覆盖缺口必须如实呈现而非静默换分母（write-gate 15/32/20 事故免疫）。",
+      "examples": [
+        3
+      ],
+      "x-invalid-examples": [
+        { "sample": 0, "reason": "INVALID（边界）：version minimum 1——版本严格从 1 起且只增不减，0 即未发布版本" }
+      ]
+    },
+    "members_count": {
+      "type": "integer",
+      "minimum": 0,
+      "title": "成员计数（members_count）",
+      "description": "当前 version 下成员基数。派生对账孪生：member_selector 在绑定表上的实际过滤结果必须等于本计数，不等=分母漂移一级信号（永不信任自报值）；=0 是合法但高危值（覆盖度除零风险，gate 侧必须报缺口而非静默）。",
+      "examples": [
+        32
+      ],
+      "x-invalid-examples": [
+        { "sample": -1, "reason": "INVALID（边界）：负数成员计数——minimum 0（=0 是合法但高危值，gate 侧须报缺口）" }
+      ]
+    },
+    "member_selector": {
+      "$ref": "#/definitions/member_selector"
+    },
+    "successor_of": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/denominator_id"
+      },
+      "uniqueItems": true,
+      "title": "前任链（successor_of，向过去的 supersede 边）",
+      "description": "本条目所取代的历史分母 id 列表。不得含自身 id、全链无环（REF_INTEGRITY DENOM_CHAIN_002）。",
+      "examples": [
+        [
+          "DENOMINATOR.PAGE.TASK_STEP"
+        ]
+      ]
+    },
+    "authority": {
+      "$ref": "#/definitions/authority"
+    },
+    "status": {
+      "$ref": "#/definitions/denominator_status"
+    },
+    "successor_ref": {
+      "$ref": "#/definitions/denominator_id",
+      "title": "后继引用（successor_ref，SUPERSEDED 必填）",
+      "description": "status=SUPERSEDED 时必填（vocab-lock lifecycle 迁移语义：SUPERSEDED 终态 successor_ref 必填），且不得等于自身 id、必须解析为现存分母（REF_INTEGRITY DENOM_LINK_003）。PROPOSED/CURRENT 阶段允许预登记后继。",
+      "examples": [
+        "DENOMINATOR.PAGE.V1_SURFACE"
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "SUPERSEDED"
+          }
+        },
+        "required": ["status"]
+      },
+      "then": {
+        "required": ["successor_ref"]
+      },
+      "description": "SUPERSEDED ⇒ successor_ref 必填（vocab-lock：SUPERSEDED 终态后继必填；旧分母终态留档永不删除）"
+    }
+  ],
+  "x-pomaster-semantic": {
+    "title": "delete_forbidden — 不可删除语义标注（x-semantic）",
+    "delete": "forbidden —— DENOMINATOR 无删除路径；删除请求返回 FATAL 并提示 supersede 流程（thread A §3.7）",
+    "replacement": "supersede_only —— 唯一离场方式：新建更高 version 条目继承成员口径，旧条目挂 successor_ref 且 status=SUPERSEDED（终态留档，永不物理删除）",
+    "rationale": "C2/GAP-POM-001：application-page-registry 被删后应用面 coverage 分母静默消失；write-gate 硬编码 15 旧分母致 20 漏判 + 12 误判。分母下线必须显式走审批且全程留痕。",
+    "lifecycle_sealed": ["REJECTED", "DEPRECATED", "RETIRED"],
+    "gate_reference_contract": "coverage 型 gate 引用必须携带 (id, version_seen)；applicable_scanned != size_expected_from_denominator ⇒ 覆盖缺口如实呈现（thread A §4.5）"
+  },
+  "x-pomaster-ref-integrity": {
+    "note": "跨实体/跨文件规则由 truth-index 层 REF_INTEGRITY 执行，违反=FATAL。",
+    "rules": [
+      {
+        "id": "DENOM_UNIQ_001",
+        "statement": "同一 (id, version) 在 denominators[] 版本化数组中唯一；同 id 多 version 共存构成历史链。"
+      },
+      {
+        "id": "DENOM_CHAIN_002",
+        "statement": "successor_of / successor_ref 不得含自身 id；全链无环。"
+      },
+      {
+        "id": "DENOM_LINK_003",
+        "statement": "status=SUPERSEDED ⇒ successor_ref 必填（schema 层已强制）且必须解析为现存分母。"
+      },
+      {
+        "id": "DENOM_REFCOUNT_004",
+        "statement": "被 gate 或对象 denominator_refs 引用的 (id, version) 不得消失——『只许 supersede 不许删除』在引用完整性上的投影。"
+      },
+      {
+        "id": "DENOM_TABLE_005",
+        "statement": "member_selector.via_binding_table 必须解析为现存绑定表；绑定表消失=FATAL（分母永远不许指空）。"
+      }
+    ]
+  },
+  "definitions": {
+    "denominator_entry": {
+      "$comment": "导出别名：01-truth-index denominators[].items $ref 此指针。$ref '#' = 根 schema 自引用（draft-07 合法；本对象无递归），条目 schema 与根单例同一定义，天然不漂移。",
+      "$ref": "#"
+    },
+    "denominator_id": {
+      "type": "string",
+      "pattern": "^DENOMINATOR\\.[A-Z][A-Z0-9_]{0,31}(\\.[A-Z][A-Z0-9_]{0,31})*(\\.[0-9]+)?$",
+      "title": "分母 id（DENOMINATOR.<SCOPE>）",
+      "description": "DENOMINATOR 前缀闭包（vocab-lock prefixes_v0）；SCOPE 至少一段 SCREAMING_SNAKE，段间点分层级。与 01-truth-index.definitions.denominator_ref.properties.id 同一 pattern（两文件同步维护）。",
+      "examples": [
+        "DENOMINATOR.PAGE.V1_SURFACE",
+        "DENOMINATOR.API_OPERATIONS.EXTERNAL_OPENAPI",
+        "denominator.page（INVALID：小写违反 SCREAMING_SNAKE；未登记前缀同理 FATAL）"
+      ]
+    },
+    "denominator_status": {
+      "type": "string",
+      "enum": ["PROPOSED", "CURRENT", "SUPERSEDED"],
+      "title": "分母生命周期（lifecycle，kind 级收窄子集）",
+      "description": "只取 vocab-lock lifecycle 六值的合法子集（kind 通过 profile 收窄取值，只禁不扩）：PROPOSED=新分母待批 → CURRENT=现行度量基准 → SUPERSEDED=被后继取代（终态留档，successor_ref 必填，永不物理删除）。\n封死三值的理由：REJECTED=删除路径，与『只许 supersede 不许删除』互斥（thread A §3.7 明文封死）；DEPRECATED=无后继的不再推荐态——分母无后继下线会使 gate 引用悬空（C2 不允许）；RETIRED=清理终态——分母留档永不清理。",
+      "$comment": "source: vocab-lock@v0.1-resolved state_axes.lifecycle 的 kind 级收窄（全量六值镜像见 lifecycle_full_mirror；thread A §3.3 收窄原则 + §3.7 REJECTED 封死）。",
+      "x-pomaster-vocab": {
+        "axis": "state_axes.lifecycle",
+        "narrowing": "只禁不扩",
+        "sealed": ["DEPRECATED", "RETIRED", "REJECTED"]
+      },
+      "examples": [
+        "CURRENT",
+        "REJECTED（INVALID：删除路径已被 kind 封死——下线唯一通路是 supersede）"
+      ]
+    },
+    "lifecycle_full_mirror": {
+      "title": "vocab-lock lifecycle 全量镜像（人读核对用，本 kind 不直接消费）",
+      "$comment": "source: vocab-lock@v0.1-resolved → state_axes.lifecycle.values（逐字镜像，勿增删）。",
+      "const": ["PROPOSED", "CURRENT", "SUPERSEDED", "DEPRECATED", "RETIRED", "REJECTED"]
+    },
+    "member_selector": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "title": "成员选择器（member selector，机械派生）",
+      "description": "成员集合的声明式定义：经绑定表派生（via_binding_table）+ 谓词过滤（filter），至少其一。手抄成员清单在本 schema 无位置——『registry 被删/硬编码分母漂移』的 schema 级免疫：成员永远可以由选择器重算（重算结果数必须等于 members_count）。",
+      "$comment": "source: thread A §2 denominators[].member_selector；C2。",
+      "properties": {
+        "via_binding_table": {
+          "$ref": "#/definitions/keybinding_table_ref"
+        },
+        "filter": {
+          "type": "object",
+          "title": "绑定行谓词过滤（filter predicates）",
+          "description": "作用于绑定表行字段的等值谓词，值限标量。示例：{\"surface\": \"V1\", \"binding_status\": \"confirmed\"}。",
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "additionalProperties": {
+            "type": ["string", "number", "boolean"]
+          }
+        }
+      },
+      "examples": [
+        {
+          "via_binding_table": "KEYBINDING.PAGE.V1",
+          "filter": {
+            "surface": "V1",
+            "binding_status": "confirmed"
+          }
+        },
+        {
+          "members": ["PAGE.BIND_CARLINE"],
+          "x_example_intent": "INVALID（边界）：手抄成员清单——选择器只许声明派生规则，不许枚举成员（防分母漂移；additionalProperties:false 拦截）"
+        }
+      ]
+    },
+    "keybinding_table_ref": {
+      "type": "string",
+      "pattern": "^KEYBINDING\\.[A-Z][A-Z0-9_]{0,31}(\\.[A-Z][A-Z0-9_]{0,31})*$",
+      "title": "成员来源绑定表引用（via binding table）",
+      "description": "指向已登记的 KEYBINDING 绑定表 id（形态同 04-keybinding.definitions.keybinding_id，至少 DOMAIN.NAME 两段）。表为绑定行的分组视图；引用存在性由索引层 REF_INTEGRITY ref-exists 检查（DENOM_TABLE_005）。",
+      "examples": [
+        "KEYBINDING.PAGE.V1",
+        "KEYBINDING.PAGE（INVALID：仅一段——表 id 至少两段）"
+      ]
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["owner"],
+      "title": "权威归属（authority）",
+      "description": "分母口径变更与 supersede 的审批权威。owner 必须能在 authority.json 解析，解析失败=FATAL 而非 WARNING（幽灵 owner 曾让 26 条 dependency-not-approved 无处申诉引发维护死锁）。thread A §3.4 的 approvers/write_policy/escalation_hint 扩展位留待 schema PR，本版只锁 owner（B7：registry 级粗起步）。",
+      "properties": {
+        "owner": {
+          "type": "string",
+          "minLength": 1,
+          "title": "owner（authority.json 可解析）",
+          "examples": [
+            "BUSINESS_OWNER",
+            "FRONTEND_ARCHITECTURE"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "owner": "BUSINESS_OWNER"
+        },
+        {
+          "x_example_intent": "INVALID（边界）：缺 owner——无主分母 = 无人能批准其 supersede，必填"
+        }
+      ]
+    }
+  },
+  "examples": [
+    {
+      "id": "DENOMINATOR.PAGE.V1_SURFACE",
+      "version": 3,
+      "members_count": 32,
+      "member_selector": {
+        "via_binding_table": "KEYBINDING.PAGE.V1",
+        "filter": {
+          "surface": "V1",
+          "binding_status": "confirmed"
+        }
+      },
+      "successor_of": ["DENOMINATOR.PAGE.TASK_STEP"],
+      "authority": {
+        "owner": "BUSINESS_OWNER"
+      },
+      "status": "CURRENT"
+    },
+    {
+      "id": "DENOMINATOR.PAGE.TASK_STEP",
+      "version": 2,
+      "members_count": 15,
+      "member_selector": {
+        "via_binding_table": "KEYBINDING.PAGE.LEGACY",
+        "filter": {
+          "binding_status": "confirmed"
+        }
+      },
+      "successor_of": [],
+      "authority": {
+        "owner": "FRONTEND_ARCHITECTURE"
+      },
+      "status": "SUPERSEDED",
+      "successor_ref": "DENOMINATOR.PAGE.V1_SURFACE"
+    },
+    {
+      "x_example_intent": "INVALID —— 六重违规演示：a) version=0 低于下界 1；b) members_count=-1 负数；c) member_selector 空对象（至少一个派生依据，minProperties:1）；d) successor_of 含自身 id（DENOM_CHAIN_002，索引层 FATAL）；e) authority 缺 owner（无主分母）；f) status=REJECTED（删除路径已被 kind 封死，封死值列表见 x-pomaster-semantic.lifecycle_sealed）",
+      "id": "DENOMINATOR.UI_TEXT_CARRIER_FILES",
+      "version": 0,
+      "members_count": -1,
+      "member_selector": {},
+      "successor_of": ["DENOMINATOR.UI_TEXT_CARRIER_FILES"],
+      "authority": {},
+      "status": "REJECTED"
+    }
+  ],
+  "x-pomaster-examples-note": "examples[0]=正例（现行 V1 页面分母，经绑定表机械派生）；examples[1]=边界正例（被取代的旧分母：SUPERSEDED 终态留档 + successor_ref 必填链——『只许 supersede 不许删除』的活样本）；examples[2]=反例，x_example_intent 列明六重违规（其中 d/e/f 属 schema 可拦或索引层可拦的混合演示）。"
+}

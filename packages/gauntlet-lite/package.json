@@ -1,0 +1,22 @@
+{
+  "name": "@pomaster/gauntlet-lite",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "POMaster vNext adversarial test seeds and lightweight gate execution surface",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@pomaster/kernel": "workspace:*",
+    "@pomaster/schemas": "workspace:*"
+  }
+}

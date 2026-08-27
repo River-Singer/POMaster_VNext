@@ -1,0 +1,742 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://pomaster.dev/schemas/object-envelope/v1-draft.json",
+  "title": "POMaster vNext · 02 对象正文信封 Object Envelope（一对象一文件 · A1）",
+  "description": "十类 truth_bodies 正文文件的公共信封（common envelope）。设计基线：design-thread-A-ir-schema.md §3 + design-synthesis-decisions.md A1-A8 + vocab-lock@v0.1-resolved（一切枚举唯一来源）。分层：truth-index.json 只存每对象一行摘要；本信封住 truth/objects/<kind-slug>/<normalized-local-name>.json，是 clobber 爆炸半径的最小单元（A1：git diff 即审计）。本信封刻意不含任何 sha256/digest/墙钟字段——身份哈希住索引层 body_sha256，时间住 evidence/ 平面（A4）。",
+  "$comment": "ajv(draft-07) 兼容：仅用标准关键字（type/required/properties/pattern/enum/const/oneOf/anyOf/allOf/if/then/not），扩展信息全部放在 x- 前缀注记键（ajv 忽略）；$definitions 由 JSON Pointer 解析（ajv 按 $ref 指针取子 schema，不依赖 draft-07 的 definitions 键名约定）。消费方装载配置：new Ajv({strictSchema: false})（或逐个 ajv.addKeyword 注册 x- 注记键）——因 D24 强制要求 x-digest-ethics 注记在场，默认 strictSchema 会对一切 x- 注记报 unknown keyword；strictSchema:false 下本文件零告警编译（strictTypes 已显式补齐）。",
+  "x-ir-schema": "pomaster.truth-index/v1-draft",
+  "x-vocab-lock": {
+    "source": "vocab-lock@v0.1-resolved（2026-08-27 三开放问题已裁决）",
+    "note": "本文件一切枚举的镜像：$definitions 中的 enum 必须与下列 const 数组逐值相等（02 自我校验脚本强制）；禁止在 $definitions 之外出现任何枚举字面量。",
+    "ir_schema": "pomaster.truth-index/v1-draft",
+    "state_axes": {
+      "lifecycle": {
+        "const": ["PROPOSED", "CURRENT", "SUPERSEDED", "DEPRECATED", "RETIRED", "REJECTED"],
+        "x-note": "A2 六值超集；SUPERSEDED=有 successor_ref 的良性终态，DEPRECATED=无后继不再推荐（可过渡 RETIRED）"
+      },
+      "confidence": {
+        "const": ["UNRESOLVED", "EXPERIMENTAL", "PROVISIONAL", "LOCKED"]
+      },
+      "evidence": {
+        "const": ["PLANNED", "IMPLEMENTED", "VERIFIED"]
+      },
+      "change": {
+        "const": ["STABLE", "CHALLENGED", "MIGRATING"]
+      }
+    },
+    "orthogonal_fields": {
+      "realization": {
+        "const": ["stub", "mock", "wired"],
+        "applies_to": ["contract_operation", "capability"],
+        "derivation": "machine_preferred"
+      }
+    },
+    "kinds_registry": {
+      "truth_bodies": {
+        "const": ["capability", "component", "contract_operation", "error_term", "field_definition", "page_surface", "knowledge_entry", "business_rule", "change_object", "task_object"],
+        "x-note": "本信封 kind 枚举的闭包；控制面对象族（key_binding_table / denominator / producer / authority / profile / policy / test-fixture 等）的 kind 值不在 v0.1 truth_bodies 内，扩展走词汇表 PR 后复用本信封"
+      }
+    },
+    "id_namespace": {
+      "prefixes_v0": {
+        "const": ["PAGE", "CAPABILITY", "COMPONENT", "API_REQ", "ERR", "FIELD", "KNOWLEDGE", "CHANGE", "TASK", "DENOMINATOR", "KEYBINDING", "POLICY", "PROFILE", "AUTHORITY", "TEST"],
+        "x-note": "closed-world（A5）：未登记前缀 = 解析即 FATAL；TEST.* 对象身份合法，但生产代码引用 TEST.* 是 doctor 违规探针（Q3 已决）"
+      },
+      "unknown_prefix_action": "FATAL"
+    },
+    "aliases_v0": [
+      {"legacy": "KB-*", "canonical": "KNOWLEDGE.*"},
+      {"legacy": "GRID.*", "canonical": "CAPABILITY.GRID.*"},
+      {"legacy": "PAGE-TASK-STEP-*", "canonical": "PAGE.*", "note": "token 重排收编，键绑定表记录历史形态"},
+      {"legacy": "TASK-*", "canonical": "TASK.*", "note": "数字段收编加字母前缀（TASK-0087→TASK.T0087），SEGMENT 不允许数字开头（02b 文法注记）"},
+      {"legacy": "CHANGE-*", "canonical": "CHANGE.*", "note": "数字段收编加字母前缀（CHANGE-0104→CHANGE.C0104）"}
+    ],
+    "digest_ethics": {
+      "write_blocking": false,
+      "side": "read_only_service",
+      "human_touch": "forbidden",
+      "violation_treatment": "WARN + auto-regen hint"
+    }
+  },
+  "x-vocab-extra": {
+    "note": "非 vocab-lock 枚举：来自任务书 02 指令或 thread-A 基线，逐项注明出处并提请 vocab PR 收编；同样禁止在 $definitions 之外手抄字面量。",
+    "source_type": {
+      "all": {"const": ["bp_blueprint", "design_seed", "human_directive", "code_refactor", "prototype_walkthrough", "prototype_html_scrape", "research_evidence", "openapi_contract", "ai_invention"]},
+      "allowed": {"const": ["bp_blueprint", "design_seed", "human_directive", "code_refactor", "prototype_walkthrough", "research_evidence", "openapi_contract"]},
+      "forbidden": {"const": ["prototype_html_scrape", "ai_invention"]},
+      "x-source": "任务书 02（object-envelope 指令）显式给定；forbidden 两值 schema 只保证可判别、不做硬拦，Transition/Gate 层判 FATAL 并留痕",
+      "x-vocab-status": "registered_in_vocab_lock__source_types（2026-08-27 随 FROZEN 一次收编，allowed/forbidden 两子集切分同构；本注记保留作宿主侧镜像）"
+    },
+    "origin": {"const": ["natural", "derived", "ingested"], "x-source": "01-truth-index 任务指派定案词形；thread-A-ir-schema.md §3.0 的 human_curated/migrated 为 legacy 词形，收编映射 human_curated→natural、migrated→ingested（2026-08-27 与 01 对齐）"},
+    "write_policy": {"const": ["NONE", "AGENT_WITH_PERMIT", "CORRECTION_ONLY", "EVOLUTION_CHANNEL"], "x-source": "thread-A-ir-schema.md §3.4"},
+    "match_rule": {"const": ["mechanical", "manual_confirmed"], "x-source": "thread-A-ir-schema.md §3.2（manual 合计占比 = 机器键债务健康指标）"},
+    "verification_verdict": {"const": ["VERIFIED", "PARTIALLY_VERIFIED", "UNVERIFIED", "REJECTED"], "x-source": "thread-A-ir-schema.md §5 verification 四态"},
+    "liveness_status": {"const": ["active", "stale", "dead"], "x-source": "thread-A-ir-schema.md §3.6 活性语义；词形以 06-producer liveness.status 收敛为准（suspect_stale→stale、dead_view→dead），unknown 兜底值废止（2026-08-27 对齐 06），提请 vocab PR"}
+  },
+  "x-digest-ethics-policy": {
+    "basis": "D24 / vocab-lock.digest_ethics",
+    "statement": "本文件所有 sha256/digest 形态字段一律经 $definitions.Sha256Digest（自带 x-digest-ethics 注记）表达：digest 只做 identity / rerun-shortcut / tamper-audit 的只读服务，永不作为写入门闸；人类禁止计算/核对/传递任何 sha，由事务自动维护；违规处置 = WARN + auto-regen hint。",
+    "envelope_scope": "本信封自身无 digest 字段，digest 只可能出现在 sources[].pin.digest（pin 挂在来源引用上，不挂在对象身份上）。"
+  },
+  "x-decision-trace": {
+    "A1": "一对象一文件：本文件即正文信封；truth-index.json 只存摘要行，爆炸半径限死单文件",
+    "A2": "lifecycle 六值超集镜像（vocab-lock state_axes.lifecycle）",
+    "A3": "realization 独立正交块，不入 evidence 轴",
+    "A4": "rev 单调事件序号；全信封零墙钟字段（DEF-POM-002 幂等教训）",
+    "A5": "closed-world：IdCanonical 正则白名单 15 前缀，未知前缀即校验失败（解析即 FATAL）",
+    "A6": "aliases[] rename-on-ingest 双向链（只减不增），存量 GRID.* / KB-* / PAGE-TASK-STEP-* / TASK-* / CHANGE-* 收编",
+    "A7": "key_bindings 宿主结构；page↔dir / contract_operation↔operationId / capability↔file 三类 P0 映射的落点",
+    "A8": "GateResult 不入信封（evidence/runs/ 平面存证）；信封仅持 evidence_refs 摘要行"
+  },
+  "x-budget-note": "synthesis 风险备忘：索引行 ≤512B / gate 结果 ≤8KB 预算待 Owner 认可。本信封为正文层（非索引行），字段按需最小化；信封行（索引摘要）的字段清单归 truth-index schema（01 系列）。",
+  "type": "object",
+  "required": ["id", "kind", "axis_profile", "axes", "title_zh", "authority", "origin", "rev", "payload"],
+  "additionalProperties": true,
+  "properties": {
+    "id": {
+      "$ref": "#/$definitions/IdCanonical",
+      "description": "canonical id（closed-world 前缀 + SCREAMING_SNAKE 段 + 可选末段 SEQ）。唯一性查重（canonical / normalized_key / aliases 三重）归 REF_INTEGRITY，不在单文件 schema 内。"
+    },
+    "kind": {
+      "$ref": "#/$definitions/KindValue",
+      "description": "truth_bodies 十类之一；决定 payload 形状（见 02b-kind-payloads.md）与 body_ref 文件名 slug。"
+    },
+    "axis_profile": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "axis_profile（轴收窄 profile 名）",
+      "description": "指向 SYS 词表对象（profile 定义本体是词表，thread-A §3.3）。profile 只禁不扩、extension 禁止：如 task 用 TASK_LIFECYCLE 词表替换 lifecycle 轴、knowledge 禁 RETIRED 以外观察。建议值：capability_default / contract_default / task_default / knowledge_default 等（非枚举，逐字面值由 SYS 词表对象登记）。"
+    },
+    "axes": {
+      "title": "四轴状态集（A2）",
+      "type": "object",
+      "required": ["lifecycle", "confidence", "evidence", "change"],
+      "additionalProperties": false,
+      "properties": {
+        "lifecycle": {"$ref": "#/$definitions/LifecycleValue"},
+        "confidence": {"$ref": "#/$definitions/ConfidenceValue"},
+        "evidence": {"$ref": "#/$definitions/EvidenceValue"},
+        "change": {"$ref": "#/$definitions/ChangeValue"}
+      },
+      "description": "信封层只锁词值；合法迁移矩阵（如 CURRENT→SUPERSEDED|DEPRECATED）与跨轴耦合断言（lifecycle∈{PROPOSED,REJECTED}⇒evidence=PLANNED、evidence=VERIFIED⇒realization=wired、change=MIGRATING 必持 ACTIVE PERMIT、LOCKED+STABLE→CHALLENGED 必持 DECISION/CHANGE 引用）是 Kernel Transition 引擎的输入契约。"
+    },
+    "title_zh": {
+      "type": "string",
+      "minLength": 1,
+      "title": "中文标题",
+      "description": "人类可读名；机器判卷永不依赖本字段。"
+    },
+    "aliases": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true,
+      "title": "别名双向链（A6 rename-on-ingest）",
+      "description": "存量 ID 收编时强制保留原拼写（如 GRID.EDITABLE_GRID / KB.FAILURE_PATTERN.CSV_NAIVE_SPLIT / PAGE-TASK-STEP-BIND-CARLINE）。纪律：别名数组只减不增（防别名桶变垃圾场）；normalized 冲突查重归 REF_INTEGRITY。"
+    },
+    "authority": {
+      "$ref": "#/$definitions/AuthorityBlock",
+      "description": "判卷三问落成结构：谁有权改（owner）、改要谁批（delegates）、改完找谁问（escalation_hint）。"
+    },
+    "origin": {
+      "$ref": "#/$definitions/OriginValue",
+      "description": "natural（人维护，免 producer 义务；原 human_curated 词形）/ derived（派生，producer 声明块必填——死 factsource 免疫）/ ingested（rename-on-ingest 迁入；原 migrated 词形）。"
+    },
+    "producer": {
+      "title": "producer 声明块（C3）",
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$definitions/ProducerDeclaration"}
+      ],
+      "description": "origin=derived 时必填且不得为 null（见 allOf 条件式）——『有 schema 无 producer』的形状在本信封上不可能静默出现；声明与现实的活性偏差由 runtime/producers/heartbeat.jsonl 对账兜底（stale / dead）。"
+    },
+    "realization": {
+      "$ref": "#/$definitions/RealizationBlock",
+      "description": "正交字段（A3）：仅 contract_operation / capability 两类按 vocab-lock applies_to 使用；其余 kind 携带由 kind profile/Gate 层收窄（建议 WARN）。"
+    },
+    "key_bindings": {
+      "$ref": "#/$definitions/KeyBindings",
+      "description": "D15 一等键绑定：对象自带 binding = 期望声明而非豁免证书。A7 P0 最小集：page↔dir、contract_operation↔operationId、capability↔file 三类。"
+    },
+    "sources": {
+      "type": "array",
+      "items": {"$ref": "#/$definitions/SourceRefEntry"},
+      "title": "typed 来源引用",
+      "description": "引用皆 minor 对象 + pin（防基线漂移重演）；禁止嵌外部大文本。"
+    },
+    "supersedes": {
+      "title": "被本对象替代者",
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$definitions/SupersedesRef"}
+      ],
+      "description": "方向：本对象（新）→ 被替代者（旧）。反向指针是 successor_ref（本对象被谁替代），lifecycle=SUPERSEDED 时必填（见 allOf 条件式）。"
+    },
+    "successor_ref": {
+      "$ref": "#/$definitions/IdCanonical",
+      "title": "后继对象引用",
+      "description": "axes.lifecycle=SUPERSEDED 时必填（vocab-lock transitions：SUPERSEDED 终态 + successor_ref 必填）。SUPERSEDED vs DEPRECATED 由机器按『有无后继链』自动归类。"
+    },
+    "denominator_refs": {
+      "type": "array",
+      "items": {"$ref": "#/$definitions/DenominatorRef"},
+      "title": "分母关联（C2）",
+      "description": "对象处在某覆盖分母度量范围时挂载；分母是只许 supersede 不许删的一等公民（GAP-POM-001 免疫），gate 必须按 id+version 引用而非内联枚举。"
+    },
+    "evidence_refs": {
+      "type": "array",
+      "items": {"$ref": "#/$definitions/EvidenceRef"},
+      "title": "evidence 摘要行（A8）",
+      "description": "claim/verification 全文住 evidence/ 平面（claims/CLM-*.json + VRF-*），对象身上只留一行摘要；GateResult 永不入 truth-index。"
+    },
+    "permits_active": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "title": "生效许可引用",
+      "description": "PERMIT 前缀在 thread-A §3.1 提案中存在、vocab-lock v0.1 闭包未收录——以其为前缀的引用需先走词汇表 PR；登记期间以自由字符串挂载。change=MIGRATING 必持 ACTIVE PERMIT（跨轴断言，Transition 层）。"
+    },
+    "retriable": {
+      "type": "boolean",
+      "title": "扩展位示例：对象级重试标记",
+      "description": "『retriable 等扩展位』示例：根级 additionalProperties=true（按类放开）。扩展纪律：扩展字段必须在本文件或 kind profile 中登记形状后才可在生产对象出现，禁止匿名扩展；kind profile 可加必填/收窄类型，但不得重定义本信封核心字段。"
+    },
+    "payload": {
+      "type": "object",
+      "title": "kind 特有正文（自由区）",
+      "additionalProperties": true,
+      "description": "十类 truth_bodies 的 payload 差异表见 02b-kind-payloads.md。本信封层唯一硬性 payload 约束 = change_object / task_object 必含 class_scan_result（R4，见 allOf 条件式）；其余逐类收窄由 kind profile schemas（03-* 系列）承担。payload 内如出现 digest 字段，一律复用 $definitions.Sha256Digest（D24 注记随引用走）。"
+    },
+    "rev": {
+      "type": "integer",
+      "minimum": 0,
+      "title": "单调 revision 序号（A4）",
+      "description": "由 apply 事务分配的全局事件序号（参考 MASTer transactions/journal 机制，clean-room 重写）。本信封禁止 created_at/updated_at 等墙钟字段；人类时间只住 evidence/ 记录与 runtime/ 侧车。"
+    },
+    "notes_md": {
+      "title": "人类散文唯一合法入口",
+      "oneOf": [
+        {"type": "null"},
+        {"type": "string"}
+      ],
+      "description": "机器不得解析本字段内容做判卷（P9 教训）；中文经验叙事的归宿在这里与 DECISION 对象族，而非散落在机器字段的自由文本。"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": ["origin"],
+        "properties": {"origin": {"const": "derived"}}
+      },
+      "then": {
+        "required": ["producer"],
+        "properties": {"producer": {"$ref": "#/$definitions/ProducerDeclaration"}}
+      },
+      "title": "条件式 1：origin=derived ⇒ producer 声明块必填（C3 死 factsource 免疫）"
+    },
+    {
+      "if": {
+        "required": ["axes"],
+        "properties": {"axes": {"type": "object", "required": ["lifecycle"], "properties": {"lifecycle": {"const": "SUPERSEDED"}}}}
+      },
+      "then": {
+        "required": ["successor_ref"]
+      },
+      "title": "条件式 2：lifecycle=SUPERSEDED ⇒ successor_ref 必填（vocab-lock transitions）"
+    },
+    {
+      "if": {
+        "required": ["kind"],
+        "properties": {"kind": {"$ref": "#/$definitions/ChangeTaskKinds"}}
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "required": ["class_scan_result"],
+            "properties": {"class_scan_result": {"$ref": "#/$definitions/ClassScanResult"}}
+          }
+        }
+      },
+      "title": "条件式 3（R4）：change_object / task_object ⇒ payload.class_scan_result 必填"
+    }
+  ],
+  "examples": [
+    {
+      "x-example-class": "positive",
+      "x-example-note": "正例：MASTer 真实底稿 thread-A §4.1（component-registry GRID.EDITABLE_GRID）按 A6 rename-on-ingest 收编后的完整信封。ingested（原 migrated 词形）+ producer 声明 + realization=wired 与 evidence=VERIFIED 耦合自洽 + capability↔file 机械键绑定。",
+      "id": "CAPABILITY.GRID.EDITABLE_GRID",
+      "aliases": ["GRID.EDITABLE_GRID"],
+      "kind": "capability",
+      "axis_profile": "capability_default",
+      "axes": {"lifecycle": "CURRENT", "confidence": "LOCKED", "evidence": "VERIFIED", "change": "STABLE"},
+      "title_zh": "可编辑表格",
+      "authority": {
+        "owner": "FRONTEND_ARCHITECTURE",
+        "delegates": [{"role": "HUMAN_OWNER", "required_for": ["retire"]}],
+        "write_policy": "EVOLUTION_CHANNEL",
+        "escalation_hint": "phase5-closeout"
+      },
+      "origin": "ingested",
+      "producer": {
+        "producer_id": "prod.component_registry_compiler",
+        "views_maintained": ["truth-index.envelope", "gate.input.COMPONENT", "projection.catalog_page"],
+        "liveness": {"status": "active", "last_output_seq": 117, "runs_since_last_output": 0},
+        "merge_semantics": {
+          "refresh_fields": ["forbidden"],
+          "backfill_if_missing": ["variants", "states"],
+          "human_never_touched": []
+        }
+      },
+      "realization": {"value": "wired"},
+      "key_bindings": {
+        "code": [
+          {
+            "artifact_type": "file",
+            "value": "src/shared/grid/MasterEditableGrid.vue",
+            "expect": {"header_contains_any": ["CAPABILITY.GRID.EDITABLE_GRID"]},
+            "probe": {"method": "header_id_scan", "result": "matched", "at_seq": 116, "run": "GRN-0733"},
+            "match_rule": "mechanical"
+          },
+          {
+            "artifact_type": "npm_dependency",
+            "value": "ag-grid-community@^31.3",
+            "probe": {"method": "package_json_query", "result": "matched", "at_seq": 116},
+            "match_rule": "mechanical"
+          }
+        ],
+        "artifact": []
+      },
+      "sources": [
+        {"type": "openapi_contract", "ref": "package://catalog/openapi/master.yaml", "captured_by": "human:owner", "pin": {"version": "0.1.0"}},
+        {"type": "code_refactor", "ref": "src/shared/grid/MasterEditableGrid.vue", "captured_by": "agent:claude/session-93", "pin": {"digest": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"}}
+      ],
+      "supersedes": null,
+      "denominator_refs": [{"id": "DENOMINATOR.SHARED_COMPONENTS", "version_seen": 2}],
+      "evidence_refs": [{"claim_id": "CLM-0421", "latest_verdict": "VERIFIED", "verification": "VRF-0312"}],
+      "permits_active": [],
+      "payload": {
+        "canonical_realization": {"component": "MasterEditableGrid", "import": "@/shared/grid"},
+        "category": "grid",
+        "forbidden": ["direct_ag_grid_import_in_business_page", "page_local_grid_css", "inline_cell_renderer"],
+        "domain_states": ["idle", "editing", "validating", "saving", "error"],
+        "variants": ["cell_edit", "row_edit", "batch_edit"],
+        "technology_base": "AG_GRID",
+        "poc_required": false
+      },
+      "rev": 87,
+      "notes_md": null
+    },
+    {
+      "x-example-class": "negative",
+      "x-example-note": "反例（两处违例演示校验边界）：1) origin=derived 而 producer 缺失 → 02 信封 if/then 判 FAIL（死 factsource 免疫，C3）；2) sources[0].type=ai_invention 属 forbidden 值——本 schema『可判别但不拦』，由 Transition/Gate 层判 FATAL 并留痕（任务书 D24 精神：非法来源在 Transition 层 FATAL，不靠哈希、不靠 schema 静默兜底）。",
+      "id": "API_REQ.BIND.CARLINE.1",
+      "kind": "contract_operation",
+      "axis_profile": "contract_default",
+      "axes": {"lifecycle": "CURRENT", "confidence": "LOCKED", "evidence": "IMPLEMENTED", "change": "STABLE"},
+      "title_zh": "列出项目下车型",
+      "authority": {"owner": "FRONTEND_CONTRACT", "delegates": []},
+      "origin": "derived",
+      "sources": [
+        {"type": "ai_invention", "ref": "notes/improvised-contract.md", "captured_by": "agent:claude/session-93"}
+      ],
+      "payload": {
+        "method": "GET",
+        "path": "/api/v1/projects/{project_id}/carlines",
+        "operation_id": "list_carlines_api_v1_projects__project_id__carlines_get",
+        "classification": "QUERY",
+        "request_need": {"fields": ["project_id"]},
+        "response_need": {"fields": ["items"]}
+      },
+      "rev": 41
+    }
+  ],
+  "$definitions": {
+    "IdCanonical": {
+      "title": "canonical id 文法（closed-world，A5）",
+      "type": "string",
+      "pattern": "^(PAGE|CAPABILITY|COMPONENT|API_REQ|ERR|FIELD|KNOWLEDGE|CHANGE|TASK|DENOMINATOR|KEYBINDING|POLICY|PROFILE|AUTHORITY|TEST)\\.[A-Z][A-Z0-9_]{0,31}(?:\\.[A-Z][A-Z0-9_]{0,31})*(?:\\.[0-9]+)?$",
+      "x-vocab-source": "vocab-lock@v0.1-resolved / id_namespace.prefixes_v0（15 前缀逐字白名单）+ thread-A §3.1 SEGMENT/SEQ 文法",
+      "description": "canonical_id := PREFIX . SEGMENT ( . SEGMENT )* [ . SEQ]；SEGMENT=[A-Z][A-Z0-9_]{0,31}，SEQ（纯数字）仅可为末段。未知前缀在本正则下直接校验失败 = 解析即 FATAL（A5 closed-world）。扩展前缀走词汇表 PR，改此正则与 vocab-lock 同 commit。"
+    },
+    "KindValue": {
+      "title": "kind 枚举（truth_bodies 十类）",
+      "type": "string",
+      "enum": ["capability", "component", "contract_operation", "error_term", "field_definition", "page_surface", "knowledge_entry", "business_rule", "change_object", "task_object"],
+      "x-vocab-source": "vocab-lock@v0.1-resolved / kinds_registry.truth_bodies",
+      "description": "正文对象 kind 闭包；control_plane_inline（denominators[]/producers[]）住 truth-index.json 内部不产生正文文件；gate_results/claims 属 A8 forbidden_in_index，永不入本信封。"
+    },
+    "LifecycleValue": {
+      "title": "lifecycle 词值（六值超集，A2）",
+      "type": "string",
+      "enum": ["PROPOSED", "CURRENT", "SUPERSEDED", "DEPRECATED", "RETIRED", "REJECTED"],
+      "x-vocab-source": "vocab-lock@v0.1-resolved / state_axes.lifecycle.values",
+      "description": "SUPERSEDED=有 successor_ref 的良性终态；DEPRECATED=无后继不再推荐（可过渡 RETIRED）。合法迁移矩阵归 Transition 引擎。"
+    },
+    "ConfidenceValue": {
+      "title": "confidence 词值（PRD §18.2 四值不动）",
+      "type": "string",
+      "enum": ["UNRESOLVED", "EXPERIMENTAL", "PROVISIONAL", "LOCKED"],
+      "x-vocab-source": "vocab-lock@v0.1-resolved / state_axes.confidence.values",
+      "description": "LOCKED 不是圣旨：LOCKED 且 change: STABLE→CHALLENGED 必须携带 DECISION.*/CHANGE.* 引用（跨轴断言，Transition 层）。"
+    },
+    "EvidenceValue": {
+      "title": "evidence 词值（PRD 三值）",
+      "type": "string",
+      "enum": ["PLANNED", "IMPLEMENTED", "VERIFIED"],
+      "x-vocab-source": "vocab-lock@v0.1-resolved / state_axes.evidence.values",
+      "description": "stub/mock 歧义由 realization 正交块承接（A3），本轴语义保持纯净：代码接没接/验没验。"
+    },
+    "ChangeValue": {
+      "title": "change 词值",
+      "type": "string",
+      "enum": ["STABLE", "CHALLENGED", "MIGRATING"],
+      "x-vocab-source": "vocab-lock@v0.1-resolved / state_axes.change.values",
+      "description": "MIGRATING 必持 ACTIVE PERMIT；漂移自动回落 CHALLENGED（跨轴断言，Transition 层）。"
+    },
+    "ChangeTaskKinds": {
+      "title": "R4 触发类子集",
+      "type": "string",
+      "enum": ["change_object", "task_object"],
+      "x-vocab-source": "vocab-lock@v0.1-resolved / kinds_registry.truth_bodies 子集（R4 任务书指令）",
+      "description": "仅用于 allOf 条件式 3 的 kind 判别。"
+    },
+    "OriginValue": {
+      "title": "origin 枚举",
+      "type": "string",
+      "enum": ["natural", "derived", "ingested"],
+      "x-vocab-source": "x-vocab-extra.origin（01-truth-index 任务指派定案词形；2026-08-27 与 01 对齐，提请 vocab PR 收编）",
+      "description": "derived ⇒ producer 必填；ingested ⇒ 建议携带 aliases（A6，原 thread-A migrated 词形）；natural 免 producer 义务（原 thread-A human_curated 词形，防死 factsource 误伤 advisory 知识）。legacy 词形收编映射：human_curated→natural、migrated→ingested。"
+    },
+    "WritePolicyValue": {
+      "title": "write_policy 枚举",
+      "type": "string",
+      "enum": ["NONE", "AGENT_WITH_PERMIT", "CORRECTION_ONLY", "EVOLUTION_CHANNEL"],
+      "x-vocab-source": "x-vocab-extra.write_policy（thread-A-ir-schema.md §3.4，提请 vocab PR 收编）",
+      "description": "NONE=锁死；AGENT_WITH_PERMIT=Agent 持许可可写；CORRECTION_ONLY=仅纠错通道；EVOLUTION_CHANNEL=技术路线变更走 ACR。"
+    },
+    "SourceTypeAllowed": {
+      "title": "source.type 合法来源（7 值）",
+      "type": "string",
+      "enum": ["bp_blueprint", "design_seed", "human_directive", "code_refactor", "prototype_walkthrough", "research_evidence", "openapi_contract"],
+      "x-vocab-source": "x-vocab-extra.source_type.allowed（任务书 02 指令给定）",
+      "description": "合法来源集，供 Gate/Transition 层判别引用。"
+    },
+    "SourceTypeForbidden": {
+      "title": "source.type forbidden 两值（可判别·不硬拦）",
+      "type": "string",
+      "enum": ["prototype_html_scrape", "ai_invention"],
+      "x-vocab-source": "x-vocab-extra.source_type.forbidden（任务书 02 指令给定）",
+      "description": "provenance_check 依赖字段：本定义与 SourceTypeAllowed 分离，使 Gate 层可用 schema 判别非法来源。D24 精神：非法来源在 Transition 层 FATAL 并留痕，本信封不靠 schema 静默拦截、更不靠哈希兜底。"
+    },
+    "SourceTypeAll": {
+      "title": "source.type 全集（allowed ∪ forbidden = 9 值）",
+      "oneOf": [
+        {"$ref": "#/$definitions/SourceTypeAllowed"},
+        {"$ref": "#/$definitions/SourceTypeForbidden"}
+      ],
+      "x-vocab-source": "x-vocab-extra.source_type.all = allowed + forbidden（任务书 02 指令给定）",
+      "description": "字段约束用全集（schema 不拦）；判别需求用两个子集定义。"
+    },
+    "Sha256Digest": {
+      "title": "sha256 内容指纹（D24 哈希伦理约束点）",
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "x-digest-ethics": {
+        "write_blocking": false,
+        "side": "read_only_service",
+        "human_touch": "forbidden"
+      },
+      "description": "D24 / vocab-lock.digest_ethics：只做 identity / rerun-shortcut / tamper-audit 的只读服务，永不作为写入门闸；人类禁止计算/核对/传递任何 sha（事务自动维护）；违规处置 = WARN + auto-regen hint。payload 内一切 digest 字段必须经本定义引用。"
+    },
+    "SourcePin": {
+      "title": "source pin（防基线漂移）",
+      "type": "object",
+      "anyOf": [
+        {"required": ["baseline"]},
+        {"required": ["version"]},
+        {"required": ["digest"]}
+      ],
+      "properties": {
+        "baseline": {"type": "string", "minLength": 1, "description": "基线锚（如 BP 基线代号 20260814）"},
+        "version": {"type": "string", "minLength": 1, "description": "外部锁定目录版本（如 catalog-lock 钉死版本）"},
+        "digest": {"$ref": "#/$definitions/Sha256Digest"}
+      },
+      "additionalProperties": true,
+      "description": "三选一必填（schema 层 anyOf 强制）；thread-A §3.5：原型从 20260722 换 20260814 时整批人肉重对齐的根因就是 source 无 pin。Gate 层可按 source kind 收紧为指定 pin 类型。"
+    },
+    "SourceRefEntry": {
+      "title": "typed 来源引用条目",
+      "type": "object",
+      "required": ["type", "ref", "captured_by"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "$ref": "#/$definitions/SourceTypeAll",
+          "description": "9 值全集（含 forbidden 两值）。provenance_check：forbidden 两值经 SourceTypeForbidden 定义可被 Gate/Transition 层判别；本 schema 不拦（FATAL 语义在 Transition 层，D24 精神）。"
+        },
+        "ref": {
+          "type": "string",
+          "minLength": 1,
+          "not": {"pattern": "^[A-Za-z]:[\\\\/]"},
+          "description": "provenance 引用：package:// 或仓内相对路径；禁开发机绝对盘符路径（check_sources 全数 dev-only 化的教训）。"
+        },
+        "captured_by": {
+          "type": "string",
+          "minLength": 1,
+          "description": "采集主体 actor 标识（如 human:owner / agent:claude/session-93）——永不信任自报值的主体留痕。"
+        },
+        "locator": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "结构化定位（section/line/operationId/finding 等），形状由 source kind 决定。"
+        },
+        "pin": {"$ref": "#/$definitions/SourcePin"}
+      }
+    },
+    "ProducerDeclaration": {
+      "title": "producer 声明块（C3 死 factsource 免疫）",
+      "type": "object",
+      "required": ["producer_id", "views_maintained"],
+      "additionalProperties": false,
+      "properties": {
+        "producer_id": {
+          "type": "string",
+          "pattern": "^prod\\.[a-z][a-z0-9_]{1,63}$",
+          "description": "prod. 强制前缀 + 小写蛇形主体；须能在 truth-index.producers[] 注册表解析（如 prod.component_registry_compiler）。pattern 与 06-producer.producer_id 同串（单一事实源 06；2026-08-27 三文件收敛，原最松变体放行连字符/无前缀已废止）。"
+        },
+        "views_maintained": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1},
+          "description": "本 producer 维护的投影视图（如 truth-index.envelope / gate.input.COMPONENT / projection.page_spec_s7）；声明了却从未出现在任何 heartbeat 的视图 → dead，进 health.dead_producers。"
+        },
+        "liveness": {"$ref": "#/$definitions/LivenessRef"},
+        "merge_semantics": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "refresh_fields": {"type": "array", "items": {"type": "string"}, "description": "每次派生安全覆盖的字段白名单"},
+            "backfill_if_missing": {"type": "array", "items": {"type": "string"}, "description": "仅缺失才回填（派生同步会碾掉人类修正——批次2 教训）"},
+            "human_never_touched": {"type": "array", "items": {"type": "string"}, "description": "空数组 = 此对象存在人类可编辑字段"}
+          }
+        }
+      },
+      "description": "origin=derived 时由信封条件式 1 强制必填：对象存在的前提就是 producer 声明存在。"
+    },
+    "LivenessRef": {
+      "title": "liveness 引用（活性快照指向 runtime 侧车）",
+      "type": "object",
+      "required": ["status"],
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["active", "stale", "dead"],
+          "x-vocab-source": "x-vocab-extra.liveness_status（词形以 06-producer liveness.status 收敛为准；2026-08-27 对齐，提请 vocab PR）",
+          "description": "判定跑在运行时侧：上游输入变了而输出连续 K 轮为零 → stale（门禁输入地位降级；原 thread-A 行文 suspect_stale 词形已收敛）；从未产出 → dead（原 dead_view 词形已收敛）。"
+        },
+        "heartbeat_ref": {
+          "type": "string",
+          "minLength": 1,
+          "description": "runtime/producers/heartbeat.jsonl 事件引用（package:// 形态）；心跳原文不进对象身份。"
+        },
+        "last_output_seq": {"type": "integer", "minimum": 0, "description": "最近一次产出的全局事件序号（A4：单调 seq，非墙钟）"},
+        "runs_since_last_output": {"type": "integer", "minimum": 0}
+      }
+    },
+    "RealizationValue": {
+      "title": "realization 词值（A3 正交三值）",
+      "type": "string",
+      "enum": ["stub", "mock", "wired"],
+      "x-vocab-source": "vocab-lock@v0.1-resolved / orthogonal_fields.realization.values",
+      "description": "词表刻意无 absent 值：字段缺省 = 未声明接线主张。三值各有证据义务：stub→源码 stub 标注探针；mock→mock_contract_ref / probe_ref；wired→commit + 绑定探针。"
+    },
+    "RealizationBlock": {
+      "title": "realization 正交块（A3：不污染 evidence 轴）",
+      "type": "object",
+      "required": ["value"],
+      "additionalProperties": false,
+      "properties": {
+        "value": {"$ref": "#/$definitions/RealizationValue"},
+        "derivation": {
+          "type": "string",
+          "const": "machine_preferred",
+          "description": "vocab-lock orthogonal_fields.realization.derivation：优先机器派生，人只做例外复核；本字段缺省即视为 machine_preferred。"
+        },
+        "probe_ref": {
+          "type": "string",
+          "minLength": 1,
+          "description": "机器派生依据的探针/证据引用（evidence 平面）；mock 时亦可为 mock_contract_ref。"
+        },
+        "human_override": {
+          "title": "人工复核例外（带 reason 才合法）",
+          "oneOf": [
+            {"type": "null"},
+            {
+              "type": "object",
+              "required": ["reason"],
+              "additionalProperties": false,
+              "properties": {
+                "reason": {"type": "string", "minLength": 1, "description": "为何推翻机器派生（必填留痕，供判卷）"},
+                "decided_by": {"type": "string", "minLength": 1},
+                "authority_ref": {"type": "string", "minLength": 1, "description": "DECISION.* / CHANGE.* 引用"},
+                "at_rev": {"type": "integer", "minimum": 0}
+              }
+            }
+          ]
+        }
+      },
+      "x-applies-to": ["contract_operation", "capability"],
+      "x-applies-to-note": "vocab-lock orthogonal_fields.realization.applies_to；信封不拦其他 kind 携带，kind profile/Gate 层收窄（建议 WARN）。跨轴断言 evidence=VERIFIED ⇒ realization=wired 归 Transition 层。",
+      "description": "ACCEPTED 一词三义（契约已接受≠已接线≠已验证）的结构性终结：lifecycle/confidence 归 axes，接线态归本块。"
+    },
+    "AuthorityBlock": {
+      "title": "authority 块（谁有权改/改要谁批/改完找谁问）",
+      "type": "object",
+      "required": ["owner", "delegates"],
+      "additionalProperties": false,
+      "properties": {
+        "owner": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]*$",
+          "description": "必须在 authority.json 可解析；解析失败 = FATAL 而非 WARNING（幽灵 owner 曾致 26 条 dependency-not-approved 无处申诉引发维护死锁）。"
+        },
+        "delegates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["role"],
+            "additionalProperties": false,
+            "properties": {
+              "role": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]*$", "description": "委托角色（如 HUMAN_OWNER / EXTERNAL_BASELINE / BUSINESS_OWNER）"},
+              "required_for": {
+                "type": "array",
+                "items": {"type": "string", "minLength": 1},
+                "description": "该 delegate 审批必需的动作（如 retire / unlock_confidence_LOCKED / modify_payload_request_need）"
+              }
+            }
+          },
+          "description": "委托审批位（thread-A §3.4 approvers 的角色化形态，任务书措辞 delegates）；空数组 = 无委托、仅 owner 判卷。审批语义不可用自由文本表达（DEF-POM-004）。"
+        },
+        "write_policy": {"$ref": "#/$definitions/WritePolicyValue"},
+        "escalation_hint": {
+          "type": "string",
+          "minLength": 1,
+          "description": "fail 时报错必须带的路标（如 phase5-closeout）——回应『报错不说去哪修』。"
+        }
+      }
+    },
+    "KeyBindings": {
+      "title": "key_bindings（D15 一等键绑定的对象侧宿主）",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "code": {"type": "array", "items": {"$ref": "#/$definitions/KeyBindingEntry"}},
+        "artifact": {"type": "array", "items": {"$ref": "#/$definitions/KeyBindingEntry"}}
+      },
+      "x-binding-discipline": "三条语义规则：1) binding 是期望声明不是豁免证书——gate 交叉校验必须重扫现实验证 expect，不得采信自报 probe.result（C5）；2) 所需 binding 类缺失 → gate verdict=not_configured（终局性诚实报告），禁止解释性静默通过；3) match_rule=manual_confirmed 合计占比 × 表行数 = 待偿机器键债务（健康指标）。A7 P0 三类：page↔dir / contract_operation↔operationId / capability↔file。",
+      "description": "批量视图间翻译层是独立 KEYBINDING.* 表对象（control-plane 族）；本结构只挂对象自带的锚点 binding。"
+    },
+    "KeyBindingEntry": {
+      "title": "key_binding 条目",
+      "type": "object",
+      "required": ["artifact_type", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "artifact_type": {
+          "type": "string",
+          "minLength": 1,
+          "description": "锚点类型：file / source_dir / npm_dependency / openapi_operationId / consumer_page 等（映射类注册为 SYS 词表对象）。"
+        },
+        "value": {
+          "type": "string",
+          "minLength": 1,
+          "not": {"pattern": "^[A-Za-z]:[\\\\/]"},
+          "description": "锚点值；仓内相对形态，禁绝对盘符路径。"
+        },
+        "expect": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "期望声明（contains_symbol / calls_path / header_contains_any 等），形状随 artifact_type。"
+        },
+        "probe": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "method": {"type": "string", "minLength": 1, "description": "探针方法（header_id_scan / http_call_scan / package_json_query / binding_table_lookup 等）"},
+            "result": {"type": "string", "minLength": 1, "description": "自报探针结果——仅作记录，gate 必须重算重扫（C5 永不信任自报值）"},
+            "at_seq": {"type": "integer", "minimum": 0, "description": "探测时全局事件序号（A4）"},
+            "run": {"type": "string", "minLength": 1, "description": "GRN-* 运行记录引用（evidence 平面）"}
+          },
+          "description": "自报探针记录；gate 必须重扫（expensive rescan 不可绕过——与 gate 执行线的关键联调验收点）。"
+        },
+        "match_rule": {"$ref": "#/$definitions/MatchRuleValue"}
+      }
+    },
+    "MatchRuleValue": {
+      "title": "match_rule 枚举",
+      "type": "string",
+      "enum": ["mechanical", "manual_confirmed"],
+      "x-vocab-source": "x-vocab-extra.match_rule（thread-A §3.2，提请 vocab PR 收编）",
+      "description": "naming_rule_derivation 推导规则本身注册为 SYS 对象；未被规则覆盖的匹配必须显式 manual_confirmed 并受机器键债务指标盯着。"
+    },
+    "DenominatorRef": {
+      "title": "分母关联条目（C2）",
+      "type": "object",
+      "required": ["id", "version_seen"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "DENOMINATOR.* 对象 id",
+          "allOf": [
+            {"$ref": "#/$definitions/IdCanonical"},
+            {"type": "string", "pattern": "^DENOMINATOR\\."}
+          ],
+          "description": "分母是只许 supersede 不许删的一等公民。"
+        },
+        "version_seen": {"type": "integer", "minimum": 1, "description": "对象声明时所见分母版本；gate 校验时与分母当前版本比对，不等即覆盖缺口如实呈现（write-gate 15/32/20 分母漂移事故免疫）。"}
+      }
+    },
+    "EvidenceRef": {
+      "title": "evidence 摘要行（A8：全文住 evidence 平面）",
+      "type": "object",
+      "required": ["claim_id"],
+      "additionalProperties": false,
+      "properties": {
+        "claim_id": {"type": "string", "pattern": "^CLM-[0-9]+$", "description": "evidence/claims/CLM-*.json 引用"},
+        "latest_verdict": {"$ref": "#/$definitions/VerificationVerdictValue"},
+        "verification": {"type": "string", "pattern": "^VRF-[0-9]+$", "description": "VRF 记录由 kernel 生成、不可由声称方书写（结构性分流：asserted 与 recomputed 物理分离）。"}
+      }
+    },
+    "VerificationVerdictValue": {
+      "title": "verification verdict 枚举",
+      "type": "string",
+      "enum": ["VERIFIED", "PARTIALLY_VERIFIED", "UNVERIFIED", "REJECTED"],
+      "x-vocab-source": "x-vocab-extra.verification_verdict（thread-A §5，提请 vocab PR 收编）",
+      "description": "task 验收（§47 DoD）硬绑：每条 acceptance 必须映射 latest_verdict=VERIFIED 的 claim。"
+    },
+    "SupersedesRef": {
+      "title": "supersedes 引用（本对象替代了谁）",
+      "type": "object",
+      "required": ["id", "reason_short"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"$ref": "#/$definitions/IdCanonical"},
+        "reason_short": {"type": "string", "minLength": 1, "description": "替代理由一句话（机器可归类，SUPERSEDED vs DEPRECATED 自动判别的输入）。"}
+      }
+    },
+    "ClassScanResult": {
+      "title": "类扫描结果 class_scan_result（R4：change/task 必备）",
+      "type": "object",
+      "required": ["scope", "hits", "fixed_count", "regression_case_ref"],
+      "additionalProperties": false,
+      "properties": {
+        "scope": {"type": "string", "minLength": 1, "description": "扫描范围（选择器/目录/目标集描述）——改动对象时同类问题扫了哪里。"},
+        "hits": {"type": "integer", "minimum": 0, "description": "同类问题现存实例命中数（csvEscape×16 类事故的计数化）。"},
+        "fixed_count": {"type": "integer", "minimum": 0, "description": "本轮已修复数；fixed_count ≤ hits 归 Gate 层校验（draft-07 无跨字段比较关键字，schema 不在此拦）。"},
+        "regression_case_ref": {"type": "string", "minLength": 1, "x-ref-kind": ["TEST", "GRN"], "description": "回归用例引用；建议 TEST.*（fixture 专用域，Q3 已决：对象身份合法，生产代码引用 TEST.* 是 doctor 违规探针）或 GRN-* 运行记录。"}
+      },
+      "description": "R4 纪律的 schema 化：任何 change_object / task_object 必须记录『同类扫描 + 回归锚』，封堵修一处漏一类的fix-forget-repeat 循环。信封条件式 3 强制。"
+    }
+  }
+}

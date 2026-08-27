@@ -1,0 +1,16 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
+    "paths": {
+      "@pomaster/kernel": ["../packages/kernel/src/index.ts"],
+      "@pomaster/schemas": ["../packages/schemas/src/index.ts"],
+      "@pomaster/cli": ["../packages/cli/src/index.ts"],
+      "@pomaster/gauntlet-lite": ["../packages/gauntlet-lite/src/index.ts"]
+    }
+  },
+  "include": ["."]
+}

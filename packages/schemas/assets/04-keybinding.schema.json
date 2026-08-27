@@ -1,0 +1,439 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://pomaster.dev/schemas/keybinding/v1-draft.json",
+  "title": "KEYBINDING 键绑定行（Key Binding Row · 一等公民，D15）",
+  "description": "治理对象 ID 与物理世界（源码目录/文件/契约 operationId）之间的显式绑定记录，消灭『ID↔代码路径靠人脑约定』病灶：蓝图↔目录 naive 对账 11+4 假差异、grep element-plus 23 假阳性、spec_binding 双 id 形态并存无人拦截（C4）。\n语义三条（thread A §3.2）：\n1. binding 是期望声明不是豁免证书——gate 交叉校验必须重扫现实验证 expect，绝不采信本行 probe.result 当结论（C5 自报值纪律）；\n2. 绑定不可达/整行缺失时，交叉校验 gate 必须输出 verdict=not_configured（终局性诚实报告），禁止 passed——见 x-pomaster-gate-coupling；\n3. legacy_id 保留迁入前历史拼写（A6 rename-on-ingest；vocab-lock aliases 注记『键绑定表记录历史形态』）。",
+  "x-pomaster-file-role": "04-keybinding.schema.json —— KEYBINDING 一等公民行对象（D15/A7）。绑定表=本行对象的分组视图（表 id 形态同 keybinding_id，如 KEYBINDING.PAGE.V1），05-denominator.member_selector.via_binding_table 按此引用。",
+  "x-pomaster-vocab-source": "vocab-lock@v0.1-resolved",
+  "x-pomaster-contract": {
+    "vocab_source": "vocab-lock@v0.1-resolved（schema-drafts/vocab-lock.draft.yaml）——前缀闭包/别名链唯一来源；governed_id pattern 内前缀列表与 vocab_prefix_closure 数组均为其机械镜像（与 01-truth-index.definitions.governed_id 同串，两文件须同步改写）",
+    "task_mandated_enums": "binding_class / binding_status / probe.result 已随 vocab-lock keybinding_axes 收编（2026-08-27，暂定事实源声明就此摘除）；match_rule 镜像 02 MatchRuleValue（02b §14.4 提请随 vocab-lock v0.2 收编）；probe.method 形态域仍以 kernel/vocab/methods.yaml 注册表为准（见 probe 定义）",
+    "gate_coupling": "D6+D15 交点：所需 binding 类不可达或整行缺失 ⇒ 交叉校验 gate verdict=not_configured，禁止 passed/降级放行（详见 x-pomaster-gate-coupling）",
+    "uniqueness_note": "双向唯一性（同一 physical_path 不得出现在两个 confirmed 绑定、同一 canonical_id 不得持两个 confirmed 物理锚）由索引层 REF_INTEGRITY 执行，见 x-pomaster-ref-integrity"
+  },
+  "x-pomaster-definitions-note": "$definitions 复用以 draft-07 关键字 definitions 承载（2019-09 的 $definitions 之 draft-07 等价物，ajv 原生支持）。",
+  "x-pomaster-digest-ethics-policy": "本对象当前不含 sha256/digest 字段。未来任何 digest/sha256 字段加入时必须携带 x-digest-ethics 注记 {\"write_blocking\": false, \"side\": \"read_only_service\", \"human_touch\": \"forbidden\"}（D24 / vocab-lock digest_ethics：digest 永不作写入门闸，人不可计算/核对/传递）。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "binding_class", "canonical_id", "physical_path", "binding_status", "match_rule", "probe"],
+  "properties": {
+    "id": {
+      "$ref": "#/definitions/keybinding_id"
+    },
+    "binding_class": {
+      "$ref": "#/definitions/binding_class"
+    },
+    "legacy_id": {
+      "$ref": "#/definitions/legacy_id"
+    },
+    "canonical_id": {
+      "$ref": "#/definitions/governed_id"
+    },
+    "physical_path": {
+      "$ref": "#/definitions/repo_relative_anchor"
+    },
+    "binding_status": {
+      "$ref": "#/definitions/binding_status"
+    },
+    "match_rule": {
+      "$ref": "#/definitions/match_rule"
+    },
+    "probe": {
+      "$ref": "#/definitions/probe"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "binding_class": {
+            "const": "page_to_dir"
+          }
+        },
+        "required": ["binding_class"]
+      },
+      "then": {
+        "properties": {
+          "canonical_id": {
+            "pattern": "^PAGE\\.[A-Z][A-Z0-9_]{0,31}(\\.[A-Z][A-Z0-9_]{0,31})*(\\.[0-9]+)?$",
+            "description": "page_to_dir ⇒ canonical 侧必须是 PAGE.* 页面对象（A7 类-前缀耦合）"
+          },
+          "physical_path": {
+            "description": "page_to_dir ⇒ 物理锚 = 页面源码目录（repo 相对，如 src/pages/page-bind-carline）"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "binding_class": {
+            "const": "contract_operation_to_operationId"
+          }
+        },
+        "required": ["binding_class"]
+      },
+      "then": {
+        "properties": {
+          "canonical_id": {
+            "pattern": "^API_REQ\\.[A-Z][A-Z0-9_]{0,31}(\\.[A-Z][A-Z0-9_]{0,31})*(\\.[0-9]+)?$",
+            "description": "contract_operation_to_operationId ⇒ canonical 侧必须是 API_REQ.* 契约操作（A7 类-前缀耦合）"
+          },
+          "physical_path": {
+            "pattern": "^[A-Za-z][A-Za-z0-9_.-]*$",
+            "description": "contract_operation_to_operationId ⇒ 物理锚 = 外部锁定契约的 operationId token（非文件系统路径；绝对路径形态同被 base 禁止）"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "binding_class": {
+            "const": "capability_to_file"
+          }
+        },
+        "required": ["binding_class"]
+      },
+      "then": {
+        "properties": {
+          "canonical_id": {
+            "pattern": "^CAPABILITY\\.[A-Z][A-Z0-9_]{0,31}(\\.[A-Z][A-Z0-9_]{0,31})*(\\.[0-9]+)?$",
+            "description": "capability_to_file ⇒ canonical 侧必须是 CAPABILITY.* 能力对象（A7 类-前缀耦合）"
+          },
+          "physical_path": {
+            "description": "capability_to_file ⇒ 物理锚 = 能力实现源码文件（repo 相对，如 src/shared/grid/MasterEditableGrid.vue）"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "binding_status": {
+            "enum": ["confirmed", "derived"]
+          },
+          "match_rule": {
+            "const": "mechanical"
+          }
+        },
+        "required": ["binding_status", "match_rule"]
+      },
+      "then": {
+        "properties": {
+          "probe": {
+            "properties": {
+              "result": {
+                "const": "matched"
+              }
+            }
+          }
+        },
+        "description": "match_rule=mechanical 且 confirmed/derived ⇒ 最近探针必须 matched——机械路径的可信态不允许踩在失败/未跑的探针结论上；manual_confirmed 行（人工确认路径）允许 probe.result=not_probed（2026-08-27 修复：原条件无差别要求 matched，人工确认行被结构性拦死无法落盘）"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "probe": {
+            "properties": {
+              "result": {
+                "enum": ["mismatched", "unreachable"]
+              }
+            }
+          }
+        },
+        "required": ["probe"]
+      },
+      "then": {
+        "properties": {
+          "binding_status": {
+            "const": "stale"
+          }
+        },
+        "description": "探针失败/不可达 ⇒ 行必须降为 stale（不得保持 confirmed/derived）"
+      }
+    }
+  ],
+  "x-pomaster-gate-coupling": {
+    "verdict_cap": {
+      "trigger": "probe.result=unreachable / binding_status=stale / 目标对象上所需 binding_class 整行缺失",
+      "requirement": "引用本绑定的交叉校验 gate 必须输出 verdict=not_configured（终局性诚实报告，不是通过）：禁止 passed、禁止解释性静默通过、禁止降级为 warning 后放行",
+      "reason_code": "binding_unverified_for_required_class",
+      "pass_cap": "即便重扫命中，出现 declare-recompute 失配或盲区比值越阈时 passed 自动降级 warning 并留原因码（thread A §4.5 verdict_cap 机制）",
+      "source": "D6+D15 交点；thread A §3.2 关键语义规则 2 / §4.5；interaction-contract-registry『opt-in 文件不存在则门禁静默』事故的结构性封堵"
+    }
+  },
+  "x-pomaster-ref-integrity": {
+    "note": "跨实体唯一性 JSON Schema 单实例无法表达，由 truth-index 层 REF_INTEGRITY 检查执行，违反=FATAL。",
+    "rules": [
+      {
+        "id": "KB_UNIQ_001",
+        "statement": "同一 binding_class 内，全部 binding_status=confirmed 绑定行的 physical_path 两两互异——同一物理锚不得挂到两个 confirmed 绑定的物理侧。"
+      },
+      {
+        "id": "KB_UNIQ_002",
+        "statement": "同一 binding_class 内，全部 binding_status=confirmed 绑定行的 canonical_id 两两互异——同一规范对象不得持两个 confirmed 物理锚（与 KB_UNIQ_001 合成双向唯一）。"
+      },
+      {
+        "id": "KB_ALIAS_003",
+        "statement": "legacy_id 经 normalized_key（NFKC→大写→连续[-_.\\s]折叠为'.'）后不得与其他行 canonical_id/alias 冲突（三重查重，封杀双登记）。"
+      },
+      {
+        "id": "KB_GATE_004",
+        "statement": "stale/unreachable 行不得作为交叉校验 gate 的通过依据（联动 x-pomaster-gate-coupling）。"
+      }
+    ],
+    "source": "thread A §3.1 normalized_key 三重查重 / §4.6 one_to_one_enforced / §50 REF_INTEGRITY"
+  },
+  "definitions": {
+    "vocab_prefix_closure": {
+      "title": "ID 前缀闭包镜像（vocab prefix closure mirror）",
+      "$comment": "source: vocab-lock@v0.1-resolved → id_namespace.prefixes_v0（逐字镜像；扩展走词表 PR 后同步改写 governed_id pattern 与本数组）。此定义仅供人读与工具核对正则同步，实际约束由 governed_id 的 pattern 承载。",
+      "const": ["PAGE.", "CAPABILITY.", "COMPONENT.", "API_REQ.", "ERR.", "FIELD.", "KNOWLEDGE.", "CHANGE.", "TASK.", "DENOMINATOR.", "KEYBINDING.", "POLICY.", "PROFILE.", "AUTHORITY.", "TEST."]
+    },
+    "governed_id": {
+      "type": "string",
+      "pattern": "^(PAGE|CAPABILITY|COMPONENT|API_REQ|ERR|FIELD|KNOWLEDGE|CHANGE|TASK|DENOMINATOR|KEYBINDING|POLICY|PROFILE|AUTHORITY|TEST)\\.[A-Z][A-Z0-9_]{0,31}(\\.[A-Z][A-Z0-9_]{0,31})*(\\.[0-9]+)?$",
+      "title": "规范对象 id（canonical governed id，closed-world）",
+      "description": "PREFIX 取 vocab-lock@v0.1-resolved prefixes_v0 闭包（与 01-truth-index.definitions.governed_id 同一机械镜像，两文件必须同步改写）。文法：PREFIX . SEGMENT (. SEGMENT)* [. SEQ]；SEGMENT 大写下划线、[A-Z] 开头、段长≤32；SEQ 纯数字仅可为末段。A5 closed-world：未登记前缀=解析即 FATAL。A6：legacy 拼写只入 legacy_id，不得作为本字段值。",
+      "examples": [
+        "PAGE.BIND_CARLINE",
+        "GRID.EDITABLE_GRID（INVALID：GRID. 仅是 alias legacy 前缀，canonical 为 CAPABILITY.GRID.EDITABLE_GRID；未登记前缀=FATAL）"
+      ]
+    },
+    "keybinding_id": {
+      "type": "string",
+      "pattern": "^KEYBINDING\\.[A-Z][A-Z0-9_]{0,31}\\.[A-Z][A-Z0-9_]{0,31}(\\.[A-Z][A-Z0-9_]{0,31})*$",
+      "title": "绑定行 id（KEYBINDING.<DOMAIN>.<NAME>）",
+      "description": "行 id 至少两段：DOMAIN 段提示绑定域（如 PAGE / CODE / ARTIFACT），NAME 段为行名。DOMAIN 与 binding_class 的对应是软约定（归 REF_INTEGRITY 审计），不作正则强约束。绑定表 id（如 KEYBINDING.PAGE.V1）与本行 id 同一形态空间。",
+      "$comment": "source: task 指定 id 形态 + vocab-lock id_namespace.rules（separator='.'，SCREAMING_SNAKE）。",
+      "examples": [
+        "KEYBINDING.PAGE.BIND_CARLINE",
+        "KEYBINDING.PAGE（INVALID：仅一段，缺 NAME 段）"
+      ]
+    },
+    "legacy_id": {
+      "type": ["string", "null"],
+      "title": "迁入前历史拼写（legacy spelling，A6 alias 双向链锚点）",
+      "description": "rename-on-ingest 保留的原拼写；原生规范对象为 null。已登记 legacy 家族：KB-*、GRID.*、PAGE-TASK-STEP-*（token 重排收编）、TASK-*、CHANGE-*（数字段加字母前缀收编，vocab-lock aliases_v0 2026-08-27 增补）。legacy_id 不参与 canonical 文法校验、不作解析目标，仅考古溯源 + normalized_key 三重查重。",
+      "$comment": "source: vocab-lock@v0.1-resolved → aliases_v0（『键绑定表记录历史形态』注记）。",
+      "if": {
+        "type": "string"
+      },
+      "then": {
+        "pattern": "^[A-Za-z][A-Za-z0-9_.\\-*]*$",
+        "minLength": 1
+      },
+      "examples": [
+        "PAGE-TASK-STEP-BIND-CARLINE",
+        null
+      ]
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 0,
+      "title": "事件序号（monotonic event seq，A4）",
+      "description": "单调递增事件序号，由 apply 事务分配；受 hash 管辖字段禁用墙钟时间（DEF-POM-002 幂等崩坏教训，A4）。",
+      "examples": [
+        115
+      ],
+      "x-invalid-examples": [
+        { "sample": -1, "reason": "INVALID（边界）：负数序号——minimum 0；事件序号由 apply 事务单调分配（A4）" }
+      ]
+    },
+    "binding_class": {
+      "type": "string",
+      "enum": ["page_to_dir", "contract_operation_to_operationId", "capability_to_file"],
+      "title": "绑定类（binding class，A7 三类最小集）",
+      "description": "page_to_dir：页面对象↔源码目录；contract_operation_to_operationId：API 契约操作↔OpenAPI operationId 锚点；capability_to_file：能力对象↔源码文件。P0 最小闭包恰好覆盖三件套 tracer bullet（D11）。",
+      "$comment": "source: design-synthesis-decisions Thread A DP-A7（task 直接指定）→ vocab-lock keybinding_axes.binding_class（2026-08-27 收编）。扩展须经词表 PR。",
+      "x-pomaster-vocab-status": "registered_in_vocab_lock__keybinding_axes（2026-08-27 收编）",
+      "examples": [
+        "page_to_dir",
+        "field_to_data_model（INVALID：词表外第四类——扩展必须走词表 PR，不得直接落值）"
+      ]
+    },
+    "binding_status": {
+      "type": "string",
+      "enum": ["confirmed", "derived", "stale"],
+      "title": "绑定可信度（binding trust tri-state）",
+      "description": "confirmed：人工确认（match_rule=manual_confirmed，允许 probe.result=not_probed）或机械探针双向验证通过（match_rule=mechanical 且 probe.result=matched）；derived：由已注册命名规则机械推导并验证（naming_rule_derivation_and_verify 通过，match_rule=mechanical）；stale：上次探针失败/物理锚不可达/机械路径未探测——待复核，不得作为 gate 通过依据（manual_confirmed 行的 not_probed 不属此列，人工确认路径合法）。健康指标：match_rule=manual_confirmed 行占比×表行数=待偿机器键债（thread A §3.2 规则 3，本表行落地后指标可计算）。",
+      "$comment": "source: task 直接指定（confirmed|derived|stale）→ vocab-lock keybinding_axes.binding_status（2026-08-27 收编）。",
+      "x-pomaster-vocab-status": "registered_in_vocab_lock__keybinding_axes（2026-08-27 收编）",
+      "examples": [
+        "confirmed",
+        "verified（INVALID：词表外值——机械验证通过的正确用词是 confirmed/derived）"
+      ]
+    },
+    "probe_result": {
+      "type": "string",
+      "enum": ["matched", "mismatched", "unreachable", "not_probed"],
+      "title": "探针结论（probe result）",
+      "description": "matched：期望在现实中复核命中；mismatched：物理锚存在但期望不命中；unreachable：物理锚不可达（文件消失/契约不可解析）——触发 x-pomaster-gate-coupling.verdict_cap；not_probed：尚未运行探针（存量收编初始态，允许与 stale 共存）。注意：probe.result 是期望声明的自报快照，gate 判卷必须重扫现实，不读本值下结论（C5）。",
+      "$comment": "source: task 指定 probe 结构 + thread A §3.2/§4.6 probe 语义归纳 → vocab-lock keybinding_axes.probe_result（2026-08-27 收编）。",
+      "x-pomaster-vocab-status": "registered_in_vocab_lock__keybinding_axes（2026-08-27 收编）",
+      "examples": [
+        "matched",
+        "passed（INVALID：passed 是 gate verdict 词，不是探针结论——两族词严禁互串）"
+      ]
+    },
+    "match_rule": {
+      "type": "string",
+      "enum": ["mechanical", "manual_confirmed"],
+      "title": "匹配规则（match rule，镜像 02 MatchRuleValue 同词表）",
+      "description": "mechanical：由命名规则/机械探针匹配；manual_confirmed：人工确认匹配——manual_confirmed 行占比×表行数=待偿机器键债务（thread A §3.2 规则 3 健康指标）。词形镜像 02-object-envelope.$definitions.MatchRuleValue / x-vocab-extra.match_rule，词表收编后以 vocab-lock 为准。",
+      "$comment": "source: thread A §3.2 match_rule（02 宿主已有）；04 行对象 2026-08-27 增设——修复前 confirmed 描述含人工确认路径但 allOf 条件 4 无差别要求 probe.result=matched，人工确认行结构性无法落盘。",
+      "examples": [
+        "mechanical",
+        "manual_confirmed",
+        "auto（INVALID：词表外值——机械匹配用 mechanical，人工确认用 manual_confirmed）"
+      ]
+    },
+    "repo_relative_anchor": {
+      "type": "string",
+      "minLength": 1,
+      "title": "物理锚（physical anchor，repo 相对）",
+      "description": "指向现实的物理锚。base 约束：禁止盘符绝对路径、前导斜杠、UNC、任何反斜杠（分隔符必须归一化为 '/'）；具体形态按 binding_class 收窄（目录/文件/operationId token，见根 allOf）。",
+      "$comment": "source: thread A §3.5 provenance 纪律（仓内相对引用；开发机绝对路径教训）。",
+      "allOf": [
+        {
+          "not": {
+            "pattern": "^[A-Za-z]:[\\\\/]"
+          },
+          "description": "禁止盘符绝对路径（D:/ 或 C:\\ 开头）"
+        },
+        {
+          "not": {
+            "pattern": "^/"
+          },
+          "description": "禁止前导斜杠与 UNC（//server、/src 均拒绝）"
+        },
+        {
+          "not": {
+            "pattern": "\\\\"
+          },
+          "description": "禁止反斜杠（Windows 分隔符必须归一化为 '/'）"
+        }
+      ],
+      "examples": [
+        "src/pages/page-bind-carline",
+        "D:\\repo\\src\\pages\\page-bind-carline（INVALID：盘符绝对路径+反斜杠）"
+      ]
+    },
+    "probe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "last_run_seq", "result"],
+      "title": "探针快照（probe snapshot）",
+      "description": "最近一次机械探针三元组。binding 是期望声明不是豁免证书：gate 交叉校验必须重新扫描现实验证 expect，绝不采信本块 result 当结论（C5 自报值纪律）。method 取值以 kernel/vocab/methods.yaml（binding probe method 段）注册表为准，本 schema 不冻结其枚举。",
+      "$comment": "source: task 指定 probe{method,last_run_seq,result} + thread A §3.2(a)/§4.6。",
+      "x-pomaster-vocab-anchor": "kernel/vocab/methods.yaml — binding probe method 注册表（build 期注入，运行时只 import 生成物）",
+      "properties": {
+        "method": {
+          "type": "string",
+          "minLength": 1,
+          "title": "探针方法（registered probe method）",
+          "examples": [
+            "code_header_id_scan",
+            "operationId_exists_in_locked_catalog",
+            "naming_rule_derivation_and_verify",
+            "binding_table_lookup"
+          ]
+        },
+        "last_run_seq": {
+          "$ref": "#/definitions/seq"
+        },
+        "result": {
+          "$ref": "#/definitions/probe_result"
+        }
+      },
+      "examples": [
+        {
+          "method": "code_header_id_scan",
+          "last_run_seq": 115,
+          "result": "matched"
+        },
+        {
+          "method": "code_header_id_scan",
+          "last_run_seq": 115,
+          "x_example_intent": "INVALID（边界）：缺 result——探针没写结论等于没跑，三字段全必填"
+        }
+      ]
+    }
+  },
+  "examples": [
+    {
+      "id": "KEYBINDING.PAGE.BIND_CARLINE",
+      "binding_class": "page_to_dir",
+      "legacy_id": "PAGE-TASK-STEP-BIND-CARLINE",
+      "canonical_id": "PAGE.BIND_CARLINE",
+      "physical_path": "src/pages/page-bind-carline",
+      "binding_status": "confirmed",
+      "match_rule": "mechanical",
+      "probe": {
+        "method": "code_header_id_scan",
+        "last_run_seq": 115,
+        "result": "matched"
+      }
+    },
+    {
+      "id": "KEYBINDING.CODE.CAP.GRID.EDITABLE_GRID",
+      "binding_class": "capability_to_file",
+      "legacy_id": "GRID.EDITABLE_GRID",
+      "canonical_id": "CAPABILITY.GRID.EDITABLE_GRID",
+      "physical_path": "src/shared/grid/MasterEditableGrid.vue",
+      "binding_status": "derived",
+      "match_rule": "mechanical",
+      "probe": {
+        "method": "naming_rule_derivation_and_verify",
+        "last_run_seq": 116,
+        "result": "matched"
+      }
+    },
+    {
+      "id": "KEYBINDING.ARTIFACT.API_REQ.BIND.CARLINE",
+      "binding_class": "contract_operation_to_operationId",
+      "legacy_id": null,
+      "canonical_id": "API_REQ.BIND.CARLINE.1",
+      "physical_path": "list_carlines_api_v1_projects__project_id__carlines_get",
+      "binding_status": "derived",
+      "match_rule": "mechanical",
+      "probe": {
+        "method": "operationId_exists_in_locked_catalog",
+        "last_run_seq": 117,
+        "result": "matched"
+      }
+    },
+    {
+      "x_example_intent": "INVALID —— 四重违规演示：a) canonical_id 前缀 CONTRACT 不在 closed-world 闭包（A5：未登记前缀=FATAL）；b) binding_class=page_to_dir 而 canonical_id 是 API_REQ 语义（类-前缀失配，allOf 拦截）；c) physical_path 为盘符绝对路径+反斜杠（path 纪律违规）；d) binding_status=confirmed 而 probe.result=mismatched（耦合断言拦截——可信态不得踩在失败探针上）",
+      "id": "KEYBINDING.CONTRACT.BIND_CARLINE_LIST",
+      "binding_class": "page_to_dir",
+      "legacy_id": null,
+      "canonical_id": "CONTRACT.API_REQ.BIND.CARLINE.1",
+      "physical_path": "D:\\Vscode Documents\\MASTer_master\\src\\pages\\page-bind-carline",
+      "binding_status": "confirmed",
+      "match_rule": "mechanical",
+      "probe": {
+        "method": "code_header_id_scan",
+        "last_run_seq": 118,
+        "result": "mismatched"
+      }
+    },
+    {
+      "id": "KEYBINDING.CODE.AUTH.LOGIN_GUARD",
+      "binding_class": "capability_to_file",
+      "legacy_id": null,
+      "canonical_id": "CAPABILITY.AUTH.LOGIN_GUARD",
+      "physical_path": "src/shared/auth/loginGuard.ts",
+      "binding_status": "confirmed",
+      "match_rule": "manual_confirmed",
+      "probe": {
+        "method": "code_header_id_scan",
+        "last_run_seq": 119,
+        "result": "not_probed"
+      }
+    }
+  ],
+  "x-pomaster-examples-note": "examples[0..2]=正例（page_to_dir 含 PAGE-TASK-STEP-* legacy 收编；capability_to_file 走命名规则推导、legacy=GRID.* 收编链；contract_operation_to_operationId 物理锚=operationId token）。examples[3]=反例，x_example_intent 列明四重违规。examples[4]=人工确认路径正例（match_rule=manual_confirmed＋probe.result=not_probed 合法共存——2026-08-27 条件 4 收窄前该形态被结构性拦死，人工确认行无法落盘）。"
+}

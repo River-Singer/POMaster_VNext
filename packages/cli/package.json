@@ -1,0 +1,27 @@
+{
+  "name": "@pomaster/cli",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "POMaster vNext command surface (eight-beat Change Loop semantics)",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "pomaster": "./dist/bin.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@pomaster/gauntlet-lite": "workspace:*",
+    "@pomaster/kernel": "workspace:*",
+    "@pomaster/schemas": "workspace:*",
+    "commander": "^14.0.1"
+  }
+}

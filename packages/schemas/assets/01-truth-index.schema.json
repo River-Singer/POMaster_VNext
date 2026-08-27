@@ -1,0 +1,989 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://pomaster.dev/schemas/truth-index/v1-draft.json",
+  "title": "truth-index 信封层 Schema（Governance IR Envelope）",
+  "description": ".pomaster/state/truth-index.json 信封层全 schema：每对象一行摘要、正文在 truth/objects/（A1 一对象一文件）。一切枚举镜像 vocab-lock@v0.1-resolved，词表外值一律非法。墙钟时间全面禁用（A4：新鲜度=单调 rev 事件序号）。GateResult/Claim 等运行产物不入本索引（A8：顶层 additionalProperties:false 结构封死）。",
+  "x-pomaster-file-role": "01-truth-index.schema.json —— 信封层（envelope）。兄弟文件 05-denominator / 06-producer 由并行铸造者落盘；本文件以 x-pomaster-contract.external_refs 声明对它们的字段契约期望，若最终落盘与此冲突，以 05/06 文件为 canonical 并回改本文件 $ref。",
+  "x-pomaster-contract": {
+    "vocab_source": "vocab-lock@v0.1-resolved（schema-drafts/vocab-lock.draft.yaml）—— 一切枚举唯一来源；本文件内 const/enum 数组均为其机械镜像",
+    "external_refs": {
+      "denominators[]": "$ref https://pomaster.dev/schemas/denominator/v1-draft.json#/definitions/denominator_entry —— 05 文件必须在 definitions 导出 denominator_entry，字段契约（thread A §2）：id(DENOMINATOR.*)、version(int>=1)、members_count(int>=0)、member_selector(object)、successor_of(array)、authority(object)、status；语义：DENOMINATOR 只许 supersede 不许删除",
+      "producers[]": "$ref https://pomaster.dev/schemas/producer/v1-draft.json#/definitions/producer_record —— 06 文件必须在 definitions 导出 producer_record，字段契约（thread A §2/§3.6）：producer_id、kind、entrypoint(package:// 相对引用)、objects_claimed(int>=0)、views_maintained(array)、liveness(object: status/runs_since_last_output/last_output_seq)"
+    },
+    "cross_file_refs": "跨文件 $ref 一律绝对 $id 形态（2026-08-27 修复）：组合装载（jsonschema referencing Registry 按全部 $id 注册 / ajv.addSchema）下，相对文件名引用（如 '05-denominator.schema.json#/definitions/denominator_entry'）按本文件 $id 目录展开为不存在的 https://pomaster.dev/schemas/truth-index/05-denominator.schema.json → Unresolvable，禁止使用",
+    "digest_authorized_scope": "content_digest 授权计算范围（thread A §2）：objects[]、denominators[]、producers[].静态字段、vocab_lock、ir_schema；明确排除 health 与一切 last_*；不含任何墙钟时间（A4）",
+    "a8": "顶层 additionalProperties:false 即 A8 落实——gate_results/claims 等运行产物键在本索引被结构性封死，只允许存在于 evidence/ 平面（runs/GRN-*、claims/CLM-*）"
+  },
+  "x-pomaster-vocab-source": "vocab-lock@v0.1-resolved",
+  "x-pomaster-definitions-note": "$definitions 复用以 draft-07 关键字 definitions 承载（2019-09 的 $definitions 之 draft-07 等价物，ajv 原生支持）。",
+  "type": "object",
+  "properties": {
+    "ir_schema": {
+      "const": "pomaster.truth-index/v1-draft",
+      "title": "IR 方言标识（IR dialect tag）",
+      "description": "source: vocab-lock@v0.1-resolved 顶层 ir_schema 字段，逐字冻结。",
+      "examples": ["pomaster.truth-index/v1-draft"]
+    },
+    "content_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "信封内容摘要（content digest）",
+      "description": "授权计算范围见 x-pomaster-contract.digest_authorized_scope。判定结果（health）必须确定性可重放，但不是身份的一部分，故不入摘要。",
+      "x-digest-ethics": {
+        "write_blocking": false,
+        "side": "read_only_service",
+        "human_touch": "forbidden"
+      },
+      "x-pomaster-digest-scope": {
+        "included": ["ir_schema", "generation", "vocab_lock", "denominators", "objects", "producers(静态字段)"],
+        "excluded": ["health", "一切 last_*", "runtime/* 侧车(heartbeat.jsonl 等)"]
+      },
+      "examples": [
+        "sha256:9f1c8a42d7e6b3051c4f2a8d93e07b5614cd83fa2b6e9170458dc3ef1a2b7c69",
+        "9f1c8a42（INVALID：缺 sha256: 前缀且非 64 位小写十六进制——D24 禁人手计算/核对/传递任何 sha，事务自动维护）"
+      ]
+    },
+    "generation": {
+      "type": "object",
+      "title": "生成元数据（generation meta）",
+      "description": "由 kernel 在每次 apply 事务时写入；seq 与 inputs_fingerprint 均参与 content_digest 计算（thread A 推荐）：重跑无变化时经 inputs_fingerprint 相等短路，seq 不动，字节天然稳定（幂等 golden test 基础）。",
+      "additionalProperties": false,
+      "required": ["tool", "seq", "inputs_fingerprint"],
+      "properties": {
+        "tool": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9._-]{0,63}@[0-9]+\\.[0-9]+\\.[0-9]+([-+][0-9A-Za-z.-]+)?$",
+          "title": "生成工具及版本（tool@semver）",
+          "examples": [
+            "pomaster-kernel@0.1.0",
+            "pomaster-kernel（INVALID：缺 @semver 版本锚）"
+          ]
+        },
+        "seq": {
+          "type": "integer",
+          "minimum": 0,
+          "title": "全局事件序号（monotonic event seq）",
+          "description": "A4：取代一切墙钟时间戳（DEF-POM-002 幂等崩坏教训）；由 apply 事务分配，单调递增。",
+          "examples": [
+            118
+          ],
+          "x-invalid-examples": [
+            { "sample": -1, "reason": "INVALID（边界）：负数 seq——minimum 0；序号由 apply 事务单调分配，负值即伪造事件序" }
+          ]
+        },
+        "inputs_fingerprint": {
+          "$ref": "#/definitions/sha256_digest",
+          "title": "源输入集指纹（inputs fingerprint）",
+          "description": "『无变化重跑』短路依据；D24 注记见 definitions.sha256_digest。",
+          "x-digest-ethics": {
+            "write_blocking": false,
+            "side": "read_only_service",
+            "human_touch": "forbidden"
+          },
+          "examples": [
+            "sha256:c024a8f19b73e5d2046891fa7c3b58e0d9162f47a8be0c537d4e1f92680ab3ce"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "tool": "pomaster-kernel@0.1.0",
+          "seq": 118,
+          "inputs_fingerprint": "sha256:c024a8f19b73e5d2046891fa7c3b58e0d9162f47a8be0c537d4e1f92680ab3ce"
+        },
+        {
+          "tool": "pomaster-kernel@0.1.0",
+          "seq": 1756329871451,
+          "inputs_fingerprint": "sha256:c024a8f19b73e5d2046891fa7c3b58e0d9162f47a8be0c537d4e1f92680ab3ce",
+          "x_example_intent": "INVALID（边界）：seq 为墙钟毫秒时间戳——A4 全面禁用墙钟， DEF-POM-002 由此而起"
+        }
+      ]
+    },
+    "vocab_lock": {
+      "type": "object",
+      "title": "词表指纹（vocab fingerprints）",
+      "description": "漂移防护第一道闸：三个指纹与 vocab-lock@v0.1-resolved 的内容摘要对账，不一致即 FATAL（枚举多头拷贝事故的结构免疫）。三个值均为 sha256 摘要，D24 注记见 definitions.sha256_digest。",
+      "additionalProperties": false,
+      "required": ["state_axes", "kinds", "prefixes"],
+      "properties": {
+        "state_axes": {
+          "$ref": "#/definitions/sha256_digest",
+          "title": "状态轴词表指纹（state_axes digest）",
+          "x-digest-ethics": {
+            "write_blocking": false,
+            "side": "read_only_service",
+            "human_touch": "forbidden"
+          },
+          "examples": [
+            "sha256:5ab3e017c8d42f96a1b0e5738c24d6f09e1b7a4c3d8f2560e9b1c4a7d308f256"
+          ]
+        },
+        "kinds": {
+          "$ref": "#/definitions/sha256_digest",
+          "title": "kind 注册表指纹（kinds digest）",
+          "x-digest-ethics": {
+            "write_blocking": false,
+            "side": "read_only_service",
+            "human_touch": "forbidden"
+          },
+          "examples": [
+            "sha256:77d0c3a5b1e8f2649057d2a8c3e1b4f67028d9a5c4e0b3f1826d7a9e0c5b4312"
+          ]
+        },
+        "prefixes": {
+          "$ref": "#/definitions/sha256_digest",
+          "title": "前缀闭包指纹（prefixes digest）",
+          "x-digest-ethics": {
+            "write_blocking": false,
+            "side": "read_only_service",
+            "human_touch": "forbidden"
+          },
+          "examples": [
+            "sha256:e01a7b4c9d2e5f803a6b1c4d7e8f0a2b5c6d9e0f1a2b3c4d5e6f7a8b9c0d1e2f"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "state_axes": "sha256:5ab3e017c8d42f96a1b0e5738c24d6f09e1b7a4c3d8f2560e9b1c4a7d308f256",
+          "kinds": "sha256:77d0c3a5b1e8f2649057d2a8c3e1b4f67028d9a5c4e0b3f1826d7a9e0c5b4312",
+          "prefixes": "sha256:e01a7b4c9d2e5f803a6b1c4d7e8f0a2b5c6d9e0f1a2b3c4d5e6f7a8b9c0d1e2f"
+        },
+        {
+          "state_axes": "5ab3e017",
+          "kinds": "sha256:77d0c3a5b1e8f2649057d2a8c3e1b4f67028d9a5c4e0b3f1826d7a9e0c5b4312",
+          "prefixes": "sha256:e01a7b4c9d2e5f803a6b1c4d7e8f0a2b5c6d9e0f1a2b3c4d5e6f7a8b9c0d1e2f",
+          "x_example_intent": "INVALID：state_axes 缺 sha256: 前缀——指纹被手改即对账 FATAL（D24：人不可计算/传递任何 sha）"
+        }
+      ]
+    },
+    "denominators": {
+      "type": "array",
+      "title": "覆盖分母（first-class denominators）",
+      "description": "C2/跨线共识3：分母是一等公民，只在此声明，gate 按 id+version 引用；只许 supersede 不许删除。条目形态 $ref 05 文件（契约见 x-pomaster-contract.external_refs）。",
+      "items": {
+        "$ref": "https://pomaster.dev/schemas/denominator/v1-draft.json#/definitions/denominator_entry"
+      }
+    },
+    "objects": {
+      "type": "array",
+      "title": "对象信封行（object envelope rows）",
+      "description": "A1：一字段不多不少，正文在 truth/objects/<kind-slug>/。信封行体积预算 ≤512B（风险备忘，待 Owner 认可），超出应回正文层。",
+      "items": {
+        "$ref": "#/definitions/object_row"
+      }
+    },
+    "producers": {
+      "type": "array",
+      "title": "producer 注册与活性快照（producer registry & liveness）",
+      "description": "C3：声明对象必须伴随活 producer——『有 schema 无 producer』的死 factsource 形态在结构上不再可能。心跳原文在 runtime/producers/heartbeat.jsonl（运行时区，不进 hash），此处只留判定结果。条目形态 $ref 06 文件。",
+      "items": {
+        "$ref": "https://pomaster.dev/schemas/producer/v1-draft.json#/definitions/producer_record"
+      }
+    },
+    "health": {
+      "$ref": "#/definitions/health_block"
+    },
+    "integrity_ruleset": {
+      "type": "string",
+      "pattern": "^REF_INTEGRITY@v[0-9]+$",
+      "title": "完整性规则集版本锚（integrity ruleset anchor）",
+      "description": "PRD §50 十三项检查所执行规则集的版本锚；跨轴耦合断言与三重查重等语义检查归属此规则集，schema 只锁取值域。",
+      "examples": [
+        "REF_INTEGRITY@v1",
+        "REF_INTEGRITY（INVALID：缺 @vN 版本号）"
+      ]
+    }
+  },
+  "required": [
+    "ir_schema",
+    "content_digest",
+    "generation",
+    "vocab_lock",
+    "denominators",
+    "objects",
+    "producers",
+    "health",
+    "integrity_ruleset"
+  ],
+  "additionalProperties": false,
+  "x-pomaster-a8": "A8 落实：顶层 additionalProperties:false —— gate_results、claims 等运行产物键在本索引被结构性封死（forbidden_in_index：gate_results→evidence/runs/、claims→evidence/claims/）。",
+  "definitions": {
+    "sha256_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "SHA-256 摘要（digest，sha256: 前缀 + 64 位小写十六进制）",
+      "description": "D24 哈希伦理全局适用于本定义的全部使用点：摘要由事务自动维护，永不作为写入门闸，仅作 identity / rerun-shortcut / tamper-audit 的只读服务。",
+      "x-digest-ethics": {
+        "write_blocking": false,
+        "side": "read_only_service",
+        "human_touch": "forbidden"
+      },
+      "x-pomaster-d24-note": "violation_treatment: WARN + auto-regen hint（source: vocab-lock@v0.1-resolved digest_ethics）。",
+      "examples": [
+        "sha256:9f1c8a42d7e6b3051c4f2a8d93e07b5614cd83fa2b6e9170458dc3ef1a2b7c69",
+        "9F1C8A42D7E6B3051C4F2A8D93E07B5614CD83FA2B6E9170458DC3EF1A2B7C69（INVALID：缺 sha256: 前缀且含大写——D24 禁人手计算/传递）"
+      ]
+    },
+    "governed_id": {
+      "type": "string",
+      "pattern": "^(PAGE|CAPABILITY|COMPONENT|API_REQ|ERR|FIELD|KNOWLEDGE|CHANGE|TASK|DENOMINATOR|KEYBINDING|POLICY|PROFILE|AUTHORITY|TEST)\\.[A-Z][A-Z0-9_]{0,31}(\\.[A-Z][A-Z0-9_]{0,31})*(\\.[0-9]+)?$",
+      "title": "受治理对象 id（governed object id，closed-world）",
+      "description": "生成方式：PREFIX 取 vocab-lock@v0.1-resolved prefixes_v0 闭包（本 pattern 为其机械镜像；扩展走词汇表 PR 流程后同步改写本 pattern 与 prefixes 指纹）。文法：PREFIX . SEGMENT (. SEGMENT)* [. SEQ]；SEGMENT 大写下划线、[A-Z] 开头、全长≤32；SEQ 纯数字、仅可为最后一段。A5 closed-world：未登记前缀=解析即 FATAL。A6 rename-on-ingest：legacy 拼写（KB-*、GRID.*、PAGE-TASK-STEP-*、TASK-*、CHANGE-*）只入 alias 双向链，不得作为本字段值。",
+      "examples": [
+        "PAGE.BIND_CARLINE",
+        "GRID.EDITABLE_GRID（INVALID：GRID. 仅是 alias 前缀（A6 收编链 legacy），canonical 为 CAPABILITY.GRID.EDITABLE_GRID；未登记前缀= FATAL）"
+      ]
+    },
+    "lifecycle_value": {
+      "enum": ["PROPOSED", "CURRENT", "SUPERSEDED", "DEPRECATED", "RETIRED", "REJECTED"],
+      "title": "lifecycle 轴取值（six-value superset）",
+      "description": "source: vocab-lock@v0.1-resolved state_axes.lifecycle（A2 六值超集）。SUPERSEDED=有 successor_ref 指向替代者的终态；DEPRECATED=无后继但不再推荐（可过渡 RETIRED）——机器可自动归类（2026-08-27 裁决#1）。",
+      "examples": [
+        "CURRENT",
+        "ACCEPTED（INVALID：词表外值——旧体系一词多义的 status 词全部废止）"
+      ]
+    },
+    "confidence_value": {
+      "enum": ["UNRESOLVED", "EXPERIMENTAL", "PROVISIONAL", "LOCKED"],
+      "title": "confidence 轴取值（decision confidence）",
+      "description": "source: vocab-lock@v0.1-resolved state_axes.confidence（PRD §18.2 四值不动）。",
+      "examples": [
+        "LOCKED",
+        "accepted（INVALID：大小写敏感，词表外值）"
+      ]
+    },
+    "evidence_value": {
+      "enum": ["PLANNED", "IMPLEMENTED", "VERIFIED"],
+      "title": "evidence 轴取值（evidence level）",
+      "description": "source: vocab-lock@v0.1-resolved state_axes.evidence（PRD 三值）。正交字段 realization(stub/mock/wired) 不进本轴（A3），住正文层。",
+      "examples": [
+        "IMPLEMENTED",
+        "wired（INVALID：realization 值不得混入 evidence 轴——A3 正交分离）"
+      ]
+    },
+    "change_value": {
+      "enum": ["STABLE", "CHALLENGED", "MIGRATING"],
+      "title": "change 轴取值（change dynamics）",
+      "description": "source: vocab-lock@v0.1-resolved state_axes.change。MIGRATING 必须存在 ACTIVE PERMIT 引用（跨轴断言，归 REF_INTEGRITY）。",
+      "examples": [
+        "STABLE",
+        "MIGRATED（INVALID：词表外值）"
+      ]
+    },
+    "kind_value": {
+      "enum": ["capability", "component", "contract_operation", "error_term", "field_definition", "page_surface", "knowledge_entry", "business_rule", "change_object", "task_object"],
+      "title": "对象 kind（truth body kind）",
+      "description": "source: vocab-lock@v0.1-resolved kinds_registry.truth_bodies。信封行只收 truth 正文 kind；denominators[]/producers[] 住控制面（control_plane_inline）；gate_results 一族 forbidden_in_index（A8）。",
+      "examples": [
+        "contract_operation",
+        "gate_result（INVALID：forbidden_in_index——运行产物只住 evidence/ 平面）"
+      ]
+    },
+    "axes_block": {
+      "type": "object",
+      "title": "四轴状态块（four state axes）",
+      "description": "A2/PRD §3.7+增补。跨轴耦合断言（如 lifecycle∈{PROPOSED,REJECTED}⇒evidence=PLANNED；evidence=VERIFIED⇒realization=wired）归 REF_INTEGRITY 语义检查，本块只锁取值域。",
+      "additionalProperties": false,
+      "required": ["lifecycle", "confidence", "evidence", "change"],
+      "properties": {
+        "lifecycle": {
+          "$ref": "#/definitions/lifecycle_value"
+        },
+        "confidence": {
+          "$ref": "#/definitions/confidence_value"
+        },
+        "evidence": {
+          "$ref": "#/definitions/evidence_value"
+        },
+        "change": {
+          "$ref": "#/definitions/change_value"
+        }
+      },
+      "examples": [
+        {
+          "lifecycle": "CURRENT",
+          "confidence": "LOCKED",
+          "evidence": "IMPLEMENTED",
+          "change": "STABLE"
+        },
+        {
+          "lifecycle": "ACCEPTED",
+          "confidence": "LOCKED",
+          "evidence": "IMPLEMENTED",
+          "change": "STABLE",
+          "x_example_intent": "INVALID：ACCEPTED 是被废止的一词多义 status 词（DEF-POM-004），必须拆解为 lifecycle+confidence+evidence+realization"
+        }
+      ]
+    },
+    "denominator_ref": {
+      "type": "object",
+      "title": "分母引用（denominator reference）",
+      "description": "C2：凡处在分母度量范围内的对象，信封与正文都挂此引用；version_seen 供 COVERAGE 型 gate 对账分母漂移（write-gate 15/32/20 事故免疫）。",
+      "additionalProperties": false,
+      "required": ["id", "version_seen"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^DENOMINATOR\\.[A-Z][A-Z0-9_]{0,31}(\\.[A-Z][A-Z0-9_]{0,31})*(\\.[0-9]+)?$",
+          "title": "分母 id（DENOMINATOR.* 前缀闭包）",
+          "examples": [
+            "DENOMINATOR.PAGE.V1_SURFACE",
+            "DENOMINATOR.PAGE.TASK_STEP"
+          ],
+          "x-examples-note": "DENOMINATOR.PAGE.TASK_STEP 为历史分母：仅当 successor 链仍引用时合法（原示例值内联尾注外置至此——示例字符串本身须可通过本 pattern 校验）"
+        },
+        "version_seen": {
+          "type": "integer",
+          "minimum": 1,
+          "title": "引用时所见分母版本",
+          "examples": [
+            3
+          ],
+          "x-invalid-examples": [
+            { "sample": 0, "reason": "INVALID（边界）：version_seen minimum 1——版本从 1 起，0 即未钉版本的悬空引用（C2）" }
+          ]
+        }
+      },
+      "examples": [
+        {
+          "id": "DENOMINATOR.API_OPERATIONS.EXTERNAL_OPENAPI",
+          "version_seen": 1
+        },
+        {
+          "id": "DENOMINATOR.API_OPERATIONS.EXTERNAL_OPENAPI",
+          "x_example_intent": "INVALID（边界）：缺 version_seen——分母漂移对账因此失锚，必填"
+        }
+      ]
+    },
+    "general_id": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_]{0,31}(\\.[A-Z0-9_]{1,32})+$",
+      "title": "受控宽松 id（controlled-loose id）",
+      "description": "用于指向尚未入 prefixes_v0 闭包的对象引用（典型：PERMIT.* 许可——前缀候选未收编）。文法同 governed_id 但前缀不限闭包；前缀收编后应升级为 governed_id。此模式是 vocab-lock 闭包的受控豁免口，不得滥用为逃避命名治理的后门。",
+      "examples": [
+        "PERMIT.MIGRATION_001",
+        "permit.migration_001（INVALID：须 SCREAMING_SNAKE 大写）"
+      ]
+    },
+    "binding_summary": {
+      "type": "object",
+      "title": "绑定摘要（binding summary）",
+      "description": "D15：binding 是期望声明不是豁免证书——gate 必须重扫现实验证，绝不读取绑定自报结果当结论。not_configured=所需绑定类缺失，是终局性诚实报告。",
+      "additionalProperties": false,
+      "required": ["declared", "probe_status"],
+      "properties": {
+        "declared": {
+          "type": "integer",
+          "minimum": 0,
+          "title": "已声明绑定条数",
+          "examples": [
+            3
+          ],
+          "x-invalid-examples": [
+            { "sample": -1, "reason": "INVALID（边界）：负数声明数——minimum 0" }
+          ]
+        },
+        "probe_status": {
+          "enum": ["all_verified", "has_unverified", "not_configured"],
+          "title": "绑定探针汇总状态（probe status summary）",
+          "description": "x-vocab-source: 词表外局部枚举——由 thread A §2/§3.2 语义推导（matched 汇总 / 缺失即 not_configured），待 vocab-lock 后续版本收编，收编前冻结于此。",
+          "examples": [
+            "all_verified",
+            "passed（INVALID：七态 verdict 词属 gate 平面（evidence/runs/），不入信封）"
+          ]
+        }
+      },
+      "examples": [
+        {
+          "declared": 3,
+          "probe_status": "all_verified"
+        },
+        {
+          "declared": 3,
+          "probe_status": "not_configured"
+        }
+      ],
+      "x-examples-note": "examples[1]=边界合法值：对象声明了 kind 所需绑定类但全缺（probe_status=not_configured）——对应 gate 侧 verdict=not_configured，禁止解释性静默通过（意图说明外置至此：本 definition additionalProperties:false，示例对象内联 x_example_intent 即无法通过自身校验）"
+    },
+    "evidence_summary": {
+      "type": "object",
+      "title": "证据摘要（evidence summary）",
+      "description": "C5 永不信任自报值：本块是对象身上仅有的 evidence 摘要；claim 全文在 evidence/claims/CLM-*，verified 计数只认 latest_verdict=VERIFIED 的映射。恒等式 verified+unverified+rejected<=claims 归 REF_INTEGRITY。",
+      "additionalProperties": false,
+      "required": ["claims", "verified", "unverified", "rejected"],
+      "properties": {
+        "claims": {
+          "type": "integer",
+          "minimum": 0,
+          "title": "关联 claim 总数",
+          "examples": [
+            2
+          ],
+          "x-invalid-examples": [
+            { "sample": -1, "reason": "INVALID（边界）：负数 claim 计数——minimum 0" }
+          ]
+        },
+        "verified": {
+          "type": "integer",
+          "minimum": 0,
+          "title": "已验证 claim 数",
+          "examples": [
+            2
+          ]
+        },
+        "unverified": {
+          "type": "integer",
+          "minimum": 0,
+          "title": "未验证 claim 数",
+          "examples": [
+            0
+          ]
+        },
+        "rejected": {
+          "type": "integer",
+          "minimum": 0,
+          "title": "已否决 claim 数",
+          "examples": [
+            0
+          ]
+        }
+      },
+      "examples": [
+        {
+          "claims": 2,
+          "verified": 2,
+          "unverified": 0,
+          "rejected": 0
+        },
+        {
+          "claims": 2,
+          "verified": 3,
+          "unverified": 0,
+          "rejected": 0,
+          "x_example_intent": "INVALID（边界）：verified>claims 恒假——四计数恒等式归 REF_INTEGRITY 语义检查，schema 只锁非负"
+        }
+      ]
+    },
+    "object_row": {
+      "type": "object",
+      "title": "对象信封行（object envelope row）",
+      "description": "A1 一字段不多不少；正文在 body_ref，信封只存摘要（预算 ≤512B）。C3 条件必填：origin=derived ⇒ producer_id 必填（见 allOf）——『13 个死 factsource』的 schema 免疫。",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "axes",
+        "title_zh",
+        "authority_owner",
+        "origin",
+        "rev",
+        "body_ref",
+        "body_sha256",
+        "denominator_refs",
+        "binding_summary",
+        "evidence_summary",
+        "permits_active"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/governed_id"
+        },
+        "kind": {
+          "$ref": "#/definitions/kind_value"
+        },
+        "axes": {
+          "$ref": "#/definitions/axes_block"
+        },
+        "title_zh": {
+          "type": "string",
+          "minLength": 1,
+          "title": "中文标题（Chinese title）",
+          "examples": [
+            "列出项目下车型"
+          ],
+          "x-invalid-examples": [
+            { "sample": "", "reason": "INVALID（边界）：空标题——minLength 1，中文标题必填非空" }
+          ]
+        },
+        "authority_owner": {
+          "type": "string",
+          "minLength": 1,
+          "title": "权威 owner（authority owner）",
+          "description": "必须在 authority.json 可解析；解析失败=FATAL 而非 WARNING（幽灵 owner 维护死锁教训）。",
+          "examples": [
+            "FRONTEND_CONTRACT",
+            "NOT_REGISTERED_OWNER（INVALID：authority.json 解析失败即 FATAL）"
+          ]
+        },
+        "origin": {
+          "enum": ["natural", "derived", "ingested"],
+          "title": "对象来源（object origin）",
+          "description": "x-vocab-source: 词表外局部枚举——由任务指派定案 natural|derived|ingested；thread A §3.0 的 human_curated/migrated 语义收编映射：human_curated→natural、migrated→ingested。待 vocab-lock 收编。derived 必须带 producer_id（C3）；ingested=存量收编（A6 rename-on-ingest 改写已完成）。",
+          "examples": [
+            "derived",
+            "human_curated（INVALID：已收编为 natural）"
+          ]
+        },
+        "producer_id": {
+          "type": "string",
+          "pattern": "^prod\\.[a-z][a-z0-9_]{1,63}$",
+          "title": "产出 producer id（producer id）",
+          "description": "origin=derived 时必填（C3 条件必填）；必须能在 producers[] 注册表解析。pattern 与 06-producer.producer_id 同串（prod. 强制前缀，单一事实源 06；2026-08-27 三文件收敛）。",
+          "examples": [
+            "prod.api_requirement_compiler",
+            "api_requirement_compiler（INVALID：缺 prod. 前缀）",
+            "prod.my-compiler（INVALID：连字符——producer_id 词法仅小写字母/数字/下划线）"
+          ]
+        },
+        "rev": {
+          "type": "integer",
+          "minimum": 0,
+          "title": "单调修订序号（monotonic revision counter）",
+          "description": "A4：取代 created_at/updated_at 等墙钟字段（DEF-POM-002）；由 apply 事务分配。",
+          "examples": [
+            87
+          ],
+          "x-invalid-examples": [
+            { "sample": -1, "reason": "INVALID（边界）：负数 rev——minimum 0；修订序号由 apply 事务分配" }
+          ]
+        },
+        "body_ref": {
+          "type": "string",
+          "pattern": "^truth/objects/[a-z][a-z0-9-]{0,47}/[a-z0-9][a-z0-9.-]{0,127}\\.json$",
+          "title": "正文文件引用（body reference）",
+          "description": "生成方式（机械、有测试）：truth/objects/ + slug(kind) + / + normalize_id_local_part(id) + .json（段间点保留、下划线转连字符、统一小写，例：API_REQ.BIND.CARLINE.1 → api-req.bind.carline.1.json）。禁止任何消费者重新推导此映射以外的路径；物理代码路径的映射归 KEYBINDING（D15）。",
+          "examples": [
+            "truth/objects/contract-op/api-req.bind.carline.1.json",
+            "truth/objects/ContractOp/API_REQ.BIND.CARLINE.1.json（INVALID：未走 slug+normalize 机械算法，语义化改名是被禁止的操作）"
+          ]
+        },
+        "body_sha256": {
+          "$ref": "#/definitions/sha256_digest",
+          "title": "正文内容摘要（body content digest）",
+          "x-digest-ethics": {
+            "write_blocking": false,
+            "side": "read_only_service",
+            "human_touch": "forbidden"
+          },
+          "examples": [
+            "sha256:31f4a8c2d6e0b9574a1c8f3e6d2b7a5c09e4f1d8a3b6c2e5f8d1a4c7b0e3f695"
+          ]
+        },
+        "denominator_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/denominator_ref"
+          },
+          "uniqueItems": true,
+          "title": "分母引用（denominator refs）",
+          "description": "空数组=不隶属任何分母——必须是显式选择而非遗漏（C2）。",
+          "examples": [
+            [
+              {
+                "id": "DENOMINATOR.API_OPERATIONS.EXTERNAL_OPENAPI",
+                "version_seen": 1
+              }
+            ]
+          ]
+        },
+        "binding_summary": {
+          "$ref": "#/definitions/binding_summary"
+        },
+        "evidence_summary": {
+          "$ref": "#/definitions/evidence_summary"
+        },
+        "permits_active": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/general_id"
+          },
+          "uniqueItems": true,
+          "title": "生效中许可引用（active permits）",
+          "description": "change=MIGRATING 必须非空（跨轴断言，归 REF_INTEGRITY）。PERMIT 前缀未入 prefixes_v0，暂用 general_id 宽松模式（vocab PR 待办，见 definitions.general_id）。",
+          "examples": [
+            ["PERMIT.MIGRATION_001"],
+            []
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "origin": {
+                "const": "derived"
+              }
+            },
+            "required": ["origin"]
+          },
+          "then": {
+            "required": ["producer_id"]
+          }
+        }
+      ],
+      "examples": [
+        {
+          "id": "API_REQ.BIND.CARLINE.1",
+          "kind": "contract_operation",
+          "axes": {
+            "lifecycle": "CURRENT",
+            "confidence": "LOCKED",
+            "evidence": "IMPLEMENTED",
+            "change": "STABLE"
+          },
+          "title_zh": "列出项目下车型",
+          "authority_owner": "FRONTEND_CONTRACT",
+          "origin": "derived",
+          "producer_id": "prod.api_requirement_compiler",
+          "rev": 87,
+          "body_ref": "truth/objects/contract-op/api-req.bind.carline.1.json",
+          "body_sha256": "sha256:31f4a8c2d6e0b9574a1c8f3e6d2b7a5c09e4f1d8a3b6c2e5f8d1a4c7b0e3f695",
+          "denominator_refs": [
+            {
+              "id": "DENOMINATOR.API_OPERATIONS.EXTERNAL_OPENAPI",
+              "version_seen": 1
+            }
+          ],
+          "binding_summary": {
+            "declared": 3,
+            "probe_status": "all_verified"
+          },
+          "evidence_summary": {
+            "claims": 2,
+            "verified": 2,
+            "unverified": 0,
+            "rejected": 0
+          },
+          "permits_active": []
+        },
+        {
+          "id": "PAGE.BIND_CARLINE",
+          "kind": "page_surface",
+          "axes": {
+            "lifecycle": "CURRENT",
+            "confidence": "PROVISIONAL",
+            "evidence": "IMPLEMENTED",
+            "change": "STABLE"
+          },
+          "title_zh": "绑定车型页",
+          "authority_owner": "BUSINESS_OWNER",
+          "origin": "derived",
+          "rev": 12,
+          "body_ref": "truth/objects/page-surface/page.bind-carline.json",
+          "body_sha256": "sha256:31f4a8c2d6e0b9574a1c8f3e6d2b7a5c09e4f1d8a3b6c2e5f8d1a4c7b0e3f696",
+          "denominator_refs": [],
+          "binding_summary": {
+            "declared": 1,
+            "probe_status": "all_verified"
+          },
+          "evidence_summary": {
+            "claims": 0,
+            "verified": 0,
+            "unverified": 0,
+            "rejected": 0
+          },
+          "permits_active": [],
+          "x_example_intent": "INVALID（边界）：origin=derived 而缺 producer_id——违反 C3 条件必填（allOf if/then 拦截）；natural 行同形状但省 producer_id 则合法"
+        }
+      ]
+    },
+    "health_block": {
+      "type": "object",
+      "title": "健康快照（health snapshot）",
+      "description": "R8 式健康指标的滚动汇总；时序原文在 evidence/runs/。判定必须确定性可重放，但不是身份的一部分。",
+      "x-pomaster-digest-scope": "excluded —— 本块不参与 content_digest（thread A §2 授权范围明示排除；health 与一切 last_* 均不入摘要）",
+      "additionalProperties": false,
+      "required": ["dead_producers", "orphaned_objects", "worst_blindspot", "alias_conflicts"],
+      "properties": {
+        "dead_producers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^prod\\.[a-z][a-z0-9_]{1,63}$"
+          },
+          "uniqueItems": true,
+          "title": "死 producer 清单（dead producers）",
+          "description": "非空即 doctor 报 DEFECT（C3：声明了 views_maintained 却在 heartbeat 从未出现=dead）。",
+          "examples": [
+            [],
+            ["prod.never_heartbeat"]
+          ]
+        },
+        "orphaned_objects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/governed_id"
+          },
+          "uniqueItems": true,
+          "title": "孤儿对象清单（orphaned objects）",
+          "description": "分母已被 successor 取代但对象没跟上的对象。",
+          "examples": [
+            [],
+            ["PAGE.OLD_DASHBOARD"]
+          ]
+        },
+        "worst_blindspot": {
+          "type": ["object", "null"],
+          "title": "最差盲区（worst blindspot）",
+          "description": "无盲区数据时为 null；gate 名以 catalog 注册为准。",
+          "additionalProperties": false,
+          "required": ["gate", "escape_ratio"],
+          "properties": {
+            "gate": {
+              "type": "string",
+              "minLength": 1,
+              "title": "gate 名（catalog 注册名）",
+              "examples": [
+                "CONTENT_TRUTH",
+                "content_truth（INVALID：gate 名大小写以 catalog 注册为准）"
+              ]
+            },
+            "escape_ratio": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "title": "盲区逃逸比（escape ratio）",
+              "examples": [
+                0.05
+              ],
+              "x-invalid-examples": [
+                { "sample": 1.5, "reason": "INVALID（边界）：>1——escape_ratio 是 0..1 的占比（maximum 1），越界即扫描器自相矛盾" }
+              ]
+            }
+          },
+          "examples": [
+            {
+              "gate": "CONTENT_TRUTH",
+              "escape_ratio": 0.05
+            },
+            null
+          ]
+        },
+        "alias_conflicts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "title": "别名冲突条目（alias conflict entry）",
+            "additionalProperties": false,
+            "required": ["normalized_key", "conflicting_ids"],
+            "properties": {
+              "normalized_key": {
+                "type": "string",
+                "minLength": 1,
+                "title": "冲突的规范化键",
+                "examples": [
+                  "CONTROL.DROPDOWN"
+                ]
+              },
+              "conflicting_ids": {
+                "type": "array",
+                "minItems": 2,
+                "uniqueItems": true,
+                "items": {
+                  "type": "string"
+                },
+                "title": "冲突 id 列表",
+                "examples": [
+                  ["CONTROL.DROPDOWN", "CONTROL.MASTER_DROPDOWN"]
+                ]
+              }
+            }
+          },
+          "uniqueItems": true,
+          "title": "别名/规范化冲突清单（alias conflicts）",
+          "description": "防双登记：唯一性三重查重（canonical id / normalized_key / 全部 alias）的冲突输出，非空即 FATAL。",
+          "examples": [
+            [],
+            [
+              {
+                "normalized_key": "CONTROL.DROPDOWN",
+                "conflicting_ids": ["CONTROL.DROPDOWN", "CONTROL.MASTER_DROPDOWN"]
+              }
+            ]
+          ]
+        }
+      },
+      "examples": [
+        {
+          "dead_producers": [],
+          "orphaned_objects": [],
+          "worst_blindspot": null,
+          "alias_conflicts": []
+        },
+        {
+          "dead_producers": ["prod.api_requirement_compiler"],
+          "orphaned_objects": ["PAGE.OLD_DASHBOARD"],
+          "worst_blindspot": {
+            "gate": "CONTENT_TRUTH",
+            "escape_ratio": 0.27
+          },
+          "alias_conflicts": []
+        }
+      ],
+      "x-examples-note": "examples[1]=反向样本（schema 合法、健康恶劣）：四指标全爆——doctor 应报多项 DEFECT；本块合法但永不参与 content_digest（意图说明外置至此：本 definition additionalProperties:false，示例对象内联 x_example_intent 即无法通过自身校验）"
+    }
+  },
+  "examples": [
+    {
+      "ir_schema": "pomaster.truth-index/v1-draft",
+      "content_digest": "sha256:9f1c8a42d7e6b3051c4f2a8d93e07b5614cd83fa2b6e9170458dc3ef1a2b7c69",
+      "generation": {
+        "tool": "pomaster-kernel@0.1.0",
+        "seq": 118,
+        "inputs_fingerprint": "sha256:c024a8f19b73e5d2046891fa7c3b58e0d9162f47a8be0c537d4e1f92680ab3ce"
+      },
+      "vocab_lock": {
+        "state_axes": "sha256:5ab3e017c8d42f96a1b0e5738c24d6f09e1b7a4c3d8f2560e9b1c4a7d308f256",
+        "kinds": "sha256:77d0c3a5b1e8f2649057d2a8c3e1b4f67028d9a5c4e0b3f1826d7a9e0c5b4312",
+        "prefixes": "sha256:e01a7b4c9d2e5f803a6b1c4d7e8f0a2b5c6d9e0f1a2b3c4d5e6f7a8b9c0d1e2f"
+      },
+      "denominators": [
+        {
+          "id": "DENOMINATOR.PAGE.V1_SURFACE",
+          "version": 3,
+          "members_count": 32,
+          "member_selector": {
+            "via_binding_table": "KEYBINDING.PAGE.V1",
+            "filter": {
+              "surface": "V1",
+              "binding_status": "confirmed"
+            }
+          },
+          "successor_of": ["DENOMINATOR.PAGE.TASK_STEP"],
+          "authority": {
+            "owner": "BUSINESS_OWNER"
+          },
+          "status": "CURRENT"
+        }
+      ],
+      "objects": [
+        {
+          "id": "API_REQ.BIND.CARLINE.1",
+          "kind": "contract_operation",
+          "axes": {
+            "lifecycle": "CURRENT",
+            "confidence": "LOCKED",
+            "evidence": "IMPLEMENTED",
+            "change": "STABLE"
+          },
+          "title_zh": "列出项目下车型",
+          "authority_owner": "FRONTEND_CONTRACT",
+          "origin": "derived",
+          "producer_id": "prod.api_requirement_compiler",
+          "rev": 87,
+          "body_ref": "truth/objects/contract-op/api-req.bind.carline.1.json",
+          "body_sha256": "sha256:31f4a8c2d6e0b9574a1c8f3e6d2b7a5c09e4f1d8a3b6c2e5f8d1a4c7b0e3f695",
+          "denominator_refs": [
+            {
+              "id": "DENOMINATOR.API_OPERATIONS.EXTERNAL_OPENAPI",
+              "version_seen": 1
+            }
+          ],
+          "binding_summary": {
+            "declared": 3,
+            "probe_status": "all_verified"
+          },
+          "evidence_summary": {
+            "claims": 2,
+            "verified": 2,
+            "unverified": 0,
+            "rejected": 0
+          },
+          "permits_active": []
+        },
+        {
+          "id": "PAGE.BIND_CARLINE",
+          "kind": "page_surface",
+          "axes": {
+            "lifecycle": "CURRENT",
+            "confidence": "PROVISIONAL",
+            "evidence": "IMPLEMENTED",
+            "change": "STABLE"
+          },
+          "title_zh": "绑定车型页",
+          "authority_owner": "BUSINESS_OWNER",
+          "origin": "natural",
+          "rev": 12,
+          "body_ref": "truth/objects/page-surface/page.bind-carline.json",
+          "body_sha256": "sha256:31f4a8c2d6e0b9574a1c8f3e6d2b7a5c09e4f1d8a3b6c2e5f8d1a4c7b0e3f696",
+          "denominator_refs": [],
+          "binding_summary": {
+            "declared": 1,
+            "probe_status": "all_verified"
+          },
+          "evidence_summary": {
+            "claims": 0,
+            "verified": 0,
+            "unverified": 0,
+            "rejected": 0
+          },
+          "permits_active": []
+        }
+      ],
+      "producers": [
+        {
+          "producer_id": "prod.api_requirement_compiler",
+          "kind": "builtin",
+          "entrypoint": "package://kernel/producers/api-requirement",
+          "objects_claimed": 178,
+          "views_maintained": [
+            "truth-index.envelope",
+            "gate.input.CONTRACT",
+            "projection.page_spec_s7"
+          ],
+          "liveness": {
+            "status": "active",
+            "runs_since_last_output": 0,
+            "last_output_seq": 117
+          }
+        }
+      ],
+      "health": {
+        "dead_producers": [],
+        "orphaned_objects": [],
+        "worst_blindspot": {
+          "gate": "CONTENT_TRUTH",
+          "escape_ratio": 0.05
+        },
+        "alias_conflicts": []
+      },
+      "integrity_ruleset": "REF_INTEGRITY@v1"
+    },
+    {
+      "x_example_intent": "INVALID —— 三重违规演示：a) A8：顶层出现 gate_results/claims 运行产物键（additionalProperties:false 拦截）；b) content_digest 缺 sha256: 前缀；c) generation.seq 为墙钟毫秒（A4 禁墙钟）",
+      "ir_schema": "pomaster.truth-index/v1-draft",
+      "content_digest": "9f1c8a42",
+      "generation": {
+        "tool": "pomaster-kernel@0.1.0",
+        "seq": 1756329871451,
+        "inputs_fingerprint": "sha256:c024a8f19b73e5d2046891fa7c3b58e0d9162f47a8be0c537d4e1f92680ab3ce"
+      },
+      "vocab_lock": {
+        "state_axes": "sha256:5ab3e017c8d42f96a1b0e5738c24d6f09e1b7a4c3d8f2560e9b1c4a7d308f256",
+        "kinds": "sha256:77d0c3a5b1e8f2649057d2a8c3e1b4f67028d9a5c4e0b3f1826d7a9e0c5b4312",
+        "prefixes": "sha256:e01a7b4c9d2e5f803a6b1c4d7e8f0a2b5c6d9e0f1a2b3c4d5e6f7a8b9c0d1e2f"
+      },
+      "denominators": [],
+      "objects": [],
+      "producers": [],
+      "health": {
+        "dead_producers": [],
+        "orphaned_objects": [],
+        "worst_blindspot": null,
+        "alias_conflicts": []
+      },
+      "integrity_ruleset": "REF_INTEGRITY@v1",
+      "gate_results": [
+        {
+          "grn": "GRN-0842"
+        }
+      ],
+      "claims": [
+        {
+          "clm": "CLM-0512"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "record_type": "run",
+  "grn": "GRN-0001",
+  "ran_at_seq": 3,
+  "trigger": { "type": "post_edit" },
+  "tool_snapshot": {
+    "tool": "tiny-csv-tool:roundtrip_probe",
+    "tool_version": "0.1.0",
+    "metric_dialect": "csv:quoted_cell_roundtrip"
+  },
+  "gate_result": {
+    "mode": "inline",
+    "result": {
+      "grn": "GRN-0001",
+      "gate": "CSV_ROUNDTRIP",
+      "gate_def": "POLICY.GATE.CSV_ROUNDTRIP@0.1.0",
+      "tool": "tiny-csv-tool:roundtrip_probe",
+      "tool_version": "0.1.0",
+      "metric_dialect": "csv:quoted_cell_roundtrip",
+      "ran_at_seq": 3,
+      "verdict": "passed",
+      "subject_id": "TEST.CSV.QUOTED_CELL",
+      "is_fixture": true,
+      "denominator_refs": [],
+      "counts": {
+        "scanned": 3,
+        "applicable_scanned": 3,
+        "violations": 0,
+        "not_applicable": 0
+      },
+      "blindspot": {
+        "scanned": 3,
+        "produced": 3,
+        "escape_ratio": 0
+      },
+      "items": [],
+      "trust": {
+        "asserted": null,
+        "recomputed": { "violations": 0, "matches_asserted": true }
+      },
+      "duration_ms": { "self": 2, "external": 0 }
+    }
+  },
+  "digest_excluded_fields": ["gate_result.result.duration_ms"]
+}

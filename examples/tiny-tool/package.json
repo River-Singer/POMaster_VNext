@@ -1,0 +1,14 @@
+{
+  "name": "tiny-csv-tool",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Two-feature CSV mini tool (parse + serialize) — Phase C eight-beat demo target; standalone project, NOT part of the pnpm workspace",
+  "main": "index.js",
+  "scripts": {
+    "demo": "node index.js"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

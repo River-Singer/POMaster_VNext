@@ -1,0 +1,65 @@
+{
+  "id": "CAPABILITY.CSV_TOOL.SERIALIZE_ROWS",
+  "kind": "capability",
+  "axis_profile": "capability_default",
+  "axes": {
+    "lifecycle": "CURRENT",
+    "confidence": "LOCKED",
+    "evidence": "IMPLEMENTED",
+    "change": "STABLE"
+  },
+  "title_zh": "CSV 行序列化（正确引号转义）",
+  "authority": {
+    "owner": "TOOL_OWNER",
+    "delegates": [],
+    "write_policy": "AGENT_WITH_PERMIT",
+    "escalation_hint": "run `pomaster doctor` then open a CHANGE object"
+  },
+  "origin": "natural",
+  "realization": { "value": "wired" },
+  "key_bindings": {
+    "code": [
+      {
+        "artifact_type": "file",
+        "value": "src/serialize.js",
+        "expect": { "contains_symbol": ["serializeRows"] },
+        "probe": {
+          "method": "naming_rule_derivation_and_verify",
+          "last_run_seq": 2,
+          "result": "matched"
+        },
+        "match_rule": "mechanical"
+      }
+    ],
+    "artifact": []
+  },
+  "sources": [
+    {
+      "type": "human_directive",
+      "ref": "README.md",
+      "captured_by": "human:owner",
+      "pin": { "baseline": "2026-08-27" }
+    }
+  ],
+  "supersedes": null,
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "permits_active": [],
+  "payload": {
+    "canonical_realization": {
+      "component": "serializeRows",
+      "import": "./src/serialize.js"
+    },
+    "category": "csv",
+    "forbidden": [
+      "naive_split_on_comma",
+      "manual_quote_concat_without_escaping"
+    ],
+    "domain_states": ["idle", "serializing", "error"],
+    "variants": ["default_quoting", "force_quote_all"],
+    "technology_base": "NODE_BUILTIN",
+    "poc_required": false
+  },
+  "rev": 1,
+  "notes_md": "能力对应 src/serialize.js 的 serializeRows：内部引号翻倍、含分隔符/换行/引号的单元格自动加引号。反面教材（payload.forbidden）即 MASTer 08-17 csvEscape 两层×16 份复制事故的两种形态；failure pattern 已登记为 KNOWLEDGE.CSV_FAILURE_PATTERN（alias KB.FAILURE_PATTERN.CSV_NAIVE_SPLIT）。本叙事为人类散文，机器永不解析判卷。"
+}

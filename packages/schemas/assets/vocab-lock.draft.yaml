@@ -1,0 +1,116 @@
+# vocab-lock（词表与状态轴）—— 第一批冻结 artifact
+
+> 状态：**FROZEN ✅（2026-08-27）**。冻结依据：两轮交叉一致性审计（首轮 20 项→修复；二轮 7 修复点全验证+残留 5 项→终修 5/5 程序比对通过）+ Owner 三问裁决 + 30 条细则裁定背书。
+> 文件名保留 draft 字样系历史沿革；权威以本头部状态为准。后续枚举变更一律走词汇表 PR（禁止旁路改代码枚举）。
+> 依据：D24（哈希伦理——本文件由内容指纹保护但永不拦写）、A2（六值超集）、A5（closed-world 前缀）、synthesis 全表。
+> 2026-08-27 修复增补（既有五块词值零改动，只登记 schema 既有值、不发明新枚举值）：新增 source_types 词轴（收编 02 信封）与 keybinding_axes 三轴（收编 04-keybinding）；aliases_v0 补 TASK-*/CHANGE-* 两族（02b §0 文法注记的 T/C 前缀收编规则）；修复 transitions 块 DEPRECATED/RETIRED 挤行。
+> 消费方：②后续全部 schemas、③Kernel 转移引擎、Behavioral Eval 种子。
+
+```yaml
+# ============================================================
+# pomaster.vocab/v0.1-resolved   （原 v0-draft；三开放问题已于 2026-08-27 会话裁决）
+# 升级路径：Owner 终审本文件整体一次 → 头部改 FROZEN → 成为第一批冻结 artifact
+# ============================================================
+
+ir_schema: pomaster.truth-index/v1-draft
+
+state_axes:
+  lifecycle:            # 对象在治理世界的位置（A2 六值超集）
+    values: [PROPOSED, CURRENT, SUPERSEDED, DEPRECATED, RETIRED, REJECTED]
+    transitions:
+      PROPOSED:    { to: [CURRENT, REJECTED], requires: authority_approval }
+      CURRENT:     { to: [SUPERSEDED, DEPRECATED], requires: transition_record }
+      SUPERSEDED:  { to: [], notes: terminal; successor_ref 必填 }
+      DEPRECATED:  { to: [RETIRED], grace_policy: config }
+      RETIRED:     { to: [] }
+      REJECTED:    { to: [] }
+  confidence:           # 决策置信（PRD §18.2 四值不动）
+    values: [UNRESOLVED, EXPERIMENTAL, PROVISIONAL, LOCKED]
+  evidence:             # 凭什么信（PRD 三值 + 正交字段扩容见 realization）
+    values: [PLANNED, IMPLEMENTED, VERIFIED]
+  change:
+    values: [STABLE, CHALLENGED, MIGRATING]
+
+orthogonal_fields:      # 不进状态轴、独立建模（A3）
+  realization:          # 治理 CLAIMED 歧义的专用通道
+    applies_to: [contract_operation, capability]
+    values: [stub, mock, wired]
+    derivation: machine_preferred   # D21：优先机器派生，人只做例外复核
+
+source_types:           # sources[].type 词轴（2026-08-27 收编 02 信封 x-vocab-extra.source_type，任务书 02 给定）
+  all:        [bp_blueprint, design_seed, human_directive, code_refactor,
+               prototype_walkthrough, prototype_html_scrape, research_evidence,
+               openapi_contract, ai_invention]
+  allowed:    [bp_blueprint, design_seed, human_directive, code_refactor,
+               prototype_walkthrough, research_evidence, openapi_contract]
+  forbidden:  [prototype_html_scrape, ai_invention]
+  # forbidden 两值 schema 只保证可判别、不做硬拦；Transition/Gate 层判 FATAL 并留痕
+
+keybinding_axes:        # KEYBINDING 词族三轴（2026-08-27 收编 04-keybinding，摘除其暂定事实源声明；D15/A7）
+  binding_class:        # A7 三类最小集；类-前缀耦合：page_to_dir⇒PAGE.* / contract_operation_to_operationId⇒API_REQ.* / capability_to_file⇒CAPABILITY.*
+    values: [page_to_dir, contract_operation_to_operationId, capability_to_file]
+  binding_status:
+    values: [confirmed, derived, stale]
+  probe_result:
+    values: [matched, mismatched, unreachable, not_probed]
+
+id_namespace:           # closed-world（A5）：未登记前缀 = 解析即 FATAL
+  rules:
+    separator: "."
+    casing: SCREAMING_SNAKE
+    unknown_prefix_action: FATAL
+  prefixes_v0:          # P0/tracer bullet 所需最小闭包；扩展走词汇表 PR 流程
+    PAGE.          : 页面对象（surface/路由入口）
+    CAPABILITY.    : 能力对象（含 GRID.EDITABLE_GRID 类既有别名）
+    COMPONENT.     : 组件实现登记
+    API_REQ.       : API 契约操作（外部 OpenAPI operationId 锚点）
+    ERR.           : 错误词条（error-taxonomy，D18）
+    FIELD.         : 字段语义定义
+    KNOWLEDGE.     : 知识条目（legacy KB- 前缀经 alias 收编，A6）
+    CHANGE.        : 变更对象
+    TASK.          : 任务对象
+    DENOMINATOR.   : 覆盖分母（一等公民，只许 supersede 不许删除）
+    KEYBINDING.    : ID↔路径绑定表（一等公民，D15）
+    POLICY.        : 目录策略引用条目
+    PROFILE.       : governance/quality profile 引用
+    AUTHORITY.     : Authority Map 条目
+    TEST.          : fixture 专用域（Q3 已决）：对象身份合法；
+                     doctor 将「生产代码引用 TEST.*」列为违规探针
+  aliases_v0:           # 存量资产收编的 rename-on-ingest 双向链（A6）
+    - { legacy: "KB-*",              canonical: "KNOWLEDGE.*" }
+    - { legacy: "GRID.*",            canonical: "CAPABILITY.GRID.*" }
+    - { legacy: "PAGE-TASK-STEP-*",  canonical: "PAGE.*", note: token 重排收编，键绑定表记录历史形态 }
+    - { legacy: "TASK-*",            canonical: "TASK.*",   note: 数字段收编加字母前缀（TASK-0087→TASK.T0087），SEGMENT 不允许数字开头（02b 文法注记） }
+    - { legacy: "CHANGE-*",          canonical: "CHANGE.*", note: 数字段收编加字母前缀（CHANGE-0104→CHANGE.C0104） }
+
+kinds_registry:         # truth/objects 正文文件的合法 kind（信封层 kind 字段取值）
+  truth_bodies: [capability, component, contract_operation, error_term,
+                 field_definition, page_surface, knowledge_entry,
+                 business_rule, change_object, task_object]
+  control_plane_inline: # 这些住在 truth-index.json 内部、不产生正文文件
+    - denominators[]    # 版本化数组（successor_of 链）
+    - producers[]       # 注册+活性快照
+  forbidden_in_index:   # A8：GateResult 及一切运行产物不得入索引
+    - gate_results     (→ evidence/runs/)
+    - claims           (→ evidence/claims/)
+
+digest_ethics:          # D24 落地注记 —— 全局适用于一切 sha256/digest 字段
+  write_blocking: false           # digest 永不作为写入门闸
+  side: read_only_service         # identity / rerun-shortcut / tamper-audit
+  human_touch: forbidden          # 人不可计算/核对/传递任何 sha；事务自动维护
+  violation_treatment: WARN + auto-regen hint
+```
+
+## 开放问题处置记录（2026-08-27 会话裁决，三问全决）
+
+1. **SUPERSEDED vs DEPRECATED 边界** → ✅ 有后继链决定：
+   有 successor_ref 指向替代者 → SUPERSEDED（终态）；
+   无后继但不再推荐使用 → DEPRECATED（可过渡 RETIRED）。机器可自动归类。
+2. **老页面 ID 收编拆分** → ✅ 统一收尾段 + 全量 alias：
+   `PAGE-TASK-STEP-BIND-CARLINE` → `PAGE.BIND_CARLINE`；
+   `PAGE-APP-DASHBOARD` → `PAGE.DASHBOARD`；
+   `TASK-STEP` / `APP` 两代历史前缀均不保留于 canonical id，
+   完整历史形态入 alias 双向链（键绑定表负责考古）。
+3. **fixture 隔离** → ✅ 加 `TEST.` 前缀入 v0 闭包（见 prefixes_v0 注记）。
+
+> 升级条件：Owner 对本文件整体终审一次后，头部状态改 FROZEN——即完成第一批冻结 artifact。

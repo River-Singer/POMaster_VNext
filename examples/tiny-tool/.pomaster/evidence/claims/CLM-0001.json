@@ -1,0 +1,21 @@
+{
+  "record_type": "claim",
+  "clm": "CLM-0001",
+  "subject": { "object_id": "TEST.CSV.QUOTED_CELL" },
+  "is_fixture": true,
+  "assertion": "CSV_ROUNDTRIP_ROUNDTRIP_STABLE：含引号/分隔符/换行的单元格经 serializeRows→parseCsv 往返后逐字节还原",
+  "asserted_by": { "actor_type": "agent", "actor": "tiny-csv-tool/demo", "self_attested": true },
+  "evidence_refs": [
+    { "ref_type": "gate_result", "grn": "GRN-0001" }
+  ],
+  "verification": {
+    "verdict": "VERIFIED",
+    "method": "recompute",
+    "recomputed_by": { "actor_type": "tool", "actor": "tiny-csv-tool:roundtrip_probe@0.1.0", "self_attested": false },
+    "recomputed_value": { "roundtripStable": true },
+    "delta_vs_asserted": null,
+    "at_seq": 3
+  },
+  "rev": 1,
+  "notes_md": null
+}

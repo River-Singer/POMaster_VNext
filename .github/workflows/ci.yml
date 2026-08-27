@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    env:
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install
+        run: corepack pnpm install
+
+      - name: Build
+        run: corepack pnpm build
+
+      - name: Test
+        run: corepack pnpm test
+
+      - name: Ratchet (test-count floor, 只升不降)
+        run: corepack pnpm ratchet
+
+      - name: Lint
+        run: corepack pnpm lint

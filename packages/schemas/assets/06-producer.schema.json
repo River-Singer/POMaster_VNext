@@ -1,0 +1,273 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://pomaster.dev/schemas/producer/v1-draft.json",
+  "title": "PRODUCER 派生生产者注册与活性（Producer Registry & Liveness · 一等公民，C3）",
+  "description": "『有 schema 无 producer』= 死 factsource 的 schema 级免疫（C3：13 个死 factsource 教训——声明派生对象必须伴随可检测活性的生产者，活性是健康指标不是注释）。\n活性语义：\n- 本文件只存判定结果；心跳原文住 runtime/producers/heartbeat.jsonl（(seq, producer_id, wrote_object_ids[]) 追加流，runtime 区不进 hash，A4）；\n- liveness 由 kernel 对账 heartbeat 得出，绝不采信本文件自报值（C5 纪律的 producer 投影）；\n- liveness.status=dead 非空即 doctor 报 DEFECT（fail-closed）——见 x-pomaster-doctor-coupling。",
+  "x-pomaster-file-role": "06-producer.schema.json —— producer 注册与活性快照；条目住 truth-index.json 控制面（vocab-lock kinds_registry.control_plane_inline.producers[]）；01-truth-index.producers[].items 以绝对 $id $ref 本文件 $id #/definitions/producer_record。",
+  "x-pomaster-vocab-source": "vocab-lock@v0.1-resolved",
+  "x-pomaster-contract": {
+    "external_refs": "01-truth-index.schema.json producers[].items → 本文件 $id #/definitions/producer_record（绝对 $id 形态，2026-08-27 修复；definitions.producer_record = $ref '#' 自引用导出，条目 schema 与根单例同一定义）",
+    "reconciliation_notes": [
+      "01 全文示例 producers[0].entrypoint 已回改为 'package://kernel/producers/api-requirement'（2026-08-27 修复，原 pkg:// 违例已消除）——本文件按任务书钉死 package:// 前缀（thread A §3.5 provenance 纪律 + 08-13 provenance 可移植性教训），本文件为 canonical（01 文件头声明冲突时以 05/06 为准)"
+    ],
+    "doctor_coupling": "liveness.status=dead ⇒ health.dead_producers 非空 ⇒ doctor 必检项 DEFECT（fail-closed），见 x-pomaster-doctor-coupling"
+  },
+  "x-pomaster-definitions-note": "$definitions 复用以 draft-07 关键字 definitions 承载（2019-09 的 $definitions 之 draft-07 等价物，ajv 原生支持）。",
+  "x-pomaster-digest-ethics-policy": "本对象当前不含 sha256/digest 字段；entrypoint 的路径卫生按 D24 同款形状以 x-path-ethics 注记（禁绝对路径）。未来任何 digest/sha256 字段加入时必须携带 x-digest-ethics 注记 {\"write_blocking\": false, \"side\": \"read_only_service\", \"human_touch\": \"forbidden\"}（D24 / vocab-lock digest_ethics）。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["producer_id", "kind", "entrypoint", "objects_claimed", "views_maintained", "liveness"],
+  "properties": {
+    "producer_id": {
+      "$ref": "#/definitions/producer_id"
+    },
+    "kind": {
+      "$ref": "#/definitions/producer_kind"
+    },
+    "entrypoint": {
+      "$ref": "#/definitions/entrypoint"
+    },
+    "objects_claimed": {
+      "type": "integer",
+      "minimum": 0,
+      "title": "声明产出对象数（objects claimed）",
+      "description": "自报孪生：truth-index.objects[] 中 producer_id 指向本 producer 的信封行实际计数由 kernel 重算；两者不一致本身是一级信号（永不信任自报值），不自动判错但必须进对账报告。",
+      "examples": [
+        178
+      ],
+      "x-invalid-examples": [
+        { "sample": -5, "reason": "INVALID（边界）：负数声明产出数——minimum 0" }
+      ]
+    },
+    "views_maintained": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/definitions/view_id"
+      },
+      "title": "维护视图清单（views maintained）",
+      "description": "本 producer 负责编译/刷新的投影视图；注册 producer 至少维护一个视图（C3：声明对象必须保证有活 producer——零视图 producer 无存在意义）。声明了却从未在任何 heartbeat 出现的视图=dead，进 health.dead_producers 判定链。",
+      "examples": [
+        [
+          "truth-index.envelope",
+          "gate.input.CONTRACT",
+          "projection.page_spec_s7"
+        ]
+      ],
+      "x-invalid-examples": [
+        { "sample": [], "reason": "INVALID（边界）：空数组——minItems 1（零视图 producer 无存在意义，C3）" }
+      ]
+    },
+    "liveness": {
+      "$ref": "#/definitions/liveness"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "liveness": {
+            "properties": {
+              "status": {
+                "const": "dead"
+              }
+            }
+          }
+        },
+        "required": ["liveness"]
+      },
+      "then": {
+        "properties": {
+          "liveness": {
+            "properties": {
+              "runs_since_last_output": {
+                "minimum": 1
+              }
+            }
+          }
+        },
+        "description": "dead ⇒ runs_since_last_output ≥ 1（dead 且 0 自相矛盾：要么从未产出要么已断供，不可能『刚产出却死了』）"
+      }
+    }
+  ],
+  "x-pomaster-doctor-coupling": {
+    "title": "dead producer → doctor DEFECT 联动（fail-closed）",
+    "on": "liveness.status == 'dead'",
+    "effect": [
+      "truth-index.health.dead_producers 收录本 producer_id（health.dead_producers 非空即异常态）",
+      "doctor 必检最小集四检之一报 DEFECT：vocab_lock 一致 + dead_producers 空 + alias_conflicts 空 + LOCAL binding probe 可重放",
+      "views_maintained 中从未出现在任何 heartbeat 的视图追加 dead 判定"
+    ],
+    "source": "C3；thread A §2 health / §3.6 活性语义 / §7 doctor 必检项最小集（D7 Portability 线接口）"
+  },
+  "x-pomaster-heartbeat-coupling": {
+    "title": "heartbeat 对账纪律（永不信任自报值）",
+    "rule": "kernel 每轮 rebuild 在 runtime/producers/heartbeat.jsonl 追加 (seq, producer_id, wrote_object_ids[])；doctor 由此重算 liveness 三字段。本文件自报值与 heartbeat 重算不一致时，重算值获胜并记录 mismatch。",
+    "digest_note": "heartbeat.jsonl 属 runtime/ 侧车，不进任何 hash（A4）。",
+    "source": "thread A §2 producers 注记 / §3.6；C5"
+  },
+  "definitions": {
+    "producer_record": {
+      "$comment": "导出别名：01-truth-index producers[].items $ref 此指针。$ref '#' = 根 schema 自引用（draft-07 合法；本对象无递归），条目 schema 与根单例同一定义，天然不漂移。",
+      "$ref": "#"
+    },
+    "producer_id": {
+      "type": "string",
+      "pattern": "^prod\\.[a-z][a-z0-9_]{1,63}$",
+      "title": "producer id",
+      "description": "prod. 强制前缀 + 小写蛇形主体（如 prod.api_requirement_compiler）；无前缀、连字符、点分主体一律非法。与 Governed Object 的 SCREAMING_SNAKE 前缀闭包分属两个标识族——producer_id 不进 closed-world 前缀体系；同 id 在 producers[] 内唯一（REF_INTEGRITY）。01-truth-index（object_row.producer_id / health.dead_producers）与 02-object-envelope（ProducerDeclaration.producer_id）镜像本串，单一事实源为本文件。",
+      "$comment": "source: task 指定（2026-08-27 收敛三文件 pattern 分歧：prod. 由约定前缀改为强制前缀，01/02 同 commit 镜像同一串）。",
+      "examples": [
+        "prod.api_requirement_compiler",
+        "Prod.Ghost.Compiler（INVALID：大写与点分违反本标识族文法）",
+        "api_requirement_compiler（INVALID：缺 prod. 强制前缀）"
+      ]
+    },
+    "producer_kind": {
+      "type": "string",
+      "enum": ["builtin", "project"],
+      "title": "producer 来源（kind）",
+      "description": "builtin=随 kernel 发行版内置（升级随版本走）；project=项目仓自有编译器（随项目演进）。",
+      "$comment": "source: task 指定（builtin|project）。候选新词轴。",
+      "x-pomaster-vocab-status": "absent_in_vocab_lock__pending_vocab_pr",
+      "examples": [
+        "builtin",
+        "external（INVALID：词表外值）"
+      ]
+    },
+    "entrypoint": {
+      "type": "string",
+      "pattern": "^package://[A-Za-z0-9][A-Za-z0-9_./-]*$",
+      "title": "入口（entrypoint，package:// 相对引用）",
+      "description": "生产者入口的 package:// 相对引用（如 package://kernel/producers/api-requirement）。绝对盘符路径/UNC/前导斜杠结构性禁止——check_sources provenance_path 全数开发机绝对路径致 dev-only 化的教训不再犯第二次（08-13 provenance 可移植性教训）。",
+      "$comment": "source: task 指定 package:// 相对引用；thread A §3.5 provenance 纪律。D24 同款形状注记见 x-path-ethics。",
+      "x-path-ethics": {
+        "write_blocking": false,
+        "side": "read_only_service",
+        "human_touch": "forbidden",
+        "rule": "只允许 package:// 相对引用；绝对路径在本 schema 中不可表达（pattern 硬约束）；人工批注绝对路径属违规（WARN + auto-regen hint）",
+        "source": "D24 注记同款形状（vocab-lock@v0.1-resolved digest_ethics；thread A §3.5）"
+      },
+      "examples": [
+        "package://kernel/producers/api-requirement",
+        "D:\\tools\\ghost-compiler\\main.py（INVALID：盘符绝对路径——结构性禁止）"
+      ]
+    },
+    "view_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]*(\\.[A-Za-z0-9_-]+)+$",
+      "title": "投影视图 id（view id）",
+      "description": "点分视图路径，族约定：truth-index.*（信封）、gate.input.*（门禁输入）、projection.*（投影文档）。视图族登记表归 kernel/vocab（build 期生成），本 schema 只锁形态。",
+      "examples": [
+        "truth-index.envelope",
+        "gate.input.CONTRACT",
+        "envelope（INVALID：缺点分段——视图 id 至少两段）"
+      ]
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 0,
+      "title": "事件序号（monotonic event seq，A4）",
+      "description": "单调递增事件序号，由 apply 事务分配；受 hash 管辖字段禁用墙钟时间（DEF-POM-002 幂等崩坏教训，A4）。",
+      "examples": [
+        117
+      ],
+      "x-invalid-examples": [
+        { "sample": -1, "reason": "INVALID（边界）：负数序号——minimum 0；事件序号由 apply 事务单调分配（A4）" }
+      ]
+    },
+    "liveness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "runs_since_last_output", "last_output_seq"],
+      "title": "活性快照（liveness，判定结果非心跳原文）",
+      "description": "status=active：上游输入变更后仍持续产出；stale：上游输入变了而连续 K 轮零输出（K 项目可配）——其对象的门禁输入地位降级（thread-A 行文的 suspect_stale 词形已收敛为 stale）；dead：在册但对账连续多轮无产出或从未产出——触发 x-pomaster-doctor-coupling。runs_since_last_output：自最近产出的 rebuild 轮数；last_output_seq：最近产出对象的事务序号（0=从未产出，合法初始态）。",
+      "$comment": "source: task 指定三态 + thread A §3.6 活性语义。",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["active", "stale", "dead"],
+          "title": "活性三态（liveness tri-state）",
+          "$comment": "source: task 指定。候选新词轴（vocab-lock 未含）。",
+          "x-pomaster-vocab-status": "absent_in_vocab_lock__pending_vocab_pr",
+          "examples": [
+            "active",
+            "suspect_stale（INVALID：thread A 行文用词，本词表收敛为 stale）"
+          ]
+        },
+        "runs_since_last_output": {
+          "type": "integer",
+          "minimum": 0,
+          "title": "距最近产出的 rebuild 轮数",
+          "examples": [
+            0,
+            9
+          ]
+        },
+        "last_output_seq": {
+          "$ref": "#/definitions/seq"
+        }
+      },
+      "examples": [
+        {
+          "status": "active",
+          "runs_since_last_output": 0,
+          "last_output_seq": 117
+        },
+        {
+          "status": "dead",
+          "runs_since_last_output": 0,
+          "last_output_seq": 117,
+          "x_example_intent": "INVALID（边界）：dead 而 runs_since_last_output=0 自相矛盾（根 allOf 拦截）"
+        }
+      ]
+    }
+  },
+  "examples": [
+    {
+      "producer_id": "prod.api_requirement_compiler",
+      "kind": "builtin",
+      "entrypoint": "package://kernel/producers/api-requirement",
+      "objects_claimed": 178,
+      "views_maintained": [
+        "truth-index.envelope",
+        "gate.input.CONTRACT",
+        "projection.page_spec_s7"
+      ],
+      "liveness": {
+        "status": "active",
+        "runs_since_last_output": 0,
+        "last_output_seq": 117
+      }
+    },
+    {
+      "producer_id": "prod.project_page_spec_renderer",
+      "kind": "project",
+      "entrypoint": "package://project/tools/pomaster-producers/page-spec-renderer",
+      "objects_claimed": 39,
+      "views_maintained": [
+        "projection.page_spec_md"
+      ],
+      "liveness": {
+        "status": "stale",
+        "runs_since_last_output": 9,
+        "last_output_seq": 88
+      }
+    },
+    {
+      "x_example_intent": "INVALID —— 五重违规演示：a) producer_id 大写+点分违标识族文法；b) kind=external 词表外值；c) entrypoint 盘符绝对路径（x-path-ethics 结构性禁止）；d) views_maintained 含缺点分段的 view id；e) dead 而 runs_since_last_output=0（allOf 耦合拦截）",
+      "producer_id": "Prod.Ghost.Compiler",
+      "kind": "external",
+      "entrypoint": "D:\\tools\\ghost-compiler\\main.py",
+      "objects_claimed": 0,
+      "views_maintained": ["envelope"],
+      "liveness": {
+        "status": "dead",
+        "runs_since_last_output": 0,
+        "last_output_seq": 117
+      }
+    }
+  ],
+  "x-pomaster-examples-note": "examples[0]=正例（builtin 生产者，thread A §2 底稿、entrypoint 按 package:// canonical 修正）；examples[1]=边界正例（project 生产者 stale 态：上游输入变了而连续 9 轮零输出，门禁输入地位降级）；examples[2]=反例，x_example_intent 列明五重违规。"
+}

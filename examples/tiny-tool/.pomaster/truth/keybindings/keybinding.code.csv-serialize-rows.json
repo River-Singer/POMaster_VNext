@@ -1,0 +1,14 @@
+{
+  "id": "KEYBINDING.CODE.CSV_SERIALIZE_ROWS",
+  "binding_class": "capability_to_file",
+  "legacy_id": null,
+  "canonical_id": "CAPABILITY.CSV_TOOL.SERIALIZE_ROWS",
+  "physical_path": "src/serialize.js",
+  "binding_status": "derived",
+  "match_rule": "mechanical",
+  "probe": {
+    "method": "naming_rule_derivation_and_verify",
+    "last_run_seq": 2,
+    "result": "matched"
+  }
+}

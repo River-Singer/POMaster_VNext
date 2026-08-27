@@ -1,0 +1,14 @@
+{
+  "observedTests": 466,
+  "floorAtRecording": 466,
+  "ratchetExitCode": 0,
+  "recordedBy": "integration-fixer（scaffold+四模块集成修复任务，2026-08-28）",
+  "composition": {
+    "kernel": "packages/kernel/tests/*（store/transitions/id/permits/projection/gate-result/doctor/digest/vocab/environment）",
+    "cli": "packages/cli/tests/*（init/status/triage/context/doctor/check/program）",
+    "gauntletLite": "packages/gauntlet-lite/test/*（detectors/build-adapter/normalize-gate-result）",
+    "goldenSpec": "tests/golden/golden.spec.ts（20 条数据驱动 P0 + 元纪律 + 执行器参考镜像 + 分派冒烟）",
+    "smokeSpec": "tests/integration/smoke.spec.ts（探测 2 + e2e 8，CLI 就绪态真端到端）"
+  },
+  "note": "集成修复后首跑基线：全仓 vitest numTotalTests=466（全绿）。本轮修复：CLI init 的 vocab 指纹形状与 kernel 对账端失配（state_axes transitions 嵌套 / kinds、prefixes 包裹键 / content_digest canonical 键形）导致 VOCAB_MISMATCH，已逐字节对齐 kernel digest.ts；3 个 kernel scaffold 时代的过时用例更新为真实 kernel 集成断言并新增 1 个注入式 not-implemented 用例（NOT_INSTALLED 分支覆盖保持）。棘轮只升不降；后续建造者新增用例时应随本次改动一并提升 floor.json。计数口径与 scripts 详见 tests/ratchet/ratchet.mjs（1 assert = 1 个 vitest 用例，子测试不计入）。"
+}

@@ -1,0 +1,525 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://pomaster.dev/schemas/gate-result/v1-draft.json",
+  "$comment": "POMaster vNext / 03-gate-result。铸造依据：schema-drafts/vocab-lock.draft.yaml@v0.1-resolved（词表/状态轴/前缀闭包/digest_ethics 的唯一来源）＋ research/design-thread-A-ir-schema.md §4.5（C1）＋ research/design-synthesis-decisions.md（A4/A5/A8/C1/C6 ＋ Q3 裁决）。注：任务书所称 $definitions 在 draft-07 的规范拼法为 definitions（$defs 是 2019-09+ 关键字）；为 ajv 原生可解析按 draft-07 落地。x-* / x-vocab-source 均为注记关键字（ajv 默认忽略，不参与校验）。本文件 definitions 与 07-evidence-records 存在刻意镜像（object_id/id_prefix/sha256_digest/actor/seq/run_trigger/grn_id），单一事实源是 vocab-lock ＋ build 期 vocab codegen（thread A §6）；改动须两侧同步并过 G-vocab-2 黄金快照。",
+  "title": "GateResult 门禁运行结果（Gate Verdict 七态超集）",
+  "description": "门禁/工具单次运行的结构化判卷记录。C1 纪律：报绿的治理工具比没有工具更危险——verdict 七态可区分真通过/失败/降级黄/阻断/未执行/未配置/盲区跳过；counts.not_applicable 必填（『为何没查』必须是数字而非沉默）；asserted/recomputed 孪生字段组（永不信任自报值）；blindspot 盲区块；duration_ms 拆 self/external 供 Overhead 双轨（C6）。A8：本记录是运行产物，不入 truth-index，存证于 evidence/runs/GRN-*.json。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["grn", "gate", "gate_def", "tool", "tool_version", "metric_dialect", "ran_at_seq", "verdict", "denominator_refs", "counts", "blindspot", "trust", "duration_ms"],
+  "x-index-policy": {
+    "admitted_to_truth_index": false,
+    "storage_plane": "evidence/runs/",
+    "source": "vocab-lock@v0.1-resolved kinds_registry.forbidden_in_index（gate_results → evidence/runs/）＋ synthesis A8：判卷产物不是治理事实"
+  },
+  "x-budget": {
+    "scope": "single GateResult document（evidence/runs/GRN-*.json 单文件）",
+    "max_bytes": 8192,
+    "on_overflow": "WARN ＋ items[] 截断；截断必须置 items_truncated=true 留痕",
+    "source": "synthesis 附带风险备忘 A-line（gate 结果 ≤8KB 粗上限，待 Owner 终审）"
+  },
+  "properties": {
+    "grn": {
+      "$ref": "#/definitions/grn_id",
+      "description": "运行记录 id；与落盘文件 evidence/runs/GRN-*.json 同名同源"
+    },
+    "gate": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_]{1,63}$",
+      "description": "门禁名（SCREAMING_SNAKE 命名纪律，如 CONTENT_TRUTH）。gate 名不属 vocab-lock 词表管辖（prefixes_v0 只锁治理对象 ID 前缀）；新增 gate 须经 gate_def 版本化登记"
+    },
+    "gate_def": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_.]+@[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "门禁定义锚（定义 id@semver，如 POLICY.GATE.CONTENT_TRUTH@1.4.0）——版本钉死，防门禁口径静默漂移（catalog-lock/D5 精神）"
+    },
+    "tool": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_:@/.-]{0,127}$",
+      "description": "执行工具标识（如 gauntlet:ui_text_scanner）"
+    },
+    "tool_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+([-+][0-9A-Za-z.-]+)?$",
+      "description": "工具版本（semver）"
+    },
+    "metric_dialect": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "度量口径声明（metric caliber declaration）。例：coverage 的 行 lines vs 分支 branches、ui_text 的 carrier_file_count。同一 gate 在不同 dialect 下的结果不可直接比较——coverage 行/分支混用即口径漂移，本字段是结构性预防",
+      "examples": ["coverage:lines", "coverage:branches", "ui_text:carrier_file_count", "dom:select_all_checkbox_presence"]
+    },
+    "ran_at_seq": {
+      "$ref": "#/definitions/seq"
+    },
+    "ran_at_utc": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "x-digest-excluded": true,
+      "description": "墙钟时间：仅作证据平面事实（thread A §1.1——时间在这里是事实不是身份）；必须排除在内容 digest 之外（x-digest-excluded）；排序与身份一律用 ran_at_seq（A4）"
+    },
+    "trigger": {
+      "$ref": "#/definitions/run_trigger"
+    },
+    "verdict": {
+      "$ref": "#/definitions/verdict"
+    },
+    "verdict_cap_reason": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "description": "verdict_cap 降级留痕：passed 因盲区越阈/自报-重算失配/binding 未验证而被自动降级为 warning 时必填（GateRunner 执行层职责——draft-07 无法表达跨字段条件）。示例原因码：binding_unverified_for_required_class / declare_recompute_mismatch / blindspot_over_threshold。这是『报绿的机器自我怀疑』的机械化落点（C1）"
+    },
+    "subject_id": {
+      "$ref": "#/definitions/object_id",
+      "description": "受检治理对象 id（可缺省：repo 级 gate 无单一 subject）。closed-world 前缀闭包见 definitions/object_id（A5）"
+    },
+    "is_fixture": {
+      "type": "boolean",
+      "default": false,
+      "description": "Q3 裁决（vocab-lock@v0.1-resolved prefixes_v0 的 TEST. 注记）：subject_id 前缀 TEST.* 时本字段必须为 true；生产账本（truth-index / 分母 / 门禁汇总）按 subject_id 前缀 TEST. 过滤掉 fixture 记录"
+    },
+    "denominator_refs": {
+      "type": "array",
+      "minItems": 0,
+      "items": { "$ref": "#/definitions/denominator_ref" },
+      "description": "C2：gate 结论必须绑定所用分母的 id＋版本（分母是一等公民 DENOMINATOR.*，只许 supersede 不许删除）。空数组 = 『本 gate 无分母』的显式诚实声明，而非省略"
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "size_expected_from_denominator": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "分母推出的期望扫描对象数（COVERAGE 型 gate 须满足 counts.applicable_scanned == 本值；不等 = 覆盖缺口如实呈现。执行层校验——draft-07 无法表达跨字段等值断言）"
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "description": "扫描足迹期望（写 gate 15/32 分母漂移事故的针对性免疫：期望值来自分母版本，而非硬编码）"
+    },
+    "counts": { "$ref": "#/definitions/counts" },
+    "blindspot": { "$ref": "#/definitions/blindspot" },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["rule", "location"],
+        "properties": {
+          "rule": {
+            "type": "string",
+            "minLength": 1,
+            "description": "违规规则码（gate_def 内定义）"
+          },
+          "location": {
+            "type": "string",
+            "minLength": 1,
+            "description": "仓内相对路径[:line]；禁止绝对盘符（provenance 可移植纪律——check_sources 全数 dev-only 化的教训不再犯）"
+          },
+          "excerpt_hash": {
+            "$ref": "#/definitions/sha256_digest",
+            "x-digest-ethics": { "write_blocking": false, "side": "read_only_service", "human_touch": "forbidden" }
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "description": "违规明细；超 x-budget 时可截断（见 items_truncated）"
+    },
+    "items_truncated": {
+      "type": "boolean",
+      "default": false,
+      "description": "true = items[] 因超 8KB 预算被截断（x-budget 注记的留痕位；完整明细按 gate_def 声明的溢出策略归档）"
+    },
+    "trust": { "$ref": "#/definitions/trust" },
+    "duration_ms": { "$ref": "#/definitions/duration_ms" },
+    "self_reported_ms": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "x-overhead-track": "secondary / SELF_REPORTED",
+      "description": "C6 Overhead 双轨第二轨：人工申报耗时，恒标 SELF_REPORTED；永不与 duration_ms（机器实测 primary）合并、换算或互相覆盖——宁高估勿低估"
+    },
+    "digest_excluded_fields": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "本记录内不参与内容 digest 的字段路径清单（如 duration_ms、ran_at_utc）——tamper-audit 时验证方按此清单重算（D24：digest 只是 read_only_service）"
+    }
+  },
+  "allOf": [
+    {
+      "$comment": "Q3 fixture 隔离·正向：subject_id 前缀 TEST.* ⇒ is_fixture 必须为 true",
+      "if": {
+        "required": ["subject_id"],
+        "properties": { "subject_id": { "type": "string", "pattern": "^TEST\\." } }
+      },
+      "then": {
+        "required": ["is_fixture"],
+        "properties": { "is_fixture": { "const": true } }
+      }
+    },
+    {
+      "$comment": "Q3 fixture 隔离·反向：is_fixture=true ⇒ subject_id 必须是 TEST.* 前缀（防生产对象冒充 fixture，也防 fixture 记录混入生产账本）",
+      "if": {
+        "required": ["is_fixture"],
+        "properties": { "is_fixture": { "const": true } }
+      },
+      "then": {
+        "required": ["subject_id"],
+        "properties": { "subject_id": { "type": "string", "pattern": "^TEST\\." } }
+      }
+    }
+  ],
+  "definitions": {
+    "grn_id": {
+      "type": "string",
+      "pattern": "^GRN-[0-9]+$",
+      "description": "Gate Run 记录 id 词形（evidence/runs/GRN-*.json）。structural 词形，非 vocab-lock 管辖"
+    },
+    "sha256_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "x-digest-ethics": { "write_blocking": false, "side": "read_only_service", "human_touch": "forbidden" },
+      "description": "内容指纹。D24 哈希伦理（source: vocab-lock@v0.1-resolved digest_ethics）：write_blocking=false 永不作写入门闸；side=read_only_service（identity / rerun-shortcut / tamper-audit）；human_touch=forbidden——人不可计算/核对/传递任何 sha，事务自动维护；违规处置 WARN ＋ auto-regen hint"
+    },
+    "object_id": {
+      "type": "string",
+      "pattern": "^(PAGE|CAPABILITY|COMPONENT|API_REQ|ERR|FIELD|KNOWLEDGE|CHANGE|TASK|DENOMINATOR|KEYBINDING|POLICY|PROFILE|AUTHORITY|TEST)\\.[A-Z][A-Z0-9_]{0,31}(\\.[A-Z][A-Z0-9_]{0,31})*(\\.[0-9]+)?$",
+      "x-vocab-source": "vocab-lock@v0.1-resolved id_namespace.prefixes_v0 ＋ rules（separator=. / SCREAMING_SNAKE / unknown_prefix=FATAL，A5 closed-world）",
+      "description": "治理对象 canonical id。文法：PREFIX '.' SEGMENT('.' SEGMENT)*['.' SEQ]，SEGMENT=[A-Z][A-Z0-9_]{0,31}，SEQ 仅可为最后一段。pattern 与 definitions/id_prefix 枚举同源闭包（扩前缀两者须同步，build 期由 vocab codegen 生成）；未知前缀 = 解析即 FATAL（A5）"
+    },
+    "id_prefix": {
+      "enum": ["PAGE.", "CAPABILITY.", "COMPONENT.", "API_REQ.", "ERR.", "FIELD.", "KNOWLEDGE.", "CHANGE.", "TASK.", "DENOMINATOR.", "KEYBINDING.", "POLICY.", "PROFILE.", "AUTHORITY.", "TEST."],
+      "x-vocab-source": "vocab-lock@v0.1-resolved id_namespace.prefixes_v0（P0/tracer bullet 最小闭包；扩展走词汇表 PR 流程）",
+      "description": "closed-world 前缀注册表镜像（A5）。与 object_id 的 pattern 保持同一闭包（G-vocab-2 黄金快照纪律）。TEST. = fixture 专用域（Q3 已决）：对象身份合法；doctor 将『生产代码引用 TEST.*』列为违规探针"
+    },
+    "actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["actor_type", "actor"],
+      "properties": {
+        "actor_type": {
+          "enum": ["agent", "human", "tool", "kernel"],
+          "x-vocab-source": "structural（非 vocab-lock 管辖）",
+          "description": "主体类型"
+        },
+        "actor": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "主体标识（如 claude/session-93、gauntlet:dom_probe@0.2.0）"
+        },
+        "self_attested": {
+          "type": "boolean",
+          "default": false,
+          "description": "true = 自报值（C5 纪律：自报永不单独作为判卷依据）"
+        }
+      },
+      "description": "行为主体（谁声称 / 谁重算）。structural 词表，非 vocab-lock 管辖"
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "全局事件序号（A4：hash 授权范围内禁用墙钟时间，以单调 revision/seq 序号取代——DEF-POM-002 幂等崩坏教训；与 Kernel 事务 journal 对接）"
+    },
+    "verdict": {
+      "enum": ["passed", "failed", "warning", "blocked", "not_run", "not_configured", "skipped_blindspot"],
+      "x-vocab-source": "任务规约 03 七态超集 ＋ thread A §4.5（PRD §46 六态与会话四态的收敛超集）；vocab-lock@v0.1-resolved 尚无 verdict 词轴——本 const 数组即该轴的候选冻结来源，扩值必须走词汇表 PR，禁止就地添加",
+      "description": "七态语义：passed / failed 直通；warning = 原生黄或 passed 被 verdict_cap 降级（见 verdict_cap_reason）；blocked = 前置未满足（许可缺失/上游 gate 未过）；not_run = 未执行（收敛旧 PRD NOT_RUN/SKIPPED_BY_POLICY 两义）——终局性诚实报告；not_configured = 检查前提缺失（典型：目标对象缺所需 KEYBINDING 类）——是终局性诚实结论而非通过（D15×C1，封堵 interaction-contract-registry opt-in 门禁静默通过事故）；skipped_blindspot = 扫描器对载体明知不可达，必须附 blindspot.fixture_regression 证据引用"
+    },
+    "denominator_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version_seen"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^DENOMINATOR\\.[A-Z][A-Z0-9_]{0,31}(\\.[A-Z][A-Z0-9_]{0,31})*(\\.[0-9]+)?$",
+          "x-vocab-source": "vocab-lock@v0.1-resolved id_namespace.prefixes_v0 的 DENOMINATOR. 前缀（一等公民，C2；只许 supersede 不许删除）",
+          "description": "分母对象 id"
+        },
+        "version_seen": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "本记录所见分母版本——gate 结论与分母版本绑定，分母换版后旧结论的适用性可被精确重判（C2/GAP-POM-001 免疫）"
+        }
+      }
+    },
+    "run_trigger": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "enum": ["pre_closeout", "pre_commit", "post_edit", "on_demand", "scheduled"],
+          "x-vocab-source": "structural（thread A §4.5；非 vocab-lock 管辖，扩值须同步 Kernel GateRunner）",
+          "description": "触发方式"
+        },
+        "task_ref": {
+          "type": "string",
+          "minLength": 1,
+          "description": "触发任务引用（task id 现存形态不强制 object_id 文法，历史 TASK-0087 与 canonical TASK.* 并存期由 alias 链回溯，A6）"
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scanned", "applicable_scanned", "violations", "not_applicable"],
+      "properties": {
+        "scanned": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "扫描足迹（寻获载体/对象总数）"
+        },
+        "applicable_scanned": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "其中适用本 gate 规则的数量；COVERAGE 型 gate 须与 scope.size_expected_from_denominator 相等（执行层校验）"
+        },
+        "violations": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "违规数（与 trust.recomputed.violations 同源）"
+        },
+        "not_applicable": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "C1 硬性必填：『多少对象与本规则无关』必须是数字——NaN/省略不允许，『23 处为何不算』必须是数字而不是沉默"
+        },
+        "suppressed_by_ledger": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "被 suppression 台账合法豁免的数量（豁免本身可审计）"
+        },
+        "unchecked_in_blindspot_estimated": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "盲区估算未检数量"
+        },
+        "declarations_failed_recompute": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "declare-recompute 失配声明数（>0 应触发 verdict_cap 降级）"
+        }
+      }
+    },
+    "blindspot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scanned", "produced", "escape_ratio"],
+      "properties": {
+        "scanned": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "扫描足迹：本 gate 寻获并尝试处理的载体数"
+        },
+        "produced": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "实际产出判定结果的数量（应 ≤ scanned；越界 = 扫描器自相矛盾，执行层 FATAL）"
+        },
+        "escape_ratio": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "盲区逃逸比（估计未被本 gate 真实覆盖/检出的占比；派生公式由 gate_def 声明）。『scanned 远大于 producing』的比值是所有扫描型 gate 的必备派生字段（R8 健康指标的即时值家）；越阈值触发 verdict_cap 降级（C1）"
+        },
+        "carrier_coverage": {
+          "type": "object",
+          "additionalProperties": { "type": "integer", "minimum": 0 },
+          "description": "载体覆盖分布（载体形态→命中数，如 .vue_template→30）"
+        },
+        "fixture_regression": {
+          "type": "string",
+          "minLength": 1,
+          "description": "盲区回归 fixture 证据引用（如 EV_TS_TEXT_ESCAPE_FIXTURE/passed）——skipped_blindspot 判定必须附证据"
+        }
+      },
+      "description": "盲区块（C1：scan_ui_content_truth 两道绿灯放走全部 .ts 文案的免疫结构）"
+    },
+    "trust": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["asserted", "recomputed"],
+      "properties": {
+        "asserted": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["declared_by"],
+          "properties": {
+            "violations": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "自报违规数（可缺省：未自报数量本身即诚实信号）"
+            },
+            "declared_by": { "$ref": "#/definitions/actor" }
+          },
+          "description": "自报值（Agent/工具声称——永不作为判卷依据的孪生落点之一）；null = 本轮无自报"
+        },
+        "recomputed": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["violations"],
+          "properties": {
+            "violations": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "GateRunner 独立重算值——与 asserted 不一致时以本字段为准并留痕"
+            },
+            "matches_asserted": {
+              "type": "boolean"
+            }
+          },
+          "description": "重算值（判卷唯一依据）"
+        },
+        "mismatch": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["detected", "action"],
+          "properties": {
+            "detected": { "type": "boolean" },
+            "action": {
+              "enum": ["recomputed_wins_recorded", "escalate_to_authority"],
+              "x-vocab-source": "structural（C5 纪律；非 vocab-lock 管辖）",
+              "description": "失配处置：记录并按重算值判卷，或升级 Authority"
+            }
+          },
+          "description": "孪生失配处置：两者不一致本身就是一级信号（C5）"
+        }
+      },
+      "description": "asserted/recomputed 孪生字段组（C1/C5：永不信任自报值——凡 Agent/工具可以声称的字段，并列一个由不同主体重算的孪生字段，两者不一致本身是一级信号）"
+    },
+    "duration_ms": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["self", "external"],
+      "x-overhead-track": "primary / machine_measured",
+      "properties": {
+        "self": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "门禁自身耗时 ms"
+        },
+        "external": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "外部依赖（子进程/网络/工具调用）耗时 ms"
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "合计（可缺省；self＋external=total 由执行层校验）"
+        }
+      },
+      "description": "C6 Overhead 双轨第一轨（机器实测 primary）：self/external 拆分供 Overhead Ratio 精确归因；人工申报走 self_reported_ms（secondary，恒标 SELF_REPORTED）。本块参与内容 digest 与否由 digest_excluded_fields 声明（thread A §4.5 惯例：排除）"
+    }
+  },
+  "x-examples-note": "examples[0..1] 为正例（可被本 schema 校验通过；ex1=CONTENT_TRUTH 降级黄全字段形态，ex2=TEST.* fixture 边界正例）；examples[2] 为反例（故意非法：subject_id 前缀 TEST.* 却缺 is_fixture=true【违反 Q3】且 counts 缺必填 not_applicable【违反 C1】——用于说明两条硬边界）",
+  "examples": [
+    {
+      "grn": "GRN-0842",
+      "gate": "CONTENT_TRUTH",
+      "gate_def": "POLICY.GATE.CONTENT_TRUTH@1.4.0",
+      "tool": "gauntlet:ui_text_scanner",
+      "tool_version": "0.2.0",
+      "metric_dialect": "ui_text:carrier_file_count（载体文件数口径）",
+      "ran_at_seq": 121,
+      "ran_at_utc": "2026-08-27T11:58:00Z",
+      "trigger": { "type": "pre_closeout", "task_ref": "TASK.T0087" },
+      "verdict": "warning",
+      "verdict_cap_reason": "declare_recompute_mismatch",
+      "denominator_refs": [
+        { "id": "DENOMINATOR.UI_TEXT_CARRIER_FILES", "version_seen": 2 }
+      ],
+      "scope": { "size_expected_from_denominator": 83 },
+      "counts": {
+        "scanned": 83,
+        "applicable_scanned": 74,
+        "violations": 2,
+        "not_applicable": 9,
+        "suppressed_by_ledger": 234,
+        "unchecked_in_blindspot_estimated": 0,
+        "declarations_failed_recompute": 1
+      },
+      "blindspot": {
+        "scanned": 83,
+        "produced": 74,
+        "escape_ratio": 0.027,
+        "carrier_coverage": { ".vue_template": 30, ".ts_columnDef": 28, ".ts_const": 13 },
+        "fixture_regression": "EV_TS_TEXT_ESCAPE_FIXTURE/passed"
+      },
+      "items": [
+        {
+          "rule": "no_inline_copy_in_script",
+          "location": "src/entities/auth/hooks.ts:44",
+          "excerpt_hash": "sha256:be1e0f2a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6",
+          "message": "脚本内联英文文案，应走 i18n 载体"
+        }
+      ],
+      "items_truncated": false,
+      "trust": {
+        "asserted": {
+          "violations": 0,
+          "declared_by": { "actor_type": "agent", "actor": "claude/session-93", "self_attested": true }
+        },
+        "recomputed": { "violations": 2, "matches_asserted": false },
+        "mismatch": { "detected": true, "action": "recomputed_wins_recorded" }
+      },
+      "duration_ms": { "self": 2901, "external": 511, "total": 3412 },
+      "self_reported_ms": 4000,
+      "digest_excluded_fields": ["duration_ms", "ran_at_utc"],
+      "is_fixture": false
+    },
+    {
+      "grn": "GRN-0901",
+      "gate": "DOM_PROBE",
+      "gate_def": "POLICY.GATE.DOM_PROBE@0.3.1",
+      "tool": "gauntlet:dom_probe",
+      "tool_version": "0.2.0",
+      "metric_dialect": "dom:select_all_checkbox_presence",
+      "ran_at_seq": 130,
+      "verdict": "passed",
+      "subject_id": "TEST.GRID.SELECT_ALL_HEADER",
+      "is_fixture": true,
+      "denominator_refs": [],
+      "counts": { "scanned": 1, "applicable_scanned": 1, "violations": 0, "not_applicable": 0 },
+      "blindspot": { "scanned": 1, "produced": 1, "escape_ratio": 0 },
+      "items": [],
+      "trust": {
+        "asserted": null,
+        "recomputed": { "violations": 0, "matches_asserted": true }
+      },
+      "duration_ms": { "self": 120, "external": 0 }
+    },
+    {
+      "grn": "GRN-0902",
+      "gate": "CONTENT_TRUTH",
+      "gate_def": "POLICY.GATE.CONTENT_TRUTH@1.4.0",
+      "tool": "gauntlet:ui_text_scanner",
+      "tool_version": "0.2.0",
+      "metric_dialect": "ui_text:carrier_file_count",
+      "ran_at_seq": 131,
+      "verdict": "passed",
+      "subject_id": "TEST.TS_TEXT_ESCAPE",
+      "denominator_refs": [],
+      "counts": { "scanned": 5, "applicable_scanned": 5, "violations": 0 },
+      "blindspot": { "scanned": 5, "produced": 0, "escape_ratio": 0 },
+      "items": [],
+      "trust": {
+        "asserted": null,
+        "recomputed": { "violations": 0, "matches_asserted": true }
+      },
+      "duration_ms": { "self": 30, "external": 0 }
+    }
+  ]
+}
