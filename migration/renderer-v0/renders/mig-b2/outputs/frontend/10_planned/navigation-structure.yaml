@@ -1,0 +1,302 @@
+{
+  "authority": "project-level-navigation",
+  "blueprint_sha256": "09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+  "document_type": "navigation-structure",
+  "drill_down_pages": [
+    {
+      "entry": "BUC 列表点行",
+      "name_zh": "BUC 详情",
+      "page_id": "PAGE-APP-BUC-DETAIL"
+    },
+    {
+      "entry": "设备库点行/新增",
+      "name_zh": "设备详情",
+      "page_id": "PAGE-APP-EQUIPMENT-DETAIL"
+    },
+    {
+      "entry": "BUC 列表点零件号",
+      "name_zh": "零件信息",
+      "page_id": "PAGE-APP-PART-INFO"
+    }
+  ],
+  "icon_policy": {
+    "allowed": [
+      "monochrome_outline_svg",
+      "monochrome_solid_svg",
+      "text_label"
+    ],
+    "forbidden": [
+      "colorful_svg",
+      "gradient_icon",
+      "photo_icon"
+    ],
+    "library": "lucide-vue-next（Lucide 单色描边 SVG，stroke=currentColor，继承文字色）",
+    "note": "原型全站 173 处 data-lucide 均为单色描边，已合规。彩色仅允许 stat 卡片背景渐变（非 icon）。",
+    "protocol": "universal:design-system-protocol",
+    "rule": "B 端产品禁彩色 SVG icon",
+    "vendor_adapter_action": "UI 阶段将 lucide-vue-next 加入 vendor-adapter-registry（adapter_dir=src/shared/ui/icon）"
+  },
+  "nav_groups": [
+    {
+      "icon": "layout-dashboard",
+      "id": "NAV.LEAF.DASHBOARD",
+      "level": 1,
+      "name_zh": "工作台",
+      "page_id": "PAGE-APP-DASHBOARD",
+      "subgroups": [],
+      "type": "top-level-leaf"
+    },
+    {
+      "icon": "car",
+      "id": "NAV.GROUP.G1",
+      "level": 1,
+      "name_zh": "整车成本分析管理",
+      "subgroups": [
+        {
+          "icon": "list",
+          "id": "NAV.SUBGROUP.G1-2",
+          "leaves": [
+            {
+              "icon": "table",
+              "id": "NAV.LEAF.CALC-PARTS",
+              "name_zh": "计算车型零件清单管理",
+              "page_id": "PAGE-TASK-STEP-BUILD-BOM"
+            },
+            {
+              "icon": "palette",
+              "id": "NAV.LEAF.PALETTE",
+              "name_zh": "装备 palette 管理",
+              "page_id": "PAGE-APP-EQUIPMENT-PALETTE"
+            },
+            {
+              "icon": "file-spreadsheet",
+              "id": "NAV.LEAF.ALL-PARTS",
+              "name_zh": "全系零件清单",
+              "page_id": "PAGE-APP-ALL-PARTS-LIST"
+            }
+          ],
+          "name_zh": "全系零件清单管理"
+        },
+        {
+          "icon": "git-branch",
+          "id": "NAV.SUBGROUP.G1-3",
+          "leaves": [
+            {
+              "icon": "check-circle",
+              "id": "NAV.LEAF.BC-EVAL",
+              "name_zh": "BC 评估",
+              "page_id": "PAGE-APP-EVALUATION"
+            },
+            {
+              "icon": "check-circle",
+              "id": "NAV.LEAF.AEKO-EVAL",
+              "name_zh": "AEKO 评估",
+              "page_id": "PAGE-APP-EVALUATION"
+            },
+            {
+              "icon": "check-circle",
+              "id": "NAV.LEAF.PKO-EVAL",
+              "name_zh": "PKO 评估",
+              "page_id": "PAGE-APP-EVALUATION"
+            },
+            {
+              "icon": "file-warning",
+              "id": "NAV.LEAF.TECH-AKT",
+              "name_zh": "技术变更 AKT",
+              "page_id": "PAGE-APP-TECHNICAL-AKT"
+            }
+          ],
+          "name_zh": "零件清单变更管理"
+        },
+        {
+          "icon": "coins",
+          "id": "NAV.SUBGROUP.G1-4",
+          "leaves": [
+            {
+              "icon": "tag",
+              "id": "NAV.LEAF.ACCESSORY-PRICE",
+              "name_zh": "配附件目标价",
+              "page_id": "PAGE-APP-CSC-PRICE"
+            },
+            {
+              "icon": "tag",
+              "id": "NAV.LEAF.MATERIAL-PRICE",
+              "name_zh": "材料成本目标价",
+              "page_id": "PAGE-APP-CSC-PRICE"
+            },
+            {
+              "icon": "tag",
+              "id": "NAV.LEAF.NOMINATION-PRICE",
+              "name_zh": "零件定点价格",
+              "page_id": "PAGE-APP-CSC-PRICE"
+            }
+          ],
+          "name_zh": "CSC 管理"
+        }
+      ]
+    },
+    {
+      "icon": "book-open",
+      "id": "NAV.LEAF.PARTS-LEDGER",
+      "level": 1,
+      "name_zh": "零件台账",
+      "page_id": "PAGE-TASK-STEP-QUERY-LEDGER",
+      "subgroups": [],
+      "type": "top-level-leaf"
+    },
+    {
+      "icon": "bar-chart-3",
+      "id": "NAV.GROUP.G3",
+      "leaves": [
+        {
+          "icon": "bar-chart",
+          "id": "NAV.LEAF.BUC",
+          "name_zh": "BUC 分析",
+          "page_id": "PAGE-TASK-STEP-BUC-ANALYSE"
+        },
+        {
+          "icon": "pie-chart",
+          "id": "NAV.LEAF.OTHER-COST",
+          "name_zh": "其他逻辑分析",
+          "page_id": "PAGE-APP-OTHER-COST-ANALYSIS"
+        }
+      ],
+      "level": 1,
+      "name_zh": "零件成本分析管理",
+      "subgroups": []
+    },
+    {
+      "icon": "database",
+      "id": "NAV.GROUP.G4",
+      "leaves": [
+        {
+          "icon": "car",
+          "id": "NAV.LEAF.VEHICLE-MASTER",
+          "name_zh": "车型主数据",
+          "page_id": "PAGE-APP-VEHICLE-MASTER-DATA"
+        },
+        {
+          "icon": "layers",
+          "id": "NAV.LEAF.MATERIAL-DB",
+          "name_zh": "材料数据库",
+          "page_id": "PAGE-APP-MATERIAL-DB"
+        },
+        {
+          "icon": "cog",
+          "id": "NAV.LEAF.PROCESS-DB",
+          "name_zh": "工艺数据库",
+          "page_id": "PAGE-APP-PROCESS-DB"
+        },
+        {
+          "icon": "wrench",
+          "id": "NAV.LEAF.EQUIPMENT-DB",
+          "name_zh": "设备数据库",
+          "page_id": "PAGE-APP-EQUIPMENT-DB"
+        },
+        {
+          "icon": "boxes",
+          "id": "NAV.LEAF.SET-DB",
+          "name_zh": "SET 数据库",
+          "page_id": "PAGE-APP-SET-DB"
+        },
+        {
+          "icon": "archive",
+          "id": "NAV.LEAF.OTHER-DB",
+          "name_zh": "其他数据库",
+          "page_id": "PAGE-APP-OTHER-DB"
+        },
+        {
+          "icon": "git-branch",
+          "id": "NAV.LEAF.PART-STRUCTURE",
+          "name_zh": "零件结构主数据",
+          "page_id": "PAGE-APP-PART-STRUCTURE-DB"
+        },
+        {
+          "icon": "clipboard-list",
+          "id": "NAV.LEAF.TASK-MGMT",
+          "name_zh": "任务管理",
+          "page_id": "PAGE-APP-TASK-MGMT"
+        }
+      ],
+      "level": 1,
+      "name_zh": "基础信息管理",
+      "subgroups": []
+    },
+    {
+      "icon": "file-bar-chart",
+      "id": "NAV.GROUP.G5",
+      "leaves": [
+        {
+          "icon": "table-2",
+          "id": "NAV.LEAF.BRIDGE-TABLE",
+          "name_zh": "桥表",
+          "page_id": "PAGE-APP-BRIDGE-TABLE"
+        },
+        {
+          "icon": "trending-up",
+          "id": "NAV.LEAF.FORECAST",
+          "name_zh": "预算预测报表",
+          "page_id": "PAGE-APP-FORECAST-REPORT"
+        }
+      ],
+      "level": 1,
+      "name_zh": "报表管理",
+      "subgroups": []
+    },
+    {
+      "icon": "shield",
+      "id": "NAV.GROUP.G6",
+      "leaves": [
+        {
+          "icon": "users",
+          "id": "NAV.LEAF.USER-MGMT",
+          "name_zh": "用户管理",
+          "page_id": "PAGE-APP-USER-MGMT"
+        },
+        {
+          "icon": "shield-check",
+          "id": "NAV.LEAF.ROLE-MGMT",
+          "name_zh": "角色管理",
+          "page_id": "PAGE-APP-ROLE-MGMT"
+        },
+        {
+          "icon": "lock",
+          "id": "NAV.LEAF.DATA-PERM",
+          "name_zh": "数据权限管理",
+          "page_id": "PAGE-APP-DATA-PERMISSION"
+        },
+        {
+          "icon": "git-pull-request",
+          "id": "NAV.LEAF.APPROVAL",
+          "name_zh": "审批流管理",
+          "page_id": "PAGE-APP-APPROVAL-FLOW"
+        }
+      ],
+      "level": 1,
+      "name_zh": "系统管理",
+      "subgroups": []
+    }
+  ],
+  "ownership": {
+    "implementation_target": "src/app/nav/nav-config.ts（UI 阶段按此生成）",
+    "machine_source": "本文件是原型 3 级导航结构的事实源（项目级，非 BP 派生）",
+    "protocol": "universal:routing-url-protocol + universal:permission-protocol"
+  },
+  "prototype_ref": "MASTer-prototype-20260722.html NAV 常量（L152-183）+ renderNav（L187）",
+  "schema_version": 1,
+  "shell_overrides": {
+    "breadcrumb_height": "40px",
+    "note": "宽度照抄原型(280px)，底色走 token(浅白)。UI 阶段同步更新 application-shell-registry + fill_application_shell.py 源。",
+    "sidebar_background": "var(--mast-color-bg-sidebar)（保持浅白 token 基线，不照抄原型深色 #0F172A，spec 21 禁深色大面积底色）",
+    "sidebar_collapsed_width": "64px",
+    "sidebar_width": "280px（原型宽度，覆盖 application-shell-registry 的 220px）",
+    "topbar_height": "56px"
+  },
+  "source_directive": "用户指令：以原型 NAV 结构为事实源（2026-08-05）。原型为混合 2~3 级导航，本项目统一为 3 级（一级菜单组 -> 二级分组 -> 叶子页）。",
+  "summary": {
+    "drill_down_pages": 3,
+    "leaf_pages": 28,
+    "level1_groups": 7,
+    "level2_subgroups": 3
+  }
+}

@@ -1,0 +1,756 @@
+{
+  "blueprint_sha256": "09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+  "document_type": "issue-register",
+  "issues": [
+    {
+      "description": "未选车型 vs 已选车型但无数据是否两种 Empty？是否提供返回/刷新动作？（通用规则见 27-rendering-state-protocol（区分无数据/筛选无结果），页面专属待定）",
+      "id": "ISSUE.ALL-PARTS-LIST.EMPTY-TYPES",
+      "page_id": "PAGE-APP-ALL-PARTS-LIST",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "车型加载失败/零件加载失败/Carline 权重加载失败是否同一页面状态？失败是否保留旧数据？（通用规则见 16-error-handling-protocol（错误归一化+恢复动作），页面专属待定）",
+      "id": "ISSUE.ALL-PARTS-LIST.ERROR-STATES",
+      "page_id": "PAGE-APP-ALL-PARTS-LIST",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "导出勾选如何提交选中 ID（Query/Body）、GET 是否适合大量 ID、导出范围（全量/筛选/可见列）、大数据是否异步、错误码",
+      "id": "ISSUE.ALL-PARTS-LIST.EXPORT-CONTRACT",
+      "page_id": "PAGE-APP-ALL-PARTS-LIST",
+      "status": "UNRESOLVED",
+      "type": "DEPENDENCY"
+    },
+    {
+      "description": "导出：是否允许重复点击？是否显示导出中？下载失败如何恢复？未选择行时按钮禁用还是点击提示？",
+      "id": "ISSUE.ALL-PARTS-LIST.EXPORT-INTERACTION",
+      "page_id": "PAGE-APP-ALL-PARTS-LIST",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "Forbidden 采取哪种处理：隐藏菜单/路由拦截/页面内 403/统一无权限页？（通用规则见 16-error-handling-protocol（forbidden UI 状态），页面专属待定）",
+      "id": "ISSUE.ALL-PARTS-LIST.FORBIDDEN-HANDLING",
+      "page_id": "PAGE-APP-ALL-PARTS-LIST",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "首次加载车型与零件是否分别展示 Loading？切换车型时是否保留旧表格？全屏 Loading 还是表格局部 Loading？（通用规则见 27-rendering-state-protocol（通用 Loading/Partial 规则），页面专属待定）",
+      "id": "ISSUE.ALL-PARTS-LIST.LOADING-STRATEGY",
+      "page_id": "PAGE-APP-ALL-PARTS-LIST",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "零件列表成功但 Carline 权重失败时，页面是否继续显示表格并把权重区域标记为失败？（通用规则见 27-rendering-state-protocol（Partial Success），页面专属待定）",
+      "id": "ISSUE.ALL-PARTS-LIST.PARTIAL-FAIL",
+      "page_id": "PAGE-APP-ALL-PARTS-LIST",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "未量化数据规模（min/avg/p95/max 行数、响应体积、默认可见列、虚拟行列、渲染预算、导出上限、降级阈值）",
+      "id": "ISSUE.ALL-PARTS-LIST.PERF-BUDGET",
+      "page_id": "PAGE-APP-ALL-PARTS-LIST",
+      "status": "UNRESOLVED",
+      "type": "P1"
+    },
+    {
+      "description": "刷新：刷新哪些接口？是否保留筛选/选择行？刷新失败是否保留旧数据？（通用规则见 15-request-api/16-error-handling-protocol，页面专属待定）",
+      "id": "ISSUE.ALL-PARTS-LIST.REFRESH-INTERACTION",
+      "page_id": "PAGE-APP-ALL-PARTS-LIST",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "是否需要标注零件来源（标准件/IST/SOLL）的视觉区分",
+      "id": "ISSUE.ALL-PARTS-LIST.SOURCE-VISUAL",
+      "page_id": "PAGE-APP-ALL-PARTS-LIST",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "合计字段待确认（价格类？条线计数？），暂不实现",
+      "id": "ISSUE.ALL-PARTS-LIST.TOTAL-FIELDS",
+      "page_id": "PAGE-APP-ALL-PARTS-LIST",
+      "status": "WONT_FIX",
+      "type": "QUESTION"
+    },
+    {
+      "description": "车型切换：立即请求还是防抖？是否取消上一次请求？快速切换如何防旧响应覆盖？是否重置行勾选/筛选？是否保留列配置？（通用规则见 15-request-api-protocol（可取消+丢弃过期响应），页面专属待定）",
+      "id": "ISSUE.ALL-PARTS-LIST.VEHICLE-SWITCH-INTERACTION",
+      "page_id": "PAGE-APP-ALL-PARTS-LIST",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "carline 权重未来是否参与成本分摊计算",
+      "id": "ISSUE.ALL-PARTS-LIST.WEIGHT-IN-CALC",
+      "page_id": "PAGE-APP-ALL-PARTS-LIST",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "no-matching-openapi-operation",
+      "id": "ISSUE.PAGE-APP-APPROVAL-FLOW.1",
+      "page_id": "PAGE-APP-APPROVAL-FLOW",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "spec 为 skeleton：字段列表/页面布局/业务规则/操作说明均待补充（13处待确认）",
+      "id": "ISSUE.PAGE-APP-APPROVAL-FLOW.2",
+      "page_id": "PAGE-APP-APPROVAL-FLOW",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "可视化流程设计器(4节点)组件未在 component-selection-register 注册，CONTENT 暂以 PATTERN.LIST_TABLE 占位",
+      "id": "ISSUE.PAGE-APP-APPROVAL-FLOW.3",
+      "page_id": "PAGE-APP-APPROVAL-FLOW",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "桥表专用 API 在 openapi.yaml 中未定义，API_REQ.BRIDGE.TABLE.3 登记为 NEEDS_BACKEND_REVIEW",
+      "id": "ISSUE.PAGE-APP-BRIDGE-TABLE.1",
+      "page_id": "PAGE-APP-BRIDGE-TABLE",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "表格字段列表待补充（原型标注'占位，字段待补'）",
+      "id": "ISSUE.PAGE-APP-BRIDGE-TABLE.2",
+      "page_id": "PAGE-APP-BRIDGE-TABLE",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "桥表与跨项目台账的字段映射关系待确认",
+      "id": "ISSUE.PAGE-APP-BRIDGE-TABLE.3",
+      "page_id": "PAGE-APP-BRIDGE-TABLE",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "BUC 分析专用 API 在 openapi.yaml 中未定义，API_REQ.BUC.DETAIL.4 登记为 NEEDS_BACKEND_REVIEW",
+      "id": "ISSUE.PAGE-APP-BUC-DETAIL.1",
+      "page_id": "PAGE-APP-BUC-DETAIL",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "描述列表字段（约 20 个）待从原型提取并确认",
+      "id": "ISSUE.PAGE-APP-BUC-DETAIL.2",
+      "page_id": "PAGE-APP-BUC-DETAIL",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "3 个 Tab 的具体字段与计算公式（CALC-BUC-13~30）待补充",
+      "id": "ISSUE.PAGE-APP-BUC-DETAIL.3",
+      "page_id": "PAGE-APP-BUC-DETAIL",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "7 个 KPI 统计卡（CALC-BUC-6~12）的数据源与计算规则待确认",
+      "id": "ISSUE.PAGE-APP-BUC-DETAIL.4",
+      "page_id": "PAGE-APP-BUC-DETAIL",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "8 列具体字段列表待补充(spec §3 待补充；列数 8 依据任务简报)",
+      "id": "ISSUE.PAGE-APP-CSC-PRICE.1",
+      "page_id": "PAGE-APP-CSC-PRICE",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "页面布局待补充(spec §4 待补充)",
+      "id": "ISSUE.PAGE-APP-CSC-PRICE.2",
+      "page_id": "PAGE-APP-CSC-PRICE",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "业务规则待补充(spec §5 待补充)",
+      "id": "ISSUE.PAGE-APP-CSC-PRICE.3",
+      "page_id": "PAGE-APP-CSC-PRICE",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "上游/下游依赖待确认(spec §2 待确认)",
+      "id": "ISSUE.PAGE-APP-CSC-PRICE.4",
+      "page_id": "PAGE-APP-CSC-PRICE",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "配附件/材料/定点 3 类价格的字段差异待确认",
+      "id": "ISSUE.PAGE-APP-CSC-PRICE.5",
+      "page_id": "PAGE-APP-CSC-PRICE",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "4 个 KPI 卡的具体指标与数据源待确认（目前复用 me/projects/operation-logs）",
+      "id": "ISSUE.PAGE-APP-DASHBOARD.1",
+      "page_id": "PAGE-APP-DASHBOARD",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "待办列表的数据源与筛选规则待确认",
+      "id": "ISSUE.PAGE-APP-DASHBOARD.2",
+      "page_id": "PAGE-APP-DASHBOARD",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "DATA.DASHBOARD_GRID 组件未在 component-registry 注册，需走 Component Gap 或改用 PATTERN.LIST_TABLE 占位",
+      "id": "ISSUE.PAGE-APP-DASHBOARD.3",
+      "page_id": "PAGE-APP-DASHBOARD",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "dictionaries-item-schema-mismatch: DictionaryItem 扁平本地化标签无法承载设备基础(10)+投资参数(11)+运营参数(12)+设备属性(7)+计算结果(13)+MHR；list/delete items 端点路径匹配但 item schema 结构性不足，新增/编辑(add_item/update_item)在明细页 PAGE-APP-EQUIPMENT-DETAIL 调用，需后端扩展富设备实体",
+      "id": "ISSUE.PAGE-APP-EQUIPMENT-DB.1",
+      "page_id": "PAGE-APP-EQUIPMENT-DB",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "mhr-column-blocked-by-schema: 汇总表设备小时费率(MHR)列为客户端基于明细投资/运营参数实时计算，但 DictionaryItem 无参数字段无法存储/重算，受 schema-mismatch 阻塞",
+      "id": "ISSUE.PAGE-APP-EQUIPMENT-DB.2",
+      "page_id": "PAGE-APP-EQUIPMENT-DB",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "no-get-item-by-id: 明细页加载单条设备无 GET /api/v1/dictionaries/{code}/items/{item_id} 端点，需经 list_items 过滤或路由 state 传递行数据",
+      "id": "ISSUE.PAGE-APP-EQUIPMENT-DB.3",
+      "page_id": "PAGE-APP-EQUIPMENT-DB",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "no-matching-openapi-operation: equipment-import（dictionaries 无导入端点）；ACT-EDB-IMPORT-EQUIPMENT 标 mock:true",
+      "id": "ISSUE.PAGE-APP-EQUIPMENT-DB.4",
+      "page_id": "PAGE-APP-EQUIPMENT-DB",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "no-matching-openapi-operation: equipment-export（dictionaries 无导出端点）；ACT-EDB-EXPORT-EQUIPMENT 标 mock:true",
+      "id": "ISSUE.PAGE-APP-EQUIPMENT-DB.5",
+      "page_id": "PAGE-APP-EQUIPMENT-DB",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "batch-delete-precheck: 批量删除扩 ACTION.DELETE（复选框+全选，2026-08-17 裁定①）：事务性预检=任一 BUC referenced 即整批阻止并列出名单，通过后循环单删（无批量端点不臆造）；mock fixture 需补 referenced 样本支撑单删/批删引用阻止演示与 vitest（API_REQ.DB.BATCH.DELETE.PRECHECK 已登记 NEEDS_BACKEND_REVIEW）",
+      "id": "ISSUE.PAGE-APP-EQUIPMENT-DB.6",
+      "page_id": "PAGE-APP-EQUIPMENT-DB",
+      "status": "UNRESOLVED",
+      "type": "DEPENDENCY"
+    },
+    {
+      "description": "equipment-referenced-mock-gap: 设备 mock fixture 缺 referenced 字段样本，需补齐以支撑单删/批删 BUC 引用硬阻止的演示与测试（配合 ISSUE.PAGE-APP-EQUIPMENT-DB.6）",
+      "id": "ISSUE.PAGE-APP-EQUIPMENT-DB.7",
+      "page_id": "PAGE-APP-EQUIPMENT-DB",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "dictionaries-item-schema-mismatch: 设备明细约 30 输入字段(投资 11 + 运营 12 + 属性 7) + 计算结果 13 + MHR 无法存入扁平 DictionaryItem(label_zh/en/de + numeric_value + sort_order + parent_id)；保存(add_item/update_item)仅能落 label，富参数需后端扩展设备实体或 item 扩展 schema",
+      "id": "ISSUE.PAGE-APP-EQUIPMENT-DETAIL.1",
+      "page_id": "PAGE-APP-EQUIPMENT-DETAIL",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "no-get-item-by-id: 明细页加载单条设备无 GET /api/v1/dictionaries/{code}/items/{item_id} 端点，需经 list_items 过滤或由汇总表路由 state 传递行数据",
+      "id": "ISSUE.PAGE-APP-EQUIPMENT-DETAIL.2",
+      "page_id": "PAGE-APP-EQUIPMENT-DETAIL",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "formula-code-mapping: list_formulas 返回 FormulaResponse(expression/inputs/params)，前端据其求值 CALC-EQUIP-43~57 + MHR；但 formula code/object_type 与 CALC-EQUIP-43~57 的具体映射、是否按 object_type=equipment 过滤待后端确认",
+      "id": "ISSUE.PAGE-APP-EQUIPMENT-DETAIL.3",
+      "page_id": "PAGE-APP-EQUIPMENT-DETAIL",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "no-matching-openapi-operation: equipment-export（dictionaries/formulas 均无导出端点）；ACT-EQD-EXPORT-EQUIPMENT 标 mock:true",
+      "id": "ISSUE.PAGE-APP-EQUIPMENT-DETAIL.4",
+      "page_id": "PAGE-APP-EQUIPMENT-DETAIL",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "mhr-trial-modal-out-of-scope: BUC Tab2 触发的 MHR 试算弹窗(spec §4.3/§5.4)属 BUC 页面交互，不在本页实现；本页仅维护设备明细与内嵌计算结果卡",
+      "id": "ISSUE.PAGE-APP-EQUIPMENT-DETAIL.5",
+      "page_id": "PAGE-APP-EQUIPMENT-DETAIL",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "评估表单字段列表待补充(spec §3 待补充)",
+      "id": "ISSUE.PAGE-APP-EVALUATION.1",
+      "page_id": "PAGE-APP-EVALUATION",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "页面布局待补充(spec §4 待补充)",
+      "id": "ISSUE.PAGE-APP-EVALUATION.2",
+      "page_id": "PAGE-APP-EVALUATION",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "审批流节点配置/3 节点可视化专用组件待确认(spec §5/§7 待确认)",
+      "id": "ISSUE.PAGE-APP-EVALUATION.3",
+      "page_id": "PAGE-APP-EVALUATION",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "成本变更分类待确认(spec §7)",
+      "id": "ISSUE.PAGE-APP-EVALUATION.4",
+      "page_id": "PAGE-APP-EVALUATION",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "no-matching-openapi-operation: 评估提交/审批流(approval-flow)在 openapi 中无对应 operation；评估通过自动改 BOM 为后端审批流回调，前端无直接调用",
+      "id": "ISSUE.PAGE-APP-EVALUATION.5",
+      "page_id": "PAGE-APP-EVALUATION",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "与 AKT 评估的协同流程待确认",
+      "id": "ISSUE.PAGE-APP-EVALUATION.6",
+      "page_id": "PAGE-APP-EVALUATION",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "预算预测报表专用 API 在 openapi.yaml 中未定义，API_REQ.FORECAST.REPORT.4 登记为 NEEDS_BACKEND_REVIEW",
+      "id": "ISSUE.PAGE-APP-FORECAST-REPORT.1",
+      "page_id": "PAGE-APP-FORECAST-REPORT",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "VSI/Target 双值对比的字段与公式待补充（原型标注'公式待补'）",
+      "id": "ISSUE.PAGE-APP-FORECAST-REPORT.2",
+      "page_id": "PAGE-APP-FORECAST-REPORT",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "报表字段列表待确认",
+      "id": "ISSUE.PAGE-APP-FORECAST-REPORT.3",
+      "page_id": "PAGE-APP-FORECAST-REPORT",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "dictionaries-item-schema-mismatch: openapi DictionaryItem 为扁平本地化标签(label_zh/en/de + numeric_value + sort_order + parent_id)，无法承载材料基础(牌号/标准/工艺/描述/附件)+塑料属性(密度等 8 字段)+价格(1:N 多供应商)；list/add/update/delete items 端点路径匹配但 item schema 结构性不足，需后端扩展富材料实体或 item 扩展字段",
+      "id": "ISSUE.PAGE-APP-MATERIAL-DB.1",
+      "page_id": "PAGE-APP-MATERIAL-DB",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "slide-panel-blocked-by-schema: 明细侧滑面板 3 折叠节(基础/属性/价格)依赖上述富字段，受 dictionaries-item-schema-mismatch 阻塞，待后端 schema 落地",
+      "id": "ISSUE.PAGE-APP-MATERIAL-DB.2",
+      "page_id": "PAGE-APP-MATERIAL-DB",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "no-matching-openapi-operation: material-import（dictionaries 无导入端点，spec §6.1 仅确认 .xlsx 格式，字段映射规则待确认）；ACT-MDB-IMPORT-MATERIALS 标 mock:true",
+      "id": "ISSUE.PAGE-APP-MATERIAL-DB.3",
+      "page_id": "PAGE-APP-MATERIAL-DB",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "no-matching-openapi-operation: material-export（dictionaries 无导出端点）；ACT-MDB-EXPORT-MATERIALS 标 mock:true",
+      "id": "ISSUE.PAGE-APP-MATERIAL-DB.4",
+      "page_id": "PAGE-APP-MATERIAL-DB",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "buc-material-selection-dual-mode: BUC 分析中材料选择(库内下拉带入 / 库外手填橙色高亮)属 BUC 页面交互(spec §5.6)，本页仅维护数据源，不在本页实现",
+      "id": "ISSUE.PAGE-APP-MATERIAL-DB.5",
+      "page_id": "PAGE-APP-MATERIAL-DB",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "batch-delete-hint-level: 批量删除扩 ACTION.DELETE（复选框+全选，2026-08-17 裁定①）：提示级——确认文案含 BUC 引用提示、无预检，真实引用校验 NEEDS_BACKEND_REVIEW（材料页不做前端硬阻止）",
+      "id": "ISSUE.PAGE-APP-MATERIAL-DB.6",
+      "page_id": "PAGE-APP-MATERIAL-DB",
+      "status": "UNRESOLVED",
+      "type": "DEPENDENCY"
+    },
+    {
+      "description": "其他逻辑分析的专用 API 在 openapi.yaml 中未定义，API_REQ.OTHER.COST.3 登记为 NEEDS_BACKEND_REVIEW",
+      "id": "ISSUE.PAGE-APP-OTHER-COST-ANALYSIS.1",
+      "page_id": "PAGE-APP-OTHER-COST-ANALYSIS",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "表格字段列表待补充（原型标注'占位，字段待补'）",
+      "id": "ISSUE.PAGE-APP-OTHER-COST-ANALYSIS.2",
+      "page_id": "PAGE-APP-OTHER-COST-ANALYSIS",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "成本类别枚举值与 master-data 字典 code 的映射待确认",
+      "id": "ISSUE.PAGE-APP-OTHER-COST-ANALYSIS.3",
+      "page_id": "PAGE-APP-OTHER-COST-ANALYSIS",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "import-action: no-matching-openapi-operation（dictionaries API 无批量导入端点；spec §7 导入字段映射规则待确认）",
+      "id": "ISSUE.PAGE-APP-OTHER-DB.1",
+      "page_id": "PAGE-APP-OTHER-DB",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "export-action: no-matching-openapi-operation（dictionaries API 无 CSV 导出端点；spec 要求人工费率全量 CSV 导出）",
+      "id": "ISSUE.PAGE-APP-OTHER-DB.2",
+      "page_id": "PAGE-APP-OTHER-DB",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "tab1-overhead-rate-mapping: 间接费率 默认费率值(decimal，如 0.05) 与 dict-item(code/label) 字段映射未确认（dict-item 无数值字段，可能需编码进 label 或扩展）",
+      "id": "ISSUE.PAGE-APP-OTHER-DB.3",
+      "page_id": "PAGE-APP-OTHER-DB",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "tab2-labor-rate-dictionary-code: 人工费率表(工种/工厂城市/小时费率/备注) 结构不符 dict-item(code/label) 模型；专属 dictionary code 未在 openapi 定义，后端实体形态待确认",
+      "id": "ISSUE.PAGE-APP-OTHER-DB.4",
+      "page_id": "PAGE-APP-OTHER-DB",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "spec-§7-工种和工厂城市是否支持自定义自由输入 vs 预设列表 待确认",
+      "id": "ISSUE.PAGE-APP-OTHER-DB.5",
+      "page_id": "PAGE-APP-OTHER-DB",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "spec-§7-间接费率是否需要按项目/工厂维度差异化配置 待确认",
+      "id": "ISSUE.PAGE-APP-OTHER-DB.6",
+      "page_id": "PAGE-APP-OTHER-DB",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "spec-§7-人工费率是否需要有效期管理(按年度调整) 待确认",
+      "id": "ISSUE.PAGE-APP-OTHER-DB.7",
+      "page_id": "PAGE-APP-OTHER-DB",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "零件信息描述列表的具体字段（原型约 20 字段）待确认",
+      "id": "ISSUE.PAGE-APP-PART-INFO.1",
+      "page_id": "PAGE-APP-PART-INFO",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "CONTENT 区域展示内容待确认（仅基础信息/是否包含历史版本）",
+      "id": "ISSUE.PAGE-APP-PART-INFO.2",
+      "page_id": "PAGE-APP-PART-INFO",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "import-action: no-matching-openapi-operation（dictionaries API 无批量导入端点；spec §7 导入字段映射规则待确认，已确认 Excel 格式）",
+      "id": "ISSUE.PAGE-APP-PART-STRUCTURE-DB.1",
+      "page_id": "PAGE-APP-PART-STRUCTURE-DB",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "export-action: no-matching-openapi-operation（dictionaries API 无 xlsx 导出端点；spec 5.9 要求全量导出 .xlsx）",
+      "id": "ISSUE.PAGE-APP-PART-STRUCTURE-DB.2",
+      "page_id": "PAGE-APP-PART-STRUCTURE-DB",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "hierarchy-mapping: 5 级层级(L1~L5) 与 dict-item parent_id 单父链映射未确认（5 级需 parent_id 链式表达）",
+      "id": "ISSUE.PAGE-APP-PART-STRUCTURE-DB.3",
+      "page_id": "PAGE-APP-PART-STRUCTURE-DB",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "tree-view-data-source: 树形视图数据源未确认（服务端返回树结构 vs 客户端由 flat items 构建；虚拟滚动大数据量策略待定）",
+      "id": "ISSUE.PAGE-APP-PART-STRUCTURE-DB.4",
+      "page_id": "PAGE-APP-PART-STRUCTURE-DB",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "spec-§7-停用状态的结构记录是否在 BUC 分析 ZSB 选择中排除 待确认",
+      "id": "ISSUE.PAGE-APP-PART-STRUCTURE-DB.5",
+      "page_id": "PAGE-APP-PART-STRUCTURE-DB",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "spec-§7-与零件清单台账零件结构字段同步机制 待确认",
+      "id": "ISSUE.PAGE-APP-PART-STRUCTURE-DB.6",
+      "page_id": "PAGE-APP-PART-STRUCTURE-DB",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "dictionaries-item-schema-mismatch: DictionaryItem 扁平本地化标签(label_zh/en/de + numeric_value + sort_order + parent_id) 无原生字段承载 工艺描述(文本)；工艺类别->label_zh 映射可行、状态->is_active(delete_item=停用)可行，但 工艺描述 字段无家，需后端确认是否扩展 item schema 或改用富实体",
+      "id": "ISSUE.PAGE-APP-PROCESS-DB.1",
+      "page_id": "PAGE-APP-PROCESS-DB",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "no-matching-openapi-operation: process-import（dictionaries 无导入端点，spec §6 仅确认 .xlsx 格式，字段映射规则待确认）；ACT-PDB-IMPORT-PROCESSES 标 mock:true",
+      "id": "ISSUE.PAGE-APP-PROCESS-DB.2",
+      "page_id": "PAGE-APP-PROCESS-DB",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "no-matching-openapi-operation: process-export（dictionaries 无导出端点，spec §6 称导出 CSV）；ACT-PDB-EXPORT-PROCESSES 标 mock:true",
+      "id": "ISSUE.PAGE-APP-PROCESS-DB.3",
+      "page_id": "PAGE-APP-PROCESS-DB",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "spec-duplication: spec 04-process-db 文件含两段 Requirement（上段详、下段 skeleton 待补充），本蓝图据详段落定；skeleton 段所列待确认问题(层级分类/标准成本参数模板)未纳入",
+      "id": "ISSUE.PAGE-APP-PROCESS-DB.4",
+      "page_id": "PAGE-APP-PROCESS-DB",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "batch-delete-referenced-block: 批量删除扩 ACTION.DELETE（复选框+全选，2026-08-17 裁定①）：已被 BUC 分析或设备数据库引用的工艺整批硬阻止；删除提示文案补 BUC/设备引用句",
+      "id": "ISSUE.PAGE-APP-PROCESS-DB.5",
+      "page_id": "PAGE-APP-PROCESS-DB",
+      "status": "UNRESOLVED",
+      "type": "DEPENDENCY"
+    },
+    {
+      "description": "import-action: no-matching-openapi-operation（dictionaries API 无批量导入端点；spec §7 导入字段映射规则待确认）",
+      "id": "ISSUE.PAGE-APP-SET-DB.1",
+      "page_id": "PAGE-APP-SET-DB",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "export-action: no-matching-openapi-operation（dictionaries API 无 CSV 导出端点；spec 5.9 要求全量 CSV 导出，文件名 SET数据库.csv）",
+      "id": "ISSUE.PAGE-APP-SET-DB.2",
+      "page_id": "PAGE-APP-SET-DB",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "set-db-field-mapping: SET 4 数据字段(setCode/setName/kzCode/kzName)+status 与 dict-item(code/label_de/parent_id/active) 的精确映射未确认（SET=parent item / Set-Kz.=child item via parent_id 为推测，前缀校验为前端业务规则）",
+      "id": "ISSUE.PAGE-APP-SET-DB.3",
+      "page_id": "PAGE-APP-SET-DB",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "spec-§7-停用状态的 SET 记录是否在 BUC 分析下拉选项中排除 待确认",
+      "id": "ISSUE.PAGE-APP-SET-DB.4",
+      "page_id": "PAGE-APP-SET-DB",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "spec-§7-SET 名称是否需要支持多语言 待确认（openapi dict-item 已提供 label_zh/en/de）",
+      "id": "ISSUE.PAGE-APP-SET-DB.5",
+      "page_id": "PAGE-APP-SET-DB",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "spec-§7-与零件清单台账 SET/Set-Kz. 字段的同步机制 待确认",
+      "id": "ISSUE.PAGE-APP-SET-DB.6",
+      "page_id": "PAGE-APP-SET-DB",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "spec-skeleton: spec 04-task-mgmt §3 字段列表 / §4 页面布局 / §5 业务规则 / §6 操作说明 均为待补充",
+      "id": "ISSUE.PAGE-APP-TASK-MGMT.1",
+      "page_id": "PAGE-APP-TASK-MGMT",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "task-crud-no-matching-openapi-operation: 任务 create/edit/delete/状态流转 无匹配 openapi 操作（openapi 无 task 实体；ACT-TASK-MGMT-CREATE 暂无后端操作）",
+      "id": "ISSUE.PAGE-APP-TASK-MGMT.2",
+      "page_id": "PAGE-APP-TASK-MGMT",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "task-semantic-mapping: 任务 <-> 项目(projects) <-> 操作日志(operation-logs) 语义对应关系未确认；列表主数据源待定",
+      "id": "ISSUE.PAGE-APP-TASK-MGMT.3",
+      "page_id": "PAGE-APP-TASK-MGMT",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "6-columns-definition: 6 列具体字段定义待确认（scenarios 暗示标题/描述/负责人/状态/优先级等）",
+      "id": "ISSUE.PAGE-APP-TASK-MGMT.4",
+      "page_id": "PAGE-APP-TASK-MGMT",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "task-status-machine: 任务状态机(待开始->...->已完成，不可跳过必经状态)定义待确认",
+      "id": "ISSUE.PAGE-APP-TASK-MGMT.5",
+      "page_id": "PAGE-APP-TASK-MGMT",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "task-project-lifecycle: 任务与项目生命周期的关联关系待确认",
+      "id": "ISSUE.PAGE-APP-TASK-MGMT.6",
+      "page_id": "PAGE-APP-TASK-MGMT",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "7 列具体字段列表待补充(spec §3 待补充；列数 7 依据任务简报)",
+      "id": "ISSUE.PAGE-APP-TECHNICAL-AKT.1",
+      "page_id": "PAGE-APP-TECHNICAL-AKT",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "页面布局待补充(spec §4 待补充)",
+      "id": "ISSUE.PAGE-APP-TECHNICAL-AKT.2",
+      "page_id": "PAGE-APP-TECHNICAL-AKT",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "审批流节点配置待确认(spec §5/§7 待确认)",
+      "id": "ISSUE.PAGE-APP-TECHNICAL-AKT.3",
+      "page_id": "PAGE-APP-TECHNICAL-AKT",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "技术变更分类待确认(spec §7)",
+      "id": "ISSUE.PAGE-APP-TECHNICAL-AKT.4",
+      "page_id": "PAGE-APP-TECHNICAL-AKT",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "no-matching-openapi-operation: AKT 提交/审批流(approval-flow)在 openapi 中无对应 operation；评估通过自动改 BOM 为后端审批流回调，前端无直接调用",
+      "id": "ISSUE.PAGE-APP-TECHNICAL-AKT.5",
+      "page_id": "PAGE-APP-TECHNICAL-AKT",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "与 BC/PKO/AEKO 评估的协同流程待确认",
+      "id": "ISSUE.PAGE-APP-TECHNICAL-AKT.6",
+      "page_id": "PAGE-APP-TECHNICAL-AKT",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "frozen-version-region-deferred: spec 04-vehicle-master-data §4.3 区域三(冻结版本)标记后续实现，本轮仅预留；template PAGE.MASTER_DETAIL 仅含 MASTER+DETAIL 两内容区，冻结版本未纳入区域；no-matching-openapi-operation: carline frozen-versions/snapshots 端点在 openapi 中不存在",
+      "id": "ISSUE.PAGE-APP-VEHICLE-MASTER-DATA.1",
+      "page_id": "PAGE-APP-VEHICLE-MASTER-DATA",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "no-matching-openapi-operation: project-export（车型导出无对应端点；spec §6.7 导出格式待确认）；ACT-VMD-EXPORT-PROJECTS 标 mock:true",
+      "id": "ISSUE.PAGE-APP-VEHICLE-MASTER-DATA.2",
+      "page_id": "PAGE-APP-VEHICLE-MASTER-DATA",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "vehicle-list-9cols-curation: 车型列表 9 列为前端对 spec §3.1 二十字段中七项必填字段(1-7)+# +操作 的裁剪，完整 20 字段在新增/编辑弹窗维护；9 列最终集以原型为准",
+      "id": "ISSUE.PAGE-APP-VEHICLE-MASTER-DATA.3",
+      "page_id": "PAGE-APP-VEHICLE-MASTER-DATA",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "delete-cascade-semantics: 删除车型映射为 archive_project(逻辑归档)，spec §5.6 级联删除 carline+冻结版本 的级联语义由后端实现，前端不臆造",
+      "id": "ISSUE.PAGE-APP-VEHICLE-MASTER-DATA.4",
+      "page_id": "PAGE-APP-VEHICLE-MASTER-DATA",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "frozen-region-landing: 区域三（REGION.FROZEN 冻结版本列表）已按 20260814 原型补登进蓝图（2026-08-17 批次0），批次1 随三卡片纵向布局（40%/30%/flex-1）落地（倒序/空态/在线预览跳台账带 snapshot 参数/导出 CSV）；实现验收通过后关闭 ISSUE.PAGE-APP-VEHICLE-MASTER-DATA.1 的 frozen-version-region-deferred 部分（no-matching-openapi 部分保留待后端）",
+      "id": "ISSUE.PAGE-APP-VEHICLE-MASTER-DATA.5",
+      "page_id": "PAGE-APP-VEHICLE-MASTER-DATA",
+      "status": "UNRESOLVED",
+      "type": "DEPENDENCY"
+    },
+    {
+      "description": "bp-blocked-no-shell-page",
+      "id": "ISSUE.PAGE-TASK-STEP-MAINTAIN-BASE-ATTRIBUTES.1",
+      "page_id": "PAGE-TASK-STEP-MAINTAIN-BASE-ATTRIBUTES",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "bp-blocked-no-shell-page",
+      "id": "ISSUE.PAGE-TASK-STEP-OUTPUT-TO-LEDGER.1",
+      "page_id": "PAGE-TASK-STEP-OUTPUT-TO-LEDGER",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    {
+      "description": "bp-blocked-no-shell-page",
+      "id": "ISSUE.PAGE-TASK-STEP-TRACK-COST-BY-SNAPSHOT.1",
+      "page_id": "PAGE-TASK-STEP-TRACK-COST-BY-SNAPSHOT",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    }
+  ],
+  "schema_version": 1
+}

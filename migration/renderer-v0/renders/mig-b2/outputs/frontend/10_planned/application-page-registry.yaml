@@ -1,0 +1,465 @@
+{
+  "authority": "project-level-application-surface",
+  "blueprint_sha256": "09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+  "description": "原型 32 个页面函数的全量注册表。15 个 task-step 页已在 screen-blueprints/（BP 派生）；17 个非任务页为本注册表登记的应用页（项目级，非 BP），需后续补 screen-blueprint。3 个孤儿函数不建独立页。",
+  "document_type": "application-page-registry",
+  "layout_patterns": [
+    {
+      "id": "PATTERN.LAYOUT.FULL_LIST",
+      "name": "全屏列表页",
+      "prototype_pages": [
+        "pCalcParts",
+        "pLedger",
+        "pAllParts",
+        "pBUCList",
+        "pMaterialDB",
+        "pEquipmentDB",
+        "pProcessDB",
+        "pOtherDB",
+        "pSetDB",
+        "pTask",
+        "pUserMgmtNew",
+        "pPermMgmtNew",
+        "pCSC",
+        "pTechChange"
+      ],
+      "usage": "约15页：标题栏+筛选栏+操作栏+冻结列表格+分页底栏"
+    },
+    {
+      "id": "PATTERN.LAYOUT.DESCRIPTION_DETAIL",
+      "name": "描述列表详情页",
+      "prototype_pages": [
+        "pPartInfo",
+        "pBUCDetail头部",
+        "pPaletteBackup描述条"
+      ],
+      "usage": "返回+标题+状态+描述列表(两栏grid)"
+    },
+    {
+      "id": "PATTERN.LAYOUT.MASTER_DETAIL",
+      "name": "主从联动页",
+      "prototype_pages": [
+        "pVehicleMasterData",
+        "pPaletteOverview->pPaletteBackup"
+      ],
+      "usage": "左列表选中高亮->右/下区联动"
+    },
+    {
+      "id": "PATTERN.LAYOUT.TAB_TABLE",
+      "name": "Tab+表格详情页",
+      "prototype_pages": [
+        "pBUCDetail",
+        "pOtherDB",
+        "pMaterialDB(Tab分类)",
+        "pPartStructure(flat/tree)"
+      ],
+      "usage": "描述列表+统计卡+Tab切换表"
+    },
+    {
+      "id": "PATTERN.LAYOUT.RIGHT_DRAWER",
+      "name": "右抽屉详情面板",
+      "prototype_pages": [
+        "pMaterialDB openMatPanel"
+      ],
+      "usage": "slide-panel+折叠节"
+    },
+    {
+      "id": "PATTERN.LAYOUT.CALCULATOR",
+      "name": "计算器页",
+      "prototype_pages": [
+        "pEquipmentDetail",
+        "pMHRDetail",
+        "showMHRModal"
+      ],
+      "usage": "左输入字段组(折叠节)+右实时计算结果表+渐变结果大卡"
+    }
+  ],
+  "orphan_prototype_functions": [
+    {
+      "disposition": "不建独立页",
+      "fn": "pMHRList",
+      "reason": "MHR 通过 BUC 内弹窗 showMHRModal 触发，非独立导航页"
+    },
+    {
+      "disposition": "不建独立页",
+      "fn": "pMHRDetail",
+      "reason": "同上，走 BUC 弹窗"
+    },
+    {
+      "disposition": "不建独立页",
+      "fn": "pDB",
+      "reason": "早期通用 DB 模板，已被 pMaterialDB 等取代"
+    }
+  ],
+  "ownership": {
+    "implementation_target": "src/pages/（Phase D/E 按 batch 实现）",
+    "machine_source": "本文件是原型 32 页全量注册表（项目级应用面，非 BP 派生）",
+    "protocol": "universal:page-structure-protocol + universal:module-boundary-protocol"
+  },
+  "pages": [
+    {
+      "columns": 36,
+      "id": "PAGE-APP-ALL-PARTS-LIST",
+      "layout": "PATTERN.LAYOUT.FULL_LIST",
+      "name": "全系零件清单",
+      "nav_group": "g1/全系零件清单管理",
+      "note": "只读；冻结左+右；L1/L2/L3 列标题带权重%；Line_Assignment T/F 转换",
+      "prototype_fn": "pAllParts",
+      "status": "new-application",
+      "template": "PAGE.LIST"
+    },
+    {
+      "id": "PAGE-APP-APPROVAL-FLOW",
+      "layout": "PATTERN.LAYOUT.TAB_TABLE",
+      "name": "审批流管理",
+      "nav_group": "g6/系统管理",
+      "note": "可视化流程设计器(4节点)；支撑 BC/AEKO/PKO/AKT 评估审批",
+      "prototype_fn": "pApproval",
+      "status": "new-application",
+      "template": "PAGE.DETAIL"
+    },
+    {
+      "id": "PAGE-APP-BRIDGE-TABLE",
+      "layout": "PATTERN.LAYOUT.FULL_LIST",
+      "name": "桥表",
+      "nav_group": "g5/报表管理",
+      "note": "占位，字段待补",
+      "prototype_fn": "pReport('桥表')",
+      "status": "new-application",
+      "template": "PAGE.LIST"
+    },
+    {
+      "id": "PAGE-APP-BUC-DETAIL",
+      "layout": "PATTERN.LAYOUT.TAB_TABLE",
+      "name": "BUC 详情",
+      "nav_group": "g3/下钻",
+      "note": "描述列表+7统计卡(KPI CALC-BUC-6~12)+3Tab(材料/制造/费用分摊)；Tab1 CALC-BUC-13~20，Tab2 CALC-BUC-21~29，Tab3 CALC-BUC-30",
+      "prototype_fn": "pBUCDetail",
+      "status": "new-application",
+      "template": "PAGE.DETAIL"
+    },
+    {
+      "columns": 8,
+      "id": "PAGE-APP-CSC-PRICE",
+      "layout": "PATTERN.LAYOUT.FULL_LIST",
+      "name": "CSC 价格(配附件/材料/定点)",
+      "nav_group": "g1/CSC 管理",
+      "note": "3类价格共用蓝图；字段待补",
+      "prototype_fn": "pCSC(name)",
+      "status": "new-application",
+      "template": "PAGE.LIST"
+    },
+    {
+      "columns": null,
+      "id": "PAGE-APP-DASHBOARD",
+      "layout": "PATTERN.LAYOUT.FULL_LIST",
+      "name": "工作台",
+      "nav_group": "工作台",
+      "note": "4 KPI 卡 + 待办列表 + 侧边卡",
+      "prototype_fn": "pDashboard",
+      "status": "new-application",
+      "template": "PAGE.DASHBOARD"
+    },
+    {
+      "columns": 6,
+      "id": "PAGE-APP-DATA-PERMISSION",
+      "layout": "PATTERN.LAYOUT.FULL_LIST",
+      "name": "数据权限管理",
+      "nav_group": "g6/系统管理",
+      "note": "SET维度(全局)+车型维度；弹窗编辑",
+      "prototype_fn": "pPermMgmtNew",
+      "status": "new-application",
+      "template": "PAGE.LIST"
+    },
+    {
+      "columns": 7,
+      "id": "PAGE-APP-EQUIPMENT-DB",
+      "layout": "PATTERN.LAYOUT.FULL_LIST",
+      "name": "设备数据库",
+      "nav_group": "g4/基础信息管理",
+      "note": "单表平铺；行点进 equipment-detail 独立页",
+      "prototype_fn": "pEquipmentDB",
+      "status": "new-application",
+      "template": "PAGE.LIST"
+    },
+    {
+      "id": "PAGE-APP-EQUIPMENT-DETAIL",
+      "layout": "PATTERN.LAYOUT.CALCULATOR",
+      "name": "设备详情(MHR计算)",
+      "nav_group": "g4/下钻",
+      "note": "返回+保存+折叠节(基础/投资/运营)+计算结果卡实时重算 CALC-EQUIP-43~57 + MHR；技术参数节~30输入字段",
+      "prototype_fn": "pEquipmentDetail",
+      "status": "new-application",
+      "template": "PAGE.DETAIL"
+    },
+    {
+      "id": "PAGE-APP-EQUIPMENT-PALETTE",
+      "layout": "PATTERN.LAYOUT.MASTER_DETAIL",
+      "name": "装备 palette 管理",
+      "nav_group": "g1/全系零件清单管理",
+      "note": "Overview 15+列(L1/L2/L3 T/F打点) + Backup IST14列只读/SOLL34列可编辑；差异列 CALC-PALETTE-3/4/5",
+      "prototype_fn": "pPalette(overview+backup)",
+      "status": "new-application",
+      "template": "PAGE.MASTER_DETAIL"
+    },
+    {
+      "id": "PAGE-APP-EVALUATION",
+      "layout": "PATTERN.LAYOUT.FULL_LIST",
+      "name": "BC/AEKO/PKO 评估",
+      "nav_group": "g1/零件清单变更管理",
+      "note": "3个评估共用蓝图；筛选+列表+审批流可视化(3节点)；评估通过改BOM；公式待补",
+      "prototype_fn": "pEval(type)",
+      "status": "new-application",
+      "template": "PAGE.LIST"
+    },
+    {
+      "id": "PAGE-APP-FORECAST-REPORT",
+      "layout": "PATTERN.LAYOUT.FULL_LIST",
+      "name": "预算预测报表",
+      "nav_group": "g5/报表管理",
+      "note": "VSI/Target 双值对比；公式待补",
+      "prototype_fn": "pReport('预算预测报表')",
+      "status": "new-application",
+      "template": "PAGE.LIST"
+    },
+    {
+      "columns": 10,
+      "id": "PAGE-APP-MATERIAL-DB",
+      "layout": "PATTERN.LAYOUT.TAB_TABLE",
+      "name": "材料数据库",
+      "nav_group": "g4/基础信息管理",
+      "note": "Tab分类(塑料/金属/EPDM/PCB/金属加工费)；行点开右slide-panel(3折叠节:基础/属性/价格,多供应商)；BUC材料选择双模",
+      "prototype_fn": "pMaterialDB",
+      "status": "new-application",
+      "template": "PAGE.LIST"
+    },
+    {
+      "id": "PAGE-APP-OTHER-COST-ANALYSIS",
+      "layout": "PATTERN.LAYOUT.FULL_LIST",
+      "name": "其他逻辑分析",
+      "nav_group": "g3/零件成本分析管理",
+      "note": "占位，字段待补",
+      "prototype_fn": "pCostA",
+      "status": "new-application",
+      "template": "PAGE.LIST"
+    },
+    {
+      "id": "PAGE-APP-OTHER-DB",
+      "layout": "PATTERN.LAYOUT.TAB_TABLE",
+      "name": "其他数据库",
+      "nav_group": "g4/基础信息管理",
+      "note": "双Tab(间接费率字典4预设/人工费率表)；为BUC提供费率默认值",
+      "prototype_fn": "pOtherDB",
+      "status": "new-application",
+      "template": "PAGE.LIST"
+    },
+    {
+      "id": "PAGE-APP-PART-INFO",
+      "layout": "PATTERN.LAYOUT.DESCRIPTION_DETAIL",
+      "name": "零件信息",
+      "nav_group": "g3/下钻",
+      "note": "BUC 列表点零件号进；描述列表~20字段",
+      "prototype_fn": "pPartInfo",
+      "status": "new-application",
+      "template": "PAGE.DETAIL"
+    },
+    {
+      "id": "PAGE-APP-PART-STRUCTURE-DB",
+      "layout": "PATTERN.LAYOUT.TAB_TABLE",
+      "name": "零件结构主数据",
+      "nav_group": "g4/基础信息管理",
+      "note": "flat/tree 两视图切换；flat 表格分页，tree 5级L1~L5缩进树；BUC ZSB结构数据源",
+      "prototype_fn": "pPartStructure(flat/tree)",
+      "status": "new-application",
+      "template": "PAGE.LIST"
+    },
+    {
+      "columns": 5,
+      "id": "PAGE-APP-PROCESS-DB",
+      "layout": "PATTERN.LAYOUT.FULL_LIST",
+      "name": "工艺数据库",
+      "nav_group": "g4/基础信息管理",
+      "note": "扁平单表；弹窗编辑",
+      "prototype_fn": "pProcessDB",
+      "status": "new-application",
+      "template": "PAGE.LIST"
+    },
+    {
+      "id": "PAGE-APP-ROLE-MGMT",
+      "layout": "PATTERN.LAYOUT.TAB_TABLE",
+      "name": "角色管理",
+      "nav_group": "g6/系统管理",
+      "note": "双视图：角色卡片(4列网格) <-> 功能权限矩阵表；8角色；权限码 模块:操作",
+      "prototype_fn": "pRoleMgmtNew",
+      "status": "new-application",
+      "template": "PAGE.MASTER_DETAIL"
+    },
+    {
+      "columns": 7,
+      "id": "PAGE-APP-SET-DB",
+      "layout": "PATTERN.LAYOUT.FULL_LIST",
+      "name": "SET 数据库",
+      "nav_group": "g4/基础信息管理",
+      "note": "扁平表密集格式；SET/Kz 编码前缀校验；弹窗编辑",
+      "prototype_fn": "pSetDB",
+      "status": "new-application",
+      "template": "PAGE.LIST"
+    },
+    {
+      "columns": 6,
+      "id": "PAGE-APP-TASK-MGMT",
+      "layout": "PATTERN.LAYOUT.FULL_LIST",
+      "name": "任务管理",
+      "nav_group": "g4/基础信息管理",
+      "prototype_fn": "pTask",
+      "status": "new-application",
+      "template": "PAGE.LIST"
+    },
+    {
+      "columns": 7,
+      "id": "PAGE-APP-TECHNICAL-AKT",
+      "layout": "PATTERN.LAYOUT.FULL_LIST",
+      "name": "技术变更 AKT",
+      "nav_group": "g1/零件清单变更管理",
+      "prototype_fn": "pTechChange",
+      "status": "new-application",
+      "template": "PAGE.LIST"
+    },
+    {
+      "columns": 8,
+      "id": "PAGE-APP-USER-MGMT",
+      "layout": "PATTERN.LAYOUT.FULL_LIST",
+      "name": "用户管理",
+      "nav_group": "g6/系统管理",
+      "note": "弹窗编辑；IT管理员保护",
+      "prototype_fn": "pUserMgmtNew",
+      "status": "new-application",
+      "template": "PAGE.LIST"
+    },
+    {
+      "id": "PAGE-APP-VEHICLE-MASTER-DATA",
+      "layout": "PATTERN.LAYOUT.MASTER_DETAIL",
+      "name": "车型主数据",
+      "nav_group": "g4/基础信息管理",
+      "note": "三区域：车型列表9列->carline条线7列(EBR%校验)->冻结版本；与 SELECT-VEHICLE-CONTEXT 共用原型",
+      "prototype_fn": "pVehicleMasterData",
+      "status": "new-application",
+      "template": "PAGE.MASTER_DETAIL"
+    },
+    {
+      "id": "PAGE-TASK-STEP-AUTHENTICATE",
+      "layout": "PATTERN.LAYOUT.DESCRIPTION_DETAIL",
+      "name": "身份认证",
+      "nav_group": "(登录页)",
+      "prototype_fn": "loginScreen",
+      "status": "existing-task-step",
+      "template": "PAGE.FORM"
+    },
+    {
+      "id": "PAGE-TASK-STEP-BIND-CARLINE",
+      "layout": "PATTERN.LAYOUT.MASTER_DETAIL",
+      "name": "绑定车型(清单搭建版本)",
+      "nav_group": "g1/项目上下文",
+      "prototype_fn": "pVehicleMasterData(共用)",
+      "status": "existing-task-step",
+      "template": "PAGE.DETAIL"
+    },
+    {
+      "columns": 16,
+      "id": "PAGE-TASK-STEP-BUC-ANALYSE",
+      "layout": "PATTERN.LAYOUT.FULL_LIST",
+      "name": "BUC 分析(列表)",
+      "nav_group": "g3/零件成本分析管理",
+      "note": "3冻结左；行点进 BUC 详情/零件号点进 part-info",
+      "prototype_fn": "pBUCList",
+      "status": "existing-task-step",
+      "template": "PAGE.EDITABLE_WORKSPACE"
+    },
+    {
+      "columns": 34,
+      "id": "PAGE-TASK-STEP-BUILD-BOM",
+      "layout": "PATTERN.LAYOUT.FULL_LIST",
+      "name": "构建清单(计算车型零件清单)",
+      "nav_group": "g1/全系零件清单管理",
+      "note": "34列(含_chk)；3冻结左；表头列筛选；双击编辑；公式列 CALC-CVP-1/2；9操作按钮(含生成版本快照)",
+      "prototype_fn": "pCalcParts",
+      "status": "existing-task-step",
+      "template": "PAGE.EDITABLE_WORKSPACE"
+    },
+    {
+      "id": "PAGE-TASK-STEP-EXPERT-MODEL-CALCULATE",
+      "layout": "PATTERN.LAYOUT.CALCULATOR",
+      "name": "专家模型(1K注塑)",
+      "nav_group": "g3/下钻",
+      "note": "全屏侧滑抽屉；8时间组件 CALC-EXPERT-31~42 + 总时间回填BUC；冷却时间 BLOCKER-EXPERT-COOLING",
+      "prototype_fn": "expertDrawer",
+      "status": "existing-task-step",
+      "template": "PAGE.FORM"
+    },
+    {
+      "blocked": true,
+      "id": "PAGE-TASK-STEP-MAINTAIN-BASE-ATTRIBUTES",
+      "name": "维护基础属性",
+      "nav_group": "(BP-blocked)",
+      "status": "existing-task-step",
+      "template": "PAGE.LIST"
+    },
+    {
+      "id": "PAGE-TASK-STEP-MANAGE-USER-ROLE",
+      "layout": "PATTERN.LAYOUT.FULL_LIST",
+      "name": "用户与角色管理",
+      "nav_group": "g6/系统管理",
+      "note": "superseded：合并页已删除，业务由用户/角色/数据权限独立页承接（蓝图 BLOCKED+superseded）",
+      "prototype_fn": "pUserMgmtNew+pRoleMgmtNew+pPermMgmtNew",
+      "status": "existing-task-step",
+      "template": "PAGE.MASTER_DETAIL"
+    },
+    {
+      "blocked": true,
+      "id": "PAGE-TASK-STEP-OUTPUT-TO-LEDGER",
+      "name": "输出到台账",
+      "nav_group": "(BP-blocked)",
+      "status": "existing-task-step",
+      "template": "PAGE.DETAIL"
+    },
+    {
+      "columns": 39,
+      "id": "PAGE-TASK-STEP-QUERY-LEDGER",
+      "layout": "PATTERN.LAYOUT.FULL_LIST",
+      "name": "查询台账(零件清单台账)",
+      "nav_group": "零件台账(顶层)",
+      "note": "39列(含_chk)；5冻结左+2冻结右；每页1000；BUC来源下钻",
+      "prototype_fn": "pLedger",
+      "status": "existing-task-step",
+      "template": "PAGE.LIST"
+    },
+    {
+      "id": "PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT",
+      "layout": "PATTERN.LAYOUT.MASTER_DETAIL",
+      "name": "选择车型上下文",
+      "nav_group": "g1/项目上下文",
+      "note": "三区域联动：车型->carline->冻结版本；EBR% 校验(CALC-VMD-58)",
+      "prototype_fn": "pVehicleMasterData",
+      "status": "existing-task-step",
+      "template": "PAGE.MASTER_DETAIL"
+    },
+    {
+      "blocked": true,
+      "id": "PAGE-TASK-STEP-TRACK-COST-BY-SNAPSHOT",
+      "name": "按版本快照追踪成本变化",
+      "nav_group": "(BP-blocked)",
+      "status": "existing-task-step",
+      "template": "PAGE.COMPARE"
+    }
+  ],
+  "prototype_ref": "doc/last_project/doc/MASTer-prototype-20260722.html（只读）",
+  "schema_version": 1,
+  "source_directive": "用户指令：以原型 MASTer-prototype-20260722.html（32 页）为布局事实源，除样式外直接照抄（2026-08-05）。",
+  "summary": {
+    "blocked_pages": 3,
+    "existing_task_step_blueprints": 15,
+    "new_application_pages": 17,
+    "orphan_functions": 3,
+    "total_prototype_pages": 32
+  }
+}

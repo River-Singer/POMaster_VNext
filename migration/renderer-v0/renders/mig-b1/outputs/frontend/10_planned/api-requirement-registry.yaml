@@ -1,0 +1,3235 @@
+{
+  "blueprint_sha256": "09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+  "document_type": "api-requirement-registry",
+  "requirements": [
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/projects/{project_id}/partlist"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.ALL.PARTS.LIST.1",
+      "operation_id": "list_partlist_api_v1_projects__project_id__partlist_get",
+      "source": {
+        "page": "PAGE-APP-ALL-PARTS-LIST"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/projects/{project_id}/carlines"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.ALL.PARTS.LIST.2",
+      "operation_id": "list_carlines_api_v1_projects__project_id__carlines_get",
+      "source": {
+        "page": "PAGE-APP-ALL-PARTS-LIST"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/projects/{project_id}/partlist/export"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.ALL.PARTS.LIST.3",
+      "operation_id": "export_partlist_api_v1_projects__project_id__partlist_export_get",
+      "source": {
+        "page": "PAGE-APP-ALL-PARTS-LIST"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "feature_id": "FEATURE-AUTH-LOGIN",
+        "method": "POST",
+        "path": "/api/v1/auth/login"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.AUTHENTICATE.1",
+      "name_zh": "本地账号登录，颁发 access/refresh token",
+      "operation_id": "login_api_v1_auth_login_post",
+      "owner": {
+        "backend": "backend-owner (baseline, openapi-0.1.0)",
+        "frontend": "entities/auth"
+      },
+      "request_need": {
+        "fields": [
+          "username",
+          "password"
+        ],
+        "identifiers": []
+      },
+      "response_need": {
+        "fields": [
+          "access_token",
+          "refresh_token",
+          "token_type",
+          "expires_in"
+        ]
+      },
+      "source": {
+        "page": "PAGE-TASK-STEP-AUTHENTICATE"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "user-action"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "feature_id": "FEATURE-AUTH-LOGIN",
+        "method": "GET",
+        "path": "/api/v1/auth/me"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.AUTHENTICATE.2",
+      "name_zh": "获取当前登录用户信息",
+      "operation_id": "get_me_api_v1_auth_me_get",
+      "owner": {
+        "backend": "backend-owner (baseline, openapi-0.1.0)",
+        "frontend": "entities/auth"
+      },
+      "request_need": {
+        "fields": [],
+        "identifiers": []
+      },
+      "response_need": {
+        "fields": [
+          "user_id",
+          "username",
+          "roles"
+        ]
+      },
+      "source": {
+        "page": "PAGE-TASK-STEP-AUTHENTICATE"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": true,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "feature_id": "FEATURE-VEHICLE-MASTER-DATA-QUERY",
+        "method": "GET",
+        "path": "/api/v1/projects/{project_id}/carlines"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.BIND.CARLINE.1",
+      "name_zh": "列出项目下车型",
+      "operation_id": "list_carlines_api_v1_projects__project_id__carlines_get",
+      "owner": {
+        "backend": "backend-owner (baseline, openapi-0.1.0)",
+        "frontend": "entities/vehicle-master-data-query"
+      },
+      "request_need": {
+        "fields": [
+          "project_id"
+        ],
+        "identifiers": []
+      },
+      "response_need": {
+        "fields": [
+          "items"
+        ]
+      },
+      "source": {
+        "page": "PAGE-TASK-STEP-BIND-CARLINE"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": true,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "feature_id": "FEATURE-VEHICLE-MASTER-DATA-QUERY",
+        "method": "GET",
+        "path": "/api/v1/projects/{project_id}/carlines/{carline_id}/partlist"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.BIND.CARLINE.2",
+      "name_zh": "获取车型零件清单（车辆主数据单源）",
+      "operation_id": "carline_partlist_api_v1_projects__project_id__carlines__carline_id__partlist_get",
+      "owner": {
+        "backend": "backend-owner (baseline, openapi-0.1.0)",
+        "frontend": "entities/vehicle-master-data-query"
+      },
+      "request_need": {
+        "fields": [
+          "project_id",
+          "carline_id"
+        ],
+        "identifiers": []
+      },
+      "response_need": {
+        "fields": [
+          "items",
+          "total_cost"
+        ]
+      },
+      "source": {
+        "page": "PAGE-TASK-STEP-BIND-CARLINE"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": true,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/partlist/ledger"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.BRIDGE.TABLE.1",
+      "operation_id": "cross_project_ledger_api_v1_partlist_ledger_get",
+      "owner": "entities/bridge-table",
+      "source": {
+        "page": "PAGE-APP-BRIDGE-TABLE"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/projects"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.BRIDGE.TABLE.2",
+      "operation_id": "list_projects_api_v1_projects_get",
+      "owner": "entities/bridge-table",
+      "source": {
+        "page": "PAGE-APP-BRIDGE-TABLE"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/reports/bridge-table"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.BRIDGE.TABLE.3",
+      "operation_id": null,
+      "owner": "entities/bridge-table",
+      "source": {
+        "page": "PAGE-APP-BRIDGE-TABLE"
+      },
+      "status": "NEEDS_BACKEND_REVIEW",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": [
+        "contract pending backend owner review"
+      ]
+    },
+    {
+      "classification": "COMMAND",
+      "id": "API_REQ.BUC.ANALYSE.0",
+      "mock_contract_ref": "outputs/frontend/10_planned/mock-contract.yaml",
+      "name_zh": "执行 BUC 零件成本分析（后端未开发，走 mock 契约）",
+      "operation_id": null,
+      "owner": {
+        "backend": "pending-development",
+        "frontend": "entities/buc-analyse (mock)"
+      },
+      "request_need": {
+        "fields": [
+          "mock-pending-backend"
+        ],
+        "identifiers": []
+      },
+      "response_need": {
+        "fields": [
+          "mock-pending-backend"
+        ]
+      },
+      "source": {
+        "page": "PAGE-TASK-STEP-BUC-ANALYSE"
+      },
+      "status": "NEEDS_BACKEND_REVIEW",
+      "trigger": {
+        "automatic": false,
+        "type": "user-action"
+      },
+      "type": "command",
+      "unresolved": [
+        "backend-not-developed",
+        "mock-contract-bound"
+      ]
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/buc_analyse/{id}"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.BUC.ANALYSE.1",
+      "mock_contract_ref": "outputs/frontend/10_planned/mock-contract.yaml",
+      "name_zh": "获取 BUC 零件成本分析详情（后端未开发，走 mock 契约）",
+      "operation_id": null,
+      "owner": {
+        "backend": "pending-development",
+        "frontend": "entities/buc-analyse (mock)"
+      },
+      "request_need": {
+        "fields": [],
+        "identifiers": []
+      },
+      "response_need": {
+        "fields": [
+          "modules",
+          "materialRows",
+          "manufacturingRows"
+        ]
+      },
+      "semantics_note": "2026-08-19 响应形状演进：detail 新增 modules 嵌套（模块→M→F 行对），materialRows/manufacturingRows 为其扁平投影（导出/KPI 消费）；mock 先行，真实契约后续再以 modules 结构为准评审。",
+      "source": {
+        "page": "PAGE-APP-BUC-DETAIL"
+      },
+      "status": "NEEDS_BACKEND_REVIEW",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": [
+        "backend-not-developed",
+        "mock-contract-bound"
+      ]
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/projects/{project_id}/partlist/{part_id}"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.BUC.DETAIL.1",
+      "operation_id": "get_part_api_v1_projects__project_id__partlist__part_id__get",
+      "owner": "entities/buc-analyse",
+      "source": {
+        "page": "PAGE-APP-BUC-DETAIL"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/projects/{project_id}/ledger"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.BUC.DETAIL.2",
+      "operation_id": "project_ledger_api_v1_projects__project_id__ledger_get",
+      "owner": "entities/buc-analyse",
+      "source": {
+        "page": "PAGE-APP-BUC-DETAIL"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/projects/{project_id}/partlist/{part_id}/history"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.BUC.DETAIL.3",
+      "operation_id": "get_history_api_v1_projects__project_id__partlist__part_id__history_get",
+      "owner": "entities/buc-analyse",
+      "source": {
+        "page": "PAGE-APP-BUC-DETAIL"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "POST",
+        "path": "/api/v1/buc/analysis/{buc_record_id}"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.BUC.DETAIL.4",
+      "operation_id": null,
+      "owner": "entities/buc-analyse",
+      "source": {
+        "page": "PAGE-APP-BUC-DETAIL"
+      },
+      "status": "NEEDS_BACKEND_REVIEW",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": [
+        "contract pending backend owner review"
+      ]
+    },
+    {
+      "backend_contract_ref": {
+        "feature_id": "FEATURE-VEHICLE-MASTER-DATA-QUERY",
+        "method": "GET",
+        "path": "/api/v1/projects/{project_id}/carlines/{carline_id}/partlist"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.BUILD.BOM.1",
+      "name_zh": "获取车型零件清单（车辆主数据单源）",
+      "operation_id": "carline_partlist_api_v1_projects__project_id__carlines__carline_id__partlist_get",
+      "owner": {
+        "backend": "backend-owner (baseline, openapi-0.1.0)",
+        "frontend": "entities/vehicle-master-data-query"
+      },
+      "request_need": {
+        "fields": [
+          "project_id",
+          "carline_id"
+        ],
+        "identifiers": []
+      },
+      "response_need": {
+        "fields": [
+          "items",
+          "total_cost"
+        ]
+      },
+      "source": {
+        "page": "PAGE-TASK-STEP-BUILD-BOM"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": true,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "feature_id": "FEATURE-LEDGER-QUERY",
+        "method": "GET",
+        "path": "/api/v1/projects/{project_id}/ledger"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.BUILD.BOM.2",
+      "name_zh": "查询项目零件台账（单项目）",
+      "operation_id": "project_ledger_api_v1_projects__project_id__ledger_get",
+      "owner": {
+        "backend": "backend-owner (baseline, openapi-0.1.0)",
+        "frontend": "entities/parts-ledger"
+      },
+      "request_need": {
+        "fields": [
+          "project_id"
+        ],
+        "identifiers": []
+      },
+      "response_need": {
+        "fields": [
+          "items",
+          "total",
+          "total_cost"
+        ]
+      },
+      "source": {
+        "page": "PAGE-TASK-STEP-BUILD-BOM"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": true,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "feature_id": "FEATURE-PARTLIST-SAVE-WRITEBACK",
+        "method": "DELETE",
+        "path": "/api/v1/projects/{id}/partlist/{pid}"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.BUILD.BOM.DELETE",
+      "mock": {
+        "enabled": true,
+        "reason": "原型有操作但后端契约未定，先 mock"
+      },
+      "name_zh": "逻辑删除零件（标台账已删除）",
+      "operation_id": "OP-DELETE-PART",
+      "owner": {
+        "backend": "backend-owner (pending)",
+        "frontend": "entities/partlist"
+      },
+      "request_need": {
+        "fields": [],
+        "identifiers": []
+      },
+      "response_need": {
+        "fields": []
+      },
+      "source": {
+        "page": "PAGE-TASK-STEP-BUILD-BOM"
+      },
+      "status": "NEEDS_BACKEND_REVIEW",
+      "trigger": {
+        "automatic": false,
+        "type": "user-action"
+      },
+      "type": "command",
+      "unresolved": [
+        "backend-contract-pending"
+      ]
+    },
+    {
+      "backend_contract_ref": {
+        "feature_id": "FEATURE-PARTLIST-SAVE-WRITEBACK",
+        "method": "POST",
+        "path": "/api/v1/projects/{id}/partlist/export"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.BUILD.BOM.EXPORT",
+      "mock": {
+        "enabled": true,
+        "reason": "原型有操作但后端契约未定，先 mock"
+      },
+      "name_zh": "零件清单导出（全部/勾选）",
+      "operation_id": "OP-EXPORT-PARTLIST",
+      "owner": {
+        "backend": "backend-owner (pending)",
+        "frontend": "entities/partlist"
+      },
+      "request_need": {
+        "fields": [],
+        "identifiers": []
+      },
+      "response_need": {
+        "fields": []
+      },
+      "source": {
+        "page": "PAGE-TASK-STEP-BUILD-BOM"
+      },
+      "status": "NEEDS_BACKEND_REVIEW",
+      "trigger": {
+        "automatic": false,
+        "type": "user-action"
+      },
+      "type": "command",
+      "unresolved": [
+        "backend-contract-pending"
+      ]
+    },
+    {
+      "backend_contract_ref": {
+        "feature_id": "FEATURE-PARTLIST-SAVE-WRITEBACK",
+        "method": "GET",
+        "path": "/api/v1/projects/{id}/partlist/{pid}/history"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.BUILD.BOM.HISTORY",
+      "mock": {
+        "enabled": true,
+        "reason": "原型有操作但后端契约未定，先 mock"
+      },
+      "name_zh": "单件/清单更改记录",
+      "operation_id": "OP-PART-CHANGE-HISTORY",
+      "owner": {
+        "backend": "backend-owner (pending)",
+        "frontend": "entities/partlist"
+      },
+      "request_need": {
+        "fields": [],
+        "identifiers": []
+      },
+      "response_need": {
+        "fields": []
+      },
+      "source": {
+        "page": "PAGE-TASK-STEP-BUILD-BOM"
+      },
+      "status": "NEEDS_BACKEND_REVIEW",
+      "trigger": {
+        "automatic": false,
+        "type": "user-action"
+      },
+      "type": "query",
+      "unresolved": [
+        "backend-contract-pending"
+      ]
+    },
+    {
+      "backend_contract_ref": {
+        "feature_id": "FEATURE-PARTLIST-SAVE-WRITEBACK",
+        "method": "GET",
+        "path": "/api/v1/projects/{id}/partlist/history"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.BUILD.BOM.HISTORY.BOM",
+      "mock": {
+        "enabled": true,
+        "reason": "原型有清单更改记录但后端契约未定，先mock"
+      },
+      "name_zh": "清单更改记录",
+      "operation_id": "OP-QUERY-BOM-HISTORY",
+      "owner": {
+        "backend": "backend-owner (pending)",
+        "frontend": "entities/partlist"
+      },
+      "request_need": {
+        "fields": [],
+        "identifiers": []
+      },
+      "response_need": {
+        "fields": []
+      },
+      "source": {
+        "page": "PAGE-TASK-STEP-BUILD-BOM"
+      },
+      "status": "NEEDS_BACKEND_REVIEW",
+      "trigger": {
+        "automatic": false,
+        "type": "user-action"
+      },
+      "type": "query",
+      "unresolved": [
+        "backend-contract-pending",
+        "backend-contract-missing"
+      ]
+    },
+    {
+      "backend_contract_ref": {
+        "feature_id": "FEATURE-PARTLIST-SAVE-WRITEBACK",
+        "method": "POST",
+        "path": "/api/v1/projects/{id}/partlist/import"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.BUILD.BOM.IMPORT",
+      "mock": {
+        "enabled": true,
+        "reason": "原型有操作但后端契约未定，先 mock"
+      },
+      "name_zh": "零件清单导入（Excel/参考车型/BUC）",
+      "operation_id": "OP-IMPORT-PARTLIST",
+      "owner": {
+        "backend": "backend-owner (pending)",
+        "frontend": "entities/partlist"
+      },
+      "request_need": {
+        "fields": [],
+        "identifiers": []
+      },
+      "response_need": {
+        "fields": []
+      },
+      "source": {
+        "page": "PAGE-TASK-STEP-BUILD-BOM"
+      },
+      "status": "NEEDS_BACKEND_REVIEW",
+      "trigger": {
+        "automatic": false,
+        "type": "user-action"
+      },
+      "type": "command",
+      "unresolved": [
+        "backend-contract-pending"
+      ]
+    },
+    {
+      "backend_contract_ref": {
+        "feature_id": "FEATURE-PARTLIST-SAVE-WRITEBACK",
+        "method": "POST",
+        "path": "/api/v1/projects/{id}/partlist/import/buc"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.BUILD.BOM.IMPORT.BUC",
+      "mock": {
+        "enabled": true,
+        "reason": "原型有BUC导入操作但后端契约未定，先mock"
+      },
+      "name_zh": "BUC零件清单导入",
+      "operation_id": "OP-IMPORT-BUC",
+      "owner": {
+        "backend": "backend-owner (pending)",
+        "frontend": "entities/partlist"
+      },
+      "request_need": {
+        "fields": [],
+        "identifiers": []
+      },
+      "response_need": {
+        "fields": []
+      },
+      "source": {
+        "page": "PAGE-TASK-STEP-BUILD-BOM"
+      },
+      "status": "NEEDS_BACKEND_REVIEW",
+      "trigger": {
+        "automatic": false,
+        "type": "user-action"
+      },
+      "type": "command",
+      "unresolved": [
+        "backend-contract-pending",
+        "backend-contract-missing"
+      ]
+    },
+    {
+      "backend_contract_ref": {
+        "feature_id": "FEATURE-PARTLIST-SAVE-WRITEBACK",
+        "method": "GET",
+        "path": "/api/v1/buc/records"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.BUILD.BOM.QUERY.BUC.VERSIONS",
+      "mock": {
+        "enabled": true,
+        "reason": "BUC 导入弹框的版本检索步骤（搜索零件号→列出「已保存」版本→单选）在原型中存在但后端契约未定，先mock；仅返回 BUC 状态机中「已保存」（数据锁定、不可逆）的记录，「进行中」记录不可导入"
+      },
+      "name_zh": "BUC 导入前置查询：按零件号模糊搜索该零件在 BUC 分析中「已保存」状态的评估版本列表",
+      "operation_id": "OP-QUERY-BUC-VERSIONS",
+      "owner": {
+        "backend": "backend-owner (pending)",
+        "frontend": "entities/partlist"
+      },
+      "request_need": {
+        "fields": [
+          "part_number_keyword",
+          "status"
+        ],
+        "identifiers": []
+      },
+      "response_need": {
+        "fields": [
+          "items",
+          "buc_record_id",
+          "part_number",
+          "part_name",
+          "evaluation_version",
+          "unit_total_price",
+          "status"
+        ]
+      },
+      "semantics_note": "BUC 分析仅两态（进行中/已保存，单向不可逆），导入前置查询只允许「已保存」；同一零件号可有多个评估版本（V1.0/V1.1...），故返回列表由用户单选；被选中版本的 buc_record_id 是后续 OP-IMPORT-BUC 的入参与快照链接依据，映射零件号/零件名称/单件总价→单件VSI A价 三个只读字段",
+      "source": {
+        "page": "PAGE-TASK-STEP-BUILD-BOM"
+      },
+      "status": "NEEDS_BACKEND_REVIEW",
+      "trigger": {
+        "automatic": false,
+        "type": "user-action"
+      },
+      "type": "query",
+      "unresolved": [
+        "backend-contract-pending",
+        "backend-contract-missing"
+      ]
+    },
+    {
+      "backend_contract_ref": {
+        "feature_id": "FEATURE-PARTLIST-SAVE-WRITEBACK",
+        "method": "POST",
+        "path": "/api/v1/projects/{id}/partlist/refresh-master"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.BUILD.BOM.REFRESH",
+      "mock": {
+        "enabled": true,
+        "reason": "原型有操作但后端契约未定，先 mock"
+      },
+      "name_zh": "刷新主数据生效",
+      "operation_id": "OP-REFRESH-MASTER-DATA",
+      "owner": {
+        "backend": "backend-owner (pending)",
+        "frontend": "entities/partlist"
+      },
+      "request_need": {
+        "fields": [],
+        "identifiers": []
+      },
+      "response_need": {
+        "fields": []
+      },
+      "source": {
+        "page": "PAGE-TASK-STEP-BUILD-BOM"
+      },
+      "status": "NEEDS_BACKEND_REVIEW",
+      "trigger": {
+        "automatic": false,
+        "type": "user-action"
+      },
+      "type": "query",
+      "unresolved": [
+        "backend-contract-pending"
+      ]
+    },
+    {
+      "backend_contract_ref": {
+        "feature_id": "FEATURE-PARTLIST-SAVE-WRITEBACK",
+        "method": "POST",
+        "path": "/api/v1/projects/{id}/partlist/{pid}/rollback"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.BUILD.BOM.ROLLBACK",
+      "mock": {
+        "enabled": true,
+        "reason": "原型有操作但后端契约未定，先 mock"
+      },
+      "name_zh": "零件行回滚",
+      "operation_id": "OP-ROLLBACK-PART",
+      "owner": {
+        "backend": "backend-owner (pending)",
+        "frontend": "entities/partlist"
+      },
+      "request_need": {
+        "fields": [],
+        "identifiers": []
+      },
+      "response_need": {
+        "fields": []
+      },
+      "source": {
+        "page": "PAGE-TASK-STEP-BUILD-BOM"
+      },
+      "status": "NEEDS_BACKEND_REVIEW",
+      "trigger": {
+        "automatic": false,
+        "type": "user-action"
+      },
+      "type": "command",
+      "unresolved": [
+        "backend-contract-pending"
+      ]
+    },
+    {
+      "backend_contract_ref": {
+        "feature_id": "FEATURE-PARTLIST-SAVE-WRITEBACK",
+        "method": "POST",
+        "path": "/api/v1/projects/{id}/carlines/{cid}/snapshot"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.BUILD.BOM.SNAPSHOT",
+      "mock": {
+        "enabled": true,
+        "reason": "原型有操作但后端契约未定，先 mock"
+      },
+      "name_zh": "生成 carline 版本快照",
+      "operation_id": "OP-GENERATE-SNAPSHOT",
+      "owner": {
+        "backend": "backend-owner (pending)",
+        "frontend": "entities/partlist"
+      },
+      "request_need": {
+        "fields": [],
+        "identifiers": []
+      },
+      "response_need": {
+        "fields": []
+      },
+      "source": {
+        "page": "PAGE-TASK-STEP-BUILD-BOM"
+      },
+      "status": "NEEDS_BACKEND_REVIEW",
+      "trigger": {
+        "automatic": false,
+        "type": "user-action"
+      },
+      "type": "command",
+      "unresolved": [
+        "backend-contract-pending"
+      ]
+    },
+    {
+      "backend_contract_ref": {
+        "method": "POST",
+        "path": "/api/v1/attachments"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.CROSS.ATTACHMENT.STORE",
+      "mock": {
+        "enabled": true,
+        "reason": "附件上传存储无后端端点；财务弹窗④/设备明细基础信息/材料面板共用同一需求，本轮 file input 控件 + mock 存储"
+      },
+      "name_zh": "附件上传存储（设备/材料/财务弹窗共用；类别+文件+增删）",
+      "operation_id": "OP-ATTACHMENT-STORE",
+      "owner": {
+        "backend": "backend-owner (pending)",
+        "frontend": "entities/vehicle-master-data (mock；equipment-detail/material-db 共用)"
+      },
+      "request_need": {
+        "fields": [
+          "category",
+          "file"
+        ],
+        "identifiers": []
+      },
+      "response_need": {
+        "fields": [
+          "attachment_id",
+          "category",
+          "filename"
+        ]
+      },
+      "source": {
+        "page": "PAGE-APP-VEHICLE-MASTER-DATA"
+      },
+      "status": "NEEDS_BACKEND_REVIEW",
+      "trigger": {
+        "automatic": false,
+        "type": "user-action"
+      },
+      "type": "command",
+      "unresolved": [
+        "backend-contract-pending",
+        "backend-contract-missing"
+      ]
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/projects/{project_id}/partlist"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.CSC.PRICE.1",
+      "operation_id": "list_partlist_api_v1_projects__project_id__partlist_get",
+      "source": {
+        "page": "PAGE-APP-CSC-PRICE"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "PUT",
+        "path": "/api/v1/projects/{project_id}/partlist/{part_id}/price"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.CSC.PRICE.2",
+      "operation_id": "update_price_api_v1_projects__project_id__partlist__part_id__price_put",
+      "source": {
+        "page": "PAGE-APP-CSC-PRICE"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/formulas"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.CSC.PRICE.3",
+      "operation_id": "list_formulas_api_v1_formulas_get",
+      "source": {
+        "page": "PAGE-APP-CSC-PRICE"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/projects/{project_id}/partlist/{part_id}/history"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.CSC.PRICE.4",
+      "operation_id": "get_history_api_v1_projects__project_id__partlist__part_id__history_get",
+      "source": {
+        "page": "PAGE-APP-CSC-PRICE"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/auth/me"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.DASHBOARD.1",
+      "operation_id": "get_me_api_v1_auth_me_get",
+      "owner": "entities/dashboard",
+      "source": {
+        "page": "PAGE-APP-DASHBOARD"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/projects"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.DASHBOARD.2",
+      "operation_id": "list_projects_api_v1_projects_get",
+      "owner": "entities/dashboard",
+      "source": {
+        "page": "PAGE-APP-DASHBOARD"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/projects/{project_id}/operation-logs"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.DASHBOARD.3",
+      "operation_id": "project_operation_logs_api_v1_projects__project_id__operation_logs_get",
+      "owner": "entities/dashboard",
+      "source": {
+        "page": "PAGE-APP-DASHBOARD"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/auth-objects"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.DATA.PERMISSION.1",
+      "operation_id": "list_auth_objects_api_v1_auth_objects_get",
+      "source": {
+        "page": "PAGE-APP-DATA-PERMISSION"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/user-grants/{user_id}"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.DATA.PERMISSION.2",
+      "operation_id": "get_user_grant_matrix_api_v1_user_grants__user_id__get",
+      "source": {
+        "page": "PAGE-APP-DATA-PERMISSION"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "PUT",
+        "path": "/api/v1/user-grants/{user_id}"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.DATA.PERMISSION.3",
+      "operation_id": "replace_user_grant_matrix_api_v1_user_grants__user_id__put",
+      "source": {
+        "page": "PAGE-APP-DATA-PERMISSION"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/users/{user_id}/roles"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.DATA.PERMISSION.4",
+      "operation_id": "get_user_roles_api_v1_users__user_id__roles_get",
+      "source": {
+        "page": "PAGE-APP-DATA-PERMISSION"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/data_permission"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.DATA.PERMISSION.5",
+      "operation_id": null,
+      "source": {
+        "page": "PAGE-APP-DATA-PERMISSION"
+      },
+      "status": "NEEDS_BACKEND_REVIEW",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": [
+        "权限配置列表（跨用户汇总）。现走脚手架占位端点 GET /data_permission（entities/data-permission/api.ts 头注已登记漂移）；契约端点形态待后端 Owner 评审"
+      ]
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": ""
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.DATA.PERMISSION.6",
+      "operation_id": null,
+      "source": {
+        "page": "PAGE-APP-DATA-PERMISSION"
+      },
+      "status": "NEEDS_BACKEND_REVIEW",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": [
+        "SET/子SET 树（权限范围选择的数据源，上游 SET 数据库 PAGE-APP-SET-DB；已发布契约无对应端点，须后端 Owner 评审）"
+      ]
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": ""
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.DATA.PERMISSION.7",
+      "operation_id": null,
+      "source": {
+        "page": "PAGE-APP-DATA-PERMISSION"
+      },
+      "status": "NEEDS_BACKEND_REVIEW",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": [
+        "车型清单（车型维度权限选择的数据源，上游其他数据库/车型主数据 PAGE-APP-OTHER-DB、PAGE-APP-VEHICLE-MASTER-DATA；已发布契约无对应端点，须后端 Owner 评审）"
+      ]
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": ""
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.DATA.PERMISSION.8",
+      "operation_id": null,
+      "source": {
+        "page": "PAGE-APP-DATA-PERMISSION"
+      },
+      "status": "NEEDS_BACKEND_REVIEW",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": [
+        "候选用户及角色维度（新增/编辑弹窗用户下拉与角色维度判定，上游用户管理/角色管理 PAGE-APP-USER-MGMT、PAGE-APP-ROLE-MGMT；已发布契约无跨页汇总端点，须后端 Owner 评审）"
+      ]
+    },
+    {
+      "backend_contract_ref": {
+        "method": "DELETE",
+        "path": "/api/v1/dictionaries/{code}/items/{item_id}"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.DB.BATCH.DELETE.PRECHECK",
+      "mock": {
+        "enabled": true,
+        "reason": "材料/工艺/设备批量删除无批量端点，不臆造：前端事务性预检（任一引用即整批阻止并列出）后循环单删（2026-08-17 裁定①）；设备=BUC referenced 硬阻止（fixture 补 referenced）、工艺=referenced 硬阻止、材料=提示级真实校验 NEEDS_BACKEND_REVIEW"
+      },
+      "name_zh": "三库批量删除预检+循环单删（equipment/material/process 共用口径）",
+      "operation_id": "OP-BATCH-DELETE-PRECHECK",
+      "owner": {
+        "backend": "backend-owner (pending)",
+        "frontend": "entities/equipment-db + material-db + process-db (mock 预检)"
+      },
+      "request_need": {
+        "fields": [
+          "item_ids"
+        ],
+        "identifiers": []
+      },
+      "response_need": {
+        "fields": [
+          "referenced_ids",
+          "reference_sources"
+        ]
+      },
+      "source": {
+        "page": "PAGE-APP-EQUIPMENT-DB"
+      },
+      "status": "NEEDS_BACKEND_REVIEW",
+      "trigger": {
+        "automatic": false,
+        "type": "user-action"
+      },
+      "type": "command",
+      "unresolved": [
+        "backend-contract-pending",
+        "backend-contract-missing"
+      ]
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/dictionaries/equipment/items"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.EQUIPMENT.DB.1",
+      "operation_id": "list_items_api_v1_dictionaries__code__items_get",
+      "source": {
+        "page": "PAGE-APP-EQUIPMENT-DB"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "DELETE",
+        "path": "/api/v1/dictionaries/equipment/items/{item_id}"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.EQUIPMENT.DB.2",
+      "operation_id": "delete_item_api_v1_dictionaries__code__items__item_id__delete",
+      "source": {
+        "page": "PAGE-APP-EQUIPMENT-DB"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/formulas"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.EQUIPMENT.DETAIL.1",
+      "operation_id": "list_formulas_api_v1_formulas_get",
+      "source": {
+        "page": "PAGE-APP-EQUIPMENT-DETAIL"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "POST",
+        "path": "/api/v1/dictionaries/equipment/items"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.EQUIPMENT.DETAIL.2",
+      "operation_id": "add_item_api_v1_dictionaries__code__items_post",
+      "source": {
+        "page": "PAGE-APP-EQUIPMENT-DETAIL"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "PUT",
+        "path": "/api/v1/dictionaries/equipment/items/{item_id}"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.EQUIPMENT.DETAIL.3",
+      "operation_id": "update_item_api_v1_dictionaries__code__items__item_id__put",
+      "source": {
+        "page": "PAGE-APP-EQUIPMENT-DETAIL"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/projects/{project_id}/partlist"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.EQUIPMENT.PALETTE.1",
+      "operation_id": "list_partlist_api_v1_projects__project_id__partlist_get",
+      "source": {
+        "page": "PAGE-APP-EQUIPMENT-PALETTE"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "POST",
+        "path": "/api/v1/projects/{project_id}/partlist"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.EQUIPMENT.PALETTE.2",
+      "operation_id": "create_part_api_v1_projects__project_id__partlist_post",
+      "source": {
+        "page": "PAGE-APP-EQUIPMENT-PALETTE"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "PUT",
+        "path": "/api/v1/projects/{project_id}/partlist/{part_id}"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.EQUIPMENT.PALETTE.3",
+      "operation_id": "update_part_api_v1_projects__project_id__partlist__part_id__put",
+      "source": {
+        "page": "PAGE-APP-EQUIPMENT-PALETTE"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "DELETE",
+        "path": "/api/v1/projects/{project_id}/partlist/{part_id}"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.EQUIPMENT.PALETTE.4",
+      "operation_id": "delete_part_api_v1_projects__project_id__partlist__part_id__delete",
+      "source": {
+        "page": "PAGE-APP-EQUIPMENT-PALETTE"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "POST",
+        "path": "/api/v1/projects/{project_id}/partlist/batch-update"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.EQUIPMENT.PALETTE.5",
+      "operation_id": "batch_update_parts_api_v1_projects__project_id__partlist_batch_update_post",
+      "source": {
+        "page": "PAGE-APP-EQUIPMENT-PALETTE"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/projects/{project_id}/partlist/export"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.EQUIPMENT.PALETTE.6",
+      "operation_id": "export_partlist_api_v1_projects__project_id__partlist_export_get",
+      "source": {
+        "page": "PAGE-APP-EQUIPMENT-PALETTE"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/projects/{project_id}/carlines"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.EQUIPMENT.PALETTE.7",
+      "operation_id": "list_carlines_api_v1_projects__project_id__carlines_get",
+      "source": {
+        "page": "PAGE-APP-EQUIPMENT-PALETTE"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/projects/{project_id}/partlist/{part_id}/history"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.EQUIPMENT.PALETTE.8",
+      "operation_id": "get_history_api_v1_projects__project_id__partlist__part_id__history_get",
+      "source": {
+        "page": "PAGE-APP-EQUIPMENT-PALETTE"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/projects/{project_id}/partlist"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.EVALUATION.1",
+      "operation_id": "list_partlist_api_v1_projects__project_id__partlist_get",
+      "source": {
+        "page": "PAGE-APP-EVALUATION"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/projects/{project_id}/operation-logs"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.EVALUATION.2",
+      "operation_id": "project_operation_logs_api_v1_projects__project_id__operation_logs_get",
+      "source": {
+        "page": "PAGE-APP-EVALUATION"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "classification": "COMMAND",
+      "id": "API_REQ.EXPERT.MODEL.CALCULATE.0",
+      "mock_contract_ref": "outputs/frontend/10_planned/mock-contract.yaml",
+      "name_zh": "执行专家模型周期时间计算（后端未开发，走 mock 契约）",
+      "operation_id": null,
+      "owner": {
+        "backend": "pending-development",
+        "frontend": "entities/expert-model-calculate (mock)"
+      },
+      "request_need": {
+        "fields": [
+          "mock-pending-backend"
+        ],
+        "identifiers": []
+      },
+      "response_need": {
+        "fields": [
+          "mock-pending-backend"
+        ]
+      },
+      "source": {
+        "page": "PAGE-TASK-STEP-EXPERT-MODEL-CALCULATE"
+      },
+      "status": "NEEDS_BACKEND_REVIEW",
+      "trigger": {
+        "automatic": false,
+        "type": "user-action"
+      },
+      "type": "command",
+      "unresolved": [
+        "backend-not-developed",
+        "mock-contract-bound"
+      ]
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/partlist/ledger"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.FORECAST.REPORT.1",
+      "operation_id": "cross_project_ledger_api_v1_partlist_ledger_get",
+      "owner": "entities/forecast-report",
+      "source": {
+        "page": "PAGE-APP-FORECAST-REPORT"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/projects"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.FORECAST.REPORT.2",
+      "operation_id": "list_projects_api_v1_projects_get",
+      "owner": "entities/forecast-report",
+      "source": {
+        "page": "PAGE-APP-FORECAST-REPORT"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/formulas"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.FORECAST.REPORT.3",
+      "operation_id": "list_formulas_api_v1_formulas_get",
+      "owner": "entities/forecast-report",
+      "source": {
+        "page": "PAGE-APP-FORECAST-REPORT"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/reports/forecast"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.FORECAST.REPORT.4",
+      "operation_id": null,
+      "owner": "entities/forecast-report",
+      "source": {
+        "page": "PAGE-APP-FORECAST-REPORT"
+      },
+      "status": "NEEDS_BACKEND_REVIEW",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": [
+        "contract pending backend owner review"
+      ]
+    },
+    {
+      "classification": "COMMAND",
+      "id": "API_REQ.GENERATE.SNAPSHOT.0",
+      "mock_contract_ref": "outputs/frontend/10_planned/mock-contract.yaml",
+      "name_zh": "生成清单版本快照（后端未开发，走 mock 契约）",
+      "operation_id": null,
+      "owner": {
+        "backend": "pending-development",
+        "frontend": "entities/generate-snapshot (mock)"
+      },
+      "request_need": {
+        "fields": [
+          "mock-pending-backend"
+        ],
+        "identifiers": []
+      },
+      "response_need": {
+        "fields": [
+          "mock-pending-backend"
+        ]
+      },
+      "source": {
+        "page": "PAGE-TASK-STEP-GENERATE-SNAPSHOT"
+      },
+      "status": "NEEDS_BACKEND_REVIEW",
+      "trigger": {
+        "automatic": false,
+        "type": "user-action"
+      },
+      "type": "command",
+      "unresolved": [
+        "backend-not-developed",
+        "mock-contract-bound"
+      ]
+    },
+    {
+      "backend_contract_ref": {
+        "feature_id": "FEATURE-PERMISSION-EVALUATION",
+        "method": "GET",
+        "path": "/api/v1/user-grants/{user_id}"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.MANAGE.USER.ROLE.1",
+      "name_zh": "获取用户权限授予矩阵（权限判定的权威来源）",
+      "note": "2026-08-18 宿主页删除（被 /system/user 替代），owner 归 user-mgmt：权限授予矩阵 API 语义归用户管理域",
+      "operation_id": "get_user_grant_matrix_api_v1_user_grants__user_id__get",
+      "owner": {
+        "backend": "backend-owner (baseline, openapi-0.1.0)",
+        "frontend": "entities/user-mgmt"
+      },
+      "request_need": {
+        "fields": [
+          "user_id"
+        ],
+        "identifiers": []
+      },
+      "response_need": {
+        "fields": [
+          "user_id",
+          "grants",
+          "version"
+        ]
+      },
+      "source": {
+        "page": "PAGE-TASK-STEP-MANAGE-USER-ROLE"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": true,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "feature_id": "FEATURE-PERMISSION-EVALUATION",
+        "method": "GET",
+        "path": "/api/v1/auth-objects"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.MANAGE.USER.ROLE.2",
+      "name_zh": "列出权限对象目录（权限项定义）",
+      "note": "2026-08-18 宿主页删除（被 /system/user 替代），owner 归 user-mgmt：权限对象目录 API 语义归用户管理域",
+      "operation_id": "list_auth_objects_api_v1_auth_objects_get",
+      "owner": {
+        "backend": "backend-owner (baseline, openapi-0.1.0)",
+        "frontend": "entities/user-mgmt"
+      },
+      "request_need": {
+        "fields": [],
+        "identifiers": []
+      },
+      "response_need": {
+        "fields": [
+          "items"
+        ]
+      },
+      "source": {
+        "page": "PAGE-TASK-STEP-MANAGE-USER-ROLE"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": true,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/dictionaries/material/items"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.MATERIAL.DB.1",
+      "operation_id": "list_items_api_v1_dictionaries__code__items_get",
+      "source": {
+        "page": "PAGE-APP-MATERIAL-DB"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "POST",
+        "path": "/api/v1/dictionaries/material/items"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.MATERIAL.DB.2",
+      "operation_id": "add_item_api_v1_dictionaries__code__items_post",
+      "source": {
+        "page": "PAGE-APP-MATERIAL-DB"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "PUT",
+        "path": "/api/v1/dictionaries/material/items/{item_id}"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.MATERIAL.DB.3",
+      "operation_id": "update_item_api_v1_dictionaries__code__items__item_id__put",
+      "source": {
+        "page": "PAGE-APP-MATERIAL-DB"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "DELETE",
+        "path": "/api/v1/dictionaries/material/items/{item_id}"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.MATERIAL.DB.4",
+      "operation_id": "delete_item_api_v1_dictionaries__code__items__item_id__delete",
+      "source": {
+        "page": "PAGE-APP-MATERIAL-DB"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "POST",
+        "path": "/api/v1/dictionaries/material/items/import"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.MATERIAL.DB.IMPORT.CSV",
+      "mock": {
+        "enabled": true,
+        "reason": "spec §6.1 定 .xlsx 导入，2026-08-17 统一为 CSV（UTF-8 BOM）经共享件 ImportPreviewDialog+parseCsvPreview 接入（C1c）；dictionaries 无导入端点"
+      },
+      "name_zh": "材料导入（xlsx 口径废止，统一 CSV UTF-8 BOM 预览导入）",
+      "operation_id": "OP-IMPORT-MATERIAL-CSV",
+      "owner": {
+        "backend": "backend-owner (pending)",
+        "frontend": "entities/material-db (mock)"
+      },
+      "request_need": {
+        "fields": [],
+        "identifiers": []
+      },
+      "response_need": {
+        "fields": []
+      },
+      "source": {
+        "page": "PAGE-APP-MATERIAL-DB"
+      },
+      "status": "NEEDS_BACKEND_REVIEW",
+      "trigger": {
+        "automatic": false,
+        "type": "user-action"
+      },
+      "type": "command",
+      "unresolved": [
+        "backend-contract-pending",
+        "backend-contract-missing"
+      ]
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/master-data/labor-rates"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.OTHER.COST.1",
+      "operation_id": "list_labor_rates_api_v1_master_data_labor_rates_get",
+      "owner": "entities/other-cost-analysis",
+      "source": {
+        "page": "PAGE-APP-OTHER-COST-ANALYSIS"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/master-data/consumable-prices"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.OTHER.COST.2",
+      "operation_id": "list_consumable_prices_api_v1_master_data_consumable_prices_get",
+      "owner": "entities/other-cost-analysis",
+      "source": {
+        "page": "PAGE-APP-OTHER-COST-ANALYSIS"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "POST",
+        "path": "/api/v1/other-cost-analysis"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.OTHER.COST.3",
+      "operation_id": null,
+      "owner": "entities/other-cost-analysis",
+      "source": {
+        "page": "PAGE-APP-OTHER-COST-ANALYSIS"
+      },
+      "status": "NEEDS_BACKEND_REVIEW",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": [
+        "contract pending backend owner review"
+      ]
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/dictionaries/{code}/items"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.OTHER.DB.1",
+      "operation_id": "list_items_api_v1_dictionaries__code__items_get",
+      "source": {
+        "page": "PAGE-APP-OTHER-DB"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "POST",
+        "path": "/api/v1/dictionaries/{code}/items"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.OTHER.DB.2",
+      "operation_id": "add_item_api_v1_dictionaries__code__items_post",
+      "source": {
+        "page": "PAGE-APP-OTHER-DB"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "PUT",
+        "path": "/api/v1/dictionaries/{code}/items/{item_id}"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.OTHER.DB.3",
+      "operation_id": "update_item_api_v1_dictionaries__code__items__item_id__put",
+      "source": {
+        "page": "PAGE-APP-OTHER-DB"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "DELETE",
+        "path": "/api/v1/dictionaries/{code}/items/{item_id}"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.OTHER.DB.4",
+      "operation_id": "delete_item_api_v1_dictionaries__code__items__item_id__delete",
+      "source": {
+        "page": "PAGE-APP-OTHER-DB"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "feature_id": "FEATURE-VEHICLE-MASTER-DATA-QUERY",
+        "method": "POST",
+        "path": "/api/v1/vehicle-catalog"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.OTHER.DB.VEHICLE.CATALOG",
+      "mock": {
+        "enabled": true,
+        "reason": "车型清单（轻量注册表：编码+名称）CRUD+CSV 导入导出在 openapi 无对应端点；批次1 先落 mock（other-db.ts 可变 store 用 createMockStore，vehicle-master-data.ts 改只读快照消费，下游 fetchVehicleCatalog 语义不变）"
+      },
+      "name_zh": "车型清单 CRUD + CSV 导入导出（全系统车型名称唯一源头）",
+      "operation_id": "OP-VEHICLE-CATALOG",
+      "owner": {
+        "backend": "backend-owner (pending)",
+        "frontend": "entities/other-db (mock store)"
+      },
+      "request_need": {
+        "fields": [
+          "code",
+          "name",
+          "status"
+        ],
+        "identifiers": []
+      },
+      "response_need": {
+        "fields": [
+          "items",
+          "code",
+          "name",
+          "status",
+          "updated_at",
+          "updated_by"
+        ]
+      },
+      "source": {
+        "page": "PAGE-APP-OTHER-DB"
+      },
+      "status": "NEEDS_BACKEND_REVIEW",
+      "trigger": {
+        "automatic": false,
+        "type": "user-action"
+      },
+      "type": "command",
+      "unresolved": [
+        "backend-contract-pending",
+        "backend-contract-missing"
+      ]
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/projects/{project_id}/partlist/{part_id}"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.PART.INFO.1",
+      "operation_id": "get_part_api_v1_projects__project_id__partlist__part_id__get",
+      "owner": "entities/part-info",
+      "source": {
+        "page": "PAGE-APP-PART-INFO"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/dictionaries/{code}/items"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.PART.STRUCTURE.DB.1",
+      "operation_id": "list_items_api_v1_dictionaries__code__items_get",
+      "source": {
+        "page": "PAGE-APP-PART-STRUCTURE-DB"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "POST",
+        "path": "/api/v1/dictionaries/{code}/items"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.PART.STRUCTURE.DB.2",
+      "operation_id": "add_item_api_v1_dictionaries__code__items_post",
+      "source": {
+        "page": "PAGE-APP-PART-STRUCTURE-DB"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "PUT",
+        "path": "/api/v1/dictionaries/{code}/items/{item_id}"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.PART.STRUCTURE.DB.3",
+      "operation_id": "update_item_api_v1_dictionaries__code__items__item_id__put",
+      "source": {
+        "page": "PAGE-APP-PART-STRUCTURE-DB"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "DELETE",
+        "path": "/api/v1/dictionaries/{code}/items/{item_id}"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.PART.STRUCTURE.DB.4",
+      "operation_id": "delete_item_api_v1_dictionaries__code__items__item_id__delete",
+      "source": {
+        "page": "PAGE-APP-PART-STRUCTURE-DB"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/dictionaries/process/items"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.PROCESS.DB.1",
+      "operation_id": "list_items_api_v1_dictionaries__code__items_get",
+      "source": {
+        "page": "PAGE-APP-PROCESS-DB"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "POST",
+        "path": "/api/v1/dictionaries/process/items"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.PROCESS.DB.2",
+      "operation_id": "add_item_api_v1_dictionaries__code__items_post",
+      "source": {
+        "page": "PAGE-APP-PROCESS-DB"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "PUT",
+        "path": "/api/v1/dictionaries/process/items/{item_id}"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.PROCESS.DB.3",
+      "operation_id": "update_item_api_v1_dictionaries__code__items__item_id__put",
+      "source": {
+        "page": "PAGE-APP-PROCESS-DB"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "DELETE",
+        "path": "/api/v1/dictionaries/process/items/{item_id}"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.PROCESS.DB.4",
+      "operation_id": "delete_item_api_v1_dictionaries__code__items__item_id__delete",
+      "source": {
+        "page": "PAGE-APP-PROCESS-DB"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "feature_id": "FEATURE-LEDGER-QUERY",
+        "method": "GET",
+        "path": "/api/v1/projects/{project_id}/ledger"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.QUERY.LEDGER.1",
+      "name_zh": "查询项目零件台账（单项目）",
+      "operation_id": "project_ledger_api_v1_projects__project_id__ledger_get",
+      "owner": {
+        "backend": "backend-owner (baseline, openapi-0.1.0)",
+        "frontend": "entities/parts-ledger"
+      },
+      "request_need": {
+        "fields": [
+          "project_id"
+        ],
+        "identifiers": []
+      },
+      "response_need": {
+        "fields": [
+          "items",
+          "total",
+          "total_cost"
+        ]
+      },
+      "source": {
+        "page": "PAGE-TASK-STEP-QUERY-LEDGER"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": true,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "feature_id": "FEATURE-LEDGER-QUERY",
+        "method": "GET",
+        "path": "/api/v1/projects/{project_id}/ledger?snapshot={snapshot_id}"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.QUERY.LEDGER.SNAPSHOT",
+      "mock": {
+        "enabled": true,
+        "reason": "冻结版本「在线预览」router 跳 /ledger/query 带 snapshot query 参数，台账真实快照过滤契约未定，先 mock"
+      },
+      "name_zh": "冻结版本在线预览（台账按 snapshot 参数过滤）",
+      "operation_id": "OP-LEDGER-SNAPSHOT-FILTER",
+      "owner": {
+        "backend": "backend-owner (pending)",
+        "frontend": "entities/ledger-query (mock)"
+      },
+      "request_need": {
+        "fields": [
+          "project_id",
+          "snapshot_id"
+        ],
+        "identifiers": []
+      },
+      "response_need": {
+        "fields": [
+          "items",
+          "total",
+          "total_cost"
+        ]
+      },
+      "source": {
+        "page": "PAGE-TASK-STEP-QUERY-LEDGER"
+      },
+      "status": "NEEDS_BACKEND_REVIEW",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": [
+        "backend-contract-pending",
+        "backend-contract-missing"
+      ]
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/roles"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.ROLE.MGMT.1",
+      "operation_id": "list_roles_api_v1_roles_get",
+      "source": {
+        "page": "PAGE-APP-ROLE-MGMT"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "POST",
+        "path": "/api/v1/roles"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.ROLE.MGMT.2",
+      "operation_id": "create_role_api_v1_roles_post",
+      "source": {
+        "page": "PAGE-APP-ROLE-MGMT"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "PUT",
+        "path": "/api/v1/roles/{role_id}"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.ROLE.MGMT.3",
+      "operation_id": "update_role_api_v1_roles__role_id__put",
+      "source": {
+        "page": "PAGE-APP-ROLE-MGMT"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "DELETE",
+        "path": "/api/v1/roles/{role_id}"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.ROLE.MGMT.4",
+      "operation_id": "delete_role_api_v1_roles__role_id__delete",
+      "source": {
+        "page": "PAGE-APP-ROLE-MGMT"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/roles/{role_id}/grants"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.ROLE.MGMT.5",
+      "operation_id": "get_role_grants_api_v1_roles__role_id__grants_get",
+      "source": {
+        "page": "PAGE-APP-ROLE-MGMT"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "PUT",
+        "path": "/api/v1/roles/{role_id}/grants"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.ROLE.MGMT.6",
+      "operation_id": "replace_role_grants_api_v1_roles__role_id__grants_put",
+      "source": {
+        "page": "PAGE-APP-ROLE-MGMT"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "feature_id": "FEATURE-PARTLIST-SAVE-WRITEBACK",
+        "method": "POST",
+        "path": "/api/v1/projects/{project_id}/partlist"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.SAVE.BOM.1",
+      "name_zh": "新增零件清单行（写台账）",
+      "operation_id": "create_part_api_v1_projects__project_id__partlist_post",
+      "owner": {
+        "backend": "backend-owner (baseline, openapi-0.1.0)",
+        "frontend": "entities/partlist-save-writeback"
+      },
+      "request_need": {
+        "fields": [
+          "project_id",
+          "part_name",
+          "quantity",
+          "unit_price"
+        ],
+        "identifiers": []
+      },
+      "response_need": {
+        "fields": [
+          "part_id",
+          "log_id"
+        ]
+      },
+      "source": {
+        "page": "PAGE-TASK-STEP-SAVE-BOM"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "user-action"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "feature_id": "FEATURE-PARTLIST-SAVE-WRITEBACK",
+        "method": "PUT",
+        "path": "/api/v1/projects/{project_id}/partlist/{part_id}"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.SAVE.BOM.2",
+      "name_zh": "更新零件清单行（回写台账）",
+      "operation_id": "update_part_api_v1_projects__project_id__partlist__part_id__put",
+      "owner": {
+        "backend": "backend-owner (baseline, openapi-0.1.0)",
+        "frontend": "entities/partlist-save-writeback"
+      },
+      "request_need": {
+        "fields": [
+          "project_id",
+          "part_id",
+          "quantity",
+          "unit_price"
+        ],
+        "identifiers": []
+      },
+      "response_need": {
+        "fields": [
+          "part_id",
+          "log_id",
+          "version"
+        ]
+      },
+      "source": {
+        "page": "PAGE-TASK-STEP-SAVE-BOM"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "user-action"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "feature_id": "FEATURE-VEHICLE-MASTER-DATA-QUERY",
+        "method": "GET",
+        "path": "/api/v1/projects"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.SELECT.VEHICLE.CONTEXT.1",
+      "name_zh": "列出项目（车型主数据查询入口）",
+      "operation_id": "list_projects_api_v1_projects_get",
+      "owner": {
+        "backend": "backend-owner (baseline, openapi-0.1.0)",
+        "frontend": "entities/vehicle-master-data-query"
+      },
+      "request_need": {
+        "fields": [],
+        "identifiers": []
+      },
+      "response_need": {
+        "fields": [
+          "items",
+          "total"
+        ]
+      },
+      "source": {
+        "page": "PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": true,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "feature_id": "FEATURE-VEHICLE-MASTER-DATA-QUERY",
+        "method": "GET",
+        "path": "/api/v1/projects/{project_id}/carlines"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.SELECT.VEHICLE.CONTEXT.2",
+      "name_zh": "列出项目下车型",
+      "operation_id": "list_carlines_api_v1_projects__project_id__carlines_get",
+      "owner": {
+        "backend": "backend-owner (baseline, openapi-0.1.0)",
+        "frontend": "entities/vehicle-master-data-query"
+      },
+      "request_need": {
+        "fields": [
+          "project_id"
+        ],
+        "identifiers": []
+      },
+      "response_need": {
+        "fields": [
+          "items"
+        ]
+      },
+      "source": {
+        "page": "PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": true,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/dictionaries/{code}/items"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.SET.DB.1",
+      "operation_id": "list_items_api_v1_dictionaries__code__items_get",
+      "source": {
+        "page": "PAGE-APP-SET-DB"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "POST",
+        "path": "/api/v1/dictionaries/{code}/items"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.SET.DB.2",
+      "operation_id": "add_item_api_v1_dictionaries__code__items_post",
+      "source": {
+        "page": "PAGE-APP-SET-DB"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "PUT",
+        "path": "/api/v1/dictionaries/{code}/items/{item_id}"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.SET.DB.3",
+      "operation_id": "update_item_api_v1_dictionaries__code__items__item_id__put",
+      "source": {
+        "page": "PAGE-APP-SET-DB"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "DELETE",
+        "path": "/api/v1/dictionaries/{code}/items/{item_id}"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.SET.DB.4",
+      "operation_id": "delete_item_api_v1_dictionaries__code__items__item_id__delete",
+      "source": {
+        "page": "PAGE-APP-SET-DB"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/operation-logs"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.TASK.MGMT.1",
+      "operation_id": "list_operation_logs_api_v1_operation_logs_get",
+      "source": {
+        "page": "PAGE-APP-TASK-MGMT"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/operation-logs/export"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.TASK.MGMT.2",
+      "operation_id": "export_operation_logs_api_v1_operation_logs_export_get",
+      "source": {
+        "page": "PAGE-APP-TASK-MGMT"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/projects"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.TASK.MGMT.3",
+      "operation_id": "list_projects_api_v1_projects_get",
+      "source": {
+        "page": "PAGE-APP-TASK-MGMT"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/projects/{project_id}/partlist"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.TECHNICAL.AKT.1",
+      "operation_id": "list_partlist_api_v1_projects__project_id__partlist_get",
+      "source": {
+        "page": "PAGE-APP-TECHNICAL-AKT"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/projects/{project_id}/operation-logs"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.TECHNICAL.AKT.2",
+      "operation_id": "project_operation_logs_api_v1_projects__project_id__operation_logs_get",
+      "source": {
+        "page": "PAGE-APP-TECHNICAL-AKT"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/users"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.USER.MGMT.1",
+      "operation_id": "list_users_api_v1_users_get",
+      "source": {
+        "page": "PAGE-APP-USER-MGMT"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "POST",
+        "path": "/api/v1/users"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.USER.MGMT.2",
+      "operation_id": "create_user_api_v1_users_post",
+      "source": {
+        "page": "PAGE-APP-USER-MGMT"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/users/{user_id}"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.USER.MGMT.3",
+      "operation_id": "get_user_api_v1_users__user_id__get",
+      "source": {
+        "page": "PAGE-APP-USER-MGMT"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "PUT",
+        "path": "/api/v1/users/{user_id}"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.USER.MGMT.4",
+      "operation_id": "update_user_api_v1_users__user_id__put",
+      "source": {
+        "page": "PAGE-APP-USER-MGMT"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "DELETE",
+        "path": "/api/v1/users/{user_id}"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.USER.MGMT.5",
+      "operation_id": "disable_user_api_v1_users__user_id__delete",
+      "source": {
+        "page": "PAGE-APP-USER-MGMT"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "POST",
+        "path": "/api/v1/users/{user_id}/reset-password"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.USER.MGMT.6",
+      "operation_id": "reset_password_api_v1_users__user_id__reset_password_post",
+      "source": {
+        "page": "PAGE-APP-USER-MGMT"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "PUT",
+        "path": "/api/v1/users/{user_id}/roles"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.USER.MGMT.7",
+      "operation_id": "assign_user_roles_api_v1_users__user_id__roles_put",
+      "source": {
+        "page": "PAGE-APP-USER-MGMT"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/projects"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.VEHICLE.MASTER.DATA.1",
+      "operation_id": "list_projects_api_v1_projects_get",
+      "source": {
+        "page": "PAGE-APP-VEHICLE-MASTER-DATA"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "POST",
+        "path": "/api/v1/projects"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.VEHICLE.MASTER.DATA.2",
+      "operation_id": "create_project_api_v1_projects_post",
+      "source": {
+        "page": "PAGE-APP-VEHICLE-MASTER-DATA"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "PUT",
+        "path": "/api/v1/projects/{project_id}"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.VEHICLE.MASTER.DATA.3",
+      "operation_id": "update_project_api_v1_projects__project_id__put",
+      "source": {
+        "page": "PAGE-APP-VEHICLE-MASTER-DATA"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "POST",
+        "path": "/api/v1/projects/{project_id}/archive"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.VEHICLE.MASTER.DATA.4",
+      "operation_id": "archive_project_api_v1_projects__project_id__archive_post",
+      "source": {
+        "page": "PAGE-APP-VEHICLE-MASTER-DATA"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "GET",
+        "path": "/api/v1/projects/{project_id}/carlines"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.VEHICLE.MASTER.DATA.5",
+      "operation_id": "list_carlines_api_v1_projects__project_id__carlines_get",
+      "source": {
+        "page": "PAGE-APP-VEHICLE-MASTER-DATA"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "PUT",
+        "path": "/api/v1/projects/{project_id}/carlines"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.VEHICLE.MASTER.DATA.6",
+      "operation_id": "replace_carlines_api_v1_projects__project_id__carlines_put",
+      "source": {
+        "page": "PAGE-APP-VEHICLE-MASTER-DATA"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "method": "PUT",
+        "path": "/api/v1/projects/{project_id}/calc-carline"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.VEHICLE.MASTER.DATA.7",
+      "operation_id": "set_calc_carline_api_v1_projects__project_id__calc_carline_put",
+      "source": {
+        "page": "PAGE-APP-VEHICLE-MASTER-DATA"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "command",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "feature_id": "FEATURE-VEHICLE-MASTER-DATA-QUERY",
+        "method": "PUT",
+        "path": "/api/v1/projects/{project_id}/finance"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.VEHICLE.MASTER.DATA.FINANCE",
+      "mock": {
+        "enabled": true,
+        "reason": "原型有财务弹窗（KPE/净收入比例/销量阶段表/月度模拟/附件）但 openapi 无对应端点，先 mock（20260814 原型批次1）"
+      },
+      "name_zh": "车型财务信息查询/保存（GET+PUT：KPE Target、净收入比例、销量阶段表、附件）",
+      "operation_id": "OP-VEHICLE-FINANCE",
+      "owner": {
+        "backend": "backend-owner (pending)",
+        "frontend": "entities/vehicle-master-data (mock)"
+      },
+      "request_need": {
+        "fields": [
+          "project_id",
+          "kpe_target",
+          "net_revenue_ratio",
+          "sales_phases",
+          "attachments"
+        ],
+        "identifiers": []
+      },
+      "response_need": {
+        "fields": [
+          "kpe_target",
+          "net_revenue_ratio",
+          "sales_phases",
+          "attachments"
+        ]
+      },
+      "source": {
+        "page": "PAGE-APP-VEHICLE-MASTER-DATA"
+      },
+      "status": "NEEDS_BACKEND_REVIEW",
+      "trigger": {
+        "automatic": false,
+        "type": "user-action"
+      },
+      "type": "command",
+      "unresolved": [
+        "backend-contract-pending",
+        "backend-contract-missing"
+      ]
+    },
+    {
+      "backend_contract_ref": {
+        "feature_id": "FEATURE-PARTLIST-SAVE-WRITEBACK",
+        "method": "GET",
+        "path": "/api/v1/projects/{project_id}/carlines/{carline_id}/frozen-versions"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.VEHICLE.MASTER.DATA.FROZEN.LIST",
+      "mock": {
+        "enabled": true,
+        "reason": "区域三冻结版本列表/导出在 openapi 无对应端点，先 mock；导出为客户端真 CSV（UTF-8 BOM，.csv 文件名，2026-08-17 裁定④）"
+      },
+      "name_zh": "冻结版本列表（按生成时间倒序；行导出 CSV）",
+      "operation_id": "OP-FROZEN-VERSIONS-LIST",
+      "owner": {
+        "backend": "backend-owner (pending)",
+        "frontend": "entities/vehicle-master-data (mock)"
+      },
+      "request_need": {
+        "fields": [
+          "project_id",
+          "carline_id"
+        ],
+        "identifiers": []
+      },
+      "response_need": {
+        "fields": [
+          "items",
+          "snapshot_name",
+          "created_at",
+          "created_by",
+          "part_count"
+        ]
+      },
+      "source": {
+        "page": "PAGE-APP-VEHICLE-MASTER-DATA"
+      },
+      "status": "NEEDS_BACKEND_REVIEW",
+      "trigger": {
+        "automatic": false,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": [
+        "backend-contract-pending",
+        "backend-contract-missing"
+      ]
+    },
+    {
+      "backend_contract_ref": {
+        "feature_id": "FEATURE-ALL-PARTS-AGGREGATE-QUERY",
+        "method": "GET",
+        "path": "/api/v1/partlist/ledger"
+      },
+      "classification": "QUERY",
+      "id": "API_REQ.VIEW.ALL.PARTS.1",
+      "name_zh": "全系零件清单聚合查询（跨项目台账，自动同步不可编辑）",
+      "operation_id": "cross_project_ledger_api_v1_partlist_ledger_get",
+      "owner": {
+        "backend": "backend-owner (baseline, openapi-0.1.0)",
+        "frontend": "entities/all-parts-aggregate-query"
+      },
+      "request_need": {
+        "fields": [],
+        "identifiers": []
+      },
+      "response_need": {
+        "fields": [
+          "items",
+          "total",
+          "total_cost"
+        ]
+      },
+      "source": {
+        "page": "PAGE-TASK-STEP-VIEW-ALL-PARTS"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": true,
+        "type": "page-entry"
+      },
+      "type": "query",
+      "unresolved": []
+    },
+    {
+      "backend_contract_ref": {
+        "feature_id": "FEATURE-PARTLIST-SAVE-WRITEBACK",
+        "method": "PUT",
+        "path": "/api/v1/projects/{project_id}/partlist/{part_id}"
+      },
+      "classification": "COMMAND",
+      "id": "API_REQ.WRITEBACK.LEDGER.1",
+      "name_zh": "更新零件清单行（回写台账）",
+      "operation_id": "update_part_api_v1_projects__project_id__partlist__part_id__put",
+      "owner": {
+        "backend": "backend-owner (baseline, openapi-0.1.0)",
+        "frontend": "entities/partlist-save-writeback"
+      },
+      "request_need": {
+        "fields": [
+          "project_id",
+          "part_id",
+          "quantity",
+          "unit_price"
+        ],
+        "identifiers": []
+      },
+      "response_need": {
+        "fields": [
+          "part_id",
+          "log_id",
+          "version"
+        ]
+      },
+      "source": {
+        "page": "PAGE-TASK-STEP-WRITEBACK-LEDGER"
+      },
+      "status": "ACCEPTED",
+      "trigger": {
+        "automatic": false,
+        "type": "user-action"
+      },
+      "type": "command",
+      "unresolved": []
+    }
+  ],
+  "schema_version": 1
+}

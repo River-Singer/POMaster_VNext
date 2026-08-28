@@ -1,0 +1,285 @@
+{
+  "batch_code": "MIG-AUTH",
+  "batches": [
+    "master-batch2"
+  ],
+  "explicit_absence": [
+    {
+      "field": "error_boundary",
+      "reason": "not carried verbatim on object side (slot-side semantics per batch2 CONVENTIONS §2.3)",
+      "target": "application-shell-registry.yaml"
+    },
+    {
+      "field": "scroll_owner",
+      "reason": "not carried verbatim on object side (slot-side semantics per batch2 CONVENTIONS §2.3); authority stays in shell slot objects",
+      "target": "application-shell-registry.yaml"
+    },
+    {
+      "field": "(whole file)",
+      "reason": "inventory-registered legacy file with zero truth objects in ingested batches (explicit absence, not a silent pass)",
+      "target": "component-selection-register.yaml"
+    },
+    {
+      "field": "nav_groups[].route / subgroups.leaves[].route / drill_down_pages[].route",
+      "reason": "route withheld at ingest by design (02b §6: physical route authority belongs to KEYBINDING.* page-dir family, objects not yet built)",
+      "target": "navigation-structure.yaml"
+    }
+  ],
+  "files": [
+    {
+      "entries_rendered": 27,
+      "objects_consumed": 1,
+      "path": "outputs/frontend/10_planned/action-placement-registry.yaml",
+      "sha256": "ba6eb0dae76123adda7fb13b20cf2655fc0e2b06d632597b299e24109cc295d2"
+    },
+    {
+      "entries_rendered": 35,
+      "objects_consumed": 35,
+      "path": "outputs/frontend/10_planned/application-page-registry.yaml",
+      "sha256": "51c45df5a67b30e0bd8487d01702d10e40f1743f03d63f735994ad85ea6ca4c5"
+    },
+    {
+      "entries_rendered": 7,
+      "objects_consumed": 7,
+      "path": "outputs/frontend/10_planned/application-shell-registry.yaml",
+      "sha256": "e5efaafc7d0dd8d99ee4d6b7da0fc4f08f2ef1db06d0b8695049d17be8e2c8e2"
+    },
+    {
+      "entries_rendered": 7,
+      "objects_consumed": 27,
+      "path": "outputs/frontend/10_planned/navigation-structure.yaml",
+      "sha256": "389338c0b933336d6f5b6124cb945c4c3d486465c93003695f03128165ae8a82"
+    },
+    {
+      "entries_rendered": 21,
+      "objects_consumed": 16,
+      "path": "outputs/frontend/10_planned/navigation-transition-registry.yaml",
+      "sha256": "7328524fa55bae56ea6daa3c3d176533170e67ea48903862e41323371e4029af"
+    },
+    {
+      "entries_rendered": 16,
+      "objects_consumed": 1,
+      "path": "outputs/frontend/10_planned/page-anatomy-registry.yaml",
+      "sha256": "75dce733230c546757d3f396a9d34d3ceed056d0702549736d9e3dd723b344a3"
+    },
+    {
+      "entries_rendered": 39,
+      "objects_consumed": 39,
+      "path": "outputs/frontend/10_planned/page-readiness-registry.yaml",
+      "sha256": "cd7fa5c346e0d4cf09475cab1d6abeb75e0f1d3e57f37d657bced18186b900ca"
+    },
+    {
+      "entries_rendered": 11,
+      "objects_consumed": 1,
+      "path": "outputs/frontend/10_planned/page-template-registry.yaml",
+      "sha256": "19e7d1c49b9ad50e3d48c6f511aee4708b5174ea050713fb120b85c98bed83bd"
+    }
+  ],
+  "inputs_fingerprint": "64a0af8dfad0d02cfdc2be02615878e295d991df555757da45f1d2932afdd7cf",
+  "notes": [],
+  "ordering_policy": "entries sorted by object id (preset P1); legacy source array order is not carried on the object side (projection-irrecoverable, see check_fidelity.py report)",
+  "preset": {
+    "decision": "D25",
+    "kind": "projection_preset",
+    "name": "legacy-outputs"
+  },
+  "renderer": "renderer-v0",
+  "seq_anchor": "MIG-AUTH-0001",
+  "unprojected": [
+    {
+      "object": "PAGE.APP_ALL_PARTS_LIST",
+      "reason": "screen-blueprint family is P2 group, out of v0 registry-family scope (README boundary)",
+      "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-ALL-PARTS-LIST.yaml"
+    },
+    {
+      "object": "PAGE.APP_APPROVAL_FLOW",
+      "reason": "screen-blueprint family is P2 group, out of v0 registry-family scope (README boundary)",
+      "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-APPROVAL-FLOW.yaml"
+    },
+    {
+      "object": "PAGE.APP_BRIDGE_TABLE",
+      "reason": "screen-blueprint family is P2 group, out of v0 registry-family scope (README boundary)",
+      "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-BRIDGE-TABLE.yaml"
+    },
+    {
+      "object": "PAGE.APP_BUC_DETAIL",
+      "reason": "screen-blueprint family is P2 group, out of v0 registry-family scope (README boundary)",
+      "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-BUC-DETAIL.yaml"
+    },
+    {
+      "object": "PAGE.APP_CSC_PRICE",
+      "reason": "screen-blueprint family is P2 group, out of v0 registry-family scope (README boundary)",
+      "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-CSC-PRICE.yaml"
+    },
+    {
+      "object": "PAGE.APP_DASHBOARD",
+      "reason": "screen-blueprint family is P2 group, out of v0 registry-family scope (README boundary)",
+      "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-DASHBOARD.yaml"
+    },
+    {
+      "object": "PAGE.APP_DATA_PERMISSION",
+      "reason": "screen-blueprint family is P2 group, out of v0 registry-family scope (README boundary)",
+      "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-DATA-PERMISSION.yaml"
+    },
+    {
+      "object": "PAGE.APP_EQUIPMENT_DB",
+      "reason": "screen-blueprint family is P2 group, out of v0 registry-family scope (README boundary)",
+      "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-EQUIPMENT-DB.yaml"
+    },
+    {
+      "object": "PAGE.APP_EQUIPMENT_DETAIL",
+      "reason": "screen-blueprint family is P2 group, out of v0 registry-family scope (README boundary)",
+      "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-EQUIPMENT-DETAIL.yaml"
+    },
+    {
+      "object": "PAGE.APP_EQUIPMENT_PALETTE",
+      "reason": "screen-blueprint family is P2 group, out of v0 registry-family scope (README boundary)",
+      "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-EQUIPMENT-PALETTE.yaml"
+    },
+    {
+      "object": "PAGE.APP_EVALUATION",
+      "reason": "screen-blueprint family is P2 group, out of v0 registry-family scope (README boundary)",
+      "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-EVALUATION.yaml"
+    },
+    {
+      "object": "PAGE.APP_FORECAST_REPORT",
+      "reason": "screen-blueprint family is P2 group, out of v0 registry-family scope (README boundary)",
+      "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-FORECAST-REPORT.yaml"
+    },
+    {
+      "object": "PAGE.APP_MATERIAL_DB",
+      "reason": "screen-blueprint family is P2 group, out of v0 registry-family scope (README boundary)",
+      "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-MATERIAL-DB.yaml"
+    },
+    {
+      "object": "PAGE.APP_OTHER_COST_ANALYSIS",
+      "reason": "screen-blueprint family is P2 group, out of v0 registry-family scope (README boundary)",
+      "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-OTHER-COST-ANALYSIS.yaml"
+    },
+    {
+      "object": "PAGE.APP_OTHER_DB",
+      "reason": "screen-blueprint family is P2 group, out of v0 registry-family scope (README boundary)",
+      "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-OTHER-DB.yaml"
+    },
+    {
+      "object": "PAGE.APP_PART_INFO",
+      "reason": "screen-blueprint family is P2 group, out of v0 registry-family scope (README boundary)",
+      "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-PART-INFO.yaml"
+    },
+    {
+      "object": "PAGE.APP_PART_STRUCTURE_DB",
+      "reason": "screen-blueprint family is P2 group, out of v0 registry-family scope (README boundary)",
+      "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-PART-STRUCTURE-DB.yaml"
+    },
+    {
+      "object": "PAGE.APP_PROCESS_DB",
+      "reason": "screen-blueprint family is P2 group, out of v0 registry-family scope (README boundary)",
+      "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-PROCESS-DB.yaml"
+    },
+    {
+      "object": "PAGE.APP_ROLE_MGMT",
+      "reason": "screen-blueprint family is P2 group, out of v0 registry-family scope (README boundary)",
+      "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-ROLE-MGMT.yaml"
+    },
+    {
+      "object": "PAGE.APP_SET_DB",
+      "reason": "screen-blueprint family is P2 group, out of v0 registry-family scope (README boundary)",
+      "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-SET-DB.yaml"
+    },
+    {
+      "object": "PAGE.APP_TASK_MGMT",
+      "reason": "screen-blueprint family is P2 group, out of v0 registry-family scope (README boundary)",
+      "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-TASK-MGMT.yaml"
+    },
+    {
+      "object": "PAGE.APP_TECHNICAL_AKT",
+      "reason": "screen-blueprint family is P2 group, out of v0 registry-family scope (README boundary)",
+      "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-TECHNICAL-AKT.yaml"
+    },
+    {
+      "object": "PAGE.APP_USER_MGMT",
+      "reason": "screen-blueprint family is P2 group, out of v0 registry-family scope (README boundary)",
+      "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-USER-MGMT.yaml"
+    },
+    {
+      "object": "PAGE.APP_VEHICLE_MASTER_DATA",
+      "reason": "screen-blueprint family is P2 group, out of v0 registry-family scope (README boundary)",
+      "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-VEHICLE-MASTER-DATA.yaml"
+    },
+    {
+      "object": "PAGE.AUTHENTICATE",
+      "reason": "screen-blueprint family is P2 group, out of v0 registry-family scope (README boundary)",
+      "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-AUTHENTICATE.yaml"
+    },
+    {
+      "object": "PAGE.BIND_CARLINE",
+      "reason": "screen-blueprint family is P2 group, out of v0 registry-family scope (README boundary)",
+      "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-BIND-CARLINE.yaml"
+    },
+    {
+      "object": "PAGE.BUC_ANALYSE",
+      "reason": "screen-blueprint family is P2 group, out of v0 registry-family scope (README boundary)",
+      "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-BUC-ANALYSE.yaml"
+    },
+    {
+      "object": "PAGE.BUILD_BOM",
+      "reason": "screen-blueprint family is P2 group, out of v0 registry-family scope (README boundary)",
+      "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-BUILD-BOM.yaml"
+    },
+    {
+      "object": "PAGE.EXPERT_MODEL_CALCULATE",
+      "reason": "screen-blueprint family is P2 group, out of v0 registry-family scope (README boundary)",
+      "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-EXPERT-MODEL-CALCULATE.yaml"
+    },
+    {
+      "object": "PAGE.GENERATE_SNAPSHOT",
+      "reason": "screen-blueprint family is P2 group, out of v0 registry-family scope (README boundary)",
+      "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-GENERATE-SNAPSHOT.yaml"
+    },
+    {
+      "object": "PAGE.MAINTAIN_BASE_ATTRIBUTES",
+      "reason": "screen-blueprint family is P2 group, out of v0 registry-family scope (README boundary)",
+      "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-MAINTAIN-BASE-ATTRIBUTES.yaml"
+    },
+    {
+      "object": "PAGE.MANAGE_USER_ROLE",
+      "reason": "screen-blueprint family is P2 group, out of v0 registry-family scope (README boundary)",
+      "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-MANAGE-USER-ROLE.yaml"
+    },
+    {
+      "object": "PAGE.OUTPUT_TO_LEDGER",
+      "reason": "screen-blueprint family is P2 group, out of v0 registry-family scope (README boundary)",
+      "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-OUTPUT-TO-LEDGER.yaml"
+    },
+    {
+      "object": "PAGE.QUERY_LEDGER",
+      "reason": "screen-blueprint family is P2 group, out of v0 registry-family scope (README boundary)",
+      "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-QUERY-LEDGER.yaml"
+    },
+    {
+      "object": "PAGE.SAVE_BOM",
+      "reason": "screen-blueprint family is P2 group, out of v0 registry-family scope (README boundary)",
+      "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-SAVE-BOM.yaml"
+    },
+    {
+      "object": "PAGE.SELECT_VEHICLE_CONTEXT",
+      "reason": "screen-blueprint family is P2 group, out of v0 registry-family scope (README boundary)",
+      "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT.yaml"
+    },
+    {
+      "object": "PAGE.TRACK_COST_BY_SNAPSHOT",
+      "reason": "screen-blueprint family is P2 group, out of v0 registry-family scope (README boundary)",
+      "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-TRACK-COST-BY-SNAPSHOT.yaml"
+    },
+    {
+      "object": "PAGE.VIEW_ALL_PARTS",
+      "reason": "screen-blueprint family is P2 group, out of v0 registry-family scope (README boundary)",
+      "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-VIEW-ALL-PARTS.yaml"
+    },
+    {
+      "object": "PAGE.WRITEBACK_LEDGER",
+      "reason": "screen-blueprint family is P2 group, out of v0 registry-family scope (README boundary)",
+      "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-WRITEBACK-LEDGER.yaml"
+    }
+  ]
+}

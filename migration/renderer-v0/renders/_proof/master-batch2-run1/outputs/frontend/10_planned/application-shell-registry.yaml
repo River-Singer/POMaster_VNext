@@ -1,0 +1,51 @@
+{
+  "blueprint_sha256": "09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+  "document_type": "application-shell-registry",
+  "schema_version": 1,
+  "shell_name": "MasterApplicationShell",
+  "slots": [
+    {
+      "id": "SHELL.BREADCRUMB",
+      "layout": "height:40px; full-width; MasterBreadcrumb; route-driven; 不硬编码路由路径",
+      "name_zh": "全局面包屑",
+      "owner": "app",
+      "visibility": "hidden when workbench multi-tab enabled; shown only for route.meta.breadcrumb=true or standalone pages"
+    },
+    {
+      "id": "SHELL.GLOBAL_MESSAGE",
+      "layout": "fixed; top-center; z-index:2000; MasterToast; 渲染 api-error-mapping 的 ui_state（login-failed/permission-denied/server-error 等）-> 对应变体的全局提示；per-message auto-dismiss",
+      "name_zh": "全局消息区",
+      "owner": "app"
+    },
+    {
+      "id": "SHELL.GLOBAL_TASK",
+      "layout": "fixed; bottom-right; z-index:2000; 异步任务进度（文件导入/导出，协议 32）；MasterProgress",
+      "name_zh": "全局任务区",
+      "owner": "app"
+    },
+    {
+      "id": "SHELL.MAIN_CONTENT",
+      "layout": "flex:1; overflow-y:auto; padding:24px; route-outlet; route-level ErrorBoundary 包裹此 slot（错误隔离：一页 query error 不传播到其他页面，协议 18/27）",
+      "name_zh": "主内容区",
+      "owner": "pages"
+    },
+    {
+      "id": "SHELL.SIDE_NAV",
+      "layout": "width:280px (collapsed:48px); full-height; position:fixed; left:0; overflow-y:auto; MasterMenu; RULE-NAV-GROUPS-NOT-CAPABILITIES 按导航组而非能力组织；侧栏无可见滚动条（scrollbar-width:none）；折叠按钮置于侧栏底部",
+      "name_zh": "侧边导航",
+      "owner": "app"
+    },
+    {
+      "id": "SHELL.TOP_BAR",
+      "layout": "height:56px; full-width; position:sticky; top:0; z-index:1000; contains brand + breadcrumb slot + user-menu",
+      "name_zh": "顶部栏",
+      "owner": "app"
+    },
+    {
+      "id": "SHELL.USER_MENU",
+      "layout": "top-right dropdown within TOP_BAR; 含 logout（POST /auth/logout）+ 用户信息（GET /auth/me）；http-client-policy authClient 管理",
+      "name_zh": "用户菜单",
+      "owner": "app"
+    }
+  ]
+}

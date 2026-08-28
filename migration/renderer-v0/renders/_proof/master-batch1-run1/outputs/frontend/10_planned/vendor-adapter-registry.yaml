@@ -1,0 +1,43 @@
+{
+  "blueprint_sha256": "09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+  "document_type": "vendor-adapter-registry",
+  "libraries": [
+    {
+      "adapter_dir": "src/shared/grid/",
+      "direct_usage_in_business_pages": "forbidden",
+      "library": "ag-grid",
+      "version": "^31.3"
+    },
+    {
+      "adapter_dir": "src/shared/ui/chart/",
+      "direct_usage_in_business_pages": "forbidden",
+      "library": "echarts",
+      "version": "^5.5"
+    },
+    {
+      "adapter_dir": "src/shared/ui/",
+      "direct_usage_in_business_pages": "forbidden",
+      "library": "element-plus",
+      "version": "^2.8"
+    },
+    {
+      "adapter_dir": "src/shared/state/",
+      "direct_usage_in_business_pages": "forbidden",
+      "library": "pinia",
+      "version": "^2.2"
+    },
+    {
+      "adapter_dir": "src/app/providers/",
+      "direct_usage_in_business_pages": "forbidden",
+      "library": "vue",
+      "version": "^3.5"
+    },
+    {
+      "adapter_dir": "src/app/router/",
+      "direct_usage_in_business_pages": "forbidden",
+      "library": "vue-router",
+      "version": "^4.4"
+    }
+  ],
+  "schema_version": 1
+}

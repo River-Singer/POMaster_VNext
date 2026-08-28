@@ -1,0 +1,178 @@
+{
+  "blueprint_sha256": "09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+  "document_type": "navigation-transition-registry",
+  "schema_version": 1,
+  "transitions": [
+    {
+      "back_behavior": "disabled",
+      "from": "PAGE-TASK-STEP-AUTHENTICATE",
+      "id": "TRANSITION-AUTHENTICATE-TO-SELECT-VEHICLE-CONTEXT",
+      "protocol": "universal:routing-url-protocol",
+      "to": "PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT",
+      "trigger": "login-success"
+    },
+    {
+      "back_behavior": "restore-source-context",
+      "from": "PAGE-TASK-STEP-BUC-ANALYSE",
+      "id": "TRANSITION-BUC-ANALYSE-TO-EXPERT-MODEL-CALCULATE",
+      "protocol": "universal:routing-url-protocol",
+      "to": "PAGE-TASK-STEP-EXPERT-MODEL-CALCULATE",
+      "trigger": "user-open-expert-model"
+    },
+    {
+      "back_behavior": "disabled",
+      "from": "PAGE-TASK-STEP-BUC-ANALYSE",
+      "id": "TRANSITION-BUC-ANALYSE-TO-OUTPUT-TO-LEDGER",
+      "protocol": "universal:routing-url-protocol",
+      "to": "PAGE-TASK-STEP-OUTPUT-TO-LEDGER",
+      "trigger": "system-output-trigger"
+    },
+    {
+      "back_behavior": "disabled",
+      "from": "PAGE-TASK-STEP-BUILD-BOM",
+      "id": "TRANSITION-BUILD-BOM-TO-BIND-CARLINE",
+      "protocol": "universal:routing-url-protocol",
+      "to": "PAGE-TASK-STEP-BIND-CARLINE",
+      "trigger": "auto-bind-carline"
+    },
+    {
+      "back_behavior": "restore-source-context",
+      "from": "PAGE-TASK-STEP-BUILD-BOM",
+      "id": "TRANSITION-BUILD-BOM-TO-GENERATE-SNAPSHOT",
+      "protocol": "universal:routing-url-protocol",
+      "to": "PAGE-TASK-STEP-GENERATE-SNAPSHOT",
+      "trigger": "user-action-snapshot"
+    },
+    {
+      "back_behavior": "restore-source-context",
+      "from": "PAGE-TASK-STEP-BUILD-BOM",
+      "id": "TRANSITION-BUILD-BOM-TO-SAVE-BOM",
+      "protocol": "universal:routing-url-protocol",
+      "to": "PAGE-TASK-STEP-SAVE-BOM",
+      "trigger": "user-action-save"
+    },
+    {
+      "back_behavior": "restore-source-context",
+      "from": "PAGE-TASK-STEP-EXPERT-MODEL-CALCULATE",
+      "id": "TRANSITION-EXPERT-MODEL-CALCULATE-TO-BUC-ANALYSE",
+      "protocol": "universal:routing-url-protocol",
+      "to": "PAGE-TASK-STEP-BUC-ANALYSE",
+      "trigger": "writeback-result-return"
+    },
+    {
+      "back_behavior": "restore-source-context",
+      "from": "PAGE-TASK-STEP-GENERATE-SNAPSHOT",
+      "id": "TRANSITION-GENERATE-SNAPSHOT-TO-TRACK-COST-BY-SNAPSHOT",
+      "protocol": "universal:routing-url-protocol",
+      "to": "PAGE-TASK-STEP-TRACK-COST-BY-SNAPSHOT",
+      "trigger": "user-compare-snapshots"
+    },
+    {
+      "back_behavior": "disabled",
+      "from": "PAGE-TASK-STEP-MANAGE-USER-ROLE",
+      "id": "TRANSITION-MANAGE-USER-ROLE-TO-AUTHENTICATE",
+      "protocol": "universal:routing-url-protocol",
+      "to": "PAGE-TASK-STEP-AUTHENTICATE",
+      "trigger": "user-logout-from-admin"
+    },
+    {
+      "back_behavior": "disabled",
+      "from": "PAGE-TASK-STEP-QUERY-LEDGER",
+      "id": "TRANSITION-QUERY-LEDGER-TO-AUTHENTICATE",
+      "protocol": "universal:routing-url-protocol",
+      "to": "PAGE-TASK-STEP-AUTHENTICATE",
+      "trigger": "auth-redirect-401"
+    },
+    {
+      "back_behavior": "restore-source-context",
+      "from": "PAGE-TASK-STEP-QUERY-LEDGER",
+      "id": "TRANSITION-QUERY-LEDGER-TO-BUC-ANALYSE",
+      "protocol": "universal:routing-url-protocol",
+      "to": "PAGE-TASK-STEP-BUC-ANALYSE",
+      "trigger": "user-select-part"
+    },
+    {
+      "back_behavior": "restore-source-context",
+      "from": "PAGE-APP-ROLE-MGMT",
+      "id": "TRANSITION-ROLE-MGMT-TO-USER-MGMT",
+      "params": {
+        "role": "角色名称；落地为 ?role=<角色名> 深链，用户管理页在角色目录载入后按名称定位到角色编码筛选（一次性）"
+      },
+      "protocol": "universal:routing-url-protocol",
+      "to": "PAGE-APP-USER-MGMT",
+      "trigger": "user-view-role-members"
+    },
+    {
+      "back_behavior": "restore-source-context",
+      "from": "PAGE-TASK-STEP-SAVE-BOM",
+      "id": "TRANSITION-SAVE-BOM-TO-QUERY-LEDGER",
+      "protocol": "universal:routing-url-protocol",
+      "to": "PAGE-TASK-STEP-QUERY-LEDGER",
+      "trigger": "save-success-redirect"
+    },
+    {
+      "back_behavior": "disabled",
+      "from": "PAGE-TASK-STEP-SAVE-BOM",
+      "id": "TRANSITION-SAVE-BOM-TO-WRITEBACK-LEDGER",
+      "protocol": "universal:routing-url-protocol",
+      "to": "PAGE-TASK-STEP-WRITEBACK-LEDGER",
+      "trigger": "system-writeback-trigger"
+    },
+    {
+      "back_behavior": "disabled",
+      "from": "PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT",
+      "id": "TRANSITION-SELECT-VEHICLE-CONTEXT-TO-AUTHENTICATE",
+      "protocol": "universal:routing-url-protocol",
+      "to": "PAGE-TASK-STEP-AUTHENTICATE",
+      "trigger": "user-logout"
+    },
+    {
+      "back_behavior": "restore-source-context",
+      "from": "PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT",
+      "id": "TRANSITION-SELECT-VEHICLE-CONTEXT-TO-BUILD-BOM",
+      "protocol": "universal:routing-url-protocol",
+      "to": "PAGE-TASK-STEP-BUILD-BOM",
+      "trigger": "user-select-vehicle"
+    },
+    {
+      "back_behavior": "restore-source-context",
+      "from": "PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT",
+      "id": "TRANSITION-SELECT-VEHICLE-CONTEXT-TO-MANAGE-USER-ROLE",
+      "protocol": "universal:routing-url-protocol",
+      "to": "PAGE-TASK-STEP-MANAGE-USER-ROLE",
+      "trigger": "side-nav-menu-click"
+    },
+    {
+      "back_behavior": "restore-source-context",
+      "from": "PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT",
+      "id": "TRANSITION-SELECT-VEHICLE-CONTEXT-TO-QUERY-LEDGER",
+      "protocol": "universal:routing-url-protocol",
+      "to": "PAGE-TASK-STEP-QUERY-LEDGER",
+      "trigger": "side-nav-menu-click"
+    },
+    {
+      "back_behavior": "restore-source-context",
+      "from": "PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT",
+      "id": "TRANSITION-SELECT-VEHICLE-CONTEXT-TO-VIEW-ALL-PARTS",
+      "protocol": "universal:routing-url-protocol",
+      "to": "PAGE-TASK-STEP-VIEW-ALL-PARTS",
+      "trigger": "side-nav-menu-click"
+    },
+    {
+      "back_behavior": "restore-source-context",
+      "from": "PAGE-TASK-STEP-VIEW-ALL-PARTS",
+      "id": "TRANSITION-VIEW-ALL-PARTS-TO-BUILD-BOM",
+      "protocol": "universal:routing-url-protocol",
+      "to": "PAGE-TASK-STEP-BUILD-BOM",
+      "trigger": "user-select-part-bind"
+    },
+    {
+      "back_behavior": "restore-source-context",
+      "from": "PAGE-TASK-STEP-VIEW-ALL-PARTS",
+      "id": "TRANSITION-VIEW-ALL-PARTS-TO-QUERY-LEDGER",
+      "protocol": "universal:routing-url-protocol",
+      "to": "PAGE-TASK-STEP-QUERY-LEDGER",
+      "trigger": "user-select-part"
+    }
+  ]
+}

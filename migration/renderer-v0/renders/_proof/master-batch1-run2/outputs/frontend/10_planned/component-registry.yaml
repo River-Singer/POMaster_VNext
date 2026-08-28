@@ -1,0 +1,57 @@
+{
+  "blueprint_sha256": "09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+  "components": [
+    {
+      "canonical_implementation": {
+        "component": "useAgGridBase",
+        "file": "src/shared/grid/useAgGridBase.ts",
+        "import": "@/shared/grid"
+      },
+      "capability_id": "GRID.BASE",
+      "category": "grid",
+      "name_zh": "AG Grid 公共基座",
+      "note": "C1 抽取：useAgGridBase+grid-theme.css，两 grid 适配器收编（getRowId/locale/gridKey/selection/expose/numeric formatter/checkbox colDef/主题变量，统一 --ag-font-size 漂移）",
+      "status": "implemented"
+    },
+    {
+      "canonical_implementation": {
+        "component": "MasterColumnConfig",
+        "file": "src/shared/grid/MasterColumnConfig.vue",
+        "import": "@/shared/grid"
+      },
+      "capability_id": "GRID.COLUMN_CONFIG",
+      "category": "grid",
+      "name_zh": "列配置面板",
+      "note": "2026-08-19 modal 契约升级（用户裁决 G21）：从显隐抽屉升级为列配置弹窗——字段搜索/显隐/冻结列（不固定·左·右）/多列排序（从左到右优先级）/列宽弹性（弹性列≤3）/个人视图（会话级，不落浏览器存储）；默认视图公共+管理员维护不可改删；# 列强制可见+左冻结；先例 CVP 页，他页渐进 2026-08-19 批 7 实施：弹窗形态落地（MasterDialog），多列排序显式列表 ≤3 列；个人视图 sessionStorage 会话级（键 {gridKey}:column-views）；无 gridKey props 的消费方走 legacy 显隐+搜索形态（props/事件向后兼容，渐进迁移）",
+      "status": "implemented",
+      "variants": [
+        "visibility",
+        "order",
+        "width"
+      ]
+    },
+    {
+      "canonical_implementation": {
+        "component": "MasterEditableGrid",
+        "file": "src/shared/grid/MasterEditableGrid.vue",
+        "import": "@/shared/grid"
+      },
+      "capability_id": "GRID.EDITABLE_GRID",
+      "category": "grid",
+      "forbidden": [
+        "direct_ag_grid_import_in_business_page",
+        "page_local_grid_css",
+        "inline_cell_renderer"
+      ],
+      "name_zh": "可编辑表格",
+      "status": "implemented",
+      "variants": [
+        "cell_edit",
+        "row_edit",
+        "batch_edit"
+      ]
+    }
+  ],
+  "document_type": "component-registry",
+  "schema_version": 1
+}

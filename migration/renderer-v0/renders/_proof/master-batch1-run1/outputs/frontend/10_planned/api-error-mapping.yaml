@@ -1,0 +1,223 @@
+{
+  "blueprint_sha256": "09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+  "document_type": "api-error-mapping",
+  "mappings": [
+    {
+      "error_code": "CONFLICT",
+      "feature_id": "FEATURE-PARTLIST-SAVE-WRITEBACK",
+      "frontend_recovery": "提示他人已修改，刷新后重试",
+      "http_status": 409,
+      "operation_ids": [
+        "OP-CREATE-PART"
+      ],
+      "protocol": "universal:error-handling-protocol",
+      "recover_action": "offer-reload-and-retry",
+      "retryable": true,
+      "severity": "warning",
+      "source": "backend",
+      "ui_state": "conflict",
+      "user_message": "乐观并发冲突"
+    },
+    {
+      "error_code": "FE-ABORTED",
+      "feature_id": null,
+      "frontend_recovery": "静默，不提示",
+      "http_status": null,
+      "operation_ids": [],
+      "protocol": "universal:browser-runtime-lifecycle-protocol",
+      "recover_action": "静默，不提示",
+      "retryable": false,
+      "severity": "info",
+      "source": "frontend",
+      "ui_state": "idle",
+      "user_message": "请求被取消（用户离开页面）"
+    },
+    {
+      "error_code": "FE-NETWORK-ERROR",
+      "feature_id": null,
+      "frontend_recovery": "检查网络后重试",
+      "http_status": null,
+      "operation_ids": [],
+      "protocol": "universal:request-api-protocol",
+      "recover_action": "检查网络后重试",
+      "retryable": true,
+      "severity": "warning",
+      "source": "frontend",
+      "ui_state": "offline",
+      "user_message": "网络异常或请求超时"
+    },
+    {
+      "error_code": "FE-TIMEOUT",
+      "feature_id": null,
+      "frontend_recovery": "重试或稍后再试",
+      "http_status": null,
+      "operation_ids": [],
+      "protocol": "universal:request-api-protocol",
+      "recover_action": "重试或稍后再试",
+      "retryable": true,
+      "severity": "warning",
+      "source": "frontend",
+      "ui_state": "timeout",
+      "user_message": "请求超时"
+    },
+    {
+      "error_code": "FE-WHITE-SCREEN",
+      "feature_id": null,
+      "frontend_recovery": "路由级 ErrorBoundary 兜底，提供返回首页",
+      "http_status": null,
+      "operation_ids": [],
+      "protocol": "universal:monitoring-logging-protocol",
+      "recover_action": "路由级 ErrorBoundary 兜底，提供返回首页",
+      "retryable": false,
+      "severity": "error",
+      "source": "frontend",
+      "ui_state": "error",
+      "user_message": "页面渲染异常（白屏）"
+    },
+    {
+      "error_code": "FORBIDDEN",
+      "feature_id": "FEATURE-ALL-PARTS-AGGREGATE-QUERY",
+      "frontend_recovery": "提示无权限",
+      "http_status": 403,
+      "operation_ids": [
+        "OP-CROSS-PROJECT-LEDGER"
+      ],
+      "protocol": "universal:error-handling-protocol",
+      "recover_action": "show-forbidden-no-retry",
+      "retryable": false,
+      "severity": "error",
+      "source": "backend",
+      "ui_state": "forbidden",
+      "user_message": "无全系聚合查询权限"
+    },
+    {
+      "error_code": "INVALID-CREDENTIALS",
+      "feature_id": "FEATURE-AUTH-LOGIN",
+      "frontend_recovery": "提示凭据无效，保留用户名不清空，允许重试",
+      "http_status": 401,
+      "operation_ids": [
+        "OP-AUTH-LOGIN"
+      ],
+      "protocol": "universal:error-handling-protocol",
+      "recover_action": "re-enter-credentials",
+      "retryable": false,
+      "severity": "error",
+      "source": "backend",
+      "ui_state": "invalid-credentials",
+      "user_message": "用户名或密码错误"
+    },
+    {
+      "error_code": "NO-PROJECT-ACCESS",
+      "feature_id": "FEATURE-LEDGER-QUERY",
+      "frontend_recovery": "提示无权限",
+      "http_status": 403,
+      "operation_ids": [
+        "OP-PROJECT-LEDGER"
+      ],
+      "protocol": "universal:error-handling-protocol",
+      "recover_action": "show-forbidden-no-retry",
+      "retryable": false,
+      "severity": "error",
+      "source": "backend",
+      "ui_state": "forbidden",
+      "user_message": "无该项目权限"
+    },
+    {
+      "error_code": "PART-NOT-FOUND",
+      "feature_id": "FEATURE-PARTLIST-SAVE-WRITEBACK",
+      "frontend_recovery": "提示并刷新列表",
+      "http_status": 404,
+      "operation_ids": [
+        "OP-UPDATE-PART"
+      ],
+      "protocol": "universal:error-handling-protocol",
+      "recover_action": "show-empty-not-found",
+      "retryable": false,
+      "severity": "info",
+      "source": "backend",
+      "ui_state": "not-found",
+      "user_message": "零件不存在"
+    },
+    {
+      "error_code": "PROJECT-NOT-FOUND",
+      "feature_id": "FEATURE-LEDGER-QUERY",
+      "frontend_recovery": "提示并返回项目列表",
+      "http_status": 404,
+      "operation_ids": [
+        "OP-PROJECT-LEDGER"
+      ],
+      "protocol": "universal:error-handling-protocol",
+      "recover_action": "show-empty-not-found",
+      "retryable": false,
+      "severity": "info",
+      "source": "backend",
+      "ui_state": "not-found",
+      "user_message": "项目不存在"
+    },
+    {
+      "error_code": "TOO-MANY-ATTEMPTS",
+      "feature_id": "FEATURE-AUTH-LOGIN",
+      "frontend_recovery": "提示稍后重试，倒计时展示",
+      "http_status": 429,
+      "operation_ids": [
+        "OP-AUTH-LOGIN"
+      ],
+      "protocol": "universal:error-handling-protocol",
+      "recover_action": "show-countdown-retry",
+      "retryable": true,
+      "severity": "warning",
+      "source": "backend",
+      "ui_state": "rate-limited",
+      "user_message": "登录尝试过多被限流"
+    },
+    {
+      "error_code": "UNAUTHENTICATED",
+      "feature_id": "FEATURE-ALL-PARTS-AGGREGATE-QUERY",
+      "frontend_recovery": "跳转登录页",
+      "http_status": 401,
+      "operation_ids": [
+        "OP-CROSS-PROJECT-LEDGER"
+      ],
+      "protocol": "universal:error-handling-protocol",
+      "recover_action": "redirect-to-login",
+      "retryable": true,
+      "severity": "error",
+      "source": "backend",
+      "ui_state": "unauthenticated",
+      "user_message": "未登录"
+    },
+    {
+      "error_code": "USER-NOT-FOUND",
+      "feature_id": "FEATURE-PERMISSION-EVALUATION",
+      "frontend_recovery": "提示用户不存在，返回用户列表",
+      "http_status": 404,
+      "operation_ids": [
+        "OP-USER-GRANT-MATRIX"
+      ],
+      "protocol": "universal:error-handling-protocol",
+      "recover_action": "show-empty-not-found",
+      "retryable": false,
+      "severity": "info",
+      "source": "backend",
+      "ui_state": "not-found",
+      "user_message": "目标用户不存在"
+    },
+    {
+      "error_code": "VALIDATION-ERROR",
+      "feature_id": "FEATURE-PARTLIST-SAVE-WRITEBACK",
+      "frontend_recovery": "定位到字段展示错误，不提交",
+      "http_status": 422,
+      "operation_ids": [
+        "OP-CREATE-PART"
+      ],
+      "protocol": "universal:error-handling-protocol",
+      "recover_action": "highlight-field-errors",
+      "retryable": false,
+      "severity": "error",
+      "source": "backend",
+      "ui_state": "validation-error",
+      "user_message": "字段校验失败"
+    }
+  ],
+  "schema_version": 1
+}

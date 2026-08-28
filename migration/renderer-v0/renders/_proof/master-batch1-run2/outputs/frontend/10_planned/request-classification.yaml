@@ -1,0 +1,96 @@
+{
+  "blueprint_sha256": "09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+  "classes": [
+    {
+      "auth_recovery": true,
+      "automatic": true,
+      "cancelable": true,
+      "description": "长时间任务：导入、导出、复杂计算、批量处理、文件转换、报表生成",
+      "id": "ASYNC_JOB",
+      "idempotent": false,
+      "max_retries": 0,
+      "requires_idempotency_key": false,
+      "retryable": false
+    },
+    {
+      "auth_recovery": false,
+      "automatic": false,
+      "cancelable": false,
+      "description": "建立/结束/变更会话身份：登录、注册、重置密码、登出",
+      "id": "AUTH",
+      "idempotent": false,
+      "max_retries": 0,
+      "requires_idempotency_key": false,
+      "retryable": false
+    },
+    {
+      "auth_recovery": true,
+      "automatic": false,
+      "cancelable": false,
+      "description": "改变业务数据：新增、编辑、删除、提交、审批、撤回、复制、计算、锁定、发布",
+      "id": "COMMAND",
+      "idempotent": false,
+      "max_retries": 0,
+      "requires_idempotency_key": true,
+      "retryable": false
+    },
+    {
+      "auth_recovery": true,
+      "automatic": true,
+      "cancelable": true,
+      "description": "下载文件、预览、导出",
+      "id": "FILE_DOWNLOAD",
+      "idempotent": true,
+      "max_retries": 1,
+      "requires_idempotency_key": false,
+      "retryable": true
+    },
+    {
+      "auth_recovery": true,
+      "automatic": false,
+      "cancelable": true,
+      "description": "上传文件、附件绑定、分片上传",
+      "id": "FILE_UPLOAD",
+      "idempotent": true,
+      "max_retries": 1,
+      "requires_idempotency_key": true,
+      "retryable": true
+    },
+    {
+      "auth_recovery": true,
+      "automatic": true,
+      "cancelable": true,
+      "description": "读取服务端状态：详情、列表、字典、历史、统计、权限、配置",
+      "id": "QUERY",
+      "idempotent": true,
+      "max_retries": 2,
+      "requires_idempotency_key": false,
+      "retryable": true
+    },
+    {
+      "auth_recovery": false,
+      "automatic": true,
+      "cancelable": false,
+      "description": "刷新当前会话：/auth/refresh",
+      "id": "SESSION_REFRESH",
+      "idempotent": true,
+      "max_retries": 0,
+      "requires_idempotency_key": false,
+      "retryable": false,
+      "single_flight": true
+    },
+    {
+      "auth_recovery": true,
+      "automatic": true,
+      "cancelable": true,
+      "description": "实时通信：SSE、WebSocket、轮询",
+      "id": "STREAM",
+      "idempotent": true,
+      "max_retries": 3,
+      "requires_idempotency_key": false,
+      "retryable": true
+    }
+  ],
+  "document_type": "request-classification",
+  "schema_version": 1
+}

@@ -1,0 +1,3596 @@
+{
+  "denominator": {
+    "files": 10
+  },
+  "files": [
+    {
+      "added_leaves": 0,
+      "added_paths": [],
+      "byte_identical": true,
+      "covered_leaves": 37,
+      "fidelity": "高保真（语义等价且数组序一致）",
+      "field_value_set_equal": true,
+      "json_equal_including_order": true,
+      "missing": [],
+      "order_differs_in": [],
+      "original_bytes_sha256": "5eb6793d5d16b1e30eb924f16571db7a08e1abdf55fcd62de256da843cb6880e",
+      "original_leaves": 37,
+      "rendered_bytes_sha256": "5eb6793d5d16b1e30eb924f16571db7a08e1abdf55fcd62de256da843cb6880e",
+      "target": "04_bp-feedback-register.yaml",
+      "value_drift": []
+    },
+    {
+      "added_leaves": 0,
+      "added_paths": [],
+      "byte_identical": true,
+      "covered_leaves": 385,
+      "fidelity": "高保真（语义等价且数组序一致）",
+      "field_value_set_equal": true,
+      "json_equal_including_order": true,
+      "missing": [],
+      "order_differs_in": [],
+      "original_bytes_sha256": "cfa6674fac5bfd93f9c3c71c08625abbcaa94f50d451c4946ad9ad1ed907d0e4",
+      "original_leaves": 385,
+      "rendered_bytes_sha256": "cfa6674fac5bfd93f9c3c71c08625abbcaa94f50d451c4946ad9ad1ed907d0e4",
+      "target": "05_engineering-decisions.yaml",
+      "value_drift": []
+    },
+    {
+      "added_leaves": 0,
+      "added_paths": [],
+      "byte_identical": false,
+      "covered_leaves": 171,
+      "fidelity": "高保真·值集等价（数组序为投影确定性排序，源序未入对象侧）",
+      "field_value_set_equal": true,
+      "json_equal_including_order": false,
+      "missing": [],
+      "order_differs_in": [
+        "api-error-mapping.yaml.mappings"
+      ],
+      "original_bytes_sha256": "f5968071fca8baf5c4a633f155b31bca9d4e70996cf4641a70ca6d226f1bfaf1",
+      "original_leaves": 171,
+      "rendered_bytes_sha256": "79e9e2e05ae239a312fe203864ba74577dbfeb2b74e8c4ad6d2784d77332fe1a",
+      "target": "api-error-mapping.yaml",
+      "value_drift": []
+    },
+    {
+      "added_leaves": 0,
+      "added_paths": [],
+      "byte_identical": false,
+      "covered_leaves": 1803,
+      "fidelity": "高保真·值集等价（数组序为投影确定性排序，源序未入对象侧）",
+      "field_value_set_equal": true,
+      "json_equal_including_order": false,
+      "missing": [],
+      "order_differs_in": [
+        "api-requirement-registry.yaml.requirements"
+      ],
+      "original_bytes_sha256": "70326e6fb4585e5e5f1291619ae72990822d1fb3fac14f08e96bab925bf98e5a",
+      "original_leaves": 1803,
+      "rendered_bytes_sha256": "5b77ade193db648da733391158d7c51d216346c85a09496006e11391d625fb92",
+      "target": "api-requirement-registry.yaml",
+      "value_drift": []
+    },
+    {
+      "added_leaves": 0,
+      "added_paths": [],
+      "byte_identical": false,
+      "covered_leaves": 35,
+      "fidelity": "部分保真（不可还原字段见清单）",
+      "field_value_set_equal": false,
+      "json_equal_including_order": false,
+      "missing": [
+        {
+          "path": "$.components[CHART.BAR].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CHART.BAR].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CHART.BAR].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CHART.BAR].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CHART.BAR].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CHART.BAR].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CHART.BAR].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CHART.BAR].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CHART.LINE].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CHART.LINE].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CHART.LINE].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CHART.LINE].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CHART.LINE].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CHART.LINE].forbidden[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CHART.LINE].forbidden[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CHART.LINE].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CHART.LINE].states[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CHART.LINE].states[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CHART.LINE].states[2]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CHART.LINE].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CHART.PIE].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CHART.PIE].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CHART.PIE].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CHART.PIE].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CHART.PIE].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CHART.PIE].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CHART.PIE].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CHART.PIE].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.AUTO_COMPLETE].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.AUTO_COMPLETE].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.AUTO_COMPLETE].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.AUTO_COMPLETE].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.AUTO_COMPLETE].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.AUTO_COMPLETE].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.AUTO_COMPLETE].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.AUTO_COMPLETE].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.BUTTON].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.BUTTON].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.BUTTON].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.BUTTON].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.BUTTON].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.BUTTON].forbidden[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.BUTTON].forbidden[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.BUTTON].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.BUTTON].sizes[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.BUTTON].sizes[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.BUTTON].sizes[2]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.BUTTON].sizes[3]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.BUTTON].states[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.BUTTON].states[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.BUTTON].states[2]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.BUTTON].states[3]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.BUTTON].states[4]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.BUTTON].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.BUTTON].tokens.background",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.BUTTON].tokens.borderRadius",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.BUTTON].tokens.color",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.BUTTON].variants[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.BUTTON].variants[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.BUTTON].variants[2]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.BUTTON].variants[3]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.BUTTON].variants[4]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.BUTTON].variants[5]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.BUTTON].variants[6]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.CASCADER].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.CASCADER].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.CASCADER].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.CASCADER].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.CASCADER].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.CASCADER].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.CASCADER].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.CASCADER].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.CHECKBOX].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.CHECKBOX].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.CHECKBOX].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.CHECKBOX].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.CHECKBOX].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.CHECKBOX].forbidden[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.CHECKBOX].forbidden[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.CHECKBOX].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.CHECKBOX].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.CODE_EDITOR].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.CODE_EDITOR].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.CODE_EDITOR].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.CODE_EDITOR].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.CODE_EDITOR].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.CODE_EDITOR].forbidden[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.CODE_EDITOR].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.CODE_EDITOR].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.CODE_EDITOR].states[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.CODE_EDITOR].states[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.CODE_EDITOR].states[2]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.CODE_EDITOR].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.CODE_EDITOR].variants[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.CODE_EDITOR].variants[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.CODE_EDITOR].variants[2]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.CODE_EDITOR].variants[3]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.DATE_PICKER].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.DATE_PICKER].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.DATE_PICKER].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.DATE_PICKER].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.DATE_PICKER].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.DATE_PICKER].forbidden[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.DATE_PICKER].forbidden[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.DATE_PICKER].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.DATE_PICKER].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.DATE_PICKER].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.DATE_RANGE_PICKER].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.DATE_RANGE_PICKER].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.DATE_RANGE_PICKER].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.DATE_RANGE_PICKER].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.DATE_RANGE_PICKER].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.DATE_RANGE_PICKER].forbidden[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.DATE_RANGE_PICKER].forbidden[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.DATE_RANGE_PICKER].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.DATE_RANGE_PICKER].note",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.DATE_RANGE_PICKER].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.DROPDOWN].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.DROPDOWN].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.DROPDOWN].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.DROPDOWN].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.DROPDOWN].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.DROPDOWN].forbidden[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.DROPDOWN].forbidden[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.DROPDOWN].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.DROPDOWN].sizes[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.DROPDOWN].sizes[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.DROPDOWN].sizes[2]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.DROPDOWN].states[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.DROPDOWN].states[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.DROPDOWN].states[2]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.DROPDOWN].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.DROPDOWN].tokens.color",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.DROPDOWN].variants[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.DROPDOWN].variants[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.DROPDOWN].variants[2]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.FILE_UPLOAD].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.FILE_UPLOAD].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.FILE_UPLOAD].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.FILE_UPLOAD].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.FILE_UPLOAD].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.FILE_UPLOAD].forbidden[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.FILE_UPLOAD].forbidden[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.FILE_UPLOAD].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.FILE_UPLOAD].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.FILE_UPLOAD].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.INPUT].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.INPUT].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.INPUT].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.INPUT].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.INPUT].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.INPUT].forbidden[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.INPUT].forbidden[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.INPUT].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.INPUT].states[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.INPUT].states[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.INPUT].states[2]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.INPUT].states[3]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.INPUT].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.INPUT].tokens.borderColor",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.INPUT].tokens.color",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.INPUT].variants[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.INPUT].variants[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.INPUT].variants[2]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.INPUT].variants[3]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.MENTIONS].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.MENTIONS].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.MENTIONS].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.MENTIONS].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.MENTIONS].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.MENTIONS].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.MENTIONS].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.MENTIONS].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.NUMBER_INPUT].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.NUMBER_INPUT].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.NUMBER_INPUT].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.NUMBER_INPUT].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.NUMBER_INPUT].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.NUMBER_INPUT].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.NUMBER_INPUT].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.NUMBER_INPUT].note",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.NUMBER_INPUT].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.RADIO_GROUP].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.RADIO_GROUP].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.RADIO_GROUP].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.RADIO_GROUP].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.RADIO_GROUP].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.RADIO_GROUP].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.RADIO_GROUP].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.RADIO_GROUP].note",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.RADIO_GROUP].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.RATE].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.RATE].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.RATE].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.RATE].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.RATE].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.RATE].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.RATE].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.RATE].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.RICH_TEXT_EDITOR].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.RICH_TEXT_EDITOR].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.RICH_TEXT_EDITOR].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.RICH_TEXT_EDITOR].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.RICH_TEXT_EDITOR].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.RICH_TEXT_EDITOR].forbidden[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.RICH_TEXT_EDITOR].forbidden[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.RICH_TEXT_EDITOR].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.RICH_TEXT_EDITOR].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.RICH_TEXT_EDITOR].states[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.RICH_TEXT_EDITOR].states[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.RICH_TEXT_EDITOR].states[2]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.RICH_TEXT_EDITOR].states[3]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.RICH_TEXT_EDITOR].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.SELECT].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.SELECT].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.SELECT].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.SELECT].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.SELECT].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.SELECT].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.SELECT].note",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.SELECT].states[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.SELECT].states[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.SELECT].states[2]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.SELECT].states[3]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.SELECT].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.SELECT].tokens.color",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.SELECT].variants[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.SELECT].variants[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.SELECT].variants[2]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.SLIDER].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.SLIDER].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.SLIDER].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.SLIDER].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.SLIDER].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.SLIDER].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.SLIDER].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.SLIDER].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.SWITCH].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.SWITCH].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.SWITCH].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.SWITCH].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.SWITCH].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.SWITCH].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.SWITCH].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.SWITCH].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TAG_INPUT].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TAG_INPUT].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TAG_INPUT].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TAG_INPUT].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TAG_INPUT].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TAG_INPUT].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TAG_INPUT].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TAG_INPUT].states[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TAG_INPUT].states[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TAG_INPUT].states[2]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TAG_INPUT].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TEXTAREA].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TEXTAREA].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TEXTAREA].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TEXTAREA].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TEXTAREA].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TEXTAREA].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TEXTAREA].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TEXTAREA].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TIME_PICKER].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TIME_PICKER].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TIME_PICKER].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TIME_PICKER].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TIME_PICKER].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TIME_PICKER].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TIME_PICKER].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TIME_PICKER].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TRANSFER].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TRANSFER].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TRANSFER].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TRANSFER].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TRANSFER].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TRANSFER].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TRANSFER].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TRANSFER].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TREE_SELECT].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TREE_SELECT].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TREE_SELECT].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TREE_SELECT].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TREE_SELECT].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TREE_SELECT].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TREE_SELECT].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[CONTROL.TREE_SELECT].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.AVATAR].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.AVATAR].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.AVATAR].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.AVATAR].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.AVATAR].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.AVATAR].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.AVATAR].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.AVATAR].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.CALENDAR].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.CALENDAR].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.CALENDAR].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.CALENDAR].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.CALENDAR].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.CALENDAR].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.CALENDAR].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.CALENDAR].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.COLLAPSE].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.COLLAPSE].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.COLLAPSE].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.COLLAPSE].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.COLLAPSE].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.COLLAPSE].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.COLLAPSE].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.COLLAPSE].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.COMMENT].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.COMMENT].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.COMMENT].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.COMMENT].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.COMMENT].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.COMMENT].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.COMMENT].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.COMMENT].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.DESCRIPTION_LIST].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.DESCRIPTION_LIST].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.DESCRIPTION_LIST].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.DESCRIPTION_LIST].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.DESCRIPTION_LIST].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.DESCRIPTION_LIST].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.DESCRIPTION_LIST].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.EMPTY_STATE].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.EMPTY_STATE].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.EMPTY_STATE].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.EMPTY_STATE].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.EMPTY_STATE].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.EMPTY_STATE].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.EMPTY_STATE].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.EMPTY_STATE].variants[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.EMPTY_STATE].variants[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.EMPTY_STATE].variants[2]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.EMPTY_STATE].variants[3]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.IMAGE].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.IMAGE].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.IMAGE].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.IMAGE].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.IMAGE].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.IMAGE].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.IMAGE].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.IMAGE].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.IMPORT_PREVIEW].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.IMPORT_PREVIEW].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.IMPORT_PREVIEW].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.IMPORT_PREVIEW].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.IMPORT_PREVIEW].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.IMPORT_PREVIEW].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.IMPORT_PREVIEW].note",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.IMPORT_PREVIEW].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.LIST].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.LIST].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.LIST].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.LIST].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.LIST].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.LIST].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.LIST].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.LIST].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.LIST_FOOTER].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.LIST_FOOTER].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.LIST_FOOTER].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.LIST_FOOTER].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.LIST_FOOTER].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.LIST_FOOTER].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.LIST_FOOTER].note",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.LIST_FOOTER].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.PAGINATION].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.PAGINATION].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.PAGINATION].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.PAGINATION].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.PAGINATION].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.PAGINATION].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.PAGINATION].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.PDF_VIEWER].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.PDF_VIEWER].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.PDF_VIEWER].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.PDF_VIEWER].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.PDF_VIEWER].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.PDF_VIEWER].forbidden[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.PDF_VIEWER].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.PDF_VIEWER].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.PDF_VIEWER].states[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.PDF_VIEWER].states[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.PDF_VIEWER].states[2]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.PDF_VIEWER].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.QRCODE].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.QRCODE].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.QRCODE].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.QRCODE].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.QRCODE].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.QRCODE].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.QRCODE].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.QRCODE].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.READONLY_TABLE].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.READONLY_TABLE].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.READONLY_TABLE].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.READONLY_TABLE].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.READONLY_TABLE].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.READONLY_TABLE].forbidden[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.READONLY_TABLE].forbidden[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.READONLY_TABLE].grid_layout",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.READONLY_TABLE].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.READONLY_TABLE].selection",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.READONLY_TABLE].states[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.READONLY_TABLE].states[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.READONLY_TABLE].states[2]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.READONLY_TABLE].states[3]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.READONLY_TABLE].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.READONLY_TABLE].variants[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.READONLY_TABLE].variants[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.READONLY_TABLE].variants[2]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.READONLY_TABLE].variants[3]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.STATISTIC].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.STATISTIC].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.STATISTIC].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.STATISTIC].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.STATISTIC].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.STATISTIC].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.STATISTIC].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.STATUS_BADGE].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.STATUS_BADGE].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.STATUS_BADGE].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.STATUS_BADGE].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.STATUS_BADGE].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.STATUS_BADGE].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.STATUS_BADGE].note",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.STATUS_BADGE].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.STATUS_BADGE].tokens.background",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.STATUS_BADGE].tokens.color",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.STATUS_BADGE].variants[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.STATUS_BADGE].variants[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.STATUS_BADGE].variants[2]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.STATUS_BADGE].variants[3]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.STATUS_BADGE].variants[4]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.TAG].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.TAG].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.TAG].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.TAG].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.TAG].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.TAG].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.TAG].note",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.TAG].states[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.TAG].states[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.TAG].states[2]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.TAG].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.TAG].variants[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.TAG].variants[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.TAG].variants[2]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.TAG].variants[3]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.TAG].variants[4]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.TIMELINE].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.TIMELINE].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.TIMELINE].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.TIMELINE].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.TIMELINE].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.TIMELINE].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.TIMELINE].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.TIMELINE].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.TREE].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.TREE].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.TREE].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.TREE].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.TREE].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.TREE].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.TREE].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.TREE].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.WATERMARK].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.WATERMARK].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.WATERMARK].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.WATERMARK].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.WATERMARK].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.WATERMARK].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.WATERMARK].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[DATA.WATERMARK].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.ALERT].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.ALERT].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.ALERT].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.ALERT].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.ALERT].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.ALERT].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.ALERT].note",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.ALERT].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.LOADING].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.LOADING].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.LOADING].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.LOADING].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.LOADING].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.LOADING].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.LOADING].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.LOADING].note",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.LOADING].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.MESSAGE].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.MESSAGE].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.MESSAGE].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.MESSAGE].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.MESSAGE].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.MESSAGE].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.MESSAGE].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.MESSAGE].note",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.MESSAGE].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.NOTIFICATION].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.NOTIFICATION].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.NOTIFICATION].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.NOTIFICATION].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.NOTIFICATION].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.NOTIFICATION].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.NOTIFICATION].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.NOTIFICATION].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.PROGRESS].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.PROGRESS].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.PROGRESS].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.PROGRESS].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.PROGRESS].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.PROGRESS].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.PROGRESS].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.PROGRESS].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.RESULT].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.RESULT].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.RESULT].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.RESULT].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.RESULT].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.RESULT].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.RESULT].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.RESULT].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.TOAST].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.TOAST].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.TOAST].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.TOAST].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.TOAST].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.TOAST].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.TOAST].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.TOAST].note",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FEEDBACK.TOAST].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FORM.FORM].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FORM.FORM].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FORM.FORM].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FORM.FORM].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FORM.FORM].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FORM.FORM].forbidden[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FORM.FORM].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FORM.FORM].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FORM.FORM_ITEM].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FORM.FORM_ITEM].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FORM.FORM_ITEM].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FORM.FORM_ITEM].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FORM.FORM_ITEM].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FORM.FORM_ITEM].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FORM.FORM_ITEM].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FORM.FORM_SECTION].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FORM.FORM_SECTION].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FORM.FORM_SECTION].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FORM.FORM_SECTION].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FORM.FORM_SECTION].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FORM.FORM_SECTION].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FORM.FORM_SECTION].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FORM.FORM_SECTION].note",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[FORM.FORM_SECTION].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[GRID.EDITABLE_GRID].states[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[GRID.EDITABLE_GRID].states[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[GRID.EDITABLE_GRID].states[2]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[GRID.EDITABLE_GRID].states[3]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[GRID.EDITABLE_GRID].states[4]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[ICON.ICON].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[ICON.ICON].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[ICON.ICON].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[ICON.ICON].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[ICON.ICON].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[ICON.ICON].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[ICON.ICON].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.CARD].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.CARD].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.CARD].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.CARD].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.CARD].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.CARD].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.CARD].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.CARD].variants[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.CARD].variants[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.CARD].variants[2]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.DIVIDER].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.DIVIDER].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.DIVIDER].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.DIVIDER].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.DIVIDER].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.DIVIDER].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.DIVIDER].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.DIVIDER].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.GRID].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.GRID].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.GRID].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.GRID].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.GRID].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.GRID].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.GRID].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.GRID].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.PAGE_CONTAINER].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.PAGE_CONTAINER].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.PAGE_CONTAINER].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.PAGE_CONTAINER].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.PAGE_CONTAINER].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.PAGE_CONTAINER].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.PAGE_CONTAINER].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.PAGE_CONTAINER].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.SPACE].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.SPACE].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.SPACE].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.SPACE].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.SPACE].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.SPACE].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.SPACE].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.SPACE].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.SPLIT_PANE].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.SPLIT_PANE].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.SPLIT_PANE].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.SPLIT_PANE].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.SPLIT_PANE].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.SPLIT_PANE].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.SPLIT_PANE].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.TABS].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.TABS].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.TABS].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.TABS].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.TABS].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.TABS].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.TABS].note",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[LAYOUT.TABS].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[NAV.ANCHOR].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[NAV.ANCHOR].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[NAV.ANCHOR].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[NAV.ANCHOR].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[NAV.ANCHOR].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[NAV.ANCHOR].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[NAV.ANCHOR].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[NAV.ANCHOR].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[NAV.BREADCRUMB].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[NAV.BREADCRUMB].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[NAV.BREADCRUMB].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[NAV.BREADCRUMB].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[NAV.BREADCRUMB].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[NAV.BREADCRUMB].deprecated",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[NAV.BREADCRUMB].forbidden[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[NAV.BREADCRUMB].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[NAV.BREADCRUMB].note",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[NAV.BREADCRUMB].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[NAV.MENU].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[NAV.MENU].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[NAV.MENU].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[NAV.MENU].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[NAV.MENU].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[NAV.MENU].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[NAV.MENU].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[NAV.MENU].variants[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[NAV.MENU].variants[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[NAV.MENU].variants[2]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[NAV.STEPS].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[NAV.STEPS].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[NAV.STEPS].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[NAV.STEPS].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[NAV.STEPS].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[NAV.STEPS].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[NAV.STEPS].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[NAV.STEPS].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.CONFIRM].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.CONFIRM].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.CONFIRM].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.CONFIRM].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.CONFIRM].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.CONFIRM].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.CONFIRM].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.DIALOG].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.DIALOG].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.DIALOG].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.DIALOG].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.DIALOG].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.DIALOG].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.DIALOG].states[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.DIALOG].states[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.DIALOG].states[2]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.DIALOG].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.DIALOG].variants[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.DIALOG].variants[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.DIALOG].variants[2]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.DRAWER].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.DRAWER].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.DRAWER].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.DRAWER].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.DRAWER].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.DRAWER].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.DRAWER].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.POPCONFIRM].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.POPCONFIRM].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.POPCONFIRM].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.POPCONFIRM].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.POPCONFIRM].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.POPCONFIRM].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.POPCONFIRM].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.POPCONFIRM].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.POPOVER].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.POPOVER].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.POPOVER].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.POPOVER].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.POPOVER].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.POPOVER].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.POPOVER].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.POPOVER].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.TOOLTIP].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.TOOLTIP].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.TOOLTIP].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.TOOLTIP].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.TOOLTIP].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.TOOLTIP].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.TOOLTIP].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.TOOLTIP].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.TOUR].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.TOUR].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.TOUR].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.TOUR].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.TOUR].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.TOUR].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.TOUR].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[OVERLAY.TOUR].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.ACTION_BAR].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.ACTION_BAR].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.ACTION_BAR].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.ACTION_BAR].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.ACTION_BAR].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.ACTION_BAR].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.ACTION_BAR].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.DESCRIPTION_SUMMARY].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.DESCRIPTION_SUMMARY].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.DESCRIPTION_SUMMARY].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.DESCRIPTION_SUMMARY].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.DESCRIPTION_SUMMARY].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.DESCRIPTION_SUMMARY].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.DESCRIPTION_SUMMARY].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.DESCRIPTION_SUMMARY].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.DETAIL_DESCRIPTION].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.DETAIL_DESCRIPTION].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.DETAIL_DESCRIPTION].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.DETAIL_DESCRIPTION].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.DETAIL_DESCRIPTION].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.DETAIL_DESCRIPTION].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.DETAIL_DESCRIPTION].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.DETAIL_DESCRIPTION].note",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.DETAIL_DESCRIPTION].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.EDITABLE_GRID_SECTION].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.EDITABLE_GRID_SECTION].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.EDITABLE_GRID_SECTION].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.EDITABLE_GRID_SECTION].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.EDITABLE_GRID_SECTION].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.EDITABLE_GRID_SECTION].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.EDITABLE_GRID_SECTION].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.EDITABLE_GRID_SECTION].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.FILTER_BAR].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.FILTER_BAR].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.FILTER_BAR].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.FILTER_BAR].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.FILTER_BAR].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.FILTER_BAR].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.FILTER_BAR].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.LIST_TABLE].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.LIST_TABLE].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.LIST_TABLE].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.LIST_TABLE].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.LIST_TABLE].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.LIST_TABLE].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.LIST_TABLE].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.LIST_TABLE].note",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.LIST_TABLE].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.PAGE_HEADER].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.PAGE_HEADER].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.PAGE_HEADER].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.PAGE_HEADER].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.PAGE_HEADER].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.PAGE_HEADER].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.PAGE_HEADER].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.TAB_CONTAINER].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.TAB_CONTAINER].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.TAB_CONTAINER].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.TAB_CONTAINER].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.TAB_CONTAINER].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.TAB_CONTAINER].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.TAB_CONTAINER].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.TAB_CONTAINER].note",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[PATTERN.TAB_CONTAINER].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.DESCRIPTION].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.DESCRIPTION].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.DESCRIPTION].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.DESCRIPTION].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.DESCRIPTION].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.DESCRIPTION].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.DESCRIPTION].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.DESCRIPTION].tokens.color",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.DESCRIPTION].tokens.fontSize",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.DESCRIPTION].variants[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.DESCRIPTION].variants[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.DESCRIPTION].variants[2]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.PAGE_TITLE].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.PAGE_TITLE].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.PAGE_TITLE].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.PAGE_TITLE].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.PAGE_TITLE].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.PAGE_TITLE].deprecated",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.PAGE_TITLE].forbidden[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.PAGE_TITLE].forbidden[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.PAGE_TITLE].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.PAGE_TITLE].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.PAGE_TITLE].tokens.color",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.PAGE_TITLE].tokens.fontSize",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.PAGE_TITLE].tokens.fontWeight",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.PAGE_TITLE].variants[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.PAGE_TITLE].variants[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.SECTION_TITLE].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.SECTION_TITLE].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.SECTION_TITLE].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.SECTION_TITLE].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.SECTION_TITLE].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.SECTION_TITLE].gap",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.SECTION_TITLE].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.SECTION_TITLE].note",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.SECTION_TITLE].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.SECTION_TITLE].tokens.color",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.SECTION_TITLE].tokens.fontSize",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.SECTION_TITLE].variants[0]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[TYPOGRAPHY.SECTION_TITLE].variants[1]",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[UTIL.CSV].canonical_implementation.component",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[UTIL.CSV].canonical_implementation.file",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[UTIL.CSV].canonical_implementation.import",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[UTIL.CSV].capability_id",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[UTIL.CSV].category",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[UTIL.CSV].name_zh",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[UTIL.CSV].note",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.components[UTIL.CSV].status",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        }
+      ],
+      "order_differs_in": [
+        "component-registry.yaml.components"
+      ],
+      "original_bytes_sha256": "ec6cb99eeda8a492d299fc084603eca18f4a1be126e3b398d3be4a52c85f934b",
+      "original_leaves": 872,
+      "rendered_bytes_sha256": "84c692cb68fc9542151079178ecba0dff553389229c64c7dd4bb2a360a26b1b7",
+      "target": "component-registry.yaml",
+      "value_drift": []
+    },
+    {
+      "added_leaves": 0,
+      "added_paths": [],
+      "byte_identical": false,
+      "covered_leaves": 538,
+      "fidelity": "高保真·值集等价（数组序为投影确定性排序，源序未入对象侧）",
+      "field_value_set_equal": true,
+      "json_equal_including_order": false,
+      "missing": [],
+      "order_differs_in": [
+        "issue-register.yaml.issues"
+      ],
+      "original_bytes_sha256": "e3ec792e23eba96fb7e343355abc54f9a307327d2283e51800a618cce4eba87d",
+      "original_leaves": 538,
+      "rendered_bytes_sha256": "89c775737daea6b5a5bb8ef331094ad03c9cd6c169fd3107ae2e16ea8e7acb61",
+      "target": "issue-register.yaml",
+      "value_drift": []
+    },
+    {
+      "added_leaves": 0,
+      "added_paths": [],
+      "byte_identical": true,
+      "covered_leaves": 4,
+      "fidelity": "高保真（语义等价且数组序一致）",
+      "field_value_set_equal": true,
+      "json_equal_including_order": true,
+      "missing": [],
+      "order_differs_in": [],
+      "original_bytes_sha256": "4c5525027c82f8844e8aa6c964758b45b960a12742bfd11944714427acbc30c4",
+      "original_leaves": 4,
+      "rendered_bytes_sha256": "4c5525027c82f8844e8aa6c964758b45b960a12742bfd11944714427acbc30c4",
+      "target": "migration-ledger.yaml",
+      "value_drift": []
+    },
+    {
+      "added_leaves": 0,
+      "added_paths": [],
+      "byte_identical": false,
+      "covered_leaves": 148,
+      "fidelity": "部分保真（不可还原字段见清单）",
+      "field_value_set_equal": false,
+      "json_equal_including_order": false,
+      "missing": [
+        {
+          "path": "$.scenarios[batch-delete-precheck|DELETE /api/v1/dictionaries/{code}/items/{item_id}].expires_at",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.scenarios[crud+import-export|GET /api/v1/vehicle-catalog].expires_at",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.scenarios[crud+reference-block|GET /api/v1/roles].expires_at",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.scenarios[crud+reference-block|GET /api/v1/users].expires_at",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.scenarios[crud+reference-block|GET /data_permission].expires_at",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.scenarios[csv-import|POST /api/v1/dictionaries/material/items/import].expires_at",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.scenarios[empty|POST /api/v1/expert-models/{model_code}/calculate].expires_at",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.scenarios[error|POST /api/v1/expert-models/{model_code}/calculate].expires_at",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.scenarios[get+save|GET /api/v1/projects/{project_id}/finance].expires_at",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.scenarios[list+export-csv|GET /api/v1/projects/{project_id}/carlines/{carline_id}/frozen-versions].expires_at",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.scenarios[snapshot-filter|GET /api/v1/projects/{project_id}/ledger?snapshot={snapshot_id}].expires_at",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.scenarios[success|POST /api/v1/expert-models/{model_code}/calculate].expires_at",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.scenarios[upload+list+delete|POST /api/v1/attachments].expires_at",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        },
+        {
+          "path": "$.updated_at",
+          "reason": "对象侧未承载（转录组切片/登记设计），投影不可再生"
+        }
+      ],
+      "order_differs_in": [
+        "mock-contract.yaml.scenarios"
+      ],
+      "original_bytes_sha256": "552db0fa7b35ed185c5e7fb0cbf043665637d3078db14610d9632bf37488acbd",
+      "original_leaves": 162,
+      "rendered_bytes_sha256": "e346c898a5e859194ab863dca8cd0f74b9f90e1b444436350972bc8d4e05b842",
+      "target": "mock-contract.yaml",
+      "value_drift": []
+    },
+    {
+      "added_leaves": 0,
+      "added_paths": [],
+      "byte_identical": true,
+      "covered_leaves": 76,
+      "fidelity": "高保真（语义等价且数组序一致）",
+      "field_value_set_equal": true,
+      "json_equal_including_order": true,
+      "missing": [],
+      "order_differs_in": [],
+      "original_bytes_sha256": "50c17658248f920d3c1f639308a8b0744ca5fe073e22ed6d034d6b51f34463b8",
+      "original_leaves": 76,
+      "rendered_bytes_sha256": "50c17658248f920d3c1f639308a8b0744ca5fe073e22ed6d034d6b51f34463b8",
+      "target": "request-classification.yaml",
+      "value_drift": []
+    },
+    {
+      "added_leaves": 0,
+      "added_paths": [],
+      "byte_identical": true,
+      "covered_leaves": 27,
+      "fidelity": "高保真（语义等价且数组序一致）",
+      "field_value_set_equal": true,
+      "json_equal_including_order": true,
+      "missing": [],
+      "order_differs_in": [],
+      "original_bytes_sha256": "ae8362cb63f045c151d66a26056bef5280ab8a5a1b245e95d7383851925f7c1e",
+      "original_leaves": 27,
+      "rendered_bytes_sha256": "ae8362cb63f045c151d66a26056bef5280ab8a5a1b245e95d7383851925f7c1e",
+      "target": "vendor-adapter-registry.yaml",
+      "value_drift": []
+    }
+  ],
+  "golden": {
+    "byte_identical": true,
+    "json_equal_including_order": true,
+    "semantic_equivalence_field_value_set": true,
+    "target": "request-classification.yaml"
+  },
+  "seq_anchor": "MIG-AUTH-0001",
+  "totals": {
+    "added": 0,
+    "covered": 3224,
+    "missing": 851,
+    "original": 4075
+  }
+}
