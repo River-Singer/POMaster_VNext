@@ -1,0 +1,18 @@
+{
+  "schema": "pomaster.vnext.calibration-approval/1",
+  "seq": "bench-0002",
+  "approved_at_seq_note": "墙钟禁入：批准事件以 seq 锚定，日期字段仅存于 evidence 平面",
+  "decision": "APPROVED_PROVISIONAL",
+  "approved_by": "OWNER (Serperior, 2026-08-28 session)",
+  "approved_items": [
+    "benchmark_exit_values: tiny→MINIMAL / normal→[LIGHT,STANDARD] 进入 Behavioral Eval 回归集",
+    "threshold_initial_set: 关键词规则(F_COPY_STYLE_ONLY 等) + 信号占位(fan_out≥6 / churn≥4-per-14d / merge θ=0.85)",
+    "calibration_procedure: seq 代号 + 可重放证据绑定 + Owner 批准位 + MASTer 语料回放占位"
+  ],
+  "provisions": [
+    "provisional — 20 个真实任务后强制复审",
+    "MASTer 语料回放（BATCH-1 启动后）触发二轮校准",
+    "system_can_not_self_approve: 后续阈值变更仍走 Owner 批准位"
+  ],
+  "owner_principle": "阈值是按项目适配的配置（per-project adaptation），不是普适常数——config.yaml governance_router thresholds 逐项目覆盖，catalog 默认值仅为出厂兜底。后续用真实项目验证参数合适性。"
+}
