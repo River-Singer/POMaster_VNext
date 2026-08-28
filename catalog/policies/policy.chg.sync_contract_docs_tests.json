@@ -58,6 +58,11 @@
     }
   ],
   "review_notes": [
-    "BE 08 反模式（只改实现不更新 OpenAPI/变更记录）即本条缺位的失败形态"
-  ]
+    "BE 08 反模式（只改实现不更新 OpenAPI/变更记录）即本条缺位的失败形态；pilot-0001 互引：GATE.BE.API.CONTRACT_CHECKS（同步清单两口径重叠约 60%，口径统一留 Owner 后续裁决，§3.4）、KNOWLEDGE.FP.BE.CONTRACT_DRIFT（M7 配对）"
+  ],
+  "review": {
+    "disposition": "ACCEPT",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L200（§8.1 #3）"
+  }
 }

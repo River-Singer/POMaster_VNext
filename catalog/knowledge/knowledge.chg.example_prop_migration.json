@@ -60,6 +60,11 @@
     }
   ],
   "review_notes": [
-    "源文件自标『内容示例，可删除』；降级 advisory 知识"
-  ]
+    "源文件自标『内容示例，可删除』；降级 advisory 知识；pilot-0001 M5：与 KNOWLEDGE.CHG.EXAMPLE_COMPAT_WINDOW（BE 08 同型）互引，合并为一条跨 lane 知识登记为候选，留后续批次"
+  ],
+  "review": {
+    "disposition": "ADJUST",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L216（§8.1 #19）"
+  }
 }

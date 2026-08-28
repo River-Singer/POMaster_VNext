@@ -54,6 +54,11 @@
     }
   ],
   "review_notes": [
-    "与 FE06 AUTHORITY.CHG.CHANGE_OWNERS 结构同型（提供/消费/仲裁三方）"
-  ]
+    "与 FE06 AUTHORITY.CHG.CHANGE_OWNERS 结构同型（提供/消费/仲裁三方）；pilot-0001 M6：同型上提审阅登记（5→1+N），留后续批次"
+  ],
+  "review": {
+    "disposition": "ADJUST",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L284（§8.4 #72）"
+  }
 }

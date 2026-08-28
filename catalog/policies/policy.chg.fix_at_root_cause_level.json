@@ -56,5 +56,14 @@
   ],
   "review_notes": [
     "与 R4 class_scan_result 纪律同源（修一处扫一类）"
-  ]
+  ],
+  "review": {
+    "disposition": "ACCEPT",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L202（§8.1 #5）",
+    "absorbed_duplicates": [
+      "POLICY.CHG.NO_LOCAL_MASK_FIX",
+      "POLICY.CHG.NO_SINGLE_CONSUMER_API"
+    ]
+  }
 }

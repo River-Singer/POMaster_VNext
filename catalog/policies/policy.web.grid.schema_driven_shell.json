@@ -56,5 +56,13 @@
   ],
   "review_notes": [
     "对应 CAPABILITY.GRID.* 能力族（GRID.* alias 收编）"
-  ]
+  ],
+  "review": {
+    "disposition": "ACCEPT",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L253（§8.3 #46）",
+    "absorbed_duplicates": [
+      "POLICY.WEB.GRID.NO_TEMPLATE_COLUMNS"
+    ]
+  }
 }

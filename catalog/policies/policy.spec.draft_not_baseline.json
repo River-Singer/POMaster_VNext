@@ -55,6 +55,14 @@
     }
   ],
   "review_notes": [
-    "带宪法级气质（认识论 fail-closed），保守留 UNIVERSAL_POLICY，是否升 CONSTITUTION 交 Human Review"
-  ]
+    "带宪法级气质（认识论 fail-closed），保守留 UNIVERSAL_POLICY，是否升 CONSTITUTION 交 Human Review；pilot-0001 R-B 裁决：维持 UNIVERSAL_POLICY，升格诉求登记挂起（待 vocab-pr V6 十二分类轴落地后由 Owner 专项裁决）"
+  ],
+  "review": {
+    "disposition": "ADJUST",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L210（§8.1 #13）",
+    "absorbed_duplicates": [
+      "POLICY.SPEC.DRAFT_NOT_BASELINE_2"
+    ]
+  }
 }

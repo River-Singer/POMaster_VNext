@@ -73,7 +73,7 @@
       "check_id": "cancel_retry_idempotency_declared",
       "statement_zh": "取消、重试、幂等边界已显式声明",
       "judgeability": "machine",
-      "machine_support": "请求函数契约字段（Cancellation/Retry/RetryAfter/Idempotency，见 POLICY.TPL.API_FUNCTION_CONTRACT 模板）存在性可机判"
+      "machine_support": "请求函数契约字段存在性可机判（内联字段清单：StatusPolicy/Cancellation/Retry/RetryAfter/Idempotency）"
     },
     {
       "seq": 4,
@@ -126,6 +126,11 @@
     }
   ],
   "review_notes": [
-    "GATE. 前缀需 vocab PR"
-  ]
+    "GATE. 前缀需 vocab PR；pilot-0001 R-C=b 联动：检查项③原『见 POLICY.TPL.API_FUNCTION_CONTRACT 模板』悬空引用已改为内联字段清单"
+  ],
+  "review": {
+    "disposition": "ACCEPT",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L243（§8.2 #41）"
+  }
 }

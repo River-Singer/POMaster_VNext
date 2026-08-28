@@ -55,6 +55,11 @@
     }
   ],
   "review_notes": [
-    "AUTHORITY. 前缀已冻结；control-plane 落地"
-  ]
+    "AUTHORITY. 前缀已冻结；control-plane 落地；pilot-0001 M6：同型上提审阅登记（见 AUTHORITY.CHG.CHANGE_OWNERS），留后续批次"
+  ],
+  "review": {
+    "disposition": "ADJUST",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L246（§8.2 #44）"
+  }
 }

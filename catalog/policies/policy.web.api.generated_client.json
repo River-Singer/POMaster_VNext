@@ -56,5 +56,10 @@
   ],
   "review_notes": [
     "SHOULD 正确降级 advisory；与 BE 12 契约权威条款跨车道呼应"
-  ]
+  ],
+  "review": {
+    "disposition": "ACCEPT",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L240（§8.2 #38）"
+  }
 }

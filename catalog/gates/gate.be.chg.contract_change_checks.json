@@ -112,5 +112,10 @@
   ],
   "review_notes": [
     "五类消费者枚举可直接做成 checklist gate"
-  ]
+  ],
+  "review": {
+    "disposition": "ACCEPT",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L281（§8.4 #69）"
+  }
 }

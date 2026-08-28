@@ -1,0 +1,422 @@
+{
+  "_record_type": "rejected_archive",
+  "seq": "pilot-0001",
+  "date": "2026-08-28",
+  "generated_by": "catalog/tools/apply_human_review_pilot_0001.py（pilot-0001 Human Review 落账）",
+  "basis": "docs/catalog-pilot-report.md §8 Human Review Checklist 逐行 REJECT + §3.1/§3.2 合并表；REJECT 语义=驳回独立入册（合并指针维持于正本 review.absorbed_duplicates），非丢弃内容；本档案为留档副本，条目仍保留于 candidates-draft.json（含 disposition=REJECT）",
+  "count": 17,
+  "rejected": [
+    {
+      "candidate_id": "POLICY.CHG.NO_SILENT_DEFAULT",
+      "source": "design_seed",
+      "evidence": "PLANNED",
+      "source_protocol": "pomaster/components/frontend-hard-spec/assets/universal/06-change-governance-protocol.md",
+      "source_section": "MUST NOT 第1条",
+      "classification": "DUPLICATE",
+      "statement_zh": "禁止静默改变公共默认行为。",
+      "statement_en_keywords": "no silent default change",
+      "applies_when": {
+        "lane": "frontend",
+        "condition": "同合并目标"
+      },
+      "enforcement": "advisory",
+      "vocab_pr_needed": false,
+      "notes": "合并指针：POLICY.CHG.COMPAT_MIGRATION_ROLLBACK 的禁止形态，语义被其覆盖；enforcement 由合并目标继承",
+      "review": {
+        "disposition": "REJECT",
+        "seq": "pilot-0001",
+        "ref": "docs/catalog-pilot-report.md:L206（§8.1 #9）",
+        "reject_reason": "极性反转 DUPLICATE：并入正本禁止形态段（报告 §8.1 #9；§3.1 表）",
+        "duplicate_of": "POLICY.CHG.COMPAT_MIGRATION_ROLLBACK"
+      }
+    },
+    {
+      "candidate_id": "POLICY.CHG.NO_SINGLE_CONSUMER_API",
+      "source": "design_seed",
+      "evidence": "PLANNED",
+      "source_protocol": "pomaster/components/frontend-hard-spec/assets/universal/06-change-governance-protocol.md",
+      "source_section": "MUST NOT 第2条",
+      "classification": "DUPLICATE",
+      "statement_zh": "禁止为满足单页临时需求而修改公共 API。",
+      "statement_en_keywords": "no public API change for single-page need",
+      "applies_when": {
+        "lane": "frontend",
+        "condition": "同合并目标"
+      },
+      "enforcement": "advisory",
+      "vocab_pr_needed": false,
+      "notes": "合并指针：POLICY.CHG.PRECHANGE_CONSUMER_SCAN + FIX_AT_ROOT_CAUSE_LEVEL 联合覆盖",
+      "review": {
+        "disposition": "REJECT",
+        "seq": "pilot-0001",
+        "ref": "docs/catalog-pilot-report.md:L207（§8.1 #10）",
+        "reject_reason": "极性反转 DUPLICATE：由正本与根因修复条款联合覆盖（报告 §8.1 #10；§3.1 表）",
+        "duplicate_of": "POLICY.CHG.PRECHANGE_CONSUMER_SCAN",
+        "duplicate_of_secondary": "POLICY.CHG.FIX_AT_ROOT_CAUSE_LEVEL"
+      }
+    },
+    {
+      "candidate_id": "POLICY.CHG.NO_LOCAL_MASK_FIX",
+      "source": "design_seed",
+      "evidence": "PLANNED",
+      "source_protocol": "pomaster/components/frontend-hard-spec/assets/universal/06-change-governance-protocol.md",
+      "source_section": "MUST NOT 第3条",
+      "classification": "DUPLICATE",
+      "statement_zh": "禁止只修一个页面来掩盖公共问题。",
+      "statement_en_keywords": "no local mask fix, page-level patch hiding public defect",
+      "applies_when": {
+        "lane": "frontend",
+        "condition": "同合并目标"
+      },
+      "enforcement": "advisory",
+      "vocab_pr_needed": false,
+      "notes": "合并指针：POLICY.CHG.FIX_AT_ROOT_CAUSE_LEVEL 的禁止形态",
+      "review": {
+        "disposition": "REJECT",
+        "seq": "pilot-0001",
+        "ref": "docs/catalog-pilot-report.md:L208（§8.1 #11）",
+        "reject_reason": "极性反转 DUPLICATE：正本禁止形态（报告 §8.1 #11；§3.1 表）",
+        "duplicate_of": "POLICY.CHG.FIX_AT_ROOT_CAUSE_LEVEL"
+      }
+    },
+    {
+      "candidate_id": "POLICY.CHG.NO_DELETE_WITHOUT_MIGRATION",
+      "source": "design_seed",
+      "evidence": "PLANNED",
+      "source_protocol": "pomaster/components/frontend-hard-spec/assets/universal/06-change-governance-protocol.md",
+      "source_section": "MUST NOT 第4条",
+      "classification": "DUPLICATE",
+      "statement_zh": "禁止无迁移地删除 props、事件、字段或状态。",
+      "statement_en_keywords": "no delete without migration",
+      "applies_when": {
+        "lane": "frontend",
+        "condition": "同合并目标"
+      },
+      "enforcement": "advisory",
+      "vocab_pr_needed": false,
+      "notes": "合并指针：POLICY.CHG.DEPRECATE_BEFORE_DELETE 的 FE 具体形态",
+      "review": {
+        "disposition": "REJECT",
+        "seq": "pilot-0001",
+        "ref": "docs/catalog-pilot-report.md:L209（§8.1 #12）",
+        "reject_reason": "极性反转 DUPLICATE：正本 FE 具体形态（报告 §8.1 #12；§3.1 表）",
+        "duplicate_of": "POLICY.CHG.DEPRECATE_BEFORE_DELETE"
+      }
+    },
+    {
+      "candidate_id": "POLICY.SPEC.DRAFT_NOT_BASELINE_2",
+      "source": "design_seed",
+      "evidence": "PLANNED",
+      "source_protocol": "pomaster/components/frontend-hard-spec/assets/universal/06-change-governance-protocol.md",
+      "source_section": "MUST NOT 第6条",
+      "classification": "DUPLICATE",
+      "statement_zh": "与上一条逐字重复（源文件 37/38 行同文）。",
+      "statement_en_keywords": "verbatim duplication in source",
+      "applies_when": {
+        "lane": "any",
+        "condition": "不适用"
+      },
+      "enforcement": "advisory",
+      "vocab_pr_needed": false,
+      "notes": "源内逐字重复实证：合并至 POLICY.SPEC.DRAFT_NOT_BASELINE；源文件自身质量缺陷样本",
+      "review": {
+        "disposition": "REJECT",
+        "seq": "pilot-0001",
+        "ref": "docs/catalog-pilot-report.md:L211（§8.1 #14）",
+        "reject_reason": "源内逐字重复实证（源协议 37/38 行同文）（报告 §8.1 #14；§3.1）",
+        "duplicate_of": "POLICY.SPEC.DRAFT_NOT_BASELINE"
+      }
+    },
+    {
+      "candidate_id": "POLICY.WEB.API.NO_RAW_FETCH",
+      "source": "design_seed",
+      "evidence": "PLANNED",
+      "source_protocol": "pomaster/components/frontend-hard-spec/assets/universal/15-request-api-protocol.md",
+      "source_section": "MUST NOT 第1条",
+      "classification": "DUPLICATE",
+      "statement_zh": "禁止在页面直接写 fetch/axios 或手工拼 endpoint。",
+      "statement_en_keywords": "no raw fetch/axios in pages",
+      "applies_when": {
+        "lane": "frontend",
+        "condition": "同合并目标"
+      },
+      "enforcement": "advisory",
+      "vocab_pr_needed": false,
+      "notes": "合并指针：DOMAIN_API_ONLY + SINGLE_HTTP_CLIENT 的禁止形态",
+      "review": {
+        "disposition": "REJECT",
+        "seq": "pilot-0001",
+        "ref": "docs/catalog-pilot-report.md:L235（§8.2 #33）",
+        "reject_reason": "极性反转 DUPLICATE：两正本联合覆盖（报告 §8.2 #33；§3.1 表）",
+        "duplicate_of": "POLICY.WEB.API.DOMAIN_API_ONLY",
+        "duplicate_of_secondary": "POLICY.WEB.API.SINGLE_HTTP_CLIENT"
+      }
+    },
+    {
+      "candidate_id": "POLICY.WEB.API.NO_LOGIC_DUPLICATION",
+      "source": "design_seed",
+      "evidence": "PLANNED",
+      "source_protocol": "pomaster/components/frontend-hard-spec/assets/universal/15-request-api-protocol.md",
+      "source_section": "MUST NOT 第2条",
+      "classification": "DUPLICATE",
+      "statement_zh": "禁止多模块重复 token、错误码与重试逻辑。",
+      "statement_en_keywords": "no duplicated token/error/retry logic",
+      "applies_when": {
+        "lane": "frontend",
+        "condition": "同合并目标"
+      },
+      "enforcement": "advisory",
+      "vocab_pr_needed": false,
+      "notes": "合并指针：SINGLE_HTTP_CLIENT 单点统一的症候表述",
+      "review": {
+        "disposition": "REJECT",
+        "seq": "pilot-0001",
+        "ref": "docs/catalog-pilot-report.md:L236（§8.2 #34）",
+        "reject_reason": "极性反转 DUPLICATE：单点统一的症候表述（报告 §8.2 #34；§3.1 表）",
+        "duplicate_of": "POLICY.WEB.API.SINGLE_HTTP_CLIENT"
+      }
+    },
+    {
+      "candidate_id": "POLICY.WEB.API.NO_AUTO_RETRY_NONIDEM",
+      "source": "design_seed",
+      "evidence": "PLANNED",
+      "source_protocol": "pomaster/components/frontend-hard-spec/assets/universal/15-request-api-protocol.md",
+      "source_section": "MUST NOT 第3条",
+      "classification": "DUPLICATE",
+      "statement_zh": "禁止对非幂等 mutation 默认自动重试。",
+      "statement_en_keywords": "no auto retry on non-idempotent mutation",
+      "applies_when": {
+        "lane": "frontend",
+        "condition": "同合并目标"
+      },
+      "enforcement": "advisory",
+      "vocab_pr_needed": false,
+      "notes": "合并指针：RETRY_DISCIPLINE + MUTATION_IDEMPOTENCY 的禁止形态",
+      "review": {
+        "disposition": "REJECT",
+        "seq": "pilot-0001",
+        "ref": "docs/catalog-pilot-report.md:L237（§8.2 #35）",
+        "reject_reason": "极性反转 DUPLICATE：与幂等条款并读，合并后消除 T4 表面冲突（报告 §8.2 #35；§3.1 表）",
+        "duplicate_of": "POLICY.WEB.API.RETRY_DISCIPLINE",
+        "duplicate_of_secondary": "POLICY.WEB.API.MUTATION_IDEMPOTENCY"
+      }
+    },
+    {
+      "candidate_id": "POLICY.WEB.API.NO_ENVELOPE_IN_COMPONENT",
+      "source": "design_seed",
+      "evidence": "PLANNED",
+      "source_protocol": "pomaster/components/frontend-hard-spec/assets/universal/15-request-api-protocol.md",
+      "source_section": "MUST NOT 第4条",
+      "classification": "DUPLICATE",
+      "statement_zh": "禁止组件层解析原始响应 envelope。",
+      "statement_en_keywords": "no envelope parsing in components, layering",
+      "applies_when": {
+        "lane": "frontend",
+        "condition": "同合并目标"
+      },
+      "enforcement": "advisory",
+      "vocab_pr_needed": false,
+      "notes": "合并指针：DOMAIN_API_ONLY + ERROR_NORMALIZATION 的越层禁止形态",
+      "review": {
+        "disposition": "REJECT",
+        "seq": "pilot-0001",
+        "ref": "docs/catalog-pilot-report.md:L238（§8.2 #36）",
+        "reject_reason": "极性反转 DUPLICATE：越层禁止形态（报告 §8.2 #36；§3.1 表）",
+        "duplicate_of": "POLICY.WEB.API.DOMAIN_API_ONLY",
+        "duplicate_of_secondary": "POLICY.WEB.API.ERROR_NORMALIZATION"
+      }
+    },
+    {
+      "candidate_id": "POLICY.WEB.GRID.NO_TEMPLATE_COLUMNS",
+      "source": "design_seed",
+      "evidence": "PLANNED",
+      "source_protocol": "pomaster/components/frontend-hard-spec/assets/universal/30-data-grid-protocol.md",
+      "source_section": "MUST NOT 第1条",
+      "classification": "DUPLICATE",
+      "statement_zh": "禁止 template 手写列或跨页面复制列数组。",
+      "statement_en_keywords": "no template columns, no copied column arrays",
+      "applies_when": {
+        "lane": "frontend",
+        "condition": "同合并目标"
+      },
+      "enforcement": "advisory",
+      "vocab_pr_needed": false,
+      "notes": "合并指针：SCHEMA_DRIVEN_SHELL 的禁止形态",
+      "review": {
+        "disposition": "REJECT",
+        "seq": "pilot-0001",
+        "ref": "docs/catalog-pilot-report.md:L260（§8.3 #53）",
+        "reject_reason": "极性反转 DUPLICATE：正本禁止形态（报告 §8.3 #53；§3.1 表）",
+        "duplicate_of": "POLICY.WEB.GRID.SCHEMA_DRIVEN_SHELL"
+      }
+    },
+    {
+      "candidate_id": "POLICY.WEB.GRID.NO_GLOBAL_WIDTH_CSS",
+      "source": "design_seed",
+      "evidence": "PLANNED",
+      "source_protocol": "pomaster/components/frontend-hard-spec/assets/universal/30-data-grid-protocol.md",
+      "source_section": "MUST NOT 第2条",
+      "classification": "DUPLICATE",
+      "statement_zh": "禁止为单页列宽修改全局 CSS。",
+      "statement_en_keywords": "no global css for single-page width",
+      "applies_when": {
+        "lane": "frontend",
+        "condition": "同合并目标"
+      },
+      "enforcement": "advisory",
+      "vocab_pr_needed": false,
+      "notes": "合并指针：WIDTH_FIX_LADDER 的禁止形态",
+      "review": {
+        "disposition": "REJECT",
+        "seq": "pilot-0001",
+        "ref": "docs/catalog-pilot-report.md:L261（§8.3 #54）",
+        "reject_reason": "极性反转 DUPLICATE：正本禁止形态（报告 §8.3 #54；§3.1 表）",
+        "duplicate_of": "POLICY.WEB.GRID.WIDTH_FIX_LADDER"
+      }
+    },
+    {
+      "candidate_id": "POLICY.WEB.GRID.NO_SHARED_CONFIG_KEYS",
+      "source": "design_seed",
+      "evidence": "PLANNED",
+      "source_protocol": "pomaster/components/frontend-hard-spec/assets/universal/30-data-grid-protocol.md",
+      "source_section": "MUST NOT 第3条",
+      "classification": "DUPLICATE",
+      "statement_zh": "禁止不同类型表格共享污染性配置 key。",
+      "statement_en_keywords": "no polluted shared config keys across grid types",
+      "applies_when": {
+        "lane": "frontend",
+        "condition": "同合并目标"
+      },
+      "enforcement": "advisory",
+      "vocab_pr_needed": false,
+      "notes": "合并指针：CONFIG_ISOLATION 的禁止形态",
+      "review": {
+        "disposition": "REJECT",
+        "seq": "pilot-0001",
+        "ref": "docs/catalog-pilot-report.md:L262（§8.3 #55）",
+        "reject_reason": "极性反转 DUPLICATE：正本禁止形态（报告 §8.3 #55；§3.1 表）",
+        "duplicate_of": "POLICY.WEB.GRID.CONFIG_ISOLATION"
+      }
+    },
+    {
+      "candidate_id": "POLICY.WEB.GRID.NO_FAKE_PAGINATION",
+      "source": "design_seed",
+      "evidence": "PLANNED",
+      "source_protocol": "pomaster/components/frontend-hard-spec/assets/universal/30-data-grid-protocol.md",
+      "source_section": "MUST NOT 第4条",
+      "classification": "DUPLICATE",
+      "statement_zh": "禁止前端加载全量数据做假分页。",
+      "statement_en_keywords": "no fake pagination, no full data load",
+      "applies_when": {
+        "lane": "frontend",
+        "condition": "同合并目标"
+      },
+      "enforcement": "advisory",
+      "vocab_pr_needed": false,
+      "notes": "合并指针：SERVER_OPS_VIRTUALIZATION 的禁止形态",
+      "review": {
+        "disposition": "REJECT",
+        "seq": "pilot-0001",
+        "ref": "docs/catalog-pilot-report.md:L263（§8.3 #56）",
+        "reject_reason": "极性反转 DUPLICATE：正本禁止形态（报告 §8.3 #56；§3.1 表）",
+        "duplicate_of": "POLICY.WEB.GRID.SERVER_OPS_VIRTUALIZATION"
+      }
+    },
+    {
+      "candidate_id": "POLICY.CHG.PRECHANGE_SCAN_BE",
+      "source": "design_seed",
+      "evidence": "PLANNED",
+      "source_protocol": "pomaster/components/backend-hard-spec/assets/universal/08-contract-change-protocol.md",
+      "source_section": "MUST",
+      "classification": "DUPLICATE",
+      "statement_zh": "契约变更前必须识别消费者、兼容窗口、迁移、回滚与版本策略。",
+      "statement_en_keywords": "pre-change scan, consumers, compatibility window, migration, rollback, version strategy",
+      "applies_when": {
+        "lane": "backend",
+        "condition": "同合并目标"
+      },
+      "enforcement": "advisory",
+      "vocab_pr_needed": false,
+      "notes": "跨车道重复：与 FE06 POLICY.CHG.PRECHANGE_CONSUMER_SCAN + COMPAT_MIGRATION_ROLLBACK 同构 → 合并为单一 UNIVERSAL 正本，本条为 BE 侧让位副本",
+      "review": {
+        "disposition": "REJECT",
+        "seq": "pilot-0001",
+        "ref": "docs/catalog-pilot-report.md:L277（§8.4 #65）",
+        "reject_reason": "M1 让位副本：六要素已并入正本（报告 §8.4 #65；§3.2 M1 合并稿）",
+        "duplicate_of": "POLICY.CHG.PRECHANGE_CONSUMER_SCAN"
+      }
+    },
+    {
+      "candidate_id": "POLICY.CHG.NO_DELETE_NO_MIGRATION_BE",
+      "source": "design_seed",
+      "evidence": "PLANNED",
+      "source_protocol": "pomaster/components/backend-hard-spec/assets/universal/08-contract-change-protocol.md",
+      "source_section": "MUST NOT",
+      "classification": "DUPLICATE",
+      "statement_zh": "无迁移说明不得删除、重命名或改变已发布语义。",
+      "statement_en_keywords": "no removal/rename/semantic change without migration note",
+      "applies_when": {
+        "lane": "backend",
+        "condition": "同合并目标"
+      },
+      "enforcement": "advisory",
+      "vocab_pr_needed": false,
+      "notes": "跨车道重复：POLICY.CHG.DEPRECATE_BEFORE_DELETE 的 BE 形态 → 让位合并",
+      "review": {
+        "disposition": "REJECT",
+        "seq": "pilot-0001",
+        "ref": "docs/catalog-pilot-report.md:L278（§8.4 #66）",
+        "reject_reason": "M2 让位：BE 禁止形态已并入正本（报告 §8.4 #66；§3.2 M2 合并稿）",
+        "duplicate_of": "POLICY.CHG.DEPRECATE_BEFORE_DELETE"
+      }
+    },
+    {
+      "candidate_id": "POLICY.CHG.BREAKING_VERSIONING_BE",
+      "source": "design_seed",
+      "evidence": "PLANNED",
+      "source_protocol": "pomaster/components/backend-hard-spec/assets/universal/08-contract-change-protocol.md",
+      "source_section": "Change Policy",
+      "classification": "DUPLICATE",
+      "statement_zh": "破坏性变更必须经显式审批、版本升级并附可执行回退方案。",
+      "statement_en_keywords": "breaking change, explicit approval, version upgrade, executable rollback",
+      "applies_when": {
+        "lane": "backend",
+        "condition": "同合并目标"
+      },
+      "enforcement": "advisory",
+      "vocab_pr_needed": false,
+      "notes": "跨车道重复：POLICY.CHG.BREAKING_VERSIONING 的 BE 形态；『显式审批』『可执行回退』两个子句建议 Human Review 时并入正本",
+      "review": {
+        "disposition": "REJECT",
+        "seq": "pilot-0001",
+        "ref": "docs/catalog-pilot-report.md:L285（§8.4 #73）",
+        "reject_reason": "M3 让位：显式审批+可执行回退两子句已并入正本（报告 §8.4 #73；§3.2 M3 合并稿）",
+        "duplicate_of": "POLICY.CHG.BREAKING_VERSIONING"
+      }
+    },
+    {
+      "candidate_id": "POLICY.API.DELEGATE_TO_CHG_PROTOCOL",
+      "source": "design_seed",
+      "evidence": "PLANNED",
+      "source_protocol": "pomaster/components/backend-hard-spec/assets/universal/12-api-contract-protocol.md",
+      "source_section": "Change Policy",
+      "classification": "DUPLICATE",
+      "statement_zh": "破坏性 API 变化必须按契约变更协议执行版本与迁移。",
+      "statement_en_keywords": "breaking api change delegates to contract change protocol",
+      "applies_when": {
+        "lane": "any",
+        "condition": "同合并目标"
+      },
+      "enforcement": "advisory",
+      "vocab_pr_needed": false,
+      "notes": "指针条款：委托至 POLICY.CHG.BREAKING_VERSIONING，无独立语义 → 让位合并",
+      "review": {
+        "disposition": "REJECT",
+        "seq": "pilot-0001",
+        "ref": "docs/catalog-pilot-report.md:L299（§8.5 #82）",
+        "reject_reason": "指针条款并入 BREAKING_VERSIONING，无独立语义（报告 §8.5 #82）",
+        "duplicate_of": "POLICY.CHG.BREAKING_VERSIONING"
+      }
+    }
+  ]
+}

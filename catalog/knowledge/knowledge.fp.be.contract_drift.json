@@ -60,6 +60,11 @@
     }
   ],
   "review_notes": [
-    "B3 failure-pattern 附带池成员；正是 vNext Contract Gate（openapi 对账）的对症场景"
-  ]
+    "B3 failure-pattern 附带池成员；正是 vNext Contract Gate（openapi 对账）的对症场景；pilot-0001 M7 互引：POLICY.CHG.SYNC_CONTRACT_DOCS_TESTS（本失败模式即其缺位形态）"
+  ],
+  "review": {
+    "disposition": "ACCEPT",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L283（§8.4 #71）"
+  }
 }

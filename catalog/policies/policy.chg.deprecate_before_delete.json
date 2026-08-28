@@ -26,7 +26,7 @@
     "change": "STABLE"
   },
   "title_zh": "先弃用确认无使用方后删除",
-  "statement_zh": "公共能力删除前必须先进入 deprecated 状态，并确认已无使用方后方可移除。",
+  "statement_zh": "公共能力删除前必须先进入 deprecated 状态，并确认已无使用方后方可移除；禁止形态：无迁移说明不得删除、重命名或改变已发布语义。",
   "statement_en_keywords": [
     "deprecate before delete",
     "zero-consumer confirmation",
@@ -55,6 +55,15 @@
     }
   ],
   "review_notes": [
-    "跨车道合并候选：BE 08 MUST NOT 同构"
-  ]
+    "pilot-0001 M2 合并执行：BE 08 NO_DELETE_NO_MIGRATION_BE 禁止形态（无迁移说明不得删除/重命名/改变已发布语义）已并入本正本禁止形态段"
+  ],
+  "review": {
+    "disposition": "ACCEPT",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L201（§8.1 #4）",
+    "absorbed_duplicates": [
+      "POLICY.CHG.NO_DELETE_WITHOUT_MIGRATION",
+      "POLICY.CHG.NO_DELETE_NO_MIGRATION_BE"
+    ]
+  }
 }

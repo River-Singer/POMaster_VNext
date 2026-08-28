@@ -55,5 +55,10 @@
   ],
   "review_notes": [
     "Contract Gate 策略正源；经 operationId 机器键（D15）可机判，M4 首选 gate 化对象"
-  ]
+  ],
+  "review": {
+    "disposition": "ACCEPT",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L291（§8.5 #74）"
+  }
 }

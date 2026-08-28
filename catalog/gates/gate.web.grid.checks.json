@@ -123,5 +123,10 @@
   ],
   "review_notes": [
     "GATE. 前缀需 vocab PR；⑤依赖 interaction-contract-registry 存在（opt-in→not-configured 语义）"
-  ]
+  ],
+  "review": {
+    "disposition": "ACCEPT",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L267（§8.3 #60）"
+  }
 }

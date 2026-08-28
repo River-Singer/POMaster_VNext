@@ -56,6 +56,11 @@
     }
   ],
   "review_notes": [
-    "落地为 Authority Map 条目（B7：registry 级粗起步）；AUTHORITY. 前缀已冻结"
-  ]
+    "落地为 Authority Map 条目（B7：registry 级粗起步）；AUTHORITY. 前缀已冻结；pilot-0001 M6：与本批其余 4 条 AUTHORITY.* 结构同型（提供/消费/仲裁三层默认值），登记 Universal『领域分层所有权默认值』模板上提审阅（5→1+N），留后续批次"
+  ],
+  "review": {
+    "disposition": "ADJUST",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L218（§8.1 #21）"
+  }
 }

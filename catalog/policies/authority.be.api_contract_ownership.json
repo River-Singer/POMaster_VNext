@@ -54,6 +54,11 @@
     }
   ],
   "review_notes": [
-    "对 MASTer 型 frontend-only 项目须叠加边界条款（backend=外部 OpenAPI，不做 owner 审批仪式）——thread B M3 边界条款一等化"
-  ]
+    "frontend-only + 已发布外部契约型项目须叠加边界条款（契约提供方为外部系统时不做 owner 审批仪式，改为消费侧确认联调结果）——防止项目特例固化进 global 正本的反例示范（pilot-0001 R-E：项目专名已改写为通用边界模式描述）；M6：五条 authority 结构同型，5→1+N 上提审阅登记，留后续批次"
+  ],
+  "review": {
+    "disposition": "ADJUST",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L298（§8.5 #81）"
+  }
 }

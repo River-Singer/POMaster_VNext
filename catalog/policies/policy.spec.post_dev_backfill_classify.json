@@ -56,5 +56,10 @@
   ],
   "review_notes": [
     "『通用规范候选』出口即本试点管线（候选卡）的源头条款"
-  ]
+  ],
+  "review": {
+    "disposition": "ACCEPT",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L205（§8.1 #8）"
+  }
 }

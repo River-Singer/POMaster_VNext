@@ -55,6 +55,11 @@
     }
   ],
   "review_notes": [
-    "引用 POLICY.CHG.* 族而非自建流程"
-  ]
+    "引用 POLICY.CHG.* 族而非自建流程；pilot-0001 ADJUST：M1 合并出单一 UNIVERSAL 正本后，本条登记为指针条款候选（避免与 CHG 族双写），留后续批次改写"
+  ],
+  "review": {
+    "disposition": "ADJUST",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L247（§8.2 #45）"
+  }
 }

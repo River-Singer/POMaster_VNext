@@ -53,5 +53,13 @@
       }
     }
   ],
-  "review_notes": []
+  "review_notes": [],
+  "review": {
+    "disposition": "ACCEPT",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L230（§8.2 #28）",
+    "absorbed_duplicates": [
+      "POLICY.WEB.API.NO_ENVELOPE_IN_COMPONENT"
+    ]
+  }
 }

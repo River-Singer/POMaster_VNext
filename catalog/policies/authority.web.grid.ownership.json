@@ -55,6 +55,11 @@
     }
   ],
   "review_notes": [
-    "三层例外结构恰是 vNext『Universal/Project/Lane 分离』的微缩模型"
-  ]
+    "三层例外结构恰是 vNext『Universal/Project/Lane 分离』的微缩模型；pilot-0001 M6：同型上提审阅登记（见 AUTHORITY.CHG.CHANGE_OWNERS），留后续批次"
+  ],
+  "review": {
+    "disposition": "ADJUST",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L270（§8.3 #63）"
+  }
 }

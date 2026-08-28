@@ -56,5 +56,10 @@
   ],
   "review_notes": [
     "引用 POLICY.CHG.* 影响评估族"
-  ]
+  ],
+  "review": {
+    "disposition": "ACCEPT",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L271（§8.3 #64）"
+  }
 }

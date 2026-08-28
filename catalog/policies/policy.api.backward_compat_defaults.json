@@ -57,5 +57,10 @@
   ],
   "review_notes": [
     "SHOULD 正确降级 advisory"
-  ]
+  ],
+  "review": {
+    "disposition": "ACCEPT",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L293（§8.5 #76）"
+  }
 }

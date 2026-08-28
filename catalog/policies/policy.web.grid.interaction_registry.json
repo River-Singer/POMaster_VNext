@@ -57,6 +57,11 @@
     }
   ],
   "review_notes": [
-    "对应 po-master B1 激活的 opt-in 门禁与 B3 data-grid 30 交互 MUST；vNext 下 opt-in 文件不存在→gate 应报 not-configured 而非静默通过（四态语义）"
-  ]
+    "opt-in 语义保留：registry 文件不存在时 gate 应报 not-configured 而非静默通过（四态语义，T3——升 MUST 时不得剥离该条件）；pilot-0001 R-E：po-master 决议编号引用已剥离，不入 global 正本"
+  ],
+  "review": {
+    "disposition": "ADJUST",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L259（§8.3 #52）"
+  }
 }

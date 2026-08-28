@@ -62,5 +62,10 @@
   ],
   "review_notes": [
     "B3 五大家族 failure-pattern 附带池成员"
-  ]
+  ],
+  "review": {
+    "disposition": "ACCEPT",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L217（§8.1 #20）"
+  }
 }

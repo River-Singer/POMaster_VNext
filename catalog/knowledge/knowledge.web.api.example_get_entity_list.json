@@ -61,5 +61,10 @@
   ],
   "review_notes": [
     "源文件自标『内容示例，可删除』"
-  ]
+  ],
+  "review": {
+    "disposition": "ACCEPT",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L244（§8.2 #42）"
+  }
 }

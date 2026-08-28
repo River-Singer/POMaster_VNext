@@ -56,5 +56,10 @@
   ],
   "review_notes": [
     "SHOULD 正确降级 advisory；FE 侧无对应条款，独有增量"
-  ]
+  ],
+  "review": {
+    "disposition": "ACCEPT",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L279（§8.4 #67）"
+  }
 }

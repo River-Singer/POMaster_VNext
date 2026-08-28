@@ -1,16 +1,23 @@
 # -*- coding: utf-8 -*-
-"""语义分解试点 · catalog 条目物化 + lock 草案生成器（2026-08-28）。
+"""语义分解试点 · catalog 条目物化 + lock 草案生成器（2026-08-28；pilot-0001 落账版）。
 
-输入（只读）: catalog/candidates/candidates-draft.json（上一步产物）
+输入: catalog/candidates/candidates-draft.json（pilot-0001 已落 Human Review 处置：
+     每卡携带 review.disposition ∈ {ACCEPT, ADJUST, REJECT}，落账脚本见同目录
+     apply_human_review_pilot_0001.py；REJECT 条目 fail-closed 跳过并归档于
+     catalog/candidates/rejected.json）
 输出:
-  catalog/policies/<id 小写>.json    — classification ∈ {UNIVERSAL_POLICY, LANE_POLICY}（45 条）
+  catalog/policies/<id 小写>.json    — classification ∈ {UNIVERSAL_POLICY, LANE_POLICY}（45 条，
+                                       含 R-F 上提后 UNIVERSAL 22 / LANE 23）
   catalog/knowledge/<id 小写>.json   — KNOWLEDGE_PATTERN / FAILURE_PATTERN（10 条，advisory 永不 FAIL gate）
   catalog/gates/<id 小写>.json       — GATE_RECIPE（5 条，判卷步骤草案引用 03 GateResult 形态）
   catalog/catalog-lock.draft.json    — read-side 指纹（D24）
 
 纪律（试点任务书 §93 + D24 + D5/B3）:
-  - 产物全部是 PROPOSAL（source=design_seed, evidence=PLANNED），Human Review 为内置下一步
-  - 词表缺口只登记 x-vocab-pr 候选注记，禁止旁路改 vocab-lock
+  - 产物全部是 PROPOSAL（source=design_seed, evidence=PLANNED），axes.lifecycle 保持 PROPOSED；
+    Human Review 处置记录于条目 review 字段（disposition/seq/ref），不改变生命周期轴
+  - 词表缺口只登记 x-vocab-pr 候选注记，禁止旁路改 vocab-lock（V1–V9 只登记不执行）
+  - R-C=b 裁决：CONTRACT_TEMPLATE 暂留 candidates-draft 不物化；gate 检查项③悬空引用已改内联字段清单
+  - R-D 裁决：GATE.CHG.PRECHANGE_CHECKS 检查项⑤为机器预检元数据字段存在（转机器派生）
   - 幂等：同输入重跑 byte-stable（DEF-POM-002 教训）；entries 按 id 排序
 """
 import hashlib
@@ -36,7 +43,7 @@ candidates = [r for r in records if isinstance(r, dict) and "candidate_id" in r]
 
 # ---------------------------------------------------------------- titles（人工拟定短题）
 TITLES = {
-    # UNIVERSAL_POLICY (20)
+    # UNIVERSAL_POLICY (22，含 R-F 上提 2 条)
     "POLICY.CHG.PRECHANGE_CONSUMER_SCAN": "公共能力变更前影响面扫描",
     "POLICY.CHG.COMPAT_MIGRATION_ROLLBACK": "公共变更兼容或附迁移回滚",
     "POLICY.CHG.SYNC_CONTRACT_DOCS_TESTS": "变更落地同步契约文档测试",
@@ -57,7 +64,7 @@ TITLES = {
     "POLICY.API.NO_INFORMAL_CONTRACT": "禁止非正式契约来源",
     "POLICY.API.BACKWARD_COMPAT_DEFAULTS": "接口演进默认向后兼容",
     "AUTHORITY.BE.API_CONTRACT_OWNERSHIP": "后端管服务端契约消费方确认联调",
-    # LANE_POLICY (25)
+    # LANE_POLICY (23，R-F 上提后)
     "POLICY.WEB.CHG.CONTROLLED_CHANGE_TRIGGERS": "Baseline 冻结后受控变更触发清单",
     "POLICY.WEB.API.DOMAIN_API_ONLY": "页面只经 Domain API 调用",
     "POLICY.WEB.API.SINGLE_HTTP_CLIENT": "HTTP Client 单点统一",
@@ -124,9 +131,9 @@ GATE_CHECKS = {
          "judgeability": "machine",
          "machine_support": "变更记录对象字段存在性 + 工作区 diff 扫描可机判"},
         {"seq": 5, "check_id": "spec_metadata_registered",
-         "statement_zh": "Spec 元数据（状态/版本/Owner/更新时间/生效范围）已登记",
+         "statement_zh": "机器预检：Spec 元数据字段存在（状态/版本/Owner/更新时间/生效范围）",
          "judgeability": "machine",
-         "machine_support": "信封 axes/authority/sources 结构性承载，字段存在性可机判"},
+         "machine_support": "信封 axes/authority/sources 结构性派生承载，字段存在性可机判（pilot-0001 R-D 裁决：转机器派生）"},
         {"seq": 6, "check_id": "post_dev_rule_backfill_classified",
          "statement_zh": "开发后 Spec Update Review 已把新规则显式归类（需求级记录/长期 spec/通用规范候选/无需更新）",
          "judgeability": "hybrid",
@@ -146,7 +153,7 @@ GATE_CHECKS = {
         {"seq": 3, "check_id": "cancel_retry_idempotency_declared",
          "statement_zh": "取消、重试、幂等边界已显式声明",
          "judgeability": "machine",
-         "machine_support": "请求函数契约字段（Cancellation/Retry/RetryAfter/Idempotency，见 POLICY.TPL.API_FUNCTION_CONTRACT 模板）存在性可机判"},
+         "machine_support": "请求函数契约字段存在性可机判（内联字段清单：StatusPolicy/Cancellation/Retry/RetryAfter/Idempotency）"},
         {"seq": 4, "check_id": "no_duplicated_loading_auth",
          "statement_zh": "无重复 loading 或认证逻辑",
          "judgeability": "machine",
@@ -263,6 +270,18 @@ def review_notes_of(c):
     return [n] if n else []
 
 
+def review_block_of(c):
+    """pilot-0001 Human Review 处置（disposition/seq/ref [+absorbed_duplicates]）。
+
+    REJECT 条目在物化循环即被 fail-closed 跳过，永不进入本函数；缺 review 字段即 KeyError（fail-closed）。
+    """
+    rv = c["review"]
+    blk = {"disposition": rv["disposition"], "seq": rv["seq"], "ref": rv["ref"]}
+    if "absorbed_duplicates" in rv:
+        blk["absorbed_duplicates"] = list(rv["absorbed_duplicates"])
+    return blk
+
+
 def title_of(c):
     t = TITLES.get(c["candidate_id"])
     if not t:
@@ -294,6 +313,7 @@ def build_policy(c):
         "origin": "ingested",
         "sources": sources_of(c),
         "review_notes": review_notes_of(c),
+        "review": review_block_of(c),
     }
 
 
@@ -325,6 +345,7 @@ def build_knowledge(c):
         "origin": "ingested",
         "sources": sources_of(c),
         "review_notes": review_notes_of(c),
+        "review": review_block_of(c),
     }
 
 
@@ -370,6 +391,7 @@ def build_gate(c, all_candidates):
         "origin": "ingested",
         "sources": sources_of(c),
         "review_notes": review_notes_of(c),
+        "review": review_block_of(c),
     }
 
 
@@ -380,6 +402,12 @@ class_count = {}
 for c in candidates:
     cls = c["classification"]
     class_count[cls] = class_count.get(cls, 0) + 1
+    # pilot-0001 fail-closed：Human Review REJECT 条目永不物化（留档 rejected.json，合并指针维持于正本）
+    if (c.get("review") or {}).get("disposition") == "REJECT":
+        skipped.append({"candidate_id": c["candidate_id"], "classification": cls,
+                        "reason": "Human Review REJECT（pilot-0001）：已归档 catalog/candidates/rejected.json，"
+                                  "duplicate_of=" + (c["review"].get("duplicate_of") or "?")})
+        continue
     if cls in ("UNIVERSAL_POLICY", "LANE_POLICY"):
         entry, sub = build_policy(c), "policies"
     elif cls in ("KNOWLEDGE_PATTERN", "FAILURE_PATTERN"):
@@ -388,8 +416,8 @@ for c in candidates:
         entry, sub = build_gate(c, candidates), "gates"
     else:
         reason = {
-            "DUPLICATE": "让位于合并目标（候选 notes 携带合并指针）：待 Human Review 裁决合并后随正本入册，避免先行制造冗余条目",
-            "CONTRACT_TEMPLATE": "不在本步三类物化范围（模板族未来归 catalog/templates 或 02b payload 形状审阅）；且 CHG_RECORD 与 CHG_RECORD_BE 存在跨车道字段集合并待审",
+            "DUPLICATE": "让位于合并目标（候选 notes 携带合并指针）：pilot-0001 已裁决 REJECT 归档，正本以 review.absorbed_duplicates 维持合并指针",
+            "CONTRACT_TEMPLATE": "R-C=b 裁决（pilot-0001）：模板暂留 candidates-draft；catalog/templates/ 落点（TEMPLATE. 前缀，V8）挂起至 vocab-pr/GATE 前缀收编后",
         }.get(cls, "未列入本步物化范围")
         skipped.append({"candidate_id": c["candidate_id"], "classification": cls, "reason": reason})
         continue
@@ -412,7 +440,7 @@ written.sort(key=lambda e: e["id"])
 lock = {
     "catalog_version": "0.1.0-pilot",
     "profile": "web-standard@0",
-    "generated_by": "catalog/tools/materialize_catalog_pilot.py（幂等重生成；entries 按 id 排序）",
+    "generated_by": "catalog/tools/materialize_catalog_pilot.py（幂等重生成；entries 按 id 排序；pilot-0001 Human Review 落账后重生成）",
     "x-digest-ethics": {
         "basis": "D24 / vocab-lock.digest_ethics",
         "write_blocking": False,

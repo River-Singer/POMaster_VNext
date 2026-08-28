@@ -18,7 +18,7 @@
   "id": "POLICY.WEB.API.TRANSPORT_VS_BUSINESS",
   "kind": "policy",
   "axis_profile": "policy_default",
-  "classification": "LANE_POLICY",
+  "classification": "UNIVERSAL_POLICY",
   "axes": {
     "lifecycle": "PROPOSED",
     "confidence": "UNRESOLVED",
@@ -54,6 +54,11 @@
     }
   ],
   "review_notes": [
-    "语义上跨车道通用（任何 client 侧），保守留 LANE_POLICY 可泛化"
-  ]
+    "语义上跨车道通用（任何 client 侧）；pilot-0001 R-F：已上提 UNIVERSAL_POLICY（判据：语句实体——传输/业务成功判定——可跨 lane 存在；applies_when.lane 维持不动，待 V7 lane 轴登记后再议）"
+  ],
+  "review": {
+    "disposition": "ADJUST",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L231（§8.2 #29）"
+  }
 }

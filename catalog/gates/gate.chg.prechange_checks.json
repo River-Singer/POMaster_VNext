@@ -86,9 +86,9 @@
     {
       "seq": 5,
       "check_id": "spec_metadata_registered",
-      "statement_zh": "Spec 元数据（状态/版本/Owner/更新时间/生效范围）已登记",
+      "statement_zh": "机器预检：Spec 元数据字段存在（状态/版本/Owner/更新时间/生效范围）",
       "judgeability": "machine",
-      "machine_support": "信封 axes/authority/sources 结构性承载，字段存在性可机判"
+      "machine_support": "信封 axes/authority/sources 结构性派生承载，字段存在性可机判（pilot-0001 R-D 裁决：转机器派生）"
     },
     {
       "seq": 6,
@@ -132,6 +132,11 @@
     }
   ],
   "review_notes": [
-    "GATE. 前缀需 vocab PR（见 meta.vocab_findings）；检查项④⑤可机判"
-  ]
+    "GATE. 前缀需 vocab PR（见 meta.vocab_findings）；检查项④⑤可机判；pilot-0001 R-D 联动：检查项⑤已按 T2 处方改写为『机器预检元数据字段存在』（转机器派生）"
+  ],
+  "review": {
+    "disposition": "ADJUST",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L215（§8.1 #18）"
+  }
 }

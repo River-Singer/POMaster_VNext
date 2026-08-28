@@ -56,6 +56,14 @@
     }
   ],
   "review_notes": [
-    "跨车道合并候选：BE 08 MUST 同构"
-  ]
+    "pilot-0001 M1 裁决执行：与正本 POLICY.CHG.PRECHANGE_CONSUMER_SCAN 保持互引（本条承载兼容窗口/迁移方案/回滚路径细则），不并条不删除（原注『跨车道合并候选：BE 08 MUST 同构』已执行完毕）"
+  ],
+  "review": {
+    "disposition": "ADJUST",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L199（§8.1 #2）",
+    "absorbed_duplicates": [
+      "POLICY.CHG.NO_SILENT_DEFAULT"
+    ]
+  }
 }

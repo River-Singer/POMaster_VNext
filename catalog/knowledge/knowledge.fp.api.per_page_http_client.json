@@ -61,5 +61,10 @@
   ],
   "review_notes": [
     "B3 failure-pattern 附带池成员"
-  ]
+  ],
+  "review": {
+    "disposition": "ACCEPT",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L245（§8.2 #43）"
+  }
 }

@@ -26,7 +26,7 @@
     "change": "STABLE"
   },
   "title_zh": "Breaking Change 版本化与事后补齐",
-  "statement_zh": "Breaking Change 必须版本化；紧急修复可豁免前置流程但不豁免事后补齐影响、通知与迁移记录。",
+  "statement_zh": "Breaking Change 必须版本化并经显式审批，且附可执行回退方案；紧急修复可豁免前置流程但不豁免事后补齐影响、通知与迁移记录。",
   "statement_en_keywords": [
     "breaking change versioning",
     "hotfix backfill obligation"
@@ -55,5 +55,14 @@
   ],
   "review_notes": [
     "跨车道合并候选：BE 08 Change Policy 同构（BE 侧多出显式审批+可执行回退子句，待并入）"
-  ]
+  ],
+  "review": {
+    "disposition": "ACCEPT",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L219（§8.1 #22）",
+    "absorbed_duplicates": [
+      "POLICY.CHG.BREAKING_VERSIONING_BE",
+      "POLICY.API.DELEGATE_TO_CHG_PROTOCOL"
+    ]
+  }
 }

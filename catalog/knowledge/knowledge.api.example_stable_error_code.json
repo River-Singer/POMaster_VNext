@@ -62,5 +62,10 @@
   ],
   "review_notes": [
     "与 ERR.* 词条体系（error-taxonomy D18）衔接"
-  ]
+  ],
+  "review": {
+    "disposition": "ACCEPT",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L296（§8.5 #79）"
+  }
 }

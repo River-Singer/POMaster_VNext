@@ -26,7 +26,7 @@
     "change": "STABLE"
   },
   "title_zh": "大数据量服务端操作与虚拟化",
-  "statement_zh": "大数据量表必须采用服务端分页/筛选/排序并启用虚拟化渲染。",
+  "statement_zh": "大数据量表必须采用服务端分页/筛选/排序并启用虚拟化渲染；『大数据量』阈值参数由 Project Baseline 供给，Catalog 正本不内置默认阈值。",
   "statement_en_keywords": [
     "server-side pagination/filter/sort",
     "virtualization",
@@ -55,6 +55,14 @@
     }
   ],
   "review_notes": [
-    "PRD §93.5 自举例：本条应拆两半——Catalog Policy（大数据→服务端操作+虚拟化）+ Project Baseline（阈值与适用表格清单）；『大数据』判据属项目基线"
-  ]
+    "PRD §93.5 自举例：本条应拆两半——Catalog Policy（大数据→服务端操作+虚拟化）+ Project Baseline（阈值与适用表格清单）；『大数据』判据属项目基线；pilot-0001 ADJUST：正本已显式声明阈值由 Project Baseline 供给（§93.5 拆两半）"
+  ],
+  "review": {
+    "disposition": "ADJUST",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L255（§8.3 #48）",
+    "absorbed_duplicates": [
+      "POLICY.WEB.GRID.NO_FAKE_PAGINATION"
+    ]
+  }
 }

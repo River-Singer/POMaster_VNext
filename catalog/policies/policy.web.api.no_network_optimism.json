@@ -18,7 +18,7 @@
   "id": "POLICY.WEB.API.NO_NETWORK_OPTIMISM",
   "kind": "policy",
   "axis_profile": "policy_default",
-  "classification": "LANE_POLICY",
+  "classification": "UNIVERSAL_POLICY",
   "axes": {
     "lifecycle": "PROPOSED",
     "confidence": "UNRESOLVED",
@@ -55,6 +55,11 @@
     }
   ],
   "review_notes": [
-    "独有内容（破除隐含假设），非既有条款极性反转"
-  ]
+    "独有内容（破除隐含假设），非既有条款极性反转；pilot-0001 R-F：已上提 UNIVERSAL_POLICY（lane 中性：『在线即成功』假设破除在任何 client 侧成立）"
+  ],
+  "review": {
+    "disposition": "ADJUST",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L239（§8.2 #37）"
+  }
 }

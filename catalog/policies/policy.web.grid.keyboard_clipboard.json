@@ -57,5 +57,10 @@
   ],
   "review_notes": [
     "SHOULD 正确降级 advisory；键盘等价路径部分已被 MUST-7（INTERACTION_REGISTRY）升格为 required"
-  ]
+  ],
+  "review": {
+    "disposition": "ACCEPT",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L265（§8.3 #58）"
+  }
 }

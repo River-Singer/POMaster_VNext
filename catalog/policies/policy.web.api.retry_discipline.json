@@ -56,5 +56,15 @@
       }
     }
   ],
-  "review_notes": []
+  "review_notes": [
+    "pilot-0001 R-F 对照样本：维持 LANE_POLICY——含 HTTP 专有词元 Retry-After，上提会失真；作为上提判据（语句实体是否可跨 lane 存在）的反例保留"
+  ],
+  "review": {
+    "disposition": "ACCEPT",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L232（§8.2 #30）",
+    "absorbed_duplicates": [
+      "POLICY.WEB.API.NO_AUTO_RETRY_NONIDEM"
+    ]
+  }
 }

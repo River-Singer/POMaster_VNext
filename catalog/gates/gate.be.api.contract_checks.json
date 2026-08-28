@@ -115,6 +115,11 @@
     }
   ],
   "review_notes": [
-    "GATE. 前缀需 vocab PR；与 M4 Contract Gate vNext 检查集对照"
-  ]
+    "GATE. 前缀需 vocab PR；与 M4 Contract Gate vNext 检查集对照；pilot-0001 §3.4 互指：与 POLICY.CHG.SYNC_CONTRACT_DOCS_TESTS 同步清单对象不同、重叠约 60%（契约/示例/测试/文档/通知 vs 契约/实现/生成客户端/测试/handoff），两口径统一留 Owner 后续裁决"
+  ],
+  "review": {
+    "disposition": "ADJUST",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L295（§8.5 #78）"
+  }
 }

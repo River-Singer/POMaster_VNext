@@ -56,6 +56,11 @@
     }
   ],
   "review_notes": [
-    "SHOULD 正确降级 advisory"
-  ]
+    "SHOULD 正确降级 advisory；pilot-0001 T1 precedence 声明：与 POLICY.CHG.BREAKING_VERSIONING 并读时紧急修复豁免优先（豁免前置流程但不豁免事后补齐），三阶段建议不溯及约束 hotfix"
+  ],
+  "review": {
+    "disposition": "ACCEPT",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L213（§8.1 #16）"
+  }
 }

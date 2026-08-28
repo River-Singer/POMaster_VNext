@@ -55,6 +55,11 @@
     }
   ],
   "review_notes": [
-    "安全相关；与 BE 12『正式契约=OpenAPI 权威』构成跨车道契约链"
-  ]
+    "安全相关；与 BE 12『正式契约=OpenAPI 权威』构成跨车道契约链；pilot-0001 互引：POLICY.API.NO_INFORMAL_CONTRACT"
+  ],
+  "review": {
+    "disposition": "ACCEPT",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L234（§8.2 #32）"
+  }
 }

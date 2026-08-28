@@ -26,7 +26,7 @@
     "change": "STABLE"
   },
   "title_zh": "公共能力变更前影响面扫描",
-  "statement_zh": "修改被多方依赖的公共能力前，必须先枚举直接与间接消费方及其受影响场景，形成影响面清单。",
+  "statement_zh": "修改被多方依赖的公共能力前，必须先枚举直接与间接消费方及其受影响场景，形成影响面清单；契约/接口类变更还须同时明确兼容窗口、迁移方案、回滚路径与版本策略，与消费方影响面共同构成完整的前置扫描。",
   "statement_en_keywords": [
     "pre-change impact scan",
     "direct/indirect consumers",
@@ -56,6 +56,15 @@
     }
   ],
   "review_notes": [
-    "跨车道合并候选：BE 08 MUST 同构，建议合并为单一 UNIVERSAL 正本供两 lane 引用"
-  ]
+    "pilot-0001 M1 合并执行：BE 08 PRECHANGE_SCAN_BE 六要素（消费方/兼容窗口/迁移/回滚/版本策略）已并入本正本，作为单一 UNIVERSAL 正本供两 lane 引用；兼容/迁移/回滚细则与 COMPAT_MIGRATION_ROLLBACK 互引"
+  ],
+  "review": {
+    "disposition": "ACCEPT",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L198（§8.1 #1）",
+    "absorbed_duplicates": [
+      "POLICY.CHG.NO_SINGLE_CONSUMER_API",
+      "POLICY.CHG.PRECHANGE_SCAN_BE"
+    ]
+  }
 }

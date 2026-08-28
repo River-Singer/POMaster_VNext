@@ -55,6 +55,11 @@
     }
   ],
   "review_notes": [
-    "与 vocab source_types 禁 ai_invention 的 fail-closed 出处纪律同构；mock_contract 的存在恰为该条款的合规出口"
-  ]
+    "与 vocab source_types 禁 ai_invention 的 fail-closed 出处纪律同构；mock_contract 的存在恰为该条款的合规出口；pilot-0001 互引：POLICY.WEB.API.TRUSTED_ENDPOINT_SOURCE（跨车道契约链）"
+  ],
+  "review": {
+    "disposition": "ACCEPT",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L292（§8.5 #75）"
+  }
 }

@@ -60,6 +60,11 @@
     }
   ],
   "review_notes": [
-    "与 FE06 EXAMPLE_PROP_MIGRATION 同型（跨车道知识同构，Catalog 可合并为一条）"
-  ]
+    "与 FE06 EXAMPLE_PROP_MIGRATION 同型（跨车道知识同构，Catalog 可合并为一条）；pilot-0001 M5：互引已建立，合并候选留后续批次"
+  ],
+  "review": {
+    "disposition": "ADJUST",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L282（§8.4 #70）"
+  }
 }

@@ -57,5 +57,10 @@
   ],
   "review_notes": [
     "触发清单含 FE 专有对象（Design Token/权限码），故 LANE_POLICY；Controlled Change 概念本身可泛化"
-  ]
+  ],
+  "review": {
+    "disposition": "ACCEPT",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L204（§8.1 #7）"
+  }
 }

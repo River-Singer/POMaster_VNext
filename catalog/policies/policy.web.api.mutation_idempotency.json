@@ -55,5 +55,13 @@
   ],
   "review_notes": [
     "与 BE 22-idempotency-protocol 形成跨车道语义对（本轮未选其对照，登记待后续批次）"
-  ]
+  ],
+  "review": {
+    "disposition": "ACCEPT",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L229（§8.2 #27）",
+    "absorbed_duplicates": [
+      "POLICY.WEB.API.NO_AUTO_RETRY_NONIDEM"
+    ]
+  }
 }

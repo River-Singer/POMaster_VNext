@@ -26,7 +26,7 @@
     "change": "STABLE"
   },
   "title_zh": "spec 元数据必填",
-  "statement_zh": "各级 spec（项目级/需求级/公共组件/接口）必须登记状态、版本、Owner、更新时间与生效范围元数据。",
+  "statement_zh": "各级 spec（项目级/需求级/公共组件/接口）必须具备状态、版本、Owner、更新时间与生效范围元数据；vNext 信封形态下由 authority/axes 字段结构性派生承载，以机器预检字段存在性为准。",
   "statement_en_keywords": [
     "spec metadata",
     "status",
@@ -57,6 +57,11 @@
     }
   ],
   "review_notes": [
-    "vNext 下由信封 authority/axes 字段结构性承接，可能转为派生而非人工义务"
-  ]
+    "pilot-0001 R-D 裁决（T2 同批）：转机器派生——元数据由信封 authority/axes 结构性派生承载，人工重复登记义务解除；联动 GATE.CHG.PRECHANGE_CHECKS 检查项⑤已改写为机器预检表述"
+  ],
+  "review": {
+    "disposition": "ADJUST",
+    "seq": "pilot-0001",
+    "ref": "docs/catalog-pilot-report.md:L203（§8.1 #6）"
+  }
 }
