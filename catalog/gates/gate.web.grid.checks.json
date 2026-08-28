@@ -1,0 +1,127 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "GATE. 前缀不在 prefixes_v0 15 前缀闭包内（closed-world：未登记前缀解析即 FATAL）；且 kind='gate_recipe' 不在 kinds_registry.truth_bodies",
+    "proposal": "词汇表 PR 登记 GATE. 前缀与 gate_recipe kind；备选落法：gate recipe 住 catalog/gates/ 非 truth 对象层，门禁定义锚沿用 03-gate-result.schema gate_def 的 POLICY.GATE.<NAME>@semver 词形（两种落法待 Owner 裁决，meta.vocab_findings[1]）",
+    "locked_vocab_untouched": true
+  },
+  "x-pilot-proposal": {
+    "status": "PROPOSAL",
+    "package": "语义分解试点送审包（2026-08-28）",
+    "human_review_required": true,
+    "source_type": "design_seed",
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/catalog/candidates/candidates-draft.json",
+    "enforcement_note": "优先机器判卷；判卷步骤草案见 catalog/gates/ 同协议 recipe",
+    "clean_room_note": "statement_zh 为独立改写（clean-room），零逐字拷贝源协议"
+  },
+  "id": "GATE.WEB.GRID.CHECKS",
+  "kind": "gate_recipe",
+  "axis_profile": "gate_recipe_default",
+  "classification": "GATE_RECIPE",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "表格门禁检查单",
+  "statement_zh": "表格门禁检查单：①schema 驱动 ②列宽影响层级正确 ③大数据与配置隔离安全 ④导出与当前视图一致 ⑤每个支持交互已在 registry 声明并绑定 action+API。",
+  "applies_when": {
+    "lane": "frontend",
+    "condition": "表格相关变更过门禁"
+  },
+  "enforcement": "deterministic_where_possible",
+  "gate_def_draft": {
+    "anchor": "GATE.WEB.GRID.CHECKS@0.1.0",
+    "anchor_note": "03-gate-result.schema gate_def 要求 '<定义id>@semver'；若 Owner 裁决 POLICY.GATE.* 落法则改写为 POLICY.GATE.WEB.GRID.CHECKS@0.1.0",
+    "result_schema_ref": "POMaster_VNext/packages/schemas/assets/03-gate-result.schema.json",
+    "verdict_vocabulary": [
+      "passed",
+      "failed",
+      "warning",
+      "blocked",
+      "not_run",
+      "not_configured",
+      "skipped_blindspot"
+    ],
+    "judging_rules": {
+      "counts_not_applicable_required": "counts.not_applicable 必填——『为何没查』必须是数字而非沉默（C1）",
+      "trust_twin": "asserted/recomputed 孪生字段组：永不信任自报值，判卷唯一依据为 GateRunner 重算（C5）",
+      "blindspot_evidence": "verdict=skipped_blindspot 必须附 blindspot.fixture_regression 证据引用",
+      "aggregate_honesty": "聚合值永远不含未声明的静默跳过；not_configured ≠ passed"
+    }
+  },
+  "checks": [
+    {
+      "seq": 1,
+      "check_id": "schema_driven_rendering",
+      "statement_zh": "表格经统一表格壳 + typed Column Schema 渲染，无 template 手写列或复制列数组",
+      "judgeability": "machine",
+      "machine_support": "模板/渲染函数中列定义模式扫描"
+    },
+    {
+      "seq": 2,
+      "check_id": "width_fix_level_correct",
+      "statement_zh": "列宽修复影响层级正确（单页例外→同类型 preset→领域 preset→表格壳→全局 token 逐级上浮）",
+      "judgeability": "human",
+      "manual_part": "层级选择语义判定"
+    },
+    {
+      "seq": 3,
+      "check_id": "large_data_and_config_isolation_safe",
+      "statement_zh": "大数据量走服务端分页/筛选/排序 + 虚拟化；列配置按页面/表格/用户/schema 版本四维隔离",
+      "judgeability": "hybrid",
+      "machine_support": "分页/虚拟化配置存在性、配置 key 隔离扫描",
+      "manual_part": "『大数据』阈值属项目基线（PRD §93.5 拆分点：Catalog Policy vs Project Baseline）"
+    },
+    {
+      "seq": 4,
+      "check_id": "export_matches_view",
+      "statement_zh": "导出内容与当前视图一致",
+      "judgeability": "machine",
+      "machine_support": "ExportScope 与当前视图状态对账"
+    },
+    {
+      "seq": 5,
+      "check_id": "interaction_registered_and_bound",
+      "statement_zh": "每个支持交互已在 interaction-contract-registry 声明并绑定 action_id + api_requirement_ids",
+      "judgeability": "machine",
+      "machine_support": "registry 条目 ↔ 页面交互声明对账",
+      "not_configured_semantics": "opt-in：registry 文件不存在 → verdict=not_configured（终局性诚实报告），禁止静默通过——interaction-contract opt-in 门禁『文件不存在则门禁静默』是 directly blocked anti-case"
+    }
+  ],
+  "policy_refs": [
+    "AUTHORITY.WEB.GRID.OWNERSHIP",
+    "POLICY.WEB.GRID.COLUMN_SCHEMA_FIELDS",
+    "POLICY.WEB.GRID.CONFIG_ISOLATION",
+    "POLICY.WEB.GRID.FREEZE_KEY_COLUMNS",
+    "POLICY.WEB.GRID.INTERACTION_REGISTRY",
+    "POLICY.WEB.GRID.KEYBOARD_CLIPBOARD",
+    "POLICY.WEB.GRID.SCHEMA_DRIVEN_SHELL",
+    "POLICY.WEB.GRID.SCHEMA_VERSIONING",
+    "POLICY.WEB.GRID.SERVER_OPS_VIRTUALIZATION",
+    "POLICY.WEB.GRID.SHELL_CHANGE_MATRIX",
+    "POLICY.WEB.GRID.WIDTH_FIX_LADDER"
+  ],
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-pilot-human-review"
+  },
+  "origin": "ingested",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "pomaster/components/frontend-hard-spec/assets/universal/30-data-grid-protocol.md",
+      "captured_by": "agent:claude/semantic-decomposition-pilot",
+      "locator": {
+        "section": "Checklist（5 项）"
+      }
+    }
+  ],
+  "review_notes": [
+    "GATE. 前缀需 vocab PR；⑤依赖 interaction-contract-registry 存在（opt-in→not-configured 语义）"
+  ]
+}

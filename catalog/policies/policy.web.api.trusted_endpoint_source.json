@@ -1,0 +1,60 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "kind='policy' 不在 vocab-lock kinds_registry.truth_bodies（POLICY. 前缀已冻结注册，closed-world）",
+    "proposal": "词汇表 PR 登记 policy kind；或 Owner 裁决 policy 条目住 catalog/ 而非 truth/objects 正文层（两种落法待裁决，见 candidates-draft.json meta.vocab_findings[0]，affected=45）",
+    "locked_vocab_untouched": true
+  },
+  "x-pilot-proposal": {
+    "status": "PROPOSAL",
+    "package": "语义分解试点送审包（2026-08-28）",
+    "human_review_required": true,
+    "source_type": "design_seed",
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/catalog/candidates/candidates-draft.json",
+    "enforcement_note": "命中 applies_when 条件时必须遵守；是否升 MUST、接入哪个 gate 由 Human Review 裁决",
+    "clean_room_note": "statement_zh 为独立改写（clean-room），零逐字拷贝源协议"
+  },
+  "id": "POLICY.WEB.API.TRUSTED_ENDPOINT_SOURCE",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "LANE_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "endpoint 只来自受控来源",
+  "statement_zh": "endpoint、redirect 与 base URL 只能来自受控配置或正式契约，禁止由不可信 URL 参数直接拼接。",
+  "statement_en_keywords": [
+    "trusted endpoint sources",
+    "no untrusted URL concatenation",
+    "SSRF-adjacent"
+  ],
+  "applies_when": {
+    "lane": "frontend",
+    "condition": "构造任何请求地址"
+  },
+  "enforcement": "required_when_applicable",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-pilot-human-review"
+  },
+  "origin": "ingested",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "pomaster/components/frontend-hard-spec/assets/universal/15-request-api-protocol.md",
+      "captured_by": "agent:claude/semantic-decomposition-pilot",
+      "locator": {
+        "section": "MUST 第10条"
+      }
+    }
+  ],
+  "review_notes": [
+    "安全相关；与 BE 12『正式契约=OpenAPI 权威』构成跨车道契约链"
+  ]
+}

@@ -1,0 +1,131 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "GATE. 前缀不在 prefixes_v0 15 前缀闭包内（closed-world：未登记前缀解析即 FATAL）；且 kind='gate_recipe' 不在 kinds_registry.truth_bodies",
+    "proposal": "词汇表 PR 登记 GATE. 前缀与 gate_recipe kind；备选落法：gate recipe 住 catalog/gates/ 非 truth 对象层，门禁定义锚沿用 03-gate-result.schema gate_def 的 POLICY.GATE.<NAME>@semver 词形（两种落法待 Owner 裁决，meta.vocab_findings[1]）",
+    "locked_vocab_untouched": true
+  },
+  "x-pilot-proposal": {
+    "status": "PROPOSAL",
+    "package": "语义分解试点送审包（2026-08-28）",
+    "human_review_required": true,
+    "source_type": "design_seed",
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/catalog/candidates/candidates-draft.json",
+    "enforcement_note": "优先机器判卷；判卷步骤草案见 catalog/gates/ 同协议 recipe",
+    "clean_room_note": "statement_zh 为独立改写（clean-room），零逐字拷贝源协议"
+  },
+  "id": "GATE.WEB.API.REQUEST_CHECKS",
+  "kind": "gate_recipe",
+  "axis_profile": "gate_recipe_default",
+  "classification": "GATE_RECIPE",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "请求层门禁检查单",
+  "statement_zh": "请求层门禁检查单：①页面仅用 Domain API ②类型与错误统一 ③取消/重试/幂等明确 ④无重复 loading/认证逻辑 ⑤状态判定、旧结果防护与 endpoint 来源明确。",
+  "applies_when": {
+    "lane": "frontend",
+    "condition": "请求层过门禁"
+  },
+  "enforcement": "deterministic_where_possible",
+  "gate_def_draft": {
+    "anchor": "GATE.WEB.API.REQUEST_CHECKS@0.1.0",
+    "anchor_note": "03-gate-result.schema gate_def 要求 '<定义id>@semver'；若 Owner 裁决 POLICY.GATE.* 落法则改写为 POLICY.GATE.WEB.API.REQUEST_CHECKS@0.1.0",
+    "result_schema_ref": "POMaster_VNext/packages/schemas/assets/03-gate-result.schema.json",
+    "verdict_vocabulary": [
+      "passed",
+      "failed",
+      "warning",
+      "blocked",
+      "not_run",
+      "not_configured",
+      "skipped_blindspot"
+    ],
+    "judging_rules": {
+      "counts_not_applicable_required": "counts.not_applicable 必填——『为何没查』必须是数字而非沉默（C1）",
+      "trust_twin": "asserted/recomputed 孪生字段组：永不信任自报值，判卷唯一依据为 GateRunner 重算（C5）",
+      "blindspot_evidence": "verdict=skipped_blindspot 必须附 blindspot.fixture_regression 证据引用",
+      "aggregate_honesty": "聚合值永远不含未声明的静默跳过；not_configured ≠ passed"
+    }
+  },
+  "checks": [
+    {
+      "seq": 1,
+      "check_id": "domain_api_only",
+      "statement_zh": "页面仅使用 Domain API 函数发起请求",
+      "judgeability": "machine",
+      "machine_support": "静态扫描页面层 import 与 fetch/axios 直调"
+    },
+    {
+      "seq": 2,
+      "check_id": "typed_and_unified_errors",
+      "statement_zh": "请求函数类型化且错误结构统一",
+      "judgeability": "hybrid",
+      "machine_support": "函数签名/错误类型引用存在性",
+      "manual_part": "类型语义一致性"
+    },
+    {
+      "seq": 3,
+      "check_id": "cancel_retry_idempotency_declared",
+      "statement_zh": "取消、重试、幂等边界已显式声明",
+      "judgeability": "machine",
+      "machine_support": "请求函数契约字段（Cancellation/Retry/RetryAfter/Idempotency，见 POLICY.TPL.API_FUNCTION_CONTRACT 模板）存在性可机判"
+    },
+    {
+      "seq": 4,
+      "check_id": "no_duplicated_loading_auth",
+      "statement_zh": "无重复 loading 或认证逻辑",
+      "judgeability": "machine",
+      "machine_support": "模式扫描（多 client 实例创建/重复 token 刷新逻辑）"
+    },
+    {
+      "seq": 5,
+      "check_id": "status_guard_endpoint_source_declared",
+      "statement_zh": "状态判定、旧结果防护与 endpoint 来源明确",
+      "judgeability": "hybrid",
+      "machine_support": "契约字段存在性（StatusPolicy/LateResultGuard/endpoint 来源声明）",
+      "manual_part": "声明与实际行为一致性"
+    }
+  ],
+  "policy_refs": [
+    "AUTHORITY.WEB.API.REQUEST_OWNERS",
+    "POLICY.WEB.API.CLIENT_CHANGE_IMPACT",
+    "POLICY.WEB.API.DOMAIN_API_ONLY",
+    "POLICY.WEB.API.ERROR_NORMALIZATION",
+    "POLICY.WEB.API.GENERATED_CLIENT",
+    "POLICY.WEB.API.LATE_RESULT_GUARD",
+    "POLICY.WEB.API.MUTATION_IDEMPOTENCY",
+    "POLICY.WEB.API.NO_NETWORK_OPTIMISM",
+    "POLICY.WEB.API.QUERY_CANCEL_STALE_DROP",
+    "POLICY.WEB.API.RETRY_DISCIPLINE",
+    "POLICY.WEB.API.SINGLE_HTTP_CLIENT",
+    "POLICY.WEB.API.SINGLE_LOADING_SOURCE",
+    "POLICY.WEB.API.TRANSPORT_VS_BUSINESS",
+    "POLICY.WEB.API.TRUSTED_ENDPOINT_SOURCE",
+    "POLICY.WEB.API.TYPED_DOMAIN_NAMING"
+  ],
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-pilot-human-review"
+  },
+  "origin": "ingested",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "pomaster/components/frontend-hard-spec/assets/universal/15-request-api-protocol.md",
+      "captured_by": "agent:claude/semantic-decomposition-pilot",
+      "locator": {
+        "section": "Checklist（5 项）"
+      }
+    }
+  ],
+  "review_notes": [
+    "GATE. 前缀需 vocab PR"
+  ]
+}

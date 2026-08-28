@@ -1,0 +1,61 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "kind='policy' 不在 vocab-lock kinds_registry.truth_bodies（POLICY. 前缀已冻结注册，closed-world）",
+    "proposal": "词汇表 PR 登记 policy kind；或 Owner 裁决 policy 条目住 catalog/ 而非 truth/objects 正文层（两种落法待裁决，见 candidates-draft.json meta.vocab_findings[0]，affected=45）",
+    "locked_vocab_untouched": true
+  },
+  "x-pilot-proposal": {
+    "status": "PROPOSAL",
+    "package": "语义分解试点送审包（2026-08-28）",
+    "human_review_required": true,
+    "source_type": "design_seed",
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/catalog/candidates/candidates-draft.json",
+    "enforcement_note": "命中 applies_when 条件时必须遵守；是否升 MUST、接入哪个 gate 由 Human Review 裁决",
+    "clean_room_note": "statement_zh 为独立改写（clean-room），零逐字拷贝源协议"
+  },
+  "id": "POLICY.CHG.COMPAT_MIGRATION_ROLLBACK",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "UNIVERSAL_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "公共变更兼容或附迁移回滚",
+  "statement_zh": "公共能力变更必须保持向后兼容，或同时给出迁移方案、受影响版本范围与回滚路径。",
+  "statement_en_keywords": [
+    "backward compatibility",
+    "migration plan",
+    "version range",
+    "rollback path"
+  ],
+  "applies_when": {
+    "lane": "any",
+    "condition": "公共能力发生不兼容变更时"
+  },
+  "enforcement": "required_when_applicable",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-pilot-human-review"
+  },
+  "origin": "ingested",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "pomaster/components/frontend-hard-spec/assets/universal/06-change-governance-protocol.md",
+      "captured_by": "agent:claude/semantic-decomposition-pilot",
+      "locator": {
+        "section": "MUST 第2条"
+      }
+    }
+  ],
+  "review_notes": [
+    "跨车道合并候选：BE 08 MUST 同构"
+  ]
+}

@@ -1,0 +1,137 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "GATE. 前缀不在 prefixes_v0 15 前缀闭包内（closed-world：未登记前缀解析即 FATAL）；且 kind='gate_recipe' 不在 kinds_registry.truth_bodies",
+    "proposal": "词汇表 PR 登记 GATE. 前缀与 gate_recipe kind；备选落法：gate recipe 住 catalog/gates/ 非 truth 对象层，门禁定义锚沿用 03-gate-result.schema gate_def 的 POLICY.GATE.<NAME>@semver 词形（两种落法待 Owner 裁决，meta.vocab_findings[1]）",
+    "locked_vocab_untouched": true
+  },
+  "x-pilot-proposal": {
+    "status": "PROPOSAL",
+    "package": "语义分解试点送审包（2026-08-28）",
+    "human_review_required": true,
+    "source_type": "design_seed",
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/catalog/candidates/candidates-draft.json",
+    "enforcement_note": "优先机器判卷；判卷步骤草案见 catalog/gates/ 同协议 recipe",
+    "clean_room_note": "statement_zh 为独立改写（clean-room），零逐字拷贝源协议"
+  },
+  "id": "GATE.CHG.PRECHANGE_CHECKS",
+  "kind": "gate_recipe",
+  "axis_profile": "gate_recipe_default",
+  "classification": "GATE_RECIPE",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "变更门禁检查单",
+  "statement_zh": "变更门禁检查单：①根因层级明确 ②调用方清单完整 ③兼容/迁移/回滚可执行 ④测试示例通知已更新 ⑤Spec 元数据已登记 ⑥开发后规则回填已归类。",
+  "applies_when": {
+    "lane": "any",
+    "condition": "公共变更过门禁"
+  },
+  "enforcement": "deterministic_where_possible",
+  "gate_def_draft": {
+    "anchor": "GATE.CHG.PRECHANGE_CHECKS@0.1.0",
+    "anchor_note": "03-gate-result.schema gate_def 要求 '<定义id>@semver'；若 Owner 裁决 POLICY.GATE.* 落法则改写为 POLICY.GATE.CHG.PRECHANGE_CHECKS@0.1.0",
+    "result_schema_ref": "POMaster_VNext/packages/schemas/assets/03-gate-result.schema.json",
+    "verdict_vocabulary": [
+      "passed",
+      "failed",
+      "warning",
+      "blocked",
+      "not_run",
+      "not_configured",
+      "skipped_blindspot"
+    ],
+    "judging_rules": {
+      "counts_not_applicable_required": "counts.not_applicable 必填——『为何没查』必须是数字而非沉默（C1）",
+      "trust_twin": "asserted/recomputed 孪生字段组：永不信任自报值，判卷唯一依据为 GateRunner 重算（C5）",
+      "blindspot_evidence": "verdict=skipped_blindspot 必须附 blindspot.fixture_regression 证据引用",
+      "aggregate_honesty": "聚合值永远不含未声明的静默跳过；not_configured ≠ passed"
+    }
+  },
+  "checks": [
+    {
+      "seq": 1,
+      "check_id": "root_cause_level_declared",
+      "statement_zh": "根因层级明确：属公共缺陷不得以局部补丁了结，属局部问题不得擅动公共层",
+      "judgeability": "hybrid",
+      "machine_support": "change/task 对象 payload.class_scan_result（02 信封 R4 条件式）提供同类扫描留痕",
+      "manual_part": "公共 vs 局部的语义判定终审在人"
+    },
+    {
+      "seq": 2,
+      "check_id": "consumer_list_complete",
+      "statement_zh": "调用方清单完整：直接与间接消费方均已枚举",
+      "judgeability": "hybrid",
+      "machine_support": "引用/调用图扫描可枚举候选消费方",
+      "manual_part": "清单完整性需 Owner 抽验"
+    },
+    {
+      "seq": 3,
+      "check_id": "compat_migration_rollback_executable",
+      "statement_zh": "兼容、迁移、回滚方案可执行",
+      "judgeability": "human",
+      "manual_part": "方案可执行性为语义判断"
+    },
+    {
+      "seq": 4,
+      "check_id": "tests_examples_docs_updated",
+      "statement_zh": "测试、示例、文档已同步更新并发出通知",
+      "judgeability": "machine",
+      "machine_support": "变更记录对象字段存在性 + 工作区 diff 扫描可机判"
+    },
+    {
+      "seq": 5,
+      "check_id": "spec_metadata_registered",
+      "statement_zh": "Spec 元数据（状态/版本/Owner/更新时间/生效范围）已登记",
+      "judgeability": "machine",
+      "machine_support": "信封 axes/authority/sources 结构性承载，字段存在性可机判"
+    },
+    {
+      "seq": 6,
+      "check_id": "post_dev_rule_backfill_classified",
+      "statement_zh": "开发后 Spec Update Review 已把新规则显式归类（需求级记录/长期 spec/通用规范候选/无需更新）",
+      "judgeability": "hybrid",
+      "machine_support": "归类字段非空可机判",
+      "manual_part": "归类正确性抽验"
+    }
+  ],
+  "policy_refs": [
+    "AUTHORITY.CHG.CHANGE_OWNERS",
+    "POLICY.CHG.AFFECT_TEMPLATES",
+    "POLICY.CHG.BREAKING_VERSIONING",
+    "POLICY.CHG.COMPAT_MIGRATION_ROLLBACK",
+    "POLICY.CHG.DEPRECATE_BEFORE_DELETE",
+    "POLICY.CHG.FIX_AT_ROOT_CAUSE_LEVEL",
+    "POLICY.CHG.PRECHANGE_CONSUMER_SCAN",
+    "POLICY.CHG.STAGED_ROLLOUT",
+    "POLICY.CHG.SYNC_CONTRACT_DOCS_TESTS",
+    "POLICY.SPEC.DRAFT_NOT_BASELINE",
+    "POLICY.SPEC.METADATA_REQUIRED",
+    "POLICY.SPEC.POST_DEV_BACKFILL_CLASSIFY",
+    "POLICY.WEB.CHG.CONTROLLED_CHANGE_TRIGGERS"
+  ],
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-pilot-human-review"
+  },
+  "origin": "ingested",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "pomaster/components/frontend-hard-spec/assets/universal/06-change-governance-protocol.md",
+      "captured_by": "agent:claude/semantic-decomposition-pilot",
+      "locator": {
+        "section": "Checklist（6 项）"
+      }
+    }
+  ],
+  "review_notes": [
+    "GATE. 前缀需 vocab PR（见 meta.vocab_findings）；检查项④⑤可机判"
+  ]
+}

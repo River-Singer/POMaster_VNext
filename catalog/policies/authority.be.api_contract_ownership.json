@@ -1,0 +1,59 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "kind='policy' 不在 vocab-lock kinds_registry.truth_bodies（POLICY. 前缀已冻结注册，closed-world）",
+    "proposal": "词汇表 PR 登记 policy kind；或 Owner 裁决 policy 条目住 catalog/ 而非 truth/objects 正文层（两种落法待裁决，见 candidates-draft.json meta.vocab_findings[0]，affected=45）",
+    "locked_vocab_untouched": true
+  },
+  "x-pilot-proposal": {
+    "status": "PROPOSAL",
+    "package": "语义分解试点送审包（2026-08-28）",
+    "human_review_required": true,
+    "source_type": "design_seed",
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/catalog/candidates/candidates-draft.json",
+    "enforcement_note": "仅建议：任何 gate 永不因本条目单独 FAIL，至多产生 WARN/HINT 或进入 Human Review 议程",
+    "clean_room_note": "statement_zh 为独立改写（clean-room），零逐字拷贝源协议"
+  },
+  "id": "AUTHORITY.BE.API_CONTRACT_OWNERSHIP",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "UNIVERSAL_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "后端管服务端契约消费方确认联调",
+  "statement_zh": "权威分配默认值：Backend 维护服务端契约，消费方确认联调与兼容结果。",
+  "statement_en_keywords": [
+    "backend owns server contract",
+    "consumer confirms integration"
+  ],
+  "applies_when": {
+    "lane": "any",
+    "condition": "Authority Map 构建"
+  },
+  "enforcement": "advisory",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-pilot-human-review"
+  },
+  "origin": "ingested",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "pomaster/components/backend-hard-spec/assets/universal/12-api-contract-protocol.md",
+      "captured_by": "agent:claude/semantic-decomposition-pilot",
+      "locator": {
+        "section": "Ownership"
+      }
+    }
+  ],
+  "review_notes": [
+    "对 MASTer 型 frontend-only 项目须叠加边界条款（backend=外部 OpenAPI，不做 owner 审批仪式）——thread B M3 边界条款一等化"
+  ]
+}

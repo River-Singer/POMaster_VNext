@@ -1,0 +1,120 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "GATE. 前缀不在 prefixes_v0 15 前缀闭包内（closed-world：未登记前缀解析即 FATAL）；且 kind='gate_recipe' 不在 kinds_registry.truth_bodies",
+    "proposal": "词汇表 PR 登记 GATE. 前缀与 gate_recipe kind；备选落法：gate recipe 住 catalog/gates/ 非 truth 对象层，门禁定义锚沿用 03-gate-result.schema gate_def 的 POLICY.GATE.<NAME>@semver 词形（两种落法待 Owner 裁决，meta.vocab_findings[1]）",
+    "locked_vocab_untouched": true
+  },
+  "x-pilot-proposal": {
+    "status": "PROPOSAL",
+    "package": "语义分解试点送审包（2026-08-28）",
+    "human_review_required": true,
+    "source_type": "design_seed",
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/catalog/candidates/candidates-draft.json",
+    "enforcement_note": "优先机器判卷；判卷步骤草案见 catalog/gates/ 同协议 recipe",
+    "clean_room_note": "statement_zh 为独立改写（clean-room），零逐字拷贝源协议"
+  },
+  "id": "GATE.BE.API.CONTRACT_CHECKS",
+  "kind": "gate_recipe",
+  "axis_profile": "gate_recipe_default",
+  "classification": "GATE_RECIPE",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "API 契约五方同步门禁",
+  "statement_zh": "API 契约门禁：契约、实现、生成客户端、测试与 handoff 五者已同步。",
+  "applies_when": {
+    "lane": "any",
+    "condition": "接口变更过门禁"
+  },
+  "enforcement": "deterministic_where_possible",
+  "gate_def_draft": {
+    "anchor": "GATE.BE.API.CONTRACT_CHECKS@0.1.0",
+    "anchor_note": "03-gate-result.schema gate_def 要求 '<定义id>@semver'；若 Owner 裁决 POLICY.GATE.* 落法则改写为 POLICY.GATE.BE.API.CONTRACT_CHECKS@0.1.0",
+    "result_schema_ref": "POMaster_VNext/packages/schemas/assets/03-gate-result.schema.json",
+    "verdict_vocabulary": [
+      "passed",
+      "failed",
+      "warning",
+      "blocked",
+      "not_run",
+      "not_configured",
+      "skipped_blindspot"
+    ],
+    "judging_rules": {
+      "counts_not_applicable_required": "counts.not_applicable 必填——『为何没查』必须是数字而非沉默（C1）",
+      "trust_twin": "asserted/recomputed 孪生字段组：永不信任自报值，判卷唯一依据为 GateRunner 重算（C5）",
+      "blindspot_evidence": "verdict=skipped_blindspot 必须附 blindspot.fixture_regression 证据引用",
+      "aggregate_honesty": "聚合值永远不含未声明的静默跳过；not_configured ≠ passed"
+    }
+  },
+  "checks": [
+    {
+      "seq": 1,
+      "check_id": "contract_synced",
+      "statement_zh": "正式契约（OpenAPI）已同步",
+      "judgeability": "machine",
+      "machine_support": "operationId 机器键对账（D15）"
+    },
+    {
+      "seq": 2,
+      "check_id": "implementation_synced",
+      "statement_zh": "实现已与契约一致",
+      "judgeability": "machine",
+      "machine_support": "契约-实现一致性扫描（POLICY.API.CONTRACT_IMPL_CONSISTENCY 为策略正源）"
+    },
+    {
+      "seq": 3,
+      "check_id": "generated_client_synced",
+      "statement_zh": "生成客户端已按新契约再生成",
+      "judgeability": "machine",
+      "machine_support": "生成产物版本/指纹比对"
+    },
+    {
+      "seq": 4,
+      "check_id": "tests_synced",
+      "statement_zh": "兼容测试已更新",
+      "judgeability": "hybrid",
+      "machine_support": "测试文件引用 operationId 存在性",
+      "manual_part": "断言语义覆盖度"
+    },
+    {
+      "seq": 5,
+      "check_id": "handoff_synced",
+      "statement_zh": "handoff 文档已同步",
+      "judgeability": "hybrid",
+      "machine_support": "handoff 产物存在性与引用链",
+      "manual_part": "内容正确性"
+    }
+  ],
+  "policy_refs": [
+    "AUTHORITY.BE.API_CONTRACT_OWNERSHIP",
+    "POLICY.API.BACKWARD_COMPAT_DEFAULTS",
+    "POLICY.API.CONTRACT_IMPL_CONSISTENCY",
+    "POLICY.API.NO_INFORMAL_CONTRACT"
+  ],
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-pilot-human-review"
+  },
+  "origin": "ingested",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "pomaster/components/backend-hard-spec/assets/universal/12-api-contract-protocol.md",
+      "captured_by": "agent:claude/semantic-decomposition-pilot",
+      "locator": {
+        "section": "Checklist"
+      }
+    }
+  ],
+  "review_notes": [
+    "GATE. 前缀需 vocab PR；与 M4 Contract Gate vNext 检查集对照"
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "kind='policy' 不在 vocab-lock kinds_registry.truth_bodies（POLICY. 前缀已冻结注册，closed-world）",
+    "proposal": "词汇表 PR 登记 policy kind；或 Owner 裁决 policy 条目住 catalog/ 而非 truth/objects 正文层（两种落法待裁决，见 candidates-draft.json meta.vocab_findings[0]，affected=45）",
+    "locked_vocab_untouched": true
+  },
+  "x-pilot-proposal": {
+    "status": "PROPOSAL",
+    "package": "语义分解试点送审包（2026-08-28）",
+    "human_review_required": true,
+    "source_type": "design_seed",
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/catalog/candidates/candidates-draft.json",
+    "enforcement_note": "命中 applies_when 条件时必须遵守；是否升 MUST、接入哪个 gate 由 Human Review 裁决",
+    "clean_room_note": "statement_zh 为独立改写（clean-room），零逐字拷贝源协议"
+  },
+  "id": "POLICY.WEB.GRID.INTERACTION_REGISTRY",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "LANE_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "表格交互逐项登记绑定",
+  "statement_zh": "表格交互（行 click/dblclick/select/drag-select/列头排序/单元格 focus 等）必须逐项登记于 interaction-contract-registry 并绑定 action_id 与 api_requirement_ids；所支持交互子集必须显式界定并说明触发后果；排斥键盘的交互必须声明键盘等价路径。",
+  "statement_en_keywords": [
+    "interaction contract registry",
+    "action binding",
+    "api requirement binding",
+    "keyboard equivalence",
+    "explicit interaction subset"
+  ],
+  "applies_when": {
+    "lane": "frontend",
+    "condition": "页面含 data grid 且项目启用 interaction-contract-registry（opt-in：registry 文件存在）"
+  },
+  "enforcement": "required_when_applicable",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-pilot-human-review"
+  },
+  "origin": "ingested",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "pomaster/components/frontend-hard-spec/assets/universal/30-data-grid-protocol.md",
+      "captured_by": "agent:claude/semantic-decomposition-pilot",
+      "locator": {
+        "section": "MUST 第7条"
+      }
+    }
+  ],
+  "review_notes": [
+    "对应 po-master B1 激活的 opt-in 门禁与 B3 data-grid 30 交互 MUST；vNext 下 opt-in 文件不存在→gate 应报 not-configured 而非静默通过（四态语义）"
+  ]
+}

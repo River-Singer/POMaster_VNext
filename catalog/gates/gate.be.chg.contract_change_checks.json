@@ -1,0 +1,116 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "GATE. 前缀不在 prefixes_v0 15 前缀闭包内（closed-world：未登记前缀解析即 FATAL）；且 kind='gate_recipe' 不在 kinds_registry.truth_bodies",
+    "proposal": "词汇表 PR 登记 GATE. 前缀与 gate_recipe kind；备选落法：gate recipe 住 catalog/gates/ 非 truth 对象层，门禁定义锚沿用 03-gate-result.schema gate_def 的 POLICY.GATE.<NAME>@semver 词形（两种落法待 Owner 裁决，meta.vocab_findings[1]）",
+    "locked_vocab_untouched": true
+  },
+  "x-pilot-proposal": {
+    "status": "PROPOSAL",
+    "package": "语义分解试点送审包（2026-08-28）",
+    "human_review_required": true,
+    "source_type": "design_seed",
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/catalog/candidates/candidates-draft.json",
+    "enforcement_note": "优先机器判卷；判卷步骤草案见 catalog/gates/ 同协议 recipe",
+    "clean_room_note": "statement_zh 为独立改写（clean-room），零逐字拷贝源协议"
+  },
+  "id": "GATE.BE.CHG.CONTRACT_CHANGE_CHECKS",
+  "kind": "gate_recipe",
+  "axis_profile": "gate_recipe_default",
+  "classification": "GATE_RECIPE",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "契约变更五类消费者门禁",
+  "statement_zh": "契约变更门禁：API、数据（migration）、消息、配置与运行五类消费者均已检查。",
+  "applies_when": {
+    "lane": "backend",
+    "condition": "契约变更过门禁"
+  },
+  "enforcement": "deterministic_where_possible",
+  "gate_def_draft": {
+    "anchor": "GATE.BE.CHG.CONTRACT_CHANGE_CHECKS@0.1.0",
+    "anchor_note": "03-gate-result.schema gate_def 要求 '<定义id>@semver'；若 Owner 裁决 POLICY.GATE.* 落法则改写为 POLICY.GATE.BE.CHG.CONTRACT_CHANGE_CHECKS@0.1.0",
+    "result_schema_ref": "POMaster_VNext/packages/schemas/assets/03-gate-result.schema.json",
+    "verdict_vocabulary": [
+      "passed",
+      "failed",
+      "warning",
+      "blocked",
+      "not_run",
+      "not_configured",
+      "skipped_blindspot"
+    ],
+    "judging_rules": {
+      "counts_not_applicable_required": "counts.not_applicable 必填——『为何没查』必须是数字而非沉默（C1）",
+      "trust_twin": "asserted/recomputed 孪生字段组：永不信任自报值，判卷唯一依据为 GateRunner 重算（C5）",
+      "blindspot_evidence": "verdict=skipped_blindspot 必须附 blindspot.fixture_regression 证据引用",
+      "aggregate_honesty": "聚合值永远不含未声明的静默跳过；not_configured ≠ passed"
+    }
+  },
+  "checks": [
+    {
+      "seq": 1,
+      "check_id": "api_consumers_checked",
+      "statement_zh": "API 类消费者已检查",
+      "judgeability": "machine",
+      "machine_support": "五类消费者为封闭枚举，可逐类做成 checklist 对账"
+    },
+    {
+      "seq": 2,
+      "check_id": "data_migration_consumers_checked",
+      "statement_zh": "数据（migration）类消费者已检查",
+      "judgeability": "machine",
+      "machine_support": "同上"
+    },
+    {
+      "seq": 3,
+      "check_id": "message_consumers_checked",
+      "statement_zh": "消息类消费者已检查",
+      "judgeability": "machine",
+      "machine_support": "同上"
+    },
+    {
+      "seq": 4,
+      "check_id": "config_consumers_checked",
+      "statement_zh": "配置类消费者已检查",
+      "judgeability": "machine",
+      "machine_support": "同上"
+    },
+    {
+      "seq": 5,
+      "check_id": "runtime_consumers_checked",
+      "statement_zh": "运行类消费者已检查",
+      "judgeability": "machine",
+      "machine_support": "同上"
+    }
+  ],
+  "policy_refs": [
+    "AUTHORITY.BE.CONTRACT_OWNERSHIP",
+    "POLICY.CHG.OBSERVABLE_EVOLUTION"
+  ],
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-pilot-human-review"
+  },
+  "origin": "ingested",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "pomaster/components/backend-hard-spec/assets/universal/08-contract-change-protocol.md",
+      "captured_by": "agent:claude/semantic-decomposition-pilot",
+      "locator": {
+        "section": "Checklist"
+      }
+    }
+  ],
+  "review_notes": [
+    "五类消费者枚举可直接做成 checklist gate"
+  ]
+}

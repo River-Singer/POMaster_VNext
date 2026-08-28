@@ -1,0 +1,66 @@
+{
+  "x-vocab-pr": {
+    "status": "no_new_enum__confirm_only",
+    "finding": "knowledge_entry kind 已在 vocab-lock kinds_registry.truth_bodies——试点纪律所称『knowledge 无正式 kind』与 vocab-lock 实况不符",
+    "proposal": "无需新 kind；payload 变体（KNOWLEDGE_PATTERN/FAILURE_PATTERN）作为 knowledge_entry 的 kind profile 承载，提请词汇表 PR 时一并确认，不新增枚举值（meta.vocab_findings[2]）",
+    "locked_vocab_untouched": true
+  },
+  "x-pilot-proposal": {
+    "status": "PROPOSAL",
+    "package": "语义分解试点送审包（2026-08-28）",
+    "human_review_required": true,
+    "source_type": "design_seed",
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/catalog/candidates/candidates-draft.json",
+    "enforcement_note": "仅建议：任何 gate 永不因本条目单独 FAIL，至多产生 WARN/HINT 或进入 Human Review 议程",
+    "clean_room_note": "statement_zh 为独立改写（clean-room），零逐字拷贝源协议"
+  },
+  "x-advisory-gate-semantics": {
+    "advisory": true,
+    "gate_binding": "NEVER_FAIL",
+    "statement": "本条目为 advisory 知识：任何 gate 永不因本条目 FAIL；至多产生 WARN/HINT 或进入 Human Review 议程"
+  },
+  "id": "KNOWLEDGE.FP.CHG.PAGE_LOCAL_PADDING",
+  "kind": "knowledge_entry",
+  "axis_profile": "knowledge_default",
+  "classification": "FAILURE_PATTERN",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "失败模式：页面局部改公共默认 padding",
+  "statement_zh": "失败模式：为单个页面修改公共组件默认 padding，引发全站布局漂移且无视觉回归兜底。",
+  "statement_en_keywords": [
+    "failure pattern",
+    "page-local override of public default",
+    "layout blast radius",
+    "no visual regression"
+  ],
+  "applies_when": {
+    "lane": "frontend",
+    "condition": "公共样式/默认值类变更"
+  },
+  "enforcement": "advisory",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-pilot-human-review"
+  },
+  "origin": "ingested",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "pomaster/components/frontend-hard-spec/assets/universal/06-change-governance-protocol.md",
+      "captured_by": "agent:claude/semantic-decomposition-pilot",
+      "locator": {
+        "section": "Anti-patterns"
+      }
+    }
+  ],
+  "review_notes": [
+    "B3 五大家族 failure-pattern 附带池成员"
+  ]
+}
