@@ -67,6 +67,8 @@ function requireCount(
  * 把工具/Agent 的 CLAIMED 输出归一为 03-gate-result 形态。语义（docs/kernel-api.md §6）：
  * - verdict 词表外值 → FATAL（VERDICT_VALUES 七态）；
  * - counts.notApplicable 缺失/NaN → FATAL（缺席必须显式表达，禁止静默跳过当通过）；
+ * - verdict=skipped_blindspot 而 counts.unchecked_in_blindspot_estimated 缺失 → FATAL
+ *   （03 schema：「skipped_blindspot 判定必须附证据」；四态纪律的机器防线）；
  * - subjectId 前缀 TEST.* ⇔ isFixture=true 双向强校验（Q3）；
  * - trust.asserted 保留为 CLAIMED（永不单独判卷）；recomputed 是判卷唯一依据；
  *   失配 → mismatch.detected=true（默认 recomputed_wins_recorded）且 passed 自动
@@ -189,6 +191,23 @@ export function normalizeGateResult(
     ),
     ...countsOptionals,
   };
+
+  // —— 四态纪律：skipped_blindspot 必附盲区指标 ——
+  // 03-gate-result verdict 注记（FROZEN）：「skipped_blindspot 判定必须附证据」。
+  // 无指标的盲区跳过 = 「静默跳过当通过」的七态词形变体：对抗性 CLAIMED 载荷可借这个
+  // 诚实词形把「什么都没查」洗成显式缺席态，聚合层无从分辨真盲区声明与空头声明。
+  // 缺席必须显式表达（与 notApplicable 必填同一条 C1 线）→ FATAL。
+  if (
+    verdict === "skipped_blindspot" &&
+    countsOptionals.uncheckedInBlindspotEstimated === undefined
+  ) {
+    throw new GovernanceError(
+      "GATE_COUNTS_INVALID",
+      `verdict=skipped_blindspot 但 counts.unchecked_in_blindspot_estimated 缺失（盲区指标必附）：${JSON.stringify(countsRaw)}`,
+      "skipped_blindspot 判定必须附盲区证据：估计未检数（counts.unchecked_in_blindspot_estimated），或 gate_def 声明的 fixture_regression 证据引用；无指标的盲区跳过视为畸形 CLAIMED 载荷",
+      { verdict, counts: countsRaw },
+    );
+  }
 
   // —— subjectId + Q3 fixture 隔离（双向强校验） ——
   const subjectRaw = pick(value, "subject_id", "subjectId");

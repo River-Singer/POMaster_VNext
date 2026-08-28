@@ -86,8 +86,12 @@ docs/     examples/
 ```bash
 pomaster init          # 建立治理基线 + 生成 AGENTS.md/CLAUDE.md 轻入口
 pomaster triage "…"    # 秒级判档：这次 change 值得多少治理
+pomaster permit issue/check/steal/list   # 八拍② FRAMEWORK LOCK：许可签发/判卷/显式接管/台账呈现
+pomaster exec-guard …  # 八拍④ 写路径机器执行点：attempt JSON → checkPermit 判卷（判卷器非写入器）
 pomaster maintain …    # 对账/分类/受控变更
 pomaster check --fast  # FAST gate 循环
+pomaster record gate-run|claim  # 证据入账通路：gate 运行结果 / claim 显式单条落账 evidence 平面
+pomaster compact …     # 八拍⑦ COMPACT：episode 折叠为单次 store 事务（证据批量收编 + 显式 ops；NO_CHANGE 合法出口）
 pomaster reconcile …   # 三方对账出 delta 报告
 pomaster doctor        # 工具/MCP 配置探测（缺什么提示装什么）
 ```

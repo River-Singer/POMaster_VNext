@@ -8,11 +8,12 @@
  * 标称节奏）；新鲜度判定只看 expiresAtSeq vs currentSeq，绝不读墙钟。
  * D20（scope expansion）：范围外写拒绝静默放行 → 显式 denied + 路由重审升级。
  */
-import type { Actor, GovernedId, Permit, PermitCheckResult, PermitRequest, Store, StealResult, WriteAttempt } from "./index.js";
+import type { Actor, AxesBlock, GovernedId, Permit, PermitCheckResult, PermitRequest, Store, StealResult, WriteAttempt } from "./index.js";
 import type { WritePolicyValue } from "./vocab.js";
-import { GovernanceError } from "./errors.js";
+import { GovernanceError, governanceCodeForParseError, GovernedIdParseError } from "./errors.js";
+import { parseGovernedId } from "./id.js";
 import { captureOriginal, executeWrites, readText } from "./io.js";
-import { pathsOf, readCurrentSeq, type StorePaths } from "./paths.js";
+import { pathsOf, readCurrentSeq, readRawIndex, type StorePaths } from "./paths.js";
 
 /** 缺省 TTL：168 拍（C9 TTL 168h 的拍数映射；A4 禁墙钟，只按 seq 判定）。 */
 export const DEFAULT_TTL_BEATS = 168 as const;
@@ -71,13 +72,41 @@ export function loadAuthorityMap(paths: StorePaths): AuthorityMap {
 // 许可签发 / 校验 / 显式接管
 // ============================================================
 
-interface PermitRecord {
+/**
+ * 基线快照的逐对象条目（issue 瞬间捕获；G3 reconcile 的 delta 审锚）。
+ * body_sha256 仅在对象行已携带时记录（D24：读侧 identity/content_drift 判定用途，
+ * 人永不计算——issue 时刻是唯一能拿到该基线的时刻，closure，设计 §3.3）。
+ */
+export interface PermitBaselineSubject {
+  readonly axes: AxesBlock;
+  readonly rev: number;
+  readonly body_sha256?: string;
+}
+
+/** 基线快照：at_seq = 签发时刻 seq；subjects[id]=null 表示签发时对象尚不存在（合法基线态）。 */
+export interface PermitBaseline {
+  readonly at_seq: number;
+  readonly subjects: Readonly<Record<string, PermitBaselineSubject | null>>;
+}
+
+/**
+ * 许可台账条目（state/permits.json 行形态；kernel 内部状态文件，不进公共契约面）。
+ * export 仅为 kernel 内部跨模块复用（reconcile.ts 直读基线）；字段演进须同步 CLI 呈现层
+ * （kernel-api.md §9 实现注记：该文件对 CLI list/issue 回读构成隐性契约）。
+ */
+export interface PermitRecord {
   permit_ref: string;
   issued_at_seq: number;
   expires_at_seq: number;
   scope: { subject_ids: string[]; write_policy: WritePolicyValue };
   requested_by: { actor_type: string; actor: string; self_attested: boolean };
   change_ref: string | null;
+  /** 五件套之二：Capability 清单（general_id 词形；issuePermit 经 parseGovernedId closed-world 校验）。 */
+  capability_refs: string[];
+  /** 五件套之五：验收形状（契约面 PermitRequest.acceptanceShape 既有但从不持久化——本字段封死「静默丢失」坑）。 */
+  acceptance_shape: Record<string, unknown> | null;
+  /** G3 服务：签发瞬间的逐对象基线快照（journal 是事件流无 axes 历史，事后不可重建）。 */
+  baseline: PermitBaseline | null;
   stolen_at_seq: number | null;
   stolen_by: { actor_type: string; actor: string } | null;
   stolen_reason: string | null;
@@ -88,12 +117,26 @@ interface PermitsFile {
   permits: PermitRecord[];
 }
 
-function readPermitsFile(paths: StorePaths): PermitsFile {
+/**
+ * 读取许可台账（kernel 内部跨模块复用：reconcile.ts 直读基线快照）。
+ * 缺失 → 空台账；损坏 → SCHEMA_INVALID（禁静默当空表）。
+ */
+export function readPermitsFile(paths: StorePaths): PermitsFile {
   const text = readText(paths.permitsPath);
   if (text === null) {
     return { version: 1, permits: [] };
   }
-  const parsed: unknown = JSON.parse(text);
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch (error) {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      "state/permits.json 无法解析（损坏或手改）",
+      "恢复 git 版本；许可文件由 kernel 事务维护，禁止手改",
+      { cause: String(error) },
+    );
+  }
   const record = parsed as PermitsFile;
   if (!Array.isArray(record.permits)) {
     throw new GovernanceError(
@@ -128,6 +171,10 @@ function permitBase(request: PermitRequest): string {
 /**
  * 签发许可（记入 store 的 permits 台账 + journal 事件流；D3 Adjudication Ledger 的事件流输入）。
  * permitRef 形如 PERMIT.<BASE>.<n>（n=同基底序号，确定性分配，无墙钟无随机）。
+ * subject 与 capability 均过 parseGovernedId closed-world 校验（A5：词表外前缀/
+ * 文法违规 = FATAL_UNKNOWN_PREFIX / FATAL_ID_GRAMMAR）。
+ * 签发瞬间同时落五件套台账：capability_refs / acceptance_shape / baseline
+ * （baseline 服务 G3 reconcile；closure——journal 无 axes 历史，事后不可重建）。
  */
 export async function issuePermit(
   store: Store,
@@ -151,6 +198,12 @@ export async function issuePermit(
       {},
     );
   }
+  const subjectIds = request.subjectIds.map((id) =>
+    parseIdOrGovernanceError(id, "PermitRequest.subjectIds[]"),
+  );
+  const capabilityRefs = (request.capabilityIds ?? []).map((id) =>
+    parseIdOrGovernanceError(id, "PermitRequest.capabilityIds[]"),
+  );
   const ttlBeats = request.ttlBeats ?? DEFAULT_TTL_BEATS;
   if (!Number.isInteger(ttlBeats) || ttlBeats <= 0) {
     throw new GovernanceError(
@@ -167,17 +220,24 @@ export async function issuePermit(
   ).length;
   const permitRef = `PERMIT.${base}.${sameBase + 1}`;
   const expiresAtSeq = currentSeq + ttlBeats;
+  const acceptanceShape =
+    request.acceptanceShape === undefined
+      ? null
+      : (JSON.parse(JSON.stringify(request.acceptanceShape)) as Record<string, unknown>);
 
   const record: PermitRecord = {
     permit_ref: permitRef,
     issued_at_seq: currentSeq,
     expires_at_seq: expiresAtSeq,
     scope: {
-      subject_ids: [...request.subjectIds],
+      subject_ids: [...subjectIds],
       write_policy: PERMIT_WRITE_POLICY,
     },
     requested_by: actorToRecord(request.requestedBy),
     change_ref: request.changeRef ?? null,
+    capability_refs: capabilityRefs,
+    acceptance_shape: acceptanceShape,
+    baseline: captureBaseline(paths, currentSeq, subjectIds),
     stolen_at_seq: null,
     stolen_by: null,
     stolen_reason: null,
@@ -190,6 +250,7 @@ export async function issuePermit(
     expires_at_seq: expiresAtSeq,
     change_ref: record.change_ref,
     requested_by: record.requested_by,
+    capability_ids: capabilityRefs,
   })}\n`;
   executeWrites([
     {
@@ -211,6 +272,51 @@ export async function issuePermit(
       writePolicy: PERMIT_WRITE_POLICY,
     },
   };
+}
+
+/** governed id 解析的 GovernanceError 包装（A5：FATAL_UNKNOWN_PREFIX / FATAL_ID_GRAMMAR）。 */
+function parseIdOrGovernanceError(id: string, context: string): GovernedId {
+  try {
+    parseGovernedId(id);
+    return id as GovernedId;
+  } catch (error) {
+    if (error instanceof GovernedIdParseError) {
+      throw new GovernanceError(
+        governanceCodeForParseError(error),
+        `${context}：${error.message}`,
+        "closed-world 前缀闭包与 SEGMENT/SEQ 文法见 vocab-lock id_namespace（A5）；新前缀走词汇表 PR，legacy 拼写走 resolveAlias 收编（A6）",
+        { id: error.id, reason: error.reason },
+      );
+    }
+    throw error;
+  }
+}
+
+/**
+ * 签发瞬间捕获逐对象基线（closure：journal 是事件流，TX_APPLIED 只记 changed ids
+ * 不含 axes 值——issue 瞬间是唯一能拿到该基线的时刻）。absent 记 null（PROPOSED
+ * 新对象的合法基线态，不是基线缺失）；body_sha256 仅在对象行已携带时记录。
+ */
+function captureBaseline(
+  paths: StorePaths,
+  atSeq: number,
+  subjectIds: readonly string[],
+): PermitBaseline {
+  const raw = readRawIndex(paths);
+  const objects = (raw?.objects as readonly Record<string, unknown>[] | undefined) ?? [];
+  const subjects: Record<string, PermitBaselineSubject | null> = {};
+  for (const id of subjectIds) {
+    const row = objects.find((candidate) => candidate.id === id);
+    subjects[id] =
+      row === undefined
+        ? null
+        : {
+            axes: structuredClone(row.axes) as AxesBlock,
+            rev: row.rev as number,
+            ...(typeof row.body_sha256 === "string" ? { body_sha256: row.body_sha256 } : {}),
+          };
+  }
+  return { at_seq: atSeq, subjects };
 }
 
 function findPermit(

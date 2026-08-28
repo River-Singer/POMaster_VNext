@@ -15,6 +15,22 @@ export const POMASTER_DIR = ".pomaster";
 /** .pomaster/state/truth-index.json（信封层，形态契约 assets/01）。 */
 export const TRUTH_INDEX_RELATIVE = ".pomaster/state/truth-index.json";
 
+/**
+ * .pomaster/state/permits.json（kernel 内部许可台账，不进 hash、非公共契约面）。
+ * CLI 仅限读呈现（permit list / issue 回读）；写通道唯一保留给 kernel（分层纪律）。
+ */
+export const PERMITS_RELATIVE = ".pomaster/state/permits.json";
+
+/** .pomaster/state/journal.jsonl（kernel 事件 journal；CLI 仅限读呈现事件链）。 */
+export const JOURNAL_RELATIVE = ".pomaster/state/journal.jsonl";
+
+/**
+ * 证据平面（kernel Store 契约布局 evidence/{runs,claims,blobs}/；A8 运行产物不入
+ * truth-index）。compact 批量收编与 record 单条入账的扫描/落账分母（G4+G6）。
+ */
+export const RUNS_DIR_RELATIVE = ".pomaster/evidence/runs";
+export const CLAIMS_DIR_RELATIVE = ".pomaster/evidence/claims";
+
 /** .pomaster/objects/（CLI 最小骨架的正文目录；kernel 运行时布局另行扩展）。 */
 export const OBJECTS_DIR_RELATIVE = ".pomaster/objects";
 
@@ -34,6 +50,22 @@ export function pomasterDir(rootDir: string): string {
 
 export function truthIndexPath(rootDir: string): string {
   return join(rootDir, ...TRUTH_INDEX_RELATIVE.split("/"));
+}
+
+export function permitsFilePath(rootDir: string): string {
+  return join(rootDir, ...PERMITS_RELATIVE.split("/"));
+}
+
+export function journalFilePath(rootDir: string): string {
+  return join(rootDir, ...JOURNAL_RELATIVE.split("/"));
+}
+
+export function runsDirPath(rootDir: string): string {
+  return join(rootDir, ...RUNS_DIR_RELATIVE.split("/"));
+}
+
+export function claimsDirPath(rootDir: string): string {
+  return join(rootDir, ...CLAIMS_DIR_RELATIVE.split("/"));
 }
 
 export function objectsDirPath(rootDir: string): string {

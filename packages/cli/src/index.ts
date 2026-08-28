@@ -1,16 +1,25 @@
 /**
  * @pomaster/cli —— POMaster vNext 命令面（八拍 Change Loop 语义）。
  *
- * 六命令（PRD §44/§45；全部支持 --json 机读信封，禁止彩色自然语言当机读接口）：
+ * 命令面（PRD §44/§45；全部支持 --json 机读信封，禁止彩色自然语言当机读接口）：
  * - init            BOOTSTRAP：创建 .pomaster/ 最小骨架 + AGENTS.md/CLAUDE.md 轻入口（D13）
  * - triage <request> 八拍①：规则桶判档（C1；TTL 168h，C9）
+ * - permit issue/check/steal/list
+ *                   八拍②：FRAMEWORK LOCK 命令面（签发/判卷/显式接管/台账呈现；G1）
+ * - exec-guard      八拍④：写路径机器执行点（判卷器非写入器；G2）
+ * - reconcile       八拍⑥：按 permit 基线出 delta 三段报告（changed/exceptions/samples；G3）
+ * - compact         八拍⑦：episode 折叠为单次 applyTransaction（证据批量收编 + 显式 ops；
+ *                   NO_CHANGE 是合法出口；G4）
+ * - record          证据入账通路：gate-run/claim 显式单条落账 evidence 平面（G6）
  * - status          读 .pomaster/state：对象计数/分母状态/permit 活性
  * - context compile 八拍③：转调 kernel compileProjection，输出三分区 markdown
  * - doctor          内核探针 + chrome-devtools MCP 探测（D7/D22，四态矩阵 fail-closed）
  * - check --fast    八拍⑤：转调 gauntlet-lite build adapter（NOT_INSTALLED 绝不静默通过）
  *
- * 分层纪律：判卷权威在 @pomaster/kernel，本包只做编排与呈现，禁止旁路写状态。
- * 词表纪律：本包局部词（triage 档位/证据级、doctor 四态）均带 TODO(vocab-pr) 注记。
+ * 分层纪律：判卷权威在 @pomaster/kernel，本包只做编排与呈现，禁止旁路写状态
+ * （例外：check/exec-guard 对过期许可追加 PERMIT_EXPIRED_OBSERVED 为 kernel 契约行为）。
+ * 词表纪律：本包局部词（triage 档位/证据级、doctor 四态、permit list status 三值）
+ * 均带 TODO(vocab-pr) 注记。
  */
 import { Command } from "commander";
 import { CLI_NAME } from "./cli-info.js";
@@ -21,6 +30,11 @@ import { runStatus } from "./status.js";
 import { runContextCompile } from "./context.js";
 import { runDoctor } from "./doctor.js";
 import { runCheckFast } from "./check.js";
+import { runPermitCheck, runPermitIssue, runPermitList, runPermitSteal } from "./permit.js";
+import { runExecGuard } from "./exec-guard.js";
+import { runReconcile } from "./reconcile.js";
+import { runCompact } from "./compact.js";
+import { runRecordClaim, runRecordGateRun } from "./record.js";
 
 export { CLI_NAME, CLI_VERSION } from "./cli-info.js";
 export { toEnvelope } from "./envelope.js";
@@ -38,6 +52,63 @@ export {
   DOCTOR_PROBE_STATUSES,
 } from "./doctor.js";
 export { runCheckFast, FAST_CHECK_GATE } from "./check.js";
+export {
+  runPermitIssue,
+  runPermitCheck,
+  runPermitSteal,
+  runPermitList,
+  PERMIT_WRITE_OPS,
+  PERMIT_LIST_STATES,
+  deniedReasonToCode,
+  parseActorArgv,
+  parseIdArgv,
+  parseAcceptanceShapeArgv,
+  parseTtlBeatsArgv,
+  governanceErrorToCliError,
+  BASELINE_NOTE,
+  EXPIRED_OBSERVED_NOTE,
+} from "./permit.js";
+export type {
+  PermitIssueResult,
+  PermitCheckResultView,
+  PermitStealResult,
+  PermitListResult,
+  PermitListEntry,
+  PermitListEvent,
+  PermitListStatus,
+  PermitActorView,
+  PermitScopeView,
+  PermitIssueInput,
+  PermitCheckInput,
+  PermitStealInput,
+  PermitListInput,
+  PermitWriteOp,
+} from "./permit.js";
+export { runExecGuard, KNOWN_ATTEMPT_KEYS } from "./exec-guard.js";
+export type { ExecGuardInput, ExecGuardResult } from "./exec-guard.js";
+export { runReconcile, RECONCILE_DIRTY_HINT } from "./reconcile.js";
+export type { ReconcileInput, ReconcileResultView } from "./reconcile.js";
+export { runCompact } from "./compact.js";
+export type {
+  CompactInput,
+  CompactResult,
+  CompactRunEntry,
+  CompactClaimEntry,
+  CompactMalformedEntry,
+} from "./compact.js";
+export { runRecordGateRun, runRecordClaim } from "./record.js";
+export type {
+  RecordGateRunInput,
+  RecordGateRunResult,
+  RecordClaimInput,
+  RecordClaimResult,
+} from "./record.js";
+export {
+  EVIDENCE_MALFORMED_CODE,
+  RUN_INGEST_ACTIONS,
+  CLAIM_INGEST_ACTIONS,
+} from "./evidence.js";
+export type { RunIngestAction, ClaimIngestAction, EvidenceMalformed } from "./evidence.js";
 
 /** 一次命令执行的人读/机读产出记录（runCli 据此决定退出码与输出）。 */
 export interface CommandRun<TResult = unknown> {
@@ -201,7 +272,246 @@ export function createProgram(
       });
     });
 
+  // —— 八拍② FRAMEWORK LOCK：permit 命令面（G1；设计 docs/eight-beat-carriers-design.md §1） ——
+  const permit = program
+    .command("permit")
+    .description(
+      "八拍② FRAMEWORK LOCK：Permit 签发/判卷/显式接管/台账呈现（TTL 只按 seq 拍判定，禁墙钟）",
+    );
+
+  permit
+    .command("issue")
+    .description(
+      "签发许可（事件写；重复签发 = PERMIT.<BASE>.n 确定性递增，无 NO_CHANGE 出口——不是幂等命令）",
+    )
+    .requiredOption(
+      "--subject <governed-id>",
+      "Permit 范围对象（closed-world governed id；可重复，≥1）",
+      collectValues,
+      [],
+    )
+    .requiredOption(
+      "--actor <type>:<name>",
+      "主体（type ∈ agent/human/tool/kernel；argv 自报恒 self_attested=true，C5）",
+    )
+    .option("--change-ref <ref>", "契约引用（general_id 宽松词形，如 CHANGE.MIGRATION_001）")
+    .option("--capability <governed-id>", "Capability 清单（可重复；closed-world 校验）", collectValues, [])
+    .option("--acceptance-shape <inline-json|@file>", "验收形状（JSON 对象；@file 读文件）")
+    .option("--ttl-beats <n>", "TTL 拍数（正整数；缺省 168 ≈ C9 的 168h 标称节奏；禁墙钟）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runPermitIssue(resolveDir(command), {
+        subjects: opts.subject as string[],
+        actor: opts.actor as string,
+        changeRef: opts.changeRef as string | undefined,
+        capabilities: opts.capability as string[] | undefined,
+        acceptanceShape: opts.acceptanceShape as string | undefined,
+        ttlBeats: opts.ttlBeats as string | undefined,
+      });
+      record({
+        command: "permit issue",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  permit
+    .command("check")
+    .description(
+      "判卷读：四态显式（allowed/denied/expired/unknown_permit），ok = (outcome === allowed)；对过期许可追加 PERMIT_EXPIRED_OBSERVED journal 事件（kernel 契约行为）",
+    )
+    .requiredOption("--permit <PERMIT.*>", "许可引用（permit issue 产出）")
+    .requiredOption("--subject <governed-id>", "写尝试目标对象")
+    .requiredOption("--op <op>", "写尝试类型：upsert_object | transition_object | delete")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runPermitCheck(resolveDir(command), {
+        permit: opts.permit as string,
+        subject: opts.subject as string,
+        op: opts.op as string,
+      });
+      record({
+        command: "permit check",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  permit
+    .command("steal")
+    .description(
+      "显式接管过期许可（D2：仅许手动 + reason 留痕；未过期 → rejected_not_expired，errors 为空）",
+    )
+    .requiredOption("--permit <PERMIT.*>", "许可引用")
+    .requiredOption("--actor <type>:<name>", "接管主体（type ∈ agent/human/tool/kernel）")
+    .requiredOption("--reason <text>", "接管理由（非空必填——接管留痕是 D2 的硬性要求）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runPermitSteal(resolveDir(command), {
+        permit: opts.permit as string,
+        actor: opts.actor as string,
+        reason: opts.reason as string,
+      });
+      record({
+        command: "permit steal",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  permit
+    .command("list")
+    .description(
+      "许可台账纯读呈现（事件链按类型折叠为 {count, first_seq, last_seq}——计数保留不吞没；--json 同 state 字节稳定）",
+    )
+    .option("--change-ref <ref>", "按契约引用过滤（缺省=全部，不做静默过滤）")
+    .option(
+      "--state <state>",
+      "按呈现态过滤：active | expired | stolen（CLI 局部词 TODO(vocab-pr)；缺省=全部）",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runPermitList(resolveDir(command), {
+        changeRef: opts.changeRef as string | undefined,
+        state: opts.state as string | undefined,
+      });
+      record({
+        command: "permit list",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  // —— 八拍④ EXECUTE：写路径机器执行点（G2；设计 §2） ——
+  program
+    .command("exec-guard")
+    .description(
+      "八拍④ EXECUTE 机器执行点：读 WriteAttempt JSON → checkPermit 判卷（严格判卷器非写入器：不碰目标文件、内容盲、零 daemon；非 allow 一律 exit 1，畸形输入永不放行）",
+    )
+    .requiredOption("--attempt <file|->", "attempt JSON 文件路径；`-` = stdin")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runExecGuard(resolveDir(command), {
+        attempt: opts.attempt as string,
+      });
+      record({
+        command: "exec-guard",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  // —— 八拍⑥ RECONCILE：delta/例外/抽样三段审阅（G3；设计 docs/eight-beat-carriers-design.md §3） ——
+  program
+    .command("reconcile")
+    .description(
+      "八拍⑥ RECONCILE：按 permit 签发基线出 delta 三段报告（changed_objects/exceptions/samples_to_review；纯读零写；clean=true 是零审阅的合法出口 exit 0，有 delta/例外 → RECONCILE_DIRTY exit 1）",
+    )
+    .requiredOption("--permit <PERMIT.*>", "许可引用（permit issue 产出；基线在签发瞬间存台账）")
+    .option("--samples <n>", "抽样条数（≥0 整数；缺省 3；0=显式放弃抽样；stride 确定性抽样）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runReconcile(resolveDir(command), {
+        permit: opts.permit as string,
+        samples: opts.samples as string | undefined,
+      });
+      record({
+        command: "reconcile",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  // —— 八拍⑦ COMPACT：episode 折叠为单次 store 事务（G4；设计 docs/eight-beat-carriers-design.md §4.3） ——
+  program
+    .command("compact")
+    .description(
+      "八拍⑦ COMPACT：episode 折叠——证据平面批量收编（runs/claims 按引用字典序）+ --ops 显式事务合并为单次 applyTransaction（一次 seq 推进；NO_CHANGE 是合法出口 exit 0；畸形证据走 warnings 不阻断）",
+    )
+    .option(
+      "--ops <tx-file>",
+      "kernel Transaction JSON 文件（{ops:[…], authorityRef?, note?}；追加在证据收编 op 之后）",
+    )
+    .option("--authority-ref <ref>", "审批/决策引用（显式给定则覆盖 --ops 文件内同名字段）")
+    .option("--note <text>", "事务注记（同上覆盖语义）")
+    .option("--no-ingest", "关闭证据平面批量收编（默认开启）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runCompact(resolveDir(command), {
+        opsFile: opts.ops as string | undefined,
+        authorityRef: opts.authorityRef as string | undefined,
+        note: opts.note as string | undefined,
+        noIngest: opts.ingest === false,
+      });
+      record({
+        command: "compact",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  // —— 证据入账通路：record 显式单条（G6；设计 §4.1 裁定 B=显式单条，C=compact 批量兜底） ——
+  const recordCommand = program
+    .command("record")
+    .description(
+      "证据入账通路：把 gate 运行结果 / claim 经 store 事务显式落账 evidence 平面（check 保持纯读；入账决定权归 ⑦ 拍编排）",
+    );
+
+  recordCommand
+    .command("gate-run")
+    .description(
+      "显式单条入账一次 gate 运行（--from GateResult JSON；GRN 缺省分配=现有最大序号+1；ran_at_seq 沿用文件自报采样点（C5），未携带才采样 store 当前 seq；同内容二次 record → SKIPPED_CANONICAL 零写入）",
+    )
+    .requiredOption(
+      "--from <file>",
+      "gate 运行结果 JSON 文件（gate_result.result 内嵌形态或 GateResult 直落顶层均可）",
+    )
+    .option("--grn <GRN-n>", "显式指定 GRN（同号重放按 pending 字节判定：等价→跳过，有变→canonical 化）")
+    .option("--trigger <type>", "运行触发方式（run_trigger 五值闭包；缺省 on_demand；文件信封 trigger.type 优先于缺省）")
+    .option("--tool <id>", "执行工具标识（缺省 pomaster-cli；文件 tool_snapshot 优先）")
+    .option("--tool-version <semver>", "工具版本（缺省 CLI 版本；文件 tool_snapshot 优先）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runRecordGateRun(resolveDir(command), {
+        from: opts.from as string,
+        grn: opts.grn as string | undefined,
+        trigger: opts.trigger as string | undefined,
+        tool: opts.tool as string | undefined,
+        toolVersion: opts.toolVersion as string | undefined,
+      });
+      record({
+        command: "record gate-run",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  recordCommand
+    .command("claim")
+    .description(
+      "显式单条入账一条 claim（record_claim 恒置 UNVERIFIED——D20：声称方不可自填 VERIFIED；已带 VERIFIED/REJECTED 等独立判定的文件 → SKIPPED_ADJUDICATED 零写入；CLM 缺省分配=现有最大序号+1）",
+    )
+    .requiredOption("--from <file>", "claim 输入 JSON（subject_id / assertion / asserted_by / evidence_refs）")
+    .option("--clm <CLM-n>", "显式指定 CLM（同号重放按 pending 字节判定）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runRecordClaim(resolveDir(command), {
+        from: opts.from as string,
+        clm: opts.clm as string | undefined,
+      });
+      record({
+        command: "record claim",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
   return program;
+}
+
+/** commander 选项收集器：可重复选项聚合为数组（--subject / --capability）。 */
+function collectValues(value: string, previous: string[]): string[] {
+  return [...previous, value];
 }
 
 /**

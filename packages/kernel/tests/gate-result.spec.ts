@@ -142,7 +142,15 @@ describe("normalizeGateResult（verdict 七态与缺席显式化，C1）", () =>
 
   it("七态逐一可归一（含 not_run / not_configured / skipped_blindspot 显式缺席态）", () => {
     for (const verdict of ["passed", "failed", "warning", "blocked", "not_run", "not_configured", "skipped_blindspot"]) {
-      const result = normalizeGateResult(claimed(validPayload({ verdict })), CONTEXT);
+      // skipped_blindspot 必附盲区指标（四态纪律，03 schema「判定必须附证据」）——其余六态无此要求。
+      const payload =
+        verdict === "skipped_blindspot"
+          ? validPayload({
+              verdict,
+              counts: { scanned: 10, applicable_scanned: 0, violations: 0, not_applicable: 0, unchecked_in_blindspot_estimated: 3 },
+            })
+          : validPayload({ verdict });
+      const result = normalizeGateResult(claimed(payload), CONTEXT);
       expect(result.verdict).toBe(verdict);
     }
   });

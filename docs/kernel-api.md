@@ -64,10 +64,13 @@ A6 rename-on-ingest 双向链：legacy→canonical（收编）与 canonical→le
 ### `issuePermit(store, request) => Promise<Permit>` / `checkPermit(store, permitRef, attempt) => Promise<PermitCheckResult>` / `stealPermit(store, permitRef, by, reason) => Promise<StealResult>`
 
 - `Permit.permitRef`：`PERMIT.*`（前缀未入 prefixes_v0，暂用 general_id 宽松词形，`TODO(vocab-pr)`）。
-- TTL 按事件拍计（禁墙钟，D2/A4）：`expiresAtSeq = currentSeq + ttlBeats`。
-- `checkPermit` 显式四态：allowed / denied（outside_scope、policy_forbidden、delete_forbidden_supersede_only）/ expired / unknown_permit——禁止静默放行或静默拒绝。DENOMINATOR 的 delete 一律 denied。
-- `stealPermit`：D2——TTL 过期仅允许手动显式接管并记 journal 事件（actor/reason 留痕）；自动抢占被禁止；未过期 → `rejected_not_expired`。
+- TTL 按事件拍计（禁墙钟，D2/A4）：`expiresAtSeq = currentSeq + ttlBeats`；缺省 `DEFAULT_TTL_BEATS = 168`（C9「TTL 168h」的拍数映射，标称 1 拍 ≈ 1 rebuild 拍）。
+- `request.subjectIds` 与 `request.capabilityIds`（可选，八拍②五件套之二）均过 `parseGovernedId` closed-world 校验（A5：词表外前缀/文法违规 → throw `GovernanceError(FATAL_UNKNOWN_PREFIX / FATAL_ID_GRAMMAR)`）。
+- **签发落五件套台账**（state/permits.json，内部状态文件；公共契约类型 `Permit` 不变）：除既有的 scope/requested_by/change_ref 外，同时落 `capability_refs`（capabilityIds）、`acceptance_shape`（五件套之五——契约面 `PermitRequest.acceptanceShape` 既有但实现此前从不持久化，本字段封死「验收形状静默丢失」坑）与 `baseline`（issue 瞬间的逐对象基线快照 `{at_seq, subjects: {[id]: {axes, rev, body_sha256?} | null}}`——journal 是事件流无 axes 历史，issue 瞬间是唯一能拿到该基线的时刻，closure；`null` = 签发时对象尚不存在（PROPOSED 新对象的合法基线态）；`body_sha256` 为 D24 读侧 identity/content_drift 判定用途，事务自动捕获，人永不计算）。`PERMIT_ISSUED` journal 事件携带 `capability_ids`。
+- `checkPermit` 显式四态：allowed / denied（outside_scope、policy_forbidden、delete_forbidden_supersede_only）/ expired / unknown_permit——禁止静默放行或静默拒绝。DENOMINATOR 的 delete 一律 denied。**写副作用披露**：outcome=expired 时追加 `PERMIT_EXPIRED_OBSERVED` journal 事件（「过期→事件，不静默」；同 seq 可重复多行，同 seq 去重收敛归后续 kernel PR）。
+- `stealPermit`：D2——TTL 过期仅允许手动显式接管并记 journal 事件（actor/reason 留痕）；自动抢占被禁止；未过期 → `rejected_not_expired`；未知许可（含已 stolen）→ throw `PERMIT_NOT_FOUND`。
 - scope expansion 拒绝静默放行 → 路由重审升级（D20，GOLDEN-L8-2）。
+- CLI 命令面：`pomaster permit issue / check / steal / list` 与 `pomaster exec-guard`（八拍④写路径执行点，纯判卷器）——编排与呈现契约见 `docs/eight-beat-carriers-design.md` §1/§2；list/事件链对 `state/permits.json` / `state/journal.jsonl` 的直读仅限读呈现，写通道唯一保留给 kernel（分层纪律）。
 
 ## 5. 投影（八拍③）
 
@@ -82,9 +85,17 @@ A6 rename-on-ingest 双向链：legacy→canonical（收编）与 canonical→le
 把工具/Agent 的 CLAIMED 输出归一为 03-gate-result 形态：
 - verdict 词表外值 → FATAL（七态词表 `VERDICT_VALUES`）；
 - `notApplicable` 缺失/NaN → FATAL（缺席必须显式表达）；
+- `verdict=skipped_blindspot` 而 `counts.unchecked_in_blindspot_estimated` 缺失 → FATAL（03 schema「skipped_blindspot 判定必须附证据」；无指标的盲区跳过 = 静默跳过当通过的七态词形变体）；
 - `subjectId` 前缀 `TEST.*` ⇔ `isFixture=true` 双向强校验（Q3）；
 - `trust.asserted` 保留为 CLAIMED；`recomputed` 是判卷唯一依据；失配 → `mismatch.detected=true`（recomputed_wins_recorded / escalate_to_authority）；
 - 本函数永不阻断写入；gate 的阻断语义由 closeout 编排层按 verdict 施加（写阻断与判卷分离）。
+
+配套纯函数导出（G4/G6 证据入账通路复用；docs/eight-beat-carriers-design.md §4.5「形态完全
+由 kernel 决定，CLI 不二次实现」）：`gateResultToSnake(result)`（GateResult → 03/07 snake_case
+落盘结构，与 store.applyRecordGateRun 的组装逐键同构——CLI canonical 字节重放即用它组装）与
+`sha256OfCanonical(value)`（canonical JSON 摘要——claim blob 引用重放需与 store.record_claim
+同源同型）。二者均为既有内部纯函数的公共可见化，无新逻辑；D24：人永不计算哈希，sha 导出仅供
+机器通路复用。
 
 ## 7. Doctor（D7 必检最小集四检）
 
@@ -119,8 +130,13 @@ A6 rename-on-ingest 双向链：legacy→canonical（收编）与 canonical→le
   CLI 层可据此翻译为退出码）。
 - **store 内部状态文件**（契约布局之外的 kernel 内部 detail，均不进 hash）：
   `state/authority.json`（Authority Map，BOOTSTRAP 登记 owner；幽灵 owner=FATAL 的解析源）、
-  `state/permits.json`（许可台账，含 stolen 标记留档）、`state/journal.jsonl`
-  （TX_APPLIED / PERMIT_ISSUED / PERMIT_EXPIRED_OBSERVED / PERMIT_STOLEN 事件流）。
+  `state/permits.json`（许可台账，含 stolen 标记留档与五件套扩展字段
+  `capability_refs` / `acceptance_shape` / `baseline`——CLI `permit list` / `issue`
+  回读呈现直读该文件，故本文件构成对 CLI 呈现层的隐性契约：kernel 改其字段须同步
+  CLI 呈现层，防字段演进静默破坏 list）、`state/journal.jsonl`
+  （TX_APPLIED / PERMIT_ISSUED（带 capability_ids）/ PERMIT_EXPIRED_OBSERVED /
+  PERMIT_STOLEN 事件流）。台账/journal 损坏 → `SCHEMA_INVALID`（readPermitsFile /
+  readJournalLines 透传给 CLI 信封）。
 - **幂等语义细化**：同 inputs 重放（inputs_fingerprint 相等）或零有效变化（同内容
   重写）→ `shortCircuited=true` 零写入（字节稳定，seq/rev 不空转，GOLDEN-L8-4）；
   auto-regen（D24 digest 修正）算有效变化，正常分配 seq 并留 journal 痕迹。
@@ -138,3 +154,42 @@ A6 rename-on-ingest 双向链：legacy→canonical（收编）与 canonical→le
 - **doctor 辅助导出**：`probeToolEnvironment(projectRoot)`（node/pnpm/git/gitHubCli →
   READY|NOT_INSTALLED；.mcp.json chrome-devtools → MISSING_CONFIGURATION+安装提示；
   src 引用 TEST.* → 违规探针）为契约四检之外的超集，供 CLI `pomaster doctor` 消费。
+
+## 10. Reconcile（八拍⑥；delta/例外/抽样三段报告）
+
+### `reconcilePermit(store, permitRef, options?) => Promise<ReconcileReport>`
+
+- **纯读零写**：报告生成不产生治理事实、不落任何文件；同 store state + 同参数重放输出
+  字节稳定（A4：stride 抽样确定、零墙钟、一切序号锚定 seq/rev）。`clean=true` 是 ⑥ 拍
+  零审阅负担的合法出口（不是跳过）。
+- **基线 closure（§4 台账扩展）**：基线快照在 permit issue 瞬间存入 `PermitRecord.baseline`
+  （journal 是事件流无 axes 历史，事后不可重建）；reconcile 只读不重建。
+  `baseline_missing=true`（本特性之前签发的旧形态许可）→ 显式 fail（CLI 翻译为
+  `RECONCILE_BASELINE_MISSING`），delta 段不可计算故为空——不能拿「没有基线」冒充
+  「无变化」（not_configured ≠ passed 的 ⑥ 拍镜像）。
+- **`changed_objects`**（仅 permit 范围内 subject，按 id 字典序）：`kind` 词形
+  `axes_change`（四轴任一 from≠to；axes 只列变化轴）/ `materialized`（签发时 absent、
+  现已存在）/ `vanished`（签发时存在、现已消失——含索引行仍在但正文文件缺失的 REF
+  异常形态，A1 成对纪律，必 fail）/ `content_drift`（四轴未变而 body_sha256 变化——
+  静默漂移显式打捞）。`content_drift` 字段三态：`true` / `false`（对 kernel 维护的行
+  结构不可达：sha 覆盖内嵌 rev）/ `null`（基线无 sha 锚或对象 absent——显式未知，
+  不冒充「无漂移」）。kind 为 CLI 呈现层局部词 TODO(vocab-pr)；其中 `content_drift`
+  词形是设计 §3.2 三值之外的第 4 词形，承载其自身 `content_drift=true` 状态所需的宿主
+  （不冒用 `axes_change`——其定义明确要求四轴任一 from≠to）。
+- **`exceptions`**：scope 内 subject 的证据平面扫描；runs 取 verdict ∈
+  {failed, not_configured, skipped_blindspot}，claims 取 verification.verdict = REJECTED。
+  证据平面损坏（*.json 无法解析 / verdict 缺失）→ throw `SCHEMA_INVALID`（禁静默跳过
+  损坏证据）；run 文件兼容 kernel canonical（gate_result.result 内嵌）与 pre-canonical
+  夹具（GateResult 直落顶层）两形态——与 compact 收编读取规则同一条线。
+- **`verdict_census`**：证据平面全量 verdict 计数（含例外条目与 scope 外条目——聚合
+  不吞没，不进例外段 ≠ 不可见）；键字典序输出，字节稳定。
+- **`samples_to_review`**：scope 内全部证据条目（runs+claims 合并）按 evidence_ref
+  字典序排列后等距步长抽样（`floor(i×total/N)`，i=0..N-1；total ≤ N 全取）；N=
+  `options.samples` 缺省 3，0 = 显式放弃抽样（不静默）；非 ≥0 整数 → `SCHEMA_INVALID`。
+- **fail-closed 出口语义（CLI 翻译为退出码，设计 §3.5）**：clean 且基线在场 →
+  ok/exit 0；有 delta/例外/vanished → `RECONCILE_DIRTY` exit 1（人须审，机器不代审
+  不代决）；baseline 缺失 → `RECONCILE_BASELINE_MISSING` exit 1；许可不存在 → throw
+  `PERMIT_NOT_FOUND`。stolen 许可仍可 reconcile（纯读审计；接管事件在 journal 留痕）。
+- CLI 命令面：`pomaster reconcile --permit <PERMIT.*> [--samples <n>]`（八拍⑥）——
+  编排与呈现契约见 `docs/eight-beat-carriers-design.md` §3；报告 snake_case 形态由
+  kernel 直接产出，CLI 逐字渲染不二次映射。

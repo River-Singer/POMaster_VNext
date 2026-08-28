@@ -14,13 +14,13 @@
 ① TRIAGE → ② FRAMEWORK LOCK → ③ PROJECTION → ④ EXECUTE → ⑤ VERIFY → ⑥ RECONCILE → ⑦ COMPACT → ⑧ 下一轮
 ```
 
-命令面语义与八拍的对应关系：`pomaster triage`=①、`FRAMEWORK` 五件套=②、`compileProjection`=③、Permit 内写=④、`check`/`normalizeGateResult`=⑤、`reconcile`=⑥、`applyTransaction`(COMPACT 出口)=⑦。
+命令面语义与八拍的对应关系：`pomaster triage`=①、`pomaster permit issue/check/steal/list`（FRAMEWORK LOCK 命令面）=②、`compileProjection`/`context compile`=③、`exec-guard` 与 Permit 内写=④、`check`/`normalizeGateResult`=⑤、`pomaster reconcile`（delta/例外/抽样三段报告，G3）=⑥、`pomaster compact`（episode 折叠：证据批量收编 + `--ops` 显式事务合并为单次 applyTransaction，NO_CHANGE 合法出口）与 `pomaster record gate-run|claim`（证据显式单条入账，G4+G6）=⑦。
 
 ## 当前物理分层（scaffold）
 
 ```text
 packages/
-  kernel/         状态机判卷者：store 事务 / 转移引擎 / ID 解析 / Permit / 投影 / gate 归一 / doctor
+  kernel/         状态机判卷者：store 事务 / 转移引擎 / ID 解析 / Permit / 投影 / gate 归一 / reconcile / doctor
   schemas/        形态契约（7 份 IR schema 资产）+ FROZEN 词表唯一镜像点（src/vocab.ts）
   gauntlet-lite/  §59 Gate Adapter 执行面：adapter-types 契约 / build-adapter（vitest 跑批 + 七态归一）/ detectors（oasdiff·import-linter·dependency-cruiser·chrome-devtools MCP 四探测）/ registry
   cli/            命令面（八拍语义；scaffold 占位）

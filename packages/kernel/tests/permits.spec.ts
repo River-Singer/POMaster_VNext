@@ -14,7 +14,7 @@ import {
   stealPermit,
   type Store,
 } from "@pomaster/kernel";
-import { AGENT, denominatorEntry, gid, HUMAN, makeStore } from "./helpers.js";
+import { AGENT, denominatorEntry, gid, HUMAN, makeStore, pageEnvelope } from "./helpers.js";
 
 let root: string;
 let store: Store;
@@ -208,5 +208,64 @@ describe("stealPermit（D2 显式接管）", () => {
     await expect(stealPermit(store, permit.permitRef, HUMAN, "  ")).rejects.toMatchObject({
       code: "SCHEMA_INVALID",
     });
+  });
+});
+
+describe("issuePermit 台账扩展（capability_refs / acceptance_shape / baseline；八拍设计 §1.3/§3.3）", () => {
+  it("capabilityIds + acceptanceShape 落台账；journal 事件带 capability_ids（坑5：验收形状不再静默丢失）", async () => {
+    await issuePermit(store, {
+      subjectIds: [gid("PAGE.DASHBOARD")],
+      requestedBy: HUMAN,
+      changeRef: "CHANGE.MIGRATION_001",
+      capabilityIds: [gid("CAPABILITY.CSV_TOOL.SERIALIZE_ROWS")],
+      acceptanceShape: { dod: ["CSV_ROUNDTRIP passed"] },
+    });
+    expect(permitsFile().permits[0]).toMatchObject({
+      capability_refs: ["CAPABILITY.CSV_TOOL.SERIALIZE_ROWS"],
+      acceptance_shape: { dod: ["CSV_ROUNDTRIP passed"] },
+    });
+    const issuedLine = journal().split("\n").find((line) => line.includes("PERMIT_ISSUED"));
+    expect(JSON.parse(issuedLine as string)).toMatchObject({
+      capability_ids: ["CAPABILITY.CSV_TOOL.SERIALIZE_ROWS"],
+    });
+  });
+
+  it("baseline：issue 瞬间捕获（closure）；存在对象记 axes/rev/body_sha256，absent 记 null（合法基线态）", async () => {
+    // 先落一个对象再签发：PAGE.DASHBOARD 有基线、PAGE.SETTINGS absent（PROPOSED 新对象）。
+    await applyTransaction(store, { ops: [{ op: "upsert_object", envelope: pageEnvelope() as never }] });
+    await issuePermit(store, {
+      subjectIds: [gid("PAGE.DASHBOARD"), gid("PAGE.SETTINGS")],
+      requestedBy: HUMAN,
+    });
+    const record = permitsFile().permits[0] as {
+      baseline: { at_seq: number; subjects: Record<string, unknown> };
+    };
+    expect(record.baseline.at_seq).toBe(1);
+    const dashboard = record.baseline.subjects["PAGE.DASHBOARD"] as Record<string, unknown>;
+    expect(dashboard.rev).toBe(1);
+    expect(dashboard.axes).toEqual({
+      lifecycle: "CURRENT",
+      confidence: "PROVISIONAL",
+      evidence: "IMPLEMENTED",
+      change: "STABLE",
+    });
+    expect(dashboard.body_sha256).toMatch(/^sha256:[0-9a-f]{64}$/);
+    expect(record.baseline.subjects["PAGE.SETTINGS"]).toBeNull();
+  });
+
+  it("subject / capability 过 parseGovernedId closed-world 校验 → FATAL_UNKNOWN_PREFIX / FATAL_ID_GRAMMAR（A5）", async () => {
+    await expect(
+      issuePermit(store, { subjectIds: ["FOO.BAR" as never], requestedBy: HUMAN }),
+    ).rejects.toMatchObject({ code: "FATAL_UNKNOWN_PREFIX" });
+    await expect(
+      issuePermit(store, { subjectIds: ["PAGE.dashboard" as never], requestedBy: HUMAN }),
+    ).rejects.toMatchObject({ code: "FATAL_ID_GRAMMAR" });
+    await expect(
+      issuePermit(store, {
+        subjectIds: [gid("PAGE.DASHBOARD")],
+        requestedBy: HUMAN,
+        capabilityIds: ["NOT_A_PREFIX.X" as never],
+      }),
+    ).rejects.toMatchObject({ code: "FATAL_UNKNOWN_PREFIX" });
   });
 });

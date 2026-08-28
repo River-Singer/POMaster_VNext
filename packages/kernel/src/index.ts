@@ -459,6 +459,12 @@ export interface PermitRequest {
   readonly ttlBeats?: number;
   /** 验收形状（八拍②五件套；§47 DoD 硬绑 VERIFIED claim 映射）。 */
   readonly acceptanceShape?: Readonly<Record<string, unknown>>;
+  /**
+   * Capability 清单（八拍②五件套之二；过 parseGovernedId closed-world 校验）。
+   * 与 acceptanceShape 同批落 state/permits.json 台账（capability_refs /
+   * acceptance_shape / baseline——内部状态文件扩展，不动本公共契约类型 Permit）。
+   */
+  readonly capabilityIds?: readonly GovernedId[];
 }
 
 export interface Permit {
@@ -617,6 +623,50 @@ export interface GateResult {
  * - 本函数只做归一与显式化，永不阻断写入（gate 阻断语义由 closeout 编排层按 verdict 施加）。
  */
 export { normalizeGateResult } from "./gate-result.js";
+
+/**
+ * GateResult → 03-gate-result 的 snake_case 形态（inline 内嵌进 07 run_record 的落盘结构）。
+ * G4/G6 证据收编通路（CLI compact/record）复用本函数做 canonical 字节重放——落盘形态
+ * 由 kernel 决定，CLI 不二次实现（docs/eight-beat-carriers-design.md §4.5「同一函数，
+ * 不两套」）。纯函数，与 store.applyRecordGateRun 的落盘组装逐键同构。
+ */
+export { gateResultToSnake } from "./gate-result.js";
+
+/**
+ * canonical JSON 的 sha256 摘要（`sha256:<64 位小写十六进制>`）。
+ * D24 哈希伦理：只读服务（identity/短路重跑/防篡改抽验），人永不计算哈希——本导出仅供
+ * 机器通路复用（G6 claim blob 引用的 canonical 重放需要与 store.record_claim 同源同型，
+ * 形态由 kernel 决定）。纯函数。
+ */
+export { sha256OfCanonical } from "./digest.js";
+
+// ============================================================
+// Reconcile（八拍⑥ RECONCILE；delta/例外/抽样三段报告）
+// ============================================================
+
+/**
+ * 八拍⑥ RECONCILE（docs/kernel-api.md §10）：按 permit 签发基线出 delta 三段报告
+ * （changed_objects / exceptions / samples_to_review；D20/D21 只审 delta，人不再逐行看全文）。
+ * 纯读零写：同 store state + 同参数重放输出字节稳定（A4：stride 抽样确定、零墙钟、seq 锚定）。
+ * 基线 closure：基线在 issue 瞬间存入 permit 台账（journal 无 axes 历史，事后不可重建）；
+ * baseline_missing=true 显式 fail（not_configured ≠ passed 的 ⑥ 拍镜像）；
+ * clean=true 是零审阅负担的合法出口。判卷逻辑住 kernel，CLI 只渲染。
+ */
+export {
+  reconcilePermit,
+  DEFAULT_RECONCILE_SAMPLES,
+  RECONCILE_EXCEPTION_RUN_VERDICTS,
+  RECONCILE_DELTA_KINDS,
+} from "./reconcile.js";
+export type {
+  ReconcileOptions,
+  ReconcileReport,
+  ReconcileChangedObject,
+  ReconcileDeltaKind,
+  ReconcileEvidenceEntry,
+  ReconcileException,
+  ReconcileSample,
+} from "./reconcile.js";
 
 // ============================================================
 // Doctor（D7 Portability 必检最小集四检；fail-closed）
