@@ -14,7 +14,10 @@
  * - 抽样确定性：N=3、total=5 的 stride 集合可手工预言；同 state 两次报告字节全同；
  * - 纯读零写 / PERMIT_NOT_FOUND / SCHEMA_INVALID（证据损坏禁静默跳过）；
  * - row 级正文探测（N1）：只手改正文、不碰索引行的篡改 → content_tamper 例外当场抓到；
- *   索引与正文一致零误报；成本边界 = 抽中样本 ∪ changed_objects（不全库扫）。
+ *   索引与正文一致零误报；成本边界 = 抽中样本 ∪ changed_objects（不全库扫）；
+ * - N6 drift_origin：合法事务变更 → transaction（TX_APPLIED 台账可解释，不入例外）；
+ *   rev 推进无事务 / rev 未动而内容变（auto-regen 行锚同步）→ unexplained + 原样升格入
+ *   exceptions；同输入重放字节全同（升格条目序 = scope id 序，A4 不破）。
  */
 import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -295,7 +298,7 @@ describe("reconcilePermit（八拍⑥ delta 三段报告）", () => {
     expect(report.clean).toBe(false);
   });
 
-  it("content_drift=true：改 payload 不改轴（静默漂移显式打捞）", async () => {
+  it("content_drift=true：改 payload 不改轴（静默漂移显式打捞；事务台账可解释 → transaction）", async () => {
     await upsertObject();
     const ref = await issue(["PAGE.DASHBOARD"]);
     await upsertObject({ payload: { surface: "V2" } });
@@ -306,11 +309,12 @@ describe("reconcilePermit（八拍⑥ delta 三段报告）", () => {
       axes: null,
       content_drift: true,
       rev: { from: 1, to: 2 },
+      drift_origin: "transaction",
     }]);
     expect(report.clean).toBe(false);
   });
 
-  it("content_drift=null：基线无 sha 锚 → 显式未知，不冒充「无漂移」（false 态对 kernel 维护行不可达：sha 覆盖内嵌 rev）", async () => {
+  it("content_drift=null：基线无 sha 锚 → 显式未知，不冒充「无漂移」（false 态对 kernel 维护行不可达：sha 覆盖内嵌 rev）；rev 推进有事务解释 → transaction", async () => {
     await upsertObject();
     const ref = await issue(["PAGE.DASHBOARD"]);
     stripBaselineSha(ref);
@@ -322,6 +326,7 @@ describe("reconcilePermit（八拍⑥ delta 三段报告）", () => {
       axes: null,
       content_drift: null,
       rev: { from: 1, to: 2 },
+      drift_origin: "transaction",
     }]);
   });
 
@@ -332,6 +337,87 @@ describe("reconcilePermit（八拍⑥ delta 三段报告）", () => {
     const report = await reconcile(ref);
     expect(report.changed_objects).toEqual([]);
     expect(report.clean).toBe(true);
+  });
+});
+
+// ============================================================
+// N6 drift_origin：content_drift 双义的机判消解（transaction / unexplained）
+// ============================================================
+
+describe("reconcilePermit（N6 drift_origin：content_drift 双义机判消解）", () => {
+  /** 手改索引行 rev（不碰正文与行 sha——「rev 推进但台账无解释事务」的最短复现）。 */
+  function bumpIndexRev(id: string): void {
+    const path = join(root, ".pomaster", "state", "truth-index.json");
+    const raw = JSON.parse(readFileSync(path, "utf8")) as {
+      objects: Array<{ id: string; rev: number }>;
+    };
+    const row = raw.objects.find((candidate) => candidate.id === id);
+    if (row === undefined) throw new Error(`index 行不存在：${id}`);
+    row.rev += 1;
+    writeFileSync(path, `${JSON.stringify(raw, null, 2)}\n`);
+  }
+
+  it("合法事务 payload 变更 → drift_origin=transaction（baseline 后 TX_APPLIED 可解释），不入 exceptions", async () => {
+    await upsertObject();
+    const ref = await issue(["PAGE.DASHBOARD"]);
+    await upsertObject({ payload: { surface: "V2" } }); // 台账：TX_APPLIED 含该对象 rev 推进 op
+    const report = await reconcile(ref);
+    expect(report.changed_objects).toEqual([{
+      id: "PAGE.DASHBOARD",
+      kind: "content_drift",
+      axes: null,
+      content_drift: true,
+      rev: { from: 1, to: 2 },
+      drift_origin: "transaction",
+    }]);
+    expect(report.exceptions).toEqual([]); // transaction：合法变更走 delta 段，不进人审例外队列
+  });
+
+  it("rev 推进无事务解释 → drift_origin=unexplained + 原样升格计入 exceptions（疑似越权漂移进人审队列）", async () => {
+    await upsertObject();
+    const ref = await issue(["PAGE.DASHBOARD"]);
+    bumpIndexRev("PAGE.DASHBOARD"); // 手改索引行 rev：baseline 后台账无任何 TX_APPLIED 触及该对象
+    const report = await reconcile(ref);
+    expect(report.changed_objects).toEqual([{
+      id: "PAGE.DASHBOARD",
+      kind: "content_drift",
+      axes: null,
+      content_drift: false, // 行 sha 与基线锚相同——unexplained 判定看台账，不看 sha 三态
+      rev: { from: 1, to: 2 },
+      drift_origin: "unexplained",
+    }]);
+    // 升格 = 同一行原样入 exceptions（判别走字段位 drift_origin，不发明新例外 kind 词）。
+    expect(report.exceptions).toEqual([report.changed_objects[0]]);
+    expect(report.clean).toBe(false);
+  });
+
+  it("auto-regen 同步行锚（rev 未动而内容变了）→ unexplained 升格，且与 content_tamper 互补不双报；同输入重放字节全同（A4 不破）", async () => {
+    await upsertObject();
+    const ref = await issue(["PAGE.DASHBOARD"]);
+    tamperBodyFile(bodyRefOf("PAGE.DASHBOARD"), (body) => {
+      body.title_zh = "手改标题";
+    });
+    // 无关事务触发 sweepDigestTampering：行 sha 自动对齐手改正文（rev 不动、
+    // changed_object_ids 不含该对象）→ 台账对此漂移无解释 → unexplained。
+    await upsertObject({ id: gid("PAGE.SETTINGS"), titleZh: "设置" });
+
+    const report = await reconcile(ref);
+    expect(report.changed_objects).toEqual([{
+      id: "PAGE.DASHBOARD",
+      kind: "content_drift",
+      axes: null,
+      content_drift: true,
+      rev: { from: 1, to: 1 },
+      drift_origin: "unexplained",
+    }]);
+    expect(report.exceptions).toEqual([report.changed_objects[0]]);
+    // 行锚已被 auto-regen 同步 → 正文探测无失配（content_tamper 与 unexplained 互补）。
+    expect(
+      report.exceptions.some((entry) => "kind" in entry && entry.kind === "content_tamper"),
+    ).toBe(false);
+
+    const again = await reconcile(ref);
+    expect(JSON.stringify(again)).toBe(JSON.stringify(report)); // 纯读重放字节稳定（A4）
   });
 });
 

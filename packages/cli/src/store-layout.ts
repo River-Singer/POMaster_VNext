@@ -2,7 +2,8 @@
  * store-layout.ts —— CLI init 管理的 .pomaster/ 最小骨架布局。
  *
  * 任务契约（cli 建造者）：init 在目标目录创建 .pomaster/ 最小骨架——
- * config.yaml / state/truth-index.json（空账本）/ objects 目录。
+ * config.yaml / state/truth-index.json（空账本）/ state/authority.json（N7：BOOTSTRAP
+ * owner 骨架）/ objects 目录。
  * 注意：kernel Store 契约（docs/kernel-api.md）定义了更完整的运行时布局
  * （truth/objects/、evidence/、runtime/）；本文件只覆盖 CLI init 的最小骨架，
  * kernel 建造者落地 createStore 时可在此基础上扩展，两者共享 state/truth-index.json。
@@ -14,6 +15,14 @@ export const POMASTER_DIR = ".pomaster";
 
 /** .pomaster/state/truth-index.json（信封层，形态契约 assets/01）。 */
 export const TRUTH_INDEX_RELATIVE = ".pomaster/state/truth-index.json";
+
+/**
+ * .pomaster/state/authority.json（Authority Map；N7：init 建 BOOTSTRAP 骨架）。
+ * kernel 解析契约（permits.loadAuthorityMap）只读 version + authorities 两键，
+ * 其余键（owner_registry/boundary_rules/map，MIG-B1 形态）为演化面注记，kernel 容忍。
+ * kernel createStore 对本文件同样是「缺失才写」——init 先建的骨架不会被覆盖。
+ */
+export const AUTHORITY_RELATIVE = ".pomaster/state/authority.json";
 
 /**
  * .pomaster/state/permits.json（kernel 内部许可台账，不进 hash、非公共契约面）。
@@ -50,6 +59,10 @@ export function pomasterDir(rootDir: string): string {
 
 export function truthIndexPath(rootDir: string): string {
   return join(rootDir, ...TRUTH_INDEX_RELATIVE.split("/"));
+}
+
+export function authorityFilePath(rootDir: string): string {
+  return join(rootDir, ...AUTHORITY_RELATIVE.split("/"));
 }
 
 export function permitsFilePath(rootDir: string): string {

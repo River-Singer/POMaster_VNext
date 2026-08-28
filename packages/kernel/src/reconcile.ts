@@ -17,6 +17,11 @@
  *   changed_objects）由本模块机器重算正文指纹并与索引行对账——纯读只报不修（失配 →
  *   content_tamper 例外，不拦写；写侧 auto-regen 仍归 applyTransaction.sweepDigestTampering
  *   双轨分工）。
+ * - N6 drift_origin：content_drift kind 一词二用（合法事务 payload 变更 vs 越权静默漂移）
+ *   由机判字段消解——transaction=rev 推进可被事务台账解释（baseline 之后的 TX_APPLIED
+ *   事件内含该对象的 rev 推进 op）；unexplained=台账无解释（含 rev 未动而内容变的 sweep
+ *   auto-regen 行锚同步形态）→ 原样升格计入 exceptions 人审队列。纯读：只扫 journal
+ *   追加流，零写入。
  * - 四态纪律：content_drift=null 是「基线无 sha 锚/对象 absent」的显式未知，不冒充
  *   「无漂移」；verdict_census 全量计数（含例外条目与 scope 外条目）——聚合不吞没，
  *   不进例外段 ≠ 不可见。
@@ -31,7 +36,7 @@ import { sha256OfCanonical } from "./digest.js";
 import { readText } from "./io.js";
 import { loadTruthIndex } from "./store.js";
 import { readPermitsFile, type PermitBaselineSubject } from "./permits.js";
-import { pathsOf, readCurrentSeq, type StorePaths } from "./paths.js";
+import { pathsOf, readCurrentSeq, readJournalLines, type StorePaths } from "./paths.js";
 import {
   RECONCILE_DELTA_KINDS,
   RECONCILE_EXCEPTION_KINDS,
@@ -70,6 +75,24 @@ export { RECONCILE_DELTA_KINDS };
 
 export type ReconcileDeltaKind = (typeof RECONCILE_DELTA_KINDS)[number];
 
+/**
+ * drift_origin 词形闭包（N6：content_drift kind 双义的机判消解）。content_drift 行同时
+ * 承载「合法事务 payload 变更」与「越权静默漂移」，人审原本要靠 rev 推进 + journal
+ * TX_APPLIED 事件人工对账；drift_origin 把该判定变成机器字段：
+ * - transaction：rev 推进能被事务台账解释（baseline 之后存在 TX_APPLIED 事件，事件 ops
+ *   含 rev 推进 op（upsert_object/transition_object）且 changed_object_ids 含该对象）；
+ * - unexplained：台账无解释——rev 未动而内容变了（含 sweep auto-regen 把手改正文同步进
+ *   行锚的形态）、或 rev 动了但找不到解释事务；unexplained 条目原样升格计入 exceptions
+ *   （人审队列；clean 语义不变——升格不新增 fail 面，changed_objects 已 fail）。
+ *
+ * 词表纪律：v0.2（PR-0001）刚 FROZEN，本轮不得再动词表——本词形作为 reconcile 报告呈现层
+ * 局部词定义于本文件，TODO(vocab-pr-0002) 登记进 vocab-lock presentation_axes（与 PR-0001
+ * 的呈现层局部词先例同构；登记前扩值必须走词汇表 PR，禁止就地添加）。
+ */
+export const RECONCILE_DRIFT_ORIGINS = ["transaction", "unexplained"] as const;
+
+export type ReconcileDriftOrigin = (typeof RECONCILE_DRIFT_ORIGINS)[number];
+
 // ============================================================
 // 报告形态（snake_case：CLI --json 信封逐字渲染，kernel 即呈现权威）
 // ============================================================
@@ -82,6 +105,12 @@ export interface ReconcileChangedObject {
   /** true=正文 sha 变了而四轴未变（静默漂移）；false=有锚且相同；null=基线无锚或对象 absent（显式未知）。 */
   readonly content_drift: boolean | null;
   readonly rev: { readonly from: number | null; readonly to: number | null };
+  /**
+   * N6 机判词形（仅 kind=content_drift 条目在场；其余 kind 键不落盘）：content_drift
+   * 双义消解见 RECONCILE_DRIFT_ORIGINS——transaction=台账可解释；unexplained=疑似越权
+   * 漂移（原样升格入 exceptions 人审队列）。
+   */
+  readonly drift_origin?: ReconcileDriftOrigin;
 }
 
 /** 证据条目（runs/claims 两平面共用的最小投影）。 */
@@ -94,7 +123,20 @@ export interface ReconcileEvidenceEntry {
   readonly gate: string | null;
 }
 
-export type ReconcileException = ReconcileEvidenceEntry | ReconcileTamperEntry;
+/**
+ * N6：drift_origin=unexplained 的 content_drift 条目**原样升格**入例外段（同一行双呈现：
+ * changed_objects 保 delta 分母完整，exceptions 入人审队列——D20/D21）。判别走字段位
+ * drift_origin（证据条目无此键；content_tamper 的 kind 属 RECONCILE_EXCEPTION_KINDS
+ * 词形），不发明新例外 kind 词——v0.2 FROZEN，词形收编归 TODO(vocab-pr-0002)。
+ */
+export type ReconcileUnexplainedDriftEntry = ReconcileChangedObject & {
+  readonly drift_origin: "unexplained";
+};
+
+export type ReconcileException =
+  | ReconcileEvidenceEntry
+  | ReconcileTamperEntry
+  | ReconcileUnexplainedDriftEntry;
 
 /**
  * row 级正文探测命中的例外条目（kind 词形=content_tamper；vocab-lock
@@ -135,6 +177,10 @@ export interface ReconcileReport {
   /** 旧形态许可无基线快照：显式 fail（RECONCILE_BASELINE_MISSING），delta 段不可计算故为空。 */
   readonly baseline_missing: boolean;
   readonly changed_objects: readonly ReconcileChangedObject[];
+  /**
+   * 人审例外队列（序固定字节稳定）：证据例外（evidence_ref 序）→ content_tamper
+   * （探测分母 id 序）→ N6 unexplained content_drift 升格条目（scope id 序）。
+   */
   readonly exceptions: readonly ReconcileException[];
   /** 证据平面全量 verdict 计数（含例外与 scope 外条目；键字典序，字节稳定）。 */
   readonly verdict_census: {
@@ -333,6 +379,46 @@ function probeBodiesAgainstIndex(
 }
 
 // ============================================================
+// 事务台账对账（N6：drift_origin 机判；纯读——journal 追加流逐行扫描，零写入 D24）
+// ============================================================
+
+/**
+ * 能推进对象 rev 的 op 词形（TX_APPLIED.ops 的子集；record_claim 等只动 evidence_summary
+ * 不动 rev，不构成 rev 推进解释）。
+ */
+const REV_ADVANCING_OPS: ReadonlySet<string> = new Set(["upsert_object", "transition_object"]);
+
+/**
+ * 扫描 journal 台账，收集 baseline 之后「事务内含该对象 rev 推进 op」的对象 id 集
+ * （transaction 判定语义：存在 seq > sinceSeq 的 TX_APPLIED 事件，事件 ops 含
+ * upsert_object/transition_object 且 changed_object_ids 含该对象）。PERMIT_* 事件行与
+ * 形态残缺行（缺 seq/ops/changed_object_ids）非解释性事件，跳过（无法解析的行已由
+ * readJournalLines 显式 SCHEMA_INVALID，禁静默跳过损坏台账）。纯读；收集为 Set 与行序
+ * 无关 → 同 state 重放字节稳定。
+ */
+function scanExplainedObjectIds(paths: StorePaths, sinceSeq: number): ReadonlySet<string> {
+  const explained = new Set<string>();
+  for (const line of readJournalLines(paths)) {
+    if (line.type !== "TX_APPLIED") continue;
+    const seq = line.seq;
+    if (typeof seq !== "number" || seq <= sinceSeq) continue; // 基线前的事务已折入 baseline
+    const ops = line.ops;
+    if (
+      !Array.isArray(ops) ||
+      !ops.some((op) => typeof op === "string" && REV_ADVANCING_OPS.has(op))
+    ) {
+      continue;
+    }
+    const changed = line.changed_object_ids;
+    if (!Array.isArray(changed)) continue;
+    for (const id of changed) {
+      if (typeof id === "string") explained.add(id);
+    }
+  }
+  return explained;
+}
+
+// ============================================================
 // delta 比较（基线 vs 当前索引行；纯函数）
 // ============================================================
 
@@ -459,10 +545,15 @@ export async function reconcilePermit(
     };
   }
 
+  // —— N6：事务台账对账（drift_origin 机判；baseline 之后的事务才可能解释 delta） ——
+  const explainedIds = scanExplainedObjectIds(paths, baseline.at_seq);
+
   // —— delta 比较：当前索引行走 loadTruthIndex（01 schema + vocab 指纹 + REF 基础项校验） ——
   const truth = await loadTruthIndex(store);
   const rowsById = new Map<string, ObjectRow>(truth.objects.map((row) => [row.id, row]));
   const changedObjects: ReconcileChangedObject[] = [];
+  // N6：unexplained 升格条目缓冲（delta 循环按 scope id 字典序迭代 → 天然有序，字节稳定）。
+  const unexplainedDrifts: ReconcileUnexplainedDriftEntry[] = [];
   let materialized = 0;
   let vanished = 0;
   for (const id of [...permit.scope.subject_ids].sort()) {
@@ -513,13 +604,31 @@ export async function reconcilePermit(
         : null;
     const revMoved = base.rev !== row.rev;
     if (drift === false && !revMoved) continue; // 无任何 delta（kernel 维护的行 sha 覆盖 rev，二者不会分叉）
-    changedObjects.push({
-      id,
-      kind: "content_drift",
-      axes: null,
-      content_drift: drift,
-      rev: { from: base.rev, to: row.rev },
-    });
+    // N6 机判（drift_origin）：台账可解释（baseline 后存在含本对象 rev 推进 op 的
+    // TX_APPLIED）→ transaction（合法事务 payload 变更）；否则 unexplained——含「rev 未动
+    // 而内容变了」（sweep auto-regen 同步行锚的形态）与「rev 动了但台账无解释事务」，疑似
+    // 越权静默漂移 → 原样升格入 exceptions 人审队列（clean 语义不变：changed_objects 已 fail）。
+    if (explainedIds.has(id)) {
+      changedObjects.push({
+        id,
+        kind: "content_drift",
+        axes: null,
+        content_drift: drift,
+        rev: { from: base.rev, to: row.rev },
+        drift_origin: "transaction",
+      });
+    } else {
+      const entry: ReconcileUnexplainedDriftEntry = {
+        id,
+        kind: "content_drift",
+        axes: null,
+        content_drift: drift,
+        rev: { from: base.rev, to: row.rev },
+        drift_origin: "unexplained",
+      };
+      changedObjects.push(entry);
+      unexplainedDrifts.push(entry);
+    }
   }
 
   // —— N1 盲区收窄：row 级正文探测（分母 = 抽中样本 subject ∪ changed_objects；纯读只报） ——
@@ -530,7 +639,13 @@ export async function reconcilePermit(
   }
   for (const changed of changedObjects) probeIds.add(changed.id);
   const tamperEntries = probeBodiesAgainstIndex(paths, rowsById, [...probeIds].sort());
-  const allExceptions: ReconcileException[] = [...exceptions, ...tamperEntries];
+  // 例外段序（字节稳定）：证据例外（evidence_ref 序）→ content_tamper（探测分母 id 序）→
+  // N6 unexplained 升格条目（scope id 序，见 unexplainedDrifts 缓冲）。
+  const allExceptions: ReconcileException[] = [
+    ...exceptions,
+    ...tamperEntries,
+    ...unexplainedDrifts,
+  ];
 
   const clean =
     changedObjects.length === 0 && allExceptions.length === 0;

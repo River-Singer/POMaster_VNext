@@ -9,16 +9,22 @@
  * - config.yaml 只在缺失时创建（人类可编辑）；
  * - state/truth-index.json 只在缺失时创建；存在但不可解析 → 显式报错 INVALID_STATE，
  *   绝不静默覆盖（clobber 家族教训）；
+ * - state/authority.json 只在缺失时创建（N7：BOOTSTRAP owner 骨架，单人项目默认形态——
+ *   Minimum Sufficient Governance：只登记项目级 BOOTSTRAP_OWNER，细粒度 owner 划分等
+ *   多人信号出现再演化）；存在但不可解析 / 结构不合 kernel 解析契约 → 显式报错
+ *   INVALID_STATE，绝不静默覆盖；合法存在（含人类加注的 owner）→ 一律不动；
  * - AGENTS.md/CLAUDE.md 仅当缺失或带本包生成标记时重写（D13 轻入口）。
  */
 
 import { readFile, stat, writeFile } from "node:fs/promises";
 import {
   AGENTS_MD_RELATIVE,
+  AUTHORITY_RELATIVE,
   CLAUDE_MD_RELATIVE,
   CONFIG_RELATIVE,
   GENERATED_MARKER,
   TRUTH_INDEX_RELATIVE,
+  authorityFilePath,
   configPath,
   ensureParentDir,
   objectsDirPath,
@@ -76,6 +82,48 @@ store:
   state: .pomaster/state/truth-index.json
   objects: .pomaster/objects/
 `;
+
+// ============================================================
+// N7：authority 骨架（BOOTSTRAP 手工步骤自动化）
+// ============================================================
+
+/**
+ * 项目级默认 owner（单人项目默认形态）：fresh 项目首个对象即可挂本 owner，
+ * 无需 BOOTSTRAP 手工登记（theme-demos-report N3/N7：三主题 demo 各手工登记 owner）。
+ */
+export const BOOTSTRAP_OWNER = "BOOTSTRAP_OWNER";
+
+/** BOOTSTRAP 骨架 owner 的语义注记（owner_registry 条目共用同一常量，字节稳定）。 */
+const BOOTSTRAP_OWNER_ROLE_SEMANTICS =
+  "项目级默认 owner（BOOTSTRAP 骨架，单人项目默认形态）：一切 authority 位置由项目 Owner 应答；" +
+  "细粒度 owner 划分等多人信号出现再演化（Minimum Sufficient Governance）。";
+
+/**
+ * authority 骨架（顶层键两段：
+ * - kernel 解析契约段：version + authorities（permits.loadAuthorityMap 唯一读取的键；
+ *   幽灵 owner=FATAL 的解析源。owner 名 → 元数据，v0 只验存在——与 kernel 测试
+ *   BOOTSTRAP 惯例一致取空对象）；
+ * - MIG-B1 形态段：owner_registry（至少含项目级 BOOTSTRAP_OWNER）/ boundary_rules（空）/
+ *   map（空）——单人项目默认形态；细粒度等多人信号出现再演化（Minimum Sufficient
+ *   Governance）。kernel 容忍额外键，读侧不消费。
+ * 零墙钟零随机 → 同代码版本字节稳定（A4）。
+ */
+export function buildSkeletonAuthority(): Record<string, unknown> {
+  return {
+    version: 1,
+    authorities: {
+      [BOOTSTRAP_OWNER]: {},
+    },
+    owner_registry: [
+      {
+        owner: BOOTSTRAP_OWNER,
+        role_semantics: BOOTSTRAP_OWNER_ROLE_SEMANTICS,
+      },
+    ],
+    boundary_rules: [],
+    map: [],
+  };
+}
 
 async function pathExists(path: string): Promise<boolean> {
   try {
@@ -219,7 +267,57 @@ export async function runInit(rootDir: string): Promise<CommandOutcome<InitResul
     files.push({ file: toPosix(TRUTH_INDEX_RELATIVE), action: "created" });
   }
 
-  // 3) config.yaml：只在缺失时创建（人类可编辑，永不覆盖）。
+  // 3) authority 骨架（N7）：只在缺失时创建；存在但不可解析 / 缺 authorities 对象
+  //    （kernel loadAuthorityMap 解析契约）→ 显式 INVALID_STATE，绝不覆盖；合法存在
+  //    （含人类手工登记的 owner）→ 一律不动（BOOTSTRAP 手改是合法演进）。
+  const authPath = authorityFilePath(rootDir);
+  if (await pathExists(authPath)) {
+    const existing = await readIfExists(authPath);
+    let corrupt = false;
+    let detail = "";
+    if (existing === null) {
+      corrupt = true;
+      detail = "not readable";
+    } else {
+      try {
+        const parsed: unknown = JSON.parse(existing);
+        const authorities = (parsed as Record<string, unknown> | null)?.authorities;
+        if (
+          typeof parsed !== "object" ||
+          parsed === null ||
+          Array.isArray(parsed) ||
+          typeof authorities !== "object" ||
+          authorities === null ||
+          Array.isArray(authorities)
+        ) {
+          corrupt = true;
+          detail = "authorities 缺失或非对象（kernel loadAuthorityMap 解析契约）";
+        }
+      } catch (err) {
+        corrupt = true;
+        detail = (err as Error).message;
+      }
+    }
+    if (corrupt) {
+      errors.push({
+        code: "INVALID_STATE",
+        message: `existing authority.json is corrupt: ${detail}`,
+        hint: `修复或从 git 恢复 ${toPosix(AUTHORITY_RELATIVE)} 后重试；init 不覆盖已存在 Authority Map（clobber 防线；幽灵 owner=FATAL 的解析源不可静默重建）。`,
+      });
+    }
+    files.push({ file: toPosix(AUTHORITY_RELATIVE), action: "unchanged" });
+  } else {
+    const skeleton = buildSkeletonAuthority();
+    await ensureParentDir(authPath);
+    await writeFile(
+      authPath,
+      `${JSON.stringify(skeleton, null, 2)}\n`,
+      "utf8",
+    );
+    files.push({ file: toPosix(AUTHORITY_RELATIVE), action: "created" });
+  }
+
+  // 4) config.yaml：只在缺失时创建（人类可编辑，永不覆盖）。
   const cfgPath = configPath(rootDir);
   let profile: TriageProfile = "LIGHT";
   const existingConfig = await readIfExists(cfgPath);
@@ -239,7 +337,7 @@ export async function runInit(rootDir: string): Promise<CommandOutcome<InitResul
     files.push({ file: toPosix(CONFIG_RELATIVE), action: "unchanged" });
   }
 
-  // 4) 轻入口（D13）：AGENTS.md 渲染 profile + truth-index 速览；CLAUDE.md 导入 AGENTS.md。
+  // 5) 轻入口（D13）：AGENTS.md 渲染 profile + truth-index 速览；CLAUDE.md 导入 AGENTS.md。
   const entryMarkdown = renderEntryMarkdown(
     profile,
     renderStateSummary(ledgerForRender),

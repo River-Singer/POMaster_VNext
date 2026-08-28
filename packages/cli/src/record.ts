@@ -17,6 +17,10 @@
  *   （VERIFIED/PARTIALLY_VERIFIED/REJECTED）的文件 → SKIPPED_ADJUDICATED 零写入；
  * - fail-closed：--from 文件畸形 / normalize FATAL（kernel 原码透传）/ subject 不存在
  *   （OBJECT_NOT_FOUND）/ store 未初始化 → exit 1；单条路径的畸形即是失败，无 warnings 通道。
+ * - subject 绑定机复核（N5）：--subject 显式声明的「本 run 证据属于这些对象」在入账时
+ *   机器验证（闭世界文法 + store 存在性）——拒者不入账只留 warnings（本体照常入账），
+ *   通过者随入账事务落 journal 注记（canonical 07 形态 FROZEN，绑定不住 run 记录本体）；
+ *   不声明时信封零变化（与现状逐字节一致）。
  */
 import { readFileSync } from "node:fs";
 import {
@@ -25,9 +29,11 @@ import {
   type GateRunContext,
   type Store,
   type Transaction,
+  type TruthIndex,
   GovernanceError,
   applyTransaction,
   createStore,
+  loadTruthIndex,
 } from "@pomaster/kernel";
 import { CLM_FILE_PATTERN, GRN_FILE_PATTERN } from "./evidence.js";
 import { EVIDENCE_MALFORMED_CODE } from "./evidence.js";
@@ -43,8 +49,12 @@ import {
   parseRunFile,
   resolveAssertedClaimedBy,
   resolveRunContext,
+  resolveSubjectBindings,
+  subjectBindingsNote,
+  type SubjectBindingRejection,
+  type SubjectBindingResolution,
 } from "./evidence.js";
-import type { CliError, CommandOutcome } from "./envelope.js";
+import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
 import { governanceErrorToCliError, requireInitialized } from "./permit.js";
 import { claimsDirPath, runsDirPath } from "./store-layout.js";
@@ -59,6 +69,13 @@ export interface RecordGateRunInput {
   readonly trigger?: string;
   readonly tool?: string;
   readonly toolVersion?: string;
+  /**
+   * subject 绑定（N5；每个 id 即一次「本 run 的证据属于该对象」的显式归属声明）。
+   * undefined / 空数组 = 不声明——信封与落盘零变化（与现状逐字节一致）。每个绑定在
+   * 入账时机器复核（闭世界文法 + store 存在性）：通过者随入账事务落 journal 注记
+   * （subject_bindings=…），拒者不入账、只留信封 warnings（gate-run 本体照常入账）。
+   */
+  readonly subjects?: readonly string[];
 }
 
 export interface RecordGateRunResult {
@@ -70,6 +87,16 @@ export interface RecordGateRunResult {
   readonly gate: string | null;
   /** true = ran_at_seq（自报采样点）> applied_seq——账本与证据平面的时差，永远显式。 */
   readonly ran_at_seq_ahead: boolean;
+  /**
+   * subject 绑定复核结果（N5；仅显式声明 subjects 时在场——无绑定路径信封零变化）。
+   * accepted = 复核通过且已落账（APPLIED 路径随事务注记持久化；SKIPPED_CANONICAL 零
+   * 写入路径无事务可挂，恒 []，未落者走 SUBJECT_BINDINGS_NOT_ATTACHED warning）；
+   * rejected = 复核拒收（不入账；warnings 留痕）。
+   */
+  readonly subject_bindings?: {
+    readonly accepted: readonly string[];
+    readonly rejected: readonly SubjectBindingRejection[];
+  };
 }
 
 function emptyGateRunResult(): RecordGateRunResult {
@@ -105,6 +132,48 @@ function readFromBytes(path: string): { bytes: string } | CliError {
       hint: "record 的入账对象是一次 gate 运行的 JSON 结果；确认路径后重试（check --fast 保持纯读，入账显式走本命令）。",
     };
   }
+}
+
+/** SKIPPED_CANONICAL 路径下通过复核的绑定无法落账（无入账事务可挂）的显式留痕码位。 */
+const SUBJECT_BINDINGS_NOT_ATTACHED = "SUBJECT_BINDINGS_NOT_ATTACHED";
+
+/** 绑定拒收 → 信封 warning（不改变 ok 语义——gate-run 本体照常入账；但拒因必须可见）。 */
+function subjectBindingWarning(rejection: SubjectBindingRejection): CliWarning {
+  return {
+    code: rejection.code,
+    message: `subject 绑定被拒（绑定不入账；gate-run 本体照常入账）：${rejection.subject} — ${rejection.message}`,
+    hint:
+      rejection.code === "SCHEMA_INVALID"
+        ? "--subject 须为 canonical governed id（PREFIX.SEGMENT(.SEGMENT)*[.SEQ]，closed-world；legacy 横线词形不收）；修正拼写后重试"
+        : "绑定对象须已在 store objects[] 登记（DENOMINATOR.* 除外）；先 upsert_object 再入账绑定",
+  };
+}
+
+/**
+ * subject 绑定机复核（N5）：读 truth-index 取登记对象集 → 逐条验证。
+ * 返回 null = 未声明 subjects（全路径零变化）；CliError = truth-index 装载失败。
+ */
+async function resolveBindingsOrFail(
+  store: Store,
+  subjects: readonly string[] | undefined,
+): Promise<SubjectBindingResolution | CliError | null> {
+  if (subjects === undefined || subjects.length === 0) return null;
+  let truthIndex: TruthIndex;
+  try {
+    truthIndex = await loadTruthIndex(store);
+  } catch (err) {
+    return err instanceof GovernanceError
+      ? governanceErrorToCliError(err)
+      : {
+          code: "KERNEL_ERROR",
+          message: err instanceof Error ? err.message : String(err),
+          hint: "truth-index 装载失败（subject 存在性复核依赖 objects[]）；查看 docs/kernel-api.md §1。",
+        };
+  }
+  return resolveSubjectBindings(
+    subjects,
+    new Set<string>(truthIndex.objects.map((row) => row.id)),
+  );
 }
 
 /**
@@ -161,6 +230,15 @@ export async function runRecordGateRun(
     );
   }
   const curSeq = store.currentSeq ?? initialized.seq;
+
+  // —— subject 绑定机复核（N5：入账层的归属验证；失败只拒绑定不拒 run） ——
+  const bindings = await resolveBindingsOrFail(store, input.subjects);
+  if (bindings !== null && "hint" in bindings) {
+    return gateRunFail(bindings);
+  }
+  const bindingResolution: SubjectBindingResolution | null = bindings;
+  const bindingWarnings: readonly CliWarning[] =
+    bindingResolution === null ? [] : bindingResolution.rejected.map(subjectBindingWarning);
 
   // —— 归一上下文解析（显式覆盖 > 文件自报 > 缺省；fail-closed） ——
   const resolved = resolveRunContext(parsed, {
@@ -255,6 +333,15 @@ export async function runRecordGateRun(
       verdict: candidate.verdict,
       gate: candidate.gate,
       ran_at_seq_ahead: candidate.ranAtSeq > curSeq,
+      // 绑定随入账事务落注记；零写入路径无事务可挂 → accepted 恒 []，未落者显式留痕。
+      ...(bindingResolution !== null
+        ? {
+            subject_bindings: {
+              accepted: [],
+              rejected: bindingResolution.rejected,
+            },
+          }
+        : {}),
     };
     return okOutcome(
       "record gate-run",
@@ -262,14 +349,31 @@ export async function runRecordGateRun(
       [
         `record gate-run → SKIPPED_CANONICAL grn=${grn} (evidence/runs/${grn}.json 已是 canonical 且等价，零写入 exit 0)`,
       ],
+      [
+        ...bindingWarnings,
+        ...(bindingResolution !== null && bindingResolution.accepted.length > 0
+          ? [
+              {
+                code: SUBJECT_BINDINGS_NOT_ATTACHED,
+                message: `subject 绑定未随本次入账落账（SKIPPED_CANONICAL 零写入）：${bindingResolution.accepted.join(", ")}`,
+                hint: "绑定随入账事务落 journal 注记；跳过路径无事务。如需绑定入账：变更 run 内容或分配新 GRN 后重新 record 并携带 --subject。",
+              },
+            ]
+          : []),
+      ],
     );
   }
 
   // —— APPLIED：经 store 事务落账（kernel 唯一写通道） ——
   const finalResult = normalizeWith(grn);
   if ("code" in finalResult) return gateRunFail(finalResult);
+  // 通过复核的绑定 → 入账注记（tx.note → journal TX_APPLIED 持久化；空集 = 无 note，
+  // 与现状逐字节一致）。canonical 07 run 记录形态 FROZEN——绑定不住 run 记录本体。
+  const bindingNote =
+    bindingResolution === null ? null : subjectBindingsNote(bindingResolution.accepted);
   const tx: Transaction = {
     ops: [{ op: "record_gate_run", run: { grn, trigger: context.trigger, result: finalResult } }],
+    ...(bindingNote !== null ? { note: bindingNote } : {}),
   };
   try {
     const applied = await applyTransaction(store, tx);
@@ -281,6 +385,14 @@ export async function runRecordGateRun(
       verdict: finalResult.verdict,
       gate: finalResult.gate,
       ran_at_seq_ahead: finalResult.ranAtSeq > applied.appliedSeq,
+      ...(bindingResolution !== null
+        ? {
+            subject_bindings: {
+              accepted: bindingResolution.accepted,
+              rejected: bindingResolution.rejected,
+            },
+          }
+        : {}),
     };
     return okOutcome(
       "record gate-run",
@@ -290,7 +402,11 @@ export async function runRecordGateRun(
         ...(result.ran_at_seq_ahead
           ? [`  ahead: ran_at_seq(${result.ran_at_seq}) > applied_seq(${result.applied_seq})——账本与证据平面的时差如实披露（存量倒挂不改写，C5）`]
           : []),
+        ...(bindingNote !== null
+          ? [`  subject bindings: accepted=${bindingResolution?.accepted.length ?? 0} rejected=${bindingResolution?.rejected.length ?? 0}（accepted 落 journal 注记：${bindingNote}）`]
+          : []),
       ],
+      bindingWarnings,
     );
   } catch (err) {
     return gateRunFail(

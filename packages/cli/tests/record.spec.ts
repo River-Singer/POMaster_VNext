@@ -14,7 +14,11 @@
  *   （VERIFIED 夹具零写入）/ OBJECT_NOT_FOUND / 畸形输入 EVIDENCE_MALFORMED；
  * - fail-closed 码位：verdict 词表外 VOCAB_INVALID_VALUE / counts 缺 notApplicable
  *   GATE_COUNTS_INVALID / --grn 词形 GRN_INVALID / --trigger 词表外 VOCAB_INVALID_VALUE /
- *   未初始化 NOT_INITIALIZED。
+ *   未初始化 NOT_INITIALIZED；
+ * - subject 绑定机复核（N5）：--subject 显式归属声明入账时机器验证——合法绑定随事务落
+ *   journal 注记 + result 回读（run 记录本体 FROZEN 不承载）；未知 id UNKNOWN_SUBJECT /
+ *   畸形 id SCHEMA_INVALID 拒绑定不入账只留 warnings（gate-run 本体照常入账）；
+ *   无 subject 声明信封零变化（零破坏）。
  */
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -367,6 +371,142 @@ describe("record gate-run fail-closed", () => {
     const outcome = await runRecordGateRun(root, { from: path });
     expect(outcome.ok).toBe(false);
     expect(outcome.errors[0]?.code).toBe("NOT_INITIALIZED");
+  });
+});
+
+// ============================================================
+// record gate-run：subject 绑定机复核（N5——harness 口说的归属 → 入账时机器验证）
+// ============================================================
+
+describe("record gate-run subject 绑定机复核（N5）", () => {
+  function journalNotes(): (string | null)[] {
+    const text = readFileSync(join(root, ".pomaster", "state", "journal.jsonl"), "utf8");
+    return text
+      .split("\n")
+      .filter((line) => line.trim().length > 0)
+      .map((line) => (JSON.parse(line) as { note?: string | null }).note ?? null);
+  }
+
+  it("合法绑定：复核通过随事务落 journal 注记 + result 回读；run 记录本体不承载绑定键；二次同绑 record → SKIPPED 零写入", async () => {
+    await seedStore();
+    await seedCapability();
+    const path = writeInput(gatePayload());
+    const outcome = await runRecordGateRun(root, {
+      from: path,
+      subjects: [
+        "CAPABILITY.CSV_TOOL.SERIALIZE_ROWS",
+        "CAPABILITY.CSV_TOOL.SERIALIZE_ROWS", // 重复声明去重
+        "DENOMINATOR.PAGES", // 分母免存在性查（与 gate denominator_refs 同宽）
+      ],
+    });
+    expect(outcome.ok).toBe(true);
+    expect(outcome.errors).toEqual([]);
+    expect(outcome.warnings).toEqual([]);
+    expect(outcome.result.change).toBe("APPLIED");
+    expect(outcome.result.subject_bindings).toEqual({
+      accepted: ["CAPABILITY.CSV_TOOL.SERIALIZE_ROWS", "DENOMINATOR.PAGES"], // 去重 + 字典序
+      rejected: [],
+    });
+    // 入账注记持久化（journal TX_APPLIED；确定性字典序、无墙钟）
+    expect(journalNotes()).toContain(
+      "subject_bindings=CAPABILITY.CSV_TOOL.SERIALIZE_ROWS,DENOMINATOR.PAGES",
+    );
+    // canonical 07 run 记录本体不承载绑定（FROZEN 形态零变化——绑定住入账层不住 run 记录）
+    expect(JSON.stringify(readRun("GRN-0001"))).not.toContain("subject_bindings");
+
+    // 同文件 + 同绑定二次 record → SKIPPED_CANONICAL 零写入（注记不重复落；未落账显式留痕）
+    const before = snapshot();
+    const second = await runRecordGateRun(root, {
+      from: path,
+      subjects: ["CAPABILITY.CSV_TOOL.SERIALIZE_ROWS"],
+    });
+    expect(second.ok).toBe(true);
+    expect(second.result.change).toBe("SKIPPED_CANONICAL");
+    expect(second.result.subject_bindings).toEqual({ accepted: [], rejected: [] });
+    expect(second.warnings.map((warning) => warning.code)).toContain(
+      "SUBJECT_BINDINGS_NOT_ATTACHED",
+    );
+    expect(snapshot()).toEqual(before);
+  });
+
+  it("未知 id 拒绑定留痕：UNKNOWN_SUBJECT 绑定不入账，gate-run 本体照常入账 exit 0", async () => {
+    await seedStore();
+    await seedCapability();
+    const outcome = await runRecordGateRun(root, {
+      from: writeInput(gatePayload()),
+      subjects: ["CAPABILITY.CSV_TOOL.SERIALIZE_ROWS", "CAPABILITY.GHOST.OBJECT"],
+    });
+    expect(outcome.ok).toBe(true); // 本体照常入账
+    expect(outcome.result.change).toBe("APPLIED");
+    expect(outcome.result.subject_bindings?.accepted).toEqual([
+      "CAPABILITY.CSV_TOOL.SERIALIZE_ROWS",
+    ]);
+    expect(outcome.result.subject_bindings?.rejected).toEqual([
+      {
+        subject: "CAPABILITY.GHOST.OBJECT",
+        code: "UNKNOWN_SUBJECT",
+        message: expect.stringContaining("不在 store objects[]"),
+      },
+    ]);
+    expect(outcome.warnings.map((warning) => warning.code)).toContain("UNKNOWN_SUBJECT"); // 留痕
+    expect(outcome.warnings.find((warning) => warning.code === "UNKNOWN_SUBJECT")?.hint).toContain(
+      "upsert_object",
+    );
+    // 只落通过者
+    expect(journalNotes()).toContain("subject_bindings=CAPABILITY.CSV_TOOL.SERIALIZE_ROWS");
+    expect(readRun("GRN-0001").record_type).toBe("run");
+  });
+
+  it("畸形 id 拒绑定：SCHEMA_INVALID（小写前缀 / legacy 横线词形）；全拒时无注记仍 APPLIED", async () => {
+    await seedStore();
+    await seedCapability();
+    const mixed = await runRecordGateRun(root, {
+      from: writeInput(gatePayload()),
+      subjects: ["capability.csv_tool", "TASK-0087", "CAPABILITY.CSV_TOOL.SERIALIZE_ROWS"],
+    });
+    expect(mixed.ok).toBe(true);
+    expect(mixed.result.subject_bindings?.accepted).toEqual([
+      "CAPABILITY.CSV_TOOL.SERIALIZE_ROWS",
+    ]);
+    expect(mixed.result.subject_bindings?.rejected.map((rejection) => rejection.subject)).toEqual([
+      "capability.csv_tool",
+      "TASK-0087",
+    ]);
+    expect(
+      mixed.result.subject_bindings?.rejected.every((rejection) => rejection.code === "SCHEMA_INVALID"),
+    ).toBe(true);
+    expect(mixed.warnings.filter((warning) => warning.code === "SCHEMA_INVALID")).toHaveLength(2);
+
+    // 全部被拒 → 无绑定注记（TX_APPLIED note=null），不把拒收内容写入账本
+    // （内容与上一条区分开，避免命中 findCanonicalRunMatch 幂等跳过）
+    const allRejected = await runRecordGateRun(root, {
+      from: writeInput(gatePayload({ gate: "LINT", gate_def: "POLICY.GATE.LINT@0.1.0" })),
+      subjects: ["TASK-0087"],
+    });
+    expect(allRejected.ok).toBe(true);
+    expect(allRejected.result.change).toBe("APPLIED");
+    expect(allRejected.result.subject_bindings?.accepted).toEqual([]);
+    expect(allRejected.result.subject_bindings?.rejected[0]?.code).toBe("SCHEMA_INVALID");
+    const notes = journalNotes();
+    expect(notes[notes.length - 1]).toBeNull();
+  });
+
+  it("无 subject 声明：信封零变化（无 subject_bindings 键 / warnings 空 / journal 无注记）——与现状一致", async () => {
+    await seedStore();
+    const outcome = await runRecordGateRun(root, { from: writeInput(gatePayload()) });
+    expect(outcome.ok).toBe(true);
+    expect("subject_bindings" in outcome.result).toBe(false);
+    expect(outcome.warnings).toEqual([]);
+    expect(journalNotes().every((note) => note === null)).toBe(true);
+
+    // 空数组 = 不声明（同一零变化语义；防未来 argv 接线把缺省 [] 当显式声明）
+    const empty = await runRecordGateRun(root, {
+      from: writeInput(gatePayload()),
+      subjects: [],
+    });
+    expect(empty.ok).toBe(true);
+    expect("subject_bindings" in empty.result).toBe(false);
+    expect(empty.warnings).toEqual([]);
   });
 });
 

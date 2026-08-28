@@ -19,6 +19,8 @@
  *   VERIFIED），绝不把判定打回 UNVERIFIED 造成数据倒退；
  * - 畸形证据 fail-closed 显式呈现：落 malformed 并镜像信封 warnings，不静默跳过（compact
  *   不阻断本轮合法 truth 更新）；record 单条路径同一判据 → exit 1。
+ * - subject 绑定机复核（N5）：入账层显式归属声明逐条过闭世界文法 + store 存在性，
+ *   拒者不入账只留痕、通过者随事务注记落 journal（resolveSubjectBindings）。
  */
 import { readdirSync, readFileSync } from "node:fs";
 import {
@@ -505,6 +507,78 @@ export function findCanonicalRunMatch(input: {
     if (canonicalRunBytes(grn, resolved.context.trigger, result) === bytes) return grn;
   }
   return null;
+}
+
+// ============================================================
+// subject 绑定机复核（N5：theme-demos-report——harness 口说的 subject 归属 → 入账时机器验证）
+// ============================================================
+
+/** 绑定复核拒收的稳定码位：SCHEMA_INVALID=闭世界文法拒 / UNKNOWN_SUBJECT=store 无此对象。 */
+export type SubjectBindingRejectionCode = "SCHEMA_INVALID" | "UNKNOWN_SUBJECT";
+
+export interface SubjectBindingRejection {
+  readonly subject: string;
+  readonly code: SubjectBindingRejectionCode;
+  readonly message: string;
+}
+
+export interface SubjectBindingResolution {
+  /** 机器复核通过（文法 + 存在性）的绑定（去重 + 字典序）；APPLIED 路径随事务注记落 journal。 */
+  readonly accepted: readonly string[];
+  /** 复核拒收的绑定（不入账；由调用方镜像为信封 warnings 留痕）。 */
+  readonly rejected: readonly SubjectBindingRejection[];
+}
+
+/**
+ * 入账层 subject 绑定机复核（N5 核心判定）。对每个显式声明的绑定：
+ * a) parseGovernedId 过闭世界文法（畸形 → SCHEMA_INVALID）；b) store objects[] 存在，
+ * 或为 DENOMINATOR.*（与 gate denominator_refs 同宽：分母免存在性查）（否则
+ * UNKNOWN_SUBJECT）。失配 → 拒该绑定（fail-closed：绑定不入账），gate-run 本体照常
+ * 入账、拒因走信封 warnings 留痕——「subject 归属」由此从 harness 口说组装决策变成
+ * 机器可验证事实（篡改归属过不了入账门）。
+ */
+export function resolveSubjectBindings(
+  subjects: readonly string[],
+  registeredObjectIds: ReadonlySet<string>,
+): SubjectBindingResolution {
+  const accepted: string[] = [];
+  const rejected: SubjectBindingRejection[] = [];
+  const seen = new Set<string>();
+  for (const subject of subjects) {
+    if (seen.has(subject)) continue; // 重复声明去重（幂等语义，非敌意输入）
+    seen.add(subject);
+    try {
+      parseGovernedId(subject);
+    } catch (err) {
+      rejected.push({
+        subject,
+        code: "SCHEMA_INVALID",
+        message: err instanceof Error ? err.message : String(err),
+      });
+      continue;
+    }
+    if (!registeredObjectIds.has(subject) && !subject.startsWith("DENOMINATOR.")) {
+      rejected.push({
+        subject,
+        code: "UNKNOWN_SUBJECT",
+        message: `绑定对象不在 store objects[]（DENOMINATOR.* 除外）：${subject}`,
+      });
+      continue;
+    }
+    accepted.push(subject);
+  }
+  return { accepted: [...accepted].sort(), rejected };
+}
+
+/**
+ * 已验证绑定的入账注记（tx.note → kernel journal TX_APPLIED 行持久化）。canonical 07
+ * run 记录形态 FROZEN（additionalProperties:false）不承载额外键——绑定住入账层事务
+ * 注记，不进 run 记录本体。确定性：去重字典序、无墙钟；空集 → null（tx 不带 note，
+ * 与现状逐字节一致）。
+ */
+export function subjectBindingsNote(accepted: readonly string[]): string | null {
+  if (accepted.length === 0) return null;
+  return `subject_bindings=${[...accepted].sort().join(",")}`;
 }
 
 // ============================================================
