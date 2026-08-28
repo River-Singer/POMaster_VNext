@@ -57,6 +57,23 @@ export function sanitizeSemver(range: string): string | null {
   return match?.[1] ?? null;
 }
 
+/**
+ * 剥离 PATH 环境变量中的双引号（子进程 env 副本，不改写 process.env）。
+ * phaseC 附录 A 教训：本机 PATH 含游离双引号时 Git Bash 自容错，但 spawnSync(...,
+ * {shell:true}) 落到 cmd.exe 后，引号配对解析会把后续整段 PATH 吞成一个 token，
+ * node/python 全部失联。所有经 shell 的 spawn（pytest 腿 / BROWSER smoke）必须先过本函数。
+ * 纯函数零 I/O，可单测（复现条件在本机真实存在）。
+ */
+export function stripQuotesFromPathEnv(
+  env: Record<string, string | undefined>,
+): Record<string, string | undefined> {
+  const pathValue = env["PATH"];
+  if (typeof pathValue !== "string" || !pathValue.includes('"')) {
+    return env;
+  }
+  return { ...env, PATH: pathValue.split('"').join("") };
+}
+
 /** 在 PATH 上寻找可执行文件（逐目录 × 平台后缀）；无 PATH/未命中 → null（禁静默，交缺席分支）。 */
 function findOnPath(executable: string, facts: DetectorFacts): string | null {
   if (facts.pathEnv === null) {

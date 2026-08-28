@@ -184,3 +184,60 @@ describe("runCli 人读双输出", () => {
     expect(io.err.join("\n")).toContain("NOT_INITIALIZED");
   });
 });
+
+describe("runCli help/version 信息性退出（fresh-clone 实录：--help 曾误入 UNEXPECTED_ERROR exit 1）", () => {
+  it("--help → exit 0，stdout 含 usage 与命令清单，stderr 干净", async () => {
+    const io = capture();
+    const code = await runCli(["--dir", dir, "--help"], io);
+    expect(code).toBe(0);
+    const text = io.out.join("\n");
+    expect(text).toContain("Usage:");
+    for (const cmd of [
+      "init",
+      "triage",
+      "status",
+      "context",
+      "doctor",
+      "check",
+      "permit",
+      "exec-guard",
+      "reconcile",
+      "compact",
+      "record",
+    ]) {
+      expect(text).toContain(cmd);
+    }
+    expect(io.err).toEqual([]);
+  });
+
+  it("子命令 --help（permit --help）→ exit 0，stdout 含子命令清单", async () => {
+    const io = capture();
+    const code = await runCli(["--dir", dir, "permit", "--help"], io);
+    expect(code).toBe(0);
+    const text = io.out.join("\n");
+    expect(text).toContain("Usage:");
+    expect(text).toContain("issue");
+    expect(text).toContain("steal");
+  });
+
+  it("help 子命令 → exit 0（commander.help 信息性退出码）", async () => {
+    const io = capture();
+    const code = await runCli(["--dir", dir, "help"], io);
+    expect(code).toBe(0);
+    expect(io.out.join("\n")).toContain("Usage:");
+  });
+
+  it("--version → exit 0（commander.version 信息性退出码）", async () => {
+    const io = capture();
+    const code = await runCli(["--dir", dir, "--version"], io);
+    expect(code).toBe(0);
+    expect(io.out.join("\n")).toContain("0.0.0");
+  });
+
+  it("对照：未知命令（commander.usageError 族）仍 fail-closed exit 1，不受信息性放行影响", async () => {
+    const io = capture();
+    const code = await runCli(["--dir", dir, "maintain"], io);
+    expect(code).toBe(1);
+    expect(io.err.join("\n")).toContain("maintain");
+  });
+});

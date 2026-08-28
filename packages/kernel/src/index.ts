@@ -665,6 +665,7 @@ export type {
   ReconcileDeltaKind,
   ReconcileEvidenceEntry,
   ReconcileException,
+  ReconcileTamperEntry,
   ReconcileSample,
 } from "./reconcile.js";
 

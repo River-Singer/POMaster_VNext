@@ -114,6 +114,46 @@ export function vitestReport(
 }
 
 // ------------------------------------------------------------
+// pytest JUnit XML 报告生成器（pytest --junitxml 词形；normalize 输入与真实产物同构）
+// ------------------------------------------------------------
+
+export type JUnitCase = {
+  readonly classname?: string;
+  readonly name?: string;
+  readonly status: "passed" | "failed" | "skipped";
+};
+
+/** 生成最小 JUnit XML（testsuite 属性自报汇总 = CLAIMED 攻击面；overrides 可撒谎）。 */
+export function junitReport(
+  cases: readonly JUnitCase[],
+  overrides: { failures?: number | null; errors?: number | null } = {},
+): string {
+  const failed = cases.filter((c) => c.status === "failed").length;
+  const skipped = cases.filter((c) => c.status === "skipped").length;
+  // null = 删除自报属性（工具未自报的诚实形态）。
+  const failuresAttr =
+    overrides.failures === null ? "" : ` failures="${overrides.failures ?? failed}"`;
+  const errorsAttr =
+    overrides.errors === null ? "" : ` errors="${overrides.errors ?? 0}"`;
+  const testcaseXml = cases
+    .map((c, index) => {
+      const classname = c.classname ?? "test_sample";
+      const name = c.name ?? `test_case_${index}`;
+      if (c.status === "passed") {
+        return `<testcase classname="${classname}" name="${name}" time="0.001"/>`;
+      }
+      if (c.status === "failed") {
+        return `<testcase classname="${classname}" name="${name}" time="0.001"><failure message="assert 1 == 2">AssertionError</failure></testcase>`;
+      }
+      return `<testcase classname="${classname}" name="${name}" time="0.001"><skipped type="pytest.skip" message="skip it">Skipped</skipped></testcase>`;
+    })
+    .join("\n");
+  // A4：JUnit 的 time/timestamp 属耗时统计（03 的 digest 排除字段族），夹具固定词形零墙钟。
+  const suiteAttrs = `skipped="${skipped}" tests="${cases.length}"${failuresAttr}${errorsAttr}`;
+  return `<?xml version="1.0" encoding="utf-8"?>\n<testsuites><testsuite name="pytest"${suiteAttrs} time="0.010">\n${testcaseXml}\n</testsuite></testsuites>\n`;
+}
+
+// ------------------------------------------------------------
 // spawn fake 与 plan/raw 工厂
 // ------------------------------------------------------------
 

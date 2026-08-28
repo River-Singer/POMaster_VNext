@@ -1,7 +1,8 @@
 /**
  * gate-result.spec —— normalizeGateResult（八拍⑤；C1 七态 + notApplicable 必填 + Q3 双向 + C5 孪生）。
  * 判据：GOLDEN-L3-NA-COUNT（notApplicable 缺席 FATAL）、ADV-D20-05（自报 0 vs 重算 2 →
- * recomputed_wins_recorded + passed 降级 warning + cap）、GOLDEN-L8-5（not_configured 七态可表达）。
+ * recomputed_wins_recorded + passed 降级 warning + cap）、GOLDEN-L8-5（not_configured 七态可表达）、
+ * GRN-0009（passed + counts.violations>0 无已声明失配可解释 → FATAL，verdict ⇔ counts 交叉校验）。
  */
 import { describe, expect, it } from "vitest";
 import {
@@ -205,15 +206,17 @@ describe("normalizeGateResult（Q3 fixture 隔离，双向强校验）", () => {
 });
 
 describe("normalizeGateResult（C5 孪生与 verdict_cap）", () => {
-  it("asserted=CLAIMED（保留 claimedBy）；recomputed 与 asserted 一致 → 无失配、passed 保持", () => {
+  it("asserted=CLAIMED（保留 claimedBy）；recomputed 与 asserted 一致 → 无失配、verdict 保持", () => {
     const result = normalizeGateResult(
       claimed(validPayload({
+        // verdict 与 counts 自洽（violations=2 ⇒ 非 passed；passed+violations>0 为 FATAL，见交叉校验组）。
+        verdict: "failed",
         counts: { scanned: 10, applicable_scanned: 8, violations: 2, not_applicable: 0 },
         trust: { asserted: { violations: 2 }, recomputed: { violations: 2 } },
       })),
       CONTEXT,
     );
-    expect(result.verdict).toBe("passed");
+    expect(result.verdict).toBe("failed");
     expect(result.verdictCapReason).toBeNull();
     expect(result.trust.asserted?.claimedBy).toEqual(AGENT);
     expect(result.trust.recomputed).toEqual({ violations: 2, matchesAsserted: true });
@@ -262,7 +265,8 @@ describe("normalizeGateResult（C5 孪生与 verdict_cap）", () => {
 
   it("载荷未携带独立重算块 → 显式回退序（scan counts → asserted 镜像），不伪造失配", () => {
     const withScan = normalizeGateResult(
-      claimed(validPayload({ counts: { scanned: 4, applicable_scanned: 4, violations: 1, not_applicable: 0 } })),
+      // verdict=failed 与 counts.violations=1 自洽（passed+violations>0 为 FATAL，见交叉校验组）。
+      claimed(validPayload({ verdict: "failed", counts: { scanned: 4, applicable_scanned: 4, violations: 1, not_applicable: 0 } })),
       CONTEXT,
     );
     expect(withScan.trust.recomputed).toEqual({ violations: 1, matchesAsserted: true });
@@ -293,5 +297,50 @@ describe("normalizeGateResult（C5 孪生与 verdict_cap）", () => {
       trust: { asserted: { violations: 1 }, recomputed: { violations: 2 } },
     }));
     expect(normalizeGateResult(payload, CONTEXT)).toEqual(normalizeGateResult(payload, CONTEXT));
+  });
+});
+
+describe("normalizeGateResult（verdict ⇔ counts 交叉校验：passed 自洽，GRN-0009）", () => {
+  it("GRN-0009 实录：verdict=passed 而 counts.violations=1（无 trust 块）→ FATAL GATE_COUNTS_INVALID（单源自相矛盾，禁入账）", () => {
+    try {
+      normalizeGateResult(
+        claimed(validPayload({ counts: { scanned: 10, applicable_scanned: 8, violations: 1, not_applicable: 1 } })),
+        CONTEXT,
+      );
+      expect.unreachable();
+    } catch (error) {
+      expect(error).toBeInstanceOf(GovernanceError);
+      expect((error as GovernanceError).code).toBe("GATE_COUNTS_INVALID");
+      expect((error as GovernanceError).message).toContain("passed");
+    }
+  });
+
+  it("passed + counts.violations=0 → 合法（交叉校验只钉自洽，不收窄合法载荷）", () => {
+    const result = normalizeGateResult(claimed(validPayload()), CONTEXT);
+    expect(result.verdict).toBe("passed");
+    expect(result.verdictCapReason).toBeNull();
+  });
+
+  it("passed + violations>0 但显式声明失配（asserted=0 / recomputed=2）→ 走 verdict_cap 降级 warning，不 FATAL（双源失配有第二测量可仲裁）", () => {
+    const capped = normalizeGateResult(
+      claimed(validPayload({
+        counts: { scanned: 83, applicable_scanned: 74, violations: 2, not_applicable: 9 },
+        trust: { asserted: { violations: 0 }, recomputed: { violations: 2 } },
+      })),
+      CONTEXT,
+    );
+    expect(capped.verdict).toBe("warning");
+    expect(capped.verdictCapReason).toBe("declare_recompute_mismatch");
+    expect(capped.trust.mismatch).toEqual({ detected: true, action: "recomputed_wins_recorded" });
+  });
+
+  it("failed / warning / blocked 携 violations>0 → 合法（FATAL 范围仅钉 passed 的自洽）", () => {
+    for (const verdict of ["failed", "warning", "blocked"] as const) {
+      const result = normalizeGateResult(
+        claimed(validPayload({ verdict, counts: { scanned: 10, applicable_scanned: 8, violations: 1, not_applicable: 1 } })),
+        CONTEXT,
+      );
+      expect(result.verdict).toBe(verdict);
+    }
   });
 });

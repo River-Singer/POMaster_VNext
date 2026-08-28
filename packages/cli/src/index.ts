@@ -21,7 +21,7 @@
  * 词表纪律：本包局部词（triage 档位/证据级、doctor 四态、permit list status 三值）
  * 均带 TODO(vocab-pr) 注记。
  */
-import { Command } from "commander";
+import { Command, CommanderError } from "commander";
 import { CLI_NAME } from "./cli-info.js";
 import { toEnvelope, type CliEnvelope, type CommandOutcome } from "./envelope.js";
 import { runInit } from "./init.js";
@@ -169,6 +169,13 @@ export function createProgram(
   // exitOverride：commander 的用法错误/帮助路径一律改为 throw（CommanderError），
   // 由 runCli 统一捕获——退出码语义收敛到 runCli 返回值，且 stderr 提示保留 commander 原文。
   program.exitOverride();
+  // 帮助/版本/用法输出统一走注入 io（commander 缺省直写 process stdout/stderr，测试与
+  // 嵌入方无法捕获）；子命令经 _copyCommandSettings 继承本配置。commander 的写入 chunk
+  // 已自带换行，剥掉尾部一个以抵消 io.stdout/stderr 的逐行追加（保持字节不翻倍）。
+  program.configureOutput({
+    writeOut: (chunk) => io.stdout(chunk.replace(/\n$/, "")),
+    writeErr: (chunk) => io.stderr(chunk.replace(/\n$/, "")),
+  });
   program
     .name(CLI_NAME)
     .description(
@@ -515,8 +522,23 @@ function collectValues(value: string, previous: string[]): string[] {
 }
 
 /**
+ * commander 信息性退出（帮助/版本请求）判定：exitOverride 把 help/version 路径也变成
+ * throw，但那些是用户的正常请求（commander 已把 usage/version 写入 io.stdout），不是错误。
+ */
+function isInformationalCommanderExit(err: unknown): err is CommanderError {
+  return (
+    err instanceof CommanderError &&
+    (err.code === "commander.helpDisplayed" ||
+      err.code === "commander.help" ||
+      err.code === "commander.version")
+  );
+}
+
+/**
  * 运行 CLI（可测试入口；bin.ts 调用）。返回进程退出码：全部命令 ok=0，否则 1。
- * 意外异常 → 结构化 UNEXPECTED_ERROR 信封（绝不裸栈逃逸到机读接口）。
+ * help/version 请求 → 输出 usage/version 后 exit 0（正常请求，绝不入 UNEXPECTED_ERROR）。
+ * 用法错误（缺参/未知命令）与意外异常 → 结构化 UNEXPECTED_ERROR 信封，fail-closed exit 1
+ * （绝不裸栈逃逸到机读接口）。
  * 注：action 内不调用 process.exit——退出码由本函数返回值统一决定。
  */
 export async function runCli(
@@ -529,6 +551,11 @@ export async function runCli(
     await program.parseAsync([...argv], { from: "user" });
     return runs.length > 0 && runs.every((r) => r.outcome.ok) ? 0 : 1;
   } catch (err) {
+    // 帮助/版本是正常信息请求（fresh-clone 实录：--help 曾被兜底 catch 误判为
+    // UNEXPECTED_ERROR 而 exit 1）——放行为 exit 0；用法错误与真异常维持 fail-closed。
+    if (isInformationalCommanderExit(err)) {
+      return 0;
+    }
     const message = err instanceof Error ? err.message : String(err);
     const envelope: CliEnvelope<null> = {
       command: "(unhandled)",

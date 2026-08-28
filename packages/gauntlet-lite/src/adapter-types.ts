@@ -199,6 +199,12 @@ export interface ToolRunOutput {
   readonly externalMs: number;
   /** spawn_failed 时的失败原因与路标（归一层据此落 not_run 判卷）。 */
   readonly failureReason: string | null;
+  /**
+   * run 期实测的工具版本（pytest 腿：`python -m pytest --version` 探测；vitest 腿省略）。
+   * 观测值与 plan.expectedToolVersion 锚失配 → 判卷降级 warning（DRIFTED→WARNING）；
+   * 记录落盘时观测值优先于计划锚（03 tool_version 记录实际执行的工具）。
+   */
+  readonly observedToolVersion?: string | null;
 }
 
 // ============================================================
@@ -217,13 +223,31 @@ export interface NormalizeContext {
 }
 
 /**
+ * 03-gate-result items[] 违规明细条目（判卷侧重算产物；不携带 excerpt_hash——
+ * D24 哈希伦理：digest 只住读侧，adapter 不设任何算 sha 路径）。
+ */
+export interface GateResultItemInput {
+  /** 违规规则码（gate_def 内定义）。 */
+  readonly rule: string;
+  /** 仓内相对路径[:line 或 #fragment]；禁止绝对盘符（provenance 可移植纪律）。 */
+  readonly location: string;
+  readonly message?: string;
+}
+
+/**
  * 归一后的门禁结果 = @pomaster/kernel 的 GateResult 契约形态 + 归一所需的工具口径三字段
  * （03-gate-result 必填 tool/tool_version/metric_dialect，kernel 契约把它们放在 GateRunContext）。
+ * 可选扩展位（03 schema 合法字段，kernel GateResult v0 契约不承载）：
+ * - scopeNote → 落盘 scope.note（缺席理由 / 安装指引 / 对账口径注记的诚实留痕位）；
+ * - items/itemsTruncated → 落盘 items[] / items_truncated（违规明细与 x-budget 截断留痕）。
  */
 export type GateResultRecord = GateResult & {
   readonly tool: string;
   readonly toolVersion: string;
   readonly metricDialect: string;
+  readonly scopeNote?: string;
+  readonly items?: readonly GateResultItemInput[];
+  readonly itemsTruncated?: boolean;
 };
 
 /** 归一失败（FATAL，无 WARNING 档；报错带路标：message 必含 hint）。 */
@@ -291,3 +315,10 @@ export type GateResultJsonDocument = Readonly<Record<string, unknown>>;
 export function asGovernedId(id: string): GovernedId {
   return id as GovernedId;
 }
+
+/**
+ * 包版本（tool_version 字段一律用被探测工具自身的 semver，本常量仅作 registry 元数据；
+ * 自执行型 adapter——CONTRACT/ARCHITECTURE/BROWSER——的 tool_version 即本值）。
+ * 住本文件（叶模块）而非 index.ts：三个新 adapter 引用它是取常量，避免环形 import。
+ */
+export const GAUNTLET_LITE_VERSION = "0.1.0" as const;

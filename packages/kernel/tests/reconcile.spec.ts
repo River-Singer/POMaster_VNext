@@ -12,7 +12,9 @@
  * - exceptions：failed/not_configured/skipped_blindspot 三态各一例 + REJECTED claim；
  *   not_run 与 scope 外条目不入例外但 verdict_census 全量可见（聚合不吞没）；
  * - 抽样确定性：N=3、total=5 的 stride 集合可手工预言；同 state 两次报告字节全同；
- * - 纯读零写 / PERMIT_NOT_FOUND / SCHEMA_INVALID（证据损坏禁静默跳过）。
+ * - 纯读零写 / PERMIT_NOT_FOUND / SCHEMA_INVALID（证据损坏禁静默跳过）；
+ * - row 级正文探测（N1）：只手改正文、不碰索引行的篡改 → content_tamper 例外当场抓到；
+ *   索引与正文一致零误报；成本边界 = 抽中样本 ∪ changed_objects（不全库扫）。
  */
 import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -24,6 +26,7 @@ import {
   normalizeGateResult,
   reconcilePermit,
   stealPermit,
+  type ReconcileTamperEntry,
   type Store,
 } from "@pomaster/kernel";
 import {
@@ -182,6 +185,34 @@ function writeLegacyPermit(): void {
 
 function reconcile(permitRef: string, samples?: number) {
   return reconcilePermit(store, permitRef, samples === undefined ? {} : { samples });
+}
+
+/** 读索引行 body_ref（正文文件定位；探测/手改共用）。 */
+function bodyRefOf(id: string): string {
+  const row = (readIndex(root).objects as Array<{ id: string; body_ref: string }>).find(
+    (candidate) => candidate.id === id,
+  );
+  if (row === undefined) throw new Error(`index 行不存在：${id}`);
+  return row.body_ref;
+}
+
+/** 读索引行 body_sha256（事务自动维护的行锚；断言失配方向用）。 */
+function indexShaOf(id: string): string {
+  const row = (readIndex(root).objects as Array<{ id: string; body_sha256?: string }>).find(
+    (candidate) => candidate.id === id,
+  );
+  if (row === undefined || typeof row.body_sha256 !== "string") {
+    throw new Error(`索引行无 sha 锚：${id}`);
+  }
+  return row.body_sha256;
+}
+
+/** 手改正文文件（索引行不动——N1 场景「只手改正文、不碰索引行」的最短复现）。 */
+function tamperBodyFile(bodyRef: string, mutate: (body: Record<string, unknown>) => void): void {
+  const path = join(root, ".pomaster", bodyRef);
+  const body = JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
+  mutate(body);
+  writeFileSync(path, `${JSON.stringify(body, null, 2)}\n`);
 }
 
 // ============================================================
@@ -383,6 +414,112 @@ describe("reconcilePermit（samples_to_review 确定性抽样）", () => {
     const ref = await issue(["PAGE.DASHBOARD"]);
     await expect(reconcile(ref, -1)).rejects.toMatchObject({ code: "SCHEMA_INVALID" });
     await expect(reconcile(ref, 1.5)).rejects.toMatchObject({ code: "SCHEMA_INVALID" });
+  });
+});
+
+// ============================================================
+// row 级正文探测（N1：content_drift 双锚都在索引侧的盲区收窄）
+// ============================================================
+
+describe("reconcilePermit（row 级正文探测：N1 双锚盲区收窄）", () => {
+  /** 例外段中的 content_tamper 条目（union 收窄）。 */
+  function tamperEntriesOf(report: Awaited<ReturnType<typeof reconcile>>): ReconcileTamperEntry[] {
+    return report.exceptions.filter(
+      (entry): entry is ReconcileTamperEntry => "kind" in entry && entry.kind === "content_tamper",
+    );
+  }
+
+  it("纯正文手改（索引行未动）→ 抽中样本的探测当场抓到：content_tamper 入 exceptions，delta 段零感知", async () => {
+    await upsertObject();
+    const ref = await issue(["PAGE.DASHBOARD"]);
+    await recordRun("GRN-0001", "passed", "PAGE.DASHBOARD"); // 抽样池非空 → subject 入探测分母
+    tamperBodyFile(bodyRefOf("PAGE.DASHBOARD"), (body) => {
+      body.title_zh = "手改标题";
+    });
+
+    const report = await reconcile(ref);
+    // N1 原盲区：索引行未动 → baseline↔行双索引锚 delta 无感知（changed_objects 空）。
+    expect(report.changed_objects).toEqual([]);
+    const tampers = tamperEntriesOf(report);
+    expect(tampers).toHaveLength(1);
+    expect(tampers[0]).toEqual({
+      kind: "content_tamper",
+      subject_id: "PAGE.DASHBOARD",
+      body_ref: bodyRefOf("PAGE.DASHBOARD"),
+      index_sha256: indexShaOf("PAGE.DASHBOARD"),
+      body_sha256: expect.any(String),
+    });
+    // 失配方向：正文重算指纹 ≠ 索引行锚（index_sha256 与未动的索引行逐字一致）。
+    expect(tampers[0]?.body_sha256).not.toBe(tampers[0]?.index_sha256);
+    expect(report.clean).toBe(false); // 失配计入 exceptions → dirty（人须审；探测只报不修）
+  });
+
+  it("索引与正文一致 → 探测零误报：干净出口保持 clean=true；合法 content_drift（事务成对改写两侧）也不误报", async () => {
+    await upsertObject();
+    const ref = await issue(["PAGE.DASHBOARD"]);
+    await recordRun("GRN-0001", "passed", "PAGE.DASHBOARD");
+
+    const cleanReport = await reconcile(ref);
+    expect(cleanReport.exceptions).toEqual([]);
+    expect(cleanReport.clean).toBe(true);
+
+    await upsertObject({ payload: { surface: "V2" } }); // 合法漂移：正文+索引行由事务成对改写
+    const driftReport = await reconcile(ref);
+    expect(driftReport.changed_objects.map((changed) => changed.kind)).toEqual(["content_drift"]);
+    expect(tamperEntriesOf(driftReport)).toEqual([]); // 行 sha 已同步新正文 → 探测无失配
+  });
+
+  it("成本边界：只探抽中样本 ∪ changed_objects——scope 内既未抽中又无 delta 的手改不探（不全库扫）", async () => {
+    await upsertObject(); // PAGE.DASHBOARD：有证据 → 抽中 → 入探测分母
+    await upsertObject({ id: gid("PAGE.SETTINGS"), titleZh: "设置" }); // 无证据、无 delta → 不在分母
+    const ref = await issue(["PAGE.DASHBOARD", "PAGE.SETTINGS"]);
+    await recordRun("GRN-0001", "passed", "PAGE.DASHBOARD");
+    tamperBodyFile(bodyRefOf("PAGE.DASHBOARD"), (body) => {
+      body.title_zh = "手改 A";
+    });
+    tamperBodyFile(bodyRefOf("PAGE.SETTINGS"), (body) => {
+      body.title_zh = "手改 B";
+    });
+
+    const report = await reconcile(ref);
+    const tampers = tamperEntriesOf(report);
+    expect(tampers).toHaveLength(1); // 全库扫会报两条；只探分母 → 仅抽中的 DASHBOARD
+    expect(tampers[0]?.subject_id).toBe("PAGE.DASHBOARD");
+    expect(report.samples_to_review.map((sample) => sample.subject_id)).toEqual([
+      "PAGE.DASHBOARD",
+    ]);
+  });
+
+  it("changed_objects 侧同样入探测分母：零证据（从不抽中）但入 delta 的对象，手改正文同样当场抓到", async () => {
+    await upsertObject();
+    const ref = await issue(["PAGE.DASHBOARD"]);
+    await applyTransaction(store, {
+      ops: [{
+        op: "transition_object",
+        id: gid("PAGE.DASHBOARD"),
+        patch: { confidence: "LOCKED" },
+        reasonShort: "口径冻结",
+      }],
+    });
+    tamperBodyFile(bodyRefOf("PAGE.DASHBOARD"), (body) => {
+      body.title_zh = "手改标题";
+    });
+
+    const report = await reconcile(ref);
+    expect(report.samples_to_review).toEqual([]); // 零证据：抽样分母为空
+    expect(report.changed_objects.map((changed) => changed.kind)).toEqual(["axes_change"]);
+    const tampers = tamperEntriesOf(report);
+    expect(tampers).toHaveLength(1); // 探测经 changed_objects 触发，不依赖抽样
+    expect(tampers[0]?.subject_id).toBe("PAGE.DASHBOARD");
+    expect(report.clean).toBe(false);
+  });
+
+  it("探测遇损坏正文（无法解析）→ SCHEMA_INVALID（禁静默跳过损坏正文）", async () => {
+    await upsertObject();
+    const ref = await issue(["PAGE.DASHBOARD"]);
+    await recordRun("GRN-0001", "passed", "PAGE.DASHBOARD");
+    writeFileSync(join(root, ".pomaster", bodyRefOf("PAGE.DASHBOARD")), "{broken");
+    await expect(reconcile(ref)).rejects.toMatchObject({ code: "SCHEMA_INVALID" });
   });
 });
 

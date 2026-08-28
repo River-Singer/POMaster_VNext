@@ -69,6 +69,10 @@ function requireCount(
  * - counts.notApplicable 缺失/NaN → FATAL（缺席必须显式表达，禁止静默跳过当通过）；
  * - verdict=skipped_blindspot 而 counts.unchecked_in_blindspot_estimated 缺失 → FATAL
  *   （03 schema：「skipped_blindspot 判定必须附证据」；四态纪律的机器防线）；
+ * - verdict=passed 而 counts.violations>0 且无已声明失配（trust.asserted/recomputed）可解释
+ *   → FATAL GATE_COUNTS_INVALID（载荷自身结构性矛盾，与上一条同属「缺席/矛盾必须显式
+ *   表达」线。verdict_cap 只仲裁 declared 双源失配故降级留痕；单源自相矛盾无从仲裁，
+ *   必须拒收——GRN-0009 实录：此类载荷曾成功入账后才被人工纠偏重放）；
  * - subjectId 前缀 TEST.* ⇔ isFixture=true 双向强校验（Q3）；
  * - trust.asserted 保留为 CLAIMED（永不单独判卷）；recomputed 是判卷唯一依据；
  *   失配 → mismatch.detected=true（默认 recomputed_wins_recorded）且 passed 自动
@@ -355,6 +359,23 @@ export function normalizeGateResult(
     if (capReason === null) {
       capReason = "declare_recompute_mismatch";
     }
+  }
+
+  // —— 七态纪律：passed ⇔ counts.violations 自洽（残余自相矛盾 FATAL） ——
+  // 上面的 verdict_cap 已先仲裁「自报结论 vs 重算失配」（trust.asserted/recomputed 双源、
+  // 载荷显式声明了失配）：passed 降级 warning 留痕（ADV-D20-05 场景），矛盾有第二测量
+  // 可解释，降级是保守留痕不是洗白。此处残余的 verdict=passed + counts.violations>0 没有
+  // 任何已声明失配可解释——单源结构性自相矛盾（GRN-0009 实录：入账成功后才被人工纠偏
+  // 重放），与 blindspot produced>scanned 同类 → FATAL GATE_COUNTS_INVALID，与
+  // skipped_blindspot 缺盲区指标同一条「缺席/矛盾必须显式表达」线；cap 降级会把畸形
+  // 载荷洗白入账，故拒收而非降级。
+  if (verdict === "passed" && counts.violations > 0) {
+    throw new GovernanceError(
+      "GATE_COUNTS_INVALID",
+      `verdict=passed 但 counts.violations=${counts.violations}——载荷自身矛盾（passed 要求 violations=0）`,
+      "若 counts 来自独立重算而自报结论基于旧值，请携带 trust.asserted/recomputed 显式声明失配（走 verdict_cap 降级通道）；否则修正工具侧判卷后重跑",
+      { verdict, violations: counts.violations },
+    );
   }
   const mismatchActionRaw = isRecord(pick(trustSource, "mismatch"))
     ? pick(pick(trustSource, "mismatch") as UnknownRecord, "action")

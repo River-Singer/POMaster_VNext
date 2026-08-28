@@ -6,17 +6,34 @@
  * （research/testing-toolchain-shipping-plan.md：POMaster 本体只包含四样）。
  *
  * 模块地图：
- * - adapter-types.ts —— §59 接口契约、探测四态（缺席语义）、判卷错误类型；
- * - build-adapter.ts —— BUILD 门禁 adapter（vitest run 执行 + 七态归一 + 03 线格式序列化）；
- * - detectors.ts     —— oasdiff / import-linter / dependency-cruiser / chrome-devtools MCP
- *                       四探测（doctor 面；缺席必带理由与安装建议，禁静默）。
+ * - adapter-types.ts      —— §59 接口契约、探测四态（缺席语义）、判卷错误类型、包版本常量；
+ * - normalize-common.ts   —— 四 adapter 共享的 normalize FATAL 闸门与缺席记录构造（单一实现）；
+ * - build-adapter.ts      —— BUILD 门禁 adapter（vitest 腿 + pytest 腿 + 七态归一 + 03 线格式序列化）；
+ * - pytest-leg.ts         —— BUILD 的 pytest 腿（junitxml 实跑 + PATH 消毒 + JUnit XML 判卷）；
+ * - contract-adapter.ts   —— CONTRACT 门禁 adapter（openapi operation_id 存在性对账）；
+ * - architecture-adapter.ts —— ARCHITECTURE 门禁 adapter（forbidden import 规则文本扫描）；
+ * - browser-adapter.ts    —— BROWSER 门禁 adapter（doctor MCP 探测 + smoke 连接证据）；
+ * - detectors.ts          —— oasdiff / import-linter / dependency-cruiser / chrome-devtools MCP
+ *                            四探测（doctor 面；缺席必带理由与安装建议，禁静默）。
  *
  * 判卷纪律：输出形态镜像 @pomaster/kernel 的 GateResult 契约（03-gate-result 的 camelCase 形态），
  * 七态 verdict + counts.notApplicable 必填 + asserted/recomputed 孪生（永不信任自报值）；
  * 会话/工具陈述一律 CLAIMED，落库必经 @pomaster/kernel 的 applyTransaction store 事务。
  */
 import { createBuildAdapter } from "./build-adapter.js";
-import type { GateAdapter, BuildToolDetection, GatePlan, ToolRunOutput } from "./adapter-types.js";
+import { createBrowserAdapter } from "./browser-adapter.js";
+import { createContractAdapter } from "./contract-adapter.js";
+import { createArchitectureAdapter } from "./architecture-adapter.js";
+import type {
+  BuildToolDetection,
+  GateAdapter,
+  GatePlan,
+  ToolRunOutput,
+  DetectionResult,
+} from "./adapter-types.js";
+import type { BrowserGatePlan, BrowserRunOutput } from "./browser-adapter.js";
+import type { ContractGatePlan, ContractRunOutput } from "./contract-adapter.js";
+import type { ArchitectureGatePlan, ArchitectureRunOutput } from "./architecture-adapter.js";
 import {
   detectChromeDevtoolsMcp,
   detectDependencyCruiser,
@@ -26,25 +43,51 @@ import {
 
 export * from "./adapter-types.js";
 export * from "./build-adapter.js";
+export * from "./pytest-leg.js";
+export * from "./contract-adapter.js";
+export * from "./architecture-adapter.js";
+export * from "./browser-adapter.js";
 export * from "./detectors.js";
+export * from "./normalize-common.js";
 
-/** 包版本（tool_version 字段一律用被探测工具自身的 semver，本常量仅作 registry 元数据）。 */
-export const GAUNTLET_LITE_VERSION = "0.1.0" as const;
-
-/** BUILD 门禁 adapter 单例（无状态；也可经 createBuildAdapter() 自建）。 */
+/** BUILD 门禁 adapter 单例（vitest/pytest 双腿；也可经 createBuildAdapter() 自建）。 */
 export const buildAdapter: GateAdapter<
   BuildToolDetection,
   GatePlan,
   ToolRunOutput
 > = createBuildAdapter();
 
+/** CONTRACT 门禁 adapter 单例（config 驱动 openapi 对账；也可经 createContractAdapter() 自建）。 */
+export const contractAdapter: GateAdapter<
+  DetectionResult,
+  ContractGatePlan,
+  ContractRunOutput
+> = createContractAdapter();
+
+/** ARCHITECTURE 门禁 adapter 单例（规则驱动文本扫描；也可经 createArchitectureAdapter() 自建）。 */
+export const architectureAdapter: GateAdapter<
+  DetectionResult,
+  ArchitectureGatePlan,
+  ArchitectureRunOutput
+> = createArchitectureAdapter();
+
+/** BROWSER 门禁 adapter 单例（doctor MCP 探测 + smoke；也可经 createBrowserAdapter() 自建）。 */
+export const browserAdapter: GateAdapter<
+  DetectionResult,
+  BrowserGatePlan,
+  BrowserRunOutput
+> = createBrowserAdapter();
+
 /**
- * adapter registry（随版计划 Batch 1：typecheck/build/test 归一化 → BUILD）。
- * CONTRACT/ARCHITECTURE/BROWSER 门禁的执行 adapter 归后续批次；当前阶段先落
- * toolDetectors 探测面（doctor 语义：缺席四态 + 安装引导）。
+ * adapter registry（G5 谱系扩展落地：BUILD 双腿 + CONTRACT / ARCHITECTURE / BROWSER）。
+ * 四 adapter 共用 §59 契约与 normalize-common 的 FATAL 闸门；缺席一律显式四态
+ * （not_configured ≠ passed），绝不静默跳过当通过。
  */
 export const gateAdapters = {
   build: buildAdapter,
+  contract: contractAdapter,
+  architecture: architectureAdapter,
+  browser: browserAdapter,
 } as const;
 
 /** doctor 工具探测 registry（oasdiff / import-linter / dependency-cruiser / chrome-devtools MCP）。 */

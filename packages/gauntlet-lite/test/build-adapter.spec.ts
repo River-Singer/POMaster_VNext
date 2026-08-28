@@ -52,7 +52,7 @@ describe("build adapter detect", () => {
     );
   });
 
-  it("无 vitest 但有 pytest.ini → pytest READY，composite READY（run 会显式拒执行）", () => {
+  it("无 vitest 但有 pytest.ini → pytest READY，composite READY（prepare 走 pytest 腿）", () => {
     const detection = adapter.detect(
       fakeFacts(VITEST_PROJECT_ROOT, {
         files: {
@@ -138,17 +138,28 @@ describe("build adapter prepare", () => {
     }
   });
 
-  it("仅 pytest 就绪 → runner_not_implemented（TODO(pytest-adapter) 显式拒绝，不伪装）", () => {
+  it("仅 pytest 就绪但缺版本锚 → runner_not_ready（pytest 版本无法从配置探测，禁伪造 semver）", () => {
     const pytestOnly = fakeFacts(VITEST_PROJECT_ROOT, {
       files: { [posixJoin(VITEST_PROJECT_ROOT, "pytest.ini")]: "[pytest]" },
     });
     expect(() =>
       adapter.prepare(
         { projectRoot: VITEST_PROJECT_ROOT },
-        { grn: "GRN-9", ranAtSeq: 1 },
+        { grn: "GRN-9", ranAtSeq: 1, expectedToolVersion: null },
         pytestOnly,
       ),
-    ).toThrowError(/TODO\(pytest-adapter\)/);
+    ).toThrowError(GateAdapterError);
+    try {
+      adapter.prepare(
+        { projectRoot: VITEST_PROJECT_ROOT },
+        { grn: "GRN-9", ranAtSeq: 1, expectedToolVersion: null },
+        pytestOnly,
+      );
+    } catch (error) {
+      expect((error as GateAdapterError).reason).toBe("runner_not_ready");
+      expect((error as GateAdapterError).message).toMatch(/expectedToolVersion/);
+      expect((error as GateAdapterError).hint).toMatch(/版本锚/);
+    }
   });
 });
 
@@ -200,21 +211,32 @@ describe("build adapter run", () => {
     expect(record.verdict).toBe("not_run");
   });
 
-  it("pytest runner 计划直接 run → GateAdapterError runner_not_implemented（纵深防御）", () => {
-    const plan = adapter.prepare(
+  it("pytest runner 计划（带版本锚）→ prepare 产出 pytest 腿 + run 正常派发（G5 后不再拒绝）", () => {
+    const pytestOnly = fakeFacts(VITEST_PROJECT_ROOT, {
+      files: { [posixJoin(VITEST_PROJECT_ROOT, "pytest.ini")]: "[pytest]" },
+    });
+    const pytestPlan = adapter.prepare(
       { projectRoot: VITEST_PROJECT_ROOT },
-      { grn: "GRN-12", ranAtSeq: 1 },
-      vitestProjectFacts(),
+      { grn: "GRN-12", ranAtSeq: 1, expectedToolVersion: "8.3.4" },
+      pytestOnly,
     );
-    const pytestPlan = { ...plan, runner: "pytest" as const };
-    expect(() => adapter.run(pytestPlan)).toThrowError(GateAdapterError);
-    try {
-      adapter.run(pytestPlan);
-    } catch (error) {
-      expect((error as GateAdapterError).reason).toBe(
-        "runner_not_implemented",
-      );
-    }
+    expect(pytestPlan.runner).toBe("pytest");
+    expect(pytestPlan.tool).toBe("gauntlet:pytest");
+    expect(pytestPlan.toolVersion).toBe("8.3.4");
+    expect(pytestPlan.command).toContain("python -m pytest");
+    // run 派发：fake spawn 透传 stdout（JUnit XML），kind=executed（归一层细节归 pytest-adapter.spec）。
+    const raw = adapter.run(
+      pytestPlan,
+      () => ({
+        status: 0,
+        stdout: "<testsuite failures=\"0\"><testcase name=\"a\"/></testsuite>",
+        stderr: "",
+        error: null,
+        externalMs: 3,
+      }),
+    );
+    expect(raw.kind).toBe("executed");
+    expect(raw.exitCode).toBe(0);
   });
 });
 

@@ -86,6 +86,7 @@ A6 rename-on-ingest 双向链：legacy→canonical（收编）与 canonical→le
 - verdict 词表外值 → FATAL（七态词表 `VERDICT_VALUES`）；
 - `notApplicable` 缺失/NaN → FATAL（缺席必须显式表达）；
 - `verdict=skipped_blindspot` 而 `counts.unchecked_in_blindspot_estimated` 缺失 → FATAL（03 schema「skipped_blindspot 判定必须附证据」；无指标的盲区跳过 = 静默跳过当通过的七态词形变体）；
+- `verdict=passed` 而 `counts.violations > 0` 且无已声明失配可解释 → FATAL `GATE_COUNTS_INVALID`（载荷自身结构性矛盾；verdict_cap 只仲裁显式声明的 asserted/recomputed 双源失配故降级留痕，单源自相矛盾无从仲裁必须拒收——与 skipped_blindspot 缺盲区指标同一条「缺席/矛盾必须显式表达」线）；
 - `subjectId` 前缀 `TEST.*` ⇔ `isFixture=true` 双向强校验（Q3）；
 - `trust.asserted` 保留为 CLAIMED；`recomputed` 是判卷唯一依据；失配 → `mismatch.detected=true`（recomputed_wins_recorded / escalate_to_authority）；
 - 本函数永不阻断写入；gate 的阻断语义由 closeout 编排层按 verdict 施加（写阻断与判卷分离）。
@@ -177,7 +178,8 @@ A6 rename-on-ingest 双向链：legacy→canonical（收编）与 canonical→le
   词形是设计 §3.2 三值之外的第 4 词形，承载其自身 `content_drift=true` 状态所需的宿主
   （不冒用 `axes_change`——其定义明确要求四轴任一 from≠to）。
 - **`exceptions`**：scope 内 subject 的证据平面扫描；runs 取 verdict ∈
-  {failed, not_configured, skipped_blindspot}，claims 取 verification.verdict = REJECTED。
+  {failed, not_configured, skipped_blindspot}，claims 取 verification.verdict = REJECTED；
+  row 级正文探测的 `content_tamper` 条目亦计入本段（见下）。
   证据平面损坏（*.json 无法解析 / verdict 缺失）→ throw `SCHEMA_INVALID`（禁静默跳过
   损坏证据）；run 文件兼容 kernel canonical（gate_result.result 内嵌）与 pre-canonical
   夹具（GateResult 直落顶层）两形态——与 compact 收编读取规则同一条线。
@@ -186,6 +188,18 @@ A6 rename-on-ingest 双向链：legacy→canonical（收编）与 canonical→le
 - **`samples_to_review`**：scope 内全部证据条目（runs+claims 合并）按 evidence_ref
   字典序排列后等距步长抽样（`floor(i×total/N)`，i=0..N-1；total ≤ N 全取）；N=
   `options.samples` 缺省 3，0 = 显式放弃抽样（不静默）；非 ≥0 整数 → `SCHEMA_INVALID`。
+- **row 级正文探测（N1 盲区收窄）**：对「抽中样本的 subject ∪ `changed_objects`」（恒在
+  permit scope 内）读正文文件重算内容指纹（`sha256OfCanonical`，与写路径
+  `applyTransaction.sweepDigestTampering` 同源同型），与索引行 `bodySha256` 对账。失配即
+  「只手改正文、不碰索引行」的篡改实锤（该篡改对 baseline↔行的双索引锚 delta 不可见，
+  原先要等下一次事务的 row 级抽验才暴露），以 `kind=content_tamper` 例外条目
+  （`subject_id` / `body_ref` / `index_sha256` / `body_sha256`；词形为呈现层局部词
+  TODO(vocab-pr)，不冒用七态 verdict）追加在证据例外之后（subject_id 字典序）计入
+  `exceptions`，并使 `clean=false`。探测纯读只报不修不拦写（D24：告警不拦写；写侧
+  auto-regen 仍归事务双轨）。成本边界：只探分母内对象，不全库扫（全库 sweep 仍是写路径
+  事务的职责）；正文文件缺失由 `vanished` 承载（探测不越界重复报）；正文无法解析 →
+  throw `SCHEMA_INVALID`（禁静默跳过损坏正文）；`baseline_missing` 路径 delta 分母不
+  成立，探测不跑（行为同旧形态）。
 - **fail-closed 出口语义（CLI 翻译为退出码，设计 §3.5）**：clean 且基线在场 →
   ok/exit 0；有 delta/例外/vanished → `RECONCILE_DIRTY` exit 1（人须审，机器不代审
   不代决）；baseline 缺失 → `RECONCILE_BASELINE_MISSING` exit 1；许可不存在 → throw

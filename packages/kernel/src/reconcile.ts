@@ -13,7 +13,10 @@
  *   reconcile 只读不重建。baseline 缺失（旧形态许可）= baseline_missing=true 显式 fail，
  *   不拿「没有基线」冒充「无变化」（not_configured ≠ passed 的 ⑥ 拍镜像）。
  * - D24：content_drift 判定只用台账内既有 body_sha256（读侧 identity 用途，事务自动
- *   维护）；人永不计算哈希，本模块也不重算任何 sha。
+ *   维护）；人永不计算哈希。row 级正文探测（N1 盲区收窄：分母 = 抽中样本 ∪
+ *   changed_objects）由本模块机器重算正文指纹并与索引行对账——纯读只报不修（失配 →
+ *   content_tamper 例外，不拦写；写侧 auto-regen 仍归 applyTransaction.sweepDigestTampering
+ *   双轨分工）。
  * - 四态纪律：content_drift=null 是「基线无 sha 锚/对象 absent」的显式未知，不冒充
  *   「无漂移」；verdict_census 全量计数（含例外条目与 scope 外条目）——聚合不吞没，
  *   不进例外段 ≠ 不可见。
@@ -23,6 +26,7 @@
 import { readdirSync } from "node:fs";
 import type { ObjectRow, Store } from "./index.js";
 import { GovernanceError } from "./errors.js";
+import { sha256OfCanonical } from "./digest.js";
 import { readText } from "./io.js";
 import { loadTruthIndex } from "./store.js";
 import { readPermitsFile, type PermitBaselineSubject } from "./permits.js";
@@ -90,7 +94,26 @@ export interface ReconcileEvidenceEntry {
   readonly gate: string | null;
 }
 
-export type ReconcileException = ReconcileEvidenceEntry;
+export type ReconcileException = ReconcileEvidenceEntry | ReconcileTamperEntry;
+
+/**
+ * row 级正文探测命中的例外条目（kind=content_tamper；呈现层局部词 TODO(vocab-pr)，
+ * 同 RECONCILE_DELTA_KINDS 的 content_drift 先例——不发明 Governed 前缀/七态 verdict，
+ * 复用 exceptions 段承载）。语义：正文重算指纹 ≠ 索引行 bodySha256——「只手改正文、
+ * 不碰索引行」的篡改实锤（该篡改对 baseline↔行的双索引锚 delta 不可见，N1 盲区）。
+ * index_sha256/body_sha256 供人直接定位；探测本身只读不修（D24：告警不拦写）。
+ */
+export interface ReconcileTamperEntry {
+  readonly kind: "content_tamper";
+  /** 失配对象 id（探测分母 = 抽中样本 subject ∪ changed_objects，恒在 permit scope 内）。 */
+  readonly subject_id: string;
+  /** 索引行 body_ref（正文文件引用；探测不写该文件）。 */
+  readonly body_ref: string;
+  /** 索引行锚（row.bodySha256，事务自动维护）。 */
+  readonly index_sha256: string;
+  /** 正文重算指纹（sha256OfCanonical(body)，机器计算）。 */
+  readonly body_sha256: string;
+}
 
 export type ReconcileSample = ReconcileEvidenceEntry & {
   /** 抽样原因（确定性可预言：stride 下标/全取；禁随机禁墙钟）。 */
@@ -260,6 +283,56 @@ function censusOf(entries: readonly EvidenceEntry[]): Record<string, number> {
 }
 
 // ============================================================
+// row 级正文探测（N1：content_drift 双锚都在索引侧的盲区收窄；纯读只报不修）
+// ============================================================
+
+/**
+ * 对探测分母（抽中样本 subject ∪ changed_objects；恒在 permit scope 内）做 row 级
+ * 「正文 ↔ 索引」失配抽验：读正文文件重算内容指纹（sha256OfCanonical，与写路径
+ * store.sweepDigestTampering 同源同型），与索引行 bodySha256 对比。失配 = 篡改实锤，
+ * 产出 content_tamper 例外（只读只报，不修不拦写——D24；写侧 auto-regen 双轨归
+ * applyTransaction）。成本边界：只探分母内对象，不全库扫（全库 sweep 仍是写路径事务
+ * 的职责）。前置不满足时显式跳过（不冒充判定，四态纪律）：
+ * - 现状无索引行 / 行无 sha 锚 → 无锚可比（显式未知）；
+ * - 正文文件缺失 → vanished/REF 域已报，探测不越界重复报。
+ */
+function probeBodiesAgainstIndex(
+  paths: StorePaths,
+  rowsById: ReadonlyMap<string, ObjectRow>,
+  probeIds: readonly string[],
+): ReconcileTamperEntry[] {
+  const tampered: ReconcileTamperEntry[] = [];
+  for (const id of probeIds) {
+    const row = rowsById.get(id);
+    if (row === undefined || typeof row.bodySha256 !== "string") continue;
+    const text = readText(`${paths.pomasterDir}/${row.bodyRef}`);
+    if (text === null) continue; // 正文缺席：vanished 的 REF 异常形态，非本探测的失配语义
+    let body: unknown;
+    try {
+      body = JSON.parse(text);
+    } catch (error) {
+      throw new GovernanceError(
+        "SCHEMA_INVALID",
+        `正文文件无法解析（损坏或手改）：${row.bodyRef}`,
+        "正文层与索引层由事务成对落盘（A1）；从 git 恢复正文或重新 upsert 该对象（禁静默跳过损坏正文）",
+        { id, body_ref: row.bodyRef, cause: String(error) },
+      );
+    }
+    const actual = sha256OfCanonical(body);
+    if (actual !== row.bodySha256) {
+      tampered.push({
+        kind: "content_tamper",
+        subject_id: id,
+        body_ref: row.bodyRef,
+        index_sha256: row.bodySha256,
+        body_sha256: actual,
+      });
+    }
+  }
+  return tampered;
+}
+
+// ============================================================
 // delta 比较（基线 vs 当前索引行；纯函数）
 // ============================================================
 
@@ -371,6 +444,7 @@ export async function reconcilePermit(
   const baseline = permit.baseline;
   if (baseline === null) {
     // 旧形态许可无基线：delta 段不可计算——显式 missing，不冒充「无变化」。
+    // row 级正文探测的分母含 changed_objects，此处不成立 → 探测不跑，行为同旧形态。
     return {
       permit_ref: permitRef,
       baseline_at_seq: null,
@@ -448,8 +522,18 @@ export async function reconcilePermit(
     });
   }
 
+  // —— N1 盲区收窄：row 级正文探测（分母 = 抽中样本 subject ∪ changed_objects；纯读只报） ——
+  // 失配条目追加在证据例外之后（subject_id 字典序）→ 同 state 重放字节稳定。
+  const probeIds = new Set<string>();
+  for (const entry of picked) {
+    if (entry.subject_id !== null) probeIds.add(entry.subject_id);
+  }
+  for (const changed of changedObjects) probeIds.add(changed.id);
+  const tamperEntries = probeBodiesAgainstIndex(paths, rowsById, [...probeIds].sort());
+  const allExceptions: ReconcileException[] = [...exceptions, ...tamperEntries];
+
   const clean =
-    changedObjects.length === 0 && exceptions.length === 0;
+    changedObjects.length === 0 && allExceptions.length === 0;
   return {
     permit_ref: permitRef,
     baseline_at_seq: baseline.at_seq,
@@ -457,7 +541,7 @@ export async function reconcilePermit(
     clean,
     baseline_missing: false,
     changed_objects: changedObjects,
-    exceptions,
+    exceptions: allExceptions,
     verdict_census: { runs: censusOf(runs), claims: censusOf(claims) },
     samples_to_review: picked,
     scope_summary: {
