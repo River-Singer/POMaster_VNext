@@ -514,7 +514,11 @@ def build_grid_envelope(entry, total, slice_count, vendor_digest, component_dige
                 "GRID key-binding drift see MIG-B1/C-04"
             ),
         },
-        "origin": "natural",
+        # OBS-3 ruling (CONVENTIONS section 6): A6 rename-on-ingest objects
+        # (GRID.* legacy governed word form rewritten to CAPABILITY.GRID.*, legacy
+        # form kept in aliases[]) carry origin="ingested", regardless of the
+        # source asset's inventory provenance origin.
+        "origin": "ingested",
         "realization": {"value": "wired"},
         "key_bindings": {
             "code": [

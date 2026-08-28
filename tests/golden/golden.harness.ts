@@ -404,7 +404,8 @@ function runIdParseCase(c: GoldenCase, ex: IdParseExecutable): GoldenCaseResult 
 }
 
 /**
- * aliases_v0 五族词形的家族判别（词形镜像 ALIASES_V0 legacy 串；KB-* 家族实例存在
+ * aliases_v0 golden 触发面五族的家族判别（词形镜像 ALIASES_V0 legacy 串；PR-0001 后注册表
+ * 八族——ISSUE.* / FTA-* / FB-* 为机械族，不走本非机械家族判别表；KB-* 家族实例存在
  * KB- 与 KB. 两种历史书写）。家族外 legacy（如开放问题#2 的 PAGE-APP-*——两代历史
  * 前缀不保留于 canonical id、只随对象 aliases[] 双向链保留）不做家族命中断言。
  */

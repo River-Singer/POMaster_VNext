@@ -170,6 +170,8 @@ golden case 适用情况：源文件无任何 status/lifecycle/updated_at 字段
 
 **origin 裁定规则**：信封 `origin` := M0 `inventory.yaml` 该资产 `provenance.origin` 逐字（两侧同为 FROZEN OriginValue 词形 natural/derived/ingested；与 classification-ledger `origin_frozen` 保持逐字一致）。`ingested` 保留给 A6 场景（legacy governed id 改拼迁入）；legacy 文件无 governed id 的，不因"被迁移"而标 ingested。铁律 9 的 legacy 词形映射：`human_curated→natural`、`migrated→ingested`。
 
+**优先级裁决（OBS-3 成文）**：前句「逐字」规则与 A6 场景规则冲突时 **A6 优先**——凡转录动作按词汇表**已登记** alias 规则（vocab-lock ALIASES 表）执行了 rename-on-ingest（对象 id 由 legacy governed 词形改拼为 canonical，legacy 原词形照录 `aliases[]`），该对象 `origin` 一律 `ingested`，不取 inventory 逐字值。依据：FROZEN 02 信封 origin 注记本义即 `ingested` = rename-on-ingest 迁入；判据是「改拼动作是否按已登记规则发生」，不是「源资产是否被迁移」。首批修正件：M2 转录组 D 的 3 个 `CAPABILITY.GRID.*` 对象（`GRID.*→CAPABILITY.GRID.*`，ALIASES_V0 已登记族）origin natural→ingested，`tools/ingest_data_grid.py` 同步改判据。两条边界照旧不动：源侧跟踪 id（如 `ISSUE.*`×107 / `FTA-*`×17 / `FB-*`×1，非 governed 词形、转录时不在 ALIASES 表）赐 canonical 名并照录 `aliases[]` **不构成 A6 场景**，对象保持源侧 origin（MIG-B1 change-object 组即此形态）；legacy 文件无 governed id 的不标 ingested。层次注记：inventory/ledger 侧 origin 描述**源资产**谱系，信封侧 origin 描述**对象**谱系，两层各表其事、不互相覆盖。
+
 **sources[] 形态**：FROZEN `SourceRefEntry` 五键闭形（`type/ref/captured_by/locator/pin`，`additionalProperties=false`）→ 铁律 9 要求的 `batch` / `ingested_from` / 转录说明放 `locator`（结构化自由区）：
 
 ```json

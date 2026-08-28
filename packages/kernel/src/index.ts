@@ -52,7 +52,8 @@ declare const governedIdBrand: unique symbol;
  * 受治理对象 canonical id（closed-world，A5）。
  * 文法：PREFIX . SEGMENT ( . SEGMENT )* [ . SEQ]；PREFIX ∈ GOVERNED_ID_PREFIXES（15 前缀）；
  * SEGMENT=[A-Z][A-Z0-9_]{0,31}（不允许数字开头）；SEQ 纯数字仅可为末段。
- * 未知前缀 = 解析即 FATAL（A5）。legacy 拼写（KB-*、GRID.*、PAGE-TASK-STEP-*、TASK-*、CHANGE-*）
+ * 未知前缀 = 解析即 FATAL（A5）。legacy 拼写（KB-*、GRID.*、PAGE-TASK-STEP-*、TASK-*、
+ * CHANGE-*、ISSUE.*、FTA-*、FB-*）
  * 只入 alias 双向链，不得作为本类型值（A6）。
  */
 export type GovernedId = string & { readonly [governedIdBrand]: "GovernedId" };
@@ -221,7 +222,7 @@ export interface TruthIndex {
     /** 源输入集指纹——重跑无变化时短路依据（D24：事务自动维护）。 */
     readonly inputsFingerprint: string;
   };
-  /** 词表指纹三元组：与 vocab-lock@v0.1-resolved 内容摘要对账，不一致即 FATAL（枚举多头拷贝免疫）。 */
+  /** 词表指纹三元组：与 vocab-lock@v0.2-resolved 内容摘要对账，不一致即 FATAL（枚举多头拷贝免疫）。 */
   readonly vocabLock: {
     readonly stateAxes: string;
     readonly kinds: string;
@@ -438,9 +439,11 @@ export interface AliasResolution {
 }
 
 /**
- * 别名双向链解析（A6 rename-on-ingest）。镜像 ALIASES_V0 五族；
+ * 别名双向链解析（A6 rename-on-ingest）。镜像 ALIASES_V0 八族（PR-0001 收编
+ * ISSUE.* / FTA-* / FB-* 三族，机械映射=greedy 打包 pack_segments 移植）；
  * 数字段收编加字母前缀规则内置：TASK-0087→TASK.T0087、CHANGE-0104→CHANGE.C0104
- * （SEGMENT 不允许数字开头，02b 文法注记）；PAGE-TASK-STEP-* 走 token 重排收编。
+ * （SEGMENT 不允许数字开头，02b 文法注记）；PAGE-TASK-STEP-* 走 token 重排收编；
+ * ISSUE.* 登记前缀点段剥离+末尾纯数字段→SEQ；FTA-* / FB-* 标记词并入首段。
  * 纯函数。canonical 化结果仍须过 parseGovernedId 验证（本函数不替代 closed-world 校验）。
  */
 export { resolveAlias } from "./id.js";
@@ -468,7 +471,9 @@ export interface PermitRequest {
 }
 
 export interface Permit {
-  /** PERMIT.* 引用——前缀未入 prefixes_v0，暂用 general_id 宽松词形 → TODO(vocab-pr) 收编。 */
+  /** PERMIT.* 引用——状态面台账键词形，词形登记于 vocab-lock id_namespace.state_plane_refs
+   * （PR-0001 文档化收编；非 governed 前缀，不入 prefixes_v0、不过 parseGovernedId，
+   * 解析归台账存在性 + 显式四态 outcome；维持 general_id 宽松词形）。 */
   readonly permitRef: string;
   readonly expiresAtSeq: number;
   readonly scope: {

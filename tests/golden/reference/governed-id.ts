@@ -2,7 +2,8 @@
  * governed-id.ts —— governed id 文法解析与别名双向链「参考镜像」（数据驱动 Golden 执行器用）。
  *
  * 词表纪律：前缀闭包与 alias 规则 import 自 @pomaster/schemas/src/vocab.ts
- * （GOVERNED_ID_PREFIXES 15 前缀 + ALIASES_V0 五族，FROZEN vocab-lock@v0.1-resolved 唯一镜像），
+ * （GOVERNED_ID_PREFIXES 15 前缀 + ALIASES_V0 golden 触发面五族——PR-0001 后注册表八族，
+ * 三新族不在 golden 输入，FROZEN vocab-lock@v0.2-resolved 唯一镜像），
  * 本文件零词值字面量（正则由常量机械拼装，镜像 01/02/03/07 definitions.governed_id pattern）。
  *
  * 定位：@pomaster/kernel 的 parseGovernedId/resolveAlias 目前是 scaffold 占位（throw

@@ -57,13 +57,13 @@ closed-world 文法解析；未知前缀（`unknown_prefix`）或 SEGMENT/SEQ �
 
 ### `resolveAlias(spelling) => AliasResolution`
 
-A6 rename-on-ingest 双向链：legacy→canonical（收编）与 canonical→legacy（考古）。镜像 `ALIASES_V0` 五族；内置数字段规则 `TASK-0087→TASK.T0087`、`CHANGE-0104→CHANGE.C0104`（SEGMENT 不允许数字开头）；`PAGE-TASK-STEP-*` 走 token 重排。别名数组只减不增；结果仍须过 `parseGovernedId`（本函数不做 closed-world 裁决）。
+A6 rename-on-ingest 双向链：legacy→canonical（收编）与 canonical→legacy（考古）。镜像 `ALIASES_V0` 八族（v0.1 五族 + PR-0001 收编 `ISSUE.*`/`FTA-*`/`FB-*` 三族）；内置数字段规则 `TASK-0087→TASK.T0087`、`CHANGE-0104→CHANGE.C0104`（SEGMENT 不允许数字开头）；`PAGE-TASK-STEP-*` 走 token 重排；`ISSUE.*` 登记前缀点段剥离 + 段内连字符→下划线 greedy 打包（32 字符 SEGMENT 上限，段界可为打包伪迹）+ 末尾纯数字段→SEQ；`FTA-*`/`FB-*` 标记词并入首段（机械映射权威=`ingest_change_governance.py pack_segments` 移植）。别名数组 append-only（v0.1 五族只减不增，v0.2 起八族不可删改语义）。canonical→legacy 逆向：`CHANGE.*` 按首段 `FTA_`/`FB_` 前缀判别分流，多候选并列（`ISSUE.` 点形与 `CHANGE-` 横线形双候选；权威考古记录仍是对象 `aliases[]`）。结果仍须过 `parseGovernedId`（本函数不做 closed-world 裁决）。
 
 ## 4. Permit（八拍②五件套）
 
 ### `issuePermit(store, request) => Promise<Permit>` / `checkPermit(store, permitRef, attempt) => Promise<PermitCheckResult>` / `stealPermit(store, permitRef, by, reason) => Promise<StealResult>`
 
-- `Permit.permitRef`：`PERMIT.*`（前缀未入 prefixes_v0，暂用 general_id 宽松词形，`TODO(vocab-pr)`）。
+- `Permit.permitRef`：`PERMIT.*` —— 状态面台账键词形，词形登记于 vocab-lock `id_namespace.state_plane_refs`（PR-0001 文档化收编；非 governed 前缀，不入 prefixes_v0、不过 parseGovernedId，解析归台账存在性 + 显式四态 outcome；维持 general_id 宽松词形）。
 - TTL 按事件拍计（禁墙钟，D2/A4）：`expiresAtSeq = currentSeq + ttlBeats`；缺省 `DEFAULT_TTL_BEATS = 168`（C9「TTL 168h」的拍数映射，标称 1 拍 ≈ 1 rebuild 拍）。
 - `request.subjectIds` 与 `request.capabilityIds`（可选，八拍②五件套之二）均过 `parseGovernedId` closed-world 校验（A5：词表外前缀/文法违规 → throw `GovernanceError(FATAL_UNKNOWN_PREFIX / FATAL_ID_GRAMMAR)`）。
 - **签发落五件套台账**（state/permits.json，内部状态文件；公共契约类型 `Permit` 不变）：除既有的 scope/requested_by/change_ref 外，同时落 `capability_refs`（capabilityIds）、`acceptance_shape`（五件套之五——契约面 `PermitRequest.acceptanceShape` 既有但实现此前从不持久化，本字段封死「验收形状静默丢失」坑）与 `baseline`（issue 瞬间的逐对象基线快照 `{at_seq, subjects: {[id]: {axes, rev, body_sha256?} | null}}`——journal 是事件流无 axes 历史，issue 瞬间是唯一能拿到该基线的时刻，closure；`null` = 签发时对象尚不存在（PROPOSED 新对象的合法基线态）；`body_sha256` 为 D24 读侧 identity/content_drift 判定用途，事务自动捕获，人永不计算）。`PERMIT_ISSUED` journal 事件携带 `capability_ids`。
@@ -145,8 +145,10 @@ A6 rename-on-ingest 双向链：legacy→canonical（收编）与 canonical→le
   PROPOSED/REJECTED⇒evidence=PLANNED、LOCKED+STABLE→CHALLENGED⇒authorityRef
   （EVOLUTION_REQUIRED）；转移矩阵仅在 lifecycle 实际变更时裁决（纯 confidence/
   evidence/change 补丁不触发自环误判）。
-- **alias 收编的机械/数据面分界（GOLDEN-AX-04）**：GRID.*、TASK-*、CHANGE-* 三族
-  mechanical=true（kernel 直接给出 canonical，双向链机械可逆）；KB 点分形态与
+- **alias 收编的机械/数据面分界（GOLDEN-AX-04）**：GRID.*、TASK-*、CHANGE-*、ISSUE.*、
+  FTA-*、FB-* 六族
+  mechanical=true（kernel 直接给出 canonical，双向链机械可逆；PR-0001 三新族逆向为多候选
+  并列）；KB 点分形态与
   PAGE-TASK-STEP-* / PAGE-APP-* 的重排 mechanical=false——resolveAlias 返回
   `matchedRuleLegacy`（家族命中）但 `canonical=null`，映射随对象 aliases[] 数据面登记。
 - **GateResult v0 字段缺口**：03 亦要求 tool/tool_version/metric_dialect；
@@ -174,7 +176,8 @@ A6 rename-on-ingest 双向链：legacy→canonical（收编）与 canonical→le
   异常形态，A1 成对纪律，必 fail）/ `content_drift`（四轴未变而 body_sha256 变化——
   静默漂移显式打捞）。`content_drift` 字段三态：`true` / `false`（对 kernel 维护的行
   结构不可达：sha 覆盖内嵌 rev）/ `null`（基线无 sha 锚或对象 absent——显式未知，
-  不冒充「无漂移」）。kind 为 CLI 呈现层局部词 TODO(vocab-pr)；其中 `content_drift`
+  不冒充「无漂移」）。kind 词形已随 vocab-lock v0.2 `presentation_axes.reconcile_delta_kinds`
+  登记（PR-0001；`content_drift` 一词二用的成文收编）；其中 `content_drift`
   词形是设计 §3.2 三值之外的第 4 词形，承载其自身 `content_drift=true` 状态所需的宿主
   （不冒用 `axes_change`——其定义明确要求四轴任一 from≠to）。
 - **`exceptions`**：scope 内 subject 的证据平面扫描；runs 取 verdict ∈
@@ -193,8 +196,8 @@ A6 rename-on-ingest 双向链：legacy→canonical（收编）与 canonical→le
   `applyTransaction.sweepDigestTampering` 同源同型），与索引行 `bodySha256` 对账。失配即
   「只手改正文、不碰索引行」的篡改实锤（该篡改对 baseline↔行的双索引锚 delta 不可见，
   原先要等下一次事务的 row 级抽验才暴露），以 `kind=content_tamper` 例外条目
-  （`subject_id` / `body_ref` / `index_sha256` / `body_sha256`；词形为呈现层局部词
-  TODO(vocab-pr)，不冒用七态 verdict）追加在证据例外之后（subject_id 字典序）计入
+  （`subject_id` / `body_ref` / `index_sha256` / `body_sha256`；词形登记于 vocab-lock
+  `presentation_axes.reconcile_exception_kinds`（PR-0001），不冒用七态 verdict）追加在证据例外之后（subject_id 字典序）计入
   `exceptions`，并使 `clean=false`。探测纯读只报不修不拦写（D24：告警不拦写；写侧
   auto-regen 仍归事务双轨）。成本边界：只探分母内对象，不全库扫（全库 sweep 仍是写路径
   事务的职责）；正文文件缺失由 `vanished` 承载（探测不越界重复报）；正文无法解析 →

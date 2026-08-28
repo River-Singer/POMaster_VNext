@@ -4,12 +4,13 @@
 > 文件名保留 draft 字样系历史沿革；权威以本头部状态为准。后续枚举变更一律走词汇表 PR（禁止旁路改代码枚举）。
 > 依据：D24（哈希伦理——本文件由内容指纹保护但永不拦写）、A2（六值超集）、A5（closed-world 前缀）、synthesis 全表。
 > 2026-08-27 修复增补（既有五块词值零改动，只登记 schema 既有值、不发明新枚举值）：新增 source_types 词轴（收编 02 信封）与 keybinding_axes 三轴（收编 04-keybinding）；aliases_v0 补 TASK-*/CHANGE-* 两族（02b §0 文法注记的 T/C 前缀收编规则）；修复 transitions 块 DEPRECATED/RETIRED 挤行。
+> 2026-08-29 PR-0001 增补（append-only 纯增量，v0.1 词值零删改）：ALIASES_V0 补 ISSUE.*/FTA-*/FB-* 三族（MIG-B1 实测收编）；新增 catalog_layer_vocab 与 presentation_axes 两段、id_namespace.state_plane_refs 注记、kinds_registry.catalog_note 注记。8 件 FROZEN schema + 02b + golden-seed-mapping.md 的 @v0.1-resolved 引用保留不改：其引用语义是「该值集镜像自 v0.1 冻结基线」，v0.2 对这些镜像子集零改动，引用继续为真。
 > 消费方：②后续全部 schemas、③Kernel 转移引擎、Behavioral Eval 种子。
 
 ```yaml
 # ============================================================
-# pomaster.vocab/v0.1-resolved   （原 v0-draft；三开放问题已于 2026-08-27 会话裁决）
-# 升级路径：Owner 终审本文件整体一次 → 头部改 FROZEN → 成为第一批冻结 artifact
+# pomaster.vocab/v0.2-resolved   （2026-08-29 PR-0001 增补；append-only 纯增量，v0.1 词值零删改）
+# 历史：原 v0-draft（三开放问题已于 2026-08-27 会话裁决）→ v0.1-resolved（2026-08-27 FROZEN）
 # ============================================================
 
 ir_schema: pomaster.truth-index/v1-draft
@@ -76,12 +77,19 @@ id_namespace:           # closed-world（A5）：未登记前缀 = 解析即 FAT
     AUTHORITY.     : Authority Map 条目
     TEST.          : fixture 专用域（Q3 已决）：对象身份合法；
                      doctor 将「生产代码引用 TEST.*」列为违规探针
+  state_plane_refs:     # PR-0001 文档化收编：状态面台账键词形（非 governed 前缀——不入 prefixes_v0、不过 parseGovernedId）
+    - form: "PERMIT.<BASE>.<SEQ>"
+      plane: state/permits.json（kernel 内部台账；A8 同族不入 truth-index）
+      validation: 台账存在性 + 显式四态 outcome；PERMIT_EXPIRED_OBSERVED / PERMIT_STOLEN 事件流引用同形
   aliases_v0:           # 存量资产收编的 rename-on-ingest 双向链（A6）
     - { legacy: "KB-*",              canonical: "KNOWLEDGE.*" }
     - { legacy: "GRID.*",            canonical: "CAPABILITY.GRID.*" }
     - { legacy: "PAGE-TASK-STEP-*",  canonical: "PAGE.*", note: token 重排收编，键绑定表记录历史形态 }
     - { legacy: "TASK-*",            canonical: "TASK.*",   note: 数字段收编加字母前缀（TASK-0087→TASK.T0087），SEGMENT 不允许数字开头（02b 文法注记） }
     - { legacy: "CHANGE-*",          canonical: "CHANGE.*", note: 数字段收编加字母前缀（CHANGE-0104→CHANGE.C0104） }
+    - { legacy: "ISSUE.*",           canonical: "CHANGE.*", note: 源侧跟踪 id 收编（MIG-B1 实测 107 形）：登记前缀点段剥离不带入 canonical；段内连字符→下划线 greedy 打包（32 字符 SEGMENT 上限，段界可为打包伪迹）；末尾纯数字段→SEQ；机械映射权威=migration/master-batch1/tools/ingest_change_governance.py pack_segments }
+    - { legacy: "FTA-*",             canonical: "CHANGE.FTA_*", note: 源侧工程裁决 id 收编（MIG-B1 实测 17 形）：标记词并入首段 FTA_，余段连字符→下划线 }
+    - { legacy: "FB-*",              canonical: "CHANGE.FB_*", note: 源侧旁路事实 id 收编（MIG-B1 实测 1 形 FB-FTA-NFR-USABLE→CHANGE.FB_FTA_NFR_USABLE）；与 FTA-*/ISSUE.* 前缀互斥（^ 锚两两不重叠） }
 
 kinds_registry:         # truth/objects 正文文件的合法 kind（信封层 kind 字段取值）
   truth_bodies: [capability, component, contract_operation, error_term,
@@ -93,6 +101,40 @@ kinds_registry:         # truth/objects 正文文件的合法 kind（信封层 k
   forbidden_in_index:   # A8：GateResult 及一切运行产物不得入索引
     - gate_results     (→ evidence/runs/)
     - claims           (→ evidence/claims/)
+  # PR-0001（V1/V2 落法 b 裁决）：catalog/ 条目（catalog-lock 管辖面）不是 02 信封实例，
+  # 其 kind 字段（policy / gate_recipe 等）是目录分类标签，不受 truth_bodies 闭包管辖；
+  # truth 正文规范性条款按 MIG-B1 §3 先例走 business_rule，门禁定义锚词形归 03 schema gate_def。
+  catalog_note: catalog 条目 kind 词形不进本闭包，登记于 catalog_layer_vocab 段
+
+catalog_layer_vocab:     # catalog/ 目录条目词轴（PR-0001 收编；catalog-lock 管辖面，非 truth 信封枚举；扩值走词汇表 PR）
+  enforcement:           # V5：条目强制力三值（60 条物化条目全携带；32/40/10）
+    values: [required_when_applicable, advisory, deterministic_where_possible]
+    notes:
+      required_when_applicable: 命中 applies_when 即 MUST 候选
+      advisory: 永不 FAIL gate（至多 WARN/HINT 或进 Human Review 议程）
+      deterministic_where_possible: 优先机器判卷
+  classification:        # V6：§93.4 十二分类（甄选结论词表）
+    values: [CONSTITUTION, UNIVERSAL_POLICY, LANE_POLICY, TECHNOLOGY_PROFILE,
+             PROJECT_BASELINE_TEMPLATE, CONTRACT_TEMPLATE, GATE_RECIPE,
+             KNOWLEDGE_PATTERN, FAILURE_PATTERN, DEPRECATED, DUPLICATE, REJECTED]
+    note: DEPRECATED/DUPLICATE/REJECTED 是甄选结论，与 lifecycle 轴正交，禁混用（物化集三值零携带：DUPLICATE 17 条留 candidates/rejected.json 留档）
+  lane:                  # V7：applies_when.lane 现用最小闭包（低优先项）
+    values: [any, frontend, backend]
+    note: architect/designer/documenter 为上游 workflow lane 概念，未成 catalog 词形；有条目采用时扩值走词汇表 PR
+  knowledge_note: >-     # V3 确认项：不新增枚举值
+    KNOWLEDGE_PATTERN / FAILURE_PATTERN 以 knowledge_entry 的 payload 变体（classification 值）承载，
+    gate_binding=NEVER_FAIL（advisory 豁免）随条目 x-advisory-gate-semantics 登记。
+
+presentation_axes:      # 呈现层词轴（PR-0001 收编；kernel/CLI 报告局部词，非治理事实枚举，不进七态 verdict 闭包；扩值走词汇表 PR）
+  reconcile_delta_kinds:    # ⑥拍 reconcile changed_objects[].kind
+    values: [axes_change, materialized, vanished, content_drift]
+    note: >-
+      content_drift 一词二用：kind 词=「四轴未变而有 delta 的行」；同行 content_drift 字段=三态判定
+      （true/false/null，null=显式未知不冒充无漂移）。机器按字段位判别；axes_change 定义要求四轴任一
+      from≠to，content_drift 行不得冒用 axes_change。
+  reconcile_exception_kinds:  # ⑥拍 reconcile exceptions[] 判别词
+    values: [content_tamper]
+    note: row 级正文探测失配（只读只报不拦写，D24）；证据条目（runs/claims）无 kind 字段，本词形是例外段唯一判别词形。
 
 digest_ethics:          # D24 落地注记 —— 全局适用于一切 sha256/digest 字段
   write_blocking: false           # digest 永不作为写入门闸

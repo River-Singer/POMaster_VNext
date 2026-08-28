@@ -3,7 +3,8 @@
  *
  * 词表纪律（违者=返工）：
  * - 本文件一切枚举/前缀/转移矩阵只能镜像 `assets/vocab-lock.draft.yaml`
- *   （pomaster.vocab/v0.1-resolved，2026-08-27 FROZEN），逐值相等，禁止发明词表外值；
+ *   （pomaster.vocab/v0.2-resolved；v0.1-resolved 2026-08-27 FROZEN，2026-08-29 PR-0001
+ *   append-only 纯增量增补，v0.1 词值零删改），逐值相等，禁止发明词表外值；
  * - 需要新值 → 留 `TODO(vocab-pr)` 注释走词汇表 PR，禁止就地添加；
  * - 标注「待词汇表 PR 收编」的词轴：词形已在 schema（01/02/03/05/06/07）的
  *   x-vocab-extra / definitions 冻结，本文件照镜像并保留 TODO(vocab-pr)；
@@ -140,7 +141,13 @@ export type ProbeResultValue = (typeof PROBE_RESULT_VALUES)[number];
 // id_namespace（x-vocab-source: vocab-lock id_namespace，A5 closed-world）
 // ============================================================
 
-/** 前缀闭包 v0（15 前缀；未登记前缀=解析即 FATAL；扩展走词汇表 PR）。 */
+/**
+ * 前缀闭包 v0（15 前缀；未登记前缀=解析即 FATAL；扩展走词汇表 PR）。
+ * PR-0001 注记（vocab-lock id_namespace.state_plane_refs）：`PERMIT.<BASE>.<SEQ>` 是状态面
+ * 台账键词形（state/permits.json 内部台账；A8 同族不入 truth-index），**不是 governed 前缀**
+ * ——不入本闭包、不过 parseGovernedId，解析归台账存在性 + 显式四态 outcome（kernel permits.ts
+ * 模板字面量承载，此处登记的是事实不是新约束）。
+ */
 export const GOVERNED_ID_PREFIXES = [
   "PAGE",
   "CAPABILITY",
@@ -161,10 +168,14 @@ export const GOVERNED_ID_PREFIXES = [
 export type GovernedIdPrefix = (typeof GOVERNED_ID_PREFIXES)[number];
 
 /**
- * 别名双向链 v0（A6 rename-on-ingest，只减不增）。
- * note 字段逐字镜像 vocab-lock aliases_v0 注记；
+ * 别名双向链 v0（A6 rename-on-ingest；v0.1 五族「只减不增」，v0.2 起 PR-0001 增补为
+ * 八族 append-only——不可删改语义）。note 字段留 yaml 侧逐字镜像（vocab-lock aliases_v0 注记）；
  * 数字段收编加字母前缀规则（TASK-0087→TASK.T0087、CHANGE-0104→CHANGE.C0104，
  * SEGMENT 不允许数字开头）由 Kernel resolveAlias/rename-on-ingest 映射器内置（02b 文法注记）。
+ * PR-0001 三新族（MIG-B1 源侧跟踪 id 收编）的机械映射归 kernel id.ts：
+ * ISSUE.* 登记前缀点段剥离不带入 canonical + 段内连字符→下划线 greedy 打包（32 字符
+ * SEGMENT 上限，段界可为打包伪迹）+ 末尾纯数字段→SEQ；FTA-* / FB-* 标记词并入首段；
+ * 机械映射权威=migration/master-batch1/tools/ingest_change_governance.py pack_segments。
  */
 export const ALIASES_V0 = [
   { legacy: "KB-*", canonical: "KNOWLEDGE.*" },
@@ -172,6 +183,9 @@ export const ALIASES_V0 = [
   { legacy: "PAGE-TASK-STEP-*", canonical: "PAGE.*" },
   { legacy: "TASK-*", canonical: "TASK.*" },
   { legacy: "CHANGE-*", canonical: "CHANGE.*" },
+  { legacy: "ISSUE.*", canonical: "CHANGE.*" },
+  { legacy: "FTA-*", canonical: "CHANGE.FTA_*" },
+  { legacy: "FB-*", canonical: "CHANGE.FB_*" },
 ] as const;
 
 // ============================================================
@@ -197,11 +211,74 @@ export type TruthBodyKind = (typeof TRUTH_BODY_KINDS)[number];
  * 控制面内联对象（住 truth-index.json 内部，不产生正文文件）：
  * denominators[]（版本化数组，successor_of 链）、producers[]（注册+活性快照）。
  * forbidden_in_index（A8）：gate_results → evidence/runs/、claims → evidence/claims/。
+ * PR-0001 catalog_note（V1/V2 落法 b 裁决）：catalog/ 条目（catalog-lock 管辖面）不是 02
+ * 信封实例，其 kind 字段（policy / gate_recipe 等）是目录分类标签，不受 truth_bodies 闭包
+ * 管辖，词形登记于 vocab-lock catalog_layer_vocab 段；truth 正文规范性条款按 MIG-B1 §3
+ * 先例走 business_rule，门禁定义锚词形归 03 schema gate_def。
  */
 
 // ============================================================
+// catalog_layer_vocab（x-vocab-source: vocab-lock catalog_layer_vocab，PR-0001 收编）
+// catalog/ 目录条目词轴：catalog-lock 管辖面，非 truth 信封枚举；扩值走词汇表 PR。
+// ============================================================
+
+/** 条目强制力三值（V5；60 条物化条目全携带）。 */
+export const CATALOG_ENFORCEMENT_VALUES = [
+  "required_when_applicable",
+  "advisory",
+  "deterministic_where_possible",
+] as const;
+export type CatalogEnforcementValue = (typeof CATALOG_ENFORCEMENT_VALUES)[number];
+
+/** §93.4 十二分类（V6 甄选结论词表；DEPRECATED/DUPLICATE/REJECTED 与 lifecycle 轴正交，禁混用）。 */
+export const CATALOG_CLASSIFICATION_VALUES = [
+  "CONSTITUTION",
+  "UNIVERSAL_POLICY",
+  "LANE_POLICY",
+  "TECHNOLOGY_PROFILE",
+  "PROJECT_BASELINE_TEMPLATE",
+  "CONTRACT_TEMPLATE",
+  "GATE_RECIPE",
+  "KNOWLEDGE_PATTERN",
+  "FAILURE_PATTERN",
+  "DEPRECATED",
+  "DUPLICATE",
+  "REJECTED",
+] as const;
+export type CatalogClassificationValue = (typeof CATALOG_CLASSIFICATION_VALUES)[number];
+
+/** applies_when.lane 最小闭包（V7；architect/designer/documenter 未成 catalog 词形，有条目采用时扩值走词汇表 PR）。 */
+export const CATALOG_LANE_VALUES = ["any", "frontend", "backend"] as const;
+export type CatalogLaneValue = (typeof CATALOG_LANE_VALUES)[number];
+
+// ============================================================
+// presentation_axes（x-vocab-source: vocab-lock presentation_axes，PR-0001 收编）
+// kernel/CLI 报告局部词：非治理事实枚举，不进七态 verdict 闭包；扩值走词汇表 PR。
+// ============================================================
+
+/**
+ * reconcile changed_objects[].kind 四值（⑥拍）。
+ * content_drift 一词二用（登记即为此歧义的成文收编）：kind 词=「四轴未变而有 delta 的行」；
+ * 同行 content_drift 字段=三态判定（true/false/null，null=显式未知不冒充无漂移）。
+ * 机器按字段位判别；axes_change 定义要求四轴任一 from≠to，content_drift 行不得冒用 axes_change。
+ */
+export const RECONCILE_DELTA_KINDS = [
+  "axes_change",
+  "materialized",
+  "vanished",
+  "content_drift",
+] as const;
+
+/**
+ * reconcile exceptions[] 判别词（⑥拍）：row 级正文探测失配（只读只报不拦写，D24）；
+ * 证据条目（runs/claims）无 kind 字段，本词形是例外段唯一判别词形。
+ */
+export const RECONCILE_EXCEPTION_KINDS = ["content_tamper"] as const;
+
+// ============================================================
 // 以下为「词表外局部枚举」：词形已在各 schema 冻结，待词汇表 PR 收编。
-// TODO(vocab-pr)：逐轴随 vocab-lock v0.2 收编；扩值必须走词汇表 PR，禁止就地添加。
+// TODO(vocab-pr)：逐轴随后续词汇表 PR 收编（v0.2/PR-0001 已收编 catalog_layer_vocab 与
+// presentation_axes 两段；本节词轴尚未入 vocab-lock）；扩值必须走词汇表 PR，禁止就地添加。
 // ============================================================
 
 /** gate verdict 七态超集（x-vocab-source: 03-gate-result definitions.verdict 候选冻结来源；C1 四态必答位=前四者）。 */

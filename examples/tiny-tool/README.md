@@ -30,8 +30,9 @@ node index.js     # 解析→序列化→往返自检（= GRN-0001 的 CSV_ROUND
 
 ## 样例遵守的全局纪律
 
-- **词表**：一切 id/枚举镜像 `vocab-lock@v0.1-resolved`（FROZEN）；测试域用 `TEST.` 前缀
-  （Q3 已决），无词表外值。
+- **词表**：一切 id/枚举镜像 `vocab-lock@v0.2-resolved`（FROZEN；v0.1-resolved 2026-08-27
+  冻结后经 2026-08-29 PR-0001 append-only 纯增量增补，本样例所用词值零改动）；测试域用
+  `TEST.` 前缀（Q3 已决），无词表外值。
 - **D24 哈希伦理**：样例零 sha256/digest 字段、零墙钟字段（时间住 evidence 平面
   `ran_at_utc` 位，本样例连它也省略）；人从未计算任何哈希。
 - **幂等（A4）**：对象无 created_at/updated_at，只有事务分配的 `rev` / `last_run_seq`。

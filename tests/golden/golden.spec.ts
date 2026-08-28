@@ -208,7 +208,7 @@ describe("执行器参考镜像 · id 解析与别名双向链（A5/A6）", () =
     if (!r.ok) expect(r.reason).toBe("unknown_prefix");
   });
 
-  it("参考镜像与 kernel 契约正则同构：resolveAliasReference 对 alias 常量零字面量（ALIASES_V0 五族可判别）", () => {
+  it("参考镜像与 kernel 契约正则同构：resolveAliasReference 对 alias 常量零字面量（ALIASES_V0 既有五族可判别——PR-0001 后注册表八族，三新族不在 golden 触发输入）", () => {
     for (const legacy of ["GRID.EDITABLE_GRID", "TASK-0087", "CHANGE-0104", "KB.FAILURE_PATTERN.CSV_NAIVE_SPLIT", "PAGE-TASK-STEP-BIND-CARLINE"]) {
       expect(
         resolveAliasReference(legacy).matchedRuleLegacy,

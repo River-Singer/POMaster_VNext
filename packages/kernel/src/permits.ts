@@ -157,7 +157,8 @@ function actorToRecord(actor: Actor): PermitRecord["requested_by"] {
   };
 }
 
-/** 许可引用基底：限 [A-Z0-9_]，截断 32（general_id 段文法；PERMIT 前缀未入闭包 → TODO(vocab-pr)）。 */
+/** 许可引用基底：限 [A-Z0-9_]，截断 32（general_id 段文法；PERMIT.* 为状态面台账键词形——
+ * vocab-lock id_namespace.state_plane_refs（PR-0001 文档化收编），非 governed 前缀定案不入闭包）。 */
 function permitBase(request: PermitRequest): string {
   const raw = request.changeRef ?? `ADHOC_${request.requestedBy.actor}`;
   const sanitized = raw

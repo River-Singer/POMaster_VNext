@@ -199,10 +199,72 @@ describe("resolveAlias（A6 双向链）", () => {
     expect(resolveAlias("").canonical).toBeNull();
   });
 
-  it("PAGE-APP-DASHBOARD 不在 aliases_v0 五族 → 无法机械收编（历史形态归数据层）", () => {
+  it("PAGE-APP-DASHBOARD 不在 aliases_v0 八族之任一 → 无法机械收编（历史形态归数据层）", () => {
     const resolution = resolveAlias("PAGE-APP-DASHBOARD");
     expect(resolution.canonical).toBeNull();
     expect(resolution.matchedRuleLegacy).toBeNull();
+  });
+
+  // —— PR-0001 三新族（MIG-B1 源侧跟踪 id 收编；机械映射=pack_segments 移植） ——
+
+  it("ISSUE.PAGE-APP-TASK-MGMT.1 → CHANGE.PAGE_APP_TASK_MGMT.1（登记前缀点段剥离 + 末尾纯数字段→SEQ）", () => {
+    const resolution = resolveAlias("ISSUE.PAGE-APP-TASK-MGMT.1");
+    expect(resolution.canonical).toBe("CHANGE.PAGE_APP_TASK_MGMT.1");
+    expect(resolution.matchedRuleLegacy).toBe("ISSUE.*");
+    expect(resolution.legacyForms).toEqual(["ISSUE.PAGE-APP-TASK-MGMT.1"]);
+  });
+
+  it("打包伪迹：ISSUE.PAGE-TASK-STEP-MAINTAIN-BASE-ATTRIBUTES.1 → CHANGE.PAGE_TASK_STEP_MAINTAIN_BASE.ATTRIBUTES.1（greedy 32 字符 SEGMENT 上限，段界可为打包伪迹）", () => {
+    const resolution = resolveAlias("ISSUE.PAGE-TASK-STEP-MAINTAIN-BASE-ATTRIBUTES.1");
+    expect(resolution.canonical).toBe("CHANGE.PAGE_TASK_STEP_MAINTAIN_BASE.ATTRIBUTES.1");
+    expect(resolution.matchedRuleLegacy).toBe("ISSUE.*");
+  });
+
+  it("FTA-RULE-USABLE → CHANGE.FTA_RULE_USABLE（标记词并入首段，MIG-B1 实测 17 形）", () => {
+    const resolution = resolveAlias("FTA-RULE-USABLE");
+    expect(resolution.canonical).toBe("CHANGE.FTA_RULE_USABLE");
+    expect(resolution.matchedRuleLegacy).toBe("FTA-*");
+    expect(resolution.legacyForms).toEqual(["FTA-RULE-USABLE"]);
+  });
+
+  it("FB-FTA-NFR-USABLE → CHANGE.FB_FTA_NFR_USABLE（FB- 不命中 ^FTA-，前缀 ^ 锚互斥）", () => {
+    const resolution = resolveAlias("FB-FTA-NFR-USABLE");
+    expect(resolution.canonical).toBe("CHANGE.FB_FTA_NFR_USABLE");
+    expect(resolution.matchedRuleLegacy).toBe("FB-*");
+  });
+
+  it("三新族收编结果过 parseGovernedId（closed-world 组合律）", () => {
+    for (const legacy of [
+      "ISSUE.PAGE-APP-TASK-MGMT.1",
+      "ISSUE.PAGE-TASK-STEP-MAINTAIN-BASE-ATTRIBUTES.1",
+      "FTA-RULE-USABLE",
+      "FB-FTA-NFR-USABLE",
+    ]) {
+      const canonical = resolveAlias(legacy).canonical;
+      expect(canonical).not.toBeNull();
+      expect(() => parseGovernedId(canonical as string)).not.toThrow();
+    }
+  });
+
+  it("canonical CHANGE.FTA_RULE_USABLE 逆向多候选：FTA- 标记形 + ISSUE 点形（首段 FTA_ 判别分流）", () => {
+    expect(resolveAlias("CHANGE.FTA_RULE_USABLE").legacyForms).toEqual([
+      "FTA-RULE-USABLE",
+      "ISSUE.FTA-RULE-USABLE",
+    ]);
+  });
+
+  it("canonical CHANGE.PAGE_APP_TASK_MGMT.1 逆向双候选并列：ISSUE 点形 + CHANGE- 横线形（权威考古记录仍是对象 aliases[]）", () => {
+    expect(resolveAlias("CHANGE.PAGE_APP_TASK_MGMT.1").legacyForms).toEqual([
+      "ISSUE.PAGE-APP-TASK-MGMT.1",
+      "CHANGE-PAGE-APP-TASK-MGMT.1",
+    ]);
+  });
+
+  it("非法 token 的家族命中词形 → canonical=null + note（resolveAlias 保持无异常出口）", () => {
+    const resolution = resolveAlias("ISSUE.foo-bar");
+    expect(resolution.canonical).toBeNull();
+    expect(resolution.matchedRuleLegacy).toBe("ISSUE.*");
+    expect(resolution.note).toContain("机械映射失败");
   });
 
   it("收编结果过 parseGovernedId（主链路组合律；mechanical=true 族）", () => {

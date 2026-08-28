@@ -20,8 +20,9 @@
  * - 四态纪律：content_drift=null 是「基线无 sha 锚/对象 absent」的显式未知，不冒充
  *   「无漂移」；verdict_census 全量计数（含例外条目与 scope 外条目）——聚合不吞没，
  *   不进例外段 ≠ 不可见。
- * - 词表纪律：verdict 取既有七态闭包 / verification 四值闭包；changed_objects 的 kind
- *   词形是 CLI 呈现层局部词 → TODO(vocab-pr)。
+ * - 词表纪律：verdict 取既有七态闭包 / verification 四值闭包；changed_objects 的 kind 词形
+ *   与 content_tamper 判别词已随 vocab-lock v0.2 presentation_axes 登记（PR-0001），本文件
+ *   自 kernel 词表入口（@pomaster/schemas 单一镜像点）引用，不在本地复制词值。
  */
 import { readdirSync } from "node:fs";
 import type { ObjectRow, Store } from "./index.js";
@@ -31,10 +32,15 @@ import { readText } from "./io.js";
 import { loadTruthIndex } from "./store.js";
 import { readPermitsFile, type PermitBaselineSubject } from "./permits.js";
 import { pathsOf, readCurrentSeq, type StorePaths } from "./paths.js";
-import type { VerdictValue } from "./vocab.js";
+import {
+  RECONCILE_DELTA_KINDS,
+  RECONCILE_EXCEPTION_KINDS,
+  type VerdictValue,
+} from "./vocab.js";
 
 // ============================================================
-// 词形与常量（呈现层局部词 TODO(vocab-pr)；verdict 取既有词表闭包）
+// 词形与常量（RECONCILE_DELTA_KINDS / RECONCILE_EXCEPTION_KINDS 镜像自
+// vocab-lock presentation_axes；verdict 取既有词表闭包）
 // ============================================================
 
 /** --samples 缺省值（设计 §3.1：缺省 3，≥0；0 = 显式放弃抽样，不静默）。 */
@@ -52,21 +58,15 @@ export const RECONCILE_EXCEPTION_RUN_VERDICTS: readonly VerdictValue[] = [
 ];
 
 /**
- * changed_objects 条目的 kind 词形（CLI 呈现层局部词 → TODO(vocab-pr)）：
+ * changed_objects 条目的 kind 词形（vocab-lock presentation_axes.reconcile_delta_kinds，
+ * PR-0001 收编；导出名与值收编前后零变化，单一镜像点在 @pomaster/schemas）：
  * - axes_change：四轴任一 from≠to（axes 只列变化的轴）；
  * - materialized：签发时 absent、现已存在（PROPOSED 新对象落地，合法但人须知道）；
  * - vanished：签发时存在、现已消失（含索引行仍在但正文文件缺失的 REF 异常形态）——必 fail；
- * - content_drift：四轴未变而 body_sha256 变化（静默漂移显式打捞）。
- *   设计 §3.2 列了前三值；其自身定义的 content_drift=true 状态（「变了而四轴未变」）
- *   需要一个宿主词形——按设计 §6「呈现层局部词带 TODO(vocab-pr)」机制补第 4 词形，
- *   不冒用 axes_change（其定义明确要求四轴任一 from≠to）。
+ * - content_drift：四轴未变而 body_sha256 变化（静默漂移显式打捞；一词二用成文收编——
+ *   kind 词 vs 同行 content_drift 三态字段，机器按字段位判别）。
  */
-export const RECONCILE_DELTA_KINDS = [
-  "axes_change",
-  "materialized",
-  "vanished",
-  "content_drift",
-] as const;
+export { RECONCILE_DELTA_KINDS };
 
 export type ReconcileDeltaKind = (typeof RECONCILE_DELTA_KINDS)[number];
 
@@ -97,14 +97,14 @@ export interface ReconcileEvidenceEntry {
 export type ReconcileException = ReconcileEvidenceEntry | ReconcileTamperEntry;
 
 /**
- * row 级正文探测命中的例外条目（kind=content_tamper；呈现层局部词 TODO(vocab-pr)，
- * 同 RECONCILE_DELTA_KINDS 的 content_drift 先例——不发明 Governed 前缀/七态 verdict，
- * 复用 exceptions 段承载）。语义：正文重算指纹 ≠ 索引行 bodySha256——「只手改正文、
- * 不碰索引行」的篡改实锤（该篡改对 baseline↔行的双索引锚 delta 不可见，N1 盲区）。
- * index_sha256/body_sha256 供人直接定位；探测本身只读不修（D24：告警不拦写）。
+ * row 级正文探测命中的例外条目（kind 词形=content_tamper；vocab-lock
+ * presentation_axes.reconcile_exception_kinds，PR-0001 收编——不发明 Governed 前缀/
+ * 七态 verdict，复用 exceptions 段承载）。语义：正文重算指纹 ≠ 索引行 bodySha256——
+ * 「只手改正文、不碰索引行」的篡改实锤（该篡改对 baseline↔行的双索引锚 delta 不可见，
+ * N1 盲区）。index_sha256/body_sha256 供人直接定位；探测本身只读不修（D24：告警不拦写）。
  */
 export interface ReconcileTamperEntry {
-  readonly kind: "content_tamper";
+  readonly kind: (typeof RECONCILE_EXCEPTION_KINDS)[number];
   /** 失配对象 id（探测分母 = 抽中样本 subject ∪ changed_objects，恒在 permit scope 内）。 */
   readonly subject_id: string;
   /** 索引行 body_ref（正文文件引用；探测不写该文件）。 */
