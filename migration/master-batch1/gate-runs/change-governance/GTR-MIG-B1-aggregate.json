@@ -1,0 +1,48 @@
+{
+  "blindspot": {
+    "escape_ratio": 0.0034,
+    "fixture_regression": "CHANGE.FB_FTA_NFR_USABLE.payload.source_document_meta.accepted_delta_ref=DELTA-VOLUME-BASELINE@1.4.0 -> outputs/frontend/00_input/decision-deltas/DELTA-VOLUME-BASELINE.accepted-receipt.yaml（MASTer_master 只读 exists 实测在场）：散文裁决回执、无对应 CHANGE 对象；对象化属 M-lane 治理动作非 gate 权限；登记出处 classification-ledger.yaml entries[kind=bp-feedback-register].rationale，ledger coverage 分母=10 不含 decision-deltas；此外 MASTer doc/*.md 内散文裁决无机械载体清单，不可枚举余量无法计数（本盲区的定义本身）",
+    "produced": 265,
+    "scanned": 290
+  },
+  "counts": {
+    "applicable_scanned": 265,
+    "not_applicable": 25,
+    "scanned": 290,
+    "unchecked_in_blindspot_estimated": 1,
+    "violations": 107
+  },
+  "denominator_refs": [],
+  "digest_excluded_fields": [
+    "duration_ms"
+  ],
+  "duration_ms": {
+    "external": 0,
+    "self": 0
+  },
+  "gate": "CHANGE_GOVERNANCE",
+  "gate_def": "POLICY.GATE.CHANGE_GOVERNANCE@1.0.0",
+  "grn": "GRN-405",
+  "items": [],
+  "items_truncated": false,
+  "metric_dialect": "change_governance:corpus_object_count",
+  "ran_at_seq": 405,
+  "scope": {
+    "note": "M4 change-governance 主题汇总（worst-of 语义：failed > blocked > not_configured/skipped_blindspot > warning > passed）。四个分检查项判定：GRN-401=failed, GRN-402=passed, GRN-403=skipped_blindspot, GRN-404=passed。汇总分母=truth/objects/ 全语料 290 对象（六个 kind 实测并集）；applicable_scanned=265 为四检查适用集的并集（107 issue + 18 decision/adjudication + 140 contract_operation，交集按并集去重）；not_applicable=25；violations=107 全部来自 GRN-401（issue-evidence-chain）；unchecked_in_blindspot_estimated=1 来自 GRN-403 的 已知未对象化散文裁决载体。逐项明细见同目录 4 份 per-check 运行记录（GTR-MIG-B1-*.json）。 self_report_trusted=false 的 FROZEN 形态：trust.asserted=null（本轮无自报），trust.recomputed 为唯一判卷依据；denominator_refs=[] 为 schema 认可的诚实空声明（MIG-B1 语料尚未登记 DENOMINATOR.* 一等分母对象），分母数值与来源在 scope.note 显式声明；迁移语境无 kernel seq 分配器且铁律 2 要求重跑 byte-identical：ran_at_seq/duration_ms 为确定性常量，ran_at_utc 整体缺席（零墙钟）；GRN-4xx 区段确定性分配给 M4 change-governance 主题，存储平面按任务指令重定向至 gate-runs/change-governance/。",
+    "size_expected_from_denominator": 290
+  },
+  "tool": "mig-b1:run_change_gate",
+  "tool_version": "1.0.0",
+  "trigger": {
+    "note": "MIG-B1/M4 change-governance gate run over migration truth/objects/ (task-mandated on-demand audit; no kernel scheduler in migration context)",
+    "type": "on_demand"
+  },
+  "trust": {
+    "asserted": null,
+    "recomputed": {
+      "matches_asserted": true,
+      "violations": 107
+    }
+  },
+  "verdict": "failed"
+}

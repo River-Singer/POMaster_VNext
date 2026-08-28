@@ -1,0 +1,126 @@
+# -*- coding: utf-8 -*-
+"""生成 calibration/proposed-thresholds.json（二轮校准阈值提案，PROPOSED only）。
+
+权限链：Agent may propose → MUST require Human Maintainer approval → cannot self-approve。
+本文件不修改 benchmarks/ 与 packages/ 的任何现有阈值——仅登记提案与证据。
+"""
+import io
+import json
+import os
+
+OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "proposed-thresholds.json")
+
+DOC = {
+    "schema": "pomaster.vnext.migration.calibration-proposal/1",
+    "batch": "MIG-B1",
+    "purpose": "bench-0002 provision 二轮校准：MASTer 语料回放暴露系统性偏离后的阈值修正提案（PROPOSED，未生效）",
+    "status": "PROPOSED",
+    "approval_gate": {
+        "cannot_self_approve": True,
+        "approver": "Owner（Human Maintainer）",
+        "生效方式": "Owner 裁决后由 Owner 侧变更阈值事实源（catalog 默认值或项目 config.yaml governance_router thresholds），本批次不触碰 benchmarks/ 与 packages/",
+        "回滚方式": "任何获批条目将关键词表恢复至当前值并重跑 node benchmarks/run-all.mjs 验证矩阵回绿",
+    },
+    "replay_evidence_base": {
+        "samples": "migration/master-batch1/calibration/samples.json（16 样本，期望档预注册）",
+        "results": "migration/master-batch1/calibration/replay-results.json",
+        "results_sha256": "7aaafc4a6b4a8e984d0f0d878197d43dde334214a97364d228873821767271a7",
+        "replay_log": "migration/master-batch1/calibration/replay-round2-input.md",
+        "summary": {"total": 16, "consistent": 12, "deviation": 4, "error": 0, "denominator_source": "samples.json samples[]"},
+        "by_class": {
+            "title_derivable": "12/12 一致（100%）",
+            "signal_requiring": "0/4 一致（0%）——全部偏离集中于 P0 未配置信号类，系统性缺口",
+        },
+        "corpus_scan_denominator": {
+            "task_dirs": 53,
+            "source": "MASTer_master/.trellis/tasks 顶层（活跃 16）+ archive/2026-08（37）；含 task.json title 与目录名词面扫描",
+        },
+    },
+    "proposals": [
+        {
+            "id": "T-1",
+            "threshold": "TRIAGE_ESCALATION_KEYWORDS（packages/cli/src/triage.ts 升档关键词表，bench-0002 approved_items 关键词规则族）",
+            "current_value": ["contract", "契约", "openapi", "api_req", "跨域", "cross-domain"],
+            "proposed_value_append": ["global"],
+            "rationale_md": "回放暴露「全局影响面」词形系统性低判：replay-R2-008 期望 STANDARD（E2 fan_out 语义，全站共享组件全局行为变更）实得 LIGHT。语料全量扫描（分母 53）：global 命中 2/53，两条均为全局影响面批次（08-10-disable-auto-boolean-rendering-grid、08-10-global-remove-header-breadcrumb-grid-locale-colwidth-filterrow），0 反例；中文「全局」命中 0/53，不提案（无语料支持，避免投机扩词）。",
+            "evidence_bindings": [
+                {
+                    "replay_id": "replay-R2-008",
+                    "evidence": "replay-round2-input.md §2 replay-R2-008 记录（行 131）+ §5 索引 DEV-1；replay-results.json records[replay_id=replay-R2-008]",
+                }
+            ],
+            "impact": "triage intake 词形含 global 的请求 → STANDARD（升档触发优先于 MINIMAL 短路）",
+            "risk_notes_md": "① 升档检查先于样式短路：未来「全局样式统一」类任务将落 STANDARD 而非 MINIMAL——按 E2 全局影响面语义该方向可接受，Owner 裁定。② 英文词形 global 在中文语料中命中率有限，本提案只修复已证词形，不做推测性扩词。③ 属关键词近似修复，不替代 fan_out 信号实现（见 signal_priority_recommendations S-1）。",
+            "support_in_corpus": "2/53 命中，0 反例",
+        }
+    ],
+    "rejected_candidates": [
+        {
+            "id": "A-1",
+            "candidate": "TRIAGE_COPY_STYLE_KEYWORDS += 只读（意图：修复 replay-R2-012 只读审计过判）",
+            "verdict": "REJECTED",
+            "evidence_md": "语料扫描（分母 53）：只读命中 2/53，其中 08-19-cvp-gap-implementation（标题含「只读口径」）为重实现批次（快修包+三大件+导入保存语义+列配置弹窗），加词将把该类任务误判 MINIMAL——精确率 1/2，方向性危险（对重任务减免治理）。",
+            "alternative": "F1 docs-only 快道应由 declared_paths 信号实现（S-2），不由词形近似。",
+        },
+        {
+            "id": "A-2",
+            "candidate": "TRIAGE_COPY_STYLE_KEYWORDS += audit / 审计（意图：docs-only 审计判 MINIMAL）",
+            "verdict": "REJECTED",
+            "evidence_md": "语料扫描（分母 53）：audit 6/53、审计 5/53；多数为写治理对象或修复批次（08-08 antdesign 审计写 registry/spec、08-18-q9-audit-fixes 为 40 处修复批次、08-18-audit-fixes-backlog 为修复待办）。replay-R2-013（audit 词形、写治理对象、期望与实际均 LIGHT）即语料内对照反例——加词将批量误判 MINIMAL。",
+            "alternative": "同 A-1：declared_paths 信号（S-2）。",
+        },
+        {
+            "id": "A-3",
+            "candidate": "TRIAGE_ESCALATION_KEYWORDS += 共享 / 引擎 / 架构（意图：修复 replay-R2-015/016 低判）",
+            "verdict": "REJECTED（作为主路径；是否加词形兜底由 Owner 裁定）",
+            "evidence_md": "语料扫描（分母 53）：共享 1/53（即 replay-R2-015 本身，加词=对回放语料过拟合）；引擎 2/53（replay-R2-016 + D1 引擎核心，同 epic 子任务，独立信号量仅 1）；架构 1/53 且为干净反例（08-18-buc-ux-structure-replication「信息架构复刻」是 UX 复刻任务，非软件架构变更）——词形近似对架构/影响面语义不可靠。",
+            "alternative": "fan_out（S-1）与 architecture_impact（S-3）信号实现。",
+        },
+    ],
+    "signal_priority_recommendations": {
+        "note_md": "以下不是阈值变更，是回放证据对信号实现优先级的建议输入（信号源实现属后续工程任务，不在本提案审批范围）。",
+        "items": [
+            {
+                "id": "S-1",
+                "signal": "fan_out / dependency_manifest_hit（thread-C E2，已批准占位 fan_out_standard_min=6）",
+                "evidence_bindings": ["replay-R2-008（行 131）", "replay-R2-015（行 212）", "replay-R2-016（行 225）"],
+                "coverage_md": "可消解 4 条偏离中 3 条低判（3/16 样本）。",
+            },
+            {
+                "id": "S-2",
+                "signal": "declared_paths（thread-C F1 docs-only 快道）",
+                "evidence_bindings": ["replay-R2-012（行 177）"],
+                "coverage_md": "可消解 1 条过判偏离（1/16 样本）；注意 replay-R2-005 的 governed_object_hits 注记提示 F3 守卫信号同属此类。",
+            },
+            {
+                "id": "S-2b",
+                "signal": "churn / 振荡检测（thread-C E7，已批准占位 churn_hits_watch=4-per-14d）",
+                "evidence_bindings": ["replay-round2-input.md §3.4 振荡簇观察"],
+                "coverage_md": "单请求回放形态不可见的簇级风险：checkbox 同区域簇 9 目录（分母=archive/2026-08 枚举）超占位阈值；非本轮回放偏离计数，登记为形态边界证据。",
+            },
+            {
+                "id": "S-3",
+                "signal": "architecture_impact（thread-C E6）+ 宪法级候选通路（C5 PROFILE_CANDIDATE，当前 triage.ts 未实现）",
+                "evidence_bindings": ["replay-R2-016（行 225）宪法级候选注记", "replay-round2-input.md §4 卡点 2"],
+                "coverage_md": "与 S-1 在本语料重叠；实现后宪法档（calibration-template 第三档）方可进入回放。",
+            },
+        ],
+    },
+    "owner_review_checklist": [
+        "复核 4 条偏离样本的期望档本身（signal_requiring 类期望为人工推演，见 replay-round2-input.md §4 卡点 3）",
+        "裁定 T-1（加词 global）是否批准；获批后由 Owner 侧改阈值事实源并重跑 benchmarks/run-all.mjs",
+        "裁定被否决候选 A-1/A-2/A-3 是否维持否决",
+        "裁定 signal_priority_recommendations S-1/S-2/S-2b/S-3 的实现排期输入",
+    ],
+}
+
+
+def main() -> None:
+    payload = json.dumps(DOC, sort_keys=True, indent=2, ensure_ascii=False) + "\n"
+    with io.open(OUT, "w", encoding="utf-8", newline="\n") as f:
+        f.write(payload)
+    print("written:", os.path.abspath(OUT))
+
+
+if __name__ == "__main__":
+    main()

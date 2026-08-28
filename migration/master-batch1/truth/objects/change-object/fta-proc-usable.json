@@ -1,0 +1,108 @@
+{
+  "aliases": [
+    "FTA-PROC-USABLE"
+  ],
+  "authority": {
+    "delegates": [],
+    "escalation_hint": "current-effectiveness promotion is an M3 Authority re-verification action executed via the supersede chain; never reopen an adjudicated record",
+    "owner": "HUMAN_OWNER",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "PROVISIONAL",
+    "evidence": "PLANNED",
+    "lifecycle": "PROPOSED"
+  },
+  "axis_profile": "change_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "CHANGE.FTA_PROC_USABLE",
+  "key_bindings": {
+    "artifact": [],
+    "code": [
+      {
+        "artifact_type": "file",
+        "expect": {
+          "decision_id": "FTA-PROC-USABLE",
+          "document_type": "engineering-decision-log",
+          "status": "proposed"
+        },
+        "match_rule": "mechanical",
+        "value": "outputs/frontend/10_planned/05_engineering-decisions.yaml"
+      }
+    ]
+  },
+  "kind": "change_object",
+  "notes_md": "MIG-B1/M2 自 05_engineering-decisions.yaml 逐条转录（源 id FTA-PROC-USABLE，ADR 族）。工程裁决签发人为项目 Owner（单人项目，如实登记）；当前生效值的 CURRENT 化留待 M3 重验落定，不重开已裁决案件；源 superseded_by 全为 null，本条无翻案史，decision_timeline 长度=1，翻案走 supersede 指针入链。本字段为人类散文，机器永不解析判卷。",
+  "origin": "natural",
+  "payload": {
+    "affected_objects": [],
+    "class_scan_result": {
+      "fixed_count": 0,
+      "hits": 8,
+      "regression_case_ref": "NONE__NOT_REGISTERED_AT_MIG_B1",
+      "scope": "same-class scan = decisions[] of outputs/frontend/10_planned/05_engineering-decisions.yaml with an identical scope_ids set (group size 8 incl. self)"
+    },
+    "decision_timeline": [
+      {
+        "event_kind": "ADJUDICATION_RECORDED",
+        "source_locator": "decisions[id=FTA-PROC-USABLE]",
+        "supersedes": null,
+        "verdict": "proposed"
+      }
+    ],
+    "motivation": "建立显式副作用图，写动作声明失效查询键；禁止隐式全量重取。",
+    "reopen_count": 0,
+    "source_decision": {
+      "decision": "建立显式副作用图，写动作声明失效查询键；禁止隐式全量重取。",
+      "decision_dimension": "assessment:FTA-PROC-USABLE",
+      "id": "FTA-PROC-USABLE",
+      "reason": "建立显式副作用图，写动作声明失效查询键；禁止隐式全量重取。",
+      "scope_ids": [
+        "CAP-ALL-PARTS-LIST",
+        "CAP-CALC-VEHICLE-PARTS",
+        "CAP-EXPERT-MODEL",
+        "CAP-LOGIN",
+        "CAP-PARTS-LEDGER",
+        "CAP-USER-MGMT",
+        "CAP-VEHICLE-MASTER-DATA"
+      ],
+      "source_assessment_id": "FTA-PROC-USABLE",
+      "status": "proposed",
+      "superseded_by": null
+    },
+    "source_document_meta": {
+      "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+      "document_type": "engineering-decision-log",
+      "schema_version": 3
+    },
+    "superseded_status_field": {
+      "mapped_to": "axes.lifecycle=PROPOSED (same-value direct map) + axes.confidence=PROVISIONAL (current-effectiveness pending M3 re-verification) + axes.evidence=PLANNED",
+      "reason": "proposed and PROPOSED are the same value, no semantic upgrade; CURRENT-ization of the current effect belongs to the M3 Authority re-verification batch per ledger ruling (never reopen an adjudicated case)",
+      "source_field": "status",
+      "source_value": "proposed",
+      "upgrade_registered": false
+    }
+  },
+  "permits_active": [],
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b1/ingest_change_governance.py",
+      "locator": {
+        "batch": "MIG-B1",
+        "decision_id": "FTA-PROC-USABLE",
+        "ingested_from": "outputs/frontend/10_planned/05_engineering-decisions.yaml",
+        "transcription": "one ADR decision -> one CHANGE object (Decision/AdjudicationRecord semantic family); decision/reason verbatim; status=proposed direct-map to PROPOSED and registered; scope_ids CAP-* legacy word forms kept verbatim (no registered alias rule, no rewrite); current-effect promotion deferred to M3 re-verification, case not reopened"
+      },
+      "pin": {
+        "digest": "sha256:cfa6674fac5bfd93f9c3c71c08625abbcaa94f50d451c4946ad9ad1ed907d0e4"
+      },
+      "ref": "outputs/frontend/10_planned/05_engineering-decisions.yaml",
+      "type": "human_directive"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "工程裁决 FTA-PROC-USABLE：建立显式副作用图，写动作声明失效查询键；禁止隐式全量重取。"
+}

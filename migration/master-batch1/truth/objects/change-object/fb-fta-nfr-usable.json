@@ -1,0 +1,138 @@
+{
+  "aliases": [
+    "FB-FTA-NFR-USABLE"
+  ],
+  "authority": {
+    "delegates": [],
+    "escalation_hint": "adjudication closed with an accepted delta receipt; reopen only via a new decision delta recorded as a superseding decision_timeline entry",
+    "owner": "BUSINESS_OWNER",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "LOCKED",
+    "evidence": "IMPLEMENTED",
+    "lifecycle": "CURRENT"
+  },
+  "axis_profile": "change_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "CHANGE.FB_FTA_NFR_USABLE",
+  "key_bindings": {
+    "artifact": [],
+    "code": [
+      {
+        "artifact_type": "file",
+        "expect": {
+          "audit_complete": true,
+          "document_type": "bp-feedback-register",
+          "list_complete": true,
+          "question_id": "FB-FTA-NFR-USABLE",
+          "status": "resolved"
+        },
+        "match_rule": "mechanical",
+        "value": "outputs/frontend/10_planned/04_bp-feedback-register.yaml"
+      }
+    ]
+  },
+  "kind": "change_object",
+  "notes_md": "MIG-B1/M2 自 04_bp-feedback-register.yaml 转录（登记册整册完成态 audit_complete/list_complete=true，1 条问答）。裁决已收口（accepted_delta_ref 回指已接受回执），不重开已裁决案件；本条无翻案史，decision_timeline 长度=1，翻案如后续出现走 supersede 指针入链。本字段为人类散文，机器永不解析判卷。",
+  "origin": "natural",
+  "payload": {
+    "affected_objects": [],
+    "class_scan_result": {
+      "fixed_count": 0,
+      "hits": 1,
+      "regression_case_ref": "NONE__NOT_REGISTERED_AT_MIG_B1",
+      "scope": "same-class scan = questions[] of outputs/frontend/10_planned/04_bp-feedback-register.yaml (group size 1 incl. self; single-question completed register)"
+    },
+    "decision_timeline": [
+      {
+        "event_kind": "ADJUDICATION_RECORDED",
+        "source_locator": "questions[id=FB-FTA-NFR-USABLE]; accepted_delta_ref=DELTA-VOLUME-BASELINE@1.4.0#outputs/frontend/10_planned/04_bp-feedback-register.yaml#FB-FTA-NFR-USABLE",
+        "supersedes": null,
+        "verdict": "resolved:OPT-NFR-BUDGET"
+      }
+    ],
+    "motivation": "若不设性能预算，30 列以上表格在真实数据量下会卡到不可操作，业务方无法完成日常成本维护。",
+    "reopen_count": 0,
+    "source_document_meta": {
+      "accepted_delta_ref": "DELTA-VOLUME-BASELINE@1.4.0#outputs/frontend/10_planned/04_bp-feedback-register.yaml#FB-FTA-NFR-USABLE",
+      "accepted_delta_sha256": "sha256:cdfff51beab04e8b1a4c39fbfd4c07f25c11c8780362b25d4d0db10ab3922cfb",
+      "assessment_sha256": "sha256:bc8fe10a916ad72ad6a2e6d12e3e379d790e4b444bdadb94d68db6332996b53a",
+      "audit_complete": true,
+      "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+      "dialog_cursor": {
+        "last_question_id": "FB-FTA-NFR-USABLE"
+      },
+      "document_type": "bp-feedback-register",
+      "list_complete": true,
+      "response_mode": "dialog",
+      "schema_version": 3
+    },
+    "source_question": {
+      "affected_ids": [
+        "CAP-ALL-PARTS-LIST",
+        "CAP-CALC-VEHICLE-PARTS",
+        "CAP-EXPERT-MODEL",
+        "CAP-LOGIN",
+        "CAP-PARTS-LEDGER",
+        "CAP-USER-MGMT",
+        "CAP-VEHICLE-MASTER-DATA"
+      ],
+      "business_consequence": "若不设性能预算，30 列以上表格在真实数据量下会卡到不可操作，业务方无法完成日常成本维护。",
+      "decision_ref": "DELTA-VOLUME-BASELINE@1.4.0#outputs/frontend/10_planned/04_bp-feedback-register.yaml#FB-FTA-NFR-USABLE",
+      "dependency_ids": [],
+      "id": "FB-FTA-NFR-USABLE",
+      "options": [
+        {
+          "business_consequence": "表格性能在验收阶段即可判定，不会上线后才发现不可用。",
+          "id": "OPT-NFR-BUDGET",
+          "label": "先设定明确性能预算与浏览器矩阵，实现期以此为验收门槛"
+        },
+        {
+          "business_consequence": "大表虚拟化与分页策略属架构级决策，事后改造成本极高。",
+          "id": "OPT-NFR-LATER",
+          "label": "先实现功能，性能问题后续优化"
+        }
+      ],
+      "order": 1,
+      "priority": "high",
+      "raw_response": null,
+      "readiness_impact": "若不设性能预算，30 列以上表格在真实数据量下会卡到不可操作，业务方无法完成日常成本维护。",
+      "recommendation_reason": "先建性能预算与浏览器设备矩阵，按最坏数据量假设设计虚拟滚动与服务端分页；同时向 BP 追加数据量级问题。",
+      "recommended_option_id": "OPT-NFR-BUDGET",
+      "risk_domain": "performance",
+      "scenario": "零件清单台账约 34 列、计算车型零件清单约 33 列，均为全量业务数据池上的表格能力，且台账保留变更留痕。BP 未给出数据量级与响应期望，而列数与数据量直接决定表格能否可用；专家模型的 8 个时间组件计算为同步交互，也需要响应预期。",
+      "source_assessment_id": "FTA-NFR-USABLE",
+      "status": "resolved"
+    },
+    "superseded_status_field": {
+      "mapped_to": "axes.lifecycle=CURRENT + axes.confidence=LOCKED (02b s4 migration-note precedent: accepted adjudication state)",
+      "reason": "resolved->accepted state is the direct precedent mapping, not a semantic upgrade; the adjudicated case is not reopened",
+      "source_field": "status",
+      "source_value": "resolved",
+      "upgrade_registered": false
+    }
+  },
+  "permits_active": [],
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b1/ingest_change_governance.py",
+      "locator": {
+        "batch": "MIG-B1",
+        "ingested_from": "outputs/frontend/10_planned/04_bp-feedback-register.yaml",
+        "question_id": "FB-FTA-NFR-USABLE",
+        "transcription": "completed register transcribed field-by-field (1 question -> 1 CHANGE object + decision_timeline); accepted_delta_sha256/assessment_sha256 bare hex re-prefixed sha256: (value unchanged); adjudicated case not reopened"
+      },
+      "pin": {
+        "digest": "sha256:5eb6793d5d16b1e30eb924f16571db7a08e1abdf55fcd62de256da843cb6880e"
+      },
+      "ref": "outputs/frontend/10_planned/04_bp-feedback-register.yaml",
+      "type": "human_directive"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "BP 问答裁决 FB-FTA-NFR-USABLE：OPT-NFR-BUDGET"
+}

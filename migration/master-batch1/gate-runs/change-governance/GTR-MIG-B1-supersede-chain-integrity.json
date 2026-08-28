@@ -1,0 +1,46 @@
+{
+  "blindspot": {
+    "escape_ratio": 0,
+    "produced": 18,
+    "scanned": 290
+  },
+  "counts": {
+    "applicable_scanned": 18,
+    "not_applicable": 272,
+    "scanned": 290,
+    "violations": 0
+  },
+  "denominator_refs": [],
+  "digest_excluded_fields": [
+    "duration_ms"
+  ],
+  "duration_ms": {
+    "external": 0,
+    "self": 0
+  },
+  "gate": "CHANGE_GOVERNANCE",
+  "gate_def": "POLICY.GATE.CHANGE_GOVERNANCE@1.0.0",
+  "grn": "GRN-402",
+  "items": [],
+  "items_truncated": false,
+  "metric_dialect": "supersede_chain:pointer_edge_count",
+  "ran_at_seq": 402,
+  "scope": {
+    "note": "分母显式声明：ADR/裁决族=18（来源 truth/objects/ 全语料 payload.decision_timeline 在场者实测：17 FTA 工程裁决 + 1 BP 问答裁决；ledger pin 17+1）；not_applicable=272=无 decision_timeline 的对象（107 issue + 1 migration-ledger + 其余 kind）。实测指针图：envelope.supersedes 全 null、decision_timeline[].supersedes 全 null、source_decision.superseded_by 全 null（三平面一致，转录完备）→ 0 条可解析指针，解析/环/入度/尾唯一规则全数空真通过（0 violations）；metric 口径=指针结构完整性（dialect: pointer_edge_count），『chain tail=当前生效值』的语义断言（M3 重验 CURRENT 化）不在本 gate 口径内，由对象 confidence=PROVISIONAL + superseded_status_field.upgrade_registered 登记，处置归 M3 Authority 重验批（classification-ledger 已裁定）。 self_report_trusted=false 的 FROZEN 形态：trust.asserted=null（本轮无自报），trust.recomputed 为唯一判卷依据；denominator_refs=[] 为 schema 认可的诚实空声明（MIG-B1 语料尚未登记 DENOMINATOR.* 一等分母对象），分母数值与来源在 scope.note 显式声明；迁移语境无 kernel seq 分配器且铁律 2 要求重跑 byte-identical：ran_at_seq/duration_ms 为确定性常量，ran_at_utc 整体缺席（零墙钟）；GRN-4xx 区段确定性分配给 M4 change-governance 主题，存储平面按任务指令重定向至 gate-runs/change-governance/。",
+    "size_expected_from_denominator": 18
+  },
+  "tool": "mig-b1:run_change_gate",
+  "tool_version": "1.0.0",
+  "trigger": {
+    "note": "MIG-B1/M4 change-governance gate run over migration truth/objects/ (task-mandated on-demand audit; no kernel scheduler in migration context)",
+    "type": "on_demand"
+  },
+  "trust": {
+    "asserted": null,
+    "recomputed": {
+      "matches_asserted": true,
+      "violations": 0
+    }
+  },
+  "verdict": "passed"
+}

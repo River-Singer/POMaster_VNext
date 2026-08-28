@@ -1,0 +1,55 @@
+{
+  "blindspot": {
+    "escape_ratio": 0,
+    "produced": 6,
+    "scanned": 6
+  },
+  "counts": {
+    "applicable_scanned": 6,
+    "not_applicable": 0,
+    "scanned": 6,
+    "violations": 0
+  },
+  "denominator_refs": [
+    {
+      "id": "DENOMINATOR.VENDOR_ADAPTER_REGISTRY_ROWS",
+      "version_seen": 1
+    },
+    {
+      "id": "DENOMINATOR.TRUTH_VENDOR_COMPONENT_OBJECTS",
+      "version_seen": 1
+    }
+  ],
+  "digest_excluded_fields": [
+    "duration_ms"
+  ],
+  "duration_ms": {
+    "external": 0,
+    "self": 0
+  },
+  "gate": "GRID",
+  "gate_def": "POLICY.GATE.MIG_B1_GRID@0.1.0",
+  "grn": "GRN-4103",
+  "items": [],
+  "metric_dialect": "grid:registry_row_field_diff",
+  "ran_at_seq": 0,
+  "scope": {
+    "note": "clobber 复发检测器：truth/objects/component/ 六个 vendor-adapter 收编对象 × 源 outputs/frontend/10_planned/vendor-adapter-registry.yaml libraries[] 逐字段机械 diff。分母声明：DENOMINATOR.VENDOR_ADAPTER_REGISTRY_ROWS@1=6（源 libraries[] 行数，本 run 现场重算 sha256=sha256:ae8362cb63f045c151d66a26056bef5280ab8a5a1b245e95d7383851925f7c1e 与对象 sources[].pin 一致，无漂移）；DENOMINATOR.TRUTH_VENDOR_COMPONENT_OBJECTS@1=6（truth/objects/component/ *.json 计数）。双向断言：源行→对象（缺失=vendor_adapter_row_lost）与 对象→源行（多余=vendor_adapter_object_unexpected）双查；每行 5 叶比较（library↔component_name、version↔vendor_base.version、library↔vendor_base.package、adapter_dir↔import_path、direct_usage_in_business_pages↔同名字段）共 30 次叶比较。数组序：对象一排一文件形态，行序保真由各对象 sources[].locator.transcription 'libraries[] row N' 注记承载（本 run 抽验一致）。零丢失=passed；任何丢失=failed（vendor-adapter-registry 曾两度被治理编译器 clobber 清空，本检查即复发探测器）。self_report_trusted=false：trust.asserted=null，判卷唯一依据 trust.recomputed。duration_ms 钉 0（byte-identical 幂等）。",
+    "size_expected_from_denominator": 6
+  },
+  "tool": "mig-b1:run_m4_grid_gate",
+  "tool_version": "1.0.0",
+  "trigger": {
+    "note": "migration batch context: no kernel seq allocator; ran_at_seq pinned to 0 (deterministic batch base, A4 wall-clock-free; kernel re-sequences on ingestion); durations pinned to 0 for byte-identical rerun idempotency (batch hard rule 2)",
+    "task_ref": "MIG-B1/M4-grid",
+    "type": "on_demand"
+  },
+  "trust": {
+    "asserted": null,
+    "recomputed": {
+      "matches_asserted": true,
+      "violations": 0
+    }
+  },
+  "verdict": "passed"
+}

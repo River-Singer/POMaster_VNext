@@ -1,0 +1,124 @@
+{
+  "aliases": [
+    "FTA-ENG-CONTENT-TRUTH-ARCHITECTURE"
+  ],
+  "authority": {
+    "delegates": [],
+    "escalation_hint": "current-effectiveness promotion is an M3 Authority re-verification action executed via the supersede chain; never reopen an adjudicated record",
+    "owner": "HUMAN_OWNER",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "PROVISIONAL",
+    "evidence": "PLANNED",
+    "lifecycle": "PROPOSED"
+  },
+  "axis_profile": "change_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "CHANGE.FTA_ENG_CONTENT_TRUTH.ARCHITECTURE",
+  "key_bindings": {
+    "artifact": [],
+    "code": [
+      {
+        "artifact_type": "file",
+        "expect": {
+          "decision_id": "FTA-ENG-CONTENT-TRUTH-ARCHITECTURE",
+          "document_type": "engineering-decision-log",
+          "status": "proposed"
+        },
+        "match_rule": "mechanical",
+        "value": "outputs/frontend/10_planned/05_engineering-decisions.yaml"
+      }
+    ]
+  },
+  "kind": "change_object",
+  "notes_md": "MIG-B1/M2 自 05_engineering-decisions.yaml 逐条转录（源 id FTA-ENG-CONTENT-TRUTH-ARCHITECTURE，ADR 族）。工程裁决签发人为项目 Owner（单人项目，如实登记）；当前生效值的 CURRENT 化留待 M3 重验落定，不重开已裁决案件；源 superseded_by 全为 null，本条无翻案史，decision_timeline 长度=1，翻案走 supersede 指针入链。本字段为人类散文，机器永不解析判卷。",
+  "origin": "natural",
+  "payload": {
+    "affected_objects": [],
+    "class_scan_result": {
+      "fixed_count": 0,
+      "hits": 9,
+      "regression_case_ref": "NONE__NOT_REGISTERED_AT_MIG_B1",
+      "scope": "same-class scan = decisions[] of outputs/frontend/10_planned/05_engineering-decisions.yaml with an identical scope_ids set (group size 9 incl. self)"
+    },
+    "decision_timeline": [
+      {
+        "event_kind": "ADJUDICATION_RECORDED",
+        "source_locator": "decisions[id=FTA-ENG-CONTENT-TRUTH-ARCHITECTURE]",
+        "supersedes": null,
+        "verdict": "proposed"
+      }
+    ],
+    "motivation": "确立四条架构硬规则，前三条可被扫描器验证，第四条必须靠评审因为扫描器在此处静默放过：(1) 用户可见文案只写在渲染它的叶 .vue 的 <template> 里，作为原生节点文本或 title/placeholder/aria-* 属性，父组件只传 v-if/v-model/@event/class/ref，禁止用 props 传文案、禁止用插槽传内容；(2) element-plus / ag-grid 等高风险供应商只在 src/shared/<adapter_dir>/*.ts 中 import 并命令式挂载，业务页面引用项目封装组件（与 scan_unauthorized_vendor_usage.py 的 adapter_dir 分层一致）；(3) 禁止 <component :is>、v-html、跨 SFC 插槽内容；(4) 【最易被忽略】任何用户可见文案都不得住在 .ts/.js 里，也不得住在 .vue 的 <script setup> 常量里——实测两者都完全逃逸内容真相扫描（见 EV_TS_TEXT_ESCAPE），门禁会给绿灯而文案不可追溯。宽表列头（AG Grid headerName）、空态模板、导出文件名是最高危场景：它们天然想写在配置对象里，而配置对象天然在 .ts 里。列头须由 .vue 模板渲染或由适配层从 .vue 传入的、来源于模板的文案数组驱动；规则 (4) 的违反只能靠 code review 与本条决策拦截。实现期每个切片提交前跑 scan_ui_content_truth.py 自检，并同时人工核对 content_count 是否覆盖该页全部可见文案——只看 ok=true 不足以判定通过。供应区一字节不改。",
+    "reopen_count": 0,
+    "source_decision": {
+      "decision": "确立四条架构硬规则，前三条可被扫描器验证，第四条必须靠评审因为扫描器在此处静默放过：(1) 用户可见文案只写在渲染它的叶 .vue 的 <template> 里，作为原生节点文本或 title/placeholder/aria-* 属性，父组件只传 v-if/v-model/@event/class/ref，禁止用 props 传文案、禁止用插槽传内容；(2) element-plus / ag-grid 等高风险供应商只在 src/shared/<adapter_dir>/*.ts 中 import 并命令式挂载，业务页面引用项目封装组件（与 scan_unauthorized_vendor_usage.py 的 adapter_dir 分层一致）；(3) 禁止 <component :is>、v-html、跨 SFC 插槽内容；(4) 【最易被忽略】任何用户可见文案都不得住在 .ts/.js 里，也不得住在 .vue 的 <script setup> 常量里——实测两者都完全逃逸内容真相扫描（见 EV_TS_TEXT_ESCAPE），门禁会给绿灯而文案不可追溯。宽表列头（AG Grid headerName）、空态模板、导出文件名是最高危场景：它们天然想写在配置对象里，而配置对象天然在 .ts 里。列头须由 .vue 模板渲染或由适配层从 .vue 传入的、来源于模板的文案数组驱动；规则 (4) 的违反只能靠 code review 与本条决策拦截。实现期每个切片提交前跑 scan_ui_content_truth.py 自检，并同时人工核对 content_count 是否覆盖该页全部可见文案——只看 ok=true 不足以判定通过。供应区一字节不改。",
+      "decision_dimension": "assessment:FTA-ENG-CONTENT-TRUTH-ARCHITECTURE",
+      "id": "FTA-ENG-CONTENT-TRUTH-ARCHITECTURE",
+      "reason": "确立四条架构硬规则，前三条可被扫描器验证，第四条必须靠评审因为扫描器在此处静默放过：(1) 用户可见文案只写在渲染它的叶 .vue 的 <template> 里，作为原生节点文本或 title/placeholder/aria-* 属性，父组件只传 v-if/v-model/@event/class/ref，禁止用 props 传文案、禁止用插槽传内容；(2) element-plus / ag-grid 等高风险供应商只在 src/shared/<adapter_dir>/*.ts 中 import 并命令式挂载，业务页面引用项目封装组件（与 scan_unauthorized_vendor_usage.py 的 adapter_dir 分层一致）；(3) 禁止 <component :is>、v-html、跨 SFC 插槽内容；(4) 【最易被忽略】任何用户可见文案都不得住在 .ts/.js 里，也不得住在 .vue 的 <script setup> 常量里——实测两者都完全逃逸内容真相扫描（见 EV_TS_TEXT_ESCAPE），门禁会给绿灯而文案不可追溯。宽表列头（AG Grid headerName）、空态模板、导出文件名是最高危场景：它们天然想写在配置对象里，而配置对象天然在 .ts 里。列头须由 .vue 模板渲染或由适配层从 .vue 传入的、来源于模板的文案数组驱动；规则 (4) 的违反只能靠 code review 与本条决策拦截。实现期每个切片提交前跑 scan_ui_content_truth.py 自检，并同时人工核对 content_count 是否覆盖该页全部可见文案——只看 ok=true 不足以判定通过。供应区一字节不改。",
+      "scope_ids": [
+        "CAP-ACCESSORY-TARGET-PRICE",
+        "CAP-AEKO-EVALUATION",
+        "CAP-APPROVAL-FLOW",
+        "CAP-BC-EVALUATION",
+        "CAP-BRIDGE-TABLE",
+        "CAP-BUC-ANALYSIS",
+        "CAP-DATA-PERMISSION",
+        "CAP-EQUIPMENT-DB",
+        "CAP-EQUIPMENT-PALETTE",
+        "CAP-FORECAST-REPORT",
+        "CAP-MATERIAL-DB",
+        "CAP-MATERIAL-TARGET-PRICE",
+        "CAP-OTHER-COST-ANALYSIS",
+        "CAP-OTHER-DB",
+        "CAP-PART-NOMINATION-PRICE",
+        "CAP-PART-STRUCTURE-DB",
+        "CAP-PKO-EVALUATION",
+        "CAP-PROCESS-DB",
+        "CAP-ROLE-MGMT",
+        "CAP-SET-DB",
+        "CAP-SYSTEM-OVERVIEW",
+        "CAP-TASK-MGMT",
+        "CAP-TECHNICAL-CHANGE-AKT"
+      ],
+      "source_assessment_id": "FTA-ENG-CONTENT-TRUTH-ARCHITECTURE",
+      "status": "proposed",
+      "superseded_by": null
+    },
+    "source_document_meta": {
+      "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+      "document_type": "engineering-decision-log",
+      "schema_version": 3
+    },
+    "superseded_status_field": {
+      "mapped_to": "axes.lifecycle=PROPOSED (same-value direct map) + axes.confidence=PROVISIONAL (current-effectiveness pending M3 re-verification) + axes.evidence=PLANNED",
+      "reason": "proposed and PROPOSED are the same value, no semantic upgrade; CURRENT-ization of the current effect belongs to the M3 Authority re-verification batch per ledger ruling (never reopen an adjudicated case)",
+      "source_field": "status",
+      "source_value": "proposed",
+      "upgrade_registered": false
+    }
+  },
+  "permits_active": [],
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b1/ingest_change_governance.py",
+      "locator": {
+        "batch": "MIG-B1",
+        "decision_id": "FTA-ENG-CONTENT-TRUTH-ARCHITECTURE",
+        "ingested_from": "outputs/frontend/10_planned/05_engineering-decisions.yaml",
+        "transcription": "one ADR decision -> one CHANGE object (Decision/AdjudicationRecord semantic family); decision/reason verbatim; status=proposed direct-map to PROPOSED and registered; scope_ids CAP-* legacy word forms kept verbatim (no registered alias rule, no rewrite); current-effect promotion deferred to M3 re-verification, case not reopened"
+      },
+      "pin": {
+        "digest": "sha256:cfa6674fac5bfd93f9c3c71c08625abbcaa94f50d451c4946ad9ad1ed907d0e4"
+      },
+      "ref": "outputs/frontend/10_planned/05_engineering-decisions.yaml",
+      "type": "human_directive"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "工程裁决 FTA-ENG-CONTENT-TRUTH-ARCHITECTURE：确立四条架构硬规则，前三条可被扫描器验证，第四条必须靠评审因..."
+}

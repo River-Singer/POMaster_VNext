@@ -1,0 +1,130 @@
+{
+  "blindspot": {
+    "escape_ratio": 0.5207,
+    "produced": 58,
+    "scanned": 121
+  },
+  "counts": {
+    "applicable_scanned": 121,
+    "not_applicable": 19,
+    "scanned": 140,
+    "suppressed_by_ledger": 0,
+    "unchecked_in_blindspot_estimated": 63,
+    "violations": 32
+  },
+  "denominator_refs": [],
+  "digest_excluded_fields": [
+    "duration_ms"
+  ],
+  "duration_ms": {
+    "external": 0,
+    "self": 0
+  },
+  "gate": "CONTRACT",
+  "gate_def": "POLICY.GATE.CONTRACT@0.1.0",
+  "grn": "GRN-0003",
+  "items": [
+    {
+      "location": "MASTer_master/src/entities/all-parts-list/index.ts:7",
+      "message": "API_REQ.ALL.PARTS.LIST.2 声明 real/wired 但 GET /api/v1/projects/{project_id}/carlines 未被 transport 支撑；归属实调: GET /api/v1/projects/${params.projectId}/partlist",
+      "rule": "declared_real_path_not_served_by_transport"
+    },
+    {
+      "location": "MASTer_master/src/entities/bind-carline/mock-api.ts:13",
+      "message": "API_REQ.BIND.CARLINE.1 声明 real/wired 但 GET /api/v1/projects/{project_id}/carlines 未被 transport 支撑；归属实调: GET /api/v1/carlines",
+      "rule": "declared_real_path_not_served_by_transport"
+    },
+    {
+      "location": "MASTer_master/src/entities/bind-carline/mock-api.ts:13",
+      "message": "API_REQ.BIND.CARLINE.2 声明 real/wired 但 GET /api/v1/projects/{project_id}/carlines/{carline_id}/partlist 未被 transport 支撑；归属实调: GET /api/v1/carlines",
+      "rule": "declared_real_path_not_served_by_transport"
+    },
+    {
+      "location": "MASTer_master/src/shared/lib/mock/bridge-table.ts:1",
+      "message": "API_REQ.BRIDGE.TABLE.2 声明 real/wired 但 GET /api/v1/projects 未被 transport 支撑；归属代码零 transport 实调（仅 mock/fail-fast 标记）",
+      "rule": "declared_real_path_not_served_by_transport"
+    },
+    {
+      "location": "MASTer_master/src/entities/equipment-db/api.ts:18",
+      "message": "API_REQ.EQUIPMENT.DB.1 声明 real/wired 但 GET /api/v1/dictionaries/equipment/items 未被 transport 支撑；归属代码零 transport 实调（仅 mock/fail-fast 标记）",
+      "rule": "declared_real_path_not_served_by_transport"
+    },
+    {
+      "location": "MASTer_master/src/entities/equipment-db/api.ts:18",
+      "message": "API_REQ.EQUIPMENT.DB.2 声明 real/wired 但 DELETE /api/v1/dictionaries/equipment/items/{item_id} 未被 transport 支撑；归属代码零 transport 实调（仅 mock/fail-fast 标记）",
+      "rule": "declared_real_path_not_served_by_transport"
+    },
+    {
+      "location": "MASTer_master/src/entities/equipment-detail/mock-api.ts:15",
+      "message": "API_REQ.EQUIPMENT.DETAIL.2 声明 real/wired 但 POST /api/v1/dictionaries/equipment/items 未被 transport 支撑；归属实调: GET /api/v1/dictionaries/equipment/items",
+      "rule": "declared_real_path_not_served_by_transport"
+    },
+    {
+      "location": "MASTer_master/src/entities/equipment-detail/mock-api.ts:15",
+      "message": "API_REQ.EQUIPMENT.DETAIL.3 声明 real/wired 但 PUT /api/v1/dictionaries/equipment/items/{item_id} 未被 transport 支撑；归属实调: GET /api/v1/dictionaries/equipment/items",
+      "rule": "declared_real_path_not_served_by_transport"
+    },
+    {
+      "location": "MASTer_master/src/entities/equipment-palette/mock-api.ts:12",
+      "message": "API_REQ.EQUIPMENT.PALETTE.1 声明 real/wired 但 GET /api/v1/projects/{project_id}/partlist 未被 transport 支撑；归属实调: GET /api/v1/equipment_palette",
+      "rule": "declared_real_path_not_served_by_transport"
+    },
+    {
+      "location": "MASTer_master/src/entities/material-db/api.ts:18",
+      "message": "API_REQ.MATERIAL.DB.1 声明 real/wired 但 GET /api/v1/dictionaries/material/items 未被 transport 支撑；归属实调: GET /api/v1/material_db",
+      "rule": "declared_real_path_not_served_by_transport"
+    },
+    {
+      "location": "MASTer_master/src/entities/material-db/api.ts:18",
+      "message": "API_REQ.MATERIAL.DB.2 声明 real/wired 但 POST /api/v1/dictionaries/material/items 未被 transport 支撑；归属实调: GET /api/v1/material_db",
+      "rule": "declared_real_path_not_served_by_transport"
+    },
+    {
+      "location": "MASTer_master/src/entities/material-db/api.ts:18",
+      "message": "API_REQ.MATERIAL.DB.3 声明 real/wired 但 PUT /api/v1/dictionaries/material/items/{item_id} 未被 transport 支撑；归属实调: GET /api/v1/material_db",
+      "rule": "declared_real_path_not_served_by_transport"
+    },
+    {
+      "location": "MASTer_master/src/entities/material-db/api.ts:18",
+      "message": "API_REQ.MATERIAL.DB.4 声明 real/wired 但 DELETE /api/v1/dictionaries/material/items/{item_id} 未被 transport 支撑；归属实调: GET /api/v1/material_db",
+      "rule": "declared_real_path_not_served_by_transport"
+    },
+    {
+      "location": "MASTer_master/src/entities/part-info/api.ts:10",
+      "message": "API_REQ.PART.INFO.1 声明 real/wired 但 GET /api/v1/projects/{project_id}/partlist/{part_id} 未被 transport 支撑；归属实调: GET /api/v1/part_info",
+      "rule": "declared_real_path_not_served_by_transport"
+    },
+    {
+      "location": "MASTer_master/src/entities/part-structure-db/api.ts:19",
+      "message": "API_REQ.PART.STRUCTURE.DB.1 声明 real/wired 但 GET /api/v1/dictionaries/{code}/items 未被 transport 支撑；归属实调: GET /api/v1/part_structure_db",
+      "rule": "declared_real_path_not_served_by_transport"
+    },
+    {
+      "location": "MASTer_master/src/entities/part-structure-db/api.ts:19",
+      "message": "API_REQ.PART.STRUCTURE.DB.2 声明 real/wired 但 POST /api/v1/dictionaries/{code}/items 未被 transport 支撑；归属实调: GET /api/v1/part_structure_db",
+      "rule": "declared_real_path_not_served_by_transport"
+    }
+  ],
+  "items_truncated": true,
+  "metric_dialect": "contract:code_transport_scan",
+  "ran_at_seq": 0,
+  "scope": {
+    "note": "分母=带 implementation_form 的 contract_operation 对象 121 个（real 95+mock_unverified 26；来源 truth/objects/contract-op/ 全量 140 个现场扫描）；not_applicable=19（8 stub+11 API_REQ.MOCK.*；stub 低申报不属违例方向）；归属（机械两级）：扫 MASTer src/ 全部 409 个 .ts/.vue，T1=对象 id 全串提及文件（源自带简写文法 id.2/3、id.1-7、族前缀可机械解析；裸续写 'API_REQ.7' 类族前缀在前文不可解析→不归属），T2=提及落 src/entities/<slug>/ 时补该实体 real 侧 api.ts+hooks.ts；判定（路径支撑）：real 要求 payload.method+path 被归属 transport 支撑（baseURL '/api/v1'（config.ts 常量）拼接；declared {x} 段通配、其余段逐字、无 -/_ 归一），不支撑=violation（含零实调 fail-fast）；mock_unverified 声明路径被实调支撑=violation；3 个无 path 的 mock 条目按 T1 直提文件 transport 存在性保守判；零命中 63 个计入盲区（grep 字面量不可达：代码侧从未提及）；覆盖：载体 409、产出提及 63（命中率 0.154）；预期样本核对：认证 600ms fake delay 案例（AUTHENTICATE.1，src/entities/auth/hooks.ts）实测一致通过——如实声明 mock_unverified+代码确 setTimeout fake delay+注释态 TODO，不构成违例；真实 failed 样本=items（fail-fast 未接线族/支架端点族）；locations 相对 MASTer_master/（只读基线）；超 8KB 截断留痕，全量可由工具同输入重跑复现（方法详见 tools/run_m4_contract_gate.py 头注）。",
+    "size_expected_from_denominator": 121
+  },
+  "tool": "pomaster-vnext:mig_b1_contract_gate",
+  "tool_version": "0.1.0",
+  "trigger": {
+    "note": "MIG-B1/M4 contract gate run; migration context has no global seq allocator, ran_at_seq pinned to 0 (A4 note), ordering by grn",
+    "task_ref": "MIG-B1/M4-contract-gate",
+    "type": "on_demand"
+  },
+  "trust": {
+    "asserted": null,
+    "recomputed": {
+      "matches_asserted": true,
+      "violations": 32
+    }
+  },
+  "verdict": "failed"
+}

@@ -1,0 +1,202 @@
+{
+  "authority": {
+    "delegates": [
+      {
+        "required_for": [
+          "modify_enum_values"
+        ],
+        "role": "EXTERNAL_BASELINE"
+      }
+    ],
+    "escalation_hint": "regenerate via migration/master-batch1/tools/ingest_request_classification.py; enum value changes require a CHANGE object (EVOLUTION_CHANNEL; ledger delegates EXTERNAL_BASELINE required_for modify_enum_values)",
+    "owner": "FRONTEND_CONTRACT",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "LOCKED",
+    "evidence": "IMPLEMENTED",
+    "lifecycle": "CURRENT"
+  },
+  "axis_profile": "rule_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "POLICY.REQUEST_CLASSIFICATION",
+  "key_bindings": {
+    "artifact": [],
+    "code": [
+      {
+        "artifact_type": "file",
+        "expect": {
+          "class_ids": [
+            "ASYNC_JOB",
+            "AUTH",
+            "COMMAND",
+            "FILE_DOWNLOAD",
+            "FILE_UPLOAD",
+            "QUERY",
+            "SESSION_REFRESH",
+            "STREAM"
+          ],
+          "document_type": "request-classification",
+          "schema_version": 1
+        },
+        "match_rule": "mechanical",
+        "value": "outputs/frontend/10_planned/request-classification.yaml"
+      }
+    ]
+  },
+  "kind": "business_rule",
+  "notes_md": "本对象为 MIG-B1/M2 迁移工具校准件（golden case）：源 outputs/frontend/10_planned/request-classification.yaml（扩展名 .yaml、内容为 JSON）整册转录。8 类请求分类枚举及其正交旗标逐字段保真：73 个类级字段 + 3 个顶层元字段，零语义增删；数值语义未篡改（max_retries 0/1/2/3 等逐值照录）。枚举值序保持源文件顺序（源序本身已为字母序）。唯一非均匀旗标为 SESSION_REFRESH.single_flight=true（Single Flight Refresh，Phase5 auth/app client 分离语义）。源文件无 status/lifecycle 字段，approval_axis x evidence_axis 拆分动作数为 0、superseded_status_field 登记数为 0（诚实零）。本字段为人类散文，机器永不解析判卷。",
+  "origin": "derived",
+  "payload": {
+    "classes": [
+      {
+        "auth_recovery": true,
+        "automatic": true,
+        "cancelable": true,
+        "description": "长时间任务：导入、导出、复杂计算、批量处理、文件转换、报表生成",
+        "id": "ASYNC_JOB",
+        "idempotent": false,
+        "max_retries": 0,
+        "requires_idempotency_key": false,
+        "retryable": false
+      },
+      {
+        "auth_recovery": false,
+        "automatic": false,
+        "cancelable": false,
+        "description": "建立/结束/变更会话身份：登录、注册、重置密码、登出",
+        "id": "AUTH",
+        "idempotent": false,
+        "max_retries": 0,
+        "requires_idempotency_key": false,
+        "retryable": false
+      },
+      {
+        "auth_recovery": true,
+        "automatic": false,
+        "cancelable": false,
+        "description": "改变业务数据：新增、编辑、删除、提交、审批、撤回、复制、计算、锁定、发布",
+        "id": "COMMAND",
+        "idempotent": false,
+        "max_retries": 0,
+        "requires_idempotency_key": true,
+        "retryable": false
+      },
+      {
+        "auth_recovery": true,
+        "automatic": true,
+        "cancelable": true,
+        "description": "下载文件、预览、导出",
+        "id": "FILE_DOWNLOAD",
+        "idempotent": true,
+        "max_retries": 1,
+        "requires_idempotency_key": false,
+        "retryable": true
+      },
+      {
+        "auth_recovery": true,
+        "automatic": false,
+        "cancelable": true,
+        "description": "上传文件、附件绑定、分片上传",
+        "id": "FILE_UPLOAD",
+        "idempotent": true,
+        "max_retries": 1,
+        "requires_idempotency_key": true,
+        "retryable": true
+      },
+      {
+        "auth_recovery": true,
+        "automatic": true,
+        "cancelable": true,
+        "description": "读取服务端状态：详情、列表、字典、历史、统计、权限、配置",
+        "id": "QUERY",
+        "idempotent": true,
+        "max_retries": 2,
+        "requires_idempotency_key": false,
+        "retryable": true
+      },
+      {
+        "auth_recovery": false,
+        "automatic": true,
+        "cancelable": false,
+        "description": "刷新当前会话：/auth/refresh",
+        "id": "SESSION_REFRESH",
+        "idempotent": true,
+        "max_retries": 0,
+        "requires_idempotency_key": false,
+        "retryable": false,
+        "single_flight": true
+      },
+      {
+        "auth_recovery": true,
+        "automatic": true,
+        "cancelable": true,
+        "description": "实时通信：SSE、WebSocket、轮询",
+        "id": "STREAM",
+        "idempotent": true,
+        "max_retries": 3,
+        "requires_idempotency_key": false,
+        "retryable": true
+      }
+    ],
+    "decision_refs": [],
+    "enforcement_point": "MASTer: compile_frontend_request_classification.py (producer) + validate_frontend_delivery.py (contract cross-check); vNext: contract gate reads contract_operation.payload.classification against this object",
+    "scope_refs": [
+      "API_REQ.*"
+    ],
+    "source_document_meta": {
+      "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+      "document_type": "request-classification",
+      "schema_version": 1
+    },
+    "statement_structured": {
+      "then": {
+        "effect": "orthogonal flags of the matched classes[] entry govern the request: idempotent / retryable / max_retries / requires_idempotency_key / single_flight / auth_recovery / automatic / cancelable",
+        "violation": "classification outside the enum, or request flags contradicting the matched entry = contract gate violation"
+      },
+      "when": {
+        "constraint": "value MUST be one of payload.classes[].id (closed 8-value enum, source schema_version 1)",
+        "subject": "contract_operation.payload.classification"
+      }
+    }
+  },
+  "permits_active": [],
+  "producer": {
+    "liveness": {
+      "status": "active"
+    },
+    "merge_semantics": {
+      "backfill_if_missing": [],
+      "human_never_touched": [
+        "payload"
+      ],
+      "refresh_fields": [
+        "payload"
+      ]
+    },
+    "producer_id": "prod.mig_b1_ingest_request_classification",
+    "views_maintained": [
+      "truth-index.envelope"
+    ]
+  },
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b1/ingest_request_classification.py",
+      "locator": {
+        "batch": "MIG-B1",
+        "ingested_from": "outputs/frontend/10_planned/request-classification.yaml",
+        "transcription": "8 request classes transcribed whole-book verbatim (all orthogonal flags preserved, array order = source order; no status field in source so the approval-axis x evidence-axis split count is 0 and no superseded_status_field is registered); mapping table in CONVENTIONS.md appendix A"
+      },
+      "pin": {
+        "digest": "sha256:50c17658248f920d3c1f639308a8b0744ca5fe073e22ed6d034d6b51f34463b8"
+      },
+      "ref": "outputs/frontend/10_planned/request-classification.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "请求分类词表（8 类契约语义枚举）"
+}

@@ -1,0 +1,80 @@
+{
+  "blindspot": {
+    "escape_ratio": 0.0,
+    "produced": 11,
+    "scanned": 11
+  },
+  "counts": {
+    "applicable_scanned": 11,
+    "not_applicable": 129,
+    "scanned": 140,
+    "suppressed_by_ledger": 0,
+    "unchecked_in_blindspot_estimated": 0,
+    "violations": 6
+  },
+  "denominator_refs": [],
+  "digest_excluded_fields": [
+    "duration_ms"
+  ],
+  "duration_ms": {
+    "external": 0,
+    "self": 0
+  },
+  "gate": "CONTRACT",
+  "gate_def": "POLICY.GATE.CONTRACT@0.1.0",
+  "grn": "GRN-0002",
+  "items": [
+    {
+      "location": "migration/master-batch1/truth/objects/contract-op/mock.attachments.json",
+      "message": "API_REQ.MOCK.ATTACHMENTS 的 mock 端点 'POST /api/v1/attachments' 不在已发布基线端点集（190 method+path）内；源 claim=upload+list+delete:无后端端点；按 AUTH-RULE-FRONTEND-ONLY 不索要 backend owner 审批，登记为契约边界事实（真实 failed 样本：臆造端点事故 fail-closed 检查的在役意义）",
+      "rule": "mock_endpoint_absent_from_published_baseline"
+    },
+    {
+      "location": "migration/master-batch1/truth/objects/contract-op/mock.carline-frozen-versions.json",
+      "message": "API_REQ.MOCK.CARLINE_FROZEN_VERSIONS 的 mock 端点 'GET /api/v1/projects/{project_id}/carlines/{carline_id}/frozen-versions' 不在已发布基线端点集（190 method+path）内；源 claim=list+export-csv:无对应端点；按 AUTH-RULE-FRONTEND-ONLY 不索要 backend owner 审批，登记为契约边界事实（真实 failed 样本：臆造端点事故 fail-closed 检查的在役意义）",
+      "rule": "mock_endpoint_absent_from_published_baseline"
+    },
+    {
+      "location": "migration/master-batch1/truth/objects/contract-op/mock.data-permission.json",
+      "message": "API_REQ.MOCK.DATA_PERMISSION 的 mock 端点 'GET /data_permission' 不在已发布基线端点集（190 method+path）内；源 claim=crud+reference-block:None；按 AUTH-RULE-FRONTEND-ONLY 不索要 backend owner 审批，登记为契约边界事实（真实 failed 样本：臆造端点事故 fail-closed 检查的在役意义）",
+      "rule": "mock_endpoint_absent_from_published_baseline"
+    },
+    {
+      "location": "migration/master-batch1/truth/objects/contract-op/mock.material-csv-import.json",
+      "message": "API_REQ.MOCK.MATERIAL_CSV_IMPORT 的 mock 端点 'POST /api/v1/dictionaries/material/items/import' 不在已发布基线端点集（190 method+path）内；源 claim=csv-import:无导入端点；按 AUTH-RULE-FRONTEND-ONLY 不索要 backend owner 审批，登记为契约边界事实（真实 failed 样本：臆造端点事故 fail-closed 检查的在役意义）",
+      "rule": "mock_endpoint_absent_from_published_baseline"
+    },
+    {
+      "location": "migration/master-batch1/truth/objects/contract-op/mock.project-finance.json",
+      "message": "API_REQ.MOCK.PROJECT_FINANCE 的 mock 端点 'GET /api/v1/projects/{project_id}/finance' 不在已发布基线端点集（190 method+path）内；源 claim=get+save:无对应端点；按 AUTH-RULE-FRONTEND-ONLY 不索要 backend owner 审批，登记为契约边界事实（真实 failed 样本：臆造端点事故 fail-closed 检查的在役意义）",
+      "rule": "mock_endpoint_absent_from_published_baseline"
+    },
+    {
+      "location": "migration/master-batch1/truth/objects/contract-op/mock.vehicle-catalog.json",
+      "message": "API_REQ.MOCK.VEHICLE_CATALOG 的 mock 端点 'GET /api/v1/vehicle-catalog' 不在已发布基线端点集（190 method+path）内；源 claim=crud+import-export:无对应端点；按 AUTH-RULE-FRONTEND-ONLY 不索要 backend owner 审批，登记为契约边界事实（真实 failed 样本：臆造端点事故 fail-closed 检查的在役意义）",
+      "rule": "mock_endpoint_absent_from_published_baseline"
+    }
+  ],
+  "items_truncated": false,
+  "metric_dialect": "mock:endpoint_baseline_membership",
+  "ran_at_seq": 0,
+  "scope": {
+    "note": "分母=API_REQ.MOCK.* mock-contract 过渡宿主对象 11 个（来源：migration/master-batch1/truth/objects/contract-op/mock.*.json，源 mock-contract.yaml 13 场景→11 端点对象）；外部权威侧=已发布基线 method+path 端点集 190 个（来源：doc/V1.0 Scope/api-contracts(2)/api-contracts/openapi.yaml sha256 pin 一致）；判定规则：mock 对象 payload.method+payload.path 不在基线端点集 = violation（出身臆造端点事故的 fail-closed 检查，如实记）；其余 129 个非 mock 对象 not_applicable；判定消费 AUTH-RULE-FRONTEND-ONLY（authority.json boundary_rules[0].enforcement=CONTRACT_GATE_SKIPS_BACKEND_OWNER_APPROVAL）：违例项只记契约边界事实，不向任何 backend owner 索要审批；5 个 mock 端点在基线内（DICTIONARY_ITEM_DELETE/EXPERT_MODEL_CALCULATE/PROJECT_LEDGER_SNAPSHOT/ROLES/USERS）不产生 violation。",
+    "size_expected_from_denominator": 11
+  },
+  "tool": "pomaster-vnext:mig_b1_contract_gate",
+  "tool_version": "0.1.0",
+  "trigger": {
+    "note": "MIG-B1/M4 contract gate run; migration context has no global seq allocator, ran_at_seq pinned to 0 (A4 note), ordering by grn",
+    "task_ref": "MIG-B1/M4-contract-gate",
+    "type": "on_demand"
+  },
+  "trust": {
+    "asserted": null,
+    "recomputed": {
+      "matches_asserted": true,
+      "violations": 6
+    }
+  },
+  "verdict": "failed"
+}

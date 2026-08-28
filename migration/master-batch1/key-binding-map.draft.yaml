@@ -1,0 +1,3803 @@
+alias_registrations:
+  applied_in_batch1:
+  - alias_rule: GRID.*→CAPABILITY.GRID.*
+    note: ALIASES_V0 已登记；本批在场形态照录，不改源数据
+    observed:
+    - GRID.BASE
+    - GRID.COLUMN_CONFIG
+    - GRID.EDITABLE_GRID
+    source: vocab-lock ALIASES_V0 / vocab.ts ALIASES_V0
+  - alias_rule: PAGE-TASK-STEP-*→PAGE.*
+    note: ALIASES_V0 已登记；本批在页面 id/代码头照录 legacy 形态，不改源数据
+    observed:
+    - PAGE-TASK-STEP-AUTHENTICATE
+    - PAGE-TASK-STEP-BIND-CARLINE
+    - PAGE-TASK-STEP-BUC-ANALYSE
+    - PAGE-TASK-STEP-BUILD-BOM
+    - PAGE-TASK-STEP-EXPERT-MODEL-CALCULATE
+    - PAGE-TASK-STEP-MAINTAIN-BASE-ATTRIBUTES
+    - PAGE-TASK-STEP-MANAGE-USER-ROLE
+    - PAGE-TASK-STEP-OUTPUT-TO-LEDGER
+    - PAGE-TASK-STEP-QUERY-LEDGER
+    - PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT
+    - PAGE-TASK-STEP-TRACK-COST-BY-SNAPSHOT
+    source: vocab-lock ALIASES_V0 / vocab.ts ALIASES_V0
+  not_observed_in_batch1:
+  - alias_rule: TASK-0087→TASK.T0087
+    note: 数字段加字母前缀规则（SEGMENT 不允许数字开头）；BATCH-1 十文件 grep TASK-[0-9]{3,} 零命中
+  - alias_rule: CHANGE-0104→CHANGE.C0104
+    note: 同上；BATCH-1 十文件 grep CHANGE-[0-9]{3,} 零命中
+  - alias_rule: KB-*→KNOWLEDGE.*
+    note: BATCH-1 三主题文件未见 KB-* 形态
+  proposed_needs_human:
+  - alias_rule: PAGE-APP-*→PAGE.APP_*（token 重排外推）
+    note: ALIASES_V0 无此规则；本表 canonical_form_draft 按同模式拟合，全部标 HUMAN_CONFIRM_REQUIRED，落 KEYBINDING.* 对象前须人工裁决
+batch: MIG-B1
+bindings:
+- binding_class: contract_operation_to_operationId
+  candidates:
+  - code_path: src/entities/all-parts-list/api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/all-parts-list/api.ts:4 头注『* - GET /api/v1/projects/{project_id}/partlist（API_REQ.ALL.PARTS.LIST.1，按项目过滤）』
+    match_rule: header_exact_token
+  - code_path: src/entities/all-parts-list/types.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/all-parts-list/types.ts:21 头注『/** 项目 ID（real 模式 API_REQ.ALL.PARTS.LIST.1 按项目过滤；缺省走跨项目聚合） */』
+    match_rule: header_exact_token
+  canonical_form_draft: API_REQ.ALL.PARTS.LIST.1
+  classification: QUERY
+  governance_id: API_REQ.ALL.PARTS.LIST.1
+  name_forms_observed:
+  - API_REQ.ALL.PARTS.LIST.1
+  openapi_presence:
+    candidate_openapi: false
+    published_openapi: true
+  operation_id: list_partlist_api_v1_projects__project_id__partlist_get
+  status: MECHANICAL_HEADER_MATCH
+  theme: API_CONTRACT
+- binding_class: contract_operation_to_operationId
+  candidates:
+  - code_path: src/entities/all-parts-list/api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/all-parts-list/api.ts:5 头注『* - GET /api/v1/projects/{project_id}/carlines（API_REQ.ALL.PARTS.LIST.2，carline 权重展示）』
+    match_rule: header_exact_token
+  - code_path: src/entities/all-parts-list/index.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/all-parts-list/index.ts:6 头注『// real 模式风险已登记 api-requirement-registry API_REQ.ALL.PARTS.LIST.2 注记方向）』
+    match_rule: header_exact_token
+  canonical_form_draft: API_REQ.ALL.PARTS.LIST.2
+  classification: QUERY
+  governance_id: API_REQ.ALL.PARTS.LIST.2
+  name_forms_observed:
+  - API_REQ.ALL.PARTS.LIST.2
+  openapi_presence:
+    candidate_openapi: false
+    published_openapi: true
+  operation_id: list_carlines_api_v1_projects__project_id__carlines_get
+  status: MECHANICAL_HEADER_MATCH
+  theme: API_CONTRACT
+- binding_class: contract_operation_to_operationId
+  candidates:
+  - code_path: src/entities/auth/hooks.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/auth/hooks.ts:3 头注『* owner 登记见 api-requirement-registry API_REQ.AUTHENTICATE.1/.2（entities/auth）。』
+    match_rule: header_exact_token
+  canonical_form_draft: API_REQ.AUTHENTICATE.1
+  classification: COMMAND
+  governance_id: API_REQ.AUTHENTICATE.1
+  name_forms_observed:
+  - API_REQ.AUTHENTICATE.1
+  openapi_presence:
+    candidate_openapi: false
+    published_openapi: true
+  operation_id: login_api_v1_auth_login_post
+  status: MECHANICAL_HEADER_MATCH
+  theme: API_CONTRACT
+- binding_class: contract_operation_to_operationId
+  candidates:
+  - code_path: src/entities/bind-carline/api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/bind-carline/api.ts:3 头注『* API_REQ.BIND.CARLINE.1 GET /carlines（OP-LIST-CARLINES）』
+    match_rule: header_exact_token
+  - code_path: src/entities/bind-carline/hooks.ts
+    confidence: header_exact
+    evidence:
+    - 'src/entities/bind-carline/hooks.ts:3 头注『* - useBindCarlineListQuery: API_REQ.BIND.CARLINE.1 GET /carlines』'
+    match_rule: header_exact_token
+  - code_path: src/entities/bind-carline/mock-api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/bind-carline/mock-api.ts:3 头注『* API_REQ.BIND.CARLINE.1 GET /carlines（列出项目下车型）』
+    match_rule: header_exact_token
+  - code_path: src/pages/page-bind-carline/BindCarlinePage.vue
+    confidence: header_exact
+    evidence:
+    - 'src/pages/page-bind-carline/BindCarlinePage.vue:7 头注『* API: API_REQ.BIND.CARLINE.1 GET /carlines / API_REQ.BIND.CARLINE.2 GET /carlines/{carlineId}/partlist』'
+    match_rule: header_exact_token
+  canonical_form_draft: API_REQ.BIND.CARLINE.1
+  classification: QUERY
+  governance_id: API_REQ.BIND.CARLINE.1
+  name_forms_observed:
+  - API_REQ.BIND.CARLINE.1
+  openapi_presence:
+    candidate_openapi: false
+    published_openapi: true
+  operation_id: list_carlines_api_v1_projects__project_id__carlines_get
+  status: MECHANICAL_HEADER_MATCH
+  theme: API_CONTRACT
+- binding_class: contract_operation_to_operationId
+  candidates:
+  - code_path: src/entities/bind-carline/api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/bind-carline/api.ts:4 头注『* API_REQ.BIND.CARLINE.2 GET /carlines/{carlineId}/partlist（OP-CARLINE-PARTLIST）』
+    match_rule: header_exact_token
+  - code_path: src/entities/bind-carline/copy.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/bind-carline/copy.ts:28 头注『/** 零件清单列头（API_REQ.BIND.CARLINE.2 车辆主数据单源） */』
+    match_rule: header_exact_token
+  - code_path: src/entities/bind-carline/hooks.ts
+    confidence: header_exact
+    evidence:
+    - 'src/entities/bind-carline/hooks.ts:4 头注『* - useBindCarlinePartListQuery: API_REQ.BIND.CARLINE.2 GET /carlines/{carlineId}/partlist』'
+    match_rule: header_exact_token
+  - code_path: src/entities/bind-carline/mock-api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/bind-carline/mock-api.ts:4 头注『* API_REQ.BIND.CARLINE.2 GET /carlines/{carlineId}/partlist（车辆主数据单源）。』
+    match_rule: header_exact_token
+  - code_path: src/pages/page-bind-carline/BindCarlinePage.vue
+    confidence: header_exact
+    evidence:
+    - 'src/pages/page-bind-carline/BindCarlinePage.vue:7 头注『* API: API_REQ.BIND.CARLINE.1 GET /carlines / API_REQ.BIND.CARLINE.2 GET /carlines/{carlineId}/partlist』'
+    match_rule: header_exact_token
+  canonical_form_draft: API_REQ.BIND.CARLINE.2
+  classification: QUERY
+  governance_id: API_REQ.BIND.CARLINE.2
+  name_forms_observed:
+  - API_REQ.BIND.CARLINE.2
+  openapi_presence:
+    candidate_openapi: false
+    published_openapi: true
+  operation_id: carline_partlist_api_v1_projects__project_id__carlines__carline_id__partlist_get
+  status: MECHANICAL_HEADER_MATCH
+  theme: API_CONTRACT
+- binding_class: contract_operation_to_operationId
+  candidates:
+  - code_path: src/shared/lib/mock/bridge-table.ts
+    confidence: header_exact
+    evidence:
+    - src/shared/lib/mock/bridge-table.ts:20 头注『/** 筛选项选项由骨架行派生（项目维度，对应 API_REQ.BRIDGE.TABLE.2 /api/v1/projects） */』
+    match_rule: header_exact_token
+  canonical_form_draft: API_REQ.BRIDGE.TABLE.2
+  classification: QUERY
+  governance_id: API_REQ.BRIDGE.TABLE.2
+  name_forms_observed:
+  - API_REQ.BRIDGE.TABLE.2
+  openapi_presence:
+    candidate_openapi: false
+    published_openapi: true
+  operation_id: list_projects_api_v1_projects_get
+  status: MECHANICAL_HEADER_MATCH
+  theme: API_CONTRACT
+- binding_class: contract_operation_to_operationId
+  candidates:
+  - code_path: src/entities/bridge-table/api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/bridge-table/api.ts:2 头注『* 桥表正式 API — API_REQ.BRIDGE.TABLE.3 GET /api/v1/reports/bridge-table』
+    match_rule: header_exact_token
+  - code_path: src/entities/bridge-table/mock-api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/bridge-table/mock-api.ts:3 头注『* API_REQ.BRIDGE.TABLE.3 GET /api/v1/reports/bridge-table 状态 NEEDS_BACKEND_REVIEW，』
+    - src/entities/bridge-table/mock-api.ts:18 头注『// timeRange：桥表报表契约待后端评审（API_REQ.BRIDGE.TABLE.3），mock 暂不过滤』
+    match_rule: header_exact_token
+  - code_path: src/entities/bridge-table/types.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/bridge-table/types.ts:21 头注『/** 列表查询参数（API_REQ.BRIDGE.TABLE.3 契约 NEEDS_BACKEND_REVIEW） */』
+    match_rule: header_exact_token
+  canonical_form_draft: API_REQ.BRIDGE.TABLE.3
+  classification: QUERY
+  governance_id: API_REQ.BRIDGE.TABLE.3
+  name_forms_observed:
+  - API_REQ.BRIDGE.TABLE.3
+  openapi_presence:
+    candidate_openapi: false
+    published_openapi: false
+  operation_id: null
+  status: MECHANICAL_HEADER_MATCH
+  theme: API_CONTRACT
+- binding_class: contract_operation_to_operationId
+  candidates:
+  - code_path: src/pages/page-buc-analyse/BucAnalysePage.vue
+    confidence: header_exact
+    evidence:
+    - src/pages/page-buc-analyse/BucAnalysePage.vue:16 头注『*   （写库端点未接入，API_REQ.BUC.ANALYSE.0 走 mock 契约，仅内存模拟）。』
+    match_rule: header_exact_token
+  canonical_form_draft: API_REQ.BUC.ANALYSE.0
+  classification: COMMAND
+  governance_id: API_REQ.BUC.ANALYSE.0
+  name_forms_observed:
+  - API_REQ.BUC.ANALYSE.0
+  openapi_presence:
+    candidate_openapi: false
+    published_openapi: false
+  operation_id: null
+  status: MECHANICAL_HEADER_MATCH
+  theme: API_CONTRACT
+- binding_class: contract_operation_to_operationId
+  candidates:
+  - code_path: src/entities/dashboard/api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/dashboard/api.ts:3 头注『* API_REQ.DASHBOARD.1（get_me）/ DASHBOARD.2（list_projects）/ DASHBOARD.3（operation_logs）』
+    match_rule: header_exact_token
+  - code_path: src/entities/dashboard/hooks.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/dashboard/hooks.ts:3 头注『* KPI/趋势/待办台账三项 ACCEPTED 契约见 api-requirement-registry API_REQ.DASHBOARD.1-3。』
+    match_rule: header_exact_token
+  canonical_form_draft: API_REQ.DASHBOARD.1
+  classification: QUERY
+  governance_id: API_REQ.DASHBOARD.1
+  name_forms_observed:
+  - API_REQ.DASHBOARD.1
+  openapi_presence:
+    candidate_openapi: false
+    published_openapi: true
+  operation_id: get_me_api_v1_auth_me_get
+  status: MECHANICAL_HEADER_MATCH
+  theme: API_CONTRACT
+- binding_class: contract_operation_to_operationId
+  candidates:
+  - code_path: src/pages/page-process-db/ProcessDbPage.vue
+    confidence: header_exact
+    evidence:
+    - src/pages/page-process-db/ProcessDbPage.vue:10 头注『* 通过后循环单删（无批量端点不臆造，API_REQ.DB.BATCH.DELETE.PRECHECK）。』
+    match_rule: header_exact_token
+  canonical_form_draft: API_REQ.DB.BATCH.DELETE.PRECHECK
+  classification: COMMAND
+  governance_id: API_REQ.DB.BATCH.DELETE.PRECHECK
+  name_forms_observed:
+  - API_REQ.DB.BATCH.DELETE.PRECHECK
+  openapi_presence:
+    candidate_openapi: false
+    published_openapi: false
+  operation_id: OP-BATCH-DELETE-PRECHECK
+  status: MECHANICAL_HEADER_MATCH
+  theme: API_CONTRACT
+- binding_class: contract_operation_to_operationId
+  candidates:
+  - code_path: src/entities/equipment-db/api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/equipment-db/api.ts:5 头注『* - API_REQ.EQUIPMENT.DB.1 GET /api/v1/dictionaries/equipment/items』
+    match_rule: header_exact_token
+  - code_path: src/entities/equipment-db/mock-api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/equipment-db/mock-api.ts:24 头注『/** API_REQ.EQUIPMENT.DB.1 — GET /api/v1/dictionaries/equipment/items */』
+    match_rule: header_exact_token
+  canonical_form_draft: API_REQ.EQUIPMENT.DB.1
+  classification: QUERY
+  governance_id: API_REQ.EQUIPMENT.DB.1
+  name_forms_observed:
+  - API_REQ.EQUIPMENT.DB.1
+  openapi_presence:
+    candidate_openapi: false
+    published_openapi: true
+  operation_id: list_items_api_v1_dictionaries__code__items_get
+  status: MECHANICAL_HEADER_MATCH
+  theme: API_CONTRACT
+- binding_class: contract_operation_to_operationId
+  candidates:
+  - code_path: src/entities/equipment-db/api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/equipment-db/api.ts:6 头注『* - API_REQ.EQUIPMENT.DB.2 DELETE /api/v1/dictionaries/equipment/items/{item_id}』
+    match_rule: header_exact_token
+  canonical_form_draft: API_REQ.EQUIPMENT.DB.2
+  classification: COMMAND
+  governance_id: API_REQ.EQUIPMENT.DB.2
+  name_forms_observed:
+  - API_REQ.EQUIPMENT.DB.2
+  openapi_presence:
+    candidate_openapi: false
+    published_openapi: true
+  operation_id: delete_item_api_v1_dictionaries__code__items__item_id__delete
+  status: MECHANICAL_HEADER_MATCH
+  theme: API_CONTRACT
+- binding_class: contract_operation_to_operationId
+  candidates:
+  - code_path: src/entities/equipment-detail/api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/equipment-detail/api.ts:3 头注『* API_REQ.EQUIPMENT.DETAIL.2/3：POST/PUT /api/v1/dictionaries/equipment/items；』
+    match_rule: header_exact_token
+  canonical_form_draft: API_REQ.EQUIPMENT.DETAIL.2
+  classification: COMMAND
+  governance_id: API_REQ.EQUIPMENT.DETAIL.2
+  name_forms_observed:
+  - API_REQ.EQUIPMENT.DETAIL.2
+  openapi_presence:
+    candidate_openapi: false
+    published_openapi: true
+  operation_id: add_item_api_v1_dictionaries__code__items_post
+  status: MECHANICAL_HEADER_MATCH
+  theme: API_CONTRACT
+- binding_class: contract_operation_to_operationId
+  candidates:
+  - code_path: src/entities/equipment-palette/mock-api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/equipment-palette/mock-api.ts:3 头注『* Overview（API_REQ.EQUIPMENT.PALETTE.1 list）+ Backup 详情（.2 detail）。』
+    match_rule: header_exact_token
+  canonical_form_draft: API_REQ.EQUIPMENT.PALETTE.1
+  classification: QUERY
+  governance_id: API_REQ.EQUIPMENT.PALETTE.1
+  name_forms_observed:
+  - API_REQ.EQUIPMENT.PALETTE.1
+  openapi_presence:
+    candidate_openapi: false
+    published_openapi: true
+  operation_id: list_partlist_api_v1_projects__project_id__partlist_get
+  status: MECHANICAL_HEADER_MATCH
+  theme: API_CONTRACT
+- binding_class: contract_operation_to_operationId
+  candidates:
+  - code_path: src/entities/expert-model-calculate/ExpertModelDrawer.vue
+    confidence: header_exact
+    evidence:
+    - 'src/entities/expert-model-calculate/ExpertModelDrawer.vue:14 头注『* Phase C: mock（API_REQ.EXPERT.MODEL.CALCULATE.0）；文案全部取自 ./copy（spec 39）。』'
+    match_rule: header_exact_token
+  - code_path: src/entities/expert-model-calculate/api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/expert-model-calculate/api.ts:2 头注『* 专家模型真实 API — API_REQ.EXPERT.MODEL.CALCULATE.0 未绑定正式契约』
+    - 'src/entities/expert-model-calculate/api.ts:17 头注『`NOT_IMPLEMENTED: expert-model-calculate "${operation}" awaits backend contract (API_REQ.EXPERT.MODEL.CALCULATE.0)`,』'
+    match_rule: header_exact_token
+  - code_path: src/entities/expert-model-calculate/mock-api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/expert-model-calculate/mock-api.ts:3 头注『* API_REQ.EXPERT.MODEL.CALCULATE.0（执行专家模型周期时间计算）后端未开发走 mock 契约：』
+    match_rule: header_exact_token
+  - code_path: src/pages/page-expert-model-calculate/ExpertModelCalculatePage.vue
+    confidence: header_exact
+    evidence:
+    - 'src/pages/page-expert-model-calculate/ExpertModelCalculatePage.vue:6 头注『* Phase C: mock（API_REQ.EXPERT.MODEL.CALCULATE.0）；计算纯前端实时重算（spec §5.8，不碰库）。』'
+    match_rule: header_exact_token
+  canonical_form_draft: API_REQ.EXPERT.MODEL.CALCULATE.0
+  classification: COMMAND
+  governance_id: API_REQ.EXPERT.MODEL.CALCULATE.0
+  name_forms_observed:
+  - API_REQ.EXPERT.MODEL.CALCULATE.0
+  openapi_presence:
+    candidate_openapi: false
+    published_openapi: false
+  operation_id: null
+  status: MECHANICAL_HEADER_MATCH
+  theme: API_CONTRACT
+- binding_class: contract_operation_to_operationId
+  candidates:
+  - code_path: src/entities/other-cost-analysis/copy.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/other-cost-analysis/copy.ts:27 头注『'骨架 spec 03-other-cost-analysis 的字段列表、页面布局、业务规则与操作说明均为待补充；专用分析 API 契约（API_REQ.OTHER.COST.3，NEEDS_BACKEND_REVIEW）与成本类别枚举映射待后端/业务确认。',』
+    match_rule: header_exact_token
+  canonical_form_draft: API_REQ.OTHER.COST.3
+  classification: COMMAND
+  governance_id: API_REQ.OTHER.COST.3
+  name_forms_observed:
+  - API_REQ.OTHER.COST.3
+  openapi_presence:
+    candidate_openapi: false
+    published_openapi: false
+  operation_id: null
+  status: MECHANICAL_HEADER_MATCH
+  theme: API_CONTRACT
+- binding_class: contract_operation_to_operationId
+  candidates:
+  - code_path: src/entities/other-db/api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/other-db/api.ts:10 头注『*   （API_REQ.OTHER.DB.VEHICLE.CATALOG / OP-VEHICLE-CATALOG，NEEDS_BACKEND_REVIEW）。』
+    match_rule: header_exact_token
+  - code_path: src/entities/other-db/mock-api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/other-db/mock-api.ts:5 头注『* 实体形态实现；Tab3 车型清单无 openapi 端点（API_REQ.OTHER.DB.VEHICLE.CATALOG』
+    match_rule: header_exact_token
+  canonical_form_draft: API_REQ.OTHER.DB.VEHICLE.CATALOG
+  classification: COMMAND
+  governance_id: API_REQ.OTHER.DB.VEHICLE.CATALOG
+  name_forms_observed:
+  - API_REQ.OTHER.DB.VEHICLE.CATALOG
+  openapi_presence:
+    candidate_openapi: false
+    published_openapi: false
+  operation_id: OP-VEHICLE-CATALOG
+  status: MECHANICAL_HEADER_MATCH
+  theme: API_CONTRACT
+- binding_class: contract_operation_to_operationId
+  candidates:
+  - code_path: src/entities/part-info/api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/part-info/api.ts:8 头注『/** scaffold 路径 /part_info 未经后端契约评审（NEEDS_BACKEND_REVIEW，registry API_REQ.PART.INFO.1 待登记） */』
+    match_rule: header_exact_token
+  canonical_form_draft: API_REQ.PART.INFO.1
+  classification: QUERY
+  governance_id: API_REQ.PART.INFO.1
+  name_forms_observed:
+  - API_REQ.PART.INFO.1
+  openapi_presence:
+    candidate_openapi: false
+    published_openapi: true
+  operation_id: get_part_api_v1_projects__project_id__partlist__part_id__get
+  status: MECHANICAL_HEADER_MATCH
+  theme: API_CONTRACT
+- binding_class: contract_operation_to_operationId
+  candidates:
+  - code_path: src/entities/process-db/hooks.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/process-db/hooks.ts:22 头注『/** API_REQ.PROCESS.DB.1 — query：列表 */』
+    match_rule: header_exact_token
+  canonical_form_draft: API_REQ.PROCESS.DB.1
+  classification: QUERY
+  governance_id: API_REQ.PROCESS.DB.1
+  name_forms_observed:
+  - API_REQ.PROCESS.DB.1
+  openapi_presence:
+    candidate_openapi: false
+    published_openapi: true
+  operation_id: list_items_api_v1_dictionaries__code__items_get
+  status: MECHANICAL_HEADER_MATCH
+  theme: API_CONTRACT
+- binding_class: contract_operation_to_operationId
+  candidates:
+  - code_path: src/entities/process-db/hooks.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/process-db/hooks.ts:30 头注『/** API_REQ.PROCESS.DB.2 — command：新增 */』
+    match_rule: header_exact_token
+  canonical_form_draft: API_REQ.PROCESS.DB.2
+  classification: COMMAND
+  governance_id: API_REQ.PROCESS.DB.2
+  name_forms_observed:
+  - API_REQ.PROCESS.DB.2
+  openapi_presence:
+    candidate_openapi: false
+    published_openapi: true
+  operation_id: add_item_api_v1_dictionaries__code__items_post
+  status: MECHANICAL_HEADER_MATCH
+  theme: API_CONTRACT
+- binding_class: contract_operation_to_operationId
+  candidates:
+  - code_path: src/pages/page-task-step-query-ledger/QueryLedgerPage.vue
+    confidence: header_exact
+    evidence:
+    - src/pages/page-task-step-query-ledger/QueryLedgerPage.vue:12 头注『* 快照预览（API_REQ.QUERY.LEDGER.SNAPSHOT / OP-LEDGER-SNAPSHOT-FILTER，NEEDS_BACKEND_REVIEW）：』
+    match_rule: header_exact_token
+  canonical_form_draft: API_REQ.QUERY.LEDGER.SNAPSHOT
+  classification: QUERY
+  governance_id: API_REQ.QUERY.LEDGER.SNAPSHOT
+  name_forms_observed:
+  - API_REQ.QUERY.LEDGER.SNAPSHOT
+  openapi_presence:
+    candidate_openapi: false
+    published_openapi: false
+  operation_id: OP-LEDGER-SNAPSHOT-FILTER
+  status: MECHANICAL_HEADER_MATCH
+  theme: API_CONTRACT
+- binding_class: contract_operation_to_operationId
+  candidates:
+  - code_path: src/entities/role-mgmt/api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/role-mgmt/api.ts:26 头注『/** API_REQ.ROLE.MGMT.1 — GET /api/v1/roles */』
+    match_rule: header_exact_token
+  canonical_form_draft: API_REQ.ROLE.MGMT.1
+  classification: QUERY
+  governance_id: API_REQ.ROLE.MGMT.1
+  name_forms_observed:
+  - API_REQ.ROLE.MGMT.1
+  openapi_presence:
+    candidate_openapi: false
+    published_openapi: true
+  operation_id: list_roles_api_v1_roles_get
+  status: MECHANICAL_HEADER_MATCH
+  theme: API_CONTRACT
+- binding_class: contract_operation_to_operationId
+  candidates:
+  - code_path: src/entities/role-mgmt/types.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/role-mgmt/types.ts:26 头注『/** 角色权限（API_REQ.ROLE.MGMT.5/6 的 grants 载荷） */』
+    match_rule: header_exact_token
+  canonical_form_draft: API_REQ.ROLE.MGMT.5
+  classification: QUERY
+  governance_id: API_REQ.ROLE.MGMT.5
+  name_forms_observed:
+  - API_REQ.ROLE.MGMT.5
+  openapi_presence:
+    candidate_openapi: false
+    published_openapi: true
+  operation_id: get_role_grants_api_v1_roles__role_id__grants_get
+  status: MECHANICAL_HEADER_MATCH
+  theme: API_CONTRACT
+- binding_class: contract_operation_to_operationId
+  candidates:
+  - code_path: src/entities/user-mgmt/mock-api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/user-mgmt/mock-api.ts:5 头注『* 操作绑定（page-spec §7）：API_REQ.USER.MGMT.1-7；业务规则见 spec 06-user-mgmt §5。』
+    match_rule: header_exact_token
+  canonical_form_draft: API_REQ.USER.MGMT.1
+  classification: QUERY
+  governance_id: API_REQ.USER.MGMT.1
+  name_forms_observed:
+  - API_REQ.USER.MGMT.1
+  openapi_presence:
+    candidate_openapi: false
+    published_openapi: true
+  operation_id: list_users_api_v1_users_get
+  status: MECHANICAL_HEADER_MATCH
+  theme: API_CONTRACT
+- binding_class: contract_operation_to_operationId
+  candidates:
+  - code_path: src/entities/user-mgmt/hooks.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/user-mgmt/hooks.ts:4 头注『* API_REQ.USER.MGMT.3 详情 hook 已删：编辑流直填行数据为既定行为（mock 无字段缺失），』
+    match_rule: header_exact_token
+  canonical_form_draft: API_REQ.USER.MGMT.3
+  classification: QUERY
+  governance_id: API_REQ.USER.MGMT.3
+  name_forms_observed:
+  - API_REQ.USER.MGMT.3
+  openapi_presence:
+    candidate_openapi: false
+    published_openapi: true
+  operation_id: get_user_api_v1_users__user_id__get
+  status: MECHANICAL_HEADER_MATCH
+  theme: API_CONTRACT
+- binding_class: contract_operation_to_operationId
+  candidates:
+  - code_path: src/entities/vehicle-master-data/api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/vehicle-master-data/api.ts:3 头注『* - GET/POST /api/v1/projects（API_REQ.VEHICLE.MASTER.DATA.1/2）』
+    match_rule: header_exact_token
+  canonical_form_draft: API_REQ.VEHICLE.MASTER.DATA.1
+  classification: QUERY
+  governance_id: API_REQ.VEHICLE.MASTER.DATA.1
+  name_forms_observed:
+  - API_REQ.VEHICLE.MASTER.DATA.1
+  openapi_presence:
+    candidate_openapi: false
+    published_openapi: true
+  operation_id: list_projects_api_v1_projects_get
+  status: MECHANICAL_HEADER_MATCH
+  theme: API_CONTRACT
+- binding_class: contract_operation_to_operationId
+  candidates:
+  - code_path: src/entities/vehicle-master-data/mock-api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/vehicle-master-data/mock-api.ts:5 头注『* 财务 get/save（API_REQ.VEHICLE.MASTER.DATA.FINANCE）、冻结版本列表/行导出』
+    match_rule: header_exact_token
+  canonical_form_draft: API_REQ.VEHICLE.MASTER.DATA.FINANCE
+  classification: COMMAND
+  governance_id: API_REQ.VEHICLE.MASTER.DATA.FINANCE
+  name_forms_observed:
+  - API_REQ.VEHICLE.MASTER.DATA.FINANCE
+  openapi_presence:
+    candidate_openapi: false
+    published_openapi: false
+  operation_id: OP-VEHICLE-FINANCE
+  status: MECHANICAL_HEADER_MATCH
+  theme: API_CONTRACT
+- binding_class: contract_operation_to_operationId
+  candidates:
+  - code_path: src/entities/vehicle-master-data/mock-api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/vehicle-master-data/mock-api.ts:6 头注『* （API_REQ.VEHICLE.MASTER.DATA.FROZEN.LIST；导出为客户端真 CSV UTF-8 BOM，蓝图偏差注记）。』
+    match_rule: header_exact_token
+  canonical_form_draft: API_REQ.VEHICLE.MASTER.DATA.FROZEN.LIST
+  classification: QUERY
+  governance_id: API_REQ.VEHICLE.MASTER.DATA.FROZEN.LIST
+  name_forms_observed:
+  - API_REQ.VEHICLE.MASTER.DATA.FROZEN.LIST
+  openapi_presence:
+    candidate_openapi: false
+    published_openapi: false
+  operation_id: OP-FROZEN-VERSIONS-LIST
+  status: MECHANICAL_HEADER_MATCH
+  theme: API_CONTRACT
+- binding_class: contract_operation_to_operationId
+  candidates:
+  - code_path: src/entities/all-parts-list/api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/all-parts-list/api.ts:3 头注『* - GET /api/v1/partlist/ledger（API_REQ.VIEW.ALL.PARTS.1，跨项目台账聚合，页面进入自动触发）』
+    match_rule: header_exact_token
+  canonical_form_draft: API_REQ.VIEW.ALL.PARTS.1
+  classification: QUERY
+  governance_id: API_REQ.VIEW.ALL.PARTS.1
+  name_forms_observed:
+  - API_REQ.VIEW.ALL.PARTS.1
+  openapi_presence:
+    candidate_openapi: false
+    published_openapi: true
+  operation_id: cross_project_ledger_api_v1_partlist_ledger_get
+  status: MECHANICAL_HEADER_MATCH
+  theme: API_CONTRACT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/chart/MasterBarChart.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: chart
+  component_name: MasterBarChart
+  governance_id: CHART.BAR
+  name_forms_observed:
+  - CHART.BAR
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/chart/MasterLineChart.vue
+    confidence: header_exact
+    evidence:
+    - registry canonical_implementation.file 声明
+    - src/shared/ui/chart/MasterLineChart.vue:3 头注『* MasterLineChart - CHART.LINE 适配器』
+    exists: true
+    match_rule: header_exact_token
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: chart
+  component_name: MasterLineChart
+  governance_id: CHART.LINE
+  name_forms_observed:
+  - CHART.LINE
+  registry_status: implemented
+  status: MECHANICAL_HEADER_MATCH
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/chart/MasterPieChart.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: chart
+  component_name: MasterPieChart
+  governance_id: CHART.PIE
+  name_forms_observed:
+  - CHART.PIE
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/control/MasterAutoComplete.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: control
+  component_name: MasterAutoComplete
+  governance_id: CONTROL.AUTO_COMPLETE
+  name_forms_observed:
+  - CONTROL.AUTO_COMPLETE
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/control/MasterButton.vue
+    confidence: header_exact
+    evidence:
+    - registry canonical_implementation.file 声明
+    - src/shared/ui/control/MasterButton.vue:3 头注『* MasterButton - CONTROL.BUTTON 适配器』
+    exists: true
+    match_rule: header_exact_token
+  - code_path: src/shared/ui/patterns/MasterPageHeader.vue
+    confidence: header_exact
+    evidence:
+    - 'src/shared/ui/patterns/MasterPageHeader.vue:5 头注『* composes: TYPOGRAPHY.PAGE_TITLE + NAV.BREADCRUMB + CONTROL.BUTTON』'
+    exists: true
+    match_rule: header_exact_token
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: control
+  component_name: MasterButton
+  governance_id: CONTROL.BUTTON
+  name_forms_observed:
+  - CONTROL.BUTTON
+  registry_status: implemented
+  status: MECHANICAL_HEADER_MATCH
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/control/MasterCascader.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: control
+  component_name: MasterCascader
+  governance_id: CONTROL.CASCADER
+  name_forms_observed:
+  - CONTROL.CASCADER
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/control/MasterCheckbox.vue
+    confidence: header_exact
+    evidence:
+    - registry canonical_implementation.file 声明
+    - src/shared/ui/control/MasterCheckbox.vue:3 头注『* MasterCheckbox - CONTROL.CHECKBOX 适配器』
+    exists: true
+    match_rule: header_exact_token
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: control
+  component_name: MasterCheckbox
+  governance_id: CONTROL.CHECKBOX
+  name_forms_observed:
+  - CONTROL.CHECKBOX
+  registry_status: implemented
+  status: MECHANICAL_HEADER_MATCH
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/control/MasterCodeEditor.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: control
+  component_name: MasterCodeEditor
+  governance_id: CONTROL.CODE_EDITOR
+  name_forms_observed:
+  - CONTROL.CODE_EDITOR
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/control/MasterDatePicker.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: control
+  component_name: MasterDatePicker
+  governance_id: CONTROL.DATE_PICKER
+  name_forms_observed:
+  - CONTROL.DATE_PICKER
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/control/MasterDateRangePicker.vue
+    confidence: header_exact
+    evidence:
+    - registry canonical_implementation.file 声明
+    - src/shared/ui/control/MasterDateRangePicker.vue:3 头注『* MasterDateRangePicker - CONTROL.DATE_RANGE_PICKER 适配器』
+    exists: true
+    match_rule: header_exact_token
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: control
+  component_name: MasterDateRangePicker
+  governance_id: CONTROL.DATE_RANGE_PICKER
+  name_forms_observed:
+  - CONTROL.DATE_RANGE_PICKER
+  registry_status: implemented
+  status: MECHANICAL_HEADER_MATCH
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/control/MasterDropdown.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: true
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: control
+  component_name: MasterDropdown
+  governance_id: CONTROL.DROPDOWN
+  name_forms_observed:
+  - CONTROL.DROPDOWN
+  registry_status: implemented
+  status: HUMAN_CONFIRM_REQUIRED
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/control/MasterFileUpload.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: control
+  component_name: MasterFileUpload
+  governance_id: CONTROL.FILE_UPLOAD
+  name_forms_observed:
+  - CONTROL.FILE_UPLOAD
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/control/MasterInput.vue
+    confidence: header_exact
+    evidence:
+    - registry canonical_implementation.file 声明
+    - src/shared/ui/control/MasterInput.vue:3 头注『* MasterInput - CONTROL.INPUT 适配器』
+    exists: true
+    match_rule: header_exact_token
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: control
+  component_name: MasterInput
+  governance_id: CONTROL.INPUT
+  name_forms_observed:
+  - CONTROL.INPUT
+  registry_status: implemented
+  status: MECHANICAL_HEADER_MATCH
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/control/MasterMentions.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: control
+  component_name: MasterMentions
+  governance_id: CONTROL.MENTIONS
+  name_forms_observed:
+  - CONTROL.MENTIONS
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/control/MasterNumberInput.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: control
+  component_name: MasterNumberInput
+  governance_id: CONTROL.NUMBER_INPUT
+  name_forms_observed:
+  - CONTROL.NUMBER_INPUT
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/pages/page-task-step-build-bom/CalcVehiclePartsPage.vue
+    confidence: header_exact
+    evidence:
+    - src/pages/page-task-step-build-bom/CalcVehiclePartsPage.vue:12 头注『// CONTROL.RADIO_GROUP 收编：裸 <input type="radio"> 经适配层 ElRadio（registry planned，MasterRadioGroup 未落地）』
+    exists: true
+    match_rule: header_exact_token
+  - code_path: src/pages/page-task-step-build-bom/RollbackHistoryDialog.vue
+    confidence: header_exact
+    evidence:
+    - src/pages/page-task-step-build-bom/RollbackHistoryDialog.vue:16 头注『// CONTROL.RADIO_GROUP 收编：裸 radio 经适配层 ElRadio（registry planned，MasterRadioGroup 未落地）』
+    exists: true
+    match_rule: header_exact_token
+  - code_path: src/shared/element-plus/index.ts
+    confidence: header_exact
+    evidence:
+    - src/shared/element-plus/index.ts:2 头注『// CONTROL.RADIO_GROUP（registry planned，MasterRadioGroup 未落地）：裸 radio 收编经此适配层』
+    exists: true
+    match_rule: header_exact_token
+  - code_path: src/shared/ui/control/MasterRadioGroup.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: control
+  component_name: MasterRadioGroup
+  governance_id: CONTROL.RADIO_GROUP
+  name_forms_observed:
+  - CONTROL.RADIO_GROUP
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/control/MasterRate.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: control
+  component_name: MasterRate
+  governance_id: CONTROL.RATE
+  name_forms_observed:
+  - CONTROL.RATE
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/control/MasterRichTextEditor.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: control
+  component_name: MasterRichTextEditor
+  governance_id: CONTROL.RICH_TEXT_EDITOR
+  name_forms_observed:
+  - CONTROL.RICH_TEXT_EDITOR
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/control/MasterSelect.vue
+    confidence: header_exact
+    evidence:
+    - registry canonical_implementation.file 声明
+    - src/shared/ui/control/MasterSelect.vue:3 头注『* MasterSelect - CONTROL.SELECT 适配器』
+    exists: true
+    match_rule: header_exact_token
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: control
+  component_name: MasterSelect
+  governance_id: CONTROL.SELECT
+  name_forms_observed:
+  - CONTROL.SELECT
+  registry_status: implemented
+  status: MECHANICAL_HEADER_MATCH
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/control/MasterSlider.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: control
+  component_name: MasterSlider
+  governance_id: CONTROL.SLIDER
+  name_forms_observed:
+  - CONTROL.SLIDER
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/control/MasterSwitch.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: control
+  component_name: MasterSwitch
+  governance_id: CONTROL.SWITCH
+  name_forms_observed:
+  - CONTROL.SWITCH
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/control/MasterTagInput.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: control
+  component_name: MasterTagInput
+  governance_id: CONTROL.TAG_INPUT
+  name_forms_observed:
+  - CONTROL.TAG_INPUT
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/control/MasterTextarea.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: control
+  component_name: MasterTextarea
+  governance_id: CONTROL.TEXTAREA
+  name_forms_observed:
+  - CONTROL.TEXTAREA
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/control/MasterTimePicker.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: control
+  component_name: MasterTimePicker
+  governance_id: CONTROL.TIME_PICKER
+  name_forms_observed:
+  - CONTROL.TIME_PICKER
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/control/MasterTransfer.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: control
+  component_name: MasterTransfer
+  governance_id: CONTROL.TRANSFER
+  name_forms_observed:
+  - CONTROL.TRANSFER
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/control/MasterTreeSelect.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: control
+  component_name: MasterTreeSelect
+  governance_id: CONTROL.TREE_SELECT
+  name_forms_observed:
+  - CONTROL.TREE_SELECT
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/data/MasterAvatar.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: data
+  component_name: MasterAvatar
+  governance_id: DATA.AVATAR
+  name_forms_observed:
+  - DATA.AVATAR
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/data/MasterCalendar.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: data
+  component_name: MasterCalendar
+  governance_id: DATA.CALENDAR
+  name_forms_observed:
+  - DATA.CALENDAR
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/data/MasterCollapse.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: data
+  component_name: MasterCollapse
+  governance_id: DATA.COLLAPSE
+  name_forms_observed:
+  - DATA.COLLAPSE
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/data/MasterComment.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: data
+  component_name: MasterComment
+  governance_id: DATA.COMMENT
+  name_forms_observed:
+  - DATA.COMMENT
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/data/MasterDescriptionList.vue
+    confidence: header_exact
+    evidence:
+    - registry canonical_implementation.file 声明
+    - src/shared/ui/data/MasterDescriptionList.vue:3 头注『* MasterDescriptionList - DATA.DESCRIPTION_LIST 适配器』
+    exists: true
+    match_rule: header_exact_token
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: data
+  component_name: MasterDescriptionList
+  governance_id: DATA.DESCRIPTION_LIST
+  name_forms_observed:
+  - DATA.DESCRIPTION_LIST
+  registry_status: implemented
+  status: MECHANICAL_HEADER_MATCH
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/data/MasterEmptyState.vue
+    confidence: header_exact
+    evidence:
+    - registry canonical_implementation.file 声明
+    - src/shared/ui/data/MasterEmptyState.vue:3 头注『* MasterEmptyState - DATA.EMPTY_STATE 适配器』
+    exists: true
+    match_rule: header_exact_token
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: data
+  component_name: MasterEmptyState
+  governance_id: DATA.EMPTY_STATE
+  name_forms_observed:
+  - DATA.EMPTY_STATE
+  registry_status: implemented
+  status: MECHANICAL_HEADER_MATCH
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/data/MasterImage.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: data
+  component_name: MasterImage
+  governance_id: DATA.IMAGE
+  name_forms_observed:
+  - DATA.IMAGE
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/feedback/MasterAlert.vue
+    confidence: header_exact
+    evidence:
+    - 'src/shared/ui/feedback/MasterAlert.vue:4 头注『* component-registry: src/shared/ui/feedback/MasterAlert.vue（DATA.IMPORT_PREVIEW 等页接入归 C2）』'
+    exists: true
+    match_rule: header_exact_token
+  - code_path: src/shared/ui/overlay/ImportPreviewDialog.vue
+    confidence: header_exact
+    evidence:
+    - registry canonical_implementation.file 声明
+    - src/shared/ui/overlay/ImportPreviewDialog.vue:3 头注『* ImportPreviewDialog - DATA.IMPORT_PREVIEW 适配器』
+    exists: true
+    match_rule: header_exact_token
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: data
+  component_name: ImportPreviewDialog
+  governance_id: DATA.IMPORT_PREVIEW
+  name_forms_observed:
+  - DATA.IMPORT_PREVIEW
+  registry_status: implemented
+  status: MECHANICAL_HEADER_MATCH
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/data/MasterList.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: data
+  component_name: MasterList
+  governance_id: DATA.LIST
+  name_forms_observed:
+  - DATA.LIST
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/data/MasterListFooter.vue
+    confidence: header_exact
+    evidence:
+    - registry canonical_implementation.file 声明
+    - src/shared/ui/data/MasterListFooter.vue:3 头注『* MasterListFooter - DATA.LIST_FOOTER 适配器』
+    exists: true
+    match_rule: header_exact_token
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: data
+  component_name: MasterListFooter
+  governance_id: DATA.LIST_FOOTER
+  name_forms_observed:
+  - DATA.LIST_FOOTER
+  registry_status: implemented
+  status: MECHANICAL_HEADER_MATCH
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/data/MasterPagination.vue
+    confidence: header_exact
+    evidence:
+    - registry canonical_implementation.file 声明
+    - src/shared/ui/data/MasterPagination.vue:3 头注『* MasterPagination - DATA.PAGINATION 适配器』
+    exists: true
+    match_rule: header_exact_token
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: data
+  component_name: MasterPagination
+  governance_id: DATA.PAGINATION
+  name_forms_observed:
+  - DATA.PAGINATION
+  registry_status: implemented
+  status: MECHANICAL_HEADER_MATCH
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/data/MasterPdfViewer.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: data
+  component_name: MasterPdfViewer
+  governance_id: DATA.PDF_VIEWER
+  name_forms_observed:
+  - DATA.PDF_VIEWER
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/data/MasterQRCode.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: data
+  component_name: MasterQRCode
+  governance_id: DATA.QRCODE
+  name_forms_observed:
+  - DATA.QRCODE
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/data/MasterReadonlyTable.vue
+    confidence: header_exact
+    evidence:
+    - registry canonical_implementation.file 声明
+    - src/shared/ui/data/MasterReadonlyTable.vue:3 头注『* MasterReadonlyTable - DATA.READONLY_TABLE 适配器』
+    exists: true
+    match_rule: header_exact_token
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: data
+  component_name: MasterReadonlyTable
+  governance_id: DATA.READONLY_TABLE
+  name_forms_observed:
+  - DATA.READONLY_TABLE
+  registry_status: implemented
+  status: MECHANICAL_HEADER_MATCH
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/data/MasterStatistic.vue
+    confidence: header_exact
+    evidence:
+    - registry canonical_implementation.file 声明
+    - src/shared/ui/data/MasterStatistic.vue:3 头注『* MasterStatistic - DATA.STATISTIC 适配器』
+    exists: true
+    match_rule: header_exact_token
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: data
+  component_name: MasterStatistic
+  governance_id: DATA.STATISTIC
+  name_forms_observed:
+  - DATA.STATISTIC
+  registry_status: implemented
+  status: MECHANICAL_HEADER_MATCH
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/entities/forecast-report/copy.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/forecast-report/copy.ts:21 头注『/** DATA.STATUS_BADGE 标签（screen-blueprint：7 列 / VSI-Target 双值对比） */』
+    exists: true
+    match_rule: header_exact_token
+  - code_path: src/shared/ui/data/MasterStatusBadge.vue
+    confidence: header_exact
+    evidence:
+    - registry canonical_implementation.file 声明
+    - src/shared/ui/data/MasterStatusBadge.vue:3 头注『* MasterStatusBadge - DATA.STATUS_BADGE 适配器』
+    exists: true
+    match_rule: header_exact_token
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: data
+  component_name: MasterStatusBadge
+  governance_id: DATA.STATUS_BADGE
+  name_forms_observed:
+  - DATA.STATUS_BADGE
+  registry_status: implemented
+  status: MECHANICAL_HEADER_MATCH
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/data/MasterTag.vue
+    confidence: header_exact
+    evidence:
+    - registry canonical_implementation.file 声明
+    - src/shared/ui/data/MasterTag.vue:3 头注『* MasterTag - DATA.TAG 适配器』
+    exists: true
+    match_rule: header_exact_token
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: data
+  component_name: MasterTag
+  governance_id: DATA.TAG
+  name_forms_observed:
+  - DATA.TAG
+  registry_status: implemented
+  status: MECHANICAL_HEADER_MATCH
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/data/MasterTimeline.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: data
+  component_name: MasterTimeline
+  governance_id: DATA.TIMELINE
+  name_forms_observed:
+  - DATA.TIMELINE
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/data/MasterTree.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: data
+  component_name: MasterTree
+  governance_id: DATA.TREE
+  name_forms_observed:
+  - DATA.TREE
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/data/MasterWatermark.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: data
+  component_name: MasterWatermark
+  governance_id: DATA.WATERMARK
+  name_forms_observed:
+  - DATA.WATERMARK
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/feedback/MasterAlert.vue
+    confidence: header_exact
+    evidence:
+    - registry canonical_implementation.file 声明
+    - src/shared/ui/feedback/MasterAlert.vue:3 头注『* MasterAlert - FEEDBACK.ALERT 适配器』
+    exists: true
+    match_rule: header_exact_token
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: feedback
+  component_name: MasterAlert
+  governance_id: FEEDBACK.ALERT
+  name_forms_observed:
+  - FEEDBACK.ALERT
+  registry_status: implemented
+  status: MECHANICAL_HEADER_MATCH
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/feedback/MasterLoading.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: feedback
+  component_name: MasterLoading
+  governance_id: FEEDBACK.LOADING
+  name_forms_observed:
+  - FEEDBACK.LOADING
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/feedback/MasterMessage.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: feedback
+  component_name: MasterMessage
+  governance_id: FEEDBACK.MESSAGE
+  name_forms_observed:
+  - FEEDBACK.MESSAGE
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/feedback/MasterNotification.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: feedback
+  component_name: MasterNotification
+  governance_id: FEEDBACK.NOTIFICATION
+  name_forms_observed:
+  - FEEDBACK.NOTIFICATION
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/feedback/MasterProgress.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: feedback
+  component_name: MasterProgress
+  governance_id: FEEDBACK.PROGRESS
+  name_forms_observed:
+  - FEEDBACK.PROGRESS
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/feedback/MasterResult.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: feedback
+  component_name: MasterResult
+  governance_id: FEEDBACK.RESULT
+  name_forms_observed:
+  - FEEDBACK.RESULT
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/feedback/MasterToast.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: feedback
+  component_name: MasterToast
+  governance_id: FEEDBACK.TOAST
+  name_forms_observed:
+  - FEEDBACK.TOAST
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/form/MasterForm.vue
+    confidence: header_exact
+    evidence:
+    - registry canonical_implementation.file 声明
+    - src/shared/ui/form/MasterForm.vue:3 头注『* MasterForm - FORM.FORM 适配器』
+    exists: true
+    match_rule: header_exact_token
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: form
+  component_name: MasterForm
+  governance_id: FORM.FORM
+  name_forms_observed:
+  - FORM.FORM
+  registry_status: implemented
+  status: MECHANICAL_HEADER_MATCH
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/form/MasterFormItem.vue
+    confidence: header_exact
+    evidence:
+    - registry canonical_implementation.file 声明
+    - src/shared/ui/form/MasterFormItem.vue:3 头注『* MasterFormItem - FORM.FORM_ITEM 适配器』
+    exists: true
+    match_rule: header_exact_token
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: form
+  component_name: MasterFormItem
+  governance_id: FORM.FORM_ITEM
+  name_forms_observed:
+  - FORM.FORM_ITEM
+  registry_status: implemented
+  status: MECHANICAL_HEADER_MATCH
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/form/MasterFormSection.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: form
+  component_name: MasterFormSection
+  governance_id: FORM.FORM_SECTION
+  name_forms_observed:
+  - FORM.FORM_SECTION
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/grid/useAgGridBase.ts
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: true
+    match_rule: registry_declared_file
+  canonical_form_draft: CAPABILITY.GRID.BASE
+  canonical_form_note: ALIASES_V0 已登记规则 GRID.*→CAPABILITY.GRID.*
+  category: grid
+  component_name: useAgGridBase
+  governance_id: GRID.BASE
+  name_forms_observed:
+  - GRID.BASE
+  registry_status: implemented
+  status: HUMAN_CONFIRM_REQUIRED
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/grid/MasterColumnConfig.vue
+    confidence: header_exact
+    evidence:
+    - registry canonical_implementation.file 声明
+    - src/shared/grid/MasterColumnConfig.vue:3 头注『* MasterColumnConfig - 列配置弹窗（GRID.COLUMN_CONFIG，spec 30 data-grid）』
+    exists: true
+    match_rule: header_exact_token
+  canonical_form_draft: CAPABILITY.GRID.COLUMN_CONFIG
+  canonical_form_note: ALIASES_V0 已登记规则 GRID.*→CAPABILITY.GRID.*
+  category: grid
+  component_name: MasterColumnConfig
+  governance_id: GRID.COLUMN_CONFIG
+  name_forms_observed:
+  - GRID.COLUMN_CONFIG
+  registry_status: implemented
+  status: MECHANICAL_HEADER_MATCH
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/grid/MasterEditableGrid.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    - src/shared/grid/MasterEditableGrid.vue:3 头注 family 变体『* MasterEditableGrid - DATA.EDITABLE_GRID 适配器（ag-grid-community）』
+    exists: true
+    match_rule: registry_declared_file
+  - code_path: src/shared/grid/MasterGridActionsCell.vue
+    confidence: header_exact
+    evidence:
+    - src/shared/grid/MasterGridActionsCell.vue:4 头注『* GRID.EDITABLE_GRID 行级动作渲染器（spec 24 操作形态：行级动作 MUST 图标+文字 MasterButton、』
+    exists: true
+    match_rule: header_exact_token
+  canonical_form_draft: CAPABILITY.GRID.EDITABLE_GRID
+  canonical_form_note: ALIASES_V0 已登记规则 GRID.*→CAPABILITY.GRID.*
+  category: grid
+  component_name: MasterEditableGrid
+  governance_id: GRID.EDITABLE_GRID
+  name_forms_observed:
+  - DATA.EDITABLE_GRID
+  - GRID.EDITABLE_GRID
+  registry_status: implemented
+  status: HUMAN_CONFIRM_REQUIRED
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/icon/MasterIcon.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: true
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: content
+  component_name: MasterIcon
+  governance_id: ICON.ICON
+  name_forms_observed:
+  - ICON.ICON
+  registry_status: implemented
+  status: HUMAN_CONFIRM_REQUIRED
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/layout/MasterCard.vue
+    confidence: header_exact
+    evidence:
+    - registry canonical_implementation.file 声明
+    - src/shared/ui/layout/MasterCard.vue:3 头注『* MasterCard - LAYOUT.CARD 适配器』
+    exists: true
+    match_rule: header_exact_token
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: layout
+  component_name: MasterCard
+  governance_id: LAYOUT.CARD
+  name_forms_observed:
+  - LAYOUT.CARD
+  registry_status: implemented
+  status: MECHANICAL_HEADER_MATCH
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/layout/MasterDivider.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: layout
+  component_name: MasterDivider
+  governance_id: LAYOUT.DIVIDER
+  name_forms_observed:
+  - LAYOUT.DIVIDER
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/layout/MasterGrid.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: layout
+  component_name: MasterGrid
+  governance_id: LAYOUT.GRID
+  name_forms_observed:
+  - LAYOUT.GRID
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/layout/MasterPageContainer.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: layout
+  component_name: MasterPageContainer
+  governance_id: LAYOUT.PAGE_CONTAINER
+  name_forms_observed:
+  - LAYOUT.PAGE_CONTAINER
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/layout/MasterSpace.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: layout
+  component_name: MasterSpace
+  governance_id: LAYOUT.SPACE
+  name_forms_observed:
+  - LAYOUT.SPACE
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/layout/MasterSplitPane.vue
+    confidence: header_exact
+    evidence:
+    - registry canonical_implementation.file 声明
+    - src/shared/ui/layout/MasterSplitPane.vue:3 头注『* MasterSplitPane - LAYOUT.SPLIT_PANE 适配器』
+    exists: true
+    match_rule: header_exact_token
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: layout
+  component_name: MasterSplitPane
+  governance_id: LAYOUT.SPLIT_PANE
+  name_forms_observed:
+  - LAYOUT.SPLIT_PANE
+  registry_status: implemented
+  status: MECHANICAL_HEADER_MATCH
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/pages/page-role-mgmt/RoleMgmtPage.vue
+    confidence: header_exact
+    evidence:
+    - src/pages/page-role-mgmt/RoleMgmtPage.vue:5 头注『* + REGION.CONTENT(LAYOUT.TABS：角色卡片 + 功能权限矩阵) + 弹窗（新增/编辑角色、权限配置）。』
+    exists: true
+    match_rule: header_exact_token
+  - code_path: src/shared/ui/layout/MasterTabs.vue
+    confidence: header_exact
+    evidence:
+    - registry canonical_implementation.file 声明
+    - src/shared/ui/layout/MasterTabs.vue:3 头注『* MasterTabs - LAYOUT.TABS adapter』
+    exists: true
+    match_rule: header_exact_token
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: layout
+  component_name: MasterTabs
+  governance_id: LAYOUT.TABS
+  name_forms_observed:
+  - LAYOUT.TABS
+  registry_status: implemented
+  status: MECHANICAL_HEADER_MATCH
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/nav/MasterAnchor.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: nav
+  component_name: MasterAnchor
+  governance_id: NAV.ANCHOR
+  name_forms_observed:
+  - NAV.ANCHOR
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/nav/MasterBreadcrumb.vue
+    confidence: header_exact
+    evidence:
+    - registry canonical_implementation.file 声明
+    - src/shared/ui/nav/MasterBreadcrumb.vue:3 头注『* MasterBreadcrumb - NAV.BREADCRUMB 适配器』
+    exists: true
+    match_rule: header_exact_token
+  - code_path: src/shared/ui/patterns/MasterPageHeader.vue
+    confidence: header_exact
+    evidence:
+    - 'src/shared/ui/patterns/MasterPageHeader.vue:5 头注『* composes: TYPOGRAPHY.PAGE_TITLE + NAV.BREADCRUMB + CONTROL.BUTTON』'
+    exists: true
+    match_rule: header_exact_token
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: nav
+  component_name: MasterBreadcrumb
+  governance_id: NAV.BREADCRUMB
+  name_forms_observed:
+  - NAV.BREADCRUMB
+  registry_status: deprecated
+  status: MECHANICAL_HEADER_MATCH
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/nav/MasterMenu.vue
+    confidence: header_exact
+    evidence:
+    - registry canonical_implementation.file 声明
+    - src/shared/ui/nav/MasterMenu.vue:3 头注『* MasterMenu - NAV.MENU 适配器』
+    exists: true
+    match_rule: header_exact_token
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: nav
+  component_name: MasterMenu
+  governance_id: NAV.MENU
+  name_forms_observed:
+  - NAV.MENU
+  registry_status: implemented
+  status: MECHANICAL_HEADER_MATCH
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/nav/MasterSteps.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: nav
+  component_name: MasterSteps
+  governance_id: NAV.STEPS
+  name_forms_observed:
+  - NAV.STEPS
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/overlay/masterConfirm.ts
+    confidence: header_exact
+    evidence:
+    - registry canonical_implementation.file 声明
+    - src/shared/ui/overlay/masterConfirm.ts:2 头注『* MasterConfirm - OVERLAY.CONFIRM 适配器（函数式）』
+    exists: true
+    match_rule: header_exact_token
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: overlay
+  component_name: masterConfirm
+  governance_id: OVERLAY.CONFIRM
+  name_forms_observed:
+  - OVERLAY.CONFIRM
+  registry_status: implemented
+  status: MECHANICAL_HEADER_MATCH
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/overlay/MasterDialog.vue
+    confidence: header_exact
+    evidence:
+    - registry canonical_implementation.file 声明
+    - src/shared/ui/overlay/MasterDialog.vue:3 头注『* MasterDialog - OVERLAY.DIALOG 适配器』
+    exists: true
+    match_rule: header_exact_token
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: overlay
+  component_name: MasterDialog
+  governance_id: OVERLAY.DIALOG
+  name_forms_observed:
+  - OVERLAY.DIALOG
+  registry_status: implemented
+  status: MECHANICAL_HEADER_MATCH
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/overlay/MasterDrawer.vue
+    confidence: header_exact
+    evidence:
+    - registry canonical_implementation.file 声明
+    - src/shared/ui/overlay/MasterDrawer.vue:5 头注『* MasterDrawer - OVERLAY.DRAWER 适配器』
+    exists: true
+    match_rule: header_exact_token
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: overlay
+  component_name: MasterDrawer
+  governance_id: OVERLAY.DRAWER
+  name_forms_observed:
+  - OVERLAY.DRAWER
+  registry_status: implemented
+  status: MECHANICAL_HEADER_MATCH
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/overlay/MasterPopconfirm.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: overlay
+  component_name: MasterPopconfirm
+  governance_id: OVERLAY.POPCONFIRM
+  name_forms_observed:
+  - OVERLAY.POPCONFIRM
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/overlay/MasterPopover.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: overlay
+  component_name: MasterPopover
+  governance_id: OVERLAY.POPOVER
+  name_forms_observed:
+  - OVERLAY.POPOVER
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/overlay/MasterTooltip.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: overlay
+  component_name: MasterTooltip
+  governance_id: OVERLAY.TOOLTIP
+  name_forms_observed:
+  - OVERLAY.TOOLTIP
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/overlay/MasterTour.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: overlay
+  component_name: MasterTour
+  governance_id: OVERLAY.TOUR
+  name_forms_observed:
+  - OVERLAY.TOUR
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/pages/page-task-step-authenticate/AuthenticatePage.vue
+    confidence: header_exact
+    evidence:
+    - 'src/pages/page-task-step-authenticate/AuthenticatePage.vue:4 头注『* screen-blueprint: TYPOGRAPHY.PAGE_TITLE + PATTERN.FORM_SECTION + PATTERN.ACTION_BAR』'
+    exists: true
+    match_rule: header_exact_token
+  - code_path: src/shared/ui/patterns/MasterActionBar.vue
+    confidence: header_exact
+    evidence:
+    - registry canonical_implementation.file 声明
+    - src/shared/ui/patterns/MasterActionBar.vue:3 头注『* MasterActionBar - PATTERN.ACTION_BAR』
+    exists: true
+    match_rule: header_exact_token
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: pattern
+  component_name: MasterActionBar
+  governance_id: PATTERN.ACTION_BAR
+  name_forms_observed:
+  - PATTERN.ACTION_BAR
+  registry_status: implemented
+  status: MECHANICAL_HEADER_MATCH
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/entities/approval-flow/copy.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/approval-flow/copy.ts:26 头注『/** REGION.SUMMARY（PATTERN.DESCRIPTION_SUMMARY）字段文案：骨架阶段与列一致 */』
+    exists: true
+    match_rule: header_exact_token
+  - code_path: src/shared/ui/patterns/MasterDescriptionSummary.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: pattern
+  component_name: MasterDescriptionSummary
+  governance_id: PATTERN.DESCRIPTION_SUMMARY
+  name_forms_observed:
+  - PATTERN.DESCRIPTION_SUMMARY
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/pages/page-part-info/PartInfoPage.vue
+    confidence: header_exact
+    evidence:
+    - src/pages/page-part-info/PartInfoPage.vue:5 头注『*   + REGION.SUMMARY（PATTERN.DETAIL_DESCRIPTION，三语义 Section：基本信息/产量与价格/供应商信息 + 底部系统行）』
+    exists: true
+    match_rule: header_exact_token
+  - code_path: src/shared/ui/patterns/MasterDetailDescription.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: pattern
+  component_name: DetailDescription
+  governance_id: PATTERN.DETAIL_DESCRIPTION
+  name_forms_observed:
+  - PATTERN.DETAIL_DESCRIPTION
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/patterns/MasterEditableGridSection.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: pattern
+  component_name: MasterEditableGridSection
+  governance_id: PATTERN.EDITABLE_GRID_SECTION
+  name_forms_observed:
+  - PATTERN.EDITABLE_GRID_SECTION
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/entities/csc-price/copy.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/csc-price/copy.ts:26 头注『/** REGION.FILTERS 价格类型筛选项（PATTERN.FILTER_BAR） */』
+    exists: true
+    match_rule: header_exact_token
+  - code_path: src/entities/technical-akt/copy.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/technical-akt/copy.ts:25 头注『/** REGION.FILTERS 评估结果筛选项（PATTERN.FILTER_BAR） */』
+    exists: true
+    match_rule: header_exact_token
+  - code_path: src/shared/ui/patterns/MasterFilterBar.vue
+    confidence: header_exact
+    evidence:
+    - registry canonical_implementation.file 声明
+    - src/shared/ui/patterns/MasterFilterBar.vue:3 头注『* MasterFilterBar - PATTERN.FILTER_BAR』
+    exists: true
+    match_rule: header_exact_token
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: pattern
+  component_name: MasterFilterBar
+  governance_id: PATTERN.FILTER_BAR
+  name_forms_observed:
+  - PATTERN.FILTER_BAR
+  registry_status: implemented
+  status: MECHANICAL_HEADER_MATCH
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/patterns/MasterListTable.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: pattern
+  component_name: MasterListTable
+  governance_id: PATTERN.LIST_TABLE
+  name_forms_observed:
+  - PATTERN.LIST_TABLE
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/patterns/MasterPageHeader.vue
+    confidence: header_exact
+    evidence:
+    - registry canonical_implementation.file 声明
+    - src/shared/ui/patterns/MasterPageHeader.vue:3 头注『* MasterPageHeader - PATTERN.PAGE_HEADER』
+    exists: true
+    match_rule: header_exact_token
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: pattern
+  component_name: MasterPageHeader
+  governance_id: PATTERN.PAGE_HEADER
+  name_forms_observed:
+  - PATTERN.PAGE_HEADER
+  registry_status: implemented
+  status: MECHANICAL_HEADER_MATCH
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/patterns/MasterTabContainer.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: pattern
+  component_name: TabContainer
+  governance_id: PATTERN.TAB_CONTAINER
+  name_forms_observed:
+  - PATTERN.TAB_CONTAINER
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/typography/MasterDescriptionText.vue
+    confidence: header_exact
+    evidence:
+    - registry canonical_implementation.file 声明
+    - src/shared/ui/typography/MasterDescriptionText.vue:3 头注『* MasterDescriptionText - TYPOGRAPHY.DESCRIPTION 适配器』
+    exists: true
+    match_rule: header_exact_token
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: typography
+  component_name: MasterDescriptionText
+  governance_id: TYPOGRAPHY.DESCRIPTION
+  name_forms_observed:
+  - TYPOGRAPHY.DESCRIPTION
+  registry_status: implemented
+  status: MECHANICAL_HEADER_MATCH
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/pages/page-task-step-authenticate/AuthenticatePage.vue
+    confidence: header_exact
+    evidence:
+    - 'src/pages/page-task-step-authenticate/AuthenticatePage.vue:4 头注『* screen-blueprint: TYPOGRAPHY.PAGE_TITLE + PATTERN.FORM_SECTION + PATTERN.ACTION_BAR』'
+    exists: true
+    match_rule: header_exact_token
+  - code_path: src/shared/ui/patterns/MasterPageHeader.vue
+    confidence: header_exact
+    evidence:
+    - 'src/shared/ui/patterns/MasterPageHeader.vue:5 头注『* composes: TYPOGRAPHY.PAGE_TITLE + NAV.BREADCRUMB + CONTROL.BUTTON』'
+    exists: true
+    match_rule: header_exact_token
+  - code_path: src/shared/ui/typography/MasterPageTitle.vue
+    confidence: header_exact
+    evidence:
+    - registry canonical_implementation.file 声明
+    - src/shared/ui/typography/MasterPageTitle.vue:3 头注『* MasterPageTitle - TYPOGRAPHY.PAGE_TITLE 适配器』
+    exists: true
+    match_rule: header_exact_token
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: typography
+  component_name: MasterPageTitle
+  governance_id: TYPOGRAPHY.PAGE_TITLE
+  name_forms_observed:
+  - TYPOGRAPHY.PAGE_TITLE
+  registry_status: deprecated
+  status: MECHANICAL_HEADER_MATCH
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/ui/typography/MasterSectionTitle.vue
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: false
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: typography
+  component_name: MasterSectionTitle
+  governance_id: TYPOGRAPHY.SECTION_TITLE
+  name_forms_observed:
+  - TYPOGRAPHY.SECTION_TITLE
+  registry_status: planned
+  status: PLANNED_NO_IMPLEMENTATION
+  theme: COMPONENT
+- binding_class: capability_to_file
+  candidates:
+  - code_path: src/shared/lib/csv.ts
+    confidence: registry_declared
+    evidence:
+    - registry canonical_implementation.file 声明
+    exists: true
+    match_rule: registry_declared_file
+  canonical_form_draft: null
+  canonical_form_note: GRID.*→CAPABILITY.GRID.* 为 ALIASES_V0 已登记规则；其余族前缀（CONTROL/DATA/...）无已登记 alias 规则，canonical_form_draft=null，只登记不改名
+  category: util
+  component_name: csv
+  governance_id: UTIL.CSV
+  name_forms_observed:
+  - UTIL.CSV
+  registry_status: implemented
+  status: HUMAN_CONFIRM_REQUIRED
+  theme: COMPONENT
+- alias_forms_observed: []
+  binding_class: page_to_dir
+  candidates:
+  - code_path: src/pages/page-all-parts-list
+    confidence: dir_name_derived
+    evidence:
+    - 目录在场（命名规则 dir_name_drop_infix）
+    match_rule: dir_name_drop_infix
+  - code_path: src/pages/page-all-parts-list/AllPartsListPage.vue
+    confidence: header_exact
+    evidence:
+    - src/pages/page-all-parts-list/AllPartsListPage.vue:3 头注『* PAGE-APP-ALL-PARTS-LIST - 全系零件清单（PAGE.LIST · 只读视图）』
+    match_rule: header_exact_token
+  - code_path: src/shared/lib/copy/route-titles.ts
+    confidence: header_exact
+    evidence:
+    - 'src/shared/lib/copy/route-titles.ts:6 头注『''PAGE-APP-ALL-PARTS-LIST'': ''全系零件清单'',』'
+    match_rule: header_exact_token
+  canonical_form_draft: PAGE.APP_ALL_PARTS_LIST
+  canonical_form_note: token 重排拟合（hyphen→segment，与 ALIASES_V0 的 PAGE-TASK-STEP-*→PAGE.* 同模式外推至 PAGE-APP-*；无已登记 alias 规则，只登记不改名，HUMAN_CONFIRM_REQUIRED）
+  governance_id: PAGE-APP-ALL-PARTS-LIST
+  registry_refs_observed:
+  - application-page-registry
+  - issue-register
+  status: MECHANICAL_HEADER_MATCH
+  theme: GOVERNANCE_LEDGER
+- alias_forms_observed: []
+  binding_class: page_to_dir
+  candidates:
+  - code_path: src/entities/approval-flow/types.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/approval-flow/types.ts:6 头注『* 待 spec §3/§4 细化后再补（ISSUE.PAGE-APP-APPROVAL-FLOW.2）。』
+    match_rule: header_exact_token
+  - code_path: src/pages/page-approval-flow
+    confidence: dir_name_derived
+    evidence:
+    - 目录在场（命名规则 dir_name_drop_infix）
+    match_rule: dir_name_drop_infix
+  - code_path: src/pages/page-approval-flow/ApprovalFlowPage.vue
+    confidence: header_exact
+    evidence:
+    - src/pages/page-approval-flow/ApprovalFlowPage.vue:3 头注『* PAGE-APP-APPROVAL-FLOW - 审批流管理（PAGE.DETAIL 骨架页 / FTA-PAGE-BLOCKED）』
+    match_rule: header_exact_token
+  - code_path: src/shared/lib/copy/route-titles.ts
+    confidence: header_exact
+    evidence:
+    - 'src/shared/lib/copy/route-titles.ts:7 头注『''PAGE-APP-APPROVAL-FLOW'': ''审批流管理'',』'
+    match_rule: header_exact_token
+  - code_path: src/shared/lib/mock/approval-flow.ts
+    confidence: header_exact
+    evidence:
+    - src/shared/lib/mock/approval-flow.ts:6 头注『* FTA-PAGE-BLOCKED：字段与取值不得超出骨架 spec 语义（ISSUE.PAGE-APP-APPROVAL-FLOW.2）；』
+    match_rule: header_exact_token
+  canonical_form_draft: PAGE.APP_APPROVAL_FLOW
+  canonical_form_note: token 重排拟合（hyphen→segment，与 ALIASES_V0 的 PAGE-TASK-STEP-*→PAGE.* 同模式外推至 PAGE-APP-*；无已登记 alias 规则，只登记不改名，HUMAN_CONFIRM_REQUIRED）
+  governance_id: PAGE-APP-APPROVAL-FLOW
+  registry_refs_observed:
+  - application-page-registry
+  - issue-register
+  status: MECHANICAL_HEADER_MATCH
+  theme: GOVERNANCE_LEDGER
+- alias_forms_observed: []
+  binding_class: page_to_dir
+  candidates:
+  - code_path: src/entities/bridge-table/api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/bridge-table/api.ts:4 头注『* ISSUE.PAGE-APP-BRIDGE-TABLE.1）：当前仅 mock 模式可用，』
+    match_rule: header_exact_token
+  - code_path: src/pages/page-bridge-table
+    confidence: dir_name_derived
+    evidence:
+    - 目录在场（命名规则 dir_name_drop_infix）
+    match_rule: dir_name_drop_infix
+  - code_path: src/shared/lib/copy/route-titles.ts
+    confidence: header_exact
+    evidence:
+    - 'src/shared/lib/copy/route-titles.ts:8 头注『''PAGE-APP-BRIDGE-TABLE'': ''桥表'',』'
+    match_rule: header_exact_token
+  canonical_form_draft: PAGE.APP_BRIDGE_TABLE
+  canonical_form_note: token 重排拟合（hyphen→segment，与 ALIASES_V0 的 PAGE-TASK-STEP-*→PAGE.* 同模式外推至 PAGE-APP-*；无已登记 alias 规则，只登记不改名，HUMAN_CONFIRM_REQUIRED）
+  governance_id: PAGE-APP-BRIDGE-TABLE
+  registry_refs_observed:
+  - application-page-registry
+  - issue-register
+  status: MECHANICAL_HEADER_MATCH
+  theme: GOVERNANCE_LEDGER
+- alias_forms_observed: []
+  binding_class: page_to_dir
+  candidates:
+  - code_path: src/entities/buc-analyse/useBucFormulas.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/buc-analyse/useBucFormulas.ts:19 头注『* 留迁移时连数据对齐同批做（PAGE-APP-BUC-DETAIL 2026-08-20 note）。』
+    match_rule: header_exact_token
+  - code_path: src/entities/expert-model-calculate/ExpertModelDrawer.vue
+    confidence: header_exact
+    evidence:
+    - src/entities/expert-model-calculate/ExpertModelDrawer.vue:4 头注『* 事实源：PAGE-APP-BUC-DETAIL 2026-08-20 note（原型 openExpertDrawer buc-analysis.html P:750-866）；』
+    match_rule: header_exact_token
+  - code_path: src/pages/page-buc-detail
+    confidence: dir_name_derived
+    evidence:
+    - 目录在场（命名规则 dir_name_drop_infix）
+    match_rule: dir_name_drop_infix
+  - code_path: src/pages/page-buc-detail/BucDetailPage.vue
+    confidence: header_exact
+    evidence:
+    - src/pages/page-buc-detail/BucDetailPage.vue:3 头注『* PAGE-APP-BUC-DETAIL - BUC 成本分析详情页（spec 03-buc-analysis §3.3/§4.3）』
+    match_rule: header_exact_token
+  - code_path: src/pages/page-buc-detail/MhrCalcDialog.vue
+    confidence: header_exact
+    evidence:
+    - src/pages/page-buc-detail/MhrCalcDialog.vue:3 头注『* MhrCalcDialog - MHR 弹窗试算（O2 翻案，2026-08-19 蓝图 PAGE-APP-BUC-DETAIL note）』
+    match_rule: header_exact_token
+  - code_path: src/pages/page-expert-model-calculate/ExpertModelCalculatePage.vue
+    confidence: header_exact
+    evidence:
+    - src/pages/page-expert-model-calculate/ExpertModelCalculatePage.vue:12 头注『* PAGE-APP-BUC-DETAIL 2026-08-20 note）；预填/换算/级联抑制与实时计算均在抽屉组件内。』
+    match_rule: header_exact_token
+  - code_path: src/shared/lib/copy/route-titles.ts
+    confidence: header_exact
+    evidence:
+    - 'src/shared/lib/copy/route-titles.ts:9 头注『''PAGE-APP-BUC-DETAIL'': ''BUC 详情'',』'
+    match_rule: header_exact_token
+  canonical_form_draft: PAGE.APP_BUC_DETAIL
+  canonical_form_note: token 重排拟合（hyphen→segment，与 ALIASES_V0 的 PAGE-TASK-STEP-*→PAGE.* 同模式外推至 PAGE-APP-*；无已登记 alias 规则，只登记不改名，HUMAN_CONFIRM_REQUIRED）
+  governance_id: PAGE-APP-BUC-DETAIL
+  registry_refs_observed:
+  - application-page-registry
+  - issue-register
+  status: MECHANICAL_HEADER_MATCH
+  theme: GOVERNANCE_LEDGER
+- alias_forms_observed: []
+  binding_class: page_to_dir
+  candidates:
+  - code_path: src/pages/page-csc-price
+    confidence: dir_name_derived
+    evidence:
+    - 目录在场（命名规则 dir_name_drop_infix）
+    match_rule: dir_name_drop_infix
+  - code_path: src/pages/page-csc-price/CscPricePage.vue
+    confidence: header_exact
+    evidence:
+    - src/pages/page-csc-price/CscPricePage.vue:3 头注『* PAGE-APP-CSC-PRICE - CSC 价格(配附件/材料/定点)（PAGE.LIST 骨架页 / FTA-PAGE-BLOCKED）』
+    match_rule: header_exact_token
+  - code_path: src/shared/lib/copy/route-titles.ts
+    confidence: header_exact
+    evidence:
+    - 'src/shared/lib/copy/route-titles.ts:10 头注『''PAGE-APP-CSC-PRICE'': ''配附件目标价'',』'
+    match_rule: header_exact_token
+  - code_path: src/shared/lib/mock/csc-price.ts
+    confidence: header_exact
+    evidence:
+    - src/shared/lib/mock/csc-price.ts:7 头注『* 见 ISSUE.PAGE-APP-CSC-PRICE.1 / ISSUE.PAGE-APP-CSC-PRICE.5）；』
+    match_rule: header_exact_token
+  canonical_form_draft: PAGE.APP_CSC_PRICE
+  canonical_form_note: token 重排拟合（hyphen→segment，与 ALIASES_V0 的 PAGE-TASK-STEP-*→PAGE.* 同模式外推至 PAGE-APP-*；无已登记 alias 规则，只登记不改名，HUMAN_CONFIRM_REQUIRED）
+  governance_id: PAGE-APP-CSC-PRICE
+  registry_refs_observed:
+  - application-page-registry
+  - issue-register
+  status: MECHANICAL_HEADER_MATCH
+  theme: GOVERNANCE_LEDGER
+- alias_forms_observed: []
+  binding_class: page_to_dir
+  candidates:
+  - code_path: src/entities/dashboard/api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/dashboard/api.ts:4 头注『* 均为 ACCEPTED，聚合视图端点待后端 Owner 评审后接入（Phase C 既定债，蓝图 PAGE-APP-DASHBOARD 注记）。』
+    match_rule: header_exact_token
+  - code_path: src/pages/page-dashboard
+    confidence: dir_name_derived
+    evidence:
+    - 目录在场（命名规则 dir_name_drop_infix）
+    match_rule: dir_name_drop_infix
+  - code_path: src/shared/lib/copy/route-titles.ts
+    confidence: header_exact
+    evidence:
+    - 'src/shared/lib/copy/route-titles.ts:13 头注『''PAGE-APP-DASHBOARD'': ''首页'',』'
+    match_rule: header_exact_token
+  canonical_form_draft: PAGE.APP_DASHBOARD
+  canonical_form_note: token 重排拟合（hyphen→segment，与 ALIASES_V0 的 PAGE-TASK-STEP-*→PAGE.* 同模式外推至 PAGE-APP-*；无已登记 alias 规则，只登记不改名，HUMAN_CONFIRM_REQUIRED）
+  governance_id: PAGE-APP-DASHBOARD
+  registry_refs_observed:
+  - application-page-registry
+  - issue-register
+  status: MECHANICAL_HEADER_MATCH
+  theme: GOVERNANCE_LEDGER
+- alias_forms_observed: []
+  binding_class: page_to_dir
+  candidates:
+  - code_path: src/pages/page-data-permission
+    confidence: dir_name_derived
+    evidence:
+    - 目录在场（命名规则 dir_name_drop_infix）
+    match_rule: dir_name_drop_infix
+  - code_path: src/pages/page-data-permission/DataPermissionPage.vue
+    confidence: header_exact
+    evidence:
+    - src/pages/page-data-permission/DataPermissionPage.vue:3 头注『* PAGE-APP-DATA-PERMISSION - 数据权限管理（PAGE.LIST）』
+    match_rule: header_exact_token
+  - code_path: src/shared/lib/copy/route-titles.ts
+    confidence: header_exact
+    evidence:
+    - 'src/shared/lib/copy/route-titles.ts:14 头注『''PAGE-APP-DATA-PERMISSION'': ''数据权限管理'',』'
+    match_rule: header_exact_token
+  canonical_form_draft: PAGE.APP_DATA_PERMISSION
+  canonical_form_note: token 重排拟合（hyphen→segment，与 ALIASES_V0 的 PAGE-TASK-STEP-*→PAGE.* 同模式外推至 PAGE-APP-*；无已登记 alias 规则，只登记不改名，HUMAN_CONFIRM_REQUIRED）
+  governance_id: PAGE-APP-DATA-PERMISSION
+  registry_refs_observed:
+  - application-page-registry
+  - mock-contract
+  status: MECHANICAL_HEADER_MATCH
+  theme: GOVERNANCE_LEDGER
+- alias_forms_observed: []
+  binding_class: page_to_dir
+  candidates:
+  - code_path: src/entities/equipment-db/api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/equipment-db/api.ts:8 头注『* +设备属性(7)+计算结果(13)+MHR 的字段集（ISSUE.PAGE-APP-EQUIPMENT-DB.1/2），』
+    match_rule: header_exact_token
+  - code_path: src/entities/equipment-db/mock-api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/equipment-db/mock-api.ts:4 头注『* 扁平结构无法承载 基础/投资/运营/属性/计算结果 字段集（ISSUE.PAGE-APP-EQUIPMENT-DB.1/2），』
+    match_rule: header_exact_token
+  - code_path: src/pages/page-equipment-db
+    confidence: dir_name_derived
+    evidence:
+    - 目录在场（命名规则 dir_name_drop_infix）
+    match_rule: dir_name_drop_infix
+  - code_path: src/pages/page-equipment-db/EquipmentDbPage.vue
+    confidence: header_exact
+    evidence:
+    - src/pages/page-equipment-db/EquipmentDbPage.vue:3 头注『* PAGE-APP-EQUIPMENT-DB - 设备数据库（PAGE.LIST · 单表平铺，无 Tab 分类）』
+    match_rule: header_exact_token
+  - code_path: src/shared/lib/copy/route-titles.ts
+    confidence: header_exact
+    evidence:
+    - 'src/shared/lib/copy/route-titles.ts:15 头注『''PAGE-APP-EQUIPMENT-DB'': ''设备数据库'',』'
+    match_rule: header_exact_token
+  canonical_form_draft: PAGE.APP_EQUIPMENT_DB
+  canonical_form_note: token 重排拟合（hyphen→segment，与 ALIASES_V0 的 PAGE-TASK-STEP-*→PAGE.* 同模式外推至 PAGE-APP-*；无已登记 alias 规则，只登记不改名，HUMAN_CONFIRM_REQUIRED）
+  governance_id: PAGE-APP-EQUIPMENT-DB
+  registry_refs_observed:
+  - application-page-registry
+  - issue-register
+  - mock-contract
+  status: MECHANICAL_HEADER_MATCH
+  theme: GOVERNANCE_LEDGER
+- alias_forms_observed: []
+  binding_class: page_to_dir
+  candidates:
+  - code_path: src/entities/equipment-detail/api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/equipment-detail/api.ts:4 头注『* 无 GET 单条端点（ISSUE.PAGE-APP-EQUIPMENT-DETAIL.2）：明细经 list 过滤；』
+    match_rule: header_exact_token
+  - code_path: src/entities/equipment-detail/mock-api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/equipment-detail/mock-api.ts:4 头注『* 无法承载 53 字段集（ISSUE.PAGE-APP-EQUIPMENT-DETAIL.1/2），mock 侧按业务实体形态实现：』
+    match_rule: header_exact_token
+  - code_path: src/pages/page-equipment-detail
+    confidence: dir_name_derived
+    evidence:
+    - 目录在场（命名规则 dir_name_drop_infix）
+    match_rule: dir_name_drop_infix
+  - code_path: src/pages/page-equipment-detail/EquipmentDetailPage.vue
+    confidence: header_exact
+    evidence:
+    - src/pages/page-equipment-detail/EquipmentDetailPage.vue:3 头注『* PAGE-APP-EQUIPMENT-DETAIL - 设备明细（PAGE.DETAIL · 53 字段 MHR 成本模型）』
+    match_rule: header_exact_token
+  - code_path: src/shared/lib/copy/route-titles.ts
+    confidence: header_exact
+    evidence:
+    - 'src/shared/lib/copy/route-titles.ts:16 头注『''PAGE-APP-EQUIPMENT-DETAIL'': ''设备详情'',』'
+    match_rule: header_exact_token
+  canonical_form_draft: PAGE.APP_EQUIPMENT_DETAIL
+  canonical_form_note: token 重排拟合（hyphen→segment，与 ALIASES_V0 的 PAGE-TASK-STEP-*→PAGE.* 同模式外推至 PAGE-APP-*；无已登记 alias 规则，只登记不改名，HUMAN_CONFIRM_REQUIRED）
+  governance_id: PAGE-APP-EQUIPMENT-DETAIL
+  registry_refs_observed:
+  - application-page-registry
+  - issue-register
+  status: MECHANICAL_HEADER_MATCH
+  theme: GOVERNANCE_LEDGER
+- alias_forms_observed: []
+  binding_class: page_to_dir
+  candidates:
+  - code_path: src/entities/equipment-palette/copy.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/equipment-palette/copy.ts:2 头注『* 装备 palette 文案目录 - PAGE-APP-EQUIPMENT-PALETTE』
+    match_rule: header_exact_token
+  - code_path: src/entities/equipment-palette/rules.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/equipment-palette/rules.ts:2 头注『* 装备 palette 纯业务规则 - PAGE-APP-EQUIPMENT-PALETTE』
+    match_rule: header_exact_token
+  - code_path: src/entities/equipment-palette/types.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/equipment-palette/types.ts:2 头注『* 装备 palette 实体类型 - PAGE-APP-EQUIPMENT-PALETTE』
+    match_rule: header_exact_token
+  - code_path: src/pages/page-equipment-palette
+    confidence: dir_name_derived
+    evidence:
+    - 目录在场（命名规则 dir_name_drop_infix）
+    match_rule: dir_name_drop_infix
+  - code_path: src/pages/page-equipment-palette/EquipmentPalettePage.vue
+    confidence: header_exact
+    evidence:
+    - src/pages/page-equipment-palette/EquipmentPalettePage.vue:3 头注『* PAGE-APP-EQUIPMENT-PALETTE - 装备 Palette 管理（PAGE.MASTER_DETAIL）』
+    match_rule: header_exact_token
+  - code_path: src/shared/lib/copy/route-titles.ts
+    confidence: header_exact
+    evidence:
+    - 'src/shared/lib/copy/route-titles.ts:17 头注『''PAGE-APP-EQUIPMENT-PALETTE'': ''装备 palette 管理'',』'
+    match_rule: header_exact_token
+  - code_path: src/shared/lib/mock/equipment-palette.ts
+    confidence: header_exact
+    evidence:
+    - src/shared/lib/mock/equipment-palette.ts:2 头注『* 装备 palette mock 数据 — PAGE-APP-EQUIPMENT-PALETTE』
+    match_rule: header_exact_token
+  canonical_form_draft: PAGE.APP_EQUIPMENT_PALETTE
+  canonical_form_note: token 重排拟合（hyphen→segment，与 ALIASES_V0 的 PAGE-TASK-STEP-*→PAGE.* 同模式外推至 PAGE-APP-*；无已登记 alias 规则，只登记不改名，HUMAN_CONFIRM_REQUIRED）
+  governance_id: PAGE-APP-EQUIPMENT-PALETTE
+  registry_refs_observed:
+  - application-page-registry
+  status: MECHANICAL_HEADER_MATCH
+  theme: GOVERNANCE_LEDGER
+- alias_forms_observed: []
+  binding_class: page_to_dir
+  candidates:
+  - code_path: src/pages/page-evaluation
+    confidence: dir_name_derived
+    evidence:
+    - 目录在场（命名规则 dir_name_drop_infix）
+    match_rule: dir_name_drop_infix
+  - code_path: src/pages/page-evaluation/EvaluationPage.vue
+    confidence: header_exact
+    evidence:
+    - src/pages/page-evaluation/EvaluationPage.vue:3 头注『* BC/AEKO/PKO 评估（三 spec 合一）- PAGE-APP-EVALUATION（PAGE.LIST）』
+    match_rule: header_exact_token
+  - code_path: src/shared/lib/copy/route-titles.ts
+    confidence: header_exact
+    evidence:
+    - 'src/shared/lib/copy/route-titles.ts:18 头注『''PAGE-APP-EVALUATION'': ''AEKO 评估'',』'
+    match_rule: header_exact_token
+  canonical_form_draft: PAGE.APP_EVALUATION
+  canonical_form_note: token 重排拟合（hyphen→segment，与 ALIASES_V0 的 PAGE-TASK-STEP-*→PAGE.* 同模式外推至 PAGE-APP-*；无已登记 alias 规则，只登记不改名，HUMAN_CONFIRM_REQUIRED）
+  governance_id: PAGE-APP-EVALUATION
+  registry_refs_observed:
+  - application-page-registry
+  - issue-register
+  status: MECHANICAL_HEADER_MATCH
+  theme: GOVERNANCE_LEDGER
+- alias_forms_observed: []
+  binding_class: page_to_dir
+  candidates:
+  - code_path: src/entities/forecast-report/types.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/forecast-report/types.ts:5 头注『* 禁止超范围扩展业务字段；VSI/Target 对比公式待补（ISSUE.PAGE-APP-FORECAST-REPORT.2）。』
+    match_rule: header_exact_token
+  - code_path: src/pages/page-forecast-report
+    confidence: dir_name_derived
+    evidence:
+    - 目录在场（命名规则 dir_name_drop_infix）
+    match_rule: dir_name_drop_infix
+  - code_path: src/pages/page-forecast-report/ForecastReportPage.vue
+    confidence: header_exact
+    evidence:
+    - src/pages/page-forecast-report/ForecastReportPage.vue:3 头注『* PAGE-APP-FORECAST-REPORT - 预算预测报表（PAGE.LIST 骨架页 / FTA-PAGE-BLOCKED）』
+    match_rule: header_exact_token
+  - code_path: src/shared/lib/copy/route-titles.ts
+    confidence: header_exact
+    evidence:
+    - 'src/shared/lib/copy/route-titles.ts:21 头注『''PAGE-APP-FORECAST-REPORT'': ''预算预测报表'',』'
+    match_rule: header_exact_token
+  - code_path: src/shared/lib/mock/forecast-report.ts
+    confidence: header_exact
+    evidence:
+    - src/shared/lib/mock/forecast-report.ts:6 头注『* 偏差公式待补（ISSUE.PAGE-APP-FORECAST-REPORT.2），fixture 按「成本预测值 - Target 目标值」计算。』
+    match_rule: header_exact_token
+  canonical_form_draft: PAGE.APP_FORECAST_REPORT
+  canonical_form_note: token 重排拟合（hyphen→segment，与 ALIASES_V0 的 PAGE-TASK-STEP-*→PAGE.* 同模式外推至 PAGE-APP-*；无已登记 alias 规则，只登记不改名，HUMAN_CONFIRM_REQUIRED）
+  governance_id: PAGE-APP-FORECAST-REPORT
+  registry_refs_observed:
+  - application-page-registry
+  - issue-register
+  status: MECHANICAL_HEADER_MATCH
+  theme: GOVERNANCE_LEDGER
+- alias_forms_observed: []
+  binding_class: page_to_dir
+  candidates:
+  - code_path: src/entities/material-db/api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/material-db/api.ts:6 头注『* 基础+属性+1:N 价格字段集（ISSUE.PAGE-APP-MATERIAL-DB.1-4），』
+    match_rule: header_exact_token
+  - code_path: src/entities/material-db/mock-api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/material-db/mock-api.ts:5 头注『* （ISSUE.PAGE-APP-MATERIAL-DB.1/2），mock 侧按业务实体形态实现』
+    match_rule: header_exact_token
+  - code_path: src/pages/page-material-db
+    confidence: dir_name_derived
+    evidence:
+    - 目录在场（命名规则 dir_name_drop_infix）
+    match_rule: dir_name_drop_infix
+  - code_path: src/pages/page-material-db/MaterialDbPage.vue
+    confidence: header_exact
+    evidence:
+    - src/pages/page-material-db/MaterialDbPage.vue:3 头注『* PAGE-APP-MATERIAL-DB - 材料数据库（PAGE.LIST · 按材料大类分类的主数据）』
+    match_rule: header_exact_token
+  - code_path: src/shared/lib/copy/route-titles.ts
+    confidence: header_exact
+    evidence:
+    - 'src/shared/lib/copy/route-titles.ts:22 头注『''PAGE-APP-MATERIAL-DB'': ''材料数据库'',』'
+    match_rule: header_exact_token
+  canonical_form_draft: PAGE.APP_MATERIAL_DB
+  canonical_form_note: token 重排拟合（hyphen→segment，与 ALIASES_V0 的 PAGE-TASK-STEP-*→PAGE.* 同模式外推至 PAGE-APP-*；无已登记 alias 规则，只登记不改名，HUMAN_CONFIRM_REQUIRED）
+  governance_id: PAGE-APP-MATERIAL-DB
+  registry_refs_observed:
+  - application-page-registry
+  - issue-register
+  - mock-contract
+  status: MECHANICAL_HEADER_MATCH
+  theme: GOVERNANCE_LEDGER
+- alias_forms_observed: []
+  binding_class: page_to_dir
+  candidates:
+  - code_path: src/entities/other-cost-analysis/copy.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/other-cost-analysis/copy.ts:17 头注『/** 成本类别筛选（全部 + spec §2 五个上游数据域；枚举映射 ISSUE.PAGE-APP-OTHER-COST-ANALYSIS.3 UNRESOLVED） */』
+    match_rule: header_exact_token
+  - code_path: src/entities/other-cost-analysis/types.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/other-cost-analysis/types.ts:4 头注『* 待业务细化后确认，不得超出骨架 spec 自行扩字段（ISSUE.PAGE-APP-OTHER-COST-ANALYSIS.2）。』
+    match_rule: header_exact_token
+  - code_path: src/pages/page-other-cost-analysis
+    confidence: dir_name_derived
+    evidence:
+    - 目录在场（命名规则 dir_name_drop_infix）
+    match_rule: dir_name_drop_infix
+  - code_path: src/pages/page-other-cost-analysis/OtherCostAnalysisPage.vue
+    confidence: header_exact
+    evidence:
+    - src/pages/page-other-cost-analysis/OtherCostAnalysisPage.vue:3 头注『* PAGE-APP-OTHER-COST-ANALYSIS - 其他逻辑分析（PAGE.LIST · 骨架 spec 页）』
+    match_rule: header_exact_token
+  - code_path: src/shared/lib/copy/route-titles.ts
+    confidence: header_exact
+    evidence:
+    - 'src/shared/lib/copy/route-titles.ts:23 头注『''PAGE-APP-OTHER-COST-ANALYSIS'': ''其他逻辑分析'',』'
+    match_rule: header_exact_token
+  - code_path: src/shared/lib/mock/other-cost-analysis.ts
+    confidence: header_exact
+    evidence:
+    - src/shared/lib/mock/other-cost-analysis.ts:4 头注『* PAGE-APP-OTHER-COST-ANALYSIS 受控 Mock（骨架 spec 页）』
+    match_rule: header_exact_token
+  canonical_form_draft: PAGE.APP_OTHER_COST_ANALYSIS
+  canonical_form_note: token 重排拟合（hyphen→segment，与 ALIASES_V0 的 PAGE-TASK-STEP-*→PAGE.* 同模式外推至 PAGE-APP-*；无已登记 alias 规则，只登记不改名，HUMAN_CONFIRM_REQUIRED）
+  governance_id: PAGE-APP-OTHER-COST-ANALYSIS
+  registry_refs_observed:
+  - application-page-registry
+  - issue-register
+  status: MECHANICAL_HEADER_MATCH
+  theme: GOVERNANCE_LEDGER
+- alias_forms_observed: []
+  binding_class: page_to_dir
+  candidates:
+  - code_path: src/entities/other-db/api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/other-db/api.ts:6 头注『*   （ISSUE.PAGE-APP-OTHER-DB.3）；』
+    match_rule: header_exact_token
+  - code_path: src/entities/other-db/mock-api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/other-db/mock-api.ts:4 头注『* 两个 Tab 的字典 code 与字段映射未决（ISSUE.PAGE-APP-OTHER-DB.3/4），mock 侧按业务』
+    match_rule: header_exact_token
+  - code_path: src/pages/page-other-db
+    confidence: dir_name_derived
+    evidence:
+    - 目录在场（命名规则 dir_name_drop_infix）
+    match_rule: dir_name_drop_infix
+  - code_path: src/pages/page-other-db/OtherDbPage.vue
+    confidence: header_exact
+    evidence:
+    - src/pages/page-other-db/OtherDbPage.vue:3 头注『* PAGE-APP-OTHER-DB - 其他数据库（PAGE.LIST · 三 Tab）』
+    match_rule: header_exact_token
+  - code_path: src/shared/lib/copy/route-titles.ts
+    confidence: header_exact
+    evidence:
+    - 'src/shared/lib/copy/route-titles.ts:24 头注『''PAGE-APP-OTHER-DB'': ''其他数据库'',』'
+    match_rule: header_exact_token
+  canonical_form_draft: PAGE.APP_OTHER_DB
+  canonical_form_note: token 重排拟合（hyphen→segment，与 ALIASES_V0 的 PAGE-TASK-STEP-*→PAGE.* 同模式外推至 PAGE-APP-*；无已登记 alias 规则，只登记不改名，HUMAN_CONFIRM_REQUIRED）
+  governance_id: PAGE-APP-OTHER-DB
+  registry_refs_observed:
+  - application-page-registry
+  - issue-register
+  - mock-contract
+  status: MECHANICAL_HEADER_MATCH
+  theme: GOVERNANCE_LEDGER
+- alias_forms_observed: []
+  binding_class: page_to_dir
+  candidates:
+  - code_path: src/pages/page-part-info
+    confidence: dir_name_derived
+    evidence:
+    - 目录在场（命名规则 dir_name_drop_infix）
+    match_rule: dir_name_drop_infix
+  - code_path: src/pages/page-part-info/PartInfoPage.vue
+    confidence: header_exact
+    evidence:
+    - src/pages/page-part-info/PartInfoPage.vue:3 头注『* PAGE-APP-PART-INFO - 零件信息（PAGE.DETAIL）』
+    match_rule: header_exact_token
+  - code_path: src/shared/lib/copy/route-titles.ts
+    confidence: header_exact
+    evidence:
+    - 'src/shared/lib/copy/route-titles.ts:25 头注『''PAGE-APP-PART-INFO'': ''零件信息'',』'
+    match_rule: header_exact_token
+  canonical_form_draft: PAGE.APP_PART_INFO
+  canonical_form_note: token 重排拟合（hyphen→segment，与 ALIASES_V0 的 PAGE-TASK-STEP-*→PAGE.* 同模式外推至 PAGE-APP-*；无已登记 alias 规则，只登记不改名，HUMAN_CONFIRM_REQUIRED）
+  governance_id: PAGE-APP-PART-INFO
+  registry_refs_observed:
+  - application-page-registry
+  - issue-register
+  status: MECHANICAL_HEADER_MATCH
+  theme: GOVERNANCE_LEDGER
+- alias_forms_observed: []
+  binding_class: page_to_dir
+  candidates:
+  - code_path: src/entities/part-structure-db/api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/part-structure-db/api.ts:6 头注『* 与 5 级层级密集行映射未确认（ISSUE.PAGE-APP-PART-STRUCTURE-DB.1-4，导入 NEEDS_BACKEND_REVIEW），』
+    match_rule: header_exact_token
+  - code_path: src/entities/part-structure-db/mock-api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/part-structure-db/mock-api.ts:4 头注『* 但 DictionaryItem 单父链与 5 级层级密集行映射未确认（ISSUE.PAGE-APP-PART-STRUCTURE-DB.3），』
+    match_rule: header_exact_token
+  - code_path: src/pages/page-part-structure-db
+    confidence: dir_name_derived
+    evidence:
+    - 目录在场（命名规则 dir_name_drop_infix）
+    match_rule: dir_name_drop_infix
+  - code_path: src/pages/page-part-structure-db/PartStructureDbPage.vue
+    confidence: header_exact
+    evidence:
+    - src/pages/page-part-structure-db/PartStructureDbPage.vue:3 头注『* PAGE-APP-PART-STRUCTURE-DB - 零件结构主数据（PAGE.LIST · 5 级层级主数据）』
+    match_rule: header_exact_token
+  - code_path: src/shared/lib/copy/route-titles.ts
+    confidence: header_exact
+    evidence:
+    - 'src/shared/lib/copy/route-titles.ts:26 头注『''PAGE-APP-PART-STRUCTURE-DB'': ''零件结构主数据'',』'
+    match_rule: header_exact_token
+  canonical_form_draft: PAGE.APP_PART_STRUCTURE_DB
+  canonical_form_note: token 重排拟合（hyphen→segment，与 ALIASES_V0 的 PAGE-TASK-STEP-*→PAGE.* 同模式外推至 PAGE-APP-*；无已登记 alias 规则，只登记不改名，HUMAN_CONFIRM_REQUIRED）
+  governance_id: PAGE-APP-PART-STRUCTURE-DB
+  registry_refs_observed:
+  - application-page-registry
+  - issue-register
+  status: MECHANICAL_HEADER_MATCH
+  theme: GOVERNANCE_LEDGER
+- alias_forms_observed: []
+  binding_class: page_to_dir
+  candidates:
+  - code_path: src/entities/process-db/api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/process-db/api.ts:6 头注『*   无原生字段承载「工艺描述」（ISSUE.PAGE-APP-PROCESS-DB.1，需后端确认扩展 item』
+    match_rule: header_exact_token
+  - code_path: src/entities/process-db/mock-api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/process-db/mock-api.ts:4 头注『* 扁平本地化标签 schema 无原生字段承载「工艺描述」（ISSUE.PAGE-APP-PROCESS-DB.1），』
+    match_rule: header_exact_token
+  - code_path: src/pages/page-process-db
+    confidence: dir_name_derived
+    evidence:
+    - 目录在场（命名规则 dir_name_drop_infix）
+    match_rule: dir_name_drop_infix
+  - code_path: src/pages/page-process-db/ProcessDbPage.vue
+    confidence: header_exact
+    evidence:
+    - src/pages/page-process-db/ProcessDbPage.vue:3 头注『* PAGE-APP-PROCESS-DB - 工艺数据库（PAGE.LIST · 单表 CRUD）』
+    match_rule: header_exact_token
+  - code_path: src/shared/lib/copy/route-titles.ts
+    confidence: header_exact
+    evidence:
+    - 'src/shared/lib/copy/route-titles.ts:27 头注『''PAGE-APP-PROCESS-DB'': ''工艺数据库'',』'
+    match_rule: header_exact_token
+  canonical_form_draft: PAGE.APP_PROCESS_DB
+  canonical_form_note: token 重排拟合（hyphen→segment，与 ALIASES_V0 的 PAGE-TASK-STEP-*→PAGE.* 同模式外推至 PAGE-APP-*；无已登记 alias 规则，只登记不改名，HUMAN_CONFIRM_REQUIRED）
+  governance_id: PAGE-APP-PROCESS-DB
+  registry_refs_observed:
+  - application-page-registry
+  - issue-register
+  status: MECHANICAL_HEADER_MATCH
+  theme: GOVERNANCE_LEDGER
+- alias_forms_observed: []
+  binding_class: page_to_dir
+  candidates:
+  - code_path: src/pages/page-role-mgmt
+    confidence: dir_name_derived
+    evidence:
+    - 目录在场（命名规则 dir_name_drop_infix）
+    match_rule: dir_name_drop_infix
+  - code_path: src/pages/page-role-mgmt/RoleMgmtPage.vue
+    confidence: header_exact
+    evidence:
+    - src/pages/page-role-mgmt/RoleMgmtPage.vue:3 头注『* PAGE-APP-ROLE-MGMT - 角色管理』
+    match_rule: header_exact_token
+  - code_path: src/shared/lib/copy/route-titles.ts
+    confidence: header_exact
+    evidence:
+    - 'src/shared/lib/copy/route-titles.ts:28 头注『''PAGE-APP-ROLE-MGMT'': ''角色管理'',』'
+    match_rule: header_exact_token
+  canonical_form_draft: PAGE.APP_ROLE_MGMT
+  canonical_form_note: token 重排拟合（hyphen→segment，与 ALIASES_V0 的 PAGE-TASK-STEP-*→PAGE.* 同模式外推至 PAGE-APP-*；无已登记 alias 规则，只登记不改名，HUMAN_CONFIRM_REQUIRED）
+  governance_id: PAGE-APP-ROLE-MGMT
+  registry_refs_observed:
+  - application-page-registry
+  - mock-contract
+  status: MECHANICAL_HEADER_MATCH
+  theme: GOVERNANCE_LEDGER
+- alias_forms_observed: []
+  binding_class: page_to_dir
+  candidates:
+  - code_path: src/entities/set-db/api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/set-db/api.ts:6 头注『*   未决（ISSUE.PAGE-APP-SET-DB.3）；』
+    match_rule: header_exact_token
+  - code_path: src/entities/set-db/mock-api.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/set-db/mock-api.ts:4 头注『* 与 dict-item(code/label_de/parent_id/active) 的精确映射未决（ISSUE.PAGE-APP-SET-DB.3），』
+    match_rule: header_exact_token
+  - code_path: src/pages/page-set-db
+    confidence: dir_name_derived
+    evidence:
+    - 目录在场（命名规则 dir_name_drop_infix）
+    match_rule: dir_name_drop_infix
+  - code_path: src/pages/page-set-db/SetDbPage.vue
+    confidence: header_exact
+    evidence:
+    - src/pages/page-set-db/SetDbPage.vue:3 头注『* PAGE-APP-SET-DB - SET 数据库（PAGE.LIST · 5 级层级主数据）』
+    match_rule: header_exact_token
+  - code_path: src/shared/lib/copy/route-titles.ts
+    confidence: header_exact
+    evidence:
+    - 'src/shared/lib/copy/route-titles.ts:29 头注『''PAGE-APP-SET-DB'': ''SET 数据库'',』'
+    match_rule: header_exact_token
+  canonical_form_draft: PAGE.APP_SET_DB
+  canonical_form_note: token 重排拟合（hyphen→segment，与 ALIASES_V0 的 PAGE-TASK-STEP-*→PAGE.* 同模式外推至 PAGE-APP-*；无已登记 alias 规则，只登记不改名，HUMAN_CONFIRM_REQUIRED）
+  governance_id: PAGE-APP-SET-DB
+  registry_refs_observed:
+  - application-page-registry
+  - issue-register
+  status: MECHANICAL_HEADER_MATCH
+  theme: GOVERNANCE_LEDGER
+- alias_forms_observed: []
+  binding_class: page_to_dir
+  candidates:
+  - code_path: src/entities/task-mgmt/copy.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/task-mgmt/copy.ts:6 头注『/** 状态取值仅含 spec scenarios 明文的状态；完整状态机待确认（ISSUE.PAGE-APP-TASK-MGMT.5） */』
+    match_rule: header_exact_token
+  - code_path: src/pages/page-task-mgmt
+    confidence: dir_name_derived
+    evidence:
+    - 目录在场（命名规则 dir_name_drop_infix）
+    match_rule: dir_name_drop_infix
+  - code_path: src/pages/page-task-mgmt/TaskMgmtPage.vue
+    confidence: header_exact
+    evidence:
+    - src/pages/page-task-mgmt/TaskMgmtPage.vue:3 头注『* PAGE-APP-TASK-MGMT - 任务管理（PAGE.LIST · 骨架 spec 页）』
+    match_rule: header_exact_token
+  - code_path: src/shared/lib/copy/route-titles.ts
+    confidence: header_exact
+    evidence:
+    - 'src/shared/lib/copy/route-titles.ts:30 头注『''PAGE-APP-TASK-MGMT'': ''任务管理'',』'
+    match_rule: header_exact_token
+  - code_path: src/shared/lib/mock/task-mgmt.ts
+    confidence: header_exact
+    evidence:
+    - src/shared/lib/mock/task-mgmt.ts:4 头注『* PAGE-APP-TASK-MGMT 受控 Mock（骨架 spec 页）』
+    match_rule: header_exact_token
+  canonical_form_draft: PAGE.APP_TASK_MGMT
+  canonical_form_note: token 重排拟合（hyphen→segment，与 ALIASES_V0 的 PAGE-TASK-STEP-*→PAGE.* 同模式外推至 PAGE-APP-*；无已登记 alias 规则，只登记不改名，HUMAN_CONFIRM_REQUIRED）
+  governance_id: PAGE-APP-TASK-MGMT
+  registry_refs_observed:
+  - application-page-registry
+  - issue-register
+  status: MECHANICAL_HEADER_MATCH
+  theme: GOVERNANCE_LEDGER
+- alias_forms_observed: []
+  binding_class: page_to_dir
+  candidates:
+  - code_path: src/pages/page-technical-akt
+    confidence: dir_name_derived
+    evidence:
+    - 目录在场（命名规则 dir_name_drop_infix）
+    match_rule: dir_name_drop_infix
+  - code_path: src/pages/page-technical-akt/TechnicalAktPage.vue
+    confidence: header_exact
+    evidence:
+    - src/pages/page-technical-akt/TechnicalAktPage.vue:3 头注『* PAGE-APP-TECHNICAL-AKT - 技术变更 AKT（PAGE.LIST 骨架页 / FTA-PAGE-BLOCKED）』
+    match_rule: header_exact_token
+  canonical_form_draft: PAGE.APP_TECHNICAL_AKT
+  canonical_form_note: token 重排拟合（hyphen→segment，与 ALIASES_V0 的 PAGE-TASK-STEP-*→PAGE.* 同模式外推至 PAGE-APP-*；无已登记 alias 规则，只登记不改名，HUMAN_CONFIRM_REQUIRED）
+  governance_id: PAGE-APP-TECHNICAL-AKT
+  registry_refs_observed:
+  - application-page-registry
+  - issue-register
+  status: MECHANICAL_HEADER_MATCH
+  theme: GOVERNANCE_LEDGER
+- alias_forms_observed: []
+  binding_class: page_to_dir
+  candidates:
+  - code_path: src/pages/page-user-mgmt
+    confidence: dir_name_derived
+    evidence:
+    - 目录在场（命名规则 dir_name_drop_infix）
+    match_rule: dir_name_drop_infix
+  - code_path: src/pages/page-user-mgmt/UserMgmtPage.vue
+    confidence: header_exact
+    evidence:
+    - src/pages/page-user-mgmt/UserMgmtPage.vue:3 头注『* PAGE-APP-USER-MGMT - 用户管理（PAGE.LIST）』
+    match_rule: header_exact_token
+  canonical_form_draft: PAGE.APP_USER_MGMT
+  canonical_form_note: token 重排拟合（hyphen→segment，与 ALIASES_V0 的 PAGE-TASK-STEP-*→PAGE.* 同模式外推至 PAGE-APP-*；无已登记 alias 规则，只登记不改名，HUMAN_CONFIRM_REQUIRED）
+  governance_id: PAGE-APP-USER-MGMT
+  registry_refs_observed:
+  - application-page-registry
+  - mock-contract
+  status: MECHANICAL_HEADER_MATCH
+  theme: GOVERNANCE_LEDGER
+- alias_forms_observed: []
+  binding_class: page_to_dir
+  candidates:
+  - code_path: src/pages/page-vehicle-master-data
+    confidence: dir_name_derived
+    evidence:
+    - 目录在场（命名规则 dir_name_drop_infix）
+    match_rule: dir_name_drop_infix
+  - code_path: src/pages/page-vehicle-master-data/VehicleMasterDataPage.vue
+    confidence: header_exact
+    evidence:
+    - src/pages/page-vehicle-master-data/VehicleMasterDataPage.vue:3 头注『* PAGE-APP-VEHICLE-MASTER-DATA - 车型主数据（PAGE.MASTER_DETAIL · 三区域联动）』
+    match_rule: header_exact_token
+  canonical_form_draft: PAGE.APP_VEHICLE_MASTER_DATA
+  canonical_form_note: token 重排拟合（hyphen→segment，与 ALIASES_V0 的 PAGE-TASK-STEP-*→PAGE.* 同模式外推至 PAGE-APP-*；无已登记 alias 规则，只登记不改名，HUMAN_CONFIRM_REQUIRED）
+  governance_id: PAGE-APP-VEHICLE-MASTER-DATA
+  registry_refs_observed:
+  - application-page-registry
+  - issue-register
+  - mock-contract
+  status: MECHANICAL_HEADER_MATCH
+  theme: GOVERNANCE_LEDGER
+- alias_forms_observed: []
+  binding_class: page_to_dir
+  candidates:
+  - code_path: src/pages/page-task-step-authenticate
+    confidence: dir_name_derived
+    evidence:
+    - 目录在场（命名规则 dir_name_full_lower）
+    match_rule: dir_name_full_lower
+  - code_path: src/pages/page-task-step-authenticate/AuthenticatePage.vue
+    confidence: header_exact
+    evidence:
+    - src/pages/page-task-step-authenticate/AuthenticatePage.vue:3 头注『* PAGE-TASK-STEP-AUTHENTICATE - 身份认证（PAGE.FORM）』
+    match_rule: header_exact_token
+  canonical_form_draft: PAGE.TASK_STEP_AUTHENTICATE
+  canonical_form_note: token 重排拟合（hyphen→segment，与 ALIASES_V0 的 PAGE-TASK-STEP-*→PAGE.* 同模式外推至 PAGE-APP-*；无已登记 alias 规则，只登记不改名，HUMAN_CONFIRM_REQUIRED）
+  governance_id: PAGE-TASK-STEP-AUTHENTICATE
+  registry_refs_observed:
+  - application-page-registry
+  status: MECHANICAL_HEADER_MATCH
+  theme: GOVERNANCE_LEDGER
+- alias_forms_observed: []
+  binding_class: page_to_dir
+  candidates:
+  - code_path: src/entities/bind-carline/types.ts
+    confidence: header_exact
+    evidence:
+    - 'src/entities/bind-carline/types.ts:5 头注『* page-spec: outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-BIND-CARLINE.md §6/§7』'
+    match_rule: header_exact_token
+  - code_path: src/pages/page-bind-carline
+    confidence: dir_name_derived
+    evidence:
+    - 目录在场（命名规则 dir_name_drop_infix）
+    match_rule: dir_name_drop_infix
+  - code_path: src/pages/page-bind-carline/BindCarlinePage.vue
+    confidence: header_exact
+    evidence:
+    - src/pages/page-bind-carline/BindCarlinePage.vue:3 头注『* PAGE-TASK-STEP-BIND-CARLINE - 自动绑定清单搭建版本（bind-carline，PAGE.DETAIL）』
+    match_rule: header_exact_token
+  - code_path: src/shared/lib/mock/bind-carline.ts
+    confidence: header_exact
+    evidence:
+    - src/shared/lib/mock/bind-carline.ts:2 头注『* 绑定条线（PAGE-TASK-STEP-BIND-CARLINE）mock 数据』
+    match_rule: header_exact_token
+  canonical_form_draft: PAGE.TASK_STEP_BIND_CARLINE
+  canonical_form_note: token 重排拟合（hyphen→segment，与 ALIASES_V0 的 PAGE-TASK-STEP-*→PAGE.* 同模式外推至 PAGE-APP-*；无已登记 alias 规则，只登记不改名，HUMAN_CONFIRM_REQUIRED）
+  governance_id: PAGE-TASK-STEP-BIND-CARLINE
+  registry_refs_observed:
+  - application-page-registry
+  status: MECHANICAL_HEADER_MATCH
+  theme: GOVERNANCE_LEDGER
+- alias_forms_observed: []
+  binding_class: page_to_dir
+  candidates:
+  - code_path: src/entities/buc-analyse/types.ts
+    confidence: header_exact
+    evidence:
+    - src/entities/buc-analyse/types.ts:3 头注『*   outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-BUC-ANALYSE.md §6』
+    match_rule: header_exact_token
+  - code_path: src/pages/page-buc-analyse
+    confidence: dir_name_derived
+    evidence:
+    - 目录在场（命名规则 dir_name_drop_infix）
+    match_rule: dir_name_drop_infix
+  - code_path: src/pages/page-buc-analyse/BucAnalysePage.vue
+    confidence: header_exact
+    evidence:
+    - src/pages/page-buc-analyse/BucAnalysePage.vue:3 头注『* PAGE-TASK-STEP-BUC-ANALYSE - BUC 分析列表页（三页式之一，spec 03-buc-analysis §3.1/§4.1/§6.1-§6.2）』
+    match_rule: header_exact_token
+  canonical_form_draft: PAGE.TASK_STEP_BUC_ANALYSE
+  canonical_form_note: token 重排拟合（hyphen→segment，与 ALIASES_V0 的 PAGE-TASK-STEP-*→PAGE.* 同模式外推至 PAGE-APP-*；无已登记 alias 规则，只登记不改名，HUMAN_CONFIRM_REQUIRED）
+  governance_id: PAGE-TASK-STEP-BUC-ANALYSE
+  registry_refs_observed:
+  - application-page-registry
+  status: MECHANICAL_HEADER_MATCH
+  theme: GOVERNANCE_LEDGER
+- alias_forms_observed: []
+  binding_class: page_to_dir
+  candidates:
+  - code_path: src/pages/page-task-step-build-bom
+    confidence: dir_name_derived
+    evidence:
+    - 目录在场（命名规则 dir_name_full_lower）
+    match_rule: dir_name_full_lower
+  - code_path: src/pages/page-task-step-build-bom/CalcVehiclePartsPage.vue
+    confidence: header_exact
+    evidence:
+    - src/pages/page-task-step-build-bom/CalcVehiclePartsPage.vue:3 头注『* PAGE-TASK-STEP-BUILD-BOM - 计算车型零件清单管理（PAGE.EDITABLE_WORKSPACE）』
+    match_rule: header_exact_token
+  canonical_form_draft: PAGE.TASK_STEP_BUILD_BOM
+  canonical_form_note: token 重排拟合（hyphen→segment，与 ALIASES_V0 的 PAGE-TASK-STEP-*→PAGE.* 同模式外推至 PAGE-APP-*；无已登记 alias 规则，只登记不改名，HUMAN_CONFIRM_REQUIRED）
+  governance_id: PAGE-TASK-STEP-BUILD-BOM
+  registry_refs_observed:
+  - application-page-registry
+  status: MECHANICAL_HEADER_MATCH
+  theme: GOVERNANCE_LEDGER
+- alias_forms_observed: []
+  binding_class: page_to_dir
+  candidates:
+  - code_path: src/entities/expert-model-calculate/ExpertModelDrawer.vue
+    confidence: header_exact
+    evidence:
+    - src/entities/expert-model-calculate/ExpertModelDrawer.vue:6 头注『*       + PAGE-TASK-STEP-EXPERT-MODEL-CALCULATE（列表 fixture 入口 / ?rec= 深链入口）。』
+    match_rule: header_exact_token
+  - code_path: src/pages/page-expert-model-calculate
+    confidence: dir_name_derived
+    evidence:
+    - 目录在场（命名规则 dir_name_drop_infix）
+    match_rule: dir_name_drop_infix
+  - code_path: src/pages/page-expert-model-calculate/ExpertModelCalculatePage.vue
+    confidence: header_exact
+    evidence:
+    - src/pages/page-expert-model-calculate/ExpertModelCalculatePage.vue:3 头注『* PAGE-TASK-STEP-EXPERT-MODEL-CALCULATE - 1K 注塑专家模型（PAGE.FORM）』
+    match_rule: header_exact_token
+  canonical_form_draft: PAGE.TASK_STEP_EXPERT_MODEL_CALCULATE
+  canonical_form_note: token 重排拟合（hyphen→segment，与 ALIASES_V0 的 PAGE-TASK-STEP-*→PAGE.* 同模式外推至 PAGE-APP-*；无已登记 alias 规则，只登记不改名，HUMAN_CONFIRM_REQUIRED）
+  governance_id: PAGE-TASK-STEP-EXPERT-MODEL-CALCULATE
+  registry_refs_observed:
+  - application-page-registry
+  - mock-contract
+  status: MECHANICAL_HEADER_MATCH
+  theme: GOVERNANCE_LEDGER
+- alias_forms_observed: []
+  binding_class: page_to_dir
+  candidates: []
+  canonical_form_draft: PAGE.TASK_STEP_MAINTAIN_BASE_ATTRIBUTES
+  canonical_form_note: token 重排拟合（hyphen→segment，与 ALIASES_V0 的 PAGE-TASK-STEP-*→PAGE.* 同模式外推至 PAGE-APP-*；无已登记 alias 规则，只登记不改名，HUMAN_CONFIRM_REQUIRED）
+  governance_id: PAGE-TASK-STEP-MAINTAIN-BASE-ATTRIBUTES
+  registry_refs_observed:
+  - application-page-registry
+  - issue-register
+  status: HUMAN_CONFIRM_REQUIRED
+  theme: GOVERNANCE_LEDGER
+- alias_forms_observed: []
+  binding_class: page_to_dir
+  candidates: []
+  canonical_form_draft: PAGE.TASK_STEP_MANAGE_USER_ROLE
+  canonical_form_note: token 重排拟合（hyphen→segment，与 ALIASES_V0 的 PAGE-TASK-STEP-*→PAGE.* 同模式外推至 PAGE-APP-*；无已登记 alias 规则，只登记不改名，HUMAN_CONFIRM_REQUIRED）
+  governance_id: PAGE-TASK-STEP-MANAGE-USER-ROLE
+  registry_refs_observed:
+  - application-page-registry
+  status: HUMAN_CONFIRM_REQUIRED
+  theme: GOVERNANCE_LEDGER
+- alias_forms_observed: []
+  binding_class: page_to_dir
+  candidates: []
+  canonical_form_draft: PAGE.TASK_STEP_OUTPUT_TO_LEDGER
+  canonical_form_note: token 重排拟合（hyphen→segment，与 ALIASES_V0 的 PAGE-TASK-STEP-*→PAGE.* 同模式外推至 PAGE-APP-*；无已登记 alias 规则，只登记不改名，HUMAN_CONFIRM_REQUIRED）
+  governance_id: PAGE-TASK-STEP-OUTPUT-TO-LEDGER
+  registry_refs_observed:
+  - application-page-registry
+  - issue-register
+  status: HUMAN_CONFIRM_REQUIRED
+  theme: GOVERNANCE_LEDGER
+- alias_forms_observed: []
+  binding_class: page_to_dir
+  candidates:
+  - code_path: src/pages/page-task-step-query-ledger
+    confidence: dir_name_derived
+    evidence:
+    - 目录在场（命名规则 dir_name_full_lower）
+    match_rule: dir_name_full_lower
+  - code_path: src/pages/page-task-step-query-ledger/QueryLedgerPage.vue
+    confidence: header_exact
+    evidence:
+    - src/pages/page-task-step-query-ledger/QueryLedgerPage.vue:3 头注『* PAGE-TASK-STEP-QUERY-LEDGER - 零件清单台账（PAGE.LIST · 只读查询）』
+    match_rule: header_exact_token
+  canonical_form_draft: PAGE.TASK_STEP_QUERY_LEDGER
+  canonical_form_note: token 重排拟合（hyphen→segment，与 ALIASES_V0 的 PAGE-TASK-STEP-*→PAGE.* 同模式外推至 PAGE-APP-*；无已登记 alias 规则，只登记不改名，HUMAN_CONFIRM_REQUIRED）
+  governance_id: PAGE-TASK-STEP-QUERY-LEDGER
+  registry_refs_observed:
+  - application-page-registry
+  - mock-contract
+  status: MECHANICAL_HEADER_MATCH
+  theme: GOVERNANCE_LEDGER
+- alias_forms_observed: []
+  binding_class: page_to_dir
+  candidates:
+  - code_path: src/pages/page-task-step-select-vehicle-context
+    confidence: dir_name_derived
+    evidence:
+    - 目录在场（命名规则 dir_name_full_lower）
+    match_rule: dir_name_full_lower
+  - code_path: src/pages/page-task-step-select-vehicle-context/SelectVehicleContextPage.vue
+    confidence: header_exact
+    evidence:
+    - src/pages/page-task-step-select-vehicle-context/SelectVehicleContextPage.vue:3 头注『* PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT - 选择车型上下文（PAGE.MASTER_DETAIL）』
+    match_rule: header_exact_token
+  canonical_form_draft: PAGE.TASK_STEP_SELECT_VEHICLE_CONTEXT
+  canonical_form_note: token 重排拟合（hyphen→segment，与 ALIASES_V0 的 PAGE-TASK-STEP-*→PAGE.* 同模式外推至 PAGE-APP-*；无已登记 alias 规则，只登记不改名，HUMAN_CONFIRM_REQUIRED）
+  governance_id: PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT
+  registry_refs_observed:
+  - application-page-registry
+  status: MECHANICAL_HEADER_MATCH
+  theme: GOVERNANCE_LEDGER
+- alias_forms_observed: []
+  binding_class: page_to_dir
+  candidates: []
+  canonical_form_draft: PAGE.TASK_STEP_TRACK_COST_BY_SNAPSHOT
+  canonical_form_note: token 重排拟合（hyphen→segment，与 ALIASES_V0 的 PAGE-TASK-STEP-*→PAGE.* 同模式外推至 PAGE-APP-*；无已登记 alias 规则，只登记不改名，HUMAN_CONFIRM_REQUIRED）
+  governance_id: PAGE-TASK-STEP-TRACK-COST-BY-SNAPSHOT
+  registry_refs_observed:
+  - application-page-registry
+  - issue-register
+  status: HUMAN_CONFIRM_REQUIRED
+  theme: GOVERNANCE_LEDGER
+code_header_ids_without_registry_entry:
+- code_anchor_count: 1
+  evidence:
+  - src/shared/ui/control/MasterDropdown.vue:3
+  observed_token: CONTROL.Dropdown
+  status: RESIDUAL_NO_REGISTRY_ENTRY
+  token_family: component_family
+- code_anchor_count: 1
+  evidence:
+  - src/shared/grid/MasterEditableGrid.vue:3
+  observed_token: DATA.EDITABLE_GRID
+  status: RESIDUAL_NO_REGISTRY_ENTRY
+  token_family: component_family
+- code_anchor_count: 1
+  evidence:
+  - src/pages/page-task-step-authenticate/AuthenticatePage.vue:5
+  observed_token: OP-AUTH-LOGIN
+  status: RESIDUAL_NO_REGISTRY_ENTRY
+  token_family: op_legacy
+- code_anchor_count: 1
+  evidence:
+  - src/pages/page-task-step-authenticate/AuthenticatePage.vue:5
+  observed_token: OP-AUTH-ME
+  status: RESIDUAL_NO_REGISTRY_ENTRY
+  token_family: op_legacy
+- code_anchor_count: 1
+  evidence:
+  - src/entities/bind-carline/api.ts:4
+  observed_token: OP-CARLINE-PARTLIST
+  status: RESIDUAL_NO_REGISTRY_ENTRY
+  token_family: op_legacy
+- code_anchor_count: 1
+  evidence:
+  - src/pages/page-task-step-query-ledger/QueryLedgerPage.vue:12
+  observed_token: OP-LEDGER-SNAPSHOT-FILTER
+  status: RESIDUAL_NO_REGISTRY_ENTRY
+  token_family: op_legacy
+- code_anchor_count: 1
+  evidence:
+  - src/entities/bind-carline/api.ts:3
+  observed_token: OP-LIST-CARLINES
+  status: RESIDUAL_NO_REGISTRY_ENTRY
+  token_family: op_legacy
+- code_anchor_count: 1
+  evidence:
+  - src/pages/page-task-step-select-vehicle-context/SelectVehicleContextPage.vue:5
+  observed_token: OP-PROJECT-DETAIL
+  status: RESIDUAL_NO_REGISTRY_ENTRY
+  token_family: op_legacy
+- code_anchor_count: 1
+  evidence:
+  - src/pages/page-task-step-select-vehicle-context/SelectVehicleContextPage.vue:5
+  observed_token: OP-PROJECT-LIST
+  status: RESIDUAL_NO_REGISTRY_ENTRY
+  token_family: op_legacy
+- code_anchor_count: 1
+  evidence:
+  - src/entities/other-db/api.ts:10
+  observed_token: OP-VEHICLE-CATALOG
+  status: RESIDUAL_NO_REGISTRY_ENTRY
+  token_family: op_legacy
+- code_anchor_count: 1
+  evidence:
+  - src/pages/page-task-step-authenticate/AuthenticatePage.vue:4
+  observed_token: PATTERN.FORM_SECTION
+  status: RESIDUAL_NO_REGISTRY_ENTRY
+  token_family: component_family
+header_scan_spec:
+  file_scope: src/**/*.ts, src/**/*.vue
+  line_limit: 30
+  note: 代码头=文件前 30 行注释区；TEMPLATE_REF_NOTE：PAGE.LIST/PAGE.FORM 等为页面模板引用（page-template-registry 族），非页面 id；已按模板词形排除，不计残差。
+kind: key-binding-map-draft
+legacy_op_crosswalk:
+- in_candidate_openapi: true
+  in_error_mapping: true
+  op_id: OP-AUTH-LOGIN
+- in_candidate_openapi: true
+  in_error_mapping: false
+  op_id: OP-AUTH-ME
+- in_candidate_openapi: true
+  in_error_mapping: false
+  op_id: OP-CARLINE-PARTLIST
+- in_candidate_openapi: true
+  in_error_mapping: true
+  op_id: OP-CREATE-PART
+- in_candidate_openapi: true
+  in_error_mapping: true
+  op_id: OP-CROSS-PROJECT-LEDGER
+- in_candidate_openapi: true
+  in_error_mapping: false
+  op_id: OP-LIST-AUTH-OBJECTS
+- in_candidate_openapi: true
+  in_error_mapping: false
+  op_id: OP-LIST-CARLINES
+- in_candidate_openapi: true
+  in_error_mapping: false
+  op_id: OP-LIST-PROJECTS
+- in_candidate_openapi: true
+  in_error_mapping: true
+  op_id: OP-PROJECT-LEDGER
+- in_candidate_openapi: true
+  in_error_mapping: true
+  op_id: OP-UPDATE-PART
+- in_candidate_openapi: true
+  in_error_mapping: true
+  op_id: OP-USER-GRANT-MATRIX
+status_legend:
+  HUMAN_CONFIRM_REQUIRED: 候选由命名规则派生/变体词形对齐得出，或证据部分成立；待人工裁决。对应 vocab-lock BINDING_STATUS 收编位：confirmed（裁决后）/ derived。
+  MECHANICAL_HEADER_MATCH: 更高置信标注：registry 精确 id（或注册表 canonical_implementation 声明文件）与代码头注释精确同形对齐。仍属草表，落 KEYBINDING.* 对象前需人工复核一次。对应 BINDING_STATUS：confirmed（待裁决转正）。
+  PLANNED_NO_IMPLEMENTATION: 更高置信标注：registry 自标 status=planned/gap=code_not_yet_implemented，实现文件在场=false 与 registry 状态自洽（非残差）。
+  RESIDUAL_IMPLEMENTED_FILE_MISSING: 残差：registry 标 status=implemented 但 canonical_implementation.file 在场=false。
+  RESIDUAL_NO_BATCH1_ID: 残差：代码路径未被任何 BATCH-1 三主题绑定候选引用。
+  RESIDUAL_NO_CODE_ANCHOR: 残差：registry 对象在 src/** 代码头（前 30 行）无任何治理 ID 锚点。
+  RESIDUAL_NO_REGISTRY_ENTRY: 残差：代码头治理 ID 在 BATCH-1 三主题 registry 中无对应条目。
+summary_counts:
+  bindings_by_theme:
+    API_CONTRACT: 29
+    COMPONENT: 90
+    GOVERNANCE_LEDGER: 35
+  bindings_total: 154
+  code_header_ids_without_registry_entry: 11
+  denominators_note: API 分母=api-requirement-registry requirements 129；COMPONENT 分母=component-registry components 90；PAGE 分母=application-page-registry pages 35。与 inventory.yaml denominators 段同源。
+  unmapped_code_paths: 1
+  unmatched_governance_ids: 100
+  unmatched_status_counts:
+    RESIDUAL_NO_CODE_ANCHOR: 100
+unmapped_code_paths:
+- code_path: src/pages/page-placeholder
+  note: 占位目录（无 BATCH-1 治理 id 头注）
+  status: RESIDUAL_NO_BATCH1_ID
+unmatched_governance_ids:
+- governance_id: API_REQ.ALL.PARTS.LIST.3
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=export_partlist_api_v1_projects__project_id__partlist_export_get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.AUTHENTICATE.2
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=get_me_api_v1_auth_me_get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.BRIDGE.TABLE.1
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=cross_project_ledger_api_v1_partlist_ledger_get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.BUC.ANALYSE.1
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=None，published=False，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.BUC.DETAIL.1
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=get_part_api_v1_projects__project_id__partlist__part_id__get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.BUC.DETAIL.2
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=project_ledger_api_v1_projects__project_id__ledger_get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.BUC.DETAIL.3
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=get_history_api_v1_projects__project_id__partlist__part_id__history_get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.BUC.DETAIL.4
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=None，published=False，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.BUILD.BOM.1
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=carline_partlist_api_v1_projects__project_id__carlines__carline_id__partlist_get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.BUILD.BOM.2
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=project_ledger_api_v1_projects__project_id__ledger_get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.BUILD.BOM.DELETE
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=OP-DELETE-PART，published=False，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.BUILD.BOM.EXPORT
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=OP-EXPORT-PARTLIST，published=False，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.BUILD.BOM.HISTORY
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=OP-PART-CHANGE-HISTORY，published=False，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.BUILD.BOM.HISTORY.BOM
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=OP-QUERY-BOM-HISTORY，published=False，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.BUILD.BOM.IMPORT
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=OP-IMPORT-PARTLIST，published=False，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.BUILD.BOM.IMPORT.BUC
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=OP-IMPORT-BUC，published=False，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.BUILD.BOM.QUERY.BUC.VERSIONS
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=OP-QUERY-BUC-VERSIONS，published=False，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.BUILD.BOM.REFRESH
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=OP-REFRESH-MASTER-DATA，published=False，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.BUILD.BOM.ROLLBACK
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=OP-ROLLBACK-PART，published=False，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.BUILD.BOM.SNAPSHOT
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=OP-GENERATE-SNAPSHOT，published=False，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.CROSS.ATTACHMENT.STORE
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=OP-ATTACHMENT-STORE，published=False，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.CSC.PRICE.1
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=list_partlist_api_v1_projects__project_id__partlist_get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.CSC.PRICE.2
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=update_price_api_v1_projects__project_id__partlist__part_id__price_put，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.CSC.PRICE.3
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=list_formulas_api_v1_formulas_get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.CSC.PRICE.4
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=get_history_api_v1_projects__project_id__partlist__part_id__history_get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.DASHBOARD.2
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=list_projects_api_v1_projects_get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.DASHBOARD.3
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=project_operation_logs_api_v1_projects__project_id__operation_logs_get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.DATA.PERMISSION.1
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=list_auth_objects_api_v1_auth_objects_get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.DATA.PERMISSION.2
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=get_user_grant_matrix_api_v1_user_grants__user_id__get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.DATA.PERMISSION.3
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=replace_user_grant_matrix_api_v1_user_grants__user_id__put，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.DATA.PERMISSION.4
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=get_user_roles_api_v1_users__user_id__roles_get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.DATA.PERMISSION.5
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=None，published=False，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.DATA.PERMISSION.6
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=None，published=False，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.DATA.PERMISSION.7
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=None，published=False，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.DATA.PERMISSION.8
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=None，published=False，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.EQUIPMENT.DETAIL.1
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=list_formulas_api_v1_formulas_get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.EQUIPMENT.DETAIL.3
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=update_item_api_v1_dictionaries__code__items__item_id__put，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.EQUIPMENT.PALETTE.2
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=create_part_api_v1_projects__project_id__partlist_post，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.EQUIPMENT.PALETTE.3
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=update_part_api_v1_projects__project_id__partlist__part_id__put，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.EQUIPMENT.PALETTE.4
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=delete_part_api_v1_projects__project_id__partlist__part_id__delete，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.EQUIPMENT.PALETTE.5
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=batch_update_parts_api_v1_projects__project_id__partlist_batch_update_post，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.EQUIPMENT.PALETTE.6
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=export_partlist_api_v1_projects__project_id__partlist_export_get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.EQUIPMENT.PALETTE.7
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=list_carlines_api_v1_projects__project_id__carlines_get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.EQUIPMENT.PALETTE.8
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=get_history_api_v1_projects__project_id__partlist__part_id__history_get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.EVALUATION.1
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=list_partlist_api_v1_projects__project_id__partlist_get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.EVALUATION.2
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=project_operation_logs_api_v1_projects__project_id__operation_logs_get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.FORECAST.REPORT.1
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=cross_project_ledger_api_v1_partlist_ledger_get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.FORECAST.REPORT.2
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=list_projects_api_v1_projects_get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.FORECAST.REPORT.3
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=list_formulas_api_v1_formulas_get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.FORECAST.REPORT.4
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=None，published=False，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.GENERATE.SNAPSHOT.0
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=None，published=False，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.MANAGE.USER.ROLE.1
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=get_user_grant_matrix_api_v1_user_grants__user_id__get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.MANAGE.USER.ROLE.2
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=list_auth_objects_api_v1_auth_objects_get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.MATERIAL.DB.1
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=list_items_api_v1_dictionaries__code__items_get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.MATERIAL.DB.2
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=add_item_api_v1_dictionaries__code__items_post，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.MATERIAL.DB.3
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=update_item_api_v1_dictionaries__code__items__item_id__put，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.MATERIAL.DB.4
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=delete_item_api_v1_dictionaries__code__items__item_id__delete，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.MATERIAL.DB.IMPORT.CSV
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=OP-IMPORT-MATERIAL-CSV，published=False，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.OTHER.COST.1
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=list_labor_rates_api_v1_master_data_labor_rates_get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.OTHER.COST.2
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=list_consumable_prices_api_v1_master_data_consumable_prices_get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.OTHER.DB.1
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=list_items_api_v1_dictionaries__code__items_get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.OTHER.DB.2
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=add_item_api_v1_dictionaries__code__items_post，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.OTHER.DB.3
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=update_item_api_v1_dictionaries__code__items__item_id__put，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.OTHER.DB.4
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=delete_item_api_v1_dictionaries__code__items__item_id__delete，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.PART.STRUCTURE.DB.1
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=list_items_api_v1_dictionaries__code__items_get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.PART.STRUCTURE.DB.2
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=add_item_api_v1_dictionaries__code__items_post，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.PART.STRUCTURE.DB.3
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=update_item_api_v1_dictionaries__code__items__item_id__put，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.PART.STRUCTURE.DB.4
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=delete_item_api_v1_dictionaries__code__items__item_id__delete，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.PROCESS.DB.3
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=update_item_api_v1_dictionaries__code__items__item_id__put，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.PROCESS.DB.4
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=delete_item_api_v1_dictionaries__code__items__item_id__delete，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.QUERY.LEDGER.1
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=project_ledger_api_v1_projects__project_id__ledger_get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.ROLE.MGMT.2
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=create_role_api_v1_roles_post，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.ROLE.MGMT.3
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=update_role_api_v1_roles__role_id__put，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.ROLE.MGMT.4
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=delete_role_api_v1_roles__role_id__delete，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.ROLE.MGMT.6
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=replace_role_grants_api_v1_roles__role_id__grants_put，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.SAVE.BOM.1
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=create_part_api_v1_projects__project_id__partlist_post，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.SAVE.BOM.2
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=update_part_api_v1_projects__project_id__partlist__part_id__put，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.SELECT.VEHICLE.CONTEXT.1
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=list_projects_api_v1_projects_get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.SELECT.VEHICLE.CONTEXT.2
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=list_carlines_api_v1_projects__project_id__carlines_get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.SET.DB.1
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=list_items_api_v1_dictionaries__code__items_get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.SET.DB.2
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=add_item_api_v1_dictionaries__code__items_post，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.SET.DB.3
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=update_item_api_v1_dictionaries__code__items__item_id__put，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.SET.DB.4
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=delete_item_api_v1_dictionaries__code__items__item_id__delete，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.TASK.MGMT.1
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=list_operation_logs_api_v1_operation_logs_get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.TASK.MGMT.2
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=export_operation_logs_api_v1_operation_logs_export_get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.TASK.MGMT.3
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=list_projects_api_v1_projects_get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.TECHNICAL.AKT.1
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=list_partlist_api_v1_projects__project_id__partlist_get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.TECHNICAL.AKT.2
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=project_operation_logs_api_v1_projects__project_id__operation_logs_get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.USER.MGMT.2
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=create_user_api_v1_users_post，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.USER.MGMT.4
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=update_user_api_v1_users__user_id__put，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.USER.MGMT.5
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=disable_user_api_v1_users__user_id__delete，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.USER.MGMT.6
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=reset_password_api_v1_users__user_id__reset_password_post，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.USER.MGMT.7
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=assign_user_roles_api_v1_users__user_id__roles_put，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.VEHICLE.MASTER.DATA.2
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=create_project_api_v1_projects_post，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.VEHICLE.MASTER.DATA.3
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=update_project_api_v1_projects__project_id__put，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.VEHICLE.MASTER.DATA.4
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=archive_project_api_v1_projects__project_id__archive_post，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.VEHICLE.MASTER.DATA.5
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=list_carlines_api_v1_projects__project_id__carlines_get，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.VEHICLE.MASTER.DATA.6
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=replace_carlines_api_v1_projects__project_id__carlines_put，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.VEHICLE.MASTER.DATA.7
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=set_calc_carline_api_v1_projects__project_id__calc_carline_put，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR
+- governance_id: API_REQ.WRITEBACK.LEDGER.1
+  note: registry 条目在 src/** 代码头（前 30 行）无治理 ID 锚点（operation_id=update_part_api_v1_projects__project_id__partlist__part_id__put，published=True，candidate=False）
+  status: RESIDUAL_NO_CODE_ANCHOR

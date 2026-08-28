@@ -1,0 +1,101 @@
+{
+  "authority": {
+    "delegates": [],
+    "escalation_hint": "register supersede records via a governance action after the source-side freeze tombstone, then re-run migration/master-batch1/tools/ingest_change_governance.py",
+    "owner": "FRONTEND_ARCHITECTURE",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "LOCKED",
+    "evidence": "IMPLEMENTED",
+    "lifecycle": "CURRENT"
+  },
+  "axis_profile": "change_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "CHANGE.MIGRATION_LEDGER",
+  "key_bindings": {
+    "artifact": [],
+    "code": [
+      {
+        "artifact_type": "file",
+        "expect": {
+          "document_type": "migration-ledger",
+          "items_count": 0,
+          "schema_version": 1
+        },
+        "match_rule": "mechanical",
+        "value": "outputs/frontend/10_planned/migration-ledger.yaml"
+      }
+    ]
+  },
+  "kind": "change_object",
+  "notes_md": "MIG-B1/M2 自 migration-ledger.yaml 最小对象转录。M1 判定 NOT_POINTER_FILE（链活账空）：schema 契约在场、items=0、消费链活跃（scan_migration_completion/manage_frontend_lifecycle/entropy-audit/frontend-write-gate）。供血计划（每个旧文件 freeze tombstone 后登记 supersede 记录）属后续治理动作；MASTer 侧绝对只读，本轮不落任何 supersede 记录——不伪造、不忽略。本字段为人类散文，机器永不解析判卷。",
+  "origin": "derived",
+  "payload": {
+    "affected_objects": [],
+    "class_scan_result": {
+      "fixed_count": 0,
+      "hits": 0,
+      "regression_case_ref": "NONE__NOT_REGISTERED_AT_MIG_B1",
+      "scope": "same-class scan = items[] of outputs/frontend/10_planned/migration-ledger.yaml (supersede records; account empty)"
+    },
+    "items": [],
+    "motivation": "迁移/追平（supersede）台账契约：schema 在场、items 起账；当前账空（链活账空，M1 判定 NOT_POINTER_FILE）",
+    "pointer_file_verdict": {
+      "adjudicated_in": "migration/master-batch1/classification-ledger.yaml entries[kind=migration-ledger].pointer_file_verdict",
+      "checked_fields": [
+        "items",
+        "document_type",
+        "schema_version",
+        "blueprint_sha256"
+      ],
+      "verdict": "NOT_POINTER_FILE"
+    },
+    "reopen_count": 0,
+    "source_document_meta": {
+      "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+      "document_type": "migration-ledger",
+      "schema_version": 1
+    }
+  },
+  "permits_active": [],
+  "producer": {
+    "liveness": {
+      "status": "active"
+    },
+    "merge_semantics": {
+      "backfill_if_missing": [],
+      "human_never_touched": [
+        "payload"
+      ],
+      "refresh_fields": [
+        "payload"
+      ]
+    },
+    "producer_id": "prod.mig_b1_ingest_change_governance",
+    "views_maintained": [
+      "truth-index.envelope"
+    ]
+  },
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b1/ingest_change_governance.py",
+      "locator": {
+        "batch": "MIG-B1",
+        "ingested_from": "outputs/frontend/10_planned/migration-ledger.yaml",
+        "ledger_role": "minimal-empty-account-object",
+        "transcription": "minimal-object transcription (items=[] honest empty account); M1 NOT_POINTER_FILE verdict carried into payload; supersede-record supply is a future governance action (source repo read-only), not fabricated here"
+      },
+      "pin": {
+        "digest": "sha256:4c5525027c82f8844e8aa6c964758b45b960a12742bfd11944714427acbc30c4"
+      },
+      "ref": "outputs/frontend/10_planned/migration-ledger.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "迁移/追平台账（链活账空）"
+}

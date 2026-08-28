@@ -1,0 +1,91 @@
+{
+  "authority": {
+    "delegates": [
+      {
+        "required_for": [
+          "retire"
+        ],
+        "role": "HUMAN_OWNER"
+      }
+    ],
+    "escalation_hint": "regenerate via migration/master-batch1/tools/ingest_data_grid.py; library add/remove or adapter_dir change requires a CHANGE object (EVOLUTION_CHANNEL; ledger delegates HUMAN_OWNER required_for retire); pending conflict MIG-B1/C-02 (6 libraries declared by src headers absent from registry) -- never backfill silently",
+    "owner": "FRONTEND_ARCHITECTURE",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "LOCKED",
+    "evidence": "IMPLEMENTED",
+    "lifecycle": "CURRENT"
+  },
+  "axis_profile": "component_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "COMPONENT.ELEMENT_PLUS",
+  "key_bindings": {
+    "artifact": [],
+    "code": [
+      {
+        "artifact_type": "npm_dependency",
+        "expect": {
+          "dependency_name": "element-plus",
+          "version_range": "^2.8"
+        },
+        "match_rule": "mechanical",
+        "value": "element-plus@^2.8"
+      }
+    ]
+  },
+  "kind": "component",
+  "notes_md": "本对象为 MIG-B1/M2 转录组 D 收编件：源 outputs/frontend/10_planned/vendor-adapter-registry.yaml（扩展名 .yaml、内容为 JSON）libraries[] 第 3 行（element-plus，adapter_dir=src/shared/ui/）逐字段保真转录（library/version/adapter_dir/direct_usage_in_business_pages 逐字照录，不转写、不规范化、不增删）。事故史注记：迁移批任务书与 PoMaster 维护史登记本登记簿人工策展字段曾两度被治理编译器 clobber 清空，此为 MIG-B1 首位收编止血动因。MASTer 仓内可考证据（M0 盘点 inventory.yaml incident_history，type=registry_clobber_rebuild）：doc/pomaster-retrospective.md §2 记录『governance compiler --confirm 会清空 vendor-adapter-registry.yaml』；git 提交链只读核验 5cb84f3 libraries=11 → 4964eeb=12 → 2cae648=6（库名短名化 clobber 收缩，5 库丢失）→ 48ccec4=6 → 213cbf3=6 = 当前文件 6 库；残留漂移：src/shared/lib/http/auth-client.ts:9 头注仍引用 adapter_dir=src/shared/lib/http（axios），当前 registry 已无 axios 条目。回归防线在场：tests/integration/test_clobber_merge_preservation.py（.agents/.claude 双镜像）。未决冲突 MIG-B1/C-02（classification-ledger conflicts_pending_owner）：src 代码头注声明归属 12 库 vs registry 在册 6 库，差集 6（axios / @tanstack/vue-query / decimal.js / @vueuse/core / dayjs / lucide-vue-next）；处置候选（option_a 按 package.json + 代码头注回填 6 库 / option_b 裁决 6 库为真值批量修正头注 / option_c 逐库裁决）待 Owner 裁决——本转录按 merge-preserving 只照录在册 6 行，不回填、不删改、不裁决。源行无 status/lifecycle 字段：approval_axis × evidence_axis 拆分动作数=0、superseded_status_field 登记数=0（诚实零）。02b §3 蓝本字段 implements_capability 缺席：源为库级登记、无逐库 capability 主张，fabricate 即违铁律 11——vendor↔capability 连线经 capability 侧 technology_base 回填表达（见 capability/grid.* 对象）。本字段为人类散文，机器永不解析判卷。",
+  "origin": "derived",
+  "payload": {
+    "component_name": "element-plus",
+    "direct_usage_in_business_pages": "forbidden",
+    "import_path": "src/shared/ui/",
+    "source_document_meta": {
+      "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+      "document_type": "vendor-adapter-registry",
+      "schema_version": 1
+    },
+    "vendor_base": {
+      "package": "element-plus",
+      "version": "^2.8"
+    }
+  },
+  "permits_active": [],
+  "producer": {
+    "liveness": {
+      "status": "active"
+    },
+    "merge_semantics": {
+      "backfill_if_missing": [],
+      "human_never_touched": [],
+      "refresh_fields": [
+        "payload"
+      ]
+    },
+    "producer_id": "prod.mig_b1_ingest_data_grid",
+    "views_maintained": [
+      "truth-index.envelope"
+    ]
+  },
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b1/ingest_data_grid.py",
+      "locator": {
+        "batch": "MIG-B1",
+        "ingested_from": "outputs/frontend/10_planned/vendor-adapter-registry.yaml",
+        "transcription": "libraries[] row 3 (element-plus) transcribed verbatim row-by-row (library/version/adapter_dir/direct_usage_in_business_pages preserved verbatim, array order = source order; no status field in source so the approval-axis x evidence-axis split count is 0 and no superseded_status_field is registered); double clobber incident history + pending conflict MIG-B1/C-02 recorded in notes_md; ledger destination_kind=component (vendor_base evidence rows)"
+      },
+      "pin": {
+        "digest": "sha256:ae8362cb63f045c151d66a26056bef5280ab8a5a1b245e95d7383851925f7c1e"
+      },
+      "ref": "outputs/frontend/10_planned/vendor-adapter-registry.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "element-plus 适配层"
+}

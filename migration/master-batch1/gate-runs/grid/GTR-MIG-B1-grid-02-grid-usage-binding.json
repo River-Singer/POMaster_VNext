@@ -1,0 +1,75 @@
+{
+  "blindspot": {
+    "carrier_coverage": {
+      "adapter_dir_membership": 9,
+      "component_import_or_export": 8,
+      "component_template_tag": 29,
+      "grid_vocab_token_unlinked": 3,
+      "module_import_shared_grid": 7
+    },
+    "escape_ratio": 0.9022,
+    "fixture_regression": "MIG-B1-GRID-BLINDSPOT-FIXTURE/passed",
+    "produced": 40,
+    "scanned": 409
+  },
+  "counts": {
+    "applicable_scanned": 40,
+    "not_applicable": 366,
+    "scanned": 409,
+    "unchecked_in_blindspot_estimated": 3,
+    "violations": 2
+  },
+  "denominator_refs": [
+    {
+      "id": "DENOMINATOR.MASTER_SRC_FILES",
+      "version_seen": 1
+    },
+    {
+      "id": "DENOMINATOR.GRID_CAPABILITY_SLICE",
+      "version_seen": 1
+    }
+  ],
+  "digest_excluded_fields": [
+    "duration_ms"
+  ],
+  "duration_ms": {
+    "external": 0,
+    "self": 0
+  },
+  "gate": "GRID",
+  "gate_def": "POLICY.GATE.MIG_B1_GRID@0.1.0",
+  "grn": "GRN-4102",
+  "items": [
+    {
+      "location": "src/shared/grid/MasterEditableGrid.vue",
+      "message": "锚文件头注（前 10 行）无 canonical 词形 CAPABILITY.GRID.EDITABLE_GRID 也无已登记 alias 词形 GRID.EDITABLE_GRID（expect.header_contains_any 期望；C5 gate 重扫复现，不伪造 probe.result）",
+      "rule": "grid_usage_binding_anchor_header_wordform"
+    },
+    {
+      "location": "src/shared/grid/useAgGridBase.ts",
+      "message": "锚文件头注（前 10 行）无 canonical 词形 CAPABILITY.GRID.BASE 也无已登记 alias 词形 GRID.BASE（expect.header_contains_any 期望；C5 gate 重扫复现，不伪造 probe.result）",
+      "rule": "grid_usage_binding_anchor_header_wordform"
+    }
+  ],
+  "metric_dialect": "grid:binding_carrier_file_reconciliation",
+  "ran_at_seq": 0,
+  "scope": {
+    "note": "检查范围=MASTer src 全部 .ts+.vue（分母声明：DENOMINATOR.MASTER_SRC_FILES@1 的 .ts+.vue 子集=409[与 inventory.yaml denominators.src_files_vue_ts@1 同值]；DENOMINATOR.GRID_CAPABILITY_SLICE@1=3[=inventory denominators.component_registry_entries.grid_slice.value=truth CAPABILITY.GRID.* 对象数]）。扫描器可达形态集（produced 判定）：adapter_dir_membership（src/shared/grid/ 目录成员）/ module_import_shared_grid（含 shared/grid 模块串字面量）/ component_template_tag（<Master* 标签）/ component_import_or_export（import|export 行含组件标识）。结构性不可达形态（盲区）：literal columnDefs/config 对象在 .ts 内联、无任何模块链接 —— 该形态扫描器不可归因（in-memory fixture 实证：仅内联字面量文件不产生 produced 判定且被词汇命中捕获，模板标签文件产生 produced 判定）。分区恒等式：produced(40) + grid_vocab_token_unlinked(3) + not_applicable(366) = scanned(409)。盲区指标：scanned_files=409 / files_producing_findings=40 / scanned_produced_ratio=10.22（设计稿参照 ratio≈5.4 为另一形态集口径，以本 run 实测为准）；escape_ratio=(scanned-produced)/scanned=0.902200。锚点对账（C5 现场重扫，不信 map 自报）：3/3 文件锚 exists=True；头注词形 1/3 命中（CAPABILITY.GRID.COLUMN_CONFIG 经已登记 alias GRID.COLUMN_CONFIG 命中 MasterColumnConfig.vue:3；CAPABILITY.GRID.BASE 锚 useAgGridBase.ts 全文无 GRID.BASE/CAPABILITY 词形——M1 key-binding-map 同判 HUMAN_CONFIRM_REQUIRED）；使用点可达性 3/3（机械形态=剥离块注释/行注释后组件标识仍在锚外文件出现，覆盖多行 import 花括号成员/模板标签/调用点：MasterEditableGrid 3 页模板标签 / MasterColumnConfig 2 页标签+barrel export / useAgGridBase 两适配器 import）。锚点漂移在案：CAPABILITY.GRID.EDITABLE_GRID 锚文件头注实测词形=DATA.EDITABLE_GRID（DATA.* 族无 ALIASES_V0 已登记 alias 规则），alias 词形 GRID.EDITABLE_GRID 实测出现在非锚文件 src/shared/grid/MasterGridActionsCell.vue:4 —— 即 classification-ledger MIG-B1/C-04（conflicts_pending_owner，human_decision=PENDING），本 gate 只如实呈现不裁决。 verdict=skipped_blindspot 依据 FROZEN 七态语义：扫描器对 literal 内联载体明知不可达，附 blindspot.fixture_regression=MIG-B1-GRID-BLINDSPOT-FIXTURE/passed；2 项头注词形违例如实计入 items 与 counts.violations。路径基：location 为 MASTer_master 仓内相对路径。self_report_trusted=false：trust.asserted=null，判卷唯一依据 trust.recomputed。duration_ms 钉 0（byte-identical 幂等）。",
+    "size_expected_from_denominator": 409
+  },
+  "tool": "mig-b1:run_m4_grid_gate",
+  "tool_version": "1.0.0",
+  "trigger": {
+    "note": "migration batch context: no kernel seq allocator; ran_at_seq pinned to 0 (deterministic batch base, A4 wall-clock-free; kernel re-sequences on ingestion); durations pinned to 0 for byte-identical rerun idempotency (batch hard rule 2)",
+    "task_ref": "MIG-B1/M4-grid",
+    "type": "on_demand"
+  },
+  "trust": {
+    "asserted": null,
+    "recomputed": {
+      "matches_asserted": true,
+      "violations": 2
+    }
+  },
+  "verdict": "skipped_blindspot"
+}

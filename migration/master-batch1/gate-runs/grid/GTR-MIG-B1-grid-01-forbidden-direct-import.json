@@ -1,0 +1,94 @@
+{
+  "blindspot": {
+    "carrier_coverage": {
+      "binary_unreadable_skipped": 2,
+      "text_scanned": 422
+    },
+    "escape_ratio": 0.004717,
+    "produced": 422,
+    "scanned": 424
+  },
+  "counts": {
+    "applicable_scanned": 68,
+    "not_applicable": 354,
+    "scanned": 422,
+    "suppressed_by_ledger": 0,
+    "violations": 6
+  },
+  "denominator_refs": [
+    {
+      "id": "DENOMINATOR.MASTER_SRC_FILES",
+      "version_seen": 1
+    }
+  ],
+  "digest_excluded_fields": [
+    "duration_ms"
+  ],
+  "duration_ms": {
+    "external": 0,
+    "self": 0
+  },
+  "gate": "GRID",
+  "gate_def": "POLICY.GATE.MIG_B1_GRID@0.1.0",
+  "grn": "GRN-4101",
+  "items": [
+    {
+      "excerpt_hash": "sha256:27bbf7218b618e9f2a0433b2a00278e769b7eebbd538968d66dffab9a8f01503",
+      "location": "src/pages/page-part-structure-db/PartStructureDbPage.vue:961",
+      "message": "页面局部 <style> 块出现 ag-grid 内部类/变量覆盖（.ag-* / --ag-*；规则源：CAPABILITY.GRID.EDITABLE_GRID payload.forbidden[1]；网格主题唯一入口=src/shared/grid/grid-theme.css）",
+      "rule": "page_local_grid_css"
+    },
+    {
+      "excerpt_hash": "sha256:26af20fa985c3f4d48cc9db771a5722f746c99fd43b12f6159d8ba9a9fa700bc",
+      "location": "src/pages/page-part-structure-db/PartStructureDbPage.vue:966",
+      "message": "页面局部 <style> 块出现 ag-grid 内部类/变量覆盖（.ag-* / --ag-*；规则源：CAPABILITY.GRID.EDITABLE_GRID payload.forbidden[1]；网格主题唯一入口=src/shared/grid/grid-theme.css）",
+      "rule": "page_local_grid_css"
+    },
+    {
+      "excerpt_hash": "sha256:73f72b5cc053b7a9b962862c4d89b54e91f80474655e7b790d709fda8ca835ae",
+      "location": "src/pages/page-part-structure-db/PartStructureDbPage.vue:970",
+      "message": "页面局部 <style> 块出现 ag-grid 内部类/变量覆盖（.ag-* / --ag-*；规则源：CAPABILITY.GRID.EDITABLE_GRID payload.forbidden[1]；网格主题唯一入口=src/shared/grid/grid-theme.css）",
+      "rule": "page_local_grid_css"
+    },
+    {
+      "excerpt_hash": "sha256:c336068053c2226f95c6f42b40311c2cec077bc4e578fb9402f596a15a05a73f",
+      "location": "src/pages/page-part-structure-db/PartStructureDbPage.vue:974",
+      "message": "页面局部 <style> 块出现 ag-grid 内部类/变量覆盖（.ag-* / --ag-*；规则源：CAPABILITY.GRID.EDITABLE_GRID payload.forbidden[1]；网格主题唯一入口=src/shared/grid/grid-theme.css）",
+      "rule": "page_local_grid_css"
+    },
+    {
+      "excerpt_hash": "sha256:b4c1193625f5f580984474ed95bff3415d14af9131f3a83f643a7f8f97a78aeb",
+      "location": "src/pages/page-task-step-build-bom/RollbackHistoryDialog.vue:442",
+      "message": "页面局部 <style> 块出现 ag-grid 内部类/变量覆盖（.ag-* / --ag-*；规则源：CAPABILITY.GRID.EDITABLE_GRID payload.forbidden[1]；网格主题唯一入口=src/shared/grid/grid-theme.css）",
+      "rule": "page_local_grid_css"
+    },
+    {
+      "excerpt_hash": "sha256:ebb12d1d78bcbf4520284f60bbb560e024a7d32498e0caeb7062af3a37379238",
+      "location": "src/pages/page-task-step-build-bom/RollbackHistoryDialog.vue:446",
+      "message": "页面局部 <style> 块出现 ag-grid 内部类/变量覆盖（.ag-* / --ag-*；规则源：CAPABILITY.GRID.EDITABLE_GRID payload.forbidden[1]；网格主题唯一入口=src/shared/grid/grid-theme.css）",
+      "rule": "page_local_grid_css"
+    }
+  ],
+  "metric_dialect": "grid:src_text_file_grep",
+  "ran_at_seq": 0,
+  "scope": {
+    "note": "检查范围=MASTer_master src/ 全量 grep（仓内相对路径，read-only walk）。规则供给方=CAPABILITY.GRID.EDITABLE_GRID payload.forbidden 三条逐字规则：direct_ag_grid_import_in_business_page / page_local_grid_css / inline_cell_renderer；规则名含 business_page/page_local 语义 → 违例判定域=src/pages/**，全量 grep 足迹仍覆盖 src/** 以机械建立判域划分。分母声明：DENOMINATOR.MASTER_SRC_FILES@1（本 run 现场重测 os.walk 全文件=424，utf-8 可解码文本文件=422，二进制跳过=2；inventory.yaml denominators.src_files_vue_ts@1 钉 .ts+.vue 子集=409[ts=333/vue=76]，本 run 复测同值）；业务页判域子集=68 个文本文件。分规则计数：direct_ag_grid_import_in_business_page=0 / page_local_grid_css=6 / inline_cell_renderer=0。设计稿『零违例』golden 正样本对 direct-import 规则实测成立（=0），但 payload.forbidden 全规则集机械执行暴露 page_local_grid_css 真实命中（page-part-structure-db/PartStructureDbPage.vue 4 处 + page-task-step-build-bom/RollbackHistoryDialog.vue 2 处 <style> 块内 .ag-row/.ag-cell 覆盖）→ 本检查如实判 failed，不放宽不豁免（迁移期无 suppression 台账，suppressed_by_ledger=0）。越界形态观察（非违例、不入 items，属 MIG-B1/C-02 漂移族证据）：src/app/main.ts:10 direct ag-grid import outside business-page rule scope (adapter/bootstrap territory; MIG-B1/C-02 family) || src/app/main.ts:11 direct ag-grid import outside business-page rule scope (adapter/bootstrap territory; MIG-B1/C-02 family) || src/shared/ui/data/MasterReadonlyTable.vue:14 direct ag-grid import outside business-page rule scope (adapter/bootstrap territory; MIG-B1/C-02 family) || src/shared/ui/data/MasterReadonlyTable.vue:15 direct ag-grid import outside business-page rule scope (adapter/bootstrap territory; MIG-B1/C-02 family)。self_report_trusted=false 落地形态：trust.asserted=null（迁移批无自报信道），判卷唯一依据 trust.recomputed。duration_ms 钉 0（byte-identical 幂等）。",
+    "size_expected_from_denominator": 422
+  },
+  "subject_id": "CAPABILITY.GRID.EDITABLE_GRID",
+  "tool": "mig-b1:run_m4_grid_gate",
+  "tool_version": "1.0.0",
+  "trigger": {
+    "note": "migration batch context: no kernel seq allocator; ran_at_seq pinned to 0 (deterministic batch base, A4 wall-clock-free; kernel re-sequences on ingestion); durations pinned to 0 for byte-identical rerun idempotency (batch hard rule 2)",
+    "task_ref": "MIG-B1/M4-grid",
+    "type": "on_demand"
+  },
+  "trust": {
+    "asserted": null,
+    "recomputed": {
+      "matches_asserted": true,
+      "violations": 6
+    }
+  },
+  "verdict": "failed"
+}

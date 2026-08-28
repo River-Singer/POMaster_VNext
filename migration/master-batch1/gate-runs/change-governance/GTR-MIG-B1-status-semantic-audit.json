@@ -1,0 +1,46 @@
+{
+  "blindspot": {
+    "escape_ratio": 0,
+    "produced": 247,
+    "scanned": 266
+  },
+  "counts": {
+    "applicable_scanned": 247,
+    "not_applicable": 19,
+    "scanned": 266,
+    "violations": 0
+  },
+  "denominator_refs": [],
+  "digest_excluded_fields": [
+    "duration_ms"
+  ],
+  "duration_ms": {
+    "external": 0,
+    "self": 0
+  },
+  "gate": "CHANGE_GOVERNANCE",
+  "gate_def": "POLICY.GATE.CHANGE_GOVERNANCE@1.0.0",
+  "grn": "GRN-404",
+  "items": [],
+  "items_truncated": false,
+  "metric_dialect": "status_semantic_audit:status_bearing_object_count",
+  "ran_at_seq": 404,
+  "scope": {
+    "note": "分母显式声明（任务书口径）：contract/issue 类对象总数=247=contract_operation 140（truth/objects/contract-op/ 实测）+ issue 对象 107（truth/objects/change-object/ 中 payload.source_issue 在场者实测）；scanned=266 为两目录全量足迹；not_applicable=19=其余 kind+非 issue 的 change 对象（18 decision/adjudication + 1 migration-ledger：其状态处理由各自 superseded_status_field 登记在案，但不在任务书给定的本检查分母内，如实披露不做静默收编）。source_value 分布（payload.superseded_status_field 实测）：ACCEPTED=100, NEEDS_BACKEND_REVIEW=29, UNRESOLVED=106, WONT_FIX=1, active=11。拆分判定=四轴在场且值合法 + ssf 三键在场 + mapped_to 引用≥2 个正交轴（审批轴 lifecycle/confidence × 证据轴 evidence/realization 分离）。 self_report_trusted=false 的 FROZEN 形态：trust.asserted=null（本轮无自报），trust.recomputed 为唯一判卷依据；denominator_refs=[] 为 schema 认可的诚实空声明（MIG-B1 语料尚未登记 DENOMINATOR.* 一等分母对象），分母数值与来源在 scope.note 显式声明；迁移语境无 kernel seq 分配器且铁律 2 要求重跑 byte-identical：ran_at_seq/duration_ms 为确定性常量，ran_at_utc 整体缺席（零墙钟）；GRN-4xx 区段确定性分配给 M4 change-governance 主题，存储平面按任务指令重定向至 gate-runs/change-governance/。",
+    "size_expected_from_denominator": 247
+  },
+  "tool": "mig-b1:run_change_gate",
+  "tool_version": "1.0.0",
+  "trigger": {
+    "note": "MIG-B1/M4 change-governance gate run over migration truth/objects/ (task-mandated on-demand audit; no kernel scheduler in migration context)",
+    "type": "on_demand"
+  },
+  "trust": {
+    "asserted": null,
+    "recomputed": {
+      "matches_asserted": true,
+      "violations": 0
+    }
+  },
+  "verdict": "passed"
+}

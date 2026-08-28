@@ -1,0 +1,533 @@
+{
+  "batch": "MIG-B1",
+  "preregistration_ref": "samples.json（expected_profile 于 Router 运行前落盘）",
+  "purpose": "bench-0002 provision 二轮校准：MASTer 语料逐样本 Router 回放实测（期望档预注册于 samples.json）",
+  "records": [
+    {
+      "actual": {
+        "absent_signals": [
+          "declared_paths",
+          "path_class",
+          "contract_surface_registry",
+          "dependency_manifest_hit",
+          "migration_hit",
+          "test_only_hit",
+          "diff_stat",
+          "governed_object_hits"
+        ],
+        "cli_returncode": 0,
+        "envelope_command": "triage",
+        "envelope_ok": true,
+        "envelope_ok_flag": true,
+        "errors": [],
+        "evidence_grade": "NOT_CONFIGURED",
+        "matched_keywords": [],
+        "matched_rule": "DEFAULT_NO_SIGNAL",
+        "profile": "LIGHT",
+        "ttl_hours": 168,
+        "warnings": []
+      },
+      "agreement": "consistent",
+      "category": "修复返工",
+      "expected_class": "title_derivable",
+      "expected_profile": "LIGHT",
+      "replay_id": "replay-R2-001",
+      "source_task_dir": ".trellis/tasks/archive/2026-08/08-10-fix-checkbox-column-width-centering",
+      "title": "Fix checkbox selection column width and centering"
+    },
+    {
+      "actual": {
+        "absent_signals": [
+          "declared_paths",
+          "path_class",
+          "contract_surface_registry",
+          "dependency_manifest_hit",
+          "migration_hit",
+          "test_only_hit",
+          "diff_stat",
+          "governed_object_hits"
+        ],
+        "cli_returncode": 0,
+        "envelope_command": "triage",
+        "envelope_ok": true,
+        "envelope_ok_flag": true,
+        "errors": [],
+        "evidence_grade": "NOT_CONFIGURED",
+        "matched_keywords": [],
+        "matched_rule": "DEFAULT_NO_SIGNAL",
+        "profile": "LIGHT",
+        "ttl_hours": 168,
+        "warnings": []
+      },
+      "agreement": "consistent",
+      "category": "修复返工",
+      "expected_class": "title_derivable",
+      "expected_profile": "LIGHT",
+      "replay_id": "replay-R2-002",
+      "source_task_dir": ".trellis/tasks/archive/2026-08/08-10-fix-double-checkbox-selection-column",
+      "title": "Fix double checkbox in selection column"
+    },
+    {
+      "actual": {
+        "absent_signals": [
+          "declared_paths",
+          "path_class",
+          "contract_surface_registry",
+          "dependency_manifest_hit",
+          "migration_hit",
+          "test_only_hit",
+          "diff_stat",
+          "governed_object_hits"
+        ],
+        "cli_returncode": 0,
+        "envelope_command": "triage",
+        "envelope_ok": true,
+        "envelope_ok_flag": true,
+        "errors": [],
+        "evidence_grade": "NOT_CONFIGURED",
+        "matched_keywords": [],
+        "matched_rule": "DEFAULT_NO_SIGNAL",
+        "profile": "LIGHT",
+        "ttl_hours": 168,
+        "warnings": []
+      },
+      "agreement": "consistent",
+      "category": "修复返工",
+      "expected_class": "title_derivable",
+      "expected_profile": "LIGHT",
+      "replay_id": "replay-R2-003",
+      "source_task_dir": ".trellis/tasks/archive/2026-08/08-10-disable-sort-checkbox-column",
+      "title": "Disable sort on checkbox selection column"
+    },
+    {
+      "actual": {
+        "absent_signals": [
+          "declared_paths",
+          "path_class",
+          "contract_surface_registry",
+          "dependency_manifest_hit",
+          "migration_hit",
+          "test_only_hit",
+          "diff_stat",
+          "governed_object_hits"
+        ],
+        "cli_returncode": 0,
+        "envelope_command": "triage",
+        "envelope_ok": true,
+        "envelope_ok_flag": true,
+        "errors": [],
+        "evidence_grade": "MEASURED",
+        "matched_keywords": [
+          "css"
+        ],
+        "matched_rule": "F_COPY_STYLE_ONLY",
+        "profile": "MINIMAL",
+        "ttl_hours": 168,
+        "warnings": []
+      },
+      "agreement": "consistent",
+      "category": "修复返工",
+      "expected_class": "title_derivable",
+      "expected_profile": "MINIMAL",
+      "replay_id": "replay-R2-004",
+      "source_task_dir": ".trellis/tasks/archive/2026-08/08-10-remove-redundant-css-fix-padding-token",
+      "title": "Remove redundant CSS and fix header width padding token"
+    },
+    {
+      "actual": {
+        "absent_signals": [
+          "declared_paths",
+          "path_class",
+          "contract_surface_registry",
+          "dependency_manifest_hit",
+          "migration_hit",
+          "test_only_hit",
+          "diff_stat",
+          "governed_object_hits"
+        ],
+        "cli_returncode": 0,
+        "envelope_command": "triage",
+        "envelope_ok": true,
+        "envelope_ok_flag": true,
+        "errors": [],
+        "evidence_grade": "MEASURED",
+        "matched_keywords": [
+          "style"
+        ],
+        "matched_rule": "F_COPY_STYLE_ONLY",
+        "profile": "MINIMAL",
+        "ttl_hours": 168,
+        "warnings": []
+      },
+      "agreement": "consistent",
+      "category": "修复返工",
+      "expected_class": "title_derivable",
+      "expected_profile": "MINIMAL",
+      "replay_id": "replay-R2-005",
+      "source_task_dir": ".trellis/tasks/archive/2026-08/08-17-readonly-column-style-by-formula",
+      "title": "readonly-column-style-by-formula"
+    },
+    {
+      "actual": {
+        "absent_signals": [
+          "declared_paths",
+          "path_class",
+          "contract_surface_registry",
+          "dependency_manifest_hit",
+          "migration_hit",
+          "test_only_hit",
+          "diff_stat",
+          "governed_object_hits"
+        ],
+        "cli_returncode": 0,
+        "envelope_command": "triage",
+        "envelope_ok": true,
+        "envelope_ok_flag": true,
+        "errors": [],
+        "evidence_grade": "NOT_CONFIGURED",
+        "matched_keywords": [],
+        "matched_rule": "DEFAULT_NO_SIGNAL",
+        "profile": "LIGHT",
+        "ttl_hours": 168,
+        "warnings": []
+      },
+      "agreement": "consistent",
+      "category": "修复返工",
+      "expected_class": "title_derivable",
+      "expected_profile": "LIGHT",
+      "replay_id": "replay-R2-006",
+      "source_task_dir": ".trellis/tasks/archive/2026-08/08-18-role-dp-layout-fix",
+      "title": "角色管理+数据权限布局修复（垂直居中/列宽/裁切/响应式）"
+    },
+    {
+      "actual": {
+        "absent_signals": [
+          "declared_paths",
+          "path_class",
+          "contract_surface_registry",
+          "dependency_manifest_hit",
+          "migration_hit",
+          "test_only_hit",
+          "diff_stat",
+          "governed_object_hits"
+        ],
+        "cli_returncode": 0,
+        "envelope_command": "triage",
+        "envelope_ok": true,
+        "envelope_ok_flag": true,
+        "errors": [],
+        "evidence_grade": "NOT_CONFIGURED",
+        "matched_keywords": [],
+        "matched_rule": "DEFAULT_NO_SIGNAL",
+        "profile": "LIGHT",
+        "ttl_hours": 168,
+        "warnings": []
+      },
+      "agreement": "consistent",
+      "category": "新功能",
+      "expected_class": "title_derivable",
+      "expected_profile": "LIGHT",
+      "replay_id": "replay-R2-007",
+      "source_task_dir": ".trellis/tasks/archive/2026-08/08-10-add-reset-filters-button",
+      "title": "Add reset filters button left of generate version snapshot"
+    },
+    {
+      "actual": {
+        "absent_signals": [
+          "declared_paths",
+          "path_class",
+          "contract_surface_registry",
+          "dependency_manifest_hit",
+          "migration_hit",
+          "test_only_hit",
+          "diff_stat",
+          "governed_object_hits"
+        ],
+        "cli_returncode": 0,
+        "envelope_command": "triage",
+        "envelope_ok": true,
+        "envelope_ok_flag": true,
+        "errors": [],
+        "evidence_grade": "NOT_CONFIGURED",
+        "matched_keywords": [],
+        "matched_rule": "DEFAULT_NO_SIGNAL",
+        "profile": "LIGHT",
+        "ttl_hours": 168,
+        "warnings": []
+      },
+      "agreement": "deviation",
+      "category": "新功能",
+      "expected_class": "signal_requiring",
+      "expected_profile": "STANDARD",
+      "replay_id": "replay-R2-008",
+      "source_task_dir": ".trellis/tasks/archive/2026-08/08-10-disable-auto-boolean-rendering-grid",
+      "title": "Disable AG Grid automatic boolean rendering globally"
+    },
+    {
+      "actual": {
+        "absent_signals": [
+          "declared_paths",
+          "path_class",
+          "contract_surface_registry",
+          "dependency_manifest_hit",
+          "migration_hit",
+          "test_only_hit",
+          "diff_stat",
+          "governed_object_hits"
+        ],
+        "cli_returncode": 0,
+        "envelope_command": "triage",
+        "envelope_ok": true,
+        "envelope_ok_flag": true,
+        "errors": [],
+        "evidence_grade": "NOT_CONFIGURED",
+        "matched_keywords": [],
+        "matched_rule": "DEFAULT_NO_SIGNAL",
+        "profile": "LIGHT",
+        "ttl_hours": 168,
+        "warnings": []
+      },
+      "agreement": "consistent",
+      "category": "新功能",
+      "expected_class": "title_derivable",
+      "expected_profile": "LIGHT",
+      "replay_id": "replay-R2-009",
+      "source_task_dir": ".trellis/tasks/archive/2026-08/08-05-page-calc-vehicle-parts",
+      "title": "Page: 计算车型零件清单 (照搬原型线框 + pomaster 前置check)"
+    },
+    {
+      "actual": {
+        "absent_signals": [
+          "declared_paths",
+          "path_class",
+          "contract_surface_registry",
+          "dependency_manifest_hit",
+          "migration_hit",
+          "test_only_hit",
+          "diff_stat",
+          "governed_object_hits"
+        ],
+        "cli_returncode": 0,
+        "envelope_command": "triage",
+        "envelope_ok": true,
+        "envelope_ok_flag": true,
+        "errors": [],
+        "evidence_grade": "NOT_CONFIGURED",
+        "matched_keywords": [],
+        "matched_rule": "DEFAULT_NO_SIGNAL",
+        "profile": "LIGHT",
+        "ttl_hours": 168,
+        "warnings": []
+      },
+      "agreement": "consistent",
+      "category": "新功能",
+      "expected_class": "title_derivable",
+      "expected_profile": "LIGHT",
+      "replay_id": "replay-R2-010",
+      "source_task_dir": ".trellis/tasks/08-11-d4-cvp-pilot",
+      "title": "D4 calc-vehicle-parts试点"
+    },
+    {
+      "actual": {
+        "absent_signals": [
+          "declared_paths",
+          "path_class",
+          "contract_surface_registry",
+          "dependency_manifest_hit",
+          "migration_hit",
+          "test_only_hit",
+          "diff_stat",
+          "governed_object_hits"
+        ],
+        "cli_returncode": 0,
+        "envelope_command": "triage",
+        "envelope_ok": true,
+        "envelope_ok_flag": true,
+        "errors": [],
+        "evidence_grade": "NOT_CONFIGURED",
+        "matched_keywords": [],
+        "matched_rule": "DEFAULT_NO_SIGNAL",
+        "profile": "LIGHT",
+        "ttl_hours": 168,
+        "warnings": []
+      },
+      "agreement": "consistent",
+      "category": "新功能",
+      "expected_class": "title_derivable",
+      "expected_profile": "LIGHT",
+      "replay_id": "replay-R2-011",
+      "source_task_dir": ".trellis/tasks/08-19-expert-model-calculator",
+      "title": "专家模型计算器（原型 openExpertDrawer 完整能力）"
+    },
+    {
+      "actual": {
+        "absent_signals": [
+          "declared_paths",
+          "path_class",
+          "contract_surface_registry",
+          "dependency_manifest_hit",
+          "migration_hit",
+          "test_only_hit",
+          "diff_stat",
+          "governed_object_hits"
+        ],
+        "cli_returncode": 0,
+        "envelope_command": "triage",
+        "envelope_ok": true,
+        "envelope_ok_flag": true,
+        "errors": [],
+        "evidence_grade": "NOT_CONFIGURED",
+        "matched_keywords": [],
+        "matched_rule": "DEFAULT_NO_SIGNAL",
+        "profile": "LIGHT",
+        "ttl_hours": 168,
+        "warnings": []
+      },
+      "agreement": "deviation",
+      "category": "治理",
+      "expected_class": "signal_requiring",
+      "expected_profile": "MINIMAL",
+      "replay_id": "replay-R2-012",
+      "source_task_dir": ".trellis/tasks/archive/2026-08/08-18-prototype-legality-audit",
+      "title": "原型合法性全面审计（只读出报告）"
+    },
+    {
+      "actual": {
+        "absent_signals": [
+          "declared_paths",
+          "path_class",
+          "contract_surface_registry",
+          "dependency_manifest_hit",
+          "migration_hit",
+          "test_only_hit",
+          "diff_stat",
+          "governed_object_hits"
+        ],
+        "cli_returncode": 0,
+        "envelope_command": "triage",
+        "envelope_ok": true,
+        "envelope_ok_flag": true,
+        "errors": [],
+        "evidence_grade": "NOT_CONFIGURED",
+        "matched_keywords": [],
+        "matched_rule": "DEFAULT_NO_SIGNAL",
+        "profile": "LIGHT",
+        "ttl_hours": 168,
+        "warnings": []
+      },
+      "agreement": "consistent",
+      "category": "治理",
+      "expected_class": "title_derivable",
+      "expected_profile": "LIGHT",
+      "replay_id": "replay-R2-013",
+      "source_task_dir": ".trellis/tasks/08-08-pomaster-antdesign-component-audit",
+      "title": "pomaster Ant Design component audit + enrich outputs/spec"
+    },
+    {
+      "actual": {
+        "absent_signals": [
+          "declared_paths",
+          "path_class",
+          "contract_surface_registry",
+          "dependency_manifest_hit",
+          "migration_hit",
+          "test_only_hit",
+          "diff_stat",
+          "governed_object_hits"
+        ],
+        "cli_returncode": 0,
+        "envelope_command": "triage",
+        "envelope_ok": true,
+        "envelope_ok_flag": true,
+        "errors": [],
+        "evidence_grade": "NOT_CONFIGURED",
+        "matched_keywords": [],
+        "matched_rule": "DEFAULT_NO_SIGNAL",
+        "profile": "LIGHT",
+        "ttl_hours": 168,
+        "warnings": []
+      },
+      "agreement": "consistent",
+      "category": "治理",
+      "expected_class": "title_derivable",
+      "expected_profile": "LIGHT",
+      "replay_id": "replay-R2-014",
+      "source_task_dir": ".trellis/tasks/08-06-page-spec-md-7-screen-blueprint-page-app-registry",
+      "title": "page-spec MD 细节回填：§7 从 screen-blueprint 渲染 + PAGE-APP 页补 registry 条目"
+    },
+    {
+      "actual": {
+        "absent_signals": [
+          "declared_paths",
+          "path_class",
+          "contract_surface_registry",
+          "dependency_manifest_hit",
+          "migration_hit",
+          "test_only_hit",
+          "diff_stat",
+          "governed_object_hits"
+        ],
+        "cli_returncode": 0,
+        "envelope_command": "triage",
+        "envelope_ok": true,
+        "envelope_ok_flag": true,
+        "errors": [],
+        "evidence_grade": "NOT_CONFIGURED",
+        "matched_keywords": [],
+        "matched_rule": "DEFAULT_NO_SIGNAL",
+        "profile": "LIGHT",
+        "ttl_hours": 168,
+        "warnings": []
+      },
+      "agreement": "deviation",
+      "category": "治理",
+      "expected_class": "signal_requiring",
+      "expected_profile": "STANDARD",
+      "replay_id": "replay-R2-015",
+      "source_task_dir": ".trellis/tasks/archive/2026-08/08-17-component-convergence",
+      "title": "组件双模板收敛（C0 登记清理 + C1 共享层抽取 + C2 页面收编）"
+    },
+    {
+      "actual": {
+        "absent_signals": [
+          "declared_paths",
+          "path_class",
+          "contract_surface_registry",
+          "dependency_manifest_hit",
+          "migration_hit",
+          "test_only_hit",
+          "diff_stat",
+          "governed_object_hits"
+        ],
+        "cli_returncode": 0,
+        "envelope_command": "triage",
+        "envelope_ok": true,
+        "envelope_ok_flag": true,
+        "errors": [],
+        "evidence_grade": "NOT_CONFIGURED",
+        "matched_keywords": [],
+        "matched_rule": "DEFAULT_NO_SIGNAL",
+        "profile": "LIGHT",
+        "ttl_hours": 168,
+        "warnings": []
+      },
+      "agreement": "deviation",
+      "category": "治理",
+      "expected_class": "signal_requiring",
+      "expected_profile": "STANDARD",
+      "replay_id": "replay-R2-016",
+      "source_task_dir": ".trellis/tasks/08-11-formula-engine-layer",
+      "title": "公式独立运行时引擎层"
+    }
+  ],
+  "router_threshold_source": "packages/cli/src/triage.ts（TRIAGE_ESCALATION_KEYWORDS / TRIAGE_COPY_STYLE_KEYWORDS；bench-0002 approved 关键词规则）",
+  "schema": "pomaster.vnext.migration.replay-results/1",
+  "summary": {
+    "consistent": 12,
+    "denominator_source": "samples.json samples[]（本文件 records 全集）",
+    "deviation": 4,
+    "error": 0,
+    "total": 16
+  },
+  "wall_clock_note": "墙钟禁入：本文件不采集时间戳与耗时；回放序以 replay_id 标识"
+}
