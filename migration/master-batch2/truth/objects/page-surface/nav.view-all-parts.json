@@ -1,0 +1,161 @@
+{
+  "aliases": [
+    "PAGE-TASK-STEP-VIEW-ALL-PARTS"
+  ],
+  "authority": {
+    "delegates": [],
+    "escalation_hint": "regenerate via migration/master-batch2/tools/ingest_navigation.py; page-level canonical id word forms pending HUMAN_OWNER adjudication (supersede merge after adjudication); route strings withheld from payloads by design (route authority = future KEYBINDING.* page<->dir table, A7 P0); endpoint page is one of the 4 orphan blueprint ids absent from application-page-registry pages[] (MIG-B2/C-01) -- see ledger conflicts_pending_owner",
+    "owner": "FRONTEND_ARCHITECTURE",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "PROVISIONAL",
+    "evidence": "IMPLEMENTED",
+    "lifecycle": "CURRENT"
+  },
+  "axis_profile": "page_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "PAGE.NAV.VIEW_ALL_PARTS",
+  "key_bindings": {
+    "artifact": [],
+    "code": []
+  },
+  "kind": "page_surface",
+  "notes_md": "本对象为 MIG-B2/M2 转录组 A 导航绑定件：源 outputs/frontend/10_planned/navigation-transition-registry.yaml 转移端点 facet（2 条出边 / 1 条入边，不立 TRANSITION 独立对象族）。转移挂载：out=2/in=1；转移条目（id/from/to/trigger/back_behavior/protocol）整条逐字，两份字节等价断言；from/to 源词形逐字保留（PAGE-TASK-STEP-* legacy 词形的收编在 facet id/aliases 层，条目值不改写）。别名收编：PAGE-TASK-STEP-VIEW-ALL-PARTS → facet PAGE.NAV.VIEW_ALL_PARTS（ALIASES_V0 已登记族 PAGE-TASK-STEP-*→PAGE.* 余段投影）；legacy 词形照录 aliases[]，origin=ingested（A6 场景）。未决冲突 MIG-B2/C-01（classification-ledger conflicts_pending_owner）：本 facet 主体页为 4 份 orphan blueprint id 之一（pages[] 无条目、转移端点在场；分母三源漂移 32/35/39）；payload.pending_conflicts 双方值逐字并存、绝不自动裁决；confidence=PROVISIONAL。key_bindings.code 为空数组（诚实空）：导航实现锚（nav-config.ts/routes.ts 路由锚）归未来 KEYBINDING.* 对象族，本 facet 不伪造锚点。 本字段为人类散文，机器永不解析判卷。",
+  "origin": "ingested",
+  "payload": {
+    "id_facet": {
+      "merge_path": "supersede",
+      "object_id": "PAGE.NAV.VIEW_ALL_PARTS",
+      "page_level_id": "PAGE.VIEW_ALL_PARTS",
+      "page_level_id_status": "REGISTERED_RULE_CANONICAL_HELD_BY_PAGE_SURFACE_OBJECT",
+      "rule": "facet-scoped id per the group-B PAGE.READINESS.* convention: concurrent page-surface transcription families hold the page-level ids in this kind-dir (ALIASES_V0 canonical PAGE.<SEG> for PAGE-TASK-STEP-*; underscore PAGE.APP_* and dotted PAGE.APP.* drafts both observed for PAGE-APP-*); this facet takes the PAGE.NAV.* scoping segment to avoid same-id clobber and merges via the supersede chain after Owner id adjudication (report only, never auto-adjudicate)"
+    },
+    "navigation_transitions_in": [
+      {
+        "counterpart_facet": "PAGE.NAV.SELECT_VEHICLE_CONTEXT",
+        "direction": "in",
+        "transition": {
+          "back_behavior": "restore-source-context",
+          "from": "PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT",
+          "id": "TRANSITION-SELECT-VEHICLE-CONTEXT-TO-VIEW-ALL-PARTS",
+          "protocol": "universal:routing-url-protocol",
+          "to": "PAGE-TASK-STEP-VIEW-ALL-PARTS",
+          "trigger": "side-nav-menu-click"
+        }
+      }
+    ],
+    "navigation_transitions_out": [
+      {
+        "counterpart_facet": "PAGE.NAV.QUERY_LEDGER",
+        "direction": "out",
+        "transition": {
+          "back_behavior": "restore-source-context",
+          "from": "PAGE-TASK-STEP-VIEW-ALL-PARTS",
+          "id": "TRANSITION-VIEW-ALL-PARTS-TO-QUERY-LEDGER",
+          "protocol": "universal:routing-url-protocol",
+          "to": "PAGE-TASK-STEP-QUERY-LEDGER",
+          "trigger": "user-select-part"
+        }
+      },
+      {
+        "counterpart_facet": "PAGE.NAV.BUILD_BOM",
+        "direction": "out",
+        "transition": {
+          "back_behavior": "restore-source-context",
+          "from": "PAGE-TASK-STEP-VIEW-ALL-PARTS",
+          "id": "TRANSITION-VIEW-ALL-PARTS-TO-BUILD-BOM",
+          "protocol": "universal:routing-url-protocol",
+          "to": "PAGE-TASK-STEP-BUILD-BOM",
+          "trigger": "user-select-part-bind"
+        }
+      }
+    ],
+    "pending_conflicts": [
+      {
+        "conflict_id": "MIG-B2/C-01",
+        "facet_context": "本 facet 主体页为该冲突所指 4 份 orphan blueprint id 之一（application-page-registry pages[] 无条目、转移端点在场）",
+        "resolution": "PENDING_OWNER",
+        "rule": "只汇总呈报，绝不自动裁决",
+        "subject": "application-page-registry 页面分母三源漂移（注册表 summary 自述 32 vs pages[] 实数 35 vs screen-blueprints 目录 39 含 4 份 orphan）及 4 份 orphan blueprint 的注册归属待裁决",
+        "values_in_conflict": [
+          {
+            "role": "registry side (M0/M1 measured, registered)",
+            "source": "migration/master-batch2/inventory.yaml denominators.application_pages",
+            "value": {
+              "application_pages_value": 35,
+              "pages_entry_present": false,
+              "screen_blueprints_not_in_pages": [
+                "PAGE-TASK-STEP-GENERATE-SNAPSHOT",
+                "PAGE-TASK-STEP-SAVE-BOM",
+                "PAGE-TASK-STEP-VIEW-ALL-PARTS",
+                "PAGE-TASK-STEP-WRITEBACK-LEDGER"
+              ]
+            }
+          },
+          {
+            "role": "transition side",
+            "source": "outputs/frontend/10_planned/navigation-transition-registry.yaml",
+            "value": {
+              "endpoint_present": true,
+              "transition_ids": [
+                "TRANSITION-VIEW-ALL-PARTS-TO-QUERY-LEDGER",
+                "TRANSITION-VIEW-ALL-PARTS-TO-BUILD-BOM",
+                "TRANSITION-SELECT-VEHICLE-CONTEXT-TO-VIEW-ALL-PARTS"
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "source_document_meta": {
+      "navigation_transition_registry": {
+        "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+        "document_type": "navigation-transition-registry",
+        "schema_version": 1
+      }
+    },
+    "transition_registration_note": {
+      "registrations": 3,
+      "rule": "out=from 端 facet、in=to 端 facet 双端挂载（ledger『转移逐条挂 from/to PAGE.* 对象』）；每条转移恰两次登记、两份字节等价（工具断言）；不立 TRANSITION 独立对象族（ledger 明示）；方向+对端 facet 引用为派生投影，from/to 源词形逐字保留",
+      "unique_transitions_registered": 3
+    }
+  },
+  "permits_active": [],
+  "producer": {
+    "liveness": {
+      "status": "active"
+    },
+    "merge_semantics": {
+      "backfill_if_missing": [],
+      "human_never_touched": [],
+      "refresh_fields": [
+        "payload"
+      ]
+    },
+    "producer_id": "prod.mig_b2_ingest_navigation",
+    "views_maintained": [
+      "truth-index.envelope"
+    ]
+  },
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b2/ingest_navigation.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/navigation-transition-registry.yaml",
+        "transcription": "transitions touching PAGE-TASK-STEP-VIEW-ALL-PARTS registered out/in on this facet (3 registrations); entries verbatim, no TRANSITION object family created (ledger explicit)"
+      },
+      "pin": {
+        "digest": "sha256:3ccf3359da07e57053c2bb778ff56704a5600bc23dd7e18d21553d866a1ec3fd"
+      },
+      "ref": "outputs/frontend/10_planned/navigation-transition-registry.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "导航转移端点·PAGE-TASK-STEP-VIEW-ALL-PARTS"
+}

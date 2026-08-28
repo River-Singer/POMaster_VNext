@@ -179,13 +179,28 @@ A6 rename-on-ingest 双向链：legacy→canonical（收编）与 canonical→le
   不冒充「无漂移」）。kind 词形已随 vocab-lock v0.2 `presentation_axes.reconcile_delta_kinds`
   登记（PR-0001；`content_drift` 一词二用的成文收编）；其中 `content_drift`
   词形是设计 §3.2 三值之外的第 4 词形，承载其自身 `content_drift=true` 状态所需的宿主
-  （不冒用 `axes_change`——其定义明确要求四轴任一 from≠to）。
+  （不冒用 `axes_change`——其定义明确要求四轴任一 from≠to）。N6 机判字段
+  `drift_origin`（仅 `kind=content_drift` 条目在场，其余 kind 键不落盘）：content_drift
+  一词二用（合法事务 payload 变更 vs 越权静默漂移）由 journal 台账对账消解——
+  `transaction` = rev 推进可被事务台账解释（baseline 之后存在 TX_APPLIED 事件，事件
+  ops 含 rev 推进 op（`upsert_object`/`transition_object`）且 changed_object_ids 含该
+  对象）；`unexplained` = 台账无解释（rev 未动而内容变的 sweep auto-regen 行锚同步
+  形态、或 rev 动了但找不到解释事务）→ 该条目**原样升格**计入 `exceptions` 人审队列
+  （clean 语义不变——升格不新增 fail 面，changed_objects 已 fail）。对账纯读（只扫
+  journal 追加流，零写入，收集为集合与行序无关）；词形闭包
+  `transaction|unexplained` 为 reconcile 报告呈现层局部词（kernel
+  `RECONCILE_DRIFT_ORIGINS`），TODO(vocab-pr-0002) 登记进 vocab-lock
+  `presentation_axes`。
 - **`exceptions`**：scope 内 subject 的证据平面扫描；runs 取 verdict ∈
   {failed, not_configured, skipped_blindspot}，claims 取 verification.verdict = REJECTED；
-  row 级正文探测的 `content_tamper` 条目亦计入本段（见下）。
-  证据平面损坏（*.json 无法解析 / verdict 缺失）→ throw `SCHEMA_INVALID`（禁静默跳过
-  损坏证据）；run 文件兼容 kernel canonical（gate_result.result 内嵌）与 pre-canonical
-  夹具（GateResult 直落顶层）两形态——与 compact 收编读取规则同一条线。
+  row 级正文探测的 `content_tamper` 条目亦计入本段（见下）；N6 `drift_origin=unexplained`
+  的 `content_drift` 条目**原样升格**为本段第三类构成（同一行双呈现：changed_objects 保
+  delta 分母完整、本段入人审队列；判别走字段位 `drift_origin`，不发明新例外 kind 词）。
+  段内序固定字节稳定：证据例外（evidence_ref 序）→ `content_tamper`（探测分母 id 序）→
+  unexplained 升格条目（scope id 序）。证据平面损坏（*.json 无法解析 / verdict 缺失）→
+  throw `SCHEMA_INVALID`（禁静默跳过损坏证据）；run 文件兼容 kernel canonical
+  （gate_result.result 内嵌）与 pre-canonical 夹具（GateResult 直落顶层）两形态——与
+  compact 收编读取规则同一条线。
 - **`verdict_census`**：证据平面全量 verdict 计数（含例外条目与 scope 外条目——聚合
   不吞没，不进例外段 ≠ 不可见）；键字典序输出，字节稳定。
 - **`samples_to_review`**：scope 内全部证据条目（runs+claims 合并）按 evidence_ref

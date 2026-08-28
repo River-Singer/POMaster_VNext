@@ -1,0 +1,55 @@
+{
+  "blindspot": {
+    "carrier_coverage": {
+      "carried_in_objects": 93,
+      "per_object_mismatch": 0,
+      "source_unresolved_total": 93,
+      "uncarried": 0
+    },
+    "escape_ratio": 0.0,
+    "produced": 39,
+    "scanned": 39
+  },
+  "counts": {
+    "applicable_scanned": 39,
+    "not_applicable": 0,
+    "scanned": 39,
+    "suppressed_by_ledger": 0,
+    "unchecked_in_blindspot_estimated": 0,
+    "violations": 0
+  },
+  "denominator_refs": [],
+  "digest_excluded_fields": [
+    "duration_ms"
+  ],
+  "duration_ms": {
+    "external": 0,
+    "self": 0
+  },
+  "gate": "BLUEPRINT",
+  "gate_def": "POLICY.GATE.MIG_B2_BLUEPRINT@0.1.0",
+  "grn": "GRN-4302",
+  "items": [],
+  "items_truncated": false,
+  "metric_dialect": "blueprint:unresolved_ledger_entries",
+  "ran_at_seq": 0,
+  "scope": {
+    "note": "分母声明：DENOMINATOR.BLUEPRINTS@1 value=39（batch2 CONVENTIONS §7 denominator_refs 显式空数组）；引用级分母=蓝图源 page.unresolved[] 条目总数 93（39 份源逐份现场重读，sha256 已于 GRN-4301 对 pin 零漂移；GAP-POM-001「分母静默消失」蓝图版：方程=源条目总数==对象 payload.blueprint.unresolved_exceptions 承载总数）。C5 逐对象复核：在场 39 对象 count/items 与源逐条等价断言，mismatch=0。合账：源总计 93 vs 对象承载总计 93 → 0 条零承载，全部悬于 0 份缺席对象（归因 GRN-4301，unresolved_carrier_object_missing 逐页登记；缺席但 unresolved=0 的 0 份由 GRN-4301 记账不重复计数）。violations=0（carrier_missing=0、entry_mismatch=0）→ verdict=passed（语料级方程 93≠93 不闭合，不以『在场对象逐条保真』报绿）。路径基：items location 为 po-master 仓内相对路径。self_report_trusted=false：trust.asserted=null，判卷唯一依据 trust.recomputed；duration_ms 钉 0（byte-identical 幂等）。",
+    "size_expected_from_denominator": 93
+  },
+  "tool": "mig-b2:run_blueprint_gate",
+  "tool_version": "1.0.0",
+  "trigger": {
+    "note": "migration batch context: no kernel seq allocator; ran_at_seq pinned to 0 (deterministic batch base, A4 wall-clock-free; kernel re-sequences on ingestion); durations pinned to 0 for byte-identical rerun idempotency (batch hard rule 2)",
+    "task_ref": "MIG-B2/M4-blueprint",
+    "type": "on_demand"
+  },
+  "trust": {
+    "asserted": null,
+    "recomputed": {
+      "matches_asserted": true,
+      "violations": 0
+    }
+  },
+  "verdict": "passed"
+}

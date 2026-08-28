@@ -1,0 +1,367 @@
+{
+  "aliases": [
+    "PAGE-TASK-STEP-BUC-ANALYSE"
+  ],
+  "authority": {
+    "delegates": [
+      {
+        "required_for": [
+          "approve_page_blueprint"
+        ],
+        "role": "HUMAN_OWNER"
+      }
+    ],
+    "escalation_hint": "regenerate via migration/master-batch2/tools/ingest_screen_blueprints_d.py; blueprint structure/action/field-semantics change re-runs the generator then this ingest; page.status progression and canonical word form PAGE.APP_* confirmation are HUMAN_OWNER seats (approve_page_blueprint; EVOLUTION_CHANNEL; ledger owner FRONTEND_ARCHITECTURE)",
+    "owner": "FRONTEND_ARCHITECTURE",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "LOCKED",
+    "evidence": "IMPLEMENTED",
+    "lifecycle": "CURRENT"
+  },
+  "axis_profile": "page_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "PAGE.BUC_ANALYSE",
+  "key_bindings": {
+    "artifact": [],
+    "code": [
+      {
+        "artifact_type": "source_dir",
+        "expect": {
+          "page_id": "PAGE-TASK-STEP-BUC-ANALYSE"
+        },
+        "match_rule": "mechanical",
+        "value": "src/pages/page-buc-analyse"
+      },
+      {
+        "artifact_type": "file",
+        "expect": {
+          "route_name_exact": "PAGE-TASK-STEP-BUC-ANALYSE"
+        },
+        "match_rule": "mechanical",
+        "value": "src/app/router/routes.ts"
+      }
+    ]
+  },
+  "kind": "page_surface",
+  "notes_md": "蓝图转录（MIG-B2 转录组 D·后半 7/19，一蓝图一 surface 主对象）：源 outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-BUC-ANALYSE.yaml（bp_blueprint，pin 见 sources[0]；分母=screen-blueprints 实测 39 之字典序后半第 7 份）。\n三层对象化：结构=template_ref PAGE.EDITABLE_WORKSPACE + regions 3 条（slot 词形均在 page-anatomy-registry 16 槽合法集内）+ states 14 项；交互=actions 8 条（ACTION.* 摆位 + PAGE_SLOT.* 槽位值引用）；字段语义=regions/slots 内联结构化字段逐字承载（源无 FIELD.* 词形 → FIELD.* 派生引用=0，诚实零）。\nsurface=V1（Page Spec 双分母之应用页侧；分母归属迁移期走信封 denominator_refs 显式空，DENOMINATOR.* 未注册）；shell 归属：shell_name=MasterApplicationShell + 内容宿主槽位 SHELL.MAIN_CONTENT（scroll/error 边界语义在槽位对象侧）。 导航归属自 navigation-structure 逐叶转录（nav_group=NAV.GROUP.G3 nav_entry=NAV.LEAF.BUC；物理 route 串不落对象——路由权威在 KEYBINDING.*，A7 P0）。\npage.status=APPROVED 为设计审批轴事实（与 readiness 实施就绪轴分立，禁混轴）；已登记 payload.blueprint.superseded_status_field，数值语义不篡改。\nunresolved 0 条逐条转 payload.blueprint.unresolved_exceptions（Exception Ledger 承载：显式未决，不静默丢弃、不静默裁决）。\n散文承载登记：notes(1) → 浓缩为信封 notes_md 摘要 + sources[0].locator.line_anchors 源指针（蓝图 YAML 正文不整本搬运）。摘要（全文按源指针回读）：notes×1：2026-08-19 用户裁决——工具栏三按钮（新建/复制/导出）并入筛选行右对齐（原独立工具栏卡撤销）；操作列个体加宽（删除按钮完整显示）登记为统一列宽规则的偏离例外；更新时间列 nowrap。\ncanonical 词形：源词形 PAGE-TASK-STEP-BUC-ANALYSE → PAGE.BUC_ANALYSE（ALIASES_V0 已登记族 rename-on-ingest（batch1 §6 OBS-3）：origin=ingested，legacy 照录 aliases[]）。A6 收编词形无身份悬置：axes.confidence=LOCKED\nroute/目录权威不在本对象 payload：page↔dir 与 route_name 机械锚以 key_bindings.code 期望声明承载（值=源词形逐字），KEYBINDING.* 表对象落档仍待人工裁决（草表 status=MECHANICAL_ROUTE_NAME_MATCH）。\n本字段为人类散文，机器永不解析判卷。",
+  "origin": "ingested",
+  "payload": {
+    "actions": [
+      "ACTION.CREATE",
+      "ACTION.EXPORT",
+      "ACTION.RESET_FILTER",
+      "ACTION.SAVE",
+      "ACTION.VIEW",
+      "ACTION.COPY",
+      "ACTION.EDIT",
+      "ACTION.DELETE"
+    ],
+    "blueprint": {
+      "actions": [
+        {
+          "action_id": "ACTION.CREATE",
+          "business_action": "ACT-BUC-ANALYSE",
+          "capability_id": "CAP-BUC-ANALYSIS",
+          "id": "PAGE-ACT-BUC-ANALYSE-1",
+          "mock": false,
+          "placement": "ACTION.CREATE",
+          "slot": "PAGE_SLOT.PRIMARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.EXPORT",
+          "business_action": "ACT-BUC-ANALYSE",
+          "capability_id": "CAP-BUC-ANALYSIS",
+          "id": "PAGE-ACT-BUC-ANALYSE-2",
+          "mock": false,
+          "placement": "ACTION.EXPORT",
+          "slot": "PAGE_SLOT.SECONDARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.RESET_FILTER",
+          "business_action": "ACT-BUC-ANALYSE",
+          "capability_id": "CAP-BUC-ANALYSIS",
+          "id": "PAGE-ACT-BUC-ANALYSE-3",
+          "mock": false,
+          "placement": "ACTION.RESET_FILTER",
+          "slot": "PAGE_SLOT.FILTERS"
+        },
+        {
+          "action_id": "ACTION.SAVE",
+          "business_action": "ACT-BUC-ANALYSE-CREATE-SUBMIT",
+          "capability_id": "CAP-BUC-ANALYSIS",
+          "id": "PAGE-ACT-BUC-ANALYSE-4",
+          "mock": true,
+          "placement": "ACTION.SAVE",
+          "slot": "PAGE_SLOT.FOOTER_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.VIEW",
+          "business_action": "ACT-BUC-ANALYSE-ENTER-DETAIL",
+          "capability_id": "CAP-BUC-ANALYSIS",
+          "id": "PAGE-ACT-BUC-ANALYSE-5",
+          "mock": false,
+          "note": "2026-08-18 注：进入详情由行点击承载（cell-op 不放独立按钮）",
+          "placement": "ACTION.VIEW",
+          "slot": "PAGE_SLOT.CONTEXT_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.COPY",
+          "business_action": "ACT-BUC-ANALYSE-COPY",
+          "capability_id": "CAP-BUC-ANALYSIS",
+          "id": "PAGE-ACT-BUC-ANALYSE-6",
+          "mock": true,
+          "note": "2026-08-18 补登：勾选恰 1 行启用；以选中行为源生成新版本（版本号 V{n}.{d+1}、状态=进行中、更新人/更新时间刷新）",
+          "placement": "ACTION.COPY",
+          "slot": "PAGE_SLOT.SECONDARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.EDIT",
+          "business_action": "ACT-BUC-ANALYSE-EDIT",
+          "capability_id": "CAP-BUC-ANALYSIS",
+          "id": "PAGE-ACT-BUC-ANALYSE-7",
+          "mock": true,
+          "note": "2026-08-18 补登：复用新建表单弹窗回填行数据；仅「进行中」行显示编辑入口（已保存行锁定）",
+          "placement": "ACTION.EDIT",
+          "slot": "PAGE_SLOT.CONTEXT_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.DELETE",
+          "business_action": "ACT-BUC-ANALYSE-DELETE",
+          "capability_id": "CAP-BUC-ANALYSIS",
+          "id": "PAGE-ACT-BUC-ANALYSE-8",
+          "mock": true,
+          "note": "2026-08-18 补登：danger 确认弹窗副文案含零件号+版本；仅「进行中」行显示删除入口",
+          "placement": "ACTION.DELETE",
+          "slot": "PAGE_SLOT.CONTEXT_ACTIONS"
+        }
+      ],
+      "api_requirements": [
+        {
+          "id": "API_REQ.BUC.ANALYSE.0",
+          "mock_contract_ref": "outputs/frontend/10_planned/mock-contract.yaml",
+          "operation_id": null,
+          "reason": "后端接口未开发，走 mock 契约（未开发状态）",
+          "source": {
+            "page": "PAGE-TASK-STEP-BUC-ANALYSE"
+          },
+          "status": "NEEDS_BACKEND_REVIEW"
+        }
+      ],
+      "error_rendering": {
+        "component": "DATA.EMPTY_STATE",
+        "fallback_slot": "PAGE_SLOT.FEEDBACK",
+        "isolation": "route-level ErrorBoundary; per-query error 不外溢其他页面（协议 18/27）",
+        "protocol": "universal:rendering-state-protocol",
+        "variant": "error"
+      },
+      "navigation": {
+        "nav_entry": "NAV.LEAF.BUC",
+        "nav_entry_name_zh": "BUC 分析",
+        "nav_group": "NAV.GROUP.G3"
+      },
+      "page_status": {
+        "axis": "design_approval",
+        "value": "APPROVED"
+      },
+      "prose_to_notes_md": [
+        {
+          "field": "notes",
+          "item_count": 1,
+          "line": 172
+        }
+      ],
+      "regions": [
+        {
+          "behavior": "static",
+          "id": "REGION.PAGE_HEADER",
+          "note": "工作台 tab 已显示标题，本区域不再渲染面包屑与页面标题。",
+          "slots": {
+            "PAGE_SLOT.PRIMARY_ACTIONS": {
+              "capability_id": "PATTERN.ACTION_BAR",
+              "component": "PATTERN.ACTION_BAR"
+            },
+            "PAGE_SLOT.SECONDARY_ACTIONS": {
+              "capability_id": "PATTERN.ACTION_BAR",
+              "component": "PATTERN.ACTION_BAR"
+            },
+            "PAGE_SLOT.STATUS": {
+              "capability_id": "DATA.STATUS_BADGE",
+              "component": "DATA.STATUS_BADGE",
+              "default_capability_id": "DATA.STATUS_BADGE",
+              "default_component": "DATA.STATUS_BADGE",
+              "protocol": "universal:error-handling-protocol",
+              "render_on_state": "error",
+              "variant": "danger"
+            }
+          }
+        },
+        {
+          "behavior": "render-by-state",
+          "id": "REGION.CONTENT",
+          "slots": {
+            "PAGE_SLOT.CONTENT": {
+              "capability_id": "PATTERN.EDITABLE_GRID_SECTION",
+              "component": "PATTERN.EDITABLE_GRID_SECTION",
+              "pattern_id": "PATTERN.EDITABLE_GRID_SECTION"
+            }
+          }
+        },
+        {
+          "behavior": "static",
+          "id": "REGION.FOOTER_ACTIONS",
+          "slots": {
+            "PAGE_SLOT.FOOTER_ACTIONS": {
+              "capability_id": "PATTERN.ACTION_BAR",
+              "component": "PATTERN.ACTION_BAR"
+            }
+          }
+        }
+      ],
+      "shell": {
+        "content_slot_ref": "SHELL.MAIN_CONTENT",
+        "shell_name": "MasterApplicationShell"
+      },
+      "source_document_meta": {
+        "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+        "document_type": "screen-blueprint",
+        "schema_version": 1
+      },
+      "source_page_id": "PAGE-TASK-STEP-BUC-ANALYSE",
+      "states": [
+        "idle",
+        "loading",
+        "success",
+        "empty",
+        "error",
+        "view",
+        "edit",
+        "read-only",
+        "create",
+        "pristine",
+        "dirty",
+        "validating",
+        "invalid",
+        "submitting"
+      ],
+      "superseded_status_field": {
+        "mapped_to": "design-approval-axis fact record (classification-ledger blueprint_status_axis_note: design-approval axis and implementation-readiness axis stay separate; the readiness axis lives in page-readiness-registry); object axes describe the truth object itself (lifecycle CURRENT = source is an active canonical), never mixed across axes; approval delegation via authority.delegates HUMAN_OWNER approve_page_blueprint",
+        "reason": "flat status is one word with many meanings; the design-approval semantic stays a fact record and status progression belongs to the HUMAN_OWNER approve_page_blueprint delegate seat; values are transcribed without tampering",
+        "source_field": "status",
+        "source_value": "APPROVED",
+        "upgrade_registered": true
+      },
+      "template": {
+        "id": "PAGE.EDITABLE_WORKSPACE"
+      },
+      "unresolved_exceptions": {
+        "carrier": "exception_ledger",
+        "count": 0,
+        "items": [],
+        "rule": "unresolved items carried item-by-item as EXPLICITLY unresolved (CONVENTIONS section 3): never silently dropped, never auto-adjudicated; resolution belongs to the Owner"
+      }
+    },
+    "slots": [
+      "PAGE_SLOT.PRIMARY_ACTIONS",
+      "PAGE_SLOT.SECONDARY_ACTIONS",
+      "PAGE_SLOT.STATUS",
+      "PAGE_SLOT.CONTENT",
+      "PAGE_SLOT.FOOTER_ACTIONS",
+      "PAGE_SLOT.FILTERS",
+      "PAGE_SLOT.CONTEXT_ACTIONS",
+      "PAGE_SLOT.FEEDBACK"
+    ],
+    "surface": "V1",
+    "template_ref": "PAGE.EDITABLE_WORKSPACE"
+  },
+  "permits_active": [],
+  "producer": {
+    "liveness": {
+      "status": "active"
+    },
+    "merge_semantics": {
+      "backfill_if_missing": [],
+      "human_never_touched": [],
+      "refresh_fields": [
+        "payload.blueprint"
+      ]
+    },
+    "producer_id": "prod.mig_b2_ingest_screen_blueprints_d",
+    "views_maintained": [
+      "truth-index.envelope"
+    ]
+  },
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_d.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-BUC-ANALYSE.yaml",
+        "line_anchors": {
+          "note": 48,
+          "notes": 172,
+          "unresolved": 171
+        },
+        "prose_summarized": [
+          {
+            "field": "notes",
+            "item_count": 1,
+            "line": 172
+          }
+        ],
+        "transcription": "back-half blueprint 7/19 objectified one-to-one into a page_surface object: structure (template_ref/regions/states) + interaction (actions) + inline field semantics transcribed verbatim as structured units (array order = source order); page.status kept as a design-approval fact record with a superseded_status_field registration; unresolved items carried item-by-item into payload.blueprint.unresolved_exceptions; prose narrative condensed into notes_md, never wholesale-migrated; no physical route string enters the payload"
+      },
+      "pin": {
+        "digest": "sha256:73cdcb281844e3e3dd17b61fe0f01b732cb530b929073a60043ecab0e4a75491"
+      },
+      "ref": "outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-BUC-ANALYSE.yaml",
+      "type": "bp_blueprint"
+    },
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_d.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "governance_id": "PAGE-TASK-STEP-BUC-ANALYSE",
+        "ingested_from": "migration/master-batch2/key-binding-map.batch2.draft.yaml",
+        "transcription": "supplies the page<->dir and route_name binding expectations (status MECHANICAL_ROUTE_NAME_MATCH, draft table): values quoted verbatim into key_bindings.code; the KEYBINDING.* table object itself stays pending human adjudication"
+      },
+      "pin": {
+        "digest": "sha256:2beea8f95e0770da028d5ac5c2e76e2e1266e0ba7af6e0a3faa29fe72cb501fa"
+      },
+      "ref": "migration/master-batch2/key-binding-map.batch2.draft.yaml",
+      "type": "design_seed"
+    },
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_d.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/application-shell-registry.yaml",
+        "transcription": "CONVENTIONS section 2 shell attribution values (shell_name / SHELL.MAIN_CONTENT content host) quoted verbatim into payload.blueprint.shell; scroll/error boundary semantics stay on the shell slot objects (COMPONENT.SHELL.*)"
+      },
+      "pin": {
+        "digest": "sha256:cca0a9d72941835264ee3128bd91d41a55b63a26d82c7580e067df504ae2dac7"
+      },
+      "ref": "outputs/frontend/10_planned/application-shell-registry.yaml",
+      "type": "design_seed"
+    },
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_d.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/navigation-structure.yaml",
+        "transcription": "CONVENTIONS section 2 navigation attribution: leaf transcription nav_group/nav_subgroup/nav_entry (drill-down minus route; route authority stays in the pending KEYBINDING.* table)"
+      },
+      "pin": {
+        "digest": "sha256:ec6c25f3e0723c485b32d08bf1c0129a504bba4e7b338b2fab38fb7250d98870"
+      },
+      "ref": "outputs/frontend/10_planned/navigation-structure.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "页面·执行 BUC 零件成本分析"
+}

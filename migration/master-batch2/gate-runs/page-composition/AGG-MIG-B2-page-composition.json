@@ -1,0 +1,49 @@
+{
+  "blindspot": {
+    "escape_ratio": 0.103448,
+    "produced": 104,
+    "scanned": 116
+  },
+  "counts": {
+    "applicable_scanned": 89,
+    "not_applicable": 27,
+    "scanned": 116,
+    "suppressed_by_ledger": 0,
+    "unchecked_in_blindspot_estimated": 0,
+    "violations": 9
+  },
+  "denominator_refs": [],
+  "digest_excluded_fields": [
+    "duration_ms"
+  ],
+  "duration_ms": {
+    "external": 0,
+    "self": 0
+  },
+  "gate": "PAGE_COMPOSITION",
+  "gate_def": "POLICY.GATE.MIG_B2_PAGE_COMPOSITION@0.1.0",
+  "grn": "GRN-4204",
+  "items": [],
+  "items_truncated": false,
+  "metric_dialect": "page_composition:check_runs",
+  "ran_at_seq": 0,
+  "scope": {
+    "note": "MIG-B2/M4 页面组合主题聚合（合规 GateResult worst-of 汇总，红线 2：全字段过 FROZEN 03 schema，禁自由形状）。rollup 规则：任一 failed → failed，否则取最差具体七态（failed > blocked > not_configured/skipped_blindspot > warning/not_run > passed；无独立 not_green 词形）。三个分检查项判定：GRN-4201(readiness-attest-cross-check)=failed(violations=1,unchecked=0), GRN-4202(composition-three-way-cross)=passed(violations=0,unchecked=0), GRN-4203(navigation-consistency)=failed(violations=8,unchecked=0)。by_verdict：failed=2, passed=1；checks_total=3。counts 聚合口径=三检查同名字段直接求和（scanned 口径各异：check1=readiness 声明对象 39、check2=action 槽位引用 56[44 适用+12 grid 域不适用]、check3=transition 21；求和仅作总量留痕、不跨检查比较，逐项 counts/denominators/items 明细见同目录 3 份 per-check 运行记录 GTR-MIG-B2-page-composition-01..03-*.json，原地有效）。分母明细（batch2 CONVENTIONS §7：迁移期未注册 DENOMINATOR.* 对象，denominator_refs 显式空数组=诚实声明；候选 id/version/value/source 逐项声明）：DENOMINATOR.PAGE_READINESS_STATUS@1 value=39（=inventory denominators.page_readiness_status，声明对象分母）；DENOMINATOR.COMPOSITION_ENTRIES@1 value=61（=inventory denominators.composition_entries；action 基数 27、引用级分母 44=27 actions 的 PAGE_SLOT.* 引用机械计数、GRID_SLOT.* 引用 12 条不适用）；DENOMINATOR.NAVIGATION_ENTRIES@1 value=62（=inventory denominators.navigation_entries；transition 子分母 21）。blindspot 聚合口径=三检查 blindspot.scanned/produced 直接求和后派生 escape_ratio（三检查判据均机械可达，无 skipped_blindspot 判定，无需 fixture_regression）。GRN 方案：GRN-420x 块确定性保留给 MIG-B2 page-composition 主题（4201=readiness-attest-cross-check、4202=composition-three-way-cross、4203=navigation-consistency、4204=本聚合；与 batch1 GRN-0001..0006/401..405/4101..4105 无重叠）。实样登记：failed=2（4201 虚假 attest 教训在仓残留 PAGE-TASK-STEP-MANAGE-USER-ROLE attest 声明而绑定代码缺席；4203 的 8 条 transition 悬空端点=MIG-B2/C-01 orphan 族下游代价）；passed=1（4202 三方闭合 44/44 引用零悬空）。self_report_trusted=false 落地形态：trust.asserted=null（迁移批无自报信道），trust.recomputed.violations=9 为三检查求和、唯一判卷依据。确定性：ran_at_seq 钉 0（迁移批无 kernel seq 分配器，A4 零墙钟，kernel 接入时重排）、duration_ms 钉 0（byte-identical 幂等硬规则）；同输入重跑 byte-identical。",
+    "size_expected_from_denominator": 89
+  },
+  "tool": "mig-b2:run_page_composition_gate",
+  "tool_version": "1.0.0",
+  "trigger": {
+    "note": "migration batch context: no kernel seq allocator; ran_at_seq pinned to 0 (deterministic batch base, A4 wall-clock-free; kernel re-sequences on ingestion); durations pinned to 0 for byte-identical rerun idempotency (batch hard rule 2)",
+    "task_ref": "MIG-B2/M4-page-composition",
+    "type": "on_demand"
+  },
+  "trust": {
+    "asserted": null,
+    "recomputed": {
+      "matches_asserted": true,
+      "violations": 9
+    }
+  },
+  "verdict": "failed"
+}

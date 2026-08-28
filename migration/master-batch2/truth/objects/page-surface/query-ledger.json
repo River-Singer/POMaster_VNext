@@ -1,0 +1,312 @@
+{
+  "aliases": [
+    "PAGE-TASK-STEP-QUERY-LEDGER"
+  ],
+  "authority": {
+    "delegates": [
+      {
+        "required_for": [
+          "approve_page_blueprint"
+        ],
+        "role": "HUMAN_OWNER"
+      }
+    ],
+    "escalation_hint": "regenerate via migration/master-batch2/tools/ingest_screen_blueprints_d.py; blueprint structure/action/field-semantics change re-runs the generator then this ingest; page.status progression and canonical word form PAGE.APP_* confirmation are HUMAN_OWNER seats (approve_page_blueprint; EVOLUTION_CHANNEL; ledger owner FRONTEND_ARCHITECTURE)",
+    "owner": "FRONTEND_ARCHITECTURE",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "LOCKED",
+    "evidence": "IMPLEMENTED",
+    "lifecycle": "CURRENT"
+  },
+  "axis_profile": "page_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "PAGE.QUERY_LEDGER",
+  "key_bindings": {
+    "artifact": [],
+    "code": [
+      {
+        "artifact_type": "source_dir",
+        "expect": {
+          "page_id": "PAGE-TASK-STEP-QUERY-LEDGER"
+        },
+        "match_rule": "mechanical",
+        "value": "src/pages/page-task-step-query-ledger"
+      },
+      {
+        "artifact_type": "file",
+        "expect": {
+          "route_name_exact": "PAGE-TASK-STEP-QUERY-LEDGER"
+        },
+        "match_rule": "mechanical",
+        "value": "src/app/router/routes.ts"
+      }
+    ]
+  },
+  "kind": "page_surface",
+  "notes_md": "蓝图转录（MIG-B2 转录组 D·后半 14/19，一蓝图一 surface 主对象）：源 outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-QUERY-LEDGER.yaml（bp_blueprint，pin 见 sources[0]；分母=screen-blueprints 实测 39 之字典序后半第 14 份）。\n三层对象化：结构=template_ref PAGE.LIST + regions 3 条（slot 词形均在 page-anatomy-registry 16 槽合法集内）+ states 14 项；交互=actions 3 条（ACTION.* 摆位 + PAGE_SLOT.* 槽位值引用）；字段语义=regions/slots 内联结构化字段逐字承载（源无 FIELD.* 词形 → FIELD.* 派生引用=0，诚实零）。\nsurface=V1（Page Spec 双分母之应用页侧；分母归属迁移期走信封 denominator_refs 显式空，DENOMINATOR.* 未注册）；shell 归属：shell_name=MasterApplicationShell + 内容宿主槽位 SHELL.MAIN_CONTENT（scroll/error 边界语义在槽位对象侧）。 导航归属自 navigation-structure 逐叶转录（nav_group=NAV.LEAF.PARTS-LEDGER nav_entry=NAV.LEAF.PARTS-LEDGER；物理 route 串不落对象——路由权威在 KEYBINDING.*，A7 P0）。\npage.status=APPROVED 为设计审批轴事实（与 readiness 实施就绪轴分立，禁混轴）；已登记 payload.blueprint.superseded_status_field，数值语义不篡改。\nunresolved 0 条逐条转 payload.blueprint.unresolved_exceptions（Exception Ledger 承载：显式未决，不静默丢弃、不静默裁决）。\n散文承载登记：none (honest zero) → 浓缩为信封 notes_md 摘要 + sources[0].locator.line_anchors 源指针（蓝图 YAML 正文不整本搬运）。摘要（全文按源指针回读）：none (honest zero)\ncanonical 词形：源词形 PAGE-TASK-STEP-QUERY-LEDGER → PAGE.QUERY_LEDGER（ALIASES_V0 已登记族 rename-on-ingest（batch1 §6 OBS-3）：origin=ingested，legacy 照录 aliases[]）。A6 收编词形无身份悬置：axes.confidence=LOCKED\nroute/目录权威不在本对象 payload：page↔dir 与 route_name 机械锚以 key_bindings.code 期望声明承载（值=源词形逐字），KEYBINDING.* 表对象落档仍待人工裁决（草表 status=MECHANICAL_ROUTE_NAME_MATCH）。\n本字段为人类散文，机器永不解析判卷。",
+  "origin": "ingested",
+  "payload": {
+    "actions": [
+      "ACTION.REFRESH",
+      "ACTION.EXPORT",
+      "ACTION.CONFIG"
+    ],
+    "blueprint": {
+      "actions": [
+        {
+          "action_id": "ACTION.REFRESH",
+          "business_action": "ACT-QUERY-LEDGER",
+          "capability_id": "CAP-PARTS-LEDGER",
+          "id": "PAGE-ACT-QUERY-LEDGER-1",
+          "mock": false,
+          "placement": "ACTION.REFRESH",
+          "slot": "PAGE_SLOT.SECONDARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.EXPORT",
+          "business_action": "ACT-QUERY-LEDGER",
+          "capability_id": "CAP-PARTS-LEDGER",
+          "id": "PAGE-ACT-QUERY-LEDGER-2",
+          "mock": false,
+          "placement": "ACTION.EXPORT",
+          "slot": "PAGE_SLOT.SECONDARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.CONFIG",
+          "business_action": "ACT-QUERY-LEDGER-COLUMN-CONFIG",
+          "capability_id": "CAP-PARTS-LEDGER",
+          "id": "PAGE-ACT-QUERY-LEDGER-3",
+          "mock": false,
+          "placement": "ACTION.CONFIG",
+          "slot": "PAGE_SLOT.SECONDARY_ACTIONS"
+        }
+      ],
+      "api_requirements": [
+        {
+          "classification": "QUERY",
+          "id": "API_REQ.QUERY.LEDGER.1",
+          "method": "GET",
+          "operation_id": "project_ledger_api_v1_projects__project_id__ledger_get",
+          "path": "/projects/{projectId}/ledger",
+          "source": {
+            "page": "PAGE-TASK-STEP-QUERY-LEDGER"
+          },
+          "status": "ACCEPTED",
+          "type": "query"
+        }
+      ],
+      "error_rendering": {
+        "component": "DATA.EMPTY_STATE",
+        "fallback_slot": "PAGE_SLOT.FEEDBACK",
+        "isolation": "route-level ErrorBoundary; per-query error 不外溢其他页面（协议 18/27）",
+        "protocol": "universal:rendering-state-protocol",
+        "variant": "error"
+      },
+      "navigation": {
+        "nav_entry": "NAV.LEAF.PARTS-LEDGER",
+        "nav_entry_name_zh": "零件台账",
+        "nav_group": "NAV.LEAF.PARTS-LEDGER"
+      },
+      "page_status": {
+        "axis": "design_approval",
+        "value": "APPROVED"
+      },
+      "prose_to_notes_md": [],
+      "regions": [
+        {
+          "behavior": "static",
+          "id": "REGION.PAGE_HEADER",
+          "note": "spec 25（2026-08-17 裁定）：不渲染面包屑导航行；h1 标题行默认渲染（标题 + 只读徽章）。",
+          "slots": {}
+        },
+        {
+          "behavior": "static",
+          "id": "REGION.CONTENT",
+          "slots": {
+            "PAGE_SLOT.CONTENT": {
+              "capability_id": "DATA.READONLY_TABLE",
+              "component": "DATA.READONLY_TABLE",
+              "grid": {
+                "editable": false,
+                "field_change_marking": {
+                  "color": "master-cell--changed = --mast-color-state-warning-bg（#FEF3C7）",
+                  "rule": "同记录编号（+车型）的相邻日志版本按日志ID升序逐字段比对，差异字段在新版本单元格标琥珀底（spec 02 §5.8，运行时对比无额外存储）",
+                  "skip": "首条（无上一版）不标注；「废除」状态跳过对比链（其上下版本直接比对）；排除字段 lid/ver/status/usr/tm/lines/optLines/buc 与 _ 前缀辅助键（原型 getFieldChanges skip 集合）"
+                },
+                "frozen_columns": {
+                  "left": [
+                    "#",
+                    "日志ID",
+                    "车型",
+                    "记录编号",
+                    "零件号"
+                  ],
+                  "right": [
+                    "BUC来源",
+                    "记录状态"
+                  ]
+                },
+                "header_filters": false,
+                "header_filters_note": "spec 02 §4.2/§5.4 列级筛选经列头筛选菜单满足（2026-08-17 用户裁定：移除 38449b2 引入的列头行内浮动筛选行，回归与计算车型零件清单一致的菜单形态，表头单行 36px）；记录状态默认「当前」（spec 02 §5.7 查询默认）不变，经列头筛选菜单可切换；页脚计数跟随实际显示行数",
+                "legend": "色卡=12×12 圆角色块×5（原型 12×12/圆角 4px；token 集无 --size-12，实现尺寸取 --size-13、圆角 --mast-radius-md；字段级变更标注琥珀 warning-bg；四态色块与记录状态徽章同源 token：当前 success-bg/过期 warning-bg/废除 danger-bg+opacity .7/删除 fill-default+opacity .5）+ 文案「字段级变更标注（🟡 对比同记录编号上一版差异）」+「IST/SOLL 保存 → INSERT 新日志ID记录，原当前→过期（非 UPDATE）」不变（2026-08-17 对齐原型 parts-ledger.html:66-74，原型 shell.css .status-* 色块复用徽章同源色；spec 02 §5.6/§5.7 版本化语义）",
+                "pagination": {
+                  "page_size": 1000
+                },
+                "read_only": true,
+                "record_status": "四态 当前/过期/废除/删除（spec 02 §5.7）；当前=绿、过期=琥珀、废除=红+删除线、删除=灰+删除线",
+                "row_highlight": "无（2026-08-17 用户裁定：台账为纯只读表，基线单元格=默认白底+网格线/斑马，当前状态由记录状态徽章表达；字段级变更标注琥珀格保留；原 spec 02 §4.1 + Scenario「当前版本行高亮」规则同步废止）",
+                "selection": "复选框列（#）多选，仅复选框/表头全选触发（spec 30 项目节 suppressRowClickSelection），行点击不选中",
+                "total_columns": 39
+              },
+              "pattern_id": "PATTERN.LIST_TABLE"
+            }
+          }
+        },
+        {
+          "behavior": "static",
+          "id": "REGION.FOOTER_ACTIONS",
+          "slots": {
+            "PAGE_SLOT.FOOTER_ACTIONS": {
+              "capability_id": "PATTERN.ACTION_BAR",
+              "component": "PATTERN.ACTION_BAR"
+            }
+          }
+        }
+      ],
+      "shell": {
+        "content_slot_ref": "SHELL.MAIN_CONTENT",
+        "shell_name": "MasterApplicationShell"
+      },
+      "source_document_meta": {
+        "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+        "document_type": "screen-blueprint",
+        "schema_version": 1
+      },
+      "source_page_id": "PAGE-TASK-STEP-QUERY-LEDGER",
+      "states": [
+        "idle",
+        "loading",
+        "success",
+        "empty",
+        "error",
+        "view",
+        "edit",
+        "read-only",
+        "create",
+        "pristine",
+        "dirty",
+        "validating",
+        "invalid",
+        "submitting"
+      ],
+      "superseded_status_field": {
+        "mapped_to": "design-approval-axis fact record (classification-ledger blueprint_status_axis_note: design-approval axis and implementation-readiness axis stay separate; the readiness axis lives in page-readiness-registry); object axes describe the truth object itself (lifecycle CURRENT = source is an active canonical), never mixed across axes; approval delegation via authority.delegates HUMAN_OWNER approve_page_blueprint",
+        "reason": "flat status is one word with many meanings; the design-approval semantic stays a fact record and status progression belongs to the HUMAN_OWNER approve_page_blueprint delegate seat; values are transcribed without tampering",
+        "source_field": "status",
+        "source_value": "APPROVED",
+        "upgrade_registered": true
+      },
+      "template": {
+        "id": "PAGE.LIST"
+      },
+      "unresolved_exceptions": {
+        "carrier": "exception_ledger",
+        "count": 0,
+        "items": [],
+        "rule": "unresolved items carried item-by-item as EXPLICITLY unresolved (CONVENTIONS section 3): never silently dropped, never auto-adjudicated; resolution belongs to the Owner"
+      }
+    },
+    "slots": [
+      "PAGE_SLOT.CONTENT",
+      "PAGE_SLOT.FOOTER_ACTIONS",
+      "PAGE_SLOT.SECONDARY_ACTIONS",
+      "PAGE_SLOT.FEEDBACK"
+    ],
+    "surface": "V1",
+    "template_ref": "PAGE.LIST"
+  },
+  "permits_active": [],
+  "producer": {
+    "liveness": {
+      "status": "active"
+    },
+    "merge_semantics": {
+      "backfill_if_missing": [],
+      "human_never_touched": [],
+      "refresh_fields": [
+        "payload.blueprint"
+      ]
+    },
+    "producer_id": "prod.mig_b2_ingest_screen_blueprints_d",
+    "views_maintained": [
+      "truth-index.envelope"
+    ]
+  },
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_d.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-QUERY-LEDGER.yaml",
+        "line_anchors": {
+          "note": 61,
+          "unresolved": 138
+        },
+        "prose_summarized": [],
+        "transcription": "back-half blueprint 14/19 objectified one-to-one into a page_surface object: structure (template_ref/regions/states) + interaction (actions) + inline field semantics transcribed verbatim as structured units (array order = source order); page.status kept as a design-approval fact record with a superseded_status_field registration; unresolved items carried item-by-item into payload.blueprint.unresolved_exceptions; prose narrative condensed into notes_md, never wholesale-migrated; no physical route string enters the payload"
+      },
+      "pin": {
+        "digest": "sha256:caded036c2f0bc0dd1bff37d71769977f1d11c3b71900a1f4d257795132a38a3"
+      },
+      "ref": "outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-QUERY-LEDGER.yaml",
+      "type": "bp_blueprint"
+    },
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_d.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "governance_id": "PAGE-TASK-STEP-QUERY-LEDGER",
+        "ingested_from": "migration/master-batch2/key-binding-map.batch2.draft.yaml",
+        "transcription": "supplies the page<->dir and route_name binding expectations (status MECHANICAL_ROUTE_NAME_MATCH, draft table): values quoted verbatim into key_bindings.code; the KEYBINDING.* table object itself stays pending human adjudication"
+      },
+      "pin": {
+        "digest": "sha256:2beea8f95e0770da028d5ac5c2e76e2e1266e0ba7af6e0a3faa29fe72cb501fa"
+      },
+      "ref": "migration/master-batch2/key-binding-map.batch2.draft.yaml",
+      "type": "design_seed"
+    },
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_d.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/application-shell-registry.yaml",
+        "transcription": "CONVENTIONS section 2 shell attribution values (shell_name / SHELL.MAIN_CONTENT content host) quoted verbatim into payload.blueprint.shell; scroll/error boundary semantics stay on the shell slot objects (COMPONENT.SHELL.*)"
+      },
+      "pin": {
+        "digest": "sha256:cca0a9d72941835264ee3128bd91d41a55b63a26d82c7580e067df504ae2dac7"
+      },
+      "ref": "outputs/frontend/10_planned/application-shell-registry.yaml",
+      "type": "design_seed"
+    },
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_d.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/navigation-structure.yaml",
+        "transcription": "CONVENTIONS section 2 navigation attribution: leaf transcription nav_group/nav_subgroup/nav_entry (drill-down minus route; route authority stays in the pending KEYBINDING.* table)"
+      },
+      "pin": {
+        "digest": "sha256:ec6c25f3e0723c485b32d08bf1c0129a504bba4e7b338b2fab38fb7250d98870"
+      },
+      "ref": "outputs/frontend/10_planned/navigation-structure.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "页面·查询零件清单台账"
+}

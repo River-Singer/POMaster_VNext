@@ -1,0 +1,55 @@
+{
+  "blindspot": {
+    "carrier_coverage": {
+      "grid_slot_refs_out_of_scope": 12,
+      "resolved_via_anatomy": 44,
+      "resolved_via_template_only": 0,
+      "template_slot_order_union": 14
+    },
+    "escape_ratio": 0,
+    "produced": 44,
+    "scanned": 56
+  },
+  "counts": {
+    "applicable_scanned": 44,
+    "not_applicable": 12,
+    "scanned": 56,
+    "suppressed_by_ledger": 0,
+    "unchecked_in_blindspot_estimated": 0,
+    "violations": 0
+  },
+  "denominator_refs": [],
+  "digest_excluded_fields": [
+    "duration_ms"
+  ],
+  "duration_ms": {
+    "external": 0,
+    "self": 0
+  },
+  "gate": "PAGE_COMPOSITION",
+  "gate_def": "POLICY.GATE.MIG_B2_PAGE_COMPOSITION@0.1.0",
+  "grn": "GRN-4202",
+  "items": [],
+  "items_truncated": false,
+  "metric_dialect": "page_composition:action_slot_references",
+  "ran_at_seq": 0,
+  "scope": {
+    "note": "检查范围=构图词表三方交叉：action-placement（truth POLICY.ACTION_PLACEMENT，27 actions）引用的 PAGE_SLOT.* 槽位 → page-anatomy（truth POLICY.PAGE_ANATOMY，16 槽）∪ page-template（truth POLICY.PAGE_TEMPLATE，11 模板 slot_order 并集 14 值）存在性。分母声明（batch2 CONVENTIONS §7：迁移期未注册 DENOMINATOR.* 对象，denominator_refs 显式空数组=诚实声明；候选 id/version/value/method/source 如下）：DENOMINATOR.COMPOSITION_ENTRIES@1 value=61（inventory.yaml denominators.composition_entries，value_breakdown.action_placement_actions=27 即本检查 action 基数）；本检查引用级分母=action 引用数 44（27 actions 的 default_slot/forbidden_slots[]/placement_rules.page_scope 逐引用机械计数；12 条 GRID_SLOT.* 引用属网格域不在本检查槽位集 → not_applicable）。C5 前提：三源 sha256 现场重算==truth objects sources[].pin（零漂移）；truth payload.actions/slots/templates 与源数组逐字等价断言通过。实测：44/44 引用解析成功（44 经 anatomy 16 槽闭集、0 仅经 template slot_order），悬空=0；三方闭合观察项：template slot_order 并集越出 anatomy 的值=none（0 值=三方无越界）。violations=0 → verdict=passed（action-placement 对象 notes 自述『PAGE_SLOT.* 引用经 16 槽闭集核验零越界』经本 gate 独立重扫复核成立）。路径基：items location 为 po-master 仓内相对路径。self_report_trusted=false：trust.asserted=null，判卷唯一依据 trust.recomputed。duration_ms 钉 0（byte-identical 幂等）。",
+    "size_expected_from_denominator": 44
+  },
+  "tool": "mig-b2:run_page_composition_gate",
+  "tool_version": "1.0.0",
+  "trigger": {
+    "note": "migration batch context: no kernel seq allocator; ran_at_seq pinned to 0 (deterministic batch base, A4 wall-clock-free; kernel re-sequences on ingestion); durations pinned to 0 for byte-identical rerun idempotency (batch hard rule 2)",
+    "task_ref": "MIG-B2/M4-page-composition",
+    "type": "on_demand"
+  },
+  "trust": {
+    "asserted": null,
+    "recomputed": {
+      "matches_asserted": true,
+      "violations": 0
+    }
+  },
+  "verdict": "passed"
+}

@@ -1,0 +1,94 @@
+{
+  "blindspot": {
+    "carrier_coverage": {
+      "endpoint_refs_in_registry": 26,
+      "endpoint_refs_total": 42
+    },
+    "escape_ratio": 0,
+    "produced": 21,
+    "scanned": 21
+  },
+  "counts": {
+    "applicable_scanned": 21,
+    "not_applicable": 0,
+    "scanned": 21,
+    "suppressed_by_ledger": 0,
+    "unchecked_in_blindspot_estimated": 0,
+    "violations": 8
+  },
+  "denominator_refs": [],
+  "digest_excluded_fields": [
+    "duration_ms"
+  ],
+  "duration_ms": {
+    "external": 0,
+    "self": 0
+  },
+  "gate": "PAGE_COMPOSITION",
+  "gate_def": "POLICY.GATE.MIG_B2_PAGE_COMPOSITION@0.1.0",
+  "grn": "GRN-4203",
+  "items": [
+    {
+      "location": "outputs/frontend/10_planned/navigation-transition-registry.yaml:TRANSITION-BUILD-BOM-TO-GENERATE-SNAPSHOT",
+      "message": "transition TRANSITION-BUILD-BOM-TO-GENERATE-SNAPSHOT（PAGE-TASK-STEP-BUILD-BOM → PAGE-TASK-STEP-GENERATE-SNAPSHOT）的端点 to=PAGE-TASK-STEP-GENERATE-SNAPSHOT 不在 application-page-registry pages[]（35 条）——MIG-B2/C-01 orphan 分母漂移族的下游一致性代价",
+      "rule": "transition_endpoint_not_in_registry"
+    },
+    {
+      "location": "outputs/frontend/10_planned/navigation-transition-registry.yaml:TRANSITION-BUILD-BOM-TO-SAVE-BOM",
+      "message": "transition TRANSITION-BUILD-BOM-TO-SAVE-BOM（PAGE-TASK-STEP-BUILD-BOM → PAGE-TASK-STEP-SAVE-BOM）的端点 to=PAGE-TASK-STEP-SAVE-BOM 不在 application-page-registry pages[]（35 条）——MIG-B2/C-01 orphan 分母漂移族的下游一致性代价",
+      "rule": "transition_endpoint_not_in_registry"
+    },
+    {
+      "location": "outputs/frontend/10_planned/navigation-transition-registry.yaml:TRANSITION-GENERATE-SNAPSHOT-TO-TRACK-COST-BY-SNAPSHOT",
+      "message": "transition TRANSITION-GENERATE-SNAPSHOT-TO-TRACK-COST-BY-SNAPSHOT（PAGE-TASK-STEP-GENERATE-SNAPSHOT → PAGE-TASK-STEP-TRACK-COST-BY-SNAPSHOT）的端点 from=PAGE-TASK-STEP-GENERATE-SNAPSHOT 不在 application-page-registry pages[]（35 条）——MIG-B2/C-01 orphan 分母漂移族的下游一致性代价",
+      "rule": "transition_endpoint_not_in_registry"
+    },
+    {
+      "location": "outputs/frontend/10_planned/navigation-transition-registry.yaml:TRANSITION-SAVE-BOM-TO-QUERY-LEDGER",
+      "message": "transition TRANSITION-SAVE-BOM-TO-QUERY-LEDGER（PAGE-TASK-STEP-SAVE-BOM → PAGE-TASK-STEP-QUERY-LEDGER）的端点 from=PAGE-TASK-STEP-SAVE-BOM 不在 application-page-registry pages[]（35 条）——MIG-B2/C-01 orphan 分母漂移族的下游一致性代价",
+      "rule": "transition_endpoint_not_in_registry"
+    },
+    {
+      "location": "outputs/frontend/10_planned/navigation-transition-registry.yaml:TRANSITION-SAVE-BOM-TO-WRITEBACK-LEDGER",
+      "message": "transition TRANSITION-SAVE-BOM-TO-WRITEBACK-LEDGER（PAGE-TASK-STEP-SAVE-BOM → PAGE-TASK-STEP-WRITEBACK-LEDGER）的端点 from=PAGE-TASK-STEP-SAVE-BOM/to=PAGE-TASK-STEP-WRITEBACK-LEDGER 不在 application-page-registry pages[]（35 条）——MIG-B2/C-01 orphan 分母漂移族的下游一致性代价",
+      "rule": "transition_endpoint_not_in_registry"
+    },
+    {
+      "location": "outputs/frontend/10_planned/navigation-transition-registry.yaml:TRANSITION-SELECT-VEHICLE-CONTEXT-TO-VIEW-ALL-PARTS",
+      "message": "transition TRANSITION-SELECT-VEHICLE-CONTEXT-TO-VIEW-ALL-PARTS（PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT → PAGE-TASK-STEP-VIEW-ALL-PARTS）的端点 to=PAGE-TASK-STEP-VIEW-ALL-PARTS 不在 application-page-registry pages[]（35 条）——MIG-B2/C-01 orphan 分母漂移族的下游一致性代价",
+      "rule": "transition_endpoint_not_in_registry"
+    },
+    {
+      "location": "outputs/frontend/10_planned/navigation-transition-registry.yaml:TRANSITION-VIEW-ALL-PARTS-TO-BUILD-BOM",
+      "message": "transition TRANSITION-VIEW-ALL-PARTS-TO-BUILD-BOM（PAGE-TASK-STEP-VIEW-ALL-PARTS → PAGE-TASK-STEP-BUILD-BOM）的端点 from=PAGE-TASK-STEP-VIEW-ALL-PARTS 不在 application-page-registry pages[]（35 条）——MIG-B2/C-01 orphan 分母漂移族的下游一致性代价",
+      "rule": "transition_endpoint_not_in_registry"
+    },
+    {
+      "location": "outputs/frontend/10_planned/navigation-transition-registry.yaml:TRANSITION-VIEW-ALL-PARTS-TO-QUERY-LEDGER",
+      "message": "transition TRANSITION-VIEW-ALL-PARTS-TO-QUERY-LEDGER（PAGE-TASK-STEP-VIEW-ALL-PARTS → PAGE-TASK-STEP-QUERY-LEDGER）的端点 from=PAGE-TASK-STEP-VIEW-ALL-PARTS 不在 application-page-registry pages[]（35 条）——MIG-B2/C-01 orphan 分母漂移族的下游一致性代价",
+      "rule": "transition_endpoint_not_in_registry"
+    }
+  ],
+  "items_truncated": false,
+  "metric_dialect": "page_composition:transition_endpoints",
+  "ran_at_seq": 0,
+  "scope": {
+    "note": "检查范围=navigation-transition-registry 全部 transition 的端点页面在 application-page-registry 的存在性。分母声明（batch2 CONVENTIONS §7 denominator_refs 显式空数组；候选 id/version/value/method/source）：DENOMINATOR.NAVIGATION_ENTRIES@1 value=62（inventory.yaml denominators.navigation_entries，source=navigation-structure.yaml + navigation-transition-registry.yaml）；本检查 transition 子分母=21（源 transitions[] 现场重读；源 sha256 现场重算==inventory content_sha256 sha256:3ccf3359da07e57053c2bb778ff56704a5600bc23dd7e18d21553d866a1ec3fd 零漂移）。C5 前提：registry truth（35 个 PAGE.REGISTRY.* 对象）与源 pages[] id 集合等价断言通过、sources[].pin 现场重算零漂移。实测：13/21 transition 端点两侧均在册；8 条 transition 携带悬空端点（端点级缺失 9 处，悬空端点页频次：PAGE-TASK-STEP-GENERATE-SNAPSHOT×2、PAGE-TASK-STEP-SAVE-BOM×3、PAGE-TASK-STEP-VIEW-ALL-PARTS×3、PAGE-TASK-STEP-WRITEBACK-LEDGER×1）——悬空端点全部落在 MIG-B2/C-01 在案的 4 份 orphan blueprint（PENDING_OWNER）页 id 上，未入 pages[] 但仍被过渡注册表引用，组合一致性代价如实呈现，本 gate 只报告不裁决。violations=8（per transition 计数，与分母同单位）→ verdict=failed。路径基：items location 为 MASTer_master 仓内相对路径。self_report_trusted=false：trust.asserted=null，判卷唯一依据 trust.recomputed。duration_ms 钉 0（byte-identical 幂等）。",
+    "size_expected_from_denominator": 21
+  },
+  "tool": "mig-b2:run_page_composition_gate",
+  "tool_version": "1.0.0",
+  "trigger": {
+    "note": "migration batch context: no kernel seq allocator; ran_at_seq pinned to 0 (deterministic batch base, A4 wall-clock-free; kernel re-sequences on ingestion); durations pinned to 0 for byte-identical rerun idempotency (batch hard rule 2)",
+    "task_ref": "MIG-B2/M4-page-composition",
+    "type": "on_demand"
+  },
+  "trust": {
+    "asserted": null,
+    "recomputed": {
+      "matches_asserted": true,
+      "violations": 8
+    }
+  },
+  "verdict": "failed"
+}

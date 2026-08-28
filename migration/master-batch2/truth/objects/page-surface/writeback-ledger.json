@@ -1,0 +1,320 @@
+{
+  "aliases": [
+    "PAGE-TASK-STEP-WRITEBACK-LEDGER"
+  ],
+  "authority": {
+    "delegates": [
+      {
+        "required_for": [
+          "approve_page_blueprint"
+        ],
+        "role": "HUMAN_OWNER"
+      }
+    ],
+    "escalation_hint": "regenerate via migration/master-batch2/tools/ingest_screen_blueprints_d.py; blueprint structure/action/field-semantics change re-runs the generator then this ingest; page.status progression and canonical word form PAGE.APP_* confirmation are HUMAN_OWNER seats (approve_page_blueprint; EVOLUTION_CHANNEL; ledger owner FRONTEND_ARCHITECTURE); pending conflict MIG-B2/C-01 (orphan blueprint absent from application-page-registry pages[]) -- values coexist verbatim in payload.pending_conflicts, never backfilled silently",
+    "owner": "FRONTEND_ARCHITECTURE",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "PROVISIONAL",
+    "evidence": "IMPLEMENTED",
+    "lifecycle": "CURRENT"
+  },
+  "axis_profile": "page_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "PAGE.WRITEBACK_LEDGER",
+  "key_bindings": {
+    "artifact": [],
+    "code": []
+  },
+  "kind": "page_surface",
+  "notes_md": "蓝图转录（MIG-B2 转录组 D·后半 19/19，一蓝图一 surface 主对象）：源 outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-WRITEBACK-LEDGER.yaml（bp_blueprint，pin 见 sources[0]；分母=screen-blueprints 实测 39 之字典序后半第 19 份）。\n三层对象化：结构=template_ref PAGE.DETAIL + regions 3 条（slot 词形均在 page-anatomy-registry 16 槽合法集内）+ states 14 项；交互=actions 1 条（ACTION.* 摆位 + PAGE_SLOT.* 槽位值引用）；字段语义=regions/slots 内联结构化字段逐字承载（源无 FIELD.* 词形 → FIELD.* 派生引用=0，诚实零）。\nsurface=V1（Page Spec 双分母之应用页侧；分母归属迁移期走信封 denominator_refs 显式空，DENOMINATOR.* 未注册）；shell 归属：shell_name=MasterApplicationShell + 内容宿主槽位 SHELL.MAIN_CONTENT（scroll/error 边界语义在槽位对象侧）。 本页无 navigation-structure 叶子（任务步骤页不入导航），导航归属以缺席表达（诚实缺席）。\npage.status=BLOCKED 为设计审批轴事实（与 readiness 实施就绪轴分立，禁混轴）；已登记 payload.blueprint.superseded_status_field，数值语义不篡改。\nunresolved 0 条逐条转 payload.blueprint.unresolved_exceptions（Exception Ledger 承载：显式未决，不静默丢弃、不静默裁决）。 本页为 orphan blueprint（pages[] 无条目）：MIG-B2/C-01 未决冲突在身，payload.pending_conflicts 三侧值逐字并存、PENDING_OWNER 绝不自动裁决。\n散文承载登记：notes(1) → 浓缩为信封 notes_md 摘要 + sources[0].locator.line_anchors 源指针（蓝图 YAML 正文不整本搬运）。摘要（全文按源指针回读）：notes×1：2026-08-18 用户裁决降级——无宿主页面/路由；写回台账语义已由 query-ledger 蓝图版本化规划（INSERT/过期）承接。\ncanonical 词形：源词形 PAGE-TASK-STEP-WRITEBACK-LEDGER → PAGE.WRITEBACK_LEDGER（ALIASES_V0 已登记族 rename-on-ingest（batch1 §6 OBS-3）：origin=ingested，legacy 照录 aliases[]）。axes.confidence=PROVISIONAL（悬置态：C-01 未决冲突/未裁决拟合词形在身，batch1 §2；Owner 裁决后可转 LOCKED）\nroute/目录权威不在本对象 payload：page↔dir 与 route_name 机械锚以 key_bindings.code 期望声明承载（值=源词形逐字），KEYBINDING.* 表对象落档仍待人工裁决（草表 status=RESIDUAL_NO_CODE_ANCHOR）。\n本字段为人类散文，机器永不解析判卷。",
+  "origin": "ingested",
+  "payload": {
+    "actions": [
+      "ACTION.REFRESH"
+    ],
+    "blueprint": {
+      "actions": [
+        {
+          "action_id": "ACTION.REFRESH",
+          "business_action": "ACT-WRITEBACK-LEDGER",
+          "capability_id": "CAP-PARTS-LEDGER",
+          "id": "PAGE-ACT-WRITEBACK-LEDGER-1",
+          "mock": false,
+          "placement": "ACTION.REFRESH",
+          "slot": "PAGE_SLOT.SECONDARY_ACTIONS"
+        }
+      ],
+      "api_requirements": [
+        {
+          "classification": "COMMAND",
+          "id": "API_REQ.WRITEBACK.LEDGER.1",
+          "method": "PUT",
+          "operation_id": "update_part_api_v1_projects__project_id__partlist__part_id__put",
+          "path": "/parts/{partId}",
+          "source": {
+            "page": "PAGE-TASK-STEP-WRITEBACK-LEDGER"
+          },
+          "status": "ACCEPTED",
+          "type": "command"
+        }
+      ],
+      "error_rendering": {
+        "component": "DATA.EMPTY_STATE",
+        "fallback_slot": "PAGE_SLOT.FEEDBACK",
+        "isolation": "route-level ErrorBoundary; per-query error 不外溢其他页面（协议 18/27）",
+        "protocol": "universal:rendering-state-protocol",
+        "variant": "error"
+      },
+      "page_status": {
+        "axis": "design_approval",
+        "value": "BLOCKED"
+      },
+      "prose_to_notes_md": [
+        {
+          "field": "notes",
+          "item_count": 1,
+          "line": 107
+        }
+      ],
+      "regions": [
+        {
+          "behavior": "static",
+          "id": "REGION.PAGE_HEADER",
+          "note": "工作台 tab 已显示标题，本区域不再渲染面包屑与页面标题。",
+          "slots": {
+            "PAGE_SLOT.PRIMARY_ACTIONS": {
+              "capability_id": "PATTERN.ACTION_BAR",
+              "component": "PATTERN.ACTION_BAR"
+            },
+            "PAGE_SLOT.SECONDARY_ACTIONS": {
+              "capability_id": "PATTERN.ACTION_BAR",
+              "component": "PATTERN.ACTION_BAR"
+            },
+            "PAGE_SLOT.STATUS": {
+              "capability_id": "DATA.STATUS_BADGE",
+              "component": "DATA.STATUS_BADGE",
+              "default_capability_id": "DATA.STATUS_BADGE",
+              "default_component": "DATA.STATUS_BADGE",
+              "protocol": "universal:error-handling-protocol",
+              "render_on_state": "error",
+              "variant": "danger"
+            }
+          }
+        },
+        {
+          "behavior": "static",
+          "id": "REGION.SUMMARY",
+          "slots": {
+            "PAGE_SLOT.SUMMARY": {
+              "capability_id": "PATTERN.DESCRIPTION_SUMMARY",
+              "component": "PATTERN.DESCRIPTION_SUMMARY"
+            }
+          }
+        },
+        {
+          "behavior": "render-by-state",
+          "id": "REGION.CONTENT",
+          "slots": {
+            "PAGE_SLOT.CONTENT": {
+              "capability_id": "PATTERN.DESCRIPTION_SUMMARY",
+              "component": "PATTERN.DESCRIPTION_SUMMARY",
+              "pattern_id": "PATTERN.DESCRIPTION_SUMMARY"
+            }
+          }
+        }
+      ],
+      "shell": {
+        "content_slot_ref": "SHELL.MAIN_CONTENT",
+        "shell_name": "MasterApplicationShell"
+      },
+      "source_document_meta": {
+        "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+        "document_type": "screen-blueprint",
+        "schema_version": 1
+      },
+      "source_page_id": "PAGE-TASK-STEP-WRITEBACK-LEDGER",
+      "states": [
+        "idle",
+        "loading",
+        "success",
+        "empty",
+        "error",
+        "view",
+        "edit",
+        "read-only",
+        "create",
+        "pristine",
+        "dirty",
+        "validating",
+        "invalid",
+        "submitting"
+      ],
+      "superseded_status_field": {
+        "mapped_to": "design-approval-axis fact record (classification-ledger blueprint_status_axis_note: design-approval axis and implementation-readiness axis stay separate; the readiness axis lives in page-readiness-registry); object axes describe the truth object itself (lifecycle CURRENT = source is an active canonical), never mixed across axes; approval delegation via authority.delegates HUMAN_OWNER approve_page_blueprint",
+        "reason": "flat status is one word with many meanings; the design-approval semantic stays a fact record and status progression belongs to the HUMAN_OWNER approve_page_blueprint delegate seat; values are transcribed without tampering",
+        "source_field": "status",
+        "source_value": "BLOCKED",
+        "upgrade_registered": true
+      },
+      "template": {
+        "id": "PAGE.DETAIL"
+      },
+      "unresolved_exceptions": {
+        "carrier": "exception_ledger",
+        "count": 0,
+        "items": [],
+        "rule": "unresolved items carried item-by-item as EXPLICITLY unresolved (CONVENTIONS section 3): never silently dropped, never auto-adjudicated; resolution belongs to the Owner"
+      }
+    },
+    "pending_conflicts": [
+      {
+        "conflict_id": "MIG-B2/C-01",
+        "resolution": "PENDING_OWNER",
+        "rule": "classification-ledger conflicts_pending_owner: report only, never auto-adjudicate",
+        "subject": "orphan blueprint: page present in screen-blueprints/ (39 files) and page-readiness-registry (39 entries) but absent from application-page-registry pages[] (35); three-source page denominator drift pending Owner adjudication (option_a fix denominator at 39 / option_b at 35 via Exception Ledger / option_c dual denominator by surface semantics)",
+        "values_in_conflict": [
+          {
+            "role": "blueprint directory side",
+            "source": "outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-WRITEBACK-LEDGER.yaml",
+            "value": {
+              "in_screen_blueprints": true,
+              "page_id": "PAGE-TASK-STEP-WRITEBACK-LEDGER",
+              "page_status": "BLOCKED"
+            }
+          },
+          {
+            "role": "registry side (no pages[] entry for this page; pages[]=35 vs summary self-report 32 also drift)",
+            "source": "outputs/frontend/10_planned/application-page-registry.yaml",
+            "value": {
+              "page_id_present": false,
+              "pages_len": 35,
+              "summary_total_prototype_pages": 32
+            }
+          },
+          {
+            "role": "readiness side (39 entries include this page)",
+            "source": "outputs/frontend/10_planned/page-readiness-registry.yaml",
+            "value": {
+              "page_id_present": true,
+              "status": "BLOCKED"
+            }
+          }
+        ]
+      }
+    ],
+    "slots": [
+      "PAGE_SLOT.PRIMARY_ACTIONS",
+      "PAGE_SLOT.SECONDARY_ACTIONS",
+      "PAGE_SLOT.STATUS",
+      "PAGE_SLOT.SUMMARY",
+      "PAGE_SLOT.CONTENT",
+      "PAGE_SLOT.FEEDBACK"
+    ],
+    "surface": "V1",
+    "template_ref": "PAGE.DETAIL"
+  },
+  "permits_active": [],
+  "producer": {
+    "liveness": {
+      "status": "active"
+    },
+    "merge_semantics": {
+      "backfill_if_missing": [],
+      "human_never_touched": [],
+      "refresh_fields": [
+        "payload.blueprint"
+      ]
+    },
+    "producer_id": "prod.mig_b2_ingest_screen_blueprints_d",
+    "views_maintained": [
+      "truth-index.envelope"
+    ]
+  },
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_d.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-WRITEBACK-LEDGER.yaml",
+        "line_anchors": {
+          "note": 62,
+          "notes": 107,
+          "unresolved": 106
+        },
+        "prose_summarized": [
+          {
+            "field": "notes",
+            "item_count": 1,
+            "line": 107
+          }
+        ],
+        "transcription": "back-half blueprint 19/19 objectified one-to-one into a page_surface object: structure (template_ref/regions/states) + interaction (actions) + inline field semantics transcribed verbatim as structured units (array order = source order); page.status kept as a design-approval fact record with a superseded_status_field registration; unresolved items carried item-by-item into payload.blueprint.unresolved_exceptions; prose narrative condensed into notes_md, never wholesale-migrated; no physical route string enters the payload"
+      },
+      "pin": {
+        "digest": "sha256:fde40c5461a5faa4ded2993cb4648504f9266b78f3a99ba4cb8613b0f47925fc"
+      },
+      "ref": "outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-WRITEBACK-LEDGER.yaml",
+      "type": "bp_blueprint"
+    },
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_d.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "governance_id": "PAGE-TASK-STEP-WRITEBACK-LEDGER",
+        "ingested_from": "migration/master-batch2/key-binding-map.batch2.draft.yaml",
+        "transcription": "supplies the page<->dir and route_name binding expectations (status RESIDUAL_NO_CODE_ANCHOR, draft table): values quoted verbatim into key_bindings.code; the KEYBINDING.* table object itself stays pending human adjudication"
+      },
+      "pin": {
+        "digest": "sha256:2beea8f95e0770da028d5ac5c2e76e2e1266e0ba7af6e0a3faa29fe72cb501fa"
+      },
+      "ref": "migration/master-batch2/key-binding-map.batch2.draft.yaml",
+      "type": "design_seed"
+    },
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_d.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/application-shell-registry.yaml",
+        "transcription": "CONVENTIONS section 2 shell attribution values (shell_name / SHELL.MAIN_CONTENT content host) quoted verbatim into payload.blueprint.shell; scroll/error boundary semantics stay on the shell slot objects (COMPONENT.SHELL.*)"
+      },
+      "pin": {
+        "digest": "sha256:cca0a9d72941835264ee3128bd91d41a55b63a26d82c7580e067df504ae2dac7"
+      },
+      "ref": "outputs/frontend/10_planned/application-shell-registry.yaml",
+      "type": "design_seed"
+    },
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_d.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/application-page-registry.yaml",
+        "transcription": "MIG-B2/C-01 registry-side evidence (no pages[] entry; pages[]=35 vs summary self-report 32), values quoted verbatim into payload.pending_conflicts"
+      },
+      "pin": {
+        "digest": "sha256:af5e7b75b849d5905d48e699ce2d529d95c669fdbbfec351f89ca9f62f78d252"
+      },
+      "ref": "outputs/frontend/10_planned/application-page-registry.yaml",
+      "type": "design_seed"
+    },
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_d.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/page-readiness-registry.yaml",
+        "transcription": "MIG-B2/C-01 readiness-side evidence (39 entries include this page), values quoted verbatim into payload.pending_conflicts"
+      },
+      "pin": {
+        "digest": "sha256:cd7fa5c346e0d4cf09475cab1d6abeb75e0f1d3e57f37d657bced18186b900ca"
+      },
+      "ref": "outputs/frontend/10_planned/page-readiness-registry.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "页面·回写零件清单台账"
+}

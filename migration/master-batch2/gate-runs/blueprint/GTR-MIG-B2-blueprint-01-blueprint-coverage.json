@@ -1,0 +1,54 @@
+{
+  "blindspot": {
+    "carrier_coverage": {
+      "dir_rescan": 39,
+      "inventory_list": 39,
+      "surface_objects_present": 39
+    },
+    "escape_ratio": 0.0,
+    "produced": 39,
+    "scanned": 39
+  },
+  "counts": {
+    "applicable_scanned": 39,
+    "not_applicable": 0,
+    "scanned": 39,
+    "suppressed_by_ledger": 0,
+    "unchecked_in_blindspot_estimated": 0,
+    "violations": 0
+  },
+  "denominator_refs": [],
+  "digest_excluded_fields": [
+    "duration_ms"
+  ],
+  "duration_ms": {
+    "external": 0,
+    "self": 0
+  },
+  "gate": "BLUEPRINT",
+  "gate_def": "POLICY.GATE.MIG_B2_BLUEPRINT@0.1.0",
+  "grn": "GRN-4301",
+  "items": [],
+  "items_truncated": false,
+  "metric_dialect": "blueprint:inventory_source_object_reconciliation",
+  "ran_at_seq": 0,
+  "scope": {
+    "note": "分母声明：DENOMINATOR.BLUEPRINTS@1 value=39（=inventory.yaml denominators.blueprints；batch2 CONVENTIONS §7 迁移期未注册 DENOMINATOR.* 对象 → denominator_refs 显式空数组=诚实声明）。两侧合账：inventory 蓝图清单 39 ↔ MASTer screen-blueprints/ 现场重扫 39（目录清单==inventory ref 集；逐份 sha256 现场重算==inventory content_sha256 零漂移；document_type/page.id/page.status 逐份同值断言）↔ 产出 surface 主对象（page-surface 中 payload.blueprint 承载者）实测 39 个。合账：缺失=0（PAGE-APP-*=0、PAGE-TASK-STEP-*=0；page_status 分布 none；全部落在转录组 C 附录 C 在案的字典序前半 20 份——现盘缺席，本 gate 只如实呈现，不补写、不凑样本），多余=0。在场 39 对象 local-name 拟形与转录工具规则逐一自检一致（红线 1）。violations=0 → verdict=passed（蓝图清单分母未在对象层闭合=预期真实 failed 样本；unresolved/散文后果分见 GRN-4302/4303）。路径基：items location 为 po-master 仓内相对路径。self_report_trusted=false：trust.asserted=null，判卷唯一依据 trust.recomputed；duration_ms 钉 0（byte-identical 幂等）。",
+    "size_expected_from_denominator": 39
+  },
+  "tool": "mig-b2:run_blueprint_gate",
+  "tool_version": "1.0.0",
+  "trigger": {
+    "note": "migration batch context: no kernel seq allocator; ran_at_seq pinned to 0 (deterministic batch base, A4 wall-clock-free; kernel re-sequences on ingestion); durations pinned to 0 for byte-identical rerun idempotency (batch hard rule 2)",
+    "task_ref": "MIG-B2/M4-blueprint",
+    "type": "on_demand"
+  },
+  "trust": {
+    "asserted": null,
+    "recomputed": {
+      "matches_asserted": true,
+      "violations": 0
+    }
+  },
+  "verdict": "passed"
+}

@@ -1,0 +1,1041 @@
+{
+  "aliases": [
+    "PAGE-TASK-STEP-BUILD-BOM"
+  ],
+  "authority": {
+    "delegates": [
+      {
+        "required_for": [
+          "approve_page_blueprint"
+        ],
+        "role": "HUMAN_OWNER"
+      }
+    ],
+    "escalation_hint": "regenerate via migration/master-batch2/tools/ingest_screen_blueprints_d.py; blueprint structure/action/field-semantics change re-runs the generator then this ingest; page.status progression and canonical word form PAGE.APP_* confirmation are HUMAN_OWNER seats (approve_page_blueprint; EVOLUTION_CHANNEL; ledger owner FRONTEND_ARCHITECTURE)",
+    "owner": "FRONTEND_ARCHITECTURE",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "LOCKED",
+    "evidence": "IMPLEMENTED",
+    "lifecycle": "CURRENT"
+  },
+  "axis_profile": "page_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "PAGE.BUILD_BOM",
+  "key_bindings": {
+    "artifact": [],
+    "code": [
+      {
+        "artifact_type": "source_dir",
+        "expect": {
+          "page_id": "PAGE-TASK-STEP-BUILD-BOM"
+        },
+        "match_rule": "mechanical",
+        "value": "src/pages/page-task-step-build-bom"
+      },
+      {
+        "artifact_type": "file",
+        "expect": {
+          "route_name_exact": "PAGE-TASK-STEP-BUILD-BOM"
+        },
+        "match_rule": "mechanical",
+        "value": "src/app/router/routes.ts"
+      }
+    ]
+  },
+  "kind": "page_surface",
+  "notes_md": "蓝图转录（MIG-B2 转录组 D·后半 8/19，一蓝图一 surface 主对象）：源 outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-BUILD-BOM.yaml（bp_blueprint，pin 见 sources[0]；分母=screen-blueprints 实测 39 之字典序后半第 8 份）。\n三层对象化：结构=template_ref PAGE.EDITABLE_GRID + regions 4 条（slot 词形均在 page-anatomy-registry 16 槽合法集内）+ states 14 项；交互=actions 16 条（ACTION.* 摆位 + PAGE_SLOT.* 槽位值引用）；字段语义=regions/slots 内联结构化字段逐字承载（源无 FIELD.* 词形 → FIELD.* 派生引用=0，诚实零）。 后半特有结构化附加层（逐字）：interactions、region_spacing\nsurface=V1（Page Spec 双分母之应用页侧；分母归属迁移期走信封 denominator_refs 显式空，DENOMINATOR.* 未注册）；shell 归属：shell_name=MasterApplicationShell + 内容宿主槽位 SHELL.MAIN_CONTENT（scroll/error 边界语义在槽位对象侧）。 导航归属自 navigation-structure 逐叶转录（nav_group=NAV.GROUP.G1 nav_entry=NAV.LEAF.CALC-PARTS；物理 route 串不落对象——路由权威在 KEYBINDING.*，A7 P0）。\npage.status=APPROVED 为设计审批轴事实（与 readiness 实施就绪轴分立，禁混轴）；已登记 payload.blueprint.superseded_status_field，数值语义不篡改。\nunresolved 0 条逐条转 payload.blueprint.unresolved_exceptions（Exception Ledger 承载：显式未决，不静默丢弃、不静默裁决）。\n散文承载登记：notes(5) → 浓缩为信封 notes_md 摘要 + sources[0].locator.line_anchors 源指针（蓝图 YAML 正文不整本搬运）。摘要（全文按源指针回读）：notes×5：2026-08-19/20 多项用户裁决批准/翻案/补登（G04/G05/G14/G22 删除实施、D-4 BUC 导入行只读口径改原型 pn/de/cn、D-3 Excel 导入 triggers_edit_dirty=true、D-11 保存版本链 mock 先行、G21 列配置升级 column-config modal、G11 行拖拽作废维持 NOT_APPLICABLE、G01/G02/G07/G16 并行开、G17 金额合计栏恢复+验收回改、G15 整车BNK目标价改公式只读列）。\ncanonical 词形：源词形 PAGE-TASK-STEP-BUILD-BOM → PAGE.BUILD_BOM（ALIASES_V0 已登记族 rename-on-ingest（batch1 §6 OBS-3）：origin=ingested，legacy 照录 aliases[]）。A6 收编词形无身份悬置：axes.confidence=LOCKED\nroute/目录权威不在本对象 payload：page↔dir 与 route_name 机械锚以 key_bindings.code 期望声明承载（值=源词形逐字），KEYBINDING.* 表对象落档仍待人工裁决（草表 status=MECHANICAL_ROUTE_NAME_MATCH）。\n本字段为人类散文，机器永不解析判卷。",
+  "origin": "ingested",
+  "payload": {
+    "actions": [
+      "ACTION.CREATE",
+      "ACTION.IMPORT",
+      "ACTION.SAVE",
+      "ACTION.SUBMIT",
+      "ACTION.SELECT",
+      "ACTION.REFRESH",
+      "ACTION.DELETE",
+      "ACTION.EXPORT",
+      "ACTION.ROLLBACK",
+      "ACTION.VIEW",
+      "ACTION.CONFIG"
+    ],
+    "blueprint": {
+      "actions": [
+        {
+          "action_id": "ACTION.CREATE",
+          "business_action": "ACT-BUILD-BOM-MANUAL-INPUT",
+          "capability_id": "CAP-CALC-VEHICLE-PARTS",
+          "id": "PAGE-ACT-BUILD-BOM-1",
+          "mock": false,
+          "placement": "ACTION.CREATE",
+          "slot": "PAGE_SLOT.PRIMARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.IMPORT",
+          "business_action": "ACT-BUILD-BOM-BULK-IMPORT",
+          "capability_id": "CAP-CALC-VEHICLE-PARTS",
+          "id": "PAGE-ACT-BUILD-BOM-2",
+          "mock": false,
+          "placement": "ACTION.IMPORT",
+          "slot": "PAGE_SLOT.PRIMARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.IMPORT",
+          "business_action": "ACT-BUILD-BOM-FROM-LEDGER",
+          "capability_id": "CAP-CALC-VEHICLE-PARTS",
+          "id": "PAGE-ACT-BUILD-BOM-3",
+          "mock": false,
+          "placement": "ACTION.IMPORT",
+          "slot": "PAGE_SLOT.PRIMARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.IMPORT",
+          "business_action": "ACT-BUILD-BOM-FROM-REFERENCE-VEHICLE",
+          "capability_id": "CAP-CALC-VEHICLE-PARTS",
+          "id": "PAGE-ACT-BUILD-BOM-4",
+          "mock": false,
+          "placement": "ACTION.IMPORT",
+          "slot": "PAGE_SLOT.PRIMARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.IMPORT",
+          "business_action": "ACT-BUILD-BOM-FROM-BUC",
+          "capability_id": "CAP-CALC-VEHICLE-PARTS",
+          "id": "PAGE-ACT-BUILD-BOM-5",
+          "mock": false,
+          "placement": "ACTION.IMPORT",
+          "slot": "PAGE_SLOT.PRIMARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.SAVE",
+          "business_action": "ACT-SAVE-BOM",
+          "capability_id": "CAP-CALC-VEHICLE-PARTS",
+          "id": "PAGE-ACT-BUILD-BOM-6",
+          "mock": false,
+          "placement": "ACTION.SAVE",
+          "slot": "PAGE_SLOT.PRIMARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.SUBMIT",
+          "business_action": "ACT-GENERATE-VERSION-SNAPSHOT",
+          "capability_id": "CAP-CALC-VEHICLE-PARTS",
+          "id": "PAGE-ACT-BUILD-BOM-7",
+          "mock": false,
+          "permission": "frontend-must-enforce-business-authorization: vehicle-coordinator-only",
+          "placement": "ACTION.SUBMIT",
+          "slot": "PAGE_SLOT.PRIMARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.SELECT",
+          "business_action": "ACT-SELECT-VEHICLE-CONTEXT",
+          "capability_id": "CAP-CALC-VEHICLE-PARTS",
+          "id": "PAGE-ACT-BUILD-BOM-8",
+          "mock": false,
+          "placement": "ACTION.SELECT",
+          "slot": "PAGE_SLOT.FILTERS"
+        },
+        {
+          "action_id": "ACTION.REFRESH",
+          "business_action": "ACT-REFRESH-MASTER-DATA",
+          "capability_id": "CAP-CALC-VEHICLE-PARTS",
+          "id": "PAGE-ACT-BUILD-BOM-9",
+          "mock": false,
+          "placement": "ACTION.REFRESH",
+          "slot": "PAGE_SLOT.FILTERS"
+        },
+        {
+          "action_id": "ACTION.DELETE",
+          "business_action": "ACT-BUILD-BOM-BULK-DELETE",
+          "capability_id": "CAP-CALC-VEHICLE-PARTS",
+          "id": "PAGE-ACT-BUILD-BOM-10",
+          "mock": false,
+          "placement": "ACTION.DELETE",
+          "slot": "PAGE_SLOT.PRIMARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.EXPORT",
+          "business_action": "ACT-BUILD-BOM-EXPORT-ALL",
+          "capability_id": "CAP-CALC-VEHICLE-PARTS",
+          "id": "PAGE-ACT-BUILD-BOM-11",
+          "mock": false,
+          "placement": "ACTION.EXPORT",
+          "slot": "PAGE_SLOT.PRIMARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.EXPORT",
+          "business_action": "ACT-BUILD-BOM-EXPORT-SELECTED",
+          "capability_id": "CAP-CALC-VEHICLE-PARTS",
+          "id": "PAGE-ACT-BUILD-BOM-12",
+          "mock": false,
+          "placement": "ACTION.EXPORT",
+          "slot": "PAGE_SLOT.PRIMARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.ROLLBACK",
+          "business_action": "ACT-ROLLBACK-PART",
+          "capability_id": "CAP-CALC-VEHICLE-PARTS",
+          "id": "PAGE-ACT-BUILD-BOM-13",
+          "mock": false,
+          "placement": "ACTION.ROLLBACK",
+          "slot": "PAGE_SLOT.CONTEXT_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.VIEW",
+          "business_action": "ACT-VIEW-PART-CHANGE-HISTORY",
+          "capability_id": "CAP-CALC-VEHICLE-PARTS",
+          "id": "PAGE-ACT-BUILD-BOM-14",
+          "mock": false,
+          "placement": "ACTION.VIEW",
+          "slot": "PAGE_SLOT.CONTEXT_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.VIEW",
+          "business_action": "ACT-VIEW-BOM-CHANGE-HISTORY",
+          "capability_id": "CAP-CALC-VEHICLE-PARTS",
+          "id": "PAGE-ACT-BUILD-BOM-15",
+          "mock": false,
+          "placement": "ACTION.VIEW",
+          "slot": "PAGE_SLOT.CONTEXT_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.CONFIG",
+          "business_action": "ACT-BUILD-BOM-COLUMN-CONFIG",
+          "capability_id": "CAP-CALC-VEHICLE-PARTS",
+          "id": "PAGE-ACT-BUILD-BOM-16",
+          "mock": false,
+          "placement": "ACTION.CONFIG",
+          "slot": "PAGE_SLOT.CONTEXT_ACTIONS"
+        }
+      ],
+      "api_requirements": [
+        {
+          "classification": "QUERY",
+          "id": "API_REQ.BUILD.BOM.1",
+          "method": "GET",
+          "operation_id": "carline_partlist_api_v1_projects__project_id__carlines__carline_id__partlist_get",
+          "path": "/carlines/{carlineId}/partlist",
+          "source": {
+            "page": "PAGE-TASK-STEP-BUILD-BOM"
+          },
+          "status": "ACCEPTED",
+          "type": "query"
+        },
+        {
+          "classification": "QUERY",
+          "id": "API_REQ.BUILD.BOM.2",
+          "method": "GET",
+          "operation_id": "project_ledger_api_v1_projects__project_id__ledger_get",
+          "path": "/projects/{projectId}/ledger",
+          "source": {
+            "page": "PAGE-TASK-STEP-BUILD-BOM"
+          },
+          "status": "ACCEPTED",
+          "type": "query"
+        }
+      ],
+      "error_rendering": {
+        "component": "DATA.EMPTY_STATE",
+        "fallback_slot": "PAGE_SLOT.FEEDBACK",
+        "isolation": "route-level ErrorBoundary; per-query error 不外溢其他页面（协议 18/27）",
+        "protocol": "universal:rendering-state-protocol",
+        "variant": "error"
+      },
+      "interactions": [
+        {
+          "action_id": "ACT-SELECT-VEHICLE-CONTEXT",
+          "api_operation_ids": [
+            "OP-LIST-CARLINES",
+            "OP-CARLINE-PARTLIST"
+          ],
+          "component": "CONTROL.SELECT",
+          "element": "Vehicle select dropdown",
+          "interaction_states": [
+            {
+              "event": "click",
+              "note": "opens dropdown",
+              "state_id": "STATE-PAGE-TASK-STEP-BUILD-BOM-INTERACTION-VEHICLE-SELECT-OPEN"
+            },
+            {
+              "event": "select",
+              "note": "triggers ACT-SELECT-VEHICLE-CONTEXT, calls OP-LIST-CARLINES + OP-CARLINE-PARTLIST, auto-binds carline, re-loads BOM",
+              "state_id": "STATE-PAGE-TASK-STEP-BUILD-BOM-REQUEST-LOADING"
+            },
+            {
+              "event": "blur",
+              "note": "closes dropdown, local state only",
+              "state_id": null
+            },
+            {
+              "event": "hover",
+              "note": "N/A: visual only",
+              "state_id": null
+            }
+          ],
+          "region": "REGION.FILTERS",
+          "triggers_edit_dirty": false,
+          "triggers_server_request": true
+        },
+        {
+          "action_id": null,
+          "api_operation_ids": [],
+          "component": "DATA.TAG",
+          "element": "Carline tag chip",
+          "interaction_states": [
+            {
+              "event": "hover",
+              "note": "N/A: visual tooltip only",
+              "state_id": null
+            },
+            {
+              "event": "click",
+              "note": "N/A: read-only",
+              "state_id": null
+            }
+          ],
+          "region": "REGION.FILTERS",
+          "triggers_edit_dirty": false,
+          "triggers_server_request": false
+        },
+        {
+          "action_id": "ACT-REFRESH-MASTER-DATA",
+          "api_operation_ids": [
+            "OP-REFRESH-MASTER-DATA"
+          ],
+          "component": "CONTROL.BUTTON",
+          "element": "Refresh master data button",
+          "interaction_states": [
+            {
+              "event": "click",
+              "note": "triggers ACT-REFRESH-MASTER-DATA, calls OP-REFRESH-MASTER-DATA, re-fetches vehicle/carline data",
+              "state_id": "STATE-PAGE-TASK-STEP-BUILD-BOM-REQUEST-LOADING"
+            },
+            {
+              "event": "hover",
+              "note": "N/A: visual only",
+              "state_id": null
+            }
+          ],
+          "region": "REGION.FILTERS",
+          "triggers_edit_dirty": false,
+          "triggers_server_request": true
+        },
+        {
+          "action_id": "ACT-BUILD-BOM-MANUAL-INPUT",
+          "api_operation_ids": [],
+          "component": "CONTROL.BUTTON",
+          "element": "Create button",
+          "interaction_states": [
+            {
+              "event": "click",
+              "note": "triggers ACT-BUILD-BOM-MANUAL-INPUT, adds empty row at top of grid, assigns provisional 记录编号 = max existing 记录编号 + 1 (int); backend assigns final id on save",
+              "state_id": "STATE-PAGE-TASK-STEP-BUILD-BOM-EDIT-DIRTY"
+            },
+            {
+              "event": "hover",
+              "note": "N/A: visual only",
+              "state_id": null
+            }
+          ],
+          "region": "REGION.TOOLBAR",
+          "triggers_edit_dirty": true,
+          "triggers_server_request": false
+        },
+        {
+          "action_id": "ACT-BUILD-BOM-BULK-DELETE",
+          "api_operation_ids": [],
+          "component": "CONTROL.BUTTON",
+          "element": "Delete button",
+          "interaction_states": [
+            {
+              "event": "click",
+              "note": "triggers ACT-BUILD-BOM-BULK-DELETE, physical remove for unsaved rows, logical delete (mark) for saved rows",
+              "state_id": "STATE-PAGE-TASK-STEP-BUILD-BOM-EDIT-DIRTY"
+            },
+            {
+              "event": "hover",
+              "note": "N/A: visual only",
+              "state_id": null
+            }
+          ],
+          "region": "REGION.TOOLBAR",
+          "triggers_edit_dirty": true,
+          "triggers_server_request": false
+        },
+        {
+          "action_id": "ACT-BUILD-BOM-BULK-IMPORT",
+          "api_operation_ids": [
+            "OP-IMPORT-PARTLIST",
+            "OP-QUERY-BUC-VERSIONS",
+            "OP-IMPORT-BUC",
+            "OP-PROJECT-LEDGER"
+          ],
+          "component": "CONTROL.DROPDOWN",
+          "element": "Import dropdown button",
+          "interaction_states": [
+            {
+              "event": "click",
+              "note": "opens dropdown menu",
+              "state_id": "STATE-PAGE-TASK-STEP-BUILD-BOM-INTERACTION-IMPORT-DROPDOWN-OPEN"
+            },
+            {
+              "event": "excel-import",
+              "note": "triggers ACT-BUILD-BOM-BULK-IMPORT, calls OP-IMPORT-PARTLIST, opens file upload dialog, adds imported rows 2026-08-19 修正（用户裁决 D-3）：导入语义按原型修正为客户端解析→行进网格待保存（triggers_edit_dirty=true，客户端等待保存统一写台账并走必填校验），不再导入即调 OP-IMPORT-PARTLIST 落库",
+              "state_id": "STATE-PAGE-TASK-STEP-BUILD-BOM-EDIT-DIRTY"
+            },
+            {
+              "event": "reference-vehicle-import",
+              "note": "triggers ACT-BUILD-BOM-FROM-REFERENCE-VEHICLE, opens dialog to select source vehicle + SET, adds imported rows",
+              "state_id": "STATE-PAGE-TASK-STEP-BUILD-BOM-EDIT-DIRTY"
+            },
+            {
+              "event": "from-ledger-import",
+              "note": "triggers ACT-BUILD-BOM-FROM-LEDGER, queries OP-PROJECT-LEDGER, opens pick dialog, adds selected rows 2026-08-19 裁决批准实施（mock 层）",
+              "state_id": "STATE-PAGE-TASK-STEP-BUILD-BOM-EDIT-DIRTY"
+            },
+            {
+              "event": "buc-import",
+              "note": "triggers ACT-BUILD-BOM-FROM-BUC; opens BUC import dialog, user searches part number -> OP-QUERY-BUC-VERSIONS lists that part's 「已保存」 BUC evaluation versions -> user picks one version -> OP-IMPORT-BUC adds row with 3 read-only fields (零件号/零件中文名称/单件VSI A价) + hidden buc_record_id/is_from_buc 2026-08-19 修正（用户裁决 D-4/G08/G09）：行只读字段口径按原型修正为 pn/de/cn（零件号/零件德语名称/零件中文名称，🔒+title「由 BUC 导入，本页只读」），覆盖本条原「零件号/零件中文名称/单件VSI A价」记录——原型 pn/de/cn、蓝图 pn/cn/vs、现状无只读三点口径互斥，今裁决以原型为准；VSI/Target 字段范围勾选（至少一项）与「已保存」可选/「进行中」置灰门控一并补登实施",
+              "state_id": "STATE-PAGE-TASK-STEP-BUILD-BOM-EDIT-DIRTY"
+            },
+            {
+              "event": "blur",
+              "note": "closes dropdown, local only",
+              "state_id": null
+            },
+            {
+              "event": "hover",
+              "note": "N/A: visual only",
+              "state_id": null
+            }
+          ],
+          "region": "REGION.TOOLBAR",
+          "triggers_edit_dirty": true,
+          "triggers_server_request": true
+        },
+        {
+          "action_id": "ACT-BUILD-BOM-EXPORT-ALL",
+          "api_operation_ids": [
+            "OP-EXPORT-PARTLIST"
+          ],
+          "component": "CONTROL.DROPDOWN",
+          "element": "Export dropdown button",
+          "interaction_states": [
+            {
+              "event": "click",
+              "note": "opens dropdown menu",
+              "state_id": "STATE-PAGE-TASK-STEP-BUILD-BOM-INTERACTION-EXPORT-DROPDOWN-OPEN"
+            },
+            {
+              "event": "export-all",
+              "note": "triggers ACT-BUILD-BOM-EXPORT-ALL, calls OP-EXPORT-PARTLIST, downloads CSV of all rows",
+              "state_id": "STATE-PAGE-TASK-STEP-BUILD-BOM-REQUEST-LOADING"
+            },
+            {
+              "event": "export-selected",
+              "note": "triggers ACT-BUILD-BOM-EXPORT-SELECTED, calls OP-EXPORT-PARTLIST, downloads CSV of selected rows",
+              "state_id": "STATE-PAGE-TASK-STEP-BUILD-BOM-REQUEST-LOADING"
+            },
+            {
+              "event": "blur",
+              "note": "closes dropdown, local only",
+              "state_id": null
+            },
+            {
+              "event": "hover",
+              "note": "N/A: visual only",
+              "state_id": null
+            }
+          ],
+          "region": "REGION.TOOLBAR",
+          "triggers_edit_dirty": false,
+          "triggers_server_request": true
+        },
+        {
+          "action_id": "ACT-ROLLBACK-PART",
+          "api_operation_ids": [
+            "OP-PART-CHANGE-HISTORY",
+            "OP-ROLLBACK-PART"
+          ],
+          "component": "CONTROL.BUTTON",
+          "element": "Rollback button",
+          "interaction_states": [
+            {
+              "event": "click",
+              "note": "triggers ACT-ROLLBACK-PART, calls OP-PART-CHANGE-HISTORY to query version history, opens dialog 2026-08-19 裁决批准实施（mock 层）",
+              "state_id": "STATE-PAGE-TASK-STEP-BUILD-BOM-INTERACTION-ROLLBACK-DIALOG-OPEN"
+            },
+            {
+              "event": "hover",
+              "note": "N/A: visual only",
+              "state_id": null
+            }
+          ],
+          "region": "REGION.TOOLBAR",
+          "triggers_edit_dirty": true,
+          "triggers_server_request": true
+        },
+        {
+          "action_id": "ACT-VIEW-PART-CHANGE-HISTORY",
+          "api_operation_ids": [
+            "OP-PART-CHANGE-HISTORY"
+          ],
+          "component": "CONTROL.BUTTON",
+          "element": "Single-part history button",
+          "interaction_states": [
+            {
+              "event": "click",
+              "note": "triggers ACT-VIEW-PART-CHANGE-HISTORY, calls OP-PART-CHANGE-HISTORY, opens read-only dialog 2026-08-19 裁决批准实施（mock 层）",
+              "state_id": "STATE-PAGE-TASK-STEP-BUILD-BOM-INTERACTION-PART-HISTORY-DIALOG-OPEN"
+            },
+            {
+              "event": "hover",
+              "note": "N/A: visual only",
+              "state_id": null
+            }
+          ],
+          "region": "REGION.TOOLBAR",
+          "triggers_edit_dirty": false,
+          "triggers_server_request": true
+        },
+        {
+          "action_id": "ACT-VIEW-BOM-CHANGE-HISTORY",
+          "api_operation_ids": [
+            "OP-QUERY-BOM-HISTORY"
+          ],
+          "component": "CONTROL.BUTTON",
+          "element": "BOM history button",
+          "interaction_states": [
+            {
+              "event": "click",
+              "note": "triggers ACT-VIEW-BOM-CHANGE-HISTORY, calls OP-QUERY-BOM-HISTORY, opens non-dialog panel",
+              "state_id": "STATE-PAGE-TASK-STEP-BUILD-BOM-INTERACTION-BOM-HISTORY-VIEW-OPEN"
+            },
+            {
+              "event": "hover",
+              "note": "N/A: visual only",
+              "state_id": null
+            }
+          ],
+          "region": "REGION.TOOLBAR",
+          "triggers_edit_dirty": false,
+          "triggers_server_request": true
+        },
+        {
+          "action_id": "ACT-GENERATE-VERSION-SNAPSHOT",
+          "api_operation_ids": [
+            "OP-GENERATE-SNAPSHOT"
+          ],
+          "component": "CONTROL.BUTTON",
+          "element": "Generate snapshot button",
+          "interaction_states": [
+            {
+              "event": "click",
+              "note": "triggers confirm dialog; if dirty, blocks with warning; confirm calls OP-GENERATE-SNAPSHOT",
+              "state_id": "STATE-PAGE-TASK-STEP-BUILD-BOM-INTERACTION-SNAPSHOT-CONFIRM-OPEN"
+            },
+            {
+              "event": "hover",
+              "note": "N/A: visual only",
+              "state_id": null
+            }
+          ],
+          "permission": "vehicle-coordinator-only",
+          "region": "REGION.TOOLBAR",
+          "triggers_edit_dirty": false,
+          "triggers_server_request": true
+        },
+        {
+          "action_id": "ACT-SAVE-BOM",
+          "api_operation_ids": [
+            "OP-CREATE-PART",
+            "OP-UPDATE-PART",
+            "OP-DELETE-PART"
+          ],
+          "component": "CONTROL.BUTTON",
+          "element": "Save button",
+          "interaction_states": [
+            {
+              "event": "click",
+              "note": "triggers ACT-SAVE-BOM, replaces provisional 记录编号 with backend-assigned id for new rows, calls OP-CREATE-PART (new) / OP-UPDATE-PART (modified) / OP-DELETE-PART (logically deleted), writes to ledger with log ID",
+              "state_id": "STATE-PAGE-TASK-STEP-BUILD-BOM-EDIT-SUBMITTING"
+            },
+            {
+              "event": "hover",
+              "note": "N/A: visual only",
+              "state_id": null
+            }
+          ],
+          "region": "REGION.TOOLBAR",
+          "triggers_edit_dirty": false,
+          "triggers_server_request": true
+        },
+        {
+          "action_id": "ACT-BUILD-BOM-COLUMN-CONFIG",
+          "api_operation_ids": [],
+          "component": "CONTROL.BUTTON",
+          "element": "Column config button",
+          "interaction_states": [
+            {
+              "event": "click",
+              "note": "opens column config panel",
+              "state_id": "STATE-PAGE-TASK-STEP-BUILD-BOM-INTERACTION-COLUMN-CONFIG-OPEN"
+            },
+            {
+              "event": "toggle-column",
+              "note": "toggles colVis for one of the 33 columns; page-session only, not written to browser storage 2026-08-19 修正（用户裁决 G21）：colVis page-session 口径升级为 column-config modal（弹窗形态，替代当前显隐抽屉）——字段搜索/显隐/冻结列（不固定·左·右）/多列排序（从左到右优先级）/列宽弹性（弹性列≤3）/个人视图（会话级；默认视图公共+管理员维护不可改删；# 列强制可见+左冻结）；先例 CVP 页，他页渐进 2026-08-19 批 7 实施增补：多列排序以显式排序列表承载（≤3 列，列表自上而下优先级递减）；个人视图存 sessionStorage（键 {gridKey}:column-views，会话生命周期+读时形状校验，spec 45 会话级口径——原「不落浏览器存储」表述修正为「不跨会话持久」，colVis 显隐本身仍 page-session）；MasterColumnConfig 升级为弹窗后 props 向后兼容，无 gridKey 的既有消费方（EquipmentPalette 等）走 legacy 显隐+搜索形态，渐进迁移",
+              "state_id": "STATE-PAGE-TASK-STEP-BUILD-BOM-INTERACTION-COLUMN-CONFIG-OPEN"
+            },
+            {
+              "event": "hover",
+              "note": "N/A: visual only",
+              "state_id": null
+            }
+          ],
+          "persistence": {
+            "browser_storage": "none",
+            "colVis_lifecycle": "page-session",
+            "increment_note": "persistence可后续纯增量补齐：colVis 归属不变，仅在其后加一层符合协议 45 的存储适配器。",
+            "rationale": "persisting colVis would trigger the 6 mandatory requirements of spec 45 browser-storage-protocol (per-user isolation keys, schema versioning + migration, read-time validation, cleanup triggers, quota/unavailable fallback, cross-tab conflict policy); no business requirement demands cross-session column memory."
+          },
+          "region": "REGION.TOOLBAR",
+          "triggers_edit_dirty": false,
+          "triggers_server_request": false
+        },
+        {
+          "action_id": null,
+          "api_operation_ids": [],
+          "component": "GRID.EDITABLE_GRID",
+          "element": "Grid row checkbox",
+          "interaction_states": [
+            {
+              "event": "click",
+              "note": "toggle row selection, local state only, updates selection count in STATUS bar",
+              "state_id": "STATE-PAGE-TASK-STEP-BUILD-BOM-INTERACTION-ROW-SELECTED"
+            },
+            {
+              "event": "hover",
+              "note": "N/A: visual only",
+              "state_id": null
+            }
+          ],
+          "region": "REGION.CONTENT",
+          "triggers_edit_dirty": false,
+          "triggers_server_request": false
+        },
+        {
+          "action_id": null,
+          "api_operation_ids": [],
+          "component": "GRID.EDITABLE_GRID",
+          "element": "Grid cell (editable columns)",
+          "interaction_states": [
+            {
+              "event": "double-click",
+              "note": "enters cell edit mode, AG Grid starts cell editor",
+              "state_id": "STATE-PAGE-TASK-STEP-BUILD-BOM-INTERACTION-CELL-EDIT"
+            },
+            {
+              "event": "focus",
+              "note": "cell receives focus; editable cell background becomes --mast-color-state-info-soft (dark blue) with inset 2px --mast-color-secondary stroke; stroke width unified with unsaved(orange)/editing(blue) states; AG Grid default focus border overridden to none",
+              "state_id": "STATE-PAGE-TASK-STEP-BUILD-BOM-INTERACTION-CELL-EDIT"
+            },
+            {
+              "event": "blur/commit",
+              "note": "if value changed vs original: marks the edited CELL dirty (cell-level __dirtyFields[field]=true), not whole row - only the edited cell gets --mast-color-state-unsaved-bg fill + --mast-color-state-unsaved-border stroke (orange); other cells in row keep normal state; row-level __unsaved flag also set for save-button gating; reverting to original clears that cell dirty flag. Triggers formula recalc (CALC-CVP-1, CALC-CVP-2), transition EDIT-PRISTINE -> EDIT-DIRTY",
+              "state_id": "STATE-PAGE-TASK-STEP-BUILD-BOM-EDIT-DIRTY"
+            },
+            {
+              "event": "esc",
+              "note": "cancel edit, revert to original value, no state change",
+              "state_id": null
+            },
+            {
+              "event": "hover",
+              "note": "visual: editable cell background becomes --mast-color-primary-subtle (light blue) on row hover; read-only/formula/checkbox cells do not change",
+              "state_id": null
+            }
+          ],
+          "region": "REGION.CONTENT",
+          "triggers_edit_dirty": true,
+          "triggers_server_request": false
+        },
+        {
+          "action_id": null,
+          "api_operation_ids": [],
+          "component": "GRID.EDITABLE_GRID",
+          "element": "Grid header filter",
+          "interaction_states": [
+            {
+              "event": "focus/input",
+              "note": "client-side row filter, local state only, no API call",
+              "state_id": null
+            },
+            {
+              "event": "hover",
+              "note": "N/A: visual only",
+              "state_id": null
+            }
+          ],
+          "region": "REGION.CONTENT",
+          "triggers_edit_dirty": false,
+          "triggers_server_request": false
+        },
+        {
+          "action_id": null,
+          "api_operation_ids": [],
+          "component": "GRID.EDITABLE_GRID",
+          "element": "Formula columns (整车VSI A价, 整车目标A价)",
+          "interaction_states": [
+            {
+              "event": "auto-recalc",
+              "note": "triggers automatically when dependent cell (单件VSI A价/单件目标A价/数量) is committed; runs CALC-CVP-1 and CALC-CVP-2, 4c2d precision; no API call",
+              "state_id": null
+            },
+            {
+              "event": "hover",
+              "note": "visual: formula cell background deepens to --mast-color-state-warning-hover; read-only/formula/checkbox cells do not follow editable-cell blue",
+              "state_id": null
+            },
+            {
+              "event": "focus/selected",
+              "note": "visual: formula cell background deepens further to --mast-color-state-warning-active; no edit possible",
+              "state_id": null
+            },
+            {
+              "event": "click",
+              "note": "N/A: read-only cells, no edit possible",
+              "state_id": null
+            },
+            {
+              "event": "double-click",
+              "note": "N/A: read-only cells, no edit possible",
+              "state_id": null
+            }
+          ],
+          "region": "REGION.CONTENT",
+          "triggers_edit_dirty": false,
+          "triggers_server_request": false
+        },
+        {
+          "action_id": null,
+          "api_operation_ids": [],
+          "applicability": "NOT_APPLICABLE",
+          "component": "GRID.EDITABLE_GRID",
+          "element": "Drag-and-drop (row reordering / column reordering)",
+          "interaction_states": [
+            {
+              "event": "drag",
+              "note": "NOT_APPLICABLE: no drag interaction exists on this page",
+              "state_id": null
+            },
+            {
+              "event": "drop",
+              "note": "NOT_APPLICABLE: no drop interaction exists on this page",
+              "state_id": null
+            },
+            {
+              "event": "column-drag",
+              "note": "NOT_APPLICABLE: column order is fixed by the 33-column definition; reordering is done via column config visibility only",
+              "state_id": null
+            }
+          ],
+          "not_applicable_decision": {
+            "explicit": true,
+            "future_requirement_note": "if row reordering or column reordering becomes a requirement, interaction entries must be added at that time: new interaction_states with real state_ids, matching STATE-PAGE-TASK-STEP-BUILD-BOM-INTERACTION-* rows in state-ownership-matrix, transitions in state-machine-registry, and an action_id in action-placement-registry (plus a persistence decision if the order must survive reload).",
+            "reason": "no business requirement exists for drag-and-drop on this page: row order follows 记录编号 sequence and column order follows the fixed 33-column definition. Grid drag features must stay disabled so behaviour matches this record.",
+            "recorded_because": "an omission is not discoverable; this entry exists so future audits find a decision instead of a gap.",
+            "resolved": "placeholder / not applicable"
+          },
+          "region": "REGION.CONTENT",
+          "triggers_edit_dirty": false,
+          "triggers_server_request": false
+        }
+      ],
+      "navigation": {
+        "nav_entry": "NAV.LEAF.CALC-PARTS",
+        "nav_entry_name_zh": "计算车型零件清单管理",
+        "nav_group": "NAV.GROUP.G1",
+        "nav_subgroup": "NAV.SUBGROUP.G1-2"
+      },
+      "page_status": {
+        "axis": "design_approval",
+        "value": "APPROVED"
+      },
+      "prose_to_notes_md": [
+        {
+          "field": "notes",
+          "item_count": 5,
+          "line": 699
+        }
+      ],
+      "region_spacing": {
+        "between_regions": "--mast-spacing-sm",
+        "notes": [
+          "页面容器使用 flex column + 8px 间距，对应 token --mast-spacing-sm。",
+          "标题行与筛选栏、筛选栏与工具栏、工具栏与表格区之间均为 8px。"
+        ]
+      },
+      "regions": [
+        {
+          "behavior": "static",
+          "id": "REGION.PAGE_HEADER",
+          "note": "工作台 tab 已显示标题，本区域不再渲染面包屑与页面标题；仅保留状态标签插槽。",
+          "slots": {
+            "PAGE_SLOT.STATUS": {
+              "capability_id": "DATA.TAG",
+              "component": "DATA.TAG",
+              "tags": [
+                "33 列",
+                "BOM"
+              ]
+            }
+          }
+        },
+        {
+          "behavior": "static",
+          "id": "REGION.FILTERS",
+          "layout": {
+            "component": "PATTERN.FILTER_BAR",
+            "gap": "--mast-spacing-md",
+            "internal_padding": {
+              "horizontal": "--mast-spacing-lg",
+              "vertical": "--mast-spacing-sm"
+            }
+          },
+          "slots": {
+            "PAGE_SLOT.FILTERS": {
+              "capability_id": "PATTERN.FILTER_BAR",
+              "component": "PATTERN.FILTER_BAR"
+            }
+          }
+        },
+        {
+          "behavior": "static",
+          "id": "REGION.TOOLBAR",
+          "layout": {
+            "component": "PATTERN.ACTION_BAR",
+            "gap": "6px",
+            "groups": [
+              {
+                "items": [
+                  "ACTION.CREATE",
+                  "ACTION.DELETE",
+                  "ACTION.IMPORT",
+                  "ACTION.EXPORT"
+                ],
+                "position": "left"
+              },
+              {
+                "divider_before": true,
+                "items": [
+                  "rollback",
+                  "part-change-history",
+                  "bom-change-history"
+                ],
+                "position": "middle"
+              },
+              {
+                "align": "right",
+                "items": [
+                  "generate-version-snapshot",
+                  "ACTION.SAVE",
+                  "column-config"
+                ],
+                "position": "right"
+              }
+            ],
+            "suggested_token": "--mast-spacing-2xs"
+          },
+          "slots": {
+            "PAGE_SLOT.PRIMARY_ACTIONS": {
+              "capability_id": "PATTERN.ACTION_BAR",
+              "component": "PATTERN.ACTION_BAR"
+            }
+          }
+        },
+        {
+          "behavior": "render-by-state",
+          "id": "REGION.CONTENT",
+          "slots": {
+            "PAGE_SLOT.CONTENT": {
+              "capability_id": "PATTERN.EDITABLE_GRID_SECTION",
+              "component": "PATTERN.EDITABLE_GRID_SECTION",
+              "grid": {
+                "editable": true,
+                "font_decision": {
+                  "frozen_columns_same_as_editable": true,
+                  "note": "结构层/信息层与原型一致；表现层沿用项目 design token（font-size 13px，数字 Inter），不为冻结列单独设置原型 Fira Sans"
+                },
+                "footer": {
+                  "component": "TYPOGRAPHY.DESCRIPTION",
+                  "text": "共 {count} 条 · 无翻页全量展示"
+                },
+                "formula_columns": [
+                  "整车VSI A价",
+                  "整车目标A价"
+                ],
+                "frozen_columns": {
+                  "left": [
+                    "#",
+                    "记录编号",
+                    "零件号"
+                  ],
+                  "right": []
+                },
+                "header_filters": false,
+                "read_only_columns": [
+                  "最后更改人",
+                  "最后更改时间"
+                ],
+                "total_columns": 33
+              },
+              "pattern_id": "PATTERN.EDITABLE_GRID_SECTION"
+            }
+          }
+        }
+      ],
+      "shell": {
+        "content_slot_ref": "SHELL.MAIN_CONTENT",
+        "shell_name": "MasterApplicationShell"
+      },
+      "source_document_meta": {
+        "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+        "document_type": "screen-blueprint",
+        "schema_version": 1
+      },
+      "source_page_id": "PAGE-TASK-STEP-BUILD-BOM",
+      "states": [
+        "idle",
+        "loading",
+        "success",
+        "empty",
+        "error",
+        "view",
+        "edit",
+        "read-only",
+        "create",
+        "pristine",
+        "dirty",
+        "validating",
+        "invalid",
+        "submitting"
+      ],
+      "superseded_status_field": {
+        "mapped_to": "design-approval-axis fact record (classification-ledger blueprint_status_axis_note: design-approval axis and implementation-readiness axis stay separate; the readiness axis lives in page-readiness-registry); object axes describe the truth object itself (lifecycle CURRENT = source is an active canonical), never mixed across axes; approval delegation via authority.delegates HUMAN_OWNER approve_page_blueprint",
+        "reason": "flat status is one word with many meanings; the design-approval semantic stays a fact record and status progression belongs to the HUMAN_OWNER approve_page_blueprint delegate seat; values are transcribed without tampering",
+        "source_field": "status",
+        "source_value": "APPROVED",
+        "upgrade_registered": true
+      },
+      "template": {
+        "id": "PAGE.EDITABLE_GRID"
+      },
+      "unresolved_exceptions": {
+        "carrier": "exception_ledger",
+        "count": 0,
+        "items": [],
+        "rule": "unresolved items carried item-by-item as EXPLICITLY unresolved (CONVENTIONS section 3): never silently dropped, never auto-adjudicated; resolution belongs to the Owner"
+      }
+    },
+    "slots": [
+      "PAGE_SLOT.STATUS",
+      "PAGE_SLOT.FILTERS",
+      "PAGE_SLOT.PRIMARY_ACTIONS",
+      "PAGE_SLOT.CONTENT",
+      "PAGE_SLOT.CONTEXT_ACTIONS",
+      "PAGE_SLOT.FEEDBACK"
+    ],
+    "surface": "V1",
+    "template_ref": "PAGE.EDITABLE_GRID"
+  },
+  "permits_active": [],
+  "producer": {
+    "liveness": {
+      "status": "active"
+    },
+    "merge_semantics": {
+      "backfill_if_missing": [],
+      "human_never_touched": [],
+      "refresh_fields": [
+        "payload.blueprint"
+      ]
+    },
+    "producer_id": "prod.mig_b2_ingest_screen_blueprints_d",
+    "views_maintained": [
+      "truth-index.envelope"
+    ]
+  },
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_d.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-BUILD-BOM.yaml",
+        "line_anchors": {
+          "note": 198,
+          "notes": 699,
+          "unresolved": 843
+        },
+        "prose_summarized": [
+          {
+            "field": "notes",
+            "item_count": 5,
+            "line": 699
+          }
+        ],
+        "transcription": "back-half blueprint 8/19 objectified one-to-one into a page_surface object: structure (template_ref/regions/states) + interaction (actions) + inline field semantics transcribed verbatim as structured units (array order = source order); page.status kept as a design-approval fact record with a superseded_status_field registration; unresolved items carried item-by-item into payload.blueprint.unresolved_exceptions; prose narrative condensed into notes_md, never wholesale-migrated; no physical route string enters the payload"
+      },
+      "pin": {
+        "digest": "sha256:77be8c67bb982e05b0cd9a270d52cd0a59bc23fde4c0c17922e709b863aca366"
+      },
+      "ref": "outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-BUILD-BOM.yaml",
+      "type": "bp_blueprint"
+    },
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_d.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "governance_id": "PAGE-TASK-STEP-BUILD-BOM",
+        "ingested_from": "migration/master-batch2/key-binding-map.batch2.draft.yaml",
+        "transcription": "supplies the page<->dir and route_name binding expectations (status MECHANICAL_ROUTE_NAME_MATCH, draft table): values quoted verbatim into key_bindings.code; the KEYBINDING.* table object itself stays pending human adjudication"
+      },
+      "pin": {
+        "digest": "sha256:2beea8f95e0770da028d5ac5c2e76e2e1266e0ba7af6e0a3faa29fe72cb501fa"
+      },
+      "ref": "migration/master-batch2/key-binding-map.batch2.draft.yaml",
+      "type": "design_seed"
+    },
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_d.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/application-shell-registry.yaml",
+        "transcription": "CONVENTIONS section 2 shell attribution values (shell_name / SHELL.MAIN_CONTENT content host) quoted verbatim into payload.blueprint.shell; scroll/error boundary semantics stay on the shell slot objects (COMPONENT.SHELL.*)"
+      },
+      "pin": {
+        "digest": "sha256:cca0a9d72941835264ee3128bd91d41a55b63a26d82c7580e067df504ae2dac7"
+      },
+      "ref": "outputs/frontend/10_planned/application-shell-registry.yaml",
+      "type": "design_seed"
+    },
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_d.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/navigation-structure.yaml",
+        "transcription": "CONVENTIONS section 2 navigation attribution: leaf transcription nav_group/nav_subgroup/nav_entry (drill-down minus route; route authority stays in the pending KEYBINDING.* table)"
+      },
+      "pin": {
+        "digest": "sha256:ec6c25f3e0723c485b32d08bf1c0129a504bba4e7b338b2fab38fb7250d98870"
+      },
+      "ref": "outputs/frontend/10_planned/navigation-structure.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "页面·搭建计算车型零件清单"
+}

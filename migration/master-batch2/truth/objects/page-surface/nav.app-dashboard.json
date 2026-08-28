@@ -1,0 +1,303 @@
+{
+  "aliases": [
+    "PAGE-APP-DASHBOARD"
+  ],
+  "authority": {
+    "delegates": [],
+    "escalation_hint": "regenerate via migration/master-batch2/tools/ingest_navigation.py; page-level canonical id word forms pending HUMAN_OWNER adjudication (supersede merge after adjudication); route strings withheld from payloads by design (route authority = future KEYBINDING.* page<->dir table, A7 P0); MIG-B2/C-02 dual-value in residence (shell_overrides collapsed 64px vs SHELL.SIDE_NAV 48px; override-note 220px stale) -- Owner-only adjudication; principal dual-value seat = COMPONENT.SHELL.SIDE_NAV payload.pending_conflicts",
+    "owner": "FRONTEND_ARCHITECTURE",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "PROVISIONAL",
+    "evidence": "IMPLEMENTED",
+    "lifecycle": "CURRENT"
+  },
+  "axis_profile": "page_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "PAGE.NAV.APP_DASHBOARD",
+  "key_bindings": {
+    "artifact": [],
+    "code": []
+  },
+  "kind": "page_surface",
+  "notes_md": "本对象为 MIG-B2/M2 转录组 A 导航绑定件：源 outputs/frontend/10_planned/navigation-structure.yaml 导航树逐叶转录之一（共 1 条叶项挂本页，含顶层单叶）。叶项转录：node 字段（id/name_zh/icon/page_id）整条逐字保真、父组/父子组上下文随条目；共用叶关系保真（多叶共挂一 facet）。route 字段剥离不落 payload（路由权威=KEYBINDING.* page↔dir A7 P0，待建），剥离计数见 payload.route_fields_withheld，余字段字节等价（工具断言）。导航册级承载位（nav_groups[0].page_id 源序机械规则）：payload.nav_book_facet 逐字保真 icon_policy/shell_overrides/source_directive/prototype_ref/ownership/summary 自述 + 导航树骨架 skeleton（组/子组结构序 + leaf_ids 值引用，叶细节住各页 facet，route 剥离）；shell_overrides 为 MIG-B2/C-02 冲突主语之一——双侧值逐字并存登记于 payload.pending_conflicts（主登记位=COMPONENT.SHELL.SIDE_NAV payload.pending_conflicts，M2 golden 载体；本位为导航侧宿主登记），confidence=PROVISIONAL（batch1 约定书 §2 悬置态条款），绝不自动裁决。id 赐名（非收编）：PAGE-APP-DASHBOARD → 页级拟形 PAGE.APP_DASHBOARD（HUMAN_CONFIRM_REQUIRED），origin=derived；本对象取 PAGE.NAV.* 作用域段避让同 id 互踩。key_bindings.code 为空数组（诚实空）：导航实现锚（nav-config.ts/routes.ts 路由锚）归未来 KEYBINDING.* 对象族，本 facet 不伪造锚点。 本字段为人类散文，机器永不解析判卷。",
+  "origin": "derived",
+  "payload": {
+    "canonical_id_grant": {
+      "canonical_draft": "PAGE.APP_DASHBOARD",
+      "legacy_word_form": "PAGE-APP-DASHBOARD",
+      "object_id": "PAGE.NAV.APP_DASHBOARD",
+      "registered_in": "migration/master-batch2/key-binding-map.batch2.draft.yaml alias_registrations.proposed_needs_human",
+      "rule": "ALIASES_V0 has no PAGE-APP-* rule; canonical fit granted only, never rename-on-ingest (object origin stays source-side derived); formal alias-family registration awaits vocab PR / Owner adjudication",
+      "status": "HUMAN_CONFIRM_REQUIRED"
+    },
+    "id_facet": {
+      "merge_path": "supersede",
+      "object_id": "PAGE.NAV.APP_DASHBOARD",
+      "page_level_id": "PAGE.APP_DASHBOARD",
+      "page_level_id_status": "HUMAN_CONFIRM_REQUIRED",
+      "rule": "facet-scoped id per the group-B PAGE.READINESS.* convention: concurrent page-surface transcription families hold the page-level ids in this kind-dir (ALIASES_V0 canonical PAGE.<SEG> for PAGE-TASK-STEP-*; underscore PAGE.APP_* and dotted PAGE.APP.* drafts both observed for PAGE-APP-*); this facet takes the PAGE.NAV.* scoping segment to avoid same-id clobber and merges via the supersede chain after Owner id adjudication (report only, never auto-adjudicate)"
+    },
+    "nav_book_facet": {
+      "carrier_rule": "nav_groups[0].page_id 源序机械规则（nav_groups[0]=NAV.LEAF.DASHBOARD）；册级语义单一承载位，其余 37 facet 不复制（batch2 §5 分叉隐患）",
+      "icon_policy": {
+        "allowed": [
+          "monochrome_outline_svg",
+          "monochrome_solid_svg",
+          "text_label"
+        ],
+        "forbidden": [
+          "colorful_svg",
+          "gradient_icon",
+          "photo_icon"
+        ],
+        "library": "lucide-vue-next（Lucide 单色描边 SVG，stroke=currentColor，继承文字色）",
+        "note": "原型全站 173 处 data-lucide 均为单色描边，已合规。彩色仅允许 stat 卡片背景渐变（非 icon）。",
+        "protocol": "universal:design-system-protocol",
+        "rule": "B 端产品禁彩色 SVG icon",
+        "vendor_adapter_action": "UI 阶段将 lucide-vue-next 加入 vendor-adapter-registry（adapter_dir=src/shared/ui/icon）"
+      },
+      "ownership": {
+        "implementation_target": "src/app/nav/nav-config.ts（UI 阶段按此生成）",
+        "machine_source": "本文件是原型 3 级导航结构的事实源（项目级，非 BP 派生）",
+        "protocol": "universal:routing-url-protocol + universal:permission-protocol"
+      },
+      "prototype_ref": "MASTer-prototype-20260722.html NAV 常量（L152-183）+ renderNav（L187）",
+      "shell_overrides": {
+        "breadcrumb_height": "40px",
+        "note": "宽度照抄原型(280px)，底色走 token(浅白)。UI 阶段同步更新 application-shell-registry + fill_application_shell.py 源。",
+        "sidebar_background": "var(--mast-color-bg-sidebar)（保持浅白 token 基线，不照抄原型深色 #0F172A，spec 21 禁深色大面积底色）",
+        "sidebar_collapsed_width": "64px",
+        "sidebar_width": "280px（原型宽度，覆盖 application-shell-registry 的 220px）",
+        "topbar_height": "56px"
+      },
+      "skeleton": {
+        "groups": [
+          {
+            "icon": "layout-dashboard",
+            "id": "NAV.LEAF.DASHBOARD",
+            "level": 1,
+            "name_zh": "工作台",
+            "page_id": "PAGE-APP-DASHBOARD",
+            "type": "top-level-leaf"
+          },
+          {
+            "icon": "car",
+            "id": "NAV.GROUP.G1",
+            "level": 1,
+            "name_zh": "整车成本分析管理",
+            "subgroups": [
+              {
+                "icon": "list",
+                "id": "NAV.SUBGROUP.G1-2",
+                "leaf_ids": [
+                  "NAV.LEAF.CALC-PARTS",
+                  "NAV.LEAF.PALETTE",
+                  "NAV.LEAF.ALL-PARTS"
+                ],
+                "name_zh": "全系零件清单管理"
+              },
+              {
+                "icon": "git-branch",
+                "id": "NAV.SUBGROUP.G1-3",
+                "leaf_ids": [
+                  "NAV.LEAF.BC-EVAL",
+                  "NAV.LEAF.AEKO-EVAL",
+                  "NAV.LEAF.PKO-EVAL",
+                  "NAV.LEAF.TECH-AKT"
+                ],
+                "name_zh": "零件清单变更管理"
+              },
+              {
+                "icon": "coins",
+                "id": "NAV.SUBGROUP.G1-4",
+                "leaf_ids": [
+                  "NAV.LEAF.ACCESSORY-PRICE",
+                  "NAV.LEAF.MATERIAL-PRICE",
+                  "NAV.LEAF.NOMINATION-PRICE"
+                ],
+                "name_zh": "CSC 管理"
+              }
+            ]
+          },
+          {
+            "icon": "book-open",
+            "id": "NAV.LEAF.PARTS-LEDGER",
+            "level": 1,
+            "name_zh": "零件台账",
+            "page_id": "PAGE-TASK-STEP-QUERY-LEDGER",
+            "type": "top-level-leaf"
+          },
+          {
+            "icon": "bar-chart-3",
+            "id": "NAV.GROUP.G3",
+            "leaf_ids": [
+              "NAV.LEAF.BUC",
+              "NAV.LEAF.OTHER-COST"
+            ],
+            "level": 1,
+            "name_zh": "零件成本分析管理",
+            "subgroups": []
+          },
+          {
+            "icon": "database",
+            "id": "NAV.GROUP.G4",
+            "leaf_ids": [
+              "NAV.LEAF.VEHICLE-MASTER",
+              "NAV.LEAF.MATERIAL-DB",
+              "NAV.LEAF.PROCESS-DB",
+              "NAV.LEAF.EQUIPMENT-DB",
+              "NAV.LEAF.SET-DB",
+              "NAV.LEAF.OTHER-DB",
+              "NAV.LEAF.PART-STRUCTURE",
+              "NAV.LEAF.TASK-MGMT"
+            ],
+            "level": 1,
+            "name_zh": "基础信息管理",
+            "subgroups": []
+          },
+          {
+            "icon": "file-bar-chart",
+            "id": "NAV.GROUP.G5",
+            "leaf_ids": [
+              "NAV.LEAF.BRIDGE-TABLE",
+              "NAV.LEAF.FORECAST"
+            ],
+            "level": 1,
+            "name_zh": "报表管理",
+            "subgroups": []
+          },
+          {
+            "icon": "shield",
+            "id": "NAV.GROUP.G6",
+            "leaf_ids": [
+              "NAV.LEAF.USER-MGMT",
+              "NAV.LEAF.ROLE-MGMT",
+              "NAV.LEAF.DATA-PERM",
+              "NAV.LEAF.APPROVAL"
+            ],
+            "level": 1,
+            "name_zh": "系统管理",
+            "subgroups": []
+          }
+        ]
+      },
+      "source_authority": "project-level-navigation",
+      "source_directive": "用户指令：以原型 NAV 结构为事实源（2026-08-05）。原型为混合 2~3 级导航，本项目统一为 3 级（一级菜单组 -> 二级分组 -> 叶子页）。",
+      "summary": {
+        "drill_down_pages": 3,
+        "leaf_pages": 28,
+        "level1_groups": 7,
+        "level2_subgroups": 3
+      }
+    },
+    "nav_entries": [
+      {
+        "kind": "top-level-leaf",
+        "node": {
+          "icon": "layout-dashboard",
+          "id": "NAV.LEAF.DASHBOARD",
+          "level": 1,
+          "name_zh": "工作台",
+          "page_id": "PAGE-APP-DASHBOARD",
+          "type": "top-level-leaf"
+        },
+        "parent_group": null,
+        "parent_subgroup": null
+      }
+    ],
+    "pending_conflicts": [
+      {
+        "conflict_id": "MIG-B2/C-02",
+        "registration_note": "本对象为 shell_overrides 源侧宿主（nav_book_facet 逐字保真）；C-02 双值并存登记主位=COMPONENT.SHELL.SIDE_NAV payload.pending_conflicts（M2 golden 载体）；本位为导航侧宿主登记，report only，绝不自动裁决",
+        "resolution": "PENDING_OWNER",
+        "rule": "只汇总呈报，绝不自动裁决",
+        "subject": "navigation-structure.shell_overrides 与 application-shell-registry SHELL.SIDE_NAV 宽度值两源漂移（覆盖注记所指『220px』已失真为现值 280px；折叠宽度 64px vs 48px 两值并存）",
+        "values_in_conflict": [
+          {
+            "role": "shell_overrides 侧（collapsed=64px；注记指 220px）",
+            "source": "outputs/frontend/10_planned/navigation-structure.yaml",
+            "value": {
+              "breadcrumb_height": "40px",
+              "note": "宽度照抄原型(280px)，底色走 token(浅白)。UI 阶段同步更新 application-shell-registry + fill_application_shell.py 源。",
+              "sidebar_background": "var(--mast-color-bg-sidebar)（保持浅白 token 基线，不照抄原型深色 #0F172A，spec 21 禁深色大面积底色）",
+              "sidebar_collapsed_width": "64px",
+              "sidebar_width": "280px（原型宽度，覆盖 application-shell-registry 的 220px）",
+              "topbar_height": "56px"
+            }
+          },
+          {
+            "role": "shell registry 侧（SHELL.SIDE_NAV width:280px collapsed:48px）",
+            "source": "outputs/frontend/10_planned/application-shell-registry.yaml",
+            "value": {
+              "layout": "width:280px (collapsed:48px); full-height; position:fixed; left:0; overflow-y:auto; MasterMenu; RULE-NAV-GROUPS-NOT-CAPABILITIES 按导航组而非能力组织；侧栏无可见滚动条（scrollbar-width:none）；折叠按钮置于侧栏底部",
+              "slot_id": "SHELL.SIDE_NAV"
+            }
+          }
+        ]
+      }
+    ],
+    "route_fields_withheld": {
+      "authority": "物理 route 串不落 payload（02b §6 注记）：路由权威在 KEYBINDING.* page↔dir 表（A7 P0 三类之一，对象族待建）；剥离逐字段计数，余字段字节等价断言",
+      "count": 1
+    },
+    "source_document_meta": {
+      "navigation_structure": {
+        "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+        "document_type": "navigation-structure",
+        "schema_version": 1
+      }
+    }
+  },
+  "permits_active": [],
+  "producer": {
+    "liveness": {
+      "status": "active"
+    },
+    "merge_semantics": {
+      "backfill_if_missing": [],
+      "human_never_touched": [],
+      "refresh_fields": [
+        "payload"
+      ]
+    },
+    "producer_id": "prod.mig_b2_ingest_navigation",
+    "views_maintained": [
+      "truth-index.envelope"
+    ]
+  },
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b2/ingest_navigation.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/navigation-structure.yaml",
+        "transcription": "nav tree units for PAGE-APP-DASHBOARD transcribed verbatim minus route (route authority withheld to the future KEYBINDING.* page<->dir table, A7 P0); book-level facets (icon_policy/shell_overrides/summary/skeleton) single-carried here"
+      },
+      "pin": {
+        "digest": "sha256:ec6c25f3e0723c485b32d08bf1c0129a504bba4e7b338b2fab38fb7250d98870"
+      },
+      "ref": "outputs/frontend/10_planned/navigation-structure.yaml",
+      "type": "design_seed"
+    },
+    {
+      "captured_by": "agent:mig-b2/ingest_navigation.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/application-shell-registry.yaml",
+        "transcription": "second-source pin for the MIG-B2/C-02 other-side value (live SHELL.SIDE_NAV layout quoted verbatim into payload.pending_conflicts; principal dual-value seat remains COMPONENT.SHELL.SIDE_NAV)"
+      },
+      "pin": {
+        "digest": "sha256:cca0a9d72941835264ee3128bd91d41a55b63a26d82c7580e067df504ae2dac7"
+      },
+      "ref": "outputs/frontend/10_planned/application-shell-registry.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "导航树绑定·工作台（导航册级承载位）"
+}

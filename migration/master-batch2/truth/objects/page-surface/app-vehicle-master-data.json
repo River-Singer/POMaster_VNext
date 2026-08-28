@@ -1,0 +1,736 @@
+{
+  "aliases": [
+    "PAGE-APP-VEHICLE-MASTER-DATA"
+  ],
+  "authority": {
+    "delegates": [
+      {
+        "required_for": [
+          "approve_page_blueprint"
+        ],
+        "role": "HUMAN_OWNER"
+      }
+    ],
+    "escalation_hint": "regenerate via migration/master-batch2/tools/ingest_screen_blueprints_d.py; blueprint structure/action/field-semantics change re-runs the generator then this ingest; page.status progression and canonical word form PAGE.APP_* confirmation are HUMAN_OWNER seats (approve_page_blueprint; EVOLUTION_CHANNEL; ledger owner FRONTEND_ARCHITECTURE)",
+    "owner": "FRONTEND_ARCHITECTURE",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "PROVISIONAL",
+    "evidence": "IMPLEMENTED",
+    "lifecycle": "CURRENT"
+  },
+  "axis_profile": "page_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "PAGE.APP_VEHICLE_MASTER_DATA",
+  "key_bindings": {
+    "artifact": [],
+    "code": [
+      {
+        "artifact_type": "source_dir",
+        "expect": {
+          "page_id": "PAGE-APP-VEHICLE-MASTER-DATA"
+        },
+        "match_rule": "mechanical",
+        "value": "src/pages/page-vehicle-master-data"
+      },
+      {
+        "artifact_type": "file",
+        "expect": {
+          "route_name_exact": "PAGE-APP-VEHICLE-MASTER-DATA"
+        },
+        "match_rule": "mechanical",
+        "value": "src/app/router/routes.ts"
+      }
+    ]
+  },
+  "kind": "page_surface",
+  "notes_md": "蓝图转录（MIG-B2 转录组 D·后半 4/19，一蓝图一 surface 主对象）：源 outputs/frontend/10_planned/screen-blueprints/PAGE-APP-VEHICLE-MASTER-DATA.yaml（bp_blueprint，pin 见 sources[0]；分母=screen-blueprints 实测 39 之字典序后半第 4 份）。\n三层对象化：结构=template_ref PAGE.MASTER_DETAIL + regions 4 条（slot 词形均在 page-anatomy-registry 16 槽合法集内）+ states 14 项；交互=actions 10 条（ACTION.* 摆位 + PAGE_SLOT.* 槽位值引用）；字段语义=regions/slots 内联结构化字段逐字承载（源无 FIELD.* 词形 → FIELD.* 派生引用=0，诚实零）。 后半特有结构化附加层（逐字）：template.note\nsurface=V1（Page Spec 双分母之应用页侧；分母归属迁移期走信封 denominator_refs 显式空，DENOMINATOR.* 未注册）；shell 归属：shell_name=MasterApplicationShell + 内容宿主槽位 SHELL.MAIN_CONTENT（scroll/error 边界语义在槽位对象侧）。 导航归属自 navigation-structure 逐叶转录（nav_group=NAV.GROUP.G4 nav_entry=NAV.LEAF.VEHICLE-MASTER；物理 route 串不落对象——路由权威在 KEYBINDING.*，A7 P0）。\npage.status=APPROVED 为设计审批轴事实（与 readiness 实施就绪轴分立，禁混轴）；已登记 payload.blueprint.superseded_status_field，数值语义不篡改。\nunresolved 5 条逐条转 payload.blueprint.unresolved_exceptions（Exception Ledger 承载：显式未决，不静默丢弃、不静默裁决）。\n散文承载登记：none (honest zero) → 浓缩为信封 notes_md 摘要 + sources[0].locator.line_anchors 源指针（蓝图 YAML 正文不整本搬运）。摘要（全文按源指针回读）：none (honest zero)\ncanonical 词形：源词形 PAGE-APP-VEHICLE-MASTER-DATA → PAGE.APP_VEHICLE_MASTER_DATA（PAGE-APP-*→PAGE.APP_* token 重排外推（非 ALIASES_V0 现役 8 族，key-binding-map.batch2.draft.yaml proposed_needs_human）→ HUMAN_CONFIRM_REQUIRED：对象以拟合词形落档、legacy 词形照录 aliases[]（登记不改名），origin 保持源侧 derived（非 A6 场景））。axes.confidence=PROVISIONAL（悬置态：C-01 未决冲突/未裁决拟合词形在身，batch1 §2；Owner 裁决后可转 LOCKED）\nroute/目录权威不在本对象 payload：page↔dir 与 route_name 机械锚以 key_bindings.code 期望声明承载（值=源词形逐字），KEYBINDING.* 表对象落档仍待人工裁决（草表 status=MECHANICAL_ROUTE_NAME_MATCH）。\n本字段为人类散文，机器永不解析判卷。",
+  "origin": "derived",
+  "payload": {
+    "actions": [
+      "ACTION.REFRESH",
+      "ACTION.CREATE",
+      "ACTION.EDIT",
+      "ACTION.DELETE",
+      "ACTION.VIEW",
+      "ACTION.SAVE",
+      "ACTION.SUBMIT",
+      "ACTION.EXPORT",
+      "ACTION.VIEW_FINANCE",
+      "ACTION.EDIT_FINANCE"
+    ],
+    "blueprint": {
+      "actions": [
+        {
+          "action_id": "ACTION.REFRESH",
+          "business_action": "ACT-VMD-LIST-PROJECTS",
+          "capability_id": "CAP-VEHICLE-MASTER-DATA",
+          "id": "PAGE-ACT-VEHICLE-MASTER-DATA-1",
+          "mock": false,
+          "placement": "ACTION.REFRESH",
+          "slot": "PAGE_SLOT.SECONDARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.CREATE",
+          "business_action": "ACT-VMD-CREATE-PROJECT",
+          "capability_id": "CAP-VEHICLE-MASTER-DATA",
+          "id": "PAGE-ACT-VEHICLE-MASTER-DATA-2",
+          "mock": false,
+          "placement": "ACTION.CREATE",
+          "slot": "PAGE_SLOT.PRIMARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.EDIT",
+          "business_action": "ACT-VMD-UPDATE-PROJECT",
+          "capability_id": "CAP-VEHICLE-MASTER-DATA",
+          "id": "PAGE-ACT-VEHICLE-MASTER-DATA-3",
+          "mock": false,
+          "placement": "ACTION.EDIT",
+          "slot": "PAGE_SLOT.PRIMARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.DELETE",
+          "business_action": "ACT-VMD-ARCHIVE-PROJECT",
+          "capability_id": "CAP-VEHICLE-MASTER-DATA",
+          "id": "PAGE-ACT-VEHICLE-MASTER-DATA-4",
+          "mock": false,
+          "placement": "ACTION.DELETE",
+          "slot": "PAGE_SLOT.SECONDARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.VIEW",
+          "business_action": "ACT-VMD-LIST-CARLINES",
+          "capability_id": "CAP-VEHICLE-MASTER-DATA",
+          "id": "PAGE-ACT-VEHICLE-MASTER-DATA-5",
+          "mock": false,
+          "placement": "ACTION.VIEW",
+          "slot": "PAGE_SLOT.CONTEXT_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.SAVE",
+          "business_action": "ACT-VMD-REPLACE-CARLINES",
+          "capability_id": "CAP-VEHICLE-MASTER-DATA",
+          "id": "PAGE-ACT-VEHICLE-MASTER-DATA-6",
+          "mock": false,
+          "placement": "ACTION.SAVE",
+          "slot": "PAGE_SLOT.PRIMARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.SUBMIT",
+          "business_action": "ACT-VMD-SET-CALC-CARLINE",
+          "capability_id": "CAP-VEHICLE-MASTER-DATA",
+          "id": "PAGE-ACT-VEHICLE-MASTER-DATA-7",
+          "mock": false,
+          "permission": "frontend-must-enforce-business-authorization: vehicle-coordinator-only",
+          "placement": "ACTION.SUBMIT",
+          "slot": "PAGE_SLOT.PRIMARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.EXPORT",
+          "business_action": "ACT-VMD-EXPORT-PROJECTS",
+          "capability_id": "CAP-VEHICLE-MASTER-DATA",
+          "id": "PAGE-ACT-VEHICLE-MASTER-DATA-8",
+          "mock": true,
+          "note": "导出已按项目现状实现为客户端真 CSV（UTF-8 BOM），保留不改 xlsx（2026-08-17 裁定④；原型按钮为占位）",
+          "placement": "ACTION.EXPORT",
+          "slot": "PAGE_SLOT.SECONDARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.VIEW_FINANCE",
+          "applicability": "选中车型后启用（2026-08-17 补登，20260814 原型区域一工具栏「查看财务信息」只读态）",
+          "business_action": "ACT-VMD-VIEW-FINANCE",
+          "capability_id": "CAP-VEHICLE-MASTER-DATA",
+          "id": "PAGE-ACT-VEHICLE-MASTER-DATA-9",
+          "mock": true,
+          "placement": "ACTION.VIEW_FINANCE",
+          "slot": "PAGE_SLOT.CONTEXT_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.EDIT_FINANCE",
+          "applicability": "选中车型后启用（2026-08-17 补登，20260814 原型区域一工具栏「维护财务信息」维护态）",
+          "business_action": "ACT-VMD-EDIT-FINANCE",
+          "capability_id": "CAP-VEHICLE-MASTER-DATA",
+          "id": "PAGE-ACT-VEHICLE-MASTER-DATA-10",
+          "mock": true,
+          "modal": {
+            "sections": [
+              {
+                "fields": [
+                  "KPE Target（手动输入）",
+                  "净收入比例（手动输入）"
+                ],
+                "id": "①财务相关信息"
+              },
+              {
+                "columns": [
+                  "阶段名",
+                  "开始时间",
+                  "结束时间",
+                  "动态年列（由各阶段起止推导并集）"
+                ],
+                "id": "②销量信息手动阶段表",
+                "row_actions": [
+                  "删除"
+                ],
+                "toolbar": "添加阶段"
+              },
+              {
+                "algorithm": "年列由阶段起止推导；活跃月数=该年落在阶段内的月数；月均=年销量/活跃月数取整；同年多月段叠加",
+                "columns": "年份 × Jan..Dec + SUM",
+                "id": "③销量明细模拟自动生成",
+                "style": "自动值 success 色系标记（非渐变，tokens 克制）",
+                "tests": "月度模拟按原型算法移植为纯函数 + vitest（2026-08-17 批次1）"
+              },
+              {
+                "columns": [
+                  "附件类别",
+                  "文件",
+                  "操作（预览/删除）"
+                ],
+                "id": "④附件管理",
+                "storage": "真实存储 NEEDS_BACKEND_REVIEW（API_REQ.CROSS.ATTACHMENT.STORE）；本轮 file input 控件",
+                "toolbar": "添加附件"
+              }
+            ],
+            "title_suffix": "— 车型名称",
+            "validation": "阶段间隙/重叠警告（confirm 级：可继续保存但须确认；间隙=部分月份无模拟数据、重叠=重叠月份模拟叠加）",
+            "width": "1000px"
+          },
+          "placement": "ACTION.EDIT_FINANCE",
+          "slot": "PAGE_SLOT.PRIMARY_ACTIONS"
+        }
+      ],
+      "api_requirements": [
+        {
+          "classification": "QUERY",
+          "id": "API_REQ.VEHICLE.MASTER.DATA.1",
+          "method": "GET",
+          "operation_id": "list_projects_api_v1_projects_get",
+          "path": "/api/v1/projects",
+          "source": {
+            "page": "PAGE-APP-VEHICLE-MASTER-DATA"
+          },
+          "status": "ACCEPTED",
+          "type": "query"
+        },
+        {
+          "classification": "COMMAND",
+          "id": "API_REQ.VEHICLE.MASTER.DATA.2",
+          "method": "POST",
+          "operation_id": "create_project_api_v1_projects_post",
+          "path": "/api/v1/projects",
+          "source": {
+            "page": "PAGE-APP-VEHICLE-MASTER-DATA"
+          },
+          "status": "ACCEPTED",
+          "type": "command"
+        },
+        {
+          "classification": "COMMAND",
+          "id": "API_REQ.VEHICLE.MASTER.DATA.3",
+          "method": "PUT",
+          "operation_id": "update_project_api_v1_projects__project_id__put",
+          "path": "/api/v1/projects/{project_id}",
+          "source": {
+            "page": "PAGE-APP-VEHICLE-MASTER-DATA"
+          },
+          "status": "ACCEPTED",
+          "type": "command"
+        },
+        {
+          "classification": "COMMAND",
+          "id": "API_REQ.VEHICLE.MASTER.DATA.4",
+          "method": "POST",
+          "operation_id": "archive_project_api_v1_projects__project_id__archive_post",
+          "path": "/api/v1/projects/{project_id}/archive",
+          "source": {
+            "page": "PAGE-APP-VEHICLE-MASTER-DATA"
+          },
+          "status": "ACCEPTED",
+          "type": "command"
+        },
+        {
+          "classification": "QUERY",
+          "id": "API_REQ.VEHICLE.MASTER.DATA.5",
+          "method": "GET",
+          "operation_id": "list_carlines_api_v1_projects__project_id__carlines_get",
+          "path": "/api/v1/projects/{project_id}/carlines",
+          "source": {
+            "page": "PAGE-APP-VEHICLE-MASTER-DATA"
+          },
+          "status": "ACCEPTED",
+          "type": "query"
+        },
+        {
+          "classification": "COMMAND",
+          "id": "API_REQ.VEHICLE.MASTER.DATA.6",
+          "method": "PUT",
+          "operation_id": "replace_carlines_api_v1_projects__project_id__carlines_put",
+          "path": "/api/v1/projects/{project_id}/carlines",
+          "source": {
+            "page": "PAGE-APP-VEHICLE-MASTER-DATA"
+          },
+          "status": "ACCEPTED",
+          "type": "command"
+        },
+        {
+          "classification": "COMMAND",
+          "id": "API_REQ.VEHICLE.MASTER.DATA.7",
+          "method": "PUT",
+          "operation_id": "set_calc_carline_api_v1_projects__project_id__calc_carline_put",
+          "path": "/api/v1/projects/{project_id}/calc-carline",
+          "source": {
+            "page": "PAGE-APP-VEHICLE-MASTER-DATA"
+          },
+          "status": "ACCEPTED",
+          "type": "command"
+        },
+        {
+          "classification": "COMMAND",
+          "id": "API_REQ.VEHICLE.MASTER.DATA.FINANCE",
+          "method": "PUT",
+          "note": "财务弹窗 get/save（GET+PUT：KPE Target/净收入比例/销量阶段表/附件）；openapi 无对应端点，批次1 走 mock（2026-08-17 批次0 补登）",
+          "operation_id": "OP-VEHICLE-FINANCE",
+          "path": "/api/v1/projects/{project_id}/finance",
+          "source": {
+            "page": "PAGE-APP-VEHICLE-MASTER-DATA"
+          },
+          "status": "NEEDS_BACKEND_REVIEW",
+          "type": "command"
+        },
+        {
+          "classification": "QUERY",
+          "id": "API_REQ.VEHICLE.MASTER.DATA.FROZEN.LIST",
+          "method": "GET",
+          "note": "区域三冻结版本列表（按生成时间倒序）+ 行导出（客户端真 CSV UTF-8 BOM）；openapi 无对应端点，批次1 走 mock（2026-08-17 批次0 补登）；台账快照过滤见 API_REQ.QUERY.LEDGER.SNAPSHOT（PAGE-TASK-STEP-QUERY-LEDGER）",
+          "operation_id": "OP-FROZEN-VERSIONS-LIST",
+          "path": "/api/v1/projects/{project_id}/carlines/{carline_id}/frozen-versions",
+          "source": {
+            "page": "PAGE-APP-VEHICLE-MASTER-DATA"
+          },
+          "status": "NEEDS_BACKEND_REVIEW",
+          "type": "query"
+        },
+        {
+          "classification": "COMMAND",
+          "id": "API_REQ.CROSS.ATTACHMENT.STORE",
+          "method": "POST",
+          "note": "附件上传存储（类别+文件+增删），财务弹窗④/设备明细基础信息/材料面板共用；本轮 file input 控件 + mock 存储（2026-08-17 批次0 补登）",
+          "operation_id": "OP-ATTACHMENT-STORE",
+          "path": "/api/v1/attachments",
+          "source": {
+            "page": "PAGE-APP-VEHICLE-MASTER-DATA"
+          },
+          "status": "NEEDS_BACKEND_REVIEW",
+          "type": "command"
+        }
+      ],
+      "error_rendering": {
+        "component": "DATA.EMPTY_STATE",
+        "fallback_slot": "PAGE_SLOT.FEEDBACK",
+        "isolation": "route-level ErrorBoundary; per-query error 不外溢其他页面（协议 18/27）",
+        "protocol": "universal:rendering-state-protocol",
+        "variant": "error"
+      },
+      "navigation": {
+        "nav_entry": "NAV.LEAF.VEHICLE-MASTER",
+        "nav_entry_name_zh": "车型主数据",
+        "nav_group": "NAV.GROUP.G4"
+      },
+      "page_status": {
+        "axis": "design_approval",
+        "value": "APPROVED"
+      },
+      "prose_to_notes_md": [],
+      "regions": [
+        {
+          "behavior": "static",
+          "id": "REGION.PAGE_HEADER",
+          "note": "工作台 tab 已显示标题，本区域不再渲染面包屑与页面标题。",
+          "slots": {
+            "PAGE_SLOT.PRIMARY_ACTIONS": {
+              "capability_id": "PATTERN.ACTION_BAR",
+              "component": "PATTERN.ACTION_BAR"
+            },
+            "PAGE_SLOT.SECONDARY_ACTIONS": {
+              "capability_id": "PATTERN.ACTION_BAR",
+              "component": "PATTERN.ACTION_BAR"
+            },
+            "PAGE_SLOT.STATUS": {
+              "capability_id": "DATA.STATUS_BADGE",
+              "component": "DATA.STATUS_BADGE",
+              "default_capability_id": "DATA.STATUS_BADGE",
+              "default_component": "DATA.STATUS_BADGE",
+              "protocol": "universal:error-handling-protocol",
+              "render_on_state": "error",
+              "variant": "danger"
+            }
+          }
+        },
+        {
+          "behavior": "static",
+          "id": "REGION.MASTER",
+          "slots": {
+            "PAGE_SLOT.SIDEBAR": {
+              "capability_id": "LAYOUT.SPLIT_PANE",
+              "component": "LAYOUT.SPLIT_PANE",
+              "grid": {
+                "column_source": "20260814 原型 vehicle-master-data.html 区域一（2026-08-17 裁定；原 spec §3.1 9 列裁剪口径废止）",
+                "columns": [
+                  {
+                    "frozen": "left",
+                    "key": "_check",
+                    "name": "勾选",
+                    "type": "checkbox",
+                    "width": "32px"
+                  },
+                  {
+                    "key": "id",
+                    "name": "#",
+                    "type": "number"
+                  },
+                  {
+                    "key": "name",
+                    "name": "车型名称",
+                    "type": "string"
+                  },
+                  {
+                    "key": "category",
+                    "name": "类别",
+                    "type": "enum"
+                  },
+                  {
+                    "key": "brand",
+                    "name": "品牌",
+                    "type": "string"
+                  },
+                  {
+                    "key": "segment",
+                    "name": "细分市场",
+                    "type": "string"
+                  },
+                  {
+                    "key": "type",
+                    "name": "车型种类",
+                    "type": "string"
+                  },
+                  {
+                    "key": "platform",
+                    "name": "车型平台",
+                    "type": "string"
+                  },
+                  {
+                    "key": "factory",
+                    "name": "工厂",
+                    "type": "string"
+                  },
+                  {
+                    "derived": "由 SOP 时间派生 是/否（SOP 时间早于等于当前月=是）",
+                    "key": "isSop",
+                    "name": "是否SOP",
+                    "type": "boolean-text"
+                  },
+                  {
+                    "key": "owner",
+                    "name": "项目负责人",
+                    "type": "string"
+                  },
+                  {
+                    "key": "_act",
+                    "name": "操作",
+                    "row_actions": [
+                      "查看",
+                      "编辑"
+                    ],
+                    "type": "button",
+                    "width": "60px"
+                  }
+                ],
+                "interaction": "选中车型（供区域二/三联动与财务按钮启用）——2026-08-17 全局裁定：行选中仅复选框触发，不跟原型行点击选中/双击编辑",
+                "sort": "按创建时间升序（最早创建在前）",
+                "total_columns": 12
+              },
+              "note": "原型 11 列 + 前端 # 行号列 = 12 列；20 字段全集在新增/编辑弹窗维护（查询界面字段 8 必填 + 基础信息字段选填）。"
+            }
+          }
+        },
+        {
+          "behavior": "render-by-state",
+          "id": "REGION.DETAIL",
+          "slots": {
+            "PAGE_SLOT.CONTENT": {
+              "capability_id": "PATTERN.LIST_TABLE",
+              "component": "PATTERN.LIST_TABLE",
+              "grid": {
+                "business_rules": [
+                  "EBR% 硬性校验：同一车型下所有 carline EBR% 之和必须 = 100%，否则报错拒绝保存（spec §5.2）；区域二标题行实时显示 EBR% 总和合规/违规状态",
+                  "清单搭建版本唯一性：一个车型下仅一个 carline 为 TRUE，置 TRUE 自动互斥其他为 FALSE（spec §5.3）",
+                  "清单搭建版本锁定：hasFrozen（该条线已有冻结版本）|| hasLedgerData（已用于 BOM 搭建保存/已生成台账）任一为真时禁改计算车型标记（spec §5.4；原型 saveCarline 同口径，2026-08-17 补登分支显式化）",
+                  "项目编号不可修改：仅新增时可输入，保存后锁定（spec §5.1）",
+                  "车型清单为空：新增车型弹窗车型名称下拉无可选（无「启用」且分配给当前协调的记录）时提示接线——copy 已有：「暂无可新增的车型，请联系业务管理员在数据权限管理中分配车型」（2026-08-17 补登 catalogEmpty 接线）"
+                ],
+                "carline_crud_via": "replace_carlines 批量替换（增/改/删统一为整集 PUT），EBR% 校验随替换 payload",
+                "column_source": "20260814 原型 vehicle-master-data.html 区域二（2026-08-17 裁定；原 spec §3.2+§4.2 7 列口径废止）",
+                "columns": [
+                  {
+                    "frozen": "left",
+                    "key": "_check",
+                    "name": "勾选",
+                    "type": "checkbox",
+                    "width": "32px"
+                  },
+                  {
+                    "key": "id",
+                    "name": "#",
+                    "type": "number"
+                  },
+                  {
+                    "key": "carlineCode",
+                    "name": "条线编号",
+                    "type": "string"
+                  },
+                  {
+                    "key": "carlineName",
+                    "name": "条线名称",
+                    "type": "string"
+                  },
+                  {
+                    "key": "ebr",
+                    "name": "装车率",
+                    "suffix": "%",
+                    "type": "number"
+                  },
+                  {
+                    "key": "code6",
+                    "name": "六位码",
+                    "type": "string"
+                  },
+                  {
+                    "key": "code5",
+                    "name": "五位码",
+                    "type": "string"
+                  },
+                  {
+                    "badge": "calc-badge（计算车型=Y 徽章）",
+                    "key": "calc",
+                    "name": "计算车型",
+                    "type": "badge"
+                  },
+                  {
+                    "key": "_act",
+                    "name": "操作",
+                    "row_actions": [
+                      "编辑"
+                    ],
+                    "type": "button",
+                    "width": "60px"
+                  }
+                ],
+                "row_selection": "2026-08-17 全局裁定：行选中仅复选框触发（区域三联动取勾选条线），不跟原型行点击选中/双击编辑",
+                "total_columns": 9
+              },
+              "pattern_id": "PATTERN.LIST_TABLE"
+            }
+          }
+        },
+        {
+          "behavior": "render-by-state",
+          "id": "REGION.FROZEN",
+          "slots": {
+            "PAGE_SLOT.CONTENT": {
+              "capability_id": "PATTERN.LIST_TABLE",
+              "component": "PATTERN.LIST_TABLE",
+              "grid": {
+                "column_source": "20260814 原型 vehicle-master-data.html 区域三（冻结版本列表；2026-08-17 批次0 补登，spec §4.3 原标记 deferred 现落地）",
+                "columns": [
+                  {
+                    "key": "snapshotName",
+                    "name": "快照版本名称",
+                    "type": "string"
+                  },
+                  {
+                    "key": "createdAt",
+                    "name": "生成时间",
+                    "type": "datetime"
+                  },
+                  {
+                    "key": "createdBy",
+                    "name": "生成人",
+                    "type": "string"
+                  },
+                  {
+                    "key": "partCount",
+                    "name": "零件数量",
+                    "type": "number"
+                  },
+                  {
+                    "key": "_act",
+                    "name": "操作",
+                    "row_actions": [
+                      "在线预览",
+                      "导出Excel"
+                    ],
+                    "type": "button",
+                    "width": "160px"
+                  }
+                ],
+                "empty_state": "该条线暂无冻结版本（快照由计算车型页面「生成快照版本」触发）",
+                "linkage": "选中车型（区域一复选）+ 勾选条线（区域二复选）后展示该条线冻结版本；未满足时提示先选择车型和条线",
+                "row_actions_detail": {
+                  "在线预览": "router 跳 /ledger/query 带 snapshot query 参数；台账按快照真实过滤 NEEDS_BACKEND_REVIEW（API_REQ.QUERY.LEDGER.SNAPSHOT），mock 期按快照行集过滤",
+                  "导出Excel": "实现为客户端真 CSV（UTF-8 BOM，文件名 .csv）——偏差注记：项目无 xlsx 依赖，不落 .xlsx（2026-08-17 裁定④）"
+                },
+                "sort": "按生成时间倒序（最新在前）",
+                "total_columns": 5
+              },
+              "pattern_id": "PATTERN.LIST_TABLE"
+            }
+          }
+        }
+      ],
+      "shell": {
+        "content_slot_ref": "SHELL.MAIN_CONTENT",
+        "shell_name": "MasterApplicationShell"
+      },
+      "source_document_meta": {
+        "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+        "document_type": "screen-blueprint",
+        "schema_version": 1
+      },
+      "source_page_id": "PAGE-APP-VEHICLE-MASTER-DATA",
+      "states": [
+        "idle",
+        "loading",
+        "success",
+        "empty",
+        "error",
+        "view",
+        "edit",
+        "read-only",
+        "create",
+        "pristine",
+        "dirty",
+        "validating",
+        "invalid",
+        "submitting"
+      ],
+      "superseded_status_field": {
+        "mapped_to": "design-approval-axis fact record (classification-ledger blueprint_status_axis_note: design-approval axis and implementation-readiness axis stay separate; the readiness axis lives in page-readiness-registry); object axes describe the truth object itself (lifecycle CURRENT = source is an active canonical), never mixed across axes; approval delegation via authority.delegates HUMAN_OWNER approve_page_blueprint",
+        "reason": "flat status is one word with many meanings; the design-approval semantic stays a fact record and status progression belongs to the HUMAN_OWNER approve_page_blueprint delegate seat; values are transcribed without tampering",
+        "source_field": "status",
+        "source_value": "APPROVED",
+        "upgrade_registered": true
+      },
+      "template": {
+        "id": "PAGE.MASTER_DETAIL",
+        "note": "布局裁定（2026-08-17，20260814 原型）：split-pane 双区改为三卡片纵向——区域一 40% / 区域二 30% / 区域三 flex-1（各卡片内部滚动）；区域三为 REGION.FROZEN 冻结版本列表"
+      },
+      "unresolved_exceptions": {
+        "carrier": "exception_ledger",
+        "count": 5,
+        "items": [
+          "TODO: backend contract missing for carline frozen-versions/snapshots — 待后端补 openapi operationId（REGION.FROZEN 2026-08-17 批次0 已按原型补登，列表/导出走 mock：API_REQ.VEHICLE.MASTER.DATA.FROZEN.LIST）",
+          "TODO: backend contract missing for project-export — 待后端补 openapi operationId（现实现为客户端真 CSV，保留）",
+          "TODO: backend contract missing for vehicle-finance get/save — 待后端补 openapi operationId（财务弹窗四节批次1 走 mock：API_REQ.VEHICLE.MASTER.DATA.FINANCE）",
+          "RESOLVED-2026-08-17: vehicle-list-columns: 车型列表列集按 20260814 原型定为 勾选/车型名称/类别/品牌/细分市场/车型种类/车型平台/工厂/是否SOP(派生)/项目负责人/操作（+前端 # 行号列，共 12 列）；原 9 列裁剪口径废止；完整 20 字段在新增/编辑弹窗维护",
+          "UNRESOLVED: delete-cascade-semantics: 删除车型映射为 archive_project(逻辑归档)，spec §5.6 级联删除 carline+冻结版本 的级联语义由后端实现，前端不臆造"
+        ],
+        "rule": "unresolved items carried item-by-item as EXPLICITLY unresolved (CONVENTIONS section 3): never silently dropped, never auto-adjudicated; resolution belongs to the Owner"
+      }
+    },
+    "slots": [
+      "PAGE_SLOT.PRIMARY_ACTIONS",
+      "PAGE_SLOT.SECONDARY_ACTIONS",
+      "PAGE_SLOT.STATUS",
+      "PAGE_SLOT.SIDEBAR",
+      "PAGE_SLOT.CONTENT",
+      "PAGE_SLOT.CONTEXT_ACTIONS",
+      "PAGE_SLOT.FEEDBACK"
+    ],
+    "surface": "V1",
+    "template_ref": "PAGE.MASTER_DETAIL"
+  },
+  "permits_active": [],
+  "producer": {
+    "liveness": {
+      "status": "active"
+    },
+    "merge_semantics": {
+      "backfill_if_missing": [],
+      "human_never_touched": [],
+      "refresh_fields": [
+        "payload.blueprint"
+      ]
+    },
+    "producer_id": "prod.mig_b2_ingest_screen_blueprints_d",
+    "views_maintained": [
+      "truth-index.envelope"
+    ]
+  },
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_d.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-VEHICLE-MASTER-DATA.yaml",
+        "line_anchors": {
+          "note": 76,
+          "unresolved": 546
+        },
+        "prose_summarized": [],
+        "transcription": "back-half blueprint 4/19 objectified one-to-one into a page_surface object: structure (template_ref/regions/states) + interaction (actions) + inline field semantics transcribed verbatim as structured units (array order = source order); page.status kept as a design-approval fact record with a superseded_status_field registration; unresolved items carried item-by-item into payload.blueprint.unresolved_exceptions; prose narrative condensed into notes_md, never wholesale-migrated; no physical route string enters the payload"
+      },
+      "pin": {
+        "digest": "sha256:e60ea53ad8c15360660e41ef043af02f4be83f272adfc537389b2089713d6d9c"
+      },
+      "ref": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-VEHICLE-MASTER-DATA.yaml",
+      "type": "bp_blueprint"
+    },
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_d.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "governance_id": "PAGE-APP-VEHICLE-MASTER-DATA",
+        "ingested_from": "migration/master-batch2/key-binding-map.batch2.draft.yaml",
+        "transcription": "supplies the page<->dir and route_name binding expectations (status MECHANICAL_ROUTE_NAME_MATCH, draft table): values quoted verbatim into key_bindings.code; the KEYBINDING.* table object itself stays pending human adjudication"
+      },
+      "pin": {
+        "digest": "sha256:2beea8f95e0770da028d5ac5c2e76e2e1266e0ba7af6e0a3faa29fe72cb501fa"
+      },
+      "ref": "migration/master-batch2/key-binding-map.batch2.draft.yaml",
+      "type": "design_seed"
+    },
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_d.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/application-shell-registry.yaml",
+        "transcription": "CONVENTIONS section 2 shell attribution values (shell_name / SHELL.MAIN_CONTENT content host) quoted verbatim into payload.blueprint.shell; scroll/error boundary semantics stay on the shell slot objects (COMPONENT.SHELL.*)"
+      },
+      "pin": {
+        "digest": "sha256:cca0a9d72941835264ee3128bd91d41a55b63a26d82c7580e067df504ae2dac7"
+      },
+      "ref": "outputs/frontend/10_planned/application-shell-registry.yaml",
+      "type": "design_seed"
+    },
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_d.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/navigation-structure.yaml",
+        "transcription": "CONVENTIONS section 2 navigation attribution: leaf transcription nav_group/nav_subgroup/nav_entry (drill-down minus route; route authority stays in the pending KEYBINDING.* table)"
+      },
+      "pin": {
+        "digest": "sha256:ec6c25f3e0723c485b32d08bf1c0129a504bba4e7b338b2fab38fb7250d98870"
+      },
+      "ref": "outputs/frontend/10_planned/navigation-structure.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "页面·车型主数据"
+}

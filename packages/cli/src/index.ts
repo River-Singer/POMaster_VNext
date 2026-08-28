@@ -477,6 +477,11 @@ export function createProgram(
     .option("--trigger <type>", "运行触发方式（run_trigger 五值闭包；缺省 on_demand；文件信封 trigger.type 优先于缺省）")
     .option("--tool <id>", "执行工具标识（缺省 pomaster-cli；文件 tool_snapshot 优先）")
     .option("--tool-version <semver>", "工具版本（缺省 CLI 版本；文件 tool_snapshot 优先）")
+    .option(
+      "--subject <governed-id>",
+      "subject 绑定归属声明（N5：本 run 证据属于该对象；可重复；入账时机复核——通过者随事务落 journal 注记，拒者留 warnings 不入账；缺省不传 = 未声明，信封零变化）",
+      collectValues,
+    )
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (opts, command) => {
       const outcome = await runRecordGateRun(resolveDir(command), {
@@ -485,6 +490,8 @@ export function createProgram(
         trigger: opts.trigger as string | undefined,
         tool: opts.tool as string | undefined,
         toolVersion: opts.toolVersion as string | undefined,
+        // 可重复选项不带缺省值：argv 未携带 → undefined（未声明，非显式空数组）。
+        subjects: opts.subject as string[] | undefined,
       });
       record({
         command: "record gate-run",
@@ -516,9 +523,14 @@ export function createProgram(
   return program;
 }
 
-/** commander 选项收集器：可重复选项聚合为数组（--subject / --capability）。 */
-function collectValues(value: string, previous: string[]): string[] {
-  return [...previous, value];
+/**
+ * commander 选项收集器：可重复选项聚合为数组（--subject / --capability）。
+ * previous 容忍 undefined（不带缺省值的可重复选项首次出现时 commander 传入 undefined
+ * ——record gate-run --subject 借此区分「未声明（undefined）」与「显式空数组」，
+ * 缺省不得伪装成显式声明）。
+ */
+function collectValues(value: string, previous: string[] | undefined): string[] {
+  return [...(previous ?? []), value];
 }
 
 /**

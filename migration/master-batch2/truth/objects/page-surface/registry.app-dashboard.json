@@ -1,0 +1,272 @@
+{
+  "aliases": [
+    "PAGE-APP-DASHBOARD"
+  ],
+  "authority": {
+    "delegates": [],
+    "escalation_hint": "regenerate via migration/master-batch2/tools/ingest_page_registry.py; page-level canonical id word forms (PAGE.APP_* underscore vs PAGE.APP.* dotted, and PAGE.<SEG> held by the blueprint family) pending HUMAN_OWNER adjudication; facet objects merge via the supersede chain after adjudication; this object carries the GAP-V1-PAGE-DENOMINATOR denominator health note and the MIG-B2/C-01 registration (page denominator three-source drift 32/35/39) -- adjudication is Owner-only, never automatic",
+    "owner": "FRONTEND_ARCHITECTURE",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "LOCKED",
+    "evidence": "IMPLEMENTED",
+    "lifecycle": "CURRENT"
+  },
+  "axis_profile": "page_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "PAGE.REGISTRY.APP_DASHBOARD",
+  "key_bindings": {
+    "artifact": [],
+    "code": [
+      {
+        "artifact_type": "file",
+        "expect": {
+          "prototype_fn": "pDashboard"
+        },
+        "match_rule": "mechanical",
+        "value": "doc/last_project/doc/MASTer-prototype-20260722.html"
+      }
+    ]
+  },
+  "kind": "page_surface",
+  "notes_md": "本对象为 MIG-B2/M2 转录组 A 页面注册身份件：源 outputs/frontend/10_planned/application-page-registry.yaml（扩展名 .yaml、内容为 JSON）pages[] 共 35 条逐条转录之一（PAGE-APP-DASHBOARD）。源条目（id/name/nav_group/template/prototype_fn/layout/columns/status/note/blocked 字段闭集）以 payload.page_entry 整条逐字保真（与源条目字节等价，工具断言）；数组顺序=源顺序。status 语义登记（payload.registry_status_semantics）：源 status=new-application 为 surface-kind 分类（新应用页 vs 既有 BP 派生任务步页），非审批/接线/变更语义——batch1 约定书 §4 拆分自检三连均不适用，双轴拆分动作=0、superseded_status_field 登记=0（诚实零，golden case 第 10 行同款）；blocked 旗标缺席（诚实缺席）。id 赐名（非收编）：PAGE-APP-DASHBOARD → 页级拟形 PAGE.APP_DASHBOARD 为 canonical 拟合（token 重排外推），ALIASES_V0 无 PAGE-APP-* 规则，全部 HUMAN_CONFIRM_REQUIRED（key-binding-map.batch2.draft.yaml alias_registrations.proposed_needs_human；盘面另见并发蓝图组的点分 PAGE.APP.* 拟形）——canonical_id_grant 逐对象登记待人工裁决，legacy 词形照录 aliases[]，origin 保持源侧 derived（batch1 约定书 §6 边界条款 / batch2 §5 SHELL.* 赐名先例同形）；本对象取 PAGE.REGISTRY.* 作用域段（payload.id_facet）避让同 id 互踩。分母之家承载（MIG-B2 任务书指令，写阻断误报史原点证据）：本对象为 pages[0]（源序机械规则）=册级承载位，payload.registry_book_facet 逐字保真 description/source_directive/prototype_ref/authority/layout_patterns（PATTERN.LAYOUT.* 本地族 6 条）/orphan_prototype_functions（3 条）/summary 自述块（32=15+17、blocked 3、orphan 3）/ownership；payload.denominator_health_note 机器可寻址承载 GAP-V1-PAGE-DENOMINATOR 演化注记（任务书叙事 15→32→20+12 如实登记，『20+12』不可考留空不登记数值）+ ledger denominator_health_note 逐字+ 在仓可考链（自述 32 → git 5d7035e 32 页 V1 词形 → b665d18 35 页 → 实测 pages[] 35/目录 39 含 orphan 4）+ MIG-B2/C-01 PENDING_OWNER。其余 34 对象持 book_facet_pointer 引用位，值不复制（batch2 §5 分叉隐患）。key_bindings.code 机械锚：prototype_ref 文件 + payload.page_entry.prototype_fn 期望声明（match_rule=mechanical），probe 缺省=未探测（gate 必须重扫，C5）。 本字段为人类散文，机器永不解析判卷。",
+  "origin": "derived",
+  "payload": {
+    "canonical_id_grant": {
+      "canonical_draft": "PAGE.APP_DASHBOARD",
+      "legacy_word_form": "PAGE-APP-DASHBOARD",
+      "object_id": "PAGE.REGISTRY.APP_DASHBOARD",
+      "registered_in": "migration/master-batch2/key-binding-map.batch2.draft.yaml alias_registrations.proposed_needs_human",
+      "rule": "ALIASES_V0 has no PAGE-APP-* rule; canonical fit granted only, never rename-on-ingest (object origin stays source-side derived); dotted PAGE.APP.* drafts observed on disk from the concurrent blueprint group are registered as the competing draft; formal alias-family registration awaits vocab PR / Owner adjudication",
+      "status": "HUMAN_CONFIRM_REQUIRED"
+    },
+    "denominator_health_note": {
+      "conflict_id": "MIG-B2/C-01",
+      "gap_event_id": "GAP-V1-PAGE-DENOMINATOR",
+      "incident_type": "page_denominator_drift",
+      "ledger_conflict_subject": "application-page-registry 页面分母三源漂移（注册表 summary 自述 32 vs pages[] 实数 35 vs screen-blueprints 目录 39 含 4 份 orphan）及 4 份 orphan blueprint 的注册归属待裁决",
+      "ledger_denominator_health_note": {
+        "attached_denominator": "inventory denominators.application_pages（M0 实测 35=24+11；screen-blueprints 39；orphan 4 份）",
+        "drift_history_in_file_verifiable": [
+          "自述态：注册表 summary 块 total_prototype_pages=32（existing_task_step_blueprints=15 + new_application_pages=17；blocked_pages=3/orphan_functions=3）——任务书漂移史『15→32』中 15 为自述 task-step 半分母、32 为自述总分母",
+          "git 5d7035e（commit id 内容寻址，只读核验）：前代 V1 surface 注册表，PAGE-V1-* 词形 32 页（surface_kind page=29/subpage=3，无 status 字段）",
+          "git b665d18：原型 re-baseline 为现词形 35 页（24+11）；53c8726/058b08b 保持 35 页",
+          "实测态（M1 复测）：pages[]=35（24+11）；screen-blueprints=39（24+15）；4 份 orphan（PAGE-TASK-STEP-GENERATE-SNAPSHOT/PAGE-TASK-STEP-SAVE-BOM/PAGE-TASK-STEP-VIEW-ALL-PARTS/PAGE-TASK-STEP-WRITEBACK-LEDGER）在 pages[] 无条目；反向缺口 0；page-readiness-registry 39 条 = pages[] 35 + orphan 4"
+        ],
+        "rule": "数值语义不篡改；自述 32 与实数 35/目录 39 并存如实登记，裁决归 MIG-B2/C-01",
+        "unverifiable_note": "任务书所述『20+12』中间态未能在仓（本文件/git 只读核验）考得，按『文件内可考才记，不可考留空』纪律不登记数值"
+      },
+      "ledger_meta_application_pages_note": "分母漂移史全文见 entries[application-page-registry].denominator_health_note（自述 32=15+17 → git 5d7035e 32 页 V1 词形 → b665d18 实数 35=24+11 → 实测目录 39 含 orphan 4 份；『20+12』不可考未登记）；裁决归 MIG-B2/C-01",
+      "measured": {
+        "page_readiness_entries_registered": 39,
+        "pages": 35,
+        "reverse_gap_registry_without_blueprint": 0,
+        "screen_blueprints_dir_live": 39,
+        "screen_blueprints_not_in_pages": [
+          "PAGE-TASK-STEP-GENERATE-SNAPSHOT",
+          "PAGE-TASK-STEP-SAVE-BOM",
+          "PAGE-TASK-STEP-VIEW-ALL-PARTS",
+          "PAGE-TASK-STEP-WRITEBACK-LEDGER"
+        ],
+        "sources": "pages[]/screen-blueprints dir live-measured by this tool; readiness value + orphan list cross-checked against inventory denominators.application_pages / page_readiness_status",
+        "status_breakdown": {
+          "existing-task-step": 11,
+          "new-application": 24
+        },
+        "summary_selfreport": {
+          "blocked_pages": 3,
+          "existing_task_step_blueprints": 15,
+          "new_application_pages": 17,
+          "orphan_functions": 3,
+          "total_prototype_pages": 32
+        }
+      },
+      "resolution": "PENDING_OWNER",
+      "rule": "数值语义不篡改：自述 32 与实数 35/目录 39 并存如实登记，裁决归 MIG-B2/C-01（classification-ledger conflicts_pending_owner）；本块为分母之家机器可寻址承载（写阻断误报史原点证据），单一承载位=本对象（pages[0] 源序机械规则），其余 34 对象持 book_facet_pointer 引用位，禁值复制（batch2 §5）",
+      "task_book_evolution_note": {
+        "claimed_sequence": "15 -> 32 -> 20+12",
+        "intermediate_20_plus_12": {
+          "reason": "任务书所述『20+12』中间态未能在仓（文件/git 只读核验）考得，按『文件内可考才记，不可考留空』纪律不登记数值（ledger denominator_health_note.unverifiable_note 逐字保真）",
+          "value_registered": false
+        },
+        "provenance": "MIG-B2 task book (Owner directive); 15 = self-reported task-step half-denominator, 32 = self-reported total"
+      }
+    },
+    "id_facet": {
+      "merge_path": "supersede",
+      "object_id": "PAGE.REGISTRY.APP_DASHBOARD",
+      "page_level_id": "PAGE.APP_DASHBOARD",
+      "page_level_id_status": "HUMAN_CONFIRM_REQUIRED",
+      "rule": "facet-scoped id per the group-B PAGE.READINESS.* convention: concurrent page-surface transcription families hold the page-level ids in this kind-dir (ALIASES_V0 canonical PAGE.<SEG> for PAGE-TASK-STEP-*; underscore PAGE.APP_* and dotted PAGE.APP.* drafts both observed for PAGE-APP-*); this facet takes the PAGE.REGISTRY.* scoping segment to avoid same-id clobber and merges via the supersede chain after Owner id adjudication (report only, never auto-adjudicate)"
+    },
+    "page_entry": {
+      "columns": null,
+      "id": "PAGE-APP-DASHBOARD",
+      "layout": "PATTERN.LAYOUT.FULL_LIST",
+      "name": "工作台",
+      "nav_group": "工作台",
+      "note": "4 KPI 卡 + 待办列表 + 侧边卡",
+      "prototype_fn": "pDashboard",
+      "status": "new-application",
+      "template": "PAGE.DASHBOARD"
+    },
+    "registry_book_facet": {
+      "description": "原型 32 个页面函数的全量注册表。15 个 task-step 页已在 screen-blueprints/（BP 派生）；17 个非任务页为本注册表登记的应用页（项目级，非 BP），需后续补 screen-blueprint。3 个孤儿函数不建独立页。",
+      "layout_patterns": [
+        {
+          "id": "PATTERN.LAYOUT.FULL_LIST",
+          "name": "全屏列表页",
+          "prototype_pages": [
+            "pCalcParts",
+            "pLedger",
+            "pAllParts",
+            "pBUCList",
+            "pMaterialDB",
+            "pEquipmentDB",
+            "pProcessDB",
+            "pOtherDB",
+            "pSetDB",
+            "pTask",
+            "pUserMgmtNew",
+            "pPermMgmtNew",
+            "pCSC",
+            "pTechChange"
+          ],
+          "usage": "约15页：标题栏+筛选栏+操作栏+冻结列表格+分页底栏"
+        },
+        {
+          "id": "PATTERN.LAYOUT.DESCRIPTION_DETAIL",
+          "name": "描述列表详情页",
+          "prototype_pages": [
+            "pPartInfo",
+            "pBUCDetail头部",
+            "pPaletteBackup描述条"
+          ],
+          "usage": "返回+标题+状态+描述列表(两栏grid)"
+        },
+        {
+          "id": "PATTERN.LAYOUT.MASTER_DETAIL",
+          "name": "主从联动页",
+          "prototype_pages": [
+            "pVehicleMasterData",
+            "pPaletteOverview->pPaletteBackup"
+          ],
+          "usage": "左列表选中高亮->右/下区联动"
+        },
+        {
+          "id": "PATTERN.LAYOUT.TAB_TABLE",
+          "name": "Tab+表格详情页",
+          "prototype_pages": [
+            "pBUCDetail",
+            "pOtherDB",
+            "pMaterialDB(Tab分类)",
+            "pPartStructure(flat/tree)"
+          ],
+          "usage": "描述列表+统计卡+Tab切换表"
+        },
+        {
+          "id": "PATTERN.LAYOUT.RIGHT_DRAWER",
+          "name": "右抽屉详情面板",
+          "prototype_pages": [
+            "pMaterialDB openMatPanel"
+          ],
+          "usage": "slide-panel+折叠节"
+        },
+        {
+          "id": "PATTERN.LAYOUT.CALCULATOR",
+          "name": "计算器页",
+          "prototype_pages": [
+            "pEquipmentDetail",
+            "pMHRDetail",
+            "showMHRModal"
+          ],
+          "usage": "左输入字段组(折叠节)+右实时计算结果表+渐变结果大卡"
+        }
+      ],
+      "orphan_prototype_functions": [
+        {
+          "disposition": "不建独立页",
+          "fn": "pMHRList",
+          "reason": "MHR 通过 BUC 内弹窗 showMHRModal 触发，非独立导航页"
+        },
+        {
+          "disposition": "不建独立页",
+          "fn": "pMHRDetail",
+          "reason": "同上，走 BUC 弹窗"
+        },
+        {
+          "disposition": "不建独立页",
+          "fn": "pDB",
+          "reason": "早期通用 DB 模板，已被 pMaterialDB 等取代"
+        }
+      ],
+      "ownership": {
+        "implementation_target": "src/pages/（Phase D/E 按 batch 实现）",
+        "machine_source": "本文件是原型 32 页全量注册表（项目级应用面，非 BP 派生）",
+        "protocol": "universal:page-structure-protocol + universal:module-boundary-protocol"
+      },
+      "prototype_ref": "doc/last_project/doc/MASTer-prototype-20260722.html（只读）",
+      "source_authority": "project-level-application-surface",
+      "source_directive": "用户指令：以原型 MASTer-prototype-20260722.html（32 页）为布局事实源，除样式外直接照抄（2026-08-05）。",
+      "summary": {
+        "blocked_pages": 3,
+        "existing_task_step_blueprints": 15,
+        "new_application_pages": 17,
+        "orphan_functions": 3,
+        "total_prototype_pages": 32
+      }
+    },
+    "registry_status_semantics": {
+      "axis_split_actions": 0,
+      "blocked_flag_present": false,
+      "honest_zero_reason": "batch1 约定书 §4 拆分自检三连：非批准（注册在案即基线事实）、非接线（接线态归 readiness/blueprint 轴）、非变更（变更史归 change 轴）——surface-kind 分类不触发双轴拆分，诚实零登记",
+      "semantics": "surface-kind classification (new application page vs existing BP-derived task-step page), NOT an approval/progress/wiring/change status",
+      "source_field": "status",
+      "source_value": "new-application",
+      "superseded_status_field_registered": false
+    },
+    "source_document_meta": {
+      "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+      "document_type": "application-page-registry",
+      "schema_version": 1
+    }
+  },
+  "permits_active": [],
+  "producer": {
+    "liveness": {
+      "status": "active"
+    },
+    "merge_semantics": {
+      "backfill_if_missing": [],
+      "human_never_touched": [],
+      "refresh_fields": [
+        "payload"
+      ]
+    },
+    "producer_id": "prod.mig_b2_ingest_page_registry",
+    "views_maintained": [
+      "truth-index.envelope"
+    ]
+  },
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b2/ingest_page_registry.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/application-page-registry.yaml",
+        "transcription": "registry pages[] entry PAGE-APP-DASHBOARD transcribed row-by-row verbatim (payload.page_entry byte-equal); status=new-application registered as surface-kind classification (axis split 0, superseded_status_field 0 = honest zero); id action: PAGE.REGISTRY.* facet + canonical grant HUMAN_CONFIRM_REQUIRED, origin=derived"
+      },
+      "pin": {
+        "digest": "sha256:af5e7b75b849d5905d48e699ce2d529d95c669fdbbfec351f89ca9f62f78d252"
+      },
+      "ref": "outputs/frontend/10_planned/application-page-registry.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "页面注册身份·工作台"
+}

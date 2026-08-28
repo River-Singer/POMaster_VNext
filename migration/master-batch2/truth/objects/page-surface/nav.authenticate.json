@@ -1,0 +1,136 @@
+{
+  "aliases": [
+    "PAGE-TASK-STEP-AUTHENTICATE"
+  ],
+  "authority": {
+    "delegates": [],
+    "escalation_hint": "regenerate via migration/master-batch2/tools/ingest_navigation.py; page-level canonical id word forms pending HUMAN_OWNER adjudication (supersede merge after adjudication); route strings withheld from payloads by design (route authority = future KEYBINDING.* page<->dir table, A7 P0)",
+    "owner": "FRONTEND_ARCHITECTURE",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "LOCKED",
+    "evidence": "IMPLEMENTED",
+    "lifecycle": "CURRENT"
+  },
+  "axis_profile": "page_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "PAGE.NAV.AUTHENTICATE",
+  "key_bindings": {
+    "artifact": [],
+    "code": []
+  },
+  "kind": "page_surface",
+  "notes_md": "本对象为 MIG-B2/M2 转录组 A 导航绑定件：源 outputs/frontend/10_planned/navigation-transition-registry.yaml 转移端点 facet（1 条出边 / 3 条入边，不立 TRANSITION 独立对象族）。转移挂载：out=1/in=3；转移条目（id/from/to/trigger/back_behavior/protocol）整条逐字，两份字节等价断言；from/to 源词形逐字保留（PAGE-TASK-STEP-* legacy 词形的收编在 facet id/aliases 层，条目值不改写）。别名收编：PAGE-TASK-STEP-AUTHENTICATE → facet PAGE.NAV.AUTHENTICATE（ALIASES_V0 已登记族 PAGE-TASK-STEP-*→PAGE.* 余段投影）；legacy 词形照录 aliases[]，origin=ingested（A6 场景）。key_bindings.code 为空数组（诚实空）：导航实现锚（nav-config.ts/routes.ts 路由锚）归未来 KEYBINDING.* 对象族，本 facet 不伪造锚点。 本字段为人类散文，机器永不解析判卷。",
+  "origin": "ingested",
+  "payload": {
+    "id_facet": {
+      "merge_path": "supersede",
+      "object_id": "PAGE.NAV.AUTHENTICATE",
+      "page_level_id": "PAGE.AUTHENTICATE",
+      "page_level_id_status": "REGISTERED_RULE_CANONICAL_HELD_BY_PAGE_SURFACE_OBJECT",
+      "rule": "facet-scoped id per the group-B PAGE.READINESS.* convention: concurrent page-surface transcription families hold the page-level ids in this kind-dir (ALIASES_V0 canonical PAGE.<SEG> for PAGE-TASK-STEP-*; underscore PAGE.APP_* and dotted PAGE.APP.* drafts both observed for PAGE-APP-*); this facet takes the PAGE.NAV.* scoping segment to avoid same-id clobber and merges via the supersede chain after Owner id adjudication (report only, never auto-adjudicate)"
+    },
+    "navigation_transitions_in": [
+      {
+        "counterpart_facet": "PAGE.NAV.QUERY_LEDGER",
+        "direction": "in",
+        "transition": {
+          "back_behavior": "disabled",
+          "from": "PAGE-TASK-STEP-QUERY-LEDGER",
+          "id": "TRANSITION-QUERY-LEDGER-TO-AUTHENTICATE",
+          "protocol": "universal:routing-url-protocol",
+          "to": "PAGE-TASK-STEP-AUTHENTICATE",
+          "trigger": "auth-redirect-401"
+        }
+      },
+      {
+        "counterpart_facet": "PAGE.NAV.SELECT_VEHICLE_CONTEXT",
+        "direction": "in",
+        "transition": {
+          "back_behavior": "disabled",
+          "from": "PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT",
+          "id": "TRANSITION-SELECT-VEHICLE-CONTEXT-TO-AUTHENTICATE",
+          "protocol": "universal:routing-url-protocol",
+          "to": "PAGE-TASK-STEP-AUTHENTICATE",
+          "trigger": "user-logout"
+        }
+      },
+      {
+        "counterpart_facet": "PAGE.NAV.MANAGE_USER_ROLE",
+        "direction": "in",
+        "transition": {
+          "back_behavior": "disabled",
+          "from": "PAGE-TASK-STEP-MANAGE-USER-ROLE",
+          "id": "TRANSITION-MANAGE-USER-ROLE-TO-AUTHENTICATE",
+          "protocol": "universal:routing-url-protocol",
+          "to": "PAGE-TASK-STEP-AUTHENTICATE",
+          "trigger": "user-logout-from-admin"
+        }
+      }
+    ],
+    "navigation_transitions_out": [
+      {
+        "counterpart_facet": "PAGE.NAV.SELECT_VEHICLE_CONTEXT",
+        "direction": "out",
+        "transition": {
+          "back_behavior": "disabled",
+          "from": "PAGE-TASK-STEP-AUTHENTICATE",
+          "id": "TRANSITION-AUTHENTICATE-TO-SELECT-VEHICLE-CONTEXT",
+          "protocol": "universal:routing-url-protocol",
+          "to": "PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT",
+          "trigger": "login-success"
+        }
+      }
+    ],
+    "source_document_meta": {
+      "navigation_transition_registry": {
+        "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+        "document_type": "navigation-transition-registry",
+        "schema_version": 1
+      }
+    },
+    "transition_registration_note": {
+      "registrations": 4,
+      "rule": "out=from 端 facet、in=to 端 facet 双端挂载（ledger『转移逐条挂 from/to PAGE.* 对象』）；每条转移恰两次登记、两份字节等价（工具断言）；不立 TRANSITION 独立对象族（ledger 明示）；方向+对端 facet 引用为派生投影，from/to 源词形逐字保留",
+      "unique_transitions_registered": 4
+    }
+  },
+  "permits_active": [],
+  "producer": {
+    "liveness": {
+      "status": "active"
+    },
+    "merge_semantics": {
+      "backfill_if_missing": [],
+      "human_never_touched": [],
+      "refresh_fields": [
+        "payload"
+      ]
+    },
+    "producer_id": "prod.mig_b2_ingest_navigation",
+    "views_maintained": [
+      "truth-index.envelope"
+    ]
+  },
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b2/ingest_navigation.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/navigation-transition-registry.yaml",
+        "transcription": "transitions touching PAGE-TASK-STEP-AUTHENTICATE registered out/in on this facet (4 registrations); entries verbatim, no TRANSITION object family created (ledger explicit)"
+      },
+      "pin": {
+        "digest": "sha256:3ccf3359da07e57053c2bb778ff56704a5600bc23dd7e18d21553d866a1ec3fd"
+      },
+      "ref": "outputs/frontend/10_planned/navigation-transition-registry.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "导航转移端点·PAGE-TASK-STEP-AUTHENTICATE"
+}

@@ -1,0 +1,266 @@
+{
+  "aliases": [
+    "PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT"
+  ],
+  "authority": {
+    "delegates": [
+      {
+        "required_for": [
+          "approve_page_blueprint"
+        ],
+        "role": "HUMAN_OWNER"
+      }
+    ],
+    "escalation_hint": "regenerate via migration/master-batch2/tools/ingest_screen_blueprints_d.py; blueprint structure/action/field-semantics change re-runs the generator then this ingest; page.status progression and canonical word form PAGE.APP_* confirmation are HUMAN_OWNER seats (approve_page_blueprint; EVOLUTION_CHANNEL; ledger owner FRONTEND_ARCHITECTURE)",
+    "owner": "FRONTEND_ARCHITECTURE",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "LOCKED",
+    "evidence": "IMPLEMENTED",
+    "lifecycle": "CURRENT"
+  },
+  "axis_profile": "page_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "PAGE.SELECT_VEHICLE_CONTEXT",
+  "key_bindings": {
+    "artifact": [],
+    "code": [
+      {
+        "artifact_type": "source_dir",
+        "expect": {
+          "page_id": "PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT"
+        },
+        "match_rule": "mechanical",
+        "value": "src/pages/page-task-step-select-vehicle-context"
+      },
+      {
+        "artifact_type": "file",
+        "expect": {
+          "route_name_exact": "PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT"
+        },
+        "match_rule": "mechanical",
+        "value": "src/app/router/routes.ts"
+      }
+    ]
+  },
+  "kind": "page_surface",
+  "notes_md": "蓝图转录（MIG-B2 转录组 D·后半 16/19，一蓝图一 surface 主对象）：源 outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT.yaml（bp_blueprint，pin 见 sources[0]；分母=screen-blueprints 实测 39 之字典序后半第 16 份）。\n三层对象化：结构=template_ref PAGE.MASTER_DETAIL + regions 3 条（slot 词形均在 page-anatomy-registry 16 槽合法集内）+ states 14 项；交互=actions 1 条（ACTION.* 摆位 + PAGE_SLOT.* 槽位值引用）；字段语义=regions/slots 内联结构化字段逐字承载（源无 FIELD.* 词形 → FIELD.* 派生引用=0，诚实零）。\nsurface=V1（Page Spec 双分母之应用页侧；分母归属迁移期走信封 denominator_refs 显式空，DENOMINATOR.* 未注册）；shell 归属：shell_name=MasterApplicationShell + 内容宿主槽位 SHELL.MAIN_CONTENT（scroll/error 边界语义在槽位对象侧）。 本页无 navigation-structure 叶子（任务步骤页不入导航），导航归属以缺席表达（诚实缺席）。\npage.status=APPROVED 为设计审批轴事实（与 readiness 实施就绪轴分立，禁混轴）；已登记 payload.blueprint.superseded_status_field，数值语义不篡改。\nunresolved 0 条逐条转 payload.blueprint.unresolved_exceptions（Exception Ledger 承载：显式未决，不静默丢弃、不静默裁决）。\n散文承载登记：note(1) → 浓缩为信封 notes_md 摘要 + sources[0].locator.line_anchors 源指针（蓝图 YAML 正文不整本搬运）。摘要（全文按源指针回读）：note×1：2026-08-18 用户裁决——任务流预留（无入口属预期，authenticate→选上下文→build-bom 链未启用）；路由 /context/select 与页面保留，meta.cache:true 维持。\ncanonical 词形：源词形 PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT → PAGE.SELECT_VEHICLE_CONTEXT（ALIASES_V0 已登记族 rename-on-ingest（batch1 §6 OBS-3）：origin=ingested，legacy 照录 aliases[]）。A6 收编词形无身份悬置：axes.confidence=LOCKED\nroute/目录权威不在本对象 payload：page↔dir 与 route_name 机械锚以 key_bindings.code 期望声明承载（值=源词形逐字），KEYBINDING.* 表对象落档仍待人工裁决（草表 status=MECHANICAL_ROUTE_NAME_MATCH）。\n本字段为人类散文，机器永不解析判卷。",
+  "origin": "ingested",
+  "payload": {
+    "actions": [
+      "ACTION.VIEW"
+    ],
+    "blueprint": {
+      "actions": [
+        {
+          "action_id": "ACTION.VIEW",
+          "business_action": "ACT-SELECT-VEHICLE-CONTEXT",
+          "capability_id": "CAP-VEHICLE-MASTER-DATA",
+          "id": "PAGE-ACT-SELECT-VEHICLE-CONTEXT-1",
+          "mock": false,
+          "placement": "ACTION.VIEW",
+          "slot": "PAGE_SLOT.CONTEXT_ACTIONS"
+        }
+      ],
+      "api_requirements": [
+        {
+          "classification": "QUERY",
+          "id": "API_REQ.SELECT.VEHICLE.CONTEXT.1",
+          "method": "GET",
+          "operation_id": "list_projects_api_v1_projects_get",
+          "path": "/projects",
+          "source": {
+            "page": "PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT"
+          },
+          "status": "ACCEPTED",
+          "type": "query"
+        },
+        {
+          "classification": "QUERY",
+          "id": "API_REQ.SELECT.VEHICLE.CONTEXT.2",
+          "method": "GET",
+          "operation_id": "list_carlines_api_v1_projects__project_id__carlines_get",
+          "path": "/carlines",
+          "source": {
+            "page": "PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT"
+          },
+          "status": "ACCEPTED",
+          "type": "query"
+        }
+      ],
+      "error_rendering": {
+        "component": "DATA.EMPTY_STATE",
+        "fallback_slot": "PAGE_SLOT.FEEDBACK",
+        "isolation": "route-level ErrorBoundary; per-query error 不外溢其他页面（协议 18/27）",
+        "protocol": "universal:rendering-state-protocol",
+        "variant": "error"
+      },
+      "page_status": {
+        "axis": "design_approval",
+        "value": "APPROVED"
+      },
+      "prose_to_notes_md": [
+        {
+          "field": "note",
+          "item_count": 1,
+          "line": 51
+        }
+      ],
+      "regions": [
+        {
+          "behavior": "static",
+          "id": "REGION.PAGE_HEADER",
+          "note": "工作台 tab 已显示标题，本区域不再渲染面包屑与页面标题。",
+          "slots": {}
+        },
+        {
+          "behavior": "static",
+          "id": "REGION.MASTER",
+          "slots": {
+            "PAGE_SLOT.SIDEBAR": {
+              "capability_id": "LAYOUT.SPLIT_PANE",
+              "component": "LAYOUT.SPLIT_PANE"
+            }
+          }
+        },
+        {
+          "behavior": "static",
+          "id": "REGION.DETAIL",
+          "slots": {
+            "PAGE_SLOT.CONTENT": {
+              "capability_id": "PATTERN.LIST_TABLE",
+              "component": "PATTERN.LIST_TABLE",
+              "pattern_id": "PATTERN.LIST_TABLE"
+            }
+          }
+        }
+      ],
+      "shell": {
+        "content_slot_ref": "SHELL.MAIN_CONTENT",
+        "shell_name": "MasterApplicationShell"
+      },
+      "source_document_meta": {
+        "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+        "document_type": "screen-blueprint",
+        "schema_version": 1
+      },
+      "source_page_id": "PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT",
+      "states": [
+        "idle",
+        "loading",
+        "success",
+        "empty",
+        "error",
+        "view",
+        "edit",
+        "read-only",
+        "create",
+        "pristine",
+        "dirty",
+        "validating",
+        "invalid",
+        "submitting"
+      ],
+      "superseded_status_field": {
+        "mapped_to": "design-approval-axis fact record (classification-ledger blueprint_status_axis_note: design-approval axis and implementation-readiness axis stay separate; the readiness axis lives in page-readiness-registry); object axes describe the truth object itself (lifecycle CURRENT = source is an active canonical), never mixed across axes; approval delegation via authority.delegates HUMAN_OWNER approve_page_blueprint",
+        "reason": "flat status is one word with many meanings; the design-approval semantic stays a fact record and status progression belongs to the HUMAN_OWNER approve_page_blueprint delegate seat; values are transcribed without tampering",
+        "source_field": "status",
+        "source_value": "APPROVED",
+        "upgrade_registered": true
+      },
+      "template": {
+        "id": "PAGE.MASTER_DETAIL"
+      },
+      "unresolved_exceptions": {
+        "carrier": "exception_ledger",
+        "count": 0,
+        "items": [],
+        "rule": "unresolved items carried item-by-item as EXPLICITLY unresolved (CONVENTIONS section 3): never silently dropped, never auto-adjudicated; resolution belongs to the Owner"
+      }
+    },
+    "slots": [
+      "PAGE_SLOT.SIDEBAR",
+      "PAGE_SLOT.CONTENT",
+      "PAGE_SLOT.CONTEXT_ACTIONS",
+      "PAGE_SLOT.FEEDBACK"
+    ],
+    "surface": "V1",
+    "template_ref": "PAGE.MASTER_DETAIL"
+  },
+  "permits_active": [],
+  "producer": {
+    "liveness": {
+      "status": "active"
+    },
+    "merge_semantics": {
+      "backfill_if_missing": [],
+      "human_never_touched": [],
+      "refresh_fields": [
+        "payload.blueprint"
+      ]
+    },
+    "producer_id": "prod.mig_b2_ingest_screen_blueprints_d",
+    "views_maintained": [
+      "truth-index.envelope"
+    ]
+  },
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_d.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT.yaml",
+        "line_anchors": {
+          "note": 51,
+          "unresolved": 101
+        },
+        "prose_summarized": [
+          {
+            "field": "note",
+            "item_count": 1,
+            "line": 51
+          }
+        ],
+        "transcription": "back-half blueprint 16/19 objectified one-to-one into a page_surface object: structure (template_ref/regions/states) + interaction (actions) + inline field semantics transcribed verbatim as structured units (array order = source order); page.status kept as a design-approval fact record with a superseded_status_field registration; unresolved items carried item-by-item into payload.blueprint.unresolved_exceptions; prose narrative condensed into notes_md, never wholesale-migrated; no physical route string enters the payload"
+      },
+      "pin": {
+        "digest": "sha256:1386a86efe7147370a402d9f9720f41ffd0c22ad305d07de6fc29c5443a7ff92"
+      },
+      "ref": "outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT.yaml",
+      "type": "bp_blueprint"
+    },
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_d.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "governance_id": "PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT",
+        "ingested_from": "migration/master-batch2/key-binding-map.batch2.draft.yaml",
+        "transcription": "supplies the page<->dir and route_name binding expectations (status MECHANICAL_ROUTE_NAME_MATCH, draft table): values quoted verbatim into key_bindings.code; the KEYBINDING.* table object itself stays pending human adjudication"
+      },
+      "pin": {
+        "digest": "sha256:2beea8f95e0770da028d5ac5c2e76e2e1266e0ba7af6e0a3faa29fe72cb501fa"
+      },
+      "ref": "migration/master-batch2/key-binding-map.batch2.draft.yaml",
+      "type": "design_seed"
+    },
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_d.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/application-shell-registry.yaml",
+        "transcription": "CONVENTIONS section 2 shell attribution values (shell_name / SHELL.MAIN_CONTENT content host) quoted verbatim into payload.blueprint.shell; scroll/error boundary semantics stay on the shell slot objects (COMPONENT.SHELL.*)"
+      },
+      "pin": {
+        "digest": "sha256:cca0a9d72941835264ee3128bd91d41a55b63a26d82c7580e067df504ae2dac7"
+      },
+      "ref": "outputs/frontend/10_planned/application-shell-registry.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "页面·选定车型与清单搭建上下文"
+}

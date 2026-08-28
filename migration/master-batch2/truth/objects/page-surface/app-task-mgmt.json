@@ -1,0 +1,350 @@
+{
+  "aliases": [
+    "PAGE-APP-TASK-MGMT"
+  ],
+  "authority": {
+    "delegates": [
+      {
+        "required_for": [
+          "approve_page_blueprint"
+        ],
+        "role": "HUMAN_OWNER"
+      }
+    ],
+    "escalation_hint": "regenerate via migration/master-batch2/tools/ingest_screen_blueprints_d.py; blueprint structure/action/field-semantics change re-runs the generator then this ingest; page.status progression and canonical word form PAGE.APP_* confirmation are HUMAN_OWNER seats (approve_page_blueprint; EVOLUTION_CHANNEL; ledger owner FRONTEND_ARCHITECTURE)",
+    "owner": "FRONTEND_ARCHITECTURE",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "PROVISIONAL",
+    "evidence": "IMPLEMENTED",
+    "lifecycle": "CURRENT"
+  },
+  "axis_profile": "page_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "PAGE.APP_TASK_MGMT",
+  "key_bindings": {
+    "artifact": [],
+    "code": [
+      {
+        "artifact_type": "source_dir",
+        "expect": {
+          "page_id": "PAGE-APP-TASK-MGMT"
+        },
+        "match_rule": "mechanical",
+        "value": "src/pages/page-task-mgmt"
+      },
+      {
+        "artifact_type": "file",
+        "expect": {
+          "route_name_exact": "PAGE-APP-TASK-MGMT"
+        },
+        "match_rule": "mechanical",
+        "value": "src/app/router/routes.ts"
+      }
+    ]
+  },
+  "kind": "page_surface",
+  "notes_md": "蓝图转录（MIG-B2 转录组 D·后半 1/19，一蓝图一 surface 主对象）：源 outputs/frontend/10_planned/screen-blueprints/PAGE-APP-TASK-MGMT.yaml（bp_blueprint，pin 见 sources[0]；分母=screen-blueprints 实测 39 之字典序后半第 1 份）。\n三层对象化：结构=template_ref PAGE.LIST + regions 4 条（slot 词形均在 page-anatomy-registry 16 槽合法集内）+ states 14 项；交互=actions 3 条（ACTION.* 摆位 + PAGE_SLOT.* 槽位值引用）；字段语义=regions/slots 内联结构化字段逐字承载（源无 FIELD.* 词形 → FIELD.* 派生引用=0，诚实零）。\nsurface=V1（Page Spec 双分母之应用页侧；分母归属迁移期走信封 denominator_refs 显式空，DENOMINATOR.* 未注册）；shell 归属：shell_name=MasterApplicationShell + 内容宿主槽位 SHELL.MAIN_CONTENT（scroll/error 边界语义在槽位对象侧）。 导航归属自 navigation-structure 逐叶转录（nav_group=NAV.GROUP.G4 nav_entry=NAV.LEAF.TASK-MGMT；物理 route 串不落对象——路由权威在 KEYBINDING.*，A7 P0）。\npage.status=DRAFT 为设计审批轴事实（与 readiness 实施就绪轴分立，禁混轴）；已登记 payload.blueprint.superseded_status_field，数值语义不篡改。\nunresolved 6 条逐条转 payload.blueprint.unresolved_exceptions（Exception Ledger 承载：显式未决，不静默丢弃、不静默裁决）。\n散文承载登记：none (honest zero) → 浓缩为信封 notes_md 摘要 + sources[0].locator.line_anchors 源指针（蓝图 YAML 正文不整本搬运）。摘要（全文按源指针回读）：none (honest zero)\ncanonical 词形：源词形 PAGE-APP-TASK-MGMT → PAGE.APP_TASK_MGMT（PAGE-APP-*→PAGE.APP_* token 重排外推（非 ALIASES_V0 现役 8 族，key-binding-map.batch2.draft.yaml proposed_needs_human）→ HUMAN_CONFIRM_REQUIRED：对象以拟合词形落档、legacy 词形照录 aliases[]（登记不改名），origin 保持源侧 derived（非 A6 场景））。axes.confidence=PROVISIONAL（悬置态：C-01 未决冲突/未裁决拟合词形在身，batch1 §2；Owner 裁决后可转 LOCKED）\nroute/目录权威不在本对象 payload：page↔dir 与 route_name 机械锚以 key_bindings.code 期望声明承载（值=源词形逐字），KEYBINDING.* 表对象落档仍待人工裁决（草表 status=MECHANICAL_ROUTE_NAME_MATCH）。\n本字段为人类散文，机器永不解析判卷。",
+  "origin": "derived",
+  "payload": {
+    "actions": [
+      "ACTION.REFRESH",
+      "ACTION.CREATE",
+      "ACTION.EXPORT"
+    ],
+    "blueprint": {
+      "actions": [
+        {
+          "action_id": "ACTION.REFRESH",
+          "business_action": "ACT-TASK-MGMT-QUERY",
+          "capability_id": "CAP-TASK-MGMT",
+          "id": "PAGE-ACT-TASK-MGMT-1",
+          "mock": false,
+          "placement": "ACTION.REFRESH",
+          "slot": "PAGE_SLOT.SECONDARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.CREATE",
+          "business_action": "ACT-TASK-MGMT-CREATE",
+          "capability_id": "CAP-TASK-MGMT",
+          "id": "PAGE-ACT-TASK-MGMT-2",
+          "mock": false,
+          "placement": "ACTION.CREATE",
+          "slot": "PAGE_SLOT.PRIMARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.EXPORT",
+          "business_action": "ACT-TASK-MGMT-EXPORT",
+          "capability_id": "CAP-TASK-MGMT",
+          "id": "PAGE-ACT-TASK-MGMT-3",
+          "mock": false,
+          "placement": "ACTION.EXPORT",
+          "slot": "PAGE_SLOT.SECONDARY_ACTIONS"
+        }
+      ],
+      "api_requirements": [
+        {
+          "classification": "QUERY",
+          "id": "API_REQ.TASK.MGMT.1",
+          "method": "GET",
+          "note": "全局操作日志(admin)；scenarios 提及记录操作日志，候选列表数据源（任务<->操作日志语义未确认，见 unresolved）",
+          "operation_id": "list_operation_logs_api_v1_operation_logs_get",
+          "path": "/api/v1/operation-logs",
+          "source": {
+            "page": "PAGE-APP-TASK-MGMT"
+          },
+          "status": "ACCEPTED",
+          "type": "query"
+        },
+        {
+          "classification": "QUERY",
+          "id": "API_REQ.TASK.MGMT.2",
+          "method": "GET",
+          "note": "操作日志 CSV 导出(admin)；对应 EXPORT 动作",
+          "operation_id": "export_operation_logs_api_v1_operation_logs_export_get",
+          "path": "/api/v1/operation-logs/export",
+          "source": {
+            "page": "PAGE-APP-TASK-MGMT"
+          },
+          "status": "ACCEPTED",
+          "type": "query"
+        },
+        {
+          "classification": "QUERY",
+          "id": "API_REQ.TASK.MGMT.3",
+          "method": "GET",
+          "note": "项目列表；若任务归属项目则作为关联数据源（任务<->项目语义未确认，见 unresolved）",
+          "operation_id": "list_projects_api_v1_projects_get",
+          "path": "/api/v1/projects",
+          "source": {
+            "page": "PAGE-APP-TASK-MGMT"
+          },
+          "status": "ACCEPTED",
+          "type": "query"
+        }
+      ],
+      "error_rendering": {
+        "component": "DATA.EMPTY_STATE",
+        "fallback_slot": "PAGE_SLOT.FEEDBACK",
+        "isolation": "route-level ErrorBoundary; per-query error 不外溢其他页面（协议 18/27）",
+        "protocol": "universal:rendering-state-protocol",
+        "variant": "error"
+      },
+      "navigation": {
+        "nav_entry": "NAV.LEAF.TASK-MGMT",
+        "nav_entry_name_zh": "任务管理",
+        "nav_group": "NAV.GROUP.G4"
+      },
+      "page_status": {
+        "axis": "design_approval",
+        "value": "DRAFT"
+      },
+      "prose_to_notes_md": [],
+      "regions": [
+        {
+          "behavior": "static",
+          "id": "REGION.PAGE_HEADER",
+          "note": "工作台 tab 已显示标题，本区域不再渲染面包屑与页面标题。",
+          "slots": {
+            "PAGE_SLOT.PRIMARY_ACTIONS": {
+              "capability_id": "PATTERN.ACTION_BAR",
+              "component": "PATTERN.ACTION_BAR"
+            },
+            "PAGE_SLOT.SECONDARY_ACTIONS": {
+              "capability_id": "PATTERN.ACTION_BAR",
+              "component": "PATTERN.ACTION_BAR"
+            },
+            "PAGE_SLOT.STATUS": {
+              "capability_id": "DATA.STATUS_BADGE",
+              "component": "DATA.STATUS_BADGE"
+            }
+          }
+        },
+        {
+          "behavior": "static",
+          "id": "REGION.FILTERS",
+          "slots": {
+            "PAGE_SLOT.FILTERS": {
+              "capability_id": "PATTERN.FILTER_BAR",
+              "component": "PATTERN.FILTER_BAR"
+            }
+          }
+        },
+        {
+          "behavior": "render-by-state",
+          "id": "REGION.CONTENT",
+          "slots": {
+            "PAGE_SLOT.CONTENT": {
+              "capability_id": "PATTERN.LIST_TABLE",
+              "component": "PATTERN.LIST_TABLE",
+              "grid": {
+                "columns": "待补充（spec §3 字段列表待确认；scenarios 暗示：标题/描述/负责人/状态/优先级/创建时间或创建人等）",
+                "editable": false,
+                "note": "spec 04-task-mgmt 为骨架(§3-6 均为待补充)；列定义/布局/规则以最终确认为准",
+                "search": {
+                  "scope": "待确认（scenarios: 按状态/负责人筛选）",
+                  "trigger": "待确认"
+                },
+                "total_columns": 6
+              },
+              "pattern_id": "PATTERN.LIST_TABLE"
+            }
+          }
+        },
+        {
+          "behavior": "static",
+          "id": "REGION.FOOTER_ACTIONS",
+          "slots": {
+            "PAGE_SLOT.FOOTER_ACTIONS": {
+              "capability_id": "PATTERN.ACTION_BAR",
+              "component": "PATTERN.ACTION_BAR"
+            }
+          }
+        }
+      ],
+      "shell": {
+        "content_slot_ref": "SHELL.MAIN_CONTENT",
+        "shell_name": "MasterApplicationShell"
+      },
+      "source_document_meta": {
+        "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+        "document_type": "screen-blueprint",
+        "schema_version": 1
+      },
+      "source_page_id": "PAGE-APP-TASK-MGMT",
+      "states": [
+        "idle",
+        "loading",
+        "success",
+        "empty",
+        "error",
+        "view",
+        "edit",
+        "read-only",
+        "create",
+        "pristine",
+        "dirty",
+        "validating",
+        "invalid",
+        "submitting"
+      ],
+      "superseded_status_field": {
+        "mapped_to": "design-approval-axis fact record (classification-ledger blueprint_status_axis_note: design-approval axis and implementation-readiness axis stay separate; the readiness axis lives in page-readiness-registry); object axes describe the truth object itself (lifecycle CURRENT = source is an active canonical), never mixed across axes; approval delegation via authority.delegates HUMAN_OWNER approve_page_blueprint",
+        "reason": "flat status is one word with many meanings; the design-approval semantic stays a fact record and status progression belongs to the HUMAN_OWNER approve_page_blueprint delegate seat; values are transcribed without tampering",
+        "source_field": "status",
+        "source_value": "DRAFT",
+        "upgrade_registered": true
+      },
+      "template": {
+        "id": "PAGE.LIST"
+      },
+      "unresolved_exceptions": {
+        "carrier": "exception_ledger",
+        "count": 6,
+        "items": [
+          "UNRESOLVED: spec skeleton pending — 待业务细化 task-mgmt spec",
+          "TODO: backend contract missing for task-crud (create/edit/delete/状态流转) — 待后端补 openapi operationId",
+          "UNRESOLVED: task-semantic-mapping: 任务 <-> 项目(projects) <-> 操作日志(operation-logs) 语义对应关系未确认；列表主数据源待定",
+          "UNRESOLVED: spec §3 fields pending — 待业务细化 task-mgmt spec",
+          "UNRESOLVED: task-status-machine: 任务状态机(待开始->...->已完成，不可跳过必经状态)定义待确认",
+          "UNRESOLVED: task-project-lifecycle: 任务与项目生命周期的关联关系待确认"
+        ],
+        "rule": "unresolved items carried item-by-item as EXPLICITLY unresolved (CONVENTIONS section 3): never silently dropped, never auto-adjudicated; resolution belongs to the Owner"
+      }
+    },
+    "slots": [
+      "PAGE_SLOT.PRIMARY_ACTIONS",
+      "PAGE_SLOT.SECONDARY_ACTIONS",
+      "PAGE_SLOT.STATUS",
+      "PAGE_SLOT.FILTERS",
+      "PAGE_SLOT.CONTENT",
+      "PAGE_SLOT.FOOTER_ACTIONS",
+      "PAGE_SLOT.FEEDBACK"
+    ],
+    "surface": "V1",
+    "template_ref": "PAGE.LIST"
+  },
+  "permits_active": [],
+  "producer": {
+    "liveness": {
+      "status": "active"
+    },
+    "merge_semantics": {
+      "backfill_if_missing": [],
+      "human_never_touched": [],
+      "refresh_fields": [
+        "payload.blueprint"
+      ]
+    },
+    "producer_id": "prod.mig_b2_ingest_screen_blueprints_d",
+    "views_maintained": [
+      "truth-index.envelope"
+    ]
+  },
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_d.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-TASK-MGMT.yaml",
+        "line_anchors": {
+          "note": 39,
+          "unresolved": 166
+        },
+        "prose_summarized": [],
+        "transcription": "back-half blueprint 1/19 objectified one-to-one into a page_surface object: structure (template_ref/regions/states) + interaction (actions) + inline field semantics transcribed verbatim as structured units (array order = source order); page.status kept as a design-approval fact record with a superseded_status_field registration; unresolved items carried item-by-item into payload.blueprint.unresolved_exceptions; prose narrative condensed into notes_md, never wholesale-migrated; no physical route string enters the payload"
+      },
+      "pin": {
+        "digest": "sha256:466c31243b749b7a38e47582af804193e578a375b812320d1adb4e5f1ec59ca9"
+      },
+      "ref": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-TASK-MGMT.yaml",
+      "type": "bp_blueprint"
+    },
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_d.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "governance_id": "PAGE-APP-TASK-MGMT",
+        "ingested_from": "migration/master-batch2/key-binding-map.batch2.draft.yaml",
+        "transcription": "supplies the page<->dir and route_name binding expectations (status MECHANICAL_ROUTE_NAME_MATCH, draft table): values quoted verbatim into key_bindings.code; the KEYBINDING.* table object itself stays pending human adjudication"
+      },
+      "pin": {
+        "digest": "sha256:2beea8f95e0770da028d5ac5c2e76e2e1266e0ba7af6e0a3faa29fe72cb501fa"
+      },
+      "ref": "migration/master-batch2/key-binding-map.batch2.draft.yaml",
+      "type": "design_seed"
+    },
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_d.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/application-shell-registry.yaml",
+        "transcription": "CONVENTIONS section 2 shell attribution values (shell_name / SHELL.MAIN_CONTENT content host) quoted verbatim into payload.blueprint.shell; scroll/error boundary semantics stay on the shell slot objects (COMPONENT.SHELL.*)"
+      },
+      "pin": {
+        "digest": "sha256:cca0a9d72941835264ee3128bd91d41a55b63a26d82c7580e067df504ae2dac7"
+      },
+      "ref": "outputs/frontend/10_planned/application-shell-registry.yaml",
+      "type": "design_seed"
+    },
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_d.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/navigation-structure.yaml",
+        "transcription": "CONVENTIONS section 2 navigation attribution: leaf transcription nav_group/nav_subgroup/nav_entry (drill-down minus route; route authority stays in the pending KEYBINDING.* table)"
+      },
+      "pin": {
+        "digest": "sha256:ec6c25f3e0723c485b32d08bf1c0129a504bba4e7b338b2fab38fb7250d98870"
+      },
+      "ref": "outputs/frontend/10_planned/navigation-structure.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "页面·任务管理"
+}

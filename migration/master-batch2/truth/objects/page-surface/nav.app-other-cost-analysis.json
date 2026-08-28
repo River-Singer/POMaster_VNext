@@ -1,0 +1,108 @@
+{
+  "aliases": [
+    "PAGE-APP-OTHER-COST-ANALYSIS"
+  ],
+  "authority": {
+    "delegates": [],
+    "escalation_hint": "regenerate via migration/master-batch2/tools/ingest_navigation.py; page-level canonical id word forms pending HUMAN_OWNER adjudication (supersede merge after adjudication); route strings withheld from payloads by design (route authority = future KEYBINDING.* page<->dir table, A7 P0)",
+    "owner": "FRONTEND_ARCHITECTURE",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "LOCKED",
+    "evidence": "IMPLEMENTED",
+    "lifecycle": "CURRENT"
+  },
+  "axis_profile": "page_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "PAGE.NAV.APP_OTHER_COST_ANALYSIS",
+  "key_bindings": {
+    "artifact": [],
+    "code": []
+  },
+  "kind": "page_surface",
+  "notes_md": "本对象为 MIG-B2/M2 转录组 A 导航绑定件：源 outputs/frontend/10_planned/navigation-structure.yaml 导航树逐叶转录之一（共 1 条叶项挂本页，叶项含父组/父子组上下文）。叶项转录：node 字段（id/name_zh/icon/page_id）整条逐字保真、父组/父子组上下文随条目；共用叶关系保真（多叶共挂一 facet）。route 字段剥离不落 payload（路由权威=KEYBINDING.* page↔dir A7 P0，待建），剥离计数见 payload.route_fields_withheld，余字段字节等价（工具断言）。id 赐名（非收编）：PAGE-APP-OTHER-COST-ANALYSIS → 页级拟形 PAGE.APP_OTHER_COST_ANALYSIS（HUMAN_CONFIRM_REQUIRED），origin=derived；本对象取 PAGE.NAV.* 作用域段避让同 id 互踩。key_bindings.code 为空数组（诚实空）：导航实现锚（nav-config.ts/routes.ts 路由锚）归未来 KEYBINDING.* 对象族，本 facet 不伪造锚点。 本字段为人类散文，机器永不解析判卷。",
+  "origin": "derived",
+  "payload": {
+    "canonical_id_grant": {
+      "canonical_draft": "PAGE.APP_OTHER_COST_ANALYSIS",
+      "legacy_word_form": "PAGE-APP-OTHER-COST-ANALYSIS",
+      "object_id": "PAGE.NAV.APP_OTHER_COST_ANALYSIS",
+      "registered_in": "migration/master-batch2/key-binding-map.batch2.draft.yaml alias_registrations.proposed_needs_human",
+      "rule": "ALIASES_V0 has no PAGE-APP-* rule; canonical fit granted only, never rename-on-ingest (object origin stays source-side derived); formal alias-family registration awaits vocab PR / Owner adjudication",
+      "status": "HUMAN_CONFIRM_REQUIRED"
+    },
+    "id_facet": {
+      "merge_path": "supersede",
+      "object_id": "PAGE.NAV.APP_OTHER_COST_ANALYSIS",
+      "page_level_id": "PAGE.APP_OTHER_COST_ANALYSIS",
+      "page_level_id_status": "HUMAN_CONFIRM_REQUIRED",
+      "rule": "facet-scoped id per the group-B PAGE.READINESS.* convention: concurrent page-surface transcription families hold the page-level ids in this kind-dir (ALIASES_V0 canonical PAGE.<SEG> for PAGE-TASK-STEP-*; underscore PAGE.APP_* and dotted PAGE.APP.* drafts both observed for PAGE-APP-*); this facet takes the PAGE.NAV.* scoping segment to avoid same-id clobber and merges via the supersede chain after Owner id adjudication (report only, never auto-adjudicate)"
+    },
+    "nav_entries": [
+      {
+        "kind": "leaf",
+        "node": {
+          "icon": "pie-chart",
+          "id": "NAV.LEAF.OTHER-COST",
+          "name_zh": "其他逻辑分析",
+          "page_id": "PAGE-APP-OTHER-COST-ANALYSIS"
+        },
+        "parent_group": {
+          "icon": "bar-chart-3",
+          "id": "NAV.GROUP.G3",
+          "name_zh": "零件成本分析管理"
+        },
+        "parent_subgroup": null
+      }
+    ],
+    "route_fields_withheld": {
+      "authority": "物理 route 串不落 payload（02b §6 注记）：路由权威在 KEYBINDING.* page↔dir 表（A7 P0 三类之一，对象族待建）；剥离逐字段计数，余字段字节等价断言",
+      "count": 1
+    },
+    "source_document_meta": {
+      "navigation_structure": {
+        "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+        "document_type": "navigation-structure",
+        "schema_version": 1
+      }
+    }
+  },
+  "permits_active": [],
+  "producer": {
+    "liveness": {
+      "status": "active"
+    },
+    "merge_semantics": {
+      "backfill_if_missing": [],
+      "human_never_touched": [],
+      "refresh_fields": [
+        "payload"
+      ]
+    },
+    "producer_id": "prod.mig_b2_ingest_navigation",
+    "views_maintained": [
+      "truth-index.envelope"
+    ]
+  },
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b2/ingest_navigation.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/navigation-structure.yaml",
+        "transcription": "nav tree units for PAGE-APP-OTHER-COST-ANALYSIS transcribed verbatim minus route (route authority withheld to the future KEYBINDING.* page<->dir table, A7 P0); leaf/drill entry verbatim with parent context"
+      },
+      "pin": {
+        "digest": "sha256:ec6c25f3e0723c485b32d08bf1c0129a504bba4e7b338b2fab38fb7250d98870"
+      },
+      "ref": "outputs/frontend/10_planned/navigation-structure.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "导航树绑定·其他逻辑分析"
+}

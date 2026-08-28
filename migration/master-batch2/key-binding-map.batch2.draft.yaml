@@ -1,0 +1,1241 @@
+alias_registrations:
+  applied_in_batch1:
+  - alias_rule: PAGE-TASK-STEP-*→PAGE.*
+    note: ALIASES_V0 已登记；本批在页面 id/代码头照录 legacy 形态，不改源数据
+    observed:
+    - PAGE-TASK-STEP-AUTHENTICATE
+    - PAGE-TASK-STEP-BIND-CARLINE
+    - PAGE-TASK-STEP-BUC-ANALYSE
+    - PAGE-TASK-STEP-BUILD-BOM
+    - PAGE-TASK-STEP-EXPERT-MODEL-CALCULATE
+    - PAGE-TASK-STEP-GENERATE-SNAPSHOT
+    - PAGE-TASK-STEP-MAINTAIN-BASE-ATTRIBUTES
+    - PAGE-TASK-STEP-MANAGE-USER-ROLE
+    - PAGE-TASK-STEP-OUTPUT-TO-LEDGER
+    - PAGE-TASK-STEP-QUERY-LEDGER
+    - PAGE-TASK-STEP-SAVE-BOM
+    - PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT
+    - PAGE-TASK-STEP-TRACK-COST-BY-SNAPSHOT
+    - PAGE-TASK-STEP-VIEW-ALL-PARTS
+    - PAGE-TASK-STEP-WRITEBACK-LEDGER
+    source: vocab-lock ALIASES_V0 / vocab.ts ALIASES_V0
+  proposed_needs_human:
+  - alias_rule: PAGE-APP-*→PAGE.APP_*（token 重排外推）
+    note: ALIASES_V0 无此规则；本表 canonical_form_draft 按同模式拟合，全部 HUMAN_CONFIRM_REQUIRED，落 KEYBINDING.* 对象前须人工裁决
+batch: MIG-B2
+binding_class: page_to_code_and_route
+denominators_note: 三方对齐分母 = registry 35 ∪ readiness 39 ∪ blueprints 39 的 page id 并集 （实测 39 个 id；registry ⊂ readiness = blueprints）。路由侧分母：routes.ts 35 条记录（去重 base id 31 个）；navigation-structure 叶子 28 条 + drill_down 3 条。与 inventory.yaml denominators 段同源。
+header_scan_spec:
+  file_scope: src/pages/**/*.ts, src/pages/**/*.vue
+  line_limit: 30
+  note: 代码头=文件前 30 行注释区。PAGE.LIST/PAGE.FORM 等为页面模板引用（page-template-registry 族），非页面 id；已按模板词形单列观察，不计残差。
+kind: key-binding-map-draft-batch2
+non_page_code_tokens:
+- anchor_count: 8
+  anchor_files:
+  - src/pages/page-approval-flow/ApprovalFlowPage.vue
+  - src/pages/page-bridge-table/BridgeTablePage.vue
+  - src/pages/page-csc-price/CscPricePage.vue
+  - src/pages/page-evaluation/EvaluationPage.vue
+  - src/pages/page-forecast-report/ForecastReportPage.vue
+  - src/pages/page-other-cost-analysis/OtherCostAnalysisPage.vue
+  - src/pages/page-task-mgmt/TaskMgmtPage.vue
+  - src/pages/page-technical-akt/TechnicalAktPage.vue
+  observed_token: PAGE-BLOCKED
+  token_family: placeholder_marker
+- anchor_count: 1
+  anchor_files:
+  - src/pages/page-dashboard/DashboardPage.vue
+  base_page_id: PAGE-APP-DASHBOARD
+  observed_token: PAGE-DASHBOARD
+  token_family: variant_of_registered_page
+- anchor_count: defineOptions_count_not_tracked
+  observed_token: PAGEAPPALLPARTSLIST
+  token_family: vue_component_registration_name
+- anchor_count: defineOptions_count_not_tracked
+  observed_token: PAGEAPPBUCDETAIL
+  token_family: vue_component_registration_name
+- anchor_count: defineOptions_count_not_tracked
+  observed_token: PAGEAPPDATAPERMISSION
+  token_family: vue_component_registration_name
+- anchor_count: defineOptions_count_not_tracked
+  observed_token: PAGEAPPEQUIPMENTDB
+  token_family: vue_component_registration_name
+- anchor_count: defineOptions_count_not_tracked
+  observed_token: PAGEAPPEQUIPMENTDETAIL
+  token_family: vue_component_registration_name
+- anchor_count: defineOptions_count_not_tracked
+  observed_token: PAGEAPPEQUIPMENTPALETTE
+  token_family: vue_component_registration_name
+- anchor_count: defineOptions_count_not_tracked
+  observed_token: PAGEAPPMATERIALDB
+  token_family: vue_component_registration_name
+- anchor_count: defineOptions_count_not_tracked
+  observed_token: PAGEAPPOTHERDB
+  token_family: vue_component_registration_name
+- anchor_count: defineOptions_count_not_tracked
+  observed_token: PAGEAPPPARTSTRUCTUREDB
+  token_family: vue_component_registration_name
+- anchor_count: defineOptions_count_not_tracked
+  observed_token: PAGEAPPPROCESSDB
+  token_family: vue_component_registration_name
+- anchor_count: defineOptions_count_not_tracked
+  observed_token: PAGEAPPSETDB
+  token_family: vue_component_registration_name
+- anchor_count: defineOptions_count_not_tracked
+  observed_token: PAGEAPPUSERMGMT
+  token_family: vue_component_registration_name
+- anchor_count: defineOptions_count_not_tracked
+  observed_token: PAGEAPPVEHICLEMASTERDATA
+  token_family: vue_component_registration_name
+- anchor_count: defineOptions_count_not_tracked
+  observed_token: PAGETASKSTEPBINDCARLINE
+  token_family: vue_component_registration_name
+- anchor_count: defineOptions_count_not_tracked
+  observed_token: PAGETASKSTEPBUCANALYSE
+  token_family: vue_component_registration_name
+- anchor_count: defineOptions_count_not_tracked
+  observed_token: PAGETASKSTEPBUILDBOM
+  token_family: vue_component_registration_name
+- anchor_count: defineOptions_count_not_tracked
+  observed_token: PAGETASKSTEPEXPERTMODELCALCULATE
+  token_family: vue_component_registration_name
+- anchor_count: defineOptions_count_not_tracked
+  observed_token: PAGETASKSTEPQUERYLEDGER
+  token_family: vue_component_registration_name
+- anchor_count: defineOptions_count_not_tracked
+  observed_token: PAGETASKSTEPSELECTVEHICLECONTEXT
+  token_family: vue_component_registration_name
+page_bindings:
+- canonical_form_draft: null
+  canonical_form_note: token 重排拟合（hyphen→segment）；PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记规则族，PAGE-APP-* 同模式外推无已登记规则——全部只登记不改名，落 KEYBINDING.* 对象前须人工裁决
+  code_anchors:
+  - code_path: src/pages/page-all-parts-list/AllPartsListPage.vue
+    evidence: '* PAGE-APP-ALL-PARTS-LIST - 全系零件清单（PAGE.LIST · 只读视图）'
+    line: 3
+    match_rule: header_exact_token
+  - code_path: src/pages/page-all-parts-list/AllPartsListPage.vue
+    evidence: '* 事实源：outputs/frontend/30_generated/page-specs/PAGE-APP-ALL-PARTS-LIST.md'
+    line: 4
+    match_rule: header_exact_token
+  - code_path: src/pages/page-all-parts-list
+    evidence: 目录在场（命名规则派生）
+    line: null
+    match_rule: dir_name_derived
+  governance_id: PAGE-APP-ALL-PARTS-LIST
+  registry_side:
+    blueprint_file: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-ALL-PARTS-LIST.yaml
+    in_application_page_registry: true
+    in_page_readiness: true
+    page_readiness_status: DRAFT
+    registry_note_superseded: false
+  route_side:
+    nav_structure_routes:
+    - entry: NAV.LEAF.ALL-PARTS
+      match_rule: nav_struct_leaf
+      route: /bom/all-parts
+    routes_ts:
+    - component_file: '@/pages/page-all-parts-list/AllPartsListPage.vue'
+      match_rule: route_name_exact
+      name: PAGE-APP-ALL-PARTS-LIST
+      path: /bom/all-parts
+  status: MECHANICAL_ROUTE_NAME_MATCH
+- canonical_form_draft: null
+  canonical_form_note: token 重排拟合（hyphen→segment）；PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记规则族，PAGE-APP-* 同模式外推无已登记规则——全部只登记不改名，落 KEYBINDING.* 对象前须人工裁决
+  code_anchors:
+  - code_path: src/pages/page-approval-flow/ApprovalFlowPage.vue
+    evidence: '* PAGE-APP-APPROVAL-FLOW - 审批流管理（PAGE.DETAIL 骨架页 / FTA-PAGE-BLOCKED）'
+    line: 3
+    match_rule: header_exact_token
+  - code_path: src/pages/page-approval-flow/ApprovalFlowPage.vue
+    evidence: '* 不做臆造业务交互（流程设计器组件待注册、配置编辑/审批操作待业务确认，ISSUE.PAGE-APP-APPROVAL-FLOW.2/3），'
+    line: 6
+    match_rule: header_exact_token
+  - code_path: src/pages/page-approval-flow
+    evidence: 目录在场（命名规则派生）
+    line: null
+    match_rule: dir_name_derived
+  governance_id: PAGE-APP-APPROVAL-FLOW
+  registry_side:
+    blueprint_file: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-APPROVAL-FLOW.yaml
+    in_application_page_registry: true
+    in_page_readiness: true
+    page_readiness_status: DRAFT
+    registry_note_superseded: false
+  route_side:
+    nav_structure_routes:
+    - entry: NAV.LEAF.APPROVAL
+      match_rule: nav_struct_leaf
+      route: /system/approval
+    routes_ts:
+    - component_file: '@/pages/page-approval-flow/ApprovalFlowPage.vue'
+      match_rule: route_name_exact
+      name: PAGE-APP-APPROVAL-FLOW
+      path: /system/approval
+  status: MECHANICAL_ROUTE_NAME_MATCH
+- canonical_form_draft: null
+  canonical_form_note: token 重排拟合（hyphen→segment）；PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记规则族，PAGE-APP-* 同模式外推无已登记规则——全部只登记不改名，落 KEYBINDING.* 对象前须人工裁决
+  code_anchors:
+  - code_path: src/pages/page-bridge-table
+    evidence: 目录在场（命名规则派生）
+    line: null
+    match_rule: dir_name_derived
+  governance_id: PAGE-APP-BRIDGE-TABLE
+  registry_side:
+    blueprint_file: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-BRIDGE-TABLE.yaml
+    in_application_page_registry: true
+    in_page_readiness: true
+    page_readiness_status: DRAFT
+    registry_note_superseded: false
+  route_side:
+    nav_structure_routes:
+    - entry: NAV.LEAF.BRIDGE-TABLE
+      match_rule: nav_struct_leaf
+      route: /report/bridge
+    routes_ts:
+    - component_file: '@/pages/page-bridge-table/BridgeTablePage.vue'
+      match_rule: route_name_exact
+      name: PAGE-APP-BRIDGE-TABLE
+      path: /report/bridge
+  status: MECHANICAL_ROUTE_NAME_MATCH
+- canonical_form_draft: null
+  canonical_form_note: token 重排拟合（hyphen→segment）；PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记规则族，PAGE-APP-* 同模式外推无已登记规则——全部只登记不改名，落 KEYBINDING.* 对象前须人工裁决
+  code_anchors:
+  - code_path: src/pages/page-buc-detail/BucDetailPage.vue
+    evidence: '* PAGE-APP-BUC-DETAIL - BUC 成本分析详情页（spec 03-buc-analysis §3.3/§4.3）'
+    line: 3
+    match_rule: header_exact_token
+  - code_path: src/pages/page-buc-detail/BucDetailPage.vue
+    evidence: '* 事实源：outputs/frontend/30_generated/page-specs/PAGE-APP-BUC-DETAIL.md'
+    line: 4
+    match_rule: header_exact_token
+  - code_path: src/pages/page-buc-detail/BucDetailPage.vue
+    evidence: '*       （不跳 /task/expert-model-calculate 新页，PAGE-APP-BUC-DETAIL 2026-08-20 note 抽屉结构契约）；'
+    line: 23
+    match_rule: header_exact_token
+  - code_path: src/pages/page-buc-detail/MhrCalcDialog.vue
+    evidence: '* MhrCalcDialog - MHR 弹窗试算（O2 翻案，2026-08-19 蓝图 PAGE-APP-BUC-DETAIL note）'
+    line: 3
+    match_rule: header_exact_token
+  - code_path: src/pages/page-expert-model-calculate/ExpertModelCalculatePage.vue
+    evidence: '* PAGE-APP-BUC-DETAIL 2026-08-20 note）；预填/换算/级联抑制与实时计算均在抽屉组件内。'
+    line: 12
+    match_rule: header_exact_token
+  - code_path: src/pages/page-buc-detail
+    evidence: 目录在场（命名规则派生）
+    line: null
+    match_rule: dir_name_derived
+  governance_id: PAGE-APP-BUC-DETAIL
+  registry_side:
+    blueprint_file: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-BUC-DETAIL.yaml
+    in_application_page_registry: true
+    in_page_readiness: true
+    page_readiness_status: DRAFT
+    registry_note_superseded: false
+  route_side:
+    nav_structure_routes:
+    - entry: PAGE-APP-BUC-DETAIL
+      match_rule: nav_struct_drill_down
+      route: /analysis/buc/:id
+    routes_ts:
+    - component_file: '@/pages/page-buc-detail/BucDetailPage.vue'
+      match_rule: route_name_exact
+      name: PAGE-APP-BUC-DETAIL
+      path: /analysis/buc/:id
+  status: MECHANICAL_ROUTE_NAME_MATCH
+- canonical_form_draft: null
+  canonical_form_note: token 重排拟合（hyphen→segment）；PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记规则族，PAGE-APP-* 同模式外推无已登记规则——全部只登记不改名，落 KEYBINDING.* 对象前须人工裁决
+  code_anchors:
+  - code_path: src/pages/page-csc-price/CscPricePage.vue
+    evidence: '* PAGE-APP-CSC-PRICE - CSC 价格(配附件/材料/定点)（PAGE.LIST 骨架页 / FTA-PAGE-BLOCKED）'
+    line: 3
+    match_rule: header_exact_token
+  - code_path: src/pages/page-csc-price/CscPricePage.vue
+    evidence: '* （§3 字段三份均待补充、8 列依据任务简报待确认，见 ISSUE.PAGE-APP-CSC-PRICE.1/2/5）：'
+    line: 5
+    match_rule: header_exact_token
+  - code_path: src/pages/page-csc-price
+    evidence: 目录在场（命名规则派生）
+    line: null
+    match_rule: dir_name_derived
+  governance_id: PAGE-APP-CSC-PRICE
+  registry_side:
+    blueprint_file: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-CSC-PRICE.yaml
+    in_application_page_registry: true
+    in_page_readiness: true
+    page_readiness_status: DRAFT
+    registry_note_superseded: false
+  route_side:
+    nav_structure_routes:
+    - entry: NAV.LEAF.ACCESSORY-PRICE
+      match_rule: nav_struct_leaf
+      route: /csc/accessory
+    - entry: NAV.LEAF.MATERIAL-PRICE
+      match_rule: nav_struct_leaf
+      route: /csc/material
+    - entry: NAV.LEAF.NOMINATION-PRICE
+      match_rule: nav_struct_leaf
+      route: /csc/nomination
+    routes_ts:
+    - component_file: '@/pages/page-csc-price/CscPricePage.vue'
+      match_rule: route_name_exact
+      name: PAGE-APP-CSC-PRICE
+      path: /csc/accessory
+    - component_file: '@/pages/page-csc-price/CscPricePage.vue'
+      match_rule: route_name_suffix_variant
+      name: PAGE-APP-CSC-PRICE-material
+      path: /csc/material
+    - component_file: '@/pages/page-csc-price/CscPricePage.vue'
+      match_rule: route_name_suffix_variant
+      name: PAGE-APP-CSC-PRICE-nomination
+      path: /csc/nomination
+  status: MECHANICAL_ROUTE_NAME_MATCH
+- canonical_form_draft: null
+  canonical_form_note: token 重排拟合（hyphen→segment）；PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记规则族，PAGE-APP-* 同模式外推无已登记规则——全部只登记不改名，落 KEYBINDING.* 对象前须人工裁决
+  code_anchors:
+  - code_path: src/pages/page-dashboard/DashboardPage.vue
+    evidence: '* PAGE-DASHBOARD - 工作台首页（PAGE.DASHBOARD）'
+    line: 3
+    match_rule: header_variant_token
+  - code_path: src/pages/page-dashboard
+    evidence: 目录在场（命名规则派生）
+    line: null
+    match_rule: dir_name_derived
+  governance_id: PAGE-APP-DASHBOARD
+  registry_side:
+    blueprint_file: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-DASHBOARD.yaml
+    in_application_page_registry: true
+    in_page_readiness: true
+    page_readiness_status: DRAFT
+    registry_note_superseded: false
+  route_side:
+    nav_structure_routes:
+    - entry: NAV.LEAF.DASHBOARD
+      match_rule: nav_struct_leaf
+      route: /
+    routes_ts:
+    - component_file: '@/pages/page-dashboard/DashboardPage.vue'
+      match_rule: route_name_exact
+      name: PAGE-APP-DASHBOARD
+      path: /
+  status: MECHANICAL_ROUTE_NAME_MATCH
+- canonical_form_draft: null
+  canonical_form_note: token 重排拟合（hyphen→segment）；PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记规则族，PAGE-APP-* 同模式外推无已登记规则——全部只登记不改名，落 KEYBINDING.* 对象前须人工裁决
+  code_anchors:
+  - code_path: src/pages/page-data-permission/DataPermissionPage.vue
+    evidence: '* PAGE-APP-DATA-PERMISSION - 数据权限管理（PAGE.LIST）'
+    line: 3
+    match_rule: header_exact_token
+  - code_path: src/pages/page-data-permission
+    evidence: 目录在场（命名规则派生）
+    line: null
+    match_rule: dir_name_derived
+  governance_id: PAGE-APP-DATA-PERMISSION
+  registry_side:
+    blueprint_file: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-DATA-PERMISSION.yaml
+    in_application_page_registry: true
+    in_page_readiness: true
+    page_readiness_status: DRAFT
+    registry_note_superseded: false
+  route_side:
+    nav_structure_routes:
+    - entry: NAV.LEAF.DATA-PERM
+      match_rule: nav_struct_leaf
+      route: /system/permission
+    routes_ts:
+    - component_file: '@/pages/page-data-permission/DataPermissionPage.vue'
+      match_rule: route_name_exact
+      name: PAGE-APP-DATA-PERMISSION
+      path: /system/permission
+  status: MECHANICAL_ROUTE_NAME_MATCH
+- canonical_form_draft: null
+  canonical_form_note: token 重排拟合（hyphen→segment）；PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记规则族，PAGE-APP-* 同模式外推无已登记规则——全部只登记不改名，落 KEYBINDING.* 对象前须人工裁决
+  code_anchors:
+  - code_path: src/pages/page-equipment-db/EquipmentDbPage.vue
+    evidence: '* PAGE-APP-EQUIPMENT-DB - 设备数据库（PAGE.LIST · 单表平铺，无 Tab 分类）'
+    line: 3
+    match_rule: header_exact_token
+  - code_path: src/pages/page-equipment-db
+    evidence: 目录在场（命名规则派生）
+    line: null
+    match_rule: dir_name_derived
+  governance_id: PAGE-APP-EQUIPMENT-DB
+  registry_side:
+    blueprint_file: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-EQUIPMENT-DB.yaml
+    in_application_page_registry: true
+    in_page_readiness: true
+    page_readiness_status: DRAFT
+    registry_note_superseded: false
+  route_side:
+    nav_structure_routes:
+    - entry: NAV.LEAF.EQUIPMENT-DB
+      match_rule: nav_struct_leaf
+      route: /db/equipment
+    routes_ts:
+    - component_file: '@/pages/page-equipment-db/EquipmentDbPage.vue'
+      match_rule: route_name_exact
+      name: PAGE-APP-EQUIPMENT-DB
+      path: /db/equipment
+  status: MECHANICAL_ROUTE_NAME_MATCH
+- canonical_form_draft: null
+  canonical_form_note: token 重排拟合（hyphen→segment）；PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记规则族，PAGE-APP-* 同模式外推无已登记规则——全部只登记不改名，落 KEYBINDING.* 对象前须人工裁决
+  code_anchors:
+  - code_path: src/pages/page-equipment-detail/EquipmentDetailPage.vue
+    evidence: '* PAGE-APP-EQUIPMENT-DETAIL - 设备明细（PAGE.DETAIL · 53 字段 MHR 成本模型）'
+    line: 3
+    match_rule: header_exact_token
+  - code_path: src/pages/page-equipment-detail
+    evidence: 目录在场（命名规则派生）
+    line: null
+    match_rule: dir_name_derived
+  governance_id: PAGE-APP-EQUIPMENT-DETAIL
+  registry_side:
+    blueprint_file: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-EQUIPMENT-DETAIL.yaml
+    in_application_page_registry: true
+    in_page_readiness: true
+    page_readiness_status: DRAFT
+    registry_note_superseded: false
+  route_side:
+    nav_structure_routes:
+    - entry: PAGE-APP-EQUIPMENT-DETAIL
+      match_rule: nav_struct_drill_down
+      route: /db/equipment/:id
+    routes_ts:
+    - component_file: '@/pages/page-equipment-detail/EquipmentDetailPage.vue'
+      match_rule: route_name_exact
+      name: PAGE-APP-EQUIPMENT-DETAIL
+      path: /db/equipment/:id
+  status: MECHANICAL_ROUTE_NAME_MATCH
+- canonical_form_draft: null
+  canonical_form_note: token 重排拟合（hyphen→segment）；PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记规则族，PAGE-APP-* 同模式外推无已登记规则——全部只登记不改名，落 KEYBINDING.* 对象前须人工裁决
+  code_anchors:
+  - code_path: src/pages/page-equipment-palette/EquipmentPalettePage.vue
+    evidence: '* PAGE-APP-EQUIPMENT-PALETTE - 装备 Palette 管理（PAGE.MASTER_DETAIL）'
+    line: 3
+    match_rule: header_exact_token
+  - code_path: src/pages/page-equipment-palette
+    evidence: 目录在场（命名规则派生）
+    line: null
+    match_rule: dir_name_derived
+  governance_id: PAGE-APP-EQUIPMENT-PALETTE
+  registry_side:
+    blueprint_file: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-EQUIPMENT-PALETTE.yaml
+    in_application_page_registry: true
+    in_page_readiness: true
+    page_readiness_status: DRAFT
+    registry_note_superseded: false
+  route_side:
+    nav_structure_routes:
+    - entry: NAV.LEAF.PALETTE
+      match_rule: nav_struct_leaf
+      route: /bom/palette
+    routes_ts:
+    - component_file: '@/pages/page-equipment-palette/EquipmentPalettePage.vue'
+      match_rule: route_name_exact
+      name: PAGE-APP-EQUIPMENT-PALETTE
+      path: /bom/palette
+  status: MECHANICAL_ROUTE_NAME_MATCH
+- canonical_form_draft: null
+  canonical_form_note: token 重排拟合（hyphen→segment）；PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记规则族，PAGE-APP-* 同模式外推无已登记规则——全部只登记不改名，落 KEYBINDING.* 对象前须人工裁决
+  code_anchors:
+  - code_path: src/pages/page-evaluation/EvaluationPage.vue
+    evidence: '* BC/AEKO/PKO 评估（三 spec 合一）- PAGE-APP-EVALUATION（PAGE.LIST）'
+    line: 3
+    match_rule: header_exact_token
+  - code_path: src/pages/page-evaluation
+    evidence: 目录在场（命名规则派生）
+    line: null
+    match_rule: dir_name_derived
+  governance_id: PAGE-APP-EVALUATION
+  registry_side:
+    blueprint_file: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-EVALUATION.yaml
+    in_application_page_registry: true
+    in_page_readiness: true
+    page_readiness_status: DRAFT
+    registry_note_superseded: false
+  route_side:
+    nav_structure_routes:
+    - entry: NAV.LEAF.AEKO-EVAL
+      match_rule: nav_struct_leaf
+      route: /eval/aeko
+    - entry: NAV.LEAF.BC-EVAL
+      match_rule: nav_struct_leaf
+      route: /eval/bc
+    - entry: NAV.LEAF.PKO-EVAL
+      match_rule: nav_struct_leaf
+      route: /eval/pko
+    routes_ts:
+    - component_file: '@/pages/page-evaluation/EvaluationPage.vue'
+      match_rule: route_name_exact
+      name: PAGE-APP-EVALUATION
+      path: /eval/aeko
+    - component_file: '@/pages/page-evaluation/EvaluationPage.vue'
+      match_rule: route_name_suffix_variant
+      name: PAGE-APP-EVALUATION-bc
+      path: /eval/bc
+    - component_file: '@/pages/page-evaluation/EvaluationPage.vue'
+      match_rule: route_name_suffix_variant
+      name: PAGE-APP-EVALUATION-pko
+      path: /eval/pko
+  status: MECHANICAL_ROUTE_NAME_MATCH
+- canonical_form_draft: null
+  canonical_form_note: token 重排拟合（hyphen→segment）；PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记规则族，PAGE-APP-* 同模式外推无已登记规则——全部只登记不改名，落 KEYBINDING.* 对象前须人工裁决
+  code_anchors:
+  - code_path: src/pages/page-forecast-report/ForecastReportPage.vue
+    evidence: '* PAGE-APP-FORECAST-REPORT - 预算预测报表（PAGE.LIST 骨架页 / FTA-PAGE-BLOCKED）'
+    line: 3
+    match_rule: header_exact_token
+  - code_path: src/pages/page-forecast-report/ForecastReportPage.vue
+    evidence: '* VSI/Target 对比公式待补（ISSUE.PAGE-APP-FORECAST-REPORT.2），'
+    line: 6
+    match_rule: header_exact_token
+  - code_path: src/pages/page-forecast-report
+    evidence: 目录在场（命名规则派生）
+    line: null
+    match_rule: dir_name_derived
+  governance_id: PAGE-APP-FORECAST-REPORT
+  registry_side:
+    blueprint_file: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-FORECAST-REPORT.yaml
+    in_application_page_registry: true
+    in_page_readiness: true
+    page_readiness_status: DRAFT
+    registry_note_superseded: false
+  route_side:
+    nav_structure_routes:
+    - entry: NAV.LEAF.FORECAST
+      match_rule: nav_struct_leaf
+      route: /report/forecast
+    routes_ts:
+    - component_file: '@/pages/page-forecast-report/ForecastReportPage.vue'
+      match_rule: route_name_exact
+      name: PAGE-APP-FORECAST-REPORT
+      path: /report/forecast
+  status: MECHANICAL_ROUTE_NAME_MATCH
+- canonical_form_draft: null
+  canonical_form_note: token 重排拟合（hyphen→segment）；PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记规则族，PAGE-APP-* 同模式外推无已登记规则——全部只登记不改名，落 KEYBINDING.* 对象前须人工裁决
+  code_anchors:
+  - code_path: src/pages/page-material-db/MaterialDbPage.vue
+    evidence: '* PAGE-APP-MATERIAL-DB - 材料数据库（PAGE.LIST · 按材料大类分类的主数据）'
+    line: 3
+    match_rule: header_exact_token
+  - code_path: src/pages/page-material-db
+    evidence: 目录在场（命名规则派生）
+    line: null
+    match_rule: dir_name_derived
+  governance_id: PAGE-APP-MATERIAL-DB
+  registry_side:
+    blueprint_file: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-MATERIAL-DB.yaml
+    in_application_page_registry: true
+    in_page_readiness: true
+    page_readiness_status: DRAFT
+    registry_note_superseded: false
+  route_side:
+    nav_structure_routes:
+    - entry: NAV.LEAF.MATERIAL-DB
+      match_rule: nav_struct_leaf
+      route: /db/material
+    routes_ts:
+    - component_file: '@/pages/page-material-db/MaterialDbPage.vue'
+      match_rule: route_name_exact
+      name: PAGE-APP-MATERIAL-DB
+      path: /db/material
+  status: MECHANICAL_ROUTE_NAME_MATCH
+- canonical_form_draft: null
+  canonical_form_note: token 重排拟合（hyphen→segment）；PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记规则族，PAGE-APP-* 同模式外推无已登记规则——全部只登记不改名，落 KEYBINDING.* 对象前须人工裁决
+  code_anchors:
+  - code_path: src/pages/page-other-cost-analysis/OtherCostAnalysisPage.vue
+    evidence: '* PAGE-APP-OTHER-COST-ANALYSIS - 其他逻辑分析（PAGE.LIST · 骨架 spec 页）'
+    line: 3
+    match_rule: header_exact_token
+  - code_path: src/pages/page-other-cost-analysis
+    evidence: 目录在场（命名规则派生）
+    line: null
+    match_rule: dir_name_derived
+  governance_id: PAGE-APP-OTHER-COST-ANALYSIS
+  registry_side:
+    blueprint_file: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-OTHER-COST-ANALYSIS.yaml
+    in_application_page_registry: true
+    in_page_readiness: true
+    page_readiness_status: DRAFT
+    registry_note_superseded: false
+  route_side:
+    nav_structure_routes:
+    - entry: NAV.LEAF.OTHER-COST
+      match_rule: nav_struct_leaf
+      route: /analysis/other
+    routes_ts:
+    - component_file: '@/pages/page-other-cost-analysis/OtherCostAnalysisPage.vue'
+      match_rule: route_name_exact
+      name: PAGE-APP-OTHER-COST-ANALYSIS
+      path: /analysis/other
+  status: MECHANICAL_ROUTE_NAME_MATCH
+- canonical_form_draft: null
+  canonical_form_note: token 重排拟合（hyphen→segment）；PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记规则族，PAGE-APP-* 同模式外推无已登记规则——全部只登记不改名，落 KEYBINDING.* 对象前须人工裁决
+  code_anchors:
+  - code_path: src/pages/page-other-db/OtherDbPage.vue
+    evidence: '* PAGE-APP-OTHER-DB - 其他数据库（PAGE.LIST · 三 Tab）'
+    line: 3
+    match_rule: header_exact_token
+  - code_path: src/pages/page-other-db/OtherDbPage.vue
+    evidence: '* 布局/字段/文案取自蓝图 PAGE-APP-OTHER-DB（2026-08-17 批次0 补登）与原型 other-db.html。'
+    line: 9
+    match_rule: header_exact_token
+  - code_path: src/pages/page-other-db
+    evidence: 目录在场（命名规则派生）
+    line: null
+    match_rule: dir_name_derived
+  governance_id: PAGE-APP-OTHER-DB
+  registry_side:
+    blueprint_file: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-OTHER-DB.yaml
+    in_application_page_registry: true
+    in_page_readiness: true
+    page_readiness_status: DRAFT
+    registry_note_superseded: false
+  route_side:
+    nav_structure_routes:
+    - entry: NAV.LEAF.OTHER-DB
+      match_rule: nav_struct_leaf
+      route: /db/other
+    routes_ts:
+    - component_file: '@/pages/page-other-db/OtherDbPage.vue'
+      match_rule: route_name_exact
+      name: PAGE-APP-OTHER-DB
+      path: /db/other
+  status: MECHANICAL_ROUTE_NAME_MATCH
+- canonical_form_draft: null
+  canonical_form_note: token 重排拟合（hyphen→segment）；PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记规则族，PAGE-APP-* 同模式外推无已登记规则——全部只登记不改名，落 KEYBINDING.* 对象前须人工裁决
+  code_anchors:
+  - code_path: src/pages/page-part-info/PartInfoPage.vue
+    evidence: '* PAGE-APP-PART-INFO - 零件信息（PAGE.DETAIL）'
+    line: 3
+    match_rule: header_exact_token
+  - code_path: src/pages/page-part-info
+    evidence: 目录在场（命名规则派生）
+    line: null
+    match_rule: dir_name_derived
+  governance_id: PAGE-APP-PART-INFO
+  registry_side:
+    blueprint_file: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-PART-INFO.yaml
+    in_application_page_registry: true
+    in_page_readiness: true
+    page_readiness_status: DRAFT
+    registry_note_superseded: false
+  route_side:
+    nav_structure_routes:
+    - entry: PAGE-APP-PART-INFO
+      match_rule: nav_struct_drill_down
+      route: /analysis/part/:id
+    routes_ts:
+    - component_file: '@/pages/page-part-info/PartInfoPage.vue'
+      match_rule: route_name_exact
+      name: PAGE-APP-PART-INFO
+      path: /analysis/part/:id
+  status: MECHANICAL_ROUTE_NAME_MATCH
+- canonical_form_draft: null
+  canonical_form_note: token 重排拟合（hyphen→segment）；PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记规则族，PAGE-APP-* 同模式外推无已登记规则——全部只登记不改名，落 KEYBINDING.* 对象前须人工裁决
+  code_anchors:
+  - code_path: src/pages/page-part-structure-db/PartStructureDbPage.vue
+    evidence: '* PAGE-APP-PART-STRUCTURE-DB - 零件结构主数据（PAGE.LIST · 5 级层级主数据）'
+    line: 3
+    match_rule: header_exact_token
+  - code_path: src/pages/page-part-structure-db
+    evidence: 目录在场（命名规则派生）
+    line: null
+    match_rule: dir_name_derived
+  governance_id: PAGE-APP-PART-STRUCTURE-DB
+  registry_side:
+    blueprint_file: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-PART-STRUCTURE-DB.yaml
+    in_application_page_registry: true
+    in_page_readiness: true
+    page_readiness_status: DRAFT
+    registry_note_superseded: false
+  route_side:
+    nav_structure_routes:
+    - entry: NAV.LEAF.PART-STRUCTURE
+      match_rule: nav_struct_leaf
+      route: /db/part-structure
+    routes_ts:
+    - component_file: '@/pages/page-part-structure-db/PartStructureDbPage.vue'
+      match_rule: route_name_exact
+      name: PAGE-APP-PART-STRUCTURE-DB
+      path: /db/part-structure
+  status: MECHANICAL_ROUTE_NAME_MATCH
+- canonical_form_draft: null
+  canonical_form_note: token 重排拟合（hyphen→segment）；PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记规则族，PAGE-APP-* 同模式外推无已登记规则——全部只登记不改名，落 KEYBINDING.* 对象前须人工裁决
+  code_anchors:
+  - code_path: src/pages/page-process-db/ProcessDbPage.vue
+    evidence: '* PAGE-APP-PROCESS-DB - 工艺数据库（PAGE.LIST · 单表 CRUD）'
+    line: 3
+    match_rule: header_exact_token
+  - code_path: src/pages/page-process-db
+    evidence: 目录在场（命名规则派生）
+    line: null
+    match_rule: dir_name_derived
+  governance_id: PAGE-APP-PROCESS-DB
+  registry_side:
+    blueprint_file: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-PROCESS-DB.yaml
+    in_application_page_registry: true
+    in_page_readiness: true
+    page_readiness_status: DRAFT
+    registry_note_superseded: false
+  route_side:
+    nav_structure_routes:
+    - entry: NAV.LEAF.PROCESS-DB
+      match_rule: nav_struct_leaf
+      route: /db/process
+    routes_ts:
+    - component_file: '@/pages/page-process-db/ProcessDbPage.vue'
+      match_rule: route_name_exact
+      name: PAGE-APP-PROCESS-DB
+      path: /db/process
+  status: MECHANICAL_ROUTE_NAME_MATCH
+- canonical_form_draft: null
+  canonical_form_note: token 重排拟合（hyphen→segment）；PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记规则族，PAGE-APP-* 同模式外推无已登记规则——全部只登记不改名，落 KEYBINDING.* 对象前须人工裁决
+  code_anchors:
+  - code_path: src/pages/page-role-mgmt/RoleMgmtPage.vue
+    evidence: '* PAGE-APP-ROLE-MGMT - 角色管理'
+    line: 3
+    match_rule: header_exact_token
+  - code_path: src/pages/page-role-mgmt
+    evidence: 目录在场（命名规则派生）
+    line: null
+    match_rule: dir_name_derived
+  governance_id: PAGE-APP-ROLE-MGMT
+  registry_side:
+    blueprint_file: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-ROLE-MGMT.yaml
+    in_application_page_registry: true
+    in_page_readiness: true
+    page_readiness_status: DRAFT
+    registry_note_superseded: false
+  route_side:
+    nav_structure_routes:
+    - entry: NAV.LEAF.ROLE-MGMT
+      match_rule: nav_struct_leaf
+      route: /system/role
+    routes_ts:
+    - component_file: '@/pages/page-role-mgmt/RoleMgmtPage.vue'
+      match_rule: route_name_exact
+      name: PAGE-APP-ROLE-MGMT
+      path: /system/role
+  status: MECHANICAL_ROUTE_NAME_MATCH
+- canonical_form_draft: null
+  canonical_form_note: token 重排拟合（hyphen→segment）；PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记规则族，PAGE-APP-* 同模式外推无已登记规则——全部只登记不改名，落 KEYBINDING.* 对象前须人工裁决
+  code_anchors:
+  - code_path: src/pages/page-set-db/SetDbPage.vue
+    evidence: '* PAGE-APP-SET-DB - SET 数据库（PAGE.LIST · 5 级层级主数据）'
+    line: 3
+    match_rule: header_exact_token
+  - code_path: src/pages/page-set-db
+    evidence: 目录在场（命名规则派生）
+    line: null
+    match_rule: dir_name_derived
+  governance_id: PAGE-APP-SET-DB
+  registry_side:
+    blueprint_file: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-SET-DB.yaml
+    in_application_page_registry: true
+    in_page_readiness: true
+    page_readiness_status: DRAFT
+    registry_note_superseded: false
+  route_side:
+    nav_structure_routes:
+    - entry: NAV.LEAF.SET-DB
+      match_rule: nav_struct_leaf
+      route: /db/set
+    routes_ts:
+    - component_file: '@/pages/page-set-db/SetDbPage.vue'
+      match_rule: route_name_exact
+      name: PAGE-APP-SET-DB
+      path: /db/set
+  status: MECHANICAL_ROUTE_NAME_MATCH
+- canonical_form_draft: null
+  canonical_form_note: token 重排拟合（hyphen→segment）；PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记规则族，PAGE-APP-* 同模式外推无已登记规则——全部只登记不改名，落 KEYBINDING.* 对象前须人工裁决
+  code_anchors:
+  - code_path: src/pages/page-task-mgmt/TaskMgmtPage.vue
+    evidence: '* PAGE-APP-TASK-MGMT - 任务管理（PAGE.LIST · 骨架 spec 页）'
+    line: 3
+    match_rule: header_exact_token
+  - code_path: src/pages/page-task-mgmt
+    evidence: 目录在场（命名规则派生）
+    line: null
+    match_rule: dir_name_derived
+  governance_id: PAGE-APP-TASK-MGMT
+  registry_side:
+    blueprint_file: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-TASK-MGMT.yaml
+    in_application_page_registry: true
+    in_page_readiness: true
+    page_readiness_status: DRAFT
+    registry_note_superseded: false
+  route_side:
+    nav_structure_routes:
+    - entry: NAV.LEAF.TASK-MGMT
+      match_rule: nav_struct_leaf
+      route: /db/task
+    routes_ts:
+    - component_file: '@/pages/page-task-mgmt/TaskMgmtPage.vue'
+      match_rule: route_name_exact
+      name: PAGE-APP-TASK-MGMT
+      path: /db/task
+  status: MECHANICAL_ROUTE_NAME_MATCH
+- canonical_form_draft: null
+  canonical_form_note: token 重排拟合（hyphen→segment）；PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记规则族，PAGE-APP-* 同模式外推无已登记规则——全部只登记不改名，落 KEYBINDING.* 对象前须人工裁决
+  code_anchors:
+  - code_path: src/pages/page-technical-akt/TechnicalAktPage.vue
+    evidence: '* PAGE-APP-TECHNICAL-AKT - 技术变更 AKT（PAGE.LIST 骨架页 / FTA-PAGE-BLOCKED）'
+    line: 3
+    match_rule: header_exact_token
+  - code_path: src/pages/page-technical-akt/TechnicalAktPage.vue
+    evidence: '* 不做臆造业务交互（提交/审批流为后端回调，见 ISSUE.PAGE-APP-TECHNICAL-AKT.5）。'
+    line: 6
+    match_rule: header_exact_token
+  - code_path: src/pages/page-technical-akt
+    evidence: 目录在场（命名规则派生）
+    line: null
+    match_rule: dir_name_derived
+  governance_id: PAGE-APP-TECHNICAL-AKT
+  registry_side:
+    blueprint_file: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-TECHNICAL-AKT.yaml
+    in_application_page_registry: true
+    in_page_readiness: true
+    page_readiness_status: DRAFT
+    registry_note_superseded: false
+  route_side:
+    nav_structure_routes:
+    - entry: NAV.LEAF.TECH-AKT
+      match_rule: nav_struct_leaf
+      route: /eval/akt
+    routes_ts:
+    - component_file: '@/pages/page-technical-akt/TechnicalAktPage.vue'
+      match_rule: route_name_exact
+      name: PAGE-APP-TECHNICAL-AKT
+      path: /eval/akt
+  status: MECHANICAL_ROUTE_NAME_MATCH
+- canonical_form_draft: null
+  canonical_form_note: token 重排拟合（hyphen→segment）；PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记规则族，PAGE-APP-* 同模式外推无已登记规则——全部只登记不改名，落 KEYBINDING.* 对象前须人工裁决
+  code_anchors:
+  - code_path: src/pages/page-user-mgmt/UserMgmtPage.vue
+    evidence: '* PAGE-APP-USER-MGMT - 用户管理（PAGE.LIST）'
+    line: 3
+    match_rule: header_exact_token
+  - code_path: src/pages/page-user-mgmt
+    evidence: 目录在场（命名规则派生）
+    line: null
+    match_rule: dir_name_derived
+  governance_id: PAGE-APP-USER-MGMT
+  registry_side:
+    blueprint_file: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-USER-MGMT.yaml
+    in_application_page_registry: true
+    in_page_readiness: true
+    page_readiness_status: DRAFT
+    registry_note_superseded: false
+  route_side:
+    nav_structure_routes:
+    - entry: NAV.LEAF.USER-MGMT
+      match_rule: nav_struct_leaf
+      route: /system/user
+    routes_ts:
+    - component_file: '@/pages/page-user-mgmt/UserMgmtPage.vue'
+      match_rule: route_name_exact
+      name: PAGE-APP-USER-MGMT
+      path: /system/user
+  status: MECHANICAL_ROUTE_NAME_MATCH
+- canonical_form_draft: null
+  canonical_form_note: token 重排拟合（hyphen→segment）；PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记规则族，PAGE-APP-* 同模式外推无已登记规则——全部只登记不改名，落 KEYBINDING.* 对象前须人工裁决
+  code_anchors:
+  - code_path: src/pages/page-vehicle-master-data/VehicleMasterDataPage.vue
+    evidence: '* PAGE-APP-VEHICLE-MASTER-DATA - 车型主数据（PAGE.MASTER_DETAIL · 三区域联动）'
+    line: 3
+    match_rule: header_exact_token
+  - code_path: src/pages/page-vehicle-master-data
+    evidence: 目录在场（命名规则派生）
+    line: null
+    match_rule: dir_name_derived
+  governance_id: PAGE-APP-VEHICLE-MASTER-DATA
+  registry_side:
+    blueprint_file: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-VEHICLE-MASTER-DATA.yaml
+    in_application_page_registry: true
+    in_page_readiness: true
+    page_readiness_status: DRAFT
+    registry_note_superseded: false
+  route_side:
+    nav_structure_routes:
+    - entry: NAV.LEAF.VEHICLE-MASTER
+      match_rule: nav_struct_leaf
+      route: /db/vehicle-master
+    routes_ts:
+    - component_file: '@/pages/page-vehicle-master-data/VehicleMasterDataPage.vue'
+      match_rule: route_name_exact
+      name: PAGE-APP-VEHICLE-MASTER-DATA
+      path: /db/vehicle-master
+  status: MECHANICAL_ROUTE_NAME_MATCH
+- canonical_form_draft: null
+  canonical_form_note: token 重排拟合（hyphen→segment）；PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记规则族，PAGE-APP-* 同模式外推无已登记规则——全部只登记不改名，落 KEYBINDING.* 对象前须人工裁决
+  code_anchors:
+  - code_path: src/pages/page-task-step-authenticate/AuthenticatePage.vue
+    evidence: '* PAGE-TASK-STEP-AUTHENTICATE - 身份认证（PAGE.FORM）'
+    line: 3
+    match_rule: header_exact_token
+  - code_path: src/pages/page-task-step-authenticate
+    evidence: 目录在场（命名规则派生）
+    line: null
+    match_rule: dir_name_derived
+  governance_id: PAGE-TASK-STEP-AUTHENTICATE
+  registry_side:
+    blueprint_file: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-AUTHENTICATE.yaml
+    in_application_page_registry: true
+    in_page_readiness: true
+    page_readiness_status: DRAFT
+    registry_note_superseded: false
+  route_side:
+    nav_structure_routes: []
+    routes_ts:
+    - component_file: '@/pages/page-task-step-authenticate/AuthenticatePage.vue'
+      match_rule: route_name_exact
+      name: PAGE-TASK-STEP-AUTHENTICATE
+      path: /login
+  status: MECHANICAL_ROUTE_NAME_MATCH
+- canonical_form_draft: null
+  canonical_form_note: token 重排拟合（hyphen→segment）；PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记规则族，PAGE-APP-* 同模式外推无已登记规则——全部只登记不改名，落 KEYBINDING.* 对象前须人工裁决
+  code_anchors:
+  - code_path: src/pages/page-bind-carline/BindCarlinePage.vue
+    evidence: '* PAGE-TASK-STEP-BIND-CARLINE - 自动绑定清单搭建版本（bind-carline，PAGE.DETAIL）'
+    line: 3
+    match_rule: header_exact_token
+  - code_path: src/pages/page-bind-carline
+    evidence: 目录在场（命名规则派生）
+    line: null
+    match_rule: dir_name_derived
+  governance_id: PAGE-TASK-STEP-BIND-CARLINE
+  registry_side:
+    blueprint_file: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-BIND-CARLINE.yaml
+    in_application_page_registry: true
+    in_page_readiness: true
+    page_readiness_status: DRAFT
+    registry_note_superseded: false
+  route_side:
+    nav_structure_routes: []
+    routes_ts:
+    - component_file: '@/pages/page-bind-carline/BindCarlinePage.vue'
+      match_rule: route_name_exact
+      name: PAGE-TASK-STEP-BIND-CARLINE
+      path: /task/bind-carline
+  status: MECHANICAL_ROUTE_NAME_MATCH
+- canonical_form_draft: null
+  canonical_form_note: token 重排拟合（hyphen→segment）；PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记规则族，PAGE-APP-* 同模式外推无已登记规则——全部只登记不改名，落 KEYBINDING.* 对象前须人工裁决
+  code_anchors:
+  - code_path: src/pages/page-buc-analyse/BucAnalysePage.vue
+    evidence: '* PAGE-TASK-STEP-BUC-ANALYSE - BUC 分析列表页（三页式之一，spec 03-buc-analysis §3.1/§4.1/§6.1-§6.2）'
+    line: 3
+    match_rule: header_exact_token
+  - code_path: src/pages/page-buc-analyse/BucAnalysePage.vue
+    evidence: '* 事实源：outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-BUC-ANALYSE.md'
+    line: 4
+    match_rule: header_exact_token
+  - code_path: src/pages/page-buc-analyse
+    evidence: 目录在场（命名规则派生）
+    line: null
+    match_rule: dir_name_derived
+  governance_id: PAGE-TASK-STEP-BUC-ANALYSE
+  registry_side:
+    blueprint_file: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-BUC-ANALYSE.yaml
+    in_application_page_registry: true
+    in_page_readiness: true
+    page_readiness_status: DRAFT
+    registry_note_superseded: false
+  route_side:
+    nav_structure_routes:
+    - entry: NAV.LEAF.BUC
+      match_rule: nav_struct_leaf
+      route: /analysis/buc
+    routes_ts:
+    - component_file: '@/pages/page-buc-analyse/BucAnalysePage.vue'
+      match_rule: route_name_exact
+      name: PAGE-TASK-STEP-BUC-ANALYSE
+      path: /analysis/buc
+  status: MECHANICAL_ROUTE_NAME_MATCH
+- canonical_form_draft: null
+  canonical_form_note: token 重排拟合（hyphen→segment）；PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记规则族，PAGE-APP-* 同模式外推无已登记规则——全部只登记不改名，落 KEYBINDING.* 对象前须人工裁决
+  code_anchors:
+  - code_path: src/pages/page-task-step-build-bom/CalcVehiclePartsPage.vue
+    evidence: '* PAGE-TASK-STEP-BUILD-BOM - 计算车型零件清单管理（PAGE.EDITABLE_WORKSPACE）'
+    line: 3
+    match_rule: header_exact_token
+  - code_path: src/pages/page-task-step-build-bom
+    evidence: 目录在场（命名规则派生）
+    line: null
+    match_rule: dir_name_derived
+  governance_id: PAGE-TASK-STEP-BUILD-BOM
+  registry_side:
+    blueprint_file: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-BUILD-BOM.yaml
+    in_application_page_registry: true
+    in_page_readiness: true
+    page_readiness_status: DRAFT
+    registry_note_superseded: false
+  route_side:
+    nav_structure_routes:
+    - entry: NAV.LEAF.CALC-PARTS
+      match_rule: nav_struct_leaf
+      route: /bom/build
+    routes_ts:
+    - component_file: '@/pages/page-task-step-build-bom/CalcVehiclePartsPage.vue'
+      match_rule: route_name_exact
+      name: PAGE-TASK-STEP-BUILD-BOM
+      path: /bom/build
+  status: MECHANICAL_ROUTE_NAME_MATCH
+- canonical_form_draft: null
+  canonical_form_note: token 重排拟合（hyphen→segment）；PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记规则族，PAGE-APP-* 同模式外推无已登记规则——全部只登记不改名，落 KEYBINDING.* 对象前须人工裁决
+  code_anchors:
+  - code_path: src/pages/page-expert-model-calculate/ExpertModelCalculatePage.vue
+    evidence: '* PAGE-TASK-STEP-EXPERT-MODEL-CALCULATE - 1K 注塑专家模型（PAGE.FORM）'
+    line: 3
+    match_rule: header_exact_token
+  - code_path: src/pages/page-expert-model-calculate
+    evidence: 目录在场（命名规则派生）
+    line: null
+    match_rule: dir_name_derived
+  governance_id: PAGE-TASK-STEP-EXPERT-MODEL-CALCULATE
+  registry_side:
+    blueprint_file: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-EXPERT-MODEL-CALCULATE.yaml
+    in_application_page_registry: true
+    in_page_readiness: true
+    page_readiness_status: DRAFT
+    registry_note_superseded: false
+  route_side:
+    nav_structure_routes: []
+    routes_ts:
+    - component_file: '@/pages/page-expert-model-calculate/ExpertModelCalculatePage.vue'
+      match_rule: route_name_exact
+      name: PAGE-TASK-STEP-EXPERT-MODEL-CALCULATE
+      path: /task/expert-model-calculate
+  status: MECHANICAL_ROUTE_NAME_MATCH
+- canonical_form_draft: null
+  canonical_form_note: token 重排拟合（hyphen→segment）；PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记规则族，PAGE-APP-* 同模式外推无已登记规则——全部只登记不改名，落 KEYBINDING.* 对象前须人工裁决
+  code_anchors: []
+  governance_id: PAGE-TASK-STEP-GENERATE-SNAPSHOT
+  registry_side:
+    blueprint_file: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-GENERATE-SNAPSHOT.yaml
+    in_application_page_registry: false
+    in_page_readiness: true
+    page_readiness_status: DRAFT
+    registry_note_superseded: false
+  residual_note: 孤儿/占位蓝图（BP-blocked 或未入选规划，未路由未实现）
+  route_side:
+    nav_structure_routes: []
+    routes_ts: []
+  status: RESIDUAL_NO_CODE_ANCHOR
+- canonical_form_draft: null
+  canonical_form_note: token 重排拟合（hyphen→segment）；PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记规则族，PAGE-APP-* 同模式外推无已登记规则——全部只登记不改名，落 KEYBINDING.* 对象前须人工裁决
+  code_anchors: []
+  governance_id: PAGE-TASK-STEP-MAINTAIN-BASE-ATTRIBUTES
+  registry_side:
+    blueprint_file: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-MAINTAIN-BASE-ATTRIBUTES.yaml
+    in_application_page_registry: true
+    in_page_readiness: true
+    page_readiness_status: BLOCKED
+    registry_note_superseded: false
+  residual_note: 孤儿/占位蓝图（BP-blocked 或未入选规划，未路由未实现）
+  route_side:
+    nav_structure_routes: []
+    routes_ts: []
+  status: RESIDUAL_NO_CODE_ANCHOR
+- canonical_form_draft: null
+  canonical_form_note: token 重排拟合（hyphen→segment）；PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记规则族，PAGE-APP-* 同模式外推无已登记规则——全部只登记不改名，落 KEYBINDING.* 对象前须人工裁决
+  code_anchors: []
+  governance_id: PAGE-TASK-STEP-MANAGE-USER-ROLE
+  registry_side:
+    blueprint_file: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-MANAGE-USER-ROLE.yaml
+    in_application_page_registry: true
+    in_page_readiness: true
+    page_readiness_status: BLOCKED
+    registry_note_superseded: true
+  residual_note: superseded 页面（注册表 note 明示合并页已删除）
+  route_side:
+    nav_structure_routes: []
+    routes_ts: []
+  status: RESIDUAL_NO_CODE_ANCHOR
+- canonical_form_draft: null
+  canonical_form_note: token 重排拟合（hyphen→segment）；PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记规则族，PAGE-APP-* 同模式外推无已登记规则——全部只登记不改名，落 KEYBINDING.* 对象前须人工裁决
+  code_anchors: []
+  governance_id: PAGE-TASK-STEP-OUTPUT-TO-LEDGER
+  registry_side:
+    blueprint_file: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-OUTPUT-TO-LEDGER.yaml
+    in_application_page_registry: true
+    in_page_readiness: true
+    page_readiness_status: BLOCKED
+    registry_note_superseded: false
+  residual_note: 孤儿/占位蓝图（BP-blocked 或未入选规划，未路由未实现）
+  route_side:
+    nav_structure_routes: []
+    routes_ts: []
+  status: RESIDUAL_NO_CODE_ANCHOR
+- canonical_form_draft: null
+  canonical_form_note: token 重排拟合（hyphen→segment）；PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记规则族，PAGE-APP-* 同模式外推无已登记规则——全部只登记不改名，落 KEYBINDING.* 对象前须人工裁决
+  code_anchors:
+  - code_path: src/pages/page-task-step-query-ledger/QueryLedgerPage.vue
+    evidence: '* PAGE-TASK-STEP-QUERY-LEDGER - 零件清单台账（PAGE.LIST · 只读查询）'
+    line: 3
+    match_rule: header_exact_token
+  - code_path: src/pages/page-task-step-query-ledger/QueryLedgerPage.vue
+    evidence: '* 事实源：outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-QUERY-LEDGER.md'
+    line: 4
+    match_rule: header_exact_token
+  - code_path: src/pages/page-task-step-query-ledger
+    evidence: 目录在场（命名规则派生）
+    line: null
+    match_rule: dir_name_derived
+  governance_id: PAGE-TASK-STEP-QUERY-LEDGER
+  registry_side:
+    blueprint_file: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-QUERY-LEDGER.yaml
+    in_application_page_registry: true
+    in_page_readiness: true
+    page_readiness_status: DRAFT
+    registry_note_superseded: false
+  route_side:
+    nav_structure_routes:
+    - entry: NAV.LEAF.PARTS-LEDGER
+      match_rule: nav_struct_leaf
+      route: /ledger/query
+    routes_ts:
+    - component_file: '@/pages/page-task-step-query-ledger/QueryLedgerPage.vue'
+      match_rule: route_name_exact
+      name: PAGE-TASK-STEP-QUERY-LEDGER
+      path: /ledger/query
+  status: MECHANICAL_ROUTE_NAME_MATCH
+- canonical_form_draft: null
+  canonical_form_note: token 重排拟合（hyphen→segment）；PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记规则族，PAGE-APP-* 同模式外推无已登记规则——全部只登记不改名，落 KEYBINDING.* 对象前须人工裁决
+  code_anchors: []
+  governance_id: PAGE-TASK-STEP-SAVE-BOM
+  registry_side:
+    blueprint_file: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-SAVE-BOM.yaml
+    in_application_page_registry: false
+    in_page_readiness: true
+    page_readiness_status: BLOCKED
+    registry_note_superseded: false
+  residual_note: 孤儿/占位蓝图（BP-blocked 或未入选规划，未路由未实现）
+  route_side:
+    nav_structure_routes: []
+    routes_ts: []
+  status: RESIDUAL_NO_CODE_ANCHOR
+- canonical_form_draft: null
+  canonical_form_note: token 重排拟合（hyphen→segment）；PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记规则族，PAGE-APP-* 同模式外推无已登记规则——全部只登记不改名，落 KEYBINDING.* 对象前须人工裁决
+  code_anchors:
+  - code_path: src/pages/page-task-step-select-vehicle-context/SelectVehicleContextPage.vue
+    evidence: '* PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT - 选择车型上下文（PAGE.MASTER_DETAIL）'
+    line: 3
+    match_rule: header_exact_token
+  - code_path: src/pages/page-task-step-select-vehicle-context
+    evidence: 目录在场（命名规则派生）
+    line: null
+    match_rule: dir_name_derived
+  governance_id: PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT
+  registry_side:
+    blueprint_file: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT.yaml
+    in_application_page_registry: true
+    in_page_readiness: true
+    page_readiness_status: DRAFT
+    registry_note_superseded: false
+  route_side:
+    nav_structure_routes: []
+    routes_ts:
+    - component_file: '@/pages/page-task-step-select-vehicle-context/SelectVehicleContextPage.vue'
+      match_rule: route_name_exact
+      name: PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT
+      path: /context/select
+  status: MECHANICAL_ROUTE_NAME_MATCH
+- canonical_form_draft: null
+  canonical_form_note: token 重排拟合（hyphen→segment）；PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记规则族，PAGE-APP-* 同模式外推无已登记规则——全部只登记不改名，落 KEYBINDING.* 对象前须人工裁决
+  code_anchors: []
+  governance_id: PAGE-TASK-STEP-TRACK-COST-BY-SNAPSHOT
+  registry_side:
+    blueprint_file: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-TRACK-COST-BY-SNAPSHOT.yaml
+    in_application_page_registry: true
+    in_page_readiness: true
+    page_readiness_status: BLOCKED
+    registry_note_superseded: false
+  residual_note: 孤儿/占位蓝图（BP-blocked 或未入选规划，未路由未实现）
+  route_side:
+    nav_structure_routes: []
+    routes_ts: []
+  status: RESIDUAL_NO_CODE_ANCHOR
+- canonical_form_draft: null
+  canonical_form_note: token 重排拟合（hyphen→segment）；PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记规则族，PAGE-APP-* 同模式外推无已登记规则——全部只登记不改名，落 KEYBINDING.* 对象前须人工裁决
+  code_anchors: []
+  governance_id: PAGE-TASK-STEP-VIEW-ALL-PARTS
+  registry_side:
+    blueprint_file: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-VIEW-ALL-PARTS.yaml
+    in_application_page_registry: false
+    in_page_readiness: true
+    page_readiness_status: DRAFT
+    registry_note_superseded: false
+  residual_note: 孤儿/占位蓝图（BP-blocked 或未入选规划，未路由未实现）
+  route_side:
+    nav_structure_routes: []
+    routes_ts: []
+  status: RESIDUAL_NO_CODE_ANCHOR
+- canonical_form_draft: null
+  canonical_form_note: token 重排拟合（hyphen→segment）；PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记规则族，PAGE-APP-* 同模式外推无已登记规则——全部只登记不改名，落 KEYBINDING.* 对象前须人工裁决
+  code_anchors: []
+  governance_id: PAGE-TASK-STEP-WRITEBACK-LEDGER
+  registry_side:
+    blueprint_file: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-WRITEBACK-LEDGER.yaml
+    in_application_page_registry: false
+    in_page_readiness: true
+    page_readiness_status: BLOCKED
+    registry_note_superseded: false
+  residual_note: 孤儿/占位蓝图（BP-blocked 或未入选规划，未路由未实现）
+  route_side:
+    nav_structure_routes: []
+    routes_ts: []
+  status: RESIDUAL_NO_CODE_ANCHOR
+route_name_suffix_variants:
+- base_page_id: PAGE-APP-CSC-PRICE
+  component_file: '@/pages/page-csc-price/CscPricePage.vue'
+  name: PAGE-APP-CSC-PRICE-material
+  path: /csc/material
+- base_page_id: PAGE-APP-CSC-PRICE
+  component_file: '@/pages/page-csc-price/CscPricePage.vue'
+  name: PAGE-APP-CSC-PRICE-nomination
+  path: /csc/nomination
+- base_page_id: PAGE-APP-EVALUATION
+  component_file: '@/pages/page-evaluation/EvaluationPage.vue'
+  name: PAGE-APP-EVALUATION-bc
+  path: /eval/bc
+- base_page_id: PAGE-APP-EVALUATION
+  component_file: '@/pages/page-evaluation/EvaluationPage.vue'
+  name: PAGE-APP-EVALUATION-pko
+  path: /eval/pko
+routes_ts_parse:
+  fact_source_header_note: '* 路由表 - 事实源 outputs/frontend/10_planned/navigation-structure.yaml'
+  file: src/app/router/routes.ts
+  record_count: 35
+  route_name_exact_records: 31
+status_legend:
+  DIR_DERIVED_ONLY: 仅目录名派生命中（无代码头注、无路由 name 锚）；目录名与 id 的去中缀小写变换一致，待人工复核。对应 BINDING_STATUS：derived。
+  HUMAN_CONFIRM_REQUIRED: 候选由命名规则派生/变体词形对齐得出，或证据部分成立；待人工裁决。对应 vocab-lock BINDING_STATUS 收编位：confirmed（裁决后）/ derived。
+  MECHANICAL_HEADER_MATCH: src/pages 代码头（前 30 行）出现 governance_id 逐字词形。仍属草表，落 KEYBINDING.* 对象前需人工复核一次。对应 BINDING_STATUS：confirmed（待裁决转正）。
+  MECHANICAL_ROUTE_NAME_MATCH: src/app/router/routes.ts 路由记录 name 字段 == governance_id 逐字（最强机械锚）。仍属草表，落 KEYBINDING.* 对象前需人工复核一次。
+  RESIDUAL_NO_CODE_ANCHOR: 残差：页面 id 在 src/pages 代码头与路由表均无锚点（页面未实现或已删除/孤儿蓝图）。
+summary_counts:
+  bindings_by_status:
+    MECHANICAL_ROUTE_NAME_MATCH: 31
+    RESIDUAL_NO_CODE_ANCHOR: 8
+  bindings_total: 39
+  code_anchor_pages: 30
+  denominator_union_page_ids: 39
+  non_page_code_tokens: 21
+  route_name_exact_pages: 31
+  route_name_suffix_variants: 4
+  routed_pages_any_anchor: 31
+  template_token_observations:
+  - PAGE.DASHBOARD
+  - PAGE.DETAIL
+  - PAGE.EDITABLE_WORKSPACE
+  - PAGE.FORM
+  - PAGE.LIST
+  - PAGE.MASTER_DETAIL
+  unmapped_src_pages_dirs:
+  - src/pages/page-placeholder
+three_way_definition: 页面 ID（registry/readiness/blueprint 词形 PAGE-APP-*|PAGE-TASK-STEP-*）↔ src/pages/ 代码头注释（前 30 行 PAGE-* 词形）↔ 路由路径（navigation-structure 设计侧 route + src/app/router/routes.ts 代码侧 path/name）。只登记不改名。
+unmapped_src_pages_dirs:
+- code_path: src/pages/page-placeholder
+  note: 未被任何页面 id 候选引用（占位/工具目录）
+  status: RESIDUAL_NO_BATCH2_ID

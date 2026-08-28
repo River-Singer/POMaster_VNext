@@ -18,7 +18,9 @@
  * - subject 绑定机复核（N5）：--subject 显式归属声明入账时机器验证——合法绑定随事务落
  *   journal 注记 + result 回读（run 记录本体 FROZEN 不承载）；未知 id UNKNOWN_SUBJECT /
  *   畸形 id SCHEMA_INVALID 拒绑定不入账只留 warnings（gate-run 本体照常入账）；
- *   无 subject 声明信封零变化（零破坏）。
+ *   无 subject 声明信封零变化（零破坏）；
+ * - 命令面：--subject 可重复 argv 接线（happy path 落注记）+ 缺省=未声明语义锚定
+ *   （argv 缺省映射 undefined，不得伪装成显式空数组声明）。
  */
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -631,6 +633,58 @@ describe("record 命令面", () => {
     expect(envelope.command).toBe("record gate-run");
     expect(envelope.ok).toBe(true);
     expect((envelope.result as Record<string, unknown>).change).toBe("APPLIED");
+  });
+
+  it("runCli: --subject 可重复接线（argv → input.subjects）：绑定机复核通过落 journal 注记并回读信封", async () => {
+    await seedStore();
+    await seedCapability();
+    const path = writeInput(gatePayload());
+    const lines: string[] = [];
+    const code = await runCli(
+      [
+        "--dir",
+        root,
+        "record",
+        "gate-run",
+        "--from",
+        path,
+        "--subject",
+        "CAPABILITY.CSV_TOOL.SERIALIZE_ROWS",
+        "--subject",
+        "DENOMINATOR.PAGES",
+        "--json",
+      ],
+      {
+        stdout: (line) => lines.push(line),
+        stderr: () => undefined,
+      },
+    );
+    expect(code).toBe(0);
+    const envelope = JSON.parse(lines.join("\n")) as CliEnvelope<Record<string, unknown>>;
+    expect(envelope.ok).toBe(true);
+    expect(envelope.result.subject_bindings).toEqual({
+      accepted: ["CAPABILITY.CSV_TOOL.SERIALIZE_ROWS", "DENOMINATOR.PAGES"], // 去重 + 字典序
+      rejected: [],
+    });
+    const journal = readFileSync(join(root, ".pomaster", "state", "journal.jsonl"), "utf8");
+    expect(journal).toContain(
+      "subject_bindings=CAPABILITY.CSV_TOOL.SERIALIZE_ROWS,DENOMINATOR.PAGES",
+    );
+  });
+
+  it("runCli: 未携带 --subject → 未声明（信封无 subject_bindings 键；argv 缺省不得伪装成显式空数组声明）", async () => {
+    await seedStore();
+    const path = writeInput(gatePayload());
+    const lines: string[] = [];
+    const code = await runCli(["--dir", root, "record", "gate-run", "--from", path, "--json"], {
+      stdout: (line) => lines.push(line),
+      stderr: () => undefined,
+    });
+    expect(code).toBe(0);
+    const envelope = JSON.parse(lines.join("\n")) as CliEnvelope<Record<string, unknown>>;
+    expect(envelope.ok).toBe(true);
+    expect("subject_bindings" in envelope.result).toBe(false);
+    expect(envelope.warnings).toEqual([]);
   });
 
   it("runCli: 畸形输入 → exit 1", async () => {

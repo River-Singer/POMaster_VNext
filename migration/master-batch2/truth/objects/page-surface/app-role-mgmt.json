@@ -1,0 +1,386 @@
+{
+  "aliases": [
+    "PAGE-APP-ROLE-MGMT"
+  ],
+  "authority": {
+    "delegates": [
+      {
+        "required_for": [
+          "approve_page_blueprint"
+        ],
+        "role": "HUMAN_OWNER"
+      }
+    ],
+    "escalation_hint": "regenerate via migration/master-batch2/tools/ingest_screen_blueprints_front_half.py; blueprint structure/action/field-semantics change re-runs the generator then this ingest; page.status progression and canonical word form PAGE.APP_* confirmation are HUMAN_OWNER seats (approve_page_blueprint; EVOLUTION_CHANNEL; ledger owner FRONTEND_ARCHITECTURE)",
+    "owner": "FRONTEND_ARCHITECTURE",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "PROVISIONAL",
+    "evidence": "IMPLEMENTED",
+    "lifecycle": "CURRENT"
+  },
+  "axis_profile": "page_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "PAGE.APP_ROLE_MGMT",
+  "key_bindings": {
+    "artifact": [],
+    "code": [
+      {
+        "artifact_type": "source_dir",
+        "expect": {
+          "page_id": "PAGE-APP-ROLE-MGMT"
+        },
+        "match_rule": "mechanical",
+        "value": "src/pages/page-role-mgmt"
+      },
+      {
+        "artifact_type": "file",
+        "expect": {
+          "route_name_exact": "PAGE-APP-ROLE-MGMT"
+        },
+        "match_rule": "mechanical",
+        "value": "src/app/router/routes.ts"
+      }
+    ]
+  },
+  "kind": "page_surface",
+  "notes_md": "蓝图转录（MIG-B2 转录组 C·前半 19/20，一蓝图一 surface 主对象）：源 outputs/frontend/10_planned/screen-blueprints/PAGE-APP-ROLE-MGMT.yaml（bp_blueprint，pin 见 sources[0]；分母=screen-blueprints 实测 39 之字典序第 19 份）。\n三层对象化：结构=template_ref PAGE.LIST + regions 4 条（slot 词形均在 page-anatomy-registry 16 槽合法集内）+ states 11 项；交互=actions 4 条（ACTION.* 摆位 + PAGE_SLOT.* 槽位值引用）；字段语义=regions/slots 内联结构化字段逐字承载（源无 FIELD.* 词形 → FIELD.* 派生引用=0，诚实零）。\nsurface=V1（Page Spec 双分母之应用页侧；分母归属迁移期走信封 denominator_refs 显式空，DENOMINATOR.* 未注册）。\npage.status=APPROVED 为设计审批轴事实（与 readiness 实施就绪轴分立，禁混轴）；已登记 payload.blueprint.superseded_status_field，数值语义不篡改。\nunresolved 0 条逐条转 payload.blueprint.unresolved_exceptions（Exception Ledger 承载：显式未决，不静默丢弃、不静默裁决）。\n散文承载登记：composition_adjudication(1) → 浓缩为信封 notes_md 摘要 + sources[0].locator.line_anchors 源指针（蓝图 YAML 正文不整本搬运；摘录截断）。摘要（全文按源指针回读）：2026-08-17 构图裁定：卡片网格+Tabs（卡片/矩阵双视图）合法化——实现质量良好、原型 role-mgmt....\ncanonical 词形：源词形 PAGE-APP-ROLE-MGMT → 拟合 PAGE.APP_ROLE_MGMT（PAGE-APP-*→PAGE.APP_* token 重排外推；非 ALIASES_V0 现役 8 族，key-binding-map.batch2.draft.yaml proposed_needs_human）→ HUMAN_CONFIRM_REQUIRED：对象以拟合词形落档、legacy 词形照录 aliases[]（登记不改名），axes.confidence=PROVISIONAL（悬置态，batch1 约定书 §2；Owner 裁决后可转 LOCKED），origin 保持源侧 derived（非 A6 场景）。\nroute/目录权威不在本对象 payload：page↔dir 与 route_name 机械锚以 key_bindings.code 期望声明承载（值=源词形逐字），KEYBINDING.* 表对象落档仍待人工裁决（草表 status=MECHANICAL_ROUTE_NAME_MATCH）。\n本字段为人类散文，机器永不解析判卷。",
+  "origin": "derived",
+  "payload": {
+    "actions": [
+      "ACTION.CREATE",
+      "ACTION.EDIT",
+      "ACTION.DELETE",
+      "ACTION.VIEW"
+    ],
+    "blueprint": {
+      "actions": [
+        {
+          "action_id": "ACTION.CREATE",
+          "business_action": "ACT-ROLE-MGMT",
+          "capability_id": "CAP-ROLE-MGMT",
+          "id": "PAGE-ACT-ROLE-MGMT-1",
+          "mock": false,
+          "placement": "ACTION.CREATE",
+          "slot": "PAGE_SLOT.PRIMARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.EDIT",
+          "business_action": "ACT-ROLE-MGMT",
+          "capability_id": "CAP-ROLE-MGMT",
+          "id": "PAGE-ACT-ROLE-MGMT-2",
+          "mock": false,
+          "note": "编辑角色字段（名称/类型/数据维度，弹窗编辑态，slot=卡片行内操作，GRID_SLOT.ROW_ACTIONS 语义）：复用新增弹窗的编辑态（480px，回填角色字段）。2026-08-17 补登：实现原缺失编辑入口，实体层同批补 update_role stub+mock+mutation",
+          "placement": "ACTION.EDIT",
+          "slot": "PAGE_SLOT.PRIMARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.DELETE",
+          "business_action": "ACT-ROLE-MGMT",
+          "capability_id": "CAP-ROLE-MGMT",
+          "id": "PAGE-ACT-ROLE-MGMT-3",
+          "mock": false,
+          "placement": "ACTION.DELETE",
+          "slot": "PAGE_SLOT.SECONDARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.VIEW",
+          "business_action": "ACT-ROLE-MGMT",
+          "capability_id": "CAP-ROLE-MGMT",
+          "id": "PAGE-ACT-ROLE-MGMT-4",
+          "mock": false,
+          "note": "成员查看（2026-08-17 补登）：卡片行内「成员」按钮跳转用户管理并携带 ?role=<角色名> 深链定位角色筛选；转换记录=TRANSITION-ROLE-MGMT-TO-USER-MGMT（navigation-transition-registry），与 PAGE-APP-USER-MGMT 侧配对登记",
+          "placement": "ACTION.VIEW",
+          "slot": "PAGE_SLOT.SECONDARY_ACTIONS"
+        }
+      ],
+      "api_requirements": [
+        {
+          "classification": "QUERY",
+          "id": "API_REQ.ROLE.MGMT.1",
+          "method": "GET",
+          "operation_id": "list_roles_api_v1_roles_get",
+          "path": "/api/v1/roles",
+          "source": {
+            "page": "PAGE-APP-ROLE-MGMT"
+          },
+          "status": "ACCEPTED",
+          "type": "query"
+        },
+        {
+          "classification": "COMMAND",
+          "id": "API_REQ.ROLE.MGMT.2",
+          "method": "POST",
+          "operation_id": "create_role_api_v1_roles_post",
+          "path": "/api/v1/roles",
+          "source": {
+            "page": "PAGE-APP-ROLE-MGMT"
+          },
+          "status": "ACCEPTED",
+          "type": "command"
+        },
+        {
+          "classification": "COMMAND",
+          "id": "API_REQ.ROLE.MGMT.3",
+          "method": "PUT",
+          "note": "编辑弹窗保存走 update_role；实体层 2026-08-17 补齐 stub+mock+mutation（原仅蓝图登记、无实现）",
+          "operation_id": "update_role_api_v1_roles__role_id__put",
+          "path": "/api/v1/roles/{role_id}",
+          "source": {
+            "page": "PAGE-APP-ROLE-MGMT"
+          },
+          "status": "ACCEPTED",
+          "type": "command"
+        },
+        {
+          "classification": "COMMAND",
+          "id": "API_REQ.ROLE.MGMT.4",
+          "method": "DELETE",
+          "operation_id": "delete_role_api_v1_roles__role_id__delete",
+          "path": "/api/v1/roles/{role_id}",
+          "source": {
+            "page": "PAGE-APP-ROLE-MGMT"
+          },
+          "status": "ACCEPTED",
+          "type": "command"
+        },
+        {
+          "classification": "QUERY",
+          "id": "API_REQ.ROLE.MGMT.5",
+          "method": "GET",
+          "operation_id": "get_role_grants_api_v1_roles__role_id__grants_get",
+          "path": "/api/v1/roles/{role_id}/grants",
+          "source": {
+            "page": "PAGE-APP-ROLE-MGMT"
+          },
+          "status": "ACCEPTED",
+          "type": "query"
+        },
+        {
+          "classification": "COMMAND",
+          "id": "API_REQ.ROLE.MGMT.6",
+          "method": "PUT",
+          "operation_id": "replace_role_grants_api_v1_roles__role_id__grants_put",
+          "path": "/api/v1/roles/{role_id}/grants",
+          "source": {
+            "page": "PAGE-APP-ROLE-MGMT"
+          },
+          "status": "ACCEPTED",
+          "type": "command"
+        }
+      ],
+      "error_rendering": {
+        "component": "DATA.EMPTY_STATE",
+        "empty_states": "空态区分（2026-08-17 对齐实现）：no_result=卡片视图筛选/关键字无命中；no_data=矩阵视图无业务角色（系统管理角色不列入矩阵）",
+        "fallback_slot": "PAGE_SLOT.FEEDBACK",
+        "isolation": "route-level ErrorBoundary; per-query error 不外溢其他页面（协议 18/27）",
+        "protocol": "universal:rendering-state-protocol",
+        "retry": "列表查询失败（2026-08-17 对齐）：useQuery isError+refetch，MasterEmptyState variant=error + #action 槽重试按钮（user-mgmt 同模式）",
+        "variant": "error"
+      },
+      "page_status": {
+        "axis": "design_approval",
+        "value": "APPROVED"
+      },
+      "prose_to_notes_md": [
+        {
+          "field": "composition_adjudication",
+          "item_count": 1,
+          "line": 120
+        }
+      ],
+      "regions": [
+        {
+          "behavior": "static",
+          "id": "REGION.PAGE_HEADER",
+          "note": "spec 25（2026-08-17 裁定）：不渲染面包屑导航行；h1 标题行默认渲染（MasterPageHeader 回退路由 meta.title，与 tab 名同源）。标题行下方职责分离提示条（info 条：功能权限归 IT 管理员，数据权限在数据权限管理页维护，前端只认权限码）。",
+          "slots": {
+            "PAGE_SLOT.PRIMARY_ACTIONS": {
+              "capability_id": "PATTERN.ACTION_BAR",
+              "component": "PATTERN.ACTION_BAR",
+              "context": [
+                "新增角色（primary，打开新增弹窗）"
+              ]
+            },
+            "PAGE_SLOT.STATUS": {
+              "capability_id": "DATA.STATUS_BADGE",
+              "component": "DATA.STATUS_BADGE",
+              "label": "IT 管理员维护 · 功能权限",
+              "variant": "info"
+            }
+          }
+        },
+        {
+          "behavior": "static",
+          "id": "REGION.FILTERS",
+          "note": "超蓝图增强补登（2026-08-17）：原蓝图无筛选区，实现按原型补状态/类型/关键字筛选+重置；计数（共 N 条）随页脚展示。",
+          "slots": {
+            "PAGE_SLOT.FILTERS": {
+              "capability_id": "PATTERN.FILTER_BAR",
+              "component": "PATTERN.FILTER_BAR",
+              "filters": [
+                "状态",
+                "类型",
+                "关键字（角色名称/编码）",
+                "重置"
+              ]
+            }
+          }
+        },
+        {
+          "behavior": "render-by-state",
+          "id": "REGION.CONTENT",
+          "layout_contract": {
+            "card_grid": "角色卡片网格 minmax(calc(var(--size-320) - var(--size-20)), 1fr) auto-fill + gap token（=300px 纯 token 算术，非 magic number），无硬编码断点。2026-08-18 布局裁定：240 最小宽在 1440 下 4 列 x269px 过窄（低于用户目标 300-340），改 300 后卡片最小宽落在用户目标区间且超宽桌面（1920）出 5 列，密度随视口自然回落",
+            "filter_controls": "筛选行 MasterSelect / MasterInput / MasterButton 统一默认 32 高，经 MasterFilterBar（align-items: center）垂直居中；控件垂直基线一致，MUST NOT 各自再对齐。2026-08-18 追加裁定（宽度策略）：四控件单行（状态 ▸ 角色类型 ▸ 关键字搜索 ▸ 重置）——状态/角色类型 select 定宽 token（--size-140/--size-160），宽度约束 MUST 落在包裹 div（MasterSelect 根节点自带 inline width:100%，直接落在组件上的 class 会被内联样式覆盖，1440 实测两 select 各 1113px 撑满折三行）；关键字搜索弹性占余宽（flex:1 + min-width --size-240）；重置按钮定高 32。宽度算术：固定合计 140+160+按钮≈59+gap 3×12=36+搜索 min 240 ≈ 635px，1366 内容区 ~1054px 下仍单行（搜索实际 ~659px），1920 搜索继续增长不折行",
+            "tab_content_spacing": "tab 头到内容区稳定间距 16px（--mast-spacing-lg 档，16-20px 区间）。2026-08-18 布局裁定：几何实测 1440 下无重叠（inputClipped=false），「裁切」观感根因是 12px 间距低于要求 + 筛选控件基线差；修法为间距提档 + 控件齐高，非 top/left magic number。MasterTabs 共享基线不动，页面 scoped 提升"
+          },
+          "note": "卡片/矩阵双视图经 LAYOUT.TABS 切换（2026-08-17 构图裁定，见 composition_adjudication）。弹窗（OVERLAY.DIALOG）：新增/编辑角色 480px（编辑态复用新增弹窗）；角色权限配置 820px（菜单权限树+操作权限矩阵，API_REQ.ROLE.MGMT.5/6）。",
+          "slots": {
+            "PAGE_SLOT.CONTENT": {
+              "capability_id": "LAYOUT.TABS",
+              "component": "LAYOUT.TABS",
+              "views": [
+                {
+                  "capability_id": "LAYOUT.CARD",
+                  "component": "LAYOUT.CARD",
+                  "id": "card",
+                  "note": "角色卡片网格：状态/用户数徽标、来源标签（系统预设/自定义/初始）、编码/类型/数据维度/权限摘要；卡片行内操作=编辑/权限配置/成员/删除（preset 角色删除禁用）"
+                },
+                {
+                  "capability_id": "DATA.READONLY_TABLE",
+                  "component": "DATA.READONLY_TABLE",
+                  "id": "matrix",
+                  "note": "功能权限矩阵（只读）：模块×业务角色勾选矩阵；spec 30 矩阵形态豁免统一表格组件，原生矩阵表渲染于卡片容器内"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "behavior": "static",
+          "id": "REGION.FOOTER_ACTIONS",
+          "slots": {
+            "PAGE_SLOT.FOOTER_ACTIONS": {
+              "capability_id": "PATTERN.ACTION_BAR",
+              "component": "PATTERN.ACTION_BAR",
+              "context": [
+                "计数（共 N 条）+ 分页（卡片视图）"
+              ]
+            }
+          }
+        }
+      ],
+      "source_document_meta": {
+        "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+        "document_type": "screen-blueprint",
+        "schema_version": 1
+      },
+      "source_page_id": "PAGE-APP-ROLE-MGMT",
+      "states": [
+        "idle",
+        "loading",
+        "success",
+        "empty",
+        "error",
+        "view",
+        "read-only",
+        "create",
+        "grants-edit",
+        "dirty",
+        "submitting"
+      ],
+      "superseded_status_field": {
+        "mapped_to": "design-approval-axis fact record (classification-ledger blueprint_status_axis_note: design-approval axis and implementation-readiness axis stay separate; the readiness axis lives in page-readiness-registry); object axes describe the truth object itself (lifecycle CURRENT = source is an active canonical), never mixed across axes",
+        "reason": "flat status is one word with many meanings; the design-approval semantic stays a fact record and status progression belongs to the HUMAN_OWNER approve_page_blueprint delegate seat; values are transcribed without tampering",
+        "source_field": "status",
+        "source_value": "APPROVED",
+        "upgrade_registered": true
+      },
+      "template": {
+        "id": "PAGE.LIST"
+      },
+      "unresolved_exceptions": {
+        "carrier": "exception_ledger",
+        "count": 0,
+        "items": [],
+        "rule": "unresolved items carried item-by-item as EXPLICITLY unresolved (CONVENTIONS section 3): never silently dropped, never auto-adjudicated; resolution belongs to the Owner"
+      }
+    },
+    "slots": [
+      "PAGE_SLOT.PRIMARY_ACTIONS",
+      "PAGE_SLOT.STATUS",
+      "PAGE_SLOT.FILTERS",
+      "PAGE_SLOT.CONTENT",
+      "PAGE_SLOT.FOOTER_ACTIONS",
+      "PAGE_SLOT.SECONDARY_ACTIONS",
+      "PAGE_SLOT.FEEDBACK"
+    ],
+    "surface": "V1",
+    "template_ref": "PAGE.LIST"
+  },
+  "permits_active": [],
+  "producer": {
+    "liveness": {
+      "status": "active"
+    },
+    "merge_semantics": {
+      "backfill_if_missing": [],
+      "human_never_touched": [],
+      "refresh_fields": [
+        "payload.blueprint"
+      ]
+    },
+    "producer_id": "prod.mig_b2_ingest_screen_blueprints_front_half",
+    "views_maintained": [
+      "truth-index.envelope"
+    ]
+  },
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_front_half.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-ROLE-MGMT.yaml",
+        "line_anchors": {
+          "composition_adjudication": 120,
+          "notes": null,
+          "unresolved": 231
+        },
+        "prose_summarized": [
+          {
+            "field": "composition_adjudication",
+            "item_count": 1,
+            "line": 120
+          }
+        ],
+        "transcription": "front-half blueprint 19/20 objectified one-to-one into a page_surface object: structure (template_ref/regions/states) + interaction (actions) + inline field semantics transcribed verbatim as structured units (array order = source order); page.status kept as a design-approval fact record with a superseded_status_field registration; unresolved items carried item-by-item into payload.blueprint.unresolved_exceptions; prose narrative excerpted into notes_md, never wholesale-migrated; no physical route string enters the payload"
+      },
+      "pin": {
+        "digest": "sha256:422dcc375fd675c7a7ac7bfa40b1f1055c7a736138d7a0058d5b8b93b4e350d5"
+      },
+      "ref": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-ROLE-MGMT.yaml",
+      "type": "bp_blueprint"
+    },
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_front_half.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "governance_id": "PAGE-APP-ROLE-MGMT",
+        "ingested_from": "migration/master-batch2/key-binding-map.batch2.draft.yaml",
+        "transcription": "supplies the page<->dir and route_name binding expectations (status MECHANICAL_ROUTE_NAME_MATCH, draft table): values quoted verbatim into key_bindings.code; the KEYBINDING.* table object itself stays pending human adjudication"
+      },
+      "pin": {
+        "digest": "sha256:2beea8f95e0770da028d5ac5c2e76e2e1266e0ba7af6e0a3faa29fe72cb501fa"
+      },
+      "ref": "migration/master-batch2/key-binding-map.batch2.draft.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "页面·角色管理"
+}

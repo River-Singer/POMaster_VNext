@@ -1,0 +1,420 @@
+{
+  "authority": {
+    "delegates": [
+      {
+        "required_for": [
+          "modify_action_placement_adjudication"
+        ],
+        "role": "HUMAN_OWNER"
+      }
+    ],
+    "escalation_hint": "regenerate via migration/master-batch2/tools/ingest_page_composition.py; placement/adjudication changes require HUMAN_OWNER adjudication (delegates modify_action_placement_adjudication; multi-round user adjudication records preserved verbatim in source notes)",
+    "owner": "FRONTEND_ARCHITECTURE",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "LOCKED",
+    "evidence": "IMPLEMENTED",
+    "lifecycle": "CURRENT"
+  },
+  "axis_profile": "rule_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "POLICY.ACTION_PLACEMENT",
+  "key_bindings": {
+    "artifact": [],
+    "code": [
+      {
+        "artifact_type": "file",
+        "expect": {
+          "action_ids": [
+            "ACTION.BACK",
+            "ACTION.CREATE",
+            "ACTION.IMPORT",
+            "ACTION.EXPORT",
+            "ACTION.EDIT",
+            "ACTION.DELETE",
+            "ACTION.SAVE",
+            "ACTION.SUBMIT",
+            "ACTION.VIEW",
+            "ACTION.CANCEL",
+            "ACTION.REFRESH",
+            "ACTION.BULK_ACTION",
+            "ACTION.SELECT",
+            "ACTION.ROLLBACK",
+            "ACTION.CONFIG",
+            "ACTION.RESET_PASSWORD",
+            "ACTION.VIEW_FINANCE",
+            "ACTION.EDIT_FINANCE",
+            "ACTION.TOGGLE_STATUS",
+            "ACTION.REMOVE",
+            "ACTION.RESET_FILTER",
+            "ACTION.STAGE_SAVE",
+            "ACTION.COPY",
+            "ACTION.ENTER_ANALYSIS",
+            "ACTION.ADD_MODULE",
+            "ACTION.DELETE_MODULE",
+            "ACTION.COLUMN_CONFIG"
+          ],
+          "document_type": "action-placement-registry",
+          "schema_version": 1
+        },
+        "match_rule": "mechanical",
+        "value": "outputs/frontend/10_planned/action-placement-registry.yaml"
+      }
+    ]
+  },
+  "kind": "business_rule",
+  "notes_md": "本对象为 MIG-B2/M2 转录组 B 构图词表件：源 outputs/frontend/10_planned/action-placement-registry.yaml（扩展名 .yaml、内容为 JSON）整册转录（ledger destination_note 裁定整册一对象，§3 判例）。actions[] 27 条逐条逐字保真（数组序=源序，payload.actions 与源数组字节等价，工具断言）；多轮用户裁决补登 notes（2026-08-17/18/19）逐字保真（merge-preserving，人工策展演化痕迹在场，不重开）；ACTION.BACK 的 forbidden_slots 硬否决与 note（icon=arrow-left 语义裁决）逐字照录；ACTION.IMPORT/EXPORT 无 default_slot（仅 placement_rules 定位）为源内事实，照录不补。PAGE_SLOT.* 引用经 16 槽闭集核验（工具断言，零越界）；GRID_SLOT.* 引用属网格域、不在本核验范围。摆位/裁决修改属 Owner 裁决位（delegates HUMAN_OWNER required_for modify_action_placement_adjudication，ledger 在案）。源文件无 status/lifecycle/updated_at 字段：approval_axis × evidence_axis 拆分动作数=0、superseded_status_field 登记数=0（诚实零）。origin=natural（M0 inventory 逐字），免 producer 义务（batch1 约定书 §6）。priority 实测分布 primary=7/secondary=18/danger=2（inventory health_note 『action-placement notes 载多轮补登』同源）。本字段为人类散文，机器永不解析判卷。",
+  "origin": "natural",
+  "payload": {
+    "actions": [
+      {
+        "default_slot": "PAGE_SLOT.BACK_NAVIGATION",
+        "forbidden_slots": [
+          "PAGE_SLOT.PRIMARY_ACTIONS"
+        ],
+        "id": "ACTION.BACK",
+        "note": "2026-08-20 返回按钮 icon=arrow-left（返回箭头）；MUST NOT rotate-ccw（语义=刷新，歧义）",
+        "priority": "secondary",
+        "variants": [
+          "icon-and-label",
+          "icon-only-compact"
+        ]
+      },
+      {
+        "default_slot": "PAGE_SLOT.PRIMARY_ACTIONS",
+        "id": "ACTION.CREATE",
+        "max_instances_per_context": 1,
+        "placement_rules": {
+          "grid_scope": "GRID_SLOT.TOOLBAR",
+          "page_scope": "PAGE_SLOT.PRIMARY_ACTIONS"
+        },
+        "priority": "primary"
+      },
+      {
+        "id": "ACTION.IMPORT",
+        "placement_rules": {
+          "grid_scope": "GRID_SLOT.TOOLBAR",
+          "page_scope": "PAGE_SLOT.SECONDARY_ACTIONS"
+        },
+        "priority": "secondary"
+      },
+      {
+        "id": "ACTION.EXPORT",
+        "placement_rules": {
+          "grid_scope": "GRID_SLOT.TOOLBAR",
+          "page_scope": "PAGE_SLOT.SECONDARY_ACTIONS",
+          "selection_scope": "GRID_SLOT.BULK_ACTIONS"
+        },
+        "priority": "secondary"
+      },
+      {
+        "default_slot": "PAGE_SLOT.PRIMARY_ACTIONS",
+        "id": "ACTION.EDIT",
+        "notes": [
+          "2026-08-18 用户裁决：行操作列/卡片动作区/弹窗内表格行动作统一 icon+文字 plain 形态，有意偏离 20260814 原型多数页纯文字链接/纯图标形态；工具栏/弹窗 footer/数据下钻链接不在本裁定范围；语义变体映射（删除=danger 实底、停用=warning、启用=success、中性=secondary）见 spec 24「操作形态」"
+        ],
+        "placement_rules": {
+          "grid_scope": "GRID_SLOT.ROW_ACTIONS",
+          "page_scope": "PAGE_SLOT.PRIMARY_ACTIONS"
+        },
+        "priority": "primary",
+        "variants": [
+          "icon-and-label"
+        ]
+      },
+      {
+        "id": "ACTION.DELETE",
+        "notes": [
+          "2026-08-17 扩展：设备/材料/工艺三库批量删除（复选框+全选）复用本 action_id 经 GRID_SLOT.BULK_ACTIONS；事务性预检/引用阻止分级语义见各页蓝图（设备=BUC referenced 硬阻止、工艺=referenced 硬阻止、材料=提示级）",
+          "2026-08-18 行内语境语义变体=danger 实底 + icon+文字（spec 24「操作形态」）"
+        ],
+        "placement_rules": {
+          "grid_scope": "GRID_SLOT.ROW_ACTIONS",
+          "page_scope": "PAGE_SLOT.SECONDARY_ACTIONS",
+          "selection_scope": "GRID_SLOT.BULK_ACTIONS"
+        },
+        "priority": "danger",
+        "variants": [
+          "icon-and-label"
+        ]
+      },
+      {
+        "default_slot": "PAGE_SLOT.FOOTER_ACTIONS",
+        "id": "ACTION.SAVE",
+        "max_instances_per_context": 1,
+        "priority": "primary"
+      },
+      {
+        "default_slot": "PAGE_SLOT.FOOTER_ACTIONS",
+        "id": "ACTION.SUBMIT",
+        "max_instances_per_context": 1,
+        "priority": "primary"
+      },
+      {
+        "default_slot": "PAGE_SLOT.CONTEXT_ACTIONS",
+        "id": "ACTION.VIEW",
+        "placement_rules": {
+          "grid_scope": "GRID_SLOT.ROW_ACTIONS"
+        },
+        "priority": "secondary",
+        "variants": [
+          "icon-and-label"
+        ]
+      },
+      {
+        "default_slot": "PAGE_SLOT.FOOTER_ACTIONS",
+        "id": "ACTION.CANCEL",
+        "max_instances_per_context": 1,
+        "priority": "secondary"
+      },
+      {
+        "default_slot": "PAGE_SLOT.SECONDARY_ACTIONS",
+        "id": "ACTION.REFRESH",
+        "max_instances_per_context": 1,
+        "priority": "secondary"
+      },
+      {
+        "default_slot": "PAGE_SLOT.PRIMARY_ACTIONS",
+        "id": "ACTION.BULK_ACTION",
+        "placement_rules": {
+          "selection_scope": "GRID_SLOT.BULK_ACTIONS"
+        },
+        "priority": "primary"
+      },
+      {
+        "default_slot": "PAGE_SLOT.FILTERS",
+        "id": "ACTION.SELECT",
+        "max_instances_per_context": 1,
+        "placement_rules": {
+          "page_scope": "PAGE_SLOT.FILTERS"
+        },
+        "priority": "secondary"
+      },
+      {
+        "default_slot": "PAGE_SLOT.CONTEXT_ACTIONS",
+        "id": "ACTION.ROLLBACK",
+        "max_instances_per_context": 1,
+        "placement_rules": {
+          "page_scope": "PAGE_SLOT.CONTEXT_ACTIONS"
+        },
+        "priority": "secondary"
+      },
+      {
+        "default_slot": "PAGE_SLOT.CONTEXT_ACTIONS",
+        "id": "ACTION.CONFIG",
+        "max_instances_per_context": 1,
+        "notes": [
+          "2026-08-18 行内/卡片语境（角色卡片「权限配置」等）统一 icon+文字 plain（secondary + settings-2），不再用 primary 实底（spec 24「操作形态」）"
+        ],
+        "placement_rules": {
+          "page_scope": "PAGE_SLOT.CONTEXT_ACTIONS"
+        },
+        "priority": "secondary",
+        "variants": [
+          "icon-and-label"
+        ]
+      },
+      {
+        "default_slot": "PAGE_SLOT.CONTEXT_ACTIONS",
+        "id": "ACTION.RESET_PASSWORD",
+        "max_instances_per_context": 1,
+        "notes": [
+          "2026-08-17 补登：用户管理重置密码（编辑弹窗 footer 链接入口 + 独立弹窗，业务 spec 06-user-mgmt §5.5 单独功能）"
+        ],
+        "placement_rules": {
+          "grid_scope": "GRID_SLOT.ROW_ACTIONS",
+          "page_scope": "PAGE_SLOT.CONTEXT_ACTIONS"
+        },
+        "priority": "secondary"
+      },
+      {
+        "default_slot": "PAGE_SLOT.CONTEXT_ACTIONS",
+        "id": "ACTION.VIEW_FINANCE",
+        "max_instances_per_context": 1,
+        "notes": [
+          "2026-08-17 补登：车型主数据「查看财务信息」（20260814 原型区域一工具栏；1000px 财务弹窗只读态，四节同维护态但输入禁用；选中车型后启用；契约 NEEDS_BACKEND_REVIEW 走 mock）"
+        ],
+        "placement_rules": {
+          "page_scope": "PAGE_SLOT.CONTEXT_ACTIONS"
+        },
+        "priority": "secondary"
+      },
+      {
+        "default_slot": "PAGE_SLOT.PRIMARY_ACTIONS",
+        "id": "ACTION.EDIT_FINANCE",
+        "max_instances_per_context": 1,
+        "notes": [
+          "2026-08-17 补登：车型主数据「维护财务信息」（20260814 原型区域一工具栏；1000px 财务弹窗维护态四节：财务相关信息/销量阶段表/月度模拟/附件；选中车型后启用；契约 NEEDS_BACKEND_REVIEW 走 mock）"
+        ],
+        "placement_rules": {
+          "page_scope": "PAGE_SLOT.PRIMARY_ACTIONS"
+        },
+        "priority": "primary"
+      },
+      {
+        "default_slot": "PAGE_SLOT.CONTEXT_ACTIONS",
+        "id": "ACTION.TOGGLE_STATUS",
+        "notes": [
+          "2026-08-18 补登：行内启停（用户管理/用户角色管理 停用/启用，label 随行状态切换）；行内语义变体 停用=warning、启用=success（icon+文字 plain，icon pause/play，spec 24「操作形态」）"
+        ],
+        "placement_rules": {
+          "grid_scope": "GRID_SLOT.ROW_ACTIONS",
+          "page_scope": "PAGE_SLOT.CONTEXT_ACTIONS"
+        },
+        "priority": "secondary",
+        "variants": [
+          "icon-and-label"
+        ]
+      },
+      {
+        "default_slot": "PAGE_SLOT.CONTEXT_ACTIONS",
+        "id": "ACTION.REMOVE",
+        "notes": [
+          "2026-08-18 补登：弹窗/子表内行移除（车型主数据财务阶段/附件行等）；语义轻于 ACTION.DELETE（不删实体只移出列表），行内形态 secondary + x 图标 icon+文字（spec 24「操作形态」）"
+        ],
+        "placement_rules": {
+          "grid_scope": "GRID_SLOT.ROW_ACTIONS",
+          "page_scope": "PAGE_SLOT.CONTEXT_ACTIONS"
+        },
+        "priority": "secondary",
+        "variants": [
+          "icon-and-label"
+        ]
+      },
+      {
+        "default_slot": "PAGE_SLOT.FILTERS",
+        "id": "ACTION.RESET_FILTER",
+        "notes": [
+          "2026-08-18 补登：筛选区「重置」按钮（BUC 分析列表等）"
+        ],
+        "placement_rules": {
+          "page_scope": "PAGE_SLOT.FILTERS"
+        },
+        "priority": "secondary"
+      },
+      {
+        "default_slot": "PAGE_SLOT.SECONDARY_ACTIONS",
+        "id": "ACTION.STAGE_SAVE",
+        "max_instances_per_context": 1,
+        "notes": [
+          "2026-08-18 补登：BUC 详情「暂存」（与保存并列的阶段性提交）"
+        ],
+        "placement_rules": {
+          "page_scope": "PAGE_SLOT.SECONDARY_ACTIONS"
+        },
+        "priority": "secondary"
+      },
+      {
+        "default_slot": "PAGE_SLOT.SECONDARY_ACTIONS",
+        "id": "ACTION.COPY",
+        "notes": [
+          "2026-08-18 补登：BUC 分析「复制为新版本」（勾选恰 1 行启用；以源行为基础生成 V max+1 新版本、状态=进行中）"
+        ],
+        "placement_rules": {
+          "selection_scope": "GRID_SLOT.BULK_ACTIONS"
+        },
+        "priority": "secondary"
+      },
+      {
+        "default_slot": "PAGE_SLOT.PRIMARY_ACTIONS",
+        "id": "ACTION.ENTER_ANALYSIS",
+        "notes": [
+          "2026-08-18 补登：零件信息页「进入成本分析」主 CTA（跳 BUC 成本分析工作区；对象=零件+评估上下文+版本，跨页携带 bucRecordId）"
+        ],
+        "placement_rules": {
+          "page_scope": "PAGE_SLOT.PRIMARY_ACTIONS"
+        },
+        "priority": "primary"
+      },
+      {
+        "default_slot": "PAGE_SLOT.CONTEXT_ACTIONS",
+        "id": "ACTION.ADD_MODULE",
+        "notes": [
+          "2026-08-19 补登：成本工作区 ZSB 模块添加（新模块默认 3 空 M→F 行对）。"
+        ],
+        "placement_rules": {
+          "grid_scope": "GRID_SLOT.TOOLBAR",
+          "page_scope": "PAGE_SLOT.CONTEXT_ACTIONS"
+        },
+        "priority": "secondary",
+        "variants": [
+          "icon-and-label"
+        ]
+      },
+      {
+        "default_slot": "PAGE_SLOT.CONTEXT_ACTIONS",
+        "id": "ACTION.DELETE_MODULE",
+        "notes": [
+          "2026-08-19 补登：ZSB 模块删除（二次确认，连模块内全部行对）。"
+        ],
+        "placement_rules": {
+          "grid_scope": "GRID_SLOT.TOOLBAR",
+          "page_scope": "PAGE_SLOT.CONTEXT_ACTIONS"
+        },
+        "priority": "danger",
+        "variants": [
+          "icon-and-label"
+        ]
+      },
+      {
+        "default_slot": "PAGE_SLOT.CONTEXT_ACTIONS",
+        "id": "ACTION.COLUMN_CONFIG",
+        "max_instances_per_context": 1,
+        "notes": [
+          "2026-08-19 补登：列配置弹窗（字段搜索/显隐/冻结/排序/列宽弹性/个人视图会话级）；先例 CVP 页，他页渐进。与通用 ACTION.CONFIG 区分：本 action_id 专用于网格列配置入口。"
+        ],
+        "placement_rules": {
+          "grid_scope": "GRID_SLOT.TOOLBAR",
+          "page_scope": "PAGE_SLOT.CONTEXT_ACTIONS"
+        },
+        "priority": "secondary",
+        "variants": [
+          "icon-and-label"
+        ]
+      }
+    ],
+    "decision_refs": [],
+    "enforcement_point": "MASTer: compile_frontend_page_composition.py + compile_frontend_api_requirements.py + compile_frontend_interaction_contracts.py + validate_frontend_delivery.py; vNext: page composition gate checks (action, slot) pairs against this object by value lookup",
+    "scope_refs": [
+      "PAGE.*",
+      "CAPABILITY.GRID.*"
+    ],
+    "source_document_meta": {
+      "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+      "document_type": "action-placement-registry",
+      "schema_version": 1
+    },
+    "statement_structured": {
+      "then": {
+        "effect": "the matched actions[] entry governs placement legality, including the multi-round user adjudication notes preserved verbatim",
+        "violation": "action in a non-listed slot, in a forbidden_slots entry, or exceeding max_instances_per_context = page composition gate violation"
+      },
+      "when": {
+        "constraint": "an ACTION.* id MUST be placed only in slots legal for it per the matched actions[] entry: default_slot and placement_rules.{page_scope,grid_scope,selection_scope} define the legal placements; forbidden_slots is a hard veto (ACTION.BACK MUST NOT appear in PAGE_SLOT.PRIMARY_ACTIONS); max_instances_per_context (where present) caps per-context instances; priority/variants govern action form",
+        "subject": "action placement (page slot / grid toolbar / row actions / bulk selection context)"
+      }
+    }
+  },
+  "permits_active": [],
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b2/ingest_page_composition.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/action-placement-registry.yaml",
+        "transcription": "whole-book verbatim transcription of actions[] (27 entries, array order = source order, byte-equality asserted); multi-round user adjudication notes preserved verbatim (merge-preserving); PAGE_SLOT.* references verified against the 16-value closure"
+      },
+      "pin": {
+        "digest": "sha256:a2174f0f78037c4ae8eb097059572152a299fe737b7e0fc5de3bbc3fafcb082e"
+      },
+      "ref": "outputs/frontend/10_planned/action-placement-registry.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "动作摆位词表（ACTION.* 27 动作摆位枚举）"
+}

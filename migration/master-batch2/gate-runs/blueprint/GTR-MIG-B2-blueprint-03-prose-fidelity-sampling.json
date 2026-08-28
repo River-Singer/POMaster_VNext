@@ -1,0 +1,56 @@
+{
+  "blindspot": {
+    "carrier_coverage": {
+      "absent_objects_cross_grn_4301": 0,
+      "sampled": 5,
+      "sampling_frame_present_objects": 39,
+      "unsampled_present": 34
+    },
+    "escape_ratio": 0.871795,
+    "fixture_regression": "MIG-B2-BLUEPRINT-PROSE-BLINDSPOT-FIXTURE/passed",
+    "produced": 5,
+    "scanned": 5
+  },
+  "counts": {
+    "applicable_scanned": 5,
+    "not_applicable": 0,
+    "scanned": 5,
+    "suppressed_by_ledger": 0,
+    "unchecked_in_blindspot_estimated": 34,
+    "violations": 0
+  },
+  "denominator_refs": [],
+  "digest_excluded_fields": [
+    "duration_ms"
+  ],
+  "duration_ms": {
+    "external": 0,
+    "self": 0
+  },
+  "gate": "BLUEPRINT",
+  "gate_def": "POLICY.GATE.MIG_B2_BLUEPRINT@0.1.0",
+  "grn": "GRN-4303",
+  "items": [],
+  "items_truncated": false,
+  "metric_dialect": "blueprint:sampled_prose_registrations",
+  "ran_at_seq": 0,
+  "scope": {
+    "note": "检查范围=散文保真抽样（确定性等距：在场 surface 对象按 local_name 字典序，idx=i*39//5 抽 5 份：app-all-parts-list.json、app-equipment-db.json、app-part-info.json、app-vehicle-master-data.json、manage-user-role.json）。分母声明（batch2 CONVENTIONS §7 denominator_refs 显式空数组；候选 id/version/value/source）：DENOMINATOR.BLUEPRINTS@1 value=39；抽样框=在场对象 39（缺席 0 份的散文无处可对，归因 GRN-4301，scope.size_expected_from_denominator=5=抽样数）。机械可达判据（代理，5/5 逐份执行）：prose_to_notes_md 注册（field/item_count/line 锚）与源 page.notes[]/note/composition_adjudication 计数逐字段相等；notes_md 摘要块『摘要（全文按源指针回读）：』有/无与源 prose 单元数对照（>0 → 非 none (honest zero)；=0 → none (honest zero)）。抽样明细：app-all-parts-list.json: source notes=0/note=0/adj=0, registration=none, abstract=none || app-equipment-db.json: source notes=0/note=0/adj=0, registration=none, abstract=none || app-part-info.json: source notes=2/note=0/adj=0, registration=notes(2), abstract=present || app-vehicle-master-data.json: source notes=0/note=0/adj=0, registration=none, abstract=none || manage-user-role.json: source notes=0/note=1/adj=0, registration=note(1), abstract=present。机械不可达（盲区，红线 3）：摘要摘录的语义保真本体（paraphrase 漂移/语义细节丢失）不可机判——in-memory fixture 实证（MIG-B2-BLUEPRINT-PROSE-BLINDSPOT-FIXTURE/passed）：fixture A 全弃散文+零注册+none 摘要 → 代理检出；fixture B 注册计数相符+摘要非 none 但内容语义漂移 → 代理放行 = 扫描器对『摘要写了但写错/写漏』形态结构性失明，verdict 故取 skipped_blindspot（终局性诚实结论而非通过）。盲区指标：escape_ratio=(39-5)/39=未机判散文保真的蓝图占比（34 份未抽样在场 + 0 份缺席对象，unchecked_in_blindspot_estimated=34）。violations=0（仅全弃形态可机判）→ verdict=skipped_blindspot。路径基：items location 为 po-master 仓内相对路径。self_report_trusted=false：trust.asserted=null，判卷唯一依据 trust.recomputed。duration_ms 钉 0（byte-identical 幂等）。",
+    "size_expected_from_denominator": 5
+  },
+  "tool": "mig-b2:run_blueprint_gate",
+  "tool_version": "1.0.0",
+  "trigger": {
+    "note": "migration batch context: no kernel seq allocator; ran_at_seq pinned to 0 (deterministic batch base, A4 wall-clock-free; kernel re-sequences on ingestion); durations pinned to 0 for byte-identical rerun idempotency (batch hard rule 2)",
+    "task_ref": "MIG-B2/M4-blueprint",
+    "type": "on_demand"
+  },
+  "trust": {
+    "asserted": null,
+    "recomputed": {
+      "matches_asserted": true,
+      "violations": 0
+    }
+  },
+  "verdict": "skipped_blindspot"
+}
