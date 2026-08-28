@@ -105,6 +105,7 @@ pomaster doctor        # 工具/MCP 配置探测（缺什么提示装什么）
 | Solo 协作形态 | `research/design-thread-D-solo-form.md` |
 | 生命周期总装图 | `research/vnext-lifecycle-and-loop.md` |
 | Kernel 公共 API 契约 | `docs/kernel-api.md` |
+| 遗产布局投影预设 legacy-outputs（旧 spec/ 与 outputs/ 目录结构以「投影预设」永续保留，D25；Canonical State 唯一事实源，渲染器为后续砖） | `docs/legacy-layout-preset.md` |
 
 ## 质量承诺
 
