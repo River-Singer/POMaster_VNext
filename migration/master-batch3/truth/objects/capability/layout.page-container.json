@@ -1,0 +1,95 @@
+{
+  "aliases": [
+    "LAYOUT.PAGE_CONTAINER"
+  ],
+  "authority": {
+    "delegates": [
+      {
+        "required_for": [
+          "retire"
+        ],
+        "role": "HUMAN_OWNER"
+      }
+    ],
+    "escalation_hint": "regenerate via migration/master-batch3/tools/ingest_component_registry.py; capability/forbidden/domain_states/key-binding evolution requires a CHANGE object (EVOLUTION_CHANNEL; ledger delegates HUMAN_OWNER required_for retire); planned/deprecated axis adjudication and technology_base grant are HUMAN_OWNER seats (superseded_status_field registrations in payload)",
+    "owner": "FRONTEND_ARCHITECTURE",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "LOCKED",
+    "evidence": "PLANNED",
+    "lifecycle": "PROPOSED"
+  },
+  "axis_profile": "capability_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "CAPABILITY.LAYOUT.PAGE_CONTAINER",
+  "key_bindings": {
+    "artifact": [],
+    "code": [
+      {
+        "artifact_type": "file",
+        "expect": {
+          "governance_id": "LAYOUT.PAGE_CONTAINER",
+          "symbol": "MasterPageContainer"
+        },
+        "match_rule": "mechanical",
+        "value": "src/shared/ui/layout/MasterPageContainer.vue"
+      }
+    ]
+  },
+  "kind": "capability",
+  "notes_md": "本对象为 MIG-B3/M2 组 6（component-registry 余量）转录件：源 outputs/frontend/10_planned/component-registry.yaml（扩展名 .yaml、内容为 JSON）components[] 共 90 条，其中 GRID.* 切片 3 条已由 BATCH-1 收编（CAPABILITY.GRID.*，本工具读 batch1 对象 id 集合做排除断言：3+87=90，输出 id 与batch1 集合零交集），本对象为非 GRID 余量 87 条逐条转录之一（LAYOUT.PAGE_CONTAINER，category=layout，数组序第 59 条）。条目字段逐字段保真，payload.component 与源条目字节等价（工具断言）——canonical_implementation 三键（component/file/import，含 import 依赖声明）逐字保留，file 锚机械挂 key_bindings.code（02b §3），tokens/variants/states/sizes/note/selection/grid_layout 等策展字段（含中文散文）逐字随 blob；数组顺序=源顺序。册级字段 document_type/schema_version/blueprint_sha256 随对象承载；源无 updated_at 墙钟字段（顶层键闭集断言），剥离数=0（诚实零）。status=planned 拆解：lifecycle=PROPOSED + evidence=PLANNED（跨轴耦合 PROPOSED⇒PLANNED 自洽）+ change=STABLE；源 gap=code_not_yet_implemented 逐字随 blob 承载，实现文件 exists=False 实测 53/53（机械佐证，代码侧无实现=接线主张缺席）；superseded_status_field 全额登记（upgrade_registered=false：忠实拆解非语义升级，PROPOSED 槽位选择属 Owner 可复核项）。赐名与别名：LAYOUT.PAGE_CONTAINER 为注册表本地族词形、非 governed id 且不在 ALIASES_V0 现役 8 族（GRID.*→CAPABILITY.GRID.* 同形机械映射域外）→ canonical 赐名 CAPABILITY.LAYOUT.PAGE_CONTAINER（§4 通则：家族词保留第二段），legacy 词形照录 aliases[]，不构成 A6 场景、origin 保持源侧 natural（inventory provenance.origin 逐字）；族级登记待词汇表 PR/Owner 裁决（key-binding-map.batch3.draft.yaml alias_registrations.proposed_needs_human 同口径）。02b §2 capability 蓝本落法：category=源 category；canonical_realization={component, import} 机械投影；forbidden/domain_states（源 states 同名值映射）/​variants/note 源有则逐字、无则缺席（诚实缺席）；technology_base/poc_required 源无整体缺席——vendor-adapter-registry element-plus 行（adapter_dir=src/shared/ui/）虽前缀命中 86/87 实现文件，但 chart 行（echarts，src/shared/ui/chart/）构成双前缀歧义，机械单值派生不成立，赐值登记归 Owner、本批不回填不立第二源 pin。realization 块缺席（本批 golden 纪律）：符号在文件内字面命中（34/34 现存文件实测）只证符号存在，调用侧接线未探测（probe 缺省=未探测，C5），缺席=未声明接线主张；batch1 GRID.* 切片的 realization=wired 判断属 batch1 侧工件不随本批延续。MIG-B1/C-04（GRID.EDITABLE_GRID 锚点漂移）影响面为 batch1 侧 3 条，非本批余量（ledger carried_conflicts_note 在案）。本字段为人类散文，机器永不解析判卷。",
+  "origin": "natural",
+  "payload": {
+    "canonical_realization": {
+      "component": "MasterPageContainer",
+      "import": "@/shared/ui"
+    },
+    "category": "layout",
+    "component": {
+      "canonical_implementation": {
+        "component": "MasterPageContainer",
+        "file": "src/shared/ui/layout/MasterPageContainer.vue",
+        "import": "@/shared/ui"
+      },
+      "capability_id": "LAYOUT.PAGE_CONTAINER",
+      "category": "layout",
+      "gap": "code_not_yet_implemented",
+      "name_zh": "页面容器",
+      "status": "planned"
+    },
+    "source_document_meta": {
+      "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+      "document_type": "component-registry",
+      "schema_version": 1
+    },
+    "superseded_status_field": {
+      "mapped_to": "axes.lifecycle=PROPOSED + axes.evidence=PLANNED（planned 忠实拆解，跨轴耦合 PROPOSED⇒PLANNED 自洽）；gap=code_not_yet_implemented 随 payload 逐字承载；realization 缺席=未声明接线主张",
+      "reason": "planned→PROPOSED+PLANNED 为忠实拆解非语义升级；PROPOSED 槽位选择属 Owner 可复核项，本登记为映射决策留痕（53 条 planned 全额登记，数值不篡改）",
+      "source_field": "status",
+      "source_value": "planned",
+      "upgrade_registered": false
+    }
+  },
+  "permits_active": [],
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b3/ingest_component_registry.py",
+      "locator": {
+        "batch": "MIG-B3",
+        "ingested_from": "outputs/frontend/10_planned/component-registry.yaml",
+        "transcription": "components[] entry 59/90 (LAYOUT.PAGE_CONTAINER, non-GRID remainder) transcribed field-by-field verbatim (payload.component byte-equal to source entry; canonical_implementation component/file/import preserved verbatim, file mechanically anchored to key_bindings.code per 02b section 3; source states mapped to capability payload domain_states per 02b section 2, values verbatim; array order = source order); status=planned split into orthogonal axes per batch1 CONVENTIONS section 4 (superseded_status_field registered, upgrade_registered=false); source has no updated_at wall-clock field (top-level key closed set asserted), strip count=0 honest zero; LAYOUT local family word form granted canonical CAPABILITY.LAYOUT.PAGE_CONTAINER (batch3 section 4 general rule, family word kept as 2nd segment), legacy word form recorded in aliases[], NOT an A6 scenario so origin stays source-side natural; GRID.* slice exclusion asserted against the batch1 object id set (3+87=90); mapping table in the tool header and the final report"
+      },
+      "pin": {
+        "digest": "sha256:ec6cb99eeda8a492d299fc084603eca18f4a1be126e3b398d3be4a52c85f934b"
+      },
+      "ref": "outputs/frontend/10_planned/component-registry.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "组件能力·layout·页面容器"
+}

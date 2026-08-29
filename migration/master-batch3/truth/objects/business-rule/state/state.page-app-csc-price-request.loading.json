@@ -1,0 +1,82 @@
+{
+  "aliases": [
+    "STATE-PAGE-APP-CSC-PRICE-REQUEST-LOADING"
+  ],
+  "authority": {
+    "delegates": [],
+    "escalation_hint": "regenerate via migration/master-batch3/tools/ingest_state_ownership_matrix.py; STATE word-form canonical choice and the 9 machine-side true gaps (MIG-B3/C-01), owner-label code-anchor bindings (MIG-B3/C-02) and the POLICY.STATE.*/POLICY.FIELD.*/POLICY.API_REQ.* family registrations are HUMAN_OWNER/vocab-PR seats (EVOLUTION_CHANNEL; ledger owner FRONTEND_ENGINEERING)",
+    "owner": "FRONTEND_ENGINEERING",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "LOCKED",
+    "evidence": "IMPLEMENTED",
+    "lifecycle": "CURRENT"
+  },
+  "axis_profile": "rule_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "POLICY.STATE.PAGE_APP_CSC_PRICE_REQUEST.LOADING",
+  "key_bindings": {
+    "artifact": [],
+    "code": []
+  },
+  "kind": "business_rule",
+  "notes_md": "本对象为 MIG-B3/M2 state-ownership-matrix 组转录之一：源 outputs/frontend/10_planned/state-ownership-matrix.yaml（扩展名 .yaml、内容为 JSON）states[] 共 455 条逐条转录（数组序第 233 条，state_id=STATE-PAGE-APP-CSC-PRICE-REQUEST-LOADING，category=server，owner 方案=entities_query_label）。行字段 page_id/state_id/category/owner/value 逐字保真（payload.state 与源条目字节等价，工具断言；数组顺序=源顺序）。所有权回填谱系：历史 210 缺 owner 缺口已由 tools/frontend/derive_platform_foundation.py 回填（回填后 455/455 全携带，inventory incident_history owner_backfill_history 在案），owner 词形照录不改名。owner 为 entities/<module>#use<X>Query 约定标签：MIG-B3/C-02 锚漂移在案（24 种标签中 23 种无字面导出、1 种符号在他模块；key-binding-map.batch3.draft.yaml state_owner_label_bindings 全量登记载体）：按 CONVENTIONS §2.3 只登记不改名、禁虚构代码锚、禁因锚漂移降 confidence，锚债务随登记链呈现（gate 呈 manual_confirmed 债务或 not_configured）。本条 state_id 与 state-machine-registry machines[].state_ids 精确同形（431 exact 交集之一，工具现场复核），无在身值冲突，confidence=LOCKED。canonical 赐名：STATE-* 为注册表本地族词形（非 vocab v0.2 15 前缀成员、非 ALIASES_V0 现役 8 族），按 CONVENTIONS §4.2 机械赐名 POLICY.STATE.PAGE_APP_CSC_PRICE_REQUEST.LOADING（家族词 STATE 保留第二段，余段连字符→下划线 greedy 打包 ≤32 上限，batch1 pack_segments 机械映射权威；禁单段摊平——38 字符摊平必超上限，多段保留是文法要求），legacy 词形照录 aliases[]，不构成 A6 场景、origin 保持源侧 derived；STATE-* 族赐名与 C-01 canonical 词形、9 条 machine 侧真缺口（matrix 无定义体，不立对象不虚构条目，随 state-ownership-pending-registration.yaml 登记）均待词汇表 PR/Owner 裁决。kind=business_rule（ledger kind_prediction + CONVENTIONS §1 闭表；条目为现状分配事实清单、与 02b §9 when/then 契约形态的距离已在 ledger kind_prediction_tension_note 登记——本组按 CONVENTIONS §2.3 事实行形态转录，statement_structured 不伪造）。axes：lifecycle=CURRENT（producer_alive=true + 活跃消费链）/ evidence=IMPLEMENTED（消费链=side_effect_graph/delivery_truth_contract/manage_frontend_lifecycle/validate_frontend_delivery/governance_factsources/page_spec/readiness 在场；不标 VERIFIED——迁移期无 CLM/VRF 台账）/ change=STABLE（pin 在场零漂移）。key_bindings.code 空=诚实无锚（C-02 禁虚构；local 按设计无锚；KBM id_family_anchor_summary MACHINE-*+STATE-* anchored_in_src=0 与 token_family_observations STATE-* distinct_tokens_in_src=0 同源佐证）。源行无 status/lifecycle 字段：双轴拆分动作数=0、superseded_status_field 登记数=0（诚实零）；源顶层无墙钟字段，零剥离。本字段为人类散文，机器永不解析判卷。",
+  "origin": "derived",
+  "payload": {
+    "source_document_meta": {
+      "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+      "document_type": "state-ownership-matrix",
+      "schema_version": 1
+    },
+    "state": {
+      "category": "server",
+      "owner": "entities/csc-price#useCscPriceQuery",
+      "page_id": "PAGE-APP-CSC-PRICE",
+      "state_id": "STATE-PAGE-APP-CSC-PRICE-REQUEST-LOADING",
+      "value": "loading"
+    }
+  },
+  "permits_active": [],
+  "producer": {
+    "liveness": {
+      "status": "active"
+    },
+    "merge_semantics": {
+      "backfill_if_missing": [],
+      "human_never_touched": [],
+      "refresh_fields": [
+        "payload"
+      ]
+    },
+    "producer_id": "prod.mig_b3_ingest_state_ownership_matrix",
+    "views_maintained": [
+      "truth-index.envelope"
+    ]
+  },
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b3/ingest_state_ownership_matrix.py",
+      "locator": {
+        "batch": "MIG-B3",
+        "ingested_from": "outputs/frontend/10_planned/state-ownership-matrix.yaml",
+        "owner_scheme": "entities_query_label",
+        "page_id": "PAGE-APP-CSC-PRICE",
+        "row_index": 233,
+        "row_key": "STATE-PAGE-APP-CSC-PRICE-REQUEST-LOADING",
+        "row_kind": "state",
+        "transcription": "states[] row 233/455 (STATE-PAGE-APP-CSC-PRICE-REQUEST-LOADING) transcribed verbatim row-by-row (page_id/state_id/category/owner/value, array order = source order; owner word form registered not renamed per MIG-B3/C-02; C-01 exact overlap (431), confidence LOCKED); STATE-* local family word form granted canonical POLICY.STATE.PAGE_APP_CSC_PRICE_REQUEST.LOADING per CONVENTIONS section 4.2 (family word kept as 2nd segment, greedy pack <=32, batch1 pack_segments authority), legacy word form in aliases[], NOT an A6 scenario so origin stays source-side derived; STATE-* family grant + C-01 word-form choice + C-02 owner-label bindings are Owner/vocab-PR seats (pending manifest: migration/master-batch3/state-ownership-pending-registration.yaml); corroborated against key-binding-map.batch3.draft.yaml state_owner_label_bindings (24 labels / 165 rows) and state_owner_local_scheme (290 rows) and id_family_anchor_summary MACHINE-*+STATE-* (anchored_in_src=0)"
+      },
+      "pin": {
+        "digest": "sha256:98252faeb92a17099a7afe51f14975c5bcfb322fd942018fda370bf9c3c1eaea"
+      },
+      "ref": "outputs/frontend/10_planned/state-ownership-matrix.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "状态所有权·服务端态·loading"
+}

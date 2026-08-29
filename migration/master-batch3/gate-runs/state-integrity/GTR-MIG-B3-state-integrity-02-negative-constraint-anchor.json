@@ -1,0 +1,60 @@
+{
+  "blindspot": {
+    "carrier_coverage": {
+      "action_ref_token_hits": 56,
+      "anchored_any_form": 56,
+      "declared_anchor_bindings": 63,
+      "declared_anchor_bindings_illegal": 0,
+      "neg_id_token_hits": 20,
+      "no_anchor_no_manual_review_declaration": 7,
+      "prose_ref_token_hits": 0,
+      "source_constraints_pending_registration": 1
+    },
+    "escape_ratio": 0.111111,
+    "fixture_regression": "MIG-B3-STATE-NEG-ANCHOR-BLINDSPOT-FIXTURE/passed",
+    "produced": 56,
+    "scanned": 63
+  },
+  "counts": {
+    "applicable_scanned": 63,
+    "not_applicable": 0,
+    "scanned": 63,
+    "suppressed_by_ledger": 0,
+    "unchecked_in_blindspot_estimated": 7,
+    "violations": 0
+  },
+  "denominator_refs": [],
+  "digest_excluded_fields": [
+    "duration_ms"
+  ],
+  "duration_ms": {
+    "external": 0,
+    "self": 0
+  },
+  "gate": "STATE_INTEGRITY",
+  "gate_def": "POLICY.GATE.MIG_B3_STATE_INTEGRITY@0.1.0",
+  "grn": "GRN-4502",
+  "items": [],
+  "items_truncated": false,
+  "metric_dialect": "state_integrity:negative_constraints",
+  "ran_at_seq": 0,
+  "scope": {
+    "note": "检查范围=MIG-B3/M2 转录组负约束对象（business-rule/neg/）全量 63 个＝已转录禁令分母（任务书：每条禁令有可检测锚；源册 outputs/frontend/10_planned/negative-constraint.yaml constraints[] 现场重读 64 条，三桶恒等式 63 已转录 + 1 待裁决 = 64 = inventory denominators.negative_constraints.value=64；待裁决=NEG.PAGE-TASK-STEP-EXPERT-MODEL-CALCULATE.SUBMIT——页段 PAGE_TASK_STEP_EXPERT_MODEL_CALCULATE 37 字符超 32 上限经 CONVENTIONS §2.2 准入门，无对象故不入本分母）。可检测锚机判（C5 现场重扫 MASTer src，不信 KBM 草表自报；三形态=转录组 notes 登记的 M4 enforceability 原料）：NEG id 词形 grep 命中 20 条；source_refs ACTION.* 词形 grep 命中 56 条（实现侧注释/字面确以 ACTION.* 词形承载，试探性命中=词形在场，页域语义绑定不在此判据内）；prose 引用（『<PAGE> §N』形）命中 0 条。三形态任一命中=有锚：56 条；无锚且无显式人工审查声明：7 条（constraints 载体仅携带 registry 级 enforcement_point=『page-spec §9 / governance_factsources』统一声明，非逐条人工审查证据——后者在本语料不存在是诚实事实）。「无锚且无声明」机械不可判卷（无法区分『未实施』与『已实施但词形未登记』）→ verdict=skipped_blindspot + 盲区指标（诚实）；锚声明但模式非法=failed：key_bindings.code 锚声明 63 条全部核验（目标册存在 + constraint_id 可 grep），非法=0。盲区 fixture 回归（红线 3，in-memory 确定性）：MIG-B3-STATE-NEG-ANCHOR-BLINDSPOT-FIXTURE/passed——fixture A id 词形在场 → 探针命中（可达面）；fixture B 禁令已由代码强制但用未登记词形 → 探针报无锚且无法区分（结构失明实证）。盲区指标：escape_ratio=(63-56)/63=无锚禁令占比（unchecked_in_blindspot_estimated=7）。violations=0。路径基：items location 为 po-master 仓内相对路径。self_report_trusted=false：trust.asserted=null（迁移批无自报信道），判卷唯一依据 trust.recomputed。duration_ms 钉 0（byte-identical 幂等）。",
+    "size_expected_from_denominator": 63
+  },
+  "tool": "mig-b3:run_state_integrity_gate",
+  "tool_version": "1.0.0",
+  "trigger": {
+    "note": "migration batch context: no kernel seq allocator; ran_at_seq pinned to 0 (deterministic batch base, A4 wall-clock-free; kernel re-sequences on ingestion); durations pinned to 0 for byte-identical rerun idempotency (batch hard rule 2)",
+    "task_ref": "MIG-B3/M4-state-integrity",
+    "type": "on_demand"
+  },
+  "trust": {
+    "asserted": null,
+    "recomputed": {
+      "matches_asserted": true,
+      "violations": 0
+    }
+  },
+  "verdict": "skipped_blindspot"
+}

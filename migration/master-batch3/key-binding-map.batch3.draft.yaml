@@ -1,0 +1,2485 @@
+alias_registrations:
+  applied_in_batch1:
+  - alias_rule: GRID.*→CAPABILITY.GRID.*
+    note: ALIASES_V0 已登记；component-registry GRID.* 3 条已由 BATCH-1 收编，本批余量=非 GRID 87 条，无新增 alias 操作
+    observed:
+    - GRID.BASE
+    - GRID.COLUMN_CONFIG
+    - GRID.EDITABLE_GRID
+    source: vocab-lock ALIASES_V0 / vocab.ts ALIASES_V0
+  - alias_rule: PAGE-TASK-STEP-*→PAGE.*
+    note: ALIASES_V0 已登记；本批领域事实（bp/business-rule/state-machine/state-ownership 的 page_id 字段）照录 legacy 词形，不改源数据
+    observed:
+    - PAGE-TASK-STEP-AUTHENTICATE
+    - PAGE-TASK-STEP-BIND-CARLINE
+    - PAGE-TASK-STEP-BUC-ANALYSE
+    - PAGE-TASK-STEP-BUILD-BOM
+    - PAGE-TASK-STEP-EXPERT-MODEL-CALCULATE
+    - PAGE-TASK-STEP-GENERATE-SNAPSHOT
+    - PAGE-TASK-STEP-MAINTAIN-BASE-ATTRIBUTES
+    - PAGE-TASK-STEP-MANAGE-USER-ROLE
+    - PAGE-TASK-STEP-OUTPUT-TO-LEDGER
+    - PAGE-TASK-STEP-QUERY-LEDGER
+    - PAGE-TASK-STEP-SAVE-BOM
+    - PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT
+    - PAGE-TASK-STEP-TRACK-COST-BY-SNAPSHOT
+    - PAGE-TASK-STEP-VIEW-ALL-PARTS
+    - PAGE-TASK-STEP-WRITEBACK-LEDGER
+    source: vocab-lock ALIASES_V0 / vocab.ts ALIASES_V0
+  proposed_needs_human:
+  - alias_rule: CALC-*/NEG.*/STATE-*/MACHINE-*/TRANSITION-<HEX> 本地族词形
+    note: 均为注册表本地族词形（非 vocab v0.2 15 前缀成员、非 ALIASES_V0 现役 8 族）；本表只登记不改名；canonical 赐名归族待词汇表 PR/Owner 裁决
+batch: MIG-B3
+binding_class: domain_fact_to_code_anchor
+calc_formula_bindings:
+- code_anchor_files:
+  - src/entities/buc-analyse/useBucFormulas.ts
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/entities/buc-analyse/useBucFormulas.ts
+    evidence: '*   CALC-BUC-10 分摊成本 KPI = sum(ext_buc_allocation_fee_rows)'
+    line: 16
+    match_rule: whole_file_token
+  - code_path: src/entities/buc-analyse/useBucFormulas.ts
+    evidence: 'const BUC_FORMULA_IDS: readonly string[] = [''CALC-BUC-6'', ''CALC-BUC-10'', ''CALC-BUC-30'']'
+    line: 30
+    match_rule: whole_file_token
+  - code_path: src/entities/buc-analyse/useBucFormulas.ts
+    evidence: '* 分摊成本 KPI（CALC-BUC-10）= sum(ext_buc_allocation_fee_rows)。'
+    line: 71
+    match_rule: whole_file_token
+  - code_path: src/entities/buc-analyse/useBucFormulas.ts
+    evidence: 'return engine.evalAll({ ext_buc_allocation_fee_rows: allocationFees.map(fromValue) })[''CALC-BUC-10'']'
+    line: 75
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-BUC-10'','
+    line: 248
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-10', 'sum(ext_buc_allocation_fee_rows)', []),
+    line: 181
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-11', '', ['CALC-BUC-8', 'CALC-BUC-9', 'CALC-BUC-10']),
+    line: 182
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-BUC-10
+    wired: true
+  engine_mirror_anchor_count: 2
+  frontend_implementable: 'yes'
+  governance_id: CALC-BUC-10
+  implementation_anchor_files:
+  - src/entities/buc-analyse/useBucFormulas.ts
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  module: 03-零件成本分析管理
+  registry_status: ready
+  status: MECHANICAL_TOKEN_MATCH_WIRED
+  wired: true
+- code_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-BUC-11'': ''BLOCKER-BUC-DIRECT-MFG'','
+    line: 32
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-BUC-11'','
+    line: 85
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-BUC-11'','
+    line: 216
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: const propagatedKpis = ['CALC-BUC-7', 'CALC-BUC-8', 'CALC-BUC-9', 'CALC-BUC-11', 'CALC-BUC-12']
+    line: 273
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-11', '', ['CALC-BUC-8', 'CALC-BUC-9', 'CALC-BUC-10']),
+    line: 182
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-12', '', ['CALC-BUC-11']),
+    line: 183
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-BUC-11'','
+    line: 312
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-BUC-11
+    wired: false
+  engine_mirror_anchor_count: 3
+  frontend_implementable: 'yes'
+  governance_id: CALC-BUC-11
+  implementation_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  module: 03-零件成本分析管理
+  registry_status: ready
+  status: WIRED_FALSE_PARALLEL_IMPLEMENTATION_PRESENT
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-BUC-12'': ''BLOCKER-BUC-DIRECT-MFG'','
+    line: 33
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-BUC-12'','
+    line: 86
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-BUC-12'','
+    line: 217
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: const propagatedKpis = ['CALC-BUC-7', 'CALC-BUC-8', 'CALC-BUC-9', 'CALC-BUC-11', 'CALC-BUC-12']
+    line: 273
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-12', '', ['CALC-BUC-11']),
+    line: 183
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-BUC-12'','
+    line: 313
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-BUC-12
+    wired: false
+  engine_mirror_anchor_count: 2
+  frontend_implementable: 'yes'
+  governance_id: CALC-BUC-12
+  implementation_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  module: 03-零件成本分析管理
+  registry_status: ready
+  status: WIRED_FALSE_PARALLEL_IMPLEMENTATION_PRESENT
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: const buc13 = BUILTIN_FORMULAS.find((f) => f.id === 'CALC-BUC-13')!.engine_expression
+    line: 174
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-BUC-13'','
+    line: 249
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-13', 'ext_buc_length * ext_buc_width * ext_buc_height * ext_material_density', []),
+    line: 186
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-14', 'CALC_BUC_13 / ext_buc_gross_weight * 100', ['CALC-BUC-13']),
+    line: 187
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '[''CALC-BUC-13''],'
+    line: 191
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-BUC-13
+    wired: false
+  engine_mirror_anchor_count: 3
+  frontend_implementable: partial
+  governance_id: CALC-BUC-13
+  implementation_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  module: 03-零件成本分析管理
+  registry_status: ready
+  status: WIRED_FALSE_PARALLEL_IMPLEMENTATION_PRESENT
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: const buc14 = BUILTIN_FORMULAS.find((f) => f.id === 'CALC-BUC-14')!.engine_expression
+    line: 182
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-14', 'CALC_BUC_13 / ext_buc_gross_weight * 100', ['CALC-BUC-13']),
+    line: 187
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-BUC-14
+    wired: false
+  engine_mirror_anchor_count: 1
+  frontend_implementable: 'yes'
+  governance_id: CALC-BUC-14
+  implementation_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  module: 03-零件成本分析管理
+  registry_status: ready
+  status: WIRED_FALSE_PARALLEL_IMPLEMENTATION_PRESENT
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-BUC-15'','
+    line: 189
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-16', 'CALC_BUC_15 * ext_buc_scrap_rate / (1 - ext_buc_scrap_rate)', ['CALC-BUC-15']),
+    line: 193
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '[''CALC-BUC-15'', ''CALC-BUC-16''],'
+    line: 197
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '[''CALC-BUC-15'', ''CALC-BUC-16'', ''CALC-BUC-17''],'
+    line: 202
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-BUC-15
+    wired: false
+  engine_mirror_anchor_count: 4
+  frontend_implementable: partial
+  governance_id: CALC-BUC-15
+  implementation_anchor_files: []
+  module: 03-零件成本分析管理
+  registry_status: ready
+  status: WIRED_FALSE_ENGINE_REGISTERED_ONLY
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-16', 'CALC_BUC_15 * ext_buc_scrap_rate / (1 - ext_buc_scrap_rate)', ['CALC-BUC-15']),
+    line: 193
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '[''CALC-BUC-15'', ''CALC-BUC-16''],'
+    line: 197
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '[''CALC-BUC-15'', ''CALC-BUC-16'', ''CALC-BUC-17''],'
+    line: 202
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-BUC-16
+    wired: false
+  engine_mirror_anchor_count: 3
+  frontend_implementable: 'yes'
+  governance_id: CALC-BUC-16
+  implementation_anchor_files: []
+  module: 03-零件成本分析管理
+  registry_status: ready
+  status: WIRED_FALSE_ENGINE_REGISTERED_ONLY
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-BUC-17'','
+    line: 195
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '[''CALC-BUC-15'', ''CALC-BUC-16'', ''CALC-BUC-17''],'
+    line: 202
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-BUC-17
+    wired: false
+  engine_mirror_anchor_count: 2
+  frontend_implementable: 'yes'
+  governance_id: CALC-BUC-17
+  implementation_anchor_files: []
+  module: 03-零件成本分析管理
+  registry_status: ready
+  status: WIRED_FALSE_ENGINE_REGISTERED_ONLY
+  wired: false
+- code_anchor_files:
+  - src/entities/buc-analyse/useBucFormulas.ts
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/entities/buc-analyse/useBucFormulas.ts
+    evidence: '* 数组槽：各 ZSB 材料明细行材料成本（行级 CALC-BUC-18 输出，页面以 m_materialCost 列值喂入）。'
+    line: 53
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-BUC-18'','
+    line: 250
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '*   ext_buc_material_cost_rows                        各ZSB材料明细行材料成本(CALC-BUC-18)数组'
+    line: 94
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-BUC-18'','
+    line: 200
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-19', 'CALC_BUC_18 * ext_buc_mgt_sales_rate', ['CALC-BUC-18']),
+    line: 204
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-20', 'CALC_BUC_18 * ext_buc_material_profit_rate', ['CALC-BUC-18']),
+    line: 205
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-BUC-18
+    wired: false
+  engine_mirror_anchor_count: 4
+  frontend_implementable: 'yes'
+  governance_id: CALC-BUC-18
+  implementation_anchor_files:
+  - src/entities/buc-analyse/useBucFormulas.ts
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  module: 03-零件成本分析管理
+  registry_status: ready
+  status: WIRED_FALSE_PARALLEL_IMPLEMENTATION_PRESENT
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: expect(engine.isBlocked('CALC-BUC-19')).toBe(false)
+    line: 265
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-9', '', ['CALC-BUC-19', 'CALC-BUC-25', 'CALC-BUC-20', 'CALC-BUC-26']),
+    line: 180
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-19', 'CALC_BUC_18 * ext_buc_mgt_sales_rate', ['CALC-BUC-18']),
+    line: 204
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-BUC-19
+    wired: false
+  engine_mirror_anchor_count: 2
+  frontend_implementable: partial
+  governance_id: CALC-BUC-19
+  implementation_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  module: 03-零件成本分析管理
+  registry_status: ready
+  status: WIRED_FALSE_PARALLEL_IMPLEMENTATION_PRESENT
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: expect(engine.isBlocked('CALC-BUC-20')).toBe(false)
+    line: 266
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-9', '', ['CALC-BUC-19', 'CALC-BUC-25', 'CALC-BUC-20', 'CALC-BUC-26']),
+    line: 180
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-20', 'CALC_BUC_18 * ext_buc_material_profit_rate', ['CALC-BUC-18']),
+    line: 205
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-BUC-20
+    wired: false
+  engine_mirror_anchor_count: 2
+  frontend_implementable: partial
+  governance_id: CALC-BUC-20
+  implementation_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  module: 03-零件成本分析管理
+  registry_status: ready
+  status: WIRED_FALSE_PARALLEL_IMPLEMENTATION_PRESENT
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  - src/shared/lib/calc/engine.ts
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-BUC-21'': ''BLOCKER-BUC-DIRECT-MFG'','
+    line: 34
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-BUC-21'','
+    line: 218
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: expect(engine.isBlocked('CALC-BUC-21')).toBe(true)
+    line: 375
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/engine.ts
+    evidence: '* （formula id 含 `-` 非合法标识符，故表达式中以 `_` 代之，如 CALC_BUC_21 -> CALC-BUC-21）。'
+    line: 238
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-21', '', [], 'BLOCKER-BUC-DIRECT-MFG'),
+    line: 208
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-22', '', ['CALC-BUC-21'], 'BLOCKER-BUC-DIRECT-MFG'),
+    line: 209
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-23', '', ['CALC-BUC-21', 'CALC-BUC-22'], 'BLOCKER-BUC-DIRECT-MFG'),
+    line: 210
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-24', '', ['CALC-BUC-21', 'CALC-BUC-22', 'CALC-BUC-23'], 'BLOCKER-BUC-DIRECT-MFG'),
+    line: 211
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-BUC-21
+    wired: false
+  engine_mirror_anchor_count: 5
+  frontend_implementable: blocked
+  governance_id: CALC-BUC-21
+  implementation_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  - src/shared/lib/calc/engine.ts
+  module: 03-零件成本分析管理
+  registry_status: blocked
+  status: WIRED_FALSE_PARALLEL_IMPLEMENTATION_PRESENT
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-BUC-22'': ''BLOCKER-BUC-DIRECT-MFG'','
+    line: 35
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-BUC-22'','
+    line: 219
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-22', '', ['CALC-BUC-21'], 'BLOCKER-BUC-DIRECT-MFG'),
+    line: 209
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-23', '', ['CALC-BUC-21', 'CALC-BUC-22'], 'BLOCKER-BUC-DIRECT-MFG'),
+    line: 210
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-24', '', ['CALC-BUC-21', 'CALC-BUC-22', 'CALC-BUC-23'], 'BLOCKER-BUC-DIRECT-MFG'),
+    line: 211
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-27', '', ['CALC-BUC-24', 'CALC-BUC-22'], 'BLOCKER-BUC-DIRECT-MFG'),
+    line: 214
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-BUC-22'','
+    line: 315
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-BUC-22
+    wired: false
+  engine_mirror_anchor_count: 5
+  frontend_implementable: 'yes'
+  governance_id: CALC-BUC-22
+  implementation_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  module: 03-零件成本分析管理
+  registry_status: blocked-by
+  status: WIRED_FALSE_PARALLEL_IMPLEMENTATION_PRESENT
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-BUC-23'': ''BLOCKER-BUC-DIRECT-MFG'','
+    line: 36
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-BUC-23'','
+    line: 220
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-23', '', ['CALC-BUC-21', 'CALC-BUC-22'], 'BLOCKER-BUC-DIRECT-MFG'),
+    line: 210
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-24', '', ['CALC-BUC-21', 'CALC-BUC-22', 'CALC-BUC-23'], 'BLOCKER-BUC-DIRECT-MFG'),
+    line: 211
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-BUC-23'','
+    line: 316
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-BUC-23
+    wired: false
+  engine_mirror_anchor_count: 3
+  frontend_implementable: 'yes'
+  governance_id: CALC-BUC-23
+  implementation_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  module: 03-零件成本分析管理
+  registry_status: blocked-by
+  status: WIRED_FALSE_PARALLEL_IMPLEMENTATION_PRESENT
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-BUC-24'': ''BLOCKER-BUC-DIRECT-MFG'','
+    line: 37
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-BUC-24'','
+    line: 221
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-24', '', ['CALC-BUC-21', 'CALC-BUC-22', 'CALC-BUC-23'], 'BLOCKER-BUC-DIRECT-MFG'),
+    line: 211
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-25', '', ['CALC-BUC-24'], 'BLOCKER-BUC-DIRECT-MFG'),
+    line: 212
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-26', '', ['CALC-BUC-24'], 'BLOCKER-BUC-DIRECT-MFG'),
+    line: 213
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-27', '', ['CALC-BUC-24', 'CALC-BUC-22'], 'BLOCKER-BUC-DIRECT-MFG'),
+    line: 214
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-BUC-24'','
+    line: 317
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-BUC-24
+    wired: false
+  engine_mirror_anchor_count: 5
+  frontend_implementable: 'yes'
+  governance_id: CALC-BUC-24
+  implementation_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  module: 03-零件成本分析管理
+  registry_status: blocked-by
+  status: WIRED_FALSE_PARALLEL_IMPLEMENTATION_PRESENT
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-BUC-25'': ''BLOCKER-BUC-DIRECT-MFG'','
+    line: 38
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-BUC-25'','
+    line: 222
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: expect(engine.isBlocked('CALC-BUC-25')).toBe(true) // 传播源（直接 blocked-by）
+    line: 267
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-9', '', ['CALC-BUC-19', 'CALC-BUC-25', 'CALC-BUC-20', 'CALC-BUC-26']),
+    line: 180
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-25', '', ['CALC-BUC-24'], 'BLOCKER-BUC-DIRECT-MFG'),
+    line: 212
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-28', '', ['CALC-BUC-25', 'CALC-BUC-26'], 'BLOCKER-BUC-DIRECT-MFG'),
+    line: 215
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-BUC-25'','
+    line: 318
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-BUC-25
+    wired: false
+  engine_mirror_anchor_count: 4
+  frontend_implementable: partial
+  governance_id: CALC-BUC-25
+  implementation_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  module: 03-零件成本分析管理
+  registry_status: blocked-by
+  status: WIRED_FALSE_PARALLEL_IMPLEMENTATION_PRESENT
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-BUC-26'': ''BLOCKER-BUC-DIRECT-MFG'','
+    line: 39
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-BUC-26'','
+    line: 223
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: expect(engine.isBlocked('CALC-BUC-26')).toBe(true) // 传播源（直接 blocked-by）
+    line: 268
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-9', '', ['CALC-BUC-19', 'CALC-BUC-25', 'CALC-BUC-20', 'CALC-BUC-26']),
+    line: 180
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-26', '', ['CALC-BUC-24'], 'BLOCKER-BUC-DIRECT-MFG'),
+    line: 213
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-28', '', ['CALC-BUC-25', 'CALC-BUC-26'], 'BLOCKER-BUC-DIRECT-MFG'),
+    line: 215
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-BUC-26'','
+    line: 319
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-BUC-26
+    wired: false
+  engine_mirror_anchor_count: 4
+  frontend_implementable: partial
+  governance_id: CALC-BUC-26
+  implementation_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  module: 03-零件成本分析管理
+  registry_status: blocked-by
+  status: WIRED_FALSE_PARALLEL_IMPLEMENTATION_PRESENT
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-BUC-27'': ''BLOCKER-BUC-DIRECT-MFG'','
+    line: 40
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-BUC-27'','
+    line: 224
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-27', '', ['CALC-BUC-24', 'CALC-BUC-22'], 'BLOCKER-BUC-DIRECT-MFG'),
+    line: 214
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-29', '', ['CALC-BUC-27', 'CALC-BUC-28'], 'BLOCKER-BUC-DIRECT-MFG'),
+    line: 216
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-BUC-27'','
+    line: 320
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-BUC-27
+    wired: false
+  engine_mirror_anchor_count: 3
+  frontend_implementable: 'yes'
+  governance_id: CALC-BUC-27
+  implementation_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  module: 03-零件成本分析管理
+  registry_status: blocked-by
+  status: WIRED_FALSE_PARALLEL_IMPLEMENTATION_PRESENT
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-BUC-28'': ''BLOCKER-BUC-DIRECT-MFG'','
+    line: 41
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-BUC-28'','
+    line: 225
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-28', '', ['CALC-BUC-25', 'CALC-BUC-26'], 'BLOCKER-BUC-DIRECT-MFG'),
+    line: 215
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-29', '', ['CALC-BUC-27', 'CALC-BUC-28'], 'BLOCKER-BUC-DIRECT-MFG'),
+    line: 216
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-BUC-28'','
+    line: 321
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-BUC-28
+    wired: false
+  engine_mirror_anchor_count: 3
+  frontend_implementable: 'yes'
+  governance_id: CALC-BUC-28
+  implementation_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  module: 03-零件成本分析管理
+  registry_status: blocked-by
+  status: WIRED_FALSE_PARALLEL_IMPLEMENTATION_PRESENT
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-BUC-29'': ''BLOCKER-BUC-DIRECT-MFG'','
+    line: 42
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-BUC-29'','
+    line: 226
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-7', '', ['CALC-BUC-29']),
+    line: 178
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-29', '', ['CALC-BUC-27', 'CALC-BUC-28'], 'BLOCKER-BUC-DIRECT-MFG'),
+    line: 216
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-BUC-29'','
+    line: 322
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-BUC-29
+    wired: false
+  engine_mirror_anchor_count: 3
+  frontend_implementable: 'yes'
+  governance_id: CALC-BUC-29
+  implementation_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  module: 03-零件成本分析管理
+  registry_status: blocked-by
+  status: WIRED_FALSE_PARALLEL_IMPLEMENTATION_PRESENT
+  wired: false
+- code_anchor_files:
+  - src/entities/buc-analyse/useBucFormulas.ts
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/entities/buc-analyse/useBucFormulas.ts
+    evidence: '*   CALC-BUC-30 分摊费       = ext_buc_item_total_cost / ext_buc_allocation_qty'
+    line: 17
+    match_rule: whole_file_token
+  - code_path: src/entities/buc-analyse/useBucFormulas.ts
+    evidence: 'const BUC_FORMULA_IDS: readonly string[] = [''CALC-BUC-6'', ''CALC-BUC-10'', ''CALC-BUC-30'']'
+    line: 30
+    match_rule: whole_file_token
+  - code_path: src/entities/buc-analyse/useBucFormulas.ts
+    evidence: '* 分摊费（CALC-BUC-30）= ext_buc_item_total_cost / ext_buc_allocation_qty。'
+    line: 60
+    match_rule: whole_file_token
+  - code_path: src/entities/buc-analyse/useBucFormulas.ts
+    evidence: '})[''CALC-BUC-30'']'
+    line: 67
+    match_rule: whole_file_token
+  - code_path: src/entities/buc-analyse/useBucFormulas.ts
+    evidence: '* 数组槽：各费用分摊项分摊费（逐行 CALC-BUC-30 结果，页面先 evaluateAllocationFee 得 fee 数组再喂入）。'
+    line: 72
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-BUC-30'','
+    line: 251
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '*   ext_buc_allocation_fee_rows                       各费用分摊项分摊费(CALC-BUC-30)数组'
+    line: 95
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-30', 'ext_buc_item_total_cost / ext_buc_allocation_qty', []),
+    line: 219
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-BUC-30
+    wired: true
+  engine_mirror_anchor_count: 2
+  frontend_implementable: 'yes'
+  governance_id: CALC-BUC-30
+  implementation_anchor_files:
+  - src/entities/buc-analyse/useBucFormulas.ts
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  module: 03-零件成本分析管理
+  registry_status: ready
+  status: MECHANICAL_TOKEN_MATCH_WIRED
+  wired: true
+- code_anchor_files:
+  - src/entities/buc-analyse/useBucFormulas.ts
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/entities/buc-analyse/useBucFormulas.ts
+    evidence: '*   CALC-BUC-6  材料成本 KPI = sum(ext_buc_material_cost_rows)'
+    line: 15
+    match_rule: whole_file_token
+  - code_path: src/entities/buc-analyse/useBucFormulas.ts
+    evidence: 'const BUC_FORMULA_IDS: readonly string[] = [''CALC-BUC-6'', ''CALC-BUC-10'', ''CALC-BUC-30'']'
+    line: 30
+    match_rule: whole_file_token
+  - code_path: src/entities/buc-analyse/useBucFormulas.ts
+    evidence: '* 材料成本 KPI（CALC-BUC-6）= sum(ext_buc_material_cost_rows)。'
+    line: 52
+    match_rule: whole_file_token
+  - code_path: src/entities/buc-analyse/useBucFormulas.ts
+    evidence: 'return engine.evalAll({ ext_buc_material_cost_rows: materialCosts.map(fromValue) })[''CALC-BUC-6'']'
+    line: 56
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-BUC-6'','
+    line: 247
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-6', 'sum(ext_buc_material_cost_rows)', []),
+    line: 177
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-8', '', ['CALC-BUC-6', 'CALC-BUC-7']),
+    line: 179
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-BUC-6
+    wired: true
+  engine_mirror_anchor_count: 2
+  frontend_implementable: 'yes'
+  governance_id: CALC-BUC-6
+  implementation_anchor_files:
+  - src/entities/buc-analyse/useBucFormulas.ts
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  module: 03-零件成本分析管理
+  registry_status: ready
+  status: MECHANICAL_TOKEN_MATCH_WIRED
+  wired: true
+- code_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-BUC-7'': ''BLOCKER-BUC-DIRECT-MFG'','
+    line: 29
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-BUC-7'','
+    line: 87
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-BUC-7'','
+    line: 213
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: const propagatedKpis = ['CALC-BUC-7', 'CALC-BUC-8', 'CALC-BUC-9', 'CALC-BUC-11', 'CALC-BUC-12']
+    line: 273
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-7', '', ['CALC-BUC-29']),
+    line: 178
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-8', '', ['CALC-BUC-6', 'CALC-BUC-7']),
+    line: 179
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-BUC-7'','
+    line: 309
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-BUC-7
+    wired: false
+  engine_mirror_anchor_count: 3
+  frontend_implementable: 'yes'
+  governance_id: CALC-BUC-7
+  implementation_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  module: 03-零件成本分析管理
+  registry_status: ready
+  status: WIRED_FALSE_PARALLEL_IMPLEMENTATION_PRESENT
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-BUC-8'': ''BLOCKER-BUC-DIRECT-MFG'','
+    line: 30
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-BUC-8'','
+    line: 88
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-BUC-8'','
+    line: 214
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: const propagatedKpis = ['CALC-BUC-7', 'CALC-BUC-8', 'CALC-BUC-9', 'CALC-BUC-11', 'CALC-BUC-12']
+    line: 273
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-8', '', ['CALC-BUC-6', 'CALC-BUC-7']),
+    line: 179
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-11', '', ['CALC-BUC-8', 'CALC-BUC-9', 'CALC-BUC-10']),
+    line: 182
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-BUC-8'','
+    line: 310
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-BUC-8
+    wired: false
+  engine_mirror_anchor_count: 3
+  frontend_implementable: 'yes'
+  governance_id: CALC-BUC-8
+  implementation_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  module: 03-零件成本分析管理
+  registry_status: ready
+  status: WIRED_FALSE_PARALLEL_IMPLEMENTATION_PRESENT
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-BUC-9'': ''BLOCKER-BUC-DIRECT-MFG'','
+    line: 31
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-BUC-9'','
+    line: 89
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-BUC-9'','
+    line: 215
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: const buc9 = BUILTIN_FORMULAS.find((f) => f.id === 'CALC-BUC-9')!
+    line: 262
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: expect(engine.isBlocked('CALC-BUC-9')).toBe(true)
+    line: 264
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: const propagatedKpis = ['CALC-BUC-7', 'CALC-BUC-8', 'CALC-BUC-9', 'CALC-BUC-11', 'CALC-BUC-12']
+    line: 273
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-9', '', ['CALC-BUC-19', 'CALC-BUC-25', 'CALC-BUC-20', 'CALC-BUC-26']),
+    line: 180
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-BUC-11', '', ['CALC-BUC-8', 'CALC-BUC-9', 'CALC-BUC-10']),
+    line: 182
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-BUC-9
+    wired: false
+  engine_mirror_anchor_count: 3
+  frontend_implementable: 'yes'
+  governance_id: CALC-BUC-9
+  implementation_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  module: 03-零件成本分析管理
+  registry_status: ready
+  status: WIRED_FALSE_PARALLEL_IMPLEMENTATION_PRESENT
+  wired: false
+- code_anchor_files:
+  - src/entities/calc-vehicle-parts/__tests__/amount-summary.spec.ts
+  - src/entities/calc-vehicle-parts/__tests__/mapper.spec.ts
+  - src/entities/calc-vehicle-parts/__tests__/useCalcVehiclePartsFormulas.test.ts
+  - src/entities/calc-vehicle-parts/amount-summary.ts
+  - src/entities/calc-vehicle-parts/mapper.ts
+  - src/entities/calc-vehicle-parts/useCalcVehiclePartsFormulas.ts
+  - src/pages/page-task-step-build-bom/CalcVehiclePartsPage.vue
+  - src/shared/lib/calc/__tests__/engine.test.ts
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/entities/calc-vehicle-parts/__tests__/amount-summary.spec.ts
+    evidence: 'id: ''CALC-CVP-1'','
+    line: 114
+    match_rule: whole_file_token
+  - code_path: src/entities/calc-vehicle-parts/__tests__/mapper.spec.ts
+    evidence: // vst/tt = CALC-CVP-1/2，由公式引擎派生（grid formula 列 -> useCalcVehiclePartsFormulas）。
+    line: 43
+    match_rule: whole_file_token
+  - code_path: src/entities/calc-vehicle-parts/__tests__/useCalcVehiclePartsFormulas.test.ts
+    evidence: 'id: ''CALC-CVP-1'','
+    line: 166
+    match_rule: whole_file_token
+  - code_path: src/entities/calc-vehicle-parts/__tests__/useCalcVehiclePartsFormulas.test.ts
+    evidence: 'id: ''CALC-CVP-1'','
+    line: 203
+    match_rule: whole_file_token
+  - code_path: src/entities/calc-vehicle-parts/__tests__/useCalcVehiclePartsFormulas.test.ts
+    evidence: 'id: ''CALC-CVP-1'','
+    line: 234
+    match_rule: whole_file_token
+  - code_path: src/entities/calc-vehicle-parts/__tests__/useCalcVehiclePartsFormulas.test.ts
+    evidence: '/CALC_FORMULA_MISSING: CALC-CVP-1,CALC-CVP-2/,'
+    line: 243
+    match_rule: whole_file_token
+  - code_path: src/entities/calc-vehicle-parts/__tests__/useCalcVehiclePartsFormulas.test.ts
+    evidence: BUILTIN_FORMULAS.filter((f) => f.id === 'CALC-CVP-1' || f.id === 'CALC-CVP-2'),
+    line: 290
+    match_rule: whole_file_token
+  - code_path: src/entities/calc-vehicle-parts/__tests__/useCalcVehiclePartsFormulas.test.ts
+    evidence: for (const id of ['CALC-CVP-1', 'CALC-CVP-2']) {
+    line: 303
+    match_rule: whole_file_token
+  engine_binding:
+    key: CALC-CVP-1
+    wired: true
+  engine_mirror_anchor_count: 4
+  frontend_implementable: 'yes'
+  governance_id: CALC-CVP-1
+  implementation_anchor_files:
+  - src/entities/calc-vehicle-parts/__tests__/amount-summary.spec.ts
+  - src/entities/calc-vehicle-parts/__tests__/mapper.spec.ts
+  - src/entities/calc-vehicle-parts/__tests__/useCalcVehiclePartsFormulas.test.ts
+  - src/entities/calc-vehicle-parts/amount-summary.ts
+  - src/entities/calc-vehicle-parts/mapper.ts
+  - src/entities/calc-vehicle-parts/useCalcVehiclePartsFormulas.ts
+  - src/pages/page-task-step-build-bom/CalcVehiclePartsPage.vue
+  - src/shared/lib/calc/__tests__/engine.test.ts
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  module: 01-整车成本分析管理
+  registry_status: ready
+  status: MECHANICAL_TOKEN_MATCH_WIRED
+  wired: true
+- code_anchor_files:
+  - src/entities/calc-vehicle-parts/__tests__/amount-summary.spec.ts
+  - src/entities/calc-vehicle-parts/__tests__/useCalcVehiclePartsFormulas.test.ts
+  - src/entities/calc-vehicle-parts/amount-summary.ts
+  - src/entities/calc-vehicle-parts/mapper.ts
+  - src/entities/calc-vehicle-parts/useCalcVehiclePartsFormulas.ts
+  - src/shared/lib/calc/__tests__/engine.test.ts
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/entities/calc-vehicle-parts/__tests__/amount-summary.spec.ts
+    evidence: 'id: ''CALC-CVP-2'','
+    line: 120
+    match_rule: whole_file_token
+  - code_path: src/entities/calc-vehicle-parts/__tests__/useCalcVehiclePartsFormulas.test.ts
+    evidence: 'id: ''CALC-CVP-2'','
+    line: 171
+    match_rule: whole_file_token
+  - code_path: src/entities/calc-vehicle-parts/__tests__/useCalcVehiclePartsFormulas.test.ts
+    evidence: 'id: ''CALC-CVP-2'','
+    line: 209
+    match_rule: whole_file_token
+  - code_path: src/entities/calc-vehicle-parts/__tests__/useCalcVehiclePartsFormulas.test.ts
+    evidence: '/CALC_FORMULA_MISSING: CALC-CVP-2/,'
+    line: 240
+    match_rule: whole_file_token
+  - code_path: src/entities/calc-vehicle-parts/__tests__/useCalcVehiclePartsFormulas.test.ts
+    evidence: '/CALC_FORMULA_MISSING: CALC-CVP-1,CALC-CVP-2/,'
+    line: 243
+    match_rule: whole_file_token
+  - code_path: src/entities/calc-vehicle-parts/__tests__/useCalcVehiclePartsFormulas.test.ts
+    evidence: BUILTIN_FORMULAS.filter((f) => f.id === 'CALC-CVP-1' || f.id === 'CALC-CVP-2'),
+    line: 290
+    match_rule: whole_file_token
+  - code_path: src/entities/calc-vehicle-parts/__tests__/useCalcVehiclePartsFormulas.test.ts
+    evidence: for (const id of ['CALC-CVP-1', 'CALC-CVP-2']) {
+    line: 303
+    match_rule: whole_file_token
+  - code_path: src/entities/calc-vehicle-parts/amount-summary.ts
+    evidence: '*   目标 单件 = Σ row.tu（单件目标A价）   整车 = Σ CALC-CVP-2（tu × q，引擎 4c half-up）'
+    line: 8
+    match_rule: whole_file_token
+  engine_binding:
+    key: CALC-CVP-2
+    wired: true
+  engine_mirror_anchor_count: 1
+  frontend_implementable: 'yes'
+  governance_id: CALC-CVP-2
+  implementation_anchor_files:
+  - src/entities/calc-vehicle-parts/__tests__/amount-summary.spec.ts
+  - src/entities/calc-vehicle-parts/__tests__/useCalcVehiclePartsFormulas.test.ts
+  - src/entities/calc-vehicle-parts/amount-summary.ts
+  - src/entities/calc-vehicle-parts/mapper.ts
+  - src/entities/calc-vehicle-parts/useCalcVehiclePartsFormulas.ts
+  - src/shared/lib/calc/__tests__/engine.test.ts
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  module: 01-整车成本分析管理
+  registry_status: ready
+  status: MECHANICAL_TOKEN_MATCH_WIRED
+  wired: true
+- code_anchor_files:
+  - src/entities/calc-vehicle-parts/__tests__/amount-summary.spec.ts
+  - src/entities/calc-vehicle-parts/__tests__/mapper.spec.ts
+  - src/entities/calc-vehicle-parts/__tests__/useCalcVehiclePartsFormulas.test.ts
+  - src/entities/calc-vehicle-parts/amount-summary.ts
+  - src/entities/calc-vehicle-parts/mapper.ts
+  - src/entities/calc-vehicle-parts/useCalcVehiclePartsFormulas.ts
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/entities/calc-vehicle-parts/__tests__/amount-summary.spec.ts
+    evidence: // G15 起注入集须含 CALC-CVP-3（bu 空 -> bt 0，本用例不断言 bnkTotal）
+    line: 124
+    match_rule: whole_file_token
+  - code_path: src/entities/calc-vehicle-parts/__tests__/amount-summary.spec.ts
+    evidence: 'id: ''CALC-CVP-3'','
+    line: 126
+    match_rule: whole_file_token
+  - code_path: src/entities/calc-vehicle-parts/__tests__/mapper.spec.ts
+    evidence: // bt = CALC-CVP-3（2026-08-20 G15 翻案），同 vst/tt 由公式引擎派生，mapper MUST NOT 复算。
+    line: 47
+    match_rule: whole_file_token
+  - code_path: src/entities/calc-vehicle-parts/__tests__/useCalcVehiclePartsFormulas.test.ts
+    evidence: 'it(''bt: bu=1.11115, q=3 -> ok(3.3335)（CALC-CVP-3，4c half-up）'', () => {'
+    line: 92
+    match_rule: whole_file_token
+  - code_path: src/entities/calc-vehicle-parts/__tests__/useCalcVehiclePartsFormulas.test.ts
+    evidence: // G15 起 hook 构造要求 CVP-1/2/3 齐备，注入集须含 CALC-CVP-3（本用例不断言 bt）
+    line: 175
+    match_rule: whole_file_token
+  - code_path: src/entities/calc-vehicle-parts/__tests__/useCalcVehiclePartsFormulas.test.ts
+    evidence: 'id: ''CALC-CVP-3'','
+    line: 177
+    match_rule: whole_file_token
+  - code_path: src/entities/calc-vehicle-parts/__tests__/useCalcVehiclePartsFormulas.test.ts
+    evidence: // G15 起注入集须含 CALC-CVP-3（未标记 blocker，不受 CVP-1 blocked 影响，本用例不断言 bt）
+    line: 213
+    match_rule: whole_file_token
+  - code_path: src/entities/calc-vehicle-parts/__tests__/useCalcVehiclePartsFormulas.test.ts
+    evidence: 'id: ''CALC-CVP-3'','
+    line: 215
+    match_rule: whole_file_token
+  engine_binding:
+    key: CALC-CVP-3
+    wired: true
+  engine_mirror_anchor_count: 2
+  frontend_implementable: 'yes'
+  governance_id: CALC-CVP-3
+  implementation_anchor_files:
+  - src/entities/calc-vehicle-parts/__tests__/amount-summary.spec.ts
+  - src/entities/calc-vehicle-parts/__tests__/mapper.spec.ts
+  - src/entities/calc-vehicle-parts/__tests__/useCalcVehiclePartsFormulas.test.ts
+  - src/entities/calc-vehicle-parts/amount-summary.ts
+  - src/entities/calc-vehicle-parts/mapper.ts
+  - src/entities/calc-vehicle-parts/useCalcVehiclePartsFormulas.ts
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  module: 01-整车成本分析管理
+  registry_status: ready
+  status: MECHANICAL_TOKEN_MATCH_WIRED
+  wired: true
+- code_anchor_files:
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-EQUIP-43', 'ext_equip_purchase_cost * 0.20', []),
+    line: 255
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '[''CALC-EQUIP-43'', ''CALC-EQUIP-52'', ''CALC-EQUIP-53'', ''CALC-EQUIP-54''],'
+    line: 282
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-EQUIP-43
+    wired: false
+  engine_mirror_anchor_count: 2
+  frontend_implementable: 'yes'
+  governance_id: CALC-EQUIP-43
+  implementation_anchor_files: []
+  module: 04-基础信息管理
+  registry_status: ready
+  status: WIRED_FALSE_ENGINE_REGISTERED_ONLY
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: const equip44 = BUILTIN_FORMULAS.find((f) => f.id === 'CALC-EQUIP-44')!
+    line: 116
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-EQUIP-44', 'ext_equip_purchase_cost * 0.96 ^ ext_equip_years', []),
+    line: 256
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-EQUIP-44
+    wired: false
+  engine_mirror_anchor_count: 1
+  frontend_implementable: 'yes'
+  governance_id: CALC-EQUIP-44
+  implementation_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  module: 04-基础信息管理
+  registry_status: ready
+  status: WIRED_FALSE_PARALLEL_IMPLEMENTATION_PRESENT
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-EQUIP-45'','
+    line: 258
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '[''CALC-EQUIP-45''],'
+    line: 268
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '[''CALC-EQUIP-45''],'
+    line: 273
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-EQUIP-57', 'CALC_EQUIP_56 / CALC_EQUIP_45', ['CALC-EQUIP-56', 'CALC-EQUIP-45']),
+    line: 297
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-EQUIP-45
+    wired: false
+  engine_mirror_anchor_count: 4
+  frontend_implementable: 'yes'
+  governance_id: CALC-EQUIP-45
+  implementation_anchor_files: []
+  module: 04-基础信息管理
+  registry_status: ready
+  status: WIRED_FALSE_ENGINE_REGISTERED_ONLY
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-EQUIP-46', 'ext_equip_floor_area * ext_equip_rent_monthly * 12', []),
+    line: 262
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-EQUIP-46'','
+    line: 288
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-EQUIP-46
+    wired: false
+  engine_mirror_anchor_count: 2
+  frontend_implementable: 'yes'
+  governance_id: CALC-EQUIP-46
+  implementation_anchor_files: []
+  module: 04-基础信息管理
+  registry_status: ready
+  status: WIRED_FALSE_ENGINE_REGISTERED_ONLY
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-EQUIP-47', 'ext_equip_power * ext_equip_electricity_price', []),
+    line: 263
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-EQUIP-47'','
+    line: 289
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-EQUIP-47
+    wired: false
+  engine_mirror_anchor_count: 2
+  frontend_implementable: 'yes'
+  governance_id: CALC-EQUIP-47
+  implementation_anchor_files: []
+  module: 04-基础信息管理
+  registry_status: ready
+  status: WIRED_FALSE_ENGINE_REGISTERED_ONLY
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-EQUIP-48', 'ext_equip_fuel * ext_equip_fuel_price', []),
+    line: 264
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-EQUIP-48'','
+    line: 290
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-EQUIP-48
+    wired: false
+  engine_mirror_anchor_count: 2
+  frontend_implementable: 'yes'
+  governance_id: CALC-EQUIP-48
+  implementation_anchor_files: []
+  module: 04-基础信息管理
+  registry_status: ready
+  status: WIRED_FALSE_ENGINE_REGISTERED_ONLY
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: const equip49 = BUILTIN_FORMULAS.find((f) => f.id === 'CALC-EQUIP-49')!.engine_expression
+    line: 184
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-EQUIP-49'','
+    line: 266
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-EQUIP-49'','
+    line: 291
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-EQUIP-49
+    wired: false
+  engine_mirror_anchor_count: 2
+  frontend_implementable: 'yes'
+  governance_id: CALC-EQUIP-49
+  implementation_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  module: 04-基础信息管理
+  registry_status: ready
+  status: WIRED_FALSE_PARALLEL_IMPLEMENTATION_PRESENT
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-EQUIP-50'','
+    line: 271
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-EQUIP-50'','
+    line: 292
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-EQUIP-50
+    wired: false
+  engine_mirror_anchor_count: 2
+  frontend_implementable: 'yes'
+  governance_id: CALC-EQUIP-50
+  implementation_anchor_files: []
+  module: 04-基础信息管理
+  registry_status: ready
+  status: WIRED_FALSE_ENGINE_REGISTERED_ONLY
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-EQUIP-51', 'ext_equip_other_consumables', []),
+    line: 275
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-EQUIP-51'','
+    line: 293
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-EQUIP-51
+    wired: false
+  engine_mirror_anchor_count: 2
+  frontend_implementable: 'yes'
+  governance_id: CALC-EQUIP-51
+  implementation_anchor_files: []
+  module: 04-基础信息管理
+  registry_status: ready
+  status: WIRED_FALSE_ENGINE_REGISTERED_ONLY
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-EQUIP-52', 'ext_equip_purchase_cost * (ext_equip_interest_rate / 100)', []),
+    line: 276
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '[''CALC-EQUIP-43'', ''CALC-EQUIP-52'', ''CALC-EQUIP-53'', ''CALC-EQUIP-54''],'
+    line: 282
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-EQUIP-52
+    wired: false
+  engine_mirror_anchor_count: 2
+  frontend_implementable: 'yes'
+  governance_id: CALC-EQUIP-52
+  implementation_anchor_files: []
+  module: 04-基础信息管理
+  registry_status: ready
+  status: WIRED_FALSE_ENGINE_REGISTERED_ONLY
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-EQUIP-53', 'ext_equip_maintenance', []),
+    line: 277
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '[''CALC-EQUIP-43'', ''CALC-EQUIP-52'', ''CALC-EQUIP-53'', ''CALC-EQUIP-54''],'
+    line: 282
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-EQUIP-53
+    wired: false
+  engine_mirror_anchor_count: 2
+  frontend_implementable: 'yes'
+  governance_id: CALC-EQUIP-53
+  implementation_anchor_files: []
+  module: 04-基础信息管理
+  registry_status: ready
+  status: WIRED_FALSE_ENGINE_REGISTERED_ONLY
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-EQUIP-54', 'ext_equip_insurance', []),
+    line: 278
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '[''CALC-EQUIP-43'', ''CALC-EQUIP-52'', ''CALC-EQUIP-53'', ''CALC-EQUIP-54''],'
+    line: 282
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-EQUIP-54
+    wired: false
+  engine_mirror_anchor_count: 2
+  frontend_implementable: 'yes'
+  governance_id: CALC-EQUIP-54
+  implementation_anchor_files: []
+  module: 04-基础信息管理
+  registry_status: ready
+  status: WIRED_FALSE_ENGINE_REGISTERED_ONLY
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-EQUIP-55'','
+    line: 280
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-EQUIP-55'','
+    line: 294
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-EQUIP-55
+    wired: false
+  engine_mirror_anchor_count: 2
+  frontend_implementable: 'yes'
+  governance_id: CALC-EQUIP-55
+  implementation_anchor_files: []
+  module: 04-基础信息管理
+  registry_status: ready
+  status: WIRED_FALSE_ENGINE_REGISTERED_ONLY
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-EQUIP-56'','
+    line: 285
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-EQUIP-57', 'CALC_EQUIP_56 / CALC_EQUIP_45', ['CALC-EQUIP-56', 'CALC-EQUIP-45']),
+    line: 297
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-EQUIP-56
+    wired: false
+  engine_mirror_anchor_count: 2
+  frontend_implementable: 'yes'
+  governance_id: CALC-EQUIP-56
+  implementation_anchor_files: []
+  module: 04-基础信息管理
+  registry_status: ready
+  status: WIRED_FALSE_ENGINE_REGISTERED_ONLY
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-EQUIP-57'','
+    line: 252
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-EQUIP-57', 'CALC_EQUIP_56 / CALC_EQUIP_45', ['CALC-EQUIP-56', 'CALC-EQUIP-45']),
+    line: 297
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-EQUIP-57
+    wired: false
+  engine_mirror_anchor_count: 1
+  frontend_implementable: 'yes'
+  governance_id: CALC-EQUIP-57
+  implementation_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  module: 04-基础信息管理
+  registry_status: ready
+  status: WIRED_FALSE_PARALLEL_IMPLEMENTATION_PRESENT
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-EXPERT-31', 'ext_expert_length * ext_expert_width', []),
+    line: 222
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '[''CALC-EXPERT-31''],'
+    line: 227
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-EXPERT-31
+    wired: false
+  engine_mirror_anchor_count: 2
+  frontend_implementable: 'yes'
+  governance_id: CALC-EXPERT-31
+  implementation_anchor_files: []
+  module: 03-零件成本分析管理
+  registry_status: ready
+  status: WIRED_FALSE_ENGINE_REGISTERED_ONLY
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-EXPERT-32', 'ext_expert_net_weight * (1 + ext_expert_process_loss / 100)', []),
+    line: 223
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-EXPERT-32
+    wired: false
+  engine_mirror_anchor_count: 1
+  frontend_implementable: 'yes'
+  governance_id: CALC-EXPERT-32
+  implementation_anchor_files: []
+  module: 03-零件成本分析管理
+  registry_status: ready
+  status: WIRED_FALSE_ENGINE_REGISTERED_ONLY
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-EXPERT-33'','
+    line: 225
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-EXPERT-39', 'pickup_time(ext_expert_pick_method, CALC_EXPERT_33)', ['CALC-EXPERT-33']),
+    line: 235
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-EXPERT-33
+    wired: false
+  engine_mirror_anchor_count: 2
+  frontend_implementable: partial
+  governance_id: CALC-EXPERT-33
+  implementation_anchor_files: []
+  module: 03-零件成本分析管理
+  registry_status: ready
+  status: WIRED_FALSE_ENGINE_REGISTERED_ONLY
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: const expert34 = BUILTIN_FORMULAS.find((f) => f.id === 'CALC-EXPERT-34')!.engine_expression
+    line: 175
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-EXPERT-34', 'ext_expert_net_weight / (ext_material_density * ext_equip_inject_param)', []),
+    line: 229
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-EXPERT-34'','
+    line: 242
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-EXPERT-34
+    wired: false
+  engine_mirror_anchor_count: 2
+  frontend_implementable: partial
+  governance_id: CALC-EXPERT-34
+  implementation_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  module: 03-零件成本分析管理
+  registry_status: ready
+  status: WIRED_FALSE_PARALLEL_IMPLEMENTATION_PRESENT
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-EXPERT-35'': ''BLOCKER-EXPERT-COOLING'','
+    line: 44
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: for (const id of ['CALC-EXPERT-35', 'CALC-EXPERT-36', 'CALC-EXPERT-42']) {
+    line: 233
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: for (const id of ['CALC-EXPERT-35', 'CALC-EXPERT-36', 'CALC-EXPERT-42']) {
+    line: 309
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-EXPERT-35', '', ['CALC-EXPERT-36'], 'BLOCKER-EXPERT-COOLING'),
+    line: 230
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-EXPERT-35'','
+    line: 243
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-EXPERT-35'','
+    line: 324
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-EXPERT-35
+    wired: false
+  engine_mirror_anchor_count: 3
+  frontend_implementable: 'yes'
+  governance_id: CALC-EXPERT-35
+  implementation_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  module: 03-零件成本分析管理
+  registry_status: blocked-by
+  status: WIRED_FALSE_PARALLEL_IMPLEMENTATION_PRESENT
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-EXPERT-36'': ''BLOCKER-EXPERT-COOLING'','
+    line: 45
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: for (const id of ['CALC-EXPERT-35', 'CALC-EXPERT-36', 'CALC-EXPERT-42']) {
+    line: 233
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: for (const id of ['CALC-EXPERT-35', 'CALC-EXPERT-36', 'CALC-EXPERT-42']) {
+    line: 309
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-EXPERT-35', '', ['CALC-EXPERT-36'], 'BLOCKER-EXPERT-COOLING'),
+    line: 230
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-EXPERT-36', '', [], 'BLOCKER-EXPERT-COOLING'),
+    line: 231
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-EXPERT-36'','
+    line: 244
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-EXPERT-36'','
+    line: 325
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-EXPERT-36
+    wired: false
+  engine_mirror_anchor_count: 4
+  frontend_implementable: blocked
+  governance_id: CALC-EXPERT-36
+  implementation_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  module: 03-零件成本分析管理
+  registry_status: blocked
+  status: WIRED_FALSE_PARALLEL_IMPLEMENTATION_PRESENT
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-EXPERT-37', 'ext_equip_pause_time_theory * ext_expert_pause_factor', []),
+    line: 232
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-EXPERT-37'','
+    line: 245
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-EXPERT-37
+    wired: false
+  engine_mirror_anchor_count: 2
+  frontend_implementable: partial
+  governance_id: CALC-EXPERT-37
+  implementation_anchor_files: []
+  module: 03-零件成本分析管理
+  registry_status: ready
+  status: WIRED_FALSE_ENGINE_REGISTERED_ONLY
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-EXPERT-38', 'ext_equip_demold_time_theory + ext_expert_slide_increment', []),
+    line: 233
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-EXPERT-38'','
+    line: 246
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-EXPERT-38
+    wired: false
+  engine_mirror_anchor_count: 2
+  frontend_implementable: partial
+  governance_id: CALC-EXPERT-38
+  implementation_anchor_files: []
+  module: 03-零件成本分析管理
+  registry_status: ready
+  status: WIRED_FALSE_ENGINE_REGISTERED_ONLY
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: const expert39 = BUILTIN_FORMULAS.find((f) => f.id === 'CALC-EXPERT-39')!
+    line: 110
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: for (const id of ['CALC-PALETTE-3', 'CALC-PALETTE-4', 'CALC-EXPERT-39']) {
+    line: 137
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-EXPERT-39', 'pickup_time(ext_expert_pick_method, CALC_EXPERT_33)', ['CALC-EXPERT-33']),
+    line: 235
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-EXPERT-39'','
+    line: 247
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-EXPERT-39
+    wired: false
+  engine_mirror_anchor_count: 2
+  frontend_implementable: 'yes'
+  governance_id: CALC-EXPERT-39
+  implementation_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  module: 03-零件成本分析管理
+  registry_status: ready
+  status: WIRED_FALSE_PARALLEL_IMPLEMENTATION_PRESENT
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-EXPERT-40', 'ext_equip_mold_open_time_theory * ext_expert_surface_factor', []),
+    line: 236
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-EXPERT-40'','
+    line: 248
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-EXPERT-40
+    wired: false
+  engine_mirror_anchor_count: 2
+  frontend_implementable: partial
+  governance_id: CALC-EXPERT-40
+  implementation_anchor_files: []
+  module: 03-零件成本分析管理
+  registry_status: ready
+  status: WIRED_FALSE_ENGINE_REGISTERED_ONLY
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-EXPERT-41', 'ext_expert_other_time', []),
+    line: 237
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-EXPERT-41'','
+    line: 249
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-EXPERT-41
+    wired: false
+  engine_mirror_anchor_count: 2
+  frontend_implementable: 'yes'
+  governance_id: CALC-EXPERT-41
+  implementation_anchor_files: []
+  module: 03-零件成本分析管理
+  registry_status: ready
+  status: WIRED_FALSE_ENGINE_REGISTERED_ONLY
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: '''CALC-EXPERT-42'': ''BLOCKER-EXPERT-COOLING'','
+    line: 46
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: for (const id of ['CALC-EXPERT-35', 'CALC-EXPERT-36', 'CALC-EXPERT-42']) {
+    line: 233
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: for (const id of ['CALC-EXPERT-35', 'CALC-EXPERT-36', 'CALC-EXPERT-42']) {
+    line: 309
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-EXPERT-42'','
+    line: 239
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-EXPERT-42'','
+    line: 326
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-EXPERT-42
+    wired: false
+  engine_mirror_anchor_count: 2
+  frontend_implementable: 'yes'
+  governance_id: CALC-EXPERT-42
+  implementation_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  module: 03-零件成本分析管理
+  registry_status: blocked-by
+  status: WIRED_FALSE_PARALLEL_IMPLEMENTATION_PRESENT
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: const palette3 = BUILTIN_FORMULAS.find((f) => f.id === 'CALC-PALETTE-3')!
+    line: 109
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: for (const id of ['CALC-PALETTE-3', 'CALC-PALETTE-4', 'CALC-EXPERT-39']) {
+    line: 137
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-PALETTE-3'','
+    line: 156
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-PALETTE-3'','
+    line: 166
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-PALETTE-3
+    wired: false
+  engine_mirror_anchor_count: 2
+  frontend_implementable: 'yes'
+  governance_id: CALC-PALETTE-3
+  implementation_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  module: 01-整车成本分析管理
+  registry_status: ready
+  status: WIRED_FALSE_PARALLEL_IMPLEMENTATION_PRESENT
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: for (const id of ['CALC-PALETTE-3', 'CALC-PALETTE-4', 'CALC-EXPERT-39']) {
+    line: 137
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-PALETTE-4'','
+    line: 161
+    match_rule: engine_registry_mirror
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: '''CALC-PALETTE-4'','
+    line: 167
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-PALETTE-4
+    wired: false
+  engine_mirror_anchor_count: 2
+  frontend_implementable: 'yes'
+  governance_id: CALC-PALETTE-4
+  implementation_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  module: 01-整车成本分析管理
+  registry_status: ready
+  status: WIRED_FALSE_PARALLEL_IMPLEMENTATION_PRESENT
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/__tests__/registry.test.ts
+    evidence: const palette5 = BUILTIN_FORMULAS.find((f) => f.id === 'CALC-PALETTE-5')!.engine_expression
+    line: 186
+    match_rule: whole_file_token
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-PALETTE-5', 'CALC_PALETTE_3 + CALC_PALETTE_4', [
+    line: 165
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-PALETTE-5
+    wired: false
+  engine_mirror_anchor_count: 1
+  frontend_implementable: 'yes'
+  governance_id: CALC-PALETTE-5
+  implementation_anchor_files:
+  - src/shared/lib/calc/__tests__/registry.test.ts
+  module: 01-整车成本分析管理
+  registry_status: ready
+  status: WIRED_FALSE_PARALLEL_IMPLEMENTATION_PRESENT
+  wired: false
+- code_anchor_files:
+  - src/shared/lib/calc/registry.ts
+  code_anchors:
+  - code_path: src/shared/lib/calc/registry.ts
+    evidence: f('CALC-VMD-58', 'sum(ext_vmd_ebr_rows)', []),
+    line: 301
+    match_rule: engine_registry_mirror
+  engine_binding:
+    key: CALC-VMD-58
+    wired: false
+  engine_mirror_anchor_count: 1
+  frontend_implementable: 'yes'
+  governance_id: CALC-VMD-58
+  implementation_anchor_files: []
+  module: 04-基础信息管理
+  registry_status: ready
+  status: WIRED_FALSE_ENGINE_REGISTERED_ONLY
+  wired: false
+code_scan_spec:
+  file_scope: src/**/*.ts, src/**/*.vue
+  line_limit: whole_file（领域 token 常居数据面中部，非仅头 30 行）
+  token_rx: \b(?:CALC-[A-Z]+(?:-[A-Z0-9]+)*|NEG\.[A-Z0-9.\-]+|STATE-[A-Z0-9\-]+|MACHINE-[A-Z0-9\-]+|FIELD\.[A-Za-z0-9\-.\u4e00-\u9fff]+|TRANSITION-[0-9A-F]{16})
+denominators_note: CALC 分母=formulas 59（wired true 6/false 53）；formatter 分母=formatters 10；state owner 标签分母=distinct owner 97 种（entities 约定词形 24 种 + local 方言）；MACHINE/STATE 族 registry 侧分母 33/464、NEG 64、FIELD 785、TRANSITION-<HEX> 311。与 inventory.yaml denominators 同源。
+formatter_bindings:
+- category: currency
+  governance_id: format-currency-4c2d
+  implementation: src/shared/lib/format.ts#formatCurrency
+  locale: dynamic
+  policy_id: universal:monetary-precision-protocol
+  status: MECHANICAL_LITERAL_EXPORT
+  symbol_evidence: src/shared/lib/format.ts:74 [export function formatCurrency(]
+  symbol_exists: true
+  target_file: src/shared/lib/format.ts
+  target_symbol: formatCurrency
+- category: date
+  governance_id: format-date-iso
+  implementation: src/shared/lib/format.ts#formatDateIso
+  locale: dynamic
+  policy_id: universal:internationalization-protocol
+  status: MECHANICAL_LITERAL_EXPORT
+  symbol_evidence: 'src/shared/lib/format.ts:33 [export function formatDateIso(iso: string | null | undefined): string {]'
+  symbol_exists: true
+  target_file: src/shared/lib/format.ts
+  target_symbol: formatDateIso
+- category: datetime
+  governance_id: format-datetime-iso
+  implementation: src/shared/lib/format.ts#formatDatetimeIso
+  locale: dynamic
+  policy_id: universal:internationalization-protocol
+  status: MECHANICAL_LITERAL_EXPORT
+  symbol_evidence: 'src/shared/lib/format.ts:47 [export function formatDatetimeIso(iso: string | null | undefined): string {]'
+  symbol_exists: true
+  target_file: src/shared/lib/format.ts
+  target_symbol: formatDatetimeIso
+- category: empty
+  governance_id: format-empty-state
+  implementation: src/shared/lib/format.ts#formatEmptyState
+  locale: dynamic
+  policy_id: universal:internationalization-protocol
+  status: MECHANICAL_LITERAL_EXPORT
+  symbol_evidence: src/shared/lib/format.ts:109 [export function formatEmptyState(]
+  symbol_exists: true
+  target_file: src/shared/lib/format.ts
+  target_symbol: formatEmptyState
+- category: enum
+  governance_id: format-enum-label
+  implementation: src/shared/lib/format.ts#formatEnumLabel
+  locale: dynamic
+  policy_id: universal:internationalization-protocol
+  status: MECHANICAL_LITERAL_EXPORT
+  symbol_evidence: src/shared/lib/format.ts:100 [export function formatEnumLabel(]
+  symbol_exists: true
+  target_file: src/shared/lib/format.ts
+  target_symbol: formatEnumLabel
+- category: money
+  governance_id: format-money-4c2d
+  implementation: src/shared/lib/format.ts#formatMoney
+  locale: dynamic
+  policy_id: universal:monetary-precision-protocol
+  status: MECHANICAL_LITERAL_EXPORT
+  symbol_evidence: 'src/shared/lib/format.ts:60 [export function formatMoney(value: number | string | null | undefined): string {]'
+  symbol_exists: true
+  target_file: src/shared/lib/format.ts
+  target_symbol: formatMoney
+- category: number
+  governance_id: format-number-4c2d
+  implementation: src/shared/lib/format.ts#formatNumber
+  locale: dynamic
+  policy_id: universal:monetary-precision-protocol
+  status: MECHANICAL_LITERAL_EXPORT
+  symbol_evidence: 'src/shared/lib/format.ts:54 [export function formatNumber(value: number | string | null | undefined): string {]'
+  symbol_exists: true
+  target_file: src/shared/lib/format.ts
+  target_symbol: formatNumber
+- category: percent
+  governance_id: format-percent-4c2d
+  implementation: src/shared/lib/format.ts#formatPercent
+  locale: dynamic
+  policy_id: universal:monetary-precision-protocol
+  status: MECHANICAL_LITERAL_EXPORT
+  symbol_evidence: 'src/shared/lib/format.ts:66 [export function formatPercent(value: number | string | null | undefined): string {]'
+  symbol_exists: true
+  target_file: src/shared/lib/format.ts
+  target_symbol: formatPercent
+- category: time
+  governance_id: format-time-iso
+  implementation: src/shared/lib/format.ts#formatTimeIso
+  locale: dynamic
+  policy_id: universal:internationalization-protocol
+  status: MECHANICAL_LITERAL_EXPORT
+  symbol_evidence: 'src/shared/lib/format.ts:40 [export function formatTimeIso(iso: string | null | undefined): string {]'
+  symbol_exists: true
+  target_file: src/shared/lib/format.ts
+  target_symbol: formatTimeIso
+- category: unit
+  governance_id: format-unit-4c2d
+  implementation: src/shared/lib/format.ts#formatUnit
+  locale: dynamic
+  policy_id: universal:monetary-precision-protocol
+  status: MECHANICAL_LITERAL_EXPORT
+  symbol_evidence: 'src/shared/lib/format.ts:94 [export function formatUnit(value: number | string | null | undefined): string {]'
+  symbol_exists: true
+  target_file: src/shared/lib/format.ts
+  target_symbol: formatUnit
+id_family_anchor_summary:
+  BP-*:
+    anchored_in_src: 0
+    registry_ids: 18
+    sample_anchored_files: []
+    sample_anchored_ids: []
+  FIELD.*:
+    anchored_in_src: 7
+    registry_ids: 785
+    sample_anchored_files:
+    - src/entities/role-mgmt/types.ts
+    sample_anchored_ids:
+    - FIELD.ROLE-MGMT.DATADIM
+    - FIELD.ROLE-MGMT.OPSSUMMARY
+    - FIELD.ROLE-MGMT.ROLECODE
+    - FIELD.ROLE-MGMT.ROLENAME
+    - FIELD.ROLE-MGMT.ROLETYPE
+    - FIELD.ROLE-MGMT.STATUS
+    - FIELD.ROLE-MGMT.USERCOUNT
+  MACHINE-*+STATE-*:
+    anchored_in_src: 0
+    registry_ids: 497
+    sample_anchored_files: []
+    sample_anchored_ids: []
+  NEG.*:
+    anchored_in_src: 20
+    registry_ids: 64
+    sample_anchored_files:
+    - src/entities/equipment-db/hooks.ts
+    - src/entities/equipment-detail/hooks.ts
+    - src/entities/equipment-palette/copy.ts
+    - src/pages/page-data-permission/DataPermissionPage.vue
+    - src/pages/page-equipment-palette/EquipmentPalettePage.vue
+    - src/pages/page-material-db/MaterialDbPage.vue
+    - src/pages/page-other-db/OtherDbPage.vue
+    - src/pages/page-part-structure-db/PartStructureDbPage.vue
+    sample_anchored_ids:
+    - NEG.PAGE-APP-DATA-PERMISSION.CREATE
+    - NEG.PAGE-APP-DATA-PERMISSION.DELETE
+    - NEG.PAGE-APP-EQUIPMENT-DB.DELETE
+    - NEG.PAGE-APP-EQUIPMENT-DETAIL.SAVE
+    - NEG.PAGE-APP-EQUIPMENT-PALETTE.DELETE
+    - NEG.PAGE-APP-MATERIAL-DB.CREATE
+    - NEG.PAGE-APP-MATERIAL-DB.DELETE
+    - NEG.PAGE-APP-OTHER-DB.DELETE
+kind: key-binding-map-draft-batch3
+state_owner_label_bindings:
+- entries_using_label: 5
+  label_kind: entities_query_label
+  literal_export_found: false
+  module_dir: src/entities/approval-flow
+  module_dir_exists: true
+  owner_label: entities/approval-flow#useApprovalFlowQuery
+  status: CONVENTION_LABEL_NO_LITERAL_EXPORT
+  symbol_found_elsewhere_in_entities: []
+  symbol_found_in_module_dir: []
+- entries_using_label: 5
+  label_kind: entities_query_label
+  literal_export_found: false
+  module_dir: src/entities/auth
+  module_dir_exists: true
+  owner_label: entities/auth#useAuthQuery
+  status: CONVENTION_LABEL_NO_LITERAL_EXPORT
+  symbol_found_elsewhere_in_entities: []
+  symbol_found_in_module_dir: []
+- entries_using_label: 5
+  label_kind: entities_query_label
+  literal_export_found: false
+  module_dir: src/entities/base-attributes
+  module_dir_exists: false
+  owner_label: entities/base-attributes#useBaseAttributesQuery
+  status: CONVENTION_LABEL_NO_LITERAL_EXPORT
+  symbol_found_elsewhere_in_entities: []
+  symbol_found_in_module_dir: []
+- entries_using_label: 5
+  label_kind: entities_query_label
+  literal_export_found: false
+  module_dir: src/entities/buc
+  module_dir_exists: false
+  owner_label: entities/buc#useBucQuery
+  status: CONVENTION_LABEL_NO_LITERAL_EXPORT
+  symbol_found_elsewhere_in_entities: []
+  symbol_found_in_module_dir: []
+- entries_using_label: 5
+  label_kind: entities_query_label
+  literal_export_found: false
+  module_dir: src/entities/csc-price
+  module_dir_exists: true
+  owner_label: entities/csc-price#useCscPriceQuery
+  status: CONVENTION_LABEL_NO_LITERAL_EXPORT
+  symbol_found_elsewhere_in_entities: []
+  symbol_found_in_module_dir: []
+- entries_using_label: 5
+  label_kind: entities_query_label
+  literal_export_found: false
+  module_dir: src/entities/data-permission
+  module_dir_exists: true
+  owner_label: entities/data-permission#useDataPermissionQuery
+  status: CONVENTION_LABEL_NO_LITERAL_EXPORT
+  symbol_found_elsewhere_in_entities: []
+  symbol_found_in_module_dir: []
+- entries_using_label: 10
+  label_kind: entities_query_label
+  literal_export_found: false
+  module_dir: src/entities/equipment
+  module_dir_exists: false
+  owner_label: entities/equipment#useEquipmentQuery
+  status: CONVENTION_LABEL_NO_LITERAL_EXPORT
+  symbol_found_elsewhere_in_entities: []
+  symbol_found_in_module_dir: []
+- entries_using_label: 5
+  label_kind: entities_query_label
+  literal_export_found: false
+  module_dir: src/entities/equipment-palette
+  module_dir_exists: true
+  owner_label: entities/equipment-palette#useEquipmentPaletteQuery
+  status: CONVENTION_LABEL_NO_LITERAL_EXPORT
+  symbol_found_elsewhere_in_entities: []
+  symbol_found_in_module_dir: []
+- entries_using_label: 5
+  label_kind: entities_query_label
+  literal_export_found: false
+  module_dir: src/entities/evaluation
+  module_dir_exists: true
+  owner_label: entities/evaluation#useEvaluationQuery
+  status: CONVENTION_LABEL_NO_LITERAL_EXPORT
+  symbol_found_elsewhere_in_entities: []
+  symbol_found_in_module_dir: []
+- entries_using_label: 5
+  label_kind: entities_query_label
+  literal_export_found: false
+  module_dir: src/entities/expert-model
+  module_dir_exists: false
+  owner_label: entities/expert-model#useExpertModelQuery
+  status: CONVENTION_LABEL_NO_LITERAL_EXPORT
+  symbol_found_elsewhere_in_entities: []
+  symbol_found_in_module_dir: []
+- entries_using_label: 15
+  label_kind: entities_query_label
+  literal_export_found: false
+  module_dir: src/entities/ledger
+  module_dir_exists: false
+  owner_label: entities/ledger#useLedgerQuery
+  status: CONVENTION_LABEL_SYMBOL_ELSEWHERE
+  symbol_found_elsewhere_in_entities:
+  - src/entities/parts-ledger/hooks.ts
+  symbol_found_in_module_dir: []
+- entries_using_label: 5
+  label_kind: entities_query_label
+  literal_export_found: false
+  module_dir: src/entities/material
+  module_dir_exists: false
+  owner_label: entities/material#useMaterialQuery
+  status: CONVENTION_LABEL_NO_LITERAL_EXPORT
+  symbol_found_elsewhere_in_entities: []
+  symbol_found_in_module_dir: []
+- entries_using_label: 5
+  label_kind: entities_query_label
+  literal_export_found: false
+  module_dir: src/entities/other
+  module_dir_exists: false
+  owner_label: entities/other#useOtherQuery
+  status: CONVENTION_LABEL_NO_LITERAL_EXPORT
+  symbol_found_elsewhere_in_entities: []
+  symbol_found_in_module_dir: []
+- entries_using_label: 5
+  label_kind: entities_query_label
+  literal_export_found: false
+  module_dir: src/entities/part-structure
+  module_dir_exists: false
+  owner_label: entities/part-structure#usePartStructureQuery
+  status: CONVENTION_LABEL_NO_LITERAL_EXPORT
+  symbol_found_elsewhere_in_entities: []
+  symbol_found_in_module_dir: []
+- entries_using_label: 20
+  label_kind: entities_query_label
+  literal_export_found: false
+  module_dir: src/entities/parts
+  module_dir_exists: false
+  owner_label: entities/parts#usePartsQuery
+  status: CONVENTION_LABEL_NO_LITERAL_EXPORT
+  symbol_found_elsewhere_in_entities: []
+  symbol_found_in_module_dir: []
+- entries_using_label: 5
+  label_kind: entities_query_label
+  literal_export_found: false
+  module_dir: src/entities/process
+  module_dir_exists: false
+  owner_label: entities/process#useProcessQuery
+  status: CONVENTION_LABEL_NO_LITERAL_EXPORT
+  symbol_found_elsewhere_in_entities: []
+  symbol_found_in_module_dir: []
+- entries_using_label: 5
+  label_kind: entities_query_label
+  literal_export_found: false
+  module_dir: src/entities/project
+  module_dir_exists: true
+  owner_label: entities/project#useProjectQuery
+  status: CONVENTION_LABEL_NO_LITERAL_EXPORT
+  symbol_found_elsewhere_in_entities: []
+  symbol_found_in_module_dir: []
+- entries_using_label: 5
+  label_kind: entities_query_label
+  literal_export_found: false
+  module_dir: src/entities/role
+  module_dir_exists: false
+  owner_label: entities/role#useRoleQuery
+  status: CONVENTION_LABEL_NO_LITERAL_EXPORT
+  symbol_found_elsewhere_in_entities: []
+  symbol_found_in_module_dir: []
+- entries_using_label: 5
+  label_kind: entities_query_label
+  literal_export_found: false
+  module_dir: src/entities/set
+  module_dir_exists: false
+  owner_label: entities/set#useSetQuery
+  status: CONVENTION_LABEL_NO_LITERAL_EXPORT
+  symbol_found_elsewhere_in_entities: []
+  symbol_found_in_module_dir: []
+- entries_using_label: 10
+  label_kind: entities_query_label
+  literal_export_found: false
+  module_dir: src/entities/snapshot
+  module_dir_exists: false
+  owner_label: entities/snapshot#useSnapshotQuery
+  status: CONVENTION_LABEL_NO_LITERAL_EXPORT
+  symbol_found_elsewhere_in_entities: []
+  symbol_found_in_module_dir: []
+- entries_using_label: 5
+  label_kind: entities_query_label
+  literal_export_found: false
+  module_dir: src/entities/task
+  module_dir_exists: false
+  owner_label: entities/task#useTaskQuery
+  status: CONVENTION_LABEL_NO_LITERAL_EXPORT
+  symbol_found_elsewhere_in_entities: []
+  symbol_found_in_module_dir: []
+- entries_using_label: 5
+  label_kind: entities_query_label
+  literal_export_found: false
+  module_dir: src/entities/technical-akt
+  module_dir_exists: true
+  owner_label: entities/technical-akt#useTechnicalAktQuery
+  status: CONVENTION_LABEL_NO_LITERAL_EXPORT
+  symbol_found_elsewhere_in_entities: []
+  symbol_found_in_module_dir: []
+- entries_using_label: 10
+  label_kind: entities_query_label
+  literal_export_found: false
+  module_dir: src/entities/user
+  module_dir_exists: false
+  owner_label: entities/user#useUserQuery
+  status: CONVENTION_LABEL_NO_LITERAL_EXPORT
+  symbol_found_elsewhere_in_entities: []
+  symbol_found_in_module_dir: []
+- entries_using_label: 10
+  label_kind: entities_query_label
+  literal_export_found: false
+  module_dir: src/entities/vehicle-master-data
+  module_dir_exists: true
+  owner_label: entities/vehicle-master-data#useVehicleMasterDataQuery
+  status: CONVENTION_LABEL_NO_LITERAL_EXPORT
+  symbol_found_elsewhere_in_entities: []
+  symbol_found_in_module_dir: []
+state_owner_local_scheme:
+  local_scheme_entries: 290
+  local_scheme_note: local:<slug>#<state> 为页面局部状态标签（组件内 local state，无 src 导出锚可考，按设计不落代码锚）
+  non_entities_labels:
+    local:all-parts-list#mode: 1
+    local:approval-flow#editing: 5
+    local:approval-flow#mode: 4
+    local:authenticate#editing: 5
+    local:authenticate#mode: 4
+    local:bind-carline#editing: 5
+    local:bind-carline#mode: 4
+    local:buc-analyse#editing: 5
+    local:buc-analyse#mode: 4
+    local:build-bom#bom-history-view-open: 1
+    local:build-bom#cell-edit: 1
+    local:build-bom#column-config-open: 1
+    local:build-bom#editing: 5
+    local:build-bom#export-dropdown-open: 1
+    local:build-bom#import-dropdown-open: 1
+    local:build-bom#mode: 4
+    local:build-bom#part-history-dialog-open: 1
+    local:build-bom#rollback-dialog-open: 1
+    local:build-bom#row-selected: 1
+    local:build-bom#snapshot-confirm-open: 1
+    local:build-bom#vehicle-select-open: 1
+    local:csc-price#editing: 5
+    local:csc-price#mode: 4
+    local:data-permission#editing: 5
+    local:data-permission#mode: 4
+    local:equipment-db#editing: 5
+    local:equipment-db#mode: 4
+    local:equipment-detail#editing: 5
+    local:equipment-detail#mode: 4
+    local:equipment-palette#editing: 5
+    local:equipment-palette#mode: 4
+    local:evaluation#editing: 5
+    local:evaluation#mode: 4
+    local:expert-model-calculate#editing: 5
+    local:expert-model-calculate#mode: 4
+    local:generate-snapshot#editing: 5
+    local:generate-snapshot#mode: 4
+    local:maintain-base-attributes#editing: 5
+    local:maintain-base-attributes#mode: 4
+    local:material-db#editing: 5
+    local:material-db#mode: 4
+    local:other-db#editing: 5
+    local:other-db#mode: 4
+    local:output-to-ledger#editing: 5
+    local:output-to-ledger#mode: 4
+    local:part-structure-db#editing: 5
+    local:part-structure-db#mode: 4
+    local:process-db#editing: 5
+    local:process-db#mode: 4
+    local:query-ledger#editing: 5
+    local:query-ledger#mode: 4
+    local:role-mgmt#editing: 5
+    local:role-mgmt#mode: 4
+    local:save-bom#editing: 5
+    local:save-bom#mode: 4
+    local:select-vehicle-context#editing: 5
+    local:select-vehicle-context#mode: 4
+    local:set-db#editing: 5
+    local:set-db#mode: 4
+    local:task-mgmt#editing: 5
+    local:task-mgmt#mode: 4
+    local:technical-akt#editing: 5
+    local:technical-akt#mode: 4
+    local:track-cost-by-snapshot#editing: 5
+    local:track-cost-by-snapshot#mode: 4
+    local:user-mgmt#editing: 5
+    local:user-mgmt#mode: 4
+    local:vehicle-master-data#editing: 5
+    local:vehicle-master-data#mode: 4
+    local:view-all-parts#editing: 5
+    local:view-all-parts#mode: 4
+    local:writeback-ledger#editing: 5
+    local:writeback-ledger#mode: 4
+status_legend:
+  CONVENTION_LABEL_NO_LITERAL_EXPORT: 形态登记：owner 标签为命名约定词形，src/entities 全域无字面同名导出（如 entities/auth#useAuthQuery vs 实际 useCurrentUser）；只登记不改名，落 KEYBINDING.* 前须人工裁决。
+  CONVENTION_LABEL_SYMBOL_ELSEWHERE: 形态登记（模块名 drift）：标签符号在 src/entities 其他模块字面存在（如 entities/ledger#useLedgerQuery 实际在 src/entities/parts-ledger/）——路径段约定与实目录漂移，只登记不改名。
+  MECHANICAL_LITERAL_EXPORT: 最高置信：锚路径存在且 export function/const <sym> 字面命中。仍属草表，落 KEYBINDING.* 对象前需人工复核一次。
+  MECHANICAL_TOKEN_MATCH_WIRED: wired=true 且 src/ 存在非镜像实现锚（引擎接线态）。
+  RESIDUAL_ANCHOR_MISSING: 残差：registry implementation 锚在 src/ 无字面导出（本批实测 formatter 0 条）。
+  WIRED_FALSE_ENGINE_REGISTERED_ONLY: wired=false 且仅 registry.ts 代码镜像命中（引擎已注册、无实现锚）——doc §二口径的『注册层完成、接线未做』态。
+  WIRED_FALSE_NO_CODE_ANCHOR: wired=false 且 src/ 无任何 token 锚（本批实测 0 条：镜像全量注册在场）。
+  WIRED_FALSE_PARALLEL_IMPLEMENTATION_PRESENT: wired=false 但 src/ 存在非镜像同名 token（doc §二『平行实现/游离债务』形态：引擎注册已存在却另写一份）。
+  WIRED_NO_IMPLEMENTATION_ANCHOR: 异常：wired=true 但无非镜像实现锚（接线声明缺代码佐证，待人工核）。
+summary_counts:
+  calc_bindings: 59
+  calc_bindings_by_status:
+    MECHANICAL_TOKEN_MATCH_WIRED: 6
+    WIRED_FALSE_ENGINE_REGISTERED_ONLY: 23
+    WIRED_FALSE_PARALLEL_IMPLEMENTATION_PRESENT: 30
+  calc_unmatched: 0
+  formatter_bindings: 10
+  formatter_verified: 10
+  state_owner_bindings: 24
+  state_owner_bindings_by_status:
+    CONVENTION_LABEL_NO_LITERAL_EXPORT: 23
+    CONVENTION_LABEL_SYMBOL_ELSEWHERE: 1
+  state_owner_local_scheme_entries: 290
+  token_family_observations: 6
+three_way_definition: 领域事实（calculation/formatter/state-ownership/state-machine/field-semantic/negative-constraint 等 registry 条目）↔ registry 词形（CALC-*/NEG.*/STATE-*/MACHINE-*/FIELD.*/formatter name 等本地族词形，只登记不改名）↔ 代码锚（src/ 实现：formatter=src/shared/lib/format.ts#<fn> 字面导出；calc=wired 接线 hook 与平行实现 token；state owner=entities/<module>#<sym> 约定标签 vs 字面导出核验）。BATCH-3 增量探查草表；关联形态结论见各 *_bindings 与 token_family_observations。
+token_family_observations:
+- distinct_tokens_in_src: 65
+  sample_files:
+  - src/entities/buc-analyse/useBucFormulas.ts
+  - src/entities/calc-vehicle-parts/__tests__/amount-summary.spec.ts
+  - src/entities/calc-vehicle-parts/__tests__/mapper.spec.ts
+  - src/entities/calc-vehicle-parts/__tests__/useCalcVehiclePartsFormulas.test.ts
+  - src/entities/calc-vehicle-parts/amount-summary.ts
+  - src/entities/calc-vehicle-parts/copy.ts
+  - src/entities/calc-vehicle-parts/mapper.ts
+  - src/entities/calc-vehicle-parts/useCalcVehiclePartsFormulas.ts
+  token_family: CALC-*
+- distinct_tokens_in_src: 7
+  sample_files:
+  - src/entities/role-mgmt/types.ts
+  token_family: FIELD.*
+- distinct_tokens_in_src: 0
+  sample_files: []
+  token_family: MACHINE-*
+- distinct_tokens_in_src: 22
+  sample_files:
+  - src/entities/equipment-db/hooks.ts
+  - src/entities/equipment-detail/hooks.ts
+  - src/entities/equipment-palette/copy.ts
+  - src/pages/page-data-permission/DataPermissionPage.vue
+  - src/pages/page-equipment-detail/EquipmentDetailPage.vue
+  - src/pages/page-equipment-palette/EquipmentPalettePage.vue
+  - src/pages/page-material-db/MaterialDbPage.vue
+  - src/pages/page-other-db/OtherDbPage.vue
+  token_family: NEG.*
+- distinct_tokens_in_src: 0
+  note: registry 侧分母：STATE-* 464 / MACHINE-* 33 / TRANSITION-<HEX> 311 / NEG.* 64 / CALC-* 59 / FIELD.* 785（与 inventory denominators 同源）；src 侧在场面以 distinct token 数与文件集合如实登记
+  sample_files: []
+  token_family: STATE-*
+- distinct_tokens_in_src: 0
+  sample_files: []
+  token_family: TRANSITION-<HEX16>
+unmatched_governance_ids: []
+wired_evidence_lines:
+  doc_acceptance_line: 7
+  doc_canonical_scope_line: 33
+  doc_ref: doc/2026-08-20-公式引擎收编裁决与BUC页内Σ遗留.md
+  doc_three_wired_line: 15
+  registry_ts_line_58: 7
+  registry_ts_line_59: 2
+  registry_ts_ref: src/shared/lib/calc/registry.ts

@@ -1,0 +1,113 @@
+{
+  "aliases": [
+    "MODEL.MANAGE-USER-ROLE.grid_row"
+  ],
+  "authority": {
+    "delegates": [],
+    "escalation_hint": "regenerate via migration/master-batch3/tools/ingest_data_model_registry.py; model add/remove or fields[] change re-runs the upstream producer compile_frontend_data_model.py then this ingest; description business semantics review is a FRONTEND_ENGINEERING seat (EVOLUTION_CHANNEL; ledger owner FRONTEND_ENGINEERING)",
+    "owner": "FRONTEND_ENGINEERING",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "LOCKED",
+    "evidence": "IMPLEMENTED",
+    "lifecycle": "CURRENT"
+  },
+  "axis_profile": "field_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "FIELD.MODEL.MANAGE_USER_ROLE.GRID_ROW",
+  "key_bindings": {
+    "artifact": [],
+    "code": [
+      {
+        "artifact_type": "file",
+        "expect": {
+          "document_type": "data-model-registry",
+          "field_ref_count": 7,
+          "model_id": "MODEL.MANAGE-USER-ROLE.grid_row",
+          "page_id": "PAGE-TASK-STEP-MANAGE-USER-ROLE",
+          "schema_version": 1
+        },
+        "match_rule": "mechanical",
+        "value": "outputs/frontend/10_planned/data-model-registry.yaml"
+      }
+    ]
+  },
+  "kind": "field_definition",
+  "notes_md": "本对象为 MIG-B3/M2 组 3 转录件：源 outputs/frontend/10_planned/data-model-registry.yaml（扩展名 .yaml、内容为 JSON）models[] 共 67 条逐条转录之一（MODEL.MANAGE-USER-ROLE.grid_row，layer=grid_row，page_id=PAGE-TASK-STEP-MANAGE-USER-ROLE，数组序第 48 条）。模型条目（description/fields/id/layer/page_id/source_requirement_id）逐字段保真，payload.model 与源条目字节等价（工具断言）；数组顺序=源顺序。fields[] 为纯引用数组（935 引用键→785 distinct，与 field-semantic-registry 双射闭合，M1 复测口径，工具现场复验 fail-closed）；引用键 FIELD.* 源词形（含页段连字符与中文语义段的漂移词形）照录不改名——引用值不是对象 id，不经赐名、不适用 §2.2 准入门。册级字段 document_type/schema_version/blueprint_sha256 随对象承载（sha256: 前缀形态）；源无 updated_at 墙钟字段、无 status/lifecycle 字段：零墙钟天然满足、双轴拆分动作数=0、superseded_status_field 登记数=0（诚实零）。source_requirement_id 现存 56 条为自由词形（prose/REQ.<SPEC>/§x.y/openapi:<DTO>），非受控 id 形态如实登记不改写；API_REQ.* 历史污染已清洗（词形 0 条）。kind 裁定（非本工具自裁，依冲突裁决链）：ledger kind_prediction_tension_note 预判 + CONVENTIONS §2.2 落法——FROZEN 十类无 data_model 专类，模型=字段分组容器（fields 纯引用闭合使模型与字段构成同一结构两视图）→ kind=field_definition 同族落位 field-definition/ 目录；备选 page_surface payload 承载排除（02b §7 surface 分母语义与 fields[] 引用闭合不匹配，模型 page_id 为 legacy 页词形绑定非 surface 分母）；02b §6 field_definition 的 semantic_type 必填系字段级蓝本，模型对象 payload 落法按 §2.2 专项规定（payload.model 逐字），源无 type 字段，不伪造 semantic_type（张力如实登记于此）。粒度裁定（batch1 §3 三问）：67 模型逐条立对象——①检索路径：模型 id MODEL.<PAGE>.<SLOT> 被 page-spec/readiness/api_requirements/validate 按条引用（fields[] 引用键即检索路径）；②ledger destination_note 预判逐条；③演化原子性：compile_frontend_data_model.py 以 merge_preserving(key='models:id') 逐模型 upsert，整册一对象会把单模型变更放大成整册协调变更。赐名：MODEL.* 为注册表本地族词形（非 vocab v0.2 15 前缀成员、非 ALIASES_V0 现役 8 族）→ canonical 赐名 FIELD.MODEL.<PAGE>.<SLOT>（§4 通则：家族词 MODEL 保留为前缀后第二段；余段连字符→下划线、小写→大写——源 slot 小写词形如 form/grid_row 机械归一为 FORM/GRID_ROW），legacy 词形照录 aliases[]，非 A6 场景、origin 保持源侧 derived；FIELD.MODEL.* 族级登记待词汇表 PR/Owner 裁决。分片：field-definition kind-dir 预期 852>500 启用二级分片（§2.5），分片键=canonical id 去前缀后第二段（MODEL→model/），片内无 index 文件。本字段为人类散文，机器永不解析判卷。",
+  "origin": "derived",
+  "payload": {
+    "model": {
+      "description": "用户管理 - 列表页字段（7 列：行号/用户编码/姓名/部门/角色/状态/操作）",
+      "fields": [
+        {
+          "field_id": "FIELD.MANAGE-USER-ROLE.ID"
+        },
+        {
+          "field_id": "FIELD.MANAGE-USER-ROLE.USERCODE"
+        },
+        {
+          "field_id": "FIELD.MANAGE-USER-ROLE.NAME"
+        },
+        {
+          "field_id": "FIELD.MANAGE-USER-ROLE.DEPT"
+        },
+        {
+          "field_id": "FIELD.MANAGE-USER-ROLE.ROLE"
+        },
+        {
+          "field_id": "FIELD.MANAGE-USER-ROLE.STATUS"
+        },
+        {
+          "field_id": "FIELD.MANAGE-USER-ROLE.ACT"
+        }
+      ],
+      "id": "MODEL.MANAGE-USER-ROLE.grid_row",
+      "layer": "grid_row",
+      "page_id": "PAGE-TASK-STEP-MANAGE-USER-ROLE",
+      "source_requirement_id": "用户管理"
+    },
+    "source_document_meta": {
+      "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+      "document_type": "data-model-registry",
+      "schema_version": 1
+    }
+  },
+  "permits_active": [],
+  "producer": {
+    "liveness": {
+      "status": "active"
+    },
+    "merge_semantics": {
+      "backfill_if_missing": [],
+      "human_never_touched": [],
+      "refresh_fields": [
+        "payload"
+      ]
+    },
+    "producer_id": "prod.mig_b3_ingest_data_model_registry",
+    "views_maintained": [
+      "truth-index.envelope"
+    ]
+  },
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b3/ingest_data_model_registry.py",
+      "locator": {
+        "batch": "MIG-B3",
+        "ingested_from": "outputs/frontend/10_planned/data-model-registry.yaml",
+        "transcription": "models[] entry 48/67 (MODEL.MANAGE-USER-ROLE.grid_row) transcribed verbatim row-by-row (description/fields/id/layer/page_id + source_requirement_id where present, array order = source order; fields[] are pure reference keys transcribed verbatim, never renamed, bijective closure with field-semantic-registry re-verified live); top-level keys have no updated_at and no status field so the wall-clock strip count is 0 and no superseded_status_field is registered; MODEL.* local family word form granted canonical FIELD.MODEL.<PAGE>.<SLOT> (family word MODEL kept as segment 2; lowercase slot word forms normalized mechanically), legacy word form recorded in aliases[], NOT an A6 scenario so origin stays source-side derived; FIELD.MODEL.* family registration awaits vocab PR / Owner; kind=field_definition per ledger tension note + CONVENTIONS 2.2 (page_surface backup rejected); grain per-entry per batch1 three questions"
+      },
+      "pin": {
+        "digest": "sha256:70220d99cfd48cad1354f93b14d0f7efaa971cbae87ed6408c1f3ed4637c82ca"
+      },
+      "ref": "outputs/frontend/10_planned/data-model-registry.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "数据模型·PAGE-TASK-STEP-MANAGE-USER-ROLE·grid_row"
+}

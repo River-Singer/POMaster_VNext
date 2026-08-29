@@ -1,0 +1,50 @@
+{
+  "blindspot": {
+    "escape_ratio": 0.006944,
+    "fixture_regression": "MIG-B3-STATE-NEG-ANCHOR-BLINDSPOT-FIXTURE/passed",
+    "produced": 1001,
+    "scanned": 1008
+  },
+  "counts": {
+    "applicable_scanned": 1008,
+    "not_applicable": 0,
+    "scanned": 1008,
+    "suppressed_by_ledger": 0,
+    "unchecked_in_blindspot_estimated": 7,
+    "violations": 49
+  },
+  "denominator_refs": [],
+  "digest_excluded_fields": [
+    "duration_ms"
+  ],
+  "duration_ms": {
+    "external": 0,
+    "self": 0
+  },
+  "gate": "STATE_INTEGRITY",
+  "gate_def": "POLICY.GATE.MIG_B3_STATE_INTEGRITY@0.1.0",
+  "grn": "GRN-4504",
+  "items": [],
+  "items_truncated": false,
+  "metric_dialect": "state_integrity:check_runs",
+  "ran_at_seq": 0,
+  "scope": {
+    "note": "MIG-B3/M4 状态与约束完整性主题聚合（合规 GateResult worst-of 汇总，红线 2：全字段过 FROZEN 03 schema，禁自由形状）。rollup 规则：任一 failed → failed，否则取最差具体七态（failed > blocked > not_configured/skipped_blindspot > warning/not_run > passed）。三个分检查项判定：GRN-4501(ownership-totality)=passed(violations=0,unchecked=0), GRN-4502(negative-constraint-anchor)=skipped_blindspot(violations=0,unchecked=7), GRN-4503(state-machine-references)=failed(violations=49,unchecked=0)。by_verdict：failed=1, passed=1, skipped_blindspot=1；checks_total=3。counts 聚合口径=三检查同名字段直接求和（scanned 口径各异：check1=状态对象 455、check2=已转录禁令对象 63、check3=状态引用 490；求和仅作总量留痕、不跨检查比较，逐项 counts/denominators/items 明细见同目录 3 份 per-check 运行记录 GTR-MIG-B3-state-integrity-01..03-*.json，原地有效）。分母明细（batch3 CONVENTIONS §6：迁移期未注册 DENOMINATOR.* 对象，denominator_refs 显式空数组=诚实声明）：DENOMINATOR.STATE_OWNERSHIP_ENTRIES@1 value=1309（inventory denominators.state_ownership_entries；本 gate 状态子分母 455=value_breakdown.states，variables 854 为独立子分母不在本主题）；DENOMINATOR.NEGATIVE_CONSTRAINTS@1 value=64（=inventory denominators.negative_constraints；已转录子分母 63+1 待裁决）；状态引用子分母 490（39 份 batch2 蓝图载体 states[] 机械计数）。blindspot 聚合口径=三检查 scanned/produced 直接求和后派生 escape_ratio；fixture_regression 保留 check2（本主题唯一 skipped_blindspot）的证据引用=MIG-B3-STATE-NEG-ANCHOR-BLINDSPOT-FIXTURE/passed。GRN 方案：GRN-450x 块确定性保留给 MIG-B3 state-integrity 主题（4501=ownership-totality、4502=negative-constraint-anchor、4503=state-machine references、4504=本聚合；与 batch1 GRN-0001..0006/401..405/4101..4105、batch2 GRN-4201..4204/4301..4304、本批 GRN-4401..4403 无重叠）。实样登记：failed=1（4503 状态引用悬空 49/490：零枚举行页面 6 个 39 条 + MANAGE-USER-ROLE 九值族+ROLE-MGMT grants-edit 10 条——跨批页面构图↔状态所有权一致性债务，MIG-B3/C-01 Owner 位，只报告不裁决）；skipped_blindspot=1（4502 无锚且无人工审查声明禁令 7 条——三形态词形探针与统一 enforcement_point 声明均不可判卷，fixture 实证在案）；passed=1（4501 所有权全册恰一 owner：零主 0/多主 0，回填后 455/455 全携带，24 条 C-01 漂移对行 PROVISIONAL 悬置不碍恰一性）。self_report_trusted=false 落地形态：trust.asserted=null（迁移批无自报信道），trust.recomputed.violations=49 为三检查求和、唯一判卷依据。确定性：ran_at_seq 钉 0（迁移批无 kernel seq 分配器，A4 零墙钟，kernel 接入时重排）、duration_ms 钉 0（byte-identical 幂等硬规则）；判卷双跑序列化字节自证一致。",
+    "size_expected_from_denominator": 1008
+  },
+  "tool": "mig-b3:run_state_integrity_gate",
+  "tool_version": "1.0.0",
+  "trigger": {
+    "note": "migration batch context: no kernel seq allocator; ran_at_seq pinned to 0 (deterministic batch base, A4 wall-clock-free; kernel re-sequences on ingestion); durations pinned to 0 for byte-identical rerun idempotency (batch hard rule 2)",
+    "task_ref": "MIG-B3/M4-state-integrity",
+    "type": "on_demand"
+  },
+  "trust": {
+    "asserted": null,
+    "recomputed": {
+      "matches_asserted": true,
+      "violations": 49
+    }
+  },
+  "verdict": "failed"
+}

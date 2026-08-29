@@ -1,0 +1,50 @@
+{
+  "blindspot": {
+    "escape_ratio": 0.75,
+    "fixture_regression": "MIG-B3-CALC-FORMULA-SOURCE-BLINDSPOT-FIXTURE/passed",
+    "produced": 59,
+    "scanned": 236
+  },
+  "counts": {
+    "applicable_scanned": 65,
+    "not_applicable": 53,
+    "scanned": 118,
+    "suppressed_by_ledger": 0,
+    "unchecked_in_blindspot_estimated": 177,
+    "violations": 0
+  },
+  "denominator_refs": [],
+  "digest_excluded_fields": [
+    "duration_ms"
+  ],
+  "duration_ms": {
+    "external": 0,
+    "self": 0
+  },
+  "gate": "CALCULATION_BINDING",
+  "gate_def": "POLICY.GATE.MIG_B3_CALCULATION@0.1.0",
+  "grn": "GRN-4403",
+  "items": [],
+  "items_truncated": false,
+  "metric_dialect": "calculation:check_runs",
+  "ran_at_seq": 0,
+  "scope": {
+    "note": "MIG-B3/M4 计算引擎绑定主题聚合（合规 GateResult worst-of 汇总，红线 2：全字段过 FROZEN 03 schema，禁自由形状）。rollup 规则：任一 failed → failed，否则取最差具体七态（failed > blocked > not_configured/skipped_blindspot > warning/not_run > passed）。两个分检查项判定：GRN-4401(wired-honesty)=passed(violations=0,unchecked=0), GRN-4402(formula-source-anchor)=skipped_blindspot(violations=0,unchecked=177)。by_verdict：passed=1, skipped_blindspot=1；checks_total=2。counts 聚合口径=两检查同名字段直接求和（scanned 口径各异：check1=wired 声明载体 59[applicable=6、not_applicable=53]、check2=公式对象 59[引用级分母=字段引用发射 177]；求和仅作总量留痕、不跨检查比较，逐项 counts/denominators/items 明细见同目录 2 份 per-check 运行记录 GTR-MIG-B3-calculation-01..02-*.json，原地有效）。分母明细（batch3 CONVENTIONS §6：迁移期未注册 DENOMINATOR.* 对象，denominator_refs 显式空数组=诚实声明）：check1 判卷分母=wired=true 声明条目 6（源册 engine_binding true=6/false=53 与 inventory denominators.calculation_formulas.value_breakdown 逐值相等）；check2 引用级分母=公式字段引用发射 177（external:* 16 + inputs 非 CALC 102 + output_field 59）。blindspot 聚合口径=两检查 scanned/produced 直接求和后派生 escape_ratio；fixture_regression 保留 check2（本主题唯一 skipped_blindspot）的证据引用=MIG-B3-CALC-FORMULA-SOURCE-BLINDSPOT-FIXTURE/passed。GRN 方案：GRN-440x 块确定性保留给 MIG-B3 calculation 主题（4401=wired-honesty、4402=formula-source-anchor、4403=本聚合；与 batch1 GRN-0001..0006/401..405/4101..4105 及 batch2 GRN-4201..4204/4301..4304 无重叠）。实样登记：passed=1（4401 六条 wired 声明 × 35 绑定 C5 现场重扫全在场——wired:true 非摆设；声明词分布 6/23/30 对 ledger 预登记）；skipped_blindspot=1（4402 FIELD 对象存在性半边机械不可达：对象层 9/785+776 待裁决、external 词形中文 vs 拼音漂移、散文引用无 governed 联结键；机械可达面公式↔公式闭合 146 发射零悬空）。self_report_trusted=false 落地形态：trust.asserted=null（迁移批无自报信道），trust.recomputed.violations=0 为两检查求和、唯一判卷依据。确定性：ran_at_seq 钉 0（迁移批无 kernel seq 分配器，A4 零墙钟，kernel 接入时重排）、duration_ms 钉 0（byte-identical 幂等硬规则）；判卷双跑序列化字节自证一致。",
+    "size_expected_from_denominator": 65
+  },
+  "tool": "mig-b3:run_calculation_gate",
+  "tool_version": "1.0.0",
+  "trigger": {
+    "note": "migration batch context: no kernel seq allocator; ran_at_seq pinned to 0 (deterministic batch base, A4 wall-clock-free; kernel re-sequences on ingestion); durations pinned to 0 for byte-identical rerun idempotency (batch hard rule 2)",
+    "task_ref": "MIG-B3/M4-calculation",
+    "type": "on_demand"
+  },
+  "trust": {
+    "asserted": null,
+    "recomputed": {
+      "matches_asserted": true,
+      "violations": 0
+    }
+  },
+  "verdict": "skipped_blindspot"
+}

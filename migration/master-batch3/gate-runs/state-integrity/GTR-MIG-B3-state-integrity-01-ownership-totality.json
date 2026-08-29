@@ -1,0 +1,59 @@
+{
+  "blindspot": {
+    "carrier_coverage": {
+      "confidence_locked_rows": 431,
+      "confidence_provisional_rows": 24,
+      "duplicate_state_id_states": 0,
+      "empty_owner_rows": 0,
+      "owner_entities_label_scheme": 165,
+      "owner_local_scheme": 290,
+      "source_rows": 455,
+      "state_objects": 455
+    },
+    "escape_ratio": 0,
+    "produced": 455,
+    "scanned": 455
+  },
+  "counts": {
+    "applicable_scanned": 455,
+    "not_applicable": 0,
+    "scanned": 455,
+    "suppressed_by_ledger": 0,
+    "unchecked_in_blindspot_estimated": 0,
+    "violations": 0
+  },
+  "denominator_refs": [],
+  "digest_excluded_fields": [
+    "duration_ms"
+  ],
+  "duration_ms": {
+    "external": 0,
+    "self": 0
+  },
+  "gate": "STATE_INTEGRITY",
+  "gate_def": "POLICY.GATE.MIG_B3_STATE_INTEGRITY@0.1.0",
+  "grn": "GRN-4501",
+  "items": [],
+  "items_truncated": false,
+  "metric_dialect": "state_integrity:state_ownership_rows",
+  "ran_at_seq": 0,
+  "scope": {
+    "note": "检查范围=MIG-B3/M2 转录组 state-ownership-matrix 组状态对象（business-rule/state/）全量 455 个＝状态分母（任务书：分母=状态数；inventory.yaml denominators.state_ownership_entries.value_breakdown.states=455 同值复测；源册 outputs/frontend/10_planned/state-ownership-matrix.yaml states[] 现场重读 455 行、state_id 集合与对象侧全等断言通过、sources[].pin 现场重算零漂移）。机械判定（每状态恰一 owner）：零主=owner 缺席/为空（实测 0；历史 210 缺 owner 缺口已由 tools/frontend/derive_platform_foundation.py 回填，回填后 455/455 全携带=inventory incident_history owner_backfill_history 在案）；多主=同 state_id 多对象行（实测 0；对象 state_id 全册唯一）。owner 词形分布：local:* 290（页面局部状态标签，按设计不落代码锚，C-02 锚漂移不属本检查判据——所有权在册性≠代码锚存在性）+ entities/<module>#use<X>Query 约定词形 165（与 inventory owner_scheme 分桶逐值相等）。在身值冲突悬置态不构成本检查判据：24 条 C-01 漂移对行（14 分隔符 + 10 组词）axes.confidence=PROVISIONAL + payload.pending_conflicts 双词形并存（绝不机械择一），其 owner 恰一性与其余 431 条 LOCKED 行同判。machine 侧 464 − matrix 455 = 9 条真缺口（matrix 无定义体，不立对象不虚构条目）在 state-ownership-pending-registration.yaml 登记，MIG-B3/C-01 PENDING_OWNER，在本分母之外。violations=0 → verdict=passed。盲区声明：所有权在册性判据机械可达（escape_ratio=0，455/455 判定产出）；owner→代码机器键（C-02：24 种 owner 约定标签无字面导出）不在本检查判据内——按 ledger 预记该域 gate 呈 manual_confirmed 债务/not_configured，归 KEYBINDING 绑定 gate口径。路径基：items location 为 po-master 仓内相对路径。self_report_trusted=false：trust.asserted=null（迁移批无自报信道），判卷唯一依据 trust.recomputed。duration_ms 钉 0（byte-identical 幂等）。",
+    "size_expected_from_denominator": 455
+  },
+  "tool": "mig-b3:run_state_integrity_gate",
+  "tool_version": "1.0.0",
+  "trigger": {
+    "note": "migration batch context: no kernel seq allocator; ran_at_seq pinned to 0 (deterministic batch base, A4 wall-clock-free; kernel re-sequences on ingestion); durations pinned to 0 for byte-identical rerun idempotency (batch hard rule 2)",
+    "task_ref": "MIG-B3/M4-state-integrity",
+    "type": "on_demand"
+  },
+  "trust": {
+    "asserted": null,
+    "recomputed": {
+      "matches_asserted": true,
+      "violations": 0
+    }
+  },
+  "verdict": "passed"
+}

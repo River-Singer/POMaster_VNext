@@ -1,0 +1,56 @@
+{
+  "blindspot": {
+    "carrier_coverage": {
+      "anchor_bindings_on_wired_true": 35,
+      "anchor_bindings_present": 35,
+      "kbm_word_declaration_inconsistencies": 0,
+      "wired_false_declarations": 53,
+      "wired_true_declarations": 6
+    },
+    "escape_ratio": 0,
+    "produced": 59,
+    "scanned": 59
+  },
+  "counts": {
+    "applicable_scanned": 6,
+    "not_applicable": 53,
+    "scanned": 59,
+    "suppressed_by_ledger": 0,
+    "unchecked_in_blindspot_estimated": 0,
+    "violations": 0
+  },
+  "denominator_refs": [],
+  "digest_excluded_fields": [
+    "duration_ms"
+  ],
+  "duration_ms": {
+    "external": 0,
+    "self": 0
+  },
+  "gate": "CALCULATION_BINDING",
+  "gate_def": "POLICY.GATE.MIG_B3_CALCULATION@0.1.0",
+  "grn": "GRN-4401",
+  "items": [],
+  "items_truncated": false,
+  "metric_dialect": "calculation:wired_declarations",
+  "ran_at_seq": 0,
+  "scope": {
+    "note": "检查范围=MIG-B3/M2 转录组 4 capability/calc.* 全量 59 个计算对象＝声明载体分母；判卷分母=engine_binding 声明 wired=true 的条目数 6（任务书：分母=wired 声明条目数；源 calculation-registry formulas[] 59/59 携带 engine_binding、键集恒等key+wired、wired 分布 true=6/false=53 与 inventory denominators.calculation_formulas.value_breakdown 逐值相等——数值语义不篡改）。机械判定（C5 现场重扫 MASTer src，不信 key-binding-map.batch3.draft.yaml 自报）：wired=true 条目的 key_bindings.code 实现锚逐绑定核验=文件在 MASTer 仓存在且 expect 词形（镜像锚 registration_call_first_arg f('CALC-*', 形/whole_file_token 形）逐字 grep 命中；实测 6 条 wired 声明 × 35 绑定，在场 35，缺席 0。wired=false 的 53 条按任务书口径 not_applicable 不罚（其 WIRED_FALSE_* 平行实现锚不属本检查判据）。附加全册声明自洽复核：payload.evidence_axis_registration.kbm_status_word 与 wired 逐条对账（wired=False/WIRED_FALSE_PARALLEL_IMPLEMENTATION_PRESENT=30、wired=False/WIRED_FALSE_ENGINE_REGISTERED_ONLY=23、wired=True/MECHANICAL_TOKEN_MATCH_WIRED=6；对 ledger wired_evidence_axis_preregistration 预登记 6/23/30），失配=0；wired 单凭自报布尔不判卷（C5），机械锚在场即「wired:true 非摆设」的唯一依据。violations=0 → verdict=passed。盲区声明：锚存在性判据机械可达（escape_ratio=0，judgment 覆盖全部 59 载体：6 判 wired 声明 + 53 判 not_applicable）；锚所在文件的接线语义深度（token 出现≠运行时接线证明）不在本检查判据内——接线探针（probe）转录期缺省=未探测，运行时行为归后续 VRF 台账。路径基：items location 为 po-master 仓内相对路径。self_report_trusted=false：trust.asserted=null（迁移批无自报信道），判卷唯一依据 trust.recomputed。duration_ms 钉 0（byte-identical 幂等）。",
+    "size_expected_from_denominator": 6
+  },
+  "tool": "mig-b3:run_calculation_gate",
+  "tool_version": "1.0.0",
+  "trigger": {
+    "note": "migration batch context: no kernel seq allocator; ran_at_seq pinned to 0 (deterministic batch base, A4 wall-clock-free; kernel re-sequences on ingestion); durations pinned to 0 for byte-identical rerun idempotency (batch hard rule 2)",
+    "task_ref": "MIG-B3/M4-calculation",
+    "type": "on_demand"
+  },
+  "trust": {
+    "asserted": null,
+    "recomputed": {
+      "matches_asserted": true,
+      "violations": 0
+    }
+  },
+  "verdict": "passed"
+}

@@ -1,0 +1,63 @@
+{
+  "blindspot": {
+    "carrier_coverage": {
+      "calc_reference_emissions_mechanical": 146,
+      "calc_references_dangling": 0,
+      "external_candidate_word_forms": 10,
+      "external_exact_source_id_hits": 0,
+      "external_structured_refs": 16,
+      "external_unexpandable_notations": 8,
+      "field_ids_pending_registration": 776,
+      "field_ids_source_space": 785,
+      "field_objects_present": 9,
+      "input_prose_field_refs": 102,
+      "output_field_refs": 59
+    },
+    "escape_ratio": 1,
+    "fixture_regression": "MIG-B3-CALC-FORMULA-SOURCE-BLINDSPOT-FIXTURE/passed",
+    "produced": 0,
+    "scanned": 177
+  },
+  "counts": {
+    "applicable_scanned": 59,
+    "not_applicable": 0,
+    "scanned": 59,
+    "suppressed_by_ledger": 0,
+    "unchecked_in_blindspot_estimated": 177,
+    "violations": 0
+  },
+  "denominator_refs": [],
+  "digest_excluded_fields": [
+    "duration_ms"
+  ],
+  "duration_ms": {
+    "external": 0,
+    "self": 0
+  },
+  "gate": "CALCULATION_BINDING",
+  "gate_def": "POLICY.GATE.MIG_B3_CALCULATION@0.1.0",
+  "grn": "GRN-4402",
+  "items": [],
+  "items_truncated": false,
+  "metric_dialect": "calculation:field_reference_emissions",
+  "ran_at_seq": 0,
+  "scope": {
+    "note": "检查范围=计算公式引用的 data-model 字段在 FIELD 对象中的存在性（跨组引用完整性：capability/calc.* 59 对象 ↔ field-definition/field.* FIELD 对象）。分母声明（batch3 CONVENTIONS §6：迁移期未注册 DENOMINATOR.* 对象，denominator_refs 显式空数组=诚实声明）：本检查引用级分母=公式字段引用数 177（机械可数发射口径：dependencies external:* 结构化引用 16 + inputs 非 CALC 数据字段条目 102 + output_field 条目 59；59/59 公式均携带 output_field）。机械可达面（判净）：公式↔公式引用闭合 146 发射（dependencies CALC-* 67 + inputs CALC 词形 50 + engine_expression CALC_* 归一 token 29），悬空=0（源册 engine_contract 自述 67 条 CALC-* 边与对象侧逐值相等，C5 复核一致）。FIELD 对象存在性半边（本检查字面判据）机械不可达，实证三链：①FIELD 对象层覆盖=9/785（authenticate 组；776 条因 governed SEGMENT 文法漂移经 CONVENTIONS §2.2 准入门登记 HUMAN_CONFIRM_REQUIRED——field-semantic-pending-registration.yaml 三桶恒等式现场复核 transcribed=9/pending=776/source=785 且 9+776=785）；②external:* 展开词形与 field-semantic 源 id 词形漂移：16 条 external 引用展开 10 个候选词形（逗号切分机械展开），源 id 空间（785）精确命中 0——material-db 页段字段为拼音词形（如 FIELD.MATERIAL-DB.MIDU）而公式引用为中文（密度/单价/夹紧力），任何「命中/悬空」判定都需语义映射=编造；按 C-01/C-02 纪律词形漂移对只登记不裁决（候选新漂移族登记归 Owner，本 gate 只呈现不裁定；压缩记法/概念级/缩写引用如设备参数1/2/3、费率字典、MHR、IST/SOLL零件快照、温度类共 8 条不做子串猜测——子串匹配是启发式非机械等价）；③inputs/output_field 为页域散文词形（数量(#5)/KPI#5 [RMB/pc.] 形），无 governed id 联结键。→ 本检查字面问题『字段引用在 FIELD 对象中存在』对 177/177 引用发射无法产出机判，verdict 故取 skipped_blindspot（终局性诚实结论而非通过；violations=0，仅机械悬空公式引用可判且实测为 0）。盲区 fixture 回归（红线 3，in-memory 确定性）：MIG-B3-CALC-FORMULA-SOURCE-BLINDSPOT-FIXTURE/passed——fixture A 悬空 CALC 依赖 → 闭合探针检出（可达面）；fixture B external 引用『external:04-material-db#密度』而字段实录为 FIELD.MATERIAL-DB.MIDU → 词形探针报未命中（结构失明实证：探针无法区分真悬空与词形漂移）。盲区指标：escape_ratio=(177-0)/177=未机判字段引用发射占比（unchecked_in_blindspot_estimated=177）。路径基：items location 为 po-master 仓内相对路径。self_report_trusted=false：trust.asserted=null，判卷唯一依据 trust.recomputed。duration_ms 钉 0（byte-identical 幂等）。",
+    "size_expected_from_denominator": 177
+  },
+  "tool": "mig-b3:run_calculation_gate",
+  "tool_version": "1.0.0",
+  "trigger": {
+    "note": "migration batch context: no kernel seq allocator; ran_at_seq pinned to 0 (deterministic batch base, A4 wall-clock-free; kernel re-sequences on ingestion); durations pinned to 0 for byte-identical rerun idempotency (batch hard rule 2)",
+    "task_ref": "MIG-B3/M4-calculation",
+    "type": "on_demand"
+  },
+  "trust": {
+    "asserted": null,
+    "recomputed": {
+      "matches_asserted": true,
+      "violations": 0
+    }
+  },
+  "verdict": "skipped_blindspot"
+}

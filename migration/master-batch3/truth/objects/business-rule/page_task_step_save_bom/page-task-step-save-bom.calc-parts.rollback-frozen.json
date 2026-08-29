@@ -1,0 +1,86 @@
+{
+  "aliases": [
+    "calc-parts:rollback-frozen"
+  ],
+  "authority": {
+    "delegates": [
+      {
+        "required_for": [
+          "modify_rule_statement"
+        ],
+        "role": "EXTERNAL_BASELINE"
+      }
+    ],
+    "escalation_hint": "regenerate via migration/master-batch3/tools/ingest_business_rule_registry.py; rule statement changes are a BUSINESS_OWNER seat (EVOLUTION_CHANNEL; ledger delegates EXTERNAL_BASELINE required_for modify_rule_statement); gated word forms and the colon adjudication are registered in pending-registrations.business-rule-registry.yaml",
+    "owner": "BUSINESS_OWNER",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "LOCKED",
+    "evidence": "IMPLEMENTED",
+    "lifecycle": "CURRENT"
+  },
+  "axis_profile": "rule_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "POLICY.PAGE_TASK_STEP_SAVE_BOM.CALC_PARTS.ROLLBACK_FROZEN",
+  "key_bindings": {
+    "artifact": [],
+    "code": [
+      {
+        "artifact_type": "file",
+        "expect": {
+          "document_type": "business-rule-registry",
+          "page_id": "PAGE-TASK-STEP-SAVE-BOM",
+          "rule_id": "calc-parts:rollback-frozen",
+          "schema_version": 1
+        },
+        "match_rule": "mechanical",
+        "value": "outputs/frontend/10_planned/business-rule-registry.yaml"
+      }
+    ]
+  },
+  "kind": "business_rule",
+  "notes_md": "本对象为 MIG-B3/M2 组 3 转录件：源 outputs/frontend/10_planned/business-rule-registry.yaml（扩展名 .yaml、内容为 JSON）rules[] 共 275 条、本工具机械转录 241 条之一（page_id=PAGE-TASK-STEP-SAVE-BOM，rule_id=calc-parts:rollback-frozen，数组序第 46 条）。条目（page_id/rule_id/name/source_refs）逐字段保真，payload.rule 与源条目字节等价（工具断言）；数组顺序=源顺序。02b §9 business_rule 蓝本落法：statement_structured{when:null, then:name}——源无独立 condition 字段，when 显式 null（诚实缺席，禁编造条件），then=规则正文（源 name 字段）逐字；enforcement_point=消费链可指认执行点，用 ledger rationale 已登记锚词形（page-spec §4 / governance_factsources），禁凭空书写 gate 名；scope_refs/decision_refs 源无 governed id 值引用（source_refs 为 doc/V1.0 Scope spec 路径 prose 引用，照录 payload.rule.source_refs；页面绑定即复合身份本身，已物化于 canonical PAGE 段与 payload.rule.page_id）→ 整体缺席（诚实缺席，不写空占位，golden formatter 判例）。复合身份：条目身份=(page_id, rule_id)（275 条 rule_id 仅 148 distinct，62 个 id 由 189 条跨页共享；复合键 distinct=275/275），canonical 族 POLICY.<PAGE>.<RULE_ID>（ledger destination_note 预判族形）。赐名 M2 裁定（显式登记于 pending-registrations.business-rule-registry.yaml，非静默）：rule_id 源词形为 <family>:<name> 冒号两段形（275/275 均含冒号、18 个 family）——§2.1 机械映射未枚举冒号，若冒号保留段内则变换后段含非 [A-Z0-9_] 字符、275/275 全部撞 §2.2 准入门、§2.1 复合定形沦为死字母；按 §4.2『token 边界保留为段界（禁单段摊平）』裁定冒号=段界，canonical=POLICY.<PAGE>.<FAMILY>.<NAME>（PAGE 段连字符→下划线；FAMILY/NAME 段小写→大写、连字符→下划线；family 与 name 保持独立段——摊平单段将混淆命名空间与规则名）。<family>:<name> legacy 词形照录 aliases[]；POLICY.<PAGE>.<FAMILY>.<NAME> 族形登记均待词汇表 PR/Owner 裁决（非 ALIASES_V0 现役 8 族、非 A6 场景、origin 保持源侧 natural）。准入门（§2.2）：34 条不进机械转录批（33 条页段超 32 字符——PAGE_TASK_STEP_EXPERT_MODEL_CALCULATE 等 3 页；1 条 rule_id 段含非文法字符 '='——palette:ist-soll-o=f），以显式登记表达（HUMAN_CONFIRM_REQUIRED），三桶恒等式 241 已转录 + 34 待裁决 = 275 源分母（硬约束 4）。源无 updated_at 墙钟字段、无 status/lifecycle 字段：零墙钟天然满足、双轴拆分动作数=0、superseded_status_field 登记数=0（诚实零）。本字段为人类散文，机器永不解析判卷。",
+  "origin": "natural",
+  "payload": {
+    "enforcement_point": "page-spec §4 / governance_factsources",
+    "rule": {
+      "name": "回滚限冻结版",
+      "page_id": "PAGE-TASK-STEP-SAVE-BOM",
+      "rule_id": "calc-parts:rollback-frozen",
+      "source_refs": [
+        "doc/V1.0 Scope/specs(1)/specs/01-calc-vehicle-parts/spec.md §5.12"
+      ]
+    },
+    "source_document_meta": {
+      "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+      "document_type": "business-rule-registry",
+      "schema_version": 1
+    },
+    "statement_structured": {
+      "then": "回滚限冻结版",
+      "when": null
+    }
+  },
+  "permits_active": [],
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b3/ingest_business_rule_registry.py",
+      "locator": {
+        "batch": "MIG-B3",
+        "ingested_from": "outputs/frontend/10_planned/business-rule-registry.yaml",
+        "transcription": "rules[] entry 46/275 transcribed verbatim row-by-row (page_id/rule_id/name/source_refs, array order = source order; composite identity = (page_id, rule_id) per ledger identity_note); statement_structured={when: null, then: name} per 02b section 9 (no condition field in source -> when is an explicit null, honest absence); enforcement_point = ledger rationale anchor word form 'page-spec §4 / governance_factsources'; top-level keys have no updated_at and no status field so the wall-clock strip count is 0 and no superseded_status_field is registered; rule_id '<family>:<name>' local word form granted canonical POLICY.<PAGE>.<FAMILY>.<NAME> (M2 colon adjudication: colon = token boundary -> segment boundary per CONVENTIONS 4.2 no-flattening rule; registered in pending-registrations.business-rule-registry.yaml), legacy word form recorded in aliases[], NOT an A6 scenario so origin stays source-side natural; family-form registration awaits vocab PR / Owner; 34 of 275 entries gated (HUMAN_CONFIRM_REQUIRED, same manifest)"
+      },
+      "pin": {
+        "digest": "sha256:08453afa152dc05feaf61f18e56c99d5828dc9f5de8e1e69aa025ac33e8cda59"
+      },
+      "ref": "outputs/frontend/10_planned/business-rule-registry.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "回滚限冻结版"
+}
