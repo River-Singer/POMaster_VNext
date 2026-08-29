@@ -1,0 +1,31 @@
+{
+  "schema": "pomaster.vnext.calibration-approval/1",
+  "seq": "bench-0003",
+  "approved_at_seq_note": "墙钟禁入：批准事件以 seq 锚定（bench-0002 批准记录顺延），日期字段仅存于 evidence 平面",
+  "decision": "APPROVED",
+  "approved_by": "OWNER (Serperior, 2026-08-29 session)",
+  "approved_items": [
+    "T-1: TRIAGE_ESCALATION_KEYWORDS += global（词形 global → E_CONTRACT_KEYWORD 升档 STANDARD，升档触发优先于 MINIMAL 短路；中文「全局」0 命中未提案，不投机扩词）",
+    "附带项确认: 4 条偏离样本期望档维持（signal_requiring 类期望为人工推演，replay-round2-input.md §4 卡点 3）",
+    "附带项确认: 被否决候选 A-1/A-2/A-3 维持否决（proposed-thresholds.json rejected_candidates）",
+    "附带项确认: S-1（fan_out）/S-2（declared_paths）/S-2b（churn）/S-3（architecture_impact）仅作信号实现排期输入登记，本轮不实现"
+  ],
+  "evidence_bindings": [
+    "replay-R2-008（corpus/master/batch-1/calibration/replay-round2-input.md §2 行 131 ＋ replay-results.json records；期望 STANDARD 实得 LIGHT 的系统性低判，E2 fan_out 全局影响面语义）",
+    "语料全量扫描: global 命中 2/53、0 反例（分母 53 = MASTer .trellis/tasks 顶层活跃 16 ＋ archive/2026-08 37；命中批次 08-10-disable-auto-boolean-rendering-grid ＋ 08-10-global-remove-header-breadcrumb-grid-locale-colwidth-filterrow）",
+    "proposals 事实源: corpus/master/batch-1/calibration/proposed-thresholds.json §proposals[T-1]",
+    "裁决台账: corpus/master/cutover/owner-adjudications.md 裁决2（2026-08-29）"
+  ],
+  "effective_change": {
+    "threshold": "TRIAGE_ESCALATION_KEYWORDS（packages/cli/src/triage.ts）",
+    "operation": "append",
+    "value": "global",
+    "pinned_by": [
+      "packages/cli/tests/triage.spec.ts T-1 global 单测（含 global 的任务 → STANDARD）",
+      "tests/golden/cases.json GOLDEN-L1-ROUTER-GLOBAL-ESCALATION（golden triage 执行面为结构化信号 rule_v0 镜像、无词形落点，以 pendingReason 显式登记执行面缺席）",
+      "benchmarks/run-all.mjs 矩阵回绿（tiny→MINIMAL / normal→[LIGHT,STANDARD]）"
+    ]
+  },
+  "rollback": "恢复词表（TRIAGE_ESCALATION_KEYWORDS 移除 global）并重跑 node benchmarks/run-all.mjs 验证矩阵回绿（proposed-thresholds.json approval_gate.回滚方式）",
+  "owner_principle_note": "阈值是按项目适配的配置（per-project adaptation）——本条为 bench-0002 provision「二轮校准」条款的首项落地；system_can_not_self_approve 纪律延续，后续阈值变更仍走 Owner 批准位。"
+}

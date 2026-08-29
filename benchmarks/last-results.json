@@ -1,7 +1,7 @@
 {
   "schema": "pomaster.vnext.selfhosting-benchmark-results/1",
-  "run_id": "bench-0002",
-  "seq": 2,
+  "run_id": "bench-0003",
+  "seq": 3,
   "ok": true,
   "summary": {
     "total": 2,
@@ -19,7 +19,7 @@
       "matched_keywords": [
         "文案"
       ],
-      "durationMs": 111,
+      "durationMs": 216,
       "ok": true,
       "assertions": [
         {
@@ -50,7 +50,7 @@
       "matched_rule": "DEFAULT_NO_SIGNAL",
       "evidence_grade": "NOT_CONFIGURED",
       "matched_keywords": [],
-      "durationMs": 112,
+      "durationMs": 200,
       "ok": true,
       "assertions": [
         {

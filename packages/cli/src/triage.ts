@@ -42,6 +42,11 @@ export const TRIAGE_TTL_HOURS = 168;
  * 升档触发关键词（镜像 thread-C E1 contract_surface_hit 的 P0 关键词近似；
  * 「跨域」按 §27.3 跨 Domain 直接 STANDARD 的语义一并纳入）。
  * 命中 → STANDARD 升档触发（任务契约：跨域 contract→STANDARD 升档触发）。
+ * T-1（`global`）：Owner 2026-08-29 批准（corpus/master/batch-1/calibration/
+ * proposed-thresholds.json#T-1 + corpus/master/cutover/owner-adjudications.md#裁决2；
+ * 批准记录 benchmarks/calibration-t1-approval.json bench-0003）——修复
+ * replay-R2-008「全局影响面」词形系统性低判（语料 2/53 命中 0 反例；
+ * 中文「全局」0 命中未提案，不投机扩词）。
  */
 export const TRIAGE_ESCALATION_KEYWORDS = [
   "contract",
@@ -50,6 +55,7 @@ export const TRIAGE_ESCALATION_KEYWORDS = [
   "api_req",
   "跨域",
   "cross-domain",
+  "global",
 ] as const;
 
 /**

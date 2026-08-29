@@ -1,6 +1,6 @@
 {
   "suite": "golden-p0-batch1",
-  "sourceOfTruth": ".trellis/tasks/08-27-vnext-ir-schema-design/schema-drafts/golden-seed-mapping.md（种子账本，转写首批 20 条 P0）",
+  "sourceOfTruth": ".trellis/tasks/08-27-vnext-ir-schema-design/schema-drafts/golden-seed-mapping.md（种子账本，转写首批 20 条 P0）；第 21 条 GOLDEN-L1-ROUTER-GLOBAL-ESCALATION 为 T-1 批准追加（corpus/master/cutover/owner-adjudications.md 裁决2 ＋ benchmarks/calibration-t1-approval.json bench-0003，2026-08-29）",
   "conventions": {
     "verdictWords": "expected.verdict / expected.verdictAlternatives 只允许 03-gate-result definitions.verdict 七态词形逐字：passed/failed/warning/blocked/not_run/not_configured/skipped_blindspot；FATAL/NO_CHANGE/字节全等属于 §0 判决维度词（非七态），照录在 expected.note / expected.outcomeWords",
     "executable": "目前仅三类可执行判定：kernel 转移校验（transition）+ id 解析（id-parse/alias）+ triage 规则桶（triage）；不可执行项必须携带非空 pendingReason（缺席显式表达，禁止静默跳过）",
@@ -515,6 +515,32 @@
         }
       },
       "pendingReason": null
+    },
+    {
+      "id": "GOLDEN-L1-ROUTER-GLOBAL-ESCALATION",
+      "group": "GOLDEN-L1",
+      "category": "L1·Router 判定矩阵",
+      "p0": true,
+      "title": "词形 global 请求 → T-1 升档 STANDARD（packages 关键词引擎；golden 执行面缺席显式登记）",
+      "input": {
+        "described": "任务请求文本含词形 global（replay-R2-008 原型：Disable AG Grid automatic boolean rendering globally，全局影响面批次）→ triage 判 STANDARD 而非 LIGHT",
+        "requestText": "Disable AG Grid automatic boolean rendering globally",
+        "expectedProfile": "STANDARD"
+      },
+      "expected": {
+        "verdict": null,
+        "verdictAlternatives": [],
+        "outcome": null,
+        "note": "T-1（Owner 2026-08-29 批准，bench-0003）：TRIAGE_ESCALATION_KEYWORDS += global → E_CONTRACT_KEYWORD 升档 STANDARD（升档触发优先于 MINIMAL 短路）；triage 非 gate 平面，verdict 位留空"
+      },
+      "trace": {
+        "source": "corpus/master/batch-1/calibration/proposed-thresholds.json §proposals[T-1] ＋ corpus/master/cutover/owner-adjudications.md 裁决2 ＋ benchmarks/calibration-t1-approval.json（bench-0003）",
+        "decisions": ["T-1", "bench-0002 provision 二轮校准（replay-R2-008 系统性低判修复）"],
+        "evidence": "replay-R2-008（replay-round2-input.md §2 行 131 ＋ replay-results.json records）＋语料全量扫描 2/53 命中 0 反例（分母 53）",
+        "breaks": "replay-R2-008 期望 STANDARD（E2 fan_out 全局影响面语义）实得 LIGHT 的系统性低判"
+      },
+      "executable": null,
+      "pendingReason": "golden 本批三类可执行判定面的 triage 走 reference/triage.ts rule_v0（只消费结构化信号 contractSurfaceHit/blastRadius/…，无请求词形信号落点；其纪律禁止发明规则 id，故不镜像关键词表）；词形 global → STANDARD 判定归 packages/cli/src/triage.ts 关键词引擎（唯一实现），钉住手段＝packages/cli/tests/triage.spec.ts T-1 单测 ＋ benchmarks/run-all.mjs 矩阵；kernel triage 面落地后本用例升级为可执行"
     },
     {
       "id": "ADV-PFX-01",

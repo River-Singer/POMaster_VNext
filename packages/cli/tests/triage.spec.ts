@@ -35,6 +35,23 @@ describe("triage 规则桶（C1）——升档触发 E_CONTRACT_KEYWORD", () => 
     expect(r.evidence_grade).toBe("INFERRED");
   });
 
+  it("global 词形 → STANDARD（T-1，bench-0003 批准：修复 replay-R2-008 全局影响面系统性低判；globally 经子串命中）", () => {
+    const r = triageRequest(
+      "Disable AG Grid automatic boolean rendering globally",
+    );
+    expect(r.profile).toBe("STANDARD");
+    expect(r.matched_rule).toBe("E_CONTRACT_KEYWORD");
+    expect(r.matched_keywords).toContain("global");
+    expect(r.evidence_grade).toBe("INFERRED");
+  });
+
+  it("global 升档触发优先于文案/样式短路（「全局样式统一」类落 STANDARD 而非 MINIMAL——T-1 risk_notes ① Owner 裁定方向）", () => {
+    const r = triageRequest("global 样式统一：调整全站 badge 样式");
+    expect(r.profile).toBe("STANDARD");
+    expect(r.matched_rule).toBe("E_CONTRACT_KEYWORD");
+    expect(r.matched_keywords).toContain("global");
+  });
+
   it("大写 CONTRACT 大小写不敏感命中", () => {
     expect(triageRequest("CONTRACT review").profile).toBe("STANDARD");
   });

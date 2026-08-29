@@ -1,5 +1,5 @@
 /**
- * golden.spec.ts —— Golden P0 批次1（20 条数据驱动）＋ 执行器参考镜像单元测试。
+ * golden.spec.ts —— Golden P0 批次1（20 条种子转写＋T-1 追加共 21 条数据驱动）＋ 执行器参考镜像单元测试。
  *
  * 运行入口（数据驱动）：cases.json 逐条 → runGoldenCase；可执行判定通过（passed），
  * 不可执行判定显式 pending（附原因，进报告 pendingList——禁静默跳过）。
@@ -47,7 +47,7 @@ afterAll(() => {
 });
 
 // ============================================================
-// 数据驱动主面：20 条 P0 逐条
+// 数据驱动主面：20 条 P0 种子转写＋T-1 追加，逐条
 // ============================================================
 
 describe(`Golden P0 批次1 数据驱动（${suite}：${cases.length} 条）`, () => {
@@ -73,8 +73,8 @@ describe(`Golden P0 批次1 数据驱动（${suite}：${cases.length} 条）`, (
 // ============================================================
 
 describe("Golden 元纪律", () => {
-  it("cases.json：恰 20 条、id 唯一、全部 P0", () => {
-    expect(cases.length).toBe(20);
+  it("cases.json：恰 21 条（20 条种子转写＋T-1 批准追加 GOLDEN-L1-ROUTER-GLOBAL-ESCALATION）、id 唯一、全部 P0", () => {
+    expect(cases.length).toBe(21);
     const ids = cases.map((c) => c.id);
     expect(new Set(ids).size).toBe(ids.length);
     expect(cases.every((c) => c.p0 === true)).toBe(true);
