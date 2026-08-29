@@ -14,6 +14,7 @@ import type {
   Claimed,
   GateCounts,
   GateResult,
+  GateResultItem,
   GateRunContext,
   GovernedId,
 } from "./index.js";
@@ -74,6 +75,8 @@ function requireCount(
  *   表达」线。verdict_cap 只仲裁 declared 双源失配故降级留痕；单源自相矛盾无从仲裁，
  *   必须拒收——GRN-0009 实录：此类载荷曾成功入账后才被人工纠偏重放）；
  * - subjectId 前缀 TEST.* ⇔ isFixture=true 双向强校验（Q3）；
+ * - tool/toolVersion/metricDialect 三件套由 context 承载（不归工具自报载荷）：assertRunContext
+ *   强制校验非空/semver/口径 1..128 字符，缺一即 FATAL SCHEMA_INVALID（强制上报 + 不伪造口径）；
  * - trust.asserted 保留为 CLAIMED（永不单独判卷）；recomputed 是判卷唯一依据；
  *   失配 → mismatch.detected=true（默认 recomputed_wins_recorded）且 passed 自动
  *   降级 warning 并留 verdictCapReason（C1「报绿的机器自我怀疑」机械化落点）；
@@ -306,6 +309,107 @@ export function normalizeGateResult(
         ? Math.max(0, (scanned - produced) / scanned)
         : 0;
 
+  // —— scope.note（可选扩展位：缺席理由/安装指引/对账口径注记的诚实留痕位）——
+  // P12 红队修复：声明位声称「scopeNote 落盘 scope.note」但本归一器与 gateResultToSnake
+  // 均不承载，GRN 账本无任何 scope* 键——留痕位静默丢失正是「缺席显式」纪律的反面。
+  // 畸形 scope（非对象 / note 空串非字符串，03 note minLength 1）→ FATAL：canonical 化
+  // 过滤器绝不做无声删除（与 items 同一条线），载荷不想留痕就别携带 scope 键。
+  const scopeRaw = pick(value, "scope");
+  let scopeNote: string | undefined;
+  if (scopeRaw !== undefined && scopeRaw !== null) {
+    if (!isRecord(scopeRaw)) {
+      throw new GovernanceError(
+        "SCHEMA_INVALID",
+        `scope 须为对象（03 scope.note 留痕位）：${JSON.stringify(scopeRaw)}`,
+        "scope.note 承载缺席理由/安装指引落盘（03 note minLength 1）；无注记就不要携带 scope 键",
+        { scope: scopeRaw },
+      );
+    }
+    const noteRaw = pick(scopeRaw, "note");
+    if (noteRaw !== undefined && noteRaw !== null) {
+      if (typeof noteRaw !== "string" || noteRaw.length === 0) {
+        throw new GovernanceError(
+          "SCHEMA_INVALID",
+          `scope.note 须为非空字符串（03 minLength 1）：${JSON.stringify(noteRaw)}`,
+          "scope.note 是缺席理由/安装指引的落盘留痕位；空串留痕=假留痕，拒收",
+          { note: noteRaw },
+        );
+      }
+      scopeNote = noteRaw;
+    }
+  }
+  const camelScopeNote = pick(value, "scopeNote");
+  if (camelScopeNote !== undefined && camelScopeNote !== null) {
+    if (typeof camelScopeNote !== "string" || camelScopeNote.length === 0) {
+      throw new GovernanceError(
+        "SCHEMA_INVALID",
+        `scopeNote 须为非空字符串：${JSON.stringify(camelScopeNote)}`,
+        "camel 直载体与 scope.note 同义（键形宽容、词值严格）；空串留痕=假留痕，拒收",
+        { scopeNote: camelScopeNote },
+      );
+    }
+    if (scopeNote === undefined) scopeNote = camelScopeNote;
+  }
+
+  // —— items[] / items_truncated（可选扩展位：违规明细与 x-budget 截断留痕）——
+  // 同上：畸形条目 FATAL，禁静默丢明细。
+  const itemsRaw = pick(value, "items");
+  let items: GateResultItem[] | undefined;
+  if (itemsRaw !== undefined && itemsRaw !== null) {
+    if (!Array.isArray(itemsRaw)) {
+      throw new GovernanceError(
+        "SCHEMA_INVALID",
+        `items 须为数组（03 items[] 违规明细）：${JSON.stringify(itemsRaw)}`,
+        "items 条目形态 {rule, location, message?}（03-gate-result definitions.items）",
+        { items: itemsRaw },
+      );
+    }
+    items = itemsRaw.map((entry, index) => {
+      if (!isRecord(entry)) {
+        throw new GovernanceError(
+          "SCHEMA_INVALID",
+          `items[${index}] 须为对象（{rule, location, message?}）`,
+          "items 条目形态见 03-gate-result definitions.items；畸形明细禁静默丢弃",
+          { entry },
+        );
+      }
+      const rule = pick(entry, "rule");
+      const location = pick(entry, "location");
+      const message = pick(entry, "message");
+      if (typeof rule !== "string" || rule.length === 0) {
+        throw new GovernanceError(
+          "SCHEMA_INVALID",
+          `items[${index}].rule 须为非空字符串（违规规则码）`,
+          "rule 对齐 gate_def 内定义的规则码；畸形明细禁静默丢弃",
+          { entry },
+        );
+      }
+      if (typeof location !== "string" || location.length === 0) {
+        throw new GovernanceError(
+          "SCHEMA_INVALID",
+          `items[${index}].location 须为非空字符串（仓内相对路径[:line 或 #fragment]）`,
+          "location 禁绝对盘符（provenance 可移植纪律）；畸形明细禁静默丢弃",
+          { entry },
+        );
+      }
+      if (message !== undefined && message !== null && typeof message !== "string") {
+        throw new GovernanceError(
+          "SCHEMA_INVALID",
+          `items[${index}].message 须为字符串或省略`,
+          "message 是明细的可读补充；畸形明细禁静默丢弃",
+          { entry },
+        );
+      }
+      return {
+        rule,
+        location,
+        ...(message === undefined || message === null ? {} : { message }),
+      };
+    });
+  }
+  const itemsTruncatedRaw = pick(value, "items_truncated", "itemsTruncated");
+  const itemsTruncated = itemsTruncatedRaw === true ? true : undefined;
+
   // —— trust：asserted=CLAIMED（永不单独判卷）/ recomputed=判卷唯一依据 ——
   const trustRaw = pick(value, "trust");
   const trustSource = isRecord(trustRaw) ? trustRaw : {};
@@ -397,6 +501,9 @@ export function normalizeGateResult(
     grn: grnRaw,
     gate: gateRaw,
     gateDef: gateDefRaw,
+    tool: context.tool,
+    toolVersion: context.toolVersion,
+    metricDialect: context.metricDialect,
     ranAtSeq: context.ranAtSeq,
     verdict,
     verdictCapReason: capReason,
@@ -418,6 +525,9 @@ export function normalizeGateResult(
         : {}),
     },
     durationMs,
+    ...(scopeNote === undefined ? {} : { scopeNote }),
+    ...(items === undefined ? {} : { items }),
+    ...(itemsTruncated === undefined ? {} : { itemsTruncated }),
   };
 }
 
@@ -449,6 +559,18 @@ function assertRunContext(context: GateRunContext): void {
       { toolVersion: context.toolVersion },
     );
   }
+  if (
+    typeof context.metricDialect !== "string" ||
+    context.metricDialect.length === 0 ||
+    context.metricDialect.length > 128
+  ) {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      `context.metricDialect 缺失或非法（须 1..128 字符度量口径声明）：${String(context.metricDialect)}`,
+      "度量口径必带（工具链计划「强制上报工具名+版本+度量口径」）：coverage 行/分支混用即口径漂移，同 gate 跨 dialect 结果不可直接比较。kernel 不伪造口径——缺即拒收，如 coverage:lines / ui_text:carrier_file_count",
+      { metricDialect: context.metricDialect },
+    );
+  }
   if (!RUN_TRIGGER_VALUES.includes(context.trigger as RunTriggerValue)) {
     throw new GovernanceError(
       "VOCAB_INVALID_VALUE",
@@ -469,6 +591,9 @@ export function gateResultToSnake(result: GateResult): UnknownRecord {
     grn: result.grn,
     gate: result.gate,
     gate_def: result.gateDef,
+    tool: result.tool,
+    tool_version: result.toolVersion,
+    metric_dialect: result.metricDialect,
     ran_at_seq: result.ranAtSeq,
     verdict: result.verdict,
     verdict_cap_reason: result.verdictCapReason,
@@ -478,6 +603,9 @@ export function gateResultToSnake(result: GateResult): UnknownRecord {
       id: ref.id,
       version_seen: ref.versionSeen,
     })),
+    // scope.note：缺席理由 / 安装指引 / 对账口径注记的诚实留痕位随 GRN 落盘（03 scope.note；
+    // P12 红队修复——此前 CLI 呈现与账本分叉，GRN 无任何 scope* 键）。
+    ...(result.scopeNote === undefined ? {} : { scope: { note: result.scopeNote } }),
     counts: {
       scanned: result.counts.scanned,
       applicable_scanned: result.counts.applicableScanned,
@@ -498,6 +626,17 @@ export function gateResultToSnake(result: GateResult): UnknownRecord {
       produced: result.blindspot.produced,
       escape_ratio: result.blindspot.escapeRatio,
     },
+    // items[] / items_truncated：违规明细与 x-budget 截断留痕随 GRN 落盘（P12 红队修复同批）。
+    ...(result.items === undefined
+      ? {}
+      : {
+          items: result.items.map((item) => ({
+            rule: item.rule,
+            location: item.location,
+            ...(item.message === undefined ? {} : { message: item.message }),
+          })),
+        }),
+    ...(result.itemsTruncated === true ? { items_truncated: true } : {}),
     trust: {
       asserted:
         result.trust.asserted === null
@@ -523,9 +662,8 @@ export function gateResultToSnake(result: GateResult): UnknownRecord {
       self: result.durationMs.self,
       external: result.durationMs.external,
     },
-    // 03 亦要求 tool/tool_version/metric_dialect/ran_at_utc：kernel GateResult v0
-    // 契约不承载（GateRunner/gauntlet-lite 层职责）；此处诚实缺席而非伪造，
-    // 由 evidence 侧车补充（TODO: GateRunner 接线后落全字段）。
+    // tool/tool_version/metric_dialect 三件套随 GateResult 契约承载（P12a）并落盘 inline
+    // （03 required + 07 inline $ref 03）；ran_at_utc 仍不承载（墙钟仅证据平面事实，x-digest-excluded）。
   };
   return snake;
 }

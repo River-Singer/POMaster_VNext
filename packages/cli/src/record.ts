@@ -69,6 +69,8 @@ export interface RecordGateRunInput {
   readonly trigger?: string;
   readonly tool?: string;
   readonly toolVersion?: string;
+  /** 度量口径显式覆盖（缺省取文件 tool_snapshot/内嵌 metric_dialect；三源皆缺席 → fail-closed，不伪造口径）。 */
+  readonly metricDialect?: string;
   /**
    * subject 绑定（N5；每个 id 即一次「本 run 的证据属于该对象」的显式归属声明）。
    * undefined / 空数组 = 不声明——信封与落盘零变化（与现状逐字节一致）。每个绑定在
@@ -246,6 +248,7 @@ export async function runRecordGateRun(
     overrideTrigger: input.trigger,
     overrideTool: input.tool,
     overrideToolVersion: input.toolVersion,
+    overrideMetricDialect: input.metricDialect,
   });
   if ("failCode" in resolved) {
     return gateRunFail({
@@ -313,6 +316,7 @@ export async function runRecordGateRun(
       overrideTrigger: input.trigger,
       overrideTool: input.tool,
       overrideToolVersion: input.toolVersion,
+      overrideMetricDialect: input.metricDialect,
     });
     if (matched !== null) {
       grn = matched;

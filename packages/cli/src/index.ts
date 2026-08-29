@@ -26,7 +26,7 @@
  */
 import { Command, CommanderError } from "commander";
 import { CLI_NAME } from "./cli-info.js";
-import { toEnvelope, type CliEnvelope, type CommandOutcome } from "./envelope.js";
+import { toEnvelope, failOutcome, type CliEnvelope, type CommandOutcome } from "./envelope.js";
 import { runInit } from "./init.js";
 import { triageRequest } from "./triage.js";
 import { runStatus } from "./status.js";
@@ -34,7 +34,7 @@ import { runInspect } from "./inspect.js";
 import { runMaintain } from "./maintain.js";
 import { runContextCompile } from "./context.js";
 import { runDoctor } from "./doctor.js";
-import { runCheckFast } from "./check.js";
+import { runCheckFast, runCheckGates } from "./check.js";
 import { runPermitCheck, runPermitIssue, runPermitList, runPermitSteal } from "./permit.js";
 import { runExecGuard } from "./exec-guard.js";
 import { runReconcile } from "./reconcile.js";
@@ -75,7 +75,13 @@ export {
   CHROME_DEVTOOLS_MCP_HINT,
   DOCTOR_PROBE_STATUSES,
 } from "./doctor.js";
-export { runCheckFast, FAST_CHECK_GATE } from "./check.js";
+export {
+  runCheckFast,
+  FAST_CHECK_GATE,
+  runCheckGates,
+  allocateGateRecipeGrns,
+} from "./check.js";
+export type { GateRecipeRunRow, GatesCheckResult, CheckGatesDeps } from "./check.js";
 export {
   runPermitIssue,
   runPermitCheck,
@@ -308,11 +314,46 @@ export function createProgram(
 
   program
     .command("check")
-    .description("八拍⑤ VERIFY：FAST gate（BUILD 腿，转调 gauntlet-lite build adapter）")
-    .requiredOption("--fast", "run the FAST gate loop (BUILD leg)")
+    .description(
+      "八拍⑤ VERIFY：--fast = FAST gate（BUILD 腿，纯读）｜--gates = catalog gate recipes 派发腿（每 recipe 一条 GRN 入账；缺席工具显式 NOT_RUN 非绿非红）",
+    )
+    .option("--fast", "run the FAST gate loop (BUILD leg; read-only)")
+    .option(
+      "--gates",
+      "run catalog gate recipes (dispatch → adapter → one GRN per recipe via record_gate_run)",
+    )
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (_opts, command) => {
-      const outcome = await runCheckFast(resolveDir(command));
+      const fast = command.opts().fast === true;
+      const gates = command.opts().gates === true;
+      if (fast === gates) {
+        // 两腿互斥且必选其一：静默双跑会混淆两种 ok 语义，零腿 = 空跑，均 fail-closed。
+        const outcome = failOutcome<null>(
+          "check",
+          null,
+          [
+            {
+              code: "SCHEMA_INVALID",
+              message: fast
+                ? "--fast 与 --gates 互斥（一次跑一腿：BUILD 与 recipes 的 ok 语义不混合）"
+                : "check 须显式选腿：--fast（BUILD 腿）或 --gates（catalog gate recipes 腿）",
+            hint: fast
+              ? "分两次执行：pomaster check --fast 与 pomaster check --gates。"
+              : "FAST gate 循环用 --fast；catalog/gates recipe 判卷+入账用 --gates。",
+            },
+          ],
+          ["check: FAILED — SCHEMA_INVALID\n  hint: --fast 与 --gates 二选一（互斥）。"],
+        );
+        record({
+          command: "check",
+          outcome: outcome as CommandOutcome<unknown>,
+          asJson: command.opts().json === true,
+        });
+        return;
+      }
+      const outcome = fast
+        ? await runCheckFast(resolveDir(command))
+        : await runCheckGates(resolveDir(command));
       record({
         command: "check",
         outcome,
@@ -559,6 +600,7 @@ export function createProgram(
     .option("--trigger <type>", "运行触发方式（run_trigger 五值闭包；缺省 on_demand；文件信封 trigger.type 优先于缺省）")
     .option("--tool <id>", "执行工具标识（缺省 pomaster-cli；文件 tool_snapshot 优先）")
     .option("--tool-version <semver>", "工具版本（缺省 CLI 版本；文件 tool_snapshot 优先）")
+    .option("--metric-dialect <caliber>", "度量口径声明（如 coverage:lines；缺省取文件 tool_snapshot/内嵌 metric_dialect；三源皆缺席 → fail-closed，不伪造口径）")
     .option(
       "--subject <governed-id>",
       "subject 绑定归属声明（N5：本 run 证据属于该对象；可重复；入账时机复核——通过者随事务落 journal 注记，拒者留 warnings 不入账；缺省不传 = 未声明，信封零变化）",
@@ -572,6 +614,7 @@ export function createProgram(
         trigger: opts.trigger as string | undefined,
         tool: opts.tool as string | undefined,
         toolVersion: opts.toolVersion as string | undefined,
+        metricDialect: opts.metricDialect as string | undefined,
         // 可重复选项不带缺省值：argv 未携带 → undefined（未声明，非显式空数组）。
         subjects: opts.subject as string[] | undefined,
       });

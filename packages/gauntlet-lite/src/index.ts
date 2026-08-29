@@ -13,6 +13,8 @@
  * - contract-adapter.ts   —— CONTRACT 门禁 adapter（openapi operation_id 存在性对账）；
  * - architecture-adapter.ts —— ARCHITECTURE 门禁 adapter（forbidden import 规则文本扫描）；
  * - browser-adapter.ts    —— BROWSER 门禁 adapter（doctor MCP 探测 + smoke 连接证据）；
+ * - gate-recipe-runner.ts —— Basic Gate Runner v1（P12b：catalog/gates recipe→adapter
+ *                            派发登记表 + 单 recipe 编排执行；入账归 CLI 层 store 事务）；
  * - detectors.ts          —— oasdiff / import-linter / dependency-cruiser / chrome-devtools MCP
  *                            四探测（doctor 面；缺席必带理由与安装建议，禁静默）。
  *
@@ -49,6 +51,7 @@ export * from "./architecture-adapter.js";
 export * from "./browser-adapter.js";
 export * from "./detectors.js";
 export * from "./normalize-common.js";
+export * from "./gate-recipe-runner.js";
 
 /** BUILD 门禁 adapter 单例（vitest/pytest 双腿；也可经 createBuildAdapter() 自建）。 */
 export const buildAdapter: GateAdapter<

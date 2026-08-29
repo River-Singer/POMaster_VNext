@@ -1,10 +1,20 @@
 /**
- * check.ts —— `pomaster check --fast`：八拍⑤ VERIFY 的 FAST gate 命令面（BUILD 腿）。
+ * check.ts —— `pomaster check`：八拍⑤ VERIFY 的 gate 命令面（两条腿）。
  *
- * 只做编排：转调 gauntlet-lite 的 build adapter（§59 Tool Adapter Contract：
- * detect / prepare / run / normalize）。adapter 不可用 → NOT_INSTALLED
- * （verdict=not_run），绝不静默通过——not_run 不是 passed，check 命令对非 passed
- * 一律 ok=false（fail-closed；阻断语义的最终裁决归 closeout 编排层）。
+ * 腿 1 · `check --fast`（BUILD 腿，P12 前既有）：只做编排，转调 gauntlet-lite 的
+ * build adapter（§59 Tool Adapter Contract：detect / prepare / run / normalize）。
+ * adapter 不可用 → NOT_INSTALLED（verdict=not_run），绝不静默通过——not_run 不是
+ * passed，check 命令对非 passed 一律 ok=false（fail-closed；阻断语义的最终裁决归
+ * closeout 编排层）。本腿保持纯读（G6 裁定：判卷层不叠写路径失败模式）。
+ *
+ * 腿 2 · `check --gates`（catalog gate recipes 腿，P12b 新增）：消费 catalog/gates/
+ * 全部 recipe（分母 = CATALOG_GATE_RECIPES，目录对账自检测试钉死），每 recipe 经
+ * Gate Runner 派发（recipe→adapter 登记表）→ 既有 adapter 四段 → 一条 GRN 经 kernel
+ * record_gate_run 事务入账（P12 出口判据；G6「check 纯读」裁定对本腿由 P12 显式
+ * 收窄——gate 运行结果即证据，不落账 = 判完即弃）。缺席工具/无执行器 → 显式
+ * NOT_RUN 入账（非绿非红，绝不静默跳过不记绿）。P12c 假绿封死：全部 runner/adapter
+ * 产物在入账前统一过 kernel normalizeGateResult 判卷复算（verdict ⇔ counts 自洽、
+ * verdict_cap 降级、七态词表）——畸形产物 FATAL 且事务零落账，禁自报绕过。
  *
  * 双形态探测（TODO(gauntlet-builder)：收敛到单一契约后可简化）：
  * - §59 完整桥接（真实 gauntlet-lite 模块）：detect(platformDetectorFacts) → 四态缺席显式；
@@ -14,13 +24,36 @@
  *
  * 判卷纪律：counts 四计数必填且为数字——notApplicable 缺席 = 缺席被静默 = blocked（C1）；
  * verdict 词表外值 → blocked + ADAPTER_MALFORMED（词表纪律）。
- * GRN/ranAtSeq 说明：CLI 呈现面临时取 store 当前 seq 组装（不落 evidence 平面；
- * 正式 GRN 分配与 record_gate_run 入账归 kernel store 事务）。
+ * GRN/ranAtSeq 说明：--fast 腿 CLI 呈现面临时取 store 当前 seq 组装（不落 evidence 平面）；
+ * --gates 腿正式分配 GRN 并经 applyTransaction 入账（ranAtSeq 采样 store 当前 seq，
+ * 恒 ran_at_seq < applied_seq，与 record 通路同一纪律）。
  */
 
 import type { VerdictValue } from "@pomaster/schemas";
 import { VERDICT_VALUES } from "@pomaster/schemas";
+import type { Actor, Store } from "@pomaster/kernel";
+import {
+  GovernanceError,
+  applyTransaction,
+  createStore,
+  gateResultToSnake,
+  normalizeGateResult,
+} from "@pomaster/kernel";
+import type {
+  CatalogGateRecipeDescriptor,
+  GateResultRecord,
+  RecipeAdapterKey,
+  RecipeExecutor,
+} from "@pomaster/gauntlet-lite";
+import {
+  CATALOG_GATE_RECIPES,
+  runGateRecipe,
+} from "@pomaster/gauntlet-lite";
+import { allocateEvidenceRef } from "./evidence.js";
 import { TRUTH_INDEX_RELATIVE } from "./store-layout.js";
+import { runsDirPath } from "./store-layout.js";
+import { requireInitialized } from "./permit.js";
+import { governanceErrorToCliError } from "./permit.js";
 import type { CliError, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
 
@@ -400,5 +433,236 @@ export async function runCheckFast(
     return buildOutcomeFromRecord(run, run.detail ?? null);
   } catch (err) {
     return adapterBlockedOutcome(`run raised: ${errText(err)}`);
+  }
+}
+
+// ============================================================
+// check --gates：catalog gate recipes 派发腿（P12b）
+// ============================================================
+
+/** 单 recipe 运行结果行（机读信封字段；snake_case 对齐 §45 惯例）。 */
+export interface GateRecipeRunRow {
+  readonly recipe: string;
+  readonly gate: string;
+  readonly grn: string;
+  readonly verdict: VerdictValue;
+  readonly tool: string;
+  readonly metric_dialect: string;
+  readonly ran_at_seq: number;
+  /** 缺席理由 / 判卷注记（GateResult scopeNote 的呈现面投影；同值落盘 scope.note——呈现与账本同源，P12 红队修复）。 */
+  readonly note: string | null;
+}
+
+export interface GatesCheckResult {
+  /** recipe 分母（= 实跑条数；分母对账自检测试在 gauntlet-lite 侧钉死目录一致）。 */
+  readonly recipes_total: number;
+  readonly passed: number;
+  readonly rows: readonly GateRecipeRunRow[];
+  readonly applied_seq: number | null;
+}
+
+export interface CheckGatesDeps {
+  /** 注入 recipe 分母（测试）；缺省 = CATALOG_GATE_RECIPES（catalog/gates 投影）。 */
+  readonly recipes?: readonly CatalogGateRecipeDescriptor[];
+  /** 注入执行器（测试；按 adapter 键覆盖默认注册表）。 */
+  readonly executors?: Readonly<Partial<Record<RecipeAdapterKey, RecipeExecutor>>>;
+  /** 注入 store 句柄（测试）；缺省 = createStore(rootDir)。 */
+  readonly store?: Store;
+}
+
+function emptyGatesResult(): GatesCheckResult {
+  return { recipes_total: 0, passed: 0, rows: [], applied_seq: null };
+}
+
+function gatesFail(error: CliError): CommandOutcome<GatesCheckResult> {
+  return failOutcome<GatesCheckResult>(
+    "check",
+    emptyGatesResult(),
+    [error],
+    [`check --gates: FAILED — ${error.code}\n  hint: ${error.hint}`],
+  );
+}
+
+/**
+ * GRN 连续分配：现有最大序号 +1 起，按 recipe 数连续取号（同一事务一次入账，
+ * 分配与落账之间无并发窗口——单进程 CLI 事务内完成）。
+ */
+export function allocateGateRecipeGrns(runsDir: string, count: number): string[] {
+  if (count <= 0) return [];
+  const first = allocateEvidenceRef(runsDir, "GRN");
+  const base = Number(first.slice("GRN-".length));
+  const grns: string[] = [];
+  for (let offset = 0; offset < count; offset += 1) {
+    grns.push(`GRN-${String(base + offset).padStart(4, "0")}`);
+  }
+  return grns;
+}
+
+/**
+ * catalog gate recipes 腿：全部 recipe 派发执行 + 每条 GRN 经 kernel record_gate_run
+ * 入账（单事务原子）。退出语义与 --fast 同一条 fail-closed 线：全部 passed → ok=true；
+ * 任一 not_run/not_configured/blocked/failed → ok=false 且逐行 errors 显式。
+ */
+export async function runCheckGates(
+  rootDir: string,
+  deps?: CheckGatesDeps,
+): Promise<CommandOutcome<GatesCheckResult>> {
+  const recipes = deps?.recipes ?? CATALOG_GATE_RECIPES;
+  if (recipes.length === 0) {
+    return gatesFail({
+      code: "SCHEMA_INVALID",
+      message: "recipe 分母为空（零 recipe = 零判卷，不允许静默空跑）",
+      hint: "catalog/gates/ 投影（CATALOG_GATE_RECIPES）不得为空；确认 catalog 物料后在重试。",
+    });
+  }
+
+  // 入账需要 store：未初始化显式失败（缺席显式，不静默建账——与 record 通道同一纪律）。
+  const initialized = await requireInitialized(rootDir);
+  if ("error" in initialized) return gatesFail(initialized.error);
+  let store: Store;
+  if (deps?.store !== undefined) {
+    store = deps.store;
+  } else {
+    try {
+      store = await createStore(rootDir);
+    } catch (err) {
+      return gatesFail(
+        err instanceof GovernanceError
+          ? governanceErrorToCliError(err)
+          : {
+              code: "KERNEL_ERROR",
+              message: err instanceof Error ? err.message : String(err),
+              hint: "store 打开失败；查看 docs/kernel-api.md §1。",
+            },
+      );
+    }
+  }
+  const ranAtSeq = store.currentSeq ?? initialized.seq;
+
+  // 派发执行（runner 纯计算；身份坏形 FATAL → SCHEMA_INVALID fail-closed）。
+  const grns = allocateGateRecipeGrns(runsDirPath(rootDir), recipes.length);
+  const records: GateResultRecord[] = [];
+  try {
+    for (let index = 0; index < recipes.length; index += 1) {
+      const recipe = recipes[index] as CatalogGateRecipeDescriptor;
+      const record = runGateRecipe(
+        recipe,
+        { projectRoot: rootDir, grn: grns[index] as string, ranAtSeq },
+        { executors: deps?.executors },
+      );
+      records.push(record);
+    }
+  } catch (err) {
+    return gatesFail({
+      code: "SCHEMA_INVALID",
+      message: `recipe 身份坏形（Gate Runner FATAL）：${err instanceof Error ? err.message : String(err)}`,
+      hint: "CATALOG_GATE_RECIPES 投影与 catalog/gates/ 实存文件由分母自检测试对账；修正投影后重试。",
+    });
+  }
+
+  // —— P12c 假绿封死：入账边界统一判卷复算（与 record 通道同一纪律：永不信任工具自报）——
+  // runner/adapter 产物在 applyTransaction 前必须逐条过 kernel normalizeGateResult：
+  // verdict ⇔ counts 自洽矛盾（GRN-0009 实录缺陷类：passed + violations>0）、verdict_cap
+  // 降级（自报与重算失配）、词表外 verdict 等七态畸形在此 FATAL——事务零落账（staged
+  // 写从未发起，GRN 文件零残留、seq 零推进）。normalize 输出为入账唯一形态：verdict 被
+  // cap 降级时以降级值为准（禁原始自报绕过）；scopeNote/items 随 canonical snake 往返
+  // 承载（03 scope.note / items[]，P12 红队修复落盘贯通）——CLI 呈现与 GRN 账本同源。
+  const trigger = "on_demand" as const;
+  let judged: GateResultRecord[];
+  try {
+    judged = records.map((record) => {
+      // 喂 canonical snake 落盘形态（gateResultToSnake）：normalize 的 trust.asserted
+      // 读取 {violations, declared_by} 块——camel 内嵌 Claimed 形态会被静默当 null，
+      // 自报/重算失配检测将失效（假绿通道），故必须走同一序列化形态。
+      return normalizeGateResult(
+        {
+          value: gateResultToSnake(record),
+          claimedBy: {
+            actorType: "tool",
+            actor: record.tool,
+            selfAttested: true,
+          } satisfies Actor,
+        },
+        {
+          ranAtSeq: record.ranAtSeq,
+          trigger,
+          tool: record.tool,
+          toolVersion: record.toolVersion,
+          metricDialect: record.metricDialect,
+        },
+      );
+    });
+  } catch (err) {
+    return gatesFail(
+      err instanceof GovernanceError
+        ? governanceErrorToCliError(err)
+        : {
+            code: "KERNEL_ERROR",
+            message: `gate 判卷复算异常：${err instanceof Error ? err.message : String(err)}`,
+            hint: "入账前 normalizeGateResult 是假绿封死边界（P12c）；七态 verdict ⇔ counts 自洽契约见 03-gate-result。",
+          },
+    );
+  }
+  const rows: GateRecipeRunRow[] = judged.map((record, index) => ({
+    recipe: (recipes[index] as CatalogGateRecipeDescriptor).id,
+    gate: record.gate,
+    grn: record.grn,
+    verdict: record.verdict,
+    tool: record.tool,
+    metric_dialect: record.metricDialect,
+    ran_at_seq: record.ranAtSeq,
+    note: record.scopeNote ?? null,
+  }));
+
+  // 单事务入账：N 条 record_gate_run op 一次 applyTransaction（一次 seq 推进，原子）。
+  // 入账的是 judged（判卷复算后形态），不是 adapter 自报原样——假绿封死边界在事务之前。
+  try {
+    const applied = await applyTransaction(store, {
+      ops: judged.map((record) => ({
+        op: "record_gate_run" as const,
+        run: { grn: record.grn, trigger, result: record },
+      })),
+    });
+    const passed = rows.filter((row) => row.verdict === "passed").length;
+    const result: GatesCheckResult = {
+      recipes_total: recipes.length,
+      passed,
+      rows,
+      applied_seq: applied.appliedSeq,
+    };
+    const human = [
+      `check --gates: ${passed}/${recipes.length} passed (applied_seq=${applied.appliedSeq}, grn=${grns[0]}..${grns[grns.length - 1] ?? grns[0]})`,
+      ...rows.map(
+        (row) =>
+          `  ${row.verdict.padEnd(15)} ${row.recipe} (${row.grn}, tool=${row.tool})${row.note === null ? "" : `\n${" ".repeat(18)}note: ${row.note}`}`,
+      ),
+    ];
+    if (passed === recipes.length) {
+      return okOutcome("check", result, human);
+    }
+    return failOutcome(
+      "check",
+      result,
+      rows
+        .filter((row) => row.verdict !== "passed")
+        .map((row) => ({
+          code: `GATE_${row.verdict.toUpperCase()}`,
+          message: `${row.recipe}: verdict=${row.verdict} (${row.grn})`,
+          hint:
+            row.note ??
+            "not_run/not_configured 是显式缺席（非绿非红）；按 note 补齐执行器/配置后重跑。",
+        })),
+      human,
+    );
+  } catch (err) {
+    return gatesFail(
+      err instanceof GovernanceError
+        ? governanceErrorToCliError(err)
+        : {
+            code: "KERNEL_ERROR",
+            message: err instanceof Error ? err.message : String(err),
+            hint: "applyTransaction 失败（kernel staged 回滚保证零残留）；record_gate_run 契约见 docs/kernel-api.md §1。",
+          },
+    );
   }
 }

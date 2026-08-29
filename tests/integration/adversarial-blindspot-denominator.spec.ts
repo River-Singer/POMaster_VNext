@@ -96,7 +96,7 @@ function claimed(value: Record<string, unknown>): Claimed<unknown> {
 }
 
 function claimContext(ranAtSeq: number): GateRunContext {
-  return { ranAtSeq, trigger: "pre_closeout", tool: "gauntlet:fake_scanner", toolVersion: "1.0.0" };
+  return { ranAtSeq, trigger: "pre_closeout", tool: "gauntlet:fake_scanner", toolVersion: "1.0.0", metricDialect: "fake:assertion_count" };
 }
 
 /** 合法最小 03 形载荷基线（覆盖即得对抗变体）。 */
@@ -178,6 +178,7 @@ describe("威胁类 1：盲区探针（「跑过=查过」的洗白企图必须�
         grn: "GRN-0001",
         gate: "CONTENT_TRUTH",
         gate_def: "POLICY.GATE.CONTENT_TRUTH@1.4.0",
+        metric_dialect: "ui_text:carrier_file_count", // 携带口径，确保落在盲区指标校验而非口径缺省拒收
         verdict: "skipped_blindspot",
         ran_at_seq: 0,
         counts: { scanned: 9, applicable_scanned: 0, violations: 0, not_applicable: 0 },

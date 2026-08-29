@@ -12,8 +12,13 @@
  *   伪造采样点，违反 C5）；文件未携带时才由本通路采样 store 当前 seq（设计 §4.2 定义 2，
  *   恒 ran_at_seq < appliedSeq，倒挂不再新增）；存量倒挂如实保留 + ahead 显式披露；
  * - grn/clm 由调用方（GateRunner/record 通路）分配：注入覆盖，永不信任文件自报（C5 同一线）；
- * - canonical 化是有损规范化：超集字段（tool_snapshot / 内嵌 tool / metric_dialect / items）
- *   被 kernel GateResult v0 契约剥离——首收入账必须标 canonicalized 而非静默覆写（设计坑 3）；
+ * - tool/tool_version/metric_dialect 三件套随 kernel GateResult 契约承载（P12a）：canonical
+ *   形态内嵌保留（03 required + 07 inline $ref 03），不再剥离；pre-canonical 超集
+ *   tool_snapshot 块折叠入内嵌三字段（值经优先级链解析后落地 inline，不另存第二套格式）；
+ *   metric_dialect 无任何诚实缺省——override > tool_snapshot > 内嵌，三源皆缺席即 fail-closed
+ *   malformed（强制上报 + 不伪造口径）；items[] 违规明细随 kernel GateResult 契约承载
+ *   （scopeNote/items/itemsTruncated 同批，见 P12 MAJOR 修复）：canonical 形态落盘保留，
+ *   畸形载荷 FATAL SCHEMA_INVALID（禁静默丢留痕位）；
  * - claims 平面三分支（设计坑 4）：已带独立判定（VERIFIED/PARTIALLY_VERIFIED/REJECTED）的
  *   文件 → skipped_adjudicated，record_claim 通道无权覆写判定（D20：声称方不可自填
  *   VERIFIED），绝不把判定打回 UNVERIFIED 造成数据倒退；
@@ -164,9 +169,11 @@ export interface ParsedRunFile {
   /** 外层 tool_snapshot 字段（超集快照；优先于载荷内嵌 tool）。 */
   readonly snapshotTool: string | null;
   readonly snapshotToolVersion: string | null;
-  /** 载荷内嵌 tool/tool_version（GateResult v0 不承载、落盘剥离，但可作归一上下文）。 */
+  readonly snapshotMetricDialect: string | null;
+  /** 载荷内嵌 tool/tool_version/metric_dialect（三件套，canonical 形态原位保留）。 */
   readonly innerTool: string | null;
   readonly innerToolVersion: string | null;
+  readonly innerMetricDialect: string | null;
   /** trust.asserted 自报是否在场（C5 孪生；在场时必须可归因）。 */
   readonly assertedPresent: boolean;
   /** trust.asserted.declared_by（自报归因主体；snake/camel 双拼兼容）。 */
@@ -211,8 +218,10 @@ export function parseRunFile(bytes: string): ParsedRunFile | ParseFailure {
     ranAtSeqRaw: pick(rawValue, "ran_at_seq", "ranAtSeq") ?? pick(parsed, "ran_at_seq"),
     snapshotTool: typeof snapshot?.tool === "string" ? snapshot.tool : null,
     snapshotToolVersion: typeof snapshot?.tool_version === "string" ? snapshot.tool_version : null,
+    snapshotMetricDialect: typeof snapshot?.metric_dialect === "string" ? snapshot.metric_dialect : null,
     innerTool: typeof rawValue.tool === "string" ? rawValue.tool : null,
     innerToolVersion: typeof rawValue.tool_version === "string" ? rawValue.tool_version : null,
+    innerMetricDialect: typeof rawValue.metric_dialect === "string" ? rawValue.metric_dialect : null,
     assertedPresent: asserted !== undefined,
     assertedDeclaredBy: asserted === undefined ? undefined : pick(asserted, "declared_by", "declaredBy"),
   };
@@ -222,10 +231,11 @@ export function parseRunFile(bytes: string): ParsedRunFile | ParseFailure {
 const SEMVER_PATTERN = /^[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)?$/;
 
 export interface RunContextSource {
-  /** 显式覆盖（record --trigger / --tool / --tool-version；compact 无覆盖）。 */
+  /** 显式覆盖（record --trigger / --tool / --tool-version / --metric-dialect；compact 无覆盖）。 */
   readonly overrideTrigger?: string;
   readonly overrideTool?: string;
   readonly overrideToolVersion?: string;
+  readonly overrideMetricDialect?: string;
   /** 文件未携带 ran_at_seq 时的采样点（store 当前 seq；设计 §4.2 定义 2）。 */
   readonly sampledRanAtSeq: number;
 }
@@ -243,7 +253,10 @@ export type RunContextResolution =
  * 归一上下文解析（resolve 一次，normalize 与 canonical 重放共用）：
  * - ran_at_seq：文件自报沿用（沿用不改写，C5）；未携带 → sampledRanAtSeq；
  * - trigger：显式覆盖 > 信封 trigger.type（词表内沿用 / 词表外 fail-closed）> 缺省 on_demand；
- * - tool/toolVersion：显式覆盖 > tool_snapshot > 载荷内嵌 > 缺省 pomaster-cli/CLI_VERSION。
+ * - tool/toolVersion：显式覆盖 > tool_snapshot > 载荷内嵌 > 缺省 pomaster-cli/CLI_VERSION
+ *   （CLI 即入账工具，缺省是诚实归属，非伪造）；
+ * - metric_dialect：显式覆盖 > tool_snapshot > 载荷内嵌 > **fail-closed 拒收**——度量口径
+ *   是原始测量属性，CLI 未参与测量无诚实缺省可填（强制上报 + 不伪造，03 schema minLength 1）。
  */
 export function resolveRunContext(
   parsed: ParsedRunFile,
@@ -301,8 +314,23 @@ export function resolveRunContext(
     };
   }
 
+  const metricDialect =
+    source.overrideMetricDialect ?? parsed.snapshotMetricDialect ?? parsed.innerMetricDialect;
+  if (
+    typeof metricDialect !== "string" ||
+    metricDialect.length === 0 ||
+    metricDialect.length > 128
+  ) {
+    return {
+      failCode: EVIDENCE_MALFORMED_CODE,
+      detail:
+        `metric_dialect 缺失（度量口径必带——「强制上报工具名+版本+度量口径」，03 schema required；` +
+        `CLI 不伪造口径）。请在 --from 文件内嵌 metric_dialect / tool_snapshot.metric_dialect，或以 --metric-dialect 显式声明（如 coverage:lines / ui_text:carrier_file_count）`,
+    };
+  }
+
   return {
-    context: { ranAtSeq, trigger, tool, toolVersion },
+    context: { ranAtSeq, trigger, tool, toolVersion, metricDialect },
     ranAtSeq,
     ranAtSeqClaimed,
   };
@@ -472,6 +500,7 @@ export function findCanonicalRunMatch(input: {
   readonly overrideTrigger?: string;
   readonly overrideTool?: string;
   readonly overrideToolVersion?: string;
+  readonly overrideMetricDialect?: string;
 }): string | null {
   for (const fileName of listPlaneFiles(input.runsDir)) {
     if (!GRN_FILE_PATTERN.test(fileName)) continue;
@@ -494,6 +523,7 @@ export function findCanonicalRunMatch(input: {
       overrideTrigger: input.overrideTrigger,
       overrideTool: input.overrideTool,
       overrideToolVersion: input.overrideToolVersion,
+      overrideMetricDialect: input.overrideMetricDialect,
     });
     if ("failCode" in resolved) continue;
     const claimedBy = resolveAssertedClaimedBy(input.parsed);

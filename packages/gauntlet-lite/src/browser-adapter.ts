@@ -299,7 +299,7 @@ export function createBrowserAdapter(
         : null;
 
       const violations = connected ? 0 : 1;
-      const record: GateResult = {
+      const record: Omit<GateResult, "tool" | "toolVersion" | "metricDialect"> = {
         grn: plan.grn,
         gate: plan.gate,
         gateDef: plan.gateDef,

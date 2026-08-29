@@ -392,7 +392,7 @@ export function createArchitectureAdapter(): GateAdapter<
         })),
       );
 
-      const record: GateResult = {
+      const record: Omit<GateResult, "tool" | "toolVersion" | "metricDialect"> = {
         grn: plan.grn,
         gate: plan.gate,
         gateDef: plan.gateDef,

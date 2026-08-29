@@ -316,7 +316,7 @@ function normalizeExecuted(
   const baseVerdict: VerdictValue = violations > 0 ? "failed" : "passed";
   const capped = baseVerdict === "passed" && caps.length > 0;
 
-  const record: GateResult = {
+  const record: Omit<GateResult, "tool" | "toolVersion" | "metricDialect"> = {
     grn: plan.grn,
     gate: plan.gate,
     gateDef: plan.gateDef,

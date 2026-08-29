@@ -186,17 +186,20 @@ describe("GRN-0001.ran_at_seq=3 而 status generation_seq=0 —— 裂缝闭合"
     const statusAgain = await runJson(["status"]);
     expect(JSON.stringify(statusAgain.envelope)).toBe(JSON.stringify(statusAfter.envelope)); // 读侧幂等不破坏
 
-    // 平面分叉闭合：runs 文件覆写为 kernel canonical 形态（超集剥离）。
+    // 平面分叉闭合：runs 文件覆写为 kernel canonical 形态（tool_snapshot 超集折叠入内嵌）。
     const run = JSON.parse(
       readFileSync(join(root, ".pomaster", "evidence", "runs", "GRN-0001.json"), "utf8"),
     ) as Record<string, unknown>;
     expect(run.record_type).toBe("run");
     expect(run.ran_at_seq).toBe(3); // 自报采样点沿用不改写（C5）
-    expect(run.tool_snapshot).toBeUndefined();
+    expect(run.tool_snapshot).toBeUndefined(); // 超集块折叠入内嵌三字段，不另存第二套格式
     const inline = ((run.gate_result as Record<string, unknown>).result ?? {}) as Record<string, unknown>;
     expect(inline.verdict).toBe("passed");
-    expect(inline.metric_dialect).toBeUndefined();
-    expect(inline.items).toBeUndefined();
+    // P12a：tool/tool_version/metric_dialect 三件套收编后内嵌保留（03 required），不再剥离。
+    expect(inline.tool).toBe("tiny-csv-tool:roundtrip_probe");
+    expect(inline.tool_version).toBe("0.1.0");
+    expect(inline.metric_dialect).toBe("csv:quoted_cell_roundtrip");
+    expect(inline.items).toEqual([]); // items[] 违规明细随 P12 红队修复落盘贯通（canonical 化不再剥离；声明位「落盘 items[]」从此为真）
   });
 
   it("幂等：二次 compact → NO_CHANGE 全树字节不变；三次输出与二次 byte-stable", async () => {
@@ -226,6 +229,7 @@ describe("GRN-0001.ran_at_seq=3 而 status generation_seq=0 —— 裂缝闭合"
       gate: "BUILD",
       gate_def: "POLICY.GATE.BUILD@0.1.0",
       verdict: "passed",
+      metric_dialect: "build:exit_code", // 度量口径必带（强制上报 + 不伪造；缺即 fail-closed）
       subject_id: null,
       denominator_refs: [],
       counts: { scanned: 2, applicable_scanned: 2, violations: 0, not_applicable: 0 },

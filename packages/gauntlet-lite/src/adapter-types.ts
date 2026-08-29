@@ -235,9 +235,11 @@ export interface GateResultItemInput {
 }
 
 /**
- * 归一后的门禁结果 = @pomaster/kernel 的 GateResult 契约形态 + 归一所需的工具口径三字段
- * （03-gate-result 必填 tool/tool_version/metric_dialect，kernel 契约把它们放在 GateRunContext）。
- * 可选扩展位（03 schema 合法字段，kernel GateResult v0 契约不承载）：
+ * 归一后的门禁结果 = @pomaster/kernel 的 GateResult 契约形态（P12a 起 kernel 契约已承载
+ * tool/toolVersion/metricDialect 三件套；此处交叉重声明为冗余但同型一致，保留以显式标注
+ * GateRunner/adapter 侧「强制上报」职责）。可选扩展位（03 schema 合法字段；P12 红队修复
+ * 起 kernel GateResult 原生承载，normalizeGateResult 解析 + gateResultToSnake 落盘贯通，
+ * CLI 呈现与 GRN 账本同源）：
  * - scopeNote → 落盘 scope.note（缺席理由 / 安装指引 / 对账口径注记的诚实留痕位）；
  * - items/itemsTruncated → 落盘 items[] / items_truncated（违规明细与 x-budget 截断留痕）。
  */

@@ -7,6 +7,7 @@
 import { describe, expect, it } from "vitest";
 import {
   GovernanceError,
+  gateResultToSnake,
   normalizeGateResult,
   type Actor,
   type Claimed,
@@ -19,6 +20,7 @@ const CONTEXT = {
   trigger: "pre_closeout",
   tool: "gauntlet:ui_text_scanner",
   toolVersion: "0.2.0",
+  metricDialect: "ui_text:carrier_file_count",
 } as const;
 
 function claimed(value: unknown): Claimed<unknown> {
@@ -72,6 +74,43 @@ describe("normalizeGateResult（happy path 与形状归一）", () => {
     expect(() =>
       normalizeGateResult(claimed(validPayload()), { ...CONTEXT, toolVersion: "dev" }),
     ).toThrow(GovernanceError);
+  });
+
+  it("三件套结构校验（P12a）：tool 空 / toolVersion 缺 / metricDialect 缺·空·超长 → FATAL SCHEMA_INVALID", () => {
+    // 强制上报：三缺一即结构不合法（03 required + 07 inline $ref 03）；kernel 不伪造口径。
+    expect(() =>
+      normalizeGateResult(claimed(validPayload()), { ...CONTEXT, tool: "" }),
+    ).toThrow(/SCHEMA_INVALID/);
+    expect(() =>
+      normalizeGateResult(claimed(validPayload()), { ...CONTEXT, toolVersion: undefined as never }),
+    ).toThrow(/SCHEMA_INVALID/);
+    expect(() =>
+      normalizeGateResult(claimed(validPayload()), { ...CONTEXT, metricDialect: undefined as never }),
+    ).toThrow(/SCHEMA_INVALID/);
+    expect(() =>
+      normalizeGateResult(claimed(validPayload()), { ...CONTEXT, metricDialect: "" }),
+    ).toThrow(/SCHEMA_INVALID/);
+    expect(() =>
+      normalizeGateResult(claimed(validPayload()), { ...CONTEXT, metricDialect: "x".repeat(129) }),
+    ).toThrow(/SCHEMA_INVALID/);
+  });
+
+  it("三件套由 context 承载进 GateResult（不归工具自报载荷），snake 落盘 inline 保留", () => {
+    const result = normalizeGateResult(claimed(validPayload()), CONTEXT);
+    expect(result.tool).toBe("gauntlet:ui_text_scanner");
+    expect(result.toolVersion).toBe("0.2.0");
+    expect(result.metricDialect).toBe("ui_text:carrier_file_count");
+    // 载荷内自报的 tool 字段不被采信——以 context 为准（C5：永不信任自报）。
+    const spoofed = normalizeGateResult(
+      claimed(validPayload({ tool: "evil:lying_tool", tool_version: "9.9.9", metric_dialect: "fake" })),
+      CONTEXT,
+    );
+    expect(spoofed.tool).toBe("gauntlet:ui_text_scanner");
+    // snake 落盘形态三件套 inline 保留（与 03 schema required 对齐）。
+    const snake = gateResultToSnake(result);
+    expect(snake.tool).toBe("gauntlet:ui_text_scanner");
+    expect(snake.tool_version).toBe("0.2.0");
+    expect(snake.metric_dialect).toBe("ui_text:carrier_file_count");
   });
 
   it("载荷非对象 → SCHEMA_INVALID", () => {
@@ -342,5 +381,88 @@ describe("normalizeGateResult（verdict ⇔ counts 交叉校验：passed 自洽�
       );
       expect(result.verdict).toBe(verdict);
     }
+  });
+});
+
+describe("normalizeGateResult（scope/items 可选扩展位：落盘贯通，P12 红队修复）", () => {
+  const SCOPE_NOTE = "未找到 contract-gate.json；指引：在项目根 contract-gate.json 声明对账输入";
+
+  it("scope.note 解析进 result.scopeNote；gateResultToSnake 落盘 scope.note（声明位「落盘 scope.note」从此为真——CLI 呈现与 GRN 账本同源）", () => {
+    const result = normalizeGateResult(
+      claimed(validPayload({ scope: { note: SCOPE_NOTE } })),
+      CONTEXT,
+    );
+    expect(result.scopeNote).toBe(SCOPE_NOTE);
+    const snake = gateResultToSnake(result);
+    expect(snake.scope).toEqual({ note: SCOPE_NOTE });
+  });
+
+  it("camel scopeNote 直载体同样接受（键形宽容、词值严格——GateResultRecord 词形往返）", () => {
+    const result = normalizeGateResult(claimed(validPayload({ scopeNote: SCOPE_NOTE })), CONTEXT);
+    expect(result.scopeNote).toBe(SCOPE_NOTE);
+    expect(gateResultToSnake(result).scope).toEqual({ note: SCOPE_NOTE });
+  });
+
+  it("items[] 与 items_truncated 解析 + snake 往返保留（违规明细与截断留痕不静默丢）", () => {
+    const result = normalizeGateResult(
+      claimed(validPayload({
+        verdict: "failed",
+        counts: { scanned: 2, applicable_scanned: 2, violations: 2, not_applicable: 0 },
+        items: [
+          { rule: "operation_id_missing", location: "spec/openapi.yaml#getUser", message: "声明的 operation_id 未出现" },
+          { rule: "operation_id_missing", location: "spec/openapi.yaml#createUser" },
+        ],
+        items_truncated: true,
+      })),
+      CONTEXT,
+    );
+    expect(result.items).toEqual([
+      { rule: "operation_id_missing", location: "spec/openapi.yaml#getUser", message: "声明的 operation_id 未出现" },
+      { rule: "operation_id_missing", location: "spec/openapi.yaml#createUser" },
+    ]);
+    expect(result.itemsTruncated).toBe(true);
+    const snake = gateResultToSnake(result);
+    expect(snake.items).toEqual(result.items);
+    expect(snake.items_truncated).toBe(true);
+  });
+
+  it("scope.note 空串/非字符串 → SCHEMA_INVALID（03 minLength 1；空串留痕=假留痕，禁静默丢留痕位）", () => {
+    for (const bad of ["", 42, { deep: true }]) {
+      expect(() =>
+        normalizeGateResult(claimed(validPayload({ scope: { note: bad } })), CONTEXT),
+      ).toThrow(/SCHEMA_INVALID/);
+    }
+    expect(() =>
+      normalizeGateResult(claimed(validPayload({ scope: "not-an-object" })), CONTEXT),
+    ).toThrow(/SCHEMA_INVALID/);
+    expect(() =>
+      normalizeGateResult(claimed(validPayload({ scopeNote: "" })), CONTEXT),
+    ).toThrow(/SCHEMA_INVALID/);
+  });
+
+  it("items 畸形（非数组 / 条目缺 rule 或 location / message 非字符串）→ SCHEMA_INVALID（禁静默丢明细）", () => {
+    expect(() =>
+      normalizeGateResult(claimed(validPayload({ items: "violations" })), CONTEXT),
+    ).toThrow(/SCHEMA_INVALID/);
+    expect(() =>
+      normalizeGateResult(claimed(validPayload({ items: [{ location: "a.ts#L1" }] })), CONTEXT),
+    ).toThrow(/SCHEMA_INVALID/);
+    expect(() =>
+      normalizeGateResult(claimed(validPayload({ items: [{ rule: "R1" }] })), CONTEXT),
+    ).toThrow(/SCHEMA_INVALID/);
+    expect(() =>
+      normalizeGateResult(claimed(validPayload({ items: [{ rule: "R1", location: "a.ts", message: 3 }] })), CONTEXT),
+    ).toThrow(/SCHEMA_INVALID/);
+  });
+
+  it("未携带 scope/items → GateResult 与 snake 零新键（缺席显式：键不落盘即载荷未声明留痕）", () => {
+    const result = normalizeGateResult(claimed(validPayload()), CONTEXT);
+    expect(result.scopeNote).toBeUndefined();
+    expect(result.items).toBeUndefined();
+    expect(result.itemsTruncated).toBeUndefined();
+    const snake = gateResultToSnake(result);
+    expect("scope" in snake).toBe(false);
+    expect("items" in snake).toBe(false);
+    expect("items_truncated" in snake).toBe(false);
   });
 });

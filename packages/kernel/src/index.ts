@@ -572,6 +572,8 @@ export interface GateRunContext {
   readonly trigger: RunTriggerValue;
   readonly tool: string;
   readonly toolVersion: string;
+  /** 度量口径声明（如 coverage:lines / ui_text:carrier_file_count）——强制上报，缺/非法 FATAL。 */
+  readonly metricDialect: string;
 }
 
 /** 计数块：notApplicable 必填（C1：「多少对象与本规则无关」必须是数字而不是沉默）。 */
@@ -585,11 +587,29 @@ export interface GateCounts {
   readonly declarationsFailedRecompute?: number;
 }
 
+/**
+ * 03 items[] 违规明细条目（rule+location 必填，message 可选；不携带 excerpt_hash——
+ * D24 哈希伦理：digest 只住读侧，判卷侧不设任何算 sha 路径）。
+ */
+export interface GateResultItem {
+  /** 违规规则码（gate_def 内定义）。 */
+  readonly rule: string;
+  /** 仓内相对路径[:line 或 #fragment]；禁止绝对盘符（provenance 可移植纪律）。 */
+  readonly location: string;
+  readonly message?: string;
+}
+
 /** 门禁运行结果（镜像 03-gate-result；A8：只住 evidence/runs/，永不入 truth-index）。 */
 export interface GateResult {
   readonly grn: string; // GRN-[0-9]+
   readonly gate: string; // SCREAMING_SNAKE；新增 gate 须经 gate_def 版本化登记
   readonly gateDef: string; // 定义 id@semver（如 POLICY.GATE.CONTENT_TRUTH@1.4.0），防口径静默漂移
+  /** 执行工具标识（如 gauntlet:ui_text_scanner）——强制上报三件套之一（P12a）。 */
+  readonly tool: string;
+  /** 工具版本（semver）——钉死口径，C6 Overhead 双轨归因依赖版本可辨识。 */
+  readonly toolVersion: string;
+  /** 度量口径声明（coverage 行/分支、ui_text 载体文件数等）；同 gate 跨 dialect 结果不可直接比较。 */
+  readonly metricDialect: string;
   readonly ranAtSeq: number;
   readonly verdict: VerdictValue;
   /** passed 被自动降级为 warning 时的原因码（binding_unverified_for_required_class 等，C1）。 */
@@ -618,6 +638,16 @@ export interface GateResult {
   };
   /** duration_ms 拆 self/external（C6 Overhead 双轨 primary/机器实测）；墙钟/耗时字段不进 digest。 */
   readonly durationMs: { readonly self: number; readonly external: number };
+  /**
+   * 03 scope.note 可选扩展位（P12 红队修复起落盘贯通）：缺席理由 / 安装指引 / 对账口径
+   * 注记的诚实留痕位。缺席显式（C1）的「为何没查、去哪补」必须随 GRN 落盘——evidence
+   * 是真相源，remediation 路标属证据记录该有的内容；CLI 呈现与账本同源，不再分叉。
+   */
+  readonly scopeNote?: string;
+  /** 03 items[] 违规明细（判卷侧重算产物；x-budget 截断前明细）。 */
+  readonly items?: readonly GateResultItem[];
+  /** items 超 x-budget 截断留痕（03 items_truncated，仅在真截断时为 true）。 */
+  readonly itemsTruncated?: boolean;
 }
 
 /**

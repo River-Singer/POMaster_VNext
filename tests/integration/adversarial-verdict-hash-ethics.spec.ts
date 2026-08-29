@@ -55,7 +55,7 @@ function claimed(value: Record<string, unknown>): Claimed<unknown> {
 }
 
 function claimContext(ranAtSeq: number): GateRunContext {
-  return { ranAtSeq, trigger: "pre_closeout", tool: "gauntlet:fake_scanner", toolVersion: "1.0.0" };
+  return { ranAtSeq, trigger: "pre_closeout", tool: "gauntlet:fake_scanner", toolVersion: "1.0.0", metricDialect: "fake:assertion_count" };
 }
 
 /** 合法最小 03 形载荷基线（覆盖即得对抗变体）。 */

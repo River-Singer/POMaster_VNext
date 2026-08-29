@@ -93,7 +93,8 @@ pomaster permit issue/check/steal/list   # 八拍② FRAMEWORK LOCK：许可签�
 pomaster exec-guard …  # 八拍④ 写路径机器执行点：attempt JSON → checkPermit 判卷（判卷器非写入器）
 pomaster maintain <change-or-task> --ops <tx.json>  # 受控变更：显式事务 → kernel applyTransaction（判卷权威在 kernel）
 pomaster maintain <change-or-task> --phase pre-dev …  # pre-dev 链：triage→permit→context 薄编排（八拍①②③一线穿）
-pomaster check --fast  # FAST gate 循环
+pomaster check --fast   # FAST gate 循环（BUILD 腿，纯读）
+pomaster check --gates  # catalog gate recipes 派发腿：每 recipe 一条 GRN 入账（缺席工具显式 NOT_RUN，非绿非红）
 pomaster record gate-run|claim  # 证据入账通路：gate 运行结果 / claim 显式单条落账 evidence 平面
 pomaster compact …     # 八拍⑦ COMPACT：episode 折叠为单次 store 事务（证据批量收编 + 显式 ops；NO_CHANGE 合法出口）
 pomaster reconcile …   # 三方对账出 delta 报告

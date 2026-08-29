@@ -104,19 +104,19 @@ export function assertCommonGates(
 }
 
 /**
- * 缺席/终局性记录构造（verdict=not_run / not_configured 等非绿非红态共用）。
+ * 缺席/终局性记录构造（verdict=not_run / not_configured / blocked 等非 passed 态共用）。
  * counts 显式全零 + blindspot 0/0/0 + trust.asserted=null——「显式零」而非省略（C1）；
  * scopeNote 可选携带缺席理由与安装/配置指引（03 scope.note，schema 合法位），
  * 报错带路标纪律：缺席记录必须说清「为何没查、去哪补」。
  */
 export function absenceRecord(
   plan: RecordPlanFields,
-  verdict: Extract<VerdictValue, "not_run" | "not_configured">,
+  verdict: Extract<VerdictValue, "not_run" | "not_configured" | "blocked">,
   scopeNote: string | null,
   selfMs: number,
   externalMs: number,
 ): GateResultRecord {
-  const base: GateResult = {
+  const base: Omit<GateResult, "tool" | "toolVersion" | "metricDialect"> = {
     grn: plan.grn,
     gate: plan.gate,
     gateDef: plan.gateDef,

@@ -106,6 +106,7 @@ async function recordRun(grn: string, verdict: string, subjectId: string | null)
       trigger: "on_demand",
       tool: "gauntlet:ui_text_scanner",
       toolVersion: "0.2.0",
+      metricDialect: "ui_text:carrier_file_count",
     },
   );
   await applyTransaction(store, {

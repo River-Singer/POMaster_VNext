@@ -192,14 +192,16 @@ describe("compact 证据批量收编", () => {
       ahead_evidence: [{ grn: "GRN-0001", ran_at_seq: 3 }],
     });
 
-    // 落盘为 kernel canonical 形态：超集剥离、平面分叉闭合。
+    // 落盘为 kernel canonical 形态：tool_snapshot 超集折叠入内嵌三字段、平面分叉闭合。
     const run = readRun("GRN-0001");
     expect(run.tool_snapshot).toBeUndefined();
     expect(run.digest_excluded_fields).toBeUndefined();
     const inline = (run.gate_result as Record<string, unknown>).result as Record<string, unknown>;
-    expect(inline.tool).toBeUndefined();
-    expect(inline.metric_dialect).toBeUndefined();
-    expect(inline.items).toBeUndefined();
+    // P12a：tool/tool_version/metric_dialect 三件套收编后内嵌保留（03 required），不再剥离。
+    expect(inline.tool).toBe("tiny-csv-tool:roundtrip_probe");
+    expect(inline.tool_version).toBe("0.1.0");
+    expect(inline.metric_dialect).toBe("csv:quoted_cell_roundtrip");
+    expect(inline.items).toEqual([]); // items[] 违规明细随 P12 红队修复落盘贯通（canonical 化不再剥离）
     expect(inline.verdict).toBe("passed");
     expect(run.ran_at_seq).toBe(3); // 自报采样点沿用不改写（C5）
 
@@ -315,6 +317,7 @@ describe("compact 畸形证据 fail-closed 显式呈现", () => {
     const badVerdict = {
       gate: "BUILD",
       gate_def: "POLICY.GATE.BUILD@0.1.0",
+      metric_dialect: "build:exit_code", // 携带口径，确保落在 verdict 词表校验而非口径缺省拒收
       verdict: "GREEN", // 词表外
       counts: { scanned: 1, applicable_scanned: 1, violations: 0, not_applicable: 0 },
       trust: { asserted: null, recomputed: { violations: 0, matches_asserted: true } },
@@ -324,6 +327,7 @@ describe("compact 畸形证据 fail-closed 显式呈现", () => {
     const missingNA = {
       gate: "BUILD",
       gate_def: "POLICY.GATE.BUILD@0.1.0",
+      metric_dialect: "build:exit_code", // 携带口径，确保落在 notApplicable 校验而非口径缺省拒收
       verdict: "passed",
       counts: { scanned: 1, applicable_scanned: 1, violations: 0 }, // 缺 not_applicable（C1 硬性）
       trust: { asserted: null, recomputed: { violations: 0, matches_asserted: true } },

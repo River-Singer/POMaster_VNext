@@ -7,7 +7,11 @@
  * - ran_at_seq 自报沿用不改写（C5）；未携带才采样 store 当前 seq（恒 ran_at_seq < applied）；
  * - record 幂等：同文件二次 record → SKIPPED_CANONICAL exit 0 零写入；--grn 同号重放
  *   等价→跳过 / 有变→canonical 化（非盲覆写）；
- * - canonical 化有损：超集字段（tool_snapshot / 内嵌 tool / metric_dialect / items）剥离；
+ * - 三件套收编保留（P12a）：tool/tool_version/metric_dialect 内嵌落盘不剥离；tool_snapshot
+ *   超集折叠入内嵌（单一家 canonical 形态）；items[] 违规明细随 kernel 契约承载落盘
+ *   （P12 MAJOR 修复批：畸形 FATAL SCHEMA_INVALID）；
+ *   metric_dialect 三源（--metric-dialect > tool_snapshot > 内嵌）皆缺席 → fail-closed
+ *   EVIDENCE_MALFORMED（强制上报 + 不伪造口径；tool/tool_version 有诚实缺省 pomaster-cli）；
  * - trust.asserted/recomputed 孪生随行入账（C5）：归因落盘 / 失配自动降级 warning +
  *   verdict_cap_reason / declared_by 缺失 fail-closed；
  * - record claim：APPLIED（UNVERIFIED 恒置）/ SKIPPED_CANONICAL / SKIPPED_ADJUDICATED
@@ -88,6 +92,8 @@ function gatePayload(overrides: Record<string, unknown> = {}): Record<string, un
     gate: "BUILD",
     gate_def: "POLICY.GATE.BUILD@0.1.0",
     verdict: "passed",
+    // 度量口径必带（强制上报 + 不伪造）：真实 gate 工具输出恒声明 caliber；缺即 fail-closed。
+    metric_dialect: "build:exit_code",
     subject_id: null,
     denominator_refs: [],
     counts: { scanned: 2, applicable_scanned: 2, violations: 0, not_applicable: 0 },
@@ -211,7 +217,7 @@ describe("record gate-run 入账通路正例", () => {
     expect(readRun("GRN-0001").trigger).toEqual({ type: "post_edit" });
   });
 
-  it("canonical 化有损：tool_snapshot / 内嵌 tool / metric_dialect / items 被剥离（kernel v0 契约诚实缺席）", async () => {
+  it("三件套收编保留：tool/tool_version/metric_dialect 内嵌落盘；tool_snapshot 超集折叠不另存；items 落盘贯通", async () => {
     await seedStore();
     const payload = runEnvelopePayload(
       gatePayload({
@@ -228,12 +234,37 @@ describe("record gate-run 入账通路正例", () => {
     expect(outcome.ok).toBe(true);
     expect(outcome.result.change).toBe("APPLIED"); // 首收入账必须标 canonicalized（compact 呈现），record 以 APPLIED 表达落账
     const run = readRun("GRN-0001");
+    // P12a：tool_snapshot 超集折叠入内嵌三字段（单一家 canonical 形态，不另存第二套）。
     expect(run.tool_snapshot).toBeUndefined();
     const inline = (run.gate_result as Record<string, unknown>).result as Record<string, unknown>;
-    expect(inline.tool).toBeUndefined();
-    expect(inline.tool_version).toBeUndefined();
-    expect(inline.metric_dialect).toBeUndefined();
-    expect(inline.items).toBeUndefined();
+    // 三件套收编后内嵌保留（03 required + 07 inline $ref 03），不再剥离。
+    expect(inline.tool).toBe("tiny-csv-tool:roundtrip_probe");
+    expect(inline.tool_version).toBe("0.1.0");
+    expect(inline.metric_dialect).toBe("csv:quoted_cell_roundtrip");
+    // items[] 违规明细随 P12 红队修复落盘贯通（canonical 化不再剥离——原「不属 v0 契约」
+    // 缺口已闭合，与声明位 adapter-types「落盘 items[]」对齐）。
+    expect(inline.items).toEqual([]);
+  });
+
+  it("metric_dialect 三源皆缺席 → fail-closed EVIDENCE_MALFORMED（强制上报 + 不伪造口径；tool/tool_version 有诚实缺省）", async () => {
+    await seedStore();
+    // 覆盖 metric_dialect 为 undefined（无 tool_snapshot、无内嵌、无 --metric-dialect 覆盖）。
+    const payload = gatePayload({ metric_dialect: undefined });
+    const outcome = await runRecordGateRun(root, { from: writeInput(payload) });
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors[0]?.code).toBe("EVIDENCE_MALFORMED");
+    expect(outcome.errors[0]?.message).toContain("metric_dialect");
+    // 显式 --metric-dialect 覆盖可补齐 → 入账成功。
+    const rescued = await runRecordGateRun(root, {
+      from: writeInput(gatePayload({ metric_dialect: undefined })),
+      metricDialect: "build:exit_code",
+    });
+    expect(rescued.ok).toBe(true);
+    expect(rescued.result.change).toBe("APPLIED");
+    const inline = (readRun("GRN-0001").gate_result as Record<string, unknown>).result as Record<string, unknown>;
+    expect(inline.metric_dialect).toBe("build:exit_code");
+    // tool/tool_version 走诚实缺省（CLI 即入账工具）。
+    expect(inline.tool).toBe("pomaster-cli");
   });
 });
 

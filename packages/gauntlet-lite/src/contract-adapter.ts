@@ -322,7 +322,7 @@ export function createContractAdapter(): GateAdapter<
       }));
       const cappedItems = capItems(items);
 
-      const record: GateResult = {
+      const record: Omit<GateResult, "tool" | "toolVersion" | "metricDialect"> = {
         grn: plan.grn,
         gate: plan.gate,
         gateDef: plan.gateDef,
