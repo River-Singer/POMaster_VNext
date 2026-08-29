@@ -9,6 +9,15 @@
   （`golden.harness.ts`：kernel 转移校验 / id 解析 / triage 规则桶三类可执行判定，
   kernel 未就绪时回落 `reference/` 参考镜像；不可执行项显式 pending 并输出
   pendingList 到 `coverage/golden-report.json`——禁静默跳过当通过）。
+- `behavioral/` —— L5 Behavioral Eval（契约 `docs/p9-human-view-and-l5-contract.md` §2）：
+  `seeds.json`（25 注册 / 23 executable / 2 pending，代号线 `L5-SEED`；种子素材唯一
+  合法来源 = `corpus/master/batch-1/calibration/`，replay 锚定请求逐字转录）＋ 双
+  evaluator 数据驱动执行器（`behavioral.harness.ts`：`cli_keyword` = @pomaster/cli
+  `triageRequest` 源码直连；`rule_v0` = golden reference `triageRuleV0`）＋ vitest 入口
+  （`behavioral.spec.ts`）。报告落 `coverage/behavioral-report.json`（镜像 golden
+  报告字段；零墙钟可字节级重放）。翻转纪律（契约 §2.7.2）：阈值/信号获批落地时对应
+  seed 期望翻转 + `flipped_from` 记录翻转前状态——翻转本身构成验收测试（T-1 翻转对
+  C-01/C-04 已随 Owner 裁决2/bench-0003 落地执行）。
 - `integration/smoke.spec.ts` —— 临时目录端到端冒烟：`pomaster init → triage×2 →
   status --json → doctor --json`（断言 §45 信封、NO_CHANGE 幂等、triage 缺席信号、
   doctor 探测四态矩阵 fail-closed）；CLI dist 未就绪时逐项显式 pending 到

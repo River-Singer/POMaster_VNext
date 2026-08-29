@@ -1,0 +1,228 @@
+{
+  "batch_code": "VIEW-M5",
+  "batches": [
+    "MIG-B1",
+    "MIG-B2",
+    "MIG-B3",
+    "MIG-B4",
+    "MIG-B5"
+  ],
+  "denominators": {
+    "application_pages": 39,
+    "capability_fdp": 109,
+    "published_openapi_operationids": 190,
+    "readiness_axis": {
+      "BLOCKED": 6,
+      "DRAFT": 33,
+      "READY": 0
+    },
+    "task_corpus_dirs": 53
+  },
+  "explicit_absence": [
+    {
+      "affects": [
+        "executive-system-map.md"
+      ],
+      "id": "MIG-B4/authority.json",
+      "reason": "批内不存在该文件（无 M3 Authority 产物）；相关治理面以 inventory.yaml 与 CONVENTIONS.md 为事实源"
+    },
+    {
+      "affects": [
+        "executive-system-map.md"
+      ],
+      "id": "MIG-B5/authority.json",
+      "reason": "批内不存在该文件（无 M3 Authority 产物）；相关治理面以 inventory.yaml 与 CONVENTIONS.md 为事实源"
+    },
+    {
+      "affects": [
+        "executive-system-map.md",
+        "known-debt.md"
+      ],
+      "id": "calibration/ (MIG-B2, MIG-B3, MIG-B4, MIG-B5)",
+      "reason": "仅 MIG-B1 产出校准回放（16 样本 + PROPOSED 阈值提案）；MIG-B3/README.md 明记校准二轮 PENDING，其余批次无 calibration/ 目录"
+    }
+  ],
+  "gate_runs": {
+    "total": 40,
+    "verdicts": {
+      "failed": 13,
+      "not_configured": 1,
+      "passed": 18,
+      "skipped_blindspot": 8
+    }
+  },
+  "generated_by": "corpus/master/tools/build_human_views.py",
+  "inputs_counts": {
+    "authority": 3,
+    "calibration_adjudication_ledger": 1,
+    "calibration_thresholds": 1,
+    "consumed_files_total": 2043,
+    "episode_archive_manifest": 1,
+    "gate_runs": 40,
+    "inventory": 5,
+    "pending_registrations": 3,
+    "truth_objects": 1983
+  },
+  "inputs_fingerprint": "9fcb3feccc960be75cac599f50c8bde9ae868380177078c65f4e85ed48bd6a51",
+  "object_domains": [
+    {
+      "batch": "MIG-B1",
+      "kind_dir": "business-rule",
+      "objects": 1
+    },
+    {
+      "batch": "MIG-B1",
+      "kind_dir": "capability",
+      "objects": 3
+    },
+    {
+      "batch": "MIG-B1",
+      "kind_dir": "change-object",
+      "objects": 126
+    },
+    {
+      "batch": "MIG-B1",
+      "kind_dir": "component",
+      "objects": 6
+    },
+    {
+      "batch": "MIG-B1",
+      "kind_dir": "contract-op",
+      "objects": 140
+    },
+    {
+      "batch": "MIG-B1",
+      "kind_dir": "error-term",
+      "objects": 14
+    },
+    {
+      "batch": "MIG-B2",
+      "kind_dir": "business-rule",
+      "objects": 3
+    },
+    {
+      "batch": "MIG-B2",
+      "kind_dir": "component",
+      "objects": 7
+    },
+    {
+      "batch": "MIG-B2",
+      "kind_dir": "page-surface",
+      "objects": 151
+    },
+    {
+      "batch": "MIG-B3",
+      "kind_dir": "business-rule",
+      "objects": 803
+    },
+    {
+      "batch": "MIG-B3",
+      "kind_dir": "capability",
+      "objects": 189
+    },
+    {
+      "batch": "MIG-B3",
+      "kind_dir": "field-definition",
+      "objects": 76
+    },
+    {
+      "batch": "MIG-B4",
+      "kind_dir": "architecture-constraint",
+      "objects": 10
+    },
+    {
+      "batch": "MIG-B4",
+      "kind_dir": "boundary",
+      "objects": 39
+    },
+    {
+      "batch": "MIG-B4",
+      "kind_dir": "dependency",
+      "objects": 27
+    },
+    {
+      "batch": "MIG-B4",
+      "kind_dir": "directory-layout",
+      "objects": 7
+    },
+    {
+      "batch": "MIG-B4",
+      "kind_dir": "fixture",
+      "objects": 101
+    },
+    {
+      "batch": "MIG-B4",
+      "kind_dir": "http-client",
+      "objects": 3
+    },
+    {
+      "batch": "MIG-B4",
+      "kind_dir": "overlay-evidence",
+      "objects": 18
+    },
+    {
+      "batch": "MIG-B4",
+      "kind_dir": "pattern",
+      "objects": 12
+    },
+    {
+      "batch": "MIG-B4",
+      "kind_dir": "performance-budget",
+      "objects": 63
+    },
+    {
+      "batch": "MIG-B4",
+      "kind_dir": "style-ownership",
+      "objects": 27
+    },
+    {
+      "batch": "MIG-B5",
+      "kind_dir": "business-rule",
+      "objects": 18
+    },
+    {
+      "batch": "MIG-B5",
+      "kind_dir": "capability",
+      "objects": 109
+    },
+    {
+      "batch": "MIG-B5",
+      "kind_dir": "page-surface",
+      "objects": 30
+    }
+  ],
+  "views": {
+    "current-business-truth.md": {
+      "bytes": 29284,
+      "citations": 158,
+      "citations_unresolved": 0,
+      "lines": 158,
+      "sections": 5,
+      "sha256": "f06cfdc13fca64f92d25c5a1561a2d7b65c9e1f8b26cc3c34b49881cd96ec239"
+    },
+    "executive-system-map.md": {
+      "bytes": 5534,
+      "citations": 19,
+      "citations_unresolved": 0,
+      "lines": 54,
+      "sections": 5,
+      "sha256": "d4ed179d9b760071a5cf163cb557b4afd035762eb040836af0cbea4639a21643"
+    },
+    "known-debt.md": {
+      "bytes": 20187,
+      "citations": 83,
+      "citations_unresolved": 0,
+      "lines": 132,
+      "sections": 6,
+      "sha256": "e15a6c9af7c9dd29972bee94a1ee5ec8854718921d7290cb0bb70ee422a5d812"
+    },
+    "technology-baseline.md": {
+      "bytes": 8974,
+      "citations": 55,
+      "citations_unresolved": 0,
+      "lines": 75,
+      "sections": 6,
+      "sha256": "4c092019bbd02b708cd3d2b472424891b94eedbb68c8cb8d7f3ea0ff098bebf4"
+    }
+  }
+}
