@@ -19,7 +19,7 @@ export const TRUTH_INDEX_RELATIVE = ".pomaster/state/truth-index.json";
 /**
  * .pomaster/state/authority.json（Authority Map；N7：init 建 BOOTSTRAP 骨架）。
  * kernel 解析契约（permits.loadAuthorityMap）只读 version + authorities 两键，
- * 其余键（owner_registry/boundary_rules/map，MIG-B1 形态）为演化面注记，kernel 容忍。
+ * 其余键（owner_registry/boundary_rules/map，语料批 batch-1 形态）为演化面注记，kernel 容忍。
  * kernel createStore 对本文件同样是「缺失才写」——init 先建的骨架不会被覆盖。
  */
 export const AUTHORITY_RELATIVE = ".pomaster/state/authority.json";

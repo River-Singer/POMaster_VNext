@@ -1,0 +1,369 @@
+{
+  "aliases": [
+    "PAGE-APP-TECHNICAL-AKT"
+  ],
+  "authority": {
+    "delegates": [
+      {
+        "required_for": [
+          "approve_page_blueprint"
+        ],
+        "role": "HUMAN_OWNER"
+      }
+    ],
+    "escalation_hint": "regenerate via corpus/master/batch-2/tools/ingest_screen_blueprints_d.py; blueprint structure/action/field-semantics change re-runs the generator then this ingest; page.status progression and canonical word form PAGE.APP_* confirmation are HUMAN_OWNER seats (approve_page_blueprint; EVOLUTION_CHANNEL; ledger owner FRONTEND_ARCHITECTURE)",
+    "owner": "FRONTEND_ARCHITECTURE",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "PROVISIONAL",
+    "evidence": "IMPLEMENTED",
+    "lifecycle": "CURRENT"
+  },
+  "axis_profile": "page_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "PAGE.APP_TECHNICAL_AKT",
+  "key_bindings": {
+    "artifact": [],
+    "code": [
+      {
+        "artifact_type": "source_dir",
+        "expect": {
+          "page_id": "PAGE-APP-TECHNICAL-AKT"
+        },
+        "match_rule": "mechanical",
+        "value": "src/pages/page-technical-akt"
+      },
+      {
+        "artifact_type": "file",
+        "expect": {
+          "route_name_exact": "PAGE-APP-TECHNICAL-AKT"
+        },
+        "match_rule": "mechanical",
+        "value": "src/app/router/routes.ts"
+      }
+    ]
+  },
+  "kind": "page_surface",
+  "notes_md": "蓝图转录（MIG-B2 转录组 D·后半 2/19，一蓝图一 surface 主对象）：源 outputs/frontend/10_planned/screen-blueprints/PAGE-APP-TECHNICAL-AKT.yaml（bp_blueprint，pin 见 sources[0]；分母=screen-blueprints 实测 39 之字典序后半第 2 份）。\n三层对象化：结构=template_ref PAGE.LIST + regions 4 条（slot 词形均在 page-anatomy-registry 16 槽合法集内）+ states 14 项；交互=actions 5 条（ACTION.* 摆位 + PAGE_SLOT.* 槽位值引用）；字段语义=regions/slots 内联结构化字段逐字承载（源无 FIELD.* 词形 → FIELD.* 派生引用=0，诚实零）。\nsurface=V1（Page Spec 双分母之应用页侧；分母归属迁移期走信封 denominator_refs 显式空，DENOMINATOR.* 未注册）；shell 归属：shell_name=MasterApplicationShell + 内容宿主槽位 SHELL.MAIN_CONTENT（scroll/error 边界语义在槽位对象侧）。 导航归属自 navigation-structure 逐叶转录（nav_group=NAV.GROUP.G1 nav_entry=NAV.LEAF.TECH-AKT；物理 route 串不落对象——路由权威在 KEYBINDING.*，A7 P0）。\npage.status=DRAFT 为设计审批轴事实（与 readiness 实施就绪轴分立，禁混轴）；已登记 payload.blueprint.superseded_status_field，数值语义不篡改。\nunresolved 6 条逐条转 payload.blueprint.unresolved_exceptions（Exception Ledger 承载：显式未决，不静默丢弃、不静默裁决）。\n散文承载登记：none (honest zero) → 浓缩为信封 notes_md 摘要 + sources[0].locator.line_anchors 源指针（蓝图 YAML 正文不整本搬运）。摘要（全文按源指针回读）：none (honest zero)\ncanonical 词形：源词形 PAGE-APP-TECHNICAL-AKT → PAGE.APP_TECHNICAL_AKT（PAGE-APP-*→PAGE.APP_* token 重排外推（非 ALIASES_V0 现役 8 族，key-binding-map.batch2.draft.yaml proposed_needs_human）→ HUMAN_CONFIRM_REQUIRED：对象以拟合词形落档、legacy 词形照录 aliases[]（登记不改名），origin 保持源侧 derived（非 A6 场景））。axes.confidence=PROVISIONAL（悬置态：C-01 未决冲突/未裁决拟合词形在身，batch1 §2；Owner 裁决后可转 LOCKED）\nroute/目录权威不在本对象 payload：page↔dir 与 route_name 机械锚以 key_bindings.code 期望声明承载（值=源词形逐字），KEYBINDING.* 表对象落档仍待人工裁决（草表 status=MECHANICAL_ROUTE_NAME_MATCH）。\n本字段为人类散文，机器永不解析判卷。",
+  "origin": "derived",
+  "payload": {
+    "actions": [
+      "ACTION.SELECT",
+      "ACTION.SUBMIT",
+      "ACTION.VIEW",
+      "ACTION.EXPORT",
+      "ACTION.REFRESH"
+    ],
+    "blueprint": {
+      "actions": [
+        {
+          "action_id": "ACTION.SELECT",
+          "business_action": "ACT-SELECT-VEHICLE-CONTEXT",
+          "capability_id": "CAP-TECHNICAL-AKT",
+          "id": "PAGE-ACT-TECHNICAL-AKT-1",
+          "mock": false,
+          "placement": "ACTION.SELECT",
+          "slot": "PAGE_SLOT.FILTERS"
+        },
+        {
+          "action_id": "ACTION.SUBMIT",
+          "business_action": "ACT-TECHNICAL-AKT-SUBMIT",
+          "capability_id": "CAP-TECHNICAL-AKT",
+          "id": "PAGE-ACT-TECHNICAL-AKT-2",
+          "mock": false,
+          "placement": "ACTION.SUBMIT",
+          "slot": "PAGE_SLOT.FOOTER_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.VIEW",
+          "business_action": "ACT-TECHNICAL-AKT-VIEW-RECORD",
+          "capability_id": "CAP-TECHNICAL-AKT",
+          "id": "PAGE-ACT-TECHNICAL-AKT-3",
+          "mock": false,
+          "placement": "ACTION.VIEW",
+          "slot": "PAGE_SLOT.SECONDARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.EXPORT",
+          "business_action": "ACT-TECHNICAL-AKT-EXPORT",
+          "capability_id": "CAP-TECHNICAL-AKT",
+          "id": "PAGE-ACT-TECHNICAL-AKT-4",
+          "mock": false,
+          "placement": "ACTION.EXPORT",
+          "slot": "PAGE_SLOT.SECONDARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.REFRESH",
+          "business_action": "ACT-REFRESH-MASTER-DATA",
+          "capability_id": "CAP-TECHNICAL-AKT",
+          "id": "PAGE-ACT-TECHNICAL-AKT-5",
+          "mock": false,
+          "placement": "ACTION.REFRESH",
+          "slot": "PAGE_SLOT.SECONDARY_ACTIONS"
+        }
+      ],
+      "api_requirements": [
+        {
+          "classification": "QUERY",
+          "id": "API_REQ.TECHNICAL.AKT.1",
+          "method": "GET",
+          "operation_id": "list_partlist_api_v1_projects__project_id__partlist_get",
+          "path": "/api/v1/projects/{project_id}/partlist",
+          "source": {
+            "page": "PAGE-APP-TECHNICAL-AKT"
+          },
+          "status": "ACCEPTED",
+          "type": "query"
+        },
+        {
+          "classification": "QUERY",
+          "id": "API_REQ.TECHNICAL.AKT.2",
+          "method": "GET",
+          "operation_id": "project_operation_logs_api_v1_projects__project_id__operation_logs_get",
+          "path": "/api/v1/projects/{project_id}/operation-logs",
+          "source": {
+            "page": "PAGE-APP-TECHNICAL-AKT"
+          },
+          "status": "ACCEPTED",
+          "type": "query"
+        }
+      ],
+      "error_rendering": {
+        "component": "DATA.EMPTY_STATE",
+        "fallback_slot": "PAGE_SLOT.FEEDBACK",
+        "isolation": "route-level ErrorBoundary; per-query error 不外溢其他页面（协议 18/27）",
+        "protocol": "universal:rendering-state-protocol",
+        "variant": "error"
+      },
+      "navigation": {
+        "nav_entry": "NAV.LEAF.TECH-AKT",
+        "nav_entry_name_zh": "技术变更 AKT",
+        "nav_group": "NAV.GROUP.G1",
+        "nav_subgroup": "NAV.SUBGROUP.G1-3"
+      },
+      "page_status": {
+        "axis": "design_approval",
+        "value": "DRAFT"
+      },
+      "prose_to_notes_md": [],
+      "regions": [
+        {
+          "behavior": "static",
+          "id": "REGION.PAGE_HEADER",
+          "note": "工作台 tab 已显示标题，本区域不再渲染面包屑与页面标题。",
+          "slots": {
+            "PAGE_SLOT.PRIMARY_ACTIONS": {
+              "capability_id": "PATTERN.ACTION_BAR",
+              "component": "PATTERN.ACTION_BAR"
+            },
+            "PAGE_SLOT.SECONDARY_ACTIONS": {
+              "capability_id": "PATTERN.ACTION_BAR",
+              "component": "PATTERN.ACTION_BAR"
+            },
+            "PAGE_SLOT.STATUS": {
+              "capability_id": "DATA.TAG",
+              "component": "DATA.TAG",
+              "tags": [
+                "7 列",
+                "技术变更评估"
+              ]
+            }
+          }
+        },
+        {
+          "behavior": "static",
+          "id": "REGION.FILTERS",
+          "slots": {
+            "PAGE_SLOT.FILTERS": {
+              "capability_id": "PATTERN.FILTER_BAR",
+              "component": "PATTERN.FILTER_BAR",
+              "filters": [
+                "车型选择",
+                "评估状态(草稿/审批中/通过/驳回)",
+                "零件号/记录编号"
+              ]
+            }
+          }
+        },
+        {
+          "behavior": "render-by-state",
+          "id": "REGION.CONTENT",
+          "slots": {
+            "PAGE_SLOT.CONTENT": {
+              "capability_id": "DATA.READONLY_TABLE",
+              "component": "DATA.READONLY_TABLE",
+              "grid": {
+                "column_fields": "待补充（7 列具体字段 spec §3 待确认）",
+                "downstream_rule": "AKT 评估通过 -> 自动修改对应车型计算车型零件清单 BOM(后端审批流回调)；评估驳回 -> BOM 不变",
+                "editable": false,
+                "header_filters": false,
+                "known_record_fields": [
+                  "变更原因",
+                  "技术影响分析",
+                  "评估结果",
+                  "审批人",
+                  "审批时间"
+                ],
+                "total_columns": 7
+              },
+              "pattern_id": "PATTERN.LIST_TABLE"
+            }
+          }
+        },
+        {
+          "behavior": "static",
+          "id": "REGION.FOOTER_ACTIONS",
+          "slots": {
+            "PAGE_SLOT.FOOTER_ACTIONS": {
+              "capability_id": "PATTERN.ACTION_BAR",
+              "component": "PATTERN.ACTION_BAR"
+            }
+          }
+        }
+      ],
+      "shell": {
+        "content_slot_ref": "SHELL.MAIN_CONTENT",
+        "shell_name": "MasterApplicationShell"
+      },
+      "source_document_meta": {
+        "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+        "document_type": "screen-blueprint",
+        "schema_version": 1
+      },
+      "source_page_id": "PAGE-APP-TECHNICAL-AKT",
+      "states": [
+        "idle",
+        "loading",
+        "success",
+        "empty",
+        "error",
+        "view",
+        "edit",
+        "read-only",
+        "create",
+        "pristine",
+        "dirty",
+        "validating",
+        "invalid",
+        "submitting"
+      ],
+      "superseded_status_field": {
+        "mapped_to": "design-approval-axis fact record (classification-ledger blueprint_status_axis_note: design-approval axis and implementation-readiness axis stay separate; the readiness axis lives in page-readiness-registry); object axes describe the truth object itself (lifecycle CURRENT = source is an active canonical), never mixed across axes; approval delegation via authority.delegates HUMAN_OWNER approve_page_blueprint",
+        "reason": "flat status is one word with many meanings; the design-approval semantic stays a fact record and status progression belongs to the HUMAN_OWNER approve_page_blueprint delegate seat; values are transcribed without tampering",
+        "source_field": "status",
+        "source_value": "DRAFT",
+        "upgrade_registered": true
+      },
+      "template": {
+        "id": "PAGE.LIST"
+      },
+      "unresolved_exceptions": {
+        "carrier": "exception_ledger",
+        "count": 6,
+        "items": [
+          "UNRESOLVED: spec §3 fields pending — 待业务细化 technical-akt spec",
+          "UNRESOLVED: spec §4 layout pending — 待业务细化 technical-akt spec",
+          "UNRESOLVED: spec §5/§7 pending — 待业务细化 technical-akt spec",
+          "UNRESOLVED: spec §7 pending — 待业务细化 technical-akt spec",
+          "TODO: backend contract missing for AKT 提交/审批流(approval-flow) — 待后端补 openapi operationId",
+          "UNRESOLVED: 与 BC/PKO/AEKO 评估的协同流程待确认"
+        ],
+        "rule": "unresolved items carried item-by-item as EXPLICITLY unresolved (CONVENTIONS section 3): never silently dropped, never auto-adjudicated; resolution belongs to the Owner"
+      }
+    },
+    "slots": [
+      "PAGE_SLOT.PRIMARY_ACTIONS",
+      "PAGE_SLOT.SECONDARY_ACTIONS",
+      "PAGE_SLOT.STATUS",
+      "PAGE_SLOT.FILTERS",
+      "PAGE_SLOT.CONTENT",
+      "PAGE_SLOT.FOOTER_ACTIONS",
+      "PAGE_SLOT.FEEDBACK"
+    ],
+    "surface": "V1",
+    "template_ref": "PAGE.LIST"
+  },
+  "permits_active": [],
+  "producer": {
+    "liveness": {
+      "status": "active"
+    },
+    "merge_semantics": {
+      "backfill_if_missing": [],
+      "human_never_touched": [],
+      "refresh_fields": [
+        "payload.blueprint"
+      ]
+    },
+    "producer_id": "prod.mig_b2_ingest_screen_blueprints_d",
+    "views_maintained": [
+      "truth-index.envelope"
+    ]
+  },
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_d.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-TECHNICAL-AKT.yaml",
+        "line_anchors": {
+          "note": 109,
+          "unresolved": 182
+        },
+        "prose_summarized": [],
+        "transcription": "back-half blueprint 2/19 objectified one-to-one into a page_surface object: structure (template_ref/regions/states) + interaction (actions) + inline field semantics transcribed verbatim as structured units (array order = source order); page.status kept as a design-approval fact record with a superseded_status_field registration; unresolved items carried item-by-item into payload.blueprint.unresolved_exceptions; prose narrative condensed into notes_md, never wholesale-migrated; no physical route string enters the payload"
+      },
+      "pin": {
+        "digest": "sha256:becabba829012a609cfad7f69d7696252a6a71e4a0b870d4a1ca158df8df17f5"
+      },
+      "ref": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-TECHNICAL-AKT.yaml",
+      "type": "bp_blueprint"
+    },
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_d.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "governance_id": "PAGE-APP-TECHNICAL-AKT",
+        "ingested_from": "corpus/master/batch-2/key-binding-map.batch2.draft.yaml",
+        "transcription": "supplies the page<->dir and route_name binding expectations (status MECHANICAL_ROUTE_NAME_MATCH, draft table): values quoted verbatim into key_bindings.code; the KEYBINDING.* table object itself stays pending human adjudication"
+      },
+      "pin": {
+        "digest": "sha256:2beea8f95e0770da028d5ac5c2e76e2e1266e0ba7af6e0a3faa29fe72cb501fa"
+      },
+      "ref": "corpus/master/batch-2/key-binding-map.batch2.draft.yaml",
+      "type": "design_seed"
+    },
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_d.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/application-shell-registry.yaml",
+        "transcription": "CONVENTIONS section 2 shell attribution values (shell_name / SHELL.MAIN_CONTENT content host) quoted verbatim into payload.blueprint.shell; scroll/error boundary semantics stay on the shell slot objects (COMPONENT.SHELL.*)"
+      },
+      "pin": {
+        "digest": "sha256:cca0a9d72941835264ee3128bd91d41a55b63a26d82c7580e067df504ae2dac7"
+      },
+      "ref": "outputs/frontend/10_planned/application-shell-registry.yaml",
+      "type": "design_seed"
+    },
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_d.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/navigation-structure.yaml",
+        "transcription": "CONVENTIONS section 2 navigation attribution: leaf transcription nav_group/nav_subgroup/nav_entry (drill-down minus route; route authority stays in the pending KEYBINDING.* table)"
+      },
+      "pin": {
+        "digest": "sha256:ec6c25f3e0723c485b32d08bf1c0129a504bba4e7b338b2fab38fb7250d98870"
+      },
+      "ref": "outputs/frontend/10_planned/navigation-structure.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "页面·技术变更 AKT"
+}

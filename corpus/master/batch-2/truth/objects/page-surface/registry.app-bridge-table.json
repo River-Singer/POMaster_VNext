@@ -1,0 +1,123 @@
+{
+  "aliases": [
+    "PAGE-APP-BRIDGE-TABLE"
+  ],
+  "authority": {
+    "delegates": [],
+    "escalation_hint": "regenerate via corpus/master/batch-2/tools/ingest_page_registry.py; page-level canonical id word forms (PAGE.APP_* underscore vs PAGE.APP.* dotted, and PAGE.<SEG> held by the blueprint family) pending HUMAN_OWNER adjudication; facet objects merge via the supersede chain after adjudication",
+    "owner": "FRONTEND_ARCHITECTURE",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "LOCKED",
+    "evidence": "IMPLEMENTED",
+    "lifecycle": "CURRENT"
+  },
+  "axis_profile": "page_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "PAGE.REGISTRY.APP_BRIDGE_TABLE",
+  "key_bindings": {
+    "artifact": [],
+    "code": [
+      {
+        "artifact_type": "file",
+        "expect": {
+          "prototype_fn": "pReport('桥表')"
+        },
+        "match_rule": "mechanical",
+        "value": "doc/last_project/doc/MASTer-prototype-20260722.html"
+      }
+    ]
+  },
+  "kind": "page_surface",
+  "notes_md": "本对象为 MIG-B2/M2 转录组 A 页面注册身份件：源 outputs/frontend/10_planned/application-page-registry.yaml（扩展名 .yaml、内容为 JSON）pages[] 共 35 条逐条转录之一（PAGE-APP-BRIDGE-TABLE）。源条目（id/name/nav_group/template/prototype_fn/layout/columns/status/note/blocked 字段闭集）以 payload.page_entry 整条逐字保真（与源条目字节等价，工具断言）；数组顺序=源顺序。status 语义登记（payload.registry_status_semantics）：源 status=new-application 为 surface-kind 分类（新应用页 vs 既有 BP 派生任务步页），非审批/接线/变更语义——batch1 约定书 §4 拆分自检三连均不适用，双轴拆分动作=0、superseded_status_field 登记=0（诚实零，golden case 第 10 行同款）；blocked 旗标缺席（诚实缺席）。id 赐名（非收编）：PAGE-APP-BRIDGE-TABLE → 页级拟形 PAGE.APP_BRIDGE_TABLE 为 canonical 拟合（token 重排外推），ALIASES_V0 无 PAGE-APP-* 规则，全部 HUMAN_CONFIRM_REQUIRED（key-binding-map.batch2.draft.yaml alias_registrations.proposed_needs_human；盘面另见并发蓝图组的点分 PAGE.APP.* 拟形）——canonical_id_grant 逐对象登记待人工裁决，legacy 词形照录 aliases[]，origin 保持源侧 derived（batch1 约定书 §6 边界条款 / batch2 §5 SHELL.* 赐名先例同形）；本对象取 PAGE.REGISTRY.* 作用域段（payload.id_facet）避让同 id 互踩。册级语义不在本对象：book_facet_pointer 指向单一承载位 PAGE.REGISTRY.APP_DASHBOARD（pages[0] 源序机械规则），分母漂移史/册级字段值不复制到兄弟对象（batch2 §5 重复登记即分叉隐患）。key_bindings.code 机械锚：prototype_ref 文件 + payload.page_entry.prototype_fn 期望声明（match_rule=mechanical），probe 缺省=未探测（gate 必须重扫，C5）。 本字段为人类散文，机器永不解析判卷。",
+  "origin": "derived",
+  "payload": {
+    "book_facet_pointer": {
+      "carrier_object_id": "PAGE.REGISTRY.APP_DASHBOARD",
+      "carries": [
+        "registry_book_facet",
+        "denominator_health_note"
+      ],
+      "conflict_id": "MIG-B2/C-01",
+      "registered_in": "corpus/master/batch-2/classification-ledger.yaml entries[application-page-registry].denominator_health_note + meta.denominator_health_notes.application_pages",
+      "rule": "book-level semantics single-carrier registration (pages[0] source array order); value duplication across siblings is a fork hazard and is forbidden (batch2 §5)"
+    },
+    "canonical_id_grant": {
+      "canonical_draft": "PAGE.APP_BRIDGE_TABLE",
+      "legacy_word_form": "PAGE-APP-BRIDGE-TABLE",
+      "object_id": "PAGE.REGISTRY.APP_BRIDGE_TABLE",
+      "registered_in": "corpus/master/batch-2/key-binding-map.batch2.draft.yaml alias_registrations.proposed_needs_human",
+      "rule": "ALIASES_V0 has no PAGE-APP-* rule; canonical fit granted only, never rename-on-ingest (object origin stays source-side derived); dotted PAGE.APP.* drafts observed on disk from the concurrent blueprint group are registered as the competing draft; formal alias-family registration awaits vocab PR / Owner adjudication",
+      "status": "HUMAN_CONFIRM_REQUIRED"
+    },
+    "id_facet": {
+      "merge_path": "supersede",
+      "object_id": "PAGE.REGISTRY.APP_BRIDGE_TABLE",
+      "page_level_id": "PAGE.APP_BRIDGE_TABLE",
+      "page_level_id_status": "HUMAN_CONFIRM_REQUIRED",
+      "rule": "facet-scoped id per the group-B PAGE.READINESS.* convention: concurrent page-surface transcription families hold the page-level ids in this kind-dir (ALIASES_V0 canonical PAGE.<SEG> for PAGE-TASK-STEP-*; underscore PAGE.APP_* and dotted PAGE.APP.* drafts both observed for PAGE-APP-*); this facet takes the PAGE.REGISTRY.* scoping segment to avoid same-id clobber and merges via the supersede chain after Owner id adjudication (report only, never auto-adjudicate)"
+    },
+    "page_entry": {
+      "id": "PAGE-APP-BRIDGE-TABLE",
+      "layout": "PATTERN.LAYOUT.FULL_LIST",
+      "name": "桥表",
+      "nav_group": "g5/报表管理",
+      "note": "占位，字段待补",
+      "prototype_fn": "pReport('桥表')",
+      "status": "new-application",
+      "template": "PAGE.LIST"
+    },
+    "registry_status_semantics": {
+      "axis_split_actions": 0,
+      "blocked_flag_present": false,
+      "honest_zero_reason": "batch1 约定书 §4 拆分自检三连：非批准（注册在案即基线事实）、非接线（接线态归 readiness/blueprint 轴）、非变更（变更史归 change 轴）——surface-kind 分类不触发双轴拆分，诚实零登记",
+      "semantics": "surface-kind classification (new application page vs existing BP-derived task-step page), NOT an approval/progress/wiring/change status",
+      "source_field": "status",
+      "source_value": "new-application",
+      "superseded_status_field_registered": false
+    },
+    "source_document_meta": {
+      "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+      "document_type": "application-page-registry",
+      "schema_version": 1
+    }
+  },
+  "permits_active": [],
+  "producer": {
+    "liveness": {
+      "status": "active"
+    },
+    "merge_semantics": {
+      "backfill_if_missing": [],
+      "human_never_touched": [],
+      "refresh_fields": [
+        "payload"
+      ]
+    },
+    "producer_id": "prod.mig_b2_ingest_page_registry",
+    "views_maintained": [
+      "truth-index.envelope"
+    ]
+  },
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b2/ingest_page_registry.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/application-page-registry.yaml",
+        "transcription": "registry pages[] entry PAGE-APP-BRIDGE-TABLE transcribed row-by-row verbatim (payload.page_entry byte-equal); status=new-application registered as surface-kind classification (axis split 0, superseded_status_field 0 = honest zero); id action: PAGE.REGISTRY.* facet + canonical grant HUMAN_CONFIRM_REQUIRED, origin=derived"
+      },
+      "pin": {
+        "digest": "sha256:af5e7b75b849d5905d48e699ce2d529d95c669fdbbfec351f89ca9f62f78d252"
+      },
+      "ref": "outputs/frontend/10_planned/application-page-registry.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "页面注册身份·桥表"
+}

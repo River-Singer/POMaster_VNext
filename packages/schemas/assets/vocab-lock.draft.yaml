@@ -4,7 +4,7 @@
 > 文件名保留 draft 字样系历史沿革；权威以本头部状态为准。后续枚举变更一律走词汇表 PR（禁止旁路改代码枚举）。
 > 依据：D24（哈希伦理——本文件由内容指纹保护但永不拦写）、A2（六值超集）、A5（closed-world 前缀）、synthesis 全表。
 > 2026-08-27 修复增补（既有五块词值零改动，只登记 schema 既有值、不发明新枚举值）：新增 source_types 词轴（收编 02 信封）与 keybinding_axes 三轴（收编 04-keybinding）；aliases_v0 补 TASK-*/CHANGE-* 两族（02b §0 文法注记的 T/C 前缀收编规则）；修复 transitions 块 DEPRECATED/RETIRED 挤行。
-> 2026-08-29 PR-0001 增补（append-only 纯增量，v0.1 词值零删改）：ALIASES_V0 补 ISSUE.*/FTA-*/FB-* 三族（MIG-B1 实测收编）；新增 catalog_layer_vocab 与 presentation_axes 两段、id_namespace.state_plane_refs 注记、kinds_registry.catalog_note 注记。8 件 FROZEN schema + 02b + golden-seed-mapping.md 的 @v0.1-resolved 引用保留不改：其引用语义是「该值集镜像自 v0.1 冻结基线」，v0.2 对这些镜像子集零改动，引用继续为真。
+> 2026-08-29 PR-0001 增补（append-only 纯增量，v0.1 词值零删改）：ALIASES_V0 补 ISSUE.*/FTA-*/FB-* 三族（语料批 batch-1 实测纳管）；新增 catalog_layer_vocab 与 presentation_axes 两段、id_namespace.state_plane_refs 注记、kinds_registry.catalog_note 注记。8 件 FROZEN schema + 02b + golden-seed-mapping.md 的 @v0.1-resolved 引用保留不改：其引用语义是「该值集镜像自 v0.1 冻结基线」，v0.2 对这些镜像子集零改动，引用继续为真。
 > 消费方：②后续全部 schemas、③Kernel 转移引擎、Behavioral Eval 种子。
 
 ```yaml
@@ -87,7 +87,7 @@ id_namespace:           # closed-world（A5）：未登记前缀 = 解析即 FAT
     - { legacy: "PAGE-TASK-STEP-*",  canonical: "PAGE.*", note: token 重排收编，键绑定表记录历史形态 }
     - { legacy: "TASK-*",            canonical: "TASK.*",   note: 数字段收编加字母前缀（TASK-0087→TASK.T0087），SEGMENT 不允许数字开头（02b 文法注记） }
     - { legacy: "CHANGE-*",          canonical: "CHANGE.*", note: 数字段收编加字母前缀（CHANGE-0104→CHANGE.C0104） }
-    - { legacy: "ISSUE.*",           canonical: "CHANGE.*", note: 源侧跟踪 id 收编（MIG-B1 实测 107 形）：登记前缀点段剥离不带入 canonical；段内连字符→下划线 greedy 打包（32 字符 SEGMENT 上限，段界可为打包伪迹）；末尾纯数字段→SEQ；机械映射权威=migration/master-batch1/tools/ingest_change_governance.py pack_segments }
+    - { legacy: "ISSUE.*",           canonical: "CHANGE.*", note: 源侧跟踪 id 收编（MIG-B1 实测 107 形）：登记前缀点段剥离不带入 canonical；段内连字符→下划线 greedy 打包（32 字符 SEGMENT 上限，段界可为打包伪迹）；末尾纯数字段→SEQ；机械映射权威=corpus/master/batch-1/tools/ingest_change_governance.py pack_segments }
     - { legacy: "FTA-*",             canonical: "CHANGE.FTA_*", note: 源侧工程裁决 id 收编（MIG-B1 实测 17 形）：标记词并入首段 FTA_，余段连字符→下划线 }
     - { legacy: "FB-*",              canonical: "CHANGE.FB_*", note: 源侧旁路事实 id 收编（MIG-B1 实测 1 形 FB-FTA-NFR-USABLE→CHANGE.FB_FTA_NFR_USABLE）；与 FTA-*/ISSUE.* 前缀互斥（^ 锚两两不重叠） }
 

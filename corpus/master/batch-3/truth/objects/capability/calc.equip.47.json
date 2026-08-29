@@ -1,0 +1,248 @@
+{
+  "aliases": [
+    "CALC-EQUIP-47"
+  ],
+  "authority": {
+    "delegates": [],
+    "escalation_hint": "regenerate via corpus/master/batch-3/tools/ingest_calculation_registry.py; formula add/remove or wiring change re-runs the upstream registry maintenance then this ingest; status/wired semantics upgrade and MIG-B3/C-03 mirror header drift are HUMAN_OWNER seats (registered in notes_md, never auto-adjudicated)",
+    "owner": "FRONTEND_ENGINEERING",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "LOCKED",
+    "evidence": "PLANNED",
+    "lifecycle": "CURRENT"
+  },
+  "axis_profile": "capability_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "CAPABILITY.CALC.EQUIP.47",
+  "key_bindings": {
+    "artifact": [],
+    "code": [
+      {
+        "artifact_type": "file",
+        "expect": {
+          "governance_id": "CALC-EQUIP-47",
+          "registration_call_first_arg": "'CALC-EQUIP-47'"
+        },
+        "match_rule": "mechanical",
+        "value": "src/shared/lib/calc/registry.ts"
+      }
+    ]
+  },
+  "kind": "capability",
+  "notes_md": "本对象为 MIG-B3/M2 组4 转录件：源 outputs/frontend/10_planned/calculation-registry.yaml formulas[] 共 59 条逐条转录之一（CALC-EQUIP-47，spec=04-equipment-db，数组序第 48 条）。条目字段（id/engine_expression/engine_binding/name/spec/module/inputs/expression/output_field/precision/frontend_implementable/dependencies/status/trigger/note/downstream/blocker 中在场的可选字段）逐字段保真，payload.calculation 与源条目字节等价（工具断言）；数组顺序=源顺序。册级引擎契约（authority/source_directive/precision_policy/engine_contract/dependency_graph/external_data_dependencies/no_formula_specs/ownership）逐字随 payload.registry_context 承载于全部 59 对象（ledger 明令 dependency_graph/precision_policy 逐字保真；59 对象kind-dir 闭表无第 60『引擎对象』席位；payload 为纯机器刷新字段（refresh_fields=['payload']），59 副本为单一 pin 源的投影非分叉值）；blockers[] 仅落 formula_id 所指对象（batch2 SHELL scroll_owner 判例：册级语义落引用目标）——本对象不携带 blocker_definition。语义核心（batch3 CONVENTIONS §2.4）：engine_binding.wired 为 evidence 轴接线声明非 lifecycle 声明，声明值逐字保真（true=6/false=53 不篡改），evidence 轴机判挂 KBM 机械词 WIRED_FALSE_ENGINE_REGISTERED_ONLY → axes.evidence=PLANNED，不采信自报布尔单独判卷（C5）；旧扁平字段双登记 superseded_status_field（batch1 §4 形状同形两实例：status + engine_binding.wired，数组形态为 batch3 登记形状）。MIG-B3/C-03 （registry.ts 头注自述 59 vs 58 漂移，PENDING_OWNER）：镜像锚 expect 只锚 f('CALC-EQUIP-47', …) 注册调用本身（多行形态容许），禁锚头注自述行（锚上即 gate 口径分裂）；C-03 不降 confidence（自述漂移非对象值冲突），登记于本注记与 escalation_hint。CALC-* 为注册表本地族词形、非 governed id 且不在 ALIASES_V0 现役 8 族：canonical 赐名 CAPABILITY.CALC.<FAM>.<SEQ>（§4.2 机械形，纯数字尾段落 SEQ 末段位），legacy 词形照录 aliases[]，不构成 A6 场景、origin 保持源侧 natural（inventory provenance.origin 逐字）；CALC.* 别名族正式登记待词汇表 PR/Owner 裁决。02b §2 capability 蓝本落法：category:=源 spec 逐字（源无 per-formula category 字段，module 随 payload.calculation 逐字承载）；canonical_realization 整体缺席（batch2 SHELL 三字段缺席判例同款：源无逐公式实现符号——镜像 f(...) 行是数据行非导出符号，禁 fabricate 册级实现为逐公式特化），实现锚以 key_bindings.code 机械承载（mirror 锚 59/59 + whole_file_token 实现/平行实现锚按 KBM implementation_anchor_files）。realization 块：缺席=wired:false 的诚实表达（词表无『未接线』值：RealizationValue 注记——字段缺省=未声明接线主张；接线事实由 axes.evidence=PLANNED + payload.calculation.engine_binding.wired=false 逐字承载）。源无 status/lifecycle 之外的墙钟字段（零墙钟天然满足）；本字段为人类散文，机器永不解析判卷。",
+  "origin": "natural",
+  "payload": {
+    "calculation": {
+      "dependencies": [],
+      "engine_binding": {
+        "key": "CALC-EQUIP-47",
+        "wired": false
+      },
+      "engine_expression": "ext_equip_power * ext_equip_electricity_price",
+      "expression": "用电成本 = 用电量 × 电价",
+      "frontend_implementable": "yes",
+      "id": "CALC-EQUIP-47",
+      "inputs": [
+        "用电量",
+        "电价"
+      ],
+      "module": "04-基础信息管理",
+      "name": "用电成本",
+      "output_field": "用电成本 [RMB/年]",
+      "precision": "4c2d",
+      "spec": "04-equipment-db",
+      "status": "ready"
+    },
+    "category": "04-equipment-db",
+    "evidence_axis_registration": {
+      "axes_evidence": "PLANNED",
+      "corroboration": "corpus/master/batch-3/key-binding-map.batch3.draft.yaml calc_formula_bindings[governance_id=CALC-EQUIP-47]（batch 内部草表非 pin 源，gate 必须重扫——C5 永不采信自报/登记值单独判卷）",
+      "kbm_status_word": "WIRED_FALSE_ENGINE_REGISTERED_ONLY",
+      "revalidation": "MACHINE_JUDGED",
+      "source_field": "engine_binding.wired",
+      "source_value": false
+    },
+    "registry_context": {
+      "authority": "frontend-owned-calculation",
+      "dependency_graph": {
+        "chains": [
+          "04-equipment-db(MHR链 #43-57，自包含) -> MHR(#57) 回填 -> 03-buc-analysis Tab2 MHR字段 -> CALC-BUC-21 直接制造",
+          "03-expert-model(时间链 #31-42) -> 总时间CT(#42) 回填 -> 03-buc-analysis Tab2 CT字段 -> CALC-BUC-21；净重量/长/宽 回填 -> Tab1 #13",
+          "03-buc-analysis(三层累加 #6-12)：Tab1材料(#13-20)->材料成本(#6) + Tab2制造(#21-29)->制造成本(#7) + Tab3分摊(#30)->分摊成本(#10) -> 单件总价(#11) -> 整车总价(#12)",
+          "03-buc-analysis 单件总价 -> (BUC导入映射) -> 01-calc-vehicle-parts 单件VSI A价 -> CALC-CVP-1 整车VSI A价",
+          "01-calc-vehicle-parts(单件×数量) -> 01-equipment-palette(IST/SOLL 按采购方式+条线 Σ 差异 #3-5)"
+        ],
+        "description": "公式跨 spec 依赖链（前端实现顺序：叶子节点先）"
+      },
+      "engine_contract": {
+        "binding_field": "engine_binding（每条 CALC-* 注册到引擎的 key，与 id 一致；标记是否已接入页面）",
+        "blocked_protocol": {
+          "closure": "引擎自算 blockedClosure 覆盖 registry status 字段（不信 status）",
+          "closure_size": "17/59（BUC-21 闭包 14 节点含 BUC-7/8/9/11/12 五条 KPI；EXPERT-36 闭包 3 节点 EXPERT-35/36/42；两闭包不相交）",
+          "result_type": "CalcResult 四态判别联合：ok / blocked / pending / error",
+          "stub": "闭包节点求值返回 {status:'blocked', blocker}，不读上游不执行表达式",
+          "unblock": "CE/产品确认表达式后：更新 registry（status:ready + 真表达式 + 移出 blockers）-> 重建 DAG -> 闭包收缩 -> computed 自动重算（数据变更，不动引擎代码）"
+        },
+        "content_truth": {
+          "approach": "方案 A：引擎 .ts 零用户可见文案，只持 CALC-*/BLOCKER-* id + 表达式 AST + 结构化错误码",
+          "copy_ownership": "公式名/错误文案/blocked 提示进 .vue <template> 按 code/blockerId 分支渲染",
+          "rationale": "scan_ui_content_truth.py 对 .ts 双重盲区（:209 continue + :169-174 不含 .ts import），.ts 文案不可追溯"
+        },
+        "dependency_graph": {
+          "algorithm": "Kahn 拓扑排序（O(V+E)，实测 59 节点 67 CALC-* 边无环，最长链 11 层，24 叶子）",
+          "external_slots": "external:* 是输入槽声明，非 DAG 图边；跨 spec 回填（MHR/CT）是 entity 层运行时 wiring（watch/computed 桥），不进静态 DAG",
+          "integration": "混合模式 C：引擎管静态声明式 DAG（环检测/blocked 闭包/拓扑序/审计/脱 Vue 单测），Vue computed 管运行时响应式传播（懒求值/异步衔接/缓存）",
+          "paths": "evalAll(inputs) 批量拓扑（单测/诊断）+ buildReactive(inputSource) 运行时主路径，共用 evalFormula 纯函数，两路径结果一致"
+        },
+        "evaluator": {
+          "approach": "jsep 纯解析器 + 自研 Decimal 求值器（visitor，~200 行）",
+          "expression_field": "engine_expression（规范化字段，jsep 可解析；与半结构化中文 expression 字段并存）",
+          "library": "jsep@1.4.0",
+          "normalization_rules": [
+            "× -> *",
+            "÷ -> /",
+            "− -> -",
+            "Σ(过滤条件 的 项) -> sum(filter(set, predicate))",
+            "IF a THEN b -> a ? b : ...（断言类如 VMD-58 走独立 validator 路径，非求值）",
+            "中文变量名 -> ASCII 标识符 + 作用域 input map",
+            "^ 注册为幂（jsep addBinaryOp('^', 11, right-assoc)；MUST NOT 用 10，jsep 的 * / % 默认即 10，同级会把 2*3^2 误解析为 (2*3)^2）",
+            "分段查表（如 EXPERT-39）建模为作用域函数 CallExpression，非嵌套三元"
+          ],
+          "rationale": "4c2d 否决性维度：自写求值器结构性保证 0 JS number 泄漏（Literal 节点 new Decimal()，BinaryExpression 派发 Decimal.add/mul/pow）；体积小；安全（闭合 visitor 无 eval/new Function/with）；与 src/shared/lib/decimal 零摩擦"
+        },
+        "extension_points": {
+          "custom_formula": {
+            "architecture_reservation": "引擎与公式来源解耦：CalcEngine 消费 FormulaNode[]，来源不限 builtin-registry 或 user-defined-backend；entity/hook 层负责合并两类来源",
+            "formula_node_schema": "FormulaNode 增 source 字段（builtin-registry | user-defined-backend）+ owner/validation 用于用户定义公式",
+            "mvp_scope": "本任务不实现编辑器 UI 与后端存储；D1 API 设计须不排斥（engine 构造接受任意 FormulaNode[] 来源，支持运行时重建）",
+            "reserved_for": "未来用户在前端自定义公式 -> 存后端 -> 运行时读取 -> 解析应用到表格",
+            "security": "jsep+自研闭合 visitor 对不可信输入安全（无 eval/new Function/with，未识别节点 throw）；用户自定义公式经同一求值器，只能用引擎注册的作用域函数，禁用未注册函数"
+          }
+        },
+        "implementation_target": "src/shared/lib/calc/",
+        "precision": {
+          "constraint": "引擎禁调 Decimal.set（污染 format.ts 展示行为）",
+          "helpers": "calc/ 本地助手 pow4c/sum4c（套 roundCalc4c），不扩展 decimal 封装本身",
+          "policy": "4c2d",
+          "primitives": "复用 src/shared/lib/decimal 的 roundCalc4c/truncDisplay2d/fromValue/toWireString",
+          "rounding_point": "每公式输出 4c：求值结束后对输出做 roundCalc4c（4 位 half-up），不在求值中间步骤逐算子舍入"
+        }
+      },
+      "external_data_dependencies": [
+        {
+          "needs": [
+            "材料密度/单价/属性(04-material-db)",
+            "间接费率字典(04-other-db)",
+            "MHR(04-equipment-db)",
+            "工艺/设备(04-process-db,04-equipment-db)"
+          ],
+          "spec": "03-buc-analysis"
+        },
+        {
+          "needs": [
+            "8材料属性(04-material-db)",
+            "7设备属性(04-equipment-db)"
+          ],
+          "spec": "03-expert-model"
+        },
+        {
+          "needs": [
+            "carline条线(04-vehicle-master-data)",
+            "IST/SOLL零件快照(02-parts-ledger/01-calc-vehicle-parts)"
+          ],
+          "spec": "01-equipment-palette"
+        }
+      ],
+      "no_formula_specs": [
+        "01-accessory-target-price",
+        "01-material-target-price",
+        "01-part-nomination-price",
+        "01-aeko-evaluation",
+        "01-bc-evaluation",
+        "01-pko-evaluation",
+        "01-technical-change-akt",
+        "03-other-cost-analysis",
+        "05-bridge-table",
+        "05-forecast-report",
+        "02-parts-ledger",
+        "04-material-db",
+        "04-other-db",
+        "04-process-db",
+        "04-set-db",
+        "04-part-structure-db",
+        "04-task-mgmt",
+        "system-overview",
+        "06-login",
+        "06-user-mgmt",
+        "06-role-mgmt",
+        "06-data-permission",
+        "06-approval-flow"
+      ],
+      "ownership": {
+        "implementation_target": "src/shared/lib/calc/ + 各 entity 计算模块（Phase D/E 实现）",
+        "machine_source": "本文件是前端计算公式的事实源（用户指令：公式全部前端实现）",
+        "protocol": "universal:monetary-precision-protocol + universal:business-rules-protocol",
+        "upstream": "doc/last_project/doc/master-requirement-specs/specs/（只读需求规格）"
+      },
+      "precision_policy": {
+        "calculation": {
+          "rounding": "half-up",
+          "scale": 4
+        },
+        "display": {
+          "rounding": "down",
+          "scale": 2,
+          "truncates": true
+        },
+        "note": "全局统一 4c2d。spec 字面「保留小数点后 2 位」解释为 2d 展示；计算统一 4c。3 个 spec（equipment-palette/equipment-db/expert-model）原未声明精度，按 4c2d 兜底。",
+        "protocol": "universal:monetary-precision-protocol",
+        "rule": "4c2d"
+      },
+      "source_directive": "用户指令：所有计算公式全部放在前端里面（2026-08-05）。需求规格来源：doc/last_project/doc/master-requirement-specs/specs/（只读）。"
+    },
+    "source_document_meta": {
+      "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+      "document_type": "calculation-registry",
+      "schema_version": 1
+    },
+    "superseded_status_field": [
+      {
+        "mapped_to": "approval×evidence 双轴拆分（batch1 约定书 §4；batch3 CONVENTIONS §2.4.3）：registry 自报实施态（batch 级 ready=47/blocked=2/blocked-by=10）退役为事实记录；对象 axes.lifecycle=CURRENT 表源册在役（inventory producer_alive=true + registry.ts 镜像消费链），自报态的语义升级只登记不执行归 Owner 裁决（doc/2026-08-20 裁决：盘点口径以 engine_binding.wired 为准、不信 status——wired_status_semantic_gap 教训原点）",
+        "reason": "旧扁平 status 自报值永不单独判卷（C5）；本对象事实值逐字保真于 payload.calculation.status；本字段为双登记实例之一（同形两实例，数组形态为 batch3 登记形状）",
+        "source_field": "status",
+        "source_value": "ready",
+        "upgrade_registered": true
+      },
+      {
+        "mapped_to": "evidence 轴机判（batch3 CONVENTIONS §2.4.2；ledger wired_evidence_axis_preregistration 特别预登记）：接线声明迁 payload.evidence_axis_registration（key-binding-map 机械判定词），axes.evidence=IMPLEMENTED（MECHANICAL_TOKEN_MATCH_WIRED）/PLANNED（WIRED_FALSE_*）；数值语义不篡改（batch 级 true=6/false=53）",
+        "reason": "wired 是接线声明（evidence 轴事实）非 lifecycle 声明——本字段为双登记实例之二；机械判定不得单凭自报布尔（C5）",
+        "source_field": "engine_binding.wired",
+        "source_value": false,
+        "upgrade_registered": true
+      }
+    ]
+  },
+  "permits_active": [],
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b3/ingest_calculation_registry.py",
+      "locator": {
+        "batch": "MIG-B3",
+        "ingested_from": "outputs/frontend/10_planned/calculation-registry.yaml",
+        "transcription": "formulas[] entry 48/59 (CALC-EQUIP-47) transcribed verbatim row-by-row (array order = source order; engine_binding.wired verbatim true=6/false=53 and re-registered onto the evidence axis per KBM mechanical word WIRED_FALSE_ENGINE_REGISTERED_ONLY -> axes.evidence=PLANNED, self-report never sole judge C5; legacy flat fields double-registered via superseded_status_field[status + engine_binding.wired], two batch1-shape instances in array form; registry-level blocks carried verbatim as payload.registry_context on all 59 objects, blockers[] only on formula_id-referenced objects; MIG-B3/C-03 mirror anchor expect = f-call first arg only, header self-report never anchored; CALC-* local family word form granted canonical CAPABILITY.CALC.<FAM>.<SEQ>, legacy form in aliases[], NOT an A6 scenario so origin stays source-side natural; corroborated against corpus/master/batch-3/key-binding-map.batch3.draft.yaml calc_formula_bindings 59/59 + live f-call registration check 59/59 (registry.ts has no pin seat, corroboration only))"
+      },
+      "pin": {
+        "digest": "sha256:818cecfe3182405755ca99425293d10874e5a97cf132d956eabf3da3ee8ade3f"
+      },
+      "ref": "outputs/frontend/10_planned/calculation-registry.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "计算能力·用电成本"
+}

@@ -6,7 +6,7 @@
  * 不发明任何前缀/别名规则值。数字段收编加字母前缀规则（TASK-0087→TASK.T0087、
  * CHANGE-0104→CHANGE.C0104）是 vocab-lock aliases_v0 注记 + 02b §0 文法注记（SEGMENT
  * 不允许数字开头）的机械落点；PR-0001 三新族（ISSUE.* / FTA-* / FB-*，MIG-B1 源侧跟踪 id
- * 收编）的机械映射是 migration/master-batch1/tools/ingest_change_governance.py
+ * 收编）的机械映射是 corpus/master/batch-1/tools/ingest_change_governance.py
  * pack_segments 的移植（greedy 打包，确定性可单测）。
  */
 import { GovernedIdParseError } from "./errors.js";
@@ -99,7 +99,7 @@ function prefixDigitRun(tail: string, letter: "T" | "C"): string {
 }
 
 // —— PR-0001 三新族机械映射（ISSUE.* / FTA-* / FB-* → CHANGE.*；机械映射权威 =
-// migration/master-batch1/tools/ingest_change_governance.py pack_segments 移植） ——
+// corpus/master/batch-1/tools/ingest_change_governance.py pack_segments 移植） ——
 
 const SEGMENT_TOKEN_PATTERN = /^[A-Z][A-Z0-9_]*$/;
 const SEGMENT_MAX = 32;

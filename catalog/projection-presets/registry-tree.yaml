@@ -1,0 +1,307 @@
+# ==============================================================================
+# projection preset: registry-tree —— 注册表树投影预设（配置骨架 / CONFIG SKELETON）
+# ==============================================================================
+# 【架构声明】本预设产出的目录是「可再生投影」（directory = projection, not fact）：
+#   - Canonical State（.pomaster/truth/objects/** + .pomaster/state/truth-index.json）
+#     是唯一事实源；投影目录里每一个字节都可由 State 重算——「目录存在 ≠ 事实存在」
+#     这一历史病灶的化解方式就是「目录 = 投影」：熟悉的结构，不再说谎的状态。
+#   - 单向流：State → 渲染器 → 投影文件；投影文件永不作为任何 compiler / 对象摄入
+#     的输入，修改事实的唯一入口是 State（走 Transition + Authority）。
+# 【byte-stable 再生契约】硬约束全文见 docs/registry-tree-projection-preset.md（§1.2 不变量 /
+#   §5 再生成契约）：同一 State 两次渲染必须字节全等；投影文件禁带 generated_at 类
+#   墙钟字段，新鲜度只由 State rev / inputsFingerprint 推导渲染；渲染前检测到投影
+#   文件与期望产物不一致（疑似人手改）→ WARN + 指引「去改 State」，不阻断。
+# 【本文件是什么】配置骨架——只声明投影预设的「映射与约束」，不含任何渲染逻辑。
+#   渲染器是后续砖（D25④），依赖 reconcile/compact 管线，自然落点 P0.5 / 纳管线 M5。
+# 决议来源：D25（.trellis/tasks/08-27-pomaster-vnext-control-plane/prd.md，用户决议 2026-08-28）
+# 词表纪律：source_families 只引用 vocab-lock prefixes_v0 已登记前缀；未登记处显式
+#   TODO(vocab-pr) 只登记不执行（FROZEN 词表零改动）。
+# ==============================================================================
+
+preset:
+  name: registry-tree
+  kind: projection_preset
+  status: DRAFT
+  decision: D25
+  contract_doc: docs/registry-tree-projection-preset.md
+  description_zh: >-
+    把 Canonical State 编译渲染成消费项目在旧 PoMaster 时代熟悉的目录骨架
+    （outputs/frontend/10_planned、30_generated/page-specs、handoffs、bp，
+    以及 spec 分类法 → catalog lanes 的归位映射），保持完成纳管的项目对旧结构的
+    视觉与工具链熟悉度，同时不复活「目录存在 ≠ 事实存在」的病灶。
+  enabled: false                        # 契约 §7：默认关闭，纳管项目按需启用（Minimum Sufficient Governance——未承载旧资产的新项目不背遗产骨架）
+  state_source:                         # 唯一事实源（A1：一对象一文件）
+    objects_root: .pomaster/truth/objects/
+    index: .pomaster/state/truth-index.json
+  vocab_lock: packages/schemas/assets/vocab-lock.draft.yaml   # prefixes_v0 白名单来源
+  renderer:
+    status: not_yet_built               # 后续砖（D25④）；本文件只锁映射与约束
+    ownership: pending                  # kernel 扩展 vs 独立 reporter 包 → 渲染器砖设计会话裁决（契约 §9.5）
+    depends_on: [reconcile, compact]    # 管线就绪后才有稳定输入；落点 P0.5 / 纳管线 M5
+  project_overrides:                    # 契约 §7：逐项目可覆盖，覆盖项集中进项目配置（有 Authority 记录），禁散落各工具（C7）
+    allowed: [legacy_root_path, registry_grouping, numbering_semantics_level, render_templates]
+
+regeneration_contract:                  # 契约 §1.2 + §5（渲染器砖任何实现或重构的验收底线，违反即 bug）
+  invariants:
+    - canonical_state_single_source_of_truth   # §1.2-1
+    - one_way_flow_state_to_projection         # §1.2-2：投影永不作为摄入输入
+    - fully_regenerable_byte_identical         # §1.2-3：删除任何投影文件后同 State 重渲可字节级还原
+    - byte_stable_zero_wall_clock              # §1.2-4（A4/D24）
+    - zero_manual_maintenance_tax              # §1.2-5：人永不编辑投影产物
+    - renderer_pure_derivation                 # §1.2-6：不写 store、不产生治理事实、不进 truth-index、不分配 seq/rev
+  triggers: [reconcile_delta, compact_truth_update, explicit_command]
+  short_circuit: same_state_zero_write        # 同 State 重放（inputsFingerprint 相等）→ 零写入（A4）
+  golden_obligation:
+    rule: 固定 State snapshot 下连续两次渲染字节全等，且与 checked-in 期望产物 diff 为空
+    location: tests/golden/
+    adversarial_case: DEF-POM-002（manifest 内墙钟致幂等崩坏）固定为对抗组反例
+  write_discipline: staged_write_with_rollback   # 失败回滚；清理路径禁凭存在性推断删除原件（staged-replace 事故教训）
+  failure_mode: keep_last_consistent_state       # 渲染失败禁半写状态；差异进 reconcile 差异报告
+  absence_semantics: explicit_absence            # 源对象缺失 → 显式占位块/差异报告条目；not_configured ≠ passed；禁静默留空
+  freshness_fields: [rev, inputsFingerprint]     # 投影文件头允许的确定性字段
+  wall_clock_fields: forbidden
+  stale_policy: warn_and_regen                   # 手改检测 → WARN + 指引去改 State，不阻断；下次渲染覆盖
+
+numbering_semantics:                    # 契约 §3：编号前缀 = 目录内的阶段语义（D25②：编号即投影阶段的视觉语言）
+  machine_rule: 编号不是任何机器判卷依据——机器按对象四轴判状态，编号只服务人类阅读惯性
+  prefixes:
+    "00":
+      stage: input
+      meaning_zh: 原始输入（sources 登记）
+      state_anchor: sources[].type ∈ {bp_blueprint, prototype_walkthrough, research_evidence}
+      status: pending_owner_confirmation          # 实测补全（frontend 与 bp 均有 00_input）；D25 只冻结 10/30（契约 §9.6）
+    "10":
+      stage: planned
+      meaning_zh: 规划投影
+      state_anchor: lifecycle ∈ {PROPOSED, CURRENT} 对象的规划态视图
+      frozen_by: D25
+      observed_subdirs: [10_planned, 10_working]  # working = 交互进行中
+    "20":
+      stage: interaction_verification
+      meaning_zh: 交互/核验中间带
+      state_anchor: evidence 轴 IMPLEMENTED → VERIFIED 的核验视图
+      status: pending_owner_confirmation          # 实测补全（20_verified）；语义定稿待 Owner 裁决后回填（契约 §9.6）
+    "30":
+      stage: generated
+      meaning_zh: 编译视图（跨对象聚合渲染的阅读面）
+      state_anchor: 跨对象聚合编译视图
+      frozen_by: D25
+  bp_side:                              # bp/ 侧三档与上表同构：输入 → 加工 → 发布
+    "00": input
+    "10": working
+    "30": publish
+
+spec_taxonomy_to_catalog_lanes:         # 契约 §4（D25③）：老 spec 分类法 → catalog lane 组织
+  boundary: >-
+    这是「目录组织层面」的归位映射，不是把协议正文原样搬家——协议正文必须经
+    Semantic Decomposition 拆为 policy/knowledge/gate_recipe 条目（§92-93
+    「禁止格式迁移」禁令不因本表松动）。
+  mappings:
+    - legacy_layer: .trellis/spec/frontend/
+      observed_files: 46
+      catalog_lane: web
+      targets: [catalog/policies/, catalog/gates/]
+      id_family_examples: ["POLICY.WEB.*", "GATE.WEB.*", "AUTHORITY.WEB.*"]
+      semantics: 前端可执行规范 → LANE_POLICY / GATE_RECIPE
+    - legacy_layer: .trellis/spec/backend/（含 stacks/）
+      observed_files: 62
+      catalog_lane: be
+      targets: [catalog/policies/, catalog/gates/]
+      stacks_target: catalog/technologies/          # Tech Profile（D17 首发顺序 Python/FastAPI → Java → Node）
+      id_family_examples: ["POLICY.BE.*", "GATE.BE.*", "AUTHORITY.BE.*"]
+      semantics: 后端可执行规范 → LANE_POLICY / GATE_RECIPE
+    - legacy_layer: .trellis/spec/guides/
+      observed_files: 7
+      targets: [catalog/knowledge/]
+      id_family_examples: ["KNOWLEDGE.*", "KNOWLEDGE.FP.*"]
+      semantics: 思维清单 → knowledge_entry；advisory 永不 FAIL gate（x-advisory-gate-semantics 已固化）
+    - legacy_layer: spec manifest（分层 index）
+      observed_files: 1
+      targets: [catalog/catalog-lock.draft.json, 目录索引]
+      semantics: 分层入口的机器对应物 = catalog-lock read-side 指纹（D24：升级 diff + 防篡改抽验），不是散文 manifest
+  inherited_semantics:
+    per_layer_index_md: 由 catalog-lock + Router（Triage 判档）承接
+    guides_always_included: 由 knowledge 条目的触发注入（ADVISORY 区）承接
+
+output_projection_groups:               # 契约 §2：目录映射（组级声明；逐文件 assignment 归渲染器砖）
+  group_switching: 每组可单独开关（契约 §7）；E3 在 PERMIT.* 登记词汇前缀前强制 disabled
+  core:                                 # D25② 点名
+    - id: P1
+      legacy_path: outputs/frontend/10_planned/*.yaml
+      observed: 48 份顶层 registry/plan YAML（12 编号 plan 文档 + 36 名称键 registry/事实源，合计约 66,606 行）
+      rule: one_yaml_file_per_registry
+      enabled_by_default: true
+      source_families: ["CAPABILITY.", "COMPONENT.", "API_REQ.", "ERR.", "FIELD.", "PAGE.", "KNOWLEDGE.", "POLICY.", "DENOMINATOR.", "KEYBINDING."]
+      notes:
+        - registry 文件名保持老名（视觉熟悉）；文件内条目按对象 id 确定性排序；YAML 输出确定性序列化（键序固定）
+        - 逐 registry ↔ 对象族归属表由渲染器砖按 A1 单对象文件反聚合填充
+    - id: P2
+      legacy_path: outputs/frontend/10_planned/screen-blueprints/*.yaml
+      observed: "39 份 screen-blueprint（约 8,681 行；自带 status: DRAFT 与 unresolved 数组）"
+      rule: one_file_per_page_with_four_axis_header
+      enabled_by_default: true
+      source_families: ["PAGE."]
+      notes:
+        - "文件头渲染四轴（lifecycle/confidence/evidence/change）+ unresolved: 数组——继承老 blueprint 的诚实缺席语义"
+        - id 主拼写 canonical，aliases: 渲染老形态（PAGE-TASK-STEP-* / PAGE-APP-* 经 alias 双向链，A6 考古方向）
+    - id: P3
+      legacy_path: outputs/frontend/30_generated/page-specs/*.md
+      observed: 39 份编译 page-spec MD（约 12,962 行，均 ~330 行/页）
+      rule: compiled_reading_view_21_sections
+      enabled_by_default: true
+      source_families: ["PAGE.", "CAPABILITY.", "API_REQ.", "ERR.", "FIELD.", "KEYBINDING."]
+      notes:
+        - 章节两态显式标注——（引用）绑定既有对象稳定 id、不重写正文；（占位）无派生数据、以 TODO/引导注记占位（占位是诚实缺席，不是伪造内容）
+        - 必须继承老头注「本文档是编译视图……本 MD 仅供人/AI 阅读，不作为其他 compiler 的输入」
+        - B4 口径：旧编译器维护至 M5 就绪即冻结；中间以本 preset 影子版 diff 校准
+    - id: P4
+      legacy_path: outputs/handoffs/frontend-to-backend/
+      observed: FRONTEND-TO-BACKEND.md + candidate-openapi.yaml（881 行）+ contract.yaml（1,593 行）+ source/ + sync-receipts/
+      rule: contract_aggregate_plus_openapi_candidate
+      enabled_by_default: true
+      source_families: ["API_REQ."]
+      notes:
+        - 契约表与候选 OpenAPI 从 contract_operation 对象族渲染；保留老权属标签语义「frontend proposal — not a backend baseline」
+        - sync-receipts 由对账差异报告渲染（与 reconcile 共用同一对账结果，不另立真相）
+    - id: P5
+      legacy_path: outputs/handoffs/frontend-to-bp/
+      observed: TECHNICAL-FEEDBACK.md + bp-response-template.md
+      rule: feedback_view
+      enabled_by_default: true
+      source_families: ["CHANGE.", "KNOWLEDGE."]
+      notes:
+        - 技术反馈从裁决链（change_object.decision_refs）与挑战记录渲染
+        - decision_refs 目标形态 DECISION.* 前缀未入 prefixes_v0 → TODO(vocab-pr)（契约 §9.3）
+    - id: P6
+      legacy_path: outputs/bp/{00_input,10_working,30_publish}/
+      observed: source-register；01_background-card … 07_business-readiness 七份工作件；bp-blueprint.yaml
+      rule: bp_pipeline_view
+      enabled_by_default: true
+      source_families: ["DENOMINATOR."]
+      notes:
+        - 输入→加工→发布三段保持老目录形态；输入侧登记 sources[].type=bp_blueprint 的 source 对象与 DENOMINATOR. 覆盖分母
+        - bp 侧对象族 kind 粒度（business_model / claim-register / gap-register 等）未入 truth_bodies 十类 → TODO(vocab-pr)（契约 §9.2）；首版按 business_rule + change_object 保守渲染
+  observed_pending_owner:               # 契约 §2.2：实测存在、D25 未点名——诚实登记，待 Owner 裁决是否纳入首版（契约 §9.4）
+    - id: E1
+      legacy_path: outputs/frontend/00_input/
+      observed: blueprint-baseline.yaml、decision-deltas/、technical-audit-findings.yaml
+      rule: input_registry_view
+      enabled_by_default: null          # pending owner decision
+      source_families: []               # sources[].type ∈ {bp_blueprint, prototype_walkthrough, research_evidence} 的输入登记视图；与 P6 的 00_input 同构
+    - id: E2
+      legacy_path: outputs/frontend/10_working/ 与 20_verified/
+      observed: 03_technical-assessment（working）；08_current-state、performance-test-results（verified）
+      rule: verification_band_view
+      enabled_by_default: null
+      source_families: []               # evidence 轴 IMPLEMENTED → VERIFIED 的中间带视图
+    - id: E3
+      legacy_path: outputs/frontend/10_planned/authorizations/*.yaml
+      observed: frontend-prepare-30.p2.yaml（Component Gap 授权）
+      rule: authorization_ledger_view
+      enabled_by_default: false         # 强制 disabled：PERMIT.* 前缀未入 prefixes_v0（契约 §9.1），登记前不得启用
+      source_families: []               # 目标族 PERMIT.* → TODO(vocab-pr)
+    - id: E4
+      legacy_path: outputs/frontend/30_generated/FRONTEND-PREDEVELOPMENT-CONFIRMATION.md
+      observed: 开发前确认聚合视图
+      rule: aggregate_checklist_view
+      enabled_by_default: null
+      source_families: []               # 跨对象聚合 checklist，可与 P3 同批渲染
+  explicitly_not_projected:             # 契约 §2.3：显式不投影（写明为何缺席）
+    - legacy_path: outputs/.pomaster/transactions/
+      reason: 事务簿记是控制面内部状态，vNext 对应物是 store state/journal.jsonl（kernel-api §1/§9）；机器簿记残渣不侵入人类阅读视图（P9 簿记分离）
+    - legacy_path: outputs/archive/
+      reason: 历史快照，纳管时一次性归档，非活投影
+
+observed_legacy_files:
+  # 【观察记录，非 assignment】本节以「observed legacy files + 少量 family 锚点」收录
+  # 旧 PoMaster 时代消费项目的目录位形（只读实测：MASTer_master，2026-08-28 复核，
+  # 同契约证据基线 research/masters-evidence-03-artifact-vs-reality.md）。
+  # 逐文件 → 对象族的完整归属表是渲染器砖（D25④）的活，本预设不做 assignment；
+  # family_anchors 只锚定契约已点名的置信映射，其余归属由渲染器砖填充。
+  # 口径注：老 PoMaster 包（治理工具侧）的 schema/协议名（interaction-contract-registry、
+  # ai-coding-forbidden-rules、form-governance、grid-governance、error-to-ui-state 等）
+  # 属 Semantic Decomposition 收编对象（契约 §4 边界），不是消费项目 outputs 的投影
+  # 对象，不入本清单。
+  observation:
+    consumer_project: MASTer_master（Vue3 + element-plus + ag-grid 整车成本分析前端）
+    outputs_totals: 209 文件 / 4.80MB
+    evidence_ref: .trellis/tasks/08-27-pomaster-vnext-control-plane/research/masters-evidence-03-artifact-vs-reality.md
+  directory_skeleton:                   # 12 个目录位形
+    - outputs/frontend/00_input/（含 decision-deltas/）
+    - outputs/frontend/10_planned/（顶层 48 份 registry/plan YAML）
+    - outputs/frontend/10_planned/screen-blueprints/（39 份）
+    - outputs/frontend/10_planned/authorizations/（E3）
+    - outputs/frontend/10_working/
+    - outputs/frontend/20_verified/
+    - outputs/frontend/30_generated/（含 FRONTEND-PREDEVELOPMENT-CONFIRMATION.md）
+    - outputs/frontend/30_generated/page-specs/（39 份编译 MD）
+    - outputs/handoffs/frontend-to-backend/（含 source/、sync-receipts/）
+    - outputs/handoffs/frontend-to-bp/
+    - outputs/bp/（00_input / 10_working / 30_publish 三档）
+    - outputs/.pomaster/transactions/ 与 outputs/archive/（显式不投影组）
+  top_level_registry_plan_files:        # 10_planned 顶层 48 份 = 12 编号 plan 文档 + 36 名称键 registry/事实源
+    numbered_plan_documents:            # 12 份（编号阶段语义见 numbering_semantics）
+      - 00_lifecycle
+      - 01_domain-projection
+      - 02_process-task-interface
+      - 03_technical-assessment
+      - 04_bp-feedback-register
+      - 05_engineering-decisions
+      - 06_traceability-plan
+      - 07_readiness
+      - 08_uiux-functional-spec
+      - 09_implementation-plan
+      - 10_action-responsibility-matrix
+      - 11_predevelopment-confirmation
+    registries_and_factsources:         # 36 份名称键文件（老名保持，见 P1）
+      - action-placement-registry
+      - api-error-mapping
+      - api-requirement-registry
+      - application-page-registry
+      - application-shell-registry
+      - architecture-constraints
+      - bp-business-contract
+      - business-rule-registry
+      - calculation-registry
+      - component-registry
+      - component-selection-register
+      - data-model-registry
+      - dependency-registry
+      - directory-layout
+      - field-semantic-registry
+      - formatter-registry
+      - http-client-policy
+      - implementation-boundary-plan
+      - issue-register
+      - migration-ledger
+      - mock-contract
+      - navigation-structure
+      - navigation-transition-registry
+      - negative-constraint
+      - page-anatomy-registry
+      - page-readiness-registry
+      - page-template-registry
+      - pattern-registry
+      - performance-budget
+      - request-classification
+      - state-machine-registry
+      - state-ownership-matrix
+      - style-ownership-registry
+      - test-fixture-plan
+      - uiux-provider-overlay
+      - vendor-adapter-registry
+    family_anchors:                     # 少量置信锚点（契约 §2 点名）；其余逐文件归属由渲染器砖填充
+      component-registry: ["COMPONENT.", "CAPABILITY."]      # GRID.* 经 alias 收编（A6）
+      api-requirement-registry: ["API_REQ."]
+      page-readiness-registry: ["PAGE."]                     # 四轴就绪度
+      screen-blueprints: ["PAGE."]                           # PAGE-TASK-STEP-* / PAGE-APP-* alias 考古
+      page-specs: ["PAGE.", "CAPABILITY.", "API_REQ.", "ERR.", "FIELD.", "KEYBINDING."]
+      handoffs-frontend-to-backend: ["API_REQ."]             # contract_operation 聚合
+      business-rule-registry: kind:business_rule             # TODO(vocab-pr)：bp 侧 kind 粒度见契约 §9.2
+  other_observed_forms:
+    screen-blueprints: "39 份，自带 status: DRAFT 与 unresolved 数组（诚实缺席语义，P2 继承）"
+    page-specs: 39 份编译 MD（30_generated 42 文件），头注声明「编译视图，不作为 compiler 输入」（P3 继承）
+    handoffs: 13 文件（FRONTEND-TO-BACKEND.md、candidate-openapi.yaml、contract.yaml、source/、sync-receipts/；TECHNICAL-FEEDBACK.md、bp-response-template.md）
+    bp: 10 文件（00_input/source-register；10_working/01_background-card … 07_business-readiness 七份工作件；30_publish/bp-blueprint.yaml）
+    inputs: 00_input/blueprint-baseline.yaml、technical-audit-findings.yaml、decision-deltas/（E1）
+    transactions: outputs/.pomaster/transactions/ 下 3 份 TX-*/journal.json（显式不投影）

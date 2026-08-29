@@ -258,10 +258,10 @@ describe("init 人读输出与信封", () => {
 // ============================================================
 
 describe("init authority 骨架（N7）", () => {
-  it("骨架形态确定：kernel 契约段 + MIG-B1 形态段，单人项目默认形态（Minimum Sufficient Governance）", async () => {
+  it("骨架形态确定：kernel 契约段 + 语料批 batch-1 形态段，单人项目默认形态（Minimum Sufficient Governance）", async () => {
     await runInit(dir);
     const auth = JSON.parse(read(AUTHORITY_RELATIVE)) as Record<string, unknown>;
-    // 顶层键两段，逐字节确定：kernel 解析段（version+authorities）在前，MIG-B1 形态段在后。
+    // 顶层键两段，逐字节确定：kernel 解析段（version+authorities）在前，语料批 batch-1 形态段在后。
     expect(Object.keys(auth)).toEqual([
       "version",
       "authorities",
@@ -274,7 +274,7 @@ describe("init authority 骨架（N7）", () => {
     expect(Object.keys(auth.authorities as Record<string, unknown>)).toEqual([
       "BOOTSTRAP_OWNER",
     ]);
-    // MIG-B1 形态：owner_registry 至少含 BOOTSTRAP_OWNER（带语义注记）；boundary_rules/map 空。
+    // 语料批 batch-1 形态：owner_registry 至少含 BOOTSTRAP_OWNER（带语义注记）；boundary_rules/map 空。
     expect(auth.owner_registry).toEqual([
       {
         owner: "BOOTSTRAP_OWNER",
@@ -342,7 +342,7 @@ describe("init authority 骨架（N7）", () => {
 
   it("结构损坏（authorities 缺失/非对象，kernel 解析契约破坏）→ INVALID_STATE fail-closed", async () => {
     mkdirSync(join(dir, ".pomaster", "state"), { recursive: true });
-    // MIG-B1 迁移件形态缺 kernel 契约键 authorities → loadAuthorityMap 必 SCHEMA_INVALID。
+    // 语料批 batch-1 纳管件形态缺 kernel 契约键 authorities → loadAuthorityMap 必 SCHEMA_INVALID。
     const noAuthorities = `${JSON.stringify({ owner_registry: [], boundary_rules: [], map: [] }, null, 2)}\n`;
     writeFileSync(join(dir, AUTHORITY_RELATIVE), noAuthorities, "utf8");
     const outcome = await runInit(dir);

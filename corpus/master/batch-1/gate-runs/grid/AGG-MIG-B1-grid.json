@@ -1,0 +1,71 @@
+{
+  "blindspot": {
+    "escape_ratio": 0.328609,
+    "fixture_regression": "MIG-B1-GRID-BLINDSPOT-FIXTURE/passed",
+    "produced": 758,
+    "scanned": 1129
+  },
+  "counts": {
+    "applicable_scanned": 114,
+    "not_applicable": 1010,
+    "scanned": 1127,
+    "suppressed_by_ledger": 0,
+    "unchecked_in_blindspot_estimated": 3,
+    "violations": 8
+  },
+  "denominator_refs": [
+    {
+      "id": "DENOMINATOR.GRID_CAPABILITY_SLICE",
+      "version_seen": 1
+    },
+    {
+      "id": "DENOMINATOR.MASTER_SRC_FILES",
+      "version_seen": 1
+    },
+    {
+      "id": "DENOMINATOR.TRUTH_OBJECT_CORPUS",
+      "version_seen": 1
+    },
+    {
+      "id": "DENOMINATOR.TRUTH_VENDOR_COMPONENT_OBJECTS",
+      "version_seen": 1
+    },
+    {
+      "id": "DENOMINATOR.VENDOR_ADAPTER_REGISTRY_ROWS",
+      "version_seen": 1
+    }
+  ],
+  "digest_excluded_fields": [
+    "duration_ms"
+  ],
+  "duration_ms": {
+    "external": 0,
+    "self": 0
+  },
+  "gate": "GRID",
+  "gate_def": "POLICY.GATE.MIG_B1_GRID@0.1.0",
+  "grn": "GRN-4105",
+  "items": [],
+  "items_truncated": false,
+  "metric_dialect": "grid:check_runs",
+  "ran_at_seq": 0,
+  "scope": {
+    "note": "M4 grid 主题聚合（合规 GateResult worst-of 汇总，GRN-4105；替换旧自由形状 AGG，本 verdict 与其 theme_verdict=failed 同判）。rollup 规则：任一 failed → failed，否则取最差具体七态（failed > blocked > not_configured/skipped_blindspot > warning/not_run > passed；旧自由形状的 not_green 中间词形在 FROZEN 七态下收敛为最差具体态，无独立词形）。四个分检查项判定：GRN-4101(forbidden-direct-import)=failed(violations=6,unchecked=0), GRN-4102(grid-usage-binding)=skipped_blindspot(violations=2,unchecked=3), GRN-4103(adapter-registry-preservation)=passed(violations=0,unchecked=0), GRN-4104(alternative-engine-lock)=not_configured(violations=0,unchecked=0)。by_verdict：failed=1, not_configured=1, passed=1, skipped_blindspot=1；checks_total=4。counts 聚合口径=四检查同名字段直接求和（scanned 口径各异：check1=MASTer src utf-8 可解码文本文件、check2=.ts+.vue 子集、check3=vendor-adapter registry 行、check4=truth 语料对象；求和仅作总量留痕、不跨检查比较，逐项 counts/denominator_refs/items 明细见同目录 4 份 per-check 运行记录 GTR-MIG-B1-grid-01..04-*.json，原地有效）。分母明细（denominator_refs 之外的 value/method/source 逐项声明）：DENOMINATOR.MASTER_SRC_FILES@1 value=424（value_breakdown: text_scannable=422/total=424/vue_ts_subset=409；method=os.walk MASTer_master src/ read-only，text=utf-8 可解码、二进制跳过，vue_ts=.ts+.vue 子集；source=MASTer_master src/ walk + inventory.yaml denominators.src_files_vue_ts 钉值 409[ts=333/vue=76] 同值复测）；DENOMINATOR.GRID_CAPABILITY_SLICE@1 value=3（method=inventory.yaml denominators.component_registry_entries.grid_slice.value == len(truth CAPABILITY.GRID.* objects)；source=inventory.yaml 同路径）；DENOMINATOR.TRUTH_OBJECT_CORPUS@1 value=290（method=find truth/objects -name '*.json' 计数；source=corpus/master/batch-1/truth/objects/）；DENOMINATOR.TRUTH_VENDOR_COMPONENT_OBJECTS@1 value=6（method=ls truth/objects/component/*.json 计数；source=corpus/master/batch-1/truth/objects/component/）；DENOMINATOR.VENDOR_ADAPTER_REGISTRY_ROWS@1 value=6（method=json.load libraries[] 行数 + sha256 现场重算与对象 sources[].pin 比对一致；source=outputs/frontend/10_planned/vendor-adapter-registry.yaml）。blindspot 聚合口径=四检查 blindspot.scanned/produced 直接求和后派生 escape_ratio；fixture_regression 保留 check2（本主题唯一 skipped_blindspot）的证据引用。GRN 方案：GRN-410x 块确定性保留给 MIG-B1 grid 主题（4101=forbidden-direct-import、4102=grid-usage-binding、4103=adapter-registry-preservation、4104=alternative-engine-lock、4105=本聚合）。实样登记（原自由形状 notes 逐字收编）：failed=1（page_local_grid_css 6 处真实命中，设计稿 golden 正样本仅对 direct-import 规则成立）；skipped_blindspot=1（literal columnDefs 内联载体结构性不可达，fixture 实证在案）；not_configured=1（FORBIDDEN_WITHOUT_ACR 声明对象 truth 缺失，如实）；passed=1（adapter-registry 逐字段 diff 零丢失，clobber 复发探测器绿灯）。self_report_trusted=false 落地形态：trust.asserted=null（迁移批无自报信道），trust.recomputed.violations=8 为四检查求和、唯一判卷依据。确定性：ran_at_seq 钉 0（迁移批无 kernel seq 分配器，A4 零墙钟，kernel 接入时重排）、duration_ms 钉 0（byte-identical 幂等硬规则）；同输入重跑 byte-identical。",
+    "size_expected_from_denominator": 114
+  },
+  "tool": "mig-b1:run_m4_grid_gate",
+  "tool_version": "1.0.0",
+  "trigger": {
+    "note": "migration batch context: no kernel seq allocator; ran_at_seq pinned to 0 (deterministic batch base, A4 wall-clock-free; kernel re-sequences on ingestion); durations pinned to 0 for byte-identical rerun idempotency (batch hard rule 2)",
+    "task_ref": "MIG-B1/M4-grid",
+    "type": "on_demand"
+  },
+  "trust": {
+    "asserted": null,
+    "recomputed": {
+      "matches_asserted": true,
+      "violations": 8
+    }
+  },
+  "verdict": "failed"
+}

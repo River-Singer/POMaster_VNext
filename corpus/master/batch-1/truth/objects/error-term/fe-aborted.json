@@ -1,0 +1,235 @@
+{
+  "authority": {
+    "delegates": [],
+    "escalation_hint": "regenerate via corpus/master/batch-1/tools/ingest_api_error_mapping.py; field corrections via CORRECTION_ONLY flow; revalidation_human_required items are the human-adjudication list",
+    "owner": "FRONTEND_CONTRACT",
+    "write_policy": "CORRECTION_ONLY"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "LOCKED",
+    "evidence": "IMPLEMENTED",
+    "lifecycle": "CURRENT"
+  },
+  "axis_profile": "error_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "ERR.FE_ABORTED",
+  "key_bindings": {
+    "artifact": [],
+    "code": [
+      {
+        "artifact_type": "file",
+        "expect": {
+          "document_type": "api-error-mapping",
+          "error_code": "FE-ABORTED",
+          "mapping_count": 14,
+          "schema_version": 1
+        },
+        "match_rule": "mechanical",
+        "value": "outputs/frontend/10_planned/api-error-mapping.yaml"
+      },
+      {
+        "artifact_type": "file",
+        "expect": {
+          "contains_symbol": [
+            "normalizeBackendError",
+            "normalizeFrontendError"
+          ],
+          "error_map_code": "FE-ABORTED"
+        },
+        "match_rule": "mechanical",
+        "value": "src/shared/lib/error/normalize.ts"
+      }
+    ]
+  },
+  "kind": "error_term",
+  "notes_md": "本对象为 MIG-B1/M2 转录组 A 产物：源 outputs/frontend/10_planned/api-error-mapping.yaml（曾经历 14→0 clobber 事故）逐条转录为 ERR.* 词条（14 条全量；401/403 各自独立词条，Phase5 教训结构回声）。error_code 连字符词形逐字保留于 payload.source_mapping.error_code，对象 id 以合法 SEGMENT 形态铸词（连字符→下划线；枚举值非 governed id 词形，按 golden case 判例不设 aliases[]）。映射链 http status → error code → 前端处理逐链保留（payload.mapping_chain）。内容真实性机判：normalize_ts_error_map_entry=matched；types_ts_ui_state_enum_membership=matched；types_ts_recover_action_enum_membership=matched；protocol_asset_present=matched；code_literal_present=matched。未机判项维持原值并登记 REVALIDATION_HUMAN_REQUIRED（payload.revalidation_human_required，本对象 0 项），不静默全绿。本字段为人类散文，机器永不解析判卷。",
+  "origin": "derived",
+  "payload": {
+    "error_class": "FE-ABORTED",
+    "error_source": "frontend",
+    "feature_id": null,
+    "http_status": null,
+    "machine_evidence": {
+      "checks": [
+        {
+          "check": "normalize_ts_error_map_entry",
+          "detail": {
+            "http_status": {
+              "code": null,
+              "source": null
+            },
+            "recover_action": {
+              "code": "静默，不提示",
+              "source": "静默，不提示"
+            },
+            "retryable": {
+              "code": false,
+              "source": false
+            },
+            "severity": {
+              "code": "info",
+              "source": "info"
+            },
+            "ui_state": {
+              "code": "idle",
+              "source": "idle"
+            },
+            "user_message": {
+              "code": "请求被取消（用户离开页面）",
+              "source": "请求被取消（用户离开页面）"
+            }
+          },
+          "entry_line": 130,
+          "fields_compared": [
+            "ui_state",
+            "severity",
+            "user_message",
+            "recover_action",
+            "retryable",
+            "http_status"
+          ],
+          "pin": "sha256:24d84c065cdfcef5b67a864191ef65c6704a84db23f23cb30b0c206c8ea7e2e9",
+          "ref": "src/shared/lib/error/normalize.ts",
+          "result": "matched"
+        },
+        {
+          "check": "types_ts_ui_state_enum_membership",
+          "detail": {
+            "enum_size": 11,
+            "ui_state": "idle"
+          },
+          "pin": "sha256:2fd5080b08c29a38f13c1e69db19a0f3a86722b6d07c87788028daa1c320b858",
+          "ref": "src/shared/lib/error/types.ts",
+          "result": "matched"
+        },
+        {
+          "check": "types_ts_recover_action_enum_membership",
+          "detail": {
+            "enum_size": 11,
+            "recover_action": "静默，不提示"
+          },
+          "pin": "sha256:2fd5080b08c29a38f13c1e69db19a0f3a86722b6d07c87788028daa1c320b858",
+          "ref": "src/shared/lib/error/types.ts",
+          "result": "matched"
+        },
+        {
+          "check": "protocol_asset_present",
+          "detail": {
+            "protocol": "universal:browser-runtime-lifecycle-protocol"
+          },
+          "pin": "sha256:b328c8b3bab2006254587143c634e17ff554d2f0103056d07edba5ffaba29fe1",
+          "ref": ".agents/skills/pomaster/components/frontend-hard-spec/assets/universal/42-browser-runtime-lifecycle-protocol.md",
+          "result": "matched"
+        },
+        {
+          "check": "code_literal_present",
+          "detail": {
+            "line": 3,
+            "literal": "FE-ABORTED"
+          },
+          "pin": "sha256:d2e489c86e7e84dd30d5469a6c0fb9f5eb8abf1715e8cf8257ea077ce41a6a18",
+          "ref": "src/shared/lib/http/normalize.ts",
+          "result": "matched"
+        }
+      ],
+      "revalidation_human_required": []
+    },
+    "mapping_chain": {
+      "chain_verbatim": [
+        {
+          "stage": "error_code",
+          "value": "FE-ABORTED"
+        },
+        {
+          "stage": "frontend_recovery",
+          "value": "静默，不提示"
+        },
+        {
+          "stage": "ui_state",
+          "value": "idle"
+        },
+        {
+          "stage": "recover_action",
+          "value": "静默，不提示"
+        },
+        {
+          "stage": "retryable",
+          "value": false
+        },
+        {
+          "stage": "severity",
+          "value": "info"
+        }
+      ],
+      "code_observed_pipeline": [
+        "frontend error origin (src/shared/lib/http/normalize.ts normalizeFrontendError for FE-* network/timeout/abort; src/app/error-boundary/RouteErrorBoundary.vue for FE-WHITE-SCREEN)",
+        "src/shared/lib/error/normalize.ts normalizeFrontendError -> ERROR_MAP[code]",
+        "ui render (ui_state + recover_action + severity)"
+      ],
+      "source": "frontend"
+    },
+    "operation_ids": [],
+    "protocol": "universal:browser-runtime-lifecycle-protocol",
+    "retry_class": "NON_RETRYABLE",
+    "severity": "info",
+    "source_document_meta": {
+      "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+      "document_type": "api-error-mapping",
+      "schema_version": 1
+    },
+    "source_mapping": {
+      "error_code": "FE-ABORTED",
+      "feature_id": null,
+      "frontend_recovery": "静默，不提示",
+      "http_status": null,
+      "operation_ids": [],
+      "protocol": "universal:browser-runtime-lifecycle-protocol",
+      "recover_action": "静默，不提示",
+      "retryable": false,
+      "severity": "info",
+      "source": "frontend",
+      "ui_state": "idle",
+      "user_message": "请求被取消（用户离开页面）"
+    },
+    "user_message_zh": "请求被取消（用户离开页面）"
+  },
+  "permits_active": [],
+  "producer": {
+    "liveness": {
+      "status": "active"
+    },
+    "merge_semantics": {
+      "backfill_if_missing": [],
+      "human_never_touched": [
+        "payload"
+      ],
+      "refresh_fields": [
+        "payload"
+      ]
+    },
+    "producer_id": "prod.mig_b1_ingest_api_error_mapping",
+    "views_maintained": [
+      "truth-index.envelope"
+    ]
+  },
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b1/ingest_api_error_mapping.py",
+      "locator": {
+        "batch": "MIG-B1",
+        "ingested_from": "outputs/frontend/10_planned/api-error-mapping.yaml",
+        "transcription": "one ERR.* object per mapping chain (14/14, 401/403 kept separate); all 12 source fields verbatim in payload.source_mapping; id minted with underscores from the hyphenated error_code (no aliases[]: enum values are not governed-id word forms, golden-case precedent); machine evidence (normalize.ts / types.ts / universal protocol assets / candidate-openapi / published-openapi) recorded in payload.machine_evidence; unverifiable aspects registered REVALIDATION_HUMAN_REQUIRED"
+      },
+      "pin": {
+        "digest": "sha256:f5968071fca8baf5c4a633f155b31bca9d4e70996cf4641a70ca6d226f1bfaf1"
+      },
+      "ref": "outputs/frontend/10_planned/api-error-mapping.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "错误词条·FE-ABORTED（前端来源）"
+}

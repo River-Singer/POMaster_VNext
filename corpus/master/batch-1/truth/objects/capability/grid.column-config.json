@@ -1,0 +1,109 @@
+{
+  "aliases": [
+    "GRID.COLUMN_CONFIG"
+  ],
+  "authority": {
+    "delegates": [
+      {
+        "required_for": [
+          "retire"
+        ],
+        "role": "HUMAN_OWNER"
+      }
+    ],
+    "escalation_hint": "regenerate via corpus/master/batch-1/tools/ingest_data_grid.py; capability/forbidden/key-binding evolution requires a CHANGE object (EVOLUTION_CHANNEL; ledger delegates HUMAN_OWNER required_for retire); GRID key-binding drift see MIG-B1/C-04",
+    "owner": "FRONTEND_ARCHITECTURE",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "LOCKED",
+    "evidence": "IMPLEMENTED",
+    "lifecycle": "CURRENT"
+  },
+  "axis_profile": "capability_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "CAPABILITY.GRID.COLUMN_CONFIG",
+  "key_bindings": {
+    "artifact": [],
+    "code": [
+      {
+        "artifact_type": "file",
+        "expect": {
+          "header_contains_any": [
+            "CAPABILITY.GRID.COLUMN_CONFIG"
+          ]
+        },
+        "match_rule": "mechanical",
+        "value": "src/shared/grid/MasterColumnConfig.vue"
+      },
+      {
+        "artifact_type": "npm_dependency",
+        "expect": {
+          "dependency_name": "ag-grid",
+          "version_range": "^31.3"
+        },
+        "match_rule": "mechanical",
+        "value": "ag-grid@^31.3"
+      }
+    ]
+  },
+  "kind": "capability",
+  "notes_md": "本对象为 MIG-B1/M2 转录组 D GRID 能力族切片收编件：源 outputs/frontend/10_planned/component-registry.yaml（扩展名 .yaml、内容为 JSON）components[] 共 90 条（分母来源：M1 复测 len(components[])=90，与 M0 inventory denominators.component_registry_entries.value 一致），其中 canonical_implementation.file 指向 src/shared/grid/* 的条目 3 条，与 capability_id 前缀 GRID.* 切片逐条重合（双谓词交叉核验一致）；切片占比 3/90≈3.3%，整库其余 87 条不在转录组 D 范围（BATCH-3 处置）。别名收编：GRID.COLUMN_CONFIG→CAPABILITY.GRID.COLUMN_CONFIG（ALIASES_V0 已登记规则，A6 rename-on-ingest 双向链只减不增；legacy 词形照录入 aliases，源数据不改，映射与 key-binding-map.draft.yaml alias_registrations 及 M0 denominators grid_slice 三方交叉核验一致）。status=implemented 按 CONVENTIONS §4 拆正交双轴：lifecycle=CURRENT + confidence=LOCKED、接线态=evidence=IMPLEMENTED + realization=wired（迁移期无 CLM/VRF 台账，禁标 VERIFIED）、change=STABLE；无数值语义篡改、无 superseded_status_field 登记（implemented 的拆解同 02b §4 ACCEPTED 判例，非语义升级）。technology_base=AG_GRID 为跨源回填（backfill-if-missing）：源条目无 technology_base 字段，依据 outputs/frontend/10_planned/vendor-adapter-registry.yaml ag-grid 行 adapter_dir=src/shared/grid/ 前缀命中实现文件（该源 pin sha256:ae8362cb63f045c151d66a26056bef5280ab8a5a1b245e95d7383851925f7c1e，工具现场重算并与 inventory pin 比对一致）；forbidden 仅在源条目自带时逐字照录（GRID.EDITABLE_GRID 的 3 条规则即后续 grid gate 规则供给方），缺失者不 fabricate。payload.note 逐字保留源条目 note（含 G21 用户裁决与批 7 实施记录，日期为源事实非墙钟生成）。expect.header_contains_any 是期望声明非豁免证书，gate 必须重扫现实验证（C5），本对象不伪造 probe.result。本字段为人类散文，机器永不解析判卷。",
+  "origin": "ingested",
+  "payload": {
+    "canonical_realization": {
+      "component": "MasterColumnConfig",
+      "import": "@/shared/grid"
+    },
+    "category": "grid",
+    "note": "2026-08-19 modal 契约升级（用户裁决 G21）：从显隐抽屉升级为列配置弹窗——字段搜索/显隐/冻结列（不固定·左·右）/多列排序（从左到右优先级）/列宽弹性（弹性列≤3）/个人视图（会话级，不落浏览器存储）；默认视图公共+管理员维护不可改删；# 列强制可见+左冻结；先例 CVP 页，他页渐进 2026-08-19 批 7 实施：弹窗形态落地（MasterDialog），多列排序显式列表 ≤3 列；个人视图 sessionStorage 会话级（键 {gridKey}:column-views）；无 gridKey props 的消费方走 legacy 显隐+搜索形态（props/事件向后兼容，渐进迁移）",
+    "source_document_meta": {
+      "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+      "document_type": "component-registry",
+      "schema_version": 1
+    },
+    "technology_base": "AG_GRID",
+    "variants": [
+      "visibility",
+      "order",
+      "width"
+    ]
+  },
+  "permits_active": [],
+  "realization": {
+    "value": "wired"
+  },
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b1/ingest_data_grid.py",
+      "locator": {
+        "batch": "MIG-B1",
+        "ingested_from": "outputs/frontend/10_planned/component-registry.yaml",
+        "transcription": "GRID.* slice entry GRID.COLUMN_CONFIG transcribed field-by-field verbatim (category/name_zh/note/variants/states/forbidden/canonical_implementation preserved; source field 'states' mapped to capability payload 'domain_states' per 02b section 2, values verbatim; source 'note' kept verbatim in payload per merge-preserving golden-case precedent; physical file anchor to key_bindings.code per 02b section 3); status=implemented split into orthogonal axes per CONVENTIONS section 4; alias GRID.COLUMN_CONFIG->CAPABILITY.GRID.COLUMN_CONFIG applied (ALIASES_V0), legacy form in aliases[]"
+      },
+      "pin": {
+        "digest": "sha256:ec6cb99eeda8a492d299fc084603eca18f4a1be126e3b398d3be4a52c85f934b"
+      },
+      "ref": "outputs/frontend/10_planned/component-registry.yaml",
+      "type": "design_seed"
+    },
+    {
+      "captured_by": "agent:mig-b1/ingest_data_grid.py",
+      "locator": {
+        "batch": "MIG-B1",
+        "ingested_from": "outputs/frontend/10_planned/vendor-adapter-registry.yaml",
+        "transcription": "technology_base=AG_GRID backfill provenance (backfill-if-missing): ag-grid row adapter_dir=src/shared/grid/ prefix-matches the implementation file; no other field of this source is consumed by this object"
+      },
+      "pin": {
+        "digest": "sha256:ae8362cb63f045c151d66a26056bef5280ab8a5a1b245e95d7383851925f7c1e"
+      },
+      "ref": "outputs/frontend/10_planned/vendor-adapter-registry.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "列配置面板"
+}

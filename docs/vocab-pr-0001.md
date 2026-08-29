@@ -42,7 +42,7 @@
 | V7 | 报告§7（新发现，低优先） | lane 词形未成轴 | **纳入 v2（最小闭包）** | catalog 层词轴 lane = [any, frontend, backend]（§3.2） |
 | V8 | 报告§7（新发现） | 模板词形 POLICY.TPL.* 错位 / TEMPLATE. 候选 | **不纳入**（R-C 已选方案 b；物化集 POLICY.TPL 引用 0 命中，登记零消费前缀违反最小闭包） | 挂起条件登记（§3.3） |
 | V9 | 报告§7（新发现，低优先） | KNOWLEDGE.* 段式不统一 | **不纳入枚举变更**（10 条存量 parse 全合法，属命名约定债非词表缺口） | 建议句留 catalog 侧契约文档（§3.3） |
-| A-1 | OBS-4 实测（migration/master-batch1） | ISSUE.*×107 / FTA-*×17 / FB-*×1 源侧跟踪 id → CHANGE.* 收编映射未入 ALIASES | **纳入 v2（核心项）** | ALIASES_V0 5→8 族（§4） |
+| A-1 | OBS-4 实测（corpus/master/batch-1） | ISSUE.*×107 / FTA-*×17 / FB-*×1 源侧跟踪 id → CHANGE.* 收编映射未入 ALIASES | **纳入 v2（核心项）** | ALIASES_V0 5→8 族（§4） |
 | P-1 | N6（kernel reconcile.ts） | RECONCILE_DELTA_KINDS 4 词 + content_tamper 判别词未登记；content_drift 一词二用 | **纳入 v2** | vocab-lock 新段 presentation_axes + schemas 导出 + kernel 改引用（§5） |
 | M-1 | docs/kernel-api.md §4:66、kernel/src/index.ts:471 | PERMIT.* 前缀未入闭包，general_id 宽松词形 TODO 悬置 | **不登记 Governed 前缀；文档化收编** | id_namespace 增 state_plane_refs 注记 + 两处 TODO 改定案指引（§6） |
 | O-1 | OBS-3 | CONVENTIONS §6 origin 规则自相矛盾；3 个 GRID 对象 origin=natural 违 A6 正例 | **已裁决并本批执行** | CONVENTIONS §6 优先级规则成文 + 3 对象 natural→ingested + 工具同步（§7，已验证） |
@@ -122,7 +122,7 @@ catalog_layer_vocab:     # catalog/ 目录条目词轴（PR-0001 收编；catalo
 
 ### 4.1 MIG-B1 实测映射（登记事实基础）
 
-migration/master-batch1/truth/objects/ 共 290 对象：128 个携带 aliases[]（3×GRID.* + 107×ISSUE.* + 17×FTA-* + 1×FB-*），162 个无别名（缺席表达）。映射实测（以落盘对象为准，`ingest_change_governance.py` `change_object_id()`/`pack_segments()` 为机械权威）：
+corpus/master/batch-1/truth/objects/ 共 290 对象：128 个携带 aliases[]（3×GRID.* + 107×ISSUE.* + 17×FTA-* + 1×FB-*），162 个无别名（缺席表达）。映射实测（以落盘对象为准，`ingest_change_governance.py` `change_object_id()`/`pack_segments()` 为机械权威）：
 
 | legacy 族 | 实测数 | canonical 形态 | 机械规则 |
 |---|---|---|---|
@@ -148,7 +148,7 @@ migration/master-batch1/truth/objects/ 共 290 对象：128 个携带 aliases[]�
     - { legacy: "ISSUE.*",           canonical: "CHANGE.*",
         note: 源侧跟踪 id 收编（MIG-B1 实测 107 形）：登记前缀点段剥离；段内连字符→下划线
               greedy 打包（32 段上限，段界可为打包伪迹）；末尾纯数字段→SEQ；
-              机械映射权威=migration/master-batch1/tools/ingest_change_governance.py pack_segments }
+              机械映射权威=corpus/master/batch-1/tools/ingest_change_governance.py pack_segments }
     - { legacy: "FTA-*",             canonical: "CHANGE.FTA_*",
         note: 源侧工程裁决 id 收编（MIG-B1 实测 17 形）：标记词并入首段 FTA_，余段连字符→下划线 }
     - { legacy: "FB-*",              canonical: "CHANGE.FB_*",
@@ -224,7 +224,7 @@ id_namespace:
 
 ## 7. OBS-3（O-1）：已裁决，本批已执行并验证
 
-**成文规则**（已写入 `migration/master-batch1/CONVENTIONS.md` §6，紧跟原 origin 裁定规则段）：「逐字」规则与 A6 场景规则冲突时 **A6 优先**——凡转录按词汇表**已登记** alias 规则执行了 rename-on-ingest（对象 id 由 legacy governed 词形改拼为 canonical、legacy 照录 aliases[]），对象 `origin=ingested`，不取 inventory 逐字值；判据是「改拼动作是否按已登记规则发生」。两条边界成文：源侧跟踪 id（ISSUE.*/FTA-*/FB-*，非 governed 词形、转录时不在 ALIASES 表）不构成 A6 场景、对象保持源侧 origin；inventory/ledger 侧 origin 描述**源资产**谱系、信封侧描述**对象**谱系，两层不互相覆盖。
+**成文规则**（已写入 `corpus/master/batch-1/CONVENTIONS.md` §6，紧跟原 origin 裁定规则段）：「逐字」规则与 A6 场景规则冲突时 **A6 优先**——凡转录按词汇表**已登记** alias 规则执行了 rename-on-ingest（对象 id 由 legacy governed 词形改拼为 canonical、legacy 照录 aliases[]），对象 `origin=ingested`，不取 inventory 逐字值；判据是「改拼动作是否按已登记规则发生」。两条边界成文：源侧跟踪 id（ISSUE.*/FTA-*/FB-*，非 governed 词形、转录时不在 ALIASES 表）不构成 A6 场景、对象保持源侧 origin；inventory/ledger 侧 origin 描述**源资产**谱系、信封侧描述**对象**谱系，两层不互相覆盖。
 
 **数据修正**（3 个 CAPABILITY.GRID.* 对象，origin natural→ingested）：
 
@@ -314,7 +314,7 @@ id_namespace:
 | # | 发现 | 处置建议 |
 |---|---|---|
 | N-1 | **CAP-\*×17 家族零登记**：FTA 决策 scope_ids 内 `CAP-ALL-PARTS-LIST` 等 17 个 legacy 词形照录 payload、明示「no registered alias rule, no rewrite」；不在 aliases[]（128=3+107+17+1）。零解析路径（payload 数据字段非 id 槽位），无 FATAL 面 | 留 PR-0002 裁决是否登记别名族；现状可维持（零消费） |
-| N-2 | **key-binding-map.draft.yaml alias_registrations 缺口**：CONVENTIONS §5 同步义务「批量形态对照见 alias_registrations」，但该表 applied_in_batch1 只登记 GRID.*/PAGE-TASK-STEP-* 两族，107+17+1 的 change-object 收编形态未对照登记 | migration 侧补记（该文件属 migration/ 路径，可随后续批执行）；或 v2 落地时以 vocab-lock aliases_v0 note 为权威、补一行指针 |
+| N-2 | **key-binding-map.draft.yaml alias_registrations 缺口**：CONVENTIONS §5 同步义务「批量形态对照见 alias_registrations」，但该表 applied_in_batch1 只登记 GRID.*/PAGE-TASK-STEP-* 两族，107+17+1 的 change-object 收编形态未对照登记 | 语料侧补记（该文件属 corpus/ 路径，可随后续批执行）；或 v2 落地时以 vocab-lock aliases_v0 note 为权威、补一行指针 |
 | N-3 | **版本字样同步面 21 文件**：`v0.1-resolved` 字面量散布 21 个源文件；FROZEN schema 侧不可改 → 需 §8.1 的「基线引用语义」注记成文，否则未来一致性审计会误报漂移 | 已写入 v0.2 头部增补行（§8.1） |
 | N-4 | **.trellis schema-drafts 副本政策未决**：`.trellis/tasks/08-27-vnext-ir-schema-design/schema-drafts/` 下 vocab-lock / golden-seed-mapping 副本当前与 assets byte-identical，cases.json sourceOfTruth 指向后者；.trellis 不在本 PR 路径，v2 不触 golden-seed-mapping.md 故恒等保持；但未来任何 assets 侧词条变更都会打破恒等 | 副本政策（历史封存 vs 同步镜像）留 Owner 专项裁决；在此之前 assets 侧不动 golden-seed-mapping.md |
 | N-5 | **catalog x-vocab-pr 销账**：PR-0001 执行后 60 个物化条目的 x-vocab-pr 注记（status=vocab_pr_candidate / no_new_enum__confirm_only）陈述过时；catalog/ 不在本 PR 路径 | catalog 维护批更新 materialize 脚本注记块（resolved+PR-0001 指针）并重生成；catalog-apply-summary.md 历史记录不改写 |

@@ -2,7 +2,7 @@
 """MIG-B4 · Universal 上提物化工具（split-ledger 驱动 → catalog/policies/ + catalog-lock 同步）。
 
 输入（只读）：
-  - POMaster_VNext/migration/master-batch4/split-ledger.yaml   （M1 分拣台账，本工具唯一驱动源）
+  - POMaster_VNext/corpus/master/batch-4/split-ledger.yaml     （M1 分拣台账，本工具唯一驱动源）
   - 上游消费项目 10_planned/<asset>.yaml 源文本                （仅作 clean-room LCS 自检对照，只 open 读）
 
 输出：
@@ -56,14 +56,14 @@ except Exception:
 HERE = os.path.dirname(os.path.abspath(__file__))                    # .../catalog/tools
 CATALOG = os.path.dirname(HERE)                                      # .../catalog
 VNEXT = os.path.dirname(CATALOG)                                     # .../POMaster_VNext
-LEDGER_PATH = os.path.join(VNEXT, "migration", "master-batch4", "split-ledger.yaml")
+LEDGER_PATH = os.path.join(VNEXT, "corpus", "master", "batch-4", "split-ledger.yaml")
 LOCK_PATH = os.path.join(CATALOG, "catalog-lock.draft.json")
 UPSTREAM_ROOT = r"D:\Vscode Documents\MASTer_master"                 # 上游消费项目（绝对只读）
 
 BATCH = "MIG-B4"
-CAPTURED_BY = "agent:claude/mig-b4-catalog-uplift"
-LEDGER_REF = "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
-CLEAN_ROOM_NOTE = "independently rewritten from upstream batch4 mirror; zero verbatim copy"
+CAPTURED_BY = "agent:claude/batch-4-catalog-uplift"
+LEDGER_REF = "POMaster_VNext/corpus/master/batch-4/split-ledger.yaml"
+CLEAN_ROOM_NOTE = "independently rewritten from field corpus batch-4 material; zero verbatim copy"
 LCS_THRESHOLD = 20  # 归一化后 ≥20 字符公共子串即判逐字拷贝（最长在册技术词形 ~14 字符，20 留安全余量）
 
 PROJECT_NOUNS = ["PAGE-", "API_REQ.", "MASTer", "雅黑", "Fira"]
@@ -355,7 +355,8 @@ def load_universal_halves():
         halves.append({
             "asset_id": e["asset_id"], "entry_id": e["entry_id"], "decision": e["decision"],
             "dir": dirname, "filename": fname, "catalog_id": stem.upper(),
-            "merge_group": e.get("merge_group"), "migration_batch": e["migration_batch"],
+            "merge_group": e.get("merge_group"),
+            "corpus_batch": e["migration_batch"].replace("MIG-B", "batch-"),
             "upstream_source_ref": e["source_ref"],
         })
 
@@ -394,7 +395,7 @@ def build_entries(halves):
                     "entry_id": h["entry_id"],
                     "decision": h["decision"],
                     "merge_group": h["merge_group"],
-                    "migration_batch": h["migration_batch"],
+                    "corpus_batch": h["corpus_batch"],
                     "split_ledger": LEDGER_REF,
                 },
             })
@@ -405,7 +406,7 @@ def build_entries(halves):
                 "locator": {
                     "asset": h["asset_id"],
                     "entry": h["entry_id"],
-                    "migration_batch": h["migration_batch"],
+                    "corpus_batch": h["corpus_batch"],
                     "upstream_source_ref": h["upstream_source_ref"],
                 },
                 "clean_room_note": CLEAN_ROOM_NOTE,
@@ -425,7 +426,7 @@ def build_entries(halves):
             },
             "x-batch4-uplift": {
                 "status": "PROPOSAL",
-                "package": "MIG-B4 Universal 上提（工程策略族 split-ledger 驱动）",
+                "package": "batch-4 语料批 Universal 上提（工程策略族 split-ledger 驱动）",
                 "human_review_required": True,
                 "evidence": "PLANNED",
                 "provenance": LEDGER_REF,
@@ -448,8 +449,8 @@ def build_entries(halves):
                 "escalation_hint": "catalog-batch4-uplift",
             },
             "origin": "ingested",
-            "origin_note": "MIG-B4 split-ledger UNIVERSAL/HYBRID universal 半上提；"
-                           "目录词面独立改写（clean-room），零逐字拷贝上游源文本",
+            "origin_note": "batch-4 语料批 split-ledger UNIVERSAL/HYBRID universal 半上提；"
+                           "词面独立改写（clean-room），零逐字拷贝源文本",
             "sub_rules": sub_rules,
             "sources": sources,
         }
@@ -544,9 +545,11 @@ def merge_lock(new_entries):
         rel = "policies/" + fname
         cid = "sha256:" + hashlib.sha256(dump_json(entry).encode("utf-8")).hexdigest()
         if entry["id"] in merged:
-            # 幂等重跑：同 id 以本工具产物为准（sha 必须与落盘一致）
+            # 幂等重跑：同 id 以本工具产物为准（sha 必须与落盘一致；source_ref 为
+            # LEDGER_REF 纯派生字段，随本工具常量同步刷新，防陈旧路径残留）
             assert merged[entry["id"]]["path"] == rel
             merged[entry["id"]]["content_sha256"] = cid
+            merged[entry["id"]]["source_ref"] = LEDGER_REF
         else:
             merged[entry["id"]] = {
                 "id": entry["id"], "path": rel, "content_sha256": cid,
@@ -572,13 +575,13 @@ def merge_lock(new_entries):
         "catalog_version": old_lock["catalog_version"],
         "profile": old_lock["profile"],
         "generated_by": "catalog/tools/materialize_batch4_uplift.py"
-                        "（MIG-B4 Universal 上提；entries 按 id 排序；"
+                        "（batch-4 语料批 Universal 上提；entries 按 id 排序；"
                         "在 materialize_catalog_pilot.py 60 条基础上追加 9 条）",
         "x-digest-ethics": old_lock["x-digest-ethics"],
         "controlled_children": {
             "note": "catalog-lock 管辖面（vocab-lock PR-0001 catalog_layer_vocab 同段语义）："
                     "allowed=登记在册可存在；required=必须存在。新增 catalog 文件须同步 allowed+required "
-                    "两处（MIG-B4 split-ledger catalog_scope_note 纪律；沿 pomaster directory-lock "
+                    "两处（batch-4 split-ledger catalog_scope_note 纪律；沿 pomaster directory-lock "
                     "controlled_children 语义移植）。",
             "allowed": list(paths),
             "required": list(paths),

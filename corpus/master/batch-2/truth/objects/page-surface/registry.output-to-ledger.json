@@ -1,0 +1,104 @@
+{
+  "aliases": [
+    "PAGE-TASK-STEP-OUTPUT-TO-LEDGER"
+  ],
+  "authority": {
+    "delegates": [],
+    "escalation_hint": "regenerate via corpus/master/batch-2/tools/ingest_page_registry.py; page-level canonical id word forms (PAGE.APP_* underscore vs PAGE.APP.* dotted, and PAGE.<SEG> held by the blueprint family) pending HUMAN_OWNER adjudication; facet objects merge via the supersede chain after adjudication",
+    "owner": "FRONTEND_ARCHITECTURE",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "LOCKED",
+    "evidence": "IMPLEMENTED",
+    "lifecycle": "CURRENT"
+  },
+  "axis_profile": "page_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "PAGE.REGISTRY.OUTPUT_TO_LEDGER",
+  "key_bindings": {
+    "artifact": [],
+    "code": []
+  },
+  "kind": "page_surface",
+  "notes_md": "本对象为 MIG-B2/M2 转录组 A 页面注册身份件：源 outputs/frontend/10_planned/application-page-registry.yaml（扩展名 .yaml、内容为 JSON）pages[] 共 35 条逐条转录之一（PAGE-TASK-STEP-OUTPUT-TO-LEDGER）。源条目（id/name/nav_group/template/prototype_fn/layout/columns/status/note/blocked 字段闭集）以 payload.page_entry 整条逐字保真（与源条目字节等价，工具断言）；数组顺序=源顺序。status 语义登记（payload.registry_status_semantics）：源 status=existing-task-step 为 surface-kind 分类（新应用页 vs 既有 BP 派生任务步页），非审批/接线/变更语义——batch1 约定书 §4 拆分自检三连均不适用，双轴拆分动作=0、superseded_status_field 登记=0（诚实零，golden case 第 10 行同款）；blocked:true 逐字随条目（==summary.blocked_pages=3 之三）。别名收编：PAGE-TASK-STEP-OUTPUT-TO-LEDGER → facet PAGE.REGISTRY.OUTPUT_TO_LEDGER（ALIASES_V0 已登记族 PAGE-TASK-STEP-*→PAGE.*，token 重排，02b §7 判例 PAGE.BIND_CARLINE 同形取余段）；legacy 词形照录 aliases[]，对象 origin=ingested（A6 场景，batch1 约定书 §6 OBS-3 裁定口径）。页级 id PAGE.OUTPUT_TO_LEDGER 由并发 page-surface 蓝图对象族持有，本 facet 取 PAGE.REGISTRY.* 作用域段避让（payload.id_facet 机器登记），Owner 裁决后经 supersede 链合并，绝不自动裁决。册级语义不在本对象：book_facet_pointer 指向单一承载位 PAGE.REGISTRY.APP_DASHBOARD（pages[0] 源序机械规则），分母漂移史/册级字段值不复制到兄弟对象（batch2 §5 重复登记即分叉隐患）。key_bindings.code 为空数组（诚实空）：本条为 blocked 登记条目，源无 prototype_fn 字段，不伪造锚点。 本字段为人类散文，机器永不解析判卷。",
+  "origin": "ingested",
+  "payload": {
+    "book_facet_pointer": {
+      "carrier_object_id": "PAGE.REGISTRY.APP_DASHBOARD",
+      "carries": [
+        "registry_book_facet",
+        "denominator_health_note"
+      ],
+      "conflict_id": "MIG-B2/C-01",
+      "registered_in": "corpus/master/batch-2/classification-ledger.yaml entries[application-page-registry].denominator_health_note + meta.denominator_health_notes.application_pages",
+      "rule": "book-level semantics single-carrier registration (pages[0] source array order); value duplication across siblings is a fork hazard and is forbidden (batch2 §5)"
+    },
+    "id_facet": {
+      "merge_path": "supersede",
+      "object_id": "PAGE.REGISTRY.OUTPUT_TO_LEDGER",
+      "page_level_id": "PAGE.OUTPUT_TO_LEDGER",
+      "page_level_id_status": "REGISTERED_RULE_CANONICAL_HELD_BY_PAGE_SURFACE_OBJECT",
+      "rule": "facet-scoped id per the group-B PAGE.READINESS.* convention: concurrent page-surface transcription families hold the page-level ids in this kind-dir (ALIASES_V0 canonical PAGE.<SEG> for PAGE-TASK-STEP-*; underscore PAGE.APP_* and dotted PAGE.APP.* drafts both observed for PAGE-APP-*); this facet takes the PAGE.REGISTRY.* scoping segment to avoid same-id clobber and merges via the supersede chain after Owner id adjudication (report only, never auto-adjudicate)"
+    },
+    "page_entry": {
+      "blocked": true,
+      "id": "PAGE-TASK-STEP-OUTPUT-TO-LEDGER",
+      "name": "输出到台账",
+      "nav_group": "(BP-blocked)",
+      "status": "existing-task-step",
+      "template": "PAGE.DETAIL"
+    },
+    "registry_status_semantics": {
+      "axis_split_actions": 0,
+      "blocked_flag_present": true,
+      "honest_zero_reason": "batch1 约定书 §4 拆分自检三连：非批准（注册在案即基线事实）、非接线（接线态归 readiness/blueprint 轴）、非变更（变更史归 change 轴）——surface-kind 分类不触发双轴拆分，诚实零登记",
+      "semantics": "surface-kind classification (new application page vs existing BP-derived task-step page), NOT an approval/progress/wiring/change status",
+      "source_field": "status",
+      "source_value": "existing-task-step",
+      "superseded_status_field_registered": false
+    },
+    "source_document_meta": {
+      "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+      "document_type": "application-page-registry",
+      "schema_version": 1
+    }
+  },
+  "permits_active": [],
+  "producer": {
+    "liveness": {
+      "status": "active"
+    },
+    "merge_semantics": {
+      "backfill_if_missing": [],
+      "human_never_touched": [],
+      "refresh_fields": [
+        "payload"
+      ]
+    },
+    "producer_id": "prod.mig_b2_ingest_page_registry",
+    "views_maintained": [
+      "truth-index.envelope"
+    ]
+  },
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b2/ingest_page_registry.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/application-page-registry.yaml",
+        "transcription": "registry pages[] entry PAGE-TASK-STEP-OUTPUT-TO-LEDGER transcribed row-by-row verbatim (payload.page_entry byte-equal); status=existing-task-step registered as surface-kind classification (axis split 0, superseded_status_field 0 = honest zero); id action: facet-scoped rename per ALIASES_V0 remainder, origin=ingested (A6)"
+      },
+      "pin": {
+        "digest": "sha256:af5e7b75b849d5905d48e699ce2d529d95c669fdbbfec351f89ca9f62f78d252"
+      },
+      "ref": "outputs/frontend/10_planned/application-page-registry.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "页面注册身份·输出到台账"
+}

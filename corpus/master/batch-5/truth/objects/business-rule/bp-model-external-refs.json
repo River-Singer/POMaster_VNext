@@ -1,0 +1,307 @@
+{
+  "authority": {
+    "delegates": [],
+    "escalation_hint": "regenerate via corpus/master/batch-5/tools/ingest_bp_main.py; 02_process-task-interface.yaml / blueprint-baseline.yaml / 01_domain-projection.yaml change re-runs the ingest; resolution tiering and any future dangling registration are report-only (EVOLUTION_CHANNEL; ledger owner FRONTEND_ARCHITECTURE)",
+    "owner": "FRONTEND_ARCHITECTURE",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "LOCKED",
+    "evidence": "PLANNED",
+    "lifecycle": "PROPOSED"
+  },
+  "axis_profile": "rule_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "POLICY.BP_MODEL_EXTERNAL_REFS",
+  "key_bindings": {
+    "artifact": [],
+    "code": [
+      {
+        "artifact_type": "file",
+        "expect": {
+          "families": {
+            "ACC": 13,
+            "ACT": 19,
+            "ACTOR": 5,
+            "OBJ": 8,
+            "PERM": 1,
+            "RULE": 9,
+            "STEP": 15
+          },
+          "referenced_word_forms_total": 70
+        },
+        "match_rule": "mechanical",
+        "value": "outputs/frontend/10_planned/02_process-task-interface.yaml"
+      }
+    ]
+  },
+  "kind": "business_rule",
+  "notes_md": "BP 主文档转录（MIG-B5 转录组 A·领域术语表，域一对象 1 条）：源 outputs/frontend/10_planned/02_process-task-interface.yaml（design_seed，pin 见 sources[0]；外部引用分母 70 词形 7 族全录）。\n整册一对象（batch1 §3 判例）：词形定义体在 BP semantic_model 与 01_domain-projection，不在 02——逐词立对象=为他文档实体复制身份（双真相），且无 per-term governed id 检索路径（值域查表）。\n解析分层（工具现场复算）：BP semantic_model 70/70（ACC 13/ACT 19/ACTOR 5(of 7)/OBJ 8/PERM 1/RULE 9(of 10)/STEP 15——ACTOR/RULE 定义多于引用非悬空；STEP 定义体在 processes[].steps[]）；01 source_ids 55/70（STEP-* 15 条 01 无 step 语义类型——分层登记非悬空）。悬空 0（诚实零）。\n构造身份：POLICY.BP_MODEL_EXTERNAL_REFS 为转录期构造 id（源无此聚合体），本约定书 §2.5 登记即非匿名扩展；aliases 缺席=无 legacy 词形（缺席表达）。\n轴基线：lifecycle=PROPOSED（coordinate_state=planned 事实记录，superseded_status_field 已登记）+ evidence=PLANNED + confidence=LOCKED + change=STABLE。\n散文承载：源为机器结构化 JSON，无散文叙事字段。摘要（全文按源指针回读）：none (honest zero)\n本字段为人类散文，机器永不解析判卷。",
+  "origin": "derived",
+  "payload": {
+    "external_ref_families": [
+      {
+        "defined_in_doc": false,
+        "family": "ACC",
+        "referenced_count": 13,
+        "referenced_word_forms": [
+          "ACC-ADMIN-PERMISSION-IMMUTABLE",
+          "ACC-ALL-PARTS-AUTO-SYNC",
+          "ACC-BOM-ADD-NOT-PERSISTED",
+          "ACC-BOM-CARLINE-AUTOBIND",
+          "ACC-BOM-SNAPSHOT",
+          "ACC-BOM-WRITEBACK-LEDGER",
+          "ACC-BUC-OUTPUT-TO-LEDGER",
+          "ACC-EXPERT-MODEL-WRITEBACK",
+          "ACC-LEDGER-QUERY-READONLY",
+          "ACC-LEDGER-UNBOUND-VISIBLE",
+          "ACC-LOGIN-LOCAL-ACCOUNT",
+          "ACC-UNDEFINED-ROLE-DENIED",
+          "ACC-VEHICLE-MASTER-SINGLE-SOURCE"
+        ],
+        "resolution": {
+          "also_in_01_domain_projection_source_ids": 13,
+          "bp_defined_count": 13,
+          "bp_semantic_model_family": "acceptances",
+          "referenced_count": 13,
+          "resolved_in_bp": 13
+        },
+        "word_form_prefix": "ACC-"
+      },
+      {
+        "defined_in_doc": false,
+        "family": "ACT",
+        "referenced_count": 19,
+        "referenced_word_forms": [
+          "ACT-AUTHENTICATE",
+          "ACT-BIND-CARLINE",
+          "ACT-BUC-ANALYSE",
+          "ACT-BUILD-BOM-BULK-IMPORT",
+          "ACT-BUILD-BOM-FROM-BUC",
+          "ACT-BUILD-BOM-FROM-LEDGER",
+          "ACT-BUILD-BOM-FROM-REFERENCE-VEHICLE",
+          "ACT-BUILD-BOM-MANUAL-INPUT",
+          "ACT-COMPARE-COST-SNAPSHOTS",
+          "ACT-EXPERT-MODEL-CALCULATE",
+          "ACT-GENERATE-VERSION-SNAPSHOT",
+          "ACT-MAINTAIN-BASE-ATTRIBUTES",
+          "ACT-MANAGE-USER-ROLE",
+          "ACT-OUTPUT-ANALYSIS-TO-LEDGER",
+          "ACT-QUERY-LEDGER",
+          "ACT-SAVE-BOM",
+          "ACT-SELECT-VEHICLE-CONTEXT",
+          "ACT-VIEW-ALL-PARTS",
+          "ACT-WRITEBACK-LEDGER"
+        ],
+        "resolution": {
+          "also_in_01_domain_projection_source_ids": 19,
+          "bp_defined_count": 19,
+          "bp_semantic_model_family": "actions",
+          "referenced_count": 19,
+          "resolved_in_bp": 19
+        },
+        "word_form_prefix": "ACT-"
+      },
+      {
+        "defined_in_doc": false,
+        "family": "ACTOR",
+        "referenced_count": 5,
+        "referenced_word_forms": [
+          "ACTOR-BUSINESS-ADMIN",
+          "ACTOR-IT-ADMIN",
+          "ACTOR-PART-CONTROLLER",
+          "ACTOR-SYSTEM",
+          "ACTOR-VEHICLE-COORDINATOR"
+        ],
+        "resolution": {
+          "also_in_01_domain_projection_source_ids": 5,
+          "bp_defined_count": 7,
+          "bp_semantic_model_family": "actors",
+          "referenced_count": 5,
+          "resolved_in_bp": 5
+        },
+        "word_form_prefix": "ACTOR-"
+      },
+      {
+        "defined_in_doc": false,
+        "family": "OBJ",
+        "referenced_count": 8,
+        "referenced_word_forms": [
+          "OBJ-BOM-VERSION-SNAPSHOT",
+          "OBJ-CALC-VEHICLE-BOM-ENTRY",
+          "OBJ-COST-DUAL-VALUE",
+          "OBJ-EQUIPMENT-PALETTE",
+          "OBJ-EXPERT-MODEL-TIME-COMPONENTS",
+          "OBJ-PART-STRUCTURE-MASTER",
+          "OBJ-PARTS-LEDGER-ENTRY",
+          "OBJ-VEHICLE-MASTER"
+        ],
+        "resolution": {
+          "also_in_01_domain_projection_source_ids": 8,
+          "bp_defined_count": 8,
+          "bp_semantic_model_family": "objects",
+          "referenced_count": 8,
+          "resolved_in_bp": 8
+        },
+        "word_form_prefix": "OBJ-"
+      },
+      {
+        "defined_in_doc": false,
+        "family": "PERM",
+        "referenced_count": 1,
+        "referenced_word_forms": [
+          "PERM-DATA-SCOPE-BY-ROLE"
+        ],
+        "resolution": {
+          "also_in_01_domain_projection_source_ids": 1,
+          "bp_defined_count": 1,
+          "bp_semantic_model_family": "permissions",
+          "referenced_count": 1,
+          "resolved_in_bp": 1
+        },
+        "word_form_prefix": "PERM-"
+      },
+      {
+        "defined_in_doc": false,
+        "family": "RULE",
+        "referenced_count": 9,
+        "referenced_word_forms": [
+          "RULE-ADMIN-FULL-PERMISSION-IMMUTABLE",
+          "RULE-ALL-PARTS-LIST-AUTO-SYNC",
+          "RULE-BOM-ADD-NOT-PERSISTED",
+          "RULE-BOM-WRITEBACK-TO-LEDGER",
+          "RULE-CARLINE-AUTO-BIND",
+          "RULE-EVALUATION-PRECEDES-BOM-CHANGE",
+          "RULE-EXPERT-MODEL-OVERWRITE-BUC",
+          "RULE-LEDGER-READ-ONLY",
+          "RULE-VEHICLE-MASTERDATA-SINGLE-SOURCE"
+        ],
+        "resolution": {
+          "also_in_01_domain_projection_source_ids": 9,
+          "bp_defined_count": 10,
+          "bp_semantic_model_family": "rules",
+          "referenced_count": 9,
+          "resolved_in_bp": 9
+        },
+        "word_form_prefix": "RULE-"
+      },
+      {
+        "defined_in_doc": false,
+        "family": "STEP",
+        "referenced_count": 15,
+        "referenced_word_forms": [
+          "STEP-AUTHENTICATE",
+          "STEP-BIND-CARLINE",
+          "STEP-BUC-ANALYSE",
+          "STEP-BUILD-BOM",
+          "STEP-EXPERT-MODEL-CALCULATE",
+          "STEP-GENERATE-SNAPSHOT",
+          "STEP-MAINTAIN-BASE-ATTRIBUTES",
+          "STEP-MANAGE-USER-ROLE",
+          "STEP-OUTPUT-TO-LEDGER",
+          "STEP-QUERY-LEDGER",
+          "STEP-SAVE-BOM",
+          "STEP-SELECT-VEHICLE-CONTEXT",
+          "STEP-TRACK-COST-BY-SNAPSHOT",
+          "STEP-VIEW-ALL-PARTS",
+          "STEP-WRITEBACK-LEDGER"
+        ],
+        "resolution": {
+          "also_in_01_domain_projection_source_ids": 0,
+          "bp_defined_count": 15,
+          "bp_semantic_model_family": "processes[].steps[]",
+          "referenced_count": 15,
+          "resolved_in_bp": 15
+        },
+        "word_form_prefix": "STEP-"
+      }
+    ],
+    "referenced_word_forms_total": 70,
+    "rule": "02 references-but-does-not-define these BP word forms; one whole-book glossary object per batch1 CONVENTIONS sec.3 (dictionary/registry source, value-domain lookup, no per-term governed-id retrieval path); per-term objects would duplicate identities owned by the BP / 01_domain-projection (double truth); resolution ledger is recomputed live by the tool and dangling refs would be REGISTERED, never adjudicated",
+    "source_document_meta": {
+      "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+      "document_type": "process-task-interface-model",
+      "schema_version": 3
+    }
+  },
+  "permits_active": [],
+  "producer": {
+    "liveness": {
+      "status": "active"
+    },
+    "merge_semantics": {
+      "backfill_if_missing": [],
+      "human_never_touched": [],
+      "refresh_fields": [
+        "payload"
+      ]
+    },
+    "producer_id": "prod.mig_b5_ingest_bp_main",
+    "views_maintained": [
+      "truth-index.envelope"
+    ]
+  },
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b5/ingest_bp_main.py",
+      "locator": {
+        "batch": "MIG-B5",
+        "ingested_from": "outputs/frontend/10_planned/02_process-task-interface.yaml",
+        "line_anchors": {
+          "pages": 4,
+          "processes": 3854,
+          "route_authority": 220,
+          "scenes": 3915,
+          "states": 4140,
+          "tasks": 6242,
+          "transitions": 6819,
+          "work_contexts": 7646
+        },
+        "transcription": "external reference inventory of the BP main document: 70 word forms in 7 families quoted verbatim; resolution ledger recomputed live against the two pin-verified sources below"
+      },
+      "pin": {
+        "digest": "sha256:6bbad100833a9c4cdfa13359e1137f5121e607f7ef0254873c3c1ab42b79c736"
+      },
+      "ref": "outputs/frontend/10_planned/02_process-task-interface.yaml",
+      "type": "design_seed"
+    },
+    {
+      "captured_by": "agent:mig-b5/ingest_bp_main.py",
+      "locator": {
+        "batch": "MIG-B5",
+        "ingested_from": "outputs/frontend/00_input/blueprint-baseline.yaml",
+        "transcription": "resolution target tier 1: BP semantic_model family definition bodies (acceptances/actions/actors/objects/permissions/rules + processes[].steps[] for STEP-*)"
+      },
+      "pin": {
+        "digest": "sha256:a9e4b6a6592b1787d1a579ec230a149e2724141a7e65c098c7fcf41d71ce1a74"
+      },
+      "ref": "outputs/frontend/00_input/blueprint-baseline.yaml",
+      "type": "bp_blueprint"
+    },
+    {
+      "captured_by": "agent:mig-b5/ingest_bp_main.py",
+      "locator": {
+        "batch": "MIG-B5",
+        "ingested_from": "outputs/frontend/10_planned/01_domain-projection.yaml",
+        "transcription": "resolution target tier 2: 01_domain-projection projections[].source_id mirror set (STEP-* has no step semantic type in 01 -- tiering registered, not dangling)"
+      },
+      "pin": {
+        "digest": "sha256:35acfa8b2c8c0600d0bf57a259118609aa8694d4c73c88b8ae1c7f15cec38c3d"
+      },
+      "ref": "outputs/frontend/10_planned/01_domain-projection.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "superseded_status_field": {
+    "mapped_to": "axes.lifecycle=PROPOSED (fact record) + axes.evidence=PLANNED (cross-axis assertion per the FROZEN 02 envelope note); semantic upgrade planned->CURRENT is register-only, Owner adjudication required (batch1 CONVENTIONS sec.4 / batch2 readiness precedent)",
+    "reason": "coordinate_state=planned is one flat coordination word; the plan fact stays a fact record and the semantic upgrade belongs to the Owner; values transcribed without tampering (planned is planned)",
+    "source_field": "coordinate_state",
+    "source_value": "planned (347/347 entities, tool-verified uniform)",
+    "upgrade_registered": true
+  },
+  "supersedes": null,
+  "title_zh": "BP 模型外部引用术语表"
+}

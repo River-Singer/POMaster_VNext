@@ -10,7 +10,7 @@
     "package": "SPEC-D 语义分解汇总（consolidated-pool D5 精选，cap=25）",
     "human_review_required": true,
     "evidence": "PLANNED",
-    "provenance": "POMaster_VNext/migration/spec-decomposition/candidates/consolidated-pool.yaml",
+    "provenance": "POMaster_VNext/corpus/spec-knowledge/candidates/consolidated-pool.yaml",
     "group": "FE-G1",
     "candidate_id": "POLICY.DEP.INTRODUCTION_REVIEW",
     "density_rank": 22,
@@ -53,7 +53,7 @@
   "sources": [
     {
       "type": "design_seed",
-      "ref": "POMaster_VNext/migration/spec-decomposition/candidates/FE-G1.yaml",
+      "ref": "POMaster_VNext/corpus/spec-knowledge/candidates/FE-G1.yaml",
       "captured_by": "agent:claude/spec-d-consolidation",
       "locator": {
         "candidate": "POLICY.DEP.INTRODUCTION_REVIEW",

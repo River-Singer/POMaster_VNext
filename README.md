@@ -22,7 +22,7 @@ POMaster = State + Context + Transition + Evidence，在 Authority 与 Adaptive 
 
 ```text
 0 BOOTSTRAP ──── init 扫描 / Authority Map / catalog-lock / 轻入口生成
-                  （有原型→活体走查提五件套；存量项目→收编已有 registry/spec/记忆）
+                  （有原型→活体走查提五件套；存量项目→纳管已有 registry/spec/记忆）
 1 主循环 ─────── N 次 Change，每次跑下面的八拍 Loop（项目的日常形态）
 2 周期事件 ────── 全量对账 / 紧缩 / 经验入库 / catalog 升级 diff / 自托管基准
 3 架构演化 ────── Challenge → ACR → 受控迁移 → Deviation 到期清算
@@ -104,12 +104,12 @@ pomaster doctor        # 工具/MCP 配置探测（缺什么提示装什么）
 | 决议记录 D1-D23 | `.trellis/tasks/08-27-pomaster-vnext-control-plane/prd.md` |
 | 设计细则裁定 30 条 | 同目录 `research/design-synthesis-decisions.md` |
 | IR Schema 形态 | `research/design-thread-A-ir-schema.md` |
-| 迁移路线 M0-M7 | `research/design-thread-B-migration.md` |
+| 语料采集路线 M0-M7 | `research/design-thread-B-migration.md` |
 | Router 判定机制 | `research/design-thread-C-router.md` |
 | Solo 协作形态 | `research/design-thread-D-solo-form.md` |
 | 生命周期总装图 | `research/vnext-lifecycle-and-loop.md` |
 | Kernel 公共 API 契约 | `docs/kernel-api.md` |
-| 遗产布局投影预设 legacy-outputs（旧 spec/ 与 outputs/ 目录结构以「投影预设」永续保留，D25；Canonical State 唯一事实源，渲染器为后续砖） | `docs/legacy-layout-preset.md` |
+| 注册表树投影预设 registry-tree（旧 spec/ 与 outputs/ 目录结构以「投影预设」永续保留，D25；Canonical State 唯一事实源，渲染器为后续砖） | `docs/registry-tree-projection-preset.md` |
 
 ## 质量承诺
 

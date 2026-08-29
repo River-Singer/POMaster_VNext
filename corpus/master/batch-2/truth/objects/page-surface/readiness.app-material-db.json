@@ -1,0 +1,145 @@
+{
+  "aliases": [
+    "PAGE-APP-MATERIAL-DB"
+  ],
+  "authority": {
+    "delegates": [],
+    "escalation_hint": "regenerate via corpus/master/batch-2/tools/ingest_page_readiness.py; lifecycle semantic upgrade (READY->CURRENT) is register-only and requires HUMAN_OWNER adjudication; readiness values flow via the compile_frontend_page_spec attest chain and self-reported attest values are never singly judgeable (C5); this is a PAGE.READINESS.* facet object (payload.id_facet) -- merge into the page-level object via the supersede chain after Owner id adjudication",
+    "owner": "FRONTEND_ENGINEERING",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "LOCKED",
+    "evidence": "IMPLEMENTED",
+    "lifecycle": "PROPOSED"
+  },
+  "axis_profile": "page_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "PAGE.READINESS.APP_MATERIAL_DB",
+  "key_bindings": {
+    "artifact": [],
+    "code": [
+      {
+        "artifact_type": "file",
+        "expect": {
+          "page_id": "PAGE-APP-MATERIAL-DB"
+        },
+        "match_rule": "mechanical",
+        "value": "outputs/frontend/30_generated/page-specs/PAGE-APP-MATERIAL-DB.md"
+      }
+    ]
+  },
+  "kind": "page_surface",
+  "notes_md": "本对象为 MIG-B2/M2 转录组 B 就绪态件：源 outputs/frontend/10_planned/page-readiness-registry.yaml（扩展名 .yaml、内容为 JSON）pages[] 共 39 条逐条转录之一（PAGE-APP-MATERIAL-DB）。源条目（last_updated_by/notes/page_id/readiness/spec_md_path/status 六字段）以 payload.readiness_entry 整条逐字保真（与源条目字节等价，工具断言）；数组顺序=源顺序。双轴化（本批语义核心，ledger dual_axis_preregistration）：旧扁平 status=DRAFT 拆 approval 轴（axes.lifecycle=PROPOSED，事实记录非语义降级）× evidence 轴（attest 记录 present=true、纠正标记 present=true，随条目保真）；READY→CURRENT 只登记不执行（实测 READY=0），语义升级归 Owner 裁决；payload.superseded_status_field 按 batch1 约定书 §4 形状逐对象登记，数值语义不篡改（实测分布 DRAFT=33/BLOCKED=6/READY=0 与 inventory page_readiness_status 三重一致）。虚假 attest 教训在仓防线（M4 attest 交叉校验 gate 的靶子）：本条 notes 携带纠正标记『readiness 按 MD 证据纠正(虚假 attest->false)』（且 last_updated_by=page-spec-attest-2026-08-06 attest 记录在案，属 attest 过 gate 后被证伪回改的 24 条之一）——attest 自报值永不单独判卷（C5），纠正痕迹随条目转录、不清洗；payload.attest_warning.attest_verified=false 为机器可寻址警示字段。id 赐名（非收编）：PAGE-APP-MATERIAL-DB→PAGE.READINESS.APP_MATERIAL_DB 为 canonical 拟合（token 重排外推），ALIASES_V0 无 PAGE-APP-* 规则，全部 HUMAN_CONFIRM_REQUIRED（key-binding-map.batch2.draft.yaml alias_registrations.proposed_needs_human，页级拟形 PAGE.APP_MATERIAL_DB）——canonical_id_grant 逐对象登记待人工裁决，legacy 词形照录 aliases[]，不构成 A6 场景、origin 保持源侧 derived（batch1 约定书 §6 边界条款 / batch2 §5 SHELL.* 赐名先例同形）。并发 page-surface 蓝图转录组同目录落地 PAGE.APP.* 点分拟形，与本组下划线拟形待同一 Owner 裁决；本对象取 PAGE.READINESS.* 作用域段（payload.id_facet）避让同 id 互踩。02b §7 page_surface 蓝本 surface/template_ref/slots/actions 字段缺席理由：readiness 注册表源文件无这些字段；surface 归属（Page Spec 双分母）与蓝图结构/交互语义归页面注册表与 screen-blueprints 转录组，转录不 fabricate（batch2 §5 component 蓝本三字段缺席同款先例）；payload 仅承载就绪态语义。路由权威不落 payload（02b §7 注记，KEYBINDING page↔dir A7 P0 待 KEYBINDING.* 对象族）。key_bindings.code 锚 spec_md_path （源条目自带 page-spec 编译产物指针），probe 缺省=未探测（gate 必须重扫，C5）。 本字段为人类散文，机器永不解析判卷。",
+  "origin": "derived",
+  "payload": {
+    "attest_warning": {
+      "attest_record_present": true,
+      "attest_verified": false,
+      "fake_attest_correction_marker": "readiness 按 MD 证据纠正(虚假 attest->false)",
+      "gate_target": "M4 attest cross-check gate",
+      "rule": "attest self-report values never singly judgeable (C5); correction traces preserved verbatim in readiness_entry.notes, never cleaned"
+    },
+    "canonical_id_grant": {
+      "canonical_draft": "PAGE.APP_MATERIAL_DB",
+      "legacy_word_form": "PAGE-APP-MATERIAL-DB",
+      "object_id": "PAGE.READINESS.APP_MATERIAL_DB",
+      "registered_in": "corpus/master/batch-2/key-binding-map.batch2.draft.yaml alias_registrations.proposed_needs_human",
+      "rule": "ALIASES_V0 has no PAGE-APP-* rule; canonical fit granted only, never rename-on-ingest (object origin stays source-side derived); formal alias-family registration awaits vocab PR / Owner adjudication",
+      "status": "HUMAN_CONFIRM_REQUIRED"
+    },
+    "id_facet": {
+      "merge_path": "supersede",
+      "object_id": "PAGE.READINESS.APP_MATERIAL_DB",
+      "page_level_id": "PAGE.APP_MATERIAL_DB",
+      "page_level_id_note": "page-level draft per key-binding-map.batch2.draft.yaml alias_registrations.proposed_needs_human (PAGE.APP_* underscore notation)",
+      "page_level_id_status": "HUMAN_CONFIRM_REQUIRED",
+      "rule": "the concurrent page-surface blueprint transcription holds the page-level ids in this kind-dir (same ALIASES_V0 canonical for PAGE-TASK-STEP-*; dotted PAGE.APP.* drafts observed for PAGE-APP-*); this readiness facet object takes the PAGE.READINESS.* scoping segment to avoid same-id clobber and merges via the supersede chain after Owner id adjudication (report only, never auto-adjudicate)"
+    },
+    "readiness_entry": {
+      "last_updated_by": "page-spec-attest-2026-08-06",
+      "notes": "已 attest：screen-blueprint DRAFT（spec/API 缺口）+ test_material 缺失 -> DRAFT。unresolved=5 项。 | readiness 按 MD 证据纠正(虚假 attest->false)。 | v16 人工维度按 MD 纠正(机器维度交 compiler)。 | v16 人工维度按 MD 纠正(机器维度交 compiler)。",
+      "page_id": "PAGE-APP-MATERIAL-DB",
+      "readiness": {
+        "api_complete": true,
+        "business_complete": false,
+        "component_complete": true,
+        "composition_complete": true,
+        "data_complete": true,
+        "implementation_boundary_complete": false,
+        "interaction_complete": null,
+        "nonfunctional_complete": true,
+        "permission_complete": false,
+        "scene_denominator_complete": null,
+        "state_complete": false,
+        "test_material_ready": true,
+        "unresolved_p0": 4,
+        "unresolved_p1": 0
+      },
+      "spec_md_path": "outputs/frontend/30_generated/page-specs/PAGE-APP-MATERIAL-DB.md",
+      "status": "DRAFT"
+    },
+    "source_document_meta": {
+      "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+      "document_type": "page-readiness-registry",
+      "schema_version": 1
+    },
+    "status_axes": {
+      "approval_axis": {
+        "blocked_fact_registered": false,
+        "lifecycle_recorded": "PROPOSED",
+        "source_status": "DRAFT"
+      },
+      "evidence_axis": {
+        "attest_record_present": true,
+        "attested_by_source_field": "readiness_entry.last_updated_by",
+        "correction_marker_present": true,
+        "notes_preserved_in": "readiness_entry.notes"
+      }
+    },
+    "superseded_status_field": {
+      "mapped_to": "approval×evidence 双轴拆分（batch1 约定书 §4）：审批/推进态迁 lifecycle 轴、attest/纠正证据迁 evidence 轴；语义升级留待 Owner 裁决",
+      "reason": "旧扁平 status 一词多义（批准没有/证据有没有/变了没有），转录时拆正交双轴；数值语义不篡改",
+      "source_field": "status",
+      "source_value": "DRAFT",
+      "upgrade_registered": true
+    }
+  },
+  "permits_active": [],
+  "producer": {
+    "liveness": {
+      "status": "active"
+    },
+    "merge_semantics": {
+      "backfill_if_missing": [],
+      "human_never_touched": [],
+      "refresh_fields": [
+        "payload"
+      ]
+    },
+    "producer_id": "prod.mig_b2_ingest_page_readiness",
+    "views_maintained": [
+      "truth-index.envelope"
+    ]
+  },
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b2/ingest_page_readiness.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/page-readiness-registry.yaml",
+        "transcription": "readiness entry PAGE-APP-MATERIAL-DB transcribed row-by-row verbatim (payload.readiness_entry byte-equal); flat status=DRAFT split into approval x evidence dual axes (lifecycle PROPOSED fact record, upgrade register-only); fake-attest correction marker preserved as payload.attest_warning (attest_verified=false, M4 gate target); superseded_status_field registered per batch1 section 4; id action: canonical grant PAGE.APP_* fit HUMAN_CONFIRM_REQUIRED, registered in payload, origin=derived (source-side), facet-scoped to PAGE.READINESS.*"
+      },
+      "pin": {
+        "digest": "sha256:cd7fa5c346e0d4cf09475cab1d6abeb75e0f1d3e57f37d657bced18186b900ca"
+      },
+      "ref": "outputs/frontend/10_planned/page-readiness-registry.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "页面实施就绪态·PAGE-APP-MATERIAL-DB"
+}

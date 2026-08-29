@@ -1,0 +1,123 @@
+{
+  "aliases": [
+    "SCENE-ACC-BUC-OUTPUT-TO-LEDGER"
+  ],
+  "authority": {
+    "delegates": [],
+    "escalation_hint": "regenerate via corpus/master/batch-5/tools/ingest_bp_main.py; 02_process-task-interface.yaml change re-runs the ingest; PROC-*/SCENE-* family word-form registration belongs to the vocabulary PR / HUMAN_OWNER (EVOLUTION_CHANNEL; ledger owner FRONTEND_ARCHITECTURE)",
+    "owner": "FRONTEND_ARCHITECTURE",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "LOCKED",
+    "evidence": "PLANNED",
+    "lifecycle": "PROPOSED"
+  },
+  "axis_profile": "rule_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "POLICY.SCENE.ACC_BUC_OUTPUT_TO_LEDGER",
+  "key_bindings": {
+    "artifact": [],
+    "code": [
+      {
+        "artifact_type": "file",
+        "expect": {
+          "acceptance_id": "ACC-BUC-OUTPUT-TO-LEDGER",
+          "page_ids": [
+            "PAGE-TASK-STEP-BUC-ANALYSE",
+            "PAGE-TASK-STEP-OUTPUT-TO-LEDGER"
+          ],
+          "scene_id": "SCENE-ACC-BUC-OUTPUT-TO-LEDGER",
+          "task_ids": [
+            "TASK-STEP-BUC-ANALYSE",
+            "TASK-STEP-OUTPUT-TO-LEDGER"
+          ]
+        },
+        "match_rule": "mechanical",
+        "value": "outputs/frontend/10_planned/02_process-task-interface.yaml"
+      }
+    ]
+  },
+  "kind": "business_rule",
+  "notes_md": "BP 主文档转录（MIG-B5 转录组 A·验收场景，每场景一对象 13 条）：源 outputs/frontend/10_planned/02_process-task-interface.yaml（design_seed，pin 见 sources[0]；实体分母 347 之场景族 13/13）。\npayload.scene 整条逐字（9 字段；given/when/then 为验收事实正文，中文逐字进 payload——batch3 §2.1 散文边界；status=compiled 为编译完成事实记录，不映射 axes）。\n检索路径：SCENE-ACC-* 单键被 09/11/回执/06_traceability 逐条引用（13=13 四侧互证）；scene↔task/page 多对多（20 个 page 引用对 ⊆ 15 页），不能随页承载，逐条立对象。\n赐名：SCENE-ACC-BUC-OUTPUT-TO-LEDGER → POLICY.SCENE.ACC_BUC_OUTPUT_TO_LEDGER（SCENE-* 本地族，batch3 §4 通则；非 A6，origin=derived）。\n双词形族分立（batch5 inventory cross_reference_forms 照录不合并）：ACC-* 业务验收 13 与 ACCEPT-PAGE-* 页级验收 15 同域异族。\n轴基线：lifecycle=PROPOSED（coordinate_state=planned 事实记录，superseded_status_field 已登记）+ evidence=PLANNED + confidence=LOCKED + change=STABLE。\n散文承载：源为机器结构化 JSON，无散文叙事字段。摘要（全文按源指针回读）：none (honest zero)\n本字段为人类散文，机器永不解析判卷。",
+  "origin": "derived",
+  "payload": {
+    "scene": {
+      "acceptance_id": "ACC-BUC-OUTPUT-TO-LEDGER",
+      "coordinate_state": "planned",
+      "given": "业务用户已基于基础信息业务数据库完成某零件的成本分析",
+      "id": "SCENE-ACC-BUC-OUTPUT-TO-LEDGER",
+      "module_ids": [],
+      "page_ids": [
+        "PAGE-TASK-STEP-BUC-ANALYSE",
+        "PAGE-TASK-STEP-OUTPUT-TO-LEDGER"
+      ],
+      "status": "compiled",
+      "task_ids": [
+        "TASK-STEP-BUC-ANALYSE",
+        "TASK-STEP-OUTPUT-TO-LEDGER"
+      ],
+      "then": "该零件在台账中的成本相关业务属性反映此次分析结果",
+      "when": "分析结果保存"
+    },
+    "source_document_meta": {
+      "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+      "document_type": "process-task-interface-model",
+      "schema_version": 3
+    }
+  },
+  "permits_active": [],
+  "producer": {
+    "liveness": {
+      "status": "active"
+    },
+    "merge_semantics": {
+      "backfill_if_missing": [],
+      "human_never_touched": [],
+      "refresh_fields": [
+        "payload"
+      ]
+    },
+    "producer_id": "prod.mig_b5_ingest_bp_main",
+    "views_maintained": [
+      "truth-index.envelope"
+    ]
+  },
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b5/ingest_bp_main.py",
+      "locator": {
+        "batch": "MIG-B5",
+        "ingested_from": "outputs/frontend/10_planned/02_process-task-interface.yaml",
+        "line_anchors": {
+          "pages": 4,
+          "processes": 3854,
+          "route_authority": 220,
+          "scenes": 3915,
+          "states": 4140,
+          "tasks": 6242,
+          "transitions": 6819,
+          "work_contexts": 7646
+        },
+        "transcription": "BP main document acceptance-scene objectified per scene (single-key retrieval path: SCENE-ACC-* consumed item-by-item by 09.acceptance_plan 13 / 11.fine_grained_scope.scene_ids 13 / P2 receipt scene_ids 13 / 06 traceability acceptance-scene nodes 13; scene<->task/page is many-to-many so scenes cannot ride inside page objects); given/when/then are verbatim acceptance facts (Chinese business text stays in payload, batch3 sec.2.1 prose boundary); status=compiled is a build-completion fact record, not an axes mapping; SCENE-ACC-* local family granted POLICY.SCENE.* per the batch3 sec.4 naming rule (not A6, origin derived)"
+      },
+      "pin": {
+        "digest": "sha256:6bbad100833a9c4cdfa13359e1137f5121e607f7ef0254873c3c1ab42b79c736"
+      },
+      "ref": "outputs/frontend/10_planned/02_process-task-interface.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "superseded_status_field": {
+    "mapped_to": "axes.lifecycle=PROPOSED (fact record) + axes.evidence=PLANNED (cross-axis assertion per the FROZEN 02 envelope note); semantic upgrade planned->CURRENT is register-only, Owner adjudication required (batch1 CONVENTIONS sec.4 / batch2 readiness precedent)",
+    "reason": "coordinate_state=planned is one flat coordination word; the plan fact stays a fact record and the semantic upgrade belongs to the Owner; values transcribed without tampering (planned is planned)",
+    "source_field": "coordinate_state",
+    "source_value": "planned (347/347 entities, tool-verified uniform)",
+    "upgrade_registered": true
+  },
+  "supersedes": null,
+  "title_zh": "验收场景·ACC-BUC-OUTPUT-TO-LEDGER"
+}

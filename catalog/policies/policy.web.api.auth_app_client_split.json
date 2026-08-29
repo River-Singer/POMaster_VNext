@@ -7,10 +7,10 @@
   },
   "x-batch4-uplift": {
     "status": "PROPOSAL",
-    "package": "MIG-B4 Universal 上提（工程策略族 split-ledger 驱动）",
+    "package": "batch-4 语料批 Universal 上提（工程策略族 split-ledger 驱动）",
     "human_review_required": true,
     "evidence": "PLANNED",
-    "provenance": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+    "provenance": "POMaster_VNext/corpus/master/batch-4/split-ledger.yaml"
   },
   "id": "POLICY.WEB.API.AUTH_APP_CLIENT_SPLIT",
   "kind": "policy",
@@ -41,7 +41,7 @@
     "escalation_hint": "catalog-batch4-uplift"
   },
   "origin": "ingested",
-  "origin_note": "MIG-B4 split-ledger UNIVERSAL/HYBRID universal 半上提；目录词面独立改写（clean-room），零逐字拷贝上游源文本",
+  "origin_note": "batch-4 语料批 split-ledger UNIVERSAL/HYBRID universal 半上提；词面独立改写（clean-room），零逐字拷贝源文本",
   "sub_rules": [
     {
       "rule_id": "clients.authClient",
@@ -51,23 +51,23 @@
         "entry_id": "clients.authClient",
         "decision": "HYBRID",
         "merge_group": "MG-HTTP-RECOVERY",
-        "migration_batch": "MIG-B4/HTTP_CLIENT",
-        "split_ledger": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+        "corpus_batch": "batch-4/HTTP_CLIENT",
+        "split_ledger": "POMaster_VNext/corpus/master/batch-4/split-ledger.yaml"
       }
     }
   ],
   "sources": [
     {
       "type": "design_seed",
-      "ref": "POMaster_VNext/migration/master-batch4/split-ledger.yaml",
-      "captured_by": "agent:claude/mig-b4-catalog-uplift",
+      "ref": "POMaster_VNext/corpus/master/batch-4/split-ledger.yaml",
+      "captured_by": "agent:claude/batch-4-catalog-uplift",
       "locator": {
         "asset": "http-client-policy",
         "entry": "clients.authClient",
-        "migration_batch": "MIG-B4/HTTP_CLIENT",
+        "corpus_batch": "batch-4/HTTP_CLIENT",
         "upstream_source_ref": "outputs/frontend/10_planned/http-client-policy.yaml"
       },
-      "clean_room_note": "independently rewritten from upstream batch4 mirror; zero verbatim copy"
+      "clean_room_note": "independently rewritten from field corpus batch-4 material; zero verbatim copy"
     }
   ],
   "review_notes": [

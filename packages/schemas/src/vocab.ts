@@ -175,7 +175,7 @@ export type GovernedIdPrefix = (typeof GOVERNED_ID_PREFIXES)[number];
  * PR-0001 三新族（MIG-B1 源侧跟踪 id 收编）的机械映射归 kernel id.ts：
  * ISSUE.* 登记前缀点段剥离不带入 canonical + 段内连字符→下划线 greedy 打包（32 字符
  * SEGMENT 上限，段界可为打包伪迹）+ 末尾纯数字段→SEQ；FTA-* / FB-* 标记词并入首段；
- * 机械映射权威=migration/master-batch1/tools/ingest_change_governance.py pack_segments。
+ * 机械映射权威=corpus/master/batch-1/tools/ingest_change_governance.py pack_segments。
  */
 export const ALIASES_V0 = [
   { legacy: "KB-*", canonical: "KNOWLEDGE.*" },

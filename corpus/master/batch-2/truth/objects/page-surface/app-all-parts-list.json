@@ -1,0 +1,363 @@
+{
+  "aliases": [
+    "PAGE-APP-ALL-PARTS-LIST"
+  ],
+  "authority": {
+    "delegates": [
+      {
+        "required_for": [
+          "approve_page_blueprint"
+        ],
+        "role": "HUMAN_OWNER"
+      }
+    ],
+    "escalation_hint": "regenerate via corpus/master/batch-2/tools/ingest_screen_blueprints_front_half.py; blueprint structure/action/field-semantics change re-runs the generator then this ingest; page.status progression and canonical word form PAGE.APP_* confirmation are HUMAN_OWNER seats (approve_page_blueprint; EVOLUTION_CHANNEL; ledger owner FRONTEND_ARCHITECTURE)",
+    "owner": "FRONTEND_ARCHITECTURE",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "PROVISIONAL",
+    "evidence": "IMPLEMENTED",
+    "lifecycle": "CURRENT"
+  },
+  "axis_profile": "page_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "PAGE.APP_ALL_PARTS_LIST",
+  "key_bindings": {
+    "artifact": [],
+    "code": [
+      {
+        "artifact_type": "source_dir",
+        "expect": {
+          "page_id": "PAGE-APP-ALL-PARTS-LIST"
+        },
+        "match_rule": "mechanical",
+        "value": "src/pages/page-all-parts-list"
+      },
+      {
+        "artifact_type": "file",
+        "expect": {
+          "route_name_exact": "PAGE-APP-ALL-PARTS-LIST"
+        },
+        "match_rule": "mechanical",
+        "value": "src/app/router/routes.ts"
+      }
+    ]
+  },
+  "kind": "page_surface",
+  "notes_md": "蓝图转录（MIG-B2 转录组 C·前半 1/20，一蓝图一 surface 主对象）：源 outputs/frontend/10_planned/screen-blueprints/PAGE-APP-ALL-PARTS-LIST.yaml（bp_blueprint，pin 见 sources[0]；分母=screen-blueprints 实测 39 之字典序第 1 份）。\n三层对象化：结构=template_ref PAGE.LIST + regions 4 条（slot 词形均在 page-anatomy-registry 16 槽合法集内）+ states 6 项；交互=actions 5 条（ACTION.* 摆位 + PAGE_SLOT.* 槽位值引用）；字段语义=regions/slots 内联结构化字段逐字承载（源无 FIELD.* 词形 → FIELD.* 派生引用=0，诚实零）。\nsurface=V1（Page Spec 双分母之应用页侧；分母归属迁移期走信封 denominator_refs 显式空，DENOMINATOR.* 未注册）。\npage.status=APPROVED 为设计审批轴事实（与 readiness 实施就绪轴分立，禁混轴）；已登记 payload.blueprint.superseded_status_field，数值语义不篡改。\nunresolved 0 条逐条转 payload.blueprint.unresolved_exceptions（Exception Ledger 承载：显式未决，不静默丢弃、不静默裁决）。\n散文承载登记：none (honest zero) → 浓缩为信封 notes_md 摘要 + sources[0].locator.line_anchors 源指针（蓝图 YAML 正文不整本搬运；摘录截断）。摘要（全文按源指针回读）：none (honest zero)\ncanonical 词形：源词形 PAGE-APP-ALL-PARTS-LIST → 拟合 PAGE.APP_ALL_PARTS_LIST（PAGE-APP-*→PAGE.APP_* token 重排外推；非 ALIASES_V0 现役 8 族，key-binding-map.batch2.draft.yaml proposed_needs_human）→ HUMAN_CONFIRM_REQUIRED：对象以拟合词形落档、legacy 词形照录 aliases[]（登记不改名），axes.confidence=PROVISIONAL（悬置态，batch1 约定书 §2；Owner 裁决后可转 LOCKED），origin 保持源侧 derived（非 A6 场景）。\nroute/目录权威不在本对象 payload：page↔dir 与 route_name 机械锚以 key_bindings.code 期望声明承载（值=源词形逐字），KEYBINDING.* 表对象落档仍待人工裁决（草表 status=MECHANICAL_ROUTE_NAME_MATCH）。\n本字段为人类散文，机器永不解析判卷。",
+  "origin": "derived",
+  "payload": {
+    "actions": [
+      "ACTION.SELECT",
+      "ACTION.EXPORT",
+      "ACTION.CONFIG",
+      "ACTION.REFRESH"
+    ],
+    "blueprint": {
+      "actions": [
+        {
+          "action_id": "ACTION.SELECT",
+          "business_action": "ACT-SELECT-VEHICLE-CONTEXT",
+          "capability_id": "CAP-ALL-PARTS-LIST",
+          "id": "PAGE-ACT-ALL-PARTS-LIST-1",
+          "mock": false,
+          "placement": "ACTION.SELECT",
+          "slot": "PAGE_SLOT.FILTERS"
+        },
+        {
+          "action_id": "ACTION.EXPORT",
+          "business_action": "ACT-ALL-PARTS-LIST-EXPORT-ALL",
+          "capability_id": "CAP-ALL-PARTS-LIST",
+          "id": "PAGE-ACT-ALL-PARTS-LIST-2",
+          "mock": false,
+          "placement": "ACTION.EXPORT",
+          "slot": "PAGE_SLOT.SECONDARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.EXPORT",
+          "business_action": "ACT-ALL-PARTS-LIST-EXPORT-SELECTED",
+          "capability_id": "CAP-ALL-PARTS-LIST",
+          "id": "PAGE-ACT-ALL-PARTS-LIST-3",
+          "mock": false,
+          "placement": "ACTION.EXPORT",
+          "slot": "PAGE_SLOT.SECONDARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.CONFIG",
+          "business_action": "ACT-ALL-PARTS-LIST-COLUMN-CONFIG",
+          "capability_id": "CAP-ALL-PARTS-LIST",
+          "id": "PAGE-ACT-ALL-PARTS-LIST-4",
+          "mock": false,
+          "placement": "ACTION.CONFIG",
+          "slot": "PAGE_SLOT.SECONDARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.REFRESH",
+          "business_action": "ACT-REFRESH-MASTER-DATA",
+          "capability_id": "CAP-ALL-PARTS-LIST",
+          "id": "PAGE-ACT-ALL-PARTS-LIST-5",
+          "mock": false,
+          "placement": "ACTION.REFRESH",
+          "slot": "PAGE_SLOT.SECONDARY_ACTIONS"
+        }
+      ],
+      "api_requirements": [
+        {
+          "classification": "QUERY",
+          "id": "API_REQ.ALL.PARTS.LIST.1",
+          "method": "GET",
+          "operation_id": "list_partlist_api_v1_projects__project_id__partlist_get",
+          "path": "/api/v1/projects/{project_id}/partlist",
+          "source": {
+            "page": "PAGE-APP-ALL-PARTS-LIST"
+          },
+          "status": "ACCEPTED",
+          "type": "query"
+        },
+        {
+          "classification": "QUERY",
+          "id": "API_REQ.ALL.PARTS.LIST.2",
+          "method": "GET",
+          "operation_id": "list_carlines_api_v1_projects__project_id__carlines_get",
+          "path": "/api/v1/projects/{project_id}/carlines",
+          "source": {
+            "page": "PAGE-APP-ALL-PARTS-LIST"
+          },
+          "status": "ACCEPTED",
+          "type": "query"
+        },
+        {
+          "classification": "QUERY",
+          "id": "API_REQ.ALL.PARTS.LIST.3",
+          "method": "GET",
+          "operation_id": "export_partlist_api_v1_projects__project_id__partlist_export_get",
+          "path": "/api/v1/projects/{project_id}/partlist/export",
+          "source": {
+            "page": "PAGE-APP-ALL-PARTS-LIST"
+          },
+          "status": "ACCEPTED",
+          "type": "query"
+        }
+      ],
+      "error_rendering": {
+        "component": "DATA.EMPTY_STATE",
+        "fallback_slot": "PAGE_SLOT.FEEDBACK",
+        "isolation": "route-level ErrorBoundary; per-query error 不外溢其他页面（协议 18/27）",
+        "protocol": "universal:rendering-state-protocol",
+        "variant": "error"
+      },
+      "page_status": {
+        "axis": "design_approval",
+        "value": "APPROVED"
+      },
+      "prose_to_notes_md": [],
+      "regions": [
+        {
+          "behavior": "static",
+          "id": "REGION.PAGE_HEADER",
+          "note": "spec 25（2026-08-17 裁定）：不渲染面包屑导航行；h1 标题行默认渲染（车型/carline 上下文在标题行右侧）。",
+          "slots": {
+            "PAGE_SLOT.PRIMARY_ACTIONS": {
+              "capability_id": "PATTERN.ACTION_BAR",
+              "component": "PATTERN.ACTION_BAR"
+            },
+            "PAGE_SLOT.SECONDARY_ACTIONS": {
+              "capability_id": "PATTERN.ACTION_BAR",
+              "component": "PATTERN.ACTION_BAR",
+              "context": [
+                "车型选择（切换车型后加载该车型全系零件台账最新版本）",
+                "carline 权重展示：L1(20%) L2(50%) L3(30%) ← 来源车型主数据，仅展示（与标题同一行右侧）"
+              ]
+            },
+            "PAGE_SLOT.STATUS": {
+              "capability_id": "DATA.TAG",
+              "component": "DATA.TAG",
+              "tags": [
+                "36 列",
+                "只读视图"
+              ]
+            }
+          }
+        },
+        {
+          "behavior": "static",
+          "id": "REGION.SUMMARY",
+          "slots": {
+            "PAGE_SLOT.SUMMARY": {
+              "capability_id": "TYPOGRAPHY.DESCRIPTION",
+              "component": "TYPOGRAPHY.DESCRIPTION",
+              "summary": {
+                "calc": "每条线对 T 状态行的整车VSI A价(vst)/整车目标A价(tt)求和（spec 01-all-parts-list §5.4，2026-08-17 回填；4c2d，实体层派生，mock/real 共用）",
+                "id": "all-parts-line-totals",
+                "source": "specs(1)/specs/01-all-parts-list/spec.md §5.4 + 原型 all-parts-list.html calcAplTotals",
+                "text": "全系加总（T条线）：L1/L2/L3 各线 VSI 与 TARGET 合计",
+                "value_colors": "VSI=主色蓝 · TARGET=语义绿（token，与 el-color 覆盖值同源）"
+              }
+            }
+          }
+        },
+        {
+          "behavior": "render-by-state",
+          "id": "REGION.CONTENT",
+          "slots": {
+            "PAGE_SLOT.CONTENT": {
+              "capability_id": "DATA.READONLY_TABLE",
+              "component": "DATA.READONLY_TABLE",
+              "grid": {
+                "column_groups": [
+                  "台账身份证",
+                  "零件基础信息",
+                  "结构类字段",
+                  "定点相关",
+                  "日志相关",
+                  "条线信息(L1/L2/L3 T/F)"
+                ],
+                "editable": false,
+                "equipment_no_source": "无(标准件) / {编号}-IST / {编号}-SOLL",
+                "footer": {
+                  "component": "TYPOGRAPHY.DESCRIPTION",
+                  "text": "共 {count} 条 · 无翻页全量展示 · 只读"
+                },
+                "frozen_columns": {
+                  "left": [
+                    "#",
+                    "记录编号",
+                    "零件号"
+                  ],
+                  "right": [
+                    "L1",
+                    "L2",
+                    "L3"
+                  ]
+                },
+                "header_filters": false,
+                "legend": "T/F/O 三态图例（T=绿 / O=橙 / F=默认色，色语义与 line_assignment_rule 同源 token；文案 src/entities/all-parts-list/copy.ts）",
+                "line_assignment_rule": "台账双字段（所属条线+选装条线）按优先级 T>O>F 转三态列（所属条线为空=全条线 T）；T=绿 / O=橙 / F=默认色（spec 21/30 语义色）",
+                "pagination": false,
+                "read_only": true,
+                "selection": "复选框列（#）多选，仅复选框/表头全选触发（spec 30 项目节 suppressRowClickSelection），行点击不选中",
+                "total_columns": 36
+              },
+              "pattern_id": "PATTERN.LIST_TABLE"
+            }
+          }
+        },
+        {
+          "behavior": "static",
+          "id": "REGION.FOOTER_ACTIONS",
+          "slots": {
+            "PAGE_SLOT.FOOTER_ACTIONS": {
+              "capability_id": "PATTERN.ACTION_BAR",
+              "component": "PATTERN.ACTION_BAR"
+            },
+            "PAGE_SLOT.SAVE_STATUS": {
+              "capability_id": "DATA.STATUS_BADGE",
+              "component": "DATA.STATUS_BADGE"
+            }
+          }
+        }
+      ],
+      "source_document_meta": {
+        "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+        "document_type": "screen-blueprint",
+        "schema_version": 1
+      },
+      "source_page_id": "PAGE-APP-ALL-PARTS-LIST",
+      "states": [
+        "idle",
+        "loading",
+        "success",
+        "empty",
+        "error",
+        "read-only"
+      ],
+      "superseded_status_field": {
+        "mapped_to": "design-approval-axis fact record (classification-ledger blueprint_status_axis_note: design-approval axis and implementation-readiness axis stay separate; the readiness axis lives in page-readiness-registry); object axes describe the truth object itself (lifecycle CURRENT = source is an active canonical), never mixed across axes",
+        "reason": "flat status is one word with many meanings; the design-approval semantic stays a fact record and status progression belongs to the HUMAN_OWNER approve_page_blueprint delegate seat; values are transcribed without tampering",
+        "source_field": "status",
+        "source_value": "APPROVED",
+        "upgrade_registered": true
+      },
+      "template": {
+        "id": "PAGE.LIST"
+      },
+      "unresolved_exceptions": {
+        "carrier": "exception_ledger",
+        "count": 0,
+        "items": [],
+        "rule": "unresolved items carried item-by-item as EXPLICITLY unresolved (CONVENTIONS section 3): never silently dropped, never auto-adjudicated; resolution belongs to the Owner"
+      }
+    },
+    "slots": [
+      "PAGE_SLOT.PRIMARY_ACTIONS",
+      "PAGE_SLOT.SECONDARY_ACTIONS",
+      "PAGE_SLOT.STATUS",
+      "PAGE_SLOT.SUMMARY",
+      "PAGE_SLOT.CONTENT",
+      "PAGE_SLOT.FOOTER_ACTIONS",
+      "PAGE_SLOT.SAVE_STATUS",
+      "PAGE_SLOT.FILTERS",
+      "PAGE_SLOT.FEEDBACK"
+    ],
+    "surface": "V1",
+    "template_ref": "PAGE.LIST"
+  },
+  "permits_active": [],
+  "producer": {
+    "liveness": {
+      "status": "active"
+    },
+    "merge_semantics": {
+      "backfill_if_missing": [],
+      "human_never_touched": [],
+      "refresh_fields": [
+        "payload.blueprint"
+      ]
+    },
+    "producer_id": "prod.mig_b2_ingest_screen_blueprints_front_half",
+    "views_maintained": [
+      "truth-index.envelope"
+    ]
+  },
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_front_half.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-ALL-PARTS-LIST.yaml",
+        "line_anchors": {
+          "composition_adjudication": null,
+          "notes": null,
+          "unresolved": 217
+        },
+        "prose_summarized": [],
+        "transcription": "front-half blueprint 1/20 objectified one-to-one into a page_surface object: structure (template_ref/regions/states) + interaction (actions) + inline field semantics transcribed verbatim as structured units (array order = source order); page.status kept as a design-approval fact record with a superseded_status_field registration; unresolved items carried item-by-item into payload.blueprint.unresolved_exceptions; prose narrative excerpted into notes_md, never wholesale-migrated; no physical route string enters the payload"
+      },
+      "pin": {
+        "digest": "sha256:c9e0bd4c604d7ffd8b6ee09998aaf955e502973554b7781b474f094919d42dd7"
+      },
+      "ref": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-ALL-PARTS-LIST.yaml",
+      "type": "bp_blueprint"
+    },
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_front_half.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "governance_id": "PAGE-APP-ALL-PARTS-LIST",
+        "ingested_from": "corpus/master/batch-2/key-binding-map.batch2.draft.yaml",
+        "transcription": "supplies the page<->dir and route_name binding expectations (status MECHANICAL_ROUTE_NAME_MATCH, draft table): values quoted verbatim into key_bindings.code; the KEYBINDING.* table object itself stays pending human adjudication"
+      },
+      "pin": {
+        "digest": "sha256:2beea8f95e0770da028d5ac5c2e76e2e1266e0ba7af6e0a3faa29fe72cb501fa"
+      },
+      "ref": "corpus/master/batch-2/key-binding-map.batch2.draft.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "页面·全系零件清单"
+}

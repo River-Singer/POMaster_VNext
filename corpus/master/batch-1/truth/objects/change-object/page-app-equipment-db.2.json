@@ -1,0 +1,90 @@
+{
+  "aliases": [
+    "ISSUE.PAGE-APP-EQUIPMENT-DB.2"
+  ],
+  "authority": {
+    "delegates": [],
+    "escalation_hint": "close via a fix CHANGE revision, then update source issue-register.yaml and re-run corpus/master/batch-1/tools/ingest_change_governance.py",
+    "owner": "FRONTEND_ENGINEERING",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "PROVISIONAL",
+    "evidence": "PLANNED",
+    "lifecycle": "PROPOSED"
+  },
+  "axis_profile": "change_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "CHANGE.PAGE_APP_EQUIPMENT_DB.2",
+  "key_bindings": {
+    "artifact": [],
+    "code": [
+      {
+        "artifact_type": "file",
+        "expect": {
+          "document_type": "issue-register",
+          "issue_id": "ISSUE.PAGE-APP-EQUIPMENT-DB.2",
+          "page_id": "PAGE-APP-EQUIPMENT-DB",
+          "status": "UNRESOLVED"
+        },
+        "match_rule": "mechanical",
+        "value": "outputs/frontend/10_planned/issue-register.yaml"
+      }
+    ]
+  },
+  "kind": "change_object",
+  "notes_md": "MIG-B1/M2 自 issue-register.yaml 逐条转录（源 id ISSUE.PAGE-APP-EQUIPMENT-DB.2）。status=UNRESOLVED 的轴映射登记见 payload.superseded_status_field；reopen_count=0 为诚实零（源无重开追踪）；class_scan_result 同类口径写在 scope 内，回归锚源文件不在场、显式登记缺失。描述内出现的日期属人类叙事。本字段为人类散文，机器永不解析判卷。",
+  "origin": "natural",
+  "payload": {
+    "affected_objects": [],
+    "class_scan_result": {
+      "fixed_count": 0,
+      "hits": 6,
+      "regression_case_ref": "NONE__NOT_REGISTERED_AT_MIG_B1",
+      "scope": "same-class scan = issues[] of outputs/frontend/10_planned/issue-register.yaml where page_id=PAGE-APP-EQUIPMENT-DB and type=QUESTION (group size 6 incl. self; R4 denominator source: source register grouping)"
+    },
+    "motivation": "mhr-column-blocked-by-schema: 汇总表设备小时费率(MHR)列为客户端基于明细投资/运营参数实时计算，但 DictionaryItem 无参数字段无法存储/重算，受 schema-mismatch 阻塞",
+    "reopen_count": 0,
+    "source_document_meta": {
+      "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+      "document_type": "issue-register",
+      "schema_version": 1
+    },
+    "source_issue": {
+      "description": "mhr-column-blocked-by-schema: 汇总表设备小时费率(MHR)列为客户端基于明细投资/运营参数实时计算，但 DictionaryItem 无参数字段无法存储/重算，受 schema-mismatch 阻塞",
+      "id": "ISSUE.PAGE-APP-EQUIPMENT-DB.2",
+      "page_id": "PAGE-APP-EQUIPMENT-DB",
+      "status": "UNRESOLVED",
+      "type": "QUESTION"
+    },
+    "superseded_status_field": {
+      "mapped_to": "axes.lifecycle=PROPOSED + axes.confidence=PROVISIONAL + axes.evidence=PLANNED (open defect kept as factual record)",
+      "reason": "open issue transcribed as factual record (PROPOSED); any promotion to an active work item is an Owner/engineering adjudication, not a transcription act",
+      "source_field": "status",
+      "source_value": "UNRESOLVED",
+      "upgrade_registered": true
+    }
+  },
+  "permits_active": [],
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b1/ingest_change_governance.py",
+      "locator": {
+        "batch": "MIG-B1",
+        "ingested_from": "outputs/frontend/10_planned/issue-register.yaml",
+        "issue_id": "ISSUE.PAGE-APP-EQUIPMENT-DB.2",
+        "transcription": "one issue -> one CHANGE object; status split across orthogonal axes and registered via superseded_status_field; legacy id ISSUE.* collected on ingest as CHANGE.* with the original word form kept in aliases (source never rewritten); numeric semantics untouched"
+      },
+      "pin": {
+        "digest": "sha256:e3ec792e23eba96fb7e343355abc54f9a307327d2283e51800a618cce4eba87d"
+      },
+      "ref": "outputs/frontend/10_planned/issue-register.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "mhr-column-blocked-by-schema: 汇总表设备小时费率(MH..."
+}

@@ -303,9 +303,9 @@ materialize_catalog_pilot.py 只设三类落点（policies/knowledge/gates）；
 | 环节 | 状态 | 说明 |
 |---|---|---|
 | **Catalog** | ✅ 全通 | 82 候选 → 60 物化 + lock 草案（幂等生成器、PROPOSAL 态、D24 read-side 指纹）；词汇缺口全部登记为 vocab-pr 候选未旁路。缺口：CONTRACT_TEMPLATE 落点（§6.1）。 |
-| **Project State** | ⏸️ 未通（设计锚点已埋） | MASTer 只读纪律下本轮无真实项目对象收编。三处「Catalog↔Project 分离」锚点已用候选卡显式标注：SERVER_OPS_VIRTUALIZATION 阈值外置（§93.5 两半拆分）、INTERACTION_REGISTRY opt-in→not-configured、AUTHORITY 边界条款通用化。实装留待迁移 M2/BATCH-1。 |
+| **Project State** | ⏸️ 未通（设计锚点已埋） | MASTer 只读纪律下本轮无真实项目对象收编。三处「Catalog↔Project 分离」锚点已用候选卡显式标注：SERVER_OPS_VIRTUALIZATION 阈值外置（§93.5 两半拆分）、INTERACTION_REGISTRY opt-in→not-configured、AUTHORITY 边界条款通用化。实装留待纳管 M2/BATCH-1。 |
 | **Projection** | ⏸️ 未通 | catalog 条目尚无投影/注入消费方；projection compiler 属后续砖。 |
 | **Gate** | ◐ 形态通、执行未通 | 5 条 GATE_RECIPE 携 judging_rules（counts.not_applicable 必填 / asserted-recomputed 孪生 / blindspot 证据 / 聚合诚实），verdict 七值与 03-gate-result.schema 逐值一致，policy_refs 反向索引齐备。但无 runner 接线、无真实 gate run——M4 自指验收（failed 与 skipped 各 ≥1 例）尚未触发。 |
 | **Human View** | ◐ 首通（以送审包形态） | 本报告 §8 Checklist（82 条逐条勾选 + 7 项管线级裁决）即第一个 Human View 形态；Current View 投影未建。 |
 
-**一句话结论**：本试点打通了「源协议 → 候选 → Catalog 目录」的生产侧全链与「Catalog → Owner 判卷」的送审侧入口；Gate 有形态无执行，Project State 与 Projection 有设计锚点无实装——三者是下一块砖（BATCH-1 收编 + gate runner + projection compiler），而非本试点的失败项。
+**一句话结论**：本试点打通了「源协议 → 候选 → Catalog 目录」的生产侧全链与「Catalog → Owner 判卷」的送审侧入口；Gate 有形态无执行，Project State 与 Projection 有设计锚点无实装——三者是下一块砖（BATCH-1 纳管 + gate runner + projection compiler），而非本试点的失败项。

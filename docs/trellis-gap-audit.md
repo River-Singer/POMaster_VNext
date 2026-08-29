@@ -56,7 +56,7 @@ D19 门禁唯一问题（是否有整个机制类别被原生设计遗漏）的�
 | H2 | 单源模板→多平台方言渲染层 | REJECT | 22 平台方言渲染是 21 平台矩阵的产物；P0 单 harness 无此需求（D13）；P1 portability 触发时以自有 adapter 描述符推导，仅把上游覆盖度当 checklist |
 | H3 | 平台注册表与派生 helpers | REJECT | 同 H2；其「注册表腐烂不变量测试」思想已由 vocab 三指纹对账 + G-vocab-1/2/3 守门闸 + golden 棘轮（GOLDEN-L1-VOCAB-GREP）以自有形式表达 |
 | H4 | 安装状态哈希基线（template-hashes manifest） | REJECT | D24 哈希伦理结构性否决：哈希不锁定表达层、单仓无镜像、项目不留规范正文拷贝；轻入口防 clobber 用字节比较 + 自有 `<!-- pomaster:generated -->` 生成标记（packages/cli/src/store-layout.ts:29），外部文件一律 skipped_foreign 不纳管 |
-| H5 | 版本升级管线 + per-version 迁移 manifest 链 | REJECT | vNext 无发布/安装足迹（clone 即用），P0 无升级对象；数据迁移走一次性 M0-M7 收编管线（thread-B）；触发条件=公开发布多版本用户群（License Decision Gate 之后），届时从 journal/events append-only + 分层 hash 地基自然延伸（license 高危点 W9 的替代做法约束仍有效） |
+| H5 | 版本升级管线 + per-version 迁移 manifest 链 | REJECT | vNext 无发布/安装足迹（clone 即用），P0 无升级对象；存量数据纳管走一次性 M0-M7 语料纳管管线（thread-B）；触发条件=公开发布多版本用户群（License Decision Gate 之后），届时从 journal/events append-only + 分层 hash 地基自然延伸（license 高危点 W9 的替代做法约束仍有效） |
 | H6 | 迁移 manifest 连续性发布门禁 | REJECT | 依附 H5 的发布侧门禁；无发布管线即无该门禁；「content 分布契约外泄只能靠机器门禁守住」的教训由 catalog-lock 版本引用 + golden 棘轮继承 |
 | H7 | 卸载与托管边界（uninstall / protected paths） | REJECT | 托管面收敛为单目录 `.pomaster/`（runtime/ gitignore）；「卸载」语义=删目录+git 历史保留，Memory Sovereignty（README 哲学宪法：删缓存+fresh clone+bootstrap≈认知恢复）本身就是卸载协议；无多平台镜像目录故无 scrubber 需求 |
 | H8 | 远程模板市场（marketplace / registry-backed 安装） | REJECT | Catalog 随仓发布 + catalog-lock 版本引用（D5/D24④）；「宣称 built-in 就必须随包闭环」（inventory surprise）作为设计红线记录——远程市场引入网络可达性依赖，触发条件=生态分发需求（远超 P0/P1） |
@@ -97,7 +97,7 @@ D19 门禁唯一问题（是否有整个机制类别被原生设计遗漏）的�
 | S1 | Spec 库分层模型与 index 入口约定 | REJECT | 变革本体即 Hard Spec→Engineering Catalog 语义分解（PRD §92-93，D5）；PRD §7 明令禁止 `.pomaster/spec/**` 平行宇宙；index 入口由 catalog-lock + 检索注入替代 |
 | S2 | 三档 spec 发现与注入决策管线 | ADOPT | 同构三档：catalog 检索（只列不贴正文）→ compileProjection 按 task 展开最小充分集（八拍③）→ Handoff Packet 投递子代理；候选集缩减链=config/profile/活动对象/分母引用，全部机器可判（GOLDEN-L8-3） |
 | S3 | Code-Spec 与 Thinking-Guide 二分法 | ADOPT | Catalog POLICY（gate 绑定可执行）vs KNOWLEDGE（advisory：trigger_when/checks/required_evidence，advisory_note_md 永不判卷）双向分家（02b §7/§8）；「ADVISORY 不进 gate 判卷输入」是 schema 级判据而非 prompt 约定 |
-| S4 | Legacy spec 结构迁移告警 | REJECT | 无 spec 目录故无布局告警对象；遗留结构处置归 thread-B M0-M7 收编管线（inventory→classification→tombstone），doctor 不承担历史布局检查 |
+| S4 | Legacy spec 结构迁移告警 | REJECT | 无 spec 目录故无布局告警对象；遗留结构处置归 thread-B M0-M7 语料纳管管线（inventory→classification→tombstone），doctor 不承担历史布局检查 |
 | S5 | Skill 装配元协议（frontmatter 注入 + 描述注册表 + placeholder 渲染） | REJECT | P0 无 skill 安装面（AGENTS.md/CLAUDE.md 由 init 直接生成）；P1 若建 skill 面须自有装配协议（frontmatter 自有 schema、描述进 catalog），上游教训（漏改注册表即 init 抛错）作为设计约束记录 |
 | S6 | 两级 skill 形态与 Reference Routing | ADOPT | 变体：「入口薄索引+按需加载」= KNOWLEDGE.trigger_when 触发注入 ADVISORY 区（八拍③）+ tool 懒加载 + catalog 检索即路由表；深度内容一律不进触发面的纪律由投影三分区承担 |
 | S7 | 受管文件哈希三态更新语义 | REJECT | 同 H4（D24 否决哈希锁定表达层）；vNext 无受管模板面；轻入口 update 语义=字节比较+生成标记（init.ts InitFileAction: created/updated/unchanged/skipped_foreign） |

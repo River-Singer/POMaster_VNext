@@ -1,0 +1,240 @@
+{
+  "authority": {
+    "delegates": [
+      {
+        "required_for": [
+          "modify_payload_mock_scenarios_scope"
+        ],
+        "role": "EXTERNAL_BASELINE"
+      }
+    ],
+    "escalation_hint": "regenerate via corpus/master/batch-1/tools/ingest_mock_contract.py; fold-in per classification-ledger mock-contract entry (API_REQ transcription group owns the supersede); openapi-relation adjudication belongs to the contract gate",
+    "owner": "FRONTEND_CONTRACT",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "LOCKED",
+    "evidence": "IMPLEMENTED",
+    "lifecycle": "CURRENT"
+  },
+  "axis_profile": "contract_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "API_REQ.MOCK.USERS",
+  "key_bindings": {
+    "artifact": [],
+    "code": [
+      {
+        "artifact_type": "file",
+        "expect": {
+          "document_type": "mock-contract",
+          "endpoint": "GET /api/v1/users",
+          "scenario_count": 1,
+          "scenario_ids": [
+            "crud+reference-block"
+          ],
+          "schema_version": 1
+        },
+        "match_rule": "mechanical",
+        "value": "outputs/frontend/10_planned/mock-contract.yaml"
+      },
+      {
+        "artifact_type": "consumer_page",
+        "expect": {
+          "page_spec_doc": "outputs/frontend/30_generated/page-specs/PAGE-APP-USER-MGMT.md"
+        },
+        "match_rule": "mechanical",
+        "value": "PAGE-APP-USER-MGMT"
+      }
+    ]
+  },
+  "kind": "contract_operation",
+  "notes_md": "本对象为 MIG-B1/M2 转录组 A 产物：源 outputs/frontend/10_planned/mock-contract.yaml（扩展名 .yaml、内容为 JSON）按端点聚合转录（源 13 场景 → 11 端点对象，本对象承载 1 条场景，数组顺序=源顺序）。mock 显式标注：信封 realization.value=mock（FROZEN 词形）+ payload.mock_contract_ref（02b §13 mock 证据义务）。与已发布 OpenAPI 的关系：源描述记载保留（claim 关键词抽取）并机判复核（MASTer API 0.1.0，123 path entries），claim_vs_check=consistent；本检查不替代 contract gate 终局裁决。内容真实性：scenario 声明的 response_fixture 路径在仓实测存在 0/1 份，缺失 1 份维持原值并登记 REVALIDATION_HUMAN_REQUIRED（payload.revalidation_human_required），不静默全绿。墙钟剥离：源顶层 updated_at与场景级 expires_at（1 条场景全部为同一值 2026-11-04T00:00:00+08:00）按 A4 零墙钟纪律剥离并在 payload 登记，数值语义不篡改。台账 fold-in 计划：classification-ledger mock-contract 条目裁定 13 条场景拆入对应 API_REQ 对象；本对象以 API_REQ.MOCK.* 过渡宿主 id 承载（与 api-requirement-registry 129 个 id 零冲突断言在场），待该转录组落 API_REQ 对象后按 supersede 链收编（方向：新对象→本对象）。场景内 page_id / capability_id / becap_id 保留源词形逐字（无 aliases[]：PAGE-APP-* 收编规则为 proposed_needs_human、CAP-*/BP-* 无已登记规则，不越权代裁）。本字段为人类散文，机器永不解析判卷。",
+  "origin": "derived",
+  "payload": {
+    "classification": null,
+    "contract_version": "openapi-0.1.0",
+    "distinct_becap_ids": [
+      "BP-USER-MGMT"
+    ],
+    "distinct_capability_ids": [
+      "CAP-USER-MGMT"
+    ],
+    "distinct_page_ids": [
+      "PAGE-APP-USER-MGMT"
+    ],
+    "endpoint_verbatim": "GET /api/v1/users",
+    "method": "GET",
+    "migration_registration": {
+      "destination_note_verbatim": "13 条场景拆入对应 API_REQ 对象的 realization.value=mock + payload.mock_contract_ref + realization.probe_ref；页面锚点入 key_bindings；不新立 mock 独立对象族。",
+      "fold_in_status": "PENDING_SIBLING_API_REQ_TRANSCRIPTION",
+      "id_minting": "API_REQ.MOCK.<SLUG> fixed table; collision-asserted against api-requirement-registry requirements[] ids (129); superseded by API_REQ group objects at fold-in (direction: new -> these)",
+      "ledger_entry": "mock-contract",
+      "ledger_ref": "corpus/master/batch-1/classification-ledger.yaml"
+    },
+    "mock_contract_ref": "outputs/frontend/10_planned/mock-contract.yaml",
+    "openapi_relation": {
+      "claim_extraction_rule": {
+        "keywords": [
+          {
+            "exists": true,
+            "phrase": "已存在于 openapi"
+          },
+          {
+            "exists": false,
+            "phrase": "无对应端点"
+          },
+          {
+            "exists": false,
+            "phrase": "契约未定"
+          },
+          {
+            "exists": false,
+            "phrase": "无后端端点"
+          },
+          {
+            "exists": false,
+            "phrase": "无导入端点"
+          },
+          {
+            "exists": false,
+            "phrase": "无批量端点"
+          }
+        ],
+        "method": "ordered keyword scan over scenario description, first match wins"
+      },
+      "claim_vs_check": "consistent",
+      "extra_checks": [],
+      "per_scenario_claims": [
+        {
+          "exists": true,
+          "matched_phrase": "已存在于 openapi",
+          "scenario_id": "crud+reference-block"
+        }
+      ],
+      "published_openapi_check": {
+        "document_version": "0.1.0",
+        "method_found": true,
+        "openapi_version": "3.1.0",
+        "operation_ids": [
+          "list_users_api_v1_users_get"
+        ],
+        "path_found": true,
+        "pin": "sha256:6fd861694d47d82fbb41cc1220ea9b04e2d8a78b6b00d07ffc6baffd4e9c09e0",
+        "ref": "doc/V1.0 Scope/api-contracts(2)/api-contracts/openapi.yaml"
+      }
+    },
+    "operation_id": null,
+    "path": "/api/v1/users",
+    "query": null,
+    "replacement_state_registration": {
+      "mapped_to": "不映射（无状态机定义在场，语义歧义），原值逐字保留于 scenarios[]",
+      "occurrences": 1,
+      "reason": "歧义单字段不越权解释：replacement 语义裁决留待 Owner",
+      "source_field": "replacement_state",
+      "source_value": "active",
+      "upgrade_registered": false
+    },
+    "request_need": null,
+    "response_fixtures_check": {
+      "checked": 1,
+      "missing": [
+        "tests/fixtures/user-mgmt-crud-reference-block.json"
+      ]
+    },
+    "response_need": null,
+    "revalidation_human_required": [
+      {
+        "aspect": "response_fixture",
+        "reason": "declared fixture path not present in the MASTer repo at ingest time (no tests/fixtures directory exists); scenario kept verbatim from source",
+        "values": [
+          "tests/fixtures/user-mgmt-crud-reference-block.json"
+        ]
+      }
+    ],
+    "scenario_count": 1,
+    "scenarios": [
+      {
+        "becap_id": "BP-USER-MGMT",
+        "capability_id": "CAP-USER-MGMT",
+        "contract_version": "openapi-0.1.0",
+        "description": "用户管理 7 端点已存在于 openapi-0.1.0（api-contracts 已发布）；mock 服务全量就绪（列表/筛选/?role= 深链/新增/编辑/停用/重置密码/角色分配），注册表原缺条目，2026-08-17 补登。 场景=crud+reference-block：CRUD 全量 + 引用阻断（用户编码重复、IT 管理员停用保护、本人角色自改防护）。",
+        "endpoint": "GET /api/v1/users",
+        "mock_kind": "temporary",
+        "page_id": "PAGE-APP-USER-MGMT",
+        "replacement_state": "active",
+        "response_fixture": "tests/fixtures/user-mgmt-crud-reference-block.json",
+        "scenario_id": "crud+reference-block",
+        "status": "active"
+      }
+    ],
+    "source_document_meta": {
+      "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+      "document_type": "mock-contract",
+      "env_switch": "unified",
+      "production_default": "off",
+      "schema_version": 1
+    },
+    "stripped_wall_clock_fields": {
+      "expires_at_uniform_across_scenarios": true,
+      "rule": "A4 zero-wall-clock (CONVENTIONS.md sections 2/7; classification-ledger mock-contract entry strips updated_at)",
+      "scenario_count": 1,
+      "scenario_level_stripped": [
+        "expires_at"
+      ],
+      "top_level_stripped": [
+        "updated_at"
+      ],
+      "values_preserved_in": "MASTer source (pinned via sources[0].pin.digest); date values stated only in notes_md human prose"
+    },
+    "superseded_status_field": {
+      "mapped_to": "axes.lifecycle=CURRENT + realization.value=mock（mock 场景在役语义）；不主张审批语义",
+      "occurrences": 1,
+      "reason": "直接拆轴映射非语义升级：active=在役，拆分后原扁平字段退役",
+      "source_field": "status",
+      "source_value": "active",
+      "upgrade_registered": false
+    }
+  },
+  "permits_active": [],
+  "producer": {
+    "liveness": {
+      "status": "active"
+    },
+    "merge_semantics": {
+      "backfill_if_missing": [],
+      "human_never_touched": [
+        "payload"
+      ],
+      "refresh_fields": [
+        "payload"
+      ]
+    },
+    "producer_id": "prod.mig_b1_ingest_mock_contract",
+    "views_maintained": [
+      "truth-index.envelope"
+    ]
+  },
+  "realization": {
+    "value": "mock"
+  },
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b1/ingest_mock_contract.py",
+      "locator": {
+        "batch": "MIG-B1",
+        "ingested_from": "outputs/frontend/10_planned/mock-contract.yaml",
+        "transcription": "per-endpoint whole-book transcription: 1 scenario entries verbatim (array order = source order); updated_at + expires_at stripped per A4 zero-wall-clock with in-payload registration; status/replacement_state axis-split registered (superseded_status_field shape); openapi-relation claims machine-checked against published OpenAPI 0.1.0; no aliases[] (page_id/capability_id/becap_id stay verbatim payload fields)"
+      },
+      "pin": {
+        "digest": "sha256:552db0fa7b35ed185c5e7fb0cbf043665637d3078db14610d9632bf37488acbd"
+      },
+      "ref": "outputs/frontend/10_planned/mock-contract.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "mock 契约·用户管理列表端点"
+}

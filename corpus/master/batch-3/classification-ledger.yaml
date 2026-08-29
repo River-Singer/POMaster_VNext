@@ -1,0 +1,568 @@
+batch: MIG-B3
+conflicts_pending_owner:
+- attached_entries:
+  - outputs/frontend/10_planned/state-machine-registry.yaml
+  - outputs/frontend/10_planned/state-ownership-matrix.yaml
+  conflict_id: MIG-B3/C-01
+  counts:
+    exact_overlap:
+      value: 431
+    group_word_drift_candidate_pairs:
+      note: 2 级再叠加 INTERACTION→MODE（BUILD-BOM-INTERACTION-* vs BUILD-BOM-MODE-*，同尾段），M1 逐对复测通过；配对只登记不裁决归属
+      value: 10
+    machine_reconciliation:
+      note: 455+9=464（M1 复测一致）
+      value: 464
+    machine_side_total_distinct:
+      source: state-machine-registry machines[].state_ids（M1 复测）
+      value: 464
+    machine_side_true_gaps:
+      value: 9
+      values:
+      - STATE-PAGE-TASK-STEP-MANAGE-USER-ROLE-EDIT-DIRTY
+      - STATE-PAGE-TASK-STEP-MANAGE-USER-ROLE-EDIT-INVALID
+      - STATE-PAGE-TASK-STEP-MANAGE-USER-ROLE-EDIT-PRISTINE
+      - STATE-PAGE-TASK-STEP-MANAGE-USER-ROLE-EDIT-SUBMITTING
+      - STATE-PAGE-TASK-STEP-MANAGE-USER-ROLE-EDIT-VALIDATING
+      - STATE-PAGE-TASK-STEP-MANAGE-USER-ROLE-MODE-CREATE
+      - STATE-PAGE-TASK-STEP-MANAGE-USER-ROLE-MODE-EDIT
+      - STATE-PAGE-TASK-STEP-MANAGE-USER-ROLE-MODE-READ-ONLY
+      - STATE-PAGE-TASK-STEP-MANAGE-USER-ROLE-MODE-VIEW
+    matrix_side_total_distinct:
+      source: state-ownership-matrix states[].state_id（M1 复测）
+      value: 455
+    matrix_side_unmatched:
+      note: matrix 侧 455 条全额清账=431 exact+14 分隔符对+10 组词对（M1 复测 431+24=455 一致）
+      value: 0
+    separator_wordform_drift_pairs:
+      note: 1 级连字符→下划线归一（连字符尾段 -READ-ONLY vs 下划线 _READ_ONLY），M1 逐对复测通过
+      value: 14
+  evidence:
+  - inventory cross_reference_forms.state_machine_state_ids_to_matrix 全量配对登记（14+10 对逐对词形在案）；M1 集合运算与逐对归一复测全部一致
+  - M0 盘点纪律原文：配对只登记不裁决归属——canonical 词形选择属 Owner 裁决项
+  human_decision: PENDING
+  impact: STATE-* 词形为跨源共享键（registry 引用形态 vs matrix 定义形态）：canonical 词形不裁决，M2 对象族 aliases/键绑定无法定型，gate 按 machine 或 matrix 词形查表的口径将分裂；9 条 machine 侧真缺口（如 STATE-PAGE-TASK-STEP-MANAGE-USER-ROLE-EDIT-DIRTY）在 matrix 无定义体，对应状态机对象转移合法性 gate 将呈 not_configured 而非 passed
+  resolution_options:
+  - option_a：以 matrix 词形为 canonical（14+10 对归一收编、431 exact 直收），machine 侧 9 条真缺口补登 matrix
+  - option_b：以 machine 词形为 canonical 回写 matrix（消费方侧修复）
+  - option_c：双词形并存入 alias 双向链待词汇表 PR（本批只登记不改名口径的延续）
+  rule: 只汇总呈报，绝不自动裁决
+  sources_in_conflict:
+  - ref: outputs/frontend/10_planned/state-machine-registry.yaml
+    role: machine 侧（state_ids 464 distinct，引用形态）
+  - ref: outputs/frontend/10_planned/state-ownership-matrix.yaml
+    role: matrix 侧（state_id 455，定义形态）
+  subject: state-machine-registry machines[].state_ids（464 distinct）与 state-ownership-matrix states[].state_id（455）同族词形跨源 id 集合双向缺口——14 对分隔符词形漂移 + 10 对组词漂移候选的 canonical 词形归属与 9 条 machine 侧真缺口的补登/降级待裁决
+- attached_entries:
+  - outputs/frontend/10_planned/state-ownership-matrix.yaml
+  conflict_id: MIG-B3/C-02
+  counts:
+    distinct_owner_labels:
+      source: corpus/master/batch-3/key-binding-map.batch3.draft.yaml state_owner_label_bindings（M1 复测对账一致）
+      value: 24
+    entities_owner_entries:
+      source: state-ownership-matrix states[].owner 非 local 前缀（M1 复测）
+      value: 165
+    labels_module_dir_missing:
+      note: module_dir_exists=False 的标签数（如 entities/equipment、entities/parts 等约定模块目录不存在）
+      value: 15
+    labels_no_literal_export:
+      value: 23
+    labels_symbol_elsewhere:
+      value: 1
+      values:
+      - entities/ledger#useLedgerQuery → src/entities/parts-ledger/hooks.ts
+    local_scheme_entries:
+      note: local:<slug>#<state> 页面局部状态标签（按设计不落代码锚，非本冲突范围）
+      value: 290
+  evidence:
+  - corpus/master/batch-3/key-binding-map.batch3.draft.yaml state_owner_label_bindings 24 条逐标签登记（symbol_found_in_module_dir/symbol_found_elsewhere 全空或他模块）；
+  - inventory 资产条目 incident_history（type=owner_backfill_history）同源：useLedgerQuery 字面存在于 parts-ledger、entities/auth#useAuthQuery 无字面导出（实际 useCurrentUser）
+  human_decision: PENDING
+  impact: owner→代码机器键（A7 P0 类锚）无法机械建立：照录词形转录后 KEYBINDING.* 绑定 gate 将呈 manual_confirmed 债务或 not_configured；消费方侧（side_effect_graph/delivery_truth_contract）按 owner 标签检索实现锚将 miss
+  resolution_options:
+  - option_a：以 src/entities 实际模块/导出名为 canonical 回填 owner 标签（消费方侧修复）
+  - option_b：约定词形照录 + alias 双向链登记映射待词汇表 PR（本批只登记不改名口径的延续）
+  - option_c：逐标签裁决（模块名 drift 回填、无导出者补实现锚或降级 local 语义）
+  rule: 只汇总呈报，绝不自动裁决
+  sources_in_conflict:
+  - ref: outputs/frontend/10_planned/state-ownership-matrix.yaml
+    role: matrix 侧（owner 约定词形 165 条/24 种标签）
+  - ref: src/entities/** 字面导出
+    role: 代码锚侧（模块目录与 export 符号实存态）
+  - ref: corpus/master/batch-3/key-binding-map.batch3.draft.yaml
+    role: 登记载体（state_owner_label_bindings 24 条全量形态登记）
+  subject: state-ownership-matrix owner 字段 entities/<module>#use<X>Query 约定标签（24 种 distinct，覆盖 165 条）与 src/entities 字面导出绑定漂移——23 种无字面导出 + 1 种符号在他模块（entities/ledger#useLedgerQuery 实际在 src/entities/parts-ledger/），owner↔代码机器键绑定锚漂移
+- attached_entries:
+  - outputs/frontend/10_planned/calculation-registry.yaml
+  conflict_id: MIG-B3/C-03
+  counts:
+    formulas_source:
+      source: outputs/frontend/10_planned/calculation-registry.yaml formulas[]（M1 复测）
+      value: 59
+    header_line2_selfreport:
+      note: registry - 59 条 CALC-* 公式注册数据（builtin-registry 来源）
+      value: 59
+    header_line7_selfreport:
+      note: 事实源：outputs/frontend/10_planned/calculation-registry.yaml（58 条 + engine_contract + blockers）
+      value: 58
+    wired_false:
+      value: 53
+    wired_true:
+      value: 6
+  evidence:
+  - M1 复测现场重读 registry.ts 行 2/行 7 逐字在案（两处自述 59 vs 58 并存）；json.load len(formulas)=59
+  - inventory 资产条目 incident_history（type=wired_status_semantic_gap）同源登记
+  human_decision: PENDING
+  impact: 镜像头注是代码锚探针（header_contains_any 类）素材：59/58 并存使镜像-源一致性 gate 无法定型口径（以 59 为准则行 7 失配、以 58 为准则行 2 失配），污染机器键债务指标与 cross-check 口径
+  resolution_options:
+  - option_a：修正 registry.ts 行 7 自述为 59（消费方侧修复，与 M0 incident_history 建议同源）
+  - option_b：头注旧值入注记/alias 不改源文件
+  - option_c：头注自述不作为判卷探针（降级为非锚注记）
+  rule: 只汇总呈报，绝不自动裁决
+  sources_in_conflict:
+  - ref: outputs/frontend/10_planned/calculation-registry.yaml
+    role: registry 侧（formulas=59，M1 复测 json.load len）
+  - ref: src/shared/lib/calc/registry.ts:2
+    role: 镜像头注侧 A（自述 59 条，与源一致）
+  - ref: src/shared/lib/calc/registry.ts:7
+    role: 镜像头注侧 B（自述 58 条，与源失配）
+  subject: calculation-registry formulas 实数 59（M1 复测）与消费镜像 src/shared/lib/calc/registry.ts 头注自述失配（行 2 自述『59 条』、行 7 自述『58 条 + engine_contract + blockers』——同文件两处自述互失配，其一与源失配）
+dead_candidates: []
+document_kind: m1-classification-ledger
+entries:
+- authority_owner_candidate:
+    delegates:
+    - required_for:
+      - modify_contract_goal_roles_main_tasks
+      role: EXTERNAL_BASELINE
+    note: authority_owner_candidate 一律为 M3 Authority Map 校准前的候选值（DP-7 粗粒度起步）；单人项目事实 Owner 唯一，角色名为功能位而非人事位；BP 业务契约正文（goal/roles/main_tasks）为业务事实陈述，delegates 之 EXTERNAL_BASELINE 指 doc/V1.0 Scope specs 业务基线引用位，不是审批仪式位
+    owner: BUSINESS_OWNER
+  coarse_class: DOMAIN_CONTRACT
+  conflicts: []
+  destination: corpus/master/batch-3/truth/objects/business-rule/
+  destination_kind: business_rule（POLICY.* 页级业务契约对象族，逐页立对象候选）
+  destination_note: 30 条逐页转录候选（page-spec §3 按 page_id 逐页消费链在场=检索路径，batch1 §3 例外条款成立）；roles/main_tasks/goal/scope 人类策展字段逐字保真；BP-* 注册表本地族词形（非 vocab v0.2 15 前缀成员、非 ALIASES_V0 现役 8 族）——只登记不改名，canonical 赐名归族待词汇表 PR/Owner 裁决（key-binding-map.batch3.draft.yaml alias_registrations.proposed_needs_human 同口径）
+  identity_note: 条目身份 M1 复测=（page_id, id）复合：30 条契约 id 词形仅 18 个 distinct（复用 id 6 个：BP-BUC-ANALYSIS、BP-CALC-VEHICLE-PARTS、BP-EQUIPMENT-DB、BP-PARTS-LEDGER、BP-ROLE-MGMT、BP-VEHICLE-MASTER-DATA），复合键 distinct=30/30（页面粒度唯一）；id 词形非唯一形态如实登记，是否违式归 Owner/后续 golden 裁决（business-rule rule_id 同族事实）
+  inventory_ref: outputs/frontend/10_planned/bp-business-contract.yaml
+  kind: bp-business-contract
+  provenance:
+    class: project-natural
+    note: class=project-derived/project-natural 为分类台账读形；origin_frozen 为 FROZEN 02 信封 OriginValue（natural/derived/ingested）词形，与 inventory provenance.origin 逐字一致
+    origin_frozen: natural
+    sources:
+    - batch: MIG-B3
+      ingested_from: outputs/frontend/10_planned/bp-business-contract.yaml
+      note: M1 只读分类审视；M1 复测 contracts=30、distinct page_id=30、roles=50、main_tasks=149、distinct 契约 id=18/30（复合身份，见 identity_note）
+      pin_content_sha256: 66bd81a9800bf177294d02fe0b80a81e046ad0b4c3fb279b121f1d790074d215
+    - batch: MIG-B3
+      ingested_from: corpus/master/batch-3/inventory.yaml
+      note: 分类依据=M0 盘点条目（kind/producer/consumers/分母/incident_history：retrospective P3 补齐待办在案）
+  rationale: 30 条页级业务契约（goal/roles/main_tasks，BP-* 本地族词形一页一契约覆盖 30 个 page_id），source_refs 直指 doc/V1.0 Scope specs 30 条——约束各页『谁在什么目标下做什么』的领域契约面，page-spec §3 与 governance_factsources 逐页消费链在场（双镜像）；非任务史非现状盘点。
+  source_content_sha256: 66bd81a9800bf177294d02fe0b80a81e046ad0b4c3fb279b121f1d790074d215
+- authority_owner_candidate:
+    delegates:
+    - required_for:
+      - modify_rule_statement
+      role: EXTERNAL_BASELINE
+    note: authority_owner_candidate 一律为 M3 Authority Map 校准前的候选值（DP-7 粗粒度起步）；单人项目事实 Owner 唯一，角色名为功能位而非人事位；规则正文（statement/condition）为业务事实陈述，delegates 之 EXTERNAL_BASELINE 指 doc/V1.0 Scope specs 业务基线引用位，不是审批仪式位
+    owner: BUSINESS_OWNER
+  coarse_class: DOMAIN_CONTRACT
+  conflicts: []
+  destination: corpus/master/batch-3/truth/objects/business-rule/
+  destination_kind: business_rule（POLICY.* 页级业务规则对象族，粒度候选逐条/逐页待 M2 三问）
+  destination_note: 粒度预判：page-spec §4 按页消费在场 → 逐条立对象候选，但 rule_id 复合身份使对象 id 赐名需复合段（如 POLICY.<PAGE>.<RULE_ID> 族），逐条 vs 逐页归并的最终粒度归 M2 照 batch1 §3 三问定案，本台账只登记预判；statement/condition/severity 人类策展字段逐字保真；规则 id 本地族词形 注册表本地族词形（非 vocab v0.2 15 前缀成员、非 ALIASES_V0 现役 8 族）——只登记不改名，canonical 赐名归族待词汇表 PR/Owner 裁决（key-binding-map.batch3.draft.yaml alias_registrations.proposed_needs_human 同口径）
+  identity_note: 条目身份 M1 复测=（page_id, rule_id）复合：275 条 rule_id 仅 148 个 distinct（62 个 id 由 189 条跨页共享、86 条单页独占，与 M0 denominators 一致），复合键（page_id, rule_id）distinct=275/275（复合键页面粒度唯一）；非唯一 id 形态如实登记，是否违式归 Owner/后续 golden 裁决
+  inventory_ref: outputs/frontend/10_planned/business-rule-registry.yaml
+  kind: business-rule-registry
+  provenance:
+    class: project-natural
+    note: class=project-derived/project-natural 为分类台账读形；origin_frozen 为 FROZEN 02 信封 OriginValue（natural/derived/ingested）词形，与 inventory provenance.origin 逐字一致
+    origin_frozen: natural
+    sources:
+    - batch: MIG-B3
+      ingested_from: outputs/frontend/10_planned/business-rule-registry.yaml
+      note: M1 只读分类审视；M1 复测 rules=275、distinct rule_id=148、跨页共享 62/189、单页 86、distinct page_id=30、复合键 distinct=275
+      pin_content_sha256: 08453afa152dc05feaf61f18e56c99d5828dc9f5de8e1e69aa025ac33e8cda59
+    - batch: MIG-B3
+      ingested_from: corpus/master/batch-3/inventory.yaml
+      note: 分类依据=M0 盘点条目（rule_id_non_unique_composite_identity 事故证据同源）
+  rationale: 275 条页级业务规则（when/then 领域约束，覆盖 30 个 page_id），source_refs 直指 doc/V1.0 Scope specs 275 条；page-spec §4 与 governance_factsources 按页消费链在场——登记的是约束『业务上什么必须/禁止成立』的契约面而非事件史。
+  source_content_sha256: 08453afa152dc05feaf61f18e56c99d5828dc9f5de8e1e69aa025ac33e8cda59
+- authority_owner_candidate:
+    delegates: []
+    note: authority_owner_candidate 一律为 M3 Authority Map 校准前的候选值（DP-7 粗粒度起步）；单人项目事实 Owner 唯一，角色名为功能位而非人事位；authority=frontend-owned-calculation、source_directive 用户指令在场（inventory 在案）
+    owner: FRONTEND_ENGINEERING
+  coarse_class: DOMAIN_CONTRACT
+  conflicts:
+  - MIG-B3/C-03
+  destination: corpus/master/batch-3/truth/objects/capability/
+  destination_kind: capability（计算能力对象族；CALC-* 本地族词形赐名候选）
+  destination_note: 59 条逐条立对象候选（registry.ts/测试文件按 formula id 逐条引用=检索路径在场，batch1 §3 例外条款成立）；formula/expression/dependency_graph/precision_policy 逐字保真；wired 接线态迁 evidence 轴机判候选（见 wired_evidence_axis_preregistration）；CALC-* 注册表本地族词形（非 vocab v0.2 15 前缀成员、非 ALIASES_V0 现役 8 族）——只登记不改名，canonical 赐名归族待词汇表 PR/Owner 裁决（key-binding-map.batch3.draft.yaml alias_registrations.proposed_needs_human 同口径）
+  inventory_ref: outputs/frontend/10_planned/calculation-registry.yaml
+  kind: calculation-registry
+  provenance:
+    class: project-natural
+    note: class=project-derived/project-natural 为分类台账读形；origin_frozen 为 FROZEN 02 信封 OriginValue（natural/derived/ingested）词形，与 inventory provenance.origin 逐字一致
+    origin_frozen: natural
+    sources:
+    - batch: MIG-B3
+      ingested_from: outputs/frontend/10_planned/calculation-registry.yaml
+      note: M1 只读分类审视；M1 复测 formulas=59、wired true=6/false=53、键集恒等、key 自指 0 失配、engine_expression 在场 42、status ready=47/blocked=2/blocked-by=10；registry.ts 头注自述漂移复测在场（行 2 自述 59 / 行 7 自述 58，见 conflicts MIG-B3/C-03）
+      pin_content_sha256: 818cecfe3182405755ca99425293d10874e5a97cf132d956eabf3da3ee8ade3f
+    - batch: MIG-B3
+      ingested_from: corpus/master/batch-3/key-binding-map.batch3.draft.yaml
+      note: calc_bindings 59 条（6 wired + 23 engine-only + 30 parallel implementation）三方探查草表同源对账
+    - batch: MIG-B3
+      ingested_from: corpus/master/batch-3/inventory.yaml
+      note: 分类依据=M0 盘点条目（wired_status_semantic_gap 事故证据 + denominators 同源）
+  rationale: 59 条前端计算公式契约（CALC-* 本地族，authority=frontend-owned-calculation，source_directive 用户指令在场），src/shared/lib/calc/registry.ts 引擎镜像逐条注册（jsep + Decimal 数据面）——约束『每个成本指标按什么公式算』的领域计算契约而非事件史；wired 接线声明语义升级方向见 wired_evidence_axis_preregistration（特别预登记）。
+  source_content_sha256: 818cecfe3182405755ca99425293d10874e5a97cf132d956eabf3da3ee8ade3f
+  wired_evidence_axis_preregistration:
+    mapped_to: evidence_axis 机判候选：接线事实由代码锚/接线探针机械判定（key-binding-map.batch3.draft.yaml calc_bindings 已实测登记 6 条 MECHANICAL_TOKEN_MATCH_WIRED / 23 条 WIRED_FALSE_ENGINE_REGISTERED_ONLY / 30 条 WIRED_FALSE_PARALLEL_IMPLEMENTATION_PRESENT，calc_unmatched=0），不采信自报声明单独判卷（C5 精神：attest 自报永不单独判卷）；M2 转录时 wired 声明迁 evidence 轴机械判定材料，probe 缺省=未探测（gate 必须重扫）
+    reason: status=ready 47 vs wired=true 6 的语义裂缝（doc/2026-08-20-公式引擎收编裁决与BUC页内Σ遗留.md 裁决在案：盘点口径以 engine_binding.wired 为准、不信 registry status 字段）即『wired 字段形态』教训原点——接线声明属 evidence 轴事实而非 lifecycle 声明；数值语义不篡改（6/53 保真），语义升级只登记不执行归 Owner 裁决
+    source_field: engine_binding.wired
+    source_value: wired=true 6（CALC-BUC-6/10/30、CALC-CVP-1/2/3）/ wired=false 53（59 条全覆盖；engine_binding 键集恒等 key+wired；key 与公式 id 自指同形 0 失配——M1 复测与 M0 denominators 一致）
+    upgrade_registered: true
+- authority_owner_candidate:
+    delegates:
+    - required_for:
+      - retire
+      role: HUMAN_OWNER
+    note: authority_owner_candidate 一律为 M3 Authority Map 校准前的候选值（DP-7 粗粒度起步）；单人项目事实 Owner 唯一，角色名为功能位而非人事位；write_policy 候选 EVOLUTION_CHANNEL（BATCH-1 同文件判例同款）
+    owner: FRONTEND_ARCHITECTURE
+  batch1_remainder_closure:
+    carried_conflicts_note: MIG-B1/C-04（GRID.EDITABLE_GRID 登记路径 vs 该文件头注引用路径漂移）仍 PENDING，归属 batch1 台账不重复登记；影响面为 batch1 已收编 3 条（GRID.* 切片），非本批 87 条余量
+    closes: corpus/master/batch-1/classification-ledger.yaml entries[component-registry].rationale 注记『本批按 thread-B §2.1 只切 GRID.* 能力族 3 条……整库余量 87 条延后批次 3』
+    grid_slice_already_ingested_batch1:
+      batch1_object_ids:
+      - CAPABILITY.GRID.BASE
+      - CAPABILITY.GRID.COLUMN_CONFIG
+      - CAPABILITY.GRID.EDITABLE_GRID
+      batch1_objects_dir: corpus/master/batch-1/truth/objects/capability/（M1 复测三对象在册）
+      source_ids:
+      - GRID.BASE
+      - GRID.COLUMN_CONFIG
+      - GRID.EDITABLE_GRID
+      value: 3
+    id_no_conflict_verification: 机械验证通过：GRID.*→CAPABILITY.GRID.* 同形映射下 batch1 三对象 id 集合（CAPABILITY.GRID.BASE、CAPABILITY.GRID.COLUMN_CONFIG、CAPABILITY.GRID.EDITABLE_GRID）与余量 87 条赐名候选集合零交集（余量均非 GRID.* 前缀，任何余量 id 在该映射域外）；余量 distinct=87/87；3+87=90=整册分母——余量收编不重复收编 batch1 已收编的 GRID.* 3 条
+    remainder_this_batch:
+      note: 非 GRID capability_id 87 条全 distinct（M1 复测）；status 分布 implemented=35/planned=53/deprecated=2
+      value: 87
+  coarse_class: CURRENT_BASELINE
+  conflicts: []
+  destination: corpus/master/batch-3/truth/objects/capability/
+  destination_kind: capability（87 条余量逐条立对象；capability_id 本地族前缀赐名候选）
+  destination_note: 87 条非 GRID 余量逐条转录为 capability 对象候选（validate/component_gaps/ai_coding 扫描按 capability_id 检索在场）；canonical_implementation/category/forbidden/technology_base/poc_required 逐字段保真（merge-preserving 关键保护对象）；capability_id 本地族前缀（CONTROL/DATA/CHART 等族）注册表本地族词形（非 vocab v0.2 15 前缀成员、非 ALIASES_V0 现役 8 族）——只登记不改名，canonical 赐名归族待词汇表 PR/Owner 裁决（key-binding-map.batch3.draft.yaml alias_registrations.proposed_needs_human 同口径）；GRID.* 3 条不在本批收编范围（batch1 已收编，见 batch1_remainder_closure）
+  inventory_ref: outputs/frontend/10_planned/component-registry.yaml
+  kind: component-registry
+  provenance:
+    class: project-natural
+    note: class=project-derived/project-natural 为分类台账读形；origin_frozen 为 FROZEN 02 信封 OriginValue（natural/derived/ingested）词形，与 inventory provenance.origin 逐字一致
+    origin_frozen: natural
+    sources:
+    - batch: MIG-B3
+      ingested_from: outputs/frontend/10_planned/component-registry.yaml
+      note: M1 只读分类审视；M1 复测 components=90、GRID.* 切片=3（GRID.BASE/GRID.COLUMN_CONFIG/GRID.EDITABLE_GRID）、非 GRID 余量 87 全 distinct、status implemented=35/planned=53/deprecated=2
+      pin_content_sha256: ec6cb99eeda8a492d299fc084603eca18f4a1be126e3b398d3be4a52c85f934b
+    - batch: MIG-B1
+      ingested_from: corpus/master/batch-1/classification-ledger.yaml
+      note: batch1 台账 entries[component-registry].rationale『整库余量 87 条延后批次 3』注记（本批闭环源）
+    - batch: MIG-B1
+      ingested_from: corpus/master/batch-1/truth/objects/capability/
+      note: GRID.* 3 对象（CAPABILITY.GRID.*）在册 M1 复测（id 不冲突验证对侧）
+    - batch: MIG-B3
+      ingested_from: corpus/master/batch-3/key-binding-map.batch3.draft.yaml
+      note: alias_registrations.applied_in_batch1：GRID.*→CAPABILITY.GRID.* ALIASES_V0 已登记，本批余量无新增 alias 操作
+    - batch: MIG-B3
+      ingested_from: corpus/master/batch-3/inventory.yaml
+      note: 分类依据=M0 盘点条目（denominators.component_entries value_breakdown 同源）
+  rationale: 当前组件注册基线（整册 90 条目：implemented=35/planned=53/deprecated=2，M1 复测与 M0/BATCH-1 分母一致）；『现在注册了哪些组件能力』的基线登记——BATCH-1 同文件判例（CURRENT_BASELINE）延续，本批收编余量 87 条（GRID.* 3 条已由 BATCH-1 收编，闭环见 batch1_remainder_closure 特别预登记）。
+  source_content_sha256: ec6cb99eeda8a492d299fc084603eca18f4a1be126e3b398d3be4a52c85f934b
+- authority_owner_candidate:
+    delegates: []
+    note: authority_owner_candidate 一律为 M3 Authority Map 校准前的候选值（DP-7 粗粒度起步）；单人项目事实 Owner 唯一，角色名为功能位而非人事位；compile_frontend_data_model.py 派生 scaffold + 人工回填 business_meaning 的混合谱系（origin derived）
+    owner: FRONTEND_ENGINEERING
+  coarse_class: DOMAIN_CONTRACT
+  conflicts: []
+  destination: corpus/master/batch-3/truth/objects/field-definition/
+  destination_kind: field_definition（数据模型挂字段语义同族落位预判，张力注记见 kind_prediction_tension_note）
+  destination_note: 67 模型预判随字段语义同族落位（fields 纯引用闭合使模型与字段构成同一结构的两个视图）；model/slot/layer/fields 引用键逐字保真；MODEL.* 注册表本地族词形（非 vocab v0.2 15 前缀成员、非 ALIASES_V0 现役 8 族）——只登记不改名，canonical 赐名归族待词汇表 PR/Owner 裁决（key-binding-map.batch3.draft.yaml alias_registrations.proposed_needs_human 同口径）
+  identity_note: source_requirement_id 现存 56 条为自由词形（prose/REQ.<SPEC>/§x.y/openapi:<DTO>），非受控 id 形态如实登记不改写；清洗规则在仓（retrospective：只接受 spec 章节或 MODEL.*/FIELD.*，禁止 API_REQ.*），M1 复测 API_REQ.* 词形=0
+  inventory_ref: outputs/frontend/10_planned/data-model-registry.yaml
+  kind: data-model-registry
+  kind_prediction_tension_note: kind 预判张力登记：FROZEN 十类无 data_model 专类；模型=字段分组容器（fields 纯引用闭合 785 双射），预判落 field_definition 同族（field-definition/ 目录）；备选 page_surface payload 承载（模型页级归属 MODEL.<PAGE>.<SLOT> 第二段即页面）；粒度（67 模型逐条 vs 并入字段/页面对象）与赐名归 M2 照 batch1 §3 三问定案，本台账只登记预判不裁决
+  provenance:
+    class: project-derived
+    note: class=project-derived/project-natural 为分类台账读形；origin_frozen 为 FROZEN 02 信封 OriginValue（natural/derived/ingested）词形，与 inventory provenance.origin 逐字一致
+    origin_frozen: derived
+    sources:
+    - batch: MIG-B3
+      ingested_from: outputs/frontend/10_planned/data-model-registry.yaml
+      note: M1 只读分类审视；M1 复测 models=67、layer form=25/grid_row=35/api_dto=3/view=3/domain=1、field 引用 935→distinct 785 与 field-semantic 双射闭合复测通过、source_requirement_id 在场 56 条 API_REQ.*=0
+      pin_content_sha256: 70220d99cfd48cad1354f93b14d0f7efaa971cbae87ed6408c1f3ed4637c82ca
+    - batch: MIG-B3
+      ingested_from: corpus/master/batch-3/inventory.yaml
+      note: 分类依据=M0 盘点条目（source_requirement_id_api_req_pollution_cleaned 事故证据同源；producer_alive_note：compile_frontend_data_model.py 为写入 producer）
+  rationale: 67 个页面数据模型契约（MODEL.<PAGE>.<SLOT> 本地族，layer form=25/grid_row=35/api_dto=3/view=3/domain=1），fields[] 为纯引用数组（935 引用键→785 distinct，与 field-semantic-registry 双射闭合零悬空零未引用）——约束『每页展示/编辑什么数据结构』的结构契约面，validate/api_requirements/readiness/page_spec 消费链在场；source_requirement_id 的 API_REQ.* 历史污染已清洗（现存 56 条中 API_REQ.* 词形 0 条，M1 复测）。
+  source_content_sha256: 70220d99cfd48cad1354f93b14d0f7efaa971cbae87ed6408c1f3ed4637c82ca
+- authority_owner_candidate:
+    delegates: []
+    note: authority_owner_candidate 一律为 M3 Authority Map 校准前的候选值（DP-7 粗粒度起步）；单人项目事实 Owner 唯一，角色名为功能位而非人事位；scaffold 派生 + business_meaning 人工回填混合谱系（origin derived）
+    owner: FRONTEND_ENGINEERING
+  coarse_class: DOMAIN_CONTRACT
+  conflicts: []
+  destination: corpus/master/batch-3/truth/objects/field-definition/
+  destination_kind: field_definition（785 条逐条立对象候选；FIELD.* 词形漂移赐名/别名登记 HUMAN_CONFIRM_REQUIRED）
+  destination_note: 785 条逐条立对象候选（field_id 为 governed 词形且被 data-model/页面蓝图逐条引用=检索路径在场）；business_meaning/nullable/type/unit/enum 人类策展字段逐字保真（TODO 占位语义如实转录不伪造回填）；词形漂移处置见 id_grammar_drift_note
+  id_grammar_drift_note: ID 文法漂移 M1 复测：785 条 FIELD.* id 中 776 条违反 governed SEGMENT 文法（页段带连字符如 PROCESS-DB、语义段含中文如 FIELD.PROCESS-DB.工艺类别；页段 distinct=24）——源内事实词形如实登记不改名；FIELD.* 为 governed 前缀但词形漂移使 rename-on-ingest 需赐名/别名登记，非 ALIASES_V0 现役族 → HUMAN_CONFIRM_REQUIRED（batch2 §5 口径），归词汇表 PR/Owner 裁决
+  inventory_ref: outputs/frontend/10_planned/field-semantic-registry.yaml
+  kind: field-semantic-registry
+  provenance:
+    class: project-derived
+    note: class=project-derived/project-natural 为分类台账读形；origin_frozen 为 FROZEN 02 信封 OriginValue（natural/derived/ingested）词形，与 inventory provenance.origin 逐字一致
+    origin_frozen: derived
+    sources:
+    - batch: MIG-B3
+      ingested_from: outputs/frontend/10_planned/field-semantic-registry.yaml
+      note: M1 只读分类审视；M1 复测 fields=785 全 distinct、SEGMENT 文法违例 776/785、页段 distinct=24；双射闭合复测通过（与 data-model 935 引用键互为子集）
+      pin_content_sha256: 446157025b900043bf37e2533e470a9cc6c3d784c1baadbec217b4a1d6a75492
+    - batch: MIG-B3
+      ingested_from: corpus/master/batch-3/key-binding-map.batch3.draft.yaml
+      note: token_family_observations：FIELD.* src 侧在场面 distinct=7（role-mgmt/types.ts），锚覆盖极小如实登记
+    - batch: MIG-B3
+      ingested_from: corpus/master/batch-3/inventory.yaml
+      note: 分类依据=M0 盘点条目（api_req_id_pollution_cleaned 事故证据 + denominators 同源；producer_alive_note：compile_frontend_data_model.py 为写入 producer）
+  rationale: 785 条字段语义登记（FIELD.* governed 前缀词形，business_meaning 人工回填），被 data-model 935 引用键双射闭合消费（零悬空零未引用，M1 复测通过）——『每个字段业务上是什么意思』的语义词典契约面（batch2 page-anatomy 词表判例同族：词典约束合法集，validate/readiness/page_spec 消费链 fail-closed 在场）；API_REQ.* 历史污染已清洗（785 条 FIELD.* 全词形）。
+  source_content_sha256: 446157025b900043bf37e2533e470a9cc6c3d784c1baadbec217b4a1d6a75492
+- authority_owner_candidate:
+    delegates: []
+    note: authority_owner_candidate 一律为 M3 Authority Map 校准前的候选值（DP-7 粗粒度起步）；单人项目事实 Owner 唯一，角色名为功能位而非人事位；encode_float_precision.py 幂等 updater 在场（实现锚变更随 producer 链演化）
+    owner: FRONTEND_ENGINEERING
+  coarse_class: DOMAIN_CONTRACT
+  conflicts: []
+  destination: corpus/master/batch-3/truth/objects/capability/
+  destination_kind: capability（格式化能力对象族，10 条逐条立对象候选；capability↔file A7 P0 锚类）
+  destination_note: 10 条逐条立对象候选（每条自带 implementation 锚=capability↔file 机械键，A7 P0 三类锚之一）；policy_id/locale/symbol 逐字保真；governance_id 词形 format-* 为本地族 注册表本地族词形（非 vocab v0.2 15 前缀成员、非 ALIASES_V0 现役 8 族）——只登记不改名，canonical 赐名归族待词汇表 PR/Owner 裁决（key-binding-map.batch3.draft.yaml alias_registrations.proposed_needs_human 同口径）
+  inventory_ref: outputs/frontend/10_planned/formatter-registry.yaml
+  kind: formatter-registry
+  provenance:
+    class: project-derived
+    note: class=project-derived/project-natural 为分类台账读形；origin_frozen 为 FROZEN 02 信封 OriginValue（natural/derived/ingested）词形，与 inventory provenance.origin 逐字一致
+    origin_frozen: derived
+    sources:
+    - batch: MIG-B3
+      ingested_from: outputs/frontend/10_planned/formatter-registry.yaml
+      note: M1 只读分类审视；M1 复测 formatters=10、categories=10、实现锚字面核验 10/10（src/shared/lib/format.ts export function 逐条 regex 命中）；源含 updated_at 墙钟字段属源侧事实，转录按 A4 零墙钟纪律剥离（数值语义不篡改：10 条 policy 逐条保真）
+      pin_content_sha256: ed0beff9b2d636372bc28619f45a33cd24855842d523514ff1c8845957c78505
+    - batch: MIG-B3
+      ingested_from: corpus/master/batch-3/key-binding-map.batch3.draft.yaml
+      note: formatter_bindings 10 条（MECHANICAL_LITERAL_EXPORT 10 / RESIDUAL 0）三方探查草表同源对账
+    - batch: MIG-B3
+      ingested_from: corpus/master/batch-3/inventory.yaml
+      note: 分类依据=M0 盘点条目（encode_float_precision.py 幂等 updater producer 在场）
+  rationale: 10 类格式化策略词表（date/time/datetime/number/money/percent/currency/unit/enum/empty 各 1），每条携带 precision_policy + implementation 实现锚（src/shared/lib/format.ts#<fn>）——约束『数值/日期如何格式化展示』的领域展示契约面；10/10 实现锚字面核验通过（M1 复测 + key-binding-map formatter_bindings MECHANICAL_LITERAL_EXPORT 10、RESIDUAL_ANCHOR_MISSING=0），i18n 协议与 monetary precision 协议消费链在场。
+  source_content_sha256: ed0beff9b2d636372bc28619f45a33cd24855842d523514ff1c8845957c78505
+- authority_owner_candidate:
+    delegates:
+    - required_for:
+      - activate_or_retire_constraint
+      role: HUMAN_OWNER
+    note: authority_owner_candidate 一律为 M3 Authority Map 校准前的候选值（DP-7 粗粒度起步）；单人项目事实 Owner 唯一，角色名为功能位而非人事位；负面约束正文为业务禁令（BUSINESS_OWNER），activation/retire 须回 Owner 裁决位
+    owner: BUSINESS_OWNER
+  coarse_class: DOMAIN_CONTRACT
+  conflicts: []
+  destination: corpus/master/batch-3/truth/objects/business-rule/
+  destination_kind: business_rule（POLICY.* 负面约束对象族，64 条逐条立对象候选）
+  destination_note: 64 条逐条立对象候选（constraint 按 NEG.<PAGE>.<ACTION> 被页面/动作逐条引用=检索路径在场）；statement/severity/source_refs 逐字保真（status 见 status_note）；NEG.* 注册表本地族词形（非 vocab v0.2 15 前缀成员、非 ALIASES_V0 现役 8 族）——只登记不改名，canonical 赐名归族待词汇表 PR/Owner 裁决（key-binding-map.batch3.draft.yaml alias_registrations.proposed_needs_human 同口径）
+  inventory_ref: outputs/frontend/10_planned/negative-constraint.yaml
+  kind: negative-constraint
+  provenance:
+    class: project-natural
+    note: class=project-derived/project-natural 为分类台账读形；origin_frozen 为 FROZEN 02 信封 OriginValue（natural/derived/ingested）词形，与 inventory provenance.origin 逐字一致
+    origin_frozen: natural
+    sources:
+    - batch: MIG-B3
+      ingested_from: outputs/frontend/10_planned/negative-constraint.yaml
+      note: M1 只读分类审视；M1 复测 constraints=64、severity blocker=37/warning=27、status PROPOSED=64、distinct page_id=31、source_refs ACTION.* 形 57/prose 形 7
+      pin_content_sha256: 8b872ed77cee7c38e4b03e4b9c5d40bf78f0fcc40503dc17c08f564b9de49d4c
+    - batch: MIG-B3
+      ingested_from: corpus/master/batch-3/key-binding-map.batch3.draft.yaml
+      note: token_family_observations：NEG.* src 侧在场面 distinct=22（8 文件），锚覆盖在案
+    - batch: MIG-B3
+      ingested_from: corpus/master/batch-3/inventory.yaml
+      note: 分类依据=M0 盘点条目（在仓无写入脚本、人工/agent 策展免 producer 义务）
+  rationale: 64 条页级负面约束（NEG.<PAGE>.<ACTION> 本地族，severity blocker=37/warning=27，status 全 64 PROPOSED 登记态），source_refs 以 ACTION.* 值引用为主（57 条）+ prose 7 条——约束『页面动作业务上禁止做什么』的领域约束面，page-spec §9 与 governance_factsources 消费链在场。
+  source_content_sha256: 8b872ed77cee7c38e4b03e4b9c5d40bf78f0fcc40503dc17c08f564b9de49d4c
+  status_note: status 全 64 条 PROPOSED（登记态事实）照录不篡改：PROPOSED 为合法 lifecycle 词形（事实记录），无语义升级动作（诚实零升级登记）；activation/retire 属 Owner 裁决位（delegates 已登记）
+- authority_owner_candidate:
+    delegates: []
+    note: authority_owner_candidate 一律为 M3 Authority Map 校准前的候选值（DP-7 粗粒度起步）；单人项目事实 Owner 唯一，角色名为功能位而非人事位；源 machines[].authority 全 33 条 frontend-engineering-default（M1 复测一致）
+    owner: FRONTEND_ENGINEERING
+  coarse_class: DOMAIN_CONTRACT
+  conflicts:
+  - MIG-B3/C-01
+  destination: corpus/master/batch-3/truth/objects/capability/
+  destination_kind: capability（交互状态机对象族，33 台逐条立对象候选；张力注记见 kind_prediction_tension_note）
+  destination_note: 33 台逐条立对象候选（MACHINE-PAGE-* 与页面一一对应、按页检索在场）；states/initial/transitions 引用形态逐字保真（state/transition 本体在 matrix 与 02_process-task-interface，转录以引用键承载不内联复制——双真相封堵）；MACHINE-*/STATE-*/TRANSITION-<HEX16> 注册表本地族词形（非 vocab v0.2 15 前缀成员、非 ALIASES_V0 现役 8 族）——只登记不改名，canonical 赐名归族待词汇表 PR/Owner 裁决（key-binding-map.batch3.draft.yaml alias_registrations.proposed_needs_human 同口径）；transition 定义体缺口见 reference_integrity_note
+  inventory_ref: outputs/frontend/10_planned/state-machine-registry.yaml
+  kind: state-machine-registry
+  kind_prediction_tension_note: kind 预判张力登记（任务书给定 capability/knowledge 二选一桶内按语义裁定）：预判 capability（页面交互状态机=页面行为能力描述，MACHINE-PAGE-* 与页面能力同族）；knowledge_entry 排除理由照 batch1 §3 三问：knowledge payload 核心是 failure_class+checks 的 advisory 失败经验，状态机是 fail-closed 行为契约非失败知识，且 knowledge lifecycle 收窄会丢演化语义；备选 business_rule（合法状态集+转移集的约束语义亦在场）一并登记，M2 照 batch1 §3 三问复核定案
+  provenance:
+    class: project-derived
+    note: class=project-derived/project-natural 为分类台账读形；origin_frozen 为 FROZEN 02 信封 OriginValue（natural/derived/ingested）词形，与 inventory provenance.origin 逐字一致
+    origin_frozen: derived
+    sources:
+    - batch: MIG-B3
+      ingested_from: outputs/frontend/10_planned/state-machine-registry.yaml
+      note: M1 只读分类审视；M1 复测 machines=33、state_ids 464 distinct、transition_ids 311 distinct、authority frontend-engineering-default=33、scope page_ids distinct=33；与 matrix 跨源集合复测=exact 431 + 分隔符对 14 + 组词对 10 + machine 侧真缺口 9（见 conflicts MIG-B3/C-01）
+      pin_content_sha256: 282d560175afeb5fb392393a90501ece7ace1a97577edd0f033a76de2e6cd7b0
+    - batch: MIG-B3
+      ingested_from: corpus/master/batch-3/key-binding-map.batch3.draft.yaml
+      note: token_family_observations：MACHINE-*/STATE-*/TRANSITION-<HEX16> src 侧在场面 distinct=0（纯 registry 侧词形，无代码锚）
+    - batch: MIG-B3
+      ingested_from: corpus/master/batch-3/inventory.yaml
+      note: 分类依据=M0 盘点条目（state_id_cross_source_divergence 事故证据 + cross_reference_forms 同源；compile_frontend_state_machines.py 写入 producer 在场）
+  rationale: 33 台页面交互状态机（MACHINE-PAGE-* 本地族：15 个 PAGE-TASK-STEP + 18 个 PAGE-APP 页域，authority 全 33 条 frontend-engineering-default），state_ids 464/transition_ids 311 全 distinct 引用形态——约束『页面处于哪些交互状态、状态间如何合法转移』的行为契约面，readiness/validate 消费链 fail-closed 在场；与 state-ownership-matrix 的 id 集合双向缺口归 MIG-B3/C-01。
+  reference_integrity_note: transition_ids 311 条（TRANSITION-<HEX16> 哈希词形）本文件仅引用无内联定义，定义体在 02_process-task-interface.yaml（M1 复测该文件词形 75 distinct 在场）——定义体文件不在本批十资产（checked_out_of_scope，见 meta.conflict_audit）；与 navigation-transition-registry 的 TRANSITION-<NAME>-TO-<NAME> 词形零交集（同前缀异族，batch2 已收编族不混淆）
+  source_content_sha256: 282d560175afeb5fb392393a90501ece7ace1a97577edd0f033a76de2e6cd7b0
+- authority_owner_candidate:
+    delegates: []
+    note: authority_owner_candidate 一律为 M3 Authority Map 校准前的候选值（DP-7 粗粒度起步）；单人项目事实 Owner 唯一，角色名为功能位而非人事位；owner 标签为工程归属约定词形（derive_platform_foundation.py 回填谱系，origin derived）
+    owner: FRONTEND_ENGINEERING
+  coarse_class: CURRENT_BASELINE
+  conflicts:
+  - MIG-B3/C-01
+  - MIG-B3/C-02
+  destination: corpus/master/batch-3/truth/objects/business-rule/
+  destination_kind: business_rule（状态所有权分配对象族候选；张力注记见 kind_prediction_tension_note）
+  destination_note: 粒度预判：states 455 逐条立对象候选（state_id 被状态机/页面逐条引用=检索路径在场）；variables 854 承载形态（逐条 vs 页面归并）归 M2 三问定案；page_id/state_id/category/owner/value/classification 逐字保真（owner 约定词形只登记不改名）；与 state-machine 的跨源词形缺口归 MIG-B3/C-01
+  inventory_ref: outputs/frontend/10_planned/state-ownership-matrix.yaml
+  kind: state-ownership-matrix
+  kind_prediction_tension_note: kind 预判=任务书给定候选 business_rule（所有权分配=治理约束规则，constraint 语义=『category/owner 分配即约束』）；张力注记：条目形态为事实清单（455+854 条现状分配）与 business_rule 的 when/then 契约形态有距离，备选 knowledge_entry（failure advisory，已按 batch1 §3 三问排除）与 page_surface payload（状态挂页面）一并登记；最终归 M2 照 batch1 §3 三问定案，本台账只登记预判不裁决
+  owner_binding_drift_note: owner 形态 M1 复测：local:* 290 + entities/<module>#use<X>Query 约定词形 165（回填后 455/455 全携带；历史 210 缺 owner 缺口已在仓记载并回填）；entities 约定标签 24 种 distinct 中 23 种无字面导出、1 种符号在他模块（ledger→parts-ledger）——机器键绑定锚漂移归 MIG-B3/C-02（key-binding-map.batch3.draft.yaml state_owner_label_bindings 全量登记载体）
+  provenance:
+    class: project-derived
+    note: class=project-derived/project-natural 为分类台账读形；origin_frozen 为 FROZEN 02 信封 OriginValue（natural/derived/ingested）词形，与 inventory provenance.origin 逐字一致
+    origin_frozen: derived
+    sources:
+    - batch: MIG-B3
+      ingested_from: outputs/frontend/10_planned/state-ownership-matrix.yaml
+      note: M1 只读分类审视；M1 复测 states=455/variables=854（合计 1309 与 M0 分母一致）、owner 非空 455/455、category editing=155/ui=135/server=165、owner local=290/entities=165、variables Server=20/UI=834、var source_field_id 在场 69/distinct 28、distinct page_id=33
+      pin_content_sha256: 98252faeb92a17099a7afe51f14975c5bcfb322fd942018fda370bf9c3c1eaea
+    - batch: MIG-B3
+      ingested_from: corpus/master/batch-3/key-binding-map.batch3.draft.yaml
+      note: state_owner_label_bindings 24 种标签全量登记（23 无字面导出 + 1 符号他模块）+ state_owner_local_scheme 290 同源对账
+    - batch: MIG-B3
+      ingested_from: corpus/master/batch-3/inventory.yaml
+      note: 分类依据=M0 盘点条目（owner_backfill_history 事故证据 + denominators 同源；tools/frontend/derive_platform_foundation.py owner 回填 producer 在场）
+  rationale: 当前状态所有权基线（形态实为 flat 清单：states 455 × (page_id,state_id,category,owner,value) 五维 + variables 854 × (classification,variable_id[,source_field_id])，非二维矩阵结构——M0 形态结论延续），『现在每个状态/变量归谁拥有』的基线登记（category editing=155/ui=135/server=165；owner 回填后 455/455 全携带）；side_effect_graph/delivery_truth_contract/manage/validate 消费链在场。
+  source_content_sha256: 98252faeb92a17099a7afe51f14975c5bcfb322fd942018fda370bf9c3c1eaea
+meta:
+  boundary_clauses:
+  - carried_from: corpus/master/batch-1/classification-ledger.yaml meta.boundary_clauses（L0 项目级不变量跨批存档，MIG-B2 同款承袭；本批 10 条目中 EXTERNAL_BASELINE delegates 指向 doc/V1.0 Scope specs 业务基线引用位，均非 backend 审批仪式位）
+    clause_id: AUTH-RULE-FRONTEND-ONLY
+    consumption_contract:
+    - authority 加载（M3 Authority Map）必须消费本条款
+    - contract gate 必须消费本条款：禁止替已发布 OpenAPI 之外虚构的 backend owner 索要审批
+    external_baseline:
+      document_title: MASTer API
+      document_version: 0.1.0
+      operationids: 190
+      source: doc/V1.0 Scope/api-contracts(2)/api-contracts/openapi.yaml
+    statement: 本项目 frontend-only；backend = 已发布外部 OpenAPI 承担，无 backend-owner 审批仪式——MASTer_master 显式项目边界
+  class_distribution:
+    CONFLICT: 0
+    CURRENT_BASELINE: 2
+    DOMAIN_CONTRACT: 8
+    ENGINEERING_POLICY: 0
+    L0_INVARIANT: 0
+    OBSOLETE: 0
+    TASK_HISTORY: 0
+    note: L0_INVARIANT=0：项目级 L0 事实（frontend-only 边界条款）以 meta.boundary_clauses 承袭存档（MIG-B1/MIG-B2 同款），非资产条目；CONFLICT=0：矛盾以跨文件 findings 形态登记于 conflicts_pending_owner（3 条），无整文件级 CONFLICT 粗分类条目；ENGINEERING_POLICY=0：工程策略族归 BATCH-4（batch1 口径），本批 10 资产无此类；TASK_HISTORY=0：本批十资产全部为领域事实/契约/基线，无事件史主体；OBSOLETE=0：10/10 producer_alive=true（见 dead_candidate_audit）
+  coarse_class_vocabulary:
+    CONFLICT: 整文件级多来源矛盾待 Owner 裁决（本批为零：矛盾登记于 conflicts_pending_owner）
+    CURRENT_BASELINE: 当前生效的业务/工程事实基线（现在是什么）
+    DOMAIN_CONTRACT: 领域/治理契约（业务契约/规则/负面约束/计算与格式化契约/字段语义与数据模型/状态机行为契约）
+    ENGINEERING_POLICY: 工程策略（怎么做——本批为零，归 BATCH-4）
+    L0_INVARIANT: 超越一切演化的项目级不变量（本批以 meta.boundary_clauses 承袭承载，无资产条目）
+    OBSOLETE: 已死/待弃（确认后留 tombstone 指针，不得静默删除——GAP-POM-001）
+    TASK_HISTORY: 任务/裁决/问答事件史（对象化后当前生效值另行落 Current）
+    source: PRD §61 M1 七分类 × thread-B §1.2 双层分类法（细分类 §93.4 仅作用 spec markdown，本批无 spec 文件，fine_class 一律 n/a）
+  conflict_audit:
+    checked_out_of_scope:
+    - transition_ids 311 条定义体在 02_process-task-interface.yaml（非本批十资产；M1 复测该文件 TRANSITION-<HEX16> 词形 75 distinct 在场 vs 本批引用 311 distinct——覆盖缺口规模在案）；定义体文件归属批次未定，本批只登记不裁决（batch1『涉及文件不在本批十资产内』先例同款），见 entries[state-machine-registry].reference_integrity_note
+    - bp 契约 id 18 distinct/30 条、rule_id 148 distinct/275 条的条目身份复合形态——非多来源矛盾，属身份形态事实（identity_note 随条目登记，是否违式归 Owner/golden 裁决）
+    - FIELD.* 776/785 SEGMENT 文法漂移、BP-/CALC-/NEG./STATE-/MACHINE-/MODEL./format-* 本地族赐名缺口——别名登记缺口非矛盾（key-binding-map.batch3.draft.yaml alias_registrations.proposed_needs_human 承接），不构成 conflict
+    - MIG-B1/C-04（GRID.EDITABLE_GRID 登记路径 vs 头注引用路径漂移）仍 PENDING——归属 batch1 台账不重复登记；影响面为 batch1 已收编 GRID.* 3 条，非本批 87 条余量（见 entries[component-registry].batch1_remainder_closure.carried_conflicts_note）
+    denominator:
+      files_audited: 10
+      findings: 3
+    files_with_findings:
+    - outputs/frontend/10_planned/state-machine-registry.yaml
+    - outputs/frontend/10_planned/state-ownership-matrix.yaml
+    - outputs/frontend/10_planned/calculation-registry.yaml
+    findings: 3
+    rule: CONFLICT/OBSOLETE 只汇总呈报绝不自动裁决；矛盾发现方法=十资产内部交叉（state-machine×state-ownership 同批双侧）+ 各自声明消费方锚点复测（registry.ts 头注/format.ts 导出/entities 导出）+ 与 M0 denominators/incident_history 对账
+    scope: 本批 10 资产内部 + 其声明消费方锚点；数值冲突全部经 M1 只读复测核验后才登记（10/10 源 pin sha256 复测一致；conflicts 计数全部现场重算并与 inventory/kbm 对账一致）
+  coverage:
+    classified: 10
+    denominator: 10
+    denominator_source: corpus/master/batch-3/inventory.yaml assets[]（M0 只读盘点产出，M1 复测 len=10）
+    ratio: 100%（10/10）
+  dead_candidate_audit:
+    dead_candidates: 0
+    denominator: 10
+    honest_zero_note: inventory 10 资产 producer_alive 全为 true 且各有活跃生产/策展+消费链（bp/business-rule/negative 为策展+page_spec/governance_factsources 消费链；calculation 为策展+registry.ts 镜像；component 为策展+校验/门禁链；data-model/field-semantic 为 compile_frontend_data_model 写入 producer+消费链；formatter 为 encode_float_precision updater+消费链；state-machine 为 compile_frontend_state_machines producer+消费链；state-ownership 为 derive_platform_foundation 回填 producer+消费链）——死候选为零是 10/10 逐条复核后的实测结果，非缺检
+    method: 逐条复核 inventory producer_alive/producer_alive_note + producer_chain_observed + consumers_detected；无 producer_alive=false 条目
+  generated_by: corpus/master/batch-3/tools/build_m1_classification_ledger.py
+  idempotency:
+    machine_fields_wall_clock: none
+    note: 机器消费字段零墙钟/零日期（散文注记内引用的源工件文件名 token 如 doc/2026-08-20-* 属源值转录非本工具生成时间戳）；批次代号固定 MIG-B3；整账构建两遍逐字节比对一致后落盘；同输入重跑 byte-identical
+    serialization: yaml.safe_dump(data, sort_keys=True, allow_unicode=True, default_flow_style=False, width=4096)
+  inputs:
+  - corpus/master/batch-3/inventory.yaml
+  - corpus/master/batch-3/key-binding-map.batch3.draft.yaml
+  - MASTer_master outputs/frontend/10_planned/**（10 源 pin sha256 复测 10/10 一致，绝对只读）
+  - corpus/master/batch-1/classification-ledger.yaml + truth/objects/capability/（component-registry 闭环验证对侧，只读）
+  kind_prediction_distribution:
+    business_rule:
+      assets:
+      - bp-business-contract
+      - business-rule-registry
+      - negative-constraint
+      - state-ownership-matrix（任务书候选）
+      entries: 4
+      kind_dir: truth/objects/business-rule/
+    capability:
+      assets:
+      - calculation-registry
+      - component-registry（余量 87）
+      - formatter-registry
+      - state-machine-registry（任务书 capability/knowledge 桶内按语义裁 capability）
+      entries: 4
+      kind_dir: truth/objects/capability/
+    field_definition:
+      assets:
+      - field-semantic-registry
+      - data-model-registry（预判落位，张力注记随条目）
+      entries: 2
+      kind_dir: truth/objects/field-definition/
+    note: 领域事实族 kind 预判（任务书给定 business_rule/field_definition/capability/knowledge 框架内）；kind-dir 全部落在 batch1 约定书 §1 十类闭表，无即兴派生；三处张力注记（data-model 落 field_definition、state-machine 落 capability、state-ownership-matrix 落 business_rule）逐条登记备选与排除理由，最终粒度/赐名归 M2 照 batch1 §3 三问定案，本台账只登记预判不裁决
+  obsolete_review:
+    note: 无 OBSOLETE 粗分类条目；结合 dead_candidate_audit（死候选=0），本批不存在需要 tombstone 的资产。诚实零亦是结果，不硬造。
+    obsolete_entries: 0
+  special_review:
+    items:
+    - item: calculation engine_binding.wired 语义升级方向特别预登记（声明→evidence_axis 机判候选）
+      note: wired 声明（true=6/false=53，59 全覆盖）迁 evidence 轴机械判定候选：key-binding-map calc_bindings 已实测 6 wired + 23 engine-only + 30 parallel；status=ready 47 vs wired=6 语义裂缝（08-20 裁决在案：以 wired 为准不信 status）为升级依据；数值语义不篡改，语义升级只登记不执行归 Owner 裁决
+      where: entries[calculation-registry].wired_evidence_axis_preregistration
+    - item: component-registry 余量收编闭环 batch1『整库延后到批次 3』注记 + 两边对象 id 不冲突验证
+      note: GRID.* 3 条已由 BATCH-1 收编（CAPABILITY.GRID.* 三对象在 batch1 truth/objects/capability/ M1 复测在册）；本批余量=非 GRID 87 条（全 distinct）；机械验证：同形映射域零交集、3+87=90=整册分母——余量收编不重复收编那 3 条；MIG-B1/C-04 仍 PENDING 不重复登记（影响面为 batch1 侧 3 条）
+      where: entries[component-registry].batch1_remainder_closure
+    - item: 条目身份复合形态 M1 复测新发现（bp 契约 id 18 distinct/30 条；rule_id 复合键 275/275）
+      note: M0 分母只登记 distinct page_id，M1 复测补充条目 id 词形非唯一事实：bp 复合键（page_id, id）distinct=30/30、business-rule 复合键（page_id, rule_id）distinct=275/275——如实登记不裁决（是否违式归 Owner/golden）
+      where: entries[bp-business-contract].identity_note + entries[business-rule-registry].identity_note
+    - item: 领域事实族 kind 预判分布（business_rule 4 / field_definition 2 / capability 4）
+      note: 任务书给定框架内逐资产预判；三处张力注记（data-model/state-machine/state-ownership-matrix）登记备选与排除理由，kind-dir 全部在 batch1 §1 十类闭表内
+      where: meta.kind_prediction_distribution + 各条目 destination_kind / kind_prediction_tension_note

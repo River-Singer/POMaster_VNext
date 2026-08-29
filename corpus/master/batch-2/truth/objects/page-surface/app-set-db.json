@@ -1,0 +1,517 @@
+{
+  "aliases": [
+    "PAGE-APP-SET-DB"
+  ],
+  "authority": {
+    "delegates": [
+      {
+        "required_for": [
+          "approve_page_blueprint"
+        ],
+        "role": "HUMAN_OWNER"
+      }
+    ],
+    "escalation_hint": "regenerate via corpus/master/batch-2/tools/ingest_screen_blueprints_front_half.py; blueprint structure/action/field-semantics change re-runs the generator then this ingest; page.status progression and canonical word form PAGE.APP_* confirmation are HUMAN_OWNER seats (approve_page_blueprint; EVOLUTION_CHANNEL; ledger owner FRONTEND_ARCHITECTURE)",
+    "owner": "FRONTEND_ARCHITECTURE",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "PROVISIONAL",
+    "evidence": "IMPLEMENTED",
+    "lifecycle": "CURRENT"
+  },
+  "axis_profile": "page_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "PAGE.APP_SET_DB",
+  "key_bindings": {
+    "artifact": [],
+    "code": [
+      {
+        "artifact_type": "source_dir",
+        "expect": {
+          "page_id": "PAGE-APP-SET-DB"
+        },
+        "match_rule": "mechanical",
+        "value": "src/pages/page-set-db"
+      },
+      {
+        "artifact_type": "file",
+        "expect": {
+          "route_name_exact": "PAGE-APP-SET-DB"
+        },
+        "match_rule": "mechanical",
+        "value": "src/app/router/routes.ts"
+      }
+    ]
+  },
+  "kind": "page_surface",
+  "notes_md": "蓝图转录（MIG-B2 转录组 C·前半 20/20，一蓝图一 surface 主对象）：源 outputs/frontend/10_planned/screen-blueprints/PAGE-APP-SET-DB.yaml（bp_blueprint，pin 见 sources[0]；分母=screen-blueprints 实测 39 之字典序第 20 份）。\n三层对象化：结构=template_ref PAGE.LIST + regions 4 条（slot 词形均在 page-anatomy-registry 16 槽合法集内）+ states 14 项；交互=actions 6 条（ACTION.* 摆位 + PAGE_SLOT.* 槽位值引用）；字段语义=regions/slots 内联结构化字段逐字承载（源无 FIELD.* 词形 → FIELD.* 派生引用=0，诚实零）。\nsurface=V1（Page Spec 双分母之应用页侧；分母归属迁移期走信封 denominator_refs 显式空，DENOMINATOR.* 未注册）。\npage.status=DRAFT 为设计审批轴事实（与 readiness 实施就绪轴分立，禁混轴）；已登记 payload.blueprint.superseded_status_field，数值语义不篡改。\nunresolved 6 条逐条转 payload.blueprint.unresolved_exceptions（Exception Ledger 承载：显式未决，不静默丢弃、不静默裁决）。\n散文承载登记：none (honest zero) → 浓缩为信封 notes_md 摘要 + sources[0].locator.line_anchors 源指针（蓝图 YAML 正文不整本搬运；摘录截断）。摘要（全文按源指针回读）：none (honest zero)\ncanonical 词形：源词形 PAGE-APP-SET-DB → 拟合 PAGE.APP_SET_DB（PAGE-APP-*→PAGE.APP_* token 重排外推；非 ALIASES_V0 现役 8 族，key-binding-map.batch2.draft.yaml proposed_needs_human）→ HUMAN_CONFIRM_REQUIRED：对象以拟合词形落档、legacy 词形照录 aliases[]（登记不改名），axes.confidence=PROVISIONAL（悬置态，batch1 约定书 §2；Owner 裁决后可转 LOCKED），origin 保持源侧 derived（非 A6 场景）。\nroute/目录权威不在本对象 payload：page↔dir 与 route_name 机械锚以 key_bindings.code 期望声明承载（值=源词形逐字），KEYBINDING.* 表对象落档仍待人工裁决（草表 status=MECHANICAL_ROUTE_NAME_MATCH）。\n本字段为人类散文，机器永不解析判卷。",
+  "origin": "derived",
+  "payload": {
+    "actions": [
+      "ACTION.REFRESH",
+      "ACTION.CREATE",
+      "ACTION.EDIT",
+      "ACTION.DELETE",
+      "ACTION.IMPORT",
+      "ACTION.EXPORT"
+    ],
+    "blueprint": {
+      "actions": [
+        {
+          "action_id": "ACTION.REFRESH",
+          "business_action": "ACT-SET-DB-QUERY",
+          "capability_id": "CAP-SET-DB",
+          "id": "PAGE-ACT-SET-DB-1",
+          "mock": false,
+          "placement": "ACTION.REFRESH",
+          "slot": "PAGE_SLOT.SECONDARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.CREATE",
+          "business_action": "ACT-SET-DB-CREATE",
+          "capability_id": "CAP-SET-DB",
+          "id": "PAGE-ACT-SET-DB-2",
+          "mock": false,
+          "placement": "ACTION.CREATE",
+          "slot": "PAGE_SLOT.PRIMARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.EDIT",
+          "business_action": "ACT-SET-DB-EDIT",
+          "capability_id": "CAP-SET-DB",
+          "id": "PAGE-ACT-SET-DB-3",
+          "mock": false,
+          "placement": "ACTION.EDIT",
+          "slot": "PAGE_SLOT.PRIMARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.DELETE",
+          "business_action": "ACT-SET-DB-DELETE",
+          "capability_id": "CAP-SET-DB",
+          "id": "PAGE-ACT-SET-DB-4",
+          "mock": false,
+          "placement": "ACTION.DELETE",
+          "slot": "PAGE_SLOT.SECONDARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.IMPORT",
+          "business_action": "ACT-SET-DB-IMPORT",
+          "capability_id": "CAP-SET-DB",
+          "id": "PAGE-ACT-SET-DB-5",
+          "mock": false,
+          "placement": "ACTION.IMPORT",
+          "slot": "PAGE_SLOT.SECONDARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.EXPORT",
+          "business_action": "ACT-SET-DB-EXPORT",
+          "capability_id": "CAP-SET-DB",
+          "id": "PAGE-ACT-SET-DB-6",
+          "mock": false,
+          "placement": "ACTION.EXPORT",
+          "slot": "PAGE_SLOT.SECONDARY_ACTIONS"
+        }
+      ],
+      "api_requirements": [
+        {
+          "classification": "QUERY",
+          "id": "API_REQ.SET.DB.1",
+          "method": "GET",
+          "note": "code=set；active_only 控制启用过滤；为 BUC/其他逻辑分析/零件台账提供 SET/Set-Kz. 数据源",
+          "operation_id": "list_items_api_v1_dictionaries__code__items_get",
+          "path": "/api/v1/dictionaries/{code}/items",
+          "source": {
+            "page": "PAGE-APP-SET-DB"
+          },
+          "status": "ACCEPTED",
+          "type": "query"
+        },
+        {
+          "classification": "COMMAND",
+          "id": "API_REQ.SET.DB.2",
+          "method": "POST",
+          "note": "code=set；新增 SET/Set-Kz. 记录，ID 自增",
+          "operation_id": "add_item_api_v1_dictionaries__code__items_post",
+          "path": "/api/v1/dictionaries/{code}/items",
+          "source": {
+            "page": "PAGE-APP-SET-DB"
+          },
+          "status": "ACCEPTED",
+          "type": "command"
+        },
+        {
+          "classification": "COMMAND",
+          "id": "API_REQ.SET.DB.3",
+          "method": "PUT",
+          "note": "code=set；编辑记录字段 / 切换启用-停用",
+          "operation_id": "update_item_api_v1_dictionaries__code__items__item_id__put",
+          "path": "/api/v1/dictionaries/{code}/items/{item_id}",
+          "source": {
+            "page": "PAGE-APP-SET-DB"
+          },
+          "status": "ACCEPTED",
+          "type": "command"
+        },
+        {
+          "classification": "COMMAND",
+          "id": "API_REQ.SET.DB.4",
+          "method": "DELETE",
+          "note": "code=set；openapi 语义为停用(逻辑删除)，与 spec 5.7 一次确认后逻辑删除一致",
+          "operation_id": "delete_item_api_v1_dictionaries__code__items__item_id__delete",
+          "path": "/api/v1/dictionaries/{code}/items/{item_id}",
+          "source": {
+            "page": "PAGE-APP-SET-DB"
+          },
+          "status": "ACCEPTED",
+          "type": "command"
+        }
+      ],
+      "error_rendering": {
+        "component": "DATA.EMPTY_STATE",
+        "fallback_slot": "PAGE_SLOT.FEEDBACK",
+        "isolation": "route-level ErrorBoundary; per-query error 不外溢其他页面（协议 18/27）",
+        "protocol": "universal:rendering-state-protocol",
+        "variant": "error"
+      },
+      "page_status": {
+        "axis": "design_approval",
+        "value": "DRAFT"
+      },
+      "prose_to_notes_md": [],
+      "regions": [
+        {
+          "behavior": "static",
+          "id": "REGION.PAGE_HEADER",
+          "note": "工作台 tab 已显示标题，本区域不再渲染面包屑与页面标题。",
+          "slots": {
+            "PAGE_SLOT.PRIMARY_ACTIONS": {
+              "capability_id": "PATTERN.ACTION_BAR",
+              "component": "PATTERN.ACTION_BAR"
+            },
+            "PAGE_SLOT.SECONDARY_ACTIONS": {
+              "capability_id": "PATTERN.ACTION_BAR",
+              "component": "PATTERN.ACTION_BAR"
+            },
+            "PAGE_SLOT.STATUS": {
+              "capability_id": "DATA.STATUS_BADGE",
+              "component": "DATA.STATUS_BADGE"
+            }
+          }
+        },
+        {
+          "behavior": "static",
+          "id": "REGION.FILTERS",
+          "slots": {
+            "PAGE_SLOT.FILTERS": {
+              "capability_id": "PATTERN.FILTER_BAR",
+              "component": "PATTERN.FILTER_BAR"
+            }
+          }
+        },
+        {
+          "behavior": "render-by-state",
+          "id": "REGION.CONTENT",
+          "slots": {
+            "PAGE_SLOT.CONTENT": {
+              "capability_id": "PATTERN.LIST_TABLE",
+              "component": "PATTERN.LIST_TABLE",
+              "grid": {
+                "autocomplete": {
+                  "auto_fill": "SET 编号精确命中自动带入 FG + SET 名称德 + SET 名称中（2026-08-17 按已实现代码确认，含前缀建议下拉）",
+                  "fg_datalist": "FG（功能组）输入挂 datalist 建议下拉（现有不重复 fgCode 值；2026-08-17 批次0 登记，批次3 落地）",
+                  "field": "setCode",
+                  "free_text": true,
+                  "source": "现有不重复 SET 编号值"
+                },
+                "column_source": "2026-08-17 按已实现代码（SetDbPage.vue 12 列五级双语）+20260814 原型回填（代码对、蓝图旧——勿据蓝图反向改代码口径）",
+                "columns": [
+                  {
+                    "frozen": "left",
+                    "key": "id",
+                    "name": "#",
+                    "type": "number",
+                    "width": "40px"
+                  },
+                  {
+                    "frozen": "left",
+                    "key": "fgCode",
+                    "name": "FG",
+                    "type": "string",
+                    "width": "60px"
+                  },
+                  {
+                    "frozen": "left",
+                    "key": "setCode",
+                    "name": "SET 编号",
+                    "type": "string",
+                    "width": "80px"
+                  },
+                  {
+                    "frozen": "left",
+                    "key": "setNameDe",
+                    "name": "SET 名称(德)",
+                    "type": "string",
+                    "width": "220px"
+                  },
+                  {
+                    "key": "setNameCn",
+                    "name": "SET 名称(中)",
+                    "type": "string",
+                    "width": "160px"
+                  },
+                  {
+                    "key": "kzCode",
+                    "name": "Set-Kz. 编号",
+                    "type": "string",
+                    "width": "100px"
+                  },
+                  {
+                    "key": "kzNameDe",
+                    "name": "Set-Kz. 名称(德)",
+                    "type": "string",
+                    "width": "260px"
+                  },
+                  {
+                    "key": "kzNameCn",
+                    "name": "Set-Kz. 名称(中)",
+                    "type": "string",
+                    "width": "180px"
+                  },
+                  {
+                    "key": "subModule",
+                    "name": "细分模块",
+                    "type": "string",
+                    "width": "160px"
+                  },
+                  {
+                    "key": "topPart",
+                    "name": "TOP零件",
+                    "type": "string",
+                    "width": "140px"
+                  },
+                  {
+                    "badge": {
+                      "停用": "red",
+                      "启用": "green"
+                    },
+                    "key": "status",
+                    "name": "状态",
+                    "type": "enum",
+                    "width": "70px"
+                  },
+                  {
+                    "frozen": "right",
+                    "key": "_act",
+                    "name": "操作",
+                    "row_actions": [
+                      "编辑",
+                      "删除"
+                    ],
+                    "type": "button",
+                    "width": "90px"
+                  }
+                ],
+                "dense_format": "每行填写完整 SET 编号/名称，不使用稀疏继承空值",
+                "dirty_data_note": "M3/M5 跨 sheet 命名冲突脏数据标记保留（alert-triangle icon + title 提示；OQ-SET-1 择一落地）",
+                "edit_mode": "modal",
+                "editable": false,
+                "export": {
+                  "columns": 11,
+                  "filename": "SET数据库.csv",
+                  "format": "csv",
+                  "note": "11 列确认不变（#,FG,SET编号,SET名称德,SET名称中,Set-Kz.编号,Set-Kz.名称德,Set-Kz.名称中,细分模块,TOP零件,状态）；CSV UTF-8 BOM 全列双引号"
+                },
+                "fixed_total_width": "1560px（12 列固定总宽，横向滚动；20260814 原型 table-layout:fixed）",
+                "footer": {
+                  "component": "TYPOGRAPHY.DESCRIPTION",
+                  "text": "共 {count} 条"
+                },
+                "frozen_columns": {
+                  "left": [
+                    "#",
+                    "FG",
+                    "SET 编号",
+                    "SET 名称(德)"
+                  ],
+                  "right": [
+                    "操作"
+                  ]
+                },
+                "hierarchy_hint": "层级提示行：L0 FG 功能组 → L1 SET 编号+名称德/中 → L2 Set-Kz. 编号+名称德/中 → L3 细分模块 → L4 TOP零件（标题行 chips：5 级层级主数据 / 中德双语）",
+                "pagination": {
+                  "default": 50,
+                  "jump_to_last_on_create": true,
+                  "note": "新增保存成功后跳最后一页（2026-08-17 补登原型 saveSet 行为；批次3 落地）",
+                  "page_sizes": [
+                    50,
+                    100,
+                    500,
+                    1000
+                  ]
+                },
+                "search": {
+                  "mode": "client-side fuzzy case-insensitive",
+                  "scope": [
+                    "fgCode",
+                    "setCode",
+                    "setNameDe",
+                    "setNameCn",
+                    "kzCode",
+                    "kzNameDe",
+                    "kzNameCn",
+                    "subModule",
+                    "topPart"
+                  ],
+                  "trigger": "输入框实时触发 + 查询按钮点击触发"
+                },
+                "total_columns": 12,
+                "validation": [
+                  {
+                    "message": "Set-Kz. 编号必须以 SET 编号「{setCode}」开头",
+                    "on": "create/edit save",
+                    "rule": "kzCode.startsWith(setCode)"
+                  },
+                  {
+                    "message": "该 SET / Set-Kz. / 细分模块组合已存在",
+                    "on": "create 全量校验 / edit 排除自身",
+                    "rule": "setCode + kzCode + subModule 组合唯一"
+                  },
+                  {
+                    "message": "SET 编号「{setCode}」已存在（FG: {fg}，名称: {nameCn}），须保持一致",
+                    "on": "create/edit save",
+                    "rule": "SET 编号全局唯一：同一 setCode 必须对应同一组 FG + 双语名称（不区分部门/车型，CEE_CEC 与 CEB 共用一套数据；2026-08-17 补登第三条）"
+                  }
+                ]
+              },
+              "pattern_id": "PATTERN.LIST_TABLE"
+            }
+          }
+        },
+        {
+          "behavior": "static",
+          "id": "REGION.FOOTER_ACTIONS",
+          "slots": {
+            "PAGE_SLOT.FOOTER_ACTIONS": {
+              "capability_id": "PATTERN.ACTION_BAR",
+              "component": "PATTERN.ACTION_BAR"
+            }
+          }
+        }
+      ],
+      "source_document_meta": {
+        "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+        "document_type": "screen-blueprint",
+        "schema_version": 1
+      },
+      "source_page_id": "PAGE-APP-SET-DB",
+      "states": [
+        "idle",
+        "loading",
+        "success",
+        "empty",
+        "error",
+        "view",
+        "edit",
+        "read-only",
+        "create",
+        "pristine",
+        "dirty",
+        "validating",
+        "invalid",
+        "submitting"
+      ],
+      "superseded_status_field": {
+        "mapped_to": "design-approval-axis fact record (classification-ledger blueprint_status_axis_note: design-approval axis and implementation-readiness axis stay separate; the readiness axis lives in page-readiness-registry); object axes describe the truth object itself (lifecycle CURRENT = source is an active canonical), never mixed across axes",
+        "reason": "flat status is one word with many meanings; the design-approval semantic stays a fact record and status progression belongs to the HUMAN_OWNER approve_page_blueprint delegate seat; values are transcribed without tampering",
+        "source_field": "status",
+        "source_value": "DRAFT",
+        "upgrade_registered": true
+      },
+      "template": {
+        "id": "PAGE.LIST"
+      },
+      "unresolved_exceptions": {
+        "carrier": "exception_ledger",
+        "count": 6,
+        "items": [
+          "TODO: backend contract missing for import-action — 待后端补 openapi operationId",
+          "TODO: backend contract missing for export-action — 待后端补 openapi operationId",
+          "UNRESOLVED: set-db-field-mapping: SET 4 数据字段(setCode/setName/kzCode/kzName)+status 与 dict-item(code/label_de/parent_id/active) 的精确映射未确认（SET=parent item / Set-Kz.=child item via parent_id 为推测，前缀校验为前端业务规则）",
+          "UNRESOLVED: spec §7 pending — 待业务细化 set-db spec",
+          "UNRESOLVED: spec §7 pending — 待业务细化 set-db spec",
+          "UNRESOLVED: spec §7 pending — 待业务细化 set-db spec"
+        ],
+        "rule": "unresolved items carried item-by-item as EXPLICITLY unresolved (CONVENTIONS section 3): never silently dropped, never auto-adjudicated; resolution belongs to the Owner"
+      }
+    },
+    "slots": [
+      "PAGE_SLOT.PRIMARY_ACTIONS",
+      "PAGE_SLOT.SECONDARY_ACTIONS",
+      "PAGE_SLOT.STATUS",
+      "PAGE_SLOT.FILTERS",
+      "PAGE_SLOT.CONTENT",
+      "PAGE_SLOT.FOOTER_ACTIONS",
+      "PAGE_SLOT.FEEDBACK"
+    ],
+    "surface": "V1",
+    "template_ref": "PAGE.LIST"
+  },
+  "permits_active": [],
+  "producer": {
+    "liveness": {
+      "status": "active"
+    },
+    "merge_semantics": {
+      "backfill_if_missing": [],
+      "human_never_touched": [],
+      "refresh_fields": [
+        "payload.blueprint"
+      ]
+    },
+    "producer_id": "prod.mig_b2_ingest_screen_blueprints_front_half",
+    "views_maintained": [
+      "truth-index.envelope"
+    ]
+  },
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_front_half.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-SET-DB.yaml",
+        "line_anchors": {
+          "composition_adjudication": null,
+          "notes": null,
+          "unresolved": 364
+        },
+        "prose_summarized": [],
+        "transcription": "front-half blueprint 20/20 objectified one-to-one into a page_surface object: structure (template_ref/regions/states) + interaction (actions) + inline field semantics transcribed verbatim as structured units (array order = source order); page.status kept as a design-approval fact record with a superseded_status_field registration; unresolved items carried item-by-item into payload.blueprint.unresolved_exceptions; prose narrative excerpted into notes_md, never wholesale-migrated; no physical route string enters the payload"
+      },
+      "pin": {
+        "digest": "sha256:5de778708ddea5c968a795a5a3f27f7ceaee65fd4e7e97250962b8c123c2dde4"
+      },
+      "ref": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-SET-DB.yaml",
+      "type": "bp_blueprint"
+    },
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_front_half.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "governance_id": "PAGE-APP-SET-DB",
+        "ingested_from": "corpus/master/batch-2/key-binding-map.batch2.draft.yaml",
+        "transcription": "supplies the page<->dir and route_name binding expectations (status MECHANICAL_ROUTE_NAME_MATCH, draft table): values quoted verbatim into key_bindings.code; the KEYBINDING.* table object itself stays pending human adjudication"
+      },
+      "pin": {
+        "digest": "sha256:2beea8f95e0770da028d5ac5c2e76e2e1266e0ba7af6e0a3faa29fe72cb501fa"
+      },
+      "ref": "corpus/master/batch-2/key-binding-map.batch2.draft.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "页面·SET 数据库"
+}

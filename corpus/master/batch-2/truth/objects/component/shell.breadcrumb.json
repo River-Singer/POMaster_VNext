@@ -1,0 +1,88 @@
+{
+  "aliases": [
+    "SHELL.BREADCRUMB"
+  ],
+  "authority": {
+    "delegates": [],
+    "escalation_hint": "regenerate via corpus/master/batch-2/tools/ingest_shell_registry.py; slot add/remove or layout change requires a CHANGE object (EVOLUTION_CHANNEL; ledger owner FRONTEND_ARCHITECTURE)",
+    "owner": "FRONTEND_ARCHITECTURE",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "LOCKED",
+    "evidence": "IMPLEMENTED",
+    "lifecycle": "CURRENT"
+  },
+  "axis_profile": "component_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "COMPONENT.SHELL.BREADCRUMB",
+  "key_bindings": {
+    "artifact": [],
+    "code": [
+      {
+        "artifact_type": "file",
+        "expect": {
+          "shell_name": "MasterApplicationShell",
+          "slot_id": "SHELL.BREADCRUMB"
+        },
+        "match_rule": "mechanical",
+        "value": "src/app/shell/MasterApplicationShell.vue"
+      }
+    ]
+  },
+  "kind": "component",
+  "notes_md": "本对象为 MIG-B2/M2 迁移校准件（golden case）：源 outputs/frontend/10_planned/application-shell-registry.yaml（扩展名 .yaml、内容为 JSON）slots[] 共 7 条逐条转录之一（SHELL.BREADCRUMB，数组序第 3 条）。槽位字段（id/name_zh/owner/layout/visibility）逐字段保真，payload.slot 与源条目字节等价（工具断言）；数组顺序=源顺序。册级字段 shell_name 与 document_type/schema_version/blueprint_sha256 随对象承载。源文件无 status/lifecycle/updated_at 字段：approval_axis × evidence_axis 拆分动作数=0、superseded_status_field 登记数=0（诚实零）。SHELL.* 为注册表本地族词形、非 governed id 且不在 ALIASES_V0 现役 8 族：canonical 赐名 COMPONENT.SHELL.*（GRID.*→CAPABILITY.GRID.* 同形机械映射，家族前缀保留为第二段），legacy 词形照录 aliases[]，不构成 A6 场景、origin 保持源侧 derived；SHELL.* 别名族正式登记待词汇表 PR/Owner 裁决。02b §3 component 蓝本三字段（component_name/implements_capability/import_path）缺席理由：槽位非独立实现单元，实现为册级单文件 MasterApplicationShell.vue——实现名以 payload.shell_name 承载、文件锚以 key_bindings.code 承载，逐槽另造 import_path/implements_capability 即 fabricate（batch1 vendor-adapter implements_capability 缺席同款先例）。 本字段为人类散文，机器永不解析判卷。",
+  "origin": "derived",
+  "payload": {
+    "shell_name": "MasterApplicationShell",
+    "slot": {
+      "id": "SHELL.BREADCRUMB",
+      "layout": "height:40px; full-width; MasterBreadcrumb; route-driven; 不硬编码路由路径",
+      "name_zh": "全局面包屑",
+      "owner": "app",
+      "visibility": "hidden when workbench multi-tab enabled; shown only for route.meta.breadcrumb=true or standalone pages"
+    },
+    "source_document_meta": {
+      "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+      "document_type": "application-shell-registry",
+      "schema_version": 1
+    }
+  },
+  "permits_active": [],
+  "producer": {
+    "liveness": {
+      "status": "active"
+    },
+    "merge_semantics": {
+      "backfill_if_missing": [],
+      "human_never_touched": [],
+      "refresh_fields": [
+        "payload"
+      ]
+    },
+    "producer_id": "prod.mig_b2_ingest_shell_registry",
+    "views_maintained": [
+      "truth-index.envelope"
+    ]
+  },
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b2/ingest_shell_registry.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/application-shell-registry.yaml",
+        "transcription": "slots[] entry 3/7 (SHELL.BREADCRUMB) transcribed verbatim row-by-row (id/name_zh/owner/layout/visibility preserved, array order = source order; no status field in source so the approval-axis x evidence-axis split count is 0 and no superseded_status_field is registered); shell-level units scroll_owner/error_boundary land on SHELL.MAIN_CONTENT; mapping table in CONVENTIONS.md appendix A"
+      },
+      "pin": {
+        "digest": "sha256:cca0a9d72941835264ee3128bd91d41a55b63a26d82c7580e067df504ae2dac7"
+      },
+      "ref": "outputs/frontend/10_planned/application-shell-registry.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "应用壳槽位·全局面包屑"
+}

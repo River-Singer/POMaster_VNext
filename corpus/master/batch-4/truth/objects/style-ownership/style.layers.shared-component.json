@@ -1,0 +1,104 @@
+{
+  "authority": {
+    "delegates": [],
+    "escalation_hint": "regenerate via corpus/master/batch-4/tools/ingest_batch4_project_side.py; 源侧修订走 MASTer 人工策展后重跑本工具（源仓只读）；语义升级/supersede 归 FRONTEND_ARCHITECTURE 裁决位",
+    "owner": "FRONTEND_ARCHITECTURE",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "LOCKED",
+    "evidence": "IMPLEMENTED",
+    "lifecycle": "CURRENT"
+  },
+  "axis_profile": "rule_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "POLICY.STYLE.LAYERS.SHARED_COMPONENT",
+  "key_bindings": {
+    "artifact": [],
+    "code": [
+      {
+        "artifact_type": "file",
+        "expect": {
+          "entry_id": "layers.shared-component"
+        },
+        "match_rule": "mechanical",
+        "value": "outputs/frontend/10_planned/style-ownership-registry.yaml"
+      }
+    ]
+  },
+  "kind": "business_rule",
+  "notes_md": "本对象为 MIG-B4/M2 项目侧转录（tools/ingest_batch4_project_side.py，分拣事实源=split-ledger.yaml）：源 outputs/frontend/10_planned/style-ownership-registry.yaml 条目 layers.shared-component（HYBRID，166/307 条之一），payload 载荷与源条目深度等价（标量/字典键值族以 {key, value} 包装承载，value 即源值；工具断言，merge-preserving）。\nkind 裁定：business_rule（axis_profile=rule_default，FROZEN 十类闭包内；ledger 预声明项目侧 kind-dir style-ownership/ 高于 batch1 kind-dir 闭表，逐字 honoring）；authority owner=FRONTEND_ARCHITECTURE（batch3 authority.json owner_registry 同族角色，DP-7 粗粒度候选，M3 校准前）。axes 裁定：lifecycle=CURRENT（活跃 canonical 事实，producer_alive=true + 消费链在场）；confidence=LOCKED（版本化 schema/门禁消费链在场，无未裁决值冲突）；evidence=IMPLEMENTED（执行点/消费链在场；迁移期无 CLM/VRF 台账不标 VERIFIED）；change=STABLE（M0 pin 在场零漂移）。\n赐名：canonical id POLICY.STYLE.LAYERS.SHARED_COMPONENT 为 CONVENTIONS §2 机械形（entry_id 词形为源键路径，非 governed id 词形，aliases 以缺席表达）；origin 保持源侧 derived。\nBaseline 引用（batch4 铁律 2 形态）：payload.baseline_refs=[{catalog_id=POLICY.WEB.STYLE.OWNERSHIP_MATRIX, override}]——语义=catalog Universal 条目为准、本项目覆盖点显式；override=ledger split_note 指认的 project 参数点，值逐字保真（与源条目对应字段深度等价，工具断言）；catalog 条目本体由 catalog 侧任务以 clean-room 独立改写物化（D3：两侧词面分离，项目专名只住项目侧对象）。\n落位偏差登记（batch1 约定书 §1 偏差记录先例）：ledger 落位串『truth/objects/style-ownership/scope-owner-shared-component.json（MIG-B4 项目侧转录落位）』vs 实际机械名『style-ownership/style.layers.shared-component.json』——偏差由 FROZEN IdCanonical 文法强制（SEGMENT 禁连字符，ledger 落位串的连字符复合名不可由合法 id 机械投影；家族前缀防跨资产 id collision）；FROZEN > ledger 冲突顺序适用，ledger 目录位逐字 honoring，实体 1:1 对应（entry_id 集合相等断言在场）。\n事故史（inventory.yaml incident_history，type=font_baseline_multi_source_drift_adjudicated）：字体基线多头漂移已裁决——MASTER.md 行 100/101/109 仍声明 Fira Sans / Fira Code 并引用 Google Fonts 外链（历史草案在盘未撤回），本 registry visual_baseline.font_decision.note 明示以本 registry 为准（正文系统雅黑栈、数字 Inter；内网无 Google Fonts 约束，bp-owner 确认）；实现侧 tokens.css --mast-font-family / --mast-font-family-numeric: Inter 已收敛，src/ 全树 Fira 词形 0 命中——多头漂移止于文档层。\n本字段为人类散文，机器永不解析判卷（P9）。",
+  "origin": "derived",
+  "payload": {
+    "baseline_refs": [
+      {
+        "catalog_id": "POLICY.WEB.STYLE.OWNERSHIP_MATRIX",
+        "override": {
+          "forbidden": [
+            "page_local_component_css",
+            "override_base_component_visual",
+            "page_local_master_class"
+          ],
+          "owner": "src/shared/ui"
+        }
+      }
+    ],
+    "enforcement_point": "scan_css_violations / compile_frontend_style_entry / compile_frontend_tokens / manage_frontend_lifecycle / validate_frontend_delivery 消费链（双镜像在场）",
+    "scope_owner": {
+      "entry": "src/shared/ui/index.css",
+      "forbidden": [
+        "page_local_component_css",
+        "override_base_component_visual",
+        "page_local_master_class"
+      ],
+      "owner": "src/shared/ui",
+      "scope": "shared-component"
+    },
+    "source_document_meta": {
+      "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+      "document_type": "style-ownership-registry",
+      "schema_version": 1
+    },
+    "statement_structured": {
+      "then": "scope=shared-component owner=src/shared/ui forbidden=page_local_component_css,override_base_component_visual,page_local_master_class",
+      "when": null
+    }
+  },
+  "permits_active": [],
+  "producer": {
+    "liveness": {
+      "status": "active"
+    },
+    "merge_semantics": {
+      "backfill_if_missing": [],
+      "human_never_touched": [],
+      "refresh_fields": [
+        "payload"
+      ]
+    },
+    "producer_id": "prod.mig_b4_ingest_batch4_project_side",
+    "views_maintained": [
+      "truth-index.envelope"
+    ]
+  },
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b4/ingest_batch4_project_side.py",
+      "locator": {
+        "batch": "MIG-B4",
+        "ingested_from": "outputs/frontend/10_planned/style-ownership-registry.yaml",
+        "transcription": "ledger entry layers.shared-component (POLICY.STYLE.LAYERS.SHARED_COMPONENT) transcribed verbatim (split-ledger.yaml decision=HYBRID, 166/307); merge-preserving deep-equal asserted; baseline_refs=1 catalog ref; source pin recomputed live; KBM batch-internal corroboration only"
+      },
+      "pin": {
+        "digest": "sha256:7eb53bcbb90045a4fe8ae68c27bee46e6738bebb4691b4c847b13bb552e2ad89"
+      },
+      "ref": "outputs/frontend/10_planned/style-ownership-registry.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "样式所有权·shared-component"
+}

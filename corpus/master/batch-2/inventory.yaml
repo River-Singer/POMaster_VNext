@@ -1,0 +1,2980 @@
+assets:
+- consumers_detected:
+  - doc/pomaster-retrospective.md
+  - tools/generate-pages.py
+  content_sha256: af5e7b75b849d5905d48e699ce2d529d95c669fdbbfec351f89ca9f62f78d252
+  incident_history:
+  - evidence:
+    - 文件内可考（description+summary 自述）：『原型 32 个页面函数的全量注册表。15 个 task-step 页已在 screen-blueprints/（BP 派生）；17 个非任务页为本注册表登记的应用页』，summary 块 total_prototype_pages=32 / existing_task_step_blueprints=15 / new_application_pages=17
+    - 工具在场复测：pages[] 实数 35=new-application 24 + existing-task-step 11——注册表内 summary 块与数组漂移 （自述 32=15+17 vs 实数 35=24+11）
+    - 工具在场复测：screen-blueprints/ 实有 39 份（PAGE-APP 24 + PAGE-TASK-STEP 15），其中 PAGE-TASK-STEP-GENERATE-SNAPSHOT、PAGE-TASK-STEP-SAVE-BOM、PAGE-TASK-STEP-VIEW-ALL-PARTS、PAGE-TASK-STEP-WRITEBACK-LEDGER 共 4 份在 pages[] 无对应条目（分母歧义源，待人工裁决）；pages[] 35 条则全部有 blueprint 文件
+    - git 提交链只读核验（M0 会话，commit id 内容寻址不随重跑漂移）：5d7035e 快照为前代 V1 surface 注册表（PAGE-V1-* 词形 32 页，surface_kind page=29/subpage=3，无 status 字段）→ b665d18 原型 re-baseline 为现词形 35 页（24+11）→ 53c8726 / 058b08b 保持 35 页
+    - 任务书所述『20+12』中间态未能在仓内（本文件/git 只读核验）考得，按『文件内可考才记，不可考留空』纪律不登记
+    type: page_denominator_drift
+  kind: application-page-registry
+  line_count: 71
+  migration_batch: MIG-B2/PAGE_SURFACE
+  producer_alive: true
+  producer_alive_note: 人工/agent 策展登记簿（origin natural，source_directive 用户指令在场，在仓无写入脚本，免 producer 义务）；tools/generate-pages.py 以本文件+navigation-structure 为输入批量生成 src/pages/ 与 src/app/router/routes.ts（代码生成消费链在场）。
+  producer_chain_observed:
+  - tools/generate-pages.py
+  provenance:
+    origin: natural
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/application-page-registry.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链/事故证据，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/application-page-registry.yaml
+  top_level_keys:
+  - authority
+  - blueprint_sha256
+  - description
+  - document_type
+  - layout_patterns
+  - orphan_prototype_functions
+  - ownership
+  - pages
+  - prototype_ref
+  - schema_version
+  - source_directive
+  - summary
+- consumers_detected:
+  - .agents/skills/pomaster/README.md
+  - .agents/skills/pomaster/SKILL.md
+  - .agents/skills/pomaster/components/what-architect-should-do/skills/frontend-planner/SKILL.md
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/SKILL.md
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/contract-index.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/document-contracts.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/issue-register.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/page-readiness-registry.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_preimplementation.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/manage_frontend_lifecycle.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/validate_frontend_delivery.py
+  - .agents/skills/pomaster/manifests/components.lock.yaml
+  - .agents/skills/pomaster/tests/integration/test_frontend_page_spec.py
+  - .agents/skills/pomaster/tests/integration/test_governance_factsources_compiler.py
+  - .agents/skills/pomaster/tests/integration/test_governance_layer_visibility.py
+  - .claude/plans/page-spec-ready-plan.md
+  - .claude/skills/pomaster/README.md
+  - .claude/skills/pomaster/SKILL.md
+  - .claude/skills/pomaster/components/what-architect-should-do/skills/frontend-planner/SKILL.md
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/SKILL.md
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/contract-index.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/document-contracts.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/issue-register.schema.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/page-readiness-registry.schema.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_preimplementation.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/manage_frontend_lifecycle.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/validate_frontend_delivery.py
+  - .claude/skills/pomaster/manifests/components.lock.yaml
+  - .claude/skills/pomaster/tests/integration/test_frontend_page_spec.py
+  - .claude/skills/pomaster/tests/integration/test_governance_factsources_compiler.py
+  - .claude/skills/pomaster/tests/integration/test_governance_layer_visibility.py
+  - doc/pomaster-retrospective.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-ALL-PARTS-LIST.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-APPROVAL-FLOW.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-BRIDGE-TABLE.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-BUC-DETAIL.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-CSC-PRICE.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-DASHBOARD.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-DATA-PERMISSION.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-EQUIPMENT-DB.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-EQUIPMENT-DETAIL.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-EQUIPMENT-PALETTE.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-EVALUATION.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-FORECAST-REPORT.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-MATERIAL-DB.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-OTHER-COST-ANALYSIS.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-OTHER-DB.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-PART-INFO.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-PART-STRUCTURE-DB.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-PROCESS-DB.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-ROLE-MGMT.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-SET-DB.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-TASK-MGMT.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-TECHNICAL-AKT.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-USER-MGMT.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-VEHICLE-MASTER-DATA.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-AUTHENTICATE.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-BIND-CARLINE.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-BUC-ANALYSE.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-BUILD-BOM.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-EXPERT-MODEL-CALCULATE.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-GENERATE-SNAPSHOT.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-MAINTAIN-BASE-ATTRIBUTES.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-MANAGE-USER-ROLE.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-OUTPUT-TO-LEDGER.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-QUERY-LEDGER.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-SAVE-BOM.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-TRACK-COST-BY-SNAPSHOT.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-VIEW-ALL-PARTS.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-WRITEBACK-LEDGER.md
+  content_sha256: cd7fa5c346e0d4cf09475cab1d6abeb75e0f1d3e57f37d657bced18186b900ca
+  incident_history:
+  - evidence:
+    - 文件内可考：39 条中 33 条 notes 携带纠正标记『readiness 按 MD 证据纠正(虚假 attest->false)』——虚假 attest 曾过 gate 后按 MD 证据逐条回改的在仓痕迹
+    - 文件内可考：24 条携带 last_updated_by=page-spec-attest-2026-08-06 attest 记录；1 条携带『第二轮审计』追加纠正标记
+    - 在仓旁证：doc/pomaster-retrospective.md 行 112、134、135 记载 page-readiness-registry『规划状态』与『代码事实』脱节教训及 BLOCKED/DRAFT 只准最小合规占位的防线约定
+    - 任务书所述『12 页』历史数字未在本文件内可考（现存纠正标记覆盖 33 条），按『文件内可考才记』纪律只登记文件内可考证据
+    type: fake_attest_gate_lesson
+  kind: page-readiness-registry
+  line_count: 904
+  migration_batch: MIG-B2/PAGE_READINESS
+  producer_alive: true
+  producer_alive_note: attest/编译更新链在场（条目 last_updated_by=page-spec-attest-2026-08-06 与 compile_frontend_page_spec.py attest 流对应；governance factsources 编译链消费）；schema 在场（references/schemas/page-readiness-registry.schema.json，双镜像）。
+  producer_chain_observed:
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/page-readiness-registry.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链/事故证据，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/page-readiness-registry.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - pages
+  - schema_version
+- consumers_detected:
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/SKILL.md
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/assets/default-libraries/default-page-anatomy.yaml
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/contract-index.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/document-contracts.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/page-anatomy-registry.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/prototype-ux-content-spec.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_composition.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_prototype_extraction.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/validate_frontend_delivery.py
+  - .agents/skills/pomaster/manifests/components.lock.yaml
+  - .agents/skills/pomaster/scripts/install_spec_enforcement.py
+  - .agents/skills/pomaster/tests/contracts/test_page_composition_registry.py
+  - .agents/skills/pomaster/tests/integration/test_governance_factsources_compiler.py
+  - .agents/skills/pomaster/tests/integration/test_install_spec_enforcement.py
+  - .agents/skills/pomaster/tests/integration/test_page_composition_compiler.py
+  - .agents/skills/pomaster/tests/integration/test_page_composition_validation.py
+  - .claude/hooks/frontend-write-gate.py
+  - .claude/hooks/inject-subagent-context.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/SKILL.md
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/assets/default-libraries/default-page-anatomy.yaml
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/contract-index.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/document-contracts.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/page-anatomy-registry.schema.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/prototype-ux-content-spec.schema.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_composition.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_prototype_extraction.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/validate_frontend_delivery.py
+  - .claude/skills/pomaster/manifests/components.lock.yaml
+  - .claude/skills/pomaster/scripts/install_spec_enforcement.py
+  - .claude/skills/pomaster/tests/contracts/test_page_composition_registry.py
+  - .claude/skills/pomaster/tests/integration/test_governance_factsources_compiler.py
+  - .claude/skills/pomaster/tests/integration/test_install_spec_enforcement.py
+  - .claude/skills/pomaster/tests/integration/test_page_composition_compiler.py
+  - .claude/skills/pomaster/tests/integration/test_page_composition_validation.py
+  - doc/frontend-tech-stack.md
+  - tools/frontend/fill_screen_blueprints.py
+  content_sha256: 9085b36cb4f7190e39ee4c54113e4fdd52b2029327e0a98e702af08a364caa7e
+  incident_history: []
+  kind: page-anatomy-registry
+  line_count: 145
+  migration_batch: MIG-B2/PAGE_COMPOSITION
+  producer_alive: true
+  producer_alive_note: PAGE_SLOT.* 槽位词表（origin natural，在仓无写入脚本，治理 seed 策展）；compile_frontend_page_composition / compile_frontend_prototype_extraction / validate_frontend_delivery 消费链在场；fill_screen_blueprints.py 以其 slots 构建蓝图合法 slot 集。
+  producer_chain_observed:
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_composition.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_composition.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_prototype_extraction.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_prototype_extraction.py
+  provenance:
+    origin: natural
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/page-anatomy-registry.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链/事故证据，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/page-anatomy-registry.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - schema_version
+  - slots
+- consumers_detected:
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/SKILL.md
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/assets/default-libraries/default-page-templates.yaml
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/contract-index.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/document-contracts.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/page-template-registry.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/performance-budget.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/prototype-ux-content-spec.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/screen-blueprint.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_composition.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_prototype_extraction.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/manage_frontend_lifecycle.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/validate_frontend_delivery.py
+  - .agents/skills/pomaster/manifests/components.lock.yaml
+  - .agents/skills/pomaster/scripts/install_spec_enforcement.py
+  - .agents/skills/pomaster/tests/contracts/test_page_composition_registry.py
+  - .agents/skills/pomaster/tests/integration/test_clobber_merge_preservation.py
+  - .agents/skills/pomaster/tests/integration/test_frontend_lifecycle.py
+  - .agents/skills/pomaster/tests/integration/test_frontend_page_spec.py
+  - .agents/skills/pomaster/tests/integration/test_frontend_prototype_extraction.py
+  - .agents/skills/pomaster/tests/integration/test_governance_factsources_compiler.py
+  - .agents/skills/pomaster/tests/integration/test_install_spec_enforcement.py
+  - .agents/skills/pomaster/tests/integration/test_page_composition_compiler.py
+  - .agents/skills/pomaster/tests/integration/test_page_composition_validation.py
+  - .claude/hooks/frontend-write-gate.py
+  - .claude/hooks/inject-subagent-context.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/SKILL.md
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/assets/default-libraries/default-page-templates.yaml
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/contract-index.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/document-contracts.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/page-template-registry.schema.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/performance-budget.schema.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/prototype-ux-content-spec.schema.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/screen-blueprint.schema.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_composition.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_prototype_extraction.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/manage_frontend_lifecycle.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/validate_frontend_delivery.py
+  - .claude/skills/pomaster/manifests/components.lock.yaml
+  - .claude/skills/pomaster/scripts/install_spec_enforcement.py
+  - .claude/skills/pomaster/tests/contracts/test_page_composition_registry.py
+  - .claude/skills/pomaster/tests/integration/test_clobber_merge_preservation.py
+  - .claude/skills/pomaster/tests/integration/test_frontend_lifecycle.py
+  - .claude/skills/pomaster/tests/integration/test_frontend_page_spec.py
+  - .claude/skills/pomaster/tests/integration/test_frontend_prototype_extraction.py
+  - .claude/skills/pomaster/tests/integration/test_governance_factsources_compiler.py
+  - .claude/skills/pomaster/tests/integration/test_install_spec_enforcement.py
+  - .claude/skills/pomaster/tests/integration/test_page_composition_compiler.py
+  - .claude/skills/pomaster/tests/integration/test_page_composition_validation.py
+  - doc/frontend-tech-stack.md
+  - doc/pomaster-retrospective.md
+  - tools/frontend/fill_screen_blueprints.py
+  content_sha256: 6d3b5c6a2e70dcd39a1706ad62f06397d92e676824970465e06e5f9bff48c5ab
+  incident_history: []
+  kind: page-template-registry
+  line_count: 253
+  migration_batch: MIG-B2/PAGE_COMPOSITION
+  producer_alive: true
+  producer_alive_note: PAGE.* 页面模板词表（origin natural，在仓无写入脚本，治理 seed 策展）；page_composition / page_spec / governance_factsources / manage_frontend_lifecycle / validate_frontend_delivery 消费链在场；fill_screen_blueprints.py 消费 templates[].{{id,regions,slot_order}} 生成蓝图。
+  producer_chain_observed:
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_composition.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_composition.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  provenance:
+    origin: natural
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/page-template-registry.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链/事故证据，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/page-template-registry.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - schema_version
+  - templates
+- consumers_detected:
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/SKILL.md
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/assets/default-libraries/default-action-placement.yaml
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/action-placement-registry.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/contract-index.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/document-contracts.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/interaction-contract-registry.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/prototype-ux-content-spec.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/screen-blueprint.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_api_requirements.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_interaction_contracts.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_composition.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/validate_frontend_delivery.py
+  - .agents/skills/pomaster/manifests/components.lock.yaml
+  - .agents/skills/pomaster/scripts/install_spec_enforcement.py
+  - .agents/skills/pomaster/tests/contracts/test_page_composition_registry.py
+  - .agents/skills/pomaster/tests/integration/test_frontend_interaction_contracts.py
+  - .agents/skills/pomaster/tests/integration/test_governance_factsources_compiler.py
+  - .agents/skills/pomaster/tests/integration/test_install_spec_enforcement.py
+  - .agents/skills/pomaster/tests/integration/test_page_composition_compiler.py
+  - .agents/skills/pomaster/tests/integration/test_page_composition_validation.py
+  - .claude/hooks/frontend-write-gate.py
+  - .claude/hooks/inject-subagent-context.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/SKILL.md
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/assets/default-libraries/default-action-placement.yaml
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/action-placement-registry.schema.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/contract-index.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/document-contracts.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/interaction-contract-registry.schema.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/prototype-ux-content-spec.schema.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/screen-blueprint.schema.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_api_requirements.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_interaction_contracts.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_composition.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/validate_frontend_delivery.py
+  - .claude/skills/pomaster/manifests/components.lock.yaml
+  - .claude/skills/pomaster/scripts/install_spec_enforcement.py
+  - .claude/skills/pomaster/tests/contracts/test_page_composition_registry.py
+  - .claude/skills/pomaster/tests/integration/test_frontend_interaction_contracts.py
+  - .claude/skills/pomaster/tests/integration/test_governance_factsources_compiler.py
+  - .claude/skills/pomaster/tests/integration/test_install_spec_enforcement.py
+  - .claude/skills/pomaster/tests/integration/test_page_composition_compiler.py
+  - .claude/skills/pomaster/tests/integration/test_page_composition_validation.py
+  - outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-BUILD-BOM.yaml
+  - tools/frontend/fill_screen_blueprints.py
+  content_sha256: a2174f0f78037c4ae8eb097059572152a299fe737b7e0fc5de3bbc3fafcb082e
+  incident_history: []
+  kind: action-placement-registry
+  line_count: 312
+  migration_batch: MIG-B2/PAGE_COMPOSITION
+  producer_alive: true
+  producer_alive_note: ACTION.* 摆位词表（origin natural，在仓无写入脚本；notes 载 2026-08-17/18/19 多轮用户裁决补登——人工策展演化痕迹在场）；page_composition / api_requirements / interaction_contracts / validate_frontend_delivery 消费链在场。
+  producer_chain_observed:
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_composition.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_composition.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_api_requirements.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_api_requirements.py
+  provenance:
+    origin: natural
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/action-placement-registry.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链/事故证据，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/action-placement-registry.yaml
+  top_level_keys:
+  - actions
+  - blueprint_sha256
+  - document_type
+  - schema_version
+- consumers_detected:
+  - doc/pomaster-retrospective.md
+  - src/app/nav/nav-config.ts
+  - src/app/router/routes.ts
+  - tools/frontend/encode_vendor_adapter.py
+  - tools/generate-pages.py
+  content_sha256: ec6c25f3e0723c485b32d08bf1c0129a504bba4e7b338b2fab38fb7250d98870
+  incident_history:
+  - evidence:
+    - 文件内可考：shell_overrides.sidebar_width 注记称『覆盖 application-shell-registry 的 220px』，但 application-shell-registry SHELL.SIDE_NAV 现值已为 width:280px——覆盖注记所指被覆盖值已失真（注记滞后）
+    - 文件内可考：本文件 sidebar_collapsed_width=64px vs application-shell-registry SHELL.SIDE_NAV collapsed:48px——折叠宽度两源不一致，开放中的跨文件漂移（nav-structure 自带 note『UI 阶段同步更新 application-shell-registry + fill_application_shell.py 源』）
+    type: cross_file_shell_override_drift
+  kind: navigation-structure
+  line_count: 152
+  migration_batch: MIG-B2/NAVIGATION
+  producer_alive: true
+  producer_alive_note: 项目级导航事实源（origin natural，source_directive 用户指令在场，在仓无写入脚本）；tools/generate-pages.py 以本文件为路由生成输入；src/app/router/routes.ts 头注自声明『路由表 - 事实源 outputs/frontend/10_planned/navigation-structure.yaml』。
+  producer_chain_observed:
+  - tools/generate-pages.py
+  provenance:
+    origin: natural
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/navigation-structure.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链/事故证据，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/navigation-structure.yaml
+  top_level_keys:
+  - authority
+  - blueprint_sha256
+  - document_type
+  - drill_down_pages
+  - icon_policy
+  - nav_groups
+  - ownership
+  - prototype_ref
+  - schema_version
+  - shell_overrides
+  - source_directive
+  - summary
+- consumers_detected:
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/SKILL.md
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/contract-index.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/document-contracts.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/navigation-transition-registry.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_composition.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_side_effect_graph.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/validate_frontend_delivery.py
+  - .agents/skills/pomaster/manifests/components.lock.yaml
+  - .agents/skills/pomaster/scripts/install_spec_enforcement.py
+  - .agents/skills/pomaster/tests/contracts/test_page_composition_registry.py
+  - .agents/skills/pomaster/tests/integration/test_governance_factsources_compiler.py
+  - .agents/skills/pomaster/tests/integration/test_install_spec_enforcement.py
+  - .agents/skills/pomaster/tests/integration/test_page_composition_compiler.py
+  - .agents/skills/pomaster/tests/integration/test_page_composition_validation.py
+  - .claude/hooks/frontend-write-gate.py
+  - .claude/hooks/inject-subagent-context.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/SKILL.md
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/contract-index.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/document-contracts.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/navigation-transition-registry.schema.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_composition.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_side_effect_graph.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/validate_frontend_delivery.py
+  - .claude/skills/pomaster/manifests/components.lock.yaml
+  - .claude/skills/pomaster/scripts/install_spec_enforcement.py
+  - .claude/skills/pomaster/tests/contracts/test_page_composition_registry.py
+  - .claude/skills/pomaster/tests/integration/test_governance_factsources_compiler.py
+  - .claude/skills/pomaster/tests/integration/test_install_spec_enforcement.py
+  - .claude/skills/pomaster/tests/integration/test_page_composition_compiler.py
+  - .claude/skills/pomaster/tests/integration/test_page_composition_validation.py
+  - outputs/frontend/10_planned/screen-blueprints/PAGE-APP-ROLE-MGMT.yaml
+  - outputs/frontend/10_planned/screen-blueprints/PAGE-APP-USER-MGMT.yaml
+  - src/app/router/guards.ts
+  - tools/frontend/fill_navigation_transition.py
+  content_sha256: 3ccf3359da07e57053c2bb778ff56704a5600bc23dd7e18d21553d866a1ec3fd
+  incident_history: []
+  kind: navigation-transition-registry
+  line_count: 178
+  migration_batch: MIG-B2/NAVIGATION
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_navigation_transition.py 直写本文件（TRANSITION-* 词形 21 条，from/to 引用 PAGE-* legacy 词形）；page_composition / side_effect_graph / validate_frontend_delivery 消费链在场。
+  producer_chain_observed:
+  - tools/frontend/fill_navigation_transition.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_composition.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_composition.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/navigation-transition-registry.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链/事故证据，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/navigation-transition-registry.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - schema_version
+  - transitions
+- consumers_detected:
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/application-shell-registry.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/contract-index.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/document-contracts.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_composition.py
+  - .agents/skills/pomaster/manifests/components.lock.yaml
+  - .agents/skills/pomaster/scripts/install_spec_enforcement.py
+  - .agents/skills/pomaster/tests/integration/test_governance_factsources_compiler.py
+  - .agents/skills/pomaster/tests/integration/test_install_spec_enforcement.py
+  - .agents/skills/pomaster/tests/integration/test_page_composition_compiler.py
+  - .claude/hooks/frontend-write-gate.py
+  - .claude/hooks/inject-subagent-context.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/application-shell-registry.schema.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/contract-index.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/document-contracts.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_composition.py
+  - .claude/skills/pomaster/manifests/components.lock.yaml
+  - .claude/skills/pomaster/scripts/install_spec_enforcement.py
+  - .claude/skills/pomaster/tests/integration/test_governance_factsources_compiler.py
+  - .claude/skills/pomaster/tests/integration/test_install_spec_enforcement.py
+  - .claude/skills/pomaster/tests/integration/test_page_composition_compiler.py
+  - outputs/frontend/10_planned/navigation-structure.yaml
+  - src/app/error-boundary/RouteErrorBoundary.vue
+  - src/app/shell/MasterApplicationShell.vue
+  - src/app/shell/ShellUserMenu.vue
+  - tools/frontend/fill_application_shell.py
+  content_sha256: cca0a9d72941835264ee3128bd91d41a55b63a26d82c7580e067df504ae2dac7
+  incident_history: []
+  kind: application-shell-registry
+  line_count: 56
+  migration_batch: MIG-B2/PAGE_COMPOSITION
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_application_shell.py 直写本文件（SHELL.* 槽位 7 个）；compile_frontend_page_composition 消费链在场；navigation-structure.shell_overrides 声明对其宽度值覆盖（跨文件漂移见 navigation-structure 条目 incident_history）。
+  producer_chain_observed:
+  - tools/frontend/fill_application_shell.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_composition.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_composition.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/application-shell-registry.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链/事故证据，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/application-shell-registry.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - error_boundary
+  - schema_version
+  - scroll_owner
+  - shell_name
+  - slots
+- consumers_detected:
+  - .agents/skills/pomaster/components/what-architect-should-do/skills/architecture-advisor/SKILL.md
+  - .agents/skills/pomaster/components/what-architect-should-do/skills/architecture-advisor/scripts/architecture_ready.py
+  - .agents/skills/pomaster/components/what-architect-should-do/skills/entropy-audit/SKILL.md
+  - .agents/skills/pomaster/components/what-architect-should-do/skills/entropy-audit/scripts/entropy_scan.py
+  - .agents/skills/pomaster/components/what-architect-should-do/skills/foundation-governance/SKILL.md
+  - .agents/skills/pomaster/components/what-architect-should-do/skills/frontend-planner/SKILL.md
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/SKILL.md
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/assets/default-libraries/default-component-library.yaml
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/assets/default-libraries/high-risk-component-list.yaml
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/component-registry.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/component-selection-register.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/contract-index.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/document-contracts.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/page-readiness-registry.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_component_gaps.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_readiness.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/delivery_truth_contract.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/manage_frontend_lifecycle.py
+  - .agents/skills/pomaster/manifests/components.lock.yaml
+  - .agents/skills/pomaster/references/skill-index.md
+  - .agents/skills/pomaster/scripts/compile_indexes.py
+  - .agents/skills/pomaster/scripts/install_spec_enforcement.py
+  - .agents/skills/pomaster/tests/contracts/test_component_selection_state_machine.py
+  - .agents/skills/pomaster/tests/integration/test_architecture_ready.py
+  - .agents/skills/pomaster/tests/integration/test_component_gaps_fail_closed.py
+  - .agents/skills/pomaster/tests/integration/test_delivery_truth_gates.py
+  - .agents/skills/pomaster/tests/integration/test_entropy_scan.py
+  - .agents/skills/pomaster/tests/integration/test_frontend_page_spec.py
+  - .agents/skills/pomaster/tests/integration/test_governance_factsources_compiler.py
+  - .agents/skills/pomaster/tests/integration/test_install_spec_enforcement.py
+  - .agents/skills/pomaster/tests/integration/test_predevelopment_readiness_18_dimensions.py
+  - .claude/hooks/frontend-write-gate.py
+  - .claude/hooks/inject-subagent-context.py
+  - .claude/skills/pomaster/components/what-architect-should-do/skills/architecture-advisor/SKILL.md
+  - .claude/skills/pomaster/components/what-architect-should-do/skills/architecture-advisor/scripts/architecture_ready.py
+  - .claude/skills/pomaster/components/what-architect-should-do/skills/entropy-audit/SKILL.md
+  - .claude/skills/pomaster/components/what-architect-should-do/skills/entropy-audit/scripts/entropy_scan.py
+  - .claude/skills/pomaster/components/what-architect-should-do/skills/foundation-governance/SKILL.md
+  - .claude/skills/pomaster/components/what-architect-should-do/skills/frontend-planner/SKILL.md
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/SKILL.md
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/assets/default-libraries/default-component-library.yaml
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/assets/default-libraries/high-risk-component-list.yaml
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/component-registry.schema.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/component-selection-register.schema.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/contract-index.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/document-contracts.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/page-readiness-registry.schema.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_component_gaps.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_readiness.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/delivery_truth_contract.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/manage_frontend_lifecycle.py
+  - .claude/skills/pomaster/manifests/components.lock.yaml
+  - .claude/skills/pomaster/references/skill-index.md
+  - .claude/skills/pomaster/scripts/compile_indexes.py
+  - .claude/skills/pomaster/scripts/install_spec_enforcement.py
+  - .claude/skills/pomaster/tests/contracts/test_component_selection_state_machine.py
+  - .claude/skills/pomaster/tests/integration/test_architecture_ready.py
+  - .claude/skills/pomaster/tests/integration/test_component_gaps_fail_closed.py
+  - .claude/skills/pomaster/tests/integration/test_delivery_truth_gates.py
+  - .claude/skills/pomaster/tests/integration/test_entropy_scan.py
+  - .claude/skills/pomaster/tests/integration/test_frontend_page_spec.py
+  - .claude/skills/pomaster/tests/integration/test_governance_factsources_compiler.py
+  - .claude/skills/pomaster/tests/integration/test_install_spec_enforcement.py
+  - .claude/skills/pomaster/tests/integration/test_predevelopment_readiness_18_dimensions.py
+  - doc/pomaster-retrospective.md
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/11_predevelopment-confirmation.yaml
+  - outputs/frontend/10_planned/issue-register.yaml
+  - outputs/frontend/10_planned/screen-blueprints/PAGE-APP-APPROVAL-FLOW.yaml
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-APPROVAL-FLOW.md
+  - tools/frontend/encode_component_selection.py
+  content_sha256: 5bc2fe5db6601a6ef9d87e08ecd8e22658cb05fbaae37f281aa8ab744b7a21cf
+  incident_history: []
+  kind: component-selection-register
+  line_count: 2459
+  migration_batch: MIG-B2/COMPONENT_SELECTION
+  producer_alive: true
+  producer_alive_note: tools/frontend/encode_component_selection.py 直写本文件（component_demand / component_selections / component_gaps 三段）；component_gaps / governance_factsources / readiness / delivery_truth_contract / manage_frontend_lifecycle 消费链在场；schema 在场（双镜像）。
+  producer_chain_observed:
+  - tools/frontend/encode_component_selection.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_component_gaps.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_component_gaps.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/component-selection-register.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链/事故证据，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/component-selection-register.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - component_demand
+  - component_gaps
+  - component_selections
+  - document_type
+  - schema_version
+- consumers_detected:
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/11_predevelopment-confirmation.yaml
+  - outputs/frontend/10_planned/api-requirement-registry.yaml
+  - outputs/frontend/10_planned/application-page-registry.yaml
+  - outputs/frontend/10_planned/bp-business-contract.yaml
+  - outputs/frontend/10_planned/business-rule-registry.yaml
+  - outputs/frontend/10_planned/component-selection-register.yaml
+  - outputs/frontend/10_planned/data-model-registry.yaml
+  - outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  - outputs/frontend/10_planned/issue-register.yaml
+  - outputs/frontend/10_planned/navigation-structure.yaml
+  - outputs/frontend/10_planned/negative-constraint.yaml
+  - outputs/frontend/10_planned/page-readiness-registry.yaml
+  - outputs/frontend/10_planned/performance-budget.yaml
+  - outputs/frontend/10_planned/state-machine-registry.yaml
+  - outputs/frontend/10_planned/state-ownership-matrix.yaml
+  - outputs/frontend/10_planned/test-fixture-plan.yaml
+  - outputs/frontend/30_generated/page-specs/.sec-extra.json
+  - outputs/frontend/30_generated/page-specs/.static-extract.json
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-ALL-PARTS-LIST.md
+  - src/app/router/routes.ts
+  - src/pages/page-all-parts-list/AllPartsListPage.vue
+  - src/shared/lib/copy/route-titles.ts
+  content_sha256: c9e0bd4c604d7ffd8b6ee09998aaf955e502973554b7781b474f094919d42dd7
+  incident_history: []
+  kind: screen-blueprint
+  line_count: 220
+  migration_batch: MIG-B2/PAGE_SURFACE
+  page_id: PAGE-APP-ALL-PARTS-LIST
+  page_status: APPROVED
+  page_template_id: PAGE.LIST
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_screen_blueprints.py 为批量写入 producer（消费 template/anatomy/action-placement/shell 四词表生成蓝图）；compile_frontend_page_spec / governance_factsources 等编译链逐份消费（page-spec/verif 链在场）。
+  producer_chain_observed:
+  - tools/frontend/fill_screen_blueprints.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-ALL-PARTS-LIST.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-ALL-PARTS-LIST.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - page
+  - schema_version
+- consumers_detected:
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/11_predevelopment-confirmation.yaml
+  - outputs/frontend/10_planned/application-page-registry.yaml
+  - outputs/frontend/10_planned/component-selection-register.yaml
+  - outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  - outputs/frontend/10_planned/issue-register.yaml
+  - outputs/frontend/10_planned/navigation-structure.yaml
+  - outputs/frontend/10_planned/negative-constraint.yaml
+  - outputs/frontend/10_planned/page-readiness-registry.yaml
+  - outputs/frontend/10_planned/performance-budget.yaml
+  - outputs/frontend/10_planned/state-machine-registry.yaml
+  - outputs/frontend/10_planned/state-ownership-matrix.yaml
+  - outputs/frontend/30_generated/page-specs/.static-extract.json
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-APPROVAL-FLOW.md
+  - src/app/router/routes.ts
+  - src/entities/approval-flow/types.ts
+  - src/pages/page-approval-flow/ApprovalFlowPage.vue
+  - src/shared/lib/copy/route-titles.ts
+  - src/shared/lib/mock/approval-flow.ts
+  content_sha256: 26d03ee2184b3a17267fe1d912a7d395f54170f04fb3310a7c6373f0f9310224
+  incident_history: []
+  kind: screen-blueprint
+  line_count: 120
+  migration_batch: MIG-B2/PAGE_SURFACE
+  page_id: PAGE-APP-APPROVAL-FLOW
+  page_status: DRAFT
+  page_template_id: PAGE.DETAIL
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_screen_blueprints.py 为批量写入 producer（消费 template/anatomy/action-placement/shell 四词表生成蓝图）；compile_frontend_page_spec / governance_factsources 等编译链逐份消费（page-spec/verif 链在场）。
+  producer_chain_observed:
+  - tools/frontend/fill_screen_blueprints.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-APPROVAL-FLOW.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-APPROVAL-FLOW.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - page
+  - schema_version
+- consumers_detected:
+  - outputs/.pomaster/transactions/TX-4DF6AB1003B9554A3D5D2314/journal.json
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/api-requirement-registry.yaml
+  - outputs/frontend/10_planned/application-page-registry.yaml
+  - outputs/frontend/10_planned/component-selection-register.yaml
+  - outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  - outputs/frontend/10_planned/issue-register.yaml
+  - outputs/frontend/10_planned/navigation-structure.yaml
+  - outputs/frontend/10_planned/negative-constraint.yaml
+  - outputs/frontend/10_planned/page-readiness-registry.yaml
+  - outputs/frontend/10_planned/performance-budget.yaml
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-BRIDGE-TABLE.md
+  - src/app/router/routes.ts
+  - src/entities/bridge-table/api.ts
+  - src/shared/lib/copy/route-titles.ts
+  - tools/generate-pages.py
+  content_sha256: b8ef01f855c645a4a3eb6ec416994e3b698c40174f5ec24f845c19c5adc92a42
+  incident_history: []
+  kind: screen-blueprint
+  line_count: 166
+  migration_batch: MIG-B2/PAGE_SURFACE
+  page_id: PAGE-APP-BRIDGE-TABLE
+  page_status: DRAFT
+  page_template_id: PAGE.LIST
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_screen_blueprints.py 为批量写入 producer（消费 template/anatomy/action-placement/shell 四词表生成蓝图）；compile_frontend_page_spec / governance_factsources 等编译链逐份消费（page-spec/verif 链在场）。
+  producer_chain_observed:
+  - tools/frontend/fill_screen_blueprints.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-BRIDGE-TABLE.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-BRIDGE-TABLE.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - page
+  - schema_version
+- consumers_detected:
+  - outputs/.pomaster/transactions/TX-4DF6AB1003B9554A3D5D2314/journal.json
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/api-requirement-registry.yaml
+  - outputs/frontend/10_planned/application-page-registry.yaml
+  - outputs/frontend/10_planned/bp-business-contract.yaml
+  - outputs/frontend/10_planned/business-rule-registry.yaml
+  - outputs/frontend/10_planned/component-selection-register.yaml
+  - outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  - outputs/frontend/10_planned/issue-register.yaml
+  - outputs/frontend/10_planned/navigation-structure.yaml
+  - outputs/frontend/10_planned/negative-constraint.yaml
+  - outputs/frontend/10_planned/page-readiness-registry.yaml
+  - outputs/frontend/10_planned/performance-budget.yaml
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-BUC-DETAIL.md
+  - src/app/router/routes.ts
+  - src/entities/buc-analyse/copy.ts
+  - src/entities/buc-analyse/useBucFormulas.ts
+  - src/entities/expert-model-calculate/ExpertModelDrawer.vue
+  - src/entities/expert-model-calculate/calc.ts
+  - src/entities/expert-model-calculate/copy.ts
+  - src/entities/expert-model-calculate/types.ts
+  - src/pages/page-buc-detail/BucDetailPage.vue
+  - src/pages/page-buc-detail/MhrCalcDialog.vue
+  - src/pages/page-expert-model-calculate/ExpertModelCalculatePage.vue
+  - src/shared/lib/copy/route-titles.ts
+  content_sha256: e14fb5b40a3e7126f44c00449a2c330bc7e77e8060d203a19a7b5df065266e8b
+  incident_history: []
+  kind: screen-blueprint
+  line_count: 236
+  migration_batch: MIG-B2/PAGE_SURFACE
+  page_id: PAGE-APP-BUC-DETAIL
+  page_status: DRAFT
+  page_template_id: PAGE.DETAIL
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_screen_blueprints.py 为批量写入 producer（消费 template/anatomy/action-placement/shell 四词表生成蓝图）；compile_frontend_page_spec / governance_factsources 等编译链逐份消费（page-spec/verif 链在场）。
+  producer_chain_observed:
+  - tools/frontend/fill_screen_blueprints.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-BUC-DETAIL.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-BUC-DETAIL.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - page
+  - schema_version
+- consumers_detected:
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/11_predevelopment-confirmation.yaml
+  - outputs/frontend/10_planned/api-requirement-registry.yaml
+  - outputs/frontend/10_planned/application-page-registry.yaml
+  - outputs/frontend/10_planned/component-selection-register.yaml
+  - outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  - outputs/frontend/10_planned/issue-register.yaml
+  - outputs/frontend/10_planned/navigation-structure.yaml
+  - outputs/frontend/10_planned/negative-constraint.yaml
+  - outputs/frontend/10_planned/page-readiness-registry.yaml
+  - outputs/frontend/10_planned/performance-budget.yaml
+  - outputs/frontend/10_planned/state-machine-registry.yaml
+  - outputs/frontend/10_planned/state-ownership-matrix.yaml
+  - outputs/frontend/10_planned/test-fixture-plan.yaml
+  - outputs/frontend/30_generated/page-specs/.static-extract.json
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-CSC-PRICE.md
+  - src/app/router/routes.ts
+  - src/pages/page-csc-price/CscPricePage.vue
+  - src/shared/lib/copy/route-titles.ts
+  - src/shared/lib/mock/csc-price.ts
+  - tools/generate-pages.py
+  content_sha256: 342d6f46c8f6e4fbb5368e46037508e08d746516c9d0553309a8ab58563b73e7
+  incident_history: []
+  kind: screen-blueprint
+  line_count: 226
+  migration_batch: MIG-B2/PAGE_SURFACE
+  page_id: PAGE-APP-CSC-PRICE
+  page_status: DRAFT
+  page_template_id: PAGE.LIST
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_screen_blueprints.py 为批量写入 producer（消费 template/anatomy/action-placement/shell 四词表生成蓝图）；compile_frontend_page_spec / governance_factsources 等编译链逐份消费（page-spec/verif 链在场）。
+  producer_chain_observed:
+  - tools/frontend/fill_screen_blueprints.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-CSC-PRICE.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-CSC-PRICE.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - page
+  - schema_version
+- consumers_detected:
+  - outputs/.pomaster/transactions/TX-4DF6AB1003B9554A3D5D2314/journal.json
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/api-requirement-registry.yaml
+  - outputs/frontend/10_planned/application-page-registry.yaml
+  - outputs/frontend/10_planned/bp-business-contract.yaml
+  - outputs/frontend/10_planned/business-rule-registry.yaml
+  - outputs/frontend/10_planned/component-selection-register.yaml
+  - outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  - outputs/frontend/10_planned/issue-register.yaml
+  - outputs/frontend/10_planned/navigation-structure.yaml
+  - outputs/frontend/10_planned/page-readiness-registry.yaml
+  - outputs/frontend/10_planned/performance-budget.yaml
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-DASHBOARD.md
+  - src/app/router/routes.ts
+  - src/entities/dashboard/api.ts
+  - src/shared/lib/copy/route-titles.ts
+  - tools/generate-pages.py
+  content_sha256: 72a7e274eff2fb7d36ca21c34dc8e90d0ecf66fccc9bdf5bf901e1495736c6b8
+  incident_history: []
+  kind: screen-blueprint
+  line_count: 115
+  migration_batch: MIG-B2/PAGE_SURFACE
+  page_id: PAGE-APP-DASHBOARD
+  page_status: DRAFT
+  page_template_id: PAGE.DASHBOARD
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_screen_blueprints.py 为批量写入 producer（消费 template/anatomy/action-placement/shell 四词表生成蓝图）；compile_frontend_page_spec / governance_factsources 等编译链逐份消费（page-spec/verif 链在场）。
+  producer_chain_observed:
+  - tools/frontend/fill_screen_blueprints.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-DASHBOARD.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-DASHBOARD.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - page
+  - schema_version
+- consumers_detected:
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/11_predevelopment-confirmation.yaml
+  - outputs/frontend/10_planned/api-requirement-registry.yaml
+  - outputs/frontend/10_planned/application-page-registry.yaml
+  - outputs/frontend/10_planned/bp-business-contract.yaml
+  - outputs/frontend/10_planned/business-rule-registry.yaml
+  - outputs/frontend/10_planned/component-selection-register.yaml
+  - outputs/frontend/10_planned/data-model-registry.yaml
+  - outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  - outputs/frontend/10_planned/mock-contract.yaml
+  - outputs/frontend/10_planned/navigation-structure.yaml
+  - outputs/frontend/10_planned/negative-constraint.yaml
+  - outputs/frontend/10_planned/page-readiness-registry.yaml
+  - outputs/frontend/10_planned/performance-budget.yaml
+  - outputs/frontend/10_planned/state-machine-registry.yaml
+  - outputs/frontend/10_planned/state-ownership-matrix.yaml
+  - outputs/frontend/10_planned/test-fixture-plan.yaml
+  - outputs/frontend/30_generated/page-specs/.static-extract.json
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-DATA-PERMISSION.md
+  - src/app/router/routes.ts
+  - src/pages/page-data-permission/DataPermissionPage.vue
+  - src/shared/lib/copy/route-titles.ts
+  - tools/generate-pages.py
+  content_sha256: 56b593ef929ae68db66d07c207181d3d4c9c4c71f2ebadc31677d5f2d3a50887
+  incident_history: []
+  kind: screen-blueprint
+  line_count: 249
+  migration_batch: MIG-B2/PAGE_SURFACE
+  page_id: PAGE-APP-DATA-PERMISSION
+  page_status: APPROVED
+  page_template_id: PAGE.LIST
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_screen_blueprints.py 为批量写入 producer（消费 template/anatomy/action-placement/shell 四词表生成蓝图）；compile_frontend_page_spec / governance_factsources 等编译链逐份消费（page-spec/verif 链在场）。
+  producer_chain_observed:
+  - tools/frontend/fill_screen_blueprints.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-DATA-PERMISSION.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-DATA-PERMISSION.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - page
+  - schema_version
+- consumers_detected:
+  - doc/V1.0 Scope/specs(1)/specs/04-equipment-db/spec.md
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/11_predevelopment-confirmation.yaml
+  - outputs/frontend/10_planned/api-requirement-registry.yaml
+  - outputs/frontend/10_planned/application-page-registry.yaml
+  - outputs/frontend/10_planned/bp-business-contract.yaml
+  - outputs/frontend/10_planned/business-rule-registry.yaml
+  - outputs/frontend/10_planned/component-selection-register.yaml
+  - outputs/frontend/10_planned/data-model-registry.yaml
+  - outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  - outputs/frontend/10_planned/issue-register.yaml
+  - outputs/frontend/10_planned/mock-contract.yaml
+  - outputs/frontend/10_planned/navigation-structure.yaml
+  - outputs/frontend/10_planned/negative-constraint.yaml
+  - outputs/frontend/10_planned/page-readiness-registry.yaml
+  - outputs/frontend/10_planned/performance-budget.yaml
+  - outputs/frontend/10_planned/state-machine-registry.yaml
+  - outputs/frontend/10_planned/state-ownership-matrix.yaml
+  - outputs/frontend/10_planned/test-fixture-plan.yaml
+  - outputs/frontend/30_generated/page-specs/.static-extract.json
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-EQUIPMENT-DB.md
+  - src/app/router/routes.ts
+  - src/entities/equipment-db/api.ts
+  - src/entities/equipment-db/hooks.ts
+  - src/entities/equipment-db/mock-api.ts
+  - src/pages/page-equipment-db/EquipmentDbPage.vue
+  - src/shared/lib/copy/route-titles.ts
+  - tools/generate-pages.py
+  content_sha256: 73029c9c65c9c41c6de0e625f5b9f4a7c50ed132ef26a2a77a73e032fcda1517
+  incident_history: []
+  kind: screen-blueprint
+  line_count: 290
+  migration_batch: MIG-B2/PAGE_SURFACE
+  page_id: PAGE-APP-EQUIPMENT-DB
+  page_status: DRAFT
+  page_template_id: PAGE.LIST
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_screen_blueprints.py 为批量写入 producer（消费 template/anatomy/action-placement/shell 四词表生成蓝图）；compile_frontend_page_spec / governance_factsources 等编译链逐份消费（page-spec/verif 链在场）。
+  producer_chain_observed:
+  - tools/frontend/fill_screen_blueprints.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-EQUIPMENT-DB.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-EQUIPMENT-DB.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - page
+  - schema_version
+- consumers_detected:
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/11_predevelopment-confirmation.yaml
+  - outputs/frontend/10_planned/api-requirement-registry.yaml
+  - outputs/frontend/10_planned/application-page-registry.yaml
+  - outputs/frontend/10_planned/bp-business-contract.yaml
+  - outputs/frontend/10_planned/business-rule-registry.yaml
+  - outputs/frontend/10_planned/component-selection-register.yaml
+  - outputs/frontend/10_planned/data-model-registry.yaml
+  - outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  - outputs/frontend/10_planned/issue-register.yaml
+  - outputs/frontend/10_planned/navigation-structure.yaml
+  - outputs/frontend/10_planned/negative-constraint.yaml
+  - outputs/frontend/10_planned/page-readiness-registry.yaml
+  - outputs/frontend/10_planned/performance-budget.yaml
+  - outputs/frontend/10_planned/screen-blueprints/PAGE-APP-EQUIPMENT-DB.yaml
+  - outputs/frontend/10_planned/state-machine-registry.yaml
+  - outputs/frontend/10_planned/state-ownership-matrix.yaml
+  - outputs/frontend/10_planned/test-fixture-plan.yaml
+  - outputs/frontend/30_generated/page-specs/.static-extract.json
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-EQUIPMENT-DB.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-EQUIPMENT-DETAIL.md
+  - src/app/router/routes.ts
+  - src/entities/equipment-detail/api.ts
+  - src/entities/equipment-detail/hooks.ts
+  - src/entities/equipment-detail/mock-api.ts
+  - src/pages/page-equipment-db/EquipmentDbPage.vue
+  - src/pages/page-equipment-detail/EquipmentDetailPage.vue
+  - src/shared/lib/copy/route-titles.ts
+  - src/shared/lib/mock/equipment-db.ts
+  content_sha256: 17a60e091fb62b4ef36b87f9c2d7be9d99cfa8eebeef1abfd8dc4bbc898cd5ab
+  incident_history: []
+  kind: screen-blueprint
+  line_count: 252
+  migration_batch: MIG-B2/PAGE_SURFACE
+  page_id: PAGE-APP-EQUIPMENT-DETAIL
+  page_status: DRAFT
+  page_template_id: PAGE.DETAIL
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_screen_blueprints.py 为批量写入 producer（消费 template/anatomy/action-placement/shell 四词表生成蓝图）；compile_frontend_page_spec / governance_factsources 等编译链逐份消费（page-spec/verif 链在场）。
+  producer_chain_observed:
+  - tools/frontend/fill_screen_blueprints.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-EQUIPMENT-DETAIL.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-EQUIPMENT-DETAIL.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - page
+  - schema_version
+- consumers_detected:
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/11_predevelopment-confirmation.yaml
+  - outputs/frontend/10_planned/api-requirement-registry.yaml
+  - outputs/frontend/10_planned/application-page-registry.yaml
+  - outputs/frontend/10_planned/bp-business-contract.yaml
+  - outputs/frontend/10_planned/business-rule-registry.yaml
+  - outputs/frontend/10_planned/component-selection-register.yaml
+  - outputs/frontend/10_planned/data-model-registry.yaml
+  - outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  - outputs/frontend/10_planned/navigation-structure.yaml
+  - outputs/frontend/10_planned/negative-constraint.yaml
+  - outputs/frontend/10_planned/page-readiness-registry.yaml
+  - outputs/frontend/10_planned/performance-budget.yaml
+  - outputs/frontend/10_planned/state-machine-registry.yaml
+  - outputs/frontend/10_planned/state-ownership-matrix.yaml
+  - outputs/frontend/10_planned/test-fixture-plan.yaml
+  - outputs/frontend/30_generated/page-specs/.static-extract.json
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-EQUIPMENT-PALETTE.md
+  - src/app/router/routes.ts
+  - src/entities/equipment-palette/copy.ts
+  - src/entities/equipment-palette/rules.ts
+  - src/entities/equipment-palette/types.ts
+  - src/pages/page-equipment-palette/EquipmentPalettePage.vue
+  - src/shared/lib/copy/route-titles.ts
+  - src/shared/lib/mock/equipment-palette.ts
+  content_sha256: 2764ed10fe6a2a13f8883500b841bd7a47db93cb72d9b782ecac1f1aad635d5c
+  incident_history: []
+  kind: screen-blueprint
+  line_count: 391
+  migration_batch: MIG-B2/PAGE_SURFACE
+  page_id: PAGE-APP-EQUIPMENT-PALETTE
+  page_status: APPROVED
+  page_template_id: PAGE.MASTER_DETAIL
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_screen_blueprints.py 为批量写入 producer（消费 template/anatomy/action-placement/shell 四词表生成蓝图）；compile_frontend_page_spec / governance_factsources 等编译链逐份消费（page-spec/verif 链在场）。
+  producer_chain_observed:
+  - tools/frontend/fill_screen_blueprints.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-EQUIPMENT-PALETTE.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-EQUIPMENT-PALETTE.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - page
+  - schema_version
+- consumers_detected:
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/11_predevelopment-confirmation.yaml
+  - outputs/frontend/10_planned/api-requirement-registry.yaml
+  - outputs/frontend/10_planned/application-page-registry.yaml
+  - outputs/frontend/10_planned/component-selection-register.yaml
+  - outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  - outputs/frontend/10_planned/issue-register.yaml
+  - outputs/frontend/10_planned/navigation-structure.yaml
+  - outputs/frontend/10_planned/negative-constraint.yaml
+  - outputs/frontend/10_planned/page-readiness-registry.yaml
+  - outputs/frontend/10_planned/performance-budget.yaml
+  - outputs/frontend/10_planned/state-machine-registry.yaml
+  - outputs/frontend/10_planned/state-ownership-matrix.yaml
+  - outputs/frontend/10_planned/test-fixture-plan.yaml
+  - outputs/frontend/30_generated/page-specs/.static-extract.json
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-EVALUATION.md
+  - src/app/router/routes.ts
+  - src/entities/evaluation/copy.ts
+  - src/pages/page-evaluation/EvaluationPage.vue
+  - src/shared/lib/copy/route-titles.ts
+  content_sha256: 1f32302c7bb51ea48709e0c6cdcc1172171cd3bc960064e2b1a2c54808a14f57
+  incident_history: []
+  kind: screen-blueprint
+  line_count: 208
+  migration_batch: MIG-B2/PAGE_SURFACE
+  page_id: PAGE-APP-EVALUATION
+  page_status: DRAFT
+  page_template_id: PAGE.LIST
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_screen_blueprints.py 为批量写入 producer（消费 template/anatomy/action-placement/shell 四词表生成蓝图）；compile_frontend_page_spec / governance_factsources 等编译链逐份消费（page-spec/verif 链在场）。
+  producer_chain_observed:
+  - tools/frontend/fill_screen_blueprints.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-EVALUATION.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-EVALUATION.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - page
+  - schema_version
+- consumers_detected:
+  - outputs/.pomaster/transactions/TX-4DF6AB1003B9554A3D5D2314/journal.json
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/api-requirement-registry.yaml
+  - outputs/frontend/10_planned/application-page-registry.yaml
+  - outputs/frontend/10_planned/component-selection-register.yaml
+  - outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  - outputs/frontend/10_planned/issue-register.yaml
+  - outputs/frontend/10_planned/navigation-structure.yaml
+  - outputs/frontend/10_planned/negative-constraint.yaml
+  - outputs/frontend/10_planned/page-readiness-registry.yaml
+  - outputs/frontend/10_planned/performance-budget.yaml
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-FORECAST-REPORT.md
+  - src/app/router/routes.ts
+  - src/entities/forecast-report/types.ts
+  - src/pages/page-forecast-report/ForecastReportPage.vue
+  - src/shared/lib/copy/route-titles.ts
+  - src/shared/lib/mock/forecast-report.ts
+  - tools/generate-pages.py
+  content_sha256: 15f3a7031760d29b58ebc8672d53f8eba0c64b3244de4b22ac2747826703252f
+  incident_history: []
+  kind: screen-blueprint
+  line_count: 179
+  migration_batch: MIG-B2/PAGE_SURFACE
+  page_id: PAGE-APP-FORECAST-REPORT
+  page_status: DRAFT
+  page_template_id: PAGE.LIST
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_screen_blueprints.py 为批量写入 producer（消费 template/anatomy/action-placement/shell 四词表生成蓝图）；compile_frontend_page_spec / governance_factsources 等编译链逐份消费（page-spec/verif 链在场）。
+  producer_chain_observed:
+  - tools/frontend/fill_screen_blueprints.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-FORECAST-REPORT.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-FORECAST-REPORT.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - page
+  - schema_version
+- consumers_detected:
+  - doc/V1.0 Scope/specs(1)/specs/04-material-db/spec.md
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/11_predevelopment-confirmation.yaml
+  - outputs/frontend/10_planned/api-requirement-registry.yaml
+  - outputs/frontend/10_planned/application-page-registry.yaml
+  - outputs/frontend/10_planned/bp-business-contract.yaml
+  - outputs/frontend/10_planned/business-rule-registry.yaml
+  - outputs/frontend/10_planned/component-selection-register.yaml
+  - outputs/frontend/10_planned/data-model-registry.yaml
+  - outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  - outputs/frontend/10_planned/issue-register.yaml
+  - outputs/frontend/10_planned/mock-contract.yaml
+  - outputs/frontend/10_planned/navigation-structure.yaml
+  - outputs/frontend/10_planned/negative-constraint.yaml
+  - outputs/frontend/10_planned/page-readiness-registry.yaml
+  - outputs/frontend/10_planned/performance-budget.yaml
+  - outputs/frontend/10_planned/state-machine-registry.yaml
+  - outputs/frontend/10_planned/state-ownership-matrix.yaml
+  - outputs/frontend/10_planned/test-fixture-plan.yaml
+  - outputs/frontend/30_generated/page-specs/.static-extract.json
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-MATERIAL-DB.md
+  - src/app/router/routes.ts
+  - src/entities/material-db/api.ts
+  - src/entities/material-db/mock-api.ts
+  - src/pages/page-material-db/MaterialDbPage.vue
+  - src/shared/lib/copy/route-titles.ts
+  - tools/generate-pages.py
+  content_sha256: 42d04437fbb58237d24a2b43cf0530349eb7070bec1e02bc0a5eae6575982282
+  incident_history: []
+  kind: screen-blueprint
+  line_count: 345
+  migration_batch: MIG-B2/PAGE_SURFACE
+  page_id: PAGE-APP-MATERIAL-DB
+  page_status: DRAFT
+  page_template_id: PAGE.LIST
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_screen_blueprints.py 为批量写入 producer（消费 template/anatomy/action-placement/shell 四词表生成蓝图）；compile_frontend_page_spec / governance_factsources 等编译链逐份消费（page-spec/verif 链在场）。
+  producer_chain_observed:
+  - tools/frontend/fill_screen_blueprints.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-MATERIAL-DB.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-MATERIAL-DB.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - page
+  - schema_version
+- consumers_detected:
+  - outputs/.pomaster/transactions/TX-4DF6AB1003B9554A3D5D2314/journal.json
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/api-requirement-registry.yaml
+  - outputs/frontend/10_planned/application-page-registry.yaml
+  - outputs/frontend/10_planned/component-selection-register.yaml
+  - outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  - outputs/frontend/10_planned/issue-register.yaml
+  - outputs/frontend/10_planned/navigation-structure.yaml
+  - outputs/frontend/10_planned/negative-constraint.yaml
+  - outputs/frontend/10_planned/page-readiness-registry.yaml
+  - outputs/frontend/10_planned/performance-budget.yaml
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-OTHER-COST-ANALYSIS.md
+  - src/app/router/routes.ts
+  - src/entities/other-cost-analysis/copy.ts
+  - src/entities/other-cost-analysis/types.ts
+  - src/pages/page-other-cost-analysis/OtherCostAnalysisPage.vue
+  - src/shared/lib/copy/route-titles.ts
+  - src/shared/lib/mock/other-cost-analysis.ts
+  - tools/generate-pages.py
+  content_sha256: 259effbdcb5d1cb2643de1806c8b490f17506fce1ffccb10959066e3897719f0
+  incident_history: []
+  kind: screen-blueprint
+  line_count: 165
+  migration_batch: MIG-B2/PAGE_SURFACE
+  page_id: PAGE-APP-OTHER-COST-ANALYSIS
+  page_status: DRAFT
+  page_template_id: PAGE.LIST
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_screen_blueprints.py 为批量写入 producer（消费 template/anatomy/action-placement/shell 四词表生成蓝图）；compile_frontend_page_spec / governance_factsources 等编译链逐份消费（page-spec/verif 链在场）。
+  producer_chain_observed:
+  - tools/frontend/fill_screen_blueprints.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-OTHER-COST-ANALYSIS.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-OTHER-COST-ANALYSIS.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - page
+  - schema_version
+- consumers_detected:
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/11_predevelopment-confirmation.yaml
+  - outputs/frontend/10_planned/api-requirement-registry.yaml
+  - outputs/frontend/10_planned/application-page-registry.yaml
+  - outputs/frontend/10_planned/bp-business-contract.yaml
+  - outputs/frontend/10_planned/business-rule-registry.yaml
+  - outputs/frontend/10_planned/component-selection-register.yaml
+  - outputs/frontend/10_planned/data-model-registry.yaml
+  - outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  - outputs/frontend/10_planned/issue-register.yaml
+  - outputs/frontend/10_planned/mock-contract.yaml
+  - outputs/frontend/10_planned/navigation-structure.yaml
+  - outputs/frontend/10_planned/negative-constraint.yaml
+  - outputs/frontend/10_planned/page-readiness-registry.yaml
+  - outputs/frontend/10_planned/performance-budget.yaml
+  - outputs/frontend/10_planned/screen-blueprints/PAGE-APP-DATA-PERMISSION.yaml
+  - outputs/frontend/10_planned/state-machine-registry.yaml
+  - outputs/frontend/10_planned/state-ownership-matrix.yaml
+  - outputs/frontend/10_planned/test-fixture-plan.yaml
+  - outputs/frontend/30_generated/page-specs/.static-extract.json
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-OTHER-DB.md
+  - src/app/router/routes.ts
+  - src/entities/other-db/api.ts
+  - src/entities/other-db/mock-api.ts
+  - src/entities/vehicle-master-data/hooks.ts
+  - src/pages/page-other-db/OtherDbPage.vue
+  - src/shared/lib/copy/route-titles.ts
+  content_sha256: 74fe5ae2fe4364759694018ffae138fb24a5c80d8fce052fb4a8e48421d80c87
+  incident_history: []
+  kind: screen-blueprint
+  line_count: 492
+  migration_batch: MIG-B2/PAGE_SURFACE
+  page_id: PAGE-APP-OTHER-DB
+  page_status: DRAFT
+  page_template_id: PAGE.LIST
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_screen_blueprints.py 为批量写入 producer（消费 template/anatomy/action-placement/shell 四词表生成蓝图）；compile_frontend_page_spec / governance_factsources 等编译链逐份消费（page-spec/verif 链在场）。
+  producer_chain_observed:
+  - tools/frontend/fill_screen_blueprints.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-OTHER-DB.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-OTHER-DB.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - page
+  - schema_version
+- consumers_detected:
+  - outputs/.pomaster/transactions/TX-4DF6AB1003B9554A3D5D2314/journal.json
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/api-requirement-registry.yaml
+  - outputs/frontend/10_planned/application-page-registry.yaml
+  - outputs/frontend/10_planned/bp-business-contract.yaml
+  - outputs/frontend/10_planned/business-rule-registry.yaml
+  - outputs/frontend/10_planned/component-selection-register.yaml
+  - outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  - outputs/frontend/10_planned/issue-register.yaml
+  - outputs/frontend/10_planned/navigation-structure.yaml
+  - outputs/frontend/10_planned/page-readiness-registry.yaml
+  - outputs/frontend/10_planned/performance-budget.yaml
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-PART-INFO.md
+  - src/app/router/routes.ts
+  - src/pages/page-part-info/PartInfoPage.vue
+  - src/shared/lib/copy/route-titles.ts
+  content_sha256: 74ccf03874a68d7ba96da615c5b3718d0b135e04b4b3214c9bd488d7388f545d
+  incident_history: []
+  kind: screen-blueprint
+  line_count: 135
+  migration_batch: MIG-B2/PAGE_SURFACE
+  page_id: PAGE-APP-PART-INFO
+  page_status: DRAFT
+  page_template_id: PAGE.DETAIL
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_screen_blueprints.py 为批量写入 producer（消费 template/anatomy/action-placement/shell 四词表生成蓝图）；compile_frontend_page_spec / governance_factsources 等编译链逐份消费（page-spec/verif 链在场）。
+  producer_chain_observed:
+  - tools/frontend/fill_screen_blueprints.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-PART-INFO.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-PART-INFO.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - page
+  - schema_version
+- consumers_detected:
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/11_predevelopment-confirmation.yaml
+  - outputs/frontend/10_planned/api-requirement-registry.yaml
+  - outputs/frontend/10_planned/application-page-registry.yaml
+  - outputs/frontend/10_planned/bp-business-contract.yaml
+  - outputs/frontend/10_planned/business-rule-registry.yaml
+  - outputs/frontend/10_planned/component-selection-register.yaml
+  - outputs/frontend/10_planned/data-model-registry.yaml
+  - outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  - outputs/frontend/10_planned/issue-register.yaml
+  - outputs/frontend/10_planned/navigation-structure.yaml
+  - outputs/frontend/10_planned/negative-constraint.yaml
+  - outputs/frontend/10_planned/page-readiness-registry.yaml
+  - outputs/frontend/10_planned/performance-budget.yaml
+  - outputs/frontend/10_planned/state-machine-registry.yaml
+  - outputs/frontend/10_planned/state-ownership-matrix.yaml
+  - outputs/frontend/10_planned/test-fixture-plan.yaml
+  - outputs/frontend/30_generated/page-specs/.static-extract.json
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-PART-STRUCTURE-DB.md
+  - src/app/router/routes.ts
+  - src/entities/part-structure-db/api.ts
+  - src/entities/part-structure-db/hooks.ts
+  - src/entities/part-structure-db/mock-api.ts
+  - src/pages/page-part-structure-db/PartStructureDbPage.vue
+  - src/shared/lib/copy/route-titles.ts
+  - tools/generate-pages.py
+  content_sha256: 8175fcfc7c9535d1612c745640608759b94851ea32cca4b50b69ae6c65aa5b97
+  incident_history: []
+  kind: screen-blueprint
+  line_count: 371
+  migration_batch: MIG-B2/PAGE_SURFACE
+  page_id: PAGE-APP-PART-STRUCTURE-DB
+  page_status: DRAFT
+  page_template_id: PAGE.LIST
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_screen_blueprints.py 为批量写入 producer（消费 template/anatomy/action-placement/shell 四词表生成蓝图）；compile_frontend_page_spec / governance_factsources 等编译链逐份消费（page-spec/verif 链在场）。
+  producer_chain_observed:
+  - tools/frontend/fill_screen_blueprints.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-PART-STRUCTURE-DB.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-PART-STRUCTURE-DB.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - page
+  - schema_version
+- consumers_detected:
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/11_predevelopment-confirmation.yaml
+  - outputs/frontend/10_planned/api-requirement-registry.yaml
+  - outputs/frontend/10_planned/application-page-registry.yaml
+  - outputs/frontend/10_planned/bp-business-contract.yaml
+  - outputs/frontend/10_planned/business-rule-registry.yaml
+  - outputs/frontend/10_planned/component-selection-register.yaml
+  - outputs/frontend/10_planned/data-model-registry.yaml
+  - outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  - outputs/frontend/10_planned/issue-register.yaml
+  - outputs/frontend/10_planned/navigation-structure.yaml
+  - outputs/frontend/10_planned/negative-constraint.yaml
+  - outputs/frontend/10_planned/page-readiness-registry.yaml
+  - outputs/frontend/10_planned/performance-budget.yaml
+  - outputs/frontend/10_planned/state-machine-registry.yaml
+  - outputs/frontend/10_planned/state-ownership-matrix.yaml
+  - outputs/frontend/10_planned/test-fixture-plan.yaml
+  - outputs/frontend/30_generated/page-specs/.static-extract.json
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-PROCESS-DB.md
+  - src/app/router/routes.ts
+  - src/entities/process-db/api.ts
+  - src/entities/process-db/copy.ts
+  - src/entities/process-db/hooks.ts
+  - src/entities/process-db/mock-api.ts
+  - src/pages/page-process-db/ProcessDbPage.vue
+  - src/shared/lib/copy/route-titles.ts
+  - tools/generate-pages.py
+  content_sha256: 7155b81cb5a4c9c8e15414c64fcad2077295d9d7cf6e06c7ea338d6320fa584d
+  incident_history: []
+  kind: screen-blueprint
+  line_count: 308
+  migration_batch: MIG-B2/PAGE_SURFACE
+  page_id: PAGE-APP-PROCESS-DB
+  page_status: DRAFT
+  page_template_id: PAGE.LIST
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_screen_blueprints.py 为批量写入 producer（消费 template/anatomy/action-placement/shell 四词表生成蓝图）；compile_frontend_page_spec / governance_factsources 等编译链逐份消费（page-spec/verif 链在场）。
+  producer_chain_observed:
+  - tools/frontend/fill_screen_blueprints.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-PROCESS-DB.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-PROCESS-DB.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - page
+  - schema_version
+- consumers_detected:
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/11_predevelopment-confirmation.yaml
+  - outputs/frontend/10_planned/api-requirement-registry.yaml
+  - outputs/frontend/10_planned/application-page-registry.yaml
+  - outputs/frontend/10_planned/bp-business-contract.yaml
+  - outputs/frontend/10_planned/business-rule-registry.yaml
+  - outputs/frontend/10_planned/component-selection-register.yaml
+  - outputs/frontend/10_planned/data-model-registry.yaml
+  - outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  - outputs/frontend/10_planned/mock-contract.yaml
+  - outputs/frontend/10_planned/navigation-structure.yaml
+  - outputs/frontend/10_planned/navigation-transition-registry.yaml
+  - outputs/frontend/10_planned/negative-constraint.yaml
+  - outputs/frontend/10_planned/page-readiness-registry.yaml
+  - outputs/frontend/10_planned/performance-budget.yaml
+  - outputs/frontend/10_planned/screen-blueprints/PAGE-APP-DATA-PERMISSION.yaml
+  - outputs/frontend/10_planned/screen-blueprints/PAGE-APP-USER-MGMT.yaml
+  - outputs/frontend/10_planned/state-machine-registry.yaml
+  - outputs/frontend/10_planned/state-ownership-matrix.yaml
+  - outputs/frontend/10_planned/test-fixture-plan.yaml
+  - outputs/frontend/30_generated/page-specs/.static-extract.json
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-ROLE-MGMT.md
+  - src/app/router/routes.ts
+  - src/pages/page-role-mgmt/RoleMgmtPage.vue
+  - src/shared/lib/copy/route-titles.ts
+  content_sha256: 422dcc375fd675c7a7ac7bfa40b1f1055c7a736138d7a0058d5b8b93b4e350d5
+  incident_history: []
+  kind: screen-blueprint
+  line_count: 234
+  migration_batch: MIG-B2/PAGE_SURFACE
+  page_id: PAGE-APP-ROLE-MGMT
+  page_status: APPROVED
+  page_template_id: PAGE.LIST
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_screen_blueprints.py 为批量写入 producer（消费 template/anatomy/action-placement/shell 四词表生成蓝图）；compile_frontend_page_spec / governance_factsources 等编译链逐份消费（page-spec/verif 链在场）。
+  producer_chain_observed:
+  - tools/frontend/fill_screen_blueprints.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-ROLE-MGMT.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-ROLE-MGMT.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - page
+  - schema_version
+- consumers_detected:
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/11_predevelopment-confirmation.yaml
+  - outputs/frontend/10_planned/api-requirement-registry.yaml
+  - outputs/frontend/10_planned/application-page-registry.yaml
+  - outputs/frontend/10_planned/bp-business-contract.yaml
+  - outputs/frontend/10_planned/business-rule-registry.yaml
+  - outputs/frontend/10_planned/component-selection-register.yaml
+  - outputs/frontend/10_planned/data-model-registry.yaml
+  - outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  - outputs/frontend/10_planned/issue-register.yaml
+  - outputs/frontend/10_planned/navigation-structure.yaml
+  - outputs/frontend/10_planned/negative-constraint.yaml
+  - outputs/frontend/10_planned/page-readiness-registry.yaml
+  - outputs/frontend/10_planned/performance-budget.yaml
+  - outputs/frontend/10_planned/screen-blueprints/PAGE-APP-DATA-PERMISSION.yaml
+  - outputs/frontend/10_planned/state-machine-registry.yaml
+  - outputs/frontend/10_planned/state-ownership-matrix.yaml
+  - outputs/frontend/10_planned/test-fixture-plan.yaml
+  - outputs/frontend/30_generated/page-specs/.static-extract.json
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-SET-DB.md
+  - src/app/router/routes.ts
+  - src/entities/set-db/api.ts
+  - src/entities/set-db/mock-api.ts
+  - src/pages/page-set-db/SetDbPage.vue
+  - src/shared/lib/copy/route-titles.ts
+  - tools/generate-pages.py
+  content_sha256: 5de778708ddea5c968a795a5a3f27f7ceaee65fd4e7e97250962b8c123c2dde4
+  incident_history: []
+  kind: screen-blueprint
+  line_count: 374
+  migration_batch: MIG-B2/PAGE_SURFACE
+  page_id: PAGE-APP-SET-DB
+  page_status: DRAFT
+  page_template_id: PAGE.LIST
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_screen_blueprints.py 为批量写入 producer（消费 template/anatomy/action-placement/shell 四词表生成蓝图）；compile_frontend_page_spec / governance_factsources 等编译链逐份消费（page-spec/verif 链在场）。
+  producer_chain_observed:
+  - tools/frontend/fill_screen_blueprints.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-SET-DB.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-SET-DB.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - page
+  - schema_version
+- consumers_detected:
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/11_predevelopment-confirmation.yaml
+  - outputs/frontend/10_planned/api-requirement-registry.yaml
+  - outputs/frontend/10_planned/application-page-registry.yaml
+  - outputs/frontend/10_planned/component-selection-register.yaml
+  - outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  - outputs/frontend/10_planned/issue-register.yaml
+  - outputs/frontend/10_planned/navigation-structure.yaml
+  - outputs/frontend/10_planned/negative-constraint.yaml
+  - outputs/frontend/10_planned/page-readiness-registry.yaml
+  - outputs/frontend/10_planned/performance-budget.yaml
+  - outputs/frontend/10_planned/state-machine-registry.yaml
+  - outputs/frontend/10_planned/state-ownership-matrix.yaml
+  - outputs/frontend/10_planned/test-fixture-plan.yaml
+  - outputs/frontend/30_generated/page-specs/.static-extract.json
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-TASK-MGMT.md
+  - src/app/router/routes.ts
+  - src/entities/task-mgmt/copy.ts
+  - src/pages/page-task-mgmt/TaskMgmtPage.vue
+  - src/shared/lib/copy/route-titles.ts
+  - src/shared/lib/mock/task-mgmt.ts
+  - tools/generate-pages.py
+  content_sha256: 466c31243b749b7a38e47582af804193e578a375b812320d1adb4e5f1ec59ca9
+  incident_history: []
+  kind: screen-blueprint
+  line_count: 176
+  migration_batch: MIG-B2/PAGE_SURFACE
+  page_id: PAGE-APP-TASK-MGMT
+  page_status: DRAFT
+  page_template_id: PAGE.LIST
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_screen_blueprints.py 为批量写入 producer（消费 template/anatomy/action-placement/shell 四词表生成蓝图）；compile_frontend_page_spec / governance_factsources 等编译链逐份消费（page-spec/verif 链在场）。
+  producer_chain_observed:
+  - tools/frontend/fill_screen_blueprints.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-TASK-MGMT.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-TASK-MGMT.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - page
+  - schema_version
+- consumers_detected:
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/11_predevelopment-confirmation.yaml
+  - outputs/frontend/10_planned/api-requirement-registry.yaml
+  - outputs/frontend/10_planned/application-page-registry.yaml
+  - outputs/frontend/10_planned/component-selection-register.yaml
+  - outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  - outputs/frontend/10_planned/issue-register.yaml
+  - outputs/frontend/10_planned/navigation-structure.yaml
+  - outputs/frontend/10_planned/negative-constraint.yaml
+  - outputs/frontend/10_planned/page-readiness-registry.yaml
+  - outputs/frontend/10_planned/performance-budget.yaml
+  - outputs/frontend/10_planned/state-machine-registry.yaml
+  - outputs/frontend/10_planned/state-ownership-matrix.yaml
+  - outputs/frontend/10_planned/test-fixture-plan.yaml
+  - outputs/frontend/30_generated/page-specs/.static-extract.json
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-TECHNICAL-AKT.md
+  - src/app/router/routes.ts
+  - src/pages/page-technical-akt/TechnicalAktPage.vue
+  - src/shared/lib/copy/route-titles.ts
+  - tools/generate-pages.py
+  content_sha256: becabba829012a609cfad7f69d7696252a6a71e4a0b870d4a1ca158df8df17f5
+  incident_history: []
+  kind: screen-blueprint
+  line_count: 192
+  migration_batch: MIG-B2/PAGE_SURFACE
+  page_id: PAGE-APP-TECHNICAL-AKT
+  page_status: DRAFT
+  page_template_id: PAGE.LIST
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_screen_blueprints.py 为批量写入 producer（消费 template/anatomy/action-placement/shell 四词表生成蓝图）；compile_frontend_page_spec / governance_factsources 等编译链逐份消费（page-spec/verif 链在场）。
+  producer_chain_observed:
+  - tools/frontend/fill_screen_blueprints.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-TECHNICAL-AKT.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-TECHNICAL-AKT.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - page
+  - schema_version
+- consumers_detected:
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/11_predevelopment-confirmation.yaml
+  - outputs/frontend/10_planned/api-requirement-registry.yaml
+  - outputs/frontend/10_planned/application-page-registry.yaml
+  - outputs/frontend/10_planned/bp-business-contract.yaml
+  - outputs/frontend/10_planned/business-rule-registry.yaml
+  - outputs/frontend/10_planned/component-selection-register.yaml
+  - outputs/frontend/10_planned/data-model-registry.yaml
+  - outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  - outputs/frontend/10_planned/mock-contract.yaml
+  - outputs/frontend/10_planned/navigation-structure.yaml
+  - outputs/frontend/10_planned/navigation-transition-registry.yaml
+  - outputs/frontend/10_planned/negative-constraint.yaml
+  - outputs/frontend/10_planned/page-readiness-registry.yaml
+  - outputs/frontend/10_planned/performance-budget.yaml
+  - outputs/frontend/10_planned/screen-blueprints/PAGE-APP-DATA-PERMISSION.yaml
+  - outputs/frontend/10_planned/screen-blueprints/PAGE-APP-ROLE-MGMT.yaml
+  - outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-MANAGE-USER-ROLE.yaml
+  - outputs/frontend/10_planned/state-machine-registry.yaml
+  - outputs/frontend/10_planned/state-ownership-matrix.yaml
+  - outputs/frontend/10_planned/test-fixture-plan.yaml
+  - outputs/frontend/30_generated/page-specs/.static-extract.json
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-USER-MGMT.md
+  - src/app/router/routes.ts
+  - src/pages/page-user-mgmt/UserMgmtPage.vue
+  - src/shared/lib/copy/route-titles.ts
+  - tools/generate-pages.py
+  content_sha256: 41a8f1df409a10fd068847fefe4ba7115a16d7326a0f6169f86518717a32b8ed
+  incident_history: []
+  kind: screen-blueprint
+  line_count: 232
+  migration_batch: MIG-B2/PAGE_SURFACE
+  page_id: PAGE-APP-USER-MGMT
+  page_status: APPROVED
+  page_template_id: PAGE.LIST
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_screen_blueprints.py 为批量写入 producer（消费 template/anatomy/action-placement/shell 四词表生成蓝图）；compile_frontend_page_spec / governance_factsources 等编译链逐份消费（page-spec/verif 链在场）。
+  producer_chain_observed:
+  - tools/frontend/fill_screen_blueprints.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-USER-MGMT.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-USER-MGMT.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - page
+  - schema_version
+- consumers_detected:
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/11_predevelopment-confirmation.yaml
+  - outputs/frontend/10_planned/api-requirement-registry.yaml
+  - outputs/frontend/10_planned/application-page-registry.yaml
+  - outputs/frontend/10_planned/bp-business-contract.yaml
+  - outputs/frontend/10_planned/business-rule-registry.yaml
+  - outputs/frontend/10_planned/component-selection-register.yaml
+  - outputs/frontend/10_planned/data-model-registry.yaml
+  - outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  - outputs/frontend/10_planned/issue-register.yaml
+  - outputs/frontend/10_planned/mock-contract.yaml
+  - outputs/frontend/10_planned/navigation-structure.yaml
+  - outputs/frontend/10_planned/negative-constraint.yaml
+  - outputs/frontend/10_planned/page-readiness-registry.yaml
+  - outputs/frontend/10_planned/performance-budget.yaml
+  - outputs/frontend/10_planned/screen-blueprints/PAGE-APP-DATA-PERMISSION.yaml
+  - outputs/frontend/10_planned/state-machine-registry.yaml
+  - outputs/frontend/10_planned/state-ownership-matrix.yaml
+  - outputs/frontend/10_planned/test-fixture-plan.yaml
+  - outputs/frontend/30_generated/page-specs/.static-extract.json
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-VEHICLE-MASTER-DATA.md
+  - src/app/router/routes.ts
+  - src/pages/page-vehicle-master-data/VehicleMasterDataPage.vue
+  - src/shared/lib/copy/route-titles.ts
+  - tools/generate-pages.py
+  content_sha256: e60ea53ad8c15360660e41ef043af02f4be83f272adfc537389b2089713d6d9c
+  incident_history: []
+  kind: screen-blueprint
+  line_count: 555
+  migration_batch: MIG-B2/PAGE_SURFACE
+  page_id: PAGE-APP-VEHICLE-MASTER-DATA
+  page_status: APPROVED
+  page_template_id: PAGE.MASTER_DETAIL
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_screen_blueprints.py 为批量写入 producer（消费 template/anatomy/action-placement/shell 四词表生成蓝图）；compile_frontend_page_spec / governance_factsources 等编译链逐份消费（page-spec/verif 链在场）。
+  producer_chain_observed:
+  - tools/frontend/fill_screen_blueprints.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-VEHICLE-MASTER-DATA.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/screen-blueprints/PAGE-APP-VEHICLE-MASTER-DATA.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - page
+  - schema_version
+- consumers_detected:
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/02_process-task-interface.yaml
+  - outputs/frontend/10_planned/06_traceability-plan.yaml
+  - outputs/frontend/10_planned/07_readiness.yaml
+  - outputs/frontend/10_planned/08_uiux-functional-spec.yaml
+  - outputs/frontend/10_planned/09_implementation-plan.yaml
+  - outputs/frontend/10_planned/10_action-responsibility-matrix.yaml
+  - outputs/frontend/10_planned/11_predevelopment-confirmation.yaml
+  - outputs/frontend/10_planned/api-requirement-registry.yaml
+  - outputs/frontend/10_planned/application-page-registry.yaml
+  - outputs/frontend/10_planned/authorizations/frontend-prepare-30.p2.yaml
+  - outputs/frontend/10_planned/bp-business-contract.yaml
+  - outputs/frontend/10_planned/business-rule-registry.yaml
+  - outputs/frontend/10_planned/component-selection-register.yaml
+  - outputs/frontend/10_planned/data-model-registry.yaml
+  - outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  - outputs/frontend/10_planned/navigation-transition-registry.yaml
+  - outputs/frontend/10_planned/negative-constraint.yaml
+  - outputs/frontend/10_planned/page-readiness-registry.yaml
+  - outputs/frontend/10_planned/performance-budget.yaml
+  - outputs/frontend/10_planned/state-machine-registry.yaml
+  - outputs/frontend/10_planned/state-ownership-matrix.yaml
+  - outputs/frontend/10_planned/test-fixture-plan.yaml
+  - outputs/frontend/10_planned/uiux-provider-overlay.yaml
+  - outputs/frontend/30_generated/FRONTEND-PREDEVELOPMENT-CONFIRMATION.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-AUTHENTICATE.md
+  - src/app/router/routes.ts
+  - src/pages/page-task-step-authenticate/AuthenticatePage.vue
+  - src/shared/lib/copy/route-titles.ts
+  - tools/frontend/extract_prototype_overlay.py
+  - tools/frontend/fill_screen_blueprints.py
+  - tools/generate-pages.py
+  content_sha256: 9c098e7109f6903db53099fde7401febd9b1e05865b08a40846b90ad4e87607e
+  incident_history: []
+  kind: screen-blueprint
+  line_count: 112
+  migration_batch: MIG-B2/PAGE_SURFACE
+  page_id: PAGE-TASK-STEP-AUTHENTICATE
+  page_status: APPROVED
+  page_template_id: PAGE.FORM
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_screen_blueprints.py 为批量写入 producer（消费 template/anatomy/action-placement/shell 四词表生成蓝图）；compile_frontend_page_spec / governance_factsources 等编译链逐份消费（page-spec/verif 链在场）。
+  producer_chain_observed:
+  - tools/frontend/fill_screen_blueprints.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-AUTHENTICATE.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-AUTHENTICATE.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - page
+  - schema_version
+- consumers_detected:
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/02_process-task-interface.yaml
+  - outputs/frontend/10_planned/06_traceability-plan.yaml
+  - outputs/frontend/10_planned/07_readiness.yaml
+  - outputs/frontend/10_planned/08_uiux-functional-spec.yaml
+  - outputs/frontend/10_planned/09_implementation-plan.yaml
+  - outputs/frontend/10_planned/10_action-responsibility-matrix.yaml
+  - outputs/frontend/10_planned/11_predevelopment-confirmation.yaml
+  - outputs/frontend/10_planned/api-requirement-registry.yaml
+  - outputs/frontend/10_planned/application-page-registry.yaml
+  - outputs/frontend/10_planned/authorizations/frontend-prepare-30.p2.yaml
+  - outputs/frontend/10_planned/bp-business-contract.yaml
+  - outputs/frontend/10_planned/business-rule-registry.yaml
+  - outputs/frontend/10_planned/component-selection-register.yaml
+  - outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  - outputs/frontend/10_planned/navigation-transition-registry.yaml
+  - outputs/frontend/10_planned/page-readiness-registry.yaml
+  - outputs/frontend/10_planned/performance-budget.yaml
+  - outputs/frontend/10_planned/state-machine-registry.yaml
+  - outputs/frontend/10_planned/state-ownership-matrix.yaml
+  - outputs/frontend/10_planned/test-fixture-plan.yaml
+  - outputs/frontend/10_planned/uiux-provider-overlay.yaml
+  - outputs/frontend/30_generated/FRONTEND-PREDEVELOPMENT-CONFIRMATION.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-BIND-CARLINE.md
+  - src/app/router/routes.ts
+  - src/entities/bind-carline/types.ts
+  - src/pages/page-bind-carline/BindCarlinePage.vue
+  - src/shared/lib/copy/route-titles.ts
+  - src/shared/lib/mock/bind-carline.ts
+  - tools/frontend/extract_prototype_overlay.py
+  - tools/frontend/fill_screen_blueprints.py
+  content_sha256: fc755b2acb99e12f11234817cfa0471628446cf58343f061aa102847a2fe68bb
+  incident_history: []
+  kind: screen-blueprint
+  line_count: 123
+  migration_batch: MIG-B2/PAGE_SURFACE
+  page_id: PAGE-TASK-STEP-BIND-CARLINE
+  page_status: APPROVED
+  page_template_id: PAGE.DETAIL
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_screen_blueprints.py 为批量写入 producer（消费 template/anatomy/action-placement/shell 四词表生成蓝图）；compile_frontend_page_spec / governance_factsources 等编译链逐份消费（page-spec/verif 链在场）。
+  producer_chain_observed:
+  - tools/frontend/fill_screen_blueprints.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-BIND-CARLINE.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-BIND-CARLINE.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - page
+  - schema_version
+- consumers_detected:
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/02_process-task-interface.yaml
+  - outputs/frontend/10_planned/06_traceability-plan.yaml
+  - outputs/frontend/10_planned/07_readiness.yaml
+  - outputs/frontend/10_planned/08_uiux-functional-spec.yaml
+  - outputs/frontend/10_planned/09_implementation-plan.yaml
+  - outputs/frontend/10_planned/10_action-responsibility-matrix.yaml
+  - outputs/frontend/10_planned/11_predevelopment-confirmation.yaml
+  - outputs/frontend/10_planned/api-requirement-registry.yaml
+  - outputs/frontend/10_planned/application-page-registry.yaml
+  - outputs/frontend/10_planned/authorizations/frontend-prepare-30.p2.yaml
+  - outputs/frontend/10_planned/bp-business-contract.yaml
+  - outputs/frontend/10_planned/business-rule-registry.yaml
+  - outputs/frontend/10_planned/component-selection-register.yaml
+  - outputs/frontend/10_planned/data-model-registry.yaml
+  - outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  - outputs/frontend/10_planned/navigation-structure.yaml
+  - outputs/frontend/10_planned/navigation-transition-registry.yaml
+  - outputs/frontend/10_planned/negative-constraint.yaml
+  - outputs/frontend/10_planned/page-readiness-registry.yaml
+  - outputs/frontend/10_planned/performance-budget.yaml
+  - outputs/frontend/10_planned/state-machine-registry.yaml
+  - outputs/frontend/10_planned/state-ownership-matrix.yaml
+  - outputs/frontend/10_planned/test-fixture-plan.yaml
+  - outputs/frontend/10_planned/uiux-provider-overlay.yaml
+  - outputs/frontend/30_generated/FRONTEND-PREDEVELOPMENT-CONFIRMATION.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-BUC-ANALYSE.md
+  - src/app/router/routes.ts
+  - src/entities/buc-analyse/types.ts
+  - src/pages/page-buc-analyse/BucAnalysePage.vue
+  - src/shared/lib/copy/route-titles.ts
+  - tools/frontend/encode_mock_contract.py
+  - tools/frontend/extract_prototype_overlay.py
+  - tools/frontend/fill_screen_blueprints.py
+  content_sha256: 73cdcb281844e3e3dd17b61fe0f01b732cb530b929073a60043ecab0e4a75491
+  incident_history: []
+  kind: screen-blueprint
+  line_count: 177
+  migration_batch: MIG-B2/PAGE_SURFACE
+  page_id: PAGE-TASK-STEP-BUC-ANALYSE
+  page_status: APPROVED
+  page_template_id: PAGE.EDITABLE_WORKSPACE
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_screen_blueprints.py 为批量写入 producer（消费 template/anatomy/action-placement/shell 四词表生成蓝图）；compile_frontend_page_spec / governance_factsources 等编译链逐份消费（page-spec/verif 链在场）。
+  producer_chain_observed:
+  - tools/frontend/fill_screen_blueprints.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-BUC-ANALYSE.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-BUC-ANALYSE.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - page
+  - schema_version
+- consumers_detected:
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/02_process-task-interface.yaml
+  - outputs/frontend/10_planned/06_traceability-plan.yaml
+  - outputs/frontend/10_planned/07_readiness.yaml
+  - outputs/frontend/10_planned/08_uiux-functional-spec.yaml
+  - outputs/frontend/10_planned/09_implementation-plan.yaml
+  - outputs/frontend/10_planned/10_action-responsibility-matrix.yaml
+  - outputs/frontend/10_planned/11_predevelopment-confirmation.yaml
+  - outputs/frontend/10_planned/api-requirement-registry.yaml
+  - outputs/frontend/10_planned/application-page-registry.yaml
+  - outputs/frontend/10_planned/authorizations/frontend-prepare-30.p2.yaml
+  - outputs/frontend/10_planned/bp-business-contract.yaml
+  - outputs/frontend/10_planned/business-rule-registry.yaml
+  - outputs/frontend/10_planned/calculation-registry.yaml
+  - outputs/frontend/10_planned/component-selection-register.yaml
+  - outputs/frontend/10_planned/data-model-registry.yaml
+  - outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  - outputs/frontend/10_planned/navigation-structure.yaml
+  - outputs/frontend/10_planned/navigation-transition-registry.yaml
+  - outputs/frontend/10_planned/negative-constraint.yaml
+  - outputs/frontend/10_planned/page-readiness-registry.yaml
+  - outputs/frontend/10_planned/performance-budget.yaml
+  - outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-BIND-CARLINE.yaml
+  - outputs/frontend/10_planned/state-machine-registry.yaml
+  - outputs/frontend/10_planned/state-ownership-matrix.yaml
+  - outputs/frontend/10_planned/test-fixture-plan.yaml
+  - outputs/frontend/10_planned/uiux-provider-overlay.yaml
+  - outputs/frontend/30_generated/FRONTEND-PREDEVELOPMENT-CONFIRMATION.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-BUILD-BOM.md
+  - src/app/router/routes.ts
+  - src/pages/page-task-step-build-bom/CalcVehiclePartsPage.vue
+  - src/shared/lib/copy/route-titles.ts
+  - tools/frontend/extract_prototype_overlay.py
+  - tools/frontend/fill_screen_blueprints.py
+  - tools/generate-pages.py
+  content_sha256: 77be8c67bb982e05b0cd9a270d52cd0a59bc23fde4c0c17922e709b863aca366
+  incident_history: []
+  kind: screen-blueprint
+  line_count: 853
+  migration_batch: MIG-B2/PAGE_SURFACE
+  page_id: PAGE-TASK-STEP-BUILD-BOM
+  page_status: APPROVED
+  page_template_id: PAGE.EDITABLE_GRID
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_screen_blueprints.py 为批量写入 producer（消费 template/anatomy/action-placement/shell 四词表生成蓝图）；compile_frontend_page_spec / governance_factsources 等编译链逐份消费（page-spec/verif 链在场）。
+  producer_chain_observed:
+  - tools/frontend/fill_screen_blueprints.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-BUILD-BOM.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-BUILD-BOM.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - page
+  - schema_version
+- consumers_detected:
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/02_process-task-interface.yaml
+  - outputs/frontend/10_planned/06_traceability-plan.yaml
+  - outputs/frontend/10_planned/07_readiness.yaml
+  - outputs/frontend/10_planned/08_uiux-functional-spec.yaml
+  - outputs/frontend/10_planned/09_implementation-plan.yaml
+  - outputs/frontend/10_planned/10_action-responsibility-matrix.yaml
+  - outputs/frontend/10_planned/11_predevelopment-confirmation.yaml
+  - outputs/frontend/10_planned/api-requirement-registry.yaml
+  - outputs/frontend/10_planned/application-page-registry.yaml
+  - outputs/frontend/10_planned/authorizations/frontend-prepare-30.p2.yaml
+  - outputs/frontend/10_planned/bp-business-contract.yaml
+  - outputs/frontend/10_planned/business-rule-registry.yaml
+  - outputs/frontend/10_planned/component-selection-register.yaml
+  - outputs/frontend/10_planned/data-model-registry.yaml
+  - outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  - outputs/frontend/10_planned/mock-contract.yaml
+  - outputs/frontend/10_planned/navigation-transition-registry.yaml
+  - outputs/frontend/10_planned/negative-constraint.yaml
+  - outputs/frontend/10_planned/page-readiness-registry.yaml
+  - outputs/frontend/10_planned/performance-budget.yaml
+  - outputs/frontend/10_planned/screen-blueprints/PAGE-APP-BUC-DETAIL.yaml
+  - outputs/frontend/10_planned/state-machine-registry.yaml
+  - outputs/frontend/10_planned/state-ownership-matrix.yaml
+  - outputs/frontend/10_planned/test-fixture-plan.yaml
+  - outputs/frontend/10_planned/uiux-provider-overlay.yaml
+  - outputs/frontend/30_generated/FRONTEND-PREDEVELOPMENT-CONFIRMATION.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-EXPERT-MODEL-CALCULATE.md
+  - src/app/router/routes.ts
+  - src/entities/buc-analyse/hooks.ts
+  - src/entities/buc-analyse/mock-api.ts
+  - src/entities/buc-analyse/types.ts
+  - src/entities/expert-model-calculate/ExpertModelDrawer.vue
+  - src/pages/page-expert-model-calculate/ExpertModelCalculatePage.vue
+  - src/shared/lib/copy/route-titles.ts
+  - tools/frontend/encode_mock_contract.py
+  - tools/frontend/extract_prototype_overlay.py
+  - tools/frontend/fill_screen_blueprints.py
+  content_sha256: 0a3ac6910c95ad92797d42067c0646704b4efe67a6beaece3eda7b67811ce591
+  incident_history: []
+  kind: screen-blueprint
+  line_count: 112
+  migration_batch: MIG-B2/PAGE_SURFACE
+  page_id: PAGE-TASK-STEP-EXPERT-MODEL-CALCULATE
+  page_status: APPROVED
+  page_template_id: PAGE.FORM
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_screen_blueprints.py 为批量写入 producer（消费 template/anatomy/action-placement/shell 四词表生成蓝图）；compile_frontend_page_spec / governance_factsources 等编译链逐份消费（page-spec/verif 链在场）。
+  producer_chain_observed:
+  - tools/frontend/fill_screen_blueprints.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-EXPERT-MODEL-CALCULATE.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-EXPERT-MODEL-CALCULATE.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - page
+  - schema_version
+- consumers_detected:
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/02_process-task-interface.yaml
+  - outputs/frontend/10_planned/06_traceability-plan.yaml
+  - outputs/frontend/10_planned/07_readiness.yaml
+  - outputs/frontend/10_planned/08_uiux-functional-spec.yaml
+  - outputs/frontend/10_planned/09_implementation-plan.yaml
+  - outputs/frontend/10_planned/10_action-responsibility-matrix.yaml
+  - outputs/frontend/10_planned/11_predevelopment-confirmation.yaml
+  - outputs/frontend/10_planned/api-requirement-registry.yaml
+  - outputs/frontend/10_planned/authorizations/frontend-prepare-30.p2.yaml
+  - outputs/frontend/10_planned/bp-business-contract.yaml
+  - outputs/frontend/10_planned/business-rule-registry.yaml
+  - outputs/frontend/10_planned/component-selection-register.yaml
+  - outputs/frontend/10_planned/data-model-registry.yaml
+  - outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  - outputs/frontend/10_planned/navigation-transition-registry.yaml
+  - outputs/frontend/10_planned/negative-constraint.yaml
+  - outputs/frontend/10_planned/page-readiness-registry.yaml
+  - outputs/frontend/10_planned/performance-budget.yaml
+  - outputs/frontend/10_planned/state-machine-registry.yaml
+  - outputs/frontend/10_planned/state-ownership-matrix.yaml
+  - outputs/frontend/10_planned/test-fixture-plan.yaml
+  - outputs/frontend/10_planned/uiux-provider-overlay.yaml
+  - outputs/frontend/30_generated/FRONTEND-PREDEVELOPMENT-CONFIRMATION.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-GENERATE-SNAPSHOT.md
+  - tools/frontend/encode_mock_contract.py
+  - tools/frontend/extract_prototype_overlay.py
+  - tools/frontend/fill_screen_blueprints.py
+  content_sha256: 2d24b51decda73605910c85bf99f7f864d41d460507c2671d65d4468935a82bb
+  incident_history: []
+  kind: screen-blueprint
+  line_count: 98
+  migration_batch: MIG-B2/PAGE_SURFACE
+  page_id: PAGE-TASK-STEP-GENERATE-SNAPSHOT
+  page_status: APPROVED
+  page_template_id: PAGE.FORM
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_screen_blueprints.py 为批量写入 producer（消费 template/anatomy/action-placement/shell 四词表生成蓝图）；compile_frontend_page_spec / governance_factsources 等编译链逐份消费（page-spec/verif 链在场）。
+  producer_chain_observed:
+  - tools/frontend/fill_screen_blueprints.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-GENERATE-SNAPSHOT.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-GENERATE-SNAPSHOT.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - page
+  - schema_version
+- consumers_detected:
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/02_process-task-interface.yaml
+  - outputs/frontend/10_planned/06_traceability-plan.yaml
+  - outputs/frontend/10_planned/07_readiness.yaml
+  - outputs/frontend/10_planned/08_uiux-functional-spec.yaml
+  - outputs/frontend/10_planned/09_implementation-plan.yaml
+  - outputs/frontend/10_planned/10_action-responsibility-matrix.yaml
+  - outputs/frontend/10_planned/11_predevelopment-confirmation.yaml
+  - outputs/frontend/10_planned/application-page-registry.yaml
+  - outputs/frontend/10_planned/authorizations/frontend-prepare-30.p2.yaml
+  - outputs/frontend/10_planned/component-selection-register.yaml
+  - outputs/frontend/10_planned/data-model-registry.yaml
+  - outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  - outputs/frontend/10_planned/issue-register.yaml
+  - outputs/frontend/10_planned/page-readiness-registry.yaml
+  - outputs/frontend/10_planned/performance-budget.yaml
+  - outputs/frontend/10_planned/state-machine-registry.yaml
+  - outputs/frontend/10_planned/state-ownership-matrix.yaml
+  - outputs/frontend/10_planned/uiux-provider-overlay.yaml
+  - outputs/frontend/30_generated/FRONTEND-PREDEVELOPMENT-CONFIRMATION.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-MAINTAIN-BASE-ATTRIBUTES.md
+  - tools/frontend/extract_prototype_overlay.py
+  - tools/frontend/fill_screen_blueprints.py
+  content_sha256: b928749fde0ff32ebb91b8debca5fbe76c5650830489518a7f93911f6923d7af
+  incident_history: []
+  kind: screen-blueprint
+  line_count: 95
+  migration_batch: MIG-B2/PAGE_SURFACE
+  page_id: PAGE-TASK-STEP-MAINTAIN-BASE-ATTRIBUTES
+  page_status: BLOCKED
+  page_template_id: PAGE.LIST
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_screen_blueprints.py 为批量写入 producer（消费 template/anatomy/action-placement/shell 四词表生成蓝图）；compile_frontend_page_spec / governance_factsources 等编译链逐份消费（page-spec/verif 链在场）。
+  producer_chain_observed:
+  - tools/frontend/fill_screen_blueprints.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-MAINTAIN-BASE-ATTRIBUTES.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-MAINTAIN-BASE-ATTRIBUTES.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - page
+  - schema_version
+- consumers_detected:
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/02_process-task-interface.yaml
+  - outputs/frontend/10_planned/06_traceability-plan.yaml
+  - outputs/frontend/10_planned/07_readiness.yaml
+  - outputs/frontend/10_planned/08_uiux-functional-spec.yaml
+  - outputs/frontend/10_planned/09_implementation-plan.yaml
+  - outputs/frontend/10_planned/10_action-responsibility-matrix.yaml
+  - outputs/frontend/10_planned/11_predevelopment-confirmation.yaml
+  - outputs/frontend/10_planned/api-requirement-registry.yaml
+  - outputs/frontend/10_planned/application-page-registry.yaml
+  - outputs/frontend/10_planned/authorizations/frontend-prepare-30.p2.yaml
+  - outputs/frontend/10_planned/bp-business-contract.yaml
+  - outputs/frontend/10_planned/business-rule-registry.yaml
+  - outputs/frontend/10_planned/component-selection-register.yaml
+  - outputs/frontend/10_planned/data-model-registry.yaml
+  - outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  - outputs/frontend/10_planned/navigation-transition-registry.yaml
+  - outputs/frontend/10_planned/negative-constraint.yaml
+  - outputs/frontend/10_planned/page-readiness-registry.yaml
+  - outputs/frontend/10_planned/performance-budget.yaml
+  - outputs/frontend/10_planned/state-machine-registry.yaml
+  - outputs/frontend/10_planned/state-ownership-matrix.yaml
+  - outputs/frontend/10_planned/test-fixture-plan.yaml
+  - outputs/frontend/10_planned/uiux-provider-overlay.yaml
+  - outputs/frontend/30_generated/FRONTEND-PREDEVELOPMENT-CONFIRMATION.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-MANAGE-USER-ROLE.md
+  - tools/frontend/extract_prototype_overlay.py
+  - tools/frontend/fill_screen_blueprints.py
+  content_sha256: d2ded332c59161d775987fb5b4f5acca9746e19fb636e8e35d136dbac6a5f6fe
+  incident_history: []
+  kind: screen-blueprint
+  line_count: 124
+  migration_batch: MIG-B2/PAGE_SURFACE
+  page_id: PAGE-TASK-STEP-MANAGE-USER-ROLE
+  page_status: BLOCKED
+  page_template_id: PAGE.MASTER_DETAIL
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_screen_blueprints.py 为批量写入 producer（消费 template/anatomy/action-placement/shell 四词表生成蓝图）；compile_frontend_page_spec / governance_factsources 等编译链逐份消费（page-spec/verif 链在场）。
+  producer_chain_observed:
+  - tools/frontend/fill_screen_blueprints.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-MANAGE-USER-ROLE.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-MANAGE-USER-ROLE.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - page
+  - schema_version
+- consumers_detected:
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/02_process-task-interface.yaml
+  - outputs/frontend/10_planned/06_traceability-plan.yaml
+  - outputs/frontend/10_planned/07_readiness.yaml
+  - outputs/frontend/10_planned/08_uiux-functional-spec.yaml
+  - outputs/frontend/10_planned/09_implementation-plan.yaml
+  - outputs/frontend/10_planned/10_action-responsibility-matrix.yaml
+  - outputs/frontend/10_planned/11_predevelopment-confirmation.yaml
+  - outputs/frontend/10_planned/application-page-registry.yaml
+  - outputs/frontend/10_planned/authorizations/frontend-prepare-30.p2.yaml
+  - outputs/frontend/10_planned/bp-business-contract.yaml
+  - outputs/frontend/10_planned/business-rule-registry.yaml
+  - outputs/frontend/10_planned/component-selection-register.yaml
+  - outputs/frontend/10_planned/data-model-registry.yaml
+  - outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  - outputs/frontend/10_planned/issue-register.yaml
+  - outputs/frontend/10_planned/navigation-transition-registry.yaml
+  - outputs/frontend/10_planned/page-readiness-registry.yaml
+  - outputs/frontend/10_planned/performance-budget.yaml
+  - outputs/frontend/10_planned/state-machine-registry.yaml
+  - outputs/frontend/10_planned/state-ownership-matrix.yaml
+  - outputs/frontend/10_planned/uiux-provider-overlay.yaml
+  - outputs/frontend/30_generated/FRONTEND-PREDEVELOPMENT-CONFIRMATION.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-OUTPUT-TO-LEDGER.md
+  - tools/frontend/extract_prototype_overlay.py
+  - tools/frontend/fill_screen_blueprints.py
+  content_sha256: 77721c9de65de0caaf1762d2b7d3f1a0dc742090ddc6d0829e0b444381c7d778
+  incident_history: []
+  kind: screen-blueprint
+  line_count: 85
+  migration_batch: MIG-B2/PAGE_SURFACE
+  page_id: PAGE-TASK-STEP-OUTPUT-TO-LEDGER
+  page_status: BLOCKED
+  page_template_id: PAGE.DETAIL
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_screen_blueprints.py 为批量写入 producer（消费 template/anatomy/action-placement/shell 四词表生成蓝图）；compile_frontend_page_spec / governance_factsources 等编译链逐份消费（page-spec/verif 链在场）。
+  producer_chain_observed:
+  - tools/frontend/fill_screen_blueprints.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-OUTPUT-TO-LEDGER.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-OUTPUT-TO-LEDGER.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - page
+  - schema_version
+- consumers_detected:
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/02_process-task-interface.yaml
+  - outputs/frontend/10_planned/06_traceability-plan.yaml
+  - outputs/frontend/10_planned/07_readiness.yaml
+  - outputs/frontend/10_planned/08_uiux-functional-spec.yaml
+  - outputs/frontend/10_planned/09_implementation-plan.yaml
+  - outputs/frontend/10_planned/10_action-responsibility-matrix.yaml
+  - outputs/frontend/10_planned/11_predevelopment-confirmation.yaml
+  - outputs/frontend/10_planned/api-requirement-registry.yaml
+  - outputs/frontend/10_planned/application-page-registry.yaml
+  - outputs/frontend/10_planned/authorizations/frontend-prepare-30.p2.yaml
+  - outputs/frontend/10_planned/bp-business-contract.yaml
+  - outputs/frontend/10_planned/business-rule-registry.yaml
+  - outputs/frontend/10_planned/component-selection-register.yaml
+  - outputs/frontend/10_planned/data-model-registry.yaml
+  - outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  - outputs/frontend/10_planned/mock-contract.yaml
+  - outputs/frontend/10_planned/navigation-structure.yaml
+  - outputs/frontend/10_planned/navigation-transition-registry.yaml
+  - outputs/frontend/10_planned/negative-constraint.yaml
+  - outputs/frontend/10_planned/page-readiness-registry.yaml
+  - outputs/frontend/10_planned/performance-budget.yaml
+  - outputs/frontend/10_planned/screen-blueprints/PAGE-APP-VEHICLE-MASTER-DATA.yaml
+  - outputs/frontend/10_planned/state-machine-registry.yaml
+  - outputs/frontend/10_planned/state-ownership-matrix.yaml
+  - outputs/frontend/10_planned/test-fixture-plan.yaml
+  - outputs/frontend/10_planned/uiux-provider-overlay.yaml
+  - outputs/frontend/30_generated/FRONTEND-PREDEVELOPMENT-CONFIRMATION.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-QUERY-LEDGER.md
+  - src/app/router/routes.ts
+  - src/pages/page-task-step-query-ledger/QueryLedgerPage.vue
+  - src/shared/lib/copy/route-titles.ts
+  - tools/frontend/extract_prototype_overlay.py
+  - tools/frontend/fill_screen_blueprints.py
+  - tools/generate-pages.py
+  content_sha256: caded036c2f0bc0dd1bff37d71769977f1d11c3b71900a1f4d257795132a38a3
+  incident_history: []
+  kind: screen-blueprint
+  line_count: 141
+  migration_batch: MIG-B2/PAGE_SURFACE
+  page_id: PAGE-TASK-STEP-QUERY-LEDGER
+  page_status: APPROVED
+  page_template_id: PAGE.LIST
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_screen_blueprints.py 为批量写入 producer（消费 template/anatomy/action-placement/shell 四词表生成蓝图）；compile_frontend_page_spec / governance_factsources 等编译链逐份消费（page-spec/verif 链在场）。
+  producer_chain_observed:
+  - tools/frontend/fill_screen_blueprints.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-QUERY-LEDGER.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-QUERY-LEDGER.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - page
+  - schema_version
+- consumers_detected:
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/02_process-task-interface.yaml
+  - outputs/frontend/10_planned/06_traceability-plan.yaml
+  - outputs/frontend/10_planned/07_readiness.yaml
+  - outputs/frontend/10_planned/08_uiux-functional-spec.yaml
+  - outputs/frontend/10_planned/09_implementation-plan.yaml
+  - outputs/frontend/10_planned/10_action-responsibility-matrix.yaml
+  - outputs/frontend/10_planned/11_predevelopment-confirmation.yaml
+  - outputs/frontend/10_planned/api-requirement-registry.yaml
+  - outputs/frontend/10_planned/authorizations/frontend-prepare-30.p2.yaml
+  - outputs/frontend/10_planned/bp-business-contract.yaml
+  - outputs/frontend/10_planned/business-rule-registry.yaml
+  - outputs/frontend/10_planned/component-selection-register.yaml
+  - outputs/frontend/10_planned/data-model-registry.yaml
+  - outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  - outputs/frontend/10_planned/navigation-transition-registry.yaml
+  - outputs/frontend/10_planned/negative-constraint.yaml
+  - outputs/frontend/10_planned/page-readiness-registry.yaml
+  - outputs/frontend/10_planned/performance-budget.yaml
+  - outputs/frontend/10_planned/state-machine-registry.yaml
+  - outputs/frontend/10_planned/state-ownership-matrix.yaml
+  - outputs/frontend/10_planned/test-fixture-plan.yaml
+  - outputs/frontend/10_planned/uiux-provider-overlay.yaml
+  - outputs/frontend/30_generated/FRONTEND-PREDEVELOPMENT-CONFIRMATION.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-SAVE-BOM.md
+  - tools/frontend/extract_prototype_overlay.py
+  - tools/frontend/fill_screen_blueprints.py
+  content_sha256: ff55a4134dbd380d4266d4844dd8cef3398e22f14fcb061516ec91bcadb1df87
+  incident_history: []
+  kind: screen-blueprint
+  line_count: 124
+  migration_batch: MIG-B2/PAGE_SURFACE
+  page_id: PAGE-TASK-STEP-SAVE-BOM
+  page_status: BLOCKED
+  page_template_id: PAGE.FORM
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_screen_blueprints.py 为批量写入 producer（消费 template/anatomy/action-placement/shell 四词表生成蓝图）；compile_frontend_page_spec / governance_factsources 等编译链逐份消费（page-spec/verif 链在场）。
+  producer_chain_observed:
+  - tools/frontend/fill_screen_blueprints.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-SAVE-BOM.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-SAVE-BOM.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - page
+  - schema_version
+- consumers_detected:
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/02_process-task-interface.yaml
+  - outputs/frontend/10_planned/06_traceability-plan.yaml
+  - outputs/frontend/10_planned/07_readiness.yaml
+  - outputs/frontend/10_planned/08_uiux-functional-spec.yaml
+  - outputs/frontend/10_planned/09_implementation-plan.yaml
+  - outputs/frontend/10_planned/10_action-responsibility-matrix.yaml
+  - outputs/frontend/10_planned/11_predevelopment-confirmation.yaml
+  - outputs/frontend/10_planned/api-requirement-registry.yaml
+  - outputs/frontend/10_planned/application-page-registry.yaml
+  - outputs/frontend/10_planned/authorizations/frontend-prepare-30.p2.yaml
+  - outputs/frontend/10_planned/bp-business-contract.yaml
+  - outputs/frontend/10_planned/business-rule-registry.yaml
+  - outputs/frontend/10_planned/component-selection-register.yaml
+  - outputs/frontend/10_planned/data-model-registry.yaml
+  - outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  - outputs/frontend/10_planned/navigation-transition-registry.yaml
+  - outputs/frontend/10_planned/page-readiness-registry.yaml
+  - outputs/frontend/10_planned/performance-budget.yaml
+  - outputs/frontend/10_planned/state-machine-registry.yaml
+  - outputs/frontend/10_planned/state-ownership-matrix.yaml
+  - outputs/frontend/10_planned/test-fixture-plan.yaml
+  - outputs/frontend/10_planned/uiux-provider-overlay.yaml
+  - outputs/frontend/30_generated/FRONTEND-PREDEVELOPMENT-CONFIRMATION.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT.md
+  - src/app/router/routes.ts
+  - src/pages/page-task-step-select-vehicle-context/SelectVehicleContextPage.vue
+  - src/shared/lib/copy/route-titles.ts
+  - tools/frontend/extract_prototype_overlay.py
+  - tools/frontend/fill_screen_blueprints.py
+  - tools/generate-pages.py
+  content_sha256: 1386a86efe7147370a402d9f9720f41ffd0c22ad305d07de6fc29c5443a7ff92
+  incident_history: []
+  kind: screen-blueprint
+  line_count: 104
+  migration_batch: MIG-B2/PAGE_SURFACE
+  page_id: PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT
+  page_status: APPROVED
+  page_template_id: PAGE.MASTER_DETAIL
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_screen_blueprints.py 为批量写入 producer（消费 template/anatomy/action-placement/shell 四词表生成蓝图）；compile_frontend_page_spec / governance_factsources 等编译链逐份消费（page-spec/verif 链在场）。
+  producer_chain_observed:
+  - tools/frontend/fill_screen_blueprints.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - page
+  - schema_version
+- consumers_detected:
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/02_process-task-interface.yaml
+  - outputs/frontend/10_planned/06_traceability-plan.yaml
+  - outputs/frontend/10_planned/07_readiness.yaml
+  - outputs/frontend/10_planned/08_uiux-functional-spec.yaml
+  - outputs/frontend/10_planned/09_implementation-plan.yaml
+  - outputs/frontend/10_planned/10_action-responsibility-matrix.yaml
+  - outputs/frontend/10_planned/11_predevelopment-confirmation.yaml
+  - outputs/frontend/10_planned/application-page-registry.yaml
+  - outputs/frontend/10_planned/authorizations/frontend-prepare-30.p2.yaml
+  - outputs/frontend/10_planned/bp-business-contract.yaml
+  - outputs/frontend/10_planned/business-rule-registry.yaml
+  - outputs/frontend/10_planned/component-selection-register.yaml
+  - outputs/frontend/10_planned/data-model-registry.yaml
+  - outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  - outputs/frontend/10_planned/issue-register.yaml
+  - outputs/frontend/10_planned/navigation-transition-registry.yaml
+  - outputs/frontend/10_planned/page-readiness-registry.yaml
+  - outputs/frontend/10_planned/performance-budget.yaml
+  - outputs/frontend/10_planned/state-machine-registry.yaml
+  - outputs/frontend/10_planned/state-ownership-matrix.yaml
+  - outputs/frontend/10_planned/uiux-provider-overlay.yaml
+  - outputs/frontend/30_generated/FRONTEND-PREDEVELOPMENT-CONFIRMATION.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-TRACK-COST-BY-SNAPSHOT.md
+  - tools/frontend/extract_prototype_overlay.py
+  - tools/frontend/fill_screen_blueprints.py
+  content_sha256: b5c8fe8850ccd261f7ecc190d5e78b347708c1697da3ddb087fc108c3065b2c2
+  incident_history: []
+  kind: screen-blueprint
+  line_count: 62
+  migration_batch: MIG-B2/PAGE_SURFACE
+  page_id: PAGE-TASK-STEP-TRACK-COST-BY-SNAPSHOT
+  page_status: BLOCKED
+  page_template_id: PAGE.COMPARE
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_screen_blueprints.py 为批量写入 producer（消费 template/anatomy/action-placement/shell 四词表生成蓝图）；compile_frontend_page_spec / governance_factsources 等编译链逐份消费（page-spec/verif 链在场）。
+  producer_chain_observed:
+  - tools/frontend/fill_screen_blueprints.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-TRACK-COST-BY-SNAPSHOT.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-TRACK-COST-BY-SNAPSHOT.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - page
+  - schema_version
+- consumers_detected:
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/02_process-task-interface.yaml
+  - outputs/frontend/10_planned/06_traceability-plan.yaml
+  - outputs/frontend/10_planned/07_readiness.yaml
+  - outputs/frontend/10_planned/08_uiux-functional-spec.yaml
+  - outputs/frontend/10_planned/09_implementation-plan.yaml
+  - outputs/frontend/10_planned/10_action-responsibility-matrix.yaml
+  - outputs/frontend/10_planned/11_predevelopment-confirmation.yaml
+  - outputs/frontend/10_planned/api-requirement-registry.yaml
+  - outputs/frontend/10_planned/authorizations/frontend-prepare-30.p2.yaml
+  - outputs/frontend/10_planned/bp-business-contract.yaml
+  - outputs/frontend/10_planned/business-rule-registry.yaml
+  - outputs/frontend/10_planned/component-selection-register.yaml
+  - outputs/frontend/10_planned/data-model-registry.yaml
+  - outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  - outputs/frontend/10_planned/navigation-transition-registry.yaml
+  - outputs/frontend/10_planned/negative-constraint.yaml
+  - outputs/frontend/10_planned/page-readiness-registry.yaml
+  - outputs/frontend/10_planned/performance-budget.yaml
+  - outputs/frontend/10_planned/state-machine-registry.yaml
+  - outputs/frontend/10_planned/state-ownership-matrix.yaml
+  - outputs/frontend/10_planned/test-fixture-plan.yaml
+  - outputs/frontend/10_planned/uiux-provider-overlay.yaml
+  - outputs/frontend/30_generated/FRONTEND-PREDEVELOPMENT-CONFIRMATION.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-VIEW-ALL-PARTS.md
+  - tools/frontend/extract_prototype_overlay.py
+  - tools/frontend/fill_screen_blueprints.py
+  content_sha256: 3be0ee4c1186b7ed61750a4ce6c20d4468188d47aea52c4c6253eec2e3406b24
+  incident_history: []
+  kind: screen-blueprint
+  line_count: 128
+  migration_batch: MIG-B2/PAGE_SURFACE
+  page_id: PAGE-TASK-STEP-VIEW-ALL-PARTS
+  page_status: APPROVED
+  page_template_id: PAGE.LIST
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_screen_blueprints.py 为批量写入 producer（消费 template/anatomy/action-placement/shell 四词表生成蓝图）；compile_frontend_page_spec / governance_factsources 等编译链逐份消费（page-spec/verif 链在场）。
+  producer_chain_observed:
+  - tools/frontend/fill_screen_blueprints.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-VIEW-ALL-PARTS.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-VIEW-ALL-PARTS.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - page
+  - schema_version
+- consumers_detected:
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/10_planned/02_process-task-interface.yaml
+  - outputs/frontend/10_planned/06_traceability-plan.yaml
+  - outputs/frontend/10_planned/07_readiness.yaml
+  - outputs/frontend/10_planned/08_uiux-functional-spec.yaml
+  - outputs/frontend/10_planned/09_implementation-plan.yaml
+  - outputs/frontend/10_planned/10_action-responsibility-matrix.yaml
+  - outputs/frontend/10_planned/11_predevelopment-confirmation.yaml
+  - outputs/frontend/10_planned/api-requirement-registry.yaml
+  - outputs/frontend/10_planned/authorizations/frontend-prepare-30.p2.yaml
+  - outputs/frontend/10_planned/bp-business-contract.yaml
+  - outputs/frontend/10_planned/business-rule-registry.yaml
+  - outputs/frontend/10_planned/component-selection-register.yaml
+  - outputs/frontend/10_planned/data-model-registry.yaml
+  - outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  - outputs/frontend/10_planned/navigation-transition-registry.yaml
+  - outputs/frontend/10_planned/page-readiness-registry.yaml
+  - outputs/frontend/10_planned/performance-budget.yaml
+  - outputs/frontend/10_planned/state-machine-registry.yaml
+  - outputs/frontend/10_planned/state-ownership-matrix.yaml
+  - outputs/frontend/10_planned/test-fixture-plan.yaml
+  - outputs/frontend/10_planned/uiux-provider-overlay.yaml
+  - outputs/frontend/30_generated/FRONTEND-PREDEVELOPMENT-CONFIRMATION.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-WRITEBACK-LEDGER.md
+  - tools/frontend/extract_prototype_overlay.py
+  - tools/frontend/fill_screen_blueprints.py
+  content_sha256: fde40c5461a5faa4ded2993cb4648504f9266b78f3a99ba4cb8613b0f47925fc
+  incident_history: []
+  kind: screen-blueprint
+  line_count: 112
+  migration_batch: MIG-B2/PAGE_SURFACE
+  page_id: PAGE-TASK-STEP-WRITEBACK-LEDGER
+  page_status: BLOCKED
+  page_template_id: PAGE.DETAIL
+  producer_alive: true
+  producer_alive_note: tools/frontend/fill_screen_blueprints.py 为批量写入 producer（消费 template/anatomy/action-placement/shell 四词表生成蓝图）；compile_frontend_page_spec / governance_factsources 等编译链逐份消费（page-spec/verif 链在场）。
+  producer_chain_observed:
+  - tools/frontend/fill_screen_blueprints.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B2
+      captured_by: agent:m0-inventory-batch2/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-WRITEBACK-LEDGER.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/screen-blueprints/PAGE-TASK-STEP-WRITEBACK-LEDGER.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - page
+  - schema_version
+batch: MIG-B2
+denominators:
+  application_pages:
+    health_note: 注册表 description/summary 自述『原型 32 页 = 15 task-step + 17 应用页』，但 pages[] 实数 35=24 new-application + 11 existing-task-step——注册表内 summary 块与数组已漂移（BATCH-1 inventory 同一结论，本批复测未变）。screen-blueprints/ 实有 39 份（PAGE-APP 24 + PAGE-TASK-STEP 15），其中 PAGE-TASK-STEP-GENERATE-SNAPSHOT、PAGE-TASK-STEP-SAVE-BOM、PAGE-TASK-STEP-VIEW-ALL-PARTS、PAGE-TASK-STEP-WRITEBACK-LEDGER 共 4 份在 pages[] 无对应条目（分母歧义源，待人工裁决）；反向零缺口（pages[] 35 条全部有 blueprint 文件）。page-readiness-registry 现为 39 条 = pages[] 35 + 上列 4 孤儿 blueprint id。
+    method: json.load 后 len(pages[])；status 字段分类计数；screen-blueprints 目录 ls 对照
+    registry_summary_block_selfreport:
+      blocked_pages: 3
+      existing_task_step_blueprints: 15
+      new_application_pages: 17
+      orphan_functions: 3
+      total_prototype_pages: 32
+    screen_blueprints_count: 39
+    screen_blueprints_not_in_pages:
+    - PAGE-TASK-STEP-GENERATE-SNAPSHOT
+    - PAGE-TASK-STEP-SAVE-BOM
+    - PAGE-TASK-STEP-VIEW-ALL-PARTS
+    - PAGE-TASK-STEP-WRITEBACK-LEDGER
+    source: outputs/frontend/10_planned/application-page-registry.yaml
+    value: 35
+    value_breakdown:
+      existing_task_step: 11
+      new_application: 24
+  blueprints:
+    health_note: page.status 分布 APPROVED=15/DRAFT=18/BLOCKED=6；39 份与 page-readiness-registry 39 条 page_id 集合完全一致；其中 4 份（见 application_pages.screen_blueprints_not_in_pages）在 application-page-registry pages[] 无条目。
+    method: screen-blueprints 目录 ls + 逐份 json.load 取 page.id/page.status/page.template.id
+    source: outputs/frontend/10_planned/screen-blueprints/
+    value: 39
+    value_breakdown:
+      page_app: 24
+      page_status:
+        status_APPROVED: 15
+        status_BLOCKED: 6
+        status_DRAFT: 18
+      page_task_step: 15
+      template_distribution:
+        PAGE.COMPARE: 1
+        PAGE.DASHBOARD: 1
+        PAGE.DETAIL: 7
+        PAGE.EDITABLE_GRID: 1
+        PAGE.EDITABLE_WORKSPACE: 1
+        PAGE.FORM: 4
+        PAGE.LIST: 20
+        PAGE.MASTER_DETAIL: 4
+  component_selection_entries:
+    health_note: component_demand 172 条（registered=true 125 / false 47）；component_selections 141 条；component_gaps 0 条（空数组）。selections 的 capability_id 词形为注册表本地族前缀（CONTROL/DATA/GRID/...），非 15 前缀闭世界成员，本批只登记不改名。
+    method: json.load 后 len(component_demand[]/component_selections[]/component_gaps[])；registered/status 分类计数
+    source: outputs/frontend/10_planned/component-selection-register.yaml
+    value: 313
+    value_breakdown:
+      component_demand: 172
+      component_demand_registered_false: 47
+      component_demand_registered_true: 125
+      component_gaps: 0
+      component_selection_status:
+        status_APPROVED: 141
+      component_selections: 141
+  composition_entries:
+    health_note: 构图词表四件套条目实测；action-placement notes 载 2026-08-17/18/19 多轮补登（人工策展演化在场）。page-template-registry 引用 REGION.* 与 PAGE_SLOT.* 词形，本表未单计 REGION.*（region 词形内嵌于各模板 regions[]）。
+    method: 逐文件 json.load 后 len(主体数组)
+    sources:
+      action-placement-registry: outputs/frontend/10_planned/action-placement-registry.yaml
+      application-shell-registry: outputs/frontend/10_planned/application-shell-registry.yaml
+      page-anatomy-registry: outputs/frontend/10_planned/page-anatomy-registry.yaml
+      page-template-registry: outputs/frontend/10_planned/page-template-registry.yaml
+    value: 61
+    value_breakdown:
+      action_placement_actions: 27
+      application_shell_slots: 7
+      page_anatomy_slots: 16
+      page_template_templates: 11
+  navigation_entries:
+    health_note: navigation-structure summary 自述 level1_groups=7/level2_subgroups=3/leaf_pages=28/drill_down_pages=3，实测组数/子组数/叶子数与自述一致；叶子 28 条映射到 24 个去重 page_id（CSC-PRICE 与 EVALUATION 各被 3 条叶子共用）；顶层单叶 2 条（DASHBOARD/PARTS-LEDGER，type=top-level-leaf 直挂 page_id）计入叶子；drill_down 3 条。TRANSITION-* 词形 21 条 from/to 引用 PAGE-TASK-STEP-* legacy 词形。
+    method: json.load 后遍历 nav_groups/subgroups/leaves 与 drill_down_pages 计数；navigation-transition-registry len(transitions[])
+    nav_leaf_route_paths:
+    - /
+    - /analysis/buc
+    - /analysis/other
+    - /bom/all-parts
+    - /bom/build
+    - /bom/palette
+    - /csc/accessory
+    - /csc/material
+    - /csc/nomination
+    - /db/equipment
+    - /db/material
+    - /db/other
+    - /db/part-structure
+    - /db/process
+    - /db/set
+    - /db/task
+    - /db/vehicle-master
+    - /eval/aeko
+    - /eval/akt
+    - /eval/bc
+    - /eval/pko
+    - /ledger/query
+    - /report/bridge
+    - /report/forecast
+    - /system/approval
+    - /system/permission
+    - /system/role
+    - /system/user
+    nav_leaf_unique_page_ids:
+    - PAGE-APP-ALL-PARTS-LIST
+    - PAGE-APP-APPROVAL-FLOW
+    - PAGE-APP-BRIDGE-TABLE
+    - PAGE-APP-CSC-PRICE
+    - PAGE-APP-DASHBOARD
+    - PAGE-APP-DATA-PERMISSION
+    - PAGE-APP-EQUIPMENT-DB
+    - PAGE-APP-EQUIPMENT-PALETTE
+    - PAGE-APP-EVALUATION
+    - PAGE-APP-FORECAST-REPORT
+    - PAGE-APP-MATERIAL-DB
+    - PAGE-APP-OTHER-COST-ANALYSIS
+    - PAGE-APP-OTHER-DB
+    - PAGE-APP-PART-STRUCTURE-DB
+    - PAGE-APP-PROCESS-DB
+    - PAGE-APP-ROLE-MGMT
+    - PAGE-APP-SET-DB
+    - PAGE-APP-TASK-MGMT
+    - PAGE-APP-TECHNICAL-AKT
+    - PAGE-APP-USER-MGMT
+    - PAGE-APP-VEHICLE-MASTER-DATA
+    - PAGE-TASK-STEP-BUC-ANALYSE
+    - PAGE-TASK-STEP-BUILD-BOM
+    - PAGE-TASK-STEP-QUERY-LEDGER
+    source: outputs/frontend/10_planned/navigation-structure.yaml + navigation-transition-registry.yaml
+    value: 62
+    value_breakdown:
+      drill_down_pages: 3
+      leaf_entries: 28
+      leaf_unique_page_ids: 24
+      level1_groups: 7
+      level2_subgroups: 3
+      navigation_transitions: 21
+  page_readiness_status:
+    health_note: READY=0：无一页达 READY（test_material_ready 与 unresolved_p0 普遍阻断）；33/39 条携带『readiness 按 MD 证据纠正(虚假 attest->false)』纠正标记，24 条携带 page-spec-attest-2026-08-06 attest 记录（虚假 attest 过 gate 教训的在仓痕迹，见 inventory 资产条目 incident_history）。
+    in_file_marker_counts:
+      attest_records_page_spec_attest_2026_08_06: 24
+      fake_attest_correction_markers: 33
+      second_audit_markers: 1
+    method: json.load 后按 status 分类计数；notes/last_updated_by 标记字段计数
+    source: outputs/frontend/10_planned/page-readiness-registry.yaml
+    value: 39
+    value_breakdown:
+      status_BLOCKED: 6
+      status_DRAFT: 33
+      status_READY: 0
+document_kind: m0-inventory
+provenance_note: M0 盘点为镜像收编只读扫描（BATCH-2 · 页面组合族）：MASTer_master 绝对只读；本文件全部字段由 tools/build_m0_inventory.py 确定性产出（sha256/行数/键清单/消费方 grep/分母实测），不含墙钟时间与 mtime；批次代号 MIG-B2；重跑 byte-identical。事故史仅登记在仓可读证据，空数组=无在仓可读证据（不编造）。约定基准：corpus/master/batch-1/CONVENTIONS.md（本批扩充不推翻）。

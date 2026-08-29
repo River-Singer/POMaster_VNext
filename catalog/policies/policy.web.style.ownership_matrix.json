@@ -7,10 +7,10 @@
   },
   "x-batch4-uplift": {
     "status": "PROPOSAL",
-    "package": "MIG-B4 Universal 上提（工程策略族 split-ledger 驱动）",
+    "package": "batch-4 语料批 Universal 上提（工程策略族 split-ledger 驱动）",
     "human_review_required": true,
     "evidence": "PLANNED",
-    "provenance": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+    "provenance": "POMaster_VNext/corpus/master/batch-4/split-ledger.yaml"
   },
   "id": "POLICY.WEB.STYLE.OWNERSHIP_MATRIX",
   "kind": "policy",
@@ -42,7 +42,7 @@
     "escalation_hint": "catalog-batch4-uplift"
   },
   "origin": "ingested",
-  "origin_note": "MIG-B4 split-ledger UNIVERSAL/HYBRID universal 半上提；目录词面独立改写（clean-room），零逐字拷贝上游源文本",
+  "origin_note": "batch-4 语料批 split-ledger UNIVERSAL/HYBRID universal 半上提；词面独立改写（clean-room），零逐字拷贝源文本",
   "sub_rules": [
     {
       "rule_id": "layers.global-reset",
@@ -52,8 +52,8 @@
         "entry_id": "layers.global-reset",
         "decision": "HYBRID",
         "merge_group": "MG-STYLE-MATRIX",
-        "migration_batch": "MIG-B4/STYLE",
-        "split_ledger": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+        "corpus_batch": "batch-4/STYLE",
+        "split_ledger": "POMaster_VNext/corpus/master/batch-4/split-ledger.yaml"
       }
     },
     {
@@ -64,8 +64,8 @@
         "entry_id": "layers.design-token",
         "decision": "HYBRID",
         "merge_group": "MG-STYLE-MATRIX",
-        "migration_batch": "MIG-B4/STYLE",
-        "split_ledger": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+        "corpus_batch": "batch-4/STYLE",
+        "split_ledger": "POMaster_VNext/corpus/master/batch-4/split-ledger.yaml"
       }
     },
     {
@@ -76,8 +76,8 @@
         "entry_id": "layers.shared-component",
         "decision": "HYBRID",
         "merge_group": "MG-STYLE-MATRIX",
-        "migration_batch": "MIG-B4/STYLE",
-        "split_ledger": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+        "corpus_batch": "batch-4/STYLE",
+        "split_ledger": "POMaster_VNext/corpus/master/batch-4/split-ledger.yaml"
       }
     },
     {
@@ -88,8 +88,8 @@
         "entry_id": "layers.page-local",
         "decision": "HYBRID",
         "merge_group": "MG-STYLE-MATRIX",
-        "migration_batch": "MIG-B4/STYLE",
-        "split_ledger": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+        "corpus_batch": "batch-4/STYLE",
+        "split_ledger": "POMaster_VNext/corpus/master/batch-4/split-ledger.yaml"
       }
     },
     {
@@ -100,8 +100,8 @@
         "entry_id": "layers.vendor-adapter",
         "decision": "HYBRID",
         "merge_group": "MG-STYLE-MATRIX",
-        "migration_batch": "MIG-B4/STYLE",
-        "split_ledger": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+        "corpus_batch": "batch-4/STYLE",
+        "split_ledger": "POMaster_VNext/corpus/master/batch-4/split-ledger.yaml"
       }
     },
     {
@@ -112,83 +112,83 @@
         "entry_id": "scoped_style_rule",
         "decision": "UNIVERSAL",
         "merge_group": "MG-STYLE-MATRIX",
-        "migration_batch": "MIG-B4/STYLE",
-        "split_ledger": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+        "corpus_batch": "batch-4/STYLE",
+        "split_ledger": "POMaster_VNext/corpus/master/batch-4/split-ledger.yaml"
       }
     }
   ],
   "sources": [
     {
       "type": "design_seed",
-      "ref": "POMaster_VNext/migration/master-batch4/split-ledger.yaml",
-      "captured_by": "agent:claude/mig-b4-catalog-uplift",
+      "ref": "POMaster_VNext/corpus/master/batch-4/split-ledger.yaml",
+      "captured_by": "agent:claude/batch-4-catalog-uplift",
       "locator": {
         "asset": "style-ownership-registry",
         "entry": "layers.global-reset",
-        "migration_batch": "MIG-B4/STYLE",
+        "corpus_batch": "batch-4/STYLE",
         "upstream_source_ref": "outputs/frontend/10_planned/style-ownership-registry.yaml"
       },
-      "clean_room_note": "independently rewritten from upstream batch4 mirror; zero verbatim copy"
+      "clean_room_note": "independently rewritten from field corpus batch-4 material; zero verbatim copy"
     },
     {
       "type": "design_seed",
-      "ref": "POMaster_VNext/migration/master-batch4/split-ledger.yaml",
-      "captured_by": "agent:claude/mig-b4-catalog-uplift",
+      "ref": "POMaster_VNext/corpus/master/batch-4/split-ledger.yaml",
+      "captured_by": "agent:claude/batch-4-catalog-uplift",
       "locator": {
         "asset": "style-ownership-registry",
         "entry": "layers.design-token",
-        "migration_batch": "MIG-B4/STYLE",
+        "corpus_batch": "batch-4/STYLE",
         "upstream_source_ref": "outputs/frontend/10_planned/style-ownership-registry.yaml"
       },
-      "clean_room_note": "independently rewritten from upstream batch4 mirror; zero verbatim copy"
+      "clean_room_note": "independently rewritten from field corpus batch-4 material; zero verbatim copy"
     },
     {
       "type": "design_seed",
-      "ref": "POMaster_VNext/migration/master-batch4/split-ledger.yaml",
-      "captured_by": "agent:claude/mig-b4-catalog-uplift",
+      "ref": "POMaster_VNext/corpus/master/batch-4/split-ledger.yaml",
+      "captured_by": "agent:claude/batch-4-catalog-uplift",
       "locator": {
         "asset": "style-ownership-registry",
         "entry": "layers.shared-component",
-        "migration_batch": "MIG-B4/STYLE",
+        "corpus_batch": "batch-4/STYLE",
         "upstream_source_ref": "outputs/frontend/10_planned/style-ownership-registry.yaml"
       },
-      "clean_room_note": "independently rewritten from upstream batch4 mirror; zero verbatim copy"
+      "clean_room_note": "independently rewritten from field corpus batch-4 material; zero verbatim copy"
     },
     {
       "type": "design_seed",
-      "ref": "POMaster_VNext/migration/master-batch4/split-ledger.yaml",
-      "captured_by": "agent:claude/mig-b4-catalog-uplift",
+      "ref": "POMaster_VNext/corpus/master/batch-4/split-ledger.yaml",
+      "captured_by": "agent:claude/batch-4-catalog-uplift",
       "locator": {
         "asset": "style-ownership-registry",
         "entry": "layers.page-local",
-        "migration_batch": "MIG-B4/STYLE",
+        "corpus_batch": "batch-4/STYLE",
         "upstream_source_ref": "outputs/frontend/10_planned/style-ownership-registry.yaml"
       },
-      "clean_room_note": "independently rewritten from upstream batch4 mirror; zero verbatim copy"
+      "clean_room_note": "independently rewritten from field corpus batch-4 material; zero verbatim copy"
     },
     {
       "type": "design_seed",
-      "ref": "POMaster_VNext/migration/master-batch4/split-ledger.yaml",
-      "captured_by": "agent:claude/mig-b4-catalog-uplift",
+      "ref": "POMaster_VNext/corpus/master/batch-4/split-ledger.yaml",
+      "captured_by": "agent:claude/batch-4-catalog-uplift",
       "locator": {
         "asset": "style-ownership-registry",
         "entry": "layers.vendor-adapter",
-        "migration_batch": "MIG-B4/STYLE",
+        "corpus_batch": "batch-4/STYLE",
         "upstream_source_ref": "outputs/frontend/10_planned/style-ownership-registry.yaml"
       },
-      "clean_room_note": "independently rewritten from upstream batch4 mirror; zero verbatim copy"
+      "clean_room_note": "independently rewritten from field corpus batch-4 material; zero verbatim copy"
     },
     {
       "type": "design_seed",
-      "ref": "POMaster_VNext/migration/master-batch4/split-ledger.yaml",
-      "captured_by": "agent:claude/mig-b4-catalog-uplift",
+      "ref": "POMaster_VNext/corpus/master/batch-4/split-ledger.yaml",
+      "captured_by": "agent:claude/batch-4-catalog-uplift",
       "locator": {
         "asset": "style-ownership-registry",
         "entry": "scoped_style_rule",
-        "migration_batch": "MIG-B4/STYLE",
+        "corpus_batch": "batch-4/STYLE",
         "upstream_source_ref": "outputs/frontend/10_planned/style-ownership-registry.yaml"
       },
-      "clean_room_note": "independently rewritten from upstream batch4 mirror; zero verbatim copy"
+      "clean_room_note": "independently rewritten from field corpus batch-4 material; zero verbatim copy"
     }
   ]
 }

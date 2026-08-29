@@ -1,0 +1,54 @@
+{
+  "blindspot": {
+    "carrier_coverage": {
+      "files_producing_err_chain_findings": 3,
+      "scanned_files": 409
+    },
+    "escape_ratio": 0.0714,
+    "fixture_regression": "MIG-B1/contract-gate/error-chain-grep-sweep：对 MASTer_master src/ 全部 409 个 .ts/.vue 载体以注释剔除后字面量扫描重跑，可复现 'FE-WHITE-SCREEN' 可执行生产点=0、唯一非词条命中=RouteErrorBoundary.vue:6 注释行",
+    "produced": 13,
+    "scanned": 14
+  },
+  "counts": {
+    "applicable_scanned": 14,
+    "not_applicable": 0,
+    "scanned": 14,
+    "suppressed_by_ledger": 0,
+    "unchecked_in_blindspot_estimated": 1,
+    "violations": 0
+  },
+  "denominator_refs": [],
+  "digest_excluded_fields": [
+    "duration_ms"
+  ],
+  "duration_ms": {
+    "external": 0,
+    "self": 0
+  },
+  "gate": "CONTRACT",
+  "gate_def": "POLICY.GATE.CONTRACT@0.1.0",
+  "grn": "GRN-0004",
+  "items": [],
+  "items_truncated": false,
+  "metric_dialect": "error:chain_grep_reachability",
+  "ran_at_seq": 0,
+  "scope": {
+    "note": "分母=ERR.* 错误词条对象 14 个（来源：corpus/master/batch-1/truth/objects/error-term/，源 api-error-mapping.yaml 14 条映射链全量）；判定规则：链结构完整（backend 须含 http_status→error_code→handler 各阶段，frontend 无 http_status 阶段属源事实） + handler 在 src/ 可达（ERROR_MAP 词条 grep + normalizeBackendError/normalizeFrontendError 符号在场） + backend 链的 status 路由证据（app-client.ts 401 refresh / 403 reject 拦截在场）；frontend 源错误码额外验证可执行生产点（注释剔除后 grep）：FE-ABORTED/FE-TIMEOUT/FE-NETWORK-ERROR 在 src/shared/lib/http/normalize.ts 有可执行生产点；FE-WHITE-SCREEN 全仓可执行生产点为 0（唯一非词条命中是 RouteErrorBoundary.vue:6 注释）——handler 路由无法用 grep 终局判定，如实记 skipped_blindspot（.ts 字面量形态盲区：注释在场≠接线在场）；盲区指标：扫描载体 409 个、产出命中的载体 3 个（载体命中率 0.0073）、未检对象 1/14（escape_ratio=0.0714）；回归证据：本 sweep 以相同参数重跑可复现 FE-WHITE-SCREEN 唯一命中为注释行的事实；scope 外观察：9 个 backend 词条的 operation_ids 为 OP-* 遗留词形（6 个在 src/ 与已发布基线均 0 命中），不属 status→code→handler 链内阶段，债务登记见 MIG-B1/C-01、违例对账见本主题 check1 items。",
+    "size_expected_from_denominator": 14
+  },
+  "tool": "pomaster-vnext:mig_b1_contract_gate",
+  "tool_version": "0.1.0",
+  "trigger": {
+    "note": "MIG-B1/M4 contract gate run; migration context has no global seq allocator, ran_at_seq pinned to 0 (A4 note), ordering by grn",
+    "task_ref": "MIG-B1/M4-contract-gate",
+    "type": "on_demand"
+  },
+  "trust": {
+    "asserted": null,
+    "recomputed": {
+      "matches_asserted": true,
+      "violations": 0
+    }
+  },
+  "verdict": "skipped_blindspot"
+}

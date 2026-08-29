@@ -1,0 +1,260 @@
+{
+  "aliases": [
+    "PAGE-APP-DASHBOARD"
+  ],
+  "authority": {
+    "delegates": [
+      {
+        "required_for": [
+          "approve_page_blueprint"
+        ],
+        "role": "HUMAN_OWNER"
+      }
+    ],
+    "escalation_hint": "regenerate via corpus/master/batch-2/tools/ingest_screen_blueprints_front_half.py; blueprint structure/action/field-semantics change re-runs the generator then this ingest; page.status progression and canonical word form PAGE.APP_* confirmation are HUMAN_OWNER seats (approve_page_blueprint; EVOLUTION_CHANNEL; ledger owner FRONTEND_ARCHITECTURE)",
+    "owner": "FRONTEND_ARCHITECTURE",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "PROVISIONAL",
+    "evidence": "IMPLEMENTED",
+    "lifecycle": "CURRENT"
+  },
+  "axis_profile": "page_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "PAGE.APP_DASHBOARD",
+  "key_bindings": {
+    "artifact": [],
+    "code": [
+      {
+        "artifact_type": "source_dir",
+        "expect": {
+          "page_id": "PAGE-APP-DASHBOARD"
+        },
+        "match_rule": "mechanical",
+        "value": "src/pages/page-dashboard"
+      },
+      {
+        "artifact_type": "file",
+        "expect": {
+          "route_name_exact": "PAGE-APP-DASHBOARD"
+        },
+        "match_rule": "mechanical",
+        "value": "src/app/router/routes.ts"
+      }
+    ]
+  },
+  "kind": "page_surface",
+  "notes_md": "蓝图转录（MIG-B2 转录组 C·前半 6/20，一蓝图一 surface 主对象）：源 outputs/frontend/10_planned/screen-blueprints/PAGE-APP-DASHBOARD.yaml（bp_blueprint，pin 见 sources[0]；分母=screen-blueprints 实测 39 之字典序第 6 份）。\n三层对象化：结构=template_ref PAGE.DASHBOARD + regions 2 条（slot 词形均在 page-anatomy-registry 16 槽合法集内）+ states 5 项；交互=actions 2 条（ACTION.* 摆位 + PAGE_SLOT.* 槽位值引用）；字段语义=regions/slots 内联结构化字段逐字承载（源无 FIELD.* 词形 → FIELD.* 派生引用=0，诚实零）。\nsurface=V1（Page Spec 双分母之应用页侧；分母归属迁移期走信封 denominator_refs 显式空，DENOMINATOR.* 未注册）。\npage.status=DRAFT 为设计审批轴事实（与 readiness 实施就绪轴分立，禁混轴）；已登记 payload.blueprint.superseded_status_field，数值语义不篡改。\nunresolved 3 条逐条转 payload.blueprint.unresolved_exceptions（Exception Ledger 承载：显式未决，不静默丢弃、不静默裁决）。\n散文承载登记：notes(1) → 浓缩为信封 notes_md 摘要 + sources[0].locator.line_anchors 源指针（蓝图 YAML 正文不整本搬运；摘录截断）。摘要（全文按源指针回读）：2026-08-18 B1 登记：SELECT/REFRESH 动作未实现，页面为骨架态（mock 驱动，Phase C...\ncanonical 词形：源词形 PAGE-APP-DASHBOARD → 拟合 PAGE.APP_DASHBOARD（PAGE-APP-*→PAGE.APP_* token 重排外推；非 ALIASES_V0 现役 8 族，key-binding-map.batch2.draft.yaml proposed_needs_human）→ HUMAN_CONFIRM_REQUIRED：对象以拟合词形落档、legacy 词形照录 aliases[]（登记不改名），axes.confidence=PROVISIONAL（悬置态，batch1 约定书 §2；Owner 裁决后可转 LOCKED），origin 保持源侧 derived（非 A6 场景）。\nroute/目录权威不在本对象 payload：page↔dir 与 route_name 机械锚以 key_bindings.code 期望声明承载（值=源词形逐字），KEYBINDING.* 表对象落档仍待人工裁决（草表 status=MECHANICAL_ROUTE_NAME_MATCH）。\n本字段为人类散文，机器永不解析判卷。",
+  "origin": "derived",
+  "payload": {
+    "actions": [
+      "ACTION.SELECT",
+      "ACTION.REFRESH"
+    ],
+    "blueprint": {
+      "actions": [
+        {
+          "action_id": "ACTION.SELECT",
+          "business_action": "ACT-SELECT-PROJECT-CONTEXT",
+          "capability_id": "CAP-SYSTEM-OVERVIEW",
+          "id": "PAGE-ACT-DASHBOARD-1",
+          "mock": false,
+          "placement": "ACTION.SELECT",
+          "slot": "PAGE_SLOT.PRIMARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.REFRESH",
+          "business_action": "ACT-REFRESH-DASHBOARD",
+          "capability_id": "CAP-SYSTEM-OVERVIEW",
+          "id": "PAGE-ACT-DASHBOARD-2",
+          "mock": false,
+          "placement": "ACTION.REFRESH",
+          "slot": "PAGE_SLOT.SECONDARY_ACTIONS"
+        }
+      ],
+      "api_requirements": [
+        {
+          "classification": "QUERY",
+          "id": "API_REQ.DASHBOARD.1",
+          "method": "GET",
+          "operation_id": "get_me_api_v1_auth_me_get",
+          "path": "/api/v1/auth/me",
+          "source": {
+            "page": "PAGE-APP-DASHBOARD"
+          },
+          "status": "ACCEPTED",
+          "type": "query"
+        },
+        {
+          "classification": "QUERY",
+          "id": "API_REQ.DASHBOARD.2",
+          "method": "GET",
+          "operation_id": "list_projects_api_v1_projects_get",
+          "path": "/api/v1/projects",
+          "source": {
+            "page": "PAGE-APP-DASHBOARD"
+          },
+          "status": "ACCEPTED",
+          "type": "query"
+        },
+        {
+          "classification": "QUERY",
+          "id": "API_REQ.DASHBOARD.3",
+          "method": "GET",
+          "operation_id": "project_operation_logs_api_v1_projects__project_id__operation_logs_get",
+          "path": "/api/v1/projects/{project_id}/operation-logs",
+          "source": {
+            "page": "PAGE-APP-DASHBOARD"
+          },
+          "status": "ACCEPTED",
+          "type": "query"
+        }
+      ],
+      "error_rendering": {
+        "component": "DATA.EMPTY_STATE",
+        "fallback_slot": "PAGE_SLOT.FEEDBACK",
+        "isolation": "route-level ErrorBoundary; per-query error 不外溢其他页面（协议 18/27）",
+        "protocol": "universal:rendering-state-protocol",
+        "variant": "error"
+      },
+      "page_status": {
+        "axis": "design_approval",
+        "value": "DRAFT"
+      },
+      "prose_to_notes_md": [
+        {
+          "field": "notes",
+          "item_count": 1,
+          "line": 110
+        }
+      ],
+      "regions": [
+        {
+          "behavior": "static",
+          "id": "REGION.PAGE_HEADER",
+          "note": "工作台 tab 已显示标题，本区域不再渲染面包屑与页面标题；顶部操作按钮下沉到 REGION.TOOLBAR。",
+          "slots": {}
+        },
+        {
+          "behavior": "render-by-state",
+          "id": "REGION.CONTENT",
+          "slots": {
+            "PAGE_SLOT.CONTENT": {
+              "capability_id": "PATTERN.LIST_TABLE",
+              "component": "PATTERN.LIST_TABLE",
+              "dashboard": {
+                "kpi_cards": "待补充（原型 4 KPI 卡：项目数/零件数/成本总额/待办数）",
+                "todo_list": "待补充（操作日志/审批待办）"
+              }
+            }
+          }
+        }
+      ],
+      "source_document_meta": {
+        "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+        "document_type": "screen-blueprint",
+        "schema_version": 1
+      },
+      "source_page_id": "PAGE-APP-DASHBOARD",
+      "states": [
+        "idle",
+        "loading",
+        "success",
+        "empty",
+        "error"
+      ],
+      "superseded_status_field": {
+        "mapped_to": "design-approval-axis fact record (classification-ledger blueprint_status_axis_note: design-approval axis and implementation-readiness axis stay separate; the readiness axis lives in page-readiness-registry); object axes describe the truth object itself (lifecycle CURRENT = source is an active canonical), never mixed across axes",
+        "reason": "flat status is one word with many meanings; the design-approval semantic stays a fact record and status progression belongs to the HUMAN_OWNER approve_page_blueprint delegate seat; values are transcribed without tampering",
+        "source_field": "status",
+        "source_value": "DRAFT",
+        "upgrade_registered": true
+      },
+      "template": {
+        "id": "PAGE.DASHBOARD"
+      },
+      "unresolved_exceptions": {
+        "carrier": "exception_ledger",
+        "count": 3,
+        "items": [
+          "UNRESOLVED: 4 个 KPI 卡的具体指标与数据源待确认（目前复用 me/projects/operation-logs）",
+          "UNRESOLVED: 待办列表的数据源与筛选规则待确认",
+          "UNRESOLVED: DATA.DASHBOARD_GRID 组件未在 component-registry 注册，需走 Component Gap 或改用 PATTERN.LIST_TABLE 占位"
+        ],
+        "rule": "unresolved items carried item-by-item as EXPLICITLY unresolved (CONVENTIONS section 3): never silently dropped, never auto-adjudicated; resolution belongs to the Owner"
+      }
+    },
+    "slots": [
+      "PAGE_SLOT.CONTENT",
+      "PAGE_SLOT.PRIMARY_ACTIONS",
+      "PAGE_SLOT.SECONDARY_ACTIONS",
+      "PAGE_SLOT.FEEDBACK"
+    ],
+    "surface": "V1",
+    "template_ref": "PAGE.DASHBOARD"
+  },
+  "permits_active": [],
+  "producer": {
+    "liveness": {
+      "status": "active"
+    },
+    "merge_semantics": {
+      "backfill_if_missing": [],
+      "human_never_touched": [],
+      "refresh_fields": [
+        "payload.blueprint"
+      ]
+    },
+    "producer_id": "prod.mig_b2_ingest_screen_blueprints_front_half",
+    "views_maintained": [
+      "truth-index.envelope"
+    ]
+  },
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_front_half.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-DASHBOARD.yaml",
+        "line_anchors": {
+          "composition_adjudication": null,
+          "notes": 110,
+          "unresolved": 105
+        },
+        "prose_summarized": [
+          {
+            "field": "notes",
+            "item_count": 1,
+            "line": 110
+          }
+        ],
+        "transcription": "front-half blueprint 6/20 objectified one-to-one into a page_surface object: structure (template_ref/regions/states) + interaction (actions) + inline field semantics transcribed verbatim as structured units (array order = source order); page.status kept as a design-approval fact record with a superseded_status_field registration; unresolved items carried item-by-item into payload.blueprint.unresolved_exceptions; prose narrative excerpted into notes_md, never wholesale-migrated; no physical route string enters the payload"
+      },
+      "pin": {
+        "digest": "sha256:72a7e274eff2fb7d36ca21c34dc8e90d0ecf66fccc9bdf5bf901e1495736c6b8"
+      },
+      "ref": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-DASHBOARD.yaml",
+      "type": "bp_blueprint"
+    },
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_front_half.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "governance_id": "PAGE-APP-DASHBOARD",
+        "ingested_from": "corpus/master/batch-2/key-binding-map.batch2.draft.yaml",
+        "transcription": "supplies the page<->dir and route_name binding expectations (status MECHANICAL_ROUTE_NAME_MATCH, draft table): values quoted verbatim into key_bindings.code; the KEYBINDING.* table object itself stays pending human adjudication"
+      },
+      "pin": {
+        "digest": "sha256:2beea8f95e0770da028d5ac5c2e76e2e1266e0ba7af6e0a3faa29fe72cb501fa"
+      },
+      "ref": "corpus/master/batch-2/key-binding-map.batch2.draft.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "页面·工作台"
+}

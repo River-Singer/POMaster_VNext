@@ -1,0 +1,635 @@
+{
+  "aliases": [
+    "PAGE-APP-OTHER-DB"
+  ],
+  "authority": {
+    "delegates": [
+      {
+        "required_for": [
+          "approve_page_blueprint"
+        ],
+        "role": "HUMAN_OWNER"
+      }
+    ],
+    "escalation_hint": "regenerate via corpus/master/batch-2/tools/ingest_screen_blueprints_front_half.py; blueprint structure/action/field-semantics change re-runs the generator then this ingest; page.status progression and canonical word form PAGE.APP_* confirmation are HUMAN_OWNER seats (approve_page_blueprint; EVOLUTION_CHANNEL; ledger owner FRONTEND_ARCHITECTURE)",
+    "owner": "FRONTEND_ARCHITECTURE",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "PROVISIONAL",
+    "evidence": "IMPLEMENTED",
+    "lifecycle": "CURRENT"
+  },
+  "axis_profile": "page_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "PAGE.APP_OTHER_DB",
+  "key_bindings": {
+    "artifact": [],
+    "code": [
+      {
+        "artifact_type": "source_dir",
+        "expect": {
+          "page_id": "PAGE-APP-OTHER-DB"
+        },
+        "match_rule": "mechanical",
+        "value": "src/pages/page-other-db"
+      },
+      {
+        "artifact_type": "file",
+        "expect": {
+          "route_name_exact": "PAGE-APP-OTHER-DB"
+        },
+        "match_rule": "mechanical",
+        "value": "src/app/router/routes.ts"
+      }
+    ]
+  },
+  "kind": "page_surface",
+  "notes_md": "蓝图转录（MIG-B2 转录组 C·前半 15/20，一蓝图一 surface 主对象）：源 outputs/frontend/10_planned/screen-blueprints/PAGE-APP-OTHER-DB.yaml（bp_blueprint，pin 见 sources[0]；分母=screen-blueprints 实测 39 之字典序第 15 份）。\n三层对象化：结构=template_ref PAGE.LIST + regions 4 条（slot 词形均在 page-anatomy-registry 16 槽合法集内）+ states 14 项；交互=actions 6 条（ACTION.* 摆位 + PAGE_SLOT.* 槽位值引用）；字段语义=regions/slots 内联结构化字段逐字承载（源无 FIELD.* 词形 → FIELD.* 派生引用=0，诚实零）。\nsurface=V1（Page Spec 双分母之应用页侧；分母归属迁移期走信封 denominator_refs 显式空，DENOMINATOR.* 未注册）。\npage.status=DRAFT 为设计审批轴事实（与 readiness 实施就绪轴分立，禁混轴）；已登记 payload.blueprint.superseded_status_field，数值语义不篡改。\nunresolved 7 条逐条转 payload.blueprint.unresolved_exceptions（Exception Ledger 承载：显式未决，不静默丢弃、不静默裁决）。\n散文承载登记：none (honest zero) → 浓缩为信封 notes_md 摘要 + sources[0].locator.line_anchors 源指针（蓝图 YAML 正文不整本搬运；摘录截断）。摘要（全文按源指针回读）：none (honest zero)\ncanonical 词形：源词形 PAGE-APP-OTHER-DB → 拟合 PAGE.APP_OTHER_DB（PAGE-APP-*→PAGE.APP_* token 重排外推；非 ALIASES_V0 现役 8 族，key-binding-map.batch2.draft.yaml proposed_needs_human）→ HUMAN_CONFIRM_REQUIRED：对象以拟合词形落档、legacy 词形照录 aliases[]（登记不改名），axes.confidence=PROVISIONAL（悬置态，batch1 约定书 §2；Owner 裁决后可转 LOCKED），origin 保持源侧 derived（非 A6 场景）。\nroute/目录权威不在本对象 payload：page↔dir 与 route_name 机械锚以 key_bindings.code 期望声明承载（值=源词形逐字），KEYBINDING.* 表对象落档仍待人工裁决（草表 status=MECHANICAL_ROUTE_NAME_MATCH）。\n本字段为人类散文，机器永不解析判卷。",
+  "origin": "derived",
+  "payload": {
+    "actions": [
+      "ACTION.REFRESH",
+      "ACTION.CREATE",
+      "ACTION.EDIT",
+      "ACTION.DELETE",
+      "ACTION.IMPORT",
+      "ACTION.EXPORT"
+    ],
+    "blueprint": {
+      "actions": [
+        {
+          "action_id": "ACTION.REFRESH",
+          "business_action": "ACT-OTHER-DB-QUERY",
+          "capability_id": "CAP-OTHER-DB",
+          "id": "PAGE-ACT-OTHER-DB-1",
+          "mock": false,
+          "placement": "ACTION.REFRESH",
+          "slot": "PAGE_SLOT.SECONDARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.CREATE",
+          "applicability": "tab-labor-rate + tab-vehicle（2026-08-17 扩：车型 Tab CRUD 全开）",
+          "business_action": "ACT-OTHER-DB-CREATE",
+          "capability_id": "CAP-OTHER-DB",
+          "id": "PAGE-ACT-OTHER-DB-2",
+          "mock": false,
+          "placement": "ACTION.CREATE",
+          "slot": "PAGE_SLOT.PRIMARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.EDIT",
+          "applicability": "all tabs",
+          "business_action": "ACT-OTHER-DB-EDIT",
+          "capability_id": "CAP-OTHER-DB",
+          "id": "PAGE-ACT-OTHER-DB-3",
+          "mock": false,
+          "placement": "ACTION.EDIT",
+          "slot": "PAGE_SLOT.PRIMARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.DELETE",
+          "applicability": "tab-labor-rate + tab-vehicle（2026-08-17 扩：车型 Tab 引用阻止删除）",
+          "business_action": "ACT-OTHER-DB-DELETE",
+          "capability_id": "CAP-OTHER-DB",
+          "id": "PAGE-ACT-OTHER-DB-4",
+          "mock": false,
+          "placement": "ACTION.DELETE",
+          "slot": "PAGE_SLOT.SECONDARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.IMPORT",
+          "applicability": "tab-labor-rate + tab-vehicle（2026-08-17 扩：车型 Tab CSV 导入）",
+          "business_action": "ACT-OTHER-DB-IMPORT",
+          "capability_id": "CAP-OTHER-DB",
+          "id": "PAGE-ACT-OTHER-DB-5",
+          "mock": false,
+          "placement": "ACTION.IMPORT",
+          "slot": "PAGE_SLOT.SECONDARY_ACTIONS"
+        },
+        {
+          "action_id": "ACTION.EXPORT",
+          "applicability": "tab-labor-rate + tab-vehicle（2026-08-17 扩：车型 Tab CSV 导出）",
+          "business_action": "ACT-OTHER-DB-EXPORT",
+          "capability_id": "CAP-OTHER-DB",
+          "id": "PAGE-ACT-OTHER-DB-6",
+          "mock": false,
+          "placement": "ACTION.EXPORT",
+          "slot": "PAGE_SLOT.SECONDARY_ACTIONS"
+        }
+      ],
+      "api_requirements": [
+        {
+          "classification": "QUERY",
+          "id": "API_REQ.OTHER.DB.1",
+          "method": "GET",
+          "note": "code=rates 用于间接费率字典；人工费率表 dictionary code 未在 openapi 定义（见 unresolved）",
+          "operation_id": "list_items_api_v1_dictionaries__code__items_get",
+          "path": "/api/v1/dictionaries/{code}/items",
+          "source": {
+            "page": "PAGE-APP-OTHER-DB"
+          },
+          "status": "ACCEPTED",
+          "type": "query"
+        },
+        {
+          "classification": "COMMAND",
+          "id": "API_REQ.OTHER.DB.2",
+          "method": "POST",
+          "note": "人工费率表新增（tab-labor-rate）；工种+城市组合唯一校验",
+          "operation_id": "add_item_api_v1_dictionaries__code__items_post",
+          "path": "/api/v1/dictionaries/{code}/items",
+          "source": {
+            "page": "PAGE-APP-OTHER-DB"
+          },
+          "status": "ACCEPTED",
+          "type": "command"
+        },
+        {
+          "classification": "COMMAND",
+          "id": "API_REQ.OTHER.DB.3",
+          "method": "PUT",
+          "note": "两 Tab 编辑：间接费率改默认值/备注；人工费率改全字段",
+          "operation_id": "update_item_api_v1_dictionaries__code__items__item_id__put",
+          "path": "/api/v1/dictionaries/{code}/items/{item_id}",
+          "source": {
+            "page": "PAGE-APP-OTHER-DB"
+          },
+          "status": "ACCEPTED",
+          "type": "command"
+        },
+        {
+          "classification": "COMMAND",
+          "id": "API_REQ.OTHER.DB.4",
+          "method": "DELETE",
+          "note": "人工费率表逻辑删除；已被 BUC 引用时阻止（引用约束前端需校验）",
+          "operation_id": "delete_item_api_v1_dictionaries__code__items__item_id__delete",
+          "path": "/api/v1/dictionaries/{code}/items/{item_id}",
+          "source": {
+            "page": "PAGE-APP-OTHER-DB"
+          },
+          "status": "ACCEPTED",
+          "type": "command"
+        },
+        {
+          "classification": "COMMAND",
+          "id": "API_REQ.OTHER.DB.VEHICLE.CATALOG",
+          "method": "POST",
+          "note": "车型 Tab（tab-vehicle）车型清单 CRUD+CSV 导入导出，openapi 无对应端点；批次1 先落 mock store（2026-08-17 批次0 补登）：mock/other-db.ts 可变 store 用 createMockStore，vehicle-master-data.ts 改只读快照消费，下游 fetchVehicleCatalog 语义不变",
+          "operation_id": "OP-VEHICLE-CATALOG",
+          "path": "/api/v1/vehicle-catalog",
+          "source": {
+            "page": "PAGE-APP-OTHER-DB"
+          },
+          "status": "NEEDS_BACKEND_REVIEW",
+          "type": "command"
+        }
+      ],
+      "error_rendering": {
+        "component": "DATA.EMPTY_STATE",
+        "fallback_slot": "PAGE_SLOT.FEEDBACK",
+        "isolation": "route-level ErrorBoundary; per-query error 不外溢其他页面（协议 18/27）",
+        "protocol": "universal:rendering-state-protocol",
+        "variant": "error"
+      },
+      "page_status": {
+        "axis": "design_approval",
+        "value": "DRAFT"
+      },
+      "prose_to_notes_md": [],
+      "regions": [
+        {
+          "behavior": "static",
+          "chips": [
+            "业务管理员维护"
+          ],
+          "id": "REGION.PAGE_HEADER",
+          "note": "工作台 tab 已显示标题，本区域不再渲染面包屑与页面标题；标题行 chip「业务管理员维护」（2026-08-17 补登，20260814 原型）。",
+          "slots": {
+            "PAGE_SLOT.PRIMARY_ACTIONS": {
+              "capability_id": "PATTERN.ACTION_BAR",
+              "component": "PATTERN.ACTION_BAR"
+            },
+            "PAGE_SLOT.SECONDARY_ACTIONS": {
+              "capability_id": "PATTERN.ACTION_BAR",
+              "component": "PATTERN.ACTION_BAR"
+            },
+            "PAGE_SLOT.STATUS": {
+              "capability_id": "DATA.STATUS_BADGE",
+              "component": "DATA.STATUS_BADGE"
+            }
+          }
+        },
+        {
+          "behavior": "static",
+          "id": "REGION.FILTERS",
+          "slots": {
+            "PAGE_SLOT.FILTERS": {
+              "capability_id": "PATTERN.FILTER_BAR",
+              "component": "PATTERN.FILTER_BAR"
+            }
+          }
+        },
+        {
+          "behavior": "render-by-state",
+          "id": "REGION.CONTENT",
+          "slots": {
+            "PAGE_SLOT.CONTENT": {
+              "capability_id": "PATTERN.LIST_TABLE",
+              "component": "PATTERN.LIST_TABLE",
+              "grid": {
+                "downstream": "为 BUC Tab1/Tab2 提供间接费率默认值；为 BUC Tab2 小时人工费用提供人工费率默认值（仅引用启用记录）",
+                "footer": {
+                  "component": "TYPOGRAPHY.DESCRIPTION",
+                  "text": "共 {count} 条"
+                },
+                "tabs": [
+                  {
+                    "columns": [
+                      {
+                        "key": "rateName",
+                        "name": "费率名称",
+                        "readonly": true,
+                        "type": "string"
+                      },
+                      {
+                        "editable": true,
+                        "key": "defaultValue",
+                        "name": "默认费率值",
+                        "type": "decimal"
+                      },
+                      {
+                        "badge": {
+                          "停用": "red",
+                          "启用": "green"
+                        },
+                        "key": "status",
+                        "name": "状态",
+                        "type": "enum"
+                      },
+                      {
+                        "key": "_act",
+                        "name": "操作",
+                        "row_actions": [
+                          "编辑"
+                        ],
+                        "type": "button"
+                      }
+                    ],
+                    "creatable": false,
+                    "deletable": false,
+                    "exportable": false,
+                    "id": "tab-overhead-rate",
+                    "importable": false,
+                    "name": "间接费率字典",
+                    "note": "4 条系统预设费率，不可新增/删除；仅默认费率值与备注可编辑；修改仅影响后续新建 BUC 记录",
+                    "preset": true,
+                    "preset_items": [
+                      {
+                        "code": "material_mgmt_sales_rate",
+                        "default": 0.05,
+                        "name": "材料管理和销售费用率"
+                      },
+                      {
+                        "code": "manufacturing_mgmt_sales_rate",
+                        "default": 0.05,
+                        "name": "制造管理和销售费用率"
+                      },
+                      {
+                        "code": "material_profit_rate",
+                        "default": 0.01,
+                        "name": "材料利润率"
+                      },
+                      {
+                        "code": "manufacturing_profit_rate",
+                        "default": 0.03,
+                        "name": "制造利润率"
+                      }
+                    ],
+                    "total_columns": 4
+                  },
+                  {
+                    "columns": [
+                      {
+                        "key": "id",
+                        "name": "#",
+                        "type": "number",
+                        "width": "40px"
+                      },
+                      {
+                        "key": "jobType",
+                        "name": "工种",
+                        "type": "string"
+                      },
+                      {
+                        "key": "factoryCity",
+                        "name": "工厂城市",
+                        "type": "string",
+                        "width": "100px"
+                      },
+                      {
+                        "key": "hourlyRate",
+                        "name": "小时人工费率",
+                        "type": "decimal",
+                        "unit": "RMB/h",
+                        "width": "110px"
+                      },
+                      {
+                        "badge": {
+                          "停用": "red",
+                          "启用": "green"
+                        },
+                        "key": "status",
+                        "name": "状态",
+                        "type": "enum",
+                        "width": "80px"
+                      },
+                      {
+                        "key": "updatedAt",
+                        "name": "更新时间",
+                        "type": "datetime",
+                        "width": "120px"
+                      },
+                      {
+                        "key": "updatedBy",
+                        "name": "更新人",
+                        "type": "string",
+                        "width": "80px"
+                      },
+                      {
+                        "key": "_act",
+                        "name": "操作",
+                        "row_actions": [
+                          "编辑",
+                          "删除"
+                        ],
+                        "type": "button",
+                        "width": "100px"
+                      }
+                    ],
+                    "creatable": true,
+                    "deletable": true,
+                    "exportable": true,
+                    "id": "tab-labor-rate",
+                    "importable": true,
+                    "name": "人工费率表",
+                    "pagination": {
+                      "page_sizes": [
+                        50,
+                        100,
+                        500,
+                        1000
+                      ]
+                    },
+                    "search": {
+                      "mode": "client-side fuzzy case-insensitive",
+                      "scope": [
+                        "jobType",
+                        "factoryCity"
+                      ]
+                    },
+                    "total_columns": 8
+                  },
+                  {
+                    "badge": "NEW（首次交付标记，2026-08-17 补登 20260814 原型 tab-new 角标；2026-08-18 已迁移 MasterTabs TabItem.badge 能力，页面伪元素/CSS 变量绑定移除；后续版本可移除）",
+                    "columns": [
+                      {
+                        "key": "id",
+                        "name": "#",
+                        "type": "number",
+                        "width": "40px"
+                      },
+                      {
+                        "key": "code",
+                        "name": "车型编码",
+                        "type": "string",
+                        "width": "140px"
+                      },
+                      {
+                        "key": "name",
+                        "name": "车型名称",
+                        "type": "string",
+                        "width": "180px"
+                      },
+                      {
+                        "badge": {
+                          "停用": "red",
+                          "启用": "green"
+                        },
+                        "key": "status",
+                        "name": "状态",
+                        "type": "enum",
+                        "width": "90px"
+                      },
+                      {
+                        "key": "updatedAt",
+                        "name": "更新时间",
+                        "type": "datetime",
+                        "width": "150px"
+                      },
+                      {
+                        "key": "updatedBy",
+                        "name": "更新人",
+                        "type": "string",
+                        "width": "90px"
+                      },
+                      {
+                        "key": "_act",
+                        "name": "操作",
+                        "row_actions": [
+                          "编辑",
+                          "删除"
+                        ],
+                        "type": "button",
+                        "width": "120px"
+                      }
+                    ],
+                    "creatable": true,
+                    "deletable": true,
+                    "exportable": true,
+                    "footer_note": "车型清单是轻量注册表（编码 + 名称），是全系统车型名称的唯一源头。车型详细业务数据（23 字段）在「车型主数据」由整车协调维护。",
+                    "id": "tab-vehicle",
+                    "importable": true,
+                    "modal": {
+                      "fields": [
+                        "车型编码*（新增可输入；编辑态锁定）",
+                        "车型名称*",
+                        "状态（启用/停用）"
+                      ],
+                      "info_note": "车型清单是全系统车型名称的唯一集中地。登记后可被「数据权限管理」（车型维度可选值）与「车型主数据」（新增车型下拉）引用。停用（而非删除）的车型不出现在下游下拉中。",
+                      "title_create": "新增车型",
+                      "title_edit": "编辑车型",
+                      "width": "480px"
+                    },
+                    "name": "车型",
+                    "pagination": false,
+                    "pagination_note": "无分页，渲染全量",
+                    "search": {
+                      "mode": "client-side fuzzy case-insensitive",
+                      "scope": [
+                        "code",
+                        "name"
+                      ]
+                    },
+                    "total_columns": 7
+                  }
+                ],
+                "validation": [
+                  {
+                    "on": "create/edit save",
+                    "rule": "工种 + 工厂城市 组合唯一",
+                    "scope": "tab-labor-rate"
+                  },
+                  {
+                    "message": "该人工费率记录存在引用关系，请先解除相关 BUC 分析中的引用",
+                    "on": "delete",
+                    "rule": "已被 BUC 引用时阻止删除",
+                    "scope": "tab-labor-rate"
+                  },
+                  {
+                    "message": "该车型编码已存在，请修改",
+                    "on": "create save",
+                    "rule": "车型编码唯一",
+                    "scope": "tab-vehicle"
+                  },
+                  {
+                    "message": "该车型存在引用关系（数据权限/车型主数据），请先解除引用",
+                    "on": "delete",
+                    "rule": "已被数据权限/车型主数据引用时阻止删除",
+                    "scope": "tab-vehicle"
+                  }
+                ],
+                "view_modes": "triple-tab（2026-08-17 扩：间接费率字典/人工费率表/车型）"
+              },
+              "pattern_id": "PATTERN.LIST_TABLE"
+            }
+          }
+        },
+        {
+          "behavior": "static",
+          "id": "REGION.FOOTER_ACTIONS",
+          "slots": {
+            "PAGE_SLOT.FOOTER_ACTIONS": {
+              "capability_id": "PATTERN.ACTION_BAR",
+              "component": "PATTERN.ACTION_BAR"
+            }
+          }
+        }
+      ],
+      "source_document_meta": {
+        "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+        "document_type": "screen-blueprint",
+        "schema_version": 1
+      },
+      "source_page_id": "PAGE-APP-OTHER-DB",
+      "states": [
+        "idle",
+        "loading",
+        "success",
+        "empty",
+        "error",
+        "view",
+        "edit",
+        "read-only",
+        "create",
+        "pristine",
+        "dirty",
+        "validating",
+        "invalid",
+        "submitting"
+      ],
+      "superseded_status_field": {
+        "mapped_to": "design-approval-axis fact record (classification-ledger blueprint_status_axis_note: design-approval axis and implementation-readiness axis stay separate; the readiness axis lives in page-readiness-registry); object axes describe the truth object itself (lifecycle CURRENT = source is an active canonical), never mixed across axes",
+        "reason": "flat status is one word with many meanings; the design-approval semantic stays a fact record and status progression belongs to the HUMAN_OWNER approve_page_blueprint delegate seat; values are transcribed without tampering",
+        "source_field": "status",
+        "source_value": "DRAFT",
+        "upgrade_registered": true
+      },
+      "template": {
+        "id": "PAGE.LIST"
+      },
+      "unresolved_exceptions": {
+        "carrier": "exception_ledger",
+        "count": 7,
+        "items": [
+          "TODO: backend contract missing for import-action — 待后端补 openapi operationId",
+          "TODO: backend contract missing for export-action — 待后端补 openapi operationId",
+          "UNRESOLVED: tab1-overhead-rate-mapping: 间接费率 默认费率值(decimal，如 0.05) 与 dict-item(code/label) 字段映射未确认（dict-item 无数值字段，可能需编码进 label 或扩展）",
+          "TODO: tab2-labor-rate-dictionary-code: 人工费率表(工种/工厂城市/小时费率/备注) 结构不符 dict-item(code/label) 模型；专属 dictionary code 未在 openapi 定义，后端实体形态待确认",
+          "UNRESOLVED: spec §7 pending — 待业务细化 other-db spec",
+          "UNRESOLVED: spec §7 pending — 待业务细化 other-db spec",
+          "UNRESOLVED: spec §7 pending — 待业务细化 other-db spec"
+        ],
+        "rule": "unresolved items carried item-by-item as EXPLICITLY unresolved (CONVENTIONS section 3): never silently dropped, never auto-adjudicated; resolution belongs to the Owner"
+      }
+    },
+    "slots": [
+      "PAGE_SLOT.PRIMARY_ACTIONS",
+      "PAGE_SLOT.SECONDARY_ACTIONS",
+      "PAGE_SLOT.STATUS",
+      "PAGE_SLOT.FILTERS",
+      "PAGE_SLOT.CONTENT",
+      "PAGE_SLOT.FOOTER_ACTIONS",
+      "PAGE_SLOT.FEEDBACK"
+    ],
+    "surface": "V1",
+    "template_ref": "PAGE.LIST"
+  },
+  "permits_active": [],
+  "producer": {
+    "liveness": {
+      "status": "active"
+    },
+    "merge_semantics": {
+      "backfill_if_missing": [],
+      "human_never_touched": [],
+      "refresh_fields": [
+        "payload.blueprint"
+      ]
+    },
+    "producer_id": "prod.mig_b2_ingest_screen_blueprints_front_half",
+    "views_maintained": [
+      "truth-index.envelope"
+    ]
+  },
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_front_half.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "ingested_from": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-OTHER-DB.yaml",
+        "line_anchors": {
+          "composition_adjudication": null,
+          "notes": null,
+          "unresolved": 481
+        },
+        "prose_summarized": [],
+        "transcription": "front-half blueprint 15/20 objectified one-to-one into a page_surface object: structure (template_ref/regions/states) + interaction (actions) + inline field semantics transcribed verbatim as structured units (array order = source order); page.status kept as a design-approval fact record with a superseded_status_field registration; unresolved items carried item-by-item into payload.blueprint.unresolved_exceptions; prose narrative excerpted into notes_md, never wholesale-migrated; no physical route string enters the payload"
+      },
+      "pin": {
+        "digest": "sha256:74fe5ae2fe4364759694018ffae138fb24a5c80d8fce052fb4a8e48421d80c87"
+      },
+      "ref": "outputs/frontend/10_planned/screen-blueprints/PAGE-APP-OTHER-DB.yaml",
+      "type": "bp_blueprint"
+    },
+    {
+      "captured_by": "agent:mig-b2/ingest_screen_blueprints_front_half.py",
+      "locator": {
+        "batch": "MIG-B2",
+        "governance_id": "PAGE-APP-OTHER-DB",
+        "ingested_from": "corpus/master/batch-2/key-binding-map.batch2.draft.yaml",
+        "transcription": "supplies the page<->dir and route_name binding expectations (status MECHANICAL_ROUTE_NAME_MATCH, draft table): values quoted verbatim into key_bindings.code; the KEYBINDING.* table object itself stays pending human adjudication"
+      },
+      "pin": {
+        "digest": "sha256:2beea8f95e0770da028d5ac5c2e76e2e1266e0ba7af6e0a3faa29fe72cb501fa"
+      },
+      "ref": "corpus/master/batch-2/key-binding-map.batch2.draft.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "页面·其他数据库"
+}

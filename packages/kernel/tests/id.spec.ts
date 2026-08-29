@@ -205,7 +205,7 @@ describe("resolveAlias（A6 双向链）", () => {
     expect(resolution.matchedRuleLegacy).toBeNull();
   });
 
-  // —— PR-0001 三新族（MIG-B1 源侧跟踪 id 收编；机械映射=pack_segments 移植） ——
+  // —— PR-0001 三新族（语料批 batch-1 源侧跟踪 id 收编；机械映射=pack_segments 移植） ——
 
   it("ISSUE.PAGE-APP-TASK-MGMT.1 → CHANGE.PAGE_APP_TASK_MGMT.1（登记前缀点段剥离 + 末尾纯数字段→SEQ）", () => {
     const resolution = resolveAlias("ISSUE.PAGE-APP-TASK-MGMT.1");
@@ -220,7 +220,7 @@ describe("resolveAlias（A6 双向链）", () => {
     expect(resolution.matchedRuleLegacy).toBe("ISSUE.*");
   });
 
-  it("FTA-RULE-USABLE → CHANGE.FTA_RULE_USABLE（标记词并入首段，MIG-B1 实测 17 形）", () => {
+  it("FTA-RULE-USABLE → CHANGE.FTA_RULE_USABLE（标记词并入首段，语料批 batch-1 实测 17 形）", () => {
     const resolution = resolveAlias("FTA-RULE-USABLE");
     expect(resolution.canonical).toBe("CHANGE.FTA_RULE_USABLE");
     expect(resolution.matchedRuleLegacy).toBe("FTA-*");

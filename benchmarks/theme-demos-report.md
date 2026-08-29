@@ -3,7 +3,7 @@
 > **seq**: DEMO-THEME-0001（A4：无墙钟日期，seq 代号锚定）　**性质**：三主题各一条**真实 change** 走八拍 8/8 全环（全部输出为命令真实 stdout；非 mock、非单测复述）。phaseD（`benchmarks/phaseD-demo-report.md`）证明的是**环本身**（CSV 单 fixture、单对象、单 delta kind）；本报告在**三主题异质对象**上复跑全环：change governance / API contract / data grid。
 > **CLI**：`packages/cli/dist/bin.js`（`@pomaster/cli` 0.0.0；dist 与 src 同步——含 N1 修复后的 `kernel/src/reconcile.ts` row 级正文探测）；node v22.13.1
 > **调用方式**：`node <仓库绝对路径>/packages/cli/dist/bin.js --dir <项目根> <command> [--json]`
-> **靶子**：系统临时目录自建 fixture `%TEMP%\pomaster-theme-demo\`（`pomaster init` 起步的 `theme-demo-console` 0.1.0 独立项目；**临时目录不拷回**——对象 JSON 完整形状见附录 A 即可复现）。素材只读取材 MASTer 语料的已收编形态（`migration/master-batch1/truth/objects/` 的 change-object / contract-op / capability+component 三族）。
+> **靶子**：系统临时目录自建 fixture `%TEMP%\pomaster-theme-demo\`（`pomaster init` 起步的 `theme-demo-console` 0.1.0 独立项目；**临时目录不拷回**——对象 JSON 完整形状见附录 A 即可复现）。素材只读取材 MASTer 语料的已纳管形态（`corpus/master/batch-1/truth/objects/` 的 change-object / contract-op / capability+component 三族）。
 >
 > **纪律声明**：
 > - 未执行任何 git 操作；FROZEN 资产（`packages/schemas/assets/*`、两处 `vocab.ts`、`tests/golden/cases.json`）零触碰；`MASTer_master` 绝对只读（本轮仅只读 grep 语料形态，零写入）；本文件是本次演示在仓库内的唯一落盘产物；
@@ -37,9 +37,9 @@ pomaster-theme-demo/
 | | `CHANGE.DOCS_STALE_LINKS`（change_object，OPEN，本轮 scope 外诚实留守） | |
 | | `KNOWLEDGE.ADR_ISSUES_EVIDENCE_RULE`（knowledge_entry，ADR-0001） | |
 | ② API contract | `API_REQ.ECHO.1` / `API_REQ.HEALTH.1`（contract_operation，payload.implementation_form=**real**，operation_id 指向 openapi.yaml） | |
-| | `API_REQ.LOGIN.1`（contract_operation，implementation_form=**mock_unverified**，payload.unresolved 显式登记端点缺口——形状参考 MIG-B1 authenticate.1 的 implementation_form 建模） | ★本轮变更对象 |
-| ③ data grid | `CAPABILITY.GRID.SUMMARY_TABLE` / `CAPABILITY.GRID.EDITABLE_ROWS`（capability，payload.forbidden 均带直连禁止规则：direct_dom_table_in_page / page_local_grid_css / inline_cell_renderer——源形参考 MIG-B1 grid.editable-grid 的 forbidden 三条） | ★EDITABLE_ROWS 本轮换锚 |
-| | `COMPONENT.INLINE_EDITOR` / `COMPONENT.DATA_TABLE`（component，payload 建模参考 MIG-B1 COMPONENT.AG_GRID；**DATA_TABLE 签发时 absent**，预含 Permit scope） | ★DATA_TABLE 本轮 materialized |
+| | `API_REQ.LOGIN.1`（contract_operation，implementation_form=**mock_unverified**，payload.unresolved 显式登记端点缺口——形状参考语料批 batch-1 authenticate.1 的 implementation_form 建模） | ★本轮变更对象 |
+| ③ data grid | `CAPABILITY.GRID.SUMMARY_TABLE` / `CAPABILITY.GRID.EDITABLE_ROWS`（capability，payload.forbidden 均带直连禁止规则：direct_dom_table_in_page / page_local_grid_css / inline_cell_renderer——源形参考语料批 batch-1 grid.editable-grid 的 forbidden 三条） | ★EDITABLE_ROWS 本轮换锚 |
+| | `COMPONENT.INLINE_EDITOR` / `COMPONENT.DATA_TABLE`（component，payload 建模参考语料批 batch-1 COMPONENT.AG_GRID；**DATA_TABLE 签发时 absent**，预含 Permit scope） | ★DATA_TABLE 本轮 materialized |
 
 三组对象分三次 `compact --ops <tx> --no-ingest` 预登记（mid-episode 显式关闭兜底收编，phaseD 的 N2 教训直接沿用）；`change_object` 类的 `payload.class_scan_result` 必填（R4）在 fixture 域内逐对象给全（scope/hits/fixed_count/regression_case_ref）。
 
@@ -154,7 +154,7 @@ $ pomaster compact --ops tx-cg-close.json --json
 
 **请求**：「API_REQ.LOGIN.1 从 mock_unverified 升级为 real：接入真实端点并在 openapi 契约登记 demo_api_v1_login_post」→ triage **STANDARD**（matched_rule=E_CONTRACT_KEYWORD，matched_keywords=[契约, openapi, api_req]；INFERRED 证据级如实——关键词只是关于世界的推断，不冒充 contract registry 实测）。三主题 triage 首次自然分化（LIGHT/STANDARD/LIGHT）。
 
-**预登记的对象即契约缺口镜像**：`API_REQ.LOGIN.1` payload `implementation_form: "mock_unverified"` + `implementation_form_basis` 引用 `src/api-client.js` 的 mock 实现证据 + `payload.unresolved: ["openapi_endpoint_missing: demo_api_v1_login_post 不在 openapi.yaml 0.1.0 paths 内"]`——代码 mock 态与 openapi 端点缺口在对象内互为镜像（源形参考 MIG-B1 authenticate.1 的 implementation_form/unresolved 建模）。
+**预登记的对象即契约缺口镜像**：`API_REQ.LOGIN.1` payload `implementation_form: "mock_unverified"` + `implementation_form_basis` 引用 `src/api-client.js` 的 mock 实现证据 + `payload.unresolved: ["openapi_endpoint_missing: demo_api_v1_login_post 不在 openapi.yaml 0.1.0 paths 内"]`——代码 mock 态与 openapi 端点缺口在对象内互为镜像（源形参考语料批 batch-1 authenticate.1 的 implementation_form/unresolved 建模）。
 
 **② 基线捕获**：3 个 contract_operation 全量（LOGIN.1：CURRENT/LOCKED/IMPLEMENTED, rev 1——契约面已接受、接线面 mock 的正交双轴拆分，与 MASTer 源形一致）。
 
@@ -270,7 +270,7 @@ $ pomaster permit list --json   # 终态：current_seq=18；三许可全 active�
 | 四态纪律 | absent 基线=null 显式（COMPONENT.DATA_TABLE）；LIGHT=NOT_CONFIGURED 非绿（两主题）；RECONCILE_DIRTY 是显式出口；census 全量计数吞不掉任何 scope 外条目（`failed:4, passed:6` 全局可见） |
 | §45 双输出 | 一切命令 `--json` 机读信封；失败必带 `errors[].hint`（PERMIT_SCOPE_DENIED / GATE_FAILED / RECONCILE_DIRTY 各带处置路标） |
 | C5 自报 | ran_at_seq 通路采样/自报沿用不改写；GRN 由通路分配；self_attested=true 如实标注；CLM-0001 恒 UNVERIFIED（先立后证） |
-| MASTer 只读 | 仅只读 grep `migration/master-batch1/truth/objects/` 取形状；消费项目零写入 |
+| MASTer 只读 | 仅只读 grep `corpus/master/batch-1/truth/objects/` 取形状；消费项目零写入 |
 
 ---
 
@@ -372,7 +372,7 @@ $ pomaster permit list --json   # 终态：current_seq=18；三许可全 active�
     { "type": "openapi_contract", "ref": "openapi.yaml", "captured_by": "human:owner", "pin": { "version": "0.1.0" } },
     { "type": "human_directive", "ref": "src/api-client.js", "captured_by": "human:owner", "pin": { "baseline": "demo-b1" } }
   ],
-  "notes_md": "contract_operation（mock_unverified 形态镜像，源形参考 MASTer MIG-B1 authenticate.1 的 implementation_form 建模）：契约面已接受（CURRENT+LOCKED），接线面为 mock；payload.unresolved 显式登记 openapi 端点缺口。demo 变更=升级 real 且 openapi 增对应端点。本叙事为人类散文，机器永不解析判卷。"
+  "notes_md": "contract_operation（mock_unverified 形态镜像，源形参考 MASTer 语料批 batch-1 authenticate.1 的 implementation_form 建模）：契约面已接受（CURRENT+LOCKED），接线面为 mock；payload.unresolved 显式登记 openapi 端点缺口。demo 变更=升级 real 且 openapi 增对应端点。本叙事为人类散文，机器永不解析判卷。"
 }
 ```
 
@@ -387,7 +387,7 @@ $ pomaster permit list --json   # 终态：current_seq=18；三许可全 active�
   "axis_profile": "capability_default",
   "axes": { "lifecycle": "CURRENT", "confidence": "LOCKED", "evidence": "IMPLEMENTED", "change": "STABLE" },
   "title_zh": "可编辑行表格",
-  "authority": { "owner": "DATA_GRID_OWNER", "delegates": [], "write_policy": "AGENT_WITH_PERMIT", "escalation_hint": "canonical 实现更换或 forbidden 规则演进须走 CHANGE 对象（GRID 能力族纪律，源形参考 MASTer MIG-B1 grid.* 收编件）" },
+  "authority": { "owner": "DATA_GRID_OWNER", "delegates": [], "write_policy": "AGENT_WITH_PERMIT", "escalation_hint": "canonical 实现更换或 forbidden 规则演进须走 CHANGE 对象（GRID 能力族纪律，源形参考 MASTer 语料批 batch-1 grid.* 纳管件）" },
   "origin": "natural",
   "payload": {
     "canonical_realization": { "component": "DataTable", "import": "./src/grid.js" },
@@ -409,7 +409,7 @@ $ pomaster permit list --json   # 终态：current_seq=18；三许可全 active�
   "axis_profile": "component_default",
   "axes": { "lifecycle": "CURRENT", "confidence": "LOCKED", "evidence": "IMPLEMENTED", "change": "STABLE" },
   "title_zh": "数据表格组件",
-  "authority": { "owner": "DATA_GRID_OWNER", "delegates": [{ "role": "HUMAN_OWNER", "requiredFor": ["retire"] }], "write_policy": "EVOLUTION_CHANNEL", "escalation_hint": "组件退役（retire）需 HUMAN_OWNER 委托审批（源形参考 MASTer component/ag-grid 收编件 delegates 语义）" },
+  "authority": { "owner": "DATA_GRID_OWNER", "delegates": [{ "role": "HUMAN_OWNER", "requiredFor": ["retire"] }], "write_policy": "EVOLUTION_CHANNEL", "escalation_hint": "组件退役（retire）需 HUMAN_OWNER 委托审批（源形参考 MASTer component/ag-grid 纳管件 delegates 语义）" },
   "origin": "natural",
   "payload": {
     "component_name": "DataTable",

@@ -1,7 +1,7 @@
 /**
  * ARCHITECTURE adapter spec（G5 谱系扩展：规则驱动 forbidden import 文本扫描）。
  *
- * 规则形态即 MASTer MIG-B1 已证的「src/** 禁直连 ag-grid 须走 wrapper」。
+ * 规则形态即语料批 batch-1 已证的「src/** 禁直连 ag-grid 须走 wrapper」。
  * 覆盖：detect 未声明/空规则/齐备三态 / not_configured 诚实缺席全链路 / 违例态→failed
  * + items（仓内相对路径:行号）/ 干净态→passed + notApplicable 显式计数 / import 形态守卫
  * （纯提及不算违例）/ 空目录→warning（零扫描不是 passed）。
@@ -153,7 +153,7 @@ describe("architecture adapter：not_configured 诚实缺席", () => {
 });
 
 // ============================================================
-// 违例态 / 干净态（MIG-B1 规则形态）
+// 违例态 / 干净态（语料批 batch-1 规则形态）
 // ============================================================
 
 describe("architecture adapter：违例态与干净态", () => {
