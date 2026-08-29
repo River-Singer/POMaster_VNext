@@ -1,0 +1,49 @@
+{
+  "blindspot": {
+    "escape_ratio": 0.0,
+    "produced": 451,
+    "scanned": 451
+  },
+  "counts": {
+    "applicable_scanned": 114,
+    "not_applicable": 283,
+    "scanned": 397,
+    "suppressed_by_ledger": 0,
+    "unchecked_in_blindspot_estimated": 0,
+    "violations": 0
+  },
+  "denominator_refs": [],
+  "digest_excluded_fields": [
+    "duration_ms"
+  ],
+  "duration_ms": {
+    "external": 0,
+    "self": 0
+  },
+  "gate": "BASELINE_INTEGRITY",
+  "gate_def": "POLICY.GATE.MIG_B4_BASELINE@0.1.0",
+  "grn": "GRN-4605",
+  "items": [],
+  "items_truncated": false,
+  "metric_dialect": "baseline:check_runs",
+  "ran_at_seq": 0,
+  "scope": {
+    "note": "MIG-B4/M4 Baseline 完整性主题聚合（合规 GateResult worst-of 汇总，红线 2：全字段过 FROZEN 03 schema，禁自由形状）。rollup 规则：任一 failed → failed，否则取最差具体七态（failed > blocked > not_configured/skipped_blindspot > warning/not_run > passed）。四个分检查项判定：GRN-4601(baseline-ref-resolves)=passed(violations=0), GRN-4602(no-project-leak)=passed(violations=0), GRN-4603(verbatim-copy-probe)=passed(violations=0), GRN-4604(lock-reconcile)=passed(violations=0)。by_verdict：passed=4；checks_total=4。counts 聚合口径=四检查同名字段直接求和（scanned 口径各异：check1=baseline_refs 载体对象 307[refs 级分母=24]、check2=新增 catalog 条目 9、check3=抽检样本 10[伴随普查 54 探针]、check4=lock 判定单元 71[entries 级分母=69]；求和仅作总量留痕、不跨检查比较，逐项 counts/denominators/items 明细见同目录 4 份 per-check 运行记录 GTR-MIG-B4-baseline-01..04-*.json，原地有效）。分母明细（迁移期未注册 DENOMINATOR.* 对象，denominator_refs 显式空数组=诚实声明）：check1=baseline_refs 总数 24（=ledger hybrid）；check2=新增条目 9；check3=抽检 10；check4=lock entries 69。blindspot 聚合口径=四检查 scanned/produced 直接求和后派生 escape_ratio；四检查全部机械可达无 skipped_blindspot，探针敏感性 fixture=MIG-B4-BASELINE-PROBE-SENSITIVITY-FIXTURE/passed（四探针阴性自测在场：不能失败的 gate 比没有 gate 更危险）。GRN 方案：GRN-460x 块确定性保留给 MIG-B4 baseline 主题（4601..4604=四检查、4605=本聚合；与 batch1 GRN-0001..0006/401..405/4101..4105、batch2 GRN-4201..4204/4301..4304、batch3 GRN-4401..4403/4501..4504 无重叠）。实样登记：ref 解析 24/24 五判据全过 + 24 载体 pin 0 漂移；泄漏网（17 业务词 + 10 机械正则，逐词语料实证在场）正文 0 命中、全文件 68 处命中全部定位于铁律 2 规定必带的 provenance 元数据字段（clean_room_note 0 处 + upstream_source_ref 路径 68 处）；verbatim 探针 10 样本 + 54 普查探针最大公共块 14 低于在册阈值 20；lock 69 条目 sha 0 mismatch + children 两处一致 + 幂等重生成 byte-identical。self_report_trusted=false 落地形态：trust.asserted=null（迁移批无自报信道），trust.recomputed.violations=0 为四检查求和、唯一判卷依据。确定性：ran_at_seq 钉 0（迁移批无 kernel seq 分配器，A4 零墙钟，kernel 接入时重排）、duration_ms 钉 0（byte-identical 幂等硬规则）；判卷双跑序列化字节自证一致。",
+    "size_expected_from_denominator": 114
+  },
+  "tool": "mig-b4:run_baseline_gate",
+  "tool_version": "1.0.0",
+  "trigger": {
+    "note": "migration batch context: no kernel seq allocator; ran_at_seq pinned to 0 (deterministic batch base, A4 wall-clock-free; kernel re-sequences on ingestion); durations pinned to 0 for byte-identical rerun idempotency (batch hard rule 2)",
+    "task_ref": "MIG-B4/M4-baseline",
+    "type": "on_demand"
+  },
+  "trust": {
+    "asserted": null,
+    "recomputed": {
+      "matches_asserted": true,
+      "violations": 0
+    }
+  },
+  "verdict": "passed"
+}

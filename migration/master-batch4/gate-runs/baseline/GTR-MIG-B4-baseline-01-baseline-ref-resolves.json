@@ -1,0 +1,57 @@
+{
+  "blindspot": {
+    "carrier_coverage": {
+      "distinct_catalog_ids": 8,
+      "objects_explicit_empty_refs": 283,
+      "objects_scanned": 307,
+      "objects_with_refs": 24,
+      "pin_recomputes": 24,
+      "refs_judged": 24
+    },
+    "escape_ratio": 0,
+    "produced": 307,
+    "scanned": 307
+  },
+  "counts": {
+    "applicable_scanned": 24,
+    "not_applicable": 283,
+    "scanned": 307,
+    "suppressed_by_ledger": 0,
+    "unchecked_in_blindspot_estimated": 0,
+    "violations": 0
+  },
+  "denominator_refs": [],
+  "digest_excluded_fields": [
+    "duration_ms"
+  ],
+  "duration_ms": {
+    "external": 0,
+    "self": 0
+  },
+  "gate": "BASELINE_INTEGRITY",
+  "gate_def": "POLICY.GATE.MIG_B4_BASELINE@0.1.0",
+  "grn": "GRN-4601",
+  "items": [],
+  "items_truncated": false,
+  "metric_dialect": "baseline:catalog_refs",
+  "ran_at_seq": 0,
+  "scope": {
+    "note": "检查范围=项目侧全部 baseline_refs 的 catalog_id 在 catalog/ 中存在且 id 词形合法（Baseline 引用形态铁律：catalog 条目为准、本项目覆盖点显式）。分母声明（迁移期未注册 DENOMINATOR.* 对象，denominator_refs 显式空数组=诚实声明）：判卷分母=baseline_refs 总数 24（=ledger hybrid 24；分母恒等式 universal 10 + project 283 + hybrid 24 = 317 台账条目 = 307 落盘对象全携带 baseline_refs 键，其中 283 个 PROJECT 对象显式空数组=『无 catalog 基线』诚实零、24 个 HYBRID 对象逐对象恰 1 ref，preflight 断言在场）。机械判定（五判据逐 ref，C5 现场重扫 catalog 落盘与 lock，不信自报）：①id 词形=FROZEN 03 schema definitions.object_id 文法（15 前缀闭世界，pattern 由 schema 文件运行时提取防漂移）；②catalog-lock.draft.json entries 登记；③lock path 盘上文件存在；④文件内 id 与 ref 相等；⑤lock path 满足 <dir>/<id 小写>.json 目录+文件名约定。实测 24 refs 引用 8 个不同 catalog_id（POLICY.WEB.API.AUTH_APP_CLIENT_SPLIT=1, POLICY.WEB.API.REQUEST_INFRASTRUCTURE=1, POLICY.WEB.API.SESSION_RECOVERY_SPLIT=1, POLICY.WEB.ARCH.LAYER_ISOLATION=11, POLICY.WEB.ARCH.NAMING_CONVENTIONS=2, POLICY.WEB.ARCH.PUBLIC_API_BARREL=1, POLICY.WEB.PERF.BUDGET_SKELETON=2, POLICY.WEB.STYLE.OWNERSHIP_MATRIX=5），悬空/词形非法/失配=0，violations=0 → verdict=passed。前置 C5：24 载体对象 sources[].pin 现场重算 0 条 0 漂移（fail-closed）。override 逐字保真属 ingest 工具 merge-preserving 断言面（batch4 CONVENTIONS 附录 B 步骤 5/6），不在本检查判据内。盲区声明：解析判据机械可达（escape_ratio=0，judgment 覆盖全部 307 载体：24 判 ref + 283 判显式空）；catalog 条目语义是否真 universal（跨项目成立性）为评审判断非机械判据，归 x-batch4-uplift.human_review_required 通道。路径基：items location 为 po-master 仓内相对路径。self_report_trusted=false：trust.asserted=null，判卷唯一依据 trust.recomputed。duration_ms 钉 0（byte-identical 幂等）。",
+    "size_expected_from_denominator": 24
+  },
+  "tool": "mig-b4:run_baseline_gate",
+  "tool_version": "1.0.0",
+  "trigger": {
+    "note": "migration batch context: no kernel seq allocator; ran_at_seq pinned to 0 (deterministic batch base, A4 wall-clock-free; kernel re-sequences on ingestion); durations pinned to 0 for byte-identical rerun idempotency (batch hard rule 2)",
+    "task_ref": "MIG-B4/M4-baseline",
+    "type": "on_demand"
+  },
+  "trust": {
+    "asserted": null,
+    "recomputed": {
+      "matches_asserted": true,
+      "violations": 0
+    }
+  },
+  "verdict": "passed"
+}

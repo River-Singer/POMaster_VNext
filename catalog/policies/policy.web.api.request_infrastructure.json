@@ -1,0 +1,78 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "kind='policy' 不在 vocab-lock kinds_registry.truth_bodies（POLICY. 前缀已冻结注册，closed-world）",
+    "proposal": "词汇表 PR 登记 policy kind；或 Owner 裁决 policy 条目住 catalog/ 而非 truth/objects 正文层（与前批 45 条同因同请，合并进同一 vocab PR）",
+    "locked_vocab_untouched": true
+  },
+  "x-batch4-uplift": {
+    "status": "PROPOSAL",
+    "package": "MIG-B4 Universal 上提（工程策略族 split-ledger 驱动）",
+    "human_review_required": true,
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+  },
+  "id": "POLICY.WEB.API.REQUEST_INFRASTRUCTURE",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "UNIVERSAL_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "请求基础设施统一挂点",
+  "statement_zh": "超时、中止、追踪、请求标识与基础地址来源五项默认挂点全部挂在唯一请求基础设施入口，禁止逐请求散落自配；数值与头名等参数由项目基线供给。",
+  "statement_en_keywords": [
+    "unified request infrastructure",
+    "abort",
+    "trace id",
+    "request id",
+    "base url source"
+  ],
+  "applies_when": {
+    "lane": "frontend",
+    "condition": "搭建或调整请求基础设施时"
+  },
+  "enforcement": "required_when_applicable",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-batch4-uplift"
+  },
+  "origin": "ingested",
+  "origin_note": "MIG-B4 split-ledger UNIVERSAL/HYBRID universal 半上提；目录词面独立改写（clean-room），零逐字拷贝上游源文本",
+  "sub_rules": [
+    {
+      "rule_id": "global",
+      "statement_zh": "超时、中止、追踪、请求标识与基础地址来源必须由统一请求基础设施单点声明默认挂点：每个出站请求都可中止、可追踪、可关联；具体超时数值、头名与重试策略标识由项目基线供给，不入目录正本。",
+      "provenance": {
+        "asset_id": "http-client-policy",
+        "entry_id": "global",
+        "decision": "HYBRID",
+        "merge_group": "MG-HTTP-RECOVERY",
+        "migration_batch": "MIG-B4/HTTP_CLIENT",
+        "split_ledger": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+      }
+    }
+  ],
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/migration/master-batch4/split-ledger.yaml",
+      "captured_by": "agent:claude/mig-b4-catalog-uplift",
+      "locator": {
+        "asset": "http-client-policy",
+        "entry": "global",
+        "migration_batch": "MIG-B4/HTTP_CLIENT",
+        "upstream_source_ref": "outputs/frontend/10_planned/http-client-policy.yaml"
+      },
+      "clean_room_note": "independently rewritten from upstream batch4 mirror; zero verbatim copy"
+    }
+  ],
+  "review_notes": [
+    "与既有 POLICY.WEB.API.SINGLE_HTTP_CLIENT 面审（MIG-B4）：本条补『统一挂点清单』维度（中止/追踪/请求标识/默认超时/基础地址来源），单点统一原则本身归既有条款。"
+  ]
+}

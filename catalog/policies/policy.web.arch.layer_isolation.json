@@ -1,0 +1,363 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "kind='policy' 不在 vocab-lock kinds_registry.truth_bodies（POLICY. 前缀已冻结注册，closed-world）",
+    "proposal": "词汇表 PR 登记 policy kind；或 Owner 裁决 policy 条目住 catalog/ 而非 truth/objects 正文层（与前批 45 条同因同请，合并进同一 vocab PR）",
+    "locked_vocab_untouched": true
+  },
+  "x-batch4-uplift": {
+    "status": "PROPOSAL",
+    "package": "MIG-B4 Universal 上提（工程策略族 split-ledger 驱动）",
+    "human_review_required": true,
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+  },
+  "id": "POLICY.WEB.ARCH.LAYER_ISOLATION",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "UNIVERSAL_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "分层职责与单向依赖隔离",
+  "statement_zh": "前端代码按职责分层，每层只承担单一职责，依赖只能自上而下单向流动；每层内部目录遵循统一解剖模板，跨层访问只能经由该层公开出口完成。",
+  "statement_en_keywords": [
+    "layer responsibility",
+    "one-way dependency",
+    "directory anatomy",
+    "colocation",
+    "new file declaration"
+  ],
+  "applies_when": {
+    "lane": "frontend",
+    "condition": "创建分层结构、新增目录或放置新文件时"
+  },
+  "enforcement": "required_when_applicable",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-batch4-uplift"
+  },
+  "origin": "ingested",
+  "origin_note": "MIG-B4 split-ledger UNIVERSAL/HYBRID universal 半上提；目录词面独立改写（clean-room），零逐字拷贝上游源文本",
+  "sub_rules": [
+    {
+      "rule_id": "layers.app",
+      "statement_zh": "应用外壳层只负责装配：路由表、全局注入器、路由级错误兜底与访问守卫都挂在这一层；本层不持有业务状态，也不渲染业务内容；单个页面内的数据失败必须被就地吸收，不得穿透到其他页面。",
+      "provenance": {
+        "asset_id": "architecture-constraints",
+        "entry_id": "layers.app",
+        "decision": "HYBRID",
+        "merge_group": "MG-ARCH-LAYER",
+        "migration_batch": "MIG-B4/ARCHITECTURE",
+        "split_ledger": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+      }
+    },
+    {
+      "rule_id": "layers.pages",
+      "statement_zh": "路由页面层只做布局编排与装配消费：禁止把业务或异步数据留在组件本地状态里，禁止直接发起网络请求；页面所需数据一律经由下层状态通道获取。",
+      "provenance": {
+        "asset_id": "architecture-constraints",
+        "entry_id": "layers.pages",
+        "decision": "HYBRID",
+        "merge_group": "MG-ARCH-LAYER",
+        "migration_batch": "MIG-B4/ARCHITECTURE",
+        "split_ledger": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+      }
+    },
+    {
+      "rule_id": "layers.features",
+      "statement_zh": "能力切片层负责单个业务能力的组件组织与交互编排：切片之间禁止互引内部实现；切片内部错误用局部边界吸收、不外溢到相邻切片；本层不持有跨页共享的全局数据。",
+      "provenance": {
+        "asset_id": "architecture-constraints",
+        "entry_id": "layers.features",
+        "decision": "HYBRID",
+        "merge_group": "MG-ARCH-LAYER",
+        "migration_batch": "MIG-B4/ARCHITECTURE",
+        "split_ledger": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+      }
+    },
+    {
+      "rule_id": "layers.entities",
+      "statement_zh": "服务端数据层持有远端数据的请求生命周期：逐查询的缓存与逐查询的错误都归这一层；禁止把远端状态复制进客户端仓库做手工双向同步；查询错误先归一化再上抛。",
+      "provenance": {
+        "asset_id": "architecture-constraints",
+        "entry_id": "layers.entities",
+        "decision": "HYBRID",
+        "merge_group": "MG-ARCH-LAYER",
+        "migration_batch": "MIG-B4/ARCHITECTURE",
+        "split_ledger": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+      }
+    },
+    {
+      "rule_id": "layers.shared-state",
+      "statement_zh": "客户端状态层按页面隔离存放表单态与视图模式态：未做页面隔离的状态禁止跨页共享；全局仓库只保留身份、权限范围这类稳定且真正跨页面的状态。",
+      "provenance": {
+        "asset_id": "architecture-constraints",
+        "entry_id": "layers.shared-state",
+        "decision": "HYBRID",
+        "merge_group": "MG-ARCH-LAYER",
+        "migration_batch": "MIG-B4/ARCHITECTURE",
+        "split_ledger": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+      }
+    },
+    {
+      "rule_id": "layers.shared-ui",
+      "statement_zh": "设计系统组件层只承载纯展示组件：不携带业务状态，不感知业务语义。",
+      "provenance": {
+        "asset_id": "architecture-constraints",
+        "entry_id": "layers.shared-ui",
+        "decision": "HYBRID",
+        "merge_group": "MG-ARCH-LAYER",
+        "migration_batch": "MIG-B4/ARCHITECTURE",
+        "split_ledger": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+      }
+    },
+    {
+      "rule_id": "layers.shared-grid",
+      "statement_zh": "表格视图层只承载表格列定义与视图配置的组装：可依赖展示组件层令牌与基础工具层，不依赖任何业务上层。",
+      "provenance": {
+        "asset_id": "architecture-constraints",
+        "entry_id": "layers.shared-grid",
+        "decision": "HYBRID",
+        "merge_group": "MG-ARCH-LAYER",
+        "migration_batch": "MIG-B4/ARCHITECTURE",
+        "split_ledger": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+      }
+    },
+    {
+      "rule_id": "layers.shared-lib",
+      "statement_zh": "基础工具层不反向依赖任何上层：格式化、精确计算、网络客户端、错误规整、枚举映射等与框架无关的设施都住在这一层，供所有上层调用。",
+      "provenance": {
+        "asset_id": "architecture-constraints",
+        "entry_id": "layers.shared-lib",
+        "decision": "HYBRID",
+        "merge_group": "MG-ARCH-LAYER",
+        "migration_batch": "MIG-B4/ARCHITECTURE",
+        "split_ledger": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+      }
+    },
+    {
+      "rule_id": "new_file_rule",
+      "statement_zh": "新建任何文件之前，必须先写明它归属哪一层哪个切片，以及为什么不能通过扩展既有文件达成；页面需要新状态时优先扩展该页已有的状态载体，而不是另起全局仓库；新组件优先归入设计系统层或对应能力切片，避免持续堆积在页面层。",
+      "provenance": {
+        "asset_id": "architecture-constraints",
+        "entry_id": "new_file_rule",
+        "decision": "UNIVERSAL",
+        "merge_group": "MG-ARCH-LAYER",
+        "migration_batch": "MIG-B4/ARCHITECTURE",
+        "split_ledger": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+      }
+    },
+    {
+      "rule_id": "layers.pages",
+      "statement_zh": "页面目录解剖模板：每页一个目录，目录内提供该页唯一公开出口、路由级页面组件与仅本页使用的局部子组件；局部子组件禁止被其他页面引用。",
+      "provenance": {
+        "asset_id": "directory-layout",
+        "entry_id": "layers.pages",
+        "decision": "HYBRID",
+        "merge_group": "MG-ARCH-LAYER",
+        "migration_batch": "MIG-B4/ARCHITECTURE",
+        "split_ledger": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+      }
+    },
+    {
+      "rule_id": "layers.features",
+      "statement_zh": "能力切片目录解剖模板：每切片一个目录，目录内提供公开出口、组合组件目录与交互逻辑目录；只为可独立复用的能力建切片，禁止按页面一对一碎片化划分；切片之间禁止互引内部实现。",
+      "provenance": {
+        "asset_id": "directory-layout",
+        "entry_id": "layers.features",
+        "decision": "HYBRID",
+        "merge_group": "MG-ARCH-LAYER",
+        "migration_batch": "MIG-B4/ARCHITECTURE",
+        "split_ledger": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+      }
+    },
+    {
+      "rule_id": "layers.entities",
+      "statement_zh": "实体目录解剖模板：每实体一个目录，目录内提供公开出口、领域接口目录、数据钩子目录、校验结构与类型定义；领域接口调用经由统一网络客户端发出，禁止直连网络库。",
+      "provenance": {
+        "asset_id": "directory-layout",
+        "entry_id": "layers.entities",
+        "decision": "HYBRID",
+        "merge_group": "MG-ARCH-LAYER",
+        "migration_batch": "MIG-B4/ARCHITECTURE",
+        "split_ledger": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+      }
+    },
+    {
+      "rule_id": "colocation_rule",
+      "statement_zh": "组件按复用范围就近放置：仅单页使用的留在该页目录内；跨页复用的进入能力切片；只有稳定共享且不携带业务语义的组件才下沉到设计系统层；禁止把带业务语义的组件放进设计系统层。",
+      "provenance": {
+        "asset_id": "directory-layout",
+        "entry_id": "colocation_rule",
+        "decision": "UNIVERSAL",
+        "merge_group": "MG-ARCH-LAYER",
+        "migration_batch": "MIG-B4/ARCHITECTURE",
+        "split_ledger": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+      }
+    }
+  ],
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/migration/master-batch4/split-ledger.yaml",
+      "captured_by": "agent:claude/mig-b4-catalog-uplift",
+      "locator": {
+        "asset": "architecture-constraints",
+        "entry": "layers.app",
+        "migration_batch": "MIG-B4/ARCHITECTURE",
+        "upstream_source_ref": "outputs/frontend/10_planned/architecture-constraints.yaml"
+      },
+      "clean_room_note": "independently rewritten from upstream batch4 mirror; zero verbatim copy"
+    },
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/migration/master-batch4/split-ledger.yaml",
+      "captured_by": "agent:claude/mig-b4-catalog-uplift",
+      "locator": {
+        "asset": "architecture-constraints",
+        "entry": "layers.pages",
+        "migration_batch": "MIG-B4/ARCHITECTURE",
+        "upstream_source_ref": "outputs/frontend/10_planned/architecture-constraints.yaml"
+      },
+      "clean_room_note": "independently rewritten from upstream batch4 mirror; zero verbatim copy"
+    },
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/migration/master-batch4/split-ledger.yaml",
+      "captured_by": "agent:claude/mig-b4-catalog-uplift",
+      "locator": {
+        "asset": "architecture-constraints",
+        "entry": "layers.features",
+        "migration_batch": "MIG-B4/ARCHITECTURE",
+        "upstream_source_ref": "outputs/frontend/10_planned/architecture-constraints.yaml"
+      },
+      "clean_room_note": "independently rewritten from upstream batch4 mirror; zero verbatim copy"
+    },
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/migration/master-batch4/split-ledger.yaml",
+      "captured_by": "agent:claude/mig-b4-catalog-uplift",
+      "locator": {
+        "asset": "architecture-constraints",
+        "entry": "layers.entities",
+        "migration_batch": "MIG-B4/ARCHITECTURE",
+        "upstream_source_ref": "outputs/frontend/10_planned/architecture-constraints.yaml"
+      },
+      "clean_room_note": "independently rewritten from upstream batch4 mirror; zero verbatim copy"
+    },
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/migration/master-batch4/split-ledger.yaml",
+      "captured_by": "agent:claude/mig-b4-catalog-uplift",
+      "locator": {
+        "asset": "architecture-constraints",
+        "entry": "layers.shared-state",
+        "migration_batch": "MIG-B4/ARCHITECTURE",
+        "upstream_source_ref": "outputs/frontend/10_planned/architecture-constraints.yaml"
+      },
+      "clean_room_note": "independently rewritten from upstream batch4 mirror; zero verbatim copy"
+    },
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/migration/master-batch4/split-ledger.yaml",
+      "captured_by": "agent:claude/mig-b4-catalog-uplift",
+      "locator": {
+        "asset": "architecture-constraints",
+        "entry": "layers.shared-ui",
+        "migration_batch": "MIG-B4/ARCHITECTURE",
+        "upstream_source_ref": "outputs/frontend/10_planned/architecture-constraints.yaml"
+      },
+      "clean_room_note": "independently rewritten from upstream batch4 mirror; zero verbatim copy"
+    },
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/migration/master-batch4/split-ledger.yaml",
+      "captured_by": "agent:claude/mig-b4-catalog-uplift",
+      "locator": {
+        "asset": "architecture-constraints",
+        "entry": "layers.shared-grid",
+        "migration_batch": "MIG-B4/ARCHITECTURE",
+        "upstream_source_ref": "outputs/frontend/10_planned/architecture-constraints.yaml"
+      },
+      "clean_room_note": "independently rewritten from upstream batch4 mirror; zero verbatim copy"
+    },
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/migration/master-batch4/split-ledger.yaml",
+      "captured_by": "agent:claude/mig-b4-catalog-uplift",
+      "locator": {
+        "asset": "architecture-constraints",
+        "entry": "layers.shared-lib",
+        "migration_batch": "MIG-B4/ARCHITECTURE",
+        "upstream_source_ref": "outputs/frontend/10_planned/architecture-constraints.yaml"
+      },
+      "clean_room_note": "independently rewritten from upstream batch4 mirror; zero verbatim copy"
+    },
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/migration/master-batch4/split-ledger.yaml",
+      "captured_by": "agent:claude/mig-b4-catalog-uplift",
+      "locator": {
+        "asset": "architecture-constraints",
+        "entry": "new_file_rule",
+        "migration_batch": "MIG-B4/ARCHITECTURE",
+        "upstream_source_ref": "outputs/frontend/10_planned/architecture-constraints.yaml"
+      },
+      "clean_room_note": "independently rewritten from upstream batch4 mirror; zero verbatim copy"
+    },
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/migration/master-batch4/split-ledger.yaml",
+      "captured_by": "agent:claude/mig-b4-catalog-uplift",
+      "locator": {
+        "asset": "directory-layout",
+        "entry": "layers.pages",
+        "migration_batch": "MIG-B4/ARCHITECTURE",
+        "upstream_source_ref": "outputs/frontend/10_planned/directory-layout.yaml"
+      },
+      "clean_room_note": "independently rewritten from upstream batch4 mirror; zero verbatim copy"
+    },
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/migration/master-batch4/split-ledger.yaml",
+      "captured_by": "agent:claude/mig-b4-catalog-uplift",
+      "locator": {
+        "asset": "directory-layout",
+        "entry": "layers.features",
+        "migration_batch": "MIG-B4/ARCHITECTURE",
+        "upstream_source_ref": "outputs/frontend/10_planned/directory-layout.yaml"
+      },
+      "clean_room_note": "independently rewritten from upstream batch4 mirror; zero verbatim copy"
+    },
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/migration/master-batch4/split-ledger.yaml",
+      "captured_by": "agent:claude/mig-b4-catalog-uplift",
+      "locator": {
+        "asset": "directory-layout",
+        "entry": "layers.entities",
+        "migration_batch": "MIG-B4/ARCHITECTURE",
+        "upstream_source_ref": "outputs/frontend/10_planned/directory-layout.yaml"
+      },
+      "clean_room_note": "independently rewritten from upstream batch4 mirror; zero verbatim copy"
+    },
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/migration/master-batch4/split-ledger.yaml",
+      "captured_by": "agent:claude/mig-b4-catalog-uplift",
+      "locator": {
+        "asset": "directory-layout",
+        "entry": "colocation_rule",
+        "migration_batch": "MIG-B4/ARCHITECTURE",
+        "upstream_source_ref": "outputs/frontend/10_planned/directory-layout.yaml"
+      },
+      "clean_room_note": "independently rewritten from upstream batch4 mirror; zero verbatim copy"
+    }
+  ]
+}

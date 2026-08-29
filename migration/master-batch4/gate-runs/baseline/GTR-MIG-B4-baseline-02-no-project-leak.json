@@ -1,0 +1,59 @@
+{
+  "blindspot": {
+    "carrier_coverage": {
+      "body_word_face_hits": 0,
+      "clean_room_note_mast_er_hits": 0,
+      "entries_scanned": 9,
+      "metadata_hits_total": 68,
+      "net_cn_words": 17,
+      "net_mechanical_patterns": 10,
+      "raw_full_file_hits": 68,
+      "upstream_source_ref_path_hits": 68
+    },
+    "escape_ratio": 0,
+    "produced": 9,
+    "scanned": 9
+  },
+  "counts": {
+    "applicable_scanned": 9,
+    "not_applicable": 0,
+    "scanned": 9,
+    "suppressed_by_ledger": 0,
+    "unchecked_in_blindspot_estimated": 0,
+    "violations": 0
+  },
+  "denominator_refs": [],
+  "digest_excluded_fields": [
+    "duration_ms"
+  ],
+  "duration_ms": {
+    "external": 0,
+    "self": 0
+  },
+  "gate": "BASELINE_INTEGRITY",
+  "gate_def": "POLICY.GATE.MIG_B4_BASELINE@0.1.0",
+  "grn": "GRN-4602",
+  "items": [],
+  "items_truncated": false,
+  "metric_dialect": "catalog:new_entry_bodies",
+  "ran_at_seq": 0,
+  "scope": {
+    "note": "检查范围=新增 catalog 条目（9 个 x-batch4-uplift 条目，lock source_ref=POMaster_VNext/migration/master-batch4/split-ledger.yaml 分界，与 ledger universal destination 集合相等断言在场）正文词面 grep 项目专名——clean-room D3 铁律的 gate 侧复核（独立于物化工具自检）。分母声明（denominator_refs 显式空数组）：判卷分母=新增条目数 9。判定面=正文词面（title_zh/statement_zh/statement_en_keywords/applies_when.condition/sub_rules[].statement_zh/review_notes；与 ledger clean_room_rule 与物化工具在册判定面同口径）；铁律 2 规定必带的 provenance 元数据非词面：sources[].clean_room_note 固定英文文案含 MASTer 一词（0 处）+ sources[].locator.upstream_source_ref 上游路径（68 处）——全文件原始 grep 命中 68 处全部定位登记并逐 pattern 作 body+metadata==raw 完备性断言（不平衡=exit 2 fail-closed），实测平衡、正文命中 0。泄漏网两类：中文业务词 17 个（车型、零件、报价、报价单、模具、夹具、夹紧力、密度、温度、引擎、玻璃、维修、工时、工单、供应商、雅黑、Fira；逐词在 MASTer outputs/frontend/10_planned 语料实证在场=网有牙，preflight 断言）+ 机械词形正则 10 个（PAGE-[A-Z0-9][A-Z0-9-]* | API_REQ\\. | MASTer | CALC-[A-Z0-9][A-Z0-9-]* | FIELD\\.[A-Z][A-Z0-9_]* | 10_planned | outputs/frontend | MASTer_master | src/views | \\.vue）。violations=0 → verdict=passed。盲区声明：词面 grep 机械可达（escape_ratio=0，9/9 条目全判）；网外项目专名（未收录同义改写词形）理论可逃逸，网有牙断言 + 全文件命中完备性断言为在册缓解，语义级漏网归 human_review_required 通道。路径基：items location 为 po-master 仓内相对路径。self_report_trusted=false：trust.asserted=null，判卷唯一依据 trust.recomputed。duration_ms 钉 0（byte-identical 幂等）。",
+    "size_expected_from_denominator": 9
+  },
+  "tool": "mig-b4:run_baseline_gate",
+  "tool_version": "1.0.0",
+  "trigger": {
+    "note": "migration batch context: no kernel seq allocator; ran_at_seq pinned to 0 (deterministic batch base, A4 wall-clock-free; kernel re-sequences on ingestion); durations pinned to 0 for byte-identical rerun idempotency (batch hard rule 2)",
+    "task_ref": "MIG-B4/M4-baseline",
+    "type": "on_demand"
+  },
+  "trust": {
+    "asserted": null,
+    "recomputed": {
+      "matches_asserted": true,
+      "violations": 0
+    }
+  },
+  "verdict": "passed"
+}

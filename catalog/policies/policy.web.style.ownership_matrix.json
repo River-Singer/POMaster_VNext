@@ -1,0 +1,194 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "kind='policy' 不在 vocab-lock kinds_registry.truth_bodies（POLICY. 前缀已冻结注册，closed-world）",
+    "proposal": "词汇表 PR 登记 policy kind；或 Owner 裁决 policy 条目住 catalog/ 而非 truth/objects 正文层（与前批 45 条同因同请，合并进同一 vocab PR）",
+    "locked_vocab_untouched": true
+  },
+  "x-batch4-uplift": {
+    "status": "PROPOSAL",
+    "package": "MIG-B4 Universal 上提（工程策略族 split-ledger 驱动）",
+    "human_review_required": true,
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+  },
+  "id": "POLICY.WEB.STYLE.OWNERSHIP_MATRIX",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "UNIVERSAL_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "样式所有权五域矩阵",
+  "statement_zh": "样式按五域所有权矩阵管理：全局重置、设计令牌、共享组件、页面局部、第三方适配各设唯一所有者并绑定禁止行为类别；任何样式写入必须落在所属域的所有者路径内，owner 路径与扫描器禁用词表由项目基线登记。",
+  "statement_en_keywords": [
+    "style ownership",
+    "five domains",
+    "forbidden behavior",
+    "scoped style"
+  ],
+  "applies_when": {
+    "lane": "frontend",
+    "condition": "编写或评审样式代码时"
+  },
+  "enforcement": "required_when_applicable",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-batch4-uplift"
+  },
+  "origin": "ingested",
+  "origin_note": "MIG-B4 split-ledger UNIVERSAL/HYBRID universal 半上提；目录词面独立改写（clean-room），零逐字拷贝上游源文本",
+  "sub_rules": [
+    {
+      "rule_id": "layers.global-reset",
+      "statement_zh": "全局重置域：重置样式的唯一所有者是全局样式入口；页面域禁止局部重置、禁止内联改写根元素样式、禁止私挂全局样式文件。",
+      "provenance": {
+        "asset_id": "style-ownership-registry",
+        "entry_id": "layers.global-reset",
+        "decision": "HYBRID",
+        "merge_group": "MG-STYLE-MATRIX",
+        "migration_batch": "MIG-B4/STYLE",
+        "split_ledger": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+      }
+    },
+    {
+      "rule_id": "layers.design-token",
+      "statement_zh": "设计令牌域：令牌源文件的唯一所有者是令牌事实源；页面域禁止私定局部令牌、禁止硬编码颜色与像素值、禁止引用不存在的幽灵令牌、禁止手改令牌源文件。",
+      "provenance": {
+        "asset_id": "style-ownership-registry",
+        "entry_id": "layers.design-token",
+        "decision": "HYBRID",
+        "merge_group": "MG-STYLE-MATRIX",
+        "migration_batch": "MIG-B4/STYLE",
+        "split_ledger": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+      }
+    },
+    {
+      "rule_id": "layers.shared-component",
+      "statement_zh": "共享组件域：共享组件样式的唯一所有者是共享组件层；页面域禁止书写组件级样式、禁止覆盖基础组件视觉、禁止私造共享类名。",
+      "provenance": {
+        "asset_id": "style-ownership-registry",
+        "entry_id": "layers.shared-component",
+        "decision": "HYBRID",
+        "merge_group": "MG-STYLE-MATRIX",
+        "migration_batch": "MIG-B4/STYLE",
+        "split_ledger": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+      }
+    },
+    {
+      "rule_id": "layers.page-local",
+      "statement_zh": "页面局部域：scoped 样式块是页面局部样式的唯一容器；块内禁止声明全局类、禁止使用强制覆盖标记、禁止滥用深选择器穿透。",
+      "provenance": {
+        "asset_id": "style-ownership-registry",
+        "entry_id": "layers.page-local",
+        "decision": "HYBRID",
+        "merge_group": "MG-STYLE-MATRIX",
+        "migration_batch": "MIG-B4/STYLE",
+        "split_ledger": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+      }
+    },
+    {
+      "rule_id": "layers.vendor-adapter",
+      "statement_zh": "第三方适配域：第三方主题样式的唯一所有者是适配目录；页面域禁止直接引入第三方样式、禁止局部覆盖第三方主题、禁止局部改写主题参数。",
+      "provenance": {
+        "asset_id": "style-ownership-registry",
+        "entry_id": "layers.vendor-adapter",
+        "decision": "HYBRID",
+        "merge_group": "MG-STYLE-MATRIX",
+        "migration_batch": "MIG-B4/STYLE",
+        "split_ledger": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+      }
+    },
+    {
+      "rule_id": "scoped_style_rule",
+      "statement_zh": "页面内 scoped 样式块只承载本页局部样式；全局样式类只允许声明在共享组件层，页面禁止声明全局类名或向页面外泄漏全局类名。",
+      "provenance": {
+        "asset_id": "style-ownership-registry",
+        "entry_id": "scoped_style_rule",
+        "decision": "UNIVERSAL",
+        "merge_group": "MG-STYLE-MATRIX",
+        "migration_batch": "MIG-B4/STYLE",
+        "split_ledger": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+      }
+    }
+  ],
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/migration/master-batch4/split-ledger.yaml",
+      "captured_by": "agent:claude/mig-b4-catalog-uplift",
+      "locator": {
+        "asset": "style-ownership-registry",
+        "entry": "layers.global-reset",
+        "migration_batch": "MIG-B4/STYLE",
+        "upstream_source_ref": "outputs/frontend/10_planned/style-ownership-registry.yaml"
+      },
+      "clean_room_note": "independently rewritten from upstream batch4 mirror; zero verbatim copy"
+    },
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/migration/master-batch4/split-ledger.yaml",
+      "captured_by": "agent:claude/mig-b4-catalog-uplift",
+      "locator": {
+        "asset": "style-ownership-registry",
+        "entry": "layers.design-token",
+        "migration_batch": "MIG-B4/STYLE",
+        "upstream_source_ref": "outputs/frontend/10_planned/style-ownership-registry.yaml"
+      },
+      "clean_room_note": "independently rewritten from upstream batch4 mirror; zero verbatim copy"
+    },
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/migration/master-batch4/split-ledger.yaml",
+      "captured_by": "agent:claude/mig-b4-catalog-uplift",
+      "locator": {
+        "asset": "style-ownership-registry",
+        "entry": "layers.shared-component",
+        "migration_batch": "MIG-B4/STYLE",
+        "upstream_source_ref": "outputs/frontend/10_planned/style-ownership-registry.yaml"
+      },
+      "clean_room_note": "independently rewritten from upstream batch4 mirror; zero verbatim copy"
+    },
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/migration/master-batch4/split-ledger.yaml",
+      "captured_by": "agent:claude/mig-b4-catalog-uplift",
+      "locator": {
+        "asset": "style-ownership-registry",
+        "entry": "layers.page-local",
+        "migration_batch": "MIG-B4/STYLE",
+        "upstream_source_ref": "outputs/frontend/10_planned/style-ownership-registry.yaml"
+      },
+      "clean_room_note": "independently rewritten from upstream batch4 mirror; zero verbatim copy"
+    },
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/migration/master-batch4/split-ledger.yaml",
+      "captured_by": "agent:claude/mig-b4-catalog-uplift",
+      "locator": {
+        "asset": "style-ownership-registry",
+        "entry": "layers.vendor-adapter",
+        "migration_batch": "MIG-B4/STYLE",
+        "upstream_source_ref": "outputs/frontend/10_planned/style-ownership-registry.yaml"
+      },
+      "clean_room_note": "independently rewritten from upstream batch4 mirror; zero verbatim copy"
+    },
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/migration/master-batch4/split-ledger.yaml",
+      "captured_by": "agent:claude/mig-b4-catalog-uplift",
+      "locator": {
+        "asset": "style-ownership-registry",
+        "entry": "scoped_style_rule",
+        "migration_batch": "MIG-B4/STYLE",
+        "upstream_source_ref": "outputs/frontend/10_planned/style-ownership-registry.yaml"
+      },
+      "clean_room_note": "independently rewritten from upstream batch4 mirror; zero verbatim copy"
+    }
+  ]
+}

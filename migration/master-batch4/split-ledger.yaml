@@ -1,0 +1,2410 @@
+batch: MIG-B4
+catalog_scope_note: 防范围膨胀：universal 半优先与既有 catalog 面审重（POLICY.WEB.API.SINGLE_HTTP_CLIENT/TRUSTED_ENDPOINT_SOURCE/ERROR_NORMALIZATION/RETRY_DISCIPLINE 等），确属缺口才立候选；候选 9 个归并为 6 个 merge_group（MG-ARCH-LAYER/MG-ARCH-BARREL/MG-ARCH-NAMING/MG-HTTP-RECOVERY/MG-PERF-SKELETON/MG-STYLE-MATRIX）。catalog-lock：候选物化时按 catalog/tools 既有模式同步 controlled_children（allowed+required 两处）并重生成 catalog-lock.draft.json（0 mismatch、幂等 byte-identical）。
+clean_room_rule: D3 生死线：UNIVERSAL 条目全部独立改写（clean_room_rewrite_sketch 为改写词面，语义等价、词形独立），每条带 clean_room_note；sketch 词面零项目专名，catalog 条目 gate grep 面安全；catalog 物化（后续步骤）以 sketch 为底稿，禁回抄 MASTer 源文本。
+decision_rule: 三选一：UNIVERSAL=换一个 Vue+FastAPI 项目仍成立的通用工程政策（上提 catalog，独立改写）；PROJECT=MASTer 专属事实（项目侧 truth 对象 + Baseline 引用）；HYBRID=骨架 universal+参数 project（拆两半分别落）。保守偏差：拿不准→PROJECT（catalog 防范围膨胀）。
+denominator:
+  assets: 10
+  hybrid: 24
+  identity_check: universal(10) + project(283) + hybrid(24) = 317 = total_entries（恒等式，脚本断言）
+  method: sum(entries_by_asset) 逐资产累加 + 全表断言；id 分母与 key-binding-map.batch4.draft.yaml summary_counts 同源（dependency 27 / fixture 101 / boundary 39 / pattern 12 / performance ptb 11 / token_usage 5 / overlay 15 / perf pages 39）
+  per_asset:
+    architecture-constraints:
+      hybrid: 9
+      project: 1
+      total: 11
+      universal: 1
+    dependency-registry:
+      hybrid: 0
+      project: 27
+      total: 27
+      universal: 0
+    directory-layout:
+      hybrid: 5
+      project: 2
+      total: 14
+      universal: 7
+    http-client-policy:
+      hybrid: 3
+      project: 0
+      total: 3
+      universal: 0
+    implementation-boundary-plan:
+      hybrid: 0
+      project: 39
+      total: 39
+      universal: 0
+    pattern-registry:
+      hybrid: 0
+      project: 12
+      total: 12
+      universal: 0
+    performance-budget:
+      hybrid: 2
+      project: 61
+      total: 63
+      universal: 0
+    style-ownership-registry:
+      hybrid: 5
+      project: 22
+      total: 28
+      universal: 1
+    test-fixture-plan:
+      hybrid: 0
+      project: 101
+      total: 101
+      universal: 0
+    uiux-provider-overlay:
+      hybrid: 0
+      project: 18
+      total: 19
+      universal: 1
+  project: 283
+  total_entries: 317
+  universal: 10
+document_kind: m1-split-ledger
+entries:
+- asset_id: architecture-constraints
+  decision: HYBRID
+  destination:
+    project: truth/objects/architecture-constraint/layer-app.json（MIG-B4 项目侧转录落位）
+    universal: catalog/policies/policy.web.arch.layer_isolation.json（候选，MG-ARCH-LAYER 归并）
+  entry_id: layers.app
+  merge_group: MG-ARCH-LAYER
+  migration_batch: MIG-B4/ARCHITECTURE
+  rationale_one_line: 层职责与隔离方向骨架 universal（任意分层项目成立）；技术栈具名与职责文本细节为 project 参数
+  source_ref: outputs/frontend/10_planned/architecture-constraints.yaml
+  split_note: universal 半=层职责/禁入方向（并入 MG-ARCH-LAYER 单一候选，防 8 条重复上提）；project 半=技术栈具名与职责文本（留 truth 对象）
+- asset_id: architecture-constraints
+  decision: HYBRID
+  destination:
+    project: truth/objects/architecture-constraint/layer-pages.json（MIG-B4 项目侧转录落位）
+    universal: catalog/policies/policy.web.arch.layer_isolation.json（候选，MG-ARCH-LAYER 归并）
+  entry_id: layers.pages
+  merge_group: MG-ARCH-LAYER
+  migration_batch: MIG-B4/ARCHITECTURE
+  rationale_one_line: 层职责与隔离方向骨架 universal（任意分层项目成立）；技术栈具名与职责文本细节为 project 参数
+  source_ref: outputs/frontend/10_planned/architecture-constraints.yaml
+  split_note: universal 半=层职责/禁入方向（并入 MG-ARCH-LAYER 单一候选，防 8 条重复上提）；project 半=技术栈具名与职责文本（留 truth 对象）
+- asset_id: architecture-constraints
+  decision: HYBRID
+  destination:
+    project: truth/objects/architecture-constraint/layer-features.json（MIG-B4 项目侧转录落位）
+    universal: catalog/policies/policy.web.arch.layer_isolation.json（候选，MG-ARCH-LAYER 归并）
+  entry_id: layers.features
+  merge_group: MG-ARCH-LAYER
+  migration_batch: MIG-B4/ARCHITECTURE
+  rationale_one_line: 层职责与隔离方向骨架 universal（任意分层项目成立）；技术栈具名与职责文本细节为 project 参数
+  source_ref: outputs/frontend/10_planned/architecture-constraints.yaml
+  split_note: universal 半=层职责/禁入方向（并入 MG-ARCH-LAYER 单一候选，防 8 条重复上提）；project 半=技术栈具名与职责文本（留 truth 对象）
+- asset_id: architecture-constraints
+  decision: HYBRID
+  destination:
+    project: truth/objects/architecture-constraint/layer-entities.json（MIG-B4 项目侧转录落位）
+    universal: catalog/policies/policy.web.arch.layer_isolation.json（候选，MG-ARCH-LAYER 归并）
+  entry_id: layers.entities
+  merge_group: MG-ARCH-LAYER
+  migration_batch: MIG-B4/ARCHITECTURE
+  rationale_one_line: 层职责与隔离方向骨架 universal（任意分层项目成立）；技术栈具名与职责文本细节为 project 参数
+  source_ref: outputs/frontend/10_planned/architecture-constraints.yaml
+  split_note: universal 半=层职责/禁入方向（并入 MG-ARCH-LAYER 单一候选，防 8 条重复上提）；project 半=技术栈具名与职责文本（留 truth 对象）
+- asset_id: architecture-constraints
+  decision: HYBRID
+  destination:
+    project: truth/objects/architecture-constraint/layer-shared-state.json（MIG-B4 项目侧转录落位）
+    universal: catalog/policies/policy.web.arch.layer_isolation.json（候选，MG-ARCH-LAYER 归并）
+  entry_id: layers.shared-state
+  merge_group: MG-ARCH-LAYER
+  migration_batch: MIG-B4/ARCHITECTURE
+  rationale_one_line: 层职责与隔离方向骨架 universal（任意分层项目成立）；技术栈具名与职责文本细节为 project 参数
+  source_ref: outputs/frontend/10_planned/architecture-constraints.yaml
+  split_note: universal 半=层职责/禁入方向（并入 MG-ARCH-LAYER 单一候选，防 8 条重复上提）；project 半=技术栈具名与职责文本（留 truth 对象）
+- asset_id: architecture-constraints
+  decision: HYBRID
+  destination:
+    project: truth/objects/architecture-constraint/layer-shared-ui.json（MIG-B4 项目侧转录落位）
+    universal: catalog/policies/policy.web.arch.layer_isolation.json（候选，MG-ARCH-LAYER 归并）
+  entry_id: layers.shared-ui
+  merge_group: MG-ARCH-LAYER
+  migration_batch: MIG-B4/ARCHITECTURE
+  rationale_one_line: 层职责与隔离方向骨架 universal（任意分层项目成立）；技术栈具名与职责文本细节为 project 参数
+  source_ref: outputs/frontend/10_planned/architecture-constraints.yaml
+  split_note: universal 半=层职责/禁入方向（并入 MG-ARCH-LAYER 单一候选，防 8 条重复上提）；project 半=技术栈具名与职责文本（留 truth 对象）
+- asset_id: architecture-constraints
+  decision: HYBRID
+  destination:
+    project: truth/objects/architecture-constraint/layer-shared-grid.json（MIG-B4 项目侧转录落位）
+    universal: catalog/policies/policy.web.arch.layer_isolation.json（候选，MG-ARCH-LAYER 归并）
+  entry_id: layers.shared-grid
+  merge_group: MG-ARCH-LAYER
+  migration_batch: MIG-B4/ARCHITECTURE
+  rationale_one_line: 层职责与隔离方向骨架 universal（任意分层项目成立）；技术栈具名与职责文本细节为 project 参数
+  source_ref: outputs/frontend/10_planned/architecture-constraints.yaml
+  split_note: universal 半=层职责/禁入方向（并入 MG-ARCH-LAYER 单一候选，防 8 条重复上提）；project 半=技术栈具名与职责文本（留 truth 对象）
+- asset_id: architecture-constraints
+  decision: HYBRID
+  destination:
+    project: truth/objects/architecture-constraint/layer-shared-lib.json（MIG-B4 项目侧转录落位）
+    universal: catalog/policies/policy.web.arch.layer_isolation.json（候选，MG-ARCH-LAYER 归并）
+  entry_id: layers.shared-lib
+  merge_group: MG-ARCH-LAYER
+  migration_batch: MIG-B4/ARCHITECTURE
+  rationale_one_line: 层职责与隔离方向骨架 universal（任意分层项目成立）；技术栈具名与职责文本细节为 project 参数
+  source_ref: outputs/frontend/10_planned/architecture-constraints.yaml
+  split_note: universal 半=层职责/禁入方向（并入 MG-ARCH-LAYER 单一候选，防 8 条重复上提）；project 半=技术栈具名与职责文本（留 truth 对象）
+- asset_id: architecture-constraints
+  decision: HYBRID
+  destination:
+    project: truth/objects/architecture-constraint/rule-deep-import.json（MIG-B4 项目侧转录落位）
+    universal: catalog/policies/policy.web.arch.public_api_barrel.json（候选，MG-ARCH-BARREL 归并）
+  entry_id: deep_import_rule
+  merge_group: MG-ARCH-BARREL
+  migration_batch: MIG-B4/ARCHITECTURE
+  rationale_one_line: 仅经公共桶导入、禁深入 internal 深路径为 universal 规则；可导入桶清单为本仓参数
+  source_ref: outputs/frontend/10_planned/architecture-constraints.yaml
+  split_note: universal 半=桶导入纪律；project 半=本仓可导入桶清单
+- asset_id: architecture-constraints
+  clean_room_note: 独立改写：语义等价、词形独立，零逐字拷贝源文本；sketch 词面零项目专名（无页面 id 词形/接口需求 id 词形/项目品牌词/具体页面名/中文业务词），catalog 条目 gate grep 面安全
+  clean_room_rewrite_sketch: 新增任何文件前，必须先写明它归属哪个分层、哪个切片，并说明为何不能通过扩展既有文件达成；页面需要新状态时优先扩展该页已有的状态载体，而不是新建全局状态；新组件优先进入设计系统层或对应切片，避免堆积在页面层。
+  decision: UNIVERSAL
+  destination: catalog/policies/policy.web.arch.layer_isolation.json（候选，MG-ARCH-LAYER 归并）
+  entry_id: new_file_rule
+  merge_group: MG-ARCH-LAYER
+  migration_batch: MIG-B4/ARCHITECTURE
+  rationale_one_line: 纯新建文件纪律（先声明归属与不扩展理由、优先扩展既有载体），无项目专名，换任意分层项目成立
+  source_ref: outputs/frontend/10_planned/architecture-constraints.yaml
+- asset_id: architecture-constraints
+  decision: PROJECT
+  destination: truth/objects/architecture-constraint/public-api.json（MIG-B4 项目侧转录落位）
+  entry_id: public_api
+  migration_batch: MIG-B4/ARCHITECTURE
+  rationale_one_line: 本仓公共桶清单属项目架构事实
+  source_ref: outputs/frontend/10_planned/architecture-constraints.yaml
+- asset_id: dependency-registry
+  decision: PROJECT
+  destination: truth/objects/dependency/dep.ag-grid-community.json（MIG-B4 项目侧转录落位）
+  entry_id: DEP.ag-grid-community
+  migration_batch: MIG-B4/DEPENDENCY
+  rationale_one_line: 具体包与版本锁定为本仓依赖事实（换技术栈即不成立）
+  source_ref: outputs/frontend/10_planned/dependency-registry.yaml
+- asset_id: dependency-registry
+  decision: PROJECT
+  destination: truth/objects/dependency/dep.ag-grid-vue3.json（MIG-B4 项目侧转录落位）
+  entry_id: DEP.ag-grid-vue3
+  migration_batch: MIG-B4/DEPENDENCY
+  rationale_one_line: 具体包与版本锁定为本仓依赖事实（换技术栈即不成立）
+  source_ref: outputs/frontend/10_planned/dependency-registry.yaml
+- asset_id: dependency-registry
+  decision: PROJECT
+  destination: truth/objects/dependency/dep.axios.json（MIG-B4 项目侧转录落位）
+  entry_id: DEP.axios
+  migration_batch: MIG-B4/DEPENDENCY
+  rationale_one_line: 具体包与版本锁定为本仓依赖事实（换技术栈即不成立）
+  source_ref: outputs/frontend/10_planned/dependency-registry.yaml
+- asset_id: dependency-registry
+  decision: PROJECT
+  destination: truth/objects/dependency/dep.dayjs.json（MIG-B4 项目侧转录落位）
+  entry_id: DEP.dayjs
+  migration_batch: MIG-B4/DEPENDENCY
+  rationale_one_line: 具体包与版本锁定为本仓依赖事实（换技术栈即不成立）
+  source_ref: outputs/frontend/10_planned/dependency-registry.yaml
+- asset_id: dependency-registry
+  decision: PROJECT
+  destination: truth/objects/dependency/dep.decimal.js.json（MIG-B4 项目侧转录落位）
+  entry_id: DEP.decimal.js
+  migration_batch: MIG-B4/DEPENDENCY
+  rationale_one_line: 具体包与版本锁定为本仓依赖事实（换技术栈即不成立）
+  source_ref: outputs/frontend/10_planned/dependency-registry.yaml
+- asset_id: dependency-registry
+  decision: PROJECT
+  destination: truth/objects/dependency/dep.echarts.json（MIG-B4 项目侧转录落位）
+  entry_id: DEP.echarts
+  migration_batch: MIG-B4/DEPENDENCY
+  rationale_one_line: 具体包与版本锁定为本仓依赖事实（换技术栈即不成立）
+  source_ref: outputs/frontend/10_planned/dependency-registry.yaml
+- asset_id: dependency-registry
+  decision: PROJECT
+  destination: truth/objects/dependency/dep.element-plus.json（MIG-B4 项目侧转录落位）
+  entry_id: DEP.element-plus
+  migration_batch: MIG-B4/DEPENDENCY
+  rationale_one_line: 具体包与版本锁定为本仓依赖事实（换技术栈即不成立）
+  source_ref: outputs/frontend/10_planned/dependency-registry.yaml
+- asset_id: dependency-registry
+  decision: PROJECT
+  destination: truth/objects/dependency/dep.eslint.json（MIG-B4 项目侧转录落位）
+  entry_id: DEP.eslint
+  migration_batch: MIG-B4/DEPENDENCY
+  rationale_one_line: 具体包与版本锁定为本仓依赖事实（换技术栈即不成立）
+  source_ref: outputs/frontend/10_planned/dependency-registry.yaml
+- asset_id: dependency-registry
+  decision: PROJECT
+  destination: truth/objects/dependency/dep.eslint-js.json（MIG-B4 项目侧转录落位）
+  entry_id: DEP.eslint-js
+  migration_batch: MIG-B4/DEPENDENCY
+  rationale_one_line: 具体包与版本锁定为本仓依赖事实（换技术栈即不成立）
+  source_ref: outputs/frontend/10_planned/dependency-registry.yaml
+- asset_id: dependency-registry
+  decision: PROJECT
+  destination: truth/objects/dependency/dep.eslint-plugin-vue.json（MIG-B4 项目侧转录落位）
+  entry_id: DEP.eslint-plugin-vue
+  migration_batch: MIG-B4/DEPENDENCY
+  rationale_one_line: 具体包与版本锁定为本仓依赖事实（换技术栈即不成立）
+  source_ref: outputs/frontend/10_planned/dependency-registry.yaml
+- asset_id: dependency-registry
+  decision: PROJECT
+  destination: truth/objects/dependency/dep.jsdom.json（MIG-B4 项目侧转录落位）
+  entry_id: DEP.jsdom
+  migration_batch: MIG-B4/DEPENDENCY
+  rationale_one_line: 具体包与版本锁定为本仓依赖事实（换技术栈即不成立）
+  source_ref: outputs/frontend/10_planned/dependency-registry.yaml
+- asset_id: dependency-registry
+  decision: PROJECT
+  destination: truth/objects/dependency/dep.jsep.json（MIG-B4 项目侧转录落位）
+  entry_id: DEP.jsep
+  migration_batch: MIG-B4/DEPENDENCY
+  rationale_one_line: 具体包与版本锁定为本仓依赖事实（换技术栈即不成立）
+  source_ref: outputs/frontend/10_planned/dependency-registry.yaml
+- asset_id: dependency-registry
+  decision: PROJECT
+  destination: truth/objects/dependency/dep.lucide-vue-next.json（MIG-B4 项目侧转录落位）
+  entry_id: DEP.lucide-vue-next
+  migration_batch: MIG-B4/DEPENDENCY
+  rationale_one_line: 具体包与版本锁定为本仓依赖事实（换技术栈即不成立）
+  source_ref: outputs/frontend/10_planned/dependency-registry.yaml
+- asset_id: dependency-registry
+  decision: PROJECT
+  destination: truth/objects/dependency/dep.pinia.json（MIG-B4 项目侧转录落位）
+  entry_id: DEP.pinia
+  migration_batch: MIG-B4/DEPENDENCY
+  rationale_one_line: 具体包与版本锁定为本仓依赖事实（换技术栈即不成立）
+  source_ref: outputs/frontend/10_planned/dependency-registry.yaml
+- asset_id: dependency-registry
+  decision: PROJECT
+  destination: truth/objects/dependency/dep.prettier.json（MIG-B4 项目侧转录落位）
+  entry_id: DEP.prettier
+  migration_batch: MIG-B4/DEPENDENCY
+  rationale_one_line: 具体包与版本锁定为本仓依赖事实（换技术栈即不成立）
+  source_ref: outputs/frontend/10_planned/dependency-registry.yaml
+- asset_id: dependency-registry
+  decision: PROJECT
+  destination: truth/objects/dependency/dep.tanstack-vue-query.json（MIG-B4 项目侧转录落位）
+  entry_id: DEP.tanstack-vue-query
+  migration_batch: MIG-B4/DEPENDENCY
+  rationale_one_line: 具体包与版本锁定为本仓依赖事实（换技术栈即不成立）
+  source_ref: outputs/frontend/10_planned/dependency-registry.yaml
+- asset_id: dependency-registry
+  decision: PROJECT
+  destination: truth/objects/dependency/dep.types-node.json（MIG-B4 项目侧转录落位）
+  entry_id: DEP.types-node
+  migration_batch: MIG-B4/DEPENDENCY
+  rationale_one_line: 具体包与版本锁定为本仓依赖事实（换技术栈即不成立）
+  source_ref: outputs/frontend/10_planned/dependency-registry.yaml
+- asset_id: dependency-registry
+  decision: PROJECT
+  destination: truth/objects/dependency/dep.typescript.json（MIG-B4 项目侧转录落位）
+  entry_id: DEP.typescript
+  migration_batch: MIG-B4/DEPENDENCY
+  rationale_one_line: 具体包与版本锁定为本仓依赖事实（换技术栈即不成立）
+  source_ref: outputs/frontend/10_planned/dependency-registry.yaml
+- asset_id: dependency-registry
+  decision: PROJECT
+  destination: truth/objects/dependency/dep.typescript-eslint.json（MIG-B4 项目侧转录落位）
+  entry_id: DEP.typescript-eslint
+  migration_batch: MIG-B4/DEPENDENCY
+  rationale_one_line: 具体包与版本锁定为本仓依赖事实（换技术栈即不成立）
+  source_ref: outputs/frontend/10_planned/dependency-registry.yaml
+- asset_id: dependency-registry
+  decision: PROJECT
+  destination: truth/objects/dependency/dep.vite.json（MIG-B4 项目侧转录落位）
+  entry_id: DEP.vite
+  migration_batch: MIG-B4/DEPENDENCY
+  rationale_one_line: 具体包与版本锁定为本仓依赖事实（换技术栈即不成立）
+  source_ref: outputs/frontend/10_planned/dependency-registry.yaml
+- asset_id: dependency-registry
+  decision: PROJECT
+  destination: truth/objects/dependency/dep.vitejs-plugin-vue.json（MIG-B4 项目侧转录落位）
+  entry_id: DEP.vitejs-plugin-vue
+  migration_batch: MIG-B4/DEPENDENCY
+  rationale_one_line: 具体包与版本锁定为本仓依赖事实（换技术栈即不成立）
+  source_ref: outputs/frontend/10_planned/dependency-registry.yaml
+- asset_id: dependency-registry
+  decision: PROJECT
+  destination: truth/objects/dependency/dep.vitest.json（MIG-B4 项目侧转录落位）
+  entry_id: DEP.vitest
+  migration_batch: MIG-B4/DEPENDENCY
+  rationale_one_line: 具体包与版本锁定为本仓依赖事实（换技术栈即不成立）
+  source_ref: outputs/frontend/10_planned/dependency-registry.yaml
+- asset_id: dependency-registry
+  decision: PROJECT
+  destination: truth/objects/dependency/dep.vue.json（MIG-B4 项目侧转录落位）
+  entry_id: DEP.vue
+  migration_batch: MIG-B4/DEPENDENCY
+  rationale_one_line: 具体包与版本锁定为本仓依赖事实（换技术栈即不成立）
+  source_ref: outputs/frontend/10_planned/dependency-registry.yaml
+- asset_id: dependency-registry
+  decision: PROJECT
+  destination: truth/objects/dependency/dep.vue-router.json（MIG-B4 项目侧转录落位）
+  entry_id: DEP.vue-router
+  migration_batch: MIG-B4/DEPENDENCY
+  rationale_one_line: 具体包与版本锁定为本仓依赖事实（换技术栈即不成立）
+  source_ref: outputs/frontend/10_planned/dependency-registry.yaml
+- asset_id: dependency-registry
+  decision: PROJECT
+  destination: truth/objects/dependency/dep.vue-test-utils.json（MIG-B4 项目侧转录落位）
+  entry_id: DEP.vue-test-utils
+  migration_batch: MIG-B4/DEPENDENCY
+  rationale_one_line: 具体包与版本锁定为本仓依赖事实（换技术栈即不成立）
+  source_ref: outputs/frontend/10_planned/dependency-registry.yaml
+- asset_id: dependency-registry
+  decision: PROJECT
+  destination: truth/objects/dependency/dep.vue-tsc.json（MIG-B4 项目侧转录落位）
+  entry_id: DEP.vue-tsc
+  migration_batch: MIG-B4/DEPENDENCY
+  rationale_one_line: 具体包与版本锁定为本仓依赖事实（换技术栈即不成立）
+  source_ref: outputs/frontend/10_planned/dependency-registry.yaml
+- asset_id: dependency-registry
+  decision: PROJECT
+  destination: truth/objects/dependency/dep.vueuse-core.json（MIG-B4 项目侧转录落位）
+  entry_id: DEP.vueuse-core
+  migration_batch: MIG-B4/DEPENDENCY
+  rationale_one_line: 具体包与版本锁定为本仓依赖事实（换技术栈即不成立）
+  source_ref: outputs/frontend/10_planned/dependency-registry.yaml
+- asset_id: directory-layout
+  decision: PROJECT
+  destination: truth/objects/directory-layout/layer-spec-app.json（MIG-B4 项目侧转录落位）
+  entry_id: layers.app
+  migration_batch: MIG-B4/ARCHITECTURE
+  rationale_one_line: 本仓入口文件清单属项目事实；组装规则半已由 architecture-constraints 条目承载
+  source_ref: outputs/frontend/10_planned/directory-layout.yaml
+- asset_id: directory-layout
+  decision: HYBRID
+  destination:
+    project: truth/objects/directory-layout/layer-spec-pages.json（MIG-B4 项目侧转录落位）
+    universal: catalog/policies/policy.web.arch.layer_isolation.json（候选，MG-ARCH-LAYER 归并）
+  entry_id: layers.pages
+  merge_group: MG-ARCH-LAYER
+  migration_batch: MIG-B4/ARCHITECTURE
+  rationale_one_line: 页目录解剖（桶+页面组件+局部组件私有）universal；蓝图页面 id 体系与路径参数 project
+  source_ref: outputs/frontend/10_planned/directory-layout.yaml
+  split_note: universal 半=页目录解剖模板；project 半=页面 id 体系与具体路径
+- asset_id: directory-layout
+  decision: HYBRID
+  destination:
+    project: truth/objects/directory-layout/layer-spec-features.json（MIG-B4 项目侧转录落位）
+    universal: catalog/policies/policy.web.arch.layer_isolation.json（候选，MG-ARCH-LAYER 归并）
+  entry_id: layers.features
+  merge_group: MG-ARCH-LAYER
+  migration_batch: MIG-B4/ARCHITECTURE
+  rationale_one_line: 按能力切片的解剖与禁互引骨架 universal；能力 id 体系与路径参数 project
+  source_ref: outputs/frontend/10_planned/directory-layout.yaml
+  split_note: universal 半=切片解剖模板与禁互引；project 半=能力 id 体系
+- asset_id: directory-layout
+  decision: HYBRID
+  destination:
+    project: truth/objects/directory-layout/layer-spec-entities.json（MIG-B4 项目侧转录落位）
+    universal: catalog/policies/policy.web.arch.layer_isolation.json（候选，MG-ARCH-LAYER 归并）
+  entry_id: layers.entities
+  merge_group: MG-ARCH-LAYER
+  migration_batch: MIG-B4/ARCHITECTURE
+  rationale_one_line: 实体目录解剖（桶/接口/hooks/schema/类型）universal；查询键维度等参数 project
+  source_ref: outputs/frontend/10_planned/directory-layout.yaml
+  split_note: universal 半=实体目录解剖；project 半=查询键维度清单
+- asset_id: directory-layout
+  clean_room_note: 独立改写：语义等价、词形独立，零逐字拷贝源文本；sketch 词面零项目专名（无页面 id 词形/接口需求 id 词形/项目品牌词/具体页面名/中文业务词），catalog 条目 gate grep 面安全
+  clean_room_rewrite_sketch: 组合式函数文件名以 use 为前缀接驼峰主体，一个文件承载一个组合式函数。
+  decision: UNIVERSAL
+  destination: catalog/policies/policy.web.arch.naming_conventions.json（候选，MG-ARCH-NAMING 归并）
+  entry_id: naming.composable
+  merge_group: MG-ARCH-NAMING
+  migration_batch: MIG-B4/ARCHITECTURE
+  rationale_one_line: 通用命名约定，无项目专名
+  source_ref: outputs/frontend/10_planned/directory-layout.yaml
+- asset_id: directory-layout
+  clean_room_note: 独立改写：语义等价、词形独立，零逐字拷贝源文本；sketch 词面零项目专名（无页面 id 词形/接口需求 id 词形/项目品牌词/具体页面名/中文业务词），catalog 条目 gate grep 面安全
+  clean_room_rewrite_sketch: 路由级页面组件文件名由页面语义名加帕斯卡式 Page 后缀组成。
+  decision: UNIVERSAL
+  destination: catalog/policies/policy.web.arch.naming_conventions.json（候选，MG-ARCH-NAMING 归并）
+  entry_id: naming.page_component
+  merge_group: MG-ARCH-NAMING
+  migration_batch: MIG-B4/ARCHITECTURE
+  rationale_one_line: 通用命名约定，无项目专名
+  source_ref: outputs/frontend/10_planned/directory-layout.yaml
+- asset_id: directory-layout
+  clean_room_note: 独立改写：语义等价、词形独立，零逐字拷贝源文本；sketch 词面零项目专名（无页面 id 词形/接口需求 id 词形/项目品牌词/具体页面名/中文业务词），catalog 条目 gate grep 面安全
+  clean_room_rewrite_sketch: 切片内组合组件以 Widget 或 Panel 后缀命名，与页面级组件相区分。
+  decision: UNIVERSAL
+  destination: catalog/policies/policy.web.arch.naming_conventions.json（候选，MG-ARCH-NAMING 归并）
+  entry_id: naming.feature_component
+  merge_group: MG-ARCH-NAMING
+  migration_batch: MIG-B4/ARCHITECTURE
+  rationale_one_line: 通用命名约定，无项目专名
+  source_ref: outputs/frontend/10_planned/directory-layout.yaml
+- asset_id: directory-layout
+  decision: PROJECT
+  destination: truth/objects/directory-layout/naming-shared-component.json（MIG-B4 项目侧转录落位）
+  entry_id: naming.shared_component
+  migration_batch: MIG-B4/ARCHITECTURE
+  rationale_one_line: 组件名前缀绑定本仓品牌词与组件/模式注册表体系
+  source_ref: outputs/frontend/10_planned/directory-layout.yaml
+- asset_id: directory-layout
+  clean_room_note: 独立改写：语义等价、词形独立，零逐字拷贝源文本；sketch 词面零项目专名（无页面 id 词形/接口需求 id 词形/项目品牌词/具体页面名/中文业务词），catalog 条目 gate grep 面安全
+  clean_room_rewrite_sketch: 每个分层根目录与每个切片、实体、页面根目录必须提供唯一的桶出口文件，作为该目录对外的唯一可见面。
+  decision: UNIVERSAL
+  destination: catalog/policies/policy.web.arch.public_api_barrel.json（候选，MG-ARCH-BARREL 归并）
+  entry_id: naming.barrel
+  merge_group: MG-ARCH-BARREL
+  migration_batch: MIG-B4/ARCHITECTURE
+  rationale_one_line: 通用命名约定，无项目专名
+  source_ref: outputs/frontend/10_planned/directory-layout.yaml
+- asset_id: directory-layout
+  clean_room_note: 独立改写：语义等价、词形独立，零逐字拷贝源文本；sketch 词面零项目专名（无页面 id 词形/接口需求 id 词形/项目品牌词/具体页面名/中文业务词），catalog 条目 gate grep 面安全
+  clean_room_rewrite_sketch: 实体目录名采用单数名词加小写中划线的形式。
+  decision: UNIVERSAL
+  destination: catalog/policies/policy.web.arch.naming_conventions.json（候选，MG-ARCH-NAMING 归并）
+  entry_id: naming.entity_dir
+  merge_group: MG-ARCH-NAMING
+  migration_batch: MIG-B4/ARCHITECTURE
+  rationale_one_line: 通用命名约定，无项目专名
+  source_ref: outputs/frontend/10_planned/directory-layout.yaml
+- asset_id: directory-layout
+  decision: HYBRID
+  destination:
+    project: truth/objects/directory-layout/naming-feature-dir.json（MIG-B4 项目侧转录落位）
+    universal: catalog/policies/policy.web.arch.naming_conventions.json（候选，MG-ARCH-NAMING 归并）
+  entry_id: naming.feature_dir
+  merge_group: MG-ARCH-NAMING
+  migration_batch: MIG-B4/ARCHITECTURE
+  rationale_one_line: 蓝图 id 到目录名的转换规则 universal；能力 id 体系参数 project
+  source_ref: outputs/frontend/10_planned/directory-layout.yaml
+  split_note: universal 半=蓝图 id 转 kebab 目录名规则；project 半=能力 id 体系本身
+- asset_id: directory-layout
+  decision: HYBRID
+  destination:
+    project: truth/objects/directory-layout/naming-page-dir.json（MIG-B4 项目侧转录落位）
+    universal: catalog/policies/policy.web.arch.naming_conventions.json（候选，MG-ARCH-NAMING 归并）
+  entry_id: naming.page_dir
+  merge_group: MG-ARCH-NAMING
+  migration_batch: MIG-B4/ARCHITECTURE
+  rationale_one_line: 蓝图 id 到目录名的转换规则 universal；页面 id 体系参数 project
+  source_ref: outputs/frontend/10_planned/directory-layout.yaml
+  split_note: universal 半=蓝图 id 转 kebab 目录名规则；project 半=页面 id 体系本身
+- asset_id: directory-layout
+  clean_room_note: 独立改写：语义等价、词形独立，零逐字拷贝源文本；sketch 词面零项目专名（无页面 id 词形/接口需求 id 词形/项目品牌词/具体页面名/中文业务词），catalog 条目 gate grep 面安全
+  clean_room_rewrite_sketch: 桶文件是分层的唯一对外契约面：只转发对外接口，不暴露内部实现；跨层引用必须经由桶完成，深入内部目录的导入一律禁止。
+  decision: UNIVERSAL
+  destination: catalog/policies/policy.web.arch.public_api_barrel.json（候选，MG-ARCH-BARREL 归并）
+  entry_id: barrel_rule
+  merge_group: MG-ARCH-BARREL
+  migration_batch: MIG-B4/ARCHITECTURE
+  rationale_one_line: 桶为唯一出口纪律，无项目专名
+  source_ref: outputs/frontend/10_planned/directory-layout.yaml
+- asset_id: directory-layout
+  clean_room_note: 独立改写：语义等价、词形独立，零逐字拷贝源文本；sketch 词面零项目专名（无页面 id 词形/接口需求 id 词形/项目品牌词/具体页面名/中文业务词），catalog 条目 gate grep 面安全
+  clean_room_rewrite_sketch: 组件按复用范围就近放置：单页私有的留在该页目录；跨页复用的进入功能切片；只有稳定共享且不携带业务语义的组件才下沉到设计系统层。
+  decision: UNIVERSAL
+  destination: catalog/policies/policy.web.arch.layer_isolation.json（候选，MG-ARCH-LAYER 归并）
+  entry_id: colocation_rule
+  merge_group: MG-ARCH-LAYER
+  migration_batch: MIG-B4/ARCHITECTURE
+  rationale_one_line: 按复用范围就近放置的纪律，无项目专名
+  source_ref: outputs/frontend/10_planned/directory-layout.yaml
+- asset_id: http-client-policy
+  decision: HYBRID
+  destination:
+    project: truth/objects/http-client/client-auth.json（MIG-B4 项目侧转录落位）
+    universal: catalog/policies/policy.web.api.auth_app_client_split.json（候选；与既有 POLICY.WEB.API.SINGLE_HTTP_CLIENT/TRUSTED_ENDPOINT_SOURCE 审重）
+  entry_id: clients.authClient
+  merge_group: MG-HTTP-RECOVERY
+  migration_batch: MIG-B4/HTTP_CLIENT
+  rationale_one_line: 会话族客户端分离与端点白名单原则 universal（任务明示例）；具体端点清单 project
+  source_ref: outputs/frontend/10_planned/http-client-policy.yaml
+  split_note: universal 半=auth/app 双客户端分离 + 端点白名单原则（与既有 SINGLE_HTTP_CLIENT/TRUSTED_ENDPOINT_SOURCE 审重）；project 半=5 条端点清单
+- asset_id: http-client-policy
+  decision: HYBRID
+  destination:
+    project: truth/objects/http-client/client-app.json（MIG-B4 项目侧转录落位）
+    universal: catalog/policies/policy.web.api.session_recovery_split.json（候选；401/403 分开 + 单飞刷新 + 重放上限）
+  entry_id: clients.appClient
+  merge_group: MG-HTTP-RECOVERY
+  migration_batch: MIG-B4/HTTP_CLIENT
+  rationale_one_line: 401/403 分开处理 + 单飞刷新 + 重放上限 universal（任务明示例）；业务域范围与排除路径 project
+  source_ref: outputs/frontend/10_planned/http-client-policy.yaml
+  split_note: universal 半=401 刷新一次重放一次 / 403 不刷新拒绝 / 单飞刷新 / 逐请求重放上限；project 半=业务域范围与排除路径清单
+- asset_id: http-client-policy
+  decision: HYBRID
+  destination:
+    project: truth/objects/http-client/global-config.json（MIG-B4 项目侧转录落位）
+    universal: catalog/policies/policy.web.api.request_infrastructure.json（候选）
+  entry_id: global
+  merge_group: MG-HTTP-RECOVERY
+  migration_batch: MIG-B4/HTTP_CLIENT
+  rationale_one_line: 统一超时/取消/追踪/请求标识挂点骨架 universal；超时数值、头名、重试策略 id 参数 project
+  source_ref: outputs/frontend/10_planned/http-client-policy.yaml
+  split_note: universal 半=请求基础设施统一挂点（超时/中止/追踪/请求标识/基础地址来源）；project 半=30000ms 数值、两个头名、重试策略 id
+- asset_id: implementation-boundary-plan
+  decision: PROJECT
+  destination: truth/objects/boundary/boundary.page-app-all-parts-list.json（MIG-B4 项目侧转录落位）
+  entry_id: BOUNDARY.PAGE-APP-ALL-PARTS-LIST
+  migration_batch: MIG-B4/BOUNDARY
+  rationale_one_line: 逐页保护面绑定本页蓝图 region/action 集合，属项目事实
+  source_ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+- asset_id: implementation-boundary-plan
+  decision: PROJECT
+  destination: truth/objects/boundary/boundary.page-app-approval-flow.json（MIG-B4 项目侧转录落位）
+  entry_id: BOUNDARY.PAGE-APP-APPROVAL-FLOW
+  migration_batch: MIG-B4/BOUNDARY
+  rationale_one_line: 逐页保护面绑定本页蓝图 region/action 集合，属项目事实
+  source_ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+- asset_id: implementation-boundary-plan
+  decision: PROJECT
+  destination: truth/objects/boundary/boundary.page-app-bridge-table.json（MIG-B4 项目侧转录落位）
+  entry_id: BOUNDARY.PAGE-APP-BRIDGE-TABLE
+  migration_batch: MIG-B4/BOUNDARY
+  rationale_one_line: 逐页保护面绑定本页蓝图 region/action 集合，属项目事实
+  source_ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+- asset_id: implementation-boundary-plan
+  decision: PROJECT
+  destination: truth/objects/boundary/boundary.page-app-buc-detail.json（MIG-B4 项目侧转录落位）
+  entry_id: BOUNDARY.PAGE-APP-BUC-DETAIL
+  migration_batch: MIG-B4/BOUNDARY
+  rationale_one_line: 逐页保护面绑定本页蓝图 region/action 集合，属项目事实
+  source_ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+- asset_id: implementation-boundary-plan
+  decision: PROJECT
+  destination: truth/objects/boundary/boundary.page-app-csc-price.json（MIG-B4 项目侧转录落位）
+  entry_id: BOUNDARY.PAGE-APP-CSC-PRICE
+  migration_batch: MIG-B4/BOUNDARY
+  rationale_one_line: 逐页保护面绑定本页蓝图 region/action 集合，属项目事实
+  source_ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+- asset_id: implementation-boundary-plan
+  decision: PROJECT
+  destination: truth/objects/boundary/boundary.page-app-dashboard.json（MIG-B4 项目侧转录落位）
+  entry_id: BOUNDARY.PAGE-APP-DASHBOARD
+  migration_batch: MIG-B4/BOUNDARY
+  rationale_one_line: 逐页保护面绑定本页蓝图 region/action 集合，属项目事实
+  source_ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+- asset_id: implementation-boundary-plan
+  decision: PROJECT
+  destination: truth/objects/boundary/boundary.page-app-data-permission.json（MIG-B4 项目侧转录落位）
+  entry_id: BOUNDARY.PAGE-APP-DATA-PERMISSION
+  migration_batch: MIG-B4/BOUNDARY
+  rationale_one_line: 逐页保护面绑定本页蓝图 region/action 集合，属项目事实
+  source_ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+- asset_id: implementation-boundary-plan
+  decision: PROJECT
+  destination: truth/objects/boundary/boundary.page-app-equipment-db.json（MIG-B4 项目侧转录落位）
+  entry_id: BOUNDARY.PAGE-APP-EQUIPMENT-DB
+  migration_batch: MIG-B4/BOUNDARY
+  rationale_one_line: 逐页保护面绑定本页蓝图 region/action 集合，属项目事实
+  source_ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+- asset_id: implementation-boundary-plan
+  decision: PROJECT
+  destination: truth/objects/boundary/boundary.page-app-equipment-detail.json（MIG-B4 项目侧转录落位）
+  entry_id: BOUNDARY.PAGE-APP-EQUIPMENT-DETAIL
+  migration_batch: MIG-B4/BOUNDARY
+  rationale_one_line: 逐页保护面绑定本页蓝图 region/action 集合，属项目事实
+  source_ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+- asset_id: implementation-boundary-plan
+  decision: PROJECT
+  destination: truth/objects/boundary/boundary.page-app-equipment-palette.json（MIG-B4 项目侧转录落位）
+  entry_id: BOUNDARY.PAGE-APP-EQUIPMENT-PALETTE
+  migration_batch: MIG-B4/BOUNDARY
+  rationale_one_line: 逐页保护面绑定本页蓝图 region/action 集合，属项目事实
+  source_ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+- asset_id: implementation-boundary-plan
+  decision: PROJECT
+  destination: truth/objects/boundary/boundary.page-app-evaluation.json（MIG-B4 项目侧转录落位）
+  entry_id: BOUNDARY.PAGE-APP-EVALUATION
+  migration_batch: MIG-B4/BOUNDARY
+  rationale_one_line: 逐页保护面绑定本页蓝图 region/action 集合，属项目事实
+  source_ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+- asset_id: implementation-boundary-plan
+  decision: PROJECT
+  destination: truth/objects/boundary/boundary.page-app-forecast-report.json（MIG-B4 项目侧转录落位）
+  entry_id: BOUNDARY.PAGE-APP-FORECAST-REPORT
+  migration_batch: MIG-B4/BOUNDARY
+  rationale_one_line: 逐页保护面绑定本页蓝图 region/action 集合，属项目事实
+  source_ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+- asset_id: implementation-boundary-plan
+  decision: PROJECT
+  destination: truth/objects/boundary/boundary.page-app-material-db.json（MIG-B4 项目侧转录落位）
+  entry_id: BOUNDARY.PAGE-APP-MATERIAL-DB
+  migration_batch: MIG-B4/BOUNDARY
+  rationale_one_line: 逐页保护面绑定本页蓝图 region/action 集合，属项目事实
+  source_ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+- asset_id: implementation-boundary-plan
+  decision: PROJECT
+  destination: truth/objects/boundary/boundary.page-app-other-cost-analysis.json（MIG-B4 项目侧转录落位）
+  entry_id: BOUNDARY.PAGE-APP-OTHER-COST-ANALYSIS
+  migration_batch: MIG-B4/BOUNDARY
+  rationale_one_line: 逐页保护面绑定本页蓝图 region/action 集合，属项目事实
+  source_ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+- asset_id: implementation-boundary-plan
+  decision: PROJECT
+  destination: truth/objects/boundary/boundary.page-app-other-db.json（MIG-B4 项目侧转录落位）
+  entry_id: BOUNDARY.PAGE-APP-OTHER-DB
+  migration_batch: MIG-B4/BOUNDARY
+  rationale_one_line: 逐页保护面绑定本页蓝图 region/action 集合，属项目事实
+  source_ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+- asset_id: implementation-boundary-plan
+  decision: PROJECT
+  destination: truth/objects/boundary/boundary.page-app-part-info.json（MIG-B4 项目侧转录落位）
+  entry_id: BOUNDARY.PAGE-APP-PART-INFO
+  migration_batch: MIG-B4/BOUNDARY
+  rationale_one_line: 逐页保护面绑定本页蓝图 region/action 集合，属项目事实
+  source_ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+- asset_id: implementation-boundary-plan
+  decision: PROJECT
+  destination: truth/objects/boundary/boundary.page-app-part-structure-db.json（MIG-B4 项目侧转录落位）
+  entry_id: BOUNDARY.PAGE-APP-PART-STRUCTURE-DB
+  migration_batch: MIG-B4/BOUNDARY
+  rationale_one_line: 逐页保护面绑定本页蓝图 region/action 集合，属项目事实
+  source_ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+- asset_id: implementation-boundary-plan
+  decision: PROJECT
+  destination: truth/objects/boundary/boundary.page-app-process-db.json（MIG-B4 项目侧转录落位）
+  entry_id: BOUNDARY.PAGE-APP-PROCESS-DB
+  migration_batch: MIG-B4/BOUNDARY
+  rationale_one_line: 逐页保护面绑定本页蓝图 region/action 集合，属项目事实
+  source_ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+- asset_id: implementation-boundary-plan
+  decision: PROJECT
+  destination: truth/objects/boundary/boundary.page-app-role-mgmt.json（MIG-B4 项目侧转录落位）
+  entry_id: BOUNDARY.PAGE-APP-ROLE-MGMT
+  migration_batch: MIG-B4/BOUNDARY
+  rationale_one_line: 逐页保护面绑定本页蓝图 region/action 集合，属项目事实
+  source_ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+- asset_id: implementation-boundary-plan
+  decision: PROJECT
+  destination: truth/objects/boundary/boundary.page-app-set-db.json（MIG-B4 项目侧转录落位）
+  entry_id: BOUNDARY.PAGE-APP-SET-DB
+  migration_batch: MIG-B4/BOUNDARY
+  rationale_one_line: 逐页保护面绑定本页蓝图 region/action 集合，属项目事实
+  source_ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+- asset_id: implementation-boundary-plan
+  decision: PROJECT
+  destination: truth/objects/boundary/boundary.page-app-task-mgmt.json（MIG-B4 项目侧转录落位）
+  entry_id: BOUNDARY.PAGE-APP-TASK-MGMT
+  migration_batch: MIG-B4/BOUNDARY
+  rationale_one_line: 逐页保护面绑定本页蓝图 region/action 集合，属项目事实
+  source_ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+- asset_id: implementation-boundary-plan
+  decision: PROJECT
+  destination: truth/objects/boundary/boundary.page-app-technical-akt.json（MIG-B4 项目侧转录落位）
+  entry_id: BOUNDARY.PAGE-APP-TECHNICAL-AKT
+  migration_batch: MIG-B4/BOUNDARY
+  rationale_one_line: 逐页保护面绑定本页蓝图 region/action 集合，属项目事实
+  source_ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+- asset_id: implementation-boundary-plan
+  decision: PROJECT
+  destination: truth/objects/boundary/boundary.page-app-user-mgmt.json（MIG-B4 项目侧转录落位）
+  entry_id: BOUNDARY.PAGE-APP-USER-MGMT
+  migration_batch: MIG-B4/BOUNDARY
+  rationale_one_line: 逐页保护面绑定本页蓝图 region/action 集合，属项目事实
+  source_ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+- asset_id: implementation-boundary-plan
+  decision: PROJECT
+  destination: truth/objects/boundary/boundary.page-app-vehicle-master-data.json（MIG-B4 项目侧转录落位）
+  entry_id: BOUNDARY.PAGE-APP-VEHICLE-MASTER-DATA
+  migration_batch: MIG-B4/BOUNDARY
+  rationale_one_line: 逐页保护面绑定本页蓝图 region/action 集合，属项目事实
+  source_ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+- asset_id: implementation-boundary-plan
+  decision: PROJECT
+  destination: truth/objects/boundary/boundary.page-task-step-authenticate.json（MIG-B4 项目侧转录落位）
+  entry_id: BOUNDARY.PAGE-TASK-STEP-AUTHENTICATE
+  migration_batch: MIG-B4/BOUNDARY
+  rationale_one_line: 逐页保护面绑定本页蓝图 region/action 集合，属项目事实
+  source_ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+- asset_id: implementation-boundary-plan
+  decision: PROJECT
+  destination: truth/objects/boundary/boundary.page-task-step-bind-carline.json（MIG-B4 项目侧转录落位）
+  entry_id: BOUNDARY.PAGE-TASK-STEP-BIND-CARLINE
+  migration_batch: MIG-B4/BOUNDARY
+  rationale_one_line: 逐页保护面绑定本页蓝图 region/action 集合，属项目事实
+  source_ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+- asset_id: implementation-boundary-plan
+  decision: PROJECT
+  destination: truth/objects/boundary/boundary.page-task-step-buc-analyse.json（MIG-B4 项目侧转录落位）
+  entry_id: BOUNDARY.PAGE-TASK-STEP-BUC-ANALYSE
+  migration_batch: MIG-B4/BOUNDARY
+  rationale_one_line: 逐页保护面绑定本页蓝图 region/action 集合，属项目事实
+  source_ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+- asset_id: implementation-boundary-plan
+  decision: PROJECT
+  destination: truth/objects/boundary/boundary.page-task-step-build-bom.json（MIG-B4 项目侧转录落位）
+  entry_id: BOUNDARY.PAGE-TASK-STEP-BUILD-BOM
+  migration_batch: MIG-B4/BOUNDARY
+  rationale_one_line: 逐页保护面绑定本页蓝图 region/action 集合，属项目事实
+  source_ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+- asset_id: implementation-boundary-plan
+  decision: PROJECT
+  destination: truth/objects/boundary/boundary.page-task-step-expert-model-calculate.json（MIG-B4 项目侧转录落位）
+  entry_id: BOUNDARY.PAGE-TASK-STEP-EXPERT-MODEL-CALCULATE
+  migration_batch: MIG-B4/BOUNDARY
+  rationale_one_line: 逐页保护面绑定本页蓝图 region/action 集合，属项目事实
+  source_ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+- asset_id: implementation-boundary-plan
+  decision: PROJECT
+  destination: truth/objects/boundary/boundary.page-task-step-generate-snapshot.json（MIG-B4 项目侧转录落位）
+  entry_id: BOUNDARY.PAGE-TASK-STEP-GENERATE-SNAPSHOT
+  migration_batch: MIG-B4/BOUNDARY
+  rationale_one_line: 逐页保护面绑定本页蓝图 region/action 集合，属项目事实
+  source_ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+- asset_id: implementation-boundary-plan
+  decision: PROJECT
+  destination: truth/objects/boundary/boundary.page-task-step-maintain-base-attributes.json（MIG-B4 项目侧转录落位）
+  entry_id: BOUNDARY.PAGE-TASK-STEP-MAINTAIN-BASE-ATTRIBUTES
+  migration_batch: MIG-B4/BOUNDARY
+  rationale_one_line: 逐页保护面绑定本页蓝图 region/action 集合，属项目事实
+  source_ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+- asset_id: implementation-boundary-plan
+  decision: PROJECT
+  destination: truth/objects/boundary/boundary.page-task-step-manage-user-role.json（MIG-B4 项目侧转录落位）
+  entry_id: BOUNDARY.PAGE-TASK-STEP-MANAGE-USER-ROLE
+  migration_batch: MIG-B4/BOUNDARY
+  rationale_one_line: 逐页保护面绑定本页蓝图 region/action 集合，属项目事实
+  source_ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+- asset_id: implementation-boundary-plan
+  decision: PROJECT
+  destination: truth/objects/boundary/boundary.page-task-step-output-to-ledger.json（MIG-B4 项目侧转录落位）
+  entry_id: BOUNDARY.PAGE-TASK-STEP-OUTPUT-TO-LEDGER
+  migration_batch: MIG-B4/BOUNDARY
+  rationale_one_line: 逐页保护面绑定本页蓝图 region/action 集合，属项目事实
+  source_ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+- asset_id: implementation-boundary-plan
+  decision: PROJECT
+  destination: truth/objects/boundary/boundary.page-task-step-query-ledger.json（MIG-B4 项目侧转录落位）
+  entry_id: BOUNDARY.PAGE-TASK-STEP-QUERY-LEDGER
+  migration_batch: MIG-B4/BOUNDARY
+  rationale_one_line: 逐页保护面绑定本页蓝图 region/action 集合，属项目事实
+  source_ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+- asset_id: implementation-boundary-plan
+  decision: PROJECT
+  destination: truth/objects/boundary/boundary.page-task-step-save-bom.json（MIG-B4 项目侧转录落位）
+  entry_id: BOUNDARY.PAGE-TASK-STEP-SAVE-BOM
+  migration_batch: MIG-B4/BOUNDARY
+  rationale_one_line: 逐页保护面绑定本页蓝图 region/action 集合，属项目事实
+  source_ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+- asset_id: implementation-boundary-plan
+  decision: PROJECT
+  destination: truth/objects/boundary/boundary.page-task-step-select-vehicle-context.json（MIG-B4 项目侧转录落位）
+  entry_id: BOUNDARY.PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT
+  migration_batch: MIG-B4/BOUNDARY
+  rationale_one_line: 逐页保护面绑定本页蓝图 region/action 集合，属项目事实
+  source_ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+- asset_id: implementation-boundary-plan
+  decision: PROJECT
+  destination: truth/objects/boundary/boundary.page-task-step-track-cost-by-snapshot.json（MIG-B4 项目侧转录落位）
+  entry_id: BOUNDARY.PAGE-TASK-STEP-TRACK-COST-BY-SNAPSHOT
+  migration_batch: MIG-B4/BOUNDARY
+  rationale_one_line: 逐页保护面绑定本页蓝图 region/action 集合，属项目事实
+  source_ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+- asset_id: implementation-boundary-plan
+  decision: PROJECT
+  destination: truth/objects/boundary/boundary.page-task-step-view-all-parts.json（MIG-B4 项目侧转录落位）
+  entry_id: BOUNDARY.PAGE-TASK-STEP-VIEW-ALL-PARTS
+  migration_batch: MIG-B4/BOUNDARY
+  rationale_one_line: 逐页保护面绑定本页蓝图 region/action 集合，属项目事实
+  source_ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+- asset_id: implementation-boundary-plan
+  decision: PROJECT
+  destination: truth/objects/boundary/boundary.page-task-step-writeback-ledger.json（MIG-B4 项目侧转录落位）
+  entry_id: BOUNDARY.PAGE-TASK-STEP-WRITEBACK-LEDGER
+  migration_batch: MIG-B4/BOUNDARY
+  rationale_one_line: 逐页保护面绑定本页蓝图 region/action 集合，属项目事实
+  source_ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+- asset_id: pattern-registry
+  decision: PROJECT
+  destination: truth/objects/pattern/pattern.action-bar.json（MIG-B4 项目侧转录落位）
+  entry_id: PATTERN.ACTION_BAR
+  migration_batch: MIG-B4/PATTERN
+  rationale_one_line: 模式条目锚定本仓实现文件与项目词汇表（composes/slots/锚路径）
+  source_ref: outputs/frontend/10_planned/pattern-registry.yaml
+- asset_id: pattern-registry
+  decision: PROJECT
+  destination: truth/objects/pattern/pattern.confirm-dialog.json（MIG-B4 项目侧转录落位）
+  entry_id: PATTERN.CONFIRM_DIALOG
+  migration_batch: MIG-B4/PATTERN
+  rationale_one_line: 模式条目锚定本仓实现文件与项目词汇表（composes/slots/锚路径）
+  source_ref: outputs/frontend/10_planned/pattern-registry.yaml
+- asset_id: pattern-registry
+  decision: PROJECT
+  destination: truth/objects/pattern/pattern.description-summary.json（MIG-B4 项目侧转录落位）
+  entry_id: PATTERN.DESCRIPTION_SUMMARY
+  migration_batch: MIG-B4/PATTERN
+  rationale_one_line: 模式条目锚定本仓实现文件与项目词汇表（composes/slots/锚路径）
+  source_ref: outputs/frontend/10_planned/pattern-registry.yaml
+- asset_id: pattern-registry
+  decision: PROJECT
+  destination: truth/objects/pattern/pattern.detail-description.json（MIG-B4 项目侧转录落位）
+  entry_id: PATTERN.DETAIL_DESCRIPTION
+  migration_batch: MIG-B4/PATTERN
+  rationale_one_line: 模式条目锚定本仓实现文件与项目词汇表（composes/slots/锚路径）
+  source_ref: outputs/frontend/10_planned/pattern-registry.yaml
+- asset_id: pattern-registry
+  decision: PROJECT
+  destination: truth/objects/pattern/pattern.editable-grid-section.json（MIG-B4 项目侧转录落位）
+  entry_id: PATTERN.EDITABLE_GRID_SECTION
+  migration_batch: MIG-B4/PATTERN
+  rationale_one_line: 模式条目锚定本仓实现文件与项目词汇表（composes/slots/锚路径）
+  source_ref: outputs/frontend/10_planned/pattern-registry.yaml
+- asset_id: pattern-registry
+  decision: PROJECT
+  destination: truth/objects/pattern/pattern.empty-state.json（MIG-B4 项目侧转录落位）
+  entry_id: PATTERN.EMPTY_STATE
+  migration_batch: MIG-B4/PATTERN
+  rationale_one_line: 模式条目锚定本仓实现文件与项目词汇表（composes/slots/锚路径）
+  source_ref: outputs/frontend/10_planned/pattern-registry.yaml
+- asset_id: pattern-registry
+  decision: PROJECT
+  destination: truth/objects/pattern/pattern.filter-bar.json（MIG-B4 项目侧转录落位）
+  entry_id: PATTERN.FILTER_BAR
+  migration_batch: MIG-B4/PATTERN
+  rationale_one_line: 模式条目锚定本仓实现文件与项目词汇表（composes/slots/锚路径）
+  source_ref: outputs/frontend/10_planned/pattern-registry.yaml
+- asset_id: pattern-registry
+  decision: PROJECT
+  destination: truth/objects/pattern/pattern.form-section.json（MIG-B4 项目侧转录落位）
+  entry_id: PATTERN.FORM_SECTION
+  migration_batch: MIG-B4/PATTERN
+  rationale_one_line: 模式条目锚定本仓实现文件与项目词汇表（composes/slots/锚路径）
+  source_ref: outputs/frontend/10_planned/pattern-registry.yaml
+- asset_id: pattern-registry
+  decision: PROJECT
+  destination: truth/objects/pattern/pattern.list-table.json（MIG-B4 项目侧转录落位）
+  entry_id: PATTERN.LIST_TABLE
+  migration_batch: MIG-B4/PATTERN
+  rationale_one_line: 模式条目锚定本仓实现文件与项目词汇表（composes/slots/锚路径）
+  source_ref: outputs/frontend/10_planned/pattern-registry.yaml
+- asset_id: pattern-registry
+  decision: PROJECT
+  destination: truth/objects/pattern/pattern.page-header.json（MIG-B4 项目侧转录落位）
+  entry_id: PATTERN.PAGE_HEADER
+  migration_batch: MIG-B4/PATTERN
+  rationale_one_line: 模式条目锚定本仓实现文件与项目词汇表（composes/slots/锚路径）
+  source_ref: outputs/frontend/10_planned/pattern-registry.yaml
+- asset_id: pattern-registry
+  decision: PROJECT
+  destination: truth/objects/pattern/pattern.tab-container.json（MIG-B4 项目侧转录落位）
+  entry_id: PATTERN.TAB_CONTAINER
+  migration_batch: MIG-B4/PATTERN
+  rationale_one_line: 模式条目锚定本仓实现文件与项目词汇表（composes/slots/锚路径）
+  source_ref: outputs/frontend/10_planned/pattern-registry.yaml
+- asset_id: pattern-registry
+  decision: PROJECT
+  destination: truth/objects/pattern/pattern.wizard-steps.json（MIG-B4 项目侧转录落位）
+  entry_id: PATTERN.WIZARD_STEPS
+  migration_batch: MIG-B4/PATTERN
+  rationale_one_line: 模式条目锚定本仓实现文件与项目词汇表（composes/slots/锚路径）
+  source_ref: outputs/frontend/10_planned/pattern-registry.yaml
+- asset_id: performance-budget
+  decision: HYBRID
+  destination:
+    project: truth/objects/performance-budget/initial-load.json（MIG-B4 项目侧转录落位）
+    universal: catalog/policies/policy.web.perf.budget_skeleton.json（候选，MG-PERF-SKELETON 归并）
+  entry_id: initial_load
+  merge_group: MG-PERF-SKELETON
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 装载预算结构（分类+计量口径）universal；具体阈值数值 project
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+  split_note: universal 半=载荷分类（脚本/样式/图片）与计量口径；project 半=500KB/100KB/300KB 数值
+- asset_id: performance-budget
+  decision: HYBRID
+  destination:
+    project: truth/objects/performance-budget/runtime.json（MIG-B4 项目侧转录落位）
+    universal: catalog/policies/policy.web.perf.budget_skeleton.json（候选，MG-PERF-SKELETON 归并）
+  entry_id: runtime
+  merge_group: MG-PERF-SKELETON
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 运行时指标集骨架（首绘/可交互/长任务）universal；目标数值 project
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+  split_note: universal 半=三类运行时指标集；project 半=1.5s/3s/200ms 目标数值
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/route-page-compare.json（MIG-B4 项目侧转录落位）
+  entry_id: route.PAGE.COMPARE
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 模板到预算的绑定行属本仓分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/route-page-dashboard.json（MIG-B4 项目侧转录落位）
+  entry_id: route.PAGE.DASHBOARD
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 模板到预算的绑定行属本仓分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/route-page-detail.json（MIG-B4 项目侧转录落位）
+  entry_id: route.PAGE.DETAIL
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 模板到预算的绑定行属本仓分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/route-page-editable_grid.json（MIG-B4 项目侧转录落位）
+  entry_id: route.PAGE.EDITABLE_GRID
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 模板到预算的绑定行属本仓分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/route-page-editable_workspace.json（MIG-B4 项目侧转录落位）
+  entry_id: route.PAGE.EDITABLE_WORKSPACE
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 模板到预算的绑定行属本仓分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/route-page-form.json（MIG-B4 项目侧转录落位）
+  entry_id: route.PAGE.FORM
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 模板到预算的绑定行属本仓分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/route-page-import.json（MIG-B4 项目侧转录落位）
+  entry_id: route.PAGE.IMPORT
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 模板到预算的绑定行属本仓分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/route-page-list.json（MIG-B4 项目侧转录落位）
+  entry_id: route.PAGE.LIST
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 模板到预算的绑定行属本仓分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/route-page-master_detail.json（MIG-B4 项目侧转录落位）
+  entry_id: route.PAGE.MASTER_DETAIL
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 模板到预算的绑定行属本仓分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/route-page-task_center.json（MIG-B4 项目侧转录落位）
+  entry_id: route.PAGE.TASK_CENTER
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 模板到预算的绑定行属本仓分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/route-page-wizard.json（MIG-B4 项目侧转录落位）
+  entry_id: route.PAGE.WIZARD
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 模板到预算的绑定行属本仓分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/ptb-page-compare.json（MIG-B4 项目侧转录落位）
+  entry_id: page_type_budgets.PAGE.COMPARE
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 模板 id 与阈值为项目参数；结构半已由 initial_load/runtime 两条承载，避免重复上提
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/ptb-page-dashboard.json（MIG-B4 项目侧转录落位）
+  entry_id: page_type_budgets.PAGE.DASHBOARD
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 模板 id 与阈值为项目参数；结构半已由 initial_load/runtime 两条承载，避免重复上提
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/ptb-page-detail.json（MIG-B4 项目侧转录落位）
+  entry_id: page_type_budgets.PAGE.DETAIL
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 模板 id 与阈值为项目参数；结构半已由 initial_load/runtime 两条承载，避免重复上提
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/ptb-page-editable_grid.json（MIG-B4 项目侧转录落位）
+  entry_id: page_type_budgets.PAGE.EDITABLE_GRID
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 模板 id 与阈值为项目参数；结构半已由 initial_load/runtime 两条承载，避免重复上提
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/ptb-page-editable_workspace.json（MIG-B4 项目侧转录落位）
+  entry_id: page_type_budgets.PAGE.EDITABLE_WORKSPACE
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 模板 id 与阈值为项目参数；结构半已由 initial_load/runtime 两条承载，避免重复上提
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/ptb-page-form.json（MIG-B4 项目侧转录落位）
+  entry_id: page_type_budgets.PAGE.FORM
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 模板 id 与阈值为项目参数；结构半已由 initial_load/runtime 两条承载，避免重复上提
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/ptb-page-import.json（MIG-B4 项目侧转录落位）
+  entry_id: page_type_budgets.PAGE.IMPORT
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 模板 id 与阈值为项目参数；结构半已由 initial_load/runtime 两条承载，避免重复上提
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/ptb-page-list.json（MIG-B4 项目侧转录落位）
+  entry_id: page_type_budgets.PAGE.LIST
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 模板 id 与阈值为项目参数；结构半已由 initial_load/runtime 两条承载，避免重复上提
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/ptb-page-master_detail.json（MIG-B4 项目侧转录落位）
+  entry_id: page_type_budgets.PAGE.MASTER_DETAIL
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 模板 id 与阈值为项目参数；结构半已由 initial_load/runtime 两条承载，避免重复上提
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/ptb-page-task_center.json（MIG-B4 项目侧转录落位）
+  entry_id: page_type_budgets.PAGE.TASK_CENTER
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 模板 id 与阈值为项目参数；结构半已由 initial_load/runtime 两条承载，避免重复上提
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/ptb-page-wizard.json（MIG-B4 项目侧转录落位）
+  entry_id: page_type_budgets.PAGE.WIZARD
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 模板 id 与阈值为项目参数；结构半已由 initial_load/runtime 两条承载，避免重复上提
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/page-page-app-all-parts-list.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-APP-ALL-PARTS-LIST
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 逐页预算绑定属本仓页面分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/page-page-app-approval-flow.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-APP-APPROVAL-FLOW
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 逐页预算绑定属本仓页面分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/page-page-app-bridge-table.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-APP-BRIDGE-TABLE
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 逐页预算绑定属本仓页面分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/page-page-app-buc-detail.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-APP-BUC-DETAIL
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 逐页预算绑定属本仓页面分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/page-page-app-csc-price.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-APP-CSC-PRICE
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 逐页预算绑定属本仓页面分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/page-page-app-dashboard.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-APP-DASHBOARD
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 逐页预算绑定属本仓页面分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/page-page-app-data-permission.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-APP-DATA-PERMISSION
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 逐页预算绑定属本仓页面分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/page-page-app-equipment-db.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-APP-EQUIPMENT-DB
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 逐页预算绑定属本仓页面分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/page-page-app-equipment-detail.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-APP-EQUIPMENT-DETAIL
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 逐页预算绑定属本仓页面分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/page-page-app-equipment-palette.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-APP-EQUIPMENT-PALETTE
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 逐页预算绑定属本仓页面分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/page-page-app-evaluation.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-APP-EVALUATION
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 逐页预算绑定属本仓页面分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/page-page-app-forecast-report.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-APP-FORECAST-REPORT
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 逐页预算绑定属本仓页面分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/page-page-app-material-db.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-APP-MATERIAL-DB
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 逐页预算绑定属本仓页面分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/page-page-app-other-cost-analysis.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-APP-OTHER-COST-ANALYSIS
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 逐页预算绑定属本仓页面分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/page-page-app-other-db.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-APP-OTHER-DB
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 逐页预算绑定属本仓页面分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/page-page-app-part-info.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-APP-PART-INFO
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 逐页预算绑定属本仓页面分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/page-page-app-part-structure-db.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-APP-PART-STRUCTURE-DB
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 逐页预算绑定属本仓页面分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/page-page-app-process-db.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-APP-PROCESS-DB
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 逐页预算绑定属本仓页面分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/page-page-app-role-mgmt.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-APP-ROLE-MGMT
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 逐页预算绑定属本仓页面分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/page-page-app-set-db.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-APP-SET-DB
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 逐页预算绑定属本仓页面分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/page-page-app-task-mgmt.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-APP-TASK-MGMT
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 逐页预算绑定属本仓页面分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/page-page-app-technical-akt.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-APP-TECHNICAL-AKT
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 逐页预算绑定属本仓页面分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/page-page-app-user-mgmt.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-APP-USER-MGMT
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 逐页预算绑定属本仓页面分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/page-page-app-vehicle-master-data.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-APP-VEHICLE-MASTER-DATA
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 逐页预算绑定属本仓页面分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/page-page-task-step-authenticate.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-TASK-STEP-AUTHENTICATE
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 逐页预算绑定属本仓页面分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/page-page-task-step-bind-carline.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-TASK-STEP-BIND-CARLINE
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 逐页预算绑定属本仓页面分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/page-page-task-step-buc-analyse.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-TASK-STEP-BUC-ANALYSE
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 逐页预算绑定属本仓页面分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/page-page-task-step-build-bom.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-TASK-STEP-BUILD-BOM
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 逐页预算绑定属本仓页面分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/page-page-task-step-expert-model-calculate.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-TASK-STEP-EXPERT-MODEL-CALCULATE
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 逐页预算绑定属本仓页面分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/page-page-task-step-generate-snapshot.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-TASK-STEP-GENERATE-SNAPSHOT
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 逐页预算绑定属本仓页面分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/page-page-task-step-maintain-base-attributes.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-TASK-STEP-MAINTAIN-BASE-ATTRIBUTES
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 逐页预算绑定属本仓页面分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/page-page-task-step-manage-user-role.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-TASK-STEP-MANAGE-USER-ROLE
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 逐页预算绑定属本仓页面分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/page-page-task-step-output-to-ledger.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-TASK-STEP-OUTPUT-TO-LEDGER
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 逐页预算绑定属本仓页面分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/page-page-task-step-query-ledger.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-TASK-STEP-QUERY-LEDGER
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 逐页预算绑定属本仓页面分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/page-page-task-step-save-bom.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-TASK-STEP-SAVE-BOM
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 逐页预算绑定属本仓页面分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/page-page-task-step-select-vehicle-context.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 逐页预算绑定属本仓页面分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/page-page-task-step-track-cost-by-snapshot.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-TASK-STEP-TRACK-COST-BY-SNAPSHOT
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 逐页预算绑定属本仓页面分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/page-page-task-step-view-all-parts.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-TASK-STEP-VIEW-ALL-PARTS
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 逐页预算绑定属本仓页面分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: performance-budget
+  decision: PROJECT
+  destination: truth/objects/performance-budget/page-page-task-step-writeback-ledger.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-TASK-STEP-WRITEBACK-LEDGER
+  migration_batch: MIG-B4/PERFORMANCE
+  rationale_one_line: 逐页预算绑定属本仓页面分母数据
+  source_ref: outputs/frontend/10_planned/performance-budget.yaml
+- asset_id: style-ownership-registry
+  decision: PROJECT
+  destination: truth/objects/style-ownership/design-baseline.json（MIG-B4 项目侧转录落位）
+  entry_id: design_baseline
+  migration_batch: MIG-B4/STYLE
+  rationale_one_line: 字体/配色/密度等视觉裁决为本仓设计基线（含雅黑+Inter 栈选择，任务明示例 project）
+  source_ref: outputs/frontend/10_planned/style-ownership-registry.yaml
+- asset_id: style-ownership-registry
+  decision: PROJECT
+  destination: truth/objects/style-ownership/global-entry.json（MIG-B4 项目侧转录落位）
+  entry_id: global_entry
+  migration_batch: MIG-B4/STYLE
+  rationale_one_line: 全局样式入口具体路径属项目事实
+  source_ref: outputs/frontend/10_planned/style-ownership-registry.yaml
+- asset_id: style-ownership-registry
+  decision: HYBRID
+  destination:
+    project: truth/objects/style-ownership/scope-owner-global-reset.json（MIG-B4 项目侧转录落位）
+    universal: catalog/policies/policy.web.style.ownership_matrix.json（候选，MG-STYLE-MATRIX 归并）
+  entry_id: layers.global-reset
+  merge_group: MG-STYLE-MATRIX
+  migration_batch: MIG-B4/STYLE
+  rationale_one_line: 样式所有权域矩阵骨架（域+禁止行为类别）universal；owner 路径与扫描器 forbidden 词表 project
+  source_ref: outputs/frontend/10_planned/style-ownership-registry.yaml
+  split_note: universal 半=五域所有权矩阵与禁止行为类别学；project 半=owner 路径与 forbidden 扫描词表
+- asset_id: style-ownership-registry
+  decision: HYBRID
+  destination:
+    project: truth/objects/style-ownership/scope-owner-design-token.json（MIG-B4 项目侧转录落位）
+    universal: catalog/policies/policy.web.style.ownership_matrix.json（候选，MG-STYLE-MATRIX 归并）
+  entry_id: layers.design-token
+  merge_group: MG-STYLE-MATRIX
+  migration_batch: MIG-B4/STYLE
+  rationale_one_line: 样式所有权域矩阵骨架（域+禁止行为类别）universal；owner 路径与扫描器 forbidden 词表 project
+  source_ref: outputs/frontend/10_planned/style-ownership-registry.yaml
+  split_note: universal 半=五域所有权矩阵与禁止行为类别学；project 半=owner 路径与 forbidden 扫描词表
+- asset_id: style-ownership-registry
+  decision: HYBRID
+  destination:
+    project: truth/objects/style-ownership/scope-owner-shared-component.json（MIG-B4 项目侧转录落位）
+    universal: catalog/policies/policy.web.style.ownership_matrix.json（候选，MG-STYLE-MATRIX 归并）
+  entry_id: layers.shared-component
+  merge_group: MG-STYLE-MATRIX
+  migration_batch: MIG-B4/STYLE
+  rationale_one_line: 样式所有权域矩阵骨架（域+禁止行为类别）universal；owner 路径与扫描器 forbidden 词表 project
+  source_ref: outputs/frontend/10_planned/style-ownership-registry.yaml
+  split_note: universal 半=五域所有权矩阵与禁止行为类别学；project 半=owner 路径与 forbidden 扫描词表
+- asset_id: style-ownership-registry
+  decision: HYBRID
+  destination:
+    project: truth/objects/style-ownership/scope-owner-page-local.json（MIG-B4 项目侧转录落位）
+    universal: catalog/policies/policy.web.style.ownership_matrix.json（候选，MG-STYLE-MATRIX 归并）
+  entry_id: layers.page-local
+  merge_group: MG-STYLE-MATRIX
+  migration_batch: MIG-B4/STYLE
+  rationale_one_line: 样式所有权域矩阵骨架（域+禁止行为类别）universal；owner 路径与扫描器 forbidden 词表 project
+  source_ref: outputs/frontend/10_planned/style-ownership-registry.yaml
+  split_note: universal 半=五域所有权矩阵与禁止行为类别学；project 半=owner 路径与 forbidden 扫描词表
+- asset_id: style-ownership-registry
+  decision: HYBRID
+  destination:
+    project: truth/objects/style-ownership/scope-owner-vendor-adapter.json（MIG-B4 项目侧转录落位）
+    universal: catalog/policies/policy.web.style.ownership_matrix.json（候选，MG-STYLE-MATRIX 归并）
+  entry_id: layers.vendor-adapter
+  merge_group: MG-STYLE-MATRIX
+  migration_batch: MIG-B4/STYLE
+  rationale_one_line: 样式所有权域矩阵骨架（域+禁止行为类别）universal；owner 路径与扫描器 forbidden 词表 project
+  source_ref: outputs/frontend/10_planned/style-ownership-registry.yaml
+  split_note: universal 半=五域所有权矩阵与禁止行为类别学；project 半=owner 路径与 forbidden 扫描词表
+- asset_id: style-ownership-registry
+  decision: PROJECT
+  destination: truth/objects/style-ownership/load-order.json（MIG-B4 项目侧转录落位）
+  entry_id: load_order
+  migration_batch: MIG-B4/STYLE
+  rationale_one_line: 装载序列绑定本仓样式文件集，属项目事实
+  source_ref: outputs/frontend/10_planned/style-ownership-registry.yaml
+- asset_id: style-ownership-registry
+  clean_room_note: 独立改写：语义等价、词形独立，零逐字拷贝源文本；sketch 词面零项目专名（无页面 id 词形/接口需求 id 词形/项目品牌词/具体页面名/中文业务词），catalog 条目 gate grep 面安全
+  clean_room_rewrite_sketch: Scoped 样式块只允许承载页面局部样式；全局样式类只允许在共享组件层声明，页面不得向外泄漏全局类名。
+  decision: UNIVERSAL
+  destination: catalog/policies/policy.web.style.ownership_matrix.json（候选，MG-STYLE-MATRIX 归并）
+  entry_id: scoped_style_rule
+  merge_group: MG-STYLE-MATRIX
+  migration_batch: MIG-B4/STYLE
+  rationale_one_line: scoped 局部/全局类声明位置纪律，无项目专名
+  source_ref: outputs/frontend/10_planned/style-ownership-registry.yaml
+- asset_id: style-ownership-registry
+  decision: PROJECT
+  destination: truth/objects/style-ownership/style-entry-tokens.json（MIG-B4 项目侧转录落位）
+  entry_id: style_entries.tokens
+  migration_batch: MIG-B4/STYLE
+  rationale_one_line: 样式文件清单与 required 标记属项目事实
+  source_ref: outputs/frontend/10_planned/style-ownership-registry.yaml
+- asset_id: style-ownership-registry
+  decision: PROJECT
+  destination: truth/objects/style-ownership/style-entry-reset.json（MIG-B4 项目侧转录落位）
+  entry_id: style_entries.reset
+  migration_batch: MIG-B4/STYLE
+  rationale_one_line: 样式文件清单与 required 标记属项目事实
+  source_ref: outputs/frontend/10_planned/style-ownership-registry.yaml
+- asset_id: style-ownership-registry
+  decision: PROJECT
+  destination: truth/objects/style-ownership/style-entry-base.json（MIG-B4 项目侧转录落位）
+  entry_id: style_entries.base
+  migration_batch: MIG-B4/STYLE
+  rationale_one_line: 样式文件清单与 required 标记属项目事实
+  source_ref: outputs/frontend/10_planned/style-ownership-registry.yaml
+- asset_id: style-ownership-registry
+  decision: PROJECT
+  destination: truth/objects/style-ownership/style-entry-typography.json（MIG-B4 项目侧转录落位）
+  entry_id: style_entries.typography
+  migration_batch: MIG-B4/STYLE
+  rationale_one_line: 样式文件清单与 required 标记属项目事实
+  source_ref: outputs/frontend/10_planned/style-ownership-registry.yaml
+- asset_id: style-ownership-registry
+  decision: PROJECT
+  destination: truth/objects/style-ownership/style-entry-layout.json（MIG-B4 项目侧转录落位）
+  entry_id: style_entries.layout
+  migration_batch: MIG-B4/STYLE
+  rationale_one_line: 样式文件清单与 required 标记属项目事实
+  source_ref: outputs/frontend/10_planned/style-ownership-registry.yaml
+- asset_id: style-ownership-registry
+  decision: PROJECT
+  destination: truth/objects/style-ownership/style-entry-vendors.json（MIG-B4 项目侧转录落位）
+  entry_id: style_entries.vendors
+  migration_batch: MIG-B4/STYLE
+  rationale_one_line: 样式文件清单与 required 标记属项目事实
+  source_ref: outputs/frontend/10_planned/style-ownership-registry.yaml
+- asset_id: style-ownership-registry
+  decision: PROJECT
+  destination: truth/objects/style-ownership/style-entry-utilities.json（MIG-B4 项目侧转录落位）
+  entry_id: style_entries.utilities
+  migration_batch: MIG-B4/STYLE
+  rationale_one_line: 样式文件清单与 required 标记属项目事实
+  source_ref: outputs/frontend/10_planned/style-ownership-registry.yaml
+- asset_id: style-ownership-registry
+  decision: PROJECT
+  destination: truth/objects/style-ownership/style-entry-overrides.json（MIG-B4 项目侧转录落位）
+  entry_id: style_entries.overrides
+  migration_batch: MIG-B4/STYLE
+  rationale_one_line: 样式文件清单与 required 标记属项目事实
+  source_ref: outputs/frontend/10_planned/style-ownership-registry.yaml
+- asset_id: style-ownership-registry
+  decision: PROJECT
+  destination: truth/objects/style-ownership/third-party-style-owners.json（MIG-B4 项目侧转录落位）
+  entry_id: third_party_style_owners
+  migration_batch: MIG-B4/STYLE
+  rationale_one_line: 显式空声明属本仓登记态
+  source_ref: outputs/frontend/10_planned/style-ownership-registry.yaml
+- asset_id: style-ownership-registry
+  decision: PROJECT
+  destination: truth/objects/style-ownership/token-entry.json（MIG-B4 项目侧转录落位）
+  entry_id: token_entry
+  migration_batch: MIG-B4/STYLE
+  rationale_one_line: token 事实源入口路径属项目事实
+  source_ref: outputs/frontend/10_planned/style-ownership-registry.yaml
+- asset_id: style-ownership-registry
+  decision: PROJECT
+  destination: truth/objects/style-ownership/token-generation-command.json（MIG-B4 项目侧转录落位）
+  entry_id: token_generation_command
+  migration_batch: MIG-B4/STYLE
+  rationale_one_line: token 生成命令属本仓工具链事实
+  source_ref: outputs/frontend/10_planned/style-ownership-registry.yaml
+- asset_id: style-ownership-registry
+  decision: PROJECT
+  destination: truth/objects/style-ownership/token-source.json（MIG-B4 项目侧转录落位）
+  entry_id: token_source
+  migration_batch: MIG-B4/STYLE
+  rationale_one_line: token 源文件路径属项目事实
+  source_ref: outputs/frontend/10_planned/style-ownership-registry.yaml
+- asset_id: style-ownership-registry
+  decision: PROJECT
+  destination: truth/objects/style-ownership/token-usage-mast-color-state-unsaved-bg.json（MIG-B4 项目侧转录落位）
+  entry_id: token_usage.mast-color-state-unsaved-bg
+  migration_batch: MIG-B4/STYLE
+  rationale_one_line: 具体 token 语义注记绑定本仓表格交互，属项目事实
+  source_ref: outputs/frontend/10_planned/style-ownership-registry.yaml
+- asset_id: style-ownership-registry
+  decision: PROJECT
+  destination: truth/objects/style-ownership/token-usage-mast-color-state-unsaved-bg-muted.json（MIG-B4 项目侧转录落位）
+  entry_id: token_usage.mast-color-state-unsaved-bg-muted
+  migration_batch: MIG-B4/STYLE
+  rationale_one_line: 具体 token 语义注记绑定本仓表格交互，属项目事实
+  source_ref: outputs/frontend/10_planned/style-ownership-registry.yaml
+- asset_id: style-ownership-registry
+  decision: PROJECT
+  destination: truth/objects/style-ownership/token-usage-mast-color-state-unsaved-border.json（MIG-B4 项目侧转录落位）
+  entry_id: token_usage.mast-color-state-unsaved-border
+  migration_batch: MIG-B4/STYLE
+  rationale_one_line: 具体 token 语义注记绑定本仓表格交互，属项目事实
+  source_ref: outputs/frontend/10_planned/style-ownership-registry.yaml
+- asset_id: style-ownership-registry
+  decision: PROJECT
+  destination: truth/objects/style-ownership/token-usage-mast-color-state-warning-active.json（MIG-B4 项目侧转录落位）
+  entry_id: token_usage.mast-color-state-warning-active
+  migration_batch: MIG-B4/STYLE
+  rationale_one_line: 具体 token 语义注记绑定本仓表格交互，属项目事实
+  source_ref: outputs/frontend/10_planned/style-ownership-registry.yaml
+- asset_id: style-ownership-registry
+  decision: PROJECT
+  destination: truth/objects/style-ownership/token-usage-mast-color-state-warning-hover.json（MIG-B4 项目侧转录落位）
+  entry_id: token_usage.mast-color-state-warning-hover
+  migration_batch: MIG-B4/STYLE
+  rationale_one_line: 具体 token 语义注记绑定本仓表格交互，属项目事实
+  source_ref: outputs/frontend/10_planned/style-ownership-registry.yaml
+- asset_id: style-ownership-registry
+  decision: PROJECT
+  destination: truth/objects/style-ownership/vendor-important-exemption-ag-cell-focus.json（MIG-B4 项目侧转录落位）
+  entry_id: vendor_important_exemptions
+  migration_batch: MIG-B4/STYLE
+  rationale_one_line: 对抗具体 vendor 引擎选择器的豁免属项目事实
+  source_ref: outputs/frontend/10_planned/style-ownership-registry.yaml
+- asset_id: style-ownership-registry
+  decision: PROJECT
+  destination: truth/objects/style-ownership/visual-baseline.json（MIG-B4 项目侧转录落位）
+  entry_id: visual_baseline
+  migration_batch: MIG-B4/STYLE
+  rationale_one_line: 密度/语义色/单元格状态模型为本仓视觉真值（原型派生+用户裁决）
+  source_ref: outputs/frontend/10_planned/style-ownership-registry.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.all.parts.list.1.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.ALL.PARTS.LIST.1
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.all.parts.list.2.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.ALL.PARTS.LIST.2
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.all.parts.list.3.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.ALL.PARTS.LIST.3
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.authenticate.1.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.AUTHENTICATE.1
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.authenticate.2.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.AUTHENTICATE.2
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.bind.carline.1.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.BIND.CARLINE.1
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.bind.carline.2.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.BIND.CARLINE.2
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.buc.analyse.0.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.BUC.ANALYSE.0
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.build.bom.1.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.BUILD.BOM.1
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.build.bom.2.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.BUILD.BOM.2
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.build.bom.delete.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.BUILD.BOM.DELETE
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.build.bom.export.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.BUILD.BOM.EXPORT
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.build.bom.history.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.BUILD.BOM.HISTORY
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.build.bom.history.bom.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.BUILD.BOM.HISTORY.BOM
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.build.bom.import.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.BUILD.BOM.IMPORT
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.build.bom.import.buc.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.BUILD.BOM.IMPORT.BUC
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.build.bom.query.buc.versions.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.BUILD.BOM.QUERY.BUC.VERSIONS
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.build.bom.refresh.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.BUILD.BOM.REFRESH
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.build.bom.rollback.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.BUILD.BOM.ROLLBACK
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.build.bom.snapshot.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.BUILD.BOM.SNAPSHOT
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.csc.price.1.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.CSC.PRICE.1
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.csc.price.2.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.CSC.PRICE.2
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.csc.price.3.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.CSC.PRICE.3
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.csc.price.4.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.CSC.PRICE.4
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.data.permission.1.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.DATA.PERMISSION.1
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.data.permission.2.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.DATA.PERMISSION.2
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.data.permission.3.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.DATA.PERMISSION.3
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.data.permission.4.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.DATA.PERMISSION.4
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.equipment.db.1.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.EQUIPMENT.DB.1
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.equipment.db.2.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.EQUIPMENT.DB.2
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.equipment.detail.1.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.EQUIPMENT.DETAIL.1
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.equipment.detail.2.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.EQUIPMENT.DETAIL.2
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.equipment.detail.3.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.EQUIPMENT.DETAIL.3
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.equipment.palette.1.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.EQUIPMENT.PALETTE.1
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.equipment.palette.2.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.EQUIPMENT.PALETTE.2
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.equipment.palette.3.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.EQUIPMENT.PALETTE.3
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.equipment.palette.4.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.EQUIPMENT.PALETTE.4
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.equipment.palette.5.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.EQUIPMENT.PALETTE.5
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.equipment.palette.6.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.EQUIPMENT.PALETTE.6
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.equipment.palette.7.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.EQUIPMENT.PALETTE.7
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.equipment.palette.8.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.EQUIPMENT.PALETTE.8
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.evaluation.1.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.EVALUATION.1
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.evaluation.2.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.EVALUATION.2
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.expert.model.calculate.0.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.EXPERT.MODEL.CALCULATE.0
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.generate.snapshot.0.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.GENERATE.SNAPSHOT.0
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.manage.user.role.1.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.MANAGE.USER.ROLE.1
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.manage.user.role.2.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.MANAGE.USER.ROLE.2
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.material.db.1.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.MATERIAL.DB.1
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.material.db.2.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.MATERIAL.DB.2
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.material.db.3.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.MATERIAL.DB.3
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.material.db.4.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.MATERIAL.DB.4
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.other.db.1.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.OTHER.DB.1
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.other.db.2.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.OTHER.DB.2
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.other.db.3.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.OTHER.DB.3
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.other.db.4.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.OTHER.DB.4
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.part.structure.db.1.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.PART.STRUCTURE.DB.1
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.part.structure.db.2.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.PART.STRUCTURE.DB.2
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.part.structure.db.3.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.PART.STRUCTURE.DB.3
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.part.structure.db.4.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.PART.STRUCTURE.DB.4
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.process.db.1.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.PROCESS.DB.1
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.process.db.2.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.PROCESS.DB.2
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.process.db.3.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.PROCESS.DB.3
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.process.db.4.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.PROCESS.DB.4
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.query.ledger.1.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.QUERY.LEDGER.1
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.role.mgmt.1.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.ROLE.MGMT.1
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.role.mgmt.2.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.ROLE.MGMT.2
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.role.mgmt.3.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.ROLE.MGMT.3
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.role.mgmt.4.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.ROLE.MGMT.4
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.role.mgmt.5.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.ROLE.MGMT.5
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.role.mgmt.6.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.ROLE.MGMT.6
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.save.bom.1.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.SAVE.BOM.1
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.save.bom.2.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.SAVE.BOM.2
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.select.vehicle.context.1.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.SELECT.VEHICLE.CONTEXT.1
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.select.vehicle.context.2.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.SELECT.VEHICLE.CONTEXT.2
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.set.db.1.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.SET.DB.1
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.set.db.2.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.SET.DB.2
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.set.db.3.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.SET.DB.3
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.set.db.4.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.SET.DB.4
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.task.mgmt.1.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.TASK.MGMT.1
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.task.mgmt.2.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.TASK.MGMT.2
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.task.mgmt.3.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.TASK.MGMT.3
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.technical.akt.1.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.TECHNICAL.AKT.1
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.technical.akt.2.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.TECHNICAL.AKT.2
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.user.locale.1.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.USER.LOCALE.1
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.user.locale.2.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.USER.LOCALE.2
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.user.mgmt.1.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.USER.MGMT.1
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.user.mgmt.2.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.USER.MGMT.2
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.user.mgmt.3.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.USER.MGMT.3
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.user.mgmt.4.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.USER.MGMT.4
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.user.mgmt.5.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.USER.MGMT.5
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.user.mgmt.6.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.USER.MGMT.6
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.user.mgmt.7.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.USER.MGMT.7
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.vehicle.master.data.1.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.VEHICLE.MASTER.DATA.1
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.vehicle.master.data.2.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.VEHICLE.MASTER.DATA.2
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.vehicle.master.data.3.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.VEHICLE.MASTER.DATA.3
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.vehicle.master.data.4.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.VEHICLE.MASTER.DATA.4
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.vehicle.master.data.5.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.VEHICLE.MASTER.DATA.5
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.vehicle.master.data.6.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.VEHICLE.MASTER.DATA.6
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.vehicle.master.data.7.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.VEHICLE.MASTER.DATA.7
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.view.all.parts.1.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.VIEW.ALL.PARTS.1
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: test-fixture-plan
+  decision: PROJECT
+  destination: truth/objects/fixture/fixture.api_req.writeback.ledger.1.json（MIG-B4 项目侧转录落位）
+  entry_id: FIXTURE.API_REQ.WRITEBACK.LEDGER.1
+  migration_batch: MIG-B4/TEST
+  rationale_one_line: 场景/数据态/测试账号绑定本仓 API 契约，属项目测试事实
+  source_ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+- asset_id: uiux-provider-overlay
+  clean_room_note: 独立改写：语义等价、词形独立，零逐字拷贝源文本；sketch 词面零项目专名（无页面 id 词形/接口需求 id 词形/项目品牌词/具体页面名/中文业务词），catalog 条目 gate grep 面安全
+  clean_room_rewrite_sketch: 由外部工具从视觉稿抽取的内容一律定性为可选参考证据，永不构成业务事实；业务真值只能来自已登记的契约面。
+  decision: UNIVERSAL
+  destination: catalog/policies/policy.web.uiux.provider_evidence_not_business_truth.json（候选）
+  entry_id: authority
+  migration_batch: MIG-B4/UIUX_OVERLAY
+  rationale_one_line: 证据定性 posture（工具抽取内容仅为可选证据、非业务事实），无项目专名
+  source_ref: outputs/frontend/10_planned/uiux-provider-overlay.yaml
+- asset_id: uiux-provider-overlay
+  decision: PROJECT
+  destination: truth/objects/overlay-evidence/provider.json（MIG-B4 项目侧转录落位）
+  entry_id: provider
+  migration_batch: MIG-B4/UIUX_OVERLAY
+  rationale_one_line: 抽取工具选型为本仓决定
+  source_ref: outputs/frontend/10_planned/uiux-provider-overlay.yaml
+- asset_id: uiux-provider-overlay
+  decision: PROJECT
+  destination: truth/objects/overlay-evidence/shared-shell.json（MIG-B4 项目侧转录落位）
+  entry_id: shared_shell
+  migration_batch: MIG-B4/UIUX_OVERLAY
+  rationale_one_line: 外壳映射属本仓原型事实
+  source_ref: outputs/frontend/10_planned/uiux-provider-overlay.yaml
+- asset_id: uiux-provider-overlay
+  decision: PROJECT
+  destination: truth/objects/overlay-evidence/source.json（MIG-B4 项目侧转录落位）
+  entry_id: source
+  migration_batch: MIG-B4/UIUX_OVERLAY
+  rationale_one_line: 原型来源指针属项目事实
+  source_ref: outputs/frontend/10_planned/uiux-provider-overlay.yaml
+- asset_id: uiux-provider-overlay
+  decision: PROJECT
+  destination: truth/objects/overlay-evidence/page-page-task-step-authenticate.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-TASK-STEP-AUTHENTICATE
+  migration_batch: MIG-B4/UIUX_OVERLAY
+  rationale_one_line: 原型证据抽取绑定本仓页面与原型资产，属项目事实
+  source_ref: outputs/frontend/10_planned/uiux-provider-overlay.yaml
+- asset_id: uiux-provider-overlay
+  decision: PROJECT
+  destination: truth/objects/overlay-evidence/page-page-task-step-bind-carline.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-TASK-STEP-BIND-CARLINE
+  migration_batch: MIG-B4/UIUX_OVERLAY
+  rationale_one_line: 原型证据抽取绑定本仓页面与原型资产，属项目事实
+  source_ref: outputs/frontend/10_planned/uiux-provider-overlay.yaml
+- asset_id: uiux-provider-overlay
+  decision: PROJECT
+  destination: truth/objects/overlay-evidence/page-page-task-step-buc-analyse.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-TASK-STEP-BUC-ANALYSE
+  migration_batch: MIG-B4/UIUX_OVERLAY
+  rationale_one_line: 原型证据抽取绑定本仓页面与原型资产，属项目事实
+  source_ref: outputs/frontend/10_planned/uiux-provider-overlay.yaml
+- asset_id: uiux-provider-overlay
+  decision: PROJECT
+  destination: truth/objects/overlay-evidence/page-page-task-step-build-bom.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-TASK-STEP-BUILD-BOM
+  migration_batch: MIG-B4/UIUX_OVERLAY
+  rationale_one_line: 原型证据抽取绑定本仓页面与原型资产，属项目事实
+  source_ref: outputs/frontend/10_planned/uiux-provider-overlay.yaml
+- asset_id: uiux-provider-overlay
+  decision: PROJECT
+  destination: truth/objects/overlay-evidence/page-page-task-step-expert-model-calculate.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-TASK-STEP-EXPERT-MODEL-CALCULATE
+  migration_batch: MIG-B4/UIUX_OVERLAY
+  rationale_one_line: 原型证据抽取绑定本仓页面与原型资产，属项目事实
+  source_ref: outputs/frontend/10_planned/uiux-provider-overlay.yaml
+- asset_id: uiux-provider-overlay
+  decision: PROJECT
+  destination: truth/objects/overlay-evidence/page-page-task-step-generate-snapshot.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-TASK-STEP-GENERATE-SNAPSHOT
+  migration_batch: MIG-B4/UIUX_OVERLAY
+  rationale_one_line: 原型证据抽取绑定本仓页面与原型资产，属项目事实
+  source_ref: outputs/frontend/10_planned/uiux-provider-overlay.yaml
+- asset_id: uiux-provider-overlay
+  decision: PROJECT
+  destination: truth/objects/overlay-evidence/page-page-task-step-maintain-base-attributes.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-TASK-STEP-MAINTAIN-BASE-ATTRIBUTES
+  migration_batch: MIG-B4/UIUX_OVERLAY
+  rationale_one_line: 原型证据抽取绑定本仓页面与原型资产，属项目事实
+  source_ref: outputs/frontend/10_planned/uiux-provider-overlay.yaml
+- asset_id: uiux-provider-overlay
+  decision: PROJECT
+  destination: truth/objects/overlay-evidence/page-page-task-step-manage-user-role.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-TASK-STEP-MANAGE-USER-ROLE
+  migration_batch: MIG-B4/UIUX_OVERLAY
+  rationale_one_line: 原型证据抽取绑定本仓页面与原型资产，属项目事实
+  source_ref: outputs/frontend/10_planned/uiux-provider-overlay.yaml
+- asset_id: uiux-provider-overlay
+  decision: PROJECT
+  destination: truth/objects/overlay-evidence/page-page-task-step-output-to-ledger.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-TASK-STEP-OUTPUT-TO-LEDGER
+  migration_batch: MIG-B4/UIUX_OVERLAY
+  rationale_one_line: 原型证据抽取绑定本仓页面与原型资产，属项目事实
+  source_ref: outputs/frontend/10_planned/uiux-provider-overlay.yaml
+- asset_id: uiux-provider-overlay
+  decision: PROJECT
+  destination: truth/objects/overlay-evidence/page-page-task-step-query-ledger.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-TASK-STEP-QUERY-LEDGER
+  migration_batch: MIG-B4/UIUX_OVERLAY
+  rationale_one_line: 原型证据抽取绑定本仓页面与原型资产，属项目事实
+  source_ref: outputs/frontend/10_planned/uiux-provider-overlay.yaml
+- asset_id: uiux-provider-overlay
+  decision: PROJECT
+  destination: truth/objects/overlay-evidence/page-page-task-step-save-bom.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-TASK-STEP-SAVE-BOM
+  migration_batch: MIG-B4/UIUX_OVERLAY
+  rationale_one_line: 原型证据抽取绑定本仓页面与原型资产，属项目事实
+  source_ref: outputs/frontend/10_planned/uiux-provider-overlay.yaml
+- asset_id: uiux-provider-overlay
+  decision: PROJECT
+  destination: truth/objects/overlay-evidence/page-page-task-step-select-vehicle-context.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT
+  migration_batch: MIG-B4/UIUX_OVERLAY
+  rationale_one_line: 原型证据抽取绑定本仓页面与原型资产，属项目事实
+  source_ref: outputs/frontend/10_planned/uiux-provider-overlay.yaml
+- asset_id: uiux-provider-overlay
+  decision: PROJECT
+  destination: truth/objects/overlay-evidence/page-page-task-step-track-cost-by-snapshot.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-TASK-STEP-TRACK-COST-BY-SNAPSHOT
+  migration_batch: MIG-B4/UIUX_OVERLAY
+  rationale_one_line: 原型证据抽取绑定本仓页面与原型资产，属项目事实
+  source_ref: outputs/frontend/10_planned/uiux-provider-overlay.yaml
+- asset_id: uiux-provider-overlay
+  decision: PROJECT
+  destination: truth/objects/overlay-evidence/page-page-task-step-view-all-parts.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-TASK-STEP-VIEW-ALL-PARTS
+  migration_batch: MIG-B4/UIUX_OVERLAY
+  rationale_one_line: 原型证据抽取绑定本仓页面与原型资产，属项目事实
+  source_ref: outputs/frontend/10_planned/uiux-provider-overlay.yaml
+- asset_id: uiux-provider-overlay
+  decision: PROJECT
+  destination: truth/objects/overlay-evidence/page-page-task-step-writeback-ledger.json（MIG-B4 项目侧转录落位）
+  entry_id: pages.PAGE-TASK-STEP-WRITEBACK-LEDGER
+  migration_batch: MIG-B4/UIUX_OVERLAY
+  rationale_one_line: 原型证据抽取绑定本仓页面与原型资产，属项目事实
+  source_ref: outputs/frontend/10_planned/uiux-provider-overlay.yaml
+entry_count_rule: 信封字段（blueprint_sha256/document_type/schema_version/updated_at/architecture_name/architecture_version/purpose）不入分母；其余顶层决策字段与主列表条目逐条入分母。条目顺序=资产按 inventory 顺序、条目按源文件键序；id 列表与 key-binding-map.batch4.draft.yaml 同源。

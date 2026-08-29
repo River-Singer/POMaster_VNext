@@ -1,0 +1,95 @@
+{
+  "authority": {
+    "delegates": [],
+    "escalation_hint": "regenerate via migration/master-batch4/tools/ingest_batch4_project_side.py; 源侧修订走 MASTer 人工策展后重跑本工具（源仓只读）；语义升级/supersede 归 FRONTEND_ARCHITECTURE 裁决位",
+    "owner": "FRONTEND_ARCHITECTURE",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "LOCKED",
+    "evidence": "IMPLEMENTED",
+    "lifecycle": "CURRENT"
+  },
+  "axis_profile": "knowledge_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "KNOWLEDGE.OVERLAY.PAGES.AUTHENTICATE",
+  "key_bindings": {
+    "artifact": [],
+    "code": []
+  },
+  "kind": "knowledge_entry",
+  "notes_md": "本对象为 MIG-B4/M2 项目侧转录（tools/ingest_batch4_project_side.py，分拣事实源=split-ledger.yaml）：源 outputs/frontend/10_planned/uiux-provider-overlay.yaml 条目 pages.PAGE-TASK-STEP-AUTHENTICATE（PROJECT，293/307 条之一），payload 载荷与源条目深度等价（标量/字典键值族以 {key, value} 包装承载，value 即源值；工具断言，merge-preserving）。\nkind 裁定：knowledge_entry（axis_profile=knowledge_default，FROZEN 十类闭包内；ledger 预声明项目侧 kind-dir overlay-evidence/ 高于 batch1 kind-dir 闭表，逐字 honoring）；authority owner=FRONTEND_ARCHITECTURE（batch3 authority.json owner_registry 同族角色，DP-7 粗粒度候选，M3 校准前）。axes 裁定：lifecycle=CURRENT（活跃 canonical 事实，producer_alive=true + 消费链在场）；confidence=LOCKED（版本化 schema/门禁消费链在场，无未裁决值冲突）；evidence=IMPLEMENTED（执行点/消费链在场；迁移期无 CLM/VRF 台账不标 VERIFIED）；change=STABLE（M0 pin 在场零漂移）。\n赐名：canonical id KNOWLEDGE.OVERLAY.PAGES.AUTHENTICATE 为 CONVENTIONS §2 机械形（entry_id 词形为源键路径，非 governed id 词形，aliases 以缺席表达）；origin 保持源侧 derived。\nBaseline 引用：payload.baseline_refs=[]（显式空数组=诚实声明『无 catalog 基线，纯项目事实』——PROJECT 条目无 Universal 半，指向 catalog id 即虚构）。\n落位偏差登记（batch1 约定书 §1 偏差记录先例）：ledger 落位串『truth/objects/overlay-evidence/page-page-task-step-authenticate.json（MIG-B4 项目侧转录落位）』vs 实际机械名『overlay-evidence/overlay.pages.authenticate.json』——偏差由 FROZEN IdCanonical 文法强制（SEGMENT 禁连字符，ledger 落位串的连字符复合名不可由合法 id 机械投影；家族前缀防跨资产 id collision）；FROZEN > ledger 冲突顺序适用，ledger 目录位逐字 honoring，实体 1:1 对应（entry_id 集合相等断言在场）。\nkind 裁定补记：knowledge_entry（advisory 豁免语义与『optional-evidence-not-business-truth』posture 对齐——batch1 §3 判例的反向适用：彼处 fail-closed 强制面装 advisory kind 会误标判卷语义，此处 advisory 定位恰是源文件 authority 自声明）；failure_class/checks 源无整体缺席（诚实缺席不伪造失败语义）；lifecycle 取 CURRENT 符合 knowledge 收窄（CURRENT/DEPRECATED/RETIRED）。\n本字段为人类散文，机器永不解析判卷（P9）。",
+  "origin": "derived",
+  "payload": {
+    "advisory_note_md": "authority=optional-evidence-not-business-truth（源文件头 authority 字段逐字）：本条为原型抽取的可选证据（optional evidence），不是业务事实；业务真值只能来自已登记契约面。advisory 豁免声明：key_bindings 空绑定是声明出来的不是漏填（batch1 约定书 §3），机器永不判卷本对象。",
+    "baseline_refs": [],
+    "page_evidence": {
+      "evidence_refs": [
+        "EV-PROTOTYPE-20260722#sha256=1450d3e441a0cee1",
+        "EV-PROTOTYPE-20260722#page=login"
+      ],
+      "page_id": "PAGE-TASK-STEP-AUTHENTICATE",
+      "visual_proposals": {
+        "extraction_note": "原型登录屏为静态 DOM，不在 pages 字典内；doLogin() 无真实认证。",
+        "observed_copy": [
+          "欢迎登录",
+          "用户编码",
+          "请输入用户编码",
+          "密码",
+          "请输入密码",
+          "登录",
+          "或",
+          "EIDP 单点登录",
+          "Material Cost & Steering Tracking",
+          "Cost Engineering · Volkswagen Group"
+        ],
+        "prototype_anchor": "静态登录屏（非 renderPage 分支，位于 body 顶部 #loginScreen）",
+        "prototype_coverage": "present",
+        "prototype_page_id": "login",
+        "prototype_region": "whole-page"
+      }
+    },
+    "source_document_meta": {
+      "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+      "document_type": "uiux-provider-evidence-overlay",
+      "schema_version": 1
+    }
+  },
+  "permits_active": [],
+  "producer": {
+    "liveness": {
+      "status": "active"
+    },
+    "merge_semantics": {
+      "backfill_if_missing": [],
+      "human_never_touched": [],
+      "refresh_fields": [
+        "payload"
+      ]
+    },
+    "producer_id": "prod.mig_b4_ingest_batch4_project_side",
+    "views_maintained": [
+      "truth-index.envelope"
+    ]
+  },
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b4/ingest_batch4_project_side.py",
+      "locator": {
+        "batch": "MIG-B4",
+        "ingested_from": "outputs/frontend/10_planned/uiux-provider-overlay.yaml",
+        "transcription": "ledger entry pages.PAGE-TASK-STEP-AUTHENTICATE (KNOWLEDGE.OVERLAY.PAGES.AUTHENTICATE) transcribed verbatim (split-ledger.yaml decision=PROJECT, 293/307); merge-preserving deep-equal asserted; baseline_refs=explicit empty; source pin recomputed live; KBM batch-internal corroboration only"
+      },
+      "pin": {
+        "digest": "sha256:d8e5077d0694c9e5b2ff7f84186c0e157b076ce3f5f43df491b64b8d13f264f5"
+      },
+      "ref": "outputs/frontend/10_planned/uiux-provider-overlay.yaml",
+      "type": "prototype_walkthrough"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "原型证据·AUTHENTICATE"
+}

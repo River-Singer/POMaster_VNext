@@ -1,0 +1,1032 @@
+assets:
+- consumers_detected:
+  - .agents/skills/pomaster/components/what-architect-should-do/skills/architecture-advisor/scripts/architecture_ready.py
+  - .agents/skills/pomaster/components/what-architect-should-do/skills/frontend-planner/SKILL.md
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/architecture-constraints.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/contract-index.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/document-contracts.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/manifests/components.lock.yaml
+  - .agents/skills/pomaster/scripts/compile_indexes.py
+  - .agents/skills/pomaster/scripts/install_spec_enforcement.py
+  - .agents/skills/pomaster/tests/integration/test_architecture_ready.py
+  - .agents/skills/pomaster/tests/integration/test_delivery_truth_gates.py
+  - .agents/skills/pomaster/tests/integration/test_governance_factsources_compiler.py
+  - .agents/skills/pomaster/tests/integration/test_install_spec_enforcement.py
+  - .claude/hooks/frontend-write-gate.py
+  - .claude/hooks/inject-subagent-context.py
+  - .claude/skills/pomaster/components/what-architect-should-do/skills/architecture-advisor/scripts/architecture_ready.py
+  - .claude/skills/pomaster/components/what-architect-should-do/skills/frontend-planner/SKILL.md
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/architecture-constraints.schema.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/contract-index.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/document-contracts.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .claude/skills/pomaster/manifests/components.lock.yaml
+  - .claude/skills/pomaster/scripts/compile_indexes.py
+  - .claude/skills/pomaster/scripts/install_spec_enforcement.py
+  - .claude/skills/pomaster/tests/integration/test_architecture_ready.py
+  - .claude/skills/pomaster/tests/integration/test_delivery_truth_gates.py
+  - .claude/skills/pomaster/tests/integration/test_governance_factsources_compiler.py
+  - .claude/skills/pomaster/tests/integration/test_install_spec_enforcement.py
+  - doc/frontend-tech-stack.md
+  - doc/pomaster-retrospective.md
+  - tools/frontend/derive_platform_foundation.py
+  - tools/frontend/encode_vendor_adapter.py
+  content_sha256: 4d3968bd1f14977b11c679f87de3c08dcdf940a6abbce6696566890f7998ec6a
+  incident_history: []
+  kind: architecture-constraints
+  line_count: 103
+  migration_batch: MIG-B4/ARCHITECTURE
+  producer_alive: true
+  producer_alive_note: compile_frontend_governance_factsources 为 producer（_derive_architecture 从 src/ best-effort 扫描派生 layers；merge by layers:layer 在 _MERGE_LIST_FIELDS 在场，人工修订存活）；architecture-constraints.schema.json + contract-index + document-contracts 登记在场；无独立消费脚本（schema 校验 + merge 链即其机器消费面）。源内含 updated_at 墙钟字段（源侧事实，本工具不转录其值到机器字段）。
+  producer_chain_observed:
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/architecture-constraints.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/architecture-constraints.schema.json
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B4
+      captured_by: agent:m0-inventory-batch4/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/architecture-constraints.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链/事故证据，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/architecture-constraints.yaml
+  top_level_keys:
+  - architecture_name
+  - architecture_version
+  - blueprint_sha256
+  - deep_import_rule
+  - document_type
+  - layers
+  - new_file_rule
+  - public_api
+  - schema_version
+  - updated_at
+- consumers_detected:
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/contract-index.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/dependency-registry.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/document-contracts.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/frontend-delivery.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/scan_ai_coding_violations.py
+  - .agents/skills/pomaster/manifests/components.lock.yaml
+  - .agents/skills/pomaster/tests/integration/test_governance_factsources_compiler.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/contract-index.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/dependency-registry.schema.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/document-contracts.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/frontend-delivery.schema.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/scan_ai_coding_violations.py
+  - .claude/skills/pomaster/manifests/components.lock.yaml
+  - .claude/skills/pomaster/tests/integration/test_governance_factsources_compiler.py
+  - doc/frontend-tech-stack.md
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - tools/frontend/encode_vendor_adapter.py
+  content_sha256: 71e1f21c35391afc47710b8ea33ffafef9f182479bd7c901df72283e876fad12
+  incident_history:
+  - evidence:
+    - 生产者 docstring 在仓自述（compile_frontend_governance_factsources.py 行 824）：『Before this producer existed the factsource was read by a gate but produced by nothing, so every dep was flagged dependency-not-approved purely because the file was absent - a structural defect（research 08-05-interaction-state-governance-research, gap A1，行 826）』——有门禁无生产者的结构性缺陷在仓记载；死锁机制=每个 package.json 依赖均被 dependency-not-approved 门禁旗标
+    - '挂起态残留实证（git 提交链只读核验，M0 会话，commit id 内容寻址不随重跑漂移）：commit 48ccec4 时本文件 26 条（25 approved + DEP.jsdom 1 条 pending，scaffold TODO『review and set status=approved (or banned) before P2 authorize』在条目 description 在场——pending 未裁决即阻塞 P2 authorize）；commit ba9209b 提交说明『dependency-registry: approve jsdom/jsep (pending -> approved)』解禁；当前文件 27 条全 approved'
+    - 计数口径对齐与证据边界：死锁窗口期 package.json 依赖总数=26（commit cabe6bc 实测），与本文件 26 条窗口一致；全挂起窗口（本文件缺席期）不在本文件 git 首提交（7fdb846 初版即 25 条全 approved）可考范围内，仅由生产者 docstring 转述——如实登记证据边界，不补写不可考窗口
+    - 回归防线在场：门禁规则 dependency-not-approved（scan_ai_coding_violations.py 行 253，规则注册行 475）；生产者侧 TODO 措辞仍为 新依赖 scaffold 默认（行 872）；当前态复测 27↔27 与 package.json 双射零缺口（见 inventory cross_reference_forms）
+    type: gate_without_producer_not_approved_deadlock
+  kind: dependency-registry
+  line_count: 196
+  migration_batch: MIG-B4/DEPENDENCY
+  producer_alive: true
+  producer_alive_note: compile_frontend_governance_factsources 为 producer（_derive_dependency_registry 自 package.json merge-preserving 派生：新依赖 scaffold status=pending，人工 approved/banned/radar 决定永不覆盖，producer 永不自动 approve——编译器 docstring 明示；producer 级 merge-preserving，豁免于 _MERGE_LIST_FIELDS）；scan_ai_coding_violations 的 dependency-not-approved 门禁为其消费方（gate 与 producer 双侧在仓）；dependency-registry.schema.json 在场。
+  producer_chain_observed:
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/scan_ai_coding_violations.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/scan_ai_coding_violations.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/dependency-registry.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/dependency-registry.schema.json
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B4
+      captured_by: agent:m0-inventory-batch4/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/dependency-registry.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链/事故证据，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/dependency-registry.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - dependencies
+  - document_type
+  - schema_version
+- consumers_detected:
+  - src/app/App.vue
+  - src/app/error-boundary/RouteErrorBoundary.vue
+  - src/app/main.ts
+  - src/app/providers/index.ts
+  - src/app/router/guards.ts
+  - src/app/router/index.ts
+  - src/shared/lib/error/types.ts
+  - src/shared/lib/format.ts
+  - tools/frontend/encode_float_precision.py
+  content_sha256: ec6c732d040d4adfc8cdf505a78dee3e8b7fe6bc15a009edee5bbc7693a20757
+  incident_history: []
+  kind: directory-layout
+  line_count: 71
+  migration_batch: MIG-B4/ARCHITECTURE
+  producer_alive: false
+  producer_alive_note: 人工/agent 策展（origin natural，在仓无写入脚本，免 producer 义务）；ownership.protocol 自声明 universal:module-boundary-protocol + machine_source 自声明『app/pages/features/entities 四层层内目录结构与命名约定的机器事实源』；但在仓无脚本生产链亦无脚本消费链（唯一在仓脚本引用为 tools/frontend/encode_float_precision.py 行内注释『路径对齐 spec 09 directory-layout 的 shared/lib 分层』），无 schema、不入 contract-index——『自声明机器事实源、实际消费面为人类/agent 阅读』的悬空态如实登记；shared/* 层内结构由 component-registry / pattern-registry / vendor-adapter-registry / style-ownership-registry 分别定义（文件自述）。
+  producer_chain_observed: []
+  provenance:
+    origin: natural
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B4
+      captured_by: agent:m0-inventory-batch4/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/directory-layout.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链/事故证据，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/directory-layout.yaml
+  top_level_keys:
+  - architecture_name
+  - barrel_rule
+  - blueprint_sha256
+  - colocation_rule
+  - document_type
+  - layers
+  - naming
+  - ownership
+  - purpose
+  - schema_version
+- consumers_detected:
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/contract-index.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/document-contracts.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/http-client-policy.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_http_client_policy.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/validate_frontend_delivery.py
+  - .agents/skills/pomaster/manifests/components.lock.yaml
+  - .agents/skills/pomaster/tests/contracts/test_http_client_policy.py
+  - .agents/skills/pomaster/tests/integration/test_api_http_client_governance.py
+  - .agents/skills/pomaster/tests/integration/test_governance_factsources_compiler.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/contract-index.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/document-contracts.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/http-client-policy.schema.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_http_client_policy.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/validate_frontend_delivery.py
+  - .claude/skills/pomaster/manifests/components.lock.yaml
+  - .claude/skills/pomaster/tests/contracts/test_http_client_policy.py
+  - .claude/skills/pomaster/tests/integration/test_api_http_client_governance.py
+  - .claude/skills/pomaster/tests/integration/test_governance_factsources_compiler.py
+  - doc/frontend-tech-stack.md
+  - outputs/frontend/10_planned/application-shell-registry.yaml
+  - src/shared/lib/http/app-client.ts
+  - src/shared/lib/http/auth-client.ts
+  - src/shared/lib/http/config.ts
+  - src/shared/lib/http/index.ts
+  - src/shared/lib/http/refresh.ts
+  - tools/frontend/fill_application_shell.py
+  content_sha256: ee664534df79c5e6f181eb0534d9bd0f759d6689775079ecdcb96c15f638d9f4
+  incident_history: []
+  kind: http-client-policy
+  line_count: 65
+  migration_batch: MIG-B4/HTTP_CLIENT
+  producer_alive: true
+  producer_alive_note: compile_frontend_http_client_policy.py 为写入 producer（OUTPUT_PATH 直指本文件；authClient/appClient 分离 + 拦截器 + 401/403 + single-flight refresh + 重试/取消 + trace 的机器事实源；merge by clients:id 在 _MERGE_LIST_FIELDS 在场；producer docstring 明示 updated_at 省略以保证重跑 byte-identical）；compile_frontend_governance_factsources 经模块钩子接线 / validate_frontend_delivery 消费链在场（双镜像）；schema + contract-index + document-contracts 登记在场。
+  producer_chain_observed:
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_http_client_policy.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_http_client_policy.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/validate_frontend_delivery.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/validate_frontend_delivery.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/http-client-policy.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/http-client-policy.schema.json
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B4
+      captured_by: agent:m0-inventory-batch4/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/http-client-policy.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链/事故证据，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/http-client-policy.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - clients
+  - document_type
+  - global
+  - schema_version
+- consumers_detected:
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/SKILL.md
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/contract-index.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/document-contracts.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/frontend-delivery.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/implementation-boundary-plan.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/page-readiness-registry.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/manifests/components.lock.yaml
+  - .agents/skills/pomaster/tests/integration/test_frontend_page_spec.py
+  - .agents/skills/pomaster/tests/integration/test_governance_factsources_compiler.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/SKILL.md
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/contract-index.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/document-contracts.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/frontend-delivery.schema.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/implementation-boundary-plan.schema.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/page-readiness-registry.schema.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/manifests/components.lock.yaml
+  - .claude/skills/pomaster/tests/integration/test_frontend_page_spec.py
+  - .claude/skills/pomaster/tests/integration/test_governance_factsources_compiler.py
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/30_generated/page-specs/.sec-extra.json
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-ALL-PARTS-LIST.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-APPROVAL-FLOW.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-BRIDGE-TABLE.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-BUC-DETAIL.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-CSC-PRICE.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-DASHBOARD.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-DATA-PERMISSION.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-EQUIPMENT-DB.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-EQUIPMENT-DETAIL.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-EQUIPMENT-PALETTE.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-EVALUATION.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-FORECAST-REPORT.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-MATERIAL-DB.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-OTHER-COST-ANALYSIS.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-OTHER-DB.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-PART-INFO.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-PART-STRUCTURE-DB.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-PROCESS-DB.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-ROLE-MGMT.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-SET-DB.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-TASK-MGMT.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-TECHNICAL-AKT.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-USER-MGMT.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-VEHICLE-MASTER-DATA.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-AUTHENTICATE.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-BIND-CARLINE.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-BUC-ANALYSE.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-BUILD-BOM.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-EXPERT-MODEL-CALCULATE.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-GENERATE-SNAPSHOT.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-MAINTAIN-BASE-ATTRIBUTES.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-MANAGE-USER-ROLE.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-OUTPUT-TO-LEDGER.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-QUERY-LEDGER.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-SAVE-BOM.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-TRACK-COST-BY-SNAPSHOT.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-VIEW-ALL-PARTS.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-WRITEBACK-LEDGER.md
+  content_sha256: 891f1d4e1560a55d782d89dc4e20d8826ae2c9d46a9c3cb5094df8140a0f9024
+  incident_history:
+  - evidence:
+    - 孤儿态在仓自述：compile_frontend_page_spec.py 行 41 『§14 absorbs the orphan implementation-boundary-plan factsource (which had a schema but no producer/consumer)』——曾有 schema 而无生产者/消费者的孤儿事实源
+    - 复活生产者在场：compile_frontend_governance_factsources.py 行 1163 『These revive the orphan implementation-boundary-plan factsource (schema existed, no producer)』+ 行 1299 docstring 『Derive implementation-boundary-plan (§14) from Screen Blueprint regions…Revives the orphan factsource』
+    - 消费链接通复测：compile_frontend_page_spec.py 行 1551 page-spec §14 渲染（outputs/frontend/30_generated/page-specs/*.md 全量在场）；现 39 条 boundaries 与 screen-blueprints 39 份集合精确相等（cross_reference_forms 机械复测）
+    type: orphan_factsource_revived
+  kind: implementation-boundary-plan
+  line_count: 725
+  migration_batch: MIG-B4/BOUNDARY
+  producer_alive: true
+  producer_alive_note: 'compile_frontend_governance_factsources 为 producer（PR4 §14 _derive_implementation_boundary_plan 从 Screen Blueprint regions 派生，一页一条 BOUNDARY.<page_id>；allowed_layers=region:/action: 稳定 id 集，forbidden_layers 为 TODO 占位待人工声明公共组件/HTTP Client/Router/Design Token 保护面；merge by boundaries:id 在 _MERGE_LIST_FIELDS 在场）；compile_frontend_page_spec §14 渲染消费（outputs/frontend/30_generated/page-specs/*.md 全量在场）；implementation-boundary-plan.schema.json 在场；孤儿复活史见 incident_history。'
+  producer_chain_observed:
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/implementation-boundary-plan.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/implementation-boundary-plan.schema.json
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B4
+      captured_by: agent:m0-inventory-batch4/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链/事故证据，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - boundaries
+  - document_type
+  - schema_version
+- consumers_detected:
+  - .agents/skills/pomaster/components/what-architect-should-do/skills/foundation-governance/SKILL.md
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/assets/default-libraries/default-pattern-library.yaml
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/component-selection-register.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/contract-index.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/document-contracts.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/pattern-registry.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_component_gaps.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/validate_frontend_delivery.py
+  - .agents/skills/pomaster/manifests/components.lock.yaml
+  - .agents/skills/pomaster/scripts/compile_indexes.py
+  - .agents/skills/pomaster/scripts/install_spec_enforcement.py
+  - .agents/skills/pomaster/tests/contracts/test_pattern_registry.py
+  - .agents/skills/pomaster/tests/integration/test_component_gaps_fail_closed.py
+  - .agents/skills/pomaster/tests/integration/test_frontend_gap_checklist.py
+  - .agents/skills/pomaster/tests/integration/test_governance_factsources_compiler.py
+  - .agents/skills/pomaster/tests/integration/test_install_spec_enforcement.py
+  - .claude/hooks/frontend-write-gate.py
+  - .claude/hooks/inject-subagent-context.py
+  - .claude/skills/pomaster/components/what-architect-should-do/skills/foundation-governance/SKILL.md
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/assets/default-libraries/default-pattern-library.yaml
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/component-selection-register.schema.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/contract-index.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/document-contracts.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/pattern-registry.schema.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_component_gaps.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/validate_frontend_delivery.py
+  - .claude/skills/pomaster/manifests/components.lock.yaml
+  - .claude/skills/pomaster/scripts/compile_indexes.py
+  - .claude/skills/pomaster/scripts/install_spec_enforcement.py
+  - .claude/skills/pomaster/tests/contracts/test_pattern_registry.py
+  - .claude/skills/pomaster/tests/integration/test_component_gaps_fail_closed.py
+  - .claude/skills/pomaster/tests/integration/test_frontend_gap_checklist.py
+  - .claude/skills/pomaster/tests/integration/test_governance_factsources_compiler.py
+  - .claude/skills/pomaster/tests/integration/test_install_spec_enforcement.py
+  - doc/frontend-tech-stack.md
+  - outputs/frontend/10_planned/directory-layout.yaml
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-ALL-PARTS-LIST.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-APPROVAL-FLOW.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-BRIDGE-TABLE.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-BUC-DETAIL.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-CSC-PRICE.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-DASHBOARD.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-DATA-PERMISSION.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-EQUIPMENT-DB.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-EQUIPMENT-DETAIL.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-EQUIPMENT-PALETTE.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-EVALUATION.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-FORECAST-REPORT.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-MATERIAL-DB.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-OTHER-COST-ANALYSIS.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-OTHER-DB.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-PART-INFO.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-PART-STRUCTURE-DB.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-PROCESS-DB.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-ROLE-MGMT.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-SET-DB.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-TASK-MGMT.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-TECHNICAL-AKT.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-USER-MGMT.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-VEHICLE-MASTER-DATA.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-AUTHENTICATE.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-BIND-CARLINE.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-BUC-ANALYSE.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-BUILD-BOM.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-EXPERT-MODEL-CALCULATE.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-GENERATE-SNAPSHOT.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-MAINTAIN-BASE-ATTRIBUTES.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-MANAGE-USER-ROLE.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-OUTPUT-TO-LEDGER.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-QUERY-LEDGER.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-SAVE-BOM.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-TRACK-COST-BY-SNAPSHOT.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-VIEW-ALL-PARTS.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-WRITEBACK-LEDGER.md
+  - src/shared/ui/patterns/MasterPageHeader.vue
+  - tools/frontend/encode_component_selection.py
+  - tools/frontend/fill_screen_blueprints.py
+  content_sha256: 10d69b4b9e566545c769c57ed7ab573334a98f77100e0869a4be6a9a0b92ae9e
+  incident_history: []
+  kind: pattern-registry
+  line_count: 251
+  migration_batch: MIG-B4/PATTERN
+  producer_alive: true
+  producer_alive_note: compile_frontend_governance_factsources 为 seed producer（_seed_pattern_registry 自 assets/default-libraries/default-pattern-library.yaml 播种 12 条 PATTERN.*，使 Screen Blueprint region.component 的 PATTERN.* 引用自首个 prepare 起可对非空 registry 校验；merge by patterns:id 在 _MERGE_LIST_FIELDS 在场）；compile_frontend_component_gaps / compile_frontend_page_spec / validate_frontend_delivery 消费链在场（双镜像）；pattern-registry.schema.json + component-selection-register.schema.json 引用在场；tests/contracts/test_pattern_registry.py 在场（双镜像）。
+  producer_chain_observed:
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_component_gaps.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_component_gaps.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/validate_frontend_delivery.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/validate_frontend_delivery.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/pattern-registry.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/pattern-registry.schema.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/component-selection-register.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/component-selection-register.schema.json
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B4
+      captured_by: agent:m0-inventory-batch4/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/pattern-registry.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链/事故证据，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/pattern-registry.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - patterns
+  - schema_version
+- consumers_detected:
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/contract-index.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/document-contracts.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/frontend-delivery.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/performance-budget.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/performance-test-results.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_readiness.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/scan_frontend_performance.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/validate_frontend_delivery.py
+  - .agents/skills/pomaster/components/what-tester-should-do/skills/quality-architecture-gate/references/output-contract.md
+  - .agents/skills/pomaster/components/what-tester-should-do/skills/quality-architecture-gate/references/test-scope-taxonomy.md
+  - .agents/skills/pomaster/components/what-tester-should-do/skills/quality-architecture-gate/scripts/render-final-report.mjs
+  - .agents/skills/pomaster/manifests/components.lock.yaml
+  - .agents/skills/pomaster/tests/integration/test_frontend_performance.py
+  - .agents/skills/pomaster/tests/integration/test_governance_factsources_compiler.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/contract-index.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/document-contracts.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/frontend-delivery.schema.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/performance-budget.schema.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/performance-test-results.schema.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_readiness.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/scan_frontend_performance.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/validate_frontend_delivery.py
+  - .claude/skills/pomaster/components/what-tester-should-do/skills/quality-architecture-gate/references/output-contract.md
+  - .claude/skills/pomaster/components/what-tester-should-do/skills/quality-architecture-gate/references/test-scope-taxonomy.md
+  - .claude/skills/pomaster/components/what-tester-should-do/skills/quality-architecture-gate/scripts/render-final-report.mjs
+  - .claude/skills/pomaster/manifests/components.lock.yaml
+  - .claude/skills/pomaster/tests/integration/test_frontend_performance.py
+  - .claude/skills/pomaster/tests/integration/test_governance_factsources_compiler.py
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  content_sha256: a4e032bd5d93895acad19e6749854f4eeb31107353ba4506fc0dedd97a613849
+  incident_history: []
+  kind: performance-budget
+  line_count: 593
+  migration_batch: MIG-B4/PERFORMANCE
+  producer_alive: true
+  producer_alive_note: compile_frontend_governance_factsources 为 producer（PR5 §21 _derive_performance_budget：page-type 差异化预算——page_type_budgets 模板自 page-template-registry ids、逐页绑定自 Screen Blueprint page.template；编译器注释明示 merge-preserving『so a human's tightened thresholds / APPROVED status survive』）；compile_frontend_readiness / scan_frontend_performance / validate_frontend_delivery 消费链在场（双镜像）；performance-budget.schema.json + performance-test-results.schema.json 双 schema 在场。
+  producer_chain_observed:
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_readiness.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_readiness.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/scan_frontend_performance.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/scan_frontend_performance.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/validate_frontend_delivery.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/validate_frontend_delivery.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/performance-budget.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/performance-budget.schema.json
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B4
+      captured_by: agent:m0-inventory-batch4/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/performance-budget.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链/事故证据，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/performance-budget.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - initial_load
+  - page_type_budgets
+  - pages
+  - route
+  - runtime
+  - schema_version
+- consumers_detected:
+  - .agents/skills/pomaster/components/what-architect-should-do/skills/foundation-governance/SKILL.md
+  - .agents/skills/pomaster/components/what-designer-should-do/skills/visual-design-execution-pack/SKILL.md
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/SKILL.md
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/assets/default-libraries/default-style-ownership.yaml
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/contract-index.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/document-contracts.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/prototype-ux-content-spec.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/prototype-visual-spec.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/style-ownership-registry.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_prototype_extraction.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_style_entry.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_tokens.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/manage_frontend_lifecycle.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/scan_css_violations.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/validate_frontend_delivery.py
+  - .agents/skills/pomaster/manifests/components.lock.yaml
+  - .agents/skills/pomaster/scripts/compile_indexes.py
+  - .agents/skills/pomaster/scripts/install_spec_enforcement.py
+  - .agents/skills/pomaster/tests/contracts/test_style_ownership_registry.py
+  - .agents/skills/pomaster/tests/integration/test_css_violations_scanner.py
+  - .agents/skills/pomaster/tests/integration/test_frontend_lifecycle.py
+  - .agents/skills/pomaster/tests/integration/test_frontend_prototype_extraction.py
+  - .agents/skills/pomaster/tests/integration/test_frontend_style_entry.py
+  - .agents/skills/pomaster/tests/integration/test_governance_factsources_compiler.py
+  - .agents/skills/pomaster/tests/integration/test_install_spec_enforcement.py
+  - .claude/hooks/frontend-write-gate.py
+  - .claude/hooks/inject-subagent-context.py
+  - .claude/skills/pomaster/components/what-architect-should-do/skills/foundation-governance/SKILL.md
+  - .claude/skills/pomaster/components/what-designer-should-do/skills/visual-design-execution-pack/SKILL.md
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/SKILL.md
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/assets/default-libraries/default-style-ownership.yaml
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/contract-index.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/document-contracts.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/prototype-ux-content-spec.schema.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/prototype-visual-spec.schema.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/style-ownership-registry.schema.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_prototype_extraction.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_style_entry.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_tokens.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/manage_frontend_lifecycle.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/scan_css_violations.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/validate_frontend_delivery.py
+  - .claude/skills/pomaster/manifests/components.lock.yaml
+  - .claude/skills/pomaster/scripts/compile_indexes.py
+  - .claude/skills/pomaster/scripts/install_spec_enforcement.py
+  - .claude/skills/pomaster/tests/contracts/test_style_ownership_registry.py
+  - .claude/skills/pomaster/tests/integration/test_css_violations_scanner.py
+  - .claude/skills/pomaster/tests/integration/test_frontend_lifecycle.py
+  - .claude/skills/pomaster/tests/integration/test_frontend_prototype_extraction.py
+  - .claude/skills/pomaster/tests/integration/test_frontend_style_entry.py
+  - .claude/skills/pomaster/tests/integration/test_governance_factsources_compiler.py
+  - .claude/skills/pomaster/tests/integration/test_install_spec_enforcement.py
+  - doc/pomaster-retrospective.md
+  - outputs/frontend/10_planned/directory-layout.yaml
+  - src/shared/grid/MasterEditableGrid.vue
+  - tools/frontend/derive_platform_foundation.py
+  - tools/frontend/encode_vendor_adapter.py
+  content_sha256: 7eb53bcbb90045a4fe8ae68c27bee46e6738bebb4691b4c847b13bb552e2ad89
+  incident_history:
+  - evidence:
+    - 双源并存实证（行号现场重算）：doc/V1.0 Scope/design-system(1)/design-system/master/MASTER.md 行 100 仍声明『正文 | Fira Sans』、行 101 『标题/代码/金额 | Fira Code』、行 109 引用 Google Fonts 外链——历史草案在盘未撤回
+    - 裁决在册（源内事实）：本 registry visual_baseline.font_decision.note 明示 MASTER.md 声明『为历史草案；以本 registry 为准：正文系统雅黑栈、数字 Inter』；裁定来源=原型视觉基线 + 内网无 Google Fonts 约束，bp-owner 确认（design_baseline.confirmed_by 在场）；原型 mono 用法 138 次计数在案（prototype_mono_usage_count）
+    - '实现侧收敛复测（工具在场）：src/styles/tokens.css 行 ? 定义 --mast-font-family 系统雅黑栈、行 ? 定义 --mast-font-family-numeric: Inter；src/ 全树 Fira 词形 0 命中——实现已收敛到 registry 裁决，多头漂移止于文档层'
+    type: font_baseline_multi_source_drift_adjudicated
+  kind: style-ownership-registry
+  line_count: 246
+  migration_batch: MIG-B4/STYLE
+  producer_alive: true
+  producer_alive_note: compile_frontend_governance_factsources 为 seed producer（_scaffold_style_ownership_registry 自 assets/default-libraries/default-style-ownership.yaml 播种——全局样式唯一入口 + @import 装载序 + token 事实源与生成命令 + 五 scope owner；整册 preserve：编译器注释明示 design_baseline 与 layer owners 人工裁决存活『no list to merge by key … whole-document preserve』）；compile_frontend_style_entry（写 src/styles 入口注释引用本文件）/ compile_frontend_tokens / compile_frontend_prototype_extraction / scan_css_violations / manage_frontend_lifecycle / validate_frontend_delivery 消费链在场（双镜像）；字体基线多头漂移裁决史见 incident_history。
+  producer_chain_observed:
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_style_entry.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_style_entry.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_tokens.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_tokens.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_prototype_extraction.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_prototype_extraction.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/scan_css_violations.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/scan_css_violations.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/manage_frontend_lifecycle.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/manage_frontend_lifecycle.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/validate_frontend_delivery.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/validate_frontend_delivery.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/style-ownership-registry.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/style-ownership-registry.schema.json
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B4
+      captured_by: agent:m0-inventory-batch4/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/style-ownership-registry.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链/事故证据，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/style-ownership-registry.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - design_baseline
+  - document_type
+  - global_entry
+  - layers
+  - load_order
+  - schema_version
+  - scoped_style_rule
+  - style_entries
+  - third_party_style_owners
+  - token_entry
+  - token_generation_command
+  - token_source
+  - token_usage
+  - vendor_important_exemptions
+  - visual_baseline
+- consumers_detected:
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/SKILL.md
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/contract-index.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/document-contracts.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/frontend-delivery.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/page-readiness-registry.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/test-fixture-plan.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_readiness.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/delivery_truth_contract.py
+  - .agents/skills/pomaster/manifests/components.lock.yaml
+  - .agents/skills/pomaster/tests/integration/test_delivery_truth_gates.py
+  - .agents/skills/pomaster/tests/integration/test_frontend_page_spec.py
+  - .agents/skills/pomaster/tests/integration/test_governance_factsources_compiler.py
+  - .agents/skills/pomaster/tests/integration/test_predevelopment_readiness_18_dimensions.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/SKILL.md
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/contract-index.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/document-contracts.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/frontend-delivery.schema.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/page-readiness-registry.schema.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/test-fixture-plan.schema.json
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_readiness.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/delivery_truth_contract.py
+  - .claude/skills/pomaster/manifests/components.lock.yaml
+  - .claude/skills/pomaster/tests/integration/test_delivery_truth_gates.py
+  - .claude/skills/pomaster/tests/integration/test_frontend_page_spec.py
+  - .claude/skills/pomaster/tests/integration/test_governance_factsources_compiler.py
+  - .claude/skills/pomaster/tests/integration/test_predevelopment_readiness_18_dimensions.py
+  - outputs/.pomaster/transactions/TX-FDD4EF79FC022503149794DF/journal.json
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-ALL-PARTS-LIST.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-APPROVAL-FLOW.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-BRIDGE-TABLE.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-BUC-DETAIL.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-CSC-PRICE.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-DASHBOARD.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-DATA-PERMISSION.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-EQUIPMENT-DB.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-EQUIPMENT-DETAIL.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-EQUIPMENT-PALETTE.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-EVALUATION.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-FORECAST-REPORT.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-MATERIAL-DB.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-OTHER-COST-ANALYSIS.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-OTHER-DB.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-PART-INFO.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-PART-STRUCTURE-DB.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-PROCESS-DB.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-ROLE-MGMT.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-SET-DB.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-TASK-MGMT.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-TECHNICAL-AKT.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-USER-MGMT.md
+  - outputs/frontend/30_generated/page-specs/PAGE-APP-VEHICLE-MASTER-DATA.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-AUTHENTICATE.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-BIND-CARLINE.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-BUC-ANALYSE.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-BUILD-BOM.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-EXPERT-MODEL-CALCULATE.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-GENERATE-SNAPSHOT.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-MAINTAIN-BASE-ATTRIBUTES.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-MANAGE-USER-ROLE.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-OUTPUT-TO-LEDGER.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-QUERY-LEDGER.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-SAVE-BOM.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-SELECT-VEHICLE-CONTEXT.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-TRACK-COST-BY-SNAPSHOT.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-VIEW-ALL-PARTS.md
+  - outputs/frontend/30_generated/page-specs/PAGE-TASK-STEP-WRITEBACK-LEDGER.md
+  content_sha256: 43224e52f62746243952a14084611c88b2ba656a5a981bb27cfdd41becd8e5f3
+  incident_history: []
+  kind: test-fixture-plan
+  line_count: 815
+  migration_batch: MIG-B4/TEST
+  producer_alive: true
+  producer_alive_note: compile_frontend_governance_factsources 为 producer（§13 _derive_fixture_plan 从 api-requirement-registry 逐条派生 FIXTURE.<req_id>（source.page 在场的条目），fixture 数据态留 TODO 给人工；merge by fixtures:id 在 _MERGE_LIST_FIELDS 在场）；compile_frontend_page_spec（§13 逐页渲染）/ compile_frontend_readiness / delivery_truth_contract 消费链在场（双镜像）；test-fixture-plan.schema.json 在场。内容态：101 条 status DRAFT=84/ready=17，description 101/101 仍为 scaffold TODO 占位（数值照录不篡改）。
+  producer_chain_observed:
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_governance_factsources.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_page_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_readiness.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_frontend_readiness.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/delivery_truth_contract.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/delivery_truth_contract.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/test-fixture-plan.schema.json
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/schemas/test-fixture-plan.schema.json
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B4
+      captured_by: agent:m0-inventory-batch4/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/test-fixture-plan.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链/事故证据，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/test-fixture-plan.yaml
+  top_level_keys:
+  - blueprint_sha256
+  - document_type
+  - fixtures
+  - schema_version
+- consumers_detected:
+  - tools/frontend/extract_prototype_overlay.py
+  - tools/frontend/rebuild_prepare_chain.sh
+  content_sha256: d8e5077d0694c9e5b2ff7f84186c0e157b076ce3f5f43df491b64b8d13f264f5
+  incident_history: []
+  kind: uiux-provider-evidence-overlay
+  line_count: 791
+  migration_batch: MIG-B4/UIUX_OVERLAY
+  producer_alive: true
+  producer_alive_note: tools/frontend/extract_prototype_overlay.py 为 producer（--output 默认直指本文件；自原型 HTML 抽取 evidence overlay；多 BP 步骤页→单原型页 many-to-one 映射、无来源页显式 coverage=absent 不静默省略——脚本头注在案）；compile_uiux_functional_spec 为消费方（overlay 实参校验 document_type=uiux-provider-evidence-overlay + blueprint_sha256 一致，写 contract[provider_evidence]，authority 固定 optional-evidence-not-business-truth）；optional-uiux-pro-max-adapter.md 治理文档在场；无 schema、不入 contract-index（optional evidence 定位，非契约面）——文件头 authority 字段自声明同口径。
+  producer_chain_observed:
+  - tools/frontend/extract_prototype_overlay.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_uiux_functional_spec.py
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/scripts/compile_uiux_functional_spec.py
+  - .claude/skills/pomaster/components/what-frontend-coding-should-do/references/optional-uiux-pro-max-adapter.md
+  - .agents/skills/pomaster/components/what-frontend-coding-should-do/references/optional-uiux-pro-max-adapter.md
+  provenance:
+    origin: derived
+    origin_note: 词形采用 FROZEN 02 信封 OriginValue（natural/derived/ingested）；legacy 映射 human_curated→natural、migrated→ingested。本批为 M0 只读盘点，未发生对象迁移转录，故无 ingested。
+    sources:
+    - batch: MIG-B4
+      captured_by: agent:m0-inventory-batch4/build_m0_inventory.py
+      ingested_from: outputs/frontend/10_planned/uiux-provider-overlay.yaml
+      note: M0 只读盘点转录：仅登记行数/sha256/顶层键/消费方/生产链/事故证据，未改写源内容；人类策展字段原样保留在源文件。
+  ref: outputs/frontend/10_planned/uiux-provider-overlay.yaml
+  top_level_keys:
+  - authority
+  - blueprint_sha256
+  - document_type
+  - pages
+  - provider
+  - schema_version
+  - shared_shell
+  - source
+batch: MIG-B4
+cross_reference_forms:
+  boundary_pages_to_blueprints_and_page_registry:
+    blueprints_total: 39
+    boundary_pages_equal_blueprints: true
+    cross_batch_note: 4 页不在 application-page-registry pages[]（PAGE-TASK-STEP-GENERATE-SNAPSHOT/SAVE-BOM/VIEW-ALL-PARTS/WRITEBACK-LEDGER）与 BATCH-1 inventory denominators.application_pages.screen_blueprints_not_in_pages 为同一 4 页集合——跨批一致性复测；分母歧义归属仍待人工裁决（承 BATCH-1 口径，不裁决）
+    form: boundaries[].page_id 词形 PAGE-<SCOPE>-<NAME>，与 screen-blueprints/*.yaml 文件名、application-page-registry pages[].id 同键空间
+    in_page_registry: 35
+    key: boundaries[].page_id
+    method: 三侧集合两两比对（boundaries vs screen-blueprints ls vs page-registry）
+    not_in_page_registry:
+    - PAGE-TASK-STEP-GENERATE-SNAPSHOT
+    - PAGE-TASK-STEP-SAVE-BOM
+    - PAGE-TASK-STEP-VIEW-ALL-PARTS
+    - PAGE-TASK-STEP-WRITEBACK-LEDGER
+    target: screen-blueprints/*.yaml（39 集合相等）+ application-page-registry pages[].id（35 命中 + 4 缺口）
+  dependency_packages_to_package_json:
+    bijection: true
+    form: dependencies[].package ↔ package.json dependencies/devDependencies/peerDependencies 并集（裸包名）
+    key: dependencies[].package
+    method: 两侧包名集合双向比对
+    package_json_not_in_registry: []
+    package_json_total: 27
+    registry_not_in_package_json: []
+    registry_total: 27
+    target: package.json
+  fixture_scenario_to_api_requirement:
+    api_req_entries_uncovered:
+    - API_REQ.BRIDGE.TABLE.1
+    - API_REQ.BRIDGE.TABLE.2
+    - API_REQ.BRIDGE.TABLE.3
+    - API_REQ.BUC.ANALYSE.1
+    - API_REQ.BUC.DETAIL.1
+    - API_REQ.BUC.DETAIL.2
+    - API_REQ.BUC.DETAIL.3
+    - API_REQ.BUC.DETAIL.4
+    - API_REQ.CROSS.ATTACHMENT.STORE
+    - API_REQ.DASHBOARD.1
+    - API_REQ.DASHBOARD.2
+    - API_REQ.DASHBOARD.3
+    - API_REQ.DATA.PERMISSION.5
+    - API_REQ.DATA.PERMISSION.6
+    - API_REQ.DATA.PERMISSION.7
+    - API_REQ.DATA.PERMISSION.8
+    - API_REQ.DB.BATCH.DELETE.PRECHECK
+    - API_REQ.FORECAST.REPORT.1
+    - API_REQ.FORECAST.REPORT.2
+    - API_REQ.FORECAST.REPORT.3
+    - API_REQ.FORECAST.REPORT.4
+    - API_REQ.MATERIAL.DB.IMPORT.CSV
+    - API_REQ.OTHER.COST.1
+    - API_REQ.OTHER.COST.2
+    - API_REQ.OTHER.COST.3
+    - API_REQ.OTHER.DB.VEHICLE.CATALOG
+    - API_REQ.PART.INFO.1
+    - API_REQ.QUERY.LEDGER.SNAPSHOT
+    - API_REQ.VEHICLE.MASTER.DATA.FINANCE
+    - API_REQ.VEHICLE.MASTER.DATA.FROZEN.LIST
+    api_req_total_uncovered: 30
+    dangling_refs:
+    - API_REQ.USER.LOCALE.1
+    - API_REQ.USER.LOCALE.2
+    dangling_total: 2
+    form: fixtures[].scenario 词形 API_REQ.*（governed 前缀），fixtures[].id 为 FIXTURE.<scenario> 派生词形
+    key: fixtures[].scenario
+    locale_note: 2 条悬空（API_REQ.USER.LOCALE.1/.2，page_id=GLOBAL 词形）：spec 侧 locale 契约在册（11_predevelopment-confirmation 引用 同 id + state-ownership-matrix variable_id API_REQ.USER.LOCALE.*.LOCALE 词形），但 api-requirement-registry 无对应条目、已发布 OpenAPI 0.1.0 无 locale 操作——跨源登记态如实呈现，归属裁决不在本批
+    matched_total: 99
+    method: 两侧 id 集合双向比对（fixtures[].scenario vs api-requirement ids）
+    refs_total: 101
+    target: api-requirement-registry requirements[].id
+  pattern_impl_anchors_to_src:
+    form: patterns[].canonical_implementation.{file,component,import} 声明 src/shared/ui/patterns/Master*.vue 锚
+    impl_missing:
+    - PATTERN.CONFIRM_DIALOG
+    - PATTERN.DESCRIPTION_SUMMARY
+    - PATTERN.DETAIL_DESCRIPTION
+    - PATTERN.EDITABLE_GRID_SECTION
+    - PATTERN.EMPTY_STATE
+    - PATTERN.FORM_SECTION
+    - PATTERN.LIST_TABLE
+    - PATTERN.TAB_CONTAINER
+    - PATTERN.WIZARD_STEPS
+    impl_missing_total: 9
+    impl_present:
+    - PATTERN.ACTION_BAR
+    - PATTERN.FILTER_BAR
+    - PATTERN.PAGE_HEADER
+    impl_present_total: 3
+    key: patterns[].canonical_implementation.file
+    method: 锚路径在文件缓存中的存在性核验（存在=字面在场）
+    note: seed 先于实现的预期态（default-pattern-library 播种使 PATTERN.* 引用自首日起可校验；9 条锚文件未落地非残差裁决，逐条进 key-binding-map SEED_IMPL_FILE_MISSING 状态）
+    target: src/shared/ui/patterns/*.vue
+  performance_budget_refs_to_page_templates:
+    budget_ref_dangling: []
+    form: pages[].budget_ref 词形 PAGE.<TYPE>（page-template-registry 族模板词形，非页面 id），与 page_type_budgets[].page_type/route[].page_type 同键空间
+    key: pages[].budget_ref
+    method: 三侧键集比对（budget_ref vs ptb vs page-template-registry ids）
+    page_template_registry_ids_total: 11
+    ptb_equals_page_template_ids: true
+    refs_total: 39
+    route_equals_ptb: true
+    target: page_type_budgets[].page_type（11）+ route[].page_type（11）+ page-template-registry templates[].id（11）
+  style_token_usage_keys_to_token_source:
+    form: token_usage 键为 kebab-case CSS 变量词形（mast-color-state-*），token 源 src/styles/tokens.json 为 camelCase（unsavedBg 等），生成物 src/styles/tokens.css 回到 kebab 变量——token_generation_command（build_design_tokens.py --confirm）承担词形映射
+    kebab_to_camel_mappings:
+    - in_generated_css_kebab: true
+      in_source_json_camel: true
+      registry_key_kebab: mast-color-state-unsaved-bg
+      source_key_camel_draft: unsavedBg
+    - in_generated_css_kebab: true
+      in_source_json_camel: true
+      registry_key_kebab: mast-color-state-unsaved-bg-muted
+      source_key_camel_draft: unsavedBgMuted
+    - in_generated_css_kebab: true
+      in_source_json_camel: true
+      registry_key_kebab: mast-color-state-unsaved-border
+      source_key_camel_draft: unsavedBorder
+    - in_generated_css_kebab: true
+      in_source_json_camel: true
+      registry_key_kebab: mast-color-state-warning-active
+      source_key_camel_draft: warningActive
+    - in_generated_css_kebab: true
+      in_source_json_camel: true
+      registry_key_kebab: mast-color-state-warning-hover
+      source_key_camel_draft: warningHover
+    key: token_usage 键
+    method: kebab→camel 机械变换后与 tokens.json/tokens.css 文本比对
+    note: 词形映射非漂移：5/5 键双向可解析（源 camelCase 在册 + 生成 kebab 在场）；只登记映射形态不改名
+    target: src/styles/tokens.json（源）+ src/styles/tokens.css（生成）
+  uiux_overlay_pages_to_screen_blueprints:
+    all_task_step: true
+    form: pages[].page_id 词形 PAGE-TASK-STEP-*（legacy 页词形，照录）
+    in_blueprints_total: 15
+    key: pages[].page_id
+    method: page_id 集合与 screen-blueprints ls 子集比对
+    not_in_blueprints: []
+    overlay_total: 15
+    screen_blueprints_total: 39
+    target: screen-blueprints/*.yaml
+denominators:
+  architecture_constraint_layers:
+    health_note: 8 层（feature-sliced-layered，state/render isolation）；每层携带 public_api + forbidden_imports + responsibility 三元声明；deep_import_rule/new_file_rule/public_api 顶层规则字段配套在册；源内含 updated_at 墙钟字段（源侧事实，本工具不转录其值到机器字段）。
+    layer_names:
+    - app
+    - entities
+    - features
+    - pages
+    - shared/grid
+    - shared/lib
+    - shared/state
+    - shared/ui
+    method: json.load 后 len(layers)；layer 名去重校验
+    source: outputs/frontend/10_planned/architecture-constraints.yaml
+    value: 8
+    value_breakdown:
+      layers_with_public_api: 8
+      source_has_updated_at_field: true
+  boundary_entries:
+    health_note: '39 条（BOUNDARY.PAGE-<page_id> 本地族词形，一页一条，与 screen-blueprints 39 份集合精确相等）；status 全 39 条 PROPOSED；forbidden_layers 39/39 仍为 TODO 占位（人工保护面声明待办——数值照录不篡改）；allowed_layers 合计 region: 引用 137 条 + action: 引用 152 条；其中 4 页不在 application-page-registry pages[]（与 BATCH-1 inventory 分母段 screen_blueprints_not_in_pages 同一 4 页——跨批一致性复测）。'
+    method: json.load 后 len(boundaries)；status 分桶；forbidden_layers TODO 前缀计数；与 screen-blueprints 目录 ls 集合比对
+    source: outputs/frontend/10_planned/implementation-boundary-plan.yaml
+    value: 39
+    value_breakdown:
+      action_refs_in_allowed_layers: 152
+      equals_screen_blueprints: true
+      forbidden_layers_todo_placeholder: 39
+      not_in_page_registry:
+      - PAGE-TASK-STEP-GENERATE-SNAPSHOT
+      - PAGE-TASK-STEP-SAVE-BOM
+      - PAGE-TASK-STEP-VIEW-ALL-PARTS
+      - PAGE-TASK-STEP-WRITEBACK-LEDGER
+      region_refs_in_allowed_layers: 137
+      status:
+        status_PROPOSED: 39
+  dependency_entries:
+    health_note: 27 条（DEP.* 本地族词形）；status 全 27 条 approved（48ccec4 窗口期曾为 25 approved + 1 pending jsdom，ba9209b 解禁——见 inventory incident_history）；与 package.json 27 依赖双射零缺口（cross_reference_forms 机械复测）。
+    method: json.load 后 len(dependencies)；status 分桶；与 package.json dependencies/devDependencies/peerDependencies 并集双射比对
+    source: outputs/frontend/10_planned/dependency-registry.yaml
+    value: 27
+    value_breakdown:
+      package_json_deps: 27
+      package_json_not_in_registry: 0
+      registry_not_in_package_json: 0
+      status:
+        status_approved: 27
+  directory_layout_layer_specs:
+    health_note: 4 层规格（app/entities/features/pages 字典键）+ 8 条命名约定（naming 键：barrel/composable/entity_dir/feature_component/feature_dir/page_component/page_dir/shared_component）；ownership.protocol 自声明 universal:module-boundary-protocol；在仓无脚本消费链（悬空态如实登记，见资产条目 producer_alive_note）。
+    method: json.load 后 len(layers)（字典键）+ len(naming)
+    source: outputs/frontend/10_planned/directory-layout.yaml
+    value: 4
+    value_breakdown:
+      layer_keys:
+      - app
+      - entities
+      - features
+      - pages
+      naming_conventions: 8
+      ownership_protocol: universal:module-boundary-protocol
+  http_client_clients:
+    health_note: 2 客户端（authClient 会话族 / appClient 业务族分离）；endpoints 合计 5 条（auth 端点白名单在册）；global 块 6 键（base_url_source/default_timeout_ms/request_id_header/trace_id_header/retry_policy_default_id/abort_controller）。
+    method: json.load 后 len(clients)；endpoints 摊平计数；global 键清点
+    source: outputs/frontend/10_planned/http-client-policy.yaml
+    value: 2
+    value_breakdown:
+      client_ids:
+      - appClient
+      - authClient
+      endpoints_total: 5
+      global_keys:
+      - abort_controller
+      - base_url_source
+      - default_timeout_ms
+      - request_id_header
+      - retry_policy_default_id
+      - trace_id_header
+  overlay_pages:
+    health_note: 15 页（全 PAGE-TASK-STEP-* 词形，为 screen-blueprints 39 份的子集）；authority=optional-evidence-not-business-truth（optional evidence 定位，非业务事实——文件头自声明）；evidence_refs 合计 57 条（EV-PROTOTYPE-* 词形）；provider=ui-ux-pro-max；many-bp-step-pages-to-one-prototype-page 映射口径（source.mapping_cardinality 在册）。
+    method: json.load 后 len(pages)；page_id 前缀与 screen-blueprints 集合比对；evidence_refs 摊平计数
+    source: outputs/frontend/10_planned/uiux-provider-overlay.yaml
+    value: 15
+    value_breakdown:
+      authority: optional-evidence-not-business-truth
+      evidence_refs_total: 57
+      in_screen_blueprints: 15
+      not_in_screen_blueprints: []
+      provider: ui-ux-pro-max
+  pattern_entries:
+    health_note: 12 条（PATTERN.* 本地族词形）；status 字段 4 条 deprecated + 8 条缺席（缺席=seed 未标状态，数值照录不推断）；canonical_implementation 12 条全声明 src/shared/ui/patterns/Master*.vue 锚，字面在场仅 3/12（seed 先于实现的预期态，9 条锚文件未落地——cross_reference_forms 逐条登记，非残差裁决）。
+    method: json.load 后 len(patterns)；status 分桶（None 计缺席）；canonical_implementation.file 在场性核验
+    source: outputs/frontend/10_planned/pattern-registry.yaml
+    value: 12
+    value_breakdown:
+      impl_files_missing: 9
+      impl_files_present: 3
+      status:
+        status_None: 8
+        status_deprecated: 4
+  performance_budget_pages:
+    health_note: 39 页预算绑定（PAGE-APP 24 + PAGE-TASK-STEP 15，与 screen-blueprints 39 份同分母）；page_type_budgets 11 模板全 PROPOSED（默认阈值待人工收紧——编译器注释明示语义，数值照录不升级）；route 11 条与 11 模板同键集；budget_ref 39/39 全绑定且 0 悬空（模板词形 PAGE.* 与 page-template-registry ids 精确同键集）。
+    method: json.load 后 len(pages)/len(page_type_budgets)/len(route)；status 分桶；budget_ref 与 ptb/page-template-registry ids 集合比对
+    source: outputs/frontend/10_planned/performance-budget.yaml
+    value: 39
+    value_breakdown:
+      budget_ref_dangling: 0
+      page_type_budgets: 11
+      page_type_budgets_status:
+        PROPOSED: 11
+      pages_missing_budget_ref: 0
+      pages_page_app: 24
+      pages_task_step: 15
+      route_entries: 11
+  style_entries:
+    health_note: 主分母=style_entries 8（tokens/reset/base/typography/layout/vendors/utilities/overrides，4 required + 4 可选）；scope owner 5（load_order 8 词与 style_entries 8 层同集）；token_usage 5 键（未保存态橙 + 公式列黄的语义注记）；vendor_important_exemptions 1（ag-grid 聚焦边框对抗）；third_party_style_owners=0（显式空）。字体基线多头漂移裁决史见 incident_history。
+    method: json.load 后 len(style_entries)/len(layers)/len(load_order)/len(token_usage)/len(vendor_important_exemptions)/len(third_party_style_owners)
+    source: outputs/frontend/10_planned/style-ownership-registry.yaml
+    value: 8
+    value_breakdown:
+      load_order_len: 8
+      scope_owner_layers: 5
+      source_has_confirmed_at_field: true
+      third_party_style_owners: 0
+      token_usage_keys: 5
+      vendor_important_exemptions: 1
+  test_fixtures:
+    health_note: 101 条（FIXTURE.API_REQ.* 本地族词形，id 全 distinct）；status DRAFT=84/ready=17（数值照录不篡改）；description 101/101 仍为 scaffold TODO 占位；scenario 引用 101 条全 distinct，其中 99 条命中 api-requirement-registry、2 条（API_REQ.USER.LOCALE.1/.2，page_id=GLOBAL 词形）悬空——悬空源=spec 侧 locale 契约（11_predevelopment-confirmation 在册）而 api-requirement-registry 无对应条目、已发布 OpenAPI 亦无 locale 操作（cross_reference_forms 逐条登记）；api-requirement-registry 反向 30 条未被任何 fixture 覆盖。
+    method: json.load 后 len(fixtures)；status/TODO 前缀分桶；scenario 与 api-requirement-registry ids 集合双向比对
+    source: outputs/frontend/10_planned/test-fixture-plan.yaml
+    value: 101
+    value_breakdown:
+      api_req_entries_uncovered: 30
+      description_todo_placeholder: 101
+      scenario_dangling:
+      - API_REQ.USER.LOCALE.1
+      - API_REQ.USER.LOCALE.2
+      scenario_matched: 99
+      status:
+        status_DRAFT: 84
+        status_ready: 17
+document_kind: m0-inventory
+provenance_note: M0 盘点为镜像收编只读扫描（BATCH-4 · 工程策略族，源 3856 行全脚本驱动解析）：MASTer_master 绝对只读；本文件全部字段由 tools/build_m0_inventory.py 确定性产出（sha256/行数/键清单/消费方 grep/分母实测/交叉引用集合比对），不含墙钟时间与 mtime；批次代号 MIG-B4；重跑 byte-identical。事故史仅登记在仓可读证据（行号现场重算 + git 只读核验以 commit id 内容寻址登记），空数组=无在仓可读证据（不编造）。约定基准：migration/master-batch1/CONVENTIONS.md → migration/master-batch2/CONVENTIONS.md → migration/master-batch3/CONVENTIONS.md（本批扩充不推翻）。

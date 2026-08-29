@@ -1,0 +1,60 @@
+{
+  "blindspot": {
+    "carrier_coverage": {
+      "census_entry_body_probes": 11,
+      "census_half_probes": 34,
+      "census_max_common_block": 14,
+      "census_units_total": 54,
+      "formal_samples": 10,
+      "lcs_threshold_chars": 20,
+      "sample_max_common_block": 8,
+      "sampling_population": 34
+    },
+    "escape_ratio": 0,
+    "fixture_regression": "MIG-B4-BASELINE-PROBE-SENSITIVITY-FIXTURE/passed",
+    "produced": 64,
+    "scanned": 64
+  },
+  "counts": {
+    "applicable_scanned": 10,
+    "not_applicable": 0,
+    "scanned": 10,
+    "suppressed_by_ledger": 0,
+    "unchecked_in_blindspot_estimated": 0,
+    "violations": 0
+  },
+  "denominator_refs": [],
+  "digest_excluded_fields": [
+    "duration_ms"
+  ],
+  "duration_ms": {
+    "external": 0,
+    "self": 0
+  },
+  "gate": "BASELINE_INTEGRITY",
+  "gate_def": "POLICY.GATE.MIG_B4_BASELINE@0.1.0",
+  "grn": "GRN-4603",
+  "items": [],
+  "items_truncated": false,
+  "metric_dialect": "catalog:verbatim_probe_samples",
+  "ran_at_seq": 0,
+  "scope": {
+    "note": "检查范围=新 catalog 条目改写词面 vs MASTer 源对应文本的最长公共子串抽检（clean-room D3 铁律：独立改写、语义等价、词形独立，禁逐字复制）。分母声明（denominator_refs 显式空数组）：判卷分母=抽检 10 条（任务书）。抽样总体=34 个 universal 半（ledger UNIVERSAL 10 + HYBRID 24；即 clean-room 纪律实际管辖的改写词面单元），确定性等距抽样：sorted(asset_id,entry_id) 取下标 floor(i*34/10)（i=0..9）→ architecture-constraints:deep_import_rule; architecture-constraints:layers.features; architecture-constraints:layers.shared-lib; directory-layout:barrel_rule; directory-layout:layers.features; directory-layout:naming.entity_dir; directory-layout:naming.page_component; http-client-policy:clients.authClient; style-ownership-registry:layers.design-token; style-ownership-registry:layers.shared-component。判据：归一化（去全部空白+小写，在册 norm 口径）后 difflib 最长公共连续块，对照面=对应资产 MASTer 源全文件归一文本（全文件 ⊇ 对应条目文本，判据更严不更松），阈值 ≥20 字符判逐字拷贝（在册阈值：最长在册技术词形 ~14 字符 + 安全余量）。实测 10 样本 LCS 值（3, 5, 6, 8, 7, 4, 7, 2, 2, 2），样本最大=8，超阈=0。伴随全总体普查（同探针，如实跑不凑样本）：34 半 + 9 归并条目正文（vs 各自成员资产源全文件取最大）共 54 探针，普查最大=14，普查违例同样计入 violations（rule 加 _census 后缀）实测 0。violations=0 → verdict=passed。盲区声明：LCS 探针机械可达（escape_ratio=0，10 样本 + 54 普查探针全判）；逐字改写（同义换形）与跨句拼抄低于阈值的逃逸形态属探针定义外，归 human_review_required 通道。探针敏感性 fixture（源文 40 字抄件必须超阈 + 独立改写词面必须低于阈）=MIG-B4-BASELINE-PROBE-SENSITIVITY-FIXTURE/passed。路径基：items location 为 po-master 仓内相对路径。self_report_trusted=false：trust.asserted=null，判卷唯一依据 trust.recomputed。duration_ms 钉 0（byte-identical 幂等）。",
+    "size_expected_from_denominator": 10
+  },
+  "tool": "mig-b4:run_baseline_gate",
+  "tool_version": "1.0.0",
+  "trigger": {
+    "note": "migration batch context: no kernel seq allocator; ran_at_seq pinned to 0 (deterministic batch base, A4 wall-clock-free; kernel re-sequences on ingestion); durations pinned to 0 for byte-identical rerun idempotency (batch hard rule 2)",
+    "task_ref": "MIG-B4/M4-baseline",
+    "type": "on_demand"
+  },
+  "trust": {
+    "asserted": null,
+    "recomputed": {
+      "matches_asserted": true,
+      "violations": 0
+    }
+  },
+  "verdict": "passed"
+}

@@ -1,0 +1,194 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "kind='policy' 不在 vocab-lock kinds_registry.truth_bodies（POLICY. 前缀已冻结注册，closed-world）",
+    "proposal": "词汇表 PR 登记 policy kind；或 Owner 裁决 policy 条目住 catalog/ 而非 truth/objects 正文层（与前批 45 条同因同请，合并进同一 vocab PR）",
+    "locked_vocab_untouched": true
+  },
+  "x-batch4-uplift": {
+    "status": "PROPOSAL",
+    "package": "MIG-B4 Universal 上提（工程策略族 split-ledger 驱动）",
+    "human_review_required": true,
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+  },
+  "id": "POLICY.WEB.ARCH.NAMING_CONVENTIONS",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "UNIVERSAL_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "分层命名约定",
+  "statement_zh": "分层内文件与目录命名遵循统一约定：组合式函数、路由级页面组件、切片组合组件、实体目录及标识符转目录名各有固定词形，同类对象全仓同形。",
+  "statement_en_keywords": [
+    "naming convention",
+    "composable prefix",
+    "page component suffix",
+    "kebab directory"
+  ],
+  "applies_when": {
+    "lane": "frontend",
+    "condition": "新建文件或目录命名时"
+  },
+  "enforcement": "required_when_applicable",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-batch4-uplift"
+  },
+  "origin": "ingested",
+  "origin_note": "MIG-B4 split-ledger UNIVERSAL/HYBRID universal 半上提；目录词面独立改写（clean-room），零逐字拷贝上游源文本",
+  "sub_rules": [
+    {
+      "rule_id": "naming.composable",
+      "statement_zh": "组合式函数文件名统一为 use 前缀接驼峰主体的形式，且一个文件只承载一个组合式函数。",
+      "provenance": {
+        "asset_id": "directory-layout",
+        "entry_id": "naming.composable",
+        "decision": "UNIVERSAL",
+        "merge_group": "MG-ARCH-NAMING",
+        "migration_batch": "MIG-B4/ARCHITECTURE",
+        "split_ledger": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+      }
+    },
+    {
+      "rule_id": "naming.page_component",
+      "statement_zh": "路由级页面组件的文件名由页面语义名接帕斯卡式页面后缀构成。",
+      "provenance": {
+        "asset_id": "directory-layout",
+        "entry_id": "naming.page_component",
+        "decision": "UNIVERSAL",
+        "merge_group": "MG-ARCH-NAMING",
+        "migration_batch": "MIG-B4/ARCHITECTURE",
+        "split_ledger": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+      }
+    },
+    {
+      "rule_id": "naming.feature_component",
+      "statement_zh": "切片内的组合组件以 Widget 或 Panel 一类视图组合后缀命名，与路由级页面组件相区分。",
+      "provenance": {
+        "asset_id": "directory-layout",
+        "entry_id": "naming.feature_component",
+        "decision": "UNIVERSAL",
+        "merge_group": "MG-ARCH-NAMING",
+        "migration_batch": "MIG-B4/ARCHITECTURE",
+        "split_ledger": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+      }
+    },
+    {
+      "rule_id": "naming.entity_dir",
+      "statement_zh": "实体目录名采用单数名词加小写中划线的形式。",
+      "provenance": {
+        "asset_id": "directory-layout",
+        "entry_id": "naming.entity_dir",
+        "decision": "UNIVERSAL",
+        "merge_group": "MG-ARCH-NAMING",
+        "migration_batch": "MIG-B4/ARCHITECTURE",
+        "split_ledger": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+      }
+    },
+    {
+      "rule_id": "naming.feature_dir",
+      "statement_zh": "能力标识转目录名时统一取小写中划线形式。",
+      "provenance": {
+        "asset_id": "directory-layout",
+        "entry_id": "naming.feature_dir",
+        "decision": "HYBRID",
+        "merge_group": "MG-ARCH-NAMING",
+        "migration_batch": "MIG-B4/ARCHITECTURE",
+        "split_ledger": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+      }
+    },
+    {
+      "rule_id": "naming.page_dir",
+      "statement_zh": "页面标识转目录名时统一取小写中划线形式。",
+      "provenance": {
+        "asset_id": "directory-layout",
+        "entry_id": "naming.page_dir",
+        "decision": "HYBRID",
+        "merge_group": "MG-ARCH-NAMING",
+        "migration_batch": "MIG-B4/ARCHITECTURE",
+        "split_ledger": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+      }
+    }
+  ],
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/migration/master-batch4/split-ledger.yaml",
+      "captured_by": "agent:claude/mig-b4-catalog-uplift",
+      "locator": {
+        "asset": "directory-layout",
+        "entry": "naming.composable",
+        "migration_batch": "MIG-B4/ARCHITECTURE",
+        "upstream_source_ref": "outputs/frontend/10_planned/directory-layout.yaml"
+      },
+      "clean_room_note": "independently rewritten from upstream batch4 mirror; zero verbatim copy"
+    },
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/migration/master-batch4/split-ledger.yaml",
+      "captured_by": "agent:claude/mig-b4-catalog-uplift",
+      "locator": {
+        "asset": "directory-layout",
+        "entry": "naming.page_component",
+        "migration_batch": "MIG-B4/ARCHITECTURE",
+        "upstream_source_ref": "outputs/frontend/10_planned/directory-layout.yaml"
+      },
+      "clean_room_note": "independently rewritten from upstream batch4 mirror; zero verbatim copy"
+    },
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/migration/master-batch4/split-ledger.yaml",
+      "captured_by": "agent:claude/mig-b4-catalog-uplift",
+      "locator": {
+        "asset": "directory-layout",
+        "entry": "naming.feature_component",
+        "migration_batch": "MIG-B4/ARCHITECTURE",
+        "upstream_source_ref": "outputs/frontend/10_planned/directory-layout.yaml"
+      },
+      "clean_room_note": "independently rewritten from upstream batch4 mirror; zero verbatim copy"
+    },
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/migration/master-batch4/split-ledger.yaml",
+      "captured_by": "agent:claude/mig-b4-catalog-uplift",
+      "locator": {
+        "asset": "directory-layout",
+        "entry": "naming.entity_dir",
+        "migration_batch": "MIG-B4/ARCHITECTURE",
+        "upstream_source_ref": "outputs/frontend/10_planned/directory-layout.yaml"
+      },
+      "clean_room_note": "independently rewritten from upstream batch4 mirror; zero verbatim copy"
+    },
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/migration/master-batch4/split-ledger.yaml",
+      "captured_by": "agent:claude/mig-b4-catalog-uplift",
+      "locator": {
+        "asset": "directory-layout",
+        "entry": "naming.feature_dir",
+        "migration_batch": "MIG-B4/ARCHITECTURE",
+        "upstream_source_ref": "outputs/frontend/10_planned/directory-layout.yaml"
+      },
+      "clean_room_note": "independently rewritten from upstream batch4 mirror; zero verbatim copy"
+    },
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/migration/master-batch4/split-ledger.yaml",
+      "captured_by": "agent:claude/mig-b4-catalog-uplift",
+      "locator": {
+        "asset": "directory-layout",
+        "entry": "naming.page_dir",
+        "migration_batch": "MIG-B4/ARCHITECTURE",
+        "upstream_source_ref": "outputs/frontend/10_planned/directory-layout.yaml"
+      },
+      "clean_room_note": "independently rewritten from upstream batch4 mirror; zero verbatim copy"
+    }
+  ]
+}
