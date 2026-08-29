@@ -1,0 +1,68 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "kind='policy' 不在 vocab-lock kinds_registry.truth_bodies（POLICY. 前缀已冻结注册，closed-world）；新 id 域段待登记：REL",
+    "proposal": "词汇表 PR 登记 policy kind 及新域段；或 Owner 裁决 policy 条目住 catalog/ 而非 truth/objects 正文层（与前批 45+9 条同因同请，合并进同一 vocab PR）",
+    "locked_vocab_untouched": true
+  },
+  "x-spec-d-materialization": {
+    "status": "PROPOSAL",
+    "package": "SPEC-D 语义分解汇总（consolidated-pool D5 精选，cap=25）",
+    "human_review_required": true,
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/migration/spec-decomposition/candidates/consolidated-pool.yaml",
+    "group": "BE-G1",
+    "candidate_id": "POLICY.REL.PRE_RELEASE_CONFIRMATION",
+    "density_rank": 5,
+    "density_score": 40.25,
+    "pool_statement_sha16": "a49198bfa964e78b",
+    "curated_rule": "UNIVERSAL + UNIVERSAL_POLICY + required_when_applicable + 无 uncertainty + 非 project_scope + 非重复 + 与既有 69 条零语义重复；按信息密度排序取前 25"
+  },
+  "id": "POLICY.REL.PRE_RELEASE_CONFIRMATION",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "UNIVERSAL_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "发布前六项确认",
+  "statement_zh": "发布前必须确认版本、依赖顺序、兼容性、观测就绪、停止条件与恢复路径六项。",
+  "statement_en_keywords": [
+    "pre release confirmation",
+    "stop condition",
+    "recovery path"
+  ],
+  "applies_when": {
+    "lane": "any",
+    "condition": "任何发布动作前"
+  },
+  "enforcement": "required_when_applicable",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-spec-decomposition"
+  },
+  "origin": "ingested",
+  "origin_note": "SPEC-D 汇总池 D5 精选物化；statement 沿用候选卡独立措辞（clean-room），零逐字拷贝上游源文本",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/migration/spec-decomposition/candidates/BE-G1.yaml",
+      "captured_by": "agent:claude/spec-d-consolidation",
+      "locator": {
+        "candidate": "POLICY.REL.PRE_RELEASE_CONFIRMATION",
+        "source_protocol": ".trellis/spec/backend/32-release-versioning-rollback-protocol.md",
+        "lines": "25",
+        "section": "MUST"
+      },
+      "clean_room_note": "independently rewritten from SPEC-D decomposition candidate cards; zero verbatim copy"
+    }
+  ],
+  "review_notes": [
+    "发布域在既有 69 条中无对应条目（灰度发布条目管发布方式，不覆盖发布前确认清单），零语义重复。"
+  ]
+}

@@ -1,6 +1,8 @@
 # MIG-B5 转录约定书 · 蓝图真值 B 分册（CONVENTIONS.group-b）—— 01_domain-projection + 08_uiux-functional-spec
 
 > **分册地位（待合并声明）**：本文件是 `migration/master-batch5/` 蓝图真值 B 组（group B：01 + 08 两资产）的**独立成文分册**——撰写时组 A 的 batch5 CONVENTIONS 主卷尚未落盘，故按任务书「若未就绪则与你的裁定独立成文」办理。合并待办（merge points）见 §7；合并时本分册效力并入主卷、不推翻 batch1–batch4 约定书任何条目。
+>
+> **已合并入主卷（2026-08-29，P7 核验移交）**：本分册有效条款已全量并入 `CONVENTIONS.md` 主卷——§2→主卷 §7、§3→主卷 §8、§4→主卷 §9、§5→主卷 §10、§6→主卷 §6 末追加 bullet、§7 五项待合并点→主卷 §13 逐项处置；目录布局由主卷 §1 合并版统一承载；本分册硬约束差异点编为主卷硬约束 14–16。**本文件自此保留为历史档案，效力以主卷为准，正文不再维护；先读主卷，后读本文件。**
 
 效力区间：`migration/master-batch5/tools/ingest_domain_projection.py` + `tools/ingest_uiux_functional_spec.py` 两个转录工具及其落盘对象（`truth/objects/capability/fdp.*.json` 109 个 + `truth/objects/page-surface/uiux-spec.*.json` 15 个）。后续施工前必读；本文是施工规范，不是散文。
 

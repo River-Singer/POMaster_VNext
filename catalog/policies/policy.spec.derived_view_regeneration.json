@@ -1,0 +1,70 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "kind='policy' 不在 vocab-lock kinds_registry.truth_bodies（POLICY. 前缀已冻结注册，closed-world）",
+    "proposal": "词汇表 PR 登记 policy kind 及新域段；或 Owner 裁决 policy 条目住 catalog/ 而非 truth/objects 正文层（与前批 45+9 条同因同请，合并进同一 vocab PR）",
+    "locked_vocab_untouched": true
+  },
+  "x-spec-d-materialization": {
+    "status": "PROPOSAL",
+    "package": "SPEC-D 语义分解汇总（consolidated-pool D5 精选，cap=25）",
+    "human_review_required": true,
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/migration/spec-decomposition/candidates/consolidated-pool.yaml",
+    "group": "FE-G4",
+    "candidate_id": "POLICY.SPEC.DERIVED_VIEW_REGENERATION",
+    "density_rank": 9,
+    "density_score": 35.44,
+    "pool_statement_sha16": "9ddee492ec405df4",
+    "curated_rule": "UNIVERSAL + UNIVERSAL_POLICY + required_when_applicable + 无 uncertainty + 非 project_scope + 非重复 + 与既有 69 条零语义重复；按信息密度排序取前 25"
+  },
+  "id": "POLICY.SPEC.DERIVED_VIEW_REGENERATION",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "UNIVERSAL_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "派生视图只读且可再生",
+  "statement_zh": "凡由事实源生成的派生视图一律只读：必须能从事实源确定性再生；一切调整只能修改事实源后重新生成；直接编辑派生产物的变更会在下次生成时被静默覆盖，并使校验与跨层核对发生事实漂移。",
+  "statement_en_keywords": [
+    "derived view read only",
+    "deterministic regeneration",
+    "edit source not artifact",
+    "silent overwrite drift"
+  ],
+  "applies_when": {
+    "lane": "any",
+    "condition": "存在事实源加生成物的任何产物链时"
+  },
+  "enforcement": "required_when_applicable",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-spec-decomposition"
+  },
+  "origin": "ingested",
+  "origin_note": "SPEC-D 汇总池 D5 精选物化；statement 沿用候选卡独立措辞（clean-room），零逐字拷贝上游源文本",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/migration/spec-decomposition/candidates/FE-G4.yaml",
+      "captured_by": "agent:claude/spec-d-consolidation",
+      "locator": {
+        "candidate": "POLICY.SPEC.DERIVED_VIEW_REGENERATION",
+        "source_protocol": ".trellis/spec/frontend/25-page-structure-protocol.md",
+        "lines": "L62-L67, L88, L126",
+        "section": "项目强制规则·页面 spec 生成来源"
+      },
+      "clean_room_note": "independently rewritten from SPEC-D decomposition candidate cards; zero verbatim copy"
+    }
+  ],
+  "review_notes": [
+    "与既有 POLICY.SPEC.METADATA_REQUIRED（机器可读派生方向）互补不重复。",
+    "与同批物化的 POLICY.DERIVED.SINGLE_IMPLEMENTATION 义务正交（本条管派生产物只读可再生，彼条管派生计算单实现点），双正本互引。"
+  ]
+}

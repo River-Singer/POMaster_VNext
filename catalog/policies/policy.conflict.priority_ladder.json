@@ -1,0 +1,70 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "kind='policy' 不在 vocab-lock kinds_registry.truth_bodies（POLICY. 前缀已冻结注册，closed-world）；新 id 域段待登记：CONFLICT",
+    "proposal": "词汇表 PR 登记 policy kind 及新域段；或 Owner 裁决 policy 条目住 catalog/ 而非 truth/objects 正文层（与前批 45+9 条同因同请，合并进同一 vocab PR）",
+    "locked_vocab_untouched": true
+  },
+  "x-spec-d-materialization": {
+    "status": "PROPOSAL",
+    "package": "SPEC-D 语义分解汇总（consolidated-pool D5 精选，cap=25）",
+    "human_review_required": true,
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/migration/spec-decomposition/candidates/consolidated-pool.yaml",
+    "group": "FE-G1",
+    "candidate_id": "POLICY.CONFLICT.PRIORITY_LADDER",
+    "density_rank": 6,
+    "density_score": 40.0,
+    "pool_statement_sha16": "e6e33847e57567da",
+    "curated_rule": "UNIVERSAL + UNIVERSAL_POLICY + required_when_applicable + 无 uncertainty + 非 project_scope + 非重复 + 与既有 69 条零语义重复；按信息密度排序取前 25"
+  },
+  "id": "POLICY.CONFLICT.PRIORITY_LADDER",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "UNIVERSAL_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "规范冲突优先级阶梯",
+  "statement_zh": "冲突裁决遵循固定优先级——项目特定规则压过通用规则、前后端正式接口契约压过模拟数据、既定令牌压过临时样式、公共组件既有 API 文档压过页面内的临时封装、安全压过交互便利、服务端授权结果压过界面显示、已发布的变更公告压过历史示例代码；放宽通用规则必须记录原因、风险、责任人与有效期，同级冲突停止实现交由责任人裁决，低优先级产物不得反向改写高优先级契约，裁决后必须同步更新产生歧义的协议或契约而非仅保留口头说明。",
+  "statement_en_keywords": [
+    "conflict priority ladder",
+    "project rules over generic",
+    "contract over mock",
+    "token over ad hoc style",
+    "security over convenience",
+    "server authorization over display"
+  ],
+  "applies_when": {
+    "lane": "any",
+    "condition": "任何规范/契约冲突裁决"
+  },
+  "enforcement": "required_when_applicable",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-spec-decomposition"
+  },
+  "origin": "ingested",
+  "origin_note": "SPEC-D 汇总池 D5 精选物化；statement 沿用候选卡独立措辞（clean-room），零逐字拷贝上游源文本",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/migration/spec-decomposition/candidates/FE-G1.yaml",
+      "captured_by": "agent:claude/spec-d-consolidation",
+      "locator": {
+        "candidate": "POLICY.CONFLICT.PRIORITY_LADDER",
+        "source_protocol": ".trellis/spec/frontend/index.md",
+        "lines": "L113-L128"
+      },
+      "clean_room_note": "independently rewritten from SPEC-D decomposition candidate cards; zero verbatim copy"
+    }
+  ],
+  "review_notes": [
+    "冲突裁决优先级在既有 69 条中无对应条目，零语义重复。"
+  ]
+}

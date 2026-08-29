@@ -1,0 +1,1860 @@
+# BE-G1 拆解候选卡（批次 SPEC-D）
+# 方法忠实复制试点：docs/catalog-pilot-report.md §3-§6 + catalog/candidates/candidates-draft.json 卡片字段形态
+# 纪律：MASTer 只读；禁墙钟（零时间戳，seq=SPEC-D，同输入重跑 byte-identical）；D5 防膨胀（本文件全部为 backlog 留档，物化按 materialize.recommendation 收口）；clean-room（statement 零逐字拷贝源文本）
+meta:
+  batch: SPEC-D
+  group: BE-G1
+  seq: SPEC-D
+  producer: agent:spec-d/decomposer-be-g1
+  method_basis:
+    - POMaster_VNext/docs/catalog-pilot-report.md（§3-§6 拆解方法与候选卡 schema、§3.1 DUPLICATE 处置先例、§3.3 上提判据、§8.4 试点 BE 协议每协议 9 卡形态）
+    - POMaster_VNext/catalog/candidates/candidates-draft.json（82 候选字段形态）+ catalog/policies(54)+knowledge(10)+gates(5) 共 69 既有条目（重复比对分母）
+  denominators:
+    files_in_scope: 14
+    files_covered: 14
+    files_empty_conclusion: 0
+    empty_conclusion_note: 全部 14 份文件均产出（13 份协议各 9 卡 + 08 试点覆盖卡 + index.md 6 卡）；index.md 的协议目录表/注入基线/Trigger 矩阵/固定结构清单为机器路由段，无可提取政策语义，已在 files 条目记录 residue，不计空结论
+  counts:
+    files_total: 14
+    cards_total: 115
+    decomposition_cards: 114
+    coverage_reference_cards: 1
+    sort:
+      UNIVERSAL: 100
+      PROJECT: 9
+      HYBRID: 6
+    classification:
+      UNIVERSAL_POLICY: 51
+      LANE_POLICY: 14
+      CONTRACT_TEMPLATE: 12
+      GATE_RECIPE: 12
+      KNOWLEDGE_PATTERN: 10
+      FAILURE_PATTERN: 12
+      DUPLICATE: 3
+      coverage_reference: 1
+    duplicates_marked: 3
+    uncertainty_flagged: 34
+    materialize:
+      shortlist: 24
+      backlog: 90
+      not_applicable: 1
+  shortlist_criteria: 高置信 Universal（sort=UNIVERSAL 且 classification=UNIVERSAL_POLICY）+ MUST 级（required_when_applicable）+ 与既有 69 条零重复 + 无 uncertainty；其余全部 backlog
+  notes:
+    - 全部源协议为跨项目治理文本，无 MASTer 专名入卡；PROJECT/HYBRID 卡以「本规范体系」指称对象，专名语境由 source 锚点承载
+    - classification 轴对体系治理类卡暂无对应值（试点 vocab-pr V6 相关），暂记 LANE_POLICY 并以 sort=PROJECT/HYBRID + notes 标注，未旁路改词表
+    - 「stage / always 基线 / 注入器」为本规范体系机宣词汇，相关卡 sort=PROJECT 或 HYBRID
+    - 镜像关系说明 MASTer 侧 backend 协议与 po-master vendored backend-hard-spec 同源（08 经 inventory 验证 byte_identical），候选卡仍按 MASTer 侧文本独立改写
+
+cards:
+  # ============ 01-architecture-governance-protocol.md ============
+  - proposed_id: POLICY.ARCH.DECISION_TRADEOFF_RECORD
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 架构级取舍必须将备选方案、权衡理由、已识别风险、决策记录坐标与复审触发条件一并成档，任一要素缺失即视为决策未完成。
+    statement_en_keywords: [architecture decision record, alternatives, trade-offs, review trigger]
+    applies_when: {lane: any, condition: 做边界、数据所有权、部署单元或公共契约层面的技术选择时}
+    enforcement: required_when_applicable
+    clean_room: true
+    source: {ref: .trellis/spec/backend/01-architecture-governance-protocol.md, lines: "25", section: MUST}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: shortlist, reason: 高置信 Universal + MUST + 既有 69 条零重复}
+
+  - proposed_id: POLICY.ARCH.NO_CONVENIENCE_OVER_BOUNDARY
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 禁止以局部实现便利为由绕开边界、数据所有权或部署约束的结构化分析，便利性论据不能替代影响评估。
+    statement_en_keywords: [no convenience shortcut, boundary analysis, data ownership, deployment constraint]
+    applies_when: {lane: any, condition: 任何架构相关实现决策}
+    enforcement: required_when_applicable
+    clean_room: true
+    source: {ref: .trellis/spec/backend/01-architecture-governance-protocol.md, lines: "29", section: MUST NOT}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: shortlist, reason: 高置信 Universal + MUST + 零重复（与 FIX_AT_ROOT_CAUSE_LEVEL 对象不同，彼约束修复层级，本卡约束决策分析）}
+
+  - proposed_id: POLICY.ARCH.PREFER_VERIFIABLE_OPTION
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 方案取舍应优先选择现有团队、工具链与运行证据能够持续验证的选项。
+    statement_en_keywords: [verifiable option, team capability, runtime evidence]
+    applies_when: {lane: any, condition: 多个可行方案比较时}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/01-architecture-governance-protocol.md, lines: "33", section: SHOULD}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: SHOULD 级，非本批物化口径}
+
+  - proposed_id: POLICY.TPL.ARCH_DECISION_RECORD
+    kind: contract_template
+    classification: CONTRACT_TEMPLATE
+    sort: UNIVERSAL
+    statement_zh: 架构决策记录模板——必填字段为稳定决策 ID、适用范围、被否决的备选方案、依赖清单与验证方式。
+    statement_en_keywords: [decision record template, decision id, rejected alternatives, verification]
+    applies_when: {lane: any, condition: 产出架构决策记录时}
+    enforcement: deterministic_where_possible
+    clean_room: true
+    source: {ref: .trellis/spec/backend/01-architecture-governance-protocol.md, lines: "37", section: Contract}
+    duplicate_of: null
+    related: [POLICY.TPL.CHG_RECORD, POLICY.TPL.CHG_RECORD_BE]
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: CONTRACT_TEMPLATE 落点未建（试点 §6.1 / R-C 方案 b），暂留 candidates}
+
+  - proposed_id: GATE.ARCH.BOUNDARY_CLARITY_CHECKS
+    kind: gate_recipe
+    classification: GATE_RECIPE
+    sort: UNIVERSAL
+    statement_zh: 架构门禁——系统边界、依赖方向、部署单元与数据所有权四项均已明确且相互一致。
+    statement_en_keywords: [boundary clarity gate, dependency direction, deployment unit, data ownership]
+    applies_when: {lane: any, condition: 架构决策过门禁}
+    enforcement: deterministic_where_possible
+    clean_room: true
+    source: {ref: .trellis/spec/backend/01-architecture-governance-protocol.md, lines: "41", section: Checklist}
+    duplicate_of: null
+    related: []
+    uncertainty: GATE. 前缀不在 prefixes_v0 闭包（试点 V2），gate recipe 住 catalog 层与否待裁决
+    materialize: {recommendation: backlog, reason: GATE 前缀词表缺口未收编（试点 V2/R-G）}
+
+  - proposed_id: KNOWLEDGE.ARCH.EXAMPLE_MONOLITH_VS_SERVICE_SPLIT
+    kind: knowledge
+    classification: KNOWLEDGE_PATTERN
+    sort: UNIVERSAL
+    statement_zh: 示例——把「保持单体」与「拆分服务」并列为候选对比，同时记录选择理由与未来触发复审的具体条件。
+    statement_en_keywords: [example, monolith vs service split, review trigger]
+    applies_when: {lane: any, condition: 架构教学或评审参照}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/01-architecture-governance-protocol.md, lines: "45", section: Examples}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: 知识类非 MUST，不作物化口径}
+
+  - proposed_id: KNOWLEDGE.FP.ARCH.UNBOUND_IDEAL_DIAGRAM
+    kind: knowledge
+    classification: FAILURE_PATTERN
+    sort: UNIVERSAL
+    statement_zh: 失败模式——架构图只画理想形态，不与构建产物、部署单元或真实依赖绑定，图与运行系统长期脱节。
+    statement_en_keywords: [failure pattern, paper architecture, unbound diagram]
+    applies_when: {lane: any, condition: 架构评审}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/01-architecture-governance-protocol.md, lines: "49", section: Anti-patterns}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: 失败模式类非 MUST}
+
+  - proposed_id: AUTHORITY.ARCH.DECISION_OWNERS
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 权威分配默认值——后端技术负责人维护架构决策，模块维护者补齐实现与运行证据。
+    statement_en_keywords: [authority default, decision owner, module maintainer]
+    applies_when: {lane: any, condition: Authority Map 构建}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/01-architecture-governance-protocol.md, lines: "53", section: Ownership}
+    duplicate_of: null
+    related: [AUTHORITY.CHG.CHANGE_OWNERS]
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: 结构同型（试点 M6 权威默认值 5→1+N 合并审留后续批次），且 advisory 非本批口径}
+
+  - proposed_id: POLICY.ARCH.ADR_IMMUTABLE_HISTORY
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 推翻既有架构结论必须新增或显式替代既有决策记录，禁止静默改写历史结论。
+    statement_en_keywords: [immutable decision history, supersede, no silent rewrite]
+    applies_when: {lane: any, condition: 改变已采用架构时}
+    enforcement: required_when_applicable
+    clean_room: true
+    source: {ref: .trellis/spec/backend/01-architecture-governance-protocol.md, lines: "57", section: Change Policy}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: shortlist, reason: 高置信 Universal + MUST + 零重复（DRAFT_NOT_BASELINE 约束草稿态，本卡约束历史结论不可静默改写，方向不同）}
+
+  # ============ 02-project-structure-governance-protocol.md ============
+  - proposed_id: POLICY.STRUCT.MODULE_ENTRY_DEPENDENCY_DECLARED
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 新建目录或模块必须同时具备单一职责、对外声明的稳定入口与明确依赖方向，三者齐备才算结构成立。
+    statement_en_keywords: [single responsibility, declared public entry, dependency direction]
+    applies_when: {lane: any, condition: 创建目录、模块或调整包结构时}
+    enforcement: required_when_applicable
+    clean_room: true
+    source: {ref: .trellis/spec/backend/02-project-structure-governance-protocol.md, lines: "25", section: MUST}
+    duplicate_of: null
+    related: [POLICY.WEB.ARCH.PUBLIC_API_BARREL, POLICY.WEB.ARCH.LAYER_ISOLATION]
+    uncertainty: null
+    materialize: {recommendation: shortlist, reason: 高置信 Universal + MUST + 既有条目仅 FE lane 镜像（互引不构成重复），lane-any 语义在册外}
+
+  - proposed_id: POLICY.STRUCT.NO_UNEXPLAINED_TOP_LEVEL_DIR
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 禁止创建说不出职责的顶层目录，禁止把业务逻辑放进通用工具区。
+    statement_en_keywords: [no unexplained top-level directory, no business logic in utility area]
+    applies_when: {lane: any, condition: 新增或整理目录结构时}
+    enforcement: required_when_applicable
+    clean_room: true
+    source: {ref: .trellis/spec/backend/02-project-structure-governance-protocol.md, lines: "29", section: MUST NOT}
+    duplicate_of: null
+    related: [POLICY.WEB.ARCH.LAYER_ISOLATION]
+    uncertainty: null
+    materialize: {recommendation: shortlist, reason: 高置信 Universal + MUST；FE 侧同类禁令是 LAYER_ISOLATION 子规则（lane frontend），lane-any 正本在册外}
+
+  - proposed_id: POLICY.STRUCT.REUSE_PROVEN_STRUCTURE
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 新增结构前应先检索仓库内已验证的同型结构并优先沿用，而不是另起炉灶。
+    statement_en_keywords: [reuse proven structure, search before create]
+    applies_when: {lane: any, condition: 新增目录或模块前}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/02-project-structure-governance-protocol.md, lines: "33", section: SHOULD}
+    duplicate_of: null
+    related: [POLICY.BOUND.SEARCH_FIRST_ENTRY_ONLY]
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: SHOULD 级；且与同批 03 MUST 检索语义相邻，互指不合并（试点 §3.4 部分重叠处置）}
+
+  - proposed_id: POLICY.TPL.STRUCT_CHANGE_RECORD
+    kind: contract_template
+    classification: CONTRACT_TEMPLATE
+    sort: UNIVERSAL
+    statement_zh: 结构变更记录模板——必填字段为目标路径、所有者、公开入口、消费者清单与迁移计划。
+    statement_en_keywords: [structure change template, target path, owner, migration plan]
+    applies_when: {lane: any, condition: 结构变更过评审}
+    enforcement: deterministic_where_possible
+    clean_room: true
+    source: {ref: .trellis/spec/backend/02-project-structure-governance-protocol.md, lines: "37", section: Contract}
+    duplicate_of: null
+    related: [POLICY.TPL.CHG_RECORD]
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: CONTRACT_TEMPLATE 落点未建（R-C 方案 b）}
+
+  - proposed_id: GATE.STRUCT.DISCOVERY_PATH_CHECKS
+    kind: gate_recipe
+    classification: GATE_RECIPE
+    sort: UNIVERSAL
+    statement_zh: 结构门禁——已检索同类模块，且构建、测试与部署的发现路径均已核查。
+    statement_en_keywords: [structure gate, discovery path, build test deploy]
+    applies_when: {lane: any, condition: 结构变更过门禁}
+    enforcement: deterministic_where_possible
+    clean_room: true
+    source: {ref: .trellis/spec/backend/02-project-structure-governance-protocol.md, lines: "41", section: Checklist}
+    duplicate_of: null
+    related: []
+    uncertainty: GATE. 前缀词表缺口（试点 V2）
+    materialize: {recommendation: backlog, reason: GATE 前缀未收编}
+
+  - proposed_id: KNOWLEDGE.STRUCT.EXAMPLE_DOMAIN_MODULE_VIA_PUBLIC_API
+    kind: knowledge
+    classification: KNOWLEDGE_PATTERN
+    sort: UNIVERSAL
+    statement_zh: 示例——为独立领域单独建模块，能力只经公开接口暴露，不开放内部包。
+    statement_en_keywords: [example, domain module, public interface only]
+    applies_when: {lane: any, condition: 结构教学或评审参照}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/02-project-structure-governance-protocol.md, lines: "45", section: Examples}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: 知识类非 MUST}
+
+  - proposed_id: KNOWLEDGE.FP.STRUCT.COPY_RENAME_MODULE_DRIFT
+    kind: knowledge
+    classification: FAILURE_PATTERN
+    sort: UNIVERSAL
+    statement_zh: 失败模式——复制相似模块后仅改名字，两份副本的规则与缺陷修复长期漂移。
+    statement_en_keywords: [failure pattern, copy-rename module, long-term drift]
+    applies_when: {lane: any, condition: 结构评审}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/02-project-structure-governance-protocol.md, lines: "49", section: Anti-patterns}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: 失败模式类非 MUST}
+
+  - proposed_id: AUTHORITY.STRUCT.MODULE_OWNERS
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 权威分配默认值——模块所有者维护结构，评审者负责跨模块依赖与重复实现检查。
+    statement_en_keywords: [authority default, module owner, reviewer]
+    applies_when: {lane: any, condition: Authority Map 构建}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/02-project-structure-governance-protocol.md, lines: "53", section: Ownership}
+    duplicate_of: null
+    related: [AUTHORITY.CHG.CHANGE_OWNERS]
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: M6 同型合并审留后续批次；advisory 非本批口径}
+
+  - proposed_id: POLICY.STRUCT.MOVE_SYNC_REFS_COMPAT_ENTRY
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 目录迁移必须同步更新全部引用、构建与测试入口和文档，并在迁移完成前保留兼容入口。
+    statement_en_keywords: [directory move, reference sync, compat entry]
+    applies_when: {lane: any, condition: 目录或模块迁移}
+    enforcement: required_when_applicable
+    clean_room: true
+    source: {ref: .trellis/spec/backend/02-project-structure-governance-protocol.md, lines: "57", section: Change Policy}
+    duplicate_of: null
+    related: [POLICY.CHG.SYNC_CONTRACT_DOCS_TESTS]
+    uncertainty: 与 POLICY.CHG.SYNC_CONTRACT_DOCS_TESTS 同步清单口径部分重叠（试点 §3.4 型），增量仅「引用 + 兼容入口」，是否统一口径留 Owner
+    materialize: {recommendation: backlog, reason: 与既有 SYNC 条目部分重叠，不满足零重复判据，待口径裁决}
+
+  # ============ 03-directory-boundary-protocol.md ============
+  - proposed_id: POLICY.BOUND.SEARCH_FIRST_ENTRY_ONLY
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 动手修改前必须先检索既有实现；依赖关系只允许指向目标模块已声明的公开入口。
+    statement_en_keywords: [search before modify, public entry only]
+    applies_when: {lane: any, condition: 实现阶段任何写入}
+    enforcement: required_when_applicable
+    clean_room: true
+    source: {ref: .trellis/spec/backend/03-directory-boundary-protocol.md, lines: "25", section: MUST}
+    duplicate_of: null
+    related: [POLICY.WEB.ARCH.PUBLIC_API_BARREL]
+    uncertainty: null
+    materialize: {recommendation: shortlist, reason: 高置信 Universal + MUST + 零重复（FE barrel 条目为 lane frontend 细则，lane-any 正本在册外）}
+
+  - proposed_id: POLICY.BOUND.NO_SHARED_CROSS_DOMAIN_NO_INTERNAL_IMPORT
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 禁止把跨域逻辑堆进共享工具层，禁止直接引用其他模块的内部文件。
+    statement_en_keywords: [no cross-domain logic in shared utils, no internal import]
+    applies_when: {lane: any, condition: 实现阶段写入共享层或跨模块取用时}
+    enforcement: required_when_applicable
+    clean_room: true
+    source: {ref: .trellis/spec/backend/03-directory-boundary-protocol.md, lines: "29", section: MUST NOT}
+    duplicate_of: null
+    related: [POLICY.STRUCT.NO_UNEXPLAINED_TOP_LEVEL_DIR]
+    uncertainty: 与同批 02 MUST NOT 语义相邻（同禁「业务/跨域逻辑进公共区」），增量在「禁直引内部文件」半句
+    materialize: {recommendation: backlog, reason: 语义与同批候选相邻，为避免同批双入待合并审（非既有条目重复）}
+
+  - proposed_id: POLICY.BOUND.MINIMAL_WRITE_SET
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 任务应以最小写入集合完成，优先复用目标边界内已有能力。
+    statement_en_keywords: [minimal write set, reuse within boundary]
+    applies_when: {lane: any, condition: 实现阶段}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/03-directory-boundary-protocol.md, lines: "33", section: SHOULD}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: SHOULD 级}
+
+  - proposed_id: POLICY.TPL.DEPENDENCY_DECLARATION
+    kind: contract_template
+    classification: CONTRACT_TEMPLATE
+    sort: UNIVERSAL
+    statement_zh: 新依赖声明模板——必填字段为提供方、消费方、稳定入口与验证方式。
+    statement_en_keywords: [dependency declaration template, provider, consumer, stable entry]
+    applies_when: {lane: any, condition: 新增模块间依赖时}
+    enforcement: deterministic_where_possible
+    clean_room: true
+    source: {ref: .trellis/spec/backend/03-directory-boundary-protocol.md, lines: "37", section: Contract}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: CONTRACT_TEMPLATE 落点未建（R-C 方案 b）}
+
+  - proposed_id: GATE.BOUND.WRITE_SET_ENTRY_REVIEW
+    kind: gate_recipe
+    classification: GATE_RECIPE
+    sort: UNIVERSAL
+    statement_zh: 边界门禁——写集、入口、依赖方向与受影响消费者四项已复核。
+    statement_en_keywords: [boundary gate, write set, entry, affected consumers]
+    applies_when: {lane: any, condition: 实现收尾过门禁}
+    enforcement: deterministic_where_possible
+    clean_room: true
+    source: {ref: .trellis/spec/backend/03-directory-boundary-protocol.md, lines: "41", section: Checklist}
+    duplicate_of: null
+    related: []
+    uncertainty: GATE. 前缀词表缺口（试点 V2）
+    materialize: {recommendation: backlog, reason: GATE 前缀未收编}
+
+  - proposed_id: KNOWLEDGE.BOUND.EXAMPLE_PORT_OVER_DIRECT_IMPL
+    kind: knowledge
+    classification: KNOWLEDGE_PATTERN
+    sort: UNIVERSAL
+    statement_zh: 示例——上层经领域端口调用基础设施适配器，而不是从控制器直取实现类。
+    statement_en_keywords: [example, port-adapter, no direct implementation access]
+    applies_when: {lane: backend, condition: 分层教学或评审参照}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/03-directory-boundary-protocol.md, lines: "45", section: Examples}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: 知识类非 MUST}
+
+  - proposed_id: KNOWLEDGE.FP.BOUND.ESCAPE_HATCH_COMMON_DIR
+    kind: knowledge
+    classification: FAILURE_PATTERN
+    sort: UNIVERSAL
+    statement_zh: 失败模式——为绕开循环依赖而新建含义含混的公共目录，边界债以目录形式固化。
+    statement_en_keywords: [failure pattern, escape hatch common directory, circular dependency bypass]
+    applies_when: {lane: any, condition: 结构评审}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/03-directory-boundary-protocol.md, lines: "49", section: Anti-patterns}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: 失败模式类非 MUST}
+
+  - proposed_id: AUTHORITY.BOUND.ENTRY_CHANGE_APPROVAL
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 权威分配默认值——代码作者说明边界影响，模块所有者审批公开入口变化。
+    statement_en_keywords: [authority default, boundary impact, entry change approval]
+    applies_when: {lane: any, condition: Authority Map 构建}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/03-directory-boundary-protocol.md, lines: "53", section: Ownership}
+    duplicate_of: null
+    related: [AUTHORITY.CHG.CHANGE_OWNERS]
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: M6 同型合并审留后续批次；advisory 非本批口径}
+
+  - proposed_id: POLICY.BOUND.ENTRY_CHANGE_AS_CONTRACT
+    kind: policy
+    classification: DUPLICATE
+    sort: UNIVERSAL
+    statement_zh: 公开入口的变化一律按公共契约变更流程处理，迁移完成前保留兼容路径。
+    statement_en_keywords: [entry change as contract change, compat path]
+    applies_when: {lane: any, condition: 公开入口发生变化}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/03-directory-boundary-protocol.md, lines: "57", section: Change Policy}
+    duplicate_of: POLICY.CHG.PRECHANGE_CONSUMER_SCAN
+    related: [POLICY.WEB.CHG.CONTROLLED_CHANGE_TRIGGERS]
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: DUPLICATE——指针条款（试点第82号卡 DELEGATE_TO_CHG_PROTOCOL 先例）：增量仅为「入口变化≡契约变更」映射声明，处置 REJECT 并入既有正本，不独立入册}
+
+  # ============ 04-layering-architecture-protocol.md ============
+  - proposed_id: POLICY.LAYER.LOGIC_IN_TESTABLE_BOUNDARY
+    kind: policy
+    classification: LANE_POLICY
+    sort: UNIVERSAL
+    statement_zh: 业务不变量、事务编排与外部适配必须落在职责可解释、行为可测试的层边界内。
+    statement_en_keywords: [business invariant, transaction orchestration, testable boundary]
+    applies_when: {lane: backend, condition: 放置业务逻辑或编排代码时}
+    enforcement: required_when_applicable
+    clean_room: true
+    source: {ref: .trellis/spec/backend/04-layering-architecture-protocol.md, lines: "25", section: MUST}
+    duplicate_of: null
+    related: [POLICY.WEB.ARCH.LAYER_ISOLATION]
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: LANE_POLICY（backend），非本批「高置信 Universal」物化口径；与 FE LAYER_ISOLATION 互引不合并}
+
+  - proposed_id: POLICY.LAYER.NO_AUTHORITATIVE_RULES_IN_EDGES
+    kind: policy
+    classification: LANE_POLICY
+    sort: UNIVERSAL
+    statement_zh: 权威业务规则不得散落在传输层控制器、ORM 实体或基础设施适配器中。
+    statement_en_keywords: [no business rules in controller, no rules in ORM entity, no rules in adapter]
+    applies_when: {lane: backend, condition: 放置业务规则时}
+    enforcement: required_when_applicable
+    clean_room: true
+    source: {ref: .trellis/spec/backend/04-layering-architecture-protocol.md, lines: "29", section: MUST NOT}
+    duplicate_of: null
+    related: [POLICY.WEB.ARCH.LAYER_ISOLATION]
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: LANE_POLICY（backend），非本批物化口径}
+
+  - proposed_id: POLICY.LAYER.EXPLICIT_CONVERSION_SINGLE_VALIDATION
+    kind: policy
+    classification: LANE_POLICY
+    sort: UNIVERSAL
+    statement_zh: 层间数据转换应显式建模，同一校验不得在多个层重复实现。
+    statement_en_keywords: [explicit conversion, single validation]
+    applies_when: {lane: backend, condition: 层间传递数据时}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/04-layering-architecture-protocol.md, lines: "33", section: SHOULD}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: SHOULD 级 + LANE_POLICY}
+
+  - proposed_id: POLICY.TPL.LAYER_CONTRACT
+    kind: contract_template
+    classification: CONTRACT_TEMPLATE
+    sort: UNIVERSAL
+    statement_zh: 分层契约模板——每层的输入、输出、失败语义、依赖与测试责任为必填字段。
+    statement_en_keywords: [layer contract template, failure semantics, test responsibility]
+    applies_when: {lane: backend, condition: 声明或评审层职责时}
+    enforcement: deterministic_where_possible
+    clean_room: true
+    source: {ref: .trellis/spec/backend/04-layering-architecture-protocol.md, lines: "37", section: Contract}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: CONTRACT_TEMPLATE 落点未建（R-C 方案 b）}
+
+  - proposed_id: GATE.LAYER.CALL_CHAIN_CLARITY_CHECKS
+    kind: gate_recipe
+    classification: GATE_RECIPE
+    sort: UNIVERSAL
+    statement_zh: 分层门禁——调用链、转换点、事务所有者与异常映射均已明确。
+    statement_en_keywords: [layering gate, call chain, transaction owner, exception mapping]
+    applies_when: {lane: backend, condition: 分层实现过门禁}
+    enforcement: deterministic_where_possible
+    clean_room: true
+    source: {ref: .trellis/spec/backend/04-layering-architecture-protocol.md, lines: "41", section: Checklist}
+    duplicate_of: null
+    related: []
+    uncertainty: GATE. 前缀词表缺口（试点 V2）
+    materialize: {recommendation: backlog, reason: GATE 前缀未收编}
+
+  - proposed_id: KNOWLEDGE.LAYER.EXAMPLE_TRANSPORT_APP_DOMAIN_SPLIT
+    kind: knowledge
+    classification: KNOWLEDGE_PATTERN
+    sort: UNIVERSAL
+    statement_zh: 示例——控制器只校验传输格式，应用服务编排用例，领域对象守护不变量。
+    statement_en_keywords: [example, controller validates transport, app service orchestrates, domain guards invariant]
+    applies_when: {lane: backend, condition: 分层教学或评审参照}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/04-layering-architecture-protocol.md, lines: "45", section: Examples}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: 知识类非 MUST}
+
+  - proposed_id: KNOWLEDGE.FP.LAYER.PASSTHROUGH_SERVICE_FAT_CONTROLLER
+    kind: knowledge
+    classification: FAILURE_PATTERN
+    sort: UNIVERSAL
+    statement_zh: 失败模式——服务层退化为纯转发，事务、SQL 与业务判断全部堆进控制器。
+    statement_en_keywords: [failure pattern, passthrough service, fat controller]
+    applies_when: {lane: backend, condition: 分层评审}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/04-layering-architecture-protocol.md, lines: "49", section: Anti-patterns}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: 失败模式类非 MUST}
+
+  - proposed_id: AUTHORITY.LAYER.LAYERING_OWNERS
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 权威分配默认值——架构所有者维护分层约束，各层维护者提供边界测试。
+    statement_en_keywords: [authority default, layering constraint owner, boundary test]
+    applies_when: {lane: backend, condition: Authority Map 构建}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/04-layering-architecture-protocol.md, lines: "53", section: Ownership}
+    duplicate_of: null
+    related: [AUTHORITY.CHG.CHANGE_OWNERS]
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: M6 同型合并审留后续批次；advisory 非本批口径}
+
+  - proposed_id: POLICY.LAYER.STAGED_CROSS_LAYER_MIGRATION
+    kind: policy
+    classification: LANE_POLICY
+    sort: UNIVERSAL
+    statement_zh: 跨层迁移必须先记录兼容影响，再分阶段消除旧依赖，不得一步切换。
+    statement_en_keywords: [cross-layer migration, staged removal, compat impact]
+    applies_when: {lane: backend, condition: 代码跨层迁移时}
+    enforcement: required_when_applicable
+    clean_room: true
+    source: {ref: .trellis/spec/backend/04-layering-architecture-protocol.md, lines: "57", section: Change Policy}
+    duplicate_of: null
+    related: [POLICY.CHG.STAGED_ROLLOUT]
+    uncertainty: 与 STAGED_ROLLOUT 三阶段推进语义部分重叠；本卡对象为跨层旧依赖消除，增量真实
+    materialize: {recommendation: backlog, reason: LANE_POLICY + 与既有条目部分重叠，不满足零重复判据}
+
+  # ============ 05-task-workflow-protocol.md ============
+  - proposed_id: POLICY.WF.TASK_FACTS_PRECONFIRM
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 开始执行前必须确认任务事实、执行阶段、写入范围、契约影响、主要风险与验证计划，确认不全不动手。
+    statement_en_keywords: [task facts, execution stage, write set, contract impact, verification plan]
+    applies_when: {lane: any, condition: 任何执行体启动任务前}
+    enforcement: required_when_applicable
+    clean_room: true
+    source: {ref: .trellis/spec/backend/05-task-workflow-protocol.md, lines: "25", section: MUST}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: shortlist, reason: 高置信 Universal + MUST + 零重复；「stage」词形已在 statement 中性化为「执行阶段」}
+
+  - proposed_id: POLICY.WF.NO_PLANNED_AS_VERIFIED
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 计划态、推测内容与未实际运行的检查一律不得表述为已验证。
+    statement_en_keywords: [no planned as verified, no speculative claim]
+    applies_when: {lane: any, condition: 任何执行状态声明}
+    enforcement: required_when_applicable
+    clean_room: true
+    source: {ref: .trellis/spec/backend/05-task-workflow-protocol.md, lines: "29", section: MUST NOT}
+    duplicate_of: null
+    related: [POLICY.SPEC.DRAFT_NOT_BASELINE]
+    uncertainty: null
+    materialize: {recommendation: shortlist, reason: 高置信 Universal + MUST + 零重复；与 DRAFT_NOT_BASELINE 同族不同向（彼约束草稿内容被当基线执行，本卡约束状态声明失实），互引待审}
+
+  - proposed_id: POLICY.WF.GAP_ESCALATION
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 发现跨角色缺口时应产出明确的问题记录或阻塞项，不留隐性缺口。
+    statement_en_keywords: [gap escalation, blocker, explicit issue]
+    applies_when: {lane: any, condition: 执行中发现跨角色缺口}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/05-task-workflow-protocol.md, lines: "33", section: SHOULD}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: SHOULD 级}
+
+  - proposed_id: POLICY.TPL.EXECUTION_RECORD
+    kind: contract_template
+    classification: CONTRACT_TEMPLATE
+    sort: HYBRID
+    statement_zh: 执行记录模板——必填字段为范围、本轮选中的规范、变更结果、检查证据与剩余风险。
+    statement_en_keywords: [execution record template, selected specs, remaining risks]
+    applies_when: {lane: any, condition: 每次执行收尾}
+    enforcement: deterministic_where_possible
+    clean_room: true
+    source: {ref: .trellis/spec/backend/05-task-workflow-protocol.md, lines: "37", section: Contract}
+    duplicate_of: null
+    related: [POLICY.SPEC.METADATA_REQUIRED]
+    uncertainty: 「选中的规范」字段绑定本规范体系注入产物概念，故 sort=HYBRID
+    materialize: {recommendation: backlog, reason: CONTRACT_TEMPLATE 落点未建（R-C 方案 b）+ HYBRID 字段依赖体系概念}
+
+  - proposed_id: GATE.WF.STAGE_GOAL_ALIGNMENT
+    kind: gate_recipe
+    classification: GATE_RECIPE
+    sort: PROJECT
+    statement_zh: 工作流门禁——当前执行阶段与任务目标一致。
+    statement_en_keywords: [workflow gate, stage goal alignment]
+    applies_when: {lane: any, condition: 本规范体系阶段工作流执行中}
+    enforcement: deterministic_where_possible
+    clean_room: true
+    source: {ref: .trellis/spec/backend/05-task-workflow-protocol.md, lines: "41", section: Checklist}
+    duplicate_of: null
+    related: []
+    uncertainty: 「stage」为本规范体系机宣概念，脱离该体系无对象，故 sort=PROJECT
+    materialize: {recommendation: backlog, reason: PROJECT 类 + GATE 前缀未收编}
+
+  - proposed_id: KNOWLEDGE.WF.EXAMPLE_MINIMAL_BASELINE_LOAD
+    kind: knowledge
+    classification: KNOWLEDGE_PATTERN
+    sort: PROJECT
+    statement_zh: 示例——小范围内部修复只加载当前阶段的常驻基线协议，不整族展开。
+    statement_en_keywords: [example, minimal baseline load, always protocol]
+    applies_when: {lane: backend, condition: 本规范体系注入教学参照}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/05-task-workflow-protocol.md, lines: "45", section: Examples}
+    duplicate_of: null
+    related: []
+    uncertainty: 描述本规范体系注入机制（always 基线），脱离体系无对象，故 sort=PROJECT
+    materialize: {recommendation: backlog, reason: PROJECT 类知识，属体系机宣}
+
+  - proposed_id: KNOWLEDGE.FP.WF.CRITICALITY_TRIGGERED_OVERLOAD
+    kind: knowledge
+    classification: FAILURE_PATTERN
+    sort: PROJECT
+    statement_zh: 失败模式——因协议标注 critical 就无条件加载其全部正文，注入量与任务无关地膨胀。
+    statement_en_keywords: [failure pattern, criticality triggered overload]
+    applies_when: {lane: any, condition: 本规范体系注入配置}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/05-task-workflow-protocol.md, lines: "49", section: Anti-patterns}
+    duplicate_of: null
+    related: []
+    uncertainty: criticality/injection 为本规范体系机宣字段，故 sort=PROJECT
+    materialize: {recommendation: backlog, reason: PROJECT 类失败模式，属体系机宣}
+
+  - proposed_id: AUTHORITY.WF.EXECUTION_REVIEW_SPLIT
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 权威分配默认值——执行者维护任务状态，评审者核对证据与声明的一致性。
+    statement_en_keywords: [authority default, executor, reviewer]
+    applies_when: {lane: any, condition: Authority Map 构建}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/05-task-workflow-protocol.md, lines: "53", section: Ownership}
+    duplicate_of: null
+    related: [AUTHORITY.CHG.CHANGE_OWNERS]
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: M6 同型合并审留后续批次；advisory 非本批口径}
+
+  - proposed_id: POLICY.WF.STAGE_SEMANTICS_SYNC_CONSUMERS
+    kind: policy
+    classification: LANE_POLICY
+    sort: PROJECT
+    statement_zh: 执行阶段语义一旦变化，必须同步注入器、族索引与全部生命周期消费方。
+    statement_en_keywords: [stage semantics change, injector sync, lifecycle consumers]
+    applies_when: {lane: any, condition: 本规范体系阶段定义变化}
+    enforcement: required_when_applicable
+    clean_room: true
+    source: {ref: .trellis/spec/backend/05-task-workflow-protocol.md, lines: "57", section: Change Policy}
+    duplicate_of: null
+    related: []
+    uncertainty: 体系治理类卡；classification 轴暂无对应值（试点 vocab-pr V6 相关），暂记 LANE_POLICY
+    materialize: {recommendation: backlog, reason: PROJECT 类，属 vNext 概念账本体系治理轨而非 global 工程政策}
+
+  # ============ 06-ai-generated-code-protocol.md ============
+  - proposed_id: POLICY.AI.READ_SEARCH_VERIFY_BEFORE_WRITE
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 写入任何内容前必须先读取适用规范、检索可复用实现，并按风险等级运行可复核的检查。
+    statement_en_keywords: [read spec first, reuse search, verifiable check]
+    applies_when: {lane: any, condition: 执行体做任何写入}
+    enforcement: required_when_applicable
+    clean_room: true
+    source: {ref: .trellis/spec/backend/06-ai-generated-code-protocol.md, lines: "25", section: MUST}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: shortlist, reason: 高置信 Universal + MUST + 零重复}
+
+  - proposed_id: POLICY.AI.NO_INVENTED_FACTS
+    kind: policy
+    classification: LANE_POLICY
+    sort: UNIVERSAL
+    statement_zh: 禁止虚构字段、接口、错误码、迁移、锁、缓存键、消息主题、机密或环境阈值等任何事实。
+    statement_en_keywords: [no invented facts, no fabricated interface, no invented threshold]
+    applies_when: {lane: backend, condition: 执行体产出任何命名实体或参数时}
+    enforcement: required_when_applicable
+    clean_room: true
+    source: {ref: .trellis/spec/backend/06-ai-generated-code-protocol.md, lines: "29", section: MUST NOT}
+    duplicate_of: null
+    related: []
+    uncertainty: 枚举词形偏后端基础设施（迁移/锁/缓存键/消息主题），按试点 §3.3 跨 lane 存在性判据记 LANE_POLICY；「禁止发明任何未经权威事实源确认的实体」的通用化变体可作 R-F 式上提候选
+    materialize: {recommendation: backlog, reason: classification=LANE_POLICY，不满足「高置信 Universal」字面判据；通用化上提候选留 Owner（R-F 先例）}
+
+  - proposed_id: POLICY.AI.EXPLICIT_ASSUMPTION_MARKING
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 假设、未知项与需升级确认的决策应显式标注，不得隐没。
+    statement_en_keywords: [explicit assumption, unknown marking, escalate decision]
+    applies_when: {lane: any, condition: 执行体产出内容含假设时}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/06-ai-generated-code-protocol.md, lines: "33", section: SHOULD}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: SHOULD 级}
+
+  - proposed_id: POLICY.TPL.AI_GENERATION_BINDING
+    kind: contract_template
+    classification: CONTRACT_TEMPLATE
+    sort: UNIVERSAL
+    statement_zh: 生成物绑定模板——必填字段为输入来源、目标写入范围与验证结果。
+    statement_en_keywords: [generation binding template, input source, write set, verification result]
+    applies_when: {lane: any, condition: 执行体交付生成内容}
+    enforcement: deterministic_where_possible
+    clean_room: true
+    source: {ref: .trellis/spec/backend/06-ai-generated-code-protocol.md, lines: "37", section: Contract}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: CONTRACT_TEMPLATE 落点未建（R-C 方案 b）}
+
+  - proposed_id: GATE.AI.PREWRITE_ENVIRONMENT_CHECKS
+    kind: gate_recipe
+    classification: GATE_RECIPE
+    sort: UNIVERSAL
+    statement_zh: 写入前门禁——既有实现、镜像路径、未提交改动与任务边界四项已核查。
+    statement_en_keywords: [pre-write gate, existing implementation, uncommitted changes, task boundary]
+    applies_when: {lane: any, condition: 执行体写入前}
+    enforcement: deterministic_where_possible
+    clean_room: true
+    source: {ref: .trellis/spec/backend/06-ai-generated-code-protocol.md, lines: "41", section: Checklist}
+    duplicate_of: null
+    related: []
+    uncertainty: GATE. 前缀词表缺口（试点 V2）
+    materialize: {recommendation: backlog, reason: GATE 前缀未收编}
+
+  - proposed_id: KNOWLEDGE.AI.EXAMPLE_MISSING_FACT_TO_PENDING
+    kind: knowledge
+    classification: KNOWLEDGE_PATTERN
+    sort: UNIVERSAL
+    statement_zh: 示例——缺少隔离级别等关键事实时登记待确认项，而不是顺手挑一个默认值。
+    statement_en_keywords: [example, missing fact, pending confirmation, no silent default]
+    applies_when: {lane: any, condition: 执行体缺事实时的处置参照}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/06-ai-generated-code-protocol.md, lines: "45", section: Examples}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: 知识类非 MUST}
+
+  - proposed_id: KNOWLEDGE.FP.AI.CHAT_MEMORY_AS_EVIDENCE
+    kind: knowledge
+    classification: FAILURE_PATTERN
+    sort: UNIVERSAL
+    statement_zh: 失败模式——以会话记忆替代仓库、契约、测试或运行证据。
+    statement_en_keywords: [failure pattern, chat memory as evidence]
+    applies_when: {lane: any, condition: 执行体取用事实时}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/06-ai-generated-code-protocol.md, lines: "49", section: Anti-patterns}
+    duplicate_of: null
+    related: [POLICY.API.NO_INFORMAL_CONTRACT]
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: 失败模式类非 MUST；与 NO_INFORMAL_CONTRACT 同域（非正式事实源）互引}
+
+  - proposed_id: AUTHORITY.AI.AGENT_USER_DECISION_BOUNDARY
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 权威分配默认值——执行体对其变更与声明负责，既定范围之外的决策权归用户。
+    statement_en_keywords: [authority default, agent responsibility, user decision right]
+    applies_when: {lane: any, condition: Authority Map 构建}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/06-ai-generated-code-protocol.md, lines: "53", section: Ownership}
+    duplicate_of: null
+    related: [AUTHORITY.CHG.CHANGE_OWNERS]
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: M6 同型合并审留后续批次；advisory 非本批口径}
+
+  - proposed_id: POLICY.AI.PATTERN_FEEDS_FORBIDDEN_LIST
+    kind: policy
+    classification: LANE_POLICY
+    sort: HYBRID
+    statement_zh: 出现新的高频误改模式时，应把明确禁止项与回归测试一并补进规则。
+    statement_en_keywords: [misuse pattern, forbidden list, regression test]
+    applies_when: {lane: any, condition: 维护规则集发现新误改模式}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/06-ai-generated-code-protocol.md, lines: "57", section: Change Policy}
+    duplicate_of: null
+    related: [POLICY.SPEC.POST_DEV_BACKFILL_CLASSIFY]
+    uncertainty: 规则集自我维护的原语（对象是规范体系自身），原则可泛化到任何规则维护，故 sort=HYBRID
+    materialize: {recommendation: backlog, reason: SHOULD 级 + HYBRID，非本批口径}
+
+  # ============ 07-evidence-acceptance-protocol.md ============
+  - proposed_id: POLICY.EVID.ACCEPTANCE_BINDS_VERIFIABLE_EVIDENCE
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 验收结论必须绑定具体任务、评审范围、版本号与他人可复核的证据。
+    statement_en_keywords: [acceptance binding, review range, verifiable evidence]
+    applies_when: {lane: any, condition: 任何验收结论成立时}
+    enforcement: required_when_applicable
+    clean_room: true
+    source: {ref: .trellis/spec/backend/07-evidence-acceptance-protocol.md, lines: "25", section: MUST}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: shortlist, reason: 高置信 Universal + MUST + 零重复}
+
+  - proposed_id: POLICY.EVID.NO_UNVERIFIABLE_PASS
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 口头完成声明、过期报告与无来源截图不得作为门禁通过依据。
+    statement_en_keywords: [no verbal pass, no stale report, no unsourced screenshot]
+    applies_when: {lane: any, condition: 任何门禁判定}
+    enforcement: required_when_applicable
+    clean_room: true
+    source: {ref: .trellis/spec/backend/07-evidence-acceptance-protocol.md, lines: "29", section: MUST NOT}
+    duplicate_of: null
+    related: [POLICY.WF.NO_PLANNED_AS_VERIFIED]
+    uncertainty: null
+    materialize: {recommendation: shortlist, reason: 高置信 Universal + MUST + 零重复；与 WF 卡同族（证据质量 vs 状态声明），互引不合并}
+
+  - proposed_id: POLICY.EVID.RECORD_FAILURES_AND_EXCEPTION_EXPIRY
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 失败检查、未覆盖风险与已批准例外应记录，例外须带到期条件。
+    statement_en_keywords: [record failed checks, uncovered risk, exception expiry]
+    applies_when: {lane: any, condition: 检查收尾与例外审批}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/07-evidence-acceptance-protocol.md, lines: "33", section: SHOULD}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: SHOULD 级}
+
+  - proposed_id: POLICY.TPL.ACCEPTANCE_RECORD
+    kind: contract_template
+    classification: CONTRACT_TEMPLATE
+    sort: UNIVERSAL
+    statement_zh: 验收记录模板——必填字段为检查项、命令或来源、结果、时间范围与责任方。
+    statement_en_keywords: [acceptance record template, command source, result, responsible party]
+    applies_when: {lane: any, condition: 验收记录产出}
+    enforcement: deterministic_where_possible
+    clean_room: true
+    source: {ref: .trellis/spec/backend/07-evidence-acceptance-protocol.md, lines: "37", section: Contract}
+    duplicate_of: null
+    related: [POLICY.TPL.TEST_EVIDENCE_RECORD]
+    uncertainty: 与同批 TEST_EVIDENCE_RECORD 字段集部分重叠——按试点 M4 先例不硬合并，审阅为统一证据模板双 profile
+    materialize: {recommendation: backlog, reason: CONTRACT_TEMPLATE 落点未建（R-C 方案 b）}
+
+  - proposed_id: GATE.EVID.EVIDENCE_SCOPE_CONSISTENCY
+    kind: gate_recipe
+    classification: GATE_RECIPE
+    sort: UNIVERSAL
+    statement_zh: 证据门禁——计划、实现、测试、运行与发布证据同属一个变更范围。
+    statement_en_keywords: [evidence gate, scope consistency]
+    applies_when: {lane: any, condition: 发布或验收过门禁}
+    enforcement: deterministic_where_possible
+    clean_room: true
+    source: {ref: .trellis/spec/backend/07-evidence-acceptance-protocol.md, lines: "41", section: Checklist}
+    duplicate_of: null
+    related: []
+    uncertainty: GATE. 前缀词表缺口（试点 V2）
+    materialize: {recommendation: backlog, reason: GATE 前缀未收编}
+
+  - proposed_id: KNOWLEDGE.EVID.EXAMPLE_MIGRATION_TEST_SCHEMA_HASH
+    kind: knowledge
+    classification: KNOWLEDGE_PATTERN
+    sort: UNIVERSAL
+    statement_zh: 示例——以迁移测试加 schema 指纹共同证明数据库变更已被验证。
+    statement_en_keywords: [example, migration test, schema hash]
+    applies_when: {lane: backend, condition: 数据库变更验收参照}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/07-evidence-acceptance-protocol.md, lines: "45", section: Examples}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: 知识类非 MUST}
+
+  - proposed_id: KNOWLEDGE.FP.EVID.BARE_PASS_STATEMENT
+    kind: knowledge
+    classification: FAILURE_PATTERN
+    sort: UNIVERSAL
+    statement_zh: 失败模式——只写「测试通过」而不附测试范围与结果来源。
+    statement_en_keywords: [failure pattern, bare pass claim]
+    applies_when: {lane: any, condition: 验收材料评审}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/07-evidence-acceptance-protocol.md, lines: "49", section: Anti-patterns}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: 失败模式类非 MUST}
+
+  - proposed_id: AUTHORITY.EVID.IMPLEMENTER_PROVIDER_REVIEWER_JUDGE
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 权威分配默认值——实现者供给证据，评审与发布责任人裁定门禁满足与否。
+    statement_en_keywords: [authority default, evidence provider, gate judge]
+    applies_when: {lane: any, condition: Authority Map 构建}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/07-evidence-acceptance-protocol.md, lines: "53", section: Ownership}
+    duplicate_of: null
+    related: [AUTHORITY.CHG.CHANGE_OWNERS]
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: M6 同型合并审留后续批次；advisory 非本批口径}
+
+  - proposed_id: POLICY.EVID.NO_SILENT_GATE_REMOVAL
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 降低证据要求必须走受控例外登记，禁止静默删除或绕过门禁。
+    statement_en_keywords: [controlled exception, no silent gate removal]
+    applies_when: {lane: any, condition: 拟降低任何证据要求}
+    enforcement: required_when_applicable
+    clean_room: true
+    source: {ref: .trellis/spec/backend/07-evidence-acceptance-protocol.md, lines: "57", section: Change Policy}
+    duplicate_of: null
+    related: [POLICY.CHG.BREAKING_VERSIONING]
+    uncertainty: null
+    materialize: {recommendation: shortlist, reason: 高置信 Universal + MUST + 零重复；与 BREAKING_VERSIONING 的「豁免前置不豁免补齐」同源互引}
+
+  # ============ 08-contract-change-protocol.md（试点已拆，覆盖援引） ============
+  - proposed_id: COVERAGE.SPEC-D.BACKEND-08-CONTRACT-CHANGE
+    kind: coverage_reference
+    classification: coverage_reference
+    sort: UNIVERSAL
+    statement_zh: 覆盖援引卡——本文件与试点源逐字节一致（sha256 805c146b31c70d08f876631bc19273076eb242d78fcb3b3a3bd33437e28a6953 双侧相同，inventory pilot_verification 已核），9 张试点候选卡即本文件全覆盖，本轮零新增卡。
+    statement_en_keywords: [coverage reference, pilot reuse, byte identical]
+    applies_when: {lane: backend, condition: 汇总组合并候选时援引试点覆盖}
+    enforcement: advisory
+    clean_room: true
+    source:
+      ref: .trellis/spec/backend/08-contract-change-protocol.md
+      lines: "1-58"
+      section: 全文（pilot_seq pilot-0001）
+    duplicate_of: null
+    covered_by_existing:
+      - POLICY.CHG.PRECHANGE_SCAN_BE（DUP，M1 让位并入 PRECHANGE_CONSUMER_SCAN）
+      - POLICY.CHG.NO_DELETE_NO_MIGRATION_BE（DUP，M2 让位并入 DEPRECATE_BEFORE_DELETE）
+      - POLICY.CHG.OBSERVABLE_EVOLUTION（在册 policy.chg.observable_evolution）
+      - POLICY.TPL.CHG_RECORD_BE（在册候选，M4 双 profile）
+      - GATE.BE.CHG.CONTRACT_CHANGE_CHECKS（在册 gates/gate.be.chg.contract_change_checks）
+      - KNOWLEDGE.CHG.EXAMPLE_COMPAT_WINDOW（在册 knowledge.chg.example_compat_window）
+      - KNOWLEDGE.FP.BE.CONTRACT_DRIFT（在册 knowledge.fp.be.contract_drift）
+      - AUTHORITY.BE.CONTRACT_OWNERSHIP（在册 authority.be.contract_ownership）
+      - POLICY.CHG.BREAKING_VERSIONING_BE（DUP，M3 两子句并入 BREAKING_VERSIONING）
+    related: []
+    uncertainty: null
+    materialize: {recommendation: not_applicable, reason: 试点覆盖已物化 6 条在册 + 3 条 DUP 留 candidates，无需新增}
+
+  # ============ 09-role-responsibility-protocol.md ============
+  - proposed_id: POLICY.ROLE.IDENTIFIABLE_OWNER_FOR_HIGH_RISK
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 高风险决策、公共契约与运行门禁必须能指认唯一责任角色。
+    statement_en_keywords: [identifiable owner, high risk decision, public contract]
+    applies_when: {lane: any, condition: 设定高风险决策、公共契约或运行门禁时}
+    enforcement: required_when_applicable
+    clean_room: true
+    source: {ref: .trellis/spec/backend/09-role-responsibility-protocol.md, lines: "25", section: MUST}
+    duplicate_of: null
+    related: [AUTHORITY.CHG.CHANGE_OWNERS]
+    uncertainty: 源协议 frontmatter criticality=advisory（BE 族唯一），MUST 段措辞仍为硬约束；整卡强制力档位留 Owner 裁决，本卡暂记 required
+    materialize: {recommendation: backlog, reason: 带 criticality 降档不确定性，待 Owner 裁决后重评}
+
+  - proposed_id: POLICY.ROLE.NO_COLLECTIVE_MASK
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 「团队共同负责」不得用来遮盖审批、维护或事故响应上的责任空缺。
+    statement_en_keywords: [no collective responsibility mask, accountability gap]
+    applies_when: {lane: any, condition: 责任分配与事故复盘}
+    enforcement: required_when_applicable
+    clean_room: true
+    source: {ref: .trellis/spec/backend/09-role-responsibility-protocol.md, lines: "29", section: MUST NOT}
+    duplicate_of: null
+    related: []
+    uncertainty: 同上——源协议整级 criticality=advisory 的降档不确定性
+    materialize: {recommendation: backlog, reason: 带 criticality 降档不确定性，待 Owner 裁决后重评}
+
+  - proposed_id: POLICY.ROLE.HANDOFF_ACCEPTANCE_TERMS
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 交接应写明输入、输出、截止条件与拒收标准。
+    statement_en_keywords: [handoff terms, acceptance criteria, rejection standard]
+    applies_when: {lane: any, condition: 跨角色交接}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/09-role-responsibility-protocol.md, lines: "33", section: SHOULD}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: SHOULD 级}
+
+  - proposed_id: POLICY.TPL.RESPONSIBILITY_RECORD
+    kind: contract_template
+    classification: CONTRACT_TEMPLATE
+    sort: UNIVERSAL
+    statement_zh: 责任记录模板——必填字段为决策者、执行者、评审者、被通知方与升级路径。
+    statement_en_keywords: [responsibility record template, RACI, escalation path]
+    applies_when: {lane: any, condition: 责任记录产出}
+    enforcement: deterministic_where_possible
+    clean_room: true
+    source: {ref: .trellis/spec/backend/09-role-responsibility-protocol.md, lines: "37", section: Contract}
+    duplicate_of: null
+    related: [AUTHORITY.CHG.CHANGE_OWNERS, AUTHORITY.BE.CONTRACT_OWNERSHIP]
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: CONTRACT_TEMPLATE 落点未建（R-C 方案 b）}
+
+  - proposed_id: GATE.ROLE.CROSS_ROLE_BOUNDARY_CLARITY
+    kind: gate_recipe
+    classification: GATE_RECIPE
+    sort: HYBRID
+    statement_zh: 角色门禁——跨业务、前端、后端、测试与运维的边界均已明确。
+    statement_en_keywords: [role gate, cross role boundary]
+    applies_when: {lane: any, condition: 多角色协同任务过门禁}
+    enforcement: deterministic_where_possible
+    clean_room: true
+    source: {ref: .trellis/spec/backend/09-role-responsibility-protocol.md, lines: "41", section: Checklist}
+    duplicate_of: null
+    related: []
+    uncertainty: lane 分母词形（业务/前端/后端/测试/运维）源自本体系 lane 集合，边界检查原则本身 lane 中性，故 sort=HYBRID
+    materialize: {recommendation: backlog, reason: GATE 前缀未收编 + HYBRID}
+
+  - proposed_id: KNOWLEDGE.ROLE.EXAMPLE_PROVIDER_CONTRACT_CONSUMER_MIGRATION
+    kind: knowledge
+    classification: DUPLICATE
+    sort: UNIVERSAL
+    statement_zh: 示例——接口提供方维护契约，调用方在兼容窗口内确认迁移完成。
+    statement_en_keywords: [example, provider maintains contract, consumer confirms migration]
+    applies_when: {lane: any, condition: 契约协作教学参照}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/09-role-responsibility-protocol.md, lines: "45", section: Examples}
+    duplicate_of: AUTHORITY.BE.CONTRACT_OWNERSHIP
+    related: [KNOWLEDGE.CHG.EXAMPLE_COMPAT_WINDOW]
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: DUPLICATE——与既有 AUTHORITY.BE.CONTRACT_OWNERSHIP 语义逐点重合（提供方维护兼容 / 消费方确认迁移），按试点 §3.1「语义被覆盖」处置 REJECT}
+
+  - proposed_id: KNOWLEDGE.FP.ROLE.LINK_ONLY_HANDOFF
+    kind: knowledge
+    classification: FAILURE_PATTERN
+    sort: UNIVERSAL
+    statement_zh: 失败模式——交接只丢一个文档链接，不说明版本、状态与待办。
+    statement_en_keywords: [failure pattern, link only handoff]
+    applies_when: {lane: any, condition: 交接评审}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/09-role-responsibility-protocol.md, lines: "49", section: Anti-patterns}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: 失败模式类非 MUST}
+
+  - proposed_id: AUTHORITY.ROLE.MODEL_VS_PROJECT_BINDING
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: HYBRID
+    statement_zh: 治理维护者定义角色模型，具体项目自行绑定实际责任人。
+    statement_en_keywords: [authority default, role model, project binding]
+    applies_when: {lane: any, condition: Authority Map 构建}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/09-role-responsibility-protocol.md, lines: "53", section: Ownership}
+    duplicate_of: null
+    related: [AUTHORITY.CHG.CHANGE_OWNERS]
+    uncertainty: 承载 Catalog↔Project 分离原语（模型归 catalog 层、事实归 project 层），原则通用而对象绑定本体系，故 sort=HYBRID
+    materialize: {recommendation: backlog, reason: M6 同型合并审 + HYBRID}
+
+  - proposed_id: POLICY.ROLE.NO_PERSONNEL_FACT_INFERENCE
+    kind: policy
+    classification: LANE_POLICY
+    sort: PROJECT
+    statement_zh: 角色模型变化不得回写、保存或推测具体项目的人员事实。
+    statement_en_keywords: [no personnel fact backwrite, no inference]
+    applies_when: {lane: any, condition: 角色模型演化}
+    enforcement: required_when_applicable
+    clean_room: true
+    source: {ref: .trellis/spec/backend/09-role-responsibility-protocol.md, lines: "57", section: Change Policy}
+    duplicate_of: null
+    related: [POLICY.SPEC.NO_PROJECT_FACTS_IN_PROTOCOLS]
+    uncertainty: Catalog↔Project 分离锚点卡（vNext 设计已埋同类锚点），classification 轴暂无体系治理值
+    materialize: {recommendation: backlog, reason: PROJECT 类，属体系治理轨而非 global 工程政策}
+
+  # ============ 26-engineering-tooling-protocol.md ============
+  - proposed_id: POLICY.TOOL.DISCOVERABLE_TOOLCHAIN
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 运行时、构建工具、依赖锁定与质量命令必须能在仓库或受控环境中被找到并复现。
+    statement_en_keywords: [discoverable toolchain, lockfile, reproducible commands]
+    applies_when: {lane: any, condition: 搭建或维护构建与检查链}
+    enforcement: required_when_applicable
+    clean_room: true
+    source: {ref: .trellis/spec/backend/26-engineering-tooling-protocol.md, lines: "25", section: MUST}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: shortlist, reason: 高置信 Universal + MUST + 零重复}
+
+  - proposed_id: POLICY.TOOL.NO_HAND_EDIT_GENERATED_NO_CI_DRIFT
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 禁止手工修改生成产物；本地与 CI 必须执行同一套门禁，不得双标。
+    statement_en_keywords: [no hand edit generated artifacts, no local CI gate divergence]
+    applies_when: {lane: any, condition: 处理生成产物或配置本地与 CI 环境}
+    enforcement: required_when_applicable
+    clean_room: true
+    source: {ref: .trellis/spec/backend/26-engineering-tooling-protocol.md, lines: "29", section: MUST NOT}
+    duplicate_of: null
+    related: [POLICY.TOOL.AUTOMATED_DRIFT_DETECTION]
+    uncertainty: null
+    materialize: {recommendation: shortlist, reason: 高置信 Universal + MUST + 零重复（含两禁令：生成物手改 / 本地 CI 门禁漂移，源为单条目故单卡承载）}
+
+  - proposed_id: POLICY.TOOL.AUTOMATED_DRIFT_DETECTION
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 生成代码、契约、迁移、依赖与容器配置的漂移应交自动校验发现。
+    statement_en_keywords: [automated drift detection, generated code, contract]
+    applies_when: {lane: any, condition: 配置持续检查}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/26-engineering-tooling-protocol.md, lines: "33", section: SHOULD}
+    duplicate_of: null
+    related: [KNOWLEDGE.FP.BE.CONTRACT_DRIFT]
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: SHOULD 级；与在册 CONTRACT_DRIFT 失败模式构成 M7 式政/失配对互引}
+
+  - proposed_id: POLICY.TPL.TOOLCHAIN_RECORD
+    kind: contract_template
+    classification: CONTRACT_TEMPLATE
+    sort: UNIVERSAL
+    statement_zh: 工具链记录模板——必填字段为版本来源、入口命令、输入、输出与失败门禁。
+    statement_en_keywords: [toolchain record template, version source, entry command]
+    applies_when: {lane: any, condition: 工具链登记}
+    enforcement: deterministic_where_possible
+    clean_room: true
+    source: {ref: .trellis/spec/backend/26-engineering-tooling-protocol.md, lines: "37", section: Contract}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: CONTRACT_TEMPLATE 落点未建（R-C 方案 b）}
+
+  - proposed_id: GATE.TOOL.CLEAN_ENVIRONMENT_BUILD
+    kind: gate_recipe
+    classification: GATE_RECIPE
+    sort: UNIVERSAL
+    statement_zh: 工具链门禁——干净环境可完成构建、测试与静态检查。
+    statement_en_keywords: [toolchain gate, clean environment build]
+    applies_when: {lane: any, condition: 工具链验收}
+    enforcement: deterministic_where_possible
+    clean_room: true
+    source: {ref: .trellis/spec/backend/26-engineering-tooling-protocol.md, lines: "41", section: Checklist}
+    duplicate_of: null
+    related: []
+    uncertainty: GATE. 前缀词表缺口（试点 V2）
+    materialize: {recommendation: backlog, reason: GATE 前缀未收编}
+
+  - proposed_id: KNOWLEDGE.TOOL.EXAMPLE_CI_REGENERATE_REJECT_DIFF
+    kind: knowledge
+    classification: KNOWLEDGE_PATTERN
+    sort: UNIVERSAL
+    statement_zh: 示例——CI 重新生成接口描述产物，出现未提交差异即失败。
+    statement_en_keywords: [example, CI regeneration, reject uncommitted diff]
+    applies_when: {lane: backend, condition: 生成物漂移防护参照}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/26-engineering-tooling-protocol.md, lines: "45", section: Examples}
+    duplicate_of: null
+    related: [KNOWLEDGE.FP.BE.CONTRACT_DRIFT]
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: 知识类非 MUST}
+
+  - proposed_id: KNOWLEDGE.FP.TOOL.MACHINE_LOCAL_TOOLING
+    kind: knowledge
+    classification: FAILURE_PATTERN
+    sort: UNIVERSAL
+    statement_zh: 失败模式——构建与检查依赖某台开发机的全局工具或未记录的 IDE 操作。
+    statement_en_keywords: [failure pattern, machine local tooling, undocumented IDE operation]
+    applies_when: {lane: any, condition: 构建可复现性评审}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/26-engineering-tooling-protocol.md, lines: "49", section: Anti-patterns}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: 失败模式类非 MUST}
+
+  - proposed_id: AUTHORITY.TOOL.TOOLCHAIN_OWNERS
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 权威分配默认值——平台维护者维护工具链，模块维护者保证项目命令持续可运行。
+    statement_en_keywords: [authority default, platform maintainer, module maintainer]
+    applies_when: {lane: any, condition: Authority Map 构建}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/26-engineering-tooling-protocol.md, lines: "53", section: Ownership}
+    duplicate_of: null
+    related: [AUTHORITY.CHG.CHANGE_OWNERS]
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: M6 同型合并审留后续批次；advisory 非本批口径}
+
+  - proposed_id: POLICY.TOOL.UPGRADE_VERIFY_LOCK_ROLLBACK
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 工具升级必须验证兼容性、锁文件变化与生成差异，并预备回退路径。
+    statement_en_keywords: [tool upgrade, compat verification, lockfile, rollback]
+    applies_when: {lane: any, condition: 升级构建或检查工具}
+    enforcement: required_when_applicable
+    clean_room: true
+    source: {ref: .trellis/spec/backend/26-engineering-tooling-protocol.md, lines: "57", section: Change Policy}
+    duplicate_of: null
+    related: [POLICY.TOOL.DISCOVERABLE_TOOLCHAIN]
+    uncertainty: null
+    materialize: {recommendation: shortlist, reason: 高置信 Universal + MUST + 零重复}
+
+  # ============ 27-dependency-supply-chain-protocol.md ============
+  - proposed_id: POLICY.DEP.ADMISSION_SIX_DIMENSION_CHECK
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 引入或升级依赖前必须核验必要性、来源、版本、许可证、漏洞与维护状态六项。
+    statement_en_keywords: [dependency admission, necessity, license, vulnerability, maintenance]
+    applies_when: {lane: any, condition: 新增或升级依赖}
+    enforcement: required_when_applicable
+    clean_room: true
+    source: {ref: .trellis/spec/backend/27-dependency-supply-chain-protocol.md, lines: "25", section: MUST}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: shortlist, reason: 高置信 Universal + MUST + 零重复（catalog 现无任何依赖治理条目）}
+
+  - proposed_id: POLICY.DEP.NO_UNTRUSTED_SOURCE_NO_LOCK_BYPASS
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 禁止从不可信来源下载并执行代码，禁止无视锁文件与校验差异。
+    statement_en_keywords: [no untrusted source, no lockfile bypass, checksum integrity]
+    applies_when: {lane: any, condition: 依赖获取与安装}
+    enforcement: required_when_applicable
+    clean_room: true
+    source: {ref: .trellis/spec/backend/27-dependency-supply-chain-protocol.md, lines: "29", section: MUST NOT}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: shortlist, reason: 高置信 Universal + MUST + 零重复}
+
+  - proposed_id: POLICY.DEP.MINIMIZE_AND_TRACEABLE_BOM
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 应合并重复能力、收窄依赖范围，并生成可追溯的物料清单。
+    statement_en_keywords: [dependency minimization, traceable bill of materials]
+    applies_when: {lane: any, condition: 依赖面治理}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/27-dependency-supply-chain-protocol.md, lines: "33", section: SHOULD}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: SHOULD 级}
+
+  - proposed_id: POLICY.TPL.DEPENDENCY_CHANGE_RECORD
+    kind: contract_template
+    classification: CONTRACT_TEMPLATE
+    sort: UNIVERSAL
+    statement_zh: 依赖变更记录模板——必填字段为原因、影响图、风险、测试、生成差异与回退。
+    statement_en_keywords: [dependency change template, impact graph, rollback]
+    applies_when: {lane: any, condition: 依赖变更评审}
+    enforcement: deterministic_where_possible
+    clean_room: true
+    source: {ref: .trellis/spec/backend/27-dependency-supply-chain-protocol.md, lines: "37", section: Contract}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: CONTRACT_TEMPLATE 落点未建（R-C 方案 b）}
+
+  - proposed_id: GATE.DEP.SUPPLY_CHAIN_AUDIT_SCOPE
+    kind: gate_recipe
+    classification: GATE_RECIPE
+    sort: UNIVERSAL
+    statement_zh: 供应链门禁——直接与传递依赖、插件、镜像与构建脚本均已审计。
+    statement_en_keywords: [supply chain gate, transitive dependency, build script audit]
+    applies_when: {lane: any, condition: 依赖变更过门禁}
+    enforcement: deterministic_where_possible
+    clean_room: true
+    source: {ref: .trellis/spec/backend/27-dependency-supply-chain-protocol.md, lines: "41", section: Checklist}
+    duplicate_of: null
+    related: []
+    uncertainty: GATE. 前缀词表缺口（试点 V2）
+    materialize: {recommendation: backlog, reason: GATE 前缀未收编}
+
+  - proposed_id: KNOWLEDGE.DEP.EXAMPLE_SECURITY_UPGRADE_VERIFICATION
+    kind: knowledge
+    classification: KNOWLEDGE_PATTERN
+    sort: UNIVERSAL
+    statement_zh: 示例——安全升级同时验证接口兼容、配置变化与运行期回归。
+    statement_en_keywords: [example, security upgrade, compat and regression verification]
+    applies_when: {lane: any, condition: 安全升级参照}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/27-dependency-supply-chain-protocol.md, lines: "45", section: Examples}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: 知识类非 MUST}
+
+  - proposed_id: KNOWLEDGE.FP.DEP.HEAVY_DEP_FOR_TRIVIAL_FUNCTION
+    kind: knowledge
+    classification: FAILURE_PATTERN
+    sort: UNIVERSAL
+    statement_zh: 失败模式——为一个小函数引入权限巨大且维护不明的重型依赖。
+    statement_en_keywords: [failure pattern, heavy dependency, trivial need]
+    applies_when: {lane: any, condition: 依赖引入评审}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/27-dependency-supply-chain-protocol.md, lines: "49", section: Anti-patterns}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: 失败模式类非 MUST}
+
+  - proposed_id: AUTHORITY.DEP.ADMISSION_AND_BLOCK_OWNERS
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 权威分配默认值——依赖引入者负责评审，安全与平台角色维护阻断策略。
+    statement_en_keywords: [authority default, dependency introducer, blocking policy]
+    applies_when: {lane: any, condition: Authority Map 构建}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/27-dependency-supply-chain-protocol.md, lines: "53", section: Ownership}
+    duplicate_of: null
+    related: [AUTHORITY.CHG.CHANGE_OWNERS]
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: M6 同型合并审留后续批次；advisory 非本批口径}
+
+  - proposed_id: POLICY.DEP.TIME_BOXED_URGENT_EXCEPTION
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 紧急漏洞例外必须限时、可追踪，并排定后续完整验证。
+    statement_en_keywords: [time boxed exception, urgent vulnerability, follow-up verification]
+    applies_when: {lane: any, condition: 紧急漏洞需要例外通道}
+    enforcement: required_when_applicable
+    clean_room: true
+    source: {ref: .trellis/spec/backend/27-dependency-supply-chain-protocol.md, lines: "57", section: Change Policy}
+    duplicate_of: null
+    related: [POLICY.CHG.BREAKING_VERSIONING]
+    uncertainty: null
+    materialize: {recommendation: shortlist, reason: 高置信 Universal + MUST + 零重复；与 BREAKING_VERSIONING 紧急豁免条款同族互引}
+
+  # ============ 28-testing-protocol.md ============
+  - proposed_id: POLICY.TEST.RISK_DRIVEN_PLAN
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 测试计划必须覆盖被变更行为、边界条件、失败路径、兼容性与高风险交互。
+    statement_en_keywords: [risk driven test plan, failure path, compatibility]
+    applies_when: {lane: any, condition: 制定测试计划}
+    enforcement: required_when_applicable
+    clean_room: true
+    source: {ref: .trellis/spec/backend/28-testing-protocol.md, lines: "25", section: MUST}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: shortlist, reason: 高置信 Universal + MUST + 零重复}
+
+  - proposed_id: POLICY.TEST.NO_SYNTHETIC_STABILITY
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 禁止用固定休眠、共享脏数据或只测成功路径来制造稳定的假象。
+    statement_en_keywords: [no fixed sleep, no shared dirty data, no happy path only]
+    applies_when: {lane: any, condition: 编写或评审测试}
+    enforcement: required_when_applicable
+    clean_room: true
+    source: {ref: .trellis/spec/backend/28-testing-protocol.md, lines: "29", section: MUST NOT}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: shortlist, reason: 高置信 Universal + MUST + 零重复}
+
+  - proposed_id: POLICY.TEST.CONTROL_NONDETERMINISM_KEEP_DIAGNOSIS
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 应管控时间、随机、网络与外部依赖等不确定因素，并保留失败诊断信息。
+    statement_en_keywords: [determinism control, failure diagnostics]
+    applies_when: {lane: any, condition: 测试实现与维护}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/28-testing-protocol.md, lines: "33", section: SHOULD}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: SHOULD 级}
+
+  - proposed_id: POLICY.TPL.TEST_EVIDENCE_RECORD
+    kind: contract_template
+    classification: CONTRACT_TEMPLATE
+    sort: UNIVERSAL
+    statement_zh: 测试证据模板——必填字段为范围、环境、命令、结果、失败项与未覆盖风险。
+    statement_en_keywords: [test evidence template, environment, uncovered risk]
+    applies_when: {lane: any, condition: 测试证据产出}
+    enforcement: deterministic_where_possible
+    clean_room: true
+    source: {ref: .trellis/spec/backend/28-testing-protocol.md, lines: "37", section: Contract}
+    duplicate_of: null
+    related: [POLICY.TPL.ACCEPTANCE_RECORD]
+    uncertainty: 与 ACCEPTANCE_RECORD 字段集部分重叠——按试点 M4 先例不硬合并，审阅为统一证据模板双 profile
+    materialize: {recommendation: backlog, reason: CONTRACT_TEMPLATE 落点未建（R-C 方案 b）}
+
+  - proposed_id: GATE.TEST.LAYER_SELECTION_BY_IMPACT
+    kind: gate_recipe
+    classification: GATE_RECIPE
+    sort: UNIVERSAL
+    statement_zh: 测试门禁——已按影响面从接口、数据库、事务、并发、幂等、缓存、安全与回滚中选定验证层。
+    statement_en_keywords: [test gate, layer selection by impact]
+    applies_when: {lane: any, condition: 变更测试选择}
+    enforcement: deterministic_where_possible
+    clean_room: true
+    source: {ref: .trellis/spec/backend/28-testing-protocol.md, lines: "41", section: Checklist}
+    duplicate_of: null
+    related: []
+    uncertainty: GATE. 前缀词表缺口（试点 V2）
+    materialize: {recommendation: backlog, reason: GATE 前缀未收编}
+
+  - proposed_id: KNOWLEDGE.TEST.EXAMPLE_MIGRATION_FORWARD_COMPAT_RECOVERY
+    kind: knowledge
+    classification: KNOWLEDGE_PATTERN
+    sort: UNIVERSAL
+    statement_zh: 示例——迁移脚本在真实数据库版本上验证前向执行、兼容与恢复三条路径。
+    statement_en_keywords: [example, migration forward compat recovery]
+    applies_when: {lane: backend, condition: 迁移测试参照}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/28-testing-protocol.md, lines: "45", section: Examples}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: 知识类非 MUST}
+
+  - proposed_id: KNOWLEDGE.FP.TEST.ALL_MOCK_INTEGRATION_CLAIM
+    kind: knowledge
+    classification: FAILURE_PATTERN
+    sort: UNIVERSAL
+    statement_zh: 失败模式——把所有边界都替换为替身之后宣称集成行为已验证。
+    statement_en_keywords: [failure pattern, all mock integration claim]
+    applies_when: {lane: any, condition: 测试评审}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/28-testing-protocol.md, lines: "49", section: Anti-patterns}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: 失败模式类非 MUST}
+
+  - proposed_id: AUTHORITY.TEST.CHANGE_TEST_OWNERS
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 权威分配默认值——实现者维护变更测试，测试与评审角色检查风险覆盖。
+    statement_en_keywords: [authority default, change test owner, risk coverage review]
+    applies_when: {lane: any, condition: Authority Map 构建}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/28-testing-protocol.md, lines: "53", section: Ownership}
+    duplicate_of: null
+    related: [AUTHORITY.CHG.CHANGE_OWNERS]
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: M6 同型合并审留后续批次；advisory 非本批口径}
+
+  - proposed_id: POLICY.TEST.REMOVAL_NEEDS_SUBSTITUTE_EVIDENCE
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 删除或放宽测试必须说明替代证据并取得风险审批。
+    statement_en_keywords: [test removal, substitute evidence, risk approval]
+    applies_when: {lane: any, condition: 拟删除或放宽任何测试}
+    enforcement: required_when_applicable
+    clean_room: true
+    source: {ref: .trellis/spec/backend/28-testing-protocol.md, lines: "57", section: Change Policy}
+    duplicate_of: null
+    related: [POLICY.EVID.NO_SILENT_GATE_REMOVAL]
+    uncertainty: null
+    materialize: {recommendation: shortlist, reason: 高置信 Universal + MUST + 零重复；与 EVID 例外门禁卡同族互引}
+
+  # ============ 32-release-versioning-rollback-protocol.md ============
+  - proposed_id: POLICY.REL.PRE_RELEASE_CONFIRMATION
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 发布前必须确认版本、依赖顺序、兼容性、观测就绪、停止条件与恢复路径六项。
+    statement_en_keywords: [pre release confirmation, stop condition, recovery path]
+    applies_when: {lane: any, condition: 任何发布动作前}
+    enforcement: required_when_applicable
+    clean_room: true
+    source: {ref: .trellis/spec/backend/32-release-versioning-rollback-protocol.md, lines: "25", section: MUST}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: shortlist, reason: 高置信 Universal + MUST + 零重复}
+
+  - proposed_id: POLICY.REL.NO_IRREVERSIBLE_UNMONITORED_FULL_RELEASE
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 数据不可恢复或无监控信号时，禁止执行不可逆的全量发布。
+    statement_en_keywords: [no irreversible release, no blind full rollout]
+    applies_when: {lane: any, condition: 发布方式选择}
+    enforcement: required_when_applicable
+    clean_room: true
+    source: {ref: .trellis/spec/backend/32-release-versioning-rollback-protocol.md, lines: "29", section: MUST NOT}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: shortlist, reason: 高置信 Universal + MUST + 零重复}
+
+  - proposed_id: POLICY.REL.CANARY_SWITCH_PARALLEL_COMPAT
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 发布应采用小批量灰度、可撤回开关与新旧版本并行兼容。
+    statement_en_keywords: [canary, withdrawable switch, parallel compat]
+    applies_when: {lane: any, condition: 发布策略选择}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/32-release-versioning-rollback-protocol.md, lines: "33", section: SHOULD}
+    duplicate_of: null
+    related: [POLICY.CHG.STAGED_ROLLOUT, POLICY.CHG.OBSERVABLE_EVOLUTION]
+    uncertainty: 与 STAGED_ROLLOUT、OBSERVABLE_EVOLUTION 各约四成语义重叠（渐进/可撤回/并行），增量在灰度与开关机制，互指不合并
+    materialize: {recommendation: backlog, reason: SHOULD 级 + 与既有条目部分重叠，不满足零重复判据}
+
+  - proposed_id: POLICY.TPL.RELEASE_RECORD
+    kind: contract_template
+    classification: CONTRACT_TEMPLATE
+    sort: UNIVERSAL
+    statement_zh: 发布记录模板——必填字段为变更范围、产物指纹、步骤、门禁、指标、责任人与结果。
+    statement_en_keywords: [release record template, artifact hash, gate, metrics]
+    applies_when: {lane: any, condition: 发布记录产出}
+    enforcement: deterministic_where_possible
+    clean_room: true
+    source: {ref: .trellis/spec/backend/32-release-versioning-rollback-protocol.md, lines: "37", section: Contract}
+    duplicate_of: null
+    related: [POLICY.TPL.ACCEPTANCE_RECORD]
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: CONTRACT_TEMPLATE 落点未建（R-C 方案 b）}
+
+  - proposed_id: GATE.REL.VERSION_ALIGNMENT_CHECKS
+    kind: gate_recipe
+    classification: GATE_RECIPE
+    sort: UNIVERSAL
+    statement_zh: 发布门禁——应用、数据库、配置、消息、缓存与消费者版本已对齐。
+    statement_en_keywords: [release gate, version alignment]
+    applies_when: {lane: any, condition: 发布过门禁}
+    enforcement: deterministic_where_possible
+    clean_room: true
+    source: {ref: .trellis/spec/backend/32-release-versioning-rollback-protocol.md, lines: "41", section: Checklist}
+    duplicate_of: null
+    related: []
+    uncertainty: GATE. 前缀词表缺口（试点 V2）
+    materialize: {recommendation: backlog, reason: GATE 前缀未收编}
+
+  - proposed_id: KNOWLEDGE.REL.EXAMPLE_EXPAND_MIGRATE_CLEAN
+    kind: knowledge
+    classification: DUPLICATE
+    sort: UNIVERSAL
+    statement_zh: 示例——先发布兼容读写的过渡版本，数据迁移完成后清理旧契约。
+    statement_en_keywords: [example, expand contract migrate clean]
+    applies_when: {lane: backend, condition: 带数据迁移的发布参照}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/32-release-versioning-rollback-protocol.md, lines: "45", section: Examples}
+    duplicate_of: KNOWLEDGE.CHG.EXAMPLE_COMPAT_WINDOW
+    related: [KNOWLEDGE.CHG.EXAMPLE_PROP_MIGRATION]
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: DUPLICATE——与既有示例同型（兼容先行→迁移完成→关闭旧窗，试点 M5 已合并同型知识为跨 lane 一条），本例仅多数据库迁移语域，处置 REJECT 归并}
+
+  - proposed_id: KNOWLEDGE.FP.REL.ROLLBACK_AS_REVERSE_MIGRATION
+    kind: knowledge
+    classification: FAILURE_PATTERN
+    sort: UNIVERSAL
+    statement_zh: 失败模式——把数据库回滚当成逆向执行破坏性迁移脚本。
+    statement_en_keywords: [failure pattern, rollback as reverse migration]
+    applies_when: {lane: backend, condition: 回滚方案评审}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/32-release-versioning-rollback-protocol.md, lines: "49", section: Anti-patterns}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: 失败模式类非 MUST}
+
+  - proposed_id: AUTHORITY.REL.RELEASE_GATE_OWNERS
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 权威分配默认值——发布责任人执行门禁，后端提供兼容与恢复证据。
+    statement_en_keywords: [authority default, release owner, recovery evidence]
+    applies_when: {lane: any, condition: Authority Map 构建}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/32-release-versioning-rollback-protocol.md, lines: "53", section: Ownership}
+    duplicate_of: null
+    related: [AUTHORITY.CHG.CHANGE_OWNERS]
+    uncertainty: null
+    materialize: {recommendation: backlog, reason: M6 同型合并审留后续批次；advisory 非本批口径}
+
+  - proposed_id: POLICY.REL.PROCESS_CHANGE_NEEDS_DRILL_AUDIT
+    kind: policy
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 发布流程或阻断门禁的变化必须先经演练与审计方可生效。
+    statement_en_keywords: [release process change, drill, audit]
+    applies_when: {lane: any, condition: 修改发布流程或阻断门禁}
+    enforcement: required_when_applicable
+    clean_room: true
+    source: {ref: .trellis/spec/backend/32-release-versioning-rollback-protocol.md, lines: "57", section: Change Policy}
+    duplicate_of: null
+    related: []
+    uncertainty: null
+    materialize: {recommendation: shortlist, reason: 高置信 Universal + MUST + 零重复}
+
+  # ============ index.md（族索引） ============
+  - proposed_id: POLICY.SPEC.NO_PROJECT_FACTS_IN_PROTOCOLS
+    kind: policy
+    classification: LANE_POLICY
+    sort: PROJECT
+    statement_zh: 协议正文只承载跨项目治理规则，不得写入任何具体项目的端点、表、列、业务状态、环境阈值或责任人。
+    statement_en_keywords: [no project facts, cross project governance, catalog project separation]
+    applies_when: {lane: any, condition: 撰写或维护规范协议正文}
+    enforcement: required_when_applicable
+    clean_room: true
+    source: {ref: .trellis/spec/backend/index.md, lines: "8", section: 引言段}
+    duplicate_of: null
+    related: [POLICY.ROLE.NO_PERSONNEL_FACT_INFERENCE, AUTHORITY.ROLE.MODEL_VS_PROJECT_BINDING]
+    uncertainty: Catalog↔Project 分离锚点卡（vNext 设计已埋同类锚点）；classification 轴暂无体系治理值（vocab-pr V6 相关），暂记 LANE_POLICY
+    materialize: {recommendation: backlog, reason: PROJECT 类，属 vNext 概念账本体系治理轨}
+
+  - proposed_id: POLICY.SPEC.STABLE_APPEND_ONLY_ADDRESSING
+    kind: policy
+    classification: LANE_POLICY
+    sort: PROJECT
+    statement_zh: 协议的语义 ID、编号与规范文件名是稳定地址——只追加、不重排，编号不表达重要性或注入优先级。
+    statement_en_keywords: [stable addressing, append only, semantic id]
+    applies_when: {lane: any, condition: 规范族地址体系维护}
+    enforcement: required_when_applicable
+    clean_room: true
+    source: {ref: .trellis/spec/backend/index.md, lines: "8,168", section: 引言段 + 维护规则}
+    duplicate_of: null
+    related: [POLICY.SPEC.RULE_DEPRECATION_REQUIRES_MIGRATION]
+    uncertainty: 体系治理类卡（classification 轴暂无对应值）
+    materialize: {recommendation: backlog, reason: PROJECT 类，属体系治理轨}
+
+  - proposed_id: POLICY.SPEC.SINGLE_CANONICAL_HOME
+    kind: policy
+    classification: LANE_POLICY
+    sort: HYBRID
+    statement_zh: 任何规则修改必须就地落在路由表命中的既有协议文件；只有全部主题与覆盖层均无处归属时才允许新建协议文件，且必须同步双向索引。
+    statement_en_keywords: [single canonical home, no parallel file, index sync]
+    applies_when: {lane: any, condition: 给规范族补充或修改规则}
+    enforcement: required_when_applicable
+    clean_room: true
+    source: {ref: .trellis/spec/backend/index.md, lines: "16-18,56-59", section: 维护 spec 路由表 + 新增条件}
+    duplicate_of: null
+    related: []
+    uncertainty: 「规则必须有唯一权威文件、禁止平行文件漂移」原则本身 lane 中性可上提，对象绑定本规范体系，故 sort=HYBRID
+    materialize: {recommendation: backlog, reason: HYBRID，通用化变体（唯一权威文件原则）可作 R-F 式上提候选留 Owner}
+
+  - proposed_id: POLICY.SPEC.FAMILY_CONFLICT_PRECEDENCE
+    kind: policy
+    classification: LANE_POLICY
+    sort: HYBRID
+    statement_zh: 族内规则冲突按固定优先序裁决——安全优先于便利，服务端权威授权优先于客户端展示，正式契约优先于替代品、历史示例与会话记录，权威语义协议优先于边界转换协议。
+    statement_en_keywords: [conflict precedence, security over convenience, formal contract priority]
+    applies_when: {lane: any, condition: 族内协议语义冲突裁决}
+    enforcement: advisory
+    clean_room: true
+    source: {ref: .trellis/spec/backend/index.md, lines: "158-163", section: 冲突与责任边界}
+    duplicate_of: null
+    related: [POLICY.API.NO_INFORMAL_CONTRACT]
+    uncertainty: 该段为定义性优先序声明（无 MUST 标头），强制力档位留 Owner；其中「正式契约优先」子句已被 NO_INFORMAL_CONTRACT 覆盖，本卡价值在整序
+    materialize: {recommendation: backlog, reason: 定义性条款档位未决 + 子句与既有条目部分重叠}
+
+  - proposed_id: POLICY.SPEC.OVERLAY_TIGHTEN_ONLY
+    kind: policy
+    classification: LANE_POLICY
+    sort: PROJECT
+    statement_zh: 技术栈覆盖层只能收紧或具体化族内通用规则，不得存放项目事实，也不得放宽底线。
+    statement_en_keywords: [overlay tighten only, no relaxation, no project facts]
+    applies_when: {lane: any, condition: 撰写或审查技术栈覆盖层}
+    enforcement: required_when_applicable
+    clean_room: true
+    source: {ref: .trellis/spec/backend/index.md, lines: "164", section: 冲突与责任边界末条}
+    duplicate_of: null
+    related: [POLICY.SPEC.NO_PROJECT_FACTS_IN_PROTOCOLS]
+    uncertainty: 覆盖层机制为本体系结构原语（BE-G5 拆解对象的上位约束），classification 轴暂无体系治理值
+    materialize: {recommendation: backlog, reason: PROJECT 类；与 BE-G5 覆盖层拆解结果会合，留汇总组合并审}
+
+  - proposed_id: POLICY.SPEC.RULE_DEPRECATION_REQUIRES_MIGRATION
+    kind: policy
+    classification: LANE_POLICY
+    sort: PROJECT
+    statement_zh: 废弃规范规则必须给出替代语义 ID、兼容窗口与迁移说明，不得直接移除。
+    statement_en_keywords: [rule deprecation, replacement id, migration note]
+    applies_when: {lane: any, condition: 废弃任何规范规则}
+    enforcement: required_when_applicable
+    clean_room: true
+    source: {ref: .trellis/spec/backend/index.md, lines: "168", section: 维护规则}
+    duplicate_of: null
+    related: [POLICY.CHG.DEPRECATE_BEFORE_DELETE]
+    uncertainty: 与 DEPRECATE_BEFORE_DELETE 同构（对象不同——规范规则 vs 公共能力），互引不合并
+    materialize: {recommendation: backlog, reason: PROJECT 类 + 同构条目在册，按指针语义处理即可}
+
+files:
+  - ref: .trellis/spec/backend/01-architecture-governance-protocol.md
+    status: decomposed
+    lines: 58
+    cards: [POLICY.ARCH.DECISION_TRADEOFF_RECORD, POLICY.ARCH.NO_CONVENIENCE_OVER_BOUNDARY, POLICY.ARCH.PREFER_VERIFIABLE_OPTION, POLICY.TPL.ARCH_DECISION_RECORD, GATE.ARCH.BOUNDARY_CLARITY_CHECKS, KNOWLEDGE.ARCH.EXAMPLE_MONOLITH_VS_SERVICE_SPLIT, KNOWLEDGE.FP.ARCH.UNBOUND_IDEAL_DIAGRAM, AUTHORITY.ARCH.DECISION_OWNERS, POLICY.ARCH.ADR_IMMUTABLE_HISTORY]
+  - ref: .trellis/spec/backend/02-project-structure-governance-protocol.md
+    status: decomposed
+    lines: 58
+    cards: [POLICY.STRUCT.MODULE_ENTRY_DEPENDENCY_DECLARED, POLICY.STRUCT.NO_UNEXPLAINED_TOP_LEVEL_DIR, POLICY.STRUCT.REUSE_PROVEN_STRUCTURE, POLICY.TPL.STRUCT_CHANGE_RECORD, GATE.STRUCT.DISCOVERY_PATH_CHECKS, KNOWLEDGE.STRUCT.EXAMPLE_DOMAIN_MODULE_VIA_PUBLIC_API, KNOWLEDGE.FP.STRUCT.COPY_RENAME_MODULE_DRIFT, AUTHORITY.STRUCT.MODULE_OWNERS, POLICY.STRUCT.MOVE_SYNC_REFS_COMPAT_ENTRY]
+  - ref: .trellis/spec/backend/03-directory-boundary-protocol.md
+    status: decomposed
+    lines: 58
+    cards: [POLICY.BOUND.SEARCH_FIRST_ENTRY_ONLY, POLICY.BOUND.NO_SHARED_CROSS_DOMAIN_NO_INTERNAL_IMPORT, POLICY.BOUND.MINIMAL_WRITE_SET, POLICY.TPL.DEPENDENCY_DECLARATION, GATE.BOUND.WRITE_SET_ENTRY_REVIEW, KNOWLEDGE.BOUND.EXAMPLE_PORT_OVER_DIRECT_IMPL, KNOWLEDGE.FP.BOUND.ESCAPE_HATCH_COMMON_DIR, AUTHORITY.BOUND.ENTRY_CHANGE_APPROVAL, POLICY.BOUND.ENTRY_CHANGE_AS_CONTRACT]
+  - ref: .trellis/spec/backend/04-layering-architecture-protocol.md
+    status: decomposed
+    lines: 58
+    cards: [POLICY.LAYER.LOGIC_IN_TESTABLE_BOUNDARY, POLICY.LAYER.NO_AUTHORITATIVE_RULES_IN_EDGES, POLICY.LAYER.EXPLICIT_CONVERSION_SINGLE_VALIDATION, POLICY.TPL.LAYER_CONTRACT, GATE.LAYER.CALL_CHAIN_CLARITY_CHECKS, KNOWLEDGE.LAYER.EXAMPLE_TRANSPORT_APP_DOMAIN_SPLIT, KNOWLEDGE.FP.LAYER.PASSTHROUGH_SERVICE_FAT_CONTROLLER, AUTHORITY.LAYER.LAYERING_OWNERS, POLICY.LAYER.STAGED_CROSS_LAYER_MIGRATION]
+  - ref: .trellis/spec/backend/05-task-workflow-protocol.md
+    status: decomposed
+    lines: 58
+    cards: [POLICY.WF.TASK_FACTS_PRECONFIRM, POLICY.WF.NO_PLANNED_AS_VERIFIED, POLICY.WF.GAP_ESCALATION, POLICY.TPL.EXECUTION_RECORD, GATE.WF.STAGE_GOAL_ALIGNMENT, KNOWLEDGE.WF.EXAMPLE_MINIMAL_BASELINE_LOAD, KNOWLEDGE.FP.WF.CRITICALITY_TRIGGERED_OVERLOAD, AUTHORITY.WF.EXECUTION_REVIEW_SPLIT, POLICY.WF.STAGE_SEMANTICS_SYNC_CONSUMERS]
+  - ref: .trellis/spec/backend/06-ai-generated-code-protocol.md
+    status: decomposed
+    lines: 58
+    cards: [POLICY.AI.READ_SEARCH_VERIFY_BEFORE_WRITE, POLICY.AI.NO_INVENTED_FACTS, POLICY.AI.EXPLICIT_ASSUMPTION_MARKING, POLICY.TPL.AI_GENERATION_BINDING, GATE.AI.PREWRITE_ENVIRONMENT_CHECKS, KNOWLEDGE.AI.EXAMPLE_MISSING_FACT_TO_PENDING, KNOWLEDGE.FP.AI.CHAT_MEMORY_AS_EVIDENCE, AUTHORITY.AI.AGENT_USER_DECISION_BOUNDARY, POLICY.AI.PATTERN_FEEDS_FORBIDDEN_LIST]
+  - ref: .trellis/spec/backend/07-evidence-acceptance-protocol.md
+    status: decomposed
+    lines: 58
+    cards: [POLICY.EVID.ACCEPTANCE_BINDS_VERIFIABLE_EVIDENCE, POLICY.EVID.NO_UNVERIFIABLE_PASS, POLICY.EVID.RECORD_FAILURES_AND_EXCEPTION_EXPIRY, POLICY.TPL.ACCEPTANCE_RECORD, GATE.EVID.EVIDENCE_SCOPE_CONSISTENCY, KNOWLEDGE.EVID.EXAMPLE_MIGRATION_TEST_SCHEMA_HASH, KNOWLEDGE.FP.EVID.BARE_PASS_STATEMENT, AUTHORITY.EVID.IMPLEMENTER_PROVIDER_REVIEWER_JUDGE, POLICY.EVID.NO_SILENT_GATE_REMOVAL]
+  - ref: .trellis/spec/backend/08-contract-change-protocol.md
+    status: covered_by_pilot
+    lines: 58
+    cards: [COVERAGE.SPEC-D.BACKEND-08-CONTRACT-CHANGE]
+    note: 试点 pilot-0001 已全拆（byte_identical，sha256 双侧 805c146b…），9 张既有卡全覆盖，零新增
+  - ref: .trellis/spec/backend/09-role-responsibility-protocol.md
+    status: decomposed
+    lines: 58
+    cards: [POLICY.ROLE.IDENTIFIABLE_OWNER_FOR_HIGH_RISK, POLICY.ROLE.NO_COLLECTIVE_MASK, POLICY.ROLE.HANDOFF_ACCEPTANCE_TERMS, POLICY.TPL.RESPONSIBILITY_RECORD, GATE.ROLE.CROSS_ROLE_BOUNDARY_CLARITY, KNOWLEDGE.ROLE.EXAMPLE_PROVIDER_CONTRACT_CONSUMER_MIGRATION, KNOWLEDGE.FP.ROLE.LINK_ONLY_HANDOFF, AUTHORITY.ROLE.MODEL_VS_PROJECT_BINDING, POLICY.ROLE.NO_PERSONNEL_FACT_INFERENCE]
+    note: BE 族唯一 criticality=advisory 协议，MUST 卡带降档不确定性标注
+  - ref: .trellis/spec/backend/26-engineering-tooling-protocol.md
+    status: decomposed
+    lines: 58
+    cards: [POLICY.TOOL.DISCOVERABLE_TOOLCHAIN, POLICY.TOOL.NO_HAND_EDIT_GENERATED_NO_CI_DRIFT, POLICY.TOOL.AUTOMATED_DRIFT_DETECTION, POLICY.TPL.TOOLCHAIN_RECORD, GATE.TOOL.CLEAN_ENVIRONMENT_BUILD, KNOWLEDGE.TOOL.EXAMPLE_CI_REGENERATE_REJECT_DIFF, KNOWLEDGE.FP.TOOL.MACHINE_LOCAL_TOOLING, AUTHORITY.TOOL.TOOLCHAIN_OWNERS, POLICY.TOOL.UPGRADE_VERIFY_LOCK_ROLLBACK]
+  - ref: .trellis/spec/backend/27-dependency-supply-chain-protocol.md
+    status: decomposed
+    lines: 58
+    cards: [POLICY.DEP.ADMISSION_SIX_DIMENSION_CHECK, POLICY.DEP.NO_UNTRUSTED_SOURCE_NO_LOCK_BYPASS, POLICY.DEP.MINIMIZE_AND_TRACEABLE_BOM, POLICY.TPL.DEPENDENCY_CHANGE_RECORD, GATE.DEP.SUPPLY_CHAIN_AUDIT_SCOPE, KNOWLEDGE.DEP.EXAMPLE_SECURITY_UPGRADE_VERIFICATION, KNOWLEDGE.FP.DEP.HEAVY_DEP_FOR_TRIVIAL_FUNCTION, AUTHORITY.DEP.ADMISSION_AND_BLOCK_OWNERS, POLICY.DEP.TIME_BOXED_URGENT_EXCEPTION]
+  - ref: .trellis/spec/backend/28-testing-protocol.md
+    status: decomposed
+    lines: 58
+    cards: [POLICY.TEST.RISK_DRIVEN_PLAN, POLICY.TEST.NO_SYNTHETIC_STABILITY, POLICY.TEST.CONTROL_NONDETERMINISM_KEEP_DIAGNOSIS, POLICY.TPL.TEST_EVIDENCE_RECORD, GATE.TEST.LAYER_SELECTION_BY_IMPACT, KNOWLEDGE.TEST.EXAMPLE_MIGRATION_FORWARD_COMPAT_RECOVERY, KNOWLEDGE.FP.TEST.ALL_MOCK_INTEGRATION_CLAIM, AUTHORITY.TEST.CHANGE_TEST_OWNERS, POLICY.TEST.REMOVAL_NEEDS_SUBSTITUTE_EVIDENCE]
+  - ref: .trellis/spec/backend/32-release-versioning-rollback-protocol.md
+    status: decomposed
+    lines: 58
+    cards: [POLICY.REL.PRE_RELEASE_CONFIRMATION, POLICY.REL.NO_IRREVERSIBLE_UNMONITORED_FULL_RELEASE, POLICY.REL.CANARY_SWITCH_PARALLEL_COMPAT, POLICY.TPL.RELEASE_RECORD, GATE.REL.VERSION_ALIGNMENT_CHECKS, KNOWLEDGE.REL.EXAMPLE_EXPAND_MIGRATE_CLEAN, KNOWLEDGE.FP.REL.ROLLBACK_AS_REVERSE_MIGRATION, AUTHORITY.REL.RELEASE_GATE_OWNERS, POLICY.REL.PROCESS_CHANGE_NEEDS_DRILL_AUDIT]
+  - ref: .trellis/spec/backend/index.md
+    status: decomposed
+    lines: 168
+    cards: [POLICY.SPEC.NO_PROJECT_FACTS_IN_PROTOCOLS, POLICY.SPEC.STABLE_APPEND_ONLY_ADDRESSING, POLICY.SPEC.SINGLE_CANONICAL_HOME, POLICY.SPEC.FAMILY_CONFLICT_PRECEDENCE, POLICY.SPEC.OVERLAY_TIGHTEN_ONLY, POLICY.SPEC.RULE_DEPRECATION_REQUIRES_MIGRATION]
+    residue_note: 协议目录表（L64-97）/默认注入基线（L99-117）/任务 Trigger 矩阵（L119-137）/协议固定结构清单（L139-154）为机器路由与结构约定，无可提取政策语义，未产候选卡（residue 记录，非空结论）

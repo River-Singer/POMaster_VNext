@@ -1,0 +1,671 @@
+# GUIDES 组候选卡 · spec-decomposition 批次 SPEC-D
+# 状态: PROPOSAL（source=design_seed, evidence=PLANNED）；Human Review 为内置下一步
+# 方法论: docs/catalog-pilot-report.md §3-§6 忠实复制；schema 对齐 catalog/candidates/candidates-draft.json
+
+meta:
+  batch: SPEC-D
+  group: GUIDES
+  file: candidates/GUIDES.yaml
+  seq: SPEC-D
+  status: PROPOSAL
+  proposal_source: design_seed
+  proposal_evidence: PLANNED
+  human_review_required: true
+  discipline:
+    - "MASTer_master 只读：仅读取 .trellis/spec/guides/** 与 .trellis/spec/spec-manifest.jsonl；源树零写入"
+    - "禁墙钟：本文件零时间戳；批次代号固定 SPEC-D"
+    - "clean-room：全部 statement_zh 独立措辞（语义等价、词形独立），零逐字拷贝源文本"
+    - "专名纪律：项目专名不入 UNIVERSAL 卡 statement；PROJECT 卡携带专名并标 project_scope"
+    - "D5 防膨胀：本文件是 backlog 留档，全部候选保持 PROPOSAL；物化入册由『高置信 Universal + MUST 级 + 零重复』保守精选另行收口，不因本文件存在而全量入册"
+  denominator:
+    files_in_scope: 8
+    files_with_candidates: 7
+    files_with_empty_conclusion: 1
+    empty_conclusion_files:
+      - ".trellis/spec/spec-manifest.jsonl"
+  duplicate_policy:
+    checked_against:
+      - "既有 69 条物化条目（catalog/policies 54 + catalog/knowledge 10 + catalog/gates 5，文件名逐一核对）"
+      - "试点 82 候选（catalog/candidates/candidates-draft.json 全量 candidate_id）"
+    true_duplicates_found: 0
+    duplicate_cards: 0
+    note: "本批零 DUPLICATE 卡，故全文件无 duplicate_of 字段；9 张卡带部分重叠/跨批合并审阅标注（见 stats.partial_overlap_cards）"
+  stats:
+    total_candidates: 33
+    by_scope_sort: { UNIVERSAL: 26, HYBRID: 3, PROJECT: 4 }
+    by_kind_proposal: { policy: 28, knowledge_entry: 1, project_state: 4 }
+    by_enforcement: { required_when_applicable: 2, advisory: 31 }
+    partial_overlap_cards:
+      - "POLICY.REUSE.POST_BATCH_COMPLETENESS_SWEEP"
+      - "POLICY.LAYER.VALIDATE_ONCE_AT_ENTRY"
+      - "POLICY.LAYER.NO_LOWER_LAYER_SCHEMA_LEAK"
+      - "POLICY.BRIEF.PREDEV_READONLY_PLANNED_VIEW"
+      - "POLICY.FACTSOURCE.NO_DERIVED_CONCLUSION_WRITEBACK"
+      - "POLICY.PRECISION.COMPUTE_DISPLAY_SEPARATION"
+      - "POLICY.COPY.NO_USER_COPY_IN_LOGIC_LAYER"
+      - "POLICY.CHG.PRE_MODIFY_REFERENCE_SEARCH"
+      - "POLICY.REGISTRY.NO_DELETE_TO_SILENCE_VALIDATION"
+  vocab_note: "policy 类候选沿用试点 V1 缺口（kind=policy 不在 truth_bodies），vocab_pr_needed=true；新主题段（REUSE/LAYER/DERIVED/FACTSOURCE/PRECISION/EXPR_EVAL/MIGRATION/COPY/CHG 增员/REGISTRY/PROC/PATHOWNERSHIP/PROVIDER/BACKUP/SCRATCH/FACTS/BRIEF/REFACTOR/REFINTEGRITY）随 V9 段式语法草案一并送 vocab-pr"
+
+# ---------------------------------------------------------------------------
+# 文件覆盖分母（8/8：7 份有卡 + 1 份诚实空结论）
+# ---------------------------------------------------------------------------
+
+files:
+  - file: ".trellis/spec/guides/code-reuse-thinking-guide.md"
+    sha256: "384a39773b375d2e690c90d0760508d2d423b98e05a8cd6a2b57914cb6357180"
+    conclusion: CANDIDATES
+    cards: ["POLICY.REUSE.SEARCH_BEFORE_CREATE", "POLICY.REUSE.CONSTANT_SINGLE_DEFINITION", "POLICY.REUSE.ABSTRACTION_THRESHOLD", "POLICY.REUSE.POST_BATCH_COMPLETENESS_SWEEP", "KNOWLEDGE.FP.REUSE.ASYMMETRIC_OUTPUT_DRIFT"]
+    coverage_note: "动机性表述（重复代码是一致性缺陷首因）不产卡；文末 commit 前清单作为 C1/C2 的 source 锚不单出卡"
+  - file: ".trellis/spec/guides/cross-layer-thinking-guide.md"
+    sha256: "b89b09d8356f9985a838613d425e15e97bd4b5b9e8640cfe0c941d97fb152ef6"
+    conclusion: CANDIDATES
+    cards: ["POLICY.LAYER.FLOW_MAP_AND_BOUNDARY_CONTRACTS", "POLICY.LAYER.VALIDATE_ONCE_AT_ENTRY", "POLICY.LAYER.NO_LOWER_LAYER_SCHEMA_LEAK", "POLICY.LAYER.ROUNDTRIP_AND_EDGE_VERIFICATION", "POLICY.LAYER.FLOW_DOC_TRIGGER"]
+    coverage_note: "Mistake 1（隐含格式假设）作为 C6 的禁止形态并入，不单出卡；边界类型表（API/Service/DB/组件）为示例素材不产卡"
+  - file: ".trellis/spec/guides/frontend/FRONTEND-IMPLEMENTATION-BRIEF.md"
+    sha256: "98f0f5605fdd13103f5a62f1fa6ff2318db61324edb5e93e91ca6d7f814e029e"
+    conclusion: CANDIDATES
+    cards: ["POLICY.BRIEF.PREDEV_READONLY_PLANNED_VIEW", "POLICY.REFACTOR.INTENT_SOURCE_FROZEN_BASELINE", "PROJECT.BRIEF.MASTER_FRONTEND_V140_SNAPSHOT"]
+    coverage_note: "主体为 MASTer 项目状态快照（能力/任务/FTA/切片/验收），仅 2 条可泛化语义出 UNIVERSAL 卡，其余归 PROJECT 卡"
+  - file: ".trellis/spec/guides/frontend/formula-engine.md"
+    sha256: "7b5f40ec5f207d0ff131f656b0fbb8681c03c725edbb5ff9c90dd0df7c386e5c"
+    conclusion: CANDIDATES
+    cards: ["POLICY.DERIVED.SINGLE_IMPLEMENTATION", "POLICY.FACTSOURCE.NO_DERIVED_CONCLUSION_WRITEBACK", "POLICY.PRECISION.COMPUTE_DISPLAY_SEPARATION", "POLICY.EXPR_EVAL.CLOSED_SANDBOX_EVALUATION", "POLICY.MIGRATION.WIRE_FIRST_RETIRE_LATER", "POLICY.COPY.NO_USER_COPY_IN_LOGIC_LAYER", "PROJECT.CALC.ENGINE_LAYER_DECISION_RECORD"]
+    coverage_note: "CalcResult 四态判别联合、engine_expression 规范化规则、具体闭包成员与目录结构属项目实现细节，归 PROJECT 卡不出通用卡"
+  - file: ".trellis/spec/guides/index.md"
+    sha256: "1fe1379a91e6cf001dbd476a9dfebd4f58d176cff65c2e4ab491362dd18f9297"
+    conclusion: CANDIDATES
+    cards: ["POLICY.CHG.PRE_MODIFY_REFERENCE_SEARCH", "POLICY.REFINTEGRITY.GHOST_REFERENCE_PRECHECK"]
+    coverage_note: "目录导航/触发器索引/使用说明为 meta 结构不产卡；L84『bug 后回填洞察』与 POLICY.SPEC.POST_DEV_BACKFILL_CLASSIFY（既有正本）语义相邻，已有正本覆盖该语义域，不出卡"
+  - file: ".trellis/spec/guides/pomaster-frontend-prepare-governance-guide.md"
+    sha256: "323ae5892664d35fd6fee370dea3098aaa8ffaff4e3abdea6020d84bc49fb217"
+    conclusion: CANDIDATES
+    cards: ["POLICY.PROC.DRYRUN_CHANGE_CHECK_BEFORE_CONFIRM", "POLICY.REGISTRY.NO_DELETE_TO_SILENCE_VALIDATION", "POLICY.REGISTRY.SHARED_SURFACE_MACHINE_FACTSOURCE", "POLICY.PROC.STOPGAP_WITH_RETURN_TO_FULL_LOOP", "PROJECT.MASTER.PREPARE_CHAIN_OPS_GOTCHAS"]
+    coverage_note: "步骤编排/工具输出键/registry schema 约束等运维事实归 PROJECT 卡；可泛化纪律 4 条出卡"
+  - file: ".trellis/spec/guides/project-readonly-boundaries-guide.md"
+    sha256: "83cf09447c9ff5d0b83b8a35e40dcba79c1ade0d8f509f365140bdaeccb6d14d"
+    conclusion: CANDIDATES
+    cards: ["POLICY.PATHOWNERSHIP.PREWRITE_OWNERSHIP_CHECK", "POLICY.PROVIDER.MANAGED_SPECS_READONLY_VIA_SYNC_CHANNEL", "POLICY.BACKUP.SOLE_ROLLBACK_ARTIFACT_IMMUTABLE", "POLICY.SCRATCH.TIMEBOXED_MIGRATION_OBLIGATION", "POLICY.FACTS.PROJECT_UNIVERSAL_SEPARATION", "PROJECT.MASTER.PATH_OWNERSHIP_MAP"]
+    coverage_note: "具体路径清单与 Owner 表归 PROJECT 卡；5 条可泛化纪律出卡（各为源清单逐条目的一一映射）"
+  - file: ".trellis/spec/spec-manifest.jsonl"
+    sha256: "6b6033538bacc30d9e33ac850b11e9600d10cff949926cc8e1cf113cccde3c94"
+    conclusion: EMPTY
+    empty_reason: "全文件 46 行均为前端协议文件路径的逐行 JSON 记录，属机器清单数据，无任何政策/知识语义可提取；其清单职能已由盘点层 spec-inventory.yaml 覆盖，建议该文件本体随目录结构 lock 收编，不产出候选卡。空结论即结果。"
+
+# ---------------------------------------------------------------------------
+# 候选卡（33 张；数组顺序 = 确定性排序：文件序 + 行锚序）
+# ---------------------------------------------------------------------------
+
+candidates:
+  # --- 文件 1: code-reuse-thinking-guide.md ---
+  - candidate_id: "POLICY.REUSE.SEARCH_BEFORE_CREATE"
+    source: design_seed
+    evidence: PLANNED
+    source_file: ".trellis/spec/guides/code-reuse-thinking-guide.md"
+    source_lines: "L3, L20-38, L100-105"
+    source_section: "The Problem + Before Writing New Code + Checklist Before Commit"
+    kind_proposal: policy
+    classification_suggestion: UNIVERSAL_POLICY
+    scope_sort: UNIVERSAL
+    applies_when: { lane: any, condition: "准备编写任何新函数/组件/工具时" }
+    enforcement: advisory
+    vocab_pr_needed: true
+    statement_zh: "新建任何函数、组件或工具之前必须先检索既有实现：已有相似能力则复用或扩展，已有既定模式则沿用该模式；一旦发现自己正在跨文件复制代码即停止动作，改为提取到共享位置后再引用。"
+    statement_en_keywords: ["search before create", "reuse or extend existing", "follow established pattern", "stop on cross-file copy", "extract to shared"]
+    clean_room: { independent_wording: true, note: "statement_zh 为独立改写，语义等价、词形独立，零逐字拷贝源文本" }
+    uncertainty: "源文对跨文件复制用强禁令语气（STOP），是否升 required_when_applicable 交 Owner 裁决"
+    notes: "与 KNOWLEDGE.FP.API.PER_PAGE_HTTP_CLIENT（请求层重复实例失败模式）互为政策/症候对，建议互引"
+
+  - candidate_id: "POLICY.REUSE.CONSTANT_SINGLE_DEFINITION"
+    source: design_seed
+    evidence: PLANNED
+    source_file: ".trellis/spec/guides/code-reuse-thinking-guide.md"
+    source_lines: "L41-45, L55-59, L104"
+    source_section: "Common Duplication Patterns / Pattern 3 Repeated Constants"
+    kind_proposal: policy
+    classification_suggestion: UNIVERSAL_POLICY
+    scope_sort: UNIVERSAL
+    applies_when: { lane: any, condition: "定义常量或发现重复字面常量时" }
+    enforcement: advisory
+    vocab_pr_needed: true
+    statement_zh: "同一常量全库只允许一个定义点，其余位置一律引用该定义；禁止在多个文件重复书写相同字面常量。"
+    statement_en_keywords: ["single definition point", "no duplicated literal constants", "import instead of redeclare"]
+    clean_room: { independent_wording: true, note: "statement_zh 为独立改写，语义等价、词形独立，零逐字拷贝源文本" }
+    notes: "与 POLICY.WEB.API.SINGLE_HTTP_CLIENT 主题相邻但对象不同（字面常量 vs 传输设施单点），非重复"
+
+  - candidate_id: "POLICY.REUSE.ABSTRACTION_THRESHOLD"
+    source: design_seed
+    evidence: PLANNED
+    source_file: ".trellis/spec/guides/code-reuse-thinking-guide.md"
+    source_lines: "L63-74"
+    source_section: "When to Abstract"
+    kind_proposal: policy
+    classification_suggestion: UNIVERSAL_POLICY
+    scope_sort: UNIVERSAL
+    applies_when: { lane: any, condition: "决定是否把重复代码提取为共享抽象时" }
+    enforcement: advisory
+    vocab_pr_needed: true
+    statement_zh: "提取共享的时机判据：同一段代码出现三次及以上、逻辑复杂到可能藏有缺陷、或预计多方需要时才值得抽象；仅单处使用、一行量级、或抽象本身比重复更复杂的场景应保留重复，不为抽象而抽象。"
+    statement_en_keywords: ["abstraction threshold", "rule of three", "do not over-abstract", "complexity vs duplication tradeoff"]
+    clean_room: { independent_wording: true, note: "statement_zh 为独立改写，语义等价、词形独立，零逐字拷贝源文本" }
+    uncertainty: "「三次」阈值为源文经验参数，可声明由项目基线覆写"
+
+  - candidate_id: "POLICY.REUSE.POST_BATCH_COMPLETENESS_SWEEP"
+    source: design_seed
+    evidence: PLANNED
+    source_file: ".trellis/spec/guides/code-reuse-thinking-guide.md"
+    source_lines: "L77-84"
+    source_section: "After Batch Modifications"
+    kind_proposal: policy
+    classification_suggestion: UNIVERSAL_POLICY
+    scope_sort: UNIVERSAL
+    applies_when: { lane: any, condition: "对多个文件完成同构修改后" }
+    enforcement: advisory
+    vocab_pr_needed: true
+    statement_zh: "对多个文件完成同构修改后必须做完整性复核：逐处确认同类实例无遗漏，用检索工具复查一遍，并评估该重复模式是否已达到提取共享的时机。"
+    statement_en_keywords: ["post-batch completeness sweep", "grep for missed instances", "reassess abstraction timing"]
+    clean_room: { independent_wording: true, note: "statement_zh 为独立改写，语义等价、词形独立，零逐字拷贝源文本" }
+    uncertainty: "与 POLICY.CHG.FIX_AT_ROOT_CAUSE_LEVEL 同族（修一处扫一类）：触发点不同（批量修改完整性复核 vs 缺陷修复层级判定）；建议合并审阅而非独立入册"
+
+  - candidate_id: "KNOWLEDGE.FP.REUSE.ASYMMETRIC_OUTPUT_DRIFT"
+    source: design_seed
+    evidence: PLANNED
+    source_file: ".trellis/spec/guides/code-reuse-thinking-guide.md"
+    source_lines: "L87-97"
+    source_section: "Gotcha: Asymmetric Mechanisms Producing Same Output"
+    kind_proposal: knowledge_entry
+    classification_suggestion: FAILURE_PATTERN
+    scope_sort: UNIVERSAL
+    applies_when: { lane: any, condition: "存在多机制产出同一输出集的架构评审场景" }
+    enforcement: advisory
+    vocab_pr_needed: false
+    statement_zh: "失败模式：同一输出集由自动派生与人工维护两条机制分别产出时，结构性调整（重命名、移动、新增子路径）只传导到自动路径，人工路径静默漂移——初始化场景看似完好，更新场景开始产出错误路径或遗漏文件。防御：结构迁移时排查引用旧结构的全部代码路径；一端自动派生、另一端人工罗列的组合必须把人工端列为必改项；为两条机制的输出一致性建立回归比对测试。"
+    statement_en_keywords: ["failure pattern", "asymmetric mechanisms", "manual mirror path drift", "regression diff between generators"]
+    clean_room: { independent_wording: true, note: "statement_zh 为独立改写，语义等价、词形独立，零逐字拷贝源文本" }
+    notes: "B3 failure-pattern 附带池候选；与 po-master 侧 mirror 同步事故经验同型（经验证的真实失败形态）"
+
+  # --- 文件 2: cross-layer-thinking-guide.md ---
+  - candidate_id: "POLICY.LAYER.FLOW_MAP_AND_BOUNDARY_CONTRACTS"
+    source: design_seed
+    evidence: PLANNED
+    source_file: ".trellis/spec/guides/cross-layer-thinking-guide.md"
+    source_lines: "L18-48, L52-57"
+    source_section: "Before Implementing Cross-Layer Features（Step 1-3）+ Mistake 1"
+    kind_proposal: policy
+    classification_suggestion: UNIVERSAL_POLICY
+    scope_sort: UNIVERSAL
+    applies_when: { lane: any, condition: "实现跨越多层边界的功能之前" }
+    enforcement: advisory
+    vocab_pr_needed: true
+    statement_zh: "实现跨层功能前必须先绘制端到端数据流，逐边界显式定义输入格式、输出格式、可能错误与验证责任归属；每处跨界转换显式书写，禁止依赖对数据表示的隐含假设（如未经核实的日期或数值格式）。"
+    statement_en_keywords: ["map data flow first", "explicit boundary contracts", "validation responsibility per boundary", "no implicit format assumptions"]
+    clean_room: { independent_wording: true, note: "statement_zh 为独立改写，语义等价、词形独立，零逐字拷贝源文本" }
+    notes: "Mistake 1（隐含格式假设）以禁止形态并入本卡"
+
+  - candidate_id: "POLICY.LAYER.VALIDATE_ONCE_AT_ENTRY"
+    source: design_seed
+    evidence: PLANNED
+    source_file: ".trellis/spec/guides/cross-layer-thinking-guide.md"
+    source_lines: "L59-63"
+    source_section: "Mistake 2: Scattered Validation"
+    kind_proposal: policy
+    classification_suggestion: UNIVERSAL_POLICY
+    scope_sort: UNIVERSAL
+    applies_when: { lane: any, condition: "为跨层数据布置业务校验时" }
+    enforcement: advisory
+    vocab_pr_needed: true
+    statement_zh: "同一业务规则的校验只在数据入口点执行一次，禁止同一校验在多个层级散落重复。"
+    statement_en_keywords: ["validate once at entry point", "no scattered multi-layer validation"]
+    clean_room: { independent_wording: true, note: "statement_zh 为独立改写，语义等价、词形独立，零逐字拷贝源文本" }
+    uncertainty: "与 MIG-B4 layers.entities 子规则「查询错误先归一化再上抛」对象相邻（校验落点 vs 错误归一化），非重复"
+
+  - candidate_id: "POLICY.LAYER.NO_LOWER_LAYER_SCHEMA_LEAK"
+    source: design_seed
+    evidence: PLANNED
+    source_file: ".trellis/spec/guides/cross-layer-thinking-guide.md"
+    source_lines: "L65-69"
+    source_section: "Mistake 3: Leaky Abstractions"
+    kind_proposal: policy
+    classification_suggestion: UNIVERSAL_POLICY
+    scope_sort: UNIVERSAL
+    applies_when: { lane: any, condition: "任意层引用其他层信息或形态时" }
+    enforcement: advisory
+    vocab_pr_needed: true
+    statement_zh: "每层只允许感知相邻层的形态：展示层不得感知持久化结构或存储 schema，跨界信息由相邻层转译后传递。"
+    statement_en_keywords: ["neighbors-only knowledge", "no persistence schema leak into presentation", "translation at boundaries"]
+    clean_room: { independent_wording: true, note: "statement_zh 为独立改写，语义等价、词形独立，零逐字拷贝源文本" }
+    uncertainty: "与 POLICY.WEB.ARCH.LAYER_ISOLATION 语义同族：该条管依赖方向与公开出口（frontend lane），本条管跨层形态感知（lane 中性）；建议合并审阅决定并入其子规则或独立入册"
+
+  - candidate_id: "POLICY.LAYER.ROUNDTRIP_AND_EDGE_VERIFICATION"
+    source: design_seed
+    evidence: PLANNED
+    source_file: ".trellis/spec/guides/cross-layer-thinking-guide.md"
+    source_lines: "L81-84"
+    source_section: "Checklist for Cross-Layer Features（After implementation）"
+    kind_proposal: policy
+    classification_suggestion: UNIVERSAL_POLICY
+    scope_sort: UNIVERSAL
+    applies_when: { lane: any, condition: "跨层功能交付验收前" }
+    enforcement: advisory
+    vocab_pr_needed: true
+    statement_zh: "跨层功能交付前必须验证：数据经边界往返后内容存续、每个边界的错误处理符合契约，并以空值、空集、非法值三类边界用例覆盖。"
+    statement_en_keywords: ["round-trip data survival", "boundary error handling verification", "null/empty/invalid edge cases"]
+    clean_room: { independent_wording: true, note: "statement_zh 为独立改写，语义等价、词形独立，零逐字拷贝源文本" }
+
+  - candidate_id: "POLICY.LAYER.FLOW_DOC_TRIGGER"
+    source: design_seed
+    evidence: PLANNED
+    source_file: ".trellis/spec/guides/cross-layer-thinking-guide.md"
+    source_lines: "L88-94"
+    source_section: "When to Create Flow Documentation"
+    kind_proposal: policy
+    classification_suggestion: UNIVERSAL_POLICY
+    scope_sort: UNIVERSAL
+    applies_when: { lane: any, condition: "决定是否为功能产出数据流文档时" }
+    enforcement: advisory
+    vocab_pr_needed: true
+    statement_zh: "功能跨越三层及以上、涉及多方协作、数据格式复杂或有历史缺陷记录时，应产出显式数据流文档；未命中触发条件的功能不强制。"
+    statement_en_keywords: ["flow documentation trigger", "multi-layer threshold", "bug-history trigger"]
+    clean_room: { independent_wording: true, note: "statement_zh 为独立改写，语义等价、词形独立，零逐字拷贝源文本" }
+    uncertainty: "「三层」阈值为源文经验参数，可声明由项目基线覆写"
+
+  # --- 文件 3: FRONTEND-IMPLEMENTATION-BRIEF.md ---
+  - candidate_id: "POLICY.BRIEF.PREDEV_READONLY_PLANNED_VIEW"
+    source: design_seed
+    evidence: PLANNED
+    source_file: ".trellis/spec/guides/frontend/FRONTEND-IMPLEMENTATION-BRIEF.md"
+    source_lines: "L155"
+    source_section: "文末编译视图语义声明"
+    kind_proposal: policy
+    classification_suggestion: UNIVERSAL_POLICY
+    scope_sort: UNIVERSAL
+    applies_when: { lane: any, condition: "消费任何实施简报类编译视图时" }
+    enforcement: advisory
+    vocab_pr_needed: true
+    statement_zh: "实施简报类编译视图是开发前只读产物，仅承载规划语义；其内容不构成仓库中已有文件、符号、行号、提交或哈希的证据，禁止据其断言实现现状。"
+    statement_en_keywords: ["pre-dev compiled view", "read-only", "planned semantics only", "not evidence of repository state"]
+    clean_room: { independent_wording: true, note: "statement_zh 为独立改写，语义等价、词形独立，零逐字拷贝源文本" }
+    uncertainty: "与 POLICY.SPEC.DRAFT_NOT_BASELINE 认识论同族但方向相反（草稿≠基线 vs 规划视图≠现状证据），建议互引不合并"
+    notes: "guides/pomaster-frontend-prepare-governance-guide.md L10（plan-ready 与 implementation-authorized 并存属设计使然）为同族印证锚"
+
+  - candidate_id: "POLICY.REFACTOR.INTENT_SOURCE_FROZEN_BASELINE"
+    source: design_seed
+    evidence: PLANNED
+    source_file: ".trellis/spec/guides/frontend/FRONTEND-IMPLEMENTATION-BRIEF.md"
+    source_lines: "L95"
+    source_section: "技术评估 FTA-BG-USABLE"
+    kind_proposal: policy
+    classification_suggestion: UNIVERSAL_POLICY
+    scope_sort: UNIVERSAL
+    applies_when: { lane: any, condition: "重构或重写既有实现时" }
+    enforcement: advisory
+    vocab_pr_needed: true
+    statement_zh: "重构或重写的唯一意图来源是显式冻结的基线文档；禁止从既有实现反推意图并据以重构；既有代码与基线冲突时以基线为准并登记偏差。"
+    statement_en_keywords: ["frozen baseline as sole intent source", "no intent reverse-engineering from legacy code", "deviation registration"]
+    clean_room: { independent_wording: true, note: "statement_zh 为独立改写（源句含项目专名，通用化改写），语义等价、词形独立，零逐字拷贝" }
+    uncertainty: "源语句出自项目 FTA 条目（语气为「必须」），通用化为 UNIVERSAL 与强度降 advisory 均交 Owner 审"
+
+  - candidate_id: "PROJECT.BRIEF.MASTER_FRONTEND_V140_SNAPSHOT"
+    source: design_seed
+    evidence: PLANNED
+    source_file: ".trellis/spec/guides/frontend/FRONTEND-IMPLEMENTATION-BRIEF.md"
+    source_lines: "L1-154"
+    source_section: "全文件（项目状态快照主体）"
+    kind_proposal: project_state
+    classification_suggestion: PROJECT_BASELINE_TEMPLATE
+    scope_sort: PROJECT
+    project_scope: true
+    applies_when: { lane: any, condition: "不适用（项目状态对象，非行为规则）" }
+    enforcement: advisory
+    vocab_pr_needed: false
+    statement_zh: "本文件是 MASTer 前端重构（蓝图 BP-MASTER-FRONTEND-REFACTOR 1.4.0）的开发前编译快照：30 个能力、15 个任务步骤与候选页面、18 项 FTA 技术评估、15 个实施切片、13 条验收准则，均为项目专属状态数据；可泛化语义仅 artifact 认识论两条（已出卡），其余按 Project State 对象收编，不进 Catalog 正本。"
+    statement_en_keywords: ["project state snapshot", "compiled brief", "MASTer-specific"]
+    clean_room: { independent_wording: true, note: "描述性概要为独立措辞；项目专名按 PROJECT 卡豁免保留" }
+
+  # --- 文件 4: formula-engine.md ---
+  - candidate_id: "POLICY.DERIVED.SINGLE_IMPLEMENTATION"
+    source: design_seed
+    evidence: PLANNED
+    source_file: ".trellis/spec/guides/frontend/formula-engine.md"
+    source_lines: "L111"
+    source_section: "Vue 集成（派生列单实现条款）"
+    kind_proposal: policy
+    classification_suggestion: UNIVERSAL_POLICY
+    scope_sort: UNIVERSAL
+    applies_when: { lane: any, condition: "任何派生值的计算实现" }
+    enforcement: required_when_applicable
+    vocab_pr_needed: true
+    statement_zh: "同一派生值的计算全库只允许一个实现点（计算引擎或等价单点）；映射层、状态容器或视图不得另写第二份同名派生逻辑——第二份实现不随事实源表达式变更演进，必然静默漂移且无门禁可查。"
+    statement_en_keywords: ["single implementation of derived value", "no parallel computation", "silent drift of second implementation"]
+    clean_room: { independent_wording: true, note: "statement_zh 为独立改写（源句含 Vue/grid 词面，已泛化），语义等价、词形独立，零逐字拷贝" }
+    notes: "源句为 MUST 语气且源文件 authority=canonical，故提 required_when_applicable；与 POLICY.REUSE.SEARCH_BEFORE_CREATE 政策/症候互补"
+
+  - candidate_id: "POLICY.FACTSOURCE.NO_DERIVED_CONCLUSION_WRITEBACK"
+    source: design_seed
+    evidence: PLANNED
+    source_file: ".trellis/spec/guides/frontend/formula-engine.md"
+    source_lines: "L68-77"
+    source_section: "blocked 协议（传播成员与 status 字段）"
+    kind_proposal: policy
+    classification_suggestion: UNIVERSAL_POLICY
+    scope_sort: UNIVERSAL
+    applies_when: { lane: any, condition: "设计事实源 schema 或决定派生结论的承载方式时" }
+    enforcement: required_when_applicable
+    vocab_pr_needed: true
+    statement_zh: "事实源只承载直接事实；可由事实推导的结论（传播、闭包、聚合状态）必须在使用时计算，禁止把派生结论回写成事实源字段——回写让事实源承担双重身份并引入陈旧风险。"
+    statement_en_keywords: ["fact source carries direct facts only", "derived conclusions computed at use time", "no writeback of propagated state"]
+    clean_room: { independent_wording: true, note: "statement_zh 为独立改写（源句语境为 blocked 闭包，已泛化），语义等价、词形独立，零逐字拷贝" }
+    uncertainty: "与 layers.entities「禁止把远端状态复制进客户端仓库做手工双向同步」相邻（客户端复制 vs 事实源回写），非重复；建议互引"
+    notes: "源句为 MUST NOT 语气，故提 required_when_applicable"
+
+  - candidate_id: "POLICY.PRECISION.COMPUTE_DISPLAY_SEPARATION"
+    source: design_seed
+    evidence: PLANNED
+    source_file: ".trellis/spec/guides/frontend/formula-engine.md"
+    source_lines: "L56-66"
+    source_section: "4c2d 精度落点"
+    kind_proposal: policy
+    classification_suggestion: UNIVERSAL_POLICY
+    scope_sort: UNIVERSAL
+    applies_when: { lane: any, condition: "涉及计算精度与展示格式化的功能" }
+    enforcement: advisory
+    vocab_pr_needed: true
+    statement_zh: "计算精度与展示精度必须分离：计算链路按显式定义的舍入点执行精度策略，中间值保持全精度不逐算子舍入，展示层截断或格式化后的值禁止回代参与后续计算。"
+    statement_en_keywords: ["compute vs display precision separation", "explicit rounding points", "no per-operator rounding", "display value never back-substituted"]
+    clean_room: { independent_wording: true, note: "statement_zh 为独立改写（源文 4c2d 具体参数留项目层），语义等价、词形独立，零逐字拷贝" }
+    uncertainty: "精度本体属 FE-G2 13-monetary-precision-protocol 拆解范围（非本批名下）：本卡只主张本文件独有增量（每公式输出级舍入、聚合语义独立舍入点、展示值禁回代）；与 FE-G2 拆解结果重叠风险高，物化前必须跨批合并审阅"
+
+  - candidate_id: "POLICY.EXPR_EVAL.CLOSED_SANDBOX_EVALUATION"
+    source: design_seed
+    evidence: PLANNED
+    source_file: ".trellis/spec/guides/frontend/formula-engine.md"
+    source_lines: "L143-152"
+    source_section: "自定义公式扩展点（安全边界）"
+    kind_proposal: policy
+    classification_suggestion: UNIVERSAL_POLICY
+    scope_sort: UNIVERSAL
+    applies_when: { lane: any, condition: "实现或评审表达式求值器时" }
+    enforcement: advisory
+    vocab_pr_needed: true
+    statement_zh: "求值用户可控表达式必须使用闭合实现：禁用动态求值原语（eval、函数构造器、with），未识别节点显式失败，可调用函数限于引擎注册的白名单作用域，不可触达全局对象；该闭合性使同一求值器可安全作用于不可信输入。"
+    statement_en_keywords: ["closed visitor evaluation", "no eval/new Function/with", "whitelisted scope functions", "untrusted-input safe"]
+    clean_room: { independent_wording: true, note: "statement_zh 为独立改写（源句 jsep/expr-eval/mathjs 选型词面留项目层），语义等价、词形独立，零逐字拷贝" }
+    uncertainty: "源上下文为预留扩展点（用户自定义公式未来路径），非当前运行路径；闭合求值的安全语义本身通用"
+
+  - candidate_id: "POLICY.MIGRATION.WIRE_FIRST_RETIRE_LATER"
+    source: design_seed
+    evidence: PLANNED
+    source_file: ".trellis/spec/guides/frontend/formula-engine.md"
+    source_lines: "L137-141"
+    source_section: "试点范围（切片接入强制口径）"
+    kind_proposal: policy
+    classification_suggestion: UNIVERSAL_POLICY
+    scope_sort: UNIVERSAL
+    applies_when: { lane: any, condition: "引入单点机制收编存量平行实现时" }
+    enforcement: advisory
+    vocab_pr_needed: true
+    statement_zh: "以单点新机制收编存量平行实现时：新触达场景必须在本次变更内完成接线，或在任务文档显式登记不接线的债务理由；既有存量在接线前保持原样可运行，禁止因新规则提前删除、隐藏或下沉；迁移顺序固定为先接线并验证、后统一清理——终态约束不构成对存量的立即删除令。"
+    statement_en_keywords: ["wire first retire later", "no premature deletion of legacy", "debt registration alternative", "end-state rule not immediate removal order"]
+    clean_room: { independent_wording: true, note: "statement_zh 为独立改写（源句 CALC-*/切片词面已泛化），语义等价、词形独立，零逐字拷贝" }
+    uncertainty: "源文对「不得提前删除」用 MUST NOT 语气，是否升 required_when_applicable 交 Owner"
+
+  - candidate_id: "POLICY.COPY.NO_USER_COPY_IN_LOGIC_LAYER"
+    source: design_seed
+    evidence: PLANNED
+    source_file: ".trellis/spec/guides/frontend/formula-engine.md"
+    source_lines: "L86-99"
+    source_section: "内容真相方案 A"
+    kind_proposal: policy
+    classification_suggestion: UNIVERSAL_POLICY
+    scope_sort: HYBRID
+    applies_when: { lane: frontend, condition: "编写计算/逻辑层代码时" }
+    enforcement: advisory
+    vocab_pr_needed: true
+    statement_zh: "计算与逻辑层源码不得持有用户可见文案；文案经文案目录常量由视图层按标识渲染，使逻辑层产物保持机器可校验的零文案状态。"
+    statement_en_keywords: ["zero user-visible copy in logic layer", "copy catalog constants", "view-layer rendering by id"]
+    clean_room: { independent_wording: true, note: "statement_zh 为独立改写（.ts/.vue 扫描器词面留项目层），语义等价、词形独立，零逐字拷贝" }
+    uncertainty: "动机来自项目侧扫描器对脚本内文案的抽取盲区（项目工具事实）；与 FE-G4 39-copywriting-protocol 拆解存在重叠风险，物化前跨批合并审阅"
+    hybrid_note: "语句泛化后 lane 中性倾向，但源语境为前端 lane 且动机是项目工具事实，故 HYBRID"
+
+  - candidate_id: "PROJECT.CALC.ENGINE_LAYER_DECISION_RECORD"
+    source: design_seed
+    evidence: PLANNED
+    source_file: ".trellis/spec/guides/frontend/formula-engine.md"
+    source_lines: "L1-20, L21-54, L68-135, L154-159"
+    source_section: "全文件（架构决策记录主体）"
+    kind_proposal: project_state
+    classification_suggestion: PROJECT_BASELINE_TEMPLATE
+    scope_sort: PROJECT
+    project_scope: true
+    applies_when: { lane: any, condition: "不适用（项目架构决策记录，非行为规则）" }
+    enforcement: advisory
+    vocab_pr_needed: false
+    statement_zh: "本文件是 MASTer 公式引擎层的架构决策记录：数据驱动注册（58 条公式注册表）+ 独立运行时求值、静态 DAG 层与响应式传播层分离、blocked 闭包由引擎自算、目录落点 src/shared/lib/calc/、4c2d 舍入落点与 engine_expression 规范化规则等项目专属决策；可泛化语义已由本批其余候选卡剥离，其余按 Project Baseline 收编。"
+    statement_en_keywords: ["architecture decision record", "project baseline", "MASTer-specific"]
+    clean_room: { independent_wording: true, note: "描述性概要为独立措辞；项目专名按 PROJECT 卡豁免保留" }
+
+  # --- 文件 5: guides/index.md ---
+  - candidate_id: "POLICY.CHG.PRE_MODIFY_REFERENCE_SEARCH"
+    source: design_seed
+    evidence: PLANNED
+    source_file: ".trellis/spec/guides/index.md"
+    source_lines: "L63-72"
+    source_section: "Pre-Modification Rule"
+    kind_proposal: policy
+    classification_suggestion: UNIVERSAL_POLICY
+    scope_sort: UNIVERSAL
+    applies_when: { lane: any, condition: "修改任何被引用的值之前" }
+    enforcement: advisory
+    vocab_pr_needed: true
+    statement_zh: "修改任何被引用的值之前，必须先检索其全部引用点；该检索先于一切修改动作执行，是防止「改一处漏多处」类缺陷的最低成本前置动作。"
+    statement_en_keywords: ["pre-modify reference search", "grep all usages first", "cheapest impact check"]
+    clean_room: { independent_wording: true, note: "statement_zh 为独立改写，语义等价、词形独立，零逐字拷贝源文本" }
+    uncertainty: "与 POLICY.CHG.PRECHANGE_CONSUMER_SCAN 同族上下位：本条触发面更宽（任意值）而动作更轻（引用检索）；建议合并审阅——并入正本作轻量触发档，或独立 advisory 入册（故挂 CHG 主题段表合并意图）"
+
+  - candidate_id: "POLICY.REFINTEGRITY.GHOST_REFERENCE_PRECHECK"
+    source: design_seed
+    evidence: PLANNED
+    source_file: ".trellis/spec/guides/index.md"
+    source_lines: "L74-76"
+    source_section: "Pre-Modification Rule（引用共享构建块同款习惯）"
+    kind_proposal: policy
+    classification_suggestion: UNIVERSAL_POLICY
+    scope_sort: HYBRID
+    applies_when: { lane: frontend, condition: "引用设计令牌/图标名/宽度类等共享注册表成员时" }
+    enforcement: advisory
+    vocab_pr_needed: true
+    statement_zh: "引用共享符号（设计令牌、图标名、宽度类等注册表成员）前必须验证其存在性：幽灵令牌静默折叠为空、幽灵图标名静默渲染为空、内联宽度覆盖令类宽度沦为死代码——此类静默失败无门禁无报警，只能以存在性预检显式防御。"
+    statement_en_keywords: ["ghost token", "ghost icon name", "silent render failure", "existence precheck before reference"]
+    clean_room: { independent_wording: true, note: "statement_zh 为独立改写，语义等价、词形独立，零逐字拷贝源文本" }
+    uncertainty: "源语境为前端（令牌/图标/宽度类），statement 已泛化为共享注册表成员引用；泛化形态或 FE 限缩形态由 Owner 定"
+    hybrid_note: "机制词面（令牌/图标/宽度类）为前端专属，防御原则（静默降级须显式防御）通用，故 HYBRID"
+
+  # --- 文件 6: pomaster-frontend-prepare-governance-guide.md ---
+  - candidate_id: "POLICY.PROC.DRYRUN_CHANGE_CHECK_BEFORE_CONFIRM"
+    source: design_seed
+    evidence: PLANNED
+    source_file: ".trellis/spec/guides/pomaster-frontend-prepare-governance-guide.md"
+    source_lines: "L9, L11, L40-43"
+    source_section: "Before Re-running（dry-run 条目 + 编译脚本输出键）"
+    kind_proposal: policy
+    classification_suggestion: UNIVERSAL_POLICY
+    scope_sort: UNIVERSAL
+    applies_when: { lane: any, condition: "重跑会重置下游状态（授权态、生命周期态）的流程之前" }
+    enforcement: advisory
+    vocab_pr_needed: true
+    statement_zh: "重跑会重置下游状态（授权态、生命周期态）的流程前，必须先以 dry-run 模式运行并比对内容指纹判断是否真有变更；无实质变更时不得执行确认运行，避免无意义的状态重置。"
+    statement_en_keywords: ["dry-run before confirm", "content fingerprint change check", "no pointless state reset"]
+    clean_room: { independent_wording: true, note: "statement_zh 为独立改写（工具名/摘要算法词面留项目层），语义等价、词形独立，零逐字拷贝" }
+    notes: "源工具细节（changes[].status 结构、Source-Digest 比对、两脚本输出键差异）留 PROJECT 卡，本卡只承载通用纪律"
+
+  - candidate_id: "POLICY.REGISTRY.NO_DELETE_TO_SILENCE_VALIDATION"
+    source: design_seed
+    evidence: PLANNED
+    source_file: ".trellis/spec/guides/pomaster-frontend-prepare-governance-guide.md"
+    source_lines: "L34"
+    source_section: "Maintaining Outputs Registries（planned 条目保留）"
+    kind_proposal: policy
+    classification_suggestion: UNIVERSAL_POLICY
+    scope_sort: UNIVERSAL
+    applies_when: { lane: any, condition: "校验报错指向登记表条目时" }
+    enforcement: advisory
+    vocab_pr_needed: true
+    statement_zh: "禁止以删除登记条目的方式消除校验报错；尚未实现的规划项必须保留登记并标记规划态与缺口原因——下游引用方仍依赖该标识，删除即掩盖而非修复。"
+    statement_en_keywords: ["no delete to silence validation", "keep planned entries", "gap marker", "downstream id dependency"]
+    clean_room: { independent_wording: true, note: "statement_zh 为独立改写，语义等价、词形独立，零逐字拷贝源文本" }
+    uncertainty: "源文为强禁令（Do not remove），可议升 required_when_applicable"
+    notes: "与 POLICY.CHG.DEPRECATE_BEFORE_DELETE 精神相邻（不以删除消除问题）但对象不同（登记条目 vs 公共能力），非重复；建议互引。高价值反 gaming 条款，本批保守精选时建议优先评估"
+
+  - candidate_id: "POLICY.REGISTRY.SHARED_SURFACE_MACHINE_FACTSOURCE"
+    source: design_seed
+    evidence: PLANNED
+    source_file: ".trellis/spec/guides/pomaster-frontend-prepare-governance-guide.md"
+    source_lines: "L30-35"
+    source_section: "Maintaining Outputs Registries（事实源与登记条款）"
+    kind_proposal: policy
+    classification_suggestion: UNIVERSAL_POLICY
+    scope_sort: HYBRID
+    applies_when: { lane: any, condition: "建设或手工维护共享面登记表时" }
+    enforcement: advisory
+    vocab_pr_needed: true
+    statement_zh: "每类共享面（共享组件、接口需求等）必须有唯一机器事实源登记表：成员以稳定标识登记并携带类别、规范实现路径与消费所需属性；跨登记表共享的关联指纹在手工编辑后必须保持一致，不一致即部分收敛的信号。"
+    statement_en_keywords: ["machine fact source per shared surface", "stable capability id registration", "cross-registry fingerprint consistency"]
+    clean_room: { independent_wording: true, note: "statement_zh 为独立改写（component-registry/api-requirement-registry 等专名留项目层），语义等价、词形独立，零逐字拷贝" }
+    notes: "吸收跨登记表指纹一致性子句（blueprint_sha256 一致性检查）；登记表形态是项目治理载体而原则通用，故 HYBRID"
+
+  - candidate_id: "POLICY.PROC.STOPGAP_WITH_RETURN_TO_FULL_LOOP"
+    source: design_seed
+    evidence: PLANNED
+    source_file: ".trellis/spec/guides/pomaster-frontend-prepare-governance-guide.md"
+    source_lines: "L26-28, L36"
+    source_section: "Maintaining Outputs Registries（止损定位）"
+    kind_proposal: policy
+    classification_suggestion: UNIVERSAL_POLICY
+    scope_sort: UNIVERSAL
+    applies_when: { lane: any, condition: "完整流程被治理阻塞需手工对账时" }
+    enforcement: advisory
+    vocab_pr_needed: true
+    statement_zh: "完整流程被治理阻塞时，允许以手工对账作止损维持登记表一致，但止损不替代完整闭环；阻塞解除后必须尽快回归完整流程重跑。"
+    statement_en_keywords: ["stop-gap not substitute", "manual reconciliation deadline", "return to full loop"]
+    clean_room: { independent_wording: true, note: "statement_zh 为独立改写，语义等价、词形独立，零逐字拷贝源文本" }
+    uncertainty: "低置信（近常识性流程纪律）；建议 Owner 审阅时优先考虑驳回或并入流程知识"
+
+  - candidate_id: "PROJECT.MASTER.PREPARE_CHAIN_OPS_GOTCHAS"
+    source: design_seed
+    evidence: PLANNED
+    source_file: ".trellis/spec/guides/pomaster-frontend-prepare-governance-guide.md"
+    source_lines: "L7-22, L39-43, L47-51"
+    source_section: "其余全部（运维 gotcha 清单）"
+    kind_proposal: project_state
+    classification_suggestion: PROJECT_BASELINE_TEMPLATE
+    scope_sort: PROJECT
+    project_scope: true
+    applies_when: { lane: any, condition: "不适用（项目运维知识，非行为规则）" }
+    enforcement: advisory
+    vocab_pr_needed: false
+    statement_zh: "本文件其余内容为 MASTer 前端准备链运维知识：步骤 7 重置授权态后必须补步骤 9 与授权确认、简报 plan-ready 与 lifecycle implementation-authorized 并存属设计使然、自建登记表的 schema 枚举与槽位引用约束（slot.component 用能力标识而非具体组件名）、CONTENT_NAVIGATION 不在页面解剖登记表、formatter 的精度协议绑定、两个编译脚本输出键差异，均属项目工具链专属，按 Project State 运维知识收编。"
+    statement_en_keywords: ["operations gotchas", "prepare chain", "MASTer tooling-specific"]
+    clean_room: { independent_wording: true, note: "描述性概要为独立措辞；项目专名按 PROJECT 卡豁免保留" }
+
+  # --- 文件 7: project-readonly-boundaries-guide.md ---
+  - candidate_id: "POLICY.PATHOWNERSHIP.PREWRITE_OWNERSHIP_CHECK"
+    source: design_seed
+    evidence: PLANNED
+    source_file: ".trellis/spec/guides/project-readonly-boundaries-guide.md"
+    source_lines: "L5-14"
+    source_section: "Before Writing Any File"
+    kind_proposal: policy
+    classification_suggestion: UNIVERSAL_POLICY
+    scope_sort: UNIVERSAL
+    applies_when: { lane: any, condition: "写入项目树任何文件之前" }
+    enforcement: advisory
+    vocab_pr_needed: true
+    statement_zh: "任何文件写入前必须先做路径所有权检查：只读归档、供给方受管目录、已弃用路径命中即停止；在只读区域运行脚本视同写入（派生产物会污染归档）。"
+    statement_en_keywords: ["pre-write path ownership check", "read-only archive stop", "running scripts counts as writing"]
+    clean_room: { independent_wording: true, note: "statement_zh 为独立改写（具体路径词面留 PROJECT 卡），语义等价、词形独立，零逐字拷贝" }
+    notes: "弃用路径重定向（项目事实进新位置）作为本条执行细节，具体路径清单归 PROJECT 卡"
+
+  - candidate_id: "POLICY.PROVIDER.MANAGED_SPECS_READONLY_VIA_SYNC_CHANNEL"
+    source: design_seed
+    evidence: PLANNED
+    source_file: ".trellis/spec/guides/project-readonly-boundaries-guide.md"
+    source_lines: "L11"
+    source_section: "Before Writing Any File（provider-managed 条目）"
+    kind_proposal: policy
+    classification_suggestion: UNIVERSAL_POLICY
+    scope_sort: UNIVERSAL
+    applies_when: { lane: any, condition: "消费或升级供给方管理的共享规范文件时" }
+    enforcement: advisory
+    vocab_pr_needed: true
+    statement_zh: "由供给方管理的共享规范文件对消费方只读；升级只能经由唯一同步通道执行，同步必须携带内容漂移校验（哈希三方比对），禁止手改镜像副本。"
+    statement_en_keywords: ["provider-managed specs read-only", "single sync channel", "three-way hash drift check", "no manual mirror edits"]
+    clean_room: { independent_wording: true, note: "statement_zh 为独立改写（governance_sync.py 专名去名化），语义等价、词形独立，零逐字拷贝" }
+    uncertainty: "源文为 immutable + only-via 强语义，可议升 required_when_applicable"
+
+  - candidate_id: "POLICY.BACKUP.SOLE_ROLLBACK_ARTIFACT_IMMUTABLE"
+    source: design_seed
+    evidence: PLANNED
+    source_file: ".trellis/spec/guides/project-readonly-boundaries-guide.md"
+    source_lines: "L12"
+    source_section: "Before Writing Any File（backup 条目）"
+    kind_proposal: policy
+    classification_suggestion: UNIVERSAL_POLICY
+    scope_sort: UNIVERSAL
+    applies_when: { lane: any, condition: "执行文件清理或删除动作前" }
+    enforcement: advisory
+    vocab_pr_needed: true
+    statement_zh: "充当唯一回滚机制的备份产物不得删除或改写；执行任何清理动作前必须确认目标不属于回滚关键产物。"
+    statement_en_keywords: ["sole rollback artifact immutable", "cleanup precheck against rollback-critical files"]
+    clean_room: { independent_wording: true, note: "statement_zh 为独立改写（.pomaster-backup 专名留项目层），语义等价、词形独立，零逐字拷贝" }
+    uncertainty: "低置信：泛化后与具体备份机制强绑定，或更适合留在 Project 层"
+
+  - candidate_id: "POLICY.SCRATCH.TIMEBOXED_MIGRATION_OBLIGATION"
+    source: design_seed
+    evidence: PLANNED
+    source_file: ".trellis/spec/guides/project-readonly-boundaries-guide.md"
+    source_lines: "L13"
+    source_section: "Before Writing Any File（doc/ 条目）"
+    kind_proposal: policy
+    classification_suggestion: UNIVERSAL_POLICY
+    scope_sort: UNIVERSAL
+    applies_when: { lane: any, condition: "向临时工作区写入内容时" }
+    enforcement: advisory
+    vocab_pr_needed: true
+    statement_zh: "临时工作区内容必须在既定时限内迁入正式归档，临时区不得沉淀项目事实；时限参数由项目基线供给，迁移动作先于到期执行。"
+    statement_en_keywords: ["timeboxed scratch zone", "migration obligation to archive", "no fact sedimentation in scratch", "threshold from project baseline"]
+    clean_room: { independent_wording: true, note: "statement_zh 为独立改写（doc/ 7 天具体参数参数化），语义等价、词形独立，零逐字拷贝" }
+    notes: "阈值参数化模式与 POLICY.WEB.GRID.SERVER_OPS_VIRTUALIZATION「阈值由 Project Baseline 供给」同款"
+
+  - candidate_id: "POLICY.FACTS.PROJECT_UNIVERSAL_SEPARATION"
+    source: design_seed
+    evidence: PLANNED
+    source_file: ".trellis/spec/guides/project-readonly-boundaries-guide.md"
+    source_lines: "L17-27"
+    source_section: "Where Project Facts Actually Live（表尾注记）"
+    kind_proposal: policy
+    classification_suggestion: UNIVERSAL_POLICY
+    scope_sort: UNIVERSAL
+    applies_when: { lane: any, condition: "决定项目事实的落位载体时" }
+    enforcement: advisory
+    vocab_pr_needed: true
+    statement_zh: "项目事实（技术选型、目录结构、字段构成、页面、接口、阈值）不属于通用规范层：必须落位于机器登记表与人读活页手册等专属载体，禁止写入供给方管理的通用协议层或已弃用的混合路径。"
+    statement_en_keywords: ["project facts vs universal separation", "machine registry + living manuals", "no facts in provider-managed universal layer"]
+    clean_room: { independent_wording: true, note: "statement_zh 为独立改写（frontend-project 等路径专名留项目层），语义等价、词形独立，零逐字拷贝" }
+    notes: "即 Catalog↔Project 分离原则在文件层的表述，与 vNext 架构自身同构"
+
+  - candidate_id: "PROJECT.MASTER.PATH_OWNERSHIP_MAP"
+    source: design_seed
+    evidence: PLANNED
+    source_file: ".trellis/spec/guides/project-readonly-boundaries-guide.md"
+    source_lines: "L7-27"
+    source_section: "全文件项目专属部分（路径清单 + 事实源表）"
+    kind_proposal: project_state
+    classification_suggestion: PROJECT_BASELINE_TEMPLATE
+    scope_sort: PROJECT
+    project_scope: true
+    applies_when: { lane: any, condition: "不适用（项目路径所有权地图，非行为规则）" }
+    enforcement: advisory
+    vocab_pr_needed: false
+    statement_zh: "本文件项目专属部分为 MASTer 路径所有权地图：只读历史归档、弃用的 frontend-project 路径、供给方管理的 frontend/backend 协议目录、.pomaster-backup 回滚件、7 天临时区 doc/，以及项目事实实际落位的六行事实源表（登记表/蓝图、前后人读视图、通用协议、思维清单的路径与 Owner）；具体路径与归属按 Project State 收编。"
+    statement_en_keywords: ["path ownership map", "MASTer-specific", "fact location table"]
+    clean_room: { independent_wording: true, note: "描述性概要为独立措辞；项目专名按 PROJECT 卡豁免保留" }

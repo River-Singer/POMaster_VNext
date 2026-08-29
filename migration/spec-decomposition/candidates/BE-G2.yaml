@@ -1,0 +1,949 @@
+# BE-G2 候选卡（契约安全与权限组）· Semantic Decomposition 送审包
+# 批次: SPEC-D | 方法论: docs/catalog-pilot-report.md §3-§6 忠实复制 | 状态: PROPOSAL (source=design_seed, evidence=PLANNED)
+# 源料只读: MASTer_master/.trellis/spec/backend/{10,11,12,13,16,17}-*.md（sha256 与 spec-inventory.yaml 逐一核对一致）
+# 分母: 6 文件 / 覆盖: 6 文件 / 空结论文件: 无
+# D5 防膨胀: 全部候选进 backlog 排队，本文件只留档不直接入册；物化收口由汇总组按『高置信 Universal + MUST 级 + 与既有 60+9 条零重复』另行执行
+- record_type: meta
+  batch: SPEC-D
+  group: BE-G2
+  group_theme: 契约安全与权限
+  source_tree: MASTer_master/.trellis/spec (read-only)
+  denominator:
+    files_assigned: 6
+    files_covered: 6
+    per_file_cards:
+      backend/10-security-protocol.md: 9
+      backend/11-environment-configuration-protocol.md: 9
+      backend/12-api-contract-protocol.md: 9
+      backend/13-privacy-data-lifecycle-protocol.md: 9
+      backend/16-error-code-protocol.md: 9
+      backend/17-permission-authorization-protocol.md: 9
+    empty_conclusion_files: []
+  cards:
+    total: 54
+    new_candidates: 45
+    duplicate_reconciliation: 9   # 文件 12 为 decomposed_pilot byte-identical，九段逐段让位既有试点卡
+    sort_distribution: {UNIVERSAL: 54, PROJECT: 0, HYBRID: 0}
+    classification_distribution:
+      UNIVERSAL_POLICY: 25        # 5 文件 × (MUST + MUST NOT + SHOULD + Change Policy + Ownership)
+      CONTRACT_TEMPLATE: 5
+      GATE_RECIPE: 5
+      KNOWLEDGE_PATTERN: 5
+      FAILURE_PATTERN: 5
+      DUPLICATE: 9
+    enforcement_distribution: {required_when_applicable: 15, advisory: 29, deterministic_where_possible: 10}
+  method_compliance:
+    - 拆解方法忠实复制试点：九段结构逐段产卡（MUST/MUST NOT/SHOULD→policy；Contract→CONTRACT_TEMPLATE；Checklist→GATE_RECIPE；Examples→KNOWLEDGE_PATTERN；Anti-patterns→FAILURE_PATTERN；Ownership→AUTHORITY 词形 policy advisory）；Scope/Non-Scope/Terms 作上下文不产卡
+    - SHOULD 全部降级 advisory（未因文件名带协议性质默认升 MUST）
+    - clean-room：全部 statement 独立措辞（语义等价、词形独立），零逐字拷贝源文
+    - 分拣三值：全部 UNIVERSAL；六份源协议无 MASTer 专属内容；文件 17 Ownership 源文含项目专名 'BP'，已按 clean-room 规则泛化后归 UNIVERSAL（见该卡 uncertainty）
+    - MUST NOT 段按 BE12 先例（POLICY.API.NO_INFORMAL_CONTRACT 独立成卡）处理为独立候选，不按 FE06 极性反转并入正本——因各 MUST NOT 均含正本未枚举的禁止向量清单
+    - policy 与其失败模式渲染的配对按 M7 先例互引不合并（如 FP.SEC.CREDENTIAL_IN_LOG_STREAMS ↔ POLICY.CFG.NO_SECRET_DISPERSAL）
+  duplicate_check_basis: catalog 既有 69 条（policies/ 54 + knowledge/ 10 + gates/ 5，其中 9 条为试点后新增 web 族）+ candidates-draft.json 82 卡；45 张新卡逐卡比对零重复
+  vocab_pr_needed_summary:
+    V1_kind_policy: 25 卡（policy kind 缺席 truth_bodies）
+    V2_GATE_prefix: 5 卡
+    V8_TPL_prefix: 5 卡
+    V9_knowledge_id_grammar: 10 卡（登记别名即可，无需新枚举）
+    AUTHORITY_prefix_frozen: 5 卡无需 PR
+
+# ============ 文件 1/6: backend/10-security-protocol.md (sha256 56387f03...) ============
+
+- proposed_id: POLICY.SEC.TRUST_BOUNDARY_ENFORCEMENT
+  source_section: MUST
+  source_protocol: .trellis/spec/backend/10-security-protocol.md
+  source_lines: L25
+  source_sha256: 56387f03edd35df50a5a701f4daab174b744d490663393f43331cf5401149f67
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 数据或调用每次从较低信任域进入较高权限域时，必须由服务端一侧完成四项动作——输入校验、最小权限授予、默认拒绝（fail-closed）与审计留痕——任何一项不可省略。
+  statement_en_keywords: trust boundary, server-side validation, least privilege, fail-closed, audit trail
+  clean_room: true
+  applies_when: {lane: backend, condition: 任何跨信任域的数据流或调用入口}
+  cross_refs: [POLICY.WEB.API.TRUSTED_ENDPOINT_SOURCE]
+  notes: 与 FE 侧 TRUSTED_ENDPOINT_SOURCE 同属信任纪律族但层向不同（入口校验 vs 请求构造），互引不合并
+
+- proposed_id: POLICY.SEC.NO_CLIENT_SIDE_TRUST
+  source_section: MUST NOT
+  source_protocol: .trellis/spec/backend/10-security-protocol.md
+  source_lines: L29
+  source_sha256: 56387f03edd35df50a5a701f4daab174b744d490663393f43331cf5401149f67
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 客户端侧的任何信号——隐藏字段、前端校验结论、代理附加头、调用方自述的资源归属——一律不得作为服务端授权判定或数据归属认定的依据。
+  statement_en_keywords: no client-side trust, hidden fields, proxy headers, self-declared ownership
+  clean_room: true
+  applies_when: {lane: backend, condition: 服务端处理任何携带客户端来源信息的请求}
+  cross_refs: [POLICY.SEC.TRUST_BOUNDARY_ENFORCEMENT]
+  notes: 独立成卡（BE12 先例 NO_INFORMAL_CONTRACT）：本条枚举了正本未列的四类不可信向量，非单纯极性反转
+
+- proposed_id: POLICY.SEC.SECURE_MECHANISM_BASELINE
+  source_section: SHOULD
+  source_protocol: .trellis/spec/backend/10-security-protocol.md
+  source_lines: L33
+  source_sha256: 56387f03edd35df50a5a701f4daab174b744d490663393f43331cf5401149f67
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: true
+  statement_zh: 建议以参数化查询接口替代字符串拼接、以集中式密钥服务替代分散保管、并让凭据具备定期轮换能力。
+  statement_en_keywords: parameterized interfaces, centralized key management, rotatable credentials
+  clean_room: true
+  applies_when: {lane: backend, condition: 实现认证、数据访问或凭据管理机制时}
+  notes: SHOULD 正确降级 advisory
+
+- proposed_id: POLICY.TPL.SECURITY_DESIGN_RECORD
+  source_section: Contract
+  source_protocol: .trellis/spec/backend/10-security-protocol.md
+  source_lines: L37
+  source_sha256: 56387f03edd35df50a5a701f4daab174b744d490663393f43331cf5401149f67
+  classification: CONTRACT_TEMPLATE
+  sort: UNIVERSAL
+  kind_proposal: contract_template
+  enforcement: deterministic_where_possible
+  vocab_pr_needed: true
+  statement_zh: 安全设计记录应包含六个字段：资产清单、威胁假设、控制措施、失败时的行为语义、日志内容的限制约束、控制有效性的验证证据。
+  statement_en_keywords: security design record, assets, threats, controls, failure semantics, log limits, verification evidence
+  clean_room: true
+  applies_when: {lane: backend, condition: 涉及安全面的设计登记}
+  notes: 落点随试点 R-C=b 挂起（catalog/templates/ 与 TEMPLATE. 前缀 V8 未收编）
+
+- proposed_id: GATE.SEC.SECURITY_CHECKS
+  source_section: Checklist
+  source_protocol: .trellis/spec/backend/10-security-protocol.md
+  source_lines: L41
+  source_sha256: 56387f03edd35df50a5a701f4daab174b744d490663393f43331cf5401149f67
+  classification: GATE_RECIPE
+  sort: UNIVERSAL
+  kind_proposal: gate_recipe
+  enforcement: deterministic_where_possible
+  vocab_pr_needed: true
+  statement_zh: 安全门禁七项核对——认证路径、鉴权路径、输入面、输出面、文件处理面、secret 处理路径、审计路径——逐项确认已检查。
+  statement_en_keywords: security gate checklist, authn, authz, input, output, file, secret, audit paths
+  clean_room: true
+  applies_when: {lane: backend, condition: 安全面变更过门禁}
+  notes: GATE. 前缀需 vocab PR（试点 V2 缺口同款）
+
+- proposed_id: KNOWLEDGE.SEC.EXAMPLE_DOWNLOAD_TRIPLE_CHECK
+  source_section: Examples
+  source_protocol: .trellis/spec/backend/10-security-protocol.md
+  source_lines: L45
+  source_sha256: 56387f03edd35df50a5a701f4daab174b744d490663393f43331cf5401149f67
+  classification: KNOWLEDGE_PATTERN
+  sort: UNIVERSAL
+  kind_proposal: knowledge_entry
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 示例：文件下载类接口应在单次请求内同时完成操作权限、可见数据范围与目标资源归属三重确认，缺一即拒绝。
+  statement_en_keywords: example, download endpoint, triple verification, permission + scope + ownership
+  clean_room: true
+  applies_when: {lane: backend, condition: 资源下载/导出类接口设计}
+  cross_refs: [KNOWLEDGE.AUTHZ.EXAMPLE_FILTER_AT_QUERY_LAYER]
+  notes: 与文件 17 示例同属授权示例族，登记 M5 式同型合并审阅候选
+
+- proposed_id: KNOWLEDGE.FP.SEC.CREDENTIAL_IN_LOG_STREAMS
+  source_section: Anti-patterns
+  source_protocol: .trellis/spec/backend/10-security-protocol.md
+  source_lines: L49
+  source_sha256: 56387f03edd35df50a5a701f4daab174b744d490663393f43331cf5401149f67
+  classification: FAILURE_PATTERN
+  sort: UNIVERSAL
+  kind_proposal: knowledge_entry
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 失败模式：调试排错时把令牌、口令乃至完整业务 payload 写进日志或异常消息，敏感内容随后被日志系统长期留存并扩散。
+  statement_en_keywords: failure pattern, credentials in logs/exceptions, long-lived log retention blast
+  clean_room: true
+  applies_when: {lane: backend, condition: 日志与异常处理路径评审}
+  cross_refs: [POLICY.CFG.NO_SECRET_DISPERSAL]
+  notes: M7 先例——政策（secret 禁区五面）与失败模式（日志/异常渲染）配对互引不合并
+
+- proposed_id: AUTHORITY.SEC.SECURITY_OWNERSHIP
+  source_section: Ownership
+  source_protocol: .trellis/spec/backend/10-security-protocol.md
+  source_lines: L53
+  source_sha256: 56387f03edd35df50a5a701f4daab174b744d490663393f43331cf5401149f67
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 权威分配默认值：服务端实现方持有安全判定的最终权威；安全评审角色拥有可阻断交付的门禁维护权。
+  statement_en_keywords: server owns final security judgment, security reviewer owns blocking gate
+  clean_room: true
+  applies_when: {lane: any, condition: Authority Map 构建}
+  notes: AUTHORITY. 前缀已冻结（试点 V4 无需 PR）；enforcement=advisory 为设计使然（权威分配默认值非行为规则）；M6 同型上提审阅——本批新增 5 条 AUTHORITY 卡使 5→1+N 模板提案扩为 10→1+N
+
+- proposed_id: POLICY.SEC.SECURITY_RELAXATION_GATE
+  source_section: Change Policy
+  source_protocol: .trellis/spec/backend/10-security-protocol.md
+  source_lines: L57
+  source_sha256: 56387f03edd35df50a5a701f4daab174b744d490663393f43331cf5401149f67
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 任何削弱既有安全控制的改动，必须同时取得显式的风险审批、限定生效范围、并设置强制到期的复审点，三者缺一不可。
+  statement_en_keywords: security relaxation, explicit risk approval, scoped enforcement, expiry review
+  clean_room: true
+  applies_when: {lane: backend, condition: 放宽任何安全控制时}
+  cross_refs: [POLICY.CHG.BREAKING_VERSIONING]
+  notes: 与 BREAKING_VERSIONING 的『显式审批』同形但含独有增量（范围限制+到期复审）；安全域专属审批门，独立成卡
+
+# ============ 文件 2/6: backend/11-environment-configuration-protocol.md (sha256 eb9e82e9...) ============
+
+- proposed_id: POLICY.CFG.CONFIG_ATTRIBUTE_COMPLETENESS
+  source_section: MUST
+  source_protocol: .trellis/spec/backend/11-environment-configuration-protocol.md
+  source_lines: L25
+  source_sha256: eb9e82e9df64ce238501bc51cd359f36150f911c149904e2ed5a43d9b652b1bd
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 每一项配置在登记时必须同时声明六件事：数据类型、合法来源、缺省时的行为、敏感级别、生效前如何验证、以及经由什么路径修改。
+  statement_en_keywords: config item attributes, type, source, default behavior, sensitivity, validation, change path
+  clean_room: true
+  applies_when: {lane: backend, condition: 登记或引入任何配置项}
+
+- proposed_id: POLICY.CFG.NO_SECRET_DISPERSAL
+  source_section: MUST NOT
+  source_protocol: .trellis/spec/backend/11-environment-configuration-protocol.md
+  source_lines: L29
+  source_sha256: eb9e82e9df64ce238501bc51cd359f36150f911c149904e2ed5a43d9b652b1bd
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 机密凭据不得出现在五类持久化面中的任何一处：版本库、日志输出、示例代码、shell 历史、以及被生成发布的文档。
+  statement_en_keywords: no secret dispersal, repo/log/example/shell-history/generated-docs forbidden surfaces
+  clean_room: true
+  applies_when: {lane: backend, condition: 处理任何 secret 或凭据时}
+  cross_refs: [KNOWLEDGE.FP.SEC.CREDENTIAL_IN_LOG_STREAMS]
+  notes: 独立成卡（BE12 先例）：本条枚举五类禁区面；日志子面的失败模式渲染见配对 FP 卡
+
+- proposed_id: POLICY.CFG.STARTUP_VALIDATION_AND_PROVENANCE
+  source_section: SHOULD
+  source_protocol: .trellis/spec/backend/11-environment-configuration-protocol.md
+  source_lines: L33
+  source_sha256: eb9e82e9df64ce238501bc51cd359f36150f911c149904e2ed5a43d9b652b1bd
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: true
+  statement_zh: 建议进程启动时即校验关键配置项的合法性，并对当前生效值所属的版本与来源留出可观测的证据出口。
+  statement_en_keywords: startup validation, config provenance, observable evidence
+  clean_room: true
+  applies_when: {lane: backend, condition: 应用启动或配置加载路径}
+  notes: SHOULD 正确降级 advisory
+
+- proposed_id: POLICY.TPL.CONFIG_CHANGE_RECORD
+  source_section: Contract
+  source_protocol: .trellis/spec/backend/11-environment-configuration-protocol.md
+  source_lines: L37
+  source_sha256: eb9e82e9df64ce238501bc51cd359f36150f911c149904e2ed5a43d9b652b1bd
+  classification: CONTRACT_TEMPLATE
+  sort: UNIVERSAL
+  kind_proposal: contract_template
+  enforcement: deterministic_where_possible
+  vocab_pr_needed: true
+  statement_zh: 配置变更记录必须写明四项：对既有消费方的兼容影响、部署时的先后顺序、回退手段、以及检测声明值与运行值漂移的方式。
+  statement_en_keywords: config change record, compatibility impact, deploy order, rollback, drift detection
+  clean_room: true
+  applies_when: {lane: backend, condition: 记录任何配置变更时}
+  cross_refs: [POLICY.TPL.CHG_RECORD_BE]
+  notes: 与 CHG_RECORD_BE 同族（变更记录模板族，M4 先例不硬合并、按域 profile 审阅）；『部署顺序+漂移检测』为本条独有字段；落点随 R-C=b 挂起
+
+- proposed_id: GATE.CFG.ENV_SOURCE_PRECEDENCE_CHECKS
+  source_section: Checklist
+  source_protocol: .trellis/spec/backend/11-environment-configuration-protocol.md
+  source_lines: L41
+  source_sha256: eb9e82e9df64ce238501bc51cd359f36150f911c149904e2ed5a43d9b652b1bd
+  classification: GATE_RECIPE
+  sort: UNIVERSAL
+  kind_proposal: gate_recipe
+  enforcement: deterministic_where_possible
+  vocab_pr_needed: true
+  statement_zh: 环境门禁核对——本地、CI、测试与真实运行四类环境各自的配置来源与覆盖优先级已逐层核对、无冲突。
+  statement_en_keywords: environment gate, config source precedence, four-environment check
+  clean_room: true
+  applies_when: {lane: backend, condition: 环境配置变更过门禁}
+  notes: GATE. 前缀需 vocab PR（V2）
+
+- proposed_id: KNOWLEDGE.CFG.EXAMPLE_FAIL_FAST_MISSING_CONFIG
+  source_section: Examples
+  source_protocol: .trellis/spec/backend/11-environment-configuration-protocol.md
+  source_lines: L45
+  source_sha256: eb9e82e9df64ce238501bc51cd359f36150f911c149904e2ed5a43d9b652b1bd
+  classification: KNOWLEDGE_PATTERN
+  sort: UNIVERSAL
+  kind_proposal: knowledge_entry
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 示例：必需配置缺失时进程拒绝启动，并给出不含任何机密内容的稳定错误信息。
+  statement_en_keywords: example, fail-fast on missing config, secret-free error message
+  clean_room: true
+  applies_when: {lane: backend, condition: 配置加载失败路径设计}
+
+- proposed_id: KNOWLEDGE.FP.CFG.ENV_DEFAULT_MASKS_UNDECLARED_PROD
+  source_section: Anti-patterns
+  source_protocol: .trellis/spec/backend/11-environment-configuration-protocol.md
+  source_lines: L49
+  source_sha256: eb9e82e9df64ce238501bc51cd359f36150f911c149904e2ed5a43d9b652b1bd
+  classification: FAILURE_PATTERN
+  sort: UNIVERSAL
+  kind_proposal: knowledge_entry
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 失败模式：依赖环境自带的默认值让系统『碰巧能跑』，生产环境的真实行为从未被显式声明与确认。
+  statement_en_keywords: failure pattern, environment default masking, undeclared production behavior
+  clean_room: true
+  applies_when: {lane: backend, condition: 环境配置评审}
+
+- proposed_id: AUTHORITY.CFG.CONFIG_OWNERSHIP
+  source_section: Ownership
+  source_protocol: .trellis/spec/backend/11-environment-configuration-protocol.md
+  source_lines: L53
+  source_sha256: eb9e82e9df64ce238501bc51cd359f36150f911c149904e2ed5a43d9b652b1bd
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 权威分配默认值：应用维护方定义配置的消费契约（哪些键、何语义）；平台维护方负责提供受管束的配置值与机密来源。
+  statement_en_keywords: app maintainer owns consumption contract, platform maintainer provides controlled config/secret source
+  clean_room: true
+  applies_when: {lane: any, condition: Authority Map 构建}
+  notes: AUTHORITY. 前缀已冻结；M6 同型上提审阅（10→1+N 提案池成员）
+
+- proposed_id: POLICY.CFG.KEY_RENAME_DUAL_READ
+  source_section: Change Policy
+  source_protocol: .trellis/spec/backend/11-environment-configuration-protocol.md
+  source_lines: L57
+  source_sha256: eb9e82e9df64ce238501bc51cd359f36150f911c149904e2ed5a43d9b652b1bd
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 配置键更名属于兼容性变更：必须维持新旧双读过渡期或给出迁移窗口，并以验证手段确认旧值已清理干净后方可收口。
+  statement_en_keywords: config key rename, dual-read window, migration window, old-value cleanup verification
+  clean_room: true
+  applies_when: {lane: backend, condition: 重命名或替换配置键}
+  cross_refs: [POLICY.CHG.COMPAT_MIGRATION_ROLLBACK]
+  notes: COMPAT_MIGRATION_ROLLBACK 的配置域实例化，独有增量『双读窗口+旧值清理验证』，独立成卡互引
+
+# ============ 文件 3/6: backend/12-api-contract-protocol.md (sha256 35519d81..., decomposed_pilot byte_identical) ============
+# 本文件与试点源 pomaster/components/backend-hard-spec/assets/universal/12-api-contract-protocol.md 逐字节一致
+# （inventory pilot.reuse_note：候选卡覆盖可直接援引，pin 双侧 sha256 相同）。
+# 九段与试点 9 卡一一对应，以下为逐段对账卡：词形让位既有条目（proposed_id 置空），语义全部标记 DUPLICATE。
+
+- proposed_id: null
+  duplicate_of: POLICY.API.CONTRACT_IMPL_CONSISTENCY
+  source_section: MUST
+  source_protocol: .trellis/spec/backend/12-api-contract-protocol.md
+  source_lines: L25
+  source_sha256: 35519d81548cabff729de888e0bf9e0d5b40a0274c9fa3684641b50e75938ca0
+  classification: DUPLICATE
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 对外接口声明的全部契约要素——方法、路径、字段集、状态码、错误码、权限要求与兼容策略——与真实实现之间不允许存在任何偏差。
+  statement_en_keywords: contract-implementation consistency, method/path/fields/status/error codes
+  clean_room: true
+  applies_when: {lane: any, condition: 同合并目标}
+  notes: 试点卡已物化（catalog/policies/policy.api.contract_impl_consistency.json，ACCEPT）；enforcement 由合并目标继承（required_when_applicable）
+
+- proposed_id: null
+  duplicate_of: POLICY.API.NO_INFORMAL_CONTRACT
+  source_section: MUST NOT
+  source_protocol: .trellis/spec/backend/12-api-contract-protocol.md
+  source_lines: L29
+  source_sha256: 35519d81548cabff729de888e0bf9e0d5b40a0274c9fa3684641b50e75938ca0
+  classification: DUPLICATE
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 原型返回值、聊天窗口里的约定、对接方的主观猜测都不构成契约；唯一有效的契约权威是正式 OpenAPI 文档或项目明文指定的同级事实源。
+  statement_en_keywords: no informal contract, mock/chat/guess forbidden, OpenAPI authority
+  clean_room: true
+  applies_when: {lane: any, condition: 同合并目标}
+  notes: 试点卡已物化（ACCEPT，与 POLICY.WEB.API.TRUSTED_ENDPOINT_SOURCE 互引）
+
+- proposed_id: null
+  duplicate_of: POLICY.API.BACKWARD_COMPAT_DEFAULTS
+  source_section: SHOULD
+  source_protocol: .trellis/spec/backend/12-api-contract-protocol.md
+  source_lines: L33
+  source_sha256: 35519d81548cabff729de888e0bf9e0d5b40a0274c9fa3684641b50e75938ca0
+  classification: DUPLICATE
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 新增字段、分页语义、重试行为与版本推进方式，建议一律先选择向后兼容的实现路径。
+  statement_en_keywords: backward compatible defaults, additive fields, pagination, versioning
+  clean_room: true
+  applies_when: {lane: any, condition: 同合并目标}
+  notes: 试点卡已物化（ACCEPT，SHOULD 已正确降级 advisory）
+
+- proposed_id: null
+  duplicate_of: POLICY.API.CONTRACT_IMPL_CONSISTENCY
+  source_section: Contract
+  source_protocol: .trellis/spec/backend/12-api-contract-protocol.md
+  source_lines: L37
+  source_sha256: 35519d81548cabff729de888e0bf9e0d5b40a0274c9fa3684641b50e75938ca0
+  classification: DUPLICATE
+  sort: UNIVERSAL
+  kind_proposal: contract_template
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 每个接口登记时需备齐七类语义定义：输入、输出、失败形态、幂等性、权限要求、追踪标识与版本。
+  statement_en_keywords: per-operation contract fields, input/output/failure/idempotency/permission/trace/version
+  clean_room: true
+  applies_when: {lane: any, condition: 同合并目标}
+  notes: 试点 CTPL 正本 POLICY.TPL.OPERATION_CONTRACT_FIELDS 未物化（R-C=b 挂起落点）；循试点链其七类接口语义归宿为已物化正本 POLICY.API.CONTRACT_IMPL_CONSISTENCY（接口必备字段集与实现一致正本，枚举 method/path/字段/状态码/错误码/权限/兼容策略），duplicate_of 改指一步可解析；enforcement 处置随合并审
+
+- proposed_id: null
+  duplicate_of: GATE.BE.API.CONTRACT_CHECKS
+  source_section: Checklist
+  source_protocol: .trellis/spec/backend/12-api-contract-protocol.md
+  source_lines: L41
+  source_sha256: 35519d81548cabff729de888e0bf9e0d5b40a0274c9fa3684641b50e75938ca0
+  classification: DUPLICATE
+  sort: UNIVERSAL
+  kind_proposal: gate_recipe
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 接口门禁五点同步确认——正式契约、服务端实现、派生客户端、测试用例与交付 handoff 五者一致。
+  statement_en_keywords: contract gate, five-way sync, contract/implementation/client/tests/handoff
+  clean_room: true
+  applies_when: {lane: any, condition: 同合并目标}
+  notes: 试点卡已物化（gate.be.api.contract_checks.json，ADJUST——与 POLICY.CHG.SYNC_CONTRACT_DOCS_TESTS 两口径统一留 Owner）；enforcement 由合并目标继承
+
+- proposed_id: null
+  duplicate_of: KNOWLEDGE.API.EXAMPLE_STABLE_ERROR_CODE
+  source_section: Examples
+  source_protocol: .trellis/spec/backend/12-api-contract-protocol.md
+  source_lines: L45
+  source_sha256: 35519d81548cabff729de888e0bf9e0d5b40a0274c9fa3684641b50e75938ca0
+  classification: DUPLICATE
+  sort: UNIVERSAL
+  kind_proposal: knowledge_entry
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 示例：冲突类失败以固定错误码加 TraceId 回给调用方，内部异常细节不外泄。
+  statement_en_keywords: example, stable error code, trace id, no internal leak
+  clean_room: true
+  applies_when: {lane: any, condition: 同合并目标}
+  notes: 试点卡已物化（ACCEPT，衔接 ERR.* 词条体系——与本批 POLICY.ERR.FAILURE_FIVE_PART_MAPPING 构成政策-示例配对）
+
+- proposed_id: null
+  duplicate_of: KNOWLEDGE.FP.API.FIELD_DRIFT_NO_CONTRACT
+  source_section: Anti-patterns
+  source_protocol: .trellis/spec/backend/12-api-contract-protocol.md
+  source_lines: L49
+  source_sha256: 35519d81548cabff729de888e0bf9e0d5b40a0274c9fa3684641b50e75938ca0
+  classification: DUPLICATE
+  sort: UNIVERSAL
+  kind_proposal: knowledge_entry
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 失败模式：响应字段结构已改变，正式契约文档未同步更新，调用方的兼容性测试亦缺席。
+  statement_en_keywords: failure pattern, field drift without contract update, missing consumer compat tests
+  clean_room: true
+  applies_when: {lane: any, condition: 同合并目标}
+  notes: 试点卡已物化（ACCEPT，B3 failure-pattern 附带池成员）
+
+- proposed_id: null
+  duplicate_of: AUTHORITY.BE.API_CONTRACT_OWNERSHIP
+  source_section: Ownership
+  source_protocol: .trellis/spec/backend/12-api-contract-protocol.md
+  source_lines: L53
+  source_sha256: 35519d81548cabff729de888e0bf9e0d5b40a0274c9fa3684641b50e75938ca0
+  classification: DUPLICATE
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 权威分配默认值：服务端实现方维护契约正文，调用方负责确认联调结果与兼容结论。
+  statement_en_keywords: backend owns server contract, consumer confirms integration compatibility
+  clean_room: true
+  applies_when: {lane: any, condition: 同合并目标}
+  notes: 试点卡已物化（ADJUST，M6 同型上提审阅池成员）；enforcement 由合并目标继承（advisory）
+
+- proposed_id: null
+  duplicate_of: POLICY.CHG.BREAKING_VERSIONING
+  source_section: Change Policy
+  source_protocol: .trellis/spec/backend/12-api-contract-protocol.md
+  source_lines: L57
+  source_sha256: 35519d81548cabff729de888e0bf9e0d5b40a0274c9fa3684641b50e75938ca0
+  classification: DUPLICATE
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 接口的不兼容演进不另设流程，统一按破坏性变更条款执行版本化与迁移安排。
+  statement_en_keywords: breaking api change delegates to breaking-change versioning
+  clean_room: true
+  applies_when: {lane: any, condition: 同合并目标}
+  notes: 二级让位链——本段直映试点卡 POLICY.API.DELEGATE_TO_CHG_PROTOCOL（REJECT：指针条款并入正本），故 duplicate_of 指向存活正本 POLICY.CHG.BREAKING_VERSIONING；enforcement 由正本继承
+
+# ============ 文件 4/6: backend/13-privacy-data-lifecycle-protocol.md (sha256 df20ccb8...) ============
+
+- proposed_id: POLICY.PRV.SENSITIVE_DATA_SIX_FACTS
+  source_section: MUST
+  source_protocol: .trellis/spec/backend/13-privacy-data-lifecycle-protocol.md
+  source_lines: L25
+  source_sha256: df20ccb85008f8744ea16db3ea64e54bdf9fd19d7aa3098c45dc44fff94c3d8d
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 任何被判定为敏感的数据，必须在进入系统前登记六个事实：收集目的、来源、流向的接收方、保留期限、删除的触发条件、访问控制方式。
+  statement_en_keywords: sensitive data attributes, purpose, provenance, recipients, retention, deletion trigger, access control
+  clean_room: true
+  applies_when: {lane: backend, condition: 收集、存储或流转任何敏感数据前}
+  notes: 前瞻：FE 44-privacy-data-lifecycle（inventory FE-G2，未拆解）未来入册时可能构成跨车道同构，登记为潜在 M 组候选
+
+- proposed_id: POLICY.PRV.NO_JUST_IN_CASE_HOARDING
+  source_section: MUST NOT
+  source_protocol: .trellis/spec/backend/13-privacy-data-lifecycle-protocol.md
+  source_lines: L29
+  source_sha256: df20ccb85008f8744ea16db3ea64e54bdf9fd19d7aa3098c45dc44fff94c3d8d
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 以『将来也许用得上』为理由收集数据，或不设期限地留存数据，均在禁止之列。
+  statement_en_keywords: no just-in-case collection, no indefinite retention
+  clean_room: true
+  applies_when: {lane: backend, condition: 数据收集与保留策略制定}
+  notes: 独立成卡（BE12 先例）：与 MUST 正本构成『属性齐备 vs 收集克制』两端，非极性反转
+
+- proposed_id: POLICY.PRV.MINIMIZATION_BY_DEFAULT
+  source_section: SHOULD
+  source_protocol: .trellis/spec/backend/13-privacy-data-lifecycle-protocol.md
+  source_lines: L33
+  source_sha256: df20ccb85008f8744ea16db3ea64e54bdf9fd19d7aa3098c45dc44fff94c3d8d
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: true
+  statement_zh: 在非必要场景，建议默认采用三种弱化形态：只取最小字段集、以脱敏值替代原值、或改用不可逆标识。
+  statement_en_keywords: data minimization, minimal fields, masked values, irreversible identifiers
+  clean_room: true
+  applies_when: {lane: backend, condition: 非必要场景的数据使用}
+  notes: SHOULD 正确降级 advisory
+
+- proposed_id: POLICY.TPL.DATA_DESIGN_RECORD
+  source_section: Contract
+  source_protocol: .trellis/spec/backend/13-privacy-data-lifecycle-protocol.md
+  source_lines: L37
+  source_sha256: df20ccb85008f8744ea16db3ea64e54bdf9fd19d7aa3098c45dc44fff94c3d8d
+  classification: CONTRACT_TEMPLATE
+  sort: UNIVERSAL
+  kind_proposal: contract_template
+  enforcement: deterministic_where_possible
+  vocab_pr_needed: true
+  statement_zh: 数据设计记录六字段：数据分类、处理目的、存储位置、流转路径、保留与删除的执行证据。
+  statement_en_keywords: data design record, classification, purpose, storage location, flow, retention/deletion evidence
+  clean_room: true
+  applies_when: {lane: backend, condition: 涉及敏感数据的数据设计登记}
+  notes: 落点随 R-C=b 挂起（V8）
+
+- proposed_id: GATE.PRV.SENSITIVE_SURFACE_SWEEP
+  source_section: Checklist
+  source_protocol: .trellis/spec/backend/13-privacy-data-lifecycle-protocol.md
+  source_lines: L41
+  source_sha256: df20ccb85008f8744ea16db3ea64e54bdf9fd19d7aa3098c45dc44fff94c3d8d
+  classification: GATE_RECIPE
+  sort: UNIVERSAL
+  kind_proposal: gate_recipe
+  enforcement: deterministic_where_possible
+  vocab_pr_needed: true
+  statement_zh: 敏感数据门禁——URL 参数、日志、trace、缓存、导出文件、备份六类持久化或外泄面逐一排查。
+  statement_en_keywords: sensitive surface sweep, url/logs/trace/cache/export/backup
+  clean_room: true
+  applies_when: {lane: backend, condition: 敏感数据相关变更过门禁}
+  notes: GATE. 前缀需 vocab PR（V2）
+
+- proposed_id: KNOWLEDGE.PRV.EXAMPLE_AUDIT_MINIMALISM
+  source_section: Examples
+  source_protocol: .trellis/spec/backend/13-privacy-data-lifecycle-protocol.md
+  source_lines: L45
+  source_sha256: df20ccb85008f8744ea16db3ea64e54bdf9fd19d7aa3098c45dc44fff94c3d8d
+  classification: KNOWLEDGE_PATTERN
+  sort: UNIVERSAL
+  kind_proposal: knowledge_entry
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 示例：审计记录只保存完成追溯所必需的标识与操作事实，完整敏感 payload 不进入审计存储。
+  statement_en_keywords: example, audit minimalism, necessary identifiers only, no full payload copy
+  clean_room: true
+  applies_when: {lane: backend, condition: 审计记录设计}
+
+- proposed_id: KNOWLEDGE.FP.PRV.REAL_SENSITIVE_DATA_IN_NONPROD
+  source_section: Anti-patterns
+  source_protocol: .trellis/spec/backend/13-privacy-data-lifecycle-protocol.md
+  source_lines: L49
+  source_sha256: df20ccb85008f8744ea16db3ea64e54bdf9fd19d7aa3098c45dc44fff94c3d8d
+  classification: FAILURE_PATTERN
+  sort: UNIVERSAL
+  kind_proposal: knowledge_entry
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 失败模式：测试用例、日志或分析埋点中出现真实敏感数据，本应受控的副本扩散到低防护环境。
+  statement_en_keywords: failure pattern, real sensitive data in tests/logs/analytics, low-protection environment spread
+  clean_room: true
+  applies_when: {lane: backend, condition: 测试数据与埋点数据选材}
+  cross_refs: [POLICY.CFG.NO_SECRET_DISPERSAL]
+  notes: 与 NO_SECRET_DISPERSAL（凭据域）互补：本条覆盖用户数据域的副本扩散；互引不合并
+
+- proposed_id: AUTHORITY.PRV.DATA_OWNERSHIP
+  source_section: Ownership
+  source_protocol: .trellis/spec/backend/13-privacy-data-lifecycle-protocol.md
+  source_lines: L53
+  source_sha256: df20ccb85008f8744ea16db3ea64e54bdf9fd19d7aa3098c45dc44fff94c3d8d
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 权威分配默认值：数据 Owner 决定数据的用途与保留策略；Backend 实现方负责落实技术控制并给出控制有效的证明。
+  statement_en_keywords: data owner decides purpose/retention, backend implements and proves controls
+  clean_room: true
+  applies_when: {lane: any, condition: Authority Map 构建}
+  notes: AUTHORITY. 前缀已冻结；M6 同型上提审阅（10→1+N 提案池成员）
+
+- proposed_id: POLICY.PRV.PROCESSING_SCOPE_RE_REVIEW
+  source_section: Change Policy
+  source_protocol: .trellis/spec/backend/13-privacy-data-lifecycle-protocol.md
+  source_lines: L57
+  source_sha256: df20ccb85008f8744ea16db3ea64e54bdf9fd19d7aa3098c45dc44fff94c3d8d
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 处理范围一旦扩大——更多用途或更多接收方——必须重新履行目的、权限、保留规则三项评审，不得沿用旧结论。
+  statement_en_keywords: processing scope expansion, purpose/permission/retention re-review
+  clean_room: true
+  applies_when: {lane: backend, condition: 扩大数据处理范围或接收方时}
+  cross_refs: [POLICY.CHG.PRECHANGE_CONSUMER_SCAN]
+  notes: 与 CHG 前置扫描同形但评审对象为隐私三要素，独有增量，独立成卡
+
+# ============ 文件 5/6: backend/16-error-code-protocol.md (sha256 aa80ee60...) ============
+
+- proposed_id: POLICY.ERR.FAILURE_FIVE_PART_MAPPING
+  source_section: MUST
+  source_protocol: .trellis/spec/backend/16-error-code-protocol.md
+  source_lines: L25
+  source_sha256: aa80ee60f7431e14859f61e563784e71b2002f35e220964170a779800fdde090
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 每一次失败响应必须由五个成分构成：稳定的机器错误码、恰当的状态码、（如适用）字段级错误明细、是否可重试的标记、全链路 TraceId。
+  statement_en_keywords: failure mapping, stable code, status, field errors, retryable flag, trace id
+  clean_room: true
+  applies_when: {lane: backend, condition: 构造任何失败响应}
+  cross_refs: [KNOWLEDGE.API.EXAMPLE_STABLE_ERROR_CODE]
+  notes: 与既有示例卡构成 M7 式政策-示例配对（示例为冲突场景实例），互引不合并
+
+- proposed_id: POLICY.ERR.NO_INTERNAL_DETAIL_EXPOSURE
+  source_section: MUST NOT
+  source_protocol: .trellis/spec/backend/16-error-code-protocol.md
+  source_lines: L29
+  source_sha256: aa80ee60f7431e14859f61e563784e71b2002f35e220964170a779800fdde090
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 堆栈文本、SQL 语句、secret、不稳定的内部异常原文——任何一样都不允许出现在给调用方的响应里。
+  statement_en_keywords: no internal detail exposure, stack/sql/secret/raw exception forbidden in responses
+  clean_room: true
+  applies_when: {lane: backend, condition: 错误响应出站方向}
+  cross_refs: [KNOWLEDGE.FP.SEC.CREDENTIAL_IN_LOG_STREAMS]
+  notes: 与 FP.SEC 方向相反（出站响应 vs 日志留存），互补不重复；独立成卡（BE12 先例）
+
+- proposed_id: POLICY.ERR.FAILURE_TAXONOMY_SEVEN_CLASSES
+  source_section: SHOULD
+  source_protocol: .trellis/spec/backend/16-error-code-protocol.md
+  source_lines: L33
+  source_sha256: aa80ee60f7431e14859f61e563784e71b2002f35e220964170a779800fdde090
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: true
+  statement_zh: 建议将失败至少划分为七类分别建模：认证失败、鉴权失败、资源不存在、冲突、校验不通过、限流、服务内部故障。
+  statement_en_keywords: failure taxonomy, authn/authz/not-found/conflict/validation/rate-limit/internal separation
+  clean_room: true
+  applies_when: {lane: backend, condition: 错误模型设计}
+  cross_refs: [POLICY.WEB.API.SESSION_RECOVERY_SPLIT]
+  notes: SHOULD 正确降级 advisory；SESSION_RECOVERY_SPLIT 为 FE 侧恢复路径对偶（客户端处理 vs 服务端建模），互引不合并
+
+- proposed_id: POLICY.TPL.ERROR_REGISTRY_ENTRY
+  source_section: Contract
+  source_protocol: .trellis/spec/backend/16-error-code-protocol.md
+  source_lines: L37
+  source_sha256: aa80ee60f7431e14859f61e563784e71b2002f35e220964170a779800fdde090
+  classification: CONTRACT_TEMPLATE
+  sort: UNIVERSAL
+  kind_proposal: contract_template
+  enforcement: deterministic_where_possible
+  vocab_pr_needed: true
+  statement_zh: 错误注册项五个必备字段：语义说明、状态码映射、消息边界（哪些内容允许出现）、重试性判定、条目所有者。
+  statement_en_keywords: error registry entry, semantics, status mapping, message boundary, retryability, owner
+  clean_room: true
+  applies_when: {lane: backend, condition: 登记任何错误码}
+  notes: 落点随 R-C=b 挂起（V8）
+
+- proposed_id: GATE.ERR.NEW_ERROR_VERIFICATION
+  source_section: Checklist
+  source_protocol: .trellis/spec/backend/16-error-code-protocol.md
+  source_lines: L41
+  source_sha256: aa80ee60f7431e14859f61e563784e71b2002f35e220964170a779800fdde090
+  classification: GATE_RECIPE
+  sort: UNIVERSAL
+  kind_proposal: gate_recipe
+  enforcement: deterministic_where_possible
+  vocab_pr_needed: true
+  statement_zh: 新增错误码门禁三项——调用方在该错误下有可执行的恢复路径、日志可凭码关联、对既有客户端保持兼容行为。
+  statement_en_keywords: new error gate, client recovery path, log correlation, compatibility
+  clean_room: true
+  applies_when: {lane: backend, condition: 新增错误码过门禁}
+  notes: GATE. 前缀需 vocab PR（V2）
+
+- proposed_id: KNOWLEDGE.ERR.EXAMPLE_OPTIMISTIC_LOCK_RETRYABILITY
+  source_section: Examples
+  source_protocol: .trellis/spec/backend/16-error-code-protocol.md
+  source_lines: L45
+  source_sha256: aa80ee60f7431e14859f61e563784e71b2002f35e220964170a779800fdde090
+  classification: KNOWLEDGE_PATTERN
+  sort: UNIVERSAL
+  kind_proposal: knowledge_entry
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 示例：并发更新冲突返回固定的冲突码，并显式告知调用方此错误是否值得重试。
+  statement_en_keywords: example, optimistic lock conflict, stable conflict code, explicit retryability
+  clean_room: true
+  applies_when: {lane: backend, condition: 冲突类错误设计}
+
+- proposed_id: KNOWLEDGE.FP.ERR.UNIFORM_200_OR_UNKNOWN
+  source_section: Anti-patterns
+  source_protocol: .trellis/spec/backend/16-error-code-protocol.md
+  source_lines: L49
+  source_sha256: aa80ee60f7431e14859f61e563784e71b2002f35e220964170a779800fdde090
+  classification: FAILURE_PATTERN
+  sort: UNIVERSAL
+  kind_proposal: knowledge_entry
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 失败模式：把一切异常都装进成功状态的外壳，或统统折叠成一个含义含混的『未知错误』，调用方因此失去分流处理能力。
+  statement_en_keywords: failure pattern, all-200 envelope, uniform unknown error, lost dispatchability
+  clean_room: true
+  applies_when: {lane: backend, condition: 错误响应架构评审}
+  notes: 语句以『成功状态的外壳』措辞以保持传输层中性（源文为 HTTP 200）
+
+- proposed_id: AUTHORITY.ERR.ERROR_REGISTRY_OWNERSHIP
+  source_section: Ownership
+  source_protocol: .trellis/spec/backend/16-error-code-protocol.md
+  source_lines: L53
+  source_sha256: aa80ee60f7431e14859f61e563784e71b2002f35e220964170a779800fdde090
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 权威分配默认值：Backend 维护错误注册表正本；API 消费方只按注册表中的稳定语义编写处理逻辑。
+  statement_en_keywords: backend owns error registry, consumers code against stable semantics
+  clean_room: true
+  applies_when: {lane: any, condition: Authority Map 构建}
+  notes: AUTHORITY. 前缀已冻结；M6 同型上提审阅（10→1+N 提案池成员）
+
+- proposed_id: POLICY.ERR.PUBLISHED_CODE_IMMUTABLE
+  source_section: Change Policy
+  source_protocol: .trellis/spec/backend/16-error-code-protocol.md
+  source_lines: L57
+  source_sha256: aa80ee60f7431e14859f61e563784e71b2002f35e220964170a779800fdde090
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 已对外发布的错误码永不回收复用；进入废弃流程时必须随附兼容说明，让存量调用方有据可依。
+  statement_en_keywords: published error code immutable, no reuse, deprecation with compatibility notes
+  clean_room: true
+  applies_when: {lane: backend, condition: 废弃或更换错误码}
+  cross_refs: [POLICY.CHG.DEPRECATE_BEFORE_DELETE]
+  notes: DEPRECATE_BEFORE_DELETE 的错误码域实例化，独有增量『永不复用』（code 不可回收性），独立成卡互引
+
+# ============ 文件 6/6: backend/17-permission-authorization-protocol.md (sha256 d85a431b...) ============
+
+- proposed_id: POLICY.AUTHZ.SERVER_FIVE_FACTOR_VERIFICATION
+  source_section: MUST
+  source_protocol: .trellis/spec/backend/17-permission-authorization-protocol.md
+  source_lines: L25
+  source_sha256: d85a431b682a3a7c3dd4a6ee1f67fc375b54edb4a8e7fe98d283103b64a6b41e
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 每个受保护操作在服务端执行时必须完成五元核验：请求主体是谁、要执行什么动作、属于哪个租户、数据范围边界在哪、目标资源归谁所有。
+  statement_en_keywords: server-side five-factor verification, subject, action, tenant, data scope, resource ownership
+  clean_room: true
+  applies_when: {lane: backend, condition: 执行任何受保护操作}
+  cross_refs: [POLICY.SEC.TRUST_BOUNDARY_ENFORCEMENT]
+  notes: 信任边界通用条款的授权域细化（五元分解为本条独有增量），互引不合并；租户为通用多租户概念非项目专名
+
+- proposed_id: POLICY.AUTHZ.NO_GATING_PROXY_TRUST
+  source_section: MUST NOT
+  source_protocol: .trellis/spec/backend/17-permission-authorization-protocol.md
+  source_lines: L29
+  source_sha256: d85a431b682a3a7c3dd4a6ee1f67fc375b54edb4a8e7fe98d283103b64a6b41e
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 路由不可见、按钮置灰、或请求方自行声明的租户与归属字段——这些客户端侧表象一律不得当作授权通过的凭据。
+  statement_en_keywords: no gating proxy trust, route hiding, button state, client-declared tenant/owner
+  clean_room: true
+  applies_when: {lane: backend, condition: 服务端授权判定}
+  cross_refs: [POLICY.AUTHZ.SERVER_FIVE_FACTOR_VERIFICATION, POLICY.SEC.NO_CLIENT_SIDE_TRUST]
+  notes: 独立成卡（BE12 先例）：枚举三类客户端表象绕过向量；与 SEC.NO_CLIENT_SIDE_TRUST 同族不同域（安全泛化 vs 授权具体）
+
+- proposed_id: POLICY.AUTHZ.CENTRAL_POLICY_AND_ABUSE_MATRIX
+  source_section: SHOULD
+  source_protocol: .trellis/spec/backend/17-permission-authorization-protocol.md
+  source_lines: L33
+  source_sha256: d85a431b682a3a7c3dd4a6ee1f67fc375b54edb4a8e7fe98d283103b64a6b41e
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: true
+  statement_zh: 建议把授权判定收敛到集中式策略点，并针对四类滥用路径编写专门测试：越权访问、跨租户渗透、批量拉取、导出场景。
+  statement_en_keywords: centralized policy, abuse test matrix, privilege escalation, cross-tenant, bulk, export
+  clean_room: true
+  applies_when: {lane: backend, condition: 授权机制设计与测试规划}
+  notes: SHOULD 正确降级 advisory
+
+- proposed_id: POLICY.TPL.PERMISSION_CONTRACT_FIELDS
+  source_section: Contract
+  source_protocol: .trellis/spec/backend/17-permission-authorization-protocol.md
+  source_lines: L37
+  source_sha256: d85a431b682a3a7c3dd4a6ee1f67fc375b54edb4a8e7fe98d283103b64a6b41e
+  classification: CONTRACT_TEMPLATE
+  sort: UNIVERSAL
+  kind_proposal: contract_template
+  enforcement: deterministic_where_possible
+  vocab_pr_needed: true
+  statement_zh: 权限契约六要素：主体、目标资源、动作、数据范围、拒绝时的对外语义、审计留痕方式。
+  statement_en_keywords: permission contract fields, subject, resource, action, scope, denial semantics, audit
+  clean_room: true
+  applies_when: {lane: backend, condition: 定义权限契约}
+  notes: 落点随 R-C=b 挂起（V8）
+
+- proposed_id: GATE.AUTHZ.SCOPE_CONSISTENCY_MATRIX
+  source_section: Checklist
+  source_protocol: .trellis/spec/backend/17-permission-authorization-protocol.md
+  source_lines: L41
+  source_sha256: d85a431b682a3a7c3dd4a6ee1f67fc375b54edb4a8e7fe98d283103b64a6b41e
+  classification: GATE_RECIPE
+  sort: UNIVERSAL
+  kind_proposal: gate_recipe
+  enforcement: deterministic_where_possible
+  vocab_pr_needed: true
+  statement_zh: 授权门禁核对六种访问形态——单条读取、列表、搜索、批量操作、导入、导出——确认执行同一套范围控制。
+  statement_en_keywords: scope consistency matrix, single/list/search/bulk/import/export
+  clean_room: true
+  applies_when: {lane: backend, condition: 授权相关变更过门禁}
+  notes: GATE. 前缀需 vocab PR（V2）
+
+- proposed_id: KNOWLEDGE.AUTHZ.EXAMPLE_FILTER_AT_QUERY_LAYER
+  source_section: Examples
+  source_protocol: .trellis/spec/backend/17-permission-authorization-protocol.md
+  source_lines: L45
+  source_sha256: d85a431b682a3a7c3dd4a6ee1f67fc375b54edb4a8e7fe98d283103b64a6b41e
+  classification: KNOWLEDGE_PATTERN
+  sort: UNIVERSAL
+  kind_proposal: knowledge_entry
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 示例：租户与数据范围的收窄发生在查询条件构造层（进入持久层查询之前），而非取回全量后再于内存中过滤。
+  statement_en_keywords: example, filter at query construction, not in-memory post-filter
+  clean_room: true
+  applies_when: {lane: backend, condition: 列表查询实现}
+  cross_refs: [KNOWLEDGE.SEC.EXAMPLE_DOWNLOAD_TRIPLE_CHECK]
+  notes: 授权示例族同型（M5 式合并审阅候选登记）
+
+- proposed_id: KNOWLEDGE.FP.AUTHZ.ROLE_NAME_ONLY_CHECK
+  source_section: Anti-patterns
+  source_protocol: .trellis/spec/backend/17-permission-authorization-protocol.md
+  source_lines: L49
+  source_sha256: d85a431b682a3a7c3dd4a6ee1f67fc375b54edb4a8e7fe98d283103b64a6b41e
+  classification: FAILURE_PATTERN
+  sort: UNIVERSAL
+  kind_proposal: knowledge_entry
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 失败模式：授权判断只比对角色名，既不核对目标资源的归属关系，也不检查字段的敏感级别，横向越权由此穿透。
+  statement_en_keywords: failure pattern, role-name-only authorization, missing ownership/field-sensitivity check, horizontal escalation
+  clean_room: true
+  applies_when: {lane: backend, condition: 授权逻辑评审}
+
+- proposed_id: AUTHORITY.AUTHZ.PERMISSION_SEMANTICS_OWNERSHIP
+  source_section: Ownership
+  source_protocol: .trellis/spec/backend/17-permission-authorization-protocol.md
+  source_lines: L53
+  source_sha256: d85a431b682a3a7c3dd4a6ee1f67fc375b54edb4a8e7fe98d283103b64a6b41e
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 权威分配默认值：业务需求侧（需求事实源）定义权限的业务语义；Backend 持有授权执行的最终权威。
+  statement_en_keywords: requirement side defines permission semantics, backend owns final authorization
+  clean_room: true
+  applies_when: {lane: any, condition: Authority Map 构建}
+  uncertainty: 源文作『BP 定义业务权限语义』——BP 为项目专名（po-master 蓝图工件），按 clean-room 规则禁入 Universal 候选，已泛化为『业务需求侧（需求事实源）』；若 Owner 裁决保留项目语义则本卡应改判 HYBRID 并标 project_scope
+  notes: AUTHORITY. 前缀已冻结；M6 同型上提审阅（10→1+N 提案池成员）
+
+- proposed_id: POLICY.AUTHZ.PERMISSION_SCOPE_EXPANSION_GATE
+  source_section: Change Policy
+  source_protocol: .trellis/spec/backend/17-permission-authorization-protocol.md
+  source_lines: L57
+  source_sha256: d85a431b682a3a7c3dd4a6ee1f67fc375b54edb4a8e7fe98d283103b64a6b41e
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 扩大权限覆盖面——更多主体、更多资源、更大范围——必须集齐三道手续：业务方正式确认、安全评审通过、回归测试佐证。
+  statement_en_keywords: permission scope expansion, business confirmation, security review, regression evidence
+  clean_room: true
+  applies_when: {lane: backend, condition: 扩大权限范围时}
+  cross_refs: [POLICY.SEC.SECURITY_RELAXATION_GATE, POLICY.PRV.PROCESSING_SCOPE_RE_REVIEW]
+  notes: 本批形成同族三卡（安全放宽/隐私扩围/权限扩围三条域专属审批门，均为『显式确认+评审+佐证』同形）——登记 M 式同族合并审阅候选，供汇总组裁决是否上提统一模板

@@ -1,0 +1,2793 @@
+# FE-G3 拆解产物（frontend 族第 3 组 · 运行时状态与交互）
+# 纪律：MASTer_master 只读；禁墙钟（seq=SPEC-D）；确定性序列化（卡片按源文件行序）；
+# clean-room：全部 statement_zh 为独立措辞（语义等价、词形独立），零逐字拷贝；
+# UNIVERSAL 分拣语句零项目专名（MASTer/Master*/Pinia/AG Grid/el-table/项目层名等仅现于 PROJECT/HYBRID 卡 statement 或 notes）；
+# D5 防膨胀：本文件全部候选一律入 backlog 排队，物化仅限下游保守精选（高置信 Universal + MUST 级 + 与既有 60+9 条零重复）。
+
+meta:
+  group: FE-G3
+  seq: SPEC-D
+  status: PROPOSAL
+  proposal_source: design_seed
+  proposal_evidence: PLANNED
+  human_review_required: true
+  source_tree: MASTer_master/.trellis/spec (read-only; 下游 source.file 均为该树内 repo-relative 路径)
+  method_refs:
+    - docs/catalog-pilot-report.md（§3-§6 拆解方法、候选卡 schema、分拣先例）
+    - catalog/candidates/candidates-draft.json（82 条试点候选，重复比对基准）
+    - catalog/policies/** + catalog/knowledge/**（60 物化条目）+ 批次4 增补 9 条（policy.web.arch.layer_isolation / naming_conventions / public_api_barrel、policy.web.api.auth_app_client_split / session_recovery_split / request_infrastructure、policy.web.perf.budget_skeleton、policy.web.style.ownership_matrix、policy.web.uiux.provider_evidence_not_business_truth）
+  denominator:
+    assigned_files: 10
+    covered_files: 10
+    empty_conclusion_files: 0
+    coverage_note: 10 份文件全部含可提取政策语义，无空结论文件
+  counts:
+    total_cards: 253
+    new_candidates: 179
+    triage_new_only: {UNIVERSAL: 151, PROJECT: 21, HYBRID: 7}
+    duplicate_cards: 74
+  duplicate_card_convention: DUPLICATE 卡不单列 enforcement 与 applies_when，强制力与适用条件一律随合并目标继承
+  triage_semantics:
+    UNIVERSAL: 可跨项目复用的通用工程政策（statement 零项目专名）
+    PROJECT: MASTer 项目专属（项目组件/层名/白名单/引擎适配细节），落点应为 Project Baseline
+    HYBRID: 通用内核 + 项目参数或落点混合（正本须声明参数由项目基线供给，随 SERVER_OPS_VIRTUALIZATION 两半拆分先例）
+  vocab_findings:
+    - 新 id 域段 STATE / CACHE / RENDER / FORM / ROUTE / PERF / COMPAT / LIFE / STORAGE 需 vocab-pr 登记（closed-world 前缀闭包，未知段注册前不得入册）
+    - PROJECT. 前缀（项目基线候选命名空间）需 vocab-pr 裁决，比照试点 V8 对 TEMPLATE. 前缀的挂起处置
+    - GATE. / POLICY.TPL. 词形沿用试点 V2/V8 结论（挂起，本批只登记不执行，FROZEN 词表未动）
+  pilot_reuse_note: 本组含 FE30（partial_overlap）。按盘点 reuse_note，试点候选不可直接援引为本文件覆盖凭证，本批已按 MASTer 版逐行重提取；与试点候选语义等同者标 DUPLICATE 并给 duplicate_of（幂等合并语义），MASTer 增量段以新候选承载
+
+files:
+
+  - file: .trellis/spec/frontend/18-state-management-protocol.md
+    sha256: 9f14bed4cea91c06c4dca8a05989a1d5bb0c6a3ae2641a33720c9272a1789394
+    coverage: {cards_total: 32, new: 18, duplicate: 14, empty_conclusion: false}
+    cards:
+
+      - proposed_id: POLICY.STATE.LIFECYCLE_DECLARATION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: UNIVERSAL_POLICY
+        statement_zh: "应用中的每一项状态都必须显式登记五类事实：归属者、允许写入者、存放位置、生命周期边界与清理时机。"
+        statement_en_keywords: "state declaration, owner, writer, storage, lifecycle, cleanup policy"
+        applies_when: {lane: any, condition: "声明或评审任何应用状态"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/18-state-management-protocol.md, lines: "20"}
+        clean_room: true
+
+      - proposed_id: POLICY.STATE.SERVER_STATE_OWNERSHIP
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "远端权威数据及其请求生命周期必须由查询缓存层统一持有，禁止在各处维护手工同步副本。"
+        statement_en_keywords: "server state ownership, query cache layer, no manual sync copies"
+        applies_when: {lane: frontend, condition: "消费远端数据"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/18-state-management-protocol.md, lines: "21"}
+        clean_room: true
+
+      - proposed_id: POLICY.STATE.GLOBAL_STORE_MINIMALITY
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "全局状态库只允许承载稳定的跨页面状态；组件局部、页面临时与服务端数据副本一律不得迁入。稳定跨页面状态的正面清单属项目基线供给。"
+        statement_en_keywords: "global store minimality, stable cross-page state only, positive list as project baseline"
+        applies_when: {lane: frontend, condition: "决定状态是否进入全局库"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/18-state-management-protocol.md, lines: "23, 57-59"}
+        clean_room: true
+        notes: "本行源文件 L57-59 正面白名单（用户摘要/认证/语言/上下文/偏好/通知）为项目基线枚举，随两半拆分先例由项目基线供给"
+
+      - proposed_id: POLICY.STATE.IDENTITY_SWITCH_CLEANSE
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: UNIVERSAL_POLICY
+        statement_zh: "用户身份、权限或数据范围发生切换时，必须清除所有携带越权风险的状态。"
+        statement_en_keywords: "identity switch cleanse, privilege-risk state purge"
+        applies_when: {lane: any, condition: "身份/权限/数据范围切换"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/18-state-management-protocol.md, lines: "24"}
+        clean_room: true
+
+      - proposed_id: POLICY.STATE.FORM_STATE_AXES
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "表单的初值、当前值、脏标记、校验错误、提交进行中与冲突六类状态必须彼此独立建模，不得混叠为单一变量。"
+        statement_en_keywords: "form state axes, initial/current/dirty/errors/submitting/conflict separation"
+        applies_when: {lane: frontend, condition: "建模表单状态"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/18-state-management-protocol.md, lines: "25"}
+        clean_room: true
+
+      - proposed_id: POLICY.STATE.OPAQUE_RUNTIME_REFERENCES
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "不可序列化的运行时对象（第三方实例、DOM 节点、连接句柄等）必须保持为不透明引用，不得进入持久化层、URL 或可序列化的全局状态。"
+        statement_en_keywords: "opaque runtime references, non-serializable handles out of persisted/URL/serializable state"
+        applies_when: {lane: frontend, condition: "持有第三方实例或 DOM/连接句柄"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/18-state-management-protocol.md, lines: "27"}
+        clean_room: true
+
+      - proposed_id: POLICY.STATE.AUTH_STORE_MINIMALITY
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: UNIVERSAL_POLICY
+        statement_zh: "认证与权限状态存储只保存最小摘要集（标识、显示名、组织与会话概要、数据范围概要、过期信息）；访问令牌、刷新令牌、完整声明集与完整权限矩阵不得进入。"
+        statement_en_keywords: "auth store minimality, no tokens/claims/permission matrix in client store"
+        applies_when: {lane: any, condition: "设计认证/权限客户端状态"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/18-state-management-protocol.md, lines: "61"}
+        clean_room: true
+
+      - proposed_id: POLICY.STATE.SINGLE_WRITER
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: UNIVERSAL_POLICY
+        statement_zh: "每项状态必须有唯一且可追踪的写入者，禁止建立双向隐式同步通道。"
+        statement_en_keywords: "single writer, traceable mutation source, no implicit two-way sync"
+        applies_when: {lane: any, condition: "任何状态写入路径"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/18-state-management-protocol.md, lines: "69"}
+        clean_room: true
+
+      - proposed_id: POLICY.STATE.NO_PERMISSION_VERSION_KEY
+        triage: HYBRID
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "当后端按请求实时计算权限且不提供版本标识时，权限版本与数据范围版本不得作为查询缓存键维度；权限失效由身份重取与 401/403 强制刷新覆盖。"
+        statement_en_keywords: "no permission-version cache key, per-request permission computation, 401/403 forced refresh"
+        applies_when: {lane: frontend, condition: "设计查询缓存键维度"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/18-state-management-protocol.md, lines: "53-55, 95"}
+        clean_room: true
+        uncertainty: "依赖「后端按请求实时计算权限、无版本响应头」这一架构事实，跨项目非普适；迁移时须按目标后端契约重审"
+
+      - proposed_id: PROJECT.STATE.REGISTRY_THREE_CATEGORIES
+        triage: PROJECT
+        kind_proposal: policy
+        classification_proposal: PROJECT_BASELINE_TEMPLATE
+        statement_zh: "MASTer 状态登记表按 editing / ui(mode) / server 三类划分，每类绑定唯一 owner 格式与实现归属（per-page store 或查询缓存 hooks）；每页面声明 EDIT/MODE/REQUEST 三组状态机边界，转移由业务步骤推导。"
+        statement_en_keywords: "three-category state registry, per-page state machine boundary"
+        applies_when: {lane: frontend, condition: "MASTer 页面状态归属登记"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/18-state-management-protocol.md, lines: "32-42"}
+        clean_room: true
+
+      - proposed_id: PROJECT.STATE.RENDER_ISOLATION
+        triage: PROJECT
+        kind_proposal: policy
+        classification_proposal: PROJECT_BASELINE_TEMPLATE
+        statement_zh: "MASTer 分层约束：server state 归 entities 层查询 hooks（含请求生命周期与 per-query 错误），client state 归 shared/state 层 per-page store；渲染层（pages/features）组件本地引用不得持有业务或异步状态，两类状态不交叉（server state 不进 Pinia，client state 不进查询缓存）。"
+        statement_en_keywords: "state/render layer isolation, entities hooks vs shared/state per-page store"
+        applies_when: {lane: frontend, condition: "MASTer 页面实现"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/18-state-management-protocol.md, lines: "44-49, 93-94"}
+        clean_room: true
+
+      - proposed_id: PROJECT.STATE.FORMULA_DERIVED_STATE
+        triage: PROJECT
+        kind_proposal: policy
+        classification_proposal: PROJECT_BASELINE_TEMPLATE
+        statement_zh: "MASTer 公式输出态归属：每条公式对应一个 computed，桥接 server state（external:* 输入槽）与 client state（用户覆写）两类输入并调纯求值器；不得进入 Pinia 或长期缓存，正式结果以后端返回为准；求值返回 ok/blocked/pending/error 四态判别，blocked/pending 渲染占位符。"
+        statement_en_keywords: "formula output as derived state, computed binding, four-state evaluation"
+        applies_when: {lane: frontend, condition: "MASTer 公式引擎接入页面"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/18-state-management-protocol.md, lines: "73-80, 96"}
+        clean_room: true
+
+      - proposed_id: TEMPLATE.STATE.REGISTRY_RECORD
+        triage: UNIVERSAL
+        kind_proposal: contract_template
+        classification_proposal: CONTRACT_TEMPLATE
+        statement_zh: "状态登记对象字段形状：StateId、Category、Owner、Writer、Storage、Persistence、IsolationKey、CleanupTrigger。"
+        statement_en_keywords: "state record schema fields"
+        applies_when: {lane: any, condition: "登记任何状态对象"}
+        enforcement: deterministic_where_possible
+        source: {file: .trellis/spec/frontend/18-state-management-protocol.md, lines: "103-108"}
+        clean_room: true
+        notes: "落点随试点 R-C（POLICY.TPL.* 暂留 candidates，catalog/templates/ 与 TEMPLATE. 前缀挂起至 vocab-pr）"
+
+      - proposed_id: GATE.STATE.CHECKS
+        triage: UNIVERSAL
+        kind_proposal: gate_recipe
+        classification_proposal: GATE_RECIPE
+        statement_zh: "状态门禁检查单：①状态分类正确 ②写入者与生命周期明确 ③URL/全局白名单遵守 ④身份切换可安全清理 ⑤运行时资源有释放时机且迟到结果不污染新上下文 ⑥持久化命名空间、版本迁移与失效策略明确。"
+        statement_en_keywords: "state gate checklist"
+        applies_when: {lane: frontend, condition: "状态相关变更过门禁"}
+        enforcement: deterministic_where_possible
+        source: {file: .trellis/spec/frontend/18-state-management-protocol.md, lines: "110-117"}
+        clean_room: true
+        notes: "GATE. 前缀随试点 V2 挂起（vocab-pr）"
+
+      - proposed_id: KNOWLEDGE.STATE.EXAMPLE_STATE_PLACEMENT
+        triage: UNIVERSAL
+        kind_proposal: knowledge_entry
+        classification_proposal: KNOWLEDGE_PATTERN
+        statement_zh: "示例：页面编辑态由页面 store 持有并随卸载销毁；列表数据由领域查询 hooks 持有且键含页面、用户与数据范围维度；分页筛选进 URL、抽屉开关留页面状态、用户摘要进全局 store。"
+        statement_en_keywords: "example, state placement decisions"
+        applies_when: {lane: frontend, condition: "状态归属设计参考"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/18-state-management-protocol.md, lines: "121-125"}
+        clean_room: true
+
+      - proposed_id: KNOWLEDGE.FP.STATE.GLOBAL_STORE_DUMPING
+        triage: UNIVERSAL
+        kind_proposal: failure_pattern
+        classification_proposal: FAILURE_PATTERN
+        statement_zh: "失败模式：把全部列表、筛选、弹窗与表单塞进单一全局 store；在页面本地引用里保存接口返回列表并手写 loading/error；把完整权限矩阵与令牌放进认证存储，导致登出后越权数据残留。"
+        statement_en_keywords: "failure pattern, global store dumping, page-local request state, credential residue"
+        applies_when: {lane: frontend, condition: "状态架构评审"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/18-state-management-protocol.md, lines: "127-133"}
+        clean_room: true
+
+      - proposed_id: AUTHORITY.STATE.OWNERSHIP
+        triage: HYBRID
+        kind_proposal: authority_default
+        classification_proposal: UNIVERSAL_POLICY
+        statement_zh: "权威分配默认值：平台 Owner 维护状态基础设施，页面/领域 Owner 负责具体状态归属。MASTer 落点：shared/state 层 Owner 维护 per-page store 与隔离约定，entities 层 Owner 维护查询 hooks、键维度与缓存失效；状态登记表与页面状态机由前端交付编译产出，为状态归属唯一机器事实源。"
+        statement_en_keywords: "state ownership defaults, machine source of truth registry"
+        applies_when: {lane: frontend, condition: "Authority Map 构建"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/18-state-management-protocol.md, lines: "135-139"}
+        clean_room: true
+        notes: "与试点 M6 同型（权威三层默认值模板上提审阅已登记，留后续批次）；项目层 Owner 分工为 HYBRID 落点"
+
+      - proposed_id: POLICY.STATE.CHANGE_MIGRATION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "状态存放位置或持久化方式的变化必须提供迁移、清理与兼容策略，用户隔离数据场景为强制项。"
+        statement_en_keywords: "state location/persistence change, migration and cleanup obligation"
+        applies_when: {lane: any, condition: "状态归属或持久化方式变更"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/18-state-management-protocol.md, lines: "141-143"}
+        clean_room: true
+        notes: "POLICY.CHG.COMPAT_MIGRATION_ROLLBACK 在状态域的实例化清单（互引），随 GRID.SCHEMA_VERSIONING 先例保留为域卡"
+
+      - proposed_id: POLICY.STATE.URL_SHAREABLE_RESTORE
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "可分享、可刷新恢复的状态应进入 URL。"
+        source: {file: .trellis/spec/frontend/18-state-management-protocol.md, lines: "22, 63-65"}
+        clean_room: true
+        duplicate_of: POLICY.ROUTE.SHAREABLE_STATE_IN_URL
+        notes: "跨文件语义重复（本组 29 号路由协议为正本自然归属）；L63-65 正面字段白名单为项目基线供给，不入 Universal 正本"
+
+      - proposed_id: POLICY.STATE.RESOURCE_DISPOSAL_DECLARATION
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "状态持有的监听器、计时器、观察者、请求、流、连接、Worker 与对象 URL 必须声明释放时机，并在销毁、身份切换或能力关闭时清理。"
+        source: {file: .trellis/spec/frontend/18-state-management-protocol.md, lines: "26"}
+        clean_room: true
+        duplicate_of: POLICY.LIFE.PAIRED_DISPOSAL
+        notes: "与本组 42 号运行时生命周期协议（本批正本）语义重复"
+
+      - proposed_id: POLICY.STATE.PERSISTENCE_NAMESPACING
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "持久化状态必须按用户/租户/环境命名空间隔离，并在登出、权限收缩或版本不兼容时失效或迁移。"
+        source: {file: .trellis/spec/frontend/18-state-management-protocol.md, lines: "28"}
+        clean_room: true
+        duplicate_of: POLICY.STORAGE.ISOLATION_ENFORCEMENT
+        notes: "与本组 45 号浏览器存储协议（本批正本）隔离语义重复"
+
+      - proposed_id: POLICY.STATE.QUERY_KEY_PROJECT_DIMENSIONS
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "查询键必须包含全部影响结果的稳定维度（本项目枚举含领域、实体、页面、用户、数据范围、车型/条线版本、记录状态、筛选、排序、分页、schema 版本）。"
+        source: {file: .trellis/spec/frontend/18-state-management-protocol.md, lines: "53"}
+        clean_room: true
+        duplicate_of: POLICY.CACHE.QUERY_KEY_COMPLETENESS
+        notes: "正本在本组 19 号缓存协议；维度枚举（含车型/条线等项目域对象）属项目基线供给"
+
+      - proposed_id: POLICY.STATE.NO_LOCAL_INVALIDATION_ONLY
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "状态变更操作不得只刷新当前页面局部变量，必须声明缓存失效范围、失败回滚与冲突处理。"
+        source: {file: .trellis/spec/frontend/18-state-management-protocol.md, lines: "70"}
+        clean_room: true
+        duplicate_of: POLICY.CACHE.MUTATION_INVALIDATION_MATRIX
+        notes: "同文件（18）与同组（19）正本联合覆盖的极性形态"
+
+      - proposed_id: POLICY.STATE.NO_STALE_CONTEXT_WRITE
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "快速切换筛选、车型、角色、数据范围、页签或路由时，旧查询响应不得写入当前状态。"
+        source: {file: .trellis/spec/frontend/18-state-management-protocol.md, lines: "71"}
+        clean_room: true
+        duplicate_of: POLICY.WEB.API.LATE_RESULT_GUARD
+        notes: "试点既有正本（迟到结果写回防护）语义覆盖"
+
+      - proposed_id: POLICY.STATE.NO_COMPONENT_STATE_IN_GLOBAL_STORE
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "组件局部状态不得迁入全局 store。"
+        source: {file: .trellis/spec/frontend/18-state-management-protocol.md, lines: "84"}
+        clean_room: true
+        duplicate_of: POLICY.STATE.GLOBAL_STORE_MINIMALITY
+        notes: "同协议极性反转（正本禁止形态）"
+
+      - proposed_id: POLICY.STATE.NO_SERVER_STATE_MANUAL_SYNC
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "server state 不得复制进全局 store 手动同步。"
+        source: {file: .trellis/spec/frontend/18-state-management-protocol.md, lines: "85"}
+        clean_room: true
+        duplicate_of: POLICY.STATE.SERVER_STATE_OWNERSHIP
+        notes: "同协议极性反转"
+
+      - proposed_id: POLICY.STATE.NO_SENSITIVE_IN_URL
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "敏感信息与未提交表单不得写入 URL。"
+        source: {file: .trellis/spec/frontend/18-state-management-protocol.md, lines: "86"}
+        clean_room: true
+        duplicate_of: POLICY.ROUTE.SHAREABLE_STATE_IN_URL
+        notes: "正本禁止形态"
+
+      - proposed_id: POLICY.STATE.NO_UNISOLATED_PAGE_STATE
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "未隔离的页面状态不得跨页面共享。"
+        source: {file: .trellis/spec/frontend/18-state-management-protocol.md, lines: "87"}
+        clean_room: true
+        duplicate_of: PROJECT.STATE.RENDER_ISOLATION
+        notes: "per-page 隔离正本的禁止形态"
+
+      - proposed_id: POLICY.STATE.NO_CREDENTIALS_IN_PERSISTED_STATE
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "认证凭据、敏感表单原值与第三方资源句柄不得写入通用持久化状态。"
+        source: {file: .trellis/spec/frontend/18-state-management-protocol.md, lines: "88"}
+        clean_room: true
+        duplicate_of: POLICY.STORAGE.NO_CREDENTIAL_PERSISTENCE
+        notes: "本组 45 号正本（脚本可读存储禁持久化凭据）覆盖"
+
+      - proposed_id: POLICY.STATE.NO_LATE_RESULT_WRITE
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "已取消请求、旧订阅或旧身份上下文的迟到结果不得继续写入当前状态。"
+        source: {file: .trellis/spec/frontend/18-state-management-protocol.md, lines: "89"}
+        clean_room: true
+        duplicate_of: POLICY.WEB.API.LATE_RESULT_GUARD
+        notes: "试点正本直接覆盖"
+
+      - proposed_id: POLICY.STATE.WRITER_UNIQUENESS_SHOULD
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "状态更新来源应唯一且可追踪。"
+        source: {file: .trellis/spec/frontend/18-state-management-protocol.md, lines: "100"}
+        clean_room: true
+        duplicate_of: POLICY.STATE.SINGLE_WRITER
+        notes: "同文件语义重复实证（L69 已以 MUST 强度承载同义内容），比照试点 DRAFT_NOT_BASELINE_2 先例合并"
+
+      - proposed_id: POLICY.STATE.PERSISTENCE_SCHEMA_VERSION_SHOULD
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "持久化状态应以 schema/版本机制管理。"
+        source: {file: .trellis/spec/frontend/18-state-management-protocol.md, lines: "101"}
+        clean_room: true
+        duplicate_of: POLICY.STORAGE.SCHEMA_VERSION_MIGRATION
+        notes: "本组 45 号正本覆盖"
+
+  - file: .trellis/spec/frontend/19-cache-protocol.md
+    sha256: 893d5651016233eec36333775441a935746fe1202c8924dc2edf753d61523daf
+    coverage: {cards_total: 17, new: 11, duplicate: 6, empty_conclusion: false}
+    cards:
+
+      - proposed_id: POLICY.CACHE.CACHE_DECLARATION_FIELDS
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "每个缓存必须显式声明键构成、参数、身份与权限隔离、新鲜期、保留时长与失效规则六类事实。"
+        statement_en_keywords: "cache declaration, query key, isolation, stale time, retention, invalidation"
+        applies_when: {lane: frontend, condition: "建立任何客户端缓存"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/19-cache-protocol.md, lines: "19"}
+        clean_room: true
+
+      - proposed_id: POLICY.CACHE.QUERY_KEY_COMPLETENESS
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "查询缓存键必须覆盖所有影响结果集的筛选与上下文维度（维度枚举由项目基线供给）。"
+        statement_en_keywords: "query key completeness, all result-affecting dimensions"
+        applies_when: {lane: frontend, condition: "构造查询缓存键"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/19-cache-protocol.md, lines: "20"}
+        clean_room: true
+        notes: "本组 18 号协议的项目维度枚举为其实例（见 POLICY.STATE.QUERY_KEY_PROJECT_DIMENSIONS DUPLICATE 卡）"
+
+      - proposed_id: POLICY.CACHE.MUTATION_INVALIDATION_MATRIX
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "每个写操作必须定义其受影响缓存的失效矩阵；禁止只更新视觉呈现而不刷新依赖数据。"
+        statement_en_keywords: "mutation invalidation matrix, no visual-only update"
+        applies_when: {lane: frontend, condition: "任何写操作落地"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/19-cache-protocol.md, lines: "21, 28"}
+        clean_room: true
+        notes: "L28 极性形态已并入正本 statement（禁止形态段），不再单列 DUPLICATE 卡"
+
+      - proposed_id: POLICY.CACHE.NO_UNAPPROVED_LONG_CACHE
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "实时敏感数据不得进入长生命周期缓存，除非获得显式批准。"
+        statement_en_keywords: "no long caching of realtime-sensitive data without approval"
+        applies_when: {lane: frontend, condition: "决定缓存保留时长"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/19-cache-protocol.md, lines: "29"}
+        clean_room: true
+
+      - proposed_id: POLICY.CACHE.KEY_FACTORY_CENTRAL_INVALIDATION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "建议以结构化键工厂与集中式失效策略管理缓存，而非散落手拼键。"
+        statement_en_keywords: "structured key factory, centralized invalidation strategy"
+        applies_when: {lane: frontend, condition: "缓存基础设施选型"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/19-cache-protocol.md, lines: "34"}
+        clean_room: true
+
+      - proposed_id: POLICY.CACHE.STALE_WHILE_REVALIDATE
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "后台刷新期间应继续提供可用的旧数据，并明确标记其过期属性。"
+        statement_en_keywords: "stale-while-revalidate, keep stale data visible and labeled"
+        applies_when: {lane: frontend, condition: "后台刷新路径"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/19-cache-protocol.md, lines: "35"}
+        clean_room: true
+
+      - proposed_id: TEMPLATE.CACHE.RESOURCE_CACHE_RECORD
+        triage: UNIVERSAL
+        kind_proposal: contract_template
+        classification_proposal: CONTRACT_TEMPLATE
+        statement_zh: "缓存登记对象字段形状：Resource、QueryKey、IsolationKeys[]、StaleTime、Retention、RefetchTriggers[]、MutationInvalidations[]。"
+        statement_en_keywords: "cache record schema fields"
+        applies_when: {lane: frontend, condition: "登记任何缓存对象"}
+        enforcement: deterministic_where_possible
+        source: {file: .trellis/spec/frontend/19-cache-protocol.md, lines: "39-42"}
+        clean_room: true
+        notes: "落点随试点 R-C 挂起"
+
+      - proposed_id: GATE.CACHE.CHECKS
+        triage: UNIVERSAL
+        kind_proposal: gate_recipe
+        classification_proposal: GATE_RECIPE
+        statement_zh: "缓存门禁检查单：①键覆盖全部结果参数 ②身份与权限隔离安全 ③mutation 失效完整 ④schema 迁移明确。"
+        statement_en_keywords: "cache gate checklist"
+        applies_when: {lane: frontend, condition: "缓存相关变更过门禁"}
+        enforcement: deterministic_where_possible
+        source: {file: .trellis/spec/frontend/19-cache-protocol.md, lines: "44-49"}
+        clean_room: true
+        notes: "GATE. 前缀随试点 V2 挂起"
+
+      - proposed_id: KNOWLEDGE.CACHE.EXAMPLE_LIST_KEY_ISOLATION
+        triage: UNIVERSAL
+        kind_proposal: knowledge_entry
+        classification_proposal: KNOWLEDGE_PATTERN
+        statement_zh: "示例：列表缓存键同时纳入用户数据范围、分页、筛选与排序维度，权限变化后整体清除。"
+        statement_en_keywords: "example, list key isolation, permission-triggered purge"
+        applies_when: {lane: frontend, condition: "列表缓存设计参考"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/19-cache-protocol.md, lines: "53-55"}
+        clean_room: true
+
+      - proposed_id: KNOWLEDGE.FP.CACHE.SHARED_KEY_CROSS_TALK
+        triage: UNIVERSAL
+        kind_proposal: failure_pattern
+        classification_proposal: FAILURE_PATTERN
+        statement_zh: "失败模式：全部用户共用同一缓存键，引发筛选串扰乃至越权数据复用。"
+        statement_en_keywords: "failure pattern, shared cache key, cross-user leakage"
+        applies_when: {lane: frontend, condition: "缓存键设计评审"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/19-cache-protocol.md, lines: "57-59"}
+        clean_room: true
+
+      - proposed_id: AUTHORITY.CACHE.OWNERSHIP
+        triage: UNIVERSAL
+        kind_proposal: authority_default
+        classification_proposal: UNIVERSAL_POLICY
+        statement_zh: "权威分配默认值：平台 Owner 维护缓存工具，领域 Owner 定义数据依赖与实时性要求。"
+        statement_en_keywords: "cache ownership defaults, platform tooling vs domain data dependencies"
+        applies_when: {lane: frontend, condition: "Authority Map 构建"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/19-cache-protocol.md, lines: "61-63"}
+        clean_room: true
+        notes: "与试点 M6 同型，合并审阅沿用该登记"
+
+      - proposed_id: POLICY.CACHE.IDENTITY_SWITCH_CACHE_CLEARING
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "用户、角色、组织和数据范围切换时必须清理有越权风险的缓存。"
+        source: {file: .trellis/spec/frontend/19-cache-protocol.md, lines: "22"}
+        clean_room: true
+        duplicate_of: POLICY.STATE.IDENTITY_SWITCH_CLEANSE
+        notes: "缓存是状态清理正本的对象子集，语义被覆盖"
+
+      - proposed_id: POLICY.CACHE.PREFERENCE_SCHEMA_MIGRATION
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "schema 变化时持久化偏好必须迁移或重置。"
+        source: {file: .trellis/spec/frontend/19-cache-protocol.md, lines: "23"}
+        clean_room: true
+        duplicate_of: POLICY.STORAGE.SCHEMA_VERSION_MIGRATION
+        notes: "本组 45 号正本覆盖"
+
+      - proposed_id: POLICY.CACHE.NO_KEY_SCOPE_REUSE
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "同一键不得表示不同筛选或权限范围。"
+        source: {file: .trellis/spec/frontend/19-cache-protocol.md, lines: "27"}
+        clean_room: true
+        duplicate_of: POLICY.CACHE.QUERY_KEY_COMPLETENESS
+        notes: "同协议极性反转"
+
+      - proposed_id: POLICY.CACHE.NO_VISUAL_ONLY_MUTATION
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "写操作后不得只改视觉而不刷新依赖数据。"
+        source: {file: .trellis/spec/frontend/19-cache-protocol.md, lines: "28"}
+        clean_room: true
+        duplicate_of: POLICY.CACHE.MUTATION_INVALIDATION_MATRIX
+        notes: "同协议极性反转"
+
+      - proposed_id: POLICY.CACHE.NO_SERVER_CACHE_IN_GLOBAL_STORE
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "服务端缓存不得再复制进全局 store。"
+        source: {file: .trellis/spec/frontend/19-cache-protocol.md, lines: "30"}
+        clean_room: true
+        duplicate_of: POLICY.STATE.SERVER_STATE_OWNERSHIP
+        notes: "正本极性形态"
+
+      - proposed_id: POLICY.CACHE.KEY_SCHEMA_CHANGE_VERSIONING
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "键结构或持久化 schema 改变必须版本化并提供迁移/清理。"
+        source: {file: .trellis/spec/frontend/19-cache-protocol.md, lines: "65-67"}
+        clean_room: true
+        duplicate_of: POLICY.STORAGE.SCHEMA_VERSION_MIGRATION
+        notes: "Change Policy 段与 L23 同源语义，统一并入 45 号正本"
+
+  - file: .trellis/spec/frontend/27-rendering-state-protocol.md
+    sha256: a640bacd811e05a35075d96ffb99ba51b8b6e11cc2a5443e3bbca0eb124738e4
+    coverage: {cards_total: 18, new: 16, duplicate: 2, empty_conclusion: false}
+    cards:
+
+      - proposed_id: POLICY.RENDER.NON_IDEAL_STATE_MATRIX
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "页面必须覆盖全部非理想状态（首载、后台刷新、空、错误、无权限、部分成功、离线、过期、大数据量）并定义相互呈现优先级。"
+        statement_en_keywords: "non-ideal state matrix, loading/empty/error/permission/partial/offline/stale, presentation priority"
+        applies_when: {lane: frontend, condition: "页面状态设计"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/27-rendering-state-protocol.md, lines: "20"}
+        clean_room: true
+
+      - proposed_id: POLICY.RENDER.SKELETON_LAYOUT_STABILITY
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "首屏骨架占位必须保持主要布局尺寸，避免加载前后布局跳变。"
+        statement_en_keywords: "skeleton layout reservation, no layout shift"
+        applies_when: {lane: frontend, condition: "首屏加载"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/27-rendering-state-protocol.md, lines: "21"}
+        clean_room: true
+
+      - proposed_id: POLICY.RENDER.EMPTY_DISAMBIGUATION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "空态必须区分「真无数据」与「筛选无结果」两种语义。"
+        statement_en_keywords: "empty state disambiguation, no-data vs filtered-empty"
+        applies_when: {lane: frontend, condition: "空态呈现"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/27-rendering-state-protocol.md, lines: "22"}
+        clean_room: true
+
+      - proposed_id: POLICY.RENDER.RECOVERY_ACTIONS
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "错误、无权限与离线状态必须提供可操作的恢复动作。"
+        statement_en_keywords: "recovery actions for error/permission/offline"
+        applies_when: {lane: frontend, condition: "非理想状态呈现"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/27-rendering-state-protocol.md, lines: "23"}
+        clean_room: true
+
+      - proposed_id: POLICY.RENDER.PARTIAL_SUCCESS_BREAKDOWN
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "部分成功场景必须披露成功/失败/跳过的数量与明细。"
+        statement_en_keywords: "partial success breakdown, counts and details"
+        applies_when: {lane: frontend, condition: "批量操作结果呈现"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/27-rendering-state-protocol.md, lines: "24"}
+        clean_room: true
+
+      - proposed_id: POLICY.RENDER.OVERLAY_DISPOSAL_POLICY
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "弹层必须显式声明销毁、保留、脏数据与关闭四类策略。"
+        statement_en_keywords: "overlay disposal policy, destroy/keep/dirty/close"
+        applies_when: {lane: frontend, condition: "弹层/抽屉实现"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/27-rendering-state-protocol.md, lines: "25"}
+        clean_room: true
+
+      - proposed_id: POLICY.RENDER.REFRESH_PRESERVES_CONTENT
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "后台刷新不得清空已呈现内容；旧数据保持可见，刷新进度以轻量指示呈现。"
+        statement_en_keywords: "background refresh preserves content, lightweight progress indicator"
+        applies_when: {lane: frontend, condition: "后台刷新呈现"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/27-rendering-state-protocol.md, lines: "30"}
+        clean_room: true
+        notes: "与 POLICY.CACHE.STALE_WHILE_REVALIDATE 为同一原则的数据层/呈现层两个执行点，互引不合并（层级与强制力不同）"
+
+      - proposed_id: POLICY.RENDER.NO_TOAST_AS_STATE
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "不得以 Toast 通知代替页面级或字段级状态呈现。"
+        statement_en_keywords: "no toast as page/field state, durable state surfaces"
+        applies_when: {lane: frontend, condition: "错误或状态反馈设计"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/27-rendering-state-protocol.md, lines: "31"}
+        clean_room: true
+
+      - proposed_id: POLICY.RENDER.UNIFIED_STATE_COMPONENTS
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "建议使用统一状态组件承载非理想状态，同时允许领域化内容插槽。"
+        statement_en_keywords: "unified state components, domain content slots"
+        applies_when: {lane: frontend, condition: "状态组件选型"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/27-rendering-state-protocol.md, lines: "36"}
+        clean_room: true
+
+      - proposed_id: POLICY.RENDER.STALE_TIMESTAMP_LABEL
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "对过期与离线数据应在呈现层标识其最后更新时间。"
+        statement_en_keywords: "stale/offline data timestamp labeling"
+        applies_when: {lane: frontend, condition: "过期数据呈现"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/27-rendering-state-protocol.md, lines: "37"}
+        clean_room: true
+        notes: "与 POLICY.CACHE.STALE_WHILE_REVALIDATE 的「标识 stale」为呈现层细化（增加离线与时间戳），保留为独立 advisory 卡"
+
+      - proposed_id: TEMPLATE.RENDER.STATE_MATRIX_RECORD
+        triage: UNIVERSAL
+        kind_proposal: contract_template
+        classification_proposal: CONTRACT_TEMPLATE
+        statement_zh: "渲染状态矩阵对象字段形状：State、Priority、Presentation、RecoverAction、LayoutReservation、AccessibilityAnnouncement。"
+        statement_en_keywords: "rendering state matrix schema fields"
+        applies_when: {lane: frontend, condition: "登记页面状态矩阵"}
+        enforcement: deterministic_where_possible
+        source: {file: .trellis/spec/frontend/27-rendering-state-protocol.md, lines: "41-44"}
+        clean_room: true
+        notes: "落点随试点 R-C 挂起"
+
+      - proposed_id: GATE.RENDER.CHECKS
+        triage: UNIVERSAL
+        kind_proposal: gate_recipe
+        classification_proposal: GATE_RECIPE
+        statement_zh: "渲染状态门禁检查单：①状态矩阵完整 ②优先级无冲突 ③恢复动作可用 ④布局与焦点稳定。"
+        statement_en_keywords: "rendering state gate checklist"
+        applies_when: {lane: frontend, condition: "页面状态相关变更过门禁"}
+        enforcement: deterministic_where_possible
+        source: {file: .trellis/spec/frontend/27-rendering-state-protocol.md, lines: "46-51"}
+        clean_room: true
+        notes: "GATE. 前缀随试点 V2 挂起"
+
+      - proposed_id: KNOWLEDGE.RENDER.EXAMPLE_BACKGROUND_REFRESH
+        triage: UNIVERSAL
+        kind_proposal: knowledge_entry
+        classification_proposal: KNOWLEDGE_PATTERN
+        statement_zh: "示例：后台刷新保留表格行并在工具栏显示轻量进度；刷新失败后旧数据仍可查看。"
+        statement_en_keywords: "example, background refresh with preserved rows"
+        applies_when: {lane: frontend, condition: "刷新呈现设计参考"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/27-rendering-state-protocol.md, lines: "53-57"}
+        clean_room: true
+
+      - proposed_id: KNOWLEDGE.FP.RENDER.PAGINATION_BLANK_TOAST_ONLY
+        triage: UNIVERSAL
+        kind_proposal: failure_pattern
+        classification_proposal: FAILURE_PATTERN
+        statement_zh: "失败模式：每次翻页整页白屏，错误后仅弹一次 Toast 且不提供重试入口。"
+        statement_en_keywords: "failure pattern, pagination blank flash, toast-only error without retry"
+        applies_when: {lane: frontend, condition: "列表页状态评审"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/27-rendering-state-protocol.md, lines: "59-61"}
+        clean_room: true
+
+      - proposed_id: AUTHORITY.RENDER.OWNERSHIP
+        triage: UNIVERSAL
+        kind_proposal: authority_default
+        classification_proposal: UNIVERSAL_POLICY
+        statement_zh: "权威分配默认值：页面 Owner 维护状态矩阵，设计系统 Owner 维护状态组件，接口 Owner 提供状态判定的必要信息。"
+        statement_en_keywords: "rendering state ownership defaults"
+        applies_when: {lane: frontend, condition: "Authority Map 构建"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/27-rendering-state-protocol.md, lines: "63-65"}
+        clean_room: true
+        notes: "与试点 M6 同型，合并审阅沿用该登记"
+
+      - proposed_id: POLICY.RENDER.NEW_STATE_SYNC_SET
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "新增渲染状态必须同步更新页面 contract、组件、文案、可访问性与测试。"
+        statement_en_keywords: "new state sync set, contract/component/copy/a11y/tests"
+        applies_when: {lane: frontend, condition: "新增渲染状态"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/27-rendering-state-protocol.md, lines: "67-69"}
+        clean_room: true
+        notes: "POLICY.CHG.SYNC_CONTRACT_DOCS_TESTS 在渲染状态域的实例化清单（互引）"
+
+      - proposed_id: POLICY.RENDER.SUCCESS_ONLY_PAGES
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "不得只实现「成功且有数据」单一状态。"
+        source: {file: .trellis/spec/frontend/27-rendering-state-protocol.md, lines: "29"}
+        clean_room: true
+        duplicate_of: POLICY.RENDER.NON_IDEAL_STATE_MATRIX
+        notes: "同协议极性反转"
+
+      - proposed_id: POLICY.RENDER.NO_RECOVERY_ENTRY
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "错误后不得缺失恢复入口。"
+        source: {file: .trellis/spec/frontend/27-rendering-state-protocol.md, lines: "32"}
+        clean_room: true
+        duplicate_of: POLICY.RENDER.RECOVERY_ACTIONS
+        notes: "同协议极性反转"
+
+  - file: .trellis/spec/frontend/28-form-protocol.md
+    sha256: 5c148783340c2fbef162dab7b4383d1957a6369a8dd7bb5c5db5fedc50fff60e
+    coverage: {cards_total: 25, new: 19, duplicate: 6, empty_conclusion: false}
+    cards:
+
+      - proposed_id: POLICY.FORM.INDEPENDENT_MODEL_SCHEMA
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "表单必须使用独立于传输对象的编辑模型，并配 typed schema 描述字段能力。"
+        statement_en_keywords: "independent form model, typed schema, DTO decoupling"
+        applies_when: {lane: frontend, condition: "实现任何表单"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/28-form-protocol.md, lines: "19"}
+        clean_room: true
+
+      - proposed_id: POLICY.FORM.FIELD_CAPABILITY_DISTINCTION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "必填、只读、自动计算、回填与无权限字段必须在模型中可区分。"
+        statement_en_keywords: "field capability distinction, required/readonly/computed/backfilled/unauthorized"
+        applies_when: {lane: frontend, condition: "表单字段建模"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/28-form-protocol.md, lines: "20"}
+        clean_room: true
+
+      - proposed_id: POLICY.FORM.TWO_STAGE_VALIDATION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "前端先执行格式校验；服务端字段级错误必须定位到具体输入并聚焦该字段。"
+        statement_en_keywords: "two-stage validation, server field error mapping and focus"
+        applies_when: {lane: frontend, condition: "表单校验链路"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/28-form-protocol.md, lines: "21"}
+        clean_room: true
+
+      - proposed_id: POLICY.FORM.SUBMIT_RESUBMIT_GUARD
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "提交必须防重复触发；失败必须保留用户已输入内容。"
+        statement_en_keywords: "submit double-fire guard, preserve input on failure"
+        applies_when: {lane: frontend, condition: "表单提交"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/28-form-protocol.md, lines: "22"}
+        clean_room: true
+
+      - proposed_id: POLICY.FORM.CENTRAL_LINKAGE_RULES
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "字段联动规则必须集中声明且可测试；隐藏字段的清值策略必须明确。"
+        statement_en_keywords: "centralized testable linkage rules, hidden field clear policy"
+        applies_when: {lane: frontend, condition: "表单联动实现"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/28-form-protocol.md, lines: "23"}
+        clean_room: true
+
+      - proposed_id: POLICY.FORM.DIRTY_DRAFT_CONFLICT_POLICY
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "脏状态离开、草稿隔离与版本冲突三类场景必须有显式策略。"
+        statement_en_keywords: "dirty-leave policy, draft isolation, version conflict strategy"
+        applies_when: {lane: frontend, condition: "表单生命周期设计"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/28-form-protocol.md, lines: "24"}
+        clean_room: true
+
+      - proposed_id: POLICY.FORM.LABEL_FIELD_ASSOCIATION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "每个输入必须有持久可见且程序化关联的标签、格式说明与必要性提示；placeholder 不得替代标签。"
+        statement_en_keywords: "persistent programmatic labels, no placeholder-as-label"
+        applies_when: {lane: frontend, condition: "表单输入实现"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/28-form-protocol.md, lines: "25"}
+        clean_room: true
+
+      - proposed_id: POLICY.FORM.ERROR_FIELD_BINDING
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "校验错误必须与字段程序化关联，并在可行时给出修复建议；错误摘要必须可导航至对应字段。"
+        statement_en_keywords: "error-field binding, fix suggestions, navigable error summary"
+        applies_when: {lane: frontend, condition: "校验错误呈现"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/28-form-protocol.md, lines: "26"}
+        clean_room: true
+
+      - proposed_id: POLICY.FORM.AUTOFILL_SEMANTIC_HINTS
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "姓名、地址、联系方式、认证等常见字段必须使用语义正确的 autocomplete / inputmode 等浏览器提示，除非存在明确的安全或业务理由。"
+        statement_en_keywords: "semantic autocomplete/inputmode hints, no unjustified suppression"
+        applies_when: {lane: frontend, condition: "常见字段类型实现"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/28-form-protocol.md, lines: "27"}
+        clean_room: true
+
+      - proposed_id: POLICY.FORM.DATA_REUSE_AND_HIGH_RISK_GUARD
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "同一流程已提供的数据必须复用或允许用户确认，避免重复录入；删除、提交、转账等高风险动作必须提供复核、确认、撤销或等效防错。"
+        statement_en_keywords: "data reuse, high-risk action confirmation/undo"
+        applies_when: {lane: frontend, condition: "多步流程与高风险动作"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/28-form-protocol.md, lines: "28"}
+        clean_room: true
+
+      - proposed_id: POLICY.FORM.NO_PASSWORD_MANAGER_BLOCKING
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "不得禁用密码管理器，也不得无理由阻止粘贴。"
+        statement_en_keywords: "no password manager suppression, no unjustified paste blocking"
+        applies_when: {lane: frontend, condition: "认证/输入类表单"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/28-form-protocol.md, lines: "37"}
+        clean_room: true
+
+      - proposed_id: POLICY.FORM.NATIVE_SUBMIT_SEMANTICS
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "表单提交按钮必须确保原生提交语义生效：使用 UI 组件库按钮时必须显式声明原生 submit 类型（组件默认值可能不触发表单提交事件，导致点击与回车均无法提交）。"
+        statement_en_keywords: "native submit semantics, explicit submit type on widget-library buttons"
+        applies_when: {lane: frontend, condition: "表单提交按钮实现"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/28-form-protocol.md, lines: "38"}
+        clean_room: true
+        uncertainty: "语句已去库名化，但具体默认值行为依组件库版本；入册前需验证表述在目标库生态的普适性"
+
+      - proposed_id: POLICY.FORM.SEMANTIC_SECTIONS
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "大表单应按业务语义分区或分步呈现。"
+        statement_en_keywords: "semantic sections or steps for large forms"
+        applies_when: {lane: frontend, condition: "大表单设计"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/28-form-protocol.md, lines: "42"}
+        clean_room: true
+
+      - proposed_id: TEMPLATE.FORM.FORM_CONTRACT_RECORD
+        triage: UNIVERSAL
+        kind_proposal: contract_template
+        classification_proposal: CONTRACT_TEMPLATE
+        statement_zh: "表单契约对象字段形状：FormModel、Schema、InitialValues、Validation、SubmitCommand、DraftPolicy、DirtyPolicy、ConflictPolicy。"
+        statement_en_keywords: "form contract schema fields"
+        applies_when: {lane: frontend, condition: "登记表单契约"}
+        enforcement: deterministic_where_possible
+        source: {file: .trellis/spec/frontend/28-form-protocol.md, lines: "47-50"}
+        clean_room: true
+        notes: "落点随试点 R-C 挂起"
+
+      - proposed_id: GATE.FORM.CHECKS
+        triage: UNIVERSAL
+        kind_proposal: gate_recipe
+        classification_proposal: GATE_RECIPE
+        statement_zh: "表单门禁检查单：①模型与 schema 独立 ②字段错误可定位 ③防重复与冲突处理完整 ④草稿与离开策略安全 ⑤标签、说明、错误与字段程序化关联 ⑥自动填充、重复录入与高风险动作已检查。"
+        statement_en_keywords: "form gate checklist"
+        applies_when: {lane: frontend, condition: "表单相关变更过门禁"}
+        enforcement: deterministic_where_possible
+        source: {file: .trellis/spec/frontend/28-form-protocol.md, lines: "53-59"}
+        clean_room: true
+        notes: "GATE. 前缀随试点 V2 挂起"
+
+      - proposed_id: KNOWLEDGE.FORM.EXAMPLE_422_FIELD_MAPPING
+        triage: UNIVERSAL
+        kind_proposal: knowledge_entry
+        classification_proposal: KNOWLEDGE_PATTERN
+        statement_zh: "示例：服务端 422 字段错误映射到对应输入控件，保留用户已输数据并聚焦首个错误字段。"
+        statement_en_keywords: "example, 422 field error mapping, focus first error"
+        applies_when: {lane: frontend, condition: "错误映射设计参考"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/28-form-protocol.md, lines: "61-65"}
+        clean_room: true
+
+      - proposed_id: KNOWLEDGE.FP.FORM.DTO_BINDING_RESET_LOSS
+        triage: UNIVERSAL
+        kind_proposal: failure_pattern
+        classification_proposal: FAILURE_PATTERN
+        statement_zh: "失败模式：表单直接绑定传输对象，提交失败后整体重置，用户输入全部丢失。"
+        statement_en_keywords: "failure pattern, DTO-bound form, reset-on-failure data loss"
+        applies_when: {lane: frontend, condition: "表单实现评审"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/28-form-protocol.md, lines: "67-69"}
+        clean_room: true
+
+      - proposed_id: AUTHORITY.FORM.OWNERSHIP
+        triage: UNIVERSAL
+        kind_proposal: authority_default
+        classification_proposal: UNIVERSAL_POLICY
+        statement_zh: "权威分配默认值：领域 Owner 维护字段规则，前端 Owner 维护表单模型，服务端 Owner 维护权威校验。"
+        statement_en_keywords: "form ownership defaults, domain rules vs form model vs authoritative validation"
+        applies_when: {lane: frontend, condition: "Authority Map 构建"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/28-form-protocol.md, lines: "71-73"}
+        clean_room: true
+        notes: "与试点 M6 同型，合并审阅沿用该登记"
+
+      - proposed_id: POLICY.FORM.CHANGE_SYNC_SET
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "字段或联动规则变化必须同步 schema、适配层、草稿版本、错误映射与测试。"
+        statement_en_keywords: "field/linkage change sync set"
+        applies_when: {lane: frontend, condition: "表单结构变更"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/28-form-protocol.md, lines: "75-77"}
+        clean_room: true
+        notes: "POLICY.CHG.SYNC_CONTRACT_DOCS_TESTS 在表单域的实例化清单（互引）"
+
+      - proposed_id: POLICY.FORM.NO_DTO_BINDING
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "不得将表单直接绑定到传输对象。"
+        source: {file: .trellis/spec/frontend/28-form-protocol.md, lines: "32"}
+        clean_room: true
+        duplicate_of: POLICY.FORM.INDEPENDENT_MODEL_SCHEMA
+        notes: "同协议极性反转"
+
+      - proposed_id: POLICY.FORM.NO_TEMPLATE_INLINE_VALIDATION
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "不得在模板中临时书写业务校验逻辑。"
+        source: {file: .trellis/spec/frontend/28-form-protocol.md, lines: "33"}
+        clean_room: true
+        duplicate_of: POLICY.FORM.CENTRAL_LINKAGE_RULES
+        notes: "集中可测试原则的禁止形态（校验与联动同属集中域）"
+
+      - proposed_id: POLICY.FORM.NO_INPUT_CLEAR_ON_FAILURE
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "提交失败不得清空用户输入。"
+        source: {file: .trellis/spec/frontend/28-form-protocol.md, lines: "34"}
+        clean_room: true
+        duplicate_of: POLICY.FORM.SUBMIT_RESUBMIT_GUARD
+        notes: "同协议极性反转"
+
+      - proposed_id: POLICY.FORM.NO_WATCHER_CHAIN_LINKAGE
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "不得以大量互相触发的监听器实现字段联动。"
+        source: {file: .trellis/spec/frontend/28-form-protocol.md, lines: "35"}
+        clean_room: true
+        duplicate_of: POLICY.FORM.CENTRAL_LINKAGE_RULES
+        notes: "同协议极性反转"
+
+      - proposed_id: POLICY.FORM.NO_COLOR_ONLY_ERROR
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "不得仅以颜色、图标、Toast 或页面顶部文案表达字段错误。"
+        source: {file: .trellis/spec/frontend/28-form-protocol.md, lines: "36"}
+        clean_room: true
+        duplicate_of: POLICY.FORM.ERROR_FIELD_BINDING
+        notes: "程序化关联正本的禁止形态"
+
+      - proposed_id: POLICY.FORM.ERROR_SUMMARY_SHOULD
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "应提供错误摘要与首错导航。"
+        source: {file: .trellis/spec/frontend/28-form-protocol.md, lines: "43"}
+        clean_room: true
+        duplicate_of: POLICY.FORM.ERROR_FIELD_BINDING
+        notes: "同文件语义重复（L26 MUST 已含摘要导航子句）"
+
+  - file: .trellis/spec/frontend/29-routing-url-protocol.md
+    sha256: d8bce751ff8538a0c907dc765d553a84ce3cee58da54fc9e47bba671a96d300c
+    coverage: {cards_total: 20, new: 17, duplicate: 3, empty_conclusion: false}
+    cards:
+
+      - proposed_id: POLICY.ROUTE.STABLE_ROUTE_CONTRACT
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "每个页面路由必须有稳定的 name、path、页面 key、标题、权限与布局元数据定义。"
+        statement_en_keywords: "stable route contract, name/path/page-key/meta"
+        applies_when: {lane: frontend, condition: "定义任何页面路由"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/29-routing-url-protocol.md, lines: "19"}
+        clean_room: true
+
+      - proposed_id: POLICY.ROUTE.SHAREABLE_STATE_IN_URL
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "分页、筛选、排序、页签等需分享、刷新或返回后恢复的状态必须进入 URL；令牌、敏感信息、大对象与未提交表单不得进入 URL。可进入字段的具体清单属项目基线供给。"
+        statement_en_keywords: "shareable state in URL, sensitive/ephemeral exclusion, field list as project baseline"
+        applies_when: {lane: frontend, condition: "决定状态是否进 URL"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/29-routing-url-protocol.md, lines: "20, 48"}
+        clean_room: true
+        notes: "两半拆分先例适用：正本承载通用原则，白名单清单由项目基线供给；本组 18 号协议 L22/L63-65/L86 为其跨文件语义重复"
+
+      - proposed_id: POLICY.ROUTE.QUERY_SCHEMA_DISCIPLINE
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "URL 查询参数必须有 schema、默认值、解析失败兜底与版本策略。"
+        statement_en_keywords: "query schema, defaults, parse-failure fallback, versioning"
+        applies_when: {lane: frontend, condition: "解析 URL query"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/29-routing-url-protocol.md, lines: "21"}
+        clean_room: true
+
+      - proposed_id: POLICY.ROUTE.ERROR_ROUTE_MATRIX
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "401、403、404、500 与资源已删除五类场景必须有统一路由策略。"
+        statement_en_keywords: "error route matrix, 401/403/404/500/resource-deleted"
+        applies_when: {lane: frontend, condition: "异常路由设计"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/29-routing-url-protocol.md, lines: "23"}
+        clean_room: true
+
+      - proposed_id: POLICY.ROUTE.ERROR_BOUNDARY_CONTAINMENT
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "页面主内容区必须被路由级错误边界包裹；任一页面的查询或变更错误不得外溢至其他页面或全局导航。"
+        statement_en_keywords: "route-level error boundary, per-page error containment"
+        applies_when: {lane: frontend, condition: "应用外壳/主内容区组装"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/29-routing-url-protocol.md, lines: "31, 57, 99"}
+        clean_room: true
+
+      - proposed_id: POLICY.ROUTE.DECLARED_TRANSITIONS
+        triage: HYBRID
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "页面间转换（源页、目标页、触发条件与返回行为）必须经登记表显式声明，禁止临场发明转换路径；返回行为必须取自受控值集（如禁用或恢复源上下文）。"
+        statement_en_keywords: "declared navigation transitions, controlled return-behavior value set, no ad-hoc paths"
+        applies_when: {lane: frontend, condition: "页面间导航实现"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/29-routing-url-protocol.md, lines: "38-44, 59"}
+        clean_room: true
+        uncertainty: "登记机制可泛化为 Universal；但受控值集的具体枚举及「认证转换=禁用、业务前进=恢复」映射属项目语义，故 HYBRID"
+
+      - proposed_id: PROJECT.ROUTE.APP_SHELL_SLOTS
+        triage: PROJECT
+        kind_proposal: policy
+        classification_proposal: PROJECT_BASELINE_TEMPLATE
+        statement_zh: "MASTer 应用外壳由固定插槽组成（顶部栏、侧边导航、全局面包屑、主内容区、全局消息区、全局任务区、用户菜单），插槽 owner 与布局固定；侧边导航按导航组组织（禁按能力清单平铺），面包屑路由驱动（禁硬编码路径），全局消息区渲染错误映射变体且自动消失，任务区承载异步任务进度，登出与当前用户请求经认证 client。"
+        statement_en_keywords: "fixed app shell slots, nav-group sidebar, route-driven breadcrumb, global message/task zones"
+        applies_when: {lane: frontend, condition: "MASTer 应用外壳实现"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/29-routing-url-protocol.md, lines: "27-36, 58, 83"}
+        clean_room: true
+
+      - proposed_id: POLICY.ROUTE.NO_TITLE_OR_URL_MATCHING
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "不得以标题字符串匹配或 URL 截取判断当前菜单/页面。"
+        statement_en_keywords: "no title-string or URL-snippet menu matching"
+        applies_when: {lane: frontend, condition: "菜单高亮/页面判定"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/29-routing-url-protocol.md, lines: "49"}
+        clean_room: true
+
+      - proposed_id: POLICY.ROUTE.NO_PAGE_LOCAL_ROUTE_TABLE_MUTATION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "页面不得直接修改全局路由表。"
+        statement_en_keywords: "no page-local route table mutation"
+        applies_when: {lane: frontend, condition: "页面内导航逻辑"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/29-routing-url-protocol.md, lines: "50, 55"}
+        clean_room: true
+
+      - proposed_id: POLICY.ROUTE.PAGE_CONTRACT_GENERATION
+        triage: HYBRID
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "路由、菜单与埋点关联建议由页面契约单一来源生成，避免多处手工维护。"
+        statement_en_keywords: "page-contract driven route/menu/analytics generation"
+        applies_when: {lane: frontend, condition: "路由与菜单维护方式"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/29-routing-url-protocol.md, lines: "64"}
+        clean_room: true
+        uncertainty: "「页面契约」概念及生成管线成熟度因项目而异，故 HYBRID"
+
+      - proposed_id: POLICY.ROUTE.TYPED_QUERY_PARSER
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "建议使用带类型的查询参数解析器。"
+        statement_en_keywords: "typed query parser"
+        applies_when: {lane: frontend, condition: "query 解析实现"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/29-routing-url-protocol.md, lines: "65"}
+        clean_room: true
+
+      - proposed_id: TEMPLATE.ROUTE.ROUTE_CONTRACT_RECORD
+        triage: UNIVERSAL
+        kind_proposal: contract_template
+        classification_proposal: CONTRACT_TEMPLATE
+        statement_zh: "路由契约对象字段形状：RouteName、Path、PageKey、Meta、ParamsSchema、QuerySchema、RestorePolicy、ErrorRoutes。"
+        statement_en_keywords: "route contract schema fields"
+        applies_when: {lane: frontend, condition: "登记路由契约"}
+        enforcement: deterministic_where_possible
+        source: {file: .trellis/spec/frontend/29-routing-url-protocol.md, lines: "69-72"}
+        clean_room: true
+        notes: "落点随试点 R-C 挂起"
+
+      - proposed_id: GATE.ROUTE.CHECKS
+        triage: UNIVERSAL
+        kind_proposal: gate_recipe
+        classification_proposal: GATE_RECIPE
+        statement_zh: "路由门禁检查单：①路由与页面 key 一致 ②URL 状态可分享恢复 ③临时/敏感状态未进 URL ④异常路由完整 ⑤外壳插槽 owner 与布局符合固定约定 ⑥主内容区被路由级错误边界包裹 ⑦页面间转换经登记表声明且返回行为取受控值 ⑧侧边导航按导航组组织。"
+        statement_en_keywords: "route gate checklist"
+        applies_when: {lane: frontend, condition: "路由相关变更过门禁"}
+        enforcement: deterministic_where_possible
+        source: {file: .trellis/spec/frontend/29-routing-url-protocol.md, lines: "74-83"}
+        clean_room: true
+        notes: "检查项⑤-⑧含项目外壳语义（HYBRID 落点），GATE. 前缀随试点 V2 挂起"
+
+      - proposed_id: KNOWLEDGE.ROUTE.EXAMPLE_QUERY_RESTORE
+        triage: PROJECT
+        kind_proposal: knowledge_entry
+        classification_proposal: KNOWLEDGE_PATTERN
+        statement_zh: "示例（MASTer 域）：列表分页筛选写入 query 并在返回时按 URL 恢复；登录成功转至选车上下文页（返回行为禁用），选车后前进至清单构建页（返回行为恢复源上下文）。"
+        statement_en_keywords: "project example, query restore, transition return behaviors"
+        applies_when: {lane: frontend, condition: "导航实现参考"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/29-routing-url-protocol.md, lines: "87-91"}
+        clean_room: true
+        notes: "示例含 MASTer 领域对象（选车/清单构建），入 Project Baseline 不入 global catalog"
+
+      - proposed_id: KNOWLEDGE.FP.ROUTE.TITLE_MATCH_AND_ERROR_LEAK
+        triage: UNIVERSAL
+        kind_proposal: failure_pattern
+        classification_proposal: FAILURE_PATTERN
+        statement_zh: "失败模式：以中文标题匹配当前菜单并将全部页面筛选永久存入全局状态；页面组件硬编码跳转路径绕过转换登记；单页查询错误冒泡至应用外壳致全导航进入错误态；按能力清单平铺侧边导航致用户无法按业务流程定位功能。"
+        statement_en_keywords: "failure pattern, title matching, hardcoded paths, error bubbling to shell, capability-list navigation"
+        applies_when: {lane: frontend, condition: "导航架构评审"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/29-routing-url-protocol.md, lines: "93-101"}
+        clean_room: true
+
+      - proposed_id: AUTHORITY.ROUTE.OWNERSHIP
+        triage: HYBRID
+        kind_proposal: authority_default
+        classification_proposal: UNIVERSAL_POLICY
+        statement_zh: "权威分配默认值：平台路由 Owner 维护机制，页面 Owner 维护路由契约，权限 Owner 维护守卫语义。MASTer 落点：应用外壳登记表与导航转换登记表由前端交付编译产出，为 shell 插槽、导航组与页面间转换的唯一机器事实源。"
+        statement_en_keywords: "route ownership defaults, compiled shell/transition registries"
+        applies_when: {lane: frontend, condition: "Authority Map 构建"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/29-routing-url-protocol.md, lines: "103-107"}
+        clean_room: true
+        notes: "与试点 M6 同型；项目机器事实源落点为 HYBRID 成分"
+
+      - proposed_id: POLICY.ROUTE.BREAKING_REDIRECT_OBSERVATION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "路由破坏性变化必须提供重定向、链接迁移与监控观察期。"
+        statement_en_keywords: "breaking route change, redirect, link migration, monitoring window"
+        applies_when: {lane: frontend, condition: "路由破坏性变更"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/29-routing-url-protocol.md, lines: "109-111"}
+        clean_room: true
+        notes: "POLICY.CHG.COMPAT_MIGRATION_ROLLBACK 在路由域的实例化清单（互引，含「监控观察期」增量子句）"
+
+      - proposed_id: POLICY.ROUTE.BACK_STATE_RESTORE
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "返回时必须恢复分页、筛选、排序与必要视图状态。"
+        source: {file: .trellis/spec/frontend/29-routing-url-protocol.md, lines: "22"}
+        clean_room: true
+        duplicate_of: POLICY.ROUTE.SHAREABLE_STATE_IN_URL
+        notes: "同协议「分享进 URL」正本的恢复侧子句，并入正本不独立入册"
+
+      - proposed_id: POLICY.ROUTE.NO_SENSITIVE_IN_URL
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "令牌、敏感信息、大对象与未提交表单不得放入 URL。"
+        source: {file: .trellis/spec/frontend/29-routing-url-protocol.md, lines: "48, 60"}
+        clean_room: true
+        duplicate_of: POLICY.ROUTE.SHAREABLE_STATE_IN_URL
+        notes: "同协议极性反转（已并入正本禁止形态段）"
+
+      - proposed_id: POLICY.ROUTE.CHANGE_CONSUMER_SYNC
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "修改路由 path/name 必须同步更新全部调用方。"
+        source: {file: .trellis/spec/frontend/29-routing-url-protocol.md, lines: "51"}
+        clean_room: true
+        duplicate_of: POLICY.CHG.PRECHANGE_CONSUMER_SCAN
+        notes: "路由契约属公共契约，变更前消费方扫描正本直接覆盖"
+
+  - file: .trellis/spec/frontend/30-data-grid-protocol.md
+    sha256: cb853973da0b2acdfcf39bbfca720f13161389b1fca316bc8d5111d33e79ee12
+    coverage: {cards_total: 54, new: 28, duplicate: 26, empty_conclusion: false}
+    reuse_note: "盘点标注 partial_overlap：试点候选不可直接援引为本文件覆盖凭证，本批按 MASTer 版重提取；与试点语义等同者标 DUPLICATE 指向试点正本，MASTer 增量段（项目强制规则 L29-139、项目禁止 L148-164、集成反模式 L208-379）以新候选承载"
+    cards:
+
+      - proposed_id: POLICY.WEB.GRID.SCHEMA_SHELL_RENDERING
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "表格必须经统一表格壳与 typed 列 schema 渲染，禁止页面自绘表格骨架或重写表头/分页/列配置/筛选/导出/状态态。"
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "19, 31"}
+        clean_room: true
+        duplicate_of: POLICY.WEB.GRID.SCHEMA_DRIVEN_SHELL
+        notes: "试点正本逐字含本文件该语义（partial_overlap 需本卡作覆盖凭证）；L31 项目壳清单为其枚举细化"
+
+      - proposed_id: POLICY.WEB.GRID.COLUMN_SCHEMA_SIX_FIELDS
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "每列必须具备稳定 key、标题、值类型、宽度策略、权限与导出规则六项 schema 字段。"
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "20"}
+        clean_room: true
+        duplicate_of: POLICY.WEB.GRID.COLUMN_SCHEMA_FIELDS
+        notes: "试点正本覆盖"
+
+      - proposed_id: POLICY.WEB.GRID.LARGE_DATA_SERVER_OPS
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "大数据量表必须采用服务端分页/筛选/排序并启用虚拟化。"
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "21"}
+        clean_room: true
+        duplicate_of: POLICY.WEB.GRID.SERVER_OPS_VIRTUALIZATION
+        notes: "试点正本（阈值由项目基线供给版）覆盖"
+
+      - proposed_id: POLICY.WEB.GRID.CONFIG_FOUR_DIM_ISOLATION
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "列配置必须按页面、表格、用户与 schema 版本四维隔离。"
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "22"}
+        clean_room: true
+        duplicate_of: POLICY.WEB.GRID.CONFIG_ISOLATION
+        notes: "试点正本覆盖"
+
+      - proposed_id: POLICY.WEB.GRID.WIDTH_FIX_IMPACT_LADDER
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "列宽修复必须先判定影响层级（单页例外→同类型→领域 preset→表格壳→全局 token）逐级上浮选择。"
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "23"}
+        clean_room: true
+        duplicate_of: POLICY.WEB.GRID.WIDTH_FIX_LADDER
+        notes: "试点正本覆盖"
+
+      - proposed_id: POLICY.WEB.GRID.SHELL_CHANGE_TYPE_MATRIX
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "公共表格壳变更必须回归验证全部表格类型。"
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "24"}
+        clean_room: true
+        duplicate_of: POLICY.WEB.GRID.SHELL_CHANGE_MATRIX
+        notes: "试点正本覆盖"
+
+      - proposed_id: POLICY.WEB.GRID.INTERACTION_REGISTRY_DECLARATION
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "表格交互必须逐项登记于交互契约注册表并绑定 action 与 API 需求；支持子集显式界定；排斥键盘的交互须声明键盘等价路径。"
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "25"}
+        clean_room: true
+        duplicate_of: POLICY.WEB.GRID.INTERACTION_REGISTRY
+        notes: "试点正本（含 opt-in→not-configured 语义与 R-E 专名剥离版）覆盖；措辞漂移但语义等同"
+
+      - proposed_id: POLICY.WEB.GRID.NO_TEMPLATE_HAND_COLUMNS
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "禁止 template 手写列或跨页面复制列数组。"
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "143"}
+        clean_room: true
+        duplicate_of: POLICY.WEB.GRID.SCHEMA_DRIVEN_SHELL
+        notes: "试点已判 DUPLICATE（本卡让位于试点候选层 NO_TEMPLATE_COLUMNS，其 duplicate_of 二跳链终到 SCHEMA_DRIVEN_SHELL 禁止形态），指针已改指物化正本一步可解析"
+
+      - proposed_id: POLICY.WEB.GRID.NO_GLOBAL_CSS_FOR_PAGE_WIDTH
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "禁止为单页列宽修改全局 CSS。"
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "144"}
+        clean_room: true
+        duplicate_of: POLICY.WEB.GRID.WIDTH_FIX_LADDER
+        notes: "试点已判 DUPLICATE（本卡让位于试点候选层 NO_GLOBAL_WIDTH_CSS，其 duplicate_of 二跳链终到 WIDTH_FIX_LADDER 禁止形态），指针已改指物化正本一步可解析"
+
+      - proposed_id: POLICY.WEB.GRID.NO_POLLUTED_CONFIG_KEYS
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "禁止不同类型表格共享污染性配置 key。"
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "145"}
+        clean_room: true
+        duplicate_of: POLICY.WEB.GRID.CONFIG_ISOLATION
+        notes: "试点已判 DUPLICATE（本卡让位于试点候选层 NO_SHARED_CONFIG_KEYS，其 duplicate_of 二跳链终到 CONFIG_ISOLATION 禁止形态），指针已改指物化正本一步可解析"
+
+      - proposed_id: POLICY.WEB.GRID.NO_FULL_LOAD_FAKE_PAGING
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "禁止前端加载全量数据做假分页。"
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "146"}
+        clean_room: true
+        duplicate_of: POLICY.WEB.GRID.SERVER_OPS_VIRTUALIZATION
+        notes: "试点已判 DUPLICATE（本卡让位于试点候选层 NO_FAKE_PAGINATION，其 duplicate_of 二跳链终到 SERVER_OPS_VIRTUALIZATION 禁止形态），指针已改指物化正本一步可解析"
+
+      - proposed_id: POLICY.WEB.GRID.FREEZE_KEY_ACTION_COLUMNS
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "建议固定关键标识列与操作列并限制冻结总宽。"
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "168"}
+        clean_room: true
+        duplicate_of: POLICY.WEB.GRID.FREEZE_KEY_COLUMNS
+        notes: "试点正本覆盖（SHOULD 降 advisory）"
+
+      - proposed_id: POLICY.WEB.GRID.KEYBOARD_CLIPBOARD_CONTRACT
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "键盘操作、复制粘贴、冲突处理与保存视图应有明确契约。"
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "169"}
+        clean_room: true
+        duplicate_of: POLICY.WEB.GRID.KEYBOARD_CLIPBOARD
+        notes: "试点正本覆盖（SHOULD 降 advisory）"
+
+      - proposed_id: TEMPLATE.GRID.GRID_OBJECT_CONTRACT
+        kind_proposal: contract_template
+        classification_proposal: DUPLICATE
+        statement_zh: "表格对象契约形状：GridType、RowKey、ColumnSchema[]、ServerOperations、Virtualization、SavedViewKey、ExportScope、Permissions、InteractionContracts[]。"
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "171-177"}
+        clean_room: true
+        duplicate_of: POLICY.WEB.GRID.SCHEMA_DRIVEN_SHELL
+        notes: "试点 CTPL 正本 POLICY.TPL.GRID_CONTRACT 未物化（R-C=b 挂起）；循试点链其表格对象契约形状语义归宿为已物化正本 SCHEMA_DRIVEN_SHELL（统一表格壳 + typed Column Schema 即表格对象契约的载体系），duplicate_of 改指一步可解析"
+
+      - proposed_id: GATE.GRID.CHECKS
+        kind_proposal: gate_recipe
+        classification_proposal: DUPLICATE
+        statement_zh: "表格门禁检查单：schema 驱动、列宽层级、大数据与配置隔离、导出一致性、交互登记，另含本项目增量五项（统一壳复用、单源列定义、金额列分面、派生列真实计算式、筛选输入画布测宽）。"
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "179-190"}
+        clean_room: true
+        duplicate_of: GATE.WEB.GRID.CHECKS
+        notes: "试点正本前五项覆盖；⑥-⑩ 增量项随项目基线（对应本批新卡），合并审阅时按 lane profile 处置"
+
+      - proposed_id: KNOWLEDGE.WEB.GRID.EXAMPLE_SHARED_PRESET
+        kind_proposal: knowledge_entry
+        classification_proposal: DUPLICATE
+        statement_zh: "示例：同类型报表共享列预设，单页例外写页面契约；可编辑宽表金额列走共享格式化器，保存经领域适配层转十进制字符串。"
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "192-198"}
+        clean_room: true
+        duplicate_of: KNOWLEDGE.WEB.GRID.EXAMPLE_COLUMN_PRESET
+        notes: "试点正本覆盖前半；后半（金额格式化/十进制字符串）为 MASTer 增量，随项目知识处置"
+
+      - proposed_id: KNOWLEDGE.FP.GRID.GLOBAL_WIDTH_RULE
+        kind_proposal: failure_pattern
+        classification_proposal: DUPLICATE
+        statement_zh: "失败模式：为某报表添加全局表格单元格宽度规则，导致所有列表与宽表列宽同时漂移。"
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "202"}
+        clean_room: true
+        duplicate_of: KNOWLEDGE.FP.GRID.GLOBAL_TD_WIDTH
+        notes: "试点正本覆盖"
+
+      - proposed_id: AUTHORITY.GRID.OWNERSHIP
+        kind_proposal: authority_default
+        classification_proposal: DUPLICATE
+        statement_zh: "权威分配默认值：表格平台 Owner 维护壳，领域 Owner 维护列 schema，页面 Owner 维护例外。"
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "381-385"}
+        clean_room: true
+        duplicate_of: AUTHORITY.WEB.GRID.OWNERSHIP
+        notes: "试点正本覆盖；本项目 shared/grid 层 Owner 与编译产出的组件登记表/屏幕蓝图机器事实源为项目落点增量"
+
+      - proposed_id: POLICY.WEB.GRID.SCHEMA_VIEW_VERSIONING
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "列 schema 与保存视图结构必须版本化；公共行为变化遵循影响评估与视觉回归。"
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "387-389"}
+        clean_room: true
+        duplicate_of: POLICY.WEB.GRID.SCHEMA_VERSIONING
+        notes: "试点正本覆盖"
+
+      - proposed_id: POLICY.WEB.GRID.NO_PAGE_DIRECT_ENGINE_ACCESS
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "业务页面不得直接引用数据网格引擎手写列，必须经网格层组件。"
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "150"}
+        clean_room: true
+        duplicate_of: POLICY.WEB.GRID.SCHEMA_DRIVEN_SHELL
+        notes: "正本禁止形态（页面越层直引引擎）"
+
+      - proposed_id: POLICY.WEB.GRID.NO_SPLIT_COLUMN_STRUCTURES
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "不得让表头、筛选、导出、列配置各自维护一份列结构。"
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "151"}
+        clean_room: true
+        duplicate_of: POLICY.WEB.GRID.SINGLE_COLUMN_DEFINITION_SOURCE
+        notes: "本批新正本（见下）的极性形态"
+
+      - proposed_id: POLICY.WEB.GRID.NO_LAYOUT_WIDTH_AS_TEXT_WIDTH
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "不得用元素布局宽度冒充列头文字宽度。"
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "152"}
+        clean_room: true
+        duplicate_of: POLICY.WEB.GRID.HEADER_FILTER_WIDTH
+        notes: "本批新正本的极性形态"
+
+      - proposed_id: POLICY.WEB.GRID.NO_FULL_WIDTH_FILTER_INPUT
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "表头筛选输入不得撑满列宽。"
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "153"}
+        clean_room: true
+        duplicate_of: POLICY.WEB.GRID.HEADER_FILTER_WIDTH
+        notes: "本批新正本的极性形态"
+
+      - proposed_id: POLICY.WEB.GRID.NO_PAGE_LEVEL_LOADING_MASK
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "不得用页面自写加载遮罩替代表格容器加载态。"
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "154"}
+        clean_room: true
+        duplicate_of: POLICY.WEB.GRID.CONTAINER_LEVEL_LOADING
+        notes: "本批新正本的极性形态"
+
+      - proposed_id: POLICY.WEB.GRID.NO_PASSTHROUGH_DERIVED_PLACEHOLDER
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "不得用透传占位充当派生列计算式。"
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "155"}
+        clean_room: true
+        duplicate_of: POLICY.WEB.GRID.DERIVED_COLUMN_DISCIPLINE
+        notes: "本批新正本的极性形态"
+
+      - proposed_id: POLICY.WEB.GRID.NO_INLINE_TITLE_LITERALS
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "不得在列定义中内联书写列标题文案字面量。"
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "160"}
+        clean_room: true
+        duplicate_of: POLICY.WEB.GRID.COLUMN_TITLE_FROM_CATALOG
+        notes: "本批新正本的极性形态"
+
+      - proposed_id: POLICY.WEB.GRID.SINGLE_COLUMN_DEFINITION_SOURCE
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "一份列定义必须同时驱动表头渲染、单元格展示、行内编辑控件、列配置面板、列筛选、保存视图、导出、权限字段与测试九个消费面；多点分开维护属漂移风险。"
+        statement_en_keywords: "single column definition source, nine consumers, drift risk"
+        applies_when: {lane: frontend, condition: "设计表格列结构"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "37, 151, 186"}
+        clean_room: true
+
+      - proposed_id: POLICY.WEB.GRID.MONETARY_COLUMN_FACETS
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "金额与数值列必须声明原始值、展示值、排序值、筛选值、导出值、币种、单位与舍入阶段八类分面。"
+        statement_en_keywords: "monetary column facets, raw/display/sort/filter/export values, rounding stage"
+        applies_when: {lane: frontend, condition: "定义金额/数值列"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "39, 187"}
+        clean_room: true
+        notes: "与金额精度协议（前端族 13 号，非本组）跨协议互引"
+
+      - proposed_id: POLICY.WEB.GRID.COLUMN_TITLE_FROM_CATALOG
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "列标题文字必须取自集中文案目录常量，禁止在列定义中内联文案字面量；列定义留在脚本内不违反文案落点规则。"
+        statement_en_keywords: "column titles from copy catalog constants, no inline literals"
+        applies_when: {lane: frontend, condition: "定义列标题"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "41, 160"}
+        clean_room: true
+        notes: "与文案协议（前端族 39 号，非本组）跨协议互引"
+
+      - proposed_id: POLICY.WEB.GRID.ALIGNMENT_AND_FREEZE_DISCIPLINE
+        triage: HYBRID
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "数值列右对齐、文本列左对齐且同类列跨页同制；关键标识与名称固定左侧、操作列固定右侧，冻结总宽不得吞噬主数据区；列不足容器时必须由明确拉伸策略处理，不得交由引擎随机分配。居中豁免列类型清单属项目视觉基线。"
+        statement_en_keywords: "alignment discipline, freeze left/right, explicit stretch strategy, center exemption list as baseline"
+        applies_when: {lane: frontend, condition: "列对齐与冻结设计"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "45-47"}
+        clean_room: true
+        uncertainty: "对齐通则可泛化；居中豁免清单（序号/操作/徽章/日期/打点列等）属项目视觉基线，故 HYBRID"
+
+      - proposed_id: POLICY.WEB.GRID.DERIVED_COLUMN_DISCIPLINE
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "派生列必须标记派生标识并持有真实计算式（编辑态联动即时生效）；派生值不得提交服务端、写入全局状态或导出为正式值，除非接口契约声明该值来自服务端权威结果。"
+        statement_en_keywords: "derived column marking, real computation formula, no export/commit of derived values"
+        applies_when: {lane: frontend, condition: "定义派生列"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "51, 155, 188"}
+        clean_room: true
+
+      - proposed_id: POLICY.WEB.GRID.HEADER_FILTER_WIDTH
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "表头内置筛选输入宽度必须贴合列头文字的实际渲染宽度，不得撑满列宽；文字宽度必须以画布文本测量获得（字体声明与表头一致），不得以容器布局宽度冒充；外宽取测得文字宽与最小宽度的较大者，不再追加内边距与边框补偿。"
+        statement_en_keywords: "header filter input width, canvas text measurement, no container-width proxy, no padding compensation"
+        applies_when: {lane: frontend, condition: "表头筛选输入实现"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "71-75, 152-153, 189"}
+        clean_room: true
+
+      - proposed_id: POLICY.WEB.GRID.MIN_WIDTH_FULL_TITLE
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "所有表格列的默认最小宽度必须能完整显示列标题（不允许省略号），由文本测量加占位计算得出；列宽拖拽调整机制必须保留；主题上下文变量须从实际渲染作用域读取而非根作用域。"
+        statement_en_keywords: "min-width shows full title, no ellipsis, drag resize preserved, theme-scoped variable read"
+        applies_when: {lane: frontend, condition: "列宽默认值计算"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "79-81"}
+        clean_room: true
+        notes: "「主题变量作用域读取」子句源自引擎主题覆盖行为，入册时可评估降为 notes"
+
+      - proposed_id: POLICY.WEB.GRID.CELL_LEVEL_DIRTY_MARKING
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "未保存标记必须细化到单元格/字段级（仅值实际变化的可编辑字段标记脏），行级聚合标记仅用于提交按钮控制；保存成功后必须同步清除两级标记；值变更后必须强制重算当前行全部单元格状态类。"
+        statement_en_keywords: "cell-level dirty marking, row-level flag only for save gating, forced restyle refresh"
+        applies_when: {lane: frontend, condition: "可编辑表格脏标记实现"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "111-115"}
+        clean_room: true
+
+      - proposed_id: POLICY.WEB.GRID.CONTAINER_LEVEL_LOADING
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "表格加载态必须作用于表格容器（首载全内容遮罩、后台刷新轻量指示且旧数据保持可见），不得以页面自写遮罩替代。"
+        statement_en_keywords: "container-level loading state, full mask on first load, light indicator on refresh"
+        applies_when: {lane: frontend, condition: "表格加载态实现"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "139, 154"}
+        clean_room: true
+        notes: "与 POLICY.RENDER.REFRESH_PRESERVES_CONTENT 互引（表格域实例化）"
+
+      - proposed_id: POLICY.WEB.GRID.EMPTY_STATE_MOUNT_DISCIPLINE
+        triage: HYBRID
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "数据为空或未就绪时不得挂载无占位的空白组件：必须始终渲染组件并以状态模板与容器最小高度兜底，禁止以条件销毁重建代替状态呈现；隐藏容器中挂载的组件不处理后续数据更新，承载面板必须懒挂载且验收以整页加载为准，不得以开发态热替换表现作为通过证据。"
+        statement_en_keywords: "always-render with overlay templates, min-height fallback, lazy-mount hidden panes, full-reload acceptance evidence"
+        applies_when: {lane: frontend, condition: "表格空态/隐藏容器挂载"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "159, 274, 292-296"}
+        clean_room: true
+        uncertainty: "策略可泛化（状态模板+兜底高度+懒挂载+整页验收）；但「组件在隐藏容器不处理更新」的成因与模板属性名为引擎专属行为，故 HYBRID"
+
+      - proposed_id: PROJECT.GRID.CQRS_PAGE_REGISTRY
+        triage: PROJECT
+        kind_proposal: policy
+        classification_proposal: PROJECT_BASELINE_TEMPLATE
+        statement_zh: "MASTer 同构增删改查页必须经注册表收敛页面 key、标题、列定义、操作、只读标记与领域接口，禁止为相似页面复制多套表格文件；仅树、矩阵、流程设计器或交互明显超出宽表范畴的页面允许单独建页，且仍复用列定义、状态壳与导出规则。"
+        statement_en_keywords: "CRUD page registry convergence, no copied grid files, exception page types"
+        applies_when: {lane: frontend, condition: "MASTer 同构页面建设"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "33"}
+        clean_room: true
+
+      - proposed_id: PROJECT.GRID.TONE_CALLBACK_SEMANTIC_COLOR
+        triage: PROJECT
+        kind_proposal: policy
+        classification_proposal: PROJECT_BASELINE_TEMPLATE
+        statement_zh: "MASTer 语义色列经统一列定义的 tone 回调声明语义色（success/warning/danger），由组件按单元格取值着色（token 色与主题覆盖值同源）；禁止页面以 cellClass 拼色或写十六进制；三态打点列单元格只显纯值，完整语义文案放图例区，禁止格内拼「值+语义描述」。"
+        statement_en_keywords: "tone callback semantic color, token-sourced, legend for tri-state values"
+        applies_when: {lane: frontend, condition: "MASTer 语义色列实现"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "55"}
+        clean_room: true
+
+      - proposed_id: PROJECT.GRID.LINK_COLUMN_DRILLDOWN
+        triage: PROJECT
+        kind_proposal: policy
+        classification_proposal: PROJECT_BASELINE_TEMPLATE
+        statement_zh: "MASTer 单元格级数据下钻（标识列跳转）经列 link 标记 + 网格 cell-clicked 事件上抛由页面路由；link 列只读并带派生标记，仅在进行中/可编辑态挂载；禁止以 cellRenderer 自绘链接元素；link 列不得承担行级动作（行级动作必须经 cellActions 按钮组承载）。"
+        statement_en_keywords: "link column drilldown, cell-clicked routing, no renderer-injected anchors, link vs row-action separation"
+        applies_when: {lane: frontend, condition: "MASTer 表格下钻入口"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "59-61"}
+        clean_room: true
+
+      - proposed_id: PROJECT.GRID.CELL_ACTIONS_BUTTON_GROUP
+        triage: PROJECT
+        kind_proposal: policy
+        classification_proposal: PROJECT_BASELINE_TEMPLATE
+        statement_zh: "MASTer 行级动作经统一列定义的 cellActions 声明为「图标+文字」按钮组（label/title 取文案常量），点击经 cell-action 事件上抛由页面按 actionKey 分发且必须阻断行选择与单元格点击通道；语义色随按钮 variant 表达（禁 tone 回调拼色与局部 CSS 覆盖）；动作格不渲染于 pinned 汇总行，锁定态整列移除；按钮容器间距取 token、行内动作用紧凑档。"
+        statement_en_keywords: "cellActions button group, event dispatch, variant semantics, compact sizing"
+        applies_when: {lane: frontend, condition: "MASTer 行级动作实现"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "65"}
+        clean_room: true
+
+      - proposed_id: PROJECT.GRID.ACTIONS_CELL_STYLE_PIERCING
+        triage: PROJECT
+        kind_proposal: policy
+        classification_proposal: PROJECT_BASELINE_TEMPLATE
+        statement_zh: "MASTer 动作按钮组容器与居中样式必须经网格宿主组件的深度选择器下钻，禁止依赖 cellRenderer 组件自身 scoped 样式（引擎把 cellRenderer 根元素渲染进网格 DOM 时不带 scoped 标识属性，scoped 规则对根容器静默失效）；垂直居中由 cell 层与容器层双通道承担，禁止内层元素高度撑满方式（产生基线偏移）。"
+        statement_en_keywords: "style piercing via host deep selector, scoped-data attr absence, dual-channel vertical centering"
+        applies_when: {lane: frontend, condition: "MASTer 动作单元格样式"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "67"}
+        clean_room: true
+
+      - proposed_id: PROJECT.GRID.CHECKBOX_SELECTION_COLUMN
+        triage: PROJECT
+        kind_proposal: policy
+        classification_proposal: PROJECT_BASELINE_TEMPLATE
+        statement_zh: "MASTer 复选框选择列为纯选择列：固定宽度且不可调整，不走普通列测宽算法；经专属 class 去除单元格 padding 与控件外边距、隐藏无业务意义的内部容器、以 flex 居中，表头全选与数据行复选框水平中心严格对齐（差值不超过 1px）；覆盖仅作用于复选框列。"
+        statement_en_keywords: "checkbox selection column, fixed width, class-scoped overrides, 1px alignment tolerance"
+        applies_when: {lane: frontend, condition: "MASTer 选择列实现"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "85-95"}
+        clean_room: true
+
+      - proposed_id: PROJECT.GRID.FLOATING_FILTER_DEFAULT_OFF
+        triage: PROJECT
+        kind_proposal: policy
+        classification_proposal: PROJECT_BASELINE_TEMPLATE
+        statement_zh: "MASTer 统一表格默认关闭列标题下方浮动筛选行：页面筛选栏是主要筛选入口；确需表头筛选时必须在列定义或表格 props 显式开启，并在对应屏幕蓝图 header_filters 中声明为 true。"
+        statement_en_keywords: "floating filter default off, explicit opt-in, screen blueprint declaration"
+        applies_when: {lane: frontend, condition: "MASTer 表格筛选入口"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "99"}
+        clean_room: true
+
+      - proposed_id: PROJECT.GRID.RESET_FILTERS_DISCIPLINE
+        triage: PROJECT
+        kind_proposal: policy
+        classification_proposal: PROJECT_BASELINE_TEMPLATE
+        statement_zh: "MASTer 重置筛选按钮必须经统一适配器暴露的方法清空筛选模型，禁止绕过适配器直调底层引擎 API；重置不得连带清空页面上下文选择（如车型/Carline）、排序状态或列显示/隐藏状态。"
+        statement_en_keywords: "reset filters via adapter only, preserve context selection/sort/columns"
+        applies_when: {lane: frontend, condition: "MASTer 重置筛选实现"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "103"}
+        clean_room: true
+
+      - proposed_id: PROJECT.GRID.LOCALE_BRIDGE
+        triage: PROJECT
+        kind_proposal: policy
+        classification_proposal: PROJECT_BASELINE_TEMPLATE
+        statement_zh: "MASTer 表格 UI 文案必须经项目全局 locale 机制桥接（适配器内 localeText 回调读取当前语言并返回译文，未覆盖 key 回退英文默认值）；该回调为初始化期选项，切换语言后必须经更新组件 key 强制重挂载生效。"
+        statement_en_keywords: "locale bridge via getLocaleText, initial-only option, key-based remount"
+        applies_when: {lane: frontend, condition: "MASTer 表格多语言"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "107"}
+        clean_room: true
+        uncertainty: "依赖引擎「initial-only option」行为，引擎版本升级需复核"
+
+      - proposed_id: PROJECT.GRID.CELL_STATE_AND_FOCUS_MODEL
+        triage: PROJECT
+        kind_proposal: policy
+        classification_proposal: PROJECT_BASELINE_TEMPLATE
+        statement_zh: "MASTer 单元格状态模型：交互状态经 cellClass 回调动态计算并区分复选框/数值公式/只读/可编辑四类（禁行级单一 class 覆盖）；行选中仅由复选框点击或表头全选触发（适配器必须抑制点击行选中）；引擎默认焦点边框必须全局抹除，焦点描边以 inset 阴影统一三态宽度，不可编辑单元格 focus 时显示同制焦点环作为键盘可见性补偿；描边优先级为 editing > dirty > focus > hover（经选择器特异性与声明顺序实现，禁单一 important 规则顺序依赖）；行内编辑输入框背景必须透明以不遮挡描边。"
+        statement_en_keywords: "cellClass state model, checkbox-only row selection, inset focus ring, state priority order, transparent edit input"
+        applies_when: {lane: frontend, condition: "MASTer 可编辑表格状态呈现"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "117-123"}
+        clean_room: true
+
+      - proposed_id: PROJECT.GRID.CELL_VERTICAL_CENTERING
+        triage: PROJECT
+        kind_proposal: policy
+        classification_proposal: PROJECT_BASELINE_TEMPLATE
+        statement_zh: "MASTer 单元格垂直居中统一机制：cell 级 flex 居中，全部非复选框列挂统一 CellRenderer 以 block wrapper 承接水平对齐继承（裸文本在 flex 下会成为匿名 item 致对齐静默失效）；禁 inline 级 wrapper 配高度撑满（原子内联盒 strut 致系统性基线偏移，验收为内容中心与单元格中心差值不超过 1-2px）；slot wrapper 必须显式恢复换行与正常行高（行高 0 仅限 wrapper 自身），多行文本须提供元素级根；业务页禁止在 slot 内自建第二套居中机制。"
+        statement_en_keywords: "cell-level flex centering, unified cell renderer, inline-box strut offset, line-height discipline"
+        applies_when: {lane: frontend, condition: "MASTer 单元格内容布局"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "127-129"}
+        clean_room: true
+
+      - proposed_id: PROJECT.GRID.FLEX_PINNED_MUTUAL_EXCLUSION
+        triage: PROJECT
+        kind_proposal: policy
+        classification_proposal: PROJECT_BASELINE_TEMPLATE
+        statement_zh: "MASTer 列宽弹性纪律：列总宽不足容器时必须由明确弹性策略吸收剩余宽度（主数据列声明 flex 份额，width 兼作下限），禁止依赖引擎对未声明列的默认分配；参与弹性分配的列不得 pinned（引擎弹性分配仅发生在中央视口，pinned 列 flex 无效）——冻结与弹性二选一：钉住列给稳定定宽，吸收剩余宽的列留在中央区。"
+        statement_en_keywords: "explicit flex strategy, flex-pinned mutual exclusion, center-viewport-only distribution"
+        applies_when: {lane: frontend, condition: "MASTer 列宽弹性设计"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "133-135"}
+        clean_room: true
+        uncertainty: "成因依赖引擎弹性分配的作用域行为，引擎版本升级需复核"
+
+      - proposed_id: PROJECT.GRID.SINGLE_ENGINE_ADAPTER
+        triage: PROJECT
+        kind_proposal: policy
+        classification_proposal: PROJECT_BASELINE_TEMPLATE
+        statement_zh: "MASTer 全部表格必须使用项目统一网格适配器，禁止引入第二种表格引擎实现（含组件库表格与原生表格）；使用集成版社区包时禁止手动调用模块注册（两套模块系统冲突），禁止在组件卸载钩子手动调用已由框架托管销毁的实例销毁方法。以上禁止项已由本地 ESLint 规则自动拦截（no-el-table / no-direct-ag-grid-import / no-ag-grid-module-registration / no-ag-grid-manual-destroy，lint 硬失败）。"
+        statement_en_keywords: "single engine adapter, no second grid implementation, no manual module registration, no manual destroy, ESLint enforcement"
+        applies_when: {lane: frontend, condition: "MASTer 任何表格实现"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "156-158, 164, 214-249"}
+        clean_room: true
+
+      - proposed_id: KNOWLEDGE.FP.GRID.PAGE_LOCAL_COLUMN_FORK
+        triage: UNIVERSAL
+        kind_proposal: failure_pattern
+        classification_proposal: FAILURE_PATTERN
+        statement_zh: "失败模式：业务页面直接引用网格引擎手写列数组并跨页面复制粘贴，列定义逐渐分叉失控。"
+        statement_en_keywords: "failure pattern, page-local engine columns, copy-paste fork"
+        applies_when: {lane: frontend, condition: "表格实现评审"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "204"}
+        clean_room: true
+
+      - proposed_id: KNOWLEDGE.FP.GRID.ENGINE_LIFECYCLE_MISUSE
+        triage: PROJECT
+        kind_proposal: failure_pattern
+        classification_proposal: FAILURE_PATTERN
+        statement_zh: "失败模式（引擎集成）：页面同时维护两套表格实现致重复修复；集成版包再手动注册模块致两套模块系统冲突与体积异常；组件卸载钩子手动销毁已托管实例致对已销毁实例调用报错。三者同属绕开统一适配器契约的引擎生命周期误用。"
+        statement_en_keywords: "failure pattern, dual implementations, manual module registration, manual destroy on managed instance"
+        applies_when: {lane: frontend, condition: "引擎集成评审"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "210-268"}
+        clean_room: true
+
+      - proposed_id: KNOWLEDGE.FP.GRID.BLANK_GRID_DIAGNOSTICS
+        triage: PROJECT
+        kind_proposal: failure_pattern
+        classification_proposal: FAILURE_PATTERN
+        statement_zh: "失败模式（空白表格）：宿主元素未撑满父容器致渲染于零高区域；数据为空或容器无确定高度时渲染为 0 高；隐藏面板中挂载的实例不执行布局测量也不处理后续数据更新（开发态热替换掩盖缺陷，整页加载即复现；同页行标识重复告警与此同源）。配套五级判断树（数据模型→DOM 行→根容器高→视口高→样式遮罩）与诊断取值函数。"
+        statement_en_keywords: "failure pattern, blank grid, zero-height host, hidden pane no-layout, five-level decision tree, diagnostic function"
+        applies_when: {lane: frontend, condition: "表格空白问题排查"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "270-367"}
+        clean_room: true
+        notes: "内嵌通用教训：验收不得以开发态热替换后的表现为通过证据（该子句已在 POLICY.WEB.GRID.EMPTY_STATE_MOUNT_DISCIPLINE 以通用措辞承载）"
+
+      - proposed_id: KNOWLEDGE.FP.GRID.DEEP_WATCH_SELF_WRITE
+        triage: UNIVERSAL
+        kind_proposal: failure_pattern
+        classification_proposal: FAILURE_PATTERN
+        statement_zh: "失败模式：对响应式行数据启用深度侦听后在回调中写回该对象的属性，写操作再次触发同一侦听形成无限递归，页面卡死。内部派生状态必须写入组件内部非入参引用，或在状态回调中经只读判断实时计算，不得在侦听回调中回写被监听对象。"
+        statement_en_keywords: "failure pattern, deep watch self-write infinite recursion, derived state into internal refs"
+        applies_when: {lane: frontend, condition: "响应式数据侦听实现"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "369-373"}
+        clean_room: true
+        notes: "语句已去框架专名化（深度侦听/响应式为通用概念），跨项目可复用"
+
+      - proposed_id: KNOWLEDGE.FP.GRID.RAW_ROW_REACTIVITY_BREAK
+        triage: PROJECT
+        kind_proposal: failure_pattern
+        classification_proposal: FAILURE_PATTERN
+        statement_zh: "失败模式（适配器原始行对象断裂响应）：网格适配器在挂载与数据变更通道对传入行数据执行去代理化处理后才交给引擎，字段级直写不经页面引用的代理，页面派生计算收不到通知（数组级变更仍触发）。正确做法：页面持有修订版本号并在派生计算中显式声明依赖，全部原始写路径统一递增版本号；版本号只补触发，禁止复制数据当第二事实源；禁止在变更事件里把变更行回写响应式数组元素（触发适配器全量刷新破坏编辑态与焦点）。"
+        statement_en_keywords: "failure pattern, raw row object proxy break, revision counter dependency, no second source of truth"
+        applies_when: {lane: frontend, condition: "网格编辑与页面派生计算联动"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/30-data-grid-protocol.md, lines: "375-379"}
+        clean_room: true
+        uncertainty: "成因依赖适配器去代理化实现细节，适配器重构需复核"
+
+  - file: .trellis/spec/frontend/31-performance-protocol.md
+    sha256: 411164937d0f1495a55dce1ffb177bbf58f2d1cc501c01b6f55765a521eaafb1
+    coverage: {cards_total: 23, new: 15, duplicate: 8, empty_conclusion: false}
+    cards:
+
+      - proposed_id: POLICY.PERF.BUDGET_DEFINITION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "必须定义首屏、包体、交互与核心页面的可验证性能预算（时间、大小或资源阈值）。"
+        statement_en_keywords: "performance budget definition, verifiable thresholds"
+        applies_when: {lane: frontend, condition: "项目性能治理"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/31-performance-protocol.md, lines: "19"}
+        clean_room: true
+
+      - proposed_id: POLICY.PERF.ON_DEMAND_LOADING
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "路由、图表与重组件必须按需加载。"
+        statement_en_keywords: "on-demand loading, route/chart/heavy components"
+        applies_when: {lane: frontend, condition: "包体与加载优化"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/31-performance-protocol.md, lines: "20"}
+        clean_room: true
+
+      - proposed_id: POLICY.PERF.LONG_TASK_ASYNC_RESUMABLE
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "长任务必须异步执行且支持恢复。"
+        statement_en_keywords: "long task async, resumable"
+        applies_when: {lane: frontend, condition: "长耗时操作设计"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/31-performance-protocol.md, lines: "23"}
+        clean_room: true
+
+      - proposed_id: POLICY.PERF.MEASUREMENT_DISCIPLINE
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "性能变更必须以相同数据量测量并记录结果。"
+        statement_en_keywords: "same-dataset measurement, recorded evidence"
+        applies_when: {lane: frontend, condition: "性能相关变更"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/31-performance-protocol.md, lines: "24"}
+        clean_room: true
+
+      - proposed_id: POLICY.PERF.LAB_FIELD_SEPARATION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "性能预算必须区分实验室数据与真实用户数据，并记录设备、网络、浏览器、采样窗口、指标版本与统计口径（如 p75）；不同版本、环境或口径的结果不得混用作直接回归结论。"
+        statement_en_keywords: "lab vs field data separation, metric version and quantile recorded, no mixed-basis regression"
+        applies_when: {lane: frontend, condition: "性能测量与回归判断"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/31-performance-protocol.md, lines: "25, 36"}
+        clean_room: true
+        notes: "L36 极性形态已并入正本禁止形态段"
+
+      - proposed_id: POLICY.PERF.RUM_CORE_VITALS_TARGETS
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "启用真实用户监测时，核心体验指标应按当前稳定定义分设备评估；行业默认参考目标为 p75 口径的最大内容绘制不超 2.5 秒、交互到下一次绘制不超 200 毫秒、累积布局偏移不超 0.1，项目可基于证据收紧或批准例外。"
+        statement_en_keywords: "real user monitoring, device-stratified core vitals, p75 defaults, project tightening/exceptions"
+        applies_when: {lane: frontend, condition: "真实用户监测启用"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/31-performance-protocol.md, lines: "26"}
+        clean_room: true
+        uncertainty: "阈值为行业公共口径非项目专名；「项目可收紧/例外」的治理声明随两半拆分先例由项目基线承接"
+
+      - proposed_id: POLICY.PERF.NO_RENDER_PHASE_HEAVY_COMPUTATION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "不得在渲染阶段执行复杂计算。"
+        statement_en_keywords: "no heavy computation in render phase"
+        applies_when: {lane: frontend, condition: "渲染函数实现"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/31-performance-protocol.md, lines: "34"}
+        clean_room: true
+
+      - proposed_id: POLICY.PERF.NO_SCORE_OVER_CORRECTNESS
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: UNIVERSAL_POLICY
+        statement_zh: "不得为追求性能分数牺牲安全、正确性、可访问性或用户可恢复性。"
+        statement_en_keywords: "no score-over-correctness, guardrail precedence"
+        applies_when: {lane: any, condition: "性能优化决策"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/31-performance-protocol.md, lines: "35"}
+        clean_room: true
+
+      - proposed_id: POLICY.PERF.RUM_MONITORING
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "应监控真实用户核心指标与业务交互耗时。"
+        statement_en_keywords: "real user monitoring, business interaction timing"
+        applies_when: {lane: frontend, condition: "监控体系建设"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/31-performance-protocol.md, lines: "40"}
+        clean_room: true
+
+      - proposed_id: TEMPLATE.PERF.BUDGET_RECORD
+        triage: UNIVERSAL
+        kind_proposal: contract_template
+        classification_proposal: CONTRACT_TEMPLATE
+        statement_zh: "性能预算对象字段形状：Scenario、DatasetSize、BudgetMetric、Threshold、MeasurementMethod、Baseline、Owner。"
+        statement_en_keywords: "performance budget schema fields"
+        applies_when: {lane: frontend, condition: "登记性能预算"}
+        enforcement: deterministic_where_possible
+        source: {file: .trellis/spec/frontend/31-performance-protocol.md, lines: "45-48"}
+        clean_room: true
+        notes: "落点随试点 R-C 挂起"
+
+      - proposed_id: GATE.PERF.CHECKS
+        triage: UNIVERSAL
+        kind_proposal: gate_recipe
+        classification_proposal: GATE_RECIPE
+        statement_zh: "性能门禁检查单：①预算与数据量明确 ②分包/分页/虚拟化合理 ③请求并发安全 ④有测量证据 ⑤实验室/真实用户口径、指标版本与分位数已记录 ⑥隐藏、恢复与离开场景无无效工作和资源泄漏。"
+        statement_en_keywords: "performance gate checklist"
+        applies_when: {lane: frontend, condition: "性能相关变更过门禁"}
+        enforcement: deterministic_where_possible
+        source: {file: .trellis/spec/frontend/31-performance-protocol.md, lines: "50-57"}
+        clean_room: true
+        notes: "GATE. 前缀随试点 V2 挂起"
+
+      - proposed_id: KNOWLEDGE.PERF.EXAMPLE_DEBOUNCE_ASYNC_EXPORT
+        triage: UNIVERSAL
+        kind_proposal: knowledge_entry
+        classification_proposal: KNOWLEDGE_PATTERN
+        statement_zh: "示例：筛选输入防抖并取消旧请求，详情抽屉按需加载，导出创建后台任务。"
+        statement_en_keywords: "example, debounce+cancel, lazy drawer, async export"
+        applies_when: {lane: frontend, condition: "性能实现参考"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/31-performance-protocol.md, lines: "59-63"}
+        clean_room: true
+
+      - proposed_id: KNOWLEDGE.FP.PERF.FULL_LOAD_FAKE_PAGINATION
+        triage: UNIVERSAL
+        kind_proposal: failure_pattern
+        classification_proposal: FAILURE_PATTERN
+        statement_zh: "失败模式：下载数万行数据到浏览器做假分页，导致内存与交互性能崩溃。"
+        statement_en_keywords: "failure pattern, full-data fake pagination, memory/interaction collapse"
+        applies_when: {lane: frontend, condition: "列表性能评审"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/31-performance-protocol.md, lines: "65-67"}
+        clean_room: true
+
+      - proposed_id: AUTHORITY.PERF.OWNERSHIP
+        triage: UNIVERSAL
+        kind_proposal: authority_default
+        classification_proposal: UNIVERSAL_POLICY
+        statement_zh: "权威分配默认值：前端性能 Owner 维护预算，模块 Owner 修复回归，服务端 Owner 配合数据与接口容量。"
+        statement_en_keywords: "performance ownership defaults"
+        applies_when: {lane: frontend, condition: "Authority Map 构建"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/31-performance-protocol.md, lines: "69-71"}
+        clean_room: true
+        notes: "与试点 M6 同型，合并审阅沿用该登记"
+
+      - proposed_id: POLICY.PERF.BUDGET_CHANGE_APPROVAL
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "预算放宽必须有数据支持与显式批准；新增重依赖或核心页面必须建立性能基线。"
+        statement_en_keywords: "budget relaxation needs data and approval, baseline for new heavy deps"
+        applies_when: {lane: frontend, condition: "预算变更或新增重依赖"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/31-performance-protocol.md, lines: "73-75"}
+        clean_room: true
+
+      - proposed_id: POLICY.PERF.SERVER_PAGING_VIRTUALIZATION
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "大列表必须服务端分页，宽表必须虚拟化。"
+        source: {file: .trellis/spec/frontend/31-performance-protocol.md, lines: "21"}
+        clean_room: true
+        duplicate_of: POLICY.WEB.GRID.SERVER_OPS_VIRTUALIZATION
+        notes: "试点正本覆盖（性能域重述）"
+
+      - proposed_id: POLICY.PERF.SEARCH_DEBOUNCE_CANCEL
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "搜索必须防抖、旧请求必须取消、过期响应必须丢弃。"
+        source: {file: .trellis/spec/frontend/31-performance-protocol.md, lines: "22, 32"}
+        clean_room: true
+        duplicate_of: POLICY.WEB.API.QUERY_CANCEL_STALE_DROP
+        notes: "试点正本覆盖；防抖为输入侧前置子句，合并审阅时可作 notes 并入"
+
+      - proposed_id: POLICY.PERF.LIFECYCLE_PAUSE_RESUME
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "页面隐藏、恢复与离开时必须暂停不必要工作并释放资源，恢复后重新校验数据新鲜度。"
+        source: {file: .trellis/spec/frontend/31-performance-protocol.md, lines: "27, 57"}
+        clean_room: true
+        duplicate_of: POLICY.LIFE.PAUSE_RESUME_DISCIPLINE
+        notes: "本组 42 号正本覆盖（协议自身亦注明遵从生命周期协议）"
+
+      - proposed_id: POLICY.PERF.NO_FULL_NODE_RENDER
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "不得一次渲染大数据的全部节点。"
+        source: {file: .trellis/spec/frontend/31-performance-protocol.md, lines: "31"}
+        clean_room: true
+        duplicate_of: POLICY.WEB.GRID.SERVER_OPS_VIRTUALIZATION
+        notes: "正本禁止形态"
+
+      - proposed_id: POLICY.PERF.NO_KEYSTROKE_REQUESTS
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "不得每次按键立即发起请求。"
+        source: {file: .trellis/spec/frontend/31-performance-protocol.md, lines: "32"}
+        clean_room: true
+        duplicate_of: POLICY.WEB.API.QUERY_CANCEL_STALE_DROP
+        notes: "防抖侧禁止形态"
+
+      - proposed_id: POLICY.PERF.NO_STALE_OVERWRITE
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "不得让旧响应覆盖新状态。"
+        source: {file: .trellis/spec/frontend/31-performance-protocol.md, lines: "33"}
+        clean_room: true
+        duplicate_of: POLICY.WEB.API.LATE_RESULT_GUARD
+        notes: "试点正本覆盖"
+
+      - proposed_id: POLICY.PERF.NO_MIXED_MEASUREMENT_BASES
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "不得混用不同版本、环境或统计口径的性能结果作直接回归结论。"
+        source: {file: .trellis/spec/frontend/31-performance-protocol.md, lines: "36"}
+        clean_room: true
+        duplicate_of: POLICY.PERF.LAB_FIELD_SEPARATION
+        notes: "同协议极性反转（已并入正本禁止形态段）"
+
+      - proposed_id: POLICY.PERF.STABLE_LOADING_DIMENSIONS
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "应保持行高、工具栏与加载占位尺寸稳定。"
+        source: {file: .trellis/spec/frontend/31-performance-protocol.md, lines: "41"}
+        clean_room: true
+        duplicate_of: POLICY.RENDER.SKELETON_LAYOUT_STABILITY
+        notes: "布局稳定原则的性能域重述"
+
+  - file: .trellis/spec/frontend/37-browser-device-compatibility-protocol.md
+    sha256: 81c0d4bf8996f6cf6b38d1c8514385065785728011222b524d73d8135703a3b3
+    coverage: {cards_total: 20, new: 17, duplicate: 3, empty_conclusion: false}
+    cards:
+
+      - proposed_id: POLICY.COMPAT.SUPPORT_MATRIX_DECLARATION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "必须显式声明支持的浏览器及最低版本、操作系统、设备与输入方式。"
+        statement_en_keywords: "support matrix declaration, browser/OS/device/input"
+        applies_when: {lane: frontend, condition: "项目兼容范围定义"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/37-browser-device-compatibility-protocol.md, lines: "19"}
+        clean_room: true
+
+      - proposed_id: POLICY.COMPAT.VIEWPORT_ZOOM_MATRIX
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "必须明确关键分辨率与整档缩放比例（100%/125%/150% 等）矩阵。"
+        statement_en_keywords: "viewport and zoom matrix"
+        applies_when: {lane: frontend, condition: "兼容范围定义"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/37-browser-device-compatibility-protocol.md, lines: "20"}
+        clean_room: true
+
+      - proposed_id: POLICY.COMPAT.KEY_FLOW_FULL_MATRIX_VALIDATION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "关键流程必须在全部已声明支持组合上完成验证；未经测试不得宣称支持。"
+        statement_en_keywords: "key flows validated across full support matrix, no untested support claims"
+        applies_when: {lane: frontend, condition: "兼容验收"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/37-browser-device-compatibility-protocol.md, lines: "21, 31"}
+        clean_room: true
+        notes: "L31 极性形态已并入正本禁止形态段"
+
+      - proposed_id: POLICY.COMPAT.UNSUPPORTED_ENVIRONMENT_GUIDANCE
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "不支持的环境必须提供可操作说明或安全降级。"
+        statement_en_keywords: "unsupported environment guidance or graceful degradation"
+        applies_when: {lane: frontend, condition: "环境不支持场景"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/37-browser-device-compatibility-protocol.md, lines: "22"}
+        clean_room: true
+
+      - proposed_id: POLICY.COMPAT.FEATURE_DETECTION_OVER_UA
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "业务分支必须使用能力检测，不得依赖脆弱的 user-agent 判断。"
+        statement_en_keywords: "feature detection over user-agent sniffing"
+        applies_when: {lane: frontend, condition: "环境差异分支实现"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/37-browser-device-compatibility-protocol.md, lines: "23"}
+        clean_room: true
+
+      - proposed_id: POLICY.COMPAT.WEB_API_CAPABILITY_COVERAGE
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "支持矩阵必须覆盖关键 Web 平台能力与约束（存储、权限、Worker、文件/媒体、长连接）；能力缺失或被策略禁用时必须提供可测试的降级。"
+        statement_en_keywords: "web API capability coverage, testable degradation when disabled"
+        applies_when: {lane: frontend, condition: "使用平台能力"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/37-browser-device-compatibility-protocol.md, lines: "24"}
+        clean_room: true
+
+      - proposed_id: POLICY.COMPAT.NO_DEV_DEFAULT_ACCEPTANCE
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "不得只在开发者默认环境完成验收。"
+        statement_en_keywords: "no dev-default-only acceptance"
+        applies_when: {lane: frontend, condition: "兼容验收"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/37-browser-device-compatibility-protocol.md, lines: "30"}
+        clean_room: true
+
+      - proposed_id: POLICY.COMPAT.NO_FONT_SHRINK_FOR_SMALL_SCREENS
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "不得以缩小字体作为小屏适配方案。"
+        statement_en_keywords: "no font shrinking for small screens"
+        applies_when: {lane: frontend, condition: "小屏适配"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/37-browser-device-compatibility-protocol.md, lines: "32"}
+        clean_room: true
+
+      - proposed_id: POLICY.COMPAT.NO_UNMAINTAINED_POLYFILL
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "不得为旧环境引入无人维护的大型补丁库。"
+        statement_en_keywords: "no unmaintained large polyfills"
+        applies_when: {lane: frontend, condition: "旧环境支持决策"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/37-browser-device-compatibility-protocol.md, lines: "33"}
+        clean_room: true
+
+      - proposed_id: POLICY.COMPAT.PRIORITIZE_REAL_ENVIRONMENTS
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "支持范围应优先覆盖组织真实使用环境。"
+        statement_en_keywords: "prioritize real usage environments"
+        applies_when: {lane: frontend, condition: "支持范围取舍"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/37-browser-device-compatibility-protocol.md, lines: "37"}
+        clean_room: true
+
+      - proposed_id: POLICY.COMPAT.AUTOMATED_REPRESENTATIVE_TESTS
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "代表性兼容测试应自动运行。"
+        statement_en_keywords: "automated representative compatibility tests"
+        applies_when: {lane: frontend, condition: "兼容测试体系"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/37-browser-device-compatibility-protocol.md, lines: "38"}
+        clean_room: true
+
+      - proposed_id: TEMPLATE.COMPAT.SUPPORT_MATRIX_RECORD
+        triage: UNIVERSAL
+        kind_proposal: contract_template
+        classification_proposal: CONTRACT_TEMPLATE
+        statement_zh: "兼容支持矩阵对象字段形状：Browser、MinVersion、OS、Device、Viewport、Zoom、Input、SupportLevel、TestEvidence。"
+        statement_en_keywords: "support matrix schema fields"
+        applies_when: {lane: frontend, condition: "登记支持矩阵"}
+        enforcement: deterministic_where_possible
+        source: {file: .trellis/spec/frontend/37-browser-device-compatibility-protocol.md, lines: "42-45"}
+        clean_room: true
+        notes: "落点随试点 R-C 挂起"
+
+      - proposed_id: GATE.COMPAT.CHECKS
+        triage: UNIVERSAL
+        kind_proposal: gate_recipe
+        classification_proposal: GATE_RECIPE
+        statement_zh: "兼容门禁检查单：①支持矩阵明确 ②关键视口与缩放通过 ③不支持提示可用 ④补丁库风险已评估 ⑤生命周期/前进后退缓存恢复通过且关键能力降级可验证。"
+        statement_en_keywords: "compatibility gate checklist"
+        applies_when: {lane: frontend, condition: "兼容相关变更过门禁"}
+        enforcement: deterministic_where_possible
+        source: {file: .trellis/spec/frontend/37-browser-device-compatibility-protocol.md, lines: "47-53"}
+        clean_room: true
+        notes: "GATE. 前缀随试点 V2 挂起"
+
+      - proposed_id: KNOWLEDGE.COMPAT.EXAMPLE_ENTERPRISE_DESKTOP_MATRIX
+        triage: UNIVERSAL
+        kind_proposal: knowledge_entry
+        classification_proposal: KNOWLEDGE_PATTERN
+        statement_zh: "示例：企业桌面项目明确支持受管浏览器版本与关键办公分辨率，不含移动端。"
+        statement_en_keywords: "example, enterprise desktop support matrix"
+        applies_when: {lane: frontend, condition: "支持范围设计参考"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/37-browser-device-compatibility-protocol.md, lines: "55-59"}
+        clean_room: true
+
+      - proposed_id: KNOWLEDGE.FP.COMPAT.SINGLE_RESOLUTION_BLINDSPOT
+        triage: UNIVERSAL
+        kind_proposal: failure_pattern
+        classification_proposal: FAILURE_PATTERN
+        statement_zh: "失败模式：只在单一高分辨率满缩放组合下测试，低分辨率笔记本上按钮与表格互相遮挡。"
+        statement_en_keywords: "failure pattern, single-resolution blindspot, overlapping controls"
+        applies_when: {lane: frontend, condition: "兼容验收评审"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/37-browser-device-compatibility-protocol.md, lines: "61-63"}
+        clean_room: true
+
+      - proposed_id: AUTHORITY.COMPAT.OWNERSHIP
+        triage: UNIVERSAL
+        kind_proposal: authority_default
+        classification_proposal: UNIVERSAL_POLICY
+        statement_zh: "权威分配默认值：产品 Owner 定义支持范围，前端与测试 Owner 维护矩阵，平台 Owner 维护构建目标。"
+        statement_en_keywords: "compatibility ownership defaults"
+        applies_when: {lane: frontend, condition: "Authority Map 构建"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/37-browser-device-compatibility-protocol.md, lines: "65-67"}
+        clean_room: true
+        notes: "与试点 M6 同型，合并审阅沿用该登记"
+
+      - proposed_id: POLICY.COMPAT.SUPPORT_CHANGE_ANNOUNCEMENT
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "增加或停止支持环境必须发布公告、更新构建与测试并提供升级路径。"
+        statement_en_keywords: "support change announcement, build/test updates, upgrade path"
+        applies_when: {lane: frontend, condition: "支持范围变更"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/37-browser-device-compatibility-protocol.md, lines: "69-71"}
+        clean_room: true
+
+      - proposed_id: POLICY.COMPAT.PAGE_LIFECYCLE_BFCACHE_RESUME
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "页面必须兼容页面隐藏/显示事件、可见性变化与前进后退缓存恢复；恢复后重新校验连接、缓存、权限与数据新鲜度。"
+        source: {file: .trellis/spec/frontend/37-browser-device-compatibility-protocol.md, lines: "25"}
+        clean_room: true
+        duplicate_of: POLICY.LIFE.PAUSE_RESUME_DISCIPLINE
+        notes: "本组 42 号正本覆盖（兼容域重述，bfcache 恢复面）"
+
+      - proposed_id: POLICY.COMPAT.NO_UNTESTED_SUPPORT_CLAIMS
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "未经测试不得宣称支持。"
+        source: {file: .trellis/spec/frontend/37-browser-device-compatibility-protocol.md, lines: "31"}
+        clean_room: true
+        duplicate_of: POLICY.COMPAT.KEY_FLOW_FULL_MATRIX_VALIDATION
+        notes: "同协议极性反转（已并入正本禁止形态段）"
+
+      - proposed_id: POLICY.COMPAT.NO_UNLOAD_AS_SAVE_SIGNAL
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "不得以页面卸载事件作为保存或清理的可靠信号；确有未保存输入时才按需注册卸载前确认并及时移除。"
+        source: {file: .trellis/spec/frontend/37-browser-device-compatibility-protocol.md, lines: "34"}
+        clean_room: true
+        duplicate_of: POLICY.LIFE.NO_UNLOAD_SIGNAL
+        notes: "本组 42 号正本覆盖（beforeunload 条件注册子句同源）"
+
+  - file: .trellis/spec/frontend/42-browser-runtime-lifecycle-protocol.md
+    sha256: b328c8b3bab2006254587143c634e17ff554d2f0103056d07edba5ffaba29fe1
+    coverage: {cards_total: 21, new: 17, duplicate: 4, empty_conclusion: false}
+    cards:
+
+      - proposed_id: POLICY.LIFE.RESOURCE_DECLARATION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "每个运行时资源必须声明归属作用域、创建条件、释放动作、暂停/恢复策略与失效触发器。"
+        statement_en_keywords: "runtime resource declaration, owner scope, acquire condition, dispose action, invalidation triggers"
+        applies_when: {lane: frontend, condition: "取得任何浏览器资源或异步工作"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/42-browser-runtime-lifecycle-protocol.md, lines: "20"}
+        clean_room: true
+
+      - proposed_id: POLICY.LIFE.PAIRED_DISPOSAL
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "事件监听、计时器、动画帧、观察者、订阅、流、长连接、Worker 与对象 URL 必须有成对的移除、清除、断开、关闭、终止或撤销动作。"
+        statement_en_keywords: "paired acquisition/disposal, listeners/timers/observers/streams/connections/workers/object URLs"
+        applies_when: {lane: frontend, condition: "注册任何资源"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/42-browser-runtime-lifecycle-protocol.md, lines: "21"}
+        clean_room: true
+        notes: "本组 18 号协议 L26 的正本自然归属"
+
+      - proposed_id: POLICY.LIFE.SCOPE_EXIT_CANCELLATION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "请求、异步计算与回调在作用域结束或上下文变化时必须取消；无法取消的必须在提交结果前验证当前请求、身份、权限与参数版本。"
+        statement_en_keywords: "scope-exit cancellation, validate-before-commit when uncancellable"
+        applies_when: {lane: frontend, condition: "异步工作生命周期"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/42-browser-runtime-lifecycle-protocol.md, lines: "22, 34"}
+        clean_room: true
+        notes: "提交前验证子句与 POLICY.WEB.API.LATE_RESULT_GUARD 互引（M7 政策/失败配对先例式关系，非重复：取消纪律与迟到结果防护为互补执行点）"
+
+      - proposed_id: POLICY.LIFE.CONTEXT_SWITCH_CLEANUP
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "路由离开、组件销毁、注销、切换账号/租户、权限变化与功能关闭时必须清理对应资源与敏感上下文。"
+        statement_en_keywords: "context-switch cleanup, resources and sensitive context"
+        applies_when: {lane: frontend, condition: "上下文切换或销毁"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/42-browser-runtime-lifecycle-protocol.md, lines: "23"}
+        clean_room: true
+        notes: "与 POLICY.STATE.IDENTITY_SWITCH_CLEANSE 互引（状态清理/资源清理两个对象域）"
+
+      - proposed_id: POLICY.LIFE.PAUSE_RESUME_DISCIPLINE
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "页面隐藏、冻结或进入前进后退缓存时必须暂停非必要轮询与高频工作；恢复时必须重新验证数据新鲜度、连接状态与权限上下文；页面必须兼容隐藏/显示与前进后退缓存恢复语义。"
+        statement_en_keywords: "pause on hidden/frozen/bfcache, resume revalidation, lifecycle-event compatibility"
+        applies_when: {lane: frontend, condition: "页面生命周期处理"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/42-browser-runtime-lifecycle-protocol.md, lines: "24, 32"}
+        clean_room: true
+        notes: "本组 31 号 L27、37 号 L25 的正本自然归属"
+
+      - proposed_id: POLICY.LIFE.BEFOREUNLOAD_CONDITIONAL_REGISTRATION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "卸载前确认事件只能在确有未保存数据时动态注册，并在风险解除后及时移除。"
+        statement_en_keywords: "conditional beforeunload registration, timely removal"
+        applies_when: {lane: frontend, condition: "未保存数据保护"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/42-browser-runtime-lifecycle-protocol.md, lines: "25"}
+        clean_room: true
+
+      - proposed_id: POLICY.LIFE.BOUNDED_RESOURCE_COUNT
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "重复进入、挂载、恢复或重试必须保持资源数量有界，并有自动化证据证明不会重复订阅或产生未关闭句柄。"
+        statement_en_keywords: "bounded resource count, automated evidence, no duplicate subscriptions"
+        applies_when: {lane: frontend, condition: "重复挂载/恢复/重试场景"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/42-browser-runtime-lifecycle-protocol.md, lines: "26"}
+        clean_room: true
+
+      - proposed_id: POLICY.LIFE.NO_UNLOAD_SIGNAL
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "不得依赖页面卸载事件完成保存、上报、释放或业务提交。"
+        statement_en_keywords: "no unload-event reliance for save/report/dispose/commit"
+        applies_when: {lane: frontend, condition: "关键行为触发点设计"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/42-browser-runtime-lifecycle-protocol.md, lines: "30, 56"}
+        clean_room: true
+        notes: "本组 37 号 L34 的正本自然归属"
+
+      - proposed_id: POLICY.LIFE.ABORT_SIGNAL_AGGREGATION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "建议以中止信号或等价统一取消机制聚合作用域内全部资源。"
+        statement_en_keywords: "abort signal aggregation, unified cancellation"
+        applies_when: {lane: frontend, condition: "作用域资源管理"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/42-browser-runtime-lifecycle-protocol.md, lines: "38"}
+        clean_room: true
+
+      - proposed_id: POLICY.LIFE.RESOURCE_REGISTRY_DIAGNOSTICS
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "复杂页面建议提供资源注册表或诊断计数，便于验证重复挂载、导航与恢复场景。"
+        statement_en_keywords: "resource registry/diagnostic counters, repeat-mount testability"
+        applies_when: {lane: frontend, condition: "复杂页面资源治理"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/42-browser-runtime-lifecycle-protocol.md, lines: "39"}
+        clean_room: true
+
+      - proposed_id: POLICY.LIFE.RECOVERABLE_LIFECYCLE_SIGNALS
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "应优先使用可恢复的页面生命周期信号（隐藏/显示、可见性变化）而非终结性信号。"
+        statement_en_keywords: "recoverable lifecycle signals preferred"
+        applies_when: {lane: frontend, condition: "生命周期信号选型"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/42-browser-runtime-lifecycle-protocol.md, lines: "40"}
+        clean_room: true
+
+      - proposed_id: TEMPLATE.LIFE.RESOURCE_RECORD
+        triage: UNIVERSAL
+        kind_proposal: contract_template
+        classification_proposal: CONTRACT_TEMPLATE
+        statement_zh: "运行时资源登记对象字段形状：ResourceId、ResourceType、OwnerScope、AcquireCondition、PauseTrigger、ResumeTrigger、DisposeAction、InvalidationTriggers[]、LateResultGuard、DiagnosticEvidence。"
+        statement_en_keywords: "runtime resource schema fields"
+        applies_when: {lane: frontend, condition: "登记运行时资源"}
+        enforcement: deterministic_where_possible
+        source: {file: .trellis/spec/frontend/42-browser-runtime-lifecycle-protocol.md, lines: "44-48"}
+        clean_room: true
+        notes: "落点随试点 R-C 挂起"
+
+      - proposed_id: GATE.LIFE.CHECKS
+        triage: UNIVERSAL
+        kind_proposal: gate_recipe
+        classification_proposal: GATE_RECIPE
+        statement_zh: "生命周期门禁检查单：①每个资源有唯一归属与成对释放动作 ②路由、身份、权限与参数变化会取消旧工作 ③隐藏、冻结与恢复行为已验证 ④重复挂载不增加订阅或开放句柄 ⑤不依赖卸载事件完成关键行为。"
+        statement_en_keywords: "lifecycle gate checklist"
+        applies_when: {lane: frontend, condition: "资源生命周期相关变更过门禁"}
+        enforcement: deterministic_where_possible
+        source: {file: .trellis/spec/frontend/42-browser-runtime-lifecycle-protocol.md, lines: "50-56"}
+        clean_room: true
+        notes: "GATE. 前缀随试点 V2 挂起"
+
+      - proposed_id: KNOWLEDGE.LIFE.EXAMPLE_SCOPE_SIGNAL_DISPOSAL
+        triage: UNIVERSAL
+        kind_proposal: knowledge_entry
+        classification_proposal: KNOWLEDGE_PATTERN
+        statement_zh: "示例：页面作用域经同一取消信号管理请求与事件监听；离开页面时关闭订阅、终止 Worker、撤销对象 URL 并拒绝晚到结果写回。"
+        statement_en_keywords: "example, scope-scoped signal, exit-time disposal"
+        applies_when: {lane: frontend, condition: "资源管理实现参考"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/42-browser-runtime-lifecycle-protocol.md, lines: "58-62"}
+        clean_room: true
+
+      - proposed_id: KNOWLEDGE.FP.LIFE.ACCUMULATING_POLLERS
+        triage: UNIVERSAL
+        kind_proposal: failure_pattern
+        classification_proposal: FAILURE_PATTERN
+        statement_zh: "失败模式：每次进入页面都新增轮询与全局监听且离开不清理；返回页面后同一消息被重复处理，旧请求还覆盖了新筛选结果。"
+        statement_en_keywords: "failure pattern, accumulating pollers, duplicate message handling, stale overwrite"
+        applies_when: {lane: frontend, condition: "页面资源评审"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/42-browser-runtime-lifecycle-protocol.md, lines: "64-66"}
+        clean_room: true
+
+      - proposed_id: AUTHORITY.LIFE.OWNERSHIP
+        triage: UNIVERSAL
+        kind_proposal: authority_default
+        classification_proposal: UNIVERSAL_POLICY
+        statement_zh: "权威分配默认值：平台 Owner 维护资源基础设施，页面/组件 Owner 声明资源边界，测试 Owner 验证释放与恢复行为。"
+        statement_en_keywords: "lifecycle ownership defaults"
+        applies_when: {lane: frontend, condition: "Authority Map 构建"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/42-browser-runtime-lifecycle-protocol.md, lines: "68-70"}
+        clean_room: true
+        notes: "与试点 M6 同型，合并审阅沿用该登记"
+
+      - proposed_id: POLICY.LIFE.CHANGE_SYNC_EVIDENCE
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: LANE_POLICY
+        statement_zh: "新增资源类型或改变生命周期行为时必须同步归属、释放、恢复、身份失效与测试证据，并复查性能、状态管理与安全协议的联动条款。"
+        statement_en_keywords: "lifecycle change sync set, cross-protocol recheck"
+        applies_when: {lane: frontend, condition: "资源类型或生命周期变更"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/42-browser-runtime-lifecycle-protocol.md, lines: "72-74"}
+        clean_room: true
+
+      - proposed_id: POLICY.LIFE.NO_STALE_RESULT_OVERWRITE
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "不得让过期请求、Worker 或订阅结果覆盖新状态。"
+        source: {file: .trellis/spec/frontend/42-browser-runtime-lifecycle-protocol.md, lines: "31"}
+        clean_room: true
+        duplicate_of: POLICY.WEB.API.LATE_RESULT_GUARD
+        notes: "试点正本覆盖"
+
+      - proposed_id: POLICY.LIFE.NO_HIDDEN_PAGE_BUSY_WORK
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "隐藏或冻结页面不得持续无必要轮询、动画或重计算。"
+        source: {file: .trellis/spec/frontend/42-browser-runtime-lifecycle-protocol.md, lines: "32"}
+        clean_room: true
+        duplicate_of: POLICY.LIFE.PAUSE_RESUME_DISCIPLINE
+        notes: "同协议极性反转"
+
+      - proposed_id: POLICY.LIFE.NO_OWNERLESS_GLOBAL_RESOURCES
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "不得创建没有归属与释放路径的全局监听、计时器、观察者、长连接或第三方实例。"
+        source: {file: .trellis/spec/frontend/42-browser-runtime-lifecycle-protocol.md, lines: "33"}
+        clean_room: true
+        duplicate_of: POLICY.LIFE.PAIRED_DISPOSAL
+        notes: "同协议极性反转"
+
+      - proposed_id: POLICY.LIFE.NO_POST_DESTROY_WRITES
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "作用域销毁后不得继续写入界面、缓存或用户状态。"
+        source: {file: .trellis/spec/frontend/42-browser-runtime-lifecycle-protocol.md, lines: "34"}
+        clean_room: true
+        duplicate_of: POLICY.LIFE.SCOPE_EXIT_CANCELLATION
+        notes: "同协议极性反转"
+
+  - file: .trellis/spec/frontend/45-browser-storage-protocol.md
+    sha256: 5f3f106661aa40fc2ba0754cf467e471399406a6f61237a69730f5ee34b9e4b1
+    coverage: {cards_total: 23, new: 21, duplicate: 2, empty_conclusion: false}
+    cards:
+
+      - proposed_id: POLICY.STORAGE.ITEM_DECLARATION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: UNIVERSAL_POLICY
+        statement_zh: "每个持久化项必须声明用途、存储介质、隔离键、schema 版本、大小预算、过期时间、迁移/重置策略、清理触发器与归属者。"
+        statement_en_keywords: "persisted item declaration, storage class, isolation key, schema version, size budget, expiry, owner"
+        applies_when: {lane: any, condition: "建立任何客户端持久化"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/45-browser-storage-protocol.md, lines: "20"}
+        clean_room: true
+
+      - proposed_id: POLICY.STORAGE.READ_SIDE_VALIDATION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: UNIVERSAL_POLICY
+        statement_zh: "从浏览器存储读取的数据必须执行 schema、版本、身份、租户与权限校验；校验失败时保守重置，不得直接信任。"
+        statement_en_keywords: "read-side validation, conservative reset on failure"
+        applies_when: {lane: any, condition: "读取任何客户端持久化数据"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/45-browser-storage-protocol.md, lines: "21"}
+        clean_room: true
+
+      - proposed_id: POLICY.STORAGE.FAILURE_DEGRADATION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: UNIVERSAL_POLICY
+        statement_zh: "必须处理存储不可用、隐私模式、配额不足、写入失败、被驱逐与数据损坏六类故障，并为关键流程提供非持久化降级路径。"
+        statement_en_keywords: "storage failure degradation, non-persisted fallback for critical flows"
+        applies_when: {lane: any, condition: "依赖客户端持久化的流程"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/45-browser-storage-protocol.md, lines: "22"}
+        clean_room: true
+
+      - proposed_id: POLICY.STORAGE.IDENTITY_SWITCH_CLEARING
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: UNIVERSAL_POLICY
+        statement_zh: "注销、切换账号/租户、权限变化与数据目的撤回时必须清除或重新隔离相关持久化数据。"
+        statement_en_keywords: "identity-switch storage clearing, re-isolation"
+        applies_when: {lane: any, condition: "身份/权限/目的变更"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/45-browser-storage-protocol.md, lines: "23"}
+        clean_room: true
+        notes: "与 POLICY.STATE.IDENTITY_SWITCH_CLEANSE 互引（持久化对象域实例）"
+
+      - proposed_id: POLICY.STORAGE.CROSS_TAB_CONSISTENCY
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: UNIVERSAL_POLICY
+        statement_zh: "跨标签页共享的数据必须定义冲突、通知、版本与最终一致性策略；不得假设内存状态会自动同步。"
+        statement_en_keywords: "cross-tab consistency policy, no auto-sync assumption"
+        applies_when: {lane: any, condition: "跨标签页数据共享"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/45-browser-storage-protocol.md, lines: "24"}
+        clean_room: true
+
+      - proposed_id: POLICY.STORAGE.VERSIONED_DB_UPGRADE_PATHS
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: UNIVERSAL_POLICY
+        statement_zh: "版本化客户端数据库必须处理升级阻塞、连接关闭、迁移失败与回滚/重置路径。"
+        statement_en_keywords: "versioned DB upgrade blocking, connection close, migration failure, rollback/reset"
+        applies_when: {lane: any, condition: "使用版本化客户端数据库"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/45-browser-storage-protocol.md, lines: "25"}
+        clean_room: true
+
+      - proposed_id: POLICY.STORAGE.SW_CACHE_SCOPE_VERSIONING
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: UNIVERSAL_POLICY
+        statement_zh: "Service Worker 与缓存 API 资产必须限定作用域、版本化缓存、验证响应来源，并在发布与退出策略中清理过期内容。"
+        statement_en_keywords: "service worker/cache scope, versioned caches, response provenance, expiry cleanup"
+        applies_when: {lane: frontend, condition: "使用离线缓存/Service Worker"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/45-browser-storage-protocol.md, lines: "26"}
+        clean_room: true
+
+      - proposed_id: POLICY.STORAGE.NO_CREDENTIAL_PERSISTENCE
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: UNIVERSAL_POLICY
+        statement_zh: "可被脚本读取的存储不得持久化登录态标识符、刷新令牌、机密或等价凭据，除非存在经批准且有期限的安全例外；凭据类数据必须遵从安全协议。"
+        statement_en_keywords: "no credentials in script-readable storage, time-boxed approved exceptions only"
+        applies_when: {lane: any, condition: "持久化任何凭据类数据"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/45-browser-storage-protocol.md, lines: "27"}
+        clean_room: true
+        notes: "与安全协议（前端族 04 号，非本组）跨协议互引"
+
+      - proposed_id: POLICY.STORAGE.NO_CLIENT_SIDE_AUTHORITY
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: UNIVERSAL_POLICY
+        statement_zh: "不得以客户端存储值证明身份、权限、价格、审批或其他权威业务事实；不得假设客户端存储可靠、保密、防篡改或永不被驱逐。"
+        statement_en_keywords: "no client-side authority, no reliability/secrecy/tamper-resistance assumptions"
+        applies_when: {lane: any, condition: "客户端存储数据的使用边界"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/45-browser-storage-protocol.md, lines: "31, 35"}
+        clean_room: true
+        notes: "L35 极性伞形禁令已并入正本禁止形态段"
+
+      - proposed_id: POLICY.STORAGE.ISOLATION_ENFORCEMENT
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: UNIVERSAL_POLICY
+        statement_zh: "多个用户、租户或权限范围不得复用未隔离的键、数据库或缓存条目。"
+        statement_en_keywords: "storage isolation enforcement, no shared keys across tenants/users"
+        applies_when: {lane: any, condition: "多用户/租户/权限范围并存"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/45-browser-storage-protocol.md, lines: "32"}
+        clean_room: true
+        notes: "本组 18 号协议 L28 的正本自然归属"
+
+      - proposed_id: POLICY.STORAGE.SCHEMA_VERSION_MIGRATION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: UNIVERSAL_POLICY
+        statement_zh: "持久化数据结构必须版本化，并在 schema 变化时提供显式迁移或重置路径。"
+        statement_en_keywords: "schema versioning, migration or reset path"
+        applies_when: {lane: any, condition: "持久化 schema 演进"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/45-browser-storage-protocol.md, lines: "20, 34"}
+        clean_room: true
+        notes: "本组 18 号 L101、19 号 L23/L65-67 的正本自然归属"
+
+      - proposed_id: POLICY.STORAGE.NO_INDEFINITE_PERSISTENCE
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: UNIVERSAL_POLICY
+        statement_zh: "不得无限期持久化草稿、文件、接口响应或敏感偏好。"
+        statement_en_keywords: "no indefinite persistence of drafts/files/responses/sensitive preferences"
+        applies_when: {lane: any, condition: "决定保留时长"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/45-browser-storage-protocol.md, lines: "33"}
+        clean_room: true
+
+      - proposed_id: POLICY.STORAGE.MINIMIZE_PERSISTENCE
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: UNIVERSAL_POLICY
+        statement_zh: "仅在明确需要跨刷新或跨会话时持久化；短生命周期状态优先留在内存。"
+        statement_en_keywords: "minimize persistence, memory-first for short-lived state"
+        applies_when: {lane: any, condition: "持久化必要性判断"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/45-browser-storage-protocol.md, lines: "39"}
+        clean_room: true
+
+      - proposed_id: POLICY.STORAGE.SAFE_DIAGNOSTICS
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: UNIVERSAL_POLICY
+        statement_zh: "应提供存储占用、迁移失败与清理结果的安全诊断信息（不泄露敏感值）。"
+        statement_en_keywords: "safe storage diagnostics"
+        applies_when: {lane: any, condition: "存储运维排查"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/45-browser-storage-protocol.md, lines: "40"}
+        clean_room: true
+
+      - proposed_id: POLICY.STORAGE.CAPACITY_PRIVACY_TESTING
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: UNIVERSAL_POLICY
+        statement_zh: "对大型或敏感持久化应建立容量、性能与隐私测试。"
+        statement_en_keywords: "capacity/performance/privacy tests for large or sensitive persistence"
+        applies_when: {lane: any, condition: "大型/敏感持久化建设"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/45-browser-storage-protocol.md, lines: "41"}
+        clean_room: true
+
+      - proposed_id: TEMPLATE.STORAGE.STORAGE_RECORD
+        triage: UNIVERSAL
+        kind_proposal: contract_template
+        classification_proposal: CONTRACT_TEMPLATE
+        statement_zh: "存储登记对象字段形状：StorageId、Purpose、StorageClass、IsolationKeys[]、SchemaVersion、SizeBudget、Expiry、Migration、ResetPolicy、EvictionFallback、CrossTabPolicy、CleanupTriggers[]、Owner。"
+        statement_en_keywords: "storage record schema fields"
+        applies_when: {lane: any, condition: "登记持久化项"}
+        enforcement: deterministic_where_possible
+        source: {file: .trellis/spec/frontend/45-browser-storage-protocol.md, lines: "45-49"}
+        clean_room: true
+        notes: "落点随试点 R-C 挂起"
+
+      - proposed_id: GATE.STORAGE.CHECKS
+        triage: UNIVERSAL
+        kind_proposal: gate_recipe
+        classification_proposal: GATE_RECIPE
+        statement_zh: "存储门禁检查单：①存储必要性与介质选择合理 ②schema、身份、租户与权限均被校验 ③配额、驱逐、损坏与不可用有降级路径 ④跨标签页与版本迁移行为明确 ⑤注销和权限变化会安全清理。"
+        statement_en_keywords: "storage gate checklist"
+        applies_when: {lane: any, condition: "存储相关变更过门禁"}
+        enforcement: deterministic_where_possible
+        source: {file: .trellis/spec/frontend/45-browser-storage-protocol.md, lines: "52-57"}
+        clean_room: true
+        notes: "GATE. 前缀随试点 V2 挂起"
+
+      - proposed_id: KNOWLEDGE.STORAGE.EXAMPLE_PREF_ISOLATION_RESET
+        triage: UNIVERSAL
+        kind_proposal: knowledge_entry
+        classification_proposal: KNOWLEDGE_PATTERN
+        statement_zh: "示例：用户列偏好按用户、租户与 schema 版本隔离；读取失败或版本不兼容时恢复默认值，不影响核心查询与编辑流程。"
+        statement_en_keywords: "example, preference isolation, graceful reset"
+        applies_when: {lane: any, condition: "偏好持久化设计参考"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/45-browser-storage-protocol.md, lines: "59-63"}
+        clean_room: true
+
+      - proposed_id: KNOWLEDGE.FP.STORAGE.LOCALSTORAGE_TRUST_DUMP
+        triage: UNIVERSAL
+        kind_proposal: failure_pattern
+        classification_proposal: FAILURE_PATTERN
+        statement_zh: "失败模式：把令牌、完整权限矩阵与接口响应长期写入脚本可读存储，所有账号共用同一键，并把读取结果直接当作可信状态。"
+        statement_en_keywords: "failure pattern, credential/matrix dump, shared key, trusted read"
+        applies_when: {lane: any, condition: "客户端存储评审"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/45-browser-storage-protocol.md, lines: "65-67"}
+        clean_room: true
+
+      - proposed_id: AUTHORITY.STORAGE.OWNERSHIP
+        triage: UNIVERSAL
+        kind_proposal: authority_default
+        classification_proposal: UNIVERSAL_POLICY
+        statement_zh: "权威分配默认值：平台 Owner 维护存储适配与迁移机制，领域 Owner 定义数据必要性与隔离键，安全/隐私 Owner 审核敏感持久化。"
+        statement_en_keywords: "storage ownership defaults, security/privacy review"
+        applies_when: {lane: any, condition: "Authority Map 构建"}
+        enforcement: advisory
+        source: {file: .trellis/spec/frontend/45-browser-storage-protocol.md, lines: "69-71"}
+        clean_room: true
+        notes: "与试点 M6 同型，合并审阅沿用该登记"
+
+      - proposed_id: POLICY.STORAGE.CHANGE_MIGRATION_SET
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_proposal: UNIVERSAL_POLICY
+        statement_zh: "改变存储介质、键、schema、隔离或保留策略必须提供迁移、重置、回滚与受影响用户说明，并复查状态管理、缓存与隐私生命周期协议的联动条款。"
+        statement_en_keywords: "storage change migration set, cross-protocol recheck"
+        applies_when: {lane: any, condition: "存储策略变更"}
+        enforcement: required_when_applicable
+        source: {file: .trellis/spec/frontend/45-browser-storage-protocol.md, lines: "73-75"}
+        clean_room: true
+        notes: "POLICY.CHG.COMPAT_MIGRATION_ROLLBACK 在存储域的实例化清单（互引）"
+
+      - proposed_id: POLICY.STORAGE.NO_SILENT_OLD_SCHEMA_READ
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "schema 变化后不得静默读取旧结构并猜测字段语义。"
+        source: {file: .trellis/spec/frontend/45-browser-storage-protocol.md, lines: "34"}
+        clean_room: true
+        duplicate_of: POLICY.STORAGE.READ_SIDE_VALIDATION
+        notes: "读侧校验正本的禁止形态"
+
+      - proposed_id: POLICY.STORAGE.NO_RELIABILITY_ASSUMPTIONS
+        kind_proposal: policy
+        classification_proposal: DUPLICATE
+        statement_zh: "不得假设客户端存储可靠、保密、不会被修改或永不被驱逐。"
+        source: {file: .trellis/spec/frontend/45-browser-storage-protocol.md, lines: "35"}
+        clean_room: true
+        duplicate_of: POLICY.STORAGE.NO_CLIENT_SIDE_AUTHORITY
+        notes: "同协议伞形极性（已并入正本禁止形态段）"

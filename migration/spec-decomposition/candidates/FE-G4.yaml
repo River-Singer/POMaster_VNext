@@ -1,0 +1,2602 @@
+# FE-G4 候选卡（UI 呈现与设计组）· Semantic Decomposition 送审包
+# 批次: SPEC-D | 方法论: docs/catalog-pilot-report.md §3-§6 忠实复制 | 状态: PROPOSAL (source=design_seed, evidence=PLANNED)
+# 源料只读: MASTer_master/.trellis/spec/frontend/{21,22,23,24,25,26,38,39,40,41}-*.md（sha256 与 spec-inventory.yaml 逐一核对一致）
+# 分母: 10 文件 / 覆盖: 10 文件 / 空结论文件: 无
+# D5 防膨胀: 全部候选进 backlog 排队，本文件只留档不直接入册；物化收口由汇总组按『高置信 Universal + MUST 级 + 与既有 60+9 条零重复』另行执行（本组满足该条件的池 = 50 卡，见 meta.materializable_pool_hint）
+# 分拣三值口径: UNIVERSAL = statement 零项目专名且语义可跨项目通用；HYBRID = 通用语义 + 需项目基线供给参数/登记表实例（沿用试点 §93.5 拆两半落法）；PROJECT = 陈述 MASTer 专属事实（专名/路径/项目裁定），标注 project_scope
+# 分类映射: sort UNIVERSAL→UNIVERSAL_POLICY | sort HYBRID→LANE_POLICY | sort PROJECT→PROJECT_BASELINE_TEMPLATE | 知识卡→KNOWLEDGE_PATTERN / FAILURE_PATTERN | 重复→DUPLICATE
+- record_type: meta
+  batch: SPEC-D
+  group: FE-G4
+  group_theme: UI 呈现与设计
+  source_tree: MASTer_master/.trellis/spec (read-only)
+  denominator:
+    files_assigned: 10
+    files_covered: 10
+    per_file_cards:
+      frontend/21-design-system-protocol.md: 25
+      frontend/22-theme-protocol.md: 14
+      frontend/23-accessibility-protocol.md: 16
+      frontend/24-component-protocol.md: 25
+      frontend/25-page-structure-protocol.md: 16
+      frontend/26-style-layout-protocol.md: 17
+      frontend/38-internationalization-protocol.md: 14
+      frontend/39-copywriting-protocol.md: 15
+      frontend/40-analytics-protocol.md: 12
+      frontend/41-design-handoff-protocol.md: 12
+    empty_conclusion_files: []
+  cards:
+    total: 166
+    new_candidates: 140
+    duplicate_reconciliation: 26   # 18 张让位既有 69 条（scope=catalog）+ 8 张批内跨文件同语义（scope=intra_batch）
+    sort_distribution: {UNIVERSAL: 107, HYBRID: 23, PROJECT: 10, DUPLICATE: 26}
+    classification_distribution:
+      UNIVERSAL_POLICY: 67
+      LANE_POLICY: 18
+      PROJECT_BASELINE_TEMPLATE: 9
+      CONTRACT_TEMPLATE: 10
+      GATE_RECIPE: 10
+      KNOWLEDGE_PATTERN: 13
+      FAILURE_PATTERN: 13
+      DUPLICATE: 26
+    enforcement_distribution: {required_when_applicable: 77, advisory: 69, deterministic_where_possible: 20}
+    materializable_pool_hint: 50   # sort=UNIVERSAL 且 UNIVERSAL_POLICY 且 required_when_applicable 且非重复；仅供汇总组收口参考，本文件不做物化决定
+  method_compliance:
+    - 拆解方法忠实复制试点：九段结构逐段产卡（MUST/MUST NOT/项目强制规则→policy；SHOULD→advisory policy；Contract→CONTRACT_TEMPLATE；Checklist→GATE_RECIPE；Examples→KNOWLEDGE_PATTERN；Anti-patterns→FAILURE_PATTERN；Ownership→AUTHORITY 词形 policy advisory；Change Policy→policy 或 DUPLICATE）
+    - FE 族特有：本组 10 文件均含『项目强制规则/项目禁止/项目示例』扩展段（BE 族无此结构），逐子段产卡并按分拣三值标注；Scope/Non-Scope/Terms 作上下文不产卡；26 文件 Examples 段全为项目示例，由 3 张知识卡（FP 注释扫描 + EX 弹性高度链 + EX 网格共享轨道）承载、其 flex 间距示例并入 24 协议间距卡
+    - SHOULD 全部降级 advisory（未因文件名带协议性质默认升 MUST）；个别过薄 SHOULD 并入相邻正本卡 notes（26 LAYOUT primitives、25 标准壳两处为独立卡/notes 的取舍已逐卡注明）
+    - clean-room：全部 statement 独立措辞（语义等价、词形独立），零逐字拷贝源文；UNIVERSAL 卡 statement 零项目专名，项目专名只出现在 PROJECT/HYBRID 卡的 project_scope 与 notes
+    - 与既有条目重复的语义标 DUPLICATE 并给 duplicate_of（scope=catalog 指向既有 69 条；scope=intra_batch 指向本批正本卡）；极性反转/域归属类重复按试点 §3.1 让位处理
+    - MUST NOT 段处理取 BE-G2 先例与试点 §3.1 的并集：已被既有条目覆盖的标 DUPLICATE 让位，含独立禁止向量的保留为独立卡或并入正本卡的禁止形态段（逐卡注明）
+    - 政策与失败模式配对按 M7 先例互引不合并
+  duplicate_check_basis: catalog 既有 69 条（policies/ 54 + knowledge/ 10 + gates/ 5，其中 9 条为试点后新增 web 族：AUTH_APP_CLIENT_SPLIT / REQUEST_INFRASTRUCTURE / SESSION_RECOVERY_SPLIT / ARCH.LAYER_ISOLATION / ARCH.NAMING_CONVENTIONS / ARCH.PUBLIC_API_BARREL / PERF.BUDGET_SKELETON / STYLE.OWNERSHIP_MATRIX / UIUX.PROVIDER_EVIDENCE_NOT_BUSINESS_TRUTH）+ candidates-draft.json 82 卡；140 张新卡逐卡比对，26 张重复已标让位
+  vocab_pr_needed_summary:
+    V1_kind_policy: 120 卡（kind_proposal=policy 缺席 truth_bodies；含 DUPLICATE 卡——若让位不物化则自动失效）
+    V2_GATE_prefix: 10 卡（GATE. 前缀不在 prefixes_v0 闭包）
+    V8_TPL_prefix: 10 卡（POLICY.TPL. 词形承载模板的错位沿试点先例维持，随 R-C 裁决）
+    V9_knowledge_id_grammar: 26 卡（KNOWLEDGE.<PATTERN>.<THEME>.* 三段文法草案；EX 段值承载技法/示例类知识，TECH 段值未定已在卡内标 uncertainty；FP 段值沿既有先例）
+    AUTHORITY_prefix_frozen: 10 卡无需 PR
+
+# ============ 文件 1/10: frontend/21-design-system-protocol.md (sha256 66f7a7ab4292ab17ae578c338da04833e4705e027aebacce09693fb67e166c9d) ============
+
+- proposed_id: POLICY.WEB.DS.VISUAL_SOURCE_TOKEN_ONLY
+  source_section: MUST + MUST NOT
+  source_protocol: .trellis/spec/frontend/21-design-system-protocol.md
+  source_lines: L19-L21, L95-L97
+  source_sha256: 66f7a7ab4292ab17ae578c338da04833e4705e027aebacce09693fb67e166c9d
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 界面的一切视觉规则只能取自设计令牌与经批准的组件清单两个来源；孤立取色、随手指定间距、临时阴影、『看起来接近』的目测替代，以及在业务页面滋生第二套视觉语言，一律禁止。
+  statement_en_keywords: visual rules source, design tokens, approved components, no orphan values, no second visual language
+  clean_room: true
+  applies_when: {lane: frontend, condition: 编写或评审任何携带视觉表现的界面代码时}
+  cross_refs: [POLICY.WEB.STYLE.OWNERSHIP_MATRIX]
+  notes: 正面来源约束（token + 批准组件）超出 OWNERSHIP_MATRIX 的样式写权限矩阵（后者管写入归属，本卡管取值来源），不构成重复；MUST NOT 四条（孤立值/近似替代/第二套语言/临时样式）中前三条并入本卡禁止形态段，第四条独立成卡（DRAFT_VALUE_NOT_TOKEN_OVERRIDE）
+- proposed_id: POLICY.WEB.DS.VISUAL_STATE_COMPLETENESS
+  source_section: MUST
+  source_protocol: .trellis/spec/frontend/21-design-system-protocol.md
+  source_lines: L21
+  source_sha256: 66f7a7ab4292ab17ae578c338da04833e4705e027aebacce09693fb67e166c9d
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 每一类可交互元素都必须给齐全套视觉状态——悬停、激活、焦点、禁用、加载、空、错误——缺任何一个状态都视为交付未完成。
+  statement_en_keywords: visual state completeness, hover, active, focus, disabled, loading, empty, error
+  clean_room: true
+  applies_when: {lane: frontend, condition: 设计或实现可交互元素时}
+  cross_refs: [POLICY.WEB.COMP.STATE_SET_IN_CONTRACT]
+  uncertainty: 与 24 组件协议『状态至少考虑 loading/empty/error/disabled/readonly/focus』语义高度相邻（本卡为视觉状态视角、彼卡为组件契约视角，交集 5/7），保留两卡互引而非合并；汇总组可裁并条
+- proposed_id: POLICY.WEB.DS.TOKEN_MAP_SINGLE_SOURCE
+  source_section: MUST
+  source_protocol: .trellis/spec/frontend/21-design-system-protocol.md
+  source_lines: L22
+  source_sha256: 66f7a7ab4292ab17ae578c338da04833e4705e027aebacce09693fb67e166c9d
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 同一令牌在代码侧与设计工具侧的对应关系必须由唯一登记来源定义，两侧取值不允许各自为政。
+  statement_en_keywords: token mapping, single source, design tool parity
+  clean_room: true
+  applies_when: {lane: frontend, condition: 维护令牌体系或同步设计工具时}
+- proposed_id: POLICY.WEB.DS.TOKEN_SOURCE_REGENERATION
+  source_section: 项目强制规则·token 事实源与生成
+  source_protocol: .trellis/spec/frontend/21-design-system-protocol.md
+  source_lines: L60-L64, L103
+  source_sha256: 66f7a7ab4292ab17ae578c338da04833e4705e027aebacce09693fb67e166c9d
+  classification: LANE_POLICY
+  sort: HYBRID
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 视觉值的新增与修改只能落在令牌事实源并触发派生产物重新生成；直接编辑派生产物、或在页面里书写游离于令牌体系之外的值，都会在下一次生成时被静默冲掉，一律禁止。
+  statement_en_keywords: token source of truth, derived artifacts, regeneration, no hand edit
+  clean_room: true
+  applies_when: {lane: frontend, condition: 项目建立令牌生成管道后修改任何视觉值时}
+  project_scope: 事实源与派生产物的具体路径、生成命令、UI 库变量桥接均由项目基线登记（源文示例为 tokens.json→tokens.css 管道）
+  cross_refs: [POLICY.WEB.STYLE.OWNERSHIP_MATRIX]
+  notes: OWNERSHIP_MATRIX design-token 域禁手改『令牌源文件』；本卡禁手改『派生产物』并要求单向再生——对象不同，互补非重复；与 25 页面结构 DERIVED_VIEW_REGENERATION 同构（生成物纪律族）
+- proposed_id: POLICY.WEB.DS.LIBRARY_THEME_OVERRIDDEN_BY_TOKENS
+  source_section: 项目强制规则·token 事实源与生成 + 项目禁止
+  source_protocol: .trellis/spec/frontend/21-design-system-protocol.md
+  source_lines: L62, L102
+  source_sha256: 66f7a7ab4292ab17ae578c338da04833e4705e027aebacce09693fb67e166c9d
+  classification: LANE_POLICY
+  sort: HYBRID
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 第三方组件库自带的出厂主题永远不能成为项目视觉基准：库的主题变量必须被项目令牌单向覆盖，而不是反过来让出厂值决定项目长相。
+  statement_en_keywords: vendor default theme, token override direction, no factory palette as baseline
+  clean_room: true
+  applies_when: {lane: frontend, condition: 引入或配置第三方组件库主题时}
+  cross_refs: [POLICY.WEB.STYLE.OWNERSHIP_MATRIX]
+  uncertainty: 与 OWNERSHIP_MATRIX vendor-adapter 域（禁页面局部覆盖第三方主题）方向互补——彼卡管『谁有权调第三方视觉』（只许适配层），本卡管『项目令牌与出厂值的覆盖方向』；自判不重复，提请汇总组复核
+- proposed_id: POLICY.WEB.DS.DRAFT_VALUE_NOT_TOKEN_OVERRIDE
+  source_section: MUST NOT
+  source_protocol: .trellis/spec/frontend/21-design-system-protocol.md
+  source_lines: L98
+  source_sha256: 66f7a7ab4292ab17ae578c338da04833e4705e027aebacce09693fb67e166c9d
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 设计稿或原型里出现的临时数值没有资格直接压过已登记令牌；双方不一致时必须回到令牌事实源裁决，而不是在实现里就地改值迁就截图。
+  statement_en_keywords: design draft values, no token override, resolve at token source
+  clean_room: true
+  applies_when: {lane: frontend, condition: 依据设计稿实现且发现与令牌不一致时}
+  cross_refs: [POLICY.SPEC.DRAFT_NOT_BASELINE]
+  notes: 与 POLICY.SPEC.DRAFT_NOT_BASELINE（草稿内容不得当基线执行）精神同源但对象不同——彼卡管变更治理中的草稿态内容，本卡管视觉值域的设计稿临时值；保留独立卡
+- proposed_id: POLICY.WEB.DS.VISUAL_BASELINE_PROTOTYPE
+  source_section: 项目强制规则·视觉基线来源
+  source_protocol: .trellis/spec/frontend/21-design-system-protocol.md
+  source_lines: L27-L38
+  source_sha256: 66f7a7ab4292ab17ae578c338da04833e4705e027aebacce09693fb67e166c9d
+  classification: PROJECT_BASELINE_TEMPLATE
+  sort: PROJECT
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 本项目视觉基线以原型为准并经设计知识库独立校验，适用范围限于色彩令牌、布局密度与排版层级三类；操作形态（按钮构成、图标文字组合、语义变体映射）不构成基线、不作为照抄依据，一律以组件协议与操作放置登记表为准。
+  statement_en_keywords: visual baseline, prototype authority, scoped applicability, operation forms excluded
+  clean_room: true
+  applies_when: {lane: frontend, condition: 确定项目视觉基准或对照原型实现时}
+  project_scope: 基线来源（原型 + 设计知识库校验）与主色等具体色值为 MASTer 项目裁定（2026-08-17 决议语境）
+  cross_refs: [POLICY.WEB.UIUX.PROVIDER_EVIDENCE_NOT_BUSINESS_TRUTH]
+  notes: 与既有 PROVIDER_EVIDENCE_NOT_BUSINESS_TRUTH 部分同构——『操作形态不构成基线』半边正是『原型抽取非业务事实』在视觉域的投影；『原型是视觉基线』半边为项目专属决定，两半合一故标 PROJECT 非重复
+- proposed_id: POLICY.WEB.DS.LIGHT_DOMINANT_PALETTE
+  source_section: 项目强制规则·浅色主导与深色配额
+  source_protocol: .trellis/spec/frontend/21-design-system-protocol.md
+  source_lines: L40-L44, L110
+  source_sha256: 66f7a7ab4292ab17ae578c338da04833e4705e027aebacce09693fb67e166c9d
+  classification: PROJECT_BASELINE_TEMPLATE
+  sort: PROJECT
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 本项目界面以浅白为主导面；深色只允许出现在文字、图标、极小面积强调与遮罩上，不得充任侧边导航、顶栏、卡片或表格的大面积底色；层次表达优先用边框、极浅底色差与间距，投影其次。
+  statement_en_keywords: light dominant surface, dark quota, hierarchy via border and spacing
+  clean_room: true
+  applies_when: {lane: frontend, condition: 确定界面明度方向或评审大面积用色时}
+  project_scope: 明度方向为 MASTer 项目视觉裁定（密集数据看板语境）
+- proposed_id: POLICY.WEB.DS.SHADOW_FOCUS_TIERS
+  source_section: 项目强制规则·视觉克制 + 项目禁止
+  source_protocol: .trellis/spec/frontend/21-design-system-protocol.md
+  source_lines: L46-L50, L111-L113
+  source_sha256: 66f7a7ab4292ab17ae578c338da04833e4705e027aebacce09693fb67e166c9d
+  classification: PROJECT_BASELINE_TEMPLATE
+  sort: PROJECT
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 本项目投影与焦点表达按固定档位封顶：投影分五档且全部使用低透明度冷灰，焦点使用 2 像素实心焦点环加 1 像素偏移、取主色；发光边缘、外扩光晕、霓虹描边、大面积多层投影、毛玻璃模糊与装饰性渐变全部禁用。
+  statement_en_keywords: shadow tiers cap, solid focus ring, no glow, no frosted glass, no decorative gradient
+  clean_room: true
+  applies_when: {lane: frontend, condition: 使用投影、焦点态或装饰性视觉时}
+  project_scope: 档位数值（如 0 2px 4px 等）为 MASTer 项目基线参数
+- proposed_id: POLICY.WEB.DS.DENSITY_METRICS
+  source_section: 项目强制规则·密集数据度量
+  source_protocol: .trellis/spec/frontend/21-design-system-protocol.md
+  source_lines: L52-L54
+  source_sha256: 66f7a7ab4292ab17ae578c338da04833e4705e027aebacce09693fb67e166c9d
+  classification: PROJECT_BASELINE_TEMPLATE
+  sort: PROJECT
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 本项目密集数据界面的度量基准固定：行高三档（默认 32 / 紧凑 28 / 宽松 40 像素）、表头 36、控件高 32、单元格内边距横 8 纵 4、主力字号 12 至 13 像素；网格表头、行悬停、行选中与网格线颜色全部取自项目令牌，不使用网格引擎出厂主题色。
+  statement_en_keywords: density metrics, row height tiers, control height, grid token colors
+  clean_room: true
+  applies_when: {lane: frontend, condition: 实现或评审密集数据界面时}
+  project_scope: 全部数值为 MASTer 项目基线参数（密集数据看板语境）
+- proposed_id: POLICY.WEB.DS.MOTION_CAUSAL_REDUCED_MOTION
+  source_section: 项目强制规则·动效 + 项目禁止
+  source_protocol: .trellis/spec/frontend/21-design-system-protocol.md
+  source_lines: L56-L58, L114
+  source_sha256: 66f7a7ab4292ab17ae578c338da04833e4705e027aebacce09693fb67e166c9d
+  classification: LANE_POLICY
+  sort: HYBRID
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 动效必须表达因果关系（进入缓出、退出缓入），禁止作为纯装饰；时长档位与曲线参数由项目基线供给；无论何种动效都必须尊重操作系统的减少动效偏好。
+  statement_en_keywords: causal motion, duration tiers, no decorative animation, reduced motion respect
+  clean_room: true
+  applies_when: {lane: frontend, condition: 添加或评审动效时}
+  project_scope: 时长档位数值（100/150/200/300 毫秒）为项目基线参数
+  cross_refs: [POLICY.WEB.A11Y.ZOOM_REDUCED_MOTION]
+  notes: 『尊重减少动效偏好』的普适半边以 23-11（A11Y.ZOOM_REDUCED_MOTION）为正本，本卡承载动效因果性与项目档位
+- proposed_id: POLICY.WEB.DS.DATA_TEXT_TYPOGRAPHY
+  source_section: 项目强制规则·字体 + 项目禁止
+  source_protocol: .trellis/spec/frontend/21-design-system-protocol.md
+  source_lines: L67-L70, L108-L109
+  source_sha256: 66f7a7ab4292ab17ae578c338da04833e4705e027aebacce09693fb67e166c9d
+  classification: LANE_POLICY
+  sort: HYBRID
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 数字、金额、公式、编号与代码类文本必须使用等宽数字字体并启用表格数字特性，保证同列数字纵向对齐；禁止与正文字体混用导致列内宽度参差。
+  statement_en_keywords: tabular numerals, numeric column alignment, no mixed fonts
+  clean_room: true
+  applies_when: {lane: frontend, condition: 排版数字密集文本或数据列时}
+  project_scope: 正文用系统字体栈、不引入依赖外网可达性的字体服务（L68-69, L109）为 MASTer 部署环境决定，随本卡登记为项目约束
+- proposed_id: POLICY.WEB.DS.ICON_LANGUAGE
+  source_section: 项目强制规则·图标 + 项目禁止
+  source_protocol: .trellis/spec/frontend/21-design-system-protocol.md
+  source_lines: L72-L77, L115
+  source_sha256: 66f7a7ab4292ab17ae578c338da04833e4705e027aebacce09693fb67e166c9d
+  classification: LANE_POLICY
+  sort: HYBRID
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 功能图标统一使用单色描边矢量，颜色经 currentColor 继承文字色保持同步；禁止彩色、渐变、照片风或 emoji 充当功能图标；图标库必须经适配层封装为统一图标组件供业务页消费，页面不得直引图标库底层包。
+  statement_en_keywords: monochrome stroke icons, currentColor inheritance, icon adapter layer, no emoji icons
+  clean_room: true
+  applies_when: {lane: frontend, condition: 引入或使用功能图标时}
+  project_scope: 『B 端产品』语境限定与适配层具体封装为项目语境
+- proposed_id: POLICY.WEB.DS.NAV_TYPE_HIERARCHY
+  source_section: 项目强制规则·导航排版层级 + 项目禁止
+  source_protocol: .trellis/spec/frontend/21-design-system-protocol.md
+  source_lines: L79-L83, L117
+  source_sha256: 66f7a7ab4292ab17ae578c338da04833e4705e027aebacce09693fb67e166c9d
+  classification: LANE_POLICY
+  sort: HYBRID
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 导航层级必须通过字重、颜色与缩进的渐进组合表达；分组标题定位为小号分区标签，字号不得大于叶子条目；全层级字号统一时必须以字重加颜色加缩进三重过渡，禁止仅靠字号跳变或满屏加粗制造层级。
+  statement_en_keywords: navigation hierarchy, weight color indent progression, no font-size jumps
+  clean_room: true
+  applies_when: {lane: frontend, condition: 设计或评审导航排版时}
+  project_scope: 字重梯度取值（组 semibold / 子分组 medium / 叶子 regular）为项目基线参数
+- proposed_id: KNOWLEDGE.EX.WEB.CANVAS_TOKEN_RESOLUTION
+  source_section: 项目强制规则·Canvas 渲染器与 token
+  source_protocol: .trellis/spec/frontend/21-design-system-protocol.md
+  source_lines: L85-L87, L116
+  source_sha256: 66f7a7ab4292ab17ae578c338da04833e4705e027aebacce09693fb67e166c9d
+  classification: KNOWLEDGE_PATTERN
+  sort: HYBRID
+  kind_proposal: knowledge_entry
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 画布类渲染器不解析 CSS 变量字符串：向其传颜色或字体前，必须先经运行时样式计算把令牌解析成具体值；直接把变量引用字符串塞进渲染器选项会静默失效。
+  statement_en_keywords: canvas renderer, css variable resolution, runtime getComputedStyle, token passthrough
+  clean_room: true
+  applies_when: {lane: frontend, condition: 将令牌接入画布/图表渲染器时}
+  project_scope: 源文实例为 echarts；模式本身框架无关
+  uncertainty: V9 词形草案的 PATTERN 段未定义技法类段值，暂以 EX 承载，留 vocab-pr 裁决
+- proposed_id: KNOWLEDGE.EX.WEB.DS_TOKEN_CONFORMANCE
+  source_section: Examples
+  source_protocol: .trellis/spec/frontend/21-design-system-protocol.md
+  source_lines: L150-L156
+  source_sha256: 66f7a7ab4292ab17ae578c338da04833e4705e027aebacce09693fb67e166c9d
+  classification: KNOWLEDGE_PATTERN
+  sort: PROJECT
+  kind_proposal: knowledge_entry
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 令牌遵循的正例形态：组件消费语义色变量而非手写十六进制；主色取原型声明值并覆盖库变量使按钮、标签、链接自动一致；金额单元格以等宽数字变量实现列内对齐。
+  statement_en_keywords: token conformance examples, semantic color vars, library variable override, tabular alignment
+  clean_room: true
+  applies_when: {lane: frontend, condition: 演示或评审令牌正确消费方式时}
+  project_scope: 含 MASTer 2026-08-17 项目裁定示例——变化量单元格按取值符号着色（增绿/减红/零默认；三态打点 T 绿 / O 黄 / F 默认，与库语义色令牌覆盖同源）
+- proposed_id: POLICY.WEB.DS.SEMANTIC_TOKEN_LAYERING
+  source_section: SHOULD
+  source_protocol: .trellis/spec/frontend/21-design-system-protocol.md
+  source_lines: L121-L122
+  source_sha256: 66f7a7ab4292ab17ae578c338da04833e4705e027aebacce09693fb67e166c9d
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: true
+  statement_zh: 宜以语义令牌分层——按用途命名、与具体品牌取值解耦，并自动化校验令牌的使用与弃用。
+  statement_en_keywords: semantic token layering, usage based naming, automated usage deprecation audit
+  clean_room: true
+  applies_when: {lane: frontend, condition: 设计令牌体系分层时}
+- proposed_id: POLICY.TPL.DS_TOKEN_CONTRACT
+  source_section: Contract
+  source_protocol: .trellis/spec/frontend/21-design-system-protocol.md
+  source_lines: L126-L129
+  source_sha256: 66f7a7ab4292ab17ae578c338da04833e4705e027aebacce09693fb67e166c9d
+  classification: CONTRACT_TEMPLATE
+  sort: UNIVERSAL
+  kind_proposal: contract_template
+  enforcement: deterministic_where_possible
+  vocab_pr_needed: true
+  statement_zh: 令牌登记契约字段：TokenName, Layer, SemanticMeaning, ValueByTheme, AllowedConsumers, Deprecated?, Owner。
+  statement_en_keywords: token contract template
+  clean_room: true
+  applies_when: {lane: frontend, condition: 登记设计令牌时}
+  notes: 落点随试点 R-C 方案 b——模板暂留 candidates，消费方引用须内联字段清单；V8 词形错位随 vocab-pr 裁决
+- proposed_id: GATE.WEB.DS.CHECKS
+  source_section: Checklist
+  source_protocol: .trellis/spec/frontend/21-design-system-protocol.md
+  source_lines: L131-L146
+  source_sha256: 66f7a7ab4292ab17ae578c338da04833e4705e027aebacce09693fb67e166c9d
+  classification: GATE_RECIPE
+  sort: UNIVERSAL
+  kind_proposal: gate_recipe
+  enforcement: deterministic_where_possible
+  vocab_pr_needed: true
+  statement_zh: 设计系统验收检查项：视觉值全部来自令牌；状态与断点完整；设计与代码来源一致；新令牌有复用语义；主色与语义色与原型声明一致未回落库默认；令牌派生产物脚本生成且未手改；库与网格引擎变量已被项目令牌覆盖；数字类文本等宽对齐；浅白主导深色配额合规；投影未超档；焦点实心环无光晕；无毛玻璃渐变装饰；密集度量合规；动效在档且尊重减少动效偏好。
+  statement_en_keywords: design system checklist, token conformance, visual regression
+  clean_room: true
+  applies_when: {lane: frontend, condition: 设计系统交付验收时}
+  notes: V2——GATE. 前缀不在 prefixes_v0，gate recipe 住 catalog 层不进 truth-index；判定实现须沿用 03-gate-result verdict 七值
+- proposed_id: KNOWLEDGE.FP.WEB.DS_ORNAMENT_DRIFT
+  source_section: Anti-patterns
+  source_protocol: .trellis/spec/frontend/21-design-system-protocol.md
+  source_lines: L158-L170
+  source_sha256: 66f7a7ab4292ab17ae578c338da04833e4705e027aebacce09693fb67e166c9d
+  classification: FAILURE_PATTERN
+  sort: UNIVERSAL
+  kind_proposal: knowledge_entry
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 失败模式族：按截图手写近似色与孤立间距；沿用组件库出厂主色导致成品与设计冷色调明显不符、改色需全量返工；手改派生产物被下次生成覆盖且无人察觉；深色铺满导航顶栏压低可读性；发光大投影与毛玻璃渐变在密集表格里形成视觉噪声。
+  statement_en_keywords: screenshot approximated colors, factory palette drift, silent derived revert, dark chrome, ornament noise
+  clean_room: true
+  applies_when: {lane: frontend, condition: 复盘视觉缺陷或评审视觉方案时}
+  cross_refs: [POLICY.WEB.DS.VISUAL_SOURCE_TOKEN_ONLY, POLICY.WEB.DS.TOKEN_SOURCE_REGENERATION, POLICY.WEB.DS.LIGHT_DOMINANT_PALETTE, POLICY.WEB.DS.SHADOW_FOCUS_TIERS]
+- proposed_id: AUTHORITY.WEB.DS.OWNERS
+  source_section: Ownership
+  source_protocol: .trellis/spec/frontend/21-design-system-protocol.md
+  source_lines: L172-L176
+  source_sha256: 66f7a7ab4292ab17ae578c338da04833e4705e027aebacce09693fb67e166c9d
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 所有权默认值：设计系统 Owner 与前端 Owner 共同维护视觉基线与令牌；组件 Owner 只消费令牌、不得私自改值。
+  statement_en_keywords: design system ownership, token owner, component owner consumes
+  clean_room: true
+  applies_when: {lane: frontend, condition: 分配设计系统职责时}
+  notes: 结构同型于试点 M6 五条 AUTHORITY 卡（提供方/消费方/仲裁方三层默认值），合并审留汇总组；源文项目半边（样式归属登记表为机器事实源）已由 OWNERSHIP_MATRIX catalog 条目承载
+- proposed_id: POLICY.WEB.STYLE.LAYERED_STYLE_OWNERSHIP
+  source_section: 项目强制规则·样式分层与归属
+  source_protocol: .trellis/spec/frontend/21-design-system-protocol.md
+  source_lines: L89-L91
+  source_sha256: 66f7a7ab4292ab17ae578c338da04833e4705e027aebacce09693fb67e166c9d
+  classification: DUPLICATE
+  sort: DUPLICATE
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: true
+  statement_zh: 全局样式入口唯一且各样式层按固定顺序加载；全局类只允许声明在设计系统层，页面组件只能使用作用域样式块；第三方组件库的视觉调整只能发生在其适配层。
+  statement_en_keywords: single global style entry, layered load order, scoped page styles, vendor adapter only
+  clean_room: true
+  applies_when: {lane: frontend, condition: 组织样式分层时}
+  duplicate_of: POLICY.WEB.STYLE.OWNERSHIP_MATRIX
+  duplicate_scope: catalog
+  notes: 矩阵五域子规则（global-reset 唯一入口 / scoped_style_rule 全局类只许共享层 / vendor-adapter 第三方只在适配目录）已覆盖本卡全部主干；『固定加载顺序』细节留项目基线不入 Universal 正本
+- proposed_id: POLICY.WEB.STYLE.NO_HARDCODED_VISUAL_VALUES
+  source_section: MUST NOT + 项目禁止
+  source_protocol: .trellis/spec/frontend/21-design-system-protocol.md
+  source_lines: L95, L104
+  source_sha256: 66f7a7ab4292ab17ae578c338da04833e4705e027aebacce09693fb67e166c9d
+  classification: DUPLICATE
+  sort: DUPLICATE
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: true
+  statement_zh: 禁止写孤立色值、魔法间距与临时阴影；禁止手改令牌派生产物；禁止页面硬编码色值、硬编码像素或引用未定义的幽灵变量。
+  statement_en_keywords: no orphan colors, no magic spacing, no ghost tokens, no derived artifact edits
+  clean_room: true
+  applies_when: {lane: frontend, condition: 书写视觉值时}
+  duplicate_of: POLICY.WEB.STYLE.OWNERSHIP_MATRIX
+  duplicate_scope: catalog
+  notes: 矩阵 design-token 域（唯一所有者是令牌事实源；禁硬编码颜色与像素、禁幽灵令牌、禁手改令牌源文件）语义覆盖；派生产物再生半边见 TOKEN_SOURCE_REGENERATION 独立卡
+- proposed_id: POLICY.WEB.STYLE.NO_PAGE_VENDOR_OVERRIDE
+  source_section: 项目禁止
+  source_protocol: .trellis/spec/frontend/21-design-system-protocol.md
+  source_lines: L105-L107
+  source_sha256: 66f7a7ab4292ab17ae578c338da04833e4705e027aebacce09693fb67e166c9d
+  classification: DUPLICATE
+  sort: DUPLICATE
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: true
+  statement_zh: 禁止在页面局部覆盖第三方组件库视觉，或于页面声明新的全局类；仅两类项目豁免（经网格库官方行类机制挂载并登记于蓝图的语义行态类；非视觉布局属性的受控穿透）。
+  statement_en_keywords: no page-level vendor override, no page global class, scoped exemptions
+  clean_room: true
+  applies_when: {lane: frontend, condition: 页面需要调整第三方组件视觉时}
+  duplicate_of: POLICY.WEB.STYLE.OWNERSHIP_MATRIX
+  duplicate_scope: catalog
+  notes: 矩阵 vendor-adapter 域（禁直接引入第三方样式、禁局部覆盖第三方主题）+ scoped_style_rule（页面禁声明全局类）覆盖主干；两类豁免为 MASTer 项目基线细化（行态类登记 L106 / 布局类穿透 L107），留项目层不入正本
+- proposed_id: POLICY.WEB.DS.TOKEN_CHANGE_DEPRECATION
+  source_section: Change Policy
+  source_protocol: .trellis/spec/frontend/21-design-system-protocol.md
+  source_lines: L180
+  source_sha256: 66f7a7ab4292ab17ae578c338da04833e4705e027aebacce09693fb67e166c9d
+  classification: DUPLICATE
+  sort: DUPLICATE
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: true
+  statement_zh: 令牌改名或删除先进入废弃态；值变化须评估全部受影响组件并执行视觉与对比度回归。
+  statement_en_keywords: token deprecation first, impact assessment, visual contrast regression
+  clean_room: true
+  applies_when: {lane: frontend, condition: 变更令牌时}
+  duplicate_of: POLICY.CHG.DEPRECATE_BEFORE_DELETE
+  duplicate_scope: catalog
+  notes: 『先 deprecated 再删除』为既有正本在令牌域的具体应用；『值变化评估所有组件』为 POLICY.CHG.PRECHANGE_CONSUMER_SCAN 消费方扫描的应用——试点先例（NO_DELETE_WITHOUT_MIGRATION→DEPRECATE_BEFORE_DELETE）同型让位
+
+# ============ 文件 2/10: frontend/22-theme-protocol.md (sha256 b93ed272a0def5abc689fe66d939b87cacf6f38cce5d6278cfd5c94d1754b3ec) ============
+
+- proposed_id: POLICY.WEB.THEME.TOKEN_FULL_COVERAGE
+  source_section: MUST
+  source_protocol: .trellis/spec/frontend/22-theme-protocol.md
+  source_lines: L20
+  source_sha256: b93ed272a0def5abc689fe66d939b87cacf6f38cce5d6278cfd5c94d1754b3ec
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 每个受支持主题都必须完整覆盖整套语义令牌，禁止只换一个背景色的局部主题。
+  statement_en_keywords: theme token full coverage, semantic token set, no partial theme
+  clean_room: true
+  applies_when: {lane: frontend, condition: 新增或维护主题时}
+- proposed_id: POLICY.WEB.THEME.THIRD_PARTY_SYNC
+  source_section: MUST + MUST NOT
+  source_protocol: .trellis/spec/frontend/22-theme-protocol.md
+  source_lines: L21, L29
+  source_sha256: b93ed272a0def5abc689fe66d939b87cacf6f38cce5d6278cfd5c94d1754b3ec
+  classification: LANE_POLICY
+  sort: HYBRID
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 主题切换必须同步所有第三方渲染面——表格、图表、弹层与 portal 挂载点——只处理页面底色而遗漏弹窗图表视为未完成。
+  statement_en_keywords: theme sync, third party surfaces, portal, charts, no background-only theming
+  clean_room: true
+  applies_when: {lane: frontend, condition: 实现主题切换时}
+  project_scope: 第三方渲染面清单（表格/图表/弹层/portal）为前端 lane 惯例，具体组件由项目基线登记
+- proposed_id: POLICY.WEB.THEME.SWITCH_PERSIST_FALLBACK
+  source_section: MUST
+  source_protocol: .trellis/spec/frontend/22-theme-protocol.md
+  source_lines: L22
+  source_sha256: b93ed272a0def5abc689fe66d939b87cacf6f38cce5d6278cfd5c94d1754b3ec
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 主题的切换行为、持久化方式、系统偏好跟随与失败回退四件事必须有显式策略，不允许缺省含糊。
+  statement_en_keywords: theme switch policy, persistence, system preference, fallback
+  clean_room: true
+  applies_when: {lane: frontend, condition: 设计主题机制时}
+- proposed_id: POLICY.WEB.THEME.PER_THEME_ACCEPTANCE
+  source_section: MUST
+  source_protocol: .trellis/spec/frontend/22-theme-protocol.md
+  source_lines: L23
+  source_sha256: b93ed272a0def5abc689fe66d939b87cacf6f38cce5d6278cfd5c94d1754b3ec
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 每个主题都必须单独通过可访问性（对比度）与视觉回归验收，不允许以单一主题的验收结果推及其余。
+  statement_en_keywords: per theme acceptance, contrast, visual regression
+  clean_room: true
+  applies_when: {lane: frontend, condition: 主题交付验收时}
+- proposed_id: POLICY.WEB.THEME.THEME_NOT_BUSINESS_STATE
+  source_section: MUST NOT + Non-Scope
+  source_protocol: .trellis/spec/frontend/22-theme-protocol.md
+  source_lines: L9, L30
+  source_sha256: b93ed272a0def5abc689fe66d939b87cacf6f38cce5d6278cfd5c94d1754b3ec
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 主题选择不得被用来表达权限或业务状态，主题也不得改变业务含义；业务语义必须走业务通道表达。
+  statement_en_keywords: theme not business state, no permission via theme, presentation only
+  clean_room: true
+  applies_when: {lane: frontend, condition: 设计主题能力边界时}
+- proposed_id: POLICY.WEB.THEME.RUNTIME_TOKEN_VARIABLES
+  source_section: SHOULD
+  source_protocol: .trellis/spec/frontend/22-theme-protocol.md
+  source_lines: L34-L35
+  source_sha256: b93ed272a0def5abc689fe66d939b87cacf6f38cce5d6278cfd5c94d1754b3ec
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: true
+  statement_zh: 宜用运行时可变的令牌载体（如 CSS 变量）实现主题，并尽量避免切换瞬间的闪烁与布局位移。
+  statement_en_keywords: runtime token variables, avoid theme flicker, no layout shift on switch
+  clean_room: true
+  applies_when: {lane: frontend, condition: 选择主题实现机制时}
+- proposed_id: POLICY.TPL.THEME_CONTRACT
+  source_section: Contract
+  source_protocol: .trellis/spec/frontend/22-theme-protocol.md
+  source_lines: L39-L42
+  source_sha256: b93ed272a0def5abc689fe66d939b87cacf6f38cce5d6278cfd5c94d1754b3ec
+  classification: CONTRACT_TEMPLATE
+  sort: UNIVERSAL
+  kind_proposal: contract_template
+  enforcement: deterministic_where_possible
+  vocab_pr_needed: true
+  statement_zh: 主题登记契约字段：ThemeId, TokenSet, Default, Persistence, SystemPreference, ThirdPartyAdapters[], Fallback。
+  statement_en_keywords: theme contract template
+  clean_room: true
+  applies_when: {lane: frontend, condition: 登记主题时}
+  notes: 落点随试点 R-C 方案 b；V8 词形错位随 vocab-pr 裁决
+- proposed_id: GATE.WEB.THEME.CHECKS
+  source_section: Checklist
+  source_protocol: .trellis/spec/frontend/22-theme-protocol.md
+  source_lines: L44-L49
+  source_sha256: b93ed272a0def5abc689fe66d939b87cacf6f38cce5d6278cfd5c94d1754b3ec
+  classification: GATE_RECIPE
+  sort: UNIVERSAL
+  kind_proposal: gate_recipe
+  enforcement: deterministic_where_possible
+  vocab_pr_needed: true
+  statement_zh: 主题验收检查项：支持范围与默认值明确；令牌覆盖完整；第三方与 portal 同步；对比度与回退通过。
+  statement_en_keywords: theme checklist, coverage, sync, contrast fallback
+  clean_room: true
+  applies_when: {lane: frontend, condition: 主题交付验收时}
+  notes: V2——GATE. 前缀 pending；verdict 沿 03-gate-result 七值
+- proposed_id: KNOWLEDGE.EX.WEB.THEME_GLOBAL_PALETTE_SYNC
+  source_section: Examples
+  source_protocol: .trellis/spec/frontend/22-theme-protocol.md
+  source_lines: L53-L55
+  source_sha256: b93ed272a0def5abc689fe66d939b87cacf6f38cce5d6278cfd5c94d1754b3ec
+  classification: KNOWLEDGE_PATTERN
+  sort: UNIVERSAL
+  kind_proposal: knowledge_entry
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 正例形态：一次主题切换统一更新页面、弹窗、表格与图表的调色板，全部渲染面同步换装。
+  statement_en_keywords: theme switch example, unified palette update
+  clean_room: true
+  applies_when: {lane: frontend, condition: 演示主题正确切换方式时}
+- proposed_id: KNOWLEDGE.FP.WEB.THEME_PARTIAL_DARK
+  source_section: Anti-patterns
+  source_protocol: .trellis/spec/frontend/22-theme-protocol.md
+  source_lines: L57-L59
+  source_sha256: b93ed272a0def5abc689fe66d939b87cacf6f38cce5d6278cfd5c94d1754b3ec
+  classification: FAILURE_PATTERN
+  sort: UNIVERSAL
+  kind_proposal: knowledge_entry
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 失败模式：只在根节点挂一个暗色类，下拉、弹窗与图表仍停留在亮色——局部换肤造成的『半明半暗』现场。
+  statement_en_keywords: partial dark mode, body class only, unsynced overlays
+  clean_room: true
+  applies_when: {lane: frontend, condition: 复盘主题缺陷时}
+  cross_refs: [POLICY.WEB.THEME.THIRD_PARTY_SYNC]
+- proposed_id: AUTHORITY.WEB.THEME.OWNERS
+  source_section: Ownership
+  source_protocol: .trellis/spec/frontend/22-theme-protocol.md
+  source_lines: L61-L63
+  source_sha256: b93ed272a0def5abc689fe66d939b87cacf6f38cce5d6278cfd5c94d1754b3ec
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 所有权默认值：设计系统 Owner 维护主题令牌，平台 Owner 维护切换机制，组件 Owner 负责自身兼容。
+  statement_en_keywords: theme ownership, token owner, switch owner, component compat
+  clean_room: true
+  applies_when: {lane: frontend, condition: 分配主题职责时}
+  notes: M6 同型合并审留汇总组
+- proposed_id: POLICY.WEB.THEME.NO_THEME_CONTROLLED_HARDCODE
+  source_section: MUST NOT
+  source_protocol: .trellis/spec/frontend/22-theme-protocol.md
+  source_lines: L27
+  source_sha256: b93ed272a0def5abc689fe66d939b87cacf6f38cce5d6278cfd5c94d1754b3ec
+  classification: DUPLICATE
+  sort: DUPLICATE
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: true
+  statement_zh: 业务组件不得把应由主题控制的颜色写死在实现里。
+  statement_en_keywords: no hardcoded theme-controlled colors
+  clean_room: true
+  applies_when: {lane: frontend, condition: 实现业务组件时}
+  duplicate_of: POLICY.WEB.STYLE.OWNERSHIP_MATRIX
+  duplicate_scope: catalog
+  notes: 写死主题可控颜色即页面域硬编码颜色，矩阵 design-token 域（禁硬编码颜色）覆盖
+- proposed_id: POLICY.WEB.THEME.NO_PAGE_LOCAL_RESKIN
+  source_section: MUST NOT
+  source_protocol: .trellis/spec/frontend/22-theme-protocol.md
+  source_lines: L28
+  source_sha256: b93ed272a0def5abc689fe66d939b87cacf6f38cce5d6278cfd5c94d1754b3ec
+  classification: DUPLICATE
+  sort: DUPLICATE
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: true
+  statement_zh: 局部页面不得自行换肤。
+  statement_en_keywords: no page local reskin
+  clean_room: true
+  applies_when: {lane: frontend, condition: 页面试图定制主题时}
+  duplicate_of: POLICY.WEB.STYLE.OWNERSHIP_MATRIX
+  duplicate_scope: catalog
+  notes: 矩阵 vendor-adapter 域『页面域禁止局部改写主题参数』逐点覆盖
+- proposed_id: POLICY.WEB.THEME.THEME_DELETE_MIGRATION
+  source_section: Change Policy
+  source_protocol: .trellis/spec/frontend/22-theme-protocol.md
+  source_lines: L67
+  source_sha256: b93ed272a0def5abc689fe66d939b87cacf6f38cce5d6278cfd5c94d1754b3ec
+  classification: DUPLICATE
+  sort: DUPLICATE
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: true
+  statement_zh: 新增主题必须完整覆盖并验收；删除主题须迁移用户偏好并提供回退。
+  statement_en_keywords: theme add full coverage, theme delete migration fallback
+  clean_room: true
+  applies_when: {lane: frontend, condition: 主题增删时}
+  duplicate_of: POLICY.CHG.DEPRECATE_BEFORE_DELETE
+  duplicate_scope: catalog
+  notes: 删除主题迁移回退为既有正本的具体应用；新增半边与 TOKEN_FULL_COVERAGE/PER_THEME_ACCEPTANCE 互引
+
+# ============ 文件 3/10: frontend/23-accessibility-protocol.md (sha256 542b8843ef53ae6446c84be72f6f76a402d22afc9e55d405a4f1de4c0add0d41) ============
+
+- proposed_id: POLICY.WEB.A11Y.STANDARD_TARGET_WITH_LEDGER
+  source_section: MUST + Change Policy
+  source_protocol: .trellis/spec/frontend/23-accessibility-protocol.md
+  source_lines: L19, L41, L77
+  source_sha256: 542b8843ef53ae6446c84be72f6f76a402d22afc9e55d405a4f1de4c0add0d41
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 可访问性以公认无障碍标准的 AA 级为默认达标线；凡未达标项必须逐条登记适用成功准则、影响、替代路径、责任人与修复期限，任何例外都要留下同样完整的台账。
+  statement_en_keywords: wcag aa default target, non-conformance ledger, alternative path, owner, deadline
+  clean_room: true
+  applies_when: {lane: frontend, condition: 设定可访问性目标或申请例外时}
+  uncertainty: statement 保留公开标准名（WCAG 2.2 AA）——属国际标准非项目专名，判可入 Universal；若汇总组从严可参数化为『公认无障碍标准 AA 级』（现措辞已按此泛化，源文 L19/L42 为 WCAG 2.2 AA）
+- proposed_id: POLICY.WEB.A11Y.KEYBOARD_FOCUS_ORDER
+  source_section: MUST + MUST NOT
+  source_protocol: .trellis/spec/frontend/23-accessibility-protocol.md
+  source_lines: L20, L35
+  source_sha256: 542b8843ef53ae6446c84be72f6f76a402d22afc9e55d405a4f1de4c0add0d41
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 每一处交互都必须能仅用键盘完成，焦点移动次序与视觉呈现次序一致；移除焦点轮廓而不提供同等可见替代，视为违规。
+  statement_en_keywords: keyboard operable, focus order matches visual order, no focus outline removal
+  clean_room: true
+  applies_when: {lane: frontend, condition: 实现任何交互时}
+- proposed_id: POLICY.WEB.A11Y.SEMANTIC_EQUIVALENCE
+  source_section: MUST + MUST NOT
+  source_protocol: .trellis/spec/frontend/23-accessibility-protocol.md
+  source_lines: L21, L34
+  source_sha256: 542b8843ef53ae6446c84be72f6f76a402d22afc9e55d405a4f1de4c0add0d41
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 控件必须使用原生语义或提供完整等价语义；拿无语义容器冒充可交互控件一律禁止。
+  statement_en_keywords: native semantics, equivalent semantics, no semantic-free div buttons
+  clean_room: true
+  applies_when: {lane: frontend, condition: 实现控件时}
+- proposed_id: POLICY.WEB.A11Y.FOCUS_TRAP_AND_RETURN
+  source_section: MUST + MUST NOT
+  source_protocol: .trellis/spec/frontend/23-accessibility-protocol.md
+  source_lines: L22, L37
+  source_sha256: 542b8843ef53ae6446c84be72f6f76a402d22afc9e55d405a4f1de4c0add0d41
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 浮层打开时接管焦点，关闭后焦点必须回到触发点；焦点泄入背景内容视为缺陷。
+  statement_en_keywords: focus trap, focus return to trigger, no focus leak
+  clean_room: true
+  applies_when: {lane: frontend, condition: 实现弹层类组件时}
+- proposed_id: POLICY.WEB.A11Y.ASSISTIVE_STATUS_ANNOUNCEMENT
+  source_section: MUST
+  source_protocol: .trellis/spec/frontend/23-accessibility-protocol.md
+  source_lines: L23, L28
+  source_sha256: 542b8843ef53ae6446c84be72f6f76a402d22afc9e55d405a4f1de4c0add0d41
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 校验错误必须与对应字段显式关联；状态消息、异步结果与进度变化必须能被辅助技术识别，且不得借此抢夺用户焦点。
+  statement_en_keywords: error field association, live announcements, async results, no focus stealing
+  clean_room: true
+  applies_when: {lane: frontend, condition: 实现动态状态反馈时}
+- proposed_id: POLICY.WEB.A11Y.COLOR_NOT_SOLE_CHANNEL
+  source_section: MUST + MUST NOT
+  source_protocol: .trellis/spec/frontend/23-accessibility-protocol.md
+  source_lines: L24, L36
+  source_sha256: 542b8843ef53ae6446c84be72f6f76a402d22afc9e55d405a4f1de4c0add0d41
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 颜色永远不能是信息的唯一载体；文本与交互元素必须满足项目对比度标准；只靠颜色、悬停或悬浮提示传递关键信息一律禁止。
+  statement_en_keywords: color not sole channel, contrast requirement, no hover-only info
+  clean_room: true
+  applies_when: {lane: frontend, condition: 用颜色表达状态或信息时}
+- proposed_id: POLICY.WEB.A11Y.FOCUS_OCCLUSION_DRAG_TARGET
+  source_section: MUST
+  source_protocol: .trellis/spec/frontend/23-accessibility-protocol.md
+  source_lines: L26-L27
+  source_sha256: 542b8843ef53ae6446c84be72f6f76a402d22afc9e55d405a4f1de4c0add0d41
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 键盘焦点不得被吸顶栏、浮层或其他作者自建内容完全遮住；依赖拖拽的操作必须提供免拖拽的等价路径；交互目标的尺寸与间距必须满足达标线对应的成功准则。
+  statement_en_keywords: focus not obscured, dragging alternatives, target size
+  clean_room: true
+  applies_when: {lane: frontend, condition: 实现吸顶布局、拖拽交互或小尺寸控件时}
+- proposed_id: POLICY.WEB.A11Y.AUTH_FLOW_ACCESSIBILITY
+  source_section: MUST
+  source_protocol: .trellis/spec/frontend/23-accessibility-protocol.md
+  source_lines: L29
+  source_sha256: 542b8843ef53ae6446c84be72f6f76a402d22afc9e55d405a4f1de4c0add0d41
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 登录与认证流程必须兼容密码管理器与粘贴输入，不得强迫用户仅凭记忆、抄写或解谜完成认证；确有安全例外须走正式批准流程。
+  statement_en_keywords: accessible authentication, paste allowed, no cognitive test, security exception approval
+  clean_room: true
+  applies_when: {lane: frontend, condition: 实现认证流程时}
+- proposed_id: POLICY.WEB.A11Y.ERROR_PREVENTION_NO_REENTRY
+  source_section: MUST
+  source_protocol: .trellis/spec/frontend/23-accessibility-protocol.md
+  source_lines: L30
+  source_sha256: 542b8843ef53ae6446c84be72f6f76a402d22afc9e55d405a4f1de4c0add0d41
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 同一流程里用户已录入的信息不得无理由要求二次录入；高风险操作必须提供确认、复核、撤销或等效的防错机制。
+  statement_en_keywords: no redundant entry, high risk confirmation, undo, error prevention
+  clean_room: true
+  applies_when: {lane: frontend, condition: 设计多步流程或高风险操作时}
+- proposed_id: POLICY.WEB.A11Y.SCAN_NOT_SOLE_EVIDENCE
+  source_section: MUST NOT + SHOULD
+  source_protocol: .trellis/spec/frontend/23-accessibility-protocol.md
+  source_lines: L38, L43
+  source_sha256: 542b8843ef53ae6446c84be72f6f76a402d22afc9e55d405a4f1de4c0add0d41
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 自动化扫描通过不得单独充当可访问性验收证据；必须辅以人工键盘走查与读屏抽查。
+  statement_en_keywords: automated scan insufficient, manual keyboard audit, screen reader spot check
+  clean_room: true
+  applies_when: {lane: frontend, condition: 可访问性验收出证时}
+- proposed_id: POLICY.WEB.A11Y.ZOOM_REDUCED_MOTION
+  source_section: MUST
+  source_protocol: .trellis/spec/frontend/23-accessibility-protocol.md
+  source_lines: L25
+  source_sha256: 542b8843ef53ae6446c84be72f6f76a402d22afc9e55d405a4f1de4c0add0d41
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 界面在内容缩放与减少动效两种场景下必须保持可用；动效须顺从系统减少动效偏好。
+  statement_en_keywords: zoom usable, reduced motion respect
+  clean_room: true
+  applies_when: {lane: frontend, condition: 适配缩放与动效偏好时}
+  notes: 本卡为组内『减少动效』正本；21 动效卡（MOTION_CAUSAL_REDUCED_MOTION）互引
+- proposed_id: POLICY.TPL.A11Y_COMPONENT_CONTRACT
+  source_section: Contract
+  source_protocol: .trellis/spec/frontend/23-accessibility-protocol.md
+  source_lines: L47-L50
+  source_sha256: 542b8843ef53ae6446c84be72f6f76a402d22afc9e55d405a4f1de4c0add0d41
+  classification: CONTRACT_TEMPLATE
+  sort: UNIVERSAL
+  kind_proposal: contract_template
+  enforcement: deterministic_where_possible
+  vocab_pr_needed: true
+  statement_zh: 可访问性契约字段：Component, Role, AccessibleName, KeyboardMap, FocusEntry, FocusReturn, LiveAnnouncements, ContrastRequirement。
+  statement_en_keywords: accessibility contract template
+  clean_room: true
+  applies_when: {lane: frontend, condition: 登记组件可访问性契约时}
+  notes: 落点随试点 R-C 方案 b
+- proposed_id: GATE.WEB.A11Y.CHECKS
+  source_section: Checklist
+  source_protocol: .trellis/spec/frontend/23-accessibility-protocol.md
+  source_lines: L52-L59
+  source_sha256: 542b8843ef53ae6446c84be72f6f76a402d22afc9e55d405a4f1de4c0add0d41
+  classification: GATE_RECIPE
+  sort: UNIVERSAL
+  kind_proposal: gate_recipe
+  enforcement: deterministic_where_possible
+  vocab_pr_needed: true
+  statement_zh: 可访问性验收检查项：键盘路径完整；焦点可见且可恢复；语义与读屏标签正确；对比度、缩放、动效通过；焦点无遮挡、拖拽有替代、目标尺寸合规；认证、重复录入与高风险操作完成专项检查。
+  statement_en_keywords: a11y checklist, keyboard path, focus recovery, target size, auth specifics
+  clean_room: true
+  applies_when: {lane: frontend, condition: 可访问性验收时}
+  notes: V2——GATE. 前缀 pending
+- proposed_id: KNOWLEDGE.EX.WEB.A11Y_DIALOG_FOCUS
+  source_section: Examples
+  source_protocol: .trellis/spec/frontend/23-accessibility-protocol.md
+  source_lines: L63-L65
+  source_sha256: 542b8843ef53ae6446c84be72f6f76a402d22afc9e55d405a4f1de4c0add0d41
+  classification: KNOWLEDGE_PATTERN
+  sort: UNIVERSAL
+  kind_proposal: knowledge_entry
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 正例形态：对话框打开时焦点落至标题或首个字段，关闭后回到原触发按钮，并向辅助技术播报提交结果。
+  statement_en_keywords: dialog focus example, focus return, result announcement
+  clean_room: true
+  applies_when: {lane: frontend, condition: 演示弹层焦点管理时}
+- proposed_id: KNOWLEDGE.FP.WEB.MOUSE_ONLY_DIV
+  source_section: Anti-patterns
+  source_protocol: .trellis/spec/frontend/23-accessibility-protocol.md
+  source_lines: L67-L69
+  source_sha256: 542b8843ef53ae6446c84be72f6f76a402d22afc9e55d405a4f1de4c0add0d41
+  classification: FAILURE_PATTERN
+  sort: UNIVERSAL
+  kind_proposal: knowledge_entry
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 失败模式：可点击容器只响应鼠标点击，状态辨识完全依赖红绿配色——键盘用户与色觉障碍用户同时被排除。
+  statement_en_keywords: mouse only clickable div, color-only state
+  clean_room: true
+  applies_when: {lane: frontend, condition: 复盘可访问性缺陷时}
+  cross_refs: [POLICY.WEB.A11Y.SEMANTIC_EQUIVALENCE, POLICY.WEB.A11Y.COLOR_NOT_SOLE_CHANNEL]
+- proposed_id: AUTHORITY.WEB.A11Y.OWNERS
+  source_section: Ownership
+  source_protocol: .trellis/spec/frontend/23-accessibility-protocol.md
+  source_lines: L71-L73
+  source_sha256: 542b8843ef53ae6446c84be72f6f76a402d22afc9e55d405a4f1de4c0add0d41
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 所有权默认值：组件 Owner 负责可访问性实现，设计 Owner 负责视觉侧达标，QA/可访问性 Owner 负责验收。
+  statement_en_keywords: a11y ownership, implementation, visual, acceptance
+  clean_room: true
+  applies_when: {lane: frontend, condition: 分配可访问性职责时}
+  notes: M6 同型合并审留汇总组
+
+# ============ 文件 4/10: frontend/24-component-protocol.md (sha256 0afcd58ae7e6f1d6467dd4186ab1e797a5df50bac4184d2da6a45e5f4d9247d0) ============
+
+- proposed_id: POLICY.WEB.COMP.REUSE_BEFORE_CREATE
+  source_section: MUST
+  source_protocol: .trellis/spec/frontend/24-component-protocol.md
+  source_lines: L20
+  source_sha256: 0afcd58ae7e6f1d6467dd4186ab1e797a5df50bac4184d2da6a45e5f4d9247d0
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 动手新建组件之前必须先检索既有组件，并把『为什么不能复用』写成明确记录；没有这份记录的新建不成立。
+  statement_en_keywords: reuse before create, search existing, documented non-reuse reason
+  clean_room: true
+  applies_when: {lane: frontend, condition: 拟新建任何组件时}
+- proposed_id: POLICY.WEB.COMP.PUBLIC_CONTRACT_COMPLETENESS
+  source_section: MUST + SHOULD
+  source_protocol: .trellis/spec/frontend/24-component-protocol.md
+  source_lines: L21-L23, L132-L134
+  source_sha256: 0afcd58ae7e6f1d6467dd4186ab1e797a5df50bac4184d2da6a45e5f4d9247d0
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 公共组件的归属、责任人、目的与非目标必须明确，并具备类型化的属性、事件、插槽契约，配套状态集、文档、测试与唯一公开入口；宜提供受控输入与语义事件、可运行示例与弃用策略。
+  statement_en_keywords: public component contract, typed props events slots, docs tests, public entry, owner purpose non-goals
+  clean_room: true
+  applies_when: {lane: frontend, condition: 发布或评审公共组件时}
+- proposed_id: POLICY.WEB.COMP.STATE_SET_IN_CONTRACT
+  source_section: MUST
+  source_protocol: .trellis/spec/frontend/24-component-protocol.md
+  source_lines: L23
+  source_sha256: 0afcd58ae7e6f1d6467dd4186ab1e797a5df50bac4184d2da6a45e5f4d9247d0
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 组件契约的状态集必须至少论证过加载、空、错误、禁用、只读与焦点六态，缺态即契约不完整。
+  statement_en_keywords: component state set, loading empty error disabled readonly focus
+  clean_room: true
+  applies_when: {lane: frontend, condition: 定义组件契约时}
+  cross_refs: [POLICY.WEB.DS.VISUAL_STATE_COMPLETENESS]
+  uncertainty: 与 21 视觉状态卡语义相邻（契约视角 vs 视觉视角，交集高），两卡互引保留；汇总组可裁并条
+- proposed_id: POLICY.WEB.COMP.PROMOTION_ON_SECOND_CONSUMER
+  source_section: MUST
+  source_protocol: .trellis/spec/frontend/24-component-protocol.md
+  source_lines: L24
+  source_sha256: 0afcd58ae7e6f1d6467dd4186ab1e797a5df50bac4184d2da6a45e5f4d9247d0
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 当第二个消费方出现时，必须重新评估该组件的层级归属，不允许放任其在原层级继续私有化生长。
+  statement_en_keywords: promotion on second consumer, layer reassessment
+  clean_room: true
+  applies_when: {lane: frontend, condition: 组件出现跨页复用时}
+- proposed_id: POLICY.WEB.COMP.NO_TRIVIAL_OR_GOD_COMPONENT
+  source_section: MUST NOT
+  source_protocol: .trellis/spec/frontend/24-component-protocol.md
+  source_lines: L110-L111
+  source_sha256: 0afcd58ae7e6f1d6467dd4186ab1e797a5df50bac4184d2da6a45e5f4d9247d0
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 禁止为省下几行代码而制造没有职责的包装组件；组件入参必须是类型化的最小契约，整包数据对象或万能配置对象一律不得透传。
+  statement_en_keywords: no trivial wrapper, typed minimal props, no god config object
+  clean_room: true
+  applies_when: {lane: frontend, condition: 设计组件接口时}
+- proposed_id: POLICY.WEB.COMP.PATTERN_ENCAPSULATION
+  source_section: 项目强制规则·模式登记表
+  source_protocol: .trellis/spec/frontend/24-component-protocol.md
+  source_lines: L76-L78, L122, L152
+  source_sha256: 0afcd58ae7e6f1d6467dd4186ab1e797a5df50bac4184d2da6a45e5f4d9247d0
+  classification: LANE_POLICY
+  sort: HYBRID
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 稳定复用的页面级结构组合登记为模式组件统一封装；页面只负责供给数据与事件，重写模式内部结构一律禁止。
+  statement_en_keywords: pattern components, page structure composition, data and events only, no internal rewrite
+  clean_room: true
+  applies_when: {lane: frontend, condition: 页面消费组合模式时}
+  project_scope: 模式登记表及其固定模式清单（页头/筛选栏/列表表格/确认弹窗等）为 MASTer 机器事实源实例
+- proposed_id: POLICY.WEB.COMP.ACTION_PLACEMENT_REGISTRY
+  source_section: 项目强制规则·操作放置
+  source_protocol: .trellis/spec/frontend/24-component-protocol.md
+  source_lines: L82-L83, L123, L151
+  source_sha256: 0afcd58ae7e6f1d6467dd4186ab1e797a5df50bac4184d2da6a45e5f4d9247d0
+  classification: LANE_POLICY
+  sort: HYBRID
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 标准操作在页面作用域与表格作用域内的放置位置与主次危险优先级必须经登记表预先声明，临场发明操作位置一律禁止；危险操作不得进入主操作区或主按钮位。
+  statement_en_keywords: action placement registry, fixed slots, priority tiers, danger not primary
+  clean_room: true
+  applies_when: {lane: frontend, condition: 摆放页面或表格操作时}
+  project_scope: 登记表实例与标准操作清单（返回/新建/导入/导出/编辑/删除等）为 MASTer 机器事实源
+- proposed_id: POLICY.WEB.COMP.ACTION_FORM_CONTRACT
+  source_section: 项目强制规则·操作形态
+  source_protocol: .trellis/spec/frontend/24-component-protocol.md
+  source_lines: L84-L86, L124-L125
+  source_sha256: 0afcd58ae7e6f1d6467dd4186ab1e797a5df50bac4184d2da6a45e5f4d9247d0
+  classification: LANE_POLICY
+  sort: HYBRID
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 行级动作按钮必须以图标加文字的组合呈现，纯文字链接或无文字图标不得承担行级动作；危险/警示/中性等语义变体必须经组件变体机制表达，禁止页面局部样式覆盖语义色；行内动作按钮使用紧凑尺寸档；同一动作标识在同类语境必须保持相同组合。
+  statement_en_keywords: icon plus text row actions, semantic variant mapping, no css override of variant color, compact row size, same action same form
+  clean_room: true
+  applies_when: {lane: frontend, condition: 实现行级或弹窗内动作按钮时}
+  project_scope: 具体变体映射（删除 danger 实底 / 停用 warning / 启用 success / 中性 secondary；warning success 为 plain 族）与紧凑尺寸档数值为 MASTer 项目基线参数
+  cross_refs: [POLICY.WEB.COPY.ACTION_CONSISTENCY]
+- proposed_id: POLICY.WEB.COMP.CONTAINER_GAP_SPACING_AUTHORITY
+  source_section: 项目强制规则·Action Bar / Button / Dropdown 间距控制
+  source_protocol: .trellis/spec/frontend/24-component-protocol.md
+  source_lines: L88-L95, L152
+  source_sha256: 0afcd58ae7e6f1d6467dd4186ab1e797a5df50bac4184d2da6a45e5f4d9247d0
+  classification: LANE_POLICY
+  sort: HYBRID
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 容器内同级操作之间的间距由容器的统一间距机制唯一控制：子项组件不得自带影响外部的边距，操作栏不得插入空占位或条件渲染占位来制造间距，条件渲染的按钮必须直接参与布局流；引入统一间距时必须在作用域内中和第三方库对相邻元素的默认外边距，使统一间距成为唯一来源。
+  statement_en_keywords: container gap single authority, no child margins, no spacer placeholders, neutralize vendor default margins
+  clean_room: true
+  applies_when: {lane: frontend, condition: 排布操作栏或同级按钮组时}
+  project_scope: 源文实例为操作栏/按钮/下拉组件与 UI 库相邻按钮默认外边距；CSS 覆盖正误示例见 26 协议项目示例段
+  uncertainty: 24 结构规则与 26 CSS 覆盖示例为同一规则的两半（组件结构侧 / 样式覆盖侧），合并为一卡承载两半；若汇总组偏好拆分可依源文行锚回拆
+- proposed_id: POLICY.WEB.COMP.CAPABILITY_REF_NOT_IMPL_NAME
+  source_section: 项目强制规则·组件登记表 + MUST NOT
+  source_protocol: .trellis/spec/frontend/24-component-protocol.md
+  source_lines: L54-L56, L113, L117, L149
+  source_sha256: 0afcd58ae7e6f1d6467dd4186ab1e797a5df50bac4184d2da6a45e5f4d9247d0
+  classification: LANE_POLICY
+  sort: HYBRID
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 组件消费方必须引用稳定的能力标识或模式标识，禁止在引用位置书写具体实现类名；能力到实现的绑定由登记表管理，实现可替换而引用保持稳定。
+  statement_en_keywords: capability id reference, no implementation class name, registry managed binding
+  clean_room: true
+  applies_when: {lane: frontend, condition: 页面或蓝图引用组件时}
+  project_scope: 登记表 schema（capability_id 词形 CATEGORY.NAME、category 类别、canonical_implementation、status/gap 等字段）与蓝图 slot.component 约定为 MASTer 机器事实源实例
+  notes: 语义多实现模式——同一能力标识可绑定不同实现；引用 25 页面结构同款条款已标 intra_batch 让位于本卡
+- proposed_id: POLICY.WEB.COMP.CAPABILITY_IMPL_BINDING
+  source_section: 项目强制规则·组件选择登记表 + 自动拦截
+  source_protocol: .trellis/spec/frontend/24-component-protocol.md
+  source_lines: L58-L61, L127-L129, L150
+  source_sha256: 0afcd58ae7e6f1d6467dd4186ab1e797a5df50bac4184d2da6a45e5f4d9247d0
+  classification: PROJECT_BASELINE_TEMPLATE
+  sort: PROJECT
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 本项目要求每个页面、每个能力在组件选择登记表中绑定唯一实现并标注审批状态与高风险标记；高风险引用必须为已批准状态，存在未关闭缺口即阻断实现；登记表约束由本地静态检查与登记校验脚本自动拦截，禁止关闭规则或跳过校验绕过。
+  statement_en_keywords: capability implementation binding, approval state, high risk block, automated lint interception
+  clean_room: true
+  applies_when: {lane: frontend, condition: 页面绑定组件实现或评审高风险引用时}
+  project_scope: 登记表、静态检查规则名、校验脚本路径均为 MASTer 项目事实源
+- proposed_id: POLICY.WEB.COMP.WIDTH_PROP_CONTRACT
+  source_section: 项目强制规则·定宽渠道（width prop）
+  source_protocol: .trellis/spec/frontend/24-component-protocol.md
+  source_lines: L70-L74
+  source_sha256: 0afcd58ae7e6f1d6467dd4186ab1e797a5df50bac4184d2da6a45e5f4d9247d0
+  classification: PROJECT_BASELINE_TEMPLATE
+  sort: PROJECT
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 本项目选定组件的定宽走组件 width 属性渠道：属性接受完整 CSS 宽度值（令牌值优先），根节点内联样式优先级高于类，落在组件上的定宽类是死代码；历史包裹层方案保留为存量兼容，新改动一律走属性渠道。
+  statement_en_keywords: width prop channel, inline style precedence, dead width class, legacy wrapper compat
+  clean_room: true
+  applies_when: {lane: frontend, condition: 为选定组件设定宽度时}
+  project_scope: MasterSelect / MasterDateRangePicker / MasterDrawer 具体契约（width 属性、size 档位、header 具名插槽连带移除内置关闭钮等）为 MASTer 组件级项目决定
+- proposed_id: POLICY.WEB.COMP.FORMULA_ENGINE_CONTRACT
+  source_section: 项目强制规则·公式引擎组件契约
+  source_protocol: .trellis/spec/frontend/24-component-protocol.md
+  source_lines: L97-L106
+  source_sha256: 0afcd58ae7e6f1d6467dd4186ab1e797a5df50bac4184d2da6a45e5f4d9247d0
+  classification: PROJECT_BASELINE_TEMPLATE
+  sort: PROJECT
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 本项目公式引擎以登记的引擎契约与逐公式绑定管理：引擎对外入口是唯一调用通道，业务页不得直调求值器内部；引擎模块不得持有用户可见文案，文案进视图层按错误码查表渲染；数组聚合公式不得声明标量依赖边，概念依赖只记于注册表事实源，防止沿依赖边级联塌零。
+  statement_en_keywords: formula engine contract, single entry, structured error codes, no scalar edge for array aggregation
+  clean_room: true
+  applies_when: {lane: frontend, condition: 接入或扩展公式引擎时}
+  project_scope: 引擎登记字段（engine_contract/engine_binding）、入口名、数组槽机制、具体依赖边事故均为 MASTer 项目契约
+  cross_refs: [POLICY.WEB.COPY.ENUMERABLE_PLACEMENT]
+- proposed_id: KNOWLEDGE.FP.WEB.SILENT_ICON_KEY_MISS
+  source_section: 项目强制规则·图标白名单与静默空渲染
+  source_protocol: .trellis/spec/frontend/24-component-protocol.md
+  source_lines: L62-L64
+  source_sha256: 0afcd58ae7e6f1d6467dd4186ab1e797a5df50bac4184d2da6a45e5f4d9247d0
+  classification: FAILURE_PATTERN
+  sort: HYBRID
+  kind_proposal: knowledge_entry
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 失败模式：按键名查表的资源引用在键缺失时静默降级为空渲染——无编译报错、无静态警告，最终界面出现空壳按钮；此类查找必须在缺失时显式失败或补注册后再用，批量审计可比对『全量引用键 vs 注册键全集』。
+  statement_en_keywords: silent key miss, empty render degradation, reference vs registry diff audit
+  clean_room: true
+  applies_when: {lane: frontend, condition: 使用键控资源（图标/枚举/字典）时}
+  project_scope: 源文实例为图标白名单机制（曾一次审计发现 6 个静默缺失）
+- proposed_id: KNOWLEDGE.FP.WEB.UNRESOLVED_COMPONENT_INLINE
+  source_section: 项目强制规则·组件未导入的降级陷阱
+  source_protocol: .trellis/spec/frontend/24-component-protocol.md
+  source_lines: L66-L68
+  source_sha256: 0afcd58ae7e6f1d6467dd4186ab1e797a5df50bac4184d2da6a45e5f4d9247d0
+  classification: FAILURE_PATTERN
+  sort: HYBRID
+  kind_proposal: knowledge_entry
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 失败模式：视图引用了未导入的组件时，部分框架会把它按原生自定义元素静默渲染——浮层壳整体消失、插槽内容内联进页面文档流挤压布局；含浮层页面的验收必须检查关闭态确实隐藏且控制台无组件解析告警。
+  statement_en_keywords: unresolved component, native custom element fallback, inline slot leak, close-state check
+  clean_room: true
+  applies_when: {lane: frontend, condition: 验收含弹窗浮层的页面时}
+  project_scope: 源文实例为 Vue 未解析组件行为；模式适用于同类运行时
+- proposed_id: KNOWLEDGE.EX.WEB.LIBRARY_CATALOG_BENCHMARK
+  source_section: External library benchmark
+  source_protocol: .trellis/spec/frontend/24-component-protocol.md
+  source_lines: L40-L48
+  source_sha256: 0afcd58ae7e6f1d6467dd4186ab1e797a5df50bac4184d2da6a45e5f4d9247d0
+  classification: KNOWLEDGE_PATTERN
+  sort: UNIVERSAL
+  kind_proposal: knowledge_entry
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 对照成熟开源组件库的能力目录仅用于三件事：校准能力命名与分类、识别常见变体与状态、补齐能力图谱缺口；迁移其 API 或样式、把具体库名/版本/路径写进规范文本均在禁止之列。
+  statement_en_keywords: library catalog benchmark, naming calibration, no api migration, no specifics in spec
+  clean_room: true
+  applies_when: {lane: frontend, condition: 评估新增或补强组件能力时}
+- proposed_id: POLICY.TPL.COMPONENT_CONTRACT
+  source_section: Contract
+  source_protocol: .trellis/spec/frontend/24-component-protocol.md
+  source_lines: L138-L141
+  source_sha256: 0afcd58ae7e6f1d6467dd4186ab1e797a5df50bac4184d2da6a45e5f4d9247d0
+  classification: CONTRACT_TEMPLATE
+  sort: UNIVERSAL
+  kind_proposal: contract_template
+  enforcement: deterministic_where_possible
+  vocab_pr_needed: true
+  statement_zh: 组件契约字段：Purpose, Owner, Props, Events, Slots, PublicMethods, States, Permissions, Accessibility, Tokens, ReuseRules, ForbiddenChanges。
+  statement_en_keywords: component contract template
+  clean_room: true
+  applies_when: {lane: frontend, condition: 登记公共组件契约时}
+  notes: 落点随试点 R-C 方案 b
+- proposed_id: GATE.WEB.COMP.CHECKS
+  source_section: Checklist
+  source_protocol: .trellis/spec/frontend/24-component-protocol.md
+  source_lines: L143-L153
+  source_sha256: 0afcd58ae7e6f1d6467dd4186ab1e797a5df50bac4184d2da6a45e5f4d9247d0
+  classification: GATE_RECIPE
+  sort: UNIVERSAL
+  kind_proposal: gate_recipe
+  enforcement: deterministic_where_possible
+  vocab_pr_needed: true
+  statement_zh: 组件验收检查项：复用检索完成；分层与公开入口正确；接口与状态完整；测试示例与可访问性齐备；组件已登记且引用走能力/模式标识；每页每能力唯一实现绑定且高风险已批准；操作放置合规且危险操作未进主操作区；间距由父级统一间距控制且无空占位外边距；模式组件未被重写内部结构。
+  statement_en_keywords: component checklist, registry conformance, binding approval, gap spacing
+  clean_room: true
+  applies_when: {lane: frontend, condition: 组件交付验收时}
+  notes: V2——GATE. 前缀 pending
+- proposed_id: KNOWLEDGE.EX.WEB.COMP_CONFORMANCE_PAIRS
+  source_section: Examples
+  source_protocol: .trellis/spec/frontend/24-component-protocol.md
+  source_lines: L155-L198
+  source_sha256: 0afcd58ae7e6f1d6467dd4186ab1e797a5df50bac4184d2da6a45e5f4d9247d0
+  classification: KNOWLEDGE_PATTERN
+  sort: UNIVERSAL
+  kind_proposal: knowledge_entry
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 正例形态：页面按能力标识取排版能力并绑定实现；列表页操作按主次危险分区摆放；操作栏以父级统一间距组织、子项无外边距——配对的反例为空占位与条件占位制造间距、组件自带外边距破坏间距。
+  statement_en_keywords: capability reference example, action zoning, gap structure good bad pair
+  clean_room: true
+  applies_when: {lane: frontend, condition: 演示组件正确引用与操作栏结构时}
+  project_scope: 示例中的组件名与结构为项目实例；模式语义通用
+- proposed_id: KNOWLEDGE.FP.WEB.COMP_ANTI_PATTERN_SET
+  source_section: Anti-patterns
+  source_protocol: .trellis/spec/frontend/24-component-protocol.md
+  source_lines: L200-L214
+  source_sha256: 0afcd58ae7e6f1d6467dd4186ab1e797a5df50bac4184d2da6a45e5f4d9247d0
+  classification: FAILURE_PATTERN
+  sort: UNIVERSAL
+  kind_proposal: knowledge_entry
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 失败模式族：任意对象进出的万能表格组件内部私接多个业务接口；引用位置直写实现类名令替换与校验双双失效；与既有组件职责重叠的第二套实现；危险操作误置主操作区；空占位与组件外边距破坏统一间距。
+  statement_en_keywords: god table component, impl name reference, duplicate implementation, danger in primary zone, spacing hack
+  clean_room: true
+  applies_when: {lane: frontend, condition: 复盘组件缺陷时}
+  cross_refs: [POLICY.WEB.COMP.NO_TRIVIAL_OR_GOD_COMPONENT, POLICY.WEB.COMP.CAPABILITY_REF_NOT_IMPL_NAME, POLICY.WEB.COMP.REUSE_BEFORE_CREATE, POLICY.WEB.COMP.CONTAINER_GAP_SPACING_AUTHORITY]
+- proposed_id: AUTHORITY.WEB.COMP.OWNERS
+  source_section: Ownership
+  source_protocol: .trellis/spec/frontend/24-component-protocol.md
+  source_lines: L216-L220
+  source_sha256: 0afcd58ae7e6f1d6467dd4186ab1e797a5df50bac4184d2da6a45e5f4d9247d0
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 所有权默认值：组件 Owner 维护契约，调用方遵守公开 API，设计系统 Owner 维护基础组件视觉。
+  statement_en_keywords: component ownership, contract owner, caller complies, design system visual
+  clean_room: true
+  applies_when: {lane: frontend, condition: 分配组件职责时}
+  notes: M6 同型合并审留汇总组；源文项目半边（四类登记表由前端交付编译产出、为机器事实源）由本组 CAPABILITY_REF/BINDING 等卡承载
+- proposed_id: POLICY.WEB.COMP.PRESENTATION_PURITY
+  source_section: MUST NOT
+  source_protocol: .trellis/spec/frontend/24-component-protocol.md
+  source_lines: L112, L119
+  source_sha256: 0afcd58ae7e6f1d6467dd4186ab1e797a5df50bac4184d2da6a45e5f4d9247d0
+  classification: DUPLICATE
+  sort: DUPLICATE
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: true
+  statement_zh: 展示组件不得私自请求接口、改动路由或篡改全局状态。
+  statement_en_keywords: presentation purity, no hidden fetch, no routing side effect
+  clean_room: true
+  applies_when: {lane: frontend, condition: 实现展示组件时}
+  duplicate_of: POLICY.WEB.ARCH.LAYER_ISOLATION
+  duplicate_scope: catalog
+  notes: 批次4 LAYER_ISOLATION 子规则 shared-ui（设计系统组件层只承载纯展示组件：不携带业务状态不感知业务语义）覆盖本卡主干
+- proposed_id: POLICY.WEB.COMP.NO_CROSS_PAGE_INTERNAL_IMPORT
+  source_section: MUST NOT
+  source_protocol: .trellis/spec/frontend/24-component-protocol.md
+  source_lines: L113
+  source_sha256: 0afcd58ae7e6f1d6467dd4186ab1e797a5df50bac4184d2da6a45e5f4d9247d0
+  classification: DUPLICATE
+  sort: DUPLICATE
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: true
+  statement_zh: 禁止从其他页面的内部目录引用组件。
+  statement_en_keywords: no cross page internal import
+  clean_room: true
+  applies_when: {lane: frontend, condition: 跨页面引用组件时}
+  duplicate_of: POLICY.WEB.ARCH.PUBLIC_API_BARREL
+  duplicate_scope: catalog
+  notes: 批次4 PUBLIC_API_BARREL deep_import_rule（跨目录引用只许走公开出口、深入内部路径一律禁止）覆盖
+- proposed_id: POLICY.WEB.COMP.BUSINESS_FREE_DESIGN_LAYER
+  source_section: 项目禁止
+  source_protocol: .trellis/spec/frontend/24-component-protocol.md
+  source_lines: L120
+  source_sha256: 0afcd58ae7e6f1d6467dd4186ab1e797a5df50bac4184d2da6a45e5f4d9247d0
+  classification: DUPLICATE
+  sort: DUPLICATE
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: true
+  statement_zh: 携带业务语义的组件不得进入设计系统层。
+  statement_en_keywords: no business semantics in design system layer
+  clean_room: true
+  applies_when: {lane: frontend, condition: 为组件定层时}
+  duplicate_of: POLICY.WEB.ARCH.LAYER_ISOLATION
+  duplicate_scope: catalog
+  notes: 批次4 LAYER_ISOLATION colocation_rule 末句（禁止把带业务语义的组件放进设计系统层）逐点覆盖
+- proposed_id: POLICY.WEB.COMP.PUBLIC_API_LIFECYCLE
+  source_section: Change Policy
+  source_protocol: .trellis/spec/frontend/24-component-protocol.md
+  source_lines: L224
+  source_sha256: 0afcd58ae7e6f1d6467dd4186ab1e797a5df50bac4184d2da6a45e5f4d9247d0
+  classification: DUPLICATE
+  sort: DUPLICATE
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: true
+  statement_zh: 公共 API 变化遵循影响评估、兼容、废弃、迁移与删除的完整周期。
+  statement_en_keywords: public api lifecycle, impact assessment, deprecation cycle
+  clean_room: true
+  applies_when: {lane: frontend, condition: 变更公共组件 API 时}
+  duplicate_of: POLICY.CHG.PRECHANGE_CONSUMER_SCAN
+  duplicate_scope: catalog
+  notes: 周期各环分别由既有变更治理族（消费方扫描 / 兼容迁移回滚 / 先废弃后删除 / 破坏性版本化）覆盖，属应用而非新政策
+
+# ============ 文件 5/10: frontend/25-page-structure-protocol.md (sha256 9f610ced9d20bf5d11cd03a30ead9af27fc1b73eabfd7540c88d350c4e464641) ============
+
+- proposed_id: POLICY.WEB.PAGE.TYPE_FIRST
+  source_section: MUST + MUST NOT
+  source_protocol: .trellis/spec/frontend/25-page-structure-protocol.md
+  source_lines: L19, L80
+  source_sha256: 9f610ced9d20bf5d11cd03a30ead9af27fc1b73eabfd7540c88d350c4e464641
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 新页面必须先归类页面类型并采用其结构契约，绕过页面契约直接创建路由页面一律禁止。
+  statement_en_keywords: page type first, page contract, no route without contract
+  clean_room: true
+  applies_when: {lane: frontend, condition: 创建新页面时}
+- proposed_id: POLICY.WEB.PAGE.REGION_CONSISTENCY
+  source_section: MUST + MUST NOT
+  source_protocol: .trellis/spec/frontend/25-page-structure-protocol.md
+  source_lines: L20-L22, L77-L79
+  source_sha256: 9f610ced9d20bf5d11cd03a30ead9af27fc1b73eabfd7540c88d350c4e464641
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 同类页面的标题、面包屑、筛选、工具栏、主体、分页与详情位置必须一致，主次操作、批量操作与状态信息的位置保持统一；不得把筛选、操作、主体与分页揉成不可复用的单体，也不得放任每页自造区域顺序。
+  statement_en_keywords: region consistency, primary secondary action placement, no monolithic page, no ad hoc region order
+  clean_room: true
+  applies_when: {lane: frontend, condition: 组装页面区域时}
+  notes: SHOULD 半边（用标准页面壳与区域组件、让上下文状态恢复路径可见）并入本卡 notes 作为建议项，不独立成卡
+- proposed_id: POLICY.WEB.PAGE.ANATOMY_SLOT_REGISTRY
+  source_section: 项目强制规则·页面解剖插槽 + 项目禁止
+  source_protocol: .trellis/spec/frontend/25-page-structure-protocol.md
+  source_lines: L27-L44, L84, L86
+  source_sha256: 9f610ced9d20bf5d11cd03a30ead9af27fc1b73eabfd7540c88d350c4e464641
+  classification: LANE_POLICY
+  sort: HYBRID
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 页面由登记在册的固定插槽集合组装：每个插槽至多一个实例并限定可放入的组件类别；新页面必须从已登记插槽与页面模板中组合，临场发明插槽或区域顺序一律禁止。
+  statement_en_keywords: page anatomy slots, single instance per slot, component category whitelist, no invented slots
+  clean_room: true
+  applies_when: {lane: frontend, condition: 组装或评审页面结构时}
+  project_scope: 插槽集合（面包屑/返回导航/标题/状态/操作组/筛选区/摘要/主内容/侧边栏/保存状态）及类别白名单为 MASTer 页面解剖登记表实例
+- proposed_id: POLICY.WEB.PAGE.BLUEPRINT_CONFORMANCE
+  source_section: 项目强制规则·屏幕蓝图 + 项目禁止
+  source_protocol: .trellis/spec/frontend/25-page-structure-protocol.md
+  source_lines: L58-L60, L64, L87-L88
+  source_sha256: 9f610ced9d20bf5d11cd03a30ead9af27fc1b73eabfd7540c88d350c4e464641
+  classification: LANE_POLICY
+  sort: HYBRID
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 每个页面必须存在唯一一份已登记的结构蓝图作为机器事实源，声明模板、区域、插槽填充、错误与受阻渲染、接口需求与页面状态；页面实现必须与蓝图声明一致，蓝图未登记的插槽、操作或组件标识不得出现。
+  statement_en_keywords: screen blueprint, single machine source, implementation conformance, no unregistered ids
+  clean_room: true
+  applies_when: {lane: frontend, condition: 实现或评审页面时}
+  project_scope: 蓝图文件形态与登记体系为 MASTer 屏幕蓝图机制
+- proposed_id: POLICY.SPEC.DERIVED_VIEW_REGENERATION
+  source_section: 项目强制规则·页面 spec 生成来源
+  source_protocol: .trellis/spec/frontend/25-page-structure-protocol.md
+  source_lines: L62-L67, L88, L126
+  source_sha256: 9f610ced9d20bf5d11cd03a30ead9af27fc1b73eabfd7540c88d350c4e464641
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 凡由事实源生成的派生视图一律只读：必须能从事实源确定性再生；一切调整只能修改事实源后重新生成；直接编辑派生产物的变更会在下次生成时被静默覆盖，并使校验与跨层核对发生事实漂移。
+  statement_en_keywords: derived view read only, deterministic regeneration, edit source not artifact, silent overwrite drift
+  clean_room: true
+  applies_when: {lane: any, condition: 存在事实源加生成物的任何产物链时}
+  cross_refs: [POLICY.WEB.DS.TOKEN_SOURCE_REGENERATION]
+  notes: lane 中性（对任何『事实源→编译视图』链成立）；与 POLICY.SPEC.METADATA_REQUIRED（R-D 转机器派生方向）互补不重复
+- proposed_id: POLICY.SPEC.UNRESOLVED_LEDGER_GATE
+  source_section: 项目强制规则·未确认项登记 + 项目禁止
+  source_protocol: .trellis/spec/frontend/25-page-structure-protocol.md
+  source_lines: L69-L74, L90
+  source_sha256: 9f610ced9d20bf5d11cd03a30ead9af27fc1b73eabfd7540c88d350c4e464641
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 未确认的业务字段、指标、数据源、交互规则或边界必须以显式未决语义登记在案，占位文案、隐含假设或含糊的『待补充』不得替代；阻断级未决项未关闭前，相关产物不得置为就绪或进入发布授权。
+  statement_en_keywords: unresolved ledger, explicit todo semantics, no placeholder assumptions, readiness blocked
+  clean_room: true
+  applies_when: {lane: any, condition: 产物存在未确认事项或申请就绪状态时}
+  notes: 与 POLICY.SPEC.DRAFT_NOT_BASELINE / POST_DEV_BACKFILL_CLASSIFY 均不同轴（未决显式化 + 就绪阻断），独立成卡
+- proposed_id: POLICY.WEB.PAGE.STANDARD_SHELL_PREFERENCE
+  source_section: SHOULD
+  source_protocol: .trellis/spec/frontend/25-page-structure-protocol.md
+  source_lines: L94-L95
+  source_sha256: 9f610ced9d20bf5d11cd03a30ead9af27fc1b73eabfd7540c88d350c4e464641
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: true
+  statement_zh: 宜优先使用标准页面壳与区域组件组装页面，并让上下文、状态与恢复路径在界面上可见。
+  statement_en_keywords: standard page shell, visible context state recovery
+  clean_room: true
+  applies_when: {lane: frontend, condition: 组装页面时}
+- proposed_id: POLICY.WEB.PAGE.WORKSPACE_TAB_HEADER
+  source_section: 项目强制规则·工作台多标签页下的页面头部
+  source_protocol: .trellis/spec/frontend/25-page-structure-protocol.md
+  source_lines: L46-L52
+  source_sha256: 9f610ced9d20bf5d11cd03a30ead9af27fc1b73eabfd7540c88d350c4e464641
+  classification: PROJECT_BASELINE_TEMPLATE
+  sort: PROJECT
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 本项目工作台多标签形态下：页面内不重复渲染面包屑行（层级定位由标签条与导航树承载）；页面主标题行全页默认渲染、未供标题时回退路由元信息；标题行次操作槽内上下文组合必须单行不折行并经定宽包裹承载；标签条底部保留固定分隔线，其与页面首区的间距必须与页内筛选区到操作栏的间距相等；页面不得自造标题容器。
+  statement_en_keywords: workspace tabs, breadcrumb suppression, default page title, single line context combo, separator spacing parity
+  clean_room: true
+  applies_when: {lane: frontend, condition: 实现工作台标签形态下的页面头部时}
+  project_scope: 标签条组件、路由标题来源、间距令牌取值与折行事故教训均为 MASTer 项目决定（2026-08-17 裁定）
+- proposed_id: POLICY.TPL.PAGE_CONTRACT
+  source_section: Contract
+  source_protocol: .trellis/spec/frontend/25-page-structure-protocol.md
+  source_lines: L99-L102
+  source_sha256: 9f610ced9d20bf5d11cd03a30ead9af27fc1b73eabfd7540c88d350c4e464641
+  classification: CONTRACT_TEMPLATE
+  sort: UNIVERSAL
+  kind_proposal: contract_template
+  enforcement: deterministic_where_possible
+  vocab_pr_needed: true
+  statement_zh: 页面契约字段：PageKey, PageType, Regions[], PrimaryActions[], Permissions[], States[], Navigation, Owner。
+  statement_en_keywords: page contract template
+  clean_room: true
+  applies_when: {lane: frontend, condition: 登记页面契约时}
+  notes: 落点随试点 R-C 方案 b
+- proposed_id: GATE.WEB.PAGE.CHECKS
+  source_section: Checklist
+  source_protocol: .trellis/spec/frontend/25-page-structure-protocol.md
+  source_lines: L104-L112
+  source_sha256: 9f610ced9d20bf5d11cd03a30ead9af27fc1b73eabfd7540c88d350c4e464641
+  classification: GATE_RECIPE
+  sort: UNIVERSAL
+  kind_proposal: gate_recipe
+  enforcement: deterministic_where_possible
+  vocab_pr_needed: true
+  statement_zh: 页面结构验收检查项：页面已归类；区域顺序正确；操作状态导航完整；同类页面共享结构；页面对应蓝图存在且为唯一事实源；未用未登记插槽/操作/组件标识；未确认项已登记并同步到派生视图。
+  statement_en_keywords: page checklist, blueprint existence, no unregistered ids, unresolved sync
+  clean_room: true
+  applies_when: {lane: frontend, condition: 页面交付验收时}
+  notes: V2——GATE. 前缀 pending
+- proposed_id: KNOWLEDGE.EX.WEB.PAGE_LEDGER_QUERY
+  source_section: Examples
+  source_protocol: .trellis/spec/frontend/25-page-structure-protocol.md
+  source_lines: L116-L118
+  source_sha256: 9f610ced9d20bf5d11cd03a30ead9af27fc1b73eabfd7540c88d350c4e464641
+  classification: KNOWLEDGE_PATTERN
+  sort: UNIVERSAL
+  kind_proposal: knowledge_entry
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 正例形态：台账查询页由面包屑、标题、筛选区、摘要、网格主体与反馈区组成，操作分主操作组与上下文操作，全部取自登记插槽。
+  statement_en_keywords: ledger query page example, registered slots only
+  clean_room: true
+  applies_when: {lane: frontend, condition: 演示页面插槽组合时}
+- proposed_id: KNOWLEDGE.FP.WEB.PAGE_STRUCTURE_DRIFT
+  source_section: Anti-patterns
+  source_protocol: .trellis/spec/frontend/25-page-structure-protocol.md
+  source_lines: L120-L128
+  source_sha256: 9f610ced9d20bf5d11cd03a30ead9af27fc1b73eabfd7540c88d350c4e464641
+  classification: FAILURE_PATTERN
+  sort: UNIVERSAL
+  kind_proposal: knowledge_entry
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 失败模式族：每个增删改查页各复制一套不同的筛选与按钮顺序逐渐失控；插槽引用位置直写实现类名令替换与校验失效；手改生成文件而不改事实源致下次编译覆盖人工调整；蓝图中发明未注册标识致校验与跨页一致性双双失败。
+  statement_en_keywords: per page drift, impl name in slots, hand edited generated file, invented ids
+  clean_room: true
+  applies_when: {lane: frontend, condition: 复盘页面结构缺陷时}
+  cross_refs: [POLICY.WEB.PAGE.REGION_CONSISTENCY, POLICY.WEB.COMP.CAPABILITY_REF_NOT_IMPL_NAME, POLICY.SPEC.DERIVED_VIEW_REGENERATION]
+- proposed_id: AUTHORITY.WEB.PAGE.OWNERS
+  source_section: Ownership
+  source_protocol: .trellis/spec/frontend/25-page-structure-protocol.md
+  source_lines: L130-L134
+  source_sha256: 9f610ced9d20bf5d11cd03a30ead9af27fc1b73eabfd7540c88d350c4e464641
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 所有权默认值：UX/前端架构 Owner 维护页面类型体系，领域 Owner 维护具体页面契约。
+  statement_en_keywords: page ownership, type owner, contract owner
+  clean_room: true
+  applies_when: {lane: frontend, condition: 分配页面结构职责时}
+  notes: M6 同型合并审留汇总组；源文项目半边（页面解剖/模板/模式登记表与蓝图由编译产出）由本组 BLUEPRINT_CONFORMANCE 等卡承载
+- proposed_id: POLICY.WEB.PAGE.SHARED_STRUCTURE_FIX
+  source_section: MUST
+  source_protocol: .trellis/spec/frontend/25-page-structure-protocol.md
+  source_lines: L23
+  source_sha256: 9f610ced9d20bf5d11cd03a30ead9af27fc1b73eabfd7540c88d350c4e464641
+  classification: DUPLICATE
+  sort: DUPLICATE
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: true
+  statement_zh: 同类页面的共性问题必须在共享结构层修复，不得逐页打补丁。
+  statement_en_keywords: shared structure fix, no per page patch
+  clean_room: true
+  applies_when: {lane: frontend, condition: 修复跨页共性缺陷时}
+  duplicate_of: POLICY.CHG.FIX_AT_ROOT_CAUSE_LEVEL
+  duplicate_scope: catalog
+  notes: 试点先例（NO_LOCAL_MASK_FIX→FIX_AT_ROOT_CAUSE_LEVEL）同型——『按缺陷归属层级修复』正本的具体形态
+- proposed_id: POLICY.WEB.PAGE.CAPABILITY_REF_IN_SLOTS
+  source_section: 项目强制规则·组件引用标识
+  source_protocol: .trellis/spec/frontend/25-page-structure-protocol.md
+  source_lines: L54-L56, L85
+  source_sha256: 9f610ced9d20bf5d11cd03a30ead9af27fc1b73eabfd7540c88d350c4e464641
+  classification: DUPLICATE
+  sort: DUPLICATE
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: true
+  statement_zh: 插槽内组件引用必须使用能力标识或模式标识，被引用的高风险组件必须为已批准状态、存在未关闭缺口时阻断。
+  statement_en_keywords: capability ref in slots, high risk approved
+  clean_room: true
+  applies_when: {lane: frontend, condition: 插槽引用组件时}
+  duplicate_of: POLICY.WEB.COMP.CAPABILITY_REF_NOT_IMPL_NAME
+  duplicate_scope: intra_batch
+  notes: 与 24 协议组件登记表条款同语义（跨文件重复），让位于本批正本卡；审批阻断半边见 CAPABILITY_IMPL_BINDING
+- proposed_id: POLICY.WEB.PAGE.NEW_TYPE_JUSTIFICATION
+  source_section: Change Policy
+  source_protocol: .trellis/spec/frontend/25-page-structure-protocol.md
+  source_lines: L138
+  source_sha256: 9f610ced9d20bf5d11cd03a30ead9af27fc1b73eabfd7540c88d350c4e464641
+  classification: DUPLICATE
+  sort: DUPLICATE
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: true
+  statement_zh: 新增页面类型前必须证明既有类型无法覆盖，并评估全部同类页面的影响与迁移。
+  statement_en_keywords: new page type justification, existing coverage proof, migration assessment
+  clean_room: true
+  applies_when: {lane: frontend, condition: 拟新增页面类型时}
+  duplicate_of: POLICY.CHG.PRECHANGE_CONSUMER_SCAN
+  duplicate_scope: catalog
+  notes: 『先证明既有不能覆盖』为复用优先，『评估同类页面与迁移』为消费方影响扫描——两半均被既有变更治理族覆盖
+
+# ============ 文件 6/10: frontend/26-style-layout-protocol.md (sha256 20bb7f035d0fe7ee2e587957969192fe19c13d750796a0954ec38a4fd309062d) ============
+
+- proposed_id: POLICY.WEB.STYLE.SIZE_OWNER_MODEL
+  source_section: MUST
+  source_protocol: .trellis/spec/frontend/26-style-layout-protocol.md
+  source_lines: L13-L15, L21
+  source_sha256: 20bb7f035d0fe7ee2e587957969192fe19c13d750796a0954ec38a4fd309062d
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 布局尺寸责任单向分配：外层容器拥有布局与溢出处置权，内层组件只负责自身内容排布，不得反向把外层撑爆。
+  statement_en_keywords: size ownership, layout owner, content owner, no reverse overflow
+  clean_room: true
+  applies_when: {lane: frontend, condition: 划分容器与内容尺寸责任时}
+  notes: SHOULD 半边（优先标准布局原语）并入本卡 notes，不独立成卡
+- proposed_id: POLICY.WEB.STYLE.STABLE_DIMENSION
+  source_section: MUST
+  source_protocol: .trellis/spec/frontend/26-style-layout-protocol.md
+  source_lines: L15, L22
+  source_sha256: 20bb7f035d0fe7ee2e587957969192fe19c13d750796a0954ec38a4fd309062d
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 固定格式的控件必须定义稳定尺寸约束（最小/最大或比例），保证动态状态下不发生布局跳动。
+  statement_en_keywords: stable dimension, min max ratio, no layout jump
+  clean_room: true
+  applies_when: {lane: frontend, condition: 固定格式控件定尺寸时}
+- proposed_id: POLICY.WEB.STYLE.TEXT_OVERFLOW_POLICY
+  source_section: MUST + MUST NOT
+  source_protocol: .trellis/spec/frontend/26-style-layout-protocol.md
+  source_lines: L23, L33
+  source_sha256: 20bb7f035d0fe7ee2e587957969192fe19c13d750796a0954ec38a4fd309062d
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 文本的换行、截断、悬浮提示与横向滚动必须有统一规则；靠缩小字体来掩盖溢出一律禁止。
+  statement_en_keywords: text overflow policy, truncate tooltip scroll, no font shrink masking
+  clean_room: true
+  applies_when: {lane: frontend, condition: 处理长文本与小空间展示时}
+- proposed_id: POLICY.WEB.STYLE.ZINDEX_FROM_TOKEN
+  source_section: MUST + MUST NOT
+  source_protocol: .trellis/spec/frontend/26-style-layout-protocol.md
+  source_lines: L24, L32
+  source_sha256: 20bb7f035d0fe7ee2e587957969192fe19c13d750796a0954ec38a4fd309062d
+  classification: LANE_POLICY
+  sort: HYBRID
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 浮层层级值只能取自层级令牌，无来源的层级数值一律禁止。
+  statement_en_keywords: z index from token, no sourceless z index
+  clean_room: true
+  applies_when: {lane: frontend, condition: 设定浮层层级时}
+  project_scope: 层级令牌集合为项目基线登记
+  uncertainty: 与 OWNERSHIP_MATRIX design-token 域『禁硬编码』存在部分交叠（矩阵明文列举颜色与像素值，z-index 未点名）；因源协议将 z-index 单列 MUST 且失败模式（层级军备竞赛）独立，保留为独立卡
+- proposed_id: POLICY.WEB.STYLE.NO_PARENT_DOM_COUPLING
+  source_section: MUST NOT
+  source_protocol: .trellis/spec/frontend/26-style-layout-protocol.md
+  source_lines: L31
+  source_sha256: 20bb7f035d0fe7ee2e587957969192fe19c13d750796a0954ec38a4fd309062d
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 组件不得依赖某个特定的父级 DOM 结构才能正常显示。
+  statement_en_keywords: no parent dom coupling, context independent rendering
+  clean_room: true
+  applies_when: {lane: frontend, condition: 实现可复用组件时}
+- proposed_id: KNOWLEDGE.FP.WEB.CSS_COMMENT_LITERAL_SCAN
+  source_section: Examples·项目示例
+  source_protocol: .trellis/spec/frontend/26-style-layout-protocol.md
+  source_lines: L60-L62
+  source_sha256: 20bb7f035d0fe7ee2e587957969192fe19c13d750796a0954ec38a4fd309062d
+  classification: FAILURE_PATTERN
+  sort: HYBRID
+  kind_proposal: knowledge_entry
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 失败模式：样式静态扫描按整行匹配且不豁免注释——注释里为对照而写的尺寸或色值字面量同样计入违规；注释描述视觉值时必须改用令牌语义表述，且违规数以扫描器输出对存量基线对比确认归零。
+  statement_en_keywords: scanner hits comments, literal in comment, token semantic wording, baseline diff
+  clean_room: true
+  applies_when: {lane: frontend, condition: 依据静态扫描治理样式时}
+  project_scope: 扫描器实例与基线对比操作法为 MASTer 工具链语境
+- proposed_id: KNOWLEDGE.EX.WEB.FLEX_HEIGHT_CHAIN
+  source_section: Examples·项目示例
+  source_protocol: .trellis/spec/frontend/26-style-layout-protocol.md
+  source_lines: L97-L132
+  source_sha256: 20bb7f035d0fe7ee2e587957969192fe19c13d750796a0954ec38a4fd309062d
+  classification: KNOWLEDGE_PATTERN
+  sort: UNIVERSAL
+  kind_proposal: knowledge_entry
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 技法：子元素要填满已定高父容器的剩余空间，必须由父容器以纵向弹性布局显式分配高度、子项以弹性增长加最小高度归零承接；只声明百分比高度不保证填充，常见于表格与图表容器塌陷出空白。
+  statement_en_keywords: flex height chain, flex one min-height zero, percentage height pitfall
+  clean_room: true
+  applies_when: {lane: frontend, condition: 布局填充型容器时}
+- proposed_id: KNOWLEDGE.EX.WEB.GRID_SHARED_TRACK_ALIGNMENT
+  source_section: Examples·项目示例
+  source_protocol: .trellis/spec/frontend/26-style-layout-protocol.md
+  source_lines: L134-L136
+  source_sha256: 20bb7f035d0fe7ee2e587957969192fe19c13d750796a0954ec38a4fd309062d
+  classification: KNOWLEDGE_PATTERN
+  sort: HYBRID
+  kind_proposal: knowledge_entry
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 技法：需要列轨道贯穿表头与全部行严格对齐时，必须用单容器共享网格轨道（行容器以透传方式并入同一网格），自动轨道按全部行最大内容宽统一计算；逐行独立容器的自动轨道只按本行内容计宽、跨行必然不齐；滚动区只滚行区、表头吸附并垫不透明底。
+  statement_en_keywords: shared grid tracks, display contents passthrough, auto track per container pitfall, sticky header
+  clean_room: true
+  applies_when: {lane: frontend, condition: 自绘表格式列对齐布局时}
+  project_scope: 源文场景为列配置弹窗实测；技法本身通用
+- proposed_id: POLICY.TPL.LAYOUT_CONTRACT
+  source_section: Contract
+  source_protocol: .trellis/spec/frontend/26-style-layout-protocol.md
+  source_lines: L42-L45
+  source_sha256: 20bb7f035d0fe7ee2e587957969192fe19c13d750796a0954ec38a4fd309062d
+  classification: CONTRACT_TEMPLATE
+  sort: UNIVERSAL
+  kind_proposal: contract_template
+  enforcement: deterministic_where_possible
+  vocab_pr_needed: true
+  statement_zh: 布局契约字段：Container, SizeOwner, OverflowPolicy, MinMax, BreakpointBehavior, ZIndexToken, TextPolicy。
+  statement_en_keywords: layout contract template
+  clean_room: true
+  applies_when: {lane: frontend, condition: 登记布局契约时}
+  notes: 落点随试点 R-C 方案 b
+- proposed_id: GATE.WEB.STYLE.CHECKS
+  source_section: Checklist
+  source_protocol: .trellis/spec/frontend/26-style-layout-protocol.md
+  source_lines: L47-L52
+  source_sha256: 20bb7f035d0fe7ee2e587957969192fe19c13d750796a0954ec38a4fd309062d
+  classification: GATE_RECIPE
+  sort: UNIVERSAL
+  kind_proposal: gate_recipe
+  enforcement: deterministic_where_possible
+  vocab_pr_needed: true
+  statement_zh: 样式布局验收检查项：尺寸责任明确；长文本与小屏不破坏布局；层级与第三方覆盖集中；动态状态无跳动。
+  statement_en_keywords: layout checklist, size ownership, no jump
+  clean_room: true
+  applies_when: {lane: frontend, condition: 样式布局验收时}
+  notes: V2——GATE. 前缀 pending
+- proposed_id: KNOWLEDGE.FP.WEB.ZINDEX_ARMS_RACE
+  source_section: Anti-patterns
+  source_protocol: .trellis/spec/frontend/26-style-layout-protocol.md
+  source_lines: L138-L140
+  source_sha256: 20bb7f035d0fe7ee2e587957969192fe19c13d750796a0954ec38a4fd309062d
+  classification: FAILURE_PATTERN
+  sort: UNIVERSAL
+  kind_proposal: knowledge_entry
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 失败模式：为救一个弹窗把全局层级抬到极大值，随后所有浮层层级失控进入军备竞赛。
+  statement_en_keywords: z index arms race, global escalation
+  clean_room: true
+  applies_when: {lane: frontend, condition: 复盘层级缺陷时}
+  cross_refs: [POLICY.WEB.STYLE.ZINDEX_FROM_TOKEN]
+- proposed_id: AUTHORITY.WEB.STYLE.OWNERS
+  source_section: Ownership
+  source_protocol: .trellis/spec/frontend/26-style-layout-protocol.md
+  source_lines: L142-L144
+  source_sha256: 20bb7f035d0fe7ee2e587957969192fe19c13d750796a0954ec38a4fd309062d
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 所有权默认值：设计系统 Owner 维护令牌，布局 Owner 维护区域，组件 Owner 维护内部样式。
+  statement_en_keywords: style ownership, token owner, layout owner, component internal
+  clean_room: true
+  applies_when: {lane: frontend, condition: 分配样式职责时}
+  notes: M6 同型合并审留汇总组；与 AUTHORITY.WEB.DS.OWNERS 相邻（合并审一并裁）
+- proposed_id: POLICY.WEB.STYLE.SINGLE_PAGE_NO_GLOBAL_CSS
+  source_section: MUST NOT
+  source_protocol: .trellis/spec/frontend/26-style-layout-protocol.md
+  source_lines: L30
+  source_sha256: 20bb7f035d0fe7ee2e587957969192fe19c13d750796a0954ec38a4fd309062d
+  classification: DUPLICATE
+  sort: DUPLICATE
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: true
+  statement_zh: 不得为单个页面的问题去修改全局样式。
+  statement_en_keywords: no global css for single page
+  clean_room: true
+  applies_when: {lane: frontend, condition: 修单页样式问题时}
+  duplicate_of: POLICY.WEB.STYLE.OWNERSHIP_MATRIX
+  duplicate_scope: catalog
+  notes: 矩阵 global-reset 域（全局重置唯一所有者是全局入口；页面域禁私挂全局样式文件）覆盖
+- proposed_id: POLICY.WEB.STYLE.NO_MAGIC_IMPORTANT
+  source_section: MUST NOT
+  source_protocol: .trellis/spec/frontend/26-style-layout-protocol.md
+  source_lines: L32
+  source_sha256: 20bb7f035d0fe7ee2e587957969192fe19c13d750796a0954ec38a4fd309062d
+  classification: DUPLICATE
+  sort: DUPLICATE
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: true
+  statement_zh: 禁止孤立魔法数值、无来源层级值与随手强覆盖标记。
+  statement_en_keywords: no magic numbers, no arbitrary important
+  clean_room: true
+  applies_when: {lane: frontend, condition: 书写样式时}
+  duplicate_of: POLICY.WEB.STYLE.OWNERSHIP_MATRIX
+  duplicate_scope: catalog
+  notes: 矩阵 page-local 域（禁强制覆盖标记）+ design-token 域（禁硬编码）合并覆盖；层级值半边见独立卡 ZINDEX_FROM_TOKEN
+- proposed_id: POLICY.WEB.STYLE.TOKEN_DIMENSION_VALUES
+  source_section: MUST
+  source_protocol: .trellis/spec/frontend/26-style-layout-protocol.md
+  source_lines: L25
+  source_sha256: 20bb7f035d0fe7ee2e587957969192fe19c13d750796a0954ec38a4fd309062d
+  classification: DUPLICATE
+  sort: DUPLICATE
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: true
+  statement_zh: 尺寸值（间距、边框、圆角、控件高、容器最小高）必须来自设计令牌，禁止硬编码像素字面量。
+  statement_en_keywords: dimensions from tokens, no hardcoded px
+  clean_room: true
+  applies_when: {lane: frontend, condition: 书写尺寸值时}
+  duplicate_of: POLICY.WEB.STYLE.OWNERSHIP_MATRIX
+  duplicate_scope: catalog
+  notes: 矩阵 design-token 域『禁止硬编码颜色与像素值』覆盖；令牌词表具体段名为项目基线
+- proposed_id: POLICY.WEB.STYLE.BOUNDARY_AND_VENDOR_CENTRALIZATION
+  source_section: MUST + SHOULD
+  source_protocol: .trellis/spec/frontend/26-style-layout-protocol.md
+  source_lines: L20, L38
+  source_sha256: 20bb7f035d0fe7ee2e587957969192fe19c13d750796a0954ec38a4fd309062d
+  classification: DUPLICATE
+  sort: DUPLICATE
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: true
+  statement_zh: 全局、组件、主题与第三方样式边界必须明确；第三方样式适配宜集中管理。
+  statement_en_keywords: style boundary, vendor adaptation centralization
+  clean_room: true
+  applies_when: {lane: frontend, condition: 划定样式边界时}
+  duplicate_of: POLICY.WEB.STYLE.OWNERSHIP_MATRIX
+  duplicate_scope: catalog
+  notes: 矩阵五域矩阵本身即边界划分；vendor-adapter 域即第三方集中适配
+- proposed_id: POLICY.WEB.STYLE.LAYOUT_CHANGE_REGRESSION
+  source_section: Change Policy
+  source_protocol: .trellis/spec/frontend/26-style-layout-protocol.md
+  source_lines: L148
+  source_sha256: 20bb7f035d0fe7ee2e587957969192fe19c13d750796a0954ec38a4fd309062d
+  classification: DUPLICATE
+  sort: DUPLICATE
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: true
+  statement_zh: 全局布局与层级变化必须评估全部页面类型并执行视觉回归。
+  statement_en_keywords: layout change impact, visual regression
+  clean_room: true
+  applies_when: {lane: frontend, condition: 变更全局布局或层级时}
+  duplicate_of: POLICY.CHG.PRECHANGE_CONSUMER_SCAN
+  duplicate_scope: catalog
+  notes: 消费方扫描 + 视觉回归为既有正本在布局域的应用
+
+# ============ 文件 7/10: frontend/38-internationalization-protocol.md (sha256 58bc93f76e4d0ec04064a8f3abfe2c00874c9ce87831c48877e9b2f025b9ad94) ============
+
+- proposed_id: POLICY.WEB.I18N.LOCALE_SCOPE_AND_FALLBACK
+  source_section: MUST
+  source_protocol: .trellis/spec/frontend/38-internationalization-protocol.md
+  source_lines: L19
+  source_sha256: 58bc93f76e4d0ec04064a8f3abfe2c00874c9ce87831c48877e9b2f025b9ad94
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 支持的语言区域集合、默认区域与回退链必须显式声明，不允许含糊缺省。
+  statement_en_keywords: locale scope, default locale, fallback chain
+  clean_room: true
+  applies_when: {lane: frontend, condition: 建立多语言机制时}
+- proposed_id: POLICY.WEB.I18N.COPY_KEY_DISCIPLINE
+  source_section: MUST + MUST NOT
+  source_protocol: .trellis/spec/frontend/38-internationalization-protocol.md
+  source_lines: L20, L30-L31
+  source_sha256: 58bc93f76e4d0ec04064a8f3abfe2c00874c9ce87831c48877e9b2f025b9ad94
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 业务文案必须以稳定键引用；拿界面显示文本当程序键、或拿人读标题做逻辑判断依据一律禁止；也不得靠复制组件来实现多语言。
+  statement_en_keywords: stable copy keys, no display text as key, no copy component duplication
+  clean_room: true
+  applies_when: {lane: frontend, condition: 引用业务文案或写展示逻辑时}
+- proposed_id: POLICY.WEB.I18N.FORMATTER_REGISTRY_SINGLE_SOURCE
+  source_section: MUST + MUST NOT + Contract·Formatter Registry
+  source_protocol: .trellis/spec/frontend/38-internationalization-protocol.md
+  source_lines: L21-L23, L29, L133-L143
+  source_sha256: 58bc93f76e4d0ec04064a8f3abfe2c00874c9ce87831c48877e9b2f025b9ad94
+  classification: LANE_POLICY
+  sort: HYBRID
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 日期、时间、数字、金额、百分比、币种、单位、枚举与空值的显示格式由统一格式化登记表唯一定义；每个页面与组件必须经由登记的格式化器输出值，本地拼接格式、页面各自硬编码空值文案与各自为政的格式化一律禁止。
+  statement_en_keywords: formatter registry, single formatting source, empty value policy, no local concatenation
+  clean_room: true
+  applies_when: {lane: frontend, condition: 显示任何可本地化值时}
+  project_scope: 登记表形态（Category/PolicyId/DefaultValue/UnknownValue/DeprecatedValue/Examples/Owner/Version）与维护文件为 MASTer 事实源实例
+- proposed_id: POLICY.WEB.I18N.RAW_VALUE_FOR_COMPUTE
+  source_section: MUST NOT
+  source_protocol: .trellis/spec/frontend/38-internationalization-protocol.md
+  source_lines: L32
+  source_sha256: 58bc93f76e4d0ec04064a8f3abfe2c00874c9ce87831c48877e9b2f025b9ad94
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 计算与排序必须使用原始值；已经过格式化的显示字符串不得再参与运算或排序。
+  statement_en_keywords: raw value for compute and sort, formatted string not computable
+  clean_room: true
+  applies_when: {lane: any, condition: 对展示值做计算或排序时}
+- proposed_id: POLICY.WEB.I18N.LAYOUT_LONG_LOCALE
+  source_section: MUST
+  source_protocol: .trellis/spec/frontend/38-internationalization-protocol.md
+  source_lines: L25
+  source_sha256: 58bc93f76e4d0ec04064a8f3abfe2c00874c9ce87831c48877e9b2f025b9ad94
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 布局必须适配最长目标语言的文案长度与文本方向。
+  statement_en_keywords: longest locale layout, text direction
+  clean_room: true
+  applies_when: {lane: frontend, condition: 支持多语言布局时}
+- proposed_id: POLICY.WEB.I18N.USER_PREFERENCE_PERSISTENCE
+  source_section: 项目强制规则·用户语言偏好 API 契约
+  source_protocol: .trellis/spec/frontend/38-internationalization-protocol.md
+  source_lines: L56-L119
+  source_sha256: 58bc93f76e4d0ec04064a8f3abfe2c00874c9ce87831c48877e9b2f025b9ad94
+  classification: LANE_POLICY
+  sort: HYBRID
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 用户级偏好以后端登记为权威、本地存储为降级回退：读取失败静默回退本地且不弹错；写入失败仅保本地不阻断操作；值非法拒绝写入；禁止长期并存两套持久化事实源。
+  statement_en_keywords: user preference persistence, backend authoritative, silent local fallback, no dual sources
+  clean_room: true
+  applies_when: {lane: frontend, condition: 实现用户偏好持久化时}
+  project_scope: 接口路径、取值枚举、本地键名与降级细节为 MASTer 契约实例
+  uncertainty: 『读取失败静默降级不上报』与可观测性/错误上报类政策的默认取向存在张力（静默 vs 留痕），源文为项目显式决定；建议汇总组按试点 T1 先例声明 precedence
+- proposed_id: POLICY.WEB.I18N.MIN_LOCALE_MECHANISM
+  source_section: 项目强制规则·最小全局 locale 机制
+  source_protocol: .trellis/spec/frontend/38-internationalization-protocol.md
+  source_lines: L36-L58
+  source_sha256: 58bc93f76e4d0ec04064a8f3abfe2c00874c9ce87831c48877e9b2f025b9ad94
+  classification: PROJECT_BASELINE_TEMPLATE
+  sort: PROJECT
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 本项目采用最小 locale 机制而非完整多语言框架：locale 单一来源文件提供当前区域、翻译函数与持久化读写，状态仓包装供调试追踪，应用启动时恢复用户上次选择；第三方组件库经配置注入器接线全局区域，网格经取词回调维护词条、未覆盖键回退英文并在切换语言时强制重挂载（取词回调仅初始化时读取）；格式化器读取当前区域而非硬编码。
+  statement_en_keywords: minimal locale mechanism, single locale source, provider locale injection, getLocaleText initial only, forced remount
+  clean_room: true
+  applies_when: {lane: frontend, condition: 维护本项目多语言机制时}
+  project_scope: 文件路径、状态仓、注入器、网格取词与重挂载技法均为 MASTer 项目实现决定
+- proposed_id: POLICY.WEB.I18N.KEY_COVERAGE_AND_TZ_CLARITY
+  source_section: SHOULD
+  source_protocol: .trellis/spec/frontend/38-internationalization-protocol.md
+  source_lines: L123-L124
+  source_sha256: 58bc93f76e4d0ec04064a8f3abfe2c00874c9ce87831c48877e9b2f025b9ad94
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: true
+  statement_zh: 宜支持缺失键检测与伪本地化验证，并明确区分存储时区与显示时区。
+  statement_en_keywords: missing key detection, pseudo localization, storage vs display timezone
+  clean_room: true
+  applies_when: {lane: frontend, condition: 完善多语言机制时}
+- proposed_id: POLICY.TPL.I18N_FORMATTER_CONTRACT
+  source_section: Contract
+  source_protocol: .trellis/spec/frontend/38-internationalization-protocol.md
+  source_lines: L128-L142
+  source_sha256: 58bc93f76e4d0ec04064a8f3abfe2c00874c9ce87831c48877e9b2f025b9ad94
+  classification: CONTRACT_TEMPLATE
+  sort: UNIVERSAL
+  kind_proposal: contract_template
+  enforcement: deterministic_where_possible
+  vocab_pr_needed: true
+  statement_zh: 国际化契约字段：Locale, Fallback, KeyNamespace, DateTimePolicy, NumberPolicy, CurrencyPolicy, UnitPolicy, EnumPolicy, EmptyPolicy；格式化登记表字段：Category, PolicyId, DefaultValue, UnknownValue, DeprecatedValue, Examples, Owner, Version。
+  statement_en_keywords: i18n contract template, formatter registry fields
+  clean_room: true
+  applies_when: {lane: frontend, condition: 登记国际化策略时}
+  notes: 落点随试点 R-C 方案 b
+- proposed_id: GATE.WEB.I18N.CHECKS
+  source_section: Checklist
+  source_protocol: .trellis/spec/frontend/38-internationalization-protocol.md
+  source_lines: L145-L153
+  source_sha256: 58bc93f76e4d0ec04064a8f3abfe2c00874c9ce87831c48877e9b2f025b9ad94
+  classification: GATE_RECIPE
+  sort: UNIVERSAL
+  kind_proposal: gate_recipe
+  enforcement: deterministic_where_possible
+  vocab_pr_needed: true
+  statement_zh: 国际化验收检查项：区域与回退明确；文案来源统一；格式化与枚举统一；空值缺省显示在登记表定义；长文案布局通过；格式化登记表已维护；用户语言偏好契约已定义并同步到接口需求登记。
+  statement_en_keywords: i18n checklist, formatter registry, preference contract sync
+  clean_room: true
+  applies_when: {lane: frontend, condition: 国际化验收时}
+  notes: V2——GATE. 前缀 pending
+- proposed_id: KNOWLEDGE.EX.WEB.I18N_FORMATTER_PIPELINE
+  source_section: Examples
+  source_protocol: .trellis/spec/frontend/38-internationalization-protocol.md
+  source_lines: L157-L159
+  source_sha256: 58bc93f76e4d0ec04064a8f3abfe2c00874c9ce87831c48877e9b2f025b9ad94
+  classification: KNOWLEDGE_PATTERN
+  sort: UNIVERSAL
+  kind_proposal: knowledge_entry
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 正例形态：百分比保留原始数值参与排序，显示时统一格式化器按当前区域渲染。
+  statement_en_keywords: percent raw value, locale aware formatter, sort raw
+  clean_room: true
+  applies_when: {lane: frontend, condition: 演示格式化正确管线时}
+  cross_refs: [POLICY.WEB.I18N.RAW_VALUE_FOR_COMPUTE]
+- proposed_id: KNOWLEDGE.FP.WEB.TEMPLATE_CONCATENATION
+  source_section: Anti-patterns
+  source_protocol: .trellis/spec/frontend/38-internationalization-protocol.md
+  source_lines: L161-L163
+  source_sha256: 58bc93f76e4d0ec04064a8f3abfe2c00874c9ce87831c48877e9b2f025b9ad94
+  classification: FAILURE_PATTERN
+  sort: UNIVERSAL
+  kind_proposal: knowledge_entry
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 失败模式：在视图模板里手工拼接币种与单位，切换语言后顺序、间距与小数规则全部出错。
+  statement_en_keywords: template concatenation, currency unit order, locale switch breakage
+  clean_room: true
+  applies_when: {lane: frontend, condition: 复盘多语言缺陷时}
+  cross_refs: [POLICY.WEB.I18N.FORMATTER_REGISTRY_SINGLE_SOURCE]
+- proposed_id: AUTHORITY.WEB.I18N.OWNERS
+  source_section: Ownership
+  source_protocol: .trellis/spec/frontend/38-internationalization-protocol.md
+  source_lines: L165-L167
+  source_sha256: 58bc93f76e4d0ec04064a8f3abfe2c00874c9ce87831c48877e9b2f025b9ad94
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 所有权默认值：产品/内容 Owner 维护语言范围，国际化 Owner 维护工具与键，领域 Owner 维护枚举语义。
+  statement_en_keywords: i18n ownership, language scope, keys, enum semantics
+  clean_room: true
+  applies_when: {lane: frontend, condition: 分配国际化职责时}
+  notes: M6 同型合并审留汇总组
+- proposed_id: POLICY.WEB.I18N.KEY_RENAME_ALIAS
+  source_section: Change Policy
+  source_protocol: .trellis/spec/frontend/38-internationalization-protocol.md
+  source_lines: L171
+  source_sha256: 58bc93f76e4d0ec04064a8f3abfe2c00874c9ce87831c48877e9b2f025b9ad94
+  classification: DUPLICATE
+  sort: DUPLICATE
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: true
+  statement_zh: 文案键改名先提供别名或迁移；新增区域必须补资源、格式与布局回归。
+  statement_en_keywords: key rename alias, new locale regression
+  clean_room: true
+  applies_when: {lane: frontend, condition: 变更文案键或新增区域时}
+  duplicate_of: POLICY.CHG.DEPRECATE_BEFORE_DELETE
+  duplicate_scope: catalog
+  notes: 键别名迁移为既有『先废弃再删除』正本的具体应用
+
+# ============ 文件 8/10: frontend/39-copywriting-protocol.md (sha256 c6768ad19a7ee952cbcb92ba575fc38e3bd29a965b87323ff2b441d389140f8d) ============
+
+- proposed_id: POLICY.WEB.COPY.ACTION_OBJECT_CLARITY
+  source_section: MUST + MUST NOT
+  source_protocol: .trellis/spec/frontend/39-copywriting-protocol.md
+  source_lines: L18, L47
+  source_sha256: c6768ad19a7ee952cbcb92ba575fc38e3bd29a965b87323ff2b441d389140f8d
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 操作按钮的文案必须写明动作与作用对象；用『操作』『处理』一类模糊动词隐藏真实行为一律禁止。
+  statement_en_keywords: action object clarity, no vague verbs
+  clean_room: true
+  applies_when: {lane: frontend, condition: 撰写操作文案时}
+- proposed_id: POLICY.WEB.COPY.ERROR_NEXT_STEP
+  source_section: MUST + MUST NOT
+  source_protocol: .trellis/spec/frontend/39-copywriting-protocol.md
+  source_lines: L19, L44, L46
+  source_sha256: c6768ad19a7ee952cbcb92ba575fc38e3bd29a965b87323ff2b441d389140f8d
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 错误文案必须回答三件事——发生了什么、可否恢复、下一步做什么；直出后端原始报文或技术堆栈、以颜色或感叹号代替说明，一律禁止。
+  statement_en_keywords: error copy triad, recoverability, next step, no raw message, no exclamation substitute
+  clean_room: true
+  applies_when: {lane: frontend, condition: 撰写错误文案时}
+  cross_refs: [POLICY.WEB.API.ERROR_NORMALIZATION]
+  notes: 与既有 ERROR_NORMALIZATION 不同层——彼卡管传输/业务错误归一化，本卡管呈现层文案；M7 型配对互引
+- proposed_id: POLICY.WEB.COPY.EMPTY_STATE_DISTINCTION
+  source_section: MUST
+  source_protocol: .trellis/spec/frontend/39-copywriting-protocol.md
+  source_lines: L20
+  source_sha256: c6768ad19a7ee952cbcb92ba575fc38e3bd29a965b87323ff2b441d389140f8d
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 空态文案必须区分『确实没有数据』与『筛选条件下无结果』两种情形。
+  statement_en_keywords: empty state distinction, no data vs filtered empty
+  clean_room: true
+  applies_when: {lane: frontend, condition: 撰写空态文案时}
+- proposed_id: POLICY.WEB.COPY.RISK_CONFIRMATION
+  source_section: MUST + MUST NOT
+  source_protocol: .trellis/spec/frontend/39-copywriting-protocol.md
+  source_lines: L21, L45
+  source_sha256: c6768ad19a7ee952cbcb92ba575fc38e3bd29a965b87323ff2b441d389140f8d
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 高风险操作的确认文案必须写明对象、后果与是否可恢复；一句泛泛的『确定吗』不构成合格确认。
+  statement_en_keywords: risk copy, object consequence recoverability, no bare confirmation
+  clean_room: true
+  applies_when: {lane: frontend, condition: 撰写高风险确认时}
+  cross_refs: [POLICY.WEB.A11Y.ERROR_PREVENTION_NO_REENTRY]
+- proposed_id: POLICY.WEB.COPY.TRANSFER_PROGRESS_SEMANTICS
+  source_section: MUST
+  source_protocol: .trellis/spec/frontend/39-copywriting-protocol.md
+  source_lines: L22
+  source_sha256: c6768ad19a7ee952cbcb92ba575fc38e3bd29a965b87323ff2b441d389140f8d
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 导入导出类文案必须说明处理范围、进度呈现、部分成功如何表达以及结果有效期。
+  statement_en_keywords: import export copy, scope progress, partial success, result validity
+  clean_room: true
+  applies_when: {lane: frontend, condition: 撰写导入导出文案时}
+- proposed_id: POLICY.WEB.COPY.ACTION_CONSISTENCY
+  source_section: MUST
+  source_protocol: .trellis/spec/frontend/39-copywriting-protocol.md
+  source_lines: L23
+  source_sha256: c6768ad19a7ee952cbcb92ba575fc38e3bd29a965b87323ff2b441d389140f8d
+  classification: LANE_POLICY
+  sort: HYBRID
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 同类操作必须使用同一名称、语气与形态；同一动作标识在同类语境下必须保持相同的图标、文字与变体组合，同名操作跨页面异形一律禁止。
+  statement_en_keywords: copy consistency, same action same form, no cross page variation
+  clean_room: true
+  applies_when: {lane: frontend, condition: 撰写或评审操作文案时}
+  project_scope: 动作标识体系来自操作放置登记表（本组 ACTION_PLACEMENT_REGISTRY）
+  cross_refs: [POLICY.WEB.COMP.ACTION_PLACEMENT_REGISTRY, POLICY.WEB.COMP.ACTION_FORM_CONTRACT]
+- proposed_id: POLICY.WEB.COPY.ENUMERABLE_PLACEMENT
+  source_section: 项目强制规则·文案落点与可枚举性
+  source_protocol: .trellis/spec/frontend/39-copywriting-protocol.md
+  source_lines: L28-L36
+  source_sha256: c6768ad19a7ee952cbcb92ba575fc38e3bd29a965b87323ff2b441d389140f8d
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 用户可见文案必须可被静态枚举，合法落点仅限两处——视图模板内、或集中文案目录中的常量与字典；脚本模块内直接书写用户可见文案字面量一律禁止；本地化字典与文案目录自身限定在各自目录内，测试夹具与模拟数据是数据不是交付文案。
+  statement_en_keywords: statically enumerable copy, template or copy catalog only, no script literals, fixtures are data
+  clean_room: true
+  applies_when: {lane: frontend, condition: 书写或搬移用户可见文案时}
+  notes: 列定义等脚本内声明的结构不受限，仅其标题类文案取自文案目录——与『列定义唯一源』不冲突（源文 L34 已自注）
+- proposed_id: POLICY.WEB.COPY.SUPPRESSION_LEDGER_DISCIPLINE
+  source_section: 项目强制规则·存量清单与收敛 + 项目禁止
+  source_protocol: .trellis/spec/frontend/39-copywriting-protocol.md
+  source_lines: L38-L41, L51-L57
+  source_sha256: c6768ad19a7ee952cbcb92ba575fc38e3bd29a965b87323ff2b441d389140f8d
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 存量违例登记于抑制清单并按页面逐步收敛；抑制清单是待偿债务台账而非合规证明；新增违例必须硬失败，靠扩大抑制清单换取校验通过一律禁止。
+  statement_en_keywords: suppression ledger, debt not compliance, new violations hard fail, no list inflation
+  clean_room: true
+  applies_when: {lane: any, condition: 用抑制清单承接存量违例时}
+  notes: lane 中性——适用于任何携带抑制清单的静态检查治理；本组另有两处同型条款（24 自动拦截、39 自动拦截）互证该模式
+- proposed_id: POLICY.WEB.COPY.TEMPLATE_REUSE
+  source_section: SHOULD
+  source_protocol: .trellis/spec/frontend/39-copywriting-protocol.md
+  source_lines: L61-L62
+  source_sha256: c6768ad19a7ee952cbcb92ba575fc38e3bd29a965b87323ff2b441d389140f8d
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: true
+  statement_zh: 文案宜简洁、专业、可行动，并复用文案模板与错误码映射。
+  statement_en_keywords: concise actionable copy, template reuse, error code mapping
+  clean_room: true
+  applies_when: {lane: frontend, condition: 撰写文案时}
+- proposed_id: POLICY.TPL.COPY_RECORD
+  source_section: Contract
+  source_protocol: .trellis/spec/frontend/39-copywriting-protocol.md
+  source_lines: L66-L69
+  source_sha256: c6768ad19a7ee952cbcb92ba575fc38e3bd29a965b87323ff2b441d389140f8d
+  classification: CONTRACT_TEMPLATE
+  sort: UNIVERSAL
+  kind_proposal: contract_template
+  enforcement: deterministic_where_possible
+  vocab_pr_needed: true
+  statement_zh: 文案契约字段：Scenario, Title, Message, PrimaryAction, SecondaryAction, Consequence, Recoverability, TraceDisplay。
+  statement_en_keywords: copy contract template
+  clean_room: true
+  applies_when: {lane: frontend, condition: 登记文案场景时}
+  notes: 落点随试点 R-C 方案 b
+- proposed_id: GATE.WEB.COPY.CHECKS
+  source_section: Checklist
+  source_protocol: .trellis/spec/frontend/39-copywriting-protocol.md
+  source_lines: L71-L76
+  source_sha256: c6768ad19a7ee952cbcb92ba575fc38e3bd29a965b87323ff2b441d389140f8d
+  classification: GATE_RECIPE
+  sort: UNIVERSAL
+  kind_proposal: gate_recipe
+  enforcement: deterministic_where_possible
+  vocab_pr_needed: true
+  statement_zh: 文案验收检查项：动作与对象明确；风险与恢复清晰；同类文案一致；无原始技术信息。
+  statement_en_keywords: copy checklist, consistency, no raw technical info
+  clean_room: true
+  applies_when: {lane: frontend, condition: 文案验收时}
+  notes: V2——GATE. 前缀 pending
+- proposed_id: KNOWLEDGE.EX.WEB.CONCURRENT_UPDATE_COPY
+  source_section: Examples
+  source_protocol: .trellis/spec/frontend/39-copywriting-protocol.md
+  source_lines: L80-L82
+  source_sha256: c6768ad19a7ee952cbcb92ba575fc38e3bd29a965b87323ff2b441d389140f8d
+  classification: KNOWLEDGE_PATTERN
+  sort: UNIVERSAL
+  kind_proposal: knowledge_entry
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 正例形态：并发更新冲突提示同时交代事实（数据已被他人更新）、动作（比较最新版本）与出路（重新提交）。
+  statement_en_keywords: concurrent update copy, fact action way out
+  clean_room: true
+  applies_when: {lane: frontend, condition: 演示错误文案写法时}
+- proposed_id: KNOWLEDGE.FP.WEB.BARE_FAILURE_COPY
+  source_section: Anti-patterns
+  source_protocol: .trellis/spec/frontend/39-copywriting-protocol.md
+  source_lines: L84-L86
+  source_sha256: c6768ad19a7ee952cbcb92ba575fc38e3bd29a965b87323ff2b441d389140f8d
+  classification: FAILURE_PATTERN
+  sort: UNIVERSAL
+  kind_proposal: knowledge_entry
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 失败模式：系统异常只展示一个『失败』，用户无从知晓对象、原因与下一步。
+  statement_en_keywords: bare failure copy, no object cause next step
+  clean_room: true
+  applies_when: {lane: frontend, condition: 复盘文案缺陷时}
+  cross_refs: [POLICY.WEB.COPY.ERROR_NEXT_STEP]
+- proposed_id: AUTHORITY.WEB.COPY.OWNERS
+  source_section: Ownership
+  source_protocol: .trellis/spec/frontend/39-copywriting-protocol.md
+  source_lines: L88-L90
+  source_sha256: c6768ad19a7ee952cbcb92ba575fc38e3bd29a965b87323ff2b441d389140f8d
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 所有权默认值：内容/产品 Owner 维护语气，领域 Owner 确认语义，前端负责正确映射。
+  statement_en_keywords: copy ownership, tone owner, semantics owner, mapping
+  clean_room: true
+  applies_when: {lane: frontend, condition: 分配文案职责时}
+  notes: M6 同型合并审留汇总组
+- proposed_id: POLICY.WEB.COPY.TEMPLATE_CHANGE_SYNC
+  source_section: Change Policy
+  source_protocol: .trellis/spec/frontend/39-copywriting-protocol.md
+  source_lines: L94
+  source_sha256: c6768ad19a7ee952cbcb92ba575fc38e3bd29a965b87323ff2b441d389140f8d
+  classification: DUPLICATE
+  sort: DUPLICATE
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: true
+  statement_zh: 公共文案模板变化需评估全部场景；业务术语变化同步多语言与帮助内容。
+  statement_en_keywords: copy template change assessment, terminology sync
+  clean_room: true
+  applies_when: {lane: frontend, condition: 变更公共文案模板时}
+  duplicate_of: POLICY.CHG.SYNC_CONTRACT_DOCS_TESTS
+  duplicate_scope: catalog
+  notes: 『变化评估场景 + 同步周边事实』为既有同步正本在文案域的应用
+
+# ============ 文件 9/10: frontend/40-analytics-protocol.md (sha256 8ae427deabcb4c1b544a5ccca9301c5537fe031decc2db3adbb27c2e276d0c7c) ============
+
+- proposed_id: POLICY.WEB.TRACK.STABLE_EVENT_KEYS
+  source_section: MUST + MUST NOT
+  source_protocol: .trellis/spec/frontend/40-analytics-protocol.md
+  source_lines: L19-L20, L24, L30-L31
+  source_sha256: 8ae427deabcb4c1b544a5ccca9301c5537fe031decc2db3adbb27c2e276d0c7c
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 分析事件必须使用稳定事件键与受控公共字段，禁止拿显示文案充当事件名；同一行为不得重复上报或多名称并存；新事件必须登记责任人、用途与保留策略；页面不得自行扩展不受控的公共字段。
+  statement_en_keywords: stable event keys, controlled common fields, single name single report, owner purpose retention
+  clean_room: true
+  applies_when: {lane: any, condition: 埋设分析事件时}
+- proposed_id: POLICY.WEB.TRACK.ATTEMPT_RESULT_CORRELATION
+  source_section: MUST
+  source_protocol: .trellis/spec/frontend/40-analytics-protocol.md
+  source_lines: L21
+  source_sha256: 8ae427deabcb4c1b544a5ccca9301c5537fe031decc2db3adbb27c2e276d0c7c
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 操作的发起与结果两类事件必须通过唯一操作标识相互关联，支撑端到端配对分析。
+  statement_en_keywords: attempt result correlation, operation id
+  clean_room: true
+  applies_when: {lane: any, condition: 埋设成对事件时}
+- proposed_id: POLICY.WEB.TRACK.NO_SYNTHETIC_ACTIONS
+  source_section: MUST
+  source_protocol: .trellis/spec/frontend/40-analytics-protocol.md
+  source_lines: L22
+  source_sha256: 8ae427deabcb4c1b544a5ccca9301c5537fe031decc2db3adbb27c2e276d0c7c
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 页面重渲染、自动刷新与程序重试不得被记为用户操作；只有真实用户意图才构成行为事件。
+  statement_en_keywords: no synthetic user actions, rerender refresh retry excluded
+  clean_room: true
+  applies_when: {lane: any, condition: 区分用户行为与程序行为时}
+- proposed_id: POLICY.WEB.TRACK.PRIVACY_DEFAULT_DENY
+  source_section: MUST + MUST NOT
+  source_protocol: .trellis/spec/frontend/40-analytics-protocol.md
+  source_lines: L23, L26, L33-L34
+  source_sha256: 8ae427deabcb4c1b544a5ccca9301c5537fe031decc2db3adbb27c2e276d0c7c
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 分析上报默认最小化：敏感字段、搜索原文与业务原值默认不上传；权限范围之外的数据一律不得进入上报；事件目的地与载荷字段一律走白名单；抓取页面结构、可见文本、地址参数或用户输入临时拼装分析数据一律禁止；第三方分析脚本、转发规则与数据出境必须经安全与隐私评审。
+  statement_en_keywords: privacy default deny, payload whitelist, no reporting beyond permission scope, no dom scraping, third party review, data transfer review
+  clean_room: true
+  applies_when: {lane: any, condition: 配置事件载荷或接入第三方分析时}
+- proposed_id: POLICY.WEB.TRACK.CONSENT_LIFECYCLE
+  source_section: MUST + MUST NOT
+  source_protocol: .trellis/spec/frontend/40-analytics-protocol.md
+  source_lines: L25, L35
+  source_sha256: 8ae427deabcb4c1b544a5ccca9301c5537fe031decc2db3adbb27c2e276d0c7c
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 采集必须遵循同意与授权状态：同意未知或已被撤回时不得发送任何非必要分析事件；撤回后立即停止采集并清理或隔离尚未发出的数据。
+  statement_en_keywords: consent lifecycle, withdrawal stops collection, pending queue cleanup
+  clean_room: true
+  applies_when: {lane: any, condition: 处理同意状态变化时}
+- proposed_id: POLICY.WEB.TRACK.TYPED_CLIENT_VALIDATION
+  source_section: SHOULD
+  source_protocol: .trellis/spec/frontend/40-analytics-protocol.md
+  source_lines: L39-L40
+  source_sha256: 8ae427deabcb4c1b544a5ccca9301c5537fe031decc2db3adbb27c2e276d0c7c
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: true
+  statement_zh: 宜经类型化分析客户端发出事件并做模式校验，同时监控事件质量、丢失率与重复率。
+  statement_en_keywords: typed analytics client, schema validation, quality monitoring
+  clean_room: true
+  applies_when: {lane: any, condition: 建设采集通道时}
+- proposed_id: POLICY.TPL.ANALYTICS_EVENT_CONTRACT
+  source_section: Contract
+  source_protocol: .trellis/spec/frontend/40-analytics-protocol.md
+  source_lines: L44-L47
+  source_sha256: 8ae427deabcb4c1b544a5ccca9301c5537fe031decc2db3adbb27c2e276d0c7c
+  classification: CONTRACT_TEMPLATE
+  sort: UNIVERSAL
+  kind_proposal: contract_template
+  enforcement: deterministic_where_possible
+  vocab_pr_needed: true
+  statement_zh: 分析事件契约字段：EventName, Trigger, CommonFields, BusinessFields, OperationId, DedupKey, PrivacyClass, Owner, Retention。
+  statement_en_keywords: analytics event contract template
+  clean_room: true
+  applies_when: {lane: any, condition: 登记分析事件时}
+  notes: 落点随试点 R-C 方案 b
+- proposed_id: GATE.WEB.TRACK.CHECKS
+  source_section: Checklist
+  source_protocol: .trellis/spec/frontend/40-analytics-protocol.md
+  source_lines: L49-L55
+  source_sha256: 8ae427deabcb4c1b544a5ccca9301c5537fe031decc2db3adbb27c2e276d0c7c
+  classification: GATE_RECIPE
+  sort: UNIVERSAL
+  kind_proposal: gate_recipe
+  enforcement: deterministic_where_possible
+  vocab_pr_needed: true
+  statement_zh: 埋点验收检查项：名称与字段稳定；时机与去重正确；隐私边界通过；责任人与用途明确；同意、撤回、目的地白名单与待发送队列清理已验证。
+  statement_en_keywords: analytics checklist, dedup, privacy, consent verification
+  clean_room: true
+  applies_when: {lane: any, condition: 埋点验收时}
+  notes: V2——GATE. 前缀 pending
+- proposed_id: KNOWLEDGE.EX.WEB.EXPORT_ATTEMPT_RESULT
+  source_section: Examples
+  source_protocol: .trellis/spec/frontend/40-analytics-protocol.md
+  source_lines: L59-L61
+  source_sha256: 8ae427deabcb4c1b544a5ccca9301c5537fe031decc2db3adbb27c2e276d0c7c
+  classification: KNOWLEDGE_PATTERN
+  sort: UNIVERSAL
+  kind_proposal: knowledge_entry
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 正例形态：用户点击导出记发起事件，后台任务完成记结果事件，两者共享同一操作标识完成配对。
+  statement_en_keywords: export attempt result, shared operation id
+  clean_room: true
+  applies_when: {lane: any, condition: 演示成对事件时}
+- proposed_id: KNOWLEDGE.FP.WEB.DOUBLE_CLICK_COUNTING
+  source_section: Anti-patterns
+  source_protocol: .trellis/spec/frontend/40-analytics-protocol.md
+  source_lines: L63-L65
+  source_sha256: 8ae427deabcb4c1b544a5ccca9301c5537fe031decc2db3adbb27c2e276d0c7c
+  classification: FAILURE_PATTERN
+  sort: UNIVERSAL
+  kind_proposal: knowledge_entry
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 失败模式：按钮组件与页面各自上报同一点击——同一行为计数翻倍且字段口径不一。
+  statement_en_keywords: double counting, component and page both report, field divergence
+  clean_room: true
+  applies_when: {lane: any, condition: 复盘埋点缺陷时}
+  cross_refs: [POLICY.WEB.TRACK.STABLE_EVENT_KEYS]
+- proposed_id: AUTHORITY.WEB.TRACK.OWNERS
+  source_section: Ownership
+  source_protocol: .trellis/spec/frontend/40-analytics-protocol.md
+  source_lines: L67-L69
+  source_sha256: 8ae427deabcb4c1b544a5ccca9301c5537fe031decc2db3adbb27c2e276d0c7c
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 所有权默认值：数据/产品 Owner 定义用途，埋点平台 Owner 维护模式，安全/隐私 Owner 审核字段。
+  statement_en_keywords: analytics ownership, purpose owner, schema owner, privacy reviewer
+  clean_room: true
+  applies_when: {lane: any, condition: 分配埋点职责时}
+  notes: M6 同型合并审留汇总组
+- proposed_id: POLICY.WEB.TRACK.EVENT_CHANGE_VERSIONING
+  source_section: Change Policy
+  source_protocol: .trellis/spec/frontend/40-analytics-protocol.md
+  source_lines: L73
+  source_sha256: 8ae427deabcb4c1b544a5ccca9301c5537fe031decc2db3adbb27c2e276d0c7c
+  classification: DUPLICATE
+  sort: DUPLICATE
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: true
+  statement_zh: 事件改名、字段语义变化与保留策略变化必须版本化并通知下游消费者。
+  statement_en_keywords: event change versioning, downstream notification
+  clean_room: true
+  applies_when: {lane: any, condition: 变更事件定义时}
+  duplicate_of: POLICY.CHG.SYNC_CONTRACT_DOCS_TESTS
+  duplicate_scope: catalog
+  notes: 『契约变更同步通知消费方』为既有同步正本在事件域的应用
+
+# ============ 文件 10/10: frontend/41-design-handoff-protocol.md (sha256 335df4991a29eb77222b0596de5db7fcc0bd5d9019ecf9bf882a08cea74c1937) ============
+
+- proposed_id: POLICY.WEB.HANDOFF.DELIVERABLE_COMPLETENESS
+  source_section: MUST
+  source_protocol: .trellis/spec/frontend/41-design-handoff-protocol.md
+  source_lines: L19, L24
+  source_sha256: 335df4991a29eb77222b0596de5db7fcc0bd5d9019ecf9bf882a08cea74c1937
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 设计交付必须声明页面类型、组件来源、令牌依据、关键视口与交互流程；设计验收要同时覆盖可用性、可访问性与契约一致性。
+  statement_en_keywords: handoff completeness, component source, token basis, viewports, acceptance scope
+  clean_room: true
+  applies_when: {lane: frontend, condition: 设计交付或设计验收时}
+- proposed_id: POLICY.WEB.HANDOFF.STATE_MATRIX_FULL
+  source_section: MUST + SHOULD
+  source_protocol: .trellis/spec/frontend/41-design-handoff-protocol.md
+  source_lines: L20-L23, L30, L36
+  source_sha256: 335df4991a29eb77222b0596de5db7fcc0bd5d9019ecf9bf882a08cea74c1937
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: required_when_applicable
+  vocab_pr_needed: true
+  statement_zh: 设计交付必须包含完整状态矩阵——默认、加载、空、错误、权限、禁用、长文本与小屏——并标注响应式、缩放、键盘与焦点要求；表格报表类交付须含列宽、固定列、大数据与导出状态；只交一张理想成功态一律禁止；高风险交互宜附可点击原型与键盘说明。
+  statement_en_keywords: full state matrix, no ideal state only, table deliverable specs, clickable prototype
+  clean_room: true
+  applies_when: {lane: frontend, condition: 评审设计交付完备性时}
+  cross_refs: [POLICY.WEB.DS.VISUAL_STATE_COMPLETENESS]
+  notes: 交付层状态矩阵与组件层状态集（COMP.STATE_SET_IN_CONTRACT）分层互补不合并
+- proposed_id: POLICY.WEB.HANDOFF.INSTANCE_AND_PROTOTYPE
+  source_section: SHOULD
+  source_protocol: .trellis/spec/frontend/41-design-handoff-protocol.md
+  source_lines: L35-L36
+  source_sha256: 335df4991a29eb77222b0596de5db7fcc0bd5d9019ecf9bf882a08cea74c1937
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: true
+  statement_zh: 设计稿宜直接使用设计系统组件实例与令牌变量表达，而非自由绘制。
+  statement_en_keywords: design system instances, token variables in drafts
+  clean_room: true
+  applies_when: {lane: frontend, condition: 制作设计稿时}
+- proposed_id: POLICY.TPL.DESIGN_HANDOFF_CONTRACT
+  source_section: Contract
+  source_protocol: .trellis/spec/frontend/41-design-handoff-protocol.md
+  source_lines: L40-L43
+  source_sha256: 335df4991a29eb77222b0596de5db7fcc0bd5d9019ecf9bf882a08cea74c1937
+  classification: CONTRACT_TEMPLATE
+  sort: UNIVERSAL
+  kind_proposal: contract_template
+  enforcement: deterministic_where_possible
+  vocab_pr_needed: true
+  statement_zh: 设计交付契约字段：PageOrComponent, DesignVersion, SourceComponents[], Tokens[], States[], Viewports[], Interaction, Accessibility, Owner。
+  statement_en_keywords: design handoff contract template
+  clean_room: true
+  applies_when: {lane: frontend, condition: 登记设计交付时}
+  notes: 落点随试点 R-C 方案 b
+- proposed_id: GATE.WEB.HANDOFF.CHECKS
+  source_section: Checklist
+  source_protocol: .trellis/spec/frontend/41-design-handoff-protocol.md
+  source_lines: L45-L50
+  source_sha256: 335df4991a29eb77222b0596de5db7fcc0bd5d9019ecf9bf882a08cea74c1937
+  classification: GATE_RECIPE
+  sort: UNIVERSAL
+  kind_proposal: gate_recipe
+  enforcement: deterministic_where_possible
+  vocab_pr_needed: true
+  statement_zh: 设计交付验收检查项：组件与令牌来源明确；状态与视口完整；表格长文本与可访问性已覆盖；版本与影响可追踪。
+  statement_en_keywords: handoff checklist, sources, state viewport coverage, traceability
+  clean_room: true
+  applies_when: {lane: frontend, condition: 设计交付验收时}
+  notes: V2——GATE. 前缀 pending
+- proposed_id: KNOWLEDGE.EX.WEB.FULL_STATE_HANDOFF
+  source_section: Examples
+  source_protocol: .trellis/spec/frontend/41-design-handoff-protocol.md
+  source_lines: L54-L56
+  source_sha256: 335df4991a29eb77222b0596de5db7fcc0bd5d9019ecf9bf882a08cea74c1937
+  classification: KNOWLEDGE_PATTERN
+  sort: UNIVERSAL
+  kind_proposal: knowledge_entry
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 正例形态：一次交付同时给出正常、无权限、错误、长文本、125% 缩放与键盘焦点状态。
+  statement_en_keywords: full state handoff example, zoom and keyboard states
+  clean_room: true
+  applies_when: {lane: frontend, condition: 演示交付完备形态时}
+- proposed_id: KNOWLEDGE.FP.WEB.IDEAL_SCREENSHOT_ONLY
+  source_section: Anti-patterns
+  source_protocol: .trellis/spec/frontend/41-design-handoff-protocol.md
+  source_lines: L58-L60
+  source_sha256: 335df4991a29eb77222b0596de5db7fcc0bd5d9019ecf9bf882a08cea74c1937
+  classification: FAILURE_PATTERN
+  sort: UNIVERSAL
+  kind_proposal: knowledge_entry
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 失败模式：交付只有一张理想截图，未说明组件来源、错误状态与小屏行为，开发全程靠猜。
+  statement_en_keywords: ideal screenshot only, missing sources and states, guess driven dev
+  clean_room: true
+  applies_when: {lane: frontend, condition: 复盘交付缺陷时}
+  cross_refs: [POLICY.WEB.HANDOFF.STATE_MATRIX_FULL]
+- proposed_id: AUTHORITY.WEB.HANDOFF.OWNERS
+  source_section: Ownership
+  source_protocol: .trellis/spec/frontend/41-design-handoff-protocol.md
+  source_lines: L62-L64
+  source_sha256: 335df4991a29eb77222b0596de5db7fcc0bd5d9019ecf9bf882a08cea74c1937
+  classification: UNIVERSAL_POLICY
+  sort: UNIVERSAL
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: false
+  statement_zh: 所有权默认值：设计 Owner 负责交付完整性，前端 Owner 负责可实现性，QA/可访问性 Owner 负责验收。
+  statement_en_keywords: handoff ownership, completeness, feasibility, acceptance
+  clean_room: true
+  applies_when: {lane: frontend, condition: 分配交付职责时}
+  notes: M6 同型合并审留汇总组
+- proposed_id: POLICY.WEB.HANDOFF.DESIGN_CHANGE_VERSIONING
+  source_section: MUST + Change Policy
+  source_protocol: .trellis/spec/frontend/41-design-handoff-protocol.md
+  source_lines: L23, L68
+  source_sha256: 335df4991a29eb77222b0596de5db7fcc0bd5d9019ecf9bf882a08cea74c1937
+  classification: DUPLICATE
+  sort: DUPLICATE
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: true
+  statement_zh: 设计变更必须有版本、原因、影响范围与通知；开发开始后的设计变化必须更新版本与影响范围，公共组件变化走变更治理。
+  statement_en_keywords: design change versioning, impact scope, notification
+  clean_room: true
+  applies_when: {lane: frontend, condition: 设计变更时}
+  duplicate_of: POLICY.CHG.SYNC_CONTRACT_DOCS_TESTS
+  duplicate_scope: catalog
+  notes: 『变更同步事实与通知』为既有同步正本在交付域的应用；公共组件变化半边直引变更治理族
+- proposed_id: POLICY.WEB.HANDOFF.SOURCE_CITED_REUSE
+  source_section: MUST NOT
+  source_protocol: .trellis/spec/frontend/41-design-handoff-protocol.md
+  source_lines: L28
+  source_sha256: 335df4991a29eb77222b0596de5db7fcc0bd5d9019ecf9bf882a08cea74c1937
+  classification: DUPLICATE
+  sort: DUPLICATE
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: true
+  statement_zh: 不得未标注来源就要求新建相似组件。
+  statement_en_keywords: cite source before new similar component
+  clean_room: true
+  applies_when: {lane: frontend, condition: 设计侧提出新建组件时}
+  duplicate_of: POLICY.WEB.COMP.REUSE_BEFORE_CREATE
+  duplicate_scope: intra_batch
+  notes: 『先检索既有并记录不可复用原因』的设计侧投影——同一复用纪律，让位于本批 24 协议正本卡
+- proposed_id: POLICY.WEB.HANDOFF.DRAFT_NOT_TOKEN_OVERRIDE
+  source_section: MUST NOT
+  source_protocol: .trellis/spec/frontend/41-design-handoff-protocol.md
+  source_lines: L29
+  source_sha256: 335df4991a29eb77222b0596de5db7fcc0bd5d9019ecf9bf882a08cea74c1937
+  classification: DUPLICATE
+  sort: DUPLICATE
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: true
+  statement_zh: 不得拿设计稿临时值覆盖令牌。
+  statement_en_keywords: no draft value over token
+  clean_room: true
+  applies_when: {lane: frontend, condition: 依据设计稿实现时}
+  duplicate_of: POLICY.WEB.DS.DRAFT_VALUE_NOT_TOKEN_OVERRIDE
+  duplicate_scope: intra_batch
+  notes: 与 21 协议同语义条款（跨文件重复），让位于本批正本卡
+- proposed_id: POLICY.WEB.HANDOFF.NO_LOCAL_CSS_PATCH
+  source_section: MUST NOT
+  source_protocol: .trellis/spec/frontend/41-design-handoff-protocol.md
+  source_lines: L31
+  source_sha256: 335df4991a29eb77222b0596de5db7fcc0bd5d9019ecf9bf882a08cea74c1937
+  classification: DUPLICATE
+  sort: DUPLICATE
+  kind_proposal: policy
+  enforcement: advisory
+  vocab_pr_needed: true
+  statement_zh: 不得通过页面局部样式修补系统性问题。
+  statement_en_keywords: no local css patch for system problems
+  clean_room: true
+  applies_when: {lane: frontend, condition: 处理设计还原偏差时}
+  duplicate_of: POLICY.CHG.FIX_AT_ROOT_CAUSE_LEVEL
+  duplicate_scope: catalog
+  notes: 试点先例（NO_LOCAL_MASK_FIX→FIX_AT_ROOT_CAUSE_LEVEL）同型——局部遮盖系统性问题的禁止形态

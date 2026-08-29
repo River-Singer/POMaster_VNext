@@ -1,0 +1,69 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "kind='policy' 不在 vocab-lock kinds_registry.truth_bodies（POLICY. 前缀已冻结注册，closed-world）；新 id 域段待登记：TRACK",
+    "proposal": "词汇表 PR 登记 policy kind 及新域段；或 Owner 裁决 policy 条目住 catalog/ 而非 truth/objects 正文层（与前批 45+9 条同因同请，合并进同一 vocab PR）",
+    "locked_vocab_untouched": true
+  },
+  "x-spec-d-materialization": {
+    "status": "PROPOSAL",
+    "package": "SPEC-D 语义分解汇总（consolidated-pool D5 精选，cap=25）",
+    "human_review_required": true,
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/migration/spec-decomposition/candidates/consolidated-pool.yaml",
+    "group": "FE-G4",
+    "candidate_id": "POLICY.WEB.TRACK.STABLE_EVENT_KEYS",
+    "density_rank": 10,
+    "density_score": 35.44,
+    "pool_statement_sha16": "83c5747328a75340",
+    "curated_rule": "UNIVERSAL + UNIVERSAL_POLICY + required_when_applicable + 无 uncertainty + 非 project_scope + 非重复 + 与既有 69 条零语义重复；按信息密度排序取前 25"
+  },
+  "id": "POLICY.WEB.TRACK.STABLE_EVENT_KEYS",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "UNIVERSAL_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "分析事件稳定键纪律",
+  "statement_zh": "分析事件必须使用稳定事件键与受控公共字段，禁止拿显示文案充当事件名；同一行为不得重复上报或多名称并存；新事件必须登记责任人、用途与保留策略；页面不得自行扩展不受控的公共字段。",
+  "statement_en_keywords": [
+    "stable event keys",
+    "controlled common fields",
+    "single name single report",
+    "owner purpose retention"
+  ],
+  "applies_when": {
+    "lane": "any",
+    "condition": "埋设分析事件时"
+  },
+  "enforcement": "required_when_applicable",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-spec-decomposition"
+  },
+  "origin": "ingested",
+  "origin_note": "SPEC-D 汇总池 D5 精选物化；statement 沿用候选卡独立措辞（clean-room），零逐字拷贝上游源文本",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/migration/spec-decomposition/candidates/FE-G4.yaml",
+      "captured_by": "agent:claude/spec-d-consolidation",
+      "locator": {
+        "candidate": "POLICY.WEB.TRACK.STABLE_EVENT_KEYS",
+        "source_protocol": ".trellis/spec/frontend/40-analytics-protocol.md",
+        "lines": "L19-L20, L24, L30-L31",
+        "section": "MUST + MUST NOT"
+      },
+      "clean_room_note": "independently rewritten from SPEC-D decomposition candidate cards; zero verbatim copy"
+    }
+  ],
+  "review_notes": [
+    "事件命名与公共字段治理在既有 69 条中无对应条目，零语义重复。"
+  ]
+}

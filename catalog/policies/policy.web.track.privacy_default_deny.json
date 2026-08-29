@@ -1,0 +1,72 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "kind='policy' 不在 vocab-lock kinds_registry.truth_bodies（POLICY. 前缀已冻结注册，closed-world）；新 id 域段待登记：TRACK",
+    "proposal": "词汇表 PR 登记 policy kind 及新域段；或 Owner 裁决 policy 条目住 catalog/ 而非 truth/objects 正文层（与前批 45+9 条同因同请，合并进同一 vocab PR）",
+    "locked_vocab_untouched": true
+  },
+  "x-spec-d-materialization": {
+    "status": "PROPOSAL",
+    "package": "SPEC-D 语义分解汇总（consolidated-pool D5 精选，cap=25）",
+    "human_review_required": true,
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/migration/spec-decomposition/candidates/consolidated-pool.yaml",
+    "group": "FE-G4",
+    "candidate_id": "POLICY.WEB.TRACK.PRIVACY_DEFAULT_DENY",
+    "density_rank": 7,
+    "density_score": 37.94,
+    "pool_statement_sha16": "62ca0e14b8c14cae",
+    "curated_rule": "UNIVERSAL + UNIVERSAL_POLICY + required_when_applicable + 无 uncertainty + 非 project_scope + 非重复 + 与既有 69 条零语义重复；按信息密度排序取前 25"
+  },
+  "id": "POLICY.WEB.TRACK.PRIVACY_DEFAULT_DENY",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "UNIVERSAL_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "分析上报默认最小化",
+  "statement_zh": "分析上报默认最小化：敏感字段、搜索原文与业务原值默认不上传；权限范围之外的数据一律不得进入上报；事件目的地与载荷字段一律走白名单；抓取页面结构、可见文本、地址参数或用户输入临时拼装分析数据一律禁止；第三方分析脚本、转发规则与数据出境必须经安全与隐私评审。",
+  "statement_en_keywords": [
+    "privacy default deny",
+    "payload whitelist",
+    "no reporting beyond permission scope",
+    "no dom scraping",
+    "third party review",
+    "data transfer review"
+  ],
+  "applies_when": {
+    "lane": "any",
+    "condition": "配置事件载荷或接入第三方分析时"
+  },
+  "enforcement": "required_when_applicable",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-spec-decomposition"
+  },
+  "origin": "ingested",
+  "origin_note": "SPEC-D 汇总池 D5 精选物化；statement 沿用候选卡独立措辞（clean-room），零逐字拷贝上游源文本",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/migration/spec-decomposition/candidates/FE-G4.yaml",
+      "captured_by": "agent:claude/spec-d-consolidation",
+      "locator": {
+        "candidate": "POLICY.WEB.TRACK.PRIVACY_DEFAULT_DENY",
+        "source_protocol": ".trellis/spec/frontend/40-analytics-protocol.md",
+        "lines": "L23, L26, L33-L34",
+        "section": "MUST + MUST NOT"
+      },
+      "clean_room_note": "independently rewritten from SPEC-D decomposition candidate cards; zero verbatim copy"
+    }
+  ],
+  "review_notes": [
+    "埋点隐私面在既有 69 条中无对应条目，零语义重复。",
+    "与同批物化的 POLICY.WEB.TRACK.CONSENT_LIFECYCLE 为不同义务维度（载荷与目的地边界 vs 同意状态时序），互引不合并。"
+  ]
+}

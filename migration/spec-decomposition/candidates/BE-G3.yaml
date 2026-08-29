@@ -1,0 +1,1275 @@
+# BE-G3 拆解产物（backend 族第 3 组 · 数据与事务）
+# 产出纪律：MASTer_master 只读；禁墙钟（seq=SPEC-D，零时间戳）；确定性序列化（固定键序 + 固定卡序）；
+# D5 防膨胀：本文件全部候选为 backlog 留档，不直接入册；物化（高置信 Universal + MUST 级 + 与既有 69 条零重复的保守精选）留汇总/协调组收口。
+# clean-room：全部 statement_zh 为独立措辞（语义等价、词形独立），零逐字拷贝源协议。
+# 分拣三值：UNIVERSAL（通用工程政策）/ PROJECT（MASTer 专属）/ HYBRID。本批禁项目专名入 UNIVERSAL statement。
+
+meta:
+  batch: SPEC-D
+  seq: SPEC-D
+  group: BE-G3
+  lane: backend
+  theme: 数据与事务
+  status: PROPOSAL
+  human_review_required: true
+  source_tree: MASTer_master/.trellis/spec（只读）
+  method_basis:
+    - docs/catalog-pilot-report.md §3-§6（拆解方法 / Duplicate 分析 / 专名检查 / 词汇缺口）
+    - catalog/candidates/candidates-draft.json（候选卡 schema 与分拣先例）
+  duplicate_baseline: catalog 既有 69 条（60 pilot 物化 + 9 后批）+ 82 条 pilot 候选，逐一比对其 filename 与语义
+
+denominator:
+  files_assigned: 7
+  files:
+    - .trellis/spec/backend/14-business-rules-state-protocol.md
+    - .trellis/spec/backend/15-data-model-protocol.md
+    - .trellis/spec/backend/18-database-schema-migration-protocol.md
+    - .trellis/spec/backend/19-query-index-sql-protocol.md
+    - .trellis/spec/backend/20-transaction-boundary-protocol.md
+    - .trellis/spec/backend/21-concurrency-locking-protocol.md
+    - .trellis/spec/backend/22-idempotency-protocol.md
+  files_with_candidates: 7
+  empty_conclusion_files: []
+  coverage_note: 7/7 全覆盖；七份文件均为九段结构（MUST/MUST NOT/SHOULD/Contract/Checklist/Examples/Anti-patterns/Ownership/Change Policy），每段可提取语义，无「无可提取政策语义」空结论。
+
+stats:
+  cards_total: 63
+  sort_counts:
+    UNIVERSAL: 63
+    PROJECT: 0
+    HYBRID: 0
+  sort_note: 七份源文件均为通用数据/事务工程语义，零项目专名、零项目基线参数（各文件 Non-Scope 明示不规定具体产品语法/表名/阈值）；BP（Blueprint）为治理工作流词形，凡入卡已泛化为「上游需求事实源 / 正式变更记录」并标注 uncertainty（C04/C08/C09），若 Owner 要求保留 BP 字面绑定则该三卡应改判 HYBRID。
+  classification_counts:
+    LANE_POLICY: 25
+    DUPLICATE: 3
+    CONTRACT_TEMPLATE: 7
+    GATE_RECIPE: 7
+    KNOWLEDGE_PATTERN: 7
+    FAILURE_PATTERN: 7
+    UNIVERSAL_POLICY: 7
+  classification_note: LANE_POLICY = 义务承担方为服务端（试点 §3.3 实体跨 lane 判据；与三值分拣的 UNIVERSAL 正交——UNIVERSAL 指非项目专属，LANE 指 lane overlay 落位）。UNIVERSAL_POLICY 7 卡均为 Ownership 段 AUTHORITY 候选（沿用试点 AUTHORITY.* 先例：权威分配默认值为参考模板非行为规则，故 classification=UNIVERSAL_POLICY 且 enforcement=advisory）。
+  duplicate_cards: 3
+  enforcement_counts:
+    required_when_applicable: 18
+    advisory: 31
+    deterministic_where_possible: 14
+
+vocab_notes:
+  - V1（沿试点）：kind=policy 不在 vocab-lock kinds_registry.truth_bodies；本批 25 张 policy 卡受同一缺口影响，登记同一 vocab-pr，未旁路改词表。
+  - V2（沿试点）：GATE. 前缀不在 prefixes_v0 闭包；7 张 gate 卡 id 仅作目录命名约定，落位裁决随试点 R-C/V2。
+  - V3（沿试点）：knowledge_entry kind 已存在；FAILURE_PATTERN 7 卡建议以 knowledge_entry payload 变体/kind profile 承载。
+  - V8/R-C（沿试点）：7 张模板卡沿用 POLICY.TPL.* 词形（与试点存量一致）；按 R-C 方案 b，模板暂留 candidates，落点挂起至 V8/GATE 前缀收编裁决。
+  - V5/V6（沿试点）：enforcement 三值词轴与 classification 十二值词轴沿用试点 vocab-pr 草案。
+
+coordination_notes:
+  - 跨组镜像风险：C10-C18（数据模型）与 FE-G2 名下 .trellis/spec/frontend/14-data-model-protocol.md 构成同题镜像协议（FE-G2 为并行拆解批次）；候选语义按本文件独立提取，跨组合并审留协调组（对应试点 M1-M4 跨车道合并审的组间版）。
+  - 跨车道已预留对：C55（幂等键规约）与既有 catalog POLICY.WEB.API.MUTATION_IDEMPOTENCY 构成服务端/客户端语义对——该卡 review_notes 明文预留「与 BE 22-idempotency-protocol 形成跨车道语义对（登记待后续批次）」，本批即该后续批次的供给方；建议互引不合并（两侧义务承担方与内容不同）。
+  - 组内跨文件同构：C45 与 C54 为互为镜像的变更联动复核规则，已按同批合并处置（C54 让位）。
+
+candidates:
+  # ── 文件 1/7：.trellis/spec/backend/14-business-rules-state-protocol.md（业务规则与状态协议）──
+  - card_no: C01
+    source_protocol: .trellis/spec/backend/14-business-rules-state-protocol.md
+    source_anchor: L25 MUST
+    proposed_id: POLICY.BE.STATE.TRANSITION_SPEC
+    kind_proposal: policy
+    catalog_target: policies
+    classification: LANE_POLICY
+    sort: UNIVERSAL
+    statement_zh: 每个状态转移在实现前必须完整给出五项规约——进入该转移的前置条件、所需权限、转移产生的效果、失败时返回的错误码，以及并发同时触发时的行为约定。
+    statement_en_keywords: state transition specification, preconditions, permission, effects, failure code, concurrency behavior
+    applies_when:
+      lane: backend
+      condition: 定义或修改任何业务状态机的转移时
+    enforcement: required_when_applicable
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: null
+
+  - card_no: C02
+    source_protocol: .trellis/spec/backend/14-business-rules-state-protocol.md
+    source_anchor: L29 MUST NOT
+    proposed_id: POLICY.BE.STATE.SERVER_AUTHORITATIVE_INVARIANT
+    kind_proposal: policy
+    catalog_target: policies
+    classification: LANE_POLICY
+    sort: UNIVERSAL
+    statement_zh: 业务不变量的维护职责必须落在服务端校验与原子写路径上；界面层隐藏入口、禁用控件或约定操作次序不得作为不变量成立的唯一保障。
+    statement_en_keywords: server-side authoritative invariants, UI-level guard insufficient, atomic server validation
+    applies_when:
+      lane: backend
+      condition: 设计或评审任何承载业务不变量的写入路径时
+    enforcement: required_when_applicable
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: 独立语义（不变量执行位置权威），非 C01 的极性反转，故不按同文件 MUST NOT 合并先例处置；与既有 catalog 各条零重复。
+
+  - card_no: C03
+    source_protocol: .trellis/spec/backend/14-business-rules-state-protocol.md
+    source_anchor: L33 SHOULD
+    proposed_id: POLICY.BE.STATE.SINGLE_RULE_SOURCE
+    kind_proposal: policy
+    catalog_target: policies
+    classification: LANE_POLICY
+    sort: UNIVERSAL
+    statement_zh: 同一权威业务规则应只在一处集中实现，并为合法边界值与非法转移路径补齐测试用例，避免各入口各自判断。
+    statement_en_keywords: single authoritative rule expression, boundary tests, illegal transition coverage
+    applies_when:
+      lane: backend
+      condition: 实现或重构业务规则时
+    enforcement: advisory
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: 与 C07（失败模式）构成正本/失败形态配对（试点 M7 型：互引非合并）。
+
+  - card_no: C04
+    source_protocol: .trellis/spec/backend/14-business-rules-state-protocol.md
+    source_anchor: L37 Contract
+    proposed_id: POLICY.TPL.RULE_RECORD_BE
+    kind_proposal: contract_template
+    catalog_target: templates（落点挂起，随试点 R-C）
+    classification: CONTRACT_TEMPLATE
+    sort: UNIVERSAL
+    statement_zh: 规则登记模板须包含六个字段——上游需求事实源引用、输入定义、涉及状态、输出定义、失败语义与验证证据。
+    statement_en_keywords: rule record template, requirement source binding, input, state, output, failure semantics, evidence
+    applies_when:
+      lane: backend
+      condition: 登记或评审业务规则设计时
+    enforcement: deterministic_where_possible
+    clean_room: true
+    duplicate_of: null
+    uncertainty: 源文 BP（Blueprint）为治理工作流专名，已泛化为「上游需求事实源引用」；若 Owner 要求保留 BP 字面绑定，本卡改判 HYBRID。
+    notes: 模板落点随试点 R-C 方案 b 挂起；gate 实现引用时应内联字段清单，勿悬空引用模板 id（试点 §6.1 教训）。
+
+  - card_no: C05
+    source_protocol: .trellis/spec/backend/14-business-rules-state-protocol.md
+    source_anchor: L41 Checklist
+    proposed_id: GATE.BE.STATE.ALIGNMENT_CHECKS
+    kind_proposal: gate_recipe
+    catalog_target: gates
+    classification: GATE_RECIPE
+    sort: UNIVERSAL
+    statement_zh: 对每个新增或变更的状态规则核对五项——不变量清单、状态集、权限矩阵、事务边界与并发边界相互对齐且无缺口。
+    statement_en_keywords: alignment gate, invariants, state set, permission matrix, transaction boundary, concurrency boundary
+    applies_when:
+      lane: backend
+      condition: 状态规则交付自检或门禁判卷时
+    enforcement: deterministic_where_possible
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: GATE. 前缀落位随试点 V2 裁决。
+
+  - card_no: C06
+    source_protocol: .trellis/spec/backend/14-business-rules-state-protocol.md
+    source_anchor: L45 Examples
+    proposed_id: KNOWLEDGE.BE.STATE.EXAMPLE_ATOMIC_APPROVAL
+    kind_proposal: knowledge_entry
+    catalog_target: knowledge
+    classification: KNOWLEDGE_PATTERN
+    sort: UNIVERSAL
+    statement_zh: 审批类操作可先在服务端复核对象当前状态与操作者权限，再以单次原子写入完成状态推进，任一前置不满足即拒绝。
+    statement_en_keywords: approval example, server-side state and permission check, atomic update
+    applies_when:
+      lane: backend
+      condition: 设计审批/状态推进类操作时参考
+    enforcement: advisory
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: null
+
+  - card_no: C07
+    source_protocol: .trellis/spec/backend/14-business-rules-state-protocol.md
+    source_anchor: L49 Anti-patterns
+    proposed_id: KNOWLEDGE.FP.BE.DIVERGENT_STATE_CHECKS
+    kind_proposal: knowledge_entry
+    catalog_target: knowledge
+    classification: FAILURE_PATTERN
+    sort: UNIVERSAL
+    statement_zh: 失败模式——同一状态判断被复制到多个入口且各副本存在细微差异，导致同一操作在不同路径下得到不一致的判定。
+    statement_en_keywords: failure pattern, divergent duplicated state checks, inconsistent decisions across entry points
+    applies_when:
+      lane: backend
+      condition: 排查状态判定不一致缺陷时参考
+    enforcement: advisory
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: 与 C03 配对互引（M7 型）。
+
+  - card_no: C08
+    source_protocol: .trellis/spec/backend/14-business-rules-state-protocol.md
+    source_anchor: L53 Ownership
+    proposed_id: AUTHORITY.BE.BUSINESS_SEMANTIC_OWNERSHIP
+    kind_proposal: authority
+    catalog_target: authority（control-plane，随试点 V4 无需 kind PR）
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 业务语义的解释权归上游需求事实源所有；服务端实现与该语义保持一致的责任归后端实现方所有。
+    statement_en_keywords: authority map, business semantics owner, consistent implementation owner
+    applies_when:
+      lane: backend
+      condition: 构建领域所有权默认值时
+    enforcement: advisory
+    clean_room: true
+    duplicate_of: null
+    uncertainty: BP 泛化为「上游需求事实源」（同 C04 口径）。
+    notes: M6 合并审挂起——与试点 AUTHORITY 5 条同型（提供方/实现方双层默认值），建议并入试点 R-F 已挂起的「领域分层所有权默认值」模板（5→1+N，N 本批 +7）。
+
+  - card_no: C09
+    source_protocol: .trellis/spec/backend/14-business-rules-state-protocol.md
+    source_anchor: L57 Change Policy
+    proposed_id: POLICY.BE.STATE.SEMANTIC_DELTA_SYNC
+    kind_proposal: policy
+    catalog_target: policies
+    classification: LANE_POLICY
+    sort: UNIVERSAL
+    statement_zh: 业务语义的任何变化必须以正式变更记录为唯一起点，落地时同步给出存量状态数据的迁移方案与兼容计划，禁止口头或临时改动语义。
+    statement_en_keywords: formal change record origin, semantic drift prevention, state data migration, compatibility plan
+    applies_when:
+      lane: backend
+      condition: 业务语义发生变化时
+    enforcement: required_when_applicable
+    clean_room: true
+    duplicate_of: null
+    uncertainty: 「正式 delta」为治理工作流词形，已泛化为「正式变更记录」。
+    notes: 独立语义（变更起点正式化 + 状态数据迁移同步）；兼容计划子句与 POLICY.CHG.COMPAT_MIGRATION_ROLLBACK 互引，不判 DUP（对象特定义务：状态数据迁移）。
+
+  # ── 文件 2/7：.trellis/spec/backend/15-data-model-protocol.md（数据模型协议）──
+  - card_no: C10
+    source_protocol: .trellis/spec/backend/15-data-model-protocol.md
+    source_anchor: L25 MUST
+    proposed_id: POLICY.BE.MODEL.TRANSFORM_FIELD_SEMANTICS
+    kind_proposal: policy
+    catalog_target: policies
+    classification: LANE_POLICY
+    sort: UNIVERSAL
+    statement_zh: 任意一次模型间的字段映射都必须逐字段写明——值来自哪里、空值如何表达、缺省取什么、数值精度如何处理、时间采用何种语义、枚举如何对应。
+    statement_en_keywords: field mapping semantics, origin, null representation, default, precision, time semantics, enum mapping
+    applies_when:
+      lane: backend
+      condition: 实现或评审任何模型间字段转换时
+    enforcement: required_when_applicable
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: 与 FE-G2 名下 frontend/14-data-model-protocol 为同题镜像，跨组合并审留协调组。
+
+  - card_no: C11
+    source_protocol: .trellis/spec/backend/15-data-model-protocol.md
+    source_anchor: L29 MUST NOT
+    proposed_id: POLICY.BE.MODEL.NO_SHARED_BOUNDARY_TYPE
+    kind_proposal: policy
+    catalog_target: policies
+    classification: LANE_POLICY
+    sort: UNIVERSAL
+    statement_zh: API 出入参对象、ORM 实体与领域模型三者不得在未加边界评估的情况下复用同一类型定义。
+    statement_en_keywords: model boundary separation, DTO, ORM entity, domain model, no unconditional type sharing
+    applies_when:
+      lane: backend
+      condition: 定义数据模型类型时
+    enforcement: required_when_applicable
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: 独立禁令（模型边界分离），非 C10 极性反转；与既有 catalog 各条零重复。
+
+  - card_no: C12
+    source_protocol: .trellis/spec/backend/15-data-model-protocol.md
+    source_anchor: L33 SHOULD
+    proposed_id: POLICY.BE.MODEL.SINGLE_BOUNDARY_CONVERSION
+    kind_proposal: policy
+    catalog_target: policies
+    classification: LANE_POLICY
+    sort: UNIVERSAL
+    statement_zh: 模型转换应收敛到系统边界处发生且仅发生一次，并以契约校验或往返（round-trip）测试证明转换无损。
+    statement_en_keywords: convert once at boundary, round-trip test, lossless mapping proof
+    applies_when:
+      lane: backend
+      condition: 设计模型转换链路时
+    enforcement: advisory
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: null
+
+  - card_no: C13
+    source_protocol: .trellis/spec/backend/15-data-model-protocol.md
+    source_anchor: L37 Contract
+    proposed_id: POLICY.TPL.MODEL_MAPPING_RECORD_BE
+    kind_proposal: contract_template
+    catalog_target: templates（落点挂起，随试点 R-C）
+    classification: CONTRACT_TEMPLATE
+    sort: UNIVERSAL
+    statement_zh: 映射登记模板须包含五个字段——源模型、目标模型、必填性约定、字段丢失时的处理规则与转换失败时的行为。
+    statement_en_keywords: mapping record template, source, target, requiredness, loss rule, failure behavior
+    applies_when:
+      lane: backend
+      condition: 登记或评审模型映射时
+    enforcement: deterministic_where_possible
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: 落点随试点 R-C 挂起；引用须内联字段清单防悬空。
+
+  - card_no: C14
+    source_protocol: .trellis/spec/backend/15-data-model-protocol.md
+    source_anchor: L41 Checklist
+    proposed_id: GATE.BE.MODEL.FIELD_PROPAGATION_CHECKS
+    kind_proposal: gate_recipe
+    catalog_target: gates
+    classification: GATE_RECIPE
+    sort: UNIVERSAL
+    statement_zh: 对每个新增字段核对四类边界均已覆盖——生产侧赋值、模型转换、持久化存储与下游消费。
+    statement_en_keywords: field propagation gate, production, transformation, storage, consumption boundaries
+    applies_when:
+      lane: backend
+      condition: 新增字段交付自检或门禁判卷时
+    enforcement: deterministic_where_possible
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: null
+
+  - card_no: C15
+    source_protocol: .trellis/spec/backend/15-data-model-protocol.md
+    source_anchor: L45 Examples
+    proposed_id: KNOWLEDGE.BE.MODEL.EXAMPLE_ENUM_INGEST_CONVERSION
+    kind_proposal: knowledge_entry
+    catalog_target: knowledge
+    classification: KNOWLEDGE_PATTERN
+    sort: UNIVERSAL
+    statement_zh: 外部传入的字符串枚举可在入口一次性转换为受控的领域枚举值；遇到未知取值时返回稳定的错误而非静默透传。
+    statement_en_keywords: enum ingest conversion, controlled domain values, stable error on unknown value
+    applies_when:
+      lane: backend
+      condition: 设计入站枚举处理时参考
+    enforcement: advisory
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: null
+
+  - card_no: C16
+    source_protocol: .trellis/spec/backend/15-data-model-protocol.md
+    source_anchor: L49 Anti-patterns
+    proposed_id: KNOWLEDGE.FP.BE.REFLECTION_COPY_MASKING
+    kind_proposal: knowledge_entry
+    catalog_target: knowledge
+    classification: FAILURE_PATTERN
+    sort: UNIVERSAL
+    statement_zh: 失败模式——借助反射做整对象字段拷贝，使字段间语义、精度与空值表达差异被工具的「能复制」假象掩盖，差异在运行期才暴露。
+    statement_en_keywords: failure pattern, reflection-based copy, masked semantic and precision differences
+    applies_when:
+      lane: backend
+      condition: 排查模型转换类缺陷时参考
+    enforcement: advisory
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: null
+
+  - card_no: C17
+    source_protocol: .trellis/spec/backend/15-data-model-protocol.md
+    source_anchor: L53 Ownership
+    proposed_id: AUTHORITY.BE.MODEL_BOUNDARY_OWNERSHIP
+    kind_proposal: authority
+    catalog_target: authority（control-plane，随试点 V4）
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 每个边界的模型契约由该边界 Owner 维护；转换实现者负责提供往返一致的验证证据。
+    statement_en_keywords: authority map, boundary contract owner, round-trip evidence owner
+    applies_when:
+      lane: backend
+      condition: 构建领域所有权默认值时
+    enforcement: advisory
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: M6 合并审挂起（同 C08 口径，本批 +1 实例）。
+
+  - card_no: C18
+    source_protocol: .trellis/spec/backend/15-data-model-protocol.md
+    source_anchor: L57 Change Policy
+    proposed_id: POLICY.BE.MODEL.CHANGE_COMPAT_ASSESSMENT
+    kind_proposal: policy
+    catalog_target: policies
+    classification: LANE_POLICY
+    sort: UNIVERSAL
+    statement_zh: 模型结构变化落地前必须完成四个维度的兼容性评估——对外 API、持久化数据、消息载荷与既有历史数据。
+    statement_en_keywords: model change compatibility assessment, API, persisted data, message payload, historical data
+    applies_when:
+      lane: backend
+      condition: 模型结构发生变化时
+    enforcement: required_when_applicable
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: 与 POLICY.CHG.COMPAT_MIGRATION_ROLLBACK 为试点 §3.4 型部分重叠（对象不同：四评估面清单 vs 兼容或迁移方案义务）——不硬合并，建议两条 review_notes 互指，口径统一留 Owner。
+
+  # ── 文件 3/7：.trellis/spec/backend/18-database-schema-migration-protocol.md（数据库 Schema 与迁移协议）──
+  - card_no: C19
+    source_protocol: .trellis/spec/backend/18-database-schema-migration-protocol.md
+    source_anchor: L25 MUST
+    proposed_id: POLICY.BE.DB.MIGRATION_LIFECYCLE
+    kind_proposal: policy
+    catalog_target: policies
+    classification: LANE_POLICY
+    sort: UNIVERSAL
+    statement_zh: 任何结构变更都必须以受版本控制的前向迁移交付，并附带兼容性分析、执行后的验证手段，以及明确写出的回退或继续前滚（roll-forward）路径。
+    statement_en_keywords: versioned forward migration, compatibility analysis, verification, fallback or roll-forward path
+    applies_when:
+      lane: backend
+      condition: 发生任何数据库结构变更时
+    enforcement: required_when_applicable
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: 独立语义（迁移工件自身完整性）；与 POLICY.CHG.COMPAT_MIGRATION_ROLLBACK 互引不合并——该正本管公共能力兼容义务，本条管迁移交付物。
+
+  - card_no: C20
+    source_protocol: .trellis/spec/backend/18-database-schema-migration-protocol.md
+    source_anchor: L29 MUST NOT
+    proposed_id: POLICY.BE.DB.NO_INFORMAL_MIGRATION
+    kind_proposal: policy
+    catalog_target: policies
+    classification: LANE_POLICY
+    sort: UNIVERSAL
+    statement_zh: ORM 自动建表改表、在生产环境手工执行的操作，以及不留痕的临时脚本，都不得充当正式迁移；正式迁移只能来自受版本控制的迁移通道。
+    statement_en_keywords: no informal migration channel, ORM auto-ddl forbidden, manual production ops forbidden, unrecorded scripts forbidden
+    applies_when:
+      lane: backend
+      condition: 交付数据库结构变更时
+    enforcement: required_when_applicable
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: 独立禁令（正式通道排他），非 C19 极性反转；与 POLICY.API.NO_INFORMAL_CONTRACT 同型但对象不同（迁移工件 vs API 契约），非重复。
+
+  - card_no: C21
+    source_protocol: .trellis/spec/backend/18-database-schema-migration-protocol.md
+    source_anchor: L33 SHOULD
+    proposed_id: POLICY.BE.DB.EXPAND_MIGRATE_CONTRACT
+    kind_proposal: policy
+    catalog_target: policies
+    classification: LANE_POLICY
+    sort: UNIVERSAL
+    statement_zh: 结构演进宜按「先扩展、再迁移数据、后收缩」三段推进，使应用版本与数据库结构可以各自独立部署、互不锁死。
+    statement_en_keywords: expand migrate contract, parallel deployability, three-phase schema evolution
+    applies_when:
+      lane: backend
+      condition: 规划不兼容结构变更时
+    enforcement: advisory
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: 与 C24（示例）同主题，正本/示例分层。
+
+  - card_no: C22
+    source_protocol: .trellis/spec/backend/18-database-schema-migration-protocol.md
+    source_anchor: L37 Contract
+    proposed_id: POLICY.TPL.MIGRATION_RECORD_BE
+    kind_proposal: contract_template
+    catalog_target: templates（落点挂起，随试点 R-C）
+    classification: CONTRACT_TEMPLATE
+    sort: UNIVERSAL
+    statement_zh: 迁移登记模板须包含七个字段——涉及对象、受影响数据量、锁风险、执行顺序、验证方式、数据修复方案与故障恢复路径。
+    statement_en_keywords: migration record template, objects, affected data, lock risk, ordering, verification, repair, recovery
+    applies_when:
+      lane: backend
+      condition: 登记或评审迁移时
+    enforcement: deterministic_where_possible
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: 落点随试点 R-C 挂起；引用须内联字段清单防悬空。
+
+  - card_no: C23
+    source_protocol: .trellis/spec/backend/18-database-schema-migration-protocol.md
+    source_anchor: L41 Checklist
+    proposed_id: GATE.BE.DB.MIGRATION_CHECKS
+    kind_proposal: gate_recipe
+    catalog_target: gates
+    classification: GATE_RECIPE
+    sort: UNIVERSAL
+    statement_zh: 发布前对六项逐一核对——约束变更、索引变更、默认值、存量历史数据影响、备份可用性与发布窗口安排。
+    statement_en_keywords: migration gate, constraints, indexes, defaults, historical data, backup, release window
+    applies_when:
+      lane: backend
+      condition: 迁移交付自检或发布门禁判卷时
+    enforcement: deterministic_where_possible
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: null
+
+  - card_no: C24
+    source_protocol: .trellis/spec/backend/18-database-schema-migration-protocol.md
+    source_anchor: L45 Examples
+    proposed_id: KNOWLEDGE.BE.DB.EXAMPLE_EXPAND_MIGRATE_CONTRACT
+    kind_proposal: knowledge_entry
+    catalog_target: knowledge
+    classification: KNOWLEDGE_PATTERN
+    sort: UNIVERSAL
+    statement_zh: 新增列时可先以可空方式加入并保持新旧两路写入，待历史数据回填完成且读取切换稳定后，再收紧为非空约束。
+    statement_en_keywords: nullable add, dual write, backfill, read switch, tighten constraint
+    applies_when:
+      lane: backend
+      condition: 执行加列类结构演进时参考
+    enforcement: advisory
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: null
+
+  - card_no: C25
+    source_protocol: .trellis/spec/backend/18-database-schema-migration-protocol.md
+    source_anchor: L49 Anti-patterns
+    proposed_id: KNOWLEDGE.FP.BE.DROP_COLUMN_WITH_DEPENDENT_RELEASE
+    kind_proposal: knowledge_entry
+    catalog_target: knowledge
+    classification: FAILURE_PATTERN
+    sort: UNIVERSAL
+    statement_zh: 失败模式——删除旧列与发布仍在读取该列的应用版本被安排在同一步执行，造成发布即报错。
+    statement_en_keywords: failure pattern, drop column, dependent release same step, deploy-time breakage
+    applies_when:
+      lane: backend
+      condition: 排查结构发布事故时参考
+    enforcement: advisory
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: null
+
+  - card_no: C26
+    source_protocol: .trellis/spec/backend/18-database-schema-migration-protocol.md
+    source_anchor: L53 Ownership
+    proposed_id: AUTHORITY.BE.DATA_SEMANTIC_APPROVAL
+    kind_proposal: authority
+    catalog_target: authority（control-plane，随试点 V4）
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 数据语义的审批权归数据 Owner；迁移工件的编写、执行记录与验证证据由后端维护。
+    statement_en_keywords: authority map, data owner approval, migration maintenance and evidence
+    applies_when:
+      lane: backend
+      condition: 构建领域所有权默认值时
+    enforcement: advisory
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: M6 合并审挂起（同 C08 口径）。
+
+  - card_no: C27
+    source_protocol: .trellis/spec/backend/18-database-schema-migration-protocol.md
+    source_anchor: L57 Change Policy
+    proposed_id: POLICY.BE.DB.MIGRATION_APPEND_ONLY
+    kind_proposal: policy
+    catalog_target: policies
+    classification: LANE_POLICY
+    sort: UNIVERSAL
+    statement_zh: 已经执行过的迁移文件必须保持只读历史，任何修正都以追加新迁移的方式表达，不允许原地修改后重放。
+    statement_en_keywords: append-only migration history, no in-place rewrite, corrective migration
+    applies_when:
+      lane: backend
+      condition: 修正已执行的迁移时
+    enforcement: required_when_applicable
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: 追加式迁移史为独立通用规则，catalog 无既有正本。
+
+  # ── 文件 4/7：.trellis/spec/backend/19-query-index-sql-protocol.md（查询、索引与 SQL 协议）──
+  - card_no: C28
+    source_protocol: .trellis/spec/backend/19-query-index-sql-protocol.md
+    source_anchor: L25 MUST
+    proposed_id: POLICY.BE.SQL.PARAMETERIZED_VERIFIED_QUERIES
+    kind_proposal: policy
+    catalog_target: policies
+    classification: LANE_POLICY
+    sort: UNIVERSAL
+    statement_zh: 所有 SQL 一律经由参数绑定执行，并按真实出现的查询形态（过滤、连接、排序、分页与数据量）验证结果正确性、边界行为与执行计划。
+    statement_en_keywords: parameterized sql, real query shape validation, boundary behavior, execution plan
+    applies_when:
+      lane: backend
+      condition: 编写或评审任何 SQL 查询时
+    enforcement: required_when_applicable
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: null
+
+  - card_no: C29
+    source_protocol: .trellis/spec/backend/19-query-index-sql-protocol.md
+    source_anchor: L29 MUST NOT
+    proposed_id: POLICY.BE.SQL.NO_CONCAT_UNBOUNDED_READ
+    kind_proposal: policy
+    catalog_target: policies
+    classification: DUPLICATE
+    sort: UNIVERSAL
+    statement_zh: 禁止以字符串拼接方式组装含不可信输入的 SQL，也禁止对大结果集做无上界的读取。
+    statement_en_keywords: no string-concatenated sql, no unbounded large reads
+    applies_when:
+      lane: backend
+      condition: 编写或评审任何 SQL 查询时
+    enforcement: advisory
+    clean_room: true
+    duplicate_of: POLICY.BE.SQL.PARAMETERIZED_VERIFIED_QUERIES
+    duplicate_of_kind: in_batch_proposal（C28）
+    uncertainty: null
+    notes: 同文件 MUST 的极性反转（试点 11 条同协议 DUP 先例）：拼接是参数化的禁止形态，无界读取是边界验证的禁止形态，无独立增量，并入 C28 禁止形态段。
+
+  - card_no: C30
+    source_protocol: .trellis/spec/backend/19-query-index-sql-protocol.md
+    source_anchor: L33 SHOULD
+    proposed_id: POLICY.BE.SQL.INDEX_FOR_KNOWN_QUERIES
+    kind_proposal: policy
+    catalog_target: policies
+    classification: LANE_POLICY
+    sort: UNIVERSAL
+    statement_zh: 建立索引前应先明确它服务哪些已知查询，并把写入放大与存储成本的取舍记录在案。
+    statement_en_keywords: index serves known queries, write amplification, storage tradeoff record
+    applies_when:
+      lane: backend
+      condition: 规划或评审索引时
+    enforcement: advisory
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: null
+
+  - card_no: C31
+    source_protocol: .trellis/spec/backend/19-query-index-sql-protocol.md
+    source_anchor: L37 Contract
+    proposed_id: POLICY.TPL.QUERY_RECORD_BE
+    kind_proposal: contract_template
+    catalog_target: templates（落点挂起，随试点 R-C）
+    classification: CONTRACT_TEMPLATE
+    sort: UNIVERSAL
+    statement_zh: 关键查询登记模板须包含五个字段——输入参数、排序键稳定性、分页语义、依赖的索引与验证时所用的数据规模。
+    statement_en_keywords: query record template, inputs, sort key stability, pagination semantics, indexes, validation data scale
+    applies_when:
+      lane: backend
+      condition: 登记或评审关键查询时
+    enforcement: deterministic_where_possible
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: 落点随试点 R-C 挂起；引用须内联字段清单防悬空。
+
+  - card_no: C32
+    source_protocol: .trellis/spec/backend/19-query-index-sql-protocol.md
+    source_anchor: L41 Checklist
+    proposed_id: GATE.BE.SQL.QUERY_CHECKS
+    kind_proposal: gate_recipe
+    catalog_target: gates
+    classification: GATE_RECIPE
+    sort: UNIVERSAL
+    statement_zh: 对关键查询核对五类情形——空结果集、排序键重复、深翻页、关联查询的 N+1 放大与慢查询表现。
+    statement_en_keywords: query gate, empty result, duplicate sort keys, deep pagination, n+1, slow query
+    applies_when:
+      lane: backend
+      condition: 查询交付自检或门禁判卷时
+    enforcement: deterministic_where_possible
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: null
+
+  - card_no: C33
+    source_protocol: .trellis/spec/backend/19-query-index-sql-protocol.md
+    source_anchor: L45 Examples
+    proposed_id: KNOWLEDGE.BE.SQL.EXAMPLE_CURSOR_PAGINATION
+    kind_proposal: knowledge_entry
+    catalog_target: knowledge
+    classification: KNOWLEDGE_PATTERN
+    sort: UNIVERSAL
+    statement_zh: 游标分页方案应携带稳定且唯一的排序键，并专门验证并发写入进行时的翻页行为。
+    statement_en_keywords: cursor pagination, stable unique sort key, concurrent write behavior validation
+    applies_when:
+      lane: backend
+      condition: 设计分页方案时参考
+    enforcement: advisory
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: null
+
+  - card_no: C34
+    source_protocol: .trellis/spec/backend/19-query-index-sql-protocol.md
+    source_anchor: L49 Anti-patterns
+    proposed_id: KNOWLEDGE.FP.BE.BLIND_INDEXING
+    kind_proposal: knowledge_entry
+    catalog_target: knowledge
+    classification: FAILURE_PATTERN
+    sort: UNIVERSAL
+    statement_zh: 失败模式——只看列名就建索引，既不评估该列的选择性，也不核对真实执行计划是否受益。
+    statement_en_keywords: failure pattern, blind indexing, selectivity ignored, execution plan unchecked
+    applies_when:
+      lane: backend
+      condition: 排查索引低效问题时参考
+    enforcement: advisory
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: null
+
+  - card_no: C35
+    source_protocol: .trellis/spec/backend/19-query-index-sql-protocol.md
+    source_anchor: L53 Ownership
+    proposed_id: AUTHORITY.BE.QUERY_EVIDENCE_OWNERSHIP
+    kind_proposal: authority
+    catalog_target: authority（control-plane，随试点 V4）
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 查询维护方负责提交执行计划证据；容量与一致性影响由数据 Owner 评审把关。
+    statement_en_keywords: authority map, plan evidence owner, capacity and consistency reviewer
+    applies_when:
+      lane: backend
+      condition: 构建领域所有权默认值时
+    enforcement: advisory
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: M6 合并审挂起（同 C08 口径）。
+
+  - card_no: C36
+    source_protocol: .trellis/spec/backend/19-query-index-sql-protocol.md
+    source_anchor: L57 Change Policy
+    proposed_id: POLICY.BE.SQL.INDEX_QUERY_CHANGE_SCAN
+    kind_proposal: policy
+    catalog_target: policies
+    classification: DUPLICATE
+    sort: UNIVERSAL
+    statement_zh: 删除索引或重写既有查询之前，必须先核实全部已知使用方并准备回滚路径。
+    statement_en_keywords: index removal, query rewrite, verify known consumers, rollback path
+    applies_when:
+      lane: backend
+      condition: 删除索引或重写既有查询时
+    enforcement: advisory
+    clean_room: true
+    duplicate_of: POLICY.CHG.PRECHANGE_CONSUMER_SCAN
+    duplicate_of_kind: catalog_entry
+    uncertainty: null
+    notes: 该正本（变更前消费方枚举 + 回滚路径）在数据库对象上的适用实例，无对象特定增量；建议登记为正本 applies_when 的 DB 扩展示例后让位（试点 M2 型处置）。
+
+  # ── 文件 5/7：.trellis/spec/backend/20-transaction-boundary-protocol.md（事务边界协议）──
+  - card_no: C37
+    source_protocol: .trellis/spec/backend/20-transaction-boundary-protocol.md
+    source_anchor: L25 MUST
+    proposed_id: POLICY.BE.TXN.WRITE_FLOW_SPEC
+    kind_proposal: policy
+    catalog_target: policies
+    classification: LANE_POLICY
+    sort: UNIVERSAL
+    statement_zh: 每条写流程都必须逐项写明——事务从哪里开启、采用何种隔离级别、如何传播、失败时如何处置、重试策略是什么、提交之后触发哪些后续动作。
+    statement_en_keywords: write flow specification, transaction entry, isolation, propagation, failure handling, retry, post-commit actions
+    applies_when:
+      lane: backend
+      condition: 设计或评审任何写流程时
+    enforcement: required_when_applicable
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: null
+
+  - card_no: C38
+    source_protocol: .trellis/spec/backend/20-transaction-boundary-protocol.md
+    source_anchor: L29 MUST NOT
+    proposed_id: POLICY.BE.TXN.NO_UNBOUNDED_IN_TXN
+    kind_proposal: policy
+    catalog_target: policies
+    classification: LANE_POLICY
+    sort: UNIVERSAL
+    statement_zh: 长事务内部不得出现无时限的网络调用、等待人工输入的操作或规模不可控的批处理。
+    statement_en_keywords: no unbounded network calls in transaction, no user waits, no uncontrolled batch
+    applies_when:
+      lane: backend
+      condition: 设计或评审事务边界内容时
+    enforcement: required_when_applicable
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: 独立禁令（事务范围卫生），非 C37 极性反转——「明确列出」不蕴含「禁止纳入」；与既有 catalog 各条零重复。
+
+  - card_no: C39
+    source_protocol: .trellis/spec/backend/20-transaction-boundary-protocol.md
+    source_anchor: L33 SHOULD
+    proposed_id: POLICY.BE.TXN.SHORT_LOCKS_COMPENSATION
+    kind_proposal: policy
+    catalog_target: policies
+    classification: LANE_POLICY
+    sort: UNIVERSAL
+    statement_zh: 应尽量压缩锁的持有时长，并把对外部系统产生的副作用设计成可重试或可补偿的形态。
+    statement_en_keywords: short lock hold time, retryable or compensable external side effects
+    applies_when:
+      lane: backend
+      condition: 设计事务与外部系统交互时
+    enforcement: advisory
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: null
+
+  - card_no: C40
+    source_protocol: .trellis/spec/backend/20-transaction-boundary-protocol.md
+    source_anchor: L37 Contract
+    proposed_id: POLICY.TPL.TXN_DESIGN_RECORD_BE
+    kind_proposal: contract_template
+    catalog_target: templates（落点挂起，随试点 R-C）
+    classification: CONTRACT_TEMPLATE
+    sort: UNIVERSAL
+    statement_zh: 事务设计登记模板须包含五个字段——读写数据集合、用到的锁、依赖的唯一约束、事务内的外部调用清单与一致性验证证据。
+    statement_en_keywords: transaction design record template, read write sets, locks, unique constraints, external calls, consistency evidence
+    applies_when:
+      lane: backend
+      condition: 登记或评审事务设计时
+    enforcement: deterministic_where_possible
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: 落点随试点 R-C 挂起；引用须内联字段清单防悬空。
+
+  - card_no: C41
+    source_protocol: .trellis/spec/backend/20-transaction-boundary-protocol.md
+    source_anchor: L41 Checklist
+    proposed_id: GATE.BE.TXN.FAILURE_PATH_CHECKS
+    kind_proposal: gate_recipe
+    catalog_target: gates
+    classification: GATE_RECIPE
+    sort: UNIVERSAL
+    statement_zh: 对写流程核对五类路径均有测试覆盖——异常中断、超时、重试、部分失败与提交后的对外发布。
+    statement_en_keywords: failure path gate, exception, timeout, retry, partial failure, post-commit publish
+    applies_when:
+      lane: backend
+      condition: 写流程交付自检或门禁判卷时
+    enforcement: deterministic_where_possible
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: null
+
+  - card_no: C42
+    source_protocol: .trellis/spec/backend/20-transaction-boundary-protocol.md
+    source_anchor: L45 Examples
+    proposed_id: KNOWLEDGE.BE.TXN.EXAMPLE_TRANSACTIONAL_OUTBOX
+    kind_proposal: knowledge_entry
+    catalog_target: knowledge
+    classification: KNOWLEDGE_PATTERN
+    sort: UNIVERSAL
+    statement_zh: 跨系统消息可先在本地事务内落入发件箱表，待事务提交后由独立的可靠发布器完成对外投递。
+    statement_en_keywords: transactional outbox, local commit, reliable publisher, external delivery
+    applies_when:
+      lane: backend
+      condition: 设计跨系统消息一致性时参考
+    enforcement: advisory
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: null
+
+  - card_no: C43
+    source_protocol: .trellis/spec/backend/20-transaction-boundary-protocol.md
+    source_anchor: L49 Anti-patterns
+    proposed_id: KNOWLEDGE.FP.BE.TXN_SCOPE_MASKING
+    kind_proposal: knowledge_entry
+    catalog_target: knowledge
+    classification: FAILURE_PATTERN
+    sort: UNIVERSAL
+    statement_zh: 失败模式——以不断放大事务边界的方式掩盖本应单独设计的跨系统一致性方案，最终把外部系统拖进不可控的长事务。
+    statement_en_keywords: failure pattern, transaction scope inflation, missing cross-system consistency design
+    applies_when:
+      lane: backend
+      condition: 排查长事务与一致性缺陷时参考
+    enforcement: advisory
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: null
+
+  - card_no: C44
+    source_protocol: .trellis/spec/backend/20-transaction-boundary-protocol.md
+    source_anchor: L53 Ownership
+    proposed_id: AUTHORITY.BE.TXN_ORCHESTRATION_OWNERSHIP
+    kind_proposal: authority
+    catalog_target: authority（control-plane，随试点 V4）
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 事务的编排权归应用服务层；持久化层负责给出明确、无歧义的数据存取语义。
+    statement_en_keywords: authority map, transaction orchestration owner, persistence semantics provider
+    applies_when:
+      lane: backend
+      condition: 构建领域所有权默认值时
+    enforcement: advisory
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: M6 合并审挂起（同 C08 口径）。
+
+  - card_no: C45
+    source_protocol: .trellis/spec/backend/20-transaction-boundary-protocol.md
+    source_anchor: L57 Change Policy
+    proposed_id: POLICY.BE.TXN.BOUNDARY_CHANGE_REVIEW
+    kind_proposal: policy
+    catalog_target: policies
+    classification: LANE_POLICY
+    sort: UNIVERSAL
+    statement_zh: 事务边界或隔离级别一旦调整，必须重新复核并发行为、锁策略、性能表现与失败恢复四项影响。
+    statement_en_keywords: boundary or isolation change, re-review concurrency, locking, performance, failure recovery
+    applies_when:
+      lane: backend
+      condition: 调整事务边界或隔离级别时
+    enforcement: required_when_applicable
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: 独立语义（设计维度联动复核，非消费方扫描亦非兼容义务）；与 C54 互为镜像，见该卡 DUP 处置。
+
+  # ── 文件 6/7：.trellis/spec/backend/21-concurrency-locking-protocol.md（并发与锁协议）──
+  - card_no: C46
+    source_protocol: .trellis/spec/backend/21-concurrency-locking-protocol.md
+    source_anchor: L25 MUST
+    proposed_id: POLICY.BE.CONC.WRITE_CONFLICT_SPEC
+    kind_proposal: policy
+    catalog_target: policies
+    classification: LANE_POLICY
+    sort: UNIVERSAL
+    statement_zh: 任何并发写入路径都必须写明五项——竞争的共享对象是什么、以什么原子条件完成写入、冲突发生时返回什么结果、是否以及如何重试、最终一致性问题如何收敛。
+    statement_en_keywords: concurrent write specification, contention object, atomic condition, conflict outcome, retry, eventual consistency
+    applies_when:
+      lane: backend
+      condition: 设计或评审任何并发写入路径时
+    enforcement: required_when_applicable
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: null
+
+  - card_no: C47
+    source_protocol: .trellis/spec/backend/21-concurrency-locking-protocol.md
+    source_anchor: L29 MUST NOT
+    proposed_id: POLICY.BE.CONC.NO_INPROCESS_CROSS_INSTANCE_LOCK
+    kind_proposal: policy
+    catalog_target: policies
+    classification: LANE_POLICY
+    sort: UNIVERSAL
+    statement_zh: 进程内的内存锁不得用于需要跨实例生效的互斥场景；任何锁都不得忽略超时设置与持有者归属。
+    statement_en_keywords: no in-process lock for cross-instance mutual exclusion, lock timeout and ownership required
+    applies_when:
+      lane: backend
+      condition: 设计或评审锁方案时
+    enforcement: required_when_applicable
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: 独立禁令（锁适用域 + 锁纪律），非 C46 极性反转；与既有 catalog 各条零重复。
+
+  - card_no: C48
+    source_protocol: .trellis/spec/backend/21-concurrency-locking-protocol.md
+    source_anchor: L33 SHOULD
+    proposed_id: POLICY.BE.CONC.PREFER_DB_CONSTRAINTS
+    kind_proposal: policy
+    catalog_target: policies
+    classification: LANE_POLICY
+    sort: UNIVERSAL
+    statement_zh: 保护不变量时应优先选用数据库层约束，或带版本条件的原子更新语句，而非应用层自行判断。
+    statement_en_keywords: prefer database constraints, version-conditional atomic update, invariant protection
+    applies_when:
+      lane: backend
+      condition: 选择不变量保护机制时
+    enforcement: advisory
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: null
+
+  - card_no: C49
+    source_protocol: .trellis/spec/backend/21-concurrency-locking-protocol.md
+    source_anchor: L37 Contract
+    proposed_id: POLICY.TPL.LOCK_DESIGN_RECORD_BE
+    kind_proposal: contract_template
+    catalog_target: templates（落点挂起，随试点 R-C）
+    classification: CONTRACT_TEMPLATE
+    sort: UNIVERSAL
+    statement_zh: 锁设计登记模板须包含七个字段——锁粒度、加锁顺序、超时时长、续租方式、释放路径、失败处置与可观测性手段。
+    statement_en_keywords: lock design record template, granularity, ordering, timeout, renewal, release, failure handling, observability
+    applies_when:
+      lane: backend
+      condition: 登记或评审锁设计时
+    enforcement: deterministic_where_possible
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: 落点随试点 R-C 挂起；引用须内联字段清单防悬空。
+
+  - card_no: C50
+    source_protocol: .trellis/spec/backend/21-concurrency-locking-protocol.md
+    source_anchor: L41 Checklist
+    proposed_id: GATE.BE.CONC.RACE_SCENARIO_CHECKS
+    kind_proposal: gate_recipe
+    catalog_target: gates
+    classification: GATE_RECIPE
+    sort: UNIVERSAL
+    statement_zh: 对并发设计核对六类场景均有测试——重复请求、到达乱序、死锁、锁超时、持锁进程崩溃与多实例并行。
+    statement_en_keywords: race scenario gate, duplicate requests, out-of-order, deadlock, timeout, crash, multi-instance
+    applies_when:
+      lane: backend
+      condition: 并发设计交付自检或门禁判卷时
+    enforcement: deterministic_where_possible
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: 与 C59（幂等场景门禁）存在「重复请求」共用场景词，但对象不同（并发写 vs 幂等去重），非重复。
+
+  - card_no: C51
+    source_protocol: .trellis/spec/backend/21-concurrency-locking-protocol.md
+    source_anchor: L45 Examples
+    proposed_id: KNOWLEDGE.BE.CONC.EXAMPLE_VERSION_CONDITIONAL_UPDATE
+    kind_proposal: knowledge_entry
+    catalog_target: knowledge
+    classification: KNOWLEDGE_PATTERN
+    sort: UNIVERSAL
+    statement_zh: 可用带版本号条件的更新语句实现乐观并发；当更新影响行数为零时，把该结果映射为稳定的冲突错误返回。
+    statement_en_keywords: version-conditional update, optimistic concurrency, zero-row update to stable conflict error
+    applies_when:
+      lane: backend
+      condition: 实现乐观锁时参考
+    enforcement: advisory
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: null
+
+  - card_no: C52
+    source_protocol: .trellis/spec/backend/21-concurrency-locking-protocol.md
+    source_anchor: L49 Anti-patterns
+    proposed_id: KNOWLEDGE.FP.BE.CHECK_THEN_ACT_RACE
+    kind_proposal: knowledge_entry
+    catalog_target: knowledge
+    classification: FAILURE_PATTERN
+    sort: UNIVERSAL
+    statement_zh: 失败模式——先查询状态再做无条件的写入，并以「请求不会并发」为前提假设，留下检查与行动之间的竞争窗口。
+    statement_en_keywords: failure pattern, check-then-act race, unconditional write, no-concurrency assumption
+    applies_when:
+      lane: backend
+      condition: 排查并发竞态缺陷时参考
+    enforcement: advisory
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: null
+
+  - card_no: C53
+    source_protocol: .trellis/spec/backend/21-concurrency-locking-protocol.md
+    source_anchor: L53 Ownership
+    proposed_id: AUTHORITY.BE.CONFLICT_SEMANTIC_OWNERSHIP
+    kind_proposal: authority
+    catalog_target: authority（control-plane，随试点 V4）
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 冲突发生时的业务语义（如何判定与如何响应）由业务用例 Owner 定义；写入的原子性由持久化层维护者验证。
+    statement_en_keywords: authority map, conflict semantics owner, atomicity verifier
+    applies_when:
+      lane: backend
+      condition: 构建领域所有权默认值时
+    enforcement: advisory
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: M6 合并审挂起（同 C08 口径）。
+
+  - card_no: C54
+    source_protocol: .trellis/spec/backend/21-concurrency-locking-protocol.md
+    source_anchor: L57 Change Policy
+    proposed_id: POLICY.BE.CONC.LOCK_STRATEGY_CHANGE_REVIEW
+    kind_proposal: policy
+    catalog_target: policies
+    classification: DUPLICATE
+    sort: UNIVERSAL
+    statement_zh: 锁策略一旦调整，必须重新评估事务行为、性能表现、故障恢复与兼容性影响。
+    statement_en_keywords: lock strategy change, re-evaluate transaction, performance, recovery, compatibility
+    applies_when:
+      lane: backend
+      condition: 调整锁策略时
+    enforcement: advisory
+    clean_room: true
+    duplicate_of: POLICY.BE.TXN.BOUNDARY_CHANGE_REVIEW
+    duplicate_of_kind: in_batch_proposal（C45）
+    uncertainty: null
+    notes: 与 C45 同构（变更触发面与复核维度互换：边界变→复核锁，锁变→复核边界），组内跨文件重复；建议合并为单一「持久化设计变更联动复核」正本，两个触发面作 applies_when 并集后让位。
+
+  # ── 文件 7/7：.trellis/spec/backend/22-idempotency-protocol.md（幂等协议）──
+  - card_no: C55
+    source_protocol: .trellis/spec/backend/22-idempotency-protocol.md
+    source_anchor: L25 MUST
+    proposed_id: POLICY.BE.IDEM.RETRYABLE_WRITE_KEY_SPEC
+    kind_proposal: policy
+    catalog_target: policies
+    classification: LANE_POLICY
+    sort: UNIVERSAL
+    statement_zh: 所有允许重试的写操作都必须事先定义五项——幂等键的作用范围、请求指纹的构成、去重记录的保留时长、并发到达的处理方式与重复请求时的响应重放规则。
+    statement_en_keywords: idempotency key scope, request fingerprint, retention period, concurrent arrival, response replay
+    applies_when:
+      lane: backend
+      condition: 设计或评审可重试写操作时
+    enforcement: required_when_applicable
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: 与 POLICY.WEB.API.MUTATION_IDEMPOTENCY 构成跨车道语义对（该卡 review_notes 已预留 BE 22 对照）；FE 侧为声明义务、本条为服务端实现契约，内容互补，建议互引不合并。
+
+  - card_no: C56
+    source_protocol: .trellis/spec/backend/22-idempotency-protocol.md
+    source_anchor: L29 MUST NOT
+    proposed_id: POLICY.BE.IDEM.NO_CLIENT_ONLY_DEDUP
+    kind_proposal: policy
+    catalog_target: policies
+    classification: LANE_POLICY
+    sort: UNIVERSAL
+    statement_zh: 客户端的防抖、按钮禁用或短时内存缓存不得作为防重复执行的唯一手段，去重职责必须落在服务端。
+    statement_en_keywords: no client-only dedup, debounce and disable insufficient, server-side dedup responsibility
+    applies_when:
+      lane: backend
+      condition: 设计防重复执行机制时
+    enforcement: required_when_applicable
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: 独立禁令（去重职责位置），非 C55 极性反转；与 C02 同属「服务端权威」主题但对象不同（不变量 vs 去重），非重复。
+
+  - card_no: C57
+    source_protocol: .trellis/spec/backend/22-idempotency-protocol.md
+    source_anchor: L33 SHOULD
+    proposed_id: POLICY.BE.IDEM.KEY_PAYLOAD_CONFLICT
+    kind_proposal: policy
+    catalog_target: policies
+    classification: LANE_POLICY
+    sort: UNIVERSAL
+    statement_zh: 同一幂等键携带不同请求内容到达时，应返回稳定的冲突响应，而不是当作新请求再次执行。
+    statement_en_keywords: same key different payload, stable conflict response, no re-execution
+    applies_when:
+      lane: backend
+      condition: 处理幂等键与请求内容不匹配时
+    enforcement: advisory
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: null
+
+  - card_no: C58
+    source_protocol: .trellis/spec/backend/22-idempotency-protocol.md
+    source_anchor: L37 Contract
+    proposed_id: POLICY.TPL.IDEMPOTENCY_RECORD_BE
+    kind_proposal: contract_template
+    catalog_target: templates（落点挂起，随试点 R-C）
+    classification: CONTRACT_TEMPLATE
+    sort: UNIVERSAL
+    statement_zh: 幂等去重登记模板须包含七个字段——请求主体、操作类型、幂等键、请求指纹、处理状态、已重放的结果与过期语义。
+    statement_en_keywords: idempotency record template, subject, operation, key, fingerprint, status, replayed result, expiry semantics
+    applies_when:
+      lane: backend
+      condition: 登记或评审幂等实现时
+    enforcement: deterministic_where_possible
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: 落点随试点 R-C 挂起；引用须内联字段清单防悬空。
+
+  - card_no: C59
+    source_protocol: .trellis/spec/backend/22-idempotency-protocol.md
+    source_anchor: L41 Checklist
+    proposed_id: GATE.BE.IDEM.REPLAY_CHECKS
+    kind_proposal: gate_recipe
+    catalog_target: gates
+    classification: GATE_RECIPE
+    sort: UNIVERSAL
+    statement_zh: 对幂等实现核对五类情形均有测试——并发到达的首个请求、失败后的重试、超时场景、同键重放与保留期过期边界。
+    statement_en_keywords: replay gate, concurrent first request, failure retry, timeout, same-key replay, expiry boundary
+    applies_when:
+      lane: backend
+      condition: 幂等实现交付自检或门禁判卷时
+    enforcement: deterministic_where_possible
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: null
+
+  - card_no: C60
+    source_protocol: .trellis/spec/backend/22-idempotency-protocol.md
+    source_anchor: L45 Examples
+    proposed_id: KNOWLEDGE.BE.IDEM.EXAMPLE_PROVIDER_EVENT_DEDUP
+    kind_proposal: knowledge_entry
+    catalog_target: knowledge
+    classification: KNOWLEDGE_PATTERN
+    sort: UNIVERSAL
+    statement_zh: 第三方回调可用「供应方事件标识 + 租户维度」作为去重依据，并把处理结果与去重标记一并原子写入。
+    statement_en_keywords: provider callback, event id plus tenant scope dedup, atomic result persistence
+    applies_when:
+      lane: backend
+      condition: 设计回调去重时参考
+    enforcement: advisory
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: null
+
+  - card_no: C61
+    source_protocol: .trellis/spec/backend/22-idempotency-protocol.md
+    source_anchor: L49 Anti-patterns
+    proposed_id: KNOWLEDGE.FP.BE.TIME_BASED_IDEMPOTENCY_KEY
+    kind_proposal: knowledge_entry
+    catalog_target: knowledge
+    classification: FAILURE_PATTERN
+    sort: UNIVERSAL
+    statement_zh: 失败模式——以当前时间戳充当幂等键，导致每次重试都生成新键、整个去重机制形同虚设。
+    statement_en_keywords: failure pattern, timestamp as idempotency key, per-retry new key, dedup defeated
+    applies_when:
+      lane: backend
+      condition: 排查重复执行缺陷时参考
+    enforcement: advisory
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: null
+
+  - card_no: C62
+    source_protocol: .trellis/spec/backend/22-idempotency-protocol.md
+    source_anchor: L53 Ownership
+    proposed_id: AUTHORITY.BE.IDEM_INTENT_OWNERSHIP
+    kind_proposal: authority
+    catalog_target: authority（control-plane，随试点 V4）
+    classification: UNIVERSAL_POLICY
+    sort: UNIVERSAL
+    statement_zh: 「什么算同一次业务意图」由 API 或任务的 Owner 定义；去重记录的原子读写由存储实现方维护。
+    statement_en_keywords: authority map, business intent definition owner, atomic dedup storage maintainer
+    applies_when:
+      lane: backend
+      condition: 构建领域所有权默认值时
+    enforcement: advisory
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: M6 合并审挂起（同 C08 口径）。
+
+  - card_no: C63
+    source_protocol: .trellis/spec/backend/22-idempotency-protocol.md
+    source_anchor: L57 Change Policy
+    proposed_id: POLICY.BE.IDEM.KEY_CHANGE_LEGACY_COMPAT
+    kind_proposal: policy
+    catalog_target: policies
+    classification: LANE_POLICY
+    sort: UNIVERSAL
+    statement_zh: 幂等键格式或记录保留期发生调整时，必须同时给出存量旧记录的处理方案与滚动发布期间的兼容做法。
+    statement_en_keywords: key format or retention change, legacy record handling, rolling release compatibility
+    applies_when:
+      lane: backend
+      condition: 调整幂等键格式或保留期时
+    enforcement: required_when_applicable
+    clean_room: true
+    duplicate_of: null
+    uncertainty: null
+    notes: 独立语义（对象特定：存量去重记录 + 滚动发布兼容）；与 POLICY.CHG.COMPAT_MIGRATION_ROLLBACK 互引不合并（同 C18/C19 §3.4 型处置口径）。

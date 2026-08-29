@@ -1,0 +1,70 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "kind='policy' 不在 vocab-lock kinds_registry.truth_bodies（POLICY. 前缀已冻结注册，closed-world）；新 id 域段待登记：CACHE",
+    "proposal": "词汇表 PR 登记 policy kind 及新域段；或 Owner 裁决 policy 条目住 catalog/ 而非 truth/objects 正文层（与前批 45+9 条同因同请，合并进同一 vocab PR）",
+    "locked_vocab_untouched": true
+  },
+  "x-spec-d-materialization": {
+    "status": "PROPOSAL",
+    "package": "SPEC-D 语义分解汇总（consolidated-pool D5 精选，cap=25）",
+    "human_review_required": true,
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/migration/spec-decomposition/candidates/consolidated-pool.yaml",
+    "group": "BE-G4",
+    "candidate_id": "POLICY.CACHE.LIFECYCLE_DEFINITION",
+    "density_rank": 1,
+    "density_score": 41.62,
+    "pool_statement_sha16": "9246d8e77c5883ce",
+    "curated_rule": "UNIVERSAL + UNIVERSAL_POLICY + required_when_applicable + 无 uncertainty + 非 project_scope + 非重复 + 与既有 69 条零语义重复；按信息密度排序取前 25"
+  },
+  "id": "POLICY.CACHE.LIFECYCLE_DEFINITION",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "UNIVERSAL_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "缓存生命周期六要素声明",
+  "statement_zh": "引入任何缓存必须显式定义键的构成维度、访问隔离边界、存活时长、更新与失效时机、故障行为与恢复行为，六类要素缺一不可。",
+  "statement_en_keywords": [
+    "cache key dimensions",
+    "access isolation",
+    "TTL",
+    "invalidation timing",
+    "failure and recovery behavior"
+  ],
+  "applies_when": {
+    "lane": "any",
+    "condition": "系统引入任何缓存层"
+  },
+  "enforcement": "required_when_applicable",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-spec-decomposition"
+  },
+  "origin": "ingested",
+  "origin_note": "SPEC-D 汇总池 D5 精选物化；statement 沿用候选卡独立措辞（clean-room），零逐字拷贝上游源文本",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/migration/spec-decomposition/candidates/BE-G4.yaml",
+      "captured_by": "agent:claude/spec-d-consolidation",
+      "locator": {
+        "candidate": "POLICY.CACHE.LIFECYCLE_DEFINITION",
+        "source_protocol": ".trellis/spec/backend/23-cache-redis-consistency-protocol.md",
+        "lines": "## MUST 段（L23-25）",
+        "source_sha256": "073da5821658adfc0580798873fde95c49dc9d993a63949b3b1543a9c0e18a11"
+      },
+      "clean_room_note": "independently rewritten from SPEC-D decomposition candidate cards; zero verbatim copy"
+    }
+  ],
+  "review_notes": [
+    "缓存域在既有 69 条中无对应条目，零语义重复；前端缓存协议同主题候选已登记汇总池 backlog，跨车道合并审留后续批次。"
+  ]
+}

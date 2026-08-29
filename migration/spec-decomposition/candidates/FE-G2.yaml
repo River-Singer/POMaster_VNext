@@ -1,0 +1,1939 @@
+# FE-G2 拆解候选卡（SPEC-D 批次）
+# 源料只读：MASTer_master/.trellis/spec/frontend（11 份，FE-G2 名下全量）
+# 方法：docs/catalog-pilot-report.md §3-§6 拆解方法 + catalog/candidates/candidates-draft.json 卡片形态
+# 重复基线：catalog 既有 69 条（60 pilot 物化 + 9 新增 policy）+ 本批组内跨文件（intra-batch）互指
+# 机器字段零时间戳；同输入重跑 byte-identical
+
+meta:
+  seq: SPEC-D
+  group: FE-G2
+  lane: frontend
+  theme: 数据与接口契约
+  source_tree: MASTer_master/.trellis/spec (read-only; refs 为仓内相对路径)
+  method_refs:
+    - POMaster_VNext/docs/catalog-pilot-report.md (§3-§6)
+    - POMaster_VNext/catalog/candidates/candidates-draft.json (卡形态)
+  discipline:
+    - MASTer 只读；本文件仅写入 migration/spec-decomposition/candidates/
+    - 禁墙钟：零时间戳，批次代号固定 SPEC-D
+    - clean-room：全部 statement 为独立措辞（语义等价、词形独立），零逐字拷贝源文
+    - D5 防膨胀：本文件是 backlog 留档；materialize_eligible 仅为拆解器建议，物化由汇总组按『高置信 Universal + MUST 级 + 与既有 69 条零重复』保守收口
+    - 禁项目专名入 UNIVERSAL statement；PROJECT/HYBRID 卡带 project_scope 标注
+  denominator:
+    files_in_group: 11
+    files_with_candidates: 11
+    empty_conclusion_files: 0
+  stats:
+    total_candidates: 149
+    duplicate_cards: 36
+    triage_non_duplicate: {UNIVERSAL: 107, HYBRID: 4, PROJECT: 2}
+    by_kind_proposal: {policy: 87, knowledge_entry_fp: 11, contract_template: 5, authority: 10}
+  duplicate_baseline_note: "duplicate_of 指向 catalog 既有条目者为跨批次重复；标注 intra-batch 者指向本文件内其他组的 proposed_id（FE14/FE17/FE32 正本），物化时只允许一侧入册"
+
+files:
+
+  # ============================================================ FE 07
+  - ref: .trellis/spec/frontend/07-frontend-backend-communication-protocol.md
+    sha256: b1f7b523c98ba0882067055336d72fed67c2c2e2b37d83928335aefbb7808136
+    first_heading: 07 前后端通信协议
+    lines: 207
+    coverage: full
+    coverage_note: P0 最长协议；MUST 7 条 + Contract 段 15 小节逐节提取；L191-199 示例/反模式由卡 14 收编；无空段
+    candidates:
+
+      - proposed_id: POLICY.WEB.COMM.ENDPOINT_CONTRACT_COMPLETENESS
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "每个对外接口必须在契约中完整声明地址、方法、参数位置与类型、响应形状、错误、权限与责任归属；分页、筛选、排序、空值、枚举、计量单位与时间语义必须逐项显式化；字段级须给出必填性、可空性、默认值、取值范围与未知值策略，且空字符串、null、缺失字段与空数组四者语义不得互换。"
+        en_keywords: "endpoint contract completeness, field-level metadata, null-family semantics"
+        applies_when: {lane: any, condition: "定义或评审任何前后端接口契约时"}
+        source_locator: "L20-L21, L44-L61"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.COMM.RESOURCE_MODELING
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "接口路径以稳定资源名与层级表达资源结构；只读与各类变更按方法语义区分，非增删改查的领域动作使用显式动作端点，禁止万能处理端点；路径、查询、头部与请求体各承载其语义（资源标识、分页筛选、协议上下文、命令数据），页面动作或展示标题不得编码进路径。"
+        en_keywords: "resource modeling, method semantics, no universal action endpoint, param placement"
+        applies_when: {lane: any, condition: "设计接口 URL 与方法语义时"}
+        source_locator: "L52-L57"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.COMM.OPTIMISTIC_CONCURRENCY
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "可编辑资源必须在契约中提供版本凭据（版本号、更新时间或实体标签），更新命令携带预期版本；冲突必须显式返回并附带解决冲突所需数据（重取方式、字段差异），禁止静默 last-write-wins。"
+        en_keywords: "optimistic concurrency, expected version, explicit conflict, no silent overwrite"
+        applies_when: {lane: any, condition: "定义可编辑资源的写操作契约时"}
+        source_locator: "L22, L119-L123"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.COMM.LIST_SHAPE_CONTRACT
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "列表响应必须固定数据数组、页码或游标、页大小与总数语义；操作类响应必须显式声明同步结果、任务标识或无内容三者之一；同一业务禁止并存多个未版本化响应信封；导出必须复用列表筛选语义并声明范围（当前页、选中项或全量）。"
+        en_keywords: "list shape contract, pagination semantics, operation result shape, export scope reuse"
+        applies_when: {lane: any, condition: "定义列表与操作类响应契约时"}
+        source_locator: "L63-L68, L95-L100"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.COMM.ERROR_SEMANTICS
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "业务错误由稳定、可枚举的机器码承载，消息文本仅用于展示与诊断、不得驱动任何逻辑；字段级错误携带稳定字段键、错误码与参数，批量错误携带对象或行标识；传输状态码表达协议层事实；五系列错误必须显式声明可重试性而非默认可重试。"
+        en_keywords: "stable business code, message display-only, field errors, 5xx retryability"
+        applies_when: {lane: any, condition: "定义错误结构与消费错误语义时"}
+        source_locator: "L31, L70-L89"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.COMM.ERROR_UI_MAPPING_REGISTRY
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "错误码到界面状态的映射必须收敛到单一事实源登记表并随契约版本同步升级，破坏性码变化视同契约变更；界面禁止按消息文本或传输状态推导业务状态；未登记码必须落入兜底状态并被记录。"
+        en_keywords: "error-to-UI-state mapping registry, single source of truth, fallback state"
+        applies_when: {lane: any, condition: "消费错误码驱动界面状态时"}
+        source_locator: "L26, L168-L178"
+        uncertainty:
+          - "本条 7 值界面状态词表与 FE16 项目强制枚举（11 值）不一致，正本化前需 Owner 对齐状态词表（跨文件张力）"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.COMM.TRACE_CORRELATION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "客户端操作、传输请求、异步任务、实时消息、服务端日志与用户可见错误之间必须可经链路标识关联；链路标识不得携带敏感信息，跨服务时保持或建立明确父子关系。"
+        en_keywords: "trace id correlation, no sensitive data in trace, parent-child across services"
+        applies_when: {lane: any, condition: "设计链路追踪贯通时"}
+        source_locator: "L25, L164-L166"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.COMM.SESSION_LIFECYCLE_CONTRACT
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "会话凭证的完整生命周期（签发、刷新、撤销、退出、多标签同步、并发失效合并）必须在契约中定义；凭证不得进入地址栏、日志、埋点或业务组件载荷；凭证相关缓存与已打开页面的失效方式必须明确。"
+        en_keywords: "session token lifecycle contract, multi-tab sync, concurrent 401 merge, token exclusion"
+        applies_when: {lane: any, condition: "定义认证会话契约时"}
+        source_locator: "L107, L109-L111"
+        uncertainty:
+          - "凭证禁入地址/日志面与 FE-G1 04-security L36/L21 同语义（跨组合并审阅）；本文件增量为生命周期契约定义面（多标签同步、并发失效合并）"
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.COMM.CACHEABILITY_DECLARATION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "接口必须声明可缓存性、版本凭据与数据实时性；高风险数据不得由调用方自行延长缓存；写操作必须提供足以精确失效依赖缓存的信息。"
+        en_keywords: "cacheability declaration, high-risk data, mutation invalidation info"
+        applies_when: {lane: any, condition: "定义接口缓存语义时"}
+        source_locator: "L125-L127"
+        uncertainty:
+          - "失效矩阵面与 FE-G3 19-cache（L21 写操作定义依赖失效矩阵）同语义，跨组合并审阅；本卡收窄为契约声明面"
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.COMM.JOB_CONTRACT
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "异步任务必须使用正式任务契约：任务标识、类型、状态、进度、结果、错误明细与链路标识齐备；状态机至少区分未开始、执行中、成功、失败与已取消，新增状态视同契约变更；创建、查询、取消、重试、结果获取与过期语义必须定义。"
+        en_keywords: "async job contract, job state machine, cancellation and expiry semantics"
+        applies_when: {lane: any, condition: "定义异步任务契约时"}
+        source_locator: "L23, L135-L145"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.COMM.REALTIME_CHANNEL_SEMANTICS
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "服务端单向推送优先选用事件流通道，双向协作才启用双向套接字通道，轮询仅作降级；实时消息信封至少含消息标识、类型、载荷、时间戳、版本与链路标识；鉴权、心跳、重连、去重、乱序、丢失、回放、终止与降级行为必须定义。"
+        en_keywords: "sse-first realtime, websocket for bidirectional, message envelope, reconnection semantics"
+        applies_when: {lane: any, condition: "设计实时通信契约时"}
+        source_locator: "L38, L147-L151"
+        uncertainty:
+          - "通道选择语义源强度介于 SHOULD（L38）与契约段规则（L149）之间，升 MUST 与否留 Owner 裁定"
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.COMM.INTEGRATION_SCENARIO_COVERAGE
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "前后端联调验收必须覆盖非理想响应：认证失败、无权限、冲突、校验失败、限流、服务错误、超时与部分成功；仅验证正常返回不构成联调完成。"
+        en_keywords: "integration scenario coverage, non-2xx acceptance, partial success"
+        applies_when: {lane: any, condition: "前后端联调与验收时"}
+        source_locator: "L160-L162"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.CHG.CONTRACT_FREEZE_FLOW
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "接口协作遵循先评审、后冻结、再实现的次序；契约冻结前不进入并行实现。"
+        en_keywords: "contract review freeze implement, no parallel implementation before freeze"
+        applies_when: {lane: any, condition: "新契约或契约破坏性变更进入实现前"}
+        source_locator: "L160-L162, L205-L207"
+        uncertainty:
+          - "Change Policy 段无显式 MUST 前缀；强度按试点 Change Policy 先例记 required，留 Owner 确认"
+        backlog_disposition: backlog_only
+
+      - proposed_id: KNOWLEDGE.FP.COMM.MOCK_GUESS_AND_ENVELOPE_DRIFT
+        triage: UNIVERSAL
+        kind_proposal: knowledge_entry
+        classification_suggestion: FAILURE_PATTERN
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "凭替身数据猜测字段结构、服务端改名后同时兼容多套响应并比较消息文本、以按钮加载态冒充幂等防护、多通道各自定义任务状态——契约缺位在消费侧的典型失败形态。"
+        en_keywords: "mock-derived fields, envelope drift, loading-as-idempotency, per-channel job states"
+        applies_when: {lane: frontend, condition: "反模式知识，无适用门禁"}
+        source_locator: "L197-L199"
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.COMM.NO_INFORMAL_ARTIFACTS
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: DUPLICATE
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "口头约定、截图、替身数据、抓包结果或前端临时类型不得替代正式契约，只能作评审输入；文件、异步任务与实时消息同样必须使用正式结构契约。"
+        source_locator: "L23, L30, L50"
+        duplicate_of: POLICY.API.NO_INFORMAL_CONTRACT
+        notes: "既有正本已含『Mock/聊天记录/猜测不得充当契约』；本文件 L23 将覆盖面延伸到文件/任务/实时通道，作为正本适用性扩展合并审"
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.COMM.NO_UNVERSIONED_BREAKING_CHANGE
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: DUPLICATE
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "未版本化地修改字段、枚举、分页或错误语义，以及破坏性变更不提供新版本、调用方清单、迁移期、弃用日期与回滚的形态被禁止。"
+        source_locator: "L24, L153, L157"
+        duplicate_of: POLICY.CHG.BREAKING_VERSIONING
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.COMM.ARTIFACT_SYNC_ON_CONTRACT_CHANGE
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: DUPLICATE
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "契约变更后生成类型、边界映射、替身、导入导出与测试必须同步更新。"
+        source_locator: "L158, L188"
+        duplicate_of: POLICY.CHG.SYNC_CONTRACT_DOCS_TESTS
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.COMM.OPTIONAL_FIELD_COMPAT_DEFAULT
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: DUPLICATE
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "新增可选字段默认向后兼容。"
+        source_locator: "L155"
+        duplicate_of: POLICY.API.BACKWARD_COMPAT_DEFAULTS
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.COMM.NO_DTO_IN_SHARED_SURFACES
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: DUPLICATE
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "公共组件、表格列与模板不得直接依赖传输层对象；字段重命名、空值、枚举、日期与金额转换只能在边界完成。"
+        source_locator: "L91-L93"
+        duplicate_of: POLICY.WEB.MODEL.LAYERING_CHAIN
+        notes: "intra-batch：FE14 为正本（同批产出），物化时仅保留 FE14 侧"
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.COMM.COMMAND_IDEMPOTENCY_DECLARATION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: DUPLICATE
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "可能重复执行的命令必须声明幂等支持；幂等键的生成方、作用域、有效期、重复请求响应与冲突行为必须固定；界面禁用与加载态只是体验保护。"
+        source_locator: "L22, L113-L117"
+        duplicate_of: POLICY.WEB.API.MUTATION_IDEMPOTENCY
+        notes: "幂等声明面与既有正本重合；幂等键契约语义（生成方/作用域/有效期/重复响应）作为正本适用性扩展合并审；并发面已独立为本文件 OPTIMISTIC_CONCURRENCY 卡"
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.COMM.DOWNLOAD_REAUTHORIZATION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: DUPLICATE
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "下载必须重新授权并校验数据范围；文件地址不得构成持久越权入口。"
+        source_locator: "L132-L133"
+        duplicate_of: POLICY.WEB.FILE.DOWNLOAD_CONTRACT
+        notes: "intra-batch：FE32 为正本，物化时仅保留 FE32 侧"
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.COMM.HIDING_NOT_AUTHORIZATION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: DUPLICATE
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "服务端只返回调用方有权访问的数据；前端隐藏入口不能替代鉴权。"
+        source_locator: "L104-L105"
+        duplicate_of: POLICY.WEB.PERM.SERVER_SIDE_ENFORCEMENT
+        notes: "intra-batch：FE17 为正本，物化时仅保留 FE17 侧"
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.COMM.UNKNOWN_ENUM_SAFE_FALLBACK
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: DUPLICATE
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "未知枚举必须安全兜底，且不得被静默赋予业务含义。"
+        source_locator: "L156"
+        duplicate_of: POLICY.WEB.MODEL.BOUNDARY_NORMALIZATION
+        notes: "intra-batch：FE14 为正本，物化时仅保留 FE14 侧"
+        backlog_disposition: backlog_only
+
+      - proposed_id: AUTHORITY.WEB.COMM.CONTRACT_OWNERSHIP
+        triage: UNIVERSAL
+        kind_proposal: authority
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "前后端接口责任者共同负责契约，业务责任者确认语义，安全责任者确认认证与权限。"
+        source_locator: "L201-L203"
+        notes: "pilot M6（authority 5→1+N 模板合并）留后续批次，backlog"
+        backlog_disposition: backlog_only
+
+  # ============================================================ FE 12
+  - ref: .trellis/spec/frontend/12-business-rules-protocol.md
+    sha256: dda683a7c907989032c82a2c1c3e552b51226e0e0cd5bdf3b6068cc7f649c525
+    first_heading: 12 业务规则协议
+    lines: 67
+    coverage: full
+    coverage_note: SHOULD L34（纯函数/schema/状态机表达）收编进 RULE_SINGLE_SOURCE notes；无空段
+    candidates:
+
+      - proposed_id: POLICY.WEB.DOMAIN.RULE_SINGLE_SOURCE
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "领域业务规则必须集中存放于唯一位置，具备显式命名、可测试性与明确责任者；页面与组件只经规则函数引用，禁止将同一判断散落到组件、文案或接口回调中各自实现；规则宜以纯函数、结构校验与状态机等可测试形态表达。"
+        en_keywords: "rule single source, no expression duplication, testable pure functions"
+        applies_when: {lane: any, condition: "实现或评审跨页面业务判断时"}
+        source_locator: "L19-L20, L27, L34"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.DOMAIN.STATE_TRANSITION_DECLARATION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "状态机的每次合法转换必须声明来源状态、目标状态、触发条件、所需权限与失败码；禁止在缺乏正式来源时发明状态或公式。"
+        en_keywords: "state transition declaration, no invented states, failure codes"
+        applies_when: {lane: any, condition: "建模业务状态流转时"}
+        source_locator: "L21, L29"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.DOMAIN.SERVER_AUTHORITATIVE_VALIDATION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "业务结果的权威校验由服务端执行；界面侧禁用或隐藏只是体验保护，不构成业务放行。"
+        en_keywords: "server-side authoritative validation, disable is not enforcement"
+        applies_when: {lane: any, condition: "存在客户端-服务端分工的任何业务操作"}
+        source_locator: "L23, L28"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.DOMAIN.STABLE_REASON_CODES
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "规则判定应返回稳定的机器原因码，由界面层映射为文案；展示文案不得充当规则返回值。"
+        en_keywords: "stable reason codes, ui text mapping, copy is not return value"
+        applies_when: {lane: any, condition: "规则结果需要界面解释时"}
+        source_locator: "L30, L35"
+        backlog_disposition: backlog_only
+
+      - proposed_id: TEMPLATE.DOMAIN_RULE_FIELDS
+        triage: UNIVERSAL
+        kind_proposal: contract_template
+        classification_suggestion: CONTRACT_TEMPLATE
+        enforcement_suggestion: deterministic_where_possible
+        clean_room: true
+        statement_zh: "领域规则登记条目应包含：规则标识、输入、前置条件、判定结果、原因码集合、服务端执行标记、责任者与版本。"
+        source_locator: "L39-L42"
+        notes: "落点随 pilot R-C 方案 b 挂起（catalog/templates/ 未建、TEMPLATE. 前缀待 vocab-pr V8）；暂留 candidates"
+        backlog_disposition: backlog_only
+
+      - proposed_id: KNOWLEDGE.FP.DOMAIN.RULE_DRIFT
+        triage: UNIVERSAL
+        kind_proposal: knowledge_entry
+        classification_suggestion: FAILURE_PATTERN
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "同一业务判断在多个页面以各自条件分支重复实现后，随迭代各自演化、口径分叉的失败模式。"
+        en_keywords: "rule drift, divergent conditionals, copy-paste business logic"
+        applies_when: {lane: frontend, condition: "反模式知识，无适用门禁"}
+        source_locator: "L59"
+        backlog_disposition: backlog_only
+
+      - proposed_id: AUTHORITY.WEB.DOMAIN.RULE_OWNERSHIP
+        triage: UNIVERSAL
+        kind_proposal: authority
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "业务语义由领域责任者定义、权威执行由服务端责任者保证、一致呈现由界面责任者维护。"
+        source_locator: "L63"
+        notes: "pilot M6 留后续批次"
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.DOMAIN.CHANGE_SYNC_ON_RULE_CHANGE
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: DUPLICATE
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "规则或状态变化必须版本化并同步接口、权限、审计、文案与测试。"
+        source_locator: "L67"
+        duplicate_of: POLICY.CHG.SYNC_CONTRACT_DOCS_TESTS
+        backlog_disposition: backlog_only
+
+  # ============================================================ FE 13
+  - ref: .trellis/spec/frontend/13-monetary-precision-protocol.md
+    sha256: c2b930b037a95f93e0d9e2fc235af13127458c899842f2663519baf0880701f1
+    first_heading: 13 金额精度协议
+    lines: 165
+    coverage: full
+    coverage_note: 项目强制规则六节全部提取（两张 HYBRID + 共享格式化器/预览边界两张 UNIVERSAL）；共享计算库路径等实现锚留 notes 不入 statement
+    candidates:
+
+      - proposed_id: POLICY.WEB.MONEY.VALUE_DECLARATION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "金额与比率值必须同时声明数值、币种、小数位与舍入规则；百分比必须声明传输倍率。"
+        en_keywords: "money value declaration, currency, scale, rounding rule, percent multiplier"
+        applies_when: {lane: any, condition: "建模或传输金额、比率类字段时"}
+        source_locator: "L20, L25"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.MONEY.DECIMAL_WIRE_FORMAT
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "金额在传输层使用十进制字符串或无歧义的最小单位整数，禁止以二进制浮点作为传输形态；数量、台数、人数等计数字段可保持整数数值类型。"
+        en_keywords: "decimal wire format, minimum-unit integer, count fields exempt"
+        applies_when: {lane: any, condition: "定义金额类字段传输格式时"}
+        source_locator: "L21, L63-L64"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.MONEY.NO_BINARY_FLOAT
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "正式金额的累计、乘除与相等比较必须使用十进制定点运算能力；禁止以二进制浮点执行，禁止以格式化方法替代计算。"
+        en_keywords: "no binary float money, decimal fixed-point, formatting is not arithmetic"
+        applies_when: {lane: any, condition: "实现金额计算逻辑时"}
+        source_locator: "L22, L86-L87"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.MONEY.VALUE_STAGE_SEPARATION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "金额数值必须区分原始、计算、展示与导出四种形态；格式化产物（含千分位）只存在于展示层，禁止回代参与计算、排序、筛选或提交。"
+        en_keywords: "value stage separation, display-only formatting, no round-trip of formatted values"
+        applies_when: {lane: any, condition: "金额的展示与持久化/传输并存时"}
+        source_locator: "L23, L72, L95"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.MONEY.ROUNDING_STAGE_DISCIPLINE
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "舍入方式与时点必须显式声明；汇总按声明的顺序执行计算与舍入；精度决策点唯一，页面、报表与导出不得各自决定精度。"
+        en_keywords: "rounding stage, aggregation order, single precision decision point"
+        applies_when: {lane: any, condition: "金额汇总与多面呈现时"}
+        source_locator: "L24, L88"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.MONEY.TWO_STAGE_PRECISION
+        triage: HYBRID
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "数值精度采用计算与展示两个独立阶段：计算与传输按声明精度舍入，展示按声明精度截断，展示值禁止回代计算；具体精度参数（计算位数、舍入方向、展示位数、截断开关）由项目基线供给。"
+        en_keywords: "two-stage precision, calculation vs display scale, baseline-supplied parameters"
+        applies_when: {lane: any, condition: "项目定义数值精度基线时"}
+        source_locator: "L27-L39, L136"
+        notes: "pilot §93.5 阈值外置先例（SERVER_OPS_VIRTUALIZATION 拆两半）同构；本项目实例=4 位 half-up 计算 / 2 位截断展示（project_scope: MASTer）"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.MONEY.FORMATTER_SINGLE_SOURCE
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "数值与金额格式化必须收敛到唯一共享格式化模块并按字段类别绑定精度策略；页面与组件禁止私有实现金额或数值格式化函数。"
+        en_keywords: "formatter single source, category-bound policy, no private formatters"
+        applies_when: {lane: frontend, condition: "实现数值/金额格式化时"}
+        source_locator: "L41-L54, L93"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.MONEY.PREVIEW_VALUE_BOUNDARY
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "渲染层的即时数值只作预览草稿：禁止写入全局状态、禁止作为正式结果保存、审批、导出或展示；向接口提交时必须在领域适配层转换为约定传输形态；预览汇总与正式结果不一致时以后端返回刷新页面。"
+        en_keywords: "preview value boundary, no draft into global state, adapter-layer serialization"
+        applies_when: {lane: frontend, condition: "存在行内即时计算或草稿汇总时"}
+        source_locator: "L60-L65, L94, L96"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.MONEY.MONEY_COLUMN_DECLARATION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "金额与数值列必须声明原始值、展示值、排序值、筛选值、导出值、币种、单位与舍入阶段；表头、筛选、导出与列配置由同一列定义驱动，分开维护即漂移。"
+        en_keywords: "money column declaration, one column definition drives all surfaces"
+        applies_when: {lane: frontend, condition: "定义含金额/数值列的表格时"}
+        source_locator: "L56-L58, L138"
+        notes: "与 POLICY.WEB.GRID.COLUMN_SCHEMA_FIELDS（六字段列 schema）互补不重复：本条加精度阶段维度，互引"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.MONEY.PRESENTATION_RULES
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "金额呈现约定：输入控件内部保留无格式数字串、失焦后格式化，空值/零/负数/非法输入明确区分；表格与表单右对齐；负数用负号呈现而非括号；千分位仅展示层处理；有币种时显式展示币种代码；红色仅用于业务语义为风险的负值。"
+        en_keywords: "money presentation, unformatted input value, explicit currency code, sign not parentheses"
+        applies_when: {lane: frontend, condition: "金额输入与展示组件"}
+        source_locator: "L68-L73, L97-L98"
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.MONEY.FORMULA_ENGINE_PRECISION
+        triage: HYBRID
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "公式引擎精度落点：每条公式最终输出按计算精度舍入、中间值保持全精度不逐算子舍入；引擎复用共享十进制原语，禁止重实现原语或修改原语库本身，禁止变更全局十进制配置污染展示层。"
+        en_keywords: "formula engine precision, full-precision intermediates, shared decimal primitives, no global config mutation"
+        applies_when: {lane: frontend, condition: "存在公式计算引擎时"}
+        source_locator: "L75-L82"
+        notes: "HYBRID：通用语义如上；项目实现锚（共享计算库路径与具体助手函数名）为 project_scope: MASTer，留 notes 不入正本"
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.MONEY.BOUNDARY_TESTS
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "金额计算应测试负数、极值、尾数为五的舍入、汇总与跨币种边界。"
+        en_keywords: "money boundary tests, rounding-5, cross-currency"
+        applies_when: {lane: any, condition: "金额逻辑测试设计"}
+        source_locator: "L103"
+        backlog_disposition: backlog_only
+
+      - proposed_id: KNOWLEDGE.FP.MONEY.PRECISION_DRIFT
+        triage: UNIVERSAL
+        kind_proposal: knowledge_entry
+        classification_suggestion: FAILURE_PATTERN
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "以浮点累加后用格式化方法生成正式报表；或在多处私有实现格式化致同一字段在不同呈现面出现不同小数位；或以展示截断值回代合计使累积偏差进入正式报表。"
+        en_keywords: "float-then-format report, formatter drift, truncated-value accumulation"
+        applies_when: {lane: frontend, condition: "反模式知识，无适用门禁"}
+        source_locator: "L149-L155"
+        backlog_disposition: backlog_only
+
+      - proposed_id: AUTHORITY.WEB.MONEY.OWNERSHIP
+        triage: UNIVERSAL
+        kind_proposal: authority
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "金额口径由业务/财务责任者定义、权威计算由服务端负责、无损传输由界面侧负责、边界由验证方把关。"
+        source_locator: "L157-L161"
+        notes: "pilot M6 留后续批次；格式化登记表为交付编译产物属项目实例（project_scope: MASTer）"
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.MONEY.PRECISION_CHANGE_IS_BREAKING
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: DUPLICATE
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "精度、币种、舍入或比例语义变化属破坏性契约变更，必须同步全链路。"
+        source_locator: "L163-L165"
+        duplicate_of: POLICY.CHG.BREAKING_VERSIONING
+        backlog_disposition: backlog_only
+
+  # ============================================================ FE 14
+  - ref: .trellis/spec/frontend/14-data-model-protocol.md
+    sha256: 7d4e31ef04a1f57d88e982c01dabc22c421bafc850b7295a73d084ec3c6fc838
+    first_heading: 14 数据模型协议
+    lines: 73
+    coverage: full
+    coverage_note: SHOULD 两条收编（L39 入 UNTRUSTED 卡 notes、L40 入 BOUNDARY_NORMALIZATION 未知枚举面）；本文件同时是 FE07/FE44 三张 intra-batch 重复卡的正本
+    candidates:
+
+      - proposed_id: POLICY.WEB.MODEL.LAYERING_CHAIN
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "数据模型按传输对象、边界转换、领域模型、消费模型的链路分层；各层类型有显式命名、位置、责任者与公开边界；传输对象不得穿透公共组件、模板或列定义，禁止以万能对象替代类型。"
+        en_keywords: "model layering chain, dto adapter domain consumer, no universal object"
+        applies_when: {lane: frontend, condition: "组织接口数据模型时"}
+        source_locator: "L20-L21, L30, L32"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.MODEL.BOUNDARY_NORMALIZATION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "空值、未知枚举、日期、金额与单位的归一化在数据边界一次性完成；未知枚举必须有安全兜底并配合监控，且不得被静默赋予业务含义；禁止在页面重复字段转换与兜底。"
+        en_keywords: "boundary normalization, unknown enum fallback with monitoring, no per-page duplication"
+        applies_when: {lane: frontend, condition: "消费外部数据的任何模型边界"}
+        source_locator: "L22, L31, L40"
+        notes: "FE07 L156 同语义 intra-batch 重复卡指向本卡"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.MODEL.UNTRUSTED_EXTERNAL_VALIDATION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "来自接口、浏览器存储、跨窗口消息、运行时配置与第三方 SDK 的外部数据，必须在信任边界执行结构校验后才能转换使用；失败时保守降级并产生安全监控；静态类型、类型断言或生成类型不得替代运行时校验。"
+        en_keywords: "untrusted external data, runtime schema validation, conservative degradation, types are not validation"
+        applies_when: {lane: any, condition: "消费任意外部来源数据时"}
+        source_locator: "L23, L34"
+        notes: "FE44 L27 intra-batch 重复卡指向本卡（身份/租户/版本维度作正本适用性扩展）"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.MODEL.PRECISION_SAFE_IDENTIFIERS
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "不透明标识符、超出安全整数范围的整数与高精度数值必须使用不丢失精度的传输与模型类型，禁止转换为浮点数值类型。"
+        en_keywords: "opaque id, safe integer limit, precision-safe types"
+        applies_when: {lane: any, condition: "建模标识符与大数时"}
+        source_locator: "L24, L35"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.MODEL.CHANGE_CONTAINMENT_ADAPTER
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "服务端字段变化应被契约与边界转换层吸收，禁止向消费模型与组件扩散。"
+        en_keywords: "change containment, adapter absorbs field changes"
+        applies_when: {lane: frontend, condition: "服务端字段演进时"}
+        source_locator: "L25"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.MODEL.ADAPTER_TEST_COVERAGE
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "边界转换层必须具备正常值、空值、未知值与边界值的测试。"
+        en_keywords: "adapter test matrix, null unknown edge cases"
+        applies_when: {lane: frontend, condition: "实现边界转换层时"}
+        source_locator: "L26"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.MODEL.NO_HIDDEN_COMPUTATION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "模型转换层不得隐藏正式业务计算；业务计算应在显式声明的位置实现。"
+        en_keywords: "no hidden business computation in adapters"
+        applies_when: {lane: frontend, condition: "编写模型转换逻辑时"}
+        source_locator: "L33"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: TEMPLATE.DOMAIN_MODEL_PIPELINE
+        triage: UNIVERSAL
+        kind_proposal: contract_template
+        classification_suggestion: CONTRACT_TEMPLATE
+        enforcement_suggestion: deterministic_where_possible
+        clean_room: true
+        statement_zh: "模型管道登记条目应包含：源传输对象、运行时结构校验、边界转换、领域模型、消费模型，以及空值、枚举、标识符、精度与格式五项策略和责任者。"
+        source_locator: "L44-L47"
+        notes: "落点随 pilot R-C 方案 b 挂起"
+        backlog_disposition: backlog_only
+
+      - proposed_id: KNOWLEDGE.FP.MODEL.TEMPLATE_DTO_LEAK
+        triage: UNIVERSAL
+        kind_proposal: knowledge_entry
+        classification_suggestion: FAILURE_PATTERN
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "模板或列定义直接访问服务端字段、且空值与枚举处理在多个单元格各自为政的失败模式。"
+        en_keywords: "template dto leak, scattered null handling"
+        applies_when: {lane: frontend, condition: "反模式知识，无适用门禁"}
+        source_locator: "L65"
+        backlog_disposition: backlog_only
+
+      - proposed_id: AUTHORITY.WEB.MODEL.MODEL_OWNERSHIP
+        triage: UNIVERSAL
+        kind_proposal: authority
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "接口责任者维护传输对象、领域责任者维护领域模型、界面模块责任者维护边界转换与消费模型。"
+        source_locator: "L69"
+        notes: "pilot M6 留后续批次"
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.MODEL.NO_SILENT_SEMANTIC_CHANGE
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: DUPLICATE
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "公共模型字段变化必须说明兼容、迁移与受影响消费者，且不得静默改变语义。"
+        source_locator: "L73"
+        duplicate_of: POLICY.CHG.COMPAT_MIGRATION_ROLLBACK
+        backlog_disposition: backlog_only
+
+  # ============================================================ FE 15
+  - ref: .trellis/spec/frontend/15-request-api-protocol.md
+    sha256: 71a7015c7f30624c23c99555fadd59da9125fd20f26b64b58de4d1ee96fcc44b
+    first_heading: 15 请求与 API 协议
+    lines: 180
+    coverage: full
+    coverage_note: "inventory reuse_note=partial_overlap 已执行：试点 22 卡不援引为本文件覆盖凭证，通用 MUST/MUST NOT/SHOULD/Ownership/Change Policy 段按本文件行锚重提取并以重复卡确认语义等价；项目强制规则（双 client/会话恢复/全局传输）与既有 3 张新 policy 一一对应；L123-L150 示例代码为项目实例化无新增政策语义"
+    candidates:
+
+      - proposed_id: POLICY.WEB.API.PAGE_USES_DOMAIN_API_ONLY_15
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: DUPLICATE
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "界面层只经领域请求函数访问服务端，禁止直接书写原生请求或手工拼接端点。"
+        source_locator: "L19, L86"
+        duplicate_of: POLICY.WEB.API.DOMAIN_API_ONLY
+        notes: "本文件与试点源措辞漂移；重复卡同时作为本文件覆盖凭证的语义等价确认（下同）"
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.API.UNIFIED_TRANSPORT_CLIENT_15
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: DUPLICATE
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "传输基础设施统一收敛：基础地址、认证、超时、取消、链路标识与响应信封由单一客户端处理。"
+        source_locator: "L20, L87"
+        duplicate_of: POLICY.WEB.API.SINGLE_HTTP_CLIENT
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.API.STABLE_DOMAIN_NAMING_15
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: DUPLICATE
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "请求函数以稳定领域动词命名并具备完整类型。"
+        source_locator: "L21"
+        duplicate_of: POLICY.WEB.API.TYPED_DOMAIN_NAMING
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.API.QUERY_CANCELLABLE_15
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: DUPLICATE
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "查询必须可取消并丢弃过期响应。"
+        source_locator: "L22"
+        duplicate_of: POLICY.WEB.API.QUERY_CANCEL_STALE_DROP
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.API.MUTATION_IDEMPOTENT_BOUNDARY_15
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: DUPLICATE
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "变更操作显式声明幂等性与重试边界。"
+        source_locator: "L23, L88"
+        duplicate_of: POLICY.WEB.API.MUTATION_IDEMPOTENCY
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.API.ERROR_STRUCTURE_15
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: DUPLICATE
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "请求错误转换为统一结构后上抛。"
+        source_locator: "L24"
+        duplicate_of: POLICY.WEB.API.ERROR_NORMALIZATION
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.API.TRANSPORT_BUSINESS_SPLIT_15
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: DUPLICATE
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "传输成功与业务成功分别判断；传输非成功、契约解析失败、取消、超时、离线与业务错误不得混为一类。"
+        source_locator: "L25, L90"
+        duplicate_of: POLICY.WEB.API.TRANSPORT_VS_BUSINESS
+        notes: "该正本已经 R-F 上提 UNIVERSAL_POLICY"
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.API.RETRY_OBEY_DISCIPLINE_15
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: DUPLICATE
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "重试服从幂等、服务端退避指示与受控退避策略且可取消。"
+        source_locator: "L26, L90"
+        duplicate_of: POLICY.WEB.API.RETRY_DISCIPLINE
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.API.STALE_RESULT_GUARD_15
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: DUPLICATE
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "请求结果提交前验证身份、租户、权限、参数与请求版本，防止旧上下文结果写回。"
+        source_locator: "L27"
+        duplicate_of: POLICY.WEB.API.LATE_RESULT_GUARD
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.API.CONTROLLED_ENDPOINT_ORIGIN_15
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: DUPLICATE
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "端点、重定向与基础地址只来自受控配置或契约，禁止由不可信地址参数直接拼接。"
+        source_locator: "L28, L52"
+        duplicate_of: POLICY.WEB.API.TRUSTED_ENDPOINT_SOURCE
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.API.GENERATED_CLIENT_PREFERRED_15
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: DUPLICATE
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "优先以生成客户端或类型化适配层对接正式契约。"
+        source_locator: "L103"
+        duplicate_of: POLICY.WEB.API.GENERATED_CLIENT
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.API.SINGLE_LOADING_ORIGIN_15
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: DUPLICATE
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "加载状态来源唯一，避免重复状态。"
+        source_locator: "L104"
+        duplicate_of: POLICY.WEB.API.SINGLE_LOADING_SOURCE
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.API.DEDICATED_SESSION_CLIENT_15
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: DUPLICATE
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "会话端点由专用客户端承载并与业务客户端分离；会话客户端不进入业务恢复链路；刷新动作单飞合并。"
+        source_locator: "L32-L41, L94, L97, L168"
+        duplicate_of: POLICY.WEB.API.AUTH_APP_CLIENT_SPLIT
+        notes: "与 9 张新增 policy 之一逐语义对应"
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.API.RECOVERY_PATH_SPLIT_15
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: DUPLICATE
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "认证失效与权限拒绝分开处理：认证失效单飞刷新一次并原请求重放一次；权限拒绝不刷新直接失败；重放上限显式声明；禁止并发多刷新与无条件自动刷新。"
+        source_locator: "L43-L48, L95-L96, L170"
+        duplicate_of: POLICY.WEB.API.SESSION_RECOVERY_SPLIT
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.API.TRANSPORT_KNOBS_INFRASTRUCTURE_15
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: DUPLICATE
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "取消控制器、超时、链路标识、请求标识与基础地址来源五项传输默认挂点收敛于唯一基础设施入口，禁止逐请求散落自配；数值与头名等参数由项目基线供给。"
+        source_locator: "L50-L52"
+        duplicate_of: POLICY.WEB.API.REQUEST_INFRASTRUCTURE
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.API.CLIENT_CHANGE_IMPACT_POINTER_15
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: DUPLICATE
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "客户端公共行为变化必须评估全部请求；函数破坏性变化提供迁移与弃用期；平台层维护客户端、领域层维护请求函数、契约层维护类型来源。"
+        source_locator: "L174-L180"
+        duplicate_of: POLICY.WEB.API.CLIENT_CHANGE_IMPACT
+        notes: "Ownership 面同时对应 AUTHORITY.WEB.API.REQUEST_OWNERS"
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.API.REQUEST_CLASSIFICATION_REGISTRY
+        triage: HYBRID
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "服务端状态请求必须经领域数据钩子发起，渲染层不得直接引用传输库或原生请求原语；请求的分类、认证要求与幂等语义由请求分类登记表统一声明。"
+        en_keywords: "request classification registry, domain hooks, no raw transport in render layer"
+        applies_when: {lane: frontend, condition: "搭建数据请求层时"}
+        source_locator: "L54-L56"
+        notes: "HYBRID：『经登记表声明分类』为通用语义；分类枚举值与登记表产物为交付编译产出（project_scope: MASTer，8 类分类）"
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.PROJ.SCREEN_BLUEPRINT_API_BINDING
+        triage: PROJECT
+        kind_proposal: policy
+        classification_suggestion: PROJECT_BASELINE_TEMPLATE
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "界面蓝图的每条接口需求必须绑定已发布契约中的真实操作标识；契约中无对应操作标识时标记待后端评审并登记未决清单，禁止虚构方法、路径或参数；实现只允许依赖已确认状态的接口需求。"
+        en_keywords: "screen blueprint api requirements, operationId binding, needs-backend-review state"
+        applies_when: {lane: frontend, condition: "编制或消费屏幕蓝图时"}
+        source_locator: "L58-L62, L98-L99, L116-L117"
+        project_scope: MASTer
+        notes: "屏幕蓝图治理对象与 NEEDS_BACKEND_REVIEW/ACCEPTED 状态机为 MASTer 治理产物；operationId 为 OpenAPI 标准词可保留"
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.PROJ.RESPONSE_FIELD_MAPPING
+        triage: HYBRID
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "服务端响应字段与展示字段名不一致时，必须在领域映射模块执行显式映射，展示字段保持语义稳定、不随后端字段名变化改动；公式列在映射层或表格层计算、不依赖服务端同名返回；映射函数使用稳定动词命名。"
+        en_keywords: "response field mapping, stable display fields, formula column computed in mapper"
+        applies_when: {lane: frontend, condition: "响应字段名与展示字段不一致时"}
+        source_locator: "L64-L82, L123"
+        project_scope: "MASTer（源标注为项目强制规则；真实字段映射表为项目实例）"
+        notes: "通用核心与 POLICY.WEB.MODEL.CHANGE_CONTAINMENT_ADAPTER / LAYERING_CHAIN 互链；字段映射表值（零件号等）属项目基线"
+        backlog_disposition: backlog_only
+
+      - proposed_id: KNOWLEDGE.FP.API.RECOVERY_STORM
+        triage: UNIVERSAL
+        kind_proposal: knowledge_entry
+        classification_suggestion: FAILURE_PATTERN
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "以同一客户端同时承载会话刷新与业务请求导致递归恢复，或对无权限响应反复触发刷新形成无效刷新风暴的失败模式。"
+        en_keywords: "recursive recovery, refresh storm on 403"
+        applies_when: {lane: frontend, condition: "反模式知识，无适用门禁"}
+        source_locator: "L166-L170"
+        backlog_disposition: backlog_only
+
+  # ============================================================ FE 16
+  - ref: .trellis/spec/frontend/16-error-handling-protocol.md
+    sha256: 959ebf63e1b2da1d8c60683401163d45e1c32cbc01dfc5ce8cec2a2110ab13af
+    first_heading: 16 错误处理协议
+    lines: 134
+    coverage: full
+    coverage_note: SHOULD 两条收编（L91 入 DUAL_SURFACE notes、L92 同）；前端错误映射表四行由 UI_STATE_CONTROLLED_ENUM 收编；项目禁止五条分散收编
+    candidates:
+
+      - proposed_id: POLICY.WEB.ERR.CLASS_DISJOINT_HANDLING
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "认证、权限、资源缺失、冲突、校验、限流、服务故障与网络异常必须分门别类处理，禁止合并为单一失败路径；每类绑定各自恢复动作与可重试性，不可重试类别不得提供重试入口。"
+        en_keywords: "disjoint error classes, per-class recovery, no meaningless retry entries"
+        applies_when: {lane: frontend, condition: "实现错误分类处理时"}
+        source_locator: "L20-L21, L35-L48, L86"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.ERR.BOUNDARY_ISOLATION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "渲染错误边界必须分层设置：局部失败不扩散为整页失败，单页失败不级联影响其他页面与全局导航；路由级边界只作最终兜底。"
+        en_keywords: "layered error boundaries, no cross-page cascade, route-level fallback"
+        applies_when: {lane: frontend, condition: "设置渲染错误边界时"}
+        source_locator: "L22, L70-L72, L85"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.ERR.EXPLAINABLE_FAILURE
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "失败呈现必须同时回答三件事：发生了什么、能否恢复、下一步是什么。"
+        en_keywords: "explainable failure, what happened, recoverable, next step"
+        applies_when: {lane: frontend, condition: "任何失败呈现"}
+        source_locator: "L23, L86"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.ERR.DUAL_SURFACE
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "读取失败与写入失败是两个错误面：读取失败在内容区行内呈现并以重新取数恢复；写入失败在操作位置行内呈现并以重新提交恢复；两者不得复用同一组件，全局浮层不得作为唯一错误面，错误呈现不得破坏布局；恢复成功后应刷新受影响数据。"
+        en_keywords: "dual error surface, read vs write recovery semantics, no toast-only errors"
+        applies_when: {lane: frontend, condition: "实现读取与写入错误呈现时"}
+        source_locator: "L59-L68, L76, L84, L91-L92, L124"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.ERR.SAFE_PRESENTATION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "错误呈现不得暴露技术堆栈、敏感参数或原始响应体。"
+        en_keywords: "safe error presentation, no stack traces, no sensitive params"
+        applies_when: {lane: frontend, condition: "任何错误呈现"}
+        source_locator: "L78"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.PROJ.UI_STATE_CONTROLLED_ENUM
+        triage: PROJECT
+        kind_proposal: policy
+        classification_suggestion: PROJECT_BASELINE_TEMPLATE
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "归一化错误必须映射到受控界面状态枚举，禁止未登记值；每个服务端错误码绑定所属能力与操作，并固定界面状态、恢复动作与可重试性；网络异常、请求超时、渲染白屏与请求取消四类界面侧失败同样有固定映射。"
+        en_keywords: "controlled ui state enum, fixed error mapping table, frontend error mapping"
+        applies_when: {lane: frontend, condition: "本项目错误映射登记与消费"}
+        source_locator: "L27-L57, L83"
+        project_scope: "MASTer（受控枚举 11 值 + 固定映射表为项目基线）"
+        uncertainty:
+          - "与 POLICY.WEB.COMM.ERROR_UI_MAPPING_REGISTRY 构成正本/实例关系；FE07 词表 7 值 vs 本文件 11 值不一致，需 Owner 对齐后合并"
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.ERR.NORMALIZE_BEFORE_RAISE_16
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: DUPLICATE
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "原始错误归一化为稳定结构（码、链路、字段错误、可重试性、恢复动作）后上抛。"
+        source_locator: "L19, L77"
+        duplicate_of: POLICY.WEB.API.ERROR_NORMALIZATION
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.ERR.NO_UNSAFE_AUTO_RETRY_16
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: DUPLICATE
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "非幂等写操作禁止自动重试；被取消的请求不得作为用户错误提示。"
+        source_locator: "L57, L79, L87"
+        duplicate_of: POLICY.WEB.API.RETRY_DISCIPLINE
+        notes: "幂等面次序对应 POLICY.WEB.API.MUTATION_IDEMPOTENCY（pilot 极性反转合并先例）"
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.ERR.CHANGE_SYNC_16
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: DUPLICATE
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "错误码或恢复语义变化必须同步契约、映射、文案、替身、监控与测试。"
+        source_locator: "L134"
+        duplicate_of: POLICY.CHG.SYNC_CONTRACT_DOCS_TESTS
+        notes: "同步清单两口径重叠（pilot §3.4 先例）：互指交 Owner 统一口径"
+        backlog_disposition: backlog_only
+
+      - proposed_id: KNOWLEDGE.FP.ERR.SURFACE_MISMATCH
+        triage: UNIVERSAL
+        kind_proposal: knowledge_entry
+        classification_suggestion: FAILURE_PATTERN
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "所有失败共用一个浮层且字段输入被清空无错误编号；单页错误冒泡到应用外壳致全局错误态；保存失败误用读取错误组件致重试语义错位、用户误以为已保存。"
+        en_keywords: "uniform toast, cascade to shell, wrong retry semantics"
+        applies_when: {lane: frontend, condition: "反模式知识，无适用门禁"}
+        source_locator: "L120-L124"
+        backlog_disposition: backlog_only
+
+      - proposed_id: AUTHORITY.WEB.ERROR.MAPPING_OWNERSHIP
+        triage: UNIVERSAL
+        kind_proposal: authority
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "错误码由契约责任者定义、归一化由平台层维护、上下文呈现由页面负责。"
+        source_locator: "L128-L130"
+        notes: "pilot M6 留后续批次；映射登记表为交付编译产物属项目实例"
+        backlog_disposition: backlog_only
+
+  # ============================================================ FE 17
+  - ref: .trellis/spec/frontend/17-permission-protocol.md
+    sha256: 3f51aeb30497c07a3b552c8f21ecff22730d276c85fd504fde16e9e17b622ec0
+    first_heading: 17 权限协议
+    lines: 67
+    coverage: full
+    coverage_note: SHOULD L34（统一 gate/hook/component）收编进 UNIFIED_SEMANTICS notes；无空段
+    candidates:
+
+      - proposed_id: POLICY.WEB.PERM.UNIFIED_SEMANTICS
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "菜单、路由、操作按钮、字段与接口必须引用同一权限语义事实源，禁止各呈现面各持一套权限口径；宜以统一守卫/钩子/组件承载。"
+        en_keywords: "unified permission semantics, single fact source across surfaces"
+        applies_when: {lane: any, condition: "任何权限消费面"}
+        source_locator: "L19, L34"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.PERM.ROUTE_GUARD_NO_BYPASS
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "直达地址栏进入的页面同样必须经过权限守卫，路由不可作为绕过权限的通道。"
+        en_keywords: "direct url guard, no routing bypass"
+        applies_when: {lane: frontend, condition: "实现路由守卫时"}
+        source_locator: "L20"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.PERM.FIELD_POLICIES
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "字段级权限必须显式声明可见、脱敏、只读、编辑四种策略。"
+        en_keywords: "field permission, visible masked readonly editable"
+        applies_when: {lane: any, condition: "字段级权限控制"}
+        source_locator: "L21"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.PERM.DATA_SCOPE_SERVER_FILTERED
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "数据范围由服务端过滤并在查询、详情与导出全链路生效；禁止界面侧获取全量数据后自行剔除敏感内容。"
+        en_keywords: "server-filtered data scope, no client-side sensitive filtering"
+        applies_when: {lane: any, condition: "数据范围权限实现"}
+        source_locator: "L22, L28"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.PERM.DENIED_EXPLAINABLE
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "权限不足时必须给出一致且可解释的状态；被禁用动作应展示只读原因。"
+        en_keywords: "explainable denied state, readonly reason"
+        applies_when: {lane: frontend, condition: "权限不足呈现"}
+        source_locator: "L23, L35"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.PERM.SERVER_SIDE_ENFORCEMENT
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "权威鉴权必须由服务端执行；隐藏菜单或按钮只是呈现策略，不构成访问控制。"
+        en_keywords: "server-side authorization, hiding is presentation not control"
+        applies_when: {lane: any, condition: "任何受权限保护的能力"}
+        source_locator: "L27"
+        notes: "FE07 L104-L105 intra-batch 重复卡指向本卡"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.PERM.NO_ROLE_HARDCODING
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "权限判断必须基于权限码或能力声明，禁止按角色名称硬编码。"
+        en_keywords: "permission codes not role names, no hardcoded roles"
+        applies_when: {lane: frontend, condition: "编写权限判断逻辑时"}
+        source_locator: "L29"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.PERM.FLAG_NOT_PERMISSION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "功能开关不得当作权限使用，两者语义与生命周期分离。"
+        en_keywords: "feature flag is not permission"
+        applies_when: {lane: any, condition: "功能开关与权限并存处"}
+        source_locator: "L30"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: KNOWLEDGE.FP.PERM.ROLE_SNIFF_UI
+        triage: UNIVERSAL
+        kind_proposal: knowledge_entry
+        classification_suggestion: FAILURE_PATTERN
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "按角色字符串常量决定按钮显隐、并误认为无需服务端校验的失败模式。"
+        en_keywords: "role sniffing ui, missing backend check"
+        applies_when: {lane: frontend, condition: "反模式知识，无适用门禁"}
+        source_locator: "L59"
+        backlog_disposition: backlog_only
+
+      - proposed_id: TEMPLATE.PERMISSION_CONTRACT
+        triage: UNIVERSAL
+        kind_proposal: contract_template
+        classification_suggestion: CONTRACT_TEMPLATE
+        enforcement_suggestion: deterministic_where_possible
+        clean_room: true
+        statement_zh: "权限登记条目应包含：权限码、资源、动作、字段策略、数据范围、服务端执行标记与拒绝呈现。"
+        source_locator: "L39-L42"
+        notes: "落点随 pilot R-C 方案 b 挂起"
+        backlog_disposition: backlog_only
+
+      - proposed_id: AUTHORITY.WEB.PERMISSION.OWNERSHIP
+        triage: UNIVERSAL
+        kind_proposal: authority
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "权限语义由业务/安全责任者定义、服务端执行鉴权、界面平台维护统一呈现。"
+        source_locator: "L63"
+        notes: "pilot M6 留后续批次"
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.PERM.CHANGE_SYNC_17
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: DUPLICATE
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "权限码或数据范围变化必须同步菜单、路由、缓存、接口、测试与审计。"
+        source_locator: "L67"
+        duplicate_of: POLICY.CHG.SYNC_CONTRACT_DOCS_TESTS
+        backlog_disposition: backlog_only
+
+  # ============================================================ FE 32
+  - ref: .trellis/spec/frontend/32-file-import-export-protocol.md
+    sha256: 2262d7ce2e910e4d64b0c6f3ef1af0b72c3cafc31d6cb1a796a8fb8b1801cbbc
+    first_heading: 32 文件、导入与导出协议
+    lines: 68
+    coverage: full
+    coverage_note: SHOULD 两条收编进 IMPORT_PIPELINE；无空段
+    candidates:
+
+      - proposed_id: POLICY.WEB.FILE.UPLOAD_CONTRACT
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "上传必须在契约中声明允许的类型、大小、数量、命名规则与安全校验阶段。"
+        en_keywords: "upload contract, type size count, validation stage"
+        applies_when: {lane: any, condition: "定义文件上传契约时"}
+        source_locator: "L19"
+        notes: "FE07 L131 同语义 intra-batch 重复面，本卡为正本"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.FILE.IMPORT_PIPELINE
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "导入必须覆盖完整链路：模板、上传、校验、任务化、进度、结果与错误明细；错误明细至少含行、列、字段、原值、错误码与修复建议；静默失败被禁止；模板与错误文件应可追踪结构版本。"
+        en_keywords: "import pipeline, error row schema, no silent failure, template version tracking"
+        applies_when: {lane: any, condition: "实现导入流程时"}
+        source_locator: "L20-L21, L28, L35-L36"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.FILE.EXPORT_SCOPE_CONTRACT
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "导出必须显式声明范围、字段、权限与有效期；页面不得自行拼装导出字段或绕过权限。"
+        en_keywords: "export scope, permission-bound export, no ad-hoc field assembly"
+        applies_when: {lane: any, condition: "实现导出时"}
+        source_locator: "L22, L30"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.FILE.LARGE_FILE_ASYNC
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "大文件处理必须任务化异步执行，不得同步阻塞页面；完成后刷新依赖数据，成功后不得遗漏缓存失效。"
+        en_keywords: "large file async job, no blocking, dependency refresh"
+        applies_when: {lane: frontend, condition: "大文件上传/导入/导出"}
+        source_locator: "L23, L29, L31"
+        notes: "失效面与 POLICY.WEB.COMM.CACHEABILITY_DECLARATION 及 FE-G3 19-cache 互链"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.FILE.DOWNLOAD_CONTRACT
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "下载必须声明内容类型、文件名编码、有效期与大文件策略，且每次下载重新鉴权并校验数据范围；文件地址不得构成持久越权入口。"
+        en_keywords: "download contract, re-authorization, no permanent access url"
+        applies_when: {lane: any, condition: "实现文件下载时"}
+        source_locator: "L24"
+        notes: "FE07 L132-L133 intra-batch 重复卡指向本卡"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: TEMPLATE.FILE_HANDOFF_CONTRACT
+        triage: UNIVERSAL
+        kind_proposal: contract_template
+        classification_suggestion: CONTRACT_TEMPLATE
+        enforcement_suggestion: deterministic_where_possible
+        clean_room: true
+        statement_zh: "文件交接登记条目应包含：文件策略、模板版本、导入任务、错误行结构、导出范围、结果有效期与权限。"
+        source_locator: "L41-L42"
+        notes: "落点随 pilot R-C 方案 b 挂起"
+        backlog_disposition: backlog_only
+
+      - proposed_id: KNOWLEDGE.FP.FILE.OPAQUE_IMPORT_FAILURE
+        triage: UNIVERSAL
+        kind_proposal: knowledge_entry
+        classification_suggestion: FAILURE_PATTERN
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "导入失败只报一句失败、无行号无原因无链路无重试路径的失败模式。"
+        en_keywords: "opaque import failure, no row-level error detail"
+        applies_when: {lane: frontend, condition: "反模式知识，无适用门禁"}
+        source_locator: "L60"
+        backlog_disposition: backlog_only
+
+      - proposed_id: AUTHORITY.WEB.FILE.OWNERSHIP
+        triage: UNIVERSAL
+        kind_proposal: authority
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "字段语义由业务责任者定义、流程由文件/任务责任者维护、文件策略由安全责任者维护。"
+        source_locator: "L64"
+        notes: "pilot M6 留后续批次"
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.FILE.SCHEMA_CHANGE_VERSIONING
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: DUPLICATE
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "模板、字段与错误结构变化必须版本化并附兼容迁移说明。"
+        source_locator: "L68"
+        duplicate_of: POLICY.CHG.COMPAT_MIGRATION_ROLLBACK
+        backlog_disposition: backlog_only
+
+  # ============================================================ FE 35
+  - ref: .trellis/spec/frontend/35-mock-protocol.md
+    sha256: d4afdff65e91a0c463e70562f3e9efd2825f003439df8099f7b41b5672647e73
+    first_heading: 35 Mock 协议
+    lines: 169
+    coverage: full
+    coverage_note: "L28-L100 环境变量/helper/entity 目录结构与示例代码为 ENV_SWITCH/SWITCH_LOCALITY 两卡的项目实例化（构建变量名、共享判断模块路径属 project_scope: MASTer），无新增政策语义"
+    candidates:
+
+      - proposed_id: POLICY.WEB.MOCK.CONTRACT_PARITY
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "替身数据必须与正式契约同源：结构符合正式接口契约，结构漂移必须被自动检查并阻断合并。"
+        en_keywords: "mock contract parity, schema drift blocking ci"
+        applies_when: {lane: any, condition: "维护接口替身时"}
+        source_locator: "L19-L20, L140-L141"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.MOCK.SCENARIO_COVERAGE
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "替身场景必须覆盖成功、空态、大数据量、慢响应、超时、无权限、冲突、错误与部分成功，禁止只造成功小数据。"
+        en_keywords: "scenario coverage, non-ideal states, no success-only mocks"
+        applies_when: {lane: any, condition: "编制替身场景清单时"}
+        source_locator: "L21, L113"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.MOCK.DETERMINISTIC_FIXTURES
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "替身数据使用稳定标识、固定时间与带种子的生成器，保证可重复。"
+        en_keywords: "deterministic fixtures, stable ids, seeded generators"
+        applies_when: {lane: any, condition: "编制替身数据时"}
+        source_locator: "L22"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.MOCK.ENV_SWITCH
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "替身启停必须收敛到统一环境开关，生产构建默认关闭。"
+        en_keywords: "unified env switch, off by default in production"
+        applies_when: {lane: any, condition: "替身启停机制"}
+        source_locator: "L23, L116"
+        notes: "本项目实例=构建环境变量 + 实体层共享判断模块（project_scope: MASTer）"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.MOCK.SWITCH_LOCALITY
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "替身与真实的切换必须收敛在领域层，界面组件只经数据钩子消费、不感知当前模式，禁止在页面、组件、路由、状态容器或工具函数中分散判断。"
+        en_keywords: "switch locality, entity-layer toggle, mode-unaware components"
+        applies_when: {lane: frontend, condition: "替身/真实双实现并存时"}
+        source_locator: "L24, L104-L106"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.MOCK.NO_DERIVED_TRUTH
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "禁止以替身数据反推正式字段、规则或契约。"
+        en_keywords: "no mock-derived truth"
+        applies_when: {lane: any, condition: "替身与契约并存处"}
+        source_locator: "L114"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.MOCK.TEMPORARY_LIFECYCLE
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "临时替身必须登记契约版本、到期日与替换状态；到期前完成真实实现替换或显式延期。"
+        en_keywords: "temporary mock lifecycle, expiry, replacement status"
+        applies_when: {lane: any, condition: "使用临时替身时"}
+        source_locator: "L108, L140"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.MOCK.SCENARIO_REGISTRY
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "替身场景登记表应记录端点、场景、契约版本、状态、到期日、替换端点与漂移检查结果。"
+        en_keywords: "mock scenario registry, contract version binding"
+        applies_when: {lane: any, condition: "替身场景较多时"}
+        source_locator: "L122, L133-L141"
+        uncertainty:
+          - "SHOULD 措辞（L122）与契约段强制语句（L140-L141）并存，升 required 与否留 Owner 裁定"
+        backlog_disposition: backlog_only
+
+      - proposed_id: KNOWLEDGE.FP.MOCK.HARDCODED_PAGE_DATA
+        triage: UNIVERSAL
+        kind_proposal: knowledge_entry
+        classification_suggestion: FAILURE_PATTERN
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "页面写死假数组、字段与服务端不一致、联调时整页重写的失败模式。"
+        en_keywords: "hardcoded fake arrays, field mismatch, rewrite at integration"
+        applies_when: {lane: frontend, condition: "反模式知识，无适用门禁"}
+        source_locator: "L161"
+        backlog_disposition: backlog_only
+
+      - proposed_id: AUTHORITY.WEB.MOCK.OWNERSHIP
+        triage: UNIVERSAL
+        kind_proposal: authority
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "契约责任者负责替身结构、界面/验证方维护场景、平台层维护启停基础设施。"
+        source_locator: "L165"
+        notes: "pilot M6 留后续批次"
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.MOCK.CONTRACT_CHANGE_SYNC
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: DUPLICATE
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "契约变化必须同步替身；删除场景前确认无测试依赖。"
+        source_locator: "L169"
+        duplicate_of: POLICY.CHG.SYNC_CONTRACT_DOCS_TESTS
+        notes: "删除场景确认面同构 POLICY.CHG.DEPRECATE_BEFORE_DELETE（废弃前置确认），合并审"
+        backlog_disposition: backlog_only
+
+  # ============================================================ FE 43
+  - ref: .trellis/spec/frontend/43-time-temporal-protocol.md
+    sha256: 4669cc3d927289f99bbd66c3e906f97d548f0cf8ea9e94b66e8b21cb24d00afb
+    first_heading: 43 时间、日期与时区协议
+    lines: 74
+    coverage: full
+    coverage_note: SHOULD L40（标准平台 API/评审库）收编进 KIND_DECLARATION notes；L42 收编进 MONOTONIC_DURATION；无空段
+    candidates:
+
+      - proposed_id: POLICY.WEB.TIME.KIND_DECLARATION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "每个时间字段必须归类为时间点、日历日期、本地墙上时间、带时区计划或持续时长之一，并在契约中记录精度、时区、日历与空值语义；宜选用能区分这五类的标准平台能力或经评审的时间库。"
+        en_keywords: "temporal kind taxonomy, per-field precision timezone calendar, reviewed time library"
+        applies_when: {lane: any, condition: "建模任何时间字段时"}
+        source_locator: "L21, L40"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.TIME.WIRE_FORMAT
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "时间跨系统传输必须使用无歧义、版本化的机器格式：时间点携带 UTC 或显式偏移，带时区计划保留命名时区。"
+        en_keywords: "unambiguous wire format, utc offset, named timezone preserved"
+        applies_when: {lane: any, condition: "时间字段跨系统传输"}
+        source_locator: "L22"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.TIME.CONVERSION_EXPLICITNESS
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "日历日期不得隐式转换为午夜时间点；墙上时间转时间点必须提供时区与夏令时歧义策略；字符串截断、手工偏移加减或固定二十四小时替代日历时区运算被禁止。"
+        en_keywords: "no implicit midnight conversion, dst ambiguity policy, no manual offset math"
+        applies_when: {lane: any, condition: "时间类型间转换"}
+        source_locator: "L23, L32"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.TIME.EXPLICIT_PARSING
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "时间解析必须使用显式声明格式，禁止依赖宿主语言环境、宿主默认时区或实现相关的字符串猜测；无时区值不得被静默解释为本地时区或 UTC。"
+        en_keywords: "explicit parse format, no host defaults, no silent zone assumption"
+        applies_when: {lane: any, condition: "解析时间字符串时"}
+        source_locator: "L24, L33"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.TIME.NORMALIZED_VALUE_COMPUTATION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "比较、排序、筛选、缓存键与提交必须使用规范化原始值；本地化显示文本不得参与任何计算。"
+        en_keywords: "normalized values for computation, display text never computed on"
+        applies_when: {lane: any, condition: "时间值参与计算或作为键"}
+        source_locator: "L25, L35"
+        notes: "与 POLICY.WEB.MONEY.VALUE_STAGE_SEPARATION 同构（展示面/计算面分离），互引"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.TIME.EXPLICIT_UNITS
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "时间单位必须显式声明；禁止混用秒与毫秒、日期与时间点、经过时长与日历天数，禁止按数值大小猜测单位。"
+        en_keywords: "explicit time units, no unit guessing, duration vs calendar days"
+        applies_when: {lane: any, condition: "时间数值的产出与消费"}
+        source_locator: "L26, L34"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.TIME.INJECTABLE_CLOCK
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "当前时间必须经可替换时钟源获取；业务代码禁止直读不可控的系统时钟；测试必须固定时钟、时区与语言环境，并覆盖月末、闰日、夏令时跳变与重复时刻。"
+        en_keywords: "injectable clock, no direct system time, temporal test matrix"
+        applies_when: {lane: any, condition: "获取当前时间或做时间相关测试"}
+        source_locator: "L27, L36"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.TIME.MONOTONIC_DURATION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "经过时长与超时测量必须使用不受系统时钟回拨影响的单调时间源；业务日历计算使用显式规则；日志与审计应同时记录规范化时间、时区上下文与事件顺序标识。"
+        en_keywords: "monotonic clock for durations, explicit calendar rules, audit time context"
+        applies_when: {lane: any, condition: "测量经过时长或审计时间"}
+        source_locator: "L28, L42"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.TIME.BUSINESS_ZONE_DISCLOSURE
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "业务时区与用户预期不同时，界面应显式提示。"
+        en_keywords: "business timezone disclosure"
+        applies_when: {lane: frontend, condition: "跨时区业务数据展示"}
+        source_locator: "L41"
+        backlog_disposition: backlog_only
+
+      - proposed_id: KNOWLEDGE.FP.TIME.LOCAL_MIDNIGHT_PARSE
+        triage: UNIVERSAL
+        kind_proposal: knowledge_entry
+        classification_suggestion: FAILURE_PATTERN
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "把纯日期字符串构造为时间点、再按宿主时区展示，导致部分地区日期前后漂移一天的失败模式。"
+        en_keywords: "date-as-instant parse, host timezone display, day shift"
+        applies_when: {lane: frontend, condition: "反模式知识，无适用门禁"}
+        source_locator: "L66"
+        backlog_disposition: backlog_only
+
+      - proposed_id: TEMPLATE.TEMPORAL_FIELD_CONTRACT
+        triage: UNIVERSAL
+        kind_proposal: contract_template
+        classification_suggestion: CONTRACT_TEMPLATE
+        enforcement_suggestion: deterministic_where_possible
+        clean_room: true
+        statement_zh: "时间字段登记条目应包含：字段、时间类别、机器格式、精度、时区、日历、歧义策略、展示时区、时钟源与测试矩阵。"
+        source_locator: "L46-L49"
+        notes: "落点随 pilot R-C 方案 b 挂起"
+        backlog_disposition: backlog_only
+
+      - proposed_id: AUTHORITY.WEB.TIME.OWNERSHIP
+        triage: UNIVERSAL
+        kind_proposal: authority
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "业务时间语义由领域责任者定义、传输格式由接口责任者定义、时钟与解析格式化能力由界面平台维护。"
+        source_locator: "L70"
+        notes: "pilot M6 留后续批次"
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.TIME.TEMPORAL_CHANGE_IS_CONTRACT_CHANGE
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: DUPLICATE
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "时间类型、精度、时区或序列化格式变化属契约变更，须迁移数据、缓存、测试与调用方并同步关联协议。"
+        source_locator: "L74"
+        duplicate_of: POLICY.CHG.BREAKING_VERSIONING
+        notes: "同步关联协议面同构 POLICY.CHG.SYNC_CONTRACT_DOCS_TESTS"
+        backlog_disposition: backlog_only
+
+  # ============================================================ FE 44
+  - ref: .trellis/spec/frontend/44-privacy-data-lifecycle-protocol.md
+    sha256: 5b3472bba296c1bb437c3ce41e1c937b636605e39b78cf06747d1010e46ba08e
+    first_heading: 44 隐私与客户端数据生命周期协议
+    lines: 75
+    coverage: full
+    coverage_note: P0；SHOULD 三条两条收编（L40/L41 入对应卡 notes）、L39 独立 advisory 卡；示例段无独立政策语义并入 MINIMIZATION notes
+    candidates:
+
+      - proposed_id: POLICY.WEB.PRIVACY.DATA_INVENTORY
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "每类受保护数据必须登记：分类、目的、来源、接收方、客户端存储形态、保留期、删除触发器、用户控制机制与责任者；访问、导出、删除、撤回与过期清理应建立可测试路径。"
+        en_keywords: "protected data inventory, retention, deletion triggers, testable user control"
+        applies_when: {lane: any, condition: "处理个人/敏感/可关联数据时"}
+        source_locator: "L20, L40"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.PRIVACY.MINIMIZATION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "请求、缓存、日志、埋点与第三方共享只得携带已批准目的所需的最少字段与最低精度；以『将来可能有用』为由收集或保留额外数据被禁止；宜在本地或边界处聚合、截断或脱敏以避免传输不必要原值。"
+        en_keywords: "data minimization, minimum fields precision, local aggregation first"
+        applies_when: {lane: any, condition: "受保护数据进入任一处理环节"}
+        source_locator: "L21, L31, L41"
+        notes: "示例（分析事件只发批准键+粗粒度结果）为本卡实例，不独立成卡"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.PRIVACY.STORAGE_BOUNDARY
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "浏览器存储、草稿、下载、剪贴板与通知必须遵守身份、租户、权限、过期与清理策略。"
+        en_keywords: "client storage boundary, tenant isolation, expiry cleanup"
+        applies_when: {lane: frontend, condition: "受保护数据落地客户端时"}
+        source_locator: "L22"
+        uncertainty:
+          - "与 FE-G3 45-browser-storage（容量与清理/敏感数据标签）存在辖区重叠，跨组合并审阅"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.PRIVACY.LIFECYCLE_CLEANUP
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "注销、切换账号或租户、权限降低、目的撤回或数据过期时，必须停止相关处理并清理无权继续保留的数据与运行时资源。"
+        en_keywords: "lifecycle trigger cleanup, stop processing, no residual data"
+        applies_when: {lane: frontend, condition: "身份/权限/目的状态变化时"}
+        source_locator: "L23"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.PRIVACY.CONSENT_GATING
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "需要同意或选择的采集与第三方集成必须在有效选择之后才启用；撤回必须阻止后续采集且不得暗中回退；默认勾选、阻碍撤回或与目的无关的强制授权被禁止。"
+        en_keywords: "consent gating, withdrawal blocks collection, no dark patterns"
+        applies_when: {lane: frontend, condition: "存在同意/选择要求的采集时"}
+        source_locator: "L24, L35"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.PRIVACY.SENSITIVE_CAPABILITY_GATING
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "摄像头、麦克风、位置、剪贴板等敏感能力只能由用户可理解的明确动作触发，并提供拒绝后的安全路径。"
+        en_keywords: "sensitive capability gating, user-action triggered, safe denial path"
+        applies_when: {lane: frontend, condition: "调用设备敏感能力时"}
+        source_locator: "L25"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.PRIVACY.THIRD_PARTY_MANIFEST
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "第三方脚本与数据目的必须有清单：字段白名单、目标域、保留策略、禁用方式与责任者。"
+        en_keywords: "third-party manifest, field whitelist, disable path"
+        applies_when: {lane: frontend, condition: "引入第三方脚本或共享数据时"}
+        source_locator: "L26"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.PRIVACY.PERSISTED_DATA_UNTRUSTED
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: DUPLICATE
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "客户端持久化内容读取时必须视为不可信输入，执行结构、身份、租户、权限与版本校验。"
+        source_locator: "L27"
+        duplicate_of: POLICY.WEB.MODEL.UNTRUSTED_EXTERNAL_VALIDATION
+        notes: "intra-batch：FE14 正本已列浏览器存储为外部数据源；本条增量=身份/租户/版本维度，作为正本适用性扩展合并审"
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.PRIVACY.SENSITIVE_PAYLOAD_EXCLUSION
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "敏感原值、搜索原文、文件内容与可识别信息不得进入地址、日志、链路标识、埋点或未批准的第三方载荷。"
+        en_keywords: "sensitive payload exclusion, no pii in urls logs trace analytics"
+        applies_when: {lane: any, condition: "数据离开设备边界的任一通道"}
+        source_locator: "L32"
+        uncertainty:
+          - "凭证面与 FE-G1 04-security 同族；埋点面与 FE-G4 40-analytics 衔接，跨组合并审阅"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.PRIVACY.PSEUDONYM_NOT_ANONYMOUS
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "去标识化、哈希或内部标识符不得自动视为匿名，其隐私风险须单独评估。"
+        en_keywords: "pseudonymization is not anonymization"
+        applies_when: {lane: any, condition: "以去标识化形态处理数据时"}
+        source_locator: "L33"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.PRIVACY.NO_STORAGE_TRUST
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "客户端存储内容不得用作身份、权限或用户已同意的证明。"
+        en_keywords: "no client storage as proof, client data is not authorization"
+        applies_when: {lane: frontend, condition: "读取客户端持久化内容用于判定时"}
+        source_locator: "L34"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: POLICY.WEB.PRIVACY.REVIEW_TRIGGERS
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "新增浏览器权限、稳定标识符、第三方 SDK、跨域传输或持久化数据时应触发隐私评审。"
+        en_keywords: "privacy review triggers"
+        applies_when: {lane: any, condition: "引入隐私相关新元素时"}
+        source_locator: "L39"
+        backlog_disposition: backlog_only
+
+      - proposed_id: POLICY.WEB.PRIVACY.RE_EVALUATION_ON_CHANGE
+        triage: UNIVERSAL
+        kind_proposal: policy
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: required_when_applicable
+        clean_room: true
+        statement_zh: "新增目的、字段、接收方、持久化或保留期必须重新评审并更新用户控制；功能发布记录不得替代隐私批准。"
+        en_keywords: "privacy re-evaluation on change, release notes are not approval"
+        applies_when: {lane: any, condition: "隐私面发生任何扩展时"}
+        source_locator: "L75"
+        backlog_disposition: materialize_eligible
+
+      - proposed_id: KNOWLEDGE.FP.PRIVACY.THIRD_PARTY_OVERCOLLECTION
+        triage: UNIVERSAL
+        kind_proposal: knowledge_entry
+        classification_suggestion: FAILURE_PATTERN
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "为未来分析把完整表单、查询词与页面文本发给第三方 SDK、且用户退出后仍留存在本地缓存的失败模式。"
+        en_keywords: "third-party overcollection, post-logout retention"
+        applies_when: {lane: frontend, condition: "反模式知识，无适用门禁"}
+        source_locator: "L67"
+        backlog_disposition: backlog_only
+
+      - proposed_id: AUTHORITY.WEB.PRIVACY.OWNERSHIP
+        triage: UNIVERSAL
+        kind_proposal: authority
+        classification_suggestion: UNIVERSAL_POLICY
+        enforcement_suggestion: advisory
+        clean_room: true
+        statement_zh: "政策由隐私/安全责任者定义、目的必要性由产品责任者证明、边界与用户控制由界面责任者实施、接收与保留由数据责任者审核。"
+        source_locator: "L71"
+        notes: "pilot M6 留后续批次"
+        uncertainty:
+          - "本文件与 backend 13-privacy-data-lifecycle-protocol 构成跨 lane 镜像，与 BE-G2 组产出存在潜在重复，批间合并审阅"
+        backlog_disposition: backlog_only
+
+# ============================================================ 统计自证
+summary:
+  files: 11
+  files_with_candidates: 11
+  empty_conclusion_files: 0
+  total_candidates: 149
+  duplicate_cards: 36
+  triage: {UNIVERSAL: 107, HYBRID: 4, PROJECT: 2}
+  triage_note: 计数口径=非重复卡（113 张）；36 张 DUPLICATE 卡的 triage 已按其正本归属给出（均 UNIVERSAL），不计入三值分布
+  by_kind: {policy: 87, knowledge_entry_fp: 11, contract_template: 5, authority: 10}
+  intra_batch_duplicate_targets: [POLICY.WEB.MODEL.LAYERING_CHAIN, POLICY.WEB.MODEL.BOUNDARY_NORMALIZATION, POLICY.WEB.MODEL.UNTRUSTED_EXTERNAL_VALIDATION, POLICY.WEB.PERM.SERVER_SIDE_ENFORCEMENT, POLICY.WEB.FILE.DOWNLOAD_CONTRACT, POLICY.WEB.FILE.UPLOAD_CONTRACT]
+  cross_file_tensions:
+    - "FE07 错误映射登记表 7 值界面状态词表 vs FE16 受控枚举 11 值：正本化前需 Owner 对齐"
+    - "FE44 与 backend 13-privacy 跨 lane 镜像：与 BE-G2 组产出合并审阅"
+    - "FE13 金额列声明与既有 GRID.COLUMN_SCHEMA_FIELDS 互补；FE44 存储边界与 FE-G3 45-browser-storage 辖区重叠"
+  d5_note: "本文件为 backlog 留档；materialize_eligible 合计 72 张为拆解器建议，非物化承诺；最终物化由汇总组按『高置信 Universal + MUST 级 + 与既有 69 条零重复』收口"

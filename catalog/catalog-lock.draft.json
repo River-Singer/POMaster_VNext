@@ -1,7 +1,7 @@
 {
   "catalog_version": "0.1.0-pilot",
   "profile": "web-standard@0",
-  "generated_by": "catalog/tools/materialize_batch4_uplift.py（MIG-B4 Universal 上提；entries 按 id 排序；在 materialize_catalog_pilot.py 60 条基础上追加 9 条）",
+  "generated_by": "catalog/tools/materialize_batch4_uplift.py（MIG-B4 Universal 上提；entries 按 id 排序；在 materialize_catalog_pilot.py 60 条基础上追加 9 条）+ migration/spec-decomposition/materialize-curated.py（SPEC-D 汇总池 D5 精选追加 25 条）",
   "x-digest-ethics": {
     "basis": "D24 / vocab-lock.digest_ethics",
     "write_blocking": false,
@@ -35,6 +35,8 @@
       "policies/policy.api.backward_compat_defaults.json",
       "policies/policy.api.contract_impl_consistency.json",
       "policies/policy.api.no_informal_contract.json",
+      "policies/policy.arch.decision_tradeoff_record.json",
+      "policies/policy.cache.lifecycle_definition.json",
       "policies/policy.chg.affect_templates.json",
       "policies/policy.chg.breaking_versioning.json",
       "policies/policy.chg.compat_migration_rollback.json",
@@ -44,9 +46,28 @@
       "policies/policy.chg.prechange_consumer_scan.json",
       "policies/policy.chg.staged_rollout.json",
       "policies/policy.chg.sync_contract_docs_tests.json",
+      "policies/policy.conflict.priority_ladder.json",
+      "policies/policy.dep.admission_six_dimension_check.json",
+      "policies/policy.dep.change_surface_review.json",
+      "policies/policy.dep.introduction_review.json",
+      "policies/policy.derived.single_implementation.json",
+      "policies/policy.obs.correlation_context_minimum.json",
+      "policies/policy.obs.rum_dimension_whitelist.json",
+      "policies/policy.proc.pre_code_declaration.json",
+      "policies/policy.rel.pre_release_confirmation.json",
+      "policies/policy.role.domain_decision_authority.json",
+      "policies/policy.sec.third_party_execution_register.json",
+      "policies/policy.spec.admission_criteria.json",
+      "policies/policy.spec.derived_view_regeneration.json",
       "policies/policy.spec.draft_not_baseline.json",
+      "policies/policy.spec.file_structure_contract.json",
       "policies/policy.spec.metadata_required.json",
       "policies/policy.spec.post_dev_backfill_classify.json",
+      "policies/policy.spec.procedural_record_not_surrogate.json",
+      "policies/policy.spec.semantic_identity.json",
+      "policies/policy.spec.unresolved_ledger_gate.json",
+      "policies/policy.stack.no_implicit_selection.json",
+      "policies/policy.tool.scoped_scan_boundary.json",
       "policies/policy.web.api.auth_app_client_split.json",
       "policies/policy.web.api.client_change_impact.json",
       "policies/policy.web.api.domain_api_only.json",
@@ -68,6 +89,7 @@
       "policies/policy.web.arch.naming_conventions.json",
       "policies/policy.web.arch.public_api_barrel.json",
       "policies/policy.web.chg.controlled_change_triggers.json",
+      "policies/policy.web.copy.suppression_ledger_discipline.json",
       "policies/policy.web.grid.column_schema_fields.json",
       "policies/policy.web.grid.config_isolation.json",
       "policies/policy.web.grid.freeze_key_columns.json",
@@ -80,6 +102,9 @@
       "policies/policy.web.grid.width_fix_ladder.json",
       "policies/policy.web.perf.budget_skeleton.json",
       "policies/policy.web.style.ownership_matrix.json",
+      "policies/policy.web.track.consent_lifecycle.json",
+      "policies/policy.web.track.privacy_default_deny.json",
+      "policies/policy.web.track.stable_event_keys.json",
       "policies/policy.web.uiux.provider_evidence_not_business_truth.json"
     ],
     "required": [
@@ -106,6 +131,8 @@
       "policies/policy.api.backward_compat_defaults.json",
       "policies/policy.api.contract_impl_consistency.json",
       "policies/policy.api.no_informal_contract.json",
+      "policies/policy.arch.decision_tradeoff_record.json",
+      "policies/policy.cache.lifecycle_definition.json",
       "policies/policy.chg.affect_templates.json",
       "policies/policy.chg.breaking_versioning.json",
       "policies/policy.chg.compat_migration_rollback.json",
@@ -115,9 +142,28 @@
       "policies/policy.chg.prechange_consumer_scan.json",
       "policies/policy.chg.staged_rollout.json",
       "policies/policy.chg.sync_contract_docs_tests.json",
+      "policies/policy.conflict.priority_ladder.json",
+      "policies/policy.dep.admission_six_dimension_check.json",
+      "policies/policy.dep.change_surface_review.json",
+      "policies/policy.dep.introduction_review.json",
+      "policies/policy.derived.single_implementation.json",
+      "policies/policy.obs.correlation_context_minimum.json",
+      "policies/policy.obs.rum_dimension_whitelist.json",
+      "policies/policy.proc.pre_code_declaration.json",
+      "policies/policy.rel.pre_release_confirmation.json",
+      "policies/policy.role.domain_decision_authority.json",
+      "policies/policy.sec.third_party_execution_register.json",
+      "policies/policy.spec.admission_criteria.json",
+      "policies/policy.spec.derived_view_regeneration.json",
       "policies/policy.spec.draft_not_baseline.json",
+      "policies/policy.spec.file_structure_contract.json",
       "policies/policy.spec.metadata_required.json",
       "policies/policy.spec.post_dev_backfill_classify.json",
+      "policies/policy.spec.procedural_record_not_surrogate.json",
+      "policies/policy.spec.semantic_identity.json",
+      "policies/policy.spec.unresolved_ledger_gate.json",
+      "policies/policy.stack.no_implicit_selection.json",
+      "policies/policy.tool.scoped_scan_boundary.json",
       "policies/policy.web.api.auth_app_client_split.json",
       "policies/policy.web.api.client_change_impact.json",
       "policies/policy.web.api.domain_api_only.json",
@@ -139,6 +185,7 @@
       "policies/policy.web.arch.naming_conventions.json",
       "policies/policy.web.arch.public_api_barrel.json",
       "policies/policy.web.chg.controlled_change_triggers.json",
+      "policies/policy.web.copy.suppression_ledger_discipline.json",
       "policies/policy.web.grid.column_schema_fields.json",
       "policies/policy.web.grid.config_isolation.json",
       "policies/policy.web.grid.freeze_key_columns.json",
@@ -151,6 +198,9 @@
       "policies/policy.web.grid.width_fix_ladder.json",
       "policies/policy.web.perf.budget_skeleton.json",
       "policies/policy.web.style.ownership_matrix.json",
+      "policies/policy.web.track.consent_lifecycle.json",
+      "policies/policy.web.track.privacy_default_deny.json",
+      "policies/policy.web.track.stable_event_keys.json",
       "policies/policy.web.uiux.provider_evidence_not_business_truth.json"
     ]
   },
@@ -294,6 +344,18 @@
       "source_ref": "pomaster/components/backend-hard-spec/assets/universal/12-api-contract-protocol.md"
     },
     {
+      "id": "POLICY.ARCH.DECISION_TRADEOFF_RECORD",
+      "path": "policies/policy.arch.decision_tradeoff_record.json",
+      "content_sha256": "sha256:1951dd1ff371c4268d3b11f412f00826cd7ca20a26af6ac5012a278122d6125a",
+      "source_ref": "POMaster_VNext/migration/spec-decomposition/candidates/BE-G1.yaml"
+    },
+    {
+      "id": "POLICY.CACHE.LIFECYCLE_DEFINITION",
+      "path": "policies/policy.cache.lifecycle_definition.json",
+      "content_sha256": "sha256:4c0bf4c3d38c3ad06deee6352effa2251b493a87e5bfce40f6518d5a39a31496",
+      "source_ref": "POMaster_VNext/migration/spec-decomposition/candidates/BE-G4.yaml"
+    },
+    {
       "id": "POLICY.CHG.AFFECT_TEMPLATES",
       "path": "policies/policy.chg.affect_templates.json",
       "content_sha256": "sha256:377a1dac32fcb98fb9b60a6a950c6c5b72dbcf197feb152a3645d24f7e0fa67d",
@@ -348,10 +410,94 @@
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/06-change-governance-protocol.md"
     },
     {
+      "id": "POLICY.CONFLICT.PRIORITY_LADDER",
+      "path": "policies/policy.conflict.priority_ladder.json",
+      "content_sha256": "sha256:cf1883cc6dbdc125447c379f1b138b26a42e0c8958a92b558325590cdce9c0a0",
+      "source_ref": "POMaster_VNext/migration/spec-decomposition/candidates/FE-G1.yaml"
+    },
+    {
+      "id": "POLICY.DEP.ADMISSION_SIX_DIMENSION_CHECK",
+      "path": "policies/policy.dep.admission_six_dimension_check.json",
+      "content_sha256": "sha256:38abe7aca8a98ea24ca1dafc29b6feccfe9c02123f9cd5a4315a14c3f3e0c086",
+      "source_ref": "POMaster_VNext/migration/spec-decomposition/candidates/BE-G1.yaml"
+    },
+    {
+      "id": "POLICY.DEP.CHANGE_SURFACE_REVIEW",
+      "path": "policies/policy.dep.change_surface_review.json",
+      "content_sha256": "sha256:986871922315f8c9941fd78ca1e41a5c53ac826cdede7eac649fe93aa79f9abe",
+      "source_ref": "POMaster_VNext/migration/spec-decomposition/candidates/FE-G1.yaml"
+    },
+    {
+      "id": "POLICY.DEP.INTRODUCTION_REVIEW",
+      "path": "policies/policy.dep.introduction_review.json",
+      "content_sha256": "sha256:7976fe378844dfd3dfaf385f75f5b9c82374ccc8697bf3bf9a84e0faabe15467",
+      "source_ref": "POMaster_VNext/migration/spec-decomposition/candidates/FE-G1.yaml"
+    },
+    {
+      "id": "POLICY.DERIVED.SINGLE_IMPLEMENTATION",
+      "path": "policies/policy.derived.single_implementation.json",
+      "content_sha256": "sha256:a573545df513c080e38bb423f7e7d91ba3eec4f2505e4d3ad1d44653d1946bd9",
+      "source_ref": "POMaster_VNext/migration/spec-decomposition/candidates/GUIDES.yaml"
+    },
+    {
+      "id": "POLICY.OBS.CORRELATION_CONTEXT_MINIMUM",
+      "path": "policies/policy.obs.correlation_context_minimum.json",
+      "content_sha256": "sha256:c4d260709392570b75869ee8b9b589f8dfc9fcc5cbac430e1a49edf06a68335e",
+      "source_ref": "POMaster_VNext/migration/spec-decomposition/candidates/BE-G4.yaml"
+    },
+    {
+      "id": "POLICY.OBS.RUM_DIMENSION_WHITELIST",
+      "path": "policies/policy.obs.rum_dimension_whitelist.json",
+      "content_sha256": "sha256:f640e0f44d9f4a1f02a8c6a77db28135a06db23905caa1b697ac43e96e3b8faa",
+      "source_ref": "POMaster_VNext/migration/spec-decomposition/candidates/FE-G1.yaml"
+    },
+    {
+      "id": "POLICY.PROC.PRE_CODE_DECLARATION",
+      "path": "policies/policy.proc.pre_code_declaration.json",
+      "content_sha256": "sha256:6aab263d9c074700af1036dc27b93f2397d4bcebbbcae117794b31346bf7ee5c",
+      "source_ref": "POMaster_VNext/migration/spec-decomposition/candidates/FE-G1.yaml"
+    },
+    {
+      "id": "POLICY.REL.PRE_RELEASE_CONFIRMATION",
+      "path": "policies/policy.rel.pre_release_confirmation.json",
+      "content_sha256": "sha256:20de951903e7616cf1f9e245ae74d1df169c8a1b39e8c50ed80473812be89f42",
+      "source_ref": "POMaster_VNext/migration/spec-decomposition/candidates/BE-G1.yaml"
+    },
+    {
+      "id": "POLICY.ROLE.DOMAIN_DECISION_AUTHORITY",
+      "path": "policies/policy.role.domain_decision_authority.json",
+      "content_sha256": "sha256:b3b171340300a82e22edb6ff2bab7441fdd12d9045e6ac2cc0f29696078c8c30",
+      "source_ref": "POMaster_VNext/migration/spec-decomposition/candidates/FE-G1.yaml"
+    },
+    {
+      "id": "POLICY.SEC.THIRD_PARTY_EXECUTION_REGISTER",
+      "path": "policies/policy.sec.third_party_execution_register.json",
+      "content_sha256": "sha256:877ec4d0cdd8d05aee8e7275f95f1d4df4afab628a2d5ed3ce95b334d2e3f4b2",
+      "source_ref": "POMaster_VNext/migration/spec-decomposition/candidates/FE-G1.yaml"
+    },
+    {
+      "id": "POLICY.SPEC.ADMISSION_CRITERIA",
+      "path": "policies/policy.spec.admission_criteria.json",
+      "content_sha256": "sha256:89360cd4c875ccaa8b162f7a295c3d9386b8128184a81a93e37de112c3ce21f4",
+      "source_ref": "POMaster_VNext/migration/spec-decomposition/candidates/FE-G1.yaml"
+    },
+    {
+      "id": "POLICY.SPEC.DERIVED_VIEW_REGENERATION",
+      "path": "policies/policy.spec.derived_view_regeneration.json",
+      "content_sha256": "sha256:9a9e940fa18b721616b3546da9d0227c6bee6d1db41cd5ba908d23e5daf72173",
+      "source_ref": "POMaster_VNext/migration/spec-decomposition/candidates/FE-G4.yaml"
+    },
+    {
       "id": "POLICY.SPEC.DRAFT_NOT_BASELINE",
       "path": "policies/policy.spec.draft_not_baseline.json",
       "content_sha256": "sha256:eac55cf276eeab430915fe12dbef8cbdae07ffeed184a5d021dfe360064894fd",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/06-change-governance-protocol.md"
+    },
+    {
+      "id": "POLICY.SPEC.FILE_STRUCTURE_CONTRACT",
+      "path": "policies/policy.spec.file_structure_contract.json",
+      "content_sha256": "sha256:ca6255c2ef472129a02a1446be74de2bfacbba443f1495973ff3f81fea44827b",
+      "source_ref": "POMaster_VNext/migration/spec-decomposition/candidates/FE-G1.yaml"
     },
     {
       "id": "POLICY.SPEC.METADATA_REQUIRED",
@@ -364,6 +510,36 @@
       "path": "policies/policy.spec.post_dev_backfill_classify.json",
       "content_sha256": "sha256:1431249b0492dc2c21fa265b7e36e0ade546126eb18b6839652533ef9b2ec309",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/06-change-governance-protocol.md"
+    },
+    {
+      "id": "POLICY.SPEC.PROCEDURAL_RECORD_NOT_SURROGATE",
+      "path": "policies/policy.spec.procedural_record_not_surrogate.json",
+      "content_sha256": "sha256:b8abf8d28a5dca9af7a5f450f3ec8042aae30e6e919cbd78272ce6b7000f5ae8",
+      "source_ref": "POMaster_VNext/migration/spec-decomposition/candidates/FE-G1.yaml"
+    },
+    {
+      "id": "POLICY.SPEC.SEMANTIC_IDENTITY",
+      "path": "policies/policy.spec.semantic_identity.json",
+      "content_sha256": "sha256:5d4e934ee6719872721fc63a8cda2275bb89223cdbd8d42c0e44267f3ba025f7",
+      "source_ref": "POMaster_VNext/migration/spec-decomposition/candidates/FE-G1.yaml"
+    },
+    {
+      "id": "POLICY.SPEC.UNRESOLVED_LEDGER_GATE",
+      "path": "policies/policy.spec.unresolved_ledger_gate.json",
+      "content_sha256": "sha256:34c47e60246dd1a766cd77becc2893a9364f7d3eff08cdebed187c6d809c8694",
+      "source_ref": "POMaster_VNext/migration/spec-decomposition/candidates/FE-G4.yaml"
+    },
+    {
+      "id": "POLICY.STACK.NO_IMPLICIT_SELECTION",
+      "path": "policies/policy.stack.no_implicit_selection.json",
+      "content_sha256": "sha256:e18bc13527b205107a8ed7841652a6c6be1fe62a65852f71e0744812bf879f3d",
+      "source_ref": "POMaster_VNext/migration/spec-decomposition/candidates/BE-G5.yaml"
+    },
+    {
+      "id": "POLICY.TOOL.SCOPED_SCAN_BOUNDARY",
+      "path": "policies/policy.tool.scoped_scan_boundary.json",
+      "content_sha256": "sha256:eee6fec162b6feb182d4c2bd3677bdce7a9c450a8bc6be808a5b857772559fa6",
+      "source_ref": "POMaster_VNext/migration/spec-decomposition/candidates/FE-G1.yaml"
     },
     {
       "id": "POLICY.WEB.API.AUTH_APP_CLIENT_SPLIT",
@@ -492,6 +668,12 @@
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/06-change-governance-protocol.md"
     },
     {
+      "id": "POLICY.WEB.COPY.SUPPRESSION_LEDGER_DISCIPLINE",
+      "path": "policies/policy.web.copy.suppression_ledger_discipline.json",
+      "content_sha256": "sha256:9e677d145fc4a25c94449578fc4018b57bc68231efbd3f70472f4f286a1aed27",
+      "source_ref": "POMaster_VNext/migration/spec-decomposition/candidates/FE-G4.yaml"
+    },
+    {
       "id": "POLICY.WEB.GRID.COLUMN_SCHEMA_FIELDS",
       "path": "policies/policy.web.grid.column_schema_fields.json",
       "content_sha256": "sha256:ca54052db652e024a82f029c3d812c940ee09cd49cb1698f95c317b3f8a560b1",
@@ -562,6 +744,24 @@
       "path": "policies/policy.web.style.ownership_matrix.json",
       "content_sha256": "sha256:de74e4cb471287ef0bd56acb6971953f03a463b612d9446f827625111d43fd93",
       "source_ref": "POMaster_VNext/migration/master-batch4/split-ledger.yaml"
+    },
+    {
+      "id": "POLICY.WEB.TRACK.CONSENT_LIFECYCLE",
+      "path": "policies/policy.web.track.consent_lifecycle.json",
+      "content_sha256": "sha256:753c4226f7a23203a6350d8cc1d7b18f9999963dc455ae13beb6e99a6ef737ed",
+      "source_ref": "POMaster_VNext/migration/spec-decomposition/candidates/FE-G4.yaml"
+    },
+    {
+      "id": "POLICY.WEB.TRACK.PRIVACY_DEFAULT_DENY",
+      "path": "policies/policy.web.track.privacy_default_deny.json",
+      "content_sha256": "sha256:b7aaaf7da5b825d31741a93ceab866c6a5cf487d0542b024e4fcd5efc1cb421d",
+      "source_ref": "POMaster_VNext/migration/spec-decomposition/candidates/FE-G4.yaml"
+    },
+    {
+      "id": "POLICY.WEB.TRACK.STABLE_EVENT_KEYS",
+      "path": "policies/policy.web.track.stable_event_keys.json",
+      "content_sha256": "sha256:74c579dab43922fbf4d04807b6224daaff3bf79e440e95529e6ea806546f5118",
+      "source_ref": "POMaster_VNext/migration/spec-decomposition/candidates/FE-G4.yaml"
     },
     {
       "id": "POLICY.WEB.UIUX.PROVIDER_EVIDENCE_NOT_BUSINESS_TRUTH",

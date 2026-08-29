@@ -1,0 +1,68 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "kind='policy' 不在 vocab-lock kinds_registry.truth_bodies（POLICY. 前缀已冻结注册，closed-world）；新 id 域段待登记：STACK",
+    "proposal": "词汇表 PR 登记 policy kind 及新域段；或 Owner 裁决 policy 条目住 catalog/ 而非 truth/objects 正文层（与前批 45+9 条同因同请，合并进同一 vocab PR）",
+    "locked_vocab_untouched": true
+  },
+  "x-spec-d-materialization": {
+    "status": "PROPOSAL",
+    "package": "SPEC-D 语义分解汇总（consolidated-pool D5 精选，cap=25）",
+    "human_review_required": true,
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/migration/spec-decomposition/candidates/consolidated-pool.yaml",
+    "group": "BE-G5",
+    "candidate_id": "POLICY.STACK.NO_IMPLICIT_SELECTION",
+    "density_rank": 13,
+    "density_score": 34.12,
+    "pool_statement_sha16": "820767c0c31e52ce",
+    "curated_rule": "UNIVERSAL + UNIVERSAL_POLICY + required_when_applicable + 无 uncertainty + 非 project_scope + 非重复 + 与既有 69 条零语义重复；按信息密度排序取前 25"
+  },
+  "id": "POLICY.STACK.NO_IMPLICIT_SELECTION",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "UNIVERSAL_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "技术栈分层显式选型",
+  "statement_zh": "对某一技术层的选型不得被用作推断其他技术层（框架、存储、缓存、入口、运行时容器）的依据；每一层能力都必须经显式选择进入项目技术基线。",
+  "statement_en_keywords": [
+    "explicit selection",
+    "no cross-layer inference",
+    "technology baseline"
+  ],
+  "applies_when": {
+    "lane": "any",
+    "condition": "引入或变更任一技术栈层时"
+  },
+  "enforcement": "required_when_applicable",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-spec-decomposition"
+  },
+  "origin": "ingested",
+  "origin_note": "SPEC-D 汇总池 D5 精选物化；statement 沿用候选卡独立措辞（clean-room），零逐字拷贝上游源文本",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/migration/spec-decomposition/candidates/BE-G5.yaml",
+      "captured_by": "agent:claude/spec-d-consolidation",
+      "locator": {
+        "candidate": "POLICY.STACK.NO_IMPLICIT_SELECTION",
+        "source_protocol": ".trellis/spec/backend/stacks/java/java-language-overlay.md",
+        "lines": "L19",
+        "source_sha256": "38b592a5beaa899abb45e871e5097cafedeea80502baee00bcfbfcfa313dab85"
+      },
+      "clean_room_note": "independently rewritten from SPEC-D decomposition candidate cards; zero verbatim copy"
+    }
+  ],
+  "review_notes": [
+    "技术栈分层选型治理在既有 69 条中无对应条目，零语义重复；源卡为该域统摄性正本（多个分层实例已 absorbed 于池台账）。"
+  ]
+}

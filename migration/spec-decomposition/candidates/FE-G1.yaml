@@ -1,0 +1,2095 @@
+# =====================================================================
+# FE-G1 语义拆解候选卡（批次 SPEC-D · frontend 族第 1 组）
+# 方法论：POMaster_VNext/docs/catalog-pilot-report.md §3-§6（试点候选卡 schema）
+# 重复分母：catalog 既有 69 条（54 policies + 10 knowledge + 5 gates）
+# 纪律：MASTer_master 只读 / 禁墙钟（无时间戳，仅批次代号） / clean-room
+#       独立措辞 / D5 防膨胀：本文件全部候选为 backlog 排队，物化由汇总组
+#       按「高置信 Universal + MUST 级 + 与既有 69 条零重复」保守精选。
+# =====================================================================
+meta:
+  seq: SPEC-D
+  group: FE-G1
+  lane: frontend
+  theme: 治理与工程流程
+  method:
+    basis: POMaster_VNext/docs/catalog-pilot-report.md §3-§6
+    candidate_schema: POMaster_VNext/catalog/candidates/candidates-draft.json 卡片形态
+    duplicate_denominator: catalog/policies + catalog/knowledge + catalog/gates 既有 69 条
+    statement_rule: clean-room（语义等价、词形独立；禁逐字拷贝；禁项目专名入 UNIVERSAL statement）
+  denominator:
+    group_files: 15
+    excluded_pilot_decomposed: 1
+    excluded_pilot_file: .trellis/spec/frontend/06-change-governance-protocol.md
+    excluded_pilot_note: 试点 pilot-0001 已按 vendor_fully_contained 处理，本组不再重复拆解
+    files_decomposed_here: 14
+    files_covered: 14
+    empty_conclusion_files: []
+  counts:
+    candidates_total: 133
+    triage:
+      UNIVERSAL: 123
+      PROJECT: 5
+      HYBRID: 5
+    duplicate_vs_existing_catalog: 10
+    kind:
+      policy: 126
+      knowledge_entry: 6
+      gate_recipe: 1
+  discipline:
+    - MASTer_master 只读：source 仅援引 .trellis/spec/frontend/ 只读源
+    - 禁墙钟：本文件零时间戳；批次代号固定 SPEC-D
+    - D5 防膨胀：候选全量留档进 backlog；物化量为汇总组保守精选子集，不等于本文件卡数
+    - 分拣三值：UNIVERSAL=通用工程政策 / PROJECT=MASTer 专属（标 project_scope） / HYBRID=通用语义+项目附则
+
+# ---------------------------------------------------------------------
+files:
+
+  - file: 01-development-checklist-protocol.md
+    ref: .trellis/spec/frontend/01-development-checklist-protocol.md
+    priority: P0
+    coverage: 9 candidates + 2 folded
+    folded:
+      - lines: L30-L32
+        note: 先实现后补范围 / 无证据断言为卡 1、卡 4 的禁止形态段，不另立卡
+      - lines: L66
+        note: 反模式（不搜调用方直改公共组件）折叠入卡 1 禁止形态段
+    cross_lane_hint: 与 backend/05-task-workflow-protocol、backend/07-evidence-acceptance-protocol（BE-G1 待拆）同构
+    candidates:
+      - proposed_id: POLICY.PROC.PRE_CODE_DECLARATION
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 任何实现动作开始前，必须先完成变更分类、确认适用协议集合、检索既有可复用能力，并圈定三份边界清单——必须修改、必须同步、禁止触碰。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/01-development-checklist-protocol.md
+        source_lines: L20-L21
+        applies_when: { lane: any, condition: 任何功能、修复、重构、配置或文档驱动变更开工前 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: 禁止形态（先实现后补范围 L30、反模式 L66）已折叠；无复用检索的公共组件直改视为违规形态
+        vocab_pr_needed: true
+      - proposed_id: POLICY.CONTRACT.NO_INVENTED_FACTS
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 缺失正式依据的字段、状态、权限、接口或业务规则，必须先补全契约或显式阻塞等待确认，不得以推测值继续实现。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/01-development-checklist-protocol.md
+        source_lines: L22
+        applies_when: { lane: any, condition: 实现中遭遇未定义事实时 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: 双锚卡——02-ai-generated-code L28（AI 侧禁止形态：发明枚举/公式/权限码/路由/配置）为同事实的第二锚点，02 文件内不重复立卡
+        vocab_pr_needed: true
+      - proposed_id: POLICY.PROC.SCOPE_DRIFT_RECLASSIFY
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 实现过程中发现范围超出既有分类时，必须暂停、重新分类并同步更新计划后再继续。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/01-development-checklist-protocol.md
+        source_lines: L23
+        applies_when: { lane: any, condition: 开发中发现范围扩大 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.EVIDENCE.DELIVERY_REPORT
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 交付时必须附带检查结果、影响说明与残余风险；主观断言（如"应该没问题"）不构成可复核证据。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/01-development-checklist-protocol.md
+        source_lines: L24, L31
+        applies_when: { lane: any, condition: 任务交付与收尾 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: 与 03-acceptance-gate 的阶段门禁证据相邻——本卡为任务级交付证据，彼为阶段放行证据
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.SPEC.REVIEW_TIMING_DUPLICATE
+        kind: policy
+        classification: DUPLICATE
+        triage: UNIVERSAL
+        statement_zh: 开发结束、任务关闭或收尾流程前必须完成规格复审；新知识必须归档入册，无新知识也须显式留痕。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/01-development-checklist-protocol.md
+        source_lines: L25-L26, L56
+        applies_when: { lane: any, condition: 每次开发结束 }
+        enforcement: required_when_applicable
+        duplicate_of: POLICY.SPEC.POST_DEV_BACKFILL_CLASSIFY
+        uncertainty: 正本已覆盖"归类不得留空"（含无需更新四分类）；本文件增量面为时机绑定（任务关闭/finish 前），见正本收编建议
+        notes: null
+        vocab_pr_needed: false
+      - proposed_id: POLICY.SPEC.PROCEDURAL_RECORD_NOT_SURROGATE
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 归档、收尾、发布记录等程序性动作不构成规格复审的替代品；跳过复审直接收尾被禁止，一次性实现细节不得写入长期规格。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/01-development-checklist-protocol.md
+        source_lines: L33-L34
+        applies_when: { lane: any, condition: 任务关闭、finish、发布等收尾动作 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: 双锚卡——03-acceptance-gate L35 与 frontend/index.md L75 为同事实锚点
+        vocab_pr_needed: true
+      - proposed_id: POLICY.CHG.NO_UNRELATED_CHANGES
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 变更不得夹带与当前目标无关的清理、升级或重构；既有的无关改动必须原样保留。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/01-development-checklist-protocol.md
+        source_lines: L32
+        applies_when: { lane: any, condition: 任何变更执行中 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: 双锚卡——02-ai-generated-code L15（Unrelated Change 术语定义）与 L24（AI 必须保留无关改动）
+        vocab_pr_needed: false
+      - proposed_id: POLICY.PROC.RISK_PROPORTIONAL_DEPTH
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 检查深度应随变更风险增减，而非机械执行与本次无关的项目；高风险场景可加设附加门禁。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/01-development-checklist-protocol.md
+        source_lines: L39
+        applies_when: { lane: any, condition: 制定检查与门禁方案时 }
+        enforcement: advisory
+        duplicate_of: null
+        uncertainty: null
+        notes: 双锚卡——03-acceptance-gate L40（按风险设置附加门禁）为同向锚点
+        vocab_pr_needed: true
+      - proposed_id: POLICY.PROC.CHECKLIST_CHANGE_POLICY
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 向检查清单新增条目必须同时定义触发条件、验证方式与失败动作；降级检查项必须经批准并附带复升期限。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/01-development-checklist-protocol.md
+        source_lines: L74
+        applies_when: { lane: any, condition: 维护检查清单本身时 }
+        enforcement: advisory
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+
+  - file: 02-ai-generated-code-protocol.md
+    ref: .trellis/spec/frontend/02-ai-generated-code-protocol.md
+    priority: P0
+    coverage: 10 candidates + 3 folded
+    folded:
+      - lines: L28
+        note: AI 发明契约禁止形态 → 已并入 01 卡 POLICY.CONTRACT.NO_INVENTED_FACTS 双锚
+      - lines: L15, L24
+        note: 无关改动术语与保留义务 → 已并入 01 卡 POLICY.CHG.NO_UNRELATED_CHANGES 双锚
+      - lines: L66
+        note: 反模式（未搜索便新建并顺手重构 store/API/样式）→ 折叠入卡 2 禁止形态段
+    cross_lane_hint: 无直接 BE 对应物（backend/06-ai-generated-code-protocol 属 BE-G1 待拆，届时可做跨车道合并审）
+    candidates:
+      - proposed_id: POLICY.AI.CHANGE_PLAN_FIRST
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: AI 参与编码前必须先读取适用协议，并产出一份写明依据、范围与验证方式的变更计划。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/02-ai-generated-code-protocol.md
+        source_lines: L19
+        applies_when: { lane: any, condition: AI 代理执行分析、生成、修改、评审或验证时 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.REUSE.JUSTIFY_BEFORE_CREATE
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 新建任何能力前必须检索既有组件、抽象、契约与工具，并能证明既有能力无法满足需求；重复制造既有能力被禁止。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/02-ai-generated-code-protocol.md
+        source_lines: L20, L29, L49
+        applies_when: { lane: any, condition: 拟新建组件、抽象、工具或同类实现时 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: 与 01 卡 PRE_CODE_DECLARATION 的复用检索步骤相邻——彼为流程槽位，本卡为新建正当性义务
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.AI.FACT_INFERENCE_SEPARATION
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 分析与实现输出必须显式区分已核实事实、推断与待确认项；未决事项以待确认标记保留，不得临场编造。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/02-ai-generated-code-protocol.md
+        source_lines: L21
+        applies_when: { lane: any, condition: AI 输出分析与实现时 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: 辅助锚点——frontend/index.md L39（TODO_CONFIRM 保留，AI 不得临场发明）
+        vocab_pr_needed: true
+      - proposed_id: POLICY.AI.JUSTIFY_FILE_SELECTION
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 每次修改必须说明选择这些文件的理由，以及为何其他层级无需改动。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/02-ai-generated-code-protocol.md
+        source_lines: L22
+        applies_when: { lane: any, condition: AI 产出文件修改集时 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.AI.HONEST_VALIDATION
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 必须真实执行可用的检查并如实报告未验证项；声称执行过实际未运行的验证被禁止。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/02-ai-generated-code-protocol.md
+        source_lines: L23, L31
+        applies_when: { lane: any, condition: AI 报告验证状态时 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: 与 01 卡 DELIVERY_REPORT 相邻——彼为交付证据完整性，本卡为 AI 汇报真实性
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.GUARD.NO_CHECK_WEAKENING
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 不得通过删除测试、削弱断言、关闭规则或类型逃逸让问题从检查中消失；任何此类例外必须最小化并留痕。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/02-ai-generated-code-protocol.md
+        source_lines: L30
+        applies_when: { lane: any, condition: 修复问题或让检查通过时 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: 多锚卡——10-engineering-tooling L38/L84 与 20-testing L32 为同事实锚点，该两文件不重复立卡
+        vocab_pr_needed: true
+      - proposed_id: POLICY.SPEC.DECISION_SINK
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 重复出现的决策应沉淀为协议、契约或自动检查，而非依赖下次记忆。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/02-ai-generated-code-protocol.md
+        source_lines: L35
+        applies_when: { lane: any, condition: 同一决策第二次出现时 }
+        enforcement: advisory
+        duplicate_of: null
+        uncertainty: 与 01 卡 SPEC 复审语义相邻——彼为逐任务复审，本卡为跨任务沉淀通道
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.CHG.HIGH_RISK_MIGRATION_DUPLICATE
+        kind: policy
+        classification: DUPLICATE
+        triage: UNIVERSAL
+        statement_zh: 高风险的公共变更应预先准备迁移方案与回退路径。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/02-ai-generated-code-protocol.md
+        source_lines: L36
+        applies_when: { lane: any, condition: 高风险公共变更 }
+        enforcement: advisory
+        duplicate_of: POLICY.CHG.COMPAT_MIGRATION_ROLLBACK
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: false
+      - proposed_id: POLICY.AI.RULE_RELAXATION_APPROVAL
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 放宽 AI 行为禁令需要工程治理与领域双方责任人共同批准；新型 AI 失误应转化为协议条款或自动门禁。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/02-ai-generated-code-protocol.md
+        source_lines: L74
+        applies_when: { lane: any, condition: 调整 AI 行为约束时 }
+        enforcement: advisory
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: KNOWLEDGE.EX.REPO.LINE_ENDING_BYTES_MODE
+        kind: knowledge_entry
+        classification: KNOWLEDGE_PATTERN
+        triage: PROJECT
+        project_scope: true
+        statement_zh: 批量改写源文件必须以字节模式保留各文件既有行尾；行尾混存仓库中，文本模式默认转换会造成全文件噪声 diff，改动后应先核对改动行数量级再继续。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/02-ai-generated-code-protocol.md
+        source_lines: L58-L60
+        applies_when: { lane: frontend, condition: 目标仓库行尾混存且禁用自动转换时 }
+        enforcement: advisory
+        duplicate_of: null
+        uncertainty: null
+        notes: 项目示例知识（仓库行尾事故实证）；D5 建议 backlog 不物化——专名密度高（core.autocrlf 等仓库细节）
+        vocab_pr_needed: true
+
+  - file: 03-acceptance-gate-protocol.md
+    ref: .trellis/spec/frontend/03-acceptance-gate-protocol.md
+    priority: P0
+    coverage: 10 candidates + 2 folded
+    folded:
+      - lines: L35
+        note: 程序性记录不替代规格复审 → 已并入 01 卡 POLICY.SPEC.PROCEDURAL_RECORD_NOT_SURROGATE 多锚
+      - lines: L40, L66
+        note: 风险比例检查 → 已并入 01 卡 RISK_PROPORTIONAL_DEPTH 双锚；反模式（小改动跳过构建）→ 折叠入卡 2 禁止形态段
+    cross_lane_hint: 与 backend/07-evidence-acceptance-protocol（BE-G1 待拆）同构
+    candidates:
+      - proposed_id: POLICY.GATE.STAGE_VERDICT_EVIDENCE
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 每个阶段必须给出通过、失败或带期限豁免三种结论之一，并附可复核证据。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/03-acceptance-gate-protocol.md
+        source_lines: L21
+        applies_when: { lane: any, condition: 任何阶段门禁判定时 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.GATE.P0_NON_BYPASSABLE
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 最高优先级门禁失败时禁止进入下一阶段；时间压力、人工代过或本地表现正常都不构成绕过理由。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/03-acceptance-gate-protocol.md
+        source_lines: L22, L31
+        applies_when: { lane: any, condition: P0 级门禁判定 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: 反模式 L66（改动很小跳过构建）已折叠为禁止形态
+        vocab_pr_needed: true
+      - proposed_id: POLICY.GATE.RISK_FACTORS_CONFIRMED
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 测试未通过、契约未冻结或回滚不可用时不得放行；契约、权限、安全、数据迁移与回滚风险必须在放行前逐项确认。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/03-acceptance-gate-protocol.md
+        source_lines: L23, L32
+        applies_when: { lane: any, condition: 评审、提测、上线放行前 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.CHG.CONSUMER_VERIFICATION_DUPLICATE
+        kind: policy
+        classification: DUPLICATE
+        triage: UNIVERSAL
+        statement_zh: 公共能力变更放行前必须验证全部受影响调用方。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/03-acceptance-gate-protocol.md
+        source_lines: L24
+        applies_when: { lane: any, condition: 公共能力变更进入门禁 }
+        enforcement: required_when_applicable
+        duplicate_of: POLICY.CHG.PRECHANGE_CONSUMER_SCAN
+        uncertainty: 门禁侧/验证侧同事实形态——正本为变更前扫描义务，本卡为其放行侧判据；20-testing L21（测试侧回归扩大）为第三锚点
+        notes: null
+        vocab_pr_needed: false
+      - proposed_id: POLICY.GATE.EXCEPTION_DISCIPLINE
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 任何门禁豁免必须记录负责人、风险、补偿措施与到期时间。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/03-acceptance-gate-protocol.md
+        source_lines: L25
+        applies_when: { lane: any, condition: 门禁豁免发生时 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.SPEC.READY_FOR_DEV_STATUS_CHECK
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 正式开发开始前必须确认所命中的各级规格均已达到可开发状态（基线或获批准的候选）。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/03-acceptance-gate-protocol.md
+        source_lines: L26
+        applies_when: { lane: any, condition: 开发启动前 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: 与既有 DRAFT_NOT_BASELINE（禁止面）互补——本卡为前置确认义务面
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.SPEC.DRAFT_GATE_DUPLICATE
+        kind: policy
+        classification: DUPLICATE
+        triage: UNIVERSAL
+        statement_zh: 规格仍为草稿且无获批准候选时，不得进入正式开发。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/03-acceptance-gate-protocol.md
+        source_lines: L34
+        applies_when: { lane: any, condition: 开发准入判定 }
+        enforcement: required_when_applicable
+        duplicate_of: POLICY.SPEC.DRAFT_NOT_BASELINE
+        uncertainty: 正本含"示例态内容"扩展面（候选态仅限标注切片，见 frontend/index.md L53-L68）
+        notes: null
+        vocab_pr_needed: false
+      - proposed_id: POLICY.SPEC.FREEZE_BEFORE_USE
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 各类规格应在被消费前冻结：需求规格在进入开发前、接口规格在联调前、公共组件规格在首次公共复用前、整体基线在首个垂直切片完成后。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/index.md
+        source_lines: index.md L63-L68
+        applies_when: { lane: any, condition: 规格冻结时点安排 }
+        enforcement: advisory
+        duplicate_of: null
+        uncertainty: 源文锚点在 index.md（本组名下），语义服务于 03 的准入判定故挂此文件组
+        notes: 冻结语义为"可作开发依据"而非"永不修改"，基线后修改走受控变更
+        vocab_pr_needed: true
+      - proposed_id: POLICY.GATE.AUTO_EVIDENCE
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 静态检查、类型、测试、构建、安全与包体证据应自动采集，减少人工口说成分。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/03-acceptance-gate-protocol.md
+        source_lines: L39
+        applies_when: { lane: any, condition: 门禁证据准备 }
+        enforcement: advisory
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: GATE.PROC.STAGE_GATE_CHECKS
+        kind: gate_recipe
+        classification: GATE_RECIPE
+        triage: UNIVERSAL
+        statement_zh: 阶段门禁判卷配方：评审前查范围/契约/自检齐全；提测前查评审关闭/构建成功/环境明确；上线前查回归/安全/监控/灰度/回滚；全程校验豁免有负责人与到期、开发准入状态与规格复审完成。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/03-acceptance-gate-protocol.md
+        source_lines: L49-L56
+        applies_when: { lane: any, condition: 阶段门禁 runner 判卷 }
+        enforcement: deterministic_where_possible
+        duplicate_of: null
+        uncertainty: null
+        notes: verdict 词表沿用试点七值对齐口径；GATE. 前缀词形随 vocab-pr V2 一并裁决
+        vocab_pr_needed: true
+
+  - file: 04-security-protocol.md
+    ref: .trellis/spec/frontend/04-security-protocol.md
+    priority: P0
+    coverage: 17 candidates + 2 folded
+    folded:
+      - lines: L35
+        note: 渲染未清洗 HTML 禁令 → 并入卡 3（VALIDATE_IN_ENCODE_OUT）禁止形态段
+      - lines: L39, L76
+        note: 遥测敏感原值禁令 → 规范归属 34-monitoring 卡 POLICY.OBS.NO_SENSITIVE_RAW_VALUES 多锚（34 文件立卡）；反模式（token 入 URL/CSS 隐藏）→ 折叠入卡 12/14 禁止形态段
+    cross_lane_hint: 与 backend/10-security-protocol（BE-G2 待拆）跨车道同构度最高，汇总组合并审候选
+    candidates:
+      - proposed_id: POLICY.SEC.AUTHN_POLICY_UNIFIED
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 令牌、会话凭据、防伪令牌、登出与刷新机制必须在单一策略中统一定义，不得各处自行其是。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/04-security-protocol.md
+        source_lines: L21
+        applies_when: { lane: any, condition: 设计或修改认证会话体系时 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.SEC.DEFAULT_DISTRUST
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 一切外部输入——包括地址、文件名、消息与标记文本——默认按不可信处理。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/04-security-protocol.md
+        source_lines: L22
+        applies_when: { lane: any, condition: 任何外部数据进入系统 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.BOUNDARY.VALIDATE_IN_ENCODE_OUT
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 不可信数据在进入系统时校验、在输出到不同上下文时按该上下文编码或净化；类型标注不构成运行时校验的替代。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/04-security-protocol.md
+        source_lines: L23
+        applies_when: { lane: any, condition: 不可信数据的入口与出口处理 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: 双锚卡——10-engineering-tooling L27（外部数据先运行时校验再入可信类型）为同事实锚点；04 L35 渲染未清洗 HTML 为禁止形态
+        vocab_pr_needed: true
+      - proposed_id: POLICY.DATA.PERMISSIONED_SURFACES
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 字段的遮蔽、复制、导出与入日志行为都必须服从该字段的数据权限设定。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/04-security-protocol.md
+        source_lines: L24
+        applies_when: { lane: any, condition: 展示、复制、导出或记录受权限保护的数据时 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.SEC.UPLOAD_DOWNLOAD_SERVER_RECHECK
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 文件上传与下载的权限、类型与范围必须由服务端再次校验，客户端检查不作为边界。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/04-security-protocol.md
+        source_lines: L25
+        applies_when: { lane: any, condition: 文件上传下载链路 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.SEC.FAIL_CLOSED_DEFAULT
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 安全机制失败时必须落入保守的默认行为，而非放行。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/04-security-protocol.md
+        source_lines: L26
+        applies_when: { lane: any, condition: 安全判定失败分支 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.WEB.SEC.COOKIE_CSRF_HARDENING
+        kind: policy
+        classification: LANE_POLICY
+        triage: UNIVERSAL
+        statement_zh: 会话 Cookie 必须逐项声明安全属性与生命周期；状态变更请求必须配备正式的防伪机制，不得仅靠同源策略属性。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/04-security-protocol.md
+        source_lines: L27
+        applies_when: { lane: frontend, condition: 会话 Cookie 与状态变更请求设计 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: Cookie/CSRF 为 Web 平台词元，故 LANE；与既有 POLICY.WEB.API.SESSION_RECOVERY_SPLIT（刷新链路）互补不重复
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.WEB.SEC.CROSS_WINDOW_MESSAGING
+        kind: policy
+        classification: LANE_POLICY
+        triage: UNIVERSAL
+        statement_zh: 跨窗口通信必须指定确切目标源，接收端校验来源与消息结构，消息内容仅作数据处理，禁止解释为代码或标记。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/04-security-protocol.md
+        source_lines: L28, L40
+        applies_when: { lane: frontend, condition: 跨窗口消息收发 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: postMessage 词元 LANE；语义（校验来源+内容仅作数据）lane 中性
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.SEC.URL_SOURCE_ALLOWLIST
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 跳转地址、外链、下载与资源地址必须限定安全协议与受信来源，禁止由不可信参数直接决定。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/04-security-protocol.md
+        source_lines: L29
+        applies_when: { lane: any, condition: 构造或接受任何跳转/加载地址 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.SEC.THIRD_PARTY_EXECUTION_REGISTER
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 引入的第三方执行体（脚本、内嵌框架、标签）必须登记责任者、来源、权限、数据范围、完整性保障与撤除方式，并遵循最小能力原则。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/04-security-protocol.md
+        source_lines: L30
+        applies_when: { lane: any, condition: 页面引入第三方执行体 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.SEC.IDENTITY_TRANSITION_CLEANUP
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 注销、账号或租户切换、权限收缩与会话失效时，必须清除敏感缓存、本地存储、订阅、后台线程与长连接。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/04-security-protocol.md
+        source_lines: L31
+        applies_when: { lane: any, condition: 身份或权限状态变化 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: 与既有 SESSION_RECOVERY_SPLIT 不重复——彼为刷新链路拆分，本卡为身份迁移清理面
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.SEC.NO_SECRETS_IN_CLIENT_SURFACE
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 凭据类秘密不得出现在源码、地址栏、日志或任何公开可见的客户端产物中；环境文件不作为秘密的存放地。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/04-security-protocol.md
+        source_lines: L36
+        applies_when: { lane: any, condition: 秘密值的存放与传播 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: 多锚卡——05-environment L28/L31 为同事实锚点（硬编码密钥/环境文件非保险箱），05 文件不重复立卡
+        vocab_pr_needed: true
+      - proposed_id: POLICY.SEC.NO_SCRIPT_READABLE_CREDENTIALS
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 登录态凭据与刷新令牌不得持久化到脚本可读取的存储；如必须，须有安全责任人批准并带期限的例外。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/04-security-protocol.md
+        source_lines: L37
+        applies_when: { lane: any, condition: 凭据持久化决策 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.SEC.NO_CLIENT_HIDE_AS_AUTHZ
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 界面隐藏不构成访问控制；最终授权判定必须来自服务端。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/04-security-protocol.md
+        source_lines: L38, L76
+        applies_when: { lane: any, condition: 权限表现层设计 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: 辅助锚点——frontend/index.md L120 冲突优先级（服务端授权结果压过界面显示）
+        vocab_pr_needed: true
+      - proposed_id: POLICY.SEC.NO_LONGTERM_SECURITY_DISABLE
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 关闭内容安全策略、防伪校验、证书校验或输入校验只能作为有期限的临时联调手段，禁止成为长期方案。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/04-security-protocol.md
+        source_lines: L41
+        applies_when: { lane: any, condition: 联调期安全策略调整 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.WEB.SEC.CSP_DEFENSE_IN_DEPTH
+        kind: policy
+        classification: LANE_POLICY
+        triage: UNIVERSAL
+        statement_zh: 内容安全策略、受控净化器与依赖安全扫描应从观察模式逐步收紧为强制模式；策略是纵深防线，不取代输出编码与净化。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/04-security-protocol.md
+        source_lines: L45-L46
+        applies_when: { lane: frontend, condition: 内容安全策略与净化器配置 }
+        enforcement: advisory
+        duplicate_of: null
+        uncertainty: CSP/Trusted Types 为 Web 词元故 LANE
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.SEC.RELAXATION_APPROVAL
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 任何安全放宽必须附带风险评估、批准人与有效期；高危漏洞修复优先于交互便利。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/04-security-protocol.md
+        source_lines: L84
+        applies_when: { lane: any, condition: 安全约束放宽决策 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+
+  - file: 05-environment-configuration-protocol.md
+    ref: .trellis/spec/frontend/05-environment-configuration-protocol.md
+    priority: P0
+    coverage: 7 candidates + 2 folded
+    folded:
+      - lines: L28, L31
+        note: 硬编码环境 URL/密钥与"环境文件非保险箱" → 已并入 04 卡 POLICY.SEC.NO_SECRETS_IN_CLIENT_SURFACE 多锚
+      - lines: L35, L56, L60
+        note: 无敏感值配置示例与反模式（注释切换生产地址）→ 折叠入卡 1/卡 2 注记
+    cross_lane_hint: 与 backend/11-environment-configuration-protocol（BE-G2 待拆）同构
+    candidates:
+      - proposed_id: POLICY.CFG.SCHEMA_BACKED_CONFIG
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 每项配置必须具备结构定义、类型、默认值、必填校验，并纳入环境矩阵管理。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/05-environment-configuration-protocol.md
+        source_lines: L20
+        applies_when: { lane: any, condition: 定义任何配置项 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.CFG.SINGLE_CONFIG_MODULE
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 接口地址、模拟开关、日志级别与环境标识只能从统一配置模块读取，业务组件不得接触底层环境变量。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/05-environment-configuration-protocol.md
+        source_lines: L21, L29
+        applies_when: { lane: any, condition: 业务代码读取配置 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: 与 10 卡 SINGLE_EFFECTIVE_CONFIG_SOURCE（仓库级配置文件唯一生效源）互补——彼管配置文件，本卡管运行时读取通道
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.CFG.PRODUCTION_SAFE_DEFAULTS
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 模拟数据、调试日志与开发工具在生产环境默认关闭；非生产环境必须显式可辨识。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/05-environment-configuration-protocol.md
+        source_lines: L22, L36
+        applies_when: { lane: any, condition: 生产构建与环境标识 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.CFG.FAIL_ON_MISSING_REQUIRED
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 必填配置缺失时进程必须启动失败或安全降级，禁止以猜测值继续。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/05-environment-configuration-protocol.md
+        source_lines: L23
+        applies_when: { lane: any, condition: 启动时配置校验 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.CFG.CLIENT_CONFIG_TREAT_AS_PUBLIC
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 所有随客户端分发的配置一律按公开信息对待，敏感值不得进入。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/05-environment-configuration-protocol.md
+        source_lines: L24
+        applies_when: { lane: any, condition: 客户端配置敏感性判定 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.CFG.ENV_ISOLATION
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 必须防止意外的跨环境数据连接；环境间隔离是配置体系的硬边界。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/05-environment-configuration-protocol.md
+        source_lines: L30
+        applies_when: { lane: any, condition: 环境连接串与数据面配置 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.CFG.CHANGE_SYNC_DUPLICATE
+        kind: policy
+        classification: DUPLICATE
+        triage: UNIVERSAL
+        statement_zh: 配置增删改必须同步其结构定义、示例、部署矩阵与回滚方案；破坏性配置变更提供迁移期。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/05-environment-configuration-protocol.md
+        source_lines: L68
+        applies_when: { lane: any, condition: 配置项变更 }
+        enforcement: required_when_applicable
+        duplicate_of: POLICY.CHG.SYNC_CONTRACT_DOCS_TESTS
+        uncertainty: 同步半句归正本；迁移期半句语义对应 COMPAT_MIGRATION_ROLLBACK——配置域实例，无独立增量
+        notes: null
+        vocab_pr_needed: false
+
+  - file: 08-role-responsibility-protocol.md
+    ref: .trellis/spec/frontend/08-role-responsibility-protocol.md
+    priority: P0
+    coverage: 5 candidates + 2 folded
+    folded:
+      - lines: L28
+        note: 集体名义不构成责任人 → 并入卡 1 禁止形态段
+      - lines: L60, L68
+        note: 反模式（未确认接口自行解释）→ 折叠入卡 4；角色变化通知 → 折叠入卡 5 注记
+    cross_lane_hint: 与 backend/09-role-responsibility-protocol（BE-G1 待拆）同构
+    candidates:
+      - proposed_id: POLICY.ROLE.ACCOUNTABLE_OWNER_EXISTS
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 每项协议、公共组件、接口、业务规则与发布都必须有单一最终责任人；找不到责任人的关键决策必须阻塞并升级。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/08-role-responsibility-protocol.md
+        source_lines: L21, L23
+        applies_when: { lane: any, condition: 关键制品与决策的责任分配 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: 与既有 AUTHORITY.CHG.CHANGE_OWNERS（变更三方权威分配默认值）相邻不重复——彼为变更过程权威分布，本卡为责任人存在性义务
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.ROLE.PRE_CHANGE_REVIEWER_SET
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 跨团队变更在开发开始前必须确定评审人与通知名单。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/08-role-responsibility-protocol.md
+        source_lines: L22
+        applies_when: { lane: any, condition: 跨团队变更启动 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.ROLE.HUMAN_SIGNS_FOR_AI
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: AI 产出必须由人类责任人复核；AI 不得担任任何放行、业务、合规或上线签字角色。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/08-role-responsibility-protocol.md
+        source_lines: L24, L31, L50
+        applies_when: { lane: any, condition: AI 参与的任何产出与决策 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.ROLE.DOMAIN_DECISION_AUTHORITY
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 各领域决定权不可越位：界面实现方不得单方面定夺接口契约、计算口径或数据权限；视觉稿不得压倒安全、可访问性与公共接口约束。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/08-role-responsibility-protocol.md
+        source_lines: L29-L30
+        applies_when: { lane: any, condition: 跨领域决策权归属争议 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.ROLE.RACI_AND_ESCALATION
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 跨层能力应维护轻量职责矩阵；责任人缺席时应有代理与升级路径，临时代理必须限定范围与期限。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/08-role-responsibility-protocol.md
+        source_lines: L35-L36, L68
+        applies_when: { lane: any, condition: 跨层协作机制维护 }
+        enforcement: advisory
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+
+  - file: 09-module-boundary-protocol.md
+    ref: .trellis/spec/frontend/09-module-boundary-protocol.md
+    priority: P0
+    coverage: 12 candidates + 3 folded
+    folded:
+      - lines: L66
+        note: 领域 API 经共享 HTTP client、禁直引 HTTP 库 → 与既有 POLICY.WEB.API.SINGLE_HTTP_CLIENT 同事实，不另立卡
+      - lines: L114
+        note: 引擎文件禁持用户可见文案 → 归属 39-copywriting（FE-G4），本组不立卡
+      - lines: L157-L167
+        note: 示例/反模式（页面自建请求、绕过网格层等）→ 折叠入卡 7/卡 8 禁止形态段
+    cross_lane_hint: 分层与公开出口语义与 backend/01/03/04（BE-G1 待拆）同族；既有 POLICY.WEB.ARCH.* 三条即出自本文件族
+    candidates:
+      - proposed_id: POLICY.WEB.ARCH.DOCUMENTED_MODULE_MAP
+        kind: policy
+        classification: LANE_POLICY
+        triage: UNIVERSAL
+        statement_zh: 顶层目录与各模块的职责必须形成文档；无职责说明的顶层目录不得创建。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/09-module-boundary-protocol.md
+        source_lines: L20, L121
+        applies_when: { lane: frontend, condition: 顶层结构变更与新建目录 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: false
+      - proposed_id: POLICY.WEB.ARCH.MACHINE_CHECKED_DEPENDENCIES
+        kind: policy
+        classification: LANE_POLICY
+        triage: UNIVERSAL
+        statement_zh: 依赖的允许与禁止方向必须落到可机器检查的形态，循环依赖必须由工具检出并阻断。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/09-module-boundary-protocol.md
+        source_lines: L21, L25, L133
+        applies_when: { lane: frontend, condition: 模块间依赖声明与检查 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: 与既有 LAYER_ISOLATION 相邻——正本含"单向流动"语义；本卡增量为可检查性义务与循环阻断义务，非重复
+        notes: null
+        vocab_pr_needed: false
+      - proposed_id: POLICY.WEB.ARCH.PUBLIC_EXIT_DUPLICATE
+        kind: policy
+        classification: DUPLICATE
+        triage: UNIVERSAL
+        statement_zh: 跨模块引用只能经由各层公开出口完成，深入内部目录的导入一律禁止。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/09-module-boundary-protocol.md
+        source_lines: L22, L48, L81, L118, L127
+        applies_when: { lane: frontend, condition: 跨模块导入 }
+        enforcement: required_when_applicable
+        duplicate_of: POLICY.WEB.ARCH.PUBLIC_API_BARREL
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: false
+      - proposed_id: POLICY.WEB.ARCH.ORCHESTRATION_PLACEMENT
+        kind: policy
+        classification: LANE_POLICY
+        triage: UNIVERSAL
+        statement_zh: 跨模块协作流程必须落在明确的编排层；任何模块不得以其他模块的页面代码为依赖。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/09-module-boundary-protocol.md
+        source_lines: L23, L119, L159
+        applies_when: { lane: frontend, condition: 跨模块流程放置 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: false
+      - proposed_id: POLICY.WEB.ARCH.SHARED_SINKDOWN_THRESHOLD
+        kind: policy
+        classification: LANE_POLICY
+        triage: UNIVERSAL
+        statement_zh: 能力下沉到共享层必须同时证明复用稳定与业务语义稀薄；带业务语义的能力禁止进入共享层。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/09-module-boundary-protocol.md
+        source_lines: L24, L83, L120, L163
+        applies_when: { lane: frontend, condition: 共享层下沉决策 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: false
+      - proposed_id: POLICY.WEB.ARCH.PAGE_ERROR_ISOLATION
+        kind: policy
+        classification: LANE_POLICY
+        triage: UNIVERSAL
+        statement_zh: 单个页面或切片内的错误必须被局部边界吸收，不得跨页面传播。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/09-module-boundary-protocol.md
+        source_lines: L44
+        applies_when: { lane: frontend, condition: 错误边界设计 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: false
+      - proposed_id: POLICY.WEB.ARCH.RENDER_STATE_SEPARATION
+        kind: policy
+        classification: LANE_POLICY
+        triage: UNIVERSAL
+        statement_zh: 渲染组件只做布局编排与数据消费，不持有业务或异步状态，也不直接发起网络请求。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/09-module-boundary-protocol.md
+        source_lines: L31, L62, L126
+        applies_when: { lane: frontend, condition: 页面与渲染层组件编写 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: 源文段落为项目分层法章节，语句已泛化为渲染/状态分离通用语义
+        notes: null
+        vocab_pr_needed: false
+      - proposed_id: POLICY.WEB.ARCH.ADAPTER_LAYER_PER_LIB
+        kind: policy
+        classification: LANE_POLICY
+        triage: UNIVERSAL
+        statement_zh: 每个第三方库必须指定唯一适配层，业务代码只允许使用适配后的封装，不得直接引用库本体；库版本由平台基线统一锁定。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/09-module-boundary-protocol.md
+        source_lines: L87-L101, L125
+        applies_when: { lane: frontend, condition: 引入或使用第三方库 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: 语义通用；具体库到层的映射表与机读登记字段为项目附则（L89-L99, L103）
+        notes: 项目附则另见本文件 PROJECT 卡 ARCH_ADAPTER_OWNERSHIP_TABLE
+        vocab_pr_needed: false
+      - proposed_id: POLICY.WEB.ARCH.NEW_FILE_PLACEMENT_GATE
+        kind: policy
+        classification: LANE_POLICY
+        triage: HYBRID
+        project_scope: true
+        statement_zh: 新建文件前必须声明其归属分层与切片，并解释为何不能扩展既有文件；新增状态优先扩展既有容器而非另起全局单例。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/09-module-boundary-protocol.md
+        source_lines: L54
+        applies_when: { lane: frontend, condition: 新建任何文件 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: slice 术语源自项目分层法，语句已泛化；分层专名（app/pages/features/entities）留项目附则
+        notes: null
+        vocab_pr_needed: false
+      - proposed_id: POLICY.WEB.ARCH.DERIVED_VALUE_SINGLE_SOURCE
+        kind: policy
+        classification: LANE_POLICY
+        triage: HYBRID
+        project_scope: true
+        statement_zh: 同一派生语义全系统只能有一个权威产出点；第二份同名派生实现会随事实源演化静默漂移，被禁止。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/09-module-boundary-protocol.md
+        source_lines: L110-L113
+        applies_when: { lane: frontend, condition: 派生值/计算口径实现 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: 语义通用（单一生成源）；公式引擎语境与目录附则为项目侧
+        notes: null
+        vocab_pr_needed: false
+      - proposed_id: PROJECT.POLICY.ARCH.FSD_LAYER_STRUCTURE
+        kind: policy
+        classification: LANE_POLICY
+        triage: PROJECT
+        project_scope: true
+        statement_zh: 本项目采用 feature-sliced 八层分层（app/pages/features/entities/shared/state/shared/ui/shared/grid/shared/lib），各层职责固定，层内目录结构按登记表固化，错误隔离按层生效。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/09-module-boundary-protocol.md
+        source_lines: L27-L66
+        applies_when: { lane: frontend, condition: MASTer 项目目录结构维护 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: 项目专名层名表；通用可提取语义已由上列各卡承载，本卡为项目附则载体
+        notes: D5 建议 backlog 不物化——项目专属结构表，归项目 baseline 层而非通用 catalog
+        vocab_pr_needed: true
+      - proposed_id: PROJECT.POLICY.ARCH.NAMING_AND_ADAPTER_TABLE
+        kind: policy
+        classification: DUPLICATE
+        triage: PROJECT
+        project_scope: true
+        statement_zh: 分层内命名遵循固定词形（组合式函数/页面组件/切片组件/共享组件前缀/barrel 等），每个第三方库的适配层归属与直接引用禁令按登记表固化。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/09-module-boundary-protocol.md
+        source_lines: L68-L103
+        applies_when: { lane: frontend, condition: MASTer 项目命名与库适配登记 }
+        enforcement: required_when_applicable
+        duplicate_of: POLICY.WEB.ARCH.NAMING_CONVENTIONS
+        uncertainty: 命名原则已被正本覆盖；本卡增量面为具体词形表与库适配映射表（项目附则），汇总组可裁为正本附则
+        notes: 兼含 POLICY.WEB.ARCH.ADAPTER_LAYER_PER_LIB 的项目映射表 annex
+        vocab_pr_needed: false
+
+  - file: 10-engineering-tooling-protocol.md
+    ref: .trellis/spec/frontend/10-engineering-tooling-protocol.md
+    priority: P0
+    coverage: 13 candidates + 3 folded
+    folded:
+      - lines: L27
+        note: 外部数据运行时校验 → 已并入 04 卡 POLICY.BOUNDARY.VALIDATE_IN_ENCODE_OUT 双锚
+      - lines: L38, L84
+        note: 关规则/断言弱化禁令 → 已并入 02 卡 POLICY.GUARD.NO_CHECK_WEAKENING 多锚
+      - lines: L130
+        note: 绕过统一适配器操作引擎内部 API → 并入 09 卡 ADAPTER_LAYER_PER_LIB 禁止形态段
+    cross_lane_hint: 工具链治理与 backend/26-engineering-tooling-protocol（BE-G1 待拆）同构
+    candidates:
+      - proposed_id: POLICY.TOOL.QUALITY_COMMAND_PARITY
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 本地与持续集成必须执行同一套标准检查命令，双侧标准不得出现分叉。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/10-engineering-tooling-protocol.md
+        source_lines: L20, L36
+        applies_when: { lane: any, condition: 质量门禁命令定义与执行 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.TOOL.VIOLATIONS_HARD_FAIL
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 工具违规必须表现为明确失败（非零退出或门禁红），仅提示不计数。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/10-engineering-tooling-protocol.md
+        source_lines: L24, L84
+        applies_when: { lane: any, condition: 工具链违规处置 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.TOOL.GENERATED_ARTIFACT_REPRODUCIBLE
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 契约与生成物必须可由可重复命令再生成并校验，手工编辑生成物被禁止。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/10-engineering-tooling-protocol.md
+        source_lines: L21, L34
+        applies_when: { lane: any, condition: 生成物维护 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.TOOL.PINNED_TOOLCHAIN
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 运行时、包管理器与关键构建工具的版本必须固定在仓库内机器可读配置中并由持续集成校验；禁止依赖开发机全局安装或隐式环境状态完成构建和检查。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/10-engineering-tooling-protocol.md
+        source_lines: L25, L37
+        applies_when: { lane: any, condition: 工具链版本管理 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: 与 11 卡 PINNED_MANAGER_AND_REGISTRY（锁文件面）互补；跨车道见 backend/27
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.TYPE.STRICT_MODE_WITH_EXIT_PLAN
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 静态类型项目必须启用与其代码库兼容的最严格检查档；暂缓启用的严格选项必须登记范围、责任人、迁移计划与期限。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/10-engineering-tooling-protocol.md
+        source_lines: L26, L94
+        applies_when: { lane: any, condition: 类型检查强度决策 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: 源文为 TypeScript 语境，语句已泛化到静态类型语言
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.CFG.SINGLE_EFFECTIVE_CONFIG_SOURCE
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 配置必须只有一份生效来源；废弃配置应移除或显式失效，防止多文件竞争生效。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/10-engineering-tooling-protocol.md
+        source_lines: L28
+        applies_when: { lane: any, condition: 仓库级配置文件维护 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: 与 05 卡 SINGLE_CONFIG_MODULE（运行时读取通道）互补不重复
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.TOOL.SCOPED_SCAN_BOUNDARY
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 质量命令必须显式限定自有源码与配置的扫描边界；由外部工具安装或生成、由其自带验证器治理的目录应排除，排除清单须版本化并可审查。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/10-engineering-tooling-protocol.md
+        source_lines: L29, L95-L97, L143
+        applies_when: { lane: any, condition: 质量命令扫描范围配置 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: 示例中的工具目录名（.agents/.trellis/.claude 等）为项目实例，不入正本语句
+        vocab_pr_needed: true
+      - proposed_id: POLICY.TOOL.NO_VENDORED_BODY_EDITS
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 不得为消除第三方或生成工具的误报而放宽应用侧规则，更不得直接改动工具包正文；修复应走适配或配置层。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/10-engineering-tooling-protocol.md
+        source_lines: L39, L131, L149
+        applies_when: { lane: any, condition: vendored/generated 工具与门禁冲突处置 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.GATE.PROTOCOL_RULES_AS_LINT
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: HYBRID
+        project_scope: true
+        statement_zh: 协议中的禁止形态应固化为静态检查规则使其成为硬失败，而非停留在文本；规则清单与所固化的协议条款保持对应。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/10-engineering-tooling-protocol.md
+        source_lines: L56-L63, L84
+        applies_when: { lane: any, condition: 协议落地为自动化门禁 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: 原则通用；本文件所列具体规则名（组件库/表格引擎/内联文案等）为项目实例 annex
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.REGISTRY.HUMAN_FIELDS_VALIDATED_DECORRELATED
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 登记表中人工裁决字段的完整性必须由与生成器解耦的独立校验断言；生成器不得覆盖或清空人工字段。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/10-engineering-tooling-protocol.md
+        source_lines: L71-L74
+        applies_when: { lane: any, condition: 生成器产出含人工裁决字段的登记表 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: 辅助锚点——09-module-boundary L103（登记表两字段人工裁决、校验独立断言）
+        vocab_pr_needed: true
+      - proposed_id: POLICY.DEBUG.LAYERED_DIAGNOSIS
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: HYBRID
+        project_scope: true
+        statement_zh: 复杂组件故障必须按分层次序逐层定位（数据、结构、几何、样式、遮蔽）并记录层级、检查点、数值与修复动作；禁止以重试、延时或随机样式调整掩盖问题。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/10-engineering-tooling-protocol.md
+        source_lines: L101, L129-L131, L135
+        applies_when: { lane: any, condition: 复杂组件故障排查 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: 分层诊断纪律通用；具体判断树（某表格引擎 API/选择器表）为项目附则，另立 PROJECT 知识卡
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.TOOL.CHANGE_EVALUATION
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 工具引入、替换或规则放宽必须评估迁移、性能与开发体验，并沉淀为版本化配置。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/10-engineering-tooling-protocol.md
+        source_lines: L157
+        applies_when: { lane: any, condition: 工具链变更 }
+        enforcement: advisory
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: KNOWLEDGE.EX.GRID.BLANK_SCREEN_DIAGNOSIS
+        kind: knowledge_entry
+        classification: KNOWLEDGE_PATTERN
+        triage: PROJECT
+        project_scope: true
+        statement_zh: 网格类组件"数据有但看不见"的排查判断树：数据模型、DOM 挂载、布局几何、样式颜色、遮罩层五层依序定位，每层给出关键检查点与结论分支。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/10-engineering-tooling-protocol.md
+        source_lines: L103-L125
+        applies_when: { lane: frontend, condition: 目标项目表格引擎空白故障 }
+        enforcement: advisory
+        duplicate_of: null
+        uncertainty: null
+        notes: 项目示例知识（含具体引擎选择器）；D5 建议 backlog 不物化——专名密度高
+        vocab_pr_needed: true
+
+  - file: 11-dependency-package-management-protocol.md
+    ref: .trellis/spec/frontend/11-dependency-package-management-protocol.md
+    priority: P1
+    coverage: 9 candidates + 4 folded
+    folded:
+      - lines: L20
+        note: dependency-registry 审批与扫描器拦截的机制细节 → 已并入卡 2 项目附则
+      - lines: L33
+        note: 手改/绕过锁文件 → 并入卡 1 禁止形态段
+      - lines: L34-L36
+        note: 忽略漏洞/许可证冲突、盲跑安装脚本、只看清单文件 → 并入卡 3/卡 4 禁止形态段
+      - lines: L41, L64, L68
+        note: adapter 隔离 SHOULD 与反模式 → 与 09 卡 ADAPTER_LAYER_PER_LIB 互引；示例知识不入卡
+    cross_lane_hint: 与 backend/27-dependency-supply-chain-protocol（BE-G1 待拆）跨车道同构度最高，汇总组合并审候选
+    candidates:
+      - proposed_id: POLICY.DEP.PINNED_MANAGER_AND_REGISTRY
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 包管理器、锁文件与受信源必须固定；仓库内只允许一份生效锁文件，持续集成以冻结模式安装并在清单与锁漂移时失败。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/11-dependency-package-management-protocol.md
+        source_lines: L19, L21
+        applies_when: { lane: any, condition: 包管理与锁文件维护 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: 与 10 卡 PINNED_TOOLCHAIN 互补（本卡锁文件面）
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.DEP.APPROVAL_GATE_BEFORE_INSTALL
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: HYBRID
+        project_scope: true
+        statement_zh: 新增依赖在安装前必须经显式审批登记，未获批准即被门禁拦截。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/11-dependency-package-management-protocol.md
+        source_lines: L20
+        applies_when: { lane: any, condition: 新增任何依赖 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: 原则通用；登记表与扫描器机制名为项目实例
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.DEP.INTRODUCTION_REVIEW
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 引入依赖前必须评估既有替代、维护状态、许可证、安全、包体与替换成本；禁止为细小功能引入大型库或并存职责重复的核心库。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/11-dependency-package-management-protocol.md
+        source_lines: L22, L31-L32, L68
+        applies_when: { lane: any, condition: 引入新依赖 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.DEP.CHANGE_SURFACE_REVIEW
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 依赖变更审查必须覆盖传递依赖、完整性来源、安装脚本、可执行内容、发布产物与锁差异；只看清单文件不算审查，盲跑安装或修复脚本被禁止。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/11-dependency-package-management-protocol.md
+        source_lines: L23, L35-L36
+        applies_when: { lane: any, condition: 依赖变更与升级评审 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.DEP.RUNTIME_DEV_SPLIT
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 运行时依赖与开发依赖必须正确区分，安装过程必须可重复。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/11-dependency-package-management-protocol.md
+        source_lines: L24
+        applies_when: { lane: any, condition: 依赖归类 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.DEP.UPGRADE_WITH_ROLLBACK
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 依赖升级必须审查破坏性变更、补齐测试并预置回退路径。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/11-dependency-package-management-protocol.md
+        source_lines: L25
+        applies_when: { lane: any, condition: 依赖升级 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.DEP.REMOVAL_WITH_CONFIG
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 移除未使用依赖时必须连同其配置、适配层与文档一并清理。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/11-dependency-package-management-protocol.md
+        source_lines: L26
+        applies_when: { lane: any, condition: 依赖移除 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.DEP.BUILD_PATH_SUPPLY_CHAIN
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 构建插件、持续集成动作、代码生成器与远程脚本按供应链依赖治理；可变引用必须改为不可变或受控版本策略。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/11-dependency-package-management-protocol.md
+        source_lines: L27
+        applies_when: { lane: any, condition: 构建路径上的可执行依赖 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.DEP.PROVENANCE_SBOM
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 发布包应生成可验证的来源证明与物料清单，并检查发布内容不含凭据、测试身份或私有映射文件。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/11-dependency-package-management-protocol.md
+        source_lines: L42
+        applies_when: { lane: any, condition: 发布打包 }
+        enforcement: advisory
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+
+  - file: 20-testing-protocol.md
+    ref: .trellis/spec/frontend/20-testing-protocol.md
+    priority: P1
+    coverage: 10 candidates + 3 folded
+    folded:
+      - lines: L21
+        note: 公共变更回归扩大到全部调用方 → 已并入 03 卡 POLICY.CHG.CONSUMER_VERIFICATION_DUPLICATE 第三锚点
+      - lines: L32
+        note: 删用例/降断言 → 已并入 02 卡 POLICY.GUARD.NO_CHECK_WEAKENING 多锚
+      - lines: L68
+        note: 反模式（只测 200 与截图）→ 折叠入卡 2 禁止形态段
+    cross_lane_hint: 与 backend/28-testing-protocol（BE-G1 待拆）同构
+    candidates:
+      - proposed_id: POLICY.TEST.RISK_BASED_MANDATES
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 公共函数与组件、复杂表单、关键流程、权限路径与错误态属于必测对象。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/20-testing-protocol.md
+        source_lines: L19
+        applies_when: { lane: any, condition: 测试范围划定 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.WEB.TEST.PAGE_STATE_MATRIX
+        kind: policy
+        classification: LANE_POLICY
+        triage: UNIVERSAL
+        statement_zh: 页面级验证必须覆盖加载、空、错误、无权限、正常与大数据量六类状态；只测成功场景被禁止。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/20-testing-protocol.md
+        source_lines: L20, L30
+        applies_when: { lane: frontend, condition: 页面测试设计 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.CHG.CONTRACT_SYNC_TEST_SLICE_DUPLICATE
+        kind: policy
+        classification: DUPLICATE
+        triage: UNIVERSAL
+        statement_zh: 接口变化必须同步契约、适配层、模拟数据与页面测试。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/20-testing-protocol.md
+        source_lines: L22
+        applies_when: { lane: any, condition: 接口变更 }
+        enforcement: required_when_applicable
+        duplicate_of: POLICY.CHG.SYNC_CONTRACT_DOCS_TESTS
+        uncertainty: 测试域切片形态，无独立增量
+        notes: null
+        vocab_pr_needed: false
+      - proposed_id: POLICY.TEST.STABLE_OBSERVABLE_ASSERTIONS
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 测试必须稳定、可重复，并断言用户可观察的行为；以实现细节作为主定位手段被禁止。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/20-testing-protocol.md
+        source_lines: L23, L35
+        applies_when: { lane: any, condition: 测试编写与定位器选择 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.TEST.TRUST_BOUNDARY_FAILURE_CASES
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 跨进程或跨信任边界进入的数据必须包含运行时结构校验失败的用例。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/20-testing-protocol.md
+        source_lines: L24
+        applies_when: { lane: any, condition: 边界数据消费方测试 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.TEST.ISOLATION_AND_CLEANUP
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 测试必须相互隔离，结束时清理凭据、浏览器存储、服务端数据、模拟器、订阅与未完成异步任务。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/20-testing-protocol.md
+        source_lines: L25, L57
+        applies_when: { lane: any, condition: 测试生命周期 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.TEST.CONTROLLABLE_NONDETERMINISM
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 时间、时区、区域、随机数、网络延迟与失败模式必须可注入控制；并发与取消场景须验证迟到结果不污染新状态；固定等待与随机外部数据被禁止。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/20-testing-protocol.md
+        source_lines: L26, L33-L34, L58
+        applies_when: { lane: any, condition: 涉及不确定性的测试设计 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: 迟到结果语义与既有 POLICY.WEB.API.LATE_RESULT_GUARD 相邻——彼为请求层义务，本卡为测试侧控制义务
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.TEST.NO_RETRY_MASKING
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 禁止以自动重试掩盖不稳定测试；重试后的通过仍须可追踪并治理根因。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/20-testing-protocol.md
+        source_lines: L36
+        applies_when: { lane: any, condition: 不稳定测试处置 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: 与既有 RETRY_DISCIPLINE（请求层）对象不同——本卡为测试重试
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.TEST.PYRAMID_AND_CI_MATRIX
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 应保持测试金字塔形态并保留少量高价值端到端用例；持续集成中应固定时区、区域、依赖与浏览器版本并对关键组合做矩阵验证。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/20-testing-protocol.md
+        source_lines: L40, L42
+        applies_when: { lane: any, condition: 测试体系与 CI 环境配置 }
+        enforcement: advisory
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.TEST.REMOVAL_JUSTIFICATION
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 删除测试必须证明对应行为已删除或已由等价用例覆盖；门禁测试降级需要审批。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/20-testing-protocol.md
+        source_lines: L76
+        applies_when: { lane: any, condition: 删除或降级测试 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+
+  - file: 33-release-versioning-protocol.md
+    ref: .trellis/spec/frontend/33-release-versioning-protocol.md
+    priority: P2
+    coverage: 7 candidates + 2 folded
+    folded:
+      - lines: L27, L35
+        note: 无标识发布禁令 → 并入卡 1 禁止形态段；功能开关降风险 SHOULD → 与 36 文件互引不立卡
+      - lines: L28-L29
+        note: 无回滚不上线/直删公共 API 禁令 → 并入卡 4/卡 5 禁止形态段
+    cross_lane_hint: 与 backend/32-release-versioning-rollback-protocol（BE-G1 待拆）同构
+    candidates:
+      - proposed_id: POLICY.REL.TRACEABLE_BUILD
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 每个构建必须携带可观测的版本标识并能回溯到来源提交；无标识的发布被禁止。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/33-release-versioning-protocol.md
+        source_lines: L19, L27
+        applies_when: { lane: any, condition: 任何发布构建 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.REL.PRE_RELEASE_GATE
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 发布动作前，契约、测试、安全、配置、监控与回滚六项必须全部满足门禁。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/33-release-versioning-protocol.md
+        source_lines: L20
+        applies_when: { lane: any, condition: 发布放行 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: 与 03 门禁族相邻——本卡为发布动作专用六项清单
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.REL.GRADUAL_STOP_CONDITIONS_DUPLICATE
+        kind: policy
+        classification: DUPLICATE
+        triage: UNIVERSAL
+        statement_zh: 高风险变更必须定义灰度范围与停止条件。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/33-release-versioning-protocol.md
+        source_lines: L21, L28
+        applies_when: { lane: any, condition: 高风险变更发布 }
+        enforcement: required_when_applicable
+        duplicate_of: POLICY.CHG.STAGED_ROLLOUT
+        uncertainty: 正本为 advisory，本文件对高风险变更为 MUST——强制力差异待汇总组裁决（升格候选）
+        notes: null
+        vocab_pr_needed: false
+      - proposed_id: POLICY.REL.ROLLBACK_SURFACE_COMPLETENESS
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 回滚预案必须覆盖静态资源之外的接口、缓存、后台任务与数据兼容面。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/33-release-versioning-protocol.md
+        source_lines: L22, L59
+        applies_when: { lane: any, condition: 回滚预案编制 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: 与既有 COMPAT_MIGRATION_ROLLBACK 相邻——彼为回滚路径存在性，本卡为回滚面完整性
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.REL.DEPRECATE_FIRST_DUPLICATE
+        kind: policy
+        classification: DUPLICATE
+        triage: UNIVERSAL
+        statement_zh: 公共破坏性变更必须先废弃并提供迁移期，直接删除公共接口被禁止。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/33-release-versioning-protocol.md
+        source_lines: L23, L29
+        applies_when: { lane: any, condition: 公共接口破坏性变更 }
+        enforcement: required_when_applicable
+        duplicate_of: POLICY.CHG.DEPRECATE_BEFORE_DELETE
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: false
+      - proposed_id: POLICY.REL.OBSERVABILITY_BEFORE_SHIP
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 监控与压缩映射必须在发布前就位，发布后补建被禁止。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/33-release-versioning-protocol.md
+        source_lines: L30
+        applies_when: { lane: any, condition: 发布就绪检查 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.REL.AUTO_RELEASE_EVIDENCE
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 变更摘要与发布证据应自动生成。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/33-release-versioning-protocol.md
+        source_lines: L34
+        applies_when: { lane: any, condition: 发布记录 }
+        enforcement: advisory
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+
+  - file: 34-monitoring-logging-protocol.md
+    ref: .trellis/spec/frontend/34-monitoring-logging-protocol.md
+    priority: P2
+    coverage: 8 candidates + 1 folded
+    folded:
+      - lines: L30-L31
+        note: 仅 console 作生产监控/静默吞错禁令 → 并入卡 1 禁止形态段
+    cross_lane_hint: 与 backend/29-observability-logging-tracing-protocol（BE-G4 待拆）同构
+    candidates:
+      - proposed_id: POLICY.OBS.ERROR_SURFACE_COLLECTION
+        kind: policy
+        classification: LANE_POLICY
+        triage: UNIVERSAL
+        statement_zh: 必须采集运行错误、未处理承诺拒绝、资源加载失败、接口错误与白屏事件；仅靠控制台输出或捕获后静默吞错都不构成监控。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/34-monitoring-logging-protocol.md
+        source_lines: L19, L30-L31
+        applies_when: { lane: frontend, condition: 客户端错误监控建设 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.OBS.CONTEXT_FIELD_BASELINE
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 每条日志必须携带版本、环境、页面、操作、追踪标识、浏览器与时间等定位字段。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/34-monitoring-logging-protocol.md
+        source_lines: L20
+        applies_when: { lane: any, condition: 日志结构设计 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.OBS.SOURCE_MAP_ACCESS_CONTROL
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 压缩映射文件必须与版本一一对应并受权限保护，公开部署被禁止。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/34-monitoring-logging-protocol.md
+        source_lines: L21, L32
+        applies_when: { lane: any, condition: 压缩映射发布与托管 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.OBS.NO_SENSITIVE_RAW_VALUES
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 遥测数据不得携带凭据、明文口令、敏感原值或完整文件；用户标识与个人数据不得进入追踪上下文、面包屑或高基数字段。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/34-monitoring-logging-protocol.md
+        source_lines: L22, L29, L33
+        applies_when: { lane: any, condition: 遥测与日志字段选择 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: 多锚卡——04-security L39 为同事实锚点（监控/埋点敏感原值禁令）
+        vocab_pr_needed: true
+      - proposed_id: POLICY.OBS.ALERT_WITH_OWNER
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 关键错误率与白屏率必须配置告警、聚合维度与明确责任人。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/34-monitoring-logging-protocol.md
+        source_lines: L23
+        applies_when: { lane: any, condition: 监控告警配置 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.OBS.TELEMETRY_LIFECYCLE_DECLARED
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 遥测事件必须声明结构、版本、采样率、用途、保留期与删除策略；遥测发送失败不得阻断应用主流程。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/34-monitoring-logging-protocol.md
+        source_lines: L24, L54-L55
+        applies_when: { lane: any, condition: 遥测事件治理 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.OBS.RUM_DIMENSION_WHITELIST
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 真实用户性能数据只能以受控的页面类别、设备类别、应用版本与指标版本为维度；完整地址、文档结构与用户输入不得作为维度。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/34-monitoring-logging-protocol.md
+        source_lines: L25
+        applies_when: { lane: any, condition: 性能监控维度设计 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.OBS.TRACE_CORRELATION
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 用户操作、请求与异步任务应通过追踪标识关联；启用分布式追踪时应遵循标准化追踪上下文并验证跨源传播与信任策略。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/34-monitoring-logging-protocol.md
+        source_lines: L37-L39
+        applies_when: { lane: any, condition: 分布式追踪接入 }
+        enforcement: advisory
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+
+  - file: 36-feature-flag-protocol.md
+    ref: .trellis/spec/frontend/36-feature-flag-protocol.md
+    priority: P2
+    coverage: 6 candidates + 1 folded
+    folded:
+      - lines: L27, L59
+        note: 多页面手写同一判断禁令与反模式 → 并入卡 1/卡 5 注记
+    cross_lane_hint: 功能开关在 backend 32 协议中无直接对应物（发布侧最近邻），跨车道对照天然缺一侧
+    candidates:
+      - proposed_id: POLICY.FLAG.LIFECYCLE_METADATA
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 每个功能开关必须登记责任人、目的、默认值、目标范围、生效期限与清理日期；无责任人、无期限的永久临时开关被禁止。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/36-feature-flag-protocol.md
+        source_lines: L19, L29
+        applies_when: { lane: any, condition: 功能开关创建与登记 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.FLAG.CONSISTENT_OFF_STATE
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 开关关闭时入口、路由与后台请求必须一并停用；界面收起而后台请求照发被禁止。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/36-feature-flag-protocol.md
+        source_lines: L20, L30
+        applies_when: { lane: any, condition: 开关关闭态行为 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.FLAG.SAFE_FETCH_FALLBACK
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 开关取值获取失败时必须采用保守默认值。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/36-feature-flag-protocol.md
+        source_lines: L21
+        applies_when: { lane: any, condition: 开关取值获取失败 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: 与既有 NO_NETWORK_OPTIMISM 同向——彼为请求层网络假设，本卡为开关失败默认
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.FLAG.NOT_A_PERMISSION
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 开关不承载权限或业务状态语义；受控操作必须同时通过开关与权限两道判定。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/36-feature-flag-protocol.md
+        source_lines: L22, L28
+        applies_when: { lane: any, condition: 开关与权限边界 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.FLAG.CLEANUP_AFTER_FULL_ROLLOUT
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 全量稳定后必须删除临时判断与旧路径；开关语义转长期时应迁移到正式配置系统并记录变化。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/36-feature-flag-protocol.md
+        source_lines: L23, L26, L67
+        applies_when: { lane: any, condition: 开关生命周期收尾 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.FLAG.KILL_SWITCH
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 关键写操作应配备紧急停用开关，并支持灰度、回滚与实验审计。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/36-feature-flag-protocol.md
+        source_lines: L34-L35
+        applies_when: { lane: any, condition: 关键写操作发布 }
+        enforcement: advisory
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+
+  - file: index.md
+    ref: .trellis/spec/frontend/index.md
+    priority: P0
+    coverage: 10 candidates + 3 folded
+    folded:
+      - lines: L35-L49
+        note: 使用方式/Pre-Development Checklist → 与卡 5（冲突裁决）、01 卡 PRE_CODE_DECLARATION 同事实，不另立卡
+      - lines: L183-L186
+        note: 注入重跑只补齐不覆盖 → 并入卡 6 注记
+      - lines: L189-L237
+        note: 协议地图（编号/id/文件名/职责表）→ 目录型清单，无独立政策语义，由卡 1 语义标识规则覆盖
+    cross_lane_hint: 卡 2/卡 3/卡 4 与 backend/index.md（BE-G1 待拆）准入与结构条款同构，跨车道合并审候选
+    candidates:
+      - proposed_id: POLICY.SPEC.SEMANTIC_IDENTITY
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 规范文件的身份由稳定语义标识承载，内部引用必须使用语义标识而非编号；已发布编号只追加不重排，废弃文件不复用其标识。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/index.md
+        source_lines: L8-L9
+        applies_when: { lane: any, condition: 规范体系引用与编号管理 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: 辅助锚点——L46（语义标识记录选择理由）、L278（数字仅查表，注入用文档 ID）
+        vocab_pr_needed: true
+      - proposed_id: POLICY.SPEC.ADMISSION_CRITERIA
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 规则进入通用规范前必须通过准入审计：跨项目适用、不绑定具体产品或供应商细节、可验证、与既有规则完成职责去重、以官方或一手来源为依据、项目阈值与选型留在项目层。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/index.md
+        source_lines: L14-L21
+        applies_when: { lane: any, condition: 规则收录与晋升决策 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: POLICY.SPEC.PRIMARY_SOURCE_BASIS
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 规则依据必须取自官方标准、官方文档或一手仓库；二手文章只能充当检索线索。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/index.md
+        source_lines: L20, L23-L31
+        applies_when: { lane: any, condition: 规则依据引用 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: L23-L31 的标准源清单（安全/可访问性/平台/性能/隐私/时间/工具）为参考列表 annex，不入正本语句
+        vocab_pr_needed: true
+      - proposed_id: POLICY.SPEC.FILE_STRUCTURE_CONTRACT
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 规范文件必须使用固定的章节名称与顺序；不适用的章节保留标题并注明原因；示例区的模板提示不构成规则，示例内容不得当作已确认事实。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/index.md
+        source_lines: L87-L111
+        applies_when: { lane: any, condition: 规范文件编写与评审 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: 具体十二节名单为本文档族结构附则
+        vocab_pr_needed: true
+      - proposed_id: POLICY.CONFLICT.PRIORITY_LADDER
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 冲突裁决遵循固定优先级——项目特定规则压过通用规则、前后端正式接口契约压过模拟数据、既定令牌压过临时样式、公共组件既有 API 文档压过页面内的临时封装、安全压过交互便利、服务端授权结果压过界面显示、已发布的变更公告压过历史示例代码；放宽通用规则必须记录原因、风险、责任人与有效期，同级冲突停止实现交由责任人裁决，低优先级产物不得反向改写高优先级契约，裁决后必须同步更新产生歧义的协议或契约而非仅保留口头说明。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/index.md
+        source_lines: L113-L128
+        applies_when: { lane: any, condition: 任何规范/契约冲突裁决 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: null
+        notes: 辅助锚点——L49（与项目层冲突时停止并记录裁决）
+        vocab_pr_needed: true
+      - proposed_id: POLICY.SPEC.IN_PLACE_MAINTENANCE
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: 补充或修改规则时必须就地编辑路由表命中的目标文件，禁止新建平行文件；确需新增文件时必须同步索引与注入矩阵保持双向完整。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/index.md
+        source_lines: L130-L133, L183-L186
+        applies_when: { lane: any, condition: 规范树维护 }
+        enforcement: required_when_applicable
+        duplicate_of: null
+        uncertainty: 路由表机制为规范树维护形态，语义（就地维护+双向索引）可泛化
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: KNOWLEDGE.REF.SPEC_LIFECYCLE_STATES
+        kind: knowledge_entry
+        classification: KNOWLEDGE_PATTERN
+        triage: UNIVERSAL
+        statement_zh: 规格状态机参考：草稿不可开发、候选仅限标注切片、基线可开发、基线后修改走受控变更、上线后回填形成下一轮输入。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/index.md
+        source_lines: L51-L68
+        applies_when: { lane: any, condition: 规格状态判定 }
+        enforcement: advisory
+        duplicate_of: null
+        uncertainty: 与既有 DRAFT_NOT_BASELINE/METADATA_REQUIRED 族互补（描述性参考，非新义务）
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: KNOWLEDGE.REF.INJECTION_PRIORITY_SEMANTICS
+        kind: knowledge_entry
+        classification: KNOWLEDGE_PATTERN
+        triage: UNIVERSAL
+        statement_zh: 注入优先级只决定默认装载与否，不改变条目强制力；低优先级协议中的强制条款同样必须执行。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/index.md
+        source_lines: L77-L85
+        applies_when: { lane: any, condition: 分级注入体系解释 }
+        enforcement: advisory
+        duplicate_of: null
+        uncertainty: null
+        notes: null
+        vocab_pr_needed: true
+      - proposed_id: KNOWLEDGE.REF.FRONTEND_INJECTION_MATRIX
+        kind: knowledge_entry
+        classification: KNOWLEDGE_PATTERN
+        triage: PROJECT
+        project_scope: true
+        statement_zh: 本项目的默认注入基线与按任务追加注入矩阵：多行命中取并集，数字仅用于查表，实际注入必须使用语义标识。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/index.md
+        source_lines: L239-L278
+        applies_when: { lane: frontend, condition: MASTer 项目会话注入 }
+        enforcement: advisory
+        duplicate_of: null
+        uncertainty: 项目注入机制（含具体工具链引用）为项目附则
+        notes: D5 建议 backlog 不物化——注入矩阵属项目装配层
+        vocab_pr_needed: true
+      - proposed_id: KNOWLEDGE.REF.PROTOCOL_RESPONSIBILITY_BOUNDARIES
+        kind: knowledge_entry
+        classification: KNOWLEDGE_PATTERN
+        triage: UNIVERSAL
+        statement_zh: 相邻协议按事实源/呈现、采集/定位、预算/归属等轴线切分职责，避免同一事实多处维护；本条为职责划分模式参考。
+        clean_room: true
+        source_protocol: .trellis/spec/frontend/index.md
+        source_lines: L280-L293
+        applies_when: { lane: any, condition: 协议族职责边界解释 }
+        enforcement: advisory
+        duplicate_of: null
+        uncertainty: 本条为描述性边界汇编（各对协议的具体切分），非新义务
+        notes: null
+        vocab_pr_needed: true

@@ -1,0 +1,1000 @@
+# BE-G4 拆解候选卡（backend 族第 4 组：集成运行时可观测）
+# 批次: SPEC-D | 状态: PROPOSAL (source=design_seed, evidence=PLANNED) | 禁墙钟：零时间戳，seq 以批次代号计
+# 方法论：忠实复制试点（docs/catalog-pilot-report.md §3-§6 + candidates-draft.json schema）
+# D5 防膨胀：本文件全部候选属 backlog 留档，不因『已分析完毕』而物化入册
+
+meta:
+  group: BE-G4
+  batch: SPEC-D
+  seq: SPEC-D
+  status: PROPOSAL
+  proposal_source: design_seed
+  proposal_evidence: PLANNED
+  human_review_required: true
+  method_note: 拆解方法忠实复制试点 BE08/BE12 处理形态——backend 九段结构（MUST/MUST NOT/SHOULD/Contract/Checklist/Examples/Anti-patterns/Ownership/Change Policy）每段一卡；Scope/Non-Scope/Terms 为上下文不产卡
+  discipline_compliance:
+    - MASTer_master 只读：仅读取 .trellis/spec/backend 下 6 份归属文件，未写未改
+    - clean-room：全部 statement_zh 为独立改写（语义等价、词形独立，零逐字拷贝）
+    - 未因文件名带协议/规范属性默认升 MUST：SHOULD 全部降级 advisory，Examples/Anti-patterns/Ownership 降级 advisory
+    - 禁项目专名入 UNIVERSAL statement：54 卡 statement 零项目专名（Redis/X-Forwarded-*/p95 等为通用技术词元）
+    - 禁墙钟：本文件零时间戳字段，确定性序列化（按文件 ref 升序 + 段落固定顺序）
+  coverage:
+    files_assigned: 6
+    files_covered: 6
+    cards: 54
+    classification_distribution:
+      UNIVERSAL_POLICY: 29
+      DUPLICATE: 1
+      CONTRACT_TEMPLATE: 6
+      GATE_RECIPE: 6
+      KNOWLEDGE_PATTERN: 6
+      FAILURE_PATTERN: 6
+    enforcement_distribution:
+      required_when_applicable: 17
+      advisory: 25
+      deterministic_where_possible: 12
+    triage_distribution:
+      UNIVERSAL: 54
+      PROJECT: 0
+      HYBRID: 0
+    empty_files: []
+    empty_files_note: 本组 6 文件均有可提取政策语义（每文件 9 段产 9 卡），无『无可提取政策语义』空结论文件
+  duplicate_check_note: 已与 catalog 既有 69 条物化（54 policies 含 5 authority + 10 knowledge + 5 gates）及 candidates-draft.json 82 条候选逐条比对；本组仅 1 条组内极性反转 DUPLICATE（缓存 MUST NOT），与既有条目零重复；若干跨车道近邻关系已记入 notes/uncertainty 而非 DUPLICATE
+  id_collision_note: proposed_id 为词形提案。POLICY.CACHE.*/POLICY.PERF.*/POLICY.OBS.* 三主题与未拆组的 FE 同主题文件存在词形撞车风险（FE-G3 19-cache-protocol、FE-G3 31-performance-protocol + 既有 POLICY.WEB.PERF.BUDGET_SKELETON、FE-G1 34-monitoring-logging-protocol），跨组最终 id 仲裁留 ingest 统一收口（试点 V9 词形不统一缺口同源）
+  authority_uplift_note: 本组 6 条 AUTHORITY.* 均沿用试点 M6 先例——结构同型（提供方/消费方/仲裁方分层所有权默认值），加入既有 5 条 AUTHORITY 的『领域分层所有权默认值』模板 5→1+N 上提审阅队列，留后续批次
+  template_fallout_note: 6 条 CONTRACT_TEMPLATE 沿用 pilot-0001 R-C=b 先例——暂留 candidates，catalog/templates/ 落点挂起 vocab-pr V8/GATE 前缀收编后；6 条 GATE_RECIPE 同挂试点 V2（GATE. 前缀与 gate_recipe kind 未登记）
+
+files:
+  - ref: .trellis/spec/backend/23-cache-redis-consistency-protocol.md
+    sha256: 073da5821658adfc0580798873fde95c49dc9d993a63949b3b1543a9c0e18a11
+    first_heading: 缓存与 Redis 一致性协议
+    criticality: critical
+    candidates:
+      - proposed_id: POLICY.CACHE.LIFECYCLE_DEFINITION
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: "引入任何缓存必须显式定义键的构成维度、访问隔离边界、存活时长、更新与失效时机、故障行为与恢复行为，六类要素缺一不可。"
+        statement_en_keywords: cache key dimensions, access isolation, TTL, invalidation timing, failure and recovery behavior
+        clean_room: statement_zh 为独立改写，与源文 MUST 段零逐字拷贝
+        applies_when: {lane: any, condition: "系统引入任何缓存层"}
+        enforcement: required_when_applicable
+        vocab_pr_needed: true
+        source:
+          protocol: .trellis/spec/backend/23-cache-redis-consistency-protocol.md
+          sha256: 073da5821658adfc0580798873fde95c49dc9d993a63949b3b1543a9c0e18a11
+          anchor: "## MUST 段（L23-25）"
+        duplicate_of: null
+        uncertainty: null
+        notes: 与 FE-G3 组 19-cache-protocol 存在跨车道同主题（FE 侧拆解归属他组），跨车道合并审留后续批次；proposed_id 词形撞车风险见 meta.id_collision_note
+      - proposed_id: POLICY.CACHE.NO_AMBIGUOUS_SHARED_KEY
+        kind: policy
+        classification: DUPLICATE
+        triage: UNIVERSAL
+        statement_zh: "禁止让租户、权限、过滤条件或数据版本不同的记录共用含义含糊的缓存键。"
+        statement_en_keywords: no ambiguous shared cache key, tenant/permission/filter/version axes
+        clean_room: statement_zh 为独立改写，与源文 MUST NOT 段零逐字拷贝
+        applies_when: {lane: any, condition: "同合并目标"}
+        enforcement: advisory
+        vocab_pr_needed: false
+        source:
+          protocol: .trellis/spec/backend/23-cache-redis-consistency-protocol.md
+          sha256: 073da5821658adfc0580798873fde95c49dc9d993a63949b3b1543a9c0e18a11
+          anchor: "## MUST NOT 段（L27-29）"
+        duplicate_of: POLICY.CACHE.LIFECYCLE_DEFINITION
+        uncertainty: "本条是否被正本『键的构成维度+访问隔离边界』完全吸收属主观判断——MUST 要求定义完备，MUST NOT 是结果性禁令并新增隔离轴枚举（租户/权限/过滤/版本）；按试点 D5 保守纪律标 DUPLICATE，枚举轴建议并入正本 notes 而非独立入册"
+        notes: 组内极性反转；本组唯一 DUPLICATE
+      - proposed_id: POLICY.CACHE.FAILURE_MODE_GUARDS
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: "缓存设计宜预先为穿透、击穿、雪崩与热点键四类典型失效形态配置限制手段与观测点。"
+        statement_en_keywords: cache penetration, breakdown, avalanche, hot key, mitigation and observation
+        clean_room: statement_zh 为独立改写，与源文 SHOULD 段零逐字拷贝
+        applies_when: {lane: any, condition: "缓存层设计"}
+        enforcement: advisory
+        vocab_pr_needed: true
+        source:
+          protocol: .trellis/spec/backend/23-cache-redis-consistency-protocol.md
+          sha256: 073da5821658adfc0580798873fde95c49dc9d993a63949b3b1543a9c0e18a11
+          anchor: "## SHOULD 段（L31-33）"
+        duplicate_of: null
+        uncertainty: null
+        notes: SHOULD 正确降级 advisory
+      - proposed_id: POLICY.TPL.CACHE_CONTRACT
+        kind: contract_template
+        classification: CONTRACT_TEMPLATE
+        triage: UNIVERSAL
+        statement_zh: "缓存契约对象的必备字段形状：权威数据源、值结构版本、读写次序、可容忍的陈旧窗口、降级路径。"
+        statement_en_keywords: cache contract fields, authoritative source, value schema version, read-write order, staleness tolerance, degradation
+        clean_room: statement_zh 为独立改写，与源文 Contract 段零逐字拷贝
+        applies_when: {lane: backend, condition: "定义缓存契约对象"}
+        enforcement: deterministic_where_possible
+        vocab_pr_needed: true
+        source:
+          protocol: .trellis/spec/backend/23-cache-redis-consistency-protocol.md
+          sha256: 073da5821658adfc0580798873fde95c49dc9d993a63949b3b1543a9c0e18a11
+          anchor: "## Contract 段（L35-37）"
+        duplicate_of: null
+        uncertainty: null
+        notes: 落点沿用 pilot-0001 R-C=b——暂留 candidates，catalog/templates/ 挂起 vocab-pr V8
+      - proposed_id: GATE.BE.CACHE.CONSISTENCY_CHECKS
+        kind: gate_recipe
+        classification: GATE_RECIPE
+        triage: UNIVERSAL
+        statement_zh: "缓存一致性门禁检查单：数据库提交时序、缓存自身故障、并发更新、条目淘汰与缓存重建五类场景均有测试证据。"
+        statement_en_keywords: cache consistency gate, commit ordering, cache failure, concurrent update, eviction, rebuild
+        clean_room: statement_zh 为独立改写，与源文 Checklist 段零逐字拷贝
+        applies_when: {lane: backend, condition: "缓存相关变更过门禁"}
+        enforcement: deterministic_where_possible
+        vocab_pr_needed: true
+        source:
+          protocol: .trellis/spec/backend/23-cache-redis-consistency-protocol.md
+          sha256: 073da5821658adfc0580798873fde95c49dc9d993a63949b3b1543a9c0e18a11
+          anchor: "## Checklist 段（L39-41）"
+        duplicate_of: null
+        uncertainty: null
+        notes: GATE. 前缀与 gate_recipe kind 待 vocab-pr（试点 V2）
+      - proposed_id: KNOWLEDGE.CACHE.EXAMPLE_VERSIONED_INVALIDATION
+        kind: knowledge_entry
+        classification: KNOWLEDGE_PATTERN
+        triage: UNIVERSAL
+        statement_zh: "示例：持久层提交完成后使带版本标识的缓存条目失效，读取未命中时以受控方式回源加载。"
+        statement_en_keywords: example, commit-then-invalidate, versioned cache entry, controlled read-through
+        clean_room: statement_zh 为独立改写，与源文 Examples 段零逐字拷贝
+        applies_when: {lane: backend, condition: "缓存读写路径设计"}
+        enforcement: advisory
+        vocab_pr_needed: false
+        source:
+          protocol: .trellis/spec/backend/23-cache-redis-consistency-protocol.md
+          sha256: 073da5821658adfc0580798873fde95c49dc9d993a63949b3b1543a9c0e18a11
+          anchor: "## Examples 段（L43-45）"
+        duplicate_of: null
+        uncertainty: null
+        notes: 知识型示例，advisory；与既有 KNOWLEDGE.CHG.EXAMPLE_COMPAT_WINDOW 同为『演进式失效』知识家族但对象不同（缓存条目 vs API 版本窗口），非重复
+      - proposed_id: KNOWLEDGE.FP.BE.CACHE_FIRST_WRITE
+        kind: knowledge_entry
+        classification: FAILURE_PATTERN
+        triage: UNIVERSAL
+        statement_zh: "失败模式：先更新缓存再落库且不配补偿机制或一致性论证，故障窗口内两侧事实相互矛盾。"
+        statement_en_keywords: failure pattern, cache-first write, no compensation, contradictory facts
+        clean_room: statement_zh 为独立改写，与源文 Anti-patterns 段零逐字拷贝
+        applies_when: {lane: backend, condition: "缓存与持久层写序设计"}
+        enforcement: advisory
+        vocab_pr_needed: false
+        source:
+          protocol: .trellis/spec/backend/23-cache-redis-consistency-protocol.md
+          sha256: 073da5821658adfc0580798873fde95c49dc9d993a63949b3b1543a9c0e18a11
+          anchor: "## Anti-patterns 段（L47-49）"
+        duplicate_of: null
+        uncertainty: null
+        notes: B3 五大家族 failure-pattern 附带池形态（沿用试点称谓）
+      - proposed_id: AUTHORITY.BE.CACHE_OWNERSHIP
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: "权威分配默认值：数据属主负责一致性语义的定义，缓存维护方负责出具失效与恢复的运行证据。"
+        statement_en_keywords: data owner defines consistency, cache maintainer evidences invalidation and recovery
+        clean_room: statement_zh 为独立改写，与源文 Ownership 段零逐字拷贝
+        applies_when: {lane: any, condition: "Authority Map 构建"}
+        enforcement: advisory
+        vocab_pr_needed: false
+        source:
+          protocol: .trellis/spec/backend/23-cache-redis-consistency-protocol.md
+          sha256: 073da5821658adfc0580798873fde95c49dc9d993a63949b3b1543a9c0e18a11
+          anchor: "## Ownership 段（L51-53）"
+        duplicate_of: null
+        uncertainty: null
+        notes: AUTHORITY. 前缀已冻结（试点 V4）；加入 M6 5→1+N 同型上提审阅队列（meta.authority_uplift_note）
+      - proposed_id: POLICY.CACHE.SCHEMA_VERSIONING
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: "缓存值结构或键约定的任何变化都必须引入版本标识，并为存量条目安排清退计划。"
+        statement_en_keywords: cache value schema versioning, key convention change, legacy entry cleanup
+        clean_room: statement_zh 为独立改写，与源文 Change Policy 段零逐字拷贝
+        applies_when: {lane: any, condition: "缓存值结构或键约定变化"}
+        enforcement: required_when_applicable
+        vocab_pr_needed: true
+        source:
+          protocol: .trellis/spec/backend/23-cache-redis-consistency-protocol.md
+          sha256: 073da5821658adfc0580798873fde95c49dc9d993a63949b3b1543a9c0e18a11
+          anchor: "## Change Policy 段（L55-57）"
+        duplicate_of: null
+        uncertainty: null
+        notes: 互引 POLICY.CHG.BREAKING_VERSIONING 族；与既有 POLICY.WEB.GRID.SCHEMA_VERSIONING 不同域（缓存值结构 vs 表格列 schema），非重复
+
+  - ref: .trellis/spec/backend/24-external-integration-resilience-protocol.md
+    sha256: e6b0626c9169e9126319bd08ee5d5bdbe38421cfa175509524145aee30ff539a
+    first_heading: 外部集成与韧性协议
+    criticality: critical
+    candidates:
+      - proposed_id: POLICY.INTEGRATION.CALL_DEFINITION_MINIMUM
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: "每一处对外部系统的调用都必须显式给出超时上限、可重试条件、幂等性结论、失败到内部错误的映射与恢复路径，五者缺一即视为未定义的集成点。"
+        statement_en_keywords: external call definition, timeout ceiling, retry condition, idempotency verdict, failure mapping, recovery path
+        clean_room: statement_zh 为独立改写，与源文 MUST 段零逐字拷贝
+        applies_when: {lane: backend, condition: "实现任何对外部系统的调用"}
+        enforcement: required_when_applicable
+        vocab_pr_needed: true
+        source:
+          protocol: .trellis/spec/backend/24-external-integration-resilience-protocol.md
+          sha256: e6b0626c9169e9126319bd08ee5d5bdbe38421cfa175509524145aee30ff539a
+          anchor: "## MUST 段（L23-25）"
+        duplicate_of: null
+        uncertainty: null
+        notes: 幂等判定细则归 BE22 幂等协议（BE-G3 组）；本条仅要求定义完备，不重复展开；与既有 POLICY.WEB.API.MUTATION_IDEMPOTENCY/RETRY_DISCIPLINE 为跨车道近邻而非重复（客户端请求纪律 vs 服务端集成定义完备性）
+      - proposed_id: POLICY.INTEGRATION.RETRY_BOUNDS
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: "禁止无上限的重试，禁止对非幂等操作实施自动重试，禁止在事务边界内发起无超时约束的外部调用。"
+        statement_en_keywords: no unbounded retry, no auto retry on non-idempotent op, no unbounded call inside transaction
+        clean_room: statement_zh 为独立改写，与源文 MUST NOT 段零逐字拷贝
+        applies_when: {lane: backend, condition: "任何自动重试机制或事务内外部调用"}
+        enforcement: required_when_applicable
+        vocab_pr_needed: true
+        source:
+          protocol: .trellis/spec/backend/24-external-integration-resilience-protocol.md
+          sha256: e6b0626c9169e9126319bd08ee5d5bdbe38421cfa175509524145aee30ff539a
+          anchor: "## MUST NOT 段（L27-29）"
+        duplicate_of: null
+        uncertainty: "前两子句与既有 FE15 RETRY_DISCIPLINE + MUTATION_IDEMPOTENCY 语义近邻（该二条为 FE lane 条款且含 HTTP 专有词元），第三子句（事务内无界调用）为后端独有增量；综合判为互补非覆盖，未标 DUPLICATE，跨车道合并审留后续批次"
+        notes: 独立保留卡
+      - proposed_id: POLICY.INTEGRATION.FAULT_CONTAINMENT
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: "对外部依赖宜组合隔离、熔断、限流、降级与定期对账手段，把供应方故障的扩散范围约束在局部。"
+        statement_en_keywords: bulkhead, circuit breaker, rate limiting, degradation, reconciliation, blast radius containment
+        clean_room: statement_zh 为独立改写，与源文 SHOULD 段零逐字拷贝
+        applies_when: {lane: any, condition: "外部依赖故障控制设计"}
+        enforcement: advisory
+        vocab_pr_needed: true
+        source:
+          protocol: .trellis/spec/backend/24-external-integration-resilience-protocol.md
+          sha256: e6b0626c9169e9126319bd08ee5d5bdbe38421cfa175509524145aee30ff539a
+          anchor: "## SHOULD 段（L31-33）"
+        duplicate_of: null
+        uncertainty: null
+        notes: SHOULD 正确降级 advisory
+      - proposed_id: POLICY.TPL.INTEGRATION_CONTRACT
+        kind: contract_template
+        classification: CONTRACT_TEMPLATE
+        triage: UNIVERSAL
+        statement_zh: "外部集成契约对象的必备字段形状：供应方版本、认证方式、请求与响应结构、错误语义、调用限额、追踪关联、责任方。"
+        statement_en_keywords: integration contract fields, provider version, auth, request-response structure, error semantics, quota, trace, owner
+        clean_room: statement_zh 为独立改写，与源文 Contract 段零逐字拷贝
+        applies_when: {lane: backend, condition: "登记外部集成契约对象"}
+        enforcement: deterministic_where_possible
+        vocab_pr_needed: true
+        source:
+          protocol: .trellis/spec/backend/24-external-integration-resilience-protocol.md
+          sha256: e6b0626c9169e9126319bd08ee5d5bdbe38421cfa175509524145aee30ff539a
+          anchor: "## Contract 段（L35-37）"
+        duplicate_of: null
+        uncertainty: null
+        notes: 落点沿用 pilot-0001 R-C=b——暂留 candidates，catalog/templates/ 挂起 vocab-pr V8
+      - proposed_id: GATE.BE.INTEGRATION.RESILIENCE_CHECKS
+        kind: gate_recipe
+        classification: GATE_RECIPE
+        triage: UNIVERSAL
+        statement_zh: "外部集成韧性门禁检查单：超时、限流触发、部分失败、重复响应与供应方整体中断五类场景均有测试证据。"
+        statement_en_keywords: integration resilience gate, timeout, throttling, partial failure, duplicate response, provider outage
+        clean_room: statement_zh 为独立改写，与源文 Checklist 段零逐字拷贝
+        applies_when: {lane: backend, condition: "外部集成变更过门禁"}
+        enforcement: deterministic_where_possible
+        vocab_pr_needed: true
+        source:
+          protocol: .trellis/spec/backend/24-external-integration-resilience-protocol.md
+          sha256: e6b0626c9169e9126319bd08ee5d5bdbe38421cfa175509524145aee30ff539a
+          anchor: "## Checklist 段（L39-41）"
+        duplicate_of: null
+        uncertainty: null
+        notes: GATE. 前缀与 gate_recipe kind 待 vocab-pr（试点 V2）
+      - proposed_id: KNOWLEDGE.INTEGRATION.EXAMPLE_INTENT_THEN_RECONCILE
+        kind: knowledge_entry
+        classification: KNOWLEDGE_PATTERN
+        triage: UNIVERSAL
+        statement_zh: "示例：先在本地持久化执行意图，再异步触达供应方，随后由状态机推进并以对账收敛终态。"
+        statement_en_keywords: example, local intent record, asynchronous provider call, state machine, reconciliation
+        clean_room: statement_zh 为独立改写，与源文 Examples 段零逐字拷贝
+        applies_when: {lane: backend, condition: "供应方调用流程设计"}
+        enforcement: advisory
+        vocab_pr_needed: false
+        source:
+          protocol: .trellis/spec/backend/24-external-integration-resilience-protocol.md
+          sha256: e6b0626c9169e9126319bd08ee5d5bdbe38421cfa175509524145aee30ff539a
+          anchor: "## Examples 段（L43-45）"
+        duplicate_of: null
+        uncertainty: null
+        notes: 知识型示例，advisory
+      - proposed_id: KNOWLEDGE.FP.BE.SWALLOWED_PROVIDER_FAILURE
+        kind: knowledge_entry
+        classification: FAILURE_PATTERN
+        triage: UNIVERSAL
+        statement_zh: "失败模式：外部调用异常被捕获后仅落日志，向上仍回报业务成功，真实故障被静默吞没。"
+        statement_en_keywords: failure pattern, swallowed exception, log-and-report-success, silent failure
+        clean_room: statement_zh 为独立改写，与源文 Anti-patterns 段零逐字拷贝
+        applies_when: {lane: backend, condition: "外部调用错误处理路径"}
+        enforcement: advisory
+        vocab_pr_needed: false
+        source:
+          protocol: .trellis/spec/backend/24-external-integration-resilience-protocol.md
+          sha256: e6b0626c9169e9126319bd08ee5d5bdbe38421cfa175509524145aee30ff539a
+          anchor: "## Anti-patterns 段（L47-49）"
+        duplicate_of: null
+        uncertainty: null
+        notes: 互引既有 POLICY.WEB.API.TRANSPORT_VS_BUSINESS（传输/业务成功分层）——本失败模式即该分层缺位的服务端形态（试点 M7 政策-失败模式配对先例）
+      - proposed_id: AUTHORITY.BE.INTEGRATION_OWNERSHIP
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: "权威分配默认值：集成属主维护与供应方的契约事实，业务属主裁定降级与补偿的业务语义。"
+        statement_en_keywords: integration owner maintains provider contract, business owner decides degradation and compensation semantics
+        clean_room: statement_zh 为独立改写，与源文 Ownership 段零逐字拷贝
+        applies_when: {lane: any, condition: "Authority Map 构建"}
+        enforcement: advisory
+        vocab_pr_needed: false
+        source:
+          protocol: .trellis/spec/backend/24-external-integration-resilience-protocol.md
+          sha256: e6b0626c9169e9126319bd08ee5d5bdbe38421cfa175509524145aee30ff539a
+          anchor: "## Ownership 段（L51-53）"
+        duplicate_of: null
+        uncertainty: null
+        notes: 加入 M6 5→1+N 同型上提审阅队列（meta.authority_uplift_note）
+      - proposed_id: POLICY.INTEGRATION.PROVIDER_CHANGE_WINDOW
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: "供应方的版本或认证方式变化必须预留兼容窗口，切换前完成演练验证后方可生效。"
+        statement_en_keywords: provider version or auth change, compatibility window, rehearsal before cutover
+        clean_room: statement_zh 为独立改写，与源文 Change Policy 段零逐字拷贝
+        applies_when: {lane: backend, condition: "供应方版本或认证变化"}
+        enforcement: required_when_applicable
+        vocab_pr_needed: true
+        source:
+          protocol: .trellis/spec/backend/24-external-integration-resilience-protocol.md
+          sha256: e6b0626c9169e9126319bd08ee5d5bdbe38421cfa175509524145aee30ff539a
+          anchor: "## Change Policy 段（L55-57）"
+        duplicate_of: null
+        uncertainty: null
+        notes: 互引 POLICY.CHG.COMPAT_MIGRATION_ROLLBACK（兼容窗口概念族）——本条为其供应方场景的具体化，非重复
+
+  - ref: .trellis/spec/backend/25-async-job-scheduler-protocol.md
+    sha256: 36af3b4466b4e617a9c552a404d98ab74604752b7410e15756d7f132394fb980
+    first_heading: 异步任务与调度协议
+    criticality: standard
+    candidates:
+      - proposed_id: POLICY.JOB.LIFECYCLE_DEFINITION
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: "每个异步任务必须显式定义身份标识、状态集合、幂等语义、重试策略、取消方式、超时上限与结果获取途径，七者缺一不可。"
+        statement_en_keywords: async job identity, state set, idempotency, retry, cancellation, timeout, result access
+        clean_room: statement_zh 为独立改写，与源文 MUST 段零逐字拷贝
+        applies_when: {lane: backend, condition: "定义任何异步任务"}
+        enforcement: required_when_applicable
+        vocab_pr_needed: true
+        source:
+          protocol: .trellis/spec/backend/25-async-job-scheduler-protocol.md
+          sha256: 36af3b4466b4e617a9c552a404d98ab74604752b7410e15756d7f132394fb980
+          anchor: "## MUST 段（L23-25）"
+        duplicate_of: null
+        uncertainty: null
+        notes: 与本组 POLICY.INTEGRATION.CALL_DEFINITION_MINIMUM 同构于不同对象（异步任务 vs 外部调用）；幂等细则归 BE22 幂等协议（BE-G3 组）
+      - proposed_id: POLICY.JOB.NO_UNMANAGED_EXECUTION
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: "关键任务不得承载于固定时长睡眠、脱离监管的裸线程或不留任何状态记录的后台执行之上。"
+        statement_en_keywords: no fixed sleep, no orphan thread, no stateless background execution for critical jobs
+        clean_room: statement_zh 为独立改写，与源文 MUST NOT 段零逐字拷贝
+        applies_when: {lane: backend, condition: "关键异步任务的执行载体选择"}
+        enforcement: required_when_applicable
+        vocab_pr_needed: true
+        source:
+          protocol: .trellis/spec/backend/25-async-job-scheduler-protocol.md
+          sha256: 36af3b4466b4e617a9c552a404d98ab74604752b7410e15756d7f132394fb980
+          anchor: "## MUST NOT 段（L27-29）"
+        duplicate_of: null
+        uncertainty: null
+        notes: 非正本极性反转——MUST 要求生命周期字段定义完备，本条禁不可靠执行载体，内容互补故独立保留
+      - proposed_id: POLICY.JOB.OPERATIONAL_FEATURES
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: "异步任务宜支持进度上报、心跳存活信号、并发度限制、失败恢复手段与过期记录清理。"
+        statement_en_keywords: progress reporting, heartbeat, concurrency limit, failure recovery, expiry cleanup
+        clean_room: statement_zh 为独立改写，与源文 SHOULD 段零逐字拷贝
+        applies_when: {lane: any, condition: "异步任务运行能力设计"}
+        enforcement: advisory
+        vocab_pr_needed: true
+        source:
+          protocol: .trellis/spec/backend/25-async-job-scheduler-protocol.md
+          sha256: 36af3b4466b4e617a9c552a404d98ab74604752b7410e15756d7f132394fb980
+          anchor: "## SHOULD 段（L31-33）"
+        duplicate_of: null
+        uncertainty: null
+        notes: SHOULD 正确降级 advisory
+      - proposed_id: POLICY.TPL.JOB_CONTRACT
+        kind: contract_template
+        classification: CONTRACT_TEMPLATE
+        triage: UNIVERSAL
+        statement_zh: "异步任务契约对象的必备字段形状：触发来源、业务参数、状态机定义、输出形态、错误语义、结果保留期、访问权限。"
+        statement_en_keywords: job contract fields, trigger source, parameters, state machine, output, error semantics, retention, permission
+        clean_room: statement_zh 为独立改写，与源文 Contract 段零逐字拷贝
+        applies_when: {lane: backend, condition: "登记异步任务契约对象"}
+        enforcement: deterministic_where_possible
+        vocab_pr_needed: true
+        source:
+          protocol: .trellis/spec/backend/25-async-job-scheduler-protocol.md
+          sha256: 36af3b4466b4e617a9c552a404d98ab74604752b7410e15756d7f132394fb980
+          anchor: "## Contract 段（L35-37）"
+        duplicate_of: null
+        uncertainty: null
+        notes: 落点沿用 pilot-0001 R-C=b——暂留 candidates，catalog/templates/ 挂起 vocab-pr V8
+      - proposed_id: GATE.BE.JOB.LIFECYCLE_CHECKS
+        kind: gate_recipe
+        classification: GATE_RECIPE
+        triage: UNIVERSAL
+        statement_zh: "异步任务门禁检查单：重复触发、执行节点崩溃、任务接管、取消、重跑与记录过期六类场景均有测试证据。"
+        statement_en_keywords: job lifecycle gate, duplicate trigger, node crash, takeover, cancellation, rerun, expiry
+        clean_room: statement_zh 为独立改写，与源文 Checklist 段零逐字拷贝
+        applies_when: {lane: backend, condition: "异步任务相关变更过门禁"}
+        enforcement: deterministic_where_possible
+        vocab_pr_needed: true
+        source:
+          protocol: .trellis/spec/backend/25-async-job-scheduler-protocol.md
+          sha256: 36af3b4466b4e617a9c552a404d98ab74604752b7410e15756d7f132394fb980
+          anchor: "## Checklist 段（L39-41）"
+        duplicate_of: null
+        uncertainty: null
+        notes: GATE. 前缀与 gate_recipe kind 待 vocab-pr（试点 V2）
+      - proposed_id: KNOWLEDGE.JOB.EXAMPLE_JOB_ID_RESULT_FETCH
+        kind: knowledge_entry
+        classification: KNOWLEDGE_PATTERN
+        triage: UNIVERSAL
+        statement_zh: "示例：导出类任务受理后返回任务标识，调用方凭标识查询进度，并从经授权的地址取回结果。"
+        statement_en_keywords: example, job id handle, status polling, authorized result download
+        clean_room: statement_zh 为独立改写，与源文 Examples 段零逐字拷贝
+        applies_when: {lane: backend, condition: "导出类任务设计"}
+        enforcement: advisory
+        vocab_pr_needed: false
+        source:
+          protocol: .trellis/spec/backend/25-async-job-scheduler-protocol.md
+          sha256: 36af3b4466b4e617a9c552a404d98ab74604752b7410e15756d7f132394fb980
+          anchor: "## Examples 段（L43-45）"
+        duplicate_of: null
+        uncertainty: null
+        notes: 知识型示例，advisory
+      - proposed_id: KNOWLEDGE.FP.BE.OVERLAPPING_SCHEDULE_REENTRY
+        kind: knowledge_entry
+        classification: FAILURE_PATTERN
+        triage: UNIVERSAL
+        statement_zh: "失败模式：调度周期相互交叠时同一不可重入任务被并发拉起，产生重复副作用。"
+        statement_en_keywords: failure pattern, overlapping schedule, non-reentrant concurrent execution, duplicate side effects
+        clean_room: statement_zh 为独立改写，与源文 Anti-patterns 段零逐字拷贝
+        applies_when: {lane: backend, condition: "调度表达式配置"}
+        enforcement: advisory
+        vocab_pr_needed: false
+        source:
+          protocol: .trellis/spec/backend/25-async-job-scheduler-protocol.md
+          sha256: 36af3b4466b4e617a9c552a404d98ab74604752b7410e15756d7f132394fb980
+          anchor: "## Anti-patterns 段（L47-49）"
+        duplicate_of: null
+        uncertainty: null
+        notes: 与本组 GATE.BE.JOB.LIFECYCLE_CHECKS 的重复触发检查项构成政策-失败模式配对（试点 M7 先例）
+      - proposed_id: AUTHORITY.BE.JOB_OWNERSHIP
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: "权威分配默认值：任务属主定义生命周期语义，运行平台方提供调度与执行的留存证据。"
+        statement_en_keywords: job owner defines lifecycle, platform provides scheduling and execution evidence
+        clean_room: statement_zh 为独立改写，与源文 Ownership 段零逐字拷贝
+        applies_when: {lane: any, condition: "Authority Map 构建"}
+        enforcement: advisory
+        vocab_pr_needed: false
+        source:
+          protocol: .trellis/spec/backend/25-async-job-scheduler-protocol.md
+          sha256: 36af3b4466b4e617a9c552a404d98ab74604752b7410e15756d7f132394fb980
+          anchor: "## Ownership 段（L51-53）"
+        duplicate_of: null
+        uncertainty: null
+        notes: 加入 M6 5→1+N 同型上提审阅队列（meta.authority_uplift_note）
+      - proposed_id: POLICY.JOB.CONTRACT_COMPAT_HISTORY
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: "任务参数结构或状态机的变化必须兼容存量历史任务与仍在执行中的实例。"
+        statement_en_keywords: job contract change, backward compatible with history and in-flight instances
+        clean_room: statement_zh 为独立改写，与源文 Change Policy 段零逐字拷贝
+        applies_when: {lane: backend, condition: "任务参数结构或状态机变化"}
+        enforcement: required_when_applicable
+        vocab_pr_needed: true
+        source:
+          protocol: .trellis/spec/backend/25-async-job-scheduler-protocol.md
+          sha256: 36af3b4466b4e617a9c552a404d98ab74604752b7410e15756d7f132394fb980
+          anchor: "## Change Policy 段（L55-57）"
+        duplicate_of: null
+        uncertainty: null
+        notes: 互引既有 POLICY.API.BACKWARD_COMPAT_DEFAULTS（向后兼容默认值）——本条为异步任务域具体化（历史记录与在途实例），非重复
+
+  - ref: .trellis/spec/backend/29-observability-logging-tracing-protocol.md
+    sha256: e871f5d7d1e9fe68956881877baba94f376a5539753441853f8cfa12939f5ebd
+    first_heading: 可观测性、日志与追踪协议
+    criticality: standard
+    candidates:
+      - proposed_id: POLICY.OBS.CORRELATION_CONTEXT_MINIMUM
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: "关键操作的观测记录必须能够关联应用版本、运行环境、操作主体、操作结果与链路标识五类上下文。"
+        statement_en_keywords: observability correlation, version, environment, actor, outcome, trace id
+        clean_room: statement_zh 为独立改写，与源文 MUST 段零逐字拷贝
+        applies_when: {lane: any, condition: "关键操作的观测记录设计"}
+        enforcement: required_when_applicable
+        vocab_pr_needed: true
+        source:
+          protocol: .trellis/spec/backend/29-observability-logging-tracing-protocol.md
+          sha256: e871f5d7d1e9fe68956881877baba94f376a5539753441853f8cfa12939f5ebd
+          anchor: "## MUST 段（L23-25）"
+        duplicate_of: null
+        uncertainty: null
+        notes: FE-G1 组 34-monitoring-logging 为前端同主题近邻（跨车道合并审留后续）；与既有 KNOWLEDGE.API.EXAMPLE_STABLE_ERROR_CODE（错误码+TraceId 示例）不同对象，非重复；proposed_id 词形撞车风险见 meta.id_collision_note
+      - proposed_id: POLICY.OBS.NO_SENSITIVE_OR_UNBOUNDED_LOGGING
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: "观测输出禁止写入令牌、口令、密钥、完整敏感报文，以及取值无界的高基数字段。"
+        statement_en_keywords: no tokens or secrets in logs, no full sensitive payload, no unbounded high-cardinality values
+        clean_room: statement_zh 为独立改写，与源文 MUST NOT 段零逐字拷贝
+        applies_when: {lane: any, condition: "任何日志/指标/链路输出"}
+        enforcement: required_when_applicable
+        vocab_pr_needed: true
+        source:
+          protocol: .trellis/spec/backend/29-observability-logging-tracing-protocol.md
+          sha256: e871f5d7d1e9fe68956881877baba94f376a5539753441853f8cfa12939f5ebd
+          anchor: "## MUST NOT 段（L27-29）"
+        duplicate_of: null
+        uncertainty: null
+        notes: 非正本极性反转——MUST 要求关联上下文完备，本条为观测卫生禁令，内容独立；与既有 BE-G2 组 13-privacy-data-lifecycle-protocol 主题相邻（隐私细则归该组，本条仅观测出口卫生）
+      - proposed_id: POLICY.OBS.ACTIONABLE_SIGNALS
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: "宜围绕关键失败、时延、容量水位与外部依赖建立可直接驱动处置动作的指标与告警。"
+        statement_en_keywords: actionable metrics and alerts, failure, latency, capacity, dependency
+        clean_room: statement_zh 为独立改写，与源文 SHOULD 段零逐字拷贝
+        applies_when: {lane: any, condition: "指标与告警体系设计"}
+        enforcement: advisory
+        vocab_pr_needed: true
+        source:
+          protocol: .trellis/spec/backend/29-observability-logging-tracing-protocol.md
+          sha256: e871f5d7d1e9fe68956881877baba94f376a5539753441853f8cfa12939f5ebd
+          anchor: "## SHOULD 段（L31-33）"
+        duplicate_of: null
+        uncertainty: null
+        notes: SHOULD 正确降级 advisory
+      - proposed_id: POLICY.TPL.SIGNAL_DESIGN
+        kind: contract_template
+        classification: CONTRACT_TEMPLATE
+        triage: UNIVERSAL
+        statement_zh: "观测信号设计对象的必备字段形状：数据结构、级别、采样策略、保留期、脱敏规则、责任人、所服务的排障用途。"
+        statement_en_keywords: signal design fields, schema, level, sampling, retention, redaction, owner, diagnostic purpose
+        clean_room: statement_zh 为独立改写，与源文 Contract 段零逐字拷贝
+        applies_when: {lane: backend, condition: "定义观测信号设计"}
+        enforcement: deterministic_where_possible
+        vocab_pr_needed: true
+        source:
+          protocol: .trellis/spec/backend/29-observability-logging-tracing-protocol.md
+          sha256: e871f5d7d1e9fe68956881877baba94f376a5539753441853f8cfa12939f5ebd
+          anchor: "## Contract 段（L35-37）"
+        duplicate_of: null
+        uncertainty: null
+        notes: 落点沿用 pilot-0001 R-C=b——暂留 candidates，catalog/templates/ 挂起 vocab-pr V8
+      - proposed_id: GATE.BE.OBS.PATH_COVERAGE_CHECKS
+        kind: gate_recipe
+        classification: GATE_RECIPE
+        triage: UNIVERSAL
+        statement_zh: "可观测性门禁检查单：成功、失败、重试、降级与恢复五类执行路径均可通过观测信号相互关联追溯。"
+        statement_en_keywords: observability gate, success/failure/retry/degraded/recovery paths correlatable
+        clean_room: statement_zh 为独立改写，与源文 Checklist 段零逐字拷贝
+        applies_when: {lane: backend, condition: "可观测性相关变更过门禁"}
+        enforcement: deterministic_where_possible
+        vocab_pr_needed: true
+        source:
+          protocol: .trellis/spec/backend/29-observability-logging-tracing-protocol.md
+          sha256: e871f5d7d1e9fe68956881877baba94f376a5539753441853f8cfa12939f5ebd
+          anchor: "## Checklist 段（L39-41）"
+        duplicate_of: null
+        uncertainty: null
+        notes: GATE. 前缀与 gate_recipe kind 待 vocab-pr（试点 V2）
+      - proposed_id: KNOWLEDGE.OBS.EXAMPLE_EXTERNAL_CALL_TRACE
+        kind: knowledge_entry
+        classification: KNOWLEDGE_PATTERN
+        triage: UNIVERSAL
+        statement_zh: "示例：对外调用的链路记录只写供应方标识、结果分类与时延，不写入认证凭据。"
+        statement_en_keywords: example, external call trace, provider, result class, latency, no credentials
+        clean_room: statement_zh 为独立改写，与源文 Examples 段零逐字拷贝
+        applies_when: {lane: backend, condition: "对外调用链路设计"}
+        enforcement: advisory
+        vocab_pr_needed: false
+        source:
+          protocol: .trellis/spec/backend/29-observability-logging-tracing-protocol.md
+          sha256: e871f5d7d1e9fe68956881877baba94f376a5539753441853f8cfa12939f5ebd
+          anchor: "## Examples 段（L43-45）"
+        duplicate_of: null
+        uncertainty: null
+        notes: 知识型示例，advisory；与本组 POLICY.OBS.NO_SENSITIVE_OR_UNBOUNDED_LOGGING 构成政策-示例配对
+      - proposed_id: KNOWLEDGE.FP.BE.FREETEXT_LOG_NO_AGGREGATION
+        kind: knowledge_entry
+        classification: FAILURE_PATTERN
+        triage: UNIVERSAL
+        statement_zh: "失败模式：异常仅以自由文本落日志、缺乏结构化字段，无法按请求、版本或业务操作维度聚合分析。"
+        statement_en_keywords: failure pattern, free-text exception log, not aggregatable by request/version/operation
+        clean_room: statement_zh 为独立改写，与源文 Anti-patterns 段零逐字拷贝
+        applies_when: {lane: backend, condition: "异常日志形态设计"}
+        enforcement: advisory
+        vocab_pr_needed: false
+        source:
+          protocol: .trellis/spec/backend/29-observability-logging-tracing-protocol.md
+          sha256: e871f5d7d1e9fe68956881877baba94f376a5539753441853f8cfa12939f5ebd
+          anchor: "## Anti-patterns 段（L47-49）"
+        duplicate_of: null
+        uncertainty: null
+        notes: 与本组 POLICY.OBS.CORRELATION_CONTEXT_MINIMUM 构成政策缺位-失败形态配对（试点 M7 先例）
+      - proposed_id: AUTHORITY.BE.OBS_OWNERSHIP
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: "权威分配默认值：服务维护方拥有诊断信号的定义与质量，运行角色负责告警规则与事故响应流程。"
+        statement_en_keywords: service maintainer owns diagnostic signals, operations role owns alerts and incident process
+        clean_room: statement_zh 为独立改写，与源文 Ownership 段零逐字拷贝
+        applies_when: {lane: any, condition: "Authority Map 构建"}
+        enforcement: advisory
+        vocab_pr_needed: false
+        source:
+          protocol: .trellis/spec/backend/29-observability-logging-tracing-protocol.md
+          sha256: e871f5d7d1e9fe68956881877baba94f376a5539753441853f8cfa12939f5ebd
+          anchor: "## Ownership 段（L51-53）"
+        duplicate_of: null
+        uncertainty: null
+        notes: 加入 M6 5→1+N 同型上提审阅队列（meta.authority_uplift_note）
+      - proposed_id: POLICY.OBS.SIGNAL_CHANGE_IMPACT
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: "观测信号的结构、采样率或保留策略变化前，必须评估对既有仪表盘、告警规则与隐私合规的影响。"
+        statement_en_keywords: signal schema/sampling/retention change, dashboard and alert impact, privacy compliance impact
+        clean_room: statement_zh 为独立改写，与源文 Change Policy 段零逐字拷贝
+        applies_when: {lane: any, condition: "观测信号结构、采样或保留变化"}
+        enforcement: required_when_applicable
+        vocab_pr_needed: true
+        source:
+          protocol: .trellis/spec/backend/29-observability-logging-tracing-protocol.md
+          sha256: e871f5d7d1e9fe68956881877baba94f376a5539753441853f8cfa12939f5ebd
+          anchor: "## Change Policy 段（L55-57）"
+        duplicate_of: null
+        uncertainty: null
+        notes: 互引 POLICY.CHG.* 影响评估族（受控变更），本条为观测域具体化，非重复
+
+  - ref: .trellis/spec/backend/30-performance-capacity-protocol.md
+    sha256: b575dd07e4bb6def646acb55c3d62d086a9fd12035b2ab359ec353bf443773e5
+    first_heading: 性能与容量协议
+    criticality: standard
+    candidates:
+      - proposed_id: POLICY.PERF.EVIDENCE_BINDING
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: "任何性能结论必须同时绑定其负载模型、数据规模、运行环境、被测版本与统计口径，缺一即不构成有效结论。"
+        statement_en_keywords: performance claim binding, load model, data scale, environment, tested version, statistics caliber
+        clean_room: statement_zh 为独立改写，与源文 MUST 段零逐字拷贝
+        applies_when: {lane: any, condition: "给出任何性能结论"}
+        enforcement: required_when_applicable
+        vocab_pr_needed: true
+        source:
+          protocol: .trellis/spec/backend/30-performance-capacity-protocol.md
+          sha256: b575dd07e4bb6def646acb55c3d62d086a9fd12035b2ab359ec353bf443773e5
+          anchor: "## MUST 段（L23-25）"
+        duplicate_of: null
+        uncertainty: null
+        notes: 与既有 policy.web.perf.budget_skeleton（FE 资源预算骨架，阈值项目基线外置）为同族不同域——性能证据绑定 vs 前端加载/渲染预算，非重复；FE-G3 组 31-performance-protocol 为前端同主题近邻
+      - proposed_id: POLICY.PERF.NO_WEAK_EVIDENCE
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: "禁止以单次本地耗时、简单平均值或不具代表性的数据样本宣称容量达标。"
+        statement_en_keywords: no single local timing, no average-only claim, no unrepresentative sample
+        clean_room: statement_zh 为独立改写，与源文 MUST NOT 段零逐字拷贝
+        applies_when: {lane: any, condition: "性能容量结论表述"}
+        enforcement: required_when_applicable
+        vocab_pr_needed: true
+        source:
+          protocol: .trellis/spec/backend/30-performance-capacity-protocol.md
+          sha256: b575dd07e4bb6def646acb55c3d62d086a9fd12035b2ab359ec353bf443773e5
+          anchor: "## MUST NOT 段（L27-29）"
+        duplicate_of: null
+        uncertainty: "与 POLICY.PERF.EVIDENCE_BINDING 部分交叠（正本要求上下文绑定，本条列举无效证据形态）；判为互补而非覆盖——『绑定了五要素但样本无代表性』仍被本条独立禁止，未标 DUPLICATE，合并审留后续"
+        notes: 独立保留卡
+      - proposed_id: POLICY.PERF.OBSERVATION_DIMENSIONS
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: "性能观测宜同时覆盖尾部时延、错误率、资源占用、排队深度、背压信号与依赖瓶颈六个维度。"
+        statement_en_keywords: tail latency, error rate, resource usage, queueing depth, backpressure, dependency bottleneck
+        clean_room: statement_zh 为独立改写，与源文 SHOULD 段零逐字拷贝
+        applies_when: {lane: any, condition: "性能观测维度设计"}
+        enforcement: advisory
+        vocab_pr_needed: true
+        source:
+          protocol: .trellis/spec/backend/30-performance-capacity-protocol.md
+          sha256: b575dd07e4bb6def646acb55c3d62d086a9fd12035b2ab359ec353bf443773e5
+          anchor: "## SHOULD 段（L31-33）"
+        duplicate_of: null
+        uncertainty: null
+        notes: SHOULD 正确降级 advisory
+      - proposed_id: POLICY.TPL.CAPACITY_PLAN
+        kind: contract_template
+        classification: CONTRACT_TEMPLATE
+        triage: UNIVERSAL
+        statement_zh: "容量计划对象的必备字段形状：业务场景、性能预算、峰值预估、已知瓶颈、扩缩容方案、降级策略；其中预算数值阈值由项目基线供给，通用层不内置默认值。"
+        statement_en_keywords: capacity plan fields, scenario, budget, peak estimate, bottleneck, scaling, degradation, thresholds from project baseline
+        clean_room: statement_zh 为独立改写，与源文 Contract 段零逐字拷贝
+        applies_when: {lane: backend, condition: "编制容量计划"}
+        enforcement: deterministic_where_possible
+        vocab_pr_needed: true
+        source:
+          protocol: .trellis/spec/backend/30-performance-capacity-protocol.md
+          sha256: b575dd07e4bb6def646acb55c3d62d086a9fd12035b2ab359ec353bf443773e5
+          anchor: "## Contract 段（L35-37）+ Non-Scope 段（L15-17，数值阈值外置依据）"
+        duplicate_of: null
+        uncertainty: null
+        notes: 沿用试点 §93.5 拆两半先例（正本 + 阈值由 Project Baseline 供给的显式声明，防 not-configured 空洞）；落点沿用 R-C=b 暂留 candidates
+      - proposed_id: GATE.BE.PERF.RESOURCE_COUPLING_CHECKS
+        kind: gate_recipe
+        classification: GATE_RECIPE
+        triage: UNIVERSAL
+        statement_zh: "性能容量门禁检查单：连接池、线程池、队列、批量策略、缓存与数据库之间的联动效应均已在代表性负载下验证。"
+        statement_en_keywords: performance gate, pool/queue/batch/cache/database coupling verified under representative load
+        clean_room: statement_zh 为独立改写，与源文 Checklist 段零逐字拷贝
+        applies_when: {lane: backend, condition: "性能容量相关变更过门禁"}
+        enforcement: deterministic_where_possible
+        vocab_pr_needed: true
+        source:
+          protocol: .trellis/spec/backend/30-performance-capacity-protocol.md
+          sha256: b575dd07e4bb6def646acb55c3d62d086a9fd12035b2ab359ec353bf443773e5
+          anchor: "## Checklist 段（L39-41）"
+        duplicate_of: null
+        uncertainty: null
+        notes: GATE. 前缀与 gate_recipe kind 待 vocab-pr（试点 V2）
+      - proposed_id: KNOWLEDGE.PERF.EXAMPLE_PERCENTILE_REPORT
+        kind: knowledge_entry
+        classification: KNOWLEDGE_PATTERN
+        triage: UNIVERSAL
+        statement_zh: "示例：在目标数据量与并发模型下出具分位时延（如 p95/p99）、错误率与资源消耗曲线。"
+        statement_en_keywords: example, percentile latency p95 p99, error rate, resource curve
+        clean_room: statement_zh 为独立改写，与源文 Examples 段零逐字拷贝
+        applies_when: {lane: any, condition: "性能测试报告出具"}
+        enforcement: advisory
+        vocab_pr_needed: false
+        source:
+          protocol: .trellis/spec/backend/30-performance-capacity-protocol.md
+          sha256: b575dd07e4bb6def646acb55c3d62d086a9fd12035b2ab359ec353bf443773e5
+          anchor: "## Examples 段（L43-45）"
+        duplicate_of: null
+        uncertainty: null
+        notes: 知识型示例，advisory；与本组 POLICY.PERF.EVIDENCE_BINDING 构成政策-示例配对
+      - proposed_id: KNOWLEDGE.FP.BE.BLIND_POOL_ENLARGEMENT
+        kind: knowledge_entry
+        classification: FAILURE_PATTERN
+        triage: UNIVERSAL
+        statement_zh: "失败模式：不分析瓶颈位置便盲目上调池容量，反而造成下游过载与更长的排队。"
+        statement_en_keywords: failure pattern, blind pool size increase, downstream overload, longer queueing
+        clean_room: statement_zh 为独立改写，与源文 Anti-patterns 段零逐字拷贝
+        applies_when: {lane: backend, condition: "资源池容量调整"}
+        enforcement: advisory
+        vocab_pr_needed: false
+        source:
+          protocol: .trellis/spec/backend/30-performance-capacity-protocol.md
+          sha256: b575dd07e4bb6def646acb55c3d62d086a9fd12035b2ab359ec353bf443773e5
+          anchor: "## Anti-patterns 段（L47-49）"
+        duplicate_of: null
+        uncertainty: null
+        notes: failure-pattern 附带池形态
+      - proposed_id: AUTHORITY.BE.PERF_OWNERSHIP
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: "权威分配默认值：业务属主给出负载目标，后端与运行角色共同验证容量是否达标。"
+        statement_en_keywords: business owner sets load targets, backend and operations roles verify capacity
+        clean_room: statement_zh 为独立改写，与源文 Ownership 段零逐字拷贝
+        applies_when: {lane: any, condition: "Authority Map 构建"}
+        enforcement: advisory
+        vocab_pr_needed: false
+        source:
+          protocol: .trellis/spec/backend/30-performance-capacity-protocol.md
+          sha256: b575dd07e4bb6def646acb55c3d62d086a9fd12035b2ab359ec353bf443773e5
+          anchor: "## Ownership 段（L51-53）"
+        duplicate_of: null
+        uncertainty: null
+        notes: 加入 M6 5→1+N 同型上提审阅队列（meta.authority_uplift_note）
+      - proposed_id: POLICY.PERF.BUDGET_CHANGE_RETEST
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: "性能预算或容量模型的变化必须记录来源依据，并重跑具代表性的负载测试后方可生效。"
+        statement_en_keywords: budget or capacity model change, source rationale, rerun representative load test
+        clean_room: statement_zh 为独立改写，与源文 Change Policy 段零逐字拷贝
+        applies_when: {lane: any, condition: "性能预算或容量模型变化"}
+        enforcement: required_when_applicable
+        vocab_pr_needed: true
+        source:
+          protocol: .trellis/spec/backend/30-performance-capacity-protocol.md
+          sha256: b575dd07e4bb6def646acb55c3d62d086a9fd12035b2ab359ec353bf443773e5
+          anchor: "## Change Policy 段（L55-57）"
+        duplicate_of: null
+        uncertainty: null
+        notes: 互引 POLICY.CHG.* 受控变更族，本条为性能域具体化，非重复
+
+  - ref: .trellis/spec/backend/31-runtime-deployment-protocol.md
+    sha256: c791451de0be3aa0629fd562e2b43cc54066e4b10d786264fa7a333c561ef23a
+    first_heading: 运行时与部署协议
+    criticality: critical
+    candidates:
+      - proposed_id: POLICY.DEPLOY.RUNTIME_FACT_RECORD
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: "交付物必须如实记录打包形态、启动方式、监听端口、对外协议、实例拓扑、状态依赖与配置来源七类运行时事实。"
+        statement_en_keywords: runtime fact record, packaging, startup, port, protocol, instance topology, state dependency, config source
+        clean_room: statement_zh 为独立改写，与源文 MUST 段零逐字拷贝
+        applies_when: {lane: backend, condition: "交付任何可部署单元"}
+        enforcement: required_when_applicable
+        vocab_pr_needed: true
+        source:
+          protocol: .trellis/spec/backend/31-runtime-deployment-protocol.md
+          sha256: c791451de0be3aa0629fd562e2b43cc54066e4b10d786264fa7a333c561ef23a
+          anchor: "## MUST 段（L23-25）"
+        duplicate_of: null
+        uncertainty: null
+        notes: 与 BE-G1 组 32-release-versioning-protocol（发布/版本/回滚）主题相邻但对象不同（运行时事实记录 vs 发布流程），非重复
+      - proposed_id: POLICY.DEPLOY.NO_DEV_ENV_AS_PRODUCTION_FACT
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: "禁止把开发环境的拓扑、默认端口或未经生产验证的容器行为当作生产事实引用。"
+        statement_en_keywords: no dev topology or default port as production fact, no unverified container behavior
+        clean_room: statement_zh 为独立改写，与源文 MUST NOT 段零逐字拷贝
+        applies_when: {lane: any, condition: "生产部署事实认定"}
+        enforcement: required_when_applicable
+        vocab_pr_needed: true
+        source:
+          protocol: .trellis/spec/backend/31-runtime-deployment-protocol.md
+          sha256: c791451de0be3aa0629fd562e2b43cc54066e4b10d786264fa7a333c561ef23a
+          anchor: "## MUST NOT 段（L27-29）"
+        duplicate_of: null
+        uncertainty: null
+        notes: 与既有 POLICY.WEB.API.NO_NETWORK_OPTIMISM 同属『破除隐含环境假设』认识论家族（试点 R-F 上提判据同源），但对象不同（部署事实 vs 网络传输假设），非重复
+      - proposed_id: POLICY.DEPLOY.OPERATIONAL_CAPABILITIES
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: "部署单元宜具备优雅启停、健康检查、滚动发布、最小权限运行与故障隔离五类运行能力。"
+        statement_en_keywords: graceful start-stop, health check, rolling release, least privilege, fault isolation
+        clean_room: statement_zh 为独立改写，与源文 SHOULD 段零逐字拷贝
+        applies_when: {lane: any, condition: "部署单元运行能力设计"}
+        enforcement: advisory
+        vocab_pr_needed: true
+        source:
+          protocol: .trellis/spec/backend/31-runtime-deployment-protocol.md
+          sha256: c791451de0be3aa0629fd562e2b43cc54066e4b10d786264fa7a333c561ef23a
+          anchor: "## SHOULD 段（L31-33）"
+        duplicate_of: null
+        uncertainty: null
+        notes: SHOULD 正确降级 advisory
+      - proposed_id: POLICY.TPL.DEPLOYMENT_DESIGN
+        kind: contract_template
+        classification: CONTRACT_TEMPLATE
+        triage: UNIVERSAL
+        statement_zh: "部署设计对象的必备字段形状：流量入口、网络拓扑、信任边界、依赖清单、扩缩容策略、故障恢复步骤、验证证据。"
+        statement_en_keywords: deployment design fields, ingress, network topology, trust boundary, dependencies, scaling, recovery steps, evidence
+        clean_room: statement_zh 为独立改写，与源文 Contract 段零逐字拷贝
+        applies_when: {lane: backend, condition: "编制部署设计"}
+        enforcement: deterministic_where_possible
+        vocab_pr_needed: true
+        source:
+          protocol: .trellis/spec/backend/31-runtime-deployment-protocol.md
+          sha256: c791451de0be3aa0629fd562e2b43cc54066e4b10d786264fa7a333c561ef23a
+          anchor: "## Contract 段（L35-37）"
+        duplicate_of: null
+        uncertainty: null
+        notes: 落点沿用 pilot-0001 R-C=b——暂留 candidates，catalog/templates/ 挂起 vocab-pr V8
+      - proposed_id: GATE.BE.DEPLOY.REHEARSAL_CHECKS
+        kind: gate_recipe
+        classification: GATE_RECIPE
+        triage: UNIVERSAL
+        statement_zh: "运行时部署门禁检查单：多实例、代理链路、加密终结、健康检查、配置注入、日志链路与回滚七项均已实际演练。"
+        statement_en_keywords: deployment gate, multi-instance, proxy chain, TLS termination, health check, config, logs, rollback rehearsed
+        clean_room: statement_zh 为独立改写，与源文 Checklist 段零逐字拷贝
+        applies_when: {lane: backend, condition: "部署相关变更过门禁"}
+        enforcement: deterministic_where_possible
+        vocab_pr_needed: true
+        source:
+          protocol: .trellis/spec/backend/31-runtime-deployment-protocol.md
+          sha256: c791451de0be3aa0629fd562e2b43cc54066e4b10d786264fa7a333c561ef23a
+          anchor: "## Checklist 段（L39-41）"
+        duplicate_of: null
+        uncertainty: null
+        notes: GATE. 前缀与 gate_recipe kind 待 vocab-pr（试点 V2）
+      - proposed_id: KNOWLEDGE.DEPLOY.EXAMPLE_PROXY_HEADER_OWNERSHIP
+        kind: knowledge_entry
+        classification: KNOWLEDGE_PATTERN
+        triage: UNIVERSAL
+        statement_zh: "示例：沿流量入口到应用服务的链路，逐段明确代理转发头处理与健康检查的责任归属。"
+        statement_en_keywords: example, ingress-to-application chain, proxy header and health check ownership per hop
+        clean_room: statement_zh 为独立改写，与源文 Examples 段零逐字拷贝（源文示例中的具体技术栈对象词元已泛化为『流量入口/应用服务』，与源文 Non-Scope 不预设选型的立场一致）
+        applies_when: {lane: backend, condition: "入口链路设计"}
+        enforcement: advisory
+        vocab_pr_needed: false
+        source:
+          protocol: .trellis/spec/backend/31-runtime-deployment-protocol.md
+          sha256: c791451de0be3aa0629fd562e2b43cc54066e4b10d786264fa7a333c561ef23a
+          anchor: "## Examples 段（L43-45）"
+        duplicate_of: null
+        uncertainty: null
+        notes: 知识型示例，advisory
+      - proposed_id: KNOWLEDGE.FP.BE.UNCONDITIONAL_FORWARDED_HEADER_TRUST
+        kind: knowledge_entry
+        classification: FAILURE_PATTERN
+        triage: UNIVERSAL
+        statement_zh: "失败模式：应用不加甄别地信任任意来源的代理转发头（如 X-Forwarded-* 族），伪造的来源信息得以长驱直入。"
+        statement_en_keywords: failure pattern, unconditional forwarded header trust, spoofed origin
+        clean_room: statement_zh 为独立改写，与源文 Anti-patterns 段零逐字拷贝（X-Forwarded-* 为通用 HTTP 词元非项目专名）
+        applies_when: {lane: backend, condition: "代理链路后的应用实现"}
+        enforcement: advisory
+        vocab_pr_needed: false
+        source:
+          protocol: .trellis/spec/backend/31-runtime-deployment-protocol.md
+          sha256: c791451de0be3aa0629fd562e2b43cc54066e4b10d786264fa7a333c561ef23a
+          anchor: "## Anti-patterns 段（L47-49）"
+        duplicate_of: null
+        uncertainty: null
+        notes: failure-pattern 附带池形态；与本组 POLICY.DEPLOY.RUNTIME_FACT_RECORD 的信任边界主题相邻
+      - proposed_id: AUTHORITY.BE.DEPLOY_OWNERSHIP
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: "权威分配默认值：后端拥有应用运行契约，平台角色拥有受控部署环境及其变更。"
+        statement_en_keywords: backend owns application runtime contract, platform role owns controlled deployment environment
+        clean_room: statement_zh 为独立改写，与源文 Ownership 段零逐字拷贝
+        applies_when: {lane: any, condition: "Authority Map 构建"}
+        enforcement: advisory
+        vocab_pr_needed: false
+        source:
+          protocol: .trellis/spec/backend/31-runtime-deployment-protocol.md
+          sha256: c791451de0be3aa0629fd562e2b43cc54066e4b10d786264fa7a333c561ef23a
+          anchor: "## Ownership 段（L51-53）"
+        duplicate_of: null
+        uncertainty: null
+        notes: 加入 M6 5→1+N 同型上提审阅队列（meta.authority_uplift_note）
+      - proposed_id: POLICY.DEPLOY.TOPOLOGY_CHANGE_SYNC
+        kind: policy
+        classification: UNIVERSAL_POLICY
+        triage: UNIVERSAL
+        statement_zh: "部署拓扑或打包形态的变化必须同步更新技术基线、发布方案与运行验证证据。"
+        statement_en_keywords: topology or packaging change, sync tech baseline, release plan, runtime verification evidence
+        clean_room: statement_zh 为独立改写，与源文 Change Policy 段零逐字拷贝
+        applies_when: {lane: backend, condition: "部署拓扑或打包形态变化"}
+        enforcement: required_when_applicable
+        vocab_pr_needed: true
+        source:
+          protocol: .trellis/spec/backend/31-runtime-deployment-protocol.md
+          sha256: c791451de0be3aa0629fd562e2b43cc54066e4b10d786264fa7a333c561ef23a
+          anchor: "## Change Policy 段（L55-57）"
+        duplicate_of: null
+        uncertainty: null
+        notes: 互引 POLICY.CHG.SYNC_CONTRACT_DOCS_TESTS（变更同步族），本条为部署域具体化，非重复
