@@ -86,9 +86,13 @@ docs/     examples/   （docs/ 为 Owner 本地目录，不入库）
 ```bash
 pomaster init          # 建立治理基线 + 生成 AGENTS.md/CLAUDE.md 轻入口
 pomaster triage "…"    # 秒级判档：这次 change 值得多少治理
+pomaster status        # 读 .pomaster/state：对象计数/分母状态/permit 活性
+pomaster inspect <governed-id>  # 单对象检视：正文+证据+谱系（纯读零写入）
+pomaster context compile --role <lane>  # 八拍③ PROJECTION：最小充分上下文投影（三分区 markdown）
 pomaster permit issue/check/steal/list   # 八拍② FRAMEWORK LOCK：许可签发/判卷/显式接管/台账呈现
 pomaster exec-guard …  # 八拍④ 写路径机器执行点：attempt JSON → checkPermit 判卷（判卷器非写入器）
-pomaster maintain …    # 对账/分类/受控变更
+pomaster maintain <change-or-task> --ops <tx.json>  # 受控变更：显式事务 → kernel applyTransaction（判卷权威在 kernel）
+pomaster maintain <change-or-task> --phase pre-dev …  # pre-dev 链：triage→permit→context 薄编排（八拍①②③一线穿）
 pomaster check --fast  # FAST gate 循环
 pomaster record gate-run|claim  # 证据入账通路：gate 运行结果 / claim 显式单条落账 evidence 平面
 pomaster compact …     # 八拍⑦ COMPACT：episode 折叠为单次 store 事务（证据批量收编 + 显式 ops；NO_CHANGE 合法出口）

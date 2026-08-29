@@ -120,8 +120,12 @@ function fail(
   );
 }
 
-/** tx 文件解析结果（形状非法 → CliError）。 */
-async function loadOpsFile(
+/**
+ * tx 文件解析结果（形状非法 → CliError）。
+ * 共享件：compact（⑦ 拍 episode 折叠）与 maintain（受控变更）共用同一解析与同一
+ * 错误码位——「同一函数，不两套」（设计 §4.5 同线纪律）。
+ */
+export async function loadOpsFile(
   path: string,
 ): Promise<{ readonly ops: readonly TransactionOp[]; readonly authorityRef?: string; readonly note?: string } | CliError> {
   let raw: string;

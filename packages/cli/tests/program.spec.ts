@@ -145,15 +145,17 @@ describe("runCli --json 机读契约（§45）", () => {
   });
 
   it("未知命令（人读模式）→ exit 1，stderr 带 commander 提示（不裸栈）", async () => {
+    // P11 后 maintain 已是真实命令（曾是 README:91 幽灵命令被借作未知命令占位）——
+    // 换用确定的词表外命令名做同判据占位。
     const io = capture();
-    const code = await runCli(["--dir", dir, "maintain"], io);
+    const code = await runCli(["--dir", dir, "definitely-not-a-command"], io);
     expect(code).toBe(1);
-    expect(io.err.join("\n")).toContain("maintain");
+    expect(io.err.join("\n")).toContain("definitely-not-a-command");
   });
 
   it("未知命令（--json 模式）→ stdout 结构化 UNEXPECTED_ERROR 信封，exit 1", async () => {
     const io = capture();
-    const code = await runCli(["--dir", dir, "maintain", "--json"], io);
+    const code = await runCli(["--dir", dir, "definitely-not-a-command", "--json"], io);
     expect(code).toBe(1);
     const envelope = parseEnvelope(io.out);
     expect(envelope.ok).toBe(false);
@@ -162,7 +164,7 @@ describe("runCli --json 机读契约（§45）", () => {
     ).toBe("UNEXPECTED_ERROR");
     expect(
       (envelope.errors as { code: string; message: string }[])[0]?.message,
-    ).toContain("maintain");
+    ).toContain("definitely-not-a-command");
   });
 });
 
@@ -196,12 +198,14 @@ describe("runCli help/version 信息性退出（fresh-clone 实录：--help 曾�
       "init",
       "triage",
       "status",
+      "inspect",
       "context",
       "doctor",
       "check",
       "permit",
       "exec-guard",
       "reconcile",
+      "maintain",
       "compact",
       "record",
     ]) {
@@ -236,8 +240,8 @@ describe("runCli help/version 信息性退出（fresh-clone 实录：--help 曾�
 
   it("对照：未知命令（commander.usageError 族）仍 fail-closed exit 1，不受信息性放行影响", async () => {
     const io = capture();
-    const code = await runCli(["--dir", dir, "maintain"], io);
+    const code = await runCli(["--dir", dir, "definitely-not-a-command"], io);
     expect(code).toBe(1);
-    expect(io.err.join("\n")).toContain("maintain");
+    expect(io.err.join("\n")).toContain("definitely-not-a-command");
   });
 });

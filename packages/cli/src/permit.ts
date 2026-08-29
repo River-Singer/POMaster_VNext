@@ -174,7 +174,7 @@ export function governanceErrorToCliError(err: GovernanceError): CliError {
 }
 
 /** GovernedIdParseError → CliError（A5 同义码位：unknown_prefix/grammar → FATAL_*）。 */
-function parseErrorToCliError(err: GovernedIdParseError): CliError {
+export function parseErrorToCliError(err: GovernedIdParseError): CliError {
   return {
     code: err.reason === "unknown_prefix" ? "FATAL_UNKNOWN_PREFIX" : "FATAL_ID_GRAMMAR",
     message: err.message,

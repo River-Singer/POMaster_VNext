@@ -12,14 +12,17 @@
  *                   NO_CHANGE 是合法出口；G4）
  * - record          证据入账通路：gate-run/claim 显式单条落账 evidence 平面（G6）
  * - status          读 .pomaster/state：对象计数/分母状态/permit 活性
+ * - inspect         单对象检视：正文+证据+谱系纯读呈现（零写入；PRD §44.1 基础命令）
+ * - maintain        受控变更（--ops 显式事务，判卷权威在 kernel applyTransaction）/
+ *                   pre-dev 链（--phase pre-dev：triage→permit issue→context compile；PRD §44.4）
  * - context compile 八拍③：转调 kernel compileProjection，输出三分区 markdown
  * - doctor          内核探针 + chrome-devtools MCP 探测（D7/D22，四态矩阵 fail-closed）
  * - check --fast    八拍⑤：转调 gauntlet-lite build adapter（NOT_INSTALLED 绝不静默通过）
  *
  * 分层纪律：判卷权威在 @pomaster/kernel，本包只做编排与呈现，禁止旁路写状态
  * （例外：check/exec-guard 对过期许可追加 PERMIT_EXPIRED_OBSERVED 为 kernel 契约行为）。
- * 词表纪律：本包局部词（triage 档位/证据级、doctor 四态、permit list status 三值）
- * 均带 TODO(vocab-pr) 注记。
+ * 词表纪律：本包局部词（triage 档位/证据级、doctor 四态、permit list status 三值、
+ * maintain --phase 相值）均带 TODO(vocab-pr) 注记。
  */
 import { Command, CommanderError } from "commander";
 import { CLI_NAME } from "./cli-info.js";
@@ -27,6 +30,8 @@ import { toEnvelope, type CliEnvelope, type CommandOutcome } from "./envelope.js
 import { runInit } from "./init.js";
 import { triageRequest } from "./triage.js";
 import { runStatus } from "./status.js";
+import { runInspect } from "./inspect.js";
+import { runMaintain } from "./maintain.js";
 import { runContextCompile } from "./context.js";
 import { runDoctor } from "./doctor.js";
 import { runCheckFast } from "./check.js";
@@ -44,6 +49,25 @@ export * from "./digest.js";
 export * from "./triage.js";
 export { runInit } from "./init.js";
 export { runStatus } from "./status.js";
+export { runInspect } from "./inspect.js";
+export type {
+  InspectInput,
+  InspectResult,
+  InspectLineage,
+  InspectRunEntry,
+  InspectClaimEntry,
+} from "./inspect.js";
+export { runMaintain, MAINTAIN_PHASES } from "./maintain.js";
+export type {
+  MaintainInput,
+  MaintainResult,
+  MaintainApplyResult,
+  MaintainPreDevResult,
+  MaintainPhase,
+  MaintainTriageView,
+  MaintainPermitView,
+  MaintainProjectionView,
+} from "./maintain.js";
 export { runContextCompile, classifyKernelError } from "./context.js";
 export {
   runDoctor,
@@ -223,6 +247,23 @@ export function createProgram(
       const outcome = await runStatus(resolveDir(command));
       record({
         command: "status",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  // —— 单对象检视（PRD §44.1 基础命令；G1 inspect hole：纯读零写入） ——
+  program
+    .command("inspect")
+    .description(
+      "单对象检视：正文+证据+谱系纯读呈现（零写入；索引行与正文缺失显式报错，A1 成对纪律；legacy 词形走 resolveAlias 收编）",
+    )
+    .argument("<governed-id>", "governed id（closed-world 文法；legacy 拼写自动收编解析）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (id: string, _opts, command) => {
+      const outcome = await runInspect(resolveDir(command), { id });
+      record({
+        command: "inspect",
         outcome,
         asJson: command.opts().json === true,
       });
@@ -424,6 +465,47 @@ export function createProgram(
       });
       record({
         command: "reconcile",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  // —— 受控变更 / pre-dev 链编排（PRD §44.4；A2+A3：判卷权威在 kernel，CLI 只编排呈现） ——
+  program
+    .command("maintain")
+    .description(
+      "受控变更/pre-dev 链（PRD §44.4）：--ops <tx-file> 显式事务走 kernel applyTransaction（唯一写入路径，零旁移判卷）；--phase pre-dev 薄编排 triage→permit issue→context compile（串既有能力零新原语）",
+    )
+    .argument("<change-or-task>", "变更/任务锚（general_id 宽松词形；apply 模式缺省作为 authorityRef 兜底）")
+    .option("--ops <tx-file>", "apply 模式：kernel Transaction JSON 文件（{ops:[…], authorityRef?, note?}）")
+    .option("--authority-ref <ref>", "审批/决策引用（覆盖 --ops 文件内与位置参数兜底）")
+    .option("--note <text>", "事务注记（覆盖 --ops 文件内同名字段）")
+    .option("--phase <phase>", "编排链模式：pre-dev（triage→permit issue→context compile；in-dev/post-dev 未落地显式拒绝）")
+    .option("--request <text>", "pre-dev 链：triage 请求文本")
+    .option("--subject <governed-id>", "pre-dev 链：permit 范围对象（可重复，≥1）", collectValues)
+    .option("--actor <type>:<name>", "pre-dev 链：permit 主体（type ∈ agent/human/tool/kernel）")
+    .option("--capability <governed-id>", "pre-dev 链：Capability 清单（可重复）", collectValues)
+    .option("--acceptance-shape <inline-json|@file>", "pre-dev 链：验收形状（JSON 对象；@file 读文件）")
+    .option("--ttl-beats <n>", "pre-dev 链：TTL 拍数（正整数；缺省 168）")
+    .option("--role <role>", "pre-dev 链：投影角色 lane（缺省不发明，必填）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (changeOrTask: string, opts, command) => {
+      const outcome = await runMaintain(resolveDir(command), {
+        changeOrTask,
+        opsFile: opts.ops as string | undefined,
+        authorityRef: opts.authorityRef as string | undefined,
+        note: opts.note as string | undefined,
+        phase: opts.phase as string | undefined,
+        request: opts.request as string | undefined,
+        subjects: opts.subject as string[] | undefined,
+        actor: opts.actor as string | undefined,
+        capabilities: opts.capability as string[] | undefined,
+        acceptanceShape: opts.acceptanceShape as string | undefined,
+        ttlBeats: opts.ttlBeats as string | undefined,
+        role: opts.role as string | undefined,
+      });
+      record({
+        command: "maintain",
         outcome,
         asJson: command.opts().json === true,
       });
