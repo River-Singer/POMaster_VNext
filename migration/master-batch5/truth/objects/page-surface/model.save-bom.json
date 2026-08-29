@@ -1,0 +1,641 @@
+{
+  "aliases": [
+    "PAGE-TASK-STEP-SAVE-BOM"
+  ],
+  "authority": {
+    "delegates": [],
+    "escalation_hint": "regenerate via migration/master-batch5/tools/ingest_bp_main.py; 02_process-task-interface.yaml change re-runs the ingest; facet id PAGE.MODEL.* supersede merge and bp_ref target adjudication are HUMAN_OWNER seats (EVOLUTION_CHANNEL; ledger owner FRONTEND_ARCHITECTURE)",
+    "owner": "FRONTEND_ARCHITECTURE",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "LOCKED",
+    "evidence": "PLANNED",
+    "lifecycle": "PROPOSED"
+  },
+  "axis_profile": "page_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "PAGE.MODEL.SAVE_BOM",
+  "key_bindings": {
+    "artifact": [],
+    "code": [
+      {
+        "artifact_type": "file",
+        "expect": {
+          "page_id": "PAGE-TASK-STEP-SAVE-BOM",
+          "states_expected": 14,
+          "transitions_expected": 5
+        },
+        "match_rule": "mechanical",
+        "value": "outputs/frontend/10_planned/02_process-task-interface.yaml"
+      }
+    ]
+  },
+  "kind": "page_surface",
+  "notes_md": "BP 主文档转录（MIG-B5 转录组 A·02_process-task-interface，页面-任务-步骤层级五元一体，一页一对象 15 页）：源 outputs/frontend/10_planned/02_process-task-interface.yaml（design_seed，pin 见 sources[0]；实体分母 347 之页节点）。\n五元一体：payload.page（30 字段含 17 个 authority 包装 facet 与 contract，UI 功能清单=页字段组，不立独立对象）+ payload.task（1:1，TASK-STEP-SAVE-BOM）+ payload.work_context（1:1，CTX-TASK-STEP-SAVE-BOM） + payload.states 14 条（edit 5/mode 4/request 5）+ payload.transitions 5 条（源序）。\nbp_ref 指针：PAGE-TASK-STEP-SAVE-BOM → 批次页级 id PAGE.SAVE_BOM（batch2 39 主对象现场解析：RESOLVED）；facet 身份 PAGE.MODEL.SAVE_BOM（batch2 组 B PAGE.MODEL.* 作用域段，merge_path=supersede）；A6 rename-on-ingest（ALIASES_V0 PAGE-TASK-STEP-* 已登记族）：origin=ingested，legacy 照录 aliases[]。\n跨批状态词形：13/14 解析于 batch3 POLICY.STATE.* aliases；悬空 1 条已登记（悬空登记不裁决，payload.dangling_state_refs 承载——MANAGE-USER-ROLE 9 条与 batch2 在案的用户裁决删页史互证，裁决归 Owner）。\n轴基线：lifecycle=PROPOSED（coordinate_state=planned 事实记录，superseded_status_field 已登记）+ evidence=PLANNED（跨轴断言）+ confidence=LOCKED + change=STABLE；route=null（route_authority=frontend-unresolved 照录，物理路由权威在 KEYBINDING.*，本对象不落路由串）。\n散文承载：源为机器结构化 JSON，无散文叙事字段；中文业务事实正文（contract.purpose 等）逐字进 payload（batch3 §2.1 散文边界）。摘要（全文按源指针回读）：none (honest zero)\n本字段为人类散文，机器永不解析判卷。",
+  "origin": "ingested",
+  "payload": {
+    "bp_ref": {
+      "batch": "MIG-B2",
+      "batch2_object_file": "migration/master-batch2/truth/objects/page-surface/save-bom.json",
+      "kind_dir": "page-surface",
+      "object_id": "PAGE.SAVE_BOM",
+      "resolution_status": "RESOLVED_IN_BATCH2_PAGE_SURFACE"
+    },
+    "dangling_state_refs": {
+      "count": 1,
+      "registered_not_adjudicated": true,
+      "resolution_target": "migration/master-batch3/truth/objects/business-rule/state/ (POLICY.STATE.* aliases)",
+      "rule": "cross-batch dangling refs are registered explicitly (CONVENTIONS sec.3; batch3 proved cross-batch dangling is real); resolution belongs to the Owner",
+      "word_forms": [
+        "STATE-PAGE-TASK-STEP-SAVE-BOM-MODE-READ-ONLY"
+      ]
+    },
+    "id_facet": {
+      "merge_path": "supersede",
+      "object_id": "PAGE.MODEL.SAVE_BOM",
+      "page_level_id": "PAGE.SAVE_BOM",
+      "page_level_id_status": "REGISTERED_RULE_CANONICAL_HELD_BY_PAGE_SURFACE_OBJECT",
+      "rule": "facet-scoped id per the batch2 group-B PAGE.READINESS.*/PAGE.REGISTRY.*/PAGE.NAV.* convention: the concurrent batch2 page-surface transcription holds the page-level id PAGE.SAVE_BOM (ALIASES_V0 canonical for PAGE-TASK-STEP-*); this batch5 BP-main-document facet takes the PAGE.MODEL.* scoping segment to avoid same-id clobber and merges via the supersede chain after Owner id adjudication (report only, never auto-adjudicate)"
+    },
+    "page": {
+      "acceptance": {
+        "authority": "frontend-engineering-proposal",
+        "evidence": [
+          "frontend-derived-from-task:TASK-STEP-SAVE-BOM"
+        ],
+        "status": "proposed",
+        "value": [
+          {
+            "business_acceptance_ids": [
+              "ACC-BOM-WRITEBACK-LEDGER",
+              "ACC-UNDEFINED-ROLE-DENIED"
+            ],
+            "criterion": "task outcome, validation, and recovery are observable",
+            "task_id": "TASK-STEP-SAVE-BOM"
+          }
+        ]
+      },
+      "authority": "frontend-planned-candidate",
+      "batch_operations": {
+        "authority": "frontend-engineering-proposal",
+        "evidence": [
+          "frontend-derived-from-task:TASK-STEP-SAVE-BOM"
+        ],
+        "status": "proposed",
+        "value": []
+      },
+      "business_states": {
+        "authority": "frontend-engineering-proposal",
+        "evidence": [
+          "frontend-derived-from-task:TASK-STEP-SAVE-BOM"
+        ],
+        "status": "proposed",
+        "value": [
+          "task-available",
+          "task-unavailable"
+        ]
+      },
+      "contract": {
+        "dangerous_actions": [],
+        "information_regions": [],
+        "primary_actions": [],
+        "primary_actor_ids": [
+          "ACTOR-PART-CONTROLLER",
+          "ACTOR-VEHICLE-COORDINATOR"
+        ],
+        "purpose": "提交清单变更，分配记录编号并触发台账回写。",
+        "recovery": []
+      },
+      "coordinate_state": "planned",
+      "dangerous_actions": {
+        "authority": "frontend-engineering-proposal",
+        "evidence": [
+          "frontend-derived-from-task:TASK-STEP-SAVE-BOM"
+        ],
+        "status": "proposed",
+        "value": []
+      },
+      "edit_states": {
+        "authority": "frontend-engineering-proposal",
+        "evidence": [
+          "frontend-derived-from-task:TASK-STEP-SAVE-BOM"
+        ],
+        "status": "proposed",
+        "value": [
+          "pristine",
+          "dirty",
+          "validating",
+          "invalid",
+          "submitting"
+        ]
+      },
+      "feedback_recovery": {
+        "authority": "frontend-engineering-proposal",
+        "evidence": [
+          "frontend-derived-from-task:TASK-STEP-SAVE-BOM"
+        ],
+        "status": "proposed",
+        "value": [
+          "preserve-user-input",
+          "show-actionable-error",
+          "offer-retry-or-safe-exit"
+        ]
+      },
+      "field_groups": {
+        "authority": "frontend-engineering-proposal",
+        "evidence": [
+          "frontend-derived-from-task:TASK-STEP-SAVE-BOM"
+        ],
+        "status": "proposed",
+        "value": [
+          {
+            "object_id": "OBJ-CALC-VEHICLE-BOM-ENTRY",
+            "status": "field-selection-pending"
+          }
+        ]
+      },
+      "forms": {
+        "authority": "frontend-engineering-proposal",
+        "evidence": [
+          "frontend-derived-from-task:TASK-STEP-SAVE-BOM"
+        ],
+        "status": "proposed",
+        "value": [
+          {
+            "action_id": "ACT-SAVE-BOM",
+            "object_ids": [
+              "OBJ-CALC-VEHICLE-BOM-ENTRY"
+            ]
+          }
+        ]
+      },
+      "generated_from_task_ids": [
+        "TASK-STEP-SAVE-BOM"
+      ],
+      "id": "PAGE-TASK-STEP-SAVE-BOM",
+      "information_architecture": {
+        "authority": "frontend-engineering-proposal",
+        "evidence": [
+          "frontend-derived-from-task:TASK-STEP-SAVE-BOM"
+        ],
+        "status": "proposed",
+        "value": [
+          "BOM 搭建链路",
+          "保存计算车型零件清单"
+        ]
+      },
+      "keyboard_accessibility": {
+        "authority": "frontend-engineering-proposal",
+        "evidence": [
+          "frontend-derived-from-task:TASK-STEP-SAVE-BOM"
+        ],
+        "status": "proposed",
+        "value": [
+          "logical-tab-order",
+          "visible-focus",
+          "keyboard-operable-actions",
+          "error-focus-recovery"
+        ]
+      },
+      "layout_regions": {
+        "authority": "frontend-engineering-proposal",
+        "evidence": [
+          "frontend-derived-from-task:TASK-STEP-SAVE-BOM"
+        ],
+        "status": "proposed",
+        "value": [
+          "task-context",
+          "primary-work-area",
+          "actions",
+          "feedback-and-recovery"
+        ]
+      },
+      "mode_states": {
+        "authority": "frontend-engineering-proposal",
+        "evidence": [
+          "frontend-derived-from-task:TASK-STEP-SAVE-BOM"
+        ],
+        "status": "proposed",
+        "value": [
+          "view",
+          "edit",
+          "read-only"
+        ]
+      },
+      "module_ids": [],
+      "name": "保存计算车型零件清单",
+      "page_type": "task-interface-candidate",
+      "permissions": {
+        "authority": "frontend-engineering-proposal",
+        "evidence": [
+          "frontend-derived-from-task:TASK-STEP-SAVE-BOM"
+        ],
+        "status": "proposed",
+        "value": {
+          "actor_ids": [
+            "ACTOR-PART-CONTROLLER",
+            "ACTOR-VEHICLE-COORDINATOR"
+          ],
+          "binding": "frontend-must-enforce-business-authorization",
+          "business_permission_ids": [
+            "PERM-DATA-SCOPE-BY-ROLE"
+          ]
+        }
+      },
+      "request_states": {
+        "authority": "frontend-engineering-proposal",
+        "evidence": [
+          "frontend-derived-from-task:TASK-STEP-SAVE-BOM"
+        ],
+        "status": "proposed",
+        "value": [
+          "idle",
+          "loading",
+          "success",
+          "empty",
+          "error"
+        ]
+      },
+      "responsive_behavior": {
+        "authority": "frontend-engineering-proposal",
+        "evidence": [
+          "frontend-derived-from-task:TASK-STEP-SAVE-BOM"
+        ],
+        "status": "proposed",
+        "value": [
+          "preserve-task-priority",
+          "avoid-horizontal-page-overflow",
+          "keep-primary-action-reachable"
+        ]
+      },
+      "route": null,
+      "route_authority": "frontend-unresolved",
+      "tables": {
+        "authority": "frontend-engineering-proposal",
+        "evidence": [
+          "frontend-derived-from-task:TASK-STEP-SAVE-BOM"
+        ],
+        "status": "proposed",
+        "value": []
+      },
+      "visual_hierarchy": {
+        "authority": "frontend-engineering-proposal",
+        "evidence": [
+          "frontend-derived-from-task:TASK-STEP-SAVE-BOM"
+        ],
+        "status": "proposed",
+        "value": [
+          "task-purpose",
+          "primary-action",
+          "supporting-information",
+          "system-feedback"
+        ]
+      },
+      "work_context": {
+        "authority": "frontend-engineering-proposal",
+        "evidence": [
+          "frontend-derived-from-task:TASK-STEP-SAVE-BOM"
+        ],
+        "status": "proposed",
+        "value": [
+          {
+            "actor_ids": [
+              "ACTOR-PART-CONTROLLER",
+              "ACTOR-VEHICLE-COORDINATOR"
+            ],
+            "object_ids": [
+              "OBJ-CALC-VEHICLE-BOM-ENTRY"
+            ],
+            "purpose": "提交清单变更，分配记录编号并触发台账回写。",
+            "task_id": "TASK-STEP-SAVE-BOM"
+          }
+        ]
+      },
+      "work_context_ids": [
+        "CTX-TASK-STEP-SAVE-BOM"
+      ]
+    },
+    "source_document_meta": {
+      "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+      "document_type": "process-task-interface-model",
+      "schema_version": 3
+    },
+    "states": [
+      {
+        "authority": "frontend-engineering-default",
+        "coordinate_state": "planned",
+        "dimension": "edit",
+        "id": "STATE-PAGE-TASK-STEP-SAVE-BOM-EDIT-DIRTY",
+        "module_ids": [],
+        "page_id": "PAGE-TASK-STEP-SAVE-BOM",
+        "source_state_id": null,
+        "value": "dirty"
+      },
+      {
+        "authority": "frontend-engineering-default",
+        "coordinate_state": "planned",
+        "dimension": "edit",
+        "id": "STATE-PAGE-TASK-STEP-SAVE-BOM-EDIT-INVALID",
+        "module_ids": [],
+        "page_id": "PAGE-TASK-STEP-SAVE-BOM",
+        "source_state_id": null,
+        "value": "invalid"
+      },
+      {
+        "authority": "frontend-engineering-default",
+        "coordinate_state": "planned",
+        "dimension": "edit",
+        "id": "STATE-PAGE-TASK-STEP-SAVE-BOM-EDIT-PRISTINE",
+        "module_ids": [],
+        "page_id": "PAGE-TASK-STEP-SAVE-BOM",
+        "source_state_id": null,
+        "value": "pristine"
+      },
+      {
+        "authority": "frontend-engineering-default",
+        "coordinate_state": "planned",
+        "dimension": "edit",
+        "id": "STATE-PAGE-TASK-STEP-SAVE-BOM-EDIT-SUBMITTING",
+        "module_ids": [],
+        "page_id": "PAGE-TASK-STEP-SAVE-BOM",
+        "source_state_id": null,
+        "value": "submitting"
+      },
+      {
+        "authority": "frontend-engineering-default",
+        "coordinate_state": "planned",
+        "dimension": "edit",
+        "id": "STATE-PAGE-TASK-STEP-SAVE-BOM-EDIT-VALIDATING",
+        "module_ids": [],
+        "page_id": "PAGE-TASK-STEP-SAVE-BOM",
+        "source_state_id": null,
+        "value": "validating"
+      },
+      {
+        "authority": "frontend-engineering-default",
+        "coordinate_state": "planned",
+        "dimension": "mode",
+        "id": "STATE-PAGE-TASK-STEP-SAVE-BOM-MODE-CREATE",
+        "module_ids": [],
+        "page_id": "PAGE-TASK-STEP-SAVE-BOM",
+        "source_state_id": null,
+        "value": "create"
+      },
+      {
+        "authority": "frontend-engineering-default",
+        "coordinate_state": "planned",
+        "dimension": "mode",
+        "id": "STATE-PAGE-TASK-STEP-SAVE-BOM-MODE-EDIT",
+        "module_ids": [],
+        "page_id": "PAGE-TASK-STEP-SAVE-BOM",
+        "source_state_id": null,
+        "value": "edit"
+      },
+      {
+        "authority": "frontend-engineering-default",
+        "coordinate_state": "planned",
+        "dimension": "mode",
+        "id": "STATE-PAGE-TASK-STEP-SAVE-BOM-MODE-READ-ONLY",
+        "module_ids": [],
+        "page_id": "PAGE-TASK-STEP-SAVE-BOM",
+        "source_state_id": null,
+        "value": "read-only"
+      },
+      {
+        "authority": "frontend-engineering-default",
+        "coordinate_state": "planned",
+        "dimension": "mode",
+        "id": "STATE-PAGE-TASK-STEP-SAVE-BOM-MODE-VIEW",
+        "module_ids": [],
+        "page_id": "PAGE-TASK-STEP-SAVE-BOM",
+        "source_state_id": null,
+        "value": "view"
+      },
+      {
+        "authority": "frontend-engineering-default",
+        "coordinate_state": "planned",
+        "dimension": "request",
+        "id": "STATE-PAGE-TASK-STEP-SAVE-BOM-REQUEST-EMPTY",
+        "module_ids": [],
+        "page_id": "PAGE-TASK-STEP-SAVE-BOM",
+        "source_state_id": null,
+        "value": "empty"
+      },
+      {
+        "authority": "frontend-engineering-default",
+        "coordinate_state": "planned",
+        "dimension": "request",
+        "id": "STATE-PAGE-TASK-STEP-SAVE-BOM-REQUEST-ERROR",
+        "module_ids": [],
+        "page_id": "PAGE-TASK-STEP-SAVE-BOM",
+        "source_state_id": null,
+        "value": "error"
+      },
+      {
+        "authority": "frontend-engineering-default",
+        "coordinate_state": "planned",
+        "dimension": "request",
+        "id": "STATE-PAGE-TASK-STEP-SAVE-BOM-REQUEST-IDLE",
+        "module_ids": [],
+        "page_id": "PAGE-TASK-STEP-SAVE-BOM",
+        "source_state_id": null,
+        "value": "idle"
+      },
+      {
+        "authority": "frontend-engineering-default",
+        "coordinate_state": "planned",
+        "dimension": "request",
+        "id": "STATE-PAGE-TASK-STEP-SAVE-BOM-REQUEST-LOADING",
+        "module_ids": [],
+        "page_id": "PAGE-TASK-STEP-SAVE-BOM",
+        "source_state_id": null,
+        "value": "loading"
+      },
+      {
+        "authority": "frontend-engineering-default",
+        "coordinate_state": "planned",
+        "dimension": "request",
+        "id": "STATE-PAGE-TASK-STEP-SAVE-BOM-REQUEST-SUCCESS",
+        "module_ids": [],
+        "page_id": "PAGE-TASK-STEP-SAVE-BOM",
+        "source_state_id": null,
+        "value": "success"
+      }
+    ],
+    "task": {
+      "acceptance_ids": [
+        "ACC-BOM-WRITEBACK-LEDGER",
+        "ACC-UNDEFINED-ROLE-DENIED"
+      ],
+      "action_ids": [
+        "ACT-SAVE-BOM"
+      ],
+      "actor_ids": [
+        "ACTOR-PART-CONTROLLER",
+        "ACTOR-VEHICLE-COORDINATOR"
+      ],
+      "backend_capability_ids": [],
+      "coordinate_state": "planned",
+      "exception_ids": [],
+      "failure_ids": [],
+      "id": "TASK-STEP-SAVE-BOM",
+      "kind": "user",
+      "module_id": null,
+      "name": "保存计算车型零件清单",
+      "object_ids": [
+        "OBJ-CALC-VEHICLE-BOM-ENTRY"
+      ],
+      "page_id": "PAGE-TASK-STEP-SAVE-BOM",
+      "permission_ids": [
+        "PERM-DATA-SCOPE-BY-ROLE"
+      ],
+      "precondition_ids": [],
+      "process_id": "PROC-BOM-BUILD-CHAIN",
+      "reads_object_ids": [
+        "OBJ-CALC-VEHICLE-BOM-ENTRY"
+      ],
+      "rule_ids": [
+        "RULE-BOM-WRITEBACK-TO-LEDGER",
+        "RULE-BOM-ADD-NOT-PERSISTED"
+      ],
+      "source_step_id": "STEP-SAVE-BOM",
+      "transforms_object_ids": [],
+      "work_context_id": "CTX-TASK-STEP-SAVE-BOM",
+      "writes_object_ids": [
+        "OBJ-CALC-VEHICLE-BOM-ENTRY",
+        "OBJ-PARTS-LEDGER-ENTRY"
+      ]
+    },
+    "transitions": [
+      {
+        "authority": "frontend-engineering-default",
+        "coordinate_state": "planned",
+        "dimension": "request",
+        "event": "request-succeeded",
+        "from_state_id": "STATE-PAGE-TASK-STEP-SAVE-BOM-REQUEST-LOADING",
+        "id": "TRANSITION-009868B13C5B360F",
+        "module_ids": [],
+        "page_id": "PAGE-TASK-STEP-SAVE-BOM",
+        "to_state_id": "STATE-PAGE-TASK-STEP-SAVE-BOM-REQUEST-SUCCESS"
+      },
+      {
+        "authority": "frontend-engineering-default",
+        "coordinate_state": "planned",
+        "dimension": "request",
+        "event": "request-started",
+        "from_state_id": "STATE-PAGE-TASK-STEP-SAVE-BOM-REQUEST-IDLE",
+        "id": "TRANSITION-31C9401D53065C42",
+        "module_ids": [],
+        "page_id": "PAGE-TASK-STEP-SAVE-BOM",
+        "to_state_id": "STATE-PAGE-TASK-STEP-SAVE-BOM-REQUEST-LOADING"
+      },
+      {
+        "authority": "frontend-engineering-default",
+        "coordinate_state": "planned",
+        "dimension": "request",
+        "event": "request-failed",
+        "from_state_id": "STATE-PAGE-TASK-STEP-SAVE-BOM-REQUEST-LOADING",
+        "id": "TRANSITION-DA252FAAA805B2EF",
+        "module_ids": [],
+        "page_id": "PAGE-TASK-STEP-SAVE-BOM",
+        "to_state_id": "STATE-PAGE-TASK-STEP-SAVE-BOM-REQUEST-ERROR"
+      },
+      {
+        "authority": "frontend-engineering-default",
+        "coordinate_state": "planned",
+        "dimension": "request",
+        "event": "retry-requested",
+        "from_state_id": "STATE-PAGE-TASK-STEP-SAVE-BOM-REQUEST-ERROR",
+        "id": "TRANSITION-EBFA42B1785455E6",
+        "module_ids": [],
+        "page_id": "PAGE-TASK-STEP-SAVE-BOM",
+        "to_state_id": "STATE-PAGE-TASK-STEP-SAVE-BOM-REQUEST-LOADING"
+      },
+      {
+        "authority": "frontend-engineering-default",
+        "coordinate_state": "planned",
+        "dimension": "request",
+        "event": "request-returned-empty",
+        "from_state_id": "STATE-PAGE-TASK-STEP-SAVE-BOM-REQUEST-LOADING",
+        "id": "TRANSITION-F5655EA303E3B028",
+        "module_ids": [],
+        "page_id": "PAGE-TASK-STEP-SAVE-BOM",
+        "to_state_id": "STATE-PAGE-TASK-STEP-SAVE-BOM-REQUEST-EMPTY"
+      }
+    ],
+    "work_context": {
+      "coordinate_state": "planned",
+      "data_focus_ids": [
+        "OBJ-CALC-VEHICLE-BOM-ENTRY"
+      ],
+      "entry_conditions": [
+        "当前清单存在未保存变更"
+      ],
+      "exit_conditions": [
+        "变更已写入零件清单台账并生成日志 ID"
+      ],
+      "id": "CTX-TASK-STEP-SAVE-BOM",
+      "module_id": null,
+      "permission_ids": [
+        "PERM-DATA-SCOPE-BY-ROLE"
+      ],
+      "purpose": "提交清单变更，分配记录编号并触发台账回写。",
+      "task_id": "TASK-STEP-SAVE-BOM"
+    }
+  },
+  "permits_active": [],
+  "producer": {
+    "liveness": {
+      "status": "active"
+    },
+    "merge_semantics": {
+      "backfill_if_missing": [],
+      "human_never_touched": [],
+      "refresh_fields": [
+        "payload"
+      ]
+    },
+    "producer_id": "prod.mig_b5_ingest_bp_main",
+    "views_maintained": [
+      "truth-index.envelope"
+    ]
+  },
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b5/ingest_bp_main.py",
+      "locator": {
+        "batch": "MIG-B5",
+        "ingested_from": "outputs/frontend/10_planned/02_process-task-interface.yaml",
+        "line_anchors": {
+          "pages": 4,
+          "processes": 3854,
+          "route_authority": 220,
+          "scenes": 3915,
+          "states": 4140,
+          "tasks": 6242,
+          "transitions": 6819,
+          "work_contexts": 7646
+        },
+        "transcription": "BP main document 02_process-task-interface page-model node objectified one-to-one (page + 1:1 task + 1:1 work_context + states + transitions verbatim, array order = source order); 17 authority-wrapped UI facets + contract carried verbatim inside payload.page (UI function inventory is a per-page field group, not standalone objects); coordinate_state=planned kept as a fact record with a superseded_status_field registration; route stays null (no physical route string enters any payload; route authority lives in the KEYBINDING page<->dir table via the batch2 bp_ref target)"
+      },
+      "pin": {
+        "digest": "sha256:6bbad100833a9c4cdfa13359e1137f5121e607f7ef0254873c3c1ab42b79c736"
+      },
+      "ref": "outputs/frontend/10_planned/02_process-task-interface.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "superseded_status_field": {
+    "mapped_to": "axes.lifecycle=PROPOSED (fact record) + axes.evidence=PLANNED (cross-axis assertion per the FROZEN 02 envelope note); semantic upgrade planned->CURRENT is register-only, Owner adjudication required (batch1 CONVENTIONS sec.4 / batch2 readiness precedent)",
+    "reason": "coordinate_state=planned is one flat coordination word; the plan fact stays a fact record and the semantic upgrade belongs to the Owner; values transcribed without tampering (planned is planned)",
+    "source_field": "coordinate_state",
+    "source_value": "planned (347/347 entities, tool-verified uniform)",
+    "upgrade_registered": true
+  },
+  "supersedes": null,
+  "title_zh": "页面模型·保存计算车型零件清单"
+}

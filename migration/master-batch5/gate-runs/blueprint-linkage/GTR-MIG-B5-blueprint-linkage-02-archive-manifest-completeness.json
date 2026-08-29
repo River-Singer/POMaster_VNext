@@ -1,0 +1,59 @@
+{
+  "blindspot": {
+    "carrier_coverage": {
+      "episode_class_vocabulary": 4,
+      "inventory_process_archive_assets": 8,
+      "manifest_file_rows": 9,
+      "manifest_groups": 8,
+      "manifest_member_files": 1,
+      "rows_three_way_sha_line_ok": 9,
+      "tombstone_rows": 9
+    },
+    "escape_ratio": 0,
+    "fixture_regression": "MIG-B5-BLUEPRINT-LINKAGE-PROBE-SENSITIVITY-FIXTURE/passed",
+    "produced": 21,
+    "scanned": 21
+  },
+  "counts": {
+    "applicable_scanned": 9,
+    "not_applicable": 12,
+    "scanned": 21,
+    "suppressed_by_ledger": 0,
+    "unchecked_in_blindspot_estimated": 0,
+    "violations": 0
+  },
+  "denominator_refs": [],
+  "digest_excluded_fields": [
+    "duration_ms"
+  ],
+  "duration_ms": {
+    "external": 0,
+    "self": 0
+  },
+  "gate": "BLUEPRINT_LINKAGE",
+  "gate_def": "POLICY.GATE.MIG_B5_BLUEPRINT_LINKAGE@0.1.0",
+  "grn": "GRN-4702",
+  "items": [],
+  "items_truncated": false,
+  "metric_dialect": "archive:manifest_rows",
+  "ran_at_seq": 0,
+  "scope": {
+    "note": "检查范围=Episode 归档 manifest 对账（batch5 铁律 3：流程档案不建 Live State truth 对象——归档=manifest+抽取；归档不是删除，MASTer 侧文件零改动；本检查即『manifest 是不是把档案数对齐了+每行 sha 还能不能对上现场』的机械复核）。分母声明（denominator_refs 显式空数组）：判卷分母=manifest 档案行数 9（documents[] 8 组 canonical + member_files 1 行 working 副本）。五重判定（C5 现场重算，不信自报）：①文件数恒等链 rows 9 == denominators.archive_files_covered 9 == tombstone_preregistrations 9 == inventory 侧 process_archive 8 资产+working_copy pin 1 == 组 8+member 1；②组集合相等 manifest documents[] ref 集 == inventory process_archive ref 集（8=8）；③逐行 sha256/行数三方对账 MASTer 源 live 重算 == manifest 行登记 == inventory pin（canonical 行走 assets[]，working 行走 denominators.technical_assessment_entries.value_breakdown；inventory sha 在册形态=裸 64 hex，gate 按各文件在册形态对账），三方全等行 9/9；④tombstone 预登记层（9 条，status=registered_only_not_executed）逐 ref sha/行数与 live 及 manifest 行三方相等；⑤episode_class 落 4 类闭世界词表+组登记必填字段（sha/行数/archive_reason/pointer_semantics/episode_summary）在场。violations=0 → verdict=passed。盲区声明：sha/行数/集合/恒等链判定全机械可达（escape_ratio=0，21 个判定单元=9 档案行分母载体+9 tombstone 预登记行+集合/恒等/词表 3 项结构判定，全部判卷产出）。counts 口径声明：scanned=21 个判定单元（全判）、applicable_scanned=9（分母载体=manifest 档案行）、not_applicable=12（9 tombstone 行+3 结构判定项——属伴随层判卷单元、不属档案行分母载体类，判卷并不缺席且同样可产 violations，此数字为 C1 要求的分界诚实化非未判声明）；行锚对漂移后源的复用风险由 pin 语义承载（manifest pointer_semantics 在场断言=判定⑤一部分），源演化后需按 pin 重放重算归 Owner 运维纪律，非本 gate 机械判据。路径基：items location 为 po-master 仓内相对路径。self_report_trusted=false：trust.asserted=null（manifest self_check 声明值只作被检登记值参与对账，不作判卷依据），判卷唯一依据 trust.recomputed。duration_ms 钉 0（byte-identical 幂等）。",
+    "size_expected_from_denominator": 9
+  },
+  "tool": "mig-b5:run_blueprint_link_gate",
+  "tool_version": "1.0.0",
+  "trigger": {
+    "note": "migration batch context: no kernel seq allocator; ran_at_seq pinned to 0 (deterministic batch base, seq=MIG-B5 batch identifier, A4 wall-clock-free; kernel re-sequences on ingestion); durations pinned to 0 for byte-identical rerun idempotency (batch hard rule 2)",
+    "task_ref": "MIG-B5/M4-blueprint-linkage",
+    "type": "on_demand"
+  },
+  "trust": {
+    "asserted": null,
+    "recomputed": {
+      "matches_asserted": true,
+      "violations": 0
+    }
+  },
+  "verdict": "passed"
+}

@@ -24,8 +24,9 @@ x-batch4-uplift 新条目 + catalog-lock.draft.json）。MASTer_master 绝对只
                                   词面（title/statement/keywords/applies_when.condition/
                                   sub_rules[].statement_zh/review_notes）；铁律 2 规定
                                   必带的 provenance 元数据（sources[].clean_room_note
-                                  固定英文文案含 MASTer 一词 + locator.upstream_source_ref
-                                  上游路径）非词面，全文件原始命中逐一定位登记并作
+                                  注记已去专名、上游专名词形命中预期 0 +
+                                  locator.upstream_source_ref 上游路径）非词面，
+                                  全文件原始命中逐一定位登记并作
                                   body+metadata==raw 完备性断言（不平衡=exit 2）。
   03 verbatim-copy-probe          新 catalog 条目改写词面 vs MASTer 源对应文本（对应
     （GRN-4603）                  资产全文件归一文本 ⊇ 对应条目文本，判据更严不更松）
@@ -592,8 +593,9 @@ def run_check2(ids, docs):
         "组）：判卷分母=新增条目数 %d。判定面=正文词面（title_zh/statement_zh/"
         "statement_en_keywords/applies_when.condition/sub_rules[].statement_zh/review_notes；"
         "与 ledger clean_room_rule 与物化工具在册判定面同口径）；铁律 2 规定必带的 provenance "
-        "元数据非词面：sources[].clean_room_note 固定英文文案含 MASTer 一词（%d 处）+ sources[]"
-        ".locator.upstream_source_ref 上游路径（%d 处）——全文件原始 grep 命中 %d 处全部定位"
+        "元数据非词面：sources[].clean_room_note 上游专名词形命中数（%d 处；预期 0——注记已"
+        "去专名）+ sources[].locator.upstream_source_ref 上游路径（%d 处）——全文件原始 grep "
+        "命中 %d 处全部定位"
         "登记并逐 pattern 作 body+metadata==raw 完备性断言（不平衡=exit 2 fail-closed），实测"
         "平衡、正文命中 %d。泄漏网两类：中文业务词 %d 个（%s；逐词在 MASTer outputs/frontend/"
         "10_planned 语料实证在场=网有牙，preflight 断言）+ 机械词形正则 %d 个（%s）。violations="
@@ -625,7 +627,7 @@ def run_check2(ids, docs):
             "body_word_face_hits": body_hits_total,
             "metadata_hits_total": meta_hits_total,
             "raw_full_file_hits": raw_hits_total,
-            "clean_room_note_mast_er_hits": meta_note_hits,
+            "upstream_proper_noun_hits": meta_note_hits,
             "upstream_source_ref_path_hits": ref_path_hits,
             "net_cn_words": len(CN_BUSINESS_WORDS),
             "net_mechanical_patterns": len(MECHANICAL_PATTERNS),
@@ -970,7 +972,8 @@ def run_aggregate(gates):
         "GRN-4201..4204/4301..4304、batch3 GRN-4401..4403/4501..4504 无重叠）。实样登记："
         "ref 解析 %d/%d 五判据全过 + %d 载体 pin 0 漂移；泄漏网（%d 业务词 + %d 机械正则，"
         "逐词语料实证在场）正文 %d 命中、全文件 %d 处命中全部定位于铁律 2 规定必带的 "
-        "provenance 元数据字段（clean_room_note %d 处 + upstream_source_ref 路径 %d 处）；"
+        "provenance 元数据字段（clean_room_note 上游专名词形命中 %d 处——注记已去专名、"
+        "预期 0；upstream_source_ref 路径 %d 处）；"
         "verbatim 探针 %d 样本 + %d 普查探针最大公共块 %d 低于在册阈值 %d；lock %d 条目 "
         "sha 0 mismatch + children 两处一致 + 幂等重生成 byte-identical。"
         "self_report_trusted=false 落地形态：trust.asserted=null（迁移批无自报信道），"
@@ -986,7 +989,7 @@ def run_aggregate(gates):
            cc1["refs_judged"], cc1["refs_judged"], cc1["pin_recomputes"],
            cc2["net_cn_words"], cc2["net_mechanical_patterns"],
            cc2["body_word_face_hits"], cc2["raw_full_file_hits"],
-           cc2["clean_room_note_mast_er_hits"], cc2["upstream_source_ref_path_hits"],
+           cc2["upstream_proper_noun_hits"], cc2["upstream_source_ref_path_hits"],
            cc3["formal_samples"], cc3["census_units_total"], lcs_max,
            cc3["lcs_threshold_chars"], cc4["lock_entries"], counts["violations"]))
     return {

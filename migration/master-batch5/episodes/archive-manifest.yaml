@@ -1,0 +1,851 @@
+archive_semantics: Episode 归档语义（铁律 3）：流程档案不建 Live State truth 对象——归档=manifest（逐文件 ref/sha256/归档理由/指针语义）+ 必要的 Evidence/Episode 抽取；归档不是删除，MASTer 侧文件一个不动（本工具对消费仓零写入，结构自证：全部文件句柄只读打开）。本 manifest 非 02-object-envelope 对象、非 03-gate-result（不落 GRN、不伪造 seq；工具自检不冒充 GateResult，batch3 §6/batch4 §7）——02/03 schema FROZEN 照过声明。ID 文法 vocab v0.2：本文件不新铸 GOVERNED_PREFIXES id；FTA-*/PREDEV-CONFIRMATION-*/MODULE-*/SLICE-* 等源内文档本地词形照录（只登记不改名）。文件名小写红线：本文件名 archive-manifest.yaml 全小写，工具落盘前断言。
+batch: MIG-B5
+denominators:
+  archive_files_covered:
+    health_note: 9 文件 = 8 组 canonical + 1 working_copy 成员（03 双副本）；与 documents[] 分组求和恒等、与 tombstone_preregistrations 9 条恒等（self_check 三向核对）。源行数合计 17431（M0 全 11 资产 30375 行 − 蓝图真值 3 资产 14629 行 + working 副本 1685 行）。
+    method: documents[] 逐组 (1 + len(member_files)) 求和；与 tombstone 条数比对
+    source: ARCHIVE_STEMS + WORKING_COPY_REF（现场重算）
+    value: 9
+    value_breakdown:
+      canonical_files: 8
+      member_files: 1
+      source_lines_covered_total: 17431
+  authorization_receipts_indexed:
+    health_note: 1 份（authorizations/ 目录逐文件登记实测仅此 1 份；M0 同口径）；逐条索引见 extractions.authorization_receipts（PERMIT_HISTORY）。
+    method: authorizations/ 目录 ls 逐文件登记 + 目录计数
+    source: outputs/frontend/10_planned/authorizations/（现场重算）
+    value: 1
+    value_breakdown:
+      gate_p2: 1
+  fta_findings_extracted:
+    health_note: 18 条（FTA-* 全前缀；severity=源 priority 逐字：blocker 8/high 10；disposition：engineering-decision 17/bp-feedback 1）；dependency_ids 全在 18 集合内（闭包 self_check）；MIG-B1 对象覆盖 18/18（alias 词形集合相等 self_check）。
+    method: json.load 后 len(assessments)；severity/disposition 分桶；dependency 闭包核验；batch1 对象 alias 集合双向比对
+    source: outputs/frontend/10_planned/03_technical-assessment.yaml
+    value: 18
+    value_breakdown:
+      disposition:
+        bp-feedback: 1
+        engineering-decision: 17
+      severity:
+        blocker: 8
+        high: 10
+  m0_inventory_cross_check:
+    health_note: M0 pin 源对账（provenance 链）：本工具对 8 组 canonical 逐文件现场重算 sha256/行数并与 M0 inventory content_sha256/line_count 全等比对（self_check 在案）；working 副本与 M0 ta.working_copy pin 全等比对。
+    method: 现场重算 sha256/line_count 与 M0 inventory 逐字段全等比对
+    source: master-batch5/inventory.yaml
+    value: 11
+    value_breakdown:
+      inventory_file_sha256: 64e992c8460444761fd042639dfb1ed6ba5eb4f90446af71598cc1eaecc78699
+  process_archive_groups:
+    health_note: 8 组（M0 inventory asset_groups.process_archive=8 同分母；ref 集合相等为 fail-closed 断言）；episode_class 闭世界 4 类裁定：PLAN_SNAPSHOT 5 + FTA_FINDINGS 1 + LIFECYCLE_LOG 1 + PERMIT_HISTORY 1。
+    method: ARCHIVE_STEMS 与 M0 inventory assets[group=process_archive] ref 集合双向比对；episode_class 分桶
+    source: master-batch5/inventory.yaml assets[]（group=process_archive）
+    value: 8
+    value_breakdown:
+      episode_class:
+        FTA_FINDINGS: 1
+        LIFECYCLE_LOG: 1
+        PERMIT_HISTORY: 1
+        PLAN_SNAPSHOT: 5
+      m0_inventory_process_archive: 1
+  tombstone_preregistrations:
+    health_note: 9 条（canonical 8 + working_copy 1；与 archive_files_covered 恒等）；全部 status=registered_only_not_executed——本批不执行写，MASTer 零改动；形态与 batch1/2 tombstone 58 件同构（15 行 FROZEN 头 prepend）。
+    method: build_tombstones 逐 ref 登记 + 与文件分母恒等比对
+    source: ARCHIVE_STEMS + WORKING_COPY_REF（现场重算）
+    value: 9
+    value_breakdown:
+      canonical: 8
+      executed: 0
+      registered_only: 9
+      working_copy_member: 1
+document_kind: m5-episode-archive-manifest
+documents:
+- archive_reason: P0/P1/P2 passed、P3–P7 pending、tracks 4（planning 轨道 implementation-authorized）的时点状态日志；状态迁移史的证据链已外置——P2 证据指针 p2-authorization-receipt:sha256= 与 authorizations 回执文件 sha256 逐字命中、P1 首引用与 07 文件 sha256 逐字命中（本工具复测在 self_check），gate 状态本体即日志，无逐条独立裁决语义，只进 manifest。
+  content_sha256: e06f326ef981483fe94799442b3a80c6bd133aad5d893025c95bc3e3f3774619
+  destination_pointers:
+  - evidence: P2 evidence_refs p2-authorization-receipt:sha256= 与回执 content_sha256 逐字命中（本工具复测）
+    kind: intra_batch_pin
+    target: outputs/frontend/10_planned/authorizations/frontend-prepare-30.p2.yaml
+  - evidence: P1 evidence_refs[0] 与本批 07 content_sha256 逐字命中（本工具复测）
+    kind: intra_batch_pin
+    target: outputs/frontend/10_planned/07_readiness.yaml
+  - evidence: PERMIT_HISTORY 承载：P2 授权 Episode 的独立归档载体（Episode 归档语义：回执=授权事件 manifest，不建 Live State）
+    kind: episode_class_pointer
+    target: outputs/frontend/10_planned/authorizations/frontend-prepare-30.p2.yaml（episode_class=PERMIT_HISTORY）
+  - evidence: producer 链登记形态：P1/规划轨道证据引用 09 的机制在 compile_frontend_preimplementation DOC_MAP（M0 inventory assets[].producer_alive_note 在册）
+    kind: producer_chain
+    target: outputs/frontend/10_planned/09_implementation-plan.yaml
+  document_type: frontend-lifecycle
+  episode_class: LIFECYCLE_LOG
+  episode_summary: 生命周期 gate/track 状态日志快照（P0–P7 八 gate + 4 tracks）。
+  line_count: 331
+  pointer_semantics: 指针语义：内容留在源（MASTer 文件零改动）；本 manifest 只承载指针与索引；行锚以本批 pin 时点 content_sha256 为界，源文件演化后行锚需按 pin 重放重算，不得对漂移后的源复用旧行号。
+  ref: outputs/frontend/10_planned/00_lifecycle.yaml
+- archive_reason: 18 条 FTA-* findings 的正本；MIG-B1 已逐条转录为 change-object（18 对象在册：17×fta-*.json alias 直配 + 1×fb-fta-nfr-usable.json canonical 段对应覆盖 FTA-NFR-USABLE；id 集合相等复测在 self_check；batch1 约定书行 173 词形裁定『源侧跟踪 id 赐 canonical 名并照录 aliases[]』）；本批追加价值=行锚索引（逐条 id/severity/源行号/对象指针），正文留在源。09.assessment_ids 18 与本文件 assessments id 集合精确相等（消费计划双桥，本工具复测）。
+  content_sha256: b4b3de403b0b443ea4c945d5ba5f078c5dd2be387d6882a47849e566f9a345b3
+  destination_pointers:
+  - evidence: '{n_b1} 对象在册且 alias 词形集合与 assessments id 集合精确相等（本工具复测）；canonical 名裁定见 batch1 约定书行 {b1_line}'
+    kind: batch_object_dir
+    target: master-batch1/truth/objects/change-object/
+  - evidence: 09.assessment_ids 18 与 03.assessments id 集合精确相等（本工具复测在 self_check）
+    kind: asset_bridge
+    target: outputs/frontend/10_planned/09_implementation-plan.yaml
+  - evidence: 本批 18 条逐条索引（id/severity/dimension/disposition/summary/行锚/对象指针）
+    kind: extraction_index
+    target: archive-manifest.yaml#extractions.technical_assessment_findings
+  document_type: technical-assessment
+  episode_class: FTA_FINDINGS
+  episode_summary: 技术评估 FTA-* findings 正本（18 条 assessment）+ 10_working 工作副本。
+  line_count: 1715
+  member_files:
+  - content_sha256: bc8fe10a916ad72ad6a2e6d12e3e379d790e4b444bdadb94d68db6332996b53a
+    line_count: 1685
+    note: 工作副本（rebuild_prepare_chain.sh 3/9 写位，10_planned 正本为晋升实例）；assessment 18=18 与正本同集合；缺 prototype_baseline 键（正本多出该键）——晋升形态证据；行锚与正本逐 id 相等（self_check 在案）；tombstone 预登记含本件（producer 写位，冻结需先退役写链，见 tombstone_preregistrations）
+    ref: outputs/frontend/10_working/03_technical-assessment.yaml
+    role: working_copy
+  pointer_semantics: 指针语义：内容留在源（MASTer 文件零改动）；本 manifest 只承载指针与索引；行锚以本批 pin 时点 content_sha256 为界，源文件演化后行锚需按 pin 重放重算，不得对漂移后的源复用旧行号。
+  ref: outputs/frontend/10_planned/03_technical-assessment.yaml
+- archive_reason: 01/02 派生物的索引图时点快照：节点三段分解恒等式 109+109+257=475（M0 cross_reference_forms.traceability_node_decomposition_06 在册）；edge evidence 全 transitive-candidate/unknown（coordinate_policy 自声明 repository_evidence_loaded=false——planned/stale/missing 的档案坐标轴定位）；图体量大且无逐条独立裁决语义，只进 manifest 不抽取条目。
+  content_sha256: b9a393336e2ca591b34354f951ae86c04d1f883646d6a605ce74c71dac88004a
+  destination_pointers:
+  - evidence: 节点三段分解恒等式（01 投影 109 + 01 语义镜像 109 + 02 模型 257）机械复测在册（M0 inventory）
+    kind: source_asset_bridge
+    target: outputs/frontend/10_planned/01_domain-projection.yaml + outputs/frontend/10_planned/02_process-task-interface.yaml
+  document_type: traceability-plan
+  episode_class: PLAN_SNAPSHOT
+  episode_summary: 可追溯性图快照（475 节点 + 502 边）。
+  line_count: 7843
+  pointer_semantics: 指针语义：内容留在源（MASTer 文件零改动）；本 manifest 只承载指针与索引；行锚以本批 pin 时点 content_sha256 为界，源文件演化后行锚需按 pin 重放重算，不得对漂移后的源复用旧行号。
+  ref: outputs/frontend/10_planned/06_traceability-plan.yaml
+- archive_reason: 6 模块 ×4 gate（uiux/frontend/backend-dependency/test）设计审批与实施就绪快照（24 gate 全 ready/fully-ready、blockers=0）。readiness 双轴已在 MIG-B2 落地：『DRAFT=33/BLOCKED=6』数值主语=page-readiness-registry.yaml（MIG-B2 资产，batch2 约定书行 90），与本文件字段级无关联（本文件 6 模块无 status 字段，M0 readiness_axis_attribution 澄清在册）；本文件为模块级 gate 快照，只进 manifest。
+  content_sha256: d3df2783a5b3828be93bd7dcc3bec514736aa43838ea2830e647c79e7e75c605
+  destination_pointers:
+  - evidence: readiness 双轴（approval_axis × evidence_axis）转录规则行 {b2_axis_rule}、双轴分立条款行 {b2_axis}；readiness.* 对象 {n_readiness_obj} 条在册（本工具点数在 self_check）
+    kind: batch_object_dir
+    target: master-batch2/truth/objects/page-surface/readiness.*.json
+  - evidence: 『DRAFT=33/BLOCKED=6/READY=0』status 分布的事实源归属（batch2 约定书行 {b2_33} 行号现场重算）
+    kind: value_attribution
+    target: outputs/frontend/10_planned/page-readiness-registry.yaml（MIG-B2 资产）
+  - evidence: consumers_detected {b2_inv_rd} 处引用本文件（screen-blueprint 消费形态登记，非转录）
+    kind: batch_consumer_registration
+    target: master-batch2/inventory.yaml
+  - evidence: 00 P1 evidence_refs[0] 与本文件 content_sha256 逐字命中（本工具复测）
+    kind: intra_batch_pin
+    target: outputs/frontend/10_planned/00_lifecycle.yaml
+  document_type: frontend-readiness-audit
+  episode_class: PLAN_SNAPSHOT
+  episode_summary: 就绪审计快照（6 模块 ×4 gate，24 条全 ready/fully-ready）。
+  line_count: 437
+  pointer_semantics: 指针语义：内容留在源（MASTer 文件零改动）；本 manifest 只承载指针与索引；行锚以本批 pin 时点 content_sha256 为界，源文件演化后行锚需按 pin 重放重算，不得对漂移后的源复用旧行号。
+  ref: outputs/frontend/10_planned/07_readiness.yaml
+- archive_reason: 15 切片实施计划时点快照（与 02.pages 15 页一一对应）；03 findings 的消费计划——assessment_ids 18 与 03 集合精确相等、scope_ids 30 与 03 coverage CAP 集合精确相等（双桥，本工具复测 id 集）；无逐条独立裁决语义，只进 manifest。
+  content_sha256: 91ed228f7b811d2402e6283ac35c0de7cee7495ec3d9a8f70970404c1efec6c2
+  destination_pointers:
+  - evidence: assessment_ids 18=18 + scope_ids 30=30 双桥（本工具复测在 self_check）
+    kind: asset_bridge
+    target: outputs/frontend/10_planned/03_technical-assessment.yaml
+  - evidence: 00_lifecycle P1/规划轨道证据（producer 链登记形态，M0 inventory producer_alive_note 在册）；governance factsources 消费链（compile_frontend_governance_factsources 读 IMPLEMENTATION_PLAN_PATH，M0 在册）
+    kind: intra_batch_pin
+    target: outputs/frontend/10_planned/00_lifecycle.yaml
+  document_type: frontend-implementation-plan
+  episode_class: PLAN_SNAPSHOT
+  episode_summary: 实施计划快照（15 切片 SLICE-TASK-STEP-*，全 planned）。
+  line_count: 649
+  pointer_semantics: 指针语义：内容留在源（MASTer 文件零改动）；本 manifest 只承载指针与索引；行锚以本批 pin 时点 content_sha256 为界，源文件演化后行锚需按 pin 重放重算，不得对漂移后的源复用旧行号。
+  ref: outputs/frontend/10_planned/09_implementation-plan.yaml
+- archive_reason: 24 行责任矩阵时点快照（disposition 分布 backend-api 12/deferred 6/frontend-local 6；coverage.state=complete 自声明闭环）。『10 已在 M3 被消费』之说在 master-batch{1,2,3,4}/authority.json 全文提及次数 0/0/0/None——四份 M3 工件不可考，不冒认；可考去向=MIG-B2 M0 inventory 消费方登记 + 授权回执 responsibility_binding（matrix_id/version/denominator_sha256 逐字命中、matrix_semantic_sha256 漂移=授权后 reconcile 语义演化）+ 11.responsibilities 24=24 桥。
+  content_sha256: 7109dbf55d42713aa5c3fe636ba6f82a09e148fa7de8a9ed8574571f94e31299
+  destination_pointers:
+  - evidence: 提及次数 {m3_1}/{m3_2}/{m3_3}/{m3_4}（本工具全文普查复测在 self_check）——『已在 M3 被消费』证据边界如实登记，不补写不可考窗口
+    kind: claim_non_corroboration
+    target: master-batch{1,2,3,4}/authority.json
+  - evidence: consumers_detected {b2_inv_arm} 处引用本文件（screen-blueprint 消费形态登记，非转录）
+    kind: batch_consumer_registration
+    target: master-batch2/inventory.yaml
+  - evidence: 回执 responsibility_binding matrix_id/matrix_version/denominator_sha256 与本文件逐字命中、matrix_semantic_sha256 漂移（分母桥复测在 self_check）
+    kind: intra_batch_pin
+    target: outputs/frontend/10_planned/authorizations/frontend-prepare-30.p2.yaml
+  - evidence: 11.responsibilities[].id 24 与本文件 rows[].id 精确相等（M0 responsibility_bridge 复测在册）
+    kind: asset_bridge
+    target: outputs/frontend/10_planned/11_predevelopment-confirmation.yaml
+  document_type: frontend-action-responsibility-matrix
+  episode_class: PLAN_SNAPSHOT
+  episode_summary: 责任矩阵快照（24 行 disposition 全裁定闭环）。
+  line_count: 855
+  pointer_semantics: 指针语义：内容留在源（MASTer 文件零改动）；本 manifest 只承载指针与索引；行锚以本批 pin 时点 content_sha256 为界，源文件演化后行锚需按 pin 重放重算，不得对漂移后的源复用旧行号。
+  ref: outputs/frontend/10_planned/10_action-responsibility-matrix.yaml
+- archive_reason: 15 页开发前确认书时点快照（confirmation_id 派生词形随 semantic_sha256 更新；responsibilities 24=24 责任桥；ai_predevelopment_output 11 项含 2 个 scaffold TODO 占位照录）；source_bindings 6 束中 5 束 sha256 与当前文件逐字命中、blueprint 束文件级陈旧（M0 source_bindings_recency_audit 在册）——授权回执 confirmation_binding 指向签发时点旧版本（drift_class=all_fields_stale），本文件为快照本体，只进 manifest。
+  content_sha256: 7954861d1607e53fbbcab7af2b56408d76a162182bd5f79813e78f88c904cf15
+  destination_pointers:
+  - evidence: 回执 confirmation_binding 指向签发时点快照（bound_confirmation_id=PREDEV-CONFIRMATION-9B5F354BEF06F1BE6367；指针语义=授权时点快照非实时绑定，抽取索引条目在案）
+    kind: intra_batch_pin
+    target: outputs/frontend/10_planned/authorizations/frontend-prepare-30.p2.yaml
+  - evidence: 11.responsibilities[].id 24 与 10.rows[].id 精确相等（M0 复测在册）
+    kind: asset_bridge
+    target: outputs/frontend/10_planned/10_action-responsibility-matrix.yaml
+  document_type: frontend-predevelopment-confirmation
+  episode_class: PLAN_SNAPSHOT
+  episode_summary: 开发前确认书快照（15 页，confirmation_version=1）。
+  line_count: 3632
+  pointer_semantics: 指针语义：内容留在源（MASTer 文件零改动）；本 manifest 只承载指针与索引；行锚以本批 pin 时点 content_sha256 为界，源文件演化后行锚需按 pin 重放重算，不得对漂移后的源复用旧行号。
+  ref: outputs/frontend/10_planned/11_predevelopment-confirmation.yaml
+- archive_reason: P2 授权 Episode 的独立归档载体（Episode 归档语义：回执=授权事件 manifest，不建 Live State truth 对象）；task_id=frontend-prepare-30/actor=bp-owner/gate=P2（三源一致）；authorized_at/expires_at 墙钟在场布尔登记值不转录；binding 漂移三类形态（confirmation 全漂移/matrix 半漂移/00 裸哈希悬空）M0 在册；逐条抽取为 extractions.authorization_receipts 索引条目（1 条，authorizations/ 目录逐文件登记实测仅此 1 份）。
+  content_sha256: 51bbb8750d97db8fe0ead431a0e57b5a8855df432db4af2435e24fc962c0241f
+  destination_pointers:
+  - evidence: 00 P2 evidence_refs p2-authorization-receipt:sha256= 与本文件 content_sha256 逐字命中（本工具复测）
+    kind: intra_batch_pin
+    target: outputs/frontend/10_planned/00_lifecycle.yaml
+  - evidence: 『page.status 设计审批轴事实，经 authorizations 授权链在案』（MIG-B2 readiness 双轴规则的授权链证据引用，行 {b2_auth_chain} 本工具现场重算）
+    kind: batch_conventions_line
+    target: master-batch2/CONVENTIONS.md:行 86
+  - evidence: 本批 PERMIT_HISTORY 逐条索引（1 条）
+    kind: extraction_index
+    target: archive-manifest.yaml#extractions.authorization_receipts
+  document_type: frontend-p2-authorization-receipt
+  episode_class: PERMIT_HISTORY
+  episode_summary: P2 授权回执（授权事件的 manifest 载体，1 份）。
+  line_count: 284
+  pointer_semantics: 指针语义：内容留在源（MASTer 文件零改动）；本 manifest 只承载指针与索引；行锚以本批 pin 时点 content_sha256 为界，源文件演化后行锚需按 pin 重放重算，不得对漂移后的源复用旧行号。
+  ref: outputs/frontend/10_planned/authorizations/frontend-prepare-30.p2.yaml
+episode_class_vocabulary:
+  FTA_FINDINGS: 发现型档案：技术评估 FTA-* findings 逐条可独立索引（id/严重度/行锚/去向对象指针），正文留在源。
+  LIFECYCLE_LOG: 状态日志型档案：生命周期 gate/track 状态整体为时点快照，逐 gate 索引由文件本体承载，本 manifest 只登记文件级指针。
+  PERMIT_HISTORY: 授权/审批记录型档案：Permit 回执逐份即授权事件的 manifest 载体，逐份索引（actor/gate/binding 指针/墙钟在场布尔）。
+  PLAN_SNAPSHOT: 计划快照型档案：计划/审计/确认类时点快照，整体快照语义（无逐条独立裁决语义），只进 manifest 不抽取条目。
+extractions:
+  authorization_receipts:
+  - actor: bp-owner
+    authorization_semantic_sha256: 202e511952c6c063f92d9c0cb820418d1f5c6e1fbcbda7b428dfe76685f582fa
+    backend_proposal_attestation: null
+    confirmation_binding_pointer:
+      bound_artifact_sha256: b65cc9c6e4238ae255126b35015c4de6d67caa87927c55b04c0d7c2f8269afce
+      bound_confirmation_id: PREDEV-CONFIRMATION-9B5F354BEF06F1BE6367
+      bound_semantic_sha256: 9b5f354bef06f1be63670e9c5490dd35e054fbaf9d782f2d9867050af07f6461
+      bound_version: '1'
+      pointer_semantics: 授权签发时点快照，非实时绑定（漂移审计承 M0）
+    consumption_pointers:
+    - evidence: 00_lifecycle gates.P2.evidence_refs p2-authorization-receipt:sha256= 与本文件 content_sha256 逐字命中（本工具复测在 self_check）
+      kind: intra_batch_pin
+      target: outputs/frontend/10_planned/00_lifecycle.yaml
+    - evidence: 『page.status 设计审批轴事实，经 authorizations 授权链在案』——MIG-B2 readiness 双轴规则的授权链证据引用（本工具行号现场重算）
+      kind: batch_conventions_line
+      target: master-batch2/CONVENTIONS.md:行 86
+    content_sha256: 51bbb8750d97db8fe0ead431a0e57b5a8855df432db4af2435e24fc962c0241f
+    document_type: frontend-p2-authorization-receipt
+    fine_grained_scope_lens:
+      acceptance_ids: 13
+      action_ids: 19
+      capability_ids: 6
+      module_ids: 0
+      page_ids: 15
+      responsibility_ids: 24
+      scene_ids: 13
+    gate: P2
+    gate_evidence: document_type=frontend-p2-authorization-receipt + 文件名 .p2.yaml + 00_lifecycle P2 evidence_refs pin 命中（三源一致）
+    hard_spec_digest: f2182cd6bce4805c7cacccdfc583d0dd58e4cde0d8ff4c6f405a9fb97c01d151
+    line_anchors:
+      actor: 2
+      anchor_rule: exact-match 行（strip 后等值）；actor 为顶层 2 空格缩进，task_id 为顶层 2 空格缩进（区别于 hard_spec_context 内 4 空格嵌套同名键）；以本批 content_sha256 pin 为界
+      task_id: 283
+    line_count: 284
+    ref: outputs/frontend/10_planned/authorizations/frontend-prepare-30.p2.yaml
+    responsibility_binding_pointer:
+      bound_artifact_sha256: 740b3ebfaaff8da7d93e3e0dec58741b828243de37b68aac999936650636435e
+      bound_denominator_sha256: 36bf72a04b9ef9b29fcc407d5f4e1e026a1cb55e22b5b9341fdc5e31d955cbe8
+      bound_matrix_id: ACTION-RESPONSIBILITY-2022B22FBD8D8F4E7BBF
+      bound_matrix_semantic_sha256: a54c30fe7324d63eb5066a32b452739e712a399b37559ee35e85573beb455486
+      bound_matrix_version: '1'
+      pointer_semantics: 分母稳定而语义演化（授权后 reconcile 只换 hash）
+    task_id: frontend-prepare-30
+    wall_clock_fields:
+      authorized_at_present: true
+      expires_at_present: true
+      rule: batch4 §4：墙钟字段只登记在场布尔，值不转录
+      values_transcribed: false
+  technical_assessment_findings:
+  - dependency_ids:
+    - FTA-BG-BLOCKED
+    dimension: actor
+    disposition: engineering-decision
+    id: FTA-ACTOR-BLOCKED
+    migration_pointer:
+      aliases:
+      - FTA-ACTOR-BLOCKED
+      canonical_id: CHANGE.FTA_ACTOR_BLOCKED
+      object_file: master-batch1/truth/objects/change-object/fta-actor-blocked.json
+    severity: blocker
+    severity_source_field: priority
+    source_pointer:
+      anchor_line: 41
+      anchor_rule: '首个 strip 后等于 "id": "<id>" 的行（1 起）；以本批 content_sha256 pin 为界'
+      ref: outputs/frontend/10_planned/03_technical-assessment.yaml
+    summary: 缺少动作责任主体的能力无法通过预开发确认，也无法定义验收标准。
+    summary_source_field: business_consequence
+  - dependency_ids:
+    - FTA-BG-USABLE
+    dimension: actor
+    disposition: engineering-decision
+    id: FTA-ACTOR-USABLE
+    migration_pointer:
+      aliases:
+      - FTA-ACTOR-USABLE
+      canonical_id: CHANGE.FTA_ACTOR_USABLE
+      object_file: master-batch1/truth/objects/change-object/fta-actor-usable.json
+    severity: high
+    severity_source_field: priority
+    source_pointer:
+      anchor_line: 111
+      anchor_rule: '首个 strip 后等于 "id": "<id>" 的行（1 起）；以本批 content_sha256 pin 为界'
+      ref: outputs/frontend/10_planned/03_technical-assessment.yaml
+    summary: 权限注册表若留空，实现期会默认放开，任何登录用户都能执行成本数据写入动作。
+    summary_source_field: business_consequence
+  - dependency_ids:
+    - FTA-BG-BLOCKED
+    dimension: backend
+    disposition: engineering-decision
+    id: FTA-BE-BLOCKED
+    migration_pointer:
+      aliases:
+      - FTA-BE-BLOCKED
+      canonical_id: CHANGE.FTA_BE_BLOCKED
+      object_file: master-batch1/truth/objects/change-object/fta-be-blocked.json
+    severity: high
+    severity_source_field: priority
+    source_pointer:
+      anchor_line: 182
+      anchor_rule: '首个 strip 后等于 "id": "<id>" 的行（1 起）；以本批 content_sha256 pin 为界'
+      ref: outputs/frontend/10_planned/03_technical-assessment.yaml
+    summary: 据契约实现 blocked 能力会产出无业务依据的功能，业务方后续裁定与实现不符时须整体返工。
+    summary_source_field: business_consequence
+  - dependency_ids:
+    - FTA-OBJ-USABLE
+    dimension: backend
+    disposition: engineering-decision
+    id: FTA-BE-USABLE
+    migration_pointer:
+      aliases:
+      - FTA-BE-USABLE
+      canonical_id: CHANGE.FTA_BE_USABLE
+      object_file: master-batch1/truth/objects/change-object/fta-be-usable.json
+    severity: high
+    severity_source_field: priority
+    source_pointer:
+      anchor_line: 253
+      anchor_rule: '首个 strip 后等于 "id": "<id>" 的行（1 起）；以本批 content_sha256 pin 为界'
+      ref: outputs/frontend/10_planned/03_technical-assessment.yaml
+    summary: 错误码若不逐条映射，用户会看到技术错误文本，无法知道该做什么，运维期支持成本高。
+    summary_source_field: business_consequence
+  - dependency_ids: []
+    dimension: background
+    disposition: engineering-decision
+    id: FTA-BG-BLOCKED
+    migration_pointer:
+      aliases:
+      - FTA-BG-BLOCKED
+      canonical_id: CHANGE.FTA_BG_BLOCKED
+      object_file: master-batch1/truth/objects/change-object/fta-bg-blocked.json
+    severity: blocker
+    severity_source_field: priority
+    source_pointer:
+      anchor_line: 322
+      anchor_rule: '首个 strip 后等于 "id": "<id>" 的行（1 起）；以本批 content_sha256 pin 为界'
+      ref: outputs/frontend/10_planned/03_technical-assessment.yaml
+    summary: 若强行进入实现，将再次以工程推断代替业务裁定，形成运维期无法追溯的语义漂移。
+    summary_source_field: business_consequence
+  - dependency_ids: []
+    dimension: background
+    disposition: engineering-decision
+    id: FTA-BG-USABLE
+    migration_pointer:
+      aliases:
+      - FTA-BG-USABLE
+      canonical_id: CHANGE.FTA_BG_USABLE
+      object_file: master-batch1/truth/objects/change-object/fta-bg-usable.json
+    severity: high
+    severity_source_field: priority
+    source_pointer:
+      anchor_line: 391
+      anchor_rule: '首个 strip 后等于 "id": "<id>" 的行（1 起）；以本批 content_sha256 pin 为界'
+      ref: outputs/frontend/10_planned/03_technical-assessment.yaml
+    summary: 若从旧代码反推，会把上一轮未经业务确认的推断固化为本轮基线，重演运维期无法定位业务意图的问题。
+    summary_source_field: business_consequence
+  - dependency_ids:
+    - FTA-ENG-USABLE
+    dimension: engineering
+    disposition: engineering-decision
+    id: FTA-ENG-CONTENT-TRUTH-ARCHITECTURE
+    migration_pointer:
+      aliases:
+      - FTA-ENG-CONTENT-TRUTH-ARCHITECTURE
+      canonical_id: CHANGE.FTA_ENG_CONTENT_TRUTH.ARCHITECTURE
+      object_file: master-batch1/truth/objects/change-object/fta-eng-content-truth.architecture.json
+    severity: blocker
+    severity_source_field: priority
+    source_pointer:
+      anchor_line: 465
+      anchor_rule: '首个 strip 后等于 "id": "<id>" 的行（1 起）；以本批 content_sha256 pin 为界'
+      ref: outputs/frontend/10_planned/03_technical-assessment.yaml
+    summary: 若按常规写法实现后才发现 P5/P7 无法通过，组件边界与文案归属须整体重构，成本等同重写一遍界面层——这正是上一轮运维成本崩溃的同一机制换了位置发生。
+    summary_source_field: business_consequence
+  - dependency_ids: []
+    dimension: engineering
+    disposition: engineering-decision
+    id: FTA-ENG-USABLE
+    migration_pointer:
+      aliases:
+      - FTA-ENG-USABLE
+      canonical_id: CHANGE.FTA_ENG_USABLE
+      object_file: master-batch1/truth/objects/change-object/fta-eng-usable.json
+    severity: blocker
+    severity_source_field: priority
+    source_pointer:
+      anchor_line: 542
+      anchor_rule: '首个 strip 后等于 "id": "<id>" 的行（1 起）；以本批 content_sha256 pin 为界'
+      ref: outputs/frontend/10_planned/03_technical-assessment.yaml
+    summary: 若强制机制未在每个实现任务上生效，规范会再次退化为磁盘上的文档，运维成本问题原样复发。
+    summary_source_field: business_consequence
+  - dependency_ids:
+    - FTA-BG-BLOCKED
+    dimension: acceptance-nfr
+    disposition: engineering-decision
+    id: FTA-NFR-BLOCKED
+    migration_pointer:
+      aliases:
+      - FTA-NFR-BLOCKED
+      canonical_id: CHANGE.FTA_NFR_BLOCKED
+      object_file: master-batch1/truth/objects/change-object/fta-nfr-blocked.json
+    severity: high
+    severity_source_field: priority
+    source_pointer:
+      anchor_line: 613
+      anchor_rule: '首个 strip 后等于 "id": "<id>" 的行（1 起）；以本批 content_sha256 pin 为界'
+      ref: outputs/frontend/10_planned/03_technical-assessment.yaml
+    summary: 无验收标准的能力即使实现也无法判定是否正确，运维期任何行为争议都无据可依。
+    summary_source_field: business_consequence
+  - dependency_ids:
+    - FTA-OBJ-USABLE
+    - FTA-PAGE-USABLE
+    dimension: acceptance-nfr
+    disposition: bp-feedback
+    id: FTA-NFR-USABLE
+    migration_pointer:
+      aliases:
+      - FB-FTA-NFR-USABLE
+      canonical_id: CHANGE.FB_FTA_NFR_USABLE
+      object_file: master-batch1/truth/objects/change-object/fb-fta-nfr-usable.json
+    severity: high
+    severity_source_field: priority
+    source_pointer:
+      anchor_line: 685
+      anchor_rule: '首个 strip 后等于 "id": "<id>" 的行（1 起）；以本批 content_sha256 pin 为界'
+      ref: outputs/frontend/10_planned/03_technical-assessment.yaml
+    summary: 若不设性能预算，30 列以上表格在真实数据量下会卡到不可操作，业务方无法完成日常成本维护。
+    summary_source_field: business_consequence
+  - dependency_ids:
+    - FTA-BG-BLOCKED
+    dimension: object
+    disposition: engineering-decision
+    id: FTA-OBJ-BLOCKED
+    migration_pointer:
+      aliases:
+      - FTA-OBJ-BLOCKED
+      canonical_id: CHANGE.FTA_OBJ_BLOCKED
+      object_file: master-batch1/truth/objects/change-object/fta-obj-blocked.json
+    severity: blocker
+    severity_source_field: priority
+    source_pointer:
+      anchor_line: 756
+      anchor_rule: '首个 strip 后等于 "id": "<id>" 的行（1 起）；以本批 content_sha256 pin 为界'
+      ref: outputs/frontend/10_planned/03_technical-assessment.yaml
+    summary: 以原型推导的字段构成建模，等于把界面呈现当成业务真相，后续业务确认时须整体返工。
+    summary_source_field: business_consequence
+  - dependency_ids:
+    - FTA-BG-USABLE
+    dimension: object
+    disposition: engineering-decision
+    id: FTA-OBJ-USABLE
+    migration_pointer:
+      aliases:
+      - FTA-OBJ-USABLE
+      canonical_id: CHANGE.FTA_OBJ_USABLE
+      object_file: master-batch1/truth/objects/change-object/fta-obj-usable.json
+    severity: high
+    severity_source_field: priority
+    source_pointer:
+      anchor_line: 827
+      anchor_rule: '首个 strip 后等于 "id": "<id>" 的行（1 起）；以本批 content_sha256 pin 为界'
+      ref: outputs/frontend/10_planned/03_technical-assessment.yaml
+    summary: 金额与工时字段若各处自行决定精度与舍入，报表汇总与零件明细会出现无法解释的差额。
+    summary_source_field: business_consequence
+  - dependency_ids:
+    - FTA-BG-BLOCKED
+    - FTA-OBJ-BLOCKED
+    dimension: page-ui
+    disposition: engineering-decision
+    id: FTA-PAGE-BLOCKED
+    migration_pointer:
+      aliases:
+      - FTA-PAGE-BLOCKED
+      canonical_id: CHANGE.FTA_PAGE_BLOCKED
+      object_file: master-batch1/truth/objects/change-object/fta-page-blocked.json
+    severity: blocker
+    severity_source_field: priority
+    source_pointer:
+      anchor_line: 899
+      anchor_rule: '首个 strip 后等于 "id": "<id>" 的行（1 起）；以本批 content_sha256 pin 为界'
+      ref: outputs/frontend/10_planned/03_technical-assessment.yaml
+    summary: 实现出的界面看起来完整，业务方会认为该能力已交付，但其行为无业务依据，上线后每次澄清都要重新讨论。
+    summary_source_field: business_consequence
+  - dependency_ids:
+    - FTA-BG-USABLE
+    - FTA-OBJ-USABLE
+    - FTA-RULE-USABLE
+    dimension: page-ui
+    disposition: engineering-decision
+    id: FTA-PAGE-USABLE
+    migration_pointer:
+      aliases:
+      - FTA-PAGE-USABLE
+      canonical_id: CHANGE.FTA_PAGE_USABLE
+      object_file: master-batch1/truth/objects/change-object/fta-page-usable.json
+    severity: high
+    severity_source_field: priority
+    source_pointer:
+      anchor_line: 972
+      anchor_rule: '首个 strip 后等于 "id": "<id>" 的行（1 起）；以本批 content_sha256 pin 为界'
+      ref: outputs/frontend/10_planned/03_technical-assessment.yaml
+    summary: 页面集合若与业务能力集合不对应，会出现无业务归属的页面（运维期无人认领）或无界面的能力（业务方认为未交付）。
+    summary_source_field: business_consequence
+  - dependency_ids:
+    - FTA-RULE-BLOCKED
+    dimension: process
+    disposition: engineering-decision
+    id: FTA-PROC-BLOCKED
+    migration_pointer:
+      aliases:
+      - FTA-PROC-BLOCKED
+      canonical_id: CHANGE.FTA_PROC_BLOCKED
+      object_file: master-batch1/truth/objects/change-object/fta-proc-blocked.json
+    severity: blocker
+    severity_source_field: priority
+    source_pointer:
+      anchor_line: 1042
+      anchor_rule: '首个 strip 后等于 "id": "<id>" 的行（1 起）；以本批 content_sha256 pin 为界'
+      ref: outputs/frontend/10_planned/03_technical-assessment.yaml
+    summary: 若不实现该前置校验，用户可绕过评估直接改 BOM，成本管控失效；若粗暴禁用，已通过评估的零件也改不了。
+    summary_source_field: business_consequence
+  - dependency_ids:
+    - FTA-OBJ-USABLE
+    - FTA-RULE-USABLE
+    dimension: process
+    disposition: engineering-decision
+    id: FTA-PROC-USABLE
+    migration_pointer:
+      aliases:
+      - FTA-PROC-USABLE
+      canonical_id: CHANGE.FTA_PROC_USABLE
+      object_file: master-batch1/truth/objects/change-object/fta-proc-usable.json
+    severity: high
+    severity_source_field: priority
+    source_pointer:
+      anchor_line: 1113
+      anchor_rule: '首个 strip 后等于 "id": "<id>" 的行（1 起）；以本批 content_sha256 pin 为界'
+      ref: outputs/frontend/10_planned/03_technical-assessment.yaml
+    summary: 回写后若不失效相关查询缓存，用户会看到已变更零件仍显示旧成本值，并据此做成本决策。
+    summary_source_field: business_consequence
+  - dependency_ids:
+    - FTA-BG-BLOCKED
+    dimension: rule-state
+    disposition: engineering-decision
+    id: FTA-RULE-BLOCKED
+    migration_pointer:
+      aliases:
+      - FTA-RULE-BLOCKED
+      canonical_id: CHANGE.FTA_RULE_BLOCKED
+      object_file: master-batch1/truth/objects/change-object/fta-rule-blocked.json
+    severity: blocker
+    severity_source_field: priority
+    source_pointer:
+      anchor_line: 1184
+      anchor_rule: '首个 strip 后等于 "id": "<id>" 的行（1 起）；以本批 content_sha256 pin 为界'
+      ref: outputs/frontend/10_planned/03_technical-assessment.yaml
+    summary: 无状态机的能力其行为不可测试，验收无据，运维期只能读代码猜行为。
+    summary_source_field: business_consequence
+  - dependency_ids:
+    - FTA-BG-USABLE
+    dimension: rule-state
+    disposition: engineering-decision
+    id: FTA-RULE-USABLE
+    migration_pointer:
+      aliases:
+      - FTA-RULE-USABLE
+      canonical_id: CHANGE.FTA_RULE_USABLE
+      object_file: master-batch1/truth/objects/change-object/fta-rule-usable.json
+    severity: high
+    severity_source_field: priority
+    source_pointer:
+      anchor_line: 1255
+      anchor_rule: '首个 strip 后等于 "id": "<id>" 的行（1 起）；以本批 content_sha256 pin 为界'
+      ref: outputs/frontend/10_planned/03_technical-assessment.yaml
+    summary: 若台账页出现编辑入口，用户操作后无处保存，或误写到上游能力，责任主体不可判定。
+    summary_source_field: business_consequence
+provenance:
+  captured_by: agent:mig-b5/build_episode_archive.py
+  pin_sources:
+  - batch: MIG-B5
+    ingested_from: master-batch5/inventory.yaml
+    note: M0 盘点 pin（content_sha256/line_count 分母源，现场全等比对）
+    sha256: 64e992c8460444761fd042639dfb1ed6ba5eb4f90446af71598cc1eaecc78699
+  sources:
+  - batch: MIG-B5
+    captured_by: agent:mig-b5/build_episode_archive.py
+    ingested_from: outputs/frontend/10_planned/00_lifecycle.yaml
+    note: Episode 归档索引转录：仅登记 ref/sha256/行数/行锚/归档理由/去向指针，未改写源内容；人类策展字段原样保留在源文件。
+  - batch: MIG-B5
+    captured_by: agent:mig-b5/build_episode_archive.py
+    ingested_from: outputs/frontend/10_planned/03_technical-assessment.yaml
+    note: Episode 归档索引转录：仅登记 ref/sha256/行数/行锚/归档理由/去向指针，未改写源内容；人类策展字段原样保留在源文件。
+  - batch: MIG-B5
+    captured_by: agent:mig-b5/build_episode_archive.py
+    ingested_from: outputs/frontend/10_planned/06_traceability-plan.yaml
+    note: Episode 归档索引转录：仅登记 ref/sha256/行数/行锚/归档理由/去向指针，未改写源内容；人类策展字段原样保留在源文件。
+  - batch: MIG-B5
+    captured_by: agent:mig-b5/build_episode_archive.py
+    ingested_from: outputs/frontend/10_planned/07_readiness.yaml
+    note: Episode 归档索引转录：仅登记 ref/sha256/行数/行锚/归档理由/去向指针，未改写源内容；人类策展字段原样保留在源文件。
+  - batch: MIG-B5
+    captured_by: agent:mig-b5/build_episode_archive.py
+    ingested_from: outputs/frontend/10_planned/09_implementation-plan.yaml
+    note: Episode 归档索引转录：仅登记 ref/sha256/行数/行锚/归档理由/去向指针，未改写源内容；人类策展字段原样保留在源文件。
+  - batch: MIG-B5
+    captured_by: agent:mig-b5/build_episode_archive.py
+    ingested_from: outputs/frontend/10_planned/10_action-responsibility-matrix.yaml
+    note: Episode 归档索引转录：仅登记 ref/sha256/行数/行锚/归档理由/去向指针，未改写源内容；人类策展字段原样保留在源文件。
+  - batch: MIG-B5
+    captured_by: agent:mig-b5/build_episode_archive.py
+    ingested_from: outputs/frontend/10_planned/11_predevelopment-confirmation.yaml
+    note: Episode 归档索引转录：仅登记 ref/sha256/行数/行锚/归档理由/去向指针，未改写源内容；人类策展字段原样保留在源文件。
+  - batch: MIG-B5
+    captured_by: agent:mig-b5/build_episode_archive.py
+    ingested_from: outputs/frontend/10_planned/authorizations/frontend-prepare-30.p2.yaml
+    note: Episode 归档索引转录：仅登记 ref/sha256/行数/行锚/归档理由/去向指针，未改写源内容；人类策展字段原样保留在源文件。
+  - batch: MIG-B5
+    captured_by: agent:mig-b5/build_episode_archive.py
+    ingested_from: outputs/frontend/10_working/03_technical-assessment.yaml
+    note: Episode 归档索引转录：仅登记 ref/sha256/行数/行锚/归档理由/去向指针，未改写源内容；人类策展字段原样保留在源文件。
+provenance_note: Episode 归档 manifest 为镜像收编只读索引（BATCH-5 流程档案 8 组，源 9 文件 17431 行全脚本驱动解析）：MASTer_master 绝对只读；本文件全部字段由 tools/build_episode_archive.py 确定性产出（sha256/行数/行锚/跨批消费行号现场重算/分母实测），不含墙钟时间与 mtime；批次代号 MIG-B5（seq=MIG-B5 口径）；重跑 byte-identical。流程档案不建 Live State truth 对象（铁律 3）；归档不是删除，MASTer 侧文件一个不动。源内墙钟字段（00 authorized_at/expires_at、03 registered_at、07 as_of、回执 authorized_at/expires_at）只登记在场布尔不转录值（batch4 §4）。抽取条目 summary/severity 为源字段逐字转录（merge-preserving），不 paraphrase 不代填。约定基准：migration/master-batch1/CONVENTIONS.md → batch2 → batch3 → batch4/CONVENTIONS.md（扩充不推翻）。『10 已在 M3 被消费』之说在四批 authority.json 不可考（本工具普查在 self_check）——可考去向照实登记，不冒认。
+self_check:
+  checks:
+  - check: authorization_receipt_coverage
+    note: authorizations/ 目录实测 1 份回执，索引 1 条（诚实零/一）
+    passed_count: 1
+    status: passed
+    violation_count: 0
+  - check: episode_class_closed_vocabulary
+    note: episode_class 全部落在 4 类闭世界词表内
+    passed_count: 8
+    status: passed
+    violation_count: 0
+  - check: fta_anchor_line_verified
+    note: '锚行回读逐字等于 "id": "<id>"（全 18 条逐行回读核验）'
+    passed_count: 18
+    status: passed
+    violation_count: 0
+  - check: fta_anchor_present
+    note: 每条 finding 的源行锚在 pin 版本源文件中机械可复核
+    passed_count: 18
+    status: passed
+    violation_count: 0
+  - check: fta_b1_object_coverage
+    note: MIG-B1 change-object alias 词形集合与抽取 id 集合精确相等（18=18）
+    passed_count: 18
+    status: passed
+    violation_count: 0
+  - check: fta_dependency_closure
+    note: dependency_ids 全部落在 18 条集合内（无悬空族内引用）
+    passed_count: 20
+    status: passed
+    violation_count: 0
+  - check: fta_extraction_complete
+    note: 抽取条目 id 集合与 03.assessments 精确相等（18=18）
+    passed_count: 18
+    status: passed
+    violation_count: 0
+  - check: group_refs_equal_m0_process_archive
+    note: 8 组 ref 集合与 M0 inventory process_archive 组精确相等
+    passed_count: 8
+    status: passed
+    violation_count: 0
+  - check: idempotency_two_pass_byte_identical
+    note: 输出内容构建两遍逐字节比对一致后才落盘；同输入重跑 byte-identical
+    passed_count: 1
+    status: passed
+    violation_count: 0
+  - check: m3_pointer_non_corroboration_stable
+    note: 四批 authority.json 对 10 词形提及全 0（文案与现场普查一致；出现非零即 fail-closed 需人复核证据边界）
+    passed_count: 4
+    status: passed
+    violation_count: 0
+  - check: output_filename_lowercase
+    note: 落盘文件名 archive-manifest.yaml 全小写
+    passed_count: 1
+    status: passed
+    violation_count: 0
+  - check: p1_pin_resolved_readiness_sha
+    note: 00 P1 evidence_refs[0] 与 07 content_sha256 逐字命中
+    passed_count: 1
+    status: passed
+    violation_count: 0
+  - check: receipt_denominator_bridge_to_10
+    note: 回执 responsibility_binding.denominator_sha256 与 10.denominator_sha256 逐字命中
+    passed_count: 1
+    status: passed
+    violation_count: 0
+  - check: receipt_line_anchors_present
+    note: 回执 actor/task_id 顶层行锚在 pin 版本源文件中机械可复核（缺席即 fail-closed）
+    passed_count: 2
+    status: passed
+    violation_count: 0
+  - check: receipt_pin_resolved_in_00_p2
+    note: 00 P2 evidence_refs p2-authorization-receipt:sha256= 与回执 content_sha256 逐字命中
+    passed_count: 1
+    status: passed
+    violation_count: 0
+  - check: receipt_trellis_digest_resolved
+    note: 00 P2 trellis-context-receipt:sha256= 与回执 hard_spec_context.digest 逐字命中
+    passed_count: 1
+    status: passed
+    violation_count: 0
+  - check: sha_line_pins_match_m0_inventory
+    note: 8 canonical + 1 working 副本共 9 文件 sha256/行数与 M0 inventory pin 全等
+    passed_count: 9
+    status: passed
+    violation_count: 0
+  - check: tombstone_coverage_equals_files
+    note: tombstone 预登记 9 条 ref 集合与文件覆盖 9 文件精确相等
+    passed_count: 9
+    status: passed
+    violation_count: 0
+  - check: working_copy_line_aligned
+    note: 10_working 副本 18 条行锚与正本逐 id 相等（晋升前同构证据）
+    passed_count: 18
+    status: passed
+    violation_count: 0
+  failed: []
+  skipped_blindspot:
+  - blindspot_metrics:
+      census_files_at_m0: 2882
+      census_source: master-batch5/inventory.yaml#cross_reference_forms.zero_gate_pointer_resolution_00（<5MB/文件，排除 node_modules/.git/dist/__pycache__）
+      dangling_ref_count: 2
+      dangling_refs:
+      - bec4e26641b0c333374eae3e65e0c7833f41d9b0256b2ddc1bb87467160fc386
+      - authorization-sha256:0f7750d2fabb5948e33a6dc737240e6628c6f73a45347b0fe23f3e9ba9a173d6
+    check: bare_hash_pointer_resolution
+    note: 00_lifecycle 裸哈希指针的全仓 sha256 语料普查为 M0 现场重算产物，本工具不重复全仓扫描（2 个悬空指针指向已演化或仓外/trellis 侧工件，M0 证据边界在案）；指针登记照 M0 结论承载，不重跑不冒算。
+    reason: 全仓语料普查属 M0 现场职责，本批只承载结论与盲区指标
+    status: skipped_blindspot
+  summary:
+    checks_total: 19
+    failed_total: 0
+    passed_total: 19
+    skipped_blindspot_total: 1
+tombstone_preregistrations:
+- authorization_note: 执行需 Owner 逐批写授权（precedent：migration/AUTHORIZATION.md 授权范围逐批明示）；本批只登记不执行，MASTer 零写入
+  content_sha256_at_registration: e06f326ef981483fe94799442b3a80c6bd133aad5d893025c95bc3e3f3774619
+  form: frozen_comment_header_prepend_15_lines
+  form_compatibility: master-batch1/batch2 tombstone 58 件同构：15 行 FROZEN 注释头逐文件 prepend、正文零字节改动、专分支原子提交、逐文件 yaml.safe_load 值全等验证
+  form_reference: migration/TOMBSTONE-RUNBOOK.md §1 + migration/AUTHORIZATION.md 授权范围
+  line_count_at_registration: 331
+  planned_batch: MIG-B5
+  producer_write_surface: true
+  producer_write_surface_note: producer 写位在场（manage_frontend_lifecycle v3 authorize/closeout 输出路径锁死本文件）——冻结需先退役写链或迁移写目标（Owner 裁决）
+  ref: outputs/frontend/10_planned/00_lifecycle.yaml
+  status: registered_only_not_executed
+- authorization_note: 执行需 Owner 逐批写授权（precedent：migration/AUTHORIZATION.md 授权范围逐批明示）；本批只登记不执行，MASTer 零写入
+  content_sha256_at_registration: b4b3de403b0b443ea4c945d5ba5f078c5dd2be387d6882a47849e566f9a345b3
+  form: frozen_comment_header_prepend_15_lines
+  form_compatibility: master-batch1/batch2 tombstone 58 件同构：15 行 FROZEN 注释头逐文件 prepend、正文零字节改动、专分支原子提交、逐文件 yaml.safe_load 值全等验证
+  form_reference: migration/TOMBSTONE-RUNBOOK.md §1 + migration/AUTHORIZATION.md 授权范围
+  line_count_at_registration: 1715
+  planned_batch: MIG-B5
+  producer_write_surface: true
+  producer_write_surface_note: 正本为晋升实例（rebuild_prepare_chain.sh 3/9 写 10_working 副本）——晋升链退役后本件写面收敛（Owner 裁决）
+  ref: outputs/frontend/10_planned/03_technical-assessment.yaml
+  status: registered_only_not_executed
+- authorization_note: 执行需 Owner 逐批写授权（precedent：migration/AUTHORIZATION.md 授权范围逐批明示）；本批只登记不执行，MASTer 零写入
+  content_sha256_at_registration: b9a393336e2ca591b34354f951ae86c04d1f883646d6a605ce74c71dac88004a
+  form: frozen_comment_header_prepend_15_lines
+  form_compatibility: master-batch1/batch2 tombstone 58 件同构：15 行 FROZEN 注释头逐文件 prepend、正文零字节改动、专分支原子提交、逐文件 yaml.safe_load 值全等验证
+  form_reference: migration/TOMBSTONE-RUNBOOK.md §1 + migration/AUTHORIZATION.md 授权范围
+  line_count_at_registration: 7843
+  planned_batch: MIG-B5
+  producer_write_surface: true
+  producer_write_surface_note: producer 写位在场（compile_frontend_product_engineering OUTPUT_FILES_V3）
+  ref: outputs/frontend/10_planned/06_traceability-plan.yaml
+  status: registered_only_not_executed
+- authorization_note: 执行需 Owner 逐批写授权（precedent：migration/AUTHORIZATION.md 授权范围逐批明示）；本批只登记不执行，MASTer 零写入
+  content_sha256_at_registration: d3df2783a5b3828be93bd7dcc3bec514736aa43838ea2830e647c79e7e75c605
+  form: frozen_comment_header_prepend_15_lines
+  form_compatibility: master-batch1/batch2 tombstone 58 件同构：15 行 FROZEN 注释头逐文件 prepend、正文零字节改动、专分支原子提交、逐文件 yaml.safe_load 值全等验证
+  form_reference: migration/TOMBSTONE-RUNBOOK.md §1 + migration/AUTHORIZATION.md 授权范围
+  line_count_at_registration: 437
+  planned_batch: MIG-B5
+  producer_write_surface: true
+  producer_write_surface_note: producer 写位在场（compile_frontend_product_engineering OUTPUT_FILES_V3）
+  ref: outputs/frontend/10_planned/07_readiness.yaml
+  status: registered_only_not_executed
+- authorization_note: 执行需 Owner 逐批写授权（precedent：migration/AUTHORIZATION.md 授权范围逐批明示）；本批只登记不执行，MASTer 零写入
+  content_sha256_at_registration: 91ed228f7b811d2402e6283ac35c0de7cee7495ec3d9a8f70970404c1efec6c2
+  form: frozen_comment_header_prepend_15_lines
+  form_compatibility: master-batch1/batch2 tombstone 58 件同构：15 行 FROZEN 注释头逐文件 prepend、正文零字节改动、专分支原子提交、逐文件 yaml.safe_load 值全等验证
+  form_reference: migration/TOMBSTONE-RUNBOOK.md §1 + migration/AUTHORIZATION.md 授权范围
+  line_count_at_registration: 649
+  planned_batch: MIG-B5
+  producer_write_surface: true
+  producer_write_surface_note: producer 写位在场（compile_frontend_preimplementation DOC_MAP）
+  ref: outputs/frontend/10_planned/09_implementation-plan.yaml
+  status: registered_only_not_executed
+- authorization_note: 执行需 Owner 逐批写授权（precedent：migration/AUTHORIZATION.md 授权范围逐批明示）；本批只登记不执行，MASTer 零写入
+  content_sha256_at_registration: 7109dbf55d42713aa5c3fe636ba6f82a09e148fa7de8a9ed8574571f94e31299
+  form: frozen_comment_header_prepend_15_lines
+  form_compatibility: master-batch1/batch2 tombstone 58 件同构：15 行 FROZEN 注释头逐文件 prepend、正文零字节改动、专分支原子提交、逐文件 yaml.safe_load 值全等验证
+  form_reference: migration/TOMBSTONE-RUNBOOK.md §1 + migration/AUTHORIZATION.md 授权范围
+  line_count_at_registration: 855
+  planned_batch: MIG-B5
+  producer_write_surface: true
+  producer_write_surface_note: producer 写位在场（manage_frontend_action_responsibility reconcile + resolve_action_dispositions --confirm）
+  ref: outputs/frontend/10_planned/10_action-responsibility-matrix.yaml
+  status: registered_only_not_executed
+- authorization_note: 执行需 Owner 逐批写授权（precedent：migration/AUTHORIZATION.md 授权范围逐批明示）；本批只登记不执行，MASTer 零写入
+  content_sha256_at_registration: 7954861d1607e53fbbcab7af2b56408d76a162182bd5f79813e78f88c904cf15
+  form: frozen_comment_header_prepend_15_lines
+  form_compatibility: master-batch1/batch2 tombstone 58 件同构：15 行 FROZEN 注释头逐文件 prepend、正文零字节改动、专分支原子提交、逐文件 yaml.safe_load 值全等验证
+  form_reference: migration/TOMBSTONE-RUNBOOK.md §1 + migration/AUTHORIZATION.md 授权范围
+  line_count_at_registration: 3632
+  planned_batch: MIG-B5
+  producer_write_surface: true
+  producer_write_surface_note: producer 写位在场（compile_predevelopment_confirmation --confirm）
+  ref: outputs/frontend/10_planned/11_predevelopment-confirmation.yaml
+  status: registered_only_not_executed
+- authorization_note: 执行需 Owner 逐批写授权（precedent：migration/AUTHORIZATION.md 授权范围逐批明示）；本批只登记不执行，MASTer 零写入
+  content_sha256_at_registration: 51bbb8750d97db8fe0ead431a0e57b5a8855df432db4af2435e24fc962c0241f
+  form: frozen_comment_header_prepend_15_lines
+  form_compatibility: master-batch1/batch2 tombstone 58 件同构：15 行 FROZEN 注释头逐文件 prepend、正文零字节改动、专分支原子提交、逐文件 yaml.safe_load 值全等验证
+  form_reference: migration/TOMBSTONE-RUNBOOK.md §1 + migration/AUTHORIZATION.md 授权范围
+  line_count_at_registration: 284
+  planned_batch: MIG-B5
+  producer_write_surface: true
+  producer_write_surface_note: producer 写位在场（manage_frontend_lifecycle v3 authorize 写 AUTHORIZATION_ROOT/<task_id>.p2.yaml；再授权入口 authorize_p2.sh）
+  ref: outputs/frontend/10_planned/authorizations/frontend-prepare-30.p2.yaml
+  status: registered_only_not_executed
+- authorization_note: 执行需 Owner 逐批写授权；本件为 live producer 写位（rebuild_prepare_chain 3/9），冻结前需先退役写链或改写目标（Owner 裁决）；登记以保 9 文件分母完备性，不构成执行建议
+  content_sha256_at_registration: bc8fe10a916ad72ad6a2e6d12e3e379d790e4b444bdadb94d68db6332996b53a
+  form: frozen_comment_header_prepend_15_lines
+  form_compatibility: master-batch1/batch2 tombstone 58 件同构：15 行 FROZEN 注释头逐文件 prepend、正文零字节改动、专分支原子提交、逐文件 yaml.safe_load 值全等验证
+  form_reference: migration/TOMBSTONE-RUNBOOK.md §1 + migration/AUTHORIZATION.md 授权范围
+  line_count_at_registration: 1685
+  planned_batch: MIG-B5
+  producer_write_surface: true
+  producer_write_surface_note: rebuild_prepare_chain.sh 3/9 直接写位（工作副本）——live 写面
+  ref: outputs/frontend/10_working/03_technical-assessment.yaml
+  status: registered_only_not_executed

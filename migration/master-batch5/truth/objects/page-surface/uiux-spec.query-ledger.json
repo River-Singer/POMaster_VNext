@@ -1,0 +1,444 @@
+{
+  "aliases": [
+    "PAGE-TASK-STEP-QUERY-LEDGER"
+  ],
+  "authority": {
+    "delegates": [],
+    "escalation_hint": "regenerate via migration/master-batch5/tools/ingest_uiux_functional_spec.py; 源侧修订走 MASTer 人工策展后重跑本工具（源仓只读）；语义升级/supersede 归 FRONTEND_ENGINEERING 裁决位；MIG-B5/C-01 漂移裁决归 Owner",
+    "owner": "FRONTEND_ENGINEERING",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "LOCKED",
+    "evidence": "PLANNED",
+    "lifecycle": "PROPOSED"
+  },
+  "axis_profile": "page_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "PAGE.UIUX_SPEC.QUERY_LEDGER",
+  "key_bindings": {
+    "artifact": [],
+    "code": [
+      {
+        "artifact_type": "file",
+        "expect": {
+          "container": "page_contracts[]",
+          "page_id": "PAGE-TASK-STEP-QUERY-LEDGER"
+        },
+        "match_rule": "mechanical",
+        "value": "outputs/frontend/10_planned/08_uiux-functional-spec.yaml"
+      }
+    ]
+  },
+  "kind": "page_surface",
+  "notes_md": "本对象为 MIG-B5 蓝图真值 B UIUX 功能规格转录（tools/ingest_uiux_functional_spec.py，10/15）：源 outputs/frontend/10_planned/08_uiux-functional-spec.yaml 页契约 PAGE-TASK-STEP-QUERY-LEDGER（查询零件清单台账），payload.page_contract / payload.acceptance_scenario 与源深度等价（工具断言，merge-preserving）；页级验收 ACCEPT-PAGE-TASK-STEP-QUERY-LEDGER 按 page_id 1:1 内嵌。\nfacet 模型（batch2 C.1 修订注记先例）：本对象为 08 页契约自有 facet 家族，不与 batch2 已落 PAGE.* surface 主对象 / PAGE.REGISTRY.* / PAGE.READINESS.* / PAGE.NAV.* 同文件收敛；页级收敛经 payload.id_facet.page_level_id + merge_path=supersede 登记。\nkind 裁定：page_surface（axis_profile=page_default，batch2 facet 同款；02b §7 page_surface 蓝本 surface 字段缺席=不 fabricate——08 是功能规格 facet 非结构 surface，surface 结构归 batch2 PAGE.* 主对象）。\n赐名与 origin：PAGE-TASK-STEP-*→PAGE.* 为 ALIASES_V0 已登记族 → facet-scoped rename per ALIASES_V0 remainder（PAGE.QUERY_LEDGER）→ A6 场景，origin=ingested（batch1 约定书 §6 OBS-3；batch2 facet 同款），legacy 词形照录 aliases[]。\naxes 裁定：lifecycle=PROPOSED（wrapped 字段 270/270 + acceptance 15/15 全 proposed——事实记录，语义升级只登记不执行）；evidence=PLANNED（跨轴断言 lifecycle=PROPOSED⇒PLANNED；规格判卷态与页代码在场事实分立，后者归 batch2 surface/registry facet，禁混轴）；confidence=LOCKED（无未裁决值冲突）；change=STABLE（M0 pin 在场零漂移）。\nauthority 裁定：owner=FRONTEND_ENGINEERING（batch3 authority.json M3 校准同族：前端工程执行 owner；源内 wrapped authority=frontend-engineering-proposal 的提案权威信号）。\n跨批登记：provider_evidence 与 uiux-provider-overlay.yaml 同源异文件，14/15 deep-equal、BUILD-BOM extraction_note 漂移（pending_conflicts MIG-B5/C-01）——如实分批登记不并笔；本页 deep_equal=True。\nD25 视觉 token 边界：本转录零 token 对象、零 token 值采纳；源内 layout_regions evidence 3 处原型间距观测词形（仅 BUILD-BOM）与 provider_evidence.visual_proposals 原型观察按 merge-preserving 逐字承载，不作 token 真值；视觉 token 权威=批次4 POLICY.STYLE.* 与 KNOWLEDGE.OVERLAY.* 对象侧。\nD24：source_document_meta.blueprint_sha256 裸 hex 加 sha256: 前缀，值不变。\n本字段为人类散文，机器永不解析判卷（P9）。",
+  "origin": "ingested",
+  "payload": {
+    "acceptance_scenario": {
+      "gap_reason": null,
+      "id": "ACCEPT-PAGE-TASK-STEP-QUERY-LEDGER",
+      "page_id": "PAGE-TASK-STEP-QUERY-LEDGER",
+      "scenarios": [
+        {
+          "business_acceptance_ids": [
+            "ACC-LEDGER-QUERY-READONLY",
+            "ACC-LEDGER-UNBOUND-VISIBLE"
+          ],
+          "criterion": "task outcome, validation, and recovery are observable",
+          "task_id": "TASK-STEP-QUERY-LEDGER"
+        }
+      ],
+      "status": "proposed"
+    },
+    "id_facet": {
+      "merge_path": "supersede",
+      "object_id": "PAGE.UIUX_SPEC.QUERY_LEDGER",
+      "page_level_id": "PAGE.QUERY_LEDGER",
+      "page_level_id_status": "REGISTERED_RULE_CANONICAL_HELD_BY_PAGE_SURFACE_OBJECT",
+      "rule": "facet-scoped id per the batch2 group-B PAGE.<FACET>.* convention: concurrent page-surface transcription families hold the page-level ids in this kind-dir (ALIASES_V0 canonical PAGE.<SEG> for PAGE-TASK-STEP-*); facet objects merge via the supersede chain, never by same-file convergence"
+    },
+    "page_contract": {
+      "acceptance": {
+        "authority": "frontend-engineering-proposal",
+        "evidence": [
+          "frontend-derived-from-task:TASK-STEP-QUERY-LEDGER"
+        ],
+        "status": "proposed",
+        "value": [
+          {
+            "business_acceptance_ids": [
+              "ACC-LEDGER-QUERY-READONLY",
+              "ACC-LEDGER-UNBOUND-VISIBLE"
+            ],
+            "criterion": "task outcome, validation, and recovery are observable",
+            "task_id": "TASK-STEP-QUERY-LEDGER"
+          }
+        ]
+      },
+      "authority": "frontend-planned-candidate",
+      "batch_operations": {
+        "authority": "frontend-engineering-proposal",
+        "evidence": [
+          "frontend-derived-from-task:TASK-STEP-QUERY-LEDGER"
+        ],
+        "status": "proposed",
+        "value": []
+      },
+      "business_states": {
+        "authority": "frontend-engineering-proposal",
+        "evidence": [
+          "frontend-derived-from-task:TASK-STEP-QUERY-LEDGER"
+        ],
+        "status": "proposed",
+        "value": [
+          "task-available",
+          "task-unavailable"
+        ]
+      },
+      "dangerous_actions": {
+        "authority": "frontend-engineering-proposal",
+        "evidence": [
+          "frontend-derived-from-task:TASK-STEP-QUERY-LEDGER"
+        ],
+        "status": "proposed",
+        "value": []
+      },
+      "edit_states": {
+        "authority": "frontend-engineering-proposal",
+        "evidence": [
+          "frontend-derived-from-task:TASK-STEP-QUERY-LEDGER"
+        ],
+        "status": "proposed",
+        "value": [
+          "pristine",
+          "dirty",
+          "validating",
+          "invalid",
+          "submitting"
+        ]
+      },
+      "feedback_recovery": {
+        "authority": "frontend-engineering-proposal",
+        "evidence": [
+          "frontend-derived-from-task:TASK-STEP-QUERY-LEDGER"
+        ],
+        "status": "proposed",
+        "value": [
+          "preserve-user-input",
+          "show-actionable-error",
+          "offer-retry-or-safe-exit"
+        ]
+      },
+      "field_groups": {
+        "authority": "frontend-engineering-proposal",
+        "evidence": [
+          "frontend-derived-from-task:TASK-STEP-QUERY-LEDGER"
+        ],
+        "status": "proposed",
+        "value": [
+          {
+            "object_id": "OBJ-PARTS-LEDGER-ENTRY",
+            "status": "field-selection-pending"
+          }
+        ]
+      },
+      "forms": {
+        "authority": "frontend-engineering-proposal",
+        "evidence": [
+          "frontend-derived-from-task:TASK-STEP-QUERY-LEDGER"
+        ],
+        "status": "proposed",
+        "value": [
+          {
+            "action_id": "ACT-QUERY-LEDGER",
+            "object_ids": [
+              "OBJ-PARTS-LEDGER-ENTRY"
+            ]
+          }
+        ]
+      },
+      "generated_from_task_ids": [
+        "TASK-STEP-QUERY-LEDGER"
+      ],
+      "id": "PAGE-TASK-STEP-QUERY-LEDGER",
+      "information_architecture": {
+        "authority": "frontend-engineering-proposal",
+        "evidence": [
+          "frontend-derived-from-task:TASK-STEP-QUERY-LEDGER"
+        ],
+        "status": "proposed",
+        "value": [
+          "成本分析链路",
+          "查询零件清单台账"
+        ]
+      },
+      "keyboard_accessibility": {
+        "authority": "frontend-engineering-proposal",
+        "evidence": [
+          "frontend-derived-from-task:TASK-STEP-QUERY-LEDGER"
+        ],
+        "status": "proposed",
+        "value": [
+          "logical-tab-order",
+          "visible-focus",
+          "keyboard-operable-actions",
+          "error-focus-recovery"
+        ]
+      },
+      "layout_regions": {
+        "authority": "frontend-engineering-proposal",
+        "evidence": [
+          "frontend-derived-from-task:TASK-STEP-QUERY-LEDGER"
+        ],
+        "status": "proposed",
+        "value": [
+          "task-context",
+          "primary-work-area",
+          "actions",
+          "feedback-and-recovery"
+        ]
+      },
+      "mode_states": {
+        "authority": "frontend-engineering-proposal",
+        "evidence": [
+          "frontend-derived-from-task:TASK-STEP-QUERY-LEDGER"
+        ],
+        "status": "proposed",
+        "value": [
+          "view",
+          "edit",
+          "read-only"
+        ]
+      },
+      "module_ids": [],
+      "name": "查询零件清单台账",
+      "permissions": {
+        "authority": "frontend-engineering-proposal",
+        "evidence": [
+          "frontend-derived-from-task:TASK-STEP-QUERY-LEDGER"
+        ],
+        "status": "proposed",
+        "value": {
+          "actor_ids": [
+            "ACTOR-PART-CONTROLLER",
+            "ACTOR-VEHICLE-COORDINATOR"
+          ],
+          "binding": "frontend-must-enforce-business-authorization",
+          "business_permission_ids": [
+            "PERM-DATA-SCOPE-BY-ROLE"
+          ]
+        }
+      },
+      "provider_evidence": {
+        "authority": "optional-evidence-not-business-truth",
+        "evidence_refs": [
+          "EV-PROTOTYPE-20260722#sha256=1450d3e441a0cee1",
+          "EV-PROTOTYPE-20260722#page=parts-ledger",
+          "EV-PROTOTYPE-20260722#fn=pLedger",
+          "EV-PROTOTYPE-20260722#fn=initLedger"
+        ],
+        "provider": "ui-ux-pro-max",
+        "visual_proposals": {
+          "extraction_note": "原型声明 38 列，与需求文档 02-parts-ledger 枚举表逐列一致。",
+          "observed_column_count": 38,
+          "observed_copy": [
+            "{} 条匹配 / {} 总计",
+            "{}-{} / {} · 每页 {} 条",
+            "全部导出",
+            "列配置",
+            "只读 · 38 列",
+            "导出",
+            "导出勾选",
+            "已选",
+            "条",
+            "行 | 共"
+          ],
+          "observed_table_columns": [
+            "日志ID",
+            "车型",
+            "记录编号",
+            "零件号",
+            "零件德语名称",
+            "零件中文名称",
+            "数量",
+            "PR号/装备号",
+            "VSI参考模块",
+            "VSI备注",
+            "单件VSI A价",
+            "整车VSI A价",
+            "目标价逻辑",
+            "Target参考模块",
+            "Target备注",
+            "单件目标A价",
+            "整车目标A价",
+            "平台帽子件",
+            "FG",
+            "SET",
+            "Set-Kz.（小SET）",
+            "细分模块",
+            "装配总成",
+            "模块系统",
+            "TOP零件",
+            "通用标签列",
+            "个人标签列",
+            "采购方式",
+            "CSC平台",
+            "已出目标价",
+            "已定点",
+            "单价BNK目标价",
+            "整车BNK目标价",
+            "最后更改人",
+            "最后更改时间",
+            "所属条线",
+            "BUC来源",
+            "记录状态"
+          ],
+          "prototype_anchor": "pLedger() 只读台账表格",
+          "prototype_coverage": "present",
+          "prototype_page_id": "parts-ledger",
+          "prototype_region": "whole-page",
+          "prototype_renderers": [
+            "pLedger",
+            "initLedger"
+          ]
+        }
+      },
+      "request_states": {
+        "authority": "frontend-engineering-proposal",
+        "evidence": [
+          "frontend-derived-from-task:TASK-STEP-QUERY-LEDGER"
+        ],
+        "status": "proposed",
+        "value": [
+          "idle",
+          "loading",
+          "success",
+          "empty",
+          "error"
+        ]
+      },
+      "responsive_behavior": {
+        "authority": "frontend-engineering-proposal",
+        "evidence": [
+          "frontend-derived-from-task:TASK-STEP-QUERY-LEDGER"
+        ],
+        "status": "proposed",
+        "value": [
+          "preserve-task-priority",
+          "avoid-horizontal-page-overflow",
+          "keep-primary-action-reachable"
+        ]
+      },
+      "source_ref": "process-task-interface-model.pages[9]",
+      "tables": {
+        "authority": "frontend-engineering-proposal",
+        "evidence": [
+          "frontend-derived-from-task:TASK-STEP-QUERY-LEDGER"
+        ],
+        "status": "proposed",
+        "value": []
+      },
+      "visual_hierarchy": {
+        "authority": "frontend-engineering-proposal",
+        "evidence": [
+          "frontend-derived-from-task:TASK-STEP-QUERY-LEDGER"
+        ],
+        "status": "proposed",
+        "value": [
+          "task-purpose",
+          "primary-action",
+          "supporting-information",
+          "system-feedback"
+        ]
+      },
+      "work_context": {
+        "authority": "frontend-engineering-proposal",
+        "evidence": [
+          "frontend-derived-from-task:TASK-STEP-QUERY-LEDGER"
+        ],
+        "status": "proposed",
+        "value": [
+          {
+            "actor_ids": [
+              "ACTOR-PART-CONTROLLER",
+              "ACTOR-VEHICLE-COORDINATOR"
+            ],
+            "object_ids": [
+              "OBJ-PARTS-LEDGER-ENTRY"
+            ],
+            "purpose": "查看零件全量业务属性与变更留痕",
+            "task_id": "TASK-STEP-QUERY-LEDGER"
+          }
+        ]
+      }
+    },
+    "provider_evidence_cross_batch": {
+      "comparison_rule": "08.provider_evidence.{evidence_refs,visual_proposals}+page_id == overlay.pages[] 条目（deep-equal）",
+      "deep_equal_pages": 14,
+      "divergent_pages": [
+        "PAGE-TASK-STEP-BUILD-BOM"
+      ],
+      "note": "如实分批登记不并笔（batch5 inventory incident_history 先例）：本对象承载 08 侧词形逐字（payload.page_contract.provider_evidence）；MIG-B4 对象承载 overlay 文件侧词形；漂移见 pending_conflicts MIG-B5/C-01",
+      "overlay_batch": "MIG-B4",
+      "overlay_objects": "KNOWLEDGE.OVERLAY.PAGES.*（migration/master-batch4/truth/objects/overlay-evidence/）",
+      "overlay_source": "outputs/frontend/10_planned/uiux-provider-overlay.yaml",
+      "this_page_deep_equal": true
+    },
+    "provider_neutral": true,
+    "provider_overlay": {
+      "authority": "optional-evidence-not-business-truth",
+      "present": true,
+      "provider": "ui-ux-pro-max",
+      "required": false
+    },
+    "source_document_meta": {
+      "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+      "document_type": "uiux-functional-spec",
+      "schema_version": 3
+    },
+    "superseded_status_field": {
+      "mapped_to": "axes.lifecycle=PROPOSED（事实记录，batch2 约定书 §4 对照表 DRAFT→PROPOSED 同族；语义升级留待 Owner 裁决）；跨轴断言自洽 lifecycle=PROPOSED ⇒ evidence=PLANNED",
+      "reason": "旧扁平 status 一词多义（提案没有/接了没有/验了没有），转录时拆正交双轴；数值语义不篡改（本页 proposed 计数照录）；source_status 形态的 wrapped 块（authority/status/value/evidence）整体逐字随 payload.page_contract 承载",
+      "source_field": "status（wrapped 字段×18 + acceptance.status×1）",
+      "source_value": "proposed（本页 wrapped 18 字段 + 页级验收共 19 处 proposed）",
+      "upgrade_registered": true
+    }
+  },
+  "permits_active": [],
+  "producer": {
+    "liveness": {
+      "status": "active"
+    },
+    "merge_semantics": {
+      "backfill_if_missing": [],
+      "human_never_touched": [],
+      "refresh_fields": [
+        "payload"
+      ]
+    },
+    "producer_id": "prod.mig_b5_ingest_uiux_functional_spec",
+    "views_maintained": [
+      "truth-index.envelope"
+    ]
+  },
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b5/ingest_uiux_functional_spec.py",
+      "locator": {
+        "batch": "MIG-B5",
+        "ingested_from": "outputs/frontend/10_planned/08_uiux-functional-spec.yaml",
+        "transcription": "page_contract %s + page-keyed acceptance scenario %s transcribed verbatim (payload deep-equal asserted); facet-scoped rename per ALIASES_V0 remainder, origin=ingested (A6, batch2 facet precedent); wrapped status=proposed (270) registered as superseded_status_field (lifecycle PROPOSED fact record); provider_evidence cross-batch registered vs uiux-provider-overlay.yaml (MIG-B4, 14/15 deep-equal, BUILD-BOM extraction_note drift = pending_conflicts MIG-B5/C-01, report only never auto-adjudicate); D25 visual-token boundary: no token objects, no token adoption; source pins recomputed live (both sources)"
+      },
+      "pin": {
+        "digest": "sha256:bc636476fa188af5922766e7b862e0a1e1ed9dc3ff21101416d87890f920a997"
+      },
+      "ref": "outputs/frontend/10_planned/08_uiux-functional-spec.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "UIUX 功能规格·查询零件清单台账"
+}

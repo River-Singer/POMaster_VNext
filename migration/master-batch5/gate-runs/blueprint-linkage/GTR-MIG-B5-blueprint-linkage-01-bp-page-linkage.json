@@ -1,0 +1,63 @@
+{
+  "blindspot": {
+    "carrier_coverage": {
+      "b2_main_objects": 39,
+      "bp_refs": 15,
+      "bp_refs_resolved": 15,
+      "dangling_registration_mismatches": 0,
+      "dangling_registration_units": 15,
+      "hierarchy_refs_denominator": 35,
+      "scene_page_pairs": 20,
+      "scene_page_pairs_resolved": 20,
+      "state_refs_dangling_registered": 23,
+      "state_refs_resolved_in_b3": 187,
+      "state_word_forms_corroboration": 210
+    },
+    "escape_ratio": 0,
+    "fixture_regression": "MIG-B5-BLUEPRINT-LINKAGE-PROBE-SENSITIVITY-FIXTURE/passed",
+    "produced": 28,
+    "scanned": 28
+  },
+  "counts": {
+    "applicable_scanned": 35,
+    "not_applicable": 0,
+    "scanned": 28,
+    "suppressed_by_ledger": 0,
+    "unchecked_in_blindspot_estimated": 0,
+    "violations": 0
+  },
+  "denominator_refs": [],
+  "digest_excluded_fields": [
+    "duration_ms"
+  ],
+  "duration_ms": {
+    "external": 0,
+    "self": 0
+  },
+  "gate": "BLUEPRINT_LINKAGE",
+  "gate_def": "POLICY.GATE.MIG_B5_BLUEPRINT_LINKAGE@0.1.0",
+  "grn": "GRN-4701",
+  "items": [],
+  "items_truncated": false,
+  "metric_dialect": "blueprint:batch2_page_refs",
+  "ran_at_seq": 0,
+  "scope": {
+    "note": "检查范围=BP 主文档（outputs/frontend/10_planned/02_process-task-interface.yaml，pin 0 漂移）抽出的页面-任务-步骤层级 vs master-batch2 的 39 个 page-surface 主对象（live 盘读=C5 真相面，39=39 主对象 fail-closed 断言在场）——交叉引用可解析率。分母声明（迁移期未注册 DENOMINATOR.* 对象，denominator_refs 显式空数组=诚实声明）：判卷分母=层级引用数 35（batch5 CONVENTIONS §3 引用计数口径：①bp_ref 15 条=15 页对象各 1 条，A6 canonical 投影 PAGE-TASK-STEP-<X>→PAGE.<SEG>；②scene→page 引用对 20 条=13 场景 page_ids 摊平），canonical/alias 双侧解析（canonical ∈39 主对象 id 集 ∨ 词形 ∈39 主对象 alias 集）。实测：bp_ref 15/15 解析、scene→page 20/20 解析，悬空=0；登记保真（batch5 对象 bp_ref/id_facet 块 vs 现场重算逐字段：object_id=投影、目标文件在场且内容 id=指针、resolution_status=重算状态、aliases 照录源词形、scene payload 深度等价）失配=0。violations=0 → verdict=passed。伴随面（同段解析代码机械复算、不入本检查主分母）：02 的 210 个 state 词形 → master-batch3 POLICY.STATE.* aliases（455 个对象）解析账=187 解析/23 悬空——23 悬空按 batch5 CONVENTIONS §3『悬空登记不裁决』与附录 C 行 3 归 batch3 GTR-MIG-B3-state-integrity-03（GRN-4503，已判 failed）+Owner 位；本 gate 判登记保真度：15 对象 payload.dangling_state_refs 逐页 word_forms/count 与复算全等（登记合计 23 条，失配=0），悬空本身不重复计 violations（避免跨 gate 重复开庭）也不隐瞒（本 note+blindspot 指标如实披露 23）。内部层级闭包（page↔task↔work_context 1:1 15/15、states/transitions 页域、transition 端点、scene 域、process 链恰 15 任务）=fail-closed 前置（破=exit 2，非 violations）。裁定留痕（任务书『读数据后裁定』）：主面悬空如实计 violations（batch3 4503 先例）；伴随面 23 悬空为语义登记不裁决+盲区指标披露——非硬判 failed 亦非硬洗 passed。探针敏感性 fixture=MIG-B5-BLUEPRINT-LINKAGE-PROBE-SENSITIVITY-FIXTURE/passed（合成悬空词形必被判悬空+真实 canonical/alias 双侧必解析+登记保真比较器必能检出扰动；解析器非空转另由伴随面实证：同段代码现场检出真实 23 悬空）。盲区声明：词形联结判据机械可达（escape_ratio=0，主面 35 refs + 伴随面 210 word forms 全部判定产出）；蓝图书面页名与 batch2 页对象的语义等价性（同 id 即同页之外的含义差）不在词形判据内，归 Owner 评审通道。路径基：items location 为 po-master 仓内相对路径。self_report_trusted=false：trust.asserted=null（ingest 工具 stdout/self_check 声明值只作被检登记值参与对账，不作判卷依据），判卷唯一依据 trust.recomputed。duration_ms 钉 0（byte-identical 幂等）。",
+    "size_expected_from_denominator": 35
+  },
+  "tool": "mig-b5:run_blueprint_link_gate",
+  "tool_version": "1.0.0",
+  "trigger": {
+    "note": "migration batch context: no kernel seq allocator; ran_at_seq pinned to 0 (deterministic batch base, seq=MIG-B5 batch identifier, A4 wall-clock-free; kernel re-sequences on ingestion); durations pinned to 0 for byte-identical rerun idempotency (batch hard rule 2)",
+    "task_ref": "MIG-B5/M4-blueprint-linkage",
+    "type": "on_demand"
+  },
+  "trust": {
+    "asserted": null,
+    "recomputed": {
+      "matches_asserted": true,
+      "violations": 0
+    }
+  },
+  "verdict": "passed"
+}

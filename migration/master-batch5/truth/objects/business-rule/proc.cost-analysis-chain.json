@@ -1,0 +1,119 @@
+{
+  "aliases": [
+    "PROC-COST-ANALYSIS-CHAIN"
+  ],
+  "authority": {
+    "delegates": [],
+    "escalation_hint": "regenerate via migration/master-batch5/tools/ingest_bp_main.py; 02_process-task-interface.yaml change re-runs the ingest; PROC-*/SCENE-* family word-form registration belongs to the vocabulary PR / HUMAN_OWNER (EVOLUTION_CHANNEL; ledger owner FRONTEND_ARCHITECTURE)",
+    "owner": "FRONTEND_ARCHITECTURE",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "LOCKED",
+    "evidence": "PLANNED",
+    "lifecycle": "PROPOSED"
+  },
+  "axis_profile": "rule_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "POLICY.PROC.COST_ANALYSIS_CHAIN",
+  "key_bindings": {
+    "artifact": [],
+    "code": [
+      {
+        "artifact_type": "file",
+        "expect": {
+          "process_id": "PROC-COST-ANALYSIS-CHAIN",
+          "task_chain": [
+            "TASK-STEP-BUC-ANALYSE",
+            "TASK-STEP-EXPERT-MODEL-CALCULATE",
+            "TASK-STEP-MAINTAIN-BASE-ATTRIBUTES",
+            "TASK-STEP-OUTPUT-TO-LEDGER",
+            "TASK-STEP-QUERY-LEDGER"
+          ]
+        },
+        "match_rule": "mechanical",
+        "value": "outputs/frontend/10_planned/02_process-task-interface.yaml"
+      }
+    ]
+  },
+  "kind": "business_rule",
+  "notes_md": "BP 主文档转录（MIG-B5 转录组 A·业务流程链，每流程一对象 4 条）：源 outputs/frontend/10_planned/02_process-task-interface.yaml（design_seed，pin 见 sources[0]；实体分母 347 之流程族 4/4）。\npayload.process 整条逐字（8 字段；task_ids 数组序=链序，禁重排）；检索路径=tasks[].process_id 回指 + 06_traceability process 节点 4 条，逐条立对象（batch3 §2.3 判例同款）。\n赐名：PROC-COST-ANALYSIS-CHAIN → POLICY.PROC.COST_ANALYSIS_CHAIN（PROC-* 本地族，batch3 §4 通则；非 ALIASES_V0 现役 8 族 → 非 A6 场景，origin=derived，legacy 照录 aliases[]，族级登记归词汇表 PR/Owner）。\nBP 对偶注记：源 4 流程与 BP semantic_model.processes 同 id 集；name 措辞存在演化差（逐字各归各位，禁择一，不立 conflict）。\n轴基线：lifecycle=PROPOSED（coordinate_state=planned 事实记录，superseded_status_field 已登记）+ evidence=PLANNED + confidence=LOCKED + change=STABLE。\n散文承载：源为机器结构化 JSON，无散文叙事字段。摘要（全文按源指针回读）：none (honest zero)\n本字段为人类散文，机器永不解析判卷。",
+  "origin": "derived",
+  "payload": {
+    "process": {
+      "context_ids": [],
+      "coordinate_state": "planned",
+      "goal_ids": [],
+      "id": "PROC-COST-ANALYSIS-CHAIN",
+      "module_id": null,
+      "name": "成本分析链路",
+      "task_ids": [
+        "TASK-STEP-BUC-ANALYSE",
+        "TASK-STEP-EXPERT-MODEL-CALCULATE",
+        "TASK-STEP-MAINTAIN-BASE-ATTRIBUTES",
+        "TASK-STEP-OUTPUT-TO-LEDGER",
+        "TASK-STEP-QUERY-LEDGER"
+      ],
+      "trigger_ids": []
+    },
+    "source_document_meta": {
+      "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+      "document_type": "process-task-interface-model",
+      "schema_version": 3
+    }
+  },
+  "permits_active": [],
+  "producer": {
+    "liveness": {
+      "status": "active"
+    },
+    "merge_semantics": {
+      "backfill_if_missing": [],
+      "human_never_touched": [],
+      "refresh_fields": [
+        "payload"
+      ]
+    },
+    "producer_id": "prod.mig_b5_ingest_bp_main",
+    "views_maintained": [
+      "truth-index.envelope"
+    ]
+  },
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b5/ingest_bp_main.py",
+      "locator": {
+        "batch": "MIG-B5",
+        "ingested_from": "outputs/frontend/10_planned/02_process-task-interface.yaml",
+        "line_anchors": {
+          "pages": 4,
+          "processes": 3854,
+          "route_authority": 220,
+          "scenes": 3915,
+          "states": 4140,
+          "tasks": 6242,
+          "transitions": 6819,
+          "work_contexts": 7646
+        },
+        "transcription": "BP main document process-chain node objectified per process (single-key retrieval path: tasks[].process_id back-refs + traceability process nodes; chain order = task_ids source order, never reordered); PROC-* local family granted POLICY.PROC.* per the batch3 sec.4 naming rule (not an A6 scenario, origin stays source-side derived); BP dual note: 02 processes mirror BP semantic_model.processes 4 ids one-to-one, name wording drift (e.g. BOM 构建链 vs BOM 搭建链路) coexists verbatim on both sides, never adjudicated"
+      },
+      "pin": {
+        "digest": "sha256:6bbad100833a9c4cdfa13359e1137f5121e607f7ef0254873c3c1ab42b79c736"
+      },
+      "ref": "outputs/frontend/10_planned/02_process-task-interface.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "superseded_status_field": {
+    "mapped_to": "axes.lifecycle=PROPOSED (fact record) + axes.evidence=PLANNED (cross-axis assertion per the FROZEN 02 envelope note); semantic upgrade planned->CURRENT is register-only, Owner adjudication required (batch1 CONVENTIONS sec.4 / batch2 readiness precedent)",
+    "reason": "coordinate_state=planned is one flat coordination word; the plan fact stays a fact record and the semantic upgrade belongs to the Owner; values transcribed without tampering (planned is planned)",
+    "source_field": "coordinate_state",
+    "source_value": "planned (347/347 entities, tool-verified uniform)",
+    "upgrade_registered": true
+  },
+  "supersedes": null,
+  "title_zh": "业务流程·成本分析链路"
+}

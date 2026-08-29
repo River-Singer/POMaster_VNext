@@ -1,0 +1,228 @@
+{
+  "aliases": [
+    "FDP-CAP-ROLE-MGMT"
+  ],
+  "authority": {
+    "delegates": [],
+    "escalation_hint": "regenerate via migration/master-batch5/tools/ingest_domain_projection.py; 源侧修订走 MASTer 人工策展后重跑本工具（源仓只读）；语义升级/supersede 归 BUSINESS_OWNER（BP 蓝图侧）裁决位",
+    "owner": "BUSINESS_OWNER",
+    "write_policy": "EVOLUTION_CHANNEL"
+  },
+  "axes": {
+    "change": "STABLE",
+    "confidence": "LOCKED",
+    "evidence": "PLANNED",
+    "lifecycle": "CURRENT"
+  },
+  "axis_profile": "capability_default",
+  "denominator_refs": [],
+  "evidence_refs": [],
+  "id": "CAPABILITY.FDP.CAP.ROLE.MGMT",
+  "key_bindings": {
+    "artifact": [],
+    "code": [
+      {
+        "artifact_type": "file",
+        "expect": {
+          "projection_id": "FDP-CAP-ROLE-MGMT",
+          "semantic_type": "capability-scope",
+          "source_id": "CAP-ROLE-MGMT"
+        },
+        "match_rule": "mechanical",
+        "value": "outputs/frontend/10_planned/01_domain-projection.yaml"
+      }
+    ]
+  },
+  "kind": "capability",
+  "notes_md": "本对象为 MIG-B5 蓝图真值 B 领域投影转录（tools/ingest_domain_projection.py，64/109）：源 outputs/frontend/10_planned/01_domain-projection.yaml 投影条目 FDP-CAP-ROLE-MGMT（semantic_type=capability-scope，source_id=CAP-ROLE-MGMT），payload.projection 与源条目深度等价（工具断言，merge-preserving）。\n粒度：逐条立对象（06_traceability-plan 109 条 frontend-domain-projection 镜像节点按投影 id 逐条检索 + 09/11 按 source_id 族逐条消费——batch1 §3 三问，检索路径在场）。\nkind 裁定：capability（axis_profile=capability_default，FROZEN 十类闭包内）；02b §2 capability 蓝本两必填字段缺席先例（batch2 §5 SHELL 三字段缺席 / batch3 machine 同款）：canonical_realization 缺席（frontend_interpretation 109/109 空对象，无实现可特化——缺席即禁 fabricate）、category 缺席（源无 category 字段，semantic_type 之别由 aliases/payload 承载，不冒认蓝本字段）。\n赐名：canonical id CAPABILITY.FDP.CAP.ROLE.MGMT 为 CONVENTIONS.group-b.md §2 机械形（FDP-* 为注册表本地族词形，非 ALIASES_V0 现役 8 族 → 非 A6 场景，origin 保持源侧 derived；legacy 词形照录 aliases[]；FDP.* 别名族正式登记归词汇表 PR/Owner）。\naxes 裁定：lifecycle=CURRENT（投影条目为 producer_alive 在册的活跃 canonical 事实）；confidence=LOCKED（blueprint_sha256 绑定 + 06/09/11 消费链在场，无未裁决值冲突）；evidence=PLANNED（coordinate_state 全 planned + src 侧锚 0 命中现场复测，禁静默全绿）；change=STABLE（M0 pin 在场零漂移）。\nauthority 裁定：owner=BUSINESS_OWNER（batch3 authority.json M3 校准同族：业务域语义事实；源内 authority=bp-derived-no-semantic-override 即语义属 BP/业务侧、前端仅投影的权威信号）；语义升级/supersede 归 BUSINESS_OWNER（BP 蓝图侧）裁决位。\nD24：source_document_meta.blueprint_sha256 裸 hex 加 sha256: 前缀，值不变。\n本字段为人类散文，机器永不解析判卷（P9）。",
+  "origin": "derived",
+  "payload": {
+    "projection": {
+      "authority": "bp-derived-no-semantic-override",
+      "coordinate_state": "planned",
+      "frontend_interpretation": {},
+      "id": "FDP-CAP-ROLE-MGMT",
+      "module_ids": [],
+      "name": "角色管理",
+      "semantic_type": "capability-scope",
+      "source_id": "CAP-ROLE-MGMT",
+      "source_status": {
+        "applicability": "required",
+        "approval_state": "reviewed",
+        "coverage_status": "partial",
+        "effective_state": "not_effective",
+        "evidence_status": "documented",
+        "maturity": "blueprint"
+      },
+      "summary": null
+    },
+    "revalidation_human_required": [
+      {
+        "aspect": "projection_code_anchor",
+        "reason": "FDP-*/source_id 前缀族 src 侧机械锚 0 命中（ingest 工具 git grep 现场复测，C5 禁伪造接线证据），coordinate_state 全 planned——axes.evidence=PLANNED（禁静默全绿，不标 IMPLEMENTED）；实现锚在场后按 evidence 轴机判重验",
+        "values": [
+          "FDP-CAP-ROLE-MGMT"
+        ]
+      }
+    ],
+    "semantic_coverage": [
+      {
+        "count": 13,
+        "semantic_type": "acceptance",
+        "status": "present"
+      },
+      {
+        "count": 19,
+        "semantic_type": "action",
+        "status": "present"
+      },
+      {
+        "count": 7,
+        "semantic_type": "actor",
+        "status": "present"
+      },
+      {
+        "count": 1,
+        "semantic_type": "audit",
+        "status": "present"
+      },
+      {
+        "count": 0,
+        "semantic_type": "authority",
+        "status": "gap"
+      },
+      {
+        "count": 6,
+        "semantic_type": "business-capability-group",
+        "status": "present"
+      },
+      {
+        "count": 30,
+        "semantic_type": "capability-scope",
+        "status": "present"
+      },
+      {
+        "count": 3,
+        "semantic_type": "context",
+        "status": "present"
+      },
+      {
+        "count": 2,
+        "semantic_type": "external-system-expectation",
+        "status": "present"
+      },
+      {
+        "count": 0,
+        "semantic_type": "failure",
+        "status": "gap"
+      },
+      {
+        "count": 6,
+        "semantic_type": "goal",
+        "status": "present"
+      },
+      {
+        "count": 8,
+        "semantic_type": "object",
+        "status": "present"
+      },
+      {
+        "count": 1,
+        "semantic_type": "permission",
+        "status": "present"
+      },
+      {
+        "count": 0,
+        "semantic_type": "platform-constraint",
+        "status": "gap"
+      },
+      {
+        "count": 0,
+        "semantic_type": "precondition",
+        "status": "gap"
+      },
+      {
+        "count": 10,
+        "semantic_type": "rule",
+        "status": "present"
+      },
+      {
+        "count": 0,
+        "semantic_type": "side-effect",
+        "status": "gap"
+      },
+      {
+        "count": 3,
+        "semantic_type": "state",
+        "status": "present"
+      },
+      {
+        "count": 0,
+        "semantic_type": "trigger",
+        "status": "gap"
+      },
+      {
+        "count": 0,
+        "semantic_type": "volume",
+        "status": "gap"
+      },
+      {
+        "count": 0,
+        "semantic_type": "work-environment-constraint",
+        "status": "gap"
+      }
+    ],
+    "source_document_meta": {
+      "blueprint_ref": {
+        "id": "BP-MASTER-FRONTEND-REFACTOR",
+        "version": "1.4.0"
+      },
+      "blueprint_sha256": "sha256:09db1457202e17eefe4302a2280e83ae0bd56d7550f2dd8d1c5c158d433da4e4",
+      "decision_refs": [],
+      "document_type": "frontend-domain-projection",
+      "schema_version": 3
+    },
+    "superseded_status_field": {
+      "mapped_to": "axes.evidence=PLANNED（planned→PLANNED 机械事实映射，事实记录；投影实体的实现升级归 Owner 裁决，语义升级只登记不执行——batch1 约定书 §4 形状）",
+      "reason": "旧扁平 coordinate_state 一词多义风险（投影坐标 vs 实现状态），转录时拆正交双轴：源词形逐字随 payload.projection.coordinate_state 承载，轴面取 PLANNED；source_status 六维为 BP 侧结构化状态（已正交），随 payload 逐字承载、禁混轴",
+      "source_field": "coordinate_state",
+      "source_value": "planned（109/109 projections，coordinate_state 全集）",
+      "upgrade_registered": true
+    }
+  },
+  "permits_active": [],
+  "producer": {
+    "liveness": {
+      "status": "active"
+    },
+    "merge_semantics": {
+      "backfill_if_missing": [],
+      "human_never_touched": [],
+      "refresh_fields": [
+        "payload"
+      ]
+    },
+    "producer_id": "prod.mig_b5_ingest_domain_projection",
+    "views_maintained": [
+      "truth-index.envelope"
+    ]
+  },
+  "rev": 1,
+  "sources": [
+    {
+      "captured_by": "agent:mig-b5/ingest_domain_projection.py",
+      "locator": {
+        "batch": "MIG-B5",
+        "ingested_from": "outputs/frontend/10_planned/01_domain-projection.yaml",
+        "transcription": "projection FDP-CAP-ROLE-MGMT (FDP-*) transcribed verbatim (payload.projection deep-equal asserted); canonical grant CAPABILITY.FDP.* per batch3 naming rule (family word kept as segment 2, token boundaries kept as segment boundaries), non-A6 so origin stays source-side derived; FDP.* alias-family registration pending vocab PR/Owner; coordinate_state=planned registered as superseded_status_field (planned->evidence PLANNED fact record); doc-level semantics (blueprint_ref/decision_refs/semantic_coverage) carried per object; source pin recomputed live"
+      },
+      "pin": {
+        "digest": "sha256:35acfa8b2c8c0600d0bf57a259118609aa8694d4c73c88b8ae1c7f15cec38c3d"
+      },
+      "ref": "outputs/frontend/10_planned/01_domain-projection.yaml",
+      "type": "design_seed"
+    }
+  ],
+  "supersedes": null,
+  "title_zh": "领域投影·角色管理"
+}
