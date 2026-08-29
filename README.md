@@ -1,6 +1,6 @@
 # POMaster_VNext
 
-> **[构建中 — scaffold 阶段]** 仓库骨架与公共契约已落盘：kernel 公共 API 契约（`docs/kernel-api.md`）、七份 IR schema 与 FROZEN 词表（`packages/schemas/assets/`）、测试棘轮（floor=150，只升不降）。各模块实现并行建造中——接口以契约为准，一切以 CI 绿为凭。
+> **[构建中 — scaffold 阶段]** 仓库骨架与公共契约已落盘：kernel 公共 API 契约（docs，本地目录不入库）、七份 IR schema 与 FROZEN 词表（`packages/schemas/assets/`）、测试棘轮（floor=150，只升不降）。各模块实现并行建造中——接口以契约为准，一切以 CI 绿为凭。
 > [![CI badge 占位](https://img.shields.io/badge/CI-pending-lightgrey)](#) <!-- repo 状态徽章占位：首次 push 后替换为真实 GitHub Actions 徽章 -->
 
 > **AI 软件工程的 Governed Software State Control Plane。**
@@ -76,7 +76,7 @@ packages/ kernel · governance · discovery · context · memory · execution
           gauntlet · adapters · reporters · cli
 catalog/  policies · knowledge · gates · profiles · standards · technologies
 schemas/  templates/  tests/ (unit·integration·fixtures·e2e·self-hosting)
-docs/     examples/
+docs/     examples/   （docs/ 为 Owner 本地目录，不入库）
 ```
 
 技术栈：TypeScript · Node LTS · pnpm monorepo · Canonical State 为 JSON · Git 为版本与回滚底座 · 外部测试工具一律走 Adapter（绝不进核心）。
@@ -108,8 +108,8 @@ pomaster doctor        # 工具/MCP 配置探测（缺什么提示装什么）
 | Router 判定机制 | `research/design-thread-C-router.md` |
 | Solo 协作形态 | `research/design-thread-D-solo-form.md` |
 | 生命周期总装图 | `research/vnext-lifecycle-and-loop.md` |
-| Kernel 公共 API 契约 | `docs/kernel-api.md` |
-| 注册表树投影预设 registry-tree（旧 spec/ 与 outputs/ 目录结构以「投影预设」永续保留，D25；Canonical State 唯一事实源，渲染器为后续砖） | `docs/registry-tree-projection-preset.md` |
+| Kernel 公共 API 契约 | `docs/kernel-api.md`（本地） |
+| 注册表树投影预设 registry-tree（旧 spec/ 与 outputs/ 目录结构以「投影预设」永续保留，D25；Canonical State 唯一事实源，渲染器为后续砖） | `docs/registry-tree-projection-preset.md`（本地） |
 
 ## 质量承诺
 
