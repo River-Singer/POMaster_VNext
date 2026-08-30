@@ -11,7 +11,13 @@
  * - state/authority.json  Authority Map（BOOTSTRAP 基线；幽灵 owner FATAL 判定的解析源）
  * - state/permits.json    已签发许可（issuePermit 持久化；stolen 标记留档）
  * - state/exception-ledger.json Exception Ledger（§49.2 异常登记；recordException 持久化）
- * - state/journal.jsonl   事件 journal（TX_APPLIED / PERMIT_* / EXCEPTION_* 追加流；不进 hash）
+ * - state/journal.jsonl   事件 journal（TX_APPLIED / PERMIT_* / EXCEPTION_* / SESSION_* /
+ *   LOCK_* / EXECUTION_* 追加流；不进 hash）
+ *
+ * D 线地基平面（P20；research/design-thread-D-solo-form.md §1.3 路径形态 逐字）：
+ * - runtime/sessions/<session_key>.json  活跃会话注册（liveness + 当前任务指针；易变态）
+ * - runtime/locks/<lock_id>.lock         三粒度互斥锁（change/task/unit；易变态）
+ * - executions/AGX-*.json                Execution Identity 正式档案（PRD §25.4；进 Git）
  */
 import { GovernanceError } from "./errors.js";
 import { isNotFoundError, readJsonText } from "./io.js";
@@ -37,6 +43,12 @@ export interface StorePaths {
   readonly blobsDir: string;
   readonly runtimeDir: string;
   readonly heartbeatPath: string;
+  /** runtime/sessions/（D 线 §1.3：活跃会话注册；session.ts 维护）。 */
+  readonly sessionsDir: string;
+  /** runtime/locks/（D 线 §1.3：三粒度互斥锁；locks.ts 维护）。 */
+  readonly locksDir: string;
+  /** executions/（D 线 §1.3：Execution Identity 正式档案，进 Git；execution.ts 维护）。 */
+  readonly executionsDir: string;
 }
 
 export function buildStorePaths(rootDir: string): StorePaths {
@@ -59,6 +71,9 @@ export function buildStorePaths(rootDir: string): StorePaths {
     blobsDir: `${evidenceDir}/blobs`,
     runtimeDir,
     heartbeatPath: `${runtimeDir}/heartbeat.jsonl`,
+    sessionsDir: `${pomasterDir}/runtime/sessions`,
+    locksDir: `${pomasterDir}/runtime/locks`,
+    executionsDir: `${pomasterDir}/executions`,
   };
 }
 

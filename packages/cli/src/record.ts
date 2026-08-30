@@ -22,7 +22,7 @@
  *   通过者随入账事务落 journal 注记（canonical 07 形态 FROZEN，绑定不住 run 记录本体）；
  *   不声明时信封零变化（与现状逐字节一致）。
  */
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import {
   type ClaimRecordInput,
   type GateResult,
@@ -48,6 +48,7 @@ import {
   parseClaimFile,
   parseRunFile,
   resolveAssertedClaimedBy,
+  resolveExecutionId,
   resolveRunContext,
   resolveSubjectBindings,
   subjectBindingsNote,
@@ -57,7 +58,7 @@ import {
 import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
 import { governanceErrorToCliError, requireInitialized } from "./permit.js";
-import { claimsDirPath, runsDirPath } from "./store-layout.js";
+import { claimsDirPath, executionsDirPath, runsDirPath } from "./store-layout.js";
 
 // ============================================================
 // record gate-run
@@ -78,6 +79,13 @@ export interface RecordGateRunInput {
    * （subject_bindings=…），拒者不入账、只留信封 warnings（gate-run 本体照常入账）。
    */
   readonly subjects?: readonly string[];
+  /**
+   * 执行身份透传（P20 §25.4；优先于 --from 文件信封自报）。携带即强制校验：
+   * AGX 词形（SCHEMA_INVALID）+ executions/ 档案存在性（EXECUTION_NOT_FOUND——
+   * S1 禁自造身份）；缺省 = 沿用文件自报（compact 收编同款），两者皆无 = 键缺席
+   * （存量字节兼容，不伪造）。已封口执行允许挂载（事后补录合法——ended_at 如实在场）。
+   */
+  readonly executionId?: string;
 }
 
 export interface RecordGateRunResult {
@@ -89,6 +97,8 @@ export interface RecordGateRunResult {
   readonly gate: string | null;
   /** true = ran_at_seq（自报采样点）> applied_seq——账本与证据平面的时差，永远显式。 */
   readonly ran_at_seq_ahead: boolean;
+  /** 本 run 落账的执行身份（P20；显式覆盖 > 文件自报，两者皆无 = null 键缺席）。 */
+  readonly execution_id: string | null;
   /**
    * subject 绑定复核结果（N5；仅显式声明 subjects 时在场——无绑定路径信封零变化）。
    * accepted = 复核通过且已落账（APPLIED 路径随事务注记持久化；SKIPPED_CANONICAL 零
@@ -110,6 +120,7 @@ function emptyGateRunResult(): RecordGateRunResult {
     verdict: null,
     gate: null,
     ran_at_seq_ahead: false,
+    execution_id: null,
   };
 }
 
@@ -233,6 +244,24 @@ export async function runRecordGateRun(
   }
   const curSeq = store.currentSeq ?? initialized.seq;
 
+  // —— execution_id 解析与挂载校验（P20：显式覆盖 > 文件自报 > 缺席；fail-closed） ——
+  const executionResolution = resolveExecutionId(input.executionId, parsed.executionIdRaw);
+  if ("fail" in executionResolution) {
+    return gateRunFail({
+      code: "SCHEMA_INVALID",
+      message: executionResolution.fail,
+      hint: "execution_id 由 beginExecution 分配（AGX-<年份>-<序号>）；先登记执行身份再入账证据（S1：禁自造身份）。",
+    });
+  }
+  const executionId = executionResolution.executionId;
+  if (executionId !== null && !existsSync(`${executionsDirPath(rootDir)}/${executionId}.json`)) {
+    return gateRunFail({
+      code: "EXECUTION_NOT_FOUND",
+      message: `execution_id 未登记（executions/ 档案缺失）：${executionId}`,
+      hint: "先 beginExecution 登记执行身份（.pomaster/executions/AGX-*.json 是身份唯一事实源）；已封口执行允许事后补录（ended_at 如实在场）。",
+    });
+  }
+
   // —— subject 绑定机复核（N5：入账层的归属验证；失败只拒绑定不拒 run） ——
   const bindings = await resolveBindingsOrFail(store, input.subjects);
   if (bindings !== null && "hint" in bindings) {
@@ -301,7 +330,7 @@ export async function runRecordGateRun(
           { ...context, ranAtSeq: replayRanAtSeq },
           claimedBy.claimedBy,
         );
-        if (canonicalRunBytes(grn, context.trigger, replay) === targetBytes) {
+        if (canonicalRunBytes(grn, context.trigger, replay, executionId) === targetBytes) {
           skippedCanonical = true;
         }
       } catch {
@@ -317,6 +346,7 @@ export async function runRecordGateRun(
       overrideTool: input.tool,
       overrideToolVersion: input.toolVersion,
       overrideMetricDialect: input.metricDialect,
+      overrideExecutionId: input.executionId,
     });
     if (matched !== null) {
       grn = matched;
@@ -337,6 +367,7 @@ export async function runRecordGateRun(
       verdict: candidate.verdict,
       gate: candidate.gate,
       ran_at_seq_ahead: candidate.ranAtSeq > curSeq,
+      execution_id: executionId,
       // 绑定随入账事务落注记；零写入路径无事务可挂 → accepted 恒 []，未落者显式留痕。
       ...(bindingResolution !== null
         ? {
@@ -376,7 +407,10 @@ export async function runRecordGateRun(
   const bindingNote =
     bindingResolution === null ? null : subjectBindingsNote(bindingResolution.accepted);
   const tx: Transaction = {
-    ops: [{ op: "record_gate_run", run: { grn, trigger: context.trigger, result: finalResult } }],
+    ops: [{
+      op: "record_gate_run",
+      run: { grn, trigger: context.trigger, result: finalResult, ...(executionId ? { executionId } : {}) },
+    }],
     ...(bindingNote !== null ? { note: bindingNote } : {}),
   };
   try {
@@ -389,6 +423,7 @@ export async function runRecordGateRun(
       verdict: finalResult.verdict,
       gate: finalResult.gate,
       ran_at_seq_ahead: finalResult.ranAtSeq > applied.appliedSeq,
+      execution_id: executionId,
       ...(bindingResolution !== null
         ? {
             subject_bindings: {
@@ -439,6 +474,11 @@ function replayRanAtSeqOf(targetBytes: string, fallback: number): number {
 export interface RecordClaimInput {
   readonly from: string;
   readonly clm?: string;
+  /**
+   * 执行身份透传（P20 §25.4；优先于 --from 文件自报；可选——缺席 = 键缺席存量兼容，
+   * 携带即强制校验：AGX 词形 + executions/ 档案存在性，S1 禁自造身份）。
+   */
+  readonly executionId?: string;
 }
 
 export interface RecordClaimResult {
@@ -447,10 +487,12 @@ export interface RecordClaimResult {
   readonly applied_seq: number | null;
   /** APPLIED/SKIPPED_CANONICAL = UNVERIFIED（record_claim 通道恒置）；SKIPPED_ADJUDICATED = 文件既有判定。 */
   readonly verification: string | null;
+  /** 本 claim 落账的执行身份（P20；显式覆盖 > 文件自报，两者皆无 = null 键缺席）。 */
+  readonly execution_id: string | null;
 }
 
 function emptyClaimResult(): RecordClaimResult {
-  return { clm: null, change: null, applied_seq: null, verification: null };
+  return { clm: null, change: null, applied_seq: null, verification: null, execution_id: null };
 }
 
 function claimFail(error: CliError): CommandOutcome<RecordClaimResult> {
@@ -527,6 +569,7 @@ export async function runRecordClaim(
         change: "SKIPPED_ADJUDICATED",
         applied_seq: curSeq,
         verification: verdict,
+        execution_id: null,
       };
       return okOutcome(
         "record claim",
@@ -547,6 +590,24 @@ export async function runRecordClaim(
 
   const claimsDir = claimsDirPath(rootDir);
 
+  // —— execution_id 解析与挂载校验（P20；与 gate-run 同法：覆盖 > 自报 > 缺席） ——
+  const executionResolution = resolveExecutionId(input.executionId, parsed.record.execution_id);
+  if ("fail" in executionResolution) {
+    return claimFail({
+      code: "SCHEMA_INVALID",
+      message: executionResolution.fail,
+      hint: "execution_id 由 beginExecution 分配（AGX-<年份>-<序号>）；先登记执行身份再入账证据（S1：禁自造身份）。",
+    });
+  }
+  const executionId = executionResolution.executionId;
+  if (executionId !== null && !existsSync(`${executionsDirPath(rootDir)}/${executionId}.json`)) {
+    return claimFail({
+      code: "EXECUTION_NOT_FOUND",
+      message: `execution_id 未登记（executions/ 档案缺失）：${executionId}`,
+      hint: "先 beginExecution 登记执行身份（.pomaster/executions/AGX-*.json 是身份唯一事实源）；已封口执行允许事后补录（ended_at 如实在场）。",
+    });
+  }
+
   const extracted: ClaimRecordInput | { detail: string } = extractClaimInput(
     parsed.record,
     input.clm ?? "",
@@ -558,6 +619,15 @@ export async function runRecordClaim(
       hint: "必填输入：subject_id（closed-world governed id）/ assertion（非空）/ asserted_by{actor_type, actor}；evidence_refs 可空（先立后证）。",
     });
   }
+  // execution_id 合入（显式覆盖 > 文件自报；null = 剥离键——键缺席存量兼容）。
+  const claimInput: ClaimRecordInput =
+    executionId !== null
+      ? { ...extracted, executionId }
+      : (() => {
+          const { executionId: _drop, ...rest } = extracted;
+          void _drop;
+          return rest as ClaimRecordInput;
+        })();
 
   // —— clm 解析与幂等判定（与 gate-run 同法：字节预比较补齐 kernel 无 per-op 幂等的缺口） ——
   let clm: string;
@@ -573,7 +643,7 @@ export async function runRecordClaim(
     if (targetBytes !== null) {
       const replayRev = replayRevOf(targetBytes, curSeq + 1);
       try {
-        if (canonicalClaimBytes({ ...extracted, clm }, replayRev) === targetBytes) {
+        if (canonicalClaimBytes({ ...claimInput, clm }, replayRev) === targetBytes) {
           skippedCanonical = true;
         }
       } catch {
@@ -600,6 +670,7 @@ export async function runRecordClaim(
       change: "SKIPPED_CANONICAL",
       applied_seq: curSeq,
       verification: "UNVERIFIED",
+      execution_id: executionId,
     };
     return okOutcome(
       "record claim",
@@ -611,7 +682,7 @@ export async function runRecordClaim(
   }
 
   const tx: Transaction = {
-    ops: [{ op: "record_claim", claim: { ...extracted, clm } }],
+    ops: [{ op: "record_claim", claim: { ...claimInput, clm } }],
   };
   try {
     const applied = await applyTransaction(store, tx);
@@ -620,6 +691,7 @@ export async function runRecordClaim(
       change: "APPLIED",
       applied_seq: applied.appliedSeq,
       verification: "UNVERIFIED",
+      execution_id: executionId,
     };
     return okOutcome(
       "record claim",

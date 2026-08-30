@@ -27,7 +27,7 @@
  * - subject 绑定机复核（N5）：入账层显式归属声明逐条过闭世界文法 + store 存在性，
  *   拒者不入账只留痕、通过者随事务注记落 journal（resolveSubjectBindings）。
  */
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import {
   type Actor,
   type ClaimRecordInput,
@@ -178,6 +178,8 @@ export interface ParsedRunFile {
   readonly assertedPresent: boolean;
   /** trust.asserted.declared_by（自报归因主体；snake/camel 双拼兼容）。 */
   readonly assertedDeclaredBy: unknown;
+  /** 外层信封 execution_id 原始值（P20 执行身份贯穿；undefined/null = 未携带 → 键缺席）。 */
+  readonly executionIdRaw: unknown;
 }
 
 export type ParseFailure = { readonly error: string };
@@ -224,6 +226,7 @@ export function parseRunFile(bytes: string): ParsedRunFile | ParseFailure {
     innerMetricDialect: typeof rawValue.metric_dialect === "string" ? rawValue.metric_dialect : null,
     assertedPresent: asserted !== undefined,
     assertedDeclaredBy: asserted === undefined ? undefined : pick(asserted, "declared_by", "declaredBy"),
+    executionIdRaw: pick(parsed, "execution_id", "executionId"),
   };
 }
 
@@ -399,21 +402,63 @@ export function normalizeIngestedRun(
 
 /**
  * canonical 07 run_record 组装（与 kernel store.applyRecordGateRun 逐键同构——
- * record_type / grn / ran_at_seq / trigger / gate_result{mode, result}；形态由 kernel 决定）。
+ * record_type / grn / ran_at_seq / trigger / [execution_id] / gate_result{mode, result}；
+ * 形态由 kernel 决定）。execution_id 仅在携带时落键（P20：缺席=键缺席存量兼容）。
  */
 export function canonicalRunBytes(
   grn: string,
   trigger: RunTriggerValue,
   result: GateResult,
+  executionId?: string | null,
 ): string {
   const record: UnknownRecord = {
     record_type: "run",
     grn,
     ran_at_seq: result.ranAtSeq,
     trigger: { type: trigger },
+    ...(executionId ? { execution_id: executionId } : {}),
     gate_result: { mode: "inline", result: gateResultToSnake(result) },
   };
   return serializeKernel(record);
+}
+
+/** AGX 词形（PRD §25.4 例文 AGX-2026-00182；与 kernel EXECUTION_ID_PATTERN 逐字同源）。 */
+const EXECUTION_ID_WORDFORM = /^AGX-[0-9]{4}-[0-9]+$/;
+
+/**
+ * already_canonical 快路径的执行档案存在性校验（P20 红队发现 2）：快路径零 op 不触发
+ * kernel record 校验，手写 canonical 形态文件携带未登记 AGX 曾可绕过（record 通路会
+ * 拒、compact 快路径放行——双通路判卷不一致）。现 compact/record 同判卷：文件携带
+ * execution_id 键即校验 executions/ 档案在场，缺失 → malformed（fail-closed 显式呈现，
+ * 不静默当已收编）。
+ */
+function missingExecutionArchive(executionsDir: string, executionId: string | null): string | null {
+  if (executionId === null) return null;
+  if (existsSync(`${executionsDir}/${executionId}.json`)) return null;
+  return `EXECUTION_NOT_FOUND: execution_id 未登记（executions/ 档案缺失）：${executionId}（already_canonical 快路径与 record 通路同判卷——身份由 beginExecution 落档，禁自造身份 S1）`;
+}
+
+export type ExecutionIdResolution =
+  | { readonly executionId: string | null }
+  | { readonly fail: string };
+
+/**
+ * execution_id 解析（显式覆盖 > 文件自报 > 缺席 null；词形 fail-closed）。
+ * 档案存在性校验：record 通路归 kernel record op；already_canonical 快路径在本层
+ * 以 missingExecutionArchive 同判卷（P20 红队发现 2——双通路同纪律，禁静默绕过）。
+ */
+export function resolveExecutionId(
+  override: string | undefined,
+  raw: unknown,
+): ExecutionIdResolution {
+  const value = override !== undefined ? override : raw;
+  if (value === undefined || value === null) return { executionId: null };
+  if (typeof value !== "string" || !EXECUTION_ID_WORDFORM.test(value)) {
+    return {
+      fail: `execution_id 词形非法（须 AGX-<4位年份>-<序号>，PRD §25.4 例文 AGX-2026-00182）：${String(value)}`,
+    };
+  }
+  return { executionId: value };
 }
 
 // ============================================================
@@ -436,6 +481,8 @@ export interface PlannedRun {
 export function planRunFile(input: {
   readonly fileName: string;
   readonly runsDir: string;
+  /** executions/ 档案目录（already_canonical 快路径的执行档案存在性校验——P20 红队发现 2）。 */
+  readonly executionsDir: string;
   readonly sampledRanAtSeq: number;
 }): { readonly plan: PlannedRun } | { readonly malformed: EvidenceMalformed } {
   const relPath = `evidence/runs/${input.fileName}`;
@@ -468,8 +515,21 @@ export function planRunFile(input: {
   } catch (err) {
     return { malformed: malformedOf(relPath, kernelDetail(err)) };
   }
-  const canonical = canonicalRunBytes(grn, resolved.context.trigger, result);
+  // execution_id 贯穿（P20）：文件自报词形在本层先检（already_canonical 快路径
+  // 不触发 kernel record 校验——禁静默持久损坏词形）；档案存在性归 kernel record op。
+  const executionIdResolution = resolveExecutionId(undefined, parsed.executionIdRaw);
+  if ("fail" in executionIdResolution) {
+    return { malformed: malformedOf(relPath, executionIdResolution.fail) };
+  }
+  const executionId = executionIdResolution.executionId;
+  const canonical = canonicalRunBytes(grn, resolved.context.trigger, result, executionId);
   if (canonical === bytes) {
+    // 快路径判卷补位（P20 红队发现 2）：携带身份键即校验档案在场（与 record 同判卷），
+    // 手写 canonical 形态 + 未登记 AGX 不再借零 op 通路绕过 S1。
+    const missingArchive = missingExecutionArchive(input.executionsDir, executionId);
+    if (missingArchive !== null) {
+      return { malformed: malformedOf(relPath, missingArchive) };
+    }
     return {
       plan: { grn, relPath, action: "already_canonical", ran_at_seq: result.ranAtSeq },
     };
@@ -482,7 +542,7 @@ export function planRunFile(input: {
       ran_at_seq: result.ranAtSeq,
       op: {
         op: "record_gate_run",
-        run: { grn, trigger: resolved.context.trigger, result },
+        run: { grn, trigger: resolved.context.trigger, result, ...(executionId ? { executionId } : {}) },
       },
     },
   };
@@ -501,7 +561,12 @@ export function findCanonicalRunMatch(input: {
   readonly overrideTool?: string;
   readonly overrideToolVersion?: string;
   readonly overrideMetricDialect?: string;
+  /** 显式执行身份覆盖（record --execution-id；参与 canonical 等价判定）。 */
+  readonly overrideExecutionId?: string;
 }): string | null {
+  const overrideResolution = resolveExecutionId(input.overrideExecutionId, input.parsed.executionIdRaw);
+  if ("fail" in overrideResolution) return null;
+  const executionId = overrideResolution.executionId;
   for (const fileName of listPlaneFiles(input.runsDir)) {
     if (!GRN_FILE_PATTERN.test(fileName)) continue;
     const grn = fileName.slice(0, -".json".length);
@@ -534,7 +599,7 @@ export function findCanonicalRunMatch(input: {
     } catch {
       continue;
     }
-    if (canonicalRunBytes(grn, resolved.context.trigger, result) === bytes) return grn;
+    if (canonicalRunBytes(grn, resolved.context.trigger, result, executionId) === bytes) return grn;
   }
   return null;
 }
@@ -712,6 +777,14 @@ export function extractClaimInput(
     }
   }
   const notesRaw = record.notes_md ?? record.notesMd;
+  // execution_id 贯穿（P20）：compact/record 双通路从既有记录原样回捞（词形校验在
+  // planClaimFile 与 kernel record op 两道闸）——重入账不得静默剥掉身份字段。
+  const executionIdRaw = pick(record, "execution_id", "executionId");
+  const executionIdResolution = resolveExecutionId(undefined, executionIdRaw);
+  if ("fail" in executionIdResolution) {
+    return { detail: executionIdResolution.fail };
+  }
+  const executionId = executionIdResolution.executionId;
   return {
     clm,
     subjectId: subjectId as ClaimRecordInput["subjectId"],
@@ -722,6 +795,7 @@ export function extractClaimInput(
       selfAttested: selfAttested === undefined ? true : selfAttested === true,
     },
     evidenceRefs,
+    ...(executionId !== null ? { executionId } : {}),
     ...(notesRaw !== undefined ? { notesMd: notesRaw as string | null } : {}),
   };
 }
@@ -729,6 +803,7 @@ export function extractClaimInput(
 /**
  * canonical claim 组装（与 kernel store.applyRecordClaim 逐键同构，含键序；
  * rev 由重放方给定：与既有文件比对时用文件自身 rev，APPLIED 时由 kernel 事务分配）。
+ * execution_id 仅在携带时落键（P20：缺席=键缺席，存量字节兼容）。
  */
 export function canonicalClaimBytes(claim: ClaimRecordInput, rev: number): string {
   const subjectId = claim.subjectId;
@@ -753,6 +828,7 @@ export function canonicalClaimBytes(claim: ClaimRecordInput, rev: number): strin
   const record: UnknownRecord = {
     record_type: "claim",
     clm: claim.clm,
+    ...(claim.executionId ? { execution_id: claim.executionId } : {}),
     subject: { object_id: subjectId },
     is_fixture: subjectId.startsWith("TEST."),
     assertion: claim.assertion,
@@ -799,6 +875,8 @@ function claimRevOf(record: UnknownRecord, fallback: number): number {
 export function planClaimFile(input: {
   readonly fileName: string;
   readonly claimsDir: string;
+  /** executions/ 档案目录（already_canonical 快路径的执行档案存在性校验——P20 红队发现 2）。 */
+  readonly executionsDir: string;
   /** APPLIED 重放的 rev 兜底（= 本事务将分配的 seq，即当前 seq + 1）。 */
   readonly nextSeq: number;
 }): { readonly plan: PlannedClaim } | { readonly malformed: EvidenceMalformed } {
@@ -847,6 +925,11 @@ export function planClaimFile(input: {
   const replayRev = claimRevOf(parsed.record, input.nextSeq);
   const canonical = canonicalClaimBytes(extracted, replayRev);
   if (canonical === bytes) {
+    // 快路径判卷补位（P20 红队发现 2）：携带身份键即校验档案在场（与 record 同判卷）。
+    const missingArchive = missingExecutionArchive(input.executionsDir, extracted.executionId ?? null);
+    if (missingArchive !== null) {
+      return { malformed: malformedOf(relPath, missingArchive) };
+    }
     return { plan: { clm, relPath, action: "already_canonical" } };
   }
   return {

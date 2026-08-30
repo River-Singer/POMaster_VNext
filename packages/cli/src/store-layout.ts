@@ -40,6 +40,21 @@ export const JOURNAL_RELATIVE = ".pomaster/state/journal.jsonl";
 export const RUNS_DIR_RELATIVE = ".pomaster/evidence/runs";
 export const CLAIMS_DIR_RELATIVE = ".pomaster/evidence/claims";
 
+/**
+ * .pomaster/executions/（P20 D 线地基：Execution Identity 正式档案，AGX-*.json；
+ * D 线 §1.3 路径形态，进 Git）。record 通路 --execution-id 挂载校验的磁盘事实源；
+ * 写通道唯一保留给 kernel beginExecution/endExecution（分层纪律）。
+ */
+export const EXECUTIONS_DIR_RELATIVE = ".pomaster/executions";
+
+/**
+ * .pomaster/runtime/{sessions,locks}/（P20 D 线地基：会话注册与三粒度互斥锁；
+ * D 线 §1.3 路径形态，易变态 runtime 侧车）。CLI 仅限读呈现（status/list 类投影）；
+ * 写通道唯一保留给 kernel attachSession/acquireLock 族（分层纪律）。
+ */
+export const RUNTIME_SESSIONS_DIR_RELATIVE = ".pomaster/runtime/sessions";
+export const RUNTIME_LOCKS_DIR_RELATIVE = ".pomaster/runtime/locks";
+
 /** .pomaster/objects/（CLI 最小骨架的正文目录；kernel 运行时布局另行扩展）。 */
 export const OBJECTS_DIR_RELATIVE = ".pomaster/objects";
 
@@ -90,6 +105,21 @@ export function runsDirPath(rootDir: string): string {
 
 export function claimsDirPath(rootDir: string): string {
   return join(rootDir, ...CLAIMS_DIR_RELATIVE.split("/"));
+}
+
+/** <rootDir>/.pomaster/executions（P20 Execution Identity 正式档案平面）。 */
+export function executionsDirPath(rootDir: string): string {
+  return join(rootDir, ...EXECUTIONS_DIR_RELATIVE.split("/"));
+}
+
+/** <rootDir>/.pomaster/runtime/sessions（P20 会话注册平面）。 */
+export function runtimeSessionsDirPath(rootDir: string): string {
+  return join(rootDir, ...RUNTIME_SESSIONS_DIR_RELATIVE.split("/"));
+}
+
+/** <rootDir>/.pomaster/runtime/locks（P20 互斥锁平面）。 */
+export function runtimeLocksDirPath(rootDir: string): string {
+  return join(rootDir, ...RUNTIME_LOCKS_DIR_RELATIVE.split("/"));
 }
 
 export function objectsDirPath(rootDir: string): string {

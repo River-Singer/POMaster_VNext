@@ -77,14 +77,26 @@
 
 ## 显式 deferred 登记（防静默缺口）
 
-- **并发会话锁（同一 store 多会话并发写互斥/检出语义）→ deferred 至 P20。**
-  现状：kernel 无 session/lock/execution_id 原语（P20 交付面），测试无法断言
-  不存在的机制——留白即静默缺口，故在此显式登记。
-  解锁条件：wave3-plan.md P20 出口判据落地（session/lock/execution_id 原语 +
-  CLI 命令面，其中明列「P16 遗留的 L2 并发锁测试解锁入账」）。
-  解锁后补面：双会话并发 createStore→applyTransaction 交错的互斥/阻塞/检出
-  语义 L2 集成测试（含锁持有者崩溃后的锁回收路径，可与本目录
-  write-layer-crash-injection.spec.ts 的 SIGKILL 注入手段同源复用）。
+- ~~**并发会话锁（同一 store 多会话并发写互斥/检出语义）→ deferred 至 P20。**~~
+  **已解锁入账（P20-Primitives 落面 + P20-Concurrency 重入语义补面闭合）**：
+  `tests/integration/concurrent-session-locks.spec.ts`
+  （L2 账）——双会话 attach→acquire→blocked→steal→release 全仪式 journal 事件链 +
+  unit 锁跨 change 真并行 + 锁持有者 SIGKILL 崩溃后磁盘态检出与 steal 回收
+  （`lock-holder-crash-child.mjs`，与 `write-layer-crash-injection.spec.ts` 的 SIGKILL
+  注入手段同源）+ 重入语义三面（同会话重入 acquire blocked 自见且锁文件/journal/
+  held_locks 零副作用；合法续期唯一通路 = 持有人心跳、fence 不动；合法再入 = 释放
+  仪式、fence 重置 1、旧凭据 unknown_lock 随锁消亡）。
+  解锁条件（wave3-plan.md P20 出口判据：session/lock/execution_id
+  原语）已由 kernel `session.ts` / `locks.ts` / `execution.ts` 落地满足。
+
+- **会话 held_locks 指针面的跨进程 CAS 化 → 显式 residual（P20-RedTeamFix 登记）。**
+  背景：P20 红队发现 1（steal 竞态）修复后，锁文件面（fence/holder）与 journal 面已
+  由独占认领 CAS + 原子追加保证跨进程正确（`concurrent-session-locks.spec.ts` E 段
+  双子进程同拍 steal 争用钉住：串行化成功、fence 严格单调、无双重凭据、LOCK_STOLEN
+  双条留痕）；但 `held_locks` 会话指针的联记（`addLockToSession`/`removeLockFromSession`
+  读-改-写覆写各自会话文件）在「首轮接管方的清除由末接管方代执行 × 与其自身 add 交叉」
+  时可留陈旧指针。处置取舍：`held_locks` 是可观测性登记（advisory），排他判卷权威在
+  锁文件 + fence（E 段已钉），指针面字节级 CAS 化为独立后续——不在本批四发现范围。
 
 ## 棘轮只升不降
 

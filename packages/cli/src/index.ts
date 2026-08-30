@@ -43,6 +43,20 @@
  * - ledger record/list
  *                   Exception Ledger 命令面（§49.2）：异常项入账（EXC-n；kernel
  *                   recordException 唯一写通路）+ 台账纯读呈现
+ * - session attach/refresh/list
+ *                   D 线地基①会话命令面（P20；D 线 §1.2/§3.1：注册/刷新 liveness +
+ *                   resumed_task 解析 + 清单并排呈现；A10「CLI 零 session 命令」闭合）
+ * - lock acquire/heartbeat/release/steal/list
+ *                   D 线地基②互斥锁命令面（P20；D 线 §3.3：三粒度获取/心跳/释放/
+ *                   显式接管（--reason 仪式）/清单；blocked → exit 1 LOCK_BLOCKED
+ *                   非静默成功，acquire 永不自动抢占 D2）
+ * - execution begin/end/list
+ *                   D 线地基③执行身份命令面（P20；PRD §25.4：AGX-n 登记/封口/清单
+ *                   ——record gate-run/claim --execution-id 的身份供给面）
+ * - agents status   §44.8 兑现（P20）：solo 运行时观测面（sessions/locks/executions
+ *                   聚合 + DEF-GATEKEEPER 分身漂移信号；触发=warning 非阻断）
+ * - run/handoff     §44.8 显式 deferred（P20 裁定；COMMAND_DEFERRED 提示 + P21 指路
+ *                   ——AgentRuntime 归 P21，回填记录 MECHANISM_GAP 落 docs/ 本地档）
  *
  * 分层纪律：判卷权威在 @pomaster/kernel，本包只做编排与呈现，禁止旁路写状态
  * （例外：check/exec-guard 对过期许可追加 PERMIT_EXPIRED_OBSERVED 为 kernel 契约行为）。
@@ -81,6 +95,20 @@ import {
   runResearchList,
   runResearchStart,
 } from "./research.js";
+import {
+  runExecutionBegin,
+  runExecutionEnd,
+  runExecutionList,
+  runLockAcquire,
+  runLockHeartbeat,
+  runLockList,
+  runLockRelease,
+  runLockSteal,
+  runSessionAttach,
+  runSessionList,
+  runSessionRefresh,
+} from "./runtime.js";
+import { runAgentsStatus, runHandoff, runRun } from "./agents.js";
 
 export { CLI_NAME, CLI_VERSION } from "./cli-info.js";
 export { toEnvelope } from "./envelope.js";
@@ -269,6 +297,38 @@ export {
   CLAIM_INGEST_ACTIONS,
 } from "./evidence.js";
 export type { RunIngestAction, ClaimIngestAction, EvidenceMalformed } from "./evidence.js";
+export {
+  runSessionAttach,
+  runSessionRefresh,
+  runSessionList,
+  runLockAcquire,
+  runLockHeartbeat,
+  runLockRelease,
+  runLockSteal,
+  runLockList,
+  runExecutionBegin,
+  runExecutionEnd,
+  runExecutionList,
+  LOCK_BLOCKED,
+} from "./runtime.js";
+export type {
+  SessionAttachInput,
+  SessionAttachResult,
+  SessionRefreshResult,
+  SessionListResult,
+  LockAcquireInput,
+  LockAcquireResult,
+  LockHeartbeatReleaseResult,
+  LockStealInput,
+  LockStealResult,
+  LockListResult,
+  ExecutionBeginInput,
+  ExecutionBeginResult,
+  ExecutionEndResult,
+  ExecutionListResult,
+} from "./runtime.js";
+export { runAgentsStatus, runRun, runHandoff, COMMAND_DEFERRED, GATEKEEPER_DRIFT_OBSERVED } from "./agents.js";
+export type { AgentsStatusResult, DeferredCommandResult } from "./agents.js";
 
 /** 一次命令执行的人读/机读产出记录（runCli 据此决定退出码与输出）。 */
 export interface CommandRun<TResult = unknown> {
@@ -736,6 +796,10 @@ export function createProgram(
       "subject 绑定归属声明（N5：本 run 证据属于该对象；可重复；入账时机复核——通过者随事务落 journal 注记，拒者留 warnings 不入账；缺省不传 = 未声明，信封零变化）",
       collectValues,
     )
+    .option(
+      "--execution-id <AGX-n>",
+      "执行身份透传（P20 §25.4；优先于 --from 文件信封自报；携带即校验 AGX 词形 + executions/ 档案存在性；缺省沿文件自报，皆无 = 键缺席）",
+    )
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (opts, command) => {
       const outcome = await runRecordGateRun(resolveDir(command), {
@@ -747,6 +811,7 @@ export function createProgram(
         metricDialect: opts.metricDialect as string | undefined,
         // 可重复选项不带缺省值：argv 未携带 → undefined（未声明，非显式空数组）。
         subjects: opts.subject as string[] | undefined,
+        executionId: opts.executionId as string | undefined,
       });
       record({
         command: "record gate-run",
@@ -762,11 +827,16 @@ export function createProgram(
     )
     .requiredOption("--from <file>", "claim 输入 JSON（subject_id / assertion / asserted_by / evidence_refs）")
     .option("--clm <CLM-n>", "显式指定 CLM（同号重放按 pending 字节判定）")
+    .option(
+      "--execution-id <AGX-n>",
+      "执行身份透传（P20 §25.4；优先于 --from 文件自报；携带即校验 AGX 词形 + executions/ 档案存在性；缺省沿文件自报，皆无 = 键缺席）",
+    )
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (opts, command) => {
       const outcome = await runRecordClaim(resolveDir(command), {
         from: opts.from as string,
         clm: opts.clm as string | undefined,
+        executionId: opts.executionId as string | undefined,
       });
       record({
         command: "record claim",
@@ -1131,6 +1201,310 @@ export function createProgram(
       });
       record({
         command: "ledger list",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  // —— D 线地基命令面（P20：session/lock/execution 三原语 + §44.8 agents/run/handoff） ——
+  // 判卷权威在 kernel session.ts/locks.ts/execution.ts；本面只编排呈现（§45 双输出）。
+  const session = program
+    .command("session")
+    .description(
+      "D 线地基①会话命令面（D 线 §1.2/§3.1）：注册/刷新 liveness + resumed_task 解析 + 清单并排呈现（runtime/sessions/ 侧车；首注册 journal SESSION_ATTACHED）",
+    );
+  session
+    .command("attach")
+    .description(
+      "注册/刷新会话（首注册 CREATED / 既有 REFRESHED / 顶替 REPLACED；resumed_task 回带既有任务指针——resume 白名单询问输入；首注册 journal SESSION_ATTACHED，刷新=心跳零事件）",
+    )
+    .requiredOption("--session-key <key>", "会话键（harness 前缀点分段词形，如 claude_9f3ab2c1 / 子代理 .sa1 后缀；hook 解析源 D 线 §1.2）")
+    .requiredOption("--harness <id>", "harness 标识（claude-code / codex…；禁静默匿名）")
+    .option("--task <governed-id>", "绑定/改绑当前任务指针（缺省 = 保留既有指针）")
+    .option("--ttl <seconds>", "会话 TTL（正整数秒；缺省 900——D 线例文逐字）")
+    .option("--meta <key=value>", "平台元数据（可重复；hook session_id / cwd 等）", collectValues)
+    .option("--force", "顶替授权（既有活会话且 harness 不同时必填——缺省拒绝无声顶替；stale 前任自动放行；顶替落 journal SESSION_REPLACED）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runSessionAttach(resolveDir(command), {
+        sessionKey: opts.sessionKey as string,
+        harness: opts.harness as string,
+        task: opts.task as string | undefined,
+        ttl: opts.ttl as string | undefined,
+        meta: opts.meta as string[] | undefined,
+        force: opts.force === true,
+      });
+      record({
+        command: "session attach",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+  session
+    .command("refresh")
+    .description("心跳顺手刷新 last_seen_at（未注册会话 SESSION_NOT_FOUND 显式拒绝——禁静默重建）")
+    .requiredOption("--session-key <key>", "已注册会话键")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runSessionRefresh(resolveDir(command), opts.sessionKey as string);
+      record({
+        command: "session refresh",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+  session
+    .command("list")
+    .description("会话清单：记录 + liveness 判定并排（纯读零写；空 = 显式空）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (_opts, command) => {
+      const outcome = await runSessionList(resolveDir(command));
+      record({
+        command: "session list",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  const lock = program
+    .command("lock")
+    .description(
+      "D 线地基②互斥锁命令面（D 线 §3.3）：change/task/unit 三粒度获取/心跳/释放/显式接管/清单（acquire 永不自动抢占——D2；stale 锁走 lock steal 显式接管 + reason 仪式）",
+    );
+  lock
+    .command("acquire")
+    .description(
+      "获取互斥锁（原子独占创建；blocked → exit 1 LOCK_BLOCKED 且回带持有者快照/liveness/stale_reason——非静默成功；持有人会话必须已 attach）",
+    )
+    .requiredOption("--kind <kind>", "锁粒度（D 线 §3.3.1 词轴：change | task | unit）")
+    .requiredOption("--session-key <key>", "持有人会话键（必须已 session attach）")
+    .option("--ref <ref>", "change/task 锁引用词（如 CHG-0042 / TASK.T0087；general_id 宽松词形）")
+    .option("--object-key <key>", "unit 锁目标（Governed Code Unit key；文件名取 sha256 前 6 hex——S6 机器键）")
+    .option("--execution-id <AGX-n>", "持有人执行身份（携带即校验词形 + 档案存在性；S1 禁自造身份）")
+    .option("--pid <n>", "持有人进程号（stale 判定第二信号：holder.pid 不存在 → stale）")
+    .option("--scope-change <ref>", "关联 change 锚")
+    .option("--scope-task <ref>", "关联 task 锚")
+    .option("--ttl <seconds>", "锁 TTL（正整数秒；缺省 900——D 线例文逐字）")
+    .option("--purpose <text>", "人类散文目的位（机器不解析判卷）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runLockAcquire(resolveDir(command), {
+        kind: opts.kind as string,
+        ref: opts.ref as string | undefined,
+        objectKey: opts.objectKey as string | undefined,
+        sessionKey: opts.sessionKey as string,
+        executionId: opts.executionId as string | undefined,
+        pid: opts.pid as string | undefined,
+        scopeChange: opts.scopeChange as string | undefined,
+        scopeTask: opts.scopeTask as string | undefined,
+        ttl: opts.ttl as string | undefined,
+        purpose: opts.purpose as string | undefined,
+      });
+      record({
+        command: "lock acquire",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+  lock
+    .command("heartbeat")
+    .description("锁心跳：持有人刷新 heartbeat_at（非持有人 LOCK_NOT_HELD；心跳零事件）")
+    .requiredOption("--lock <lock-id>", "锁 id（acquire 产出）")
+    .requiredOption("--session-key <key>", "持有人会话键")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runLockHeartbeat(
+        resolveDir(command),
+        opts.lock as string,
+        opts.sessionKey as string,
+      );
+      record({
+        command: "lock heartbeat",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+  lock
+    .command("release")
+    .description("释放锁（仅持有人；锁文件删除 + journal LOCK_RELEASED + 会话 held_locks 同步）")
+    .requiredOption("--lock <lock-id>", "锁 id（acquire 产出）")
+    .requiredOption("--session-key <key>", "持有人会话键")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runLockRelease(
+        resolveDir(command),
+        opts.lock as string,
+        opts.sessionKey as string,
+      );
+      record({
+        command: "lock release",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+  lock
+    .command("steal")
+    .description(
+      "显式接管锁（D 线 §3.3.1 抢占仪式逐字：--reason 非空必填；fence 单调 +1；journal LOCK_STOLEN；原持有人 execution 封口 interrupted）",
+    )
+    .argument("<lock-id>", "锁 id（listLocks 呈现的分母）")
+    .requiredOption("--session-key <key>", "接管方会话键（必须已 session attach）")
+    .requiredOption("--reason <text>", "接管理由（非空必填——偷锁不可耻，也不可无声，D2）")
+    .option("--execution-id <AGX-n>", "接管方执行身份（携带即校验）")
+    .option("--pid <n>", "接管方进程号")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (lockId: string, opts, command) => {
+      const outcome = await runLockSteal(resolveDir(command), {
+        lockId,
+        sessionKey: opts.sessionKey as string,
+        reason: opts.reason as string,
+        executionId: opts.executionId as string | undefined,
+        pid: opts.pid as string | undefined,
+      });
+      record({
+        command: "lock steal",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+  lock
+    .command("list")
+    .description("锁清单：记录 + liveness 判定并排（纯读零写；空 = 显式空）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (_opts, command) => {
+      const outcome = await runLockList(resolveDir(command));
+      record({
+        command: "lock list",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  const execution = program
+    .command("execution")
+    .description(
+      "D 线地基③执行身份命令面（PRD §25.4）：AGX-n 登记/封口/清单——record gate-run/claim --execution-id 的身份供给面（一次真实执行一份独立身份）",
+    );
+  execution
+    .command("begin")
+    .description(
+      "登记执行身份（AGX-n 缺省分配 = 现有最大序号 +1；词表三轴 role/runtime/identity_kind 闭包；session_key 在场须已 attach 且与 harness 成对；started_at 由本命令以基础设施墙钟盖章）",
+    )
+    .requiredOption("--role <role>", "执行角色（P0 词轴六值：owner/orchestrator/research/implementer/qa/script）")
+    .requiredOption("--runtime <runtime>", "执行载体（D 线 §2.1：claude-code/codex/script）")
+    .requiredOption("--identity-kind <kind>", "身份种类（D 线 §2.1：interactive/subagent/script）")
+    .option("--execution-id <AGX-n>", "显式指定（词形校验；缺省分配；同号已存在 EXECUTION_ALREADY_EXISTS）")
+    .option("--session-key <key>", "绑定会话（须已 attach；与 --harness 成对）")
+    .option("--harness <id>", "harness 标识（与 --session-key 成对）")
+    .option("--task-id <ref>", "关联 task 锚")
+    .option("--change-id <ref>", "关联 change 锚")
+    .option("--permit-id <PERMIT.*>", "关联 permit（可重复；research 子代理合法空缺）", collectValues)
+    .option("--policy-lock <ref>", "Policy 版本锚（catalog-lock@sha256:...；人不算哈希，D24）")
+    .option("--model <model>", "模型标识（宁缺毋猜——仅 runtime adapter 可靠提供时记录）")
+    .option("--notes <text>", "人类散文注记")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runExecutionBegin(resolveDir(command), {
+        role: opts.role as string,
+        runtime: opts.runtime as string,
+        identityKind: opts.identityKind as string,
+        executionId: opts.executionId as string | undefined,
+        sessionKey: opts.sessionKey as string | undefined,
+        harness: opts.harness as string | undefined,
+        taskId: opts.taskId as string | undefined,
+        changeId: opts.changeId as string | undefined,
+        permitIds: opts.permitId as string[] | undefined,
+        policyLock: opts.policyLock as string | undefined,
+        model: opts.model as string | undefined,
+        notes: opts.notes as string | undefined,
+      });
+      record({
+        command: "execution begin",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+  execution
+    .command("end")
+    .description("封口执行身份（ended_at 盖章 + journal EXECUTION_ENDED；重复封口 EXECUTION_ALREADY_ENDED 显式拒绝）")
+    .argument("<execution-id>", "执行身份（AGX-<年份>-<序号>）")
+    .option("--note <text>", "封口注记（替换既有 notes）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (executionId: string, opts, command) => {
+      const outcome = await runExecutionEnd(
+        resolveDir(command),
+        executionId,
+        opts.note as string | undefined,
+      );
+      record({
+        command: "execution end",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+  execution
+    .command("list")
+    .description("执行身份档案清单（纯读零写；空 = 显式空；呈现两态 active/ended——interrupted 状态归 journal 面）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (_opts, command) => {
+      const outcome = await runExecutionList(resolveDir(command));
+      record({
+        command: "execution list",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  // —— §44.8 Agent 命令面（P20 裁定：agents status 兑现观测面；run/handoff 显式 deferred） ——
+  const agents = program
+    .command("agents")
+    .description(
+      "§44.8 Agent 命令面（P20）：status = solo 运行时观测面（sessions/locks/executions 聚合 + DEF-GATEKEEPER 分身漂移信号；触发 = warning 非阻断）；run/handoff 显式 deferred 至 P21",
+    );
+  agents
+    .command("status")
+    .description(
+      "agents 运行时观测（§44.8 兑现=P20 D 线地基聚合）：会话 liveness / 锁 liveness / 执行身份档案 + DEF-GATEKEEPER 观测（同 execution 既提 proposal 又 ALLOW ≥N 次/窗——D 线 §5；触发处置呈报 Owner）",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (_opts, command) => {
+      const outcome = await runAgentsStatus(resolveDir(command));
+      record({
+        command: "agents status",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  program
+    .command("run")
+    .description(
+      "§44.8 托管编排——显式 deferred（P20 裁定：AgentRuntime 归 P21；COMMAND_DEFERRED 提示非静默缺席；P0 solo 直连由当前 Harness 主 Agent 直接执行，PRD §25.2 内生依据）",
+    )
+    .argument("<task>", "任务对象 governed id")
+    .option("--role <role>", "执行角色（P1 Capability Pool 词汇层同 deferred）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (task: string, opts, command) => {
+      const outcome = runRun(resolveDir(command), task, opts.role as string | undefined);
+      record({
+        command: "run",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  program
+    .command("handoff")
+    .description(
+      "§44.8 会话交接——显式 deferred（P20 裁定：Handoff Protocol 执行面归 P21 Runtime Adapter；COMMAND_DEFERRED 提示非静默缺席）",
+    )
+    .argument("<task>", "任务对象 governed id")
+    .requiredOption("--to <role>", "交接目标角色（PRD §44.8 例文 --to cleaner）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (task: string, opts, command) => {
+      const outcome = runHandoff(resolveDir(command), task, opts.to as string);
+      record({
+        command: "handoff",
         outcome,
         asJson: command.opts().json === true,
       });

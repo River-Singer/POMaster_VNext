@@ -84,6 +84,21 @@ export type GovernanceErrorCode =
   | "GATE_COUNTS_INVALID"
   /** Q3 fixture 隔离违规：subjectId 前缀 TEST.* ⇔ isFixture=true 双向强校验失败。 */
   | "FIXTURE_ISOLATION_VIOLATION"
+  /** 引用的会话未 attach（runtime/sessions/<session_key>.json 缺失；锁/执行身份的会话锚）。 */
+  | "SESSION_NOT_FOUND"
+  /** attach 既有活会话且 harness 不同（会话载体顶替）但未显式 force——顶替不可无声（P20 红队发现 3）。 */
+  | "SESSION_REPLACE_REQUIRED"
+  /** 引用的锁不存在（runtime/locks/<lock_id>；锁状态显式可见非隐式）。 */
+  | "LOCK_NOT_FOUND"
+  /** 锁操作主体非当前持有人（释放/心跳非持有人 = 显式拒绝，禁静默）。 */
+  | "LOCK_NOT_HELD"
+  /** 引用的执行身份未登记（executions/AGX-*.json 缺失——S1：身份是基础设施印的，
+   *  证据挂载到未登记身份 = 自造身份，fail-closed）。 */
+  | "EXECUTION_NOT_FOUND"
+  /** beginExecution 重复登记同号执行身份（AGX-n 主键唯一）。 */
+  | "EXECUTION_ALREADY_EXISTS"
+  /** endExecution 目标已封口（ended_at 在场；重复封口 = 调用方缺陷，显式拒绝）。 */
+  | "EXECUTION_ALREADY_ENDED"
   /** 单机本地盘假设破裂（目录不可创建 / 原子替换失败 / runtime 侧车不可读），禁静默。 */
   | "ENVIRONMENT_ERROR";
 

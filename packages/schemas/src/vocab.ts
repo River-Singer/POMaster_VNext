@@ -502,3 +502,64 @@ export const EXCEPTION_CLASSIFICATION_VALUES = [
 ] as const;
 export type ExceptionClassificationValue =
   (typeof EXCEPTION_CLASSIFICATION_VALUES)[number];
+
+// ============================================================
+// P20 D 线地基词轴（x-vocab-source: PRD v0.4 §25.4 Agent Execution Identity +
+// research/design-thread-D-solo-form.md §1.2/§1.3/§2.1/§3.3.1/§4 原文词形）。
+// TODO(vocab-pr)：Execution Identity / session / lock 是 D 线自有 P0 状态面
+// （wave3-plan.md P20 范围锚「D 线 §7 ①②」），与既有对象轴 state_axes 正交、
+// 值域不相交；下列词轴全部 absent_in_vocab_lock__pending_vocab_pr，收编后以
+// vocab-lock 为准逐值镜像。AGX-n 执行编号与 session_key / lock_id 同 GRN-n/
+// CLM-n/EXC-n 先例：状态/证据面通路编号词形，非 governed 前缀，不入
+// id_namespace 闭包。
+// ============================================================
+
+/**
+ * 执行载体（D 线 §2.1 必填枚举 逐字：`claude-code` / `codex` / `script`——区分执行
+ * 载体；后台脚本在 audit 中单列）。PRD §25.4 例文 runtime: claude-code 同源。
+ */
+export const EXECUTION_RUNTIME_VALUES = [
+  "claude-code",
+  "codex",
+  "script",
+] as const;
+export type ExecutionRuntimeValue = (typeof EXECUTION_RUNTIME_VALUES)[number];
+
+/**
+ * 身份种类（D 线 §2.1 新增必填 逐字：`interactive` / `subagent` / `script`——
+ * 后台脚本文凭上是二等公民，audit 里要能单独过滤）。
+ */
+export const EXECUTION_IDENTITY_KIND_VALUES = [
+  "interactive",
+  "subagent",
+  "script",
+] as const;
+export type ExecutionIdentityKindValue =
+  (typeof EXECUTION_IDENTITY_KIND_VALUES)[number];
+
+/**
+ * P0 执行角色标签六值（D 线 §4 roles_vocabulary_p0 逐字；配置可扩展，非内置人格）：
+ * research 是唯一内置 sub-role（read-only contract）；PRD §25.3 十二角色（SUPervisor/
+ * IMPLEMENTER…大写词形）属 P1 Capability Pool 词汇层（wave3-plan.md P21 范围锚），
+ * 与本轴分层不相交。PRD §25.4 例文 role: IMPLEMENTER 为 yaml 示意，词形以 D 线
+ * 词汇表为准。
+ */
+export const EXECUTION_ROLE_VALUES = [
+  "owner",
+  "orchestrator",
+  "research",
+  "implementer",
+  "qa",
+  "script",
+] as const;
+export type ExecutionRoleValue = (typeof EXECUTION_ROLE_VALUES)[number];
+
+/**
+ * 锁三粒度（D 线 §3.3.1「锁的三粒度」表 逐字：change 锁=单驱动者强排他 /
+ * task 锁=多读单写意图登记 / unit 锁=Governed Code Unit 写写互斥读写共享；
+ * 锁文件名词形 `change-<CHG-ID>.lock` / `task-<TASK-ID>.lock` / `unit-<key-hash>.lock`）。
+ * D 线 §3.3.1 例文 lock_type: "unit_write" 为 unit 锁的原文类型词形（change/task
+ * 锁该字段原文未给词形，留 null 不发明）。
+ */
+export const LOCK_KIND_VALUES = ["change", "task", "unit"] as const;
+export type LockKindValue = (typeof LOCK_KIND_VALUES)[number];

@@ -251,6 +251,7 @@ export interface CreateStoreOptions {
  * - truth/objects/<kind-slug>/*.json（正文层，02；一对象一文件，A1）
  * - evidence/{runs,claims,blobs}/（运行产物平面，A8；blobs 内容寻址）
  * - runtime/producers/heartbeat.jsonl（心跳侧车，不进 hash）
+ * - runtime/sessions|locks + executions/（P20 D 线地基：会话/锁/执行身份，§13）
  * kernel 内部补充状态（实现 detail）：state/authority.json、state/permits.json、
  * state/journal.jsonl（事件 journal，不进 hash）。
  */
@@ -330,6 +331,11 @@ export interface ClaimRecordInput {
   readonly assertedBy: Actor;
   /** blob / GRN-* / 治理对象 引用。允许先立后证：空数组合法，但 verification 不得为 VERIFIED。 */
   readonly evidenceRefs: readonly string[];
+  /**
+   * 执行身份透传（P20 §25.4；可选——缺席 = 记录无 execution_id 键，存量字节兼容；
+   * 携带即 kernel 侧强制校验：AGX 词形 + executions/ 档案存在性）。
+   */
+  readonly executionId?: string;
   readonly notesMd?: string | null;
 }
 
@@ -338,6 +344,8 @@ export interface GateRunRecordInput {
   readonly grn: string; // GRN-[0-9]+
   readonly result: GateResult;
   readonly trigger: RunTriggerValue;
+  /** 执行身份透传（P20 §25.4；可选——校验语义同 ClaimRecordInput.executionId）。 */
+  readonly executionId?: string;
 }
 
 export type TransactionOp =
@@ -711,6 +719,98 @@ export type {
   ExceptionLedgerFile,
   ExceptionRecordInput,
 } from "./ledger.js";
+
+// ============================================================
+// D 线地基：Sessions / Locks / Execution Identity（P20 · PRD §25.3/§25.4 + D 线 §1/§2/§3.3）
+// ============================================================
+// 语义边界（docs/kernel-api.md §13）：三原语是 D 线自身 P0 清单①②的 Task 层并发
+// 地基（R2 重分类：P0=地基，P1=池——DEF-SUP 严格留 P1）。会话/锁住 runtime 侧车
+// （易变态，墙钟合法位，liveness 判定显式可见非隐式）；执行身份住 executions/ 正式
+// 档案（进 Git）。事件留痕统一走 state/journal.jsonl（A4 seq 采样，无墙钟）。
+export {
+  attachSession,
+  refreshSession,
+  readSessionRecord,
+  listSessionRecords,
+  judgeSessionLiveness,
+  sessionRecordPath,
+} from "./session.js";
+export {
+  SESSIONS_RELATIVE,
+  SESSION_KEY_PATTERN,
+  SESSION_DEFAULT_TTL_SECONDS,
+} from "./session.js";
+export type {
+  SessionRecord,
+  SessionAttachInput,
+  SessionAttachOutcome,
+  SessionLivenessRow,
+} from "./session.js";
+export {
+  acquireLock,
+  heartbeatLock,
+  releaseLock,
+  stealLock,
+  readLockRecord,
+  listLocks,
+  checkLockFence,
+  judgeLockStaleness,
+  lockRecordPath,
+} from "./locks.js";
+export {
+  LOCKS_RELATIVE,
+  LOCK_DEFAULT_TTL_SECONDS,
+  UNIT_LOCK_TYPE,
+} from "./locks.js";
+export type {
+  LockRecord,
+  LockHolder,
+  LockAcquireInput,
+  LockAcquireOutcome,
+  LockStaleReason,
+  LockLivenessRow,
+  LockStealInput,
+} from "./locks.js";
+export type { LockKindValue } from "@pomaster/schemas";
+export {
+  beginExecution,
+  endExecution,
+  readExecutionRecordById,
+  listExecutionRecords,
+  allocateExecutionId,
+  assertExecutionAttachable,
+  isExecutionRef,
+  executionRecordPath,
+} from "./execution.js";
+export {
+  EXECUTIONS_RELATIVE,
+  EXECUTION_ID_PATTERN,
+  EXECUTION_SCHEMA,
+} from "./execution.js";
+export type {
+  ExecutionRecord,
+  ExecutionBeginInput,
+  ExecutionEndInput,
+} from "./execution.js";
+
+// DEF-GATEKEEPER 触发观测器（P20-Commands；D 线 §5「同一 execution 既提 proposal
+// 又 ALLOW ≥N 次/周」变为可测——对位裁定与窗锚语义见 gatekeeper.ts 头注）。
+export { detectGatekeeperDrift } from "./gatekeeper.js";
+export {
+  GATEKEEPER_THRESHOLD_DEFAULT,
+  GATEKEEPER_WINDOW_DAYS_DEFAULT,
+} from "./gatekeeper.js";
+export type {
+  GatekeeperDriftInput,
+  GatekeeperDriftReport,
+  GatekeeperDriftRow,
+} from "./gatekeeper.js";
+
+// pathsOf / StorePaths 公共化（P20-Commands）：清单函数（listSessionRecords /
+// listLocks / listExecutionRecords / detectGatekeeperDrift）以 StorePaths 为参，
+// 嵌入方与 CLI 需要从 Store 句柄取得路径集（此前仅 kernel 内部与测试相对路径可达）。
+export { pathsOf } from "./paths.js";
+export type { StorePaths } from "./paths.js";
 
 // ============================================================
 // Engineering Catalog 读取器（P14：catalog→运行时联结的唯一读取面）

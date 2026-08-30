@@ -273,6 +273,12 @@
           "description": "判别字段（root oneOf 分流）"
         },
         "clm": { "$ref": "#/definitions/clm_id" },
+        "execution_id": {
+          "type": "string",
+          "pattern": "^AGX-[0-9]{4}-[0-9]+$",
+          "x-vocab-source": "PRD v0.4 §25.4 Agent Execution Identity（例文词形 AGX-2026-00182）；P20 D 线地基",
+          "description": "执行身份引用（可选——存量兼容：缺席=键缺席不伪造；携带即 kernel 侧强制校验 AGX 词形 + executions/AGX-*.json 档案存在性，S1 禁自造身份）。audit 由此回连「哪个 Agent 在什么 Policy/Permit 下做了哪次变化」（§25.4）；AGX-n 为证据面通路编号词形，非 governed 前缀"
+        },
         "subject": {
           "type": "object",
           "additionalProperties": false,
@@ -378,6 +384,12 @@
           "description": "墙钟时间 = 证据平面事实非身份；不参与内容 digest"
         },
         "trigger": { "$ref": "#/definitions/run_trigger" },
+        "execution_id": {
+          "type": "string",
+          "pattern": "^AGX-[0-9]{4}-[0-9]+$",
+          "x-vocab-source": "PRD v0.4 §25.4 Agent Execution Identity（例文词形 AGX-2026-00182）；P20 D 线地基",
+          "description": "执行身份引用（可选——存量兼容：缺席=键缺席不伪造；携带即 kernel 侧强制校验 AGX 词形 + executions/AGX-*.json 档案存在性，S1 禁自造身份）。audit 由此回连「哪个 Agent 在什么 Policy/Permit 下做了哪次变化」（§25.4）；AGX-n 为证据面通路编号词形，非 governed 前缀"
+        },
         "tool_snapshot": {
           "type": "object",
           "additionalProperties": false,

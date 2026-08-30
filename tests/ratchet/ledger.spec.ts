@@ -158,9 +158,15 @@ describe("P15 分层账本契约（tests/ratchet/floor.json · ledger）", () =>
     }
   });
 
-  it("账本内部相容：四域 floor 之和 >= L1 层 floor（战略 410>=400，防 L1 被迫靠域外凑数）；minTests >= 五层 floor 之和", () => {
+  it("账本内部相容：四域 floor 之和 >= L1 战略下限（400，防四域被架空——战略承诺面四域必须自足）；minTests >= 五层 floor 之和", () => {
+    // 语义注记（P20 修复；原断言对象误写为 L1 棘轮 floor）：L1 层 floor 随「全部 L1
+    // 实测」棘轮（P16-P19 起含 doctor/catalog/eval/adapter 契约面等战略四域之外的
+    // 真实判卷面），而四域轴是测试战略的承诺下限面（150/120/80/60）——tests/README
+    // 「禁止凑数填充」明令禁止把非战略判卷面强行归入四域凑和，故本不变量锚定
+    // 战略下限（L1=400），保证四域自足、不被域外测试架空；棘轮防塌方由
+    // ratchet.mjs 的 actual>=floor 逐类强制（两道闸互补，见本文件头注）。
     const domainSum = DOMAIN_IDS.reduce((s, id) => s + (ledger.domains[id]?.floor ?? 0), 0);
-    expect(domainSum).toBeGreaterThanOrEqual(ledger.layers.L1?.floor ?? Number.MAX_SAFE_INTEGER);
+    expect(domainSum).toBeGreaterThanOrEqual(STRATEGY_LAYER_FLOORS.L1);
     const layerSum = LAYER_IDS.reduce((s, id) => s + (ledger.layers[id]?.floor ?? 0), 0);
     expect(floorRaw.minTests, "总 floor 不得低于各层 floor 之和").toBeGreaterThanOrEqual(layerSum);
   });

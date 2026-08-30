@@ -53,6 +53,7 @@ import { KERNEL_TOOL, buildStorePaths, pathsOf, readRawIndex, registerStore, typ
 import { asGovernedId, normalizedKey } from "./id.js";
 import { validateTransition } from "./transitions.js";
 import { loadAuthorityMap } from "./permits.js";
+import { assertExecutionAttachable } from "./execution.js";
 import { gateResultToSnake } from "./gate-result.js";
 import type {
   AxesBlock,
@@ -74,6 +75,30 @@ type UnknownRecord = Record<string, unknown>;
 type RawRow = Record<string, unknown>;
 
 const NEW_FILE = null;
+
+/**
+ * record 类 op 的 execution_id 挂载校验（P20 执行身份贯穿证据链的 kernel 侧闸门；
+ * 词形 + executions/ 档案存在性双检——S1：身份是基础设施印的，自造身份 fail-closed）。
+ * 兼容裁定（decisions 落档，测试见 kernel/execution.spec.ts 与 cli/record-execution-threading）：
+ * 07 证据记录的 execution_id 是**可选**字段（存量记录零迁移、canonical 幂等不破）；
+ * record 通路**携带即强制校验**、不携带不伪造（缺席=键缺席）；身份盖章编排
+ * （任意命令自动 begin + 自动随附）归 P21 Runtime Adapter 面。
+ */
+function assertExecutionIdClaimed(paths: StorePaths, executionId: string, context: string): void {
+  try {
+    assertExecutionAttachable(paths, executionId);
+  } catch (error) {
+    if (error instanceof GovernanceError) {
+      throw new GovernanceError(
+        error.code,
+        `${context}：${error.message}`,
+        error.hint,
+        { ...error.details, context },
+      );
+    }
+    throw error;
+  }
+}
 
 // ajv 8 在 NodeNext 下的类型把模块解析为 CJS export= 形态；运行时 default 即构造器
 // （module.exports.default = Ajv），此处显式解包（ajv 允许依赖清单内）。
@@ -118,6 +143,9 @@ export async function createStore(
     paths.claimsDir,
     paths.blobsDir,
     paths.runtimeDir,
+    paths.sessionsDir,
+    paths.locksDir,
+    paths.executionsDir,
   ]) {
     ensureDir(dir);
   }
@@ -154,6 +182,11 @@ function ensureSidecars(paths: StorePaths): void {
   const heartbeat = fileIfMissing(paths.heartbeatPath, "");
   if (heartbeat.original === null) writes.push(heartbeat);
   if (writes.length > 0) executeWrites(writes);
+  // P20 D 线地基平面目录补齐（runtime/sessions、runtime/locks、executions；
+  // 存量 store 升级路径——仅缺失才建，不产生治理事实）。
+  ensureDir(paths.sessionsDir);
+  ensureDir(paths.locksDir);
+  ensureDir(paths.executionsDir);
 }
 
 function skeletonIndex(): UnknownRecord {
@@ -1411,6 +1444,11 @@ function applyRecordClaim(
   if (typeof claim.clm !== "string" || !/^CLM-[0-9]+$/.test(claim.clm)) {
     throw new GovernanceError("SCHEMA_INVALID", `clm 词形非法（须 CLM-[0-9]+）：${String(claim.clm)}`, "claim 记录 id 词形（evidence/claims/CLM-*.json）", { clm: claim.clm });
   }
+  // execution_id 透传（P20：执行身份贯穿证据链；携带即校验——词形 + 档案存在性，
+  // S1：身份是基础设施印的，自造身份 fail-closed。缺席 = 键缺席，与存量字节兼容）。
+  if (claim.executionId !== undefined) {
+    assertExecutionIdClaimed(paths, claim.executionId, "record_claim.claim.executionId");
+  }
   const subjectId = parseIdOrWrap(claim.subjectId as string, "record_claim.claim.subjectId");
   const objects = workspace.working.objects as RawRow[];
   const row = objects.find((candidate) => candidate.id === subjectId);
@@ -1444,6 +1482,7 @@ function applyRecordClaim(
   const record: UnknownRecord = {
     record_type: "claim",
     clm: claim.clm,
+    ...(claim.executionId !== undefined ? { execution_id: claim.executionId } : {}),
     subject: { object_id: subjectId },
     is_fixture: isFixture,
     assertion: claim.assertion,
@@ -1486,6 +1525,11 @@ function applyRecordGateRun(
   if (result.grn !== run.grn) {
     throw new GovernanceError("GRN_INVALID", `record_gate_run.grn(${run.grn}) 与 result.grn(${result.grn}) 不一致`, "07 run_record：inline 模式下两者须一致（执行层一致性校验）", { grn: run.grn });
   }
+  // execution_id 透传（P20：执行身份贯穿证据链；携带即校验，缺席 = 键缺席存量兼容——
+  // 裁定详见 execution.ts 头注「可选字段 + 携带即强制校验」）。
+  if (run.executionId !== undefined) {
+    assertExecutionIdClaimed(paths, run.executionId, "record_gate_run.run.executionId");
+  }
   assertVocabValue(result.verdict, VERDICT_VALUES, "result.verdict", `七态：${VERDICT_VALUES.join(" / ")}`);
   assertVocabValue(run.trigger, RUN_TRIGGER_VALUES, "run.trigger", `run_trigger 词表：${RUN_TRIGGER_VALUES.join(" / ")}`);
   // Q3 双向强校验（fixture 隔离）。
@@ -1503,6 +1547,7 @@ function applyRecordGateRun(
     grn: run.grn,
     ran_at_seq: result.ranAtSeq,
     trigger: { type: run.trigger },
+    ...(run.executionId !== undefined ? { execution_id: run.executionId } : {}),
     gate_result: { mode: "inline", result: gateResultToSnake(result) },
   };
   workspace.files.set(

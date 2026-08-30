@@ -39,7 +39,7 @@ import {
   planRunFile,
 } from "./evidence.js";
 import { governanceErrorToCliError, requireInitialized } from "./permit.js";
-import { claimsDirPath, runsDirPath } from "./store-layout.js";
+import { claimsDirPath, executionsDirPath, runsDirPath } from "./store-layout.js";
 
 // ============================================================
 // 结果形态（snake_case 对齐设计 §4.3 字段级契约）
@@ -228,8 +228,9 @@ export async function runCompact(
   if (input.noIngest !== true) {
     const runsDir = runsDirPath(rootDir);
     const claimsDir = claimsDirPath(rootDir);
+    const executionsDir = executionsDirPath(rootDir);
     for (const fileName of listPlaneFiles(runsDir)) {
-      const planned = planRunFile({ fileName, runsDir, sampledRanAtSeq: curSeq });
+      const planned = planRunFile({ fileName, runsDir, executionsDir, sampledRanAtSeq: curSeq });
       if ("malformed" in planned) {
         malformed.push(planned.malformed);
         continue;
@@ -242,7 +243,7 @@ export async function runCompact(
       if (planned.plan.op !== undefined) ingestOps.push(planned.plan.op);
     }
     for (const fileName of listPlaneFiles(claimsDir)) {
-      const planned = planClaimFile({ fileName, claimsDir, nextSeq: curSeq + 1 });
+      const planned = planClaimFile({ fileName, claimsDir, executionsDir, nextSeq: curSeq + 1 });
       if ("malformed" in planned) {
         malformed.push(planned.malformed);
         continue;
