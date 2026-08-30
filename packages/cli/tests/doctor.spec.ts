@@ -41,6 +41,9 @@ function readyGauntletProbes(): GauntletToolProbe[] {
       "pytest_cov",
       "mutmut",
       "stryker",
+      "gitleaks",
+      "pip_audit",
+      "semgrep",
     ] as const
   ).map((probe) => ({
     probe,
@@ -216,11 +219,11 @@ describe("doctor 四态矩阵", () => {
     expect(kernel?.detail).toContain("os.replace unsupported");
   });
 
-  it("P22/P23/P24 工具探针：缺省探测面在空目录 → 七工具显式缺席 + 安装路标 + ok=false", async () => {
+  it("P22/P23/P24/P25 工具探针：缺省探测面在空目录 → 十工具显式缺席 + 安装路标 + ok=false", async () => {
     // 临时目录无 .importlinter / setup.cfg / pyproject.toml / package.json 等——
     // 工具按配置线索缺席（c8/stryker 探测读 package.json 声明；mutmut 读 pyproject/
-    // setup.cfg）；oasdiff 按 PATH 线索缺席（测试进程 PATH 上无 oasdiff 等运行面；
-    // 若宿主真装了则显式容忍 READY——诚实缺席与真实在位都不静默）。
+    // setup.cfg）；oasdiff / gitleaks / pip-audit / semgrep 按 PATH 线索缺席（测试进程
+    // PATH 上无这些运行面；若宿主真装了则显式容忍 READY——诚实缺席与真实在位都不静默）。
     await runInit(dir);
     const outcome = await runDoctor(dir);
     for (const name of [
@@ -231,6 +234,9 @@ describe("doctor 四态矩阵", () => {
       "pytest_cov",
       "mutmut",
       "stryker",
+      "gitleaks",
+      "pip_audit",
+      "semgrep",
     ]) {
       const probe = outcome.result.probes.find((p) => p.probe === name);
       expect(probe, name).toBeDefined();

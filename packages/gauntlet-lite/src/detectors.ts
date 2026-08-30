@@ -9,6 +9,9 @@
  *                          → pytest-cov 先行，JaCoCo 属 Java 第二波显式 deferred）
  * - mutmut / StrykerJS → MUTATION 门禁双腿（P24 / 随版计划 Batch 2 B2-3/B2-4；mutmut
  *                          能力落差如实标注，PIT/Java 第二波显式 deferred）
+ * - gitleaks / pip-audit / semgrep → SECURITY 门禁三腿（P25 / 随版计划 Batch 2 B2-5
+ *                          「三个独立 adapter，禁止合并为单一 "security ok" 绿灯」；
+ *                          PATH 线索，oasdiff 同款 CLI 无配置文件形态）
  * - chrome-devtools MCP → BROWSER 交互式腿（D22；.mcp.json 线索，未配置 → MISSING_CONFIGURATION 显式缺席 + 一键引导）
  *
  * 词表纪律：DetectionStatus 四态词形冻结于 adapter-types.ts（TODO(vocab-pr)），禁止就地扩值。
@@ -600,6 +603,98 @@ export function detectStryker(
     detectedVersion,
     evidence: `package.json 命中 @stryker-mutator/core = ${declared}`,
   };
+}
+
+// ============================================================
+// SECURITY 门禁三腿（P25 / 随版计划 Batch 2 B2-5；PATH 线索，oasdiff 同款形态）
+// ============================================================
+
+// 三腿探测说明（三探测函数刻意彼此独立、不共享中间态——B2-5「三个独立 adapter」
+// 纪律在探测面的同构落实；三腿探测结果互不输入）：
+// - gitleaks（密钥扫描腿，PRD §26 secret 轴）：PATH 命中 gitleaks 可执行体 → READY；
+//   版本不可离线探测（detectedVersion=null，oasdiff 同款），run 期 `gitleaks version`
+//   实测对账；
+// - pip-audit（依赖漏洞腿，PRD §26 dependency risk 轴）：PATH 命中 pip-audit → READY；
+//   run 期 `pip-audit --version` 实测对账；
+// - semgrep（静态分析腿，PRD §26 unsafe eval / XSS / CSRF 策略工具面）：PATH 命中
+//   semgrep → READY（规则配置在位性归项目 semgrep 配置——探测面不冒充已验证，
+//   判卷分母=配置所载规则，scopeNote 如实标注）；run 期 `semgrep --version` 实测对账。
+
+function detectSecurityPathTool(
+  executable: string,
+  tool: string,
+  reasonText: string,
+  installHint: string,
+  facts: DetectorFacts,
+  options: DetectorOptions = {},
+): DetectionResult {
+  if (options.requiredByProfile === false) {
+    return {
+      status: "NOT_REQUIRED_BY_PROFILE",
+      tool,
+      reason: `当前 Governance Profile 未要求 SECURITY 门禁${reasonText}（合法缺席，显式计数而非静默跳过）`,
+    };
+  }
+  const hit = findExecutableOnPath(executable, facts);
+  if (hit !== null) {
+    return {
+      status: "READY",
+      tool,
+      detectedVersion: null,
+      evidence: `PATH 命中: ${hit}`,
+    };
+  }
+  return {
+    status: "NOT_INSTALLED",
+    tool,
+    reason: `PATH 上未找到 ${executable} 可执行文件（SECURITY 门禁${reasonText}；P25 三独立 adapter——本腿缺席不影响其余两腿判卷）`,
+    installHint,
+  };
+}
+
+/** gitleaks 探测（P25 SECURITY 门禁密钥扫描腿，B2-5；oasdiff 同款 PATH 线索形态）。 */
+export function detectGitleaks(
+  facts: DetectorFacts,
+  options: DetectorOptions = {},
+): DetectionResult {
+  return detectSecurityPathTool(
+    "gitleaks",
+    "gitleaks",
+    "密钥扫描腿（PRD §26 secret 轴）",
+    "安装建议：brew install gitleaks，或 go install github.com/gitleaks/gitleaks/v8@latest，或从 github.com/gitleaks/gitleaks/releases 下载二进制；安装后重跑 pomaster doctor 复核（SECURITY 门禁密钥扫描腿，P25）",
+    facts,
+    options,
+  );
+}
+
+/** pip-audit 探测（P25 SECURITY 门禁 Python 依赖漏洞腿，B2-5；oasdiff 同款 PATH 线索形态）。 */
+export function detectPipAudit(
+  facts: DetectorFacts,
+  options: DetectorOptions = {},
+): DetectionResult {
+  return detectSecurityPathTool(
+    "pip-audit",
+    "pip-audit",
+    "Python 依赖漏洞腿（PRD §26 dependency risk 轴）",
+    "安装建议：pip install pip-audit；安装后重跑 pomaster doctor 复核（SECURITY 门禁 Python 依赖漏洞腿，P25）",
+    facts,
+    options,
+  );
+}
+
+/** semgrep 探测（P25 SECURITY 门禁静态分析腿，B2-5；规则配置在位性归项目配置——探测面不冒充已验证）。 */
+export function detectSemgrep(
+  facts: DetectorFacts,
+  options: DetectorOptions = {},
+): DetectionResult {
+  return detectSecurityPathTool(
+    "semgrep",
+    "semgrep",
+    "静态分析腿（PRD §26 unsafe eval / XSS / CSRF 策略轴的工具面）",
+    "安装建议：pip install semgrep；并在项目内落 semgrep 规则配置（判卷分母=配置所载规则，配置未覆盖的规则面不在本腿判卷内）；安装后重跑 pomaster doctor 复核（SECURITY 门禁静态分析腿，P25）",
+    facts,
+    options,
+  );
 }
 
 // ============================================================

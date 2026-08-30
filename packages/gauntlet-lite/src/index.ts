@@ -28,11 +28,17 @@
  *                            落差如实标注——B2-4）；
  * - seed-mutants.ts       —— 固定 seed mutant 库（P24：判卷敏感性考卷——生成者/判卷者
  *                            分离纪律 §1.3-3 的落地载体，两报告词形确定性渲染器）；
+ * - security-leg.ts       —— SECURITY 的执行腿机械与三报告解析（P25：三道闸真执行 +
+ *                            gitleaks/pip-audit/semgrep 三词形独立解析 + 判卷锚=报告重算）；
+ * - security-adapter.ts   —— SECURITY 三独立 adapter + 一次三腿三记录编排（P25 /
+ *                            随版计划 B2-5「三个独立 adapter，禁止合并为单一
+ *                            "security ok" 绿灯」——gitleaks/pip-audit/semgrep 三工厂
+ *                            三实例三 GRN，无聚合 verdict 位）；
  * - browser-adapter.ts    —— BROWSER 门禁 adapter（doctor MCP 探测 + smoke 连接证据）；
  * - gate-recipe-runner.ts —— Basic Gate Runner v1（P12b：catalog/gates recipe→adapter
  *                            派发登记表 + 单 recipe 编排执行；入账归 CLI 层 store 事务）；
  * - detectors.ts          —— oasdiff / import-linter / dependency-cruiser / c8 / pytest-cov /
- *                            mutmut / StrykerJS / chrome-devtools MCP 探测（doctor 面；
+ *                            mutmut / StrykerJS / gitleaks / pip-audit / semgrep 探测（doctor 面；
  *                            缺席必带理由与安装建议，禁静默）。
  *
  * 判卷纪律：输出形态镜像 @pomaster/kernel 的 GateResult 契约（03-gate-result 的 camelCase 形态），
@@ -45,6 +51,11 @@ import { createContractAdapter } from "./contract-adapter.js";
 import { createArchitectureAdapter } from "./architecture-adapter.js";
 import { createCoverageAdapter, createCrapGateAdapter } from "./coverage-adapter.js";
 import { createMutationAdapter } from "./mutation-adapter.js";
+import {
+  createGitleaksAdapter,
+  createPipAuditAdapter,
+  createSemgrepAdapter,
+} from "./security-adapter.js";
 import type {
   BuildToolDetection,
   GateAdapter,
@@ -64,10 +75,13 @@ import {
   detectC8,
   detectChromeDevtoolsMcp,
   detectDependencyCruiser,
+  detectGitleaks,
   detectImportLinter,
   detectMutmut,
   detectOasdiff,
+  detectPipAudit,
   detectPytestCov,
+  detectSemgrep,
   detectStryker,
 } from "./detectors.js";
 
@@ -86,6 +100,8 @@ export * from "./coverage-adapter.js";
 export * from "./mutation-leg.js";
 export * from "./mutation-adapter.js";
 export * from "./seed-mutants.js";
+export * from "./security-leg.js";
+export * from "./security-adapter.js";
 export * from "./detectors.js";
 export * from "./normalize-common.js";
 export * from "./gate-recipe-runner.js";
@@ -149,6 +165,16 @@ export const mutationAdapter: GateAdapter<
 > = createMutationAdapter();
 
 /**
+ * SECURITY 三独立 adapter 单例（P25：gitleaks / pip-audit / semgrep——B2-5 原文
+ * 「三个独立 adapter，禁止合并为单一 "security ok" 绿灯」；三实例三记录，无聚合
+ * adapter——也可经 createGitleaksAdapter()/createPipAuditAdapter()/createSemgrepAdapter()
+ * 自建）。一次跑三腿的编排面 = runSecurityGateLegs（三元组返回，无聚合 verdict 位）。
+ */
+export const gitleaksAdapter = createGitleaksAdapter();
+export const pipAuditAdapter = createPipAuditAdapter();
+export const semgrepAdapter = createSemgrepAdapter();
+
+/**
  * adapter registry（G5 谱系扩展落地：BUILD 双腿 + CONTRACT / ARCHITECTURE / BROWSER）。
  * 四 adapter 共用 §59 契约与 normalize-common 的 FATAL 闸门；缺席一律显式四态
  * （not_configured ≠ passed），绝不静默跳过当通过。
@@ -160,7 +186,7 @@ export const gateAdapters = {
   browser: browserAdapter,
 } as const;
 
-/** doctor 工具探测 registry（oasdiff / import-linter / dependency-cruiser / c8 / pytest-cov / mutmut / StrykerJS / chrome-devtools MCP）。 */
+/** doctor 工具探测 registry（oasdiff / import-linter / dependency-cruiser / c8 / pytest-cov / mutmut / StrykerJS / gitleaks / pip-audit / semgrep / chrome-devtools MCP）。 */
 export const toolDetectors = {
   oasdiff: detectOasdiff,
   importLinter: detectImportLinter,
@@ -169,5 +195,8 @@ export const toolDetectors = {
   pytestCov: detectPytestCov,
   mutmut: detectMutmut,
   stryker: detectStryker,
+  gitleaks: detectGitleaks,
+  pipAudit: detectPipAudit,
+  semgrep: detectSemgrep,
   chromeDevtoolsMcp: detectChromeDevtoolsMcp,
 } as const;

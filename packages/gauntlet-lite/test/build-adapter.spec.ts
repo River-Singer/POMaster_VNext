@@ -271,16 +271,19 @@ describe("BUILD gate 全链路（fake spawn 集成）", () => {
     expect(validate(toGateResultJson(record))).toBe(true);
   });
 
-  it("registry 导出面：gateAdapters.build 与 toolDetectors 八探测齐备（P24 扩容 mutmut/stryker）", () => {
+  it("registry 导出面：gateAdapters.build 与 toolDetectors 十一探测齐备（P25 扩容 gitleaks/pipAudit/semgrep）", () => {
     expect(gateAdapters.build.adapterId).toBe("gauntlet-lite:build");
     expect(Object.keys(toolDetectors).sort()).toEqual([
       "c8",
       "chromeDevtoolsMcp",
       "dependencyCruiser",
+      "gitleaks",
       "importLinter",
       "mutmut",
       "oasdiff",
+      "pipAudit",
       "pytestCov",
+      "semgrep",
       "stryker",
     ]);
   });
