@@ -202,6 +202,7 @@ describe("runCli help/version 信息性退出（fresh-clone 实录：--help 曾�
       "context",
       "doctor",
       "check",
+      "eval",
       "permit",
       "exec-guard",
       "reconcile",

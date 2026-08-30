@@ -1,6 +1,6 @@
 {
   "suite": "golden-p0-batch1",
-  "sourceOfTruth": ".trellis/tasks/08-27-vnext-ir-schema-design/schema-drafts/golden-seed-mapping.md（种子账本，转写首批 20 条 P0）；第 21 条 GOLDEN-L1-ROUTER-GLOBAL-ESCALATION 为 T-1 批准追加（corpus/master/cutover/owner-adjudications.md 裁决2 ＋ benchmarks/calibration-t1-approval.json bench-0003，2026-08-29）",
+  "sourceOfTruth": "packages/schemas/assets/golden-seed-mapping.md（种子账本，转写首批 20 条 P0）；第 21 条 GOLDEN-L1-ROUTER-GLOBAL-ESCALATION 为 T-1 批准追加（corpus/master/cutover/owner-adjudications.md 裁决2 ＋ benchmarks/calibration-t1-approval.json bench-0003）；第 22-25 条为 wave3-plan.md P17 测试战略 L3 四点名种子补录（Case C 技术基线漂移 EVOLUTION_REQUIRED / prototype_html_scrape→FATAL / 语料归档件 14 态派生收敛 / compact 幂等 NO_CHANGE 转正——工具链研究 §2 L3 行）",
   "conventions": {
     "verdictWords": "expected.verdict / expected.verdictAlternatives 只允许 03-gate-result definitions.verdict 七态词形逐字：passed/failed/warning/blocked/not_run/not_configured/skipped_blindspot；FATAL/NO_CHANGE/字节全等属于 §0 判决维度词（非七态），照录在 expected.note / expected.outcomeWords",
     "executable": "目前仅三类可执行判定：kernel 转移校验（transition）+ id 解析（id-parse/alias）+ triage 规则桶（triage）；不可执行项必须携带非空 pendingReason（缺席显式表达，禁止静默跳过）",
@@ -16,7 +16,9 @@
       "input": {
         "described": "02b fixture CAPABILITY.GRID.EDITABLE_GRID（alias GRID.EDITABLE_GRID；MASTer 实例 src/shared/grid/MasterEditableGrid.vue ＋ ag-grid-community@^31.3）过 REF_INTEGRITY＋COMPONENT 交叉校验",
         "objectId": "CAPABILITY.GRID.EDITABLE_GRID",
-        "aliases": ["GRID.EDITABLE_GRID"],
+        "aliases": [
+          "GRID.EDITABLE_GRID"
+        ],
         "kind": "capability"
       },
       "expected": {
@@ -27,7 +29,10 @@
       },
       "trace": {
         "source": "golden-seed-mapping.md §2.D GOLDEN-FIX-01",
-        "decisions": ["thread-A §4.1", "ev03 §key_facts 正向对账"],
+        "decisions": [
+          "thread-A §4.1",
+          "ev03 §key_facts 正向对账"
+        ],
         "evidence": "ev03 · artifact-vs-reality 正向对账样本",
         "breaks": "ev02·『slot.component 直写 MasterReadonlyTable/MasterEditableGrid 需 fixer 改语义 GRID.*』（未登记直写）"
       },
@@ -55,7 +60,10 @@
       },
       "trace": {
         "source": "golden-seed-mapping.md §2.D GOLDEN-FIX-02",
-        "decisions": ["thread-A §4.2", "ev03 抽样断言③"],
+        "decisions": [
+          "thread-A §4.2",
+          "ev03 抽样断言③"
+        ],
         "evidence": "ev03 · artifact-vs-reality",
         "breaks": "ev03·§pain_points『ACCEPTED 状态语义歧义：契约已接受≠代码已接线，被下游 Agent 误读』"
       },
@@ -71,7 +79,9 @@
       "input": {
         "described": "02b fixture KNOWLEDGE.CSV_FAILURE_PATTERN（alias KB.FAILURE_PATTERN.CSV_NAIVE_SPLIT 经 alias 收编；MASTer 实例=08-17 csvEscape 两层×16 份复制事故的 failure pattern）",
         "objectId": "KNOWLEDGE.CSV_FAILURE_PATTERN",
-        "aliases": ["KB.FAILURE_PATTERN.CSV_NAIVE_SPLIT"],
+        "aliases": [
+          "KB.FAILURE_PATTERN.CSV_NAIVE_SPLIT"
+        ],
         "kind": "knowledge_entry",
         "origin": "natural",
         "keyBindings": "empty（声明出来的豁免，非漏填）"
@@ -84,7 +94,10 @@
       },
       "trace": {
         "source": "golden-seed-mapping.md §2.D GOLDEN-FIX-03",
-        "decisions": ["thread-A §4.3", "ev02 §key_facts csvEscape×16"],
+        "decisions": [
+          "thread-A §4.3",
+          "ev02 §key_facts csvEscape×16"
+        ],
         "evidence": "ev02 · trellis-tasks",
         "breaks": "ev02·08-17-component-convergence『CSV 导出两层×16 份复制、弱转义 2 处漂移出损坏 CSV 风险』（failure pattern 未登记时的复制发散）"
       },
@@ -104,13 +117,19 @@
       },
       "expected": {
         "verdict": "failed",
-        "verdictAlternatives": ["warning", "skipped_blindspot"],
+        "verdictAlternatives": [
+          "warning",
+          "skipped_blindspot"
+        ],
         "outcome": null,
         "note": "不得 passed——或扫出 violations，或 verdict=skipped_blindspot 且 blindspot.escape_ratio>0 计入 health；「两道门都绿」在结构上不可能"
       },
       "trace": {
         "source": "golden-seed-mapping.md §2.C ADV-D20-01",
-        "decisions": ["test-strategy L4", "ev04 defect-02"],
+        "decisions": [
+          "test-strategy L4",
+          "ev04 defect-02"
+        ],
         "evidence": "ev04 · defect-archive defect-02",
         "breaks": "ev04·pomaster-defect-02-script-content-truth-blindspot.md（234 句文案 100% 逃逸且 exit 0）＋ev01·vended-ts-text-silent-escape.md"
       },
@@ -137,7 +156,10 @@
       },
       "trace": {
         "source": "golden-seed-mapping.md §2.C ADV-D20-02",
-        "decisions": ["C2／GAP-POM-001", "test-strategy L4"],
+        "decisions": [
+          "C2／GAP-POM-001",
+          "test-strategy L4"
+        ],
         "evidence": "ev01 + ev04 分母漂移双档案",
         "breaks": "ev01·pomaster-screen-blueprint-gate-denominator.md（write-gate 硬编码 15 旧分母 → 20 漏判＋12 误判）＋ev04·pomaster-write-gate-screen-blueprint-denominator-drift.md"
       },
@@ -157,13 +179,18 @@
       "expected": {
         "verdict": "blocked",
         "verdictAlternatives": [],
-        "outcomeWords": ["FATAL"],
+        "outcomeWords": [
+          "FATAL"
+        ],
         "outcome": null,
         "note": "FATAL 拒绝＋事件留痕；permit 文件物理存在不构成放行依据"
       },
       "trace": {
         "source": "golden-seed-mapping.md §2.C ADV-D20-03",
-        "decisions": ["test-strategy L4", "Transition-Permit 原语"],
+        "decisions": [
+          "test-strategy L4",
+          "Transition-Permit 原语"
+        ],
         "evidence": "ev01 · p2-reauthorize-after-prepare",
         "breaks": "ev01·pomaster-p2-reauthorize-after-prepare.md（confirmation stale 是『常见根因』——失效态长期不被察觉）"
       },
@@ -183,13 +210,18 @@
       },
       "expected": {
         "verdict": "failed",
-        "verdictAlternatives": ["blocked", "not_run"],
+        "verdictAlternatives": [
+          "blocked",
+          "not_run"
+        ],
         "outcome": null,
         "note": "无 success verdict 输出；state 完好（原子写/回滚），journal 记录中断点；重跑幂等收敛"
       },
       "trace": {
         "source": "golden-seed-mapping.md §2.C ADV-D20-04",
-        "decisions": ["test-strategy L2 原子写崩溃注入"],
+        "decisions": [
+          "test-strategy L2 原子写崩溃注入"
+        ],
         "evidence": "ev04 · 三镜像同步 WinError 5 事故",
         "breaks": "ev04·三镜像同步 WinError 5 事故（publish 先毁目标再失败且未回滚，真实丢过消费方镜像）"
       },
@@ -218,7 +250,10 @@
       },
       "trace": {
         "source": "golden-seed-mapping.md §2.C ADV-D20-05",
-        "decisions": ["thread-A §5 永不信任自报值", "test-strategy L4"],
+        "decisions": [
+          "thread-A §5 永不信任自报值",
+          "test-strategy L4"
+        ],
         "evidence": "ev01 · v23-two-defects-remain",
         "breaks": "ev01·pomaster-v23-two-defects-remain.md（scan_ui_content_truth 放走全部 .ts 文案的假绿）"
       },
@@ -234,28 +269,47 @@
       "input": {
         "described": "申请 SUPERSEDED→DEPRECATED 迁移；旁证申请 SUPERSEDED→CURRENT（撤销 supersede）",
         "attempts": [
-          { "from": "SUPERSEDED", "to": "DEPRECATED" },
-          { "from": "SUPERSEDED", "to": "CURRENT" }
+          {
+            "from": "SUPERSEDED",
+            "to": "DEPRECATED"
+          },
+          {
+            "from": "SUPERSEDED",
+            "to": "CURRENT"
+          }
         ]
       },
       "expected": {
         "verdict": "blocked",
         "verdictAlternatives": [],
-        "outcomeWords": ["FATAL"],
-        "outcome": { "expectAll": "rejected" },
+        "outcomeWords": [
+          "FATAL"
+        ],
+        "outcome": {
+          "expectAll": "rejected"
+        },
         "note": "双双 FATAL（SUPERSEDED 为终态，successor_ref 必填；vocab-lock 裁定不保留 thread-A 的「需 PERMIT 撤销」支线）"
       },
       "trace": {
         "source": "golden-seed-mapping.md §2.F GOLDEN-L1-ILLEGAL-TRANSITION",
-        "decisions": ["A2", "vocab-lock state_axes.transitions（lock 胜出：撤销 supersede=新建对象并引用旧 id）"],
+        "decisions": [
+          "A2",
+          "vocab-lock state_axes.transitions（lock 胜出：撤销 supersede=新建对象并引用旧 id）"
+        ],
         "evidence": "ev01 · 授权状态机可被标准操作静默倒退",
         "breaks": "ev01·授权状态机可被标准操作静默倒退（状态词随意挪用的同族）"
       },
       "executable": {
         "kind": "transition",
         "attempts": [
-          { "from": "SUPERSEDED", "to": "DEPRECATED" },
-          { "from": "SUPERSEDED", "to": "CURRENT" }
+          {
+            "from": "SUPERSEDED",
+            "to": "DEPRECATED"
+          },
+          {
+            "from": "SUPERSEDED",
+            "to": "CURRENT"
+          }
         ],
         "expectAll": "rejected"
       },
@@ -275,13 +329,18 @@
       "expected": {
         "verdict": "blocked",
         "verdictAlternatives": [],
-        "outcomeWords": ["FATAL"],
+        "outcomeWords": [
+          "FATAL"
+        ],
         "outcome": null,
         "note": "FATAL＋提示 supersede 流程（该 kind 删除/REJECTED 路径封死）"
       },
       "trace": {
         "source": "golden-seed-mapping.md §2.F GOLDEN-L1-DENOM-NO-DELETE",
-        "decisions": ["C2", "thread-A §3.7"],
+        "decisions": [
+          "C2",
+          "thread-A §3.7"
+        ],
         "evidence": "ev04 · GAP-POM-001",
         "breaks": "ev04·GAP-POM-001（application-page-registry 被删、应用面分母静默消失无人察觉）"
       },
@@ -307,7 +366,10 @@
       },
       "trace": {
         "source": "golden-seed-mapping.md §2.F GOLDEN-L1-DENOM-SUPERSEDE",
-        "decisions": ["C2", "ev01 分母三层演化"],
+        "decisions": [
+          "C2",
+          "ev01 分母三层演化"
+        ],
         "evidence": "ev01 · task-step-vs-application-denominator",
         "breaks": "ev01·pomaster-task-step-vs-application-denominator.md（分母演进甩开检查者）"
       },
@@ -328,13 +390,18 @@
       "expected": {
         "verdict": "blocked",
         "verdictAlternatives": [],
-        "outcomeWords": ["FATAL"],
+        "outcomeWords": [
+          "FATAL"
+        ],
         "outcome": null,
         "note": "FATAL（声明对象的前提是 producer 声明存在）"
       },
       "trace": {
         "source": "golden-seed-mapping.md §2.F GOLDEN-L1-DERIVED-NEEDS-PRODUCER",
-        "decisions": ["C3", "thread-A §3.6"],
+        "decisions": [
+          "C3",
+          "thread-A §3.6"
+        ],
         "evidence": "ev04 · maintenance audit",
         "breaks": "ev04·maintenance audit（13 个死 factsource：有 schema 无 producer）"
       },
@@ -354,13 +421,17 @@
       "expected": {
         "verdict": "blocked",
         "verdictAlternatives": [],
-        "outcomeWords": ["FATAL"],
+        "outcomeWords": [
+          "FATAL"
+        ],
         "outcome": null,
         "note": "REF_INTEGRITY FATAL"
       },
       "trace": {
         "source": "golden-seed-mapping.md §2.F GOLDEN-L1-REF-EXISTS",
-        "decisions": ["thread-A §50 REF_INTEGRITY"],
+        "decisions": [
+          "thread-A §50 REF_INTEGRITY"
+        ],
         "evidence": "ev04 · 模型填坑链路第一道闸",
         "breaks": "ev04·模型填坑链路的第一道闸（假引用无主即 FATAL）"
       },
@@ -376,19 +447,26 @@
       "input": {
         "described": "confidence=LOCKED 对象申请 change STABLE→CHALLENGED 且无决策引用（CHANGE.*(ACR) 类）",
         "confidence": "LOCKED",
-        "changePatch": { "from": "STABLE", "to": "CHALLENGED" },
+        "changePatch": {
+          "from": "STABLE",
+          "to": "CHALLENGED"
+        },
         "decisionRef": null
       },
       "expected": {
         "verdict": "blocked",
         "verdictAlternatives": [],
-        "outcomeWords": ["FATAL"],
+        "outcomeWords": [
+          "FATAL"
+        ],
         "outcome": null,
         "note": "FATAL；附合法决策引用后放行（LOCKED 不是圣旨但也不是随便挑战）"
       },
       "trace": {
         "source": "golden-seed-mapping.md §2.F GOLDEN-L1-LOCKED-CHALLENGE",
-        "decisions": ["thread-A §3.3 跨轴断言"],
+        "decisions": [
+          "thread-A §3.3 跨轴断言"
+        ],
         "evidence": "ev02 · 人类裁决不终局（G17/O2/G10/G11 翻案）",
         "breaks": "ev02·『G17 合计栏先删后补回、O2 先 defer 后补上、G10/G11 OPEN QUESTION 被翻案实施——「勿再议」被无痕翻案』"
       },
@@ -409,13 +487,18 @@
       "expected": {
         "verdict": "blocked",
         "verdictAlternatives": [],
-        "outcomeWords": ["FATAL"],
+        "outcomeWords": [
+          "FATAL"
+        ],
         "outcome": null,
         "note": "FATAL（A4：hash 授权范围内禁用墙钟；人类时间只住 evidence/runtime 侧车）"
       },
       "trace": {
         "source": "golden-seed-mapping.md §2.F GOLDEN-L1-WALLCLOCK",
-        "decisions": ["A4", "thread-A §1.1"],
+        "decisions": [
+          "A4",
+          "thread-A §1.1"
+        ],
         "evidence": "ev04 · DEF-POM-002",
         "breaks": "ev04·DEF-POM-002（generated_at 成为内容身份）"
       },
@@ -431,7 +514,9 @@
       "input": {
         "described": "跨域契约变更信号（修改 API_REQ.BIND.CARLINE.1 的 response_need）以 MINIMAL 档申报",
         "triageRequest": {
-          "declaredPaths": ["src/entities/bind-carline/api.ts"],
+          "declaredPaths": [
+            "src/entities/bind-carline/api.ts"
+          ],
           "contractSurfaceHit": true,
           "requestedProfileOverride": "MINIMAL",
           "projectLegacyMaster": true
@@ -449,14 +534,19 @@
       },
       "trace": {
         "source": "golden-seed-mapping.md §2.F GOLDEN-L1-ROUTER-BOUNDARY",
-        "decisions": ["test-strategy L1 Router 60＋L5", "C1"],
+        "decisions": [
+          "test-strategy L1 Router 60＋L5",
+          "C1"
+        ],
         "evidence": "ev04 · 风险备忘「全员 MINIMAL 起步架空治理」风险面",
         "breaks": "ev04·风险备忘「全员 MINIMAL 起步架空治理」风险面"
       },
       "executable": {
         "kind": "triage",
         "request": {
-          "declaredPaths": ["src/entities/bind-carline/api.ts"],
+          "declaredPaths": [
+            "src/entities/bind-carline/api.ts"
+          ],
           "contractSurfaceHit": true,
           "requestedProfileOverride": "MINIMAL",
           "projectLegacyMaster": true
@@ -478,10 +568,19 @@
       "input": {
         "described": "MASTer 型存量项目把 src/** 档位申报为 MINIMAL",
         "triageRequest": {
-          "declaredPaths": ["src/shared/widgets/mini.vue"],
+          "declaredPaths": [
+            "src/shared/widgets/mini.vue"
+          ],
           "requestedProfileOverride": "MINIMAL",
           "projectLegacyMaster": true,
-          "floorOverrides": [{ "whenPath": ["src/**"], "floor": "LIGHT" }]
+          "floorOverrides": [
+            {
+              "whenPath": [
+                "src/**"
+              ],
+              "floor": "LIGHT"
+            }
+          ]
         }
       },
       "expected": {
@@ -496,17 +595,28 @@
       },
       "trace": {
         "source": "golden-seed-mapping.md §2.F GOLDEN-L1-ROUTER-FLOOR",
-        "decisions": ["C4"],
+        "decisions": [
+          "C4"
+        ],
         "evidence": "ev04 · 同 ROUTER-BOUNDARY 风险面",
         "breaks": "ev04·同上（Profile floor 的直接验收行）"
       },
       "executable": {
         "kind": "triage",
         "request": {
-          "declaredPaths": ["src/shared/widgets/mini.vue"],
+          "declaredPaths": [
+            "src/shared/widgets/mini.vue"
+          ],
           "requestedProfileOverride": "MINIMAL",
           "projectLegacyMaster": true,
-          "floorOverrides": [{ "whenPath": ["src/**"], "floor": "LIGHT" }]
+          "floorOverrides": [
+            {
+              "whenPath": [
+                "src/**"
+              ],
+              "floor": "LIGHT"
+            }
+          ]
         },
         "expect": {
           "effectiveProfile": "LIGHT",
@@ -535,7 +645,10 @@
       },
       "trace": {
         "source": "corpus/master/batch-1/calibration/proposed-thresholds.json §proposals[T-1] ＋ corpus/master/cutover/owner-adjudications.md 裁决2 ＋ benchmarks/calibration-t1-approval.json（bench-0003）",
-        "decisions": ["T-1", "bench-0002 provision 二轮校准（replay-R2-008 系统性低判修复）"],
+        "decisions": [
+          "T-1",
+          "bench-0002 provision 二轮校准（replay-R2-008 系统性低判修复）"
+        ],
         "evidence": "replay-R2-008（replay-round2-input.md §2 行 131 ＋ replay-results.json records）＋语料全量扫描 2/53 命中 0 反例（分母 53）",
         "breaks": "replay-R2-008 期望 STANDARD（E2 fan_out 全局影响面语义）实得 LIGHT 的系统性低判"
       },
@@ -555,12 +668,17 @@
       "expected": {
         "verdict": null,
         "verdictAlternatives": [],
-        "outcome": { "parse": "ok", "prefix": "TEST" },
+        "outcome": {
+          "parse": "ok",
+          "prefix": "TEST"
+        },
         "note": "解析通过（closed-world 表含 TEST.）；fixture 不污染生产分母（is_fixture 语义，Q3 裁决；verdict 位留空——id 解析平面非 gate 判卷）"
       },
       "trace": {
         "source": "golden-seed-mapping.md §2.E ADV-PFX-01",
-        "decisions": ["vocab-lock prefixes_v0 TEST. 注记（Q3 已决／开放问题#3）"],
+        "decisions": [
+          "vocab-lock prefixes_v0 TEST. 注记（Q3 已决／开放问题#3）"
+        ],
         "evidence": "（反事实）封闭表缺 TEST. → fixture 无法落盘或被迫占用生产前缀",
         "breaks": "（反事实）封闭表缺 TEST. → fixture 无法落盘或被迫占用生产前缀"
       },
@@ -585,12 +703,18 @@
       "expected": {
         "verdict": null,
         "verdictAlternatives": [],
-        "outcome": { "parse": "fatal", "reason": "unknown_prefix" },
+        "outcome": {
+          "parse": "fatal",
+          "reason": "unknown_prefix"
+        },
         "note": "解析即 FATAL（unknown_prefix_action=FATAL，A5；id 解析平面非 gate 判卷，verdict 位留空）"
       },
       "trace": {
         "source": "golden-seed-mapping.md §2.E ADV-PFX-03",
-        "decisions": ["A5", "vocab-lock id_namespace"],
+        "decisions": [
+          "A5",
+          "vocab-lock id_namespace"
+        ],
         "evidence": "ev02 + ev04 provenance audit",
         "breaks": "ev02·『spec_binding 双形态并存无人拦截（master:24-component-protocol vs master:component-protocol）』＋ev04·provenance audit『5 个连字符 id 因 pattern 未执行而漏网』"
       },
@@ -611,12 +735,42 @@
       "input": {
         "described": "收编三条 legacy：GRID.EDITABLE_GRID→CAPABILITY.GRID.EDITABLE_GRID；KB.FAILURE_PATTERN.CSV_NAIVE_SPLIT→KNOWLEDGE.CSV_FAILURE_PATTERN；PAGE-TASK-STEP-BIND-CARLINE→PAGE.BIND_CARLINE（旁证 PAGE-APP-DASHBOARD→PAGE.DASHBOARD）；另含数字段收编 TASK-0087→TASK.T0087、CHANGE-0104→CHANGE.C0104（02b 文法注记）",
         "mappings": [
-          { "legacy": "GRID.EDITABLE_GRID", "expectedCanonical": "CAPABILITY.GRID.EDITABLE_GRID", "rule": "aliases_v0: GRID.* → CAPABILITY.GRID.*（机械）", "mechanical": true },
-          { "legacy": "KB.FAILURE_PATTERN.CSV_NAIVE_SPLIT", "expectedCanonical": "KNOWLEDGE.CSV_FAILURE_PATTERN", "rule": "aliases_v0: KB-* → KNOWLEDGE.*（02b §8 实例；段重排映射随对象登记，非机械可推导）", "mechanical": false },
-          { "legacy": "PAGE-TASK-STEP-BIND-CARLINE", "expectedCanonical": "PAGE.BIND_CARLINE", "rule": "aliases_v0: PAGE-TASK-STEP-* token 重排收编（开放问题#2 裁决）", "mechanical": false },
-          { "legacy": "PAGE-APP-DASHBOARD", "expectedCanonical": "PAGE.DASHBOARD", "rule": "开放问题#2 裁决旁证（APP 两代历史前缀不保留于 canonical id）", "mechanical": false },
-          { "legacy": "TASK-0087", "expectedCanonical": "TASK.T0087", "rule": "aliases_v0: 数字段收编加字母前缀（SEGMENT 不允许数字开头，02b 文法注记）", "mechanical": true },
-          { "legacy": "CHANGE-0104", "expectedCanonical": "CHANGE.C0104", "rule": "aliases_v0: 数字段收编加字母前缀", "mechanical": true }
+          {
+            "legacy": "GRID.EDITABLE_GRID",
+            "expectedCanonical": "CAPABILITY.GRID.EDITABLE_GRID",
+            "rule": "aliases_v0: GRID.* → CAPABILITY.GRID.*（机械）",
+            "mechanical": true
+          },
+          {
+            "legacy": "KB.FAILURE_PATTERN.CSV_NAIVE_SPLIT",
+            "expectedCanonical": "KNOWLEDGE.CSV_FAILURE_PATTERN",
+            "rule": "aliases_v0: KB-* → KNOWLEDGE.*（02b §8 实例；段重排映射随对象登记，非机械可推导）",
+            "mechanical": false
+          },
+          {
+            "legacy": "PAGE-TASK-STEP-BIND-CARLINE",
+            "expectedCanonical": "PAGE.BIND_CARLINE",
+            "rule": "aliases_v0: PAGE-TASK-STEP-* token 重排收编（开放问题#2 裁决）",
+            "mechanical": false
+          },
+          {
+            "legacy": "PAGE-APP-DASHBOARD",
+            "expectedCanonical": "PAGE.DASHBOARD",
+            "rule": "开放问题#2 裁决旁证（APP 两代历史前缀不保留于 canonical id）",
+            "mechanical": false
+          },
+          {
+            "legacy": "TASK-0087",
+            "expectedCanonical": "TASK.T0087",
+            "rule": "aliases_v0: 数字段收编加字母前缀（SEGMENT 不允许数字开头，02b 文法注记）",
+            "mechanical": true
+          },
+          {
+            "legacy": "CHANGE-0104",
+            "expectedCanonical": "CHANGE.C0104",
+            "rule": "aliases_v0: 数字段收编加字母前缀",
+            "mechanical": true
+          }
         ]
       },
       "expected": {
@@ -631,22 +785,191 @@
       },
       "trace": {
         "source": "golden-seed-mapping.md §2.E GOLDEN-AX-04",
-        "decisions": ["A6", "vocab-lock aliases_v0＋开放问题#2 处置"],
+        "decisions": [
+          "A6",
+          "vocab-lock aliases_v0＋开放问题#2 处置"
+        ],
         "evidence": "ev03 · naive 对账 11+4 假差异",
         "breaks": "ev03·『PAGE-TASK-STEP-BIND-CARLINE vs page-bind-carline：naive 对账 11+4 假差异』"
       },
       "executable": {
         "kind": "alias",
         "mappings": [
-          { "legacy": "GRID.EDITABLE_GRID", "expectedCanonical": "CAPABILITY.GRID.EDITABLE_GRID", "rule": "aliases_v0: GRID.* → CAPABILITY.GRID.*（机械）", "mechanical": true },
-          { "legacy": "KB.FAILURE_PATTERN.CSV_NAIVE_SPLIT", "expectedCanonical": "KNOWLEDGE.CSV_FAILURE_PATTERN", "rule": "aliases_v0: KB-* → KNOWLEDGE.*（02b §8 实例；段重排映射随对象登记，非机械可推导）", "mechanical": false },
-          { "legacy": "PAGE-TASK-STEP-BIND-CARLINE", "expectedCanonical": "PAGE.BIND_CARLINE", "rule": "aliases_v0: PAGE-TASK-STEP-* token 重排收编（开放问题#2 裁决）", "mechanical": false },
-          { "legacy": "PAGE-APP-DASHBOARD", "expectedCanonical": "PAGE.DASHBOARD", "rule": "开放问题#2 裁决旁证", "mechanical": false },
-          { "legacy": "TASK-0087", "expectedCanonical": "TASK.T0087", "rule": "aliases_v0: 数字段收编加字母前缀（02b 文法注记）", "mechanical": true },
-          { "legacy": "CHANGE-0104", "expectedCanonical": "CHANGE.C0104", "rule": "aliases_v0: 数字段收编加字母前缀", "mechanical": true }
+          {
+            "legacy": "GRID.EDITABLE_GRID",
+            "expectedCanonical": "CAPABILITY.GRID.EDITABLE_GRID",
+            "rule": "aliases_v0: GRID.* → CAPABILITY.GRID.*（机械）",
+            "mechanical": true
+          },
+          {
+            "legacy": "KB.FAILURE_PATTERN.CSV_NAIVE_SPLIT",
+            "expectedCanonical": "KNOWLEDGE.CSV_FAILURE_PATTERN",
+            "rule": "aliases_v0: KB-* → KNOWLEDGE.*（02b §8 实例；段重排映射随对象登记，非机械可推导）",
+            "mechanical": false
+          },
+          {
+            "legacy": "PAGE-TASK-STEP-BIND-CARLINE",
+            "expectedCanonical": "PAGE.BIND_CARLINE",
+            "rule": "aliases_v0: PAGE-TASK-STEP-* token 重排收编（开放问题#2 裁决）",
+            "mechanical": false
+          },
+          {
+            "legacy": "PAGE-APP-DASHBOARD",
+            "expectedCanonical": "PAGE.DASHBOARD",
+            "rule": "开放问题#2 裁决旁证",
+            "mechanical": false
+          },
+          {
+            "legacy": "TASK-0087",
+            "expectedCanonical": "TASK.T0087",
+            "rule": "aliases_v0: 数字段收编加字母前缀（02b 文法注记）",
+            "mechanical": true
+          },
+          {
+            "legacy": "CHANGE-0104",
+            "expectedCanonical": "CHANGE.C0104",
+            "rule": "aliases_v0: 数字段收编加字母前缀",
+            "mechanical": true
+          }
         ]
       },
       "pendingReason": null
+    },
+    {
+      "id": "GOLDEN-L3-CASE-C-EVOLUTION",
+      "group": "GOLDEN-L3",
+      "category": "L3·技术基线漂移",
+      "p0": true,
+      "title": "技术基线漂移（换网格引擎）：需审批引用的迁移缺 authorityRef → EVOLUTION_REQUIRED（技术路线变更走 ACR/进化通道）",
+      "input": {
+        "described": "CAPABILITY.GRID.EDITABLE_GRID 提交 alternative_engine 变更申请（AG Grid→MasterGrid 换网格引擎；种子判决形态 write_policy=EVOLUTION_CHANNEL 拦截，需 ACR 决策链）；kernel 判决载体=同一语义家族（技术路线变更必须携带审批/决策引用）的转移面：PROPOSED→CURRENT requires=[authority_approval] 而事务缺 authorityRef",
+        "scenario": "case-c-baseline-drift"
+      },
+      "expected": {
+        "verdict": "blocked",
+        "verdictAlternatives": [],
+        "outcomeWords": [
+          "EVOLUTION_REQUIRED"
+        ],
+        "outcome": {
+          "expectCode": "EVOLUTION_REQUIRED"
+        },
+        "note": "verdict=blocked＋判决维度词 EVOLUTION_REQUIRED（gate_def 级 reason_code=evolution_required，非七态词形故走 outcomeWords 照录位）；remediation 指路 tx.authorityRef 提供 DECISION.*/CHANGE.*/PERMIT.* 引用、技术路线变更走 ACR/进化通道"
+      },
+      "trace": {
+        "source": "golden-seed-mapping.md §GOLDEN-L3-CASE-C ＋ wave3-plan.md P17（测试战略 L3 点名：Case C 技术基线漂移 EVOLUTION_REQUIRED）",
+        "decisions": [
+          "test-strategy L3 Case C",
+          "ev03 P3"
+        ],
+        "evidence": "ev02 ·「grid 适配器 --ag-font-size token 分叉＋MasterBreadcrumb deprecated 后仍被 PageHeader 组合渲染」（漂移无登记自由发生）",
+        "breaks": "技术基线漂移无审批引用自由发生——治理面必须在缺 authorityRef 时以 EVOLUTION_REQUIRED 拒绝"
+      },
+      "executable": null,
+      "pendingReason": "数据驱动四类纯函数判定面（transition/id-parse/alias/triage）不判 store 事务执行面；kernel 真实判决载体（applyTransitionObject 转移缺 authorityRef → GovernanceError EVOLUTION_REQUIRED，store.ts hint 直注 GOLDEN-L3-CASE-C）已在本 spec「GOLDEN-L3 点名种子 · 执行面对照」describe 跑实（wave3-plan P17 补录）；L1 覆盖=packages/kernel/tests/store.spec.ts/transitions-store.spec.ts。形态映射 concern：种子的 write_policy=EVOLUTION_CHANNEL（对象变更申请维度）在 kernel 尚无独立 write-policy 执行面，判决以转移 authorityRef 强制承载（语义家族相同、载体不同——如实呈报不冒充同形）"
+    },
+    {
+      "id": "GOLDEN-L3-SCRAPE-FATAL",
+      "group": "GOLDEN-L3",
+      "category": "L3·原型摄取",
+      "p0": true,
+      "title": "prototype_html_scrape 来源的组件注册请求 → SOURCE_TYPE_FORBIDDEN FATAL（禁入条款；合法通道=Live Walkthrough 产物过 Existing Truth Gate 才升 CURRENT）",
+      "input": {
+        "described": "以 sources[].type=prototype_html_scrape（静态解析原型摄取，D23 禁入来源）发起组件对象 upsert_object 注册",
+        "scenario": "prototype-html-scrape-registration",
+        "sourceType": "prototype_html_scrape"
+      },
+      "expected": {
+        "verdict": "blocked",
+        "verdictAlternatives": [],
+        "outcomeWords": [
+          "FATAL"
+        ],
+        "outcome": {
+          "expectCode": "SOURCE_TYPE_FORBIDDEN"
+        },
+        "note": "FATAL 拒绝＋留痕（Transition 层判）；remediation 指路 prototype_html_scrape→Live Walkthrough 活体走查（D23）、ai_invention→补 bp_blueprint/research_evidence 等合法来源后重提"
+      },
+      "trace": {
+        "source": "golden-seed-mapping.md §GOLDEN-L3-SCRAPE-FATAL ＋ wave3-plan.md P17（测试战略 L3 点名：D20 配套 prototype_html_scrape→FATAL）",
+        "decisions": [
+          "test-strategy L3 D20 配套",
+          "D23"
+        ],
+        "evidence": "ev01 · 静态解析原型缺陷（多态弹窗/条件分支不可见、页面计数失真 → fidelity 返工源头）",
+        "breaks": "原型静态摄取产物混过注册即污染治理面——禁入条款必须在 sources 校验层 FATAL"
+      },
+      "executable": null,
+      "pendingReason": "数据驱动四类纯函数判定面不判 store 事务执行面；kernel 真实判决载体（upsert_object sources[].type ∈ SOURCE_TYPE_FORBIDDEN_VALUES 两值闭表 → GovernanceError SOURCE_TYPE_FORBIDDEN，store.ts hint 直注 GOLDEN-L3-SCRAPE-FATAL）已在本 spec「GOLDEN-L3 点名种子 · 执行面对照」describe 跑实（wave3-plan P17 补录）；L1 覆盖=packages/kernel/tests/store.spec.ts"
+    },
+    {
+      "id": "GOLDEN-L3-STATE-SUBSET",
+      "group": "GOLDEN-L3",
+      "category": "L3·状态派生",
+      "p0": true,
+      "title": "只读页（readonly PAGE.*）跑状态全集派生（14 态通用模板含 edit/create/dirty）→ 派生收敛到实际可达态子集；页面实例自带新态禁止",
+      "input": {
+        "described": "MASTer 33 蓝图 page.states 全是同一份 14 态通用全集（只读页也含 edit/create/dirty）——对只读页跑状态全集派生，要求收敛到该页实际可达子集",
+        "scenario": "readonly-page-14-state-derivation",
+        "templateStateCount": 14,
+        "pagePosture": "readonly"
+      },
+      "expected": {
+        "verdict": null,
+        "verdictAlternatives": [],
+        "outcome": {
+          "deriveTo": "reachable_subset",
+          "pageOwnedNewStateForbidden": true
+        },
+        "note": "派生收敛到实际可达态子集；页面实例自带新态禁止（domain_states 挂 capability、页面只许引用子集）——非 gate 判卷面，verdict 位留空"
+      },
+      "trace": {
+        "source": "golden-seed-mapping.md §GOLDEN-L3-STATE-SUBSET ＋ wave3-plan.md P17（测试战略 L3 点名：语料归档件 14 态派生收敛）",
+        "decisions": [
+          "test-strategy L3 MASTer 反例修正",
+          "thread-A §4.1"
+        ],
+        "evidence": "ev02 ·「33 蓝图 page.states 全是同一份 14 态通用全集（只读页也含 edit/create/dirty）」",
+        "breaks": "状态全集照抄使 state_complete 类判据失真（只读页含 edit 仍绿）——派生必须收敛到实际可达子集"
+      },
+      "executable": null,
+      "pendingReason": "结构性缺席：代码现实无 PAGE states/domain_states 派生执行面（kernel/cli/schemas 全仓 grep 零命中；kernel lifecycle 轴为对象生命周期六值，不含页面 UI 态全集概念）——本条登记在场性防决策漂移，执行面落地前为显式 pending（禁静默跳过当通过）；转正属 PRD 现范围外的派生面工程，已呈报 Owner"
+    },
+    {
+      "id": "GOLDEN-L3-COMPACT-IDEMPOTENT",
+      "group": "GOLDEN-L3",
+      "category": "L3·幂等铁律",
+      "p0": true,
+      "title": "compact 连跑两次第二次字节级 NO_CHANGE（幂等铁律：NO_CHANGE 零写入＋applied_seq 不空转＋输出 byte-stable）",
+      "input": {
+        "described": "同一 store：runCompact --ops（upsert PAGE.DASHBOARD 显式事务）首跑 APPLIED 后，同 ops 二跑",
+        "scenario": "compact-double-run",
+        "runs": 2
+      },
+      "expected": {
+        "verdict": null,
+        "verdictAlternatives": [],
+        "outcomeWords": [
+          "NO_CHANGE"
+        ],
+        "outcome": {
+          "firstRun": "APPLIED",
+          "secondRun": "NO_CHANGE",
+          "byteStable": true
+        },
+        "note": "第二次 change=NO_CHANGE、applied_seq 不空转、truth-index/journal 全树字节不变（A4：No-op is elegant——零变化即成功）——非 gate 判卷面，verdict 位留空"
+      },
+      "trace": {
+        "source": "wave3-plan.md P17（测试战略 L3 点名：compact 幂等 NO_CHANGE 转正）＋ docs/wave3-research-toolchain.md §2 L3 行「已有断言可转正 Golden」",
+        "decisions": [
+          "A4",
+          "test-strategy L3 幂等铁律"
+        ],
+        "evidence": "工具链研究 §2 L3 行点名转正；转正注记修正：存量断言实位于 packages/cli/tests/compact.spec.ts（L1；smoke.spec.ts 所载为 init 幂等同族断言）",
+        "breaks": "编排层重跑空转/半写即破坏八拍⑦幂等出口——NO_CHANGE 必须伴随零写入且可重放"
+      },
+      "executable": null,
+      "pendingReason": "数据驱动四类纯函数判定面不判 CLI 编排执行面；真实转正执行（runCompact --ops 双跑：首次 APPLIED → 二次 NO_CHANGE＋state 字节不变）已在本 spec「GOLDEN-L3 点名种子 · 执行面对照」describe 落地（wave3-plan P17 补录）；L1 覆盖=packages/cli/tests/compact.spec.ts"
     }
   ]
 }

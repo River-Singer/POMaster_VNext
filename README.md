@@ -90,6 +90,7 @@ pomaster status        # 读 .pomaster/state：对象计数/分母状态/permit 
 pomaster inspect <governed-id>  # 单对象检视：正文+证据+谱系（纯读零写入）
 pomaster context compile --role <lane>  # 八拍③ PROJECTION：最小充分上下文投影（MUST/ADVISORY/CATALOG/LAZY TOOLS 四分区 markdown；CATALOG 区出处 catalog 策展源，§92.2 非 project state）
 pomaster catalog status/explain  # Engineering Catalog 命令面（§44.10）：catalog 构成与单条目解释；catalog-lock 漂移（物料改而未重锁）显式检出
+pomaster eval --suite behavioral  # Agent Behavioral Eval（§44.10）：25 种子 pass/fail/pending/retired 结构化呈现；pending/retired 显式列出不冒充绿不冒充败，executable 失败 exit 1；§94.3 五类源（Context Compiler/Router/Gate Policy/Catalog Rule/Harness）升级后经 `node scripts/eval-trigger.mjs` 触发必跑
 pomaster permit issue/check/steal/list   # 八拍② FRAMEWORK LOCK：许可签发/判卷/显式接管/台账呈现
 pomaster exec-guard …  # 八拍④ 写路径机器执行点：attempt JSON → checkPermit 判卷（判卷器非写入器）
 pomaster maintain <change-or-task> --ops <tx.json>  # 受控变更：显式事务 → kernel applyTransaction（判卷权威在 kernel）

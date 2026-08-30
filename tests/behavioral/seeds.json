@@ -11,6 +11,7 @@
     "design_expected": "已知偏离样本（replay agreement=deviation）按契约 §2.7.1 钉实际值为回归锚；设计期望档记入 design_expected 元数据（expected_profile/expected_class，转录 samples.json 预注册字段）——钉当前行为不判红，翻转即新信号/阈值的验收测试（契约 §2.7.2）",
     "flip": "阈值/信号获批落地时（契约 §2.7.2）：对应 seed 期望翻转、expect_flip_when 清空，翻转本身构成该阈值/信号的验收测试；flipped_from 记录翻转前状态（TRIAGE profile 词形=翻转前回归锚值；PENDING=翻转前为 pending 登记），机器元校验断言 flipped_from 与 replay 实测的谱系连续性。本账本翻转 authority = corpus/master/cutover/owner-adjudications.md 裁决2 + benchmarks/calibration-t1-approval.json（seq=bench-0003 APPROVED）+ 阈值事实源变更（packages/cli/src/triage.ts TRIAGE_ESCALATION_KEYWORDS += global，commit ed947cf）",
     "pending": "pendingReason 非空 = pending，不计入 executable；禁静默跳过（缺席显式）",
+    "retired": "retired 字段非空 = 显式退役（P17-Seeds 处置形态，wave3-plan.md P17『L5 2 条 pending seeds 翻转处置』）：登记与谱系保留、执行与翻转路径关闭——不计 executable、不计 pending、不执行判定（缺席显式第三态，禁静默 pending 滞留）；reason_md 必须落档退役判据（含原 pendingReason 与原 expect_flip_when 的转录）与重登记路径；retired 与 pendingReason、expect_flip_when 互斥（执行器结构校验 fail-closed）。退役属登记状态谱系操作（flipped_from 同款先例），非期望回填——预注册纪律不涉",
     "zero_wall_clock": "本文件无时间戳/日期字段；source_task_dir 中形如日期的片段是 MASTer 仓源目录名（源标识符，provenance 必需，非墙钟字段——samples.json sampling_frame.date_field_note 同款口径）"
   },
   "calibration_sources": {
@@ -592,8 +593,11 @@
       },
       "expect": {},
       "design_expected": null,
-      "expect_flip_when": "E7 churn 信号实现（S-2b）落地后翻转为 executable 并定义簇级升档断言",
-      "pendingReason": "E7 churn 信号 NOT_CONFIGURED（bench-0002 占位 churn_hits_watch=4-per-14d 未实现为信号源；语料证据 replay-round2-input.md §3.4 九目录簇）"
+      "expect_flip_when": null,
+      "pendingReason": null,
+      "retired": {
+        "reason_md": "P17-Seeds 显式退役（可执行前置不成立，禁静默 pending 滞留）：原 pendingReason=E7 churn 信号 NOT_CONFIGURED（bench-0002 占位 churn_hits_watch=4-per-14d 未实现为信号源；语料证据 replay-round2-input.md §3.4 九目录簇）——现盘 triage.ts/triage-rule-v0.ts 零 churn 词形（代码现实 grep 实证），翻转前置条件不成立；expect 留空无可执行断言（簇级升档断言形态依赖 E7 落地形态，缺席显式不臆造——契约裁决 4）。原 expect_flip_when『E7 churn 信号实现（S-2b）落地后翻转为 executable 并定义簇级升档断言』随退役关闭。单请求形态边界已由 L5-F-01 executable 锚定；E7/S-2b 信号源落地时以新 seed 重新登记（本 id 保留退役谱系，不复用、不复活）。"
+      }
     },
     {
       "id": "L5-G-01-replay-R2-004-css-minimal-anchor",
@@ -666,8 +670,11 @@
         "profile": "MINIMAL"
       },
       "design_expected": null,
-      "expect_flip_when": "capability router 实现（thread-C §1 调用时点）→ 翻转为 executable 并新增禁 spawn architect 断言",
-      "pendingReason": "capability router 未实现（thread-C §1 调用时点）"
+      "expect_flip_when": null,
+      "pendingReason": null,
+      "retired": {
+        "reason_md": "P17-Seeds 显式退役（可执行前置不成立，禁静默 pending 滞留）：原 pendingReason=capability router 未实现（thread-C §1 调用时点）——现盘 kernel/cli 无 capability 路由与 spawn architect 原语（代码现实 grep 实证零命中），MINIMAL 侧输入断言（profile=MINIMAL）已由 L5-A-01 executable 覆盖，本 seed 独有价值（禁 spawn architect 能力断言）无被测对象。原 expect_flip_when『capability router 实现（thread-C §1 调用时点）→ 翻转为 executable 并新增禁 spawn architect 断言』随退役关闭。capability router 落地时以新 seed 重新登记（期望断言集只增不减纪律由新 seed 承接；本 id 保留退役谱系，不复用、不复活）。"
+      }
     }
   ]
 }

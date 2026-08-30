@@ -1,0 +1,59 @@
+{
+  "manifest_version": 1,
+  "prd_anchor": "PRD §94.3 触发清单（原文在仓库外；语义以研究纪要 docs/wave3-research-prd.md L96 转述为准：Context Compiler / Router / Role Prompt / Catalog Rule / Gate Policy / Harness-Model 升级 / 自身架构演进 → Eval；『生产事故、重复误判和高成本 Debug 应逐步变成永久 Eval Case』）。本 manifest 如实落其中仓库内实际存在文件的五类：Context Compiler / Router / Gate Policy / Catalog Rule / Harness；Role Prompt 与自身架构演进暂无仓库内载体，不发明占位触发源（消费脚本按 TRIGGER_CATEGORIES 闭表 fail-closed 封死第六类）",
+  "suites": {
+    "behavioral": {
+      "title": "L5 Behavioral Eval",
+      "spec": "tests/behavioral/behavioral.spec.ts",
+      "eval_command": "pomaster eval --suite behavioral"
+    }
+  },
+  "sources": [
+    {
+      "category": "Context Compiler",
+      "patterns": [
+        "packages/kernel/src/projection.ts",
+        "packages/cli/src/context.ts"
+      ],
+      "suites": ["behavioral"],
+      "rationale": "上下文投影编译器（kernel compileProjection 本体 / CLI 编排面）升级 → 行为判定面回归"
+    },
+    {
+      "category": "Router",
+      "patterns": [
+        "packages/cli/src/triage.ts",
+        "packages/cli/src/triage-rule-v0.ts"
+      ],
+      "suites": ["behavioral"],
+      "rationale": "路由双引擎升级（cli_keyword 关键词引擎 / rule_v0 参考镜像）→ 全部 behavioral seed 经此二 evaluator 执行，必回归"
+    },
+    {
+      "category": "Gate Policy",
+      "patterns": [
+        "catalog/gates/**",
+        "packages/gauntlet-lite/src/gate-recipe-runner.ts"
+      ],
+      "suites": ["behavioral"],
+      "rationale": "gate recipe 物料 / 派发执行器升级 → 判卷行为面回归"
+    },
+    {
+      "category": "Catalog Rule",
+      "patterns": [
+        "catalog/policies/**",
+        "catalog/catalog-lock.draft.json",
+        "packages/kernel/src/catalog.ts"
+      ],
+      "suites": ["behavioral"],
+      "rationale": "Engineering Policy 规则物料 / catalog-lock / 读取联结面升级 → 规则消费行为回归"
+    },
+    {
+      "category": "Harness",
+      "patterns": [
+        "tests/behavioral/**",
+        "packages/cli/src/eval.ts"
+      ],
+      "suites": ["behavioral"],
+      "rationale": "eval harness 自身升级（种子账本 / 执行器本体 / 命令面）→ 全量重跑"
+    }
+  ]
+}

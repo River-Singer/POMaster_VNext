@@ -1,14 +1,28 @@
 /**
- * golden.spec.ts —— Golden P0 批次1（20 条种子转写＋T-1 追加共 21 条数据驱动）＋ 执行器参考镜像单元测试。
+ * golden.spec.ts —— Golden P0 批次1（20 条种子转写＋T-1 追加＋P17 四点名补录共 25 条数据驱动）
+ * ＋ 执行器参考镜像单元测试 ＋ GOLDEN-L3 点名种子执行面对照（真实判决跑实）。
  *
  * 运行入口（数据驱动）：cases.json 逐条 → runGoldenCase；可执行判定通过（passed），
  * 不可执行判定显式 pending（附原因，进报告 pendingList——禁静默跳过）。
  * 报告落盘：coverage/golden-report.json（幂等可重放，零墙钟字段）。
+ * P17-Seeds：测试战略 L3 四点名种子补录进 cases.json（21→25），其中 Case C（EVOLUTION_
+ * REQUIRED）/prototype_html_scrape（FATAL）/compact 幂等（NO_CHANGE）三场景的 kernel/CLI
+ * 真实判决执行面在「GOLDEN-L3 点名种子 · 执行面对照」describe 跑实——数据驱动账本登记
+ * 与真实执行对照分离表达（四类纯函数判定面不判 store 事务/CLI 编排）。
  */
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, describe, expect, it } from "vitest";
+import {
+  GovernanceError,
+  applyTransaction,
+  createStore,
+  type Store,
+  type Transaction,
+} from "@pomaster/kernel";
+import { runCompact, type CompactResult } from "@pomaster/cli";
 import { LIFECYCLE_TRANSITIONS, LIFECYCLE_VALUES } from "@pomaster/schemas";
 import {
   loadGoldenCases,
@@ -69,15 +83,172 @@ describe(`Golden P0 批次1 数据驱动（${suite}：${cases.length} 条）`, (
 });
 
 // ============================================================
+// GOLDEN-L3 点名种子 · 执行面对照（wave3-plan P17 测试战略 L3 种子点名）
+// ============================================================
+//
+// 四点名场景（cases.json 第 22-25 条登记）中三个有 kernel/CLI 真实判决执行面的场景
+// 在此跑实（转正）；第四场景（GOLDEN-L3-STATE-SUBSET）代码现实无派生执行面，登记为
+// 显式 pending（结构性缺席，见 cases.json pendingReason——呈报项）。
+// 执行环境：临时 kernel store（与 packages/kernel/tests/store.spec.ts 同款纪律——
+// 临时目录留给 OS tmp 清理，不 rm 避免 Windows EBUSY 噪声）。
+
+/** 合法 PAGE 信封基线（覆盖即得变体；形态对齐 packages/kernel/tests/helpers.ts，就地最小复刻）。 */
+function pageEnvelopeOf(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    id: "PAGE.DASHBOARD",
+    kind: "page_surface",
+    axisProfile: "page_default",
+    axes: {
+      lifecycle: "CURRENT",
+      confidence: "PROVISIONAL",
+      evidence: "IMPLEMENTED",
+      change: "STABLE",
+    },
+    titleZh: "仪表盘",
+    authority: { owner: "BUSINESS_OWNER", delegates: [] },
+    origin: "natural",
+    payload: { surface: "V1" },
+    ...overrides,
+  };
+}
+
+/** 临时 store + BOOTSTRAP owner 登记（幽灵 owner FATAL 的解析源）。 */
+async function makeGoldenStore(): Promise<{ store: Store; root: string }> {
+  const root = mkdtempSync(join(tmpdir(), "pomaster-golden-l3-"));
+  const store = await createStore(root);
+  const authPath = join(root, ".pomaster", "state", "authority.json");
+  const auth = JSON.parse(readFileSync(authPath, "utf8")) as {
+    authorities: Record<string, unknown>;
+  };
+  auth.authorities["BUSINESS_OWNER"] = {};
+  writeFileSync(authPath, `${JSON.stringify(auth, null, 2)}\n`);
+  return { store, root };
+}
+
+function txOf(ops: Transaction["ops"], authorityRef?: string): Transaction {
+  return { ops, ...(authorityRef !== undefined ? { authorityRef } : {}) };
+}
+
+describe("GOLDEN-L3 点名种子 · 执行面对照（wave3-plan P17 测试战略 L3 种子点名）", () => {
+  it("Case C 技术基线漂移：需审批引用的迁移缺 authorityRef → EVOLUTION_REQUIRED（hint 指路 ACR/进化通道，GOLDEN-L3-CASE-C）", async () => {
+    const { store } = await makeGoldenStore();
+    // 种子对象（PROPOSED 态提案：跨轴断言 PROPOSED ⇒ evidence=PLANNED）。
+    await applyTransaction(
+      store,
+      txOf([
+        {
+          op: "upsert_object",
+          envelope: pageEnvelopeOf({
+            axes: { lifecycle: "PROPOSED", confidence: "UNRESOLVED", evidence: "PLANNED", change: "STABLE" },
+            titleZh: "网格引擎替代方案提案",
+          }) as never,
+        },
+      ]),
+    );
+    // 技术路线变更转正申请缺审批引用 → EVOLUTION_REQUIRED。
+    const bad = await applyTransaction(
+      store,
+      txOf([
+        {
+          op: "transition_object",
+          id: "PAGE.DASHBOARD",
+          patch: { lifecycle: "CURRENT" },
+          reasonShort: "换网格引擎落地",
+        },
+      ]),
+    ).catch((e: unknown) => e);
+    expect(bad).toBeInstanceOf(GovernanceError);
+    expect((bad as GovernanceError).code).toBe("EVOLUTION_REQUIRED");
+    expect((bad as GovernanceError).hint).toContain("ACR/进化通道");
+    expect((bad as GovernanceError).hint).toContain("authorityRef");
+  });
+
+  it("prototype_html_scrape 来源的组件注册 → SOURCE_TYPE_FORBIDDEN FATAL（禁入条款，hint 指路 Live Walkthrough，GOLDEN-L3-SCRAPE-FATAL）", async () => {
+    const { store } = await makeGoldenStore();
+    const bad = await applyTransaction(
+      store,
+      txOf([
+        {
+          op: "upsert_object",
+          envelope: {
+            id: "CAPABILITY.CSV_TOOL.SERIALIZE_ROWS",
+            kind: "capability",
+            axisProfile: "capability_default",
+            axes: { lifecycle: "CURRENT", confidence: "PROVISIONAL", evidence: "IMPLEMENTED", change: "STABLE" },
+            titleZh: "原型抓取组件",
+            authority: { owner: "BUSINESS_OWNER", delegates: [] },
+            origin: "natural",
+            payload: {},
+            sources: [
+              {
+                type: "prototype_html_scrape",
+                ref: "prototypes/dashboard.html",
+                capturedBy: "agent:scraper",
+                pin: { baseline: "prototypes@head" },
+              },
+            ],
+          } as never,
+        },
+      ]),
+    ).catch((e: unknown) => e);
+    expect(bad).toBeInstanceOf(GovernanceError);
+    expect((bad as GovernanceError).code).toBe("SOURCE_TYPE_FORBIDDEN");
+    expect((bad as GovernanceError).hint).toContain("Live Walkthrough");
+  });
+
+  it("compact 连跑两次第二次字节级 NO_CHANGE：首跑 APPLIED → 二跑 NO_CHANGE＋applied_seq 不空转＋truth-index/journal 字节不变（GOLDEN-L3-COMPACT-IDEMPOTENT，A4）", async () => {
+    const { root } = await makeGoldenStore();
+    const txPath = join(root, "tx.json");
+    writeFileSync(
+      txPath,
+      `${JSON.stringify(
+        {
+          ops: [{ op: "upsert_object", envelope: pageEnvelopeOf() }],
+          note: "GOLDEN-L3-COMPACT-IDEMPOTENT 点名事务",
+        },
+        null,
+        2,
+      )}\n`,
+      "utf8",
+    );
+
+    const first = await runCompact(root, { opsFile: txPath });
+    expect(first.ok).toBe(true);
+    expect((first.result as CompactResult).change).toBe("APPLIED");
+    expect((first.result as CompactResult).applied_seq).toBe(1);
+
+    const indexBefore = readFileSync(join(root, ".pomaster", "state", "truth-index.json"), "utf8");
+    const journalBefore = readFileSync(join(root, ".pomaster", "state", "journal.jsonl"), "utf8");
+
+    const second = await runCompact(root, { opsFile: txPath });
+    expect(second.ok).toBe(true);
+    const secondResult = second.result as CompactResult;
+    expect(secondResult.change).toBe("NO_CHANGE");
+    expect(secondResult.applied_seq).toBe(1);
+    expect(readFileSync(join(root, ".pomaster", "state", "truth-index.json"), "utf8")).toBe(indexBefore);
+    expect(readFileSync(join(root, ".pomaster", "state", "journal.jsonl"), "utf8")).toBe(journalBefore);
+  });
+});
+
+// ============================================================
 // 元纪律
 // ============================================================
 
 describe("Golden 元纪律", () => {
-  it("cases.json：恰 21 条（20 条种子转写＋T-1 批准追加 GOLDEN-L1-ROUTER-GLOBAL-ESCALATION）、id 唯一、全部 P0", () => {
-    expect(cases.length).toBe(21);
+  it("cases.json：恰 25 条（20 条种子转写＋T-1 批准追加＋P17 测试战略 L3 四点名补录）、id 唯一、全部 P0", () => {
+    expect(cases.length).toBe(25);
     const ids = cases.map((c) => c.id);
     expect(new Set(ids).size).toBe(ids.length);
     expect(cases.every((c) => c.p0 === true)).toBe(true);
+    // P17 点名分母：四点名场景逐条在场（缺席即账本漂移）。
+    for (const named of [
+      "GOLDEN-L3-CASE-C-EVOLUTION",
+      "GOLDEN-L3-SCRAPE-FATAL",
+      "GOLDEN-L3-STATE-SUBSET",
+      "GOLDEN-L3-COMPACT-IDEMPOTENT",
+    ]) {
+      expect(ids, `点名种子 ${named} 应在账`).toContain(named);
+    }
   });
 
   it("verdict 词形：expected.verdict/alternatives 与 03 七态枚举逐字一致（含 null 合法）", () => {

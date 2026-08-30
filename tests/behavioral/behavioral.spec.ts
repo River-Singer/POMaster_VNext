@@ -2,14 +2,16 @@
  * behavioral.spec.ts —— L5 Behavioral Eval（契约 docs/p9-human-view-and-l5-contract.md §2）。
  *
  * 运行入口（数据驱动）：seeds.json 逐条 → runSeed；executable 判定通过（passed），
- * pending 判定显式缺席（附原因，进报告 pendingList——禁静默跳过当通过）。
+ * pending 判定显式缺席（附原因，进报告 pendingList——禁静默跳过当通过），retired 判定
+ * 显式退役（附判据，进报告 retiredList——P17-Seeds 处置：F-02/X-01 翻转前置不成立，
+ * 禁静默 pending 滞留）。
  * 报告落盘：coverage/behavioral-report.json（镜像 golden-report.json：total/executable/
- * passed/failed/pending/pendingList；幂等可重放，零墙钟字段）。
+ * passed/failed/pending/retired/pendingList/retiredList；幂等可重放，零墙钟字段）。
  *
  * 元校验四层：
- * 1. 规模纪律：executable ≥ 15（fail-below-floor，契约 §2.8.1）+ 注册矩阵恰 25/23/2
- *   （T-1 已批准生效——裁决2/bench-0003/commit ed947cf，契约 §2.7.2 翻转即验收：
- *   C-01 期望翻转 LIGHT→STANDARD、C-04 解除 pending，二者 flipped_from 在案）；
+ * 1. 规模纪律：executable ≥ 15（fail-below-floor，契约 §2.8.1）+ 注册矩阵恰 25/23/0/2
+ *   （25 注册 / 23 executable / 0 pending / 2 retired——P17-Seeds：F-02 churn 信号与
+ *   X-01 capability router 翻转前置不成立，显式退役，理由落档 seeds.json retired.reason_md）；
  * 2. 覆盖矩阵：族 executable 计数与契约 §2.5 全等（含三档可区分 / escalation 六词形 /
  *   T-1 边界 / 缺席显式 / conflict 优先级 / 振荡形态边界 / 语料回归锚七族）；
  * 3. 谱系对账：replay 锚定 seed 的输入逐字一致 + 期望与 replay-results.json actual 一致
@@ -28,11 +30,12 @@ import {
 } from "@pomaster/cli";
 import { triageRuleV0 } from "../golden/reference/triage.js";
 import {
-  CAPABILITY_PENDING_SEED_ID,
+  CAPABILITY_RETIRED_SEED_ID,
   CONTRACT_FAMILY_EXECUTABLE,
   EXECUTABLE_SEED_FLOOR,
   FLIPPED_SEED_IDS,
   PENDING_SEED_IDS,
+  RETIRED_SEED_IDS,
   checkCliKeywordResult,
   checkRuleV0Decision,
   loadReplayRecords,
@@ -55,18 +58,18 @@ const byId = new Map<string, BehavioralSeedResult>(
   report.results.map((r) => [r.id, r]),
 );
 
-/** 契约 §2.5：七族注册数（= executable + 族内 pending；F-2 为族内 pending；原 C-4 已随
- * T-1 批准生效翻转为 executable——契约 §2.7.2，C 族 executable 4/4）。 */
+/** 契约 §2.5：七族注册数（= executable + 族内 retired；F-2 为族内 retired（P17-Seeds）；
+ * 原 C-4 已随 T-1 批准生效翻转为 executable——契约 §2.7.2，C 族 executable 4/4）。 */
 const CONTRACT_FAMILY_REGISTERED: Readonly<Record<string, number>> = {
   ...CONTRACT_FAMILY_EXECUTABLE,
   F: 2,
 };
-/** 在册翻转注册（expect_flip_when 非空，等待信号/阈值落地）：E7 churn（F-02）/ fan_out（G-02）/ capability router（X-01）。
- * T-1 翻转对（C-01/C-04）已落地执行——flipped_from 登记，见 FLIPPED_SEED_IDS。 */
+/** 在册翻转注册（expect_flip_when 非空，等待信号/阈值落地）：fan_out（G-02）。
+ * T-1 翻转对（C-01/C-04）已落地执行——flipped_from 登记，见 FLIPPED_SEED_IDS。
+ * P17-Seeds：F-02/X-01 翻转前置不成立已显式退役（翻转注册随 retired 关闭，
+ * expect_flip_when=null——信号落地时以新 seed 重新登记）。 */
 const FLIP_REGISTERED_SEED_IDS = [
-  "L5-F-02-churn-cluster-escalation-pending",
   "L5-G-02-replay-R2-015-fanout-deviation-anchor",
-  CAPABILITY_PENDING_SEED_ID,
 ] as const;
 
 /** seed 引用的全部 replay 锚（provenance.replay_id + 簇 requests[].replay_id）。 */
@@ -109,8 +112,11 @@ afterAll(() => {
   for (const p of report.pendingList) {
     console.log(`[behavioral][pending] ${p.id} — ${p.reason}`);
   }
+  for (const r of report.retiredList) {
+    console.log(`[behavioral][retired] ${r.id} — ${r.reason}`);
+  }
   console.log(
-    `[behavioral] ${report.passed} passed / ${report.failed} failed / ${report.pending} pending（共 ${report.total}，executable ${report.executable}；evaluator cli_keyword=${report.evaluatorSummary.cli_keyword} rule_v0=${report.evaluatorSummary.rule_v0}）`,
+    `[behavioral] ${report.passed} passed / ${report.failed} failed / ${report.pending} pending / ${report.retired} retired（共 ${report.total}，executable ${report.executable}；evaluator cli_keyword=${report.evaluatorSummary.cli_keyword} rule_v0=${report.evaluatorSummary.rule_v0}）`,
   );
 });
 
@@ -120,7 +126,9 @@ afterAll(() => {
 
 describe(`L5 Behavioral 数据驱动（${suite} / ${batchCode}：${seeds.length} 条）`, () => {
   for (const s of seeds) {
-    const status = (s.pendingReason ?? null) === null ? s.evaluator : "pending";
+    const retired = (s.retired ?? null) !== null;
+    const pending = !retired && (s.pendingReason ?? null) !== null;
+    const status = retired ? "retired" : pending ? "pending" : s.evaluator;
     it(`${s.id}（${status}）：${s.title}`, () => {
       const r = byId.get(s.id);
       expect(r, `seed ${s.id} 未产生结果`).toBeDefined();
@@ -128,6 +136,11 @@ describe(`L5 Behavioral 数据驱动（${suite} / ${batchCode}：${seeds.length}
       if (r.status === "pending") {
         // 显式缺席：pending 必须带非空原因（禁静默跳过当通过）。
         expect(r.detail, `pending seed ${s.id} 缺缺席原因`).toBeTruthy();
+        return;
+      }
+      if (r.status === "retired") {
+        // 显式退役：reason_md 必须落档退役判据（禁静默 pending 滞留，P17-Seeds）。
+        expect(r.detail, `retired seed ${s.id} 缺退役判据`).toBeTruthy();
         return;
       }
       expect(r.status, `${s.id}：${r.detail}`).toBe("passed");
@@ -144,12 +157,16 @@ describe("L5 元纪律 · 规模与注册矩阵（契约 §2.5/§2.8）", () => 
     expect(report.executable).toBeGreaterThanOrEqual(EXECUTABLE_SEED_FLOOR);
   });
 
-  it("注册矩阵恰 25/23/2：T-1 翻转对已随阈值生效转为 executable（契约 §2.7.2），X 族 capability 追加 pending 不占 executable 分母", () => {
+  it("注册矩阵恰 25/23/0/2（注册/executable/pending/retired）：P17-Seeds 处置——F-02/X-01 翻转前置不成立显式退役（理由落档 retired.reason_md），pending 清零不滞留", () => {
     expect(report.total).toBe(25);
     expect(report.executable).toBe(23);
-    expect(report.pending).toBe(2);
+    expect(report.pending).toBe(0);
+    expect(report.retired).toBe(2);
     expect(report.pendingList.map((p) => p.id).sort()).toEqual(
       [...PENDING_SEED_IDS].sort(),
+    );
+    expect(report.retiredList.map((r) => r.id).sort()).toEqual(
+      [...RETIRED_SEED_IDS].sort(),
     );
   });
 
@@ -161,7 +178,7 @@ describe("L5 元纪律 · 规模与注册矩阵（契约 §2.5/§2.8）", () => 
     expect(bad.map((s) => s.id)).toEqual([]);
   });
 
-  it("覆盖矩阵族计数与契约 §2.5 全等（T-1 翻转后）：三档可区分 A4 / escalation 六词形 B6 / T-1 边界翻转验收 C4 / 缺席显式 D2 / conflict 优先级 E4 / 振荡形态边界 F1+1pending / 语料回归锚 G2 / capability 追加 X1pending", () => {
+  it("覆盖矩阵族计数与契约 §2.5 全等（T-1 翻转后 + P17-Seeds 退役）：三档可区分 A4 / escalation 六词形 B6 / T-1 边界翻转验收 C4 / 缺席显式 D2 / conflict 优先级 E4 / 振荡形态边界 F1+1retired / 语料回归锚 G2 / capability 追加 X0+1retired", () => {
     expect(report.familySummary.map((f) => f.family)).toEqual([
       "A",
       "B",
@@ -177,6 +194,8 @@ describe("L5 元纪律 · 规模与注册矩阵（契约 §2.5/§2.8）", () => 
         f.family === "X" ? 1 : CONTRACT_FAMILY_REGISTERED[f.family];
       const expectedExecutable =
         f.family === "X" ? 0 : CONTRACT_FAMILY_EXECUTABLE[f.family];
+      const expectedRetired =
+        f.family === "F" || f.family === "X" ? 1 : 0;
       expect(
         f.registered,
         `族 ${f.family} registered`,
@@ -185,10 +204,14 @@ describe("L5 元纪律 · 规模与注册矩阵（契约 §2.5/§2.8）", () => 
         f.executable,
         `族 ${f.family} executable`,
       ).toBe(expectedExecutable);
+      expect(
+        f.retired,
+        `族 ${f.family} retired`,
+      ).toBe(expectedRetired);
     }
   });
 
-  it("翻转纪律：在册翻转注册恰 3 条（E7 churn / fan_out / capability router）；已翻转恰 T-1 翻转对 2 条且 expect_flip_when 已清空（契约 §2.7.2）", () => {
+  it("翻转纪律：在册翻转注册恰 1 条（fan_out/G-02；F-02/X-01 已随 P17-Seeds 退役，翻转注册随之关闭）；已翻转恰 T-1 翻转对 2 条且 expect_flip_when 已清空（契约 §2.7.2）", () => {
     const standing = seeds
       .filter((s) => s.expect_flip_when !== null)
       .map((s) => s.id);
@@ -204,21 +227,40 @@ describe("L5 元纪律 · 规模与注册矩阵（契约 §2.5/§2.8）", () => 
           `${s.id}: 已翻转 seed 的 expect_flip_when 应清空`,
         ).toBeNull();
       }
+      if ((s.retired ?? null) !== null) {
+        expect(
+          s.expect_flip_when,
+          `${s.id}: retired seed 的 expect_flip_when 应清空（退役即关闭翻转注册）`,
+        ).toBeNull();
+        expect(
+          s.pendingReason ?? null,
+          `${s.id}: retired seed 不得同时 pending（互斥）`,
+        ).toBeNull();
+      }
     }
   });
 
-  it("pending 显式入账：两条 pendingReason 钉契约词形（churn NOT_CONFIGURED / capability router 未实现）", () => {
+  it("retired 显式入账：两条退役判据（reason_md）钉住原缺席事实与重登记路径——churn 信号 NOT_CONFIGURED / capability router 未实现；禁静默 pending 滞留", () => {
     const reasonOf = (id: string): string => {
-      const r = report.pendingList.find((p) => p.id === id);
-      expect(r, `pending seed ${id} 不在 pendingList`).toBeDefined();
+      const r = report.retiredList.find((p) => p.id === id);
+      expect(r, `retired seed ${id} 不在 retiredList`).toBeDefined();
       return r?.reason ?? "";
     };
-    expect(reasonOf("L5-F-02-churn-cluster-escalation-pending")).toContain(
-      "NOT_CONFIGURED",
-    );
-    expect(reasonOf(CAPABILITY_PENDING_SEED_ID)).toContain(
-      "capability router 未实现",
-    );
+    const churnReason = reasonOf("L5-F-02-churn-cluster-escalation-pending");
+    expect(churnReason).toContain("NOT_CONFIGURED");
+    expect(churnReason).toContain("重新登记");
+    const capabilityReason = reasonOf(CAPABILITY_RETIRED_SEED_ID);
+    expect(capabilityReason).toContain("capability router 未实现");
+    expect(capabilityReason).toContain("重新登记");
+    // 退役判据必须转录原缺席事实（谱系连续性）：原 pendingReason 词形在 reason_md 可追溯。
+    for (const s of seeds) {
+      if ((s.retired ?? null) !== null) {
+        expect(
+          (s.retired as { reason_md: string }).reason_md.length,
+          `${s.id}: reason_md 应落档实质判据`,
+        ).toBeGreaterThan(40);
+      }
+    }
   });
 });
 
@@ -272,6 +314,7 @@ describe("L5 谱系对账 · corpus batch-1 校准语料（铁律 4 机器化）
     const problems: string[] = [];
     for (const s of seeds) {
       if ((s.pendingReason ?? null) !== null) continue;
+      if ((s.retired ?? null) !== null) continue;
       if (s.evaluator !== "cli_keyword") continue;
       const expectProfile = (s.expect as CliKeywordExpect).profile;
       if (expectProfile === undefined) continue;
@@ -314,7 +357,7 @@ describe("L5 谱系对账 · corpus batch-1 校准语料（铁律 4 机器化）
     expect(problems, problems.join("；")).toEqual([]);
   });
 
-  it("design_expected 与 samples.json 预注册一致；pending/已翻转 seed 的 expect.profile 与 design_expected 配对（翻转对 C-01+C-04、pending F-02）", () => {
+  it("design_expected 与 samples.json 预注册一致；pending/retired/已翻转 seed 的 expect.profile 与 design_expected 配对（翻转对 C-01+C-04、retired F-02）", () => {
     const sampleByReplayId = new Map(
       loadSampleEntries().map((s) => [s.replay_id, s]),
     );
@@ -344,7 +387,9 @@ describe("L5 谱系对账 · corpus batch-1 校准语料（铁律 4 机器化）
         }
       }
       const isPendingOrFlipped =
-        (s.pendingReason ?? null) !== null || (s.flipped_from ?? null) !== null;
+        (s.pendingReason ?? null) !== null ||
+        (s.retired ?? null) !== null ||
+        (s.flipped_from ?? null) !== null;
       if (
         isPendingOrFlipped &&
         (s.expect as CliKeywordExpect).profile !== undefined &&
@@ -365,7 +410,7 @@ describe("L5 谱系对账 · corpus batch-1 校准语料（铁律 4 机器化）
 // ============================================================
 
 describe("L5 执行器纪律", () => {
-  it("报告自洽：total = executable + pending = passed + failed + pending；族合计闭环", () => {
+  it("报告自洽：total = executable + pending + retired = passed + failed + pending + retired；族合计闭环", () => {
     expect(reportIsConsistent(report)).toBe(true);
   });
 
@@ -424,11 +469,11 @@ describe("L5 执行器纪律", () => {
 // ============================================================
 
 describe("runSeed 分派", () => {
-  it("pending seed（capability 路由）产出 pending 结果且带非空原因", () => {
-    const s = seeds.find((x) => x.id === CAPABILITY_PENDING_SEED_ID);
+  it("retired seed（capability 路由）产出 retired 结果且退役判据落档（P17-Seeds：禁静默 pending 滞留）", () => {
+    const s = seeds.find((x) => x.id === CAPABILITY_RETIRED_SEED_ID);
     expect(s).toBeDefined();
     const r = runSeed(s as BehavioralSeed);
-    expect(r.status).toBe("pending");
+    expect(r.status).toBe("retired");
     expect(r.detail.length).toBeGreaterThan(0);
   });
 

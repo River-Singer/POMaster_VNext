@@ -23,6 +23,9 @@
  * - catalog status/explain
  *                   Engineering Catalog 命令面（§44.10；P14：catalog 构成与单条目解释，
  *                   catalog-lock 漂移显式检出；catalog 是策展源非第二套 Project Truth——§92.2）
+ * - eval            Agent Behavioral Eval（§44.10）：跑 --suite behavioral（seeds 25 注册/
+ *                   23 executable/2 retired；retired 显式呈现不计失败；executable 失败
+ *                   fail-closed exit 1；§94.3 触发面配套——trigger-manifest + eval-trigger.mjs）
  *
  * 分层纪律：判卷权威在 @pomaster/kernel，本包只做编排与呈现，禁止旁路写状态
  * （例外：check/exec-guard 对过期许可追加 PERMIT_EXPIRED_OBSERVED 为 kernel 契约行为）。
@@ -47,6 +50,7 @@ import { runCompact } from "./compact.js";
 import { runRecordClaim, runRecordGateRun } from "./record.js";
 import { runCloseout } from "./closeout.js";
 import { runCatalogStatus, runCatalogExplain } from "./catalog.js";
+import { runEval } from "./eval.js";
 
 export { CLI_NAME, CLI_VERSION } from "./cli-info.js";
 export { toEnvelope } from "./envelope.js";
@@ -154,6 +158,39 @@ export type {
   CatalogSectionCounts,
   CatalogStatusResult,
 } from "./catalog.js";
+export {
+  runEval,
+  EVAL_SUITES,
+  BEHAVIORAL_SEEDS_PATH,
+  L5_FAMILIES,
+  L5_EVALUATORS,
+  loadSeeds,
+  runSeed,
+  runAllSeeds,
+  reportIsConsistent,
+  checkCliKeywordResult,
+  checkRuleV0Decision,
+} from "./eval.js";
+export type {
+  EvalInput,
+  EvalResult,
+  EvalSuite,
+  L5Family,
+  L5Evaluator,
+  SeedProvenance,
+  ReplayAnchoredRequest,
+  SeedRequest,
+  SeedInput,
+  CliKeywordExpect,
+  RuleV0Expect,
+  SeedExpect,
+  DesignExpected,
+  BehavioralSeed,
+  BehavioralSeedResult,
+  SeedRunStatus,
+  FamilySummaryEntry,
+  BehavioralReport,
+} from "./eval.js";
 export {
   EVIDENCE_MALFORMED_CODE,
   RUN_INGEST_ACTIONS,
@@ -728,6 +765,27 @@ export function createProgram(
       });
       record({
         command: "catalog explain",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  // —— Agent Behavioral Eval（PRD §44.10；§94.3 触发面配套） ——
+  // 执行器本体在本包 eval 模块（seeds 25 注册/23 executable/2 retired；触发清单
+  // tests/behavioral/trigger-manifest.json + 消费脚本 scripts/eval-trigger.mjs）。
+  // 本命令零 store 依赖（未 init 目录同样可跑）；pending 显式呈现不冒充绿；
+  // executable seed 任何失败 → ok=false exit 1（fail-closed）。
+  program
+    .command("eval")
+    .description(
+      "Agent Behavioral Eval（§44.10）：跑 --suite behavioral（每种子 pass/fail/pending 结构化呈现；pending 显式列出不冒充绿；executable 失败 exit 1；--suite 词表外显式拒绝。§94.3 五类源升级经 scripts/eval-trigger.mjs 触发本 suite）",
+    )
+    .requiredOption("--suite <name>", "eval suite 名（词表闭包：behavioral；词表外显式拒绝）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runEval({ suite: opts.suite as string });
+      record({
+        command: "eval",
         outcome,
         asJson: command.opts().json === true,
       });

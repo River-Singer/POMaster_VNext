@@ -12,7 +12,8 @@
     "build": "node scripts/build-all.mjs",
     "test": "vitest run --passWithNoTests",
     "lint": "eslint .",
-    "ratchet": "node tests/ratchet/ratchet.mjs"
+    "ratchet": "node tests/ratchet/ratchet.mjs",
+    "eval:trigger": "node scripts/eval-trigger.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.13.1",

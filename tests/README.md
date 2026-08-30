@@ -9,20 +9,37 @@
 - `ratchet/ratchet.mjs` —— 棘轮检查：`corepack pnpm exec vitest run --reporter=json` 统计用例数，低于 floor 退出码 1（CI 强制执行 `pnpm ratchet`）；含 `ledger` 段时按类 fail-below-floor（任何层/域实测计数低于其 floor 即退出码 1，输出分类明细），并做 mapping 封闭分母三查（未归类 spec / stale 条目 / 逐文件和与总数分叉，均红）；实测分解落 `coverage/ratchet-ledger.json`（策略在 floor.json，测量在 coverage）。
 - `ratchet/ledger.spec.ts` —— 账本契约测试：floor 钉住战略值、mapping 与磁盘 spec 分母双向闭合、词形合法、内部相容（运行时计数判定归棘轮，本文件防账本本身被改坏）。
 - 测试命名纪律：`*.spec.ts`；测试框架 vitest 2.x；根 `vitest.config.ts` 收集 `tests/**/*.spec.ts` 与 `packages/**/*.spec.ts`。
-- `golden/` —— Golden P0 用例账本（`cases.json`，首批 20 条，转写自
-  `packages/schemas/assets/golden-seed-mapping.md`）＋ 数据驱动执行器
+- `golden/` —— Golden P0 用例账本（`cases.json`，25 条：首批 20 条转写自
+  `packages/schemas/assets/golden-seed-mapping.md` ＋ T-1 批准追加 ＋ P17 测试战略
+  L3 四点名补录）＋ 数据驱动执行器
   （`golden.harness.ts`：kernel 转移校验 / id 解析 / triage 规则桶三类可执行判定，
   kernel 未就绪时回落 `reference/` 参考镜像；不可执行项显式 pending 并输出
-  pendingList 到 `coverage/golden-report.json`——禁静默跳过当通过）。
+  pendingList 到 `coverage/golden-report.json`——禁静默跳过当通过；P17-Seeds 起
+  `golden.spec.ts` 另设「GOLDEN-L3 点名种子 · 执行面对照」describe，四点名场景中
+  三个有 kernel/CLI 真实判决执行面的场景跑实转正）。
 - `behavioral/` —— L5 Behavioral Eval（契约 `docs/p9-human-view-and-l5-contract.md` §2）：
-  `seeds.json`（25 注册 / 23 executable / 2 pending，代号线 `L5-SEED`；种子素材唯一
+  `seeds.json`（25 注册 / 23 executable / 0 pending / 2 retired——P17-Seeds：F-02 churn
+  信号与 X-01 capability router 翻转前置不成立显式退役，`retired.reason_md` 落档判据与
+  重登记路径，禁静默 pending 滞留；代号线 `L5-SEED`；种子素材唯一
   合法来源 = `corpus/master/batch-1/calibration/`，replay 锚定请求逐字转录）＋ 双
-  evaluator 数据驱动执行器（`behavioral.harness.ts`：`cli_keyword` = @pomaster/cli
-  `triageRequest` 源码直连；`rule_v0` = golden reference `triageRuleV0`）＋ vitest 入口
-  （`behavioral.spec.ts`）。报告落 `coverage/behavioral-report.json`（镜像 golden
-  报告字段；零墙钟可字节级重放）。翻转纪律（契约 §2.7.2）：阈值/信号获批落地时对应
-  seed 期望翻转 + `flipped_from` 记录翻转前状态——翻转本身构成验收测试（T-1 翻转对
-  C-01/C-04 已随 Owner 裁决2/bench-0003 落地执行）。
+  evaluator 数据驱动执行器（P17 起执行器本体居 `@pomaster/cli` 的 `packages/cli/src/eval.ts`
+  ——`pomaster eval --suite behavioral`（PRD §44.10）需要在包内 in-process 执行，dist
+  可加载；rule_v0 参考镜像同址居 `packages/cli/src/triage-rule-v0.ts`；本目录
+  `behavioral.harness.ts` 保留账本常量与 corpus 谱系对账 loader 并 re-export 执行器面，
+  单一实现禁两套 runner 漂移：`cli_keyword` = triageRequest；`rule_v0` = triageRuleV0）
+  ＋ vitest 入口（`behavioral.spec.ts`）。报告落 `coverage/behavioral-report.json`
+  （镜像 golden 报告字段；零墙钟可字节级重放）。翻转纪律（契约 §2.7.2）：阈值/信号获批
+  落地时对应 seed 期望翻转 + `flipped_from` 记录翻转前状态——翻转本身构成验收测试
+  （T-1 翻转对 C-01/C-04 已随 Owner 裁决2/bench-0003 落地执行）。
+  - `trigger-manifest.json` —— §94.3 触发清单（PRD §94.3；原文在仓库外，语义以
+    `docs/wave3-research-prd.md` 转述为准）：五类触发源（Context Compiler / Router /
+    Gate Policy / Catalog Rule / Harness；Role Prompt 与自身架构演进暂无仓库内载体，
+    不发明占位触发源，类别闭表由消费脚本机器封死）的源路径模式 → suite 映射 +
+    suites 注册表（behavioral → 本目录 spec + `pomaster eval --suite behavioral`）。
+    消费脚本 `scripts/eval-trigger.mjs`（本地/CI 可跑：`--base <ref>` 比 `git diff`
+    触达源，或 `--paths` 显式给定；提示模式 exit 0；`--run` 逐 suite 执行 vitest、
+    失败透传退出码 fail-closed；`--dry-run`/`--json`；manifest 非法/git 不可用一律
+    exit 1 绝不静默放行）。
 - `integration/smoke.spec.ts` —— 临时目录端到端冒烟：`pomaster init → triage×2 →
   status --json → doctor --json`（断言 §45 信封、NO_CHANGE 幂等、triage 缺席信号、
   doctor 探测四态矩阵 fail-closed）；CLI dist 未就绪时逐项显式 pending 到
@@ -41,6 +58,14 @@
   文件补 verifyCatalogLock 其余 drift kind——missing / unexpected_file（含
   catalog status 命令面 fail-closed）/ entry_not_allowed / missing_required /
   lock_unreadable（坏形与缺失两形态），逐 kind「显式检出 + 恢复回绿」。
+- `integration/eval-trigger.spec.ts` —— P17 §94.3 触发面专项（L2 账）：
+  trigger-manifest.json 落档契约（结构合法 / 类别 ⊆ 五类闭表且第六类 fail-closed /
+  五类分母齐全 / pattern 静态前缀在盘）＋ 映射正确性（触达源逐类命中含 ** 通配、
+  未触达零误报、多类触发 suite 去重、Windows 反斜杠归一、JS matcher 与 TS 参考镜像
+  globMatch 逐例一致）＋ 消费脚本子进程（--paths 提示 / 零命中合法成功 / 坏 manifest
+  fail-closed / --run --dry-run 呈现命令不执行 / git diff 端到端临时仓库：tracked
+  修改触发、未跟踪新文件不触发 / git 不可用 fail-closed）。
+  `pomaster eval` 命令面契约在 `packages/cli/tests/eval.spec.ts`（L1）。
 
 ## 显式 deferred 登记（防静默缺口）
 
