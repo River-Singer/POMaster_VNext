@@ -43,6 +43,17 @@ export const CLAIMS_DIR_RELATIVE = ".pomaster/evidence/claims";
 /** .pomaster/objects/（CLI 最小骨架的正文目录；kernel 运行时布局另行扩展）。 */
 export const OBJECTS_DIR_RELATIVE = ".pomaster/objects";
 
+/**
+ * .pomaster/discovery/scratchpads/<id>/（Discovery 平面暂存区；PRD §80.3 原文路径形态，
+ * 08-discovery-state-chain x-pomaster-contract.scratchpad_layout）。Brainstorm 的合法
+ * 维护面（§80.2 权限清单「维护 Discovery Scratchpad」）——与治理 store（state/truth/
+ * evidence）正交，Ephemeral 纪律：未达晋升条件的讨论允许长期驻留，不产生 Task。
+ */
+export const DISCOVERY_SCRATCHPADS_RELATIVE = ".pomaster/discovery/scratchpads";
+
+/** scratchpad <id> 词形（08 schema scratchpad_ref pattern 的目录名段逐字镜像）。 */
+export const DISCOVERY_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
+
 /** .pomaster/config.yaml（人类可编辑；init 只在缺失时创建，绝不覆盖手改）。 */
 export const CONFIG_RELATIVE = ".pomaster/config.yaml";
 
@@ -83,6 +94,16 @@ export function claimsDirPath(rootDir: string): string {
 
 export function objectsDirPath(rootDir: string): string {
   return join(rootDir, ...OBJECTS_DIR_RELATIVE.split("/"));
+}
+
+/** <rootDir>/.pomaster/discovery/scratchpads（Discovery 平面暂存区根）。 */
+export function discoveryScratchpadsDirPath(rootDir: string): string {
+  return join(rootDir, ...DISCOVERY_SCRATCHPADS_RELATIVE.split("/"));
+}
+
+/** <rootDir>/.pomaster/discovery/scratchpads/<id>/（单个 scratchpad）。 */
+export function discoveryScratchpadDirPath(rootDir: string, id: string): string {
+  return join(discoveryScratchpadsDirPath(rootDir), id);
 }
 
 export function configPath(rootDir: string): string {

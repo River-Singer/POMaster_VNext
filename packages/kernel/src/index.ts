@@ -2,14 +2,14 @@
  * @pomaster/kernel —— POMaster vNext 内核公共 API 契约。
  *
  * 【已实现（kernel 建造者落地）】本文件是公共契约面：全部类型/签名与 docs/kernel-api.md
- * 1:1 对应；函数实现按模块拆分（store/transitions/id/permits/projection/gate-result/
- * doctor/errors），本文件以 re-export 保持签名逐字不变。改签名必须先改 docs/kernel-api.md
- * 并同 commit 同步。
+ * 1:1 对应；函数实现按模块拆分（store/transitions/discovery-chain/id/permits/projection/
+ * gate-result/doctor/errors），本文件以 re-export 保持签名逐字不变。改签名必须先改
+ * docs/kernel-api.md 并同 commit 同步。
  *
  * 设计输入（改签名前必读）：
  * - packages/schemas/assets/vocab-lock.draft.yaml（FROZEN 词表；枚举唯一来源，
  *   代码镜像点 @pomaster/schemas/src/vocab.ts）
- * - packages/schemas/assets/01..07（形态契约）
+ * - packages/schemas/assets/01..10（形态契约）
  * - research/design-synthesis-decisions.md（裁定表 A1-A8/B/C/D）与 vnext-lifecycle-and-loop.md（八拍）
  *
  * 全局纪律锚（每个签名的设计前提，实现时不得违背）：
@@ -416,6 +416,113 @@ export type TransitionOutcome =
  * 归 applyTransaction/REF_INTEGRITY，不在本纯函数内。
  */
 export { validateTransition } from "./transitions.js";
+
+// ============================================================
+// Discovery 状态链（P18 · PRD §80.3 Ephemeral Discovery）
+// ============================================================
+
+/**
+ * Discovery 状态链转移校验（纯函数）。
+ * 状态链（PRD §80.3 原文词形）：IDEA → DISCOVERY → READY_TO_PROMOTE → CHANGE/TASK；
+ * 拓扑唯一来源 DISCOVERY_CHAIN_TRANSITIONS（@pomaster/schemas，镜像 08-discovery-state-chain
+ * x-pomaster-transition-matrix）。Discovery 状态链是新状态面（Discovery 讨论生命周期），
+ * 与 state_axes.lifecycle 正交、值域不相交；词轴待词汇表 PR 收编（TODO(vocab-pr)）。
+ * 非法迁移（跳步/倒退/自环/词表外值）不 throw——返回 allowed:false 显式拒绝（fail-closed）；
+ * 提升边（READY_TO_PROMOTE→CHANGE/TASK）requires ["promotion_basis"]（§80.3 四条晋升条件
+ * 任一满足），且提升写入必须走 P11 maintain 面（受控写入唯一面，Discovery 层不私造第二
+ * 写入通道）——本原语只判定，不落盘、不写入。
+ */
+export { validateDiscoveryTransition } from "./discovery-chain.js";
+export type {
+  DiscoveryChainRequirement,
+  DiscoveryChainOutcome,
+} from "./discovery-chain.js";
+
+// ============================================================
+// Question Gate / One-question-at-a-time / Diverge→Converge（P18 · PRD §80.4/80.5/80.7）
+// ============================================================
+
+/**
+ * Question Gate Q1-Q7 判卷（纯函数，§80.4）：Brainstorm 提问前依次检查七关（不跳关），
+ * 只有最后仍为「需要人类裁决」且申报分类 ∈ ASKABLE（BLOCKING_AUTHORITY/PREFERENCE）
+ * 才 ASK_HUMAN；Q1-Q5 命中 → DERIVABLE、Q6 → RESEARCHABLE（Research-first §80.6）、
+ * Q7 不阻塞 → DEFERABLE；七关全过但分类非可问类 → ASK_REJECTED（矛盾显式拒绝）。
+ * declaredConsistent 是申报分类与七关重算的对账信号——判卷以七关重算为准（C5）。
+ */
+export { evaluateQuestionGate } from "./question-gate.js";
+export type {
+  QuestionGateCategory,
+  AskableCategory,
+  QuestionGateId,
+  QuestionGateAnswerable,
+  QuestionGateInput,
+  QuestionVerdict,
+  QuestionGateOutcome,
+} from "./question-gate.js";
+export {
+  QUESTION_GATE_CATEGORIES,
+  ASKABLE_CATEGORIES,
+  QUESTION_GATES,
+  QUESTION_PRIORITY_DESCRIPTIONS,
+  CONVERGENCE_ZONE_KEYS,
+} from "./question-gate.js";
+export type {
+  QuestionPriority,
+  PrioritizedQuestion,
+  OneQuestionOutcome,
+  ConvergenceZoneKey,
+  ConvergencePartition,
+  ConvergenceOutcome,
+} from "./question-gate.js";
+/**
+ * One-question-at-a-time 选择器（纯函数，§80.5）：一次只返回价值最高的一个问题
+ * （priority 1-5 机械序号，同优先级稳定排序，零墙钟）；队列混入未过闸问题显式拒绝。
+ * Diverge→Converge 分区判卷（纯函数，§80.7）：三区显式存在（缺席 fail）+ 分区互斥
+ * （跨区重复 = future 偷渡当前范围的违例形态，逐条列出）。
+ */
+export { selectNextQuestion, evaluateConvergencePartition } from "./question-gate.js";
+
+// ============================================================
+// Research Read-only Contract / 五级 Evidence / Blueprint Envelope（P18 · PRD §81.3/81.4/82.5）
+// ============================================================
+
+/**
+ * Research 写面契约判卷（纯函数，§81.3）：申报路径必须落在 <host>/research/** 内；
+ * 受治理面（state/truth/objects/policies/evidence——Current Truth 与证据平面）文件
+ * 直写一律 fatal:governed_surface（Evidence Pack 合法入账走 record 通路）；盘符/绝对/
+ * .. 逃逸 fatal:path_not_portable；越出 research/ 面 fatal:outside_research_dir——
+ * 越写即 FATAL（wave3-plan P18 出口判据），CLI 层据此 exit 1。
+ */
+export { checkResearchWriteContract } from "./research-contract.js";
+export type { ResearchWriteContractOutcome } from "./research-contract.js";
+export { RESEARCH_ARTIFACT_FILES, RESEARCH_FORBIDDEN_SURFACE_PREFIXES } from "./research-contract.js";
+export type { ResearchArtifactFile } from "./research-contract.js";
+/**
+ * 五级 Evidence 判卷语义（纯函数，§81.4/§81.5）：词形独立重算（五级/三级/三值词表外
+ * violation）；CONFLICTS → escalation（发现不是裁决，上报正式治理面）；IMPLEMENTATION
+ * +SUPPORTS 未记录对账 → 降信 warning（§81.5 Existence ≠ Correctness ≠ Authority）。
+ */
+export { adjudicateResearchFindings } from "./research-contract.js";
+export type {
+  ResearchFindingInput,
+  ResearchFindingViolationCode,
+  ResearchFindingSignalCode,
+  ResearchFindingAdjudication,
+  FindingsAdjudicationReport,
+} from "./research-contract.js";
+/**
+ * Blueprint Acceptance Envelope 判卷（纯函数，§82.5）：HARD_BLOCKER>0 ⇒ 不得
+ * ACCEPTED/CONDITIONALLY_ACCEPTED（09 allOf 同源重算）；CONDITIONALLY_ACCEPTED 七条
+ * 前提 a/b/c/d/f 机器判 PASS/FAIL，e/g 显式 NOT_MACHINE_CHECKABLE 不冒充已查（C1）；
+ * msd_reached 与三轴派生不一致整体 fail（09 allOf 双向强制）。
+ */
+export { evaluateBlueprintEnvelope } from "./research-contract.js";
+export type {
+  BlueprintEnvelopeInput,
+  EnvelopeCheckStatus,
+  EnvelopeRequirementId,
+  BlueprintEnvelopeAdjudication,
+} from "./research-contract.js";
 
 // ============================================================
 // ID 解析与别名收编（A5 / A6）

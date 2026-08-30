@@ -95,6 +95,9 @@ pomaster permit issue/check/steal/list   # 八拍② FRAMEWORK LOCK：许可签�
 pomaster exec-guard …  # 八拍④ 写路径机器执行点：attempt JSON → checkPermit 判卷（判卷器非写入器）
 pomaster maintain <change-or-task> --ops <tx.json>  # 受控变更：显式事务 → kernel applyTransaction（判卷权威在 kernel）
 pomaster maintain <change-or-task> --phase pre-dev …  # pre-dev 链：triage→permit→context 薄编排（八拍①②③一线穿）
+pomaster brainstorm start/status/promote  # Discovery Plane（§80）：scratchpad 讨论面（Ephemeral 纪律，不复制「Step 0 永远创建 Task」）；状态链 IDEA→DISCOVERY→READY_TO_PROMOTE→CHANGE/TASK，提升走 P11 maintain 面
+pomaster research <topic> --mode internal|external|mixed|comparative|impact|forensic  # Research 会话（§81）：写面契约判卷（越写=FATAL，§81.3）+ 四文件骨架（§81.6）
+pomaster research list/inspect  # research 产物清单 / 单 artifact 判读（五级 Evidence 判卷语义 + handoff 三件，§81.4/§81.5）
 pomaster check --fast   # FAST gate 循环（BUILD 腿，纯读）
 pomaster check --gates  # catalog gate recipes 派发腿：每 recipe 一条 GRN 入账（缺席工具显式 NOT_RUN，非绿非红）
 pomaster record gate-run|claim  # 证据入账通路：gate 运行结果 / claim 显式单条落账 evidence 平面

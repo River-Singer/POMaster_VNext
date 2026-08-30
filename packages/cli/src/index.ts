@@ -13,6 +13,14 @@
  * - record          证据入账通路：gate-run/claim 显式单条落账 evidence 平面（G6）
  * - closeout        八拍⑧：DoD 判卷（acceptance→VERIFIED claim 硬绑）+ gate 阻断施断
  *                   COMPLETED（transition evidence→VERIFIED；A9）
+ * - brainstorm start/status/promote
+ *                   Discovery Plane（§44.3/§80）：scratchpad 讨论面（Ephemeral 纪律，
+ *                   §80.3 状态链）+ 提升面（READY_TO_PROMOTE→CHANGE/TASK 经 P11
+ *                   maintain --ops 落库——不私造第二写入通道）
+ * - research <topic>/list/inspect
+ *                   Research 命令面（§44.3/§81）：Read-only Contract 写面判卷
+ *                   （越写=FATAL，§81.3）+ 四文件骨架（§81.6）+ 五级 Evidence 判读
+ *                   （§81.4/§81.5）
  * - status          读 .pomaster/state：对象计数/分母状态/permit 活性
  * - inspect         单对象检视：正文+证据+谱系纯读呈现（零写入；PRD §44.1 基础命令）
  * - maintain        受控变更（--ops 显式事务，判卷权威在 kernel applyTransaction）/
@@ -51,6 +59,16 @@ import { runRecordClaim, runRecordGateRun } from "./record.js";
 import { runCloseout } from "./closeout.js";
 import { runCatalogStatus, runCatalogExplain } from "./catalog.js";
 import { runEval } from "./eval.js";
+import {
+  runBrainstormPromote,
+  runBrainstormStart,
+  runBrainstormStatus,
+} from "./brainstorm.js";
+import {
+  runResearchInspect,
+  runResearchList,
+  runResearchStart,
+} from "./research.js";
 
 export { CLI_NAME, CLI_VERSION } from "./cli-info.js";
 export { toEnvelope } from "./envelope.js";
@@ -191,6 +209,36 @@ export type {
   FamilySummaryEntry,
   BehavioralReport,
 } from "./eval.js";
+export {
+  runBrainstormStart,
+  runBrainstormStatus,
+  runBrainstormPromote,
+  PROMOTE_TARGETS,
+} from "./brainstorm.js";
+export type {
+  BrainstormStartInput,
+  BrainstormStartResult,
+  BrainstormStatusEntry,
+  BrainstormStatusResult,
+  BrainstormPromoteInput,
+  BrainstormPromoteResult,
+  DiscoveryStateFile,
+  DiscoveryMetaFile,
+  PromoteTarget,
+} from "./brainstorm.js";
+export {
+  runResearchStart,
+  runResearchList,
+  runResearchInspect,
+  RESEARCH_MODE_ARGV_ALIASES,
+} from "./research.js";
+export type {
+  ResearchStartInput,
+  ResearchStartResult,
+  ResearchListEntry,
+  ResearchListResult,
+  ResearchInspectResult,
+} from "./research.js";
 export {
   EVIDENCE_MALFORMED_CODE,
   RUN_INGEST_ACTIONS,
@@ -786,6 +834,149 @@ export function createProgram(
       const outcome = await runEval({ suite: opts.suite as string });
       record({
         command: "eval",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  // —— Discovery / Research 命令面（§44.3 六命令；P18） ——
+  // Brainstorm scratchpad 是 Discovery 平面（PRD §80.2/§80.3 明文授权维护面），
+  // 独立于治理 store；提升（promote）写入走 P11 maintain 面——不私造第二写入通道。
+  const brainstorm = program
+    .command("brainstorm")
+    .description(
+      "Discovery Plane（§80）：scratchpad 讨论面（Ephemeral 纪律——不复制「Step 0 永远创建 Task」假设）；状态链 IDEA→DISCOVERY→READY_TO_PROMOTE→CHANGE/TASK，提升走 P11 maintain 面",
+    );
+  brainstorm
+    .command("start")
+    .description(
+      "创建 scratchpad 并进入 DISCOVERY 态（.pomaster/discovery/scratchpads/<id>/，§80.3 原文路径；--ephemeral 登记 Ephemeral 标记；同 id 重复=NO_CHANGE 幂等）",
+    )
+    .option("--ephemeral", "登记 Ephemeral Discovery 标记（§80.3：普通讨论驻留 scratchpad，未达晋升条件不创建 Task）")
+    .option("--id <id>", "显式 discovery id（[A-Za-z0-9][A-Za-z0-9_-]{0,63}；缺省自动编号 idea-001 起）")
+    .option("--title <text>", "讨论标题注记（meta 注记位）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runBrainstormStart(resolveDir(command), {
+        ephemeral: opts.ephemeral === true,
+        id: opts.id as string | undefined,
+        title: opts.title as string | undefined,
+      });
+      record({
+        command: "brainstorm start",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+  brainstorm
+    .command("status")
+    .description(
+      "呈现全部 scratchpad 的状态链位置（§44.3；空=合法状态显式呈现，残缺 state.json 显式 warning）",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (_opts, command) => {
+      const outcome = await runBrainstormStatus(resolveDir(command));
+      record({
+        command: "brainstorm status",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+  brainstorm
+    .command("promote")
+    .description(
+      "提升 READY_TO_PROMOTE→CHANGE/TASK（§80.3 晋升条件）：链判定/词表/closed-world id 三闸 kernel 判卷；缺省产出 maintain --ops tx 文件+指路，--apply 经同一 maintain 通路落库（提升写入走 P11 maintain 面，Discovery 层不私造第二写入通道）",
+    )
+    .argument("<discovery-id>", "scratchpad id（brainstorm start 产出的 id）")
+    .requiredOption("--to <target>", "提升落点词形（§80.3：CHANGE | TASK）")
+    .requiredOption(
+      "--basis <basis>",
+      "晋升依据（§80.3 四条件词形：user_explicit_request | msd_reached | needs_formal_resources | needs_cross_session_tracking）",
+    )
+    .option("--as <governed-id>", "显式落点 id（CHANGE.*/TASK.* governed id；缺省从 discovery id 机械派生）")
+    .option("--apply", "经 runMaintain（maintain --ops 同一入口）落库；缺省只产出 tx 文件+指路")
+    .option("--tx-out <path>", "tx 文件路径（缺省 <scratchpad>/promote-tx.json）")
+    .option("--authority-ref <ref>", "审批/决策引用（缺省 promoted_ref）")
+    .option("--note <text>", "事务注记")
+    .option("--owner <owner>", "提升对象 authority.owner（缺省 BOOTSTRAP_OWNER；须已在 authority.json 登记）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (discoveryId: string, opts, command) => {
+      const outcome = await runBrainstormPromote(resolveDir(command), {
+        discoveryId,
+        to: opts.to as string | undefined,
+        basis: opts.basis as string | undefined,
+        asRef: opts.as as string | undefined,
+        apply: opts.apply === true,
+        txOut: opts.txOut as string | undefined,
+        authorityRef: opts.authorityRef as string | undefined,
+        note: opts.note as string | undefined,
+        owner: opts.owner as string | undefined,
+      });
+      record({
+        command: "brainstorm promote",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  const research = program
+    .command("research")
+    .description(
+      "Research Agent 命令面（§44.3/§81）：Read-only Contract 写面判卷（越写=FATAL，§81.3）+ 四文件骨架（§81.6）+ 产物判读（五级 Evidence 判卷语义，§81.4/§81.5）",
+    );
+  research
+    .command("list")
+    .description("宿主 research 产物清单（§44.3 research list <task-or-discovery>；宿主不存在=显式错误，无产物=显式空清单）")
+    .argument("<task-or-discovery>", "宿主目录（scratchpad 或 task 目录；尾斜杠可省）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (host: string, _opts, command) => {
+      const outcome = await runResearchList(resolveDir(command), host);
+      record({
+        command: "research list",
+        outcome,
+        // 混合模式（§44.3 直跑形态 + 子命令并存）：`research list X --json` 的 --json
+        // 会被父命令 research（直跑形态自带 --json）先行消费——本 action 须经
+        // optsWithGlobals 读到全局值，否则 --json 被吞、§45 机读信封违约（实测缺陷回归）。
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  research
+    .command("inspect")
+    .description(
+      "单 artifact 判读：四文件完整性 + index.yaml 机读形态 + 五级 Evidence 判卷（词表外 violation/CONFLICTS escalation/IMPLEMENTATION+SUPPORTS 降信 warning）+ handoff 三件呈现（纯读零写入）",
+    )
+    .argument("<research-id>", "artifact 根目录（<host>/research/；index.yaml 结尾亦可）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (researchId: string, _opts, command) => {
+      const outcome = await runResearchInspect(resolveDir(command), researchId);
+      record({
+        command: "research inspect",
+        outcome,
+        // 同 list：--json 被父命令先行消费时经 optsWithGlobals 兜住（§45 契约）。
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  // §44.3 逐字形态：`pomaster research <topic> [--mode …]` 直跑（topic 不匹配子命令
+  // 时走本 action——commander 混合模式）+ `research list/inspect` 子命令；topic 恰为
+  // "list"/"inspect" 字样的边缘情况须改用 --topic 无关书写（文档注记）。
+  research
+    .argument("<topic>", "研究主题（§44.3 research <topic>）")
+    .option(
+      "--mode <mode>",
+      "研究模式（§44.3 词表：internal|external|mixed|comparative|impact|forensic）",
+    )
+    .option("--host <dir>", "宿主目录（缺省=唯一活跃 scratchpad；多/零个显式拒绝）")
+    .option("--write <path>", "额外申报写入面（可重复；每条过 Read-only Contract 判卷）", collectValues)
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (topic: string, opts, command) => {
+      const outcome = await runResearchStart(resolveDir(command), {
+        topic,
+        mode: opts.mode as string | undefined,
+        host: opts.host as string | undefined,
+        write: opts.write as string[] | undefined,
+      });
+      record({
+        command: "research",
         outcome,
         asJson: command.opts().json === true,
       });

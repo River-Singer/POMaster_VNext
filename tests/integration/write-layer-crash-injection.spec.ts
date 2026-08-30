@@ -397,7 +397,7 @@ describe("A 段：注入式半写后重启（state 完好或显式检出，绝�
     expect(code).toBe(1);
     const envelope = JSON.parse(lines.join("\n")) as CliEnvelope<Record<string, unknown>>;
     expect(envelope.ok).toBe(false);
-    expect((envelope.errors[0] as Record<string, unknown>)["code"]).toBe("SCHEMA_INVALID");
+    expect((envelope.errors[0] as unknown as Record<string, unknown>)["code"]).toBe("SCHEMA_INVALID");
   });
 });
 

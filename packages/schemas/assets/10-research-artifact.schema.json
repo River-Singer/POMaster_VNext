@@ -1,0 +1,292 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://pomaster.dev/schemas/research-artifact/v1-draft.json",
+  "title": "Research Artifact（四文件结构 · §81.6，P18）",
+  "description": "PRD §81.6 Research Artifact 的文件形态定义：\n<task-or-discovery>/research/\n├── index.yaml\n├── current-implementation.md\n├── external-options.md\n└── risks-and-caveats.md\nindex.yaml 的 findings 条目形态按 §81.4 逐字段冻结（statement / evidence_type 五级 / sources / confidence / authority_effect / caveats）。主 Agent Handoff 只传：artifact path + one-line summary + critical caveat（§81.6 原文），避免把原始网页/日志全部污染主 Context。Research 有发现权，没有裁决权（§81.1）。",
+  "x-pomaster-file-role": "10-research-artifact.schema.json —— Research 产物文件形态（P18）。定义 research/ 四文件结构、index.yaml findings 条目（§81.4 五级 Evidence）与 handoff 三件；被 Research Agent（Read-only Contract，§81.3）与后续 Discovery 命令面消费。",
+  "x-pomaster-vocab-source": "PRD v0.4 §81.2/§81.4 词形逐字（六模式、五级 Evidence、confidence 三级、authority_effect 三值）；vocab-lock@v0.2-resolved 尚无对应词轴——词形在本文件 definitions 冻结，提请词汇表 PR 收编；代码镜像点 @pomaster/schemas/src/vocab.ts「待词汇表 PR 收编」段。",
+  "x-pomaster-contract": {
+    "read_only_contract_prd": "PRD §81.3 Read-only Contract——允许：Read / Search / Grep / AST/Index Query；Web/Docs/Repo research；写 research/** 和 Evidence Pack。禁止：改业务代码；改 Current Truth；改 Architecture；改 .pomaster/policies；approve/deny proposal；自行把 research conclusion 变成 MUST。违规写入=对抗测试 FATAL 面（wave3-plan P18 出口判据）。",
+    "evidence_levels_prd": "PRD §81.4 Evidence 等级建议统一枚举（逐字）：AUTHORITATIVE（Human/Owner 批准、正式 Contract、法律/标准权威源）/ PRIMARY（官方产品文档、原始需求材料、OpenAPI、正式设计稿）/ IMPLEMENTATION（当前代码/配置/运行事实；证明「存在」，不自动证明「正确」）/ SECONDARY（社区文章、第三方实践、比较资料）/ INFERENCE（Agent 基于证据推断）。",
+    "existence_correctness_authority": "PRD §81.5 Existence ≠ Correctness ≠ Authority：例如「代码中存在 3 个 MasterGrid 使用点」不得推导「MasterGrid 是项目官方 Grid 标准」——必须继续与 Architecture Truth / ADR / Technology Registry 对账。IMPLEMENTATION 级 evidence 的 authority_effect 判定由此约束。",
+    "four_file_structure_prd": "PRD §81.6 四文件结构逐字：<task-or-discovery>/research/ 下 index.yaml + current-implementation.md + external-options.md + risks-and-caveats.md。",
+    "handoff_prd": "PRD §81.6：主 Agent Handoff 只传 artifact path + one-line summary + critical caveat，避免把原始网页/日志全部污染主 Context。"
+  },
+  "x-pomaster-digest-ethics-policy": "本对象当前不含 sha256/digest 字段。未来任何 digest/sha256 字段加入时必须携带 x-digest-ethics 注记 {\"write_blocking\": false, \"side\": \"read_only_service\", \"human_touch\": \"forbidden\"}（D24 / vocab-lock digest_ethics）。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["host_ref", "artifact_root", "files", "findings", "handoff"],
+  "properties": {
+    "host_ref": {
+      "type": "string",
+      "minLength": 1,
+      "title": "宿主引用（host_ref，task 或 discovery）",
+      "description": "本 artifact 归属的 task 或 discovery（§81.6 路径模板 <task-or-discovery>/research/ 的宿主位；词形随 Discovery 命令面 PR 收紧，本版只锁非空）。"
+    },
+    "artifact_root": {
+      "$ref": "#/definitions/artifact_root"
+    },
+    "files": {
+      "$ref": "#/definitions/research_files"
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/research_finding"
+      },
+      "title": "Research Finding 列表（index.yaml 内容的 schema 形态，§81.4）",
+      "description": "每条 finding 至少包含 §81.4 六字段（逐字）：statement / evidence_type / sources / confidence / authority_effect / caveats。空数组合法（Research 跑完一无所获是诚实结论，handoff 照传）。"
+    },
+    "handoff": {
+      "$ref": "#/definitions/handoff"
+    }
+  },
+  "x-pomaster-semantic": {
+    "title": "research_artifact — Research 身份语义标注（x-semantic）",
+    "core_identity": "Research 回答「关于这个变化，我们实际上知道什么？」（§81.1）；有发现权，没有裁决权——本 artifact 的 findings 永不直接改变 Authority/Current Truth，conclusion 变 MUST 必须走正式治理面。",
+    "read_only_contract": "§81.3 允许/禁止清单见 x-pomaster-contract.read_only_contract_prd；写 research/** 是 Research 唯一写入面。",
+    "context_pollution_guard": "handoff 三件（path + one-line summary + critical caveat）是主 Agent 消费的唯一必需面；原始网页/日志必须留在 artifact 内，不得随 handoff 注入主 Context（§81.6）。"
+  },
+  "definitions": {
+    "artifact_root": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9.][A-Za-z0-9._\\-\\/]*\\/research\\/$",
+      "title": "artifact 根目录（<task-or-discovery>/research/）",
+      "description": "PRD §81.6 路径模板：宿主目录下的 research/ 子目录（以 /research/ 结尾的相对目录路径）。禁止绝对盘符（冒号）、反斜杠与根斜杠开头（provenance 可移植纪律）。",
+      "examples": [
+        ".pomaster/discovery/scratchpads/idea-carline-import/research/",
+        "tasks/TASK.T0087/research/"
+      ]
+    },
+    "research_files": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "index",
+        "current_implementation",
+        "external_options",
+        "risks_and_caveats"
+      ],
+      "title": "四文件清单（§81.6 逐字冻结）",
+      "description": "PRD §81.6 四文件结构：index.yaml（findings 索引）+ current-implementation.md（现状调查）+ external-options.md（外部选项/惯例）+ risks-and-caveats.md（风险与告警）。文件名逐字冻结（const 值），禁止语义化改名——四文件名是 Research 产物的稳定寻址契约。",
+      "$comment": "source: PRD v0.4 §81.6 文件树逐字；properties 键名 snake_case 化，const 值为原文文件名。",
+      "properties": {
+        "index": {
+          "const": "index.yaml",
+          "title": "index.yaml（findings 索引，本 schema findings 数组的落盘载体）"
+        },
+        "current_implementation": {
+          "const": "current-implementation.md",
+          "title": "current-implementation.md（现状：repo/code/docs/current truth 调查，§81.2 INTERNAL 面）"
+        },
+        "external_options": {
+          "const": "external-options.md",
+          "title": "external-options.md（外部：官方文档/标准/OSS/公开资料，§81.2 EXTERNAL 面）"
+        },
+        "risks_and_caveats": {
+          "const": "risks-and-caveats.md",
+          "title": "risks-and-caveats.md（风险与告警：handoff critical_caveat 的来源面）"
+        }
+      }
+    },
+    "research_finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "statement",
+        "evidence_type",
+        "sources",
+        "confidence",
+        "authority_effect",
+        "caveats"
+      ],
+      "title": "Research Finding（§81.4 逐字段冻结）",
+      "description": "PRD §81.4「每条 Research Finding 至少包含」六字段逐字词形化。IMPLEMENTATION 级 evidence 只证明「存在」（§81.5：Existence ≠ Correctness ≠ Authority）——三处使用点不构成官方标准结论，authority_effect 的判定必须经 Architecture Truth / ADR / Technology Registry 对账。",
+      "$comment": "source: PRD v0.4 §81.4 finding yaml 逐键（statement/evidence_type/sources/confidence/authority_effect/caveats）。",
+      "properties": {
+        "statement": {
+          "type": "string",
+          "minLength": 1,
+          "title": "发现陈述（statement）"
+        },
+        "evidence_type": {
+          "$ref": "#/definitions/evidence_level"
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "title": "来源列表（sources，§81.4 示例 sources: []——空数组合法）",
+          "description": "来源引用（URL/路径/commit 等，形态不锁）。INFERENCE 级允许空列表（推断自既有证据组合）；宣称具体来源的证据级（AUTHORITATIVE/PRIMARY）空来源应在消费方对账时降信。"
+        },
+        "confidence": {
+          "$ref": "#/definitions/confidence"
+        },
+        "authority_effect": {
+          "$ref": "#/definitions/authority_effect"
+        },
+        "caveats": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "title": "告警（caveats，critical_caveat 的来源）",
+          "description": "结论适用边界；handoff.critical_caveat 应从中取最关键一条（§81.6 handoff 纪律）。"
+        }
+      }
+    },
+    "evidence_level": {
+      "type": "string",
+      "enum": [
+        "AUTHORITATIVE",
+        "PRIMARY",
+        "IMPLEMENTATION",
+        "SECONDARY",
+        "INFERENCE"
+      ],
+      "title": "Evidence 等级（§81.4 五级，逐字冻结）",
+      "description": "PRD §81.4 逐字：AUTHORITATIVE（Human/Owner 批准、正式 Contract、法律/标准权威源）/ PRIMARY（官方产品文档、原始需求材料、OpenAPI、正式设计稿）/ IMPLEMENTATION（当前代码/配置/运行事实；证明「存在」，不自动证明「正确」——§81.5）/ SECONDARY（社区文章、第三方实践、比较资料）/ INFERENCE（Agent 基于证据推断）。",
+      "$comment": "source: PRD v0.4 §81.4 Evidence 等级列表逐字；提请词汇表 PR 收编（pending_vocab_pr）。",
+      "x-pomaster-vocab": {
+        "axis": "research_evidence_level",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "source": "PRD v0.4 §81.4"
+      },
+      "examples": [
+        "IMPLEMENTATION",
+        "AUTHORITATIVE"
+      ]
+    },
+    "confidence": {
+      "type": "string",
+      "enum": ["HIGH", "MEDIUM", "LOW"],
+      "title": "置信度（confidence 三级，§81.4 finding 逐键）",
+      "description": "§81.4 finding yaml 逐键：HIGH | MEDIUM | LOW。与 state_axes.confidence（UNRESOLVED/EXPERIMENTAL/PROVISIONAL/LOCKED，§18.2 对象置信轴）正交：本词轴是单条 finding 的证据置信，不入对象轴。",
+      "$comment": "source: PRD v0.4 §81.4 finding yaml confidence 行逐字；提请词汇表 PR 收编（pending_vocab_pr）。",
+      "x-pomaster-vocab": {
+        "axis": "research_finding_confidence",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "orthogonal_to": "state_axes.confidence",
+        "source": "PRD v0.4 §81.4"
+      },
+      "examples": [
+        "HIGH",
+        "LOW"
+      ]
+    },
+    "authority_effect": {
+      "type": "string",
+      "enum": ["NONE", "SUPPORTS", "CONFLICTS"],
+      "title": "权威效应（authority_effect 三值，§81.4 finding 逐键）",
+      "description": "§81.4 finding yaml 逐键：NONE（对 Authority 无效应）/ SUPPORTS（支持既有 Authority 结论）/ CONFLICTS（与既有 Authority 结论冲突——冲突是发现不是裁决：Research 无权改判，CONFLICTS 条目须上报走正式治理面）。§81.5：IMPLEMENTATION 级 evidence 申报 SUPPORTS 前必须完成与 Architecture Truth / ADR / Technology Registry 对账。",
+      "$comment": "source: PRD v0.4 §81.4 finding yaml authority_effect 行逐字；提请词汇表 PR 收编（pending_vocab_pr）。",
+      "x-pomaster-vocab": {
+        "axis": "research_authority_effect",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "source": "PRD v0.4 §81.4"
+      },
+      "examples": [
+        "NONE",
+        "CONFLICTS"
+      ]
+    },
+    "handoff": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_path", "one_line_summary", "critical_caveat"],
+      "title": "主 Agent Handoff 三件（§81.6 逐字）",
+      "description": "PRD §81.6：主 Agent Handoff 只传 artifact path + one-line summary + critical caveat——三件全必填（无 caveat 的 research 也要显式写「无关键告警」级别的陈述，缺席即未诚实传达 §81.6 的 handoff 契约）。避免把原始网页/日志全部污染主 Context。",
+      "$comment": "source: PRD v0.4 §81.6 handoff 三件逐字词形化。",
+      "properties": {
+        "artifact_path": {
+          "type": "string",
+          "minLength": 1,
+          "title": "artifact path（与 artifact_root 一致的相对路径）",
+          "description": "主 Agent 按需自取全文的寻址位；handoff 本体只传路径不传内容（context pollution guard）。"
+        },
+        "one_line_summary": {
+          "type": "string",
+          "minLength": 1,
+          "title": "one-line summary（单行摘要）"
+        },
+        "critical_caveat": {
+          "type": "string",
+          "minLength": 1,
+          "title": "critical caveat（最关键告警）",
+          "description": "无关键告警时填写显式陈述（如「无关键告警」）——三件是 handoff 的完整契约，缺席=未传达（C1 显式缺席纪律在本字段的投影）。"
+        }
+      }
+    },
+    "research_mode_full": {
+      "title": "§81.2 六模式全量镜像（人读核对/后续命令面消费位，本版无字段消费）",
+      "$comment": "source: PRD v0.4 §81.2 支持模式列表逐字（INTERNAL/EXTERNAL/MIXED/COMPARATIVE/IMPACT/FORENSIC）；对齐 05 lifecycle_full_mirror 的「全量镜像」模式。Research Artifact 层本版未设 mode 字段（PRD §81.6 未规定）；后续命令面若需 mode 维度，消费本定义并同步词汇表 PR。",
+      "type": "string",
+      "enum": [
+        "INTERNAL",
+        "EXTERNAL",
+        "MIXED",
+        "COMPARATIVE",
+        "IMPACT",
+        "FORENSIC"
+      ],
+      "x-pomaster-vocab": {
+        "axis": "research_mode",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "consumed_by_fields": "none__reserved_for_command_surface",
+        "source": "PRD v0.4 §81.2"
+      }
+    }
+  },
+  "examples": [
+    {
+      "host_ref": ".pomaster/discovery/scratchpads/idea-carline-import/",
+      "artifact_root": ".pomaster/discovery/scratchpads/idea-carline-import/research/",
+      "files": {
+        "index": "index.yaml",
+        "current_implementation": "current-implementation.md",
+        "external_options": "external-options.md",
+        "risks_and_caveats": "risks-and-caveats.md"
+      },
+      "findings": [
+        {
+          "statement": "代码中存在 3 个 MasterGrid 使用点",
+          "evidence_type": "IMPLEMENTATION",
+          "sources": ["src/pages/carline/list.vue", "src/pages/task/grid.vue"],
+          "confidence": "HIGH",
+          "authority_effect": "NONE",
+          "caveats": ["存在不等于官方标准（§81.5）；须与 Architecture Truth 对账"]
+        }
+      ],
+      "handoff": {
+        "artifact_path": ".pomaster/discovery/scratchpads/idea-carline-import/research/",
+        "one_line_summary": "现状 3 处 MasterGrid 使用，外部无更优替代结论",
+        "critical_caveat": "使用点存在不构成官方 Grid 标准结论（§81.5）"
+      }
+    },
+    {
+      "x_example_intent": "INVALID —— 三重违规演示：a) files 缺 risks-and-caveats（四文件结构不全）；b) finding.evidence_type=社区博客文章（词表外值，五级之外）；c) handoff 缺 critical_caveat（三件契约不全）",
+      "host_ref": ".pomaster/discovery/scratchpads/idea-broken/",
+      "artifact_root": ".pomaster/discovery/scratchpads/idea-broken/research/",
+      "files": {
+        "index": "index.yaml",
+        "current_implementation": "current-implementation.md",
+        "external_options": "external-options.md"
+      },
+      "findings": [
+        {
+          "statement": "某博客说 grid 应该这样用",
+          "evidence_type": "社区博客文章",
+          "sources": [],
+          "confidence": "LOW",
+          "authority_effect": "NONE",
+          "caveats": []
+        }
+      ],
+      "handoff": {
+        "artifact_path": ".pomaster/discovery/scratchpads/idea-broken/research/",
+        "one_line_summary": "无结论"
+      }
+    }
+  ],
+  "x-pomaster-examples-note": "examples[0]=正例（四文件齐全 + IMPLEMENTATION 级 finding 带 §81.5 caveat + handoff 三件，活样本）；examples[1]=反例，x_example_intent 列明三重违规。"
+}

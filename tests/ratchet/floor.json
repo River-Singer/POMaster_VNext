@@ -1,96 +1,292 @@
 {
-  "minTests": 1219,
+  "minTests": 1427,
   "ledger": {
     "version": 1,
-    "strategy": "docs/wave3-research-toolchain.md §2 L1-L5 承诺下限 + wave3-plan.md P15（L1 四域明细：IR 不变量 150 / 状态机转移对 120 / Permit·Evidence 推导 80 / Router 判定矩阵 60）。首轮 floor=战略目标值；P15-FillA 补量后 ir_invariants 与 state_machine_pairs 达战略下限，P15-FillB 补量后 permit_evidence 与 router_matrix 亦达标——四域 floor 均随 actual 提升锁住增量（棘轮只升不降）；P16-Fixtures 三技术栈全链 fixture 补量后 L2 缺口填平（L2 floor 随 actual 138 锁住增量）；P16-WriteLayer 写入层可靠性专项（kill -9 崩溃注入 + catalog-lock 漂移缺口矩阵）补量后 L2 floor 随 actual 150 再次锁住增量；P17-EvalCLI（eval 命令面 L1 + §94.3 触发面 L2）补量后 minTests 1210、L2 floor 随 actual 169 锁住增量；P17-Seeds（L3 四点名种子补录 + L5 retired 处置）补量后 minTests 1219、L3 floor 随 actual 64 锁住增量。",
+    "strategy": "docs/wave3-research-toolchain.md §2 L1-L5 承诺下限 + wave3-plan.md P15（L1 四域明细：IR 不变量 150 / 状态机转移对 120 / Permit·Evidence 推导 80 / Router 判定矩阵 60）。首轮 floor=战略目标值；P15-FillA 补量后 ir_invariants 与 state_machine_pairs 达战略下限，P15-FillB 补量后 permit_evidence 与 router_matrix 亦达标——四域 floor 均随 actual 提升锁住增量（棘轮只升不降）；P16-Fixtures 三技术栈全链 fixture 补量后 L2 缺口填平（L2 floor 随 actual 138 锁住增量）；P16-WriteLayer 写入层可靠性专项（kill -9 崩溃注入 + catalog-lock 漂移缺口矩阵）补量后 L2 floor 随 actual 150 再次锁住增量；P17-EvalCLI（eval 命令面 L1 + §94.3 触发面 L2）补量后 minTests 1210、L2 floor 随 actual 169 锁住增量；P17-Seeds（L3 四点名种子补录 + L5 retired 处置）补量后 minTests 1219、L3 floor 随 actual 64 锁住增量；P18-Chain（Discovery 状态链转移全矩阵 + 08/09/10 schema 正反例）补量后 minTests 1280、state_machine_pairs floor 随 actual 167 锁住增量。；P18-Commands（Question Gate Q1-Q7 逐关正反 + One-question-at-a-time + Diverge→Converge + §81.3 写面契约/§81.4 五级 Evidence/§82.5 envelope 判卷 + §44.3 六命令面 CLI 集成）补量后 minTests 1372、L1 floor 随 actual 锁增量。；P18-Adversarial（L4 威胁类 7-8：Research 越写旁路 + 提升写入通道旁路，全部真实 runCli 实跑 + 全树字节快照零落盘；L2 Discovery 状态链×closeout 消费闭环 fixture；L1 六命令 fail-closed 参数面与 --help）补量后 minTests 1406、L2 floor 随 actual 177、L4 floor 随 actual 38 锁住增量；P18-RedTeamFix（红队修复批次：发现1 §81.4 六字段存在性判卷——AUTHORITATIVE 零 sources/caveats 幻觉洗白 fail-closed + INFERENCE 空来源豁免对照 + 形态残缺条目不静默出判卷分母；发现2 --host 登记面三道闸（词形→登记面→磁盘存在性，src 拒绝）；发现3 promote --tx-out rootDir 容纳闸（出仓/受治理面拒绝，相对路径相对 rootDir）；发现4 research inspect 宿主位词形/存在性校验（../../ 穿透封死）；L4 幻觉洗白全链对抗 ADV-H1/H2）补量后 minTests 1427、L4 floor 随 actual 40 锁住增量。",
     "layers": {
-      "L1": { "title": "单元", "floor": 400 },
-      "L2": { "title": "集成", "floor": 169 },
-      "L3": { "title": "Golden", "floor": 64 },
-      "L4": { "title": "对抗", "floor": 20 },
-      "L5": { "title": "Behavioral", "floor": 15 }
+      "L1": {
+        "title": "单元",
+        "floor": 400
+      },
+      "L2": {
+        "title": "集成",
+        "floor": 177
+      },
+      "L3": {
+        "title": "Golden",
+        "floor": 64
+      },
+      "L4": {
+        "title": "对抗",
+        "floor": 40
+      },
+      "L5": {
+        "title": "Behavioral",
+        "floor": 15
+      }
     },
     "domains": {
-      "ir_invariants": { "layer": "L1", "title": "IR 不变量", "floor": 163 },
-      "state_machine_pairs": { "layer": "L1", "title": "状态机转移对", "floor": 132 },
-      "permit_evidence": { "layer": "L1", "title": "Permit·Evidence 推导", "floor": 242 },
-      "router_matrix": { "layer": "L1", "title": "Router 判定矩阵", "floor": 62 }
+      "ir_invariants": {
+        "layer": "L1",
+        "title": "IR 不变量",
+        "floor": 163
+      },
+      "state_machine_pairs": {
+        "layer": "L1",
+        "title": "状态机转移对",
+        "floor": 167
+      },
+      "permit_evidence": {
+        "layer": "L1",
+        "title": "Permit·Evidence 推导",
+        "floor": 242
+      },
+      "router_matrix": {
+        "layer": "L1",
+        "title": "Router 判定矩阵",
+        "floor": 62
+      }
     },
     "mapping": {
-      "packages/kernel/tests/id.spec.ts": { "layer": "L1", "domain": "ir_invariants" },
-      "packages/kernel/tests/ir-invariants-store.spec.ts": { "layer": "L1", "domain": "ir_invariants" },
-      "packages/kernel/tests/transitions-store.spec.ts": { "layer": "L1", "domain": "state_machine_pairs" },
-      "packages/kernel/tests/digest.spec.ts": { "layer": "L1", "domain": "ir_invariants" },
-      "packages/kernel/tests/store.spec.ts": { "layer": "L1", "domain": "ir_invariants" },
-      "packages/kernel/tests/vocab.spec.ts": { "layer": "L1", "domain": "ir_invariants" },
-      "packages/kernel/tests/transitions.spec.ts": { "layer": "L1", "domain": "state_machine_pairs" },
-      "packages/kernel/tests/gate-result.spec.ts": { "layer": "L1", "domain": "permit_evidence" },
-      "packages/kernel/tests/permits.spec.ts": { "layer": "L1", "domain": "permit_evidence" },
-      "packages/kernel/tests/reconcile.spec.ts": { "layer": "L1", "domain": "permit_evidence" },
-      "packages/cli/tests/closeout.spec.ts": { "layer": "L1", "domain": "permit_evidence" },
-      "packages/cli/tests/exec-guard.spec.ts": { "layer": "L1", "domain": "permit_evidence" },
-      "packages/cli/tests/permit.spec.ts": { "layer": "L1", "domain": "permit_evidence" },
-      "packages/cli/tests/record.spec.ts": { "layer": "L1", "domain": "permit_evidence" },
-      "packages/cli/tests/reconcile.spec.ts": { "layer": "L1", "domain": "permit_evidence" },
-      "packages/gauntlet-lite/test/normalize-gate-result.spec.ts": { "layer": "L1", "domain": "permit_evidence" },
-      "packages/cli/tests/triage.spec.ts": { "layer": "L1", "domain": "router_matrix" },
-      "packages/cli/tests/triage-matrix.spec.ts": { "layer": "L1", "domain": "router_matrix" },
-      "packages/kernel/tests/evidence-recompute.spec.ts": { "layer": "L1", "domain": "permit_evidence" },
-      "packages/gauntlet-lite/test/architecture-adapter.spec.ts": { "layer": "L1" },
-      "packages/gauntlet-lite/test/browser-adapter.spec.ts": { "layer": "L1" },
-      "packages/gauntlet-lite/test/build-adapter.spec.ts": { "layer": "L1" },
-      "packages/gauntlet-lite/test/contract-adapter.spec.ts": { "layer": "L1" },
-      "packages/gauntlet-lite/test/detectors.spec.ts": { "layer": "L1" },
-      "packages/gauntlet-lite/test/gate-recipe-runner.spec.ts": { "layer": "L1" },
-      "packages/gauntlet-lite/test/pytest-adapter.spec.ts": { "layer": "L1" },
-      "packages/kernel/tests/catalog.spec.ts": { "layer": "L1" },
-      "packages/kernel/tests/doctor.spec.ts": { "layer": "L1" },
-      "packages/kernel/tests/environment.spec.ts": { "layer": "L1" },
-      "packages/kernel/tests/projection.spec.ts": { "layer": "L1" },
-      "packages/cli/tests/catalog.spec.ts": { "layer": "L1" },
-      "packages/cli/tests/check.spec.ts": { "layer": "L1" },
-      "packages/cli/tests/compact.spec.ts": { "layer": "L1" },
-      "packages/cli/tests/context.spec.ts": { "layer": "L1" },
-      "packages/cli/tests/doctor.spec.ts": { "layer": "L1" },
-      "packages/cli/tests/eval.spec.ts": { "layer": "L1" },
-      "packages/cli/tests/init.spec.ts": { "layer": "L1" },
-      "packages/cli/tests/inspect.spec.ts": { "layer": "L1" },
-      "packages/cli/tests/maintain.spec.ts": { "layer": "L1" },
-      "packages/cli/tests/program.spec.ts": { "layer": "L1" },
-      "packages/cli/tests/readme-command-surface.spec.ts": { "layer": "L1" },
-      "packages/cli/tests/status.spec.ts": { "layer": "L1" },
-      "tests/ratchet/ledger.spec.ts": { "layer": "L1" },
-      "tests/integration/catalog-lock-drift-matrix.spec.ts": { "layer": "L2" },
-      "tests/integration/catalog-runtime-binding.spec.ts": { "layer": "L2" },
-      "tests/integration/cli-ledger-kernel-contract.spec.ts": { "layer": "L2" },
-      "tests/integration/evidence-ingest-crack-closure.spec.ts": { "layer": "L2" },
-      "tests/integration/eval-trigger.spec.ts": { "layer": "L2" },
-      "tests/integration/fixture-fastapi-project.spec.ts": { "layer": "L2" },
-      "tests/integration/fixture-git-repo-minimal.spec.ts": { "layer": "L2" },
-      "tests/integration/fixture-vue3-project.spec.ts": { "layer": "L2" },
-      "tests/integration/gate-recipes-check.spec.ts": { "layer": "L2" },
-      "tests/integration/human-views.spec.ts": { "layer": "L2" },
-      "tests/integration/smoke.spec.ts": { "layer": "L2" },
-      "tests/integration/write-layer-crash-injection.spec.ts": { "layer": "L2" },
-      "tests/golden/golden.spec.ts": { "layer": "L3" },
-      "tests/integration/adversarial-blindspot-denominator.spec.ts": { "layer": "L4" },
-      "tests/integration/adversarial-permit-write-integrity.spec.ts": { "layer": "L4" },
-      "tests/integration/adversarial-verdict-hash-ethics.spec.ts": { "layer": "L4" },
-      "tests/behavioral/behavioral.spec.ts": { "layer": "L5" }
+      "packages/kernel/tests/id.spec.ts": {
+        "layer": "L1",
+        "domain": "ir_invariants"
+      },
+      "packages/kernel/tests/ir-invariants-store.spec.ts": {
+        "layer": "L1",
+        "domain": "ir_invariants"
+      },
+      "packages/kernel/tests/transitions-store.spec.ts": {
+        "layer": "L1",
+        "domain": "state_machine_pairs"
+      },
+      "packages/kernel/tests/digest.spec.ts": {
+        "layer": "L1",
+        "domain": "ir_invariants"
+      },
+      "packages/kernel/tests/store.spec.ts": {
+        "layer": "L1",
+        "domain": "ir_invariants"
+      },
+      "packages/kernel/tests/vocab.spec.ts": {
+        "layer": "L1",
+        "domain": "ir_invariants"
+      },
+      "packages/kernel/tests/transitions.spec.ts": {
+        "layer": "L1",
+        "domain": "state_machine_pairs"
+      },
+      "packages/kernel/tests/discovery-chain.spec.ts": {
+        "layer": "L1",
+        "domain": "state_machine_pairs"
+      },
+      "packages/kernel/tests/discovery-schema.spec.ts": {
+        "layer": "L1"
+      },
+      "packages/kernel/tests/gate-result.spec.ts": {
+        "layer": "L1",
+        "domain": "permit_evidence"
+      },
+      "packages/kernel/tests/permits.spec.ts": {
+        "layer": "L1",
+        "domain": "permit_evidence"
+      },
+      "packages/kernel/tests/reconcile.spec.ts": {
+        "layer": "L1",
+        "domain": "permit_evidence"
+      },
+      "packages/cli/tests/closeout.spec.ts": {
+        "layer": "L1",
+        "domain": "permit_evidence"
+      },
+      "packages/cli/tests/exec-guard.spec.ts": {
+        "layer": "L1",
+        "domain": "permit_evidence"
+      },
+      "packages/cli/tests/permit.spec.ts": {
+        "layer": "L1",
+        "domain": "permit_evidence"
+      },
+      "packages/cli/tests/record.spec.ts": {
+        "layer": "L1",
+        "domain": "permit_evidence"
+      },
+      "packages/cli/tests/reconcile.spec.ts": {
+        "layer": "L1",
+        "domain": "permit_evidence"
+      },
+      "packages/gauntlet-lite/test/normalize-gate-result.spec.ts": {
+        "layer": "L1",
+        "domain": "permit_evidence"
+      },
+      "packages/cli/tests/triage.spec.ts": {
+        "layer": "L1",
+        "domain": "router_matrix"
+      },
+      "packages/cli/tests/triage-matrix.spec.ts": {
+        "layer": "L1",
+        "domain": "router_matrix"
+      },
+      "packages/kernel/tests/evidence-recompute.spec.ts": {
+        "layer": "L1",
+        "domain": "permit_evidence"
+      },
+      "packages/gauntlet-lite/test/architecture-adapter.spec.ts": {
+        "layer": "L1"
+      },
+      "packages/gauntlet-lite/test/browser-adapter.spec.ts": {
+        "layer": "L1"
+      },
+      "packages/gauntlet-lite/test/build-adapter.spec.ts": {
+        "layer": "L1"
+      },
+      "packages/gauntlet-lite/test/contract-adapter.spec.ts": {
+        "layer": "L1"
+      },
+      "packages/gauntlet-lite/test/detectors.spec.ts": {
+        "layer": "L1"
+      },
+      "packages/gauntlet-lite/test/gate-recipe-runner.spec.ts": {
+        "layer": "L1"
+      },
+      "packages/gauntlet-lite/test/pytest-adapter.spec.ts": {
+        "layer": "L1"
+      },
+      "packages/kernel/tests/catalog.spec.ts": {
+        "layer": "L1"
+      },
+      "packages/kernel/tests/doctor.spec.ts": {
+        "layer": "L1"
+      },
+      "packages/kernel/tests/environment.spec.ts": {
+        "layer": "L1"
+      },
+      "packages/kernel/tests/projection.spec.ts": {
+        "layer": "L1"
+      },
+      "packages/cli/tests/catalog.spec.ts": {
+        "layer": "L1"
+      },
+      "packages/cli/tests/check.spec.ts": {
+        "layer": "L1"
+      },
+      "packages/cli/tests/compact.spec.ts": {
+        "layer": "L1"
+      },
+      "packages/cli/tests/context.spec.ts": {
+        "layer": "L1"
+      },
+      "packages/cli/tests/doctor.spec.ts": {
+        "layer": "L1"
+      },
+      "packages/cli/tests/eval.spec.ts": {
+        "layer": "L1"
+      },
+      "packages/cli/tests/init.spec.ts": {
+        "layer": "L1"
+      },
+      "packages/cli/tests/inspect.spec.ts": {
+        "layer": "L1"
+      },
+      "packages/cli/tests/maintain.spec.ts": {
+        "layer": "L1"
+      },
+      "packages/cli/tests/program.spec.ts": {
+        "layer": "L1"
+      },
+      "packages/cli/tests/readme-command-surface.spec.ts": {
+        "layer": "L1"
+      },
+      "packages/cli/tests/status.spec.ts": {
+        "layer": "L1"
+      },
+      "tests/ratchet/ledger.spec.ts": {
+        "layer": "L1"
+      },
+      "tests/integration/catalog-lock-drift-matrix.spec.ts": {
+        "layer": "L2"
+      },
+      "tests/integration/catalog-runtime-binding.spec.ts": {
+        "layer": "L2"
+      },
+      "tests/integration/cli-ledger-kernel-contract.spec.ts": {
+        "layer": "L2"
+      },
+      "tests/integration/evidence-ingest-crack-closure.spec.ts": {
+        "layer": "L2"
+      },
+      "tests/integration/eval-trigger.spec.ts": {
+        "layer": "L2"
+      },
+      "tests/integration/fixture-fastapi-project.spec.ts": {
+        "layer": "L2"
+      },
+      "tests/integration/fixture-git-repo-minimal.spec.ts": {
+        "layer": "L2"
+      },
+      "tests/integration/fixture-vue3-project.spec.ts": {
+        "layer": "L2"
+      },
+      "tests/integration/gate-recipes-check.spec.ts": {
+        "layer": "L2"
+      },
+      "tests/integration/human-views.spec.ts": {
+        "layer": "L2"
+      },
+      "tests/integration/smoke.spec.ts": {
+        "layer": "L2"
+      },
+      "tests/integration/write-layer-crash-injection.spec.ts": {
+        "layer": "L2"
+      },
+      "tests/golden/golden.spec.ts": {
+        "layer": "L3"
+      },
+      "tests/integration/adversarial-blindspot-denominator.spec.ts": {
+        "layer": "L4"
+      },
+      "tests/integration/adversarial-permit-write-integrity.spec.ts": {
+        "layer": "L4"
+      },
+      "tests/integration/adversarial-verdict-hash-ethics.spec.ts": {
+        "layer": "L4"
+      },
+      "tests/behavioral/behavioral.spec.ts": {
+        "layer": "L5"
+      },
+      "packages/kernel/tests/question-gate.spec.ts": {
+        "layer": "L1"
+      },
+      "packages/kernel/tests/research-contract.spec.ts": {
+        "layer": "L1"
+      },
+      "packages/cli/tests/brainstorm.spec.ts": {
+        "layer": "L1"
+      },
+      "packages/cli/tests/research.spec.ts": {
+        "layer": "L1"
+      },
+      "tests/integration/adversarial-research-write-contract.spec.ts": {
+        "layer": "L4"
+      },
+      "tests/integration/fixture-discovery-chain.spec.ts": {
+        "layer": "L2"
+      }
     },
     "notes": {
       "粒度": "分类粒度 = spec 文件整文件归类；一文件只入一类（layer + 可选 domain）；域计数 = 该类全部文件的 vitest 用例数之和（与棘轮总口径同源：1 assert = 1 用例，子测试不计入）。",
       "ir_invariants": "id.spec（身份文法/别名双向链）+ digest.spec（canonical 序列化/摘要/词表指纹）+ vocab.spec（FROZEN 词表唯一镜像）+ store.spec（事务层维持的 IR 结构不变量：A1 成对/rev 单调/指纹短路/来源与词表校验/跨轴断言/staged 回滚/D24 哈希伦理）+ ir-invariants-store.spec（P15-FillA 补量：upsert 词表防线逐轴/信封必填/sources pin 与 capturedBy 变体/supersedes 与 denominatorRefs 契约/指纹对账逐键定位/normalizedKey 折叠与三新族收编失败分流/contentDigestOf 默认值等价）。",
-      "state_machine_pairs": "transitions.spec（validateTransition 纯函数：5 合法边 + 25 矩阵外对逐对 + 自环 + 终态 + 词表外防御）+ transitions-store.spec（P15-FillA 补量，store 层转移面：applyTransitionObject 合法边 requires 三类判定与判定顺序 / 全部 25 矩阵外对经 store 层逐对拒绝且 reason 一致 / 同值 lifecycle 补丁是轴补丁非迁移 / 跨轴耦合断言转移面判 nextAxes（PROPOSED/REJECTED⇒PLANNED、MIGRATING⇒ACTIVE PERMIT、LOCKED+STABLE→CHALLENGED⇒决策引用）/ 无矩阵轴逐值补丁（v0.1 仅 lifecycle 有矩阵）/ 同事务串联转移与失败零落盘 / 转移派生不变量（body_sha256 同步/journal 留痕/evidence_summary 不动/幂等短路）/ 分母状态 kind 级收窄子集与 supersede 链 / producer 活性状态机（三值域/dead⇒runs≥1/heartbeat 复活）/ upsert lifecycle 六值域与 successor_ref 预登记）。",
+      "state_machine_pairs": "transitions.spec（validateTransition 纯函数：5 合法边 + 25 矩阵外对逐对 + 自环 + 终态 + 词表外防御）+ transitions-store.spec（P15-FillA 补量，store 层转移面：applyTransitionObject 合法边 requires 三类判定与判定顺序 / 全部 25 矩阵外对经 store 层逐对拒绝且 reason 一致 / 同值 lifecycle 补丁是轴补丁非迁移 / 跨轴耦合断言转移面判 nextAxes（PROPOSED/REJECTED⇒PLANNED、MIGRATING⇒ACTIVE PERMIT、LOCKED+STABLE→CHALLENGED⇒决策引用）/ 无矩阵轴逐值补丁（v0.1 仅 lifecycle 有矩阵）/ 同事务串联转移与失败零落盘 / 转移派生不变量（body_sha256 同步/journal 留痕/evidence_summary 不动/幂等短路）/ 分母状态 kind 级收窄子集与 supersede 链 / producer 活性状态机（三值域/dead⇒runs≥1/heartbeat 复活）/ upsert lifecycle 六值域与 successor_ref 预登记）+ discovery-chain.spec（P18-Chain 补量，Discovery 状态链转移面（PRD §80.3，与 lifecycle 轴正交的新状态面）：validateDiscoveryTransition 合法链 4 边逐边（IDEA→DISCOVERY / DISCOVERY→READY_TO_PROMOTE / READY_TO_PROMOTE→CHANGE|TASK）+ 两条完整链走通 + 全部 16 矩阵外对逐对 + 自环 + 终态 CHANGE/TASK 无出边 + 非法跳步专项（IDEA→READY_TO_PROMOTE、IDEA→CHANGE|TASK、DISCOVERY→CHANGE|TASK）+ 倒退专项（DISCOVERY→IDEA、READY_TO_PROMOTE→IDEA|DISCOVERY、CHANGE/TASK 回退）+ promote 边 requires [promotion_basis] 与 P11 maintain 面路标 notes + 矩阵常量与词值集拓扑闭包（无幽灵键/无缺键/目标⊆词值/恰两终态）+ 词表外防御（lifecycle 词形 PROPOSED 与本轴不相交）+ 纯函数幂等）。",
       "store_spec_宁少勿多": "store.spec 含 9 条事务层状态机断言与 4 条 record_claim/record_gate_run 证据断言，按整文件规则计入 ir_invariants，不拆计入 state_machine_pairs / permit_evidence（宁少勿多，后续补量不得依赖此口径）。",
       "permit_evidence": "许可生命周期（kernel permits / cli permit）与执行闸（exec-guard）、基线→delta→verdict census 推导（kernel reconcile / cli reconcile）、证据归一与 claim→verification 推导（kernel gate-result / gauntlet normalize-gate-result：七态判卷 + trust 孪生 + verdict_cap）、证据入账（record）、DoD 证据判卷（closeout）、recompute 不可信自报值专项（evidence-recompute.spec：P15-FillB——声称方自报判定整体丢弃（D20）/ evidence_summary 篡改被真实写入路径重算纠正与幂等短路零写入对照 / 四态计数与 staged+磁盘双源扫描判定行 / subject 过滤与非 json 忽略与 claims 目录缺失防线 / census 键字典序字节稳定 / record claim APPLIED 后 summary 通路贯通）。",
       "router_matrix": "triage 判定矩阵（档位路由/升档词形/短路快道/floor 拒降/override≠bypass）。triage-matrix.spec（P15-FillB）：升档 7 词形与短路 13 词形逐词形一测 + 词表↔行为一致性全扫、matched_keywords 去重与词表序保序、子串命中与词形精确性边界（styling/color/api-req/cross domain 不投机命中、中文「全局」不升档 T-1）、三行规则·档位·证据级绑定映射、判定顺序不变量（升档优先短路）、词表字面锁定与两表不相交、CLI triage 命令面（--json 信封 result 同构/human 模板逐段/缺参 fail-closed）。golden 与 behavioral 中的 triage 镜像测试分属 L3/L5，不计入 L1 域。",
       "混合编排文件不入域": "init/check/compact/context/doctor/status/inspect/maintain/program/readme-command-surface/catalog(×2)/projection/environment 等 L1 文件为命令编排/探测/投影骨架（跨域混合形态），按宁少勿多只计 L1 层、不计四域。",
+      "p18_discovery_schema_不入域": "discovery-schema.spec.ts（P18-Chain）为 08/09/10 三份 schema 资产的 ajv 正反例校验（形态面跨状态链/MSD/Research 三主题），按宁少勿多只计 L1 层、不计四域；schema 词形冻结来源在 assets/08/09/10 definitions（提请词汇表 PR 收编），词值镜像在 @pomaster/schemas/src/vocab.ts「待收编」段。",
       "gauntlet_lite": "适配器/detectors/gate-recipe-runner = 工具适配执行层，计 L1 层无域；normalize-gate-result = verdict 归一与 trust 孪生专指，计 permit_evidence。",
       "L3 构成": "golden.spec.ts（57：批次1 数据驱动 21 + 元纪律 4 + 执行器参考镜像 29 + 分派冒烟 3）+ P17-Seeds 四点名补录 7（cases.json 第 22-25 条数据驱动 4 + 「GOLDEN-L3 点名种子 · 执行面对照」真实判决 3——Case C EVOLUTION_REQUIRED / prototype_html_scrape SOURCE_TYPE_FORBIDDEN / compact 双跑 NO_CHANGE，kernel store 与 CLI compact 执行面跑实；第四点名场景 GOLDEN-L3-STATE-SUBSET 代码现实无派生执行面，登记显式 pending 呈报 Owner）= 64。",
       "L5 计数口径": "机械口径 = vitest 用例数（41，与本账本计数同源）；seeds.json 注册分母 25（23 executable / 0 pending / 2 retired——P17-Seeds：F-02 churn 信号与 X-01 capability router 翻转前置不成立显式退役，retired.reason_md 落档，禁静默 pending 滞留）为另一既有口径，两者并存不混用。",
-      "L4 构成": "威胁类 1-6（盲区探针/分母漂移/stale permit 重放/部分写入伪装/四态混淆/D24 哈希伦理）三个 adversarial spec。",
-      "L2 构成": "6 个既有 L2（catalog 运行时联结 / CLI 账本↔kernel digest 契约 / 证据裂缝闭合 / check --gates 全链路 / human-views 编译器 / 冒烟）+ P16 三技术栈 fixture 全链（fixture-git-repo-minimal：git repo 最小工程·BUILD 双腿缺席形态 + fixture-vue3-project：Vue3 工程·BUILD 腿 vitest 声明 READY 真实执行收敛 not_run + fixture-fastapi-project：FastAPI 工程·pytest 腿 READY 版本锚缺失 runner_not_ready 形态——triage 三档 × 三证据级全矩阵、init→triage→maintain pre-dev→task 落账→gate GRN 入账→reconcile clean/dirty→closeout 阻断逐拍 exit 码与证据面断言）+ P16-WriteLayer 写入层可靠性专项（write-layer-crash-injection：A 段注入式半写六时点——staged 碎片/WAL 孤儿/commit 后/evidence 孤儿/index·journal 半字节截断——重启 state 完好或显式检出绝不静默半状态 + B 段真实 SIGKILL 子进程任意时点硬中断后快照 k 精确一致/journal 前缀无洞 m-k≤1/碎片形状/恢复事务干净；crash-workload-child.mjs 非 spec 不入账；与 L4 威胁类 4 分工=L4 证进程内异常回滚、本件证 kill -9 硬中断后磁盘态与重启路径）+ P16-WriteLayer catalog-lock 漂移缺口矩阵（catalog-lock-drift-matrix：P14 已覆盖 content_drift，本件补 missing/unexpected_file 含命令面 fail-closed/entry_not_allowed/missing_required/lock_unreadable 坏形与缺失两形态，逐 kind 显式检出+恢复回绿）。共享运行器 fixture-chain-lib.ts 非 spec 文件不入账。+ P17-EvalCLI §94.3 触发面专项（eval-trigger：trigger-manifest.json 落档契约——version/suites 注册表/spec 在盘/类别 ⊆ PRD §94.3 五类闭表且第六类 fail-closed（不发明额外触发源的机器封印）/五类分母齐全/pattern 静态前缀在盘，映射正确性——触达源逐类命中含 ** 通配、未触达零误报、多类触发 suite 去重、Windows 反斜杠归一、JS matcher 与 TS 参考镜像 globMatch 逐例一致，消费脚本——--paths 提示/零命中合法成功/坏 manifest fail-closed/--run --dry-run 呈现命令不执行/git diff 端到端（临时仓库 tracked 修改触发、未跟踪新文件不触发）/git 不可用 fail-closed；scripts/eval-trigger.mjs 非 spec 不入账）。",
+      "L4 构成": "威胁类 1-6（盲区探针/分母漂移/stale permit 重放/部分写入伪装/四态混淆/D24 哈希伦理）三个 adversarial spec。＋P18-Adversarial 威胁类 7-8（adversarial-research-write-contract）：威胁类 7「Research 越写旁路」7 例（§81.3 Read-only Contract——治理 state 面/业务代码/..与根斜杠逃逸/盘符绝对路径/跨宿主偷渡/敌意宿主词形全部真实 runCli 实跑 exit 1 + RESEARCH_CONTRACT_FATAL/SCHEMA_INVALID 显式码位 + 全树字节快照零变（判卷失败零落盘是字节级断言非恒真条款）；ADV-R7 非恒真对照：research/ 内 scratch 工作文件放行（判卷器不是全拒恒真））。威胁类 8「提升写入通道旁路」6 例（Discovery 不私造第二写入通道——伪造 scratchpad 终态 TASK/CHANGE 后 store 零事实（inspect/closeout OBJECT_NOT_FOUND、status 可见不静默）；缺省 promote store 字节零变 + suggested_command 引回 maintain 面；词表外链态 unknown_from_state + SCRATCHPAD_STATE_INVALID warning；真实终态再提升无出边 + store 不二次触发；借 Research 会话改链状态威胁 7/8 同闸拒绝）。正向全链（合法提升落账 + closeout 续接）由 fixture-discovery-chain 承载——两件合证「该拒的拒、该放的放」。",
+      "L2 构成": "6 个既有 L2（catalog 运行时联结 / CLI 账本↔kernel digest 契约 / 证据裂缝闭合 / check --gates 全链路 / human-views 编译器 / 冒烟）+ P16 三技术栈 fixture 全链（fixture-git-repo-minimal：git repo 最小工程·BUILD 双腿缺席形态 + fixture-vue3-project：Vue3 工程·BUILD 腿 vitest 声明 READY 真实执行收敛 not_run + fixture-fastapi-project：FastAPI 工程·pytest 腿 READY 版本锚缺失 runner_not_ready 形态——triage 三档 × 三证据级全矩阵、init→triage→maintain pre-dev→task 落账→gate GRN 入账→reconcile clean/dirty→closeout 阻断逐拍 exit 码与证据面断言）+ P16-WriteLayer 写入层可靠性专项（write-layer-crash-injection：A 段注入式半写六时点——staged 碎片/WAL 孤儿/commit 后/evidence 孤儿/index·journal 半字节截断——重启 state 完好或显式检出绝不静默半状态 + B 段真实 SIGKILL 子进程任意时点硬中断后快照 k 精确一致/journal 前缀无洞 m-k≤1/碎片形状/恢复事务干净；crash-workload-child.mjs 非 spec 不入账；与 L4 威胁类 4 分工=L4 证进程内异常回滚、本件证 kill -9 硬中断后磁盘态与重启路径）+ P16-WriteLayer catalog-lock 漂移缺口矩阵（catalog-lock-drift-matrix：P14 已覆盖 content_drift，本件补 missing/unexpected_file 含命令面 fail-closed/entry_not_allowed/missing_required/lock_unreadable 坏形与缺失两形态，逐 kind 显式检出+恢复回绿）。共享运行器 fixture-chain-lib.ts 非 spec 文件不入账。+ P17-EvalCLI §94.3 触发面专项（eval-trigger：trigger-manifest.json 落档契约——version/suites 注册表/spec 在盘/类别 ⊆ PRD §94.3 五类闭表且第六类 fail-closed（不发明额外触发源的机器封印）/五类分母齐全/pattern 静态前缀在盘，映射正确性——触达源逐类命中含 ** 通配、未触达零误报、多类触发 suite 去重、Windows 反斜杠归一、JS matcher 与 TS 参考镜像 globMatch 逐例一致，消费脚本——--paths 提示/零命中合法成功/坏 manifest fail-closed/--run --dry-run 呈现命令不执行/git diff 端到端（临时仓库 tracked 修改触发、未跟踪新文件不触发）/git 不可用 fail-closed；scripts/eval-trigger.mjs 非 spec 不入账）。＋P18-Adversarial Discovery 状态链×closeout 消费闭环 fixture（fixture-discovery-chain，全部真实 runCli）：init→brainstorm start（08 信封 ajv + meta 链）→research 挂同一宿主（§81.6 四文件 + inspect SKELETON 判读）→§80.2 授权面推进 READY_TO_PROMOTE（scratchpad 维护面直写，promotion_basis 可见）→brainstorm promote --apply 经 P11 maintain 面落账（PROPOSED/PLANNED 提升诚实初值 + scratchpad 08 终态 + meta 链闭合 [IDEA,DISCOVERY,TASK]）→closeout 四拍续接（①诚实初值双阻断 DOD_ACCEPTANCE_EMPTY+GATE_EVIDENCE_MISSING 且全树字节零变；②P11 面补 acceptance 后 gate 绑定分母空仍阻断；③验证侧证据齐（D20 独立验证流 VERIFIED claim + 绑定 passed run）后施断被 kernel CROSS_AXIS_ASSERTION 拒（PROPOSED⇒evidence 必为 PLANNED——proposal 态不许伪装 COMPLETED，跨轴断言在提升链上同样生效）；④PROPOSED→CURRENT（authority_approval）→COMPLETED，evidence→VERIFIED 落 store）→终态对账（brainstorm status TASK+promoted_ref / inspect CURRENT+VERIFIED / journal ≥3 次事务留痕）。附真缺陷修复回归：research list/inspect --json 曾被混合模式父命令（§44.3 直跑形态自带 --json）先行消费致 §45 机读信封违约——修复=list/inspect action 经 optsWithGlobals 读全局值（packages/cli/src/index.ts），program.spec + fixture 段2 双钉。",
       "deferred": "并发会话锁（同一 store 多会话并发写互斥/检出语义）显式 deferred→P20，登记于 tests/README.md「显式 deferred 登记」段；解锁条件=wave3-plan.md P20 出口判据（session/lock/execution_id 原语 + CLI 命令面，其明列『P16 遗留的 L2 并发锁测试解锁入账』）。kernel 现无锁原语，测试不得断言不存在的机制。",
       "eval_cli": "P17-EvalCLI（wave3-plan.md P17；PRD §44.10/§94.3）：`pomaster eval --suite behavioral` 命令面入 L1（packages/cli/tests/eval.spec.ts——happy 全绿/每种子结构化呈现/pending 显式列出不冒充绿/executable 失败 fail-closed exit 1/seeds 缺失与坏形 fail-closed/报告自洽守卫/--suite 词表闭包字面锁定与词表外显式拒绝/幂等双跑字节级同报告）；执行器本体（seeds 装载与结构校验/双 evaluator 分派/可诊断 diff/报告汇总）自 tests/behavioral/behavioral.harness.ts 上移至 packages/cli/src/eval.ts（dist 可加载——包禁反向依赖 tests/），rule_v0 参考镜像同址上移至 packages/cli/src/triage-rule-v0.ts（tests/golden/reference/triage.ts 保留 re-export 门面，golden/behavioral 既有导入不变、L3/L5 计数不受影响）；harness 门面保留账本常量与 corpus 谱系对账 loader。§94.3 触发面（tests/behavioral/trigger-manifest.json + scripts/eval-trigger.mjs 消费脚本）入 L2（tests/integration/eval-trigger.spec.ts，见 L2 构成）。P17-Seeds 增量：报告形态加 retired 第三态（total = executable + pending + retired；retiredList 显式退役呈现——不计 executable/pending、不执行判定，与 pendingReason/expect_flip_when 互斥结构校验 fail-closed），seeds.json F-02/X-01 两条 pending 翻转处置为显式退役（理由落档 retired.reason_md），eval.spec.ts +2（retired-only 账 + retired 互斥三型 SEEDS_INVALID）。",
       "新增纪律": "新增 spec 文件必须同步入 mapping（ratchet 遇未归类 spec 即红）；删除/改名 spec 必须同步清理 mapping（stale 条目即红）。提升某类 actual 超过 floor 后应随改动一并提升该类 floor（棘轮只升不降）。"

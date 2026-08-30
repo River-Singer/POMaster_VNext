@@ -1,0 +1,513 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://pomaster.dev/schemas/msd-uncertainty/v1-draft.json",
+  "title": "MSD 与不确定性治理（Minimum Sufficient Definition & Uncertainty，P18）",
+  "description": "PRD §82 的 schema 落地。核心原则（§82.1 原文）：需求不完整是合法状态；不完整不等于阻塞。POMaster 的职责是判断「当前 Increment 是否已经足够确定，可以安全推进」，而不是「是否所有问题都已经被回答」。\n三块语义：\n- unknowns —— Unknown 分类登记（§82.2 十分类，禁止统一使用 UNRESOLVED/BLOCKER）+ AI Blocker 防幻觉算法（§82.3 八问，blocker 初始只能是 BLOCKER_CANDIDATE）；\n- msd_assessment —— Minimum Sufficient Definition 判定（§80.3 晋升条件 b 的判据面：Goal/Scope/Acceptance）；\n- blueprint_envelope —— Blueprint Acceptance Envelope（§82.5 四态；CONDITIONALLY_ACCEPTED 是合法状态，要求 HARD_BLOCKER=0）。",
+  "x-pomaster-file-role": "09-msd-uncertainty.schema.json —— MSD/Uncertainty 登记形态（P18）。Discovery/Brainstorm 产物的不确定度登记与 MSD 判定面；被 08-discovery-state-chain 的 promotion_basis=msd_reached 引用，被后续 Discovery 命令面消费。",
+  "x-pomaster-vocab-source": "PRD v0.4 §82.2/§82.4/§82.5 词形逐字（unknown 十分类大写枚举、assumption_risk 三级、blueprint envelope 四态）；vocab-lock@v0.2-resolved 尚无对应词轴——词形在本文件 definitions 冻结，提请词汇表 PR 收编；代码镜像点 @pomaster/schemas/src/vocab.ts「待词汇表 PR 收编」段。",
+  "x-pomaster-contract": {
+    "unknown_classification_prd": "PRD §82.2：禁止统一使用 UNRESOLVED/BLOCKER。必须至少区分十分类（逐字）：BLOCKER_CANDIDATE / HARD_BLOCKER / SOFT_UNCERTAINTY / ASSUMPTION / DEFERRED_DECISION / DISCOVERY_REQUIRED / SUSPECTED_ISSUE / NON_BLOCKING_GAP / FUTURE_CONSIDERATION / OUT_OF_SCOPE。",
+    "blocker_algorithm_prd": "PRD §82.3：任何 Agent 提出的 blocker，初始只能是 BLOCKER_CANDIDATE；必须回答八问（见 definitions.blocker_triage 逐字段）；只有满足高风险且无法安全假设时才升级 HARD_BLOCKER。",
+    "assumption_risk_prd": "PRD §82.4：LOW/MEDIUM 可以在明确记录条件下继续；HIGH 默认需要 Authority。",
+    "envelope_prd": "PRD §82.5：Blueprint 状态四态 ACCEPTED / CONDITIONALLY_ACCEPTED / BLOCKED / REJECTED；CONDITIONALLY_ACCEPTED 是合法状态，要求 HARD_BLOCKER = 0 且 Assumptions 已显式记录等（见 x-pomaster-semantic.conditionally_accepted_requirements）。",
+    "msd_prd": "PRD §82.6：Blueprint 验收证明「当前 Increment 已达到可开发的最小充分定义」，不证明「产品需求已经永久完整」；开发中发现新事实允许 Architecture/Requirement Challenge → Brainstorm/Research/Maintain → 更新当前 Increment 或建立后续 Change。"
+  },
+  "x-pomaster-digest-ethics-policy": "本对象当前不含 sha256/digest 字段。未来任何 digest/sha256 字段加入时必须携带 x-digest-ethics 注记 {\"write_blocking\": false, \"side\": \"read_only_service\", \"human_touch\": \"forbidden\"}（D24 / vocab-lock digest_ethics）。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["discovery_ref", "unknowns"],
+  "properties": {
+    "discovery_ref": {
+      "type": "string",
+      "minLength": 1,
+      "title": "所属 Discovery 引用（discovery_ref）",
+      "description": "本登记表归属的 Discovery 记录/scratchpad 引用（.pomaster/discovery/ 路径或未来具名 id；词形随 Discovery 命令面 PR 收紧）。MSD/Uncertainty 从属于具体 Discovery，不悬浮。"
+    },
+    "unknowns": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/unknown_item"
+      },
+      "title": "Unknown 登记列表（§82.2 十分类）",
+      "description": "空数组合法（无未决项是诚实结论而非缺省）；§82.1「不完整是合法状态」的登记面——每个未决项必须落分类，禁止以单一 UNRESOLVED/BLOCKER 词形糊弄（§82.2 明文禁止）。"
+    },
+    "msd_assessment": {
+      "$ref": "#/definitions/msd_assessment",
+      "title": "MSD 判定（Goal/Scope/Acceptance）"
+    },
+    "blueprint_envelope": {
+      "$ref": "#/definitions/blueprint_envelope",
+      "title": "Blueprint Acceptance Envelope（§82.5，可选）"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "unknowns": {
+            "contains": {
+              "properties": {
+                "classification": {
+                  "const": "HARD_BLOCKER"
+                }
+              },
+              "required": ["classification"]
+            }
+          }
+        },
+        "required": ["unknowns"]
+      },
+      "then": {
+        "properties": {
+          "blueprint_envelope": {
+            "properties": {
+              "status": {
+                "not": {
+                  "enum": ["ACCEPTED", "CONDITIONALLY_ACCEPTED"]
+                }
+              }
+            }
+          }
+        },
+        "description": "unknowns 含 HARD_BLOCKER ⇒ blueprint_envelope.status 不得为 ACCEPTED/CONDITIONALLY_ACCEPTED（§82.5：CONDITIONALLY_ACCEPTED 要求 HARD_BLOCKER = 0；ACCEPTED 是全量确认态，更不允许带着硬阻塞通过）"
+      }
+    }
+  ],
+  "x-pomaster-semantic": {
+    "title": "msd_uncertainty — 不确定性治理语义标注（x-semantic）",
+    "no_unified_blocker": "禁止统一使用 UNRESOLVED/BLOCKER（§82.2）：裸词形 BLOCKER/UNRESOLVED 不在 classification 枚举——「一切未决都是 blocker」的偷懒登记在本 schema 无法表达。与 state_axes.confidence 的 UNRESOLVED 边界：confidence 轴的 UNRESOLVED 管治理对象置信度（§18.2），本轴管 Discovery 未决项分类，两轴正交。",
+    "blocker_starts_as_candidate": "blocker 初始只能是 BLOCKER_CANDIDATE（§82.3）：HARD_BLOCKER 必须携带通过八问的 blocker_triage 且 upgrade_to_hard=true——「高风险且无法安全假设」是唯一升级通路；「仅仅因为 Agent 没找到信息」（八问之七）不是 blocker。",
+    "conditionally_accepted_requirements": "CONDITIONALLY_ACCEPTED 的合法前提（§82.5 逐条）：a) 当前 Increment Goal 清楚（msd_assessment.goal_defined）；b) 主业务对象与主路径足够清楚（msd_assessment.scope_defined）；c) HARD_BLOCKER = 0（allOf 聚合强制）；d) Assumptions 已显式记录（unknowns 含 ASSUMPTION 条目或 envelope.assumptions 非空）；e) Deferred/Future 问题不会被 Coding Agent 偷偷实现（FUTURE_CONSIDERATION/OUT_OF_SCOPE/DEFERRED_DECISION 只登记不进入当前实现范围，§80.7）；f) Acceptance 可验证（msd_assessment.acceptance_verifiable）；g) 变更范围可回滚或风险被接受。其中 a/b/c/f 为 schema/allOf 机器可判，d/e/g 为命令面语义检查（登记于此备查）。",
+    "acceptance_not_freeze": "MSD 达成与 Blueprint 验收不等于需求冻结（§82.6）：验收只证明当前 Increment 可开发，新事实允许 Challenge → Brainstorm/Research/Maintain 更新或建后续 Change。"
+  },
+  "definitions": {
+    "unknown_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["statement", "classification"],
+      "properties": {
+        "statement": {
+          "type": "string",
+          "minLength": 1,
+          "title": "未决项陈述（statement）",
+          "description": "精确、可判定的未决事实陈述（§82.3 八问之一「精确缺失的事实是什么」的登记面）。禁止空泛占位（minLength 1；「待定」不是陈述）。"
+        },
+        "classification": {
+          "$ref": "#/definitions/unknown_classification"
+        },
+        "blocker_triage": {
+          "$ref": "#/definitions/blocker_triage",
+          "title": "Blocker 防幻觉八问（§82.3，BLOCKER_CANDIDATE/HARD_BLOCKER 相关必答）"
+        },
+        "assumption_risk": {
+          "$ref": "#/definitions/assumption_risk",
+          "title": "假设风险分级（§82.4，classification=ASSUMPTION 必填）"
+        },
+        "requires_authority": {
+          "type": "boolean",
+          "title": "需要 Authority 裁决（requires_authority）",
+          "description": "assumption_risk=HIGH 时必须为 true（§82.4：HIGH 默认需要 Authority；allOf 强制）。LOW/MEDIUM 可在明确记录条件下继续（requires_authority 可为 false）。"
+        },
+        "resolution": {
+          "type": "string",
+          "minLength": 1,
+          "title": "处置注记（resolution，人类散文位）",
+          "description": "处置路径的人类散文注记（如何消除/由谁裁决/假设内容）。机器不得解析其内容做判卷（P9 教训：人类散文唯一合法入口，只登记不解析）。"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "classification": {
+                "const": "HARD_BLOCKER"
+              }
+            },
+            "required": ["classification"]
+          },
+          "then": {
+            "required": ["blocker_triage"],
+            "properties": {
+              "blocker_triage": {
+                "required": ["upgrade_to_hard"],
+                "properties": {
+                  "upgrade_to_hard": {
+                    "const": true
+                  }
+                }
+              }
+            },
+            "description": "HARD_BLOCKER ⇒ blocker_triage 必填且 upgrade_to_hard=true（§82.3：只有满足高风险且无法安全假设时才升级——升级必须带着八问答案，禁止直接申报硬阻塞）"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "classification": {
+                "const": "ASSUMPTION"
+              }
+            },
+            "required": ["classification"]
+          },
+          "then": {
+            "required": ["assumption_risk"],
+            "description": "ASSUMPTION ⇒ assumption_risk 必填（§82.4 分级是假设登记的一部分，无分级的假设不可继续）"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "assumption_risk": {
+                "const": "HIGH"
+              }
+            },
+            "required": ["assumption_risk"]
+          },
+          "then": {
+            "properties": {
+              "requires_authority": {
+                "const": true
+              }
+            },
+            "required": ["requires_authority"],
+            "description": "assumption_risk=HIGH ⇒ requires_authority 必须为 true（§82.4：HIGH 默认需要 Authority——数据语义、不可逆写、权限、安全、财务/合规、核心 Contract）"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "classification": {
+                "enum": ["BLOCKER_CANDIDATE", "HARD_BLOCKER"]
+              }
+            },
+            "required": ["classification"]
+          },
+          "then": {
+            "required": ["blocker_triage"],
+            "description": "BLOCKER_CANDIDATE/HARD_BLOCKER ⇒ blocker_triage 必填（§82.3 八问是 blocker 族的申报表格：candidate 是初始态也得答八问，hard 是升级结论更得答全）"
+          }
+        }
+      ]
+    },
+    "unknown_classification": {
+      "type": "string",
+      "enum": [
+        "BLOCKER_CANDIDATE",
+        "HARD_BLOCKER",
+        "SOFT_UNCERTAINTY",
+        "ASSUMPTION",
+        "DEFERRED_DECISION",
+        "DISCOVERY_REQUIRED",
+        "SUSPECTED_ISSUE",
+        "NON_BLOCKING_GAP",
+        "FUTURE_CONSIDERATION",
+        "OUT_OF_SCOPE"
+      ],
+      "title": "Unknown 分类（§82.2 十分类，逐字冻结）",
+      "description": "PRD §82.2 逐字：禁止统一使用 UNRESOLVED/BLOCKER，必须至少区分——\n- BLOCKER_CANDIDATE：blocker 候选（一切 Agent 申报的 blocker 的唯一初始态，§82.3）；\n- HARD_BLOCKER：硬阻塞（经八问升级，高风险且无法安全假设）；\n- SOFT_UNCERTAINTY：软不确定（不阻塞当前 Increment）；\n- ASSUMPTION：显式假设（附 assumption_risk 分级）；\n- DEFERRED_DECISION：显式延后的决策；\n- DISCOVERY_REQUIRED：需要进一步 Discovery；\n- SUSPECTED_ISSUE：疑似问题（未证实）；\n- NON_BLOCKING_GAP：非阻塞缺口（如空态文案）；\n- FUTURE_CONSIDERATION：未来考量（§80.7：不得自动进入当前实现范围）；\n- OUT_OF_SCOPE：明确出界。",
+      "$comment": "source: PRD v0.4 §82.2 分类列表逐字；提请词汇表 PR 收编（pending_vocab_pr）。",
+      "x-pomaster-vocab": {
+        "axis": "msd_unknown_classification",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "source": "PRD v0.4 §82.2",
+        "forbidden_wordforms": ["UNRESOLVED", "BLOCKER"]
+      },
+      "examples": [
+        "SOFT_UNCERTAINTY",
+        "BLOCKER（INVALID：裸词形被 §82.2 明文禁止——blocker 必须以 BLOCKER_CANDIDATE 起步走八问升级）"
+      ]
+    },
+    "blocker_triage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "missing_fact",
+        "authority_owner",
+        "scope_blocking",
+        "safe_assumption_available",
+        "assumption_loss_reversible",
+        "high_risk_domain",
+        "agent_information_gap",
+        "research_can_resolve",
+        "upgrade_to_hard"
+      ],
+      "title": "AI Blocker 防幻觉算法八问（§82.3 逐问词形化）",
+      "description": "PRD §82.3 八问逐字段（任何 Agent 提出的 blocker 初始只能是 BLOCKER_CANDIDATE，必须回答八问；只有满足高风险且无法安全假设时才升级 HARD_BLOCKER）。upgrade_to_hard=true 的语义等价式 = high_risk_domain=true 且 safe_assumption_available=false（高风险且无法安全假设）——字段级自洽由消费方对账，schema 锁必答与升级通路。",
+      "$comment": "source: PRD v0.4 §82.3 八问列表逐问词形化（中文原文逐条入 description）；提请词汇表 PR 收编。",
+      "properties": {
+        "missing_fact": {
+          "type": "string",
+          "minLength": 1,
+          "title": "问 1：精确缺失的事实是什么？",
+          "description": "§82.3 问 1。「缺失事实」必须被精确陈述——陈述不了精确缺失即回答不了本问，blocker 申报不成立。"
+        },
+        "authority_owner": {
+          "type": "string",
+          "minLength": 1,
+          "title": "问 2：事实来源/Authority 应该是谁？",
+          "description": "§82.3 问 2。无 Authority 归属的 blocker 无处裁决（幽灵 owner 教训：解析失败=FATAL 而非 WARNING）。"
+        },
+        "scope_blocking": {
+          "type": "boolean",
+          "title": "问 3：如果未知，是否真的无法实现当前 Scope？",
+          "description": "§82.3 问 3。false 即不阻塞当前 Increment（按 §82.1 不完整不等于阻塞，应降级 SOFT_UNCERTAINTY/NON_BLOCKING_GAP）。"
+        },
+        "safe_assumption_available": {
+          "type": "boolean",
+          "title": "问 4：是否可以用显式 Assumption 前进？",
+          "description": "§82.3 问 4。true 时 blocker 降级为 ASSUMPTION 条目（附 assumption_risk 分级）继续前进。"
+        },
+        "assumption_loss_reversible": {
+          "type": "boolean",
+          "title": "问 5：如果假设错误，损失是否可逆？",
+          "description": "§82.3 问 5。与问 4 联合判定：可用假设前进且损失可逆 ⇒ 通常无资格升级 HARD_BLOCKER。"
+        },
+        "high_risk_domain": {
+          "type": "boolean",
+          "title": "问 6：会不会产生安全、权限、数据破坏、合规、不可逆迁移风险？",
+          "description": "§82.3 问 6（§82.4 HIGH 档语义同源：数据语义、不可逆写、权限、安全、财务/合规、核心 Contract）。true 且无法安全假设才是升级 HARD_BLOCKER 的高风险前提。"
+        },
+        "agent_information_gap": {
+          "type": "boolean",
+          "title": "问 7：这个问题是不是仅仅因为 Agent 没找到信息？",
+          "description": "§82.3 问 7。true 即不是真 blocker（信息缺口 ≠ 业务阻塞），必须先自行补找。"
+        },
+        "research_can_resolve": {
+          "type": "boolean",
+          "title": "问 8：Research 能否消除它？",
+          "description": "§82.3 问 8（§80.6 Research-first：技术选型/行业惯例/库能力不要求业务人员凭空回答）。true ⇒ 转 DISCOVERY_REQUIRED/Research Agent，不占人类裁决位。"
+        },
+        "upgrade_to_hard": {
+          "type": "boolean",
+          "title": "升级结论：upgrade_to_hard（高风险且无法安全假设才为 true）",
+          "description": "§82.3 升级判定的落点：true = 满足高风险（问 6）且无法安全假设（问 4）⇒ 升级 HARD_BLOCKER；false = 保持/降级 BLOCKER_CANDIDATE。HARD_BLOCKER 条目本字段必须 true（allOf 强制）——直接申报硬阻塞而不走八问升级通路的登记无法通过 schema。"
+        }
+      }
+    },
+    "assumption_risk": {
+      "type": "string",
+      "enum": ["LOW", "MEDIUM", "HIGH"],
+      "title": "假设风险分级（§82.4 三级）",
+      "description": "PRD §82.4 逐字：\n- LOW —— 易回滚、局部 UI/默认交互；\n- MEDIUM —— 会产生一定重构，但不会破坏数据/权限；\n- HIGH —— 数据语义、不可逆写、权限、安全、财务/合规、核心 Contract。\nLOW/MEDIUM 可以在明确记录条件下继续；HIGH 默认需要 Authority（requires_authority=true 由 allOf 强制）。",
+      "$comment": "source: PRD v0.4 §82.4 分级列表逐字；提请词汇表 PR 收编（pending_vocab_pr）。",
+      "x-pomaster-vocab": {
+        "axis": "msd_assumption_risk",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "source": "PRD v0.4 §82.4"
+      },
+      "examples": [
+        "LOW",
+        "HIGH"
+      ]
+    },
+    "msd_assessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["goal_defined", "scope_defined", "acceptance_verifiable", "msd_reached"],
+      "title": "Minimum Sufficient Definition 判定（Goal/Scope/Acceptance）",
+      "description": "PRD §80.3 晋升条件 b（Goal/Scope/Acceptance 已达到 Minimum Sufficient Definition）的判据面；语义锚定 §82.5 CONDITIONALLY_ACCEPTED 要求：当前 Increment Goal 清楚（goal_defined）、主业务对象与主路径足够清楚（scope_defined）、Acceptance 可验证（acceptance_verifiable）。三者全 true ⇒ msd_reached 必须 true（allOf 强制，禁止三轴全绿却申报未达成）。§82.6：MSD 达成只证明当前 Increment 可安全推进，不证明产品需求永久完整。",
+      "$comment": "source: PRD v0.4 §80.3 条件 b + §82.5/§82.6；提请词汇表 PR 收编（字段轴 pending_vocab_pr）。",
+      "properties": {
+        "goal_defined": {
+          "type": "boolean",
+          "title": "当前 Increment Goal 清楚（goal_defined）"
+        },
+        "scope_defined": {
+          "type": "boolean",
+          "title": "主业务对象与主路径足够清楚（scope_defined）",
+          "description": "§82.5 措辞：主业务对象与主路径足够清楚——「足够」是 MSD 语义本身（Minimum Sufficient），不要求穷尽。"
+        },
+        "acceptance_verifiable": {
+          "type": "boolean",
+          "title": "Acceptance 可验证（acceptance_verifiable）",
+          "description": "§82.5：Acceptance 可验证——验收形状不可验证则 Increment 无法判卷（§47 DoD 证据判卷的上游）。"
+        },
+        "msd_reached": {
+          "type": "boolean",
+          "title": "MSD 已达成（msd_reached，三轴派生结论声明）",
+          "description": "三轴（goal_defined/scope_defined/acceptance_verifiable）全 true 时必须 true；任一 false 时必须 false（allOf 双向强制）。声明值与三轴的一致性由 schema 保证，消费方（promotion_basis=msd_reached 的晋升闸）据此判定。"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "goal_defined": { "const": true },
+              "scope_defined": { "const": true },
+              "acceptance_verifiable": { "const": true }
+            },
+            "required": ["goal_defined", "scope_defined", "acceptance_verifiable"]
+          },
+          "then": {
+            "properties": {
+              "msd_reached": { "const": true }
+            },
+            "description": "三轴全 true ⇒ msd_reached 必须 true（禁止三轴全绿却申报未达成）"
+          }
+        },
+        {
+          "if": {
+            "anyOf": [
+              { "properties": { "goal_defined": { "const": false } }, "required": ["goal_defined"] },
+              { "properties": { "scope_defined": { "const": false } }, "required": ["scope_defined"] },
+              { "properties": { "acceptance_verifiable": { "const": false } }, "required": ["acceptance_verifiable"] }
+            ]
+          },
+          "then": {
+            "properties": {
+              "msd_reached": { "const": false }
+            },
+            "description": "任一轴 false ⇒ msd_reached 必须 false（禁止带未定义轴申报 MSD 达成）"
+          }
+        }
+      ],
+      "examples": [
+        {
+          "goal_defined": true,
+          "scope_defined": true,
+          "acceptance_verifiable": true,
+          "msd_reached": true
+        },
+        {
+          "goal_defined": true,
+          "scope_defined": true,
+          "acceptance_verifiable": false,
+          "msd_reached": false
+        }
+      ]
+    },
+    "blueprint_envelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "title": "Blueprint Acceptance Envelope（§82.5）",
+      "description": "Blueprint 验收状态四态（§82.5 逐字）：ACCEPTED / CONDITIONALLY_ACCEPTED / BLOCKED / REJECTED。CONDITIONALLY_ACCEPTED 是合法状态（「当前 Increment 已达到可开发的最小充分定义」的正式形态）；结构与 §82.5 示例 yaml 逐键同源（confirmed/assumptions/deferred/non_blocking_gaps/blockers）。unknowns 含 HARD_BLOCKER ⇒ status 不得为 ACCEPTED/CONDITIONALLY_ACCEPTED（顶层 allOf 强制）。",
+      "$comment": "source: PRD v0.4 §82.5 状态列表与示例 yaml 逐键；提请词汇表 PR 收编（pending_vocab_pr）。",
+      "properties": {
+        "status": {
+          "$ref": "#/definitions/blueprint_envelope_status"
+        },
+        "confirmed": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "title": "已确认面（confirmed，如 main page structure / core objects / edit flow）",
+          "description": "§82.5 示例逐键：明确确认过的范围面。"
+        },
+        "assumptions": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "title": "显式假设（assumptions，如 only one active version edited at a time）",
+          "description": "§82.5 CONDITIONALLY_ACCEPTED 要求 d：Assumptions 已显式记录。"
+        },
+        "deferred": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "title": "显式延后（deferred，如 bulk-import recovery UX）",
+          "description": "§82.5 要求 e 的登记面：Deferred 问题不会被 Coding Agent 偷偷实现（§80.7 同源纪律）。"
+        },
+        "non_blocking_gaps": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "title": "非阻塞缺口（non_blocking_gaps，如 empty-state copy）",
+          "description": "§82.5 示例逐键：不阻塞当前 Increment 的已知缺口（与 §82.2 NON_BLOCKING_GAP 分类同源）。"
+        },
+        "blockers": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "title": "硬阻塞清单（blockers，CONDITIONALLY_ACCEPTED 时必须为空）",
+          "description": "§82.5 示例逐键（blockers: []）。与本登记表 unknowns 的 HARD_BLOCKER 聚合一致：出现 HARD_BLOCKER ⇒ status 不得为 ACCEPTED/CONDITIONALLY_ACCEPTED（顶层 allOf）。"
+        }
+      },
+      "examples": [
+        {
+          "status": "CONDITIONALLY_ACCEPTED",
+          "confirmed": ["main page structure", "core objects", "edit flow"],
+          "assumptions": ["only one active version edited at a time"],
+          "deferred": ["bulk-import recovery UX"],
+          "non_blocking_gaps": ["empty-state copy"],
+          "blockers": []
+        }
+      ]
+    },
+    "blueprint_envelope_status": {
+      "type": "string",
+      "enum": ["ACCEPTED", "CONDITIONALLY_ACCEPTED", "BLOCKED", "REJECTED"],
+      "title": "Blueprint 状态（§82.5 四态，逐字冻结）",
+      "description": "PRD §82.5 逐字：ACCEPTED（全量确认）/ CONDITIONALLY_ACCEPTED（合法状态：带显式假设与延后项的有条件通过，要求 HARD_BLOCKER=0）/ BLOCKED（硬阻塞在场）/ REJECTED（拒绝）。",
+      "$comment": "source: PRD v0.4 §82.5 状态列表逐字；提请词汇表 PR 收编（pending_vocab_pr）。",
+      "x-pomaster-vocab": {
+        "axis": "blueprint_envelope_status",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "source": "PRD v0.4 §82.5"
+      },
+      "examples": [
+        "CONDITIONALLY_ACCEPTED"
+      ]
+    }
+  },
+  "examples": [
+    {
+      "discovery_ref": ".pomaster/discovery/scratchpads/idea-carline-import/",
+      "unknowns": [
+        {
+          "statement": "车辆导入是否允许多版本并行编辑",
+          "classification": "ASSUMPTION",
+          "assumption_risk": "LOW",
+          "requires_authority": false,
+          "resolution": "假设单版本编辑；MEDIUM 以下可显式记录继续"
+        },
+        {
+          "statement": "批量导入失败后的恢复交互未定义",
+          "classification": "DEFERRED_DECISION"
+        },
+        {
+          "statement": "导入模板缺少官方字段表",
+          "classification": "BLOCKER_CANDIDATE",
+          "blocker_triage": {
+            "missing_fact": "导入模板的官方字段清单",
+            "authority_owner": "BUSINESS_OWNER",
+            "scope_blocking": false,
+            "safe_assumption_available": true,
+            "assumption_loss_reversible": true,
+            "high_risk_domain": false,
+            "agent_information_gap": false,
+            "research_can_resolve": false,
+            "upgrade_to_hard": false
+          }
+        }
+      ],
+      "msd_assessment": {
+        "goal_defined": true,
+        "scope_defined": true,
+        "acceptance_verifiable": true,
+        "msd_reached": true
+      },
+      "blueprint_envelope": {
+        "status": "CONDITIONALLY_ACCEPTED",
+        "confirmed": ["main page structure", "core objects", "edit flow"],
+        "assumptions": ["only one active version edited at a time"],
+        "deferred": ["bulk-import recovery UX"],
+        "non_blocking_gaps": ["empty-state copy"],
+        "blockers": []
+      }
+    },
+    {
+      "x_example_intent": "INVALID —— 三重违规演示：a) unknowns[0] 申报 HARD_BLOCKER 但缺 blocker_triage（八问必答）；b) unknowns[1] classification=ASSUMPTION 缺 assumption_risk；c) blueprint_envelope.status=CONDITIONALLY_ACCEPTED 而 unknowns 含 HARD_BLOCKER（HARD_BLOCKER=0 被顶层 allOf 破坏）",
+      "discovery_ref": ".pomaster/discovery/scratchpads/idea-broken/",
+      "unknowns": [
+        {
+          "statement": "权限模型未定义",
+          "classification": "HARD_BLOCKER"
+        },
+        {
+          "statement": "默认排序假设",
+          "classification": "ASSUMPTION"
+        }
+      ],
+      "blueprint_envelope": {
+        "status": "CONDITIONALLY_ACCEPTED"
+      }
+    }
+  ],
+  "x-pomaster-examples-note": "examples[0]=正例（ASSUMPTION 带分级 + DEFERRED_DECISION + BLOCKER_CANDIDATE 走完八问不升级 + CONDITIONALLY_ACCEPTED 无 HARD_BLOCKER 的完整活样本，结构逐键同 §82.5 示例）；examples[1]=反例，x_example_intent 列明三重违规。"
+}

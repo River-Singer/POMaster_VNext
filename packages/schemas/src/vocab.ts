@@ -6,8 +6,8 @@
  *   （pomaster.vocab/v0.2-resolved；v0.1-resolved 2026-08-27 FROZEN，2026-08-29 PR-0001
  *   append-only 纯增量增补，v0.1 词值零删改），逐值相等，禁止发明词表外值；
  * - 需要新值 → 留 `TODO(vocab-pr)` 注释走词汇表 PR，禁止就地添加；
- * - 标注「待词汇表 PR 收编」的词轴：词形已在 schema（01/02/03/05/06/07）的
- *   x-vocab-extra / definitions 冻结，本文件照镜像并保留 TODO(vocab-pr)；
+ * - 标注「待词汇表 PR 收编」的词轴：词形已在 schema（01/02/03/05/06/07 及 P18 的
+ *   08/09/10）的 x-vocab-extra / definitions 冻结，本文件照镜像并保留 TODO(vocab-pr)；
  * - 每个数组都带 x-vocab-source 行，改 vocab-lock 时同 commit 同步本文件。
  */
 
@@ -348,3 +348,137 @@ export const DENOMINATOR_STATUS_VALUES = [
   "SUPERSEDED",
 ] as const;
 export type DenominatorStatusValue = (typeof DENOMINATOR_STATUS_VALUES)[number];
+
+// ============================================================
+// P18 Discovery 词轴（x-vocab-source: 08/09/10 schema definitions 冻结来源；
+// PRD v0.4 §80.3/§81/§82 原文词形，逐字）。
+// TODO(vocab-pr)：Discovery 状态链是**新状态面**（Discovery 讨论生命周期），
+// 不混入既有对象轴 state_axes.lifecycle（该轴 FROZEN 且值域不相交）；下列词轴
+// 全部 absent_in_vocab_lock__pending_vocab_pr，收编后以 vocab-lock 为准逐值镜像。
+// ============================================================
+
+/**
+ * Discovery 状态链（PRD §80.3 原文词形逐字：IDEA → DISCOVERY → READY_TO_PROMOTE
+ * → CHANGE/TASK）。x-vocab-source: 08-discovery-state-chain definitions.discovery_state。
+ */
+export const DISCOVERY_CHAIN_VALUES = [
+  "IDEA",
+  "DISCOVERY",
+  "READY_TO_PROMOTE",
+  "CHANGE",
+  "TASK",
+] as const;
+export type DiscoveryChainValue = (typeof DISCOVERY_CHAIN_VALUES)[number];
+
+/**
+ * Discovery 状态链合法迁移矩阵（拓扑部分；与 08 x-pomaster-transition-matrix 逐值同源）。
+ * 执行面住 kernel discovery-chain（validateDiscoveryTransition）：矩阵外转移一律显式拒绝
+ * （fail-closed，跳步/倒退均不在矩阵）；提升（READY_TO_PROMOTE→CHANGE/TASK）前置条件
+ * promotion_basis 见 DISCOVERY_PROMOTION_BASIS_VALUES，写入走 P11 maintain 面。
+ * x-vocab-source: 08-discovery-state-chain x-pomaster-transition-matrix。
+ */
+export const DISCOVERY_CHAIN_TRANSITIONS = {
+  IDEA: ["DISCOVERY"],
+  DISCOVERY: ["READY_TO_PROMOTE"],
+  READY_TO_PROMOTE: ["CHANGE", "TASK"],
+  CHANGE: [],
+  TASK: [],
+} as const satisfies Readonly<
+  Record<DiscoveryChainValue, readonly DiscoveryChainValue[]>
+>;
+
+/**
+ * Discovery 晋升依据（PRD §80.3 四条晋升条件的词形化，任一满足即合法晋升）：
+ * user_explicit_request=用户明确要求推进开发 / msd_reached=Goal/Scope/Acceptance 已达
+ * Minimum Sufficient Definition（判据面 09 msd_assessment）/ needs_formal_resources=
+ * 需要正式 Research/Architecture/Governance 资源 / needs_cross_session_tracking=
+ * 需要跨 Session 持续追踪。
+ * x-vocab-source: 08-discovery-state-chain definitions.promotion_basis。
+ */
+export const DISCOVERY_PROMOTION_BASIS_VALUES = [
+  "user_explicit_request",
+  "msd_reached",
+  "needs_formal_resources",
+  "needs_cross_session_tracking",
+] as const;
+export type DiscoveryPromotionBasisValue =
+  (typeof DISCOVERY_PROMOTION_BASIS_VALUES)[number];
+
+/**
+ * Unknown 分类十分类（PRD §82.2 逐字；禁止统一使用 UNRESOLVED/BLOCKER——裸词形
+ * UNRESOLVED/BLOCKER 不在枚举。与 state_axes.confidence 的 UNRESOLVED 正交：
+ * confidence 轴管治理对象置信度，本轴管 Discovery 未决项分类）。
+ * x-vocab-source: 09-msd-uncertainty definitions.unknown_classification。
+ */
+export const MSD_UNKNOWN_CLASSIFICATION_VALUES = [
+  "BLOCKER_CANDIDATE",
+  "HARD_BLOCKER",
+  "SOFT_UNCERTAINTY",
+  "ASSUMPTION",
+  "DEFERRED_DECISION",
+  "DISCOVERY_REQUIRED",
+  "SUSPECTED_ISSUE",
+  "NON_BLOCKING_GAP",
+  "FUTURE_CONSIDERATION",
+  "OUT_OF_SCOPE",
+] as const;
+export type MsdUnknownClassificationValue =
+  (typeof MSD_UNKNOWN_CLASSIFICATION_VALUES)[number];
+
+/** 假设风险三级（PRD §82.4 逐字；HIGH 默认需要 Authority）。x-vocab-source: 09 assumptions_risk。 */
+export const MSD_ASSUMPTION_RISK_VALUES = ["LOW", "MEDIUM", "HIGH"] as const;
+export type MsdAssumptionRiskValue = (typeof MSD_ASSUMPTION_RISK_VALUES)[number];
+
+/** Blueprint Acceptance Envelope 四态（PRD §82.5 逐字；CONDITIONALLY_ACCEPTED 是合法状态，要求 HARD_BLOCKER=0）。x-vocab-source: 09 blueprint_envelope_status。 */
+export const BLUEPRINT_ENVELOPE_STATUS_VALUES = [
+  "ACCEPTED",
+  "CONDITIONALLY_ACCEPTED",
+  "BLOCKED",
+  "REJECTED",
+] as const;
+export type BlueprintEnvelopeStatusValue =
+  (typeof BLUEPRINT_ENVELOPE_STATUS_VALUES)[number];
+
+/** Research Finding 置信三级（PRD §81.4 finding 逐键；与 state_axes.confidence 正交，不入对象轴）。x-vocab-source: 10 confidence。 */
+export const RESEARCH_FINDING_CONFIDENCE_VALUES = [
+  "HIGH",
+  "MEDIUM",
+  "LOW",
+] as const;
+export type ResearchFindingConfidenceValue =
+  (typeof RESEARCH_FINDING_CONFIDENCE_VALUES)[number];
+
+/** Evidence 五级（PRD §81.4 逐字；IMPLEMENTATION 证明「存在」不自动证明「正确」，§81.5）。x-vocab-source: 10 evidence_level。 */
+export const RESEARCH_EVIDENCE_LEVEL_VALUES = [
+  "AUTHORITATIVE",
+  "PRIMARY",
+  "IMPLEMENTATION",
+  "SECONDARY",
+  "INFERENCE",
+] as const;
+export type ResearchEvidenceLevelValue =
+  (typeof RESEARCH_EVIDENCE_LEVEL_VALUES)[number];
+
+/** authority_effect 三值（PRD §81.4 finding 逐键；CONFLICTS 是发现不是裁决——上报走正式治理面）。x-vocab-source: 10 authority_effect。 */
+export const RESEARCH_AUTHORITY_EFFECT_VALUES = [
+  "NONE",
+  "SUPPORTS",
+  "CONFLICTS",
+] as const;
+export type ResearchAuthorityEffectValue =
+  (typeof RESEARCH_AUTHORITY_EFFECT_VALUES)[number];
+
+/**
+ * Research 六模式全量镜像（PRD §81.2 逐字；本版 Research Artifact 层无 mode 字段消费，
+ * 保留为后续命令面消费位——对齐 05 lifecycle_full_mirror「全量镜像」模式）。
+ * x-vocab-source: 10-research-artifact definitions.research_mode_full。
+ */
+export const RESEARCH_MODE_VALUES = [
+  "INTERNAL",
+  "EXTERNAL",
+  "MIXED",
+  "COMPARATIVE",
+  "IMPACT",
+  "FORENSIC",
+] as const;
+export type ResearchModeValue = (typeof RESEARCH_MODE_VALUES)[number];

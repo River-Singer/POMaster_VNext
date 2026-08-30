@@ -209,6 +209,8 @@ describe("runCli help/version 信息性退出（fresh-clone 实录：--help 曾�
       "maintain",
       "compact",
       "record",
+      "brainstorm",
+      "research",
     ]) {
       expect(text).toContain(cmd);
     }
@@ -244,5 +246,131 @@ describe("runCli help/version 信息性退出（fresh-clone 实录：--help 曾�
     const code = await runCli(["--dir", dir, "definitely-not-a-command"], io);
     expect(code).toBe(1);
     expect(io.err.join("\n")).toContain("definitely-not-a-command");
+  });
+});
+
+describe("§44.3 六命令参数 fail-closed 与 --help（P18-Adversarial 补全）", () => {
+  // —— 用法错误（缺参/多参）：commander 用法错误族 → exit 1 + stderr 提示（信息性放行不覆盖） ——
+  it("brainstorm promote 缺 --to → exit 1，stderr 含 '--to'（requiredOption 原文）", async () => {
+    const io = capture();
+    const code = await runCli(["--dir", dir, "brainstorm", "promote", "idea-x", "--basis", "msd_reached"], io);
+    expect(code).toBe(1);
+    expect(io.err.join("\n")).toContain("--to");
+  });
+
+  it("brainstorm promote 缺 --basis → exit 1，stderr 含 '--basis'", async () => {
+    const io = capture();
+    const code = await runCli(["--dir", dir, "brainstorm", "promote", "idea-x", "--to", "TASK"], io);
+    expect(code).toBe(1);
+    expect(io.err.join("\n")).toContain("--basis");
+  });
+
+  it("brainstorm promote 缺 <discovery-id> → exit 1，stderr 含 'discovery-id'", async () => {
+    const io = capture();
+    const code = await runCli(["--dir", dir, "brainstorm", "promote", "--to", "TASK", "--basis", "msd_reached"], io);
+    expect(code).toBe(1);
+    expect(io.err.join("\n")).toContain("discovery-id");
+  });
+
+  it("research 缺 <topic> → exit 1（§44.3 直跑形态的位置参数必填）", async () => {
+    const io = capture();
+    const code = await runCli(["--dir", dir, "research"], io);
+    expect(code).toBe(1);
+    expect(io.err.join("\n")).toContain("topic");
+  });
+
+  it("research list 缺 <task-or-discovery> / inspect 缺 <research-id> → 双双 exit 1", async () => {
+    const io1 = capture();
+    expect(await runCli(["--dir", dir, "research", "list"], io1)).toBe(1);
+    expect(io1.err.join("\n")).toContain("task-or-discovery");
+    const io2 = capture();
+    expect(await runCli(["--dir", dir, "research", "inspect"], io2)).toBe(1);
+    expect(io2.err.join("\n")).toContain("research-id");
+  });
+
+  it("多余位置参数（brainstorm start extra）→ exit 1（commander excessArguments fail-closed 不吞参数）", async () => {
+    const io = capture();
+    const code = await runCli(["--dir", dir, "brainstorm", "start", "extra-arg"], io);
+    expect(code).toBe(1);
+    expect(io.err.join("\n")).toContain("too many arguments");
+  });
+
+  // —— 坏值：run 级词表闸 → 结构化 SCHEMA_INVALID 信封（fail-closed 码位而非裸错） ——
+  it("brainstorm promote --to EPIC（词表外落点）→ exit 1，--json 信封 SCHEMA_INVALID + 二选一 hint", async () => {
+    const io = capture();
+    const code = await runCli(
+      ["--dir", dir, "brainstorm", "promote", "idea-x", "--to", "EPIC", "--basis", "msd_reached", "--json"],
+      io,
+    );
+    expect(code).toBe(1);
+    const env = parseEnvelope(io.out);
+    expect(env.ok).toBe(false);
+    expect(env.errors[0]?.code).toBe("SCHEMA_INVALID");
+    expect(env.errors[0]?.hint).toContain("CHANGE");
+    expect(env.errors[0]?.hint).toContain("TASK");
+  });
+
+  it("brainstorm promote 缺省 --to/--basis（run 级直调形态）→ SCHEMA_INVALID（闸 0 不猜缺省）", async () => {
+    const { runBrainstormPromote } = await import("@pomaster/cli");
+    const outcome = await runBrainstormPromote(dir, { discoveryId: "idea-x" });
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors[0]?.code).toBe("SCHEMA_INVALID");
+    expect(outcome.errors[0]?.message).toContain("--to");
+  });
+
+  it("research t --mode vibes（词表外模式）→ exit 1，信封 SCHEMA_INVALID + 六词形 hint", async () => {
+    const io = capture();
+    const code = await runCli(["--dir", dir, "research", "t", "--mode", "vibes", "--json"], io);
+    expect(code).toBe(1);
+    const env = parseEnvelope(io.out);
+    expect(env.ok).toBe(false);
+    expect(env.errors[0]?.code).toBe("SCHEMA_INVALID");
+    expect(env.errors[0]?.hint).toContain("forensic");
+  });
+
+  it("research list <host> --json → 机读信封（混合模式回归：--json 被父命令先行消费时仍出 §45 信封）", async () => {
+    // 缺陷史：`research list X --json` 的 --json 被直跑形态的父命令 research 消费，
+    // list action 读不到 → 人读文本上了 stdout（§45 机读唯一接口被绕过）。
+    // 修复 = list/inspect action 经 optsWithGlobals 读全局值；本例用「宿主不存在」
+    // 错误信封钉回归（无需 fixture，信封可解析即证明 --json 生效）。
+    const io = capture();
+    const code = await runCli(["--dir", dir, "research", "list", ".pomaster/discovery/scratchpads/nope/", "--json"], io);
+    expect(code).toBe(1);
+    const env = parseEnvelope(io.out);
+    expect(env.command).toBe("research list");
+    expect(env.ok).toBe(false);
+    expect(env.errors[0]?.code).toBe("RESEARCH_HOST_NOT_FOUND");
+  });
+
+  // —— --help：六命令的帮助面携带 fail-closed 词汇指引（信息性 exit 0） ——
+  it("brainstorm --help → exit 0，含 start/status/promote 三子命令", async () => {
+    const io = capture();
+    const code = await runCli(["--dir", dir, "brainstorm", "--help"], io);
+    expect(code).toBe(0);
+    const text = io.out.join("\n");
+    for (const sub of ["start", "status", "promote"]) {
+      expect(text).toContain(sub);
+    }
+    expect(io.err).toEqual([]);
+  });
+
+  it("brainstorm promote --help → exit 0，含 --to/--basis/--apply（提升面词汇指引）", async () => {
+    const io = capture();
+    const code = await runCli(["--dir", dir, "brainstorm", "promote", "--help"], io);
+    expect(code).toBe(0);
+    const text = io.out.join("\n");
+    for (const flag of ["--to", "--basis", "--apply", "--as"]) {
+      expect(text).toContain(flag);
+    }
+  });
+
+  it("research --help → exit 0，含 --mode 六词形与 list/inspect 子命令", async () => {
+    const io = capture();
+    const code = await runCli(["--dir", dir, "research", "--help"], io);
+    expect(code).toBe(0);
+    const text = io.out.join("\n");
+    for (const word of ["--mode", "internal", "external", "mixed", "comparative", "impact", "forensic", "list", "inspect"]) {
+      expect(text).toContain(word);
+    }
   });
 });

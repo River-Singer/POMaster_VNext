@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "POMaster vNext IR schema assets (01-07, FROZEN vocab mirror) and frozen vocabulary constants",
+  "description": "POMaster vNext IR schema assets (01-10, FROZEN vocab mirror + P18 discovery/msd/research pending-vocab-pr axes) and frozen vocabulary constants",
   "exports": {
     ".": {
       "types": "./dist/src/index.d.ts",

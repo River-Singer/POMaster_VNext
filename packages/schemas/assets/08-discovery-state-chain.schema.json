@@ -1,0 +1,189 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://pomaster.dev/schemas/discovery-state-chain/v1-draft.json",
+  "title": "Discovery 状态链（Discovery State Chain · Ephemeral Discovery 原语，P18）",
+  "description": "PRD §80.3 Ephemeral Discovery 的状态链原语。POMaster 不复制 Trellis「Brainstorm Step 0 永远创建 Task」的假设：普通讨论允许驻留 ephemeral 态（IDEA/DISCOVERY），只有满足任一晋升条件才进入 READY_TO_PROMOTE，并最终晋升为正式 CHANGE/TASK。\n状态链原文（PRD §80.3，词形逐字冻结）：\nIDEA → DISCOVERY → READY_TO_PROMOTE → CHANGE/TASK。\n本 schema 是状态原语与合法转移的冻结来源（fail-closed：矩阵外转移一律显式拒绝，跳步与倒退均不在矩阵）；执行面（转移校验纯函数）住 @pomaster/kernel discovery-chain 模块。\n写入纪律：Discovery 的提升（promote）必须走 P11 maintain 面——Discovery 层不私造第二写入通道；本 schema 只定义状态与合法性判定，不含任何写入通道。",
+  "x-pomaster-file-role": "08-discovery-state-chain.schema.json —— Discovery 状态链原语（P18）。定义 IDEA→DISCOVERY→READY_TO_PROMOTE→CHANGE/TASK 的状态枚举、合法转移矩阵与晋升前置（promotion_basis）；被后续 Discovery 命令面（wave3-plan P18）消费。",
+  "x-pomaster-vocab-source": "PRD v0.4 §80.3 状态链原文词形（IDEA/DISCOVERY/READY_TO_PROMOTE/CHANGE/TASK 逐字）；vocab-lock@v0.2-resolved 尚无 discovery_chain 词轴——本词轴是新状态面（Discovery 生命周期），不得混入既有对象轴 state_axes.lifecycle（该轴 FROZEN：PROPOSED/CURRENT/SUPERSEDED/DEPRECATED/RETIRED/REJECTED）。词形在本文件 definitions 冻结，提请词汇表 PR 收编；代码镜像点 @pomaster/schemas/src/vocab.ts「待词汇表 PR 收编」段。",
+  "x-pomaster-transition-matrix": {
+    "$comment": "合法转移矩阵（拓扑部分，与 kernel DISCOVERY_CHAIN_TRANSITIONS 逐值同源；矩阵外转移一律显式拒绝）。提升（READY_TO_PROMOTE→CHANGE/TASK）前置条件见 x-pomaster-transition-requirements。",
+    "IDEA": ["DISCOVERY"],
+    "DISCOVERY": ["READY_TO_PROMOTE"],
+    "READY_TO_PROMOTE": ["CHANGE", "TASK"],
+    "CHANGE": [],
+    "TASK": []
+  },
+  "x-pomaster-transition-requirements": {
+    "$comment": "转移前置条件（key = FROM>TO；与 kernel REQUIREMENTS 映射逐字同源）。promotion_basis 词形见 definitions.promotion_basis（PRD §80.3 四条晋升条件的词形化，任一满足即合法）。",
+    "IDEA>DISCOVERY": [],
+    "DISCOVERY>READY_TO_PROMOTE": [],
+    "READY_TO_PROMOTE>CHANGE": ["promotion_basis"],
+    "READY_TO_PROMOTE>TASK": ["promotion_basis"]
+  },
+  "x-pomaster-contract": {
+    "promotion_conditions_prd": "PRD §80.3：只有满足以下任一条件才晋升正式 Change/Task——a) 用户明确要求推进开发；b) Goal/Scope/Acceptance 已达到 Minimum Sufficient Definition（判据面见 09-msd-uncertainty.schema.json definitions.msd_assessment）；c) 需要正式 Research/Architecture/Governance 资源；d) 需要跨 Session 持续追踪。",
+    "promote_via_maintain": "提升写入必须走 P11 maintain 面（受控写入唯一面）；Discovery 层不私造第二写入通道。本 schema 与 kernel 转移原语均为纯判定，不落盘、不写入。",
+    "scratchpad_layout": "IDEA/DISCOVERY 态普通讨论保存在 .pomaster/discovery/scratchpads/<id>/（PRD §80.3 原文路径）；<id> 形态由 Discovery 命令面 PR 收紧，本版只锁目录前缀。",
+    "change_task_carrier": "CHANGE/TASK 是既有治理载体的 id（P11/P13 链路命令面所产），本链只引用（promoted_ref），不重定义其内部形态。"
+  },
+  "x-pomaster-digest-ethics-policy": "本对象当前不含 sha256/digest 字段。未来任何 digest/sha256 字段加入时必须携带 x-digest-ethics 注记 {\"write_blocking\": false, \"side\": \"read_only_service\", \"human_touch\": \"forbidden\"}（D24 / vocab-lock digest_ethics）。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["state"],
+  "properties": {
+    "state": {
+      "$ref": "#/definitions/discovery_state"
+    },
+    "scratchpad_ref": {
+      "$ref": "#/definitions/scratchpad_ref",
+      "title": "暂存区引用（scratchpad_ref，IDEA/DISCOVERY 必填）",
+      "description": "IDEA/DISCOVERY 态普通讨论的落点：.pomaster/discovery/scratchpads/<id>/（PRD §80.3 原文路径形态）。Ephemeral 纪律：未达晋升条件的讨论允许长期驻留 scratchpad，不产生 Task——「不复制 Brainstorm Step 0 永远创建 Task 的假设」在本字段的必填条件式上兑现（READY_TO_PROMOTE 之后不再需要 scratchpad_ref，产物已具名）。"
+    },
+    "promotion_basis": {
+      "$ref": "#/definitions/promotion_basis",
+      "title": "晋升依据（promotion_basis，READY_TO_PROMOTE/CHANGE/TASK 必填）",
+      "description": "满足 PRD §80.3 四条晋升条件之一的依据记录。进入 READY_TO_PROMOTE 即意味着至少一条条件成立；晋升为 CHANGE/TASK 时该依据随状态链留档（谁/依据什么 promoted，全程可审计）。"
+    },
+    "promoted_ref": {
+      "$ref": "#/definitions/promoted_ref",
+      "title": "提升落点引用（promoted_ref，CHANGE/TASK 必填）",
+      "description": "晋升产生的正式载体引用（CHANGE.* / TASK.* id，P11 maintain 面所产）。state=CHANGE/TASK 时必填且不得为空——提升必须真的落到受控写入面，禁止停留在「口头上晋升了」的状态。"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "enum": ["IDEA", "DISCOVERY"]
+          }
+        },
+        "required": ["state"]
+      },
+      "then": {
+        "required": ["scratchpad_ref"]
+      },
+      "description": "IDEA/DISCOVERY ⇒ scratchpad_ref 必填（PRD §80.3：普通讨论保存在 .pomaster/discovery/scratchpads/<id>/）"
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "enum": ["READY_TO_PROMOTE", "CHANGE", "TASK"]
+          }
+        },
+        "required": ["state"]
+      },
+      "then": {
+        "required": ["promotion_basis"]
+      },
+      "description": "READY_TO_PROMOTE/CHANGE/TASK ⇒ promotion_basis 必填（PRD §80.3 晋升条件任一满足；进入待晋升态即须声明依据）"
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "enum": ["CHANGE", "TASK"]
+          }
+        },
+        "required": ["state"]
+      },
+      "then": {
+        "required": ["promoted_ref"]
+      },
+      "description": "CHANGE/TASK ⇒ promoted_ref 必填（提升必须落到 P11 maintain 面产出的正式载体，禁止口头晋升）"
+    }
+  ],
+  "x-pomaster-semantic": {
+    "title": "discovery_chain — Ephemeral Discovery 语义标注（x-semantic）",
+    "ephemeral_legal": "IDEA/DISCOVERY 是合法驻留态——需求不完整是合法状态（PRD §82.1），未达晋升条件的讨论不产生 Task/Change。",
+    "promote_gate": "READY_TO_PROMOTE 不是终态而是闸门：晋升条件（§80.3 四条件）任一满足才可进入；MSD 判据面（条件 b）见 09-msd-uncertainty.schema.json。",
+    "promote_via_maintain_only": "READY_TO_PROMOTE→CHANGE/TASK 的写入走 P11 maintain 面（受控写入唯一面）；Discovery 层无写入通道。kernel 转移原语在其 outcome.notes 中携带同一路标。",
+    "terminal_states": ["CHANGE", "TASK"],
+    "no_second_write_channel": "本 schema 是状态原语（判定面），不含写入口；离开本链的唯一通路是 promoted_ref 指向的受控载体。"
+  },
+  "definitions": {
+    "discovery_state": {
+      "type": "string",
+      "enum": ["IDEA", "DISCOVERY", "READY_TO_PROMOTE", "CHANGE", "TASK"],
+      "title": "Discovery 状态（discovery_chain 词轴）",
+      "description": "PRD §80.3 状态链原文词形逐字冻结：IDEA（原始想法）→ DISCOVERY（Brainstorm/Research 进行中）→ READY_TO_PROMOTE（满足任一晋升条件，待晋升）→ CHANGE/TASK（晋升落点，本链终态）。\n与 state_axes.lifecycle 的边界：lifecycle 管 governance 对象（PROPOSED/CURRENT/…），本轴管 Discovery 讨论的生命周期——两轴正交，值域不相交，禁止互转互填。",
+      "$comment": "source: PRD v0.4 §80.3 状态链原文；提请词汇表 PR 收编为新词轴 discovery_chain（pending_vocab_pr）。",
+      "x-pomaster-vocab": {
+        "axis": "discovery_chain",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "orthogonal_to": "state_axes.lifecycle",
+        "source": "PRD v0.4 §80.3"
+      },
+      "examples": [
+        "IDEA",
+        "READY_TO_PROMOTE",
+        "CURRENT（INVALID：lifecycle 轴词形，与本轴不相交——两轴禁止互填）"
+      ]
+    },
+    "promotion_basis": {
+      "type": "string",
+      "enum": [
+        "user_explicit_request",
+        "msd_reached",
+        "needs_formal_resources",
+        "needs_cross_session_tracking"
+      ],
+      "title": "晋升依据（promotion_basis，§80.3 四条件词形化）",
+      "description": "PRD §80.3「只有满足以下任一条件才晋升正式 Change/Task」的四条件词形化（任一满足即合法晋升）：\n- user_explicit_request —— 用户明确要求推进开发；\n- msd_reached —— Goal/Scope/Acceptance 已达到 Minimum Sufficient Definition（判据面见 09-msd-uncertainty definitions.msd_assessment）；\n- needs_formal_resources —— 需要正式 Research/Architecture/Governance 资源；\n- needs_cross_session_tracking —— 需要跨 Session 持续追踪。\n四条是「任一 OR」而非「全部 AND」——schema 不要求多选；具体依据随 promotion_basis 单值留档。",
+      "$comment": "source: PRD v0.4 §80.3 晋升条件列表的词形化（中文原文逐条入 description）；提请词汇表 PR 收编。",
+      "x-pomaster-vocab": {
+        "axis": "discovery_promotion_basis",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "source": "PRD v0.4 §80.3"
+      },
+      "examples": [
+        "msd_reached",
+        "user_explicit_request"
+      ]
+    },
+    "scratchpad_ref": {
+      "type": "string",
+      "pattern": "^\\.pomaster/discovery/scratchpads/[A-Za-z0-9][A-Za-z0-9_-]{0,63}/$",
+      "title": "暂存区引用（.pomaster/discovery/scratchpads/<id>/）",
+      "description": "PRD §80.3 原文路径形态。本版只锁目录前缀与 <id> 字符集；<id> 的生成规则与更严文法由 Discovery 命令面 PR 收紧（x-pomaster-contract.scratchpad_layout）。禁止绝对盘符路径（provenance 可移植纪律）。",
+      "examples": [
+        ".pomaster/discovery/scratchpads/idea-carline-import/",
+        ".pomaster/discovery/scratchpads/D:/temp/x/（INVALID：绝对盘符路径，pattern 不匹配）"
+      ]
+    },
+    "promoted_ref": {
+      "type": "string",
+      "pattern": "^(CHANGE|TASK)\\.[A-Z][A-Z0-9_]{0,31}(\\.[A-Z][A-Z0-9_]{0,31})*(\\.[0-9]+)?$",
+      "title": "提升落点引用（CHANGE.* / TASK.*）",
+      "description": "P11 maintain 面产出的正式载体 id（general_id 宽松词形：前缀 CHANGE/TASK + SEGMENT 段，文法对齐 GovernedId SEGMENT 约束）。存在性由消费方对账（本 schema 只锁词形）。",
+      "examples": [
+        "CHANGE.C0104",
+        "TASK.T0087",
+        "TASK-0087（INVALID：legacy 拼写须先经别名收编为 TASK.T0087 再引用）"
+      ]
+    }
+  },
+  "examples": [
+    {
+      "state": "DISCOVERY",
+      "scratchpad_ref": ".pomaster/discovery/scratchpads/idea-carline-import/"
+    },
+    {
+      "state": "READY_TO_PROMOTE",
+      "scratchpad_ref": ".pomaster/discovery/scratchpads/idea-carline-import/",
+      "promotion_basis": "msd_reached"
+    },
+    {
+      "state": "TASK",
+      "promotion_basis": "user_explicit_request",
+      "promoted_ref": "TASK.T0087"
+    },
+    {
+      "x_example_intent": "INVALID —— 三重违规演示：a) state=READY_TO_PROMOTE 缺 promotion_basis（晋升依据必填）；b) state=CHANGE 缺 promoted_ref（提升落点必填）；c) scratchpad_ref 不匹配 scratchpads 目录前缀（READY_TO_PROMOTE 态本不应再依赖 scratchpad 具名，此处字段值也非法）",
+      "state": "CHANGE",
+      "scratchpad_ref": "some/random/path/"
+    }
+  ],
+  "x-pomaster-examples-note": "examples[0]=边界正例（DISCOVERY 态驻留 scratchpad，Ephemeral 合法）；examples[1]=边界正例（READY_TO_PROMOTE 带晋升依据）；examples[2]=终态正例（TASK 带 promoted_ref 指向 P11 面）；examples[3]=反例，x_example_intent 列明三重违规。"
+}

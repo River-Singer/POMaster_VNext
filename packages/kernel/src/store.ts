@@ -231,7 +231,7 @@ function validateRawIndex(paths: StorePaths, raw: UnknownRecord): void {
     throw new GovernanceError(
       "SCHEMA_INVALID",
       `truth-index 不满足 01-truth-index schema：${errors}`,
-      "按 01 schema 修正结构（组合装载已注册 01..07 全部 $id）；或从 git 恢复索引",
+      "按 01 schema 修正结构（组合装载已注册 01..10 全部 $id）；或从 git 恢复索引",
       { errors: (validate.errors ?? []).length },
     );
   }
