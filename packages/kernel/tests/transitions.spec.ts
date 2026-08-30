@@ -73,7 +73,7 @@ describe("validateTransition（合法边）", () => {
   });
 });
 
-describe("validateTransition（全部 30 个矩阵外对 + 终态）", () => {
+describe("validateTransition（全部 25 个矩阵外对 + 终态）", () => {
   const LEGAL = new Set([
     "PROPOSED>CURRENT",
     "PROPOSED>REJECTED",

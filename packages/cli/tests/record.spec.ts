@@ -16,6 +16,7 @@
  *   verdict_cap_reason / declared_by 缺失 fail-closed；
  * - record claim：APPLIED（UNVERIFIED 恒置）/ SKIPPED_CANONICAL / SKIPPED_ADJUDICATED
  *   （VERIFIED 夹具零写入）/ OBJECT_NOT_FOUND / 畸形输入 EVIDENCE_MALFORMED；
+ *   APPLIED 后索引行 evidence_summary 重算值即刻可见（P15 recompute 专项）；
  * - fail-closed 码位：verdict 词表外 VOCAB_INVALID_VALUE / counts 缺 notApplicable
  *   GATE_COUNTS_INVALID / --grn 词形 GRN_INVALID / --trigger 词表外 VOCAB_INVALID_VALUE /
  *   未初始化 NOT_INITIALIZED；
@@ -585,6 +586,22 @@ describe("record claim", () => {
     expect(second.ok).toBe(true);
     expect(second.result.change).toBe("SKIPPED_CANONICAL");
     expect(snapshot()).toEqual(before);
+  });
+
+  it("APPLIED 后 truth-index 行 evidence_summary 即刻可见 kernel 重算值（status/inspect 消费面；P15 recompute 专项贯通）", async () => {
+    await seedStore();
+    await seedCapability();
+    const first = await runRecordClaim(root, { from: writeInput(claimPayload()) });
+    expect(first.ok).toBe(true);
+    const raw = JSON.parse(
+      readFileSync(join(root, ".pomaster", "state", "truth-index.json"), "utf8"),
+    ) as { objects: Array<{ evidence_summary: Record<string, number> }> };
+    expect(raw.objects[0]?.evidence_summary).toEqual({
+      claims: 1,
+      verified: 0,
+      unverified: 1,
+      rejected: 0,
+    });
   });
 
   it("已带 VERIFIED 独立判定的夹具 → SKIPPED_ADJUDICATED 零写入 exit 0（无权打回 UNVERIFIED）", async () => {
