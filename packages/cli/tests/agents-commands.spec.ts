@@ -17,6 +17,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { attachSession, type Store } from "@pomaster/kernel";
 import {
   GATEKEEPER_DRIFT_OBSERVED,
+  SUPERVISOR_TRIGGER_OBSERVED,
   runAgentsStatus,
   runHandoff,
   runRecordClaim,
@@ -208,18 +209,108 @@ describe("agents status（§44.8 兑现：运行时观测面）", () => {
   });
 });
 
-describe("run / handoff 显式 deferred（§44.8 注记状态兑现）", () => {
-  it("run <task> → ok=false COMMAND_DEFERRED + deferred_to=P21 + hint 指 P21/回填记录", async () => {
+// ============================================================
+// DEF-SUP 触发制观测位（P21-Contract；D 线 §5 三触发条件——观测不施断）
+// ============================================================
+
+describe("DEF-SUP 触发制观测位（P21-Contract）", () => {
+  it("空 store → supervisor_trigger 三条件 false + window=full_journal + ok=true（合法 solo 状态）", async () => {
+    const outcome = await runAgentsStatus(root);
+    expect(outcome.ok).toBe(true);
+    expect(outcome.result.supervisor_trigger).toMatchObject({
+      window: "full_journal",
+      journal_events_scanned: 0,
+      triggered: false,
+    });
+    expect(outcome.result.supervisor_trigger.condition_sop_chain_repeat).toMatchObject({
+      source: "measured",
+      triggered: false,
+      chains: [],
+    });
+    expect(outcome.result.supervisor_trigger.condition_second_contributor).toEqual({
+      source: "declared",
+      triggered: false,
+    });
+    expect(outcome.warnings).toEqual([]);
+  });
+
+  it("同 SOP 链重复 ≥3 次（journal 实测）→ supervisor_trigger.triggered=true + warning + ok 恒 true（观测非阻断）", async () => {
+    const { attachSession, beginExecution } = await import("@pomaster/kernel");
+    for (const key of ["claude_s1", "claude_s2", "claude_s3"]) {
+      await attachSession(store, { sessionKey: key, harness: "claude-code" });
+      await beginExecution(store, {
+        role: "implementer",
+        runtime: "claude-code",
+        identityKind: "interactive",
+        sessionKey: key,
+        harness: "claude-code",
+      });
+    }
+    const outcome = await runAgentsStatus(root);
+    expect(outcome.ok).toBe(true);
+    expect(outcome.result.supervisor_trigger.triggered).toBe(true);
+    expect(outcome.result.supervisor_trigger.condition_sop_chain_repeat.chains[0]).toEqual({
+      chain: ["SESSION_ATTACHED", "EXECUTION_BEGUN"],
+      count: 3,
+    });
+    expect(outcome.warnings.map((w) => w.code)).toContain(SUPERVISOR_TRIGGER_OBSERVED);
+    expect(outcome.warnings.at(-1)?.hint).toContain("呈报 Owner");
+    expect(outcome.warnings.at(-1)?.hint).toContain("DEF-SUP");
+  });
+
+  it("申报位：--second-contributor / --headless-ci → 对应条件 triggered（source=declared 如实呈现）", async () => {
+    const declared = await runAgentsStatus(root, {
+      secondContributor: true,
+      headlessCi: true,
+    });
+    expect(declared.ok).toBe(true);
+    expect(declared.result.supervisor_trigger.condition_second_contributor).toEqual({
+      source: "declared",
+      triggered: true,
+    });
+    expect(declared.result.supervisor_trigger.condition_headless_ci).toEqual({
+      source: "declared",
+      triggered: true,
+    });
+    expect(declared.result.supervisor_trigger.condition_sop_chain_repeat.triggered).toBe(false);
+    expect(declared.result.supervisor_trigger.triggered).toBe(true);
+    expect(declared.warnings.map((w) => w.code)).toContain(SUPERVISOR_TRIGGER_OBSERVED);
+
+    const quiet = await runAgentsStatus(root);
+    expect(quiet.result.supervisor_trigger.condition_second_contributor.triggered).toBe(false);
+    expect(quiet.warnings).toEqual([]);
+  });
+
+  it("程序级 runCli：agents status --second-contributor --json → exit 0 + warning 码在信封（触发不改 exit code）", async () => {
+    const lines: string[] = [];
+    const code = await runCli(
+      ["--dir", root, "agents", "status", "--second-contributor", "--json"],
+      { stdout: (line) => lines.push(line), stderr: (line) => lines.push(line) },
+    );
+    expect(code).toBe(0);
+    const envelope = JSON.parse(lines.join("\n")) as CliEnvelope<unknown>;
+    expect(envelope.ok).toBe(true);
+    const warnings = (envelope as unknown as { warnings: { code: string }[] }).warnings;
+    expect(warnings.map((w) => w.code)).toContain(SUPERVISOR_TRIGGER_OBSERVED);
+  });
+});
+
+describe("run / handoff 显式 deferred（§44.8 注记状态兑现；P21-Contract 词形复核后）", () => {
+  it("run <task> → ok=false COMMAND_DEFERRED + deferred_to=DEF-SUP + reason=DEF_SUP_NOT_TRIGGERED + hint 指触发制/回填记录", async () => {
     const outcome = runRun(root, "TASK.T0087", "implementer");
     expect(outcome.ok).toBe(false);
     expect(outcome.errors[0]?.code).toBe("COMMAND_DEFERRED");
+    // P21-Contract 词形复核：AgentRuntime 契约已落 kernel runtime-adapter.ts，
+    // deferred 对象由阶段位（P21）更正为触发制（DEF-SUP）——契约缺席语义退役。
     expect(outcome.result).toEqual({
       command: "run",
-      deferred_to: "P21",
-      reason: "AGENT_RUNTIME_NOT_LANDED",
+      deferred_to: "DEF-SUP",
+      reason: "DEF_SUP_NOT_TRIGGERED",
     });
-    expect(outcome.errors[0]?.hint).toContain("P21");
+    expect(outcome.errors[0]?.hint).toContain("DEF-SUP");
+    expect(outcome.errors[0]?.hint).toContain("runtime-adapter");
     expect(outcome.errors[0]?.hint).toContain("wave3-p20-sec79-backfill-44-8.md");
+    expect(outcome.errors[0]?.hint).toContain("不建 daemon");
   });
 
   it("handoff <task> --to cleaner → ok=false COMMAND_DEFERRED（同法显式 deferred）", async () => {
@@ -228,6 +319,7 @@ describe("run / handoff 显式 deferred（§44.8 注记状态兑现）", () => {
     expect(outcome.errors[0]?.code).toBe("COMMAND_DEFERRED");
     expect(outcome.errors[0]?.message).toContain("handoff");
     expect(outcome.errors[0]?.message).toContain("cleaner");
+    expect(outcome.errors[0]?.message).toContain("DEF-SUP");
   });
 
   it("程序级 runCli：run --json → exit 1 + 信封 COMMAND_DEFERRED（deferred 非静默缺席）", async () => {

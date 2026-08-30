@@ -590,6 +590,12 @@ export async function applyTransaction(
   validateRawIndex(paths, raw);
   const curSeq = seqOfRaw(raw);
 
+  // —— 事务级执行身份盖章校验（P21-Enforcement；先于幂等短路——盖章位携带即
+  //    校验，重放路径同样不放行自造身份；S1 与 record op 同法同闸） ——
+  if (tx.executionId !== undefined) {
+    assertExecutionIdClaimed(paths, tx.executionId, "transaction.executionId");
+  }
+
   // —— 幂等短路：同 inputs 重放 = 零写入（字节稳定，seq 不动） ——
   const fingerprint = inputsFingerprintOf(tx);
   if (fingerprint === (raw.generation as UnknownRecord).inputs_fingerprint) {
@@ -651,6 +657,9 @@ export async function applyTransaction(
         type: "TX_APPLIED",
         seq: workspace.nextSeq,
         authority_ref: tx.authorityRef ?? null,
+        // 事务级执行身份盖章（P21-Enforcement；§25.4 审计问题的 journal 兑现位；
+        // 缺席 = null 显式——C1，存量事件消费方只读既有键，向后兼容）。
+        execution_id: tx.executionId ?? null,
         note: tx.note ?? null,
         ops: tx.ops.map((op) => op.op),
         changed_object_ids: [...workspace.changedObjectIds].sort(),

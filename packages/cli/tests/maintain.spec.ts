@@ -15,7 +15,7 @@ import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSyn
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { applyTransaction, createStore } from "@pomaster/kernel";
+import { applyTransaction, beginExecution, createStore } from "@pomaster/kernel";
 import {
   runCli,
   runMaintain,
@@ -402,5 +402,67 @@ describe("maintain CLI 命令面", () => {
     expect(envelope.ok).toBe(false);
     expect(envelope.errors[0]?.code).toBe("SCHEMA_INVALID");
     expect(envelope.errors[0]?.message).toContain("--request");
+  });
+});
+
+// ============================================================
+// 事务级 execution 盖章（P21-Enforcement；P20 收口义务——maintain 通路
+// §25.4「哪个 Agent……做了哪次变化」审计问题的兑现位；P20 §3 裁定 5 归 P21）
+// ============================================================
+
+describe("maintain 事务级 execution 盖章（--execution-id → TX_APPLIED）", () => {
+  it("携带已登记 AGX → APPLIED + 结果回读 execution_id + journal TX_APPLIED 盖章", async () => {
+    await seedStore();
+    const store = await createStore(root);
+    const record = await beginExecution(store, {
+      role: "orchestrator",
+      runtime: "claude-code",
+      identityKind: "interactive",
+      startedAt: "2026-08-30T00:00:00.000Z",
+    });
+    const txPath = writeTx("tx.json", UPSERT_TX);
+    const outcome = await runMaintain(root, {
+      changeOrTask: ANCHOR,
+      opsFile: txPath,
+      executionId: record.execution_id,
+    });
+    expect(outcome.ok).toBe(true);
+    const result = outcome.result as MaintainApplyResult;
+    expect(result.change).toBe("APPLIED");
+    expect(result.execution_id).toBe(record.execution_id);
+    const applied = journalEvents()
+      .filter((event) => event.type === "TX_APPLIED")
+      .at(-1);
+    expect(applied?.execution_id).toBe(record.execution_id);
+  });
+
+  it("未登记 AGX（自造身份）→ EXECUTION_NOT_FOUND exit 1（S1 禁自造身份；零残留）", async () => {
+    await seedStore();
+    const txPath = writeTx("tx.json", UPSERT_TX);
+    const outcome = await runMaintain(root, {
+      changeOrTask: ANCHOR,
+      opsFile: txPath,
+      executionId: "AGX-2026-09999",
+    });
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors[0]?.code).toBe("EXECUTION_NOT_FOUND");
+    // staged 回滚：对象未入账。
+    const index = JSON.parse(
+      readFileSync(join(root, ".pomaster", "state", "truth-index.json"), "utf8"),
+    ) as { objects: { id: string }[] };
+    expect(index.objects.map((row) => row.id)).not.toContain("PAGE.DASHBOARD");
+  });
+
+  it("缺席 --execution-id → 结果 execution_id=null（显式——不冒充已盖章）", async () => {
+    await seedStore();
+    const txPath = writeTx("tx.json", UPSERT_TX);
+    const outcome = await runMaintain(root, { changeOrTask: ANCHOR, opsFile: txPath });
+    expect(outcome.ok).toBe(true);
+    const result = outcome.result as MaintainApplyResult;
+    expect(result.execution_id).toBe(null);
+    const applied = journalEvents()
+      .filter((event) => event.type === "TX_APPLIED")
+      .at(-1);
+    expect(applied?.execution_id).toBe(null);
   });
 });

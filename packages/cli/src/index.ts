@@ -53,10 +53,14 @@
  * - execution begin/end/list
  *                   D 线地基③执行身份命令面（P20；PRD §25.4：AGX-n 登记/封口/清单
  *                   ——record gate-run/claim --execution-id 的身份供给面）
- * - agents status   §44.8 兑现（P20）：solo 运行时观测面（sessions/locks/executions
- *                   聚合 + DEF-GATEKEEPER 分身漂移信号；触发=warning 非阻断）
- * - run/handoff     §44.8 显式 deferred（P20 裁定；COMMAND_DEFERRED 提示 + P21 指路
- *                   ——AgentRuntime 归 P21，回填记录 MECHANISM_GAP 落 docs/ 本地档）
+ * - agents status   §44.8 兑现（P20 建面 + P21-Contract 接入 DEF-SUP 观测位）：solo
+ *                   运行时观测面（sessions/locks/executions 聚合 + DEF-GATEKEEPER
+ *                   分身漂移信号 + DEF-SUP 触发制三条件观测；触发=warning 非阻断；
+ *                   --second-contributor / --headless-ci 申报位 source=declared）
+ * - run/handoff     §44.8 显式 deferred（P21-Contract 词形复核：AgentRuntime 契约已落
+ *                   kernel runtime-adapter.ts；托管编排受 DEF-SUP 触发制门槛——
+ *                   COMMAND_DEFERRED 提示 + DEF-SUP 指路，回填记录 MECHANISM_GAP
+ *                   落 docs/ 本地档；不建 daemon，Supervisor 是 §25.3 角色）
  *
  * 分层纪律：判卷权威在 @pomaster/kernel，本包只做编排与呈现，禁止旁路写状态
  * （例外：check/exec-guard 对过期许可追加 PERMIT_EXPIRED_OBSERVED 为 kernel 契约行为）。
@@ -327,8 +331,8 @@ export type {
   ExecutionEndResult,
   ExecutionListResult,
 } from "./runtime.js";
-export { runAgentsStatus, runRun, runHandoff, COMMAND_DEFERRED, GATEKEEPER_DRIFT_OBSERVED } from "./agents.js";
-export type { AgentsStatusResult, DeferredCommandResult } from "./agents.js";
+export { runAgentsStatus, runRun, runHandoff, COMMAND_DEFERRED, GATEKEEPER_DRIFT_OBSERVED, SUPERVISOR_TRIGGER_OBSERVED } from "./agents.js";
+export type { AgentsStatusResult, AgentsStatusInput, DeferredCommandResult } from "./agents.js";
 
 /** 一次命令执行的人读/机读产出记录（runCli 据此决定退出码与输出）。 */
 export interface CommandRun<TResult = unknown> {
@@ -711,6 +715,10 @@ export function createProgram(
     .option("--ops <tx-file>", "apply 模式：kernel Transaction JSON 文件（{ops:[…], authorityRef?, note?}）")
     .option("--authority-ref <ref>", "审批/决策引用（覆盖 --ops 文件内与位置参数兜底）")
     .option("--note <text>", "事务注记（覆盖 --ops 文件内同名字段）")
+    .option(
+      "--execution-id <AGX-n>",
+      "事务级执行身份盖章（§25.4）：携带即校验词形+档案存在性（S1 禁自造身份）并盖进 TX_APPLIED 事件（P21-Enforcement）",
+    )
     .option("--phase <phase>", "编排链模式：pre-dev（triage→permit issue→context compile；in-dev/post-dev 未落地显式拒绝）")
     .option("--request <text>", "pre-dev 链：triage 请求文本")
     .option("--subject <governed-id>", "pre-dev 链：permit 范围对象（可重复，≥1）", collectValues)
@@ -726,6 +734,7 @@ export function createProgram(
         opsFile: opts.ops as string | undefined,
         authorityRef: opts.authorityRef as string | undefined,
         note: opts.note as string | undefined,
+        executionId: opts.executionId as string | undefined,
         phase: opts.phase as string | undefined,
         request: opts.request as string | undefined,
         subjects: opts.subject as string[] | undefined,
@@ -1455,20 +1464,31 @@ export function createProgram(
       });
     });
 
-  // —— §44.8 Agent 命令面（P20 裁定：agents status 兑现观测面；run/handoff 显式 deferred） ——
+  // —— §44.8 Agent 命令面（P20 建面；P21-Contract：DEF-SUP 观测位接入 + run/handoff deferred 词形复核） ——
   const agents = program
     .command("agents")
     .description(
-      "§44.8 Agent 命令面（P20）：status = solo 运行时观测面（sessions/locks/executions 聚合 + DEF-GATEKEEPER 分身漂移信号；触发 = warning 非阻断）；run/handoff 显式 deferred 至 P21",
+      "§44.8 Agent 命令面：status = solo 运行时观测面（sessions/locks/executions 聚合 + DEF-GATEKEEPER 分身漂移信号 + DEF-SUP 触发制观测；触发 = warning 非阻断）；run/handoff 显式 deferred（DEF-SUP 触发制门槛）",
     );
   agents
     .command("status")
     .description(
-      "agents 运行时观测（§44.8 兑现=P20 D 线地基聚合）：会话 liveness / 锁 liveness / 执行身份档案 + DEF-GATEKEEPER 观测（同 execution 既提 proposal 又 ALLOW ≥N 次/窗——D 线 §5；触发处置呈报 Owner）",
+      "agents 运行时观测（§44.8 兑现=D 线地基聚合 + P21 Runtime Adapter 契约面）：会话 liveness / 锁 liveness / 执行身份档案 + DEF-GATEKEEPER 观测（同 execution 既提 proposal 又 ALLOW ≥N 次/窗）+ DEF-SUP 触发制观测（D 线 §5：同 SOP 链重复 / 第二贡献者 / headless-CI；后两者为申报位）",
     )
     .option("--json", "machine-readable JSON output (§45)")
-    .action(async (_opts, command) => {
-      const outcome = await runAgentsStatus(resolveDir(command));
+    .option(
+      "--second-contributor",
+      "DEF-SUP 条件 (b) 申报：第二贡献者加入（source=declared；触发处置呈报 Owner）",
+    )
+    .option(
+      "--headless-ci",
+      "DEF-SUP 条件 (c) 申报：需要 headless/CI 无人值守跑 change（source=declared）",
+    )
+    .action(async (opts, command) => {
+      const outcome = await runAgentsStatus(resolveDir(command), {
+        ...(opts.secondContributor === true ? { secondContributor: true } : {}),
+        ...(opts.headlessCi === true ? { headlessCi: true } : {}),
+      });
       record({
         command: "agents status",
         outcome,
@@ -1479,7 +1499,7 @@ export function createProgram(
   program
     .command("run")
     .description(
-      "§44.8 托管编排——显式 deferred（P20 裁定：AgentRuntime 归 P21；COMMAND_DEFERRED 提示非静默缺席；P0 solo 直连由当前 Harness 主 Agent 直接执行，PRD §25.2 内生依据）",
+      "§44.8 托管编排——显式 deferred（P21-Contract 复核：AgentRuntime 契约已落 kernel；托管编排受 DEF-SUP 触发制门槛，COMMAND_DEFERRED 提示非静默缺席；solo 直连由当前 Harness 主 Agent 直接执行，PRD §25.2 内生依据）",
     )
     .argument("<task>", "任务对象 governed id")
     .option("--role <role>", "执行角色（P1 Capability Pool 词汇层同 deferred）")
@@ -1496,7 +1516,7 @@ export function createProgram(
   program
     .command("handoff")
     .description(
-      "§44.8 会话交接——显式 deferred（P20 裁定：Handoff Protocol 执行面归 P21 Runtime Adapter；COMMAND_DEFERRED 提示非静默缺席）",
+      "§44.8 会话交接——显式 deferred（P21-Enforcement 复核：§24 Handoff Packet 契约面已落 kernel handoff.ts——九键 closed form + validateHandoffPacket/compileHandoffContext 消费面；托管编排执行面受 DEF-SUP 触发制门槛；COMMAND_DEFERRED 提示非静默缺席）",
     )
     .argument("<task>", "任务对象 governed id")
     .requiredOption("--to <role>", "交接目标角色（PRD §44.8 例文 --to cleaner）")

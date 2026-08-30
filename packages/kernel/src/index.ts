@@ -372,6 +372,15 @@ export interface Transaction {
   /** 审批/决策引用（DECISION.* / CHANGE.* / PERMIT.*，general_id 宽松词形）。 */
   readonly authorityRef?: string;
   readonly note?: string;
+  /**
+   * 事务级执行身份盖章（P21-Enforcement；PRD §25.4「哪个 Agent……做了哪次变化」
+   * 的审计问题在 maintain 事务通路的兑现位）：携带即校验（词形 SCHEMA_INVALID /
+   * 档案缺失 EXECUTION_NOT_FOUND——S1 禁自造身份，record op 同法）并盖章进
+   * TX_APPLIED journal 事件（execution_id 键）；缺席 = null 显式呈现（C1）。
+   * 盖章**不进** inputs_fingerprint（身份是 provenance 不是变更输入——同 ops 重放
+   * 携带不同身份仍幂等短路，字节稳定纪律不破）。
+   */
+  readonly executionId?: string;
 }
 
 export interface TransactionResult {
@@ -805,6 +814,75 @@ export type {
   GatekeeperDriftReport,
   GatekeeperDriftRow,
 } from "./gatekeeper.js";
+
+// ============================================================
+// Runtime Adapter 契约与 Capability Pool（P21-Contract · PRD §25.1/§25.2/§58 + §24）
+// ============================================================
+// 语义边界（docs/kernel-api.md §14）：本节是**契约与判定面**——不实现任何真实
+// runtime、不建 daemon（PRD grep "daemon" 0 命中；托管编排归 DEF-SUP 触发制，
+// D 线 §5）。§58 AgentRuntime interface 是外部 Runtime Adapter 的实现契约；
+// kernel 只消费三探针做能力探测与降级判定。全部纯函数零 IO 零墙钟。
+export {
+  probeRuntimeCapabilities,
+  isMultiAgentCapable,
+  evaluateCapabilityDegradation,
+  planRoleExecution,
+  assertHonestConcurrency,
+  RUNTIME_CONCURRENCY_MASQUERADE,
+} from "./runtime-adapter.js";
+export type {
+  AgentContext,
+  AgentPacket,
+  AgentPermissions,
+  AgentHandle,
+  AgentResult,
+  AgentRuntime,
+  RuntimeCapabilityProbe,
+  RuntimeCapabilities,
+  CapabilityDegradationRow,
+  CapabilityDegradationReport,
+  RoleExecutionPlanInput,
+  RoleExecutionStep,
+  RoleExecutionPlan,
+} from "./runtime-adapter.js";
+
+// Handoff Protocol 语义落地面（P21-Enforcement · PRD §24）：Handoff Packet 形态
+// （§24 yaml 九键 closed form——「必须通过 Handoff Packet」的唯一形态；extra 键
+// SCHEMA_INVALID 即「不得直接继承完整聊天上下文」的结构封条）+ 消费面
+// （compileHandoffContext =「Agent 出生 → 获取最小 Context」的机器形态）。
+// 纯函数零 IO；`pomaster handoff` 命令仍显式 deferred（DEF-SUP 触发制门槛）——
+// 本节是其 deferred 下的契约面（runtime-adapter「契约与执行分层」同构）。
+export {
+  HANDOFF_FAST_GATE_VALUES,
+  HANDOFF_PACKET_KEYS,
+  validateHandoffPacket,
+  compileHandoffContext,
+} from "./handoff.js";
+export type {
+  HandoffFastGateValue,
+  HandoffPacketKey,
+  HandoffPacketEvidence,
+  HandoffPacket,
+} from "./handoff.js";
+
+// DEF-SUP 触发制观测器（P21-Contract；D 线 §5 DEF-SUP 行三触发条件——
+// (a) 同 SOP 链重复 ≥3 次（journal 事件型链实测）/ (b) 第二贡献者（申报）/
+// (c) headless-CI（申报）；观测不施断，处置呈报 Owner。见 supervisor-trigger.ts 头注）。
+export { detectSupervisorTrigger } from "./supervisor-trigger.js";
+export {
+  SUPERVISOR_CHAIN_THRESHOLD_DEFAULT,
+  SUPERVISOR_CHAIN_MIN_LENGTH_DEFAULT,
+  SUPERVISOR_MAX_CHAIN_LENGTH_DEFAULT,
+  SUPERVISOR_TRIGGER_CONDITIONS,
+} from "./supervisor-trigger.js";
+export type {
+  SupervisorTriggerCondition,
+  SupervisorTriggerSource,
+  SupervisorChainMatch,
+  SupervisorTriggerConditionRow,
+  SupervisorTriggerReport,
+  SupervisorTriggerInput,
+} from "./supervisor-trigger.js";
 
 // pathsOf / StorePaths 公共化（P20-Commands）：清单函数（listSessionRecords /
 // listLocks / listExecutionRecords / detectGatekeeperDrift）以 StorePaths 为参，

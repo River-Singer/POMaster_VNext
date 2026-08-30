@@ -96,7 +96,7 @@ pomaster catalog status/explain  # Engineering Catalog 命令面（§44.10）：
 pomaster eval --suite behavioral  # Agent Behavioral Eval（§44.10）：25 种子 pass/fail/pending/retired 结构化呈现；pending/retired 显式列出不冒充绿不冒充败，executable 失败 exit 1；§94.3 五类源（Context Compiler/Router/Gate Policy/Catalog Rule/Harness）升级后经 `node scripts/eval-trigger.mjs` 触发必跑
 pomaster permit issue/check/steal/list   # 八拍② FRAMEWORK LOCK：许可签发/判卷/显式接管/台账呈现
 pomaster exec-guard …  # 八拍④ 写路径机器执行点：attempt JSON → checkPermit 判卷（判卷器非写入器）
-pomaster maintain <change-or-task> --ops <tx.json>  # 受控变更：显式事务 → kernel applyTransaction（判卷权威在 kernel）
+pomaster maintain <change-or-task> --ops <tx.json>  # 受控变更：显式事务 → kernel applyTransaction（判卷权威在 kernel）；--execution-id AGX-n 事务级执行身份盖章（§25.4：TX_APPLIED 事件可答「谁做了这次变化」）
 pomaster maintain <change-or-task> --phase pre-dev …  # pre-dev 链：triage→permit→context 薄编排（八拍①②③一线穿）
 pomaster brainstorm start/status/promote  # Discovery Plane（§80）：scratchpad 讨论面（Ephemeral 纪律，不复制「Step 0 永远创建 Task」）；状态链 IDEA→DISCOVERY→READY_TO_PROMOTE→CHANGE/TASK，提升走 P11 maintain 面
 pomaster research <topic> --mode internal|external|mixed|comparative|impact|forensic  # Research 会话（§81）：写面契约判卷（越写=FATAL，§81.3）+ 四文件骨架（§81.6）
@@ -107,9 +107,9 @@ pomaster record gate-run|claim  # 证据入账通路：gate 运行结果 / claim
 pomaster session attach/refresh/list  # D 线地基①会话命令面（P20）：注册/刷新 liveness + resumed_task 解析 + 清单并排呈现（runtime/sessions/ 侧车；D 线 §1.2/§3.1）
 pomaster lock acquire/heartbeat/release/steal/list  # D 线地基②互斥锁命令面（P20）：change/task/unit 三粒度；blocked 非静默成功（exit 1 + 持有者快照）；acquire 永不自动抢占（D2）——stale 锁走 lock steal <lock> --reason 显式接管（fence+1 + 原执行封口 interrupted）
 pomaster execution begin/end/list  # D 线地基③执行身份命令面（P20 §25.4）：AGX-n 登记/封口/清单——record gate-run/claim --execution-id 的身份供给面
-pomaster agents status  # §44.8 兑现（P20）：solo 运行时观测面——sessions/locks/executions 聚合 + DEF-GATEKEEPER 分身漂移观测（同 execution 既提 proposal 又 ALLOW ≥N 次/窗；触发=warning 呈报 Owner，非阻断）
-pomaster run <task>  # §44.8 托管编排——显式 deferred 至 P21（COMMAND_DEFERRED 提示非静默缺席；P0 solo 直连由当前 Harness 主 Agent 直接执行，PRD §25.2 内生依据）
-pomaster handoff <task> --to cleaner  # §44.8 会话交接——显式 deferred 至 P21（Handoff Protocol 执行面归 P21 Runtime Adapter）
+pomaster agents status  # §44.8 兑现（P20 建面 + P21 观测位）：solo 运行时观测面——sessions/locks/executions 聚合 + DEF-GATEKEEPER 分身漂移观测（同 execution 既提 proposal 又 ALLOW ≥N 次/窗）+ DEF-SUP 触发制观测（同 SOP 链重复/第二贡献者/headless-CI；触发=warning 呈报 Owner，非阻断）
+pomaster run <task>  # §44.8 托管编排——显式 deferred（COMMAND_DEFERRED 提示非静默缺席；P21 复核：AgentRuntime 契约已落 kernel，托管编排受 DEF-SUP 触发制门槛——触发前 solo 直连由当前 Harness 主 Agent 直接执行，PRD §25.2 内生依据）
+pomaster handoff <task> --to cleaner  # §44.8 会话交接——显式 deferred（同 run 触发制；§24 Handoff Packet 契约面已落 kernel——九键 closed form，「不得直接继承完整聊天上下文」结构封条）
 pomaster compact …     # 八拍⑦ COMPACT：episode 折叠为单次 store 事务（证据批量收编 + 显式 ops；NO_CHANGE 合法出口）
 pomaster closeout <task-id>  # 八拍⑧ CARRY：DoD 判卷（acceptance→VERIFIED claim 硬绑）+ gate 阻断施断 COMPLETED（证据缺失伪装完成硬阻断）
 pomaster reconcile …   # 三方对账出 delta 报告

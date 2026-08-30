@@ -265,6 +265,137 @@ describe("record op 透传（执行身份贯穿证据链 kernel 闸门）", () =
 });
 
 // ============================================================
+// 事务级 execution 盖章（P21-Enforcement；maintain 通路收口义务——
+// §25.4 审计问题「哪个 Agent……做了哪次变化」在事务通路的兑现位）
+// ============================================================
+
+describe("事务级 execution 盖章（Transaction.executionId → TX_APPLIED 事件）", () => {
+  it("携带已登记 execution_id → TX_APPLIED 事件带 execution_id 键（§25.4 事务级审计兑现）", async () => {
+    await seedObject();
+    const record = await beginExecution(store, { ...BASE, startedAt: "2026-08-30T00:00:00.000Z" });
+    await applyTransaction(store, {
+      ops: [
+        {
+          op: "upsert_object",
+          envelope: {
+            id: "PAGE.OTHER",
+            kind: "page_surface",
+            axisProfile: "page_default",
+            axes: { lifecycle: "CURRENT", confidence: "PROVISIONAL", evidence: "IMPLEMENTED", change: "STABLE" },
+            titleZh: "另一页",
+            authority: { owner: "BUSINESS_OWNER", delegates: [] },
+            origin: "natural",
+            payload: { surface: "V1" },
+          } as never,
+        },
+      ],
+      authorityRef: "CHANGE.P21_ENFORCEMENT",
+      executionId: record.execution_id,
+    });
+    const applied = journalEvents().filter((event) => event.type === "TX_APPLIED").at(-1);
+    expect(applied?.execution_id).toBe(record.execution_id);
+  });
+
+  it("缺席 execution_id → TX_APPLIED 带 execution_id: null（显式缺席 C1——「谁做的」不冒充已答；向后兼容）", async () => {
+    await seedObject();
+    const applied = journalEvents().filter((event) => event.type === "TX_APPLIED").at(-1);
+    expect(applied).toBeDefined();
+    expect(applied?.execution_id).toBe(null);
+  });
+
+  it("未登记 AGX（自造身份）→ EXECUTION_NOT_FOUND 且零写入（S1 与 record op 同闸；先于幂等短路）", async () => {
+    await seedObject();
+    const indexBefore = readFileSync(join(root, ".pomaster", "state", "truth-index.json"), "utf8");
+    await expect(
+      applyTransaction(store, {
+        ops: [
+          {
+            op: "upsert_object",
+            envelope: {
+              id: "PAGE.OTHER",
+              kind: "page_surface",
+              axisProfile: "page_default",
+              axes: { lifecycle: "CURRENT", confidence: "PROVISIONAL", evidence: "IMPLEMENTED", change: "STABLE" },
+              titleZh: "另一页",
+              authority: { owner: "BUSINESS_OWNER", delegates: [] },
+              origin: "natural",
+              payload: { surface: "V1" },
+            } as never,
+          },
+        ],
+        executionId: "AGX-2026-09999",
+      }),
+    ).rejects.toMatchObject({ code: "EXECUTION_NOT_FOUND" });
+    expect(readFileSync(join(root, ".pomaster", "state", "truth-index.json"), "utf8")).toBe(indexBefore);
+  });
+
+  it("词形漂移（非 AGX 词形）→ SCHEMA_INVALID（盖章位词形与 record op 同契约）", async () => {
+    await seedObject();
+    await expect(
+      applyTransaction(store, {
+        ops: [],
+        executionId: "exec-not-agx",
+      } as never),
+    ).rejects.toMatchObject({ code: "SCHEMA_INVALID" });
+  });
+
+  it("盖章不进 inputs_fingerprint：同 ops 重放换身份 → 仍幂等短路（provenance ≠ 变更输入；字节稳定纪律不破）", async () => {
+    await seedObject();
+    const first = await beginExecution(store, { ...BASE, startedAt: "2026-08-30T00:00:00.000Z" });
+    const second = await beginExecution(store, { ...BASE, startedAt: "2026-08-30T00:01:00.000Z" });
+    const tx = {
+      ops: [
+        {
+          op: "upsert_object",
+          envelope: {
+            id: "PAGE.OTHER",
+            kind: "page_surface",
+            axisProfile: "page_default",
+            axes: { lifecycle: "CURRENT", confidence: "PROVISIONAL", evidence: "IMPLEMENTED", change: "STABLE" },
+            titleZh: "另一页",
+            authority: { owner: "BUSINESS_OWNER", delegates: [] },
+            origin: "natural",
+            payload: { surface: "V1" },
+          } as never,
+        },
+      ],
+    };
+    await applyTransaction(store, { ...tx, executionId: first.execution_id });
+    const journalBefore = journalEvents().length;
+    const replay = await applyTransaction(store, { ...tx, executionId: second.execution_id });
+    expect(replay.shortCircuited).toBe(true);
+    expect(journalEvents().length).toBe(journalBefore); // 零写入：无第二条 TX_APPLIED
+  });
+
+  it("已封口执行的盖章允许（事后补录合法通路——与 record op 同裁定，不伪造时间围栏）", async () => {
+    await seedObject();
+    const record = await beginExecution(store, { ...BASE, startedAt: "2026-08-30T00:00:00.000Z" });
+    await endExecution(store, record.execution_id);
+    // 盖章事务须有真实变化（零变化事务零写入零事件——GOLDEN-L8-4，无事件可盖）。
+    await applyTransaction(store, {
+      ops: [
+        {
+          op: "upsert_object",
+          envelope: {
+            id: "PAGE.OTHER",
+            kind: "page_surface",
+            axisProfile: "page_default",
+            axes: { lifecycle: "CURRENT", confidence: "PROVISIONAL", evidence: "IMPLEMENTED", change: "STABLE" },
+            titleZh: "另一页",
+            authority: { owner: "BUSINESS_OWNER", delegates: [] },
+            origin: "natural",
+            payload: { surface: "V1" },
+          } as never,
+        },
+      ],
+      executionId: record.execution_id,
+    });
+    const applied = journalEvents().filter((event) => event.type === "TX_APPLIED").at(-1);
+    expect(applied?.execution_id).toBe(record.execution_id);
+  });
+});
+
+// ============================================================
 // 局部 fixture（避免跨模块依赖 CLI 包）
 // ============================================================
 

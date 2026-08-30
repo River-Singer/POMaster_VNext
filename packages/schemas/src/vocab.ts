@@ -563,3 +563,110 @@ export type ExecutionRoleValue = (typeof EXECUTION_ROLE_VALUES)[number];
  */
 export const LOCK_KIND_VALUES = ["change", "task", "unit"] as const;
 export type LockKindValue = (typeof LOCK_KIND_VALUES)[number];
+
+// ============================================================
+// P21 Capability Pool 词轴（x-vocab-source: PRD v0.4 §25.3 十二角色标题词形 +
+// §25.2 池选图短词形 + §24 Handoff 例文 from: IMPLEMENTER / to: CLEANER +
+// §25.4 role: IMPLEMENTER yaml 词形）。
+// TODO(vocab-pr)：Capability Pool 是 P1 capability 面（wave3-plan.md P21 范围锚；
+// R2 重分类裁定「P0=地基，P1=池」——docs/wave3-p20-r2-reclassification.md），
+// 十二角色词轴 absent_in_vocab_lock__pending_vocab_pr，收编后以 vocab-lock 为准
+// 逐值镜像。与 P0 六值 EXECUTION_ROLE_VALUES 分层不相交（该轴注记同源预告）：
+// P0 轴是执行身份档案的小写角色标签（配置可扩展、非内置人格），本轴是 §25.3
+// 池角色的机器词形。solo 默认运行形态不变（§25.2 MINIMAL→主 Harness 直接执行
+// = D 线 §1.1 SOLO-DIRECT 的 PRD 内生依据）：本词轴是 capability 面，
+// 不触发池时零消费。
+// ============================================================
+
+/**
+ * §25.3 十二角色机器词形（SCREAMING_SNAKE）。词形裁定（decisions，P21-Contract，
+ * 落档 docs/wave3-p20-sec79-backfill-44-8.md P21 注记）：不走 §25.3 标题的盲目
+ * 机械映射，逐值取 PRD 已给出的词形锚——
+ * - IMPLEMENTER / CLEANER：§24 Handoff 例文 `from: IMPLEMENTER` / `to: CLEANER`
+ *   与 §25.4 `role: IMPLEMENTER` yaml 大写词形逐字（§25.2 Implementer/Cleaner 同形）；
+ * - BRAINSTORM / RESEARCH / ARCHITECT / GATEKEEPER / STRENGTHENER / QA：
+ *   §25.2 池选图短词形大写化（「Brainstorm/Research（按需）」「Architect +
+ *   Implementer + Cleaner + Strengthener + QA」「Gatekeeper/QA」；D 线 §5
+ *   DEF-GATEKEEPER 同款短词形）；
+ * - SUPERVISOR / GOVERNANCE_WRITER / RECONCILIATION / KNOWLEDGE_CURATOR：
+ *   §25.3 标题机械映射（PRD 无更短词形锚，不发明缩写）。
+ * §25.3 标题词形（Brainstorm Agent / Implementation Agent / Governance Gatekeeper
+ * 等十二标题）另行逐字镜像于 AGENT_ROLE_POOL_PRD_HEADINGS——一词二形成文收编
+ * （content_drift 先例：登记歧义而非消歧；IMPLEMENTER 标题词形为 Implementation
+ * Agent、GATEKEEPER 标题词形为 Governance Gatekeeper，机器词形与标题词形按各自
+ * 锚各自成立）。
+ */
+export const AGENT_ROLE_POOL_VALUES = [
+  "SUPERVISOR",
+  "BRAINSTORM",
+  "RESEARCH",
+  "ARCHITECT",
+  "GOVERNANCE_WRITER",
+  "GATEKEEPER",
+  "IMPLEMENTER",
+  "CLEANER",
+  "STRENGTHENER",
+  "QA",
+  "RECONCILIATION",
+  "KNOWLEDGE_CURATOR",
+] as const;
+export type AgentRolePoolValue = (typeof AGENT_ROLE_POOL_VALUES)[number];
+
+/** §25.3 十二标题词形逐字镜像（键=机器词形，值=PRD §25.3 标题原文）。 */
+export const AGENT_ROLE_POOL_PRD_HEADINGS = {
+  SUPERVISOR: "Supervisor",
+  BRAINSTORM: "Brainstorm Agent",
+  RESEARCH: "Research Agent",
+  ARCHITECT: "Architect Agent",
+  GOVERNANCE_WRITER: "Governance Writer",
+  GATEKEEPER: "Governance Gatekeeper",
+  IMPLEMENTER: "Implementation Agent",
+  CLEANER: "Cleaner Agent",
+  STRENGTHENER: "Strengthener Agent",
+  QA: "QA Agent",
+  RECONCILIATION: "Reconciliation Agent",
+  KNOWLEDGE_CURATOR: "Knowledge Curator Agent",
+} as const satisfies Readonly<Record<AgentRolePoolValue, string>>;
+
+/**
+ * 角色执行形态三值（§58 四条降级规则与 §25.2 solo 内生形态的机器词形）：
+ * - direct：主 Harness 直接执行（§25.2 MINIMAL「甚至可由当前 Harness 主 Agent
+ *   直接执行」逐字语义 + D 线 §1.1 SOLO-DIRECT）——不经池、零开销、零降级报告；
+ * - sequential：§58「降级为 sequential roles」逐字（每角色先重编译上下文再执行）；
+ * - parallel：§58 supportsParallel 探针成立时的真并发（禁伪装并发封条的唯一放行形）。
+ */
+export const RUNTIME_EXECUTION_MODE_VALUES = [
+  "direct",
+  "sequential",
+  "parallel",
+] as const;
+export type RuntimeExecutionModeValue =
+  (typeof RUNTIME_EXECUTION_MODE_VALUES)[number];
+
+/**
+ * §58 三探针的机器词形（supportsParallel / supportsToolPermissions /
+ * supportsContextIsolation 方法名的 snake_case 机械映射；降级报告 rows 的
+ * capability 判别词）。
+ */
+export const RUNTIME_CAPABILITY_VALUES = [
+  "parallel",
+  "tool_permissions",
+  "context_isolation",
+] as const;
+export type RuntimeCapabilityValue = (typeof RUNTIME_CAPABILITY_VALUES)[number];
+
+/**
+ * §58 四条降级规则 id（四条 bullet 的 mechanical mirror，逐条一一对应）：
+ * - sequential_fallback =「降级为 sequential roles」；
+ * - context_recompile_per_role =「每一 Role 重新编译 Context」；
+ * - no_concurrency_masquerade =「禁止伪装成真正并发」（契约层恒封死）；
+ * - capability_degradation_report =「报告 Capability Degradation」。
+ */
+export const RUNTIME_DEGRADATION_RULE_IDS = [
+  "sequential_fallback",
+  "context_recompile_per_role",
+  "no_concurrency_masquerade",
+  "capability_degradation_report",
+] as const;
+export type RuntimeDegradationRuleId =
+  (typeof RUNTIME_DEGRADATION_RULE_IDS)[number];

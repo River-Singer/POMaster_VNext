@@ -61,6 +61,11 @@ export interface MaintainApplyResult {
   readonly change_or_task: string;
   readonly authority_ref: string | null;
   readonly note: string | null;
+  /**
+   * 事务级执行身份盖章回读（P21-Enforcement；§25.4 审计问题兑现位）：--execution-id
+   * 携带并校验通过时回显 AGX；缺席 = null（显式——「这次变化是谁做的」不冒充已答）。
+   */
+  readonly execution_id: string | null;
   readonly change: "APPLIED" | "NO_CHANGE" | null;
   readonly applied_seq: number | null;
   readonly short_circuited: boolean | null;
@@ -122,6 +127,12 @@ export interface MaintainInput {
   /** 审批/决策引用（显式覆盖；解析优先级 --authority-ref > --ops 文件内 authorityRef > 位置参数）。 */
   readonly authorityRef?: string;
   readonly note?: string;
+  /**
+   * 事务级执行身份盖章（P21-Enforcement；§25.4 审计问题兑现位）：携带即 kernel 校验
+   * （词形 SCHEMA_INVALID / 档案缺失 EXECUTION_NOT_FOUND——S1 禁自造身份）并盖进
+   * TX_APPLIED journal 事件与结果回读；缺席 = 事务无身份盖章（显式呈现，不伪造）。
+   */
+  readonly executionId?: string;
   /** pre-dev 链模式。 */
   readonly phase?: string;
   /** pre-dev 链：triage 请求文本。 */
@@ -143,6 +154,7 @@ function emptyApplyResult(changeOrTask: string): MaintainApplyResult {
     change_or_task: changeOrTask,
     authority_ref: null,
     note: null,
+    execution_id: null,
     change: null,
     applied_seq: null,
     short_circuited: null,
@@ -255,10 +267,14 @@ async function runMaintainApply(
   const note = input.note ?? loaded.note;
   const ops: readonly TransactionOp[] = loaded.ops;
 
+  // 事务级执行身份盖章（P21-Enforcement）：--execution-id 携带即透传 kernel 校验
+  // （词形/档案存在性；S1 禁自造身份）并盖进 TX_APPLIED journal 事件（§25.4 审计
+  // 问题「哪个 Agent……做了哪次变化」在 maintain 通路的兑现位）。
   const tx = {
     ops,
     ...(authorityRef !== undefined ? { authorityRef } : {}),
     ...(note !== undefined ? { note } : {}),
+    ...(input.executionId !== undefined ? { executionId: input.executionId } : {}),
   };
   let appliedSeq: number;
   let shortCircuited: boolean;
@@ -289,6 +305,7 @@ async function runMaintainApply(
     change_or_task: input.changeOrTask,
     authority_ref: authorityRef ?? null,
     note: note ?? null,
+    execution_id: input.executionId ?? null,
     change: shortCircuited ? "NO_CHANGE" : "APPLIED",
     applied_seq: appliedSeq,
     short_circuited: shortCircuited,
@@ -302,6 +319,7 @@ async function runMaintainApply(
   const human = [
     `maintain ${input.changeOrTask} → ${result.change} (applied_seq=${result.applied_seq}${countsText.length > 0 ? `, ops: ${countsText}` : ""})`,
     `  authority: ${result.authority_ref ?? "(none)"}`,
+    `  execution: ${result.execution_id ?? "(unstamped)"}`,
     `  changed: ${changedObjectIds.length > 0 ? changedObjectIds.join(", ") : "(none)"}`,
   ];
   return okOutcome("maintain", result, human, warnings);

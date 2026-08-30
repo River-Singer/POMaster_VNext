@@ -147,4 +147,35 @@ describe("vocab mirror（FROZEN 词表唯一镜像点）", () => {
   it("IR 方言标识逐字冻结", () => {
     expect(IR_SCHEMA_DIALECT).toBe("pomaster.truth-index/v1-draft");
   });
+
+  it("P21 Capability Pool 词轴（§25.3 十二角色 pending_vocab_pr；词形裁定见 schemas vocab.ts P21 段）", async () => {
+    const {
+      AGENT_ROLE_POOL_PRD_HEADINGS,
+      AGENT_ROLE_POOL_VALUES,
+      RUNTIME_CAPABILITY_VALUES,
+      RUNTIME_DEGRADATION_RULE_IDS,
+      RUNTIME_EXECUTION_MODE_VALUES,
+    } = await import("../src/vocab.js");
+    expect([...AGENT_ROLE_POOL_VALUES]).toEqual([
+      "SUPERVISOR", "BRAINSTORM", "RESEARCH", "ARCHITECT", "GOVERNANCE_WRITER",
+      "GATEKEEPER", "IMPLEMENTER", "CLEANER", "STRENGTHENER", "QA",
+      "RECONCILIATION", "KNOWLEDGE_CURATOR",
+    ]);
+    // 标题词形逐字（PRD §25.3 原文）+ 键集与机器词形集互为镜像。
+    expect(Object.values(AGENT_ROLE_POOL_PRD_HEADINGS)).toEqual([
+      "Supervisor", "Brainstorm Agent", "Research Agent", "Architect Agent",
+      "Governance Writer", "Governance Gatekeeper", "Implementation Agent",
+      "Cleaner Agent", "Strengthener Agent", "QA Agent", "Reconciliation Agent",
+      "Knowledge Curator Agent",
+    ]);
+    expect(Object.keys(AGENT_ROLE_POOL_PRD_HEADINGS)).toEqual([...AGENT_ROLE_POOL_VALUES]);
+    expect([...RUNTIME_EXECUTION_MODE_VALUES]).toEqual(["direct", "sequential", "parallel"]);
+    expect([...RUNTIME_CAPABILITY_VALUES]).toEqual([
+      "parallel", "tool_permissions", "context_isolation",
+    ]);
+    expect([...RUNTIME_DEGRADATION_RULE_IDS]).toEqual([
+      "sequential_fallback", "context_recompile_per_role",
+      "no_concurrency_masquerade", "capability_degradation_report",
+    ]);
+  });
 });

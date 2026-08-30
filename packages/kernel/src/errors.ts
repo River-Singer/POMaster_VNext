@@ -100,7 +100,10 @@ export type GovernanceErrorCode =
   /** endExecution 目标已封口（ended_at 在场；重复封口 = 调用方缺陷，显式拒绝）。 */
   | "EXECUTION_ALREADY_ENDED"
   /** 单机本地盘假设破裂（目录不可创建 / 原子替换失败 / runtime 侧车不可读），禁静默。 */
-  | "ENVIRONMENT_ERROR";
+  | "ENVIRONMENT_ERROR"
+  /** 伪装并发（PRD §58「禁止伪装成真正并发」——MAJOR 级语义违例，契约层封死）：
+   *  申报 concurrent 而执行计划经能力探测派生为 sequential/direct。 */
+  | "RUNTIME_CONCURRENCY_MASQUERADE";
 
 /** GovernanceError 判读上下文（错误详情结构化，机器可判读）。 */
 export interface GovernanceErrorDetails {
