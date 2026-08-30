@@ -113,7 +113,7 @@ pomaster handoff <task> --to cleaner  # §44.8 会话交接——显式 deferred
 pomaster compact …     # 八拍⑦ COMPACT：episode 折叠为单次 store 事务（证据批量收编 + 显式 ops；NO_CHANGE 合法出口）
 pomaster closeout <task-id>  # 八拍⑧ CARRY：DoD 判卷（acceptance→VERIFIED claim 硬绑）+ gate 阻断施断 COMPLETED（证据缺失伪装完成硬阻断）
 pomaster reconcile …   # 三方对账出 delta 报告
-pomaster doctor        # 工具/MCP 配置探测（P22 起含 oasdiff / import-linter / dependency-cruiser 三机判腿工具；P23 起扩容 c8 / pytest-cov 覆盖率双腿；P24 起扩容 mutmut / StrykerJS 变异测试双腿；P25 起扩容 gitleaks / pip-audit / semgrep 安全三腿——三探针独立呈现不聚合，B2-5 防假绿纪律；缺什么提示装什么）
+pomaster doctor        # 工具/MCP 配置探测（P22 起含 oasdiff / import-linter / dependency-cruiser 三机判腿工具；P23 起扩容 c8 / pytest-cov 覆盖率双腿；P24 起扩容 mutmut / StrykerJS 变异测试双腿；P25 起扩容 gitleaks / pip-audit / semgrep 安全三腿——三探针独立呈现不聚合，B2-5 防假绿纪律；P26 起扩容 playwright（BROWSER 确定性腿，B3-1）——与 chrome-devtools MCP 交互腿探针并存，双通道各自显式呈现；缺什么提示装什么）
 ```
 
 ## 文档地图

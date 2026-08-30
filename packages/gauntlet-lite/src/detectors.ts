@@ -12,6 +12,9 @@
  * - gitleaks / pip-audit / semgrep → SECURITY 门禁三腿（P25 / 随版计划 Batch 2 B2-5
  *                          「三个独立 adapter，禁止合并为单一 "security ok" 绿灯」；
  *                          PATH 线索，oasdiff 同款 CLI 无配置文件形态）
+ * - @playwright/test   → BROWSER 门禁确定性腿（P26 / 随版计划 Batch 3 B3-1；D22①；
+ *                          package.json 声明线索，c8/StrykerJS 同款形态；run 期
+ *                          `corepack pnpm exec playwright --version` 实测对账）
  * - chrome-devtools MCP → BROWSER 交互式腿（D22；.mcp.json 线索，未配置 → MISSING_CONFIGURATION 显式缺席 + 一键引导）
  *
  * 词表纪律：DetectionStatus 四态词形冻结于 adapter-types.ts（TODO(vocab-pr)），禁止就地扩值。
@@ -695,6 +698,77 @@ export function detectSemgrep(
     facts,
     options,
   );
+}
+
+// ============================================================
+// @playwright/test → BROWSER 门禁确定性腿（P26 / 随版计划 Batch 3 B3-1；D22①；
+// package.json 线索，c8/StrykerJS 同款形态）
+// ============================================================
+
+/**
+ * @playwright/test 探测（P26 BROWSER 门禁确定性腿，B3-1「evidence 必含 console error /
+ * network 维度」；D22① 双通道之一）：package.json devDependencies/dependencies 声明
+ * @playwright/test → READY（c8 探测同款形态；run 期以 `corepack pnpm exec playwright
+ * --version` 实测对账）。缺席必带安装指引，禁静默。
+ * 诚实能力边界：浏览器二进制（npx playwright install）的在位性无法从 package.json
+ * 证明——缺席会在 run 期显式落 not_run，探测面不冒充已验证（pytest-cov 同款纪律）。
+ */
+export function detectPlaywright(
+  facts: DetectorFacts,
+  options: DetectorOptions = {},
+): DetectionResult {
+  const tool = "@playwright/test";
+  if (options.requiredByProfile === false) {
+    return {
+      status: "NOT_REQUIRED_BY_PROFILE",
+      tool,
+      reason:
+        "当前 Governance Profile 未要求 BROWSER 门禁确定性腿（合法缺席，显式计数而非静默跳过）",
+    };
+  }
+  const pkg = readPackageJson(facts);
+  if (pkg === null) {
+    return {
+      status: "NOT_INSTALLED",
+      tool,
+      reason:
+        "package.json 不存在（无法探测 @playwright/test 依赖声明——BROWSER 门禁确定性腿）",
+      installHint:
+        '安装建议：corepack pnpm add -D @playwright/test 并执行 npx playwright install 安装浏览器二进制；在 browser-gate.json 声明 {"playwright":{"command":"<遍历命令，须自行产出 Playwright JSON 报告>"}}（BROWSER 门禁确定性腿，P26/B3-1）',
+    };
+  }
+  const declared = dependencyVersion(pkg, "@playwright/test");
+  if (typeof declared !== "string") {
+    return {
+      status: "NOT_INSTALLED",
+      tool,
+      reason:
+        "package.json 未声明 @playwright/test 依赖（devDependencies/dependencies 均无）",
+      installHint:
+        "安装建议：corepack pnpm add -D @playwright/test 并执行 npx playwright install（BROWSER 门禁确定性腿，P26/B3-1；run 期 corepack pnpm exec playwright 执行，--reporter=json 产出官方 JSONReport 判卷）",
+    };
+  }
+  const detectedVersion = sanitizeSemver(declared);
+  if (
+    options.expectedVersion != null &&
+    detectedVersion !== null &&
+    detectedVersion !== options.expectedVersion
+  ) {
+    return {
+      status: "DRIFTED",
+      tool,
+      detectedVersion,
+      expectedVersion: options.expectedVersion,
+      evidence: `package.json 命中 @playwright/test = ${declared}（版本 ${detectedVersion}）`,
+      installHint: `版本对齐建议：将 @playwright/test 对齐到锁定版本 ${options.expectedVersion}（DRIFTED 态判卷降级 warning）`,
+    };
+  }
+  return {
+    status: "READY",
+    tool,
+    detectedVersion,
+    evidence: `package.json 命中 @playwright/test = ${declared}`,
+  };
 }
 
 // ============================================================

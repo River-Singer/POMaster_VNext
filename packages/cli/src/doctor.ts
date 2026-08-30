@@ -18,7 +18,9 @@
  * 扩容 mutmut / stryker（MUTATION 门禁双腿工具，B2-3 StrykerJS / B2-4 mutmut——
  * mutmut 能力落差如实标注，PIT/Java 第二波 deferred）；P25 起扩容 gitleaks / pip_audit /
  * semgrep（SECURITY 门禁三腿工具，B2-5「三个独立 adapter，禁止合并为单一
- * "security ok" 绿灯」——三探针独立呈现，任一缺席各带各的安装路标，不聚合）。
+ * "security ok" 绿灯」——三探针独立呈现，任一缺席各带各的安装路标，不聚合）；P26 起
+ * 扩容 playwright（BROWSER 门禁确定性腿工具，B3-1「evidence 必含 console error /
+ * network 维度」/ D22①——与 chrome_devtools_mcp 交互腿探针并存，双通道各自显式呈现）。
  */
 
 import { readFile } from "node:fs/promises";
@@ -215,6 +217,7 @@ async function defaultGauntletProbes(
     "gitleaks",
     "pip_audit",
     "semgrep",
+    "playwright",
   ] as const;
   try {
     const mod = (await import("@pomaster/gauntlet-lite")) as Record<string, unknown>;
@@ -236,6 +239,7 @@ async function defaultGauntletProbes(
       gitleaks: detectors["gitleaks"]!,
       pip_audit: detectors["pipAudit"]!,
       semgrep: detectors["semgrep"]!,
+      playwright: detectors["playwright"]!,
     };
     return names.map((name) => ({
       probe: name,
@@ -286,11 +290,13 @@ async function runGauntletProbes(
  *    store 缺失 → MISSING_CONFIGURATION；kernel scaffold → NOT_INSTALLED；
  *    环境异常 → DEFECT（禁静默）。
  * 2) oasdiff / import_linter / dependency_cruiser / c8 / pytest_cov / mutmut / stryker /
- *    gitleaks / pip_audit / semgrep ——
+ *    gitleaks / pip_audit / semgrep / playwright ——
  *    工具链机判腿探测（P22 contract/architecture + P23 coverage 双腿 + P24 mutation
- *    双腿 + P25 security 三腿；转调 gauntlet-lite toolDetectors 单一探测面；缺席必带
- *    安装路标；P25 三探针独立呈现不聚合——B2-5 防假绿纪律）。
- * 3) chrome_devtools_mcp —— D22 探测 + 一键引导文本。
+ *    双腿 + P25 security 三腿 + P26 playwright 确定性腿；转调 gauntlet-lite
+ *    toolDetectors 单一探测面；缺席必带安装路标；P25 三探针独立呈现不聚合——
+ *    B2-5 防假绿纪律）。
+ * 3) chrome_devtools_mcp —— D22 探测 + 一键引导文本（P26 起与 playwright 确定性腿
+ *    探针并存——BROWSER 双通道各自显式呈现）。
  */
 export async function runDoctor(
   rootDir: string,

@@ -34,12 +34,22 @@
  *                            随版计划 B2-5「三个独立 adapter，禁止合并为单一
  *                            "security ok" 绿灯」——gitleaks/pip-audit/semgrep 三工厂
  *                            三实例三 GRN，无聚合 verdict 位）；
- * - browser-adapter.ts    —— BROWSER 门禁 adapter（doctor MCP 探测 + smoke 连接证据）；
+ * - playwright-leg.ts     —— BROWSER 确定性腿执行机械与官方报告解析（P26：三道闸真执行 +
+ *                            Playwright 官方 JSONReport 词形解析（对账 testReporter.d.ts）
+ *                            + console/network 双维度强制（缺维=not_run）+ 判卷锚=报告重算）；
+ * - playwright-adapter.ts —— BROWSER 确定性腿 adapter（P26 / B3-1 / D22①；
+ *                            browser-gate.json 配置面 + @playwright/test 探测 +
+ *                            版本锚强制；不做档位豁免——§27.1 MINIMAL visual verify 在主集）；
+ * - browser-legs.ts       —— BROWSER 双通道一次编排（P26 / D22：确定性腿 ∥ MCP 交互腿
+ *                            两腿两记录，无聚合 verdict 位，互不牵连）；
+ * - browser-adapter.ts    —— BROWSER MCP 交互腿 adapter（P26 升级：握手 smoke=通道可达
+ *                            前置证据，判卷锚=a11y snapshot/截图/performance trace
+ *                            证据三件套归一化面；§26.2 七项清单映射表落档位）；
  * - gate-recipe-runner.ts —— Basic Gate Runner v1（P12b：catalog/gates recipe→adapter
  *                            派发登记表 + 单 recipe 编排执行；入账归 CLI 层 store 事务）；
  * - detectors.ts          —— oasdiff / import-linter / dependency-cruiser / c8 / pytest-cov /
- *                            mutmut / StrykerJS / gitleaks / pip-audit / semgrep 探测（doctor 面；
- *                            缺席必带理由与安装建议，禁静默）。
+ *                            mutmut / StrykerJS / gitleaks / pip-audit / semgrep /
+ *                            @playwright/test 探测（doctor 面；缺席必带理由与安装建议，禁静默）。
  *
  * 判卷纪律：输出形态镜像 @pomaster/kernel 的 GateResult 契约（03-gate-result 的 camelCase 形态），
  * 七态 verdict + counts.notApplicable 必填 + asserted/recomputed 孪生（永不信任自报值）；
@@ -47,10 +57,12 @@
  */
 import { createBuildAdapter } from "./build-adapter.js";
 import { createBrowserAdapter } from "./browser-adapter.js";
+import { runBrowserGateLegs } from "./browser-legs.js";
 import { createContractAdapter } from "./contract-adapter.js";
 import { createArchitectureAdapter } from "./architecture-adapter.js";
 import { createCoverageAdapter, createCrapGateAdapter } from "./coverage-adapter.js";
 import { createMutationAdapter } from "./mutation-adapter.js";
+import { createPlaywrightAdapter } from "./playwright-adapter.js";
 import {
   createGitleaksAdapter,
   createPipAuditAdapter,
@@ -71,6 +83,7 @@ import type { CrapLegPlan } from "./crap.js";
 import type { CoverageRunOutput, CrapRunOutput } from "./coverage-adapter.js";
 import type { MutationLegPlan } from "./mutation-leg.js";
 import type { MutationRunOutput } from "./mutation-adapter.js";
+import type { PlaywrightLegPlan, PlaywrightLegOutput } from "./playwright-leg.js";
 import {
   detectC8,
   detectChromeDevtoolsMcp,
@@ -80,6 +93,7 @@ import {
   detectMutmut,
   detectOasdiff,
   detectPipAudit,
+  detectPlaywright,
   detectPytestCov,
   detectSemgrep,
   detectStryker,
@@ -91,6 +105,9 @@ export * from "./pytest-leg.js";
 export * from "./contract-adapter.js";
 export * from "./architecture-adapter.js";
 export * from "./browser-adapter.js";
+export * from "./browser-legs.js";
+export * from "./playwright-leg.js";
+export * from "./playwright-adapter.js";
 export * from "./oasdiff-leg.js";
 export * from "./dependency-cruiser-leg.js";
 export * from "./import-linter-leg.js";
@@ -127,12 +144,28 @@ export const architectureAdapter: GateAdapter<
   ArchitectureRunOutput
 > = createArchitectureAdapter();
 
-/** BROWSER 门禁 adapter 单例（doctor MCP 探测 + smoke；也可经 createBrowserAdapter() 自建）。 */
+/** BROWSER MCP 交互腿 adapter 单例（P26 升级：握手 smoke + 证据三件套判卷；也可经 createBrowserAdapter() 自建）。 */
 export const browserAdapter: GateAdapter<
   DetectionResult,
   BrowserGatePlan,
   BrowserRunOutput
 > = createBrowserAdapter();
+
+/**
+ * BROWSER 确定性腿 adapter 单例（P26/B3-1/D22①：官方 JSONReport 解析 +
+ * console/network 双维度强制；也可经 createPlaywrightAdapter() 自建）。
+ */
+export const playwrightAdapter: GateAdapter<
+  DetectionResult,
+  PlaywrightLegPlan,
+  PlaywrightLegOutput
+> = createPlaywrightAdapter();
+
+/**
+ * BROWSER 双通道一次编排单例入口（P26/D22：runBrowserGateLegs——两腿两记录，
+ * 无聚合 verdict 位；工厂入参可注入 fake spawn/证据面）。
+ */
+export { runBrowserGateLegs };
 
 /**
  * COVERAGE 门禁 adapter 单例（P23：c8 / pytest-cov 双腿 + 行/分支口径强制上报；
@@ -175,8 +208,9 @@ export const pipAuditAdapter = createPipAuditAdapter();
 export const semgrepAdapter = createSemgrepAdapter();
 
 /**
- * adapter registry（G5 谱系扩展落地：BUILD 双腿 + CONTRACT / ARCHITECTURE / BROWSER）。
- * 四 adapter 共用 §59 契约与 normalize-common 的 FATAL 闸门；缺席一律显式四态
+ * adapter registry（G5 谱系扩展落地：BUILD 双腿 + CONTRACT / ARCHITECTURE / BROWSER /
+ * BROWSER·Playwright 确定性腿）。
+ * 各 adapter 共用 §59 契约与 normalize-common 的 FATAL 闸门；缺席一律显式四态
  * （not_configured ≠ passed），绝不静默跳过当通过。
  */
 export const gateAdapters = {
@@ -184,9 +218,10 @@ export const gateAdapters = {
   contract: contractAdapter,
   architecture: architectureAdapter,
   browser: browserAdapter,
+  playwright: playwrightAdapter,
 } as const;
 
-/** doctor 工具探测 registry（oasdiff / import-linter / dependency-cruiser / c8 / pytest-cov / mutmut / StrykerJS / gitleaks / pip-audit / semgrep / chrome-devtools MCP）。 */
+/** doctor 工具探测 registry（oasdiff / import-linter / dependency-cruiser / c8 / pytest-cov / mutmut / StrykerJS / gitleaks / pip-audit / semgrep / @playwright/test / chrome-devtools MCP）。 */
 export const toolDetectors = {
   oasdiff: detectOasdiff,
   importLinter: detectImportLinter,
@@ -198,5 +233,6 @@ export const toolDetectors = {
   gitleaks: detectGitleaks,
   pipAudit: detectPipAudit,
   semgrep: detectSemgrep,
+  playwright: detectPlaywright,
   chromeDevtoolsMcp: detectChromeDevtoolsMcp,
 } as const;
