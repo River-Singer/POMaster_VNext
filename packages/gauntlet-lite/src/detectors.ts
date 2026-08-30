@@ -16,6 +16,7 @@ import type {
   DetectionResult,
   DetectorFacts,
   DetectorOptions,
+  ExecutableProbeFn,
 } from "./adapter-types.js";
 
 // ============================================================
@@ -74,8 +75,15 @@ export function stripQuotesFromPathEnv(
   return { ...env, PATH: pathValue.split('"').join("") };
 }
 
-/** 在 PATH 上寻找可执行文件（逐目录 × 平台后缀）；无 PATH/未命中 → null（禁静默，交缺席分支）。 */
-function findOnPath(executable: string, facts: DetectorFacts): string | null {
+/**
+ * 在 PATH 上寻找可执行文件（逐目录 × 平台后缀）；无 PATH/未命中 → null（禁静默，交缺席分支）。
+ * 探测面（detectOasdiff）与机判腿 run 前置闸（ExecutableProbeFn 缺省实现）共用本实现——
+ * 两处必须同源，漂移即「探测说在位、执行说缺席」的口径分裂。
+ */
+export function findExecutableOnPath(
+  executable: string,
+  facts: DetectorFacts,
+): string | null {
   if (facts.pathEnv === null) {
     return null;
   }
@@ -91,6 +99,27 @@ function findOnPath(executable: string, facts: DetectorFacts): string | null {
     }
   }
   return null;
+}
+
+/**
+ * ExecutableProbeFn 缺省实现：对真实 process.env.PATH 做可执行体扫描
+ * （findExecutableOnPath 同源；机判腿 run 前置闸①a 用，测试可注入 fake 旁路）。
+ */
+export const platformExecutableProbe: ExecutableProbeFn = (executable) =>
+  findExecutableOnPath(executable, platformDetectorFacts(process.cwd()));
+
+/**
+ * 命令串首 token（shell 实际解析的可执行体词形；剥一层包裹双引号）。
+ * run 前置闸用它从 plan.command 派生「真正要在 PATH/shell 上解析的可执行体」——
+ * 与 production 词形（`lint-imports`、`corepack pnpm exec …`）和测试词形
+ * （`node "<脚本路径>"`）同源兼容。首 token 带内嵌空格的引号路径词形不支持（本仓
+ * 计划命令不产生该形态；出现时宁可探不到走 not_run，不做预测性解析）。
+ */
+export function firstCommandToken(command: string): string {
+  const first = command.trim().split(/\s+/)[0] ?? command.trim();
+  return first.startsWith('"') && first.endsWith('"') && first.length >= 2
+    ? first.slice(1, -1)
+    : first;
 }
 
 /** package.json 读取（缺失/不可解析 → null，由各 detector 显式表达缺席理由）。 */
@@ -146,7 +175,7 @@ export function detectOasdiff(
         "当前 Governance Profile 未要求 CONTRACT 门禁（MINIMAL 档整组 testing/contract gate 合法缺席；缺席显式计数而非静默跳过）",
     };
   }
-  const hit = findOnPath(tool, facts);
+  const hit = findExecutableOnPath(tool, facts);
   if (hit !== null) {
     return {
       status: "READY",
@@ -169,11 +198,17 @@ export function detectOasdiff(
 // import-linter → ARCHITECTURE 门禁 BE-Python 腿（配置文件线索）
 // ============================================================
 
-const IMPORT_LINTER_PLAIN_CONFIGS = [
+/**
+ * import-linter 配置候选（探测与机判腿共用的单一清单：detectImportLinter 找配置、
+ * import-linter-leg 落 items.location——两处必须同源，漂移即口径分裂）。
+ */
+export const IMPORT_LINTER_CONFIG_CANDIDATES = [
   ".importlinter",
   ".importlinter.yaml",
   ".importlinter.toml",
 ] as const;
+
+const IMPORT_LINTER_PLAIN_CONFIGS = IMPORT_LINTER_CONFIG_CANDIDATES;
 
 export function detectImportLinter(
   facts: DetectorFacts,
@@ -235,12 +270,18 @@ export function detectImportLinter(
 // dependency-cruiser → ARCHITECTURE 门禁 FE 腿（配置文件 + package.json 版本）
 // ============================================================
 
-const DEPCUISE_CONFIGS = [
+/**
+ * dependency-cruiser 配置候选（探测与机判腿共用的单一清单：detectDependencyCruiser
+ * 找配置、dependency-cruiser-leg 拼命令 --config——两处必须同源，漂移即口径分裂）。
+ */
+export const DEPCUISE_CONFIG_CANDIDATES = [
   ".dependency-cruiser.cjs",
   ".dependency-cruiser.js",
   ".dependency-cruiser.mjs",
   ".dependency-cruiser.json",
 ] as const;
+
+const DEPCUISE_CONFIGS = DEPCUISE_CONFIG_CANDIDATES;
 
 export function detectDependencyCruiser(
   facts: DetectorFacts,

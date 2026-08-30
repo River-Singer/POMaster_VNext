@@ -1,10 +1,14 @@
 /**
- * doctor.spec.ts —— 四态探测矩阵（kernel 探针 + chrome-devtools MCP 一键引导）。
+ * doctor.spec.ts —— 四态探测矩阵（kernel 探针 + P22 工具链机判腿探测 + chrome-devtools
+ * MCP 一键引导）。
  *
  * TODO(integration-2026-08-28)：kernel 模块已由 kernel 建造者落地。原「init 后
  * kernel scaffold → NOT_INSTALLED」真实 kernel 场景已不存在，两处相关用例更新为
  * 真实 kernel 集成断言（READY 路径）；NOT_INSTALLED 分类路径改由注入式用例覆盖
  * （kernel 抛 not-implemented → NOT_INSTALLED，缺席显式语义不变）。
+ * P22：oasdiff / import_linter / dependency_cruiser 三工具探针入矩阵（转调 gauntlet-lite
+ * toolDetectors 单一探测面）；ok=true 的用例注入全 READY fake 探针（宿主是否安装
+ * oasdiff 等属于环境差异，不影响命令面判卷语义的断言）。
  */
 import { writeFileSync, rmSync } from "node:fs";
 import { mkdtempSync } from "node:fs";
@@ -12,15 +16,31 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { DoctorReport, Store } from "@pomaster/kernel";
+import type { DetectionResult } from "@pomaster/gauntlet-lite";
+import type { GauntletToolProbe } from "@pomaster/cli";
 import {
   DOCTOR_PROBE_STATUSES,
   CHROME_DEVTOOLS_MCP_HINT,
+  detectionToDoctorProbe,
   runInit,
   runDoctor,
   probeChromeDevtoolsMcp,
 } from "@pomaster/cli";
 
 let dir: string;
+
+/** 全 READY 工具探针 fake（宿主工具安装状态无关化；探测面语义另由缺席用例覆盖）。 */
+function readyGauntletProbes(): GauntletToolProbe[] {
+  return (["oasdiff", "import_linter", "dependency_cruiser"] as const).map((probe) => ({
+    probe,
+    detect: () => ({
+      status: "READY" as const,
+      tool: probe,
+      detectedVersion: null,
+      evidence: `fake READY: ${probe}`,
+    }),
+  }));
+}
 
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), "pomaster-cli-doctor-"));
@@ -88,7 +108,7 @@ describe("doctor 四态矩阵", () => {
     expect(kernel?.hint).toContain("@pomaster/kernel");
   });
 
-  it(".mcp.json 含 chrome-devtools → mcp=READY；真实 kernel 亦 READY → ok=true", async () => {
+  it(".mcp.json 含 chrome-devtools → mcp=READY；真实 kernel 亦 READY → 全探针 READY ok=true", async () => {
     await runInit(dir);
     writeFileSync(
       join(dir, ".mcp.json"),
@@ -102,7 +122,7 @@ describe("doctor 四态矩阵", () => {
       }),
       "utf8",
     );
-    const outcome = await runDoctor(dir);
+    const outcome = await runDoctor(dir, { gauntletProbes: readyGauntletProbes() });
     const mcp = outcome.result.probes.find(
       (p) => p.probe === "chrome_devtools_mcp",
     );
@@ -140,7 +160,7 @@ describe("doctor 四态矩阵", () => {
     expect(CHROME_DEVTOOLS_MCP_HINT).toContain(".mcp.json");
   });
 
-  it("注入 kernel 全 pass + mcp READY → 两探针 READY，ok=true", async () => {
+  it("注入 kernel 全 pass + mcp READY → 全探针 READY，ok=true", async () => {
     await runInit(dir);
     writeFileSync(
       join(dir, ".mcp.json"),
@@ -148,7 +168,10 @@ describe("doctor 四态矩阵", () => {
       "utf8",
     );
     const kernel = fakeKernel(passingReport());
-    const outcome = await runDoctor(dir, kernel);
+    const outcome = await runDoctor(dir, {
+      ...kernel,
+      gauntletProbes: readyGauntletProbes(),
+    });
     expect(outcome.ok).toBe(true);
     expect(outcome.result.probes.every((p) => p.status === "READY")).toBe(true);
     expect(kernel.doctorProbes).toHaveBeenCalledOnce();
@@ -182,6 +205,58 @@ describe("doctor 四态矩阵", () => {
     expect(kernel?.detail).toContain("os.replace unsupported");
   });
 
+  it("P22 工具探针：缺省探测面在空目录 → 三工具 NOT_INSTALLED + 安装路标 + ok=false", async () => {
+    // 临时目录无 .importlinter / setup.cfg / pyproject.toml 等——双工具按配置线索缺席；
+    // oasdiff 按 PATH 线索缺席（测试进程 PATH 上无 oasdiff；若宿主真装了则显式容忍 READY）。
+    await runInit(dir);
+    const outcome = await runDoctor(dir);
+    for (const name of ["oasdiff", "import_linter", "dependency_cruiser"]) {
+      const probe = outcome.result.probes.find((p) => p.probe === name);
+      expect(probe, name).toBeDefined();
+      expect(probe?.status === "NOT_INSTALLED" || probe?.status === "READY").toBe(true);
+      if (probe?.status === "NOT_INSTALLED") {
+        expect(probe.hint, name).toMatch(/安装建议|install/i);
+      }
+    }
+    expect(outcome.ok).toBe(false);
+  });
+
+  it("P22 工具探针：探测函数抛异常 → DEFECT（探测面异常禁静默）", async () => {
+    const outcome = await runDoctor(dir, {
+      gauntletProbes: [
+        {
+          probe: "oasdiff",
+          detect: () => {
+            throw new Error("facts unavailable");
+          },
+        },
+      ],
+    });
+    const probe = outcome.result.probes.find((p) => p.probe === "oasdiff");
+    expect(probe?.status).toBe("DEFECT");
+    expect(probe?.detail).toContain("facts unavailable");
+  });
+
+  it("P22 工具探针：NOT_INSTALLED 映射保留 reason 与 installHint（缺席带路标）", async () => {
+    const outcome = await runDoctor(dir, {
+      gauntletProbes: [
+        {
+          probe: "import_linter",
+          detect: () => ({
+            status: "NOT_INSTALLED" as const,
+            tool: "import-linter",
+            reason: "未找到 import-linter 配置（fixture reason）",
+            installHint: "安装建议：pip install import-linter（fixture hint）",
+          }),
+        },
+      ],
+    });
+    const probe = outcome.result.probes.find((p) => p.probe === "import_linter");
+    expect(probe?.status).toBe("NOT_INSTALLED");
+    expect(probe?.detail).toContain("fixture reason");
+    expect(probe?.hint).toContain("pip install import-linter");
+  });
+
   it("全部探针状态值都在四态词表内", async () => {
     const outcome = await runDoctor(dir);
     for (const probe of outcome.result.probes) {
@@ -202,5 +277,62 @@ describe("probeChromeDevtoolsMcp 独立探测", () => {
     const probe = await probeChromeDevtoolsMcp(dir);
     expect(probe.status).toBe("READY");
     expect(probe.detail).toContain("web");
+  });
+});
+
+describe("detectionToDoctorProbe 四态映射（gauntlet-lite → doctor 语义对齐）", () => {
+  it("DRIFTED → DEFECT：detail 含漂移版本对（detected ≠ expected）+ 对齐 hint 随附", () => {
+    // P22 审计 MINOR：DRIFTED 分支零覆盖——mapping 契约钉死（版本漂移是需要处理的
+    // 配置态，doctor 侧呈现 DEFECT 而非静默 READY）。
+    const result: DetectionResult = {
+      status: "DRIFTED",
+      tool: "dependency-cruiser",
+      detectedVersion: "17.0.0",
+      expectedVersion: "16.5.0",
+      evidence: "配置文件命中: .dependency-cruiser.cjs（版本 17.0.0）",
+      installHint: "版本对齐建议：将 dependency-cruiser 对齐到锁定版本 16.5.0",
+    };
+    const probe = detectionToDoctorProbe("dependency_cruiser", result);
+    expect(probe.probe).toBe("dependency_cruiser");
+    expect(probe.status).toBe("DEFECT");
+    expect(probe.detail).toContain("17.0.0");
+    expect(probe.detail).toContain("16.5.0");
+    expect(probe.detail).toContain("版本漂移");
+    expect(probe.hint).toContain("16.5.0");
+  });
+
+  it("READY → READY：evidence 进 detail、hint 为 null", () => {
+    const probe = detectionToDoctorProbe("oasdiff", {
+      status: "READY",
+      tool: "oasdiff",
+      detectedVersion: null,
+      evidence: "PATH 命中: C:/tools/oasdiff.exe",
+    });
+    expect(probe.status).toBe("READY");
+    expect(probe.detail).toBe("PATH 命中: C:/tools/oasdiff.exe");
+    expect(probe.hint).toBeNull();
+  });
+
+  it("NOT_INSTALLED → NOT_INSTALLED：reason 进 detail、installHint 进 hint（缺席带路标）", () => {
+    const probe = detectionToDoctorProbe("import_linter", {
+      status: "NOT_INSTALLED",
+      tool: "import-linter",
+      reason: "未找到 import-linter 配置（fixture reason）",
+      installHint: "安装建议：pip install import-linter",
+    });
+    expect(probe.status).toBe("NOT_INSTALLED");
+    expect(probe.detail).toContain("fixture reason");
+    expect(probe.hint).toContain("pip install import-linter");
+  });
+
+  it("NOT_REQUIRED_BY_PROFILE → NOT_INSTALLED：合法缺席显式呈现（hint 为 null）", () => {
+    const probe = detectionToDoctorProbe("oasdiff", {
+      status: "NOT_REQUIRED_BY_PROFILE",
+      tool: "oasdiff",
+      reason: "当前 Governance Profile 未要求 CONTRACT 门禁",
+    });
+    expect(probe.status).toBe("NOT_INSTALLED");
+    expect(probe.detail).toContain("未要求 CONTRACT 门禁");
+    expect(probe.hint).toBeNull();
   });
 });

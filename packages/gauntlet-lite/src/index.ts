@@ -7,11 +7,16 @@
  *
  * 模块地图：
  * - adapter-types.ts      —— §59 接口契约、探测四态（缺席语义）、判卷错误类型、包版本常量；
- * - normalize-common.ts   —— 四 adapter 共享的 normalize FATAL 闸门与缺席记录构造（单一实现）；
+ * - normalize-common.ts   —— 各 adapter 共享的 normalize FATAL 闸门与缺席记录构造（单一实现）；
  * - build-adapter.ts      —— BUILD 门禁 adapter（vitest 腿 + pytest 腿 + 七态归一 + 03 线格式序列化）；
  * - pytest-leg.ts         —— BUILD 的 pytest 腿（junitxml 实跑 + PATH 消毒 + JUnit XML 判卷）；
- * - contract-adapter.ts   —— CONTRACT 门禁 adapter（openapi operation_id 存在性对账）；
- * - architecture-adapter.ts —— ARCHITECTURE 门禁 adapter（forbidden import 规则文本扫描）；
+ * - contract-adapter.ts   —— CONTRACT 门禁 adapter（P22 双口径：operation_id 存在性对账 +
+ *                            oasdiff breaking-change diff 执行腿）；
+ * - oasdiff-leg.ts        —— CONTRACT 的 oasdiff 执行腿（P22/D18：breaking diff 真跑 + 退出码锚判卷）；
+ * - architecture-adapter.ts —— ARCHITECTURE 门禁 adapter（P22 三口径：rules 文本扫描 +
+ *                            dependency-cruiser / import-linter 机判腿）；
+ * - dependency-cruiser-leg.ts —— ARCHITECTURE 的 FE 机判腿（P22：depcruise JSON 重算）；
+ * - import-linter-leg.ts  —— ARCHITECTURE 的 BE-Python 机判腿（P22：lint-imports 退出码锚 + 文本重算）；
  * - browser-adapter.ts    —— BROWSER 门禁 adapter（doctor MCP 探测 + smoke 连接证据）；
  * - gate-recipe-runner.ts —— Basic Gate Runner v1（P12b：catalog/gates recipe→adapter
  *                            派发登记表 + 单 recipe 编排执行；入账归 CLI 层 store 事务）；
@@ -49,6 +54,9 @@ export * from "./pytest-leg.js";
 export * from "./contract-adapter.js";
 export * from "./architecture-adapter.js";
 export * from "./browser-adapter.js";
+export * from "./oasdiff-leg.js";
+export * from "./dependency-cruiser-leg.js";
+export * from "./import-linter-leg.js";
 export * from "./detectors.js";
 export * from "./normalize-common.js";
 export * from "./gate-recipe-runner.js";

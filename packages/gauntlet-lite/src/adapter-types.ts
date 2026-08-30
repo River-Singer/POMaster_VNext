@@ -189,6 +189,24 @@ export type SpawnFn = (
   options: { readonly cwd: string; readonly timeoutMs: number },
 ) => SpawnOutcome;
 
+/**
+ * spawnSync 输出缓冲上限（64MB）。容量依据（P22 红队 MAJOR）：Node 默认仅 1MB——
+ * 真实项目 depcruise `--output-type json` 报告实测可达 ~1.3MB，超限即 error=ENOBUFS
+ * → spawn_failed → not_run 结构性失效（工具在位却永远出不了判卷）。64MB ≈ 实测形态
+ * 约 48 倍的量级余量，仍远低于单次 spawnSync 可稳定持有的输出预算；encoding utf8 下
+ * 按字节计。各腿默认 spawn 的 maxBuffer 必须显式引用本常量，禁回落默认值。
+ */
+export const SPAWN_MAX_BUFFER_BYTES = 64 * 1024 * 1024;
+
+/**
+ * run 前置可执行体探测注入面（P22 红队 MAJOR「缺席误红」闸①a）：Windows cmd 下命令
+ * 缺席以 status=1+error=null 伪装成「正常执行失败」，spawn 层无从分辨——run 前先证
+ * 可执行体在位。返回 PATH 命中路径（留痕 evidence）或 null（缺席 → not_run，禁静默）。
+ * 缺省实现 platformExecutableProbe（detectors.ts，detectOasdiff findOnPath 同源先例）；
+ * 测试注入 fake，保证判卷矩阵与宿主环境无关。
+ */
+export type ExecutableProbeFn = (executable: string) => string | null;
+
 /** run 产物（§59 的 run 原始输出；第三方控制台文本止步于本形态，禁止上抛进核心）。 */
 export interface ToolRunOutput {
   readonly plan: GatePlan;

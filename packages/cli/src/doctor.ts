@@ -1,18 +1,24 @@
 /**
- * doctor.ts —— `pomaster doctor`：环境/内核/MCP 探测矩阵（D7 Portability + D22 一键引导）。
+ * doctor.ts —— `pomaster doctor`：环境/内核/工具链/MCP 探测矩阵（D7 Portability +
+ * D22 一键引导 + P22 工具链执行腿探测）。
  *
  * 四态矩阵（探测层缺席显式，禁静默跳过当通过；词表外局部词 → TODO(vocab-pr)）：
  * - READY               —— 探测项可用且通过；
- * - NOT_INSTALLED       —— 依赖模块未落地（如 kernel scaffold not-implemented）；
+ * - NOT_INSTALLED       —— 依赖模块/工具未落地（kernel scaffold not-implemented；
+ *                          oasdiff / import-linter / dependency-cruiser 缺席——P22 起
+ *                          CONTRACT/ARCHITECTURE 机判腿的执行前提，缺席必带安装路标）；
  * - MISSING_CONFIGURATION —— 依赖存在但项目未配置（如 chrome-devtools MCP 未进 .mcp.json）；
- * - DEFECT              —— 配置/内容/环境异常（解析失败、探针报 defect）。
+ * - DEFECT              —— 配置/内容/环境异常（解析失败、探针报 defect、版本漂移 DRIFTED）。
  *
  * fail-closed：ok = 全部 READY；任一非 READY → ok=false。doctor 只读，永不修改 store。
  * D 线风险备忘：环境异常（文件不可读等）必须报 DEFECT，禁静默。
+ * P22 探测转调 @pomaster/gauntlet-lite 的 toolDetectors（单一探测面——doctor 呈现与
+ * adapter 执行腿用同一 detect，禁两套探测口径漂移）。
  */
 
 import { readFile } from "node:fs/promises";
 import type { DoctorReport, Store } from "@pomaster/kernel";
+import type { DetectionResult, DetectorFacts } from "@pomaster/gauntlet-lite";
 import { TRUTH_INDEX_RELATIVE, toPosix, truthIndexPath } from "./store-layout.js";
 import type { CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
@@ -43,6 +49,11 @@ export interface DoctorResult {
 export interface DoctorKernelDeps {
   createStore: (rootDir: string) => Promise<Store>;
   doctorProbes: (store: Store) => Promise<DoctorReport>;
+}
+
+/** doctor 工具探针注入面（测试注入 fake；缺省转调 gauntlet-lite toolDetectors）。 */
+export interface DoctorToolProbeDeps {
+  readonly gauntletProbes?: readonly GauntletToolProbe[];
 }
 
 /** D22 一键引导文本：粘贴即完成 chrome-devtools MCP 配置（生成 .mcp.json 或并入现有 mcpServers）。 */
@@ -137,16 +148,127 @@ function kernelProbeFromReport(report: DoctorReport): DoctorProbe {
   };
 }
 
+// ============================================================
+// P22：CONTRACT/ARCHITECTURE 机判腿工具探测（转调 gauntlet-lite toolDetectors）
+// ============================================================
+
+/** 单工具探针（探测函数注入面：测试注入 fake，缺省转调 gauntlet-lite toolDetectors）。 */
+export interface GauntletToolProbe {
+  readonly probe: string;
+  readonly detect: (facts: DetectorFacts) => DetectionResult;
+}
+
+/**
+ * gauntlet-lite 四态 → doctor 四态映射（缺席语义对齐）：
+ * READY→READY；NOT_INSTALLED→NOT_INSTALLED（reason+installHint 路标随附）；
+ * DRIFTED→DEFECT（版本漂移是需要处理的配置态）；NOT_REQUIRED_BY_PROFILE→NOT_INSTALLED
+ * （合法缺席，同样显式呈现而非静默）。
+ */
+export function detectionToDoctorProbe(
+  probeName: string,
+  result: DetectionResult,
+): DoctorProbe {
+  switch (result.status) {
+    case "READY":
+      return { probe: probeName, status: "READY", detail: result.evidence, hint: null };
+    case "NOT_INSTALLED":
+      return {
+        probe: probeName,
+        status: "NOT_INSTALLED",
+        detail: result.reason,
+        hint: result.installHint,
+      };
+    case "DRIFTED":
+      return {
+        probe: probeName,
+        status: "DEFECT",
+        detail: `版本漂移：detected ${result.detectedVersion} ≠ expected ${result.expectedVersion}（${result.evidence}）`,
+        hint: result.installHint,
+      };
+    case "NOT_REQUIRED_BY_PROFILE":
+      return {
+        probe: probeName,
+        status: "NOT_INSTALLED",
+        detail: result.reason,
+        hint: null,
+      };
+  }
+}
+
+/** 缺省工具探针（转调 gauntlet-lite toolDetectors；import 失败 → 全 NOT_INSTALLED 留痕）。 */
+async function defaultGauntletProbes(
+  rootDir: string,
+): Promise<readonly GauntletToolProbe[]> {
+  const names = ["oasdiff", "import_linter", "dependency_cruiser"] as const;
+  try {
+    const mod = (await import("@pomaster/gauntlet-lite")) as Record<string, unknown>;
+    const detectors = mod["toolDetectors"] as
+      | Record<string, (facts: DetectorFacts) => DetectionResult>
+      | undefined;
+    const facts = (mod["platformDetectorFacts"] as (root: string) => DetectorFacts)(rootDir);
+    if (detectors === undefined) {
+      throw new Error("toolDetectors export missing");
+    }
+    const keyed: Record<string, (facts: DetectorFacts) => DetectionResult> = {
+      oasdiff: detectors["oasdiff"]!,
+      import_linter: detectors["importLinter"]!,
+      dependency_cruiser: detectors["dependencyCruiser"]!,
+    };
+    return names.map((name) => ({
+      probe: name,
+      detect: () => keyed[name]!(facts),
+    }));
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return names.map((probe) => ({
+      probe,
+      detect: () =>
+        ({
+          status: "NOT_INSTALLED",
+          tool: probe,
+          reason: `gauntlet-lite 探测面不可用（${message}）——工具探测缺席，禁静默`,
+          installHint: "修复 @pomaster/gauntlet-lite 安装后重跑 pomaster doctor",
+        }) satisfies DetectionResult,
+    }));
+  }
+}
+
+/** 运行工具探针（探测函数逐个执行；异常 → DEFECT 留痕，禁静默）。 */
+async function runGauntletProbes(
+  probes: readonly GauntletToolProbe[],
+  facts: DetectorFacts,
+): Promise<readonly DoctorProbe[]> {
+  const results: DoctorProbe[] = [];
+  for (const entry of probes) {
+    let probe: DoctorProbe;
+    try {
+      probe = detectionToDoctorProbe(entry.probe, entry.detect(facts));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      probe = {
+        probe: entry.probe,
+        status: "DEFECT",
+        detail: `探测执行异常：${message}`,
+        hint: "环境异常禁静默（D 线风险备忘）；检查项目目录可读性后重试。",
+      };
+    }
+    results.push(probe);
+  }
+  return results;
+}
+
 /**
  * 探测矩阵：
  * 1) kernel_doctor_probes —— 转调 kernel doctorProbes（四探针 fail-closed）；
  *    store 缺失 → MISSING_CONFIGURATION；kernel scaffold → NOT_INSTALLED；
  *    环境异常 → DEFECT（禁静默）。
- * 2) chrome_devtools_mcp —— D22 探测 + 一键引导文本。
+ * 2) oasdiff / import_linter / dependency_cruiser —— P22 工具链机判腿探测
+ *    （转调 gauntlet-lite toolDetectors；缺席必带安装路标）。
+ * 3) chrome_devtools_mcp —— D22 探测 + 一键引导文本。
  */
 export async function runDoctor(
   rootDir: string,
-  deps?: Partial<DoctorKernelDeps>,
+  deps?: Partial<DoctorKernelDeps> & DoctorToolProbeDeps,
 ): Promise<CommandOutcome<DoctorResult>> {
   const probes: DoctorProbe[] = [];
 
@@ -203,7 +325,30 @@ export async function runDoctor(
     }
   }
 
-  // 2) chrome-devtools MCP 探测（D22）。
+  // 2) 工具链机判腿探测（P22：转调 gauntlet-lite toolDetectors 单一探测面）。
+  const gauntletProbes =
+    deps?.gauntletProbes ?? (await defaultGauntletProbes(rootDir));
+  const { platformDetectorFacts } = (await import(
+    "@pomaster/gauntlet-lite"
+  )) as Record<string, unknown>;
+  const facts =
+    typeof platformDetectorFacts === "function"
+      ? (platformDetectorFacts as (root: string) => DetectorFacts)(rootDir)
+      : null;
+  if (facts === null) {
+    for (const entry of gauntletProbes) {
+      probes.push({
+        probe: entry.probe,
+        status: "DEFECT",
+        detail: "gauntlet-lite platformDetectorFacts export missing——探测面契约破坏",
+        hint: "核对 @pomaster/gauntlet-lite 版本后重试。",
+      });
+    }
+  } else {
+    probes.push(...(await runGauntletProbes(gauntletProbes, facts)));
+  }
+
+  // 3) chrome-devtools MCP 探测（D22）。
   probes.push(await probeChromeDevtoolsMcp(rootDir));
 
   const ok = probes.every((p) => p.status === "READY");

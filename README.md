@@ -102,7 +102,7 @@ pomaster brainstorm start/status/promote  # Discovery Plane（§80）：scratchp
 pomaster research <topic> --mode internal|external|mixed|comparative|impact|forensic  # Research 会话（§81）：写面契约判卷（越写=FATAL，§81.3）+ 四文件骨架（§81.6）
 pomaster research list/inspect  # research 产物清单 / 单 artifact 判读（五级 Evidence 判卷语义 + handoff 三件，§81.4/§81.5）
 pomaster check --fast   # FAST gate 循环（BUILD 腿，纯读）
-pomaster check --gates  # catalog gate recipes 派发腿：每 recipe 一条 GRN 入账（缺席工具显式 NOT_RUN，非绿非红）
+pomaster check --gates  # catalog gate recipes 派发腿：每 recipe 一条 GRN 入账（P22 起 CONTRACT=operationId 对账 / oasdiff breaking diff 双口径、ARCHITECTURE=文本扫描 / dependency-cruiser / import-linter 三口径；工具缺席显式 NOT_RUN，非绿非红）
 pomaster record gate-run|claim  # 证据入账通路：gate 运行结果 / claim 显式单条落账 evidence 平面
 pomaster session attach/refresh/list  # D 线地基①会话命令面（P20）：注册/刷新 liveness + resumed_task 解析 + 清单并排呈现（runtime/sessions/ 侧车；D 线 §1.2/§3.1）
 pomaster lock acquire/heartbeat/release/steal/list  # D 线地基②互斥锁命令面（P20）：change/task/unit 三粒度；blocked 非静默成功（exit 1 + 持有者快照）；acquire 永不自动抢占（D2）——stale 锁走 lock steal <lock> --reason 显式接管（fence+1 + 原执行封口 interrupted）
@@ -113,7 +113,7 @@ pomaster handoff <task> --to cleaner  # §44.8 会话交接——显式 deferred
 pomaster compact …     # 八拍⑦ COMPACT：episode 折叠为单次 store 事务（证据批量收编 + 显式 ops；NO_CHANGE 合法出口）
 pomaster closeout <task-id>  # 八拍⑧ CARRY：DoD 判卷（acceptance→VERIFIED claim 硬绑）+ gate 阻断施断 COMPLETED（证据缺失伪装完成硬阻断）
 pomaster reconcile …   # 三方对账出 delta 报告
-pomaster doctor        # 工具/MCP 配置探测（缺什么提示装什么）
+pomaster doctor        # 工具/MCP 配置探测（P22 起含 oasdiff / import-linter / dependency-cruiser 三机判腿工具；缺什么提示装什么）
 ```
 
 ## 文档地图
