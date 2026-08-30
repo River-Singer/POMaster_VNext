@@ -88,7 +88,8 @@ pomaster init          # 建立治理基线 + 生成 AGENTS.md/CLAUDE.md 轻入�
 pomaster triage "…"    # 秒级判档：这次 change 值得多少治理
 pomaster status        # 读 .pomaster/state：对象计数/分母状态/permit 活性
 pomaster inspect <governed-id>  # 单对象检视：正文+证据+谱系（纯读零写入）
-pomaster context compile --role <lane>  # 八拍③ PROJECTION：最小充分上下文投影（三分区 markdown）
+pomaster context compile --role <lane>  # 八拍③ PROJECTION：最小充分上下文投影（MUST/ADVISORY/CATALOG/LAZY TOOLS 四分区 markdown；CATALOG 区出处 catalog 策展源，§92.2 非 project state）
+pomaster catalog status/explain  # Engineering Catalog 命令面（§44.10）：catalog 构成与单条目解释；catalog-lock 漂移（物料改而未重锁）显式检出
 pomaster permit issue/check/steal/list   # 八拍② FRAMEWORK LOCK：许可签发/判卷/显式接管/台账呈现
 pomaster exec-guard …  # 八拍④ 写路径机器执行点：attempt JSON → checkPermit 判卷（判卷器非写入器）
 pomaster maintain <change-or-task> --ops <tx.json>  # 受控变更：显式事务 → kernel applyTransaction（判卷权威在 kernel）

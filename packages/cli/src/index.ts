@@ -20,6 +20,9 @@
  * - context compile 八拍③：转调 kernel compileProjection，输出三分区 markdown
  * - doctor          内核探针 + chrome-devtools MCP 探测（D7/D22，四态矩阵 fail-closed）
  * - check --fast    八拍⑤：转调 gauntlet-lite build adapter（NOT_INSTALLED 绝不静默通过）
+ * - catalog status/explain
+ *                   Engineering Catalog 命令面（§44.10；P14：catalog 构成与单条目解释，
+ *                   catalog-lock 漂移显式检出；catalog 是策展源非第二套 Project Truth——§92.2）
  *
  * 分层纪律：判卷权威在 @pomaster/kernel，本包只做编排与呈现，禁止旁路写状态
  * （例外：check/exec-guard 对过期许可追加 PERMIT_EXPIRED_OBSERVED 为 kernel 契约行为）。
@@ -43,6 +46,7 @@ import { runReconcile } from "./reconcile.js";
 import { runCompact } from "./compact.js";
 import { runRecordClaim, runRecordGateRun } from "./record.js";
 import { runCloseout } from "./closeout.js";
+import { runCatalogStatus, runCatalogExplain } from "./catalog.js";
 
 export { CLI_NAME, CLI_VERSION } from "./cli-info.js";
 export { toEnvelope } from "./envelope.js";
@@ -143,6 +147,13 @@ export type {
   CloseoutDodEntry,
   CloseoutGateRow,
 } from "./closeout.js";
+export { runCatalogStatus, runCatalogExplain } from "./catalog.js";
+export type {
+  CatalogCommandDeps,
+  CatalogExplainResult,
+  CatalogSectionCounts,
+  CatalogStatusResult,
+} from "./catalog.js";
 export {
   EVIDENCE_MALFORMED_CODE,
   RUN_INGEST_ACTIONS,
@@ -673,6 +684,50 @@ export function createProgram(
       });
       record({
         command: "closeout",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  // —— Engineering Catalog 命令面（§44.10；P14 Catalog→运行时联结的查看面） ——
+  // catalog/ 是工具侧策展资产（§92.2 非第二套 Project Truth）：本命令不依赖 store，
+  // 未 init 目录同样可查；lock 漂移 → CATALOG_LOCK_DRIFT 显式 fail-closed 呈现。
+  const catalog = program
+    .command("catalog")
+    .description(
+      "Engineering Catalog 命令面（§44.10）：查看 catalog 构成（status）与单条目解释（explain）；catalog-lock 漂移显式检出",
+    );
+  catalog
+    .command("status")
+    .description(
+      "catalog 构成：版本/profile/分区计数（policies/gates/knowledge/tools/projection-presets）+ catalog-lock 校验（漂移 = CATALOG_LOCK_DRIFT fail-closed）",
+    )
+    .option("--catalog-root <path>", "注入 catalog 根目录（测试/嵌入面；缺省 = 工具仓库 catalog/）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runCatalogStatus({
+        catalogRoot: opts.catalogRoot as string | undefined,
+      });
+      record({
+        command: "catalog status",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+  catalog
+    .command("explain")
+    .description(
+      "单条目解释：lock 身份层（path/content_sha256/source_ref）+ 正文策展字段（title/statement/lane/enforcement…）+ 该条目 lock 校验",
+    )
+    .argument("<entry-id>", "catalog 条目 id（lock entries 分母，如 POLICY.WEB.API.SINGLE_HTTP_CLIENT）")
+    .option("--catalog-root <path>", "注入 catalog 根目录（测试/嵌入面；缺省 = 工具仓库 catalog/）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (entryId: string, opts, command) => {
+      const outcome = await runCatalogExplain(entryId, {
+        catalogRoot: opts.catalogRoot as string | undefined,
+      });
+      record({
+        command: "catalog explain",
         outcome,
         asJson: command.opts().json === true,
       });

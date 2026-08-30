@@ -91,12 +91,13 @@ export interface MaintainPermitView {
   } | null;
 }
 
-/** 投影呈现（kernel Projection 的 snake 投影；MUST/ADVISORY 分层保留）。 */
+/** 投影呈现（kernel Projection 的 snake 投影；MUST/ADVISORY/CATALOG 分层保留）。 */
 export interface MaintainProjectionView {
   readonly role: string;
   readonly inputs_fingerprint: string;
   readonly must_entries: readonly { readonly ref: string; readonly reason: string }[];
   readonly advisory_entries: readonly { readonly ref: string; readonly reason: string }[];
+  readonly catalog_entries: readonly { readonly ref: string; readonly reason: string }[];
   readonly lazy_tools: readonly string[];
 }
 
@@ -212,6 +213,10 @@ function projectionViewOf(role: string, projection: Projection): MaintainProject
       reason: entry.reason,
     })),
     advisory_entries: projection.manifest.advisoryEntries.map((entry) => ({
+      ref: entry.ref,
+      reason: entry.reason,
+    })),
+    catalog_entries: projection.manifest.catalogEntries.map((entry) => ({
       ref: entry.ref,
       reason: entry.reason,
     })),

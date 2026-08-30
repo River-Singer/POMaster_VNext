@@ -8,9 +8,13 @@
  *   （按触发条件注入的经验/漂移预警，不进 gate 判卷输入）物理分离——契约的
  *   mustEntries/advisoryEntries 两分区即 §74 三分区的前两轴（VERIFICATION 判卷
  *   输入 = MUST 区；gate 归一走 normalizeGateResult）；
+ * - catalogEntries 独立第四分区（P14，§92.2）：catalog/ 策展源的检索式注入，
+ *   出处逐条标明 catalog 路径，绝不混入 mustEntries 判卷输入——Catalog 不是
+ *   第二套 Project Truth，catalog 物料变更只影响本分区与 inputsFingerprint，
+ *   store state 零变更（分区边界由对抗测试钉住）；
  * - 每 entry 必带 reason（why-injected，可判卷；无理由注入=噪声）；
  * - inputsFingerprint 由 manifest+request 派生：同输入重放字节稳定（D24：只读服务）。
- * 纯派生视图：只读 store，不产生治理事实，不写任何文件。
+ * 纯派生视图：只读 store 与 catalog/，不产生治理事实，不写任何文件。
  */
 import type { DenominatorRefRow, Projection, ProjectionEntry, Store } from "./index.js";
 import { GovernanceError } from "./errors.js";
@@ -18,9 +22,126 @@ import { sha256OfCanonical } from "./digest.js";
 import { readText } from "./io.js";
 import { pathsOf, readRawIndex } from "./paths.js";
 import { loadTruthIndex } from "./store.js";
+import {
+  loadCatalogPolicies,
+  loadCatalogProjectionPresets,
+  loadCatalogTools,
+  resolveCatalogRoot,
+  verifyCatalogLock,
+  type CatalogLockDrift,
+  type CatalogPolicyMaterial,
+} from "./catalog.js";
 import type { ObjectRow } from "./index.js";
 
 type UnknownRecord = Record<string, unknown>;
+
+/** catalog 消费出处呈现（catalogSource；不进 inputsFingerprint——root 是环境信息）。 */
+export interface CatalogProjectionSource {
+  /** catalog = 已消费；absent = catalog 目录缺席（显式缺席，非静默空）。 */
+  readonly status: "catalog" | "absent";
+  /** 消费的 catalog 根目录（absent 时为 null）。 */
+  readonly root: string | null;
+  /**
+   * 消费注记：lock 校验结果（ok / 漂移 WARN 摘要——D24 write_blocking=false，
+   * 漂移呈现不阻断）或缺席原因。
+   */
+  readonly note: string;
+}
+
+/** compileProjection 可选注入（测试/嵌入方；缺省走 repo 缺省定位）。 */
+export interface ProjectionCatalogOptions {
+  /** 注入 catalog 根目录；缺省 resolveCatalogRoot()（仓库 catalog/）。 */
+  readonly catalogRoot?: string;
+}
+
+function driftSummary(drifts: readonly CatalogLockDrift[]): string {
+  const head = drifts
+    .slice(0, 5)
+    .map((drift) => `${drift.kind}:${drift.path}`)
+    .join("; ");
+  return drifts.length > 5 ? `${head}; …共 ${drifts.length} 处` : head;
+}
+
+/**
+ * catalog 策展消费（P14）：policies 检索式注入 + tools 懒加载清单 + lock 校验呈现。
+ * 语义边界：
+ * - 坏物料（SCHEMA_INVALID）→ 原样抛出（fail-closed：目录在但物料坏 ≠ catalog 缺席，
+ *   禁静默当空分区消费）；
+ * - catalog 目录缺席（NOT_CONFIGURED）→ status="absent" 显式呈现 + 空分区
+ *   （投影核心是 store 派生，策展源缺席不阻断投影，但绝不伪装成有内容）；
+ * - lock 漂移 → WARN 进 note（D24 哈希伦理：呈现不阻断；修复 = producer 重锁）。
+ */
+function consumeCatalog(
+  request: import("./index.js").ProjectionRequest,
+  options?: ProjectionCatalogOptions,
+): {
+  readonly catalogEntries: ProjectionEntry[];
+  readonly lazyTools: string[];
+  readonly catalogSource: CatalogProjectionSource;
+} {
+  let catalogRoot: string;
+  try {
+    catalogRoot = resolveCatalogRoot(options?.catalogRoot);
+  } catch (error) {
+    if (error instanceof GovernanceError && error.code === "NOT_CONFIGURED") {
+      return {
+        catalogEntries: [],
+        lazyTools: [],
+        catalogSource: {
+          status: "absent",
+          root: null,
+          note: `catalog 缺席：${error.message}`,
+        },
+      };
+    }
+    throw error;
+  }
+
+  const policies = loadCatalogPolicies(catalogRoot);
+  // lane 检索：applies_when.lane ∈ {"any", role 命中}（CATALOG_LANE_VALUES 与 role
+  // lane 词的交集即 frontend/backend；architect 等 role 只命中 any——V7 词表注记）。
+  const catalogEntries: ProjectionEntry[] = [];
+  for (const policy of policies as readonly CatalogPolicyMaterial[]) {
+    if (policy.lane !== "any" && policy.lane !== request.role) continue;
+    catalogEntries.push({
+      ref: policy.id,
+      reason:
+        `catalog: ${policy.file}（lane=${policy.lane} 命中 role=${request.role}，` +
+        `enforcement=${policy.enforcement}，lifecycle=${policy.lifecycle}）：${policy.titleZh}`,
+    });
+  }
+  // projection-presets 消费（P14 出口判据：presets 与 policies 同为 context 编译的
+  // catalog 策展面）：身份三元组在场呈现——预设无治理 id 词形，ref = preset.name；
+  // 正文语义（映射与约束）住 yaml 本体，此处只注入身份与出处（检索式策展，不搬运正文）。
+  for (const preset of loadCatalogProjectionPresets(catalogRoot)) {
+    catalogEntries.push({
+      ref: preset.name,
+      reason:
+        `catalog: ${preset.file}（projection preset，kind=${preset.kind}，status=${preset.status}）`,
+    });
+  }
+  catalogEntries.sort((a, b) => (a.ref < b.ref ? -1 : a.ref > b.ref ? 1 : 0));
+
+  // 懒加载工具清单：消费 catalog/tools/（P14：原 projection.ts:177「v0 无工具
+  // catalog」显式空自注消灭——清单来自实存目录，不再自注）。
+  const lazyTools = loadCatalogTools(catalogRoot).map((tool) => tool.file);
+
+  const verification = verifyCatalogLock(catalogRoot);
+  const catalogSource: CatalogProjectionSource = verification.ok
+    ? {
+        status: "catalog",
+        root: catalogRoot,
+        note: `catalog-lock 校验通过（${verification.entries_checked} entries）`,
+      }
+    : {
+        status: "catalog",
+        root: catalogRoot,
+        note:
+          `catalog-lock 漂移 ${verification.drifts.length} 处（WARN 呈现不阻断，D24；` +
+          `重跑 catalog/tools 物料工具重锁）：${driftSummary(verification.drifts)}`,
+      };
+  return { catalogEntries, lazyTools, catalogSource };
+}
 
 function entryId(row: ObjectRow): string {
   return row.id;
@@ -55,12 +176,16 @@ function readPermitLedger(store: Store): readonly PermitLedgerEntry[] {
 /**
  * 编译最小充分上下文投影。范围派生（确定性、可判卷）：
  * - 分母通道：request.denominatorRefs 命中的对象（信封行 denominator_refs 交集）；
- * - 许可通道：request.taskRef 命中 changeRef 的 Permit 的 scope.subjectIds。
- * 范围为空 → manifest 为空（诚实缺席，不杜撰「全域上下文」）。
+ * - 许可通道：request.taskRef 命中 changeRef 的 Permit 的 scope.subjectIds；
+ * - catalog 通道（P14）：policies 按 lane 检索注入独立分区 + tools 懒加载清单
+ *   （§92.2：出处 catalog 的策展源，独立于 store 派生的三通道）。
+ * 范围为空 → manifest 的 store 派生分区为空（诚实缺席，不杜撰「全域上下文」）；
+ * catalog 分区按 lane 检索在场（与 store 范围正交——策展源不依赖任务分母）。
  */
 export async function compileProjection(
   store: Store,
   request: import("./index.js").ProjectionRequest,
+  options?: ProjectionCatalogOptions,
 ): Promise<Projection> {
   // 未初始化的 store：loadTruthIndex 会以 NOT_CONFIGURED 显式报错（禁静默）。
   const raw = readRawIndex(pathsOf(store));
@@ -174,8 +299,8 @@ export async function compileProjection(
     }
   }
 
-  // —— 懒加载工具清单：v0 无工具 catalog（catalog/ 层未建成）——显式空，不杜撰。
-  const lazyTools: string[] = [];
+  // —— catalog 策展消费（P14；见 consumeCatalog 契约注记） ——
+  const { catalogEntries, lazyTools, catalogSource } = consumeCatalog(request, options);
 
   const sortEntries = (entries: readonly ProjectionEntry[]): ProjectionEntry[] =>
     [...entries].sort((a, b) => (a.ref === b.ref ? (a.reason < b.reason ? -1 : 1) : a.ref < b.ref ? -1 : 1));
@@ -183,6 +308,7 @@ export async function compileProjection(
   const manifest = {
     mustEntries: sortEntries(mustEntries),
     advisoryEntries: sortEntries(advisoryEntries),
+    catalogEntries,
     lazyTools,
   };
   const inputsFingerprint = sha256OfCanonical({
@@ -191,5 +317,5 @@ export async function compileProjection(
     denominatorRefs: requestedDenoms,
     manifest,
   });
-  return { manifest, inputsFingerprint };
+  return { manifest, catalogSource, inputsFingerprint };
 }

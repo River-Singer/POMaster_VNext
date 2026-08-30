@@ -31,7 +31,19 @@ function fakeProjection(overrides?: Partial<Projection>): Projection {
       advisoryEntries: [
         { ref: "KNOWLEDGE.KB_GRID", reason: "触发条件：任务涉及表格" },
       ],
+      catalogEntries: [
+        {
+          ref: "POLICY.WEB.API.SINGLE_HTTP_CLIENT",
+          reason:
+            "catalog: policies/policy.web.api.single_http_client.json（lane=frontend 命中 role=frontend，enforcement=required_when_applicable，lifecycle=PROPOSED）：HTTP Client 单点统一",
+        },
+      ],
       lazyTools: ["playwright"],
+    },
+    catalogSource: {
+      status: "catalog",
+      root: "/repo/catalog",
+      note: "catalog-lock 校验通过（94 entries）",
     },
     inputsFingerprint: "sha256:" + "a".repeat(64),
     ...overrides,
@@ -51,7 +63,7 @@ describe("context compile 缺席显式", () => {
     expect(outcome.errors[0]?.code).toBe("NOT_INITIALIZED");
   });
 
-  it("init 后（真实 kernel 已落地）→ 编译成功：三分区标题在场、空区显式缺席", async () => {
+  it("init 后（真实 kernel 已落地）→ 编译成功：四分区标题在场、空区显式缺席、catalog 分区真消费 repo catalog", async () => {
     await runInit(dir);
     const outcome = await runContextCompile(dir, "frontend");
     expect(outcome.ok).toBe(true);
@@ -60,12 +72,17 @@ describe("context compile 缺席显式", () => {
     );
     expect(outcome.result.markdown).toContain("## MUST（gate 判卷输入）");
     expect(outcome.result.markdown).toContain("无 MUST 注入项");
+    expect(outcome.result.markdown).toContain("## CATALOG（catalog 策展注入；出处 catalog，非 project state——§92.2）");
+    // P14：catalog 分区真实消费 repo catalog（frontend lane 命中非空 + lock 注记）。
+    expect(outcome.result.catalog_source.status).toBe("catalog");
+    expect(outcome.result.manifest.catalog_entries.length).toBeGreaterThan(0);
+    expect(outcome.result.manifest.catalog_entries[0]?.reason.startsWith("catalog:")).toBe(true);
     expect(outcome.errors).toEqual([]);
   });
 });
 
 describe("context compile 转调 kernel（注入 fake）", () => {
-  it("三分区 markdown：MUST / ADVISORY / LAZY TOOLS 标题与条目（含注入理由）", async () => {
+  it("四分区 markdown：MUST / ADVISORY / CATALOG / LAZY TOOLS 标题与条目（含注入理由）", async () => {
     await runInit(dir);
     const kernel = fakeKernel(fakeProjection());
     const outcome = await runContextCompile(dir, "frontend", kernel);
@@ -73,9 +90,19 @@ describe("context compile 转调 kernel（注入 fake）", () => {
     expect(kernel.compileProjection).toHaveBeenCalledOnce();
     expect(outcome.result.markdown).toContain("## MUST（gate 判卷输入）");
     expect(outcome.result.markdown).toContain("## ADVISORY");
+    expect(outcome.result.markdown).toContain("## CATALOG（catalog 策展注入；出处 catalog，非 project state——§92.2）");
     expect(outcome.result.markdown).toContain("## LAZY TOOLS");
     expect(outcome.result.markdown).toContain("`POLICY.PAGE.TTL` — 本任务触碰 PAGE.* 分母");
+    expect(outcome.result.markdown).toContain("`POLICY.WEB.API.SINGLE_HTTP_CLIENT` — catalog: policies/");
     expect(outcome.result.markdown).toContain("- playwright");
+  });
+
+  it("catalog_source 呈现：root + lock 注记进 markdown（出处显式，§92.2）", async () => {
+    await runInit(dir);
+    const outcome = await runContextCompile(dir, "frontend", fakeKernel(fakeProjection()));
+    expect(outcome.result.markdown).toContain("> source: /repo/catalog");
+    expect(outcome.result.markdown).toContain("> catalog-lock 校验通过（94 entries）");
+    expect(outcome.result.catalog_source.status).toBe("catalog");
   });
 
   it("role 透传 kernel；inputs_fingerprint 原样回显", async () => {
@@ -89,11 +116,18 @@ describe("context compile 转调 kernel（注入 fake）", () => {
     expect(outcome.result.inputs_fingerprint).toBe("sha256:" + "a".repeat(64));
   });
 
-  it("manifest 字段机读映射（must_entries/advisory_entries/lazy_tools）", async () => {
+  it("manifest 字段机读映射（must_entries/advisory_entries/catalog_entries/lazy_tools）", async () => {
     await runInit(dir);
     const outcome = await runContextCompile(dir, "frontend", fakeKernel(fakeProjection()));
     expect(outcome.result.manifest.must_entries).toEqual([
       { ref: "POLICY.PAGE.TTL", reason: "本任务触碰 PAGE.* 分母" },
+    ]);
+    expect(outcome.result.manifest.catalog_entries).toEqual([
+      {
+        ref: "POLICY.WEB.API.SINGLE_HTTP_CLIENT",
+        reason:
+          "catalog: policies/policy.web.api.single_http_client.json（lane=frontend 命中 role=frontend，enforcement=required_when_applicable，lifecycle=PROPOSED）：HTTP Client 单点统一",
+      },
     ]);
     expect(outcome.result.manifest.lazy_tools).toEqual(["playwright"]);
   });
@@ -104,6 +138,7 @@ describe("context compile 转调 kernel（注入 fake）", () => {
       manifest: {
         mustEntries: [],
         advisoryEntries: [],
+        catalogEntries: [],
         lazyTools: [],
       },
     });
@@ -111,6 +146,7 @@ describe("context compile 转调 kernel（注入 fake）", () => {
     expect(outcome.ok).toBe(true);
     expect(outcome.result.markdown).toContain("无 MUST 注入项");
     expect(outcome.result.markdown).toContain("无触发条件命中");
+    expect(outcome.result.markdown).toContain("无 lane 命中的 catalog 条目");
   });
 
   it("kernel 抛非 not-implemented 错误 → KERNEL_ERROR（带原消息）", async () => {

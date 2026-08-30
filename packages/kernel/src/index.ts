@@ -543,25 +543,74 @@ export interface ProjectionEntry {
   readonly reason: string;
 }
 
+/**
+ * catalog 消费出处呈现（P14；§92.2 Catalog 不是第二套 Project Truth）。
+ * 不进 inputsFingerprint：root 是环境信息，同输入重放的字节稳定以内容为准。
+ */
+export interface CatalogProjectionSource {
+  /** catalog = 已消费；absent = catalog 目录缺席（显式缺席，非静默空）。 */
+  readonly status: "catalog" | "absent";
+  readonly root: string | null;
+  /** 消费注记：lock 校验结果（ok / 漂移 WARN 摘要）或缺席原因。 */
+  readonly note: string;
+}
+
 export interface Projection {
   readonly manifest: {
     /** MUST 区：进 gate 判卷输入。 */
     readonly mustEntries: readonly ProjectionEntry[];
     /** ADVISORY 区：按触发条件注入的经验；不进 gate 判卷输入（GOLDEN-L8-3）。 */
     readonly advisoryEntries: readonly ProjectionEntry[];
-    /** 懒加载工具清单（tool 按需物化）。 */
+    /**
+     * catalog 策展注入分区（P14；§92.2）：出处 catalog/ 的检索式策展源，
+     * reason 逐条标明 catalog 出处；绝不混入 mustEntries 判卷输入——catalog
+     * 变更只影响本分区与 inputsFingerprint，store state 零变更。
+     */
+    readonly catalogEntries: readonly ProjectionEntry[];
+    /** 懒加载工具清单（tool 按需物化；P14 起消费 catalog/tools/ 实存目录）。 */
     readonly lazyTools: readonly string[];
   };
+  /** catalog 消费出处与 lock 校验呈现（P14）。 */
+  readonly catalogSource: CatalogProjectionSource;
   /** 投影输入指纹——同输入重放字节稳定（D24：事务/store 自动维护，短路重跑依据）。 */
   readonly inputsFingerprint: string;
 }
 
 /**
  * 编译最小充分上下文投影。契约不变量（GOLDEN-L8-3 判据）：
- * manifest 与 task 无关的 POLICY. 条目 = 0；MUST/ADVISORY 分层可见。
+ * manifest 与 task 无关的 POLICY. 条目 = 0；MUST/ADVISORY 分层可见；
+ * catalogEntries 独立分区（§92.2，出处 catalog 非project state）。
  * 纯派生视图：投影不产生治理事实，不写 store。
+ * 可选 options.catalogRoot 注入 catalog 根（测试/嵌入方；缺省仓库 catalog/）。
  */
 export { compileProjection } from "./projection.js";
+export type { ProjectionCatalogOptions } from "./projection.js";
+
+// ============================================================
+// Engineering Catalog 读取器（P14：catalog→运行时联结的唯一读取面）
+// ============================================================
+// 只读消费 catalog/ 物料与 catalog-lock（§92.2：策展源非第二真相；D24 哈希伦理
+// write_blocking=false——lock 漂移 WARN 呈现，永不阻断）。消费方：projection 通道
+// （context compile 的 catalog 分区）与 CLI catalog status/explain（§44.10）。
+export {
+  loadCatalogPolicies,
+  loadCatalogProjectionPresets,
+  loadCatalogTools,
+  readCatalogLock,
+  resolveCatalogRoot,
+  sha256OfUtf8,
+  verifyCatalogLock,
+} from "./catalog.js";
+export type {
+  CatalogLockDocument,
+  CatalogLockDrift,
+  CatalogLockDriftKind,
+  CatalogLockEntry,
+  CatalogLockVerification,
+  CatalogPolicyMaterial,
+  CatalogProjectionPresetMaterial,
+  CatalogToolMaterial,
+} from "./catalog.js";
 
 // ============================================================
 // Gate 归一（八拍⑤ VERIFY；C1 七态判卷）

@@ -1,9 +1,11 @@
 /**
  * context.ts —— `pomaster context compile --role X`：八拍③ PROJECTION 的命令面。
  *
- * 只做编排与呈现：转调 kernel compileProjection（唯一判卷/派生权威），渲染三分区
- * markdown（MUST / ADVISORY / LAZY TOOLS）。MUST 区是 gate 判卷输入；ADVISORY 区
- * 按触发条件注入、不进 gate 判卷输入（GOLDEN-L8-3）；投影是纯派生视图，不写 store。
+ * 只做编排与呈现：转调 kernel compileProjection（唯一判卷/派生权威），渲染四分区
+ * markdown（MUST / ADVISORY / CATALOG / LAZY TOOLS）。MUST 区是 gate 判卷输入；
+ * ADVISORY 区按触发条件注入、不进 gate 判卷输入（GOLDEN-L8-3）；CATALOG 区是
+ * catalog/ 策展源的检索式注入（P14，§92.2：出处 catalog 非 project state，不进
+ * 判卷输入）；投影是纯派生视图，不写 store。
  *
  * kernel scaffold 阶段（not-implemented）→ 结构化 KERNEL_NOT_INSTALLED（缺席显式，
  * 禁静默、禁伪绿）；kernel 落地后本命令自动升级，无需改动。
@@ -33,9 +35,16 @@ export interface ContextCompileResult {
   readonly manifest: {
     readonly must_entries: readonly { ref: string; reason: string }[];
     readonly advisory_entries: readonly { ref: string; reason: string }[];
+    readonly catalog_entries: readonly { ref: string; reason: string }[];
     readonly lazy_tools: readonly string[];
   };
-  /** 三分区 markdown（人读形态；机读走 manifest 字段——§45 双输出）。 */
+  /** catalog 消费出处呈现（P14；§92.2——策展源出处显式，不混 project state）。 */
+  readonly catalog_source: {
+    readonly status: "catalog" | "absent";
+    readonly root: string | null;
+    readonly note: string;
+  };
+  /** 四分区 markdown（人读形态；机读走 manifest 字段——§45 双输出）。 */
   readonly markdown: string;
 }
 
@@ -70,6 +79,16 @@ function renderMarkdown(
     projection.manifest.advisoryEntries.length > 0
       ? projection.manifest.advisoryEntries.map(entry).join("\n")
       : "_（空——无触发条件命中的经验注入）_";
+  // §92.2：catalog 分区标题逐字标明出处（catalog 策展源 ≠ project state）；
+  // 出处与 lock 校验走 catalog_source 呈现（缺席显式，不伪装成空策展）。
+  const catalogHeader =
+    projection.catalogSource.status === "catalog"
+      ? `> source: ${projection.catalogSource.root}\n> ${projection.catalogSource.note}\n> 策展源非判卷输入（§92.2：Catalog 不是第二套 Project Truth）；条目 lifecycle/enforcement 以 catalog 为准。`
+      : `> ${projection.catalogSource.note}`;
+  const catalog =
+    projection.manifest.catalogEntries.length > 0
+      ? projection.manifest.catalogEntries.map(entry).join("\n")
+      : "_（空——无 lane 命中的 catalog 条目）_";
   const lazy =
     projection.manifest.lazyTools.length > 0
       ? projection.manifest.lazyTools.map((t) => `- ${t}`).join("\n")
@@ -87,7 +106,13 @@ ${must}
 
 ${advisory}
 
-## LAZY TOOLS（按需物化）
+## CATALOG（catalog 策展注入；出处 catalog，非 project state——§92.2）
+
+${catalogHeader}
+
+${catalog}
+
+## LAZY TOOLS（按需物化；出处 catalog/tools）
 
 ${lazy}
 `;
@@ -107,7 +132,8 @@ export async function runContextCompile(
       {
         role,
         inputs_fingerprint: "",
-        manifest: { must_entries: [], advisory_entries: [], lazy_tools: [] },
+        manifest: { must_entries: [], advisory_entries: [], catalog_entries: [], lazy_tools: [] },
+        catalog_source: { status: "absent", root: null, note: "context compile 未执行（store 未初始化）" },
         markdown: "",
       },
       [
@@ -151,7 +177,16 @@ export async function runContextCompile(
           ref: e.ref,
           reason: e.reason,
         })),
+        catalog_entries: projection.manifest.catalogEntries.map((e) => ({
+          ref: e.ref,
+          reason: e.reason,
+        })),
         lazy_tools: [...projection.manifest.lazyTools],
+      },
+      catalog_source: {
+        status: projection.catalogSource.status,
+        root: projection.catalogSource.root,
+        note: projection.catalogSource.note,
       },
       markdown: renderMarkdown(role, projection),
     };
@@ -167,7 +202,8 @@ export async function runContextCompile(
       {
         role,
         inputs_fingerprint: "",
-        manifest: { must_entries: [], advisory_entries: [], lazy_tools: [] },
+        manifest: { must_entries: [], advisory_entries: [], catalog_entries: [], lazy_tools: [] },
+        catalog_source: { status: "absent", root: null, note: "context compile 未执行（kernel 错误）" },
         markdown: "",
       },
       [error],
