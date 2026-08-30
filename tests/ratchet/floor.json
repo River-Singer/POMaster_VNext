@@ -1,11 +1,11 @@
 {
-  "minTests": 1061,
+  "minTests": 1177,
   "ledger": {
     "version": 1,
-    "strategy": "docs/wave3-research-toolchain.md §2 L1-L5 承诺下限 + wave3-plan.md P15（L1 四域明细：IR 不变量 150 / 状态机转移对 120 / Permit·Evidence 推导 80 / Router 判定矩阵 60）。首轮 floor=战略目标值；P15-FillA 补量后 ir_invariants 与 state_machine_pairs 达战略下限，P15-FillB 补量后 permit_evidence 与 router_matrix 亦达标——四域 floor 均随 actual 提升锁住增量（棘轮只升不降）；L2 缺口由 P16 补量阶段填平（gap 见 coverage/ratchet-ledger.json）。",
+    "strategy": "docs/wave3-research-toolchain.md §2 L1-L5 承诺下限 + wave3-plan.md P15（L1 四域明细：IR 不变量 150 / 状态机转移对 120 / Permit·Evidence 推导 80 / Router 判定矩阵 60）。首轮 floor=战略目标值；P15-FillA 补量后 ir_invariants 与 state_machine_pairs 达战略下限，P15-FillB 补量后 permit_evidence 与 router_matrix 亦达标——四域 floor 均随 actual 提升锁住增量（棘轮只升不降）；P16-Fixtures 三技术栈全链 fixture 补量后 L2 缺口填平（L2 floor 随 actual 138 锁住增量）；P16-WriteLayer 写入层可靠性专项（kill -9 崩溃注入 + catalog-lock 漂移缺口矩阵）补量后 L2 floor 随 actual 150 再次锁住增量。",
     "layers": {
       "L1": { "title": "单元", "floor": 400 },
-      "L2": { "title": "集成", "floor": 120 },
+      "L2": { "title": "集成", "floor": 150 },
       "L3": { "title": "Golden", "floor": 50 },
       "L4": { "title": "对抗", "floor": 20 },
       "L5": { "title": "Behavioral", "floor": 15 }
@@ -59,12 +59,17 @@
       "packages/cli/tests/readme-command-surface.spec.ts": { "layer": "L1" },
       "packages/cli/tests/status.spec.ts": { "layer": "L1" },
       "tests/ratchet/ledger.spec.ts": { "layer": "L1" },
+      "tests/integration/catalog-lock-drift-matrix.spec.ts": { "layer": "L2" },
       "tests/integration/catalog-runtime-binding.spec.ts": { "layer": "L2" },
       "tests/integration/cli-ledger-kernel-contract.spec.ts": { "layer": "L2" },
       "tests/integration/evidence-ingest-crack-closure.spec.ts": { "layer": "L2" },
+      "tests/integration/fixture-fastapi-project.spec.ts": { "layer": "L2" },
+      "tests/integration/fixture-git-repo-minimal.spec.ts": { "layer": "L2" },
+      "tests/integration/fixture-vue3-project.spec.ts": { "layer": "L2" },
       "tests/integration/gate-recipes-check.spec.ts": { "layer": "L2" },
       "tests/integration/human-views.spec.ts": { "layer": "L2" },
       "tests/integration/smoke.spec.ts": { "layer": "L2" },
+      "tests/integration/write-layer-crash-injection.spec.ts": { "layer": "L2" },
       "tests/golden/golden.spec.ts": { "layer": "L3" },
       "tests/integration/adversarial-blindspot-denominator.spec.ts": { "layer": "L4" },
       "tests/integration/adversarial-permit-write-integrity.spec.ts": { "layer": "L4" },
@@ -82,6 +87,8 @@
       "gauntlet_lite": "适配器/detectors/gate-recipe-runner = 工具适配执行层，计 L1 层无域；normalize-gate-result = verdict 归一与 trust 孪生专指，计 permit_evidence。",
       "L5 计数口径": "机械口径 = vitest 用例数（41，与本账本计数同源）；seeds.json 注册分母 25（23 executable / 2 pending）为另一既有口径，两者并存不混用。",
       "L4 构成": "威胁类 1-6（盲区探针/分母漂移/stale permit 重放/部分写入伪装/四态混淆/D24 哈希伦理）三个 adversarial spec。",
+      "L2 构成": "6 个既有 L2（catalog 运行时联结 / CLI 账本↔kernel digest 契约 / 证据裂缝闭合 / check --gates 全链路 / human-views 编译器 / 冒烟）+ P16 三技术栈 fixture 全链（fixture-git-repo-minimal：git repo 最小工程·BUILD 双腿缺席形态 + fixture-vue3-project：Vue3 工程·BUILD 腿 vitest 声明 READY 真实执行收敛 not_run + fixture-fastapi-project：FastAPI 工程·pytest 腿 READY 版本锚缺失 runner_not_ready 形态——triage 三档 × 三证据级全矩阵、init→triage→maintain pre-dev→task 落账→gate GRN 入账→reconcile clean/dirty→closeout 阻断逐拍 exit 码与证据面断言）+ P16-WriteLayer 写入层可靠性专项（write-layer-crash-injection：A 段注入式半写六时点——staged 碎片/WAL 孤儿/commit 后/evidence 孤儿/index·journal 半字节截断——重启 state 完好或显式检出绝不静默半状态 + B 段真实 SIGKILL 子进程任意时点硬中断后快照 k 精确一致/journal 前缀无洞 m-k≤1/碎片形状/恢复事务干净；crash-workload-child.mjs 非 spec 不入账；与 L4 威胁类 4 分工=L4 证进程内异常回滚、本件证 kill -9 硬中断后磁盘态与重启路径）+ P16-WriteLayer catalog-lock 漂移缺口矩阵（catalog-lock-drift-matrix：P14 已覆盖 content_drift，本件补 missing/unexpected_file 含命令面 fail-closed/entry_not_allowed/missing_required/lock_unreadable 坏形与缺失两形态，逐 kind 显式检出+恢复回绿）。共享运行器 fixture-chain-lib.ts 非 spec 文件不入账。",
+      "deferred": "并发会话锁（同一 store 多会话并发写互斥/检出语义）显式 deferred→P20，登记于 tests/README.md「显式 deferred 登记」段；解锁条件=wave3-plan.md P20 出口判据（session/lock/execution_id 原语 + CLI 命令面，其明列『P16 遗留的 L2 并发锁测试解锁入账』）。kernel 现无锁原语，测试不得断言不存在的机制。",
       "新增纪律": "新增 spec 文件必须同步入 mapping（ratchet 遇未归类 spec 即红）；删除/改名 spec 必须同步清理 mapping（stale 条目即红）。提升某类 actual 超过 floor 后应随改动一并提升该类 floor（棘轮只升不降）。"
     }
   }

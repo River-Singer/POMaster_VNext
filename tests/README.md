@@ -27,6 +27,31 @@
   status --json → doctor --json`（断言 §45 信封、NO_CHANGE 幂等、triage 缺席信号、
   doctor 探测四态矩阵 fail-closed）；CLI dist 未就绪时逐项显式 pending 到
   `coverage/smoke-report.json`。
+- `integration/write-layer-crash-injection.spec.ts` —— P16 写入层可靠性专项
+  （L2 账）：A 段注入式半写（确定性重构 kill 在 executeWrites 各时点的磁盘态：
+  staged 碎片 / WAL 孤儿 / commit 后 / evidence 孤儿 / index·journal 半字节截断）
+  逐时点断言「重启（重新 createStore）state 完好或显式检出，绝不静默半状态」；
+  B 段真实 SIGKILL 子进程（kernel dist 二进制跑真实事务循环，观测 READY/TX 1 后
+  kill），断言重启全局不变量（快照 k 精确一致 / journal 前缀 1..m 无洞无重且
+  m-k≤1 / 碎片形状干净 / 恢复事务干净）。与 L4 adversarial-permit-write-integrity
+  分工：L4 证进程内异常的回滚，本文件证 kill -9 硬中断（无回滚代码运行）后的
+  磁盘态与重启路径。`crash-workload-child.mjs` 为子进程工作载荷（非 spec 不入账）。
+- `integration/catalog-lock-drift-matrix.spec.ts` —— P16 catalog-lock 漂移专项
+  缺口面（L2 账）：P14（catalog-runtime-binding §②）已覆盖 content_drift，本
+  文件补 verifyCatalogLock 其余 drift kind——missing / unexpected_file（含
+  catalog status 命令面 fail-closed）/ entry_not_allowed / missing_required /
+  lock_unreadable（坏形与缺失两形态），逐 kind「显式检出 + 恢复回绿」。
+
+## 显式 deferred 登记（防静默缺口）
+
+- **并发会话锁（同一 store 多会话并发写互斥/检出语义）→ deferred 至 P20。**
+  现状：kernel 无 session/lock/execution_id 原语（P20 交付面），测试无法断言
+  不存在的机制——留白即静默缺口，故在此显式登记。
+  解锁条件：wave3-plan.md P20 出口判据落地（session/lock/execution_id 原语 +
+  CLI 命令面，其中明列「P16 遗留的 L2 并发锁测试解锁入账」）。
+  解锁后补面：双会话并发 createStore→applyTransaction 交错的互斥/阻塞/检出
+  语义 L2 集成测试（含锁持有者崩溃后的锁回收路径，可与本目录
+  write-layer-crash-injection.spec.ts 的 SIGKILL 注入手段同源复用）。
 
 ## 棘轮只升不降
 
