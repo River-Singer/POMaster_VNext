@@ -11,6 +11,8 @@
  * - compact         八拍⑦：episode 折叠为单次 applyTransaction（证据批量收编 + 显式 ops；
  *                   NO_CHANGE 是合法出口；G4）
  * - record          证据入账通路：gate-run/claim 显式单条落账 evidence 平面（G6）
+ * - closeout        八拍⑧：DoD 判卷（acceptance→VERIFIED claim 硬绑）+ gate 阻断施断
+ *                   COMPLETED（transition evidence→VERIFIED；A9）
  * - status          读 .pomaster/state：对象计数/分母状态/permit 活性
  * - inspect         单对象检视：正文+证据+谱系纯读呈现（零写入；PRD §44.1 基础命令）
  * - maintain        受控变更（--ops 显式事务，判卷权威在 kernel applyTransaction）/
@@ -40,6 +42,7 @@ import { runExecGuard } from "./exec-guard.js";
 import { runReconcile } from "./reconcile.js";
 import { runCompact } from "./compact.js";
 import { runRecordClaim, runRecordGateRun } from "./record.js";
+import { runCloseout } from "./closeout.js";
 
 export { CLI_NAME, CLI_VERSION } from "./cli-info.js";
 export { toEnvelope } from "./envelope.js";
@@ -133,6 +136,13 @@ export type {
   RecordClaimInput,
   RecordClaimResult,
 } from "./record.js";
+export { runCloseout } from "./closeout.js";
+export type {
+  CloseoutInput,
+  CloseoutResult,
+  CloseoutDodEntry,
+  CloseoutGateRow,
+} from "./closeout.js";
 export {
   EVIDENCE_MALFORMED_CODE,
   RUN_INGEST_ACTIONS,
@@ -640,6 +650,29 @@ export function createProgram(
       });
       record({
         command: "record claim",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  // —— 八拍⑧ CARRY：closeout/Completion 编排层（A9；判卷权威零旁移，施断走 kernel） ——
+  program
+    .command("closeout")
+    .description(
+      "八拍⑧ CARRY：DoD 判卷 + 阻断施断——acceptance 逐条映射 VERIFIED claim（§47 硬绑；D20 判定来自 claims 平面）+ subject 绑定 gate 记录最新判卷全 passed（七态非 passed 一律阻断）才施断 COMPLETED（transition evidence→VERIFIED 经 kernel applyTransaction）；证据缺失伪装完成硬阻断 fail-closed 零写入",
+    )
+    .argument("<task-id>", "任务对象 governed id（DoD 判卷面 = task_object payload.acceptance；legacy 词形自动收编）")
+    .option("--authority-ref <ref>", "审批/决策引用（随施断事务落 journal）")
+    .option("--note <text>", "事务注记")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (taskId: string, opts, command) => {
+      const outcome = await runCloseout(resolveDir(command), {
+        taskId,
+        authorityRef: opts.authorityRef as string | undefined,
+        note: opts.note as string | undefined,
+      });
+      record({
+        command: "closeout",
         outcome,
         asJson: command.opts().json === true,
       });

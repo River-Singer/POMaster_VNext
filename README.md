@@ -97,6 +97,7 @@ pomaster check --fast   # FAST gate 循环（BUILD 腿，纯读）
 pomaster check --gates  # catalog gate recipes 派发腿：每 recipe 一条 GRN 入账（缺席工具显式 NOT_RUN，非绿非红）
 pomaster record gate-run|claim  # 证据入账通路：gate 运行结果 / claim 显式单条落账 evidence 平面
 pomaster compact …     # 八拍⑦ COMPACT：episode 折叠为单次 store 事务（证据批量收编 + 显式 ops；NO_CHANGE 合法出口）
+pomaster closeout <task-id>  # 八拍⑧ CARRY：DoD 判卷（acceptance→VERIFIED claim 硬绑）+ gate 阻断施断 COMPLETED（证据缺失伪装完成硬阻断）
 pomaster reconcile …   # 三方对账出 delta 报告
 pomaster doctor        # 工具/MCP 配置探测（缺什么提示装什么）
 ```
