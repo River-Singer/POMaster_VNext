@@ -7,6 +7,8 @@
  * - dependency-cruiser → ARCHITECTURE 门禁 FE 腿（配置文件 + package.json 版本线索）
  * - c8 / pytest-cov    → COVERAGE 门禁双腿（P23 / 随版计划 Batch 2 B2-1；D17 Python 首发顺序
  *                          → pytest-cov 先行，JaCoCo 属 Java 第二波显式 deferred）
+ * - mutmut / StrykerJS → MUTATION 门禁双腿（P24 / 随版计划 Batch 2 B2-3/B2-4；mutmut
+ *                          能力落差如实标注，PIT/Java 第二波显式 deferred）
  * - chrome-devtools MCP → BROWSER 交互式腿（D22；.mcp.json 线索，未配置 → MISSING_CONFIGURATION 显式缺席 + 一键引导）
  *
  * 词表纪律：DetectionStatus 四态词形冻结于 adapter-types.ts（TODO(vocab-pr)），禁止就地扩值。
@@ -460,6 +462,143 @@ export function detectPytestCov(
       "未找到 pytest.ini / pyproject.toml（[tool.pytest...]）——Python coverage 腿缺席（D17：pytest-cov 先行；JaCoCo 属 Java 第二波，deferred 不在本探测面）",
     installHint:
       "安装建议：pip install pytest pytest-cov 并落 pytest.ini（COVERAGE 门禁 Python 腿，P23；run 期 python -m pytest --cov=<target> --cov-branch 执行，版本锚由 policy.expectedToolVersion 供给）",
+  };
+}
+
+// ============================================================
+// mutmut → MUTATION 门禁 Python 腿（P24 / 随版计划 Batch 2 B2-4；配置文件线索）
+// ============================================================
+
+/**
+ * mutmut 配置候选（探测单一清单：pyproject [tool.mutmut] / setup.cfg [mutmut]）。
+ */
+export const MUTMUT_CONFIG_CANDIDATES = [
+  "pyproject.toml",
+  "setup.cfg",
+] as const;
+
+/**
+ * mutmut 探测（P24 MUTATION 门禁 Python 腿，B2-4；PIT/Java 第二波显式 deferred 不在
+ * 本探测面）：pyproject.toml [tool.mutmut] / setup.cfg [mutmut] 段命中 → READY。
+ * 诚实能力边界：mutmut 可执行体的在位性与版本无法从配置文件证明——缺席会在 run 期
+ * 三道闸（①a 可执行体探测 / ①b `python -m mutmut --version` 版本探测）显式落
+ * not_run，探测面不冒充已验证（pytest-cov 探测同款形态）。
+ * 能力落差注记（B2-4）：mutmut 与 StrykerJS 的结构性差距见 mutation-leg.ts 头注
+ * （无 schema 化报告 / killed 无位置 / 无算子字段 / suspicious 保守口径）——探测面
+ * 不做强度伪装，READY ≠ 与 StrykerJS 同强度。
+ */
+export function detectMutmut(
+  facts: DetectorFacts,
+  options: DetectorOptions = {},
+): DetectionResult {
+  const tool = "mutmut";
+  if (options.requiredByProfile === false) {
+    return {
+      status: "NOT_REQUIRED_BY_PROFILE",
+      tool,
+      reason:
+        "当前 Governance Profile 未要求 MUTATION 门禁 Python 腿（HARDENING 档专属——B2-3/B2-4；合法缺席，显式计数而非静默跳过）",
+    };
+  }
+  const pyproject = facts.readTextFile(
+    facts.joinPath(facts.projectRoot, "pyproject.toml"),
+  );
+  if (pyproject !== null && pyproject.includes("[tool.mutmut")) {
+    return {
+      status: "READY",
+      tool,
+      detectedVersion: null,
+      evidence:
+        "pyproject.toml [tool.mutmut] 段命中（可执行体/版本在位性以 run 期三道闸实测为准；能力落差如实标注——非 StrykerJS 同强度）",
+    };
+  }
+  const setupCfg = facts.readTextFile(
+    facts.joinPath(facts.projectRoot, "setup.cfg"),
+  );
+  if (setupCfg !== null && setupCfg.includes("[mutmut]")) {
+    return {
+      status: "READY",
+      tool,
+      detectedVersion: null,
+      evidence:
+        "setup.cfg [mutmut] 段命中（可执行体/版本在位性以 run 期三道闸实测为准；能力落差如实标注——非 StrykerJS 同强度）",
+    };
+  }
+  return {
+    status: "NOT_INSTALLED",
+    tool,
+    reason:
+      "未找到 mutmut 配置（pyproject.toml [tool.mutmut] / setup.cfg [mutmut]）——MUTATION 门禁 Python 腿缺席（B2-4：mutmut，能力落差如实标注；PIT/Java 第二波 deferred）",
+    installHint:
+      "安装建议：pip install mutmut 并落 pyproject [tool.mutmut]（MUTATION 门禁 Python 腿，P24；run 期 python -m mutmut run + junitxml 导出执行，版本锚由 policy.expectedToolVersion 供给）",
+  };
+}
+
+// ============================================================
+// StrykerJS → MUTATION 门禁 JS/TS 腿（P24 / 随版计划 Batch 2 B2-3；package.json 线索）
+// ============================================================
+
+/**
+ * StrykerJS 探测（P24 MUTATION 门禁 JS/TS 腿，B2-3「changed-code scope、survivor 上限、
+ * HARDENING 档专属」）：package.json devDependencies/dependencies 声明
+ * @stryker-mutator/core → READY（c8 探测同款形态；run 期以 `corepack pnpm exec stryker
+ * --version` 实测对账）。缺席必带安装指引，禁静默。
+ */
+export function detectStryker(
+  facts: DetectorFacts,
+  options: DetectorOptions = {},
+): DetectionResult {
+  const tool = "@stryker-mutator/core";
+  if (options.requiredByProfile === false) {
+    return {
+      status: "NOT_REQUIRED_BY_PROFILE",
+      tool,
+      reason:
+        "当前 Governance Profile 未要求 MUTATION 门禁 JS/TS 腿（HARDENING 档专属——B2-3 原文；合法缺席，显式计数而非静默跳过）",
+    };
+  }
+  const pkg = readPackageJson(facts);
+  if (pkg === null) {
+    return {
+      status: "NOT_INSTALLED",
+      tool,
+      reason:
+        "package.json 不存在（无法探测 @stryker-mutator/core 依赖声明——MUTATION 门禁 JS/TS 腿）",
+      installHint:
+        "安装建议：corepack pnpm add -D @stryker-mutator/core @stryker-mutator/vitest-runner 并在 mutation-gate.json 声明 {\"runner\":\"stryker\",\"command\":\"<...>\",\"changedFiles\":[...]}（MUTATION 门禁 JS/TS 腿，P24）",
+    };
+  }
+  const declared = dependencyVersion(pkg, "@stryker-mutator/core");
+  if (typeof declared !== "string") {
+    return {
+      status: "NOT_INSTALLED",
+      tool,
+      reason:
+        "package.json 未声明 @stryker-mutator/core 依赖（devDependencies/dependencies 均无）",
+      installHint:
+        "安装建议：corepack pnpm add -D @stryker-mutator/core（MUTATION 门禁 JS/TS 腿，P24；run 期 corepack pnpm exec stryker 执行，json reporter 产出 mutation.json 判卷）",
+    };
+  }
+  const detectedVersion = sanitizeSemver(declared);
+  if (
+    options.expectedVersion != null &&
+    detectedVersion !== null &&
+    detectedVersion !== options.expectedVersion
+  ) {
+    return {
+      status: "DRIFTED",
+      tool,
+      detectedVersion,
+      expectedVersion: options.expectedVersion,
+      evidence: `package.json 命中 @stryker-mutator/core = ${declared}（版本 ${detectedVersion}）`,
+      installHint: `版本对齐建议：将 @stryker-mutator/core 对齐到锁定版本 ${options.expectedVersion}（DRIFTED 态判卷降级 warning）`,
+    };
+  }
+  return {
+    status: "READY",
+    tool,
+    detectedVersion,
+    evidence: `package.json 命中 @stryker-mutator/core = ${declared}`,
   };
 }
 

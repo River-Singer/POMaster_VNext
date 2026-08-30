@@ -1,6 +1,6 @@
 /**
  * doctor.spec.ts —— 四态探测矩阵（kernel 探针 + P22 工具链机判腿探测 + P23 coverage
- * 双腿探测 + chrome-devtools MCP 一键引导）。
+ * 双腿探测 + P24 mutation 双腿探测 + chrome-devtools MCP 一键引导）。
  *
  * TODO(integration-2026-08-28)：kernel 模块已由 kernel 建造者落地。原「init 后
  * kernel scaffold → NOT_INSTALLED」真实 kernel 场景已不存在，两处相关用例更新为
@@ -39,6 +39,8 @@ function readyGauntletProbes(): GauntletToolProbe[] {
       "dependency_cruiser",
       "c8",
       "pytest_cov",
+      "mutmut",
+      "stryker",
     ] as const
   ).map((probe) => ({
     probe,
@@ -214,10 +216,11 @@ describe("doctor 四态矩阵", () => {
     expect(kernel?.detail).toContain("os.replace unsupported");
   });
 
-  it("P22/P23 工具探针：缺省探测面在空目录 → 五工具 NOT_INSTALLED + 安装路标 + ok=false", async () => {
+  it("P22/P23/P24 工具探针：缺省探测面在空目录 → 七工具显式缺席 + 安装路标 + ok=false", async () => {
     // 临时目录无 .importlinter / setup.cfg / pyproject.toml / package.json 等——
-    // 四工具按配置线索缺席（c8 探测读 package.json 声明）；oasdiff 按 PATH 线索缺席
-    // （测试进程 PATH 上无 oasdiff/c8 运行面；若宿主真装了则显式容忍 READY）。
+    // 工具按配置线索缺席（c8/stryker 探测读 package.json 声明；mutmut 读 pyproject/
+    // setup.cfg）；oasdiff 按 PATH 线索缺席（测试进程 PATH 上无 oasdiff 等运行面；
+    // 若宿主真装了则显式容忍 READY——诚实缺席与真实在位都不静默）。
     await runInit(dir);
     const outcome = await runDoctor(dir);
     for (const name of [
@@ -226,6 +229,8 @@ describe("doctor 四态矩阵", () => {
       "dependency_cruiser",
       "c8",
       "pytest_cov",
+      "mutmut",
+      "stryker",
     ]) {
       const probe = outcome.result.probes.find((p) => p.probe === name);
       expect(probe, name).toBeDefined();
@@ -235,6 +240,18 @@ describe("doctor 四态矩阵", () => {
       }
     }
     expect(outcome.ok).toBe(false);
+  });
+
+  it("P24 mutation 双腿探针：mutmut/stryker 缺席 NOT_INSTALLED 的 reason 保留能力落差/runner 词形", async () => {
+    await runInit(dir);
+    const outcome = await runDoctor(dir);
+    const mutmut = outcome.result.probes.find((p) => p.probe === "mutmut");
+    const stryker = outcome.result.probes.find((p) => p.probe === "stryker");
+    for (const probe of [mutmut, stryker]) {
+      if (probe?.status === "NOT_INSTALLED") {
+        expect(probe.hint ?? "").toMatch(/mutmut|stryker/i);
+      }
+    }
   });
 
   it("P22 工具探针：探测函数抛异常 → DEFECT（探测面异常禁静默）", async () => {

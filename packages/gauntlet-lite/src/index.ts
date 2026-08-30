@@ -21,11 +21,19 @@
  *                            配置面 + c8 / pytest-cov 双腿 + CRAP 原生公式 gate；HARDENING-only 档位语义）；
  * - coverage-leg.ts       —— COVERAGE 的执行腿（P23：三道闸真执行 + 行/分支口径强制上报解析）；
  * - crap.ts               —— CRAP 原生计算器（P23：PRD §28.1 公式本侧重算 + 第三方双输入源 fail-closed）；
+ * - mutation-adapter.ts   —— MUTATION 门禁 adapter（P24：mutation-gate.json 配置面 +
+ *                            StrykerJS / mutmut 双腿；HARDENING 档专属——决策 D1）；
+ * - mutation-leg.ts       —— MUTATION 的执行腿（P24：三道闸真执行 + changed-code scope
+ *                            命令面/判卷面双强制 + kill score 重算双阈值判卷；mutmut 能力
+ *                            落差如实标注——B2-4）；
+ * - seed-mutants.ts       —— 固定 seed mutant 库（P24：判卷敏感性考卷——生成者/判卷者
+ *                            分离纪律 §1.3-3 的落地载体，两报告词形确定性渲染器）；
  * - browser-adapter.ts    —— BROWSER 门禁 adapter（doctor MCP 探测 + smoke 连接证据）；
  * - gate-recipe-runner.ts —— Basic Gate Runner v1（P12b：catalog/gates recipe→adapter
  *                            派发登记表 + 单 recipe 编排执行；入账归 CLI 层 store 事务）；
  * - detectors.ts          —— oasdiff / import-linter / dependency-cruiser / c8 / pytest-cov /
- *                            chrome-devtools MCP 探测（doctor 面；缺席必带理由与安装建议，禁静默）。
+ *                            mutmut / StrykerJS / chrome-devtools MCP 探测（doctor 面；
+ *                            缺席必带理由与安装建议，禁静默）。
  *
  * 判卷纪律：输出形态镜像 @pomaster/kernel 的 GateResult 契约（03-gate-result 的 camelCase 形态），
  * 七态 verdict + counts.notApplicable 必填 + asserted/recomputed 孪生（永不信任自报值）；
@@ -36,6 +44,7 @@ import { createBrowserAdapter } from "./browser-adapter.js";
 import { createContractAdapter } from "./contract-adapter.js";
 import { createArchitectureAdapter } from "./architecture-adapter.js";
 import { createCoverageAdapter, createCrapGateAdapter } from "./coverage-adapter.js";
+import { createMutationAdapter } from "./mutation-adapter.js";
 import type {
   BuildToolDetection,
   GateAdapter,
@@ -49,13 +58,17 @@ import type { ArchitectureGatePlan, ArchitectureRunOutput } from "./architecture
 import type { CoverageLegPlan } from "./coverage-leg.js";
 import type { CrapLegPlan } from "./crap.js";
 import type { CoverageRunOutput, CrapRunOutput } from "./coverage-adapter.js";
+import type { MutationLegPlan } from "./mutation-leg.js";
+import type { MutationRunOutput } from "./mutation-adapter.js";
 import {
   detectC8,
   detectChromeDevtoolsMcp,
   detectDependencyCruiser,
   detectImportLinter,
+  detectMutmut,
   detectOasdiff,
   detectPytestCov,
+  detectStryker,
 } from "./detectors.js";
 
 export * from "./adapter-types.js";
@@ -70,6 +83,9 @@ export * from "./import-linter-leg.js";
 export * from "./coverage-leg.js";
 export * from "./crap.js";
 export * from "./coverage-adapter.js";
+export * from "./mutation-leg.js";
+export * from "./mutation-adapter.js";
+export * from "./seed-mutants.js";
 export * from "./detectors.js";
 export * from "./normalize-common.js";
 export * from "./gate-recipe-runner.js";
@@ -123,6 +139,16 @@ export const crapGateAdapter: GateAdapter<
 > = createCrapGateAdapter();
 
 /**
+ * MUTATION 门禁 adapter 单例（P24：StrykerJS / mutmut 双腿 + changed-code scope
+ * 双面强制 + kill score 双阈值判卷；HARDENING 档专属——也可经 createMutationAdapter() 自建）。
+ */
+export const mutationAdapter: GateAdapter<
+  DetectionResult,
+  MutationLegPlan,
+  MutationRunOutput
+> = createMutationAdapter();
+
+/**
  * adapter registry（G5 谱系扩展落地：BUILD 双腿 + CONTRACT / ARCHITECTURE / BROWSER）。
  * 四 adapter 共用 §59 契约与 normalize-common 的 FATAL 闸门；缺席一律显式四态
  * （not_configured ≠ passed），绝不静默跳过当通过。
@@ -134,12 +160,14 @@ export const gateAdapters = {
   browser: browserAdapter,
 } as const;
 
-/** doctor 工具探测 registry（oasdiff / import-linter / dependency-cruiser / c8 / pytest-cov / chrome-devtools MCP）。 */
+/** doctor 工具探测 registry（oasdiff / import-linter / dependency-cruiser / c8 / pytest-cov / mutmut / StrykerJS / chrome-devtools MCP）。 */
 export const toolDetectors = {
   oasdiff: detectOasdiff,
   importLinter: detectImportLinter,
   dependencyCruiser: detectDependencyCruiser,
   c8: detectC8,
   pytestCov: detectPytestCov,
+  mutmut: detectMutmut,
+  stryker: detectStryker,
   chromeDevtoolsMcp: detectChromeDevtoolsMcp,
 } as const;
