@@ -13,7 +13,8 @@
  * fail-closed：ok = 全部 READY；任一非 READY → ok=false。doctor 只读，永不修改 store。
  * D 线风险备忘：环境异常（文件不可读等）必须报 DEFECT，禁静默。
  * P22 探测转调 @pomaster/gauntlet-lite 的 toolDetectors（单一探测面——doctor 呈现与
- * adapter 执行腿用同一 detect，禁两套探测口径漂移）。
+ * adapter 执行腿用同一 detect，禁两套探测口径漂移）；P23 起矩阵扩容 c8 / pytest_cov
+ * （COVERAGE 门禁双腿工具，D17：pytest-cov 先行 / JaCoCo Java 第二波 deferred）。
  */
 
 import { readFile } from "node:fs/promises";
@@ -199,7 +200,13 @@ export function detectionToDoctorProbe(
 async function defaultGauntletProbes(
   rootDir: string,
 ): Promise<readonly GauntletToolProbe[]> {
-  const names = ["oasdiff", "import_linter", "dependency_cruiser"] as const;
+  const names = [
+    "oasdiff",
+    "import_linter",
+    "dependency_cruiser",
+    "c8",
+    "pytest_cov",
+  ] as const;
   try {
     const mod = (await import("@pomaster/gauntlet-lite")) as Record<string, unknown>;
     const detectors = mod["toolDetectors"] as
@@ -213,6 +220,8 @@ async function defaultGauntletProbes(
       oasdiff: detectors["oasdiff"]!,
       import_linter: detectors["importLinter"]!,
       dependency_cruiser: detectors["dependencyCruiser"]!,
+      c8: detectors["c8"]!,
+      pytest_cov: detectors["pytestCov"]!,
     };
     return names.map((name) => ({
       probe: name,
@@ -262,8 +271,9 @@ async function runGauntletProbes(
  * 1) kernel_doctor_probes —— 转调 kernel doctorProbes（四探针 fail-closed）；
  *    store 缺失 → MISSING_CONFIGURATION；kernel scaffold → NOT_INSTALLED；
  *    环境异常 → DEFECT（禁静默）。
- * 2) oasdiff / import_linter / dependency_cruiser —— P22 工具链机判腿探测
- *    （转调 gauntlet-lite toolDetectors；缺席必带安装路标）。
+ * 2) oasdiff / import_linter / dependency_cruiser / c8 / pytest_cov —— 工具链机判腿探测
+ *    （P22 contract/architecture + P23 coverage 双腿；转调 gauntlet-lite toolDetectors
+ *    单一探测面；缺席必带安装路标）。
  * 3) chrome_devtools_mcp —— D22 探测 + 一键引导文本。
  */
 export async function runDoctor(

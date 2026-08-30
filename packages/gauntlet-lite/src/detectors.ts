@@ -5,6 +5,8 @@
  * - oasdiff            → CONTRACT 门禁（OpenAPI breaking-change diff，D18 P0 点名项；PATH 线索）
  * - import-linter      → ARCHITECTURE 门禁 BE-Python 腿（配置文件线索）
  * - dependency-cruiser → ARCHITECTURE 门禁 FE 腿（配置文件 + package.json 版本线索）
+ * - c8 / pytest-cov    → COVERAGE 门禁双腿（P23 / 随版计划 Batch 2 B2-1；D17 Python 首发顺序
+ *                          → pytest-cov 先行，JaCoCo 属 Java 第二波显式 deferred）
  * - chrome-devtools MCP → BROWSER 交互式腿（D22；.mcp.json 线索，未配置 → MISSING_CONFIGURATION 显式缺席 + 一键引导）
  *
  * 词表纪律：DetectionStatus 四态词形冻结于 adapter-types.ts（TODO(vocab-pr)），禁止就地扩值。
@@ -337,6 +339,127 @@ export function detectDependencyCruiser(
     tool,
     detectedVersion,
     evidence: `配置文件命中: ${configEvidence}`,
+  };
+}
+
+// ============================================================
+// c8 → COVERAGE 门禁 JS/TS 腿（P23 / 随版计划 Batch 2 B2-1；package.json 线索）
+// ============================================================
+
+/**
+ * c8 探测（P23 COVERAGE 门禁 JS/TS 腿）：package.json devDependencies/dependencies
+ * 声明 c8 → READY（vitest 探测同款形态；run 期以 `corepack pnpm exec c8 --version`
+ * 实测对账，dependency-cruiser 腿同款 corepack 命令链）。缺席必带安装指引，禁静默。
+ */
+export function detectC8(
+  facts: DetectorFacts,
+  options: DetectorOptions = {},
+): DetectionResult {
+  const tool = "c8";
+  if (options.requiredByProfile === false) {
+    return {
+      status: "NOT_REQUIRED_BY_PROFILE",
+      tool,
+      reason:
+        "当前 Governance Profile 未要求 COVERAGE 门禁 JS/TS 腿（MINIMAL/LIGHT 档合法缺席，显式计数而非静默跳过）",
+    };
+  }
+  const pkg = readPackageJson(facts);
+  if (pkg === null) {
+    return {
+      status: "NOT_INSTALLED",
+      tool,
+      reason: "package.json 不存在（无法探测 c8 依赖声明——COVERAGE 门禁 JS/TS 腿）",
+      installHint:
+        "安装建议：corepack pnpm add -D c8 并在 coverage-gate.json 声明 {\"runner\":\"c8\",\"command\":\"<测试命令>\"}（COVERAGE 门禁 JS/TS 腿，P23）",
+    };
+  }
+  const declared = dependencyVersion(pkg, "c8");
+  if (typeof declared !== "string") {
+    return {
+      status: "NOT_INSTALLED",
+      tool,
+      reason: "package.json 未声明 c8 依赖（devDependencies/dependencies 均无）",
+      installHint:
+        "安装建议：corepack pnpm add -D c8（COVERAGE 门禁 JS/TS 腿，P23；run 期 corepack pnpm exec c8 执行）",
+    };
+  }
+  const detectedVersion = sanitizeSemver(declared);
+  if (
+    options.expectedVersion != null &&
+    detectedVersion !== null &&
+    detectedVersion !== options.expectedVersion
+  ) {
+    return {
+      status: "DRIFTED",
+      tool,
+      detectedVersion,
+      expectedVersion: options.expectedVersion,
+      evidence: `package.json 命中 c8 = ${declared}（版本 ${detectedVersion}）`,
+      installHint: `版本对齐建议：将 c8 对齐到锁定版本 ${options.expectedVersion}（DRIFTED 态判卷降级 warning）`,
+    };
+  }
+  return {
+    status: "READY",
+    tool,
+    detectedVersion,
+    evidence: `package.json 命中 c8 = ${declared}`,
+  };
+}
+
+// ============================================================
+// pytest-cov → COVERAGE 门禁 Python 腿（P23 / D17 Python 首发顺序；配置文件线索）
+// ============================================================
+
+/**
+ * pytest-cov 探测（P23 COVERAGE 门禁 Python 腿，D17 Python 首发先行；
+ * JaCoCo 属 Java 第二波，本探测面显式不做——deferred 注记）：
+ * pytest.ini / pyproject.toml [tool.pytest...] 命中 → READY（build-adapter
+ * detectPytest 同款形态）。诚实能力边界：pytest-cov 插件的在位性无法从配置文件
+ * 证明——缺席会在 run 期以「unrecognized arguments: --cov」（exit 4）显式落
+ * not_run 并带安装路标，探测面不冒充已验证。
+ */
+export function detectPytestCov(
+  facts: DetectorFacts,
+  options: DetectorOptions = {},
+): DetectionResult {
+  const tool = "pytest-cov";
+  if (options.requiredByProfile === false) {
+    return {
+      status: "NOT_REQUIRED_BY_PROFILE",
+      tool,
+      reason:
+        "当前 Governance Profile 未要求 COVERAGE 门禁 Python 腿（MINIMAL/LIGHT 档合法缺席，显式计数而非静默跳过）",
+    };
+  }
+  const pytestIni = facts.joinPath(facts.projectRoot, "pytest.ini");
+  if (facts.fileExists(pytestIni)) {
+    return {
+      status: "READY",
+      tool,
+      detectedVersion: null,
+      evidence: `配置文件命中: ${pytestIni}（pytest-cov 插件在位性以 run 期实测为准——缺席将显式 not_run 带安装路标）`,
+    };
+  }
+  const pyproject = facts.readTextFile(
+    facts.joinPath(facts.projectRoot, "pyproject.toml"),
+  );
+  if (pyproject !== null && pyproject.includes("[tool.pytest")) {
+    return {
+      status: "READY",
+      tool,
+      detectedVersion: null,
+      evidence:
+        "pyproject.toml [tool.pytest...] 段命中（pytest-cov 插件在位性以 run 期实测为准——缺席将显式 not_run 带安装路标）",
+    };
+  }
+  return {
+    status: "NOT_INSTALLED",
+    tool,
+    reason:
+      "未找到 pytest.ini / pyproject.toml（[tool.pytest...]）——Python coverage 腿缺席（D17：pytest-cov 先行；JaCoCo 属 Java 第二波，deferred 不在本探测面）",
+    installHint:
+      "安装建议：pip install pytest pytest-cov 并落 pytest.ini（COVERAGE 门禁 Python 腿，P23；run 期 python -m pytest --cov=<target> --cov-branch 执行，版本锚由 policy.expectedToolVersion 供给）",
   };
 }
 

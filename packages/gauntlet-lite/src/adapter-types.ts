@@ -112,6 +112,51 @@ export interface DetectorFacts {
 }
 
 // ============================================================
+// 门禁档位（P23 判卷强度轴；coverage/CRAP 的 HARDENING-only 生效载体）
+// ============================================================
+
+/**
+ * 门禁判卷强度轴（P23；x-vocab-source: PRD §27.1 Governance Profile 词形
+ * MINIMAL/LIGHT/STANDARD + §27.2 Gate Profile 词形 FAST/STANDARD/HARDENING）。
+ * TODO(vocab-pr)：五词形全部 PRD 出处（不发明新词形），但「两轴并置为单轴」的
+ * 收编裁定待词汇表 PR/A4——随版计划 B2-2 原文「HARDENING-only 生效（PRD §27.2
+ * Gate Profile）」与 wave3-plan.md P23 出口判据「MINIMAL/LIGHT 档合法缺席」把
+ * Governance/Gate 两 Profile 的词形并置在同一个判卷强度决策位，本轴如实承载该
+ * 并置；STRICT/CRITICAL（§27.1）不入本轴——其「映射到 HARDENING 强度」是编排层
+ * 决策，不由 adapter 私设映射。
+ *
+ * 判卷强度语义（coverage/CRAP adapter 消费；§73 Case G「CRAP 不做 P0 前置」+
+ * 随版计划 B2-2「阈值配置化，HARDENING-only 生效」）：
+ * - MINIMAL / LIGHT / FAST → 合法缺席（SKIPPED_BY_POLICY 收敛义：not_run +
+ *   counts.notApplicable=1 + policy_skip 口径；显式语义非静默跳过，P12c 裁定映射）；
+ * - STANDARD → 运行判卷（coverage 行/分支阈值生效；CRAP 阈值不生效——超标降
+ *   warning 呈报而非 failed，HARDENING-only）；
+ * - HARDENING → 运行判卷 + CRAP 阈值判罚（工具缺席 = not_run 非绿非红）。
+ */
+export const GATE_TIER_VALUES = [
+  "MINIMAL",
+  "LIGHT",
+  "FAST",
+  "STANDARD",
+  "HARDENING",
+] as const;
+export type GateTier = (typeof GATE_TIER_VALUES)[number];
+
+/**
+ * 缺省档位 = STANDARD（PRD §27.2 STANDARD Gate Profile 明列 coverage/CRAP——
+ * 未声明档位时 gate 按 STANDARD 运行：coverage 阈值判卷、CRAP 只呈报不判罚）。
+ * provisional 待 A4 打包批准（阈值纪律：缺省值不得自批为永久裁定）。
+ */
+export const DEFAULT_GATE_TIER: GateTier = "STANDARD";
+
+/** MINIMAL/LIGHT/FAST → 合法缺席档（SKIPPED_BY_POLICY 收敛义，见 GATE_TIER_VALUES 注）。 */
+export const POLICY_EXEMPT_GATE_TIERS: readonly GateTier[] = [
+  "MINIMAL",
+  "LIGHT",
+  "FAST",
+];
+
+// ============================================================
 // 计划（prepare）与执行（run）
 // ============================================================
 
@@ -145,6 +190,13 @@ export interface GatePolicy {
    * 判卷降级 warning（research 缺席语义：DRIFTED→WARNING）。
    */
   readonly expectedToolVersion?: string | null;
+  /**
+   * 门禁判卷强度档位（P23；缺省 DEFAULT_GATE_TIER=STANDARD）。
+   * coverage/CRAP adapter 消费：MINIMAL/LIGHT/FAST → 合法缺席（policy_skip）；
+   * STANDARD → coverage 阈值判卷、CRAP 只呈报；HARDENING → CRAP 阈值判罚
+   * （HARDENING-only 生效，工具缺席 = not_run 非绿非红）。词形见 GATE_TIER_VALUES。
+   */
+  readonly gateTier?: GateTier;
 }
 
 /** 门禁执行计划（prepare 产物：纯数据，零 I/O；run 只消费 plan 不再探测）。 */

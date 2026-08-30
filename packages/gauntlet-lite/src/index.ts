@@ -6,7 +6,7 @@
  * （research/testing-toolchain-shipping-plan.md：POMaster 本体只包含四样）。
  *
  * 模块地图：
- * - adapter-types.ts      —— §59 接口契约、探测四态（缺席语义）、判卷错误类型、包版本常量；
+ * - adapter-types.ts      —— §59 接口契约、探测四态（缺席语义）、判卷错误类型、门禁档位词轴、包版本常量；
  * - normalize-common.ts   —— 各 adapter 共享的 normalize FATAL 闸门与缺席记录构造（单一实现）；
  * - build-adapter.ts      —— BUILD 门禁 adapter（vitest 腿 + pytest 腿 + 七态归一 + 03 线格式序列化）；
  * - pytest-leg.ts         —— BUILD 的 pytest 腿（junitxml 实跑 + PATH 消毒 + JUnit XML 判卷）；
@@ -17,11 +17,15 @@
  *                            dependency-cruiser / import-linter 机判腿）；
  * - dependency-cruiser-leg.ts —— ARCHITECTURE 的 FE 机判腿（P22：depcruise JSON 重算）；
  * - import-linter-leg.ts  —— ARCHITECTURE 的 BE-Python 机判腿（P22：lint-imports 退出码锚 + 文本重算）；
+ * - coverage-adapter.ts   —— COVERAGE / COMPLEXITY_CRAP 门禁 adapter（P23：coverage-gate.json
+ *                            配置面 + c8 / pytest-cov 双腿 + CRAP 原生公式 gate；HARDENING-only 档位语义）；
+ * - coverage-leg.ts       —— COVERAGE 的执行腿（P23：三道闸真执行 + 行/分支口径强制上报解析）；
+ * - crap.ts               —— CRAP 原生计算器（P23：PRD §28.1 公式本侧重算 + 第三方双输入源 fail-closed）；
  * - browser-adapter.ts    —— BROWSER 门禁 adapter（doctor MCP 探测 + smoke 连接证据）；
  * - gate-recipe-runner.ts —— Basic Gate Runner v1（P12b：catalog/gates recipe→adapter
  *                            派发登记表 + 单 recipe 编排执行；入账归 CLI 层 store 事务）；
- * - detectors.ts          —— oasdiff / import-linter / dependency-cruiser / chrome-devtools MCP
- *                            四探测（doctor 面；缺席必带理由与安装建议，禁静默）。
+ * - detectors.ts          —— oasdiff / import-linter / dependency-cruiser / c8 / pytest-cov /
+ *                            chrome-devtools MCP 探测（doctor 面；缺席必带理由与安装建议，禁静默）。
  *
  * 判卷纪律：输出形态镜像 @pomaster/kernel 的 GateResult 契约（03-gate-result 的 camelCase 形态），
  * 七态 verdict + counts.notApplicable 必填 + asserted/recomputed 孪生（永不信任自报值）；
@@ -31,6 +35,7 @@ import { createBuildAdapter } from "./build-adapter.js";
 import { createBrowserAdapter } from "./browser-adapter.js";
 import { createContractAdapter } from "./contract-adapter.js";
 import { createArchitectureAdapter } from "./architecture-adapter.js";
+import { createCoverageAdapter, createCrapGateAdapter } from "./coverage-adapter.js";
 import type {
   BuildToolDetection,
   GateAdapter,
@@ -41,11 +46,16 @@ import type {
 import type { BrowserGatePlan, BrowserRunOutput } from "./browser-adapter.js";
 import type { ContractGatePlan, ContractRunOutput } from "./contract-adapter.js";
 import type { ArchitectureGatePlan, ArchitectureRunOutput } from "./architecture-adapter.js";
+import type { CoverageLegPlan } from "./coverage-leg.js";
+import type { CrapLegPlan } from "./crap.js";
+import type { CoverageRunOutput, CrapRunOutput } from "./coverage-adapter.js";
 import {
+  detectC8,
   detectChromeDevtoolsMcp,
   detectDependencyCruiser,
   detectImportLinter,
   detectOasdiff,
+  detectPytestCov,
 } from "./detectors.js";
 
 export * from "./adapter-types.js";
@@ -57,6 +67,9 @@ export * from "./browser-adapter.js";
 export * from "./oasdiff-leg.js";
 export * from "./dependency-cruiser-leg.js";
 export * from "./import-linter-leg.js";
+export * from "./coverage-leg.js";
+export * from "./crap.js";
+export * from "./coverage-adapter.js";
 export * from "./detectors.js";
 export * from "./normalize-common.js";
 export * from "./gate-recipe-runner.js";
@@ -90,6 +103,26 @@ export const browserAdapter: GateAdapter<
 > = createBrowserAdapter();
 
 /**
+ * COVERAGE 门禁 adapter 单例（P23：c8 / pytest-cov 双腿 + 行/分支口径强制上报；
+ * 也可经 createCoverageAdapter() 自建）。
+ */
+export const coverageAdapter: GateAdapter<
+  DetectionResult,
+  CoverageLegPlan,
+  CoverageRunOutput
+> = createCoverageAdapter();
+
+/**
+ * COMPLEXITY/CRAP 门禁 adapter 单例（P23：POMaster 原生公式 + 第三方双输入源
+ * fail-closed；也可经 createCrapGateAdapter() 自建）。
+ */
+export const crapGateAdapter: GateAdapter<
+  DetectionResult,
+  CrapLegPlan,
+  CrapRunOutput
+> = createCrapGateAdapter();
+
+/**
  * adapter registry（G5 谱系扩展落地：BUILD 双腿 + CONTRACT / ARCHITECTURE / BROWSER）。
  * 四 adapter 共用 §59 契约与 normalize-common 的 FATAL 闸门；缺席一律显式四态
  * （not_configured ≠ passed），绝不静默跳过当通过。
@@ -101,10 +134,12 @@ export const gateAdapters = {
   browser: browserAdapter,
 } as const;
 
-/** doctor 工具探测 registry（oasdiff / import-linter / dependency-cruiser / chrome-devtools MCP）。 */
+/** doctor 工具探测 registry（oasdiff / import-linter / dependency-cruiser / c8 / pytest-cov / chrome-devtools MCP）。 */
 export const toolDetectors = {
   oasdiff: detectOasdiff,
   importLinter: detectImportLinter,
   dependencyCruiser: detectDependencyCruiser,
+  c8: detectC8,
+  pytestCov: detectPytestCov,
   chromeDevtoolsMcp: detectChromeDevtoolsMcp,
 } as const;

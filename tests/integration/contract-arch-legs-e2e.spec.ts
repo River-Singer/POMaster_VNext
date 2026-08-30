@@ -8,7 +8,8 @@
  * ② 宿主 oasdiff 缺席的真跑验证：真实 contract adapter（零 fake）+ breakingDiff 声明 →
  *    check --gates 的 GRN-0001 落 verdict=not_run（非绿非红，counts 显式全零，scope.note
  *    带安装路标）——D18 执行腿的缺席语义在入账层成立（宿主装了 oasdiff 则诚实跳过）；
- * ③ doctor 探测矩阵扩容：真实 runDoctor 呈现三工具探针（缺席 NOT_INSTALLED 非静默）。
+ * ③ doctor 探测矩阵扩容：真实 runDoctor 呈现工具探针（P22 三腿 + P23 coverage 双腿；
+ *   缺席 NOT_INSTALLED 非静默）。
  */
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -246,16 +247,28 @@ describe("② 宿主 oasdiff 缺席的真跑验证（真实 adapter 零 fake）"
   });
 });
 
-describe("③ doctor 探测矩阵扩容（P22 三工具探针）", () => {
-  it("真实 runDoctor 呈现 oasdiff / import_linter / dependency_cruiser 三探针（缺席非静默）", async () => {
+describe("③ doctor 探测矩阵扩容（P22 三工具探针 + P23 coverage 双腿探针）", () => {
+  it("真实 runDoctor 呈现 oasdiff / import_linter / dependency_cruiser / c8 / pytest_cov 五探针（缺席非静默）", async () => {
     const outcome = await runDoctor(root);
     const names = outcome.result.probes.map((probe) => probe.probe);
-    expect(names).toContain("oasdiff");
-    expect(names).toContain("import_linter");
-    expect(names).toContain("dependency_cruiser");
-    for (const name of ["oasdiff", "import_linter", "dependency_cruiser"]) {
+    for (const name of [
+      "oasdiff",
+      "import_linter",
+      "dependency_cruiser",
+      "c8",
+      "pytest_cov",
+    ]) {
+      expect(names).toContain(name);
+    }
+    for (const name of [
+      "oasdiff",
+      "import_linter",
+      "dependency_cruiser",
+      "c8",
+      "pytest_cov",
+    ]) {
       const probe = outcome.result.probes.find((p) => p.probe === name);
-      // 空目录下双工具按配置线索缺席；oasdiff 在真装了的宿主可为 READY（诚实容忍）。
+      // 空目录下配置线索类工具缺席；PATH/声明类工具在真装了的宿主可为 READY（诚实容忍）。
       expect(probe?.status === "NOT_INSTALLED" || probe?.status === "READY").toBe(true);
       if (probe?.status === "NOT_INSTALLED") {
         expect(probe.hint === null || typeof probe.hint === "string").toBe(true);

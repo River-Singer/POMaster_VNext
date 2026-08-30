@@ -1,13 +1,14 @@
 /**
- * doctor.spec.ts —— 四态探测矩阵（kernel 探针 + P22 工具链机判腿探测 + chrome-devtools
- * MCP 一键引导）。
+ * doctor.spec.ts —— 四态探测矩阵（kernel 探针 + P22 工具链机判腿探测 + P23 coverage
+ * 双腿探测 + chrome-devtools MCP 一键引导）。
  *
  * TODO(integration-2026-08-28)：kernel 模块已由 kernel 建造者落地。原「init 后
  * kernel scaffold → NOT_INSTALLED」真实 kernel 场景已不存在，两处相关用例更新为
  * 真实 kernel 集成断言（READY 路径）；NOT_INSTALLED 分类路径改由注入式用例覆盖
  * （kernel 抛 not-implemented → NOT_INSTALLED，缺席显式语义不变）。
  * P22：oasdiff / import_linter / dependency_cruiser 三工具探针入矩阵（转调 gauntlet-lite
- * toolDetectors 单一探测面）；ok=true 的用例注入全 READY fake 探针（宿主是否安装
+ * toolDetectors 单一探测面）；P23：c8 / pytest_cov（COVERAGE 门禁双腿，D17 pytest-cov
+ * 先行）扩容入矩阵。ok=true 的用例注入全 READY fake 探针（宿主是否安装
  * oasdiff 等属于环境差异，不影响命令面判卷语义的断言）。
  */
 import { writeFileSync, rmSync } from "node:fs";
@@ -31,7 +32,15 @@ let dir: string;
 
 /** 全 READY 工具探针 fake（宿主工具安装状态无关化；探测面语义另由缺席用例覆盖）。 */
 function readyGauntletProbes(): GauntletToolProbe[] {
-  return (["oasdiff", "import_linter", "dependency_cruiser"] as const).map((probe) => ({
+  return (
+    [
+      "oasdiff",
+      "import_linter",
+      "dependency_cruiser",
+      "c8",
+      "pytest_cov",
+    ] as const
+  ).map((probe) => ({
     probe,
     detect: () => ({
       status: "READY" as const,
@@ -205,12 +214,19 @@ describe("doctor 四态矩阵", () => {
     expect(kernel?.detail).toContain("os.replace unsupported");
   });
 
-  it("P22 工具探针：缺省探测面在空目录 → 三工具 NOT_INSTALLED + 安装路标 + ok=false", async () => {
-    // 临时目录无 .importlinter / setup.cfg / pyproject.toml 等——双工具按配置线索缺席；
-    // oasdiff 按 PATH 线索缺席（测试进程 PATH 上无 oasdiff；若宿主真装了则显式容忍 READY）。
+  it("P22/P23 工具探针：缺省探测面在空目录 → 五工具 NOT_INSTALLED + 安装路标 + ok=false", async () => {
+    // 临时目录无 .importlinter / setup.cfg / pyproject.toml / package.json 等——
+    // 四工具按配置线索缺席（c8 探测读 package.json 声明）；oasdiff 按 PATH 线索缺席
+    // （测试进程 PATH 上无 oasdiff/c8 运行面；若宿主真装了则显式容忍 READY）。
     await runInit(dir);
     const outcome = await runDoctor(dir);
-    for (const name of ["oasdiff", "import_linter", "dependency_cruiser"]) {
+    for (const name of [
+      "oasdiff",
+      "import_linter",
+      "dependency_cruiser",
+      "c8",
+      "pytest_cov",
+    ]) {
       const probe = outcome.result.probes.find((p) => p.probe === name);
       expect(probe, name).toBeDefined();
       expect(probe?.status === "NOT_INSTALLED" || probe?.status === "READY").toBe(true);
