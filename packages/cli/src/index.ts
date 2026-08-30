@@ -34,6 +34,15 @@
  * - eval            Agent Behavioral Eval（§44.10）：跑 --suite behavioral（seeds 25 注册/
  *                   23 executable/2 retired；retired 显式呈现不计失败；executable 失败
  *                   fail-closed exit 1；§94.3 触发面配套——trigger-manifest + eval-trigger.mjs）
+ * - view blueprint/task
+ *                   三投影 Human 侧（§44.7/§49.1）：Narrative View（Stable Core 正文 +
+ *                   Uncertainty Envelope）/ Review View（§53 十二步审查顺序）；纯读零写入
+ * - audit blueprint/task
+ *                   三投影 Audit View（§44.7/§49.1）：七字段完整呈现（§91.3：Audit View
+ *                   才逐项显示完整 State Axes）；纯读零写入
+ * - ledger record/list
+ *                   Exception Ledger 命令面（§49.2）：异常项入账（EXC-n；kernel
+ *                   recordException 唯一写通路）+ 台账纯读呈现
  *
  * 分层纪律：判卷权威在 @pomaster/kernel，本包只做编排与呈现，禁止旁路写状态
  * （例外：check/exec-guard 对过期许可追加 PERMIT_EXPIRED_OBSERVED 为 kernel 契约行为）。
@@ -59,6 +68,9 @@ import { runRecordClaim, runRecordGateRun } from "./record.js";
 import { runCloseout } from "./closeout.js";
 import { runCatalogStatus, runCatalogExplain } from "./catalog.js";
 import { runEval } from "./eval.js";
+import { runViewBlueprint, runViewTask } from "./view.js";
+import { runAuditBlueprint, runAuditTask } from "./audit.js";
+import { runLedgerList, runLedgerRecord } from "./ledger.js";
 import {
   runBrainstormPromote,
   runBrainstormStart,
@@ -239,6 +251,18 @@ export type {
   ResearchListResult,
   ResearchInspectResult,
 } from "./research.js";
+export { runViewBlueprint, runViewTask, REVIEW_STEPS } from "./view.js";
+export type { ViewBlueprintResult, ViewTaskResult, ReviewStepRow } from "./view.js";
+export { runAuditBlueprint, runAuditTask, AUDIT_FIELDS } from "./audit.js";
+export type { AuditResult, AuditObjectReport } from "./audit.js";
+export { runLedgerRecord, runLedgerList } from "./ledger.js";
+export type {
+  LedgerRecordInput,
+  LedgerRecordResult,
+  LedgerListEntry,
+  LedgerListResult,
+  LedgerKernelDeps,
+} from "./ledger.js";
 export {
   EVIDENCE_MALFORMED_CODE,
   RUN_INGEST_ACTIONS,
@@ -977,6 +1001,136 @@ export function createProgram(
       });
       record({
         command: "research",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  // —— 三投影命令面（§44.7 view/audit；§49.1 一个 State 多种 View；P19） ——
+  // 纯读零写入（执行前后 .pomaster 字节不变，测试锚）；数据源 = 既有 store/truth/
+  // evidence 平面 + Exception Ledger（§49.2），不自造第二事实面。
+  const view = program
+    .command("view")
+    .description(
+      "三投影 Human 侧（§44.7/§49.1）：view blueprint = Narrative View（Stable Core 正文 + Uncertainty Envelope，正常状态标签默认隐藏 §91.3）；view task = Review View（§53 十二步审查顺序，File Diff 降级证据层）",
+    );
+  view
+    .command("blueprint")
+    .description(
+      "Narrative View（§49.1）：面向业务/产品/开发者的连续叙事——Stable Core 正文（§49.2 正文=当前可成立的完整世界）+ Uncertainty Envelope（§91.2）+ Exception Ledger 聚合与高显著度异常区块（§91.3）",
+    )
+    .argument("[scope]", "可选 governed id 前缀过滤（如 PAGE.；缺省全库）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (scope: string | undefined, _opts, command) => {
+      const outcome = await runViewBlueprint(resolveDir(command), {
+        scope,
+      });
+      record({
+        command: "view blueprint",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+  view
+    .command("task")
+    .description(
+      "Review View（§49.1 + §53）：面向 PO/Architect/Tech Lead 的结构化审查视图——十二步默认审查顺序逐字渲染（不发明步骤），每步挂既有平面可汇编数据，缺席显式（无）；第 12 步 File Diff 只给 inspect 指路（降级为证据层）",
+    )
+    .argument("<task>", "任务对象 governed id（legacy 词形走 alias 收编）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (task: string, _opts, command) => {
+      const outcome = await runViewTask(resolveDir(command), { task });
+      record({
+        command: "view task",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  const audit = program
+    .command("audit")
+    .description(
+      "三投影 Audit View（§44.7/§49.1）：面向治理人员/自检 Agent 的七字段完整呈现（Object ID/State Axes/Authority/Source/Evidence/Policy/Transition History；§91.3——Audit View 才逐项显示完整 State Axes）",
+    );
+  audit
+    .command("blueprint")
+    .description("全库（或 scope 前缀过滤）对象逐一审计（§49.1 七字段）")
+    .argument("[scope]", "可选 governed id 前缀过滤（如 PAGE.；缺省全库）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (scope: string | undefined, _opts, command) => {
+      const outcome = await runAuditBlueprint(resolveDir(command), {
+        scope,
+      });
+      record({
+        command: "audit blueprint",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+  audit
+    .command("task")
+    .description("任务影响对象分母（permit subjects ∪ change.affected_objects ∪ task）审计（§49.1 七字段）")
+    .argument("<task>", "任务对象 governed id（legacy 词形走 alias 收编）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (task: string, _opts, command) => {
+      const outcome = await runAuditTask(resolveDir(command), { task });
+      record({
+        command: "audit task",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  // —— Exception Ledger 命令面（§49.2；入账唯一写通路在 kernel recordException） ——
+  const ledger = program
+    .command("ledger")
+    .description(
+      "Exception Ledger（§49.2）：当前世界边界之外仍需处理的异常状态登记面——正文不贴标签（§49.2 反模式禁令），异常集中登记；三投影（view/audit）按 §91.3 消费",
+    );
+  ledger
+    .command("record")
+    .description(
+      "异常条目入账（EXC-n 确定性递增；非幂等——重复登记 = 新条目，同 permit issue 先例；journal EXCEPTION_RECORDED 留痕）",
+    )
+    .requiredOption(
+      "--classification <class>",
+      "异常分类（§49.2 五分类闭包：ASSUMPTION | OPEN_QUESTION | DEFERRED_DECISION | CONFLICT | HARD_BLOCKER）",
+    )
+    .requiredOption("--statement <text>", "精确、可判定的异常事实陈述（「待定」不是陈述）")
+    .option("--object-ref <id>", "关联治理对象（宽松词形——异常可引用尚不存在的对象）")
+    .option("--change-ref <ref>", "关联变更/任务锚（general_id 宽松词形）")
+    .requiredOption("--actor <type>:<name>", "登记主体（type ∈ agent/human/tool/kernel；argv 自报恒 self_attested=true）")
+    .option("--note <text>", "人类散文注记（机器不解析其内容）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runLedgerRecord(resolveDir(command), {
+        classification: opts.classification as string,
+        statement: opts.statement as string,
+        objectRef: opts.objectRef as string | undefined,
+        changeRef: opts.changeRef as string | undefined,
+        actor: opts.actor as string,
+        note: opts.note as string | undefined,
+      });
+      record({
+        command: "ledger record",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+  ledger
+    .command("list")
+    .description("台账纯读呈现（缺席 = 显式空「尚无异常登记」；--classification 词形过滤，词表外显式 warning）")
+    .option(
+      "--classification <class>",
+      "按异常分类过滤（§49.2 五分类闭包；缺省=全部）",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runLedgerList(resolveDir(command), {
+        classification: opts.classification as string | undefined,
+      });
+      record({
+        command: "ledger list",
         outcome,
         asJson: command.opts().json === true,
       });

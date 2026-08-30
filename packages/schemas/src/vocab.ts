@@ -482,3 +482,23 @@ export const RESEARCH_MODE_VALUES = [
   "FORENSIC",
 ] as const;
 export type ResearchModeValue = (typeof RESEARCH_MODE_VALUES)[number];
+
+/**
+ * Exception Ledger 分类五值（PRD §49.2「至少分类」逐字语义，词形大写化对齐
+ * §91.3 原文词形：ASSUMPTION / OPEN_QUESTION / DEFERRED / CONFLICT / HARD_BLOCKER；
+ * 「Deferred Decision」取 §82.2 DEFERRED_DECISION 同词形先例）。与 §82.2 Discovery
+ * Unknown 十分类正交（那是 Discovery 未决项分类面；本轴管 Exception Ledger 登记面，
+ * P19 投影视图按 §91.3 消费：CONFLICT/HARD_BLOCKER = 高显著度异常区块，其余三类
+ * 聚合到对应章节）。x-vocab-source: PRD v0.4 §49.2/§91.3；schema 落点
+ * 11-exception-ledger definitions.exception_classification。
+ * TODO(vocab-pr)：absent_in_vocab_lock__pending_vocab_pr，收编后以 vocab-lock 为准。
+ */
+export const EXCEPTION_CLASSIFICATION_VALUES = [
+  "ASSUMPTION",
+  "OPEN_QUESTION",
+  "DEFERRED_DECISION",
+  "CONFLICT",
+  "HARD_BLOCKER",
+] as const;
+export type ExceptionClassificationValue =
+  (typeof EXCEPTION_CLASSIFICATION_VALUES)[number];

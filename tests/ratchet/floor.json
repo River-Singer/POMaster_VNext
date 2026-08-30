@@ -1,12 +1,12 @@
 {
-  "minTests": 1427,
+  "minTests": 1489,
   "ledger": {
     "version": 1,
-    "strategy": "docs/wave3-research-toolchain.md §2 L1-L5 承诺下限 + wave3-plan.md P15（L1 四域明细：IR 不变量 150 / 状态机转移对 120 / Permit·Evidence 推导 80 / Router 判定矩阵 60）。首轮 floor=战略目标值；P15-FillA 补量后 ir_invariants 与 state_machine_pairs 达战略下限，P15-FillB 补量后 permit_evidence 与 router_matrix 亦达标——四域 floor 均随 actual 提升锁住增量（棘轮只升不降）；P16-Fixtures 三技术栈全链 fixture 补量后 L2 缺口填平（L2 floor 随 actual 138 锁住增量）；P16-WriteLayer 写入层可靠性专项（kill -9 崩溃注入 + catalog-lock 漂移缺口矩阵）补量后 L2 floor 随 actual 150 再次锁住增量；P17-EvalCLI（eval 命令面 L1 + §94.3 触发面 L2）补量后 minTests 1210、L2 floor 随 actual 169 锁住增量；P17-Seeds（L3 四点名种子补录 + L5 retired 处置）补量后 minTests 1219、L3 floor 随 actual 64 锁住增量；P18-Chain（Discovery 状态链转移全矩阵 + 08/09/10 schema 正反例）补量后 minTests 1280、state_machine_pairs floor 随 actual 167 锁住增量。；P18-Commands（Question Gate Q1-Q7 逐关正反 + One-question-at-a-time + Diverge→Converge + §81.3 写面契约/§81.4 五级 Evidence/§82.5 envelope 判卷 + §44.3 六命令面 CLI 集成）补量后 minTests 1372、L1 floor 随 actual 锁增量。；P18-Adversarial（L4 威胁类 7-8：Research 越写旁路 + 提升写入通道旁路，全部真实 runCli 实跑 + 全树字节快照零落盘；L2 Discovery 状态链×closeout 消费闭环 fixture；L1 六命令 fail-closed 参数面与 --help）补量后 minTests 1406、L2 floor 随 actual 177、L4 floor 随 actual 38 锁住增量；P18-RedTeamFix（红队修复批次：发现1 §81.4 六字段存在性判卷——AUTHORITATIVE 零 sources/caveats 幻觉洗白 fail-closed + INFERENCE 空来源豁免对照 + 形态残缺条目不静默出判卷分母；发现2 --host 登记面三道闸（词形→登记面→磁盘存在性，src 拒绝）；发现3 promote --tx-out rootDir 容纳闸（出仓/受治理面拒绝，相对路径相对 rootDir）；发现4 research inspect 宿主位词形/存在性校验（../../ 穿透封死）；L4 幻觉洗白全链对抗 ADV-H1/H2）补量后 minTests 1427、L4 floor 随 actual 40 锁住增量。",
+    "strategy": "docs/wave3-research-toolchain.md §2 L1-L5 承诺下限 + wave3-plan.md P15（L1 四域明细：IR 不变量 150 / 状态机转移对 120 / Permit·Evidence 推导 80 / Router 判定矩阵 60）。首轮 floor=战略目标值；P15-FillA 补量后 ir_invariants 与 state_machine_pairs 达战略下限，P15-FillB 补量后 permit_evidence 与 router_matrix 亦达标——四域 floor 均随 actual 提升锁住增量（棘轮只升不降）；P16-Fixtures 三技术栈全链 fixture 补量后 L2 缺口填平（L2 floor 随 actual 138 锁住增量）；P16-WriteLayer 写入层可靠性专项（kill -9 崩溃注入 + catalog-lock 漂移缺口矩阵）补量后 L2 floor 随 actual 150 再次锁住增量；P17-EvalCLI（eval 命令面 L1 + §94.3 触发面 L2）补量后 minTests 1210、L2 floor 随 actual 169 锁住增量；P17-Seeds（L3 四点名种子补录 + L5 retired 处置）补量后 minTests 1219、L3 floor 随 actual 64 锁住增量；P18-Chain（Discovery 状态链转移全矩阵 + 08/09/10 schema 正反例）补量后 minTests 1280、state_machine_pairs floor 随 actual 167 锁住增量。；P18-Commands（Question Gate Q1-Q7 逐关正反 + One-question-at-a-time + Diverge→Converge + §81.3 写面契约/§81.4 五级 Evidence/§82.5 envelope 判卷 + §44.3 六命令面 CLI 集成）补量后 minTests 1372、L1 floor 随 actual 锁增量。；P18-Adversarial（L4 威胁类 7-8：Research 越写旁路 + 提升写入通道旁路，全部真实 runCli 实跑 + 全树字节快照零落盘；L2 Discovery 状态链×closeout 消费闭环 fixture；L1 六命令 fail-closed 参数面与 --help）补量后 minTests 1406、L2 floor 随 actual 177、L4 floor 随 actual 38 锁住增量；P18-RedTeamFix（红队修复批次：发现1 §81.4 六字段存在性判卷——AUTHORITATIVE 零 sources/caveats 幻觉洗白 fail-closed + INFERENCE 空来源豁免对照 + 形态残缺条目不静默出判卷分母；发现2 --host 登记面三道闸（词形→登记面→磁盘存在性，src 拒绝）；发现3 promote --tx-out rootDir 容纳闸（出仓/受治理面拒绝，相对路径相对 rootDir）；发现4 research inspect 宿主位词形/存在性校验（../../ 穿透封死）；L4 幻觉洗白全链对抗 ADV-H1/H2）补量后 minTests 1427、L4 floor 随 actual 40 锁住增量。；P19-Projections（三投影命令面 view/audit + Exception Ledger 入账面 ledger + §53 十二步审查视图渲染 + §91.3 可见性二分消费；kernel ledger.spec.ts 10 例入 permit_evidence 域、cli view.spec.ts 22 例含 runCli 程序级与纯读零写入字节锚）补量后 minTests 1459、permit_evidence floor 随 actual 锁住增量。；P19-EvalCarrier（PRD §94.2 yaml 载物：eval-cases.yaml 25 case + eval-case.schema.json 词形/必填 fail-closed + 兼容双读同构锚——载物与 seeds.json 逐 case deep-equal + 双源判卷字节级同报告 + eval 命令消费面对 yaml 显式拒绝的诚实报错 + §94.3 触发链覆盖）补量后 minTests 1478、L5 actual 随载物面增量（L5 floor 15 = 契约 §2.8.1 executable 下限语义，不随 vitest 用例数锁增）。；P19-RedTeamFix（红队 MINOR 修复：11-exception-ledger.schema.json 补 ajv 挂载（discovery-schema.spec.ts 追加 11 例，沿用 08/09/10 先例）——$id 注册锚 + recordException 产物形态合法台账正例（五分类逐值/可选三件 null·有值/四类主体）与空 entries 正例 + 词表外 classification（自造 MAYBE_BROKEN/§91.3 简写 DEFERRED/原文词形 Deferred Decision）+ 八字段缺必填（statement/recorded_at_seq/note）+ EXC-n pattern 越形 + 三件空串 minLength + recorded_at_seq integer·minimum + recorded_by 面（actor_type 词表外/缺 self_attested/闭表外键）+ 三级 additionalProperties 闭表（root·entry·recorded_by；生命周期字段 resolved/status 不发明——§49.2 无结清语义））补量后 minTests 1489、L1 floor 随 actual 1148 锁住增量。",
     "layers": {
       "L1": {
         "title": "单元",
-        "floor": 400
+        "floor": 1148
       },
       "L2": {
         "title": "集成",
@@ -39,7 +39,7 @@
       "permit_evidence": {
         "layer": "L1",
         "title": "Permit·Evidence 推导",
-        "floor": 242
+        "floor": 252
       },
       "router_matrix": {
         "layer": "L1",
@@ -90,6 +90,13 @@
       "packages/kernel/tests/permits.spec.ts": {
         "layer": "L1",
         "domain": "permit_evidence"
+      },
+      "packages/kernel/tests/ledger.spec.ts": {
+        "layer": "L1",
+        "domain": "permit_evidence"
+      },
+      "packages/cli/tests/view.spec.ts": {
+        "layer": "L1"
       },
       "packages/kernel/tests/reconcile.spec.ts": {
         "layer": "L1",
@@ -254,6 +261,9 @@
       "tests/behavioral/behavioral.spec.ts": {
         "layer": "L5"
       },
+      "tests/behavioral/eval-carrier.spec.ts": {
+        "layer": "L5"
+      },
       "packages/kernel/tests/question-gate.spec.ts": {
         "layer": "L1"
       },
@@ -289,6 +299,7 @@
       "L2 构成": "6 个既有 L2（catalog 运行时联结 / CLI 账本↔kernel digest 契约 / 证据裂缝闭合 / check --gates 全链路 / human-views 编译器 / 冒烟）+ P16 三技术栈 fixture 全链（fixture-git-repo-minimal：git repo 最小工程·BUILD 双腿缺席形态 + fixture-vue3-project：Vue3 工程·BUILD 腿 vitest 声明 READY 真实执行收敛 not_run + fixture-fastapi-project：FastAPI 工程·pytest 腿 READY 版本锚缺失 runner_not_ready 形态——triage 三档 × 三证据级全矩阵、init→triage→maintain pre-dev→task 落账→gate GRN 入账→reconcile clean/dirty→closeout 阻断逐拍 exit 码与证据面断言）+ P16-WriteLayer 写入层可靠性专项（write-layer-crash-injection：A 段注入式半写六时点——staged 碎片/WAL 孤儿/commit 后/evidence 孤儿/index·journal 半字节截断——重启 state 完好或显式检出绝不静默半状态 + B 段真实 SIGKILL 子进程任意时点硬中断后快照 k 精确一致/journal 前缀无洞 m-k≤1/碎片形状/恢复事务干净；crash-workload-child.mjs 非 spec 不入账；与 L4 威胁类 4 分工=L4 证进程内异常回滚、本件证 kill -9 硬中断后磁盘态与重启路径）+ P16-WriteLayer catalog-lock 漂移缺口矩阵（catalog-lock-drift-matrix：P14 已覆盖 content_drift，本件补 missing/unexpected_file 含命令面 fail-closed/entry_not_allowed/missing_required/lock_unreadable 坏形与缺失两形态，逐 kind 显式检出+恢复回绿）。共享运行器 fixture-chain-lib.ts 非 spec 文件不入账。+ P17-EvalCLI §94.3 触发面专项（eval-trigger：trigger-manifest.json 落档契约——version/suites 注册表/spec 在盘/类别 ⊆ PRD §94.3 五类闭表且第六类 fail-closed（不发明额外触发源的机器封印）/五类分母齐全/pattern 静态前缀在盘，映射正确性——触达源逐类命中含 ** 通配、未触达零误报、多类触发 suite 去重、Windows 反斜杠归一、JS matcher 与 TS 参考镜像 globMatch 逐例一致，消费脚本——--paths 提示/零命中合法成功/坏 manifest fail-closed/--run --dry-run 呈现命令不执行/git diff 端到端（临时仓库 tracked 修改触发、未跟踪新文件不触发）/git 不可用 fail-closed；scripts/eval-trigger.mjs 非 spec 不入账）。＋P18-Adversarial Discovery 状态链×closeout 消费闭环 fixture（fixture-discovery-chain，全部真实 runCli）：init→brainstorm start（08 信封 ajv + meta 链）→research 挂同一宿主（§81.6 四文件 + inspect SKELETON 判读）→§80.2 授权面推进 READY_TO_PROMOTE（scratchpad 维护面直写，promotion_basis 可见）→brainstorm promote --apply 经 P11 maintain 面落账（PROPOSED/PLANNED 提升诚实初值 + scratchpad 08 终态 + meta 链闭合 [IDEA,DISCOVERY,TASK]）→closeout 四拍续接（①诚实初值双阻断 DOD_ACCEPTANCE_EMPTY+GATE_EVIDENCE_MISSING 且全树字节零变；②P11 面补 acceptance 后 gate 绑定分母空仍阻断；③验证侧证据齐（D20 独立验证流 VERIFIED claim + 绑定 passed run）后施断被 kernel CROSS_AXIS_ASSERTION 拒（PROPOSED⇒evidence 必为 PLANNED——proposal 态不许伪装 COMPLETED，跨轴断言在提升链上同样生效）；④PROPOSED→CURRENT（authority_approval）→COMPLETED，evidence→VERIFIED 落 store）→终态对账（brainstorm status TASK+promoted_ref / inspect CURRENT+VERIFIED / journal ≥3 次事务留痕）。附真缺陷修复回归：research list/inspect --json 曾被混合模式父命令（§44.3 直跑形态自带 --json）先行消费致 §45 机读信封违约——修复=list/inspect action 经 optsWithGlobals 读全局值（packages/cli/src/index.ts），program.spec + fixture 段2 双钉。",
       "deferred": "并发会话锁（同一 store 多会话并发写互斥/检出语义）显式 deferred→P20，登记于 tests/README.md「显式 deferred 登记」段；解锁条件=wave3-plan.md P20 出口判据（session/lock/execution_id 原语 + CLI 命令面，其明列『P16 遗留的 L2 并发锁测试解锁入账』）。kernel 现无锁原语，测试不得断言不存在的机制。",
       "eval_cli": "P17-EvalCLI（wave3-plan.md P17；PRD §44.10/§94.3）：`pomaster eval --suite behavioral` 命令面入 L1（packages/cli/tests/eval.spec.ts——happy 全绿/每种子结构化呈现/pending 显式列出不冒充绿/executable 失败 fail-closed exit 1/seeds 缺失与坏形 fail-closed/报告自洽守卫/--suite 词表闭包字面锁定与词表外显式拒绝/幂等双跑字节级同报告）；执行器本体（seeds 装载与结构校验/双 evaluator 分派/可诊断 diff/报告汇总）自 tests/behavioral/behavioral.harness.ts 上移至 packages/cli/src/eval.ts（dist 可加载——包禁反向依赖 tests/），rule_v0 参考镜像同址上移至 packages/cli/src/triage-rule-v0.ts（tests/golden/reference/triage.ts 保留 re-export 门面，golden/behavioral 既有导入不变、L3/L5 计数不受影响）；harness 门面保留账本常量与 corpus 谱系对账 loader。§94.3 触发面（tests/behavioral/trigger-manifest.json + scripts/eval-trigger.mjs 消费脚本）入 L2（tests/integration/eval-trigger.spec.ts，见 L2 构成）。P17-Seeds 增量：报告形态加 retired 第三态（total = executable + pending + retired；retiredList 显式退役呈现——不计 executable/pending、不执行判定，与 pendingReason/expect_flip_when 互斥结构校验 fail-closed），seeds.json F-02/X-01 两条 pending 翻转处置为显式退役（理由落档 retired.reason_md），eval.spec.ts +2（retired-only 账 + retired 互斥三型 SEEDS_INVALID）。",
+      "eval_carrier": "P19-EvalCarrier（wave3-plan.md P19；PRD §94.2）：L5 25 seeds 的 §94.2 yaml 载物落 tests/behavioral/eval-cases.yaml（id/input/expected 三键形态，expected = 契约 §2.4 断言集；载物由一次性确定性转录生成，js-yaml round-trip 验证零误差）+ eval-case.schema.json（draft-07：账本/条目两级 additionalProperties 闭表 + 词表 enum（family/evaluator = L5_FAMILIES/L5_EVALUATORS、profile/effectiveProfile = TRIAGE_PROFILES、evidence_grade = TRIAGE_EVIDENCE_GRADES、expected_class = samples.json expected_tier_convention 闭表）+ if/then 复刻 retired 互斥与 executable 非空断言条件）。兼容双读裁定：机器判卷消费面 = seeds.json（预注册账本字节集不动），yaml = §94.2 登记形态，eval-carrier.spec.ts 锚同构（逐 case deep-equal + 双源 runAllSeeds 字节级同报告 + 处置态 25/23/2/翻转对/翻转注册口径在载物上独立成立）；CLI 运行时零 yaml 依赖（kernel catalog.ts/digest.ts『不引 YAML 运行时依赖』同款纪律），loadSeeds 对 yaml 扩展名显式拒绝并指路；§94.2 示例词形 must_not_spawn/must_not_create/classification/allowed_outcomes 等 capability/门集面未实现不入载物词表（禁发明无被测对象字段，schema 闸 + 直接扫描双锚）。js-yaml@4.3.2 入根 devDependencies（仅 tests 面消费）；ajv 用既有根 devDependency（brainstorm.spec 先例）。eval-carrier.spec.ts 19 例入 L5 层。",
       "新增纪律": "新增 spec 文件必须同步入 mapping（ratchet 遇未归类 spec 即红）；删除/改名 spec 必须同步清理 mapping（stale 条目即红）。提升某类 actual 超过 floor 后应随改动一并提升该类 floor（棘轮只升不降）。"
     }
   }

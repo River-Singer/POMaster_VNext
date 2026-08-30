@@ -109,3 +109,26 @@ python tools/check_fidelity.py --rendered renders/batch-1 --master-root "D:/Vsco
 python tools/proof_byte_stable.py --batch-dir ../batch-1 --work renders/_proof
 python tools/proof_byte_stable.py --batch-dir ../batch-2 --work renders/_proof
 ```
+
+## 8. 与 P19 三投影命令面的关系（归宿注记，按代码现实裁定）
+
+P19 落地了 TS CLI 的三投影命令面（`pomaster view blueprint/task`、`pomaster audit
+blueprint/task`，packages/cli/src/view.ts / audit.ts；§44.7/§49.1/§53/§91）。两者关系
+如实裁定为 **独立演进**，不合并：
+
+| 维度 | 本雏形（renderer-v0） | P19 三投影命令面 |
+|---|---|---|
+| 语言/运行面 | Python 脚本（迁移语料线 corpus 离线跑） | TypeScript CLI（@pomaster/cli，npm workspace） |
+| 投影目标 | 旧 PoMaster `outputs/frontend/10_planned` 的 registry **文件树形状**（M0-M7 迁移保真线，M5 正式砖前身） | 面向人的 **视图**：Narrative/Review（§53 十二步）/Audit（§49.1 七字段）markdown |
+| 数据源 | vNext truth 对象文件（corpus/master/batch-*） | 治理 store（truth-index + 正文 + evidence + state/exception-ledger） |
+| 输出 | registry YAML 文件（byte-stable，golden 3 文件字节全等） | §45 双输出（--json 信封 + 人读 markdown；纯读零写入） |
+
+**共享的是同一批治理内核纪律，不是代码**：纯派生（不写 store、不产生治理事实）、
+确定性排序、inputs_fingerprint 重放稳定、显式缺席（explicit_absence /
+not_configured ≠ passed）、零墙钟。两线各自执行这批纪律；D25 的 registry-tree
+preset 是本雏形的唯一配置源，P19 视图不消费它（§44.7 命令面无 preset 入参）。
+
+**未来交汇点**：本雏形 §5 已声明 `renderer.status: not_yet_built` 状态翻转与
+`project_overrides` 接入归 M5 正式砖；届时 M5 渲染器与 P19 投影同走 kernel 纯派生
+纪律，是否收敛为统一投影框架由 M5 设计裁定——本雏形不预先合并，P19 也不回写
+本目录（packages/ 与 prototypes/ 零耦合）。

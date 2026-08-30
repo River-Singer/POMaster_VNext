@@ -10,7 +10,8 @@
  * kernel 内部补充状态（实现 detail，不属公共契约面）：
  * - state/authority.json  Authority Map（BOOTSTRAP 基线；幽灵 owner FATAL 判定的解析源）
  * - state/permits.json    已签发许可（issuePermit 持久化；stolen 标记留档）
- * - state/journal.jsonl   事件 journal（TX_APPLIED / PERMIT_* 追加流；不进 hash）
+ * - state/exception-ledger.json Exception Ledger（§49.2 异常登记；recordException 持久化）
+ * - state/journal.jsonl   事件 journal（TX_APPLIED / PERMIT_* / EXCEPTION_* 追加流；不进 hash）
  */
 import { GovernanceError } from "./errors.js";
 import { isNotFoundError, readJsonText } from "./io.js";
@@ -26,6 +27,8 @@ export interface StorePaths {
   readonly indexPath: string;
   readonly authorityPath: string;
   readonly permitsPath: string;
+  /** state/exception-ledger.json（§49.2 Exception Ledger 台账；ledger.ts 维护）。 */
+  readonly exceptionLedgerPath: string;
   readonly journalPath: string;
   readonly truthObjectsDir: string;
   readonly evidenceDir: string;
@@ -47,6 +50,7 @@ export function buildStorePaths(rootDir: string): StorePaths {
     indexPath: `${stateDir}/truth-index.json`,
     authorityPath: `${stateDir}/authority.json`,
     permitsPath: `${stateDir}/permits.json`,
+    exceptionLedgerPath: `${stateDir}/exception-ledger.json`,
     journalPath: `${stateDir}/journal.jsonl`,
     truthObjectsDir: `${pomasterDir}/truth/objects`,
     evidenceDir,

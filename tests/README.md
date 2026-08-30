@@ -31,6 +31,14 @@
   （镜像 golden 报告字段；零墙钟可字节级重放）。翻转纪律（契约 §2.7.2）：阈值/信号获批
   落地时对应 seed 期望翻转 + `flipped_from` 记录翻转前状态——翻转本身构成验收测试
   （T-1 翻转对 C-01/C-04 已随 Owner 裁决2/bench-0003 落地执行）。
+  - `eval-cases.yaml` + `eval-case.schema.json` + `eval-carrier.spec.ts`（P19-EvalCarrier，
+    PRD §94.2）：25 seeds 的 §94.2 Eval Case yaml 载物（id/input/expected 三键形态；
+    expected = 契约 §2.4 断言集，词表闭表锁 schema）与 draft-07 schema（词形/必填
+    fail-closed）。兼容双读裁定：机器判卷消费面 = `seeds.json`（预注册账本字节集不动），
+    yaml = §94.2 登记形态——`eval-carrier.spec.ts` 锚同构（逐 case deep-equal + 双源
+    `runAllSeeds` 字节级同报告）；CLI 运行时零 yaml 依赖（`loadSeeds` 对 yaml 显式拒绝
+    并指路）；`must_not_spawn` 等 §94.2 示例词形在 capability/门集面落地前不入载物
+    词表（禁发明无被测对象字段）。改期望/增删 case 必须双登记同步（缺一即红）。
   - `trigger-manifest.json` —— §94.3 触发清单（PRD §94.3；原文在仓库外，语义以
     `docs/wave3-research-prd.md` 转述为准）：五类触发源（Context Compiler / Router /
     Gate Policy / Catalog Rule / Harness；Role Prompt 与自身架构演进暂无仓库内载体，

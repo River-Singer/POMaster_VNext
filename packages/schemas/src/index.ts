@@ -1,13 +1,14 @@
 /**
  * @pomaster/schemas —— POMaster vNext 公共 schema 资产导出与 FROZEN 词表镜像。
  *
- * 形态契约：assets/01..10 十份 JSON Schema（draft-07，$id 形态
+ * 形态契约：assets/01..11 十一份 JSON Schema（draft-07，$id 形态
  * https://pomaster.dev/schemas/<name>/v1-draft.json）＋ 02b-kind-payloads.md /
  * golden-seed-mapping.md 两份配套文档（原样随包分发，非运行时依赖）。
  *
  * P18 增量（08/09/10）：Discovery 状态链 / MSD-Uncertainty / Research Artifact
  * 三份 schema 的词形按 PRD 原文落在各自 definitions 冻结（新状态面，不混入既有
  * 对象轴词表），提请词汇表 PR 收编；代码镜像点 ./vocab.js「待词汇表 PR 收编」段。
+ * P19 增量（11）：Exception Ledger（§49.2 异常登记面，五分类词轴 pending_vocab_pr）。
  *
  * 词表纪律：一切枚举唯一来源是 assets/vocab-lock.draft.yaml（FROZEN）；
  * 代码侧唯一镜像点在 ./vocab.js（本文件 re-export）。YAML 资产仅作人读/工具对账，
@@ -19,7 +20,7 @@
  *
  * 装载提示（ajv）：schema 携带大量 x- 注记键（含 D24 强制在场的 x-digest-ethics），
  * 请以 `new Ajv({ strictSchema: false })` 装载，或逐个 ajv.addKeyword 注册注记键；
- * 跨文件 $ref 为绝对 $id 形态，组合装载须将全部 10 份 schema addSchema 注册。
+ * 跨文件 $ref 为绝对 $id 形态，组合装载须将全部 11 份 schema addSchema 注册。
  */
 import evidenceRecordsSchemaRaw from "../assets/07-evidence-records.schema.json" with { type: "json" };
 import denominatorSchemaRaw from "../assets/05-denominator.schema.json" with { type: "json" };
@@ -31,6 +32,7 @@ import truthIndexSchemaRaw from "../assets/01-truth-index.schema.json" with { ty
 import discoveryStateChainSchemaRaw from "../assets/08-discovery-state-chain.schema.json" with { type: "json" };
 import msdUncertaintySchemaRaw from "../assets/09-msd-uncertainty.schema.json" with { type: "json" };
 import researchArtifactSchemaRaw from "../assets/10-research-artifact.schema.json" with { type: "json" };
+import exceptionLedgerSchemaRaw from "../assets/11-exception-ledger.schema.json" with { type: "json" };
 
 export * from "./vocab.js";
 
@@ -62,6 +64,8 @@ const MSD_UNCERTAINTY_ID =
   "https://pomaster.dev/schemas/msd-uncertainty/v1-draft.json";
 const RESEARCH_ARTIFACT_ID =
   "https://pomaster.dev/schemas/research-artifact/v1-draft.json";
+const EXCEPTION_LEDGER_ID =
+  "https://pomaster.dev/schemas/exception-ledger/v1-draft.json";
 
 function asSchema(raw: unknown, expectedId: string): JsonSchemaObject {
   const schema = raw as JsonSchemaObject;
@@ -100,8 +104,12 @@ export const researchArtifactSchema = asSchema(
   researchArtifactSchemaRaw,
   RESEARCH_ARTIFACT_ID,
 );
+export const exceptionLedgerSchema = asSchema(
+  exceptionLedgerSchemaRaw,
+  EXCEPTION_LEDGER_ID,
+);
 
-/** 全部 10 份 schema 的聚合（组合装载：ajv.addSchema 逐个注册即可遍历本对象）。 */
+/** 全部 11 份 schema 的聚合（组合装载：ajv.addSchema 逐个注册即可遍历本对象）。 */
 export const allSchemas = {
   truthIndex: truthIndexSchema,
   objectEnvelope: objectEnvelopeSchema,
@@ -113,4 +121,5 @@ export const allSchemas = {
   discoveryStateChain: discoveryStateChainSchema,
   msdUncertainty: msdUncertaintySchema,
   researchArtifact: researchArtifactSchema,
+  exceptionLedger: exceptionLedgerSchema,
 } as const;

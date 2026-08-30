@@ -1,0 +1,346 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://pomaster.dev/schemas/eval-case/v1-draft.json",
+  "title": "L5 Behavioral Eval Case 载物（P19）",
+  "description": "PRD §94.2 的 yaml 载物形态落地：Eval Case = id / input / expected 三键（§94.2 示例逐字键形），case 级与账本级 additionalProperties 全闭表——词形与必填 fail-closed。\n本文件校验对象是 tests/behavioral/eval-cases.yaml（25 条 case 登记载物）；机器判卷消费面 = tests/behavioral/seeds.json（契约 docs/p9-human-view-and-l5-contract.md §2.2 落点，预注册账本），两者由 eval-carrier.spec.ts 机器锚定同构（逐 seed deep-equal + 双源判卷字节级同报告）。",
+  "x-pomaster-file-role": "eval-case.schema.json —— §94.2 Eval Case 载物形态契约（P19-EvalCarrier）。校验面 = tests 侧 ajv（devDependency）；CLI 运行时零 yaml 依赖（仓库纪律：kernel catalog.ts/digest.ts 同款「不引 YAML 运行时依赖」注记）。",
+  "x-pomaster-vocab-source": "词表全部为既有事实源闭表镜像，零新词形：family/evaluator = L5 契约 §2.3/§2.4（@pomaster/cli L5_FAMILIES/L5_EVALUATORS）；profile 与 effectiveProfile = TRIAGE_PROFILES；evidence_grade = TRIAGE_EVIDENCE_GRADES（packages/cli/src/triage.ts）；expected_class = corpus/master/batch-1/calibration/samples.json expected_tier_convention.expected_class 闭表（title_derivable/signal_requiring）；断言集键 = 契约 §2.4 两断言集（CliKeywordExpect/RuleV0Expect）并集。PRD §94.2 示例中 must_not_spawn/must_not_create/classification/allowed_outcomes/silent_baseline_drift/hard_blocker 等词形属 capability 路由/门集/Discovery 分类面——实现落地前不入本载物词表（禁发明无被测对象字段），以 pending/retired case 登记形态表达（契约 §2.4 先例）；落地时随其消费面 PR 扩本表词表。",
+  "x-pomaster-contract": {
+    "three_keys_prd": "PRD §94.2：Eval Case 顶层 = id / input / expected 三键（示例键形逐字）；本载物在三键之外携带 L5 契约字段（family/title/evaluator/provenance/处置态）——PRD 示例是最小形态，L5 契约是 §94 的仓库内执行契约，两者是同一载物的键集与断言集来源。",
+    "absence_explicit": "缺席显式登记词形：design_expected/flipped_from/expect_flip_when/pendingReason/retired 五键全 case 必填（显式 null 优于键缺席）；retired 非空与 pendingReason/expect_flip_when 互斥（契约 §2.3/§2.7.2 与 seeds.json 结构校验同判据，schema 层 if/then 复刻）。expected 允许空对象仅当 case 处于缺席态（retired 或 pendingReason 非空）——缺席显式不臆造断言（契约裁决 4）；executable case 条件约束 expected 至少 1 断言键（allOf if/then）。",
+    "matched_rule_vocab": "matched_rule/fastPathHit/triggerHits/notApplicableRules 的规则词形只锁词形 pattern（大写下划线），词值单一事实源在 packages/cli/src/triage.ts 与 triage-rule-v0.ts——schema 硬锁词值会与之双登记漂移。",
+    "consumer_separation": "本 schema 是登记面契约；判卷判定面（expect 断言集语义）在 @pomaster/cli eval 模块结构校验（双格式共用）。schema 管词形/必填/类型/闭表，跨字段语义（谱系连续性/语料对账）归 eval-carrier.spec 与 behavioral.spec 元校验。"
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["suite", "batch_code", "cases"],
+  "properties": {
+    "suite": {
+      "type": "string",
+      "minLength": 1,
+      "title": "suite 名（= seeds.json suite；EVAL_SUITES 词表闭包在 @pomaster/cli）"
+    },
+    "batch_code": {
+      "type": "string",
+      "minLength": 1,
+      "title": "代号线（= seeds.json batch_code，L5-SEED）"
+    },
+    "prd_anchor": {
+      "type": "string",
+      "title": "PRD 出处锚（§94.2/§94.3/§44.10）"
+    },
+    "carrier_note": {
+      "type": "string",
+      "title": "兼容双读裁定注记（登记面 vs 消费面；演进双登记纪律）"
+    },
+    "source_of_truth": {
+      "type": "string",
+      "title": "契约出处（转录 seeds.json 同名键）"
+    },
+    "preregistration_note_md": {
+      "type": "string",
+      "title": "预注册纪律注记（转录 seeds.json 同名键；期望定稿于执行器评审前，禁回填）"
+    },
+    "conventions": {
+      "type": "object",
+      "title": "账本约定（转录 seeds.json 同名键）"
+    },
+    "calibration_sources": {
+      "type": "object",
+      "title": "校准语料事实源（转录 seeds.json 同名键）"
+    },
+    "cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/eval_case"
+      },
+      "title": "Eval Case 列表（cases）——与 seeds.json seeds 数组逐条同构"
+    }
+  },
+  "definitions": {
+    "eval_case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "family",
+        "title",
+        "evaluator",
+        "provenance",
+        "input",
+        "expected",
+        "design_expected",
+        "flipped_from",
+        "expect_flip_when",
+        "pendingReason",
+        "retired"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^L5-[A-GX]-[0-9]{2}-[A-Za-z0-9.\\-]+$",
+          "title": "case id（契约 §2.3 词形 L5-<族号>-<序号>-<slug>）"
+        },
+        "family": {
+          "type": "string",
+          "enum": ["A", "B", "C", "D", "E", "F", "G", "X"],
+          "title": "覆盖矩阵族号（契约 §2.5；= L5_FAMILIES）"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "title": "人读标题（期望语义摘要）"
+        },
+        "evaluator": {
+          "type": "string",
+          "enum": ["cli_keyword", "rule_v0"],
+          "title": "判定执行器（契约 §2.4；= L5_EVALUATORS）"
+        },
+        "provenance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["corpus", "note_md"],
+          "properties": {
+            "corpus": {
+              "type": "string",
+              "minLength": 1,
+              "title": "corpus 事实源路径（契约 §2.8.3 谱系铁律：全部 seed 必填非空）"
+            },
+            "anchor": {
+              "type": "string",
+              "title": "登记文件键路径/章节锚（辅锚）"
+            },
+            "replay_id": {
+              "type": "string",
+              "title": "校准回放 id（主锚）"
+            },
+            "source_task_dir": {
+              "type": "string",
+              "title": "MASTer 源任务目录（源标识符，非墙钟字段）"
+            },
+            "note_md": {
+              "type": "string",
+              "minLength": 1,
+              "title": "谱系注记（禁空——禁静默登记）"
+            }
+          }
+        },
+        "input": {
+          "type": "object",
+          "additionalProperties": false,
+          "anyOf": [
+            { "required": ["request"] },
+            { "required": ["requests"] }
+          ],
+          "properties": {
+            "request": {
+              "anyOf": [
+                { "type": "string", "minLength": 1 },
+                { "type": "object" }
+              ],
+              "title": "待判请求：cli_keyword = 请求文本（逐字转录纪律）；rule_v0 = TriageRequestInput 信号集对象（形态归代码类型面）"
+            },
+            "requests": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["replay_id", "request"],
+                "properties": {
+                  "replay_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "title": "簇成员回放锚"
+                  },
+                  "request": {
+                    "type": "string",
+                    "minLength": 1,
+                    "title": "簇成员请求文本（逐字转录纪律）"
+                  }
+                }
+              },
+              "title": "簇请求集（F 族多请求形态）"
+            }
+          }
+        },
+        "expected": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "profile": {
+              "type": "string",
+              "enum": ["MINIMAL", "LIGHT", "STANDARD"],
+              "title": "期望档（= TRIAGE_PROFILES 闭表）"
+            },
+            "matched_rule": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]*$",
+              "title": "期望命中规则（词值事实源 triage.ts；此处锁词形）"
+            },
+            "evidence_grade": {
+              "type": "string",
+              "enum": ["MEASURED", "INFERRED", "NOT_CONFIGURED"],
+              "title": "期望证据级（= TRIAGE_EVIDENCE_GRADES 闭表）"
+            },
+            "matched_keywords_contains": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "title": "命中词形包含断言"
+            },
+            "matched_keywords_equals": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "title": "命中词形全等断言"
+            },
+            "outcome": {
+              "type": "string",
+              "enum": ["TRIAGED", "NO_CHANGE"],
+              "title": "rule_v0 期望结果"
+            },
+            "effectiveProfile": {
+              "anyOf": [
+                { "type": "string", "enum": ["MINIMAL", "LIGHT", "STANDARD"] },
+                { "type": "null" }
+              ],
+              "title": "rule_v0 期望生效档（含合法无操作 null）"
+            },
+            "effectiveProfileAtLeast": {
+              "type": "string",
+              "enum": ["MINIMAL", "LIGHT", "STANDARD"],
+              "title": "rule_v0 期望生效档下界"
+            },
+            "triggerHitsContains": {
+              "type": "array",
+              "items": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+              "title": "门集前驱代理断言（契约 §2.4 保守口径；词值事实源 triage-rule-v0.ts）"
+            },
+            "fastPathHit": {
+              "anyOf": [
+                { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+                { "type": "null" }
+              ],
+              "title": "期望快道命中（含显式 null）"
+            },
+            "fastLane": {
+              "type": "boolean",
+              "title": "期望快车道标记"
+            },
+            "floorApplied": {
+              "anyOf": [
+                { "type": "string" },
+                { "type": "null" }
+              ],
+              "title": "期望 floor 应用路径 glob（含显式 null）"
+            },
+            "overrideBelowFloorRejected": {
+              "type": "boolean",
+              "title": "期望 override 拒降断言（禁 quiet-below-floor）"
+            },
+            "overrideOverpoweredByEscalation": {
+              "type": "boolean",
+              "title": "期望 override 被升档压过断言（override ≠ bypass）"
+            },
+            "notApplicableRulesContains": {
+              "type": "array",
+              "items": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+              "title": "vacuous 规则缺席断言（R-B：缺席不当 0 也不当有）"
+            }
+          },
+          "title": "期望断言集（契约 §2.4 两集并集；= seeds.json expect 键的 §94.2 expected 键形）"
+        },
+        "design_expected": {
+          "anyOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["expected_profile", "expected_class"],
+              "properties": {
+                "expected_profile": {
+                  "type": "string",
+                  "minLength": 1,
+                  "title": "设计期望档（转录 samples.json 预注册字段）"
+                },
+                "expected_class": {
+                  "type": "string",
+                  "enum": ["title_derivable", "signal_requiring"],
+                  "title": "设计期望类（= samples.json expected_tier_convention.expected_class 闭表）"
+                }
+              }
+            }
+          ],
+          "title": "设计期望档元数据（契约 §2.7.1 已知偏离样本的钉值对照；显式 null = 无）"
+        },
+        "flipped_from": {
+          "anyOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ],
+          "title": "翻转前状态（契约 §2.7.2：TRIAGE profile 词形或 PENDING；null = 未翻转）"
+        },
+        "expect_flip_when": {
+          "anyOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ],
+          "title": "翻转注册（非空 = 等待信号/阈值落地翻转；已翻转/退役必须 null）"
+        },
+        "pendingReason": {
+          "anyOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ],
+          "title": "缺席显式（非空 = pending，不计 executable；禁静默跳过）"
+        },
+        "retired": {
+          "anyOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["reason_md"],
+              "properties": {
+                "reason_md": {
+                  "type": "string",
+                  "minLength": 1,
+                  "title": "退役判据（禁空——禁静默退役；含原缺席事实转录与重登记路径）"
+                }
+              }
+            }
+          ],
+          "title": "显式退役（P17-Seeds 处置形态：登记与谱系保留、执行与翻转路径关闭；null = 未退役）"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "retired": { "type": "object" } },
+            "required": ["retired"]
+          },
+          "then": {
+            "properties": {
+              "pendingReason": { "type": "null" },
+              "expect_flip_when": { "type": "null" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "retired": { "type": "null" },
+              "pendingReason": { "type": "null" }
+            },
+            "required": ["retired", "pendingReason"]
+          },
+          "then": {
+            "properties": {
+              "expected": { "minProperties": 1 }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

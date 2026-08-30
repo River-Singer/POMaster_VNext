@@ -89,6 +89,9 @@ pomaster triage "…"    # 秒级判档：这次 change 值得多少治理
 pomaster status        # 读 .pomaster/state：对象计数/分母状态/permit 活性
 pomaster inspect <governed-id>  # 单对象检视：正文+证据+谱系（纯读零写入）
 pomaster context compile --role <lane>  # 八拍③ PROJECTION：最小充分上下文投影（MUST/ADVISORY/CATALOG/LAZY TOOLS 四分区 markdown；CATALOG 区出处 catalog 策展源，§92.2 非 project state）
+pomaster view blueprint/task  # §49.1 Narrative / Review 投影：view blueprint [<scope>] = Stable Core 正文 + Uncertainty Envelope（正常状态标签默认隐藏 §91.3，Exception Ledger 异常聚合 §49.2）；view task <task> = §53 十二步审查顺序视图（File Diff 降级证据层）；纯派生零写入
+pomaster audit blueprint/task  # §49.1 Audit View：Object ID/State Axes/Authority/Source/Evidence/Policy/Transition History 七字段完整呈现（Audit View 才逐项显示完整 State Axes，§91.3）；audit task <task> 分母 = permit subjects ∪ change.affected_objects ∪ task
+pomaster ledger record/list  # §49.2 Exception Ledger：异常项入账（EXC-n；ASSUMPTION/OPEN_QUESTION/DEFERRED_DECISION/CONFLICT/HARD_BLOCKER 五分类）+ 台账纯读呈现
 pomaster catalog status/explain  # Engineering Catalog 命令面（§44.10）：catalog 构成与单条目解释；catalog-lock 漂移（物料改而未重锁）显式检出
 pomaster eval --suite behavioral  # Agent Behavioral Eval（§44.10）：25 种子 pass/fail/pending/retired 结构化呈现；pending/retired 显式列出不冒充绿不冒充败，executable 失败 exit 1；§94.3 五类源（Context Compiler/Router/Gate Policy/Catalog Rule/Harness）升级后经 `node scripts/eval-trigger.mjs` 触发必跑
 pomaster permit issue/check/steal/list   # 八拍② FRAMEWORK LOCK：许可签发/判卷/显式接管/台账呈现

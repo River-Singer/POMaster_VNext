@@ -1,0 +1,748 @@
+# ==============================================================================
+# eval-cases.yaml —— L5 Behavioral Eval Case 载物（PRD §94.2 键形；P19-EvalCarrier）
+# ==============================================================================
+# 【本文件是什么】tests/behavioral/seeds.json（25 注册 / 23 executable / 0 pending /
+#   2 retired）的 PRD §94.2 yaml 载物：id / input / expected 三键形态（§94.2 示例），
+#   case 级词形与必填由 eval-case.schema.json（draft-07 + ajv）fail-closed 校验。
+# 【兼容双读裁定】机器判卷消费面 = seeds.json（预注册账本字节集不动）；本文件为
+#   §94.2 登记形态，由 eval-carrier.spec.ts 锚定与 json 同构（逐 seed deep-equal +
+#   runAllSeeds 双源字节级同报告）。改期望/增删 case 必须双登记同步（缺一即红）。
+# 【expected 词形边界】= 契约 §2.4 两断言集并集（schema additionalProperties:false
+#   闭表）；§94.2 示例的 must_not_spawn/must_not_create/classification/allowed_outcomes
+#   等面未实现，落地前不入词表（禁发明无被测对象字段）——以 pending/retired 登记。
+# 【零墙钟】本文件与 seeds.json 同款纪律：无时间戳/日期字段（conventions.zero_wall_clock）。
+# ==============================================================================
+
+suite: behavioral-l5
+batch_code: L5-SEED
+prd_anchor: PRD v0.4 §94.2（Eval Case 示例：id / input / expected 三键 yaml 载物形态）；触发面 §94.3；命令面 §44.10
+carrier_note: >-
+  兼容双读载物（P19-EvalCarrier 裁定）：本文件是 L5 25 条 seed 的 PRD §94.2 yaml 载物（登记形态）；机器判卷消费面 = seeds.json（契约
+  §2.2 落点，预注册账本字节集不动）——pomaster eval 与 trigger 链读 seeds.json，本文件由
+  tests/behavioral/eval-carrier.spec.ts 机器锚定同构（逐 seed deep-equal + 双源判卷字节级同报告 +
+  eval-case.schema.json 词形校验 fail-closed）。演进纪律：改期望/增删 case 必须双登记同步（一致性测试强制，缺一即红）。expected 键 = 契约
+  §2.4 断言集（cli_keyword/rule_v0 两集，词表锁 eval-case.schema.json）——§94.2 示例中
+  must_not_spawn/must_not_create/classification/allowed_outcomes 等 capability 路由/门集/Discovery
+  分类面期望在实现落地前不入载物词表（禁发明无被测对象字段），以 pending/retired seed 登记形态表达（契约 §2.4 先例）。仓库纪律不引 YAML 运行时依赖（kernel
+  catalog.ts/digest.ts 同款注记）：本文件的解析与 schema 校验居 tests 面（js-yaml devDependency + ajv），CLI 运行时零 yaml
+  依赖。
+source_of_truth: docs/p9-human-view-and-l5-contract.md §2（L5 Behavioral Eval 契约；落点/harness 形态/覆盖矩阵/期望档纪律均以该契约为准）
+preregistration_note_md: >-
+  本账本期望在执行器代码评审前定稿（契约 §2.7.3 预注册纪律，镜像 samples.json『Router 运行前落盘，二者不得互相回填』）：expect 与 corpus
+  回放实测/预注册期望的对账由 spec 元校验机器强制，不回填本文件。
+conventions:
+  id: >-
+    L5-<族号>-<序号>-<slug>；族号 A..G 为契约 §2.5 七族，X 为契约 §2.4/§2.5 尾注的 capability 路由追加 pending seed（注册于 F
+    族之后，不占 executable 分母）
+  evaluator: >-
+    cli_keyword = bench-0002 已批准 provision 的关键词引擎（packages/cli/src/triage.ts triageRequest，vitest
+    alias 源码直连）；rule_v0 = thread-C §3.2/§7 参考镜像（tests/golden/reference/triage.ts triageRuleV0；kernel
+    triage 面落地后按 golden.harness 同款 kernel 优先回落升级）
+  input_transcription: >-
+    replay 锚定 seed 的 input.request 逐字转录 samples.json title（禁改写，契约 §2.6/裁决 8）；探针
+    seed（词表覆盖/反投机锁）的输入非语料标题，在 provenance.note_md 显式声明并挂词表事实源锚
+  absent_signals_machine_assertion: >-
+    cli_keyword 全部 executable seed 由执行器强制断言 absent_signals 与 TRIAGE_ABSENT_SIGNALS 八项闭表全等（契约 §2.4
+    缺席显式化机器断言）+ ttl_hours 168 不判（超出 §2.4 断言集，不钉）
+  design_expected: >-
+    已知偏离样本（replay agreement=deviation）按契约 §2.7.1 钉实际值为回归锚；设计期望档记入 design_expected
+    元数据（expected_profile/expected_class，转录 samples.json 预注册字段）——钉当前行为不判红，翻转即新信号/阈值的验收测试（契约 §2.7.2）
+  flip: >-
+    阈值/信号获批落地时（契约 §2.7.2）：对应 seed 期望翻转、expect_flip_when 清空，翻转本身构成该阈值/信号的验收测试；flipped_from
+    记录翻转前状态（TRIAGE profile 词形=翻转前回归锚值；PENDING=翻转前为 pending 登记），机器元校验断言 flipped_from 与 replay
+    实测的谱系连续性。本账本翻转 authority = corpus/master/cutover/owner-adjudications.md 裁决2 +
+    benchmarks/calibration-t1-approval.json（seq=bench-0003 APPROVED）+
+    阈值事实源变更（packages/cli/src/triage.ts TRIAGE_ESCALATION_KEYWORDS += global，commit ed947cf）
+  pending: pendingReason 非空 = pending，不计入 executable；禁静默跳过（缺席显式）
+  retired: >-
+    retired 字段非空 = 显式退役（P17-Seeds 处置形态，wave3-plan.md P17『L5 2 条 pending seeds
+    翻转处置』）：登记与谱系保留、执行与翻转路径关闭——不计 executable、不计 pending、不执行判定（缺席显式第三态，禁静默 pending 滞留）；reason_md
+    必须落档退役判据（含原 pendingReason 与原 expect_flip_when 的转录）与重登记路径；retired 与
+    pendingReason、expect_flip_when 互斥（执行器结构校验 fail-closed）。退役属登记状态谱系操作（flipped_from
+    同款先例），非期望回填——预注册纪律不涉
+  zero_wall_clock: >-
+    本文件无时间戳/日期字段；source_task_dir 中形如日期的片段是 MASTer 仓源目录名（源标识符，provenance 必需，非墙钟字段——samples.json
+    sampling_frame.date_field_note 同款口径）
+calibration_sources:
+  samples: corpus/master/batch-1/calibration/samples.json（16 样本，期望档预注册，PREREGISTERED）
+  results: >-
+    corpus/master/batch-1/calibration/replay-results.json（16 记录实测；results_sha256 pin 见
+    proposed-thresholds.json replay_evidence_base，spec 元校验现盘重算比对）
+  thresholds: >-
+    corpus/master/batch-1/calibration/proposed-thresholds.json（T-1 / A-1..A-3 /
+    S-1..S-3，status=PROPOSED 未生效；cannot self-approve）
+  replay_log: corpus/master/batch-1/calibration/replay-round2-input.md（§3.4 振荡簇观察 / §4 卡点）
+cases:
+  - id: L5-A-01-replay-R2-005-style-minimal
+    family: A
+    title: 纯样式标题 → MINIMAL（F_COPY_STYLE_ONLY 短路快道；A 族 MINIMAL 通路代表）
+    evaluator: cli_keyword
+    provenance:
+      corpus: corpus/master/batch-1/calibration/samples.json
+      replay_id: replay-R2-005
+      source_task_dir: .trellis/tasks/archive/2026-08/08-17-readonly-column-style-by-formula
+      note_md: >-
+        title 逐字转录自 samples.json（MASTer task.json 脱敏转录）；实测锚 replay-results.json
+        records[replay-R2-005].actual（MINIMAL / F_COPY_STYLE_ONLY / [style] /
+        MEASURED）。信号缺席注记：变更落点为受治理共享组件（governed_object_hits 信号 P0 缺席），见 replay-round2-input.md §2
+        replay-R2-005。
+    input:
+      request: readonly-column-style-by-formula
+    expected:
+      profile: MINIMAL
+      matched_rule: F_COPY_STYLE_ONLY
+      evidence_grade: MEASURED
+      matched_keywords_contains:
+        - style
+    design_expected:
+      expected_profile: MINIMAL
+      expected_class: title_derivable
+    flipped_from: null
+    expect_flip_when: null
+    pendingReason: null
+    retired: null
+  - id: L5-A-02-replay-R2-001-rework-light
+    family: A
+    title: 修复返工标题 → LIGHT（DEFAULT_NO_SIGNAL 兜底；A 族 LIGHT 通路代表 + 振荡簇 R2-001 成员锚）
+    evaluator: cli_keyword
+    provenance:
+      corpus: corpus/master/batch-1/calibration/samples.json
+      replay_id: replay-R2-001
+      source_task_dir: .trellis/tasks/archive/2026-08/08-10-fix-checkbox-column-width-centering
+      note_md: >-
+        title 逐字转录自 samples.json；实测锚 replay-results.json records[replay-R2-001].actual（LIGHT /
+        DEFAULT_NO_SIGNAL / [] / NOT_CONFIGURED）。本样本同时是 §3.4 checkbox 振荡簇的簇成员（F-1 簇形态边界的单请求代表）。
+    input:
+      request: Fix checkbox selection column width and centering
+    expected:
+      profile: LIGHT
+      matched_rule: DEFAULT_NO_SIGNAL
+      evidence_grade: NOT_CONFIGURED
+      matched_keywords_equals: []
+    design_expected:
+      expected_profile: LIGHT
+      expected_class: title_derivable
+    flipped_from: null
+    expect_flip_when: null
+    pendingReason: null
+    retired: null
+  - id: L5-A-03-escalation-standard-path
+    family: A
+    title: 跨域+契约双词形 → STANDARD（E_CONTRACT_KEYWORD 升档；A 族 STANDARD 通路代表）
+    evaluator: cli_keyword
+    provenance:
+      corpus: corpus/master/batch-1/calibration/proposed-thresholds.json
+      anchor: '#/proposals/0/current_value'
+      note_md: >-
+        探针输入（非语料标题；语料 16 样本标题无升档词形命中，samples.json/replay-results.json 实证）：词表锚 =
+        TRIAGE_ESCALATION_KEYWORDS 六词形（bench-0002
+        approved_items，proposed-thresholds.json#/proposals/0/current_value 与
+        samples.json#/router_invocation_contract/threshold_source 双登记）；业务域词（bind carline / vehicle
+        parts 计算页）取自 MASTer 真实页面域——replay-R2-009 计算车型零件清单 +
+        MIG-B1/truth/objects/contract-op/bind.carline.1.json#API_REQ.BIND.CARLINE.1 key_bindings
+        consumer_page=PAGE-TASK-STEP-BIND-CARLINE。
+    input:
+      request: 跨域契约字段调整：bind carline 与 vehicle parts 计算页对齐
+    expected:
+      profile: STANDARD
+      matched_rule: E_CONTRACT_KEYWORD
+      evidence_grade: INFERRED
+      matched_keywords_contains:
+        - 契约
+        - 跨域
+    design_expected: null
+    flipped_from: null
+    expect_flip_when: null
+    pendingReason: null
+    retired: null
+  - id: L5-A-04-zero-signal-no-change
+    family: A
+    title: 零信号输入 → NO_CHANGE（合法无操作、非判档；A 族第四通路，GOLDEN-L8-1 判据）
+    evaluator: rule_v0
+    provenance:
+      corpus: corpus/master/batch-1/calibration/replay-round2-input.md
+      anchor: '#§0-阈值事实源（被测对象）'
+      note_md: >-
+        零信号语义锚：bench-0002 provision 的信号占位（fan_out/churn/merge）尚未实现为信号源（本文件 §0 载明），P0
+        引擎唯一可采信号是请求文本关键词——零信号输入的 NO_CHANGE 判据镜像 GOLDEN-L8-1 与 tests/golden/reference/triage.ts『No-op
+        is elegant』纪律。与 L1 既有用例不重叠（GOLDEN-L8-1 未在 cases.json 注册为 triage 用例）。
+    input:
+      request: {}
+    expected:
+      outcome: NO_CHANGE
+      effectiveProfile: null
+    design_expected: null
+    flipped_from: null
+    expect_flip_when: null
+    pendingReason: null
+    retired: null
+  - id: L5-B-01-kw-contract-en
+    family: B
+    title: 升档词形 contract 命中 → STANDARD（B 族六词形覆盖 1/6）
+    evaluator: cli_keyword
+    provenance:
+      corpus: corpus/master/batch-1/calibration/proposed-thresholds.json
+      anchor: '#/proposals/0/current_value'
+      note_md: >-
+        探针输入（非语料标题）：升档词形 contract 命中覆盖（bench-0002 approved 词表双登记锚同 A-03 provenance）。matched_keywords
+        含 contract 断言每词命中。
+    input:
+      request: Align bind carline response contract with published schema
+    expected:
+      profile: STANDARD
+      matched_rule: E_CONTRACT_KEYWORD
+      evidence_grade: INFERRED
+      matched_keywords_contains:
+        - contract
+    design_expected: null
+    flipped_from: null
+    expect_flip_when: null
+    pendingReason: null
+    retired: null
+  - id: L5-B-02-kw-contract-zh-over-style-shortcircuit
+    family: B
+    title: 升档词形 契约 命中 → STANDARD，且压过同现样式短路（B 族六词形覆盖 2/6；冲突优先级路由）
+    evaluator: cli_keyword
+    provenance:
+      corpus: corpus/master/batch-1/calibration/proposed-thresholds.json
+      anchor: '#/proposals/0/current_value'
+      note_md: >-
+        探针输入（非语料标题）：升档压过样式短路冲突用例（契约 §2.5 B 族指定）。输入同时含升档词形「契约」与短路词形「样式」；triage.ts
+        有序规则桶升档触发先判——matched_keywords 全等 ["契约"]（样式词形未被采集）即短路次序的机器证据，matched_rule=E_CONTRACT_KEYWORD
+        即优先级路由证据。
+    input:
+      request: 统一列宽样式与契约字段命名
+    expected:
+      profile: STANDARD
+      matched_rule: E_CONTRACT_KEYWORD
+      evidence_grade: INFERRED
+      matched_keywords_equals:
+        - 契约
+    design_expected: null
+    flipped_from: null
+    expect_flip_when: null
+    pendingReason: null
+    retired: null
+  - id: L5-B-03-kw-openapi
+    family: B
+    title: 升档词形 openapi 命中 → STANDARD（B 族六词形覆盖 3/6）
+    evaluator: cli_keyword
+    provenance:
+      corpus: corpus/master/batch-1/calibration/proposed-thresholds.json
+      anchor: '#/proposals/0/current_value'
+      note_md: >-
+        探针输入（非语料标题）：升档词形 openapi 命中覆盖。openapi 词形与 published external baseline（MASTer API 0.1.0
+        openapi.yaml，MIG-B1 contract-op 对象 sources[type=openapi_contract]）同域。
+    input:
+      request: Refresh generated openapi client bindings
+    expected:
+      profile: STANDARD
+      matched_rule: E_CONTRACT_KEYWORD
+      evidence_grade: INFERRED
+      matched_keywords_contains:
+        - openapi
+    design_expected: null
+    flipped_from: null
+    expect_flip_when: null
+    pendingReason: null
+    retired: null
+  - id: L5-B-04-kw-api-req
+    family: B
+    title: 升档词形 api_req 命中 → STANDARD（B 族六词形覆盖 4/6）
+    evaluator: cli_keyword
+    provenance:
+      corpus: corpus/master/batch-1/calibration/proposed-thresholds.json
+      anchor: '#/proposals/0/current_value'
+      note_md: >-
+        探针输入（非语料标题）：升档词形 api_req 命中覆盖。api_req 词形与语料 contract-op 对象 id 前缀 API_REQ.*
+        同域（MIG-B1/truth/objects/contract-op/，如 API_REQ.BIND.CARLINE.1）。
+    input:
+      request: 补登 api_req 操作映射与错误码表
+    expected:
+      profile: STANDARD
+      matched_rule: E_CONTRACT_KEYWORD
+      evidence_grade: INFERRED
+      matched_keywords_contains:
+        - api_req
+    design_expected: null
+    flipped_from: null
+    expect_flip_when: null
+    pendingReason: null
+    retired: null
+  - id: L5-B-05-kw-cross-domain-zh
+    family: B
+    title: 升档词形 跨域 命中 → STANDARD（B 族六词形覆盖 5/6；跨域=跨 Domain 直接 STANDARD 语义）
+    evaluator: cli_keyword
+    provenance:
+      corpus: corpus/master/batch-1/calibration/proposed-thresholds.json
+      anchor: '#/proposals/0/current_value'
+      note_md: 探针输入（非语料标题）：升档词形「跨域」命中覆盖（triage.ts 注记：跨域按 thread-C §27.3 跨 Domain 直接 STANDARD 语义纳入）。
+    input:
+      request: 跨域筛选状态与排序联动
+    expected:
+      profile: STANDARD
+      matched_rule: E_CONTRACT_KEYWORD
+      evidence_grade: INFERRED
+      matched_keywords_contains:
+        - 跨域
+    design_expected: null
+    flipped_from: null
+    expect_flip_when: null
+    pendingReason: null
+    retired: null
+  - id: L5-B-06-kw-cross-domain-en
+    family: B
+    title: 升档词形 cross-domain 命中 → STANDARD（B 族六词形覆盖 6/6）
+    evaluator: cli_keyword
+    provenance:
+      corpus: corpus/master/batch-1/calibration/proposed-thresholds.json
+      anchor: '#/proposals/0/current_value'
+      note_md: 探针输入（非语料标题）：升档词形 cross-domain 命中覆盖。
+    input:
+      request: cross-domain filter state sync for grid columns
+    expected:
+      profile: STANDARD
+      matched_rule: E_CONTRACT_KEYWORD
+      evidence_grade: INFERRED
+      matched_keywords_contains:
+        - cross-domain
+    design_expected: null
+    flipped_from: null
+    expect_flip_when: null
+    pendingReason: null
+    retired: null
+  - id: L5-C-01-replay-R2-008-t1-boundary-anchor
+    family: C
+    title: T-1 边界样本 R2-008（global 词形）→ STANDARD（T-1 已批准生效：翻转验收锚；翻转前回归锚值 LIGHT 记入 flipped_from）
+    evaluator: cli_keyword
+    provenance:
+      corpus: corpus/master/batch-1/calibration/samples.json
+      replay_id: replay-R2-008
+      source_task_dir: .trellis/tasks/archive/2026-08/08-10-disable-auto-boolean-rendering-grid
+      note_md: >-
+        R2-008 是 T-1 的证据样本（期望 STANDARD，E2 fan_out 全局影响面语义，两个全站共享表格组件 defaultColDef
+        全局行为变更）：design_expected 即 samples.json 预注册期望。翻转链（契约 §2.7.2，翻转即验收）：calibration 回放实测
+        LIGHT（replay-results.json records[replay-R2-008].actual，T-1 生效前时点）→ Owner 批准
+        T-1（corpus/master/cutover/owner-adjudications.md 裁决2 +
+        benchmarks/calibration-t1-approval.json seq=bench-0003 APPROVED，语料扫描 global 2/53 命中 0 反例）→
+        阈值事实源变更落地（packages/cli/src/triage.ts TRIAGE_ESCALATION_KEYWORDS += global，commit ed947cf）→ 本
+        seed 期望翻转为 STANDARD（E_CONTRACT_KEYWORD / [global] / INFERRED），flipped_from=LIGHT 记录翻转前回归锚值。
+    input:
+      request: Disable AG Grid automatic boolean rendering globally
+    expected:
+      profile: STANDARD
+      matched_rule: E_CONTRACT_KEYWORD
+      evidence_grade: INFERRED
+      matched_keywords_equals:
+        - global
+    design_expected:
+      expected_profile: STANDARD
+      expected_class: signal_requiring
+    flipped_from: LIGHT
+    expect_flip_when: null
+    pendingReason: null
+    retired: null
+  - id: L5-C-02-zh-quanju-no-hit-lock
+    family: C
+    title: 中文「全局」零命中 → LIGHT（反投机扩词锁：T-1 实证 0/53 不提案）
+    evaluator: cli_keyword
+    provenance:
+      corpus: corpus/master/batch-1/calibration/proposed-thresholds.json
+      anchor: '#/proposals/0/rationale_md'
+      note_md: >-
+        探针输入（非语料标题；中文「全局」在语料 53 目录命中 0/53——T-1 rationale_md 实证，故无语料标题可转录）：断言该词形零命中不升档。T-1
+        已批准生效（裁决2/bench-0003）但只追加英文词形 global——中文「全局」维持不扩词（0/53 无语料支持，bench-0003 approved_items
+        载明「不投机扩词」）；若未来把「全局」加入升档词表而无新语料证据，本 seed 即红——显式打破需走翻转注册并附语料证据（反投机扩词，契约 §2.5 C-2）。
+    input:
+      request: 全局列宽统一调整
+    expected:
+      profile: LIGHT
+      matched_rule: DEFAULT_NO_SIGNAL
+      evidence_grade: NOT_CONFIGURED
+      matched_keywords_equals: []
+    design_expected: null
+    flipped_from: null
+    expect_flip_when: null
+    pendingReason: null
+    retired: null
+  - id: L5-C-03-replay-R2-012-readonly-audit-rejected-lock
+    family: C
+    title: R2-012 只读审计 → 钉 LIGHT（A-1/A-2 被否决候选的反例回归锁）
+    evaluator: cli_keyword
+    provenance:
+      corpus: corpus/master/batch-1/calibration/samples.json
+      replay_id: replay-R2-012
+      source_task_dir: .trellis/tasks/archive/2026-08/08-18-prototype-legality-audit
+      note_md: >-
+        契约 §2.5 C-3：钉当前实得 LIGHT（replay-results.json
+        records[replay-R2-012].actual，agreement=deviation 1 过判）。把「只读」或「审计」加入
+        TRIAGE_COPY_STYLE_KEYWORDS 会令本 seed 翻 MINIMAL
+        即红——proposed-thresholds.json#/rejected_candidates A-1/A-2（verdict=REJECTED：语料反例
+        08-19-cvp-gap-implementation 重实现批次 / replay-R2-013 audit 词形写治理对象对照）已否决该方向（否决维持经 Owner 裁决2
+        附带项确认：corpus/master/cutover/owner-adjudications.md 裁决2 +
+        benchmarks/calibration-t1-approval.json approved_items）；加词必须显式打破本 seed 并附反例复核。
+    input:
+      request: 原型合法性全面审计（只读出报告）
+    expected:
+      profile: LIGHT
+      matched_rule: DEFAULT_NO_SIGNAL
+      evidence_grade: NOT_CONFIGURED
+      matched_keywords_equals: []
+    design_expected:
+      expected_profile: MINIMAL
+      expected_class: signal_requiring
+    flipped_from: null
+    expect_flip_when: null
+    pendingReason: null
+    retired: null
+  - id: L5-C-04-replay-R2-008-t1-flip-acceptance
+    family: C
+    title: T-1 翻转验收（bench-0003 APPROVED）：R2-008 → STANDARD（原 pending 登记翻转为 executable，与 C-01 构成翻转对）
+    evaluator: cli_keyword
+    provenance:
+      corpus: corpus/master/batch-1/calibration/proposed-thresholds.json
+      anchor: '#/proposals/0'
+      replay_id: replay-R2-008
+      note_md: >-
+        契约 §2.5 C-4 的翻转落地（契约 §2.7.2 翻转即验收）：T-1 已经 Owner
+        批准生效（corpus/master/cutover/owner-adjudications.md 裁决2 +
+        benchmarks/calibration-t1-approval.json seq=bench-0003 APPROVED + 阈值事实源变更 commit ed947cf），原
+        pendingReason（PROPOSED, cannot self-approve）所述前提不再成立，解除 pending 翻转为 executable。expect
+        即翻转断言（matched_keywords_contains ["global"]——T-1 proposed_value_append 的命中断言）；与
+        C-01（回归锚侧）构成翻转对：同一行为从提案链与本锚链两处接受。flipped_from=PENDING 记录翻转前状态。
+    input:
+      request: Disable AG Grid automatic boolean rendering globally
+    expected:
+      profile: STANDARD
+      matched_rule: E_CONTRACT_KEYWORD
+      evidence_grade: INFERRED
+      matched_keywords_contains:
+        - global
+    design_expected:
+      expected_profile: STANDARD
+      expected_class: signal_requiring
+    flipped_from: PENDING
+    expect_flip_when: null
+    pendingReason: null
+    retired: null
+  - id: L5-D-01-replay-R2-006-absent-signals-explicit
+    family: D
+    title: 兜底档判定必附缺席清单：absent_signals 全等 8 项闭表 + evidence_grade=NOT_CONFIGURED（缺省档不是绿）
+    evaluator: cli_keyword
+    provenance:
+      corpus: corpus/master/batch-1/calibration/samples.json
+      replay_id: replay-R2-006
+      source_task_dir: .trellis/tasks/archive/2026-08/08-18-role-dp-layout-fix
+      note_md: >-
+        缺席显式化（thread-C §0.2 镜像，契约 §2.5 D 族）：absent_signals 闭表全等由执行器对全部 cli_keyword seed 机器强制；本 seed
+        另钉兜底档 evidence_grade=NOT_CONFIGURED——DEFAULT_NO_SIGNAL 是无信号下的诚实缺省不是绿（triage.ts
+        证据级映射注记）。16/16 实测共性字段（absent_signals 八项闭表 + NOT_CONFIGURED 兜底）见 replay-round2-input.md
+        §2.17。
+    input:
+      request: 角色管理+数据权限布局修复（垂直居中/列宽/裁切/响应式）
+    expected:
+      profile: LIGHT
+      matched_rule: DEFAULT_NO_SIGNAL
+      evidence_grade: NOT_CONFIGURED
+      matched_keywords_equals: []
+    design_expected:
+      expected_profile: LIGHT
+      expected_class: title_derivable
+    flipped_from: null
+    expect_flip_when: null
+    pendingReason: null
+    retired: null
+  - id: L5-D-02-replay-R2-008-blast-not-configured-vacuous
+    family: D
+    title: 缺 blastRadius → E_BLAST 计入 notApplicableRules（R-B vacuous：缺席不当 0 也不当有）
+    evaluator: rule_v0
+    provenance:
+      corpus: corpus/master/batch-1/calibration/samples.json
+      replay_id: replay-R2-008
+      note_md: >-
+        信号集形态取 R2-008 task_shape（两个全站共享表格组件 defaultColDef 全局行为变更）：declaredPaths 形态锚 =
+        MIG-B1/truth/objects/capability/ GRID 切片 src/shared/grid/* 键绑定（MasterEditableGrid.vue
+        grid.editable-grid.json#CAPABILITY.GRID.EDITABLE_GRID / MasterColumnConfig.vue
+        grid.column-config.json#CAPABILITY.GRID.COLUMN_CONFIG）——R2-008 两个组件的具体身份语料未逐字登记（诚实留白），本 seed
+        只断言 blastRadius 缺席时 E_BLAST 整条规则未评估（blindspots.notApplicableRules）而非按 false
+        处理（R-B）；effectiveProfile 钉 LIGHT 与 replay 实测同档（projectLegacyMaster
+        default_profile=LIGHT，thread-C §3.2）。
+    input:
+      request:
+        declaredPaths:
+          - src/shared/grid/MasterEditableGrid.vue
+          - src/shared/grid/MasterColumnConfig.vue
+        blastRadius: null
+        projectLegacyMaster: true
+    expected:
+      outcome: TRIAGED
+      effectiveProfile: LIGHT
+      notApplicableRulesContains:
+        - E_BLAST
+    design_expected: null
+    flipped_from: null
+    expect_flip_when: null
+    pendingReason: null
+    retired: null
+  - id: L5-E-01-replay-R2-015-override-overpowered-by-escalation
+    family: E
+    title: override LIGHT 撞 blastRadius=7 → STANDARD + overrideOverpoweredByEscalation（override ≠ bypass）
+    evaluator: rule_v0
+    provenance:
+      corpus: corpus/master/batch-1/calibration/samples.json
+      replay_id: replay-R2-015
+      note_md: >-
+        blastRadius=7 取 R2-015 expected_basis_md 语料事实「跨 ≥7 页共享层抽取与页面收编，fan_out 语义远超 6」（≥ thread-C §7
+        FAN_OUT_STANDARD_MIN=6，E_BLAST 触发）；blastRadius 单信号即满足 hasAnySignal，故零 declaredPaths（不虚构
+        MASTer 路径）。人工 override LIGHT 压不过自动升级钩子（thread-C §3.5：override ≠ bypass）。
+    input:
+      request:
+        blastRadius: 7
+        requestedProfileOverride: LIGHT
+    expected:
+      outcome: TRIAGED
+      effectiveProfile: STANDARD
+      triggerHitsContains:
+        - E_BLAST
+      overrideOverpoweredByEscalation: true
+    design_expected: null
+    flipped_from: null
+    expect_flip_when: null
+    pendingReason: null
+    retired: null
+  - id: L5-E-02-replay-R2-001-floor-rejects-below-floor-override
+    family: E
+    title: >-
+      override MINIMAL 撞 src/** floor LIGHT → 钉回 LIGHT + overrideBelowFloorRejected（禁
+      quiet-below-floor）
+    evaluator: rule_v0
+    provenance:
+      corpus: corpus/master/batch-1/calibration/samples.json
+      replay_id: replay-R2-001
+      note_md: >-
+        declaredPaths 形态锚 = R2-001 task_shape「改动落在共享 grid 组件列配置」→
+        MIG-B1/truth/objects/capability/grid.column-config.json#CAPABILITY.GRID.COLUMN_CONFIG 键绑定
+        src/shared/grid/MasterColumnConfig.vue；floor/override 语义 thread-C §3.5 + C4 防滥用条款 3。与 L1
+        既有用例 GOLDEN-L1-ROUTER-FLOOR 的分界（契约 §2.7.4）：本 seed 携带 corpus provenance 且输入锚定真实语料对象键绑定路径。
+    input:
+      request:
+        declaredPaths:
+          - src/shared/grid/MasterColumnConfig.vue
+        requestedProfileOverride: MINIMAL
+        projectLegacyMaster: true
+        floorOverrides:
+          - whenPath:
+              - src/**
+            floor: LIGHT
+    expected:
+      outcome: TRIAGED
+      effectiveProfile: LIGHT
+      floorApplied: src/**
+      overrideBelowFloorRejected: true
+    design_expected: null
+    flipped_from: null
+    expect_flip_when: null
+    pendingReason: null
+    retired: null
+  - id: L5-E-03-hotfix-fastlane-escalation-still-wins
+    family: E
+    title: hotfix 快车道（base LIGHT + fastLane）；契约面命中升档仍可压顶（快车道不封顶）
+    evaluator: rule_v0
+    provenance:
+      corpus: corpus/master/batch-1/truth/objects/contract-op/authenticate.1.json
+      anchor: '#API_REQ.AUTHENTICATE.1'
+      note_md: >-
+        declaredPaths 形态 = 契约面实体文件（对象 payload.owner.frontend=entities/auth）；contractSurfaceHit=true
+        语料锚 = 该对象 consumption_posture=external_published_contract（published OpenAPI MASTer API 0.1.0
+        基线成员）；hotfix 语义 thread-C §7 overrides[when_task_type: hotfix]（profile_base LIGHT +
+        fast_lane，tests/golden/reference/triage.ts 逐条镜像）。
+    input:
+      request:
+        declaredPaths:
+          - src/entities/auth/api.ts
+        declaredType: hotfix
+        contractSurfaceHit: true
+        projectLegacyMaster: true
+    expected:
+      outcome: TRIAGED
+      fastLane: true
+      fastPathHit: null
+      effectiveProfile: STANDARD
+      triggerHitsContains:
+        - E_CONTRACT
+    design_expected: null
+    flipped_from: null
+    expect_flip_when: null
+    pendingReason: null
+    retired: null
+  - id: L5-E-04-test-only-fastpath-escalation-wins
+    family: E
+    title: TEST_ONLY 快道命中 + contractSurfaceHit → STANDARD（快道不拦截升档）
+    evaluator: rule_v0
+    provenance:
+      corpus: corpus/master/batch-1/calibration/replay-results.json
+      anchor: '#/records/0/actual/absent_signals'
+      note_md: >-
+        test_only_hit 信号族在 bench-0002 provision 的 absent_signals 闭表登记（replay-results.json 16/16
+        记录实测共性，replay-round2-input.md §2.17）；declaredPaths tests/** 形态具体化该信号（thread-C §7 fast_paths
+        TEST_ONLY）——MASTer 语料未登记具体测试文件路径（语料未覆盖，诚实留白），本 seed 只钉「快道不拦截升档」规则语义。
+    input:
+      request:
+        declaredPaths:
+          - tests/grid/column-config.spec.ts
+        contractSurfaceHit: true
+    expected:
+      outcome: TRIAGED
+      fastPathHit: TEST_ONLY
+      effectiveProfile: STANDARD
+      triggerHitsContains:
+        - E_CONTRACT
+    design_expected: null
+    flipped_from: null
+    expect_flip_when: null
+    pendingReason: null
+    retired: null
+  - id: L5-F-01-checkbox-cluster-form-boundary
+    family: F
+    title: checkbox 振荡簇成员（R2-001/002/003）逐样本各自 LIGHT + 缺席清单显式（单请求形态边界如实钉住）
+    evaluator: cli_keyword
+    provenance:
+      corpus: corpus/master/batch-1/calibration/samples.json
+      note_md: >-
+        簇 = replay-round2-input.md §3.4 振荡簇观察（archive/2026-08 标题含 checkbox 任务目录 9 个 ≥ 已批准占位
+        churn_hits_watch 4-per-14d）；三成员 title 逐字转录 samples.json。单请求回放形态逐样本正确（三样本 replay 均
+        agreement=consistent）——簇级振荡聚合不可见属单请求引擎的形态边界（S-2b 证据），如实钉住不判红；簇级升档期望由 F-02 pending 登记（契约裁决
+        4）。
+    input:
+      requests:
+        - replay_id: replay-R2-001
+          request: Fix checkbox selection column width and centering
+        - replay_id: replay-R2-002
+          request: Fix double checkbox in selection column
+        - replay_id: replay-R2-003
+          request: Disable sort on checkbox selection column
+    expected:
+      profile: LIGHT
+      matched_rule: DEFAULT_NO_SIGNAL
+      evidence_grade: NOT_CONFIGURED
+    design_expected:
+      expected_profile: LIGHT
+      expected_class: title_derivable
+    flipped_from: null
+    expect_flip_when: null
+    pendingReason: null
+    retired: null
+  - id: L5-F-02-churn-cluster-escalation-pending
+    family: F
+    title: E7 churn 信号在位后簇级应升 ≥LIGHT + 振荡检测强化（pending）
+    evaluator: rule_v0
+    provenance:
+      corpus: corpus/master/batch-1/calibration/replay-round2-input.md
+      anchor: '#§3.4-振荡簇观察'
+      note_md: >-
+        语料证据：九目录簇（archive/2026-08 标题含 checkbox）≥ 已批准占位 churn_hits_watch=4-per-14d；信号优先级建议
+        proposed-thresholds.json#/signal_priority_recommendations/items[S-2b]。expect 留空：E7
+        实现后的断言形态（簇级 triggerHit 词形/升档幅度）依赖其落地形态，由翻转 PR 定义（缺席显式，不臆造断言——契约裁决 4）。
+    input:
+      requests:
+        - replay_id: replay-R2-001
+          request: Fix checkbox selection column width and centering
+        - replay_id: replay-R2-002
+          request: Fix double checkbox in selection column
+        - replay_id: replay-R2-003
+          request: Disable sort on checkbox selection column
+    expected: {}
+    design_expected: null
+    flipped_from: null
+    expect_flip_when: null
+    pendingReason: null
+    retired:
+      reason_md: >-
+        P17-Seeds 显式退役（可执行前置不成立，禁静默 pending 滞留）：原 pendingReason=E7 churn 信号
+        NOT_CONFIGURED（bench-0002 占位 churn_hits_watch=4-per-14d 未实现为信号源；语料证据 replay-round2-input.md
+        §3.4 九目录簇）——现盘 triage.ts/triage-rule-v0.ts 零 churn 词形（代码现实 grep 实证），翻转前置条件不成立；expect
+        留空无可执行断言（簇级升档断言形态依赖 E7 落地形态，缺席显式不臆造——契约裁决 4）。原 expect_flip_when『E7 churn 信号实现（S-2b）落地后翻转为
+        executable 并定义簇级升档断言』随退役关闭。单请求形态边界已由 L5-F-01 executable 锚定；E7/S-2b 信号源落地时以新 seed 重新登记（本 id
+        保留退役谱系，不复用、不复活）。
+  - id: L5-G-01-replay-R2-004-css-minimal-anchor
+    family: G
+    title: R2-004 标题 → MINIMAL/MEASURED（title_derivable 100% 一致带代表，真实任务形态不漂移）
+    evaluator: cli_keyword
+    provenance:
+      corpus: corpus/master/batch-1/calibration/samples.json
+      replay_id: replay-R2-004
+      source_task_dir: .trellis/tasks/archive/2026-08/08-10-remove-redundant-css-fix-padding-token
+      note_md: >-
+        title 逐字转录自 samples.json；实测锚 replay-results.json records[replay-R2-004].actual（MINIMAL /
+        F_COPY_STYLE_ONLY / [css] / MEASURED）。G 族回归锚：title_derivable 一致带
+        12/12=100%（replay-round2-input.md §3.2）的代表样本。
+    input:
+      request: Remove redundant CSS and fix header width padding token
+    expected:
+      profile: MINIMAL
+      matched_rule: F_COPY_STYLE_ONLY
+      evidence_grade: MEASURED
+      matched_keywords_contains:
+        - css
+    design_expected:
+      expected_profile: MINIMAL
+      expected_class: title_derivable
+    flipped_from: null
+    expect_flip_when: null
+    pendingReason: null
+    retired: null
+  - id: L5-G-02-replay-R2-015-fanout-deviation-anchor
+    family: G
+    title: >-
+      R2-015 标题 → 钉当前 LIGHT（known deviation 回归锚：expected_class=signal_requiring；fan_out 信号落地后翻转
+      STANDARD）
+    evaluator: cli_keyword
+    provenance:
+      corpus: corpus/master/batch-1/calibration/samples.json
+      replay_id: replay-R2-015
+      source_task_dir: .trellis/tasks/archive/2026-08/08-17-component-convergence
+      note_md: >-
+        已知偏离样本（replay agreement=deviation，3 低判之一）：期望值按契约 §2.7.1 钉 replay-results.json
+        records[replay-R2-015].actual=LIGHT（回归锚）；设计期望档 STANDARD（signal_requiring，跨 ≥7 页 fan_out/E6
+        语义）记入 design_expected——钉当前行为不判红，否则 CI 常红违背测试不破铁律。翻转即 fan_out/dependency_manifest_hit
+        信号（proposed-thresholds.json S-1）的验收测试；词形兜底已被否决（rejected_candidates A-3：共享 1/53 过拟合）。
+    input:
+      request: 组件双模板收敛（C0 登记清理 + C1 共享层抽取 + C2 页面收编）
+    expected:
+      profile: LIGHT
+      matched_rule: DEFAULT_NO_SIGNAL
+      evidence_grade: NOT_CONFIGURED
+      matched_keywords_equals: []
+    design_expected:
+      expected_profile: STANDARD
+      expected_class: signal_requiring
+    flipped_from: null
+    expect_flip_when: fan_out/dependency_manifest_hit 信号落地（proposed-thresholds.json S-1）→ 翻转为期望 STANDARD 并清空本字段
+    pendingReason: null
+    retired: null
+  - id: L5-X-01-capability-router-no-architect-pending
+    family: X
+    title: MINIMAL 档请求禁 spawn architect（capability 路由 pending；A 族 MINIMAL 侧能力期望，注册于 F 族之后追加）
+    evaluator: cli_keyword
+    provenance:
+      corpus: corpus/master/batch-1/calibration/samples.json
+      replay_id: replay-R2-005
+      note_md: >-
+        test-strategy L5 指定要求「微小 UI 变更→MINIMAL 且禁 spawn architect」的能力路由半边（契约 §2.5 尾注：A 族 MINIMAL 侧 +
+        capability 路由 pending seed，不占 executable 分母）。输入复用 A-01 的 MINIMAL 场景（R2-005 title
+        逐字）；capability router 实现后翻转为 executable 并新增禁 spawn architect 断言（期望断言集届时扩展，只增不减）。
+    input:
+      request: readonly-column-style-by-formula
+    expected:
+      profile: MINIMAL
+    design_expected: null
+    flipped_from: null
+    expect_flip_when: null
+    pendingReason: null
+    retired:
+      reason_md: >-
+        P17-Seeds 显式退役（可执行前置不成立，禁静默 pending 滞留）：原 pendingReason=capability router 未实现（thread-C §1
+        调用时点）——现盘 kernel/cli 无 capability 路由与 spawn architect 原语（代码现实 grep 实证零命中），MINIMAL
+        侧输入断言（profile=MINIMAL）已由 L5-A-01 executable 覆盖，本 seed 独有价值（禁 spawn architect 能力断言）无被测对象。原
+        expect_flip_when『capability router 实现（thread-C §1 调用时点）→ 翻转为 executable 并新增禁 spawn architect
+        断言』随退役关闭。capability router 落地时以新 seed 重新登记（期望断言集只增不减纪律由新 seed 承接；本 id 保留退役谱系，不复用、不复活）。

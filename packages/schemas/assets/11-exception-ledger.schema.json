@@ -1,0 +1,144 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://pomaster.dev/schemas/exception-ledger/v1-draft.json",
+  "title": "Exception Ledger（异常状态登记面，P19）",
+  "description": "PRD §49.2 的 schema 落地。核心语义（§49.2 逐字）：Narrative 文档不得在每个句子后追加 [已确认]/[待确认]/[冲突] 标签；正文 = 当前可成立的完整世界，Exception Ledger = 当前世界边界之外仍需处理的异常状态。状态负责组织文档，不负责打断文档。\n本登记面是 Human State Visibility（§49）三投影（§49.1 Narrative/Review/Audit，§91.1 一个 State 多种 View）的异常项机器事实源：view blueprint 的 Uncertainty Envelope（§91.2）与高显著度异常区块（§91.3）从这里聚合。",
+  "x-pomaster-file-role": "11-exception-ledger.schema.json —— §49.2 Exception Ledger 登记形态（P19）。store 侧车 state/exception-ledger.json 的形态契约（kernel recordException 维护，写入唯一通路；不进 content_digest）；消费方 = view/audit 投影命令面（纯读）。",
+  "x-pomaster-vocab-source": "PRD v0.4 §49.2 分类五值（Assumption/Open Question/Deferred Decision/Conflict/Hard Blocker）+ §91.3 词形（ASSUMPTION/OPEN_QUESTION/DEFERRED/CONFLICT/HARD_BLOCKER）；vocab-lock@v0.2-resolved 尚无对应词轴——词形在本文件 definitions 冻结并镜像于 @pomaster/schemas vocab.ts 待收编段（EXCEPTION_CLASSIFICATION_VALUES），提请词汇表 PR 收编。",
+  "x-pomaster-contract": {
+    "ledger_semantics_prd": "PRD §49.2：正文 = 当前可成立的完整世界；Exception Ledger = 当前世界边界之外仍需处理的异常状态。至少分类五值逐字：Assumption；Open Question；Deferred Decision；Conflict；Hard Blocker。",
+    "visibility_rule_prd": "PRD §91.3：CONFLICT / HARD_BLOCKER → 高显著度异常区块；ASSUMPTION / OPEN_QUESTION / DEFERRED → 聚合到对应章节。投影渲染规则按分类二分执行，不发明第三种呈现。",
+    "narrative_antipattern_prd": "PRD §49.2 首段反模式禁令：Narrative 文档不得在每个句子后追加 [已确认]/[待确认]/[冲突]——异常集中登记于本面，正文保持连续 Stable Core（§49.1）。",
+    "object_ref_loose_prd": "object_ref 宽松词形（无 governed-id closed-world 校验）：§49.2「当前世界边界之外」的异常可以引用 truth-index 中尚不存在的对象——这正是异常登记的语义本体；呈现侧能解析则带对象行，不能解析如实呈现引用原文。",
+    "no_lifecycle_prd": "PRD §49.2 未定义异常条目的生命周期（结清/取代语义无出处）——本 schema 不发明 status/resolved 字段；登记即当前事实，重复登记同一异常 = 两条独立条目（登记命令非幂等，同 permit issue 先例）。"
+  },
+  "x-pomaster-digest-ethics-policy": "本对象当前不含 sha256/digest 字段。未来任何 digest/sha256 字段加入时必须携带 x-digest-ethics 注记 {\"write_blocking\": false, \"side\": \"read_only_service\", \"human_touch\": \"forbidden\"}（D24 / vocab-lock digest_ethics）。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "entries"],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1,
+      "title": "台账文件版本（version）"
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/exception_entry"
+      },
+      "title": "异常条目列表（entries）",
+      "description": "空数组合法（无异常登记是合法状态；投影侧显式呈现「无登记」，不伪装成「无异常」）。"
+    }
+  },
+  "definitions": {
+    "exception_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ledger_ref", "classification", "statement", "object_ref", "change_ref", "recorded_by", "recorded_at_seq", "note"],
+      "properties": {
+        "ledger_ref": {
+          "type": "string",
+          "pattern": "^EXC-[0-9]+$",
+          "title": "台账编号（ledger_ref，EXC-n）",
+          "description": "EXC-n 平面内通路编号词形（GRN-n/CLM-n 同款；状态面台账键，非 governed 前缀，不入 id_namespace 闭包）。确定性递增分配（现有最大序号 + 1），无墙钟无随机。"
+        },
+        "classification": {
+          "$ref": "#/definitions/exception_classification"
+        },
+        "statement": {
+          "type": "string",
+          "minLength": 1,
+          "title": "异常陈述（statement）",
+          "description": "精确、可判定的异常事实陈述。禁止空泛占位（minLength 1；「待定」不是陈述——同 09 unknown_item.statement 语义）。"
+        },
+        "object_ref": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "title": "关联治理对象（object_ref，可选）",
+          "description": "宽松词形（无 closed-world 校验——异常可引用尚不存在的对象，见 x-pomaster-contract.object_ref_loose_prd）；无关联对象时为 null。"
+        },
+        "change_ref": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "title": "关联变更/任务锚（change_ref，可选）",
+          "description": "general_id 宽松词形（同 permit --change-ref 纪律）；无关联时为 null。"
+        },
+        "recorded_by": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["actor_type", "actor", "self_attested"],
+          "properties": {
+            "actor_type": {
+              "type": "string",
+              "enum": ["agent", "human", "tool", "kernel"]
+            },
+            "actor": { "type": "string", "minLength": 1 },
+            "self_attested": { "type": "boolean" }
+          },
+          "title": "登记主体（recorded_by；C5 自报——kernel 不判其真，只登记）"
+        },
+        "recorded_at_seq": {
+          "type": "integer",
+          "minimum": 0,
+          "title": "登记时 store 事件拍（recorded_at_seq；A4 禁墙钟——新鲜度只按 seq）"
+        },
+        "note": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "title": "人类散文注记（note，可选）",
+          "description": "机器不得解析其内容做判卷（P9 教训：人类散文唯一合法入口，只登记不解析）。"
+        }
+      }
+    },
+    "exception_classification": {
+      "type": "string",
+      "enum": [
+        "ASSUMPTION",
+        "OPEN_QUESTION",
+        "DEFERRED_DECISION",
+        "CONFLICT",
+        "HARD_BLOCKER"
+      ],
+      "title": "异常分类（§49.2 五分类，逐字语义冻结）",
+      "description": "PRD §49.2「至少分类」逐字：\n- ASSUMPTION：显式假设（当前世界按其成立，但边界外待确认）；\n- OPEN_QUESTION：开放问题（答案未定）；\n- DEFERRED_DECISION：显式延后的决策；\n- CONFLICT：冲突（两个可成立陈述不相容）；\n- HARD_BLOCKER：硬阻塞（不消除则无法继续）。\n§91.3 投影可见性二分：CONFLICT/HARD_BLOCKER = 高显著度异常区块；其余三类聚合到对应章节。",
+      "$comment": "source: PRD v0.4 §49.2 分类列表 + §91.3 词形；提请词汇表 PR 收编（pending_vocab_pr）。",
+      "x-pomaster-vocab": {
+        "axis": "exception_classification",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "source": "PRD v0.4 §49.2/§91.3"
+      },
+      "examples": [
+        "ASSUMPTION",
+        "HARD_BLOCKER"
+      ]
+    }
+  },
+  "examples": [
+    {
+      "version": 1,
+      "entries": [
+        {
+          "ledger_ref": "EXC-1",
+          "classification": "ASSUMPTION",
+          "statement": "车辆导入按单版本编辑假设推进（并行编辑未定义）",
+          "object_ref": "PAGE.CARLINE_IMPORT",
+          "change_ref": "CHANGE.C0104",
+          "recorded_by": { "actor_type": "human", "actor": "owner", "self_attested": false },
+          "recorded_at_seq": 12,
+          "note": null
+        },
+        {
+          "ledger_ref": "EXC-2",
+          "classification": "HARD_BLOCKER",
+          "statement": "导入模板的官方字段清单缺失，映射无法定案",
+          "object_ref": null,
+          "change_ref": "CHANGE.C0104",
+          "recorded_by": { "actor_type": "agent", "actor": "claude/session-93", "self_attested": true },
+          "recorded_at_seq": 15,
+          "note": "Authority 裁决位：BUSINESS_OWNER"
+        }
+      ]
+    }
+  ]
+}

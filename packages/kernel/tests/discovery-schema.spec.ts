@@ -1,15 +1,20 @@
 /**
- * discovery-schema.spec.ts —— P18 三份新 schema（08/09/10）入库正反例（ajv draft-07）。
+ * discovery-schema.spec.ts —— schema 资产入库正反例（ajv draft-07）。
+ * P18 三份（08/09/10）：
  * 覆盖：08 状态链记录条件式（scratchpad_ref/promotion_basis/promoted_ref 必填条件式 + 词表外状态拒绝）；
  * 09 §82.2/§82.3/§82.4/§82.5 fail-closed 面（HARD_BLOCKER 升级通路 / ASSUMPTION 分级必填 /
  * HIGH⇒Authority / CONDITIONALLY_ACCEPTED 要求 HARD_BLOCKER=0 / msd 三轴派生双向一致）；
  * 10 §81.6 四文件结构 + §81.4 finding 六字段 + handoff 三件。
+ * P19 增量（11）：§49.2 Exception Ledger 登记面（recordException 产物形态正例 + 五分类闭包 /
+ * 八字段必填 / EXC-n 词形 / recorded_at_seq 事件拍 / recorded_by C5 自报结构 /
+ * 三级 additionalProperties 闭表——生命周期字段 resolved/status 不发明）。
  */
 import Ajv from "ajv";
 import { describe, expect, it } from "vitest";
 import {
   allSchemas,
   discoveryStateChainSchema,
+  exceptionLedgerSchema,
   msdUncertaintySchema,
   researchArtifactSchema,
   SCHEMA_VERSION,
@@ -23,6 +28,7 @@ for (const schema of Object.values(allSchemas)) {
 const validateChain = ajv.compile(discoveryStateChainSchema as object);
 const validateMsd = ajv.compile(msdUncertaintySchema as object);
 const validateResearch = ajv.compile(researchArtifactSchema as object);
+const validateLedger = ajv.compile(exceptionLedgerSchema as object);
 
 function expectInvalid(
   validate: { errors: unknown[] | null },
@@ -32,6 +38,28 @@ function expectInvalid(
   expect(JSON.stringify(validate.errors)).toContain(fragment);
 }
 
+/** 11 合法条目基线（recordException 产物形态，ledger.spec.ts 合法 fixture 同构；覆盖即得非法变体）。 */
+const ledgerEntryBase: Record<string, unknown> = {
+  ledger_ref: "EXC-1",
+  classification: "ASSUMPTION",
+  statement: "卡片布局按 12 列栅格假设推进",
+  object_ref: "PAGE.DASHBOARD",
+  change_ref: "CHANGE.C0001",
+  recorded_by: { actor_type: "human", actor: "owner", self_attested: false },
+  recorded_at_seq: 1,
+  note: null,
+};
+
+/** 11 台账构造器：单条目基线 + 字段覆盖/剔除变体（omit 得缺必填非法变体）。 */
+function ledgerWith(
+  overrides: Record<string, unknown> = {},
+  omit: ReadonlyArray<string> = [],
+): Record<string, unknown> {
+  const entry: Record<string, unknown> = { ...ledgerEntryBase, ...overrides };
+  for (const key of omit) delete entry[key];
+  return { version: 1, entries: [entry] };
+}
+
 describe("08-discovery-state-chain（$id 与注册）", () => {
   it("$id 形态对齐 v1-draft 契约且已注册进 allSchemas", () => {
     expect(discoveryStateChainSchema.$id).toBe(
@@ -39,7 +67,7 @@ describe("08-discovery-state-chain（$id 与注册）", () => {
     );
     expect(SCHEMA_VERSION).toBe("v1-draft");
     expect(allSchemas.discoveryStateChain).toBe(discoveryStateChainSchema);
-    expect(Object.keys(allSchemas).length).toBe(10);
+    expect(Object.keys(allSchemas).length).toBe(11);
   });
 
   it("正例：IDEA 态带 scratchpad_ref；READY_TO_PROMOTE 带 promotion_basis；TASK 带 promotion_basis+promoted_ref", () => {
@@ -515,5 +543,168 @@ describe("10-research-artifact（§81.6 四文件 + §81.4 finding + handoff）"
         },
       }),
     ).toBe(false);
+  });
+});
+
+describe("11-exception-ledger（§49.2 异常登记面）", () => {
+  it("$id 形态对齐 v1-draft 契约且已注册进 allSchemas", () => {
+    expect(exceptionLedgerSchema.$id).toBe(
+      "https://pomaster.dev/schemas/exception-ledger/v1-draft.json",
+    );
+    expect(allSchemas.exceptionLedger).toBe(exceptionLedgerSchema);
+  });
+
+  it("正例：recordException 实际产物形态的完整台账（ledger.spec.ts 合法 fixture 同构；五分类逐值 + 可选三件 null/有值 + 四类主体）", () => {
+    expect(
+      validateLedger({
+        version: 1,
+        entries: [
+          {
+            ledger_ref: "EXC-1",
+            classification: "ASSUMPTION",
+            statement: "卡片布局按 12 列栅格假设推进",
+            object_ref: "PAGE.DASHBOARD",
+            change_ref: "CHANGE.C0001",
+            recorded_by: { actor_type: "human", actor: "owner", self_attested: false },
+            recorded_at_seq: 1,
+            note: null,
+          },
+          {
+            ledger_ref: "EXC-2",
+            classification: "OPEN_QUESTION",
+            statement: "批量导出顺序未定",
+            object_ref: null,
+            change_ref: null,
+            recorded_by: { actor_type: "agent", actor: "claude/session-93", self_attested: true },
+            recorded_at_seq: 2,
+            note: null,
+          },
+          {
+            ledger_ref: "EXC-3",
+            classification: "DEFERRED_DECISION",
+            statement: "批量导入恢复交互延后决策",
+            object_ref: null,
+            change_ref: null,
+            recorded_by: { actor_type: "human", actor: "owner", self_attested: false },
+            recorded_at_seq: 3,
+            note: null,
+          },
+          {
+            ledger_ref: "EXC-4",
+            classification: "CONFLICT",
+            statement: "两份契约对同一 operationId 语义冲突",
+            object_ref: "API_REQ.BIND.CARLINE.1",
+            change_ref: null,
+            recorded_by: {
+              actor_type: "tool",
+              actor: "gauntlet-lite/contract-adapter",
+              self_attested: true,
+            },
+            recorded_at_seq: 4,
+            note: "机器登记自报（C5：kernel 不判其真，只登记）",
+          },
+          {
+            ledger_ref: "EXC-5",
+            classification: "HARD_BLOCKER",
+            statement: "导入模板的官方字段清单缺失，映射无法定案",
+            object_ref: null,
+            change_ref: "CHANGE.C0104",
+            recorded_by: { actor_type: "kernel", actor: "pomaster-kernel", self_attested: false },
+            recorded_at_seq: 5,
+            note: "Authority 裁决位：BUSINESS_OWNER",
+          },
+        ],
+      }),
+    ).toBe(true);
+  });
+
+  it("正例：空 entries 合法（无异常登记是合法状态；投影侧显式呈现「无登记」不伪装「无异常」）；单条目基线自身健全（防夹具漂移致反例全数假阳）", () => {
+    expect(validateLedger({ version: 1, entries: [] })).toBe(true);
+    expect(validateLedger(ledgerWith())).toBe(true);
+  });
+
+  it("fail-closed：version 偏离 1（const）拒绝；缺 version / 缺 entries 拒绝（root required）", () => {
+    validateLedger({ version: 2, entries: [] });
+    expectInvalid(validateLedger, "const");
+    validateLedger({ entries: [] });
+    expectInvalid(validateLedger, "version");
+    validateLedger({ version: 1 });
+    expectInvalid(validateLedger, "entries");
+  });
+
+  it("fail-closed：classification 词表外拒绝（§49.2 五分类闭包——自造 MAYBE_BROKEN / §91.3 简写 DEFERRED / 原文词形 Deferred Decision 均不在词表）", () => {
+    validateLedger(ledgerWith({ classification: "MAYBE_BROKEN" }));
+    expectInvalid(validateLedger, "enum");
+    validateLedger(ledgerWith({ classification: "DEFERRED" }));
+    expectInvalid(validateLedger, "enum");
+    validateLedger(ledgerWith({ classification: "Deferred Decision" }));
+    expectInvalid(validateLedger, "enum");
+  });
+
+  it("fail-closed：entry 缺必填字段拒绝（八字段逐一必填——缺 statement / 缺 recorded_at_seq / 缺 note）", () => {
+    validateLedger(ledgerWith({}, ["statement"]));
+    expectInvalid(validateLedger, "statement");
+    validateLedger(ledgerWith({}, ["recorded_at_seq"]));
+    expectInvalid(validateLedger, "recorded_at_seq");
+    validateLedger(ledgerWith({}, ["note"]));
+    expectInvalid(validateLedger, "note");
+  });
+
+  it("fail-closed：ledger_ref 偏离 EXC-n 词形拒绝（GRN-n/CLM-n 同款通路编号；小写/governed id 均不合法）", () => {
+    validateLedger(ledgerWith({ ledger_ref: "GRN-1" }));
+    expectInvalid(validateLedger, "pattern");
+    validateLedger(ledgerWith({ ledger_ref: "exc-1" }));
+    expectInvalid(validateLedger, "pattern");
+    validateLedger(ledgerWith({ ledger_ref: "PAGE.DASHBOARD" }));
+    expectInvalid(validateLedger, "pattern");
+  });
+
+  it("fail-closed：statement / object_ref / note 空串拒绝（string|null 且 minLength 1——null 是合法空，空串不是）", () => {
+    validateLedger(ledgerWith({ statement: "" }));
+    expectInvalid(validateLedger, "minLength");
+    validateLedger(ledgerWith({ object_ref: "" }));
+    expectInvalid(validateLedger, "minLength");
+    validateLedger(ledgerWith({ note: "" }));
+    expectInvalid(validateLedger, "minLength");
+  });
+
+  it("fail-closed：recorded_at_seq 负数 / 非整数拒绝（A4 事件拍：integer 且 minimum 0，禁墙钟）", () => {
+    validateLedger(ledgerWith({ recorded_at_seq: -1 }));
+    expectInvalid(validateLedger, "minimum");
+    validateLedger(ledgerWith({ recorded_at_seq: 1.5 }));
+    expectInvalid(validateLedger, "type");
+  });
+
+  it("fail-closed：recorded_by 面拒绝——actor_type 词表外 / 缺 self_attested / 闭表外键（C5 自报结构：kernel 不判其真，只登记）", () => {
+    validateLedger(
+      ledgerWith({ recorded_by: { actor_type: "ai", actor: "x", self_attested: true } }),
+    );
+    expectInvalid(validateLedger, "enum");
+    validateLedger(
+      ledgerWith({ recorded_by: { actor_type: "agent", actor: "claude/session-93" } }),
+    );
+    expectInvalid(validateLedger, "self_attested");
+    validateLedger(
+      ledgerWith({
+        recorded_by: {
+          actor_type: "agent",
+          actor: "claude/session-93",
+          self_attested: true,
+          verified: true,
+        },
+      }),
+    );
+    expectInvalid(validateLedger, "verified");
+    expectInvalid(validateLedger, "additionalProperties");
+  });
+
+  it("fail-closed：三级 additionalProperties 闭表——root 自造 host_ref / entry 自造生命周期字段 resolved·status（§49.2 不发明结清语义）拒绝", () => {
+    validateLedger({ ...ledgerWith(), host_ref: ".pomaster/discovery/scratchpads/x/" });
+    expectInvalid(validateLedger, "host_ref");
+    expectInvalid(validateLedger, "additionalProperties");
+    validateLedger(ledgerWith({ resolved: true }));
+    expectInvalid(validateLedger, "resolved");
+    validateLedger(ledgerWith({ status: "RESOLVED" }));
+    expectInvalid(validateLedger, "additionalProperties");
   });
 });

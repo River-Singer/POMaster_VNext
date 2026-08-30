@@ -20,6 +20,9 @@
  *   不计 executable、不计 pending、不执行判定；retired 与 pendingReason/expect_flip_when
  *   互斥由结构校验 fail-closed（缺席显式第三态，禁静默 pending 滞留）；
  * - seeds 缺失/坏形显式报错（SEEDS_NOT_AVAILABLE / SEEDS_INVALID），禁静默空跑；
+ * - yaml 载物显式拒绝并指路（P19-EvalCarrier 消费面裁定）：PRD §94.2 载物
+ *   eval-cases.yaml 是登记形态（tests 面 schema 校验 + json 同构锚），判卷消费面
+ *   恒为 seeds.json——仓库纪律不引 YAML 运行时依赖；
  * - 报告自洽守卫（EVAL_REPORT_INCONSISTENT）——执行器自身被改坏时拒绝判卷。
  * 幂等：纯函数 + 零墙钟——同 seeds 字节级同报告（GOLDEN-L8-1 判据同款）。
  *
@@ -150,6 +153,20 @@ export function loadSeeds(seedsPath: string = BEHAVIORAL_SEEDS_PATH): {
   batchCode: string;
   seeds: readonly BehavioralSeed[];
 } {
+  // 载物消费面裁定（P19-EvalCarrier）：eval 命令消费面 = seeds.json（契约 §2.2 落点，
+  // 预注册账本）；PRD §94.2 yaml 载物（tests/behavioral/eval-cases.yaml）是登记形态，
+  // 由 tests/behavioral/eval-carrier.spec.ts 消费（schema 校验 + 与 json 同构锚定）。
+  // 仓库纪律不引 YAML 运行时依赖（kernel catalog.ts/digest.ts 同款注记）——此处显式
+  // 拒绝并指路，不伪装成 JSON.parse 的坏形报错（fail-closed 错误信息诚实性）。
+  const lower = seedsPath.toLowerCase();
+  if (lower.endsWith(".yaml") || lower.endsWith(".yml")) {
+    throw new Error(
+      `eval 命令消费面为 seeds.json，不接受 yaml 载物（${seedsPath}）。` +
+        "PRD §94.2 yaml 载物（tests/behavioral/eval-cases.yaml）是登记形态：" +
+        "schema 校验与 json 同构锚定在 tests/behavioral/eval-carrier.spec.ts（js-yaml devDependency + ajv，tests 面）；" +
+        "判卷请注入 seeds.json 或省略 seedsPath 用仓库缺省账本。",
+    );
+  }
   const raw: unknown = JSON.parse(readFileSync(seedsPath, "utf8"));
   const file = raw as SeedsFile;
   if (!Array.isArray(file.seeds)) {

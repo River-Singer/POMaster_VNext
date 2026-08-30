@@ -694,6 +694,25 @@ export { compileProjection } from "./projection.js";
 export type { ProjectionCatalogOptions } from "./projection.js";
 
 // ============================================================
+// Exception Ledger（§49.2 异常状态登记面；P19 三投影的异常事实源）
+// ============================================================
+// 语义边界：Ledger 是「当前世界边界之外仍需处理的异常状态」的机器登记面——
+// 正文（Stable Core）不逐句贴标签（§49.2 反模式禁令），异常集中登记于此；
+// view/audit 投影命令面（CLI，纯读）按 §91.3 二分消费。写通道唯一在
+// recordException（模式同 issuePermit：台账侧车 + journal 事件流 + staged write）。
+export {
+  recordException,
+  readExceptionLedgerFile,
+  isExceptionLedgerRef,
+  EXCEPTION_LEDGER_RELATIVE,
+} from "./ledger.js";
+export type {
+  ExceptionLedgerEntry,
+  ExceptionLedgerFile,
+  ExceptionRecordInput,
+} from "./ledger.js";
+
+// ============================================================
 // Engineering Catalog 读取器（P14：catalog→运行时联结的唯一读取面）
 // ============================================================
 // 只读消费 catalog/ 物料与 catalog-lock（§92.2：策展源非第二真相；D24 哈希伦理
