@@ -106,7 +106,11 @@ export type GovernanceErrorCode =
   | "AUTHORITY_REQUIRED"
   /** 伪装并发（PRD §58「禁止伪装成真正并发」——MAJOR 级语义违例，契约层封死）：
    *  申报 concurrent 而执行计划经能力探测派生为 sequential/direct。 */
-  | "RUNTIME_CONCURRENCY_MASQUERADE";
+  | "RUNTIME_CONCURRENCY_MASQUERADE"
+  /** §95.2 链序封条（P34）：Agent Diagnosis 引用的挑战缺既有 BREACHED band evidence——
+   *  diagnosis 必须落在 Deterministic Detection → Evidence → State Challenge 链序之后
+   *  （「判定来自工具信号非 LLM 自报」的结构性保序位）。 */
+  | "DIAGNOSIS_WITHOUT_BREACH_EVIDENCE";
 
 /** GovernanceError 判读上下文（错误详情结构化，机器可判读）。 */
 export interface GovernanceErrorDetails {

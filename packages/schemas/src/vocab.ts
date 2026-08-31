@@ -1011,3 +1011,225 @@ export type MemoryCliErrorValue = (typeof MEMORY_CLI_ERROR_VALUES)[number];
  * + §84.6 铁律）。
  */
 export const OWNER_ESCALATION_REQUIRED = "OWNER_ESCALATION_REQUIRED" as const;
+
+// ============================================================
+// P34 Production Feedback / Control Band 词形轴（x-vocab-source: PRD v0.4
+// §30 L2554-2612 四态时间轴 / §95 L6099-6156 全节 / §55.1 L3579-3597 八能力表 /
+// §90.4 L5682-5696 八信号，逐字 + 机器词形映射）。
+// TODO(vocab-pr)：absent_in_vocab_lock__pending_vocab_pr，收编后以 vocab-lock
+// 为准逐值镜像。schema 落点 15-production-band definitions（与本段逐值同源）。
+// 词形大小写裁定呈报项：DIAGNOSIS_KIND 默认 SCREAMING_SNAKE（§31 challenge
+// classification 先例词形 ARCHITECTURE_EVOLUTION 同源）；信号源五词形取 §95.2
+// L6126「metric / log / error budget / SLO / control band」空格词形转
+// snake_case（error budget→error_budget、control band→control_band、SLO→slo）。
+// CHALLENGED 不在本段重复登记——§95.3 CURRENT→CHALLENGED 复用既有
+// CHANGE_VALUES（STABLE/CHALLENGED/MIGRATING）词形，零新增。
+// ============================================================
+
+/**
+ * §30 开发时间轴四态（PRD L2554-2563 逐字 PRE_DEV / IN_DEV / POST_DEV /
+ * IN_PRODUCTION）。与 state_axes.lifecycle（PROPOSED/CURRENT/... 对象生命周期轴）
+ * 正交、值域不相交：本轴管开发生命阶段（§95.1 生命周期扩展
+ * PRE_DEV→IN_DEV→POST_DEV→IN_PRODUCTION→new Evidence/Incident/Opportunity→Change ↺
+ * 的状态承载位），band 定义 phase 字段恒 IN_PRODUCTION（§95 生产反馈带）。
+ * x-vocab-source: PRD v0.4 §30 L2554-2563 逐字。
+ */
+export const PHASE_TIMELINE_VALUES = [
+  "PRE_DEV",
+  "IN_DEV",
+  "POST_DEV",
+  "IN_PRODUCTION",
+] as const;
+export type PhaseTimelineValue = (typeof PHASE_TIMELINE_VALUES)[number];
+
+/**
+ * §95.2 生产信号源五词形（PRD L6126「metric / log / error budget / SLO /
+ * control band」逐字；空格词形转 snake_case：error budget→error_budget、
+ * control band→control_band、SLO→slo——映射注记随词汇表 PR 呈报）。
+ * x-vocab-source: PRD v0.4 §95.2 L6126。
+ */
+export const PRODUCTION_SIGNAL_SOURCE_VALUES = [
+  "metric",
+  "log",
+  "error_budget",
+  "slo",
+  "control_band",
+] as const;
+export type ProductionSignalSourceValue =
+  (typeof PRODUCTION_SIGNAL_SOURCE_VALUES)[number];
+
+/**
+ * §95.3 诊断三分（PRD L6153「Implementation Issue / Config Issue /
+ * Architecture Evolution」逐字语义；词形 SCREAMING_SNAKE 化——§31 challenge
+ * classification 词形 ARCHITECTURE_EVOLUTION 同源先例，大小写裁定呈报 Owner，
+ * pending_vocab_pr 注记）。ARCHITECTURE_EVOLUTION 与 §31 分类词表同形复用
+ * 不发明新值。
+ * x-vocab-source: PRD v0.4 §95.3 L6153 + §31 L2630。
+ */
+export const DIAGNOSIS_KIND_VALUES = [
+  "IMPLEMENTATION_ISSUE",
+  "CONFIG_ISSUE",
+  "ARCHITECTURE_EVOLUTION",
+] as const;
+export type DiagnosisKindValue = (typeof DIAGNOSIS_KIND_VALUES)[number];
+
+/**
+ * Control band 谓词算子五值（P34 任务定案机器词形；谓词 machine-evaluable——
+ * §95.2「不得把是否异常完全交给 LLM 主观判断」的类型面落点：判定通路只接受
+ * 显式算子+数值阈值，禁自由文本判据字段）。between 须 threshold+threshold_max
+ * 成对（闭区间健康带，带外即 BREACHED）。
+ * x-vocab-source: P34 任务定案（wave3-plan P34 范围锚；非 PRD 逐字）。
+ */
+export const BAND_PREDICATE_OPERATOR_VALUES = [
+  "gt",
+  "lt",
+  "gte",
+  "lte",
+  "between",
+] as const;
+export type BandPredicateOperatorValue =
+  (typeof BAND_PREDICATE_OPERATOR_VALUES)[number];
+
+/**
+ * Control band 判定三态（P34 fail-closed 纪律词形，P32 PASS/FAIL/NOT_RUN
+ * 三态显式同源）：OK=带内；BREACHED=击穿（产 Evidence，detected_by=tool_signal）；
+ * NOT_EVALUABLE=不可判（观测指标名不匹配/值非有限数值/谓词损坏——显式缺席，
+ * 绝不静默折算 OK）。与 03 VERDICT_VALUES 七态正交（band 判定是 §95.2
+ * Deterministic Detection 面，不是 gate 判卷面）。
+ * x-vocab-source: P34 任务定案（fail-closed 三态纪律；§95.2 Deterministic
+ * Detection 词形锚）。
+ */
+export const CONTROL_BAND_EVALUATION_STATUS_VALUES = [
+  "OK",
+  "BREACHED",
+  "NOT_EVALUABLE",
+] as const;
+export type ControlBandEvaluationStatusValue =
+  (typeof CONTROL_BAND_EVALUATION_STATUS_VALUES)[number];
+
+/**
+ * §55.1 Capability Outcome Metrics 机算状态两值（P34 任务定案）：MEASURED=
+ * 从既有 gate/evidence 台账机算成立（附 value+basis 口径披露）；
+ * NOT_MEASURABLE_YET=不可机算显式缺席（附理由——绝不冒充数值，§55.1
+ * 「Metrics 用于风险提示」fail-closed 半边）。
+ * x-vocab-source: P34 任务定案（wave3-plan P34 出口判据「挂钩既有 gate/evidence
+ * 数据」的可算分账词形）。
+ */
+export const CAPABILITY_OUTCOME_METRIC_STATUS_VALUES = [
+  "MEASURED",
+  "NOT_MEASURABLE_YET",
+] as const;
+export type CapabilityOutcomeMetricStatusValue =
+  (typeof CAPABILITY_OUTCOME_METRIC_STATUS_VALUES)[number];
+
+/**
+ * §55.1 十六指标机器键（八能力 × Leading/Lagging，snake_case 机械映射；
+ * 人读呈现列以 CAPABILITY_OUTCOME_METRICS 常量逐字承载，本轴是机器消费键）。
+ * x-vocab-source: PRD v0.4 §55.1 L3583-3592 逐字表列的机械映射（pending_vocab_pr）。
+ */
+export const CAPABILITY_OUTCOME_METRIC_KEY_VALUES = [
+  "brainstorm_change_convergence_time",
+  "in_dev_requirement_rework_rate",
+  "research_high_risk_unknown_reduction_rate",
+  "research_tech_choice_rework_rate",
+  "context_hit_or_redundancy_rate",
+  "agent_boundary_violation_rate",
+  "profile_first_hit_rate",
+  "governance_overhead",
+  "arch_gate_predev_interceptions",
+  "architecture_rework_rollback_rate",
+  "relevant_knowledge_hit_rate",
+  "same_class_bug_recurrence_rate",
+  "gauntlet_first_pass_pass_rate",
+  "production_change_failure_rate",
+  "drift_detection_rate",
+  "cross_session_state_error_rate",
+] as const;
+export type CapabilityOutcomeMetricKey =
+  (typeof CAPABILITY_OUTCOME_METRIC_KEY_VALUES)[number];
+
+/**
+ * §90.4 自改进八信号（PRD L5686-5693 八条 bullet 逐字语义，snake_case 机器
+ * 词形；人读原文列以 SELF_IMPROVEMENT_SIGNAL_PRD_LABELS 逐字承载）。登记产物
+ * 恒 POMASTER_SELF_IMPROVEMENT_CANDIDATE 呈报态——「不得自动应用」（L5695
+ * 逐字）由 kernel production.ts 结构封条承载（模块导出面无任何 Router/Profile/
+ * Gate 配置修改函数）。
+ * x-vocab-source: PRD v0.4 §90.4 L5686-5693。
+ */
+export const SELF_IMPROVEMENT_SIGNAL_VALUES = [
+  "governance_overhead_ratio_anomaly",
+  "gate_high_frequency_false_positive",
+  "role_without_independent_evidence",
+  "registry_empty_or_duplicate_view",
+  "context_oversized_low_utilization",
+  "repeated_architecture_challenge",
+  "profile_frequent_manual_deescalation",
+  "profile_frequent_inflight_escalation",
+] as const;
+export type SelfImprovementSignalValue =
+  (typeof SELF_IMPROVEMENT_SIGNAL_VALUES)[number];
+
+/** §90.4 八信号人读原文逐字镜像（键=机器词形，值=PRD bullet 原文）。 */
+export const SELF_IMPROVEMENT_SIGNAL_PRD_LABELS = {
+  governance_overhead_ratio_anomaly: "Governance Overhead Ratio 长期异常",
+  gate_high_frequency_false_positive: "某 Gate 高频产生误报",
+  role_without_independent_evidence: "某 Agent Role 几乎从不带来独立 Evidence",
+  registry_empty_or_duplicate_view: "某 Registry 长期为空或重复另一 Object View",
+  context_oversized_low_utilization: "Context 长期过大但实际使用率低",
+  repeated_architecture_challenge: "相同 Architecture Challenge 重复出现",
+  profile_frequent_manual_deescalation:
+    "Profile 经常被人工降级，说明 Router 过度保守",
+  profile_frequent_inflight_escalation:
+    "Profile 经常在开发中升级，说明 Triage 过度乐观",
+} as const satisfies Readonly<Record<SelfImprovementSignalValue, string>>;
+
+/**
+ * §90.4 逐字产物词形（PRD L5695「这些建议进入
+ * `POMASTER_SELF_IMPROVEMENT_CANDIDATE`，不得自动应用」）。P34 登记产物 kind
+ * 字段恒携带本词形（呈报位非应用位；MEMORY_DRIFT 单词常量同款承载先例）。
+ */
+export const POMASTER_SELF_IMPROVEMENT_CANDIDATE =
+  "POMASTER_SELF_IMPROVEMENT_CANDIDATE" as const;
+
+/**
+ * §95.2 Deterministic Detection 判定主体词形（P34 任务定案：breach Evidence
+ * detected_by 字段恒 tool_signal——C5「判定来自工具信号非 LLM 自报」的承载位；
+ * 词形 snake_case）。
+ * x-vocab-source: P34 任务定案（§95.2 Tool Detects 链序的机械词形锚）。
+ */
+export const DETECTED_BY_TOOL_SIGNAL = "tool_signal" as const;
+
+/**
+ * production CLI 错误词形族（P34b-Commands 补位词；kernel GovernanceError 码位之上
+ * 的命令面呈现码——映射关系确定性一一对应（按命令面 + kernel 码位查表），禁子串/
+ * 模糊猜测映射）。PRD §44 命令清单未定义 production 子命令——本命令面词形与五命令
+ * 名（band/evaluate/challenge/diagnose/metrics/self-improvement）均为新造，随 P34
+ * 呈报件一并呈报 Owner（命令面命名权呈报位）：
+ * - BAND_SCHEMA_INVALID：band 定义面词形/谓词/重复登记（kernel SCHEMA_INVALID·
+ *   VOCAB_INVALID_VALUE 在 band define 面的命令面词形——band 面只有 schema 族错误）；
+ * - BAND_NOT_FOUND：band 定义不在册（kernel OBJECT_NOT_FOUND 在 band 读取面的
+ *   命令面词形）；
+ * - OBSERVATION_NOT_EVALUABLE：观测缺席/不可判（evaluate 无 --value 且无
+ *   --observations-file、观测文件不可读/形态非法、观测值非有限数、判定三态
+ *   NOT_EVALUABLE 的命令面 fail-closed 词形——显式缺席绝不静默绿）；
+ * - CHALLENGE_REJECTED：challenge 被拒（非 CURRENT/已 CHALLENGED/MIGRATING/
+ *   band↔breach 不符/申报对象≠band 挂载对象/目标对象不在册——kernel
+ *   TRANSITION_ILLEGAL·OBJECT_NOT_FOUND·SCHEMA_INVALID 在 challenge 面的命令面词形）；
+ * - EVIDENCE_NOT_FOUND：breach evidence 引用词形非法或不在册（kernel
+ *   SCHEMA_INVALID·OBJECT_NOT_FOUND 在 breach 读取面的命令面词形）；
+ * - DIAGNOSIS_WITHOUT_BREACH_EVIDENCE：无既有 BREACHED band evidence 的 diagnosis
+ *   （§95.2 链序封条词形——kernel 同名 GovernanceErrorCode 的命令面透传复用，
+ *   唯一与 kernel 码位同名的族员，零二次造词）。
+ * x-vocab-source: P34b 任务定案（wave3-plan P34 命令面；PRD §44 无此命令组的
+ * 新造词形——pending_vocab_pr + 命令面命名权呈报 Owner）。
+ */
+export const PRODUCTION_CLI_ERROR_VALUES = [
+  "BAND_SCHEMA_INVALID",
+  "BAND_NOT_FOUND",
+  "OBSERVATION_NOT_EVALUABLE",
+  "CHALLENGE_REJECTED",
+  "EVIDENCE_NOT_FOUND",
+  "DIAGNOSIS_WITHOUT_BREACH_EVIDENCE",
+] as const;
+export type ProductionCliErrorValue =
+  (typeof PRODUCTION_CLI_ERROR_VALUES)[number];

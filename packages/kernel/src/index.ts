@@ -1398,6 +1398,95 @@ export type {
 } from "./vocab.js";
 
 // ============================================================
+// Production Feedback / Control Band v1（P34a · PRD §95 全节 + §30 第四态 +
+// §55.1 + §90.4）
+// ============================================================
+// 语义边界（production.ts 头注为准）：§95.2「Tool Detects, Agent Diagnoses」链 v1
+// ——异常判定只走显式谓词+数值 observation（evaluateControlBand 三态纯函数，禁自由
+// 文本判据入判定通路）；BREACHED 产 Evidence 恒 detected_by=tool_signal；
+// §95.3 CURRENT→CHALLENGED 走 applyTransaction 零旁路（authorityRef 承载 breach
+// evidence 引用满足 store LOCKED+STABLE→CHALLENGED 既有前置）；Agent Diagnosis
+// 必持既有 BREACHED band evidence（DIAGNOSIS_WITHOUT_BREACH_EVIDENCE 封条）；
+// §55.1 八能力 Leading/Lagging 指标挂钩既有 gate 台账（不可机算显式
+// NOT_MEASURABLE_YET + METRICS_CAVEAT 逐字注记）；§90.4 八信号登记恒
+// POMASTER_SELF_IMPROVEMENT_CANDIDATE 呈报态，无任何自动应用通路（结构封条）。
+// 数据落点 .pomaster/production/ 子树（新分区呈报项；零 journal 事件——唯一治理
+// 事实变更经 applyTransaction 由事务自身记 TX_APPLIED）。
+export {
+  PRODUCTION_RELATIVE,
+  PRODUCTION_BANDS_RELATIVE,
+  PRODUCTION_OBSERVATIONS_RELATIVE,
+  PRODUCTION_BREACHES_RELATIVE,
+  PRODUCTION_CHALLENGES_RELATIVE,
+  PRODUCTION_DIAGNOSES_RELATIVE,
+  PRODUCTION_SELF_IMPROVEMENT_RELATIVE,
+  CAPABILITY_OUTCOME_METRICS,
+  METRICS_CAVEAT,
+  registerControlBand,
+  readControlBand,
+  listControlBands,
+  evaluateControlBand,
+  recordObservation,
+  listObservations,
+  readBreach,
+  listBreaches,
+  challengeFromBreach,
+  listChallenges,
+  recordDiagnosis,
+  listDiagnoses,
+  computeCapabilityOutcomeMetrics,
+  registerSelfImprovementCandidate,
+  listSelfImprovementCandidates,
+} from "./production.js";
+export type {
+  BandPredicate,
+  ControlBand,
+  BandObservation,
+  BreachEvidenceRecord,
+  BandEvaluation,
+  ObservationRecord,
+  ChallengeRecord,
+  DiagnosisRecord,
+  SelfImprovementCandidateRecord,
+  ControlBandInput,
+  ChallengeFromBreachOptions,
+  ChallengeFromBreachResult,
+  DiagnosisInput,
+  SelfImprovementSignalInput,
+  CapabilityOutcomeMetricRow,
+  CapabilityOutcomeMetricValue,
+  CapabilityOutcomeReport,
+} from "./production.js";
+// P34 词形轴唯一镜像在 @pomaster/schemas vocab.ts P34 段（kernel vocab.ts re-export
+// 同源转发，P32/P33 段同款惯例；CHALLENGED 复用 CHANGE_VALUES 不重复登记）。
+export {
+  PHASE_TIMELINE_VALUES,
+  PRODUCTION_SIGNAL_SOURCE_VALUES,
+  DIAGNOSIS_KIND_VALUES,
+  BAND_PREDICATE_OPERATOR_VALUES,
+  CONTROL_BAND_EVALUATION_STATUS_VALUES,
+  CAPABILITY_OUTCOME_METRIC_STATUS_VALUES,
+  CAPABILITY_OUTCOME_METRIC_KEY_VALUES,
+  SELF_IMPROVEMENT_SIGNAL_VALUES,
+  SELF_IMPROVEMENT_SIGNAL_PRD_LABELS,
+  POMASTER_SELF_IMPROVEMENT_CANDIDATE,
+  DETECTED_BY_TOOL_SIGNAL,
+  // P34b CLI 命令面词形（错误词形族；同段 pending_vocab_pr + 命令面命名权呈报 Owner）。
+  PRODUCTION_CLI_ERROR_VALUES,
+} from "./vocab.js";
+export type {
+  PhaseTimelineValue,
+  ProductionSignalSourceValue,
+  DiagnosisKindValue,
+  BandPredicateOperatorValue,
+  ControlBandEvaluationStatusValue,
+  CapabilityOutcomeMetricStatusValue,
+  CapabilityOutcomeMetricKey,
+  SelfImprovementSignalValue,
+  ProductionCliErrorValue,
+} from "./vocab.js";
+
+// ============================================================
 // Doctor（D7 Portability 必检最小集四检；fail-closed）
 // ============================================================
 

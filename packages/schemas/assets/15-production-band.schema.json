@@ -1,0 +1,208 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://pomaster.dev/schemas/production-band/v1-draft.json",
+  "title": "Production Control Band（生产控制带定义 · P34 · PRD §95.2/§95.3/§30/§55.1/§90.4 词形冻结面）",
+  "description": "P34 Production Feedback / Control Band v1 的定义形态契约：Control band 是 §95.2「Tool Detects, Agent Diagnoses」链的确定性探测锚——谓词 machine-evaluable（显式算子 + 数值阈值），禁自由文本判据字段（§95.2 逐字「不得把『是否异常』完全交给 LLM 主观判断」的类型面落点：判定通路 evaluateControlBand 只接受本 schema 形态的谓词 + 数值 observation）。\n§95.1 生命周期扩展的状态承载：band phase 恒 IN_PRODUCTION（§30 四态时间轴第四态）；§95.3 CURRENT→CHALLENGED 转移的触发源（challenge 转移本体走 store applyTransaction 既有通路零旁路）。\n数据落点 .pomaster/production/ 子树（bands/observations/breaches/challenges/diagnoses/self-improvement；kernel production.ts 维护）。observations/breaches/challenges/diagnoses/self-improvement 五类台账记录为 kernel 侧车（user-scope 台账同款无独立 schema，装载面 fail-closed）；本文件 definitions 同时冻结 P34 全部词轴（production_signal_source / band_predicate_operator / control_band_evaluation_status / phase_timeline / diagnosis_kind / self_improvement_signal），提请词汇表 PR 收编。",
+  "x-pomaster-file-role": "15-production-band.schema.json —— .pomaster/production/bands/<band-id>.json 定义形态契约（kernel production.ts registerControlBand 唯一写入通路）。消费方 = evaluateControlBand（Deterministic Detection 纯函数）、challengeFromBreach（§95.3 CURRENT→CHALLENGED）、computeCapabilityOutcomeMetrics（§55.1 指标派生）。",
+  "x-pomaster-vocab-source": "词形轴 absent_in_vocab_lock__pending_vocab_pr：phase_timeline 轴（PRD §30 L2554-2563 逐字四值；与 state_axes.lifecycle 正交）；production_signal_source 轴（§95.2 L6126「metric / log / error budget / SLO / control band」空格词形转 snake_case：error_budget/control_band/slo）；band_predicate_operator 轴（P34 任务定案 gt/lt/gte/lte/between）；control_band_evaluation_status 轴（OK/BREACHED/NOT_EVALUABLE fail-closed 三态，P32 同源纪律）；diagnosis_kind 轴（§95.3 L6153 三分 SCREAMING_SNAKE 化，§31 ARCHITECTURE_EVOLUTION 词形同源先例，大小写裁定呈报 Owner）；self_improvement_signal 轴（§90.4 八信号 snake_case 机器词形）。CHALLENGED 复用 CHANGE_VALUES 不重复登记。词形已在本文件 definitions 冻结并镜像于 @pomaster/schemas vocab.ts 待收编段，提请词汇表 PR 收编（pending_vocab_pr）。",
+  "x-pomaster-contract": {
+    "machine_evaluable_predicate": "谓词 machine-evaluable 封条（§95.2 逐字「不得把『是否异常』完全交给 LLM 主观判断」）：predicate 只含显式算子（五值闭集）+ 数值阈值，additionalProperties:false 封死一切自由文本判据字段位（criteria/description/looks_wrong 等键结构性不存在）；between 须 threshold+threshold_max 成对（kernel 侧另验 threshold ≤ threshold_max——draft-07 无跨字段比较）。",
+    "three_state_fail_closed": "判定三态 OK/BREACHED/NOT_EVALUABLE 显式（definitions.control_band_evaluation_status）：观测指标名不匹配/值非有限数值/谓词损坏一律 NOT_EVALUABLE——绝不静默折算 OK（fail-closed，缺项显式呈现非假绿）。",
+    "tool_detects_seal": "BREACHED 产 Evidence 恒 detected_by=tool_signal（C5：判定来自工具信号非 LLM 自报）；Agent Diagnosis（recordDiagnosis）必须引用存在且 BREACHED 的 band evidence，否则 kernel DIAGNOSIS_WITHOUT_BREACH_EVIDENCE 拒绝——§95.2 链序 Deterministic Detection → Evidence → State Challenge → Agent Diagnosis 的结构性保序。",
+    "state_challenge_via_transaction": "§95.3 Capability CURRENT→CHALLENGED 转移走 store applyTransaction 既有通路（transition_object op patch change=STABLE→CHALLENGED；CHALLENGED 复用 CHANGE_VALUES 词形零新增）；LOCKED+STABLE→CHALLENGED 必持引用的既有前置由 store 层强制（authorityRef 携带 breach evidence 引用）。",
+    "self_improvement_candidate_only": "§90.4 逐字「这些建议进入 POMASTER_SELF_IMPROVEMENT_CANDIDATE，不得自动应用」：登记产物恒 CANDIDATE 呈报态，kernel production.ts 导出面无任何 Router/Profile/Gate 配置修改函数（结构封条，头注声明）；§55.1「Metrics 用于风险提示，不直接替代专业判断」注记随指标报告逐次输出。"
+  },
+  "x-pomaster-digest-ethics-policy": "本对象当前不含 sha256/digest 字段。未来任何 digest/sha256 字段加入时必须携带 x-digest-ethics 注记 {\"write_blocking\": false, \"side\": \"read_only_service\", \"human_touch\": \"forbidden\"}（D24 / vocab-lock digest_ethics）。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "title", "capability_ref", "phase", "source", "metric_name", "predicate", "window"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+      "title": "band id（确定性 slug 词形；.pomaster/production/bands/<id>.json 落点名）",
+      "description": "小写 slug（禁墙钟禁随机——A4 同输入重放字节稳定）；machine-comparable exact match 面向 observation.metric_name 联结。",
+      "examples": ["carline-list-p99-latency", "checkout-error-budget"]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "title": "band 人读标题（title）",
+      "description": "呈报呈现位；不进判定通路（判定只读 predicate+metric_name——禁自由文本判据字段的结构性另一面：人读标题与机器判定分离）。",
+      "examples": ["车型列表接口 p99 延迟控制带"]
+    },
+    "capability_ref": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_]*(\\.[A-Z][A-Z0-9_]{0,31})+(\\.[0-9]+)?$",
+      "title": "受治理对象引用（capability_ref；§95.3 CURRENT→CHALLENGED 的转移目标）",
+      "description": "Governed Object id（parseGovernedId closed-world 校验为权威——本 pattern 仅粗筛文法，前缀闭包归 A5 词表）。§95.3 例：Capability = CURRENT + Performance control band breached → Capability = CHALLENGED。",
+      "examples": ["CAPABILITY.CARLINE.LIST", "PAGE.CHECKOUT"]
+    },
+    "phase": {
+      "const": "IN_PRODUCTION",
+      "title": "开发时间轴相位（phase；恒 IN_PRODUCTION——§95.1 生命周期扩展第四态）",
+      "description": "PHASE_TIMELINE_VALUES（PRD §30 L2554-2563 逐字 PRE_DEV/IN_DEV/POST_DEV/IN_PRODUCTION）的 band 级收窄：生产反馈带只在 IN_PRODUCTION 相位生效（PRE_DEV/IN_DEV/POST_DEV 相位的门禁归 Gauntlet/Gate 体系，不归本带）。",
+      "x-pomaster-vocab": {
+        "axis": "phase_timeline",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "source": "PRD v0.4 §30 L2554-2563"
+      }
+    },
+    "source": { "$ref": "#/definitions/production_signal_source" },
+    "metric_name": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_.-]{0,127}$",
+      "title": "观测指标名（metric_name；observation 联结键——exact match）",
+      "description": "机器可比较的指标标识（小写 snake/dot/dash 词形）；observation.metric_name 必须与本字段全等才可判（不匹配 = NOT_EVALUABLE 显式，绝不猜测就近匹配）。",
+      "examples": ["http.server.requests.p99_ms", "error_budget.remaining_ratio"]
+    },
+    "predicate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operator", "threshold"],
+      "properties": {
+        "operator": { "$ref": "#/definitions/band_predicate_operator" },
+        "threshold": {
+          "type": "number",
+          "title": "击穿阈值（threshold；between 时为健康带下界）",
+          "description": "数值阈值（有限数；NaN/Infinity 由 kernel 装载面 SCHEMA_INVALID 拒——JSON Schema number 不含 NaN/Infinity 词形，kernel 双保险）。"
+        },
+        "threshold_max": {
+          "type": "number",
+          "title": "健康带上界（threshold_max；仅 between 且必填）",
+          "description": "between 闭区间健康带的上界；非 between 算子携带本键非法（allOf 封条）。"
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "operator": { "const": "between" } }, "required": ["operator"] },
+          "then": { "required": ["threshold_max"] },
+          "description": "between 须 threshold+threshold_max 成对（闭区间健康带，带外即 BREACHED）。"
+        },
+        {
+          "if": {
+            "properties": { "operator": { "enum": ["gt", "lt", "gte", "lte"] } },
+            "required": ["operator"]
+          },
+          "then": { "not": { "required": ["threshold_max"] } },
+          "description": "非 between 算子不得携带 threshold_max（单阈值算子与双阈值算子互斥——歧义即损坏，kernel 装载面同判）。"
+        }
+      ],
+      "title": "击穿谓词（predicate；machine-evaluable——禁自由文本判据字段）",
+      "description": "§95.2 结构封条的类型面：显式算子 + 数值阈值，additionalProperties:false 封死自由文本判据键位。阈值语义=击穿边界：gt/gte 值超上界击穿、lt/lte 值破下界击穿、between 值出闭区间击穿。"
+    },
+    "window": {
+      "oneOf": [
+        { "type": "integer", "minimum": 1 },
+        { "type": "null" }
+      ],
+      "title": "观测窗口声明位（window；v1 单观测评估不消费——多观测窗口语义待后续批次，禁发明）",
+      "description": "声明位非消费位：v1 evaluateControlBand 是单观测纯函数（band × observation → 三态），window 仅登记口径意图（如连续 N 次观测窗）；null = 未声明。窗口消费语义落地前 kernel 不冒充已实现（呈报项）。"
+    }
+  },
+  "definitions": {
+    "phase_timeline": {
+      "type": "string",
+      "enum": ["PRE_DEV", "IN_DEV", "POST_DEV", "IN_PRODUCTION"],
+      "title": "§30 开发时间轴四态（PRD L2554-2563 逐字）",
+      "description": "PRE_DEV / IN_DEV / POST_DEV / IN_PRODUCTION。§95.1 生命周期扩展 PRE_DEV→IN_DEV→POST_DEV→IN_PRODUCTION→new Evidence/Incident/Opportunity→Change ↺ 的状态承载位；与 state_axes.lifecycle 正交（对象生命周期轴 vs 开发阶段轴）。",
+      "$comment": "source: PRD v0.4 §30 L2554-2563 逐字。提请词汇表 PR 收编（pending_vocab_pr）。",
+      "x-pomaster-vocab": {
+        "axis": "phase_timeline",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "source": "PRD v0.4 §30"
+      }
+    },
+    "production_signal_source": {
+      "type": "string",
+      "enum": ["metric", "log", "error_budget", "slo", "control_band"],
+      "title": "§95.2 生产信号源五词形（L6126 逐字；空格词形转 snake_case）",
+      "description": "metric / log / error budget→error_budget / SLO→slo / control band→control_band。§95.2 链首「生产异常必须优先由确定性 Observation 触发」的信号源闭集。",
+      "$comment": "source: PRD v0.4 §95.2 L6126（snake_case 映射注记随词汇表 PR 呈报）。",
+      "x-pomaster-vocab": {
+        "axis": "production_signal_source",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "source": "PRD v0.4 §95.2 L6126"
+      }
+    },
+    "band_predicate_operator": {
+      "type": "string",
+      "enum": ["gt", "lt", "gte", "lte", "between"],
+      "title": "击穿谓词算子五值（P34 任务定案机器词形）",
+      "description": "显式算子闭集；判定通路只接受本闭集内算子 + 数值阈值（词表外算子 = NOT_EVALUABLE 显式非 OK）。",
+      "$comment": "source: P34 任务定案（wave3-plan P34 范围锚）。提请词汇表 PR 收编（pending_vocab_pr）。",
+      "x-pomaster-vocab": {
+        "axis": "band_predicate_operator",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "source": "P34 任务定案"
+      }
+    },
+    "control_band_evaluation_status": {
+      "type": "string",
+      "enum": ["OK", "BREACHED", "NOT_EVALUABLE"],
+      "title": "band 判定三态（fail-closed 显式）",
+      "description": "OK=带内；BREACHED=击穿（产 Evidence，detected_by=tool_signal）；NOT_EVALUABLE=不可判（指标名不匹配/值非有限数值/谓词损坏——显式缺席绝不静默折算 OK）。",
+      "$comment": "source: P34 任务定案（fail-closed 三态纪律；§95.2 Deterministic Detection）。提请词汇表 PR 收编（pending_vocab_pr）。",
+      "x-pomaster-vocab": {
+        "axis": "control_band_evaluation_status",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "source": "P34 任务定案"
+      }
+    },
+    "diagnosis_kind": {
+      "type": "string",
+      "enum": ["IMPLEMENTATION_ISSUE", "CONFIG_ISSUE", "ARCHITECTURE_EVOLUTION"],
+      "title": "§95.3 诊断三分（L6153 逐字语义；SCREAMING_SNAKE 词形）",
+      "description": "Implementation Issue→IMPLEMENTATION_ISSUE / Config Issue→CONFIG_ISSUE / Architecture Evolution→ARCHITECTURE_EVOLUTION（§31 challenge classification 词形同源先例；大小写裁定呈报 Owner）。§95.3 链尾「生产现实因此成为下一轮 Current State 的外部反馈」的三分落点。",
+      "$comment": "source: PRD v0.4 §95.3 L6153 + §31 L2630 词形先例。提请词汇表 PR 收编（pending_vocab_pr）。",
+      "x-pomaster-vocab": {
+        "axis": "diagnosis_kind",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "source": "PRD v0.4 §95.3 + §31"
+      }
+    },
+    "self_improvement_signal": {
+      "type": "string",
+      "enum": [
+        "governance_overhead_ratio_anomaly",
+        "gate_high_frequency_false_positive",
+        "role_without_independent_evidence",
+        "registry_empty_or_duplicate_view",
+        "context_oversized_low_utilization",
+        "repeated_architecture_challenge",
+        "profile_frequent_manual_deescalation",
+        "profile_frequent_inflight_escalation"
+      ],
+      "title": "§90.4 自改进八信号（L5686-5693 逐字语义 snake_case 机器词形）",
+      "description": "八条 bullet 一一对应（人读原文列 SELF_IMPROVEMENT_SIGNAL_PRD_LABELS 逐字镜像）；登记产物恒 POMASTER_SELF_IMPROVEMENT_CANDIDATE 呈报态——L5695 逐字「不得自动应用」。",
+      "$comment": "source: PRD v0.4 §90.4 L5686-5693。提请词汇表 PR 收编（pending_vocab_pr）。",
+      "x-pomaster-vocab": {
+        "axis": "self_improvement_signal",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "source": "PRD v0.4 §90.4"
+      }
+    }
+  },
+  "examples": [
+    {
+      "id": "carline-list-p99-latency",
+      "title": "车型列表接口 p99 延迟控制带",
+      "capability_ref": "CAPABILITY.CARLINE.LIST",
+      "phase": "IN_PRODUCTION",
+      "source": "metric",
+      "metric_name": "http.server.requests.p99_ms",
+      "predicate": { "operator": "gt", "threshold": 800 },
+      "window": null
+    },
+    {
+      "id": "checkout-error-budget",
+      "title": "结账错误预算控制带",
+      "capability_ref": "PAGE.CHECKOUT",
+      "phase": "IN_PRODUCTION",
+      "source": "error_budget",
+      "metric_name": "error_budget.remaining_ratio",
+      "predicate": { "operator": "lt", "threshold": 0.25 },
+      "window": null
+    }
+  ]
+}

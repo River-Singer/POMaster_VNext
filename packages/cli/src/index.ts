@@ -67,6 +67,22 @@
  *                   P28 生命周期恒 CANDIDATE+ADVISORY；TRUTH/DECISION/EVIDENCE→
  *                   OWNER_ESCALATION_REQUIRED 呈报 exit 0 不写 Canonical State）/ audit =
  *                   分母封闭 + MEMORY_DRIFT 探测（drift 段非空 exit 1 fail-closed，§84.6）
+ * - production band define/list / evaluate / challenge / diagnose / metrics /
+ *                   self-improvement register/list
+ *                   Production Feedback 命令面（§95 全节 + §30 第四态 + §55.1/§90.4；
+ *                   P34-Commands）：band define = ControlBand 定义登记（phase 恒
+ *                   IN_PRODUCTION；谓词字段机校验）/ evaluate = Deterministic Detection
+ *                   三态判定 + 台账落账（BREACHED 产 evidence + envelope evidence_ref；
+ *                   NOT_EVALUABLE exit 1 fail-closed 非 fake 绿）/ challenge = §95.3
+ *                   State Challenge（change 轴 STABLE→CHALLENGED 走 applyTransaction
+ *                   零旁路；authority=breach Evidence；链外捷径 CHALLENGE_REJECTED）/
+ *                   diagnose = Agent Diagnosis 消费位（无 breach evidence →
+ *                   DIAGNOSIS_WITHOUT_BREACH_EVIDENCE exit 1——§95.2 链序封条）/
+ *                   metrics = §55.1 八能力表（MEASURED 数值 + NOT_MEASURABLE_YET 显式
+ *                   + METRICS_CAVEAT 注记）/ self-improvement = §90.4 登记恒
+ *                   POMASTER_SELF_IMPROVEMENT_CANDIDATE 呈报态（输出恒带「不得自动
+ *                   应用」注记）；命令面词形为新造（PRD §44 无此命令组——命名权呈报
+ *                   Owner，pending_vocab_pr）
  * - session attach/refresh/list
  *                   D 线地基①会话命令面（P20；D 线 §1.2/§3.1：注册/刷新 liveness +
  *                   resumed_task 解析 + 清单并排呈现；A10「CLI 零 session 命令」闭合）
@@ -135,6 +151,16 @@ import {
   runMemoryPromote,
   runMemoryReview,
 } from "./memory.js";
+import {
+  runProductionBandDefine,
+  runProductionBandList,
+  runProductionChallenge,
+  runProductionDiagnose,
+  runProductionEvaluate,
+  runProductionMetrics,
+  runProductionSelfImprovementList,
+  runProductionSelfImprovementRegister,
+} from "./production.js";
 import {
   runResearchInspect,
   runResearchList,
@@ -449,6 +475,32 @@ export type {
   MemoryAuditCliInput,
   MemoryAuditCliResult,
 } from "./memory.js";
+export {
+  runProductionBandDefine,
+  runProductionBandList,
+  runProductionChallenge,
+  runProductionDiagnose,
+  runProductionEvaluate,
+  runProductionMetrics,
+  runProductionSelfImprovementList,
+  runProductionSelfImprovementRegister,
+  NO_AUTO_APPLY_NOTE,
+} from "./production.js";
+export type {
+  ProductionBandDefineInput,
+  ProductionBandDefineResult,
+  ProductionBandListResult,
+  ProductionEvaluateInput,
+  ProductionEvaluateResult,
+  ProductionChallengeInput,
+  ProductionChallengeResult,
+  ProductionDiagnoseInput,
+  ProductionDiagnoseResult,
+  ProductionMetricsResult,
+  ProductionSelfImprovementRegisterInput,
+  ProductionSelfImprovementRegisterResult,
+  ProductionSelfImprovementListResult,
+} from "./production.js";
 
 /** 一次命令执行的人读/机读产出记录（runCli 据此决定退出码与输出）。 */
 export interface CommandRun<TResult = unknown> {
@@ -1523,6 +1575,188 @@ export function createProgram(
       });
     });
 
+  // —— Production Feedback 命令面（§95 全节 + §30 第四态 + §55.1/§90.4；P34-Commands） ——
+  // 判卷/落盘权威在 kernel production.ts 语义入口（P34a）；本面只做 argv 收敛、错误
+  // 词形映射与呈现。命令面词形为新造（PRD §44 无此命令组——命名权呈报 Owner，
+  // pending_vocab_pr）。三条封条的命令面呈现：§95.2 判定只走显式谓词+数值观测
+  // （NOT_EVALUABLE 显式缺席 exit 1 非 fake 绿）；§95.3 challenge 走 applyTransaction
+  // 零旁路（无 band/无 evidence/非 CURRENT 拒绝显式）；§90.4 登记恒呈报态（输出恒带
+  // 「不得自动应用」注记——零自动应用通路）。
+  const production = program
+    .command("production")
+    .description(
+      "Production Feedback 命令面（§95/§30/§55.1/§90.4）：band define|list（ControlBand 定义，phase 恒 IN_PRODUCTION）/ evaluate（Deterministic Detection 三态判定+台账落账，BREACHED 产 evidence）/ challenge（§95.3 State Challenge：CURRENT+breach→CHALLENGED）/ diagnose（Agent Diagnosis——无 breach evidence 结构性拒绝）/ metrics（§55.1 八能力 Leading/Lagging：可算面数值+NOT_MEASURABLE_YET 显式）/ self-improvement register|list（§90.4 呈报态——不得自动应用）",
+    );
+  const productionBand = production
+    .command("band")
+    .description("ControlBand 定义面（.pomaster/production/bands/；§95.2 五信号源+显式谓词）");
+  productionBand
+    .command("define")
+    .description(
+      "band 定义登记（phase 恒 IN_PRODUCTION——§30 第四态/§95.1 生命周期扩展承载位；谓词字段机校验：五算子闭集 gt|lt|gte|lte|between + 数值阈值，between 须 --threshold-max 成对；自由文本判据字段结构性不存在——§95.2 封条；同 id 重复登记显式拒绝）",
+    )
+    .argument("<band-id>", "band id（确定性 slug ^[a-z0-9][a-z0-9_-]{0,63}$；落盘文件名兼联结键）")
+    .option("--title <text>", "band 人读标题（呈现位，不进判定通路）")
+    .option("--capability-ref <id>", "受治理对象 governed id（§95.3 CURRENT→CHALLENGED 的转移目标）")
+    .option("--source <source>", "§95.2 生产信号源五词形：metric | log | error_budget | slo | control_band")
+    .option("--metric-name <name>", "observation 联结键（exact match；不匹配 = NOT_EVALUABLE 显式）")
+    .option("--operator <operator>", "击穿谓词算子五值闭集：gt | lt | gte | lte | between")
+    .option("--threshold <number>", "击穿阈值（有限数；between 时为健康带下界）")
+    .option("--threshold-max <number>", "健康带上界（仅 between 且必填——单/双阈值算子互斥）")
+    .option("--window <n>", "观测窗口声明位（≥1 整数；v1 单观测评估不消费——多观测窗口语义待后续批次）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (bandId: string, opts, command) => {
+      const outcome = await runProductionBandDefine(resolveDir(command), {
+        id: bandId,
+        title: opts.title as string | undefined,
+        capabilityRef: opts.capabilityRef as string | undefined,
+        source: opts.source as string | undefined,
+        metricName: opts.metricName as string | undefined,
+        operator: opts.operator as string | undefined,
+        threshold: opts.threshold as string | undefined,
+        thresholdMax: opts.thresholdMax as string | undefined,
+        window: opts.window as string | undefined,
+      });
+      record({
+        command: "production band define",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  productionBand
+    .command("list")
+    .description("band 定义清单（id 字典序；无目录 = 显式空合法态；纯读零写入）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (_opts, command) => {
+      const outcome = runProductionBandList(resolveDir(command));
+      record({
+        command: "production band list",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  production
+    .command("evaluate")
+    .description(
+      "Deterministic Detection（§95.2 第 2 拍）：band × observation → OK | BREACHED | NOT_EVALUABLE 三态判定 + observation 台账落账（NOT_EVALUABLE 同样显式入账禁静默丢弃）；BREACHED 时 breach Evidence 同批落账（detected_by=tool_signal）+ envelope evidence_ref；观测缺席/不可判 exit 1 fail-closed（OBSERVATION_NOT_EVALUABLE）非 fake 绿",
+    )
+    .argument("<band-id>", "band id（须已 production band define 登记）")
+    .option("--value <number>", "观测值（有限数；observed_at_seq 缺席取 store 当前 seq——A4 禁墙钟）")
+    .option("--observations-file <path>", "观测 JSON 文件（{metric_name, value, observed_at_seq}；与 --value 互斥二选一）")
+    .option("--observed-at-seq <n>", "观测序号显式覆盖（≥0 整数；仅 --value 路径）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (bandId: string, opts, command) => {
+      const outcome = await runProductionEvaluate(resolveDir(command), {
+        bandId,
+        value: opts.value as string | undefined,
+        observationsFile: opts.observationsFile as string | undefined,
+        observedAtSeq: opts.observedAtSeq as string | undefined,
+      });
+      record({
+        command: "production evaluate",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  production
+    .command("challenge")
+    .description(
+      "§95.3 State Challenge：Capability=CURRENT + control band breached → change 轴 STABLE→CHALLENGED（kernel challengeFromBreach 走 applyTransaction 零旁路；authorityRef=breach Evidence 引用——确定性工具信号即挑战权威）；非 CURRENT/已 CHALLENGED/MIGRATING/申报对象≠band 挂载对象/无 evidence 全部 CHALLENGE_REJECTED 显式（链外捷径结构性拒绝）",
+    )
+    .argument("<object-id>", "受治理对象 governed id（须与 band.capability_ref 全等——防挂错带）")
+    .option("--band <band-id>", "在册 control band id")
+    .option("--evidence <ref>", "breach Evidence 引用（PBR-<12hex>；production evaluate 判定 BREACHED 时产出）")
+    .option("--note <text>", "事务注记（journal TX_APPLIED note 位）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (objectId: string, opts, command) => {
+      const outcome = await runProductionChallenge(resolveDir(command), {
+        objectId,
+        bandId: opts.band as string | undefined,
+        evidence: opts.evidence as string | undefined,
+        note: opts.note as string | undefined,
+      });
+      record({
+        command: "production challenge",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  production
+    .command("diagnose")
+    .description(
+      "Agent Diagnosis 消费位（§95.2 链序第 4 拍；§95.3 三分落点）：--kind 三分（IMPLEMENTATION_ISSUE | CONFIG_ISSUE | ARCHITECTURE_EVOLUTION——大小写裁定呈报 Owner）+ --notes 必填留痕；无既有 BREACHED band evidence → DIAGNOSIS_WITHOUT_BREACH_EVIDENCE exit 1（结构性拒绝——无确定性检测在先，诊断不可入账）",
+    )
+    .argument("<challenge-ref>", "challenge 留痕引用（PCH-<12hex>；须已 production challenge）")
+    .option("--kind <kind>", "§95.3 诊断三分：IMPLEMENTATION_ISSUE | CONFIG_ISSUE | ARCHITECTURE_EVOLUTION")
+    .option("--notes <text>", "诊断注记（必填留痕——自由文本住这里，不住判定通路）")
+    .option("--actor <actor>", "诊断主体 <type>:<name>（C5 自报；缺省 agent:claude/diagnosis）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (challengeRef: string, opts, command) => {
+      const outcome = await runProductionDiagnose(resolveDir(command), {
+        challengeRef,
+        kind: opts.kind as string | undefined,
+        notes: opts.notes as string | undefined,
+        actor: opts.actor as string | undefined,
+      });
+      record({
+        command: "production diagnose",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  production
+    .command("metrics")
+    .description(
+      "§55.1 Capability Outcome Metrics（八能力 Leading/Lagging 表）：可算面数值（MEASURED+basis 口径披露，挂钩既有 gate/evidence 台账——Gauntlet first-pass pass rate / Architecture Gate 拦截数）+ NOT_MEASURABLE_YET 显式（缺信号源绝不冒充数值）+ METRICS_CAVEAT 逐字注记（「Metrics 用于风险提示，不直接替代专业判断」）；纯读零写入",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (_opts, command) => {
+      const outcome = runProductionMetrics(resolveDir(command));
+      record({
+        command: "production metrics",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  const productionSelfImprovement = production
+    .command("self-improvement")
+    .description("§90.4 POMaster 指导优化 POMaster（登记恒 POMASTER_SELF_IMPROVEMENT_CANDIDATE 呈报态——不得自动应用）");
+  productionSelfImprovement
+    .command("register")
+    .description(
+      "八信号登记（§90.4 L5686-5693 八 bullet；产物恒 POMASTER_SELF_IMPROVEMENT_CANDIDATE 呈报态——命令输出恒带「不得自动应用」注记：零 Router/Profile/Gate 配置变更、零 journal 事件、零 state/ 写入；「应用」永远是人/Owner 经治理面的显式动作）",
+    )
+    .option("--signal <signal>", "§90.4 八信号之一（snake_case 机器词形闭集）")
+    .option("--note <text>", "申报说明（必填留痕）")
+    .option("--actor <actor>", "申报主体 <type>:<name>（C5 自报；缺省 agent:claude/self-report）")
+    .option("--evidence-ref <ref>", "证据引用（可重复；宽松词形 GRN-*/PBR-*/路径）", collectValues)
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runProductionSelfImprovementRegister(resolveDir(command), {
+        signal: opts.signal as string | undefined,
+        note: opts.note as string | undefined,
+        actor: opts.actor as string | undefined,
+        evidenceRefs: opts.evidenceRef as string[] | undefined,
+      });
+      record({
+        command: "production self-improvement register",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  productionSelfImprovement
+    .command("list")
+    .description("候选台账呈现（id 字典序；无登记 = 显式空合法态；恒呈报态非应用位；纯读零写入）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (_opts, command) => {
+      const outcome = runProductionSelfImprovementList(resolveDir(command));
+      record({
+        command: "production self-improvement list",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+
   const research = program
     .command("research")
     .description(
@@ -1786,7 +2020,7 @@ export function createProgram(
     .description(
       "获取互斥锁（原子独占创建；blocked → exit 1 LOCK_BLOCKED 且回带持有者快照/liveness/stale_reason——非静默成功；持有人会话必须已 attach）",
     )
-    .requiredOption("--kind <kind>", "锁粒度（D 线 §3.3.1 词轴：change | task | unit）")
+    .option("--kind <kind>", "锁粒度（D 线 §3.3.1 词轴：change | task | unit）")
     .requiredOption("--session-key <key>", "持有人会话键（必须已 session attach）")
     .option("--ref <ref>", "change/task 锁引用词（如 CHG-0042 / TASK.T0087；general_id 宽松词形）")
     .option("--object-key <key>", "unit 锁目标（Governed Code Unit key；文件名取 sha256 前 6 hex——S6 机器键）")

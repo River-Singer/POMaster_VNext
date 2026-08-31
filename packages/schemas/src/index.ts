@@ -18,6 +18,12 @@
  * + thread-B §4 迁移设计；bucket/memory_class/review_state/source/confidence 五词轴
  * pending_vocab_pr；内容原文零改写铁律 + review_state 默认 PENDING 封条 + Case N
  * 不得自动成为 Truth 的 staging 形态封条）。
+ * P34 增量（15）：Production Control Band（§95 全节 + §30 第四态 + §55.1/§90.4；
+ * phase_timeline/production_signal_source/band_predicate_operator/
+ * control_band_evaluation_status/diagnosis_kind/self_improvement_signal 六词轴
+ * pending_vocab_pr；谓词 machine-evaluable 封死自由文本判据位——§95.2「不得把
+ * 『是否异常』完全交给 LLM 主观判断」的类型面落点；CHALLENGED 复用 CHANGE_VALUES
+ * 不重复登记）。
  *
  * 词表纪律：一切枚举唯一来源是 assets/vocab-lock.draft.yaml（FROZEN）；
  * 代码侧唯一镜像点在 ./vocab.js（本文件 re-export）。YAML 资产仅作人读/工具对账，
@@ -29,7 +35,7 @@
  *
  * 装载提示（ajv）：schema 携带大量 x- 注记键（含 D24 强制在场的 x-digest-ethics），
  * 请以 `new Ajv({ strictSchema: false })` 装载，或逐个 ajv.addKeyword 注册注记键；
- * 跨文件 $ref 为绝对 $id 形态，组合装载须将全部 14 份 schema addSchema 注册。
+ * 跨文件 $ref 为绝对 $id 形态，组合装载须将全部 15 份 schema addSchema 注册。
  */
 import evidenceRecordsSchemaRaw from "../assets/07-evidence-records.schema.json" with { type: "json" };
 import denominatorSchemaRaw from "../assets/05-denominator.schema.json" with { type: "json" };
@@ -45,6 +51,7 @@ import exceptionLedgerSchemaRaw from "../assets/11-exception-ledger.schema.json"
 import knowledgeEntrySchemaRaw from "../assets/12-knowledge-entry.schema.json" with { type: "json" };
 import equivalenceRegistrySchemaRaw from "../assets/13-equivalence-registry.schema.json" with { type: "json" };
 import memoryHarvestSchemaRaw from "../assets/14-memory-harvest.schema.json" with { type: "json" };
+import productionBandSchemaRaw from "../assets/15-production-band.schema.json" with { type: "json" };
 
 export * from "./vocab.js";
 
@@ -84,6 +91,8 @@ const EQUIVALENCE_REGISTRY_ID =
   "https://pomaster.dev/schemas/equivalence-registry/v1-draft.json";
 const MEMORY_HARVEST_ID =
   "https://pomaster.dev/schemas/memory-harvest/v1-draft.json";
+const PRODUCTION_BAND_ID =
+  "https://pomaster.dev/schemas/production-band/v1-draft.json";
 
 function asSchema(raw: unknown, expectedId: string): JsonSchemaObject {
   const schema = raw as JsonSchemaObject;
@@ -138,8 +147,12 @@ export const memoryHarvestSchema = asSchema(
   memoryHarvestSchemaRaw,
   MEMORY_HARVEST_ID,
 );
+export const productionBandSchema = asSchema(
+  productionBandSchemaRaw,
+  PRODUCTION_BAND_ID,
+);
 
-/** 全部 14 份 schema 的聚合（组合装载：ajv.addSchema 逐个注册即可遍历本对象）。 */
+/** 全部 15 份 schema 的聚合（组合装载：ajv.addSchema 逐个注册即可遍历本对象）。 */
 export const allSchemas = {
   truthIndex: truthIndexSchema,
   objectEnvelope: objectEnvelopeSchema,
@@ -155,6 +168,7 @@ export const allSchemas = {
   knowledgeEntry: knowledgeEntrySchema,
   equivalenceRegistry: equivalenceRegistrySchema,
   memoryHarvest: memoryHarvestSchema,
+  productionBand: productionBandSchema,
 } as const;
 
 // ============================================================
