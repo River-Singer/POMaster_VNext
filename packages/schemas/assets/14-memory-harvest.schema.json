@@ -1,0 +1,303 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://pomaster.dev/schemas/memory-harvest/v1-draft.json",
+  "title": "Memory Harvest Inbox Entry（harvest 台账 inbox 条目 · P33 · PRD §48.2/§48.4/§44.10 + thread-B §4 迁移设计）",
+  "description": "thread-B §4 半自动 inbox 管线（迁移工作台简版）的条目形态契约：机器做全量读取→逐条打分类提案+置信度→冲突检测位→落 inbox；人做唯一环节是 batch review，只改分类标签，不改写内容原文（原始文本逐字保真）。四桶初筛（TRUTH/KNOWLEDGE/EPISODE/PREFERENCE）+ 两条特殊出口（AUTHORITY_POLICY 升格、INVALID_EXPIRED 淘汰）+ 机械判不了的 UNCLASSIFIED_PENDING 拒绝位（禁模糊猜测）。\n数据落点 .pomaster/memory/inbox/<batch>/<id>.json（batch 目录式）。inbox 是 staging 平面不是 Canonical State：MEMORY_DRIFT 产物与本管线任何条目都不得自动成为 Truth（PRD Case N 逐字「不得自动成为 Truth」；§84.6 禁自动写入 Canonical State）。",
+  "x-pomaster-file-role": "14-memory-harvest.schema.json —— .pomaster/memory/inbox/<batch>/<id>.json 条目形态契约（kernel memory-harvest.ts 维护，写入唯一通路；kernel 内部补充状态，不进 content_digest）。消费方 = memory review/promote/audit 命令面（§44.10）与 Memory Curator batch review（thread-B §4.2）。",
+  "x-pomaster-vocab-source": "词形轴 absent_in_vocab_lock__pending_vocab_pr：bucket 轴（四桶 + 两特殊出口取 thread-B §4.1 表逐字；UNCLASSIFIED_PENDING 为禁模糊猜测的机械拒绝位，equivalence unknown 词形同源纪律）；memory_class 轴（PRD §48.2 七类逐字大写化）；review_state 轴（thread-B §4.2 例文 PENDING + §48.4 Review/Promotion 词形）；source 轴（user_capture/memory_harvest/memory_drift_audit 通路词形）；confidence 轴（§81.4/§83.4 三级同词形复用，不发明新值）。词形已在本文件 definitions 冻结并镜像于 @pomaster/schemas vocab.ts 待收编段，提请词汇表 PR 收编（pending_vocab_pr）。id 词形 HM-<12hex> 是通路编号词形（GRN-/CLM-/EXC-/EQG-/AGX-/SA-nnnn 同族先例），非 governed 前缀，不入 id_namespace prefixes_v0 闭包、不过 parseGovernedId。",
+  "x-pomaster-contract": {
+    "verbatim_text": "内容原文零改写铁律（thread-B §4.2「只改分类标签，不改写内容原文」逐字）的结构性落法：text 字段承载收割/捕获原文逐字字节；kernel decideInboxEntry 签名无 text 参数位（结构上写不出改写动作），评审只经 reclassify 位改 proposal.bucket/memory_class（分类标签）。",
+    "pending_default_seal": "review_state 默认 PENDING 且不可缺省为 PROMOTED：kernel buildInboxEntry 结构性只写 PENDING；本 schema allOf 封条——review_state 字段缺席的条目不得携带任何已决痕迹（reviewed_by/promoted_route 必须为 null），缺省语义恒 PENDING（kernel 装载面同式 ?? PENDING）。",
+    "decided_requires_audit": "已决条目（PROMOTED/REJECTED）必有评审留痕：reviewed_by（actor 三元组，C5 自报不判真）+ review_notes 非空——评审动作不经留痕写不出已决态；PENDING 条目两者恒 null。",
+    "staging_not_truth": "inbox 是 staging 平面：本 schema 无任何 authority/axes/gate 字段位（结构封条——entry 面不存在让 Gate 判卷的键位，同 knowledge ADVISORY 隔离四层保证③的通路层）；needs_conflict_check 只是与 Current Truth 对照的标记位（对照判定留待消费侧，thread-B §4.2 冲突检测 + §4.3 三分法①），kernel 不做数值裁决。",
+    "case_n_no_auto_truth": "Case N（PRD L5526-5530 逐字「memory audit 报 MEMORY_DRIFT，进入 inbox；不得自动成为 Truth」）的形态面：source=memory_drift_audit 条目与其他条目同构同状态机（review_state=PENDING 起步），不存在绕过 review 的晋升通路。",
+    "content_addressed_id": "id = HM- + text 的 sha256 前 12 hex（内容寻址，D24 读侧服务）：同文重复捕获/重复收割显式检出（kernel 拒绝或跳过去重），幂等重跑零新增；id 不含墙钟不含随机——A4 同输入重放字节稳定。"
+  },
+  "x-pomaster-digest-ethics-policy": "本对象当前不含 sha256/digest 字段（id 的哈希是内容寻址身份，非 D24 digest 轴字段）。未来任何 digest/sha256 字段加入时必须携带 x-digest-ethics 注记 {\"write_blocking\": false, \"side\": \"read_only_service\", \"human_touch\": \"forbidden\"}（D24 / vocab-lock digest_ethics）。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "batch", "source", "scope", "text", "proposal", "needs_conflict_check", "origin_text_archive", "review_state", "review_notes", "reviewed_by", "recorded_at_seq", "promoted_route"],
+  "allOf": [
+    {
+      "if": {
+        "properties": { "review_state": { "enum": ["PROMOTED", "REJECTED"] } },
+        "required": ["review_state"]
+      },
+      "then": {
+        "properties": {
+          "reviewed_by": { "type": "object" },
+          "review_notes": { "type": "string", "minLength": 1 }
+        },
+        "description": "已决必有评审留痕：PROMOTED/REJECTED 条目 reviewed_by 非空（actor 三元组）+ review_notes 非空（batch review 裁决注记）——不经评审动作写不出已决态（thread-B §4.2 batch review 是唯一人工环节）。"
+      }
+    },
+    {
+      "if": {
+        "properties": { "review_state": { "const": "PENDING" } },
+        "required": ["review_state"]
+      },
+      "then": {
+        "properties": {
+          "reviewed_by": { "type": "null" },
+          "promoted_route": { "type": "null" }
+        },
+        "description": "未决条目无已决痕迹：reviewed_by 与 promoted_route 恒 null——非 null 即手改痕迹（kernel 装载面 SCHEMA_INVALID；13-equivalence pending 声明位同款形态封条）。"
+      }
+    },
+    {
+      "if": { "not": { "required": ["review_state"] } },
+      "then": {
+        "properties": {
+          "reviewed_by": { "type": "null" },
+          "promoted_route": { "type": "null" }
+        },
+        "description": "review_state 缺省封条：缺省语义恒 PENDING（kernel 装载面 ?? PENDING），缺省条目不得携带 reviewed_by/promoted_route——「默认 PENDING 不可缺省为 PROMOTED」的形态面：无显式 review_state 字段的条目在结构上不存在已决形态。"
+      }
+    },
+    {
+      "if": {
+        "properties": { "review_state": { "const": "REJECTED" } },
+        "required": ["review_state"]
+      },
+      "then": {
+        "properties": {
+          "promoted_route": { "type": "null" }
+        },
+        "description": "REJECTED 是终态：被拒条目无晋升路由产物（promoted_route 恒 null）——拒绝与晋升互斥，非 null 即手改痕迹。"
+      }
+    }
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^HM-[0-9a-f]{12}$",
+      "title": "条目 id（HM-<12hex>，内容寻址通路编号词形）",
+      "description": "HM- + 原文 text 的 sha256 前 12 位十六进制（内容寻址：同文同 id，重复捕获/收割显式检出）。HM- 与 GRN-/CLM-/EXC-/EQG-/AGX-/SA-nnnn 同族：通路编号词形，非 governed 前缀，不入 id_namespace prefixes_v0 闭包、不过 parseGovernedId。",
+      "examples": ["HM-3f9a1c02b7d4"]
+    },
+    "batch": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,63}$",
+      "title": "批次目录名（batch；.pomaster/memory/inbox/<batch>/，thread-B §4.2 batch 目录式）",
+      "description": "确定性命名（禁墙钟，A4）：capture / harvest-<harness> / audit-drift 或显式覆盖。同批次幂等重跑复用同目录（内容寻址 id 去重）。",
+      "examples": ["capture", "harvest-claude", "audit-drift", "harvest-2026-09-batch1"]
+    },
+    "source": { "$ref": "#/definitions/harvest_source" },
+    "scope": {
+      "type": "string",
+      "enum": ["project", "user"],
+      "title": "作用域（scope；promote 分桶路由的落点半边——user 作用域晋升落 user-scope 台账不入项目 Git）",
+      "description": "project | user（PRD §44.10 memory capture --scope project|user 逐字两词形）。scope=user 条目晋升时路由到 user-scope 台账（§48.6 ~/.pomaster/user/ 不随 repo 提交；§48.2 第 6 类 User Memory 默认不进项目 Git）。",
+      "examples": ["project", "user"]
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "title": "内容原文（text；逐字保真——零改写铁律的承载字段）",
+      "description": "捕获/收割的原文逐字字节（thread-B §4.2「不改写内容原文」；原始文本保真优先于归一化——不 trim 不折叠）。id 由此字段内容寻址派生。零改写由 kernel decideInboxEntry 结构封条保证（签名无 text 参数位）。",
+      "examples": [
+        "后端=已发布 178 opIds 的外部契约",
+        "Batch write pipelines without transactional primitives recur destructive rewrite across versions"
+      ]
+    },
+    "proposal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bucket", "memory_class", "confidence", "title", "extracted_to", "expiry"],
+      "properties": {
+        "bucket": { "$ref": "#/definitions/harvest_bucket" },
+        "memory_class": {
+          "oneOf": [
+            { "$ref": "#/definitions/memory_class" },
+            { "type": "null" }
+          ],
+          "title": "提案的 §48.2 七类长期记忆分类（memory_class；机械判不了恒 null 显式——禁模糊猜测）",
+          "description": "桶→类映射（kernel MEMORY_CLASS_OF_BUCKET）：TRUTH→TRUTH、KNOWLEDGE→KNOWLEDGE、EPISODE→EPISODE、PREFERENCE→USER、AUTHORITY_POLICY→DECISION（用户明令=决策记忆）；INVALID_EXPIRED/UNCLASSIFIED_PENDING→null（被推翻条目无有效分类、未分类条目不猜测）。"
+        },
+        "confidence": { "$ref": "#/definitions/harvest_confidence" },
+        "title": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "title": "提炼标题（title；thread-B §4.2 例文 proposal.title 位）",
+          "description": "机器从文件首标题行机械搬运（无则 null——禁内容改写式生成）；人读 batch review 呈现位。"
+        },
+        "extracted_to": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "title": "提炼稿落点（extracted_to；thread-B §4.2「提炼稿单独成文并双向链接」的指针位）",
+          "description": "提炼稿（与原文分离的知识正文）的计划落点引用（宽松词形）；null = 尚未提炼。原文归档位见 origin_text_archive。"
+        },
+        "expiry": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "title": "expiry 条件注记（thread-B §4.2 OBSOLETE_AFTER_M6 型条目；§4.3 三分法③机制描述过期的注记位）",
+          "description": "头部 metadata（expiry/obsolete_after 键）显式声明时机械搬运；无声明恒 null（禁猜测）。条件注记不是闭集词形（里程碑/条件是项目局部事实），只要求非空串。",
+          "examples": ["none", "M6", "OBSOLETE_AFTER_M6"]
+        }
+      },
+      "title": "分类提案（proposal；机器产出——逐条打分类提案+置信度，thread-B §4.2）"
+    },
+    "needs_conflict_check": {
+      "type": "boolean",
+      "title": "冲突检测位（thread-B §4.2「冲突检测（与 Current Truth 对照）」的机械标记）",
+      "description": "与 Current Truth 的数值对照判定留待消费侧（kernel 只标记不裁决——三分法①「truth 胜出+记忆标 EXPIRED 留痕」是消费侧动作）。kernel 机械规则：bucket=TRUTH（陈述现状基线值，数值冲突风险位）恒 true，其余恒 false。"
+    },
+    "origin_text_archive": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "title": "原文归档指针（origin_text_archive；thread-B §4.2 例文「原始文本进 episodes 归档」位）",
+      "description": "harness memory 收割时指向源文件引用（宽松词形）；user_capture/drift 条目恒 null（原文即 text 字段）。"
+    },
+    "review_state": { "$ref": "#/definitions/review_state" },
+    "review_notes": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "title": "评审注记（review_notes；batch review 只改分类标签+留注记，不改原文）",
+      "description": "PENDING 恒 null；PROMOTED/REJECTED 必非空（allOf 封条）。机器不得解析其内容做判卷（P9 教训：人类散文只登记不解析）。"
+    },
+    "reviewed_by": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["actor_type", "actor", "self_attested"],
+          "properties": {
+            "actor_type": { "type": "string", "enum": ["agent", "human", "tool", "kernel"] },
+            "actor": { "type": "string", "minLength": 1 },
+            "self_attested": { "type": "boolean" }
+          },
+          "title": "评审主体（C5 自报：kernel 不判其真，只登记）"
+        },
+        { "type": "null" }
+      ],
+      "title": "评审主体（reviewed_by；PENDING 恒 null——allOf 封条）"
+    },
+    "recorded_at_seq": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "title": "登记时 store 事件拍（recorded_at_seq；A4 禁墙钟——新鲜度只按事件拍）",
+      "description": "store 初始化时采样当前 generation.seq（只读采样）；store 未初始化恒 null（显式缺席非伪造）。inbox 是 staging 平面，本字段是排序考古辅助不是治理事实。"
+    },
+    "promoted_route": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "ref", "upgraded"],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": ["knowledge_library", "user_ledger", "escalate_owner"],
+              "title": "晋升路由词形（分桶路由三分）",
+              "description": "knowledge_library = KNOWLEDGE 桶走 P28 record 通路（恒 CANDIDATE 起步 + authority 恒 ADVISORY，不旁路生命周期）；user_ledger = USER/PREFERENCE 桶落 user-scope 台账（不入项目 Git，§48.2 第 6 类）；escalate_owner = TRUTH/DECISION/EVIDENCE 桶与 AUTHORITY_POLICY 升格——不写 Canonical State，呈报 Owner 裁决（Case N 不得自动成为 Truth 的正向镜像）。"
+            },
+            "ref": {
+              "type": ["string", "null"],
+              "minLength": 1,
+              "title": "路由产物引用（宽松词形：KNOWLEDGE.* id / user 台账路径 / escalate 呈报位说明）",
+              "description": "escalate_owner 路由恒 null（无产物可引用——呈报位不是落点位）。"
+            },
+            "upgraded": {
+              "type": "boolean",
+              "title": "AUTHORITY_POLICY 显式升格声明位（authority_upgrade=true 才可能为 true）",
+              "description": "thread-B §4.1「从 PREFERENCE/TRUTH 中升格」的显式声明承载：非 AUTHORITY_POLICY 条目恒 false；AUTHORITY_POLICY 条目未携显式升格声明时 kernel AUTHORITY_REQUIRED 拒绝（默认拒绝）。"
+            }
+          }
+        },
+        { "type": "null" }
+      ],
+      "title": "晋升路由产物（promoted_route；PENDING/REJECTED 恒 null——allOf 封条）"
+    }
+  },
+  "definitions": {
+    "harvest_bucket": {
+      "type": "string",
+      "enum": ["TRUTH", "KNOWLEDGE", "EPISODE", "PREFERENCE", "AUTHORITY_POLICY", "INVALID_EXPIRED", "UNCLASSIFIED_PENDING"],
+      "title": "harvest 分桶（thread-B §4.1 四桶初筛 + 两条特殊出口 + 机械拒绝位）",
+      "description": "四桶（thread-B §4.1 判别规则逐字）：TRUTH=陈述现状基线值/规模/栈/权威指针；KNOWLEDGE=失败模式/诊断法/教训，不随 M6 失效；EPISODE=事件史/时间线/翻案过程；PREFERENCE=个人工作偏好。两条特殊出口：AUTHORITY_POLICY=type=feedback 且属用户明令——从 PREFERENCE/TRUTH 中升格（升格须显式声明，默认拒绝）；INVALID_EXPIRED=被后续事实推翻。UNCLASSIFIED_PENDING=机械判不了的显式拒绝位（confidence 恒 LOW——禁模糊猜测，promote 面拒绝未分拣条目）。",
+      "$comment": "source: thread-B §4.1 表逐字（research/design-thread-B-migration.md）+ kernel UNCLASSIFIED_PENDING 补位词。提请词汇表 PR 收编（pending_vocab_pr）。",
+      "x-pomaster-vocab": {
+        "axis": "harvest_bucket",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "source": "thread-B §4.1 + kernel fail-closed 补位词"
+      },
+      "examples": ["TRUTH", "KNOWLEDGE", "UNCLASSIFIED_PENDING"]
+    },
+    "memory_class": {
+      "type": "string",
+      "enum": ["TRUTH", "KNOWLEDGE", "EPISODE", "DECISION", "EVIDENCE", "USER", "HARNESS_RUNTIME"],
+      "title": "PRD §48.2 七类长期记忆分类（七类闭集）",
+      "description": "Truth Memory（当前系统是什么；权威）/ Experience Memory / Knowledge（过去踩过什么坑、有哪些模式；非权威）/ Episode Memory（某个 Task/Incident/Migration 发生过什么；历史证据）/ Decision Memory（为什么形成当前架构/业务决策；ADR/ACR）/ Evidence Memory（什么证明 Claim 成立）/ User Memory（个人偏好，默认不进入项目 Git）/ Harness Runtime Memory（平台本地状态；可丢弃）。",
+      "$comment": "source: PRD v0.4 §48.2 L3236-3242 逐字（标题词形大写化，§91.3 先例）。提请词汇表 PR 收编（pending_vocab_pr）。",
+      "x-pomaster-vocab": {
+        "axis": "memory_class",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "source": "PRD v0.4 §48.2"
+      },
+      "examples": ["TRUTH", "USER", "HARNESS_RUNTIME"]
+    },
+    "review_state": {
+      "type": "string",
+      "enum": ["PENDING", "PROMOTED", "REJECTED"],
+      "title": "review 三态（默认 PENDING；已决再决 fail-closed）",
+      "description": "PENDING：待 batch review（新建条目唯一合法起点，缺省语义亦 PENDING）；PROMOTED：评审通过待晋升路由；REJECTED：评审否决（终态，无路由产物）。已决条目再决 = kernel fail-closed 拒绝（TRANSITION_ILLEGAL——三态封闭，无回退边）。",
+      "$comment": "source: thread-B §4.2 例文 review_state: PENDING + PRD §48.4「Review/Promotion」。提请词汇表 PR 收编（pending_vocab_pr）。",
+      "x-pomaster-vocab": {
+        "axis": "review_state",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "source": "thread-B §4.2 + PRD §48.4"
+      },
+      "examples": ["PENDING", "PROMOTED", "REJECTED"]
+    },
+    "harvest_source": {
+      "type": "string",
+      "enum": ["user_capture", "memory_harvest", "memory_drift_audit"],
+      "title": "条目来源通路（三值闭集）",
+      "description": "user_capture = 用户显式「记住」请求（STRICT 模式统一入口，§48.5）；memory_harvest = harness memory 目录批量收割（COMPATIBILITY 模式，§48.5）；memory_drift_audit = memory audit 的 MEMORY_DRIFT 探测产物自动入 inbox（Case N「进入 inbox」半边——不得自动成为 Truth）。",
+      "$comment": "source: PRD §44.10/§48.4/§48.5 + Case N。提请词汇表 PR 收编（pending_vocab_pr）。",
+      "x-pomaster-vocab": {
+        "axis": "harvest_source",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "source": "PRD §44.10/§48.4/§48.5 + Case N"
+      },
+      "examples": ["user_capture", "memory_drift_audit"]
+    },
+    "harvest_confidence": {
+      "type": "string",
+      "enum": ["HIGH", "MEDIUM", "LOW"],
+      "title": "分类提案置信三级（§81.4/§83.4 同词形复用，不发明新值）",
+      "description": "HIGH = 头部 metadata 显式声明（机器可读自述）；MEDIUM = 文件名/头部关键词机械命中（词面证据）；LOW = 无规则命中（UNCLASSIFIED_PENDING 恒 LOW——判不了显式降级，禁模糊猜测）。",
+      "$comment": "source: thread-B §4.2 + §81.4/§83.4 三级词形复用裁定。提请词汇表 PR 收编（pending_vocab_pr）。",
+      "x-pomaster-vocab": {
+        "axis": "harvest_confidence",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "source": "thread-B §4.2 + §81.4/§83.4 词形复用"
+      },
+      "examples": ["HIGH", "MEDIUM", "LOW"]
+    }
+  },
+  "examples": [
+    {
+      "id": "HM-3f9a1c02b7d4",
+      "batch": "harvest-claude",
+      "source": "memory_harvest",
+      "scope": "project",
+      "text": "Batch write pipelines without transactional primitives recur destructive rewrite across versions",
+      "proposal": {
+        "bucket": "KNOWLEDGE",
+        "memory_class": "KNOWLEDGE",
+        "confidence": "MEDIUM",
+        "title": "pomaster-governance-compiler-batch-clobbers",
+        "extracted_to": "knowledge/failure-patterns/KB-FP-CLOBBER-BATCH-WRITES.md",
+        "expiry": null
+      },
+      "needs_conflict_check": false,
+      "origin_text_archive": "~/.claude/projects/d--Vscode-Documents-MASTer-master/memory/pomaster-governance-compiler-batch-clobbers.md",
+      "review_state": "PENDING",
+      "review_notes": null,
+      "reviewed_by": null,
+      "recorded_at_seq": 41,
+      "promoted_route": null
+    }
+  ]
+}

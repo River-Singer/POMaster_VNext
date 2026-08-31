@@ -56,6 +56,17 @@
  *                   （--from-research 走 P18 上游）/ CANDIDATE 评审分母 / 提升唯一通路
  *                   （复用 P28a 权威位闸，§25.3）/ 降级去僵化（§83.11）；knowledge 恒
  *                   ADVISORY 永不进 gate 判卷输入（§83.2 铁律）
+ * - memory capture/inspect/harvest/review/promote/audit
+ *                   Memory 命令面（§44.10 六命令逐字 + §48.4/§48.5 + Case N；
+ *                   P33-Commands）：capture = STRICT 统一入口（stdin/--text → inbox
+ *                   PENDING，机器不分类）/ inspect = inbox 总览（各桶计数/分母封闭/
+ *                   PENDING 清单，纯读）/ harvest = COMPATIBILITY 批量收割（--harness-dir
+ *                   显式优先，缺省探测仅注册 claude；目录缺席 NOT_RUN exit 1 非 fake 绿）/
+ *                   review = batch review 唯一人工闸（--decide --promote|--reject --note
+ *                   必填留痕；只改分类标签不改写内容原文）/ promote = 分桶路由（KNOWLEDGE→
+ *                   P28 生命周期恒 CANDIDATE+ADVISORY；TRUTH/DECISION/EVIDENCE→
+ *                   OWNER_ESCALATION_REQUIRED 呈报 exit 0 不写 Canonical State）/ audit =
+ *                   分母封闭 + MEMORY_DRIFT 探测（drift 段非空 exit 1 fail-closed，§84.6）
  * - session attach/refresh/list
  *                   D 线地基①会话命令面（P20；D 线 §1.2/§3.1：注册/刷新 liveness +
  *                   resumed_task 解析 + 清单并排呈现；A10「CLI 零 session 命令」闭合）
@@ -116,6 +127,14 @@ import {
   runBrainstormStart,
   runBrainstormStatus,
 } from "./brainstorm.js";
+import {
+  runMemoryAudit,
+  runMemoryCapture,
+  runMemoryHarvest,
+  runMemoryInspect,
+  runMemoryPromote,
+  runMemoryReview,
+} from "./memory.js";
 import {
   runResearchInspect,
   runResearchList,
@@ -407,6 +426,29 @@ export type {
   PortabilityBootstrapCliResult,
   PortabilityCheckCliResult,
 } from "./portability.js";
+export {
+  runMemoryCapture,
+  runMemoryInspect,
+  runMemoryHarvest,
+  runMemoryReview,
+  runMemoryPromote,
+  runMemoryAudit,
+  claudeProjectSlugOf,
+  defaultHarnessMemoryDir,
+} from "./memory.js";
+export type {
+  MemoryCaptureInput,
+  MemoryCaptureResult,
+  MemoryInspectResult,
+  MemoryHarvestInput,
+  MemoryHarvestResult,
+  MemoryReviewInput,
+  MemoryReviewResult,
+  MemoryPromoteCliInput,
+  MemoryPromoteCliResult,
+  MemoryAuditCliInput,
+  MemoryAuditCliResult,
+} from "./memory.js";
 
 /** 一次命令执行的人读/机读产出记录（runCli 据此决定退出码与输出）。 */
 export interface CommandRun<TResult = unknown> {
@@ -1321,6 +1363,161 @@ export function createProgram(
       });
       record({
         command: "knowledge demote",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+
+  // —— Memory 命令面（PRD §44.10 六命令逐字 + §48.4/§48.5 + Case N；P33-Commands） ——
+  // 判卷/落盘权威在 kernel memory-harvest.ts 语义入口（P33a）；本面只做 argv 收敛、
+  // 错误词形映射与呈现。§84.6 铁律（G6 记忆主权）：本命令组没有任何写 Canonical
+  // State 的通路——TRUTH/DECISION/EVIDENCE 晋升只呈报（OWNER_ESCALATION_REQUIRED
+  // + result.owner_escalation 非空），数据落点全部在 .pomaster/memory/ 子树。
+  const memory = program
+    .command("memory")
+    .description(
+      "Memory 命令面（§44.10/§48）：capture（STRICT 统一入口）/ inspect（inbox 总览）/ harvest（COMPATIBILITY 批量收割）/ review（batch review 唯一人工闸）/ promote（分桶路由——KNOWLEDGE 走 P28 生命周期，TRUTH/DECISION/EVIDENCE 呈报 Owner 零 Canonical 写入）/ audit（分母封闭 + MEMORY_DRIFT fail-closed）",
+    );
+  memory
+    .command("capture")
+    .description(
+      "用户「记住」请求 → inbox 条目（§48.5 STRICT 模式统一入口；恒 UNCLASSIFIED_PENDING+LOW——分类归 Memory Curator，PRD §48.4；同文重复捕获 MEMORY_CAPTURE_DUPLICATE 显式拒绝）",
+    )
+    .option("--text <text>", "要记住的原文（缺席时读 stdin；空白原文拒绝）")
+    .option("--scope <scope>", "作用域（§44.10 逐字两值：project | user；缺省 project）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runMemoryCapture(resolveDir(command), {
+        scope: opts.scope as string | undefined,
+        text: opts.text as string | undefined,
+      });
+      record({
+        command: "memory capture",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  memory
+    .command("inspect")
+    .description(
+      "inbox 总览：各桶计数（七桶零填充）/ 分母封闭（total = PENDING+PROMOTED+REJECTED）/ PENDING 清单（纯读零写入；无 inbox = 显式空合法态）",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (_opts, command) => {
+      const outcome = runMemoryInspect(resolveDir(command));
+      record({
+        command: "memory inspect",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  memory
+    .command("harvest")
+    .description(
+      "harness memory 目录批量收割（§48.5 COMPATIBILITY 模式；全量读取→逐条分类提案+置信度→落 inbox PENDING）：--harness-dir 显式目录优先，缺省探测仅注册 claude（~/.claude/projects/<slug>/memory）；目录缺席 = MEMORY_HARVEST_NOT_RUN exit 1（显式 not_run 非 fake 绿）",
+    )
+    .argument("<harness>", "harness 名（claude 缺省探测位注册；其余须配 --harness-dir）")
+    .option("--harness-dir <dir>", "harness memory 目录（显式指定优先于缺省探测；禁猜测路径）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (harness: string, opts, command) => {
+      const outcome = await runMemoryHarvest(resolveDir(command), {
+        harness,
+        harnessDir: opts.harnessDir as string | undefined,
+      });
+      record({
+        command: "memory harvest",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  memory
+    .command("review")
+    .description(
+      "batch review 唯一人工闸（thread-B §4.2）：缺省 PENDING 队列；--list 全量+过滤（--state/--bucket/--batch）；--decide <id> --promote|--reject --note <text> 裁决（只改分类标签不改写内容原文——--reclassify-bucket/--reclassify-class 可选修正）",
+    )
+    .option("--list", "全量列表模式（缺省呈现 PENDING 队列）")
+    .option("--state <state>", "过滤 review 三态（PENDING | PROMOTED | REJECTED）")
+    .option("--bucket <bucket>", "过滤桶（thread-B §4.1 四桶+两特殊出口+拒绝位闭集）")
+    .option("--batch <batch>", "过滤批次目录名")
+    .option("--decide <id>", "裁决目标 inbox 条目 id（HM-<12hex>）")
+    .option("--promote", "裁决为 PROMOTED（与 --reject 互斥且二选一）")
+    .option("--reject", "裁决为 REJECTED（终态留痕淘汰）")
+    .option("--note <text>", "裁决注记（--decide 必填——已决必有评审留痕）")
+    .option("--reclassify-bucket <bucket>", "分类标签修正（桶；词表闭集）")
+    .option("--reclassify-class <class>", "分类标签修正（PRD §48.2 七类；null = 显式无分类）")
+    .option("--actor <actor>", "评审主体 <type>:<name>（C5 自报；缺省 human:owner）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runMemoryReview(resolveDir(command), {
+        list: opts.list === true,
+        state: opts.state as string | undefined,
+        bucket: opts.bucket as string | undefined,
+        batch: opts.batch as string | undefined,
+        decide: opts.decide as string | undefined,
+        promote: opts.promote === true,
+        reject: opts.reject === true,
+        note: opts.note as string | undefined,
+        reclassifyBucket: opts.reclassifyBucket as string | undefined,
+        reclassifyMemoryClass: opts.reclassifyClass as string | undefined,
+        actor: opts.actor as string | undefined,
+      });
+      record({
+        command: "memory review",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  memory
+    .command("promote")
+    .description(
+      "分桶路由晋升（评审通过后的路由执行；kernel promoteMemory 唯一通路）：KNOWLEDGE→P28 knowledge 生命周期恒 CANDIDATE+ADVISORY（--knowledge-id/--knowledge-kind 必填显式申报）；USER→user-scope 台账（不入项目 Git）；TRUTH/DECISION/EVIDENCE→OWNER_ESCALATION_REQUIRED 呈报 exit 0（owner_escalation 非空，Canonical State 零写入）；AUTHORITY_POLICY 须 --authority-upgrade 显式申报（默认 MEMORY_PROMOTE_OWNER_REQUIRED）",
+    )
+    .argument("<memory-id>", "inbox 条目 id（HM-<12hex>；须已 PROMOTED）")
+    .requiredOption("--actor <actor>", "执行主体 <type>:<name>（C5 自报）")
+    .option("--knowledge-id <id>", "KNOWLEDGE 桶路由必填：KNOWLEDGE.* governed id（P28 record 通路申报）")
+    .option(
+      "--knowledge-kind <kind>",
+      "KNOWLEDGE 桶路由必填：§83.3 四类型（ENGINEERING_PATTERN|FAILURE_PATTERN|DIAGNOSTIC_PLAYBOOK|DECISION_HEURISTIC）",
+    )
+    .option("--knowledge-title <text>", "知识标题（缺省机械搬运条目 title/首标题行）")
+    .option("--knowledge-trigger <text>", "触发条件（可重复；§83.4 检索键承载）", collectValues)
+    .option("--authority-upgrade", "AUTHORITY_POLICY 升格显式申报（默认拒绝——用户明令不可机器默认代行）")
+    .option("--user-memory-root <dir>", "user-scope 台账根注入（缺省 ~/.pomaster/user——§48.6）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (memoryId: string, opts, command) => {
+      const outcome = await runMemoryPromote(resolveDir(command), {
+        id: memoryId,
+        actor: opts.actor as string,
+        knowledgeId: opts.knowledgeId as string | undefined,
+        knowledgeKind: opts.knowledgeKind as string | undefined,
+        knowledgeTitle: opts.knowledgeTitle as string | undefined,
+        knowledgeTrigger: opts.knowledgeTrigger as string[] | undefined,
+        authorityUpgrade: opts.authorityUpgrade === true,
+        userMemoryRoot: opts.userMemoryRoot as string | undefined,
+      });
+      record({
+        command: "memory promote",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  memory
+    .command("audit")
+    .description(
+      "memory audit（§44.10 逐字）：auditMemory 全量结果（分母封闭恒等式 + 七桶计数 + batches 清单）+ Case N MEMORY_DRIFT 探测（hidden_memory_dependency=FAIL → drift 项自动进 inbox PENDING；envelope drift 段非空 exit 1 fail-closed，纯绿 exit 0；不得自动成为 Truth——§84.6）",
+    )
+    .option(
+      "--harness-memory-root <dir>",
+      "harness 记忆探测位注入（可重复；缺省 ~/.claude 与 ~/.codex 存在性探测——内容零读取）",
+      collectValues,
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runMemoryAudit(resolveDir(command), {
+        harnessMemoryRoot: opts.harnessMemoryRoot as string[] | undefined,
+      });
+      record({
+        command: "memory audit",
         outcome,
         asJson: command.optsWithGlobals().json === true,
       });

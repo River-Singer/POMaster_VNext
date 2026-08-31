@@ -862,3 +862,152 @@ export type PortabilityForbiddenDependencyValue =
 
 /** §84.6 Hidden Memory Drift 判定词形（PRD 逐字输出）。 */
 export const MEMORY_DRIFT = "MEMORY_DRIFT" as const;
+
+// ============================================================
+// P33 Memory Harvest 台账管线词形轴（x-vocab-source: PRD §48.2/§48.4/§44.10 逐字 +
+// thread-B §4 迁移设计词形（research/design-thread-B-migration.md）+ kernel
+// fail-closed 纪律补位词）。
+// TODO(vocab-pr)：absent_in_vocab_lock__pending_vocab_pr，收编后以 vocab-lock
+// 为准逐值镜像。schema 落点 14-memory-harvest definitions（与本段逐值同源）。
+// ============================================================
+
+/**
+ * Memory Harvest 分桶（thread-B §4.1 四桶初筛表 + 两条特殊出口，词形逐字）：
+ * - TRUTH：陈述现状基线值/规模/栈/权威指针；
+ * - KNOWLEDGE：失败模式/诊断法/教训，不随 M6 失效；
+ * - EPISODE：事件史/时间线/翻案过程；
+ * - PREFERENCE：个人工作偏好；
+ * - AUTHORITY_POLICY（特殊出口①）：type=feedback 且属用户明令——从
+ *   PREFERENCE/TRUTH 中升格（升格须显式声明，kernel 侧 AUTHORITY_REQUIRED 闸）；
+ * - INVALID_EXPIRED（特殊出口②）：被后续事实推翻（thread-B 表「INVALID/EXPIRED」
+ *   的机器键 snake_case 词形）；
+ * - UNCLASSIFIED_PENDING：机械判不了的第 refusal 位（禁模糊猜测——判不了显式
+ *   unknown 落待分拣，confidence 恒 LOW；equivalence unknown 词形同源纪律）。
+ * 与 MEMORY_CLASS_VALUES（PRD §48.2 七类长期记忆分类）分轴正交：桶是 harvest
+ * 工作台初筛位，类是 promote 后的长期记忆归属位（映射表 MEMORY_CLASS_OF_BUCKET）。
+ * x-vocab-source: thread-B §4.1 表逐字 + kernel UNCLASSIFIED_PENDING 补位词。
+ */
+export const HARVEST_BUCKET_VALUES = [
+  "TRUTH",
+  "KNOWLEDGE",
+  "EPISODE",
+  "PREFERENCE",
+  "AUTHORITY_POLICY",
+  "INVALID_EXPIRED",
+  "UNCLASSIFIED_PENDING",
+] as const;
+export type HarvestBucketValue = (typeof HARVEST_BUCKET_VALUES)[number];
+
+/** 四桶初筛位（thread-B §4.1 逐字四词形；特殊出口不在其列——出口是升格/淘汰位）。 */
+export const HARVEST_PRIMARY_BUCKETS = [
+  "TRUTH",
+  "KNOWLEDGE",
+  "EPISODE",
+  "PREFERENCE",
+] as const;
+export type HarvestPrimaryBucket = (typeof HARVEST_PRIMARY_BUCKETS)[number];
+
+/** 两条特殊出口（thread-B §4.1 表 ↑AUTHORITY_POLICY 与 INVALID/EXPIRED 行）。 */
+export const HARVEST_SPECIAL_EXIT_VALUES = [
+  "AUTHORITY_POLICY",
+  "INVALID_EXPIRED",
+] as const;
+export type HarvestSpecialExitValue = (typeof HARVEST_SPECIAL_EXIT_VALUES)[number];
+
+/**
+ * PRD §48.2 七类长期记忆分类（七类闭集，§48.2 标题词形大写化——§91.3 词形
+ * 大写化先例）：Truth / Experience Memory(Knowledge) / Episode / Decision /
+ * Evidence / User / Harness Runtime。桶→类映射见 MEMORY_CLASS_OF_BUCKET。
+ * x-vocab-source: PRD v0.4 §48.2 L3236-3242 逐字。
+ */
+export const MEMORY_CLASS_VALUES = [
+  "TRUTH",
+  "KNOWLEDGE",
+  "EPISODE",
+  "DECISION",
+  "EVIDENCE",
+  "USER",
+  "HARNESS_RUNTIME",
+] as const;
+export type MemoryClassValue = (typeof MEMORY_CLASS_VALUES)[number];
+
+/**
+ * inbox 条目 review 三态（P33a fail-closed 纪律补位词；§48.4「Review/Promotion
+ * 决定是否进入长期存储」的显式状态承载）。默认 PENDING（新建条目唯一合法起点
+ * ——kernel buildInboxEntry 结构性只写 PENDING）；PROMOTED/REJECTED 只能由
+ * decideInboxEntry 评审动作显式写入；已决条目再决 fail-closed 拒绝。
+ * x-vocab-source: PRD §48.4「Review/Promotion」+ thread-B §4.2 review_state
+ * 例文词形 PENDING。
+ */
+export const REVIEW_STATE_VALUES = ["PENDING", "PROMOTED", "REJECTED"] as const;
+export type ReviewStateValue = (typeof REVIEW_STATE_VALUES)[number];
+
+/**
+ * inbox 条目来源三值（P33a 通路词形）：user_capture = 用户显式「记住」请求
+ * （STRICT 模式统一入口，§48.5）；memory_harvest = harness memory 目录批量
+ * 收割（COMPATIBILITY 模式，§48.5）；memory_drift_audit = memory audit 的
+ * MEMORY_DRIFT 探测产物自动入 inbox（Case N「进入 inbox」半边——不得自动
+ * 成为 Truth，§84.6）。
+ * x-vocab-source: PRD §44.10/§48.4/§48.5 + Case N L5526-5530。
+ */
+export const HARVEST_SOURCE_VALUES = [
+  "user_capture",
+  "memory_harvest",
+  "memory_drift_audit",
+] as const;
+export type HarvestSourceValue = (typeof HARVEST_SOURCE_VALUES)[number];
+
+/**
+ * 分类提案置信三级（thread-B §4.2「逐条打分类提案+置信度」；词形复用 §81.4
+ * Research Finding / §83.4 Knowledge 置信三级同词形 HIGH/MEDIUM/LOW——词形
+ * 复用不发明新值先例；判不了的 UNCLASSIFIED_PENDING 恒 LOW）。与
+ * state_axes.confidence（UNRESOLVED/EXPERIMENTAL/PROVISIONAL/LOCKED）值域
+ * 不相交。
+ * x-vocab-source: thread-B §4.2 + §81.4/§83.4 三级同词形复用裁定。
+ */
+export const HARVEST_CONFIDENCE_VALUES = ["HIGH", "MEDIUM", "LOW"] as const;
+export type HarvestConfidenceValue = (typeof HARVEST_CONFIDENCE_VALUES)[number];
+
+// ============================================================
+// P33b Memory CLI 命令面词形（§44.10 六命令错误面 + 呈报位）。
+// TODO(vocab-pr)：absent_in_vocab_lock__pending_vocab_pr，收编后以 vocab-lock
+// 为准逐值镜像。无 PRD 逐字出处的自创补位词与本批任务定案词形均在此登记，
+// 随 P33 呈报件同批呈报 Owner（词汇表 PR 收编前禁进 vocab-lock 主表）。
+// ============================================================
+
+/**
+ * memory CLI 错误词形族（P33b-Commands 补位词；kernel GovernanceError 码位之上
+ * 的命令面呈现码——映射关系确定性一一对应，禁子串/模糊猜测映射）：
+ * - MEMORY_ENTRY_NOT_FOUND：inbox 条目不在册（kernel OBJECT_NOT_FOUND 的命令面
+ *   词形；inspect/review --decide/promote 共用）；
+ * - MEMORY_ALREADY_REVIEWED：已决条目再决（kernel TRANSITION_ILLEGAL 的
+ *   review --decide 面 / REJECTED 条目 promote 面词形——review 三态封闭）；
+ * - MEMORY_REVIEW_REQUIRED：PENDING 条目直接 promote（batch review 是唯一
+ *   人工闸——thread-B §4.2 的命令面词形）；
+ * - MEMORY_ALREADY_PROMOTED：已晋升条目重复 promote（晋升一次性）；
+ * - MEMORY_PROMOTE_OWNER_REQUIRED：AUTHORITY_POLICY 升格未申报（kernel
+ *   AUTHORITY_REQUIRED 的命令面词形——用户明令升格不可机器默认代行）；
+ * - MEMORY_CAPTURE_DUPLICATE：同文重复捕获（内容寻址 id 撞册）；
+ * - MEMORY_HARVEST_NOT_RUN：harness 目录缺席/零 md（kernel NOT_RUN 三态的
+ *   命令面 fail-closed 词形——显式非绿，绝不伪造空跑成功）。
+ */
+export const MEMORY_CLI_ERROR_VALUES = [
+  "MEMORY_ENTRY_NOT_FOUND",
+  "MEMORY_ALREADY_REVIEWED",
+  "MEMORY_REVIEW_REQUIRED",
+  "MEMORY_ALREADY_PROMOTED",
+  "MEMORY_PROMOTE_OWNER_REQUIRED",
+  "MEMORY_CAPTURE_DUPLICATE",
+  "MEMORY_HARVEST_NOT_RUN",
+] as const;
+export type MemoryCliErrorValue = (typeof MEMORY_CLI_ERROR_VALUES)[number];
+
+/**
+ * memory promote 呈报词形（P33b 任务定案：TRUTH/DECISION/EVIDENCE 桶晋升路由
+ * escalate_owner 时 envelope warnings 携带本词形 + result.owner_escalation 非空
+ * ——exit 0 不冒充失败也不冒充普通成功，呈报语义显式；Case N「不得自动成为
+ * Truth」的命令面正向镜像）。
+ * x-vocab-source: P33b 任务定案（wave3-plan P33 呈报位；PRD Case N L5526-5530
+ * + §84.6 铁律）。
+ */
+export const OWNER_ESCALATION_REQUIRED = "OWNER_ESCALATION_REQUIRED" as const;

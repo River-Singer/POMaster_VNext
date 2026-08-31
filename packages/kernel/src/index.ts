@@ -1308,6 +1308,96 @@ export {
 } from "./vocab.js";
 
 // ============================================================
+// Memory Harvest 台账管线内核（P33a · PRD §48.2/§48.4/§48.5/§44.10 memory 命令组
+// + Case N；thread-B §4 四桶+inbox 设计的产品半边）
+// ============================================================
+// 语义边界（docs/kernel-api.md §21）：四桶初筛（TRUTH/KNOWLEDGE/EPISODE/PREFERENCE，
+// thread-B §4.1 逐字）+ 两条特殊出口（AUTHORITY_POLICY 升格须显式 authorityUpgrade
+// 声明默认拒绝 / INVALID_EXPIRED 淘汰）+ UNCLASSIFIED_PENDING 机械拒绝位（禁模糊
+// 猜测——判不了显式 LOW）+ 半自动 inbox 管线（机器提案→batch review 只改分类标签
+// 不改写内容原文——decideInboxEntry 签名无 text 键位的结构封条→promote 分桶路由）。
+// KNOWLEDGE 桶晋升走 P28 recordKnowledge 通路（恒 CANDIDATE 起步 + authority 恒
+// ADVISORY，不旁路生命周期）；TRUTH/DECISION/EVIDENCE 晋升不写 Canonical State 返回
+// escalate_owner（呈报位——Case N「不得自动成为 Truth」正向镜像）；USER/PREFERENCE
+// 落 user-scope 台账（§48.2 第 6 类不入项目 Git；默认 ~/.pomaster/user 可注入）。
+// auditMemory 消费 P32 MEMORY_DRIFT 探测（词形复用），drift 项自动进 inbox。数据
+// 落点全部在 .pomaster/memory/ 子树（绝不触碰 .pomaster/state/truth；零 journal）；
+// id=HM-<12hex> 内容寻址（同文同 id 重复显式检出，A4 无墙钟无随机）；词形轴
+// pending_vocab_pr（HARVEST_*/MEMORY_CLASS/REVIEW_STATE，schemas vocab.ts P33 段）。
+export {
+  MEMORY_INBOX_RELATIVE,
+  USER_MEMORY_LEDGER_FILENAME,
+  defaultUserMemoryRoot,
+  inboxEntryIdOf,
+  buildInboxEntry,
+  captureMemory,
+  harvestHarness,
+  classifyForHarvest,
+  parseFrontmatterMeta,
+  HARVEST_RULES,
+  OBSOLETE_MARKERS,
+  reviewInbox,
+  readInboxEntries,
+  readInboxEntry,
+  decideInboxEntry,
+  promoteMemory,
+  auditMemory,
+  readUserMemoryLedger,
+  INBOX_SCOPE_VALUES,
+  MEMORY_CLASS_PRD_LABELS,
+  MEMORY_CLASS_OF_BUCKET,
+} from "./memory-harvest.js";
+export type {
+  InboxEntry,
+  InboxProposal,
+  InboxReviewedBy,
+  InboxPromotedRoute,
+  InboxEntryBuildInput,
+  InboxScopeValue,
+  HarvestRule,
+  HarvestClassification,
+  CaptureMemoryOptions,
+  HarvestHarnessOptions,
+  HarvestHarnessReport,
+  InboxReviewFilters,
+  InboxReviewReport,
+  InboxReclassify,
+  InboxDecisionInput,
+  PromoteKnowledgeInput,
+  MemoryPromoteOptions,
+  MemoryPromoteOutcome,
+  MemoryPromoteResult,
+  UserMemoryLedgerEntry,
+  UserMemoryLedgerFile,
+  MemoryAuditOptions,
+  MemoryAuditReport,
+} from "./memory-harvest.js";
+// P33 词形轴唯一镜像在 @pomaster/schemas vocab.ts P33 段（kernel vocab.ts re-export
+// 同源转发，P32 段同款惯例）。
+export {
+  HARVEST_BUCKET_VALUES,
+  HARVEST_PRIMARY_BUCKETS,
+  HARVEST_SPECIAL_EXIT_VALUES,
+  MEMORY_CLASS_VALUES,
+  REVIEW_STATE_VALUES,
+  HARVEST_SOURCE_VALUES,
+  HARVEST_CONFIDENCE_VALUES,
+  // P33b CLI 命令面词形（错误词形族 + 呈报词形；同段 pending_vocab_pr）。
+  MEMORY_CLI_ERROR_VALUES,
+  OWNER_ESCALATION_REQUIRED,
+} from "./vocab.js";
+export type {
+  HarvestBucketValue,
+  HarvestPrimaryBucket,
+  HarvestSpecialExitValue,
+  MemoryClassValue,
+  ReviewStateValue,
+  HarvestSourceValue,
+  HarvestConfidenceValue,
+  MemoryCliErrorValue,
+} from "./vocab.js";
+
+// ============================================================
 // Doctor（D7 Portability 必检最小集四检；fail-closed）
 // ============================================================
 
