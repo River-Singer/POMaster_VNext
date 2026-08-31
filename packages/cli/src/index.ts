@@ -31,6 +31,13 @@
  * - catalog status/explain
  *                   Engineering Catalog 命令面（§44.10；P14：catalog 构成与单条目解释，
  *                   catalog-lock 漂移显式检出；catalog 是策展源非第二套 Project Truth——§92.2）
+ * - migrate trellis-spec
+ *                   Trellis Spec 迁移命令面（§93.6/§96 第 8 步；P30-Commands）：--analyze
+ *                   消费 P30a Analyzer 内核输出迁移分类清单（分母 fail-closed 恒呈现；
+ *                   只读零写入，未 init 目录可跑）；--propose/--diff/--apply 结构性不注册
+ *                   （注册表无此词形，golden 钉住），unknown-option 拦截面显式提示
+ *                   COMMAND_DEFERRED + exit 1 非静默吞参；--spec-root 缺席 fail-closed
+ *                   不猜测默认路径；迁移纪律（§96 第 11 步 Tracer Bullet）随报告呈现
  * - eval            Agent Behavioral Eval（§44.10）：跑 --suite behavioral（seeds 25 注册/
  *                   23 executable/2 retired；retired 显式呈现不计失败；executable 失败
  *                   fail-closed exit 1；§94.3 触发面配套——trigger-manifest + eval-trigger.mjs）
@@ -127,6 +134,7 @@ import {
   runSessionRefresh,
 } from "./runtime.js";
 import { runAgentsStatus, runHandoff, runRun } from "./agents.js";
+import { MIGRATE_DEFERRED_FORMS, runMigrateTrellisSpec } from "./migrate.js";
 
 export { CLI_NAME, CLI_VERSION } from "./cli-info.js";
 export { toEnvelope } from "./envelope.js";
@@ -374,6 +382,18 @@ export type {
 } from "./runtime.js";
 export { runAgentsStatus, runRun, runHandoff, COMMAND_DEFERRED, GATEKEEPER_DRIFT_OBSERVED, SUPERVISOR_TRIGGER_OBSERVED } from "./agents.js";
 export type { AgentsStatusResult, AgentsStatusInput, DeferredCommandResult } from "./agents.js";
+export {
+  runMigrateTrellisSpec,
+  MIGRATE_DEFERRED_FORMS,
+  MIGRATE_DEFERRED_HINT,
+  MIGRATE_STAGE_ANALYZE_ONLY,
+  classificationCensus,
+} from "./migrate.js";
+export type {
+  MigrateTrellisSpecInput,
+  MigrateTrellisSpecResult,
+  MigrateDeferredResult,
+} from "./migrate.js";
 
 /** 一次命令执行的人读/机读产出记录（runCli 据此决定退出码与输出）。 */
 export interface CommandRun<TResult = unknown> {
@@ -957,6 +977,44 @@ export function createProgram(
       });
       record({
         command: "catalog explain",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  // —— Trellis Spec 迁移命令面（PRD §93.6 四词形 + §96 第 8 步；P30-Commands） ——
+  // analyze-only 阶段：--analyze 消费 P30a Analyzer 内核（analyzeSpecDir，只读零写入）；
+  // --propose/--diff/--apply 结构性不注册为选项（注册表无此词形，golden 钉住），经
+  // unknown-option 拦截显式提示 COMMAND_DEFERRED + exit 1——deferred 提示非静默吞参。
+  const migrate = program
+    .command("migrate")
+    .description(
+      "Trellis Spec 迁移命令面（§93.6/§96 第 8 步）：analyze-only 阶段只接线 --analyze（只读分析零写入）",
+    );
+  migrate
+    .command("trellis-spec")
+    .description(
+      "Trellis Spec Analyzer（§96 第 8 步「只分析，不 Apply」）：--analyze --spec-root <dir> 输出迁移分类清单（§93.3 八类候选 + §93.4 十二分类 + §93.6 六检 analyze 版；分母块恒呈现）；--propose/--diff/--apply 显式 deferred（传入即提示 exit 1，非静默吞参）；迁移纪律（§96 第 11 步）：不以一次迁完为完成条件——Tracer Bullet 先打通 3~5 个代表主题全链路",
+    )
+    .option("--analyze", "运行分析（本阶段唯一接线词形；只读零写入）")
+    .option(
+      "--spec-root <dir>",
+      "Analyzer 输入源 spec 目录（缺席 = fail-closed 显式报错，不猜测默认路径）",
+    )
+    .allowUnknownOption(true)
+    .argument("[extras...]")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (extras: string[], _opts, command) => {
+      const deferredForms = (extras as readonly string[]).filter((form) =>
+        (MIGRATE_DEFERRED_FORMS as readonly string[]).includes(form),
+      );
+      const outcome = await runMigrateTrellisSpec(resolveDir(command), {
+        analyze: command.opts().analyze === true,
+        specRoot: command.opts().specRoot as string | undefined,
+        deferredForms,
+      });
+      record({
+        command: "migrate trellis-spec",
         outcome,
         asJson: command.opts().json === true,
       });

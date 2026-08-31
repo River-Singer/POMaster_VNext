@@ -974,6 +974,52 @@ export type {
 } from "./catalog.js";
 
 // ============================================================
+// Trellis Spec Analyzer（P30 · PRD §96 第 8 步「只分析，不 Apply」+ §93.3/93.4/93.5/93.6）
+// ============================================================
+// 语义边界：纯分析引擎——输入 spec 目录（或文件内容集），输出迁移分类清单
+// （八类候选提取 + 十二分类 + PENDING_REVIEW 诚实桶 + overlap/cross-lane 清单 +
+// §93.6 六项前置检查的 analyze 版 + §92.5/92.6 附带清单 + 分母 fail-closed 块）。
+// analyze-only 结构封条：导出面无任何写 catalog/项目 state 的函数（签名只收路径/
+// 内容，无 Store）；TransactionOp 无 Analyzer op；本模块零写 IO（对照测试钉）。
+// --propose/--diff/--apply 显式 deferred（PRD §93.6 四词形；呈现层提示归后续批次）。
+export {
+  analyzeSpecDir,
+  analyzeSpecFiles,
+  parseSpecMarkdown,
+  normalizeClassificationValue,
+  specSimilarityTokens,
+  CANDIDATE_KIND_MAPPING,
+  PRECHECK_IDS,
+  ACTIVATION_BEARING_CLASSIFICATIONS,
+  PENDING_REVIEW_BUCKET,
+  PROJECT_STATE_HINT,
+  SPEC_ANALYZER_REPORT_DIALECT,
+  DUPLICATE_SIMILARITY_THRESHOLD,
+  OVERLAP_SIMILARITY_THRESHOLD,
+  CONTRADICTION_SIMILARITY_THRESHOLD,
+} from "./spec-analyzer.js";
+export type {
+  SpecFileInput,
+  SpecSection,
+  SpecCandidateSource,
+  SpecCandidate,
+  SpecOverlapLink,
+  SpecCrossLaneRow,
+  SpecPreCheckRow,
+  SpecPreCheckHit,
+  SpecPreCheckDeferred,
+  SpecAnalysisFileRow,
+  SpecAnalysisDenominator,
+  SpecActivationRow,
+  SpecNameExitEntry,
+  SpecAnalysisReport,
+  SpecAnalysisSource,
+  CandidateKind,
+  CandidateKindMappingRow,
+  PreCheckId,
+} from "./spec-analyzer.js";
+
+// ============================================================
 // Gate 归一（八拍⑤ VERIFY；C1 七态判卷）
 // ============================================================
 
