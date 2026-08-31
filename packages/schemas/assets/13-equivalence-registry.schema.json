@@ -1,0 +1,266 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://pomaster.dev/schemas/equivalence-registry/v1-draft.json",
+  "title": "Equivalence Registry（跨域联结词形等价登记表 · P31 / GRN-4402 转译 · A13 / OPEN-M6-12）",
+  "description": "把「跨域引用联结键」升为一等治理对象的词形轴落地（docs/wave3-research-gaps.md §3 GRN-4402 产品需求转译，line 105 逐字：词形等价登记表（中文↔拼音↔缩写/压缩记法，declared-equivalence-only、禁启发式猜测）+ 未登记词形 pending 桶（机械入册、Owner 裁决）+ 联结覆盖率盲区指标）。\nGRN-4402 断链三层（gaps §3 line 99-102）：①工具内硬编码映射表不是治理对象；②公式侧中文（密度/单价/夹紧力）vs 源 id 侧拼音（FIELD.MATERIAL-DB.MIDU）精确命中 0、无等价登记；③页域散文词形（数量(#5) / KPI#5 [RMB/pc.]）没有 governed 联结键。\n三条现行纪律（gaps §3 line 103 逐字，本 schema 结构性保住）：词形漂移对只登记不裁决（登记≠批准等价，等价表是声明性事实不是裁决权行使）；禁子串猜测（启发式≠机械等价，等价必须显式声明）；判不了显式 skipped_blindspot 而非假绿（未登记词形落 pending 桶 + 盲区指标，绝不静默记绿）。",
+  "x-pomaster-file-role": "13-equivalence-registry.schema.json —— state/equivalence-registry.json 侧车的形态契约（kernel equivalence.ts 维护，写入唯一通路；kernel 内部补充状态，不进 content_digest）。消费方 = D15 Key Binding / A6 alias 双向链上的联结键解析面（resolveLinkageWordForm 三腿链：精确 id → active 等价登记 → pending 机械入册）与联结覆盖率盲区指标（03 FROZEN 盲区证据链同型）。",
+  "x-pomaster-vocab-source": "词形轴 absent_in_vocab_lock__pending_vocab_pr：domain 轴（zh-formal/pinyin/abbrev/compressed 取 gaps §3 line 105「中文↔拼音↔缩写/压缩记法」逐字转译；canonical 取 A6 canonical governed id 既有词形 + gaps §3 line 101「源 id 侧」结构性必需位；unknown = 机械入册不判域的显式未知——禁启发式判域，域标记由 Authority 声明时补登）；status 轴（active/pending 取 gaps §3 line 105「未登记词形 pending 桶」词形）。词形已在本文件 definitions 冻结并镜像于 @pomaster/schemas vocab.ts 待收编段（WORD_FORM_DOMAIN_VALUES / EQUIVALENCE_STATUS_VALUES），提请词汇表 PR 收编（pending_vocab_pr）。equivalence_group 的 EQG-n 是通路编号词形（GRN-/CLM-/EXC-/AGX-/SA-nnnn 同族先例），非 governed 前缀，不入 id_namespace prefixes_v0 闭包、不过 parseGovernedId。",
+  "x-pomaster-contract": {
+    "register_not_adjudicate": "纪律①（gaps §3 line 103 逐字「词形漂移对只登记不裁决」）的结构性落法：本表是声明性事实（declared_by + declaration_ref 记录谁声明的等价），不是裁决权行使——kernel 不判申报真（C5 自报），只要求显式声明（declared-equivalence-only）：无 declared_by 显式声明的等价对一律落 pending 桶（status=pending），不存在「kernel 自己认定等价」的形态通道（active 条目 declared_by 必非空，allOf 条件式封死）。",
+    "declared_equivalence_only": "纪律②（「禁子串猜测（启发式≠机械等价）」）的结构性落法：解析面只做 active 登记 word_forms[].text 的全等精确匹配——禁子串、禁大小写/NFKC 折叠、禁编辑距离、禁任何模糊/启发式匹配（FE↔frontend、MIDU↔密度 未登记等价一律不猜测，P28 检索纪律同源）；词形域标记（domain）机械入册时恒 unknown（机器不判域——判域即启发式），由 Authority 声明时显式补登。",
+    "no_fake_green": "纪律③（「判不了就显式 skipped_blindspot 而非假绿」）的结构性落法：未命中 active 登记的词形显式 unresolved（解析结果 status=unresolved，canonical=null），机械入册 pending 桶供 Authority 裁决队列；绝不静默返回「最近似」候选。联结覆盖率指标（kernel computeLinkageCoverage）分母封闭：resolved+pending+unresolved=total，盲区数以 unchecked_in_blindspot_estimated 同型指标显式呈现（03-gate-result GateCounts.uncheckedInBlindspotEstimated 同名键位）。",
+    "text_uniqueness": "词形全文唯一性（同一 text 至多属于一个登记条目，active+pending 全域）为跨条目不变式，JSON Schema 单实例无法表达——由 kernel 装载面 fail-closed 校验（违反=SCHEMA_INVALID，alias 三重查重同源纪律）；解析确定性（text→唯一 canonical）由此不变式保证。",
+    "exactly_one_canonical": "active 条目恰含一个 domain=canonical 词形（联结键解析的 canonical 产物位，文本须过 governed id 文法）：JSON Schema 无法对数组元素计数——kernel 装载面 fail-closed 校验（本 schema 以 allOf contains 表达 ≥1 存在性；恰一性与文法校验在 kernel equivalence.ts）。",
+    "disposal_semantics": "Authority 声明等价（registerEquivalence 携带 declaredBy）时机械清理与声明词形重叠的 pending 队列条目（裁决消费队列；journal EQUIVALENCE_DECLARED.disposed_groups 留痕）——清理是声明事实的簿记后果，不是 kernel 裁决；与任何 active 条目词形重叠的声明整体 SCHEMA_INVALID 拒绝（冲突显式，禁静默合并）。",
+    "group_seq_monotonic": "group_seq 是已分配最大组号（EQG-n 单调分配、永不复用——A4 单调纪律；已处置组号不复用，journal 考古无歧义）。装载面校验 group_seq ≥ 在册最大组号（手改回卷=SCHEMA_INVALID）。"
+  },
+  "x-pomaster-digest-ethics-policy": "本对象当前不含 sha256/digest 字段。未来任何 digest/sha256 字段加入时必须携带 x-digest-ethics 注记 {\"write_blocking\": false, \"side\": \"read_only_service\", \"human_touch\": \"forbidden\"}（D24 / vocab-lock digest_ethics）。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "group_seq", "entries"],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1,
+      "title": "登记表文件版本（version）"
+    },
+    "group_seq": {
+      "type": "integer",
+      "minimum": 0,
+      "title": "已分配最大等价组号（group_seq；EQG-n 单调分配永不复用，A4）",
+      "description": "kernel 分配新组时取 group_seq+1 并同事务落盘；0 = 尚未分配任何组（空表合法值）。装载面校验 group_seq ≥ 在册最大 n（回卷=手改痕迹，SCHEMA_INVALID）。"
+    },
+    "entries": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/equivalence_entry" },
+      "title": "等价登记条目列表（entries）",
+      "description": "空数组合法（无等价登记是合法状态；未登记词形一律显式 unresolved/pending，不猜测）。equivalence_group 在表内唯一；词形 text 全域（active+pending）唯一（kernel 装载面校验）。"
+    }
+  },
+  "definitions": {
+    "equivalence_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["equivalence_group", "word_forms", "status", "declared_by", "declaration_ref", "provenance", "note"],
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "const": "active" } }, "required": ["status"] },
+          "then": {
+            "properties": {
+              "word_forms": { "minItems": 2 },
+              "declared_by": { "type": "object" },
+              "declaration_ref": { "type": "string", "minLength": 1 },
+              "provenance": {
+                "properties": { "declared_at_seq": { "type": "integer", "minimum": 0 } }
+              }
+            },
+            "description": "declared-equivalence-only 结构封条：active（已声明的等价）必有声明者（declared_by 非空）+ 声明出处锚（declaration_ref 非空）+ 声明事件拍（declared_at_seq 非空）+ 至少两个词形；无显式声明的等价对落 pending（kernel registerEquivalence 无 declaredBy 输入时结构性写不出 active）。"
+          }
+        },
+        {
+          "if": { "properties": { "status": { "const": "active" } }, "required": ["status"] },
+          "then": {
+            "properties": {
+              "word_forms": {
+                "contains": {
+                  "type": "object",
+                  "properties": { "domain": { "const": "canonical" } },
+                  "required": ["domain"]
+                }
+              }
+            },
+            "description": "active 组必含 canonical 位词形（联结键解析 resolveWordForm 的产物位：词形→canonical governed id；恰一性与 governed id 文法校验在 kernel 装载面）。"
+          }
+        },
+        {
+          "if": { "properties": { "status": { "const": "pending" } }, "required": ["status"] },
+          "then": {
+            "properties": {
+              "declared_by": { "type": "null" },
+              "declaration_ref": { "type": "null" }
+            },
+            "description": "pending（未获声明的候选组，机械入册等裁决）不存在声明者与声明引用——非 null 即手改痕迹（装载面 SCHEMA_INVALID；「登记≠裁决」的形态面：机械入册永远写不出声明位）。"
+          }
+        }
+      ],
+      "properties": {
+        "equivalence_group": {
+          "type": "string",
+          "pattern": "^EQG-[0-9]+$",
+          "title": "等价组号（equivalence_group，EQG-n 通路编号词形）",
+          "description": "EQG-n 与 GRN-/CLM-/EXC-/AGX-/SA-nnnn 同族：通路编号词形，非 governed 前缀，不入 id_namespace prefixes_v0 闭包、不过 parseGovernedId（PERMIT.<BASE>.<SEQ> 台账键同款纪律）。kernel 单调分配、永不复用（A4）；表内唯一。",
+          "examples": ["EQG-1", "EQG-42"]
+        },
+        "word_forms": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/word_form" },
+          "title": "互等价词形列表（word_forms）",
+          "description": "一组互等价词形（gaps §3 line 105「词形等价登记表」）。条目内 text 互异（重复=登记缺陷，kernel 拒绝）；跨条目 text 全域唯一（kernel 装载面校验）。canonical 位词形文本须过 governed id 文法（PREFIX.SEGMENT(.SEGMENT)*[.SEQ]，A5 closed-world）。"
+        },
+        "status": { "$ref": "#/definitions/equivalence_status" },
+        "declared_by": {
+          "type": ["object", "null"],
+          "properties": {
+            "actor_type": {
+              "type": "string",
+              "enum": ["agent", "human", "tool", "kernel"]
+            },
+            "actor": { "type": "string", "minLength": 1 },
+            "self_attested": { "type": "boolean" }
+          },
+          "additionalProperties": false,
+          "required": ["actor_type", "actor", "self_attested"],
+          "title": "等价声明者（declared_by；登记≠裁决——等价由 Authority 显式声明）",
+          "description": "谁声明了这组等价（gaps §3 line 103 纪律①「登记≠批准等价，等价表是声明性事实不是裁决权行使」）。C5 自报：kernel 不判申报真（是否真 Authority 归 journal 留痕 + Authority 裁决审计），只登记声明事实。pending 条目恒 null（无声明即候选）。",
+          "examples": [
+            { "actor_type": "human", "actor": "owner", "self_attested": false }
+          ]
+        },
+        "declaration_ref": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "title": "声明出处锚（declaration_ref；active 必非空）",
+          "description": "声明事实的出处锚（词汇表 PR / Authority 决议 / GRN 证据引用，宽松词形）——「每条裁定注记出处锚」纪律（gaps §3 line 100-102 GRN-4402 语料锚先例）的落点。pending 条目恒 null。",
+          "examples": ["vocab-pr-pending/equivalence-batch-1", "GRN-4402 判例语料 owner 裁决"]
+        },
+        "provenance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["recorded_at_seq", "declared_at_seq"],
+          "properties": {
+            "recorded_at_seq": {
+              "type": "integer",
+              "minimum": 0,
+              "title": "登记时 store 事件拍（recorded_at_seq；A4 禁墙钟）",
+              "description": "机械入册/显式登记发生时的 store 事件拍（11-exception-ledger recorded_at_seq 先例）；新鲜度只按事件拍，不按墙钟。"
+            },
+            "declared_at_seq": {
+              "type": ["integer", "null"],
+              "minimum": 0,
+              "title": "声明时 store 事件拍（declared_at_seq；A4 禁墙钟）",
+              "description": "Authority 声明发生时的 store 事件拍；pending 条目恒 null（未声明）。"
+            }
+          },
+          "title": "事件拍沿革（provenance；A4 事件拍禁墙钟）"
+        },
+        "note": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "title": "人类散文注记（note，可选）",
+          "description": "机器不得解析其内容做判卷（P9 教训：人类散文唯一合法入口，只登记不解析）。"
+        }
+      }
+    },
+    "word_form": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text", "domain", "source_ref"],
+      "properties": {
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "title": "词形原文（text；解析面全等精确匹配唯一依据）",
+          "description": "登记原文，逐字符精确（登记后 trim 归一空白边缘；除此之外零归一——禁大小写折叠/NFKC 折叠/子串/编辑距离等任何启发式匹配，FE↔frontend、MIDU↔密度 未登记等价不猜测）。中文散文（密度）、拼音（MIDU）、缩写（FE）、压缩记法（数量(#5)）、governed id（FIELD.MATERIAL-DB.MIDU）同槽承载——词形轴统一，跨域联结键由此成为一等治理对象。",
+          "examples": ["密度", "MIDU", "FIELD.MATERIAL-DB.MIDU", "数量(#5)", "KPI#5 [RMB/pc.]"]
+        },
+        "domain": { "$ref": "#/definitions/word_form_domain" },
+        "source_ref": {
+          "type": "string",
+          "minLength": 1,
+          "title": "登记出处锚（source_ref）",
+          "description": "该词形登记的出处锚（gaps §3 行锚 / PRD §号 / GRN 证据引用 / 词汇表 PR 引用，宽松词形）——「每条裁定注记出处锚」纪律的逐词形落点。",
+          "examples": [
+            "docs/wave3-research-gaps.md §3 L101（GRN-4402 公式侧中文词形）",
+            "docs/wave3-research-gaps.md §3 L101（GRN-4402 源 id 侧拼音）"
+          ]
+        }
+      },
+      "title": "词形（word form）"
+    },
+    "word_form_domain": {
+      "type": "string",
+      "enum": ["zh-formal", "pinyin", "abbrev", "compressed", "canonical", "unknown"],
+      "title": "词形语言域标记（word form domain）",
+      "description": "词形所在语言域（gaps §3 line 105「中文↔拼音↔缩写/压缩记法」逐字转译 + 结构性必需位）：\n- zh-formal：中文正式词形（gaps §3 L101「公式侧中文（密度/单价/夹紧力）」）；\n- pinyin：拼音词形（gaps §3 L101「源 id 侧拼音（FIELD.MATERIAL-DB.MIDU）」——id 的段即拼音转写）；\n- abbrev：缩写记法（「缩写」，如 FE）；\n- compressed：压缩记法（「压缩记法」，如 数量(#5) / KPI#5 [RMB/pc.]——gaps §3 L102 页域散文词形）；\n- canonical：governed id 词形（A6 canonical 既有词形 + gaps §3 L101「源 id 侧」结构性必需位——active 组的联结产物位；文本须过 governed id 文法）；\n- unknown：机械入册不判域（禁启发式判域——判域即启发式；显式未知非猜测，域标记由 Authority 声明时补登）。\n与既有词轴正交：不入 MATCH_RULE_VALUES（那是 02 信封匹配规则轴）、不入 CATALOG_CLASSIFICATION_VALUES（catalog 分类轴）。",
+      "$comment": "source: docs/wave3-research-gaps.md §3 L101/L102/L105（GRN-4402 转译）+ A6 canonical 词形先例。提请词汇表 PR 收编（pending_vocab_pr）。",
+      "x-pomaster-vocab": {
+        "axis": "word_form_domain",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "source": "docs/wave3-research-gaps.md §3 L101/L102/L105"
+      },
+      "examples": ["zh-formal", "pinyin", "unknown"]
+    },
+    "equivalence_status": {
+      "type": "string",
+      "enum": ["active", "pending"],
+      "title": "等价组状态（equivalence status）",
+      "description": "active：已获显式声明（declared_by + declaration_ref + declared_at_seq 齐备），解析面 resolveWordForm 唯一可命中的状态；pending：未获声明的候选组（机械入册等裁决——gaps §3 line 105「未登记词形 pending 桶（机械入册、Owner 裁决）」），解析面永不命中（禁假绿）。两值封闭：不存在 draft/expired 等中间态（裁决走声明登记 + 重叠 pending 处置，不引入第三态）。",
+      "$comment": "source: docs/wave3-research-gaps.md §3 L103/L105（只登记不裁决 + pending 桶词形）。提请词汇表 PR 收编（pending_vocab_pr）。",
+      "x-pomaster-vocab": {
+        "axis": "equivalence_status",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "source": "docs/wave3-research-gaps.md §3 L103/L105"
+      },
+      "examples": ["active", "pending"]
+    }
+  },
+  "examples": [
+    {
+      "version": 1,
+      "group_seq": 2,
+      "entries": [
+        {
+          "equivalence_group": "EQG-1",
+          "word_forms": [
+            {
+              "text": "密度",
+              "domain": "zh-formal",
+              "source_ref": "docs/wave3-research-gaps.md §3 L101（GRN-4402 公式侧中文词形）"
+            },
+            {
+              "text": "MIDU",
+              "domain": "pinyin",
+              "source_ref": "docs/wave3-research-gaps.md §3 L101（GRN-4402 源 id 侧拼音段转写）"
+            },
+            {
+              "text": "FIELD.MATERIAL-DB.MIDU",
+              "domain": "pinyin",
+              "source_ref": "corpus/master/batch-3/field-semantic-pending-registration.yaml:864（源 id 侧实录词形，声明时补登域）"
+            },
+            {
+              "text": "FIELD.MATERIAL_DB.MIDU",
+              "domain": "canonical",
+              "source_ref": "corpus/master/batch-3/field-semantic-pending-registration.yaml:867（proposed_canonical；governed id 文法合规产物位）"
+            }
+          ],
+          "status": "active",
+          "declared_by": { "actor_type": "human", "actor": "owner", "self_attested": false },
+          "declaration_ref": "vocab-pr-pending/equivalence-batch-1（GRN-4402 判例语料 owner 裁决）",
+          "provenance": { "recorded_at_seq": 41, "declared_at_seq": 42 },
+          "note": null
+        },
+        {
+          "equivalence_group": "EQG-2",
+          "word_forms": [
+            {
+              "text": "数量(#5)",
+              "domain": "unknown",
+              "source_ref": "docs/wave3-research-gaps.md §3 L102（GRN-4402 页域散文词形 encounter）"
+            },
+            {
+              "text": "FIELD.ORDER.QTY.5",
+              "domain": "canonical",
+              "source_ref": "resolveLinkageWordForm encounter 候选（声明结构显式给出，非启发式）"
+            }
+          ],
+          "status": "pending",
+          "declared_by": null,
+          "declaration_ref": null,
+          "provenance": { "recorded_at_seq": 43, "declared_at_seq": null },
+          "note": "encounter 机械入册；待 Owner 裁决（域标记裁决时补登）"
+        }
+      ]
+    }
+  ]
+}

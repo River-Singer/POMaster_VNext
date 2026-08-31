@@ -573,6 +573,94 @@ export interface AliasResolution {
 export { resolveAlias } from "./id.js";
 
 // ============================================================
+// 跨域联结词形等价登记（P31 · GRN-4402 转译 / A13 · OPEN-M6-12）
+// ============================================================
+// 语义边界（docs/kernel-api.md §18）：把「跨域引用联结键」升为一等治理对象的词形轴
+// ——等价登记表（declared-equivalence-only：无 declared_by 显式声明的等价对落
+// pending 桶而非 active，登记≠裁决）+ 解析面（active 登记全等精确匹配，禁子串/
+// 启发式/模糊猜测，未命中=显式 unresolved）+ pending 桶机械入册（encounter 自动
+// 入册+dedupe，供 Authority 裁决队列）+ 联结覆盖率盲区指标（分母封闭
+// resolved+pending+unresolved=total，unchecked_in_blindspot_estimated 同型）。
+// 三条现行纪律（gaps §3 L103）结构性保住。D15/A6 挂接：resolveLinkageWordForm
+// 三腿链（精确 id → A6 机械别名 canonical 化 → active 等价登记 → pending 桶），
+// resolveAlias 本体零改动。侧车 state/equivalence-registry.json（staged write +
+// 损坏 fail-closed + journal EQUIVALENCE_* 事件流；不进 content_digest）。
+// 词形轴 pending_vocab_pr（WORD_FORM_DOMAIN_VALUES / EQUIVALENCE_STATUS_VALUES，
+// 13-equivalence-registry definitions 镜像）。
+export {
+  EQUIVALENCE_REGISTRY_RELATIVE,
+  EQUIVALENCE_GROUP_PATTERN,
+  readEquivalenceRegistry,
+  registerEquivalence,
+  recordPendingEquivalence,
+  resolveWordForm,
+  wordFormsFor,
+  resolveLinkageWordForm,
+  computeLinkageCoverage,
+  normalizeWordFormDomain,
+} from "./equivalence.js";
+export type {
+  EquivalenceWordForm,
+  EquivalenceDeclarationAudit,
+  EquivalenceProvenance,
+  EquivalenceEntry,
+  EquivalenceRegistryFile,
+  EquivalenceWordFormInput,
+  EquivalenceRegistrationInput,
+  PendingRecordInput,
+  PendingRecordOutcome,
+  WordFormResolution,
+  LinkageVia,
+  LinkageResolution,
+  LinkageResolveInput,
+  LinkageAttempt,
+  LinkageAttemptOutcome,
+  LinkageCoverage,
+  EquivalenceReverseLookup,
+} from "./equivalence.js";
+export type {
+  WordFormDomainValue,
+  EquivalenceStatusValue,
+} from "@pomaster/schemas";
+
+// ============================================================
+// 跨对象引用完整性 gate（P31 第二件 · gaps §3 GRN-4402 转译 · REF 消费面）
+// ============================================================
+// 语义边界（docs/kernel-api.md §19）：对对象集的跨对象引用（公式→字段 / 页段→对象 /
+// 任意 ref 轴）逐条走 P31a 三腿链解析（resolveLinkageReadOnly 单一实现）+ 存在性全等
+// 查册——命中 active 等价/精确 id → 真判（present/dangling）；未命中 → pending 桶机械
+// 入册 + skipped_blindspot 证据链显式盲区计数（unchecked_in_blindspot_estimated）。
+// 产出真实七态 verdict（verdict 矩阵：零分母 not_run / 真悬空 failed / 有盲区
+// skipped_blindspot / 全判净 passed）+ 联结覆盖率指标（分母封闭三查两侧机器断言）。
+// 盲区指标走既有 03 证据链（record_gate_run → evidence/runs/GRN-*.json，A8）+ store
+// 侧车 state/linkage-coverage.json + journal LINKAGE_COVERAGE_RECORDED（truth-index
+// health 闭表无现成挂点的取舍注记见 §19，呈报 Owner）。
+export {
+  LINKAGE_COVERAGE_RELATIVE,
+  REF_INTEGRITY_GATE,
+  REF_INTEGRITY_GATE_DEF,
+  REF_DANGLING_RULE,
+  resolveRefBatch,
+  refIntegrityVerdict,
+  attemptsOfRefJudgements,
+  runRefIntegrityGate,
+  readLinkageCoverage,
+} from "./ref-integrity.js";
+export type {
+  RefEmission,
+  RefDisposition,
+  RefJudgement,
+  RefIntegrityGateInput,
+  PendingRegistrationRow,
+  RefIntegrityVerdictDecision,
+  RefIntegrityGateRun,
+  LinkageCoverageRecord,
+  LinkageCoverageFile,
+} from "./ref-integrity.js";
+// P31a 纯读半边（三腿链腿①②③单一实现；ref-integrity gate 同源消费，禁第二套）。
+export { resolveLinkageReadOnly } from "./equivalence.js";
+
+// ============================================================
 // Permit（Transition/写授权；八拍②五件套之 Permit 范围）
 // ============================================================
 

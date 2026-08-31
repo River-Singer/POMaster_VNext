@@ -771,3 +771,46 @@ export const RUNTIME_DEGRADATION_RULE_IDS = [
 ] as const;
 export type RuntimeDegradationRuleId =
   (typeof RUNTIME_DEGRADATION_RULE_IDS)[number];
+
+// ============================================================
+// P31 跨域联结词形轴（x-vocab-source: docs/wave3-research-gaps.md §3 GRN-4402
+// 产品需求转译原文词形，A13 / OPEN-M6-12）。
+// TODO(vocab-pr)：跨域联结键词形轴 absent_in_vocab_lock__pending_vocab_pr，
+// 收编后以 vocab-lock 为准逐值镜像。schema 落点 13-equivalence-registry
+// definitions（word_form_domain / equivalence_status 与本段逐值同源）。
+// ============================================================
+
+/**
+ * 词形语言域标记六值（gaps §3 line 105「中文↔拼音↔缩写/压缩记法」逐字转译 +
+ * 结构性必需位）：
+ * - zh-formal：中文正式词形（gaps §3 L101「公式侧中文（密度/单价/夹紧力）」）；
+ * - pinyin：拼音词形（gaps §3 L101「源 id 侧拼音（FIELD.MATERIAL-DB.MIDU）」）；
+ * - abbrev：缩写记法（line 105「缩写」）；
+ * - compressed：压缩记法（line 105「压缩记法」，如 数量(#5) / KPI#5 [RMB/pc.]——L102 页域散文词形）；
+ * - canonical：governed id 词形（A6 canonical 既有词形 + L101「源 id 侧」结构性必需位；
+ *   active 组的联结产物位，文本须过 governed id 文法）；
+ * - unknown：机械入册不判域（禁启发式判域——判域即启发式；显式未知非猜测，
+ *   域标记由 Authority 声明时补登）。
+ * 与 MATCH_RULE_VALUES（02 匹配规则轴）/ CATALOG_CLASSIFICATION_VALUES（catalog 分类轴）
+ * 正交、值域不相交混用。
+ * x-vocab-source: 13-equivalence-registry definitions.word_form_domain。
+ */
+export const WORD_FORM_DOMAIN_VALUES = [
+  "zh-formal",
+  "pinyin",
+  "abbrev",
+  "compressed",
+  "canonical",
+  "unknown",
+] as const;
+export type WordFormDomainValue = (typeof WORD_FORM_DOMAIN_VALUES)[number];
+
+/**
+ * 等价组状态两值（gaps §3 line 103「只登记不裁决」+ line 105「未登记词形 pending 桶」
+ * 词形）：active=已获显式声明（declared_by + declaration_ref + declared_at_seq 齐备，
+ * 解析面唯一可命中状态）；pending=未获声明的候选组（机械入册等裁决，解析面永不命中——
+ * 禁假绿）。两值封闭，无第三态（裁决走声明登记 + 重叠 pending 处置）。
+ * x-vocab-source: 13-equivalence-registry definitions.equivalence_status。
+ */
+export const EQUIVALENCE_STATUS_VALUES = ["active", "pending"] as const;
+export type EquivalenceStatusValue = (typeof EQUIVALENCE_STATUS_VALUES)[number];

@@ -13,8 +13,12 @@
  * - state/exception-ledger.json Exception Ledger（§49.2 异常登记；recordException 持久化）
  * - state/knowledge-library.json Engineering Knowledge 库（§83 知识内核；knowledge.ts
  *   维护——ADVISORY 策展源，永不进 gate 判卷输入 §83.2 铁律；不进 content_digest）
+ * - state/equivalence-registry.json 跨域联结词形等价登记表（P31 / GRN-4402 转译；
+ *   equivalence.ts 维护——declared-equivalence-only 侧车，登记≠裁决；不进 content_digest）
+ * - state/linkage-coverage.json 联结覆盖率盲区指标侧车（P31 第二件 / 跨对象引用完整性
+ *   gate；ref-integrity.ts 维护——分母封闭三查两侧机器断言；不进 content_digest）
  * - state/journal.jsonl   事件 journal（TX_APPLIED / PERMIT_* / EXCEPTION_* / SESSION_* /
- *   LOCK_* / EXECUTION_* / KNOWLEDGE_* 追加流；不进 hash）
+ *   LOCK_* / EXECUTION_* / KNOWLEDGE_* / EQUIVALENCE_* / LINKAGE_COVERAGE_* 追加流；不进 hash）
  *
  * D 线地基平面（P20；research/design-thread-D-solo-form.md §1.3 路径形态 逐字）：
  * - runtime/sessions/<session_key>.json  活跃会话注册（liveness + 当前任务指针；易变态）
@@ -39,6 +43,10 @@ export interface StorePaths {
   readonly exceptionLedgerPath: string;
   /** state/knowledge-library.json（§83 Knowledge 库；knowledge.ts 维护）。 */
   readonly knowledgeLibraryPath: string;
+  /** state/equivalence-registry.json（P31 词形等价登记表；equivalence.ts 维护）。 */
+  readonly equivalenceRegistryPath: string;
+  /** state/linkage-coverage.json（P31 第二件联结覆盖率指标侧车；ref-integrity.ts 维护）。 */
+  readonly linkageCoveragePath: string;
   readonly journalPath: string;
   readonly truthObjectsDir: string;
   readonly evidenceDir: string;
@@ -68,6 +76,8 @@ export function buildStorePaths(rootDir: string): StorePaths {
     permitsPath: `${stateDir}/permits.json`,
     exceptionLedgerPath: `${stateDir}/exception-ledger.json`,
     knowledgeLibraryPath: `${stateDir}/knowledge-library.json`,
+    equivalenceRegistryPath: `${stateDir}/equivalence-registry.json`,
+    linkageCoveragePath: `${stateDir}/linkage-coverage.json`,
     journalPath: `${stateDir}/journal.jsonl`,
     truthObjectsDir: `${pomasterDir}/truth/objects`,
     evidenceDir,

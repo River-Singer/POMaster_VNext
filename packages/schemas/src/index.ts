@@ -1,7 +1,7 @@
 /**
  * @pomaster/schemas —— POMaster vNext 公共 schema 资产导出与 FROZEN 词表镜像。
  *
- * 形态契约：assets/01..12 十二份 JSON Schema（draft-07，$id 形态
+ * 形态契约：assets/01..13 十三份 JSON Schema（draft-07，$id 形态
  * https://pomaster.dev/schemas/<name>/v1-draft.json）＋ 02b-kind-payloads.md /
  * golden-seed-mapping.md 两份配套文档（原样随包分发，非运行时依赖）。
  *
@@ -11,6 +11,9 @@
  * P19 增量（11）：Exception Ledger（§49.2 异常登记面，五分类词轴 pending_vocab_pr）。
  * P28 增量（12）：Knowledge Entry（§83 内核，四类型/五状态/提升权威位/置信三级/
  * Context 分区词轴 pending_vocab_pr；authority 恒 ADVISORY——§83.2 铁律形态封条）。
+ * P31 增量（13）：Equivalence Registry（跨域联结词形等价登记表，GRN-4402 转译 /
+ * A13 · OPEN-M6-12；domain 轴/status 轴 pending_vocab_pr；declared-equivalence-only
+ * ——登记≠裁决、禁启发式猜测、未登记词形 pending 桶绝不假绿）。
  *
  * 词表纪律：一切枚举唯一来源是 assets/vocab-lock.draft.yaml（FROZEN）；
  * 代码侧唯一镜像点在 ./vocab.js（本文件 re-export）。YAML 资产仅作人读/工具对账，
@@ -22,7 +25,7 @@
  *
  * 装载提示（ajv）：schema 携带大量 x- 注记键（含 D24 强制在场的 x-digest-ethics），
  * 请以 `new Ajv({ strictSchema: false })` 装载，或逐个 ajv.addKeyword 注册注记键；
- * 跨文件 $ref 为绝对 $id 形态，组合装载须将全部 12 份 schema addSchema 注册。
+ * 跨文件 $ref 为绝对 $id 形态，组合装载须将全部 13 份 schema addSchema 注册。
  */
 import evidenceRecordsSchemaRaw from "../assets/07-evidence-records.schema.json" with { type: "json" };
 import denominatorSchemaRaw from "../assets/05-denominator.schema.json" with { type: "json" };
@@ -36,6 +39,7 @@ import msdUncertaintySchemaRaw from "../assets/09-msd-uncertainty.schema.json" w
 import researchArtifactSchemaRaw from "../assets/10-research-artifact.schema.json" with { type: "json" };
 import exceptionLedgerSchemaRaw from "../assets/11-exception-ledger.schema.json" with { type: "json" };
 import knowledgeEntrySchemaRaw from "../assets/12-knowledge-entry.schema.json" with { type: "json" };
+import equivalenceRegistrySchemaRaw from "../assets/13-equivalence-registry.schema.json" with { type: "json" };
 
 export * from "./vocab.js";
 
@@ -71,6 +75,8 @@ const EXCEPTION_LEDGER_ID =
   "https://pomaster.dev/schemas/exception-ledger/v1-draft.json";
 const KNOWLEDGE_ENTRY_ID =
   "https://pomaster.dev/schemas/knowledge-entry/v1-draft.json";
+const EQUIVALENCE_REGISTRY_ID =
+  "https://pomaster.dev/schemas/equivalence-registry/v1-draft.json";
 
 function asSchema(raw: unknown, expectedId: string): JsonSchemaObject {
   const schema = raw as JsonSchemaObject;
@@ -117,8 +123,12 @@ export const knowledgeEntrySchema = asSchema(
   knowledgeEntrySchemaRaw,
   KNOWLEDGE_ENTRY_ID,
 );
+export const equivalenceRegistrySchema = asSchema(
+  equivalenceRegistrySchemaRaw,
+  EQUIVALENCE_REGISTRY_ID,
+);
 
-/** 全部 12 份 schema 的聚合（组合装载：ajv.addSchema 逐个注册即可遍历本对象）。 */
+/** 全部 13 份 schema 的聚合（组合装载：ajv.addSchema 逐个注册即可遍历本对象）。 */
 export const allSchemas = {
   truthIndex: truthIndexSchema,
   objectEnvelope: objectEnvelopeSchema,
@@ -132,6 +142,7 @@ export const allSchemas = {
   researchArtifact: researchArtifactSchema,
   exceptionLedger: exceptionLedgerSchema,
   knowledgeEntry: knowledgeEntrySchema,
+  equivalenceRegistry: equivalenceRegistrySchema,
 } as const;
 
 // ============================================================
