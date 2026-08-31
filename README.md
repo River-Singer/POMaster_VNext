@@ -92,6 +92,7 @@ pomaster context compile --role <lane>  # 八拍③ PROJECTION：最小充分上
 pomaster view blueprint/task  # §49.1 Narrative / Review 投影：view blueprint [<scope>] = Stable Core 正文 + Uncertainty Envelope（正常状态标签默认隐藏 §91.3，Exception Ledger 异常聚合 §49.2）；view task <task> = §53 十二步审查顺序视图（File Diff 降级证据层）；纯派生零写入
 pomaster audit blueprint/task  # §49.1 Audit View：Object ID/State Axes/Authority/Source/Evidence/Policy/Transition History 七字段完整呈现（Audit View 才逐项显示完整 State Axes，§91.3）；audit task <task> 分母 = permit subjects ∪ change.affected_objects ∪ task
 pomaster ledger record/list  # §49.2 Exception Ledger：异常项入账（EXC-n；ASSUMPTION/OPEN_QUESTION/DEFERRED_DECISION/CONFLICT/HARD_BLOCKER 五分类）+ 台账纯读呈现
+pomaster knowledge search/inspect/record/review-candidates/promote/demote  # Knowledge 命令面（§44.10/§83）：检索（§83.8 检索而非全量注入，检索语义与 context compile [ADVISORY] 分区同源）/ 单条目检视 / 候选登记（--from-research 走 P18 Research→Knowledge 上游通道）/ CANDIDATE 评审分母 / 提升（权威位闸 MAINTAIN/AUTHORITY/GATEKEEPER——§25.3 逐字，Curator 直升 = AUTHORITY_REQUIRED §25.5 ⑦）/ 降级淘汰（§83.11 去僵化）；knowledge 恒 ADVISORY 永不进 gate 判卷输入（§83.2 铁律「Knowledge 不能直接让 Gate FAIL」）
 pomaster catalog status/explain  # Engineering Catalog 命令面（§44.10）：catalog 构成与单条目解释；catalog-lock 漂移（物料改而未重锁）显式检出
 pomaster eval --suite behavioral  # Agent Behavioral Eval（§44.10）：25 种子 pass/fail/pending/retired 结构化呈现；pending/retired 显式列出不冒充绿不冒充败，executable 失败 exit 1；§94.3 五类源（Context Compiler/Router/Gate Policy/Catalog Rule/Harness）升级后经 `node scripts/eval-trigger.mjs` 触发必跑
 pomaster permit issue/check/steal/list   # 八拍② FRAMEWORK LOCK：许可签发/判卷/显式接管/台账呈现

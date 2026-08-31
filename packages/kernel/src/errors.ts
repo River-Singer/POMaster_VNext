@@ -101,6 +101,9 @@ export type GovernanceErrorCode =
   | "EXECUTION_ALREADY_ENDED"
   /** 单机本地盘假设破裂（目录不可创建 / 原子替换失败 / runtime 侧车不可读），禁静默。 */
   | "ENVIRONMENT_ERROR"
+  /** 非权威位动作被拒（§83.10/§25.3：Knowledge 晋升必须 Maintain / Authority /
+   *  Gatekeeper 位；词形闸拒绝并指路权威位，§25.5 ⑦ Curator 直升 MUST 的机器化）。 */
+  | "AUTHORITY_REQUIRED"
   /** 伪装并发（PRD §58「禁止伪装成真正并发」——MAJOR 级语义违例，契约层封死）：
    *  申报 concurrent 而执行计划经能力探测派生为 sequential/direct。 */
   | "RUNTIME_CONCURRENCY_MASQUERADE";

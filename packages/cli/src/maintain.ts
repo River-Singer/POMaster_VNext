@@ -103,6 +103,7 @@ export interface MaintainProjectionView {
   readonly must_entries: readonly { readonly ref: string; readonly reason: string }[];
   readonly advisory_entries: readonly { readonly ref: string; readonly reason: string }[];
   readonly catalog_entries: readonly { readonly ref: string; readonly reason: string }[];
+  readonly knowledge_entries: readonly { readonly ref: string; readonly reason: string }[];
   readonly lazy_tools: readonly string[];
 }
 
@@ -229,6 +230,10 @@ function projectionViewOf(role: string, projection: Projection): MaintainProject
       reason: entry.reason,
     })),
     catalog_entries: projection.manifest.catalogEntries.map((entry) => ({
+      ref: entry.ref,
+      reason: entry.reason,
+    })),
+    knowledge_entries: projection.manifest.knowledgeEntries.map((entry) => ({
       ref: entry.ref,
       reason: entry.reason,
     })),
@@ -417,7 +422,7 @@ async function runMaintainPreDev(
     `maintain ${changeOrTask} --phase pre-dev → triage ${triage.profile} (rule ${triage.matched_rule}, grade=${triage.evidence_grade})`,
     `  permit: ${permit.permit_ref} (issued_at_seq=${permit.issued_at_seq}, expires_at_seq=${permit.expires_at_seq})`,
     `  scope: ${permit.scope?.subject_ids.join(", ") ?? "(none)"}`,
-    `  projection: role=${projectionView.role} must=${projectionView.must_entries.length} advisory=${projectionView.advisory_entries.length} lazy_tools=${projectionView.lazy_tools.length}`,
+    `  projection: role=${projectionView.role} must=${projectionView.must_entries.length} advisory=${projectionView.advisory_entries.length} knowledge=${projectionView.knowledge_entries.length} lazy_tools=${projectionView.lazy_tools.length}`,
     ...projectionView.must_entries.map((entry) => `    MUST ${entry.ref} — ${entry.reason}`),
   ];
   return okOutcome("maintain", result, human);

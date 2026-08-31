@@ -1,0 +1,297 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://pomaster.dev/schemas/knowledge-entry/v1-draft.json",
+  "title": "Knowledge Entry（Engineering Knowledge 内核，P28）",
+  "description": "PRD §83 的 schema 落地。核心语义（§83.1 逐字）：Spec / Current Truth 管「这个项目现在必须相信/遵守什么」；Knowledge 管「遇到这种问题时，有什么值得想起的经验、失败模式、诊断方法与启发」——身份不同，不互相替代。\n§83.8 检索纪律：Knowledge 是「定期沉淀 + 按 Change Localization 检索注入」，不是「每次开发把所有经验塞进 Prompt」；Context 按 [AUTHORITATIVE] / [ADVISORY] 明显分区。",
+  "x-pomaster-file-role": "12-knowledge-entry.schema.json —— §83.3/83.4 Knowledge 形态（P28-Kernel）。store 侧车 state/knowledge-library.json 的形态契约（kernel knowledge.ts 维护，写入唯一通路；不进 content_digest）；消费方 = 检索注入投影与 §44.10 knowledge 命令面（纯读）。Knowledge 对象永不进 gate 判卷输入（§83.2 铁律 / GOLDEN-L8-3）。",
+  "x-pomaster-vocab-source": "PRD v0.4 §83.3 四类型（ENGINEERING_PATTERN/FAILURE_PATTERN/DIAGNOSTIC_PLAYBOOK/DECISION_HEURISTIC）+ §83.9 五状态（CANDIDATE/VALIDATED/PROMOTED/DEPRECATED/REJECTED）+ §83.8 分区词形（AUTHORITATIVE/ADVISORY）+ §83.4 例文 confidence: HIGH（全集取 §81.4 同款三级 HIGH/MEDIUM/LOW——知识候选上游是 Research 产物，P18）；vocab-lock@v0.2-resolved 尚无对应词轴——词形在本文件 definitions 冻结并镜像于 @pomaster/schemas vocab.ts 待收编段（KNOWLEDGE_*_VALUES），提请词汇表 PR 收编。",
+  "x-pomaster-contract": {
+    "authority_isolation_prd": "PRD §83.2 铁律：「Knowledge 不能直接让 Gate FAIL。」Authority 隔离表：Engineering Knowledge / Pattern / Failure Pattern / Diagnostic Playbook / Heuristic 权威性 NO、不可直接阻断。结构性落法：本 schema authority 字段为 const ADVISORY——知识对象在形态层面不存在 AUTHORITATIVE 选项（不是禁止后惩罚，是写不出）；kernel 装载面对 authority ≠ ADVISORY 的条目 fail-closed 拒绝（SCHEMA_INVALID）。",
+    "lifecycle_prd": "PRD §83.9 生命周期五状态（CANDIDATE/VALIDATED/PROMOTED/DEPRECATED/REJECTED）+ §83.10 提升链（Knowledge Candidate → Validation → Governance Proposal → maintain → Authority / Gatekeeper → Current Policy/Truth）+ §83.11 降级链（Hard Rule → Architecture/Governance Review → Demote → Recommended Pattern / Heuristic）。",
+    "promotion_authority_prd": "PRD §25.3 Knowledge Curator 逐字：「不得直接把经验升级为 Spec/Truth；晋升必须经过 Maintain / Authority / Gatekeeper。」§83.10：「只有 Promotion 完成后，才可成为强约束。」强约束载体 = 提升后经 P11 maintain 面落地的 Current Policy/Truth 对象；knowledge 条目本体恒 ADVISORY（PROMOTED 只是谱系状态，不改变其权威性）。",
+    "strictly_advisory_promoted_prd": "PROMOTED 状态不把 knowledge 变成 gate 判卷输入：§83.10「只有 Promotion 完成后，才可成为强约束」的机器化 = 强约束是新落地的 Policy/Truth 对象，knowledge 本体（含 PROMOTED 态）恒入 [ADVISORY] 分区（GOLDEN-L8-3）。",
+    "demotion_prd": "PRD §83.11：「POMaster 必须支持『去僵化』，而不是只有规则越来越多。」demoted_from/review_ref 承载 Spec → Knowledge Demotion 谱系（Hard Rule 被 Architecture/Governance Review 降级为 Recommended Pattern / Heuristic 的产物谱系）；knowledge 自身的 DEPRECATED（淘汰）是 ADVISORY 面内部动作（§83.2 权威性 NO——不影响任何 gate，无需权威审批），但 reason 必填留痕（journal KNOWLEDGE_DEMOTED）。",
+    "last_validated_at_a4": "字段名逐字 §83.4（last_validated_at）；值域按 A4 禁墙钟纪律取 store 事件拍（integer seq，同 11-exception-ledger recorded_at_seq 先例）——新鲜度只按事件拍，不按墙钟。",
+    "no_gate_coupling_fields": "本 schema 不发明 gate 耦合字段位（gate_binding / blocking / enforcement 等）：Knowledge 对 gate 判决零影响（§83.2 铁律），给知识对象任何 gate 耦合字段位都会制造「知识进判卷」的形态通道——字段集封闭即结构封条（handoff closed form 同款纪律）。"
+  },
+  "x-pomaster-digest-ethics-policy": "本对象当前不含 sha256/digest 字段。未来任何 digest/sha256 字段加入时必须携带 x-digest-ethics 注记 {\"write_blocking\": false, \"side\": \"read_only_service\", \"human_touch\": \"forbidden\"}（D24 / vocab-lock digest_ethics）。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "entries"],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1,
+      "title": "库文件版本（version）"
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/knowledge_entry"
+      },
+      "title": "知识条目列表（entries）",
+      "description": "空数组合法（无知识登记是合法状态；检索侧显式呈现「无知识」不伪装命中）。id 在库内唯一（kernel 落盘保证；装载面校验）。"
+    }
+  },
+  "definitions": {
+    "knowledge_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "title", "triggers", "observations", "diagnostic_questions", "recommendation", "counter_examples", "confidence", "authority", "status", "source_episodes", "last_validated_at", "demoted_from", "review_ref", "promoted_ref", "recorded_by", "recorded_at_seq", "note"],
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "const": "PROMOTED" } }, "required": ["status"] },
+          "then": { "properties": { "promoted_ref": { "type": "string", "minLength": 1 } } },
+          "description": "§83.10 条件式：PROMOTED 态提升指向必非空（kernel promoteKnowledge 强制；反向不强制——PROMOTED→DEPRECATED 去僵化后 promoted_ref 谱系保留可考古）。"
+        },
+        {
+          "if": { "properties": { "demoted_from": { "type": "string" } } },
+          "then": { "properties": { "review_ref": { "type": "string", "minLength": 1 } } },
+          "description": "§83.11 条件式：降级谱系在册 ⇒ Architecture/Governance Review 留痕必非空（降级必经评审，谱系与评审成对）。"
+        }
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^KNOWLEDGE\\.[A-Z][A-Z0-9_]{0,31}(\\.[A-Z][A-Z0-9_]{0,31})*(\\.[0-9]+)?$",
+          "title": "知识 id（governed id，KNOWLEDGE.*）",
+          "description": "KNOWLEDGE 是 vocab-lock id_namespace prefixes_v0 已登记前缀（closed-world，A5）。§83.4 例文 id: KB-FE-COMP-017 是 legacy 词形——经 ALIASES_V0 别名双向链（KB-* → KNOWLEDGE.*，A6 rename-on-ingest）收编后方可登记；侧车落盘只存 canonical 词形（kernel 落盘保证）。"
+        },
+        "kind": {
+          "$ref": "#/definitions/knowledge_kind"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "title": "知识标题（title）",
+          "description": "§83.4 例文：Semantic component vs presentation variants。"
+        },
+        "triggers": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "title": "触发条件（triggers）",
+          "description": "§83.4 例文：same business action with multiple visual forms。§83.8 检索纪律的检索键承载（按 Change Localization 检索注入——无 trigger 的条目不被检索命中，不会被注入）；空数组合法（登记面不冒充检索面）。"
+        },
+        "observations": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "title": "观察记录（observations）",
+          "description": "§83.4 例文空数组合法（observations: []）。"
+        },
+        "diagnostic_questions": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "title": "诊断问题清单（diagnostic_questions）",
+          "description": "§83.4 例文：same business meaning? / same permission? …（§83.7 案例 C 六问；§83.5 案例 A 六步检查）。"
+        },
+        "recommendation": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "title": "推荐做法（recommendation）",
+          "description": "§83.4 例文：prefer one semantic capability with presentation variants when behavior is identical。"
+        },
+        "counter_examples": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "title": "反例（counter_examples）",
+          "description": "§83.4 例文空数组合法（counter_examples: []）。"
+        },
+        "confidence": {
+          "$ref": "#/definitions/knowledge_confidence"
+        },
+        "authority": {
+          "type": "string",
+          "const": "ADVISORY",
+          "title": "权威性（authority）——恒 ADVISORY",
+          "description": "§83.2 铁律的结构封条：Authority 隔离表 Engineering Knowledge 权威性 NO、不可直接阻断；知识对象在形态层面不存在 AUTHORITATIVE 选项（const 封闭，装载面拒绝任何异值）。[AUTHORITATIVE] 分区只承载 Current Truth / Architecture / Contract / Policy（§83.8），knowledge 恒入 [ADVISORY] 分区（GOLDEN-L8-3：永不进 gate 判卷输入）。",
+          "$comment": "source: PRD v0.4 §83.2 铁律 + §83.8 分区词形 + P21 GOLDEN-L8-3 锚。",
+          "x-pomaster-authority-isolation": {
+            "rule": "Knowledge 不能直接让 Gate FAIL",
+            "source": "PRD v0.4 §83.2",
+            "enforcement": "const ADVISORY（形态层写不出 AUTHORITATIVE）+ kernel 装载面 fail-closed 拒绝异值"
+          },
+          "x-pomaster-vocab": {
+            "axis": "context_authority_partition",
+            "status": "absent_in_vocab_lock__pending_vocab_pr",
+            "source": "PRD v0.4 §83.8"
+          }
+        },
+        "status": {
+          "$ref": "#/definitions/knowledge_status"
+        },
+        "source_episodes": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "title": "来源 episode 引用（source_episodes）",
+          "description": "§83.4 例文空数组合法。宽松词形（general_id 同 11-exception-ledger change_ref 纪律）：§83 上游是 Research Evidence（P18），episode 引用可以指向尚无 governed id 的 Research 产物。"
+        },
+        "last_validated_at": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "title": "最近验证事件拍（last_validated_at；A4 事件拍非墙钟）",
+          "description": "§83.4 例文 last_validated_at: null（未验证）；VALIDATED 及之后由 kernel 置为转移时 store seq。字段名逐字 §83.4，值域按 A4 禁墙钟纪律取事件拍（11-exception-ledger recorded_at_seq 先例）。"
+        },
+        "demoted_from": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "title": "降级谱系：被降级的 Hard Rule 引用（demoted_from，§83.11）",
+          "description": "Spec → Knowledge Demotion（§83.11：Hard Rule → Architecture/Governance Review → Demote → Recommended Pattern / Heuristic）的产物谱系；非降级产物为 null。宽松词形（被降级的规则可以是尚未 governed 化的 spec 条款——降级正是它脱离强制面的出口）。"
+        },
+        "review_ref": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "title": "Architecture/Governance Review 引用（review_ref，§83.11）",
+          "description": "降级产物的评审留痕（必填于降级通路，kernel 强制）；非降级产物为 null。"
+        },
+        "promoted_ref": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "title": "提升指向：Governance Proposal / Policy 引用（promoted_ref，§83.10）",
+          "description": "§83.10 提升链（maintain → Authority / Gatekeeper → Current Policy/Truth）的指向留痕；PROMOTED 状态必非 null（kernel 强制），其余状态为 null。强约束载体是提升后经 P11 maintain 面落地的 Policy/Truth 对象，本字段只留谱系——knowledge 本体不因 PROMOTED 改变权威性。"
+        },
+        "recorded_by": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["actor_type", "actor", "self_attested"],
+          "properties": {
+            "actor_type": {
+              "type": "string",
+              "enum": ["agent", "human", "tool", "kernel"]
+            },
+            "actor": { "type": "string", "minLength": 1 },
+            "self_attested": { "type": "boolean" }
+          },
+          "title": "登记主体（recorded_by；C5 自报——kernel 不判其真，只登记）"
+        },
+        "recorded_at_seq": {
+          "type": "integer",
+          "minimum": 0,
+          "title": "登记时 store 事件拍（recorded_at_seq；A4 禁墙钟）"
+        },
+        "note": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "title": "人类散文注记（note，可选）",
+          "description": "机器不得解析其内容做判卷（P9 教训：人类散文唯一合法入口，只登记不解析）。"
+        }
+      }
+    },
+    "knowledge_kind": {
+      "type": "string",
+      "enum": [
+        "ENGINEERING_PATTERN",
+        "FAILURE_PATTERN",
+        "DIAGNOSTIC_PLAYBOOK",
+        "DECISION_HEURISTIC"
+      ],
+      "title": "知识类型（§83.3 四类型，逐字冻结）",
+      "description": "PRD §83.3 逐字四类型：\n- ENGINEERING_PATTERN：工程模式（怎么做更好的可复用形态）；\n- FAILURE_PATTERN：失败模式（§83.6 案例 B：CSV naïve split——quoted delimiter/embedded newline/BOM… 检查清单）；\n- DIAGNOSTIC_PLAYBOOK：诊断手册（§83.5 案例 A：组件边框被遮挡——按顺序检查 computed box/overflow/stacking context…）；\n- DECISION_HEURISTIC：决策启发（§83.7 案例 C：Visual Identity ≠ Semantic Identity 判断问题集）。",
+      "$comment": "source: PRD v0.4 §83.3；案例身份锚 §83.5/83.6/83.7。提请词汇表 PR 收编（pending_vocab_pr）。",
+      "x-pomaster-vocab": {
+        "axis": "knowledge_kind",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "source": "PRD v0.4 §83.3"
+      },
+      "examples": [
+        "DIAGNOSTIC_PLAYBOOK",
+        "DECISION_HEURISTIC"
+      ]
+    },
+    "knowledge_status": {
+      "type": "string",
+      "enum": [
+        "CANDIDATE",
+        "VALIDATED",
+        "PROMOTED",
+        "DEPRECATED",
+        "REJECTED"
+      ],
+      "title": "知识生命周期状态（§83.9，逐字冻结）",
+      "description": "PRD §83.9 逐字五状态。登记起点恒 CANDIDATE（§25.3 Knowledge Curator「生成 Knowledge Candidate」）；DEPRECATED/REJECTED 为终态。",
+      "$comment": "source: PRD v0.4 §83.9。提请词汇表 PR 收编（pending_vocab_pr）。",
+      "x-pomaster-transition-matrix": {
+        "CANDIDATE": ["VALIDATED", "REJECTED"],
+        "VALIDATED": ["PROMOTED", "DEPRECATED"],
+        "PROMOTED": ["DEPRECATED"],
+        "DEPRECATED": [],
+        "REJECTED": []
+      },
+      "x-pomaster-transition-requirements": {
+        "VALIDATED>PROMOTED": ["promotion_authority"],
+        "CANDIDATE>VALIDATED": [],
+        "CANDIDATE>REJECTED": [],
+        "VALIDATED>DEPRECATED": [],
+        "PROMOTED>DEPRECATED": []
+      },
+      "x-pomaster-transition-notes": {
+        "matrix_source": "§83.9 状态集 + §83.10 提升链（CANDIDATE→VALIDATED 为 Validation；VALIDATED→PROMOTED 为 maintain → Authority / Gatekeeper）+ §83.11 去僵化（→DEPRECATED 为降级/淘汰出口）。",
+        "PROMOTED>DEPRECATED": "§83.11 尾句「POMaster 必须支持『去僵化』，而不是只有规则越来越多」：已被提升的经验被 Architecture/Governance Review 推翻/降级后转入 DEPRECATED 显式淘汰，禁静默滞留 PROMOTED。",
+        "DEPRECATED/REJECTED 终态": "to: []——淘汰与拒绝不再生效；已提升经验被推翻走 PROMOTED→DEPRECATED，不经 REJECTED 回退（REJECTED 是候选评审否决）。",
+        "promotion_authority": "§25.3 逐字「晋升必须经过 Maintain / Authority / Gatekeeper」+ §83.10「只有 Promotion 完成后，才可成为强约束」——唯一跨面向边（出 ADVISORY 平面入权威面）；其余边均为 ADVISORY 面内部转移（§83.2 权威性 NO，无需权威审批），reason 留痕由 journal 事件承载。",
+        "single_authoritative_channel": "VALIDATED→PROMOTED 唯一通路是 promoteKnowledge（权威位词形闸 MAINTAIN/AUTHORITY/GATEKEEPER）；通用转移面对该边显式拒绝（不私造第二提升通道，Discovery promote 面「写入必须走受控面」同款）。"
+      },
+      "x-pomaster-vocab": {
+        "axis": "knowledge_status",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "source": "PRD v0.4 §83.9/83.10/83.11"
+      },
+      "examples": [
+        "CANDIDATE",
+        "VALIDATED",
+        "PROMOTED"
+      ]
+    },
+    "knowledge_confidence": {
+      "type": "string",
+      "enum": ["HIGH", "MEDIUM", "LOW"],
+      "title": "置信三级（knowledge confidence）",
+      "description": "§83.4 例文 confidence: HIGH。全集取 §81.4 Research Finding 置信三级（HIGH/MEDIUM/LOW）同词形——知识候选上游是 Research 产物（P18），词形复用不发明新值。",
+      "$comment": "source: PRD v0.4 §83.4 例文 HIGH + §81.4 三级同词形。提请词汇表 PR 收编（pending_vocab_pr）。",
+      "x-pomaster-vocab": {
+        "axis": "knowledge_confidence",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "source": "PRD v0.4 §83.4/§81.4"
+      },
+      "examples": [
+        "HIGH",
+        "LOW"
+      ]
+    }
+  },
+  "examples": [
+    {
+      "version": 1,
+      "entries": [
+        {
+          "id": "KNOWLEDGE.FE.COMP.SEMANTIC_VS_PRESENTATION",
+          "kind": "DECISION_HEURISTIC",
+          "title": "Semantic component vs presentation variants",
+          "triggers": ["same business action with multiple visual forms"],
+          "observations": [],
+          "diagnostic_questions": [
+            "same business meaning?",
+            "same permission?",
+            "same event?",
+            "same lifecycle/state?",
+            "same result?"
+          ],
+          "recommendation": [
+            "prefer one semantic capability with presentation variants when behavior is identical"
+          ],
+          "counter_examples": [],
+          "confidence": "HIGH",
+          "authority": "ADVISORY",
+          "status": "VALIDATED",
+          "source_episodes": [],
+          "last_validated_at": 12,
+          "demoted_from": null,
+          "review_ref": null,
+          "promoted_ref": null,
+          "recorded_by": { "actor_type": "agent", "actor": "claude/session-93", "self_attested": true },
+          "recorded_at_seq": 9,
+          "note": null
+        }
+      ]
+    }
+  ]
+}

@@ -691,6 +691,14 @@ export interface Projection {
      * 变更只影响本分区与 inputsFingerprint，store state 零变更。
      */
     readonly catalogEntries: readonly ProjectionEntry[];
+    /**
+     * knowledge 检索注入分区（P28-Commands；§83.8「检索而不是全量注入」）：
+     * knowledge 侧车（state/knowledge-library.json）的 [ADVISORY] 检索命中注入，
+     * reason 逐条标明出处与命中 token（why-matched 可判卷）；绝不混入 mustEntries
+     * 判卷输入——§83.2 铁律「Knowledge 不能直接让 Gate FAIL」+ GOLDEN-L8-3
+     * （knowledge 平面与 gate 对象分母无通路，分区边界由对抗测试钉住）。
+     */
+    readonly knowledgeEntries: readonly ProjectionEntry[];
     /** 懒加载工具清单（tool 按需物化；P14 起消费 catalog/tools/ 实存目录）。 */
     readonly lazyTools: readonly string[];
   };
@@ -728,6 +736,51 @@ export type {
   ExceptionLedgerFile,
   ExceptionRecordInput,
 } from "./ledger.js";
+
+// ============================================================
+// Engineering Knowledge 内核（P28 · PRD §83 Knowledge / Engineering Experience Kernel）
+// ============================================================
+// 语义边界：Knowledge 是 [ADVISORY] 检索注入的策展源（§83.8「定期沉淀 + 按 Change
+// Localization 检索注入」），永不进 gate 判卷输入——§83.2 铁律「Knowledge 不能直接
+// 让 Gate FAIL」的结构性保证四层（形态层 12 schema authority const ADVISORY / 类型层
+// KnowledgeEntry["authority"]="ADVISORY" 字面量 / 通路层 TransactionOp 无 knowledge op /
+// 消费层检索只产 ADVISORY 分区，见 knowledge.ts 头注）。写通道唯一在本模块语义入口
+// （模式同 recordException：侧车 state/knowledge-library.json + journal KNOWLEDGE_*
+// 事件流 + staged write）；每个生命周期边恰好一个语义入口——通用转移面对 promote/
+// demote 边显式拒绝并指路（§25.3「晋升必须经过 Maintain / Authority / Gatekeeper」，
+// §25.5 ⑦ Curator 直升 MUST = 禁止模式的机器化）。
+export {
+  validateKnowledgeTransition,
+  readKnowledgeLibrary,
+  recordKnowledge,
+  applyKnowledgeTransition,
+  promoteKnowledge,
+  demoteKnowledge,
+  demoteSpecToKnowledge,
+  searchKnowledge,
+  knowledgeQueryTokens,
+  KNOWLEDGE_LIBRARY_RELATIVE,
+  KNOWLEDGE_INJECTABLE_STATUSES,
+} from "./knowledge.js";
+export type {
+  KnowledgeEntry,
+  KnowledgeLibraryFile,
+  KnowledgeEntryAudit,
+  KnowledgeRecordInput,
+  KnowledgeTransitionInput,
+  KnowledgePromotionInput,
+  KnowledgeDemotionInput,
+  KnowledgeTransitionRequirement,
+  KnowledgeTransitionOutcome,
+  KnowledgeSearchRequest,
+  KnowledgeSearchHit,
+} from "./knowledge.js";
+export type {
+  KnowledgeKindValue,
+  KnowledgeStatusValue,
+  KnowledgePromotionAuthorityValue,
+  KnowledgeConfidenceValue,
+} from "@pomaster/schemas";
 
 // ============================================================
 // D 线地基：Sessions / Locks / Execution Identity（P20 · PRD §25.3/§25.4 + D 线 §1/§2/§3.3）
@@ -887,7 +940,11 @@ export type {
 // pathsOf / StorePaths 公共化（P20-Commands）：清单函数（listSessionRecords /
 // listLocks / listExecutionRecords / detectGatekeeperDrift）以 StorePaths 为参，
 // 嵌入方与 CLI 需要从 Store 句柄取得路径集（此前仅 kernel 内部与测试相对路径可达）。
-export { pathsOf } from "./paths.js";
+// buildStorePaths 公共化（P28-Commands）：knowledge 纯读命令（search/inspect/
+// review-candidates）不建账读侧车——路径派生与 createStore 同源（buildStorePaths
+// 是纯函数，不写任何文件），装载面防线（authority/status 词形 fail-closed）与
+// kernel 写通路共享同一 readKnowledgeLibrary 实现。
+export { pathsOf, buildStorePaths } from "./paths.js";
 export type { StorePaths } from "./paths.js";
 
 // ============================================================

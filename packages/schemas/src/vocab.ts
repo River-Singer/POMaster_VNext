@@ -504,6 +504,107 @@ export type ExceptionClassificationValue =
   (typeof EXCEPTION_CLASSIFICATION_VALUES)[number];
 
 // ============================================================
+// P28 Knowledge 词轴（x-vocab-source: PRD v0.4 §83 原文词形，逐字）。
+// TODO(vocab-pr)：Knowledge 是 §83 独立平面（ADVISORY 策展源，永不进 gate 判卷
+// 输入——§83.2 铁律 / GOLDEN-L8-3 锚），词轴 absent_in_vocab_lock__pending_vocab_pr，
+// 收编后以 vocab-lock 为准逐值镜像。schema 落点 12-knowledge-entry definitions
+// （x-pomaster-transition-matrix/-requirements 与本段 KNOWLEDGE_TRANSITIONS 逐值同源）。
+// ============================================================
+
+/**
+ * Knowledge 四类型（PRD §83.3 原文词形逐字）。案例身份锚：§83.5 组件边框被遮挡 =
+ * DIAGNOSTIC_PLAYBOOK；§83.6 CSV naïve split = FAILURE_PATTERN；§83.7
+ * 文字/图标/文字+图标按钮 = DECISION_HEURISTIC。
+ * x-vocab-source: 12-knowledge-entry definitions.knowledge_kind。
+ */
+export const KNOWLEDGE_KIND_VALUES = [
+  "ENGINEERING_PATTERN",
+  "FAILURE_PATTERN",
+  "DIAGNOSTIC_PLAYBOOK",
+  "DECISION_HEURISTIC",
+] as const;
+export type KnowledgeKindValue = (typeof KNOWLEDGE_KIND_VALUES)[number];
+
+/**
+ * Knowledge 生命周期（PRD §83.9 原文词形逐字五状态）。登记起点恒 CANDIDATE
+ * （§25.3 Knowledge Curator「生成 Knowledge Candidate」）；DEPRECATED/REJECTED 终态。
+ * x-vocab-source: 12-knowledge-entry definitions.knowledge_status。
+ */
+export const KNOWLEDGE_STATUS_VALUES = [
+  "CANDIDATE",
+  "VALIDATED",
+  "PROMOTED",
+  "DEPRECATED",
+  "REJECTED",
+] as const;
+export type KnowledgeStatusValue = (typeof KNOWLEDGE_STATUS_VALUES)[number];
+
+/**
+ * Knowledge 生命周期合法迁移矩阵（拓扑部分；与 12 x-pomaster-transition-matrix
+ * 逐值同源）。执行面住 kernel knowledge（validateKnowledgeTransition）：矩阵外
+ * 转移一律显式拒绝（fail-closed）；唯一权威边 VALIDATED→PROMOTED requires
+ * ["promotion_authority"]（§25.3「晋升必须经过 Maintain / Authority / Gatekeeper」+
+ * §83.10「只有 Promotion 完成后，才可成为强约束」），唯一通路 promoteKnowledge；
+ * PROMOTED→DEPRECATED = §83.11 去僵化（被推翻的提升经验显式淘汰，禁静默滞留）。
+ * x-vocab-source: 12-knowledge-entry definitions.knowledge_status
+ * x-pomaster-transition-matrix。
+ */
+export const KNOWLEDGE_TRANSITIONS = {
+  CANDIDATE: ["VALIDATED", "REJECTED"],
+  VALIDATED: ["PROMOTED", "DEPRECATED"],
+  PROMOTED: ["DEPRECATED"],
+  DEPRECATED: [],
+  REJECTED: [],
+} as const satisfies Readonly<
+  Record<KnowledgeStatusValue, readonly KnowledgeStatusValue[]>
+>;
+
+/**
+ * Knowledge 提升权威位（PRD §25.3/§83.10 原文角色词形大写化：Maintain /
+ * Authority / Gatekeeper——§91.3 词形大写化先例）。§25.3 Knowledge Curator 逐字：
+ * 「不得直接把经验升级为 Spec/Truth；晋升必须经过 Maintain / Authority / Gatekeeper」；
+ * §25.5 ⑦「Knowledge Curator 把一次偶发修复直接晋升为 MUST」= 禁止模式（Curator
+ * 词形不在本闭包，promote 词形闸显式拒绝）。kernel 不判申报真（C5 自报），词形闸 +
+ * authorityRef 审批引用留痕；真伪归 journal 留痕 + Authority 裁决审计。
+ * x-vocab-source: PRD v0.4 §25.3/§83.10。
+ */
+export const KNOWLEDGE_PROMOTION_AUTHORITY_VALUES = [
+  "MAINTAIN",
+  "AUTHORITY",
+  "GATEKEEPER",
+] as const;
+export type KnowledgePromotionAuthorityValue =
+  (typeof KNOWLEDGE_PROMOTION_AUTHORITY_VALUES)[number];
+
+/**
+ * Context 分区词形（PRD §83.8 原文 [AUTHORITATIVE]/[ADVISORY] 逐字；knowledge
+ * 条目恒 ADVISORY——§83.2 Authority 隔离表权威性 NO，schema authority 字段 const
+ * 封闭，AUTHORITATIVE 分区只承载 Current Truth / Architecture / Contract / Policy）。
+ * 与 RESEARCH_EVIDENCE_LEVEL_VALUES（§81.4 evidence level 轴，值域部分重叠）和
+ * CATALOG_ENFORCEMENT_VALUES（catalog 强制力轴，小写 advisory）轴正交、值域不相交混用。
+ * x-vocab-source: 12-knowledge-entry definitions.knowledge_entry.properties.authority。
+ */
+export const CONTEXT_AUTHORITY_PARTITION_VALUES = [
+  "AUTHORITATIVE",
+  "ADVISORY",
+] as const;
+export type ContextAuthorityPartitionValue =
+  (typeof CONTEXT_AUTHORITY_PARTITION_VALUES)[number];
+
+/**
+ * Knowledge 置信三级（§83.4 例文 confidence: HIGH；全集取 §81.4 Research Finding
+ * 置信三级同词形——知识候选上游是 Research 产物 P18，词形复用不发明新值）。
+ * 与 state_axes.confidence（UNRESOLVED/EXPERIMENTAL/PROVISIONAL/LOCKED）值域不相交。
+ * x-vocab-source: 12-knowledge-entry definitions.knowledge_confidence。
+ */
+export const KNOWLEDGE_CONFIDENCE_VALUES = [
+  "HIGH",
+  "MEDIUM",
+  "LOW",
+] as const;
+export type KnowledgeConfidenceValue = (typeof KNOWLEDGE_CONFIDENCE_VALUES)[number];
+
+// ============================================================
 // P20 D 线地基词轴（x-vocab-source: PRD v0.4 §25.4 Agent Execution Identity +
 // research/design-thread-D-solo-form.md §1.2/§1.3/§2.1/§3.3.1/§4 原文词形）。
 // TODO(vocab-pr)：Execution Identity / session / lock 是 D 线自有 P0 状态面

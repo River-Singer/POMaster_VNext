@@ -38,6 +38,13 @@ function fakeProjection(overrides?: Partial<Projection>): Projection {
             "catalog: policies/policy.web.api.single_http_client.json（lane=frontend 命中 role=frontend，enforcement=required_when_applicable，lifecycle=PROPOSED）：HTTP Client 单点统一",
         },
       ],
+      knowledgeEntries: [
+        {
+          ref: "KNOWLEDGE.FE.DASH.STACK_CLIP",
+          reason:
+            "ADVISORY: knowledge 检索命中（§83.8「按 Change Localization 检索注入」；命中 token: dashboard；出处 knowledge-library: .pomaster/state/knowledge-library.json）——不进 gate 判卷输入（GOLDEN-L8-3；knowledge 恒 ADVISORY，§83.2 铁律）",
+        },
+      ],
       lazyTools: ["playwright"],
     },
     catalogSource: {
@@ -63,15 +70,19 @@ describe("context compile 缺席显式", () => {
     expect(outcome.errors[0]?.code).toBe("NOT_INITIALIZED");
   });
 
-  it("init 后（真实 kernel 已落地）→ 编译成功：四分区标题在场、空区显式缺席、catalog 分区真消费 repo catalog", async () => {
+  it("init 后（真实 kernel 已落地）→ 编译成功：五分区标题在场、空区显式缺席、catalog 分区真消费 repo catalog", async () => {
     await runInit(dir);
     const outcome = await runContextCompile(dir, "frontend");
     expect(outcome.ok).toBe(true);
     expect(outcome.result.markdown).toContain(
       "# Context Projection — role: frontend",
     );
-    expect(outcome.result.markdown).toContain("## MUST（gate 判卷输入）");
+    expect(outcome.result.markdown).toContain("## MUST（[AUTHORITATIVE] gate 判卷输入）");
     expect(outcome.result.markdown).toContain("无 MUST 注入项");
+    expect(outcome.result.markdown).toContain(
+      "## KNOWLEDGE（[ADVISORY] 知识检索注入；出处 state/knowledge-library.json——§83.8 检索而非全量注入）",
+    );
+    expect(outcome.result.markdown).toContain("检索而非全量注入");
     expect(outcome.result.markdown).toContain("## CATALOG（catalog 策展注入；出处 catalog，非 project state——§92.2）");
     // P14：catalog 分区真实消费 repo catalog（frontend lane 命中非空 + lock 注记）。
     expect(outcome.result.catalog_source.status).toBe("catalog");
@@ -82,14 +93,18 @@ describe("context compile 缺席显式", () => {
 });
 
 describe("context compile 转调 kernel（注入 fake）", () => {
-  it("四分区 markdown：MUST / ADVISORY / CATALOG / LAZY TOOLS 标题与条目（含注入理由）", async () => {
+  it("五分区 markdown：MUST / ADVISORY / KNOWLEDGE / CATALOG / LAZY TOOLS 标题与条目（§83.8 分区词形逐字）", async () => {
     await runInit(dir);
     const kernel = fakeKernel(fakeProjection());
     const outcome = await runContextCompile(dir, "frontend", kernel);
     expect(outcome.ok).toBe(true);
     expect(kernel.compileProjection).toHaveBeenCalledOnce();
-    expect(outcome.result.markdown).toContain("## MUST（gate 判卷输入）");
-    expect(outcome.result.markdown).toContain("## ADVISORY");
+    expect(outcome.result.markdown).toContain("## MUST（[AUTHORITATIVE] gate 判卷输入）");
+    expect(outcome.result.markdown).toContain("## ADVISORY（[ADVISORY] 按触发条件注入；不进 gate 判卷输入）");
+    expect(outcome.result.markdown).toContain(
+      "## KNOWLEDGE（[ADVISORY] 知识检索注入；出处 state/knowledge-library.json——§83.8 检索而非全量注入）",
+    );
+    expect(outcome.result.markdown).toContain("`KNOWLEDGE.FE.DASH.STACK_CLIP` — ADVISORY: knowledge 检索命中");
     expect(outcome.result.markdown).toContain("## CATALOG（catalog 策展注入；出处 catalog，非 project state——§92.2）");
     expect(outcome.result.markdown).toContain("## LAZY TOOLS");
     expect(outcome.result.markdown).toContain("`POLICY.PAGE.TTL` — 本任务触碰 PAGE.* 分母");
@@ -116,7 +131,7 @@ describe("context compile 转调 kernel（注入 fake）", () => {
     expect(outcome.result.inputs_fingerprint).toBe("sha256:" + "a".repeat(64));
   });
 
-  it("manifest 字段机读映射（must_entries/advisory_entries/catalog_entries/lazy_tools）", async () => {
+  it("manifest 字段机读映射（must/advisory/catalog/knowledge_entries/lazy_tools）", async () => {
     await runInit(dir);
     const outcome = await runContextCompile(dir, "frontend", fakeKernel(fakeProjection()));
     expect(outcome.result.manifest.must_entries).toEqual([
@@ -129,16 +144,19 @@ describe("context compile 转调 kernel（注入 fake）", () => {
           "catalog: policies/policy.web.api.single_http_client.json（lane=frontend 命中 role=frontend，enforcement=required_when_applicable，lifecycle=PROPOSED）：HTTP Client 单点统一",
       },
     ]);
+    expect(outcome.result.manifest.knowledge_entries).toHaveLength(1);
+    expect(outcome.result.manifest.knowledge_entries[0]?.ref).toBe("KNOWLEDGE.FE.DASH.STACK_CLIP");
     expect(outcome.result.manifest.lazy_tools).toEqual(["playwright"]);
   });
 
-  it("空 manifest → markdown 显式标注空区（缺席显式，不渲染成有内容）", async () => {
+  it("空 manifest → markdown 显式标注空区（缺席显式，不渲染成有内容；knowledge 空区含检索而非全量措辞）", async () => {
     await runInit(dir);
     const empty = fakeProjection({
       manifest: {
         mustEntries: [],
         advisoryEntries: [],
         catalogEntries: [],
+        knowledgeEntries: [],
         lazyTools: [],
       },
     });
@@ -146,6 +164,7 @@ describe("context compile 转调 kernel（注入 fake）", () => {
     expect(outcome.ok).toBe(true);
     expect(outcome.result.markdown).toContain("无 MUST 注入项");
     expect(outcome.result.markdown).toContain("无触发条件命中");
+    expect(outcome.result.markdown).toContain("无 Change Localization 检索命中的知识条目");
     expect(outcome.result.markdown).toContain("无 lane 命中的 catalog 条目");
   });
 

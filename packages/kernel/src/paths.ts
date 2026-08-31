@@ -11,8 +11,10 @@
  * - state/authority.json  Authority Map（BOOTSTRAP 基线；幽灵 owner FATAL 判定的解析源）
  * - state/permits.json    已签发许可（issuePermit 持久化；stolen 标记留档）
  * - state/exception-ledger.json Exception Ledger（§49.2 异常登记；recordException 持久化）
+ * - state/knowledge-library.json Engineering Knowledge 库（§83 知识内核；knowledge.ts
+ *   维护——ADVISORY 策展源，永不进 gate 判卷输入 §83.2 铁律；不进 content_digest）
  * - state/journal.jsonl   事件 journal（TX_APPLIED / PERMIT_* / EXCEPTION_* / SESSION_* /
- *   LOCK_* / EXECUTION_* 追加流；不进 hash）
+ *   LOCK_* / EXECUTION_* / KNOWLEDGE_* 追加流；不进 hash）
  *
  * D 线地基平面（P20；research/design-thread-D-solo-form.md §1.3 路径形态 逐字）：
  * - runtime/sessions/<session_key>.json  活跃会话注册（liveness + 当前任务指针；易变态）
@@ -35,6 +37,8 @@ export interface StorePaths {
   readonly permitsPath: string;
   /** state/exception-ledger.json（§49.2 Exception Ledger 台账；ledger.ts 维护）。 */
   readonly exceptionLedgerPath: string;
+  /** state/knowledge-library.json（§83 Knowledge 库；knowledge.ts 维护）。 */
+  readonly knowledgeLibraryPath: string;
   readonly journalPath: string;
   readonly truthObjectsDir: string;
   readonly evidenceDir: string;
@@ -63,6 +67,7 @@ export function buildStorePaths(rootDir: string): StorePaths {
     authorityPath: `${stateDir}/authority.json`,
     permitsPath: `${stateDir}/permits.json`,
     exceptionLedgerPath: `${stateDir}/exception-ledger.json`,
+    knowledgeLibraryPath: `${stateDir}/knowledge-library.json`,
     journalPath: `${stateDir}/journal.jsonl`,
     truthObjectsDir: `${pomasterDir}/truth/objects`,
     evidenceDir,

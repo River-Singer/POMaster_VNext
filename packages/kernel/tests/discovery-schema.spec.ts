@@ -8,6 +8,8 @@
  * P19 增量（11）：§49.2 Exception Ledger 登记面（recordException 产物形态正例 + 五分类闭包 /
  * 八字段必填 / EXC-n 词形 / recorded_at_seq 事件拍 / recorded_by C5 自报结构 /
  * 三级 additionalProperties 闭表——生命周期字段 resolved/status 不发明）。
+ * P28 增量（12）独立成件：knowledge-schema.spec.ts（§83 Knowledge 内核——四类型/
+ * 五状态/authority const ADVISORY 形态封条/提升与降级条件式）。
  */
 import Ajv from "ajv";
 import { describe, expect, it } from "vitest";
@@ -67,7 +69,7 @@ describe("08-discovery-state-chain（$id 与注册）", () => {
     );
     expect(SCHEMA_VERSION).toBe("v1-draft");
     expect(allSchemas.discoveryStateChain).toBe(discoveryStateChainSchema);
-    expect(Object.keys(allSchemas).length).toBe(11);
+    expect(Object.keys(allSchemas).length).toBe(12);
   });
 
   it("正例：IDEA 态带 scratchpad_ref；READY_TO_PROMOTE 带 promotion_basis；TASK 带 promotion_basis+promoted_ref", () => {

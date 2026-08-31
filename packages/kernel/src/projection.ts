@@ -12,6 +12,10 @@
  *   出处逐条标明 catalog 路径，绝不混入 mustEntries 判卷输入——Catalog 不是
  *   第二套 Project Truth，catalog 物料变更只影响本分区与 inputsFingerprint，
  *   store state 零变更（分区边界由对抗测试钉住）；
+ * - knowledgeEntries 独立第五分区（P28-Commands，§83.8「检索而不是全量注入」）：
+ *   knowledge 侧车按 Change Localization 检索命中的 [ADVISORY] 注入，出处逐条
+ *   标明 state/knowledge-library.json，绝不混入 mustEntries 判卷输入——§83.2
+ *   铁律「Knowledge 不能直接让 Gate FAIL」（GOLDEN-L8-3），分区边界由对抗测试钉住；
  * - 每 entry 必带 reason（why-injected，可判卷；无理由注入=噪声）；
  * - inputsFingerprint 由 manifest+request 派生：同输入重放字节稳定（D24：只读服务）。
  * 纯派生视图：只读 store 与 catalog/，不产生治理事实，不写任何文件。
@@ -20,7 +24,7 @@ import type { DenominatorRefRow, Projection, ProjectionEntry, Store } from "./in
 import { GovernanceError } from "./errors.js";
 import { sha256OfCanonical } from "./digest.js";
 import { readText } from "./io.js";
-import { pathsOf, readRawIndex } from "./paths.js";
+import { pathsOf, readRawIndex, type StorePaths } from "./paths.js";
 import { loadTruthIndex } from "./store.js";
 import {
   loadCatalogPolicies,
@@ -31,6 +35,10 @@ import {
   type CatalogLockDrift,
   type CatalogPolicyMaterial,
 } from "./catalog.js";
+import {
+  readKnowledgeLibrary,
+  searchKnowledge,
+} from "./knowledge.js";
 import type { ObjectRow } from "./index.js";
 
 type UnknownRecord = Record<string, unknown>;
@@ -143,6 +151,39 @@ function consumeCatalog(
   return { catalogEntries, lazyTools, catalogSource };
 }
 
+/**
+ * knowledge 检索消费（P28-Commands；§83.8「检索而不是全量注入」）：
+ * knowledge 侧车按 Change Localization（request 的 role/taskRef/denominatorRefs
+ * 词形）检索命中注入 [ADVISORY] 独立分区。语义边界：
+ * - 检索语义单一实现在 knowledge.searchKnowledge（CLI search 同源同语义——
+ *   词级精确 token 交集，禁子串/等价猜测；注入分母 status ∈ VALIDATED|PROMOTED）；
+ * - 侧车损坏（SCHEMA_INVALID）→ 原样抛出（fail-closed：文件在但坏 ≠ 空库，
+ *   禁静默当空分区消费——consumeCatalog 坏物料同款）；
+ * - 侧车缺席 = 合法空库（opt-in 登记面）→ 空分区诚实呈现；
+ * - reason 不含 status：knowledge 生命周期状态不进入投影任何字节（带命中场景下
+ *   VALIDATED→PROMOTED 前后 manifest/inputsFingerprint 字节一致——knowledge 平面
+ *   零影响投影的更强形态；分母增减随注入分母闭包显式可见）。
+ */
+function consumeKnowledge(
+  request: import("./index.js").ProjectionRequest,
+  paths: StorePaths,
+): readonly ProjectionEntry[] {
+  const library = readKnowledgeLibrary(paths);
+  const hits = searchKnowledge(library, {
+    role: request.role,
+    taskRef: request.taskRef,
+    denominatorIds: (request.denominatorRefs ?? []).map((ref) => ref.id),
+  });
+  return hits.map((hit) => ({
+    ref: hit.entry.id,
+    reason:
+      `ADVISORY: knowledge 检索命中（§83.8「按 Change Localization 检索注入」；` +
+      `命中 token: ${hit.matchedTokens.join("/")}；` +
+      `出处 knowledge-library: .pomaster/state/knowledge-library.json）——` +
+      `不进 gate 判卷输入（GOLDEN-L8-3；knowledge 恒 ADVISORY，§83.2 铁律）`,
+  }));
+}
+
 function entryId(row: ObjectRow): string {
   return row.id;
 }
@@ -178,9 +219,11 @@ function readPermitLedger(store: Store): readonly PermitLedgerEntry[] {
  * - 分母通道：request.denominatorRefs 命中的对象（信封行 denominator_refs 交集）；
  * - 许可通道：request.taskRef 命中 changeRef 的 Permit 的 scope.subjectIds；
  * - catalog 通道（P14）：policies 按 lane 检索注入独立分区 + tools 懒加载清单
- *   （§92.2：出处 catalog 的策展源，独立于 store 派生的三通道）。
+ *   （§92.2：出处 catalog 的策展源，独立于 store 派生的三通道）；
+ * - knowledge 通道（P28-Commands）：knowledge 侧车按 Change Localization 检索
+ *   命中注入独立分区（§83.8 检索而非全量；[ADVISORY] 分区，永不进判卷输入）。
  * 范围为空 → manifest 的 store 派生分区为空（诚实缺席，不杜撰「全域上下文」）；
- * catalog 分区按 lane 检索在场（与 store 范围正交——策展源不依赖任务分母）。
+ * catalog/knowledge 分区按各自检索语义在场（与 store 范围正交——策展源不依赖任务分母）。
  */
 export async function compileProjection(
   store: Store,
@@ -302,6 +345,9 @@ export async function compileProjection(
   // —— catalog 策展消费（P14；见 consumeCatalog 契约注记） ——
   const { catalogEntries, lazyTools, catalogSource } = consumeCatalog(request, options);
 
+  // —— knowledge 检索消费（P28-Commands；§83.8；见 consumeKnowledge 契约注记） ——
+  const knowledgeEntries = consumeKnowledge(request, pathsOf(store));
+
   const sortEntries = (entries: readonly ProjectionEntry[]): ProjectionEntry[] =>
     [...entries].sort((a, b) => (a.ref === b.ref ? (a.reason < b.reason ? -1 : 1) : a.ref < b.ref ? -1 : 1));
 
@@ -309,6 +355,7 @@ export async function compileProjection(
     mustEntries: sortEntries(mustEntries),
     advisoryEntries: sortEntries(advisoryEntries),
     catalogEntries,
+    knowledgeEntries,
     lazyTools,
   };
   const inputsFingerprint = sha256OfCanonical({

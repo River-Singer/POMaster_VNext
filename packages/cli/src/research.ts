@@ -97,12 +97,12 @@ export interface ResearchInspectResult {
 // 内部工具
 // ============================================================
 
-function normalizeDir(p: string): string {
+export function normalizeDir(p: string): string {
   const posix = p.split("\\").join("/");
   return posix.endsWith("/") ? posix : `${posix}/`;
 }
 
-function hostShapeViolation(host: string): string | null {
+export function hostShapeViolation(host: string): string | null {
   if (host.length === 0) return "host_ref 缺失";
   const posix = host.split("\\").join("/");
   if (/^[A-Za-z]:/.test(posix) || posix.startsWith("/")) return "host_ref 禁绝对盘符/根斜杠";
@@ -227,7 +227,7 @@ async function resolveResearchHost(
   return { host: `.pomaster/discovery/scratchpads/${active[0]}/` };
 }
 
-interface IndexYamlShape {
+export interface IndexYamlShape {
   host_ref?: unknown;
   artifact_root?: unknown;
   files?: unknown;
@@ -235,7 +235,7 @@ interface IndexYamlShape {
   handoff?: unknown;
 }
 
-async function readIndexYaml(indexPath: string): Promise<IndexYamlShape | null> {
+export async function readIndexYaml(indexPath: string): Promise<IndexYamlShape | null> {
   if (!existsSync(indexPath)) return null;
   try {
     return JSON.parse(await readFile(indexPath, "utf8")) as IndexYamlShape;

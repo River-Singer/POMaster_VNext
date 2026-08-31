@@ -1,10 +1,13 @@
 /**
  * context.ts —— `pomaster context compile --role X`：八拍③ PROJECTION 的命令面。
  *
- * 只做编排与呈现：转调 kernel compileProjection（唯一判卷/派生权威），渲染四分区
- * markdown（MUST / ADVISORY / CATALOG / LAZY TOOLS）。MUST 区是 gate 判卷输入；
- * ADVISORY 区按触发条件注入、不进 gate 判卷输入（GOLDEN-L8-3）；CATALOG 区是
- * catalog/ 策展源的检索式注入（P14，§92.2：出处 catalog 非 project state，不进
+ * 只做编排与呈现：转调 kernel compileProjection（唯一判卷/派生权威），渲染五分区
+ * markdown（MUST / ADVISORY / KNOWLEDGE / CATALOG / LAZY TOOLS）。MUST 区是 gate
+ * 判卷输入（§83.8 [AUTHORITATIVE] 分区承载）；ADVISORY 区按触发条件注入、不进 gate
+ * 判卷输入（GOLDEN-L8-3）；KNOWLEDGE 区是 knowledge 侧车的 [ADVISORY] 检索注入
+ * （P28-Commands，§83.8「检索而不是全量注入」——按 Change Localization 检索命中，
+ * 出处 state/knowledge-library.json 逐条标明，绝不混入 MUST 判卷输入）；CATALOG 区
+ * 是 catalog/ 策展源的检索式注入（P14，§92.2：出处 catalog 非 project state，不进
  * 判卷输入）；投影是纯派生视图，不写 store。
  *
  * kernel scaffold 阶段（not-implemented）→ 结构化 KERNEL_NOT_INSTALLED（缺席显式，
@@ -36,6 +39,7 @@ export interface ContextCompileResult {
     readonly must_entries: readonly { ref: string; reason: string }[];
     readonly advisory_entries: readonly { ref: string; reason: string }[];
     readonly catalog_entries: readonly { ref: string; reason: string }[];
+    readonly knowledge_entries: readonly { ref: string; reason: string }[];
     readonly lazy_tools: readonly string[];
   };
   /** catalog 消费出处呈现（P14；§92.2——策展源出处显式，不混 project state）。 */
@@ -44,7 +48,7 @@ export interface ContextCompileResult {
     readonly root: string | null;
     readonly note: string;
   };
-  /** 四分区 markdown（人读形态；机读走 manifest 字段——§45 双输出）。 */
+  /** 五分区 markdown（人读形态；机读走 manifest 字段——§45 双输出）。 */
   readonly markdown: string;
 }
 
@@ -93,18 +97,28 @@ function renderMarkdown(
     projection.manifest.lazyTools.length > 0
       ? projection.manifest.lazyTools.map((t) => `- ${t}`).join("\n")
       : "- _（无）_";
+  // §83.8 分区词形逐字：[AUTHORITATIVE]（MUST 区）/[ADVISORY]（ADVISORY/KNOWLEDGE 区）
+  // ——CONTEXT_AUTHORITY_PARTITION_VALUES 消费；knowledge 分区出处逐条在 reason。
+  const knowledge =
+    projection.manifest.knowledgeEntries.length > 0
+      ? projection.manifest.knowledgeEntries.map(entry).join("\n")
+      : "_（空——无 Change Localization 检索命中的知识条目；检索而非全量注入，§83.8）_";
   return `# Context Projection — role: ${role}
 
 > inputs_fingerprint: ${projection.inputsFingerprint}
-> 纯派生视图（八拍③）：不写 store、不产生治理事实；MUST 区为 gate 判卷输入，ADVISORY 区不进判卷（GOLDEN-L8-3）。
+> 纯派生视图（八拍③）：不写 store、不产生治理事实；MUST 区为 gate 判卷输入，ADVISORY/KNOWLEDGE 区不进判卷（GOLDEN-L8-3）。
 
-## MUST（gate 判卷输入）
+## MUST（[AUTHORITATIVE] gate 判卷输入）
 
 ${must}
 
-## ADVISORY（按触发条件注入；不进 gate 判卷输入）
+## ADVISORY（[ADVISORY] 按触发条件注入；不进 gate 判卷输入）
 
 ${advisory}
+
+## KNOWLEDGE（[ADVISORY] 知识检索注入；出处 state/knowledge-library.json——§83.8 检索而非全量注入）
+
+${knowledge}
 
 ## CATALOG（catalog 策展注入；出处 catalog，非 project state——§92.2）
 
@@ -132,7 +146,7 @@ export async function runContextCompile(
       {
         role,
         inputs_fingerprint: "",
-        manifest: { must_entries: [], advisory_entries: [], catalog_entries: [], lazy_tools: [] },
+        manifest: { must_entries: [], advisory_entries: [], catalog_entries: [], knowledge_entries: [], lazy_tools: [] },
         catalog_source: { status: "absent", root: null, note: "context compile 未执行（store 未初始化）" },
         markdown: "",
       },
@@ -181,6 +195,10 @@ export async function runContextCompile(
           ref: e.ref,
           reason: e.reason,
         })),
+        knowledge_entries: projection.manifest.knowledgeEntries.map((e) => ({
+          ref: e.ref,
+          reason: e.reason,
+        })),
         lazy_tools: [...projection.manifest.lazyTools],
       },
       catalog_source: {
@@ -202,7 +220,7 @@ export async function runContextCompile(
       {
         role,
         inputs_fingerprint: "",
-        manifest: { must_entries: [], advisory_entries: [], catalog_entries: [], lazy_tools: [] },
+        manifest: { must_entries: [], advisory_entries: [], catalog_entries: [], knowledge_entries: [], lazy_tools: [] },
         catalog_source: { status: "absent", root: null, note: "context compile 未执行（kernel 错误）" },
         markdown: "",
       },

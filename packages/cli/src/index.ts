@@ -43,6 +43,12 @@
  * - ledger record/list
  *                   Exception Ledger 命令面（§49.2）：异常项入账（EXC-n；kernel
  *                   recordException 唯一写通路）+ 台账纯读呈现
+ * - knowledge search/inspect/record/review-candidates/promote/demote
+ *                   Knowledge 命令面（§44.10 五命令 + §83 上游候选通道；P28-Commands）：
+ *                   检索与投影注入同源（§83.8 检索而非全量）/ 单条目检视 / 候选登记
+ *                   （--from-research 走 P18 上游）/ CANDIDATE 评审分母 / 提升唯一通路
+ *                   （复用 P28a 权威位闸，§25.3）/ 降级去僵化（§83.11）；knowledge 恒
+ *                   ADVISORY 永不进 gate 判卷输入（§83.2 铁律）
  * - session attach/refresh/list
  *                   D 线地基①会话命令面（P20；D 线 §1.2/§3.1：注册/刷新 liveness +
  *                   resumed_task 解析 + 清单并排呈现；A10「CLI 零 session 命令」闭合）
@@ -89,6 +95,14 @@ import { runEval } from "./eval.js";
 import { runViewBlueprint, runViewTask } from "./view.js";
 import { runAuditBlueprint, runAuditTask } from "./audit.js";
 import { runLedgerList, runLedgerRecord } from "./ledger.js";
+import {
+  runKnowledgeDemote,
+  runKnowledgeInspect,
+  runKnowledgePromote,
+  runKnowledgeRecord,
+  runKnowledgeReviewCandidates,
+  runKnowledgeSearch,
+} from "./knowledge.js";
 import {
   runBrainstormPromote,
   runBrainstormStart,
@@ -302,6 +316,26 @@ export type {
   LedgerListResult,
   LedgerKernelDeps,
 } from "./ledger.js";
+export {
+  runKnowledgeSearch,
+  runKnowledgeInspect,
+  runKnowledgeRecord,
+  runKnowledgeReviewCandidates,
+  runKnowledgePromote,
+  runKnowledgeDemote,
+} from "./knowledge.js";
+export type {
+  KnowledgeSearchResult,
+  KnowledgeInspectResult,
+  KnowledgeRecordInput,
+  KnowledgeRecordResult,
+  KnowledgeReviewCandidatesResult,
+  KnowledgePromotionCliInput,
+  KnowledgePromotionResult,
+  KnowledgeDemotionCliInput,
+  KnowledgeDemotionResult,
+  KnowledgeKernelDeps,
+} from "./knowledge.js";
 export {
   EVIDENCE_MALFORMED_CODE,
   RUN_INGEST_ACTIONS,
@@ -1026,6 +1060,160 @@ export function createProgram(
         command: "brainstorm promote",
         outcome,
         asJson: command.opts().json === true,
+      });
+    });
+
+  // —— Knowledge 命令面（PRD §44.10 五命令 + §83 上游候选通道；P28-Commands） ——
+  // 判卷/落盘权威在 kernel knowledge.ts 语义入口（唯一写通路，§44.10 promote 复用
+  // P28a 权威位词形闸 MAINTAIN/AUTHORITY/GATEKEEPER——§25.3「晋升必须经过 Maintain /
+  // Authority / Gatekeeper」）；search/inspect/review-candidates 纯读零建账。
+  // §83.2 铁律呈现纪律：knowledge 恒 ADVISORY（§83.8 检索注入只产 [ADVISORY] 分区，
+  // GOLDEN-L8-3），本命令组没有任何写 truth-index 的通路。
+  const knowledge = program
+    .command("knowledge")
+    .description(
+      "Knowledge 命令面（§44.10/§83）：检索（§83.8 检索而非全量注入）/ 单条目检视 / 候选登记（--from-research 走 P18 上游）/ 评审分母 / 提升（权威位闸，§25.3）/ 降级去僵化（§83.11）；knowledge 恒 ADVISORY 永不进 gate 判卷输入",
+    );
+  knowledge
+    .command("search")
+    .description(
+      "检索知识库（§83.8「检索而不是全量注入」）：检索键 = title+triggers 词级精确 token 交集（禁子串/等价猜测），命中呈现含 matched_tokens（why-matched 可判卷）；检索语义与 context compile 注入同源（kernel searchKnowledge）",
+    )
+    .argument("<query>", "检索词（§44.10 knowledge search <query>）")
+    .option("--role <role>", "角色域 lane 词（加入检索域；与 context compile 注入通道对齐）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (query: string, opts, command) => {
+      const outcome = await runKnowledgeSearch(resolveDir(command), {
+        query,
+        role: opts.role as string | undefined,
+      });
+      record({
+        command: "knowledge search",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  knowledge
+    .command("inspect")
+    .description("单条目全字段呈现（纯读零写入；不在册 OBJECT_NOT_FOUND 显式）")
+    .argument("<id>", "knowledge id（KNOWLEDGE.* governed id）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (id: string, opts, command) => {
+      const outcome = await runKnowledgeInspect(resolveDir(command), id);
+      record({
+        command: "knowledge inspect",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  knowledge
+    .command("record")
+    .description(
+      "登记知识候选（§25.3「生成 Knowledge Candidate」；status 恒 CANDIDATE 起步）：直登形态（--id/--kind/--title/--confidence）或 --from-research 形态（P18 Research Evidence 上游：finding statement/confidence/sources 机械搬运，id/kind 必须显式给——evidence_type 与 knowledge kind 词轴值域不相交，禁机械映射）",
+    )
+    .option("--id <id>", "knowledge id（KNOWLEDGE.* governed id；§83.4 例文 KB-* legacy 词形 hint 指路收编）")
+    .option("--kind <kind>", "§83.3 四类型词形（ENGINEERING_PATTERN|FAILURE_PATTERN|DIAGNOSTIC_PLAYBOOK|DECISION_HEURISTIC）")
+    .option("--title <text>", "知识标题（§83.4 必填）")
+    .option("--confidence <value>", "置信三级（HIGH|MEDIUM|LOW，§83.4 例文 + §81.4 同词形）")
+    .option("--trigger <text>", "触发条件（可重复；§83.4 检索键承载）", collectValues)
+    .option("--diagnostic-question <text>", "诊断问题（可重复）", collectValues)
+    .option("--recommendation <text>", "建议（可重复）", collectValues)
+    .option("--counter-example <text>", "反例（可重复）", collectValues)
+    .option("--source-episode <ref>", "来源 episode 引用（可重复；§83 上游）", collectValues)
+    .option("--from-research <research-id>", "P18 上游通道：从 research artifact 登记（<host>/research/）")
+    .option("--finding <n>", "finding 序号（1 起，按 index.yaml findings 顺序；--from-research 必配）")
+    .option("--demoted-from <ref>", "§83.11 降级谱系（被降级的 Hard Rule 引用；须与 --review-ref 成对）")
+    .option("--review-ref <ref>", "§83.11 Architecture/Governance Review 引用（降级谱系成对强制）")
+    .option("--actor <actor>", "登记主体 <type>:<name>（C5 自报）")
+    .option("--note <text>", "人类散文注记（只登记不解析）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runKnowledgeRecord(resolveDir(command), {
+        id: opts.id as string | undefined,
+        kind: opts.kind as string | undefined,
+        title: opts.title as string | undefined,
+        confidence: opts.confidence as string | undefined,
+        triggers: opts.trigger as string[] | undefined,
+        diagnosticQuestions: opts.diagnosticQuestion as string[] | undefined,
+        recommendations: opts.recommendation as string[] | undefined,
+        counterExamples: opts.counterExample as string[] | undefined,
+        sourceEpisodes: opts.sourceEpisode as string[] | undefined,
+        demotedFrom: opts.demotedFrom as string | undefined,
+        reviewRef: opts.reviewRef as string | undefined,
+        fromResearch: opts.fromResearch as string | undefined,
+        finding:
+          opts.finding === undefined ? undefined : Number.parseInt(String(opts.finding), 10),
+        actor: (opts.actor as string | undefined) ?? "",
+        note: opts.note as string | undefined,
+      });
+      record({
+        command: "knowledge record",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  knowledge
+    .command("review-candidates")
+    .description(
+      "CANDIDATE 评审分母呈现（§83.10 提升链「Knowledge Candidate → Validation」等待面；空=显式空；含 --from-research 登记来源与 §83.11 降级谱系标注）",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (_opts, command) => {
+      const outcome = await runKnowledgeReviewCandidates(resolveDir(command));
+      record({
+        command: "knowledge review-candidates",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  knowledge
+    .command("promote")
+    .description(
+      "提升 VALIDATED→PROMOTED（唯一提升通路 CLI 面；复用 kernel promoteKnowledge 权威位词形闸：MAINTAIN|AUTHORITY|GATEKEEPER——§25.3 逐字，非权威位含 KNOWLEDGE_CURATOR 一律 AUTHORITY_REQUIRED=§25.5 ⑦ 禁止模式机器化；knowledge 本体恒 ADVISORY，强约束载体是 maintain 面落地的 Policy/Truth 对象）",
+    )
+    .argument("<id>", "knowledge id（须已在 VALIDATED 态——验证边走 kernel applyKnowledgeTransition）")
+    .requiredOption("--promotion-authority <value>", "权威位词形（MAINTAIN|AUTHORITY|GATEKEEPER）")
+    .requiredOption("--authority-ref <ref>", "权威位申报审批/决策引用（必填留痕，C5 自报不判真）")
+    .requiredOption("--promoted-ref <ref>", "§83.10「→ Current Policy/Truth」提升指向（Governance Proposal / Policy 引用）")
+    .requiredOption("--actor <actor>", "执行主体 <type>:<name>")
+    .option("--note <text>", "事务注记")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (id: string, opts, command) => {
+      const outcome = await runKnowledgePromote(resolveDir(command), {
+        id,
+        promotionAuthority: opts.promotionAuthority as string | undefined,
+        authorityRef: opts.authorityRef as string | undefined,
+        promotedRef: opts.promotedRef as string | undefined,
+        actor: opts.actor as string,
+        note: opts.note as string | undefined,
+      });
+      record({
+        command: "knowledge promote",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  knowledge
+    .command("demote")
+    .description(
+      "降级/淘汰 →DEPRECATED（唯一淘汰通路 CLI 面；§83.11 去僵化「POMaster 必须支持『去僵化』」——ADVISORY 面内动作不影响任何 gate，--reason 必填 journal KNOWLEDGE_DEMOTED 留痕）",
+    )
+    .argument("<id>", "knowledge id（VALIDATED 或 PROMOTED 态）")
+    .requiredOption("--reason <text>", "降级/淘汰原因（必填留痕）")
+    .requiredOption("--actor <actor>", "执行主体 <type>:<name>")
+    .option("--note <text>", "事务注记")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (id: string, opts, command) => {
+      const outcome = await runKnowledgeDemote(resolveDir(command), {
+        id,
+        reason: opts.reason as string | undefined,
+        actor: opts.actor as string,
+        note: opts.note as string | undefined,
+      });
+      record({
+        command: "knowledge demote",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
       });
     });
 
