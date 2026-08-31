@@ -8,30 +8,39 @@
 |---|---|---|---|---|
 | **Tiny Change** | README badge 文案调整 | `MINIMAL` | 已脚本化 | `tiny.mjs` |
 | **Normal Change** | 新增一个普通 CLI capability（如 `pomaster explain`） | `LIGHT` / `STANDARD` | 已脚本化 | `normal.mjs` |
-| **Constitutional / Architecture Change** | 修改 State Model、新增 Kernel Primitive | `STRICT` + Meta-Governance | **不脚本化**——留待首次架构变更自然触发 | （无，见下） |
+| **Constitutional / Architecture Change** | 修改 State Model、新增 Kernel Primitive | `STRICT` + Meta-Governance（口径 **A3 pending**） | 已脚本化（L6-3）——走**结构可区分**的第三条通路 | `constitutional.mjs` |
 
-**Constitutional 档为何不脚本化**：§90.3 的成立条件是三档走**不同**流程。P0 CLI 的关键词引擎不产出 STRICT（C5 裁定：命中宪法级关键词时输出 `PROFILE_CANDIDATE` 提示并落 `STANDARD`，prompt_only）——在宪法级通路（Meta-Governance 流程）真正落地前强行脚本化，只会把第三档压扁成与前两档同一套脚本流程，恰是 §90.3 判定为「Adaptive Governance 失败」的情形。因此本目录只保留该档的占位：**首次真实架构变更发生时，按当次的 Meta-Governance 流程走一遍并记录**，之后再评估是否值得固化为脚本。
+**Constitutional 档如何做到「不同流程」（L6-3）**：§90.3 的成立条件是三档走**不同**流程。tiny/normal 走 CLI triage 关键词引擎（`surface=cli:triage`，信封只产 profile/证据级/关键词，无 gate 执行载体）；constitutional 档**不走 triage**，改走 kernel catalog v1 完整治理面（`surface=kernel:catalog+gatekeeper`，全部为 `packages/kernel` 既有 API 真实执行，禁 mock）：① `readCatalogLock` + `verifyCatalogLock`（catalog-lock 全量 sha256 对账，D24）；② profile 锚定（catalog-lock `profile=web-standard@0`）；③ 宪法级条目面（lock entries 的 `GATE.*` 5 条 gate recipe + `AUTHORITY.*` 5 条 §90.2 Protected Set 之 Authority Model 锚，经共享读取器单点取得）；④ DEF-GATEKEEPER「cannot self-approve」观测器行为校验（临时 store fixture：同 execution 既提 proposal 又 ALLOW → drift 触发；身份分离 → 不触发；空 store → 零分母显式）。三档各产出**路径签名**（执行面 / gate 集合 / artifact 集合 / profile 值），脚本机器断言两两不同——三者同路即红（§90.3「同路 = Adaptive Governance 失败」的判卷化）。
+
+**A3 pending 纪律**：宪法档的**口径**（具体执行哪些宪法 gate、判定阈值、STRICT 档映射）属 Owner A3 裁定位。脚本内凡依赖未裁口径的项列入 `a3_pending_items`（`ruling="PENDING_A3"`），**不参与 ok 判定**（不假绿也不误红）；机器上今天可真判的部分（catalog-lock 完整性 / 路径签名可区分性 / profile 锚定存在性 / gatekeeper 观测器行为）正常断言参与 ok。裁定后逐项转正为断言。
+
+**装置纪律**：gatekeeper fixture 一律 `mkdtemp` 临时目录（前缀 `pvnext-kernel-test-`），`finally` 全树删除；**绝不触碰真实 `~/.claude` / 用户 home**；fixture 证据记录零时间戳（运行序纪律与 last-results.json 同源）。
 
 ## 运行
 
-前置：`corepack pnpm --filter @pomaster/cli build`（脚本调用 `packages/cli/dist/bin.js`，即 `@pomaster/cli` 的 `bin` 定义；dist 缺失时脚本报 harness error 并以退出码 2 结束）。
+前置：`node scripts/build-all.mjs`（tiny/normal 调用 `packages/cli/dist/bin.js`；constitutional 加载 `packages/kernel/dist/index.js`——任一 dist 缺失时脚本报 harness error 并以退出码 2 结束）。
 
 ```bash
-node benchmarks/tiny.mjs      # 单档 Tiny：断言 MINIMAL 且输出无 architect/research/spawn 字样
-node benchmarks/normal.mjs    # 单档 Normal：断言 profile ∈ [LIGHT, STANDARD]
-node benchmarks/run-all.mjs   # 两档合跑 + 写 last-results.json
+node benchmarks/tiny.mjs            # 单档 Tiny：断言 MINIMAL 且输出无 architect/research/spawn 字样
+node benchmarks/normal.mjs          # 单档 Normal：断言 profile ∈ [LIGHT, STANDARD]
+node benchmarks/constitutional.mjs  # 单档 Constitutional：catalog 治理面 + gatekeeper + 三档签名判卷（内部真跑 tiny+normal 取签名）
+node benchmarks/run-all.mjs         # 三档合跑 + 写 last-results.json（constitutional 复用本轮 tiny/normal 条目，不重复执行）
 ```
 
-退出码语义（三脚本一致）：`0` = 断言全部通过；`1` = 断言失败；`2` = 基准装置错误（CLI 缺失 / 输出不可解析）。
+退出码语义（三脚本一致）：`0` = 断言全部通过；`1` = 断言失败（含三档路径签名同路）；`2` = 基准装置错误（dist 缺失 / 输出不可解析）。
 
 ## last-results.json
 
 `run-all.mjs` 的唯一落盘产物，记录每档的真实输出：
 
-- `entries[].profile` / `matched_rule` / `evidence_grade` / `matched_keywords`：triage 判定原文；
-- `entries[].durationMs`：该档整轮墙钟耗时（含子进程）；
+- `entries[].profile` / `matched_rule` / `evidence_grade` / `matched_keywords`：triage 判定原文（tiny/normal）；
+- `entries[].profile`（constitutional）：catalog profile 锚原值（`profile_kind="catalog-profile-anchor"`，非 triage 档位词——不冒充 STRICT）；
+- `entries[].path_signature`：三档路径签名（surface / profile / matched_rule / gate_ids / artifacts），同路判卷依据；
+- `entries[].a3_pending_items` 与顶层 `a3_pending_items`：宪法档口径裁定位清单（`ruling="PENDING_A3"`，不参与 ok）；
+- `entries[].durationMs`：该档整轮墙钟耗时（含子进程；constitutional 合跑态因复用两档条目而小于单跑，属预期）；
 - `entries[].assertions[]`：逐条断言明细（name / ok / detail）；
-- **timestamp 禁入**：运行序以整数 `seq` + `run_id`（`bench-NNNN`）标识，seq 单调递增、append-only，不回头改写历史。
+- **timestamp 禁入**：运行序以整数 `seq` + `run_id`（`bench-NNNN`）标识，seq 单调递增、append-only，不回头改写历史；
+- **schema `…/2` 向后兼容 `/1`**：`/2` 新增 `path_signature` 与 `a3_pending_items` 字段；既有消费面（`readPrevSeq` 只取 `seq`；m6 evidence pack 取 `run_id`/`summary`）字段不变。
 
 ## 校准（C7）
 

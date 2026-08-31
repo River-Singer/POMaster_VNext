@@ -1,11 +1,11 @@
 {
-  "schema": "pomaster.vnext.selfhosting-benchmark-results/1",
-  "run_id": "bench-0003",
-  "seq": 3,
+  "schema": "pomaster.vnext.selfhosting-benchmark-results/2",
+  "run_id": "bench-0005",
+  "seq": 5,
   "ok": true,
   "summary": {
-    "total": 2,
-    "passed": 2,
+    "total": 3,
+    "passed": 3,
     "failed": 0
   },
   "entries": [
@@ -19,7 +19,7 @@
       "matched_keywords": [
         "文案"
       ],
-      "durationMs": 216,
+      "durationMs": 294,
       "ok": true,
       "assertions": [
         {
@@ -50,7 +50,7 @@
       "matched_rule": "DEFAULT_NO_SIGNAL",
       "evidence_grade": "NOT_CONFIGURED",
       "matched_keywords": [],
-      "durationMs": 200,
+      "durationMs": 293,
       "ok": true,
       "assertions": [
         {
@@ -64,7 +64,230 @@
           "detail": "profile=LIGHT (rule DEFAULT_NO_SIGNAL)，期望 ∈ [LIGHT, STANDARD]"
         }
       ]
+    },
+    {
+      "tier": "constitutional",
+      "scenario": "修改 State Model 并新增 Kernel Primitive",
+      "expected": "STRICT + Meta-Governance",
+      "profile": "web-standard@0",
+      "profile_kind": "catalog-profile-anchor",
+      "surface": "kernel:catalog+gatekeeper",
+      "matched_rule": null,
+      "evidence_grade": "MEASURED",
+      "matched_keywords": [],
+      "catalog": {
+        "catalog_version": "0.1.0-pilot",
+        "profile": "web-standard@0",
+        "entries_total": 94,
+        "entries_checked": 94,
+        "drifts": 0,
+        "gate_entry_ids": [
+          "GATE.BE.API.CONTRACT_CHECKS",
+          "GATE.BE.CHG.CONTRACT_CHANGE_CHECKS",
+          "GATE.CHG.PRECHANGE_CHECKS",
+          "GATE.WEB.API.REQUEST_CHECKS",
+          "GATE.WEB.GRID.CHECKS"
+        ],
+        "authority_entry_ids": [
+          "AUTHORITY.BE.API_CONTRACT_OWNERSHIP",
+          "AUTHORITY.BE.CONTRACT_OWNERSHIP",
+          "AUTHORITY.CHG.CHANGE_OWNERS",
+          "AUTHORITY.WEB.API.REQUEST_OWNERS",
+          "AUTHORITY.WEB.GRID.OWNERSHIP"
+        ],
+        "policies_total": 79,
+        "policies_human_owner": 79
+      },
+      "gatekeeper": {
+        "drift_fixture_triggered": true,
+        "clean_fixture_triggered": false,
+        "empty_store_executions": 0
+      },
+      "path_signature": {
+        "constitutional": {
+          "surface": "kernel:catalog+gatekeeper",
+          "profile": "web-standard@0",
+          "matched_rule": null,
+          "gate_ids": [
+            "GATE.BE.API.CONTRACT_CHECKS",
+            "GATE.BE.CHG.CONTRACT_CHANGE_CHECKS",
+            "GATE.CHG.PRECHANGE_CHECKS",
+            "GATE.WEB.API.REQUEST_CHECKS",
+            "GATE.WEB.GRID.CHECKS"
+          ],
+          "artifacts": [
+            "catalog-lock-verification",
+            "catalog-authority-anchor",
+            "gatekeeper-drift-report",
+            "three-tier-path-signature"
+          ]
+        },
+        "normal": {
+          "surface": "cli:triage",
+          "profile": "LIGHT",
+          "matched_rule": "DEFAULT_NO_SIGNAL",
+          "gate_ids": [],
+          "artifacts": [
+            "triage-envelope"
+          ]
+        },
+        "tiny": {
+          "surface": "cli:triage",
+          "profile": "MINIMAL",
+          "matched_rule": "F_COPY_STYLE_ONLY",
+          "gate_ids": [],
+          "artifacts": [
+            "triage-envelope"
+          ]
+        }
+      },
+      "a3_pending_items": [
+        {
+          "id": "constitutional_gate_subset_selection",
+          "ruling": "PENDING_A3",
+          "question": "宪法档具体执行哪些宪法 gate（catalog 5 条 GATE.* recipe 的执行子集或全量）",
+          "candidates": [
+            "GATE.BE.API.CONTRACT_CHECKS",
+            "GATE.BE.CHG.CONTRACT_CHANGE_CHECKS",
+            "GATE.CHG.PRECHANGE_CHECKS",
+            "GATE.WEB.API.REQUEST_CHECKS",
+            "GATE.WEB.GRID.CHECKS"
+          ],
+          "current_behavior": "仅经 catalog-lock 哈希校验锚定在场（anchored），不执行任何 gate 判卷；不参与 ok",
+          "participates_in_ok": false
+        },
+        {
+          "id": "constitutional_gate_thresholds",
+          "ruling": "PENDING_A3",
+          "question": "宪法档 gate 判定阈值与 passed 判据（gate_def_draft.judging_rules 为草稿词形，非裁定）",
+          "candidates": [
+            "counts_not_applicable_required",
+            "trust_twin",
+            "blindspot_evidence",
+            "aggregate_honesty"
+          ],
+          "current_behavior": "不做 gate 判卷，因此无阈值断言；不参与 ok",
+          "participates_in_ok": false
+        },
+        {
+          "id": "strict_profile_mapping",
+          "ruling": "PENDING_A3",
+          "question": "§90.3 期望「STRICT + Meta-Governance」与本基准呈现面的映射口径：triage v0 引擎无 STRICT 档（prompt_only 预留，ceiling_candidates 恒空）；宪法档现以 catalog profile 锚（name@version）呈现治理档",
+          "candidates": [
+            "triage-STRICT-物化",
+            "catalog-profile-锚即档",
+            "双轨并行"
+          ],
+          "current_behavior": "profile 字段如实呈现 catalog 锚原值并标 profile_kind=catalog-profile-anchor，不冒充 triage STRICT；不参与 ok",
+          "participates_in_ok": false
+        }
+      ],
+      "durationMs": 201,
+      "ok": true,
+      "assertions": [
+        {
+          "name": "catalog-lock-ok",
+          "ok": true,
+          "detail": "verifyCatalogLock ok=true，entries_checked=94/94，drifts=0（sha256 逐条对账，D24 read-side 指纹）"
+        },
+        {
+          "name": "profile-anchor-present",
+          "ok": true,
+          "detail": "catalog-lock profile=\"web-standard@0\"（catalog_version=0.1.0-pilot），name@version 词形锚存在"
+        },
+        {
+          "name": "constitutional-gate-subset-anchored",
+          "ok": true,
+          "detail": "GATE.* 条目 5 条经 lock 哈希校验在场（GATE.BE.API.CONTRACT_CHECKS, GATE.BE.CHG.CONTRACT_CHANGE_CHECKS, GATE.CHG.PRECHANGE_CHECKS, GATE.WEB.API.REQUEST_CHECKS, GATE.WEB.GRID.CHECKS）；具体执行子集与阈值属 A3 pending，不在本断言判定范围"
+        },
+        {
+          "name": "authority-model-anchor-present",
+          "ok": true,
+          "detail": "AUTHORITY.* 条目 5 条（§90.2 Protected Set 之 Authority Model 锚）：AUTHORITY.BE.API_CONTRACT_OWNERSHIP, AUTHORITY.BE.CONTRACT_OWNERSHIP, AUTHORITY.CHG.CHANGE_OWNERS, AUTHORITY.WEB.API.REQUEST_OWNERS, AUTHORITY.WEB.GRID.OWNERSHIP"
+        },
+        {
+          "name": "policies-loadable-human-owned",
+          "ok": true,
+          "detail": "loadCatalogPolicies=79 条（共享读取器词表对账 fail-closed 真实执行）；authority.owner=HUMAN_OWNER 79/79（cannot self-approve 锚）"
+        },
+        {
+          "name": "gatekeeper-drift-caught",
+          "ok": true,
+          "detail": "同 execution 既 CLM（proposal）又 GRN passed（ALLOW）→ triggered=true，rows[0].drift=true（detectGatekeeperDrift 真实执行）"
+        },
+        {
+          "name": "gatekeeper-separated-identities-clean",
+          "ok": true,
+          "detail": "proposal 与 ALLOW 身份分离 → triggered=false（分身纪律：分离即无信号）"
+        },
+        {
+          "name": "gatekeeper-empty-store-zero-denominator",
+          "ok": true,
+          "detail": "空 store → executions_with_identity=0，triggered=false（缺席不伪造，零分母显式）"
+        },
+        {
+          "name": "three-tier-path-signatures-distinct",
+          "ok": true,
+          "detail": "三档签名两两不同（§90.3 同路=失败未触发）：surface constitutional=\"kernel:catalog+gatekeeper\" vs tiny/normal=\"cli:triage\"；gate_ids constitutional=5 条 vs 两档 0 条；profile constitutional=\"web-standard@0\" vs triage 档位词"
+        },
+        {
+          "name": "distinct-axis-execution-surface",
+          "ok": true,
+          "detail": "执行面轴：constitutional=\"kernel:catalog+gatekeeper\"，tiny=\"cli:triage\"，normal=\"cli:triage\""
+        },
+        {
+          "name": "distinct-axis-gate-set",
+          "ok": true,
+          "detail": "gate 集合轴：constitutional 5 条 GATE.* vs tiny=0 / normal=0（triage 信封无 gate 执行载体）"
+        },
+        {
+          "name": "distinct-axis-profile-value",
+          "ok": true,
+          "detail": "profile 值轴：constitutional 锚 catalog profile=\"web-standard@0\"，tiny=\"MINIMAL\"，normal=\"LIGHT\"（triage 档位词 vs catalog name@version 锚）"
+        }
+      ]
     }
   ],
-  "note": "timestamp 禁入：运行序以 seq/run_id 标识（seq 即 C7 校准轮代号，见 calibration-template.md）。"
+  "a3_pending_items": [
+    {
+      "id": "constitutional_gate_subset_selection",
+      "ruling": "PENDING_A3",
+      "question": "宪法档具体执行哪些宪法 gate（catalog 5 条 GATE.* recipe 的执行子集或全量）",
+      "candidates": [
+        "GATE.BE.API.CONTRACT_CHECKS",
+        "GATE.BE.CHG.CONTRACT_CHANGE_CHECKS",
+        "GATE.CHG.PRECHANGE_CHECKS",
+        "GATE.WEB.API.REQUEST_CHECKS",
+        "GATE.WEB.GRID.CHECKS"
+      ],
+      "current_behavior": "仅经 catalog-lock 哈希校验锚定在场（anchored），不执行任何 gate 判卷；不参与 ok",
+      "participates_in_ok": false
+    },
+    {
+      "id": "constitutional_gate_thresholds",
+      "ruling": "PENDING_A3",
+      "question": "宪法档 gate 判定阈值与 passed 判据（gate_def_draft.judging_rules 为草稿词形，非裁定）",
+      "candidates": [
+        "counts_not_applicable_required",
+        "trust_twin",
+        "blindspot_evidence",
+        "aggregate_honesty"
+      ],
+      "current_behavior": "不做 gate 判卷，因此无阈值断言；不参与 ok",
+      "participates_in_ok": false
+    },
+    {
+      "id": "strict_profile_mapping",
+      "ruling": "PENDING_A3",
+      "question": "§90.3 期望「STRICT + Meta-Governance」与本基准呈现面的映射口径：triage v0 引擎无 STRICT 档（prompt_only 预留，ceiling_candidates 恒空）；宪法档现以 catalog profile 锚（name@version）呈现治理档",
+      "candidates": [
+        "triage-STRICT-物化",
+        "catalog-profile-锚即档",
+        "双轨并行"
+      ],
+      "current_behavior": "profile 字段如实呈现 catalog 锚原值并标 profile_kind=catalog-profile-anchor，不冒充 triage STRICT；不参与 ok",
+      "participates_in_ok": false
+    }
+  ],
+  "note": "timestamp 禁入：运行序以 seq/run_id 标识（seq 即 C7 校准轮代号，见 calibration-template.md）。schema /2 向后兼容 /1：新增 path_signature 与 a3_pending_items 字段，readPrevSeq/summary 消费面不变。"
 }

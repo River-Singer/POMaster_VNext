@@ -13,7 +13,9 @@
     "test": "vitest run --passWithNoTests",
     "lint": "eslint .",
     "ratchet": "node tests/ratchet/ratchet.mjs",
-    "eval:trigger": "node scripts/eval-trigger.mjs"
+    "eval:trigger": "node scripts/eval-trigger.mjs",
+    "mutation:verify": "node benchmarks/mutation-kill.mjs --verify",
+    "notices:verify": "node legal/verify_notices.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.13.1",

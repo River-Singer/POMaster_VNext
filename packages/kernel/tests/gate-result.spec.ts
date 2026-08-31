@@ -153,6 +153,16 @@ describe("normalizeGateResult（happy path 与形状归一）", () => {
     expect(result.blindspot).toEqual({ scanned: 10, produced: 8, escapeRatio: 0.2 });
   });
 
+  it("盲区显式声明域闭合：escape_ratio=1 逐字采信（<=1 闭边界；L6-1 幸存者 MUT-GR-008 强度器补杀）", () => {
+    // 域规则：显式 escape_ratio ∈ [0,1] 逐字采信；=1（满逃逸率）是域内合法值——
+    // 若域闸退化为 <1，=1 会坠入派生回退（0.2）而静默改写声明值，本用例钉死该边界。
+    const result = normalizeGateResult(
+      claimed(validPayload({ blindspot: { scanned: 10, produced: 8, escape_ratio: 1 } })),
+      CONTEXT,
+    );
+    expect(result.blindspot).toEqual({ scanned: 10, produced: 8, escapeRatio: 1 });
+  });
+
   it("produced > scanned → GATE_COUNTS_INVALID（扫描器自相矛盾，执行层 FATAL）", () => {
     expect(() =>
       normalizeGateResult(

@@ -1,14 +1,42 @@
 /**
  * kernel 测试共享工具：临时 store fixture 与常用输入构造器。
  * 词表纪律：一切 id/枚举取自 vocab-lock 闭包；测试不发明词表外值。
+ *
+ * fixture 卫生（HYG-1 封条）：makeRoot/makeStore 创建的临时目录登记进 sweepList，
+ * 由模块级 afterEach 统一清理——但只清「测试体内创建」的（每次全量套件跑泄漏
+ * 数万目录的火源）；beforeAll 等文件级 setup 中创建的 fixture 归属主自管生命周期
+ * （GRN-4402 同型 spec 的共享 store 依赖它跨测试存活），封条不越权代删。
+ * 对自带 afterEach 清理的 spec 幂等无害（rmSync force 对已删路径 no-op）。
+ * 历史：至 2026-09 封条前，本 helper 的调用方约 10 个 spec 零清理，Windows Temp
+ * 积压 pvnext-kernel-test-* 目录 20 万+（每次全量套件运行持续新增）。
  */
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { afterEach, beforeEach } from "vitest";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createStore, parseGovernedId, type GovernedId, type Store } from "@pomaster/kernel";
 
+/** 本测试文件内经 makeRoot/makeStore 创建的临时根目录（含创建时机标记）。 */
+const sweepList: { root: string; inTest: boolean }[] = [];
+/** 是否处于测试体内（beforeAll 等文件级 setup 中创建的 fixture 归属主自管生命周期）。 */
+let inTest = false;
+
+beforeEach(() => {
+  inTest = true;
+});
+
+afterEach(() => {
+  inTest = false;
+  for (const entry of sweepList) {
+    if (entry.inTest) rmSync(entry.root, { recursive: true, force: true });
+  }
+  sweepList.length = 0;
+});
+
 export function makeRoot(): string {
-  return mkdtempSync(join(tmpdir(), "pvnext-kernel-test-"));
+  const root = mkdtempSync(join(tmpdir(), "pvnext-kernel-test-"));
+  sweepList.push({ root, inTest });
+  return root;
 }
 
 export async function makeStore(

@@ -1,12 +1,12 @@
 /**
  * ci-workflow-contract.spec.ts —— CI workflow 双 OS 腿形态契约（P32b · gaps B3
- * 闭合的机器可判半边：Windows 腿存在 + 五步同形 + Windows 安全调用形态）。
+ * 闭合的机器可判半边：Windows 腿存在 + 七步同形 + Windows 安全调用形态）。
  *
  * 钉住的契约（.github/workflows/ci.yml）：
  * - matrix 双腿 ubuntu-latest + windows-latest（B3：此前 CI 只在 ubuntu 验证，
  *   PATH 双引号吞段等 Windows 特有坑只在本机踩过、CI 不设防）；
  * - fail-fast: false（单腿红不取消另一腿——Windows 特有失败不得掩盖 ubuntu 主信号）；
- * - 五步 run 命令恒为 `corepack pnpm <install|build|test|ratchet|lint>`：统一经
+ * - 七步 run 命令恒为 `corepack pnpm <install|build|mutation:verify|notices:verify|test|ratchet|lint>`：统一经
  *   corepack 前缀（不依赖 runner PATH 上的裸 pnpm/npx——Windows pwsh 与 ubuntu bash
  *   双 shell 同形；build-all.mjs/ratchet.mjs 内部再以 process.execPath 直连子进程，
  *   shell:false + 参数数组，CI 与本机行为一致）；
@@ -28,10 +28,12 @@ const workflowPath = join(repoRoot, ".github", "workflows", "ci.yml");
 
 type UnknownRecord = Record<string, unknown>;
 
-/** 五步命令闭包（顺序敏感：install→build→test→ratchet→lint）。 */
+/** 七步命令闭包（顺序敏感：install→build→mutation:verify→notices:verify→test→ratchet→lint；P35 RT2/RT4 封条接线）。 */
 const EXPECTED_STEP_COMMANDS = [
   "corepack pnpm install",
   "corepack pnpm build",
+  "corepack pnpm mutation:verify",
+  "corepack pnpm notices:verify",
   "corepack pnpm test",
   "corepack pnpm ratchet",
   "corepack pnpm lint",
@@ -74,7 +76,7 @@ describe("CI workflow 双 OS 腿形态契约（P32b · B3 闭合）", () => {
     expect(matrix.os).toEqual(EXPECTED_RUNNERS);
   });
 
-  it("五步命令同形且顺序恒定：install→build→test→ratchet→lint，全部 corepack pnpm 前缀", () => {
+  it("七步命令同形且顺序恒定：install→build→mutation:verify→notices:verify→test→ratchet→lint，全部 corepack pnpm 前缀", () => {
     const doc = loadWorkflow();
     const ci = (doc.jobs as UnknownRecord).ci as UnknownRecord;
     const runs = runCommandsOf(ci);
