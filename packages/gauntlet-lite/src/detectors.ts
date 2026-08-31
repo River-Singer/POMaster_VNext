@@ -16,6 +16,14 @@
  *                          package.json 声明线索，c8/StrykerJS 同款形态；run 期
  *                          `corepack pnpm exec playwright --version` 实测对账）
  * - chrome-devtools MCP → BROWSER 交互式腿（D22；.mcp.json 线索，未配置 → MISSING_CONFIGURATION 显式缺席 + 一键引导）
+ * - lighthouse → PERFORMANCE 门禁实验室腿（P27 / 随版计划 Batch 3 后段 B3-3；
+ *                          PATH 线索，oasdiff 同款 CLI 形态；run 期 `lighthouse --version` 实测对账）
+ * - web-vitals → PERFORMANCE 门禁字段数据腿（P27 / B3-3；package.json 声明线索
+ *                          （web-vitals 是库非 CLI——c8/StrykerJS 同款形态）；run 期版本
+ *                          探测命令由项目在 performance-gate.json 显式声明（无 CLI 缺省可派生））
+ * - schemathesis → CONTRACT 加强腿（P27 / 随版计划 B3-4「从 OpenAPI 生成
+ *                          property-based 用例；FastAPI profile 招牌件」；PATH 线索；
+ *                          run 期 `schemathesis --version` 实测对账）
  *
  * 词表纪律：DetectionStatus 四态词形冻结于 adapter-types.ts（TODO(vocab-pr)），禁止就地扩值。
  * 探测为纯函数（DetectorFacts 注入），零隐式 I/O；真实事实源 platformDetectorFacts（node:fs）。
@@ -846,5 +854,152 @@ export function detectChromeDevtoolsMcp(
     reason:
       ".mcp.json 存在但未注册 chrome-devtools MCP server（D22 MISSING_CONFIGURATION：视觉证据交互腿缺席）",
     installHint,
+  };
+}
+
+// ============================================================
+// PERFORMANCE 门禁双 runner + CONTRACT 加强腿（P27 / 随版计划 Batch 3 后段
+// B3-3「Lighthouse / web-vitals——对接 §29 性能预算字段」+ B3-4「schemathesis
+// ——从 OpenAPI 生成 property-based 用例」）
+// ============================================================
+
+/**
+ * lighthouse 探测（P27 PERFORMANCE 门禁实验室腿，B3-3；oasdiff 同款 PATH 线索形态）：
+ * PATH 命中 lighthouse 可执行体 → READY；版本不可离线探测（detectedVersion=null，
+ * oasdiff 同款），run 期 `lighthouse --version` 实测对账。
+ */
+export function detectLighthouse(
+  facts: DetectorFacts,
+  options: DetectorOptions = {},
+): DetectionResult {
+  const tool = "lighthouse";
+  if (options.requiredByProfile === false) {
+    return {
+      status: "NOT_REQUIRED_BY_PROFILE",
+      tool,
+      reason:
+        "当前 Governance Profile 未要求 PERFORMANCE 门禁 lighthouse 腿（合法缺席，显式计数而非静默跳过）",
+    };
+  }
+  const hit = findExecutableOnPath(tool, facts);
+  if (hit !== null) {
+    return {
+      status: "READY",
+      tool,
+      detectedVersion: null,
+      evidence: `PATH 命中: ${hit}`,
+    };
+  }
+  return {
+    status: "NOT_INSTALLED",
+    tool,
+    reason:
+      "PATH 上未找到 lighthouse 可执行文件（PERFORMANCE 门禁实验室腿——官方 LHR 报告实测 vs §29.1 性能预算，P27/B3-3）",
+    installHint:
+      "安装建议：npm install -g lighthouse（或 corepack pnpm add -D lighthouse 后以 corepack pnpm exec lighthouse 探测/执行）；安装后重跑 pomaster doctor 复核（PERFORMANCE 门禁 lighthouse 腿，P27）",
+  };
+}
+
+/**
+ * web-vitals 探测（P27 PERFORMANCE 门禁字段数据腿，B3-3）：package.json
+ * devDependencies/dependencies 声明 web-vitals → READY（c8/StrykerJS 同款形态——
+ * web-vitals 是库非 CLI，无可执行体可 PATH 探测；run 期版本探测命令由项目在
+ * performance-gate.json webVitals 段显式声明，配置闸强制，禁猜口径）。
+ * 诚实能力边界：库已声明 ≠ harness 已产出报告——报告缺席在 run 期显式 not_run，
+ * 探测面不冒充已验证。
+ */
+export function detectWebVitals(
+  facts: DetectorFacts,
+  options: DetectorOptions = {},
+): DetectionResult {
+  const tool = "web-vitals";
+  if (options.requiredByProfile === false) {
+    return {
+      status: "NOT_REQUIRED_BY_PROFILE",
+      tool,
+      reason:
+        "当前 Governance Profile 未要求 PERFORMANCE 门禁 web-vitals 腿（合法缺席，显式计数而非静默跳过）",
+    };
+  }
+  const pkg = readPackageJson(facts);
+  if (pkg === null) {
+    return {
+      status: "NOT_INSTALLED",
+      tool,
+      reason:
+        "package.json 不存在（无法探测 web-vitals 依赖声明——PERFORMANCE 门禁字段数据腿）",
+      installHint:
+        '安装建议：corepack pnpm add -D web-vitals（页面侧 onLCP/onINP 回调收集官方 Metric 对象写盘），并在 performance-gate.json 声明 {"budget":{...},"webVitals":{"command":"<harness 命令，须产出 {\\"metrics\\":[...]} 报告>","versionProbe":"<版本探测>"}（P27/B3-3）',
+    };
+  }
+  const declared = dependencyVersion(pkg, "web-vitals");
+  if (typeof declared !== "string") {
+    return {
+      status: "NOT_INSTALLED",
+      tool,
+      reason:
+        "package.json 未声明 web-vitals 依赖（devDependencies/dependencies 均无——PERFORMANCE 门禁字段数据腿）",
+      installHint:
+        "安装建议：corepack pnpm add -D web-vitals（官方 Metric 词形报告由项目侧 harness 产出，容器=POMaster 遍历契约）（P27/B3-3）",
+    };
+  }
+  const detectedVersion = sanitizeSemver(declared);
+  if (
+    options.expectedVersion != null &&
+    detectedVersion !== null &&
+    detectedVersion !== options.expectedVersion
+  ) {
+    return {
+      status: "DRIFTED",
+      tool,
+      detectedVersion,
+      expectedVersion: options.expectedVersion,
+      evidence: `package.json 命中 web-vitals = ${declared}（版本 ${detectedVersion}）`,
+      installHint: `版本对齐建议：将 web-vitals 对齐到锁定版本 ${options.expectedVersion}（DRIFTED 态判卷降级 warning）`,
+    };
+  }
+  return {
+    status: "READY",
+    tool,
+    detectedVersion,
+    evidence: `package.json 命中 web-vitals = ${declared}`,
+  };
+}
+
+/**
+ * schemathesis 探测（P27 CONTRACT 加强腿，B3-4「从 OpenAPI 生成 property-based
+ * 用例；FastAPI profile 招牌件」；oasdiff 同款 PATH 线索形态）：PATH 命中
+ * schemathesis 可执行体 → READY；版本不可离线探测（detectedVersion=null），
+ * run 期 `schemathesis --version` 实测对账。
+ */
+export function detectSchemathesis(
+  facts: DetectorFacts,
+  options: DetectorOptions = {},
+): DetectionResult {
+  const tool = "schemathesis";
+  if (options.requiredByProfile === false) {
+    return {
+      status: "NOT_REQUIRED_BY_PROFILE",
+      tool,
+      reason:
+        "当前 Governance Profile 未要求 CONTRACT 门禁 schemathesis 腿（合法缺席，显式计数而非静默跳过）",
+    };
+  }
+  const hit = findExecutableOnPath(tool, facts);
+  if (hit !== null) {
+    return {
+      status: "READY",
+      tool,
+      detectedVersion: null,
+      evidence: `PATH 命中: ${hit}`,
+    };
+  }
+  return {
+    status: "NOT_INSTALLED",
+    tool,
+    reason:
+      "PATH 上未找到 schemathesis 可执行文件（CONTRACT 门禁 property-based 腿——从受治项目声明的 OpenAPI 生成 property-based 用例，P27/B3-4 招牌件）",
+    installHint:
+      "安装建议：pip install schemathesis（或 uvx schemathesis run … 词形执行）；安装后重跑 pomaster doctor 复核（CONTRACT 门禁 schemathesis 腿，P27/B3-4）",
   };
 }

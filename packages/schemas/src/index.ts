@@ -123,3 +123,59 @@ export const allSchemas = {
   researchArtifact: researchArtifactSchema,
   exceptionLedger: exceptionLedgerSchema,
 } as const;
+
+// ============================================================
+// P27（B3-3）：PRD §29.1 PerformanceBudget 定义的运行时消费锚
+// ============================================================
+
+/**
+ * 从 02 信封 $definitions 提取具名定义（装载期即校验：定义缺席 = 装载错位，
+ * 立即 FATAL 而非运行期静默——asSchema 同款纪律）。
+ */
+function definitionOf(
+  schema: JsonSchemaObject,
+  name: string,
+): Record<string, unknown> {
+  const definitions = schema["$definitions"];
+  if (definitions === null || typeof definitions !== "object" || Array.isArray(definitions)) {
+    throw new Error(
+      `schema asset malformed: ${String(schema.$id)} 缺少 $definitions 对象`,
+    );
+  }
+  const def = (definitions as Record<string, unknown>)[name];
+  if (def === null || typeof def !== "object" || Array.isArray(def)) {
+    throw new Error(
+      `schema asset mismatch: ${String(schema.$id)} $definitions.${name} 缺席（定义被改名/删除？）`,
+    );
+  }
+  return def as Record<string, unknown>;
+}
+
+/**
+ * PRD §29.1 performance_budget 定义对象（02 信封 $definitions.PerformanceBudget
+ * 原文引用，非镜像拷贝——schema 是唯一事实源，判卷消费面（gauntlet-lite
+ * PERFORMANCE 腿）从这里读字段集，零漂移）。minProperties: 1 +
+ * additionalProperties: false（字段集封闭，禁发明字段）。
+ */
+export const performanceBudgetDefinition = definitionOf(
+  objectEnvelopeSchema,
+  "PerformanceBudget",
+);
+
+function performanceBudgetPropertyNames(): readonly string[] {
+  const properties = performanceBudgetDefinition["properties"];
+  if (properties === null || typeof properties !== "object" || Array.isArray(properties)) {
+    throw new Error(
+      "schema asset mismatch: $definitions.PerformanceBudget.properties 缺席（定义形态被破坏？）",
+    );
+  }
+  // 排序输出保证确定性（消费面按此集合做字段识别，序无关但留痕序稳定）。
+  return Object.keys(properties as Record<string, unknown>).sort();
+}
+
+/**
+ * §29.1 预算字段全集（从 performanceBudgetDefinition.properties 派生，非手抄——
+ * schema 改字段集即同步，无第二份镜像可漂移）。当前六字段：
+ * initial_js_gzip_kb / inp_ms / lcp_ms / long_task_ms / max_chunk_kb / max_memory_mb。
+ */
+export const PERFORMANCE_BUDGET_FIELDS = performanceBudgetPropertyNames();

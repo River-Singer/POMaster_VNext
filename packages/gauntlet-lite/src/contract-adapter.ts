@@ -1,15 +1,18 @@
 /**
  * contract-adapter.ts —— CONTRACT 门禁 adapter（G5 谱系扩展；P22 双口径：存在性对账 +
- * oasdiff breaking-change diff 执行腿）。
+ * oasdiff breaking-change diff 执行腿；P27 第三口径：schemathesis property-based 执行腿）。
  *
  * 职责（§59 四段，全部走既有 GateAdapter 契约，产出过 03 schema）：
- * - detect：读项目根 contract-gate.json——两种机判口径（一份配置声明一个口径，互斥）：
+ * - detect：读项目根 contract-gate.json——三种机判口径（一份配置声明一个口径，互斥）：
  *   · operation_ids 口径：声明 openapi 文件路径 + 待验 operation_id 清单（清单来自
  *   Project Baseline/config）——声明齐备 → READY；
  *   · breaking_diff 口径（P22 / gaps A6 / D18 P0 点名）：声明 breakingDiff.base +
  *   openapi（受检方 current），并要求 PATH 上 oasdiff 在位（detectOasdiff）——工具缺席
  *   → NOT_INSTALLED（缺席理由 + 安装指引，禁静默）；
- *   未声明/不可解析/形态非法/两口径混声明 → NOT_INSTALLED（缺席理由 + 落位指引，禁静默）。
+ *   · schemathesis 口径（P27 / 随版计划 B3-4 招牌件）：声明 schemathesis 段
+ *   （schemathesis run 命令），并要求 PATH 上 schemathesis 在位（detectSchemathesis）
+ *   ——工具缺席 → NOT_INSTALLED；
+ *   未声明/不可解析/形态非法/多口径混声明 → NOT_INSTALLED（缺席理由 + 落位指引，禁静默）。
  * - prepare：纯数据执行计划；未声明 → plan.declared=false + absenceKind（config_absent
  *   沿管线走到 normalize 落 verdict=not_configured；tool_absent 落 not_run——诚实缺席，
  *   非 passed：03 七态语义「缺席是终局性诚实结论而非通过」）。breaking_diff 腿强制
@@ -26,7 +29,10 @@
  *   （zero_declared_operations_nothing_verified，报绿的机器自我怀疑）；openapi 文件不可读
  *   → not_run（非绿非红）；未声明 → not_configured。
  *   · breaking_diff：normalizeOasdiffLeg（violations=breaking changes 重算计数 + 明细
- *   items；oasdiff 缺席/执行错误 → not_run 非绿非红）。
+ *   items；oasdiff 缺席/执行错误 → not_run 非绿非红）；
+ *   · schemathesis（P27/B3-4）：normalizeSchemathesisLeg（官方退出码契约 × NDJSON
+ *   recorder.checks 重算双锚 + 零生成用例零分母闸；schemathesis 缺席/执行错误/配置
+ *   或 schema 中止 → not_run 非绿非红）。
  *
  * D24：本文件不计算任何 sha；D13：零运行时第三方依赖；A4：机器字段一律以
  * policy 供给的 grn/ranAtSeq 为锚，禁墙钟。
@@ -39,6 +45,7 @@ import type { RunTriggerValue, VerdictValue } from "@pomaster/schemas";
 import type {
   DetectionResult,
   DetectorFacts,
+  ExecutableProbeFn,
   GateAdapter,
   GatePolicy,
   GateResultRecord,
@@ -48,7 +55,12 @@ import type {
 } from "./adapter-types.js";
 import { GAUNTLET_LITE_VERSION } from "./adapter-types.js";
 import { GateAdapterError } from "./adapter-types.js";
-import { detectOasdiff, platformDetectorFacts } from "./detectors.js";
+import {
+  detectOasdiff,
+  detectSchemathesis,
+  platformDetectorFacts,
+  platformExecutableProbe,
+} from "./detectors.js";
 import {
   DEFAULT_LEG_TIMEOUT_MS,
   OASDIFF_METRIC_DIALECT,
@@ -61,6 +73,19 @@ import {
   type OasdiffLegOutput,
   type OasdiffLegPlan,
 } from "./oasdiff-leg.js";
+import {
+  DEFAULT_SCHEMATHESIS_TIMEOUT_MS,
+  SCHEMATHESIS_METRIC_DIALECT,
+  SCHEMATHESIS_TOOL_ID,
+  SCHEMATHESIS_VERSION_PROBE_COMMAND,
+  normalizeSchemathesisLeg,
+  resolveSchemathesisReportPath,
+  runSchemathesisLeg,
+  schemathesisLegExecutable,
+  schemathesisSpawn,
+  type SchemathesisLegOutput,
+  type SchemathesisLegPlan,
+} from "./schemathesis-leg.js";
 import {
   absenceRecord,
   assertCommonGates,
@@ -79,9 +104,11 @@ export const CONTRACT_METRIC_DIALECT = "contract:operation_id_existence";
 export const CONTRACT_GATE_CONFIG_FILE = "contract-gate.json";
 
 export const CONTRACT_CONFIG_HINT =
-  "在项目根 contract-gate.json 声明对账输入，两种机判口径二选一（互斥，一份配置一个口径）：" +
+  "在项目根 contract-gate.json 声明对账输入，三种机判口径三选一（互斥，一份配置一个口径）：" +
   '存在性对账 {"openapi":"spec/openapi.yaml","expectedOperationIds":["getUser","createUser"]}；' +
-  'breaking-change diff（P22/D18）{"openapi":"spec/openapi.yaml","breakingDiff":{"base":"spec/openapi.base.yaml"}}（需 PATH 上有 oasdiff）——' +
+  'breaking-change diff（P22/D18）{"openapi":"spec/openapi.yaml","breakingDiff":{"base":"spec/openapi.base.yaml"}}（需 PATH 上有 oasdiff）；' +
+  'property-based（P27/B3-4 schemathesis 招牌件）{"openapi":"spec/openapi.yaml","schemathesis":{"command":"schemathesis run spec/openapi.yaml --url <base-url> --report ndjson --report-ndjson-path reports/contract/schemathesis.ndjson"}}' +
+  "（需 PATH 上有 schemathesis；schemathesis run 从 OpenAPI 生成 property-based 用例并对目标 API 执行——命令含 base-url/checks/报告旗标由项目拼装）——" +
   "未声明是诚实缺席（not_configured），不会被记为通过";
 
 // ============================================================
@@ -106,6 +133,15 @@ export type ContractGateConfig =
       readonly openapi: string;
       /** 对比基线（旧版本）openapi 文件的仓内相对路径（breakingDiff.base）。 */
       readonly breakingBase: string;
+    }
+  | {
+      readonly mode: "schemathesis";
+      /** 受检 openapi 文件的仓内相对路径（B3-4：property-based 用例的生成事实源——受治项目声明）。 */
+      readonly openapi: string;
+      /** schemathesis run 命令（项目侧运行面：base-url/checks/报告旗标由项目拼装）。 */
+      readonly schemathesisCommand: string;
+      /** NDJSON 报告落点声明（可选；null = 缺省 reports/contract/schemathesis.ndjson）。 */
+      readonly schemathesisReport: string | null;
     };
 
 export type ContractConfigRead =
@@ -140,11 +176,58 @@ export function readContractConfig(facts: DetectorFacts): ContractConfigRead {
   const openapi = loose === null ? undefined : loose["openapi"];
   const expected = loose === null ? undefined : loose["expectedOperationIds"];
   const breakingDiff = loose === null ? undefined : loose["breakingDiff"];
+  const schemathesis = loose === null ? undefined : loose["schemathesis"];
   if (typeof openapi !== "string" || openapi.trim().length === 0) {
     return {
       ok: false,
       reason: `${CONTRACT_GATE_CONFIG_FILE} 缺少非空字符串字段 openapi（openapi 文件路径）`,
       installHint: `字段形态见：${CONTRACT_CONFIG_HINT}`,
+    };
+  }
+  // —— schemathesis 口径（P27/B3-4）：schemathesis 段声明 + 与既有两口径互斥 ——
+  if (schemathesis !== undefined) {
+    if (
+      breakingDiff !== undefined ||
+      expected !== undefined
+    ) {
+      return {
+        ok: false,
+        reason: `${CONTRACT_GATE_CONFIG_FILE} 同时声明 schemathesis 与 ${breakingDiff !== undefined ? "breakingDiff" : "expectedOperationIds"}——机判口径互斥（一条 GateResult 只携带一个 metric_dialect，混声明即口径漂移）；分多次判卷，各自声明一份配置`,
+        installHint: `口径形态见：${CONTRACT_CONFIG_HINT}`,
+      };
+    }
+    const stLoose =
+      schemathesis !== null && typeof schemathesis === "object"
+        ? (schemathesis as Record<string, unknown>)
+        : null;
+    const command = stLoose === null ? undefined : stLoose["command"];
+    if (stLoose === null || typeof command !== "string" || command.trim().length === 0) {
+      return {
+        ok: false,
+        reason: `${CONTRACT_GATE_CONFIG_FILE} 的 schemathesis 段缺少非空字符串字段 command（schemathesis run 命令——须含 OpenAPI 路径、base-url 与 --report ndjson --report-ndjson-path 报告旗标）`,
+        installHint: `字段形态见：${CONTRACT_CONFIG_HINT}`,
+      };
+    }
+    const report = stLoose["report"];
+    if (
+      report !== undefined &&
+      (typeof report !== "string" || report.trim().length === 0)
+    ) {
+      return {
+        ok: false,
+        reason: `${CONTRACT_GATE_CONFIG_FILE} 的 schemathesis 段 report 必须是非空字符串（NDJSON 报告落点；缺省 reports/contract/schemathesis.ndjson）`,
+        installHint: `字段形态见：${CONTRACT_CONFIG_HINT}`,
+      };
+    }
+    return {
+      ok: true,
+      config: {
+        mode: "schemathesis",
+        openapi,
+        schemathesisCommand: command,
+        schemathesisReport: typeof report === "string" ? report.replaceAll("\\", "/") : null,
+      },
+      evidence: `配置文件命中: ${configPath}（schemathesis 口径：openapi=${openapi}，property-based 判卷面已声明）`,
     };
   }
   // —— breaking_diff 口径（P22）：breakingDiff.base 声明 + 与 expectedOperationIds 互斥 ——
@@ -231,8 +314,8 @@ export type ContractAbsenceKind = "config_absent" | "tool_absent";
 
 export interface ContractGatePlan extends RecordPlanFields {
   readonly projectRoot: string;
-  /** 机判口径（P22 双口径：operation_ids 既有对账 / breaking_diff oasdiff 执行腿）。 */
-  readonly mode: "operation_ids" | "breaking_diff";
+  /** 机判口径（P22 双口径 + P27 第三口径：operation_ids / breaking_diff / schemathesis）。 */
+  readonly mode: "operation_ids" | "breaking_diff" | "schemathesis";
   /** false = 缺席（absenceKind 分流到 normalize 的 not_configured / not_run）。 */
   readonly declared: boolean;
   readonly absenceKind: ContractAbsenceKind | null;
@@ -244,6 +327,8 @@ export interface ContractGatePlan extends RecordPlanFields {
   readonly installHint: string | null;
   /** breaking_diff 腿执行计划；其余口径 null（prepare 组装，run 直接消费）。 */
   readonly oasdiffPlan: OasdiffLegPlan | null;
+  /** schemathesis 腿执行计划（P27/B3-4）；其余口径 null（prepare 组装，run 直接消费）。 */
+  readonly schemathesisPlan: SchemathesisLegPlan | null;
   /** 版本锚（policy 供给；normalize 对账 tool_version 漂移）。 */
   readonly expectedToolVersion: string | null;
   readonly trigger: RunTriggerValue;
@@ -267,6 +352,12 @@ export type ContractRunOutput =
       readonly outcome: "breaking_diff";
       readonly leg: OasdiffLegOutput;
       readonly externalMs: number;
+    }
+  | {
+      readonly plan: ContractGatePlan;
+      readonly outcome: "schemathesis";
+      readonly leg: SchemathesisLegOutput;
+      readonly externalMs: number;
     };
 
 /**
@@ -278,6 +369,13 @@ export function createContractAdapter(
   options: {
     /** 注入 oasdiff 腿 spawn（测试 fake / 显式装配）；缺省 oasdiffSpawn。 */
     readonly oasdiffSpawnFn?: SpawnFn;
+    /** 注入 schemathesis 腿 spawn（测试 fake / 显式装配）；缺省 schemathesisSpawn。 */
+    readonly schemathesisSpawnFn?: SpawnFn;
+    /**
+     * 注入 schemathesis 腿 run 前置可执行体探测（gate ①a）；缺省
+     * platformExecutableProbe（真实 PATH）——security/performance adapter 同款注入面。
+     */
+    readonly schemathesisExecutableProbe?: ExecutableProbeFn;
   } = {},
 ): GateAdapter<
   DetectionResult,
@@ -285,6 +383,9 @@ export function createContractAdapter(
   ContractRunOutput
 > {
   const oasdiffSpawnFn = options.oasdiffSpawnFn ?? oasdiffSpawn;
+  const schemathesisSpawnFn = options.schemathesisSpawnFn ?? schemathesisSpawn;
+  const schemathesisExecutableProbe =
+    options.schemathesisExecutableProbe ?? platformExecutableProbe;
   return {
     adapterId: "gauntlet-lite:contract",
 
@@ -306,25 +407,47 @@ export function createContractAdapter(
           evidence: read.evidence,
         };
       }
-      // breaking_diff 口径：配置就绪还不够，PATH 上必须有 oasdiff（D18 执行腿前提）。
-      const tool = detectOasdiff(facts);
-      if (tool.status === "READY") {
+      if (read.config.mode === "breaking_diff") {
+        // breaking_diff 口径：配置就绪还不够，PATH 上必须有 oasdiff（D18 执行腿前提）。
+        const tool = detectOasdiff(facts);
+        if (tool.status === "READY") {
+          return {
+            status: "READY",
+            tool: OASDIFF_TOOL_ID,
+            detectedVersion: null,
+            evidence: `${read.evidence}；${tool.evidence}`,
+          };
+        }
+        return {
+          status: "NOT_INSTALLED",
+          tool: OASDIFF_TOOL_ID,
+          reason:
+            tool.status === "NOT_INSTALLED"
+              ? `breaking_diff 口径声明就绪但 ${tool.reason}`
+              : `breaking_diff 口径声明就绪但 oasdiff 探测态异常：${tool.status}`,
+          installHint:
+            tool.status === "NOT_INSTALLED" ? tool.installHint : CONTRACT_CONFIG_HINT,
+        };
+      }
+      // schemathesis 口径（P27/B3-4）：配置就绪还不够，PATH 上必须有 schemathesis。
+      const stTool = detectSchemathesis(facts);
+      if (stTool.status === "READY") {
         return {
           status: "READY",
-          tool: OASDIFF_TOOL_ID,
+          tool: SCHEMATHESIS_TOOL_ID,
           detectedVersion: null,
-          evidence: `${read.evidence}；${tool.evidence}`,
+          evidence: `${read.evidence}；${stTool.evidence}`,
         };
       }
       return {
         status: "NOT_INSTALLED",
-        tool: OASDIFF_TOOL_ID,
+        tool: SCHEMATHESIS_TOOL_ID,
         reason:
-          tool.status === "NOT_INSTALLED"
-            ? `breaking_diff 口径声明就绪但 ${tool.reason}`
-            : `breaking_diff 口径声明就绪但 oasdiff 探测态异常：${tool.status}`,
+          stTool.status === "NOT_INSTALLED"
+            ? `schemathesis 口径声明就绪但 ${stTool.reason}`
+            : `schemathesis 口径声明就绪但 schemathesis 探测态异常：${stTool.status}`,
         installHint:
-          tool.status === "NOT_INSTALLED" ? tool.installHint : CONTRACT_CONFIG_HINT,
+          stTool.status === "NOT_INSTALLED" ? stTool.installHint : CONTRACT_CONFIG_HINT,
       };
     },
 
@@ -362,6 +485,7 @@ export function createContractAdapter(
           absentReason: read.reason,
           installHint: read.installHint,
           oasdiffPlan: null,
+          schemathesisPlan: null,
         };
       }
       if (read.config.mode === "operation_ids") {
@@ -376,6 +500,74 @@ export function createContractAdapter(
           absentReason: null,
           installHint: null,
           oasdiffPlan: null,
+          schemathesisPlan: null,
+        };
+      }
+      if (read.config.mode === "schemathesis") {
+        // —— schemathesis 口径（P27/B3-4）：schemathesis 在位性 + 版本锚强制 ——
+        const stDetection = detectSchemathesis(resolved);
+        if (stDetection.status !== "READY") {
+          const absentReason =
+            stDetection.status === "NOT_INSTALLED"
+              ? stDetection.reason
+              : `schemathesis 探测态异常：${stDetection.status}`;
+          return {
+            ...common,
+            mode: "schemathesis",
+            declared: false,
+            absenceKind: "tool_absent",
+            openapiPath: read.config.openapi,
+            expectedOperationIds: [],
+            breakingBasePath: null,
+            absentReason,
+            installHint:
+              stDetection.status === "NOT_INSTALLED" ? stDetection.installHint : null,
+            oasdiffPlan: null,
+            schemathesisPlan: null,
+          };
+        }
+        if (
+          policy.expectedToolVersion === null ||
+          policy.expectedToolVersion === undefined
+        ) {
+          throw new GateAdapterError(
+            "runner_not_ready",
+            "schemathesis 腿就绪但 policy.expectedToolVersion 缺失（schemathesis 版本无法从配置文件可靠探测）",
+            `由编排层从 catalog/profile 锁供给 schemathesis 版本锚；run 期以 ${SCHEMATHESIS_VERSION_PROBE_COMMAND} 实测对账，失配降级 warning`,
+          );
+        }
+        const schemathesisPlan: SchemathesisLegPlan = {
+          tool: SCHEMATHESIS_TOOL_ID,
+          toolVersion: policy.expectedToolVersion,
+          gate: CONTRACT_GATE_NAME,
+          gateDef: CONTRACT_GATE_DEF,
+          metricDialect: SCHEMATHESIS_METRIC_DIALECT,
+          grn: policy.grn,
+          ranAtSeq: policy.ranAtSeq,
+          trigger,
+          subjectId: scope.subjectId ?? null,
+          denominatorRefs: scope.denominatorRefs ?? [],
+          projectRoot: scope.projectRoot,
+          command: read.config.schemathesisCommand,
+          versionProbeCommand: SCHEMATHESIS_VERSION_PROBE_COMMAND,
+          executable: schemathesisLegExecutable(SCHEMATHESIS_VERSION_PROBE_COMMAND),
+          timeoutMs: policy.timeoutMs ?? DEFAULT_SCHEMATHESIS_TIMEOUT_MS,
+          reportPath: resolveSchemathesisReportPath(read.config.schemathesisReport),
+          openapiPath: read.config.openapi,
+          expectedToolVersion: policy.expectedToolVersion,
+        };
+        return {
+          ...common,
+          mode: "schemathesis",
+          declared: true,
+          absenceKind: null,
+          openapiPath: read.config.openapi,
+          expectedOperationIds: [],
+          breakingBasePath: null,
+          absentReason: null,
+          installHint: null,
+          oasdiffPlan: null,
+          schemathesisPlan,
         };
       }
 
@@ -398,6 +590,7 @@ export function createContractAdapter(
           installHint:
             detection.status === "NOT_INSTALLED" ? detection.installHint : null,
           oasdiffPlan: null,
+          schemathesisPlan: null,
         };
       }
       if (
@@ -442,6 +635,7 @@ export function createContractAdapter(
         absentReason: null,
         installHint: null,
         oasdiffPlan,
+        schemathesisPlan: null,
       };
     },
 
@@ -468,6 +662,23 @@ export function createContractAdapter(
         return {
           plan,
           outcome: "breaking_diff",
+          leg,
+          externalMs: leg.externalMs,
+        };
+      }
+      if (plan.mode === "schemathesis") {
+        if (plan.schemathesisPlan === null) {
+          // 不可达形态（declared=true 的 schemathesis 必带 schemathesisPlan）——防御性显式拒绝。
+          throw new GateAdapterError(
+            "runner_not_implemented",
+            "schemathesis 计划缺 schemathesisPlan（prepare 契约破坏）",
+            "plan.schemathesisPlan 与 plan.mode 必须同源（contract-adapter.prepare 组装）",
+          );
+        }
+        const leg = runSchemathesisLeg(plan.schemathesisPlan, schemathesisSpawnFn, schemathesisExecutableProbe);
+        return {
+          plan,
+          outcome: "schemathesis",
           leg,
           externalMs: leg.externalMs,
         };
@@ -519,6 +730,11 @@ export function createContractAdapter(
       if (raw.outcome === "breaking_diff") {
         // oasdiff 腿判卷（violations=breaking changes 重算计数 + 明细 items；退出码锚）。
         return normalizeOasdiffLeg(raw.leg, selfMs);
+      }
+      if (raw.outcome === "schemathesis") {
+        // schemathesis 腿判卷（P27/B3-4：官方退出码契约 × NDJSON recorder.checks
+        // 重算双锚；零分母闸/零生成用例禁当满分）。
+        return normalizeSchemathesisLeg(raw.leg, selfMs);
       }
       if (raw.outcome === "openapi_unreadable") {
         return absenceRecord(

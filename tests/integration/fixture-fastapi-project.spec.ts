@@ -12,15 +12,17 @@
  *   pytest.ini 命中 → pytest 腿 READY → BUILD 腿在 prepare 阶段因版本锚缺失
  *   （policy.expectedToolVersion=null）显式 runner_not_ready → NOT_INSTALLED；
  * - lane=backend；锚 TASK.F0001 → PERMIT.TASK_F0001.*。
+ *
+ * 工程四件套由共享构造器 fixture-fastapi-project-lib.ts 单一来源产出（P27 双核验
+ * MINOR：与 performance-contract-legs-e2e.spec 的逐字拷贝收敛同源共建——B3-4；
+ * 非 spec 不入账，fixture-chain-lib.ts 先例）。
  */
 import {
   existsSync,
-  mkdirSync,
   mkdtempSync,
   readdirSync,
   readFileSync,
   rmSync,
-  writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -34,6 +36,7 @@ import {
   type FixtureChain,
   type StepRecord,
 } from "./fixture-chain-lib.js";
+import { writeFastapiProjectFiles } from "./fixture-fastapi-project-lib.js";
 
 const TASK_ID = "TASK.F0001";
 const CHANGE_OR_TASK = TASK_ID;
@@ -50,34 +53,8 @@ let initReplay: StepRecord;
 
 beforeAll(async () => {
   root = mkdtempSync(join(tmpdir(), "pvnext-fixture-fastapi-"));
-  mkdirSync(join(root, "tests"), { recursive: true });
-  // —— 就地构造 FastAPI 最小工程（声明依赖但不安装） ——
-  writeFileSync(
-    join(root, "requirements.txt"),
-    "fastapi==0.115.6\nuvicorn==0.34.0\npydantic==2.10.4\n",
-    "utf8",
-  );
-  writeFileSync(
-    join(root, "main.py"),
-    [
-      "from fastapi import FastAPI",
-      "",
-      "app = FastAPI(title=\"fixture-api\")",
-      "",
-      "",
-      "@app.get('/health')",
-      "def health() -> dict[str, bool]:",
-      "    return {'ok': True}",
-      "",
-    ].join("\n"),
-    "utf8",
-  );
-  writeFileSync(join(root, "pytest.ini"), "[pytest]\ntestpaths = tests\n", "utf8");
-  writeFileSync(
-    join(root, "tests", "test_main.py"),
-    "def test_health_shape() -> None:\n    assert {'ok': True} == {'ok': True}\n",
-    "utf8",
-  );
+  // —— 就地构造 FastAPI 最小工程（共享构造器单一来源；声明依赖但不安装） ——
+  writeFastapiProjectFiles(root);
 
   // 链前幂等窗口：state 零变化时的两次 init（A4 NO_CHANGE 的合法时点）。
   initFirst = await runJsonStep(root, ["init"]);

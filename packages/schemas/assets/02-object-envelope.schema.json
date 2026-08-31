@@ -737,6 +737,21 @@
         "regression_case_ref": {"type": "string", "minLength": 1, "x-ref-kind": ["TEST", "GRN"], "description": "回归用例引用；建议 TEST.*（fixture 专用域，Q3 已决：对象身份合法，生产代码引用 TEST.* 是 doctor 违规探针）或 GRN-* 运行记录。"}
       },
       "description": "R4 纪律的 schema 化：任何 change_object / task_object 必须记录『同类扫描 + 回归锚』，封堵修一处漏一类的fix-forget-repeat 循环。信封条件式 3 强制。"
+    },
+    "PerformanceBudget": {
+      "title": "性能预算 performance_budget（PRD §29.1：每个关键 Layer / Capability 可定义）",
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "initial_js_gzip_kb": {"type": "number", "minimum": 0, "description": "初始 JS gzip 后体积预算（KB）。PRD §29.1 示例值 500。"},
+        "max_chunk_kb": {"type": "number", "minimum": 0, "description": "单 chunk 最大体积预算（KB）。PRD §29.1 示例值 800。"},
+        "lcp_ms": {"type": "number", "minimum": 0, "description": "Largest Contentful Paint 预算（毫秒）。PRD §29.1 示例值 2500。"},
+        "inp_ms": {"type": "number", "minimum": 0, "description": "Interaction to Next Paint 预算（毫秒）。PRD §29.1 示例值 200。"},
+        "long_task_ms": {"type": "number", "minimum": 0, "description": "主线程长任务时长预算（毫秒）。PRD §29.1 示例值 200。"},
+        "max_memory_mb": {"type": "number", "minimum": 0, "description": "最大内存预算（MB）。PRD §29.1 示例值 800。"}
+      },
+      "x-vocab-source": "PRD §29.1 performance_budget 六字段逐字（initial_js_gzip_kb/max_chunk_kb/lcp_ms/inp_ms/long_task_ms/max_memory_mb）；B3-3（随版计划 Batch 3 后段原文：『需先有性能预算字段的 schema/对象承载』）。字段集封闭（additionalProperties: false，禁发明字段）；不同页面允许不同预算（§29.1 原文），故六字段全部可选、minProperties: 1（空预算无判卷语义）。capability payload 侧承载见 02b-kind-payloads.md §2（performance_budget，选填）。性能门禁判卷消费面 = gauntlet-lite PERFORMANCE 腿（P27，对接 Lighthouse/web-vitals 报告词形）。"
     }
   }
 }

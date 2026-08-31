@@ -20,7 +20,11 @@
  * semgrep（SECURITY 门禁三腿工具，B2-5「三个独立 adapter，禁止合并为单一
  * "security ok" 绿灯」——三探针独立呈现，任一缺席各带各的安装路标，不聚合）；P26 起
  * 扩容 playwright（BROWSER 门禁确定性腿工具，B3-1「evidence 必含 console error /
- * network 维度」/ D22①——与 chrome_devtools_mcp 交互腿探针并存，双通道各自显式呈现）。
+ * network 维度」/ D22①——与 chrome_devtools_mcp 交互腿探针并存，双通道各自显式呈现）；
+ * P27 起扩容 lighthouse / web_vitals（PERFORMANCE 门禁双 runner 工具，B3-3「对接 §29
+ * 性能预算字段」——双探针独立呈现不聚合，lighthouse=实验室判卷面 / web_vitals=字段
+ * 数据判卷面）+ schemathesis（CONTRACT 加强腿工具，B3-4「从 OpenAPI 生成
+ * property-based 用例；FastAPI profile 招牌件」）。
  */
 
 import { readFile } from "node:fs/promises";
@@ -218,6 +222,9 @@ async function defaultGauntletProbes(
     "pip_audit",
     "semgrep",
     "playwright",
+    "lighthouse",
+    "web_vitals",
+    "schemathesis",
   ] as const;
   try {
     const mod = (await import("@pomaster/gauntlet-lite")) as Record<string, unknown>;
@@ -240,6 +247,9 @@ async function defaultGauntletProbes(
       pip_audit: detectors["pipAudit"]!,
       semgrep: detectors["semgrep"]!,
       playwright: detectors["playwright"]!,
+      lighthouse: detectors["lighthouse"]!,
+      web_vitals: detectors["webVitals"]!,
+      schemathesis: detectors["schemathesis"]!,
     };
     return names.map((name) => ({
       probe: name,
@@ -290,11 +300,11 @@ async function runGauntletProbes(
  *    store 缺失 → MISSING_CONFIGURATION；kernel scaffold → NOT_INSTALLED；
  *    环境异常 → DEFECT（禁静默）。
  * 2) oasdiff / import_linter / dependency_cruiser / c8 / pytest_cov / mutmut / stryker /
- *    gitleaks / pip_audit / semgrep / playwright ——
+ *    gitleaks / pip_audit / semgrep / playwright / lighthouse / web_vitals / schemathesis ——
  *    工具链机判腿探测（P22 contract/architecture + P23 coverage 双腿 + P24 mutation
- *    双腿 + P25 security 三腿 + P26 playwright 确定性腿；转调 gauntlet-lite
- *    toolDetectors 单一探测面；缺席必带安装路标；P25 三探针独立呈现不聚合——
- *    B2-5 防假绿纪律）。
+ *    双腿 + P25 security 三腿 + P26 playwright 确定性腿 + P27 performance 双 runner
+ *    与 schemathesis 加强腿；转调 gauntlet-lite toolDetectors 单一探测面；缺席必带
+ *    安装路标；P25 三探针独立呈现不聚合——B2-5 防假绿纪律）。
  * 3) chrome_devtools_mcp —— D22 探测 + 一键引导文本（P26 起与 playwright 确定性腿
  *    探针并存——BROWSER 双通道各自显式呈现）。
  */

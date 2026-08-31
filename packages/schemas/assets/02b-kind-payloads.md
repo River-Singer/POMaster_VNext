@@ -72,6 +72,7 @@ axis_profile 建议值（非枚举，本体是 SYS 词表对象）：`capability
 | variants | string[] | 选填 | 同上（cell_edit / row_edit / …） |
 | technology_base | string | 选填 | Catalog 引用不自造（91 决议精神，如 AG_GRID） |
 | poc_required | boolean | 选填 | 高风险组件 POC MUST（EditableGrid 类） |
+| performance_budget | object（`$definitions.PerformanceBudget`） | 选填 | PRD §29.1「每个关键 Layer / Capability 可定义 Performance Budget」；六字段封闭（initial_js_gzip_kb/max_chunk_kb/lcp_ms/inp_ms/long_task_ms/max_memory_mb，禁发明字段）；P27/B3-3 起判卷消费面 = PERFORMANCE 门禁（Lighthouse/web-vitals 腿） |
 
 ### MASTer 实例：`CAPABILITY.GRID.EDITABLE_GRID`（alias `GRID.EDITABLE_GRID`）
 

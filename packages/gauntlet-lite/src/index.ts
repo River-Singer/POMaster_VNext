@@ -45,11 +45,25 @@
  * - browser-adapter.ts    —— BROWSER MCP 交互腿 adapter（P26 升级：握手 smoke=通道可达
  *                            前置证据，判卷锚=a11y snapshot/截图/performance trace
  *                            证据三件套归一化面；§26.2 七项清单映射表落档位）；
+ * - performance-leg.ts    —— PERFORMANCE 执行腿机械与官方报告解析（P27：三道闸真执行 +
+ *                            Lighthouse 官方 LHR 词形解析（对账 types/lhr/*.d.ts 与
+ *                            default-config.js 审计 id）+ web-vitals 官方 Metric 词形解析
+ *                            （对账 src/types/base.ts）+ §29.1 预算字段判卷（字段集 =
+ *                            @pomaster/schemas PERFORMANCE_BUDGET_FIELDS schema 派生，
+ *                            禁发明字段）+ 零分母闸 + 判卷锚=报告重算）；
+ * - performance-adapter.ts —— PERFORMANCE 双独立 adapter + 一次双腿两记录编排（P27 /
+ *                            随版计划 B3-3：lighthouse 实验室腿 ∥ web-vitals 字段腿，
+ *                            performance-gate.json 配置面 + 双腿独立探测/执行/判卷，
+ *                            二元组无聚合 verdict 位，互不牵连）；
+ * - schemathesis-leg.ts   —— CONTRACT 的 schemathesis property-based 执行腿（P27 /
+ *                            随版计划 B3-4 招牌件：三道闸真执行 + 官方退出码契约
+ *                            （0/1/2）× NDJSON 事件流重算双锚 + 零生成用例零分母闸）；
  * - gate-recipe-runner.ts —— Basic Gate Runner v1（P12b：catalog/gates recipe→adapter
  *                            派发登记表 + 单 recipe 编排执行；入账归 CLI 层 store 事务）；
  * - detectors.ts          —— oasdiff / import-linter / dependency-cruiser / c8 / pytest-cov /
  *                            mutmut / StrykerJS / gitleaks / pip-audit / semgrep /
- *                            @playwright/test 探测（doctor 面；缺席必带理由与安装建议，禁静默）。
+ *                            @playwright/test / lighthouse / web-vitals / schemathesis
+ *                            探测（doctor 面；缺席必带理由与安装建议，禁静默）。
  *
  * 判卷纪律：输出形态镜像 @pomaster/kernel 的 GateResult 契约（03-gate-result 的 camelCase 形态），
  * 七态 verdict + counts.notApplicable 必填 + asserted/recomputed 孪生（永不信任自报值）；
@@ -62,6 +76,11 @@ import { createContractAdapter } from "./contract-adapter.js";
 import { createArchitectureAdapter } from "./architecture-adapter.js";
 import { createCoverageAdapter, createCrapGateAdapter } from "./coverage-adapter.js";
 import { createMutationAdapter } from "./mutation-adapter.js";
+import {
+  createLighthouseAdapter,
+  createWebVitalsAdapter,
+  runPerformanceGateLegs,
+} from "./performance-adapter.js";
 import { createPlaywrightAdapter } from "./playwright-adapter.js";
 import {
   createGitleaksAdapter,
@@ -90,13 +109,16 @@ import {
   detectDependencyCruiser,
   detectGitleaks,
   detectImportLinter,
+  detectLighthouse,
   detectMutmut,
   detectOasdiff,
   detectPipAudit,
   detectPlaywright,
   detectPytestCov,
+  detectSchemathesis,
   detectSemgrep,
   detectStryker,
+  detectWebVitals,
 } from "./detectors.js";
 
 export * from "./adapter-types.js";
@@ -119,6 +141,9 @@ export * from "./mutation-adapter.js";
 export * from "./seed-mutants.js";
 export * from "./security-leg.js";
 export * from "./security-adapter.js";
+export * from "./performance-leg.js";
+export * from "./performance-adapter.js";
+export * from "./schemathesis-leg.js";
 export * from "./detectors.js";
 export * from "./normalize-common.js";
 export * from "./gate-recipe-runner.js";
@@ -208,6 +233,16 @@ export const pipAuditAdapter = createPipAuditAdapter();
 export const semgrepAdapter = createSemgrepAdapter();
 
 /**
+ * PERFORMANCE 双独立 adapter 单例（P27：lighthouse 实验室判卷腿 / web-vitals 字段
+ * 数据判卷腿——B3-3「对接 §29 性能预算字段」；两实例两记录，无聚合 adapter——也可经
+ * createLighthouseAdapter()/createWebVitalsAdapter() 自建）。一次跑双腿的编排面 =
+ * runPerformanceGateLegs（二元组返回，无聚合 verdict 位）。
+ */
+export const lighthouseAdapter = createLighthouseAdapter();
+export const webVitalsAdapter = createWebVitalsAdapter();
+export { runPerformanceGateLegs };
+
+/**
  * adapter registry（G5 谱系扩展落地：BUILD 双腿 + CONTRACT / ARCHITECTURE / BROWSER /
  * BROWSER·Playwright 确定性腿）。
  * 各 adapter 共用 §59 契约与 normalize-common 的 FATAL 闸门；缺席一律显式四态
@@ -221,7 +256,7 @@ export const gateAdapters = {
   playwright: playwrightAdapter,
 } as const;
 
-/** doctor 工具探测 registry（oasdiff / import-linter / dependency-cruiser / c8 / pytest-cov / mutmut / StrykerJS / gitleaks / pip-audit / semgrep / @playwright/test / chrome-devtools MCP）。 */
+/** doctor 工具探测 registry（oasdiff / import-linter / dependency-cruiser / c8 / pytest-cov / mutmut / StrykerJS / gitleaks / pip-audit / semgrep / @playwright/test / lighthouse / web-vitals / schemathesis / chrome-devtools MCP）。 */
 export const toolDetectors = {
   oasdiff: detectOasdiff,
   importLinter: detectImportLinter,
@@ -234,5 +269,8 @@ export const toolDetectors = {
   pipAudit: detectPipAudit,
   semgrep: detectSemgrep,
   playwright: detectPlaywright,
+  lighthouse: detectLighthouse,
+  webVitals: detectWebVitals,
+  schemathesis: detectSchemathesis,
   chromeDevtoolsMcp: detectChromeDevtoolsMcp,
 } as const;

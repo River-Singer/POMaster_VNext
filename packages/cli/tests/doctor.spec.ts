@@ -1,6 +1,7 @@
 /**
  * doctor.spec.ts —— 四态探测矩阵（kernel 探针 + P22 工具链机判腿探测 + P23 coverage
  * 双腿探测 + P24 mutation 双腿探测 + P25 security 三腿探测 + P26 playwright 确定性腿
+ * 探测 + P27 performance 双 runner（lighthouse / web_vitals）与 schemathesis 加强腿
  * 探测 + chrome-devtools MCP 一键引导）。
  *
  * TODO(integration-2026-08-28)：kernel 模块已由 kernel 建造者落地。原「init 后
@@ -10,8 +11,10 @@
  * P22：oasdiff / import_linter / dependency_cruiser 三工具探针入矩阵（转调 gauntlet-lite
  * toolDetectors 单一探测面）；P23：c8 / pytest_cov（COVERAGE 门禁双腿，D17 pytest-cov
  * 先行）扩容入矩阵；P26：playwright（BROWSER 确定性腿，B3-1/D22①）扩容入矩阵——
- * 与 chrome_devtools_mcp 交互腿探针并存（双通道各自显式呈现）。ok=true 的用例注入
- * 全 READY fake 探针（宿主是否安装 oasdiff 等属于环境差异，不影响命令面判卷语义的断言）。
+ * 与 chrome_devtools_mcp 交互腿探针并存（双通道各自显式呈现）；P27：lighthouse /
+ * web_vitals（PERFORMANCE 双 runner，B3-3）+ schemathesis（CONTRACT 加强腿，B3-4）
+ * 扩容入矩阵（三探针独立呈现不聚合——防假绿纪律）。ok=true 的用例注入全 READY
+ * fake 探针（宿主是否安装 oasdiff 等属于环境差异，不影响命令面判卷语义的断言）。
  */
 import { writeFileSync, rmSync } from "node:fs";
 import { mkdtempSync } from "node:fs";
@@ -221,12 +224,12 @@ describe("doctor 四态矩阵", () => {
     expect(kernel?.detail).toContain("os.replace unsupported");
   });
 
-  it("P22/P23/P24/P25/P26 工具探针：缺省探测面在空目录 → 十一工具显式缺席 + 安装路标 + ok=false", async () => {
+  it("P22/P23/P24/P25/P26/P27 工具探针：缺省探测面在空目录 → 十四工具显式缺席 + 安装路标 + ok=false", async () => {
     // 临时目录无 .importlinter / setup.cfg / pyproject.toml / package.json 等——
-    // 工具按配置线索缺席（c8/stryker/playwright 探测读 package.json 声明；mutmut 读
-    // pyproject/setup.cfg）；oasdiff / gitleaks / pip-audit / semgrep 按 PATH 线索缺席
-    //（测试进程 PATH 上无这些运行面；若宿主真装了则显式容忍 READY——诚实缺席与
-    // 真实在位都不静默）。
+    // 工具按配置线索缺席（c8/stryker/playwright/web_vitals 探测读 package.json 声明；
+    // mutmut 读 pyproject/setup.cfg）；oasdiff / gitleaks / pip-audit / semgrep /
+    // lighthouse / schemathesis 按 PATH 线索缺席（测试进程 PATH 上无这些运行面；
+    // 若宿主真装了则显式容忍 READY——诚实缺席与真实在位都不静默）。
     await runInit(dir);
     const outcome = await runDoctor(dir);
     for (const name of [
@@ -241,6 +244,9 @@ describe("doctor 四态矩阵", () => {
       "pip_audit",
       "semgrep",
       "playwright",
+      "lighthouse",
+      "web_vitals",
+      "schemathesis",
     ]) {
       const probe = outcome.result.probes.find((p) => p.probe === name);
       expect(probe, name).toBeDefined();

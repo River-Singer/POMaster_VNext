@@ -132,7 +132,7 @@ describe("runCli --json 机读契约（§45）", () => {
     expect(code).toBe(envelope.ok ? 0 : 1);
   });
 
-  it("doctor --json → 矩阵含 kernel / 三工具探针（P22）+ coverage 双腿（P23）+ mutation 双腿（P24）+ security 三腿（P25）+ playwright（P26）/ chrome_devtools_mcp 十三探针", async () => {
+  it("doctor --json → 矩阵含 kernel / 三工具探针（P22）+ coverage 双腿（P23）+ mutation 双腿（P24）+ security 三腿（P25）+ playwright（P26）+ performance 双 runner 与 schemathesis（P27）/ chrome_devtools_mcp 十六探针", async () => {
     const io = capture();
     const code = await runCli(["--dir", dir, "doctor", "--json"], io);
     expect(code).toBe(1);
@@ -145,13 +145,16 @@ describe("runCli --json 机读契约（§45）", () => {
       "gitleaks",
       "import_linter",
       "kernel_doctor_probes",
+      "lighthouse",
       "mutmut",
       "oasdiff",
       "pip_audit",
       "playwright",
       "pytest_cov",
+      "schemathesis",
       "semgrep",
       "stryker",
+      "web_vitals",
     ]);
   });
 
