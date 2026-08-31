@@ -29,6 +29,9 @@
 
 import { readFile } from "node:fs/promises";
 import type { DoctorReport, Store } from "@pomaster/kernel";
+import type {
+  PortabilityRuntimeRebuildProbe,
+} from "@pomaster/kernel";
 import type { DetectionResult, DetectorFacts } from "@pomaster/gauntlet-lite";
 import { TRUTH_INDEX_RELATIVE, toPosix, truthIndexPath } from "./store-layout.js";
 import type { CommandOutcome } from "./envelope.js";
@@ -137,6 +140,36 @@ export async function probeChromeDevtoolsMcp(
     detail: "mcpServers present but no chrome-devtools entry",
     hint: CHROME_DEVTOOLS_MCP_HINT,
   };
+}
+
+/**
+ * P32 kernel 探针 → doctor 四态矩阵映射（portability_runtime_rebuild）：
+ * READY→READY；NOT_RUN→MISSING_CONFIGURATION（store 与 runtime 皆缺 = 依赖面未
+ * 配置——no-pomaster-state 先例）；DRIFTED→DEFECT（声明漂移是需要处理的配置态——
+ * detectionToDoctorProbe 既有 DRIFTED→DEFECT 裁定同源）。kernel 侧状态词形
+ * （NOT_RUN/DRIFTED）随 detail 逐字呈现供机读对账。
+ */
+export function portabilityProbeToDoctorProbe(
+  kernel: PortabilityRuntimeRebuildProbe,
+): DoctorProbe {
+  switch (kernel.status) {
+    case "READY":
+      return { probe: kernel.probe, status: "READY", detail: kernel.detail, hint: null };
+    case "NOT_RUN":
+      return {
+        probe: kernel.probe,
+        status: "MISSING_CONFIGURATION",
+        detail: `NOT_RUN: ${kernel.detail}`,
+        hint: "run: pomaster init 后重试 doctor；runtime 面可由 pomaster portability bootstrap 重建（§85.4）。",
+      };
+    case "DRIFTED":
+      return {
+        probe: kernel.probe,
+        status: "DEFECT",
+        detail: `DRIFTED: ${kernel.detail}`,
+        hint: "manifest 声明与实况矛盾：核对 .pomaster/portability-manifest.json（§85.3 五键）或重跑 pomaster portability bootstrap。",
+      };
+  }
 }
 
 function kernelProbeFromReport(report: DoctorReport): DoctorProbe {
@@ -299,6 +332,9 @@ async function runGauntletProbes(
  * 1) kernel_doctor_probes —— 转调 kernel doctorProbes（四探针 fail-closed）；
  *    store 缺失 → MISSING_CONFIGURATION；kernel scaffold → NOT_INSTALLED；
  *    环境异常 → DEFECT（禁静默）。
+ * 1.5) portability_runtime_rebuild —— P32 runtime 可重建探针（state 在=READY，
+ *    runtime 缺失但 state 在=READY 可重建语义，两者都缺=NOT_RUN→
+ *    MISSING_CONFIGURATION，manifest 声明与实况矛盾=DRIFTED→DEFECT）。
  * 2) oasdiff / import_linter / dependency_cruiser / c8 / pytest_cov / mutmut / stryker /
  *    gitleaks / pip_audit / semgrep / playwright / lighthouse / web_vitals / schemathesis ——
  *    工具链机判腿探测（P22 contract/architecture + P23 coverage 双腿 + P24 mutation
@@ -365,6 +401,32 @@ export async function runDoctor(
         });
       }
     }
+  }
+
+  // 1.5) P32 portability_runtime_rebuild 探针（runtime 可重建性；§85.4 语义）：
+  //      state 在=READY（runtime 缺失亦 READY——可重建语义）；两者都缺=NOT_RUN→
+  //      MISSING_CONFIGURATION；manifest 声明与实况矛盾=DRIFTED→DEFECT。
+  try {
+    const { probePortabilityRuntimeRebuild } = (await import(
+      "@pomaster/kernel"
+    )) as Record<string, unknown>;
+    if (typeof probePortabilityRuntimeRebuild !== "function") {
+      throw new Error("probePortabilityRuntimeRebuild export missing");
+    }
+    probes.push(
+      portabilityProbeToDoctorProbe(
+        (probePortabilityRuntimeRebuild as (root: string) => PortabilityRuntimeRebuildProbe)(
+          rootDir,
+        ),
+      ),
+    );
+  } catch (err) {
+    probes.push({
+      probe: "portability_runtime_rebuild",
+      status: "DEFECT",
+      detail: `portability probe raised: ${err instanceof Error ? err.message : String(err)}`,
+      hint: "环境异常禁静默（D 线风险备忘）；检查 .pomaster 可读性后重试。",
+    });
   }
 
   // 2) 工具链机判腿探测（P22：转调 gauntlet-lite toolDetectors 单一探测面）。

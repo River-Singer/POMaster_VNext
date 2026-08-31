@@ -814,3 +814,51 @@ export type WordFormDomainValue = (typeof WORD_FORM_DOMAIN_VALUES)[number];
  */
 export const EQUIVALENCE_STATUS_VALUES = ["active", "pending"] as const;
 export type EquivalenceStatusValue = (typeof EQUIVALENCE_STATUS_VALUES)[number];
+
+// ============================================================
+// P32 Portability Kernel 词形轴（x-vocab-source: PRD §85.2/§85.3/§84.6 逐字 +
+// kernel fail-closed 纪律补位词）。
+// TODO(vocab-pr)：absent_in_vocab_lock__pending_vocab_pr，收编后以 vocab-lock
+// 为准逐值镜像。§85.2/§85.3 的词形是 PRD 逐字承载（非本仓发明）；FAIL/NOT_RUN
+// 两态是「缺项=FAIL 或 NOT_RUN 显式，绝不静默绿」fail-closed 纪律的补位词
+// （PRD §85.2 逐字只给 PASS），随本轴一并提请词汇表 PR 裁决。
+// ============================================================
+
+/**
+ * §85.2 八项检查结果三态：PASS（§85.2 逐字）= 可机判通过；FAIL = 应存在而缺席/
+ * 损坏/判违（缺项按语义应存在而缺席）；NOT_RUN = 环境性缺席（上游条件不成立无法
+ * 执行检查本身）。三态显式呈现，禁止静默绿（fail-closed 纪律）。
+ */
+export const PORTABILITY_CHECK_STATUS_VALUES = ["PASS", "FAIL", "NOT_RUN"] as const;
+export type PortabilityCheckStatusValue =
+  (typeof PORTABILITY_CHECK_STATUS_VALUES)[number];
+
+/** §85.3 required_canonical_sets 五族闭集（PRD 逐字；manifest 读侧校验 ⊇ 五族）。 */
+export const PORTABILITY_CANONICAL_SET_VALUES = [
+  "truth",
+  "architecture",
+  "decisions",
+  "knowledge",
+  "evidence",
+] as const;
+export type PortabilityCanonicalSetValue =
+  (typeof PORTABILITY_CANONICAL_SET_VALUES)[number];
+
+/** §85.3 required_runtime_rebuild 两项（PRD 逐字：可重建运行面闭集）。 */
+export const PORTABILITY_RUNTIME_REBUILD_VALUES = [
+  "contexts",
+  "harness-bootstrap",
+] as const;
+export type PortabilityRuntimeRebuildValue =
+  (typeof PORTABILITY_RUNTIME_REBUILD_VALUES)[number];
+
+/** §85.3 forbidden_dependencies 两项（PRD 逐字：禁依赖闭集；命中检测 fail-closed）。 */
+export const PORTABILITY_FORBIDDEN_DEPENDENCY_VALUES = [
+  "user-home-project-memory",
+  "untracked-local-spec",
+] as const;
+export type PortabilityForbiddenDependencyValue =
+  (typeof PORTABILITY_FORBIDDEN_DEPENDENCY_VALUES)[number];
+
+/** §84.6 Hidden Memory Drift 判定词形（PRD 逐字输出）。 */
+export const MEMORY_DRIFT = "MEMORY_DRIFT" as const;

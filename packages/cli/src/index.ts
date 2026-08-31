@@ -90,6 +90,7 @@ import { runInspect } from "./inspect.js";
 import { runMaintain } from "./maintain.js";
 import { runContextCompile } from "./context.js";
 import { runDoctor } from "./doctor.js";
+import { runPortabilityBootstrap, runPortabilityCheck } from "./portability.js";
 import { runCheckFast, runCheckGates } from "./check.js";
 import { runPermitCheck, runPermitIssue, runPermitList, runPermitSteal } from "./permit.js";
 import { runExecGuard } from "./exec-guard.js";
@@ -168,6 +169,7 @@ export {
   runDoctor,
   probeChromeDevtoolsMcp,
   detectionToDoctorProbe,
+  portabilityProbeToDoctorProbe,
   CHROME_DEVTOOLS_MCP_HINT,
   DOCTOR_PROBE_STATUSES,
 } from "./doctor.js";
@@ -394,6 +396,17 @@ export type {
   MigrateTrellisSpecResult,
   MigrateDeferredResult,
 } from "./migrate.js";
+export {
+  runPortabilityBootstrap,
+  runPortabilityCheck,
+  PORTABILITY_CHECK_FAILED,
+  PORTABILITY_MANIFEST_DRIFT,
+  portabilityCheckHuman,
+} from "./portability.js";
+export type {
+  PortabilityBootstrapCliResult,
+  PortabilityCheckCliResult,
+} from "./portability.js";
 
 /** 一次命令执行的人读/机读产出记录（runCli 据此决定退出码与输出）。 */
 export interface CommandRun<TResult = unknown> {
@@ -562,6 +575,44 @@ export function createProgram(
       const outcome = await runDoctor(resolveDir(command));
       record({
         command: "doctor",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  // —— Portability Kernel 命令面（PRD §85.2 三命令词形之二；P32-Commands） ——
+  // 判卷权威在 kernel portability.ts（八项检查/manifest 对账/可删除测试执行器）；
+  // bootstrap 只重建 runtime 面（零治理事实零 journal 事件，§85.4 state equivalent
+  // 的字节可判定性前提）；check 纯读零写入，非全 PASS exit 1 fail-closed。
+  const portability = program
+    .command("portability")
+    .description(
+      "Portability Kernel（§85）：bootstrap = runtime 面重建（§85.4 bootstrap 步，幂等零治理事实）+ Portability Manifest 生成（§85.3 五键）；check = §85.2 MEMORY_PORTABILITY_GATE 八项检查 + manifest 对账（PASS/FAIL/NOT_RUN 显式，缺项绝不静默绿；§84.6 MEMORY_DRIFT 检测——禁自动写入 Canonical State，必须 classification/review）",
+    );
+  portability
+    .command("bootstrap")
+    .description(
+      "在 --dir 重建 runtime 面（runtime/producers|sessions|locks + heartbeat 侧车，缺失才写；幂等 NO_CHANGE）+ 缺失才写 canonical §85.3 Manifest；在座非 canonical → PORTABILITY_MANIFEST_DRIFT exit 1 显式不覆盖；store 未初始化 → NOT_CONFIGURED（初始化归 pomaster init）",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (_opts, command) => {
+      const outcome = await runPortabilityBootstrap(resolveDir(command));
+      record({
+        command: "portability bootstrap",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+  portability
+    .command("check")
+    .description(
+      "§85.2 八项检查（Project Truth/Architecture State/Knowledge Index/Decision History/Verified Evidence/Active Task Recovery/Harness Bootstrap/Hidden Memory Dependency）逐项 PASS/FAIL/NOT_RUN 呈现 + §85.3 manifest 对账 + forbidden_dependencies 命中检测；非全 PASS exit 1 fail-closed",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (_opts, command) => {
+      const outcome = await runPortabilityCheck(resolveDir(command));
+      record({
+        command: "portability check",
         outcome,
         asJson: command.opts().json === true,
       });

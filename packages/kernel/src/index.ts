@@ -1249,6 +1249,65 @@ export type {
 } from "./reconcile.js";
 
 // ============================================================
+// Portability Kernel（P32 · PRD §85 全节 + §84.6 Hidden Memory Drift）
+// ============================================================
+// 语义边界（docs/kernel-api.md §20）：§85.2 MEMORY_PORTABILITY_GATE 八项检查
+// （PASS/FAIL/NOT_RUN 三态显式，缺项=FAIL 或 NOT_RUN 禁静默绿）+ §85.3
+// Portability Manifest 读写（JSON 形态 .pomaster/portability-manifest.json，
+// 五键逐字；读侧校验五族闭集 + 禁依赖命中检测）+ §85.4 可删除测试执行器
+// （rm -rf .pomaster/runtime → bootstrap → state equivalent；只接受含临时标记段
+// 的 fixture root——防误删真实 store 的结构性防线）+ §84.6 MEMORY_DRIFT 检测
+// （harness-local 记忆位仅探测存在性，内容不读取不入库；禁自动写入 Canonical
+// State，必须 classification/review）。bootstrap 只重建 runtime 面（缺失才写，
+// 零治理事实零 journal 事件——重建非变更，A4；§85.4 state equivalent 的
+// 字节可判定性前提）。词形轴 pending_vocab_pr（PORTABILITY_* / MEMORY_DRIFT，
+// PRD §85/§84.6 逐字 + FAIL/NOT_RUN fail-closed 补位词）。
+export {
+  PORTABILITY_MANIFEST_RELATIVE,
+  PORTABILITY_CHECK_IDS,
+  PORTABILITY_CHECK_LABELS,
+  EVIDENCE_SAMPLE_CAP,
+  DELETABILITY_FIXTURE_MARKERS,
+  canonicalPortabilityManifest,
+  readPortabilityManifest,
+  validatePortabilityManifest,
+  writePortabilityManifestIfMissing,
+  runPortabilityChecks,
+  portabilityCheck,
+  portabilityBootstrap,
+  probePortabilityRuntimeRebuild,
+  defaultHarnessMemoryRoots,
+  assertDeletabilityFixtureRoot,
+  runDeletabilityTest,
+} from "./portability.js";
+export type {
+  PortabilityCanonicalSetValue,
+  PortabilityRuntimeRebuildValue,
+  PortabilityForbiddenDependencyValue,
+  PortabilityCheckStatusValue,
+} from "./vocab.js";
+export type {
+  PortabilityCheckId,
+  PortabilityCheckRow,
+  PortabilityCheckOptions,
+  PortabilityManifest,
+  ForbiddenDependencyHit,
+  PortabilityManifestReconciliation,
+  PortabilityReport,
+  PortabilityBootstrapResult,
+  PortabilityRuntimeRebuildProbe,
+  DeletabilityTestReport,
+} from "./portability.js";
+// §85/§84.6 词形轴唯一镜像在 @pomaster/schemas vocab.ts 待收编段（P32 段）；
+// 本契约面照 kernel 各模块惯例转发（kernel vocab.ts re-export 同源）。
+export {
+  PORTABILITY_CANONICAL_SET_VALUES,
+  PORTABILITY_RUNTIME_REBUILD_VALUES,
+  PORTABILITY_FORBIDDEN_DEPENDENCY_VALUES,
+  MEMORY_DRIFT,
+} from "./vocab.js";
+
+// ============================================================
 // Doctor（D7 Portability 必检最小集四检；fail-closed）
 // ============================================================
 

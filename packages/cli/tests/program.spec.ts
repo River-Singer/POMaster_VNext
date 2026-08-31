@@ -132,12 +132,12 @@ describe("runCli --json 机读契约（§45）", () => {
     expect(code).toBe(envelope.ok ? 0 : 1);
   });
 
-  it("doctor --json → 矩阵含 kernel / 三工具探针（P22）+ coverage 双腿（P23）+ mutation 双腿（P24）+ security 三腿（P25）+ playwright（P26）+ performance 双 runner 与 schemathesis（P27）/ chrome_devtools_mcp 十六探针", async () => {
+  it("doctor --json → 矩阵含 kernel / 三工具探针（P22）+ coverage 双腿（P23）+ mutation 双腿（P24）+ security 三腿（P25）+ playwright（P26）+ performance 双 runner 与 schemathesis（P27）/ chrome_devtools_mcp / portability_runtime_rebuild（P32）十七探针", async () => {
     const io = capture();
     const code = await runCli(["--dir", dir, "doctor", "--json"], io);
     expect(code).toBe(1);
     const envelope = parseEnvelope(io.out);
-    const probes = (envelope.result as { probes: { probe: string }[] }).probes;
+    const probes = (envelope.result as { probes: { probe: string; status: string; detail: string }[] }).probes;
     expect(probes.map((p) => p.probe).sort()).toEqual([
       "c8",
       "chrome_devtools_mcp",
@@ -150,12 +150,18 @@ describe("runCli --json 机读契约（§45）", () => {
       "oasdiff",
       "pip_audit",
       "playwright",
+      "portability_runtime_rebuild",
       "pytest_cov",
       "schemathesis",
       "semgrep",
       "stryker",
       "web_vitals",
     ]);
+    // P32：未 init 目录 state 与 runtime 皆缺 → NOT_RUN（kernel 侧词形随 detail 逐字
+    // 呈现）→ doctor 四态矩阵映射为 MISSING_CONFIGURATION（缺席显式非静默）。
+    const portability = probes.find((p) => p.probe === "portability_runtime_rebuild");
+    expect(portability?.status).toBe("MISSING_CONFIGURATION");
+    expect(portability?.detail).toContain("NOT_RUN");
   });
 
   it("未知命令（人读模式）→ exit 1，stderr 带 commander 提示（不裸栈）", async () => {
