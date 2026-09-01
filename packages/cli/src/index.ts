@@ -81,8 +81,9 @@
  *                   metrics = §55.1 八能力表（MEASURED 数值 + NOT_MEASURABLE_YET 显式
  *                   + METRICS_CAVEAT 注记）/ self-improvement = §90.4 登记恒
  *                   POMASTER_SELF_IMPROVEMENT_CANDIDATE 呈报态（输出恒带「不得自动
- *                   应用」注记）；命令面词形为新造（PRD §44 无此命令组——命名权呈报
- *                   Owner，pending_vocab_pr）
+ *                   应用」注记）；命令组名 production + 六子命令位经 Owner 2026-09-01
+ *                   认可（PRD §44 无此命令组——呈报件 §2.1，落档 docs/kernel-api.md
+ *                   production 命令段）；错误词形族已随 vocab-pr-0004 收编
  * - session attach/refresh/list
  *                   D 线地基①会话命令面（P20；D 线 §1.2/§3.1：注册/刷新 liveness +
  *                   resumed_task 解析 + 清单并排呈现；A10「CLI 零 session 命令」闭合）
@@ -1577,8 +1578,10 @@ export function createProgram(
 
   // —— Production Feedback 命令面（§95 全节 + §30 第四态 + §55.1/§90.4；P34-Commands） ——
   // 判卷/落盘权威在 kernel production.ts 语义入口（P34a）；本面只做 argv 收敛、错误
-  // 词形映射与呈现。命令面词形为新造（PRD §44 无此命令组——命名权呈报 Owner，
-  // pending_vocab_pr）。三条封条的命令面呈现：§95.2 判定只走显式谓词+数值观测
+  // 词形映射与呈现。命令组名 production + 六子命令位经 Owner 2026-09-01 认可（PRD
+  // §44 无此命令组——呈报件 §2.1，落档 docs/kernel-api.md production 命令段）；错误
+  // 词形族已随 vocab-pr-0004 收编（Owner 决议 2026-09-01）。三条封条的命令面呈现：
+  // §95.2 判定只走显式谓词+数值观测
   // （NOT_EVALUABLE 显式缺席 exit 1 非 fake 绿）；§95.3 challenge 走 applyTransaction
   // 零旁路（无 band/无 evidence/非 CURRENT 拒绝显式）；§90.4 登记恒呈报态（输出恒带
   // 「不得自动应用」注记——零自动应用通路）。
@@ -1684,7 +1687,7 @@ export function createProgram(
   production
     .command("diagnose")
     .description(
-      "Agent Diagnosis 消费位（§95.2 链序第 4 拍；§95.3 三分落点）：--kind 三分（IMPLEMENTATION_ISSUE | CONFIG_ISSUE | ARCHITECTURE_EVOLUTION——大小写裁定呈报 Owner）+ --notes 必填留痕；无既有 BREACHED band evidence → DIAGNOSIS_WITHOUT_BREACH_EVIDENCE exit 1（结构性拒绝——无确定性检测在先，诊断不可入账）",
+      "Agent Diagnosis 消费位（§95.2 链序第 4 拍；§95.3 三分落点）：--kind 三分（IMPLEMENTATION_ISSUE | CONFIG_ISSUE | ARCHITECTURE_EVOLUTION——大小写裁定 Owner 2026-09-01 照准）+ --notes 必填留痕；无既有 BREACHED band evidence → DIAGNOSIS_WITHOUT_BREACH_EVIDENCE exit 1（结构性拒绝——无确定性检测在先，诊断不可入账）",
     )
     .argument("<challenge-ref>", "challenge 留痕引用（PCH-<12hex>；须已 production challenge）")
     .option("--kind <kind>", "§95.3 诊断三分：IMPLEMENTATION_ISSUE | CONFIG_ISSUE | ARCHITECTURE_EVOLUTION")

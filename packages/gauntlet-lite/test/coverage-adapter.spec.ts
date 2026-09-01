@@ -11,8 +11,9 @@
  * - 出口判据 4「行/分支口径强制上报」：c8 报告缺行或缺分支口径 / pytest-cov 缺
  *   num_branches（--cov-branch 未生效形态）→ malformed → not_run 非默认值（禁 0%/100%
  *   兜底）；双口径齐备才判卷（violations = 低于阈值口径数）；
- * - 出口判据 5「阈值进配置 + provisional 呈报项」：config thresholds 生效 / 缺省
- *   provisional 出厂兜底 + scopeNote 注记（「provisional 待 A4」字样在 record 留痕）；
+ * - 出口判据 5「阈值进配置 + 呈报项登记」：config thresholds 生效 / 缺省出厂兜底按
+ *   档位分化（行阈值 MINIMAL 80 / LIGHT 60 / STANDARD 30——Owner 决议 2026-09-01
+ *   批准转正；branches 60 未在批准包维持出厂值）+ scopeNote 批准注记在 record 留痕；
  * - P22 三腿同款三道闸先例：⓪ 可执行体 PATH 探测（缺席 → not_run 带留痕）→
  *   ① 版本探测（退出 0 且版本词形可得）→ ② 真执行；报告缺席/坏形 → not_run；
  * - 大输出 maxBuffer 回归（>1MB stdout 不被 Node 默认 1MB ENOBUFS 打断）；
@@ -41,11 +42,13 @@ import {
   C8_TOOL_ID,
   COVERAGE_GATE_DEF,
   COVERAGE_GATE_NAME,
+  COVERAGE_LINES_THRESHOLDS_BY_TIER,
   COVERAGE_POLICY_SKIP_METRIC_DIALECT,
   COVERAGE_PROVISIONAL_THRESHOLDS,
   coverageSpawn,
   detectC8,
   detectPytestCov,
+  GATE_TIER_VALUES,
   normalizeCoverageLeg,
   parseC8Summary,
   parsePytestCovJson,
@@ -54,6 +57,7 @@ import {
   PYTEST_COV_METRIC_DIALECT,
   PYTEST_COV_TOOL_ID,
   readCoverageGateConfig,
+  resolveCoverageProvisionalThresholdsForTier,
   resolveCoverageReportPath,
   runCoverageLeg,
   stripQuotesFromPathEnv,
@@ -61,6 +65,7 @@ import {
   type CoverageLegPlan,
   type GatePolicy,
   type GateResultRecord,
+  type GateTier,
   type SpawnFn,
   type SpawnOutcome,
 } from "@pomaster/gauntlet-lite";
@@ -396,12 +401,16 @@ describe("prepare：HARDENING-only 档位语义 + 三闸缺席分流", () => {
     expect(plan.command).toContain("--reports-dir=");
     expect(plan.command).toContain("corepack pnpm exec vitest run");
     expect(plan.coverageReportPath).toBe("coverage/coverage-summary.json");
-    expect(plan.thresholds).toEqual(COVERAGE_PROVISIONAL_THRESHOLDS);
+    // 缺省档位 STANDARD（DEFAULT_GATE_TIER）→ 出厂兜底行阈值取分化值 30（Owner 决议
+    // 2026-09-01）；branches 恒出厂值 60（未在批准包）。
+    expect(plan.tier).toBe("STANDARD");
+    expect(plan.thresholds).toEqual(resolveCoverageProvisionalThresholdsForTier("STANDARD"));
+    expect(plan.thresholds).toEqual({ lines: 30, branches: 60 });
     expect(plan.thresholdsProvisional).toBe(true);
     expect(plan.executable).toBe("corepack");
   });
 
-  it("配置显式 thresholds / coverageReport 生效（阈值配置化；provisional 旗翻转）", () => {
+  it("配置显式 thresholds / coverageReport 生效（阈值配置化；出厂兜底旗翻转）", () => {
     put(
       "coverage-gate.json",
       JSON.stringify({
@@ -519,9 +528,9 @@ function c8ReadyFixture(reportText: string | null): void {
 }
 
 describe("coverage 判卷矩阵（violations=低于阈值口径；malformed=非默认值）", () => {
-  it("三态① 低覆盖抓红：行/分支双口径低于 provisional 阈值 → failed violations=2 + items 携带实测/阈值", () => {
+  it("三态① 低覆盖抓红：行/分支双口径低于档位阈值（HARDENING 80/60）→ failed violations=2 + items 携带实测/阈值/批准注记", () => {
     c8ReadyFixture(c8Summary(40, 30));
-    const record = fullPipeline();
+    const record = fullPipeline(policy({ gateTier: "HARDENING" }));
     expect(record.verdict).toBe("failed");
     expect(record.counts.violations).toBe(2);
     expect(record.counts.scanned).toBe(2);
@@ -529,9 +538,14 @@ describe("coverage 判卷矩阵（violations=低于阈值口径；malformed=非�
     expect(record.items?.[0]?.rule).toBe("coverage_below_threshold");
     expect(record.items?.[0]?.message).toContain("40.00%");
     expect(record.items?.[0]?.message).toContain("80");
-    expect(record.items?.[0]?.message).toContain("provisional 待 A4");
+    expect(record.items?.[0]?.message).toContain("档位 HARDENING 行覆盖率分化阈值");
+    expect(record.items?.[0]?.message).toContain("Owner 决议 2026-09-01");
+    expect(record.items?.[0]?.message).not.toContain("provisional 待 A4");
     expect(record.items?.[1]?.message).toContain("分支口径");
-    expect(record.scopeNote).toContain("provisional 待 A4");
+    expect(record.items?.[1]?.message).toContain("未在 2026-09-01 批准包");
+    expect(record.scopeNote).toContain("档位 HARDENING 行覆盖率分化阈值");
+    expect(record.scopeNote).toContain("Owner 决议 2026-09-01");
+    expect(record.scopeNote).not.toContain("provisional 待 A4");
     expect(record.metricDialect).toBe(C8_METRIC_DIALECT);
     const doc = toGateResultJson(record);
     if (!validate(doc)) console.error(validate.errors);
@@ -920,7 +934,7 @@ describe("parseC8Summary：C5 计数重算（pct 字段不消费，计数为唯�
     expect(metrics?.files.get("src/ok.ts")?.branchesPct).toBeNull();
   });
 
-  it("判卷钉：total 自报 pct=99 而计数真实 40% → 全链判 failed（重算 40<80）——自报 pct 不进判卷", () => {
+  it("判卷钉：total 自报 pct=99 而计数真实 40% → 全链判 failed（重算 40<80，HARDENING 档）——自报 pct 不进判卷", () => {
     const tampered = JSON.stringify({
       total: {
         lines: { pct: 99, covered: 400, total: 1000 },
@@ -928,11 +942,208 @@ describe("parseC8Summary：C5 计数重算（pct 字段不消费，计数为唯�
       },
     });
     c8ReadyFixture(tampered);
-    const record = fullPipeline();
+    const record = fullPipeline(policy({ gateTier: "HARDENING" }));
     expect(record.verdict).toBe("failed");
     expect(record.counts.violations).toBe(1);
     expect(record.items?.[0]?.message).toContain("40.00%");
     expect(record.scopeNote).toContain("40.00%");
+  });
+});
+
+// ============================================================
+// 行覆盖率三档分化判卷（Owner 决议 2026-09-01 A4 阈值包批准转正：
+// MINIMAL 80 / LIGHT 60 / STANDARD 30；HARDENING/FAST 未在批准包沿用 80；
+// branches 不参与分化恒 60）
+// ============================================================
+
+/**
+ * 三档分化判卷夹具：直接构造 plan（plan.thresholds = 判卷契约——coverage-leg.ts
+ * 「prepare 以 resolveCoverageProvisionalThresholdsForTier 单一实现消费本表」的同一
+ * 消费路径）+ kind:"executed" 的腿输出 → normalizeCoverageLeg 判卷。
+ * MINIMAL/LIGHT 档在 adapter prepare 面 policy-exempt（POLICY_EXEMPT_GATE_TIERS
+ * 合法缺席），分化值的判卷可达面 = plan.thresholds 契约面；STANDARD/HARDENING 的
+ * prepare 面接线另有专测（下方 prepare 消费分化表用例）。
+ */
+function tieredLegPlan(
+  tier: GateTier,
+  thresholds: { readonly lines: number; readonly branches: number },
+  projectRoot: string,
+): CoverageLegPlan {
+  return {
+    tool: C8_TOOL_ID,
+    toolVersion: "5.3.0",
+    gate: COVERAGE_GATE_NAME,
+    gateDef: COVERAGE_GATE_DEF,
+    metricDialect: C8_METRIC_DIALECT,
+    grn: "GRN-2301",
+    ranAtSeq: 2301,
+    trigger: "on_demand",
+    subjectId: null,
+    denominatorRefs: [],
+    projectRoot,
+    runner: "c8",
+    absenceKind: null,
+    absentReason: null,
+    absentHint: null,
+    tier,
+    command: "corepack pnpm exec vitest run",
+    versionProbeCommand: "corepack pnpm exec c8 --version",
+    executable: "corepack",
+    timeoutMs: 60_000,
+    coverageReportPath: "coverage/coverage-summary.json",
+    thresholds,
+    thresholdsProvisional: true,
+    expectedToolVersion: null,
+  };
+}
+
+/** 直接 normalize 的腿输出（executed + 预写报告文本；不经 spawn——判卷面单测）。 */
+function tieredLegOutput(plan: CoverageLegPlan, reportText: string) {
+  return {
+    plan,
+    kind: "executed" as const,
+    exitCode: 0,
+    stdout: "",
+    stderr: "",
+    observedToolVersion: "5.3.0",
+    reportText,
+    runnerUsageError: false,
+    externalMs: 0,
+    failureReason: null,
+  };
+}
+
+describe("行覆盖率三档分化判卷（Owner 决议 2026-09-01 A4 阈值包）", () => {
+  it.each([
+    ["MINIMAL", 80, 79],
+    ["LIGHT", 60, 59],
+    ["STANDARD", 30, 29],
+  ] as const)(
+    "tier=%s 行阈值 %i：改动 %i%% 红（<阈值）→ failed 且行口径违规携带档位分化阈值与批准注记",
+    (tier, threshold, below) => {
+      const plan = tieredLegPlan(tier, resolveCoverageProvisionalThresholdsForTier(tier), dir);
+      const record = normalizeCoverageLeg(tieredLegOutput(plan, c8Summary(below, 90)), 0);
+      expect(record.verdict).toBe("failed");
+      expect(record.counts.violations).toBe(1);
+      expect(record.items?.[0]?.message).toContain("行口径");
+      expect(record.items?.[0]?.message).toContain(`${String(below)}.00%`);
+      expect(record.items?.[0]?.message).toContain(`阈值 ${String(threshold)}%`);
+      expect(record.items?.[0]?.message).toContain(`档位 ${tier} 行覆盖率分化阈值`);
+      expect(record.items?.[0]?.message).toContain("Owner 决议 2026-09-01");
+      expect(record.items?.[0]?.message).not.toContain("provisional 待 A4");
+    },
+  );
+
+  it.each([
+    ["MINIMAL", 80],
+    ["LIGHT", 60],
+    ["STANDARD", 30],
+  ] as const)(
+    "tier=%s 行阈值 %i：改动达线 %i%% 绿（≥阈值，边界含等号）→ passed（分支 90 同过）",
+    (tier, threshold) => {
+      const plan = tieredLegPlan(tier, resolveCoverageProvisionalThresholdsForTier(tier), dir);
+      const record = normalizeCoverageLeg(tieredLegOutput(plan, c8Summary(threshold, 90)), 0);
+      expect(record.verdict).toBe("passed");
+      expect(record.counts.violations).toBe(0);
+      expect(record.scopeNote).toContain(`阈值 ≥${String(threshold)}`);
+      expect(record.scopeNote).toContain("Owner 决议 2026-09-01");
+      expect(record.scopeNote).not.toContain("provisional 待 A4");
+    },
+  );
+
+  it("HARDENING 档值未在批准包：沿用 80（与 MINIMAL 同）——79 红 / 80 绿；注记带「后续呈报」", () => {
+    const plan = tieredLegPlan(
+      "HARDENING",
+      resolveCoverageProvisionalThresholdsForTier("HARDENING"),
+      dir,
+    );
+    const red = normalizeCoverageLeg(tieredLegOutput(plan, c8Summary(79, 90)), 0);
+    expect(red.verdict).toBe("failed");
+    expect(red.items?.[0]?.message).toContain("阈值 80%");
+    const green = normalizeCoverageLeg(tieredLegOutput(plan, c8Summary(80, 90)), 0);
+    expect(green.verdict).toBe("passed");
+    expect(green.scopeNote).toContain("后续呈报");
+  });
+
+  it("同一报告跨档判定分化：行 50% 在 STANDARD 过（≥30）/ 在 HARDENING 红（<80）——分化真实改变判卷", () => {
+    const report = c8Summary(50, 90);
+    const standard = normalizeCoverageLeg(
+      tieredLegOutput(
+        tieredLegPlan("STANDARD", resolveCoverageProvisionalThresholdsForTier("STANDARD"), dir),
+        report,
+      ),
+      0,
+    );
+    expect(standard.verdict).toBe("passed");
+    const hardening = normalizeCoverageLeg(
+      tieredLegOutput(
+        tieredLegPlan("HARDENING", resolveCoverageProvisionalThresholdsForTier("HARDENING"), dir),
+        report,
+      ),
+      0,
+    );
+    expect(hardening.verdict).toBe("failed");
+    expect(hardening.items?.[0]?.message).toContain("50.00%");
+    expect(hardening.items?.[0]?.message).toContain("阈值 80%");
+  });
+
+  it("branches 阈值不受分化影响：全档恒 60（resolve 层全表）+ 判卷面 STANDARD 40/55 只红分支（行 40≥30 过）", () => {
+    for (const tier of GATE_TIER_VALUES) {
+      expect(resolveCoverageProvisionalThresholdsForTier(tier).branches).toBe(60);
+    }
+    const plan = tieredLegPlan("STANDARD", resolveCoverageProvisionalThresholdsForTier("STANDARD"), dir);
+    const record = normalizeCoverageLeg(tieredLegOutput(plan, c8Summary(40, 55)), 0);
+    expect(record.verdict).toBe("failed");
+    expect(record.counts.violations).toBe(1);
+    expect(record.items?.[0]?.message).toContain("分支口径");
+    expect(record.items?.[0]?.message).toContain("55.00%");
+    expect(record.items?.[0]?.message).toContain("阈值 60%");
+    expect(record.items?.[0]?.message).toContain("未在 2026-09-01 批准包");
+  });
+
+  it("分化表全表对账（批准三档 + HARDENING/FAST 未批沿用 80）", () => {
+    expect(COVERAGE_LINES_THRESHOLDS_BY_TIER).toEqual({
+      MINIMAL: 80,
+      LIGHT: 60,
+      FAST: 80,
+      STANDARD: 30,
+      HARDENING: 80,
+    });
+  });
+
+  it("prepare 消费分化表：STANDARD 出厂兜底 {lines:30, branches:60} / HARDENING {lines:80, branches:60}；配置显式供给整体覆盖（配置优先）", () => {
+    put("coverage-gate.json", C8_CONFIG);
+    put("package.json", C8_DECL);
+    const adapter = createCoverageAdapter();
+    const standard = adapter.prepare(
+      { projectRoot: dir },
+      policy({ gateTier: "STANDARD" }),
+      platformDetectorFacts(dir),
+    );
+    expect(standard.tier).toBe("STANDARD");
+    expect(standard.thresholds).toEqual({ lines: 30, branches: 60 });
+    const hardening = adapter.prepare(
+      { projectRoot: dir },
+      policy({ gateTier: "HARDENING" }),
+      platformDetectorFacts(dir),
+    );
+    expect(hardening.thresholds).toEqual({ lines: 80, branches: 60 });
+    // 配置显式供给时整体覆盖兜底（判卷不分档——coverage-adapter 消费契约）。
+    put(
+      "coverage-gate.json",
+      JSON.stringify({
+        runner: "c8",
+        command: "npm test",
+        thresholds: { lines: 50, branches: 45 },
+      }),
+    );
+    const explicit = adapter.prepare(
+      { projectRoot: dir },
+      policy({ gateTier: "STANDARD" }),
+      platformDetectorFacts(dir),
+    );
+    expect(explicit.thresholds).toEqual({ lines: 50, branches: 45 });
+    expect(explicit.thresholdsProvisional).toBe(false);
   });
 });
 

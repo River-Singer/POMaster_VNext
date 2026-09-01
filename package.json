@@ -1,6 +1,7 @@
 {
   "name": "pomaster-vnext",
   "version": "0.0.0",
+  "license": "PolyForm-Noncommercial-1.0.0",
   "private": true,
   "type": "module",
   "description": "POMaster vNext - Governed Software State Control Plane (构建中)",

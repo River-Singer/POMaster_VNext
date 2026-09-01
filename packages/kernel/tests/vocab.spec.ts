@@ -1,26 +1,38 @@
 /**
  * vocab.spec —— kernel 词表引用入口（@pomaster/schemas re-export）与 FROZEN 词表逐值对账。
- * 词表纪律：以下断言值逐字镜像 vocab-lock@v0.2-resolved（v0.1-resolved FROZEN 后 PR-0001
- * append-only 增补）；改词表须同 commit 改这里。
+ * 词表纪律：以下断言值逐字镜像 vocab-lock@v0.3-resolved（v0.1-resolved FROZEN 后 PR-0001、
+ * 2026-09-01 PR-0004 两次 append-only 增补，v0.1/v0.2 词值零删改）；改词表须同 commit 改这里。
  */
 import { describe, expect, it } from "vitest";
 import {
   ALIASES_V0,
+  BAND_PREDICATE_OPERATOR_VALUES,
   BINDING_CLASS_VALUES,
   CATALOG_CLASSIFICATION_VALUES,
   CATALOG_ENFORCEMENT_VALUES,
   CATALOG_LANE_VALUES,
+  CAPABILITY_OUTCOME_METRIC_KEY_VALUES,
+  CAPABILITY_OUTCOME_METRIC_STATUS_VALUES,
   CHANGE_VALUES,
   CONFIDENCE_VALUES,
+  CONTROL_BAND_EVALUATION_STATUS_VALUES,
+  DETECTED_BY_TOOL_SIGNAL,
+  DIAGNOSIS_KIND_VALUES,
   EVIDENCE_VALUES,
   GOVERNED_ID_PREFIXES,
   IR_SCHEMA_DIALECT,
   LIFECYCLE_TRANSITIONS,
   LIFECYCLE_VALUES,
+  PHASE_TIMELINE_VALUES,
+  POMASTER_SELF_IMPROVEMENT_CANDIDATE,
   PROBE_RESULT_VALUES,
+  PRODUCTION_CLI_ERROR_VALUES,
+  PRODUCTION_SIGNAL_SOURCE_VALUES,
   REALIZATION_VALUES,
   RECONCILE_DELTA_KINDS,
   RECONCILE_EXCEPTION_KINDS,
+  SELF_IMPROVEMENT_SIGNAL_PRD_LABELS,
+  SELF_IMPROVEMENT_SIGNAL_VALUES,
   SOURCE_TYPE_ALL_VALUES,
   SOURCE_TYPE_ALLOWED_VALUES,
   SOURCE_TYPE_FORBIDDEN_VALUES,
@@ -146,6 +158,90 @@ describe("vocab mirror（FROZEN 词表唯一镜像点）", () => {
 
   it("IR 方言标识逐字冻结", () => {
     expect(IR_SCHEMA_DIALECT).toBe("pomaster.truth-index/v1-draft");
+  });
+
+  // —— production_band_vocab 词轴（PR-0004 收编；Owner 决议 2026-09-01）——
+  // 改词表须同 commit 改这里：以下断言逐值镜像 vocab-lock@v0.3-resolved
+  // production_band_vocab 段（2026-09-01 vocab-pr-0004 正式收编，append-only 纯增量）。
+  describe("production_band_vocab 词轴（vocab-pr-0004 收编 · Owner 决议 2026-09-01）", () => {
+    it("§30 开发时间轴四态（PRD L2554-2563 逐字；与 state_axes.lifecycle 值域不相交）", () => {
+      expect([...PHASE_TIMELINE_VALUES]).toEqual(["PRE_DEV", "IN_DEV", "POST_DEV", "IN_PRODUCTION"]);
+      for (const phase of PHASE_TIMELINE_VALUES) {
+        expect(LIFECYCLE_VALUES.includes(phase as never)).toBe(false);
+      }
+    });
+
+    it("§95.2 生产信号源五词形（L6126 逐字；空格词形转 snake_case 映射注记 Owner 2026-09-01 照准）", () => {
+      expect([...PRODUCTION_SIGNAL_SOURCE_VALUES]).toEqual(["metric", "log", "error_budget", "slo", "control_band"]);
+    });
+
+    it("§95.3 诊断三分（SCREAMING_SNAKE 词形——大小写裁定 Owner 2026-09-01 照准；§31 ARCHITECTURE_EVOLUTION 同形复用）", () => {
+      expect([...DIAGNOSIS_KIND_VALUES]).toEqual(["IMPLEMENTATION_ISSUE", "CONFIG_ISSUE", "ARCHITECTURE_EVOLUTION"]);
+    });
+
+    it("band 谓词算子五值（machine-evaluable 谓词闭集；§95.2 禁自由文本判据的类型面）", () => {
+      expect([...BAND_PREDICATE_OPERATOR_VALUES]).toEqual(["gt", "lt", "gte", "lte", "between"]);
+    });
+
+    it("band 判定三态（fail-closed 显式；与 03 VERDICT_VALUES 七态正交——band 判定非 gate 判卷面）", () => {
+      expect([...CONTROL_BAND_EVALUATION_STATUS_VALUES]).toEqual(["OK", "BREACHED", "NOT_EVALUABLE"]);
+      for (const status of CONTROL_BAND_EVALUATION_STATUS_VALUES) {
+        expect(VERDICT_VALUES.includes(status as never)).toBe(false);
+      }
+    });
+
+    it("§55.1 指标机算两态 + 十六机器键（八能力 × Leading/Lagging；唯一性）", () => {
+      expect([...CAPABILITY_OUTCOME_METRIC_STATUS_VALUES]).toEqual(["MEASURED", "NOT_MEASURABLE_YET"]);
+      expect([...CAPABILITY_OUTCOME_METRIC_KEY_VALUES]).toEqual([
+        "brainstorm_change_convergence_time",
+        "in_dev_requirement_rework_rate",
+        "research_high_risk_unknown_reduction_rate",
+        "research_tech_choice_rework_rate",
+        "context_hit_or_redundancy_rate",
+        "agent_boundary_violation_rate",
+        "profile_first_hit_rate",
+        "governance_overhead",
+        "arch_gate_predev_interceptions",
+        "architecture_rework_rollback_rate",
+        "relevant_knowledge_hit_rate",
+        "same_class_bug_recurrence_rate",
+        "gauntlet_first_pass_pass_rate",
+        "production_change_failure_rate",
+        "drift_detection_rate",
+        "cross_session_state_error_rate",
+      ]);
+      expect(new Set(CAPABILITY_OUTCOME_METRIC_KEY_VALUES).size).toBe(16);
+    });
+
+    it("§90.4 自改进八信号（snake_case 机器词形）+ PRD 原文镜像键集互为镜像", () => {
+      expect([...SELF_IMPROVEMENT_SIGNAL_VALUES]).toEqual([
+        "governance_overhead_ratio_anomaly",
+        "gate_high_frequency_false_positive",
+        "role_without_independent_evidence",
+        "registry_empty_or_duplicate_view",
+        "context_oversized_low_utilization",
+        "repeated_architecture_challenge",
+        "profile_frequent_manual_deescalation",
+        "profile_frequent_inflight_escalation",
+      ]);
+      expect(Object.keys(SELF_IMPROVEMENT_SIGNAL_PRD_LABELS)).toEqual([...SELF_IMPROVEMENT_SIGNAL_VALUES]);
+    });
+
+    it("产物/常量词形两枚（单词常量承载——MEMORY_DRIFT 同款先例）", () => {
+      expect(POMASTER_SELF_IMPROVEMENT_CANDIDATE).toBe("POMASTER_SELF_IMPROVEMENT_CANDIDATE");
+      expect(DETECTED_BY_TOOL_SIGNAL).toBe("tool_signal");
+    });
+
+    it("production CLI 错误词形族六值（呈报件 §2.4 裁定落档；第 6 位与 kernel GovernanceErrorCode 同名透传）", () => {
+      expect([...PRODUCTION_CLI_ERROR_VALUES]).toEqual([
+        "BAND_SCHEMA_INVALID",
+        "BAND_NOT_FOUND",
+        "OBSERVATION_NOT_EVALUABLE",
+        "CHALLENGE_REJECTED",
+        "EVIDENCE_NOT_FOUND",
+        "DIAGNOSIS_WITHOUT_BREACH_EVIDENCE",
+      ]);
+    });
   });
 
   it("P21 Capability Pool 词轴（§25.3 十二角色 pending_vocab_pr；词形裁定见 schemas vocab.ts P21 段）", async () => {

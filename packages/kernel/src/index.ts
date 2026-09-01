@@ -222,7 +222,7 @@ export interface TruthIndex {
     /** 源输入集指纹——重跑无变化时短路依据（D24：事务自动维护）。 */
     readonly inputsFingerprint: string;
   };
-  /** 词表指纹三元组：与 vocab-lock@v0.2-resolved 内容摘要对账，不一致即 FATAL（枚举多头拷贝免疫）。 */
+  /** 词表指纹三元组：与 vocab-lock@v0.3-resolved 内容摘要对账，不一致即 FATAL（枚举多头拷贝免疫）。 */
   readonly vocabLock: {
     readonly stateAxes: string;
     readonly kinds: string;
@@ -1471,7 +1471,7 @@ export {
   SELF_IMPROVEMENT_SIGNAL_PRD_LABELS,
   POMASTER_SELF_IMPROVEMENT_CANDIDATE,
   DETECTED_BY_TOOL_SIGNAL,
-  // P34b CLI 命令面词形（错误词形族；同段 pending_vocab_pr + 命令面命名权呈报 Owner）。
+  // P34b CLI 命令面词形（错误词形族；vocab-pr-0004 已收编，Owner 决议 2026-09-01）。
   PRODUCTION_CLI_ERROR_VALUES,
 } from "./vocab.js";
 export type {

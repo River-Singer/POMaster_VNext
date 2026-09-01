@@ -36,3 +36,12 @@
 ## 裁决 5（既有协议确认）：20 真实任务强制复审
 
 - 协议已武装（corpus/master/batch-1/calibration/ + P0 出口记录）：累计 20 个真实治理任务后强制复审校准（阈值适配性 per-project 原则）。到期自动呈报，无需动作。
+
+## 裁决 6：Owner 决议包 — 全部批准（2026-09-01）
+
+- **决策渠道**：本会话 Owner 直答（AskUserQuestion，2026-09-01）。呈报件：docs/l6-release-gate-p35-report.md（Owner-local）§2/§3/§6。
+- **①License = 双许可**：PolyForm Noncommercial-1.0.0（官方全文落 LICENSE）+ 独立商业授权（COMMERCIAL_LICENSE.md）。两个子问（内部商用豁免 / 小企业豁免）**未获答复——按草案默认严格口径：商用均需另行授权，不豁免，绿灯未开**。
+- **②A4 阈值 = 三项全批**：mutation minKillScore=85 / maxSurvivors=10 / coverage 三档行覆盖率分化 MINIMAL 80 / LIGHT 60 / STANDARD 30。branches 60 单值与 HARDENING 档行覆盖率**不在批准包**——维持出厂值并注记。
+- **③A3 宪法档 = 按推荐全收**：执行面=catalog 全部 5 条 GATE.*；judging_rules 四条草稿纪律升硬判据；STRICT 映射=catalog 锚即档（triage 不物化 STRICT 档、无双轨）。
+- **④四小项全批**：(a) production 命令组定名认可；(b) PBR-* 等生产击穿词形正式入词表（正式 vocab PR，不再 pending）；(c) mutation 基准轮 gate record 入正式账本（vNext 自身 .pomaster store，本机账本不入 git）；(d) harvest review 通道启用——P33 呈报件遗留的 STRICT vs COMPATIBILITY 词形位**本次未裁，维持默认 STRICT**。
+- **落盘形态**：六条实现线并行落地（License 落盘 / 阈值 approved / 宪法档转正 / 词表 PR / 账本入账 / harvest 启动），全量门禁通过后由主控统一提交。

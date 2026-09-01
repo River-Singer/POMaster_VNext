@@ -142,4 +142,13 @@ pomaster doctor        # 工具/MCP 配置探测（P22 起含 oasdiff / import-l
 
 ## License
 
-PolyForm Noncommercial 1.0.0 + 商业书面授权双许可方向（首次公开发布前完成法律复核与本决策门禁）。Trellis 仅作机制研究对照，零代码继承。
+POMaster 采用**双许可**发布（Owner 决议 2026-09-01）：
+
+- **PolyForm Noncommercial 1.0.0**（默认公共许可，仅授权非商业使用）：全文见 [`LICENSE`](./LICENSE)，官方标准文本逐字落盘；
+- **Commercial**（独立商业授权）：任何商业使用（含企业内部商用、小企业商用）均不在公共许可范围内、不豁免，需另行签署书面商业授权——说明见 [`COMMERCIAL_LICENSE.md`](./COMMERCIAL_LICENSE.md)。
+
+该组合为 source-available 双许可，不应宣传为 OSI Open Source。商标与项目标识归属见 [`TRADEMARKS.md`](./TRADEMARKS.md)；贡献授权条款见 [`CONTRIBUTING.md`](./CONTRIBUTING.md)；安全漏洞报告渠道见 [`SECURITY.md`](./SECURITY.md)；第三方依赖许可与 notice 义务见 [`legal/THIRD_PARTY_NOTICES.md`](./legal/THIRD_PARTY_NOTICES.md)。
+
+商业授权联系：TODO(Owner): 填联系邮箱/渠道
+
+> 正式公开发布前需完成法律专业人士复核。Trellis 仅作机制研究对照，零代码继承。

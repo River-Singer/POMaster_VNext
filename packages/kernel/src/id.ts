@@ -2,7 +2,7 @@
  * id.ts —— governed id 解析（A5 closed-world）与别名双向链（A6 rename-on-ingest）。
  *
  * 词表纪律：前缀闭包与别名族唯一来源 = @pomaster/schemas（GOVERNED_ID_PREFIXES /
- * ALIASES_V0，逐值镜像 vocab-lock@v0.2-resolved——PR-0001 后 ALIASES_V0 八族）；本文件
+ * ALIASES_V0，逐值镜像 vocab-lock@v0.3-resolved——PR-0001 后 ALIASES_V0 八族）；本文件
  * 不发明任何前缀/别名规则值。数字段收编加字母前缀规则（TASK-0087→TASK.T0087、
  * CHANGE-0104→CHANGE.C0104）是 vocab-lock aliases_v0 注记 + 02b §0 文法注记（SEGMENT
  * 不允许数字开头）的机械落点；PR-0001 三新族（ISSUE.* / FTA-* / FB-*，MIG-B1 源侧跟踪 id
@@ -46,7 +46,7 @@ export function parseGovernedId(id: string): ParsedGovernedId {
     throw new GovernedIdParseError(
       id,
       "unknown_prefix",
-      `prefix "${candidatePrefix}" 未登记于 vocab-lock@v0.2-resolved prefixes_v0 闭包（A5 closed-world；扩展走词汇表 PR，代码镜像 @pomaster/schemas GOVERNED_ID_PREFIXES）`,
+      `prefix "${candidatePrefix}" 未登记于 vocab-lock@v0.3-resolved prefixes_v0 闭包（A5 closed-world；扩展走词汇表 PR，代码镜像 @pomaster/schemas GOVERNED_ID_PREFIXES）`,
     );
   }
   if (!GOVERNED_ID_PATTERN.test(id)) {
@@ -70,7 +70,7 @@ export function parseGovernedId(id: string): ParsedGovernedId {
 /** resolveAlias 的结构化结果 = 契约类型（index.ts AliasResolution，1:1）。 */
 export type { AliasResolution };
 
-// —— aliases_v0 注记逐字镜像（x-vocab-source: vocab-lock@v0.2-resolved aliases_v0；PR-0001 起八族） ——
+// —— aliases_v0 注记逐字镜像（x-vocab-source: vocab-lock@v0.3-resolved aliases_v0；PR-0001 起八族） ——
 
 const NOTE_PAGE_TASK_STEP =
   "token 重排收编，键绑定表记录历史形态";

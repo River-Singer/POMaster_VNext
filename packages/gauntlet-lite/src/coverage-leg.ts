@@ -46,12 +46,14 @@
  *   · 行/分支口径强制上报（随版计划 B2-1 原文）：报告缺行口径或缺分支口径 →
  *   malformed → not_run（非绿非红，非默认值——禁把缺席口径当 0% 或 100%）。
  *   · violations 语义 = 低于阈值口径：lines < thresholds.lines / branches <
- *   thresholds.branches 各记一条违规（items 明细携带实测值/阈值/provisional 注记，
+ *   thresholds.branches 各记一条违规（items 明细携带实测值/阈值/批准状态注记，
  *   可复算对账）；violations>0 → failed（cap 不洗白）；版本漂移 → passed 降 warning。
- * - 阈值 provisional 纪律：默认阈值行 80 / 分支 60 是 provisional 出厂兜底
- *   （「provisional 待 A4 打包批准」，PRD §26.2 CRAP 注「不把某个数字当成永久真理」；
- *   benchmarks/calibration-approval.json system_can_not_self_approve 同款纪律）；
- *   scopeNote 必带注记，呈报项登记见 PROVISIONAL_THRESHOLD_REGISTRATIONS（crap.ts）。
+ * - 阈值纪律（A4 对齐点）：行覆盖率按档位分化 MINIMAL 80 / LIGHT 60 / STANDARD 30
+ *   （changed-code）已经 Owner 决议 2026-09-01 批准（呈报件 §2.1；HARDENING/FAST
+ *   档值未在批准包沿用 80 后续呈报；配置 thresholds.lines 显式供给时覆盖分化值）；
+ *   branches 阈值未在 2026-09-01 批准包、维持出厂值 60（PRD §26.2 CRAP 注「不把
+ *   某个数字当成永久真理」）；scopeNote 必带注记，呈报项登记见
+ *   PROVISIONAL_THRESHOLD_REGISTRATIONS（本文件；crap.ts CRAP 阈值登记另行同表语义域）。
  *
  * PATH 引号消毒（phaseC 附录 A 教训，与 pytest-leg/oasdiff-leg 同源）；
  * spawn maxBuffer = SPAWN_MAX_BUFFER_BYTES（64MB，P22 三腿先例）；
@@ -112,42 +114,94 @@ export const PYTEST_COV_DEFAULT_REPORT = "coverage.json";
 export const DEFAULT_COVERAGE_TIMEOUT_MS = 600_000;
 
 // ============================================================
-// 阈值 provisional 纪律（A4 对齐点；配置化覆盖，未配置时的出厂兜底）
+// 阈值纪律（A4 对齐点：行覆盖率三档分化已经 Owner 决议 2026-09-01 批准；
+// 配置化覆盖，未配置时的出厂兜底按档位分化）
 // ============================================================
 
 /**
- * coverage 行/分支阈值出厂兜底（provisional）：
- * 「provisional 待 A4 打包批准」——wave3-plan.md P23【阈值初值 Owner 批准位（A4 打包）】；
- * 阈值必须配置化（PRD §26.2 CRAP 注：不把某个数字当成永久真理）；系统不自批为永久值
- * （benchmarks/calibration-approval.json system_can_not_self_approve 同款纪律）。
+ * coverage 阈值出厂兜底基线对（branches 唯一定义点 + 原始出厂词形锚）：
+ * 原始出厂对 {lines:80, branches:60} 的单一数值对已经 Owner 决议 2026-09-01 部分
+ * 转正——行覆盖率按档位分化（COVERAGE_LINES_THRESHOLDS_BY_TIER：MINIMAL 80 /
+ * LIGHT 60 / STANDARD 30），branches 不在批准包、维持出厂值 60。
+ * 配置 thresholds 显式供给时整体覆盖兜底（配置优先，判卷不分档）。
  */
 export const COVERAGE_PROVISIONAL_THRESHOLDS = {
   lines: 80,
   branches: 60,
 } as const;
 
-/** provisional 注记原文（scopeNote 与呈报项登记共用，逐字含「provisional」「A4」）。 */
+/**
+ * 行覆盖率三档分化（changed-code；Owner 决议 2026-09-01 A4 阈值包批准，
+ * 呈报件 docs/l6-release-gate-p35-report.md §2.1）：
+ * MINIMAL 80 / LIGHT 60 / STANDARD 30（变更规模递减 → 行阈值递减，靠 gate 矩阵兜底）。
+ * - HARDENING / FAST 档值未在批准包：沿用 80（与 MINIMAL 同），后续呈报；FAST 档
+ *   现行为 policy-exempt（POLICY_EXEMPT_GATE_TIERS）判卷不可达，值仅为总函数完备性；
+ * - branches 不参与分化（branches 阈值未在批准包，维持出厂值 60）；
+ * - coverage-adapter prepare 以 resolveCoverageProvisionalThresholdsForTier 消费本表
+ *   （单一实现），plan.thresholds 即判卷契约。
+ */
+export const COVERAGE_LINES_THRESHOLDS_BY_TIER: Readonly<Record<GateTier, number>> = {
+  MINIMAL: 80,
+  LIGHT: 60,
+  FAST: 80, // 未在批准包，沿用 80，后续呈报（policy-exempt 档判卷不可达）
+  STANDARD: 30,
+  HARDENING: 80, // 未在批准包，沿用 80（与 MINIMAL 同），后续呈报
+};
+
+/**
+ * 出厂兜底阈值按档位解析（coverage-adapter prepare 消费；单一实现防漂移）：
+ * 行阈值取档位分化值，branches 恒出厂值 60。
+ */
+export function resolveCoverageProvisionalThresholdsForTier(tier: GateTier): {
+  readonly lines: number;
+  readonly branches: number;
+} {
+  return {
+    lines: COVERAGE_LINES_THRESHOLDS_BY_TIER[tier],
+    branches: COVERAGE_PROVISIONAL_THRESHOLDS.branches,
+  };
+}
+
+/**
+ * provisional 注记原文（P23 原始出厂兜底注记）。coverage 行阈值已批准转正、不再
+ * 消费本注记；crap.ts CRAP 阈值仍在用——CRAP 未在 2026-09-01 批准包（呈报件 §2.4），
+ * 维持 provisional 待批。
+ */
 export const PROVISIONAL_THRESHOLD_NOTE =
   "provisional 待 A4 打包批准（wave3-plan.md P23 阈值初值 Owner 批准位；PRD §26.2：不把某个数字当成永久真理；系统不自批为永久值）";
 
+/** 行覆盖率阈值 approved 注记（items/scopeNote 与呈报项登记共用；Owner 决议 2026-09-01）。 */
+export const COVERAGE_LINES_THRESHOLD_APPROVED_NOTE =
+  "行覆盖率三档分化（changed-code；MINIMAL 80 / LIGHT 60 / STANDARD 30）已经 Owner 决议 2026-09-01 批准转正（A4 阈值包；HARDENING/FAST 档值未在批准包，沿用 80，后续呈报；PRD §26.2：不把某个数字当成永久真理——后续调整走 coverage-gate.json thresholds 配置化覆盖）";
+
+/** branches 阈值未批注记（branches 不在 2026-09-01 批准包，维持出厂值）。 */
+export const COVERAGE_BRANCHES_THRESHOLD_NOTE =
+  "branches 阈值未在 2026-09-01 批准包，维持出厂值 60（Owner 决议 2026-09-01 A4 阈值包仅批行覆盖率三档分化；branches 转正另行呈报）";
+
 /**
- * P23 provisional 阈值呈报项登记（机器可读；呈报 Owner A4 打包批准位）。
- * 词形锚：key = 配置面键位；value = 出厂兜底值；status 恒为 provisional——
- * 任何把本表项改成 approved/permanent 的改动都必须来自 Owner 批准（A4），
- * 系统与测试面禁止自批（呈报项登记测试钉住 provisional 词形）。
+ * P23/A4 阈值呈报项登记（机器可读；原 provisional 呈报表——Owner 决议 2026-09-01
+ * 将行覆盖率三档分化转正 approved（value = 批准的三档值），branches 未在批准包、
+ * 维持 provisional 待批。常量名保留 PROVISIONAL 词形作为历史呈报位锚（最小改造，
+ * 禁大改登记结构 API），行内 status/approved_by/note 是权威词形；
+ * 任何再改 status 的动作都必须来自 Owner 批准，系统与测试面禁止自批）。
  */
 export const PROVISIONAL_THRESHOLD_REGISTRATIONS = [
   {
     key: "coverage-gate.json thresholds.lines",
-    value: COVERAGE_PROVISIONAL_THRESHOLDS.lines,
-    status: "provisional" as const,
-    note: PROVISIONAL_THRESHOLD_NOTE,
+    value: {
+      MINIMAL: COVERAGE_LINES_THRESHOLDS_BY_TIER.MINIMAL,
+      LIGHT: COVERAGE_LINES_THRESHOLDS_BY_TIER.LIGHT,
+      STANDARD: COVERAGE_LINES_THRESHOLDS_BY_TIER.STANDARD,
+    },
+    status: "approved" as const,
+    approved_by: "OWNER 2026-09-01 decision",
+    note: COVERAGE_LINES_THRESHOLD_APPROVED_NOTE,
   },
   {
     key: "coverage-gate.json thresholds.branches",
     value: COVERAGE_PROVISIONAL_THRESHOLDS.branches,
     status: "provisional" as const,
-    note: PROVISIONAL_THRESHOLD_NOTE,
+    note: COVERAGE_BRANCHES_THRESHOLD_NOTE,
   },
 ];
 
@@ -211,7 +265,10 @@ export interface CoverageLegPlan extends RecordPlanFields {
   /** 仓内相对报告文件路径（run 侧回读 + items.location + scopeNote 可移植词形）。 */
   readonly coverageReportPath: string;
   readonly thresholds: { readonly lines: number; readonly branches: number };
-  /** true = 阈值来自出厂兜底（provisional 待 A4）；false = 配置显式供给。 */
+  /**
+   * true = 阈值来自出厂兜底（行阈值=档位分化值，已经 Owner 决议 2026-09-01 批准；
+   * branches=出厂值 60 未批）；false = 配置显式供给。
+   */
   readonly thresholdsProvisional: boolean;
   /** 版本锚（policy 供给；可选——c8 腿以 package.json 声明版本为 toolVersion）。 */
   readonly expectedToolVersion: string | null;
@@ -660,14 +717,14 @@ export function normalizeCoverageLeg(
     items.push({
       rule: "coverage_below_threshold",
       location: plan.coverageReportPath,
-      message: `行口径 ${formatPct(metrics.linesPct)}% < 阈值 ${plan.thresholds.lines}%${plan.thresholdsProvisional ? `（阈值${PROVISIONAL_THRESHOLD_NOTE}）` : ""}`,
+      message: `行口径 ${formatPct(metrics.linesPct)}% < 阈值 ${plan.thresholds.lines}%${plan.thresholdsProvisional ? `（档位 ${plan.tier} 行覆盖率分化阈值；${COVERAGE_LINES_THRESHOLD_APPROVED_NOTE}）` : ""}`,
     });
   }
   if (metrics.branchesPct < plan.thresholds.branches) {
     items.push({
       rule: "coverage_below_threshold",
       location: plan.coverageReportPath,
-      message: `分支口径 ${formatPct(metrics.branchesPct)}% < 阈值 ${plan.thresholds.branches}%${plan.thresholdsProvisional ? `（阈值${PROVISIONAL_THRESHOLD_NOTE}）` : ""}`,
+      message: `分支口径 ${formatPct(metrics.branchesPct)}% < 阈值 ${plan.thresholds.branches}%${plan.thresholdsProvisional ? `（${COVERAGE_BRANCHES_THRESHOLD_NOTE}）` : ""}`,
     });
   }
   const violations = items.length;
@@ -697,7 +754,7 @@ export function normalizeCoverageLeg(
   const scopeNote =
     `行口径 ${formatPct(metrics.linesPct)}%（阈值 ≥${plan.thresholds.lines}）/ 分支口径 ${formatPct(metrics.branchesPct)}%（阈值 ≥${plan.thresholds.branches}）；` +
     `报告内文件 ${metrics.files.size} 个；` +
-    `阈值 lines≥${plan.thresholds.lines} branches≥${plan.thresholds.branches}${plan.thresholdsProvisional ? `（${PROVISIONAL_THRESHOLD_NOTE}）` : "（配置显式供给）"}；` +
+    `阈值 lines≥${plan.thresholds.lines} branches≥${plan.thresholds.branches}${plan.thresholdsProvisional ? `（档位 ${plan.tier} 行覆盖率分化阈值；${COVERAGE_LINES_THRESHOLD_APPROVED_NOTE}；${COVERAGE_BRANCHES_THRESHOLD_NOTE}）` : "（配置显式供给）"}；` +
     `${exitNote}`;
 
   const cappedItems = capItems(items);

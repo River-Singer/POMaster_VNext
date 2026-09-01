@@ -5,8 +5,9 @@
  * 判卷权威在 @pomaster/kernel production.ts（P34a 已全量单测）；本文件钉命令编排
  * 语义：命令词形（band define/list、evaluate、challenge、diagnose、metrics、
  * self-improvement register/list）+ exit code + --json 信封词形 + 错误路径词形族
- * （PRODUCTION_CLI_ERROR_VALUES——schemas vocab.ts P34b 段单一镜像点；
- * absent_in_vocab_lock__pending_vocab_pr + 命令面命名权呈报 Owner）。
+ * （PRODUCTION_CLI_ERROR_VALUES——schemas vocab.ts P34b 段单一镜像点，已随
+ * vocab-pr-0004 收编——Owner 决议 2026-09-01；命令组名 production + 六子命令位经
+ * Owner 2026-09-01 认可，落档 docs/kernel-api.md production 命令段）。
  *
  * 命令面三条封条的测试级钉死：
  * - §95.2：evaluate 观测缺席/不可判 = OBSERVATION_NOT_EVALUABLE exit 1 非 fake 绿；

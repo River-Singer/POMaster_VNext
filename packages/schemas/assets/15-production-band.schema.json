@@ -2,9 +2,9 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://pomaster.dev/schemas/production-band/v1-draft.json",
   "title": "Production Control Band（生产控制带定义 · P34 · PRD §95.2/§95.3/§30/§55.1/§90.4 词形冻结面）",
-  "description": "P34 Production Feedback / Control Band v1 的定义形态契约：Control band 是 §95.2「Tool Detects, Agent Diagnoses」链的确定性探测锚——谓词 machine-evaluable（显式算子 + 数值阈值），禁自由文本判据字段（§95.2 逐字「不得把『是否异常』完全交给 LLM 主观判断」的类型面落点：判定通路 evaluateControlBand 只接受本 schema 形态的谓词 + 数值 observation）。\n§95.1 生命周期扩展的状态承载：band phase 恒 IN_PRODUCTION（§30 四态时间轴第四态）；§95.3 CURRENT→CHALLENGED 转移的触发源（challenge 转移本体走 store applyTransaction 既有通路零旁路）。\n数据落点 .pomaster/production/ 子树（bands/observations/breaches/challenges/diagnoses/self-improvement；kernel production.ts 维护）。observations/breaches/challenges/diagnoses/self-improvement 五类台账记录为 kernel 侧车（user-scope 台账同款无独立 schema，装载面 fail-closed）；本文件 definitions 同时冻结 P34 全部词轴（production_signal_source / band_predicate_operator / control_band_evaluation_status / phase_timeline / diagnosis_kind / self_improvement_signal），提请词汇表 PR 收编。",
+  "description": "P34 Production Feedback / Control Band v1 的定义形态契约：Control band 是 §95.2「Tool Detects, Agent Diagnoses」链的确定性探测锚——谓词 machine-evaluable（显式算子 + 数值阈值），禁自由文本判据字段（§95.2 逐字「不得把『是否异常』完全交给 LLM 主观判断」的类型面落点：判定通路 evaluateControlBand 只接受本 schema 形态的谓词 + 数值 observation）。\n§95.1 生命周期扩展的状态承载：band phase 恒 IN_PRODUCTION（§30 四态时间轴第四态）；§95.3 CURRENT→CHALLENGED 转移的触发源（challenge 转移本体走 store applyTransaction 既有通路零旁路）。\n数据落点 .pomaster/production/ 子树（bands/observations/breaches/challenges/diagnoses/self-improvement；kernel production.ts 维护）。observations/breaches/challenges/diagnoses/self-improvement 五类台账记录为 kernel 侧车（user-scope 台账同款无独立 schema，装载面 fail-closed）；本文件 definitions 同时冻结 P34 全部词轴（production_signal_source / band_predicate_operator / control_band_evaluation_status / phase_timeline / diagnosis_kind / self_improvement_signal），已随 vocab-pr-0004 收编 vocab-lock production_band_vocab（Owner 决议 2026-09-01）。",
   "x-pomaster-file-role": "15-production-band.schema.json —— .pomaster/production/bands/<band-id>.json 定义形态契约（kernel production.ts registerControlBand 唯一写入通路）。消费方 = evaluateControlBand（Deterministic Detection 纯函数）、challengeFromBreach（§95.3 CURRENT→CHALLENGED）、computeCapabilityOutcomeMetrics（§55.1 指标派生）。",
-  "x-pomaster-vocab-source": "词形轴 absent_in_vocab_lock__pending_vocab_pr：phase_timeline 轴（PRD §30 L2554-2563 逐字四值；与 state_axes.lifecycle 正交）；production_signal_source 轴（§95.2 L6126「metric / log / error budget / SLO / control band」空格词形转 snake_case：error_budget/control_band/slo）；band_predicate_operator 轴（P34 任务定案 gt/lt/gte/lte/between）；control_band_evaluation_status 轴（OK/BREACHED/NOT_EVALUABLE fail-closed 三态，P32 同源纪律）；diagnosis_kind 轴（§95.3 L6153 三分 SCREAMING_SNAKE 化，§31 ARCHITECTURE_EVOLUTION 词形同源先例，大小写裁定呈报 Owner）；self_improvement_signal 轴（§90.4 八信号 snake_case 机器词形）。CHALLENGED 复用 CHANGE_VALUES 不重复登记。词形已在本文件 definitions 冻结并镜像于 @pomaster/schemas vocab.ts 待收编段，提请词汇表 PR 收编（pending_vocab_pr）。",
+  "x-pomaster-vocab-source": "词形轴已随 2026-09-01 vocab-pr-0004 正式收编 vocab-lock production_band_vocab（v0.3-resolved；Owner 决议 2026-09-01——呈报件 docs/production-feedback-p34-report.md §2.2/§2.4 裁定落档；本文件原 absent_in_vocab_lock__pending_vocab_pr 状态就此关闭）：phase_timeline 轴（PRD §30 L2554-2563 逐字四值；与 state_axes.lifecycle 正交）；production_signal_source 轴（§95.2 L6126「metric / log / error budget / SLO / control band」空格词形转 snake_case：error_budget/control_band/slo，映射注记 Owner 2026-09-01 照准）；band_predicate_operator 轴（P34 任务定案 gt/lt/gte/lte/between）；control_band_evaluation_status 轴（OK/BREACHED/NOT_EVALUABLE fail-closed 三态，P32 同源纪律）；diagnosis_kind 轴（§95.3 L6153 三分 SCREAMING_SNAKE 化，§31 ARCHITECTURE_EVOLUTION 词形同源先例，大小写裁定 Owner 2026-09-01 照准）；self_improvement_signal 轴（§90.4 八信号 snake_case 机器词形）。CHALLENGED 复用 CHANGE_VALUES 不重复登记。本文件 definitions 为词形冻结锚；vocab-lock production_band_vocab 与 @pomaster/schemas vocab.ts 为逐值镜像，扩值走词汇表 PR。",
   "x-pomaster-contract": {
     "machine_evaluable_predicate": "谓词 machine-evaluable 封条（§95.2 逐字「不得把『是否异常』完全交给 LLM 主观判断」）：predicate 只含显式算子（五值闭集）+ 数值阈值，additionalProperties:false 封死一切自由文本判据字段位（criteria/description/looks_wrong 等键结构性不存在）；between 须 threshold+threshold_max 成对（kernel 侧另验 threshold ≤ threshold_max——draft-07 无跨字段比较）。",
     "three_state_fail_closed": "判定三态 OK/BREACHED/NOT_EVALUABLE 显式（definitions.control_band_evaluation_status）：观测指标名不匹配/值非有限数值/谓词损坏一律 NOT_EVALUABLE——绝不静默折算 OK（fail-closed，缺项显式呈现非假绿）。",
@@ -44,7 +44,7 @@
       "description": "PHASE_TIMELINE_VALUES（PRD §30 L2554-2563 逐字 PRE_DEV/IN_DEV/POST_DEV/IN_PRODUCTION）的 band 级收窄：生产反馈带只在 IN_PRODUCTION 相位生效（PRE_DEV/IN_DEV/POST_DEV 相位的门禁归 Gauntlet/Gate 体系，不归本带）。",
       "x-pomaster-vocab": {
         "axis": "phase_timeline",
-        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "status": "collected_in_vocab_lock__vocab_pr_0004",
         "source": "PRD v0.4 §30 L2554-2563"
       }
     },
@@ -106,10 +106,10 @@
       "enum": ["PRE_DEV", "IN_DEV", "POST_DEV", "IN_PRODUCTION"],
       "title": "§30 开发时间轴四态（PRD L2554-2563 逐字）",
       "description": "PRE_DEV / IN_DEV / POST_DEV / IN_PRODUCTION。§95.1 生命周期扩展 PRE_DEV→IN_DEV→POST_DEV→IN_PRODUCTION→new Evidence/Incident/Opportunity→Change ↺ 的状态承载位；与 state_axes.lifecycle 正交（对象生命周期轴 vs 开发阶段轴）。",
-      "$comment": "source: PRD v0.4 §30 L2554-2563 逐字。提请词汇表 PR 收编（pending_vocab_pr）。",
+      "$comment": "source: PRD v0.4 §30 L2554-2563 逐字。已收编 vocab-lock production_band_vocab（vocab-pr-0004，2026-09-01，Owner 决议）。",
       "x-pomaster-vocab": {
         "axis": "phase_timeline",
-        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "status": "collected_in_vocab_lock__vocab_pr_0004",
         "source": "PRD v0.4 §30"
       }
     },
@@ -118,10 +118,10 @@
       "enum": ["metric", "log", "error_budget", "slo", "control_band"],
       "title": "§95.2 生产信号源五词形（L6126 逐字；空格词形转 snake_case）",
       "description": "metric / log / error budget→error_budget / SLO→slo / control band→control_band。§95.2 链首「生产异常必须优先由确定性 Observation 触发」的信号源闭集。",
-      "$comment": "source: PRD v0.4 §95.2 L6126（snake_case 映射注记随词汇表 PR 呈报）。",
+      "$comment": "source: PRD v0.4 §95.2 L6126（snake_case 映射注记 Owner 2026-09-01 照准——vocab-pr-0004）。已收编 vocab-lock production_band_vocab（vocab-pr-0004，2026-09-01）。",
       "x-pomaster-vocab": {
         "axis": "production_signal_source",
-        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "status": "collected_in_vocab_lock__vocab_pr_0004",
         "source": "PRD v0.4 §95.2 L6126"
       }
     },
@@ -130,10 +130,10 @@
       "enum": ["gt", "lt", "gte", "lte", "between"],
       "title": "击穿谓词算子五值（P34 任务定案机器词形）",
       "description": "显式算子闭集；判定通路只接受本闭集内算子 + 数值阈值（词表外算子 = NOT_EVALUABLE 显式非 OK）。",
-      "$comment": "source: P34 任务定案（wave3-plan P34 范围锚）。提请词汇表 PR 收编（pending_vocab_pr）。",
+      "$comment": "source: P34 任务定案（wave3-plan P34 范围锚）。已收编 vocab-lock production_band_vocab（vocab-pr-0004，2026-09-01，Owner 决议）。",
       "x-pomaster-vocab": {
         "axis": "band_predicate_operator",
-        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "status": "collected_in_vocab_lock__vocab_pr_0004",
         "source": "P34 任务定案"
       }
     },
@@ -142,10 +142,10 @@
       "enum": ["OK", "BREACHED", "NOT_EVALUABLE"],
       "title": "band 判定三态（fail-closed 显式）",
       "description": "OK=带内；BREACHED=击穿（产 Evidence，detected_by=tool_signal）；NOT_EVALUABLE=不可判（指标名不匹配/值非有限数值/谓词损坏——显式缺席绝不静默折算 OK）。",
-      "$comment": "source: P34 任务定案（fail-closed 三态纪律；§95.2 Deterministic Detection）。提请词汇表 PR 收编（pending_vocab_pr）。",
+      "$comment": "source: P34 任务定案（fail-closed 三态纪律；§95.2 Deterministic Detection）。已收编 vocab-lock production_band_vocab（vocab-pr-0004，2026-09-01，Owner 决议）。",
       "x-pomaster-vocab": {
         "axis": "control_band_evaluation_status",
-        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "status": "collected_in_vocab_lock__vocab_pr_0004",
         "source": "P34 任务定案"
       }
     },
@@ -153,11 +153,11 @@
       "type": "string",
       "enum": ["IMPLEMENTATION_ISSUE", "CONFIG_ISSUE", "ARCHITECTURE_EVOLUTION"],
       "title": "§95.3 诊断三分（L6153 逐字语义；SCREAMING_SNAKE 词形）",
-      "description": "Implementation Issue→IMPLEMENTATION_ISSUE / Config Issue→CONFIG_ISSUE / Architecture Evolution→ARCHITECTURE_EVOLUTION（§31 challenge classification 词形同源先例；大小写裁定呈报 Owner）。§95.3 链尾「生产现实因此成为下一轮 Current State 的外部反馈」的三分落点。",
-      "$comment": "source: PRD v0.4 §95.3 L6153 + §31 L2630 词形先例。提请词汇表 PR 收编（pending_vocab_pr）。",
+      "description": "Implementation Issue→IMPLEMENTATION_ISSUE / Config Issue→CONFIG_ISSUE / Architecture Evolution→ARCHITECTURE_EVOLUTION（§31 challenge classification 词形同源先例；大小写裁定 Owner 2026-09-01 照准）。§95.3 链尾「生产现实因此成为下一轮 Current State 的外部反馈」的三分落点。",
+      "$comment": "source: PRD v0.4 §95.3 L6153 + §31 L2630 词形先例。已收编 vocab-lock production_band_vocab（vocab-pr-0004，2026-09-01，Owner 决议）。",
       "x-pomaster-vocab": {
         "axis": "diagnosis_kind",
-        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "status": "collected_in_vocab_lock__vocab_pr_0004",
         "source": "PRD v0.4 §95.3 + §31"
       }
     },
@@ -175,10 +175,10 @@
       ],
       "title": "§90.4 自改进八信号（L5686-5693 逐字语义 snake_case 机器词形）",
       "description": "八条 bullet 一一对应（人读原文列 SELF_IMPROVEMENT_SIGNAL_PRD_LABELS 逐字镜像）；登记产物恒 POMASTER_SELF_IMPROVEMENT_CANDIDATE 呈报态——L5695 逐字「不得自动应用」。",
-      "$comment": "source: PRD v0.4 §90.4 L5686-5693。提请词汇表 PR 收编（pending_vocab_pr）。",
+      "$comment": "source: PRD v0.4 §90.4 L5686-5693。已收编 vocab-lock production_band_vocab（vocab-pr-0004，2026-09-01，Owner 决议）。",
       "x-pomaster-vocab": {
         "axis": "self_improvement_signal",
-        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "status": "collected_in_vocab_lock__vocab_pr_0004",
         "source": "PRD v0.4 §90.4"
       }
     }

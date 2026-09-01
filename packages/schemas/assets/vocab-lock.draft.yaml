@@ -5,12 +5,14 @@
 > 依据：D24（哈希伦理——本文件由内容指纹保护但永不拦写）、A2（六值超集）、A5（closed-world 前缀）、synthesis 全表。
 > 2026-08-27 修复增补（既有五块词值零改动，只登记 schema 既有值、不发明新枚举值）：新增 source_types 词轴（收编 02 信封）与 keybinding_axes 三轴（收编 04-keybinding）；aliases_v0 补 TASK-*/CHANGE-* 两族（02b §0 文法注记的 T/C 前缀收编规则）；修复 transitions 块 DEPRECATED/RETIRED 挤行。
 > 2026-08-29 PR-0001 增补（append-only 纯增量，v0.1 词值零删改）：ALIASES_V0 补 ISSUE.*/FTA-*/FB-* 三族（语料批 batch-1 实测纳管）；新增 catalog_layer_vocab 与 presentation_axes 两段、id_namespace.state_plane_refs 注记、kinds_registry.catalog_note 注记。8 件 FROZEN schema + 02b + golden-seed-mapping.md 的 @v0.1-resolved 引用保留不改：其引用语义是「该值集镜像自 v0.1 冻结基线」，v0.2 对这些镜像子集零改动，引用继续为真。
+> 2026-09-01 PR-0004 增补（append-only 纯增量，v0.1/v0.2 词值零删改；Owner 决议 2026-09-01 批准——呈报件 docs/production-feedback-p34-report.md §2.1/§2.2/§2.4/§2.6 裁定落档）：新增 production_band_vocab 段（P34 §95/§30/§55.1/§90.4 八词轴 + NOT_EVALUABLE 缺席归因三呈现码 + 八信号人读原文镜像 + 产物/常量词形两枚 + production CLI 错误词形族六词形）；id_namespace.state_plane_refs 补 POB-/PBR-/PCH-/PDG-/PSI- 五通路编号词形注记（非 governed 前缀，照 PERMIT.* 先例）。既有 @v0.2-resolved 引用（FROZEN schema/corpus 转录工具/examples 文档）保留不改：其引用语义是「该值集镜像自 v0.2 基线」，v0.3 对这些镜像子集零改动，引用继续为真。
 > 消费方：②后续全部 schemas、③Kernel 转移引擎、Behavioral Eval 种子。
 
 ```yaml
 # ============================================================
-# pomaster.vocab/v0.2-resolved   （2026-08-29 PR-0001 增补；append-only 纯增量，v0.1 词值零删改）
+# pomaster.vocab/v0.3-resolved   （2026-09-01 PR-0004 增补；append-only 纯增量，v0.1/v0.2 词值零删改）
 # 历史：原 v0-draft（三开放问题已于 2026-08-27 会话裁决）→ v0.1-resolved（2026-08-27 FROZEN）
+#       → v0.2-resolved（2026-08-29 PR-0001 增补）→ v0.3-resolved（2026-09-01 PR-0004 增补）
 # ============================================================
 
 ir_schema: pomaster.truth-index/v1-draft
@@ -81,6 +83,24 @@ id_namespace:           # closed-world（A5）：未登记前缀 = 解析即 FAT
     - form: "PERMIT.<BASE>.<SEQ>"
       plane: state/permits.json（kernel 内部台账；A8 同族不入 truth-index）
       validation: 台账存在性 + 显式四态 outcome；PERMIT_EXPIRED_OBSERVED / PERMIT_STOLEN 事件流引用同形
+    # —— PR-0004 增补（P34 production 侧车五通路编号词形；HM-/GRN-/CLM-/EXC-/EQG-/AGX- 同族：
+    #    内容寻址 sha256 前 12 hex，A4 无墙钟无随机，词形校验归 kernel ENTRY_ID_PATTERN 正则 +
+    #    台账存在性，非 governed 前缀不过 parseGovernedId）——
+    - form: "POB-<12hex>"
+      plane: .pomaster/production/observations/（observation 台账；§95.2 Deterministic Detection 判定随录）
+      validation: 内容寻址 id + 台账存在性；NOT_EVALUABLE 观测同样显式入账（breach_ref=null 禁静默丢弃）
+    - form: "PBR-<12hex>"
+      plane: .pomaster/production/breaches/（breach Evidence；detected_by 恒 tool_signal——C5 判定来自工具信号非 LLM 自报）
+      validation: 词形正则 ^PBR-[0-9a-f]{12}$ + 台账存在性（禁手造引用，EVIDENCE_NOT_FOUND）；作 tx.authorityRef 承载位（store LOCKED+STABLE→CHALLENGED 前置——确定性工具信号即挑战权威，PR-0004 登记该接线事实不是新约束：store 仅校验非空）
+    - form: "PCH-<12hex>"
+      plane: .pomaster/production/challenges/（challenge 留痕；§95.3 事务结果镜像——唯一治理事实变更经 applyTransaction 落 state/）
+      validation: 内容寻址 id + 台账存在性；一 (band, breach) 至多一留痕（重复 challenge 显式拒绝）
+    - form: "PDG-<12hex>"
+      plane: .pomaster/production/diagnoses/（diagnosis 台账；§95.2 链序第 4 拍 Agent Diagnosis）
+      validation: 内容寻址 id + 台账存在性；必挂在册 PCH-* 且其 breach_ref 可解析为在册 BREACHED 记录（DIAGNOSIS_WITHOUT_BREACH_EVIDENCE 封条——无确定性检测在先诊断不可入账）
+    - form: "PSI-<12hex>"
+      plane: .pomaster/production/self-improvement/（§90.4 候选；kind 恒 POMASTER_SELF_IMPROVEMENT_CANDIDATE 呈报态）
+      validation: 内容寻址 id + 台账存在性；零 journal 零 state/ 写入（纯呈报位——「不得自动应用」L5695 逐字）
   aliases_v0:           # 存量资产收编的 rename-on-ingest 双向链（A6）
     - { legacy: "KB-*",              canonical: "KNOWLEDGE.*" }
     - { legacy: "GRID.*",            canonical: "CAPABILITY.GRID.*" }
@@ -135,6 +155,61 @@ presentation_axes:      # 呈现层词轴（PR-0001 收编；kernel/CLI 报告�
   reconcile_exception_kinds:  # ⑥拍 reconcile exceptions[] 判别词
     values: [content_tamper]
     note: row 级正文探测失配（只读只报不拦写，D24）；证据条目（runs/claims）无 kind 字段，本词形是例外段唯一判别词形。
+
+production_band_vocab:  # P34 Production Feedback / Control Band 词轴（PR-0004 收编；Owner 决议 2026-09-01 批准；§95/§30/§55.1/§90.4 逐字 + P34 任务定案补位词；schema 冻结锚 15-production-band definitions + kernel production.ts；扩值走词汇表 PR）
+  phase_timeline:             # §30 开发时间轴四态（PRD L2554-2563 逐字）
+    values: [PRE_DEV, IN_DEV, POST_DEV, IN_PRODUCTION]
+    note: 与 state_axes.lifecycle 正交（对象生命周期轴 vs 开发阶段轴，值域不相交禁混用）；band.phase 为本轴的 band 级收窄恒 IN_PRODUCTION（§95 生产反馈带只在第四态生效——PRE_DEV/IN_DEV/POST_DEV 门禁归 Gauntlet/Gate 体系）
+  production_signal_source:   # §95.2 生产信号源五词形（PRD L6126「metric / log / error budget / SLO / control band」逐字）
+    values: [metric, log, error_budget, slo, control_band]
+    note: 空格词形转 snake_case 映射注记：error budget→error_budget、control band→control_band、SLO→slo（映射随 PR-0004 呈报 Owner 照准）
+  band_predicate_operator:    # 击穿谓词算子五值（P34 任务定案机器词形；§95.2「不得把是否异常完全交给 LLM 主观判断」的判定面闭集）
+    values: [gt, lt, gte, lte, between]
+    note: machine-evaluable 谓词——判定通路只接受显式算子+数值阈值，禁自由文本判据字段；between 须 threshold+threshold_max 成对（闭区间健康带），单阈值算子携带 threshold_max 非法（单/双阈值互斥）
+  control_band_evaluation_status:  # band 判定三态（P34 fail-closed 纪律；P32 PASS/FAIL/NOT_RUN 三态显式同源）
+    values: [OK, BREACHED, NOT_EVALUABLE]
+    note: OK=带内；BREACHED=击穿（产 Evidence，detected_by=tool_signal）；NOT_EVALUABLE=不可判（显式缺席绝不静默折算 OK）。与 03 VERDICT_VALUES 七态正交（band 判定是 §95.2 Deterministic Detection 面，不是 gate 判卷面）；缺席归因呈现码见 not_evaluable_detail_reasons
+  not_evaluable_detail_reasons:    # NOT_EVALUABLE 缺席归因呈现码三值（observation 台账 detail 字段结构化前缀）
+    values: [METRIC_NAME_MISMATCH, VALUE_NOT_FINITE_NUMBER, PREDICATE_CORRUPT]
+    note: detail 是自由文本留痕位，本轴值是其前缀呈现码（CLI hint 提示机器回溯用）；非独立字段枚举——判定三态以 control_band_evaluation_status 为准
+  diagnosis_kind:             # §95.3 诊断三分（PRD L6153 逐字语义；SCREAMING_SNAKE 词形——§31 challenge classification 词形 ARCHITECTURE_EVOLUTION 同源先例；大小写裁定 Owner 2026-09-01 照准）
+    values: [IMPLEMENTATION_ISSUE, CONFIG_ISSUE, ARCHITECTURE_EVOLUTION]
+    note: 与 §31 分类词表同形复用不发明新值；§95.2 链序封条：diagnosis 必持存在且 BREACHED 的 band evidence（kernel DIAGNOSIS_WITHOUT_BREACH_EVIDENCE）
+  capability_outcome_metric_status:  # §55.1 指标机算状态两值（P34 任务定案；fail-closed 分账）
+    values: [MEASURED, NOT_MEASURABLE_YET]
+    note: MEASURED=从既有 gate/evidence 台账机算成立（附 value+numerator/denominator 分账口径披露）；NOT_MEASURABLE_YET=不可机算显式缺席（附理由——绝不冒充数值，§55.1「Metrics 用于风险提示，不直接替代专业判断」fail-closed 半边）
+  capability_outcome_metric_key:     # §55.1 十六指标机器键（八能力 × Leading/Lagging；PRD L3583-3592 表列机械映射）
+    values: [brainstorm_change_convergence_time, in_dev_requirement_rework_rate,
+             research_high_risk_unknown_reduction_rate, research_tech_choice_rework_rate,
+             context_hit_or_redundancy_rate, agent_boundary_violation_rate,
+             profile_first_hit_rate, governance_overhead,
+             arch_gate_predev_interceptions, architecture_rework_rollback_rate,
+             relevant_knowledge_hit_rate, same_class_bug_recurrence_rate,
+             gauntlet_first_pass_pass_rate, production_change_failure_rate,
+             drift_detection_rate, cross_session_state_error_rate]
+    note: 人读呈现列（八能力三列原文）以 kernel CAPABILITY_OUTCOME_METRICS 常量逐字承载，本轴是机器消费键；v1 可算子集=gauntlet_first_pass_pass_rate + arch_gate_predev_interceptions（「开发前拦截数」口径取 ARCHITECTURE 门 verdict∈{failed,blocked} 计数——实现裁定随 P34 呈报件呈报），其余十四位显式 NOT_MEASURABLE_YET
+  self_improvement_signal:    # §90.4 自改进八信号（PRD L5686-5693 八条 bullet 逐字语义 snake_case 机器词形）
+    values: [governance_overhead_ratio_anomaly, gate_high_frequency_false_positive,
+             role_without_independent_evidence, registry_empty_or_duplicate_view,
+             context_oversized_low_utilization, repeated_architecture_challenge,
+             profile_frequent_manual_deescalation, profile_frequent_inflight_escalation]
+    note: 人读原文列 self_improvement_signal_prd_labels 逐字镜像（一词二形成文收编——content_drift 先例：登记歧义而非消歧）；登记产物 kind 恒 POMASTER_SELF_IMPROVEMENT_CANDIDATE 呈报态——「不得自动应用」（L5695 逐字）由 kernel production.ts 结构封条承载（导出面无任何 Router/Profile/Gate 配置修改函数）
+  self_improvement_signal_prd_labels:  # §90.4 八信号人读原文逐字镜像（键=机器词形，值=PRD bullet 原文；AGENT_ROLE_POOL_PRD_HEADINGS 一词二形同款先例）
+    governance_overhead_ratio_anomaly: Governance Overhead Ratio 长期异常
+    gate_high_frequency_false_positive: 某 Gate 高频产生误报
+    role_without_independent_evidence: 某 Agent Role 几乎从不带来独立 Evidence
+    registry_empty_or_duplicate_view: 某 Registry 长期为空或重复另一 Object View
+    context_oversized_low_utilization: Context 长期过大但实际使用率低
+    repeated_architecture_challenge: 相同 Architecture Challenge 重复出现
+    profile_frequent_manual_deescalation: Profile 经常被人工降级，说明 Router 过度保守
+    profile_frequent_inflight_escalation: Profile 经常在开发中升级，说明 Triage 过度乐观
+  product_word_forms:         # 产物/常量词形（单词常量位；MEMORY_DRIFT 单词常量承载先例）
+    POMASTER_SELF_IMPROVEMENT_CANDIDATE: §90.4 L5695 逐字产物词形（登记产物 kind 字段恒携带；呈报位非应用位）
+    tool_signal: §95.2 Deterministic Detection 判定主体词形（breach Evidence detected_by 恒值——C5「判定来自工具信号非 LLM 自报」的承载位）
+  cli_error_codes:            # production CLI 错误词形族六值（P34b 任务定案；kernel GovernanceError 码位之上的命令面呈现码——确定性一一对应映射，禁子串/模糊猜测映射）
+    values: [BAND_SCHEMA_INVALID, BAND_NOT_FOUND, OBSERVATION_NOT_EVALUABLE,
+             CHALLENGE_REJECTED, EVIDENCE_NOT_FOUND, DIAGNOSIS_WITHOUT_BREACH_EVIDENCE]
+    note: 第 6 位 DIAGNOSIS_WITHOUT_BREACH_EVIDENCE 与 kernel GovernanceErrorCode 同名同义（族内唯一同名者，零二次造词——透传复用）。命令组词形 production + 六子命令名（band/evaluate/challenge/diagnose/metrics/self-improvement）非本词表管辖（命令面命名权 Owner 2026-09-01 认可，落档 docs/kernel-api.md production 命令段；memory CLI 六命令 P33b 同款先例：词表只收错误词形族不收命令名）
 
 digest_ethics:          # D24 落地注记 —— 全局适用于一切 sha256/digest 字段
   write_blocking: false           # digest 永不作为写入门闸

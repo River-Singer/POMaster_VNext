@@ -12,8 +12,8 @@
  * 本参考实现不收录（不发明规则 id；届时随 rule_v0 catalog 落地再扩）。
  *
  * TODO(vocab-pr)：档位词 MINIMAL/LIGHT/STANDARD（及 prompt_only 预留的 STRICT/CRITICAL）
- * 尚未入 vocab-lock@v0.2-resolved（词源：thread-C §3.2/§7 + 根 README 八拍①；
- * PR-0001 未收编本词轴）；词轴收编前本文件只消费上述四词形，禁止扩值。
+ * 尚未入 vocab-lock@v0.3-resolved（词源：thread-C §3.2/§7 + 根 README 八拍①；
+ * PR-0001/PR-0004 未收编本词轴）；词轴收编前本文件只消费上述四词形，禁止扩值。
  *
  * 纪律镜像：
  * - C1 条件触发规则桶：不打分、不 LLM 裁决，每条规则可单测；

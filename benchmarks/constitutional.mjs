@@ -3,8 +3,8 @@
  * （PRD §90.3 第三档；测试战略 L6-3）。
  *
  * 场景：「修改 State Model 并新增 Kernel Primitive」——宪法级/架构变更，
- * §90.3 期望 Profile = STRICT + Meta-Governance（口径映射待 Owner A3 裁定，
- * 见本文件 a3_pending_items——不假绿也不误红）。
+ * §90.3 期望 Profile = STRICT + Meta-Governance（映射口径已裁定：catalog 锚即档，
+ * Owner 决议 2026-09-01，见本文件 a3_ruling）。
  *
  * 结构可区分性（§90.3「三类任务走同一套流程 = Adaptive Governance 失败」的判卷化）：
  *   - tiny / normal 走 CLI triage 关键词引擎（surface = "cli:triage"，信封只产
@@ -13,27 +13,41 @@
  *     全部取 packages/kernel 既有 API 真实执行（禁止 mock 假跑）：
  *       1. catalog-lock 校验：readCatalogLock + verifyCatalogLock（全量条目 sha256 对账，
  *          D24 read-side 指纹）；
- *       2. profile 锚定：catalog-lock profile（web-standard@0）存在性；
- *       3. 宪法级条目面：lock entries 的 GATE.*（gate recipe 5 条）与 AUTHORITY.*
- *          （§90.2 Meta-Governance Protected Set 的 Authority Model 锚 5 条）——
- *          经共享读取器单点取得，零 readdir 旁路；
- *       4. DEF-GATEKEEPER「cannot self-approve」观测器行为校验（gatekeeper.ts 既有 API）：
+ *       2. profile 锚定：catalog-lock profile（web-standard@0）存在性——catalog 锚即档
+ *          （A3 裁定 3，Owner 决议 2026-09-01）；
+ *       3. 宪法级条目面：lock entries 的 GATE.*（gate recipe 5 条，A3 裁定 1 = 全量执行面）
+ *          与 AUTHORITY.*（§90.2 Meta-Governance Protected Set 的 Authority Model 锚 5 条）
+ *          ——经共享读取器单点取得，零 readdir 旁路；
+ *       4. gate 判卷就绪校验（A3 裁定 1+2 执行面）：5 条 gate 逐条做「定义在场 + lock 哈希锚
+ *          + judging_rules 四硬判据词形（草稿升硬）」校验。诚实边界（关键）：vNext 仓库自身
+ *          无业务分母（gate 真实判卷需要 subject 数据面），执行面 = 就绪校验，每条 gate 显式
+ *          产出 execution="not_run"（分母缺席）计入独立披露字段 constitutional_gate_readiness
+ *          ——ok 吃「5/5 就绪 + 四规则词形完整」，不吃假判卷；
+ *       5. fixture 演示判卷（红绿各一，加分量）：kernel normalizeGateResult（C1 七态判卷器）
+ *          以 catalog gate_def 锚真实执行——绿 = 合式载荷归一为 passed（trust 孪生一致），
+ *          红 = counts.not_applicable 缺失被 FATAL 拒收（裁定 2 规则 1 的判卷器机制）；
+ *          fixture 面（subject TEST.* + is_fixture=true，Q3 隔离）不冒充业务分母判卷，
+ *          5 条 gate 的执行 verdict 仍为 not_run；
+ *       6. DEF-GATEKEEPER「cannot self-approve」观测器行为校验（gatekeeper.ts 既有 API）：
  *          临时 store fixture（mkdtemp，前缀 pvnext-kernel-test-，finally 全树删除）上
  *          验证 同 execution 既提 proposal（CLM）又 ALLOW（GRN verdict=passed）→ drift
  *          触发；身份分离 → 不触发；空 store → 零分母不触发。
  *   - 三档各自产出路径签名（执行面 / gate 集合 / artifact 集合 / profile 值），脚本内
  *     机器断言两两不同；三者出现同路 → 本脚本红（§90.3 失败条款的判卷化）。
  *
- * A3 pending 纪律：宪法档「口径」（具体执行哪些宪法 gate、判定阈值、STRICT 档映射）
- * 属 Owner A3 裁定位——凡依赖未裁口径的项列入 a3_pending_items（ruling="PENDING_A3"），
- * 不参与 ok 判定；机器上今天可真判的部分（catalog-lock 完整性 / 路径签名可区分性 /
- * profile 锚定存在性 / gatekeeper 观测器行为）正常断言参与 ok。
+ * A3 裁定纪律（Owner 决议 2026-09-01，按推荐全收）：三项裁定记入 a3_ruling
+ * （ruling="APPROVED_OWNER_2026_09_01"，三项裁定内容逐字）——「PENDING_A3 不参与 ok」
+ * 机制已移除，被裁定项转正为参与 ok 判定的真断言：
+ *   裁定 1（gate 子集）→ constitutional-gate-subset-anchored（精确集合）+
+ *   gate-judging-readiness-5-of-5；裁定 2（判定阈值）→ gate-judging-rules-hardened-wordform +
+ *   gate-result-fixture-red/green；裁定 3（STRICT 映射）→ profile-anchor-present +
+ *   distinct-axis-profile-value（catalog 锚即档，无双轨）。
  *
  * 退出码：0 = ok 断言全过；1 = 断言失败（含三档同路）；2 = 基准装置错误（kernel/CLI dist 缺失）。
  * 单跑：node benchmarks/constitutional.mjs（内部真跑 tiny+normal 以取得三档真实签名）；
  * 亦可由 run-all.mjs 传入已跑的两档条目复用，避免重复执行。
  */
-import { existsSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import path from "node:path";
@@ -43,8 +57,47 @@ import { runNormalBenchmark } from "./normal.mjs";
 
 export const CONSTITUTIONAL_TIER = "constitutional";
 export const CONSTITUTIONAL_SCENARIO = "修改 State Model 并新增 Kernel Primitive";
-/** §90.3 期望词形；与 triage 档位的映射口径待 A3（STRICT 在 triage v0 为 prompt_only 预留）。 */
+/** §90.3 期望词形；映射口径已裁定（A3 裁定 3，Owner 2026-09-01）：catalog 锚即档——
+ *  呈现面以 catalog-lock profile 锚（name@version）为宪法档位词形，triage 不物化 STRICT
+ *  档（prompt_only 预留不动），无双轨。 */
 export const CONSTITUTIONAL_EXPECTED = "STRICT + Meta-Governance";
+
+// ============================================================
+// A3 裁定常量（Owner 决议 2026-09-01，本会话 AskUserQuestion 直答，按推荐全收；
+// 三项裁定内容逐字——台账由主控统一记，此处为执行面事实源）
+// ============================================================
+
+/** A3 裁定 id。 */
+export const A3_RULING_ID = "APPROVED_OWNER_2026_09_01";
+
+/** 裁定 1（gate 子集，逐字）：宪法档执行面 = catalog 5 条 GATE.* 全部。 */
+export const A3_RULING_GATE_SUBSET =
+  "宪法档执行面 = catalog 5 条 GATE.* 全部（BE.API.CONTRACT_CHECKS / BE.CHG.CONTRACT_CHANGE_CHECKS / CHG.PRECHANGE_CHECKS / WEB.API.REQUEST_CHECKS / WEB.GRID.CHECKS）";
+
+/** 裁定 2（判定阈值，逐字）：judging_rules 四条草稿纪律全部升为硬判据。 */
+export const A3_RULING_THRESHOLDS =
+  "catalog gate_def_draft.judging_rules 四条草稿纪律（counts_not_applicable_required / trust_twin / blindspot_evidence / aggregate_honesty）全部升为硬判据";
+
+/** 裁定 3（STRICT 映射，逐字）：catalog 锚即档，无双轨。 */
+export const A3_RULING_STRICT_MAPPING =
+  "catalog 锚即档——catalog-lock 的 profile 锚即宪法档位词形，triage 不物化 STRICT 档，无双轨";
+
+/** 裁定 1 执行面的 gate id 全集（与 catalog-lock entries 的 GATE.* 5 条排序对账）。 */
+export const A3_RULING_GATE_IDS = [
+  "GATE.BE.API.CONTRACT_CHECKS",
+  "GATE.BE.CHG.CONTRACT_CHANGE_CHECKS",
+  "GATE.CHG.PRECHANGE_CHECKS",
+  "GATE.WEB.API.REQUEST_CHECKS",
+  "GATE.WEB.GRID.CHECKS",
+];
+
+/** 裁定 2 的四硬判据键（gate_def_draft.judging_rules 词形，与 5 条 gate 定义逐字同键）。 */
+export const A3_GATE_JUDGING_RULE_KEYS = [
+  "counts_not_applicable_required",
+  "trust_twin",
+  "blindspot_evidence",
+  "aggregate_honesty",
+];
 
 /** 临时 store fixture 目录前缀（铁律：绝不触碰真实 ~/.claude / 用户 home）。 */
 const FIXTURE_PREFIX = "pvnext-kernel-test-";
@@ -142,9 +195,10 @@ export async function runConstitutionalBenchmark(options = {}) {
   let policiesTotal = 0;
   let policiesHumanOwner = 0;
   let catalogBroken = null;
+  let catalogRoot = null;
 
   try {
-    const catalogRoot = kernel.resolveCatalogRoot();
+    catalogRoot = kernel.resolveCatalogRoot();
     lock = kernel.readCatalogLock(catalogRoot);
     verification = kernel.verifyCatalogLock(catalogRoot, lock);
     gateEntryIds = lock.entries.filter((e) => e.id.startsWith("GATE.")).map((e) => e.id);
@@ -170,13 +224,20 @@ export async function runConstitutionalBenchmark(options = {}) {
     assertions.push({
       name: "profile-anchor-present",
       ok: anchorShaped,
-      detail: `catalog-lock profile="${profileAnchor}"（catalog_version=${lock.catalog_version}）${anchorShaped ? "，name@version 词形锚存在" : "，锚缺失或词形非法"}`,
+      detail: `catalog-lock profile="${profileAnchor}"（catalog_version=${lock.catalog_version}）${anchorShaped ? "，name@version 词形锚存在——catalog 锚即档（A3 裁定 3，Owner 2026-09-01）" : "，锚缺失或词形非法"}`,
     });
 
+    // A3 裁定 1 转正（Owner 2026-09-01）：执行面 = catalog 5 条 GATE.* 全部——
+    // 由旧「>0 存在性」升为与裁定词形逐一对应的精确集合判卷。
+    const subsetExact =
+      gateEntryIds.length === A3_RULING_GATE_IDS.length &&
+      [...gateEntryIds].sort().join(",") === [...A3_RULING_GATE_IDS].sort().join(",");
     assertions.push({
       name: "constitutional-gate-subset-anchored",
-      ok: gateEntryIds.length > 0 && gateEntryIds.every((id) => id.startsWith("GATE.")),
-      detail: `GATE.* 条目 ${gateEntryIds.length} 条经 lock 哈希校验在场（${gateEntryIds.join(", ")}）；具体执行子集与阈值属 A3 pending，不在本断言判定范围`,
+      ok: subsetExact,
+      detail: subsetExact
+        ? `A3 裁定 1 转正（Owner 2026-09-01）：GATE.* 执行面 = catalog 全量 5 条且与裁定词形逐一对应（${gateEntryIds.join(", ")}），全部经 lock 哈希校验在场`
+        : `A3 裁定 1 失配：lock GATE.* 集合（${gateEntryIds.join(", ") || "空"}）≠ 裁定 5 条全集（${A3_RULING_GATE_IDS.join(", ")}）`,
     });
 
     assertions.push({
@@ -190,6 +251,99 @@ export async function runConstitutionalBenchmark(options = {}) {
       ok: policiesTotal > 0 && policiesHumanOwner === policiesTotal,
       detail: `loadCatalogPolicies=${policiesTotal} 条（共享读取器词表对账 fail-closed 真实执行）；authority.owner=HUMAN_OWNER ${policiesHumanOwner}/${policiesTotal}（cannot self-approve 锚）`,
     });
+  }
+
+  // ============================================================
+  // 1b) A3 裁定 1+2 执行面：gate 判卷就绪校验（5 条全量）+ fixture 演示判卷（红绿各一）
+  //     诚实边界：vNext 仓库自身无业务分母（subject 数据面）→ 执行面 = 就绪校验，
+  //     每条 gate 显式 execution="not_run"（分母缺席）计入 constitutional_gate_readiness，
+  //     ok 吃「5/5 就绪 + 四规则词形完整」，不吃假判卷。
+  // ============================================================
+  let gateReadiness = [];
+  let readinessCrashed = null;
+  if (catalogRoot !== null && lock !== null) {
+    try {
+      gateReadiness = checkGateJudgingReadiness(kernel, catalogRoot, lock);
+    } catch (error) {
+      readinessCrashed = error instanceof Error ? error.message : String(error);
+    }
+  }
+
+  if (gateReadiness.length === A3_RULING_GATE_IDS.length) {
+    const ready = gateReadiness.filter((r) => r.readiness === "ready");
+    const notReady = gateReadiness.filter((r) => r.readiness !== "ready");
+    // not_run 封条：披露字段的 execution 恒为 not_run（分母缺席），禁假 passed 混入。
+    const noFakeJudging = gateReadiness.every((r) => r.execution === "not_run");
+    assertions.push({
+      name: "gate-judging-readiness-5-of-5",
+      ok: ready.length === 5 && noFakeJudging,
+      detail:
+        ready.length === 5 && noFakeJudging
+          ? `A3 裁定 1+2 执行面（Owner 2026-09-01）：5/5 gate 判卷就绪（定义在场 + lock 哈希锚 + gate_def 锚词形逐条对账）；execution 恒 not_run（分母缺席显式披露于 constitutional_gate_readiness，禁假判卷；ok 只吃就绪不吃假 verdict）`
+          : `就绪 ${ready.length}/5${notReady.length > 0 ? `（未就绪：${notReady.map((r) => `${r.gate_id}[${r.problems.join("；")}]`).join("；")}）` : ""}${noFakeJudging ? "" : "；披露字段出现非 not_run 的 execution（假判卷泄漏）"}`,
+    });
+
+    const rulesOk = gateReadiness.every((r) => r.rules_complete);
+    assertions.push({
+      name: "gate-judging-rules-hardened-wordform",
+      ok: rulesOk,
+      detail: rulesOk
+        ? `A3 裁定 2 转正（Owner 2026-09-01）：judging_rules 四硬判据（${A3_GATE_JUDGING_RULE_KEYS.join(" / ")}）在 5 条 gate_def_draft 中全部可解析且非空（草稿词形升硬=词形逐条校验；判卷器机制另见 gate-result-fixture-red/green）`
+        : `四硬判据词形残缺：${gateReadiness
+            .filter((r) => !r.rules_complete)
+            .map((r) => {
+              const missing = A3_GATE_JUDGING_RULE_KEYS.filter((k) => r.judging_rules[k] !== true);
+              return `${r.gate_id} 缺 ${missing.join("/")}`;
+            })
+            .join("；")}`,
+    });
+
+    if (ready.length === 5) {
+      const anchor = ready[0].anchor; // 来自 catalog 定义非硬编码（GATE.BE.API.CONTRACT_CHECKS@0.1.0）
+      try {
+        const fixture = runGateResultFixtures(kernel, anchor);
+        assertions.push({
+          name: "gate-result-fixture-green",
+          ok:
+            fixture.green.verdict === "passed" &&
+            fixture.green.trust.recomputed.matchesAsserted === true &&
+            fixture.green.gateDef === anchor,
+          detail: `fixture 绿（演示判卷，非业务分母）：normalizeGateResult 以 catalog 锚 ${anchor} 归一合式载荷 → verdict=passed，trust.asserted/recomputed 孪生一致（subject TEST.* + is_fixture=true，Q3 隔离；5 条 gate 执行 verdict 仍 not_run）`,
+        });
+        assertions.push({
+          name: "gate-result-fixture-red",
+          ok: fixture.redCaughtCode === "GATE_COUNTS_INVALID",
+          detail:
+            fixture.redCaughtCode === "GATE_COUNTS_INVALID"
+              ? `fixture 红（演示判卷，非业务分母）：counts.not_applicable 缺失 → FATAL GATE_COUNTS_INVALID（裁定 2 规则 1 counts_not_applicable_required 的判卷器机制真实执行——『为何没查』必须是数字而非沉默）`
+              : `fixture 红失效：畸形载荷未被 GATE_COUNTS_INVALID 拒收（${fixture.redCaughtCode ?? "未抛错"}）——判卷器机制漂移`,
+        });
+      } catch (error) {
+        fail(
+          "gate-result-fixture-green",
+          `fixture 演示判卷执行崩溃：${error instanceof Error ? error.message : String(error)}`,
+        );
+        fail("gate-result-fixture-red", "fixture 演示判卷执行崩溃（同因红）");
+      }
+    } else {
+      fail(
+        "gate-result-fixture-green",
+        `gate 就绪未 5/5（未就绪：${notReady.map((r) => r.gate_id).join(", ") || "unknown"}）——fixture 演示判卷不假跑`,
+      );
+      fail(
+        "gate-result-fixture-red",
+        `gate 就绪未 5/5（未就绪：${notReady.map((r) => r.gate_id).join(", ") || "unknown"}）——fixture 演示判卷不假跑`,
+      );
+    }
+  } else {
+    const why =
+      readinessCrashed !== null
+        ? `gate 就绪校验崩溃：${readinessCrashed}`
+        : `catalog 治理面不可用（catalogRoot=${catalogRoot === null ? "null" : "ok"}，lock=${lock === null ? "null" : "ok"}）——A3 裁定执行面无法校验`;
+    fail("gate-judging-readiness-5-of-5", why);
+    fail("gate-judging-rules-hardened-wordform", `${why}（同因红）`);
+    fail("gate-result-fixture-green", `${why}——fixture 演示判卷不假跑`);
+    fail("gate-result-fixture-red", `${why}——fixture 演示判卷不假跑`);
   }
 
   // ============================================================
@@ -243,6 +397,8 @@ export async function runConstitutionalBenchmark(options = {}) {
     artifacts: [
       "catalog-lock-verification",
       "catalog-authority-anchor",
+      "gate-judging-readiness-report",
+      "gate-result-fixture-red-green",
       "gatekeeper-drift-report",
       "three-tier-path-signature",
     ],
@@ -302,7 +458,7 @@ export async function runConstitutionalBenchmark(options = {}) {
   assertions.push({
     name: "distinct-axis-profile-value",
     ok: axisProfileDistinct,
-    detail: `profile 值轴：constitutional 锚 catalog profile="${signatureConstitutional.profile}"，tiny="${signatureTiny.profile}"，normal="${signatureNormal.profile}"（triage 档位词 vs catalog name@version 锚）`,
+    detail: `profile 值轴：constitutional 锚 catalog profile="${signatureConstitutional.profile}"，tiny="${signatureTiny.profile}"，normal="${signatureNormal.profile}"（catalog 锚即档——A3 裁定 3，Owner 2026-09-01；triage 不物化 STRICT 档，无双轨）`,
   });
 
   const ok = assertions.length > 0 && assertions.every((a) => a.ok);
@@ -311,7 +467,8 @@ export async function runConstitutionalBenchmark(options = {}) {
     tier: CONSTITUTIONAL_TIER,
     scenario: CONSTITUTIONAL_SCENARIO,
     expected: CONSTITUTIONAL_EXPECTED,
-    /** catalog profile 锚（非 triage 档位词——宪法档不走 triage，见 surface 轴）。 */
+    /** catalog profile 锚（非 triage 档位词）。A3 裁定 3（Owner 2026-09-01）：catalog 锚
+     *  即档——profile_kind 的语义自 pending 候选转为裁定记录（无双轨）。 */
     profile: lock !== null ? lock.profile : null,
     profile_kind: "catalog-profile-anchor",
     surface: signatureConstitutional.surface,
@@ -345,8 +502,12 @@ export async function runConstitutionalBenchmark(options = {}) {
       normal: signatureNormal,
       tiny: signatureTiny,
     },
-    /** A3 pending 清单（不参与 ok 判定；Owner 裁定后逐项转正为断言）。 */
-    a3_pending_items: a3PendingItems(gateEntryIds),
+    /** A3 裁定记录（Owner 2026-09-01，三项裁定内容逐字；原 a3_pending_items 机制移除，
+     *  被裁定项已转正为参与 ok 判定的真断言，promoted_to_assertions 记映射）。 */
+    a3_ruling: a3Ruling(),
+    /** A3 裁定 1+2 执行面披露字段：5 条 gate 判卷就绪明细 + execution=not_run（分母缺席
+     *  显式披露——ok 吃「5/5 就绪 + 四规则词形完整」，不吃假判卷）。 */
+    constitutional_gate_readiness: gateReadiness,
     durationMs: Math.round(performance.now() - startedAt),
     ok,
     assertions,
@@ -417,44 +578,188 @@ function writeEvidence(rootDir, { claims, runs }) {
   }
 }
 
-/** A3 pending 清单：宪法档口径裁定位（不参与 ok；裁定后逐项转正）。 */
-function a3PendingItems(gateEntryIds) {
-  return [
-    {
-      id: "constitutional_gate_subset_selection",
-      ruling: "PENDING_A3",
-      question:
-        "宪法档具体执行哪些宪法 gate（catalog 5 条 GATE.* recipe 的执行子集或全量）",
-      candidates: gateEntryIds,
-      current_behavior:
-        "仅经 catalog-lock 哈希校验锚定在场（anchored），不执行任何 gate 判卷；不参与 ok",
-      participates_in_ok: false,
-    },
-    {
-      id: "constitutional_gate_thresholds",
-      ruling: "PENDING_A3",
-      question:
-        "宪法档 gate 判定阈值与 passed 判据（gate_def_draft.judging_rules 为草稿词形，非裁定）",
-      candidates: [
-        "counts_not_applicable_required",
-        "trust_twin",
-        "blindspot_evidence",
-        "aggregate_honesty",
-      ],
-      current_behavior: "不做 gate 判卷，因此无阈值断言；不参与 ok",
-      participates_in_ok: false,
-    },
-    {
-      id: "strict_profile_mapping",
-      ruling: "PENDING_A3",
-      question:
-        "§90.3 期望「STRICT + Meta-Governance」与本基准呈现面的映射口径：triage v0 引擎无 STRICT 档（prompt_only 预留，ceiling_candidates 恒空）；宪法档现以 catalog profile 锚（name@version）呈现治理档",
-      candidates: ["triage-STRICT-物化", "catalog-profile-锚即档", "双轨并行"],
-      current_behavior:
-        "profile 字段如实呈现 catalog 锚原值并标 profile_kind=catalog-profile-anchor，不冒充 triage STRICT；不参与 ok",
-      participates_in_ok: false,
-    },
-  ];
+/**
+ * A3 裁定记录（Owner 决议 2026-09-01，按推荐全收；三项裁定内容逐字）。
+ * 原 a3_pending_items（ruling="PENDING_A3"，不参与 ok）机制移除——三项均已转正为
+ * 参与 ok 判定的真断言（promoted_to_assertions 记映射）：
+ *   - 裁定 1（gate 子集）：执行面 = catalog 5 条 GATE.* 全部 →
+ *     constitutional-gate-subset-anchored（精确集合）+ gate-judging-readiness-5-of-5；
+ *   - 裁定 2（判定阈值）：judging_rules 四条草稿纪律全部升为硬判据 →
+ *     gate-judging-rules-hardened-wordform + gate-result-fixture-red/green（判卷器机制演示）；
+ *   - 裁定 3（STRICT 映射）：catalog 锚即档、无双轨 →
+ *     profile-anchor-present + distinct-axis-profile-value。
+ */
+function a3Ruling() {
+  return {
+    ruling: A3_RULING_ID,
+    source: "Owner 决议 2026-09-01（本会话 AskUserQuestion 直答，按推荐全收）",
+    items: [
+      {
+        id: "constitutional_gate_subset_selection",
+        ruling: A3_RULING_ID,
+        decision: A3_RULING_GATE_SUBSET,
+        promoted_to_assertions: [
+          "constitutional-gate-subset-anchored",
+          "gate-judging-readiness-5-of-5",
+        ],
+      },
+      {
+        id: "constitutional_gate_thresholds",
+        ruling: A3_RULING_ID,
+        decision: A3_RULING_THRESHOLDS,
+        promoted_to_assertions: [
+          "gate-judging-rules-hardened-wordform",
+          "gate-result-fixture-red",
+          "gate-result-fixture-green",
+        ],
+      },
+      {
+        id: "strict_profile_mapping",
+        ruling: A3_RULING_ID,
+        decision: A3_RULING_STRICT_MAPPING,
+        promoted_to_assertions: ["profile-anchor-present", "distinct-axis-profile-value"],
+      },
+    ],
+  };
+}
+
+/**
+ * A3 裁定 1+2 执行面：逐 gate「判卷就绪校验」（Owner 决议 2026-09-01）。
+ * 三要素（全过才 readiness="ready"）：
+ *   1. 定义在场：lock 登记路径文件可读、JSON 可解析、id 与 lock 条目一致、
+ *      gate_def_draft.anchor 呈 "<id>@semver" 词形且与 id 同源；
+ *   2. lock 哈希锚：文件字节 sha256 与 lock content_sha256 一致（per-gate 对账，
+ *      kernel.sha256OfUtf8 与 verifyCatalogLock 同口径）；
+ *   3. judging_rules 四硬判据词形（裁定 2：草稿升硬 = 校验每条 rule 在 gate_def 中
+ *      可解析且非空——四键齐、每键值为非空字符串）。
+ * 诚实边界：execution 恒 "not_run"——vNext 仓库自身无业务分母（subject 数据面），
+ * gate 真实判卷需在消费项目数据面上执行；not_run 显式披露（not_run_reason 随行），
+ * 禁假 passed。gate 文件经 lock 登记路径读取（非 readdir 旁路）。
+ */
+function checkGateJudgingReadiness(kernel, catalogRoot, lock) {
+  const records = [];
+  for (const entry of lock.entries.filter((e) => e.id.startsWith("GATE."))) {
+    const problems = [];
+    let raw = null;
+    let body = null;
+    try {
+      raw = readFileSync(path.join(catalogRoot, entry.path), "utf8");
+    } catch {
+      problems.push("定义文件不可读");
+    }
+    if (raw !== null) {
+      try {
+        body = JSON.parse(raw);
+      } catch {
+        problems.push("定义 JSON 不可解析");
+      }
+    }
+    const anchorPattern = new RegExp(`^${entry.id.replace(/\./g, "\\.")}@[0-9]+\\.[0-9]+\\.[0-9]+$`);
+    if (raw === null || body === null) {
+      records.push({
+        gate_id: entry.id,
+        lock_path: entry.path,
+        anchor: null,
+        definition_present: false,
+        lock_hash_anchored: false,
+        anchor_wordform_ok: false,
+        judging_rules: {},
+        rules_complete: false,
+        readiness: "not_ready",
+        problems,
+        execution: "not_run",
+        not_run_reason:
+          "分母缺席（vNext 仓库自身无业务 subject 数据面）；且定义不可读/不可解析，就绪校验失败",
+      });
+      continue;
+    }
+    if (body.id !== entry.id) problems.push(`id 失配（文件=${body.id} lock=${entry.id}）`);
+    const draft =
+      typeof body.gate_def_draft === "object" && body.gate_def_draft !== null
+        ? body.gate_def_draft
+        : null;
+    const anchor = draft !== null && typeof draft.anchor === "string" ? draft.anchor : null;
+    const anchorWordformOk = anchor !== null && anchorPattern.test(anchor);
+    if (!anchorWordformOk) problems.push(`gate_def 锚词形非法（${String(anchor)}）`);
+    const rules =
+      draft !== null && typeof draft.judging_rules === "object" && draft.judging_rules !== null
+        ? draft.judging_rules
+        : null;
+    const ruleShape = {};
+    let rulesComplete = true;
+    for (const key of A3_GATE_JUDGING_RULE_KEYS) {
+      const value = rules !== null ? rules[key] : undefined;
+      const ok = typeof value === "string" && value.trim().length > 0;
+      ruleShape[key] = ok;
+      if (!ok) rulesComplete = false;
+    }
+    if (!rulesComplete) problems.push("judging_rules 四硬判据词形残缺");
+    const lockHashAnchored = kernel.sha256OfUtf8(raw) === entry.content_sha256;
+    if (!lockHashAnchored) problems.push("lock 哈希失配（物料改而未重锁）");
+    records.push({
+      gate_id: entry.id,
+      lock_path: entry.path,
+      anchor,
+      definition_present: true,
+      lock_hash_anchored: lockHashAnchored,
+      anchor_wordform_ok: anchorWordformOk,
+      judging_rules: ruleShape,
+      rules_complete: rulesComplete,
+      readiness: problems.length === 0 ? "ready" : "not_ready",
+      problems,
+      execution: "not_run",
+      not_run_reason:
+        "分母缺席：vNext 仓库自身无业务 subject 数据面，gate 真实判卷需在消费项目数据面执行（A3 裁定执行面=就绪校验；not_run 显式披露，禁假 passed）",
+    });
+  }
+  return records;
+}
+
+/**
+ * fixture 演示判卷（红绿各一，加分量）：kernel normalizeGateResult（C1 七态判卷器）
+ * 以 catalog gate_def 锚真实执行。绿 = 合式载荷（counts.not_applicable 在场 +
+ * trust.asserted/recomputed 孪生一致）归一为 verdict=passed；红 = counts.not_applicable
+ * 缺失 → FATAL GATE_COUNTS_INVALID（裁定 2 规则 1 counts_not_applicable_required 的
+ * 判卷器机制）。纯函数零落盘；subject TEST.* + is_fixture=true（Q3 fixture 隔离），
+ * 不冒充业务分母判卷——5 条 gate 的执行 verdict 仍为 not_run。
+ */
+function runGateResultFixtures(kernel, anchor) {
+  const claimedBy = { actorType: "tool", actor: "benchmarks:constitutional", selfAttested: true };
+  const context = {
+    ranAtSeq: 0,
+    trigger: "on_demand",
+    tool: "benchmarks:constitutional",
+    toolVersion: "0.1.0",
+    metricDialect: "bench:fixture_gate_payload",
+  };
+  const basePayload = {
+    grn: "GRN-9001",
+    gate: "BE_API_CONTRACT_CHECKS",
+    gate_def: anchor,
+    verdict: "passed",
+    subject_id: "TEST.GATE_FIXTURE",
+    is_fixture: true,
+    counts: { scanned: 3, applicable_scanned: 3, violations: 0, not_applicable: 0 },
+    trust: { asserted: { violations: 0 }, recomputed: { violations: 0 } },
+  };
+  const green = kernel.normalizeGateResult({ value: basePayload, claimedBy }, context);
+  let redCaught = null;
+  try {
+    kernel.normalizeGateResult(
+      {
+        value: {
+          ...basePayload,
+          grn: "GRN-9002",
+          counts: { scanned: 3, applicable_scanned: 3, violations: 0 }, // not_applicable 缺失
+        },
+        claimedBy,
+      },
+      context,
+    );
+  } catch (error) {
+    redCaught = error;
+  }
+  return { green, redCaughtCode: redCaught !== null ? redCaught.code : null };
 }
 
 /** 装置错误条目（exit 2 语义）：kernel/CLI 缺失或崩溃——非断言失败。 */
@@ -472,7 +777,8 @@ function harnessError(startedAt, assertions, message, extra = {}) {
     catalog: null,
     gatekeeper: null,
     path_signature: null,
-    a3_pending_items: [],
+    a3_ruling: null,
+    constitutional_gate_readiness: null,
     durationMs: Math.round(performance.now() - startedAt),
     ok: false,
     error: message,
@@ -497,7 +803,7 @@ if (isMain) {
       console.log(`  [${a.ok ? "PASS" : "FAIL"}] ${a.name}: ${a.detail}`);
     }
     console.log(
-      `[constitutional] surface=${entry.surface} profile=${entry.profile} gates=${entry.catalog?.gate_entry_ids.length ?? 0} a3_pending=${entry.a3_pending_items.length} durationMs=${entry.durationMs} → ${entry.ok ? "PASS" : "FAIL"}${entry.error ? ` (${entry.error})` : ""}`,
+      `[constitutional] surface=${entry.surface} profile=${entry.profile} gates=${entry.catalog?.gate_entry_ids.length ?? 0} a3_ruling=${entry.a3_ruling?.ruling ?? "none"} readiness=${Array.isArray(entry.constitutional_gate_readiness) ? entry.constitutional_gate_readiness.filter((r) => r.readiness === "ready").length : 0}/5 durationMs=${entry.durationMs} → ${entry.ok ? "PASS" : "FAIL"}${entry.error ? ` (${entry.error})` : ""}`,
     );
     console.log(
       `  [signature] constitutional surface="${entry.path_signature.constitutional.surface}" gates=${entry.path_signature.constitutional.gate_ids.length} | tiny surface="${entry.path_signature.tiny.surface}" gates=${entry.path_signature.tiny.gate_ids.length} | normal surface="${entry.path_signature.normal.surface}" gates=${entry.path_signature.normal.gate_ids.length}`,

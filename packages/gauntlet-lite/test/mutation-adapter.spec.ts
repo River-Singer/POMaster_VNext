@@ -22,7 +22,8 @@
  *   ②b spawn 前 rmSync 失效化（陈旧报告误绿通道封死 + 失效化失败 pre_run_failed）；
  * - 大输出 maxBuffer 回归（>1MB stdout 不被 Node 默认 1MB ENOBUFS 打断）；
  * - mutmut 腿版本锚强制（pytest-cov 腿同款 fail-closed）；
- * - provisional 阈值呈报项登记（「provisional 待 A4」词形钉死——系统不自批）。
+ * - A4 阈值批准登记（status=approved + approved_by=OWNER 2026-09-01 decision——
+ *   Owner 决议 2026-09-01 批准转正；再变更必须 Owner 批准，系统不自批）。
  */
 import Ajv from "ajv";
 import addFormats from "ajv-formats";
@@ -427,7 +428,7 @@ describe("prepare：HARDENING 档专属档位语义（决策 D1）+ 三闸缺席
     expect(plan.versionProbeCommand).toBe("corepack pnpm exec stryker --version");
   });
 
-  it("配置显式 thresholds / report 生效（阈值配置化；provisional 旗翻转）", () => {
+  it("配置显式 thresholds / report 生效（阈值配置化；出厂兜底旗翻转）", () => {
     put(
       MUTATION_GATE_CONFIG_FILE,
       JSON.stringify({
@@ -555,7 +556,7 @@ function strykerReadyFixture(reportText: string | null, thresholds?: object): vo
 }
 
 describe("kill score 判卷矩阵（violations=双阈值违例，决策 D2；幸存者明细=PRD §28 survivor list）", () => {
-  it("满分绿：3 killed → kill score 100% → passed（scopeNote 携带 detected/generated 与 provisional 注记）", () => {
+  it("满分绿：3 killed → kill score 100% → passed（scopeNote 携带 detected/generated 与批准注记）", () => {
     strykerReadyFixture(
       strykerReport({ "src/calc.ts": [["ArithmeticOperator", "Killed"], ["BooleanLiteral", "Killed"], ["ComparisonOperator", "Killed"]] }),
     );
@@ -564,7 +565,8 @@ describe("kill score 判卷矩阵（violations=双阈值违例，决策 D2；幸
     expect(record.counts.violations).toBe(0);
     expect(record.counts.applicableScanned).toBe(3);
     expect(record.scopeNote).toContain("100.00%");
-    expect(record.scopeNote).toContain("provisional 待 A4");
+    expect(record.scopeNote).toContain("Owner 决议 2026-09-01");
+    expect(record.scopeNote).not.toContain("provisional 待 A4");
     expect(record.metricDialect).toBe(STRYKER_METRIC_DIALECT);
     expect(validate(toGateResultJson(record))).toBe(true);
   });
@@ -580,7 +582,8 @@ describe("kill score 判卷矩阵（violations=双阈值违例，决策 D2；幸
     const item = record.items?.find((i) => i.rule === "mutation_kill_score_below_threshold");
     expect(item?.message).toContain("33.33%");
     expect(item?.message).toContain("85.00");
-    expect(item?.message).toContain("provisional 待 A4");
+    expect(item?.message).toContain("Owner 决议 2026-09-01");
+    expect(item?.message).not.toContain("provisional 待 A4");
     expect(item?.message).toMatch(/L6-1/);
     expect(validate(toGateResultJson(record))).toBe(true);
   });
@@ -1207,17 +1210,18 @@ describe("三态 truth-index 记录互异", () => {
 });
 
 // ============================================================
-// provisional 阈值呈报项登记（A4；系统不自批——crap.spec 同款钉子）
+// A4 阈值批准登记（Owner 决议 2026-09-01 转正 approved；再变更必须 Owner 批准——crap.spec 同款钉子）
 // ============================================================
 
-describe("MUTATION provisional 阈值呈报项登记（A4 打包批准位）", () => {
-  it("minKillScore=85（L6 锚）/ maxSurvivors（survivor 上限）双双 provisional，词形钉死禁自批", () => {
+describe("MUTATION 阈值批准登记（Owner 决议 2026-09-01 A4 阈值包转正 approved）", () => {
+  it("minKillScore=85（L6 锚）/ maxSurvivors=10 双双 approved + approved_by，旧 provisional 词形退役禁复辟", () => {
     expect(MUTATION_PROVISIONAL_REGISTRATIONS).toHaveLength(2);
     for (const row of MUTATION_PROVISIONAL_REGISTRATIONS) {
-      expect(row.status).toBe("provisional");
-      expect(row.note).toContain("provisional");
+      expect(row.status).toBe("approved");
+      expect(row.approved_by).toBe("OWNER 2026-09-01 decision");
+      expect(row.note).toContain("Owner 决议 2026-09-01");
       expect(row.note).toContain("A4");
-      expect(row.note).toMatch(/系统不自批/);
+      expect(row.note).not.toContain("provisional 待 A4");
       expect(row.key).toMatch(/^mutation-gate\.json thresholds\./);
     }
     expect(MUTATION_PROVISIONAL_REGISTRATIONS[0]?.value).toBe(
@@ -1227,11 +1231,13 @@ describe("MUTATION provisional 阈值呈报项登记（A4 打包批准位）", (
     expect(MUTATION_PROVISIONAL_REGISTRATIONS[1]?.value).toBe(
       MUTATION_PROVISIONAL_THRESHOLDS.maxSurvivors,
     );
+    expect(MUTATION_PROVISIONAL_REGISTRATIONS[1]?.value).toBe(10);
   });
 
-  it("执行记录 scopeNote 恒携带 provisional 词形（出厂兜底态）", () => {
+  it("执行记录 scopeNote 恒携带批准词形（出厂兜底态；旧 provisional 注记退役）", () => {
     strykerReadyFixture(strykerReport({ "src/calc.ts": [["ArithmeticOperator", "Killed"]] }));
     const record = fullPipeline();
-    expect(record.scopeNote).toContain("provisional 待 A4");
+    expect(record.scopeNote).toContain("Owner 决议 2026-09-01");
+    expect(record.scopeNote).not.toContain("provisional 待 A4");
   });
 });

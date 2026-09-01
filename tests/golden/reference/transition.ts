@@ -2,7 +2,7 @@
  * transition.ts —— lifecycle 转移校验「参考镜像」（数据驱动 Golden 执行器用）。
  *
  * 词表纪律：本文件不持有任何词值——一切枚举/矩阵 import 自 @pomaster/schemas/src/vocab.ts
- * （FROZEN vocab-lock@v0.2-resolved 的代码唯一镜像点）。
+ * （FROZEN vocab-lock@v0.3-resolved 的代码唯一镜像点）。
  * 定位：@pomaster/kernel 的 validateTransition 目前是 scaffold 占位（throw "not-implemented"）。
  * Golden 执行器先尝试委托 kernel，未实现时回落本参考镜像（report 记录 evaluator=reference）；
  * kernel 落地后 golden 自动变成 kernel 契约测试。本镜像与 kernel 契约（docs/kernel-api.md

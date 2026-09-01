@@ -1,6 +1,6 @@
 {
   "schema": "pomaster.vnext.mutation-kill-results/1",
-  "seq": 3,
+  "seq": 4,
   "ok": true,
   "scope": {
     "modules": [
@@ -37,7 +37,7 @@
       {
         "file": "packages/kernel/src/transitions.ts",
         "role": "Decision——lifecycle 转移引擎（requires/grace 映射 + FROZEN 矩阵校验）",
-        "sha256_baseline": "5d8068ec2a0f58e1df0d841f08a7412c7ff0a0749611a74543a6b39f91a77a79",
+        "sha256_baseline": "86ba72a1b3d7f115f295535cc836df6d34135bb969dc26227cdad09f77a64285",
         "mapped_tests": [
           "packages/kernel/tests/transitions.spec.ts",
           "packages/kernel/tests/transitions-store.spec.ts",
@@ -53,7 +53,7 @@
   "thresholds": {
     "minKillScore": 85,
     "maxSurvivors": 10,
-    "provenance": "MUTATION_PROVISIONAL_THRESHOLDS（packages/gauntlet-lite/src/mutation-leg.ts；provisional 待 A4 打包批准，wave3-plan.md P24 Owner 位）"
+    "provenance": "MUTATION_PROVISIONAL_THRESHOLDS（packages/gauntlet-lite/src/mutation-leg.ts；已经 Owner 决议 2026-09-01 批准转正——A4 阈值包一并批准（原 wave3-plan.md P24 Owner 位））"
   },
   "mutants": [
     {
@@ -82,7 +82,7 @@
         "ASK_HUMAN 双闸与分类矛盾（§80.4 只能主动问两类） DERIVABLE 申报撞上七关全过 → ASK_REJECTED（矛盾显式拒绝，不静默归一）",
         "ASK_HUMAN 双闸与分类矛盾（§80.4 只能主动问两类） 对账信号：申报 DERIVABLE 而重算 RESEARCHABLE → declaredConsistent=false 但 verdict 以重算为准（C5）"
       ],
-      "durationMs": 1942
+      "durationMs": 1901
     },
     {
       "id": "MUT-QG-002",
@@ -99,7 +99,7 @@
         "Q1-Q7 逐关：每问一正一反 Q6 正：Research 能答 → RESEARCHABLE@Q6（Research-first §80.6：不要求业务凭空回答）",
         "ASK_HUMAN 双闸与分类矛盾（§80.4 只能主动问两类） 对账信号：申报 DERIVABLE 而重算 RESEARCHABLE → declaredConsistent=false 但 verdict 以重算为准（C5）"
       ],
-      "durationMs": 1908
+      "durationMs": 1956
     },
     {
       "id": "MUT-QG-003",
@@ -117,7 +117,7 @@
         "ASK_HUMAN 双闸与分类矛盾（§80.4 只能主动问两类） PREFERENCE 分类七关全过 → ASK_HUMAN",
         "ASK_HUMAN 双闸与分类矛盾（§80.4 只能主动问两类） DERIVABLE 申报撞上七关全过 → ASK_REJECTED（矛盾显式拒绝，不静默归一）"
       ],
-      "durationMs": 1955
+      "durationMs": 1923
     },
     {
       "id": "MUT-QG-004",
@@ -132,7 +132,7 @@
         "Q1-Q7 逐关：每问一正一反 Q7 正：不回答真的阻塞（七关全过）+ 可问分类 → ASK_HUMAN",
         "ASK_HUMAN 双闸与分类矛盾（§80.4 只能主动问两类） PREFERENCE 分类七关全过 → ASK_HUMAN"
       ],
-      "durationMs": 1922
+      "durationMs": 1931
     },
     {
       "id": "MUT-QG-005",
@@ -147,7 +147,7 @@
         "One-question-at-a-time（§80.5） fail-closed：队列混入未过闸问题 → 整批显式拒绝（不静默吞问题）",
         "One-question-at-a-time（§80.5） fail-closed：优先级词形外（0/6）→ 显式拒绝"
       ],
-      "durationMs": 1931
+      "durationMs": 1949
     },
     {
       "id": "MUT-QG-006",
@@ -160,7 +160,7 @@
       "killingTests": [
         "One-question-at-a-time（§80.5） 多问题队列只返回一个（价值最高优先），剩余数显式"
       ],
-      "durationMs": 1942
+      "durationMs": 1870
     },
     {
       "id": "MUT-QG-007",
@@ -174,7 +174,7 @@
         "Diverge → Converge（§80.7） 合法分区：三区显式（空数组合法）+ future 非空时携带 §80.7 路标",
         "Diverge → Converge（§80.7） 跨区重复 fail-closed：future_considerations 偷进 current_increment 被逐条点名"
       ],
-      "durationMs": 1905
+      "durationMs": 1952
     },
     {
       "id": "MUT-QG-008",
@@ -187,7 +187,7 @@
       "killingTests": [
         "Diverge → Converge（§80.7） 合法分区：三区显式（空数组合法）+ future 非空时携带 §80.7 路标"
       ],
-      "durationMs": 1919
+      "durationMs": 1933
     },
     {
       "id": "MUT-GR-001",
@@ -247,7 +247,7 @@
         "readLinkageCoverage（侧车 fail-closed） 损坏 / 分母封闭破坏 / 盲区失型 / ratio 漂移 / zero_denominator 失配 / verdict 词表外 → SCHEMA_INVALID",
         "输入面 fail-closed 与证据链 gate 产物经 record_gate_run 入账：evidence/runs/GRN-*.json 携盲区计数与 items 明细（盲区证据链贯通）"
       ],
-      "durationMs": 4511
+      "durationMs": 4767
     },
     {
       "id": "MUT-GR-002",
@@ -312,7 +312,7 @@
         "readLinkageCoverage（侧车 fail-closed） 损坏 / 分母封闭破坏 / 盲区失型 / ratio 漂移 / zero_denominator 失配 / verdict 词表外 → SCHEMA_INVALID",
         "输入面 fail-closed 与证据链 gate 产物经 record_gate_run 入账：evidence/runs/GRN-*.json 携盲区计数与 items 明细（盲区证据链贯通）"
       ],
-      "durationMs": 4348
+      "durationMs": 4766
     },
     {
       "id": "MUT-GR-003",
@@ -374,7 +374,7 @@
         "readLinkageCoverage（侧车 fail-closed） 损坏 / 分母封闭破坏 / 盲区失型 / ratio 漂移 / zero_denominator 失配 / verdict 词表外 → SCHEMA_INVALID",
         "输入面 fail-closed 与证据链 gate 产物经 record_gate_run 入账：evidence/runs/GRN-*.json 携盲区计数与 items 明细（盲区证据链贯通）"
       ],
-      "durationMs": 4432
+      "durationMs": 4597
     },
     {
       "id": "MUT-GR-004",
@@ -400,7 +400,7 @@
         "runRefIntegrityGate（七态真判矩阵） gate/gateDef 常量默认 + 自定义 gate 名独立入侧车（多 gate 指标块合并、既有记录保留）",
         "readLinkageCoverage（侧车 fail-closed） 缺席 = 合法空表（opt-in 指标面）；运行后可读且路径契约成立"
       ],
-      "durationMs": 4351
+      "durationMs": 4603
     },
     {
       "id": "MUT-GR-005",
@@ -417,7 +417,7 @@
         "runRefIntegrityGate（七态真判矩阵） 子串猜测禁令（gate 级）：「密度计」不命中「密度」组 → 盲区而非真判（禁启发式，P28 检索纪律同源）",
         "readLinkageCoverage（侧车 fail-closed） 损坏 / 分母封闭破坏 / 盲区失型 / ratio 漂移 / zero_denominator 失配 / verdict 词表外 → SCHEMA_INVALID"
       ],
-      "durationMs": 4450
+      "durationMs": 4659
     },
     {
       "id": "MUT-GR-006",
@@ -435,7 +435,7 @@
         "normalizeGateResult（C5 孪生与 verdict_cap） 载荷未携带独立重算块 → 显式回退序（scan counts → asserted 镜像），不伪造失配",
         "normalizeGateResult（verdict ⇔ counts 交叉校验：passed 自洽，GRN-0009） passed + violations>0 但显式声明失配（asserted=0 / recomputed=2）→ 走 verdict_cap 降级 warning，不 FATAL（双源失配有第二测量可仲裁）"
       ],
-      "durationMs": 4503
+      "durationMs": 4726
     },
     {
       "id": "MUT-GR-007",
@@ -450,7 +450,7 @@
         "normalizeGateResult（C5 孪生与 verdict_cap） 失配但 verdict 已非 passed → 不覆盖 verdict，cap_reason 仍留痕",
         "normalizeGateResult（verdict ⇔ counts 交叉校验：passed 自洽，GRN-0009） passed + violations>0 但显式声明失配（asserted=0 / recomputed=2）→ 走 verdict_cap 降级 warning，不 FATAL（双源失配有第二测量可仲裁）"
       ],
-      "durationMs": 4614
+      "durationMs": 4681
     },
     {
       "id": "MUT-GR-008",
@@ -463,7 +463,7 @@
       "killingTests": [
         "normalizeGateResult（happy path 与形状归一） 盲区显式声明域闭合：escape_ratio=1 逐字采信（<=1 闭边界；L6-1 幸存者 MUT-GR-008 强度器补杀）"
       ],
-      "durationMs": 4602
+      "durationMs": 4651
     },
     {
       "id": "MUT-GR-009",
@@ -478,7 +478,7 @@
         "normalizeGateResult（scope/items 可选扩展位：落盘贯通，P12 红队修复） camel scopeNote 直载体同样接受（键形宽容、词值严格——GateResultRecord 词形往返）",
         "normalizeGateResult（scope/items 可选扩展位：落盘贯通，P12 红队修复） 未携带 scope/items → GateResult 与 snake 零新键（缺席显式：键不落盘即载荷未声明留痕）"
       ],
-      "durationMs": 4589
+      "durationMs": 4698
     },
     {
       "id": "MUT-GK-001",
@@ -499,7 +499,7 @@
         "阈值与周窗 窗内（started_at 距 now 不足 windowDays）→ in_window=true；windowDays 收窄生效",
         "阈值与周窗 档案缺失（人为删档）→ started_at=null + in_window=true 宁严不漏（drift 信号不因删档消失）"
       ],
-      "durationMs": 2847
+      "durationMs": 2783
     },
     {
       "id": "MUT-GK-002",
@@ -518,7 +518,7 @@
         "阈值与周窗 窗内（started_at 距 now 不足 windowDays）→ in_window=true；windowDays 收窄生效",
         "阈值与周窗 档案缺失（人为删档）→ started_at=null + in_window=true 宁严不漏（drift 信号不因删档消失）"
       ],
-      "durationMs": 2807
+      "durationMs": 2836
     },
     {
       "id": "MUT-GK-003",
@@ -531,7 +531,7 @@
       "killingTests": [
         "阈值与周窗 档案缺失（人为删档）→ started_at=null + in_window=true 宁严不漏（drift 信号不因删档消失）"
       ],
-      "durationMs": 2781
+      "durationMs": 2800
     },
     {
       "id": "MUT-GK-004",
@@ -555,7 +555,7 @@
         "阈值与周窗 档案缺失（人为删档）→ started_at=null + in_window=true 宁严不漏（drift 信号不因删档消失）",
         "纪律 execution_id 词形漂移（手改坏词形）→ SCHEMA_INVALID（canonical 文件由 kernel 保证词形）"
       ],
-      "durationMs": 2870
+      "durationMs": 2812
     },
     {
       "id": "MUT-GK-005",
@@ -574,7 +574,7 @@
         "阈值与周窗 周窗：档案 started_at 旧于窗 → in_window=false 且 triggered=false（drift 行仍如实呈现）",
         "阈值与周窗 窗内（started_at 距 now 不足 windowDays）→ in_window=true；windowDays 收窄生效"
       ],
-      "durationMs": 2792
+      "durationMs": 2857
     },
     {
       "id": "MUT-GK-006",
@@ -601,7 +601,7 @@
         "纪律 非 GRN/CLM 词形文件不进分母也不报错（与 compact 收编 pattern 同纪律）",
         "纪律 纯读零写入：检测前后 journal 与 truth-index 字节不变（观测不是治理动作）"
       ],
-      "durationMs": 2817
+      "durationMs": 2762
     },
     {
       "id": "MUT-TR-001",
@@ -702,7 +702,7 @@
         "validateTransition（词表外与轴防御） unknown to 状态 → unknown_to_state（ACCEPTED 一词多义废止，DEF-POM-004）",
         "validateTransition（词表外与轴防御） 非 lifecycle 轴 → FATAL（v0.1 无矩阵，扩轴走词汇表 PR）"
       ],
-      "durationMs": 4833
+      "durationMs": 4978
     },
     {
       "id": "MUT-TR-002",
@@ -805,7 +805,7 @@
         "validateTransition（词表外与轴防御） unknown from 状态 → unknown_from_state + hint 列出合法值",
         "validateTransition（词表外与轴防御） unknown to 状态 → unknown_to_state（ACCEPTED 一词多义废止，DEF-POM-004）"
       ],
-      "durationMs": 4749
+      "durationMs": 5086
     },
     {
       "id": "MUT-TR-003",
@@ -904,7 +904,7 @@
         "validateTransition（全部 25 个矩阵外对 + 终态） SUPERSEDED→CURRENT（撤销 supersede）被显式拒绝且 hint 指明唯一再生方式",
         "validateTransition（词表外与轴防御） unknown to 状态 → unknown_to_state（ACCEPTED 一词多义废止，DEF-POM-004）"
       ],
-      "durationMs": 4760
+      "durationMs": 4916
     },
     {
       "id": "MUT-TR-004",
@@ -1008,7 +1008,7 @@
         "validateTransition（全部 25 个矩阵外对 + 终态） 自环（from===to）一律非法",
         "validateTransition（全部 25 个矩阵外对 + 终态） 终态 SUPERSEDED/RETIRED/REJECTED 无出边（to: []）"
       ],
-      "durationMs": 4829
+      "durationMs": 5061
     },
     {
       "id": "MUT-TR-005",
@@ -1021,7 +1021,7 @@
       "killingTests": [
         "validateTransition 映射一致性（requires/grace/notes/词表精确匹配） DEPRECATED→RETIRED notes 含终态注记"
       ],
-      "durationMs": 4787
+      "durationMs": 5072
     },
     {
       "id": "MUT-TR-006",
@@ -1035,7 +1035,7 @@
         "validateTransition（合法边） PROPOSED→CURRENT requires authority_approval",
         "validateTransition（合法边） CURRENT→SUPERSEDED requires transition_record 且注记 successor_ref 必填"
       ],
-      "durationMs": 4815
+      "durationMs": 5406
     },
     {
       "id": "MUT-TR-007",
@@ -1054,7 +1054,7 @@
         "validateTransition（合法边） CURRENT→SUPERSEDED requires transition_record 且注记 successor_ref 必填",
         "validateTransition（合法边） DEPRECATED→RETIRED 附加 grace_policy: config"
       ],
-      "durationMs": 4859
+      "durationMs": 5040
     }
   ],
   "totals": {
@@ -1069,7 +1069,7 @@
   "judge_crosscheck": {
     "metric_dialect": "mutation:harness_changed_code",
     "tool": "gauntlet:mutation-kill-harness",
-    "grn": "GRN-3",
+    "grn": "GRN-4",
     "verdict": "passed",
     "counts": {
       "scanned": 30,
@@ -1082,15 +1082,15 @@
       "produced": 30,
       "escapeRatio": 0
     },
-    "scope_note": "MUTATION（runner=stryker，changed-code scope 4 文件，命令面 scope 旗标 + 判卷面逐条复核双重强制）：报告内 30 条，in-scope 分母 30，幸存者 0；kill score=100.00%（detected=30：killed 30 + timeout 0；generated=30：survived 0 + no_coverage 0 + suspicious 0；排除类 0）；阈值 minKillScore=85.00% maxSurvivors=10（provisional 待 A4 打包批准（wave3-plan.md P24 survivor 上限 Owner 批准位；PRD §26.2：不把某个数字当成永久真理；系统不自批为永久值））；档位=HARDENING；exit=0（第三方工具自身语义非本 gate 判卷锚——stryker 内部阈值不达标亦 exit 1；判卷锚=报告重算）",
+    "scope_note": "MUTATION（runner=stryker，changed-code scope 4 文件，命令面 scope 旗标 + 判卷面逐条复核双重强制）：报告内 30 条，in-scope 分母 30，幸存者 0；kill score=100.00%（detected=30：killed 30 + timeout 0；generated=30：survived 0 + no_coverage 0 + suspicious 0；排除类 0）；阈值 minKillScore=85.00% maxSurvivors=10（已经 Owner 决议 2026-09-01 批准转正（A4 阈值包：minKillScore=85 锚测试战略 L6-1、maxSurvivors=10 一并获批；PRD §26.2：不把某个数字当成永久真理——后续调整走 mutation-gate.json thresholds 配置化覆盖））；档位=HARDENING；exit=0（第三方工具自身语义非本 gate 判卷锚——stryker 内部阈值不达标亦 exit 1；判卷锚=报告重算）",
     "items": [],
     "matches_harness": true
   },
   "gate_record": {
-    "grn": "GRN-3",
+    "grn": "GRN-4",
     "gate": "MUTATION",
     "gateDef": "POLICY.GATE.MUTATION@0.1.0",
-    "ranAtSeq": 3,
+    "ranAtSeq": 4,
     "verdict": "passed",
     "verdictCapReason": null,
     "subjectId": null,
@@ -1116,12 +1116,19 @@
     },
     "durationMs": {
       "self": 0,
-      "external": 120488
+      "external": 124726
     },
     "tool": "gauntlet:mutation-kill-harness",
     "toolVersion": "0.1.0",
     "metricDialect": "mutation:harness_changed_code",
-    "scopeNote": "MUTATION（runner=stryker，changed-code scope 4 文件，命令面 scope 旗标 + 判卷面逐条复核双重强制）：报告内 30 条，in-scope 分母 30，幸存者 0；kill score=100.00%（detected=30：killed 30 + timeout 0；generated=30：survived 0 + no_coverage 0 + suspicious 0；排除类 0）；阈值 minKillScore=85.00% maxSurvivors=10（provisional 待 A4 打包批准（wave3-plan.md P24 survivor 上限 Owner 批准位；PRD §26.2：不把某个数字当成永久真理；系统不自批为永久值））；档位=HARDENING；exit=0（第三方工具自身语义非本 gate 判卷锚——stryker 内部阈值不达标亦 exit 1；判卷锚=报告重算）"
+    "scopeNote": "MUTATION（runner=stryker，changed-code scope 4 文件，命令面 scope 旗标 + 判卷面逐条复核双重强制）：报告内 30 条，in-scope 分母 30，幸存者 0；kill score=100.00%（detected=30：killed 30 + timeout 0；generated=30：survived 0 + no_coverage 0 + suspicious 0；排除类 0）；阈值 minKillScore=85.00% maxSurvivors=10（已经 Owner 决议 2026-09-01 批准转正（A4 阈值包：minKillScore=85 锚测试战略 L6-1、maxSurvivors=10 一并获批；PRD §26.2：不把某个数字当成永久真理——后续调整走 mutation-gate.json thresholds 配置化覆盖））；档位=HARDENING；exit=0（第三方工具自身语义非本 gate 判卷锚——stryker 内部阈值不达标亦 exit 1；判卷锚=报告重算）"
+  },
+  "ledger_entry": {
+    "status": "entered",
+    "store": ".pomaster（仓库根本机治理账本；.gitignore 排除不入 git——保守裁定披露）",
+    "grn": "GRN-4",
+    "applied_seq": 1,
+    "short_circuited": false
   },
   "integrity": {
     "baseline_scope_green": {
@@ -1135,7 +1142,7 @@
     "all_sha256_restored": true
   },
   "durationMs": {
-    "total": 120488
+    "total": 124726
   },
-  "note": "timestamp 禁入：运行序以 seq 整数标识（自增，append-only）；durationMs 允许。gate_record 为基准产物不入 evidence/runs 账本（GRN 序号空间独立于 store 账本）。落盘结果 at-rest 可校验：node benchmarks/mutation-kill.mjs --verify（RT2 封条——重放 harness_report 判卷锚，手改落盘分数/计数/killed 位必被检出）。"
+  "note": "timestamp 禁入：运行序以 seq 整数标识（自增，append-only）；durationMs 允许。gate_record 已入正式账本（Owner 决议 2026-09-01 批准）：经 applyTransaction record_gate_run 落本仓 .pomaster store（evidence/runs/<GRN>.json + journal TX_APPLIED 锚）；last-results.json 仍是基准报告文件、store 账本是正式治理事实面，两者并存。GRN 词形 GRN-<results seq>（ran_at_seq 同源取 results seq）；GRN 序号空间与 store 事务 seq 相互独立。同 GRN 重复入账显式幂等：同内容 already_entered 零写入、异内容 GRN_CONFLICT fail-closed exit 2（kernel 对重复 GRN 无守卫，入账预检封死静默双写）。.pomaster 已入 .gitignore（账本留本机不入 git）。落盘结果与账本一致性可校验：node benchmarks/mutation-kill.mjs --verify（重放 harness_report 判卷锚——手改落盘分数/计数/killed 位必被检出——并对账 store 在账状态与 results gate_record 一致）。"
 }

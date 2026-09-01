@@ -72,7 +72,7 @@ export function sha256Digest(canonical: string): string {
   return `sha256:${createHash("sha256").update(canonical, "utf8").digest("hex")}`;
 }
 
-/** 词表三元组指纹（口径见文件头；与 vocab-lock@v0.2-resolved 内容一一对应）。 */
+/** 词表三元组指纹（口径见文件头；与 vocab-lock@v0.3-resolved 内容一一对应）。 */
 export function vocabLockFingerprints(): {
   readonly state_axes: string;
   readonly kinds: string;

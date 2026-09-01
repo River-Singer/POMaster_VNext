@@ -142,44 +142,52 @@ export const MUTMUT_DEFAULT_REPORT = "mutants.xml";
 export const DEFAULT_MUTATION_TIMEOUT_MS = 1_800_000;
 
 // ============================================================
-// 阈值 provisional 纪律（A4 对齐点；配置化覆盖，未配置时的出厂兜底）
+// 阈值纪律（A4 对齐点：Owner 决议 2026-09-01 批准转正；配置化覆盖，未配置时的出厂兜底）
 // ============================================================
 
 /**
- * MUTATION 阈值出厂兜底（provisional）：
- * - minKillScore=85 锚测试战略 L6-1 原文「kill score ≥85%（changed-code scope）」——
- *   数字有出处但阈值生效仍是 provisional 待 A4 打包批准（阈值纪律：系统不自批为永久）；
- * - maxSurvivors=10（survivor 上限）无 PRD/战略数字出处——纯 provisional 占位，
- *   wave3-plan.md P24【survivor 上限 Owner 位（A4 打包）】点名呈报位。
- * 两者都必须配置化（mutation-gate.json thresholds），未配置时用出厂兜底并在
- * scopeNote/items 留 provisional 注记；系统不自批为永久值（benchmarks/
- * calibration-approval.json system_can_not_self_approve 同款纪律）。
+ * MUTATION 阈值出厂兜底（值不变，登记状态已经 Owner 决议 2026-09-01 由 provisional
+ * 转正为 approved）：
+ * - minKillScore=85 锚测试战略 L6-1 原文「kill score ≥85%（changed-code scope）」
+ *   （L6-1 原文锚，呈报件 §2.2）；
+ * - maxSurvivors=10（survivor 上限）原纯 provisional 占位，Owner 决议 2026-09-01
+ *   A4 阈值包一并批准（呈报件 §2.3）。
+ * 两者仍可配置化覆盖（mutation-gate.json thresholds）；PRD §26.2：不把某个数字当成
+ * 永久真理——后续调整走配置面与再呈报，登记 status/approved_by 是权威词形。
  */
 export const MUTATION_PROVISIONAL_THRESHOLDS = {
   minKillScore: 85,
   maxSurvivors: 10,
 } as const;
 
-/** provisional 注记原文（scopeNote/items 与呈报项登记共用，逐字含「provisional」「A4」）。 */
-export const MUTATION_PROVISIONAL_NOTE =
-  "provisional 待 A4 打包批准（wave3-plan.md P24 survivor 上限 Owner 批准位；PRD §26.2：不把某个数字当成永久真理；系统不自批为永久值）";
+/**
+ * approved 注记原文（items/scopeNote 与呈报项登记共用；Owner 决议 2026-09-01）。
+ * 原 provisional 注记（「provisional 待 A4 打包批准…」）随批准转正退役；
+ * 常量名从 MUTATION_PROVISIONAL_NOTE 更名以保词形诚实（零外部消费者，纯内部更名）。
+ */
+export const MUTATION_THRESHOLD_APPROVED_NOTE =
+  "已经 Owner 决议 2026-09-01 批准转正（A4 阈值包：minKillScore=85 锚测试战略 L6-1、maxSurvivors=10 一并获批；PRD §26.2：不把某个数字当成永久真理——后续调整走 mutation-gate.json thresholds 配置化覆盖）";
 
 /**
- * P24 provisional 阈值呈报项登记（机器可读；呈报 Owner A4 打包批准位——
- * coverage-leg PROVISIONAL_THRESHOLD_REGISTRATIONS 同款形态）。
+ * P24 阈值呈报项登记（机器可读；原 provisional 呈报表——Owner 决议 2026-09-01
+ * A4 阈值包批准转正，两行 status 均 approved 并带 approved_by。常量名保留
+ * PROVISIONAL 词形作为历史呈报位锚（最小改造，禁大改登记结构 API），
+ * 行内 status/approved_by/note 是权威词形）。
  */
 export const MUTATION_PROVISIONAL_REGISTRATIONS = [
   {
     key: "mutation-gate.json thresholds.minKillScore",
     value: MUTATION_PROVISIONAL_THRESHOLDS.minKillScore,
-    status: "provisional" as const,
-    note: MUTATION_PROVISIONAL_NOTE,
+    status: "approved" as const,
+    approved_by: "OWNER 2026-09-01 decision",
+    note: MUTATION_THRESHOLD_APPROVED_NOTE,
   },
   {
     key: "mutation-gate.json thresholds.maxSurvivors",
     value: MUTATION_PROVISIONAL_THRESHOLDS.maxSurvivors,
-    status: "provisional" as const,
-    note: MUTATION_PROVISIONAL_NOTE,
+    status: "approved" as const,
+    approved_by: "OWNER 2026-09-01 decision",
+    note: MUTATION_THRESHOLD_APPROVED_NOTE,
   },
 ];
 
@@ -238,7 +246,7 @@ export interface MutationLegPlan extends RecordPlanFields {
   /** changed-code scope 分母（变更文件清单；命令面旗标 + 判卷面复核双重消费）。 */
   readonly changedFiles: readonly string[];
   readonly thresholds: { readonly minKillScore: number; readonly maxSurvivors: number };
-  /** true = 阈值来自出厂兜底（provisional 待 A4）；false = 配置显式供给。 */
+  /** true = 阈值来自出厂兜底（已经 Owner 决议 2026-09-01 批准转正）；false = 配置显式供给。 */
   readonly thresholdsProvisional: boolean;
   /** 版本锚（policy 供给；stryker 腿可选——以 package.json 声明版本为 toolVersion）。 */
   readonly expectedToolVersion: string | null;
@@ -816,21 +824,21 @@ export function normalizeMutationLeg(
 
   // —— 双阈值判罚（决策 D2；violations 载体=阈值违例条目）。
   const items: GateResultItemInput[] = [];
-  const provisionalSuffix = plan.thresholdsProvisional
-    ? `（阈值${MUTATION_PROVISIONAL_NOTE}）`
+  const thresholdSuffix = plan.thresholdsProvisional
+    ? `（阈值${MUTATION_THRESHOLD_APPROVED_NOTE}）`
     : "（配置显式供给）";
   if (stats.scorePercent < plan.thresholds.minKillScore) {
     items.push({
       rule: "mutation_kill_score_below_threshold",
       location: plan.reportPath,
-      message: `kill score ${formatPct(stats.scorePercent)}%（detected ${String(stats.detected)}/${String(stats.generated)}，changed-code scope）< 阈值 ${formatPct(plan.thresholds.minKillScore)}%${provisionalSuffix}——L6-1「kill score ≥85%（changed-code scope）」`,
+      message: `kill score ${formatPct(stats.scorePercent)}%（detected ${String(stats.detected)}/${String(stats.generated)}，changed-code scope）< 阈值 ${formatPct(plan.thresholds.minKillScore)}%${thresholdSuffix}——L6-1「kill score ≥85%（changed-code scope）」`,
     });
   }
   if (survivors.length > plan.thresholds.maxSurvivors) {
     items.push({
       rule: "mutation_survivors_above_cap",
       location: plan.reportPath,
-      message: `幸存者 ${String(survivors.length)} > 上限 ${String(plan.thresholds.maxSurvivors)}${provisionalSuffix}——随版计划 B2-3「survivor 上限」`,
+      message: `幸存者 ${String(survivors.length)} > 上限 ${String(plan.thresholds.maxSurvivors)}${thresholdSuffix}——随版计划 B2-3「survivor 上限」`,
     });
   }
   // 幸存者明细（PRD §28 survivor list 支持面；判卷留痕非逐条判罚——粒度声明见头注）。
@@ -870,7 +878,7 @@ export function normalizeMutationLeg(
     `MUTATION（runner=${plan.runner}，changed-code scope ${String(plan.changedFiles.length)} 文件，命令面 scope 旗标 + 判卷面逐条复核双重强制）：` +
     `报告内 ${String(metrics.mutants.length)} 条，in-scope 分母 ${String(stats.generated)}，幸存者 ${String(survivors.length)}；` +
     `kill score=${formatPct(stats.scorePercent)}%（detected=${String(stats.detected)}：killed ${String(stats.killed)} + timeout ${String(stats.timeout)}；generated=${String(stats.generated)}：survived ${String(stats.survived)} + no_coverage ${String(stats.noCoverage)} + suspicious ${String(stats.suspicious)}；排除类 ${String(stats.excluded)}）；` +
-    `阈值 minKillScore=${formatPct(plan.thresholds.minKillScore)}% maxSurvivors=${String(plan.thresholds.maxSurvivors)}${plan.thresholdsProvisional ? `（${MUTATION_PROVISIONAL_NOTE}）` : "（配置显式供给）"}；` +
+    `阈值 minKillScore=${formatPct(plan.thresholds.minKillScore)}% maxSurvivors=${String(plan.thresholds.maxSurvivors)}${plan.thresholdsProvisional ? `（${MUTATION_THRESHOLD_APPROVED_NOTE}）` : "（配置显式供给）"}；` +
     `档位=${plan.tier}${outOfScopeNote}${unattributedNote}${runnerNote}；${exitNote}`;
 
   const cappedItems = capItems([...items, ...survivorItems]);

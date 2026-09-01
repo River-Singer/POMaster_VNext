@@ -2,8 +2,8 @@
  * transitions.ts —— lifecycle 转移引擎（纯函数）。
  *
  * 拓扑唯一来源：LIFECYCLE_TRANSITIONS（@pomaster/schemas，逐值镜像
- * vocab-lock@v0.2-resolved state_axes.lifecycle.transitions；v0.1-resolved FROZEN 后
- * PR-0001 append-only 增补，转移矩阵零改动，仍为 FROZEN 值集）。
+ * vocab-lock@v0.3-resolved state_axes.lifecycle.transitions；v0.1-resolved FROZEN 后
+ * PR-0001/PR-0004 append-only 增补，转移矩阵零改动，仍为 FROZEN 值集）。
  * requires/grace_policy 映射同样逐字镜像该块：
  * - PROPOSED→{CURRENT, REJECTED} requires: authority_approval
  * - CURRENT→{SUPERSEDED, DEPRECATED} requires: transition_record

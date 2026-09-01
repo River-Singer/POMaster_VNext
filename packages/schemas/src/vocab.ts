@@ -3,8 +3,10 @@
  *
  * 词表纪律（违者=返工）：
  * - 本文件一切枚举/前缀/转移矩阵只能镜像 `assets/vocab-lock.draft.yaml`
- *   （pomaster.vocab/v0.2-resolved；v0.1-resolved 2026-08-27 FROZEN，2026-08-29 PR-0001
- *   append-only 纯增量增补，v0.1 词值零删改），逐值相等，禁止发明词表外值；
+ *   （pomaster.vocab/v0.3-resolved；v0.1-resolved 2026-08-27 FROZEN，2026-08-29 PR-0001
+ *   append-only 纯增量增补（v0.1 词值零删改），2026-09-01 PR-0004 增补
+ *   production_band_vocab 段 + id_namespace.state_plane_refs 五通路编号词形注记
+ *   ——Owner 决议 2026-09-01，v0.1/v0.2 词值零删改），逐值相等，禁止发明词表外值；
  * - 需要新值 → 留 `TODO(vocab-pr)` 注释走词汇表 PR，禁止就地添加；
  * - 标注「待词汇表 PR 收编」的词轴：词形已在 schema（01/02/03/05/06/07 及 P18 的
  *   08/09/10）的 x-vocab-extra / definitions 冻结，本文件照镜像并保留 TODO(vocab-pr)；
@@ -1013,15 +1015,19 @@ export type MemoryCliErrorValue = (typeof MEMORY_CLI_ERROR_VALUES)[number];
 export const OWNER_ESCALATION_REQUIRED = "OWNER_ESCALATION_REQUIRED" as const;
 
 // ============================================================
-// P34 Production Feedback / Control Band 词形轴（x-vocab-source: PRD v0.4
+// P34 Production Feedback / Control Band 词形轴（x-vocab-source: vocab-lock
+// production_band_vocab，PR-0004 收编；Owner 决议 2026-09-01 批准——呈报件
+// docs/production-feedback-p34-report.md §2.2/§2.4/§2.6 裁定落档；出处锚 PRD v0.4
 // §30 L2554-2612 四态时间轴 / §95 L6099-6156 全节 / §55.1 L3579-3597 八能力表 /
 // §90.4 L5682-5696 八信号，逐字 + 机器词形映射）。
-// TODO(vocab-pr)：absent_in_vocab_lock__pending_vocab_pr，收编后以 vocab-lock
-// 为准逐值镜像。schema 落点 15-production-band definitions（与本段逐值同源）。
-// 词形大小写裁定呈报项：DIAGNOSIS_KIND 默认 SCREAMING_SNAKE（§31 challenge
-// classification 先例词形 ARCHITECTURE_EVOLUTION 同源）；信号源五词形取 §95.2
-// L6126「metric / log / error budget / SLO / control band」空格词形转
-// snake_case（error budget→error_budget、control band→control_band、SLO→slo）。
+// 本段原 absent_in_vocab_lock__pending_vocab_pr，2026-09-01 vocab-pr-0004 正式收编
+// （主表登记，append-only 纯增量）；收编后以 vocab-lock 为准逐值镜像，扩值走词汇表 PR。
+// schema 冻结锚 15-production-band definitions（与本段逐值同源）。
+// 词形大小写裁定（呈报项已裁）：DIAGNOSIS_KIND 取 SCREAMING_SNAKE（§31 challenge
+// classification 先例词形 ARCHITECTURE_EVOLUTION 同源），Owner 2026-09-01 照准；
+// 信号源五词形取 §95.2 L6126「metric / log / error budget / SLO / control band」
+// 空格词形转 snake_case（error budget→error_budget、control band→control_band、
+// SLO→slo），映射注记 Owner 2026-09-01 照准。
 // CHALLENGED 不在本段重复登记——§95.3 CURRENT→CHALLENGED 复用既有
 // CHANGE_VALUES（STABLE/CHALLENGED/MIGRATING）词形，零新增。
 // ============================================================
@@ -1032,7 +1038,8 @@ export const OWNER_ESCALATION_REQUIRED = "OWNER_ESCALATION_REQUIRED" as const;
  * 正交、值域不相交：本轴管开发生命阶段（§95.1 生命周期扩展
  * PRE_DEV→IN_DEV→POST_DEV→IN_PRODUCTION→new Evidence/Incident/Opportunity→Change ↺
  * 的状态承载位），band 定义 phase 字段恒 IN_PRODUCTION（§95 生产反馈带）。
- * x-vocab-source: PRD v0.4 §30 L2554-2563 逐字。
+ * x-vocab-source: vocab-lock production_band_vocab.phase_timeline（PRD v0.4 §30
+ * L2554-2563 逐字）。
  */
 export const PHASE_TIMELINE_VALUES = [
   "PRE_DEV",
@@ -1045,8 +1052,9 @@ export type PhaseTimelineValue = (typeof PHASE_TIMELINE_VALUES)[number];
 /**
  * §95.2 生产信号源五词形（PRD L6126「metric / log / error budget / SLO /
  * control band」逐字；空格词形转 snake_case：error budget→error_budget、
- * control band→control_band、SLO→slo——映射注记随词汇表 PR 呈报）。
- * x-vocab-source: PRD v0.4 §95.2 L6126。
+ * control band→control_band、SLO→slo——映射注记 Owner 2026-09-01 照准）。
+ * x-vocab-source: vocab-lock production_band_vocab.production_signal_source
+ * （PRD v0.4 §95.2 L6126）。
  */
 export const PRODUCTION_SIGNAL_SOURCE_VALUES = [
   "metric",
@@ -1061,10 +1069,11 @@ export type ProductionSignalSourceValue =
 /**
  * §95.3 诊断三分（PRD L6153「Implementation Issue / Config Issue /
  * Architecture Evolution」逐字语义；词形 SCREAMING_SNAKE 化——§31 challenge
- * classification 词形 ARCHITECTURE_EVOLUTION 同源先例，大小写裁定呈报 Owner，
- * pending_vocab_pr 注记）。ARCHITECTURE_EVOLUTION 与 §31 分类词表同形复用
+ * classification 词形 ARCHITECTURE_EVOLUTION 同源先例，大小写裁定 Owner
+ * 2026-09-01 照准）。ARCHITECTURE_EVOLUTION 与 §31 分类词表同形复用
  * 不发明新值。
- * x-vocab-source: PRD v0.4 §95.3 L6153 + §31 L2630。
+ * x-vocab-source: vocab-lock production_band_vocab.diagnosis_kind
+ * （PRD v0.4 §95.3 L6153 + §31 L2630）。
  */
 export const DIAGNOSIS_KIND_VALUES = [
   "IMPLEMENTATION_ISSUE",
@@ -1078,7 +1087,8 @@ export type DiagnosisKindValue = (typeof DIAGNOSIS_KIND_VALUES)[number];
  * §95.2「不得把是否异常完全交给 LLM 主观判断」的类型面落点：判定通路只接受
  * 显式算子+数值阈值，禁自由文本判据字段）。between 须 threshold+threshold_max
  * 成对（闭区间健康带，带外即 BREACHED）。
- * x-vocab-source: P34 任务定案（wave3-plan P34 范围锚；非 PRD 逐字）。
+ * x-vocab-source: vocab-lock production_band_vocab.band_predicate_operator
+ * （P34 任务定案；非 PRD 逐字）。
  */
 export const BAND_PREDICATE_OPERATOR_VALUES = [
   "gt",
@@ -1095,9 +1105,11 @@ export type BandPredicateOperatorValue =
  * 三态显式同源）：OK=带内；BREACHED=击穿（产 Evidence，detected_by=tool_signal）；
  * NOT_EVALUABLE=不可判（观测指标名不匹配/值非有限数值/谓词损坏——显式缺席，
  * 绝不静默折算 OK）。与 03 VERDICT_VALUES 七态正交（band 判定是 §95.2
- * Deterministic Detection 面，不是 gate 判卷面）。
- * x-vocab-source: P34 任务定案（fail-closed 三态纪律；§95.2 Deterministic
- * Detection 词形锚）。
+ * Deterministic Detection 面，不是 gate 判卷面）。缺席归因呈现码
+ * METRIC_NAME_MISMATCH / VALUE_NOT_FINITE_NUMBER / PREDICATE_CORRUPT 同段收编
+ * （not_evaluable_detail_reasons——detail 自由文本字段的结构化前缀呈现码）。
+ * x-vocab-source: vocab-lock production_band_vocab.control_band_evaluation_status
+ * （P34 任务定案 fail-closed 三态纪律；§95.2 Deterministic Detection 词形锚）。
  */
 export const CONTROL_BAND_EVALUATION_STATUS_VALUES = [
   "OK",
@@ -1112,8 +1124,8 @@ export type ControlBandEvaluationStatusValue =
  * 从既有 gate/evidence 台账机算成立（附 value+basis 口径披露）；
  * NOT_MEASURABLE_YET=不可机算显式缺席（附理由——绝不冒充数值，§55.1
  * 「Metrics 用于风险提示」fail-closed 半边）。
- * x-vocab-source: P34 任务定案（wave3-plan P34 出口判据「挂钩既有 gate/evidence
- * 数据」的可算分账词形）。
+ * x-vocab-source: vocab-lock production_band_vocab.capability_outcome_metric_status
+ * （P34 任务定案；wave3-plan P34 出口判据「挂钩既有 gate/evidence 数据」的可算分账词形）。
  */
 export const CAPABILITY_OUTCOME_METRIC_STATUS_VALUES = [
   "MEASURED",
@@ -1125,7 +1137,8 @@ export type CapabilityOutcomeMetricStatusValue =
 /**
  * §55.1 十六指标机器键（八能力 × Leading/Lagging，snake_case 机械映射；
  * 人读呈现列以 CAPABILITY_OUTCOME_METRICS 常量逐字承载，本轴是机器消费键）。
- * x-vocab-source: PRD v0.4 §55.1 L3583-3592 逐字表列的机械映射（pending_vocab_pr）。
+ * x-vocab-source: vocab-lock production_band_vocab.capability_outcome_metric_key
+ * （PRD v0.4 §55.1 L3583-3592 逐字表列的机械映射；vocab-pr-0004 收编）。
  */
 export const CAPABILITY_OUTCOME_METRIC_KEY_VALUES = [
   "brainstorm_change_convergence_time",
@@ -1154,7 +1167,8 @@ export type CapabilityOutcomeMetricKey =
  * 恒 POMASTER_SELF_IMPROVEMENT_CANDIDATE 呈报态——「不得自动应用」（L5695
  * 逐字）由 kernel production.ts 结构封条承载（模块导出面无任何 Router/Profile/
  * Gate 配置修改函数）。
- * x-vocab-source: PRD v0.4 §90.4 L5686-5693。
+ * x-vocab-source: vocab-lock production_band_vocab.self_improvement_signal
+ * （PRD v0.4 §90.4 L5686-5693）。
  */
 export const SELF_IMPROVEMENT_SIGNAL_VALUES = [
   "governance_overhead_ratio_anomaly",
@@ -1169,7 +1183,7 @@ export const SELF_IMPROVEMENT_SIGNAL_VALUES = [
 export type SelfImprovementSignalValue =
   (typeof SELF_IMPROVEMENT_SIGNAL_VALUES)[number];
 
-/** §90.4 八信号人读原文逐字镜像（键=机器词形，值=PRD bullet 原文）。 */
+/** §90.4 八信号人读原文逐字镜像（键=机器词形，值=PRD bullet 原文）。x-vocab-source: vocab-lock production_band_vocab.self_improvement_signal_prd_labels。 */
 export const SELF_IMPROVEMENT_SIGNAL_PRD_LABELS = {
   governance_overhead_ratio_anomaly: "Governance Overhead Ratio 长期异常",
   gate_high_frequency_false_positive: "某 Gate 高频产生误报",
@@ -1187,6 +1201,7 @@ export const SELF_IMPROVEMENT_SIGNAL_PRD_LABELS = {
  * §90.4 逐字产物词形（PRD L5695「这些建议进入
  * `POMASTER_SELF_IMPROVEMENT_CANDIDATE`，不得自动应用」）。P34 登记产物 kind
  * 字段恒携带本词形（呈报位非应用位；MEMORY_DRIFT 单词常量同款承载先例）。
+ * x-vocab-source: vocab-lock production_band_vocab.product_word_forms。
  */
 export const POMASTER_SELF_IMPROVEMENT_CANDIDATE =
   "POMASTER_SELF_IMPROVEMENT_CANDIDATE" as const;
@@ -1195,16 +1210,19 @@ export const POMASTER_SELF_IMPROVEMENT_CANDIDATE =
  * §95.2 Deterministic Detection 判定主体词形（P34 任务定案：breach Evidence
  * detected_by 字段恒 tool_signal——C5「判定来自工具信号非 LLM 自报」的承载位；
  * 词形 snake_case）。
- * x-vocab-source: P34 任务定案（§95.2 Tool Detects 链序的机械词形锚）。
+ * x-vocab-source: vocab-lock production_band_vocab.product_word_forms
+ * （P34 任务定案；§95.2 Tool Detects 链序的机械词形锚）。
  */
 export const DETECTED_BY_TOOL_SIGNAL = "tool_signal" as const;
 
 /**
  * production CLI 错误词形族（P34b-Commands 补位词；kernel GovernanceError 码位之上
  * 的命令面呈现码——映射关系确定性一一对应（按命令面 + kernel 码位查表），禁子串/
- * 模糊猜测映射）。PRD §44 命令清单未定义 production 子命令——本命令面词形与五命令
- * 名（band/evaluate/challenge/diagnose/metrics/self-improvement）均为新造，随 P34
- * 呈报件一并呈报 Owner（命令面命名权呈报位）：
+ * 模糊猜测映射）。六词形经 vocab-pr-0004 收编（Owner 决议 2026-09-01；呈报件
+ * docs/production-feedback-p34-report.md §2.4 裁定落档）；命令组词形 production +
+ * 六子命令名（band/evaluate/challenge/diagnose/metrics/self-improvement）同批经
+ * Owner 认可（呈报件 §2.1——命令名非词表管辖面，落档 docs/kernel-api.md production
+ * 命令段；memory CLI 六命令 P33b 同款先例：词表只收错误词形族不收命令名）：
  * - BAND_SCHEMA_INVALID：band 定义面词形/谓词/重复登记（kernel SCHEMA_INVALID·
  *   VOCAB_INVALID_VALUE 在 band define 面的命令面词形——band 面只有 schema 族错误）；
  * - BAND_NOT_FOUND：band 定义不在册（kernel OBJECT_NOT_FOUND 在 band 读取面的
@@ -1220,8 +1238,8 @@ export const DETECTED_BY_TOOL_SIGNAL = "tool_signal" as const;
  * - DIAGNOSIS_WITHOUT_BREACH_EVIDENCE：无既有 BREACHED band evidence 的 diagnosis
  *   （§95.2 链序封条词形——kernel 同名 GovernanceErrorCode 的命令面透传复用，
  *   唯一与 kernel 码位同名的族员，零二次造词）。
- * x-vocab-source: P34b 任务定案（wave3-plan P34 命令面；PRD §44 无此命令组的
- * 新造词形——pending_vocab_pr + 命令面命名权呈报 Owner）。
+ * x-vocab-source: vocab-lock production_band_vocab.cli_error_codes（P34b 任务定案；
+ * vocab-pr-0004 收编）。
  */
 export const PRODUCTION_CLI_ERROR_VALUES = [
   "BAND_SCHEMA_INVALID",

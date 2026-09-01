@@ -29,17 +29,28 @@
  *   7. 落盘 benchmarks/mutation-last-results.json（seq 自增；timestamp 禁入身份
  *      字段——运行序以 seq 整数标识，durationMs 允许）。合成判卷报告以
  *      harness_report 键一并持久化（RT2 封条：at-rest 校验锚——--verify 可在
- *      不重跑测量的前提下重放判卷器，手改落盘分数/计数必被检出）。
+ *      不重跑测量的前提下重放判卷器，手改落盘分数/计数必被检出）；
+ *   8. 入正式账本（Owner 决议 2026-09-01：批准基准轮 gate record 入账）：gate record
+ *      自洽复核通过后，经 kernel applyTransaction 的 record_gate_run op 落本仓
+ *      REPO_ROOT/.pomaster store（evidence/runs/<GRN>.json + journal TX_APPLIED 锚），
+ *      成为正式治理事实——store 未初始化时 createStore 幂等建 skeleton（authority
+ *      骨架按默认；record_gate_run 不需要 authority owner）。同 GRN 重复入账显式
+ *      处理：同内容 already_entered 零写入、异内容 GRN_CONFLICT fail-closed（kernel
+ *      applyRecordGateRun 对重复 GRN 无守卫，预检封死静默双写）。账本一致性纳入
+ *      --verify 对账面。REPO_ROOT/.pomaster 已入 .gitignore（保守裁定：账本留本机
+ *      不入 git）；last-results.json 照旧是基准报告文件，与 store 账本并存。
  *
  * 用法：
- *   node benchmarks/mutation-kill.mjs              # 真实测量（写结果文件）
+ *   node benchmarks/mutation-kill.mjs              # 真实测量（写结果文件 + 入账）
  *   node benchmarks/mutation-kill.mjs --selfcheck  # 自检：fixture mutant 集验证判卷器
  *   node benchmarks/mutation-kill.mjs --verify     # at-rest 校验：重放判卷锚对账落盘值
+ *                                                  # + 校验 GRN 在账与 results 一致
  *
  * 退出码：0 = 达标（score ≥ 85 且 survivors ≤ 10；--verify 时 = 对账一致）；
  * 1 = 测量完成但阈值未达（strengthener 回路：正确动作是补测试杀幸存者后重跑，禁调
- * 阈值/禁改判）或 --verify 对账失配（落盘结果不可信）；2 = harness 错误（判卷输入
- * 不可信 / invalid mutant / results 缺席）；3 = 树完整性破坏（基线哈希复核失败）。
+ * 阈值/禁改判）或 --verify 对账失配（落盘结果不可信或账本不一致）；2 = harness 错误
+ * （判卷输入不可信 / invalid mutant / results 缺席 / 账本入账失败 fail-closed——测量
+ * 成功但账本写入失败不能静默绿）；3 = 树完整性破坏（基线哈希复核失败）。
  *
  * 前置：node scripts/build-all.mjs（判卷锚消费 packages/gauntlet-lite/dist）。
  *
@@ -63,11 +74,16 @@ import {
   sha256Hex,
   verifyMutationResults,
 } from "./lib/mutation-harness-core.mjs";
+import {
+  enterGateRecordInStore,
+  verifyGateRecordInLedger,
+} from "./lib/mutation-ledger.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(join(HERE, ".."));
 const VITEST_MJS = join(REPO_ROOT, "node_modules", "vitest", "vitest.mjs");
 const GAUNTLET_DIST = join(REPO_ROOT, "packages", "gauntlet-lite", "dist", "index.js");
+const KERNEL_DIST = join(REPO_ROOT, "packages", "kernel", "dist", "index.js");
 const RESULTS_PATH = join(REPO_ROOT, "benchmarks", "mutation-last-results.json");
 const RESULTS_SCHEMA = "pomaster.vnext.mutation-kill-results/1";
 const FIXTURE_PREFIX = "pomaster-p35-mutation-";
@@ -76,7 +92,7 @@ const KERNEL_TESTS_DIR = "packages/kernel/tests";
 // 预算纪律：逐 mutant scoped vitest 期望 ~30s 内；90s 硬超时（超时 = harness error，
 // 禁当 killed 虚高 score）。
 const PER_RUN_TIMEOUT_MS = 90_000;
-/** 阈值（MUTATION_PROVISIONAL_THRESHOLDS 出厂兜底同值；provisional 待 A4 批准）。 */
+/** 阈值（MUTATION_PROVISIONAL_THRESHOLDS 出厂兜底同值；已经 Owner 决议 2026-09-01 批准转正——A4 阈值包）。 */
 const THRESHOLDS = { minKillScore: 85, maxSurvivors: 10 };
 
 // ============================================================
@@ -410,6 +426,17 @@ function loadGauntletDist() {
     );
   }
   return import(pathToFileURL(GAUNTLET_DIST).href);
+}
+
+/** 入账通路消费 kernel dist 词形（createStore/applyTransaction/gateResultToSnake 注入入账核心）。 */
+function loadKernelDist() {
+  if (!existsSync(KERNEL_DIST)) {
+    fail(
+      `packages/kernel/dist/index.js 不在位（入账通路消费 kernel dist 词形）——先跑 node scripts/build-all.mjs`,
+      2,
+    );
+  }
+  return import(pathToFileURL(KERNEL_DIST).href);
 }
 
 /** 跑一次 vitest（json 报告落 runDir/<tag>.json），返回 { status, errorMessage, jsonText, durationMs }。 */
@@ -827,6 +854,32 @@ async function runMeasurement() {
     if (!/^GRN-[0-9]+$/.test(record.grn)) recordSelfCheck.push(`grn 词形非法：${record.grn}`);
     if (recordSelfCheck.length > 0) fail(`gate record 自洽复核失配：${recordSelfCheck.join("; ")}`, 2);
 
+    // —— 入正式账本（Owner 决议 2026-09-01：批准基准轮 gate record 入账）。
+    // 自洽复核通过后、results 落盘前执行：入账失败 = exit 2（fail-closed——测量成功
+    // 但账本写入失败不能静默绿；results 文件保持上一成功轮原貌，重跑复用同 seq/GRN
+    // 重试入账）。同 GRN 重复入账由入账核心显式处理（同内容 already_entered 零写入、
+    // 异内容 GRN_CONFLICT 冲突拒绝——kernel 对重复 GRN 无守卫，预检封死静默双写）。
+    let ledgerOutcome;
+    try {
+      const kernel = await loadKernelDist();
+      ledgerOutcome = await enterGateRecordInStore({ record, storeRoot: REPO_ROOT, kernel });
+    } catch (error) {
+      const hint = error?.hint ? `；hint: ${error.hint}` : "";
+      fail(
+        `gate record 入账失败（${error?.code ?? "LEDGER_ENTRY_FAILED"}）：${error?.message ?? String(error)}${hint}`,
+        typeof error?.exitCode === "number" ? error.exitCode : 2,
+      );
+    }
+    if (ledgerOutcome.status === "already_entered") {
+      process.stdout.write(
+        `[ledger] GRN ${record.grn} 已在账（同内容幂等重入——零写入，此前轮次已入账；NO_CHANGE 语义显式披露）\n`,
+      );
+    } else {
+      process.stdout.write(
+        `[ledger] GRN ${record.grn} 已入账 → .pomaster/evidence/runs/${record.grn}.json（TX_APPLIED seq=${String(ledgerOutcome.appliedSeq)}${ledgerOutcome.shortCircuited ? "，事务幂等短路" : ""}；账本留本机不入 git）\n`,
+      );
+    }
+
     const ok =
       harnessTotals.scorePercent >= THRESHOLDS.minKillScore &&
       harnessTotals.survived <= THRESHOLDS.maxSurvivors;
@@ -857,7 +910,7 @@ async function runMeasurement() {
       thresholds: {
         ...THRESHOLDS,
         provenance:
-          "MUTATION_PROVISIONAL_THRESHOLDS（packages/gauntlet-lite/src/mutation-leg.ts；provisional 待 A4 打包批准，wave3-plan.md P24 Owner 位）",
+          "MUTATION_PROVISIONAL_THRESHOLDS（packages/gauntlet-lite/src/mutation-leg.ts；已经 Owner 决议 2026-09-01 批准转正——A4 阈值包一并批准（原 wave3-plan.md P24 Owner 位））",
       },
       mutants: outcomes,
       totals: {
@@ -881,6 +934,17 @@ async function runMeasurement() {
         matches_harness: cross.ok,
       },
       gate_record: record,
+      // —— 入账事实面（Owner 决议 2026-09-01）：store 账本状态镜像（无绝对路径——
+      // provenance 可移植纪律；applied_seq 是 store 事务序，与 results seq 相互独立）。
+      ledger_entry: {
+        status: ledgerOutcome.status,
+        store: ".pomaster（仓库根本机治理账本；.gitignore 排除不入 git——保守裁定披露）",
+        grn: record.grn,
+        ...(ledgerOutcome.appliedSeq !== undefined ? { applied_seq: ledgerOutcome.appliedSeq } : {}),
+        ...(ledgerOutcome.shortCircuited !== undefined
+          ? { short_circuited: ledgerOutcome.shortCircuited }
+          : {}),
+      },
       integrity: {
         baseline_scope_green: { files: allScopeFiles.length, tests: baselineTestCount },
         final_scope_green_after_restore: { files: allScopeFiles.length, detail: finalVerdict.detail },
@@ -888,7 +952,7 @@ async function runMeasurement() {
       },
       durationMs: { total: totalExternalMs },
       note:
-        "timestamp 禁入：运行序以 seq 整数标识（自增，append-only）；durationMs 允许。gate_record 为基准产物不入 evidence/runs 账本（GRN 序号空间独立于 store 账本）。落盘结果 at-rest 可校验：node benchmarks/mutation-kill.mjs --verify（RT2 封条——重放 harness_report 判卷锚，手改落盘分数/计数/killed 位必被检出）。",
+        "timestamp 禁入：运行序以 seq 整数标识（自增，append-only）；durationMs 允许。gate_record 已入正式账本（Owner 决议 2026-09-01 批准）：经 applyTransaction record_gate_run 落本仓 .pomaster store（evidence/runs/<GRN>.json + journal TX_APPLIED 锚）；last-results.json 仍是基准报告文件、store 账本是正式治理事实面，两者并存。GRN 词形 GRN-<results seq>（ran_at_seq 同源取 results seq）；GRN 序号空间与 store 事务 seq 相互独立。同 GRN 重复入账显式幂等：同内容 already_entered 零写入、异内容 GRN_CONFLICT fail-closed exit 2（kernel 对重复 GRN 无守卫，入账预检封死静默双写）。.pomaster 已入 .gitignore（账本留本机不入 git）。落盘结果与账本一致性可校验：node benchmarks/mutation-kill.mjs --verify（重放 harness_report 判卷锚——手改落盘分数/计数/killed 位必被检出——并对账 store 在账状态与 results gate_record 一致）。",
     };
     writeFileSync(RESULTS_PATH, `${JSON.stringify(results, null, 2)}\n`, "utf8");
 
@@ -929,6 +993,27 @@ async function runVerify() {
   }
   process.stdout.write(
     `[verify] OK——seq=${String(results.seq)} score=${String(results.recomputed_score)}%（${String(results.totals.killed)}/${String(results.totals.generated)}）经判卷锚重放对账一致\n`,
+  );
+
+  // —— 账本一致性面（Owner 决议 2026-09-01）：results gate_record ↔ store 在账状态。
+  // 校验 evidence/runs/<GRN>.json 在账 + journal TX_APPLIED 锚在座 + 与 results
+  // gate_record 全量一致（含 applied_seq 精确事件锚）。失配走 --verify 同款退出码 1
+  //（对账失配类）；旧版 results（入账机制启用前）会在此显式红并指明重跑迁移。
+  const kernel = await loadKernelDist();
+  const ledger = verifyGateRecordInLedger({
+    results,
+    storeRoot: REPO_ROOT,
+    gateResultToSnake: kernel.gateResultToSnake,
+  });
+  if (!ledger.ok) {
+    for (const p of ledger.problems) process.stderr.write(`[verify] 账本对账失配：${p}\n`);
+    throw new HarnessExit(
+      `账本对账失配（${ledger.problems.length} 处）：results gate_record（GRN ${ledger.grn ?? "?"}）与 .pomaster store 在账状态不一致——重跑 node benchmarks/mutation-kill.mjs 重新测量入账`,
+      1,
+    );
+  }
+  process.stdout.write(
+    `[verify] 账本 OK——GRN ${ledger.grn} 在账（evidence/runs 在座 + journal TX_APPLIED 锚${ledger.anchor.appliedSeq !== null ? `，applied_seq=${String(ledger.anchor.appliedSeq)} 精确匹配` : ""}）与 results.gate_record 全量一致\n`,
   );
 }
 

@@ -21,7 +21,8 @@
  * P34 增量（15）：Production Control Band（§95 全节 + §30 第四态 + §55.1/§90.4；
  * phase_timeline/production_signal_source/band_predicate_operator/
  * control_band_evaluation_status/diagnosis_kind/self_improvement_signal 六词轴
- * pending_vocab_pr；谓词 machine-evaluable 封死自由文本判据位——§95.2「不得把
+ * 已随 vocab-pr-0004 收编 vocab-lock@v0.3-resolved（Owner 决议 2026-09-01）；
+ * 谓词 machine-evaluable 封死自由文本判据位——§95.2「不得把
  * 『是否异常』完全交给 LLM 主观判断」的类型面落点；CHALLENGED 复用 CHANGE_VALUES
  * 不重复登记）。
  *

@@ -2,10 +2,11 @@
  * production.ts —— `pomaster production` 命令面（P34b · PRD §95 全节 + §30 第四态 +
  * §55.1 + §90.4；docs/wave3-plan.md P34 出口判据的命令面侧）。
  *
- * **命令面命名权呈报项**：PRD §44 命令清单未定义 production 子命令（§95 只有概念
- * 面）——命令面词形是新造，全部进 @pomaster/schemas vocab.ts P34 段待收编注记
- * （absent_in_vocab_lock__pending_vocab_pr）+ docs/production-feedback-p34-report.md
- * §2 呈报 Owner（命令面命名权）。
+ * **命令面命名权（已裁）**：PRD §44 命令清单未定义 production 子命令（§95 只有概念
+ * 面）——命令面词形为新造；命令组名 production + 六子命令位（band/evaluate/challenge/
+ * diagnose/metrics/self-improvement）经 Owner 2026-09-01 认可（呈报件
+ * docs/production-feedback-p34-report.md §2.1——落档 docs/kernel-api.md production
+ * 命令段）；配套错误词形族已随 vocab-pr-0004 收编（Owner 决议 2026-09-01）。
  *
  * 命令组（--json envelope 全覆盖；判卷/落盘权威在 @pomaster/kernel production.ts
  * P34a 语义入口，本包只做 argv 收敛、错误词形映射与呈现）：
@@ -42,8 +43,8 @@
  * - self-improvement list            候选台账呈现（无登记 = 显式空合法态）。
  *
  * 分层纪律：判卷/落盘权威在 kernel production.ts；本面零旁路写状态。错误词形纪律：
- * PRODUCTION_CLI_ERROR_VALUES（schemas vocab.ts P34b 段，pending_vocab_pr + 命令面
- * 命名权呈报）经元组解构取词（单一镜像点）；kernel GovernanceError 码位 → 命令面词形
+ * PRODUCTION_CLI_ERROR_VALUES（schemas vocab.ts P34b 段，vocab-pr-0004 收编——
+ * Owner 决议 2026-09-01）经元组解构取词（单一镜像点）；kernel GovernanceError 码位 → 命令面词形
  * 映射全部由确定性前置检查（读 band/breach 台账现状判分支）或（命令面, kernel 码位）
  * 显式查表承载，禁子串/模糊猜测映射。
  *
@@ -799,7 +800,7 @@ export async function runProductionDiagnose(
     return fail(empty, command, {
       code: "SCHEMA_INVALID",
       message: "--kind 必填（§95.3 诊断三分）",
-      hint: `三词形闭集（SCREAMING_SNAKE——大小写裁定呈报 Owner）：${DIAGNOSIS_KIND_VALUES.join(" | ")}。`,
+      hint: `三词形闭集（SCREAMING_SNAKE——大小写裁定 Owner 2026-09-01 照准）：${DIAGNOSIS_KIND_VALUES.join(" | ")}。`,
     });
   }
   if (!(DIAGNOSIS_KIND_VALUES as readonly string[]).includes(input.kind)) {

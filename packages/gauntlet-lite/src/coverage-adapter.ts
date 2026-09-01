@@ -5,7 +5,7 @@
  * 共享配置（coverage-gate.json，单一事实源，两 gate 各取所需）：
  *   {"runner":"c8","command":"corepack pnpm exec vitest run",
  *    "coverageReport":"coverage/coverage-summary.json",          // 可选（c8=报告目录词形/pytest-cov=文件词形，语义随 runner）
- *    "thresholds":{"lines":80,"branches":60},                    // 可选（缺省=provisional 出厂兜底，待 A4 打包批准）
+ *    "thresholds":{"lines":80,"branches":60},                    // 可选（缺省=出厂兜底：行阈值按档位分化 Owner 决议 2026-09-01，branches 60 未批）
  *    "crap":{"complexityReport":"reports/complexity.json","maxCrap":30}} // 可选（声明即激活 CRAP gate）
  *   pytest-cov 词形：{"runner":"pytest-cov","covTarget":"src", ...}（D17 先行）。
  *
@@ -58,7 +58,6 @@ import {
   COVERAGE_GATE_NAME,
   COVERAGE_METRIC_DIALECT_UNDECLARED,
   COVERAGE_POLICY_SKIP_METRIC_DIALECT,
-  COVERAGE_PROVISIONAL_THRESHOLDS,
   coverageLegExecutable,
   coverageReportAbsolutePath,
   coverageSpawn,
@@ -69,6 +68,7 @@ import {
   normalizeCoverageLeg,
   PYTEST_COV_METRIC_DIALECT,
   PYTEST_COV_TOOL_ID,
+  resolveCoverageProvisionalThresholdsForTier,
   resolveCoverageReportPath,
   runCoverageLeg,
   type CoverageLegOutput,
@@ -101,7 +101,7 @@ export const COVERAGE_CONFIG_HINT =
   'JS/TS 腿 {"runner":"c8","command":"<被 c8 包裹的测试命令>"}（需 package.json 声明 c8），' +
   'Python 腿（D17 先行）{"runner":"pytest-cov","covTarget":"<--cov 目标>"}（需 pytest 配置 + pytest-cov 插件）；' +
   '可选 "coverageReport"（c8=报告目录词形，reporter 固定产出 coverage-summary.json；pytest-cov=报告文件词形）、' +
-  '"thresholds":{"lines":80,"branches":60}（缺省=provisional 出厂兜底，待 A4 打包批准）、' +
+  '"thresholds":{"lines":80,"branches":60}（缺省=出厂兜底：行阈值按档位分化 MINIMAL 80/LIGHT 60/STANDARD 30——Owner 决议 2026-09-01 批准，branches 60 未批维持出厂值）、' +
   '"crap":{"complexityReport":"<radon cc --json 或 {file:complexity} JSON 路径>","maxCrap":30}（声明即激活 COMPLEXITY/CRAP gate）——' +
   "未声明是诚实缺席（not_configured），不会被记为通过";
 
@@ -125,7 +125,10 @@ export interface CoverageGateConfig {
   readonly covTarget: string | null;
   /** 报告落点声明（可选）：c8=报告目录词形；pytest-cov=报告文件词形；null=runner 缺省。 */
   readonly coverageReport: string | null;
-  /** 阈值（可选；null=provisional 出厂兜底 80/60，待 A4 打包批准）。 */
+  /**
+   * 阈值（可选；null=出厂兜底——行阈值按档位分化 MINIMAL 80/LIGHT 60/STANDARD 30
+   * （Owner 决议 2026-09-01 批准），branches 60 未批维持出厂值）。
+   */
   readonly thresholds: CoverageThresholds | null;
   /** CRAP 腿声明（可选；null=CRAP gate 合法未配置 not_configured 非静默）。 */
   readonly crap: CoverageCrapConfig | null;
@@ -254,7 +257,7 @@ export function readCoverageGateConfig(facts: DetectorFacts): CoverageConfigRead
   if (thresholds === "invalid") {
     return {
       ok: false,
-      reason: `${COVERAGE_GATE_CONFIG_FILE} 的 thresholds 必须是 {"lines":<0-100>,"branches":<0-100>}（两键都给；阈值配置化——缺省即用 provisional 出厂兜底，不给半份）`,
+      reason: `${COVERAGE_GATE_CONFIG_FILE} 的 thresholds 必须是 {"lines":<0-100>,"branches":<0-100>}（两键都给；阈值配置化——缺省即用档位分化出厂兜底，不给半份）`,
       installHint: `字段形态见：${COVERAGE_CONFIG_HINT}`,
     };
   }
@@ -444,7 +447,7 @@ export function createCoverageAdapter(
           executable: "",
           timeoutMs: policy.timeoutMs ?? DEFAULT_COVERAGE_TIMEOUT_MS,
           coverageReportPath: "",
-          thresholds: COVERAGE_PROVISIONAL_THRESHOLDS,
+          thresholds: resolveCoverageProvisionalThresholdsForTier(tier),
           thresholdsProvisional: true,
           expectedToolVersion: null,
         };
@@ -469,7 +472,7 @@ export function createCoverageAdapter(
           executable: "",
           timeoutMs: policy.timeoutMs ?? DEFAULT_COVERAGE_TIMEOUT_MS,
           coverageReportPath: "",
-          thresholds: COVERAGE_PROVISIONAL_THRESHOLDS,
+          thresholds: resolveCoverageProvisionalThresholdsForTier(tier),
           thresholdsProvisional: true,
           expectedToolVersion: null,
         };
@@ -477,7 +480,9 @@ export function createCoverageAdapter(
 
       const config = read.config;
       const runner = config.runner;
-      const thresholds = config.thresholds ?? COVERAGE_PROVISIONAL_THRESHOLDS;
+      // 出厂兜底按档位分化（行阈值 Owner 决议 2026-09-01：MINIMAL 80/LIGHT 60/
+      // STANDARD 30；branches 恒 60 未批）；配置显式供给时整体覆盖（配置优先）。
+      const thresholds = config.thresholds ?? resolveCoverageProvisionalThresholdsForTier(tier);
       const thresholdsProvisional = config.thresholds === null;
       const metricDialect =
         runner === "c8" ? C8_METRIC_DIALECT : PYTEST_COV_METRIC_DIALECT;

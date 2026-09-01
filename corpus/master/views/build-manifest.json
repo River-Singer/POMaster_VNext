@@ -63,7 +63,7 @@
     "pending_registrations": 3,
     "truth_objects": 1983
   },
-  "inputs_fingerprint": "9fcb3feccc960be75cac599f50c8bde9ae868380177078c65f4e85ed48bd6a51",
+  "inputs_fingerprint": "2f9ee72d7fe373570457abdc23865790dd00e447f24fd307792ef9bb837bac99",
   "object_domains": [
     {
       "batch": "MIG-B1",
@@ -198,7 +198,7 @@
       "citations_unresolved": 0,
       "lines": 158,
       "sections": 5,
-      "sha256": "f06cfdc13fca64f92d25c5a1561a2d7b65c9e1f8b26cc3c34b49881cd96ec239"
+      "sha256": "8d279e2db0beff3ed16f6b22fc75496a997a6c7773339a5241959d686ceecf44"
     },
     "executive-system-map.md": {
       "bytes": 5534,
@@ -206,7 +206,7 @@
       "citations_unresolved": 0,
       "lines": 54,
       "sections": 5,
-      "sha256": "d4ed179d9b760071a5cf163cb557b4afd035762eb040836af0cbea4639a21643"
+      "sha256": "251490095b466b1738ec0d959b02cfae72017f395c4c868302d6d6f6e5d4fe4e"
     },
     "known-debt.md": {
       "bytes": 20187,
@@ -214,7 +214,7 @@
       "citations_unresolved": 0,
       "lines": 132,
       "sections": 6,
-      "sha256": "e15a6c9af7c9dd29972bee94a1ee5ec8854718921d7290cb0bb70ee422a5d812"
+      "sha256": "f1576d6160157f11bf028fef0ee2defbec776c62e6cc78a5500419e8aaeec1cf"
     },
     "technology-baseline.md": {
       "bytes": 8974,
@@ -222,7 +222,7 @@
       "citations_unresolved": 0,
       "lines": 75,
       "sections": 6,
-      "sha256": "4c092019bbd02b708cd3d2b472424891b94eedbb68c8cb8d7f3ea0ff098bebf4"
+      "sha256": "3df44155ff753f5bc1433b1e9b6eed6562449b0477d299685589ee2a549548ec"
     }
   }
 }

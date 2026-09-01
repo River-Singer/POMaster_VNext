@@ -10,8 +10,8 @@
  * - 无墙钟（A4）：本模块的全部输出只依赖输入内容本身，同输入重放字节稳定。
  *
  * vocab 指纹口径：对「代码唯一镜像点」@pomaster/schemas/src/vocab.ts 的常量做
- * canonical JSON 摘要（该文件逐值镜像 vocab-lock@v0.2-resolved；指纹只取 state_axes /
- * truth_bodies / prefixes 三块，PR-0001 增补段不参与，指纹值稳定）。不解析 YAML 资产
+ * canonical JSON 摘要（该文件逐值镜像 vocab-lock@v0.3-resolved；指纹只取 state_axes /
+ * truth_bodies / prefixes 三块，PR-0001/PR-0004 增补段不参与，指纹值稳定）。不解析 YAML 资产
  * （schemas 包不引入 YAML 运行时依赖）；写入端与对账端共用同一计算 → 指纹漂移
  * 当且仅当词表代码镜像变化，正是「枚举多头拷贝」要抓的信号。
  */

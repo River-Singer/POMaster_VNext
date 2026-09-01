@@ -1,7 +1,7 @@
 {
-  "schema": "pomaster.vnext.selfhosting-benchmark-results/2",
-  "run_id": "bench-0005",
-  "seq": 5,
+  "schema": "pomaster.vnext.selfhosting-benchmark-results/3",
+  "run_id": "bench-0008",
+  "seq": 8,
   "ok": true,
   "summary": {
     "total": 3,
@@ -19,7 +19,7 @@
       "matched_keywords": [
         "文案"
       ],
-      "durationMs": 294,
+      "durationMs": 340,
       "ok": true,
       "assertions": [
         {
@@ -50,7 +50,7 @@
       "matched_rule": "DEFAULT_NO_SIGNAL",
       "evidence_grade": "NOT_CONFIGURED",
       "matched_keywords": [],
-      "durationMs": 293,
+      "durationMs": 341,
       "ok": true,
       "assertions": [
         {
@@ -118,6 +118,8 @@
           "artifacts": [
             "catalog-lock-verification",
             "catalog-authority-anchor",
+            "gate-judging-readiness-report",
+            "gate-result-fixture-red-green",
             "gatekeeper-drift-report",
             "three-tier-path-signature"
           ]
@@ -141,48 +143,138 @@
           ]
         }
       },
-      "a3_pending_items": [
+      "a3_ruling": {
+        "ruling": "APPROVED_OWNER_2026_09_01",
+        "source": "Owner 决议 2026-09-01（本会话 AskUserQuestion 直答，按推荐全收）",
+        "items": [
+          {
+            "id": "constitutional_gate_subset_selection",
+            "ruling": "APPROVED_OWNER_2026_09_01",
+            "decision": "宪法档执行面 = catalog 5 条 GATE.* 全部（BE.API.CONTRACT_CHECKS / BE.CHG.CONTRACT_CHANGE_CHECKS / CHG.PRECHANGE_CHECKS / WEB.API.REQUEST_CHECKS / WEB.GRID.CHECKS）",
+            "promoted_to_assertions": [
+              "constitutional-gate-subset-anchored",
+              "gate-judging-readiness-5-of-5"
+            ]
+          },
+          {
+            "id": "constitutional_gate_thresholds",
+            "ruling": "APPROVED_OWNER_2026_09_01",
+            "decision": "catalog gate_def_draft.judging_rules 四条草稿纪律（counts_not_applicable_required / trust_twin / blindspot_evidence / aggregate_honesty）全部升为硬判据",
+            "promoted_to_assertions": [
+              "gate-judging-rules-hardened-wordform",
+              "gate-result-fixture-red",
+              "gate-result-fixture-green"
+            ]
+          },
+          {
+            "id": "strict_profile_mapping",
+            "ruling": "APPROVED_OWNER_2026_09_01",
+            "decision": "catalog 锚即档——catalog-lock 的 profile 锚即宪法档位词形，triage 不物化 STRICT 档，无双轨",
+            "promoted_to_assertions": [
+              "profile-anchor-present",
+              "distinct-axis-profile-value"
+            ]
+          }
+        ]
+      },
+      "constitutional_gate_readiness": [
         {
-          "id": "constitutional_gate_subset_selection",
-          "ruling": "PENDING_A3",
-          "question": "宪法档具体执行哪些宪法 gate（catalog 5 条 GATE.* recipe 的执行子集或全量）",
-          "candidates": [
-            "GATE.BE.API.CONTRACT_CHECKS",
-            "GATE.BE.CHG.CONTRACT_CHANGE_CHECKS",
-            "GATE.CHG.PRECHANGE_CHECKS",
-            "GATE.WEB.API.REQUEST_CHECKS",
-            "GATE.WEB.GRID.CHECKS"
-          ],
-          "current_behavior": "仅经 catalog-lock 哈希校验锚定在场（anchored），不执行任何 gate 判卷；不参与 ok",
-          "participates_in_ok": false
+          "gate_id": "GATE.BE.API.CONTRACT_CHECKS",
+          "lock_path": "gates/gate.be.api.contract_checks.json",
+          "anchor": "GATE.BE.API.CONTRACT_CHECKS@0.1.0",
+          "definition_present": true,
+          "lock_hash_anchored": true,
+          "anchor_wordform_ok": true,
+          "judging_rules": {
+            "counts_not_applicable_required": true,
+            "trust_twin": true,
+            "blindspot_evidence": true,
+            "aggregate_honesty": true
+          },
+          "rules_complete": true,
+          "readiness": "ready",
+          "problems": [],
+          "execution": "not_run",
+          "not_run_reason": "分母缺席：vNext 仓库自身无业务 subject 数据面，gate 真实判卷需在消费项目数据面执行（A3 裁定执行面=就绪校验；not_run 显式披露，禁假 passed）"
         },
         {
-          "id": "constitutional_gate_thresholds",
-          "ruling": "PENDING_A3",
-          "question": "宪法档 gate 判定阈值与 passed 判据（gate_def_draft.judging_rules 为草稿词形，非裁定）",
-          "candidates": [
-            "counts_not_applicable_required",
-            "trust_twin",
-            "blindspot_evidence",
-            "aggregate_honesty"
-          ],
-          "current_behavior": "不做 gate 判卷，因此无阈值断言；不参与 ok",
-          "participates_in_ok": false
+          "gate_id": "GATE.BE.CHG.CONTRACT_CHANGE_CHECKS",
+          "lock_path": "gates/gate.be.chg.contract_change_checks.json",
+          "anchor": "GATE.BE.CHG.CONTRACT_CHANGE_CHECKS@0.1.0",
+          "definition_present": true,
+          "lock_hash_anchored": true,
+          "anchor_wordform_ok": true,
+          "judging_rules": {
+            "counts_not_applicable_required": true,
+            "trust_twin": true,
+            "blindspot_evidence": true,
+            "aggregate_honesty": true
+          },
+          "rules_complete": true,
+          "readiness": "ready",
+          "problems": [],
+          "execution": "not_run",
+          "not_run_reason": "分母缺席：vNext 仓库自身无业务 subject 数据面，gate 真实判卷需在消费项目数据面执行（A3 裁定执行面=就绪校验；not_run 显式披露，禁假 passed）"
         },
         {
-          "id": "strict_profile_mapping",
-          "ruling": "PENDING_A3",
-          "question": "§90.3 期望「STRICT + Meta-Governance」与本基准呈现面的映射口径：triage v0 引擎无 STRICT 档（prompt_only 预留，ceiling_candidates 恒空）；宪法档现以 catalog profile 锚（name@version）呈现治理档",
-          "candidates": [
-            "triage-STRICT-物化",
-            "catalog-profile-锚即档",
-            "双轨并行"
-          ],
-          "current_behavior": "profile 字段如实呈现 catalog 锚原值并标 profile_kind=catalog-profile-anchor，不冒充 triage STRICT；不参与 ok",
-          "participates_in_ok": false
+          "gate_id": "GATE.CHG.PRECHANGE_CHECKS",
+          "lock_path": "gates/gate.chg.prechange_checks.json",
+          "anchor": "GATE.CHG.PRECHANGE_CHECKS@0.1.0",
+          "definition_present": true,
+          "lock_hash_anchored": true,
+          "anchor_wordform_ok": true,
+          "judging_rules": {
+            "counts_not_applicable_required": true,
+            "trust_twin": true,
+            "blindspot_evidence": true,
+            "aggregate_honesty": true
+          },
+          "rules_complete": true,
+          "readiness": "ready",
+          "problems": [],
+          "execution": "not_run",
+          "not_run_reason": "分母缺席：vNext 仓库自身无业务 subject 数据面，gate 真实判卷需在消费项目数据面执行（A3 裁定执行面=就绪校验；not_run 显式披露，禁假 passed）"
+        },
+        {
+          "gate_id": "GATE.WEB.API.REQUEST_CHECKS",
+          "lock_path": "gates/gate.web.api.request_checks.json",
+          "anchor": "GATE.WEB.API.REQUEST_CHECKS@0.1.0",
+          "definition_present": true,
+          "lock_hash_anchored": true,
+          "anchor_wordform_ok": true,
+          "judging_rules": {
+            "counts_not_applicable_required": true,
+            "trust_twin": true,
+            "blindspot_evidence": true,
+            "aggregate_honesty": true
+          },
+          "rules_complete": true,
+          "readiness": "ready",
+          "problems": [],
+          "execution": "not_run",
+          "not_run_reason": "分母缺席：vNext 仓库自身无业务 subject 数据面，gate 真实判卷需在消费项目数据面执行（A3 裁定执行面=就绪校验；not_run 显式披露，禁假 passed）"
+        },
+        {
+          "gate_id": "GATE.WEB.GRID.CHECKS",
+          "lock_path": "gates/gate.web.grid.checks.json",
+          "anchor": "GATE.WEB.GRID.CHECKS@0.1.0",
+          "definition_present": true,
+          "lock_hash_anchored": true,
+          "anchor_wordform_ok": true,
+          "judging_rules": {
+            "counts_not_applicable_required": true,
+            "trust_twin": true,
+            "blindspot_evidence": true,
+            "aggregate_honesty": true
+          },
+          "rules_complete": true,
+          "readiness": "ready",
+          "problems": [],
+          "execution": "not_run",
+          "not_run_reason": "分母缺席：vNext 仓库自身无业务 subject 数据面，gate 真实判卷需在消费项目数据面执行（A3 裁定执行面=就绪校验；not_run 显式披露，禁假 passed）"
         }
       ],
-      "durationMs": 201,
+      "durationMs": 252,
       "ok": true,
       "assertions": [
         {
@@ -193,12 +285,12 @@
         {
           "name": "profile-anchor-present",
           "ok": true,
-          "detail": "catalog-lock profile=\"web-standard@0\"（catalog_version=0.1.0-pilot），name@version 词形锚存在"
+          "detail": "catalog-lock profile=\"web-standard@0\"（catalog_version=0.1.0-pilot），name@version 词形锚存在——catalog 锚即档（A3 裁定 3，Owner 2026-09-01）"
         },
         {
           "name": "constitutional-gate-subset-anchored",
           "ok": true,
-          "detail": "GATE.* 条目 5 条经 lock 哈希校验在场（GATE.BE.API.CONTRACT_CHECKS, GATE.BE.CHG.CONTRACT_CHANGE_CHECKS, GATE.CHG.PRECHANGE_CHECKS, GATE.WEB.API.REQUEST_CHECKS, GATE.WEB.GRID.CHECKS）；具体执行子集与阈值属 A3 pending，不在本断言判定范围"
+          "detail": "A3 裁定 1 转正（Owner 2026-09-01）：GATE.* 执行面 = catalog 全量 5 条且与裁定词形逐一对应（GATE.BE.API.CONTRACT_CHECKS, GATE.BE.CHG.CONTRACT_CHANGE_CHECKS, GATE.CHG.PRECHANGE_CHECKS, GATE.WEB.API.REQUEST_CHECKS, GATE.WEB.GRID.CHECKS），全部经 lock 哈希校验在场"
         },
         {
           "name": "authority-model-anchor-present",
@@ -209,6 +301,26 @@
           "name": "policies-loadable-human-owned",
           "ok": true,
           "detail": "loadCatalogPolicies=79 条（共享读取器词表对账 fail-closed 真实执行）；authority.owner=HUMAN_OWNER 79/79（cannot self-approve 锚）"
+        },
+        {
+          "name": "gate-judging-readiness-5-of-5",
+          "ok": true,
+          "detail": "A3 裁定 1+2 执行面（Owner 2026-09-01）：5/5 gate 判卷就绪（定义在场 + lock 哈希锚 + gate_def 锚词形逐条对账）；execution 恒 not_run（分母缺席显式披露于 constitutional_gate_readiness，禁假判卷；ok 只吃就绪不吃假 verdict）"
+        },
+        {
+          "name": "gate-judging-rules-hardened-wordform",
+          "ok": true,
+          "detail": "A3 裁定 2 转正（Owner 2026-09-01）：judging_rules 四硬判据（counts_not_applicable_required / trust_twin / blindspot_evidence / aggregate_honesty）在 5 条 gate_def_draft 中全部可解析且非空（草稿词形升硬=词形逐条校验；判卷器机制另见 gate-result-fixture-red/green）"
+        },
+        {
+          "name": "gate-result-fixture-green",
+          "ok": true,
+          "detail": "fixture 绿（演示判卷，非业务分母）：normalizeGateResult 以 catalog 锚 GATE.BE.API.CONTRACT_CHECKS@0.1.0 归一合式载荷 → verdict=passed，trust.asserted/recomputed 孪生一致（subject TEST.* + is_fixture=true，Q3 隔离；5 条 gate 执行 verdict 仍 not_run）"
+        },
+        {
+          "name": "gate-result-fixture-red",
+          "ok": true,
+          "detail": "fixture 红（演示判卷，非业务分母）：counts.not_applicable 缺失 → FATAL GATE_COUNTS_INVALID（裁定 2 规则 1 counts_not_applicable_required 的判卷器机制真实执行——『为何没查』必须是数字而非沉默）"
         },
         {
           "name": "gatekeeper-drift-caught",
@@ -228,7 +340,7 @@
         {
           "name": "three-tier-path-signatures-distinct",
           "ok": true,
-          "detail": "三档签名两两不同（§90.3 同路=失败未触发）：surface constitutional=\"kernel:catalog+gatekeeper\" vs tiny/normal=\"cli:triage\"；gate_ids constitutional=5 条 vs 两档 0 条；profile constitutional=\"web-standard@0\" vs triage 档位词"
+          "detail": "三档在全部真实轴上两两可区分（§90.3 同路=失败未触发；头版=三轴聚合，非整签名两两不等的同义反复——surface/matched_rule/artifacts 为常量词形不计入）：surface constitutional=\"kernel:catalog+gatekeeper\" vs tiny/normal=\"cli:triage\"；gate_ids constitutional=5 条 vs 两档 0 条；profile constitutional=\"web-standard@0\" vs triage 档位词"
         },
         {
           "name": "distinct-axis-execution-surface",
@@ -243,51 +355,44 @@
         {
           "name": "distinct-axis-profile-value",
           "ok": true,
-          "detail": "profile 值轴：constitutional 锚 catalog profile=\"web-standard@0\"，tiny=\"MINIMAL\"，normal=\"LIGHT\"（triage 档位词 vs catalog name@version 锚）"
+          "detail": "profile 值轴：constitutional 锚 catalog profile=\"web-standard@0\"，tiny=\"MINIMAL\"，normal=\"LIGHT\"（catalog 锚即档——A3 裁定 3，Owner 2026-09-01；triage 不物化 STRICT 档，无双轨）"
         }
       ]
     }
   ],
-  "a3_pending_items": [
-    {
-      "id": "constitutional_gate_subset_selection",
-      "ruling": "PENDING_A3",
-      "question": "宪法档具体执行哪些宪法 gate（catalog 5 条 GATE.* recipe 的执行子集或全量）",
-      "candidates": [
-        "GATE.BE.API.CONTRACT_CHECKS",
-        "GATE.BE.CHG.CONTRACT_CHANGE_CHECKS",
-        "GATE.CHG.PRECHANGE_CHECKS",
-        "GATE.WEB.API.REQUEST_CHECKS",
-        "GATE.WEB.GRID.CHECKS"
-      ],
-      "current_behavior": "仅经 catalog-lock 哈希校验锚定在场（anchored），不执行任何 gate 判卷；不参与 ok",
-      "participates_in_ok": false
-    },
-    {
-      "id": "constitutional_gate_thresholds",
-      "ruling": "PENDING_A3",
-      "question": "宪法档 gate 判定阈值与 passed 判据（gate_def_draft.judging_rules 为草稿词形，非裁定）",
-      "candidates": [
-        "counts_not_applicable_required",
-        "trust_twin",
-        "blindspot_evidence",
-        "aggregate_honesty"
-      ],
-      "current_behavior": "不做 gate 判卷，因此无阈值断言；不参与 ok",
-      "participates_in_ok": false
-    },
-    {
-      "id": "strict_profile_mapping",
-      "ruling": "PENDING_A3",
-      "question": "§90.3 期望「STRICT + Meta-Governance」与本基准呈现面的映射口径：triage v0 引擎无 STRICT 档（prompt_only 预留，ceiling_candidates 恒空）；宪法档现以 catalog profile 锚（name@version）呈现治理档",
-      "candidates": [
-        "triage-STRICT-物化",
-        "catalog-profile-锚即档",
-        "双轨并行"
-      ],
-      "current_behavior": "profile 字段如实呈现 catalog 锚原值并标 profile_kind=catalog-profile-anchor，不冒充 triage STRICT；不参与 ok",
-      "participates_in_ok": false
-    }
-  ],
-  "note": "timestamp 禁入：运行序以 seq/run_id 标识（seq 即 C7 校准轮代号，见 calibration-template.md）。schema /2 向后兼容 /1：新增 path_signature 与 a3_pending_items 字段，readPrevSeq/summary 消费面不变。"
+  "a3_ruling": {
+    "ruling": "APPROVED_OWNER_2026_09_01",
+    "source": "Owner 决议 2026-09-01（本会话 AskUserQuestion 直答，按推荐全收）",
+    "items": [
+      {
+        "id": "constitutional_gate_subset_selection",
+        "ruling": "APPROVED_OWNER_2026_09_01",
+        "decision": "宪法档执行面 = catalog 5 条 GATE.* 全部（BE.API.CONTRACT_CHECKS / BE.CHG.CONTRACT_CHANGE_CHECKS / CHG.PRECHANGE_CHECKS / WEB.API.REQUEST_CHECKS / WEB.GRID.CHECKS）",
+        "promoted_to_assertions": [
+          "constitutional-gate-subset-anchored",
+          "gate-judging-readiness-5-of-5"
+        ]
+      },
+      {
+        "id": "constitutional_gate_thresholds",
+        "ruling": "APPROVED_OWNER_2026_09_01",
+        "decision": "catalog gate_def_draft.judging_rules 四条草稿纪律（counts_not_applicable_required / trust_twin / blindspot_evidence / aggregate_honesty）全部升为硬判据",
+        "promoted_to_assertions": [
+          "gate-judging-rules-hardened-wordform",
+          "gate-result-fixture-red",
+          "gate-result-fixture-green"
+        ]
+      },
+      {
+        "id": "strict_profile_mapping",
+        "ruling": "APPROVED_OWNER_2026_09_01",
+        "decision": "catalog 锚即档——catalog-lock 的 profile 锚即宪法档位词形，triage 不物化 STRICT 档，无双轨",
+        "promoted_to_assertions": [
+          "profile-anchor-present",
+          "distinct-axis-profile-value"
+        ]
+      }
+    ]
+  },
+  "note": "timestamp 禁入：运行序以 seq/run_id 标识（seq 即 C7 校准轮代号，见 calibration-template.md）。schema /3 向后兼容 /2//1：/3 将 a3_pending_items 更名为 a3_ruling（A3 三项裁定转正，Owner 2026-09-01）并在 constitutional 条目新增 constitutional_gate_readiness；readPrevSeq/summary 消费面不变。"
 }

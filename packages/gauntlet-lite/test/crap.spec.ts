@@ -524,11 +524,12 @@ describe("CRAP adapter detect", () => {
 });
 
 // ============================================================
-// 阈值 provisional 纪律（呈报项登记；A4 对齐点）
+// 阈值呈报项登记（A4 对齐点：coverage 行阈值已批准转正 approved；
+// CRAP 阈值与 coverage branches 未在 2026-09-01 批准包、维持 provisional）
 // ============================================================
 
-describe("provisional 阈值呈报项登记（系统不自批为永久值）", () => {
-  it("CRAP 阈值呈报项：status=provisional、注记含「provisional」与「A4」、值与出厂兜底一致", () => {
+describe("阈值呈报项登记（status/approved_by 是权威词形；再变更必须 Owner 批准，系统不自批）", () => {
+  it("CRAP 阈值呈报项：status=provisional、注记含「provisional」与「A4」、值与出厂兜底一致（CRAP 未在 2026-09-01 批准包）", () => {
     expect(CRAP_PROVISIONAL_REGISTRATION.status).toBe("provisional");
     expect(CRAP_PROVISIONAL_REGISTRATION.value).toBe(CRAP_PROVISIONAL_MAX_CRAP);
     expect(CRAP_PROVISIONAL_MAX_CRAP).toBe(30);
@@ -537,14 +538,26 @@ describe("provisional 阈值呈报项登记（系统不自批为永久值）", (
     expect(CRAP_PROVISIONAL_REGISTRATION.key).toBe("coverage-gate.json crap.maxCrap");
   });
 
-  it("coverage 行/分支阈值呈报项同表登记（两键齐备，逐项 provisional）", () => {
+  it("coverage 行/分支阈值呈报项同表登记：行阈值三档分化已批准（approved + approved_by）、branches 未在批准包维持 provisional", () => {
     expect(PROVISIONAL_THRESHOLD_REGISTRATIONS).toHaveLength(2);
-    for (const entry of PROVISIONAL_THRESHOLD_REGISTRATIONS) {
-      expect(entry.status).toBe("provisional");
-      expect(entry.note).toContain("provisional");
-      expect(entry.note).toContain("A4");
+    const lines = PROVISIONAL_THRESHOLD_REGISTRATIONS[0];
+    expect(lines?.key).toBe("coverage-gate.json thresholds.lines");
+    expect(lines?.status).toBe("approved");
+    if (lines === undefined || !("approved_by" in lines)) {
+      throw new Error("行阈值登记行缺 approved_by（Owner 决议 2026-09-01 批准词形破损）");
     }
-    expect(PROVISIONAL_THRESHOLD_REGISTRATIONS.map((e) => e.value)).toEqual([80, 60]);
+    expect(lines.approved_by).toBe("OWNER 2026-09-01 decision");
+    // value = 批准的三档分化值（MINIMAL 80 / LIGHT 60 / STANDARD 30）。
+    expect(lines.value).toEqual({ MINIMAL: 80, LIGHT: 60, STANDARD: 30 });
+    expect(lines.note).toContain("Owner 决议 2026-09-01");
+    expect(lines.note).toContain("三档分化");
+    expect(lines.note).not.toContain("provisional 待 A4");
+    const branches = PROVISIONAL_THRESHOLD_REGISTRATIONS[1];
+    expect(branches?.key).toBe("coverage-gate.json thresholds.branches");
+    expect(branches?.status).toBe("provisional");
+    expect(branches?.value).toBe(60);
+    expect(branches?.note).toContain("未在 2026-09-01 批准包");
+    expect(branches?.note).toContain("维持出厂值 60");
   });
 
   it("档位词轴：五词形 PRD 出处闭包 + 缺省 STANDARD", () => {

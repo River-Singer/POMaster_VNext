@@ -4,7 +4,8 @@
  * 覆盖（对位任务测试面）：
  * - §30 四态词形（PHASE_TIMELINE_VALUES 逐字 + 与 lifecycle 轴正交 + band phase 恒
  *   IN_PRODUCTION 构造面封条）；
- * - 词轴逐值（P34 段 pending_vocab_pr：SIGNAL_SOURCE 五值 / DIAGNOSIS_KIND 三分 /
+ * - 词轴逐值（P34 段已随 vocab-pr-0004 收编——Owner 决议 2026-09-01：SIGNAL_SOURCE 五值 /
+ *   DIAGNOSIS_KIND 三分 /
  *   BAND_PREDICATE_OPERATOR 五算子 / EVALUATION_STATUS 三态 / SELF_IMPROVEMENT_SIGNAL
  *   八信号 + PRD 原文逐字镜像 + 十六机器键与八能力表一致性）；
  * - 15-production-band schema 契约（registerControlBand 产物 ajv 校验 + allSchemas
@@ -280,15 +281,15 @@ describe("§30 四态词形轴（PHASE_TIMELINE_VALUES）", () => {
 });
 
 // ============================================================
-// 词轴逐值（P34 段 pending_vocab_pr）
+// 词轴逐值（P34 段已收编——vocab-pr-0004 · Owner 决议 2026-09-01）
 // ============================================================
 
-describe("P34 词轴逐值（pending_vocab_pr 收编段）", () => {
+describe("P34 词轴逐值（vocab-pr-0004 收编段 · Owner 决议 2026-09-01）", () => {
   it("§95.2 生产信号源五词形（L6126 空格词形转 snake_case：error budget→error_budget、SLO→slo）", () => {
     expect([...PRODUCTION_SIGNAL_SOURCE_VALUES]).toEqual(["metric", "log", "error_budget", "slo", "control_band"]);
   });
 
-  it("§95.3 诊断三分（SCREAMING_SNAKE 词形——§31 ARCHITECTURE_EVOLUTION 同源先例；大小写裁定呈报 Owner）", () => {
+  it("§95.3 诊断三分（SCREAMING_SNAKE 词形——§31 ARCHITECTURE_EVOLUTION 同源先例；大小写裁定 Owner 2026-09-01 照准）", () => {
     expect([...DIAGNOSIS_KIND_VALUES]).toEqual(["IMPLEMENTATION_ISSUE", "CONFIG_ISSUE", "ARCHITECTURE_EVOLUTION"]);
   });
 

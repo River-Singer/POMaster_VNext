@@ -24,7 +24,7 @@
  *   Capability=CHALLENGED → Diagnosis/Evidence → Implementation Issue / Config Issue /
  *   Architecture Evolution 三分（DIAGNOSIS_KIND_VALUES，SCREAMING_SNAKE 词形——
  *   §31 challenge classification 先例词形 ARCHITECTURE_EVOLUTION 同源，大小写裁定
- *   呈报 Owner）。「生产现实因此成为下一轮 Current State 的外部反馈」。
+ *   Owner 2026-09-01 照准）。「生产现实因此成为下一轮 Current State 的外部反馈」。
  * - PRD §55.1（L3579-3597）：八能力 Leading/Lagging 表（CAPABILITY_OUTCOME_METRICS
  *   三列逐字常量化）+「某能力若长期只增加步骤而不改善 Leading/Lagging Outcome，应进入
  *   POMASTER_SELF_IMPROVEMENT_CANDIDATE」+「注意：Metrics 用于风险提示，不直接替代
@@ -44,8 +44,9 @@
  * - store.ts L1240 既有前置核实结论：LOCKED+STABLE→CHALLENGED 要求 tx.authorityRef
  *   非空（DECISION.* / CHANGE.* / PERMIT.* 宽松 general_id 形态，store 仅校验非空）——
  *   本模块把 breach Evidence 引用（PBR-*）作为 tx.authorityRef 接线（确定性工具信号
- *   即挑战权威：「LOCKED 不是圣旨，但也不是随便挑战」的 §95.2 兑现形态），呈报项：
- *   authorityRef 承载 PBR-* 非词表前缀引用属新形态，随词汇表 PR 一并呈报 Owner；
+ *   即挑战权威：「LOCKED 不是圣旨，但也不是随便挑战」的 §95.2 兑现形态）。呈报项已裁：
+ *   authorityRef 承载 PBR-* 的接线事实经 vocab-pr-0004 登记于 vocab-lock
+ *   id_namespace.state_plane_refs（Owner 决议 2026-09-01）；
  * - §95.3 前置（capability lifecycle=CURRENT、change=STABLE、breach evidence 存在且
  *   属该 band）在事务外显式核实，非 CURRENT/重复 challenge/无 evidence 显式拒绝。
  *
@@ -277,7 +278,7 @@ function requireVocab<T extends string>(
     throw new GovernanceError(
       "VOCAB_INVALID_VALUE",
       `${field} 词表外：${value}（${source}）`,
-      `合法词形：${values.join(" | ")}；扩值走词汇表 PR（pending_vocab_pr）`,
+      `合法词形：${values.join(" | ")}；扩值走词汇表 PR（production_band_vocab@vocab-pr-0004 已收编）`,
       { [field]: value },
     );
   }
@@ -1179,7 +1180,7 @@ export function recordDiagnosis(
     input.kind,
     DIAGNOSIS_KIND_VALUES,
     "kind",
-    "§95.3 诊断三分（Implementation Issue/Config Issue/Architecture Evolution，SCREAMING_SNAKE 词形——大小写裁定呈报 Owner）",
+    "§95.3 诊断三分（Implementation Issue/Config Issue/Architecture Evolution，SCREAMING_SNAKE 词形——大小写裁定 Owner 2026-09-01 照准）",
   );
   const notes = requireNonEmpty(input.notes, "notes", "诊断注记必填留痕");
   if (typeof input.diagnosedBy?.actor !== "string" || input.diagnosedBy.actor.length === 0) {
@@ -1280,7 +1281,8 @@ export interface CapabilityOutcomeMetricRow {
 
 /**
  * PRD §55.1 八能力 Leading/Lagging 表逐字常量（L3583-3592 表列原文；机器键映射见
- * @pomaster/schemas CAPABILITY_OUTCOME_METRIC_KEY_VALUES，pending_vocab_pr）。
+ * @pomaster/schemas CAPABILITY_OUTCOME_METRIC_KEY_VALUES——vocab-pr-0004 收编，
+ * Owner 决议 2026-09-01）。
  */
 export const CAPABILITY_OUTCOME_METRICS: readonly CapabilityOutcomeMetricRow[] = [
   {

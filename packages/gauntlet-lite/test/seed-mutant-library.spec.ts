@@ -378,7 +378,8 @@ describe("seed 库全链路：fake 工具 × 真实 spawnSync × 三道闸 × �
       "src/math.ts:8",
     ]);
     expect(record.scopeNote).toContain("72.73");
-    expect(record.scopeNote).toContain("provisional 待 A4");
+    expect(record.scopeNote).toContain("Owner 决议 2026-09-01");
+    expect(record.scopeNote).not.toContain("provisional 待 A4");
     expect(record.metricDialect).toBe(STRYKER_METRIC_DIALECT);
     const doc = toGateResultJson(record);
     if (!validate(doc)) console.error(validate.errors);
