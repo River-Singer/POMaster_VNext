@@ -2,7 +2,8 @@
  * browser-legs-e2e.spec.ts —— P26 出口判据 E2E（tests/integration，L2 账）：
  *
  * ① BROWSER 双通道两条 GRN 独立入账 truth-index：runBrowserGateLegs 双腿真判卷
- *    （fake spawn × 真实 adapter 归一 + 编排方注入的 MCP 证据面）产出「playwright
+ *    （fake spawn × fake smoke × 真实 adapter 归一 + 编排方注入的 MCP 证据面）
+ *    产出「playwright
  *    红（console 违规）+ MCP 交互腿绿（三件套齐备）」两记录 → 逐条过 kernel
  *    normalizeGateResult 判卷复算（P12c 假绿封死边界同款）→ 单事务两条
  *    record_gate_run 入账 → evidence/runs/ 恰好两个 GRN 文件、verdict 互异、
@@ -51,10 +52,14 @@ beforeEach(() => {
 // ============================================================
 // afterEach 清理的有界确定性重试（P26 红队 MINOR · EBUSY flake；P25 同款形态）：
 // Windows 并发全量下（SQLite/文件句柄释放晚于断言）rmSync 偶发 EBUSY/EPERM/EACCES。
-// 20/50/100ms 三次退避（kernel IO_RETRY_DELAYS_MS / withBoundedRetry 惯例——局部
-// helper，不动共享面）；重试耗尽仍失败照常上抛原始错误（禁静默吞错）。
+// 20/50/100/200/400ms 五次退避（kernel IO_RETRY_DELAYS_MS / withBoundedRetry 惯例——
+// 局部 helper，不动共享面）；重试耗尽仍失败照常上抛原始错误（禁静默吞错）。
+// （2026-09-01 windows CI 实证注记：有界重试只能吸收「句柄迟释」类瞬态——
+// 本文件曾因 MCP 腿误走真实 npx smoke（见 runLegs 注），被杀 smoke 的孤儿
+// node 进程持续占住 fixture cwd，重试窗口再长也救不了；根因在源头封死，
+// 重试保留给真正的瞬态形态。）
 // ============================================================
-const RM_RETRY_DELAYS_MS = [20, 50, 100] as const;
+const RM_RETRY_DELAYS_MS = [20, 50, 100, 200, 400] as const;
 
 function rmTempRootWithBoundedRetry(target: string): void {
   for (let attempt = 0; ; attempt += 1) {
@@ -270,6 +275,15 @@ function runLegs(
       expectedToolVersions: { playwright: "1.49.0" },
       // 编排方证据注入面：MCP 工具结果按真实词形交给交互腿归一化面。
       mcpEvidenceProvider: () => evidence,
+      // smoke 注入面（连接前置证据，非判卷锚——判卷锚=证据三件套）：本 spec 头注
+      // 声明的「fake spawn × 真实 adapter 归一，零网络零下载」要求 MCP 交互腿同样
+      // 不 spawn。此前未注入 = 误走真实 `npx -y chrome-devtools-mcp@latest` 握手
+      // （windows CI 2026-09-01 实证链：冷 npx 缓存下载 > 15s smoke 超时 →
+      // connected=false → 交互腿误红 failed（用例时长 15503ms ≈ 15s 超时字面）；
+      // 且被超时击杀的 smoke 留下孤儿 node 进程持 fixture cwd → afterEach rmdir
+      // EBUSY 有界重试耗尽）。真实连通性的 e2e 归
+      // gauntlet-lite/test/browser-adapter.spec.ts（宿主未装诚实 skip——缺席链面）。
+      smokeFn: () => ({ connected: true, pageTitle: null, failureReason: null }),
     },
   );
 }

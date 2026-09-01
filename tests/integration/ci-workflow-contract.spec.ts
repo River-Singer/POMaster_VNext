@@ -1,6 +1,6 @@
 /**
  * ci-workflow-contract.spec.ts —— CI workflow 多 OS 腿形态契约（P32b · gaps B3
- * 闭合的机器可判半边：Windows 腿存在 + 七步同形 + Windows 安全调用形态；
+ * 闭合的机器可判半边：Windows 腿存在 + 八步同形 + Windows 安全调用形态；
  * macOS 腿 Owner 2026-09-01 批准启用，与 ci.yml matrix 同步钉死）。
  *
  * 钉住的契约（.github/workflows/ci.yml）：
@@ -8,10 +8,13 @@
  *   ubuntu 验证，PATH 双引号吞段等 Windows 特有坑只在本机踩过、CI 不设防；
  *   macOS 腿按呈报件 docs/l6-release-gate-p35-report.md §3 即插即用件启用）；
  * - fail-fast: false（单腿红不取消另一腿——Windows 特有失败不得掩盖 ubuntu 主信号）；
- * - 七步 run 命令恒为 `corepack pnpm <install|build|mutation:verify|notices:verify|test|ratchet|lint>`：统一经
- *   corepack 前缀（不依赖 runner PATH 上的裸 pnpm/npx——Windows pwsh 与 ubuntu bash
- *   双 shell 同形；build-all.mjs/ratchet.mjs 内部再以 process.execPath 直连子进程，
- *   shell:false + 参数数组，CI 与本机行为一致）；
+ * - 八步 run 命令恒为
+ *   `corepack pnpm <install|build|mutation:verify|notices:verify|test|ratchet|lint>` 七步 + pyyaml
+ *   安装步（`python -m pip install pyyaml`——M5 human views 编译器的 Python 依赖，
+ *   runner 预置 Python 不带；词形三腿同形，human-views spec 探测面同源）：pnpm 系
+ *   统一经 corepack 前缀（不依赖 runner PATH 上的裸 pnpm/npx——Windows pwsh 与
+ *   ubuntu bash 双 shell 同形；build-all.mjs/ratchet.mjs 内部再以 process.execPath
+ *   直连子进程，shell:false + 参数数组，CI 与本机行为一致）；
  * - COREPACK_ENABLE_DOWNLOAD_PROMPT=0（job 级 env：免交互下载确认，Windows 同需）；
  * - node-version 22（engines >=22 同源）+ actions 版本锚（checkout@v4/setup-node@v4）。
  *
@@ -30,12 +33,14 @@ const workflowPath = join(repoRoot, ".github", "workflows", "ci.yml");
 
 type UnknownRecord = Record<string, unknown>;
 
-/** 七步命令闭包（顺序敏感：install→build→mutation:verify→notices:verify→test→ratchet→lint；P35 RT2/RT4 封条接线）。 */
+/** 八步 run 步闭包（顺序敏感：install→build→mutation:verify→notices:verify→pyyaml→test→ratchet→lint；
+ *  P35 RT2/RT4 封条接线 + pyyaml 步为 M5 human views 编译器 Python 依赖，2026-09-01 接线）。 */
 const EXPECTED_STEP_COMMANDS = [
   "corepack pnpm install",
   "corepack pnpm build",
   "corepack pnpm mutation:verify",
   "corepack pnpm notices:verify",
+  "python -m pip install pyyaml",
   "corepack pnpm test",
   "corepack pnpm ratchet",
   "corepack pnpm lint",
@@ -78,15 +83,20 @@ describe("CI workflow 多 OS 腿形态契约（P32b · B3 闭合 + macOS 腿启�
     expect(matrix.os).toEqual(EXPECTED_RUNNERS);
   });
 
-  it("七步命令同形且顺序恒定：install→build→mutation:verify→notices:verify→test→ratchet→lint，全部 corepack pnpm 前缀", () => {
+  it("八步命令同形且顺序恒定：install→build→mutation:verify→notices:verify→pyyaml→test→ratchet→lint，pnpm 系全部 corepack 前缀", () => {
     const doc = loadWorkflow();
     const ci = (doc.jobs as UnknownRecord).ci as UnknownRecord;
     const runs = runCommandsOf(ci);
     expect(runs).toEqual(EXPECTED_STEP_COMMANDS);
     for (const run of runs) {
-      expect(run.startsWith("corepack pnpm "), `run 步应走 corepack pnpm 前缀: ${run}`).toBe(
-        true,
-      );
+      // 词形闭集：corepack pnpm 前缀（七步）或 pyyaml 安装步精确词形（三腿同形，
+      // 裸 pip 在部分 runner 形缺席；禁任何第三词形混入）。
+      const allowed =
+        run.startsWith("corepack pnpm ") || run === "python -m pip install pyyaml";
+      expect(
+        allowed,
+        `run 步词形越界（corepack pnpm 前缀或 pyyaml 安装步二选一）: ${run}`,
+      ).toBe(true);
     }
   });
 

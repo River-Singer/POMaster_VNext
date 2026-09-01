@@ -463,15 +463,52 @@ describe("dependency-cruiser 腿真实子进程（fake 脚本两段式）", () =
 // ============================================================
 // 大输出（maxBuffer）：默认 spawn 的 64MB 缓冲——>1MB 合法 JSON 报告不被 ENOBUFS 打断
 // （真实项目 depcruise JSON 报告 ~1.3MB 被 Node 默认 1MB 打断是 P22 红队实测形态）
+//
+// 跨平台确定性构造（ubuntu/macos CI 实证修复，同仓 4 文件同款）：单次
+// process.stdout.write(>管道缓冲) + 立即 process.exit() 在 POSIX 管道上会截断输出
+// （同脚本 Windows 全量 / ubuntu 仅 ~0.14MB、macos 仅 64KB——一个管道块）。子进程侧
+// 改为 fs.writeSync(1,…) 循环补写（部分写/EAGAIN 重试）——「产出 >1MB stdout」跨平台
+// 保证全量落管；模块 id 零填充定宽 → 每条目字节数恒定 → 期望字节数闭式可算，断言
+// 从 >1MB 收紧到精确相等——任何截断即刻红。若 spawn 回落 Node 默认 1MB → maxBuffer
+// 超限 → error=ENOBUFS → spawn_failed，同样红（原 ENOBUFS 回归意图不变）。
 // ============================================================
 
-const BIG_OUTPUT_DEPCUISE_CJS = `if (process.argv.includes("--version")) {
+const BIG_MODULE_COUNT = 40000;
+/** 定宽条目词形（序号零填充 5 位）——每条目恒 32 字节（ASCII → length==字节）。 */
+const BIG_DEPCUISE_ENTRY = '{"source":"src/module-00000.ts"}';
+const BIG_DEPCUISE_PREFIX = '{"summary":{"violations":[]},"modules":[';
+const BIG_DEPCUISE_SUFFIX = "]}";
+/** 期望 stdout 精确字节数 = 前缀 + 条目 × N + 条目间逗号 (N-1) + 后缀。 */
+const BIG_STDOUT_EXPECTED_BYTES =
+  BIG_DEPCUISE_PREFIX.length +
+  BIG_DEPCUISE_ENTRY.length * BIG_MODULE_COUNT +
+  (BIG_MODULE_COUNT - 1) +
+  BIG_DEPCUISE_SUFFIX.length;
+
+const BIG_OUTPUT_DEPCUISE_CJS = `const { writeSync } = require("node:fs");
+// flush-safe 全量落管：部分写（返回值 < 请求量）与 EAGAIN（非阻塞管道瞬时满）都
+// 继续补写，直到全量进入管道——POSIX 管道 + process.exit() 前必须写完。
+function writeAll(text) {
+  const buf = Buffer.from(text, "utf8");
+  let offset = 0;
+  while (offset < buf.length) {
+    try {
+      offset += writeSync(1, buf, offset, buf.length - offset);
+    } catch (error) {
+      if (error && error.code === "EAGAIN") continue;
+      throw error;
+    }
+  }
+}
+if (process.argv.includes("--version")) {
   process.stdout.write("16.5.0\\n");
   process.exit(0);
 }
-const modules = [];
-for (let i = 0; i < 40000; i++) modules.push({ source: "src/module-" + i + ".ts" });
-process.stdout.write(JSON.stringify({ summary: { violations: [] }, modules }));
+const payload = { summary: { violations: [] }, modules: [] };
+for (let i = 0; i < ${BIG_MODULE_COUNT}; i++) {
+  payload.modules.push({ source: "src/module-" + String(i).padStart(5, "0") + ".ts" });
+}
+writeAll(JSON.stringify(payload));
 process.exit(0);
 `;
 
@@ -480,12 +517,15 @@ describe("dependency-cruiser 腿大输出 maxBuffer（默认 spawn 64MB）", () 
   const scriptPath = join(dir, "big-depcruise.cjs");
   writeFileSync(scriptPath, BIG_OUTPUT_DEPCUISE_CJS, "utf8");
 
-  it(">1MB 合法 JSON 报告走通两段 spawn 与判卷（passed，scanned=40000）", { timeout: 60_000 }, () => {
+  it(">1MB 合法 JSON 报告走通两段 spawn 与判卷（passed，scanned=40000，stdout 字节数精确恒等）", { timeout: 60_000 }, () => {
+    // fixture 自证：构造目标 > Node 默认 1MB（本用例的回归判据前提）。
+    expect(BIG_STDOUT_EXPECTED_BYTES).toBeGreaterThan(1024 * 1024);
     // 刻意走默认 depcruiseSpawn（maxBuffer 修复位）；修复前 Node 默认 1MB
     // → error=ENOBUFS → spawn_failed，本用例红。
     const raw = runDepcruiseLeg(legPlan(scriptPath, dir));
     expect(raw.kind).toBe("executed");
-    expect(raw.stdout.length).toBeGreaterThan(1024 * 1024);
+    // 精确恒等（强于原 >1MB）：跨 OS 全量落管，任何截断即刻红。
+    expect(raw.stdout.length).toBe(BIG_STDOUT_EXPECTED_BYTES);
     const record = normalizeDepcruiseLeg(raw, 0);
     expect(record.verdict).toBe("passed");
     expect(record.counts.scanned).toBe(40000);

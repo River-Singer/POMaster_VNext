@@ -24,7 +24,7 @@ import type {
   SpawnFn,
 } from "./adapter-types.js";
 import { GAUNTLET_LITE_VERSION } from "./adapter-types.js";
-import { createBrowserAdapter, BROWSER_GATE_DEF, BROWSER_GATE_NAME } from "./browser-adapter.js";
+import { createBrowserAdapter, BROWSER_GATE_DEF, BROWSER_GATE_NAME, type BrowserSmokeFn } from "./browser-adapter.js";
 import { absenceRecord } from "./normalize-common.js";
 import { createPlaywrightAdapter } from "./playwright-adapter.js";
 import type { McpEvidenceProvider } from "./browser-adapter.js";
@@ -41,6 +41,14 @@ export interface BrowserGateLegsDeps {
   readonly spawnFn?: SpawnFn;
   /** playwright 腿注入可执行体探针（gate ①a）；缺省真实 PATH。 */
   readonly executableProbe?: ExecutableProbeFn;
+  /**
+   * MCP 交互腿 smoke 注入面；缺省 defaultMcpSmokeFn（真实 `npx -y
+   * chrome-devtools-mcp@latest` 握手——真网络真子进程）。测试/离线编排方必须
+   * 注入 fake smoke（零网络零下载）：真实缺省在冷 npm 缓存的 runner 上是
+   * 下载时长依赖（windows CI 实证 >15s 超时 → 交互腿误红 + 被杀进程孤儿
+   * 持 cwd → 清场 EBUSY）——判卷锚本就是证据三件套，smoke 只是连接前置证据。
+   */
+  readonly smokeFn?: BrowserSmokeFn;
   /** MCP 交互腿证据供给面（编排方注入 MCP 工具结果）；缺省空集（诚实 not_run）。 */
   readonly mcpEvidenceProvider?: McpEvidenceProvider;
   readonly trigger?: RunTriggerValue;
@@ -71,6 +79,7 @@ export function runBrowserGateLegs(
     executableProbe: deps.executableProbe,
   });
   const browserAdapter = createBrowserAdapter({
+    smokeFn: deps.smokeFn,
     mcpEvidenceProvider: deps.mcpEvidenceProvider,
   });
 

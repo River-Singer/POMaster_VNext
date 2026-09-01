@@ -13,6 +13,12 @@ views/** 永不作为任何 compiler/ingest 的输入）：
 纪律（契约 §0/§1.3）：
   零墙钟（批次代号 VIEW-M5 为产出运行档案身份锚）；
   确定性排序与序列化；同输入双跑 byte-stable；
+  跨平台字节确定性（读侧 LF 归一 + 产出 path 词形 posix-only）：消费域全部为文本
+  （yaml/json/md），工作树换行形态随 git checkout 配置（core.autocrlf/eol）在
+  CRLF/LF 间摆动——读侧一律归一化为 LF 字节再计指纹/派生，产出写侧恒二进制
+  字节（LF-only 词形），Windows/Linux/macOS 同语料重生成字节全等；manifest 内
+  一切 path 词形必须是 posix 形态（反斜杠 = os.path.join/os.sep 泄漏信号，守卫
+  fail-closed）；
   同指纹且现盘产物 sha256 全部吻合 → 零写入短路（same_state_zero_write）；
   staged write（.tmp + os.replace），失败不落半写状态；
   计数恒等式 fail-closed（合计数必须等于分母枚举实测值，不等拒绝产出）；
@@ -139,6 +145,12 @@ class Corpus:
     def read_bytes(self, rel):
         with open(self._abs(rel), "rb") as fh:
             data = fh.read()
+        # 读侧统一 \n 规约（跨平台字节确定性，见模块头纪律）：CRLF 工作树形态
+        # （git autocrlf 检出）与 LF 工作树形态在此归一为同一字节集——指纹、
+        # 引文核验、yaml/json 解析全部消费归一化后的字节，checkout 模式不再
+        # 进入产出字节。（归一化只动 \r\n→\n：git 检出形态只有 LF/CRLF 两态，
+        # 不碰孤立 \r，避免误伤非换行用途的字节。）
+        data = data.replace(b"\r\n", b"\n")
         self.consumed[rel] = self.sha256_bytes(data)
         return data
 
@@ -1403,10 +1415,17 @@ def build_manifest(ctx, texts, citation_stats):
     return json.dumps(manifest, sort_keys=True, indent=2, ensure_ascii=False) + "\n"
 
 
-def manifest_wallclock_guard(manifest_text):
+def manifest_output_guards(manifest_text):
+    """产出字节确定性的 fail-closed 守卫（§1.3.1 零墙钟 + 跨平台 path 词形）。"""
     for pat in DATE_PATTERNS:
         if pat.search(manifest_text):
             raise BuildError(f"manifest contains date word form: {pat.pattern}")
+    # posix-only path 词形：反斜杠只能来自 os.path.join/os.sep 泄漏进产出
+    # （Windows 专属字节差异源）——登记 rel 一律走「os.path.relpath + 显式
+    # replace("\\", "/")」的 posix 形态，此守卫兜底未来回归。
+    if "\\" in manifest_text:
+        raise BuildError("manifest contains backslash path word form "
+                         "(posix-only path discipline, cross-platform byte determinism)")
 
 
 def compile_all(batches):
@@ -1431,13 +1450,15 @@ def compile_all(batches):
     texts = texts_with(ctx["fingerprint"])
     citation_stats = self_check(ctx, texts)
     manifest_text = build_manifest(ctx, texts, citation_stats)
-    manifest_wallclock_guard(manifest_text)
+    manifest_output_guards(manifest_text)
     outputs = dict(texts)
     outputs[MANIFEST_NAME] = manifest_text
     return {name: text.encode("utf-8") for name, text in outputs.items()}
 
 
 def write_outputs(out_dir, produced):
+    # 写侧恒二进制（"wb"，内容为 LF-only 词形）——无文本模式换行翻译，无平台差异；
+    # 同输入 → 同字节集 → 落盘字节跨平台全等（比对亦按字节，非文本等价）。
     os.makedirs(out_dir, exist_ok=True)
     for name, data in sorted(produced.items()):
         path = os.path.join(out_dir, name)

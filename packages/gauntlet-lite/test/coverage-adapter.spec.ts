@@ -1267,18 +1267,41 @@ describe("coverage 腿真实子进程（fake c8 脚本两段式；出口判据 1
   });
 
   it("大输出（>1MB stdout）：默认 coverageSpawn 64MB 缓冲不被 Node 默认 1MB ENOBUFS 打断", { timeout: 60_000 }, () => {
+    // 跨平台确定性构造（macos CI 实证修复，同仓 4 文件同款）：单次
+    // process.stdout.write(>管道缓冲) + 立即 process.exit() 在 POSIX 管道上会截断
+    // 输出（同脚本 Windows 全量 / macos 仅 64KB——一个管道块）。子进程侧改为
+    // fs.writeSync(1,…) 循环补写（部分写/EAGAIN 重试）——「产出 >1MB stdout」跨平台
+    // 保证全量落管；"x"×定数 → 期望字节数恒定，断言收紧到精确相等——任何截断即刻红。
+    // 若 spawn 回落 Node 默认 1MB → maxBuffer 超限 → error=ENOBUFS → spawn_failed，
+    // 同样红（原回归意图不变）。
+    const BIG_STDOUT_EXPECTED_BYTES = 1200 * 1024;
     const projectRoot = mkdtempSync(join(tmpdir(), "pomaster-c8-run-big-"));
     const bigScript = join(workRoot, "big-c8.cjs");
     writeFileSync(
       bigScript,
       `const fs = require("node:fs");
 const path = require("node:path");
+const { writeSync } = require("node:fs");
+// flush-safe 全量落管：部分写（返回值 < 请求量）与 EAGAIN（非阻塞管道瞬时满）都
+// 继续补写，直到全量进入管道——POSIX 管道 + process.exit() 前必须写完。
+function writeAll(text) {
+  const buf = Buffer.from(text, "utf8");
+  let offset = 0;
+  while (offset < buf.length) {
+    try {
+      offset += writeSync(1, buf, offset, buf.length - offset);
+    } catch (error) {
+      if (error && error.code === "EAGAIN") continue;
+      throw error;
+    }
+  }
+}
 const args = process.argv.slice(2);
 if (args.includes("--version")) {
   process.stdout.write("8.4.0\\n");
   process.exit(0);
 }
-process.stdout.write("x".repeat(1200 * 1024));
+writeAll("x".repeat(${BIG_STDOUT_EXPECTED_BYTES}));
 const dirArg = args.find((a) => a.startsWith("--reports-dir="));
 const dirValue = dirArg ? dirArg.slice("--reports-dir=".length).replace(/^"|"$/g, "") : ".";
 fs.mkdirSync(dirValue, { recursive: true });
@@ -1295,11 +1318,14 @@ process.exit(0);
 `,
       "utf8",
     );
+    // fixture 自证：构造目标 > Node 默认 1MB（本用例的回归判据前提）。
+    expect(BIG_STDOUT_EXPECTED_BYTES).toBeGreaterThan(1024 * 1024);
     const raw = runCoverageLeg(c8LegPlan(bigScript, projectRoot));
     // 刻意走默认 coverageSpawn（maxBuffer 修复位，oasdiff 腿同款回归手法）——
     // 若回落 Node 默认 1MB，本用例将以 error=ENOBUFS → spawn_failed 变红。
     expect(raw.kind).toBe("executed");
-    expect(raw.stdout.length).toBeGreaterThan(1024 * 1024);
+    // 精确恒等（强于原 >1MB）：跨 OS 全量落管，任何截断即刻红。
+    expect(raw.stdout.length).toBe(BIG_STDOUT_EXPECTED_BYTES);
     const record = normalizeCoverageLeg(raw, 0);
     expect(record.verdict).toBe("passed");
   });

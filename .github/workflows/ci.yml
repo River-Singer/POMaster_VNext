@@ -7,7 +7,7 @@ on:
 
 # 三 OS 腿（P32b · gaps B3 闭合；macOS 腿 Owner 2026-09-01 批准启用——呈报件
 # docs/l6-release-gate-p35-report.md §3 即插即用件）：matrix 而非独立 job 的裁定——
-# install→build→test→ratchet→lint 五步在各 OS 上完全同形（零步骤复制）；
+# install→build→封条×2→pyyaml→test→ratchet→lint 七步在各 OS 上完全同形（零步骤复制）；
 # fail-fast: false 让单腿红不取消另一腿（Windows/macOS 特有失败不得掩盖 ubuntu
 # 主信号，反之亦然）。
 #
@@ -50,6 +50,15 @@ jobs:
 
       - name: Verify third-party notices
         run: corepack pnpm notices:verify
+
+      # M5 human views 编译器（corpus/master/tools/build_human_views.py）依赖 PyYAML：
+      # runner 预置 Python 不带（macos/windows CI 实证 ModuleNotFoundError: yaml）。
+      # `python -m pip` 词形三腿同形（python 垫片三腿皆在 PATH——human-views spec
+      # 探测面同源）；ubuntu 镜像已预装 → already-satisfied 零写入零风险，
+      # macos/windows 真装入未标记 toolcache 解释器（ubuntu-24.04 系统 python 的
+      # PEP 668 标记不触发：非 real install 不做 externally-managed 检查）。
+      - name: Install pyyaml (human views compiler dependency)
+        run: python -m pip install pyyaml
 
       - name: Test
         run: corepack pnpm test
@@ -103,6 +112,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+
+      # 与 matrix 腿同词形（pyyaml = M5 human views 编译器依赖；runner 预置 Python 不带）。
+      - name: Install pyyaml (human views compiler dependency)
+        run: python -m pip install pyyaml
 
       - name: Bootstrap under clean HOME (install → build → test)
         working-directory: fresh-clone
