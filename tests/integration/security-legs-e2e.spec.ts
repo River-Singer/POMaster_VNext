@@ -13,6 +13,13 @@
  *    每场景三条记录态各自正确（出口判据 3）；
  * ④ doctor 探测矩阵扩容：真实 runDoctor 呈现 gitleaks / pip_audit / semgrep 三探针
  *    （缺席 NOT_INSTALLED 非静默 + 安装路标；宿主真装则诚实容忍 READY）；
+ * ⓪ fake PATH fixture 跨平台自证：与生产同源 findExecutableOnPath 钉死 fake 探测
+ *    在座性在本平台可解析（ubuntu CI ":" 分裂事故回归钉）；
+ * ⑥ 宿主真实双分支 E2E：platformDetectorFacts + platformExecutableProbe +
+ *    securitySpawn 全真实（零 fake），探测在座腿→真跑判卷（缺席词形禁入 + 真实
+ *    外部进程时间>0 + 干净空工程零违规）；探测缺席腿→诚实缺席链（not_run +
+ *    缺席原因词形 + 安装路标 + 不牵连后缀 + counts 显式全零 + externalMs=0 +
+ *    缺席归因只提名本腿）；三 GRN 独立入账落盘（两分支同环境并跑，禁 skip）。
  * ⑤ 对抗：伪造「SECURITY passed 聚合 + violations>0」的记录在 P12c 边界 FATAL——
  *    聚合绿灯是撒谎，零落账（GRN 文件零残留、seq 零推进）。
  *
@@ -26,7 +33,14 @@ import { tmpdir } from "node:os";
 import { join as pathJoin } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
+  findExecutableOnPath,
+  platformDetectorFacts,
+  platformExecutableProbe,
   runSecurityGateLegs,
+  sanitizeSemver,
+  securityLegExecutable,
+  securitySpawn,
+  securityVersionProbeCommand,
   type DetectorFacts,
   type GateResultRecord,
 } from "@pomaster/gauntlet-lite";
@@ -55,7 +69,12 @@ afterEach(() => {
 // 探测面与真实 fs 双通道：三腿的报告失效化/回读仍走真实 fs）
 // ============================================================
 
-const FAKE_TOOLS = "C:/fake-security-tools";
+// fake PATH 根：取 tmpdir() 拼接而非 "C:/…" 词形——POSIX 的 PATH 分隔符是 ":"，
+// 含 ":" 的 fake 路径会被 findExecutableOnPath 按分隔符切碎（ubuntu CI 实证：
+// "C:/fake-security-tools" 被切成 ["C", "/fake-security-tools"] → fake 探测全缺席
+// → 三腿全 tool_absent not_run）。win32 的 tmpdir 带 "C:" 无碍——win32 分隔符是
+// ";"。纯词形 fixture（fileExists 零 fs 触碰），不创建任何真实目录。
+const FAKE_TOOLS = pathJoin(tmpdir(), "pvnext-security-legs-fake-tools");
 
 interface LegPresence {
   readonly gitleaks?: boolean;
@@ -91,6 +110,28 @@ function securityFacts(presence: LegPresence = {}): DetectorFacts {
         : null,
   };
 }
+
+// ============================================================
+// ⓪ fake PATH fixture 跨平台自证（ubuntu CI 回归钉）
+// ============================================================
+// CI 事故锚：FAKE_TOOLS 曾为 "C:/fake-security-tools"——POSIX 分隔符 ":" 把 fake
+// PATH 切成两段，findExecutableOnPath 在 ubuntu 全 miss → 三腿 tool_absent not_run
+// （Windows 分隔符 ";" 不切 → 本机全绿，两环境判卷分裂）。本用例用与生产同源的
+// findExecutableOnPath 钉死「fake 探测在座性在本平台真的可解析」——fixture 失效
+// 在任何平台都是即时红，不再以「三腿全 not_run」的间接形态误伤下游断言。
+
+describe("⓪ fake PATH fixture 跨平台自证（与生产探测同源 findExecutableOnPath）", () => {
+  it("在座腿经 fake facts 在 fake PATH 命中精确词形；缺席腿 miss", () => {
+    const facts = securityFacts();
+    for (const name of ["gitleaks", "pip-audit", "semgrep"]) {
+      expect(
+        findExecutableOnPath(name, facts),
+        `${name} 应在 fake PATH 命中（fixture 跨平台词形自证）`,
+      ).toBe(pathJoin(FAKE_TOOLS, name));
+    }
+    expect(findExecutableOnPath("gitleaks", securityFacts({ gitleaks: false }))).toBeNull();
+  });
+});
 
 // ============================================================
 // 三报告词形夹具（与真实工具产物同构）
@@ -318,7 +359,16 @@ describe("① 三条 GRN 独立入账 truth-index（gitleaks 红 + pip-audit 绿
       not_applicable: 0,
     });
     const scope = semgrep["scope"] as Record<string, unknown> | undefined;
-    expect(String(scope?.["note"])).toMatch(/安装建议/);
+    const semgrepNote = String(scope?.["note"] ?? "");
+    // 缺席失败原因词形三件套（显式缺席落盘，禁静默）：缺席原因 + 安装路标 + 不牵连声明。
+    expect(semgrepNote).toMatch(/PATH 上未找到 semgrep 可执行文件/);
+    expect(semgrepNote).toMatch(/安装建议/);
+    expect(semgrepNote).toMatch(/不牵连其余两腿/);
+    // 缺席归因只提名本腿工具（其余两腿工具名禁入本腿缺席理由——互不牵连的落盘面）。
+    expect(semgrepNote).not.toContain("gitleaks");
+    expect(semgrepNote).not.toContain("pip-audit");
+    // 缺席腿零执行（外部进程时间=0 是缺席路径的结构性事实，非计时波动）。
+    expect((semgrep["duration_ms"] as Record<string, unknown>)["external"]).toBe(0);
   });
 
   it("② 无聚合呈现面：账本零「gauntlet:security」聚合 run；三记录各态独立", async () => {
@@ -525,5 +575,125 @@ describe("⑤ 对抗：伪造 SECURITY 聚合 passed + violations>0 → normaliz
     expect(raised).toBeInstanceOf(GovernanceError);
     // 零落账：GRN 文件零残留（staged 写从未发起——kernel 事务边界同款保证）。
     expect(existsSync(pathJoin(runsDir(), "GRN-0001.json"))).toBe(false);
+  });
+});
+
+// ============================================================
+// ⑥ 宿主真实双分支 E2E（ubuntu CI / Windows/macOS 开发机同判卷，禁 skip）
+// ============================================================
+// CI 修复线纪律的落地面：不按宿主裁剪断言面——两分支在同一环境并跑，各自严格
+// 断言「该环境的诚实预期形态」。探测面/执行面/归一面全真实（platformDetectorFacts
+// + platformExecutableProbe + securitySpawn 零 fake）；配置面用离线安全命令
+// （空工程 + 空 requirements.txt + 本地 semgrep 规则文件——零网络、零安装副作用）。
+// 在座与缺席由宿主真实 PATH 决定，测试对两分支都预置了严格判据：
+// - 在座分支：探测说在位，执行就禁说缺席（/PATH 上未找到//不在 PATH/ 词形禁入——
+//   探测/执行同源口径分裂是产品缺陷类）；durationMs.external>0（外部进程确实
+//   执行过，缺席路径的结构性 0 在此禁入）；干净空工程零违规（violations=0）。
+// - 缺席分支：诚实缺席链全词形——not_run + 「PATH 上未找到 <本腿工具> 可执行
+//   文件」+ 安装路标 + 不牵连后缀 + counts 显式全零 + externalMs=0（零执行）+
+//   缺席归因只提名本腿工具（其余两腿工具名禁入——互不牵连在缺席态的映射）。
+
+describe("⑥ 宿主真实双分支 E2E：探测在座→真跑判卷；探测缺席→诚实缺席链", () => {
+  it("runSecurityGateLegs 全真实探测/执行/归一，三 GRN 独立入账落盘（两分支各按本环境诚实形态严格断言）", { timeout: 120_000 }, async () => {
+    await runInit(root);
+    putConfig(
+      JSON.stringify({
+        gitleaks: {
+          command:
+            "gitleaks detect --no-git --source . --report-format json --report-path reports/security/gitleaks.json",
+        },
+        "pip-audit": {
+          command: "pip-audit -r requirements.txt -f json -o reports/security/pip-audit.json",
+        },
+        semgrep: {
+          command: "semgrep --config semgrep-rules.yaml --json --output reports/security/semgrep.json src/",
+        },
+      }),
+    );
+    // 离线判卷分母：空依赖清单 + 永不命中的本地 semgrep 规则 + 空 src（三工具对
+    // 空工程的诚实判卷 = 零违规；任一工具报出违规即是工具/判卷层异常，本用例红）。
+    writeFileSync(pathJoin(root, "requirements.txt"), "", "utf8");
+    writeFileSync(
+      pathJoin(root, "semgrep-rules.yaml"),
+      'rules:\n  - id: pvnext-clean-noop\n    languages: [generic]\n    message: clean fixture rule\n    severity: INFO\n    pattern: "__pvnext_no_match__"\n',
+      "utf8",
+    );
+    mkdirSync(pathJoin(root, "src"), { recursive: true });
+
+    // 在座腿先实测版本作版本锚（prepare 版本锚强制；anchor=实测值 → 零漂移判卷）。
+    const versions: Partial<Record<"gitleaks" | "pip-audit" | "semgrep", string>> = {};
+    for (const runner of ["gitleaks", "pip-audit", "semgrep"] as const) {
+      const exe = securityLegExecutable(runner);
+      if (platformExecutableProbe(exe) === null) continue;
+      const probe = securitySpawn(securityVersionProbeCommand(runner), {
+        cwd: root,
+        timeoutMs: 60_000,
+      });
+      versions[runner] = sanitizeSemver(probe.stdout) ?? "0.0.0";
+    }
+
+    // 全真实三腿（deps 只注入 facts/gateTier/版本锚——spawnFn 与 executableProbe 走
+    // 生产缺省 securitySpawn / platformExecutableProbe）。
+    const records = runSecurityGateLegs(
+      { projectRoot: root, subjectId: null, denominatorRefs: [] },
+      LEG_IDENTITIES,
+      {
+        facts: platformDetectorFacts(root),
+        gateTier: "STANDARD",
+        expectedToolVersions: {
+          gitleaks: versions["gitleaks"] ?? null,
+          pipAudit: versions["pip-audit"] ?? null,
+          semgrep: versions["semgrep"] ?? null,
+        },
+      },
+    );
+    const byRunner = [
+      { runner: "gitleaks" as const, record: records[0] },
+      { runner: "pip-audit" as const, record: records[1] },
+      { runner: "semgrep" as const, record: records[2] },
+    ];
+    // 三 GRN 独立（缺席也是独立记录，非省略、非合并）。
+    expect(new Set(records.map((record) => record.grn)).size).toBe(3);
+
+    for (const { runner, record } of byRunner) {
+      const note = record.scopeNote ?? "";
+      if (platformExecutableProbe(securityLegExecutable(runner)) !== null) {
+        // —— 在座分支：真跑判卷（探测/执行同源口径；真实外部进程时间；干净零违规）。
+        expect(note, `${runner} 在座腿禁入缺席词形`).not.toMatch(/PATH 上未找到/);
+        expect(note).not.toMatch(/不在 PATH/);
+        expect(record.durationMs.external, `${runner} 在座腿必经真实子进程`).toBeGreaterThan(0);
+        expect(record.counts.violations, `${runner} 空工程判卷必为零违规`).toBe(0);
+        expect(["passed", "warning", "not_run"]).toContain(record.verdict);
+      } else {
+        // —— 缺席分支：诚实缺席链（显式缺席落盘，非绿非红，禁静默）。
+        expect(record.verdict, `${runner} 缺席腿必须 not_run`).toBe("not_run");
+        expect(note).toMatch(new RegExp(`PATH 上未找到 ${securityLegExecutable(runner)} 可执行文件`));
+        expect(note).toMatch(/安装建议/);
+        expect(note).toMatch(/不牵连其余两腿/);
+        expect(record.counts).toEqual({
+          scanned: 0,
+          applicableScanned: 0,
+          violations: 0,
+          notApplicable: 0,
+        });
+        // 零执行：缺席路径不出 spawn（外部进程时间=0 是结构性事实，非计时波动）。
+        expect(record.durationMs.external).toBe(0);
+        // 缺席归因只提名本腿工具（互不牵连的缺席态映射）。
+        for (const other of byRunner) {
+          if (other.runner === runner) continue;
+          expect(note, `${runner} 缺席理由禁提名 ${other.runner}`).not.toContain(
+            securityLegExecutable(other.runner),
+          );
+        }
+      }
+    }
+
+    // 显式缺席落盘：三记录逐条入账（check --gates 同款通路），缺席腿的 not_run
+    // 逐字落 GRN 文件（非省略）；落盘 verdict 与在座判卷逐一对应。
+    await ledgerIngest(records);
+    const verdicts = readdirSync(runsDir())
+      .sort()
+      .map((f) => readRunInline(f)["verdict"]);
+    expect(verdicts).toEqual(byRunner.map((leg) => leg.record.verdict));
   });
 });

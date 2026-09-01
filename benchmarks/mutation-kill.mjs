@@ -38,15 +38,20 @@
  *      处理：同内容 already_entered 零写入、异内容 GRN_CONFLICT fail-closed（kernel
  *      applyRecordGateRun 对重复 GRN 无守卫，预检封死静默双写）。账本一致性纳入
  *      --verify 对账面。REPO_ROOT/.pomaster 已入 .gitignore（保守裁定：账本留本机
- *      不入 git）；last-results.json 照旧是基准报告文件，与 store 账本并存。
+ *      不入 git）；last-results.json 照旧是基准报告文件，与 store 账本并存。--verify
+ *      的账本对账按环境依赖分层（Owner 设计修正 2026-09-01）：store 在座必查
+ *      fail-closed；store 缺席（fresh clone 预期形态）显式披露跳过——判卷锚重放层
+ *      （环境无关）兜底判卷，两环境都严格判卷不放宽。
  *
  * 用法：
  *   node benchmarks/mutation-kill.mjs              # 真实测量（写结果文件 + 入账）
  *   node benchmarks/mutation-kill.mjs --selfcheck  # 自检：fixture mutant 集验证判卷器
  *   node benchmarks/mutation-kill.mjs --verify     # at-rest 校验：重放判卷锚对账落盘值
- *                                                  # + 校验 GRN 在账与 results 一致
+ *                                                  # + 账本对账（store 在座必查 fail-closed /
+ *                                                  # 缺席显式跳过披露——分层语义）
  *
- * 退出码：0 = 达标（score ≥ 85 且 survivors ≤ 10；--verify 时 = 对账一致）；
+ * 退出码：0 = 达标（score ≥ 85 且 survivors ≤ 10；--verify 时 = 对账一致——账本层
+ * store 缺席属显式跳过披露而非失配，判卷锚重放层已全绿兜底）；
  * 1 = 测量完成但阈值未达（strengthener 回路：正确动作是补测试杀幸存者后重跑，禁调
  * 阈值/禁改判）或 --verify 对账失配（落盘结果不可信或账本不一致）；2 = harness 错误
  * （判卷输入不可信 / invalid mutant / results 缺席 / 账本入账失败 fail-closed——测量
@@ -967,12 +972,13 @@ async function runMeasurement() {
 }
 
 // ============================================================
-// --verify：落盘结果 at-rest 校验（RT2 封条）
+// --verify：落盘结果 at-rest 校验（RT2 封条）+ 账本对账（分层语义）
 // ============================================================
 // 重放持久化的判卷锚（harness_report → parseStrykerReport → summarizeMutants）
 // 与落盘自报（totals / recomputed_score / mutants[] 判卷位 / gate_record / ok）
-// 逐项对账。零 vitest 运行、秒级——CI 与本地可高频执行；手改落盘分数在此被检出，
-// 不再依赖「有人手动重跑覆盖」。
+// 逐项对账——这一层环境无关，任何环境 fail-closed。其后的账本对账层按 store 在座
+// 性分层：在座必查 fail-closed / 缺席显式披露跳过。零 vitest 运行、秒级——CI 与
+// 本地可高频执行；手改落盘分数在此被检出，不再依赖「有人手动重跑覆盖」。
 
 async function runVerify() {
   const gauntlet = await loadGauntletDist();
@@ -995,26 +1001,32 @@ async function runVerify() {
     `[verify] OK——seq=${String(results.seq)} score=${String(results.recomputed_score)}%（${String(results.totals.killed)}/${String(results.totals.generated)}）经判卷锚重放对账一致\n`,
   );
 
-  // —— 账本一致性面（Owner 决议 2026-09-01）：results gate_record ↔ store 在账状态。
-  // 校验 evidence/runs/<GRN>.json 在账 + journal TX_APPLIED 锚在座 + 与 results
-  // gate_record 全量一致（含 applied_seq 精确事件锚）。失配走 --verify 同款退出码 1
-  //（对账失配类）；旧版 results（入账机制启用前）会在此显式红并指明重跑迁移。
+  // —— 账本一致性面（Owner 决议 2026-09-01 + 分层设计修正）：results gate_record ↔
+  // store 在账状态。gate_record 词形校验环境无关 fail-closed（lib 内先行）；账本在账
+  // 对账分层：store 在座 → 校验 evidence/runs/<GRN>.json 在账 + journal TX_APPLIED 锚
+  // 在座 + 与 results gate_record 全量一致（含 applied_seq 精确事件锚），失配走
+  // --verify 同款退出码 1（对账失配类）；store 缺席（Owner 决议账本留本机不入 git，
+  // fresh clone 属预期形态）→ 显式披露跳过、exit 0——判卷锚重放层已全绿兜底判卷，
+  // 跳过必须显式输出禁静默。
   const kernel = await loadKernelDist();
   const ledger = verifyGateRecordInLedger({
     results,
     storeRoot: REPO_ROOT,
     gateResultToSnake: kernel.gateResultToSnake,
   });
-  if (!ledger.ok) {
+  if (ledger.skipped) {
+    process.stdout.write(`[verify] ${ledger.disclosure}\n`);
+  } else if (!ledger.ok) {
     for (const p of ledger.problems) process.stderr.write(`[verify] 账本对账失配：${p}\n`);
     throw new HarnessExit(
       `账本对账失配（${ledger.problems.length} 处）：results gate_record（GRN ${ledger.grn ?? "?"}）与 .pomaster store 在账状态不一致——重跑 node benchmarks/mutation-kill.mjs 重新测量入账`,
       1,
     );
+  } else {
+    process.stdout.write(
+      `[verify] 账本 OK——GRN ${ledger.grn} 在账（evidence/runs 在座 + journal TX_APPLIED 锚${ledger.anchor.appliedSeq !== null ? `，applied_seq=${String(ledger.anchor.appliedSeq)} 精确匹配` : ""}）与 results.gate_record 全量一致\n`,
+    );
   }
-  process.stdout.write(
-    `[verify] 账本 OK——GRN ${ledger.grn} 在账（evidence/runs 在座 + journal TX_APPLIED 锚${ledger.anchor.appliedSeq !== null ? `，applied_seq=${String(ledger.anchor.appliedSeq)} 精确匹配` : ""}）与 results.gate_record 全量一致\n`,
-  );
 }
 
 // ============================================================

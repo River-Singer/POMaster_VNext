@@ -5,13 +5,14 @@ on:
     branches: [main]
   pull_request:
 
-# 双 OS 腿（P32b · gaps B3 闭合）：matrix 而非独立 job 的裁定——
-# install→build→test→ratchet→lint 五步在两个 OS 上完全同形（零步骤复制），
-# 后续 L6-2 扩 macOS 是 matrix.os 一行改动；fail-fast: false 让单腿红不取消
-# 另一腿（Windows 特有失败不得掩盖 ubuntu 主信号，反之亦然）。
+# 三 OS 腿（P32b · gaps B3 闭合；macOS 腿 Owner 2026-09-01 批准启用——呈报件
+# docs/l6-release-gate-p35-report.md §3 即插即用件）：matrix 而非独立 job 的裁定——
+# install→build→test→ratchet→lint 五步在各 OS 上完全同形（零步骤复制）；
+# fail-fast: false 让单腿红不取消另一腿（Windows/macOS 特有失败不得掩盖 ubuntu
+# 主信号，反之亦然）。
 #
 # Windows 腿考量（如实处理）：
-# - corepack 启用：COREPACK_ENABLE_DOWNLOAD_PROMPT=0（job 级 env，两腿共享）——
+# - corepack 启用：COREPACK_ENABLE_DOWNLOAD_PROMPT=0（job 级 env，三腿共享）——
 #   免交互下载确认，Windows runner 同样需要；
 # - 路径分隔符：产品全部走 node:path（ratchet.mjs/build-all.mjs 均 process.execPath
 #   直连、shell:false + 参数数组，不经 cmd/PowerShell 解析）——run 步本身只有
@@ -23,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     env:
       COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"

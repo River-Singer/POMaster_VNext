@@ -36,6 +36,7 @@ import {
   LIGHTHOUSE_DEFAULT_REPORT,
   WEB_VITALS_DEFAULT_REPORT,
   createContractAdapter,
+  findExecutableOnPath,
   runPerformanceGateLegs,
   schemathesisReportAbsolutePath,
   type DetectorFacts,
@@ -180,7 +181,14 @@ const ST_FAILING_NDJSON = [
 // fake facts 与调度 spawn（探测面 fake PATH；报告失效化/回读走真实 fs——security e2e 先例）
 // ============================================================
 
-const FAKE_TOOLS = "C:/fake-p27-tools";
+const FAKE_TOOLS = process.platform === "win32" ? "C:/fake-p27-tools" : "/fake-p27-tools";
+// 平台条件词形（2026-08-31/09-01 CI 事故根因，非装饰）：POSIX 的 PATH 分隔符是 ":"，
+// win32 词形 "C:/fake-p27-tools" 内嵌冒号会被腿工厂探测面 findExecutableOnPath 的
+// pathEnv.split(pathSeparator) 在 linux runner 上拆成 ["C", "/fake-p27-tools"] 两个
+// 目录 → fake 可执行体永不命中 → detectLighthouse/detectSchemathesis 诚实 NOT_INSTALLED
+// → prepare 工具闸 tool_absent → not_run（本机 win32 分隔符 ";" 不拆分故绿、runner 全红
+// 的平台分裂）。fake 目录词形必须与本文件 pathSeparator/executableSuffixes 的平台条件
+// 同源，两平台的 PATH 语义下都可解析命中（① 用例以工厂同款探测函数就地自检钉死）。
 
 function fixtureFacts(): DetectorFacts {
   const suffixes = process.platform === "win32" ? ["", ".exe", ".cmd", ".bat"] : [""];
@@ -357,6 +365,16 @@ describe("P27 PERFORMANCE + CONTRACT legs E2E（FastAPI fixture 同源）", () =
     ]) {
       expect(existsSync(pathJoin(root, rel)), `${rel} 应在场`).toBe(true);
     }
+    // 注入 PATH 可达性自检（两平台同判，复用腿工厂同款探测函数——禁第二套探测）：
+    // ②③④ 的「真跑链」断言全部建立在注入探测 READY 之上；若 fake PATH 在某平台的
+    // PATH 语义下解析失败（win32 冒号词形在 POSIX split 下拆碎的 CI 事故），此处就地
+    // 红灯指认 fixture 面，而非让下游以 not_run/not_configured 假象偏航成「环境红」。
+    for (const tool of ["lighthouse", "node", "schemathesis"] as const) {
+      expect(
+        findExecutableOnPath(tool, fixtureFacts()),
+        `注入 fake PATH 应命中 ${tool}（win32/linux 两平台同判）`,
+      ).not.toBeNull();
+    }
   });
 
   it("② 三腿真跑 → P12c 复算 → 单事务三 GRN 落盘：lighthouse 红（预算超标）+ web-vitals 绿 + schemathesis 红", async () => {
@@ -470,6 +488,13 @@ describe("P27 PERFORMANCE + CONTRACT legs E2E（FastAPI fixture 同源）", () =
       "not_configured",
       "failed",
     ]);
+    // 诚实缺席链严格断言（非跳过）：配置缺席的落盘注记必须携带「未找到」词形
+    // （配置缺席 ≠ 工具缺席 ≠ 静默通过——缺席理由逐腿留痕）；第三腿照常真跑判红
+    // 即「不牵连」的落盘形态（上方第三元素 failed 已钉）。
+    for (const inline of inlines.slice(0, 2)) {
+      const scope = inline["scope"] as Record<string, unknown> | undefined;
+      expect(String(scope?.["note"])).toContain("未找到 performance-gate.json");
+    }
   });
 
   it("⑤ 无聚合呈现面：账本零「gauntlet:performance」聚合 run（双腿逐腿罗列）", async () => {

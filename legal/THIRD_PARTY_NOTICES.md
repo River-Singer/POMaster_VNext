@@ -273,11 +273,11 @@
 
 ## §4 Owner 签字位（License Decision Gate §87.5 相关）
 
-- [ ] **O-L1 许可路线裁定**：是否采纳 PRD §87.3 默认推荐（PolyForm Noncommercial 1.0.0 + 单独 Commercial License）作为对外分发许可？（备选：§87.4 表中 AGPL-3.0 / PolyForm Internal Use / PolyForm Small Business / BSL 1.1 / 自定义 EULA）
-- [ ] **O-L2 分发口径**：对外分发形态是「源码仓库可见」还是「产物分发」？§B 开发工具链依赖是否进入分发物（决定 THIRD_PARTY_NOTICES 对外版本的收录范围）？
-- [ ] **O-L3 §87.5 yaml 两个显式 Owner 位**：`free_internal_business_use`（企业内部商用是否免费）与 `free_small_business_use`（小企业商用是否免费）——PRD 显式标注「必须由 Owner 决定」，Agent 不得代填。
-- [ ] **O-L4 正式 LICENSE 落盘**：裁定后按 §87.6 要求落盘官方标准文本 LICENSE（PolyForm 全文不魔改）+ COMMERCIAL_LICENSE.md / TRADEMARKS.md / CONTRIBUTING.md / SECURITY.md 等其余法律文件清单。
-- [ ] **O-L5 node_modules 漂移处置**：是否授权执行干净重装以消除 §3 的 46 包残留？
+- [x] **O-L1 许可路线裁定**：是否采纳 PRD §87.3 默认推荐（PolyForm Noncommercial 1.0.0 + 单独 Commercial License）作为对外分发许可？（备选：§87.4 表中 AGPL-3.0 / PolyForm Internal Use / PolyForm Small Business / BSL 1.1 / 自定义 EULA）——**已采纳（Owner 直答 2026-09-01），LICENSE 已落盘**。
+- [x] **O-L2 分发口径**：对外分发形态是「源码仓库可见」还是「产物分发」？§B 开发工具链依赖是否进入分发物（决定 THIRD_PARTY_NOTICES 对外版本的收录范围）？——**源码仓库公开可见（Owner 确认 2026-09-01，public 已成事实）；本清单 204 包（§A+§B）即对外版收录范围**。
+- [x] **O-L3 §87.5 yaml 两个显式 Owner 位**：`free_internal_business_use`（企业内部商用是否免费）与 `free_small_business_use`（小企业商用是否免费）——PRD 显式标注「必须由 Owner 决定」，Agent 不得代填。——**Owner 2026-09-01 裁定：均否（不豁免，商用另谈）**；正式载体=COMMERCIAL_LICENSE.md 严格口径声明。
+- [x] **O-L4 正式 LICENSE 落盘**：裁定后按 §87.6 要求落盘官方标准文本 LICENSE（PolyForm 全文不魔改）+ COMMERCIAL_LICENSE.md / TRADEMARKS.md / CONTRIBUTING.md / SECURITY.md 等其余法律文件清单。——**已执行（2026-09-01，官方 blob 字节级比对一致）**。
+- [x] **O-L5 node_modules 漂移处置**：是否授权执行干净重装以消除 §3 的 46 包残留？——**已授权（Owner 2026-09-01），随 P36 收尾执行；本清单以 lockfile 为锚不受影响**。
 
 ---
 *本文件为事实整理，不构成法律意见；正式公开发布或商业授权前应由熟悉开源/软件许可的法律专业人士复核（PRD §87 章首声明）。*

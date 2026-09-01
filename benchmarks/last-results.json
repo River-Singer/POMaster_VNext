@@ -1,7 +1,7 @@
 {
   "schema": "pomaster.vnext.selfhosting-benchmark-results/3",
-  "run_id": "bench-0008",
-  "seq": 8,
+  "run_id": "bench-0009",
+  "seq": 9,
   "ok": true,
   "summary": {
     "total": 3,
@@ -19,7 +19,7 @@
       "matched_keywords": [
         "文案"
       ],
-      "durationMs": 340,
+      "durationMs": 295,
       "ok": true,
       "assertions": [
         {
@@ -50,7 +50,7 @@
       "matched_rule": "DEFAULT_NO_SIGNAL",
       "evidence_grade": "NOT_CONFIGURED",
       "matched_keywords": [],
-      "durationMs": 341,
+      "durationMs": 294,
       "ok": true,
       "assertions": [
         {
@@ -274,7 +274,7 @@
           "not_run_reason": "分母缺席：vNext 仓库自身无业务 subject 数据面，gate 真实判卷需在消费项目数据面执行（A3 裁定执行面=就绪校验；not_run 显式披露，禁假 passed）"
         }
       ],
-      "durationMs": 252,
+      "durationMs": 215,
       "ok": true,
       "assertions": [
         {

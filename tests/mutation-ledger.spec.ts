@@ -40,8 +40,11 @@ import {
  *   唯一防线）；
  * - 失败语义 fail-closed：一切入账失败 LedgerEntryError.exitCode=2（测量成功但账本写入
  *   失败不能静默绿）；
- * - --verify 账本对账面：在账一致 / 不在账 / 手改 / 旁路直写 / applied_seq 锚失配 /
- *   旧版 results 全部按词形红绿。
+ * - --verify 账本对账面（分层语义，Owner 设计修正 2026-09-01）：store 在座 → 在账一致
+ *   ok / GRN 缺席 / 手改 / 旁路直写 / applied_seq 锚失配 / 旧版 results 全部按词形红绿；
+ *   store 缺席（fresh clone 预期形态——.pomaster 是 Owner 决议本机账本不入 git）→
+ *   ok=true + 显式跳过披露（禁静默；判卷锚重放层兜底不在本层）；gate_record 词形校验
+ *   环境无关、先于跳过判定（任何环境 fail-closed）。
  *
  * 测试卫生：fixture mkdtemp（pomaster-p35-mutation-ledger- 前缀）+ afterEach 整树删除；
  * 真实 home 绝不触碰。全确定性输入（durationMs 等用常量；无墙钟无随机——同输入重放
@@ -409,6 +412,10 @@ describe("verifyGateRecordInLedger（store 在账状态 ↔ results gate_record 
     expect(verify.problems).toEqual([]);
     expect(verify.grn).toBe("GRN-9");
     expect(verify.anchor.appliedSeq).toBe(entered.appliedSeq);
+    // 分层语义机器钉面：store 在座分支非跳过（skipped=false + disclosure=null）。
+    expect(verify.skipped).toBe(false);
+    expect(verify.storePresent).toBe(true);
+    expect(verify.disclosure).toBeNull();
   });
 
   it("already_entered results（无 applied_seq）→ 仍 ok=true（锚只要求 record_gate_run TX 在座，anchor.appliedSeq=null 如实）", async () => {
@@ -424,8 +431,11 @@ describe("verifyGateRecordInLedger（store 在账状态 ↔ results gate_record 
     expect(verify.anchor.appliedSeq).toBeNull();
   });
 
-  it("GRN 不在账（store 缺席/被清）→ ok=false 并指明重跑迁移（旧版 results 迁移语义 fail-closed）", () => {
-    const root = fixtureRoot(); // 零 store
+  it("store 在座但 GRN 不在账 → ok=false fail-closed（在座必查：入账未发生/局部被清不得假绿）", async () => {
+    const root = fixtureRoot();
+    // store 在座（先入账 GRN-1 建立 store），results 却声称 GRN-2——缺席照旧红。
+    const seeded = produceRecord(root, "GRN-1", 1);
+    await enterGateRecordInStore({ record: seeded, storeRoot: root, kernel });
     const record = produceRecord(root, "GRN-2", 2);
     const verify = verifyGateRecordInLedger({
       results: { gate_record: record, ledger_entry: { status: "entered", grn: "GRN-2", applied_seq: 1 } },
@@ -433,7 +443,34 @@ describe("verifyGateRecordInLedger（store 在账状态 ↔ results gate_record 
       gateResultToSnake: toSnakeLoose,
     });
     expect(verify.ok).toBe(false);
+    expect(verify.skipped).toBe(false);
+    expect(verify.storePresent).toBe(true);
     expect(verify.problems.join("; ")).toContain("不在账");
+    expect(verify.problems.join("; ")).toContain("store 在座");
+  });
+
+  it("store 缺席（fresh clone 预期形态）+ results 声称 GRN → ok=true 且显式跳过披露（禁静默；判卷锚重放层兜底不在本层）", () => {
+    const root = fixtureRoot(); // 零 store
+    const record = produceRecord(root, "GRN-2", 2);
+    const verify = verifyGateRecordInLedger({
+      results: { gate_record: record, ledger_entry: { status: "entered", grn: "GRN-2", applied_seq: 1 } },
+      storeRoot: root,
+      gateResultToSnake: toSnakeLoose,
+    });
+    expect(verify.ok).toBe(true);
+    expect(verify.skipped).toBe(true);
+    expect(verify.storePresent).toBe(false);
+    // 显式披露非静默：披露文案钉分层语义要素（缺席归因 + Owner 决议 + 兜底层 + GRN）。
+    expect(verify.disclosure).toContain("账本对账跳过");
+    expect(verify.disclosure).toContain("store 缺席");
+    expect(verify.disclosure).toContain("fresh clone 属预期形态");
+    expect(verify.disclosure).toContain("判卷锚重放层已全绿");
+    expect(verify.disclosure).toContain("GRN-2");
+    expect(verify.problems).toEqual([]);
+    expect(verify.grn).toBe("GRN-2");
+    expect(verify.anchor.appliedSeq).toBeNull();
+    // 跳过面零写入：零 store 仍是零 store。
+    expect(existsSync(join(root, ".pomaster"))).toBe(false);
   });
 
   it("手改在账 run 文件（verdict）→ 全量对账检出（账本面防篡改）", async () => {
@@ -474,6 +511,9 @@ describe("verifyGateRecordInLedger（store 在账状态 ↔ results gate_record 
       gateResultToSnake: toSnakeLoose,
     });
     expect(verify.ok).toBe(false);
+    // 在座判定=目录存在：手搭的 .pomaster/evidence/runs 即算 store 在座 → 必查分支。
+    expect(verify.storePresent).toBe(true);
+    expect(verify.skipped).toBe(false);
     expect(verify.problems.join("; ")).toContain("journal");
     expect(verify.problems.join("; ")).toContain("TX_APPLIED");
   });
@@ -504,6 +544,10 @@ describe("verifyGateRecordInLedger（store 在账状态 ↔ results gate_record 
     });
     expect(verify.ok).toBe(false);
     expect(verify.problems.join("; ")).toContain("gate_record 缺席");
+    // 排序钉面：gate_record 词形校验环境无关，先于 store 缺席跳过判定——即使本例零
+    // store（storePresent=false）也不得借跳过通道假绿（skipped=false）。
+    expect(verify.storePresent).toBe(false);
+    expect(verify.skipped).toBe(false);
   });
 });
 

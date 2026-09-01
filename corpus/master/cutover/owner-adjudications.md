@@ -45,3 +45,12 @@
 - **③A3 宪法档 = 按推荐全收**：执行面=catalog 全部 5 条 GATE.*；judging_rules 四条草稿纪律升硬判据；STRICT 映射=catalog 锚即档（triage 不物化 STRICT 档、无双轨）。
 - **④四小项全批**：(a) production 命令组定名认可；(b) PBR-* 等生产击穿词形正式入词表（正式 vocab PR，不再 pending）；(c) mutation 基准轮 gate record 入正式账本（vNext 自身 .pomaster store，本机账本不入 git）；(d) harvest review 通道启用——P33 呈报件遗留的 STRICT vs COMPATIBILITY 词形位**本次未裁，维持默认 STRICT**。
 - **落盘形态**：六条实现线并行落地（License 落盘 / 阈值 approved / 宪法档转正 / 词表 PR / 账本入账 / harvest 启动），全量门禁通过后由主控统一提交。
+
+## 裁决 7：Owner 决议包第二轮 + CI 回绿战役（2026-09-01）
+
+- **决策渠道**：本会话 Owner 直答（AskUserQuestion，2026-09-01 第二轮）。
+- **① CI 回绿战役（P36）批准**：API 核实 CI 自 2026-08-28 起真实执行 40 次（22 绿；#30（P22）起 Test 步连败；#39/#40 挂 P35 verify 步 fresh-clone 语义缺陷——主控设计责任，已在本地实证）。三层修复：verify 账本校验分层化（store 在座必查 / 缺席显式跳过披露）/ E2E spec 宿主工具耦合双分支严格化（禁放宽断言）/ maxBuffer fixture 跨平台化。Owner 提供只读 fine-grained PAT 用于日志诊断（用后即删，不入库不入盘）。
+- **② 仓库可见性 + macOS 腿**：维持 **public**；**批准 macOS 腿**（public 仓 macOS runner 免费，ci.yml + 契约测试两处一行 diff 随 P36）；配额口径确认（public 免费，约束不成立）。
+- **③ License/provenance 余 7 签全按现状确认**：O-L2=源码公开可见、NOTICES 204 包即对外版；O-L3=两豁免位均**否**（维持不豁免，正式载体 COMMERCIAL_LICENSE.md 严格口径声明）；O-L5=授权 node_modules 干净重装（随 P36 收尾，lockfile 为锚）；O-P1~P4=clean-room 四签确认（含绿灯；sources.yaml 结构化落盘随后续批次）。
+- **④ harvest 词形位 = COMPATIBILITY**：继续使用 harness 自动项目记忆，按批次把有价值条目经 P33 管线收割进 pomaster 正式账本（capture→harvest→review→promote）；STRICT 的 harness 配置关闭动作不执行。
+- **呈报件状态**：docs/l6-release-gate-p35-report.md 全部 Owner 位闭合（裁决 6+7 两轮回填）；legal/THIRD_PARTY_NOTICES.md §4 五签回填。

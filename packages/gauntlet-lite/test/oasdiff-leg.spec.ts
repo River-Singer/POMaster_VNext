@@ -468,15 +468,47 @@ describe("oasdiff 腿真实子进程（fake 脚本两段式）", () => {
 // ============================================================
 // 大输出（maxBuffer）：默认 spawn 的 64MB 缓冲——>1MB stdout 不被 ENOBUFS 打断
 // （Node 默认 1MB 会被大 spec diff 输出打断成 ENOBUFS → 结构性 not_run，P22 红队 MAJOR）
+//
+// 跨平台确定性构造（ubuntu CI 实证修复）：单次 process.stdout.write(>管道缓冲) +
+// 立即 process.exit() 在 POSIX 管道上会截断输出（同脚本 Windows 全量 / ubuntu 仅
+// ~0.14MB）。子进程侧改为 fs.writeSync(1,…) 循环补写（部分写/EAGAIN 重试）——
+// 「产出 >1MB stdout」跨平台保证全量落管；键宽零填充 → 每条目字节数恒定 → 期望
+// 字节数闭式可算，断言收紧到精确相等（键为非数字词形 → JSON 对象键保持插入序，
+// 序列化字节确定）。若 spawn 回落 Node 默认 1MB → maxBuffer 超限 → error=ENOBUFS
+// → spawn_failed，同样红（原回归意图不变）。
 // ============================================================
 
-const BIG_OUTPUT_OASDIFF_CJS = `if (process.argv.includes("--version")) {
+const BIG_OASDIFF_KEYS = 70000;
+/** 定宽条目词形（序号零填充 5 位）——每条目恒 25 字节。 */
+const BIG_OASDIFF_ENTRY = '"changed-path-00000":null';
+/** 期望 stdout 精确字节数 = 条目 × N + 条目间逗号 (N-1) + 首尾大括号 2。 */
+const BIG_OASDIFF_EXPECTED_BYTES =
+  BIG_OASDIFF_ENTRY.length * BIG_OASDIFF_KEYS + (BIG_OASDIFF_KEYS - 1) + 2;
+
+const BIG_OUTPUT_OASDIFF_CJS = `const { writeSync } = require("node:fs");
+// flush-safe 全量落管：部分写（返回值 < 请求量）与 EAGAIN（非阻塞管道瞬时满）都
+// 继续补写，直到全量进入管道——POSIX 管道 + process.exit() 前必须写完。
+function writeAll(text) {
+  const buf = Buffer.from(text, "utf8");
+  let offset = 0;
+  while (offset < buf.length) {
+    try {
+      offset += writeSync(1, buf, offset, buf.length - offset);
+    } catch (error) {
+      if (error && error.code === "EAGAIN") continue;
+      throw error;
+    }
+  }
+}
+if (process.argv.includes("--version")) {
   process.stdout.write("oasdiff 2.2.0\\n");
   process.exit(0);
 }
 const payload = {};
-for (let i = 0; i < 70000; i++) payload["changed-path-" + i] = null;
-process.stdout.write(JSON.stringify(payload));
+for (let i = 0; i < ${BIG_OASDIFF_KEYS}; i++) {
+  payload["changed-path-" + String(i).padStart(5, "0")] = null;
+}
+writeAll(JSON.stringify(payload));
 process.exit(0);
 `;
 
@@ -485,13 +517,16 @@ describe("oasdiff 腿大输出 maxBuffer（默认 spawn 64MB）", () => {
   const scriptPath = join(dir, "big-oasdiff.cjs");
   writeFileSync(scriptPath, BIG_OUTPUT_OASDIFF_CJS, "utf8");
 
-  it(">1MB 合法 JSON 走通两段 spawn 与判卷（passed，零 breaking）", { timeout: 60_000 }, () => {
+  it(">1MB 合法 JSON 走通两段 spawn 与判卷（passed，零 breaking，stdout 字节数精确恒等）", { timeout: 60_000 }, () => {
+    // fixture 自证：构造目标 > Node 默认 1MB（本用例的回归判据前提）。
+    expect(BIG_OASDIFF_EXPECTED_BYTES).toBeGreaterThan(1024 * 1024);
     // 刻意走默认 oasdiffSpawn（maxBuffer 修复位）；修复前 Node 默认 1MB
     // → error=ENOBUFS → spawn_failed，本用例红。null 叶子无信息量不计明细
-    // （宽容提取器契约），故 1.4MB 输出对应零 breaking。
+    // （宽容提取器契约），故 >1MB 输出对应零 breaking。
     const raw = runOasdiffLeg(legPlan(scriptPath, dir));
     expect(raw.kind).toBe("executed");
-    expect(raw.stdout.length).toBeGreaterThan(1024 * 1024);
+    // 精确恒等（强于原 >1MB）：跨 OS 全量落管，任何截断即刻红。
+    expect(raw.stdout.length).toBe(BIG_OASDIFF_EXPECTED_BYTES);
     const record = normalizeOasdiffLeg(raw, 0);
     expect(record.verdict).toBe("passed");
     expect(record.counts.violations).toBe(0);

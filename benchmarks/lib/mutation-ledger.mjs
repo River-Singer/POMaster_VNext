@@ -35,6 +35,15 @@
  * 本机账本披露：REPO_ROOT/.pomaster 已加入 .gitignore（保守裁定——账本留本机不入 git；
  * 仓库无既有相反政策）。store 未初始化时由 createStore 幂等建 skeleton（authority 骨架
  * 按默认；record_gate_run 不需要 authority owner）。
+ *
+ * --verify 分层语义（Owner 设计修正 2026-09-01：账本对账按环境依赖分层，两环境都严格
+ * 判卷——禁放宽断言换绿）：
+ * - 判卷工件自身校验（gate_record 词形）环境无关，任何环境 fail-closed——置于跳过判定
+ *   之前（备选排序会让 gate_record 损坏的 results 在 fresh clone 假绿，属放宽，禁）；
+ * - 账本在账对账（run 文件在账 + journal 锚 + 全量一致）环境相关：store 在座 → 必查
+ *   fail-closed（GRN 缺席/失配照旧红）；store 缺席 → 显式披露跳过（ledgerSkipDisclosure，
+ *   harness 原样 stdout）而非静默——判卷锚重放层（mutation-harness-core 的
+ *   verifyMutationResults，环境无关 fail-closed）已在该层全绿兜底判卷。
  */
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -114,6 +123,19 @@ export function storeLayout(storeRoot) {
       return join(this.runsDir, `${grn}.json`);
     },
   };
+}
+
+/**
+ * store 缺席时的显式跳过披露（分层语义单一措辞源：harness --verify 原样 stdout，
+ * 测试面钉内容——跳过必须显式、禁静默）。.pomaster 是 Owner 决议的本机账本
+ * （.gitignore 排除不入 git），fresh clone 无 store 属预期形态——此时账本在账对账层
+ * 无法执行，判卷锚重放层（verifyMutationResults，环境无关 fail-closed）已全绿兜底。
+ *
+ * @param {string} grn results 声称的 GRN。
+ * @returns {string}
+ */
+export function ledgerSkipDisclosure(grn) {
+  return `账本对账跳过：本机 store 缺席（.pomaster 为 Owner 决议的本机账本，不入 git——fresh clone 属预期形态），判卷锚重放层已全绿；results 声称 GRN ${grn} 的在账对账未执行（显式披露非静默；store 建立后重跑 --verify 即补全对账）`;
 }
 
 /**
@@ -351,8 +373,16 @@ function readJournalEvents(journalPath, problems) {
 }
 
 /**
- * --verify 的账本一致性面：校验 store 内该 GRN 在账（evidence/runs/<GRN>.json + journal
- * TX_APPLIED 锚）且与 results.gate_record 一致。零写入纯读；失配逐条列入 problems。
+ * --verify 的账本一致性面（分层语义）：校验 store 内该 GRN 在账（evidence/runs/<GRN>.json +
+ * journal TX_APPLIED 锚）且与 results.gate_record 一致。零写入纯读；失配逐条列入 problems。
+ *
+ * 分层（Owner 设计修正 2026-09-01；两环境都严格判卷）：
+ * - gate_record 词形校验（缺席/GRN 词形非法）：results 工件自身缺陷，环境无关——任何
+ *   环境 fail-closed，置于 store 缺席跳过判定之前（备选排序会让损坏 results 在
+ *   fresh clone 假绿，属放宽断言换绿，禁）；
+ * - 账本在账对账：仅当 store 在座（<storeRoot>/.pomaster 目录在座）执行，GRN 缺席/
+ *   内容失配/锚缺席照旧 fail-closed；store 缺席 → ok=true + skipped=true + disclosure
+ *   （ledgerSkipDisclosure 显式披露，harness 原样 stdout——跳过禁静默）。
  *
  * 口径披露：journal TX_APPLIED 事件不携带 GRN（kernel 事件词形只有 ops 词形数组），GRN
  * 的机器锚是 run 文件本体；journal 锚证明该写入经 applyTransaction 通路（CLAIMED 纪律）
@@ -362,14 +392,19 @@ function readJournalEvents(journalPath, problems) {
  * @param {Record<string, unknown>} args.results mutation-last-results.json 解析产物。
  * @param {string} args.storeRoot store 根目录（REPO_ROOT）。
  * @param {(result: Record<string, unknown>) => Record<string, unknown>} args.gateResultToSnake kernel 注入。
- * @returns {{ ok: boolean, problems: string[], grn: string | null, anchor: { appliedSeq: number | null } }}
+ * @returns {{ ok: boolean, skipped: boolean, disclosure: string | null, storePresent: boolean, problems: string[], grn: string | null, anchor: { appliedSeq: number | null } }}
  */
 export function verifyGateRecordInLedger({ results, storeRoot, gateResultToSnake }) {
   const problems = [];
+  const layout = storeLayout(storeRoot);
+  const storePresent = existsSync(layout.pomasterDir);
   const record = results?.gate_record;
   if (record === null || typeof record !== "object" || Array.isArray(record)) {
     return {
       ok: false,
+      skipped: false,
+      disclosure: null,
+      storePresent,
       problems: ["results.gate_record 缺席或不是对象（旧版 results 或文件损坏）——重跑 node benchmarks/mutation-kill.mjs 生成新格式"],
       grn: null,
       anchor: { appliedSeq: null },
@@ -379,27 +414,43 @@ export function verifyGateRecordInLedger({ results, storeRoot, gateResultToSnake
   if (grn === null || !GRN_RE.test(grn)) {
     return {
       ok: false,
+      skipped: false,
+      disclosure: null,
+      storePresent,
       problems: [`results.gate_record.grn 词形非法（须 GRN-[0-9]+）：${String(record.grn)}`],
       grn,
       anchor: { appliedSeq: null },
     };
   }
-  const layout = storeLayout(storeRoot);
 
-  // —— run 文件在账 + 与 results.gate_record 全量一致 ——
+  // —— 分层第二支：store 缺席（Owner 决议账本留本机不入 git——fresh clone 属预期形态）
+  // ——账本在账对账层显式跳过（披露非静默）；判卷锚重放层已全绿兜底判卷。
+  if (!storePresent) {
+    return {
+      ok: true,
+      skipped: true,
+      disclosure: ledgerSkipDisclosure(grn),
+      storePresent: false,
+      problems: [],
+      grn,
+      anchor: { appliedSeq: null },
+    };
+  }
+
+  // —— run 文件在账 + 与 results.gate_record 全量一致（store 在座必查，fail-closed）——
   const runPath = layout.runFile(grn);
   if (!existsSync(runPath)) {
     problems.push(
-      `GRN ${grn} 不在账（${runPath} 缺席）——测量后入账未发生或 store 被清；本版本起 gate record 必须在账（旧版 results 需重跑一次测量完成入账迁移）`,
+      `GRN ${grn} 不在账（${runPath} 缺席）——store 在座而账本对账必查（fail-closed）：测量后入账未发生或 store 局部被清；重跑 node benchmarks/mutation-kill.mjs 重新测量入账`,
     );
-    return { ok: false, problems, grn, anchor: { appliedSeq: null } };
+    return { ok: false, skipped: false, disclosure: null, storePresent: true, problems, grn, anchor: { appliedSeq: null } };
   }
   let stored;
   try {
     stored = JSON.parse(readFileSync(runPath, "utf8"));
   } catch (error) {
     problems.push(`在账 run 文件无法解析（损坏或手改）：${String(error)}`);
-    return { ok: false, problems, grn, anchor: { appliedSeq: null } };
+    return { ok: false, skipped: false, disclosure: null, storePresent: true, problems, grn, anchor: { appliedSeq: null } };
   }
   const expected = expectedStoreRunRecord(record, gateResultToSnake);
   const diffs = runRecordDiff(stored, expected);
@@ -430,5 +481,5 @@ export function verifyGateRecordInLedger({ results, storeRoot, gateResultToSnake
       anchoredSeq = declaredAppliedSeq;
     }
   }
-  return { ok: problems.length === 0, problems, grn, anchor: { appliedSeq: anchoredSeq } };
+  return { ok: problems.length === 0, skipped: false, disclosure: null, storePresent: true, problems, grn, anchor: { appliedSeq: anchoredSeq } };
 }

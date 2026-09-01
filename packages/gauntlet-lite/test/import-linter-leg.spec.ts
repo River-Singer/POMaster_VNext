@@ -430,18 +430,48 @@ describe("import-linter 腿真实子进程（fake 脚本两段式）", () => {
 // ============================================================
 // 大输出（maxBuffer）：默认 spawn 的 64MB 缓冲——>1MB stdout 不被 ENOBUFS 打断
 // （Node 默认 1MB 会被真实大仓 stdout 打断成 ENOBUFS → 结构性 not_run，P22 红队 MAJOR）
+//
+// 跨平台确定性构造（ubuntu CI 实证修复）：单次 process.stdout.write(>管道缓冲) +
+// 立即 process.exit() 在 POSIX 管道上会截断输出（写未落管进程已退——同脚本
+// Windows 全量 / ubuntu 仅 ~0.66MB）。修复双管齐下：
+// - 子进程侧 fs.writeSync(1,…) 循环补写（部分写/EAGAIN 重试）——「产出 >1MB
+//   stdout」在本体层面跨平台保证全量落管，再 process.exit；
+// - 填充行定宽（零填充词形）→ 期望字节数闭式可算，断言从 >1MB 收紧到精确相等
+//   ——任何截断即刻红；若 spawn 回落 Node 默认 1MB，则 maxBuffer 超限 →
+//   error=ENOBUFS → spawn_failed，同样红（原回归意图不变）。
 // ============================================================
 
-const BIG_OUTPUT_LINT_IMPORTS_CJS = `if (process.argv.includes("--version")) {
+const BIG_FILLER_LINE = "module-00000 processed"; // 22 字符定宽（序号零填充）
+const BIG_FILLER_LINES = 60000;
+const BIG_TAIL_TEXT =
+  "Contracts: 3 kept, 2 broken.\n" +
+  "myapp.services cannot import myapp.api (contract: layered)\n" +
+  "myapp.cli cannot import myapp.api (contract: layered)";
+/** 子进程产出的 stdout 精确字节数（每填充行 +\n；尾行不再带结尾换行——与脚本逐字节同构，ASCII → length==字节）。 */
+const BIG_STDOUT_EXPECTED_BYTES =
+  (BIG_FILLER_LINE.length + 1) * BIG_FILLER_LINES + BIG_TAIL_TEXT.length;
+
+const BIG_OUTPUT_LINT_IMPORTS_CJS = `const { writeSync } = require("node:fs");
+// flush-safe 全量落管：部分写（返回值 < 请求量）与 EAGAIN（非阻塞管道瞬时满）都
+// 继续补写，直到全量进入管道——POSIX 管道 + process.exit() 前必须写完。
+function writeAll(text) {
+  const buf = Buffer.from(text, "utf8");
+  let offset = 0;
+  while (offset < buf.length) {
+    try {
+      offset += writeSync(1, buf, offset, buf.length - offset);
+    } catch (error) {
+      if (error && error.code === "EAGAIN") continue;
+      throw error;
+    }
+  }
+}
+if (process.argv.includes("--version")) {
   process.stdout.write("import-linter 2.1.0\\n");
   process.exit(0);
 }
-const lines = [];
-for (let i = 0; i < 70000; i++) lines.push("module-" + i + " processed");
-lines.push("Contracts: 3 kept, 2 broken.");
-lines.push("myapp.services cannot import myapp.api (contract: layered)");
-lines.push("myapp.cli cannot import myapp.api (contract: layered)");
-process.stdout.write(lines.join("\\n"));
+writeAll(("${BIG_FILLER_LINE}\\n").repeat(${BIG_FILLER_LINES}));
+writeAll(${JSON.stringify(BIG_TAIL_TEXT)});
 process.exit(1);
 `;
 
@@ -450,12 +480,15 @@ describe("import-linter 腿大输出 maxBuffer（默认 spawn 64MB）", () => {
   const scriptPath = join(dir, "big-lint-imports.cjs");
   writeFileSync(scriptPath, BIG_OUTPUT_LINT_IMPORTS_CJS, "utf8");
 
-  it(">1MB 合法输出走通两段 spawn 与判卷（failed violations=2）", { timeout: 60_000 }, () => {
+  it(">1MB 合法输出走通两段 spawn 与判卷（failed violations=2，stdout 字节数精确恒等）", { timeout: 60_000 }, () => {
+    // fixture 自证：构造目标 > Node 默认 1MB（本用例的回归判据前提）。
+    expect(BIG_STDOUT_EXPECTED_BYTES).toBeGreaterThan(1024 * 1024);
     // 刻意走默认 importLinterSpawn（maxBuffer 修复位）；修复前 Node 默认 1MB
     // → error=ENOBUFS → spawn_failed，本用例红。
     const raw = runImportLinterLeg(legPlan(scriptPath, dir));
     expect(raw.kind).toBe("executed");
-    expect(raw.stdout.length).toBeGreaterThan(1024 * 1024);
+    // 精确恒等（强于原 >1MB）：跨 OS 全量落管，任何截断即刻红。
+    expect(raw.stdout.length).toBe(BIG_STDOUT_EXPECTED_BYTES);
     const record = normalizeImportLinterLeg(raw, 0);
     expect(record.verdict).toBe("failed");
     expect(record.counts.violations).toBe(2);

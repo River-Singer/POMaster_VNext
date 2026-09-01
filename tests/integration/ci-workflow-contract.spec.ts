@@ -1,10 +1,12 @@
 /**
- * ci-workflow-contract.spec.ts —— CI workflow 双 OS 腿形态契约（P32b · gaps B3
- * 闭合的机器可判半边：Windows 腿存在 + 七步同形 + Windows 安全调用形态）。
+ * ci-workflow-contract.spec.ts —— CI workflow 多 OS 腿形态契约（P32b · gaps B3
+ * 闭合的机器可判半边：Windows 腿存在 + 七步同形 + Windows 安全调用形态；
+ * macOS 腿 Owner 2026-09-01 批准启用，与 ci.yml matrix 同步钉死）。
  *
  * 钉住的契约（.github/workflows/ci.yml）：
- * - matrix 双腿 ubuntu-latest + windows-latest（B3：此前 CI 只在 ubuntu 验证，
- *   PATH 双引号吞段等 Windows 特有坑只在本机踩过、CI 不设防）；
+ * - matrix 三腿 ubuntu-latest + windows-latest + macos-latest（B3：此前 CI 只在
+ *   ubuntu 验证，PATH 双引号吞段等 Windows 特有坑只在本机踩过、CI 不设防；
+ *   macOS 腿按呈报件 docs/l6-release-gate-p35-report.md §3 即插即用件启用）；
  * - fail-fast: false（单腿红不取消另一腿——Windows 特有失败不得掩盖 ubuntu 主信号）；
  * - 七步 run 命令恒为 `corepack pnpm <install|build|mutation:verify|notices:verify|test|ratchet|lint>`：统一经
  *   corepack 前缀（不依赖 runner PATH 上的裸 pnpm/npx——Windows pwsh 与 ubuntu bash
@@ -39,7 +41,7 @@ const EXPECTED_STEP_COMMANDS = [
   "corepack pnpm lint",
 ];
 
-const EXPECTED_RUNNERS = ["ubuntu-latest", "windows-latest"];
+const EXPECTED_RUNNERS = ["ubuntu-latest", "windows-latest", "macos-latest"];
 
 function loadWorkflow(): UnknownRecord {
   const raw = readFileSync(workflowPath, "utf8");
@@ -60,8 +62,8 @@ function runCommandsOf(job: UnknownRecord): string[] {
   return runs;
 }
 
-describe("CI workflow 双 OS 腿形态契约（P32b · B3 闭合）", () => {
-  it("matrix 含 ubuntu-latest + windows-latest 双腿；fail-fast=false（单腿红不取消另一腿）", () => {
+describe("CI workflow 多 OS 腿形态契约（P32b · B3 闭合 + macOS 腿启用）", () => {
+  it("matrix 含 ubuntu-latest + windows-latest + macos-latest 三腿；fail-fast=false（单腿红不取消另一腿）", () => {
     const doc = loadWorkflow();
     const jobs = doc.jobs as UnknownRecord;
     const ci = jobs.ci as UnknownRecord;
