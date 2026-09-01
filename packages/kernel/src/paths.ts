@@ -24,6 +24,12 @@
  * - runtime/sessions/<session_key>.json  活跃会话注册（liveness + 当前任务指针；易变态）
  * - runtime/locks/<lock_id>.lock         三粒度互斥锁（change/task/unit；易变态）
  * - executions/AGX-*.json                Execution Identity 正式档案（PRD §25.4；进 Git）
+ *
+ * W1-C Execution Trace 侧车平面（PRD v0.5.2 §8；裁决 8 ②「trace 独立 traces/ 分区」
+ * ——P34 production 新分区先例：不进 content_digest、零 journal 事件）：
+ * - traces/AGX-*.json           durable manifest（TASK/INCIDENT/AUDIT 留存档，进 Git）
+ * - runtime/traces/AGX-*.json   EPHEMERAL manifest（易变平面；§85.4 可删除测试 runtime/
+ *                               判据豁免——删后投影可重建，Benchmark C raw 可丢弃）
  */
 import { GovernanceError } from "./errors.js";
 import { isNotFoundError, readJsonText } from "./io.js";
@@ -61,6 +67,10 @@ export interface StorePaths {
   readonly locksDir: string;
   /** executions/（D 线 §1.3：Execution Identity 正式档案，进 Git；execution.ts 维护）。 */
   readonly executionsDir: string;
+  /** traces/（W1-C §8：durable Execution Trace 分区，进 Git；trace.ts 维护）。 */
+  readonly tracesDir: string;
+  /** runtime/traces/（W1-C §8.3：EPHEMERAL trace 易变平面，可丢弃；trace.ts 维护）。 */
+  readonly rawTracesDir: string;
 }
 
 export function buildStorePaths(rootDir: string): StorePaths {
@@ -89,6 +99,8 @@ export function buildStorePaths(rootDir: string): StorePaths {
     sessionsDir: `${pomasterDir}/runtime/sessions`,
     locksDir: `${pomasterDir}/runtime/locks`,
     executionsDir: `${pomasterDir}/executions`,
+    tracesDir: `${pomasterDir}/traces`,
+    rawTracesDir: `${pomasterDir}/runtime/traces`,
   };
 }
 

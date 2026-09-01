@@ -1,7 +1,7 @@
 {
   "schema": "pomaster.vnext.selfhosting-benchmark-results/3",
-  "run_id": "bench-0009",
-  "seq": 9,
+  "run_id": "bench-0010",
+  "seq": 10,
   "ok": true,
   "summary": {
     "total": 3,
@@ -19,7 +19,7 @@
       "matched_keywords": [
         "文案"
       ],
-      "durationMs": 295,
+      "durationMs": 324,
       "ok": true,
       "assertions": [
         {
@@ -50,7 +50,7 @@
       "matched_rule": "DEFAULT_NO_SIGNAL",
       "evidence_grade": "NOT_CONFIGURED",
       "matched_keywords": [],
-      "durationMs": 294,
+      "durationMs": 316,
       "ok": true,
       "assertions": [
         {
@@ -78,8 +78,8 @@
       "catalog": {
         "catalog_version": "0.1.0-pilot",
         "profile": "web-standard@0",
-        "entries_total": 94,
-        "entries_checked": 94,
+        "entries_total": 100,
+        "entries_checked": 100,
         "drifts": 0,
         "gate_entry_ids": [
           "GATE.BE.API.CONTRACT_CHECKS",
@@ -274,13 +274,13 @@
           "not_run_reason": "分母缺席：vNext 仓库自身无业务 subject 数据面，gate 真实判卷需在消费项目数据面执行（A3 裁定执行面=就绪校验；not_run 显式披露，禁假 passed）"
         }
       ],
-      "durationMs": 215,
+      "durationMs": 235,
       "ok": true,
       "assertions": [
         {
           "name": "catalog-lock-ok",
           "ok": true,
-          "detail": "verifyCatalogLock ok=true，entries_checked=94/94，drifts=0（sha256 逐条对账，D24 read-side 指纹）"
+          "detail": "verifyCatalogLock ok=true，entries_checked=100/100，drifts=0（sha256 逐条对账，D24 read-side 指纹）"
         },
         {
           "name": "profile-anchor-present",

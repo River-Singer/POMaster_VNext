@@ -20,12 +20,24 @@
  * - inputsFingerprint 由 manifest+request 派生：同输入重放字节稳定（D24：只读服务）。
  * 纯派生视图：只读 store 与 catalog/，不产生治理事实，不写任何文件。
  */
-import type { DenominatorRefRow, Projection, ProjectionEntry, Store } from "./index.js";
-import { GovernanceError } from "./errors.js";
+import type {
+  DenominatorRefRow,
+  Projection,
+  ProjectionEntry,
+  ProjectionRequest,
+  Store,
+  TruthIndex,
+} from "./index.js";
+import { GovernanceError, GovernedIdParseError, governanceCodeForParseError } from "./errors.js";
 import { sha256OfCanonical } from "./digest.js";
 import { readText } from "./io.js";
+import { parseGovernedId } from "./id.js";
 import { pathsOf, readRawIndex, type StorePaths } from "./paths.js";
 import { loadTruthIndex } from "./store.js";
+import {
+  CATALOG_CHANGE_CLASS_VALUES,
+  CATALOG_GOVERNANCE_PROFILE_VALUES,
+} from "./vocab.js";
 import {
   loadCatalogPolicies,
   loadCatalogProjectionPresets,
@@ -62,6 +74,50 @@ export interface ProjectionCatalogOptions {
   readonly catalogRoot?: string;
 }
 
+// ============================================================
+// catalog include/exclude 决策记录（P0.5-1；PRD §5.4 why_included/why_excluded）
+// ============================================================
+
+/** 决策词形（PRD §5.4 逐字：INCLUDED/EXCLUDED 语义位；词形小写对齐 verdict 局部词纪律）。 */
+export type CatalogDecisionWord = "included" | "excluded";
+
+/**
+ * 单条 catalog 条目的 include/exclude 决策记录（PRD §5.4 决策面字段逐字：
+ * why_included / why_excluded；matched=命中轴→命中值）。与 manifest 严格隔离：
+ * 本记录不进五分区、不进 inputsFingerprint（excluded 不进 Agent Context——PRD §5.4）。
+ */
+export interface CatalogEntryDecision {
+  /** 治理对象/条目引用（policy id 或 preset name，与 catalogEntries.ref 同一词形）。 */
+  readonly ref: string;
+  /** catalog 根相对路径（出处；如 policies/policy.api.backward_compat_defaults.json）。 */
+  readonly file: string;
+  readonly decision: CatalogDecisionWord;
+  /** included 时非 null：命中轴片段 + 判定模式注记（lane 回退/机器全字段）。 */
+  readonly why_included: string | null;
+  /** excluded 时非 null：未命中轴片段（缺席显式——请求侧输入缺席同样明示）。 */
+  readonly why_excluded: string | null;
+  /** 命中轴 → 命中值（轴键：lane/lanes/capabilities/change_class/governance_profile/object_kinds）。 */
+  readonly matched: Readonly<Record<string, readonly string[]>>;
+  /** lane 回退判定（未声明机器 applicability 字段，O7 行为零变化）。 */
+  readonly fallback_lane: boolean;
+}
+
+/** explainCatalogProjection 结果（决策记录面；含输入回显与 catalog 出处呈现）。 */
+export interface CatalogProjectionExplanation {
+  /** 请求输入回显（判卷可重放：同输入重放 decisions 字节稳定）。 */
+  readonly inputs: {
+    readonly role: string;
+    readonly taskRef: string | null;
+    readonly capabilities: readonly string[];
+    readonly changeClass: string | null;
+    readonly governanceProfile: string | null;
+  };
+  /** 全量决策（policies included+excluded 与 presets included；ref 确定性排序）。 */
+  readonly decisions: readonly CatalogEntryDecision[];
+  /** catalog 消费出处与 lock 校验呈现（与 compileProjection 同一面）。 */
+  readonly catalogSource: CatalogProjectionSource;
+}
+
 function driftSummary(drifts: readonly CatalogLockDrift[]): string {
   const head = drifts
     .slice(0, 5)
@@ -71,21 +127,248 @@ function driftSummary(drifts: readonly CatalogLockDrift[]): string {
 }
 
 /**
- * catalog 策展消费（P14）：policies 检索式注入 + tools 懒加载清单 + lock 校验呈现。
- * 语义边界：
+ * catalog 结构化 applicability 输入（P0.5-1；PRD §5.3 确定性包含管线的中三层输入）。
+ * 由 ProjectionRequest 派生（role/capabilities/changeClass/governanceProfile）+
+ * store 范围派生（inScopeObjectKinds——分母/许可通道命中的对象 kind 集）。
+ */
+interface CatalogApplicabilityInput {
+  readonly role: string;
+  readonly capabilities: readonly string[];
+  readonly changeClass: string | null;
+  readonly governanceProfile: string | null;
+  readonly inScopeObjectKinds: readonly string[];
+}
+
+/**
+ * 单条 policy 的 applicability 判定结果（确定性、纯派生、同输入重放字节稳定）。
+ * hitSegments/failedSegments 是 reason / why_excluded 的轴级片段（轴序固定：
+ * lanes → capabilities → change_class → governance_profile → object_kinds）。
+ */
+interface PolicyApplicabilityOutcome {
+  readonly included: boolean;
+  /** lane 回退判定（未声明任何机器 applicability 字段——O7 行为零变化）。 */
+  readonly fallback: boolean;
+  /** 命中轴 → 命中值（决策记录 matched 面）。 */
+  readonly matched: Readonly<Record<string, readonly string[]>>;
+  /** 命中轴的 reason 片段（include 组装用）。 */
+  readonly hitSegments: readonly string[];
+  /** 未命中轴的 why 片段（exclude 组装用）。 */
+  readonly failedSegments: readonly string[];
+}
+
+/** 留位不登记词轴的消费面呈现（O4：not_configured 显式缺席，禁半成品假绿）。 */
+function unregisteredAxisNote(policy: CatalogPolicyMaterial): string {
+  if (policy.declaredUnregisteredAxes.length === 0) return "";
+  return (
+    `；另声明未登记词轴 ${policy.declaredUnregisteredAxes.join("/")}` +
+    `（not_configured：留位不登记，本增量不消费——裁决 8 ② O4）`
+  );
+}
+
+/**
+ * 结构化确定性判定核（P0.5-1；PRD §5.3 Deterministic Inclusion + A20 Applicability
+ * Before Utility）。语义（vocab-pr-0005 applicability_fields 注记逐字承载）：
+ * - 未声明任一机器字段 → lane 回退判定（lane ∈ {any, role}；现行行为逐字节保留，O7）；
+ * - 声明了任一机器字段 → 全字段确定性判定（声明轴全部命中才 include）：
+ *   角色判定恒在场（lanes 缺席回退 lane 单值，同一双读语义）；capabilities/
+ *   change_classes/governance_profiles/object_kinds 各轴按声明参与（交集/成员判定），
+ *   请求侧对应输入缺席 = 不可判定即不注入（缺席显式，禁假绿——PRD §5.3
+ *   「先做确定性排除」；explain 面逐条 why_excluded 可纠偏）；
+ * - risk_at_least/technologies 不参与判定（O4 留位不登记），仅以 not_configured
+ *   注记显式呈现。
+ */
+function evaluatePolicyApplicability(
+  policy: CatalogPolicyMaterial,
+  input: CatalogApplicabilityInput,
+): PolicyApplicabilityOutcome {
+  const matched: Record<string, readonly string[]> = {};
+  const hitSegments: string[] = [];
+  const failedSegments: string[] = [];
+
+  // —— lane 回退判定（未声明机器字段；现行词形逐字节保留） ——
+  if (!policy.hasMachineApplicability) {
+    const included = policy.lane === "any" || policy.lane === input.role;
+    if (included) {
+      hitSegments.push(`lane=${policy.lane} 命中 role=${input.role}`);
+      matched["lane"] = [input.role];
+    } else {
+      failedSegments.push(`lane=${policy.lane} 未命中 role=${input.role}（lane 回退判定）`);
+    }
+    return { included, fallback: true, matched, hitSegments, failedSegments };
+  }
+
+  // —— 机器全字段判定（轴序固定，全部声明轴命中才 include） ——
+  // ① 角色轴（lanes 声明取复数；缺席回退 lane 单值——双读同一语义，PR-0005）。
+  const lanesForCheck = policy.declaresLanes ? policy.lanes : [policy.lane];
+  if (lanesForCheck.length > 0) {
+    if (lanesForCheck.includes("any")) {
+      hitSegments.push(`lanes=${lanesForCheck.join("/")}（any 恒命中 role=${input.role}）`);
+      matched["lanes"] = [input.role];
+    } else if (lanesForCheck.includes(input.role as never)) {
+      hitSegments.push(`lanes=${lanesForCheck.join("/")} 命中 role=${input.role}`);
+      matched["lanes"] = [input.role];
+    } else {
+      failedSegments.push(`lanes=[${lanesForCheck.join("/")}] 未命中 role=${input.role}`);
+    }
+  }
+  // ② capabilities 轴（交集判定；请求侧缺席 = 不可判定即不注入）。
+  if (policy.capabilities.length > 0) {
+    const hits = policy.capabilities.filter((capability) =>
+      input.capabilities.includes(capability),
+    );
+    if (hits.length > 0) {
+      hitSegments.push(`capabilities 命中=${hits.join("/")}`);
+      matched["capabilities"] = hits;
+    } else if (input.capabilities.length === 0) {
+      failedSegments.push(
+        `capabilities=[${policy.capabilities.join("/")}] 而请求未提供 capabilities` +
+          `（不可判定即不适用——缺席显式）`,
+      );
+    } else {
+      failedSegments.push(
+        `capabilities=[${policy.capabilities.join("/")}] 与请求 ` +
+          `capabilities=[${input.capabilities.join("/")}] 无交集`,
+      );
+    }
+  }
+  // ③ change_classes 轴（成员判定）。
+  if (policy.changeClasses.length > 0) {
+    if (input.changeClass !== null && policy.changeClasses.includes(input.changeClass as never)) {
+      hitSegments.push(`change_class 命中=${input.changeClass}`);
+      matched["change_class"] = [input.changeClass];
+    } else if (input.changeClass === null) {
+      failedSegments.push(
+        `change_classes=[${policy.changeClasses.join("/")}] 而请求未提供 change_class（缺席显式）`,
+      );
+    } else {
+      failedSegments.push(
+        `change_classes=[${policy.changeClasses.join("/")}] 未命中请求 change_class=${input.changeClass}`,
+      );
+    }
+  }
+  // ④ governance_profiles 轴（成员判定；O2 词形对齐 triage+STRICT）。
+  if (policy.governanceProfiles.length > 0) {
+    if (
+      input.governanceProfile !== null &&
+      policy.governanceProfiles.includes(input.governanceProfile as never)
+    ) {
+      hitSegments.push(`governance_profile 命中=${input.governanceProfile}`);
+      matched["governance_profile"] = [input.governanceProfile];
+    } else if (input.governanceProfile === null) {
+      failedSegments.push(
+        `governance_profiles=[${policy.governanceProfiles.join("/")}] 而请求未提供 governance_profile（缺席显式）`,
+      );
+    } else {
+      failedSegments.push(
+        `governance_profiles=[${policy.governanceProfiles.join("/")}] 未命中请求 governance_profile=${input.governanceProfile}`,
+      );
+    }
+  }
+  // ⑤ object_kinds 轴（与投影范围内对象 kind 集交集——PRD §5.3 管线「Governed Object Scope」层）。
+  if (policy.objectKinds.length > 0) {
+    const hits = policy.objectKinds.filter((kind) => input.inScopeObjectKinds.includes(kind));
+    if (hits.length > 0) {
+      hitSegments.push(`object_kinds 命中=${hits.join("/")}`);
+      matched["object_kinds"] = hits;
+    } else if (input.inScopeObjectKinds.length === 0) {
+      failedSegments.push(
+        `object_kinds=[${policy.objectKinds.join("/")}] 而投影范围内对象为空（无分母/许可范围——缺席显式）`,
+      );
+    } else {
+      failedSegments.push(
+        `object_kinds=[${policy.objectKinds.join("/")}] 与范围内对象 ` +
+          `kinds=[${input.inScopeObjectKinds.join("/")}] 无交集`,
+      );
+    }
+  }
+
+  const included = failedSegments.length === 0;
+  return { included, fallback: false, matched, hitSegments, failedSegments };
+}
+
+/** include reason 词形组装（lane 回退片段逐字节保留现行词形；机器片段轴序固定）。 */
+function includeReasonOf(
+  policy: CatalogPolicyMaterial,
+  outcome: PolicyApplicabilityOutcome,
+): string {
+  return (
+    `catalog: ${policy.file}（${outcome.hitSegments.join("；")}，` +
+    `enforcement=${policy.enforcement}，lifecycle=${policy.lifecycle}）：${policy.titleZh}`
+  );
+}
+
+/**
+ * 投影请求侧 applicability 输入校验（fail-closed 同款：词表外/词形非法 = SCHEMA_INVALID，
+ * 禁静默当未提供——静默 = 判定输入被吞，排除面假绿）。
+ */
+function validateApplicabilityInputs(request: ProjectionRequest): void {
+  for (const capability of request.capabilities ?? []) {
+    try {
+      const parsed = parseGovernedId(capability);
+      if (parsed.prefix !== "CAPABILITY") {
+        throw new GovernanceError(
+          "SCHEMA_INVALID",
+          `ProjectionRequest.capabilities 前缀非 CAPABILITY: ${capability}`,
+          "capabilities 须为 CAPABILITY.* governed id（A5 closed-world；与 catalog applies_when.capabilities 同一词形）。",
+          { capability },
+        );
+      }
+    } catch (error) {
+      if (error instanceof GovernedIdParseError) {
+        throw new GovernanceError(
+          governanceCodeForParseError(error),
+          `ProjectionRequest.capabilities 词形非法: ${capability}`,
+          "capabilities 须为 CAPABILITY.* governed id（A5 closed-world 文法）。",
+          { capability, reason: error.reason },
+        );
+      }
+      throw error;
+    }
+  }
+  if (
+    request.changeClass !== undefined &&
+    !CATALOG_CHANGE_CLASS_VALUES.includes(request.changeClass as never)
+  ) {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      `ProjectionRequest.changeClass 词表外: ${request.changeClass}`,
+      `changeClass 须 ∈ CATALOG_CHANGE_CLASS_VALUES（vocab-pr-0005 词轴）；扩值走词汇表 PR。`,
+      { changeClass: request.changeClass },
+    );
+  }
+  if (
+    request.governanceProfile !== undefined &&
+    !CATALOG_GOVERNANCE_PROFILE_VALUES.includes(request.governanceProfile as never)
+  ) {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      `ProjectionRequest.governanceProfile 词表外: ${request.governanceProfile}`,
+      `governanceProfile 须 ∈ CATALOG_GOVERNANCE_PROFILE_VALUES（O2：对齐 TRIAGE_PROFILES+STRICT）。`,
+      { governanceProfile: request.governanceProfile },
+    );
+  }
+}
+
+/**
+ * catalog 策展消费（P14；P0.5-1 升级为结构化确定性过滤）：policies 检索式注入 +
+ * tools 懒加载清单 + lock 校验呈现。语义边界：
  * - 坏物料（SCHEMA_INVALID）→ 原样抛出（fail-closed：目录在但物料坏 ≠ catalog 缺席，
  *   禁静默当空分区消费）；
  * - catalog 目录缺席（NOT_CONFIGURED）→ status="absent" 显式呈现 + 空分区
  *   （投影核心是 store 派生，策展源缺席不阻断投影，但绝不伪装成有内容）；
- * - lock 漂移 → WARN 进 note（D24 哈希伦理：呈现不阻断；修复 = producer 重锁）。
+ * - lock 漂移 → WARN 进 note（D24 哈希伦理：呈现不阻断；修复 = producer 重锁）；
+ * - applicability 判定核见 evaluatePolicyApplicability（P0.5-1：lane 回退 + 机器
+ *   全字段确定性判定——PRD §5.2/§5.3，裁决 8 ② O7 行为零变化）。
  */
 function consumeCatalog(
-  request: import("./index.js").ProjectionRequest,
+  request: ProjectionRequest,
   options?: ProjectionCatalogOptions,
+  inScopeObjectKinds: readonly string[] = [],
 ): {
   readonly catalogEntries: ProjectionEntry[];
   readonly lazyTools: string[];
   readonly catalogSource: CatalogProjectionSource;
+  readonly decisions: readonly CatalogEntryDecision[];
 } {
   let catalogRoot: string;
   try {
@@ -100,35 +383,73 @@ function consumeCatalog(
           root: null,
           note: `catalog 缺席：${error.message}`,
         },
+        decisions: [],
       };
     }
     throw error;
   }
 
   const policies = loadCatalogPolicies(catalogRoot);
-  // lane 检索：applies_when.lane ∈ {"any", role 命中}（CATALOG_LANE_VALUES 与 role
-  // lane 词的交集即 frontend/backend；architect 等 role 只命中 any——V7 词表注记）。
+  const input: CatalogApplicabilityInput = {
+    role: request.role,
+    capabilities: request.capabilities ?? [],
+    changeClass: request.changeClass ?? null,
+    governanceProfile: request.governanceProfile ?? null,
+    inScopeObjectKinds,
+  };
+  // 结构化确定性过滤（P0.5-1）：lane 回退 + 机器全字段判定；include reason 保留
+  // 现行词形（回退条目逐字节不变——O7），机器条目扩展命中轴详情。
   const catalogEntries: ProjectionEntry[] = [];
+  const decisions: CatalogEntryDecision[] = [];
   for (const policy of policies as readonly CatalogPolicyMaterial[]) {
-    if (policy.lane !== "any" && policy.lane !== request.role) continue;
-    catalogEntries.push({
-      ref: policy.id,
-      reason:
-        `catalog: ${policy.file}（lane=${policy.lane} 命中 role=${request.role}，` +
-        `enforcement=${policy.enforcement}，lifecycle=${policy.lifecycle}）：${policy.titleZh}`,
-    });
+    const outcome = evaluatePolicyApplicability(policy, input);
+    const note = unregisteredAxisNote(policy);
+    if (outcome.included) {
+      catalogEntries.push({ ref: policy.id, reason: includeReasonOf(policy, outcome) });
+      decisions.push({
+        ref: policy.id,
+        file: policy.file,
+        decision: "included",
+        why_included:
+          outcome.hitSegments.join("；") +
+          (outcome.fallback ? "（未声明机器 applicability 字段——lane 回退判定，O7）" : "（机器 applicability 全字段判定通过）") +
+          note,
+        why_excluded: null,
+        matched: outcome.matched,
+        fallback_lane: outcome.fallback,
+      });
+    } else {
+      decisions.push({
+        ref: policy.id,
+        file: policy.file,
+        decision: "excluded",
+        why_included: null,
+        why_excluded: `未命中（${outcome.failedSegments.join("；")}）${note}`,
+        matched: outcome.matched,
+        fallback_lane: outcome.fallback,
+      });
+    }
   }
   // projection-presets 消费（P14 出口判据：presets 与 policies 同为 context 编译的
   // catalog 策展面）：身份三元组在场呈现——预设无治理 id 词形，ref = preset.name；
   // 正文语义（映射与约束）住 yaml 本体，此处只注入身份与出处（检索式策展，不搬运正文）。
+  // 预设无 applicability 词轴（恒注入）——决策记录面同样逐条呈现（included）。
   for (const preset of loadCatalogProjectionPresets(catalogRoot)) {
-    catalogEntries.push({
+    const reason =
+      `catalog: ${preset.file}（projection preset，kind=${preset.kind}，status=${preset.status}）`;
+    catalogEntries.push({ ref: preset.name, reason });
+    decisions.push({
       ref: preset.name,
-      reason:
-        `catalog: ${preset.file}（projection preset，kind=${preset.kind}，status=${preset.status}）`,
+      file: preset.file,
+      decision: "included",
+      why_included: "projection preset：身份三元组恒注入（无 applicability 词轴——§69 步骤 12）",
+      why_excluded: null,
+      matched: {},
+      fallback_lane: false,
     });
   }
   catalogEntries.sort((a, b) => (a.ref < b.ref ? -1 : a.ref > b.ref ? 1 : 0));
+  decisions.sort((a, b) => (a.ref < b.ref ? -1 : a.ref > b.ref ? 1 : 0));
 
   // 懒加载工具清单：消费 catalog/tools/（P14：原 projection.ts:177「v0 无工具
   // catalog」显式空自注消灭——清单来自实存目录，不再自注）。
@@ -148,7 +469,7 @@ function consumeCatalog(
           `catalog-lock 漂移 ${verification.drifts.length} 处（WARN 呈现不阻断，D24；` +
           `重跑 catalog/tools 物料工具重锁）：${driftSummary(verification.drifts)}`,
       };
-  return { catalogEntries, lazyTools, catalogSource };
+  return { catalogEntries, lazyTools, catalogSource, decisions };
 }
 
 /**
@@ -195,6 +516,11 @@ interface PermitLedgerEntry {
   readonly scope: { readonly subject_ids: readonly string[] };
 }
 
+// TODO(P0.5-1-R8)：投影内为宽松 permit 重解析（只取 permit_ref/change_ref/scope.subject_ids，
+// 不走 readPermitsFile 严格通道）。P0.5-1 起台账已增记 change_class/governance_profile
+// （PermitRecord 新字段），本投影**不消费台账侧 applicability 输入**——请求侧直传
+// （ProjectionRequest.capabilities 等）是本增量唯一输入通路；切 readPermitsFile 单点
+// 属双头收敛改动，波及面未专项核查，留待后续 PR（研究 applicability.md R8 保守路径）。
 function readPermitLedger(store: Store): readonly PermitLedgerEntry[] {
   const paths = pathsOf(store);
   const text = readText(paths.permitsPath);
@@ -215,44 +541,22 @@ function readPermitLedger(store: Store): readonly PermitLedgerEntry[] {
 }
 
 /**
- * 编译最小充分上下文投影。范围派生（确定性、可判卷）：
+ * 范围派生（compileProjection / explainCatalogProjection 共享；确定性、可判卷）：
  * - 分母通道：request.denominatorRefs 命中的对象（信封行 denominator_refs 交集）；
- * - 许可通道：request.taskRef 命中 changeRef 的 Permit 的 scope.subjectIds；
- * - catalog 通道（P14）：policies 按 lane 检索注入独立分区 + tools 懒加载清单
- *   （§92.2：出处 catalog 的策展源，独立于 store 派生的三通道）；
- * - knowledge 通道（P28-Commands）：knowledge 侧车按 Change Localization 检索
- *   命中注入独立分区（§83.8 检索而非全量；[ADVISORY] 分区，永不进判卷输入）。
- * 范围为空 → manifest 的 store 派生分区为空（诚实缺席，不杜撰「全域上下文」）；
- * catalog/knowledge 分区按各自检索语义在场（与 store 范围正交——策展源不依赖任务分母）。
+ * - 许可通道：request.taskRef 命中 changeRef 的 Permit 的 scope.subjectIds。
  */
-export async function compileProjection(
+function deriveScopeReasons(
+  index: TruthIndex,
+  request: ProjectionRequest,
   store: Store,
-  request: import("./index.js").ProjectionRequest,
-  options?: ProjectionCatalogOptions,
-): Promise<Projection> {
-  // 未初始化的 store：loadTruthIndex 会以 NOT_CONFIGURED 显式报错（禁静默）。
-  const raw = readRawIndex(pathsOf(store));
-  if (raw === null) {
-    throw new GovernanceError(
-      "NOT_CONFIGURED",
-      "store 未初始化（state/truth-index.json 缺失）",
-      "先跑 createStore(rootDir) 完成骨架初始化",
-      { rootDir: store.rootDir },
-    );
-  }
-  const index = await loadTruthIndex(store);
-
-  const requestedDenoms: readonly DenominatorRefRow[] = request.denominatorRefs ?? [];
-  const requestedDenomIds = new Set(requestedDenoms.map((ref) => ref.id));
-
-  // —— 范围派生 ——
+): Map<string, Set<string>> {
   const scopeReasons = new Map<string, Set<string>>();
   const addToScope = (id: string, reason: string): void => {
     const bucket = scopeReasons.get(id) ?? new Set<string>();
     bucket.add(reason);
     scopeReasons.set(id, bucket);
   };
-
+  const requestedDenomIds = new Set((request.denominatorRefs ?? []).map((ref) => ref.id));
   for (const row of index.objects) {
     for (const ref of row.denominatorRefs) {
       if (requestedDenomIds.has(ref.id)) {
@@ -275,6 +579,53 @@ export async function compileProjection(
       }
     }
   }
+  return scopeReasons;
+}
+
+/** 范围内对象 kind 集（P0.5-1：catalog object_kinds 轴的请求侧输入；确定性排序）。 */
+function inScopeObjectKindsOf(index: TruthIndex, scopeReasons: Map<string, Set<string>>): readonly string[] {
+  return [...new Set(
+    index.objects
+      .filter((row) => scopeReasons.has(entryId(row)))
+      .map((row) => row.kind),
+  )].sort();
+}
+
+/**
+ * 编译最小充分上下文投影。范围派生（确定性、可判卷）：
+ * - 分母通道：request.denominatorRefs 命中的对象（信封行 denominator_refs 交集）；
+ * - 许可通道：request.taskRef 命中 changeRef 的 Permit 的 scope.subjectIds；
+ * - catalog 通道（P14；P0.5-1 起结构化 applicability 过滤）：policies 按 lane 回退 /
+ *   机器全字段确定性判定注入独立分区 + tools 懒加载清单（§92.2：出处 catalog 的
+ *   策展源，独立于 store 派生的三通道）；
+ * - knowledge 通道（P28-Commands）：knowledge 侧车按 Change Localization 检索
+ *   命中注入独立分区（§83.8 检索而非全量；[ADVISORY] 分区，永不进判卷输入）。
+ * 范围为空 → manifest 的 store 派生分区为空（诚实缺席，不杜撰「全域上下文」）；
+ * catalog/knowledge 分区按各自检索语义在场（与 store 范围正交——策展源不依赖任务分母）。
+ */
+export async function compileProjection(
+  store: Store,
+  request: import("./index.js").ProjectionRequest,
+  options?: ProjectionCatalogOptions,
+): Promise<Projection> {
+  // P0.5-1：请求侧 applicability 输入 fail-closed 校验（词表外显式爆，禁静默当未提供）。
+  validateApplicabilityInputs(request);
+  // 未初始化的 store：loadTruthIndex 会以 NOT_CONFIGURED 显式报错（禁静默）。
+  const raw = readRawIndex(pathsOf(store));
+  if (raw === null) {
+    throw new GovernanceError(
+      "NOT_CONFIGURED",
+      "store 未初始化（state/truth-index.json 缺失）",
+      "先跑 createStore(rootDir) 完成骨架初始化",
+      { rootDir: store.rootDir },
+    );
+  }
+  const index = await loadTruthIndex(store);
+
+  const requestedDenoms: readonly DenominatorRefRow[] = request.denominatorRefs ?? [];
+
+  // —— 范围派生（与 explainCatalogProjection 共享同一派生核） ——
+  const scopeReasons = deriveScopeReasons(index, request, store);
 
   const currentDenominatorVersion = new Map<string, number>();
   for (const denom of index.denominators) {
@@ -342,8 +693,12 @@ export async function compileProjection(
     }
   }
 
-  // —— catalog 策展消费（P14；见 consumeCatalog 契约注记） ——
-  const { catalogEntries, lazyTools, catalogSource } = consumeCatalog(request, options);
+  // —— catalog 策展消费（P14；P0.5-1 结构化 applicability 过滤，见 consumeCatalog 契约注记） ——
+  const { catalogEntries, lazyTools, catalogSource } = consumeCatalog(
+    request,
+    options,
+    inScopeObjectKindsOf(index, scopeReasons),
+  );
 
   // —— knowledge 检索消费（P28-Commands；§83.8；见 consumeKnowledge 契约注记） ——
   const knowledgeEntries = consumeKnowledge(request, pathsOf(store));
@@ -365,4 +720,51 @@ export async function compileProjection(
     manifest,
   });
   return { manifest, catalogSource, inputsFingerprint };
+}
+
+/**
+ * catalog include/exclude 决策记录面（P0.5-1；PRD §5.4 Explainability）。
+ *
+ * 与 compileProjection 共享同一判定核（evaluatePolicyApplicability）与范围派生
+ * （deriveScopeReasons）——同输入下 decisions 的 included 集合与 manifest.catalogEntries
+ * 逐 ref 一致（一致性由测试钉住）；但本函数是独立导出，**不回填 manifest、不进
+ * inputsFingerprint**（PRD §5.4 明文：excluded 不进 Agent Context，只用于
+ * `pomaster context explain` / Audit / Eval / Debug——R2 隔离纪律：任何 applicability
+ * 字段调整不扰动投影指纹语义）。纯派生只读；catalog 缺席 → 空 decisions + absent
+ * catalogSource（同 compileProjection 显式缺席语义）；坏物料 SCHEMA_INVALID 原样抛出。
+ */
+export async function explainCatalogProjection(
+  store: Store,
+  request: import("./index.js").ProjectionRequest,
+  options?: ProjectionCatalogOptions,
+): Promise<CatalogProjectionExplanation> {
+  // P0.5-1：请求侧 applicability 输入 fail-closed 校验（与 compileProjection 同款）。
+  validateApplicabilityInputs(request);
+  const raw = readRawIndex(pathsOf(store));
+  if (raw === null) {
+    throw new GovernanceError(
+      "NOT_CONFIGURED",
+      "store 未初始化（state/truth-index.json 缺失）",
+      "先跑 createStore(rootDir) 完成骨架初始化",
+      { rootDir: store.rootDir },
+    );
+  }
+  const index = await loadTruthIndex(store);
+  const scopeReasons = deriveScopeReasons(index, request, store);
+  const { catalogSource, decisions } = consumeCatalog(
+    request,
+    options,
+    inScopeObjectKindsOf(index, scopeReasons),
+  );
+  return {
+    inputs: {
+      role: request.role,
+      taskRef: request.taskRef ?? null,
+      capabilities: [...(request.capabilities ?? [])],
+      changeClass: request.changeClass ?? null,
+      governanceProfile: request.governanceProfile ?? null,
+    },
+    decisions,
+    catalogSource,
+  };
 }

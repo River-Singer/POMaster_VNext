@@ -1,0 +1,46 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "SENSOR. 前缀不在 prefixes_v0 15 前缀闭包内（closed-world：未登记前缀解析即 FATAL）；且 kind='sensor_capability' 不在 kinds_registry.truth_bodies",
+    "proposal": "词汇表 PR 登记 SENSOR. 前缀与 sensor_capability kind；备选落法：sensor capability 住 catalog/sensors/ 非 truth 对象层，身份只作 catalog 物料标识（沿 catalog/gates/gate.web.api.request_checks.json 的 GATE. 先例；裁决 8（2026-09-01）D6=A：SENSOR.<DOMAIN>.<KIND> 点族词形照研究侧推荐实施）",
+    "open_enum_registration": "本条目消费的开放枚举（PRD §6.4 明言不要求立即成为 Closed-world Core Vocab；pending vocab PR → TODO(vocab-pr-0005)）：surfaces=RESOURCE_BEHAVIOR；side_effect_class=SANDBOXED_EXECUTION；evidence_types=lighthouse_report/web_vitals_metrics；availability_probe.surface=toolDetectors",
+    "locked_vocab_untouched": true
+  },
+  "id": "SENSOR.PERFORMANCE.BUDGET",
+  "kind": "sensor_capability",
+  "title_zh": "性能 Sensor（PERFORMANCE 双 runner）",
+  "statement_zh": "对性能与资源事实（RESOURCE_BEHAVIOR）做双 runner 观察：lighthouse 实验室腿（官方 LHR 词形解析，对账 types/lhr/*.d.ts）∥ web-vitals 字段腿（官方 Metric 词形解析，对账 src/types/base.ts）；两腿两记录，无聚合 verdict 位，互不牵连（B3-3：对接 §29 性能预算字段，判卷字段集=schema 派生禁发明）。",
+  "surfaces": [
+    "RESOURCE_BEHAVIOR"
+  ],
+  "operations": [
+    "performance_trace",
+    "field_metrics_sample"
+  ],
+  "side_effect_class": "SANDBOXED_EXECUTION",
+  "side_effect_note": "lighthouse 实验室腿拉起受控浏览器对目标页采样；web-vitals 字段腿为只读采集——取双 runner 的诚实上限。",
+  "evidence_types": [
+    "lighthouse_report",
+    "web_vitals_metrics"
+  ],
+  "implementations": [
+    "lighthouse",
+    "web-vitals"
+  ],
+  "availability_probe": {
+    "surface": "toolDetectors",
+    "keys": [
+      "lighthouse",
+      "webVitals"
+    ],
+    "note": "声明式引用（四克制：防第二套探测机制）——可执行性永远归 gauntlet-lite toolDetectors 单一探测面；doctor 呈现行=lighthouse / web_vitals 双探针独立呈现不聚合（实验室判卷面/字段数据判卷面）。键闭包由 tests/integration/sensor-capability-catalog.spec.ts 交叉测试守。"
+  },
+  "fallback": [],
+  "fallback_note": "空数组=显式登记无降级；lighthouse（实验室面）与 web-vitals（字段面）是双 runner 并存非互备（B3-3）。",
+  "x-source-anchors": {
+    "adapter": "packages/gauntlet-lite/src/performance-adapter.ts + performance-leg.ts（双独立 adapter + runPerformanceGateLegs）",
+    "doctor_row": "packages/cli/src/doctor.ts lighthouse / web_vitals 探针行",
+    "detector": "packages/gauntlet-lite/src/index.ts toolDetectors.lighthouse / toolDetectors.webVitals（15 探测器单一事实源）"
+  },
+  "x-prd": "POMaster-vNext-PRD-v0.5.2 §6.4 RESOURCE_BEHAVIOR + §14 P1-5；裁决 8（2026-09-01）D6=A/D7=A"
+}

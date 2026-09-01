@@ -31,9 +31,11 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import {
   type Actor,
   type ClaimRecordInput,
+  type EvidenceArtifactRefInput,
   type GateResult,
   type GateRunContext,
   type TransactionOp,
+  artifactRefsToSnake,
   gateResultToSnake,
   normalizeGateResult,
   parseGovernedId,
@@ -180,6 +182,11 @@ export interface ParsedRunFile {
   readonly assertedDeclaredBy: unknown;
   /** 外层信封 execution_id 原始值（P20 执行身份贯穿；undefined/null = 未携带 → 键缺席）。 */
   readonly executionIdRaw: unknown;
+  /**
+   * 外层信封 artifact_refs 原始值（P0.5-2 存在性绑定；undefined/null = 未携带 → 键缺席，
+   * 存量 GRN 字节兼容）。词形解析在 resolveArtifactRefs。
+   */
+  readonly artifactRefsRaw: unknown;
 }
 
 export type ParseFailure = { readonly error: string };
@@ -227,6 +234,7 @@ export function parseRunFile(bytes: string): ParsedRunFile | ParseFailure {
     assertedPresent: asserted !== undefined,
     assertedDeclaredBy: asserted === undefined ? undefined : pick(asserted, "declared_by", "declaredBy"),
     executionIdRaw: pick(parsed, "execution_id", "executionId"),
+    artifactRefsRaw: parsed["artifact_refs"],
   };
 }
 
@@ -402,14 +410,18 @@ export function normalizeIngestedRun(
 
 /**
  * canonical 07 run_record 组装（与 kernel store.applyRecordGateRun 逐键同构——
- * record_type / grn / ran_at_seq / trigger / [execution_id] / gate_result{mode, result}；
- * 形态由 kernel 决定）。execution_id 仅在携带时落键（P20：缺席=键缺席存量兼容）。
+ * record_type / grn / ran_at_seq / trigger / [execution_id] / [artifact_refs] /
+ * gate_result{mode, result}；形态由 kernel 决定）。execution_id 仅在携带时落键
+ * （P20：缺席=键缺席存量兼容）；artifact_refs 仅在非空时落键（P0.5-2：缺席=键缺席，
+ * 存量 GRN 字节兼容），键位在 execution_id 之后、gate_result 之前——与 kernel
+ * store.applyRecordGateRun 同位（R1 双写点纪律，映射单源 artifactRefsToSnake）。
  */
 export function canonicalRunBytes(
   grn: string,
   trigger: RunTriggerValue,
   result: GateResult,
   executionId?: string | null,
+  artifactRefs?: readonly EvidenceArtifactRefInput[],
 ): string {
   const record: UnknownRecord = {
     record_type: "run",
@@ -417,6 +429,9 @@ export function canonicalRunBytes(
     ran_at_seq: result.ranAtSeq,
     trigger: { type: trigger },
     ...(executionId ? { execution_id: executionId } : {}),
+    ...(artifactRefs !== undefined && artifactRefs.length > 0
+      ? { artifact_refs: artifactRefsToSnake(artifactRefs) }
+      : {}),
     gate_result: { mode: "inline", result: gateResultToSnake(result) },
   };
   return serializeKernel(record);
@@ -459,6 +474,55 @@ export function resolveExecutionId(
     };
   }
   return { executionId: value };
+}
+
+/**
+ * artifact_refs 解析（P0.5-2；外层信封原始值 → kernel 输入形态）。缺席 → 空数组
+ * （canonical 重放不落键，存量字节兼容）；在场即逐条严格反解——非 blob 分支
+ * （D3=A 收窄：gate_result/truth_object 不收）/ 字段畸形 → fail-closed malformed
+ * （kernel record 侧 assertArtifactRefs 会再判，本层先检与 execution_id 同线）。
+ */
+export function resolveArtifactRefs(
+  raw: unknown,
+): { readonly refs: readonly EvidenceArtifactRefInput[] } | { readonly fail: string } {
+  if (raw === undefined || raw === null) return { refs: [] };
+  if (!Array.isArray(raw) || raw.length === 0) {
+    return { fail: `artifact_refs 须为非空数组（或整个键缺席）：${JSON.stringify(raw)?.slice(0, 120)}` };
+  }
+  const refs: EvidenceArtifactRefInput[] = [];
+  for (const entry of raw) {
+    if (typeof entry !== "object" || entry === null || Array.isArray(entry)) {
+      return { fail: `artifact_refs 条目形状非法：${JSON.stringify(entry)?.slice(0, 120)}` };
+    }
+    const record = entry as UnknownRecord;
+    if (record["ref_type"] !== "blob") {
+      return {
+        fail: `artifact_refs 条目非 blob 分支（D3=A 收窄，ref_type 须 "blob"）：${JSON.stringify(record).slice(0, 120)}`,
+      };
+    }
+    const blob = record["blob"];
+    if (typeof blob !== "object" || blob === null || Array.isArray(blob)) {
+      return { fail: `artifact_refs[].blob 须为对象：${JSON.stringify(record).slice(0, 120)}` };
+    }
+    const blobRef = blob as UnknownRecord;
+    const sha256 = blobRef["sha256"];
+    const media = blobRef["media"];
+    const byteSize = blobRef["byte_size"];
+    const storagePath = blobRef["storage_path"];
+    if (typeof sha256 !== "string" || typeof media !== "string" || typeof storagePath !== "string") {
+      return { fail: `artifact_refs[].blob 缺 sha256/media/storage_path：${JSON.stringify(blobRef).slice(0, 160)}` };
+    }
+    if (byteSize !== undefined && (typeof byteSize !== "number" || !Number.isInteger(byteSize) || byteSize < 1)) {
+      return { fail: `artifact_refs[].blob.byte_size 须为 ≥1 整数：${String(byteSize)}` };
+    }
+    refs.push({
+      sha256,
+      media,
+      ...(byteSize !== undefined ? { byteSize } : {}),
+      storagePath,
+    });
+  }
+  return { refs };
 }
 
 // ============================================================
@@ -522,7 +586,15 @@ export function planRunFile(input: {
     return { malformed: malformedOf(relPath, executionIdResolution.fail) };
   }
   const executionId = executionIdResolution.executionId;
-  const canonical = canonicalRunBytes(grn, resolved.context.trigger, result, executionId);
+  // artifact_refs 贯穿（P0.5-2）：文件自报在本层先反解（blob 分支收窄，畸形
+  // fail-closed）；canonical 重放携带同键——带 refs 的存量 canonical 文件不因
+  // 重放丢 refs（重入账不得静默剥掉绑定字段）。
+  const artifactRefsResolution = resolveArtifactRefs(parsed.artifactRefsRaw);
+  if ("fail" in artifactRefsResolution) {
+    return { malformed: malformedOf(relPath, artifactRefsResolution.fail) };
+  }
+  const artifactRefs = artifactRefsResolution.refs;
+  const canonical = canonicalRunBytes(grn, resolved.context.trigger, result, executionId, artifactRefs);
   if (canonical === bytes) {
     // 快路径判卷补位（P20 红队发现 2）：携带身份键即校验档案在场（与 record 同判卷），
     // 手写 canonical 形态 + 未登记 AGX 不再借零 op 通路绕过 S1。
@@ -542,7 +614,13 @@ export function planRunFile(input: {
       ran_at_seq: result.ranAtSeq,
       op: {
         op: "record_gate_run",
-        run: { grn, trigger: resolved.context.trigger, result, ...(executionId ? { executionId } : {}) },
+        run: {
+          grn,
+          trigger: resolved.context.trigger,
+          result,
+          ...(executionId ? { executionId } : {}),
+          ...(artifactRefs.length > 0 ? { artifactRefs } : {}),
+        },
       },
     },
   };
@@ -567,6 +645,11 @@ export function findCanonicalRunMatch(input: {
   const overrideResolution = resolveExecutionId(input.overrideExecutionId, input.parsed.executionIdRaw);
   if ("fail" in overrideResolution) return null;
   const executionId = overrideResolution.executionId;
+  // artifact_refs（P0.5-2）：--from 自报随 canonical 重放参与等价判定（缺席 → 空数组
+  // 不落键，存量等价判定不变）。
+  const artifactRefsResolution = resolveArtifactRefs(input.parsed.artifactRefsRaw);
+  if ("fail" in artifactRefsResolution) return null;
+  const artifactRefs = artifactRefsResolution.refs;
   for (const fileName of listPlaneFiles(input.runsDir)) {
     if (!GRN_FILE_PATTERN.test(fileName)) continue;
     const grn = fileName.slice(0, -".json".length);
@@ -599,7 +682,7 @@ export function findCanonicalRunMatch(input: {
     } catch {
       continue;
     }
-    if (canonicalRunBytes(grn, resolved.context.trigger, result, executionId) === bytes) return grn;
+    if (canonicalRunBytes(grn, resolved.context.trigger, result, executionId, artifactRefs) === bytes) return grn;
   }
   return null;
 }

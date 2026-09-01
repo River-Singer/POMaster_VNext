@@ -1,0 +1,244 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://pomaster.dev/schemas/execution-trace/v1-draft.json",
+  "title": "Execution Trace Manifest（执行行为侧车 · W1-C Lite · PRD v0.5.2 §8/§14 P0.5-3 词形冻结面）",
+  "description": "P0.5-3 Execution Trace Manifest Lite 的定义形态契约：Trace 是 Execution Identity 的**派生投影/侧车**（§8.1「Execution Identity 必须保持短、稳定、Git durable；行为轨迹另建 Execution Trace Manifest」——A19 Identity Is Not Trace，不新增第二套身份）。\n零新采集器（PRD §14 P0.5-3「只记录 execution_id / write footprint / tool receipts / evidence refs；不先采集完整 read trace」）：kernel compileExecutionTrace 从既有平面派生——state/journal.jsonl TX_APPLIED.changed_object_ids（execution_id 过滤）→ writes、ops 计数 → transition_proposals、evidence/runs/GRN-*.json 与 evidence/claims/CLM-*.json 文件自报 execution_id（P20 执行身份贯穿证据链落盘位）→ tool_receipts/evidence_refs；reads/agent_spawns 恒空数组**显式**（Lite 边界非缺席）。\n§8.4 隐私封条：manifest 闭形态（additionalProperties:false + 无任何自由文本载荷键位）禁私有思维链/隐藏推理/凭据——只存 observable actions / resource refs / tool receipts / state transitions / artifact references。\n数据落点双平面（Owner 裁决 8 ② 2026-09-01「trace 独立 traces/ 分区 + 投影 + 可选 --seal」）：.pomaster/traces/AGX-*.json（durable，TASK/INCIDENT/AUDIT 留存档进 Git）与 .pomaster/runtime/traces/AGX-*.json（EPHEMERAL 易变平面——§85.4 可删除测试 runtime/ 判据豁免，删后投影可重建，§15 Benchmark C「删除可丢弃 raw trace 后核心 Identity/Evidence Audit 仍可理解」）。retention 四档**仅记录不 GC**（裁决 8 ②；OD-4）。",
+  "x-pomaster-file-role": "16-execution-trace.schema.json —— .pomaster/traces/AGX-*.json（durable）与 .pomaster/runtime/traces/AGX-*.json（EPHEMERAL）封存 manifest 形态契约（kernel trace.ts sealExecutionTrace 唯一写入通路）。投影形态（retention/derived_from_seq 双 null）为 on-demand 派生视图不落盘；消费方 = readSealedExecutionTrace（canonical 重放对账——重算投影派生视图逐字节比对，漂移 stale 显式）、listSealedExecutionTraces（双平面清单）、批 2 CLI `trace show/list` 编排。",
+  "x-pomaster-vocab-source": "词形轴 absent_in_vocab_lock__pending_vocab_pr（TODO(vocab-pr-0005)，批 1 文件面互斥——vocab 三镜像登记归主控批次，收编后以 vocab-lock 为准逐值镜像）：trace_retention 轴（PRD v0.5.2 §8.3 逐字四档 EPHEMERAL/TASK_RETENTION/INCIDENT_RETENTION/AUDIT_RETENTION；Owner 裁决 8 ② 2026-09-01「retention 四档逐字仅记录不 GC」批准）；schema 词形 pomaster.execution_trace/v1（镜像 pomaster.execution/v1 先例）；trace_version=1（§8.2 例文逐字）。execution_id 词形沿用 07 同款 ^AGX-[0-9]{4}-[0-9]+$（PRD §25.4 例文；证据面通路编号词形，非 governed 前缀）。verdict 七态复用 03 definitions.verdict（$ref 绝对 $id 形态——单一事实源禁二次镜像）。",
+  "x-pomaster-contract": {
+    "case_a_identity_reuse": "§16 Case A「Trace 只能引用已有 AGX，不得自造第二种 EXEC-* 身份」：execution_id 复用 kernel assertExecutionAttachable 严格通道（词形非法 SCHEMA_INVALID / executions/ 档案缺失 EXECUTION_NOT_FOUND——零新错误码）。",
+    "identity_not_trace": "§8.2「这里不重复 runtime/model/permit/policy_lock/context_manifest——这些属于 Execution Identity」：manifest 键位结构性不含上述五面（A19）。",
+    "reads_lite_boundary": "§14 P0.5-3「不先采集完整 read trace」：reads/agent_spawns 恒空数组显式（Lite 边界的机器呈现位——空数组=边界声明，非『读过且为零』的判卷断言；§9.3 read 完整性问题在 Lite 下不可判）。",
+    "seal_stale_discipline": "封存快照带 derived_from_seq 锚（封存时刻 store seq——A4 seq 非墙钟）；读侧 canonical 重放对账：重算投影派生视图（剥 retention/derived_from_seq）逐字节比对，漂移 = stale 显式呈现（post-hoc 补录是合法通路，快照不冒充新鲜——evidence compact「磁盘字节 ≠ canonical 重放字节」同构）。",
+    "zero_journal_zero_digest": "P34 production 新分区先例：本平面零 journal 事件（manifest 自带 derived_from_seq 锚）、不进 content_digest（digest 授权范围闭集不含 traces/）。",
+    "zero_wall_clock": "A4 分层：manifest 无任何墙钟时间戳键（时间锚恒 seq）；人类时间只住 execution 档案/evidence/runtime 侧车（GOLDEN-L1-WALLCLOCK）。"
+  },
+  "x-pomaster-digest-ethics-policy": "本对象当前不含 sha256/digest 字段。未来任何 digest/sha256 字段加入时必须携带 x-digest-ethics 注记 {\"write_blocking\": false, \"side\": \"read_only_service\", \"human_touch\": \"forbidden\"}（D24 / vocab-lock digest_ethics）。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "execution_id",
+    "schema",
+    "trace_version",
+    "retention",
+    "reads",
+    "writes",
+    "tool_receipts",
+    "agent_spawns",
+    "transition_proposals",
+    "evidence_refs",
+    "raw_trace_ref",
+    "derived_from_seq"
+  ],
+  "properties": {
+    "execution_id": {
+      "type": "string",
+      "pattern": "^AGX-[0-9]{4}-[0-9]+$",
+      "x-vocab-source": "PRD v0.4 §25.4 Agent Execution Identity（例文词形 AGX-2026-00182）；P20 D 线地基；§16 Case A 复用断言",
+      "description": "执行身份引用（Trace 的唯一联结键）。复用 assertExecutionAttachable 严格通道：AGX 词形 + executions/AGX-*.json 档案存在性（S1 禁自造身份——§16 Case A「不得自造第二种 EXEC-* 身份」）；AGX-n 为通路编号词形，非 governed 前缀"
+    },
+    "schema": {
+      "const": "pomaster.execution_trace/v1",
+      "title": "trace 档案 schema 词形（镜像 pomaster.execution/v1 先例）",
+      "description": "TODO(vocab-pr-0005)：absent_in_vocab_lock__pending_vocab_pr（批 1 文件面互斥，词形登记归主控批次）。"
+    },
+    "trace_version": {
+      "type": "integer",
+      "const": 1,
+      "title": "trace 词形版本（PRD §8.2 例文 trace_version: 1）",
+      "description": "词形版本锚：manifest 派生规则演进时 +1（升版走 Schema PR，禁止就地改语义）。"
+    },
+    "retention": {
+      "oneOf": [
+        { "$ref": "#/definitions/trace_retention" },
+        {
+          "type": "null",
+          "description": "投影形态（compileExecutionTrace on-demand 派生视图——未封存即无留存承诺，null 显式非缺席 C1）"
+        }
+      ],
+      "title": "retention 四档（§8.3 逐字；投影形态 null）",
+      "description": "仅记录不执法（裁决 8 ②；无 GC 无 prune 是诚实现状）。封存分层规则（裁决 8 ② OD-1=B）：EPHEMERAL → runtime/traces/（易变可丢弃）；TASK/INCIDENT/AUDIT → traces/（durable 进 Git）。"
+    },
+    "reads": { "$ref": "#/definitions/ref_footprint" },
+    "writes": { "$ref": "#/definitions/ref_footprint" },
+    "tool_receipts": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/tool_receipt" },
+      "title": "工具收据（GRN run 信封三件套 inline 派生）",
+      "description": "evidence/runs/GRN-*.json 按文件自报 execution_id 过滤（P20 执行身份贯穿证据链落盘位）；tool/tool_version/metric_dialect 三件套随 GateResult inline（P12a）。词形外执行身份（手改痕迹）由 kernel 装载面 SCHEMA_INVALID fail-closed。"
+    },
+    "agent_spawns": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "title": "Agent spawn 留痕（Lite 恒空数组显式）",
+      "description": "§8.2 键位保留：P21 Runtime Adapter 缺席——无 spawn 采集面（零新采集器纪律），恒空数组是 Lite 边界声明非『零 spawn』判卷断言。"
+    },
+    "transition_proposals": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/transition_proposal" },
+      "title": "状态转移提案（journal TX_APPLIED ops 计数派生）",
+      "description": "按 TX_APPLIED.seq 升序；事件真相源（journal）不携带 per-op 对象归因——不发明 journal 之外的事实，行级只记 seq + transition_object op 计数。"
+    },
+    "evidence_refs": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "title": "证据引用位（开放引用槽）",
+      "description": "GRN-/CLM- 先行（词形自描述）；未来 EVR/OBS 皆可挂（evidence-binding 簇落地后 trace 无需改 schema——引用位是字符串数组）。字典序确定性；与证据平面双向对账 = §15 Benchmark C「Evidence links back to execution_id」。"
+    },
+    "raw_trace_ref": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "title": "raw tool trace 引用（Lite 恒 null）",
+      "description": "§8.3「Raw Tool Trace 默认不要求全部进 Git；长期只需要保存最小可审计 Manifest 与 Evidence References」：Lite 不采集 raw（恒 null——runtime/traces/ 为 EPHEMERAL manifest 预留位；未来 raw 采集落地时指 runtime/ 易变平面文件）。"
+    },
+    "derived_from_seq": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "title": "封存对账锚（封存时刻 store seq；投影形态 null）",
+      "description": "A4：seq 整数序非墙钟（时间戳禁入落盘 JSON 身份字段）。readSealedExecutionTrace 以此为界做 canonical 重放对账（重算投影逐字节比对）——漂移 stale 显式呈现，封存快照不冒充新鲜。"
+    }
+  },
+  "definitions": {
+    "trace_retention": {
+      "type": "string",
+      "enum": ["EPHEMERAL", "TASK_RETENTION", "INCIDENT_RETENTION", "AUDIT_RETENTION"],
+      "title": "§8.3 Trace Retention 四档（PRD 逐字；裁决 8 ② 批准）",
+      "description": "EPHEMERAL（易变可丢弃——落 runtime/traces，§85.4 可删除测试 runtime/ 判据豁免）/ TASK_RETENTION（任务留档）/ INCIDENT_RETENTION（事件调查留档）/ AUDIT_RETENTION（审计长期留档）——后三档落 traces/（durable 进 Git）。§8.3「长期只需要保存最小可审计 Manifest 与 Evidence References」：四档只是记录语义，无自动 GC（裁决 8 ② OD-4 仅记录）。",
+      "$comment": "source: PRD v0.5.2 §8.3 L2163-2168 逐字 + Owner 裁决 8 ②（2026-09-01，corpus/master/cutover/owner-adjudications.md）。",
+      "x-pomaster-vocab": {
+        "axis": "trace_retention",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "todo": "vocab-pr-0005（批 1 文件面互斥：vocab 三镜像登记归主控批次；与 O-Q4 trace 族词汇批次合并呈报）",
+        "source": "PRD v0.5.2 §8.3 逐字四档"
+      }
+    },
+    "ref_footprint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["governed_refs", "source_areas"],
+      "properties": {
+        "governed_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]*(\\.[A-Z][A-Z0-9_]{0,31})+(\\.[0-9]+)?$",
+            "x-vocab-source": "governed id 文法粗筛（A5 closed-world 前缀闭包归 parseGovernedId）"
+          },
+          "description": "governed 对象 id 集（writes = journal TX_APPLIED.changed_object_ids 跨事件并集去重，字典序；reads = Lite 恒空）。"
+        },
+        "source_areas": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "源区域（Lite 零采集器——恒空数组显式；§8.2 键位保留）。"
+        }
+      },
+      "title": "引用足迹片段（reads/writes 共形；PRD §8.2 例文双键）"
+    },
+    "tool_receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["grn", "gate", "gate_def", "tool", "tool_version", "metric_dialect", "verdict", "ran_at_seq"],
+      "properties": {
+        "grn": {
+          "type": "string",
+          "pattern": "^GRN-[0-9]+$",
+          "description": "GRN-n（07 run_record 主键词形；evidence/runs/GRN-*.json 落点名同源）。"
+        },
+        "gate": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]{1,63}$",
+          "description": "门禁名（SCREAMING_SNAKE，03 词形同源；gate 名不属 vocab-lock 词表管辖——新增 gate 须经 gate_def 版本化登记）。"
+        },
+        "gate_def": {
+          "type": "string",
+          "minLength": 1,
+          "description": "gate 定义 id@semver（防口径静默漂移，03 同源）。"
+        },
+        "tool": {
+          "type": "string",
+          "minLength": 1,
+          "description": "执行工具标识（P12a 三件套之一）。"
+        },
+        "tool_version": {
+          "type": "string",
+          "minLength": 1,
+          "description": "工具版本（C6 Overhead 双轨归因依赖版本可辨识）。"
+        },
+        "metric_dialect": {
+          "type": "string",
+          "minLength": 1,
+          "description": "度量口径声明（同 gate 跨 dialect 结果不可直接比较）。"
+        },
+        "verdict": {
+          "$ref": "https://pomaster.dev/schemas/gate-result/v1-draft.json#/definitions/verdict",
+          "description": "七态判卷词形（03 definitions.verdict 原样引用——单一事实源禁二次镜像；trace 只承载不重判，C5 判卷以 GRN 重算为准）。"
+        },
+        "ran_at_seq": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "事件锚（GRN ran_at_seq 原样；A4 seq 采样无墙钟）。"
+        }
+      },
+      "title": "工具收据行（07 run_record 词形同源；闭形态无自由文本载荷位）"
+    },
+    "transition_proposal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["seq", "transition_ops"],
+      "properties": {
+        "seq": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "TX_APPLIED 事件 seq（A4 事件锚）。"
+        },
+        "transition_ops": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "该事务内 transition_object op 计数（≥1——零转移事务不产生行）。"
+        }
+      },
+      "title": "状态转移提案行（journal ops 计数派生）"
+    }
+  },
+  "examples": [
+    {
+      "execution_id": "AGX-2026-00182",
+      "schema": "pomaster.execution_trace/v1",
+      "trace_version": 1,
+      "retention": null,
+      "reads": { "governed_refs": [], "source_areas": [] },
+      "writes": { "governed_refs": ["PAGE.DASHBOARD"], "source_areas": [] },
+      "tool_receipts": [
+        {
+          "grn": "GRN-0007",
+          "gate": "BUILD",
+          "gate_def": "POLICY.GATE.BUILD@0.1.0",
+          "tool": "tiny-csv-tool:probe",
+          "tool_version": "0.1.0",
+          "metric_dialect": "build:exit_code",
+          "verdict": "passed",
+          "ran_at_seq": 3
+        }
+      ],
+      "agent_spawns": [],
+      "transition_proposals": [{ "seq": 2, "transition_ops": 1 }],
+      "evidence_refs": ["CLM-0003", "GRN-0007"],
+      "raw_trace_ref": null,
+      "derived_from_seq": null
+    },
+    {
+      "execution_id": "AGX-2026-00183",
+      "schema": "pomaster.execution_trace/v1",
+      "trace_version": 1,
+      "retention": "AUDIT_RETENTION",
+      "reads": { "governed_refs": [], "source_areas": [] },
+      "writes": { "governed_refs": [], "source_areas": [] },
+      "tool_receipts": [],
+      "agent_spawns": [],
+      "transition_proposals": [],
+      "evidence_refs": [],
+      "raw_trace_ref": null,
+      "derived_from_seq": 12
+    }
+  ]
+}

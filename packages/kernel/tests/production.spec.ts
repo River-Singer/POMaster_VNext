@@ -350,12 +350,12 @@ describe("registerControlBand（15-production-band schema 契约）", () => {
     expect([...listControlBands(root)]).toEqual([band]);
   });
 
-  it("15-production-band 已注册进 allSchemas（15 份聚合，P34 增量 14→15）", () => {
+  it("15-production-band 已注册进 allSchemas（17 份聚合，P34 增量 14→15；W1-C 增量 15→16；VB-PR1 增量 16→17）", () => {
     expect(productionBandSchema.$id).toBe(
       "https://pomaster.dev/schemas/production-band/v1-draft.json",
     );
     expect(allSchemas.productionBand).toBe(productionBandSchema);
-    expect(Object.keys(allSchemas).length).toBe(15);
+    expect(Object.keys(allSchemas).length).toBe(17);
   });
 
   it("同 id 重复登记 = SCHEMA_INVALID（band 是可寻址定义，禁静默覆盖）", () => {

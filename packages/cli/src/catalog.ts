@@ -17,6 +17,7 @@ import type {
 import {
   loadCatalogPolicies,
   loadCatalogProjectionPresets,
+  loadCatalogSensors,
   loadCatalogTools,
   readCatalogLock,
   resolveCatalogRoot,
@@ -30,11 +31,12 @@ export interface CatalogCommandDeps {
   readonly catalogRoot?: string;
 }
 
-/** 分区计数（status 机读面；键名与 catalog/ 子目录一一对应）。 */
+/** 分区计数（status 机读面；键名与 catalog/ 子目录一一对应；sensors 为 P1-5 新增家族）。 */
 export interface CatalogSectionCounts {
   readonly policies: number;
   readonly gates: number;
   readonly knowledge: number;
+  readonly sensors: number;
   readonly tools: number;
   readonly projection_presets: number;
 }
@@ -52,6 +54,9 @@ export interface CatalogStatusResult {
  * 单条目解释（explain 机读面）：lock 身份层（id/path/hash/source_ref）+
  * 正文策展字段层（宽松提取：gates/knowledge/policies 三类物料共享字段子集，
  * 缺字段显式 null——查看器不伪造，也禁静默吞差异）。
+ * P0.5-1：机器 applicability 字段层（lanes/capabilities/change_classes/
+ * governance_profiles/object_kinds/applicability_note）；risk_at_least/technologies
+ * 恒 "not_configured"（留位不登记，O4——显式缺席不伪造）。
  */
 export interface CatalogExplainResult {
   readonly id: string;
@@ -69,7 +74,45 @@ export interface CatalogExplainResult {
     readonly enforcement: string | null;
     readonly lifecycle: string | null;
     readonly authority_owner: string | null;
+    /** lanes 双读结果（applies_when.lanes 在场取数组，缺席回退 [lane]——PR-0005）。 */
+    readonly lanes: readonly string[] | null;
+    /** 机器 applicability 字段（未声明 = null；声明为空数组按 null 呈现——缺席显式）。 */
+    readonly capabilities: readonly string[] | null;
+    readonly change_classes: readonly string[] | null;
+    readonly governance_profiles: readonly string[] | null;
+    readonly object_kinds: readonly string[] | null;
+    /** 自然语言 applicability 说明（PRD §5.2 降级位；缺席回退 condition 原文）。 */
+    readonly applicability_note: string | null;
+    readonly risk_at_least: "not_configured";
+    readonly technologies: "not_configured";
   };
+}
+
+/** 空物料层（gates/knowledge 无 policies 解析面 / 条目缺席 / 命令失败共用）。 */
+function emptyMaterial(): CatalogExplainResult["material"] {
+  return {
+    title_zh: null,
+    statement_zh: null,
+    classification: null,
+    lane: null,
+    condition: null,
+    enforcement: null,
+    lifecycle: null,
+    authority_owner: null,
+    lanes: null,
+    capabilities: null,
+    change_classes: null,
+    governance_profiles: null,
+    object_kinds: null,
+    applicability_note: null,
+    risk_at_least: "not_configured",
+    technologies: "not_configured",
+  };
+}
+
+/** 非空数组 → 数组；空/未声明 → null（未声明显式，不冒充声明为空）。 */
+function axisOrNull(values: readonly string[]): readonly string[] | null {
+  return values.length > 0 ? [...values] : null;
 }
 
 function catalogRootOf(deps?: CatalogCommandDeps): string {
@@ -109,6 +152,7 @@ export async function runCatalogStatus(
       policies: loadCatalogPolicies(catalogRoot).length,
       gates: lock.entries.filter((entry) => entry.path.startsWith("gates/")).length,
       knowledge: lock.entries.filter((entry) => entry.path.startsWith("knowledge/")).length,
+      sensors: loadCatalogSensors(catalogRoot).length,
       tools: loadCatalogTools(catalogRoot).length,
       projection_presets: loadCatalogProjectionPresets(catalogRoot).length,
     };
@@ -121,7 +165,7 @@ export async function runCatalogStatus(
         catalog_version: "",
         profile: "",
         entries_total: 0,
-        sections: { policies: 0, gates: 0, knowledge: 0, tools: 0, projection_presets: 0 },
+        sections: { policies: 0, gates: 0, knowledge: 0, sensors: 0, tools: 0, projection_presets: 0 },
         lock_verification: { ok: false, entries_checked: 0, drifts: [] },
       },
       [
@@ -146,7 +190,7 @@ export async function runCatalogStatus(
   const human = [
     `catalog status: ${lock.catalog_version}（profile ${lock.profile}）`,
     `  root: ${catalogRoot}`,
-    `  entries: ${lock.entries.length}（policies ${sections.policies} / gates ${sections.gates} / knowledge ${sections.knowledge}；tools ${sections.tools} / projection-presets ${sections.projection_presets}）`,
+    `  entries: ${lock.entries.length}（policies ${sections.policies} / gates ${sections.gates} / knowledge ${sections.knowledge} / sensors ${sections.sensors}；tools ${sections.tools} / projection-presets ${sections.projection_presets}）`,
     verification.ok
       ? `  catalog-lock: ok（${verification.entries_checked} entries 哈希与管辖面对账通过）`
       : `  catalog-lock: DRIFT（${verification.drifts.length} 处——明细见 --json lock_verification.drifts）`,
@@ -184,16 +228,7 @@ export async function runCatalogExplain(
         content_sha256: "",
         source_ref: "",
         drifts: [],
-        material: {
-          title_zh: null,
-          statement_zh: null,
-          classification: null,
-          lane: null,
-          condition: null,
-          enforcement: null,
-          lifecycle: null,
-          authority_owner: null,
-        },
+        material: emptyMaterial(),
       },
       [
         {
@@ -216,16 +251,7 @@ export async function runCatalogExplain(
         content_sha256: "",
         source_ref: "",
         drifts: [],
-        material: {
-          title_zh: null,
-          statement_zh: null,
-          classification: null,
-          lane: null,
-          condition: null,
-          enforcement: null,
-          lifecycle: null,
-          authority_owner: null,
-        },
+        material: emptyMaterial(),
       },
       [
         {
@@ -248,16 +274,7 @@ export async function runCatalogExplain(
     drifts: entryDrifts,
     material:
       policy === undefined
-        ? {
-            title_zh: null,
-            statement_zh: null,
-            classification: null,
-            lane: null,
-            condition: null,
-            enforcement: null,
-            lifecycle: null,
-            authority_owner: null,
-          }
+        ? emptyMaterial()
         : {
             title_zh: policy.titleZh,
             statement_zh: policy.statementZh,
@@ -267,8 +284,22 @@ export async function runCatalogExplain(
             enforcement: policy.enforcement,
             lifecycle: policy.lifecycle,
             authority_owner: policy.authorityOwner,
+            lanes: [...policy.lanes],
+            capabilities: axisOrNull(policy.capabilities),
+            change_classes: axisOrNull(policy.changeClasses),
+            governance_profiles: axisOrNull(policy.governanceProfiles),
+            object_kinds: axisOrNull(policy.objectKinds),
+            applicability_note: policy.applicabilityNote,
+            risk_at_least: "not_configured",
+            technologies: "not_configured",
           },
   };
+  const applicabilityLines =
+    policy === undefined
+      ? []
+      : [
+          `  applicability: 模式=${policy.hasMachineApplicability ? "机器字段全判定" : "lane 回退（未声明机器 applicability 字段，O7）"}；lanes=[${policy.lanes.join("/")}]；capabilities=${axisOrNull(policy.capabilities)?.join("/") ?? "未声明"}；change_classes=${axisOrNull(policy.changeClasses)?.join("/") ?? "未声明"}；governance_profiles=${axisOrNull(policy.governanceProfiles)?.join("/") ?? "未声明"}；object_kinds=${axisOrNull(policy.objectKinds)?.join("/") ?? "未声明"}；risk_at_least=not_configured；technologies=not_configured${policy.declaredUnregisteredAxes.length > 0 ? `（另声明未登记词轴 ${policy.declaredUnregisteredAxes.join("/")}）` : ""}`,
+        ];
   const human = [
     `catalog explain: ${entry.id}`,
     `  file: ${entry.path}`,
@@ -277,6 +308,7 @@ export async function runCatalogExplain(
     result.material.lane === null
       ? null
       : `  applies_when: lane=${result.material.lane}，condition=${result.material.condition ?? "—"}`,
+    ...applicabilityLines,
     result.material.enforcement === null
       ? null
       : `  enforcement=${result.material.enforcement}，lifecycle=${result.material.lifecycle ?? "—"}，authority.owner=${result.material.authority_owner ?? "—"}`,

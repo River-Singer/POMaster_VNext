@@ -116,7 +116,7 @@ import { triageRequest } from "./triage.js";
 import { runStatus } from "./status.js";
 import { runInspect } from "./inspect.js";
 import { runMaintain } from "./maintain.js";
-import { runContextCompile } from "./context.js";
+import { runContextCompile, runContextExplain } from "./context.js";
 import { runDoctor } from "./doctor.js";
 import { runPortabilityBootstrap, runPortabilityCheck } from "./portability.js";
 import { runCheckFast, runCheckGates } from "./check.js";
@@ -210,7 +210,13 @@ export type {
   MaintainPermitView,
   MaintainProjectionView,
 } from "./maintain.js";
-export { runContextCompile, classifyKernelError } from "./context.js";
+export { runContextCompile, runContextExplain, classifyKernelError } from "./context.js";
+export type {
+  ContextApplicabilityInputs,
+  ContextCompileResult,
+  ContextExplainResult,
+  ApplicabilityInputsView,
+} from "./context.js";
 export {
   runDoctor,
   probeChromeDevtoolsMcp,
@@ -644,17 +650,67 @@ export function createProgram(
   context
     .command("compile")
     .description(
-      "转调 kernel compileProjection，输出三分区 markdown（MUST/ADVISORY/LAZY TOOLS）",
+      "转调 kernel compileProjection，输出五分区 markdown（MUST/ADVISORY/KNOWLEDGE/CATALOG/LAZY TOOLS）；catalog 分区按结构化 applicability 确定性过滤（P0.5-1，PRD §5.2/§5.3）",
     )
     .requiredOption(
       "--role <role>",
       "role lane (frontend/backend/architect/designer/documenter ...)",
     )
+    .option("--change <ref>", "CHANGE.*/TASK.* 引用（透传 taskRef，激活许可通道）")
+    .option(
+      "--capability <governed-id>",
+      "CAPABILITY.* governed id（可重复；catalog applicability 判定输入，P0.5-1）",
+      collectValues,
+      [],
+    )
+    .option("--change-class <class>", "变更类目（∈ CATALOG_CHANGE_CLASS_VALUES，vocab-pr-0005 词轴）")
+    .option("--profile <profile>", "治理档位（∈ CATALOG_GOVERNANCE_PROFILE_VALUES；对齐 triage+STRICT）")
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (opts, command) => {
-      const outcome = await runContextCompile(resolveDir(command), opts.role);
+      const outcome = await runContextCompile(resolveDir(command), opts.role, undefined, {
+        ...(opts.change !== undefined ? { change: opts.change as string } : {}),
+        ...(opts.capability !== undefined && (opts.capability as string[]).length > 0
+          ? { capabilities: opts.capability as string[] }
+          : {}),
+        ...(opts.changeClass !== undefined ? { changeClass: opts.changeClass as string } : {}),
+        ...(opts.profile !== undefined ? { governanceProfile: opts.profile as string } : {}),
+      });
       record({
         command: "context compile",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+  context
+    .command("explain")
+    .description(
+      "catalog include/exclude 决策记录（P0.5-1；PRD §5.4 why_included/why_excluded 逐条）——决策面与 Agent Context 严格隔离（excluded 不进五分区 manifest，只用于 explain/Audit/Eval/Debug）",
+    )
+    .requiredOption(
+      "--role <role>",
+      "role lane (frontend/backend/architect/designer/documenter ...)",
+    )
+    .option("--change <ref>", "CHANGE.*/TASK.* 引用（透传 taskRef，激活许可通道）")
+    .option(
+      "--capability <governed-id>",
+      "CAPABILITY.* governed id（可重复；catalog applicability 判定输入）",
+      collectValues,
+      [],
+    )
+    .option("--change-class <class>", "变更类目（∈ CATALOG_CHANGE_CLASS_VALUES，vocab-pr-0005 词轴）")
+    .option("--profile <profile>", "治理档位（∈ CATALOG_GOVERNANCE_PROFILE_VALUES；对齐 triage+STRICT）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runContextExplain(resolveDir(command), opts.role, undefined, {
+        ...(opts.change !== undefined ? { change: opts.change as string } : {}),
+        ...(opts.capability !== undefined && (opts.capability as string[]).length > 0
+          ? { capabilities: opts.capability as string[] }
+          : {}),
+        ...(opts.changeClass !== undefined ? { changeClass: opts.changeClass as string } : {}),
+        ...(opts.profile !== undefined ? { governanceProfile: opts.profile as string } : {}),
+      });
+      record({
+        command: "context explain",
         outcome,
         asJson: command.opts().json === true,
       });

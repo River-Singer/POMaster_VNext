@@ -15,8 +15,10 @@
  * - content_sha256 = sha256(文件 utf-8 字节)——materialize_catalog_pilot.py /
  *   materialize_batch4_uplift.py 的写入口径，本模块按同一算法对账：漂移当且仅当
  *   物料变更而未重锁（producer 与对账端共用同一计算，枚举多头拷贝同款免疫）；
- * - controlled_children 只管辖 gates/knowledge/policies 三目录（tools/、candidates/、
- *   projection-presets/ 与 lock 自身不在管辖面——unexpected_file 只在管辖目录内判）。
+ * - controlled_children 只管辖 gates/knowledge/policies/sensors 四目录（tools/、
+ *   candidates/、projection-presets/ 与 lock 自身不在管辖面——unexpected_file 只在
+ *   管辖目录内判；sensors/ 为 P1-5 Sensor Capability Catalog Lite 新增管辖目录，
+ *   PRD v0.5.2 §6.5/§14 P1-5，裁决 8（2026-09-01）D6/D7）。
  *
  * 词形纪律：lane/enforcement/classification 对账 packages/schemas 已登记的
  * CATALOG_LANE_VALUES / CATALOG_ENFORCEMENT_VALUES / CATALOG_CLASSIFICATION_VALUES
@@ -28,20 +30,27 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 import {
+  CATALOG_CHANGE_CLASS_VALUES,
   CATALOG_CLASSIFICATION_VALUES,
   CATALOG_ENFORCEMENT_VALUES,
+  CATALOG_GOVERNANCE_PROFILE_VALUES,
   CATALOG_LANE_VALUES,
+  TRUTH_BODY_KINDS,
+  type CatalogChangeClassValue,
   type CatalogClassificationValue,
   type CatalogEnforcementValue,
+  type CatalogGovernanceProfileValue,
   type CatalogLaneValue,
+  type TruthBodyKind,
 } from "@pomaster/schemas";
-import { GovernanceError } from "./errors.js";
+import { GovernanceError, GovernedIdParseError, governanceCodeForParseError } from "./errors.js";
+import { parseGovernedId } from "./id.js";
 import { readText } from "./io.js";
 
 type UnknownRecord = Record<string, unknown>;
 
 /** catalog/ 在仓库内的目录名（与 controlled_children 相对路径的基准）。 */
-const CATALOG_SECTIONS = ["gates", "knowledge", "policies"] as const;
+const CATALOG_SECTIONS = ["gates", "knowledge", "policies", "sensors"] as const;
 
 // ============================================================
 // catalog-lock 文档（catalog/catalog-lock.draft.json 的机器形态）
@@ -197,7 +206,7 @@ export function sha256OfUtf8(text: string): string {
 /**
  * catalog-lock 漂移检测（P14 出口判据：catalog 物料被改而 lock 未重锁 → 显式检出）。
  * 对账四面：entries[].path 文件存在性 / 内容哈希 / entries ⊆ allowed /
- * required ⊆ 目录实存 / 目录实存 ⊆ allowed（unexpected_file 只查管辖三目录）。
+ * required ⊆ 目录实存 / 目录实存 ⊆ allowed（unexpected_file 只查管辖四目录）。
  * 纯读：不写不修（D24 write_blocking=false；修复动作是 producer 工具重锁，不是这里）。
  */
 export function verifyCatalogLock(
@@ -270,7 +279,7 @@ export function verifyCatalogLock(
     }
   }
 
-  // 3) 目录实存 ⊆ allowed（管辖三目录内的新文件必须先登记 allowed+required）。
+  // 3) 目录实存 ⊆ allowed（管辖四目录内的新文件必须先登记 allowed+required）。
   for (const section of CATALOG_SECTIONS) {
     const onDisk = onDiskBySection.get(section) ?? new Set<string>();
     for (const fileName of onDisk) {
@@ -294,7 +303,7 @@ export function verifyCatalogLock(
 // 物料读取：policies / tools / projection-presets
 // ============================================================
 
-/** policy/authority 物料的运行时消费形态（正文策展字段 + 消费所需身份）。 */
+/** policy/authority 物料的运行时消费形态（正文策展字段 + 消费所需身份 + 机器 applicability 字段）。 */
 export interface CatalogPolicyMaterial {
   /** catalog 根相对路径（出处呈现用，如 policies/policy.web.api.single_http_client.json）。 */
   readonly file: string;
@@ -304,7 +313,39 @@ export interface CatalogPolicyMaterial {
   readonly titleZh: string;
   readonly statementZh: string;
   readonly lane: CatalogLaneValue;
+  /**
+   * lanes 复数双读（PRD §5.2 / vocab-lock catalog_layer_vocab.applicability_fields，
+   * PR-0005；Owner 裁决 8 ② 2026-09-01「双读过渡」）：applies_when.lanes 在场取其数组；
+   * 缺席回退 [lane] 单值（未标注条目 lane 回退判定，行为零变化——O7）。
+   */
+  readonly lanes: readonly CatalogLaneValue[];
+  /** applies_when.lanes 是否显式声明（lane 回退 vs 机器全字段判定的分界位；空数组=声明但无角色约束）。 */
+  readonly declaresLanes: boolean;
+  /**
+   * Capability 清单（applies_when.capabilities；CAPABILITY.* governed id 词形，A5 closed-world
+   * 校验同 permit capability_refs 先例）。空数组 = 未声明（该轴不参与确定性判定）。
+   */
+  readonly capabilities: readonly string[];
+  /** 变更类目清单（applies_when.change_classes ∈ CATALOG_CHANGE_CLASS_VALUES，PR-0005 词轴）。 */
+  readonly changeClasses: readonly CatalogChangeClassValue[];
+  /** 治理档位清单（applies_when.governance_profiles ∈ CATALOG_GOVERNANCE_PROFILE_VALUES，O2 对齐）。 */
+  readonly governanceProfiles: readonly CatalogGovernanceProfileValue[];
+  /** 治理对象 kind 清单（applies_when.object_kinds ∈ TRUTH_BODY_KINDS——复用十类零新轴）。 */
+  readonly objectKinds: readonly TruthBodyKind[];
+  /** 声明了任一机器 applicability 字段（true=全字段确定性判定；false=lane 回退判定，O7）。 */
+  readonly hasMachineApplicability: boolean;
+  /**
+   * 声明了留位不登记词轴（applies_when.risk_at_least / technologies——Owner 裁决 8 ② O4：
+   * 只检存在不解析值、词轴不入 vocab-lock；消费面以 not_configured 显式缺席呈现，禁半成品假绿）。
+   */
+  readonly declaredUnregisteredAxes: readonly ("risk_at_least" | "technologies")[];
   readonly appliesWhenCondition: string;
+  /**
+   * 自然语言 applicability 说明（PRD §5.2 applicability_note 降级位：可保留但「不得作为唯一
+   * 机器路由条件」）。applies_when.applicability_note 缺席时回退 condition 原文（现库 94 条
+   * condition 中文词面即其承载——标注战役 T3 逐步显式化）。
+   */
+  readonly applicabilityNote: string;
   readonly enforcement: CatalogEnforcementValue;
   readonly lifecycle: string;
   readonly authorityOwner: string;
@@ -318,6 +359,10 @@ function asRecord(value: unknown): UnknownRecord {
  * 读 policies/ 全部条目（authority.* 与 policy.* 同为 kind=policy）。
  * 词表对账 fail-closed：lane/enforcement/classification 词表外或必填字段缺失
  * → SCHEMA_INVALID（坏物料显式爆，禁静默跳过——静默跳过 = 消费面假绿）。
+ * P0.5-1（PRD §5.2/vocab-pr-0005）：applies_when 机器 applicability 字段同款
+ * fail-closed 解析——lanes 值集对账 V7、capabilities 过 governed id 文法+CAPABILITY
+ * 前缀闭包、change_classes/governance_profiles/object_kinds 对账 PR-0005 词轴与
+ * truth_bodies；risk_at_least/technologies 只检存在不解析值（O4 留位不登记）。
  */
 export function loadCatalogPolicies(catalogRoot: string): readonly CatalogPolicyMaterial[] {
   const dir = join(catalogRoot, "policies");
@@ -329,6 +374,29 @@ export function loadCatalogPolicies(catalogRoot: string): readonly CatalogPolicy
       { dir },
     );
   }
+  /** 数组字段解析：缺席 → []；非数组/非字符串元素 → SCHEMA_INVALID（坏物料显式爆）。 */
+  const stringArrayOf = (raw: unknown, file: string, axis: string): readonly string[] => {
+    if (raw === undefined) return [];
+    if (!Array.isArray(raw)) {
+      throw new GovernanceError(
+        "SCHEMA_INVALID",
+        `catalog 物料 applies_when.${axis} 须为数组: ${file}（实为 ${typeof raw}）`,
+        `applies_when.${axis} 是机器 applicability 字段（PRD §5.2）；数组词形由 materialize 工具维护。`,
+        { file, axis },
+      );
+    }
+    for (const item of raw) {
+      if (typeof item !== "string") {
+        throw new GovernanceError(
+          "SCHEMA_INVALID",
+          `catalog 物料 applies_when.${axis} 元素须为字符串: ${file}（${String(item)}）`,
+          `applies_when.${axis} 元素词形见 vocab-lock catalog_layer_vocab；手改破坏词形请幂等重生成。`,
+          { file, axis, item: String(item) },
+        );
+      }
+    }
+    return raw as string[];
+  };
   const materials: CatalogPolicyMaterial[] = [];
   for (const fileName of readdirSync(dir).filter((name) => name.endsWith(".json")).sort()) {
     const file = `policies/${fileName}`;
@@ -390,6 +458,90 @@ export function loadCatalogPolicies(catalogRoot: string): readonly CatalogPolicy
         { file, enforcement: String(enforcement) },
       );
     }
+    // —— P0.5-1 机器 applicability 字段（缺席=诚实缺省 lane 回退，O7；在场=fail-closed 对账） ——
+    const declaresLanes = appliesWhen["lanes"] !== undefined;
+    const lanesRaw = stringArrayOf(appliesWhen["lanes"], file, "lanes");
+    for (const laneItem of lanesRaw) {
+      if (!CATALOG_LANE_VALUES.includes(laneItem as never)) {
+        throw new GovernanceError(
+          "SCHEMA_INVALID",
+          `catalog 物料 applies_when.lanes 词表外: ${file}（${laneItem}）`,
+          `lanes 值集复用 CATALOG_LANE_VALUES（V7，vocab-pr-0005 applicability_fields 注记）；扩值走词汇表 PR。`,
+          { file, lanes: laneItem },
+        );
+      }
+    }
+    const capabilities: string[] = [];
+    for (const capability of stringArrayOf(appliesWhen["capabilities"], file, "capabilities")) {
+      try {
+        const parsed = parseGovernedId(capability);
+        if (parsed.prefix !== "CAPABILITY") {
+          throw new GovernanceError(
+            "SCHEMA_INVALID",
+            `catalog 物料 applies_when.capabilities 前缀非 CAPABILITY: ${file}（${capability}）`,
+            "capabilities 须为 CAPABILITY.* governed id（A5 closed-world；capability_refs 五件套同款词形）。",
+            { file, capability },
+          );
+        }
+      } catch (error) {
+        if (error instanceof GovernedIdParseError) {
+          throw new GovernanceError(
+            governanceCodeForParseError(error),
+            `catalog 物料 applies_when.capabilities 词形非法: ${file}（${capability}）`,
+            "capabilities 须为 CAPABILITY.* governed id（A5 closed-world 文法）；legacy 拼写走 resolveAlias 收编。",
+            { file, capability, reason: error.reason },
+          );
+        }
+        throw error;
+      }
+      capabilities.push(capability);
+    }
+    const changeClasses: CatalogChangeClassValue[] = [];
+    for (const item of stringArrayOf(appliesWhen["change_classes"], file, "change_classes")) {
+      if (!CATALOG_CHANGE_CLASS_VALUES.includes(item as never)) {
+        throw new GovernanceError(
+          "SCHEMA_INVALID",
+          `catalog 物料 applies_when.change_classes 词表外: ${file}（${item}）`,
+          `change_classes 须 ∈ CATALOG_CHANGE_CLASS_VALUES（vocab-pr-0005 词轴）；扩值走词汇表 PR。`,
+          { file, changeClass: item },
+        );
+      }
+      changeClasses.push(item as CatalogChangeClassValue);
+    }
+    const governanceProfiles: CatalogGovernanceProfileValue[] = [];
+    for (const item of stringArrayOf(appliesWhen["governance_profiles"], file, "governance_profiles")) {
+      if (!CATALOG_GOVERNANCE_PROFILE_VALUES.includes(item as never)) {
+        throw new GovernanceError(
+          "SCHEMA_INVALID",
+          `catalog 物料 applies_when.governance_profiles 词表外: ${file}（${item}）`,
+          `governance_profiles 须 ∈ CATALOG_GOVERNANCE_PROFILE_VALUES（O2 对齐 TRIAGE_PROFILES+STRICT）；扩值走词汇表 PR。`,
+          { file, governanceProfile: item },
+        );
+      }
+      governanceProfiles.push(item as CatalogGovernanceProfileValue);
+    }
+    const objectKinds: TruthBodyKind[] = [];
+    for (const item of stringArrayOf(appliesWhen["object_kinds"], file, "object_kinds")) {
+      if (!TRUTH_BODY_KINDS.includes(item as never)) {
+        throw new GovernanceError(
+          "SCHEMA_INVALID",
+          `catalog 物料 applies_when.object_kinds 词表外: ${file}（${item}）`,
+          `object_kinds 复用 TRUTH_BODY_KINDS 十类（零新轴，vocab-pr-0005 applicability_fields 注记）。`,
+          { file, objectKind: item },
+        );
+      }
+      objectKinds.push(item as TruthBodyKind);
+    }
+    // 留位不登记词轴（O4）：只检存在、不解析值——消费面 not_configured 显式呈现。
+    const declaredUnregisteredAxes: ("risk_at_least" | "technologies")[] = [];
+    if (appliesWhen["risk_at_least"] !== undefined) declaredUnregisteredAxes.push("risk_at_least");
+    if (appliesWhen["technologies"] !== undefined) declaredUnregisteredAxes.push("technologies");
+    const hasMachineApplicability =
+      declaresLanes ||
+      capabilities.length > 0 ||
+      changeClasses.length > 0 ||
+      governanceProfiles.length > 0 ||
+      objectKinds.length > 0;
     materials.push({
       file,
       id,
@@ -398,7 +550,21 @@ export function loadCatalogPolicies(catalogRoot: string): readonly CatalogPolicy
       titleZh,
       statementZh,
       lane: lane as CatalogLaneValue,
+      lanes: declaresLanes
+        ? (lanesRaw as CatalogLaneValue[])
+        : [lane as CatalogLaneValue],
+      declaresLanes,
+      capabilities,
+      changeClasses,
+      governanceProfiles,
+      objectKinds,
+      hasMachineApplicability,
+      declaredUnregisteredAxes,
       appliesWhenCondition: appliesWhen["condition"] as string,
+      applicabilityNote:
+        typeof appliesWhen["applicability_note"] === "string"
+          ? (appliesWhen["applicability_note"] as string)
+          : (appliesWhen["condition"] as string),
       enforcement: enforcement as CatalogEnforcementValue,
       lifecycle: String(axes["lifecycle"] ?? ""),
       authorityOwner: String(authority["owner"] ?? ""),
@@ -477,4 +643,226 @@ export function loadCatalogProjectionPresets(
     materials.push({ file, name, kind, status });
   }
   return materials;
+}
+
+// ============================================================
+// P1-5 Sensor Capability Catalog Lite（PRD v0.5.2 §6.5/§14 P1-5；裁决 8 D6/D7）
+// ============================================================
+
+/**
+ * SENSOR.<DOMAIN>.<KIND> 点族词形（裁决 8 D6=A，照研究侧推荐实施）。
+ * 非 governed 前缀（catalog 物料身份非 governed id）——x-vocab-pr 注记沿
+ * catalog/gates/gate.web.api.request_checks.json 的 GATE. 先例，登记歧义不消歧。
+ */
+export const SENSOR_ID_PATTERN = /^SENSOR\.[A-Z0-9_]+\.[A-Z0-9_]+$/;
+
+/**
+ * Observation Surface 词表（PRD §6.4 八面逐字；§6.4 明言「不要求立即成为新的
+ * Closed-world Core Vocab」——开放枚举登记于此单点，扩值走词汇表 PR。
+ * TODO(vocab-pr-0005)：词表三镜像登记归主控批次，本常量为暂载位。
+ */
+export const OBSERVATION_SURFACE_VALUES = [
+  "USER_SURFACE",
+  "INTERACTION_STATE",
+  "BOUNDARY_IO",
+  "RUNTIME_SIGNAL",
+  "DATA_STATE",
+  "RESOURCE_BEHAVIOR",
+  "STRUCTURAL_REALITY",
+  "PRODUCTION_REALITY",
+] as const;
+export type ObservationSurfaceValue = (typeof OBSERVATION_SURFACE_VALUES)[number];
+
+/**
+ * side_effect_class 已登记值（开放枚举单点登记；PRD §6.5 例文两值 + 新登记
+ * SANDBOXED_EXECUTION=观察动作在沙箱内执行被测代码、副作用限于可丢弃产物）。
+ * TODO(vocab-pr-0005)：同上，扩值走词汇表 PR。
+ */
+export const SENSOR_SIDE_EFFECT_CLASS_VALUES = [
+  "INTERACTIVE_REVERSIBLE",
+  "READ_ONLY",
+  "SANDBOXED_EXECUTION",
+] as const;
+export type SensorSideEffectClassValue = (typeof SENSOR_SIDE_EFFECT_CLASS_VALUES)[number];
+
+/**
+ * availability_probe.surface 已登记引用面（防第二套探测机制=四克制：availability_probe
+ * 只允许声明式引用既有单一事实源面，catalog 是数据不执行——可执行性永远归
+ * gauntlet-lite toolDetectors/gateAdapters 或 kernel 既有面）：
+ * - toolDetectors —— gauntlet-lite toolDetectors 15 探测器单一探测面（index.ts:260-276）；
+ * - gateAdapters  —— gauntlet-lite gateAdapters adapter registry（BUILD 无独立探测器键，
+ *   探测在 build-adapter.detect 内联于 adapter 契约）；
+ * - kernel        —— kernel 侧数据/判定面（SENSOR_KERNEL_SURFACE_KEYS 键闭包）。
+ * TODO(vocab-pr-0005)：同上，扩值走词汇表 PR。
+ */
+export const SENSOR_AVAILABILITY_SURFACE_VALUES = [
+  "toolDetectors",
+  "gateAdapters",
+  "kernel",
+] as const;
+export type SensorAvailabilitySurfaceValue = (typeof SENSOR_AVAILABILITY_SURFACE_VALUES)[number];
+
+/** kernel 面可用键闭包（fail-closed 校验锚；新增 kernel 观察面在此单点登记）。 */
+export const SENSOR_KERNEL_SURFACE_KEYS = ["production_control_band"] as const;
+
+/** availability_probe 消费形态（声明式引用：surface=引用面 + keys=该面既有键）。 */
+export interface SensorAvailabilityProbe {
+  readonly surface: SensorAvailabilitySurfaceValue;
+  readonly keys: readonly string[];
+}
+
+/** sensor_capability 物料的运行时消费形态（§6.5 六字段 + 身份）。 */
+export interface CatalogSensorMaterial {
+  /** catalog 根相对路径（出处呈现用，如 sensors/sensor.browser.interactive.json）。 */
+  readonly file: string;
+  readonly id: string;
+  readonly kind: string;
+  readonly titleZh: string;
+  readonly surfaces: readonly string[];
+  readonly operations: readonly string[];
+  readonly sideEffectClass: SensorSideEffectClassValue;
+  readonly evidenceTypes: readonly string[];
+  readonly implementations: readonly string[];
+  readonly availabilityProbe: SensorAvailabilityProbe;
+  /** fallback 传感器 id（可空数组=显式登记无降级；§6.6 明言 Browser 双通道互不替代）。 */
+  readonly fallback: readonly string[];
+}
+
+function isNonEmptyStringArray(value: unknown): value is readonly string[] {
+  return (
+    Array.isArray(value) &&
+    value.length > 0 &&
+    value.every((item) => typeof item === "string" && item.length > 0)
+  );
+}
+
+/**
+ * 读 sensors/ 全部条目（P1-5 六条 Sensor Capability：PRD §14「只收编真实存在」——
+ * Playwright / Chrome DevTools MCP / Build·Type·Lint / Contract / Performance /
+ * Production Metric·Control Band）。
+ *
+ * 词表对账 fail-closed（loadCatalogPolicies 同法）：id 词形 / Observation Surface 八面 /
+ * side_effect_class / availability_probe.surface / kernel 面键闭包——词表外值或必填字段
+ * 缺失 → SCHEMA_INVALID（坏物料显式爆，禁静默跳过——静默跳过 = 消费面假绿）。
+ * fallback 允许空数组（显式无降级）；id 全目录唯一（身份面禁重复）。
+ * 返回按 id 字典序（确定性）。
+ */
+export function loadCatalogSensors(catalogRoot: string): readonly CatalogSensorMaterial[] {
+  const dir = join(catalogRoot, "sensors");
+  if (!existsSync(dir)) {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      `catalog/sensors/ 目录缺失: ${dir}`,
+      "sensors/ 是 catalog-lock required 管辖面（P1-5 登记后）；目录缺失说明物料不完整，对照 catalog-lock.draft.json required 段恢复。",
+      { dir },
+    );
+  }
+  const materials = new Map<string, CatalogSensorMaterial>();
+  for (const fileName of readdirSync(dir).filter((name) => name.endsWith(".json")).sort()) {
+    const file = `sensors/${fileName}`;
+    const raw = readFileSync(join(dir, fileName), "utf8");
+    let body: UnknownRecord;
+    try {
+      body = asRecord(JSON.parse(raw));
+    } catch (error) {
+      throw new GovernanceError(
+        "SCHEMA_INVALID",
+        `catalog 物料不可解析: ${file}`,
+        "物料 JSON 坏形：sensor_capability 条目为 W1-E 登记物料，对照同目录在册条目修复。",
+        { file, cause: String(error) },
+      );
+    }
+    const id = body["id"];
+    const titleZh = body["title_zh"];
+    const surfaces = body["surfaces"];
+    const operations = body["operations"];
+    const sideEffectClass = body["side_effect_class"];
+    const evidenceTypes = body["evidence_types"];
+    const implementations = body["implementations"];
+    const fallback = body["fallback"];
+    const probe = asRecord(body["availability_probe"]);
+    const probeSurface = probe["surface"];
+    const probeKeys = probe["keys"];
+    if (
+      typeof id !== "string" ||
+      !SENSOR_ID_PATTERN.test(id) ||
+      typeof titleZh !== "string" ||
+      !isNonEmptyStringArray(surfaces) ||
+      !isNonEmptyStringArray(operations) ||
+      !isNonEmptyStringArray(evidenceTypes) ||
+      !isNonEmptyStringArray(implementations) ||
+      !Array.isArray(fallback) ||
+      !fallback.every((item) => typeof item === "string" && SENSOR_ID_PATTERN.test(item))
+    ) {
+      throw new GovernanceError(
+        "SCHEMA_INVALID",
+        `catalog sensor_capability 缺必填字段或词形非法（id=SENSOR.<DOMAIN>.<KIND>/title_zh/surfaces/operations/evidence_types/implementations/fallback）: ${file}`,
+        "sensor_capability 条目形状由 P1-5 契约定义（裁决 8 D6=A 点族词形）；对照在册六条目修复。",
+        { file, id: String(id) },
+      );
+    }
+    if (!surfaces.every((s) => OBSERVATION_SURFACE_VALUES.includes(s as never))) {
+      throw new GovernanceError(
+        "SCHEMA_INVALID",
+        `catalog sensor_capability surfaces 词表外: ${file}（${JSON.stringify(surfaces)}）`,
+        `surfaces 须 ⊆ OBSERVATION_SURFACE_VALUES（PRD §6.4 八面）；扩值走词汇表 PR（TODO(vocab-pr-0005)）。`,
+        { file, id },
+      );
+    }
+    if (!SENSOR_SIDE_EFFECT_CLASS_VALUES.includes(sideEffectClass as never)) {
+      throw new GovernanceError(
+        "SCHEMA_INVALID",
+        `catalog sensor_capability side_effect_class 词表外: ${file}（${String(sideEffectClass)}）`,
+        `side_effect_class 须 ∈ SENSOR_SIDE_EFFECT_CLASS_VALUES；扩值走词汇表 PR（TODO(vocab-pr-0005)）。`,
+        { file, id, side_effect_class: String(sideEffectClass) },
+      );
+    }
+    if (
+      !SENSOR_AVAILABILITY_SURFACE_VALUES.includes(probeSurface as never) ||
+      !isNonEmptyStringArray(probeKeys)
+    ) {
+      throw new GovernanceError(
+        "SCHEMA_INVALID",
+        `catalog sensor_capability availability_probe 形状非法（surface ∈ ${SENSOR_AVAILABILITY_SURFACE_VALUES.join("/")} + keys 非空字符串数组）: ${file}`,
+        "availability_probe 是声明式引用不是执行体（四克制：防第二套探测机制）——只许引用既有单一事实源面的既有键。",
+        { file, id, surface: String(probeSurface) },
+      );
+    }
+    if (
+      probeSurface === "kernel" &&
+      !probeKeys.every((k) => SENSOR_KERNEL_SURFACE_KEYS.includes(k as never))
+    ) {
+      throw new GovernanceError(
+        "SCHEMA_INVALID",
+        `catalog sensor_capability availability_probe kernel 面键闭包外: ${file}（${JSON.stringify(probeKeys)}）`,
+        `kernel 面可用键 ⊆ SENSOR_KERNEL_SURFACE_KEYS（${SENSOR_KERNEL_SURFACE_KEYS.join("/")}）；新 kernel 观察面先在常量登记再引用。`,
+        { file, id },
+      );
+    }
+    if (materials.has(id)) {
+      throw new GovernanceError(
+        "SCHEMA_INVALID",
+        `catalog sensor_capability id 重复（身份面禁重复）: ${id}`,
+        "SENSOR.* id 是 catalog 家族身份；重复说明物料管理失序，删除或合并重复文件。",
+        { file, id },
+      );
+    }
+    materials.set(id, {
+      file,
+      id,
+      kind: String(body["kind"] ?? ""),
+      titleZh,
+      surfaces: surfaces as readonly string[],
+      operations: operations as readonly string[],
+      sideEffectClass: sideEffectClass as SensorSideEffectClassValue,
+      evidenceTypes: evidenceTypes as readonly string[],
+      implementations: implementations as readonly string[],
+      availabilityProbe: {
+        surface: probeSurface as SensorAvailabilitySurfaceValue,
+        keys: probeKeys as readonly string[],
+      },
+      fallback: fallback as readonly string[],
+    });
+  }
+  return [...materials.values()].sort((a, b) => (a.id < b.id ? -1 : 1));
 }

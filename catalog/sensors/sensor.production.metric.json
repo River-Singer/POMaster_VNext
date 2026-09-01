@@ -1,0 +1,44 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "SENSOR. 前缀不在 prefixes_v0 15 前缀闭包内（closed-world：未登记前缀解析即 FATAL）；且 kind='sensor_capability' 不在 kinds_registry.truth_bodies",
+    "proposal": "词汇表 PR 登记 SENSOR. 前缀与 sensor_capability kind；备选落法：sensor capability 住 catalog/sensors/ 非 truth 对象层，身份只作 catalog 物料标识（沿 catalog/gates/gate.web.api.request_checks.json 的 GATE. 先例；裁决 8（2026-09-01）D6=A：SENSOR.<DOMAIN>.<KIND> 点族词形照研究侧推荐实施）",
+    "open_enum_registration": "本条目消费的开放枚举（PRD §6.4 明言不要求立即成为 Closed-world Core Vocab；pending vocab PR → TODO(vocab-pr-0005)）：surfaces=PRODUCTION_REALITY；side_effect_class=READ_ONLY（§6.4：Production Observation 默认不得产生业务写副作用）；evidence_types=control_band_evaluation/breach_evidence/production_observation；availability_probe.surface=kernel（新登记引用面）",
+    "locked_vocab_untouched": true
+  },
+  "id": "SENSOR.PRODUCTION.METRIC",
+  "kind": "sensor_capability",
+  "title_zh": "生产指标·控制带 Sensor（POB 台账）",
+  "statement_zh": "对生产环境事实（PRODUCTION_REALITY：SLO/error budget/control band/production metric/incident log）做只读观察：kernel production POB 台账（observations/breaches/challenges，POB-<12hex> 内容寻址 id）+ 控制带判定面（registerControlBand/evaluateControlBand）。§6.4 纪律：Production Observation 默认不得产生业务写副作用。",
+  "surfaces": [
+    "PRODUCTION_REALITY"
+  ],
+  "operations": [
+    "control_band_evaluate",
+    "observation_record_read",
+    "breach_read"
+  ],
+  "side_effect_class": "READ_ONLY",
+  "evidence_types": [
+    "control_band_evaluation",
+    "breach_evidence",
+    "production_observation"
+  ],
+  "implementations": [
+    "@pomaster/kernel:production"
+  ],
+  "availability_probe": {
+    "surface": "kernel",
+    "keys": [
+      "production_control_band"
+    ],
+    "note": "声明式引用（四克制：防第二套探测机制）——生产观察面是 kernel 数据面（POB 台账）而非外部工具，无 toolDetectors/gateAdapters 键；引用键闭包=kernel SENSOR_KERNEL_SURFACE_KEYS 常量（loadCatalogSensors fail-closed 校验），可执行性归 kernel production.ts 既有读取面。闭包由 tests/integration/sensor-capability-catalog.spec.ts 交叉测试守。"
+  },
+  "fallback": [],
+  "fallback_note": "空数组=显式登记无降级；POB 台账缺席 → 观察缺席显式呈现（禁静默当空）。",
+  "x-source-anchors": {
+    "kernel": "packages/kernel/src/production.ts（POB 台账 + ControlBand 判定：registerControlBand/evaluateControlBand/listBreaches 等）",
+    "prd_face": "PRD §6.4 PRODUCTION_REALITY 既有实现面（P34 控制带）"
+  },
+  "x-prd": "POMaster-vNext-PRD-v0.5.2 §6.4 PRODUCTION_REALITY + §14 P1-5；裁决 8（2026-09-01）D6=A/D7=A"
+}

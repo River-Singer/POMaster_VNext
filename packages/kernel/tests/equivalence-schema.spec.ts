@@ -114,13 +114,13 @@ function entryWith(
 }
 
 describe("13-equivalence-registry（$id 与注册）", () => {
-  it("$id 形态对齐 v1-draft 契约且已注册进 allSchemas（15 份聚合，P34 增量 14→15）", () => {
+  it("$id 形态对齐 v1-draft 契约且已注册进 allSchemas（17 份聚合，P34 增量 14→15；W1-C 增量 15→16；VB-PR1 增量 16→17）", () => {
     expect(equivalenceRegistrySchema.$id).toBe(
       "https://pomaster.dev/schemas/equivalence-registry/v1-draft.json",
     );
     expect(SCHEMA_VERSION).toBe("v1-draft");
     expect(allSchemas.equivalenceRegistry).toBe(equivalenceRegistrySchema);
-    expect(Object.keys(allSchemas).length).toBe(15);
+    expect(Object.keys(allSchemas).length).toBe(17);
   });
 
   it("正例：GRN-4402 场景 active 等价组（密度↔MIDU↔FIELD.MATERIAL-DB.MIDU，声明位齐备）与空表", () => {

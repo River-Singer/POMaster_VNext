@@ -1,0 +1,1021 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://pomaster.dev/schemas/decision-graph/v1-draft.json",
+  "title": "Decision Graph（Grounded Decision Graph · Discovery scratchpad 平面 sidecar，v0.5.3 P0.5 / VB-PR1）",
+  "description": "PRD v0.5.3 §5/§16 的 schema 落地。Decision Graph 表达 Decision → Prerequisite Decisions → Factual Premises → Affected Governed Objects → Options → Recommendation → Trade-offs → Downstream Decisions → Authority → Required Evidence（§5.1）；Grill 的核心产物是 Decision Graph 而不是一串独立问题。\n本 schema 是 decision-graph.json（.pomaster/discovery/scratchpads/<id>/ 内 sidecar）的产物形态冻结：§5.2 十键节点一次锁全（additionalProperties:false，Owner 位 O-9 全锁——字段演化走 Schema PR，禁就地改，SCHEMA_VERSION=v1-draft）。\n身份纪律：不进 truth-index、不走 store 事务（scratchpad 平面 sidecar——Ephemeral Discovery 产物，晋升即消亡或转写为 CHANGE/TASK payload）；Frontier 由 Graph 动态计算（computeDecisionFrontier），Human Narrative 由 Graph 编译生成——本 schema 无 frontier/verdict/card 字段（§16 禁增的 questions/answers/decisions/frontier/recommendations/grill-state 六文件全部不出现）。\n写入纪律：本文件归 Brainstorm 命令面在 scratchpad 授权维护面内读写；Discovery 的提升仍必须走 P11 maintain 面（promote→maintain 零改动复用，§21 禁绕过）。\n执行面：buildDecisionGraph / computeDecisionFrontier / evaluateDecisionGrounding / createResearchRequest / applyResearchHandoff / resolveDecision / evaluateDiscoverySufficiency 住 @pomaster/kernel decision-graph 模块（纯函数、零 IO、不 throw、fail-closed）。",
+  "x-pomaster-file-role": "18-decision-graph.schema.json —— Grounded Decision Graph 产物形态（v0.5.3 P0.5 · VB-PR1）。定义 §5.2 十键节点（decision_id/class/prompt/depends_on/affects/grounding 十槽/options/recommendation/authority/resolution）、§9.1 research_request 九键形态、§10.2 research_handoff + finding_link 联结形态（research_request/handoff 住本 schema——10 号 research-artifact 零改动，Owner 裁决9③）。被 Brainstorm 命令面（ground/grill/answer/explain/converge，PR-2~PR-4）消费。",
+  "x-pomaster-vocab-source": "PRD v0.5.3 §5.2/§6.1/§9.1/§10.1/§13.2 词形逐字 + Owner 裁决9（2026-09-01）②③：\n- DECISION. / RESEARCH.REQ. / FINDING. / DISCOVERY.INTENT. / FACT. 是 **Discovery 平面局部词形**（vocab-lock id_namespace.state_plane_refs 先例：PERMIT.<BASE>.<SEQ> / POB-<12hex> / AGX-n 同族）——不入 GOVERNED_ID_PREFIXES 闭包、不过 parseGovernedId，校验 = 本 schema 词形正则 + 图内/台账存在性对账；\n- decision class 闭包 = SCOPE 单值起步（裁决9②：SCOPE 单值起步，schema 冻结 + pending_vocab_pr，扩值走词汇表 PR）；\n- CONTRACT.* 是 PRD §5.2 示意词形——现词表无此前缀（governed 前缀是 API_REQ），affects/contract_refs 等外部引用槽按 loose_ref 宽松词形放行（存在性对账归 Truth 对账面）；\n- 禁词负例：GRILLING / GRILLED / GRILL_CONFIRMED 不得成为任何词形位取值（§1.1 不新增 State Axis；09-msd-uncertainty definitions.unknown_classification x-pomaster-vocab.forbidden_wordforms 先例；机器拒绝面在 kernel buildDecisionGraph）；\n- Grounding Verdict 五值（READY_FOR_DECISION/NEEDS_DERIVATION/NEEDS_RESEARCH/CONFLICT_REVIEW/INSUFFICIENT_GROUNDING，§6.2）是**派生判定不落盘、不进 Canonical Object State Axis**——本 schema 刻意无 verdict 字段；同族派生词形（§6.1 G2 检索面四面、G6 缺失事实路由、§15 八维显著改变、§9.3 mode 路由 gap 词形、UNKNOWN 六问处置）同样只住 kernel 模块常量；\n- finding↔decision relation 六值（RESOLVES_FACT/SUPPORTS_OPTION/WEAKENS_OPTION/CONTRADICTS_PREMISE/NO_DECISION_EFFECT/INSUFFICIENT_EVIDENCE）与 RESEARCH_AUTHORITY_EFFECT_VALUES（NONE/SUPPORTS/CONFLICTS）**划界注记（裁决9③）**：relation 管「finding 对某个 Decision 的证据关系」，authority_effect 管「finding 对既有 Authority 的效应」——两轴并存禁互填。\n以上词形全部 absent_in_vocab_lock__pending_vocab_pr：提请词汇表独立批（VB-A）收编；代码镜像点 @pomaster/kernel/src/decision-graph.ts 模块常量（TODO(vocab-pr)）。",
+  "x-pomaster-contract": {
+    "anti_hallucination_schema_half": "§12 反幻觉规则的 schema 半边：recommendation.basis_refs minItems 1（§12.1 No Unreferenced Project Fact / §12.2 Recommendation Must Have Basis）、tradeoff/uncertainty/rationale 非空、source=INFERENCE 显式披露位（只有模型经验必须申报 INFERENCE，不得说「根据项目现状建议」却没有任何项目引用）。跨字段判卷（basis ∩ missing_facts = ∅、G1-G8 全量、五值 verdict 派生）由 kernel evaluateDecisionGrounding 机器化——schema 锁形态，kernel 锁语义。",
+    "laundering_guard": "§12.4 Research Cannot Launder Inference into Fact 的 schema 半边：finding_link 上 evidence_type=INFERENCE 时 sources 空数组豁免（推断自既有证据组合），但 relation=RESOLVES_FACT 与 evidence_type=INFERENCE 互斥（allOf 强制——INFERENCE 不因进入 handoff 就升级为项目事实）；finding_link.relation=CONTRADICTS_PREMISE 必须指向 ≥1 个 Decision（矛盾必须可见、必须指向被矛盾方）。",
+    "frontier_no_persistence": "§16：Frontier 应由 Decision Graph 动态计算（kernel computeDecisionFrontier 纯派生）；本 schema 无 frontier 字段、无对应文件——§16 禁增清单（questions/answers/decisions/frontier/recommendations/grill-state）全部不出现。",
+    "verdict_not_state_axis": "§6.2：Grounding Verdict 五值是派生判定，不进入 Canonical Object State Axis、不落盘；只有 READY_FOR_DECISION 的 Decision 才允许进入 Question Gate 的人机交互路径（evaluateQuestionGate/selectNextQuestion 复用，零第二 Ask Engine）。",
+    "request_data_lives_in_research": "顶层 request_refs 仅为同步标记（§16 禁第二持久化面——避免双写漂移）；正式 research_request 住 <host>/research/index.yaml（PR-4 接线）。definitions.research_request / research_handoff / finding_link 供消费方以 $ref 子模式编译（ajv: compile({$ref: '<$id>#/definitions/research_request'})）——10-research-artifact.schema.json 零改动（Owner 裁决9③）。",
+    "authority_owner_reconciliation": "authority.owner 词形对齐 authority.json owner_registry（SCREAMING_SNAKE；bootstrap 最小骨架为 BOOTSTRAP_OWNER——细粒度 owner 划分随项目演化）；本 schema 只锁词形，存在性对账归消费面（PRD §5.2 示例 PRODUCT_OWNER 同样匹配词形，注册后即可引用）。",
+    "promotion_still_via_maintain": "§15 Sufficiency（evaluateDiscoverySufficiency）产出的是 promotion_basis=msd_reached 的机器判据面；READY_TO_PROMOTE→CHANGE/TASK 的写入仍必须走 P11 maintain 面——Discovery 层零新写入通道（§21）。",
+    "relation_authority_effect_boundary": "finding relation 六值与 authority_effect 三值划界（裁决9③）：relation = finding↔Decision 证据关系（本 schema）；authority_effect = finding↔既有 Authority 效应（10-research-artifact）。两轴并存禁互填。"
+  },
+  "x-pomaster-digest-ethics-policy": "本对象含 sha256 词形字段（graph_fingerprint / projection_fingerprint），均带 x-digest-ethics 注记 {\"write_blocking\": false, \"side\": \"read_only_service\", \"human_touch\": \"forbidden\"}（D24 / vocab-lock digest_ethics）：指纹由 kernel 自动计算与维护（sha256OfCanonical），人类永不计算；失配/手改 → WARN + 自动重算（auto-regen），永不拦写。零墙钟（A4）：本对象任何字段禁时间戳——事件序靠 resolution.seq（调用方供给的整数事件拍），过期判定靠 seq/fingerprint 比对（P1 STALE_GROUNDING）。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["graph_fingerprint", "decisions"],
+  "properties": {
+    "graph_fingerprint": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "图指纹（graph_fingerprint，kernel 自动维护）",
+      "description": "sha256OfCanonical({projection_fingerprint, decisions, request_refs})——由 kernel buildDecisionGraph/resolveDecision/applyResearchHandoff 在每次图变更时自动重算（D24：human_touch forbidden / write_blocking:false / read_only_service；同输入重放字节稳定，零墙钟）。人类禁算禁改。",
+      "x-digest-ethics": {
+        "write_blocking": false,
+        "side": "read_only_service",
+        "human_touch": "forbidden",
+        "violation": "WARN+auto-regen"
+      }
+    },
+    "projection_fingerprint": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Projection Fingerprint 引用（§4.3，P0.5 只存）",
+      "description": "§4.3 Projection Fingerprint（compileDiscoveryProjection 的 inputsFingerprint）的存储位——build 时传入，图重建时保真透传。P0.5 只存不消费；P1 消费 = fingerprint 比对派生 STALE_GROUNDING（Truth/Contract/Research Finding 更新 → 必须 re-ground，§7.4）。",
+      "x-digest-ethics": {
+        "write_blocking": false,
+        "side": "read_only_service",
+        "human_touch": "forbidden",
+        "violation": "WARN+auto-regen"
+      }
+    },
+    "decisions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/decision_node"
+      },
+      "title": "Decision 节点列表（§5.2 十键节点）",
+      "description": "图至少含一个 Decision（§5.1：Decision Graph 不是空 Question List）。节点间 depends_on 构成 DAG（环/悬空依赖由 kernel buildDecisionGraph fail-closed 拒绝——schema 词形锁不完备处由执行面补齐）。",
+      "x-pomaster-semantic-note": "resolution 进图只经 resolveDecision（answer 四词形 + UNKNOWN 六问重分类）；build 产物全 OPEN——「resolution 不得随 build 进入」由 kernel 强制（schema 对单节点无法表达图级时序）。"
+    },
+    "request_refs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/research_request_id"
+      },
+      "title": "Research Request 同步标记（request_refs）",
+      "description": "已在 <host>/research/index.yaml 落档的 request id 列表（§16 禁第二持久化面：本列表仅为同步标记，防止 handoff 对账时引用悬空——正式 request 形态住 research/index.yaml，其 schema 形态见本文件 definitions.research_request）。空数组合法（尚无 research 联结）。"
+    }
+  },
+  "definitions": {
+    "decision_id": {
+      "type": "string",
+      "pattern": "^DECISION\\.[A-Z][A-Z0-9_]{0,31}(\\.[0-9]+)?$",
+      "title": "Decision id（DECISION.<SEGMENT>[.SEQ]，Discovery 平面局部词形）",
+      "description": "Discovery 平面局部词形（state_plane_refs 先例，Owner 裁决9②）：不入 GOVERNED_ID_PREFIXES、不过 parseGovernedId——Decision 生命周期完全住在 scratchpad decision-graph.json（§16），晋升即消亡或转写为 CHANGE/TASK payload，不是长期治理对象。SEGMENT 文法对齐 governed SEGMENT（[A-Z] 开头、≤32、不允许数字/小写/连字符开头）。\n禁词：GRILLING/GRILLED/GRILL_CONFIRMED 不得作为本词形任何取值或片段（§1.1 不新增 State Axis——词形正则对 DECISION.GRILLED 不设防，机器拒绝面在 kernel buildDecisionGraph forbidden_wordform + 禁词负例注记）。",
+      "$comment": "source: PRD v0.5.3 §5.2 decision_id: DECISION.D017；词形归 Discovery 平面（pending_vocab_pr，axis=discovery_plane_refs）。",
+      "x-pomaster-vocab": {
+        "axis": "decision_id",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "plane": "discovery_local_refs__not_governed_prefixes",
+        "forbidden_wordforms": ["GRILLING", "GRILLED", "GRILL_CONFIRMED"],
+        "source": "PRD v0.5.3 §5.2 + Owner 裁决9②"
+      },
+      "examples": [
+        "DECISION.D017",
+        "DECISION.GRILLED（INVALID：词形正则放行但为 §1.1 禁词——不新增 State Axis，kernel buildDecisionGraph 显式拒绝）"
+      ]
+    },
+    "decision_class": {
+      "type": "string",
+      "enum": ["SCOPE"],
+      "title": "Decision class（裁决9②：SCOPE 单值起步）",
+      "description": "decision class 闭包（Owner 裁决9②：SCOPE 单值起步——PRD §5.2 示例只给 SCOPE 一值；研究侧建议的七值/九维对齐全集属发明风险，扩值走词汇表 PR，禁止实现侧私扩）。class 承载 §15「显著改变维度」映射（当前 SCOPE → Scope 维；其余维度映射待词表批扩容后并入——PRD §15 原文第九维 Critical Failure Behavior 同批）。\n禁词：GRILLING/GRILLED/GRILL_CONFIRMED 不在枚举（§1.1——Grill 过程词不得变成状态词形）。",
+      "$comment": "source: PRD v0.5.3 §5.2 class: SCOPE 示例 + Owner 裁决9②；提请词汇表 PR 收编（pending_vocab_pr）。",
+      "x-pomaster-vocab": {
+        "axis": "decision_class",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "forbidden_wordforms": ["GRILLING", "GRILLED", "GRILL_CONFIRMED"],
+        "source": "PRD v0.5.3 §5.2 示例 + Owner 裁决9②（SCOPE 单值起步）"
+      },
+      "examples": [
+        "SCOPE",
+        "BEHAVIOR（INVALID：词表外——闭包当前仅 SCOPE，扩值须走词汇表 PR）"
+      ]
+    },
+    "decision_option": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_]{0,63}$",
+      "title": "候选选项词形（options 成员）",
+      "description": "候选选项大写词形（PRD §5.2 示例 INCLUDE_CURRENT_INCREMENT/DEFER）。禁词 GRILLING/GRILLED/GRILL_CONFIRMED 不得作为选项词形（kernel 机器拒绝）。recommendation.option 必须是本节点 options 成员之一（kernel 判卷）。",
+      "$comment": "source: PRD v0.5.3 §5.2 options 列表词形化。",
+      "examples": [
+        "INCLUDE_CURRENT_INCREMENT",
+        "DEFER"
+      ]
+    },
+    "loose_ref": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._\\-/:]*$",
+      "title": "宽松引用词形（truth_refs/contract_refs/architecture_refs/implementation_refs/evidence_refs/knowledge_refs/affects/basis_refs 共用）",
+      "description": "外部引用槽的宽松词形（非空、字母/数字开头、不含空白）。**CONTRACT.* 是 PRD §5.2 示意词形**——现词表无此前缀（governed 前缀是 API_REQ），按裁决9② 以示意词形放行；CAPABILITY.*/KNOWLEDGE.* 等 governed 引用的存在性对账归 Truth 对账面（P1：STALE_GROUNDING 消费同批），本 schema 只锁词形不自造第二前缀闭包。",
+      "$comment": "source: PRD v0.5.3 §5.2 affects/grounding 各槽示例（CAPABILITY.CROSS_MODEL_COMPARE / CONTRACT.COST_COMPARE / KNOWLEDGE.CROSS_MODEL.MATCHING_RISK）+ Owner 裁决9② CONTRACT.* 示意词形裁定。",
+      "examples": [
+        "CAPABILITY.CROSS_MODEL_COMPARE",
+        "CONTRACT.COST_COMPARE（PRD 示意词形——词表无 CONTRACT 前缀，按宽松词形放行，存在性对账归 Truth 对账面）"
+      ]
+    },
+    "conflict_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["statement", "refs"],
+      "title": "冲突披露条目（§12.3 Contradiction Must Be Surfaced）",
+      "description": "BP says A / Prototype says B / Repo implements C 时，Grill 不得自行挑一个「看起来最合理」的——必须登记冲突并进入正式治理/Authority 路径。矛盾至少两方（refs minItems 2——单引用构不成冲突）；conflicts 非空 → kernel G-Gate 判 CONFLICT_REVIEW（禁自行挑答案）。",
+      "$comment": "source: PRD v0.5.3 §12.3。",
+      "properties": {
+        "statement": {
+          "type": "string",
+          "minLength": 1,
+          "title": "矛盾陈述（statement）"
+        },
+        "refs": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "$ref": "#/definitions/loose_ref"
+          },
+          "title": "冲突各方引用（refs，≥2）"
+        }
+      }
+    },
+    "grounding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "intent_refs",
+        "truth_refs",
+        "contract_refs",
+        "architecture_refs",
+        "implementation_refs",
+        "evidence_refs",
+        "knowledge_refs",
+        "research_finding_refs",
+        "conflicts",
+        "missing_facts"
+      ],
+      "title": "Grounding 十槽（§5.2 一次锁全）",
+      "description": "§5.2 grounding 逐键（七 refs + conflicts + missing_facts）：十键全必填——空数组合法，缺席非法（C1 显式缺席纪律）。缺失事实必须保持 FACT.* 的 Hypothesis/Unknown 形态（§5.3：LLM Prior 可以生成问题，不能生成项目现实；§12.1 无 Ref 项目事实拒为 Recommendation Premise——kernel G4 判卷面）。",
+      "$comment": "source: PRD v0.5.3 §5.2 grounding yaml 十键逐字。",
+      "properties": {
+        "intent_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/discovery_intent_ref"
+          },
+          "title": "Intent 锚（intent_refs，G1 Intent Anchor 判卷输入）"
+        },
+        "truth_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/loose_ref"
+          },
+          "title": "Current Truth 引用（truth_refs）"
+        },
+        "contract_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/loose_ref"
+          },
+          "title": "Contract 引用（contract_refs；CONTRACT.* 为 PRD 示意词形）"
+        },
+        "architecture_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/loose_ref"
+          },
+          "title": "Architecture 引用（architecture_refs）"
+        },
+        "implementation_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/loose_ref"
+          },
+          "title": "实现现实引用（implementation_refs）"
+        },
+        "evidence_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/loose_ref"
+          },
+          "title": "Evidence 引用（evidence_refs）"
+        },
+        "knowledge_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/loose_ref"
+          },
+          "title": "Knowledge 引用（knowledge_refs；ADVISORY 策展源，永不进 gate 判卷输入——§83.2，仅作推荐 basis）"
+        },
+        "research_finding_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/finding_id"
+          },
+          "title": "Research Finding 引用（research_finding_refs，applyResearchHandoff 回填位）"
+        },
+        "conflicts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/conflict_entry"
+          },
+          "title": "冲突披露（conflicts，§12.3——非空 → CONFLICT_REVIEW）"
+        },
+        "missing_facts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/missing_fact_ref"
+          },
+          "title": "缺失事实（missing_facts，Hypothesis/Unknown 形态）"
+        }
+      }
+    },
+    "recommendation_source": {
+      "type": "string",
+      "enum": ["PROJECT_GROUNDED", "INFERENCE"],
+      "title": "Recommendation source 披露位（§12.2）",
+      "description": "PROJECT_GROUNDED = basis_refs 全部携带 Ref；INFERENCE = 只有模型经验，必须显式披露（§12.2 逐字：如果只有模型经验，Recommendation Source = INFERENCE 必须明确披露；不得说「根据项目现状建议」却没有任何项目引用——kernel G7 判卷 PROJECT_GROUNDED 但零 basis 的矛盾）。",
+      "$comment": "source: PRD v0.5.3 §12.2 语义词形化；提请词汇表 PR 收编（pending_vocab_pr）。",
+      "x-pomaster-vocab": {
+        "axis": "recommendation_source",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "source": "PRD v0.5.3 §12.2"
+      },
+      "examples": [
+        "PROJECT_GROUNDED",
+        "INFERENCE"
+      ]
+    },
+    "recommendation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["option", "basis_refs", "rationale", "tradeoff", "uncertainty", "source"],
+      "title": "推荐（§5.2 + §12.2 六字段）",
+      "description": "§5.2 recommendation（option/basis_refs/rationale/tradeoff）+ §12.2 强制的 uncertainty 与 source 披露位：每个 Recommendation 必须至少包含 basis_refs/tradeoff/uncertainty（§12.2 逐字；basis_refs minItems 1 是 §12.1 No Unreferenced Project Fact 的 schema 半边）。node 上 recommendation 允许 null（尚未形成推荐——但 G7 会判 INSUFFICIENT_GROUNDING，没有推荐不许问人，§13.2 Question Card 必须展示推荐）。",
+      "$comment": "source: PRD v0.5.3 §5.2 recommendation yaml + §12.2 三键强制 + source 披露位词形化。",
+      "properties": {
+        "option": {
+          "$ref": "#/definitions/decision_option",
+          "title": "推荐选项（option，必须是本节点 options 成员）"
+        },
+        "basis_refs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/loose_ref"
+          },
+          "title": "依据引用（basis_refs，§12.2 必须 ≥1——无 Ref 事实拒为推荐前提）"
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "title": "理由（rationale）"
+        },
+        "tradeoff": {
+          "type": "string",
+          "minLength": 1,
+          "title": "关键取舍（tradeoff，§12.2 强制）"
+        },
+        "uncertainty": {
+          "type": "string",
+          "minLength": 1,
+          "title": "不确定性披露（uncertainty，§12.2 强制）"
+        },
+        "source": {
+          "$ref": "#/definitions/recommendation_source"
+        }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["owner"],
+      "title": "Authority（§5.2 authority.owner，G8）",
+      "description": "§6.1 G8：如果最终需要 Human Decision，必须知道谁有权决定。owner 词形对齐 authority.json owner_registry（SCREAMING_SNAKE）；存在性对账归消费面。",
+      "$comment": "source: PRD v0.5.3 §5.2 authority yaml + Owner 裁决9②（对齐 owner_registry）。",
+      "properties": {
+        "owner": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]{1,63}$",
+          "title": "决策权属（owner，对齐 owner_registry 词形）",
+          "examples": ["BOOTSTRAP_OWNER", "PRODUCT_OWNER"]
+        }
+      }
+    },
+    "unknown_disposition": {
+      "type": "string",
+      "enum": [
+        "DERIVABLE",
+        "RESEARCHABLE",
+        "ASSUMPTION",
+        "DEFERRED_DECISION",
+        "DISCOVERY_REQUIRED",
+        "BLOCKER_CANDIDATE"
+      ],
+      "title": "UNKNOWN 重分类处置（§14 六问输出）",
+      "description": "§14：Human 回答 UNKNOWN 不是失败，但必须重新分类（Can derive? / Can research? / Can safely assume? / Can defer? / Can prototype-observe? / Does it truly block?——行序取第一个 yes；只有 No/No/No/No/No/Yes 才是真正 Blocker）。词源复用零新轴：DERIVABLE/RESEARCHABLE = Question Gate 分类；ASSUMPTION/DEFERRED_DECISION/DISCOVERY_REQUIRED/BLOCKER_CANDIDATE = MSD 十分类子集。BLOCKER_CANDIDATE（非 HARD_BLOCKER）是唯一 blocker 出口——升级 HARD_BLOCKER 必须走 09 blocker_triage 八问升级通路（高风险且无法安全假设），本 schema 刻意不收录 HARD_BLOCKER 词形。",
+      "$comment": "source: PRD v0.5.3 §14 六问 + 09-msd-uncertainty 分类词形复用；提请词汇表 PR 收编（pending_vocab_pr，axis=unknown_disposition，词源复用注记）。",
+      "x-pomaster-vocab": {
+        "axis": "unknown_disposition",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "reuse_note": "词源复用 QUESTION_GATE_CATEGORIES（DERIVABLE/RESEARCHABLE）+ MSD_UNKNOWN_CLASSIFICATION_VALUES 子集（ASSUMPTION/DEFERRED_DECISION/DISCOVERY_REQUIRED/BLOCKER_CANDIDATE）——零新分类词",
+        "source": "PRD v0.5.3 §14"
+      },
+      "examples": [
+        "RESEARCHABLE",
+        "BLOCKER_CANDIDATE"
+      ]
+    },
+    "resolution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["answer"],
+      "title": "裁决（resolution，§13.2 四词形；node 上 null = OPEN）",
+      "description": "§13.2：Human 可回答 ACCEPT / CHANGE / UNKNOWN / DEFER。ACCEPT = 采纳 recommendation.option（kernel 拒绝无推荐的 ACCEPT 与 ACCEPT 带 value 的矛盾）；CHANGE 必带 value（人给的新 option，触发受影响 grounding 重算申报）；UNKNOWN 必带 classified（§14 六问重分类——不许登记死端）；DEFER = 显式延后（§15 合法残留）。seq = 调用方供给的事件拍（零墙钟 A4：禁时间戳，过期判定靠 seq/fingerprint）。",
+      "$comment": "source: PRD v0.5.3 §5.2 resolution + §13.2 四词形 + §14 重分类。",
+      "properties": {
+        "answer": {
+          "type": "string",
+          "enum": ["ACCEPT", "CHANGE", "UNKNOWN", "DEFER"],
+          "title": "答面（answer，§13.2 四词形）",
+          "$comment": "source: PRD v0.5.3 §13.2；提请词汇表 PR 收编（pending_vocab_pr，axis=decision_answer）。",
+          "x-pomaster-vocab": {
+            "axis": "decision_answer",
+            "status": "absent_in_vocab_lock__pending_vocab_pr",
+            "source": "PRD v0.5.3 §13.2"
+          }
+        },
+        "value": {
+          "type": "string",
+          "minLength": 1,
+          "title": "CHANGE 的新 option 值（value）",
+          "description": "仅 answer=CHANGE 合法（allOf 强制）——人工给的新选项，可与原 options 词形不同（人给值不经 option 词形正则约束，原样留档）。"
+        },
+        "classified": {
+          "$ref": "#/definitions/unknown_disposition"
+        },
+        "seq": {
+          "type": "integer",
+          "minimum": 1,
+          "title": "事件拍（seq，零墙钟 A4）",
+          "description": "调用方供给的整数事件拍（store seq / 本地事件序）——本对象禁时间戳，过期判定靠 seq/fingerprint 比对（P1 STALE_GROUNDING）。"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "answer": {
+                "const": "CHANGE"
+              }
+            },
+            "required": ["answer"]
+          },
+          "then": {
+            "required": ["value"]
+          },
+          "description": "CHANGE ⇒ value 必填（§13.2 --value：人给的新 option）"
+        },
+        {
+          "if": {
+            "properties": {
+              "answer": {
+                "const": "UNKNOWN"
+              }
+            },
+            "required": ["answer"]
+          },
+          "then": {
+            "required": ["classified"]
+          },
+          "description": "UNKNOWN ⇒ classified 必填（§14：UNKNOWN 必须重分类，不许登记死端）"
+        },
+        {
+          "if": {
+            "properties": {
+              "answer": {
+                "enum": ["ACCEPT", "UNKNOWN", "DEFER"]
+              }
+            },
+            "required": ["answer"]
+          },
+          "then": {
+            "not": {
+              "required": ["value"]
+            }
+          },
+          "description": "ACCEPT/UNKNOWN/DEFER ⇒ 不得携带 value（value 仅 CHANGE 合法——ACCEPT 的语义就是采纳 recommendation.option）"
+        },
+        {
+          "if": {
+            "required": ["classified"]
+          },
+          "then": {
+            "properties": {
+              "answer": {
+                "const": "UNKNOWN"
+              }
+            }
+          },
+          "description": "classified 仅在 answer=UNKNOWN 时合法（反向锁定）"
+        }
+      ]
+    },
+    "decision_node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decision_id",
+        "class",
+        "prompt",
+        "depends_on",
+        "affects",
+        "grounding",
+        "options",
+        "recommendation",
+        "authority",
+        "resolution"
+      ],
+      "title": "Decision 节点（§5.2 十键一次锁全）",
+      "description": "§5.2 Decision Node 最小形态十键逐字：decision_id / class / prompt / depends_on / affects / grounding（十槽）/ options / recommendation / authority / resolution。P1 预留（invalidated_by / stale_since 等 invalidation 字段位）不在本版锁入——字段演化走 Schema PR（SCHEMA_VERSION=v1-draft 禁就地改）。",
+      "$comment": "source: PRD v0.5.3 §5.2 Decision Node yaml 十键逐字（recommendation/resolution 在节点上允许 null；§12.2 追加的 uncertainty/source 并入 recommendation 定义）。",
+      "properties": {
+        "decision_id": {
+          "$ref": "#/definitions/decision_id"
+        },
+        "class": {
+          "$ref": "#/definitions/decision_class"
+        },
+        "prompt": {
+          "type": "string",
+          "minLength": 1,
+          "title": "决策问题（prompt）"
+        },
+        "depends_on": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/decision_id"
+          },
+          "title": "前置 Decision（depends_on，DAG——环/悬空由 kernel 拒绝）"
+        },
+        "affects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/loose_ref"
+          },
+          "title": "受治理影响对象（affects；governed 引用存在性对账归 Truth 对账面）"
+        },
+        "grounding": {
+          "$ref": "#/definitions/grounding"
+        },
+        "options": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/decision_option"
+          },
+          "title": "候选选项（options，≥1——零选项节点不可判卷；recommendation.option 必须是成员之一）"
+        },
+        "recommendation": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/recommendation"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "推荐（recommendation，null = 尚未形成——G7 会判 INSUFFICIENT）"
+        },
+        "authority": {
+          "$ref": "#/definitions/authority"
+        },
+        "resolution": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/resolution"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "裁决（resolution，null = OPEN）"
+        }
+      }
+    },
+    "discovery_intent_ref": {
+      "type": "string",
+      "pattern": "^DISCOVERY\\.INTENT\\.[0-9]+$",
+      "title": "Intent 引用词形（DISCOVERY.INTENT.<n>）",
+      "description": "Discovery 平面局部词形（Owner 裁决9②）：G1 Intent Anchor 的判卷输入——Decision 必须锚定到当前 Intent/Scope，悬浮 Decision 不许问。",
+      "$comment": "source: PRD v0.5.3 §5.2 grounding.intent_refs: DISCOVERY.INTENT.001；pending_vocab_pr。",
+      "x-pomaster-vocab": {
+        "axis": "discovery_plane_refs",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "source": "PRD v0.5.3 §5.2 + Owner 裁决9②"
+      },
+      "examples": ["DISCOVERY.INTENT.001"]
+    },
+    "missing_fact_ref": {
+      "type": "string",
+      "pattern": "^FACT\\.[A-Z][A-Z0-9_]{0,31}(\\.[A-Z][A-Z0-9_]{0,31}){0,3}$",
+      "title": "缺失事实词形（FACT.<SEGMENT>(.SEGMENT)*）",
+      "description": "Discovery 平面局部词形（Owner 裁决9②）：缺失事实的 Hypothesis/Unknown 形态（§5.3/§12.1）——missing_facts 成员不得进入 recommendation.basis_refs（kernel G4/build 双层拒绝）。",
+      "$comment": "source: PRD v0.5.3 §5.2 missing_facts: FACT.CROSS_MODEL.MATCHING_SEMANTICS；pending_vocab_pr。",
+      "x-pomaster-vocab": {
+        "axis": "discovery_plane_refs",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "source": "PRD v0.5.3 §5.2 + Owner 裁决9②"
+      },
+      "examples": ["FACT.CROSS_MODEL.MATCHING_SEMANTICS"]
+    },
+    "research_request_id": {
+      "type": "string",
+      "pattern": "^RESEARCH\\.REQ\\.[0-9]+$",
+      "title": "Research Request id 词形（RESEARCH.REQ.<n>）",
+      "description": "Discovery 平面局部词形（Owner 裁决9②）：id 由 createResearchRequest 按 nextSeq 机械派生（零墙钟——序号靠 seq 不靠钟）。",
+      "$comment": "source: PRD v0.5.3 §9.1 id: RESEARCH.REQ.017；pending_vocab_pr。",
+      "x-pomaster-vocab": {
+        "axis": "discovery_plane_refs",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "source": "PRD v0.5.3 §9.1 + Owner 裁决9②"
+      },
+      "examples": ["RESEARCH.REQ.017"]
+    },
+    "finding_id": {
+      "type": "string",
+      "pattern": "^FINDING\\.R[0-9]+\\.[0-9]+$",
+      "title": "Finding id 词形（FINDING.R<n>.<n>）",
+      "description": "Discovery 平面局部词形（Owner 裁决9②）：finding 在 handoff key_findings 与 decision grounding.research_finding_refs 的引用形态。",
+      "$comment": "source: PRD v0.5.3 §10.2 key_findings: FINDING.R017.1；pending_vocab_pr。",
+      "x-pomaster-vocab": {
+        "axis": "discovery_plane_refs",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "source": "PRD v0.5.3 §10.2 + Owner 裁决9②"
+      },
+      "examples": ["FINDING.R017.1"]
+    },
+    "research_mode_mirror": {
+      "type": "string",
+      "enum": ["INTERNAL", "EXTERNAL", "MIXED", "COMPARATIVE", "IMPACT", "FORENSIC"],
+      "title": "Research 六模式（RESEARCH_MODE_VALUES 镜像——复用既有轴，非新词形）",
+      "description": "research_request.mode 取值 = 既有 RESEARCH_MODE_VALUES 六模式逐值镜像（10-research-artifact definitions.research_mode_full 同源；此处内联镜像使本 schema 局部编译自足——10 号零改动）。mode 可由 createResearchRequest 按 §9.3 路由表从 Decision Gap 推荐，Human 可覆盖，但不得因为「更全面」默认 MIXED（§9.3 逐字——kernel 零缺省政策）。",
+      "$comment": "source: PRD v0.5.3 §9.1/§9.3；词形复用 10-research-artifact definitions.research_mode_full（x-vocab-source: PRD v0.4 §81.2）。",
+      "examples": ["INTERNAL", "MIXED"]
+    },
+    "evidence_level_mirror": {
+      "type": "string",
+      "enum": ["AUTHORITATIVE", "PRIMARY", "IMPLEMENTATION", "SECONDARY", "INFERENCE"],
+      "title": "Evidence 五级（RESEARCH_EVIDENCE_LEVEL_VALUES 镜像——复用既有轴，非新词形）",
+      "description": "research_request.required_evidence 与 finding_link.evidence_type 取值 = 既有五级 Evidence 逐值镜像（10-research-artifact definitions.evidence_level 同源；内联镜像使本 schema 局部编译自足）。IMPLEMENTATION 证明「存在」不自动证明「正确」（§81.5）；INFERENCE 不升 Fact（§12.4——finding_link 上 INFERENCE×RESOLVES_FACT 被 allOf 禁止）。",
+      "$comment": "source: PRD v0.5.3 §9.1/§12.4；词形复用 10-research-artifact definitions.evidence_level（x-vocab-source: PRD v0.4 §81.4）。",
+      "examples": ["IMPLEMENTATION", "INFERENCE"]
+    },
+    "decision_relation": {
+      "type": "string",
+      "enum": [
+        "RESOLVES_FACT",
+        "SUPPORTS_OPTION",
+        "WEAKENS_OPTION",
+        "CONTRADICTS_PREMISE",
+        "NO_DECISION_EFFECT",
+        "INSUFFICIENT_EVIDENCE"
+      ],
+      "title": "finding↔decision relation 六值（§10.1 闭包逐字）",
+      "description": "§10.1：relation 只是 Evidence 与 Decision 的关系描述，不是 Research 替 Brainstorm 作决策（Research 有发现权无裁决权）。划界注记（Owner 裁决9③）：relation 管「finding 对某个 Decision 的证据关系」；RESEARCH_AUTHORITY_EFFECT_VALUES（NONE/SUPPORTS/CONFLICTS）管「finding 对既有 Authority 的效应」——两轴并存禁互填。",
+      "$comment": "source: PRD v0.5.3 §10.1 relation 闭包逐字 + Owner 裁决9③ 划界注记；提请词汇表 PR 收编（pending_vocab_pr）。",
+      "x-pomaster-vocab": {
+        "axis": "decision_relation",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "orthogonal_to": "research_authority_effect（NONE/SUPPORTS/CONFLICTS）",
+        "boundary_note": "relation=Decision 证据关系；authority_effect=既有 Authority 效应——并存禁互填（裁决9③）",
+        "source": "PRD v0.5.3 §10.1"
+      },
+      "examples": [
+        "RESOLVES_FACT",
+        "CONTRADICTS_PREMISE"
+      ]
+    },
+    "research_request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "origin_decision_refs",
+        "proposition",
+        "why_needed",
+        "mode",
+        "required_evidence",
+        "disconfirming_evidence_required",
+        "stop_when",
+        "forbidden_conclusion"
+      ],
+      "title": "Research Request（§9.1 九键 + known_context_refs；形态住本 schema——10 号零改动）",
+      "description": "§9.1：Brainstorm 触发 Research 时生成精确 Research Request（不再接受宽泛问题）。§9.4 Request Gate 四条件：来源不足 + 可被证据回答由 kernel createResearchRequest 判（前者以 G-Gate verdict=NEEDS_RESEARCH 为前置凭证）；影响当前决策/成本合算由调用方申报。落盘位置 = <host>/research/index.yaml（PR-4 接线；本定义供 $ref 子模式编译）。forbidden_conclusion 是 §81.1（Research 有发现权无裁决权）在本请求上的逐字申报。",
+      "$comment": "source: PRD v0.5.3 §9.1 research_request yaml 逐键 + §9.4 Gate；Owner 裁决9③（住决策图 schema）。",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/research_request_id"
+        },
+        "origin_decision_refs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/decision_id"
+          },
+          "title": "来源 Decision（origin_decision_refs，≥1——请求必须锚定到 Decision）"
+        },
+        "proposition": {
+          "type": "string",
+          "minLength": 1,
+          "title": "精确事实主张（proposition，可被证据证实/证伪）"
+        },
+        "why_needed": {
+          "type": "string",
+          "minLength": 1,
+          "title": "必要性（why_needed，哪个 Decision 的 Recommendation 依赖本事实）"
+        },
+        "known_context_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/loose_ref"
+          },
+          "title": "已知上下文引用（known_context_refs，空数组合法）"
+        },
+        "mode": {
+          "$ref": "#/definitions/research_mode_mirror"
+        },
+        "required_evidence": {
+          "$ref": "#/definitions/evidence_level_mirror",
+          "title": "期望证据级（required_evidence）"
+        },
+        "disconfirming_evidence_required": {
+          "type": "boolean",
+          "title": "证伪证据强制（§9.2：Research 的核心问题是证伪）"
+        },
+        "stop_when": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "title": "停机判据（stop_when，≥1——防 Research 成为无限 Ceremony）"
+        },
+        "forbidden_conclusion": {
+          "type": "string",
+          "minLength": 1,
+          "title": "越权禁令（forbidden_conclusion，§81.1 逐字申报）"
+        }
+      },
+      "examples": [
+        {
+          "id": "RESEARCH.REQ.017",
+          "origin_decision_refs": ["DECISION.D017"],
+          "proposition": "现有 MASTer 数据与代码中是否存在可复用的跨车型零件匹配键？",
+          "why_needed": "DECISION.D017 的 Recommendation 依赖跨车型匹配复杂度判断。",
+          "known_context_refs": ["CAPABILITY.COST_ANALYSIS"],
+          "mode": "INTERNAL",
+          "required_evidence": "IMPLEMENTATION",
+          "disconfirming_evidence_required": true,
+          "stop_when": [
+            "已定位权威字段或明确证明不存在统一匹配键",
+            "发现互相冲突的实现并形成 caveat"
+          ],
+          "forbidden_conclusion": "Research 不得决定当前 Increment 是否包含跨车型能力。"
+        }
+      ]
+    },
+    "finding_link": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "finding_id",
+        "statement",
+        "evidence_type",
+        "sources",
+        "caveats",
+        "request_refs",
+        "relation"
+      ],
+      "title": "Finding 联结形态（§10.1：Finding 必须知道自己回答了什么）",
+      "description": "research_handoff.key_findings 成员。§81.4 六字段（statement/evidence_type/sources/confidence→略/confidence 归 10 号原图面/authority_effect 归 10 号）之外，v2 联结三键 = request_refs / decision_refs / relation（§10.1 逐字）。§12.4 防洗白：INFERENCE 不因进入 handoff 升级为项目事实（INFERENCE×RESOLVES_FACT 被 allOf 禁止；INFERENCE 允许空 sources——推断自既有证据组合）；CONTRADICTS_PREMISE 必须指向 ≥1 个 Decision（矛盾必须可见）。",
+      "$comment": "source: PRD v0.5.3 §10.1 联结字段 + §12.4；10 号 research_finding 零改动（联结形态住本 schema——Owner 裁决9③）。",
+      "properties": {
+        "finding_id": {
+          "$ref": "#/definitions/finding_id"
+        },
+        "statement": {
+          "type": "string",
+          "minLength": 1,
+          "title": "发现陈述（statement）"
+        },
+        "evidence_type": {
+          "$ref": "#/definitions/evidence_level_mirror"
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "title": "来源列表（sources，空数组仅 INFERENCE 豁免——allOf 强制）"
+        },
+        "caveats": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "title": "告警（caveats，≥1——无告警写显式陈述；critical_caveat 的来源面）"
+        },
+        "request_refs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/research_request_id"
+          },
+          "title": "回答的请求（request_refs，≥1——§10.1 Finding 必须知道自己回答了什么）"
+        },
+        "decision_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/decision_id"
+          },
+          "title": "影响的 Decision（decision_refs；RESOLVES_FACT/SUPPORTS_OPTION/WEAKENS_OPTION/CONTRADICTS_PREMISE 时 ≥1——allOf 强制）"
+        },
+        "relation": {
+          "$ref": "#/definitions/decision_relation"
+        },
+        "resolves_missing_facts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/missing_fact_ref"
+          },
+          "title": "被消解的缺失事实（仅 relation=RESOLVES_FACT 合法，且须已在目标 decision 的 missing_facts 登记——kernel 对账）"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "sources": {
+                "const": []
+              }
+            },
+            "required": ["sources"]
+          },
+          "then": {
+            "properties": {
+              "evidence_type": {
+                "const": "INFERENCE"
+              }
+            }
+          },
+          "description": "sources 为空 ⇒ evidence_type 必须 INFERENCE（§12.4：零来源断言不冒充已取证）"
+        },
+        {
+          "if": {
+            "properties": {
+              "relation": {
+                "enum": ["RESOLVES_FACT", "SUPPORTS_OPTION", "WEAKENS_OPTION", "CONTRADICTS_PREMISE"]
+              }
+            },
+            "required": ["relation"]
+          },
+          "then": {
+            "properties": {
+              "decision_refs": {
+                "minItems": 1
+              }
+            }
+          },
+          "description": "证据性 relation（RESOLVES_FACT/SUPPORTS_OPTION/WEAKENS_OPTION/CONTRADICTS_PREMISE）⇒ decision_refs ≥1（矛盾必须可见、证据必须指向被影响方）；NO_DECISION_EFFECT/INSUFFICIENT_EVIDENCE 允许空"
+        },
+        {
+          "if": {
+            "properties": {
+              "relation": {
+                "const": "RESOLVES_FACT"
+              }
+            },
+            "required": ["relation"]
+          },
+          "then": {
+            "required": ["resolves_missing_facts"]
+          },
+          "description": "RESOLVES_FACT ⇒ resolves_missing_facts 必填（宣称消解事实必须点名是哪个）"
+        },
+        {
+          "if": {
+            "required": ["resolves_missing_facts"]
+          },
+          "then": {
+            "properties": {
+              "relation": {
+                "const": "RESOLVES_FACT"
+              }
+            }
+          },
+          "description": "resolves_missing_facts 仅在 relation=RESOLVES_FACT 时合法（反向锁定）"
+        },
+        {
+          "if": {
+            "properties": {
+              "evidence_type": {
+                "const": "INFERENCE"
+              },
+              "relation": {
+                "const": "RESOLVES_FACT"
+              }
+            },
+            "required": ["evidence_type", "relation"]
+          },
+          "then": {
+            "not": {}
+          },
+          "description": "§12.4 Research Cannot Launder Inference into Fact：INFERENCE × RESOLVES_FACT 互斥（INFERENCE 不因进入 handoff 就升级为项目事实）"
+        }
+      ]
+    },
+    "research_handoff": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_ref",
+        "answered_requests",
+        "affected_decisions",
+        "key_findings",
+        "unresolved_requests",
+        "one_line_summary",
+        "critical_caveat"
+      ],
+      "title": "Research Handoff（§10.2 decision-aware；形态住本 schema——10 号 handoff 三件零改动）",
+      "description": "§10.2：Research 返回 Brainstorm 时不把原始网页/日志塞回 Context——handoff 携带 artifact_ref 寻址位 + answered/affected 联结 + key_findings（finding_link）+ unresolved + 两件摘要。10-research-artifact 的 handoff 三件（artifact_path/one_line_summary/critical_caveat）零改动；本定义是其 decision-aware 扩展形态（PRD v0.5.3 §10.2 逐键）。kernel applyResearchHandoff 以本形态回填 decision graph（幂等：同 handoff 重放 = NO_CHANGE）。",
+      "$comment": "source: PRD v0.5.3 §10.2 research_handoff yaml 逐键 + Owner 裁决9③。",
+      "properties": {
+        "artifact_ref": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9.][A-Za-z0-9._\\-/]*\\/research\\/$",
+          "title": "artifact 寻址位（artifact_ref，<host>/research/ 形态——handoff 只传路径不传内容）",
+          "description": "与 10-research-artifact definitions.artifact_root 同一词形（镜像；禁止绝对盘符与反斜杠——provenance 可移植纪律）。"
+        },
+        "answered_requests": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/research_request_id"
+          },
+          "title": "已回答请求（answered_requests）"
+        },
+        "affected_decisions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/decision_id"
+          },
+          "title": "受影响 Decision（affected_decisions，须在图内——kernel 对账）"
+        },
+        "key_findings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/finding_link"
+          },
+          "title": "关键发现（key_findings，finding_link 联结形态）"
+        },
+        "unresolved_requests": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/research_request_id"
+          },
+          "title": "未解决请求（unresolved_requests；与 answered_requests 互斥——kernel 对账）"
+        },
+        "one_line_summary": {
+          "type": "string",
+          "minLength": 1,
+          "title": "单行摘要（one_line_summary）"
+        },
+        "critical_caveat": {
+          "type": "string",
+          "minLength": 1,
+          "title": "最关键告警（critical_caveat）"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "graph_fingerprint": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "projection_fingerprint": "sha256:fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210",
+      "request_refs": ["RESEARCH.REQ.017"],
+      "decisions": [
+        {
+          "decision_id": "DECISION.D003",
+          "class": "SCOPE",
+          "prompt": "跨车型成本比较的上游口径是否已确认？",
+          "depends_on": [],
+          "affects": ["CAPABILITY.COST_ANALYSIS"],
+          "grounding": {
+            "intent_refs": ["DISCOVERY.INTENT.001"],
+            "truth_refs": ["CAPABILITY.COST_ANALYSIS"],
+            "contract_refs": [],
+            "architecture_refs": [],
+            "implementation_refs": [],
+            "evidence_refs": [],
+            "knowledge_refs": [],
+            "research_finding_refs": [],
+            "conflicts": [],
+            "missing_facts": []
+          },
+          "options": ["CONFIRMED", "POSTPONE"],
+          "recommendation": {
+            "option": "CONFIRMED",
+            "basis_refs": ["CAPABILITY.COST_ANALYSIS"],
+            "rationale": "单车型成本分析口径已在 Current Truth 登记。",
+            "tradeoff": "先锁口径，跨车型比较延后决策。",
+            "uncertainty": "口径若在跨车型场景失效需重开本决策。",
+            "source": "PROJECT_GROUNDED"
+          },
+          "authority": {
+            "owner": "BOOTSTRAP_OWNER"
+          },
+          "resolution": {
+            "answer": "ACCEPT",
+            "seq": 1
+          }
+        },
+        {
+          "decision_id": "DECISION.D017",
+          "class": "SCOPE",
+          "prompt": "当前 Increment 是否包含跨车型成本比较？",
+          "depends_on": ["DECISION.D003"],
+          "affects": ["CAPABILITY.CROSS_MODEL_COMPARE", "CONTRACT.COST_COMPARE"],
+          "grounding": {
+            "intent_refs": ["DISCOVERY.INTENT.001"],
+            "truth_refs": ["CAPABILITY.COST_ANALYSIS"],
+            "contract_refs": [],
+            "architecture_refs": [],
+            "implementation_refs": [],
+            "evidence_refs": [],
+            "knowledge_refs": ["KNOWLEDGE.CROSS_MODEL.MATCHING_RISK"],
+            "research_finding_refs": [],
+            "conflicts": [],
+            "missing_facts": ["FACT.CROSS_MODEL.MATCHING_SEMANTICS"]
+          },
+          "options": ["INCLUDE_CURRENT_INCREMENT", "DEFER"],
+          "recommendation": {
+            "option": "DEFER",
+            "basis_refs": ["CAPABILITY.COST_ANALYSIS", "KNOWLEDGE.CROSS_MODEL.MATCHING_RISK"],
+            "rationale": "当前价值可以通过单车型成本分析交付；跨车型比较会引入新的匹配语义。",
+            "tradeoff": "延后跨车型价值，但避免当前数据模型提前复杂化。",
+            "uncertainty": "跨车型匹配语义未定（missing_facts 在场）——若 Research 证明匹配键可复用，本推荐需重开。",
+            "source": "PROJECT_GROUNDED"
+          },
+          "authority": {
+            "owner": "BOOTSTRAP_OWNER"
+          },
+          "resolution": null
+        }
+      ]
+    },
+    {
+      "x_example_intent": "INVALID —— 四重违规演示：a) decisions[0].class=BEHAVIOR 词表外（闭包当前仅 SCOPE，扩值走词汇表 PR）；b) decisions[0].recommendation 缺 basis_refs（§12.1/§12.2 schema 半边——无 Ref 事实拒为推荐前提）；c) decisions[0] 缺 authority（§6.1 G8：必须知道谁有权决定）；d) decisions[0].decision_id=DECISION.GRILLED 为 §1.1 禁词（词形正则放行但 forbidden_wordforms 负例 + kernel buildDecisionGraph forbidden_wordform 机器拒绝——schema 层禁词以注记承载，机器面在 kernel）",
+      "graph_fingerprint": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "decisions": [
+        {
+          "decision_id": "DECISION.GRILLED",
+          "class": "BEHAVIOR",
+          "prompt": "示例反例节点",
+          "depends_on": [],
+          "affects": [],
+          "grounding": {
+            "intent_refs": [],
+            "truth_refs": [],
+            "contract_refs": [],
+            "architecture_refs": [],
+            "implementation_refs": [],
+            "evidence_refs": [],
+            "knowledge_refs": [],
+            "research_finding_refs": [],
+            "conflicts": [],
+            "missing_facts": []
+          },
+          "options": ["DO_IT"],
+          "recommendation": {
+            "option": "DO_IT",
+            "rationale": "无依据的推荐示例",
+            "tradeoff": "示例",
+            "uncertainty": "示例",
+            "source": "INFERENCE"
+          },
+          "resolution": null
+        }
+      ]
+    }
+  ],
+  "x-pomaster-examples-note": "examples[0]=正例（PRD §5.2 跨车型 D017 样本转录：D003 已 ACCEPT + D017 OPEN；转录适配两处——recommendation 补 §12.2 强制的 uncertainty/source 字段（PRD 原文样例早于 §12.2 追加）、authority.owner 取 BOOTSTRAP_OWNER 对齐 owner_registry 既有词形（PRD 原文 PRODUCT_OWNER 同样匹配词形正则，注册后即可引用）；affects 携带 CONTRACT.COST_COMPARE 示意词形验证 loose_ref 放行）；examples[1]=反例，x_example_intent 列明四重违规（词表外 class / 无 basis_refs 推荐 / 缺 authority / 禁词 decision_id）。"
+}

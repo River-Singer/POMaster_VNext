@@ -390,6 +390,21 @@
           "x-vocab-source": "PRD v0.4 §25.4 Agent Execution Identity（例文词形 AGX-2026-00182）；P20 D 线地基",
           "description": "执行身份引用（可选——存量兼容：缺席=键缺席不伪造；携带即 kernel 侧强制校验 AGX 词形 + executions/AGX-*.json 档案存在性，S1 禁自造身份）。audit 由此回连「哪个 Agent 在什么 Policy/Permit 下做了哪次变化」（§25.4）；AGX-n 为证据面通路编号词形，非 governed 前缀"
         },
+        "artifact_refs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["ref_type", "blob"],
+            "properties": {
+              "ref_type": { "const": "blob" },
+              "blob": { "$ref": "#/definitions/blob_ref" }
+            }
+          },
+          "x-vocab-source": "structural（PRD v0.5.2 §7 Evidence Artifact Binding / §14 P0.5-2；裁决8③ D2=A 落点=07 run_record optional artifact_refs、D3=A blob 分支收窄——gate_result/truth_object 分支不收）；词形零新增（复用 definitions.blob_ref，media 开放词 screenshot 已是文档示例值）",
+          "description": "证据存在性绑定引用（可选——缺席=键缺席，存量 GRN 字节兼容；携带即 kernel 侧强制校验词形 + storage_path⇔sha256 派生一致 + blob 文件在场，先 persist 再 record）。P0.5-2 Screenshot Evidence Binding：Gate Result 必须能追溯到同一 artifact（§7.2）；binding check 四态见 kernel verifyEvidenceBinding（bound / 文件缺失 / 字节篡改 / refs 缺失而 passed → EVIDENCE_BINDING_INCOMPLETE）；绑定判卷归 POLICY.GATE.BROWSER@0.2.0 gate_def 版本化条款（裁决8④ D4=A）"
+        },
         "tool_snapshot": {
           "type": "object",
           "additionalProperties": false,

@@ -41,6 +41,7 @@ import type {
   VerdictValue,
   WritePolicyValue,
 } from "@pomaster/schemas";
+import type { EvidenceArtifactRefInput } from "./evidence-artifacts.js";
 
 // ============================================================
 // 基础标识
@@ -346,6 +347,13 @@ export interface GateRunRecordInput {
   readonly trigger: RunTriggerValue;
   /** 执行身份透传（P20 §25.4；可选——校验语义同 ClaimRecordInput.executionId）。 */
   readonly executionId?: string;
+  /**
+   * 证据存在性绑定引用（P0.5-2 / PRD §7；裁决8③ D2/D3=A：07 run_record 信封 optional
+   * artifact_refs，blob 分支收窄）。可选——缺席 = 键缺席，存量 GRN 字节兼容；携带即
+   * kernel 侧强制校验（词形 + 路径⇔身份派生一致 + blob 文件在场——先 persist 再 record）。
+   * 绑定的门内判卷（POLICY.GATE.BROWSER@0.2.0 条款）归 gate 侧，kernel 保持 gate 无关。
+   */
+  readonly artifactRefs?: readonly EvidenceArtifactRefInput[];
 }
 
 export type TransactionOp =
@@ -454,6 +462,101 @@ export type {
   DiscoveryChainRequirement,
   DiscoveryChainOutcome,
 } from "./discovery-chain.js";
+
+// ============================================================
+// Grounded Decision Graph 纯函数面（VB-PR1 · PRD v0.5.3 §5/§6/§7/§9/§10/§13/§14/§15/§16）
+// ============================================================
+// 语义边界（decision-graph.ts 头注为准；docs/kernel-api.md §24）：Grill 的核心产物是
+// Decision Graph 而不是一串独立问题（§5.1）。全部纯函数零 IO 不 throw——非法输入一律
+// 显式 outcome 拒绝（fail-closed）；零墙钟（事件序靠调用方供给 seq，A4）；**零写入通道**
+// ——decision-graph.json 的读写归 CLI 命令面（PR-2 起），提升仍走 promote→maintain
+// （§21 禁绕过）。graph_fingerprint 由本模块自动维护（sha256OfCanonical，D24：
+// human_touch forbidden / write_blocking:false）；Grounding Verdict 五值与 §7.3 frontier
+// 均为**派生判定不落盘**（§6.2 不进 Canonical Object State Axis / §16 禁 frontier.json）。
+// 词形纪律（Owner 裁决 9②③，2026-09-01）：DECISION./RESEARCH.REQ./FINDING./
+// DISCOVERY.INTENT./FACT. 是 Discovery 平面局部词形（state_plane_refs 先例）——不入
+// GOVERNED_ID_PREFIXES、不过 parseGovernedId，校验=本模块词形正则 + 图内存在性；
+// GRILLING/GRILLED/GRILL_CONFIRMED 禁词负例（§1.1 不新增 State Axis，09 号
+// forbidden_wordforms 先例）；TODO(vocab-pr) 词形三镜像收编归独立词汇表批。
+// schema 载体 18-decision-graph.schema.json（research_request/research_handoff/
+// finding_link 三平面 definitions 同住决策图 schema，10 号零改动——Owner 裁决 9③）。
+export {
+  // —— 词形常量（Discovery 平面局部词形 + 派生词轴；TODO(vocab-pr)） ——
+  DECISION_GRAPH_FORBIDDEN_WORDFORMS,
+  DECISION_ID_PATTERN,
+  RESEARCH_REQUEST_ID_PATTERN,
+  FINDING_ID_PATTERN,
+  DISCOVERY_INTENT_REF_PATTERN,
+  MISSING_FACT_REF_PATTERN,
+  DECISION_CLASS_VALUES,
+  DECISION_CLASS_TO_DIMENSIONS,
+  GROUNDING_VERDICT_VALUES,
+  DECISION_RELATION_VALUES,
+  DECISION_ANSWER_VALUES,
+  RECOMMENDATION_SOURCE_VALUES,
+  GROUNDING_SURFACE_VALUES,
+  MISSING_FACT_ROUTE_VALUES,
+  UNKNOWN_DISPOSITION_VALUES,
+  SUFFICIENCY_DIMENSIONS,
+  SUFFICIENCY_RESIDUAL_CLASSIFICATIONS,
+  RESEARCH_MODE_ROUTE_HINTS,
+  // —— 七函数公共面（§5.2 build / §7.3 frontier / §6.1-6.2 grounding gate /
+  //    §9.1-9.4 research request / §10.1-10.2 handoff / §13.2-§14 resolve+六问重分类 /
+  //    §15 discovery sufficiency） ——
+  buildDecisionGraph,
+  computeDecisionFrontier,
+  evaluateDecisionGrounding,
+  createResearchRequest,
+  applyResearchHandoff,
+  resolveDecision,
+  classifyUnknownTriage,
+  evaluateDiscoverySufficiency,
+} from "./decision-graph.js";
+export type {
+  DecisionClassValue,
+  GroundingVerdict,
+  DecisionRelationValue,
+  DecisionAnswer,
+  RecommendationSourceValue,
+  GroundingSurfaceValue,
+  MissingFactRouteValue,
+  UnknownDisposition,
+  SufficiencyDimension,
+  SufficiencyResidualClassification,
+  ResearchModeRouteHint,
+  DecisionConflictEntry,
+  DecisionGrounding,
+  DecisionRecommendation,
+  DecisionAuthority,
+  DecisionResolution,
+  DecisionNode,
+  DecisionGraph,
+  DecisionNodeCandidate,
+  BuildDecisionGraphOptions,
+  BuildDecisionGraphRejectReason,
+  BuildDecisionGraphOutcome,
+  DecisionFrontierReport,
+  DecisionFrontierOutcome,
+  GroundingCheckId,
+  GroundingCheckResult,
+  DecisionGroundingInput,
+  DecisionGroundingOutcome,
+  ResearchRequestDraft,
+  CreateResearchRequestInput,
+  ResearchRequest,
+  CreateResearchRequestOutcome,
+  HandoffFinding,
+  ResearchHandoffInput,
+  ApplyResearchHandoffOutcome,
+  UnknownTriage,
+  ResolveDecisionInput,
+  ResolveDecisionOutcome,
+  SufficiencyResidual,
+  DiscoverySufficiencyInput,
+  SufficiencyBlockingItem,
+  DiscoverySufficiencyReport,
+  EvaluateDiscoverySufficiencyOutcome,
+} from "./decision-graph.js";
 
 // ============================================================
 // Question Gate / One-question-at-a-time / Diverge→Converge（P18 · PRD §80.4/80.5/80.7）
@@ -680,6 +783,14 @@ export interface PermitRequest {
    * acceptance_shape / baseline——内部状态文件扩展，不动本公共契约类型 Permit）。
    */
   readonly capabilityIds?: readonly GovernedId[];
+  /**
+   * 变更类目（P0.5-1；∈ CATALOG_CHANGE_CLASS_VALUES，vocab-pr-0005 词轴；裁决 8 ②）。
+   * 落 PermitRecord.change_class（capability_refs 内部状态文件扩展先例）——
+   * Project Change / Permit 侧 applicability 输入承载位（PRD §14 P0.5-1 最小实现二）。
+   */
+  readonly changeClass?: string;
+  /** 治理档位（P0.5-1；∈ CATALOG_GOVERNANCE_PROFILE_VALUES，O2 对齐 TRIAGE_PROFILES+STRICT）。 */
+  readonly governanceProfile?: string;
 }
 
 export interface Permit {
@@ -746,6 +857,16 @@ export interface ProjectionRequest {
   readonly role: string;
   readonly taskRef?: string;
   readonly denominatorRefs?: readonly DenominatorRefRow[];
+  /**
+   * P0.5-1 结构化 applicability 输入（PRD §5.2/§5.3；vocab-pr-0005；裁决 8 ② 2026-09-01）。
+   * 全部 optional → 既有调用零破坏；词形 fail-closed 校验（capabilities=CAPABILITY.*
+   * governed id / changeClass ∈ CATALOG_CHANGE_CLASS_VALUES / governanceProfile ∈
+   * CATALOG_GOVERNANCE_PROFILE_VALUES）。未提供时，声明了对应机器字段的 catalog 条目
+   * 按「不可判定即不注入」确定性排除（缺席显式，禁假绿——PRD §5.3 确定性排除优先）。
+   */
+  readonly capabilities?: readonly string[];
+  readonly changeClass?: string;
+  readonly governanceProfile?: string;
 }
 
 export interface ProjectionEntry {
@@ -803,8 +924,13 @@ export interface Projection {
  * 纯派生视图：投影不产生治理事实，不写 store。
  * 可选 options.catalogRoot 注入 catalog 根（测试/嵌入方；缺省仓库 catalog/）。
  */
-export { compileProjection } from "./projection.js";
-export type { ProjectionCatalogOptions } from "./projection.js";
+export { compileProjection, explainCatalogProjection } from "./projection.js";
+export type {
+  CatalogEntryDecision,
+  CatalogDecisionWord,
+  CatalogProjectionExplanation,
+  ProjectionCatalogOptions,
+} from "./projection.js";
 
 // ============================================================
 // Exception Ledger（§49.2 异常状态登记面；P19 三投影的异常事实源）
@@ -1044,11 +1170,17 @@ export type { StorePaths } from "./paths.js";
 export {
   loadCatalogPolicies,
   loadCatalogProjectionPresets,
+  loadCatalogSensors,
   loadCatalogTools,
   readCatalogLock,
   resolveCatalogRoot,
   sha256OfUtf8,
   verifyCatalogLock,
+  OBSERVATION_SURFACE_VALUES,
+  SENSOR_ID_PATTERN,
+  SENSOR_SIDE_EFFECT_CLASS_VALUES,
+  SENSOR_AVAILABILITY_SURFACE_VALUES,
+  SENSOR_KERNEL_SURFACE_KEYS,
 } from "./catalog.js";
 export type {
   CatalogLockDocument,
@@ -1058,7 +1190,12 @@ export type {
   CatalogLockVerification,
   CatalogPolicyMaterial,
   CatalogProjectionPresetMaterial,
+  CatalogSensorMaterial,
   CatalogToolMaterial,
+  ObservationSurfaceValue,
+  SensorAvailabilityProbe,
+  SensorAvailabilitySurfaceValue,
+  SensorSideEffectClassValue,
 } from "./catalog.js";
 
 // ============================================================
@@ -1218,6 +1355,34 @@ export { gateResultToSnake } from "./gate-result.js";
  * 形态由 kernel 决定）。纯函数。
  */
 export { sha256OfCanonical } from "./digest.js";
+
+// ============================================================
+// Evidence Artifact Binding（P0.5-2；PRD §7/§14 + 裁决8③④）
+// ============================================================
+
+/**
+ * 原始字节 sha256 摘要（artifact 内容寻址；PRD §7.3「content_identity 只能由基础设施
+ * 产生」）。与 sha256OfCanonical 是两种不同哈希对象（raw 字节 ≠ canonical-JSON），
+ * 禁止互替。纯函数。
+ */
+export { sha256OfBytes } from "./digest.js";
+export {
+  EVIDENCE_BINDING_INCOMPLETE,
+  EVIDENCE_BINDING_INCOMPLETE_REASONS,
+  artifactRefsToSnake,
+  assertArtifactBlobsExist,
+  assertArtifactRefs,
+  persistEvidenceArtifact,
+  storagePathOfSha256,
+  verifyEvidenceBinding,
+} from "./evidence-artifacts.js";
+export type {
+  EvidenceArtifactRefInput,
+  EvidenceBindingIncompleteReason,
+  EvidenceBindingOutcome,
+  PersistEvidenceArtifactInput,
+  PersistedEvidenceArtifact,
+} from "./evidence-artifacts.js";
 
 // ============================================================
 // Reconcile（八拍⑥ RECONCILE；delta/例外/抽样三段报告）
@@ -1532,3 +1697,44 @@ export type {
   TestPrefixScanCheck,
   ToolEnvironmentReport,
 } from "./doctor.js";
+
+// ============================================================
+// Execution Trace Manifest Lite（W1-C · PRD v0.5.2 §8 + §14 P0.5-3 + §15 Benchmark C + §16 Case A）
+// ============================================================
+// 语义边界（trace.ts 头注为准）：Trace 是 Identity 的**派生投影/侧车**（A19 Identity
+// Is Not Trace——不新增第二套身份；四克制：零新 State Axis/Gate/Runner）。纯函数
+// 编译器从既有平面派生（零新采集器）：journal TX_APPLIED.changed_object_ids → writes、
+// ops 计数 → transition_proposals、GRN/CLM 文件自报 execution_id → tool_receipts/
+// evidence_refs；reads/agent_spawns 恒空数组显式（§14 P0.5-3「不先采集完整 read
+// trace」的 Lite 边界）。execution_id 复用 assertExecutionAttachable 严格通道（§16
+// Case A 禁自造第二种 EXEC-* 身份，SCHEMA_INVALID/EXECUTION_NOT_FOUND 直接继承）。
+// 落盘双平面（裁决 8 ②「trace 独立 traces/ 分区」；P34 新分区先例——不进 content_digest、
+// 零 journal 事件）：traces/（durable 进 Git）+ runtime/traces/（EPHEMERAL 可丢弃，
+// §85.4 runtime/ 判据豁免）。显式 --seal 物化带 derived_from_seq 锚，读侧 canonical
+// 重放对账 stale 显式（evidence compact 快路径同构）；retention 四档逐字仅记录不 GC
+// （§8.3 + 裁决 8 ②）。词形轴 pending vocab-pr-0005（TRACE_RETENTION_VALUES /
+// pomaster.execution_trace/v1——批 1 文件面互斥，词表三镜像登记归主控批次）。
+export {
+  TRACES_RELATIVE,
+  RAW_TRACES_RELATIVE,
+  EXECUTION_TRACE_SCHEMA,
+  EXECUTION_TRACE_VERSION,
+  TRACE_RETENTION_VALUES,
+  compileExecutionTrace,
+  executionTraceDerivedView,
+  sealExecutionTrace,
+  readSealedExecutionTrace,
+  listSealedExecutionTraces,
+} from "./trace.js";
+export type {
+  TraceRetentionValue,
+  TraceStoragePlane,
+  TraceRefFootprint,
+  TraceToolReceipt,
+  TraceTransitionProposal,
+  ExecutionTraceManifest,
+  ExecutionTraceSealInput,
+  ExecutionTraceSealResult,
+  SealedExecutionTrace,
+  SealedTraceListRow,
+} from "./trace.js";

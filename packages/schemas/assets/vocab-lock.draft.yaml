@@ -6,13 +6,15 @@
 > 2026-08-27 修复增补（既有五块词值零改动，只登记 schema 既有值、不发明新枚举值）：新增 source_types 词轴（收编 02 信封）与 keybinding_axes 三轴（收编 04-keybinding）；aliases_v0 补 TASK-*/CHANGE-* 两族（02b §0 文法注记的 T/C 前缀收编规则）；修复 transitions 块 DEPRECATED/RETIRED 挤行。
 > 2026-08-29 PR-0001 增补（append-only 纯增量，v0.1 词值零删改）：ALIASES_V0 补 ISSUE.*/FTA-*/FB-* 三族（语料批 batch-1 实测纳管）；新增 catalog_layer_vocab 与 presentation_axes 两段、id_namespace.state_plane_refs 注记、kinds_registry.catalog_note 注记。8 件 FROZEN schema + 02b + golden-seed-mapping.md 的 @v0.1-resolved 引用保留不改：其引用语义是「该值集镜像自 v0.1 冻结基线」，v0.2 对这些镜像子集零改动，引用继续为真。
 > 2026-09-01 PR-0004 增补（append-only 纯增量，v0.1/v0.2 词值零删改；Owner 决议 2026-09-01 批准——呈报件 docs/production-feedback-p34-report.md §2.1/§2.2/§2.4/§2.6 裁定落档）：新增 production_band_vocab 段（P34 §95/§30/§55.1/§90.4 八词轴 + NOT_EVALUABLE 缺席归因三呈现码 + 八信号人读原文镜像 + 产物/常量词形两枚 + production CLI 错误词形族六词形）；id_namespace.state_plane_refs 补 POB-/PBR-/PCH-/PDG-/PSI- 五通路编号词形注记（非 governed 前缀，照 PERMIT.* 先例）。既有 @v0.2-resolved 引用（FROZEN schema/corpus 转录工具/examples 文档）保留不改：其引用语义是「该值集镜像自 v0.2 基线」，v0.3 对这些镜像子集零改动，引用继续为真。
+> 2026-09-01 PR-0005 增补（append-only 纯增量，v0.1/v0.2/v0.3 词值零删改；Owner 裁决 8 ② 2026-09-01 批准——corpus/master/cutover/owner-adjudications.md#裁决8，PRD v0.5.2 §5 Structured Applicability / P0.5-1）：catalog_layer_vocab 段新增 change_classes 词轴（首批 4 值最小闭包，PRD §5.2 示例词形 API_EVOLUTION 逐字 + corpus 实测词面锚）与 governance_profiles 词轴（对齐 CLI TRIAGE_PROFILES 三值 + STRICT，消 STANDARD 两义）；新增 applicability_fields 字段面注记（lanes 双读过渡 / capabilities governed id / object_kinds 复用 truth_bodies / applicability_note 自然语言降级位 / risk_at_least·technologies 留位不登记 O4）。既有 @v0.3-resolved 引用保留不改：其引用语义是「该值集镜像自 v0.3 基线」，v0.4 对这些镜像子集零改动，引用继续为真。
 > 消费方：②后续全部 schemas、③Kernel 转移引擎、Behavioral Eval 种子。
 
 ```yaml
 # ============================================================
-# pomaster.vocab/v0.3-resolved   （2026-09-01 PR-0004 增补；append-only 纯增量，v0.1/v0.2 词值零删改）
+# pomaster.vocab/v0.4-resolved   （2026-09-01 PR-0005 增补；append-only 纯增量，v0.1/v0.2/v0.3 词值零删改）
 # 历史：原 v0-draft（三开放问题已于 2026-08-27 会话裁决）→ v0.1-resolved（2026-08-27 FROZEN）
 #       → v0.2-resolved（2026-08-29 PR-0001 增补）→ v0.3-resolved（2026-09-01 PR-0004 增补）
+#       → v0.4-resolved（2026-09-01 PR-0005 增补）
 # ============================================================
 
 ir_schema: pomaster.truth-index/v1-draft
@@ -141,6 +143,29 @@ catalog_layer_vocab:     # catalog/ 目录条目词轴（PR-0001 收编；catalo
   lane:                  # V7：applies_when.lane 现用最小闭包（低优先项）
     values: [any, frontend, backend]
     note: architect/designer/documenter 为上游 workflow lane 概念，未成 catalog 词形；有条目采用时扩值走词汇表 PR
+  change_classes:        # applies_when.change_classes 词轴（PR-0005 收编；Owner 裁决 8 ② 2026-09-01「首批 3-5 值最小闭包，逐例对 corpus 实测词面」；PRD §5.2 示例词形 API_EVOLUTION 逐字）
+    values: [API_EVOLUTION, PUBLIC_CONTRACT_CHANGE, DEPENDENCY_CHANGE, PRESENTATION_CHANGE]
+    notes:
+      API_EVOLUTION: 接口/契约面演进（corpus 词面锚：接口演进/接口字段变更/字段级契约演进/契约演进方式选择/任何接口实现或变更/确定任何接口契约时）
+      PUBLIC_CONTRACT_CHANGE: 公共契约与破坏性变更（corpus 词面锚：变更触及公共契约/破坏性公共变更/公共能力发生不兼容变更/拟删除任何被依赖能力/任何公共变更落地）
+      DEPENDENCY_CHANGE: 依赖新增与升级（corpus 词面锚：引入新依赖/新增或升级依赖/依赖变更与升级评审）
+      PRESENTATION_CHANGE: 纯 UI 呈现面变更（corpus 词面锚：编写或评审样式代码/表格样式变更/公共样式默认值类变更/文案调整——Case B 按钮布局与 Benchmark A README 文案变更的承载位）
+  governance_profiles:   # applies_when.governance_profiles 词轴（PR-0005 收编；Owner 裁决 8 ② 2026-09-01「对齐 TRIAGE_PROFILES+STRICT，消 STANDARD 两义」）
+    values: [MINIMAL, LIGHT, STANDARD, STRICT]
+    note: >-
+      前三值与 CLI triage TRIAGE_PROFILES（packages/cli/src/triage.ts）同词形同义；STRICT 对位 constitutional 档
+      （catalog-profile-anchor 词形先例，C5 STRICT prompt_only 命中即升档位）。与 PRD §5.2 示例值
+      [STANDARD, STRICT, CRITICAL] 的分叉系 Owner 裁决消 STANDARD 两义（CRITICAL 不入——另立第二套 profile
+      词表 = 变相第二套轴，违四克制）。
+  applicability_fields:  # PR-0005：applies_when 机器 applicability 字段面注记（字段级词形，非值轴——各字段值集各归其轴）
+    note: >-
+      PRD §5.2 Structured Applicability 的机器字段面：lanes（数组，值集复用 V7 lane——双读过渡：未声明回退单值
+      lane，标注完成后单值 lane 转弃用，Owner 裁决 8 ②）；capabilities（CAPABILITY.* governed id，A5 closed-world
+      词形校验）；object_kinds（复用 kinds_registry.truth_bodies 十类，零新轴）；applicability_note（自然语言说明
+      降级位——PRD §5.2 明文「不得作为唯一机器路由条件」，现库 condition 中文原文即其承载）；risk_at_least /
+      technologies（留位不登记——消费面 not_configured 显式缺席不伪造，Owner 裁决 8 ② O4）。未声明任一机器字段
+      的条目 = lane 回退判定（行为零变化，Owner 裁决 8 ② O7）；声明了任一机器字段的条目 = 全字段确定性判定
+      （PRD §5.3 Deterministic Inclusion：先确定性排除，再处理 Budget）。
   knowledge_note: >-     # V3 确认项：不新增枚举值
     KNOWLEDGE_PATTERN / FAILURE_PATTERN 以 knowledge_entry 的 payload 变体（classification 值）承载，
     gate_binding=NEVER_FAIL（advisory 豁免）随条目 x-advisory-gate-semantics 登记。

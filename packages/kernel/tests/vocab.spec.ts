@@ -1,15 +1,18 @@
 /**
  * vocab.spec —— kernel 词表引用入口（@pomaster/schemas re-export）与 FROZEN 词表逐值对账。
- * 词表纪律：以下断言值逐字镜像 vocab-lock@v0.3-resolved（v0.1-resolved FROZEN 后 PR-0001、
- * 2026-09-01 PR-0004 两次 append-only 增补，v0.1/v0.2 词值零删改）；改词表须同 commit 改这里。
+ * 词表纪律：以下断言值逐字镜像 vocab-lock@v0.4-resolved（v0.1-resolved FROZEN 后 PR-0001、
+ * 2026-09-01 PR-0004、2026-09-01 PR-0005 三次 append-only 增补，v0.1/v0.2/v0.3 词值零删改）；
+ * 改词表须同 commit 改这里。
  */
 import { describe, expect, it } from "vitest";
 import {
   ALIASES_V0,
   BAND_PREDICATE_OPERATOR_VALUES,
   BINDING_CLASS_VALUES,
+  CATALOG_CHANGE_CLASS_VALUES,
   CATALOG_CLASSIFICATION_VALUES,
   CATALOG_ENFORCEMENT_VALUES,
+  CATALOG_GOVERNANCE_PROFILE_VALUES,
   CATALOG_LANE_VALUES,
   CAPABILITY_OUTCOME_METRIC_KEY_VALUES,
   CAPABILITY_OUTCOME_METRIC_STATUS_VALUES,
@@ -138,6 +141,32 @@ describe("vocab mirror（FROZEN 词表唯一镜像点）", () => {
       "KNOWLEDGE_PATTERN", "FAILURE_PATTERN", "DEPRECATED", "DUPLICATE", "REJECTED",
     ]);
     expect([...CATALOG_LANE_VALUES]).toEqual(["any", "frontend", "backend"]);
+  });
+
+  // —— catalog_layer_vocab applicability 词轴（PR-0005 收编；Owner 裁决 8 ② 2026-09-01）——
+  // 改词表须同 commit 改这里：以下断言逐值镜像 vocab-lock@v0.4-resolved
+  // catalog_layer_vocab.change_classes / governance_profiles（PRD v0.5.2 §5.2）。
+  describe("catalog_layer_vocab applicability 词轴（vocab-pr-0005 收编 · 裁决 8 ②）", () => {
+    it("change_classes 首批 4 值最小闭包（PRD §5.2 示例词形 API_EVOLUTION 逐字 + corpus 词面锚）", () => {
+      expect([...CATALOG_CHANGE_CLASS_VALUES]).toEqual([
+        "API_EVOLUTION",
+        "PUBLIC_CONTRACT_CHANGE",
+        "DEPENDENCY_CHANGE",
+        "PRESENTATION_CHANGE",
+      ]);
+    });
+
+    it("governance_profiles 对齐 TRIAGE_PROFILES+STRICT（消 STANDARD 两义；CRITICAL 不入——O2 裁决）", () => {
+      expect([...CATALOG_GOVERNANCE_PROFILE_VALUES]).toEqual([
+        "MINIMAL", "LIGHT", "STANDARD", "STRICT",
+      ]);
+      // 前三值与 CLI triage TRIAGE_PROFILES（packages/cli/src/triage.ts，CLI 局部词）
+      // 同词形同义——对账值此处逐字镜像（kernel 测试禁反向 import cli，分层纪律）；
+      // triage 侧词形漂移由 cli/triage.spec 对账本断言同源词形。
+      expect(CATALOG_GOVERNANCE_PROFILE_VALUES.slice(0, 3)).toEqual([
+        "MINIMAL", "LIGHT", "STANDARD",
+      ]);
+    });
   });
 
   it("presentation_axes reconcile 词形（PR-0001 收编；不进七态 verdict 闭包）", () => {

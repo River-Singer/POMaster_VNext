@@ -25,6 +25,11 @@
  * 性能预算字段」——双探针独立呈现不聚合，lighthouse=实验室判卷面 / web_vitals=字段
  * 数据判卷面）+ schemathesis（CONTRACT 加强腿工具，B3-4「从 OpenAPI 生成
  * property-based 用例；FastAPI profile 招牌件」）。
+ * P1-5 起新增 sensor_capability_catalog 探针（PRD v0.5.2 §6.5/§14 P1-5，裁决 8 D7=A
+ * 「loader + doctor 联结」）：catalog/sensors/ 六条 sensor_capability 经 kernel
+ * loadCatalogSensors 载入；availability_probe 是声明式引用（四克制：防第二套探测机制，
+ * catalog 是数据不执行），doctor 侧只做引用→既有探针行的名字解析（见
+ * SENSOR_DETECTOR_TO_DOCTOR_PROBE），绝不二次探测——可用性事实仍由 2)/3) 既有行承载。
  */
 
 import { readFile } from "node:fs/promises";
@@ -57,6 +62,33 @@ export interface DoctorProbe {
 export interface DoctorResult {
   readonly ok: boolean;
   readonly probes: readonly DoctorProbe[];
+  /**
+   * P1-5 Sensor Capability 联结呈现（加法字段，不改 ok 语义：可用性事实由既有
+   * 工具/MCP 探针行承载，本字段只呈现「catalog 能力 → 探针行」的声明式引用解析
+   * 结果，禁二次探测；缺省缺席 = catalog 载入失败时的探针行 detail 承载）。
+   */
+  readonly sensors?: readonly SensorCapabilityAvailability[];
+}
+
+/** P1-5 Sensor Capability 联结呈现形态（DoctorResult.sensors 条目）。 */
+export interface SensorCapabilityAvailability {
+  readonly sensor_id: string;
+  readonly file: string;
+  readonly availability_probe: { readonly surface: string; readonly keys: readonly string[] };
+  /** 解析到的 doctor 既有探针行名（toolDetectors 面；gateAdapters/kernel 面无 doctor 行 → 空数组显式）。 */
+  readonly doctor_probe_names: readonly string[];
+  readonly fallback: readonly string[];
+}
+
+/** kernel loadCatalogSensors 返回形态的本包最小镜像（动态导入收窄用；字段级子集）。 */
+interface LoadedSensorMaterial {
+  readonly file: string;
+  readonly id: string;
+  readonly availabilityProbe: {
+    readonly surface: string;
+    readonly keys: readonly string[];
+  };
+  readonly fallback: readonly string[];
 }
 
 /** CLI 所需的 kernel doctor 最小面。 */
@@ -68,6 +100,8 @@ export interface DoctorKernelDeps {
 /** doctor 工具探针注入面（测试注入 fake；缺省转调 gauntlet-lite toolDetectors）。 */
 export interface DoctorToolProbeDeps {
   readonly gauntletProbes?: readonly GauntletToolProbe[];
+  /** P1-5：catalog 根注入（测试/嵌入方；缺省 kernel resolveCatalogRoot 缺省定位）。 */
+  readonly catalogRoot?: string;
 }
 
 /** D22 一键引导文本：粘贴即完成 chrome-devtools MCP 配置（生成 .mcp.json 或并入现有 mcpServers）。 */
@@ -77,6 +111,24 @@ export const CHROME_DEVTOOLS_MCP_HINT =
 
 const KERNEL_PROBE_NAME = "kernel_doctor_probes";
 const MCP_PROBE_NAME = "chrome_devtools_mcp";
+const SENSOR_CATALOG_PROBE_NAME = "sensor_capability_catalog";
+
+/**
+ * P1-5/D7 联结位：sensor availability_probe（toolDetectors 面）键 → doctor 探针行名。
+ * 键词形 = gauntlet-lite toolDetectors 的 camelCase 键（15 探测器单一事实源）；
+ * 行名 = 本文件探测矩阵既有呈现名（snake_case）。声明式引用的漂移防线：
+ * tests/integration/sensor-capability-catalog.spec.ts 断言 catalog 引用键 ⊆ 本映射
+ * keys ⊆ toolDetectors/gateAdapters/kernel 三面闭包（两头造册必漂的结构防线）。
+ * TODO(vocab-pr-0005)：行名词形随词表批次统一登记。
+ */
+export const SENSOR_DETECTOR_TO_DOCTOR_PROBE: Record<string, string> = {
+  chromeDevtoolsMcp: MCP_PROBE_NAME,
+  playwright: "playwright",
+  oasdiff: "oasdiff",
+  schemathesis: "schemathesis",
+  lighthouse: "lighthouse",
+  webVitals: "web_vitals",
+};
 
 /** 探测 .mcp.json 是否配置了 chrome-devtools MCP（D22：未配置 → MISSING_CONFIGURATION + 一键提示）。 */
 export async function probeChromeDevtoolsMcp(
@@ -343,6 +395,9 @@ async function runGauntletProbes(
  *    安装路标；P25 三探针独立呈现不聚合——B2-5 防假绿纪律）。
  * 3) chrome_devtools_mcp —— D22 探测 + 一键引导文本（P26 起与 playwright 确定性腿
  *    探针并存——BROWSER 双通道各自显式呈现）。
+ * 4) sensor_capability_catalog —— P1-5 catalog/sensors/ 载入（裁决 8 D7=A loader+doctor
+ *    联结；availability_probe 声明式引用→既有行名解析，禁二次探测；catalog 缺席
+ *    MISSING_CONFIGURATION / 物料坏形 DEFECT——坏物料 ≠ catalog 缺席，fail-closed 显式）。
  */
 export async function runDoctor(
   rootDir: string,
@@ -455,8 +510,64 @@ export async function runDoctor(
   // 3) chrome-devtools MCP 探测（D22）。
   probes.push(await probeChromeDevtoolsMcp(rootDir));
 
+  // 4) P1-5 Sensor Capability Catalog（裁决 8 D7=A：loader + doctor 联结）。
+  //    只做声明式引用的行名解析（SENSOR_DETECTOR_TO_DOCTOR_PROBE），绝不二次探测；
+  //    坏物料/缺席显式入探针行（fail-closed），ok 语义与既有行一致（非 READY → ok=false）。
+  let sensors: readonly SensorCapabilityAvailability[] | undefined;
+  try {
+    // 动态导入 + 收窄（kernel 源码直连/vitest 与 dist 双形态下都显式核验导出在场）。
+    const kernel = (await import("@pomaster/kernel")) as Record<string, unknown>;
+    const loadCatalogSensors = kernel["loadCatalogSensors"] as
+      | ((root: string) => readonly LoadedSensorMaterial[])
+      | undefined;
+    const resolveCatalogRoot = kernel["resolveCatalogRoot"] as
+      | ((root?: string) => string)
+      | undefined;
+    if (typeof loadCatalogSensors !== "function" || typeof resolveCatalogRoot !== "function") {
+      throw new Error("kernel loadCatalogSensors/resolveCatalogRoot export missing");
+    }
+    const materials = loadCatalogSensors(resolveCatalogRoot(deps?.catalogRoot));
+    sensors = materials.map((sensor) => ({
+      sensor_id: sensor.id,
+      file: sensor.file,
+      availability_probe: {
+        surface: sensor.availabilityProbe.surface,
+        keys: [...sensor.availabilityProbe.keys],
+      },
+      doctor_probe_names:
+        sensor.availabilityProbe.surface === "toolDetectors"
+          ? sensor.availabilityProbe.keys
+              .map((key) => SENSOR_DETECTOR_TO_DOCTOR_PROBE[key])
+              .filter((name): name is string => typeof name === "string")
+          : [],
+      fallback: [...sensor.fallback],
+    }));
+    probes.push({
+      probe: SENSOR_CATALOG_PROBE_NAME,
+      status: "READY",
+      detail: `${sensors.length} sensor capabilities loaded（availability 为声明式引用，探测仍归 toolDetectors/gateAdapters/kernel 既有面——禁第二套探测机制）`,
+      hint: null,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    const code = (err as { code?: string }).code;
+    // 缺席两态：catalog 根不在（NOT_CONFIGURED）/ sensors 目录缺失（loader 对「目录缺失」
+    // 报 SCHEMA_INVALID 但语义是物料缺席）→ MISSING_CONFIGURATION；其余坏形 → DEFECT。
+    const missing =
+      code === "NOT_CONFIGURED" ||
+      (code === "SCHEMA_INVALID" && message.includes("目录缺失"));
+    probes.push({
+      probe: SENSOR_CATALOG_PROBE_NAME,
+      status: missing ? "MISSING_CONFIGURATION" : "DEFECT",
+      detail: missing ? `sensor catalog unavailable: ${message}` : `sensor catalog malformed: ${message}`,
+      hint: missing
+        ? "catalog/ 是 POMaster_VNext 仓库资产（sensors/ 为 P1-5 管辖面）；在仓库内运行或显式注入 catalogRoot。"
+        : "sensor_capability 物料坏形（SCHEMA_INVALID fail-closed）：对照 catalog/sensors/ 在册条目修复后重试。",
+    });
+  }
+
   const ok = probes.every((p) => p.status === "READY");
-  const result: DoctorResult = { ok, probes };
+  const result: DoctorResult = sensors === undefined ? { ok, probes } : { ok, probes, sensors };
   const human = [
     `doctor: ${ok ? "READY" : "NOT READY"}`,
     ...probes.map(

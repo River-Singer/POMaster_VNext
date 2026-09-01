@@ -54,3 +54,21 @@
 - **③ License/provenance 余 7 签全按现状确认**：O-L2=源码公开可见、NOTICES 204 包即对外版；O-L3=两豁免位均**否**（维持不豁免，正式载体 COMMERCIAL_LICENSE.md 严格口径声明）；O-L5=授权 node_modules 干净重装（随 P36 收尾，lockfile 为锚）；O-P1~P4=clean-room 四签确认（含绿灯；sources.yaml 结构化落盘随后续批次）。
 - **④ harvest 词形位 = COMPATIBILITY**：继续使用 harness 自动项目记忆，按批次把有价值条目经 P33 管线收割进 pomaster 正式账本（capture→harvest→review→promote）；STRICT 的 harness 配置关闭动作不执行。
 - **呈报件状态**：docs/l6-release-gate-p35-report.md 全部 Owner 位闭合（裁决 6+7 两轮回填）；legal/THIRD_PARTY_NOTICES.md §4 五签回填。
+
+## 裁决 8：PRD v0.5.2 排期批准 + B1-B4 决策包 + D4（2026-09-01）
+
+- **决策渠道**：本会话 Owner 直答（AskUserQuestion，2026-09-01）。排期底档：.trellis/tasks/09-01-pomaster-vnext-prd-v052-agent-perception/prd.md（三波十五任务）+ research/*.md 五份锚点级研究。
+- **① 排期批准**：Wave 1（P0.5 四件 + P1-5 Sensor Catalog，五壳已建）→ Wave 2（P1-3 Agent Trace Eval / P1-1 前置 / P1-2 Wave A）→ Wave 3（P1-1 全链 / P1-4 Autonomy Wave B）。P2 全部 defer 维持。
+- **② B1+B4 词形总包 17 位全按推荐**：lanes 双读过渡（标注完成旧 lane 弃用）/ governance_profiles 对齐 TRIAGE_PROFILES+STRICT（消 STANDARD 两义）/ change_classes 首批 3-5 值最小闭包 / risk_at_least·technologies 留位不登记 / catalog_version 保持 0.1.0-pilot / 不引入正式 catalog-entry schema / 未标注条目=lane 回退行为零变化 / context explain 词形照 PRD / DB Transaction 验收 fixture-only；trace 独立 traces/ 分区 + 投影 + 可选 --seal / retention 四档逐字仅记录不 GC / agent-trace 新 suite 值 / evaluator=trace_check / 台账编号族 EPC-n·AUA-n·CSA-n / AUTO_MERGE 词形登记但实现闸 P2。
+- **③ B2 架构包 9 位全按推荐**：receipt 身份=blob sha256 即身份（不新增 EVR- id）；落点=07 run_record 增 optional artifact_refs（复用既有 definitions）；tracer 收窄 screenshot；EVIDENCE_BINDING_INCOMPLETE=门内 rule+稳定码并用；SENSOR.<DOMAIN>.<KIND> 词形 + x-vocab-pr 注记；sensor catalog 消费=loader+doctor 联结。
+- **④ D4 = A 升版路径**（Owner 明示，异于研究侧倾向 B）：存在性绑定**写进门禁判卷本体**——POLICY.GATE.BROWSER gate_def 版本化变更 @0.1.0→@0.2.0，绑定缺失/失配=判卷红；browser-adapter.ts:62 在案合规路标由此满足。
+- **⑤ B3 选型包 4 位全按推荐**：P1-1 靶=playground/web-capability（Vue3+vite+bug 开关，CI fake 轨+宿主真轨双轨）；OPEN_PR 试点=本地 bare repo fixture remote（gh 缺席显式 NOT_RUN）；CI 不装真浏览器（宿主轨诚实 skip）；新词形一批收齐入词表 PR。
+
+## 裁决 9：PRD v0.5.3 排期批准 + VB 三包 + 即刻并行（2026-09-01）
+
+- **决策渠道**：本会话 Owner 直答（AskUserQuestion，2026-09-01）。排期底档：.trellis/tasks/09-01-pomaster-vnext-prd-v053-grounded-brainstorm/prd.md（4 PR 拆解）+ research/*.md 三份锚点级研究（主控已人工复核含安全分类器缺席标注件）。
+- **① 排期批准**：P0.5 最小闭环拆 4 PR（VB-PR1 kernel decision-graph 纯函数面+schema 18 → PR2 Discovery Projection+ground → PR3 grill/answer/explain（question-gate 首次 CLI 接线）→ PR4 research 联结+converge 补链断点+全链集成）。P1/P2 递延。
+- **② VB-A 词形词表包 6 位全按推荐**：DECISION./RESEARCH.REQ./FINDING./DISCOVERY.INTENT./FACT. 不入 governed prefixes（Discovery 平面局部词形，state_plane_refs 先例）；decision class SCOPE 单值起步；词表独立一批；CONTRACT.* 按 PRD 示意词形处理（词表无此前缀实测张力）；authority.owner 对齐 owner_registry；GRILLING/GRILLED/GRILL_CONFIRMED 禁词负例登记。
+- **③ VB-B 架构落点包 5 位全按推荐**：schema=18-decision-graph；research_request/handoff 住决策图 schema（10 号零改动）；relation 六值与 authority_effect 轴划界注记；§19 六指标 P0.5 defer（禁问题计数指标）；投影指纹 kernel 自动维护（human_touch forbidden）。
+- **④ VB-C 载体命名包 4 位全按推荐**：§18 十 cases 两步走（P0.5 vitest 承载/P1 eval 账本化 decision-gate+grounding_gate 与 W2-A 协调）；CLI 六子命令照 PRD 逐字；Discovery Projection 解耦点火；converge=补全 DISCOVERY→READY_TO_PROMOTE 链断点。
+- **⑤ 点火节奏 = PR1 即刻并行**（与 v0.5.2 Wave 1 并行，研究确认零文件交集；PR2-4 错峰 Wave 1 落定后）。

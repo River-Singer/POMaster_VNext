@@ -1,7 +1,7 @@
 {
   "catalog_version": "0.1.0-pilot",
   "profile": "web-standard@0",
-  "generated_by": "catalog/tools/materialize_batch4_uplift.py（batch-4 语料批 Universal 上提；entries 按 id 排序；在 materialize_catalog_pilot.py 60 条基础上追加 9 条）+ corpus/spec-knowledge/materialize-curated.py（SPEC-D 汇总池 D5 精选追加 25 条）",
+  "generated_by": "catalog/tools/materialize_batch4_uplift.py（batch-4 语料批 Universal 上提；entries 按 id 排序；在 materialize_catalog_pilot.py 60 条基础上追加 9 条）+ corpus/spec-knowledge/materialize-curated.py（SPEC-D 汇总池 D5 精选追加 25 条） + W1-E（P1-5 Sensor Capability Catalog Lite：catalog/sensors/ 六条目登记，allowed+required+entries 三处同步；裁决 8 D6/D7；SENSOR.<DOMAIN>.<KIND> 三段词形）",
   "x-digest-ethics": {
     "basis": "D24 / vocab-lock.digest_ethics",
     "write_blocking": false,
@@ -105,7 +105,13 @@
       "policies/policy.web.track.consent_lifecycle.json",
       "policies/policy.web.track.privacy_default_deny.json",
       "policies/policy.web.track.stable_event_keys.json",
-      "policies/policy.web.uiux.provider_evidence_not_business_truth.json"
+      "policies/policy.web.uiux.provider_evidence_not_business_truth.json",
+      "sensors/sensor.browser.deterministic.json",
+      "sensors/sensor.browser.interactive.json",
+      "sensors/sensor.build.static.json",
+      "sensors/sensor.contract.conformance.json",
+      "sensors/sensor.performance.budget.json",
+      "sensors/sensor.production.metric.json"
     ],
     "required": [
       "gates/gate.be.api.contract_checks.json",
@@ -201,7 +207,13 @@
       "policies/policy.web.track.consent_lifecycle.json",
       "policies/policy.web.track.privacy_default_deny.json",
       "policies/policy.web.track.stable_event_keys.json",
-      "policies/policy.web.uiux.provider_evidence_not_business_truth.json"
+      "policies/policy.web.uiux.provider_evidence_not_business_truth.json",
+      "sensors/sensor.browser.deterministic.json",
+      "sensors/sensor.browser.interactive.json",
+      "sensors/sensor.build.static.json",
+      "sensors/sensor.contract.conformance.json",
+      "sensors/sensor.performance.budget.json",
+      "sensors/sensor.production.metric.json"
     ]
   },
   "entries": [
@@ -768,6 +780,42 @@
       "path": "policies/policy.web.uiux.provider_evidence_not_business_truth.json",
       "content_sha256": "sha256:2fd90eb2f0182d3ba9ff6da7e74b81af32725bf18b383386a055f1ccb2b1b42a",
       "source_ref": "POMaster_VNext/corpus/master/batch-4/split-ledger.yaml"
+    },
+    {
+      "id": "SENSOR.BROWSER.DETERMINISTIC",
+      "path": "sensors/sensor.browser.deterministic.json",
+      "content_sha256": "sha256:480456873c0eea565135084aac4f33c3cf7ada7640efba56b8a0163b44d937e5",
+      "source_ref": "POMaster_VNext/doc/POMaster-vNext-PRD-v0.5.2-agent-perception.md §14 P1-5（W1-E 线登记）"
+    },
+    {
+      "id": "SENSOR.BROWSER.INTERACTIVE",
+      "path": "sensors/sensor.browser.interactive.json",
+      "content_sha256": "sha256:313e2d3ee2ee61c0d9e65a315a764a22675b2d33080f2401de73a14c3950a26b",
+      "source_ref": "POMaster_VNext/doc/POMaster-vNext-PRD-v0.5.2-agent-perception.md §14 P1-5（W1-E 线登记）"
+    },
+    {
+      "id": "SENSOR.BUILD.STATIC",
+      "path": "sensors/sensor.build.static.json",
+      "content_sha256": "sha256:cd1c965677e08ef3f0b92c9014ee4a3c8fa967419fbfabd1079590b6746ef462",
+      "source_ref": "POMaster_VNext/doc/POMaster-vNext-PRD-v0.5.2-agent-perception.md §14 P1-5（W1-E 线登记）"
+    },
+    {
+      "id": "SENSOR.CONTRACT.CONFORMANCE",
+      "path": "sensors/sensor.contract.conformance.json",
+      "content_sha256": "sha256:cf961ae80c9472c1e7d5ffc85bc5d3c975a0dd390b1c52986cfccee1c1373194",
+      "source_ref": "POMaster_VNext/doc/POMaster-vNext-PRD-v0.5.2-agent-perception.md §14 P1-5（W1-E 线登记）"
+    },
+    {
+      "id": "SENSOR.PERFORMANCE.BUDGET",
+      "path": "sensors/sensor.performance.budget.json",
+      "content_sha256": "sha256:6bf3c3a8eeca97f59400fca0217522016d4fbfe8b2de00891a3173d715875798",
+      "source_ref": "POMaster_VNext/doc/POMaster-vNext-PRD-v0.5.2-agent-perception.md §14 P1-5（W1-E 线登记）"
+    },
+    {
+      "id": "SENSOR.PRODUCTION.METRIC",
+      "path": "sensors/sensor.production.metric.json",
+      "content_sha256": "sha256:969954331cfb8267524e614de72a8605c7cb8195c0f0e5867acf7adf82f52361",
+      "source_ref": "POMaster_VNext/doc/POMaster-vNext-PRD-v0.5.2-agent-perception.md §14 P1-5（W1-E 线登记）"
     }
   ],
   "note": "read-side 指纹（D24）：仅用于升级 diff 与防篡改抽验"

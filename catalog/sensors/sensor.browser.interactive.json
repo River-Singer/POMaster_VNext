@@ -1,0 +1,58 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "SENSOR. 前缀不在 prefixes_v0 15 前缀闭包内（closed-world：未登记前缀解析即 FATAL）；且 kind='sensor_capability' 不在 kinds_registry.truth_bodies",
+    "proposal": "词汇表 PR 登记 SENSOR. 前缀与 sensor_capability kind；备选落法：sensor capability 住 catalog/sensors/ 非 truth 对象层，身份只作 catalog 物料标识（沿 catalog/gates/gate.web.api.request_checks.json 的 GATE. 先例；裁决 8（2026-09-01）D6=A：SENSOR.<DOMAIN>.<KIND> 点族词形照研究侧推荐实施）",
+    "open_enum_registration": "本条目消费的开放枚举（PRD §6.4 明言不要求立即成为 Closed-world Core Vocab；pending vocab PR → TODO(vocab-pr-0005)）：surfaces=USER_SURFACE/INTERACTION_STATE/BOUNDARY_IO/RUNTIME_SIGNAL/RESOURCE_BEHAVIOR；side_effect_class=INTERACTIVE_REVERSIBLE；availability_probe.surface=toolDetectors",
+    "locked_vocab_untouched": true
+  },
+  "id": "SENSOR.BROWSER.INTERACTIVE",
+  "kind": "sensor_capability",
+  "title_zh": "浏览器交互诊断 Sensor（MCP 通道）",
+  "statement_zh": "对运行中的用户界面做交互式诊断观察：进入/导航/点击/输入/快照/截图/网络与控制台检查/性能追踪。本条目只登记能力不绑定具体工具（§6.5 原则：POMaster reasons about capability / Runtime binds concrete tool——项目 Truth 禁写死 MCP）；证据字节由编排方入 evidence pack，本条目为纯能力描述物料（§92.2：Catalog 不是第二套 Project Truth）。",
+  "surfaces": [
+    "USER_SURFACE",
+    "INTERACTION_STATE",
+    "BOUNDARY_IO",
+    "RUNTIME_SIGNAL",
+    "RESOURCE_BEHAVIOR"
+  ],
+  "operations": [
+    "launch_or_attach",
+    "navigate",
+    "click",
+    "type",
+    "snapshot",
+    "screenshot",
+    "inspect_network",
+    "inspect_console",
+    "performance_trace"
+  ],
+  "side_effect_class": "INTERACTIVE_REVERSIBLE",
+  "evidence_types": [
+    "accessibility_snapshot",
+    "screenshot",
+    "network_observation",
+    "console_observation",
+    "performance_trace"
+  ],
+  "implementations": [
+    "chrome-devtools-mcp",
+    "playwright"
+  ],
+  "availability_probe": {
+    "surface": "toolDetectors",
+    "keys": [
+      "chromeDevtoolsMcp"
+    ],
+    "note": "声明式引用（四克制：防第二套探测机制）——可执行性永远归 gauntlet-lite toolDetectors 单一探测面；doctor 呈现行=chrome_devtools_mcp（D22 一键引导）。键闭包由 tests/integration/sensor-capability-catalog.spec.ts 交叉测试守。"
+  },
+  "fallback": [],
+  "fallback_note": "空数组=显式登记无降级（§6.6 明言 Browser MCP 与 Playwright 不是互相替代：MCP 适合探索/交互诊断，Playwright 适合确定性回归）；未来 Sensor Resolution（P0.5-4）如需降级语义再扩。",
+  "x-source-anchors": {
+    "adapter": "packages/gauntlet-lite/src/browser-adapter.ts（MCP 交互腿 adapter：握手 smoke + 证据三件套判卷）",
+    "doctor_row": "packages/cli/src/doctor.ts chrome_devtools_mcp 探针行（D22 探测 + 一键引导）",
+    "detector": "packages/gauntlet-lite/src/index.ts toolDetectors.chromeDevtoolsMcp（15 探测器单一事实源）"
+  },
+  "x-prd": "POMaster-vNext-PRD-v0.5.2 §6.5 例文逐字 + §14 P1-5；裁决 8（2026-09-01）D6=A/D7=A"
+}

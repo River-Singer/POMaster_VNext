@@ -10,6 +10,7 @@
  */
 import type { Actor, AxesBlock, GovernedId, Permit, PermitCheckResult, PermitRequest, Store, StealResult, WriteAttempt } from "./index.js";
 import type { WritePolicyValue } from "./vocab.js";
+import { CATALOG_CHANGE_CLASS_VALUES, CATALOG_GOVERNANCE_PROFILE_VALUES } from "./vocab.js";
 import { GovernanceError, governanceCodeForParseError, GovernedIdParseError } from "./errors.js";
 import { parseGovernedId } from "./id.js";
 import { captureOriginal, executeWrites, readText } from "./io.js";
@@ -103,6 +104,14 @@ export interface PermitRecord {
   change_ref: string | null;
   /** 五件套之二：Capability 清单（general_id 词形；issuePermit 经 parseGovernedId closed-world 校验）。 */
   capability_refs: string[];
+  /**
+   * P0.5-1 applicability 输入承载位（PRD §14 P0.5-1 最小实现二「Project Change / Permit
+   * 能提供 capability/change_class/profile 等输入」；裁决 8 ②）：变更类目与治理档位。
+   * ∈ CATALOG_CHANGE_CLASS_VALUES / CATALOG_GOVERNANCE_PROFILE_VALUES（O2），签发时
+   * fail-closed 校验；null = 未申报（缺席显式，非空串冒充）。
+   */
+  change_class: string | null;
+  governance_profile: string | null;
   /** 五件套之五：验收形状（契约面 PermitRequest.acceptanceShape 既有但从不持久化——本字段封死「静默丢失」坑）。 */
   acceptance_shape: Record<string, unknown> | null;
   /** G3 服务：签发瞬间的逐对象基线快照（journal 是事件流无 axes 历史，事后不可重建）。 */
@@ -205,6 +214,29 @@ export async function issuePermit(
   const capabilityRefs = (request.capabilityIds ?? []).map((id) =>
     parseIdOrGovernanceError(id, "PermitRequest.capabilityIds[]"),
   );
+  // P0.5-1 applicability 输入 fail-closed 校验（词表外 = SCHEMA_INVALID，禁静默当未申报）。
+  if (
+    request.changeClass !== undefined &&
+    !CATALOG_CHANGE_CLASS_VALUES.includes(request.changeClass as never)
+  ) {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      `PermitRequest.changeClass 词表外: ${request.changeClass}`,
+      `changeClass 须 ∈ CATALOG_CHANGE_CLASS_VALUES（vocab-pr-0005 词轴）；扩值走词汇表 PR。`,
+      { changeClass: request.changeClass },
+    );
+  }
+  if (
+    request.governanceProfile !== undefined &&
+    !CATALOG_GOVERNANCE_PROFILE_VALUES.includes(request.governanceProfile as never)
+  ) {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      `PermitRequest.governanceProfile 词表外: ${request.governanceProfile}`,
+      `governanceProfile 须 ∈ CATALOG_GOVERNANCE_PROFILE_VALUES（O2：对齐 TRIAGE_PROFILES+STRICT）。`,
+      { governanceProfile: request.governanceProfile },
+    );
+  }
   const ttlBeats = request.ttlBeats ?? DEFAULT_TTL_BEATS;
   if (!Number.isInteger(ttlBeats) || ttlBeats <= 0) {
     throw new GovernanceError(
@@ -237,6 +269,8 @@ export async function issuePermit(
     requested_by: actorToRecord(request.requestedBy),
     change_ref: request.changeRef ?? null,
     capability_refs: capabilityRefs,
+    change_class: request.changeClass ?? null,
+    governance_profile: request.governanceProfile ?? null,
     acceptance_shape: acceptanceShape,
     baseline: captureBaseline(paths, currentSeq, subjectIds),
     stolen_at_seq: null,
@@ -252,6 +286,8 @@ export async function issuePermit(
     change_ref: record.change_ref,
     requested_by: record.requested_by,
     capability_ids: capabilityRefs,
+    change_class: record.change_class,
+    governance_profile: record.governance_profile,
   })}\n`;
   executeWrites([
     {

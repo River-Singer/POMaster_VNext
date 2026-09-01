@@ -3,10 +3,12 @@
  *
  * 词表纪律（违者=返工）：
  * - 本文件一切枚举/前缀/转移矩阵只能镜像 `assets/vocab-lock.draft.yaml`
- *   （pomaster.vocab/v0.3-resolved；v0.1-resolved 2026-08-27 FROZEN，2026-08-29 PR-0001
+ *   （pomaster.vocab/v0.4-resolved；v0.1-resolved 2026-08-27 FROZEN，2026-08-29 PR-0001
  *   append-only 纯增量增补（v0.1 词值零删改），2026-09-01 PR-0004 增补
- *   production_band_vocab 段 + id_namespace.state_plane_refs 五通路编号词形注记
- *   ——Owner 决议 2026-09-01，v0.1/v0.2 词值零删改），逐值相等，禁止发明词表外值；
+ *   production_band_vocab 段 + id_namespace.state_plane_refs 五通路编号词形注记，
+ *   2026-09-01 PR-0005 增补 catalog_layer_vocab 段 change_classes/governance_profiles
+ *   两词轴 + applicability_fields 字段面注记——Owner 裁决 8 ② 2026-09-01，
+ *   v0.1/v0.2/v0.3 词值零删改），逐值相等，禁止发明词表外值；
  * - 需要新值 → 留 `TODO(vocab-pr)` 注释走词汇表 PR，禁止就地添加；
  * - 标注「待词汇表 PR 收编」的词轴：词形已在 schema（01/02/03/05/06/07 及 P18 的
  *   08/09/10）的 x-vocab-extra / definitions 冻结，本文件照镜像并保留 TODO(vocab-pr)；
@@ -252,6 +254,37 @@ export type CatalogClassificationValue = (typeof CATALOG_CLASSIFICATION_VALUES)[
 /** applies_when.lane 最小闭包（V7；architect/designer/documenter 未成 catalog 词形，有条目采用时扩值走词汇表 PR）。 */
 export const CATALOG_LANE_VALUES = ["any", "frontend", "backend"] as const;
 export type CatalogLaneValue = (typeof CATALOG_LANE_VALUES)[number];
+
+/**
+ * applies_when.change_classes 词轴（x-vocab-source: vocab-lock catalog_layer_vocab.change_classes，
+ * PR-0005 收编；Owner 裁决 8 ② 2026-09-01「首批 3-5 值最小闭包，逐例对 corpus 实测词面」；
+ * PRD v0.5.2 §5.2 Structured Applicability 示例词形 API_EVOLUTION 逐字）。与 CATALOG_LANE_VALUES
+ * 正交：lane 管角色域，change_classes 管变更类目（PRD §5.3 确定性包含管线的第三层输入）。
+ */
+export const CATALOG_CHANGE_CLASS_VALUES = [
+  "API_EVOLUTION",
+  "PUBLIC_CONTRACT_CHANGE",
+  "DEPENDENCY_CHANGE",
+  "PRESENTATION_CHANGE",
+] as const;
+export type CatalogChangeClassValue = (typeof CATALOG_CHANGE_CLASS_VALUES)[number];
+
+/**
+ * applies_when.governance_profiles 词轴（x-vocab-source: vocab-lock
+ * catalog_layer_vocab.governance_profiles，PR-0005 收编；Owner 裁决 8 ② 2026-09-01
+ * 「对齐 TRIAGE_PROFILES+STRICT，消 STANDARD 两义」）。前三值与 CLI triage
+ * TRIAGE_PROFILES（packages/cli/src/triage.ts）同词形同义；STRICT 对位 constitutional 档
+ * （catalog-profile-anchor 词形先例）；PRD §5.2 示例值 CRITICAL 不入（另立第二套 profile
+ * 词表 = 变相第二套轴，违四克制——R4 消解裁定）。
+ */
+export const CATALOG_GOVERNANCE_PROFILE_VALUES = [
+  "MINIMAL",
+  "LIGHT",
+  "STANDARD",
+  "STRICT",
+] as const;
+export type CatalogGovernanceProfileValue =
+  (typeof CATALOG_GOVERNANCE_PROFILE_VALUES)[number];
 
 // ============================================================
 // presentation_axes（x-vocab-source: vocab-lock presentation_axes，PR-0001 收编）

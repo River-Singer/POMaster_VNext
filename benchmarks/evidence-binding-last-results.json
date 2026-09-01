@@ -1,0 +1,153 @@
+{
+  "schema": "pomaster.vnext.evidence-binding-benchmark/1",
+  "run_id": "eb-0004",
+  "seq": 4,
+  "ok": true,
+  "benchmark": "evidence-binding-tamper",
+  "prd_anchors": [
+    "§7 Evidence Artifact Binding",
+    "§14 P0.5-2",
+    "§15 Benchmark B",
+    "§16 Case E"
+  ],
+  "rounds": {
+    "control": {
+      "playwright_verdict": "passed",
+      "browser_verdict": "passed",
+      "binding": "PASS",
+      "blob_storage_path": "blobs/sha256/02/a3e298f1533f62558c58e4c70edcab9af5a50d62d925fd5390942020fb0fb8"
+    },
+    "tamper": {
+      "binding": "FAIL EVIDENCE_BINDING_INCOMPLETE (artifact_bytes_tampered)",
+      "mapped_verdict": "failed"
+    },
+    "file_missing": {
+      "binding": "FAIL EVIDENCE_BINDING_INCOMPLETE (artifact_file_missing)"
+    }
+  },
+  "assertions": [
+    {
+      "id": "r1.1 playwright 腿独立判卷 passed",
+      "ok": true,
+      "detail": "actual=\"passed\" expected=\"passed\""
+    },
+    {
+      "id": "r1.2 browser 腿 passed（三件套判卷不受绑定层污染）",
+      "ok": true,
+      "detail": "actual=\"passed\" expected=\"passed\""
+    },
+    {
+      "id": "r1.3 Receipt 在座（blob 落盘）",
+      "ok": true,
+      "detail": "actual=true expected=true"
+    },
+    {
+      "id": "r1.4 binding=bound",
+      "ok": true,
+      "detail": "actual={\"bound\":true,\"artifactCount\":1} expected={\"bound\":true,\"artifactCount\":1}"
+    },
+    {
+      "id": "r1.5 persisted artifact sha == 引用身份",
+      "ok": true,
+      "detail": "actual=\"sha256:02a3e298f1533f62558c58e4c70edcab9af5a50d62d925fd5390942020fb0fb8\" expected=\"sha256:02a3e298f1533f62558c58e4c70edcab9af5a50d62d925fd5390942020fb0fb8\""
+    },
+    {
+      "id": "r1.6 verified bytes（判卷选中件解码）== persisted bytes",
+      "ok": true,
+      "detail": "actual=true expected=true"
+    },
+    {
+      "id": "r1.7 GRN 携 artifact_refs（blob 分支）",
+      "ok": true,
+      "detail": "actual=1 expected=1"
+    },
+    {
+      "id": "r1.8 GRN 引用身份 == persisted 身份",
+      "ok": true,
+      "detail": "actual=\"sha256:02a3e298f1533f62558c58e4c70edcab9af5a50d62d925fd5390942020fb0fb8\" expected=\"sha256:02a3e298f1533f62558c58e4c70edcab9af5a50d62d925fd5390942020fb0fb8\""
+    },
+    {
+      "id": "r1.9 GRN 引用路径 == persisted 路径",
+      "ok": true,
+      "detail": "actual=\"blobs/sha256/02/a3e298f1533f62558c58e4c70edcab9af5a50d62d925fd5390942020fb0fb8\" expected=\"blobs/sha256/02/a3e298f1533f62558c58e4c70edcab9af5a50d62d925fd5390942020fb0fb8\""
+    },
+    {
+      "id": "r1.10 无主张腿（playwright）零 artifact_refs 键",
+      "ok": true,
+      "detail": "actual=false expected=false"
+    },
+    {
+      "id": "r1.11 证据字节不入记录（base64 原文零泄漏）",
+      "ok": true,
+      "detail": "actual=false expected=false"
+    },
+    {
+      "id": "r1.12 入账分母恰好两 GRN",
+      "ok": true,
+      "detail": "actual=\"GRN-0001.json,GRN-0002.json\" expected=\"GRN-0001.json,GRN-0002.json\""
+    },
+    {
+      "id": "r2.1 篡改前 control=bound",
+      "ok": true,
+      "detail": "actual={\"bound\":true,\"artifactCount\":1} expected={\"bound\":true,\"artifactCount\":1}"
+    },
+    {
+      "id": "r2.2 篡改检出 bound=false",
+      "ok": true,
+      "detail": "actual=false expected=false"
+    },
+    {
+      "id": "r2.3 稳定码 EVIDENCE_BINDING_INCOMPLETE",
+      "ok": true,
+      "detail": "actual=\"EVIDENCE_BINDING_INCOMPLETE\" expected=\"EVIDENCE_BINDING_INCOMPLETE\""
+    },
+    {
+      "id": "r2.4 reason=artifact_bytes_tampered",
+      "ok": true,
+      "detail": "actual=\"artifact_bytes_tampered\" expected=\"artifact_bytes_tampered\""
+    },
+    {
+      "id": "r2.5 绑定 FAIL → 判卷红 failed（绝不维持 PASS）",
+      "ok": true,
+      "detail": "actual=\"failed\" expected=\"failed\""
+    },
+    {
+      "id": "r2.6 items rule=EVIDENCE_BINDING_INCOMPLETE（门内 rule + 稳定码并用，D5）",
+      "ok": true,
+      "detail": "actual=true expected=true"
+    },
+    {
+      "id": "r2.7 呈现面含 FAIL",
+      "ok": true,
+      "detail": "actual=true expected=true"
+    },
+    {
+      "id": "r2.8 呈现面无 PASS",
+      "ok": true,
+      "detail": "actual=false expected=false"
+    },
+    {
+      "id": "r3.1 缺失检出 bound=false",
+      "ok": true,
+      "detail": "actual=false expected=false"
+    },
+    {
+      "id": "r3.2 reason=artifact_file_missing",
+      "ok": true,
+      "detail": "actual=\"artifact_file_missing\" expected=\"artifact_file_missing\""
+    },
+    {
+      "id": "r3.3 呈现面含 FAIL",
+      "ok": true,
+      "detail": "actual=true expected=true"
+    },
+    {
+      "id": "r3.4 呈现面无 PASS",
+      "ok": true,
+      "detail": "actual=false expected=false"
+    }
+  ],
+  "assertions_total": 24,
+  "assertions_failed": 0,
+  "durationMs": 430
+}

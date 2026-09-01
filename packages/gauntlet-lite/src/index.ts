@@ -128,6 +128,7 @@ export * from "./contract-adapter.js";
 export * from "./architecture-adapter.js";
 export * from "./browser-adapter.js";
 export * from "./browser-legs.js";
+export * from "./browser-evidence.js";
 export * from "./playwright-leg.js";
 export * from "./playwright-adapter.js";
 export * from "./oasdiff-leg.js";

@@ -11,8 +11,8 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Projection, Store } from "@pomaster/kernel";
-import { runInit, runContextCompile } from "@pomaster/cli";
+import type { CatalogProjectionExplanation, Projection, Store } from "@pomaster/kernel";
+import { runInit, runContextCompile, runContextExplain } from "@pomaster/cli";
 
 let dir: string;
 
@@ -50,7 +50,7 @@ function fakeProjection(overrides?: Partial<Projection>): Projection {
     catalogSource: {
       status: "catalog",
       root: "/repo/catalog",
-      note: "catalog-lock 校验通过（94 entries）",
+      note: "catalog-lock 校验通过（100 entries）",
     },
     inputsFingerprint: "sha256:" + "a".repeat(64),
     ...overrides,
@@ -116,7 +116,7 @@ describe("context compile 转调 kernel（注入 fake）", () => {
     await runInit(dir);
     const outcome = await runContextCompile(dir, "frontend", fakeKernel(fakeProjection()));
     expect(outcome.result.markdown).toContain("> source: /repo/catalog");
-    expect(outcome.result.markdown).toContain("> catalog-lock 校验通过（94 entries）");
+    expect(outcome.result.markdown).toContain("> catalog-lock 校验通过（100 entries）");
     expect(outcome.result.catalog_source.status).toBe("catalog");
   });
 
@@ -195,5 +195,175 @@ describe("context compile 转调 kernel（注入 fake）", () => {
     });
     expect(outcome.ok).toBe(false);
     expect(outcome.errors[0]?.code).toBe("KERNEL_NOT_INSTALLED");
+  });
+});
+
+// ============================================================
+// P0.5-1：compile applicability 输入透传 + context explain 决策记录面
+// ============================================================
+
+describe("context compile applicability 输入（P0.5-1）", () => {
+  it("inputs 透传 kernel（change→taskRef / capabilities / changeClass / governanceProfile）", async () => {
+    await runInit(dir);
+    const kernel = fakeKernel(fakeProjection());
+    const outcome = await runContextCompile(
+      dir,
+      "frontend",
+      kernel,
+      {
+        change: "CHANGE.C0042",
+        capabilities: ["CAPABILITY.PRESENTATION"],
+        changeClass: "PRESENTATION_CHANGE",
+        governanceProfile: "MINIMAL",
+      },
+    );
+    expect(outcome.ok).toBe(true);
+    expect(kernel.compileProjection.mock.calls[0]?.[1]).toEqual({
+      role: "frontend",
+      taskRef: "CHANGE.C0042",
+      capabilities: ["CAPABILITY.PRESENTATION"],
+      changeClass: "PRESENTATION_CHANGE",
+      governanceProfile: "MINIMAL",
+    });
+    // 输入回显（机读面 snake_case；缺席显式）。
+    expect(outcome.result.applicability).toEqual({
+      change: "CHANGE.C0042",
+      capabilities: ["CAPABILITY.PRESENTATION"],
+      change_class: "PRESENTATION_CHANGE",
+      governance_profile: "MINIMAL",
+    });
+  });
+
+  it("无输入时 markdown 零新增行（O7 输入面字节零变化）；有输入时 applicability 行在场", async () => {
+    await runInit(dir);
+    const kernel = fakeKernel(fakeProjection());
+    const plain = await runContextCompile(dir, "frontend", kernel);
+    expect(plain.result.markdown).not.toContain("applicability:");
+    const withInput = await runContextCompile(
+      dir,
+      "frontend",
+      fakeKernel(fakeProjection()),
+      { capabilities: ["CAPABILITY.PRESENTATION"], changeClass: "PRESENTATION_CHANGE" },
+    );
+    expect(withInput.result.markdown).toContain(
+      "> applicability: capabilities=CAPABILITY.PRESENTATION；change_class=PRESENTATION_CHANGE",
+    );
+  });
+
+  it("kernel 词形拒绝 → KERNEL_ERROR 透传原消息（fail-closed 命令面；真实 kernel 校验，注入 fake 会绕过判卷）", async () => {
+    await runInit(dir);
+    const outcome = await runContextCompile(dir, "frontend", undefined, {
+      changeClass: "NOT_A_CLASS",
+    });
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors[0]?.code).toBe("KERNEL_ERROR");
+    expect(outcome.errors[0]?.message).toContain("changeClass 词表外");
+  });
+});
+
+describe("context explain（P0.5-1 决策记录面；PRD §5.4）", () => {
+  function fakeExplanation(): CatalogProjectionExplanation {
+    return {
+      inputs: {
+        role: "frontend",
+        taskRef: null,
+        capabilities: ["CAPABILITY.PRESENTATION"],
+        changeClass: null,
+        governanceProfile: null,
+      },
+      decisions: [
+        {
+          ref: "POLICY.WEB.STYLE.OWNERSHIP_MATRIX",
+          file: "policies/policy.web.style.ownership_matrix.json",
+          decision: "included",
+          why_included:
+            "lane=frontend 命中 role=frontend（未声明机器 applicability 字段——lane 回退判定，O7）",
+          why_excluded: null,
+          matched: { lane: ["frontend"] },
+          fallback_lane: true,
+        },
+        {
+          ref: "POLICY.WEB.API.SINGLE_HTTP_CLIENT",
+          file: "policies/policy.web.api.single_http_client.json",
+          decision: "excluded",
+          why_included: null,
+          why_excluded:
+            "未命中（capabilities=[CAPABILITY.API_CONTRACT] 与请求 capabilities=[CAPABILITY.PRESENTATION] 无交集）",
+          matched: { lanes: ["frontend"] },
+          fallback_lane: false,
+        },
+      ],
+      catalogSource: {
+        status: "catalog",
+        root: "/repo/catalog",
+        note: "catalog-lock 校验通过（94 entries）",
+      },
+    };
+  }
+
+  function fakeExplainKernel(explanation: CatalogProjectionExplanation) {
+    const explainCatalogProjection = vi.fn(async () => explanation);
+    const createStore = vi.fn(async (root: string) => ({ rootDir: root, currentSeq: 0 }) as Store);
+    return { createStore, explainCatalogProjection };
+  }
+
+  it("include/exclude 逐条 why 渲染（PRD §5.4 词形逐字）+ 输入透传", async () => {
+    await runInit(dir);
+    const kernel = fakeExplainKernel(fakeExplanation());
+    const outcome = await runContextExplain(
+      dir,
+      "frontend",
+      kernel,
+      { capabilities: ["CAPABILITY.PRESENTATION"] },
+    );
+    expect(outcome.ok).toBe(true);
+    expect(kernel.explainCatalogProjection.mock.calls[0]?.[1]).toEqual({
+      role: "frontend",
+      capabilities: ["CAPABILITY.PRESENTATION"],
+    });
+    expect(outcome.result.decisions).toHaveLength(2);
+    expect(outcome.result.markdown).toContain(
+      "# Context Explain — catalog include/exclude（PRD §5.4 决策记录面）",
+    );
+    expect(outcome.result.markdown).toContain("## INCLUDED（1）");
+    expect(outcome.result.markdown).toContain("## EXCLUDED（1）");
+    expect(outcome.result.markdown).toContain(
+      "`POLICY.WEB.STYLE.OWNERSHIP_MATRIX` — why_included: lane=frontend 命中 role=frontend",
+    );
+    expect(outcome.result.markdown).toContain(
+      "`POLICY.WEB.API.SINGLE_HTTP_CLIENT` — why_excluded: 未命中（capabilities=",
+    );
+    // 隔离注记在场（excluded 不进 Agent Context——PRD §5.4 明文）。
+    expect(outcome.result.markdown).toContain("excluded 不进五分区 manifest");
+  });
+
+  it("真实 kernel：repo catalog 全量决策逐条可解释（lane 回退分母下 excluded 显式为空）", async () => {
+    await runInit(dir);
+    const outcome = await runContextExplain(dir, "frontend", undefined, {
+      capabilities: ["CAPABILITY.PRESENTATION"],
+    });
+    expect(outcome.ok).toBe(true);
+    expect(outcome.result.catalog_source.status).toBe("catalog");
+    const included = outcome.result.decisions.filter((d) => d.decision === "included");
+    const excluded = outcome.result.decisions.filter((d) => d.decision === "excluded");
+    expect(included.length).toBeGreaterThan(0);
+    // 真实 catalog（94 条全未标注 → lane 回退全命中）下 excluded 为空是 O7 的诚实结果；
+    // excluded 判卷由 fixture 集成（tests/integration/catalog-applicability-case-b.spec.ts）承载。
+    expect(excluded.length).toBe(0);
+    for (const decision of outcome.result.decisions) {
+      if (decision.decision === "included") {
+        expect(decision.why_included).toBeTruthy();
+        expect(decision.why_excluded).toBeNull();
+      } else {
+        expect(decision.why_excluded).toBeTruthy();
+        expect(decision.why_included).toBeNull();
+      }
+    }
+  });
+
+  it("未初始化 → NOT_INITIALIZED（缺席显式，与 compile 同款）", async () => {
+    const outcome = await runContextExplain(dir, "frontend");
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors[0]?.code).toBe("NOT_INITIALIZED");
   });
 });

@@ -50,16 +50,21 @@
  * D24：不计算任何 sha；A4：机器字段以 policy 供给的 grn/ranAtSeq 为锚，禁墙钟。
  *
  * ============================================================
- * 已知边界（P26 红队 MINOR 处置：如实登记，不发明声明外契约）
+ * 已知边界（P26 红队 MINOR 登记 → P0.5-2 gate_def 版本化闭合）
  * ============================================================
- * - **MCP 证据无存在性绑定**（P20 先例「缺存在性半边」同形）：adapter 对编排方
- *   注入的 MCP 证据只做词形/结构校验（content types + 最低门槛 + PNG 签名），
- *   不持有也不校验「经校验的证据字节 = 编排方实际入 evidence pack 的字节」——
- *   证据字节由编排方入 evidence pack（上文契约原文），adapter 侧不可见入包结果。
- *   头注「证据字节由编排方入 evidence pack」的声明即本边界（声明内边界，非遗漏）；
- *   对照 handoff 内容级/symlink 先例的登记形态如实呈报。不发明 hash 绑定
- *   （D24 禁 sha 属声明内边界）；若未来要求存在性绑定，须走 gate_def 版本化
- *   变更，不在本文件就地加料。
+ * - **MCP 证据存在性绑定**（版本化记录，裁决8④ D4=A，2026-09-01）：
+ *   @0.1.0 时代边界（原文如实留档）：adapter 对编排方注入的 MCP 证据只做词形/结构
+ *   校验（content types + 最低门槛 + PNG 签名），不持有也不校验「经校验的证据字节 =
+ *   编排方实际入 evidence pack 的字节」；不发明 hash 绑定（D24 禁 sha 属声明内边界）；
+ *   并在案路标「若未来要求存在性绑定，须走 gate_def 版本化变更，不在本文件就地加料」。
+ *   @0.2.0 闭合（PRD §7/§14 P0.5-2）：存在性绑定按在案路标经 gate_def 版本化变更
+ *   **进门禁判卷本体**——passed 即存在性主张，screenshot 件绑定缺失/失配 = 判卷红。
+ *   本文件仍不持有字节、不计算任何 sha（D24 纪律不变，adapter 不就地加料）：被选中
+ *   的 screenshot content block 以**内存载荷**（payload 字段）交编排方，由编排方经
+ *   kernel persistEvidenceArtifact 内容寻址落盘 + verifyEvidenceBinding 校验后随 GRN
+ *   携 artifact_refs 入账；绑定判卷（红/绿裁决）在 browser-evidence.ts
+ *   adjudicateEvidenceBindingClause。「首条胜出」确定性选择规则保留——判卷字节 =
+ *   持久化字节由此可机械证明（同输入数组纯函数重放，选件逐字节同一）。
  */
 import { spawnSync } from "node:child_process";
 import { performance } from "node:perf_hooks";
@@ -93,7 +98,20 @@ import {
 // ============================================================
 
 export const BROWSER_GATE_NAME = "BROWSER";
-export const BROWSER_GATE_DEF = "POLICY.GATE.BROWSER@0.1.0";
+/**
+ * gate_def 版本化记录（裁决8④ D4=A，2026-09-01）：
+ * - @0.1.0 = 三件套清单判卷（连接失败→failed；三件齐备→passed；缺件→not_run）；
+ * - @0.2.0 = +screenshot 存在性绑定条款（PRD §7/§14 P0.5-2）：passed 即存在性主张，
+ *   screenshot 件的持久化字节必须与 Gate Result 引用同一（artifact_refs 绑定）；
+ *   绑定缺失/失配 = 判卷红（failed，items rule=EVIDENCE_BINDING_INCOMPLETE）。
+ *   绑定半边的判定在编排层（kernel persistEvidenceArtifact/verifyEvidenceBinding 供
+ *   原语——本文件 D24 不算 sha；裁决函数见 browser-evidence.ts
+ *   adjudicateEvidenceBindingClause）。被 cap 降级的 warning（tool_version 漂移，证据
+ *   同样齐备）编排层照常附挂 refs 供篡改审计；条款判红只咬 passed（唯一 PASS 主张）。
+ *   0.2.0 条款对 playwright 确定性腿空转（该腿证据空间无 screenshot artifact，无主张
+ *   即无绑定义务）。
+ */
+export const BROWSER_GATE_DEF = "POLICY.GATE.BROWSER@0.2.0";
 export const BROWSER_TOOL_ID = "gauntlet:browser";
 /** P26 升级：口径从 smoke_connect 改为 interactive_evidence（判卷锚已升级为证据三件套）。 */
 export const BROWSER_METRIC_DIALECT = "browser:mcp_interactive_evidence";
@@ -207,7 +225,14 @@ function pngSignatureMatches(base64Data: string): boolean {
   );
 }
 
-/** 校验通过的单一证据件（清单留痕词形：kind + 体积披露，禁携带任意原文入记录）。 */
+/**
+ * 校验通过的单一证据件（清单留痕词形：kind + 体积披露，禁携带任意原文入记录）。
+ * P0.5-2 起增**内存载荷位** payload：被选中 content block 的原文（screenshot=base64
+ * 原文；a11y_snapshot/performance_trace 本 tracer 不启用恒 null——PRD §14 只收
+ * screenshot 一种）。载荷只在内存交编排方（persist 入 blob 平面），绝不进任何落盘
+ * 记录（scopeNote 清单/03 GateResult 契约不含载荷——证据字节不入记录纪律不变，
+ * D24：哈希由 kernel persist 层产生，本文件不算 sha）。
+ */
 export interface McpEvidenceArtifact {
   readonly kind: McpEvidenceKind;
   /** 工具名（官方词形原文）。 */
@@ -216,6 +241,12 @@ export interface McpEvidenceArtifact {
   readonly sizeChars: number;
   /** screenshot 专属：image mimeType（image/*）。 */
   readonly mimeType: string | null;
+  /**
+   * 被选中 content block 的内存载荷（screenshot=base64 原文；其余 kind tracer 范围外
+   * 恒 null）。与判卷所用的 content block 字节同一（同字符串引用），编排方 persist
+   * 后「判卷字节 = 持久化字节」可机械证明。
+   */
+  readonly payload: string | null;
 }
 
 export interface McpEvidenceProblem {
@@ -272,6 +303,8 @@ function classifyToolResult(
         tool: entry.tool,
         sizeChars: text.text.length,
         mimeType: null,
+        // tracer 范围钉死只 screenshot（PRD §14 / D3）：text 件载荷位恒 null（第二片再启用）。
+        payload: null,
       },
       problem: null,
     };
@@ -308,6 +341,9 @@ function classifyToolResult(
         tool: entry.tool,
         sizeChars: ((image as Record<string, unknown>)["data"] as string).length,
         mimeType,
+        // P0.5-2：判卷选中的 base64 原文随件内存携带（同字符串引用——判卷字节 =
+        // 持久化字节可机械证明）；绝不进任何落盘记录（清单只载体积披露）。
+        payload: (image as Record<string, unknown>)["data"] as string,
       },
       problem: null,
     };
@@ -331,6 +367,8 @@ function classifyToolResult(
         tool: entry.tool,
         sizeChars: text.text.length,
         mimeType: null,
+        // tracer 范围钉死只 screenshot（PRD §14 / D3）：text 件载荷位恒 null（第二片再启用）。
+        payload: null,
       },
       problem: null,
     };

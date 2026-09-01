@@ -6,7 +6,7 @@
  *    （vocab-lock catalog_layer_vocab，PR-0001），词表外/必填缺失 SCHEMA_INVALID
  *    fail-closed（坏物料 ≠ catalog 缺席，禁静默当空）。
  * 2) lock 校验（D24 read-side 指纹）：repo 实物全量对账 ok——producer 写入口径
- *    sha256(utf-8 字节) 与对账端同源；entries 分母 94（policies 79/gates 5/knowledge 10）。
+ *    sha256(utf-8 字节) 与对账端同源；entries 分母 100（policies 79/gates 5/knowledge 10/sensors 6——P1-5 Sensor Capability Catalog Lite 登记六条目）。
  * 3) 漂移检出：临时 catalog 副本构造 content_drift / missing / unexpected_file /
  *    lock 缺失 → 显式检出（「catalog 物料被改而 lock 未重锁」的事故通道封死）。
  *
@@ -73,13 +73,13 @@ describe("resolveCatalogRoot（缺省定位与显式注入）", () => {
 });
 
 describe("readCatalogLock（lock 文档形态）", () => {
-  it("版本/profile/entries 分母与排序（分母锁：94 entries，id 确定性排序）", () => {
+  it("版本/profile/entries 分母与排序（分母锁：100 entries，id 确定性排序）", () => {
     const lock = readCatalogLock(REPO_CATALOG);
     expect(lock.catalog_version).toBe("0.1.0-pilot");
     expect(lock.profile).toBe("web-standard@0");
-    expect(lock.entries.length).toBe(94);
-    expect(lock.controlled_children.allowed.length).toBe(94);
-    expect(lock.controlled_children.required.length).toBe(94);
+    expect(lock.entries.length).toBe(100);
+    expect(lock.controlled_children.allowed.length).toBe(100);
+    expect(lock.controlled_children.required.length).toBe(100);
     const sorted = [...lock.entries].sort((a, b) => (a.id < b.id ? -1 : 1));
     expect(lock.entries).toEqual(sorted);
   });
@@ -134,6 +134,136 @@ describe("loadCatalogPolicies（policies 物料读取）", () => {
   });
 });
 
+// ============================================================
+// P0.5-1 机器 applicability 字段解析（vocab-pr-0005；PRD §5.2；裁决 8 ②）
+// ============================================================
+
+describe("loadCatalogPolicies 机器 applicability 字段（P0.5-1）", () => {
+  /** 取一条真实 policy、改写其 applies_when（临时副本内，绝不改 repo 实物）。 */
+  function withAppliesWhen(
+    mutate: (appliesWhen: Record<string, unknown>) => void,
+  ): ReturnType<typeof loadCatalogPolicies> {
+    const catalogRoot = trackTempCatalog();
+    const target = join(catalogRoot, "policies", "policy.web.api.single_http_client.json");
+    const body = JSON.parse(readFileSync(target, "utf8")) as Record<string, unknown>;
+    mutate(body["applies_when"] as Record<string, unknown>);
+    writeFileSync(target, `${JSON.stringify(body, null, 2)}\n`, "utf8");
+    return loadCatalogPolicies(catalogRoot).find(
+      (candidate) => candidate.id === "POLICY.WEB.API.SINGLE_HTTP_CLIENT",
+    )!;
+  }
+
+  it("未声明机器字段：hasMachineApplicability=false + lanes 双读回退 [lane]（O7 行为零变化）", () => {
+    const policy = withAppliesWhen(() => undefined);
+    expect(policy.hasMachineApplicability).toBe(false);
+    expect(policy.declaresLanes).toBe(false);
+    expect(policy.lanes).toEqual(["frontend"]);
+    expect(policy.capabilities).toEqual([]);
+    expect(policy.changeClasses).toEqual([]);
+    expect(policy.governanceProfiles).toEqual([]);
+    expect(policy.objectKinds).toEqual([]);
+    expect(policy.declaredUnregisteredAxes).toEqual([]);
+    // applicability_note 回退 condition 原文（PRD §5.2 降级位）。
+    expect(policy.applicabilityNote).toBe("构建请求基础设施");
+  });
+
+  it("lanes 复数在场：双读取数组；capabilities CAPABILITY.* governed id 解析", () => {
+    const policy = withAppliesWhen((appliesWhen) => {
+      appliesWhen["lanes"] = ["frontend", "backend"];
+      appliesWhen["capabilities"] = ["CAPABILITY.API_CONTRACT"];
+    });
+    expect(policy.declaresLanes).toBe(true);
+    expect(policy.lanes).toEqual(["frontend", "backend"]);
+    expect(policy.capabilities).toEqual(["CAPABILITY.API_CONTRACT"]);
+    expect(policy.hasMachineApplicability).toBe(true);
+  });
+
+  it("change_classes/governance_profiles/object_kinds 解析（PR-0005 词轴 + truth_bodies 复用）", () => {
+    const policy = withAppliesWhen((appliesWhen) => {
+      appliesWhen["change_classes"] = ["API_EVOLUTION"];
+      appliesWhen["governance_profiles"] = ["STANDARD", "STRICT"];
+      appliesWhen["object_kinds"] = ["page_surface", "capability"];
+    });
+    expect(policy.changeClasses).toEqual(["API_EVOLUTION"]);
+    expect(policy.governanceProfiles).toEqual(["STANDARD", "STRICT"]);
+    expect(policy.objectKinds).toEqual(["page_surface", "capability"]);
+  });
+
+  it("applicability_note 在场：优先于 condition（自然语言降级位，PRD §5.2）", () => {
+    const policy = withAppliesWhen((appliesWhen) => {
+      appliesWhen["applicability_note"] = "仅当构建请求基础设施时（人工复核注记）";
+    });
+    expect(policy.applicabilityNote).toBe("仅当构建请求基础设施时（人工复核注记）");
+    expect(policy.appliesWhenCondition).toBe("构建请求基础设施");
+    expect(policy.hasMachineApplicability).toBe(false); // note 不算机器字段（禁自然语言路由）
+  });
+
+  it("risk_at_least/technologies 留位不登记（O4）：只检存在不解析值 + not_configured 呈现位", () => {
+    const policy = withAppliesWhen((appliesWhen) => {
+      appliesWhen["risk_at_least"] = "任意值——本增量不解析";
+      appliesWhen["technologies"] = ["react"];
+    });
+    expect(policy.hasMachineApplicability).toBe(false); // 不触发机器判定（词轴未登记）
+    expect(policy.declaredUnregisteredAxes).toEqual(["risk_at_least", "technologies"]);
+  });
+
+  it("fail-closed：lanes 词表外 → SCHEMA_INVALID", () => {
+    try {
+      withAppliesWhen((appliesWhen) => { appliesWhen["lanes"] = ["architect"]; });
+      expect.unreachable("必须抛出");
+    } catch (error) {
+      expect((error as { code?: string }).code).toBe("SCHEMA_INVALID");
+      expect((error as Error).message).toContain("lanes 词表外");
+    }
+  });
+
+  it("fail-closed：capabilities 非 CAPABILITY 前缀 governed id → SCHEMA_INVALID（A5 同款）", () => {
+    try {
+      withAppliesWhen((appliesWhen) => { appliesWhen["capabilities"] = ["PAGE.DASHBOARD"]; });
+      expect.unreachable("必须抛出");
+    } catch (error) {
+      expect((error as { code?: string }).code).toBe("SCHEMA_INVALID");
+      expect((error as Error).message).toContain("前缀非 CAPABILITY");
+    }
+  });
+
+  it("fail-closed：capabilities 词形非法（未知前缀）→ FATAL_UNKNOWN_PREFIX 透传", () => {
+    try {
+      withAppliesWhen((appliesWhen) => { appliesWhen["capabilities"] = ["BOGUS.X"]; });
+      expect.unreachable("必须抛出");
+    } catch (error) {
+      expect((error as { code?: string }).code).toBe("FATAL_UNKNOWN_PREFIX");
+    }
+  });
+
+  it("fail-closed：change_classes / governance_profiles / object_kinds 词表外 → SCHEMA_INVALID", () => {
+    const cases: [string, unknown][] = [
+      ["change_classes", ["NOT_A_CLASS"]],
+      ["governance_profiles", ["CRITICAL"]], // O2 裁决：CRITICAL 不入（禁双词表）
+      ["object_kinds", ["denominator"]], // truth_bodies 十类之外
+    ];
+    for (const [axis, value] of cases) {
+      try {
+        withAppliesWhen((appliesWhen) => { appliesWhen[axis] = value; });
+        expect.unreachable(`${axis} 必须抛出`);
+      } catch (error) {
+        expect((error as { code?: string }).code).toBe("SCHEMA_INVALID");
+        expect((error as Error).message).toContain(axis);
+      }
+    }
+  });
+
+  it("fail-closed：机器字段非数组形状 → SCHEMA_INVALID（禁静默当缺席）", () => {
+    try {
+      withAppliesWhen((appliesWhen) => { appliesWhen["capabilities"] = "CAPABILITY.API_CONTRACT"; });
+      expect.unreachable("必须抛出");
+    } catch (error) {
+      expect((error as { code?: string }).code).toBe("SCHEMA_INVALID");
+      expect((error as Error).message).toContain("须为数组");
+    }
+  });
+});
+
 describe("loadCatalogTools / loadCatalogProjectionPresets", () => {
   it("tools 消费：3 份实存工具（懒加载清单分母）", () => {
     const tools = loadCatalogTools(REPO_CATALOG);
@@ -162,9 +292,9 @@ describe("loadCatalogTools / loadCatalogProjectionPresets", () => {
 // ============================================================
 
 describe("verifyCatalogLock（repo 实物：producer 与对账端同口径）", () => {
-  it("全量对账 ok：94 entries 哈希 + 管辖面双向对账零漂移", () => {
+  it("全量对账 ok：100 entries 哈希 + 管辖面双向对账零漂移", () => {
     const verification = verifyCatalogLock(REPO_CATALOG);
-    expect(verification).toEqual({ ok: true, entries_checked: 94, drifts: [] });
+    expect(verification).toEqual({ ok: true, entries_checked: 100, drifts: [] });
   });
 });
 

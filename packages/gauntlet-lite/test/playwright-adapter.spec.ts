@@ -229,7 +229,7 @@ function handPlan(overrides: Partial<PlaywrightLegPlan> = {}): PlaywrightLegPlan
   return {
     grn: "GRN-26",
     gate: "BROWSER",
-    gateDef: "POLICY.GATE.BROWSER@0.1.0",
+    gateDef: "POLICY.GATE.BROWSER@0.2.0",
     ranAtSeq: 26,
     subjectId: null,
     denominatorRefs: [],

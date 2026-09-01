@@ -1,8 +1,9 @@
 /**
  * @pomaster/schemas —— POMaster vNext 公共 schema 资产导出与 FROZEN 词表镜像。
  *
- * 形态契约：assets/01..14 十四份 JSON Schema（draft-07，$id 形态
- * https://pomaster.dev/schemas/<name>/v1-draft.json）＋ 02b-kind-payloads.md /
+ * 形态契约：assets/01..16+18 十七份 JSON Schema（draft-07，$id 形态
+ * https://pomaster.dev/schemas/<name>/v1-draft.json；17 号编号位空缺——编号随资产
+ * 批次不连续）＋ 02b-kind-payloads.md /
  * golden-seed-mapping.md 两份配套文档（原样随包分发，非运行时依赖）。
  *
  * P18 增量（08/09/10）：Discovery 状态链 / MSD-Uncertainty / Research Artifact
@@ -25,6 +26,22 @@
  * 谓词 machine-evaluable 封死自由文本判据位——§95.2「不得把
  * 『是否异常』完全交给 LLM 主观判断」的类型面落点；CHALLENGED 复用 CHANGE_VALUES
  * 不重复登记）。
+ * W1-C 增量（16）：Execution Trace Manifest Lite（PRD v0.5.2 §8 行为侧车 +
+ * §14 P0.5-3 + §15 Benchmark C + §16 Case A；Owner 裁决 8 ② 2026-09-01）。Trace 是
+ * Identity 的派生投影/侧车（A19，不新增第二套身份）；reads/agent_spawns 恒空数组
+ * 显式（Lite 边界 =「不先采集完整 read trace」）；§8.4 隐私封条 = 闭形态
+ * additionalProperties:false 无自由文本载荷位。trace_retention 轴（§8.3 逐字四档）
+ * 与 schema 词形 pomaster.execution_trace/v1 absent_in_vocab_lock__pending_vocab_pr
+ * ——TODO(vocab-pr-0005)，词表三镜像登记归主控批次（批 1 文件面互斥）。verdict 七态
+ * 复用 03 definitions.verdict 绝对 $id 引用（单一事实源禁二次镜像）。
+ * VB-PR1 增量（18）：Grounded Decision Graph（PRD v0.5.3 §5/§16 Decision Graph +
+ * §9/§10 research_request/research_handoff/finding_link 三平面 definitions 同住一份
+ * schema——10 号零改动，Owner 裁决 9③）。词形纪律（Owner 裁决 9②）：DECISION./
+ * RESEARCH.REQ./FINDING./DISCOVERY.INTENT./FACT. 是 Discovery 平面局部词形（不入
+ * governed prefixes、不过 parseGovernedId），GRILLING/GRILLED/GRILL_CONFIRMED
+ * 禁词负例登记（§1.1 不新增 State Axis）；Grounding Verdict 五值是**派生判定不落盘**
+ * （§6.2 不进 Canonical Object State Axis）——schema 18 无 verdict 字段。
+ * TODO(vocab-pr) 词形三镜像收编归独立词汇表批。
  *
  * 词表纪律：一切枚举唯一来源是 assets/vocab-lock.draft.yaml（FROZEN）；
  * 代码侧唯一镜像点在 ./vocab.js（本文件 re-export）。YAML 资产仅作人读/工具对账，
@@ -36,7 +53,7 @@
  *
  * 装载提示（ajv）：schema 携带大量 x- 注记键（含 D24 强制在场的 x-digest-ethics），
  * 请以 `new Ajv({ strictSchema: false })` 装载，或逐个 ajv.addKeyword 注册注记键；
- * 跨文件 $ref 为绝对 $id 形态，组合装载须将全部 15 份 schema addSchema 注册。
+ * 跨文件 $ref 为绝对 $id 形态，组合装载须将全部 17 份 schema addSchema 注册。
  */
 import evidenceRecordsSchemaRaw from "../assets/07-evidence-records.schema.json" with { type: "json" };
 import denominatorSchemaRaw from "../assets/05-denominator.schema.json" with { type: "json" };
@@ -53,6 +70,8 @@ import knowledgeEntrySchemaRaw from "../assets/12-knowledge-entry.schema.json" w
 import equivalenceRegistrySchemaRaw from "../assets/13-equivalence-registry.schema.json" with { type: "json" };
 import memoryHarvestSchemaRaw from "../assets/14-memory-harvest.schema.json" with { type: "json" };
 import productionBandSchemaRaw from "../assets/15-production-band.schema.json" with { type: "json" };
+import executionTraceSchemaRaw from "../assets/16-execution-trace.schema.json" with { type: "json" };
+import decisionGraphSchemaRaw from "../assets/18-decision-graph.schema.json" with { type: "json" };
 
 export * from "./vocab.js";
 
@@ -94,6 +113,10 @@ const MEMORY_HARVEST_ID =
   "https://pomaster.dev/schemas/memory-harvest/v1-draft.json";
 const PRODUCTION_BAND_ID =
   "https://pomaster.dev/schemas/production-band/v1-draft.json";
+const EXECUTION_TRACE_ID =
+  "https://pomaster.dev/schemas/execution-trace/v1-draft.json";
+const DECISION_GRAPH_ID =
+  "https://pomaster.dev/schemas/decision-graph/v1-draft.json";
 
 function asSchema(raw: unknown, expectedId: string): JsonSchemaObject {
   const schema = raw as JsonSchemaObject;
@@ -152,8 +175,16 @@ export const productionBandSchema = asSchema(
   productionBandSchemaRaw,
   PRODUCTION_BAND_ID,
 );
+export const executionTraceSchema = asSchema(
+  executionTraceSchemaRaw,
+  EXECUTION_TRACE_ID,
+);
+export const decisionGraphSchema = asSchema(
+  decisionGraphSchemaRaw,
+  DECISION_GRAPH_ID,
+);
 
-/** 全部 15 份 schema 的聚合（组合装载：ajv.addSchema 逐个注册即可遍历本对象）。 */
+/** 全部 17 份 schema 的聚合（组合装载：ajv.addSchema 逐个注册即可遍历本对象）。 */
 export const allSchemas = {
   truthIndex: truthIndexSchema,
   objectEnvelope: objectEnvelopeSchema,
@@ -170,6 +201,8 @@ export const allSchemas = {
   equivalenceRegistry: equivalenceRegistrySchema,
   memoryHarvest: memoryHarvestSchema,
   productionBand: productionBandSchema,
+  executionTrace: executionTraceSchema,
+  decisionGraph: decisionGraphSchema,
 } as const;
 
 // ============================================================

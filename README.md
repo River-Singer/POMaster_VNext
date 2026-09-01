@@ -88,7 +88,7 @@ pomaster init          # 建立治理基线 + 生成 AGENTS.md/CLAUDE.md 轻入�
 pomaster triage "…"    # 秒级判档：这次 change 值得多少治理
 pomaster status        # 读 .pomaster/state：对象计数/分母状态/permit 活性
 pomaster inspect <governed-id>  # 单对象检视：正文+证据+谱系（纯读零写入）
-pomaster context compile --role <lane>  # 八拍③ PROJECTION：最小充分上下文投影（MUST/ADVISORY/CATALOG/LAZY TOOLS 四分区 markdown；CATALOG 区出处 catalog 策展源，§92.2 非 project state）
+pomaster context compile/explain --role <lane>  # 八拍③ PROJECTION：最小充分上下文投影（MUST/ADVISORY/CATALOG/LAZY TOOLS 四分区 markdown；CATALOG 区出处 catalog 策展源，§92.2 非 project state）；context explain = P0.5-1 决策记录面（PRD §5.4）：catalog include/exclude 决策逐条 why_included/why_excluded——决策面与 Agent Context 严格隔离（excluded 不进五分区 manifest，只用于 explain/Audit/Eval/Debug）
 pomaster view blueprint/task  # §49.1 Narrative / Review 投影：view blueprint [<scope>] = Stable Core 正文 + Uncertainty Envelope（正常状态标签默认隐藏 §91.3，Exception Ledger 异常聚合 §49.2）；view task <task> = §53 十二步审查顺序视图（File Diff 降级证据层）；纯派生零写入
 pomaster audit blueprint/task  # §49.1 Audit View：Object ID/State Axes/Authority/Source/Evidence/Policy/Transition History 七字段完整呈现（Audit View 才逐项显示完整 State Axes，§91.3）；audit task <task> 分母 = permit subjects ∪ change.affected_objects ∪ task
 pomaster ledger record/list  # §49.2 Exception Ledger：异常项入账（EXC-n；ASSUMPTION/OPEN_QUESTION/DEFERRED_DECISION/CONFLICT/HARD_BLOCKER 五分类）+ 台账纯读呈现

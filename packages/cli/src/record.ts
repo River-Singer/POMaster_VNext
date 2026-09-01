@@ -48,6 +48,7 @@ import {
   parseClaimFile,
   parseRunFile,
   resolveAssertedClaimedBy,
+  resolveArtifactRefs,
   resolveExecutionId,
   resolveRunContext,
   resolveSubjectBindings,
@@ -305,6 +306,19 @@ export async function runRecordGateRun(
 
   const runsDir = runsDirPath(rootDir);
 
+  // —— artifact_refs 解析（P0.5-2）：--from 自报在本层先反解（blob 分支收窄，畸形
+  // fail-closed）；canonical 幂等判定与 APPLIED 落账 op 同源携带——重入账不得静默剥掉
+  // 绑定字段（与 execution_id 贯穿同线）。缺席 → 空数组（canonical 重放不落键，存量兼容）。
+  const artifactRefsResolution = resolveArtifactRefs(parsed.artifactRefsRaw);
+  if ("fail" in artifactRefsResolution) {
+    return gateRunFail({
+      code: "SCHEMA_INVALID",
+      message: artifactRefsResolution.fail,
+      hint: "P0.5-2：artifact_refs 只收 blob 分支（D3=A 收窄），畸形 fail-closed 不入账。",
+    });
+  }
+  const artifactRefs = artifactRefsResolution.refs;
+
   // —— grn 解析与幂等判定 ——
   let grn: string;
   let skippedCanonical = false;
@@ -330,7 +344,7 @@ export async function runRecordGateRun(
           { ...context, ranAtSeq: replayRanAtSeq },
           claimedBy.claimedBy,
         );
-        if (canonicalRunBytes(grn, context.trigger, replay, executionId) === targetBytes) {
+        if (canonicalRunBytes(grn, context.trigger, replay, executionId, artifactRefs) === targetBytes) {
           skippedCanonical = true;
         }
       } catch {
@@ -409,7 +423,13 @@ export async function runRecordGateRun(
   const tx: Transaction = {
     ops: [{
       op: "record_gate_run",
-      run: { grn, trigger: context.trigger, result: finalResult, ...(executionId ? { executionId } : {}) },
+      run: {
+        grn,
+        trigger: context.trigger,
+        result: finalResult,
+        ...(executionId ? { executionId } : {}),
+        ...(artifactRefs.length > 0 ? { artifactRefs } : {}),
+      },
     }],
     ...(bindingNote !== null ? { note: bindingNote } : {}),
   };

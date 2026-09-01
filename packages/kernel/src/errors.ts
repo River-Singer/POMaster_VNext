@@ -110,7 +110,10 @@ export type GovernanceErrorCode =
   /** §95.2 链序封条（P34）：Agent Diagnosis 引用的挑战缺既有 BREACHED band evidence——
    *  diagnosis 必须落在 Deterministic Detection → Evidence → State Challenge 链序之后
    *  （「判定来自工具信号非 LLM 自报」的结构性保序位）。 */
-  | "DIAGNOSIS_WITHOUT_BREACH_EVIDENCE";
+  | "DIAGNOSIS_WITHOUT_BREACH_EVIDENCE"
+  /** sealExecutionTrace 目标执行已有封存 trace（AGX 主键唯一；durable/ephemeral 双平面
+   *  检查——重封存须显式删除旧文件后进行，禁静默覆盖审计快照；W1-C PRD v0.5.2 §8）。 */
+  | "TRACE_ALREADY_SEALED";
 
 /** GovernanceError 判读上下文（错误详情结构化，机器可判读）。 */
 export interface GovernanceErrorDetails {

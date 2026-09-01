@@ -396,10 +396,20 @@ async function runMaintainPreDev(
   };
 
   // —— ③ context compile（kernel compileProjection；taskRef 命中 ② 签发许可的许可通道） ——
+  // P0.5-1（PRD §5.3；裁决 8 ②）：链已持有的 applicability 输入传给投影——
+  // triage 档位（①产出）与 --capability 清单（与 ② permit 同源），零新原语。
+  // 未提供 --capability 时该输入缺席（声明 capabilities 轴的条目按缺席显式排除）。
   let projection: Projection;
   try {
     const store = await createStore(rootDir);
-    projection = await compileProjection(store, { role, taskRef: changeOrTask });
+    projection = await compileProjection(store, {
+      role,
+      taskRef: changeOrTask,
+      governanceProfile: triage.profile,
+      ...(input.capabilities !== undefined && input.capabilities.length > 0
+        ? { capabilities: input.capabilities }
+        : {}),
+    });
   } catch (err) {
     return failMaintain(
       kernelErrorOf(err),

@@ -54,6 +54,20 @@ export function sha256OfCanonical(value: unknown): string {
   return `sha256:${hash.digest("hex")}`;
 }
 
+/**
+ * 原始字节摘要（artifact 内容寻址；PRD §7.3「content_identity 只能由基础设施产生」
+ * 的机器落点，D24 伦理同条：基础设施计算、人类禁触）。与 sha256OfCanonical 是
+ * **两种不同哈希对象**（R3）：本函数对 artifact 原始字节（如 PNG 解码后字节）做
+ * raw sha256，绝不对 canonical-JSON 做——消费方不得拿 claim blob 降级引用的
+ * canonical 摘要（store.record_claim 对引用字符串的哈希）到 blobs/ 目录找文件。
+ * P0.5-2 Screenshot Evidence Binding（裁决8③：receipt 身份=blob sha256 即身份）。
+ */
+export function sha256OfBytes(bytes: Uint8Array): string {
+  const hash = createHash("sha256");
+  hash.update(bytes);
+  return `sha256:${hash.digest("hex")}`;
+}
+
 /** 词表指纹三元组（01 truth-index.vocab_lock 的对账基准）。 */
 export interface VocabFingerprints {
   readonly stateAxes: string;

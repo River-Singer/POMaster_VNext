@@ -11,8 +11,11 @@ import {
   applyTransaction,
   compileProjection,
   createStore,
+  explainCatalogProjection,
   issuePermit,
+  loadCatalogPolicies,
   resolveCatalogRoot,
+  type CatalogEntryDecision,
   type Store,
 } from "@pomaster/kernel";
 import {
@@ -389,5 +392,301 @@ describe("compileProjection catalog 分区（§69 步骤 12 运行时联结）",
       compileProjection(store, { role: "frontend" }, { catalogRoot }),
     ).rejects.toMatchObject({ code: "SCHEMA_INVALID" });
     rmSync(dirname(catalogRoot), { recursive: true, force: true });
+  });
+});
+
+// ============================================================
+// P0.5-1 结构化 applicability（PRD §5.2/§5.3/§5.4；vocab-pr-0005；裁决 8 ②）
+// ============================================================
+
+describe("compileProjection 结构化 applicability（P0.5-1 确定性过滤）", () => {
+  /** 给临时副本 catalog 中的一条 policy 加机器 applicability 字段。 */
+  function annotate(
+    catalogRoot: string,
+    policyFile: string,
+    appliesWhenExtra: Record<string, unknown>,
+  ): void {
+    const target = join(catalogRoot, policyFile);
+    const body = JSON.parse(readFileSync(target, "utf8")) as Record<string, unknown>;
+    Object.assign(body["applies_when"] as Record<string, unknown>, appliesWhenExtra);
+    writeFileSync(target, `${JSON.stringify(body, null, 2)}\n`, "utf8");
+  }
+
+  it("capability 维度：frontend+CAPABILITY.PRESENTATION 不见 capabilities=[API_CONTRACT] 条目（Case B 核心语义）", async () => {
+    const catalogRoot = makeTempCatalog();
+    annotate(catalogRoot, "policies/policy.web.api.single_http_client.json", {
+      lanes: ["frontend"],
+      capabilities: ["CAPABILITY.API_CONTRACT"],
+    });
+    const projection = await compileProjection(
+      store,
+      { role: "frontend", capabilities: ["CAPABILITY.PRESENTATION"] },
+      { catalogRoot },
+    );
+    const refs = projection.manifest.catalogEntries.map((entry) => entry.ref);
+    expect(refs).not.toContain("POLICY.WEB.API.SINGLE_HTTP_CLIENT");
+    // 未声明机器字段的条目照常 lane 回退注入（O7 行为零变化——94 条存量不受影响）。
+    expect(refs).toContain("POLICY.WEB.STYLE.OWNERSHIP_MATRIX");
+  });
+
+  it("capability 命中：请求 capabilities 含声明值 → include 且 reason 携带命中详情（PRD §5.4 reason 保留+扩展）", async () => {
+    const catalogRoot = makeTempCatalog();
+    annotate(catalogRoot, "policies/policy.web.api.single_http_client.json", {
+      lanes: ["frontend"],
+      capabilities: ["CAPABILITY.API_CONTRACT", "CAPABILITY.REQUEST_INFRA"],
+    });
+    const projection = await compileProjection(
+      store,
+      { role: "frontend", capabilities: ["CAPABILITY.REQUEST_INFRA"] },
+      { catalogRoot },
+    );
+    const entry = projection.manifest.catalogEntries.find(
+      (candidate) => candidate.ref === "POLICY.WEB.API.SINGLE_HTTP_CLIENT",
+    );
+    expect(entry).toBeDefined();
+    expect(entry?.reason).toContain("lanes=frontend 命中 role=frontend");
+    expect(entry?.reason).toContain("capabilities 命中=CAPABILITY.REQUEST_INFRA");
+    expect(entry?.reason).toContain("enforcement=required_when_applicable");
+  });
+
+  it("请求侧 capabilities 缺席：声明了 capabilities 轴的条目确定性排除（不可判定即不注入——缺席显式）", async () => {
+    const catalogRoot = makeTempCatalog();
+    annotate(catalogRoot, "policies/policy.web.api.single_http_client.json", {
+      capabilities: ["CAPABILITY.API_CONTRACT"],
+    });
+    const projection = await compileProjection(store, { role: "frontend" }, { catalogRoot });
+    const refs = projection.manifest.catalogEntries.map((entry) => entry.ref);
+    expect(refs).not.toContain("POLICY.WEB.API.SINGLE_HTTP_CLIENT");
+  });
+
+  it("change_class 维度：声明轴未命中 → 排除；命中 → include（词形对账 PR-0005）", async () => {
+    const catalogRoot = makeTempCatalog();
+    annotate(catalogRoot, "policies/policy.web.style.ownership_matrix.json", {
+      change_classes: ["API_EVOLUTION"],
+    });
+    const excluded = await compileProjection(
+      store,
+      { role: "frontend", changeClass: "PRESENTATION_CHANGE" },
+      { catalogRoot },
+    );
+    expect(
+      excluded.manifest.catalogEntries.map((entry) => entry.ref),
+    ).not.toContain("POLICY.WEB.STYLE.OWNERSHIP_MATRIX");
+    const included = await compileProjection(
+      store,
+      { role: "frontend", changeClass: "API_EVOLUTION" },
+      { catalogRoot },
+    );
+    expect(
+      included.manifest.catalogEntries.map((entry) => entry.ref),
+    ).toContain("POLICY.WEB.STYLE.OWNERSHIP_MATRIX");
+  });
+
+  it("governance_profile 维度：STRICT-only 条目在 MINIMAL 下排除、STRICT 下 include（O2 词形）", async () => {
+    const catalogRoot = makeTempCatalog();
+    annotate(catalogRoot, "policies/policy.web.arch.public_api_barrel.json", {
+      governance_profiles: ["STRICT"],
+    });
+    const minimal = await compileProjection(
+      store,
+      { role: "frontend", governanceProfile: "MINIMAL" },
+      { catalogRoot },
+    );
+    expect(
+      minimal.manifest.catalogEntries.map((entry) => entry.ref),
+    ).not.toContain("POLICY.WEB.ARCH.PUBLIC_API_BARREL");
+    const strict = await compileProjection(
+      store,
+      { role: "frontend", governanceProfile: "STRICT" },
+      { catalogRoot },
+    );
+    expect(
+      strict.manifest.catalogEntries.map((entry) => entry.ref),
+    ).toContain("POLICY.WEB.ARCH.PUBLIC_API_BARREL");
+  });
+
+  it("object_kinds 维度：与范围内对象 kind 交集判定（分母通道 page_surface 命中）", async () => {
+    await seedScope();
+    const catalogRoot = makeTempCatalog();
+    annotate(catalogRoot, "policies/policy.web.grid.column_schema_fields.json", {
+      object_kinds: ["page_surface"],
+    });
+    const withScope = await compileProjection(
+      store,
+      {
+        role: "frontend",
+        denominatorRefs: [{ id: gid("DENOMINATOR.PAGE.V1_SURFACE"), versionSeen: 1 }],
+      },
+      { catalogRoot },
+    );
+    // 范围内对象含 kind=page_surface（seedScope 的 PAGE.DASHBOARD）→ 命中 include。
+    expect(
+      withScope.manifest.catalogEntries.map((entry) => entry.ref),
+    ).toContain("POLICY.WEB.GRID.COLUMN_SCHEMA_FIELDS");
+    const noScope = await compileProjection(store, { role: "frontend" }, { catalogRoot });
+    // 范围为空 → 不可判定即不注入（缺席显式）。
+    expect(
+      noScope.manifest.catalogEntries.map((entry) => entry.ref),
+    ).not.toContain("POLICY.WEB.GRID.COLUMN_SCHEMA_FIELDS");
+  });
+
+  it("请求侧输入 fail-closed：changeClass/governanceProfile 词表外、capability 词形非法 → 显式拒绝（A5 同款码位透传）", async () => {
+    await expect(
+      compileProjection(store, { role: "frontend", changeClass: "NOT_A_CLASS" }),
+    ).rejects.toMatchObject({ code: "SCHEMA_INVALID" });
+    await expect(
+      compileProjection(store, { role: "frontend", governanceProfile: "CRITICAL" }),
+    ).rejects.toMatchObject({ code: "SCHEMA_INVALID" });
+    // 未知前缀 → A5 closed-world 原码透传（与 permit capabilityRefs 同款语义）。
+    await expect(
+      compileProjection(store, { role: "frontend", capabilities: ["BOGUS.X"] }),
+    ).rejects.toMatchObject({ code: "FATAL_UNKNOWN_PREFIX" });
+    // 已登记前缀但非 CAPABILITY → SCHEMA_INVALID（capabilities 轴词形约束）。
+    await expect(
+      compileProjection(store, { role: "frontend", capabilities: ["PAGE.DASHBOARD"] }),
+    ).rejects.toMatchObject({ code: "SCHEMA_INVALID" });
+  });
+
+  it("O7 行为零变化：真实 catalog（94 条全未标注）下带 capability 输入的输出与不带逐字节一致", async () => {
+    const withInput = await compileProjection(store, {
+      role: "frontend",
+      capabilities: ["CAPABILITY.PRESENTATION"],
+      changeClass: "PRESENTATION_CHANGE",
+      governanceProfile: "MINIMAL",
+    });
+    const withoutInput = await compileProjection(store, { role: "frontend" });
+    expect(withInput.manifest.catalogEntries).toEqual(withoutInput.manifest.catalogEntries);
+    expect(withInput.inputsFingerprint).toBe(withoutInput.inputsFingerprint);
+  });
+
+  it("§92.2 红线回归：机器过滤不改变分区边界（catalog 条目仍不进 MUST；store state 字节不变）", async () => {
+    await seedScope();
+    const catalogRoot = makeTempCatalog();
+    annotate(catalogRoot, "policies/policy.web.api.single_http_client.json", {
+      capabilities: ["CAPABILITY.PRESENTATION"],
+    });
+    const indexPath = join(root, ".pomaster", "state", "truth-index.json");
+    const before = readFileSync(indexPath, "utf8");
+    const projection = await compileProjection(
+      store,
+      {
+        role: "frontend",
+        capabilities: ["CAPABILITY.PRESENTATION"],
+        denominatorRefs: [{ id: gid("DENOMINATOR.PAGE.V1_SURFACE"), versionSeen: 1 }],
+      },
+      { catalogRoot },
+    );
+    for (const entry of projection.manifest.mustEntries) {
+      expect(entry.reason.startsWith("catalog:")).toBe(false);
+    }
+    expect(readFileSync(indexPath, "utf8")).toBe(before);
+    rmSync(dirname(catalogRoot), { recursive: true, force: true });
+  });
+});
+
+describe("explainCatalogProjection（P0.5-1 决策记录面；PRD §5.4）", () => {
+  function makeAnnotatedCatalog(): string {
+    const catalogRoot = makeTempCatalog();
+    const annotate = (policyFile: string, extra: Record<string, unknown>): void => {
+      const target = join(catalogRoot, policyFile);
+      const body = JSON.parse(readFileSync(target, "utf8")) as Record<string, unknown>;
+      Object.assign(body["applies_when"] as Record<string, unknown>, extra);
+      writeFileSync(target, `${JSON.stringify(body, null, 2)}\n`, "utf8");
+    };
+    // Case B 三实体（真实条目承载）：API Compat=capabilities 轴；Layout=lane 回退代表；
+    // DB Transaction 实体缺席（O9 fixture-only——集成 spec 用 fixture 条目承载）。
+    annotate("policies/policy.web.api.single_http_client.json", {
+      lanes: ["frontend"],
+      capabilities: ["CAPABILITY.API_CONTRACT"],
+    });
+    return catalogRoot;
+  }
+
+  it("included/excluded 逐条 why：命中条目 why_included、未命中条目 why_excluded（缺席显式）", async () => {
+    const catalogRoot = makeAnnotatedCatalog();
+    const explanation = await explainCatalogProjection(
+      store,
+      { role: "frontend", capabilities: ["CAPABILITY.PRESENTATION"] },
+      { catalogRoot },
+    );
+    const byId = new Map(explanation.decisions.map((d) => [d.ref, d]));
+    const apiEntry = byId.get("POLICY.WEB.API.SINGLE_HTTP_CLIENT");
+    expect(apiEntry?.decision).toBe("excluded");
+    expect(apiEntry?.why_excluded).toContain("capabilities=[CAPABILITY.API_CONTRACT]");
+    expect(apiEntry?.why_excluded).toContain("无交集");
+    // excluded 决策的 matched 携带部分命中轴（lanes 命中而 capabilities 未命中）——
+    // 决策记录如实呈现部分命中，不伪造全轴失败。
+    expect(apiEntry?.matched).toEqual({ lanes: ["frontend"] });
+    expect(apiEntry?.fallback_lane).toBe(false);
+
+    const layoutEntry = byId.get("POLICY.WEB.STYLE.OWNERSHIP_MATRIX");
+    expect(layoutEntry?.decision).toBe("included");
+    expect(layoutEntry?.why_included).toContain("lane=frontend 命中 role=frontend");
+    expect(layoutEntry?.why_included).toContain("lane 回退判定");
+    expect(layoutEntry?.fallback_lane).toBe(true);
+    expect(layoutEntry?.why_excluded).toBeNull();
+
+    // 输入回显（判卷可重放）。
+    expect(explanation.inputs).toEqual({
+      role: "frontend",
+      taskRef: null,
+      capabilities: ["CAPABILITY.PRESENTATION"],
+      changeClass: null,
+      governanceProfile: null,
+    });
+    expect(explanation.catalogSource.status).toBe("catalog");
+    rmSync(dirname(catalogRoot), { recursive: true, force: true });
+  });
+
+  it("与 manifest 一致：included 决策集 = catalogEntries ref 集（同一判定核的两面）", async () => {
+    const catalogRoot = makeAnnotatedCatalog();
+    const request = {
+      role: "frontend",
+      capabilities: ["CAPABILITY.API_CONTRACT"],
+    } as const;
+    const [explanation, projection] = await Promise.all([
+      explainCatalogProjection(store, request, { catalogRoot }),
+      compileProjection(store, request, { catalogRoot }),
+    ]);
+    const includedRefs = explanation.decisions
+      .filter((d: CatalogEntryDecision) => d.decision === "included")
+      .map((d) => d.ref)
+      .sort();
+    const manifestRefs = projection.manifest.catalogEntries.map((e) => e.ref).sort();
+    expect(includedRefs).toEqual(manifestRefs);
+    rmSync(dirname(catalogRoot), { recursive: true, force: true });
+  });
+
+  it("同输入重放字节稳定（纯派生只读决策面）", async () => {
+    const catalogRoot = makeAnnotatedCatalog();
+    const request = { role: "frontend", capabilities: ["CAPABILITY.PRESENTATION"] } as const;
+    const first = await explainCatalogProjection(store, request, { catalogRoot });
+    const second = await explainCatalogProjection(store, request, { catalogRoot });
+    expect(first).toEqual(second);
+    rmSync(dirname(catalogRoot), { recursive: true, force: true });
+  });
+
+  it("决策记录与指纹隔离：explanation 形状无 manifest/fingerprint 面（R2 隔离纪律）", async () => {
+    const catalogRoot = makeAnnotatedCatalog();
+    const request = { role: "frontend", capabilities: ["CAPABILITY.PRESENTATION"] } as const;
+    const explanation = await explainCatalogProjection(store, request, { catalogRoot });
+    // explanation 不携带 manifest/fingerprint 面（隔离由形状封死——excluded 无通路进投影）。
+    expect("manifest" in explanation).toBe(false);
+    expect("inputsFingerprint" in explanation).toBe(false);
+    // decisions 分母 = policies 全集 + presets（excluded 在决策面全量可解释）。
+    const policyCount = loadCatalogPolicies(catalogRoot).length;
+    expect(explanation.decisions.length).toBe(policyCount + 1); // +1 = registry-tree preset
+    rmSync(dirname(catalogRoot), { recursive: true, force: true });
+  });
+
+  it("catalog 缺席 → 空 decisions + absent catalogSource（显式缺席，非静默空）", async () => {
+    const absentRoot = join(makeRoot(), "no-such-catalog");
+    const explanation = await explainCatalogProjection(
+      store,
+      { role: "frontend" },
+      { catalogRoot: absentRoot },
+    );
+    expect(explanation.decisions).toEqual([]);
+    expect(explanation.catalogSource.status).toBe("absent");
   });
 });
