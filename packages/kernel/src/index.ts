@@ -1835,3 +1835,100 @@ export type {
   NegativeObservationOutcome,
   NegativeObservationPreconditions,
 } from "./perception.js";
+
+// ============================================================
+// Software Graph relation sidecar + Object Family 派生视图 + Analyzer Output
+// Contract + Resolver（P-v06 批次 0 Model Constitution · Owner 四决议 D-1~D-4
+// 2026-09-02 · PRD v0.6 §6-8/§98/§148-149 + v0.6.1 §2/§69/§73/§75/§87）
+// ============================================================
+// 语义边界：Graph 不是第六原语（PRD v0.6 §6 逐字）——relations.ts 只承载边
+// （Typed Relation sidecar：state/relations.jsonl 追加流，EDGE-<12hex> 内容寻址
+// 幂等；不建图库、不改 01、不进 content_digest；端点存在性归消费面）；family.ts
+// 是 Derived Facts 派生视图（前缀→family 全总映射，零信封改动——PRD §1.2/§163
+// Phase A）；analyzer-contract.ts 是 §148 八字段必答判卷 + §149 盲区四态映射
+// （不新增词——规范位归既有 perception 词面；FAILED_TO_OBSERVE 恒盲区位绝不折算
+// absence）；resolver.ts 是统一语义解析门面（§98/§69/§73：三精确腿 + 词形腿，
+// match_class 确定性派生、NO_MATCH 显式、分母披露、advisory≠match §87；解析≠采用
+// ——INSTANCE_OF 边由显式采用动作经 registerRelation 登记）。词形轴
+// RELATION_*/SUBSTRATE_LAYER/RESOLUTION_MATCH_CLASS/OBJECT_FAMILY/CATALOG_KIND
+// 已随 vocab-pr-0006 收编 vocab-lock@v0.5-resolved 主表 software_graph_vocab 段
+// （schema 载体 19-software-graph-relations.schema.json）。
+export {
+  RELATIONS_RELATIVE,
+  EDGE_ID_PATTERN,
+  CATALOG_ENDPOINT_ID_PATTERN,
+  OBSERVATION_REF_PATTERN,
+  normalizeRelationType,
+  normalizeRelationOrigin,
+  normalizeEndpointDomain,
+  normalizeRelationConfidence,
+  readRelations,
+  registerRelation,
+  edgeIdOf,
+  relationsTouching,
+  reverseDependents,
+  forwardDependencies,
+} from "./relations.js";
+export type {
+  RelationEndpoint,
+  RelationProvenance,
+  RelationEntry,
+  RelationEndpointInput,
+  RelationRegistrationInput,
+  RelationRegistrationOutcome,
+} from "./relations.js";
+export {
+  PREFIX_FAMILY_MAP,
+  FAMILIES_WITHOUT_PREFIX,
+  deriveFamily,
+  familyOfId,
+} from "./family.js";
+export {
+  ANALYZER_ID_PATTERN,
+  SOURCE_SHA_PATTERN,
+  PRD_BLINDSPOT_STATES,
+  PRD_BLINDSPOT_STATE_MAPPING,
+  BLINDSPOT_CANONICAL_OBSERVED,
+  normalizeAnalyzerReport,
+  partitionBlindSpotAttempts,
+} from "./analyzer-contract.js";
+export type {
+  AnalyzerReportInput,
+  AnalyzerReport,
+  PrdBlindSpotState,
+  BlindSpotAttempt,
+  BlindSpotPartition,
+} from "./analyzer-contract.js";
+export {
+  NEW_ENTITY_GATE_DEF,
+  resolveNeed,
+  newEntityVerdictFromResolution,
+} from "./resolver.js";
+export type {
+  ResolverRequestInput,
+  ResolverMatch,
+  ResolverOutcome,
+} from "./resolver.js";
+export { loadCatalogArchetypes } from "./catalog.js";
+export type { CatalogArchetypeMaterial } from "./catalog.js";
+// —— P-v06 词值常量再导出（软件图词轴；vocab-pr-0006 收编，唯一镜像 @pomaster/schemas） ——
+export {
+  RELATION_TYPE_VALUES,
+  RELATION_ORIGIN_VALUES,
+  RELATION_ENDPOINT_DOMAIN_VALUES,
+  RELATION_CONFIDENCE_VALUES,
+  SUBSTRATE_LAYER_VALUES,
+  RESOLUTION_MATCH_CLASS_VALUES,
+  OBJECT_FAMILY_VALUES,
+  CATALOG_KIND_VALUES,
+} from "@pomaster/schemas";
+export type {
+  RelationTypeValue,
+  RelationOriginValue,
+  RelationEndpointDomainValue,
+  RelationConfidenceValue,
+  ResolutionMatchClassValue,
+  ObjectFamilyValue,
+  SubstrateLayerValue,
+  CatalogKindValue,
+} from "@pomaster/schemas";

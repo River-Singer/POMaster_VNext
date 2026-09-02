@@ -3,12 +3,15 @@
  *
  * 词表纪律（违者=返工）：
  * - 本文件一切枚举/前缀/转移矩阵只能镜像 `assets/vocab-lock.draft.yaml`
- *   （pomaster.vocab/v0.4-resolved；v0.1-resolved 2026-08-27 FROZEN，2026-08-29 PR-0001
+ *   （pomaster.vocab/v0.5-resolved；v0.1-resolved 2026-08-27 FROZEN，2026-08-29 PR-0001
  *   append-only 纯增量增补（v0.1 词值零删改），2026-09-01 PR-0004 增补
  *   production_band_vocab 段 + id_namespace.state_plane_refs 五通路编号词形注记，
  *   2026-09-01 PR-0005 增补 catalog_layer_vocab 段 change_classes/governance_profiles
  *   两词轴 + applicability_fields 字段面注记——Owner 裁决 8 ② 2026-09-01，
- *   v0.1/v0.2/v0.3 词值零删改），逐值相等，禁止发明词表外值；
+ *   2026-09-02 PR-0006 增补 software_graph_vocab 段六词轴 + catalog_layer_vocab
+ *   catalog_kind 词轴 + id_namespace.state_plane_refs EDGE-<12hex> 通路词形注记
+ *   ——Owner 四决议 D-1~D-4 2026-09-02（PRD v0.6/v0.6.1 融合批次 0 Model Constitution），
+ *   v0.1/v0.2/v0.3/v0.4 词值零删改），逐值相等，禁止发明词表外值；
  * - 需要新值 → 留 `TODO(vocab-pr)` 注释走词汇表 PR，禁止就地添加；
  * - 标注「待词汇表 PR 收编」的词轴：词形已在 schema（01/02/03/05/06/07 及 P18 的
  *   08/09/10）的 x-vocab-extra / definitions 冻结，本文件照镜像并保留 TODO(vocab-pr)；
@@ -1284,3 +1287,143 @@ export const PRODUCTION_CLI_ERROR_VALUES = [
 ] as const;
 export type ProductionCliErrorValue =
   (typeof PRODUCTION_CLI_ERROR_VALUES)[number];
+
+// ============================================================
+// software_graph_vocab（x-vocab-source: vocab-lock software_graph_vocab，PR-0006 收编）
+// P-v06 Software Graph / Engineering Substrate 词轴（PRD v0.6 §6-8/§111/§148-149/
+// §162-163 + PRD v0.6.1 §2/§69/§73/§75 逐字 + Owner 四决议 D-1~D-4 2026-09-02）。
+// schema 冻结锚 19-relations definitions；kernel 消费面 relations.ts /
+// resolver.ts / analyzer-contract.ts；扩值走词汇表 PR。
+// ============================================================
+
+/**
+ * Typed Relation 词表首批 8 值（PRD v0.6 §7 Relation Model 逐字词形 + D-2 裁定补位
+ * INSTANCE_OF；「只收真实消费」纪律——PRD §7 其余词形待真实消费者落地逐批 append-only
+ * 增补，禁一次性登记空词）。MAPS_TO_SOURCE 语义由既有 key_bindings 承载（D15）；
+ * SUPERSEDES 语义由信封 supersedes/successor_ref 承载零新增——既有机制已有承载位的
+ * PRD 词形不重复登记。
+ * x-vocab-source: vocab-lock software_graph_vocab.relation_type（PR-0006）。
+ */
+export const RELATION_TYPE_VALUES = [
+  "INSTANCE_OF",
+  "IMPLEMENTS",
+  "CONTAINS",
+  "CALLS",
+  "READS",
+  "WRITES",
+  "VERIFIED_BY",
+  "DERIVED_FROM",
+] as const;
+export type RelationTypeValue = (typeof RELATION_TYPE_VALUES)[number];
+
+/**
+ * 边来源三值（PRD v0.6 §8 Graph Provenance source_type 语义的边侧承载）。与
+ * SOURCE_TYPE_ALL_VALUES（02 信封对象侧九值来源词表）正交、值域不相交混用。
+ * x-vocab-source: vocab-lock software_graph_vocab.relation_origin（PR-0006）。
+ */
+export const RELATION_ORIGIN_VALUES = [
+  "static_analysis",
+  "runtime_trace",
+  "human_declared",
+] as const;
+export type RelationOriginValue = (typeof RELATION_ORIGIN_VALUES)[number];
+
+/**
+ * 边端点域两值（D-2 裁定：边端点可指 governed id（truth 面）或 catalog 条目 id
+ * （catalog 面）；INSTANCE_OF 典型=truth→catalog）。
+ * x-vocab-source: vocab-lock software_graph_vocab.relation_endpoint_domain（PR-0006）。
+ */
+export const RELATION_ENDPOINT_DOMAIN_VALUES = ["truth", "catalog"] as const;
+export type RelationEndpointDomainValue =
+  (typeof RELATION_ENDPOINT_DOMAIN_VALUES)[number];
+
+/**
+ * 边置信三级（PRD v0.6 §8 Graph Provenance confidence.deterministic 语义的三级化 +
+ * §148 Analyzer Output Contract confidence 位）。与 state_axes.confidence
+ * （UNRESOLVED/EXPERIMENTAL/PROVISIONAL/LOCKED 对象治理轴）正交、值域不相交。
+ * x-vocab-source: vocab-lock software_graph_vocab.relation_confidence（PR-0006）。
+ */
+export const RELATION_CONFIDENCE_VALUES = [
+  "deterministic",
+  "probable",
+  "declared",
+] as const;
+export type RelationConfidenceValue = (typeof RELATION_CONFIDENCE_VALUES)[number];
+
+/**
+ * Engineering Substrate 七层（PRD v0.6.1 §2 分层逐字：Foundation→Primitive→Pattern
+ * →Archetype→Reference Solution→Project Baseline→Business Delta；SCREAMING_SNAKE
+ * 词形化——§91.3 词形大写化先例，空格词形转下划线）。archetype 物料必填分层位
+ * （catalog_kind=archetype 的物料级轴）：逐层稳定度递减、复用面递增方向即 §2 箭头序。
+ * x-vocab-source: vocab-lock software_graph_vocab.substrate_layer（PR-0006）。
+ */
+export const SUBSTRATE_LAYER_VALUES = [
+  "FOUNDATION",
+  "PRIMITIVE",
+  "PATTERN",
+  "ARCHETYPE",
+  "REFERENCE_SOLUTION",
+  "PROJECT_BASELINE",
+  "BUSINESS_DELTA",
+] as const;
+export type SubstrateLayerValue = (typeof SUBSTRATE_LAYER_VALUES)[number];
+
+/**
+ * Resolver 匹配分类六值（PRD v0.6.1 §69 Requirement Resolution SOP 分类清单逐字）。
+ * 只有 NO_MATCH 才允许进入 Design Synthesis（§69）；New Entity Gate 判卷消费本轴（§75）。
+ * Resolver MVP 确定性派生覆盖 EXACT/CONFIGURABLE/EXTENSIBLE/NO_MATCH 四值；
+ * COMPOSABLE/REFERENCE 为批次 2+ 组合分析预留位（登记全闭包、派生覆盖子集——缺席显式）。
+ * Anti-Hallucination（§87）：advisory 面（knowledge/policy）命中不改变 match_class。
+ * x-vocab-source: vocab-lock software_graph_vocab.resolution_match_class（PR-0006）。
+ */
+export const RESOLUTION_MATCH_CLASS_VALUES = [
+  "EXACT_MATCH",
+  "CONFIGURABLE_MATCH",
+  "COMPOSABLE_MATCH",
+  "EXTENSIBLE_MATCH",
+  "REFERENCE_MATCH",
+  "NO_MATCH",
+] as const;
+export type ResolutionMatchClassValue =
+  (typeof RESOLUTION_MATCH_CLASS_VALUES)[number];
+
+/**
+ * 十二 Object Family（PRD v0.6 §6.1 Object Family 十二族逐字）。**family=派生视图**
+ * （PRD §1.2 Derived Facts Must Be Derived：由前缀映射机器派生，零信封改动——映射表
+ * PREFIX_FAMILY_MAP 见 kernel family.ts；RUNTIME/RESOURCE/RELIABILITY/SECURITY/DELIVERY
+ * 五族暂无前缀映射，派生 null 显式缺席禁猜测）。PRD §163 Phase C：新 family 待真实对象
+ * 出现走词汇表 PR 增前缀，本轴不扩值。
+ * x-vocab-source: vocab-lock software_graph_vocab.object_family（PR-0006）。
+ */
+export const OBJECT_FAMILY_VALUES = [
+  "PRODUCT",
+  "UI",
+  "INTERFACE",
+  "CODE",
+  "DATA",
+  "RUNTIME",
+  "RESOURCE",
+  "RELIABILITY",
+  "SECURITY",
+  "DELIVERY",
+  "GOVERNANCE",
+  "EVIDENCE",
+] as const;
+export type ObjectFamilyValue = (typeof OBJECT_FAMILY_VALUES)[number];
+
+/**
+ * catalog 物料 kind 词轴（PR-0006 收编：兑现 kinds_registry.catalog_note「catalog 条目
+ * kind 词形住 catalog_layer_vocab 段」的登记位）。前四值=既有物料实测词形登记
+ * （policy/gate_recipe/sensor_capability/knowledge_entry）；archetype=D-2 裁定新增
+ * （Engineering Substrate 标准件物料，PRD v0.6.1 §2-§4：定义住 catalog 面、实例采用走
+ * relation sidecar INSTANCE_OF 边——「Catalog 不是第二套 Project Truth」§92.2）。
+ * x-vocab-source: vocab-lock catalog_layer_vocab.catalog_kind（PR-0006）。
+ */
+export const CATALOG_KIND_VALUES = [
+  "policy",
+  "gate_recipe",
+  "sensor_capability",
+  "knowledge_entry",
+  "archetype",
+] as const;
+export type CatalogKindValue = (typeof CATALOG_KIND_VALUES)[number];

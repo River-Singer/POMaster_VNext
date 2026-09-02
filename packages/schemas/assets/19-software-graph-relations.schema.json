@@ -1,0 +1,177 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://pomaster.dev/schemas/software-graph-relations/v1-draft.json",
+  "title": "Software Graph Relations（Typed Relation sidecar 台账 · P-v06 批次 0 Model Constitution · PRD v0.6 §6-8 + Owner 决议 D-3）",
+  "description": "Canonical Software Graph 的边平面落地（PRD v0.6 §6「Graph 不是第六原语；Graph 是 Governed Object + Typed Relation 的主要实现方式」逐字 + Owner 裁决 D-3 2026-09-02「relation sidecar + 派生视图」）。\n形态纪律（结构性保住）：①不建图数据库、不改 01 truth-index（additionalProperties:false 封条不动，A8 封死运行产物入索引）——边住 .pomaster/state/relations.jsonl 追加流侧车（staged write 同族 + journal RELATION_* 事件流 + 不进 content_digest，equivalence-registry 侧车先例）；②边端点可指 governed id（truth 面，A5 closed-world 过 parseGovernedId）或 catalog 条目 id（catalog 面，D-2 裁定 INSTANCE_OF 边的 catalog 侧端点）；③边 provenance 每边必答「为什么存在」（PRD v0.6 §8 Graph Provenance：origin/producer/locator/confidence/observed 事件拍；runtime_trace 边必须附 OBS-n/POB-<12hex> observation_ref——「Agent 必须证明我看过」§6.13 封条的边侧镜像）。",
+  "x-pomaster-file-role": "19-software-graph-relations.schema.json —— state/relations.jsonl 侧车的形态契约（kernel relations.ts 维护，写入唯一通路 registerRelation；append-only 追加流，EDGE-<12hex> 内容寻址幂等 dedupe）。消费方 = Software Graph 派生视图（dependencies/composition/runtime 全部从本面派生——projection 缝3）、Change Impact（§106-108 reverse dependents）、New Entity Gate（v0.6.1 §75 五否证明的图消费位）、ref-integrity 同族存在性消费 gate。",
+  "x-pomaster-vocab-source": "词形轴已随 vocab-pr-0006 收编 vocab-lock@v0.5-resolved 主表 software_graph_vocab 段（Owner 四决议 D-1~D-4 2026-09-02 批准）：relation_type 首批 8 值（INSTANCE_OF/IMPLEMENTS/CONTAINS/CALLS/READS/WRITES/VERIFIED_BY/DERIVED_FROM——PRD v0.6 §7 逐字 + D-2 补位；「只收真实消费」，其余 §7 词形待真实消费者逐批 append-only 增补）；relation_origin 三值（static_analysis/runtime_trace/human_declared——PRD §8 source_type 语义边侧承载）；relation_endpoint_domain 两值（truth/catalog——D-2）；relation_confidence 三值（deterministic/probable/declared——PRD §8 confidence.deterministic 三级化）。EDGE-<12hex> 是通路编号词形（EQG-/POB-/PBR- 同族先例：内容寻址 sha256 前 12 hex，A4 无墙钟无随机），非 governed 前缀，不入 id_namespace prefixes_v0 闭包、不过 parseGovernedId（vocab-lock id_namespace.state_plane_refs PR-0006 注记）。",
+  "x-pomaster-contract": {
+    "not_a_sixth_primitive": "PRD v0.6 §6 逐字：Graph 不是第六原语——本面是 Governed Object + Typed Relation 的边承载侧车；节点=既有 truth-index 对象与 catalog 条目（零新节点存储），边=本面追加流；dependencies/composition/runtime 视图全部派生（PRD §1.3 One Model Many Projections），不建第二套节点事实。",
+    "derived_edges_stay_derived": "机器派生边（origin=static_analysis/runtime_trace）是 Derived Facts（PRD §1.2）——由 analyzer/传感器经 kernel registerRelation 语义入口登记，禁人工维护 JSON 复制代码事实（PRD §1.7 No JSON Hell）；来源代码变化后旧边不自动失效（stale 语义归批次 2+ rebuild 面），但 provenance.recorded_at_seq + producer + locator 保证每边可回溯重算。",
+    "existence_judged_by_consumers": "「本面只解析命名，存在性归消费面」（equivalence 三腿链先例）：装载面校验端点词形文法（truth 端点过 governed id 文法；catalog 端点词形法式），端点存在性判卷归消费 gate（ref-integrity 同族/新实体门禁/loader 分母）——本面不查册、不猜测、不裁断。",
+    "runtime_trace_seal": "origin=runtime_trace 的边必须附 observation_ref（allOf 条件式封死）：OBS-n（perception observation receipt 通路）或 POB-<12hex>（production observation 台账）——无观察回执的「运行时边」是手改痕迹（装载面 SCHEMA_INVALID）。static_analysis/human_declared 边禁带 observation_ref（来源面互斥）。",
+    "append_only_idempotent": "EDGE-<12hex> = canonical 序列化 (source,type,target) 的 sha256 前 12 hex（A4 无墙钟无随机；PR-0004 POB- 内容寻址先例）：同 (source,type,target) 重登记 = 同 id，registerRelation 语义入口 dedupe noop 幂等（analyzer 重跑安全）；(source,type,target) 相同而 provenance 相异的重复登记 = 调用方缺陷（SCHEMA_INVALID 显式拒绝，禁静默覆盖）。",
+    "no_fake_green": "装载面逐行 fail-closed（禁静默跳过坏行——坏行=SCHEMA_INVALID 整体拒绝）；confidence=probable 的边必须附 uncertainty_note（§148 Analyzer Output Contract：非确定派生必须披露 unresolved/parse_failures 位）；零边是合法状态（空图 ≠ 盲区冒充全知——分母披露归消费面）。"
+  },
+  "x-pomaster-digest-ethics-policy": "本对象当前不含 sha256/digest 字段（EDGE-<12hex> 是内容寻址 id 词形，不是 digest 字段——D24 伦理同条：基础设施计算、人类禁触）。未来任何 digest/sha256 字段加入时必须携带 x-digest-ethics 注记 {\"write_blocking\": false, \"side\": \"read_only_service\", \"human_touch\": \"forbidden\"}（D24 / vocab-lock digest_ethics）。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "entries"],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1,
+      "title": "台账文件版本（version）"
+    },
+    "entries": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/relation_entry" },
+      "title": "关系边条目列表（entries；.pomaster/state/relations.jsonl 逐行一条）",
+      "description": "空数组合法（零边=合法状态，禁盲区冒充全知）。edge_id 全域唯一（内容寻址同 id 幂等）；(source,type,target) 三元组全域唯一。"
+    }
+  },
+  "definitions": {
+    "relation_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["edge_id", "type", "source", "target", "origin", "confidence", "producer", "provenance"],
+      "allOf": [
+        {
+          "if": {
+            "properties": { "origin": { "const": "runtime_trace" } },
+            "required": ["origin"]
+          },
+          "then": {
+            "properties": {
+              "provenance": {
+                "type": "object",
+                "properties": {
+                  "observation_ref": { "type": "string", "minLength": 1 }
+                },
+                "required": ["observation_ref"]
+              }
+            },
+            "description": "runtime_trace 封条：运行时边必须附观察回执引用（OBS-n / POB-<12hex> 词形，kernel 装载面校验）——「Agent 必须证明我看过」（§6.13）的边侧镜像。"
+          }
+        },
+        {
+          "if": {
+            "properties": { "origin": { "enum": ["static_analysis", "human_declared"] } },
+            "required": ["origin"]
+          },
+          "then": {
+            "properties": {
+              "provenance": {
+                "type": "object",
+                "properties": { "observation_ref": { "type": "null" } }
+              }
+            },
+            "description": "来源面互斥：static_analysis/human_declared 边禁带 observation_ref（非 null 即手改痕迹）。"
+          }
+        },
+        {
+          "if": {
+            "properties": { "confidence": { "const": "probable" } },
+            "required": ["confidence"]
+          },
+          "then": {
+            "properties": {
+              "uncertainty_note": { "type": "string", "minLength": 1 }
+            },
+            "required": ["uncertainty_note"],
+            "description": "probable 封条（§148 Analyzer Output Contract）：非确定派生必须披露不确定性注记（unresolved/parse_failures 位）——禁把推测包装成确定。"
+          }
+        }
+      ],
+      "properties": {
+        "edge_id": {
+          "type": "string",
+          "pattern": "^EDGE-[0-9a-f]{12}$",
+          "title": "边通路编号（EDGE-<12hex>；内容寻址 sha256 前 12 hex——canonical (source,type,target) 序列化，A4 无墙钟无随机）",
+          "description": "EQG-/POB-/PBR- 同族通路词形：非 governed 前缀，不入 id_namespace prefixes_v0 闭包、不过 parseGovernedId（vocab-lock id_namespace.state_plane_refs PR-0006 注记）。全域唯一；同三元组重登记同 id（幂等 dedupe）。"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["INSTANCE_OF", "IMPLEMENTS", "CONTAINS", "CALLS", "READS", "WRITES", "VERIFIED_BY", "DERIVED_FROM"],
+          "title": "关系类型（relation_type 词表首批 8 值——vocab-lock software_graph_vocab.relation_type，PR-0006 收编；扩值走词汇表 PR）",
+          "description": "MAPS_TO_SOURCE 语义由既有 key_bindings 承载（D15）；SUPERSEDES 语义由信封 supersedes/successor_ref 承载——既有机制已有承载位的 PRD §7 词形不重复登记。"
+        },
+        "source": { "$ref": "#/definitions/relation_endpoint" },
+        "target": { "$ref": "#/definitions/relation_endpoint" },
+        "origin": {
+          "type": "string",
+          "enum": ["static_analysis", "runtime_trace", "human_declared"],
+          "title": "边来源（relation_origin 词表三值——PRD v0.6 §8 Graph Provenance source_type 语义的边侧承载）"
+        },
+        "confidence": {
+          "type": "string",
+          "enum": ["deterministic", "probable", "declared"],
+          "title": "边置信（relation_confidence 词表三级——PRD §8 confidence.deterministic 三级化 + §148 analyzer confidence 位）",
+          "description": "与 state_axes.confidence（对象治理轴）正交、值域不相交禁混用。"
+        },
+        "producer": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_.\\-]{0,63}$",
+          "title": "产出者词形（ANALYZER.* / SENSOR.* / AGENT.* / 人类主体词形——每边必答「谁产出的」，PRD §8 provenance.producer）",
+          "examples": ["ANALYZER.TS.IMPORT_GRAPH", "SENSOR.OTEL.TRACE", "human:owner"]
+        },
+        "uncertainty_note": {
+          "type": ["string", "null"],
+          "title": "不确定性注记（confidence=probable 时必填——§148 披露位；其余恒 null）"
+        },
+        "provenance": { "$ref": "#/definitions/relation_provenance" },
+        "note": {
+          "type": ["string", "null"],
+          "title": "人类散文注记（只登记不解析；P9 纪律）"
+        }
+      }
+    },
+    "relation_endpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["domain", "id"],
+      "properties": {
+        "domain": {
+          "type": "string",
+          "enum": ["truth", "catalog"],
+          "title": "端点域（relation_endpoint_domain 词表两值——D-2：truth 面 governed id / catalog 面条目 id）"
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "title": "端点 id（truth=PREFIX.SEGMENT(.SEGMENT)*[.SEQ] canonical governed id；catalog=条目 id 词形如 ARCHETYPE.BACKEND.CRUD_RESOURCE）",
+          "description": "truth 端点文法校验归 kernel 装载面（parseGovernedId 同法）；存在性（truth-index 查册 / catalog-lock 分母）归消费 gate——本面只解析命名。"
+        }
+      }
+    },
+    "relation_provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["recorded_at_seq", "source_ref"],
+      "properties": {
+        "recorded_at_seq": {
+          "type": "integer",
+          "minimum": 0,
+          "title": "登记事件拍（A4 禁墙钟；11-exception-ledger recorded_at_seq 先例）"
+        },
+        "source_ref": {
+          "type": "string",
+          "minLength": 1,
+          "title": "登记出处锚（每条裁定注记出处锚纪律：源文件:行 / PRD §号 / GRN 引用 / 声明决议引用）"
+        },
+        "locator": {
+          "type": ["string", "null"],
+          "title": "源定位（static_analysis：file:line；runtime_trace：span/trace 锚；human_declared：决议锚——PRD §8 source_location）"
+        },
+        "observation_ref": {
+          "type": ["string", "null"],
+          "title": "观察回执引用（runtime_trace 必填：OBS-n 或 POB-<12hex>；其余 origin 恒 null——来源面互斥封条）"
+        },
+        "declared_by": {
+          "type": ["string", "null"],
+          "title": "声明主体（human_declared 时登记谁声明——C5 自报只登记事实不判真；其余恒 null）"
+        }
+      }
+    }
+  }
+}

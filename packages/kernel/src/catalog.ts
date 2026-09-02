@@ -34,13 +34,16 @@ import {
   CATALOG_CLASSIFICATION_VALUES,
   CATALOG_ENFORCEMENT_VALUES,
   CATALOG_GOVERNANCE_PROFILE_VALUES,
+  CATALOG_KIND_VALUES,
   CATALOG_LANE_VALUES,
+  SUBSTRATE_LAYER_VALUES,
   TRUTH_BODY_KINDS,
   type CatalogChangeClassValue,
   type CatalogClassificationValue,
   type CatalogEnforcementValue,
   type CatalogGovernanceProfileValue,
   type CatalogLaneValue,
+  type SubstrateLayerValue,
   type TruthBodyKind,
 } from "@pomaster/schemas";
 import { GovernanceError, GovernedIdParseError, governanceCodeForParseError } from "./errors.js";
@@ -881,4 +884,193 @@ export function loadCatalogSensors(catalogRoot: string): readonly CatalogSensorM
     });
   }
   return [...materials.values()].sort((a, b) => (a.id < b.id ? -1 : 1));
+}
+
+// ============================================================
+// 物料读取：archetypes（Engineering Substrate 标准件；P-v06 批次 0/D-2 裁定）
+// ============================================================
+
+/** archetype 物料的运行时消费形态（v0.6.1 §4 Catalog Object 通用结构的最小判卷面）。 */
+export interface CatalogArchetypeMaterial {
+  /** catalog 根相对路径（出处呈现用，如 archetypes/archetype.page.master_data.json）。 */
+  readonly file: string;
+  readonly id: string;
+  /** 恒 "archetype"（vocab-lock catalog_layer_vocab.catalog_kind，PR-0006；词表闸校验）。 */
+  readonly kind: string;
+  /** Substrate 分层（software_graph_vocab.substrate_layer 七值，PR-0006；词表闸校验）。 */
+  readonly layer: SubstrateLayerValue;
+  readonly titleZh: string;
+  /** What It Is（v0.6.1 §5 Human Reference 页第 1 段的机器承载位）。 */
+  readonly summaryZh: string;
+  /** 组合面（v0.6.1 §4 composition：requires/optional/incompatible——resolver required_bindings 派生源）。 */
+  readonly composition: {
+    readonly requires: readonly string[];
+    readonly optional: readonly string[];
+    readonly incompatible: readonly string[];
+  };
+  /** 语义面（v0.6.1 §4 semantic：responsibility/when_to_use/when_not_to_use；可选）。 */
+  readonly semantic: {
+    readonly responsibility: string | null;
+    readonly whenToUse: string | null;
+    readonly whenNotToUse: string | null;
+  };
+}
+
+/**
+ * 读 archetypes/ 全部条目（Engineering Substrate 标准件物料；P-v06 批次 1 起物化）。
+ *
+ * opt-in 语义（与「禁止空壳仪式」PRD v0.6 §10 配套）：目录缺失 → 空数组显式返回
+ * （未物化 = 零标准件是合法状态；resolver sources_examined 分母披露 0，禁猜测）。
+ * 目录在场则逐文件 fail-closed（loadCatalogSensors 同法）：id 词形（catalog 条目 id
+ * 至少两段 SCREAMING_SNAKE，relation sidecar CATALOG_ENDPOINT_ID_PATTERN 同一法式）
+ * / kind 词表闸（catalog_kind，PR-0006）/ layer 词表闸（substrate_layer，PR-0006）/
+ * title_zh/summary_zh 必填 / composition 三数组词形（catalog id）——坏物料显式爆，
+ * 禁静默跳过。id 全目录唯一。返回按 id 字典序（确定性）。
+ */
+export function loadCatalogArchetypes(catalogRoot: string): readonly CatalogArchetypeMaterial[] {
+  const dir = join(catalogRoot, "archetypes");
+  if (!existsSync(dir)) {
+    return [];
+  }
+  const materials = new Map<string, CatalogArchetypeMaterial>();
+  for (const fileName of readdirSync(dir).filter((name) => name.endsWith(".json")).sort()) {
+    const file = `archetypes/${fileName}`;
+    const raw = readFileSync(join(dir, fileName), "utf8");
+    let body: UnknownRecord;
+    try {
+      body = asRecord(JSON.parse(raw));
+    } catch (error) {
+      throw new GovernanceError(
+        "SCHEMA_INVALID",
+        `catalog 物料不可解析: ${file}`,
+        "物料 JSON 坏形：archetype 条目为 P-v06 D-2 裁定登记物料（catalog 面），对照 catalog_layer_vocab.catalog_kind 修复。",
+        { file, cause: String(error) },
+      );
+    }
+    const id = body["id"];
+    const kind = body["kind"];
+    const layer = body["layer"];
+    const titleZh = body["title_zh"];
+    const summaryZh = body["summary_zh"];
+    if (
+      typeof id !== "string" ||
+      !CATALOG_ARCHETYPE_ID_PATTERN.test(id) ||
+      !CATALOG_KIND_VALUES.includes(kind as never) ||
+      !SUBSTRATE_LAYER_VALUES.includes(layer as never) ||
+      typeof titleZh !== "string" ||
+      titleZh.length === 0 ||
+      typeof summaryZh !== "string" ||
+      summaryZh.length === 0
+    ) {
+      throw new GovernanceError(
+        "SCHEMA_INVALID",
+        `catalog archetype 缺必填字段或词形非法（id 至少两段 SCREAMING_SNAKE / kind ∈ CATALOG_KIND_VALUES / layer ∈ SUBSTRATE_LAYER_VALUES / title_zh / summary_zh）: ${file}`,
+        "archetype 条目形状由 P-v06 D-2 裁定 + vocab-lock software_graph_vocab（PR-0006）定义；对照在册条目修复。",
+        { file, id: String(id) },
+      );
+    }
+    const composition = validateComposition(body["composition"], file, id);
+    const semantic = validateSemantic(body["semantic"], file, id);
+    if (materials.has(id)) {
+      throw new GovernanceError(
+        "SCHEMA_INVALID",
+        `catalog archetype id 重复（身份面禁重复）: ${id}`,
+        "archetype id 是 Engineering Substrate 标准件身份；重复说明物料管理失序，删除或合并重复文件。",
+        { file, id },
+      );
+    }
+    materials.set(id, {
+      file,
+      id,
+      kind: String(kind),
+      layer: layer as SubstrateLayerValue,
+      titleZh,
+      summaryZh,
+      composition,
+      semantic,
+    });
+  }
+  return [...materials.values()].sort((a, b) => (a.id < b.id ? -1 : 1));
+}
+
+/** archetype id 词形（catalog 条目 id：至少两段 SCREAMING_SNAKE；与 relation 端点同法式）。 */
+const CATALOG_ARCHETYPE_ID_PATTERN = /^[A-Z][A-Z0-9_]*(\.[A-Z][A-Z0-9_]+)+$/;
+
+/** composition 面校验（v0.6.1 §4；三槽均可空数组——组合约束显式登记，缺席=无约束不是未知）。 */
+function validateComposition(
+  value: unknown,
+  file: string,
+  id: string,
+): CatalogArchetypeMaterial["composition"] {
+  if (value === undefined || value === null) {
+    return { requires: [], optional: [], incompatible: [] };
+  }
+  const record = value as UnknownRecord;
+  const slots: [string, unknown][] = [
+    ["requires", record["requires"]],
+    ["optional", record["optional"]],
+    ["incompatible", record["incompatible"]],
+  ];
+  const out: Record<string, readonly string[]> = {};
+  for (const [slot, list] of slots) {
+    if (list === undefined || list === null) {
+      out[slot] = [];
+      continue;
+    }
+    if (
+      !Array.isArray(list) ||
+      !list.every((item) => typeof item === "string" && CATALOG_ARCHETYPE_ID_PATTERN.test(item))
+    ) {
+      throw new GovernanceError(
+        "SCHEMA_INVALID",
+        `catalog archetype composition.${slot} 形态非法（须 catalog id 词形数组）: ${file}`,
+        "组合约束引用的是标准件 id（v0.6.1 §4 composition）；自由文本不是机器可判卷约束。",
+        { file, id, slot },
+      );
+    }
+    out[slot] = list as readonly string[];
+  }
+  return {
+    requires: out["requires"] ?? [],
+    optional: out["optional"] ?? [],
+    incompatible: out["incompatible"] ?? [],
+  };
+}
+
+/** semantic 面校验（v0.6.1 §4 semantic 三槽可选；非空字符串或缺席）。 */
+function validateSemantic(
+  value: unknown,
+  file: string,
+  id: string,
+): CatalogArchetypeMaterial["semantic"] {
+  if (value === undefined || value === null) {
+    return { responsibility: null, whenToUse: null, whenNotToUse: null };
+  }
+  if (typeof value !== "object" || Array.isArray(value)) {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      `catalog archetype semantic 形态非法（须对象）: ${file}`,
+      "semantic 是 v0.6.1 §4 三槽语义面；坏形物料显式爆。",
+      { file, id },
+    );
+  }
+  const record = value as UnknownRecord;
+  const pick = (key: string): string | null => {
+    const slot = record[key];
+    if (slot === undefined || slot === null) return null;
+    if (typeof slot !== "string" || slot.length === 0) {
+      throw new GovernanceError(
+        "SCHEMA_INVALID",
+        `catalog archetype semantic.${key} 形态非法（须非空字符串或缺席）: ${file}`,
+        "semantic 三槽是 resolver「why」呈现位；坏形显式爆。",
+        { file, id, key },
+      );
+    }
+    return slot;
+  };
+  return {
+    responsibility: pick("responsibility"),
+    whenToUse: pick("when_to_use"),
+    whenNotToUse: pick("when_not_to_use"),
+  };
 }

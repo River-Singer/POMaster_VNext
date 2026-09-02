@@ -56,6 +56,12 @@
  * 禁词负例登记（§1.1 不新增 State Axis）；Grounding Verdict 五值是**派生判定不落盘**
  * （§6.2 不进 Canonical Object State Axis）——schema 18 无 verdict 字段。
  * TODO(vocab-pr) 词形三镜像收编归独立词汇表批。
+ * P-v06 增量（19）：Software Graph Relations（PRD v0.6 §6-8 + Owner 四决议 D-1~D-4
+ * 2026-09-02；批次 0 Model Constitution）。Typed Relation sidecar 台账形态契约
+ * （state/relations.jsonl 追加流侧车：不建图库、不改 01、不进 content_digest）；
+ * 词形轴 relation_type/relation_origin/relation_endpoint_domain/relation_confidence
+ * 已随 vocab-pr-0006 收编 vocab-lock@v0.5-resolved 主表 software_graph_vocab 段
+ * （EDGE-<12hex> 通路词形同批注记 id_namespace.state_plane_refs）。
  *
  * 词表纪律：一切枚举唯一来源是 assets/vocab-lock.draft.yaml（FROZEN）；
  * 代码侧唯一镜像点在 ./vocab.js（本文件 re-export）。YAML 资产仅作人读/工具对账，
@@ -87,6 +93,7 @@ import productionBandSchemaRaw from "../assets/15-production-band.schema.json" w
 import executionTraceSchemaRaw from "../assets/16-execution-trace.schema.json" with { type: "json" };
 import perceptionReceiptsSchemaRaw from "../assets/17-perception-receipts.schema.json" with { type: "json" };
 import decisionGraphSchemaRaw from "../assets/18-decision-graph.schema.json" with { type: "json" };
+import softwareGraphRelationsSchemaRaw from "../assets/19-software-graph-relations.schema.json" with { type: "json" };
 
 export * from "./vocab.js";
 
@@ -134,6 +141,8 @@ const PERCEPTION_RECEIPTS_ID =
   "https://pomaster.dev/schemas/perception-receipts/v1-draft.json";
 const DECISION_GRAPH_ID =
   "https://pomaster.dev/schemas/decision-graph/v1-draft.json";
+const SOFTWARE_GRAPH_RELATIONS_ID =
+  "https://pomaster.dev/schemas/software-graph-relations/v1-draft.json";
 
 function asSchema(raw: unknown, expectedId: string): JsonSchemaObject {
   const schema = raw as JsonSchemaObject;
@@ -204,6 +213,10 @@ export const decisionGraphSchema = asSchema(
   decisionGraphSchemaRaw,
   DECISION_GRAPH_ID,
 );
+export const softwareGraphRelationsSchema = asSchema(
+  softwareGraphRelationsSchemaRaw,
+  SOFTWARE_GRAPH_RELATIONS_ID,
+);
 
 /** 全部 18 份 schema 的聚合（组合装载：ajv.addSchema 逐个注册即可遍历本对象）。 */
 export const allSchemas = {
@@ -225,6 +238,7 @@ export const allSchemas = {
   executionTrace: executionTraceSchema,
   perceptionReceipts: perceptionReceiptsSchema,
   decisionGraph: decisionGraphSchema,
+  softwareGraphRelations: softwareGraphRelationsSchema,
 } as const;
 
 // ============================================================

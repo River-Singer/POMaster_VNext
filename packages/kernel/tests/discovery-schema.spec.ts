@@ -69,7 +69,7 @@ describe("08-discovery-state-chain（$id 与注册）", () => {
     );
     expect(SCHEMA_VERSION).toBe("v1-draft");
     expect(allSchemas.discoveryStateChain).toBe(discoveryStateChainSchema);
-    expect(Object.keys(allSchemas).length).toBe(18);
+    expect(Object.keys(allSchemas).length).toBe(19);
   });
 
   it("正例：IDEA 态带 scratchpad_ref；READY_TO_PROMOTE 带 promotion_basis；TASK 带 promotion_basis+promoted_ref", () => {

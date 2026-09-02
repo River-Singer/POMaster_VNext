@@ -27,6 +27,11 @@
  *                   Research 命令面（§44.3/§81）：Read-only Contract 写面判卷
  *                   （越写=FATAL，§81.3）+ 四文件骨架（§81.6）+ 五级 Evidence 判读
  *                   （§81.4/§81.5）
+ * - resolve         统一语义解析（P-v06 批次 0；PRD v0.6 §98 + v0.6.1 §69/§73/§87）：
+ *                   需求词形 → 既有对象/archetype 标准件匹配；三精确腿+词形腿单一实现；
+ *                   match_class 确定性派生（EXACT/CONFIGURABLE/EXTENSIBLE/NO_MATCH）；
+ *                   NO_MATCH 显式 exit 0 不臆造（Anti-Hallucination）；分母披露
+ *                   sources_examined；纯读零写入（解析≠采用，INSTANCE_OF 边归显式采用动作）
  * - status          读 .pomaster/state：对象计数/分母状态/permit 活性
  * - inspect         单对象检视：正文+证据+谱系纯读呈现（零写入；PRD §44.1 基础命令）
  * - maintain        受控变更（--ops 显式事务，判卷权威在 kernel applyTransaction）/
@@ -143,6 +148,7 @@ import { runCompact } from "./compact.js";
 import { runRecordClaim, runRecordGateRun } from "./record.js";
 import { runCloseout } from "./closeout.js";
 import { runCatalogStatus, runCatalogExplain } from "./catalog.js";
+import { runResolve } from "./resolve.js";
 import { runEval } from "./eval.js";
 import { runViewBlueprint, runViewTask } from "./view.js";
 import { runAuditBlueprint, runAuditTask } from "./audit.js";
@@ -346,6 +352,8 @@ export type {
   CloseoutGateRow,
 } from "./closeout.js";
 export { runCatalogStatus, runCatalogExplain } from "./catalog.js";
+export { runResolve, renderResolve } from "./resolve.js";
+export type { ResolveInput, ResolveResult } from "./resolve.js";
 export type {
   CatalogCommandDeps,
   CatalogExplainResult,
@@ -734,6 +742,32 @@ export function createProgram(
       const outcome = await runInspect(resolveDir(command), { id });
       record({
         command: "inspect",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  // —— 统一语义解析（P-v06 批次 0；PRD v0.6 §98 + v0.6.1 §69/§73/§87；纯读零写入） ——
+  // resolveNeed 判卷权威在 kernel（三精确腿+词形腿+match_class 确定性派生+分母披露；
+  // NO_MATCH 显式 exit 0——解析面不臆造，「设计新」决策归上游；advisory ≠ match）。
+  program
+    .command("resolve")
+    .description(
+      "统一语义解析：需求词形 → 既有对象/archetype 标准件匹配（EXACT/CONFIGURABLE/EXTENSIBLE/NO_MATCH 确定性分类；NO_MATCH 显式不臆造——Anti-Hallucination；解析≠采用，INSTANCE_OF 边归显式采用动作）",
+    )
+    .argument("<need>", "需求词形（自然语言/意图原文；词形化词级精确禁子串猜测）")
+    .option("--hints <words...>", "补充检索词（可多值）")
+    .option("--catalog-root <path>", "注入 catalog 根目录（测试/嵌入面；缺省 = 工具仓库 catalog/）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (need: string, opts, command) => {
+      const outcome = await runResolve({
+        need,
+        hints: opts.hints as string[] | undefined,
+        catalogRoot: opts.catalogRoot as string | undefined,
+        rootDir: resolveDir(command),
+      });
+      record({
+        command: "resolve",
         outcome,
         asJson: command.opts().json === true,
       });

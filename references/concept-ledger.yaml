@@ -1,0 +1,57 @@
+# =============================================================================
+# POMaster_VNext 治理概念账本（Concept Ledger · vNext 侧）
+#
+# 防治理体系自身熵增：PRD v0.6/v0.6.1 融合任务（09-02-vnext-prd-v06-governed-
+# substrate）新增顶层概念在此记账，硬上限 16 个具名条目（count 加权）。每批次
+# 交付时更新本账本（新增/合并/删除；delivered 必须附 carrier 实存路径）。
+# 记账规则：连续两个批次只增不减（条目总数不减少）→ 触发设计复审。
+#
+# 与旧体系账本（po-master/pomaster/references/governance-concept-ledger.yaml，
+# 32/32 满编）的关系（Owner 裁决 D-1 2026-09-02）：旧账本属旧 Python PoMaster
+# 体系已满编，v0.6 概念不挤占其预算——vNext 另立本账本；两账本概念禁止同名
+# 重复登记（守卫测试钉住）。
+#
+# 来源：.trellis/tasks/09-02-vnext-prd-v06-governed-substrate/prd.md。
+# =============================================================================
+
+document_type: governance-concept-ledger-vnext
+schema_version: 1
+budget_limit: 16
+rule: 连续两个批次只增不减（具名条目数不减少）触发设计复审
+accounting_note: >-
+  批次 0（Model Constitution）首批登记 6 概念（加权 total_count=8）；
+  批次 1（Tracer Bullet）预计新增 archetype-instance-binding 与
+  new-entity-gate-recipe 两概念（delivered 后同批回填 status）。
+  状态词形 planned / delivered 二值闭包（守卫测试钉住）。
+
+concepts:
+  - name: Typed Relation sidecar（EDGE-<12hex> 内容寻址追加流；Graph 不是第六原语）
+    count: 2
+    introduced_by_batch: batch-0
+    status: delivered
+    carrier: packages/kernel/src/relations.ts + packages/schemas/assets/19-software-graph-relations.schema.json
+  - name: Object Family 派生视图（family=前缀映射派生，零信封改动——Derived Facts Must Be Derived）
+    count: 1
+    introduced_by_batch: batch-0
+    status: delivered
+    carrier: packages/kernel/src/family.ts
+  - name: 统一语义解析门面 Resolver（三精确腿+词形腿单一实现；match_class 确定性派生；分母披露）
+    count: 1
+    introduced_by_batch: batch-0
+    status: delivered
+    carrier: packages/kernel/src/resolver.ts + packages/cli/src/resolve.ts
+  - name: Analyzer Output Contract（§148 八字段必答；确定性宣称杀手）
+    count: 1
+    introduced_by_batch: batch-0
+    status: delivered
+    carrier: packages/kernel/src/analyzer-contract.ts
+  - name: 盲区四态映射（§149 零新词——canonical ⊆ 既有 perception 词面；FAILED_TO_OBSERVE 恒盲区位）
+    count: 1
+    introduced_by_batch: batch-0
+    status: delivered
+    carrier: packages/kernel/src/analyzer-contract.ts（PRD_BLINDSPOT_STATE_MAPPING）
+  - name: Software Graph 词表段（vocab-pr-0006：relation_type 首批/origin/endpoint_domain/confidence/match_class/substrate_layer/object_family/catalog_kind 八轴 + EDGE- 通路词形）
+    count: 2
+    introduced_by_batch: batch-0
+    status: delivered
+    carrier: packages/schemas/assets/vocab-lock.draft.yaml（software_graph_vocab 段，v0.5-resolved）+ packages/schemas/src/vocab.ts

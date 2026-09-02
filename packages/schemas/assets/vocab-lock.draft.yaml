@@ -7,14 +7,15 @@
 > 2026-08-29 PR-0001 增补（append-only 纯增量，v0.1 词值零删改）：ALIASES_V0 补 ISSUE.*/FTA-*/FB-* 三族（语料批 batch-1 实测纳管）；新增 catalog_layer_vocab 与 presentation_axes 两段、id_namespace.state_plane_refs 注记、kinds_registry.catalog_note 注记。8 件 FROZEN schema + 02b + golden-seed-mapping.md 的 @v0.1-resolved 引用保留不改：其引用语义是「该值集镜像自 v0.1 冻结基线」，v0.2 对这些镜像子集零改动，引用继续为真。
 > 2026-09-01 PR-0004 增补（append-only 纯增量，v0.1/v0.2 词值零删改；Owner 决议 2026-09-01 批准——呈报件 docs/production-feedback-p34-report.md §2.1/§2.2/§2.4/§2.6 裁定落档）：新增 production_band_vocab 段（P34 §95/§30/§55.1/§90.4 八词轴 + NOT_EVALUABLE 缺席归因三呈现码 + 八信号人读原文镜像 + 产物/常量词形两枚 + production CLI 错误词形族六词形）；id_namespace.state_plane_refs 补 POB-/PBR-/PCH-/PDG-/PSI- 五通路编号词形注记（非 governed 前缀，照 PERMIT.* 先例）。既有 @v0.2-resolved 引用（FROZEN schema/corpus 转录工具/examples 文档）保留不改：其引用语义是「该值集镜像自 v0.2 基线」，v0.3 对这些镜像子集零改动，引用继续为真。
 > 2026-09-01 PR-0005 增补（append-only 纯增量，v0.1/v0.2/v0.3 词值零删改；Owner 裁决 8 ② 2026-09-01 批准——corpus/master/cutover/owner-adjudications.md#裁决8，PRD v0.5.2 §5 Structured Applicability / P0.5-1）：catalog_layer_vocab 段新增 change_classes 词轴（首批 4 值最小闭包，PRD §5.2 示例词形 API_EVOLUTION 逐字 + corpus 实测词面锚）与 governance_profiles 词轴（对齐 CLI TRIAGE_PROFILES 三值 + STRICT，消 STANDARD 两义）；新增 applicability_fields 字段面注记（lanes 双读过渡 / capabilities governed id / object_kinds 复用 truth_bodies / applicability_note 自然语言降级位 / risk_at_least·technologies 留位不登记 O4）。既有 @v0.3-resolved 引用保留不改：其引用语义是「该值集镜像自 v0.3 基线」，v0.4 对这些镜像子集零改动，引用继续为真。
+> 2026-09-02 PR-0006 增补（append-only 纯增量，v0.1/v0.2/v0.3/v0.4 词值零删改；Owner 四决议 D-1~D-4 2026-09-02 批准——.trellis/tasks/09-02-vnext-prd-v06-governed-substrate/prd.md Owner 决议表，PRD v0.6 §6-8/§111/§148-149/§162-163 + PRD v0.6.1 §2/§69/§73/§75）：新增 software_graph_vocab 段（Software Graph / Engineering Substrate 六词轴：relation_type 首批 8 值「只收真实消费」/ relation_origin / relation_endpoint_domain / relation_confidence / resolution_match_class 六值逐字 / object_family 十二值派生视图）；catalog_layer_vocab 段新增 catalog_kind 词轴（既有四词形实测登记 + archetype 新词形——D-2 裁定「Archetype 定义住 catalog 面」）；id_namespace.state_plane_refs 补 EDGE-<12hex> 通路词形注记（照 PERMIT./POB- 先例，非 governed 前缀）。既有 @v0.4-resolved 引用保留不改：其引用语义是「该值集镜像自 v0.4 基线」，v0.5 对这些镜像子集零改动，引用继续为真。
 > 消费方：②后续全部 schemas、③Kernel 转移引擎、Behavioral Eval 种子。
 
 ```yaml
 # ============================================================
-# pomaster.vocab/v0.4-resolved   （2026-09-01 PR-0005 增补；append-only 纯增量，v0.1/v0.2/v0.3 词值零删改）
+# pomaster.vocab/v0.5-resolved   （2026-09-02 PR-0006 增补；append-only 纯增量，v0.1/v0.2/v0.3/v0.4 词值零删改）
 # 历史：原 v0-draft（三开放问题已于 2026-08-27 会话裁决）→ v0.1-resolved（2026-08-27 FROZEN）
 #       → v0.2-resolved（2026-08-29 PR-0001 增补）→ v0.3-resolved（2026-09-01 PR-0004 增补）
-#       → v0.4-resolved（2026-09-01 PR-0005 增补）
+#       → v0.4-resolved（2026-09-01 PR-0005 增补）→ v0.5-resolved（2026-09-02 PR-0006 增补）
 # ============================================================
 
 ir_schema: pomaster.truth-index/v1-draft
@@ -103,6 +104,11 @@ id_namespace:           # closed-world（A5）：未登记前缀 = 解析即 FAT
     - form: "PSI-<12hex>"
       plane: .pomaster/production/self-improvement/（§90.4 候选；kind 恒 POMASTER_SELF_IMPROVEMENT_CANDIDATE 呈报态）
       validation: 内容寻址 id + 台账存在性；零 journal 零 state/ 写入（纯呈报位——「不得自动应用」L5695 逐字）
+    # —— PR-0006 增补（Software Graph relation sidecar 通路词形；EQG-/POB- 同族：
+    #    内容寻址 sha256 前 12 hex，A4 无墙钟无随机，非 governed 前缀不过 parseGovernedId）——
+    - form: "EDGE-<12hex>"
+      plane: .pomaster/state/relations.jsonl（Typed Relation sidecar 台账；D-3 裁定 2026-09-02：append-only 追加流 + journal RELATION_* 事件流 + 不进 content_digest；A8 同族不入 truth-index——01 additionalProperties:false 封条不动）
+      validation: 词形正则 ^EDGE-[0-9a-f]{12}$ + 台账存在性；id=内容寻址（canonical 序列化 sha256 前 12 hex——同 (source,type,target) 重登记 dedupe noop 幂等）；edge 词形校验归 kernel relations.ts 装载面（19-relations definitions 镜像）
   aliases_v0:           # 存量资产收编的 rename-on-ingest 双向链（A6）
     - { legacy: "KB-*",              canonical: "KNOWLEDGE.*" }
     - { legacy: "GRID.*",            canonical: "CAPABILITY.GRID.*" }
@@ -166,6 +172,15 @@ catalog_layer_vocab:     # catalog/ 目录条目词轴（PR-0001 收编；catalo
       technologies（留位不登记——消费面 not_configured 显式缺席不伪造，Owner 裁决 8 ② O4）。未声明任一机器字段
       的条目 = lane 回退判定（行为零变化，Owner 裁决 8 ② O7）；声明了任一机器字段的条目 = 全字段确定性判定
       （PRD §5.3 Deterministic Inclusion：先确定性排除，再处理 Budget）。
+  catalog_kind:          # catalog 物料 kind 词轴（PR-0006 收编：兑现 kinds_registry.catalog_note「catalog 条目 kind 词形住 catalog_layer_vocab 段」的登记位；前四值=既有物料实测词形登记，archetype=D-2 裁定新增）
+    values: [policy, gate_recipe, sensor_capability, knowledge_entry, archetype]
+    notes:
+      archetype: >-
+        Engineering Substrate 标准件物料（PRD v0.6.1 §2-§4 逐字：Archetype/Pattern/Primitive 母版）。
+        D-2 裁决（2026-09-02）：archetype **定义住 catalog 面**（可能解/靶子），项目对象的实例采用走
+        relation sidecar INSTANCE_OF 边 + 既有 key_bindings 落地锚——「Catalog 不是第二套 Project Truth」
+        （§92.2）与 v0.6.1 §85 Catalog/Software Model 边界的边化落法；不改 02 信封、不增 governed 前缀。
+        目录分层（design/frontend/backend/data/…）编码域，PRD v0.6.1 §3/§82；逐批物化禁空壳仪式（PRD v0.6 §10）。
   knowledge_note: >-     # V3 确认项：不新增枚举值
     KNOWLEDGE_PATTERN / FAILURE_PATTERN 以 knowledge_entry 的 payload 变体（classification 值）承载，
     gate_binding=NEVER_FAIL（advisory 豁免）随条目 x-advisory-gate-semantics 登记。
@@ -235,6 +250,53 @@ production_band_vocab:  # P34 Production Feedback / Control Band 词轴（PR-000
     values: [BAND_SCHEMA_INVALID, BAND_NOT_FOUND, OBSERVATION_NOT_EVALUABLE,
              CHALLENGE_REJECTED, EVIDENCE_NOT_FOUND, DIAGNOSIS_WITHOUT_BREACH_EVIDENCE]
     note: 第 6 位 DIAGNOSIS_WITHOUT_BREACH_EVIDENCE 与 kernel GovernanceErrorCode 同名同义（族内唯一同名者，零二次造词——透传复用）。命令组词形 production + 六子命令名（band/evaluate/challenge/diagnose/metrics/self-improvement）非本词表管辖（命令面命名权 Owner 2026-09-01 认可，落档 docs/kernel-api.md production 命令段；memory CLI 六命令 P33b 同款先例：词表只收错误词形族不收命令名）
+
+software_graph_vocab:   # P-v06 Software Graph / Engineering Substrate 词轴（PR-0006 收编；Owner 四决议 D-1~D-4 2026-09-02 批准——.trellis/tasks/09-02-vnext-prd-v06-governed-substrate/prd.md；PRD v0.6 §6-8/§111/§148-149/§162-163 + PRD v0.6.1 §2/§69/§73/§75 逐字 + 批次裁定补位词；schema 冻结锚 19-relations definitions + kernel relations.ts / resolver.ts / analyzer-contract.ts；扩值走词汇表 PR）
+  relation_type:         # Typed Relation 词表首批 8 值（PRD v0.6 §7 Relation Model 逐字词形 + D-2 裁定补位 INSTANCE_OF；「只收真实消费」纪律——PRD §7 其余词形（OWNS/DEPENDS_ON/CONSUMES/TRANSFORMS/PUBLISHES/SUBSCRIBES/CACHES/INVALIDATES/DEPLOYS_AS/RUNS_ON/CONNECTS_TO/AUTHENTICATES_WITH/AUTHORIZED_BY/USES_TOKEN/USES_COMPONENT/PRODUCES/GOVERNED_BY/CHANGED_BY 等）待真实消费者落地逐批 append-only 增补，禁一次性登记空词）
+    values: [INSTANCE_OF, IMPLEMENTS, CONTAINS, CALLS, READS, WRITES, VERIFIED_BY, DERIVED_FROM]
+    notes:
+      INSTANCE_OF: 项目对象 → archetype/catalog 标准件（D-2 裁定：v0.6.1 §84 instance binding 的边化落法——定义住 catalog 面、实例边住 sidecar）
+      IMPLEMENTS: 实现（PRD §7 逐字）
+      CONTAINS: 组成（PRD §7 逐字）
+      CALLS: 调用（PRD §7 逐字）
+      READS: 数据读（PRD §7 逐字）
+      WRITES: 数据写（PRD §7 逐字）
+      VERIFIED_BY: 被什么验证（PRD §111 Trace Everything 逐字）
+      DERIVED_FROM: 派生来源（PRD §7 逐字；机器派生边的 provenance 承载位）
+    note: MAPS_TO_SOURCE 语义由既有 key_bindings 承载（D15——ID↔路径锚是一等公民，零新增边型）；SUPERSEDES 语义由信封 supersedes/successor_ref 承载零新增（PRD §7 词形在既有机制已有承载位的不重复登记）
+  relation_origin:       # 边来源三值（PRD v0.6 §8 Graph Provenance 语义的边侧承载：source_type STATIC_ANALYSIS→static_analysis / 运行时 trace→runtime_trace / 人类/治理声明→human_declared）
+    values: [static_analysis, runtime_trace, human_declared]
+    note: >-
+      与 SOURCE_TYPE_ALL_VALUES（02 信封 sources[].type 九值）正交——那是对象侧来源词表，本轴是边侧 provenance 来源
+      （snake_case 机器词形，PRESENTATION/production 信号源词形先例）。runtime_trace 边必须附 observation_ref
+      （OBS-n / POB-<12hex> 通路词形——「Agent 必须证明我看过」§6.13 封条纪律的边侧镜像）。
+  relation_endpoint_domain:  # 边端点域两值（D-2：边端点可指 governed id（truth 面）或 catalog 条目 id（catalog 面））
+    values: [truth, catalog]
+    note: truth 端点词形须过 parseGovernedId（A5 closed-world）；catalog 端点词形须命中 catalog-lock entries 分母（存在性归消费 gate/loader 判卷——「本面只解析命名，存在性归消费面」equivalence 三腿链先例）；两端点域可同可异（INSTANCE_OF 典型=truth→catalog）
+  relation_confidence:   # 边置信三级（PRD v0.6 §8 Graph Provenance confidence.deterministic 语义的三级化 + §148 Analyzer Output Contract confidence 位；批次裁定补位词）
+    values: [deterministic, probable, declared]
+    note: deterministic=机器确定性派生（AST/import 等可重算）；probable=机器非确定派生（启发式 analyzer——必须附 unresolved/parse_failures 披露，§148）；declared=人类/治理显式声明。与 state_axes.confidence（UNRESOLVED/EXPERIMENTAL/PROVISIONAL/LOCKED 对象治理轴）正交、值域不相交禁混用
+  substrate_layer:      # Engineering Substrate 七层（PRD v0.6.1 §2 分层逐字：Foundation→Primitive→Pattern→Archetype→Reference Solution→Project Baseline→Business Delta；SCREAMING_SNAKE 词形化——§91.3 词形大写化先例；空格词形转下划线：Reference Solution→REFERENCE_SOLUTION）
+    values: [FOUNDATION, PRIMITIVE, PATTERN, ARCHETYPE, REFERENCE_SOLUTION, PROJECT_BASELINE, BUSINESS_DELTA]
+    note: >-
+      archetype 物料的必填分层位（catalog_layer_vocab.catalog_kind=archetype 的物料级轴）：
+      逐层稳定度递减、复用面递增方向即 §2 箭头序；批次 1 物料首落 ARCHETYPE 层
+      （PAGE_ARCHETYPE/ARCHETYPE.BACKEND/DATA_ARCHETYPE 族）+ 少量 FOUNDATION 层
+      design foundations；层间组合约束（§2.4 组合语义）归物料 composition 字段与
+      后续批次 SOP 面，本轴只登记分层归属。
+  resolution_match_class:  # Resolver 匹配分类六值（PRD v0.6.1 §69 Requirement Resolution SOP 分类清单逐字）
+    values: [EXACT_MATCH, CONFIGURABLE_MATCH, COMPOSABLE_MATCH, EXTENSIBLE_MATCH, REFERENCE_MATCH, NO_MATCH]
+    note: >-
+      只有 NO_MATCH 才允许进入 Design Synthesis（§69 逐字）；New Entity Gate 判卷消费本轴（§75 五否证明）。
+      Resolver MVP 确定性派生覆盖 EXACT_MATCH / CONFIGURABLE_MATCH / EXTENSIBLE_MATCH / NO_MATCH 四值；
+      COMPOSABLE_MATCH / REFERENCE_MATCH 为批次 2+ 组合分析预留位（登记全闭包、派生覆盖子集——缺席显式不伪造）。
+      Anti-Hallucination（§87）：advisory 面（knowledge/policy）命中不改变 match_class——advisory ≠ match。
+  object_family:         # 十二 Object Family（PRD v0.6 §6.1 Object Family 十二族逐字）——**family=派生视图**（PRD §1.2 Derived Facts Must Be Derived：由前缀映射机器派生，零信封改动；PREFIX_FAMILY_MAP 见 kernel family.ts；PRD §163 Phase C：新 family 待真实对象出现走词汇表 PR 增前缀，本轴不扩值）
+    values: [PRODUCT, UI, INTERFACE, CODE, DATA, RUNTIME, RESOURCE, RELIABILITY, SECURITY, DELIVERY, GOVERNANCE, EVIDENCE]
+    note: >-
+      既有 15 前缀的派生映射：PAGE/COMPONENT→UI；CAPABILITY→PRODUCT；API_REQ/ERR→INTERFACE；FIELD→DATA；
+      KEYBINDING→CODE；KNOWLEDGE/CHANGE/TASK/DENOMINATOR/POLICY/PROFILE/AUTHORITY→GOVERNANCE；TEST→EVIDENCE。
+      RUNTIME/RESOURCE/RELIABILITY/SECURITY/DELIVERY 五族暂无前缀映射（派生为 null 显式缺席——禁猜测，§163 Phase C 逐批落）
 
 digest_ethics:          # D24 落地注记 —— 全局适用于一切 sha256/digest 字段
   write_blocking: false           # digest 永不作为写入门闸

@@ -655,12 +655,12 @@ const sealedManifestBase: Record<string, unknown> = {
 };
 
 describe("16-execution-trace.schema.json", () => {
-  it("$id 形态对齐 v1-draft 契约且已注册进 allSchemas（18 份聚合，W1-C 增量 15→16；VB-PR1 增量 16→17；W1-D2 增量 17→18）", () => {
+  it("$id 形态对齐 v1-draft 契约且已注册进 allSchemas（19 份聚合，W1-C 增量 15→16；VB-PR1 增量 16→17；W1-D2 增量 17→18；P-v06 增量 18→19）", () => {
     expect(executionTraceSchema.$id).toBe(
       "https://pomaster.dev/schemas/execution-trace/v1-draft.json",
     );
     expect(allSchemas.executionTrace).toBe(executionTraceSchema);
-    expect(Object.keys(allSchemas).length).toBe(18);
+    expect(Object.keys(allSchemas).length).toBe(19);
   });
 
   it("正例：封存形态（retention 四档词形）与投影形态（retention null）均过 ajv 校验", () => {

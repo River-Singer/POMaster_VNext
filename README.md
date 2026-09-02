@@ -54,6 +54,7 @@ pomaster memory capture/inspect/harvest/review/promote/audit
 pomaster closeout <task-id>
 
 # 横切 —— 对象检视 / Discovery / Research / Eval / Catalog / 迁移 / 生产反馈 / 多 Agent / 执行身份
+pomaster resolve "<need>" [--hints ...]
 pomaster inspect <governed-id>
 pomaster brainstorm start/status/promote
 pomaster research list/inspect

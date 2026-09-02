@@ -17,8 +17,12 @@
  *   equivalence.ts 维护——declared-equivalence-only 侧车，登记≠裁决；不进 content_digest）
  * - state/linkage-coverage.json 联结覆盖率盲区指标侧车（P31 第二件 / 跨对象引用完整性
  *   gate；ref-integrity.ts 维护——分母封闭三查两侧机器断言；不进 content_digest）
+ * - state/relations.jsonl  Typed Relation sidecar 台账（P-v06 批次 0 / Owner 裁决 D-3
+ *   2026-09-02；relations.ts 维护——EDGE-<12hex> 内容寻址 append-only 追加流；
+ *   不进 content_digest；A8 同族不入 truth-index——01 additionalProperties:false 封条不动）
  * - state/journal.jsonl   事件 journal（TX_APPLIED / PERMIT_* / EXCEPTION_* / SESSION_* /
- *   LOCK_* / EXECUTION_* / KNOWLEDGE_* / EQUIVALENCE_* / LINKAGE_COVERAGE_* 追加流；不进 hash）
+ *   LOCK_* / EXECUTION_* / KNOWLEDGE_* / EQUIVALENCE_* / LINKAGE_COVERAGE_* /
+ *   RELATION_* 追加流；不进 hash）
  *
  * D 线地基平面（P20；research/design-thread-D-solo-form.md §1.3 路径形态 逐字）：
  * - runtime/sessions/<session_key>.json  活跃会话注册（liveness + 当前任务指针；易变态）
@@ -53,6 +57,8 @@ export interface StorePaths {
   readonly equivalenceRegistryPath: string;
   /** state/linkage-coverage.json（P31 第二件联结覆盖率指标侧车；ref-integrity.ts 维护）。 */
   readonly linkageCoveragePath: string;
+  /** state/relations.jsonl（P-v06 Typed Relation sidecar 台账；relations.ts 维护）。 */
+  readonly relationsPath: string;
   readonly journalPath: string;
   readonly truthObjectsDir: string;
   readonly evidenceDir: string;
@@ -88,6 +94,7 @@ export function buildStorePaths(rootDir: string): StorePaths {
     knowledgeLibraryPath: `${stateDir}/knowledge-library.json`,
     equivalenceRegistryPath: `${stateDir}/equivalence-registry.json`,
     linkageCoveragePath: `${stateDir}/linkage-coverage.json`,
+    relationsPath: `${stateDir}/relations.jsonl`,
     journalPath: `${stateDir}/journal.jsonl`,
     truthObjectsDir: `${pomasterDir}/truth/objects`,
     evidenceDir,
