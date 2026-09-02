@@ -2,7 +2,12 @@
  * @pomaster/cli —— POMaster vNext 命令面（八拍 Change Loop 语义）。
  *
  * 命令面（PRD §44/§45；全部支持 --json 机读信封，禁止彩色自然语言当机读接口）：
- * - init            BOOTSTRAP：创建 .pomaster/ 最小骨架 + AGENTS.md/CLAUDE.md 轻入口（D13）
+ * - init            BOOTSTRAP：创建 .pomaster/ 最小骨架 + AGENTS.md 唯一事实源 +
+ *                   平台适配器（F1：--platforms claude,codex,cursor,qoder / none；
+ *                   TTY 人读模式无旗标时编号清单交互；幂等 NO_CHANGE）
+ * - update          CLI 自更新（F2）：缺省 --check（npm view semver 比对，registry
+ *                   不可达 fail-closed 显式呈现禁假绿）；--yes = npm install -g
+ *                   pomaster@latest（stdio inherit；失败透传 exit 1）
  * - triage <request> 八拍①：规则桶判档（C1；TTL 168h，C9）
  * - permit issue/check/steal/list
  *                   八拍②：FRAMEWORK LOCK 命令面（签发/判卷/显式接管/台账呈现；G1）
@@ -115,9 +120,12 @@
  * maintain --phase 相值）均带 TODO(vocab-pr) 注记。
  */
 import { Command, CommanderError } from "commander";
+import { createInterface } from "node:readline";
 import { CLI_NAME } from "./cli-info.js";
 import { toEnvelope, failOutcome, type CliEnvelope, type CommandOutcome } from "./envelope.js";
-import { runInit } from "./init.js";
+import { runInit, runInitInteractive } from "./init.js";
+import { runUpdate } from "./update.js";
+import { resolveCliVersion } from "./version.js";
 import { triageRequest } from "./triage.js";
 import { runStatus } from "./status.js";
 import { runInspect } from "./inspect.js";
@@ -191,12 +199,39 @@ import { runAgentsStatus, runHandoff, runRun } from "./agents.js";
 import { MIGRATE_DEFERRED_FORMS, runMigrateTrellisSpec } from "./migrate.js";
 
 export { CLI_NAME, CLI_VERSION } from "./cli-info.js";
+export { resolveCliVersion } from "./version.js";
 export { toEnvelope } from "./envelope.js";
 export type { CliEnvelope, CommandOutcome } from "./envelope.js";
 export * from "./store-layout.js";
 export * from "./digest.js";
 export * from "./triage.js";
-export { runInit } from "./init.js";
+export {
+  runInit,
+  runInitInteractive,
+  INIT_PLATFORMS,
+  parsePlatformSelection,
+  renderPlatformMenu,
+} from "./init.js";
+export type {
+  InitResult,
+  InitFileReport,
+  InitFileAction,
+  InitOptions,
+  InitPlatform,
+  InitPlatformAction,
+  InitPlatformReport,
+  InitInteractiveIo,
+  PlatformSelectionParse,
+} from "./init.js";
+export { runUpdate, compareSemver, UPDATE_PACKAGE_NAME } from "./update.js";
+export type {
+  UpdateResult,
+  UpdateCheckStatus,
+  UpdateInstallReport,
+  UpdateDeps,
+  NpmRunner,
+  NpmRunResult,
+} from "./update.js";
 export { runStatus } from "./status.js";
 export { runInspect } from "./inspect.js";
 export type {
@@ -590,18 +625,64 @@ export function createProgram(
     .description(
       "POMaster vNext — Governed Software State Control Plane（八拍 Change Loop 命令面）",
     )
-    .version("0.0.0")
+    // F3：版本经 version.ts 单点解析——bundle 形态读 esbuild define 注入的发布版本
+    // （真源 = build-npm-package.mjs 顶部 POMASTER_VERSION），dev 形态回落 cli
+    // package.json（0.0.0），`pomaster --version` 双形态都不再恒报 0.0.0。
+    .version(resolveCliVersion())
     .option("--dir <path>", "project root directory", process.cwd());
+
+  // 帮助面品牌触点（人读通道专属）：epilogue 只出现在顶层 --help 渲染尾部
+  // （commander afterHelp 事件独立 write 一段，经 configureOutput.writeOut 走注入 io），
+  // 与命令词形零交集（B1 golden 的 README↔--help 逐字在场断言不受影响），更不进任何
+  // --json 机读信封（§45 单信封纪律）。
+  program.addHelpText(
+    "after",
+    "\nContact / commercial licensing: allenxujianyang@outlook.com",
+  );
 
   program
     .command("init")
     .description(
-      "创建 .pomaster/ 最小骨架 + AGENTS.md/CLAUDE.md 轻入口（幂等；重复执行 NO_CHANGE）",
+      "创建 .pomaster/ 最小骨架 + AGENTS.md 唯一事实源 + 平台适配器（F1：--platforms 逗号列表 claude,codex,cursor,qoder / none；幂等；重复执行 NO_CHANGE）",
+    )
+    .option(
+      "--platforms <platforms>",
+      "平台适配器逗号列表（claude|codex|cursor|qoder|none；缺省 claude；TTY 人读模式无旗标时出清单交互）",
     )
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (_opts, command) => {
-      const outcome = await runInit(resolveDir(command));
-      record({ command: "init", outcome, asJson: command.opts().json === true });
+      const platformsArg = command.opts().platforms as string | undefined;
+      const asJson = command.opts().json === true;
+      // F1 TTY 交互面：仅人读模式 + 未带旗标时启用（--json / 显式旗标恒走确定性
+      // 路径——机读通道禁交互阻塞）。
+      const outcome =
+        platformsArg === undefined && !asJson && process.stdin.isTTY === true
+          ? await runInitInteractive(resolveDir(command), {
+              write: (line) => io.stdout(line),
+              readLine: readLineFromStdin,
+            })
+          : await runInit(resolveDir(command), { platforms: platformsArg });
+      record({ command: "init", outcome, asJson });
+    });
+
+  // —— CLI 自更新（F2）：缺省 --check 查 registry 比对版本；--yes 才执行全局安装 ——
+  // 判卷纯本地（semver 比较）；registry 不可达 fail-closed 显式呈现，禁假报「已是最新」；
+  // npm 执行面 stdio inherit 透传。--json 信封 {current, latest, updateAvailable, check}。
+  program
+    .command("update")
+    .description(
+      "检查/执行 CLI 自更新：缺省 --check（npm view 比对 semver，registry 不可达显式呈现禁假绿）；--yes = 更新可用时 npm install -g pomaster@latest（npm 失败透传 exit 1；完成后重新 pomaster init 刷新轻入口）",
+    )
+    .option("--check", "检查更新（缺省行为，显式词形兼容）")
+    .option("--yes", "检查到更新时执行 npm install -g pomaster@latest")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = runUpdate({ yes: opts.yes === true });
+      record({
+        command: "update",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
     });
 
   program
@@ -2399,6 +2480,21 @@ export function createProgram(
  */
 function collectValues(value: string, previous: string[] | undefined): string[] {
   return [...(previous ?? []), value];
+}
+
+/**
+ * F1 交互缺省读行：process.stdin 单行（零依赖 readline 接口）。
+ * 行事件与流关闭（EOF/Ctrl-D）双监听——close 先到按空串处理，调用方落缺省 claude。
+ */
+function readLineFromStdin(): Promise<string> {
+  const rl = createInterface({ input: process.stdin });
+  return new Promise<string>((resolve) => {
+    rl.once("line", (line) => {
+      resolve(line);
+      rl.close();
+    });
+    rl.once("close", () => resolve(""));
+  });
 }
 
 /**

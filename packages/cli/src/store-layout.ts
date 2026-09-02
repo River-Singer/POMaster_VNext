@@ -76,6 +76,14 @@ export const CONFIG_RELATIVE = ".pomaster/config.yaml";
 export const AGENTS_MD_RELATIVE = "AGENTS.md";
 export const CLAUDE_MD_RELATIVE = "CLAUDE.md";
 
+/**
+ * 平台适配器文件（F1：init 平台选择；细指针 3-8 行指向 AGENTS.md 唯一事实源，
+ * 已存在一律不覆盖）。claude 适配器 = CLAUDE.md（上文，既有 D13 形态）；
+ * codex 原生入口即根 AGENTS.md，零额外文件。
+ */
+export const CURSOR_RULES_RELATIVE = ".cursor/rules/pomaster.mdc";
+export const QODER_RULES_RELATIVE = ".qoder/rules/pomaster.md";
+
 /** 生成文件标记：带本标记的入口文件允许 init 重写；不带则视为人类文件，跳过不覆盖。 */
 export const GENERATED_MARKER = "<!-- pomaster:generated -->";
 

@@ -122,7 +122,9 @@ const forbiddenFields = ["dependencies", "peerDependencies", "optionalDependenci
 const presentForbidden = forbiddenFields.filter((field) => stageManifest[field] !== undefined);
 assert(presentForbidden.length === 0, "零 dependencies（四字段全缺席）", presentForbidden.join(", "));
 assert(stageManifest.private === undefined, "private 不设（缺省可发布）");
-assert(stageManifest.name === "pomaster" && stageManifest.version === "0.1.0", "name/version = pomaster@0.1.0");
+// 版本断言与 build-npm-package.mjs 的 POMASTER_VERSION 单点真源同步维护
+// （发布 tag v<version> 以该常量为锚，publish.yml 版本闸强制）。
+assert(stageManifest.name === "pomaster" && stageManifest.version === "0.1.1", "name/version = pomaster@0.1.1");
 assert(stageManifest.license === "PolyForm-Noncommercial-1.0.0", "license = PolyForm-Noncommercial-1.0.0");
 assert(stageManifest.bin?.pomaster === "dist/bin.js", "bin.pomaster = dist/bin.js");
 assert(stageManifest.engines?.node === ">=22", "engines.node = >=22");
@@ -142,7 +144,9 @@ if (packReal.status !== 0) {
   console.error(`npm pack 失败（exit ${packReal.status}）:\n${packReal.stdout}${packReal.stderr}`);
   process.exit(1);
 }
-const tgzPath = join(SMOKE_DIR, "pomaster-0.1.0.tgz");
+// tgz 文件名由 npm pack 依 staging manifest version 机械生成——从 manifest 派生，
+// 版本推进时零同步点（manifest version 与 POMASTER_VERSION 一致性已在 1.5 断言钉住）。
+const tgzPath = join(SMOKE_DIR, `pomaster-${stageManifest.version}.tgz`);
 if (!existsSync(tgzPath)) {
   console.error(`npm pack 未产出预期 tgz: ${tgzPath}`);
   process.exit(1);

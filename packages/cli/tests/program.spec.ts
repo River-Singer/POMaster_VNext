@@ -10,7 +10,7 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { runInit, runCli, type CliEnvelope } from "@pomaster/cli";
+import { resolveCliVersion, runInit, runCli, type CliEnvelope } from "@pomaster/cli";
 
 let dir: string;
 
@@ -88,6 +88,21 @@ describe("runCli --json 机读契约（§45）", () => {
     expect(code2).toBe(0);
     const second = parseEnvelope(io2.out);
     expect((second.result as { change: string }).change).toBe("NO_CHANGE");
+  });
+
+  it("init --json：信封恒单通道（§45）——品牌横幅与 logo 文案不得污染机读 stdout（新增负向判卷）", async () => {
+    const io = capture();
+    const code = await runCli(["--dir", dir, "init", "--json"], io);
+    expect(code).toBe(0);
+    const raw = io.out.join("\n");
+    // stdout 整体必须可解析为单一 §45 信封：横幅/logo 若漏进 stdout，JSON.parse 即红。
+    const envelope = parseEnvelope(io.out);
+    expect(envelope.command).toBe("init");
+    expect(envelope.ok).toBe(true);
+    expect(raw).not.toContain("State is the only truth");
+    expect(raw).not.toContain("allenxujianyang");
+    expect(raw).not.toContain("██████╗");
+    expect(raw).not.toContain("VNext");
   });
 
   it("context compile --role --json（真实 kernel）→ exit 0，信封 ok=true（kernel 落地后自动升级）", async () => {
@@ -199,6 +214,18 @@ describe("runCli 人读双输出", () => {
     expect(text).not.toMatch(/\[/);
   });
 
+  it("init 人读：stdout 尾部带品牌横幅与联系邮箱（完成输出收尾段，人读通道专属）", async () => {
+    const io = capture();
+    const code = await runCli(["--dir", dir, "init"], io);
+    expect(code).toBe(0);
+    const text = io.out.join("\n");
+    expect(text).toContain("POMaster · Governed Software State Control Plane");
+    expect(text).toContain("State is the only truth. Evidence is the only proof.");
+    expect(text).toContain(
+      "Contact / commercial licensing: allenxujianyang@outlook.com",
+    );
+  });
+
   it("失败命令人读走 stderr（stdout 保持干净）", async () => {
     const io = capture();
     const code = await runCli(["--dir", dir, "status"], io);
@@ -238,6 +265,16 @@ describe("runCli help/version 信息性退出（fresh-clone 实录：--help 曾�
     expect(io.err).toEqual([]);
   });
 
+  it("--help 尾部 epilogue：联系邮箱逐字在场（品牌触点；人读帮助面专属）", async () => {
+    const io = capture();
+    const code = await runCli(["--dir", dir, "--help"], io);
+    expect(code).toBe(0);
+    expect(io.out.join("\n")).toContain(
+      "Contact / commercial licensing: allenxujianyang@outlook.com",
+    );
+    expect(io.err).toEqual([]);
+  });
+
   it("子命令 --help（permit --help）→ exit 0，stdout 含子命令清单", async () => {
     const io = capture();
     const code = await runCli(["--dir", dir, "permit", "--help"], io);
@@ -260,6 +297,11 @@ describe("runCli help/version 信息性退出（fresh-clone 实录：--help 曾�
     const code = await runCli(["--dir", dir, "--version"], io);
     expect(code).toBe(0);
     expect(io.out.join("\n")).toContain("0.0.0");
+  });
+
+  it("--version 词形 = resolveCliVersion()（F3：dev 形态读 cli package.json 0.0.0；bundle 形态读 esbuild define 注入的发布版本）", () => {
+    // dev/vitest 源直连形态：define 不存在 → 回落 cli package.json（0.0.0），且不炸。
+    expect(resolveCliVersion()).toBe("0.0.0");
   });
 
   it("对照：未知命令（commander.usageError 族）仍 fail-closed exit 1，不受信息性放行影响", async () => {
@@ -393,5 +435,52 @@ describe("§44.3 六命令参数 fail-closed 与 --help（P18-Adversarial 补全
     for (const word of ["--mode", "internal", "external", "mixed", "comparative", "impact", "forensic", "list", "inspect"]) {
       expect(text).toContain(word);
     }
+  });
+});
+
+// ============================================================
+// F1/F2：init --platforms 机读信封 + update 命令注册（程序面）
+// ============================================================
+
+describe("F1/F2 程序面（init --platforms / update）", () => {
+  it("init --platforms cursor --json → 信封 result.platforms 数组（{name,file,action}）", async () => {
+    const io = capture();
+    const code = await runCli(
+      ["--dir", dir, "init", "--platforms", "cursor", "--json"],
+      io,
+    );
+    expect(code).toBe(0);
+    const envelope = parseEnvelope(io.out);
+    expect(envelope.command).toBe("init");
+    expect(envelope.ok).toBe(true);
+    const platforms = (envelope.result as { platforms: { name: string; file: string; action: string }[] })
+      .platforms;
+    expect(platforms).toEqual([
+      { name: "cursor", file: ".cursor/rules/pomaster.mdc", action: "created" },
+    ]);
+    // --json 信封零人读横幅污染（§45）：平台段只在 result 结构化数据里。
+    expect(io.out.join("\n")).not.toContain("platforms:");
+  });
+
+  it("init --platforms weex --json → exit 1，SCHEMA_INVALID 信封（机读 fail-closed）", async () => {
+    const io = capture();
+    const code = await runCli(
+      ["--dir", dir, "init", "--platforms", "weex", "--json"],
+      io,
+    );
+    expect(code).toBe(1);
+    const envelope = parseEnvelope(io.out);
+    expect(envelope.ok).toBe(false);
+    expect((envelope.errors as { code: string }[])[0]?.code).toBe("SCHEMA_INVALID");
+  });
+
+  it("update 注册为顶层命令：--help 含 --yes/--check 词形（信息性 exit 0，零网络）", async () => {
+    const io = capture();
+    const code = await runCli(["--dir", dir, "update", "--help"], io);
+    expect(code).toBe(0);
+    const text = io.out.join("\n");
+    expect(text).toContain("--yes");
+    expect(text).toContain("--check");
+    expect(io.err).toEqual([]);
   });
 });

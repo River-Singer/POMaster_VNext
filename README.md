@@ -15,11 +15,12 @@ POMaster = State + Context + Transition + Evidence，在 Authority 与 Adaptive 
 POMaster 的全部能力收敛在一条 CLI（`pomaster`）——八拍 Change Loop 的每一拍都有对应命令面。先给一张**命令全景**（机器钉版，与 `pomaster --help` 零漂移；`#` 分节注释仅人读）。第一次使用？直接看下面 [install → init → 第一个 Change](#1-安装) 的全流程。
 
 ```text
-# 0 BOOTSTRAP —— 建基线 / 速览 / 装眼睛 / 可移植性
+# 0 BOOTSTRAP —— 建基线 / 速览 / 装眼睛 / 可移植性 / 自更新
 pomaster init
 pomaster status
 pomaster doctor
 pomaster portability bootstrap/check
+pomaster update --check/--yes
 
 # ① TRIAGE —— 秒级判档（MINIMAL/LIGHT/STANDARD；NO-OP 合法）
 pomaster triage "<request>"
@@ -96,6 +97,8 @@ pomaster init
 | `.pomaster/state/authority.json` | Authority Map 骨架（默认登记 `BOOTSTRAP_OWNER`） | 否（人类加注的 owner 一律不动） |
 | `.pomaster/config.yaml` | 治理配置（人类可编辑） | 否（只在缺失时创建） |
 | `AGENTS.md` / `CLAUDE.md` | Agent 轻入口（profile + 状态速览 + 常用命令） | 仅带生成标记的（`CLAUDE.md` 通过 `@AGENTS.md` 导入共享） |
+
+**多平台适配器**：`AGENTS.md` 恒为唯一事实源；`--platforms claude,codex,cursor,qoder` 追加各平台的细指针适配器（`CLAUDE.md` / 根 `AGENTS.md` 即 codex 原生入口 / `.cursor/rules/pomaster.mdc` / `.qoder/rules/pomaster.md`，已存在一律不覆盖）；`--platforms none` 只建 AGENTS.md + 状态骨架。TTY 交互终端直接 `pomaster init` 会出编号清单供选择；`--json` 恒走确定性缺省（claude）。
 
 ### 3. init 之后该配置什么（config.yaml）
 
@@ -350,37 +353,17 @@ Spec、Task、Gate、Knowledge、Brainstorm……全部是这五个原语的派�
 - Minimum Sufficient Governance：治理开销必须与变更风险成比例；小改动的体验是"几乎感觉不到 POMaster"
 - Memory Sovereignty：删掉本机缓存 + fresh clone + bootstrap ≈ 项目认知完全恢复
 
-## 命令面
-
-完整命令全景见上文 [快速上手](#快速上手)——那是机器钉版（与 `pomaster --help` 零漂移，CI golden 强制），此处不再重复抄写以避免漂移。每条命令的逐字说明用 `pomaster <组> --help` 查看；全部命令支持 `--json` 机读信封（§45），禁止彩色自然语言当机读接口。
-
-## 仓库蓝图（逻辑结构，物理上按需物化）
+## 项目结构
 
 ```text
-packages/ kernel · cli · gauntlet-lite · schemas
-catalog/  policies(79) · knowledge(10) · gates(5) · sensors(6)
-tests/    unit · integration · golden · adversarial · behavioral · benchmarks
-benchmarks/ mutation-kill · constitutional · run-all（自托管三档基准）
-legal/    THIRD_PARTY_NOTICES · PROVENANCE · verify_notices
+packages/    kernel（状态与判卷权威）· cli（命令面）· gauntlet-lite（确定性 gate 腿）· schemas（FROZEN 词表 schema）
+catalog/     policies · knowledge · gates · sensors——随包分发的工程策展物料（catalog-lock 逐字节对账）
+tests/       单元 / 集成 / Golden / 对抗 / 行为 / 自托管基准（数量下限进 CI 棘轮，只升不降）
+benchmarks/  mutation-kill · constitutional · run-all
+legal/       THIRD_PARTY_NOTICES · PROVENANCE
 ```
 
-技术栈：TypeScript · Node ≥22 · pnpm monorepo · Canonical State 为 JSON · Git 为版本与回滚底座 · 外部测试工具一律走 Adapter（绝不进核心）。
-
-## 文档地图
-
-| 想了解 | 去哪里 |
-|---|---|
-| 产品需求全文（v0.4） | `doc/POMaster vNext/POMaster-vNext-PRD-v0.4.md` |
-| 增量 PRD v0.5.2（Agent Perception） | `doc/POMaster-vNext-PRD-v0.5.2-agent-perception.md` |
-| 增量 PRD v0.5.3（Grounded Brainstorm） | `doc/POMaster-vNext-PRD-v0.5.3-grounded-brainstorm-research.md` |
-| Kernel 公共 API 契约 | `docs/kernel-api.md`（本地） |
-| 设计研究资产 | `.trellis/tasks/*/research/`（本地） |
-
-## 质量承诺
-
-- 全量套件 3038 用例（六类齐全：单元/集成/Golden/对抗/行为/自托管基准），数量下限进 CI 棘轮强制执行（只升不降）
-- 任何已修缺陷类别必须先存在对应回归用例，才允许标注"结构性消灭"
-- CI 四腿（ubuntu/windows/macos/bootstrap-clean）+ mutation kill score 100%（changed-code scope）+ 三机器验证器（mutation --verify / notices / constitutional）
+技术栈：TypeScript · Node ≥ 22 · pnpm monorepo · Canonical State 为 JSON · Git 为版本与回滚底座 · 外部测试工具一律走 Adapter（绝不进核心）。
 
 ## License
 
@@ -391,6 +374,12 @@ POMaster 采用**双许可**发布（Owner 决议 2026-09-01）：
 
 该组合为 source-available 双许可，不应宣传为 OSI Open Source。商标与项目标识归属见 [`TRADEMARKS.md`](./TRADEMARKS.md)；贡献授权条款见 [`CONTRIBUTING.md`](./CONTRIBUTING.md)；安全漏洞报告渠道见 [`SECURITY.md`](./SECURITY.md)；第三方依赖许可与 notice 义务见 [`legal/THIRD_PARTY_NOTICES.md`](./legal/THIRD_PARTY_NOTICES.md)。
 
-商业授权联系：TODO(Owner): 填联系邮箱/渠道
+商业授权联系：**allenxujianyang@outlook.com**
 
 > 正式公开发布前需完成法律专业人士复核。Trellis 仅作机制研究对照，零代码继承。
+
+## 联系方式
+
+- **商业授权 / 合作**：[allenxujianyang@outlook.com](mailto:allenxujianyang@outlook.com)
+- **问题反馈**：[GitHub Issues](https://github.com/River-Singer/POMaster_VNext/issues)
+- **安全漏洞**：见 [`SECURITY.md`](./SECURITY.md)（不走公开 issue）

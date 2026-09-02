@@ -1,6 +1,7 @@
 /**
  * init.spec.ts —— 骨架创建、幂等（NO_CHANGE 契约）、不覆盖人类文件、D24 账本形态、
- * N7 authority 骨架（BOOTSTRAP 手工步骤自动化）。
+ * N7 authority 骨架（BOOTSTRAP 手工步骤自动化）、F1 平台选择（--platforms 词表闸 /
+ * 适配器产出 / 幂等 / 交互解析）。
  */
 import { mkdtempSync, existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -12,9 +13,14 @@ import {
   AUTHORITY_RELATIVE,
   CLAUDE_MD_RELATIVE,
   CONFIG_RELATIVE,
+  CURSOR_RULES_RELATIVE,
   GENERATED_MARKER,
+  QODER_RULES_RELATIVE,
   TRUTH_INDEX_RELATIVE,
+  parsePlatformSelection,
+  renderPlatformMenu,
   runInit,
+  runInitInteractive,
 } from "@pomaster/cli";
 
 let dir: string;
@@ -248,8 +254,51 @@ describe("init 不覆盖人类文件", () => {
 describe("init 人读输出与信封", () => {
   it("人读行包含 change 汇总与 profile", async () => {
     const outcome = await runInit(dir);
-    expect(outcome.human[0]).toContain("CREATED");
+    // 顶部新增 logo 横幅后，change 汇总不再是首行——按结构定位（logo 之后正文段）。
+    const summary = outcome.human.find((line) => line.startsWith("init: "));
+    expect(summary).toBeDefined();
+    expect(summary).toContain("CREATED");
     expect(outcome.human.join("\n")).toContain("profile: LIGHT");
+  });
+
+  it("人读输出顶部带 ASCII logo：首行前缀 ██████╗、含 VNext，结构 logo→空行→产物输出", async () => {
+    const outcome = await runInit(dir);
+    // 逐字钉位：首行前缀 + VNext（品牌触点，改动须有意为之并同步本断言）。
+    expect(outcome.human[0].startsWith("██████╗")).toBe(true);
+    expect(outcome.human.join("\n")).toContain("VNext");
+    // 结构钉位：logo 恒 7 行 → 1 空行 → init: 汇总（§45 人读通道版式契约）。
+    expect(outcome.human.length).toBeGreaterThan(8);
+    expect(outcome.human[7]).toBe("");
+    expect(outcome.human[8]?.startsWith("init: ")).toBe(true);
+  });
+
+  it("人读输出尾部带品牌横幅：哲学文案与联系邮箱逐字钉位（完成输出收尾段）", async () => {
+    const outcome = await runInit(dir);
+    const text = outcome.human.join("\n");
+    // 逐字钉位（品牌文案受 spec 钉住，改动须有意为之并同步本断言）。
+    expect(text).toContain("POMaster · Governed Software State Control Plane");
+    expect(text).toContain("State is the only truth. Evidence is the only proof.");
+    expect(text).toContain(
+      "A tool that reports green without evidence is more dangerous",
+    );
+    expect(outcome.human[outcome.human.length - 1]).toBe(
+      "Contact / commercial licensing: allenxujianyang@outlook.com",
+    );
+    // 前导空行分隔：横幅不与产物清单粘连。
+    expect(text).toContain("  profile: LIGHT\n\nPOMaster · Governed");
+  });
+
+  it("品牌横幅零进入机读信封原料（§45 单信封：result/warnings/errors 均无文案与 logo）", async () => {
+    const outcome = await runInit(dir);
+    const envelopeRaw = JSON.stringify({
+      result: outcome.result,
+      warnings: outcome.warnings,
+      errors: outcome.errors,
+    });
+    expect(envelopeRaw).not.toContain("State is the only truth");
+    expect(envelopeRaw).not.toContain("allenxujianyang");
+    expect(envelopeRaw).not.toContain("██████╗");
+    expect(envelopeRaw).not.toContain("VNext");
   });
 });
 
@@ -449,5 +498,234 @@ describe("init authority 骨架（N7）", () => {
     const outcome = await runCompact(dir, { opsFile: txPath, noIngest: true });
     expect(outcome.ok).toBe(false);
     expect(outcome.errors[0]?.code).toBe("GHOST_AUTHORITY_OWNER");
+  });
+});
+
+// ============================================================
+// F1：平台选择（--platforms 词表闸 / 适配器产出 / 幂等 / 交互解析）
+// ============================================================
+
+describe("init --platforms 合法组合（F1）", () => {
+  it("缺省（非 TTY 无旗标）= 现行为：claude 适配器 CLAUDE.md created，platforms 恰一行", async () => {
+    const outcome = await runInit(dir);
+    expect(outcome.ok).toBe(true);
+    expect(
+      outcome.result.files.find((f) => f.file === CLAUDE_MD_RELATIVE)?.action,
+    ).toBe("created");
+    expect(outcome.result.platforms).toEqual([
+      { name: "claude", file: CLAUDE_MD_RELATIVE, action: "created" },
+    ]);
+  });
+
+  it("--platforms claude,cursor → 双适配器产出；cursor 细指针指向 AGENTS.md（3-8 行纪律）", async () => {
+    const outcome = await runInit(dir, { platforms: "claude,cursor" });
+    expect(outcome.ok).toBe(true);
+    expect(existsSync(join(dir, CLAUDE_MD_RELATIVE))).toBe(true);
+    expect(existsSync(join(dir, CURSOR_RULES_RELATIVE))).toBe(true);
+    // 细指针内容：唯一事实源 AGENTS.md 在场，frontmatter 随 cursor .mdc 惯例；
+    // 3-8 行纪律（含 frontmatter）。
+    const cursor = read(CURSOR_RULES_RELATIVE);
+    expect(cursor).toContain("alwaysApply: true");
+    expect(cursor).toContain("AGENTS.md");
+    expect(cursor.split("\n").length).toBeLessThanOrEqual(8);
+    expect(outcome.result.platforms).toEqual([
+      { name: "claude", file: CLAUDE_MD_RELATIVE, action: "created" },
+      { name: "cursor", file: CURSOR_RULES_RELATIVE, action: "created" },
+    ]);
+    expect(outcome.result.change).toBe("CREATED");
+  });
+
+  it("--platforms cursor,qoder → 不建 CLAUDE.md（平台外适配器零产出）；qoder 细指针带 trigger frontmatter", async () => {
+    const outcome = await runInit(dir, { platforms: "cursor,qoder" });
+    expect(outcome.ok).toBe(true);
+    expect(existsSync(join(dir, CLAUDE_MD_RELATIVE))).toBe(false);
+    expect(existsSync(join(dir, QODER_RULES_RELATIVE))).toBe(true);
+    const qoder = read(QODER_RULES_RELATIVE);
+    expect(qoder).toContain("trigger: always_on");
+    expect(qoder).toContain("AGENTS.md");
+    expect(outcome.result.platforms).toEqual([
+      { name: "cursor", file: CURSOR_RULES_RELATIVE, action: "created" },
+      { name: "qoder", file: QODER_RULES_RELATIVE, action: "created" },
+    ]);
+  });
+
+  it("--platforms claude,codex → codex 零额外文件（covered：根 AGENTS.md 即原生入口）", async () => {
+    const outcome = await runInit(dir, { platforms: "claude,codex" });
+    expect(outcome.ok).toBe(true);
+    expect(outcome.result.platforms).toEqual([
+      { name: "claude", file: CLAUDE_MD_RELATIVE, action: "created" },
+      { name: "codex", file: AGENTS_MD_RELATIVE, action: "covered" },
+    ]);
+    // 唯一落盘的入口文件仍只有 AGENTS.md + CLAUDE.md，无 codex 专属文件。
+    expect(existsSync(join(dir, "AGENTS.md"))).toBe(true);
+    expect(existsSync(join(dir, "codex"))).toBe(false);
+  });
+
+  it("--platforms none → 只建 AGENTS.md + 状态骨架：不建 CLAUDE.md，platforms 空数组", async () => {
+    const outcome = await runInit(dir, { platforms: "none" });
+    expect(outcome.ok).toBe(true);
+    expect(existsSync(join(dir, CLAUDE_MD_RELATIVE))).toBe(false);
+    expect(existsSync(join(dir, AGENTS_MD_RELATIVE))).toBe(true);
+    expect(outcome.result.platforms).toEqual([]);
+    expect(
+      outcome.result.files.find((f) => f.file === AGENTS_MD_RELATIVE)?.action,
+    ).toBe("created");
+  });
+
+  it("幂等二次跑：适配器已在座 → skipped-existing（字节不动），change=NO_CHANGE", async () => {
+    await runInit(dir, { platforms: "claude,cursor" });
+    const cursorBefore = read(CURSOR_RULES_RELATIVE);
+    const second = await runInit(dir, { platforms: "claude,cursor" });
+    expect(second.ok).toBe(true);
+    expect(second.result.change).toBe("NO_CHANGE");
+    expect(second.result.platforms).toEqual([
+      { name: "claude", file: CLAUDE_MD_RELATIVE, action: "skipped-existing" },
+      { name: "cursor", file: CURSOR_RULES_RELATIVE, action: "skipped-existing" },
+    ]);
+    expect(read(CURSOR_RULES_RELATIVE)).toBe(cursorBefore);
+  });
+
+  it("人读平台段：逐平台一行 [name] action file（created/skipped-existing/covered）", async () => {
+    const outcome = await runInit(dir, { platforms: "claude,codex" });
+    const text = outcome.human.join("\n");
+    expect(text).toContain("platforms:");
+    expect(text).toContain("[claude] created");
+    expect(text).toContain("[codex] covered");
+    // 平台段在 profile 行之前、横幅之前（§45 人读版式；--json 不受影响）。
+    const platformIdx = text.indexOf("platforms:");
+    const profileIdx = text.indexOf("profile: LIGHT");
+    expect(platformIdx).toBeGreaterThan(-1);
+    expect(platformIdx).toBeLessThan(profileIdx);
+  });
+});
+
+describe("init --platforms fail-closed 词表闸（F1）", () => {
+  it("非法平台名 → SCHEMA_INVALID 列出合法词形，且零写入（.pomaster 不落盘）", async () => {
+    const outcome = await runInit(dir, { platforms: "claude,weex" });
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors[0]?.code).toBe("SCHEMA_INVALID");
+    expect(outcome.errors[0]?.message).toContain("weex");
+    for (const word of ["claude", "codex", "cursor", "qoder", "none"]) {
+      expect(outcome.errors[0]?.message).toContain(word);
+    }
+    expect(existsSync(join(dir, ".pomaster"))).toBe(false);
+    expect(outcome.result.files).toEqual([]);
+    expect(outcome.result.platforms).toEqual([]);
+  });
+
+  it("none 与其他平台并列 → SCHEMA_INVALID（none 必须独占）", async () => {
+    const outcome = await runInit(dir, { platforms: "none,claude" });
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors[0]?.code).toBe("SCHEMA_INVALID");
+    expect(outcome.errors[0]?.message).toContain("none");
+    expect(existsSync(join(dir, ".pomaster"))).toBe(false);
+  });
+
+  it("空旗标（--platforms \"\"）→ SCHEMA_INVALID（显式空不是合法词形；none 才是空选择）", async () => {
+    const outcome = await runInit(dir, { platforms: "" });
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors[0]?.code).toBe("SCHEMA_INVALID");
+  });
+});
+
+describe("parsePlatformSelection 纯函数（F1 交互词形）", () => {
+  it("平台名逗号列表 / 去重保序 / a+all 全选 / 编号 1-4 / none 独占", () => {
+    expect(parsePlatformSelection("claude,cursor")).toEqual({
+      ok: true,
+      platforms: ["claude", "cursor"],
+    });
+    expect(parsePlatformSelection("cursor,claude,cursor")).toEqual({
+      ok: true,
+      platforms: ["cursor", "claude"],
+    });
+    expect(parsePlatformSelection("a")).toEqual({
+      ok: true,
+      platforms: ["claude", "codex", "cursor", "qoder"],
+    });
+    expect(parsePlatformSelection("all")).toEqual({
+      ok: true,
+      platforms: ["claude", "codex", "cursor", "qoder"],
+    });
+    expect(parsePlatformSelection("3")).toEqual({ ok: true, platforms: ["cursor"] });
+    expect(parsePlatformSelection("4,1")).toEqual({
+      ok: true,
+      platforms: ["qoder", "claude"],
+    });
+    expect(parsePlatformSelection("none")).toEqual({ ok: true, platforms: [] });
+  });
+
+  it("词表外 token / 越界编号 / 零号 → SCHEMA_INVALID 带合法词形", () => {
+    for (const bad of ["weex", "9", "0", "-1", "claude;cursor"]) {
+      const parsed = parsePlatformSelection(bad);
+      expect(parsed.ok, `词形 ${bad} 必须被拒绝`).toBe(false);
+      if (!parsed.ok) {
+        expect(parsed.error.code).toBe("SCHEMA_INVALID");
+        expect(parsed.error.message).toContain("claude");
+      }
+    }
+  });
+});
+
+describe("runInitInteractive（F1 TTY 交互，io 注入零 TTY）", () => {
+  function fakeIo(answer: string): {
+    written: string[];
+    io: { write: (line: string) => void; readLine: () => Promise<string> };
+  } {
+    const written: string[] = [];
+    return {
+      written,
+      io: {
+        write: (line) => written.push(line),
+        readLine: () => Promise.resolve(answer),
+      },
+    };
+  }
+
+  it("回车空行 → 缺省 claude；清单先于读行打印（编号+名称+产出文件路径）", async () => {
+    const { written, io } = fakeIo("");
+    const outcome = await runInitInteractive(dir, io);
+    expect(outcome.ok).toBe(true);
+    expect(outcome.result.platforms).toEqual([
+      { name: "claude", file: CLAUDE_MD_RELATIVE, action: "created" },
+    ]);
+    expect(written.join("\n")).toContain("1. claude");
+    expect(written.join("\n")).toContain(CLAUDE_MD_RELATIVE);
+    expect(written.join("\n")).toContain("a=全选");
+  });
+
+  it("编号输入 2,4 → codex（covered）+ qoder（created）", async () => {
+    const { io } = fakeIo("2,4");
+    const outcome = await runInitInteractive(dir, io);
+    expect(outcome.ok).toBe(true);
+    expect(outcome.result.platforms).toEqual([
+      { name: "codex", file: AGENTS_MD_RELATIVE, action: "covered" },
+      { name: "qoder", file: QODER_RULES_RELATIVE, action: "created" },
+    ]);
+    expect(existsSync(join(dir, QODER_RULES_RELATIVE))).toBe(true);
+  });
+
+  it("a=全选 → 四平台；非法词形 → SCHEMA_INVALID fail-closed 零写入", async () => {
+    const all = fakeIo("a");
+    const allOutcome = await runInitInteractive(dir, all.io);
+    expect(allOutcome.ok).toBe(true);
+    expect(allOutcome.result.platforms).toHaveLength(4);
+
+    const bad = fakeIo("weex");
+    const badOutcome = await runInitInteractive(join(dir, "fresh"), bad.io);
+    expect(badOutcome.ok).toBe(false);
+    expect(badOutcome.errors[0]?.code).toBe("SCHEMA_INVALID");
+    expect(existsSync(join(dir, "fresh", ".pomaster"))).toBe(false);
+  });
+});
+
+describe("renderPlatformMenu（F1 清单形态）", () => {
+  it("四平台编号连续、含产出文件路径与全选提示", () => {
+    const lines = renderPlatformMenu();
+    expect(lines).toHaveLength(6); // 标题 + 四行 + 提示行
+    expect(lines[0]).toContain("平台适配器");
+    expect(lines[1]).toContain("1. claude");
+    expect(lines[4]).toContain("4. qoder");
+    expect(lines.join("\n")).toContain(CURSOR_RULES_RELATIVE);
+    expect(lines[5]).toContain("a=全选");
   });
 });

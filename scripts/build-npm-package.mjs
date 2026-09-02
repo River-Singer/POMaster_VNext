@@ -1,4 +1,5 @@
-// npm 单包发布 staging 构建（Owner 裁决 10：单包 `pomaster` 0.1.0，双许可）。
+// npm 单包发布 staging 构建（Owner 裁决 10：单包 `pomaster`，双许可）。
+// 发布版本唯一真源 = 顶部 POMASTER_VERSION 常量（字面量不得散落别处）。
 //
 // 职责：把 kernel/gauntlet-lite/schemas + CLI esbuild 打成单文件 ESM bundle，
 // 连同 catalog/ 资产与法务文档落 `stage/pomaster/`，产出可直接 `npm publish`
@@ -37,6 +38,13 @@ const esbuild = require("esbuild");
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 const p = (...parts) => join(repoRoot, ...parts);
+
+/**
+ * 发布版本唯一真源（single source of truth）：git tag `v<version>` 必须与之一致
+ * （publish.yml 版本闸强制逐字相等）；verify-npm-package.mjs 的版本断言随本常量
+ * 同步维护。改版本只改这一行。
+ */
+const POMASTER_VERSION = "0.1.1";
 
 const STAGE_PKG = p("stage", "pomaster");
 const STAGE_BIN = join(STAGE_PKG, "dist", "bin.js");
@@ -97,6 +105,13 @@ esbuild.buildSync({
   banner: { js: BANNER },
   sourcemap: false,
   logLevel: "warning",
+  // F3 bundled --version 修复：发布版本以 define 注入字面量（真源 = 顶部
+  // POMASTER_VERSION 单点常量；cli 源 version.ts 以 typeof 守卫读取，dev 形态
+  // 回落 cli package.json 的 0.0.0）。此前 bundle 后 `pomaster --version` 恒报
+  // cli 包占位版本 0.0.0——发布级缺陷回归锚见出口判据 4.6。
+  define: {
+    POMASTER_VERSION: JSON.stringify(POMASTER_VERSION),
+  },
 });
 
 // ============================================================
@@ -161,6 +176,19 @@ if (helpRun.status !== 0 || !helpRun.stdout.includes("Usage: pomaster")) {
   );
 }
 
+// 4.6 bundled --version：define 注入的发布版本必须生效（F3 回归锚——此前 bundle 后
+//     `pomaster --version` 恒报 cli 包占位版本 0.0.0）。
+const versionRun = spawnSync(process.execPath, [STAGE_BIN, "--version"], {
+  cwd: repoRoot,
+  encoding: "utf8",
+});
+if (versionRun.status !== 0 || versionRun.stdout.trim() !== POMASTER_VERSION) {
+  fail(
+    `bundle --version 应输出 ${POMASTER_VERSION}，实为 exit ${versionRun.status} ` +
+      `stdout=${JSON.stringify(versionRun.stdout)} stderr=${JSON.stringify(versionRun.stderr)}`,
+  );
+}
+
 // ============================================================
 // 5) catalog/ 整目录拷贝（含 catalog-lock.draft.json）
 // ============================================================
@@ -199,12 +227,13 @@ const cliPackageJson = JSON.parse(readFileSync(p("packages", "cli", "package.jso
 
 /**
  * staging manifest（Owner 裁决 10）：name/version/license/bin/files/engines/repository
- * 逐项钉死；`private` 不设（缺省可发布）；零 dependencies/peerDependencies
+ * 逐项钉死；version 取自顶部 POMASTER_VERSION 单点常量；`private` 不设（缺省可发布）；
+ * 零 dependencies/peerDependencies
  * （kernel/gauntlet-lite/schemas/commander 全部 bundle，ajv 仅测试面不进 bundle）。
  */
 const stagePackageJson = {
   name: "pomaster",
-  version: "0.1.0",
+  version: POMASTER_VERSION,
   description: cliPackageJson.description,
   license: "PolyForm-Noncommercial-1.0.0",
   type: "module",
