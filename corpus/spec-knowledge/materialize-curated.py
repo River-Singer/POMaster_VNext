@@ -228,6 +228,11 @@ REVIEW_NOTES = {
     ],
     "POLICY.SEC.THIRD_PARTY_EXECUTION_REGISTER": [
         "第三方执行体登记在既有 69 条中无对应条目，零语义重复。",
+        "机器 applicability 标注撤账（2026-09-02 第二轮全盘审查 I7）：批 2 曾沿 W1-A1 批 1 "
+        "先例标注 capabilities=[CAPABILITY.API_CONTRACT]，但源协议（frontend-hard-spec "
+        "04-security-protocol.md 第三方执行体登记义务）正文无任何 API 契约动词面——词面证据"
+        "弱不满足保守派生纪律，撤回 annotated 回 human_review_candidate（capabilities 留空"
+        "回退 lane 缺省，O7 行为零变化）；列 Human Review 复核议程。",
     ],
     "POLICY.WEB.TRACK.CONSENT_LIFECYCLE": [
         "同意状态采集时序在既有 69 条中无对应条目，零语义重复。",
@@ -302,11 +307,10 @@ APPLICABILITY_AXES = {
         "change_classes": ["DEPENDENCY_CHANGE"],
         "basis": "condition『引入新依赖』",
     },
-    "POLICY.SEC.THIRD_PARTY_EXECUTION_REGISTER": {
-        "capabilities": ["CAPABILITY.API_CONTRACT"],
-        "basis": "沿 tests/integration/catalog-applicability-case-b.spec.ts（W1-A1 批1）先例标注；"
-                 "T3 实测词面证据弱（condition『页面引入第三方执行体』无契约动词面）——列 Human Review 复核",
-    },
+    # 注：POLICY.SEC.THIRD_PARTY_EXECUTION_REGISTER 曾按 W1-A1 批 1 先例标注
+    # capabilities=[CAPABILITY.API_CONTRACT]，2026-09-02 第二轮全盘审查 I7 撤账——
+    # 源协议正文无契约动词面，词面证据弱不满足保守派生纪律（撤销理由落在该条目的
+    # review_notes；capabilities 留空回退 lane 缺省，O7 行为零变化）。
 }
 
 APPLICABILITY_CAMPAIGN = "W1-A2 P0.5-1 T3 标注战役（PRD v0.5.2 §5.2/§14；Owner 裁决 8 ②，2026-09-01）"

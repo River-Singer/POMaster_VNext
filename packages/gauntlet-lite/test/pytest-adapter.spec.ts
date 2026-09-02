@@ -149,6 +149,8 @@ describe("pytest 腿 run", () => {
     expect(raw.failureReason).toMatch(/版本探测失败/);
     const record = adapter.normalize(raw, {});
     expect(record.verdict).toBe("not_run");
+    // I3：failureReason 透传进 not_run 记录的 scopeNote（缺席必须说清「为何没查」，禁 null 静默）。
+    expect(record.scopeNote).toMatch(/版本探测失败/);
   });
 
   it("stripQuotesFromPathEnv：游离双引号被剥离（附录 A 教训）、无引号原样返回、PATH 缺失不动", () => {
@@ -159,6 +161,35 @@ describe("pytest 腿 run", () => {
     const alreadyClean = { PATH: "C:/Windows" };
     expect(stripQuotesFromPathEnv(alreadyClean)).toBe(alreadyClean);
     expect(stripQuotesFromPathEnv({}).PATH).toBeUndefined();
+  });
+
+  it("pytestSpawn 大输出 maxBuffer（I4：显式 64MB）——>1MB stdout 不被 ENOBUFS 打断", { timeout: 60_000 }, () => {
+    // 真实子进程 + fs.writeSync flush-safe 全量落管（oasdiff-leg 大输出先例同款）；
+    // 回落 Node 默认 1MB → error=ENOBUFS → 本用例红（回归意图：大 JUnit 报告不截断）。
+    const expectedBytes = 2 * 1024 * 1024;
+    expect(expectedBytes).toBeGreaterThan(1024 * 1024);
+    const dir = mkdtempSync(join(tmpdir(), "pomaster-pytest-big-"));
+    const scriptPath = join(dir, "big-output.cjs");
+    writeFileSync(
+      scriptPath,
+      `const { writeSync } = require("node:fs");
+function writeAll(text) {
+  const buf = Buffer.from(text, "utf8");
+  let offset = 0;
+  while (offset < buf.length) {
+    try { offset += writeSync(1, buf, offset, buf.length - offset); }
+    catch (error) { if (error && error.code === "EAGAIN") continue; throw error; }
+  }
+}
+writeAll("x".repeat(${expectedBytes}));
+process.exit(0);
+`,
+      "utf8",
+    );
+    const outcome = pytestSpawn(`node "${scriptPath}"`, { cwd: dir, timeoutMs: 60_000 });
+    expect(outcome.error).toBeNull();
+    expect(outcome.status).toBe(0);
+    expect(outcome.stdout.length).toBe(expectedBytes);
   });
 });
 
@@ -245,7 +276,7 @@ describe("pytest 腿 normalize：七态判卷", () => {
     expect(validate(toGateResultJson(record))).toBe(true);
   });
 
-  it("非法 XML（未闭合 testcase）→ not_run（判卷不可能，禁猜测）", () => {
+  it("非法 XML（未闭合 testcase）→ not_run（判卷不可能，禁猜测）+ scopeNote 带原因（I3 禁 null 静默）", () => {
     expect(parseJUnitXml("<testsuite><testcase classname=\"a\">")).toBeNull();
     const record = normalizeWithXml(makePytestPlan(), "<testsuite><testcase classname=\"a\">");
     expect(record.verdict).toBe("not_run");
@@ -255,6 +286,8 @@ describe("pytest 腿 normalize：七态判卷", () => {
       violations: 0,
       notApplicable: 0,
     });
+    expect(record.scopeNote).toMatch(/不可判卷/);
+    expect(record.scopeNote).toMatch(/JUnit XML/);
   });
 
   it("观测版本 ≠ policy 锚 → warning + tool_version_drifted；record.toolVersion 落观测值（实际执行的工具）", () => {

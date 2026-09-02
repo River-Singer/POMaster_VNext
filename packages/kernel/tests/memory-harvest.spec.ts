@@ -898,6 +898,18 @@ describe("红队攻击面回归（修复轮封条）", () => {
     expect(readInboxEntries(root)).toHaveLength(1);
   });
 
+  it("text 非字符串先于哈希位类型校验（G8）：装载面 SCHEMA_INVALID 显式拒收，禁 inboxEntryIdOf 哈希位裸 TypeError", async () => {
+    const entry = await captureMemory(root, "类型校验先于哈希样本");
+    const path = join(root, ".pomaster/memory/inbox/capture", `${entry.id}.json`);
+    const base = JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
+    // 手改 text 为非字符串——先类型校验（text 缺失或空）再哈希（内容寻址重算）。
+    writeFileSync(path, JSON.stringify({ ...base, text: 12345 }, null, 2), "utf8");
+    expect(() => readInboxEntries(root)).toThrow(/text 缺失或空/);
+    // 还原后装载恢复合法态。
+    writeFileSync(path, JSON.stringify(base, null, 2), "utf8");
+    expect(readInboxEntries(root)).toHaveLength(1);
+  });
+
   it("攻击面1c 封条：手改 PROMOTED + reviewed_by 空对象/残缺结构 → 装载面拒绝（已决留痕须三字段齐备）", async () => {
     const entry = await captureMemory(root, "已决留痕结构样本");
     const path = join(root, ".pomaster/memory/inbox/capture", `${entry.id}.json`);

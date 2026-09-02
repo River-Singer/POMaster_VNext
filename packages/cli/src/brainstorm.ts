@@ -426,7 +426,8 @@ export interface BrainstormPromoteInput {
 }
 
 /**
- * 提升 READY_TO_PROMOTE→CHANGE/TASK。四道闸（全 kernel/词表判卷，CLI 零自造判卷）：
+ * 提升 READY_TO_PROMOTE→CHANGE/TASK。五道闸（全 kernel/词表判卷，CLI 零自造判卷）：
+ * discovery id 词形（DISCOVERY_ID_PATTERN，与 start 同款——../ 逃逸写面封死）→
  * 链转移（validateDiscoveryTransition）→ promotion_basis 词表 → 目标 id 文法
  * （parseGovernedId closed-world + 前缀与 --to 一致）→ promote 边 requires
  * ["promotion_basis"]。写入面：tx 文件（maintain --ops 输入形态）+ --apply 时经
@@ -451,6 +452,21 @@ export async function runBrainstormPromote(
   };
   const fail = (error: CliError, human: string[]): CommandOutcome<BrainstormPromoteResult> =>
     failOutcome<BrainstormPromoteResult>("brainstorm promote", emptyResult, [error], human);
+
+  // —— 闸 -1：discovery id 词形（审查 H4：与 runBrainstormStart 同款
+  //    DISCOVERY_ID_PATTERN 闸；promote 缺闸时 discoveryId 含 ../ 会让
+  //    mkdir(recursive) 在 scratchpad 平面外建目录树——词形不符零落盘显式拒绝，
+  //    任何 IO 之前先判） ——
+  if (!DISCOVERY_ID_PATTERN.test(input.discoveryId)) {
+    return fail(
+      {
+        code: "SCHEMA_INVALID",
+        message: `discovery id "${input.discoveryId}" 不匹配词形（08 scratchpad_ref 目录段：[A-Za-z0-9][A-Za-z0-9_-]{0,63}）`,
+        hint: "用字母/数字开头的短横线或下划线 id（如 idea-carline-import）；pomaster brainstorm status 查看现有 discovery。",
+      },
+      [`brainstorm promote: FAILED — SCHEMA_INVALID (discovery id 词形非法: ${input.discoveryId})`],
+    );
+  }
 
   // —— 闸 0：参数词形（--to/--basis 必给且词表内；fail-closed 不猜缺省） ——
   const to = input.to;

@@ -427,8 +427,12 @@ export function runCoverageLeg(
   };
 }
 
-/** 报告绝对路径是否越出项目根（含路径即根——rmSync 破坏性面前置拒绝判据）。 */
-function pathEscapesProjectRoot(projectRoot: string, absolutePath: string): boolean {
+/**
+ * 报告绝对路径是否越出项目根（含路径即根——rmSync 破坏性面前置拒绝判据）。
+ * I6 起导出共享：CRAP 腿报告读面（coverage-adapter run 的 readOrNull）同款容纳闸——
+ * 读面无删除面但同样禁越根读（配置声明的越根路径 = 治理对象外的任意文件读取面）。
+ */
+export function pathEscapesProjectRoot(projectRoot: string, absolutePath: string): boolean {
   const rel = pathRelative(pathResolve(projectRoot), pathResolve(absolutePath));
   return rel === "" || rel.startsWith("..") || pathIsAbsolute(rel);
 }

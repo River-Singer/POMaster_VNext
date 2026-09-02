@@ -22,7 +22,7 @@
       "capabilities",
       "applicability_note"
     ],
-    "basis": "id 与正文『API 契约所有权』词面逐字——后端 API 契约域权属锚（同族补标）"
+    "basis": "正文『Backend 维护服务端契约，消费者确认联调与兼容结果』（backend-hard-spec 12-api-contract-protocol.md L53 逐字）——后端 API 契约域权属锚（同族补标；I9② 2026-09-02 修正：原引『API 契约所有权』词形在源文零命中，改引真实逐字句）"
   },
   "id": "AUTHORITY.BE.API_CONTRACT_OWNERSHIP",
   "kind": "policy",

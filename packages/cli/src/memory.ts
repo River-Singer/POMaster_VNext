@@ -41,6 +41,7 @@ import { homedir } from "node:os";
 import {
   GovernanceError,
   HARVEST_BUCKET_VALUES,
+  MEMORY_CLASS_VALUES,
   MEMORY_CLI_ERROR_VALUES,
   MEMORY_DRIFT,
   MEMORY_INBOX_RELATIVE,
@@ -636,14 +637,12 @@ async function decideMode(
     if (
       input.reclassifyMemoryClass !== undefined &&
       input.reclassifyMemoryClass !== "null" &&
-      !(["TRUTH", "KNOWLEDGE", "EPISODE", "DECISION", "EVIDENCE", "USER", "HARNESS_RUNTIME"] as readonly string[]).includes(
-        input.reclassifyMemoryClass,
-      )
+      !(MEMORY_CLASS_VALUES as readonly string[]).includes(input.reclassifyMemoryClass)
     ) {
       return fail(empty, command, {
         code: "SCHEMA_INVALID",
         message: `--reclassify-class 词形非法：${input.reclassifyMemoryClass}`,
-        hint: "PRD §48.2 七类闭集：TRUTH | KNOWLEDGE | EPISODE | DECISION | EVIDENCE | USER | HARNESS_RUNTIME（null = 显式无分类）。",
+        hint: `PRD §48.2 七类闭集：${MEMORY_CLASS_VALUES.join(" | ")}（null = 显式无分类）。`,
       });
     }
     reclassify = {

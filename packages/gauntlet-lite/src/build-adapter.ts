@@ -9,8 +9,10 @@
  *   policy.expectedToolVersion 供给版本锚（pytest 版本无法从配置文件可靠探测，
  *   run 期以 `python -m pytest --version` 实测对账——禁伪造 semver）。
  * - run：vitest 腿 spawn `corepack pnpm exec vitest run --reporter=json`；pytest 腿
- *   （runPytestLeg，见 pytest-leg.ts）版本探测 + `--junitxml` 实跑 + 报告回读，
- *   子进程 env 的 PATH 显式消毒（phaseC 附录 A 游离引号教训）。第三方文本止步于此。
+ *   （runPytestLeg，见 pytest-leg.ts）版本探测 + `--junitxml` 实跑 + 报告回读。
+ *   两腿默认 spawn 一律显式消毒子进程 env 的 PATH（phaseC 附录 A 游离引号教训）
+ *   + 显式 64MB maxBuffer（P22 先例，禁回落 Node 默认 1MB——I4 对齐 coverage/
+ *   playwright/oasdiff 腿先例）。第三方文本止步于此。
  * - normalize：vitest JSON / pytest JUnit XML → GateResultRecord（七态判卷 /
  *   notApplicable 显式计数 / asserted-recomputed 孪生 / duration self-external 拆分）；
  *   共享 FATAL 闸门归 normalize-common.ts（四 adapter 单一实现，防拷贝漂移）。
@@ -55,9 +57,11 @@ import type {
   ToolRunOutput,
 } from "./adapter-types.js";
 import { GateAdapterError, asGovernedId } from "./adapter-types.js";
+import { SPAWN_MAX_BUFFER_BYTES } from "./adapter-types.js";
 import {
   platformDetectorFacts,
   sanitizeSemver,
+  stripQuotesFromPathEnv,
 } from "./detectors.js";
 import {
   assertCommonGates,
@@ -181,12 +185,19 @@ function detectPytest(facts: DetectorFacts): DetectionResult {
 
 export const defaultSpawn: SpawnFn = (command, options) => {
   const startedAt = performance.now();
+  // PATH 引号消毒（phaseC 附录 A 教训，I4 与 coverageSpawn/playwrightSpawn 先例对齐）
+  // + 显式 64MB maxBuffer（P22 先例：adapter-types.ts 契约「各腿默认 spawn 的 maxBuffer
+  // 必须显式引用本常量，禁回落默认值」——Node 默认 1MB 会被大 vitest JSON 报告
+  // ENOBUFS 打断 → 结构性 not_run）。
+  const sanitizedEnv = stripQuotesFromPathEnv({ ...process.env });
   const res = spawnSync(command, {
     shell: true,
     cwd: options.cwd,
     timeout: options.timeoutMs,
     encoding: "utf8",
+    maxBuffer: SPAWN_MAX_BUFFER_BYTES,
     windowsHide: true,
+    env: sanitizedEnv,
   });
   const externalMs = Math.max(0, Math.round(performance.now() - startedAt));
   return {
@@ -209,26 +220,45 @@ interface LooseFile {
 /**
  * vitest JSON 判卷核心（C5：从 assertionResults 逐条重算，汇总字段只作 asserted 孪生）。
  * 口径：counts 以断言为粒度；blindspot 以测试文件（载体）为粒度。
+ * failureReason（I3）：run 期 spawn 侧原因透传进 not_run 记录的 scopeNote——缺席
+ * 记录必须说清「为何没查、去哪补」，禁 null 静默（报错带路标纪律）。
  */
 function normalizeExecuted(
   plan: GatePlan,
   stdout: string,
   externalMs: number,
   selfMs: number,
+  failureReason: string | null = null,
 ): GateResultRecord {
+  const notRunNote = (detail: string): string =>
+    `vitest 腿输出不可判卷：${detail}` +
+    (failureReason === null ? "" : `；run 期原因：${failureReason}`) +
+    "——判卷不可能，not_run 是终局性诚实报告（非绿非红，禁静默当通过）";
   let parsed: unknown;
   try {
     parsed = JSON.parse(stdout);
   } catch {
     // 退出码非零但无合法 JSON（崩溃/被杀）——判卷不可能，not_run 是终局性诚实报告。
-    return absenceRecord(plan, "not_run", null, selfMs, externalMs);
+    return absenceRecord(
+      plan,
+      "not_run",
+      notRunNote("stdout 非合法 JSON（崩溃/被杀/报告缺失）"),
+      selfMs,
+      externalMs,
+    );
   }
   const root =
     parsed !== null && typeof parsed === "object"
       ? (parsed as Record<string, unknown>)
       : null;
   if (root === null || !Array.isArray(root["testResults"])) {
-    return absenceRecord(plan, "not_run", null, selfMs, externalMs);
+    return absenceRecord(
+      plan,
+      "not_run",
+      notRunNote("stdout JSON 根形态不符（testResults 数组缺席——词形漂移或工具损坏）"),
+      selfMs,
+      externalMs,
+    );
   }
 
   let scannedAssertions = 0;
@@ -498,10 +528,17 @@ export function createBuildAdapter(): GateAdapter<
         return normalizePytestLeg(plan, raw, selfMs);
       }
       if (raw.kind === "spawn_failed") {
-        // not_run 也是七态之一：缺席必须显式表达（counts 全零是显式零，非省略）。
-        return absenceRecord(plan, "not_run", null, selfMs, raw.externalMs);
+        // not_run 也是七态之一：缺席必须显式表达（counts 全零是显式零，非省略）；
+        // failureReason 透传进 scopeNote（I3：缺席记录必须说清「为何没查」，禁 null 静默）。
+        return absenceRecord(
+          plan,
+          "not_run",
+          `${raw.failureReason ?? "BUILD 子进程不可执行"}（not_run，非绿非红，禁静默当通过）`,
+          selfMs,
+          raw.externalMs,
+        );
       }
-      return normalizeExecuted(plan, raw.stdout, raw.externalMs, selfMs);
+      return normalizeExecuted(plan, raw.stdout, raw.externalMs, selfMs, raw.failureReason);
     },
   };
 }

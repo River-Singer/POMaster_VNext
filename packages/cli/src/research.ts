@@ -752,6 +752,17 @@ export async function runResearchInspect(
       : null;
 
   if (missing.length > 0 || errors.length > 0) {
+    // H1（二轮审查 §45 机读契约破缺修复）：四文件缺失路径此前 failOutcome 携带
+    // errors=[]——ok=false 但机读方取不到因，文档/测试钉的 RESEARCH_ARTIFACT_INCOMPLETE
+    // 码位从未产生。缺失 → errors[0] = RESEARCH_ARTIFACT_INCOMPLETE（hint 列缺失清单），
+    // 先于 findings 判卷错误（分母完整性在判卷语义之前）。
+    if (missing.length > 0) {
+      errors.unshift({
+        code: "RESEARCH_ARTIFACT_INCOMPLETE",
+        message: `${artifactRoot}四文件不完整（§81.6 产物契约）：缺 ${missing.join(", ")}`,
+        hint: `缺失文件：${missing.map((m) => `${artifactRoot}${m}`).join(", ")}——补齐后重跑（骨架可由 research <topic> 幂等重建）。`,
+      });
+    }
     return failOutcome<ResearchInspectResult>(
       "research inspect",
       {

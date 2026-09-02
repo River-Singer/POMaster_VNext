@@ -220,7 +220,7 @@
     {
       "id": "AUTHORITY.BE.API_CONTRACT_OWNERSHIP",
       "path": "policies/authority.be.api_contract_ownership.json",
-      "content_sha256": "sha256:96077965d915d2cd4f66c888a013f733532a1c92b2e649eaeb659df42c6d2bbf",
+      "content_sha256": "sha256:ea32fd4f036903543c2e2242b635a7dc7edceee8cac72c20bed0062ace05a912",
       "source_ref": "pomaster/components/backend-hard-spec/assets/universal/12-api-contract-protocol.md"
     },
     {
@@ -238,7 +238,7 @@
     {
       "id": "AUTHORITY.WEB.API.REQUEST_OWNERS",
       "path": "policies/authority.web.api.request_owners.json",
-      "content_sha256": "sha256:7b6b0bb2870c0bd96b45f9a11b3ba404617768a27a7d6141226c7e21275d5109",
+      "content_sha256": "sha256:c6e2d913af5eb5eefb5ea0cf9af6adc1e96bdbd95f49024eee47cf3ae3c1eef4",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/15-request-api-protocol.md"
     },
     {
@@ -484,7 +484,7 @@
     {
       "id": "POLICY.SEC.THIRD_PARTY_EXECUTION_REGISTER",
       "path": "policies/policy.sec.third_party_execution_register.json",
-      "content_sha256": "sha256:bf4bc51646e5855babd97216703d437967a0d63ca4049263de25f9eae85ff90e",
+      "content_sha256": "sha256:a87b0f4ffbd1a7eb3b2fca73d94c4cca51925379b0348fa67ac28e241c33feef",
       "source_ref": "POMaster_VNext/corpus/spec-knowledge/candidates/FE-G1.yaml"
     },
     {
@@ -785,37 +785,37 @@
       "id": "SENSOR.BROWSER.DETERMINISTIC",
       "path": "sensors/sensor.browser.deterministic.json",
       "content_sha256": "sha256:480456873c0eea565135084aac4f33c3cf7ada7640efba56b8a0163b44d937e5",
-      "source_ref": "POMaster_VNext/doc/POMaster-vNext-PRD-v0.5.2-agent-perception.md §14 P1-5（W1-E 线登记）"
+      "source_ref": "doc/POMaster-vNext-PRD-v0.5.2-agent-perception.md §14 P1-5（W1-E 线登记；仓库外路径——PRD 住 POMaster 工作区根 doc/，不在本仓；I9① 2026-09-02 修正原悬空词形 POMaster_VNext/doc/…）"
     },
     {
       "id": "SENSOR.BROWSER.INTERACTIVE",
       "path": "sensors/sensor.browser.interactive.json",
       "content_sha256": "sha256:313e2d3ee2ee61c0d9e65a315a764a22675b2d33080f2401de73a14c3950a26b",
-      "source_ref": "POMaster_VNext/doc/POMaster-vNext-PRD-v0.5.2-agent-perception.md §14 P1-5（W1-E 线登记）"
+      "source_ref": "doc/POMaster-vNext-PRD-v0.5.2-agent-perception.md §14 P1-5（W1-E 线登记；仓库外路径——PRD 住 POMaster 工作区根 doc/，不在本仓；I9① 2026-09-02 修正原悬空词形 POMaster_VNext/doc/…）"
     },
     {
       "id": "SENSOR.BUILD.STATIC",
       "path": "sensors/sensor.build.static.json",
       "content_sha256": "sha256:cd1c965677e08ef3f0b92c9014ee4a3c8fa967419fbfabd1079590b6746ef462",
-      "source_ref": "POMaster_VNext/doc/POMaster-vNext-PRD-v0.5.2-agent-perception.md §14 P1-5（W1-E 线登记）"
+      "source_ref": "doc/POMaster-vNext-PRD-v0.5.2-agent-perception.md §14 P1-5（W1-E 线登记；仓库外路径——PRD 住 POMaster 工作区根 doc/，不在本仓；I9① 2026-09-02 修正原悬空词形 POMaster_VNext/doc/…）"
     },
     {
       "id": "SENSOR.CONTRACT.CONFORMANCE",
       "path": "sensors/sensor.contract.conformance.json",
       "content_sha256": "sha256:cf961ae80c9472c1e7d5ffc85bc5d3c975a0dd390b1c52986cfccee1c1373194",
-      "source_ref": "POMaster_VNext/doc/POMaster-vNext-PRD-v0.5.2-agent-perception.md §14 P1-5（W1-E 线登记）"
+      "source_ref": "doc/POMaster-vNext-PRD-v0.5.2-agent-perception.md §14 P1-5（W1-E 线登记；仓库外路径——PRD 住 POMaster 工作区根 doc/，不在本仓；I9① 2026-09-02 修正原悬空词形 POMaster_VNext/doc/…）"
     },
     {
       "id": "SENSOR.PERFORMANCE.BUDGET",
       "path": "sensors/sensor.performance.budget.json",
       "content_sha256": "sha256:6bf3c3a8eeca97f59400fca0217522016d4fbfe8b2de00891a3173d715875798",
-      "source_ref": "POMaster_VNext/doc/POMaster-vNext-PRD-v0.5.2-agent-perception.md §14 P1-5（W1-E 线登记）"
+      "source_ref": "doc/POMaster-vNext-PRD-v0.5.2-agent-perception.md §14 P1-5（W1-E 线登记；仓库外路径——PRD 住 POMaster 工作区根 doc/，不在本仓；I9① 2026-09-02 修正原悬空词形 POMaster_VNext/doc/…）"
     },
     {
       "id": "SENSOR.PRODUCTION.METRIC",
       "path": "sensors/sensor.production.metric.json",
       "content_sha256": "sha256:969954331cfb8267524e614de72a8605c7cb8195c0f0e5867acf7adf82f52361",
-      "source_ref": "POMaster_VNext/doc/POMaster-vNext-PRD-v0.5.2-agent-perception.md §14 P1-5（W1-E 线登记）"
+      "source_ref": "doc/POMaster-vNext-PRD-v0.5.2-agent-perception.md §14 P1-5（W1-E 线登记；仓库外路径——PRD 住 POMaster 工作区根 doc/，不在本仓；I9① 2026-09-02 修正原悬空词形 POMaster_VNext/doc/…）"
     }
   ],
   "note": "read-side 指纹（D24）：仅用于升级 diff 与防篡改抽验"

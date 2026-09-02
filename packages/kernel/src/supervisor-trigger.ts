@@ -14,8 +14,12 @@
  *   「链」语义下限）的连续 type 元组，去噪规则：链内事件型须 ≥2 种（排除
  *   TX_APPLIED 等同型连发的日常噪声——SOP 链的本体是跨步骤异型序列）；计数窗口
  *   = 现存全量 journal（append-only 平面无墙钟，A4 分层——周窗无合法锚，取全集
- *   是宁严不漏的观测近似：超报代价远低于漏报，观测信号非阻断）；逐长度贪心
- *   不重叠计数（最左优先，确定性）；阈值缺省 3（D 线「≥3 次」逐字）；
+ *   是宁严不漏的观测近似：超报代价远低于漏报，观测信号非阻断）；计数 = 全起点
+ *   滑窗出现计数（G2 审查修正：原「固定步长切瓦片」对错位重复系统性漏报——与
+ *   头注「宁严不漏」自述相反。全起点计数保证「计得的出现次数 ≥ 真实出现次数」，
+ *   方向恒为宁超报不漏报；代价是跨链接缝对（如前一链尾 + 后一链头）也会如实
+ *   计入——接缝链同样是 journal 里真实重复的相邻序列，观测面如实呈现不修饰）；
+ *   阈值缺省 3（D 线「≥3 次」逐字）；
  * - (b) **declared**：第二贡献者是人的事实，repo 状态面（sessions 的 harness 是
  *   载体不是人）无机器可判载体——如实作显式申报入参，source 词形 declared，
  *   禁自造探测（S1 同源：不把载体计数冒充人头计数）；
@@ -176,9 +180,13 @@ export function detectSupervisorTrigger(
 const CHAIN_KEY_SEPARATOR = String.fromCharCode(1);
 
 /**
- * 重复链计数（纯函数）：对每个链长 L ∈ [minLength, maxLength] 独立做最左优先
- * 贪心不重叠滑窗计数；链内事件型 ≥2 种（去同型连发噪声）；达标（count ≥
- * threshold）链按 count 降序 → 链长降序 → 字典序排序（确定性）。
+ * 重复链计数（纯函数）：对每个链长 L ∈ [minLength, maxLength] 做**全起点滑窗**出现
+ * 计数（G2 审查修正——原「固定步长切瓦片」只看单一对齐位，错位重复（pattern 起点
+ * 不落在步长格点上）被系统性漏报，与「宁严不漏」相反）。全起点计数的不变量：
+ * 计得出现次数 ≥ 非重叠出现次数 ≥ 真实重复次数——检出方向恒宁超报不漏报（重叠
+ * 自相似模式可能多计，超报代价远低于漏报，观测信号非阻断）；链内事件型 ≥2 种
+ * （去同型连发噪声）；达标（count ≥ threshold）链按 count 降序 → 链长降序 →
+ * 字典序排序（确定性）。
  */
 function countRepeatedChains(
   types: readonly string[],
@@ -188,20 +196,17 @@ function countRepeatedChains(
 ): SupervisorChainMatch[] {
   const counts = new Map<string, { chain: string[]; count: number }>();
   for (let length = minLength; length <= maxLength; length += 1) {
-    let index = 0;
-    while (index + length <= types.length) {
-      const chain = types.slice(index, index + length);
+    for (let start = 0; start + length <= types.length; start += 1) {
+      const chain = types.slice(start, start + length);
       // 去噪：链内事件型须 ≥2 种（TX_APPLIED×N 等同型连发不是 SOP 链）。
-      if (new Set(chain).size >= 2) {
-        const key = chain.join(CHAIN_KEY_SEPARATOR);
-        const existing = counts.get(key);
-        if (existing === undefined) {
-          counts.set(key, { chain, count: 1 });
-        } else {
-          existing.count += 1;
-        }
+      if (new Set(chain).size < 2) continue;
+      const key = chain.join(CHAIN_KEY_SEPARATOR);
+      const existing = counts.get(key);
+      if (existing === undefined) {
+        counts.set(key, { chain, count: 1 });
+      } else {
+        existing.count += 1;
       }
-      index += length; // 贪心不重叠（最左优先；确定性计数）
     }
   }
   return [...counts.values()]

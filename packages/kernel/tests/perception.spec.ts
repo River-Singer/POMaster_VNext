@@ -687,6 +687,85 @@ describe("buildObservationReceipt（W1-D2 · §6.13 最小通路组装）", () =
     expect(receipt.artifact_refs).toEqual([SCREENSHOT_BLOB]);
   });
 
+  it("§6.14 绑定封条（G5）：手工组装 OBSERVED_ABSENT 无四前提绑定 → SCHEMA_INVALID（禁绕过 judgeNegativeObservation 直入回执）", () => {
+    const err = catchGovernance(() =>
+      buildObservationReceipt({
+        ...validObservedInput(),
+        artifactRefs: [],
+        result: "OBSERVED_ABSENT",
+        normalizedFacts: ["network_capture_empty: true"],
+      }),
+    );
+    expect(err.code).toBe("SCHEMA_INVALID");
+    expect(err.message).toContain("Observation Receipt");
+    const missing = (err.details as { missing: readonly string[] }).missing.join("\n");
+    expect(missing).toContain("absencePreconditions");
+    expect(missing).toContain("§6.14");
+  });
+
+  it("§6.14 绑定在座但任一前提为 false → SCHEMA_INVALID（判定器本应产出 INCONCLUSIVE 的形态同拒）", () => {
+    const err = catchGovernance(() =>
+      buildObservationReceipt({
+        ...validObservedInput(),
+        artifactRefs: [],
+        result: "OBSERVED_ABSENT",
+        absencePreconditions: {
+          correctPage: true,
+          correctInstance: false,
+          sensorWorked: true,
+          captureWindowCoveredOperation: true,
+        },
+      }),
+    );
+    expect(err.code).toBe("SCHEMA_INVALID");
+    const invalidFields = (
+      err.details as { invalid_values: readonly { field: string }[] }
+    ).invalid_values.map((entry) => entry.field);
+    expect(invalidFields).toContain("absencePreconditions.correctInstance");
+  });
+
+  it("§6.14 绑定四值全真 → OBSERVED_ABSENT 回执合法（judgeNegativeObservation 正常通路不回归，绑定语义与判定器一致）", () => {
+    const preconditions = {
+      correctPage: true,
+      correctInstance: true,
+      sensorWorked: true,
+      captureWindowCoveredOperation: true,
+    };
+    // 对照：判定器在同款四前提 + 捕获空下产出 OBSERVED_ABSENT。
+    expect(
+      judgeNegativeObservation({ declared: [], captureEmpty: true, ...preconditions }).result,
+    ).toBe("OBSERVED_ABSENT");
+    const receipt = buildObservationReceipt({
+      ...validObservedInput(),
+      artifactRefs: [],
+      result: "OBSERVED_ABSENT",
+      normalizedFacts: ["network_capture_empty: true"],
+      absencePreconditions: preconditions,
+    });
+    expect(receipt.result).toBe("OBSERVED_ABSENT");
+    // 十三键闭形态不变（绑定是组装入口闸，不新增回执键位）。
+    expect(Object.keys(receipt)).toHaveLength(13);
+  });
+
+  it("绑定与 result 轴矛盾：非 OBSERVED_ABSENT 携带 absencePreconditions → SCHEMA_INVALID", () => {
+    const err = catchGovernance(() =>
+      buildObservationReceipt({
+        ...validObservedInput(),
+        absencePreconditions: {
+          correctPage: true,
+          correctInstance: true,
+          sensorWorked: true,
+          captureWindowCoveredOperation: true,
+        },
+      }),
+    );
+    expect(err.code).toBe("SCHEMA_INVALID");
+    const invalidFields = (
+      err.details as { invalid_values: readonly { field: string }[] }
+    ).invalid_values.map((entry) => entry.field);
+    expect(invalidFields).toContain("absencePreconditions");
+  });
+
   it("词形反例聚合报全：OBS 点形 / ENVREC 词形错 / AGX 空 / capturedAtSeq 负数 / surface 词轴外", () => {
     const err = catchGovernance(() =>
       buildObservationReceipt({

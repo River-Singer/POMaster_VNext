@@ -4,6 +4,9 @@
  */
 import Ajv from "ajv";
 import addFormats from "ajv-formats";
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   GateAdapterError,
@@ -209,6 +212,35 @@ describe("build adapter run", () => {
     expect(raw.failureReason).toMatch(/ENOENT/);
     const record = adapter.normalize(raw, {});
     expect(record.verdict).toBe("not_run");
+    // I3：failureReason 透传进 not_run 记录的 scopeNote（缺席必须说清「为何没查」，禁 null 静默）。
+    expect(record.scopeNote).toMatch(/ENOENT/);
+    expect(record.scopeNote).toMatch(/not_run/);
+  });
+
+  it("exit 0 但 stdout 非合法 vitest JSON → not_run + scopeNote 带判卷不可能原因（I3 禁 null 静默）", () => {
+    const plan = adapter.prepare(
+      { projectRoot: VITEST_PROJECT_ROOT },
+      { grn: "GRN-13", ranAtSeq: 1 },
+      vitestProjectFacts(),
+    );
+    const raw = adapter.run(plan, () => ({
+      status: 0,
+      stdout: "crashed mid-run, not json",
+      stderr: "",
+      error: null,
+      externalMs: 9,
+    }));
+    expect(raw.kind).toBe("executed");
+    const record = adapter.normalize(raw, {});
+    expect(record.verdict).toBe("not_run");
+    expect(record.counts).toEqual({
+      scanned: 0,
+      applicableScanned: 0,
+      violations: 0,
+      notApplicable: 0,
+    });
+    expect(record.scopeNote).toMatch(/不可判卷/);
+    expect(record.scopeNote).toMatch(/非合法 JSON/);
   });
 
   it("pytest runner 计划（带版本锚）→ prepare 产出 pytest 腿 + run 正常派发（G5 后不再拒绝）", () => {
@@ -300,5 +332,74 @@ describe("BUILD gate 全链路（fake spawn 集成）", () => {
         factsWithPackageJson(packageJsonWithVitest("workspace:*")),
       ),
     ).toThrowError(/tool_version/);
+  });
+});
+
+// ============================================================
+// vitest 腿大输出 maxBuffer（I4：defaultSpawn 显式 64MB——此前未设，Node 默认 1MB
+// 会被大 vitest JSON 报告 ENOBUFS 打断 → 结构性 not_run，P22 红队 MAJOR 同款）。
+//
+// 跨平台确定性构造（oasdiff-leg 大输出先例同款）：子进程侧 fs.writeSync(1,…) 循环
+// 补写（部分写/EAGAIN 重试）——「产出 >1MB stdout」跨平台保证全量落管；期望字节数
+// 闭式可算，断言收紧到精确相等。若 defaultSpawn 回落 Node 默认 1MB → error=ENOBUFS
+// → spawn_failed，同样红（原回归意图不变）。
+// ============================================================
+
+const BIG_VITEST_ASSERTIONS = 60_000; // {"status":"passed"} + 逗号 ≈ 20B/条 → >1MB。
+
+/** 与子进程脚本同构构造期望 JSON（同键序 → JSON.stringify 字节恒等）。 */
+function bigVitestExpectedJson(): string {
+  const assertionResults: Array<{ status: string }> = [];
+  for (let i = 0; i < BIG_VITEST_ASSERTIONS; i += 1) {
+    assertionResults.push({ status: "passed" });
+  }
+  return JSON.stringify({
+    numFailedTests: 0,
+    success: true,
+    testResults: [{ assertionResults }],
+  });
+}
+
+const BIG_VITEST_RUNNER_CJS = `const { writeSync } = require("node:fs");
+function writeAll(text) {
+  const buf = Buffer.from(text, "utf8");
+  let offset = 0;
+  while (offset < buf.length) {
+    try {
+      offset += writeSync(1, buf, offset, buf.length - offset);
+    } catch (error) {
+      if (error && error.code === "EAGAIN") continue;
+      throw error;
+    }
+  }
+}
+const assertionResults = [];
+for (let i = 0; i < ${BIG_VITEST_ASSERTIONS}; i++) assertionResults.push({ status: "passed" });
+writeAll(JSON.stringify({ numFailedTests: 0, success: true, testResults: [{ assertionResults }] }));
+process.exit(0);
+`;
+
+describe("vitest 腿大输出 maxBuffer（I4：defaultSpawn 64MB，真实子进程）", () => {
+  it(">1MB 合法 vitest JSON 走通 defaultSpawn + 判卷（passed，stdout 字节数精确恒等）", { timeout: 60_000 }, () => {
+    const expectedJson = bigVitestExpectedJson();
+    // fixture 自证：构造目标 > Node 默认 1MB（本用例的回归判据前提）。
+    expect(expectedJson.length).toBeGreaterThan(1024 * 1024);
+    const dir = mkdtempSync(join(tmpdir(), "pomaster-build-big-"));
+    const scriptPath = join(dir, "big-vitest-report.cjs");
+    writeFileSync(scriptPath, BIG_VITEST_RUNNER_CJS, "utf8");
+    const plan = adapter.prepare(
+      { projectRoot: VITEST_PROJECT_ROOT },
+      { grn: "GRN-14", ranAtSeq: 1 },
+      vitestProjectFacts(),
+    );
+    // 命令与 cwd 一并替换为真实临时目录（defaultSpawn 是修复位——不注入 spawnFn 走默认实现）。
+    const raw = adapter.run({ ...plan, command: `node "${scriptPath}"`, cwd: dir });
+    expect(raw.kind).toBe("executed");
+    expect(raw.failureReason).toBeNull();
+    // 精确恒等（强于 >1MB）：跨 OS 全量落管，任何截断/ENOBUFS 即刻红。
+    expect(raw.stdout.length).toBe(expectedJson.length);
+    const record = adapter.normalize(raw, {});
+    expect(record.verdict).toBe("passed");
+    expect(record.counts.scanned).toBe(BIG_VITEST_ASSERTIONS);
   });
 });

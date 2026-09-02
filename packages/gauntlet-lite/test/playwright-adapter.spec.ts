@@ -775,13 +775,26 @@ describe("维度完整性闸（B3-1：evidence 必含 console error / network �
     expect(extractDimension(parsePlaywrightJsonReport(CLEAN_REPORT)!.suites[0]!.specs[0]!.tests[0]!.attachments, CONSOLE_DIMENSION_ATTACHMENT).kind).toBe("ok");
   });
 
-  it("skipped test 不要求维度（无执行面）→ 全 skipped 报告 passed + notApplicable 计数", () => {
+  it("skipped test 不要求维度（无执行面）；全 skipped 报告 → skipped_blindspot 非 passed（I1 全 skipped 盲区闸：可执行分母=0 禁当满分）", () => {
     const report = reportJson([
       suiteEntry("s", [specEntry("核心流程 checkout", [testEntry("skipped")])]),
     ]);
     const record = runLeg(report);
-    expect(record.verdict).toBe("passed");
+    // 修法（I1）：全 skipped（violations=0 + applicableScanned=0 + skipped>0）此前落
+    // passed 是零分母当满分假绿——判 skipped_blindspot（pytest-leg 先例）+ 盲区指标
+    // uncheckedInBlindspotEstimated 必附 + fixture_regression 合规位 + 盲区说明。
+    expect(record.verdict).toBe("skipped_blindspot");
     expect(record.counts.notApplicable).toBe(1);
+    expect(record.counts.applicableScanned).toBe(0);
+    expect(record.counts.uncheckedInBlindspotEstimated).toBe(1);
+    expect(record.blindspot.fixtureRegression).toContain("PLAYWRIGHT_ALL_SKIPPED");
+    expect(record.blindspot.produced).toBe(0);
+    expect(record.blindspot.escapeRatio).toBe(1);
+    expect(record.scopeNote).toContain("盲区说明");
+    expect(record.scopeNote).toContain("applicableScanned=0");
+    const doc = toGateResultJson(record);
+    if (!validate(doc)) console.error(validate.errors);
+    expect(validate(doc)).toBe(true);
   });
 });
 

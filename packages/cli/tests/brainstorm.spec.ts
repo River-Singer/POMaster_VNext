@@ -194,6 +194,21 @@ describe("brainstorm promote（提升面：READY_TO_PROMOTE→CHANGE/TASK 走 P1
     expect(outcome.errors[0]?.code).toBe("SCHEMA_INVALID");
   });
 
+  it("对抗（审查 H4）：discovery id 含 ../ 逃逸 → SCHEMA_INVALID 零落盘（与 start 同款词形闸，mkdir 越位封死）", async () => {
+    await seedReadyToPromote("idea-legit");
+    const outcome = await runBrainstormPromote(root, {
+      discoveryId: "../idea-evil",
+      to: "TASK",
+      basis: "user_explicit_request",
+    });
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors[0]?.code).toBe("SCHEMA_INVALID");
+    expect(outcome.errors[0]?.message).toContain("不匹配词形");
+    // 零落盘：逃逸位（scratchpads 平面外）与 tx 文件都不存在，合法位不被波及。
+    expect(existsSync(join(root, ".pomaster", "discovery", "idea-evil"))).toBe(false);
+    expect(existsSync(join(scratchpadDir("idea-legit"), "promote-tx.json"))).toBe(false);
+  });
+
   it("缺省（无 --apply）：产出 maintain --ops tx 文件 + 指路命令；scratchpad 状态不动（提升未落库）", async () => {
     await seedReadyToPromote("idea-txonly");
     const outcome = await runBrainstormPromote(root, {

@@ -16,7 +16,7 @@
 import { createHash } from "node:crypto";
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { describe, expect, expectTypeOf, it } from "vitest";
+import { describe, expect, expectTypeOf, it, vi } from "vitest";
 import {
   CATALOG_CLASSIFICATION_VALUES,
   type CatalogClassificationValue,
@@ -43,6 +43,28 @@ import {
 } from "@pomaster/kernel";
 import * as specAnalyzerModule from "../src/spec-analyzer.js";
 import { makeRoot } from "./helpers.js";
+
+/**
+ * 并发窗口注入器（store.spec.ts 同款 vi.mock 委托式 hook）：默认 hideReadPath=null =
+ * 纯透传（本文件其余用例零影响）。G7 回归用 hideReadPath 让指定 .md 在「扫描清单在座、
+ * 逐文件读取」一步缺席（确定性复现扫描后删除/并发删改窗口，不依赖 OS 时序，禁 flake）。
+ */
+const ioInterceptor = vi.hoisted(() => ({
+  hideReadPath: null as string | null,
+}));
+
+vi.mock("../src/io.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../src/io.js")>();
+  return {
+    ...actual,
+    readText: (path: string) => {
+      if (ioInterceptor.hideReadPath !== null && path === ioInterceptor.hideReadPath) {
+        return null;
+      }
+      return actual.readText(path);
+    },
+  };
+});
 
 // ============================================================
 // fixture 工具（内联小型 markdown，不依赖外层 .trellis）
@@ -355,6 +377,35 @@ describe("分母 fail-closed（缺席/空目录=显式错误非空清单）", ()
     expect(() => analyzeSpecFiles([])).toThrow(
       expect.objectContaining({ code: "NOT_CONFIGURED" }),
     );
+  });
+
+  it("扫描后读取缺席 → SCHEMA_INVALID 显式（G7：扫描清单在座而读取失败的并发删改窗口，禁静默折叠为空文件计入分母）", () => {
+    const root = makeRoot();
+    const specDir = join(root, "spec");
+    mkdirSync(specDir, { recursive: true });
+    writeFileSync(join(specDir, "a.md"), "# A\n\n## MUST\n\n- 必须先行。\n");
+    writeFileSync(join(specDir, "b.md"), "# B\n\n## Examples\n\n- 例如先行。\n");
+    // 注入：b.md 在扫描（readdir）后、逐文件读取（readText）时消失。
+    ioInterceptor.hideReadPath = join(specDir, "b.md");
+    try {
+      expect(() => analyzeSpecDir(specDir)).toThrow(
+        expect.objectContaining({ code: "SCHEMA_INVALID" }),
+      );
+      // 缺席文件词形入 message（escalation 纪律：报错带路标）。
+      let message = "";
+      try {
+        analyzeSpecDir(specDir);
+      } catch (error) {
+        message = String((error as { message?: string }).message);
+      }
+      expect(message).toContain("b.md");
+      expect(message).toContain("扫描清单在座而读取失败");
+    } finally {
+      ioInterceptor.hideReadPath = null;
+    }
+    // 撤销注入后同目录正常分析（fixture 自身合法——错误确由缺席注入触发）。
+    const report = analyzeSpecDir(specDir);
+    expect(report.denominator.scannedFileCount).toBe(2);
   });
 
   it("分母块逐文件/逐段/逐候选对账（classified + unclassified = candidateCount）", () => {

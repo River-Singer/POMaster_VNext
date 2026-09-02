@@ -345,6 +345,8 @@ export interface BuildDecisionGraphOptions {
 
 export type BuildDecisionGraphRejectReason =
   | "empty_candidates"
+  /** 候选形态畸形（非对象 / 数组位异形 / grounding 或 recommendation 非对象）——G8：按契约显式 outcome 拒绝，禁裸 TypeError。 */
+  | "candidate_malformed"
   | "decision_id_invalid"
   | "forbidden_wordform"
   | "duplicate_decision_id"
@@ -395,6 +397,10 @@ function hitsForbiddenWordform(value: string): string | null {
 
 /**
  * 校验单个候选节点（build 内部；类型化拒绝原因——不做关键字反推）。
+ * 形状防线（G8）：本模块契约是「纯函数零 IO 不 throw——非法输入一律显式 outcome
+ * 拒绝」，畸形候选（候选非对象 / depends_on·affects·options 非数组 / grounding
+ * 或 recommendation 非 null 非对象 / 十键槽位缺席后仍跑逐项循环）一律折叠为
+ * candidate_malformed（或归位既有 reason），禁裸 TypeError 通道。
  */
 type CandidateValidation =
   | { readonly ok: true }
@@ -409,6 +415,13 @@ function validateCandidate(candidate: DecisionNodeCandidate): CandidateValidatio
     if (ok) reason = next;
     ok = false;
   };
+  if (typeof candidate !== "object" || candidate === null || Array.isArray(candidate)) {
+    return {
+      ok: false,
+      reason: "candidate_malformed",
+      details: [`候选不是对象（${String(candidate)}）——§5.2 十键节点须为对象形态`],
+    };
+  }
   if (typeof candidate.decision_id !== "string" || !DECISION_ID_PATTERN.test(candidate.decision_id)) {
     setReason("decision_id_invalid");
     details.push(
@@ -438,39 +451,55 @@ function validateCandidate(candidate: DecisionNodeCandidate): CandidateValidatio
     setReason("prompt_empty");
     details.push("prompt 必须是非空字符串（空泛占位不是可判定问题）");
   }
-  for (const dep of candidate.depends_on) {
-    if (typeof dep !== "string" || !DECISION_ID_PATTERN.test(dep)) {
-      setReason("depends_on_invalid");
-      details.push(`depends_on 条目 "${String(dep)}" 不是 DECISION.* 词形`);
+  if (!Array.isArray(candidate.depends_on)) {
+    setReason("candidate_malformed");
+    details.push(`depends_on 须为数组（§5.2 十键形态；得到 ${typeof candidate.depends_on}）`);
+  } else {
+    for (const dep of candidate.depends_on) {
+      if (typeof dep !== "string" || !DECISION_ID_PATTERN.test(dep)) {
+        setReason("depends_on_invalid");
+        details.push(`depends_on 条目 "${String(dep)}" 不是 DECISION.* 词形`);
+      }
     }
   }
-  for (const affect of candidate.affects) {
-    if (!isLooseRef(affect)) {
-      setReason("grounding_invalid");
-      details.push(`affects 条目 "${String(affect)}" 不是合法宽松引用词形`);
+  if (!Array.isArray(candidate.affects)) {
+    setReason("candidate_malformed");
+    details.push(`affects 须为数组（§5.2 十键形态；得到 ${typeof candidate.affects}）`);
+  } else {
+    for (const affect of candidate.affects) {
+      if (!isLooseRef(affect)) {
+        setReason("grounding_invalid");
+        details.push(`affects 条目 "${String(affect)}" 不是合法宽松引用词形`);
+      }
     }
   }
-  if (candidate.options.length === 0) {
+  // option 去重集（recommendation.option ∈ options 校验共用；options 异形时恒空——
+  // recommendation 校验随之如实报 recommendation_invalid，不 crash）。
+  const seenOptions = new Set<string>();
+  if (!Array.isArray(candidate.options)) {
+    setReason("candidate_malformed");
+    details.push(`options 须为数组（§5.2 十键形态；得到 ${typeof candidate.options}）`);
+  } else if (candidate.options.length === 0) {
     setReason("options_invalid");
     details.push("options 不得为空（§5.2：决策节点至少携带候选选项；零选项节点不可判卷）");
-  }
-  const seenOptions = new Set<string>();
-  for (const option of candidate.options) {
-    if (typeof option !== "string" || !OPTION_PATTERN.test(option)) {
-      setReason("options_invalid");
-      details.push(`option "${String(option)}" 不匹配大写词形 ^[A-Z][A-Z0-9_]{0,63}$`);
-      continue;
+  } else {
+    for (const option of candidate.options) {
+      if (typeof option !== "string" || !OPTION_PATTERN.test(option)) {
+        setReason("options_invalid");
+        details.push(`option "${String(option)}" 不匹配大写词形 ^[A-Z][A-Z0-9_]{0,63}$`);
+        continue;
+      }
+      const forbidden = hitsForbiddenWordform(option);
+      if (forbidden !== null) {
+        setReason("forbidden_wordform");
+        details.push(`option 含禁词 ${forbidden}（Grill 过程词不得变成 State Axis 词形，§1.1）`);
+      }
+      if (seenOptions.has(option)) {
+        setReason("options_invalid");
+        details.push(`option "${option}" 重复`);
+      }
+      seenOptions.add(option);
     }
-    const forbidden = hitsForbiddenWordform(option);
-    if (forbidden !== null) {
-      setReason("forbidden_wordform");
-      details.push(`option 含禁词 ${forbidden}（Grill 过程词不得变成 State Axis 词形，§1.1）`);
-    }
-    if (seenOptions.has(option)) {
-      setReason("options_invalid");
-      details.push(`option "${option}" 重复`);
-    }
-    seenOptions.add(option);
   }
   // —— grounding 十键全显式校验（空数组合法，缺席非法——C1 显式缺席纪律） ——
   const grounding = candidate.grounding;
@@ -486,58 +515,85 @@ function validateCandidate(candidate: DecisionNodeCandidate): CandidateValidatio
     "conflicts",
     "missing_facts",
   ];
-  for (const slot of tenKeySlots) {
-    if (!Array.isArray(grounding[slot])) {
-      setReason("grounding_invalid");
-      details.push(`grounding.${slot} 缺席或非数组（§5.2 十键一次锁全：空数组合法，缺席非法）`);
-    }
-  }
-  for (const intent of grounding.intent_refs) {
-    if (typeof intent !== "string" || !DISCOVERY_INTENT_REF_PATTERN.test(intent)) {
-      setReason("grounding_invalid");
-      details.push(`grounding.intent_refs 条目 "${String(intent)}" 不是 DISCOVERY.INTENT.<n> 词形（G1 Intent Anchor 的判卷输入）`);
-    }
-  }
-  for (const slot of ["truth_refs", "contract_refs", "architecture_refs", "implementation_refs", "evidence_refs", "knowledge_refs"] as const) {
-    for (const ref of grounding[slot] as readonly unknown[]) {
-      if (!isLooseRef(ref)) {
+  // 形状防线（G8）：grounding 非 null 非对象 → candidate_malformed 并跳过全部十键
+  // 循环；单个槽位缺席/异形 → grounding_invalid 且跳过该槽位的逐项循环（禁裸 TypeError）。
+  const groundingUsable =
+    typeof grounding === "object" && grounding !== null && !Array.isArray(grounding);
+  if (!groundingUsable) {
+    setReason("candidate_malformed");
+    details.push(
+      `grounding 须为十键对象（§5.2 十键一次锁全；得到 ${Array.isArray(grounding) ? "array" : typeof grounding}）`,
+    );
+  } else {
+    for (const slot of tenKeySlots) {
+      if (!Array.isArray(grounding[slot])) {
         setReason("grounding_invalid");
-        details.push(
-          `grounding.${slot} 引用 "${String(ref)}" 不是合法宽松引用词形（非空、字母/数字开头、不含空白；CONTRACT.* 等 PRD 示意词形按宽松词形放行）`,
-        );
+        details.push(`grounding.${slot} 缺席或非数组（§5.2 十键一次锁全：空数组合法，缺席非法）`);
+      }
+    }
+    if (Array.isArray(grounding.intent_refs)) {
+      for (const intent of grounding.intent_refs) {
+        if (typeof intent !== "string" || !DISCOVERY_INTENT_REF_PATTERN.test(intent)) {
+          setReason("grounding_invalid");
+          details.push(`grounding.intent_refs 条目 "${String(intent)}" 不是 DISCOVERY.INTENT.<n> 词形（G1 Intent Anchor 的判卷输入）`);
+        }
+      }
+    }
+    for (const slot of ["truth_refs", "contract_refs", "architecture_refs", "implementation_refs", "evidence_refs", "knowledge_refs"] as const) {
+      if (!Array.isArray(grounding[slot])) continue; // 异形槽位已在十键检查报 grounding_invalid
+      for (const ref of grounding[slot] as readonly unknown[]) {
+        if (!isLooseRef(ref)) {
+          setReason("grounding_invalid");
+          details.push(
+            `grounding.${slot} 引用 "${String(ref)}" 不是合法宽松引用词形（非空、字母/数字开头、不含空白；CONTRACT.* 等 PRD 示意词形按宽松词形放行）`,
+          );
+        }
+      }
+    }
+    if (Array.isArray(grounding.research_finding_refs)) {
+      for (const findingRef of grounding.research_finding_refs) {
+        if (typeof findingRef !== "string" || !FINDING_ID_PATTERN.test(findingRef)) {
+          setReason("grounding_invalid");
+          details.push(`grounding.research_finding_refs 条目 "${String(findingRef)}" 不是 FINDING.R<n>.<n> 词形`);
+        }
+      }
+    }
+    if (Array.isArray(grounding.missing_facts)) {
+      for (const fact of grounding.missing_facts) {
+        if (typeof fact !== "string" || !MISSING_FACT_REF_PATTERN.test(fact)) {
+          setReason("grounding_invalid");
+          details.push(`grounding.missing_facts 条目 "${String(fact)}" 不是 FACT.* 词形（缺失事实必须保持 Hypothesis/Unknown 形态，§5.3/§12.1）`);
+        }
+      }
+    }
+    if (Array.isArray(grounding.conflicts)) {
+      for (const conflict of grounding.conflicts) {
+        const entry = conflict as Partial<DecisionConflictEntry>;
+        if (
+          typeof entry !== "object" ||
+          entry === null ||
+          !isPlainNonEmptyString(entry.statement) ||
+          !Array.isArray(entry.refs) ||
+          entry.refs.length < 2 ||
+          !entry.refs.every((ref) => isLooseRef(ref))
+        ) {
+          setReason("grounding_invalid");
+          details.push(
+            `grounding.conflicts 条目非法（须 { statement 非空, refs ≥2 个宽松引用 }——矛盾至少两方，单引用构不成冲突；§12.3 Contradiction Must Be Surfaced）`,
+          );
+        }
       }
     }
   }
-  for (const findingRef of grounding.research_finding_refs) {
-    if (typeof findingRef !== "string" || !FINDING_ID_PATTERN.test(findingRef)) {
-      setReason("grounding_invalid");
-      details.push(`grounding.research_finding_refs 条目 "${String(findingRef)}" 不是 FINDING.R<n>.<n> 词形`);
-    }
-  }
-  for (const fact of grounding.missing_facts) {
-    if (typeof fact !== "string" || !MISSING_FACT_REF_PATTERN.test(fact)) {
-      setReason("grounding_invalid");
-      details.push(`grounding.missing_facts 条目 "${String(fact)}" 不是 FACT.* 词形（缺失事实必须保持 Hypothesis/Unknown 形态，§5.3/§12.1）`);
-    }
-  }
-  for (const conflict of grounding.conflicts) {
-    const entry = conflict as Partial<DecisionConflictEntry>;
-    if (
-      typeof entry !== "object" ||
-      entry === null ||
-      !isPlainNonEmptyString(entry.statement) ||
-      !Array.isArray(entry.refs) ||
-      entry.refs.length < 2 ||
-      !entry.refs.every((ref) => isLooseRef(ref))
-    ) {
-      setReason("grounding_invalid");
-      details.push(
-        `grounding.conflicts 条目非法（须 { statement 非空, refs ≥2 个宽松引用 }——矛盾至少两方，单引用构不成冲突；§12.3 Contradiction Must Be Surfaced）`,
-      );
-    }
-  }
   // —— recommendation 形态（§12.2 六字段；语义判卷归 G-Gate，此处锁形态） ——
-  if (candidate.recommendation !== null) {
+  // 形状防线（G8）：非 null 且非对象 → candidate_malformed（禁 rec.option 解引用裸崩）。
+  if (candidate.recommendation !== null && candidate.recommendation !== undefined &&
+      (typeof candidate.recommendation !== "object" || Array.isArray(candidate.recommendation))) {
+    setReason("candidate_malformed");
+    details.push(
+      `recommendation 须为六字段对象或 null（§5.2/§12.2；得到 ${Array.isArray(candidate.recommendation) ? "array" : typeof candidate.recommendation}）`,
+    );
+  } else if (candidate.recommendation !== null) {
     const rec = candidate.recommendation;
     if (!seenOptions.has(rec.option)) {
       setReason("recommendation_invalid");
@@ -553,7 +609,8 @@ function validateCandidate(candidate: DecisionNodeCandidate): CandidateValidatio
           details.push(`recommendation.basis_refs 引用 "${String(basis)}" 不是合法宽松引用词形`);
         }
       }
-      if (Array.isArray(grounding.missing_facts)) {
+      // grounding 异形时（candidate_malformed 已记）跳过 missing_facts 交叉检查（禁二次裸崩）。
+      if (groundingUsable && Array.isArray(grounding.missing_facts)) {
         for (const basis of rec.basis_refs) {
           if ((grounding.missing_facts as readonly string[]).includes(basis as string)) {
             setReason("recommendation_invalid");
@@ -638,6 +695,15 @@ export function buildDecisionGraph(
   candidates: readonly DecisionNodeCandidate[],
   options: BuildDecisionGraphOptions = {},
 ): BuildDecisionGraphOutcome {
+  // 形状防线（G8）：candidates 本体非数组 → 显式 outcome 拒绝（禁 .length/.map 裸崩）。
+  if (!Array.isArray(candidates)) {
+    return {
+      ok: false,
+      reason: "candidate_malformed",
+      details: [`candidates 不是数组（得到 ${typeof candidates}）——图构建输入须为候选节点数组`],
+      hint: "传 §5.2 十键候选节点数组（至少一个；先经 Grill 暴露 Candidate Decision，§5.1）",
+    };
+  }
   if (candidates.length === 0) {
     return {
       ok: false,
@@ -1909,6 +1975,9 @@ export type EvaluateDiscoverySufficiencyOutcome =
  *   （deferred/assumptions/unknowns[含 SOFT_UNCERTAINTY=Known Unknown]/future_considerations）；
  * - MSD：09 msd_assessment 三轴派生 msd_reached（三轴全 true ⇒ true，任一 false ⇒ false）；
  *   未达成 → blocking；
+ * - 零分母显式不足（G6）：零决策图（decisions=[]）即便零残留 + MSD 三轴全绿也
+ *   sufficient=false——零分母当满分是 promotion_basis=msd_reached 判据面上的假绿，
+ *   显式 blocking 项携带「零分母」原因，禁冒充「已评估充分」；
  * - sufficient = blocking 为空。产出即 promotion_basis=msd_reached 的机器判据面
  *   （§15：满足后 READY_TO_PROMOTE，仍经 maintain 晋升——零新写入通道）。
  * 诚实注记：PRD §15 原文第九维 Critical Failure Behavior 的 class 映射待词表批扩容
@@ -1942,6 +2011,15 @@ export function evaluateDiscoverySufficiency(
   const unknowns: string[] = [];
   const future: string[] = [];
   const notes: string[] = [];
+  // 零分母显式不足（G6）：停止条件「不存在尚未处理且会显著改变的维度」的前提是
+  // 存在决策分母——零决策图上「无 blocking」是零分母当满分，不是已评估充分。
+  if (input.graph.decisions.length === 0) {
+    blocking.push({
+      decision_id: null,
+      detail:
+        "零决策图（decisions=[]）——零分母不得判 sufficient（§15 停止条件的前提是图非空；先经 Grill 暴露至少一个 Candidate Decision 再判卷，§5.1）",
+    });
+  }
   for (const residual of input.residuals) {
     if (residual.classification === "DEFERRED_DECISION") deferred.push(residual.statement);
     else if (residual.classification === "ASSUMPTION") assumptions.push(residual.statement);

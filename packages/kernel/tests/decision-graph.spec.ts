@@ -474,6 +474,60 @@ describe("buildDecisionGraph（合法图谱与指纹自动维护）", () => {
     expect(outcome.ok).toBe(false);
     if (!outcome.ok) expect(outcome.reason).toBe("empty_candidates");
   });
+
+  it("畸形候选显式 outcome 拒绝（G8）：非对象候选 / 数组位异形 / grounding·recommendation 异形 → candidate_malformed，禁裸 TypeError", () => {
+    const cases: readonly {
+      readonly candidate: unknown;
+      readonly reason: string;
+      readonly detail: string;
+    }[] = [
+      { candidate: null, reason: "candidate_malformed", detail: "不是对象" },
+      { candidate: "DECISION.D017", reason: "candidate_malformed", detail: "不是对象" },
+      {
+        candidate: candidateD017({ depends_on: "DECISION.D001" as never }),
+        reason: "candidate_malformed",
+        detail: "depends_on 须为数组",
+      },
+      {
+        candidate: candidateD017({ affects: "CAPABILITY.X" as never }),
+        reason: "candidate_malformed",
+        detail: "affects 须为数组",
+      },
+      {
+        candidate: candidateD017({ options: "GO" as never }),
+        reason: "candidate_malformed",
+        detail: "options 须为数组",
+      },
+      {
+        candidate: candidateD017({ grounding: null as never }),
+        reason: "candidate_malformed",
+        detail: "grounding 须为十键对象",
+      },
+      {
+        candidate: candidateD017({ recommendation: "DEFER" as never }),
+        reason: "candidate_malformed",
+        detail: "recommendation 须为六字段对象或 null",
+      },
+      // 十键槽位异形：逐项循环被跳过、折叠为既有 grounding_invalid（禁缺槽位裸崩）。
+      {
+        candidate: candidateD017({ grounding: { intent_refs: "DISCOVERY.INTENT.001" } as never }),
+        reason: "grounding_invalid",
+        detail: "缺席或非数组",
+      },
+    ];
+    for (const { candidate, reason, detail } of cases) {
+      const outcome = buildDecisionGraph([candidate as DecisionNodeCandidate]);
+      expect(outcome.ok, detail).toBe(false);
+      if (!outcome.ok) {
+        expect(outcome.reason, detail).toBe(reason);
+        expect(outcome.details.join(), detail).toContain(detail);
+      }
+    }
+    // candidates 本体非数组同法显式拒绝（禁 .length/.map 裸崩）。
+    const nonArray = buildDecisionGraph(undefined as never);
+    expect(nonArray.ok).toBe(false);
+    if (!nonArray.ok) expect(nonArray.reason).toBe("candidate_malformed");
+  });
 });
 
 describe("buildDecisionGraph（词形与词表 fail-closed）", () => {
@@ -1810,6 +1864,30 @@ describe("evaluateDiscoverySufficiency（§15 停止条件）", () => {
       expect(outcome.report.msd_reached).toBe(true);
       expect(outcome.report.blocking).toEqual([]);
       expect(outcome.report.deferred.join()).toContain("批量导入");
+    }
+  });
+
+  it("零决策图（G6）：零残留 + MSD 三轴全绿 → sufficient=false 且 blocking 显式携带零分母原因（禁零分母当满分）", () => {
+    // 零决策图无法经 build 构造（empty_candidates 拒绝）——手搓闭形态空图即判卷输入。
+    const emptyGraph: DecisionGraph = {
+      graph_fingerprint: `sha256:${"0".repeat(64)}`,
+      decisions: [],
+      request_refs: [],
+    };
+    const outcome = evaluateDiscoverySufficiency({
+      graph: emptyGraph,
+      residuals: [],
+      msd: msdAllGreen,
+    });
+    expect(outcome.ok).toBe(true);
+    if (outcome.ok) {
+      // MSD 三轴全绿也不得冒充「已评估充分」——零分母显式 blocking。
+      expect(outcome.report.msd_reached).toBe(true);
+      expect(outcome.report.sufficient).toBe(false);
+      expect(outcome.report.blocking).toHaveLength(1);
+      expect(outcome.report.blocking[0]?.decision_id).toBeNull();
+      expect(outcome.report.blocking[0]?.detail).toContain("零决策图");
+      expect(outcome.report.blocking[0]?.detail).toContain("零分母");
     }
   });
 

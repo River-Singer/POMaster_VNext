@@ -561,6 +561,13 @@ export interface ObservationReceiptInput {
   readonly environmentReceiptRef?: string | null;
   /** 治理对象 id（closed-world 校验归消费通路——头注同款边界）。 */
   readonly targetRef?: string | null;
+  /**
+   * §6.14 四前提绑定（result=OBSERVED_ABSENT 时必填且四值全 true；其余 result 携带
+   * 即拒）。G2 审查封条：「缺席是事实」的正主张原可手工组装 result=OBSERVED_ABSENT
+   * 绕过 judgeNegativeObservation 直接入回执——现将判定器的四前提闸上移到回执组装
+   * 入口（同款全真要求），缺席绑定缺失/不全 → SCHEMA_INVALID 拒收。
+   */
+  readonly absencePreconditions?: NegativeObservationPreconditions;
   /** blob 引用（persist 产物原样携带；OBSERVED 时必须 ≥1——见 buildObservationReceipt）。 */
   readonly artifactRefs?: readonly ObservationReceiptArtifactRef[];
   /** 机器可判事实清单（§6.13 例文 request_status: 200 词形；禁携带证据原文）。 */
@@ -597,8 +604,11 @@ export interface ObservationReceipt {
  * 关键封条（Benchmark E 的本模块级落点）：**result=OBSERVED 必须 ≥1 条
  * artifact_refs**——「看到」的主张必须由基础设施签发的 blob 身份背书（§6.13
  * 「基础设施负责证明工具调用与 Artifact 的存在」）；无 artifact 的 OBSERVED =
- * Agent 自报无凭，结构性拒收。负观察词形不强制空 refs（Case I 留痕形态：截图
- * 在场而 network 不可观察——result=NOT_OBSERVABLE 诚实申报，不构成验证主张）。
+ * Agent 自报无凭，结构性拒收。**result=OBSERVED_ABSENT 必须绑定 §6.14 四前提且
+ * 四值全真**（absencePreconditions）——「缺席是事实」的正主张与「看到」同族，
+ * 必须经 judgeNegativeObservation 同款前提闸背书，禁手工组装绕过判定器（G2 审查
+ * G5 封条）。负观察词形不强制空 refs（Case I 留痕形态：截图在场而 network 不可
+ * 观察——result=NOT_OBSERVABLE 诚实申报，不构成验证主张）。
  */
 export function buildObservationReceipt(
   input: ObservationReceiptInput,
@@ -652,6 +662,38 @@ export function buildObservationReceipt(
     missing.push(
       "artifactRefs（result=OBSERVED 必须 ≥1 条 blob 引用——§6.13 基础设施证明 Artifact 存在；Benchmark E：Observation Receipt 不得冒充有效业务 Evidence）",
     );
+  }
+  // §6.14 四前提绑定（G5）：OBSERVED_ABSENT 是「缺席是事实」的正主张，与 OBSERVED
+  // 同族受闸——绑定缺失 = 绕过 judgeNegativeObservation 的手工组装，SCHEMA_INVALID；
+  // 绑定在座但任一前提为 false = 判定器本应产出 INCONCLUSIVE 的形态，同拒。
+  const ABSENCE_PRECONDITION_KEYS = [
+    "correctPage",
+    "correctInstance",
+    "sensorWorked",
+    "captureWindowCoveredOperation",
+  ] as const;
+  if (input.result === "OBSERVED_ABSENT") {
+    const binding = input.absencePreconditions;
+    if (binding === undefined || binding === null || typeof binding !== "object") {
+      missing.push(
+        "absencePreconditions（result=OBSERVED_ABSENT 必须绑定 §6.14 四前提且四值全真——缺席主张经 judgeNegativeObservation 同款闸背书，禁手工组装绕过判定器）",
+      );
+    } else {
+      const record = binding as unknown as Record<string, unknown>;
+      for (const key of ABSENCE_PRECONDITION_KEYS) {
+        if (record[key] !== true) {
+          invalidValues.push({
+            field: `absencePreconditions.${key}`,
+            value: record[key],
+          });
+        }
+      }
+    }
+  } else if (input.absencePreconditions !== undefined) {
+    invalidValues.push({
+      field: "absencePreconditions",
+      value: "仅 result=OBSERVED_ABSENT 可携带四前提绑定（与 result 轴自相矛盾）",
+    });
   }
 
   if (missing.length === 0 && invalidValues.length === 0) {
@@ -722,13 +764,19 @@ export interface NegativeObservationOutcome {
   readonly result: NegativeObservationValue;
   readonly reason: string;
   /** 四前提快照（恒在场——C1 显式呈现；declared 路径下不作分岔输入，仅留痕）。 */
-  readonly preconditions: {
-    readonly correctPage: boolean;
-    readonly correctInstance: boolean;
-    readonly sensorWorked: boolean;
-    readonly captureWindowCoveredOperation: boolean;
-  };
+  readonly preconditions: NegativeObservationPreconditions;
   readonly hint: string;
+}
+
+/**
+ * §6.14 四前提（正确页面 + 正确实例 + Sensor 已工作 + 捕获窗口覆盖操作）——
+ * OBSERVED_ABSENT 判定与回执组装（absencePreconditions 绑定位）共用的单一形态。
+ */
+export interface NegativeObservationPreconditions {
+  readonly correctPage: boolean;
+  readonly correctInstance: boolean;
+  readonly sensorWorked: boolean;
+  readonly captureWindowCoveredOperation: boolean;
 }
 
 /**

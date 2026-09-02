@@ -4,7 +4,9 @@
  * 设计契约：docs/eight-beat-carriers-design.md §3。判卷权威在 @pomaster/kernel
  * （reconcilePermit：delta 比较 / 例外归类 / stride 抽样全部住 kernel），本文件只做
  * 编排与呈现：
- * - 纯读零写：报告生成不落任何文件；clean=true 是 ⑥ 拍零审阅负担的合法出口（exit 0）；
+ * - 纯读零写：报告生成不落任何文件；装载走 kernel loadStoreReadOnly（审查 H3 同型点
+ *   扫尾——不经 createStore，侧车缺失不静默重建）；clean=true 是 ⑥ 拍零审阅负担的
+ *   合法出口（exit 0）；
  * - fail-closed：有 delta/例外/vanished → RECONCILE_DIRTY exit 1（人须审；机器不代审
  *   不代决）；baseline 缺失 → RECONCILE_BASELINE_MISSING exit 1（不能拿「没有基线」
  *   冒充「无变化」——not_configured ≠ passed 的 ⑥ 拍镜像）；许可不存在 →
@@ -19,7 +21,7 @@ import type { ReconcileReport } from "@pomaster/kernel";
 import {
   DEFAULT_RECONCILE_SAMPLES,
   GovernanceError,
-  createStore,
+  loadStoreReadOnly,
   reconcilePermit,
 } from "@pomaster/kernel";
 import type { CliError, CommandOutcome } from "./envelope.js";
@@ -91,7 +93,9 @@ export async function runReconcile(
   // —— kernel 判卷（唯一权威；CLI 不重造 delta/例外/抽样逻辑） ——
   let report: ReconcileReport;
   try {
-    const store = await createStore(rootDir);
+    // 纯读零写装载（审查 H3 同型点扫尾）：报告生成不落任何文件，装载亦不得经
+    // createStore（ensureSidecars 会在侧车缺失的存量 store 上静默重建空账）。
+    const store = loadStoreReadOnly(rootDir);
     report = await reconcilePermit(store, input.permit, samples === undefined ? {} : { samples });
   } catch (err) {
     const error: CliError =

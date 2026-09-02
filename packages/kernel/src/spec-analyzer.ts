@@ -1548,9 +1548,21 @@ export function analyzeSpecDir(specDir: string): SpecAnalysisReport {
       { specDir, skippedNonMarkdown: skipped },
     );
   }
-  const files: SpecFileInput[] = markdown.map((relativePath) => ({
-    relativePath,
-    text: readText(join(specDir, relativePath)) ?? "",
-  }));
+  // 扫描后读取缺席显式化（G7）：清单在座而读取失败 = 并发删改窗口（「扫描时在座、
+  // 读取缺席禁静默跳过」纪律）。禁 `?? ""` 折叠为空文件计入分母（分母失真 = 假绿）；
+  // code 选型随本库最近同形先例（trace.ts readEvidenceRecord「清单在座而读取失败」
+  // → SCHEMA_INVALID），SCHEMA_INVALID 携带缺席文件词形显式上抛。
+  const files: SpecFileInput[] = markdown.map((relativePath) => {
+    const text = readText(join(specDir, relativePath));
+    if (text === null) {
+      throw new GovernanceError(
+        "SCHEMA_INVALID",
+        `spec 文件扫描清单在座而读取失败（扫描后消失/并发删改窗口）：${relativePath}`,
+        "重跑 analyzeSpecDir（缺席文件若为并发删除所致，以重跑时的真实目录为准）；禁静默按空文件计入分母",
+        { specDir, relativePath },
+      );
+    }
+    return { relativePath, text };
+  });
   return analyzeSpecFiles(files, { specDir, nonMarkdownSkipped: skipped });
 }

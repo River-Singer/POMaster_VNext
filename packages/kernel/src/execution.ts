@@ -174,8 +174,19 @@ export function listExecutionRecords(paths: StorePaths): ExecutionRecord[] {
   for (const name of names) {
     const text = readText(`${paths.executionsDir}/${name}`);
     if (text === null) continue;
-    const parsed = JSON.parse(text) as ExecutionRecord;
-    records.push(parsed);
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(text);
+    } catch (error) {
+      // 损坏档案显式抛（本函数头注承诺的契约；裸 SyntaxError = 裸崩通道，G8）。
+      throw new GovernanceError(
+        "SCHEMA_INVALID",
+        `执行档案无法解析（损坏或手改）：${EXECUTIONS_RELATIVE}/${name}`,
+        "执行档案由 beginExecution/endExecution 维护，禁止手改；从 git 恢复该文件",
+        { cause: String(error), file: name },
+      );
+    }
+    records.push(parsed as ExecutionRecord);
   }
   return records;
 }
@@ -271,7 +282,8 @@ function assertVocabValue<T extends string>(
 
 /**
  * 登记执行身份（AGX-n = 缺省分配「现有最大序号 +1」；显式传入同号已存在 →
- * EXECUTION_ALREADY_EXISTS）。session_key 在场时校验会话已 attach（SESSION_NOT_FOUND
+ * EXECUTION_ALREADY_EXISTS，落盘前另有 A1 同族复核兜并发窗口——见函数体注）。
+ * session_key 在场时校验会话已 attach（SESSION_NOT_FOUND
  * ——执行身份锚定真实会话，不接自报悬空引用）。journal 事件 EXECUTION_BEGUN。
  */
 export async function beginExecution(
@@ -344,11 +356,27 @@ export async function beginExecution(
     notes: input.notes?.trim() ? input.notes.trim() : null,
   };
   ensureDir(paths.executionsDir);
+  // 落盘前存在性/世代复核（G2，A1 同族手法——store.ts assertCommitSeqUnchanged 同源）：
+  // 开卷检查（本函数头部 readExecutionRecordById）与 executeWrites 的 rename 落盘之间
+  // 是无 CAS 的「检查-落盘」窗口，跨进程并发同号注册时后 rename 者会静默覆写先写者
+  // 的执行身份档案。复核把窗口收窄到「复核 → rename」最小缝隙（检测到并发落位即
+  // 显式拒绝，绝不静默覆写；彻底闭环需文件级独占认领——locks.swapLockCas 同法，归
+  // 后续 kernel PR）。失配复用 EXECUTION_ALREADY_EXISTS（勿新码位）；捕获到的 null
+  // 原样作为 staged 写入的 original（复核时确认不在场——回滚语义不变）。
+  const existing = captureOriginal(executionRecordPath(paths, executionId));
+  if (existing !== null) {
+    throw new GovernanceError(
+      "EXECUTION_ALREADY_EXISTS",
+      `执行身份已登记（落盘前复核发现并发写入，AGX-n 主键唯一）：${executionId}`,
+      "一次真实执行一份独立身份（PRD §25.4）；本请求零落盘零事件，重新分配新号",
+      { execution_id: executionId },
+    );
+  }
   executeWrites([
     {
       path: executionRecordPath(paths, executionId),
       next: `${JSON.stringify(record, null, 2)}\n`,
-      original: captureOriginal(executionRecordPath(paths, executionId)),
+      original: existing,
     },
   ]);
   appendJournalLine(paths, {

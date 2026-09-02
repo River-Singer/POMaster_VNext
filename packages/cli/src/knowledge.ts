@@ -437,6 +437,18 @@ async function loadResearchFinding(
       },
     };
   }
+  // H6a（二轮审查）：与 research inspect 的 B3 闸同款同码——findings「键存在但非数组」
+  // 是字段级整体损坏 ≠ 合法空分母，禁静默折叠为空数组后降级成「序号越界」错误
+  //（与 inspect 的字段级损坏显式拒语义对齐，消两条 --from-research/inspect 通道漂移）。
+  if (index.findings !== undefined && !Array.isArray(index.findings)) {
+    return {
+      error: {
+        code: "INDEX_NOT_MACHINE_PARSEABLE",
+        message: `${artifactRoot}index.yaml 的 findings 字段损坏（键存在但非数组——损坏非缺席，禁静默折叠为空分母）`,
+        hint: "「findings 键真缺席」才是合法空分母（骨架未填写）；修正为 findings: []（骨架形态）或合法 findings 数组后重试。",
+      },
+    };
+  }
   const findings = Array.isArray(index.findings) ? (index.findings as unknown[]) : [];
   const idx = (findingNumber as number) - 1;
   const finding = findings[idx];

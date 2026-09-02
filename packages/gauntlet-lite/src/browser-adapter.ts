@@ -808,10 +808,18 @@ export function createBrowserAdapter(
 
       const verdict: VerdictValue = caps.length > 0 ? "warning" : "passed";
       const capReason = caps.length > 0 ? caps.join("+") : null;
+      // I5：complete=true 与 problems 非空可并存（如额外坏形条目被忽略）——problems
+      // 明细禁静默丢弃（此前只在 not_run 分支呈报，passed/warning 分支会吞掉坏形面）。
+      // 与 not_run 分支同款词形（where: reason，全角分号连接）呈报进 scopeNote。
+      const problemsNote =
+        report.problems.length > 0
+          ? `；问题明细（证据判 complete 但归一化忽略以下坏形条目——禁静默）：${report.problems.map((p) => `${p.where}: ${p.reason}`).join("；")}`
+          : "";
       const scopeNote =
         `mcp 交互证据齐备：${evidenceManifestNote(report)}` +
         `（D22② 实时对账；证据字节由编排方入 evidence pack，本记录只载清单）；` +
-        `smoke connected（握手级通道证据）${smoke?.pageTitle != null ? `；pageTitle=「${smoke.pageTitle}」` : ""}`;
+        `smoke connected（握手级通道证据）${smoke?.pageTitle != null ? `；pageTitle=「${smoke.pageTitle}」` : ""}` +
+        problemsNote;
 
       const record: Omit<GateResult, "tool" | "toolVersion" | "metricDialect"> = {
         grn: plan.grn,

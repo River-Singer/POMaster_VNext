@@ -635,20 +635,29 @@ function checkActiveTaskRecovery(ctx: CheckContext): PortabilityCheckRow {
       );
     }
   }
+  // 缺席显式原则（G2 审查 G3）：journal「行损坏 → FAIL、整文件缺席 → PASS」的
+  // 不对称是假绿——TASK 行在座意味着 store 已初始化，journal.jsonl 是重放基底的
+  // 必备半边（createStore 即建）；「应存在而缺席 = FAIL」（本模块 fail-closed
+  // 三态纪律），缺席绝不静默按「可解析」放行。
   const journalText = readText(ctx.paths.journalPath);
-  if (journalText !== null) {
-    for (const line of journalText.split("\n")) {
-      const trimmed = line.trim();
-      if (trimmed.length === 0) continue;
-      try {
-        JSON.parse(trimmed);
-      } catch {
-        return row(
-          "active_task_recovery",
-          "FAIL",
-          `journal 存在不可解析事件行（重放基底损坏）：${trimmed.slice(0, 60)}`,
-        );
-      }
+  if (journalText === null) {
+    return row(
+      "active_task_recovery",
+      "FAIL",
+      "journal.jsonl 缺席（重放基底应存在而缺席——TASK 行在座而事件流不在场，任务态不可重放）",
+    );
+  }
+  for (const line of journalText.split("\n")) {
+    const trimmed = line.trim();
+    if (trimmed.length === 0) continue;
+    try {
+      JSON.parse(trimmed);
+    } catch {
+      return row(
+        "active_task_recovery",
+        "FAIL",
+        `journal 存在不可解析事件行（重放基底损坏）：${trimmed.slice(0, 60)}`,
+      );
     }
   }
   return row(

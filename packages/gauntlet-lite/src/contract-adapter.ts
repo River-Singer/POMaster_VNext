@@ -68,6 +68,7 @@ import {
   OASDIFF_TOOL_ID,
   OASDIFF_VERSION_PROBE_COMMAND,
   normalizeOasdiffLeg,
+  oasdiffLegExecutable,
   oasdiffSpawn,
   runOasdiffLeg,
   type OasdiffLegOutput,
@@ -369,6 +370,11 @@ export function createContractAdapter(
   options: {
     /** 注入 oasdiff 腿 spawn（测试 fake / 显式装配）；缺省 oasdiffSpawn。 */
     readonly oasdiffSpawnFn?: SpawnFn;
+    /**
+     * 注入 oasdiff 腿 run 前置可执行体探测（gate ①a，I2 对齐三道闸惯例）；缺省
+     * platformExecutableProbe（真实 PATH）——schemathesis 腿同款注入面。
+     */
+    readonly oasdiffExecutableProbe?: ExecutableProbeFn;
     /** 注入 schemathesis 腿 spawn（测试 fake / 显式装配）；缺省 schemathesisSpawn。 */
     readonly schemathesisSpawnFn?: SpawnFn;
     /**
@@ -383,6 +389,8 @@ export function createContractAdapter(
   ContractRunOutput
 > {
   const oasdiffSpawnFn = options.oasdiffSpawnFn ?? oasdiffSpawn;
+  const oasdiffExecutableProbe =
+    options.oasdiffExecutableProbe ?? platformExecutableProbe;
   const schemathesisSpawnFn = options.schemathesisSpawnFn ?? schemathesisSpawn;
   const schemathesisExecutableProbe =
     options.schemathesisExecutableProbe ?? platformExecutableProbe;
@@ -619,6 +627,7 @@ export function createContractAdapter(
         projectRoot: scope.projectRoot,
         command: `${OASDIFF_RUN_COMMAND_PREFIX} "${basePath}" "${currentPath}"`,
         versionProbeCommand: OASDIFF_VERSION_PROBE_COMMAND,
+        executable: oasdiffLegExecutable(OASDIFF_VERSION_PROBE_COMMAND),
         timeoutMs: policy.timeoutMs ?? DEFAULT_LEG_TIMEOUT_MS,
         basePath: read.config.breakingBase,
         currentPath: read.config.openapi,
@@ -658,7 +667,7 @@ export function createContractAdapter(
             "plan.oasdiffPlan 与 plan.mode 必须同源（contract-adapter.prepare 组装）",
           );
         }
-        const leg = runOasdiffLeg(plan.oasdiffPlan, spawnFn);
+        const leg = runOasdiffLeg(plan.oasdiffPlan, spawnFn, oasdiffExecutableProbe);
         return {
           plan,
           outcome: "breaking_diff",

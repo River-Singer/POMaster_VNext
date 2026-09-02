@@ -385,6 +385,38 @@ describe("audit（Audit View §49.1/§91.3）", () => {
     expect(outcome.ok).toBe(true);
     expect(snapshot()).toEqual(before);
   });
+
+  it("implements_change 链正文不可读 → 显式 warning + 分母降级（审查 H2，禁静默）", async () => {
+    await seedWorld();
+    // change 正文被删：affected_objects（含 API_REQ.DASHBOARD.CARDS）推导不动，
+    // 此前 audit 零告警静默降级（view.ts 同路径有 warning）——现在必须显式可见。
+    rmSync(join(root, ".pomaster", "truth", "objects", "change-object", "change.c0001.json"));
+    const outcome = await runAuditTask(root, { task: "TASK.T0001" });
+    expect(outcome.ok).toBe(true);
+    const warning = outcome.warnings.find((w) => w.message.includes("CHANGE.C0001"));
+    expect(warning).toBeDefined();
+    expect(warning?.code).toBe("OBJECT_BODY_MISSING");
+    expect(warning?.message).toContain("implements_change 链对象正文不可读");
+    expect(warning?.hint).toContain("task/permit 分母");
+    // 分母缺失可呈现：CHANGE.C0001 的影响对象只剩 task/permit 分母，不在 object_ids。
+    expect(outcome.result.object_ids).not.toContain("API_REQ.DASHBOARD.CARDS");
+  });
+
+  it("implements_change 引用不在 truth-index → REF_INTEGRITY 显式 warning（审查 H2，对齐 view 先例）", async () => {
+    await seedWorld();
+    // 把 implements_change 指向不存在的对象（直接改 task 正文——测试注入残态）。
+    const taskBodyPath = join(root, ".pomaster", "truth", "objects", "task-object", "task.t0001.json");
+    const taskBody = JSON.parse(readFileSync(taskBodyPath, "utf8")) as {
+      payload: Record<string, unknown>;
+    };
+    taskBody.payload.implements_change = "CHANGE.NOPE";
+    writeFileSync(taskBodyPath, `${JSON.stringify(taskBody, null, 2)}\n`);
+    const outcome = await runAuditTask(root, { task: "TASK.T0001" });
+    expect(outcome.ok).toBe(true);
+    const warning = outcome.warnings.find((w) => w.message.includes("CHANGE.NOPE"));
+    expect(warning).toBeDefined();
+    expect(warning?.code).toBe("REF_INTEGRITY");
+  });
 });
 
 // ============================================================

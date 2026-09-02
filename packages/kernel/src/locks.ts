@@ -29,12 +29,21 @@
  * （详见 swapLockCas 注）。journal 事件一律 appendLine 原子追加（覆写落法会把并发方
  * 整行抹掉）。
  *
+ * fence 跨锁周期绑定（G2 审查 G4）：锁文件语义 = release 即消亡、re-acquire 重置
+ * fence=1（新锁周期非续期），故裸 fence 数字在不同周期间可复现——旧周期凭据在锁
+ * 重建后可重新通过 fence 相等性校验（「任何交错下双凭据不可能同 valid」的反例）。
+ * 封条：锁记录携带一次性周期代 `cycle`（acquire 时生成、release 消亡、steal 过户
+ * 不变），写闸凭据 = (cycle, fence) 二元组；checkLockFence 对携带周期锚的凭据做
+ * 双轴校验，跨周期旧凭据同 fence 也判 stale_fence（周期代为 runtime 侧车随机位，
+ * 非治理事实、不入任何 digest）。
+ *
  * 墙钟语义（A4 分层）：acquired_at/heartbeat_at/ttl_seconds 是 runtime 侧车墙钟
  * （hash 管辖外——GOLDEN-L1-WALLCLOCK 判词「人类时间只住 evidence/runtime 侧车」）；
  * journal 事件（LOCK_ACQUIRED/LOCK_RELEASED/LOCK_STOLEN/LOCK_STALE_OBSERVED/
  * EXECUTION_INTERRUPTED）一律 seq 采样（A4，无墙钟）。确定性由 `now` 注入点保障。
  */
 import { existsSync, linkSync, readdirSync, renameSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
+import { randomBytes } from "node:crypto";
 import type { Store } from "./index.js";
 import { GovernanceError } from "./errors.js";
 import { appendLine, ensureDir, isNotFoundError, isTransientSwapError, readText, sleepSync, withBoundedRetry } from "./io.js";
@@ -86,6 +95,12 @@ export interface LockRecord {
   /** 关联 task 锚（task/change 锁语境；例文未给词形，general_id 宽松收纳）。 */
   readonly scope_task: string | null;
   readonly holder: LockHolder;
+  /**
+   * 锁周期代（acquire 时一次性生成；release 随锁文件消亡、steal 过户不变）。
+   * 凭据 = (cycle, fence) 二元组——fence 在 re-acquire 后重置 1，裸 fence 数字跨
+   * 周期可复现；周期代使 checkLockFence 能拒绝「锁重建后回魂」的旧周期凭据（G4）。
+   */
+  readonly cycle: string;
   /** fencing token（从 1 起；steal 时 +1——旧持有者迟写因 fence 过期被拒）。 */
   readonly fence: number;
   readonly acquired_at: string;
@@ -196,8 +211,14 @@ export function readLockRecord(paths: StorePaths, lockId: string): LockRecord | 
 function parseLockBytes(lockId: string, text: string): LockRecord {
   try {
     const parsed = JSON.parse(text) as LockRecord;
-    if (parsed.lock_id !== lockId || typeof parsed.fence !== "number" || parsed.holder === undefined) {
-      throw new SyntaxError("lock_id/fence/holder 形态缺失");
+    if (
+      parsed.lock_id !== lockId ||
+      typeof parsed.fence !== "number" ||
+      parsed.holder === undefined ||
+      typeof parsed.cycle !== "string" ||
+      parsed.cycle.length === 0
+    ) {
+      throw new SyntaxError("lock_id/fence/holder/cycle 形态缺失");
     }
     return parsed;
   } catch (error) {
@@ -241,15 +262,24 @@ export function listLocks(paths: StorePaths, now: number = Date.now()): LockLive
 }
 
 /**
- * fence 校验（写闸消费原语：hook/编排层记录所验 fence 后的复验通道——「锁被 steal
+ * fence 校验（写闸消费原语：hook/编排层记录所验凭据后的复验通道——「锁被 steal
  * 后旧持有者的迟写因 fence 过期被拒」）。显式三态：valid / stale_fence / unknown_lock。
+ *
+ * 周期绑定（G4 反例封条）：裸 fence 数字在 release→re-acquire 的锁重建后可复现
+ * （新周期 fence 重置 1），旧周期凭据凭 fence 相等即可重新通过 = 「僵尸凭据回魂」。
+ * 凭据因此应为 (cycle, fence) 二元组（acquireLock/stealLock 返回的 LockRecord 整体
+ * 留痕）：传入 `cycle` 时做双轴校验——fence 相等但周期代不匹配（含锁已重建换代）
+ * 一律 stale_fence；`currentCycle` 随结果回带，供调用方从裸 fence 升级为完整凭据。
+ * 只传 fence 的旧词形按 fence-only 复验（存量兼容）——写闸消费方必须记录完整凭据，
+ * 周期代缺失的锁文件（手改/旧版落盘）在 parseLockBytes 即 SCHEMA_INVALID 拒读。
  */
 export function checkLockFence(
   paths: StorePaths,
   lockId: string,
   fence: number,
-): { readonly outcome: "valid"; readonly currentFence: number }
-| { readonly outcome: "stale_fence"; readonly currentFence: number }
+  cycle?: string,
+): { readonly outcome: "valid"; readonly currentFence: number; readonly currentCycle: string }
+| { readonly outcome: "stale_fence"; readonly currentFence: number; readonly currentCycle: string }
 | { readonly outcome: "unknown_lock" } {
   const record = readLockRecord(paths, lockId);
   if (record === null) return { outcome: "unknown_lock" };
@@ -261,9 +291,11 @@ export function checkLockFence(
       { fence },
     );
   }
-  return fence === record.fence
-    ? { outcome: "valid", currentFence: record.fence }
-    : { outcome: "stale_fence", currentFence: record.fence };
+  // 周期代失配 = 凭据来自已消亡的旧锁周期（fence 即使撞上当前值也是跨周期复用）。
+  const cycleMismatch = cycle !== undefined && cycle !== record.cycle;
+  return fence === record.fence && !cycleMismatch
+    ? { outcome: "valid", currentFence: record.fence, currentCycle: record.cycle }
+    : { outcome: "stale_fence", currentFence: record.fence, currentCycle: record.cycle };
 }
 
 // ============================================================
@@ -385,6 +417,7 @@ export async function acquireLock(
       execution_id: input.executionId ?? null,
       pid: input.pid ?? null,
     },
+    cycle: newLockCycle(),
     fence: 1,
     acquired_at: nowIso,
     heartbeat_at: nowIso,
@@ -421,9 +454,24 @@ export async function acquireLock(
   return { outcome: "acquired", lock: record };
 }
 
+/** 锁周期代生成（一次性随机位；runtime 侧车用，非治理事实不入任何 digest）。 */
+function newLockCycle(): string {
+  return randomBytes(16).toString("hex");
+}
+
 /** blocked 快照组装（持有者快照 + stale 判定 + 会话注册缺席检出，全部显式）。 */
 function blockedOutcome(paths: StorePaths, lockId: string, nowMs: number): LockAcquireOutcome {
-  const record = readLockRecord(paths, lockId) as LockRecord;
+  // EEXIST 证明锁瞬息前在座；此刻读取缺席 = 并发方在 link 与读之间释放/换代的
+  // 瞬态窗口。禁 `as LockRecord` 断言后解引用 null 裸崩（G8）——显式可重试语义。
+  const record = readLockRecord(paths, lockId);
+  if (record === null) {
+    throw new GovernanceError(
+      "ENVIRONMENT_ERROR",
+      `锁状态瞬态消失（认领判定时在座，读取快照时已被并发方释放/重建）：${LOCKS_RELATIVE}/${lockId}.lock`,
+      "锁处于并发争用窗口——稍后重试 acquire；反复出现请核对是否存在异常高频的锁争用方",
+      { lock_id: lockId },
+    );
+  }
   const judged = judgeLockStaleness(record, nowMs);
   const holderSession = readSessionRecord(paths, record.holder.session_key);
   const staleObserved = judged.stale;
@@ -530,8 +578,9 @@ export interface LockStealInput {
 }
 
 /**
- * 显式接管锁（抢占仪式）：fence +1（旧持有者迟写因 fence 过期被拒）+ journal
- * LOCK_STOLEN + 原持有人 execution 封口 interrupted（D 线 §3.3.1「使原 execution 以
+ * 显式接管锁（抢占仪式）：fence +1（旧持有者迟写因 fence 过期被拒；周期代 cycle
+ * 随 `...record` 透传不变——凭据 = (cycle, fence) 二元组，过户只消耗新 fence）+
+ * journal LOCK_STOLEN + 原持有人 execution 封口 interrupted（D 线 §3.3.1「使原 execution 以
  * interrupted 结束」；档案缺失容忍——锁回收不因档案面损毁阻塞，EXECUTION_INTERRUPTED
  * 事件仍如实留痕；已正常封口的 execution 无需再 interrupt——封口事实由档案 ended_at
  * 如实呈现，不重复留痕）+ 双方会话 held_locks 同步。reason 空 = SCHEMA_INVALID。

@@ -9,7 +9,7 @@
  */
 import Ajv from "ajv";
 import { describe, expect, it } from "vitest";
-import { allSchemas, denominatorSchema } from "@pomaster/schemas";
+import { denominatorSchema } from "@pomaster/schemas";
 
 const ajv = new Ajv({ strictSchema: false, allErrors: true });
 // compile(root) 已按 $id 隐式注册——后续 $ref 子模式直接解析到同一份文档

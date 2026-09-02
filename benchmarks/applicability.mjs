@@ -7,9 +7,10 @@
  *   1. triage 信封 profile=MINIMAL（tiny 档同引擎：自同场景 triage 信封取 profile；
  *      run-all 传入本轮 tiny 条目则复用，不重复执行子进程）；
  *   2. `context compile --role frontend --capability CAPABILITY.PRESENTATION` 的
- *      catalogEntries 不含 policy.api.* / policy.sec.* 族（真实 catalog T3 标注承载的
- *      更严真断言：标注前现状是 lane=frontend 全量注入 API 族——现状被动正确，
- *      标注后由 capabilities 轴确定性排除 = 主动判卷）；
+ *      catalogEntries 不含「非回退泄漏」的 policy.api.* / policy.sec.* 族（真实 catalog
+ *      T3 标注承载的更严真断言；I7 修正：lane=any 保守回退纳入且 explain 决策面
+ *      fallback_lane=true 披露的条目是已披露回退而非泄漏——SEC 第三方执行体登记
+ *      撤账后的诚实词形；进编译但决策面无 fallback 披录 = 泄漏，fail-closed 判红）；
  *   3. 编译原始输出（stdout+stderr）无 architect/research/spawn/subagent 字样
  *      （MINIMAL 档纪律延续 tiny 先例）；
  *   4. `context explain` 逐条 why：每个决策恰有一面 why（included→why_included /
@@ -18,7 +19,9 @@
  *
  * 诚实边界（研究 applicability.md R6 / Owner 裁决 8 ② O9——DB Transaction 验收 fixture-only）：
  *   - 真实 catalog 无 DB transaction / backend persistence 条目（db_domain_entries_total=0
- *     如实披露）——「DB 类条目排除」的空分母不冒充判卷；DB 排除逻辑的真判卷由
+ *     如实披露）——I8③ 修正：绊线判读对象 = catalog 锁全集 id（catalog 分母）而非编译
+ *     输出（编译分母冒充 catalog 分母的原缺陷：DB 条目被排除在编译外时空分母假绿）；
+ *     DB 域条目出现在 catalog 即红。DB 排除逻辑的真判卷由
  *     tests/integration/catalog-applicability-case-b.spec.ts 的 fixture DB 条目承载
  *     （fixture-only，真实条目挂 catalog 扩容后续任务）；
  *   - 本档判卷面 = capabilities 轴（T3 标注的 API/Sec 族）；change_class / profile 轴
@@ -35,7 +38,7 @@
  * 单跑：node benchmarks/applicability.mjs ；亦可被 run-all.mjs import（import 时不自动执行）。
  */
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -47,6 +50,10 @@ export const APPLICABILITY_TIER = "applicability";
 export const APPLICABILITY_SCENARIO = TINY_SCENARIO; // README badge 文案调整（与 tiny 同场景）
 export const APPLICABILITY_EXPECTED =
   "MINIMAL + catalog applicability exclusion（PRD v0.5.2 §15 Benchmark A）";
+
+/** 仓根（catalog 锁的绊线分母读取锚；本文件住 <repo>/benchmarks/）。 */
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const CATALOG_LOCK_PATH = path.join(REPO_ROOT, "catalog", "catalog-lock.draft.json");
 
 /** 编译用 capability 输入（README 文案调整 = 纯呈现面变更；PRD §16 Case B 同词形）。 */
 const COMPILE_CAPABILITIES = ["CAPABILITY.PRESENTATION"];
@@ -208,21 +215,41 @@ export async function runApplicabilityBenchmark(options = {}) {
   let catalogRefs = [];
   let excludedApiSecRefs = [];
   let allDecisions = [];
+  let apiSecFallbackIncludedRefs = [];
+  let catalogIds = [];
+  let catalogScanError = null;
   if (harnessError !== null) {
     fail("compile-explain-harness", harnessError);
   } else {
     const manifest = compileEnvelope.result?.manifest ?? {};
     catalogRefs = (manifest.catalog_entries ?? []).map((entry) => entry.ref);
+    allDecisions = explainEnvelope.result?.decisions ?? [];
+    const decisionByRef = new Map(
+      allDecisions.map((decision) => [decision.ref, decision]),
+    );
 
-    // ② catalogEntries 不含 policy.api.* / policy.sec.* 族（T3 标注后的确定性排除）。
-    const leaked = catalogRefs.filter(API_SEC_REF);
+    // ② catalogEntries 不含「非回退泄漏」的 API/Sec 族（T3 标注后的确定性排除）。
+    // I7 语义修正：POLICY.SEC.THIRD_PARTY_EXECUTION_REGISTER 撤账（源协议正文无契约
+    // 动词面，不满足保守派生纪律）后走 lane=any 缺省回退——explain 决策面
+    // fallback_lane=true 的纳入是已披露的保守回退（O7 行为零变化）而非泄漏；真泄漏 =
+    // API/Sec ref 进编译分母且无 fallback_lane 披露（机器轴判卷回归或被静默吞）。
+    // 编译分母与 explain 决策面交叉对账：进编译却查无决策记录同样判泄漏（fail-closed）。
+    const apiSecInCompile = catalogRefs.filter(API_SEC_REF);
+    const leaked = apiSecInCompile.filter((ref) => {
+      const decision = decisionByRef.get(ref);
+      return !(decision?.decision === "included" && decision.fallback_lane === true);
+    });
+    apiSecFallbackIncludedRefs = apiSecInCompile.filter((ref) => {
+      const decision = decisionByRef.get(ref);
+      return decision?.decision === "included" && decision.fallback_lane === true;
+    });
     assertions.push({
       name: "catalog-no-api-sec-entries",
       ok: leaked.length === 0,
       detail:
         leaked.length === 0
-          ? `catalogEntries ${catalogRefs.length} 条零 API/Sec 族泄漏（capabilities=[${COMPILE_CAPABILITIES.join("/")}] 输入下确定性排除；T3 标注承载，现状全量注入被动正确已升级为主动判卷）`
-          : `API/Sec 族泄漏进纯呈现面 Change 的上下文：${leaked.join(", ")}——T3 标注或 capabilities 轴判定回归`,
+          ? `catalogEntries 的 API/Sec 族 ${apiSecInCompile.length} 条零非回退泄漏（capabilities=[${COMPILE_CAPABILITIES.join("/")}] 输入下：capabilities 轴确定性排除为常态；${apiSecFallbackIncludedRefs.length} 条经 lane=any 保守回退纳入且 fallback_lane=true 披露——SEC 第三方执行体登记 I7 撤账后的诚实词形，O7 行为零变化）`
+          : `API/Sec 族非回退泄漏进纯呈现面 Change 的上下文：${leaked.join(", ")}——机器 applicability 判定回归（含进编译但 explain 决策面无 fallback_lane 披录的形态）`,
     });
 
     // ③ 编译原始输出无 architect/research/spawn/subagent 字样。
@@ -234,7 +261,6 @@ export async function runApplicabilityBenchmark(options = {}) {
     });
 
     // ④ context explain 逐条 why + API/Sec 族 excluded 可解释（PRD §5.4）。
-    allDecisions = explainEnvelope.result?.decisions ?? [];
     const malformed = allDecisions.filter(
       (decision) =>
         (decision.decision === "included" && typeof decision.why_included !== "string") ||
@@ -268,18 +294,33 @@ export async function runApplicabilityBenchmark(options = {}) {
   }
 
   // ============================================================
-  // 诚实边界披露（O9：真实 catalog 无 DB 域条目——空分母不冒充判卷）
+  // 诚实边界披露（O9：真实 catalog 无 DB 域条目——绊线式，I8③ 修正判读分母）
   // ============================================================
-  const dbDomainRefs = catalogRefs.filter(
-    (ref) => ref.includes(".DB.") || ref.includes("PERSISTENCE"),
-  );
+  // I8③：原实现扫编译输出（catalogRefs）——编译分母冒充 catalog 分母：DB 条目即使
+  // 真实存在于 catalog，也会被 capabilities/档位排除在本次编译外，扫编译面恒空 =
+  // 「真实 catalog 无 DB 域条目」的自述被空分母假绿冒充。修正为绊线式判读（自述
+  // 语义）：直接扫 catalog 锁（catalog/catalog-lock.draft.json 全集 id），DB 域条目
+  // 出现即红（提示重审本断言面与 O9 fixture-only 裁决前提）；锁不可读按失败处理
+  // （fail-closed，禁分母不可得时报绿）。
+  const DB_DOMAIN_ID = (id) => id.includes(".DB.") || id.includes("PERSISTENCE");
+  try {
+    const lock = JSON.parse(readFileSync(CATALOG_LOCK_PATH, "utf8"));
+    catalogIds = (Array.isArray(lock.entries) ? lock.entries : [])
+      .map((entry) => String(entry?.id ?? ""))
+      .filter((id) => id.length > 0);
+  } catch (error) {
+    catalogScanError = error instanceof Error ? error.message : String(error);
+  }
+  const dbDomainCatalogIds = catalogIds.filter(DB_DOMAIN_ID);
   assertions.push({
     name: "db-domain-absence-disclosed",
-    ok: dbDomainRefs.length === 0,
+    ok: catalogScanError === null && dbDomainCatalogIds.length === 0,
     detail:
-      dbDomainRefs.length === 0
-        ? "真实 catalog 无 DB transaction / backend persistence 条目（O9 fixture-only 裁决；db_domain_entries_total=0 如实披露——DB 排除逻辑的真判卷由 catalog-applicability-case-b.spec 的 fixture DB 条目承载，本档不冒充空分母判卷）"
-        : `catalogEntries 出现 DB 域引用：${dbDomainRefs.join(", ")}——真实 catalog 出现 DB 域条目时需重审本断言面`,
+      catalogScanError !== null
+        ? `catalog 锁不可读（${path.relative(REPO_ROOT, CATALOG_LOCK_PATH)}）：${catalogScanError}——绊线分母不可得，按失败处理（fail-closed）`
+        : dbDomainCatalogIds.length === 0
+          ? `真实 catalog 锁 ${catalogIds.length} 条零 DB 域条目（O9 fixture-only 裁决；db_domain_entries_total=0 如实披露——绊线扫 catalog 全集而非编译分母，I8③ 修正；DB 排除逻辑的真判卷仍由 catalog-applicability-case-b.spec 的 fixture DB 条目承载，本档不冒充空分母判卷）`
+          : `真实 catalog 出现 DB 域条目：${dbDomainCatalogIds.join(", ")}——绊线触发，需重审本断言面与 O9 裁决前提`,
   });
 
   // ============================================================
@@ -363,10 +404,13 @@ export async function runApplicabilityBenchmark(options = {}) {
       compile_capabilities: COMPILE_CAPABILITIES,
       catalog_entries_total: catalogRefs.length,
       excluded_api_sec_refs: excludedApiSecRefs,
+      api_sec_compile_refs_total: catalogRefs.filter(API_SEC_REF).length,
+      api_sec_fallback_included_refs: apiSecFallbackIncludedRefs,
       decisions_total: allDecisions.length,
-      db_domain_entries_total: dbDomainRefs.length,
+      catalog_lock_entries_total: catalogIds.length,
+      db_domain_entries_total: dbDomainCatalogIds.length,
       honest_boundary:
-        "真实 catalog 无 DB transaction / backend persistence 条目（Owner 裁决 8 ② O9 fixture-only）：DB 排除逻辑的真判卷由 catalog-applicability-case-b.spec 的 fixture DB 条目承载；本档判卷面=capabilities 轴（T3 标注的 API/Sec 族），change_class/profile 轴判卷由 kernel/集成 spec 承载。",
+        "真实 catalog 无 DB transaction / backend persistence 条目（Owner 裁决 8 ② O9 fixture-only；绊线扫 catalog 锁全集而非编译分母——I8③ 修正「编译分母冒充 catalog 分母」）：DB 排除逻辑的真判卷由 catalog-applicability-case-b.spec 的 fixture DB 条目承载；本档判卷面=capabilities 轴（T3 标注的 API/Sec 族）+ lane=any 保守回退披露（fallback_lane=true 非泄漏——I7 撤账后的诚实词形），change_class/profile 轴判卷由 kernel/集成 spec 承载。",
     },
     path_signature: signatures,
     durationMs: Math.round(performance.now() - startedAt),

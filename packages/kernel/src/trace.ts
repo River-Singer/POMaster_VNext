@@ -580,19 +580,44 @@ function gateResultInnerOf(record: Record<string, unknown>): Record<string, unkn
   return inner as Record<string, unknown>;
 }
 
-/** 收据行装配（07 run_record 词形同源；缺键 = 落盘面损坏——string 型显性暴露）。 */
+/**
+ * 收据行装配（07 run_record 词形同源；缺键 = 落盘面损坏）。缺键显式 fail-closed
+ * （G8）：String()/Number() 强转会把缺席键产出 "undefined"/NaN 垃圾收据行——收据
+ * 是证据面通路记录，垃圾词形 = 伪造留痕，禁静默。
+ */
 function toolReceiptOf(
   record: Record<string, unknown>,
   inner: Record<string, unknown>,
 ): TraceToolReceipt {
+  const missing: string[] = [];
+  if (typeof record.grn !== "string" || record.grn.length === 0) missing.push("grn");
+  for (const key of ["gate", "gate_def", "tool", "tool_version", "metric_dialect", "verdict"] as const) {
+    const value = inner[key];
+    if (typeof value !== "string" || value.length === 0) missing.push(`gate_result.result.${key}`);
+  }
+  if (
+    typeof inner.ran_at_seq !== "number" ||
+    !Number.isInteger(inner.ran_at_seq) ||
+    inner.ran_at_seq < 0
+  ) {
+    missing.push("gate_result.result.ran_at_seq");
+  }
+  if (missing.length > 0) {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      `run 记录收据键缺席/异形（禁强转出 "undefined"/NaN 垃圾收据）：${missing.join(", ")}`,
+      "收据行八键由 record gate-run 通路落盘保证（闭形态）；缺键 = 手改/旧版落盘——从 git 恢复或重跑 record 通路",
+      { missing, grn: typeof record.grn === "string" ? record.grn : null },
+    );
+  }
   return {
-    grn: String(record.grn),
-    gate: String(inner.gate),
-    gate_def: String(inner.gate_def),
-    tool: String(inner.tool),
-    tool_version: String(inner.tool_version),
-    metric_dialect: String(inner.metric_dialect),
-    verdict: String(inner.verdict),
-    ran_at_seq: Number(inner.ran_at_seq),
+    grn: record.grn as string,
+    gate: inner.gate as string,
+    gate_def: inner.gate_def as string,
+    tool: inner.tool as string,
+    tool_version: inner.tool_version as string,
+    metric_dialect: inner.metric_dialect as string,
+    verdict: inner.verdict as string,
+    ran_at_seq: inner.ran_at_seq as number,
   };
 }

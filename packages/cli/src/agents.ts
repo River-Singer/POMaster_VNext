@@ -20,7 +20,10 @@
  *   deferred_to 更新为 DEF-SUP）。
  *
  * 观测纪律：
- * - 纯读零写入：本命令不落任何事件（agents status 是观测不是治理动作）；
+ * - 纯读零写入：本命令不落任何事件（agents status 是观测不是治理动作）；装载走
+ *   kernel loadStoreReadOnly（零写副作用，审查 H3）——不经 createStore（其
+ *   ensureSidecars 会在侧车缺失的存量 store 上静默重建空账，丢失信号被吞），
+ *   侧车缺失按「显式空/缺席」呈现（0 计数 + journal_events_scanned=0）；
  * - 触发 = warning 呈现 + ok 恒 true：观测面不施断——DEF-GATEKEEPER / DEF-SUP 的
  *   处置都是触发制升级信号，呈报 Owner 裁定，非本命令职权（对齐 status 命令
  *   「词表外观测值 warning 不改 ok 语义」先例）；
@@ -28,13 +31,13 @@
  *   COMMAND_DEFERRED / execution 呈现两态）均带 TODO(vocab-pr) 注记。
  */
 import {
-  createStore,
   detectGatekeeperDrift,
   detectSupervisorTrigger,
   GovernanceError,
   listExecutionRecords,
   listLocks,
   listSessionRecords,
+  loadStoreReadOnly,
   type SupervisorTriggerSource,
 } from "@pomaster/kernel";
 import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
@@ -143,7 +146,7 @@ export async function runAgentsStatus(
     ]);
   }
   try {
-    const store = await createStore(rootDir);
+    const store = loadStoreReadOnly(rootDir);
     const paths = runtimeStorePaths(store);
     const sessionRows = listSessionRecords(paths);
     const lockRows = listLocks(paths);

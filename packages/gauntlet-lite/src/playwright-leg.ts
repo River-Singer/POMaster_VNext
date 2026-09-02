@@ -954,8 +954,13 @@ export function normalizePlaywrightLeg(
   let flaky = 0;
   let consoleEntries = 0;
   let networkEntries = 0;
+  // blindspot 载体 = spec 文件（pytest-leg classname 载体粒度同款）：有执行面的
+  // spec 文件才算 produced——全 skipped 盲区态的量化锚。
+  const specFiles = new Set<string>();
+  const executedSpecFiles = new Set<string>();
 
   for (const spec of specs) {
+    specFiles.add(spec.file);
     const location = `${spec.file.replaceAll("\\", "/")}${spec.line === null ? "" : `:${String(spec.line)}`}`;
     for (const test of spec.tests) {
       scanned += 1;
@@ -963,6 +968,7 @@ export function normalizePlaywrightLeg(
         skipped += 1;
         continue;
       }
+      executedSpecFiles.add(spec.file);
       if (test.status === "unexpected") {
         unexpected += 1;
         items.push({
@@ -1012,11 +1018,26 @@ export function normalizePlaywrightLeg(
     caps.push("playwright_flaky_tests");
   }
 
+  // —— 全 skipped 盲区闸（第二轮全盘审查 I1，P26 零分母闸同族）：报告可解析、
+  // 违规=0，但 skipped>0 且可执行分母 applicableScanned=0——「全部被跳过」的分母
+  // 形态：分母非零但执行面为零，语义上什么都没验，此前落 passed 是零分母当满分
+  // 假绿。修法对齐 pytest-leg allSkippedBlindspot 先例：判 skipped_blindspot（03
+  // 七态既有词形）+ counts.uncheckedInBlindspotEstimated 盲区指标必附（kernel
+  // normalizeGateResult 的 FATAL 校验是同一条 C1 线）+ blindspot.fixture_regression
+  // 合规位（03 allOf 封条）+ scopeNote 盲区说明；禁 passed。
+  const applicableScanned = scanned - skipped;
+  const allSkippedBlindspot = violations === 0 && applicableScanned === 0 && skipped > 0;
+
   let verdict: VerdictValue;
   let capReason: string | null;
   if (violations > 0) {
     verdict = "failed";
     capReason = null;
+  } else if (allSkippedBlindspot) {
+    verdict = "skipped_blindspot";
+    // pytest-leg 先例在此置 capReason=null；本腿刻意保留 caps（全 skipped 场景仍可能
+    // 命中 tool_version_drifted）——cap 禁静默丢弃，flaky 除外（全 skipped 时不可表达）。
+    capReason = caps.length > 0 ? caps.join("+") : null;
   } else if (caps.length > 0) {
     verdict = "warning";
     capReason = caps.join("+");
@@ -1025,11 +1046,20 @@ export function normalizePlaywrightLeg(
     capReason = null;
   }
 
+  const filesScanned = specFiles.size;
+  const filesProduced = executedSpecFiles.size;
+
   const scopeNote =
     `能力面=确定性遍历（PRD §26.2 七项清单承载见 BROWSER_GATE_CHECKLIST_MAPPING；` +
     `页面加载/Console Error/Network Error 直接判卷，SPA Route/Login/核心流程经项目遍历套件 ` +
     `spec 覆盖——全 spec 结果重算不猜归类；D22①）；` +
-    `违规 ${String(violations)} 条（判卷锚=报告 ${plan.reportPath} 重算：失败 spec ${String(unexpected)} + console-error ${String(consoleEntries)} + network-error ${String(networkEntries)}）；` +
+    (allSkippedBlindspot
+      ? `盲区说明：报告 ${plan.reportPath} 的全部 test 均被跳过（skipped ${String(skipped)}，` +
+        `可执行分母 applicableScanned=0——遍历实际执行面为零，等同什么都没验），判 ` +
+        `skipped_blindspot 而非 passed（零分母禁当满分）；估计未检数 ` +
+        `uncheckedInBlindspotEstimated=${String(skipped)}；核对遍历环境为何全部 skipped ` +
+        `（浏览器未安装/条件跳过/配置漂移）后重跑（非绿非红，禁静默当通过）；`
+      : `违规 ${String(violations)} 条（判卷锚=报告 ${plan.reportPath} 重算：失败 spec ${String(unexpected)} + console-error ${String(consoleEntries)} + network-error ${String(networkEntries)}）；`) +
     `tests ${String(scanned)}（skipped ${String(skipped)} / flaky ${String(flaky)}）；` +
     `runner=playwright exit=${String(raw.exitCode)}（退出码非判卷锚）`;
 
@@ -1054,12 +1084,24 @@ export function normalizePlaywrightLeg(
       applicableScanned: scanned - skipped,
       violations,
       notApplicable: skipped,
+      // C1 盲区指标必附（kernel FATAL 校验同线）：估计未检数 = 被跳过的全部 test。
+      ...(allSkippedBlindspot ? { uncheckedInBlindspotEstimated: skipped } : {}),
     },
     blindspot: {
-      // 载体 = 报告文件本身（完整回读且可解析 + 双维度完整；维度外盲区由能力面声明承载）。
-      scanned: 1,
-      produced: 1,
-      escapeRatio: 0,
+      // 载体 = spec 文件（pytest-leg classname 载体粒度同款）：全 skipped 盲区态下
+      // produced=0 / escapeRatio=1（零载体有执行面），量化「报告产出了但什么都没验」。
+      scanned: filesScanned,
+      produced: filesProduced,
+      escapeRatio:
+        filesScanned === 0 ? 0 : (filesScanned - filesProduced) / filesScanned,
+      // C3 封条合规位：03 allOf「skipped_blindspot ⇒ blindspot.fixture_regression 必附」。
+      // 本腿的证据锚是盲区指标本身（被跳过 test 数=估计未检数），引用词形指向该计数——
+      // 不是虚构的回归 fixture 名（禁伪造证据引用；pytest-leg 同款词形）。
+      ...(allSkippedBlindspot
+        ? {
+            fixtureRegression: `PLAYWRIGHT_ALL_SKIPPED/unchecked_in_blindspot_estimated=${skipped}`,
+          }
+        : {}),
     },
     trust: {
       // 报告是工具测量输出而非自报判词；violations 由报告重算得出（C5，security 腿同款）。

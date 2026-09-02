@@ -61,6 +61,7 @@ import {
   coverageLegExecutable,
   coverageReportAbsolutePath,
   coverageSpawn,
+  pathEscapesProjectRoot,
   C8_METRIC_DIALECT,
   C8_TOOL_ID,
   C8_VERSION_PROBE_COMMAND,
@@ -768,6 +769,31 @@ export function createCrapGateAdapter(): GateAdapter<
       const externalMs = Math.max(0, Math.round(performance.now() - startedAt));
       if (plan.absenceKind !== null) {
         return { plan, outcome: "not_declared", externalMs };
+      }
+      // —— I6 读面容纳闸（coverage 腿写面闸 ②a 的 read-face 对应）：配置声明的报告
+      // 路径越出项目根 = 治理对象外的任意文件读取面——前置拒绝，禁读禁判。拒绝语义
+      // 经 readViolation 分词留痕（normalize 落 not_run，与「输入缺席」分开表述）。
+      const containmentViolation = (relative: string): string | null => {
+        if (relative.length === 0) {
+          return null; // 空路径交给既有缺席分支语义（不可读 → not_run）。
+        }
+        const absolute = pathJoin(plan.projectRoot, relative);
+        return pathEscapesProjectRoot(plan.projectRoot, absolute)
+          ? `CRAP 腿报告路径越出项目根：${relative}（解析为 ${absolute}）——读面容纳闸拒绝（I6；越根声明路径是治理对象外的任意文件读取面，禁读禁判）`
+          : null;
+      };
+      const readViolation =
+        containmentViolation(plan.complexityReportPath) ??
+        containmentViolation(plan.coverageReportPath);
+      if (readViolation !== null) {
+        const leg: CrapLegOutput = {
+          plan,
+          complexityText: null,
+          coverageText: null,
+          readViolation,
+          externalMs,
+        };
+        return { plan, outcome: "leg", leg, externalMs };
       }
       const readOrNull = (relative: string): string | null => {
         try {

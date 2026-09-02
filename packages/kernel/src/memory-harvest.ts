@@ -370,6 +370,11 @@ function validateLoadedEntry(record: unknown, path: string): InboxEntry {
   if (typeof entry.id !== "string" || !ID_PATTERN.test(entry.id)) {
     throw fail(`id 词形非法：${String(entry.id)}`, "inbox 条目 id 须 HM-<12hex>（内容寻址）；恢复 git 版本或删除该手改文件");
   }
+  // 顺序纪律（G8）：先类型校验再哈希——非字符串 text 若先入 inboxEntryIdOf 会在
+  // 哈希位裸 TypeError（裸崩通道），必须折叠为 SCHEMA_INVALID 显式拒收。
+  if (typeof entry.text !== "string" || entry.text.length === 0) {
+    throw fail("text 缺失或空（原文零改写铁律破坏）", "恢复 git 版本；inbox 条目必须承载原文");
+  }
   // 内容寻址完整性复核（装载面重算——判卷不信任落盘 id，C5 同源）：
   // 手改 text 保留旧 id 的条目在此 fail-closed（红队攻击面 2 的封条）。
   if (entry.id !== inboxEntryIdOf(entry.text)) {
@@ -380,9 +385,6 @@ function validateLoadedEntry(record: unknown, path: string): InboxEntry {
   }
   requireVocab(String(entry.source), HARVEST_SOURCE_VALUES, "source", "来源通路三值闭集");
   requireVocab(String(entry.scope), INBOX_SCOPE_VALUES, "scope", "PRD §44.10 --scope 两值");
-  if (typeof entry.text !== "string" || entry.text.length === 0) {
-    throw fail("text 缺失或空（原文零改写铁律破坏）", "恢复 git 版本；inbox 条目必须承载原文");
-  }
   if (!entry.proposal || typeof entry.proposal !== "object") {
     throw fail("proposal 缺失", "恢复 git 版本；条目必须携带分类提案块");
   }

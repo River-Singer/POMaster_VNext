@@ -105,6 +105,18 @@ describe("checkResearchWriteContract（§81.3 写面判卷）", () => {
     }
   });
 
+  it("对抗（审查 H6b）：纯反斜杠路径（无盘符）= FATAL path_not_portable（hint 与行为一致：拒收反斜杠，非静默归一）", () => {
+    // 死条件修复前：hint 宣称拒收反斜杠，实际 `research\\notes.md` 被静默归一为
+    // `research/notes.md` 放行。修复后原始输入含反斜杠即拒收（hint-行为一致）。
+    const outcome = checkResearchWriteContract(HOST, `${HOST}research\\notes.md`);
+    expect(outcome.allowed).toBe(false);
+    if (!outcome.allowed) {
+      expect(outcome.fatal).toBe(true);
+      expect(outcome.reason).toBe("path_not_portable");
+      expect(outcome.hint).toContain("反斜杠");
+    }
+  });
+
   it("对抗：受治理面八前缀逐一 FATAL governed_surface（Current Truth/policies/证据/执行与运行时平面）", () => {
     expect(RESEARCH_FORBIDDEN_SURFACE_PREFIXES).toEqual([
       ".pomaster/state/",

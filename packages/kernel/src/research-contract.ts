@@ -130,8 +130,13 @@ export function checkResearchWriteContract(
     };
   }
   const posix = toPosixSlashes(targetPath);
+  // H6b（二轮审查）：原首析取 `posix !== toPosixSlashes(posix.split("\\").join("/"))`
+  // 是恒假死条件（posix 已是归一产物，再归一必恒等）——hint 宣称拒收反斜杠，实际
+  // 对含反斜杠路径静默归一放行。取舍：改严为真实意图（原始输入含反斜杠即拒收），
+  // hint-行为一致优先于行为不变；全仓无测试钉「纯反斜杠路径归一放行」（唯一相关
+  // 钉面 D:\proj\src\x.vue 同时命中盘符闸，判卷结论不变），无既有钉面破坏。
   if (
-    posix !== toPosixSlashes(posix.split("\\").join("/")) ||
+    targetPath.includes("\\") ||
     /^[A-Za-z]:/.test(targetPath) ||
     posix.startsWith("/") ||
     posix.split("/").includes("..")

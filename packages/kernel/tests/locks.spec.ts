@@ -20,9 +20,9 @@
  *   concurrent-session-locks.spec.ts E 段）；原 execution 已封口的 steal 容忍
  *   （回收不因档案面状态阻塞、不伪造第二次封口事件）。
  */
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   acquireLock,
   attachSession,
@@ -41,6 +41,28 @@ import {
 } from "@pomaster/kernel";
 import { pathsOf } from "../src/paths.js";
 import { makeStore } from "./helpers.js";
+
+/**
+ * 并发窗口注入器（store.spec.ts 同款 vi.mock 委托式 hook）：默认 hidePath=null =
+ * 纯透传（本文件其余用例零影响）。G8 回归用 hidePath 让指定锁路径在 blockedOutcome
+ * 快照读取时消失（确定性复现 link-EEXIST 与读取之间的并发释放窗口，禁 flake）。
+ */
+const ioInterceptor = vi.hoisted(() => ({
+  hidePath: null as string | null,
+}));
+
+vi.mock("../src/io.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../src/io.js")>();
+  return {
+    ...actual,
+    readText: (path: string) => {
+      if (ioInterceptor.hidePath !== null && path === ioInterceptor.hidePath) {
+        rmSync(path, { force: true });
+      }
+      return actual.readText(path);
+    },
+  };
+});
 
 let root: string;
 let store: Store;
@@ -259,6 +281,62 @@ describe("stale 判定与显式接管（D2）", () => {
     });
     expect(checkLockFence(paths, "change-CHG-0042", 2)).toMatchObject({ outcome: "valid" });
     expect(checkLockFence(paths, "change-NOPE", 1)).toMatchObject({ outcome: "unknown_lock" });
+  });
+
+  it("锁周期代绑定（G4）：release→re-acquire 新周期上，同 fence 旧周期凭据 stale_fence（僵尸凭据回魂封条）；steal 过户周期代不变", async () => {
+    const paths = pathsOf(store);
+    await attachBoth();
+    const first = await acquireLock(store, { kind: "change", ref: "CHG-0042", sessionKey: A, now: T0 });
+    if (first.outcome !== "acquired") throw new Error("expect acquired");
+    const staleCycle = first.lock.cycle;
+    // 周期代是一次性随机位（16 字节 hex；runtime 侧车，非治理事实）。
+    expect(staleCycle).toMatch(/^[0-9a-f]{32}$/);
+    await releaseLock(store, "change-CHG-0042", A);
+    // 锁不在场：凭据不跨周期存续（既有语义——unknown_lock 非 stale_fence）。
+    expect(checkLockFence(paths, "change-CHG-0042", 1, staleCycle)).toMatchObject({
+      outcome: "unknown_lock",
+    });
+    // 新锁周期 fence 重置 1：裸 fence 数字撞上当前值 → 兼容词形 valid；携带旧周期代
+    // → stale_fence（G4 反例封条：fence 相等但周期代不匹配 = 跨周期复用的旧凭据）。
+    const second = await acquireLock(store, { kind: "change", ref: "CHG-0042", sessionKey: A, now: T0 + 1000 });
+    if (second.outcome !== "acquired") throw new Error("expect acquired");
+    expect(second.lock.fence).toBe(1);
+    expect(second.lock.cycle).not.toBe(staleCycle);
+    expect(checkLockFence(paths, "change-CHG-0042", 1)).toMatchObject({
+      outcome: "valid", currentCycle: second.lock.cycle,
+    });
+    expect(checkLockFence(paths, "change-CHG-0042", 1, staleCycle)).toMatchObject({
+      outcome: "stale_fence", currentFence: 1, currentCycle: second.lock.cycle,
+    });
+    expect(checkLockFence(paths, "change-CHG-0042", 1, second.lock.cycle)).toMatchObject({
+      outcome: "valid",
+    });
+    // steal 过户：周期代透传不变、fence +1——同周期旧 fence 凭据照常 stale_fence。
+    const stolen = await stealLock(store, {
+      lockId: "change-CHG-0042", sessionKey: B, reason: "接管", now: T0 + 2000,
+    });
+    expect(stolen.lock.cycle).toBe(second.lock.cycle);
+    expect(checkLockFence(paths, "change-CHG-0042", 1, second.lock.cycle)).toMatchObject({
+      outcome: "stale_fence",
+    });
+    expect(checkLockFence(paths, "change-CHG-0042", 2, second.lock.cycle)).toMatchObject({
+      outcome: "valid",
+    });
+  });
+
+  it("blocked 快照遇锁瞬态消失 → ENVIRONMENT_ERROR 显式可重试（G8 禁 as 断言后解引用 null 裸崩）", async () => {
+    await attachBoth();
+    await acquireLock(store, { kind: "change", ref: "CHG-VANISH", sessionKey: A, now: T0 });
+    // 注入：blockedOutcome 快照读取时锁文件恰好被并发方释放（link-EEXIST 与读取之间）。
+    // 路径拼法与 lockRecordPath 同形（buildStorePaths 用 / 拼接）。
+    ioInterceptor.hidePath = `${root}/.pomaster/runtime/locks/change-CHG-VANISH.lock`;
+    try {
+      await expect(
+        acquireLock(store, { kind: "change", ref: "CHG-VANISH", sessionKey: B, now: T0 + 1000 }),
+      ).rejects.toMatchObject({ code: "ENVIRONMENT_ERROR" });
+    } finally {
+      ioInterceptor.hidePath = null;
+    }
   });
 
   it("steal 无 reason → SCHEMA_INVALID（偷锁不可耻，也不可无声）；未知锁 → LOCK_NOT_FOUND", async () => {

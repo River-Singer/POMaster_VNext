@@ -23,13 +23,17 @@
  *   词表外）/ TRACE_ALREADY_SEALED（重复封存）；retention 词形不在 CLI 复制第二套
  *   词表闸（kernel VOCAB_INVALID_VALUE 唯一裁决位——CLI 零判卷的直接推论）；
  * - §45 双输出：--json 机读信封（toEnvelope 沿既有命令形态）；人读纯文本无颜色码；
- * - 零 GC 零 prune：OD-4「仅记录不执法」——本命令组没有删除面（诚实现状：无 GC）。
+ * - 零 GC 零 prune：OD-4「仅记录不执法」——本命令组没有删除面（诚实现状：无 GC）；
+ * - 纯读路径零写装载（审查 H3）：trace show 缺省投影与 trace list 自述「纯读零写」，
+ *   装载走 kernel loadStoreReadOnly（零写副作用）而非 createStore（其 ensureSidecars
+ *   会静默重建缺失侧车）——侧车缺失按「显式空/缺席」呈现；--seal 写面仍走 createStore。
  */
 import {
   compileExecutionTrace,
   createStore,
   GovernanceError,
   listSealedExecutionTraces,
+  loadStoreReadOnly,
   pathsOf,
   readSealedExecutionTrace,
   sealExecutionTrace,
@@ -175,7 +179,8 @@ export async function runTraceShow(
     }
   }
   try {
-    const store: Store = await createStore(rootDir);
+    // 纯投影零写装载（审查 H3）：不经 createStore（ensureSidecars 会静默重建缺失侧车）。
+    const store: Store = loadStoreReadOnly(rootDir);
     const paths = pathsOf(store);
     const sealedRecord = readSealedExecutionTrace(paths, executionId);
     if (sealedRecord !== null) {
@@ -229,7 +234,8 @@ export interface TraceListResult {
   }[];
 }
 
-/** `trace list`：封存 trace 清单（纯读零写；空 = 显式空）。 */
+/** `trace list`：封存 trace 清单（纯读零写——装载走 loadStoreReadOnly 零写副作用，
+ *  审查 H3；空/侧车缺失 = 显式空）。 */
 export async function runTraceList(rootDir: string): Promise<CommandOutcome<TraceListResult>> {
   const initialized = await requireInitialized(rootDir);
   if ("error" in initialized) {
@@ -241,7 +247,7 @@ export async function runTraceList(rootDir: string): Promise<CommandOutcome<Trac
     );
   }
   try {
-    const store: Store = await createStore(rootDir);
+    const store: Store = loadStoreReadOnly(rootDir);
     const rows = listSealedExecutionTraces(pathsOf(store));
     const result: TraceListResult = {
       traces: rows.map((row) => ({

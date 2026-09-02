@@ -12,7 +12,9 @@
  * 但 spawnSync(..., {shell:true}) 落到 cmd.exe 后，引号配对解析把后续整段 PATH 吞成
  * 一个 token，`node`/`python` 全部失联。pytestSpawn 显式剥离子进程 env 副本里 PATH 的
  * 双引号（绝不改写用户环境）；命令形态用 `python -m pytest`（entry-point shim 在
- * Windows 上的 PATH 依赖更脆，-m 调用只要包可导入即可执行）。
+ * Windows 上的 PATH 依赖更脆，-m 调用只要包可导入即可执行）。spawn maxBuffer 显式
+ * SPAWN_MAX_BUFFER_BYTES（64MB，I4 与 coverage/playwright/oasdiff 腿先例对齐——
+ * Node 默认 1MB 会被大 JUnit 报告 ENOBUFS 打断 → 结构性 not_run）。
  *
  * 判卷语义（C1/C5，与 vitest 腿同一条线）：
  * - recomputed（判卷唯一依据）= 从 <testcase> 逐条重算（failure/error→failed、
@@ -36,6 +38,7 @@ import { performance } from "node:perf_hooks";
 import type { GateCounts, GateResult } from "@pomaster/kernel";
 import type { VerdictValue } from "@pomaster/schemas";
 import type { GatePlan, GateResultRecord, SpawnFn, SpawnOutcome, ToolRunOutput } from "./adapter-types.js";
+import { SPAWN_MAX_BUFFER_BYTES } from "./adapter-types.js";
 import { absenceRecord, capItems } from "./normalize-common.js";
 import { sanitizeSemver, stripQuotesFromPathEnv } from "./detectors.js";
 
@@ -47,7 +50,7 @@ export const PYTEST_VERSION_PROBE_COMMAND = "python -m pytest --version";
 // spawn：PATH 引号消毒默认实现（消毒器住 detectors.ts，与 BROWSER smoke 共用）
 // ============================================================
 
-/** pytest 腿默认 spawn：PATH 消毒 + shell:true（Windows 下 python 为 PATH 解析）。 */
+/** pytest 腿默认 spawn：PATH 消毒 + shell:true + 显式 64MB maxBuffer（I4 P22 先例对齐）。 */
 export const pytestSpawn: SpawnFn = (command, options) => {
   const startedAt = performance.now();
   const sanitizedEnv = stripQuotesFromPathEnv({ ...process.env });
@@ -56,6 +59,8 @@ export const pytestSpawn: SpawnFn = (command, options) => {
     cwd: options.cwd,
     timeout: options.timeoutMs,
     encoding: "utf8",
+    // 显式 64MB（Node 默认 1MB 会被大 JUnit 报告 ENOBUFS 打断 → 结构性 not_run）。
+    maxBuffer: SPAWN_MAX_BUFFER_BYTES,
     windowsHide: true,
     env: sanitizedEnv,
   });
@@ -227,12 +232,26 @@ export function normalizePytestLeg(
   selfMs: number,
 ): GateResultRecord {
   if (raw.kind === "spawn_failed") {
-    return absenceRecord(plan, "not_run", null, selfMs, raw.externalMs);
+    // I3：failureReason 透传进 not_run 记录（缺席必须说清「为何没查」，禁 null 静默）。
+    return absenceRecord(
+      plan,
+      "not_run",
+      `${raw.failureReason ?? "pytest 子进程不可执行"}（not_run，非绿非红，禁静默当通过）`,
+      selfMs,
+      raw.externalMs,
+    );
   }
   const parsed = parseJUnitXml(raw.stdout);
   if (parsed === null) {
-    // 非法/空 JUnit XML（崩溃/被杀/报告缺失）——判卷不可能，not_run 是终局性诚实报告。
-    return absenceRecord(plan, "not_run", null, selfMs, raw.externalMs);
+    // 非法/空 JUnit XML（崩溃/被杀/报告缺失）——判卷不可能，not_run 是终局性诚实报告；
+    // run 期 failureReason 一并透传留痕（I3）。
+    return absenceRecord(
+      plan,
+      "not_run",
+      `pytest 腿输出不可判卷：非合法/空 JUnit XML（崩溃/被杀/报告缺失）${raw.failureReason === null ? "" : `；run 期原因：${raw.failureReason}`}——判卷不可能，not_run 是终局性诚实报告（非绿非红，禁静默当通过）`,
+      selfMs,
+      raw.externalMs,
+    );
   }
 
   // —— 观测版本优先落盘（03 tool_version 记录实际执行的工具；探测失败回退计划锚）——

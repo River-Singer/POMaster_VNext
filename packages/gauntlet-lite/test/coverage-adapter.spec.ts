@@ -38,6 +38,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   computeCrap,
   createCoverageAdapter,
+  createCrapGateAdapter,
   C8_METRIC_DIALECT,
   C8_TOOL_ID,
   COVERAGE_GATE_DEF,
@@ -1422,5 +1423,59 @@ describe("coverage × CRAP 同源对账（CRAP 地基语义：行口径入公式
     const linesPct = metrics?.linesPct ?? 0;
     // PRD §28.1：c=5, cov=0.4 → 25×(0.6)³+5 = 25×0.216+5 = 5.4+5 = 10.4。
     expect(computeCrap(5, linesPct / 100)).toBeCloseTo(10.4, 12);
+  });
+});
+
+// ============================================================
+// CRAP 腿读面容纳闸（I6：越根声明路径 = 治理对象外的任意文件读取面，禁读禁判）
+// ============================================================
+
+describe("CRAP 腿读面容纳闸（I6）", () => {
+  it("complexityReport 越出项目根 → run 侧禁读 + normalize not_run + scopeNote 带越根拒绝原因", () => {
+    // 越根目标真实存在且内容可判卷——守卫判据是「禁读」而非「读不到」：
+    // 若无容纳闸，本用例会读到合法复杂度 JSON 走判卷（越权读面静默生效）。
+    const outsideFile = join(dir, "..", "outside-complexity.json");
+    writeFileSync(outsideFile, JSON.stringify({ "src/a.ts": { complexity: 5 } }), "utf8");
+    try {
+      put(
+        "coverage-gate.json",
+        JSON.stringify({
+          runner: "c8",
+          command: "npm test",
+          crap: { complexityReport: "../outside-complexity.json", maxCrap: 30 },
+        }),
+      );
+      put("coverage/coverage-summary.json", c8Summary(40, 60));
+      const crapAdapter = createCrapGateAdapter();
+      const plan = crapAdapter.prepare(
+        { projectRoot: dir },
+        policy(),
+        platformDetectorFacts(dir),
+      );
+      expect(plan.absenceKind).toBeNull();
+      expect(plan.complexityReportPath).toBe("../outside-complexity.json");
+      const raw = crapAdapter.run(plan);
+      expect(raw.outcome).toBe("leg");
+      if (raw.outcome === "leg") {
+        expect(raw.leg.readViolation).toBeTruthy();
+        expect(raw.leg.readViolation).toMatch(/越出项目根/);
+        expect(raw.leg.complexityText).toBeNull();
+      }
+      const record = crapAdapter.normalize(raw, {});
+      expect(record.verdict).toBe("not_run");
+      expect(record.scopeNote).toMatch(/越出项目根/);
+      expect(record.scopeNote).toMatch(/容纳闸/);
+      expect(record.counts).toEqual({
+        scanned: 0,
+        applicableScanned: 0,
+        violations: 0,
+        notApplicable: 0,
+      });
+      const doc = toGateResultJson(record);
+      if (!validate(doc)) console.error(validate.errors);
+      expect(validate(doc)).toBe(true);
+    } finally {
+      rmSync(outsideFile, { force: true });
+    }
   });
 });

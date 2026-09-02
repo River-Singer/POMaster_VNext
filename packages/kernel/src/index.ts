@@ -269,6 +269,13 @@ export interface Store {
 export { createStore } from "./store.js";
 
 /**
+ * 纯读装载（零写副作用）：与 createStore 同源（01 校验同闸），但不补侧车、不建目录
+ * ——自述「纯读零写」的命令经本入口装载，存量 store 侧车缺失按「缺席」呈现，
+ * 禁静默重建空账（审查 H3；契约面见 store.ts 头注）。
+ */
+export { loadStoreReadOnly } from "./store.js";
+
+/**
  * 装载并校验 truth-index：01 schema 校验 + vocab_lock 三指纹对账（不一致=FATAL，
  * 属 D24 read_only_service 的 identity 抽验，非写阻断）+ REF_INTEGRITY 基础项。
  */
@@ -1826,4 +1833,5 @@ export type {
   DeclaredNegative,
   NegativeObservationInput,
   NegativeObservationOutcome,
+  NegativeObservationPreconditions,
 } from "./perception.js";

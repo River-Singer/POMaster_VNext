@@ -378,7 +378,7 @@ legal/    THIRD_PARTY_NOTICES · PROVENANCE · verify_notices
 
 ## 质量承诺
 
-- 全量套件 2940 用例（六类齐全：单元/集成/Golden/对抗/行为/自托管基准），数量下限进 CI 棘轮强制执行（只升不降）
+- 全量套件 3038 用例（六类齐全：单元/集成/Golden/对抗/行为/自托管基准），数量下限进 CI 棘轮强制执行（只升不降）
 - 任何已修缺陷类别必须先存在对应回归用例，才允许标注"结构性消灭"
 - CI 四腿（ubuntu/windows/macos/bootstrap-clean）+ mutation kill score 100%（changed-code scope）+ 三机器验证器（mutation --verify / notices / constitutional）
 

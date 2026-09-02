@@ -239,6 +239,26 @@ describe("knowledge record（候选登记通道；§25.3 + §83 上游 P18）", 
     expect(noFinding.ok).toBe(false);
     expect(noFinding.errors[0]?.code).toBe("SCHEMA_INVALID");
   });
+
+  it("对抗（审查 H6a）：findings 键存在但非数组 → INDEX_NOT_MACHINE_PARSEABLE（与 inspect B3 闸同码，禁静默折叠空数组）", async () => {
+    await runInit(root);
+    mkdirSync(join(root, "mytask", "research"), { recursive: true });
+    writeFileSync(
+      join(root, "mytask", "research", "index.yaml"),
+      JSON.stringify({ artifact_root: "mytask/research/", findings: { corrupted: true } }),
+      "utf8",
+    );
+    const outcome = await runKnowledgeRecord(root, {
+      id: "KNOWLEDGE.FE.X.Y",
+      kind: "ENGINEERING_PATTERN",
+      fromResearch: "mytask/research/",
+      finding: 1,
+      actor: "agent:curator",
+    });
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors[0]?.code).toBe("INDEX_NOT_MACHINE_PARSEABLE");
+    expect(outcome.errors[0]?.message).toContain("字段损坏");
+  });
 });
 
 describe("knowledge review-candidates（§83.10 等待面）", () => {

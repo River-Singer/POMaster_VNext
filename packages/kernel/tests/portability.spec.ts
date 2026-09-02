@@ -327,6 +327,18 @@ describe("runPortabilityChecks（§85.2 八项；PASS/FAIL/NOT_RUN 显式）", (
     expect(row.detail).toContain("正文缺失");
     expect(row.detail).toContain("TASK.T0001");
   });
+
+  it("journal 整文件缺席 → active_task_recovery FAIL（缺席显式原则——G3：行损坏→FAIL 与整文件缺席→PASS 的不对称是假绿）", async () => {
+    const { root } = await makeRichStore();
+    rmSync(join(root, ".pomaster", "state", "journal.jsonl"), { force: true });
+    const rows = runPortabilityChecks(root, {
+      harnessMemoryRoots: harnessRootsUnder(root, false),
+    });
+    const row = statusOf(rows, "active_task_recovery");
+    expect(row.status).toBe("FAIL");
+    expect(row.detail).toContain("journal.jsonl 缺席");
+    expect(row.detail).toContain("应存在而缺席");
+  });
 });
 
 // ============================================================

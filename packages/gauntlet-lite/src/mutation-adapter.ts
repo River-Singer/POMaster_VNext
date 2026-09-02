@@ -7,7 +7,7 @@
  *    mutmut 词形：{"runner":"mutmut","command":"python -m mutmut run ... && python -m mutmut junitxml > mutants.xml"},
  *    "changedFiles":["src/calc.ts","src/edge.ts"],                    // 必填（changed-code scope 分母）
  *    "report":"reports/mutation/mutation.json",                       // 可选（缺省按 runner）
- *    "thresholds":{"minKillScore":85,"maxSurvivors":10}}              // 可选（缺省=provisional 出厂兜底，待 A4）
+ *    "thresholds":{"minKillScore":85,"maxSurvivors":10}}              // 可选（缺省=出厂兜底 85/10——已经 Owner 决议 2026-09-01 批准转正；后续调整走本字段配置化覆盖）
  *
  * - detect = 配置 + runner 工具探测（detectStryker: package.json @stryker-mutator/core
  *   声明，c8 同款；detectMutmut: pyproject [tool.mutmut] / setup.cfg [mutmut]，run 期
@@ -86,7 +86,7 @@ export const MUTATION_CONFIG_HINT =
   'Python 腿（D17 先行）{"runner":"mutmut","command":"<mutmut run 与 junitxml 导出的组合命令>","changedFiles":["<变更文件>"]}（需 pyproject [tool.mutmut] 或 setup.cfg [mutmut] + policy 版本锚）；' +
   '"changedFiles" 必填非空（changed-code scope 分母——命令面旗标 + 判卷面逐条复核双重强制，见随版计划 B2-3）；' +
   '可选 "report"（缺省 stryker=reports/mutation/mutation.json / mutmut=mutants.xml）、' +
-  '"thresholds":{"minKillScore":85,"maxSurvivors":10}（缺省=provisional 出厂兜底，待 A4 打包批准）；' +
+  '"thresholds":{"minKillScore":85,"maxSurvivors":10}（缺省=出厂兜底 85/10——已经 Owner 决议 2026-09-01 批准转正，A4 阈值包：minKillScore 锚测试战略 L6-1、maxSurvivors 一并获批；后续调整走本字段配置化覆盖）；' +
   "MUTATION gate 是 HARDENING 档专属（随版计划 B2-3 原文）：MINIMAL/LIGHT/FAST/STANDARD 档合法缺席；" +
   "未声明是诚实缺席（not_configured），不会被记为通过";
 
@@ -103,7 +103,7 @@ export interface MutationGateConfig {
   readonly changedFiles: readonly string[];
   /** 报告落点声明（可选；null=runner 缺省）。 */
   readonly report: string | null;
-  /** 阈值（可选；null=provisional 出厂兜底 85/10，待 A4 打包批准）。 */
+  /** 阈值（可选；null=出厂兜底 85/10——已经 Owner 决议 2026-09-01 批准转正；后续调整走本字段配置化覆盖）。 */
   readonly thresholds: MutationThresholds | null;
 }
 

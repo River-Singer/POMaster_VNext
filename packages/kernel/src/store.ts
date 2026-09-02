@@ -188,6 +188,30 @@ function fileIfMissing(path: string, next: string): FileWrite {
   return { path, next, original: captureOriginal(path) };
 }
 
+/**
+ * 纯读装载路径（二轮审查 H3）：与 createStore 同源（buildStorePaths + readRawIndex +
+ * validateRawIndex——损坏索引照样 fail-closed），但**零写副作用**——不 ensureSidecars、
+ * 不建平面目录。自述「纯读零写」的命令（session/lock/execution/trace 观测面、agents
+ * status）经本入口装载：存量 store 侧车缺失按「缺席」呈现（丢失信号可见），禁静默
+ * 重建空账（inspect.ts 先例的 kernel 侧落点）。未初始化 → NOT_CONFIGURED。
+ */
+export function loadStoreReadOnly(rootDir: string): Store {
+  const paths = buildStorePaths(rootDir);
+  const raw = readRawIndex(paths);
+  if (raw === null) {
+    throw new GovernanceError(
+      "NOT_CONFIGURED",
+      "store 未初始化（state/truth-index.json 缺失）",
+      "先跑 createStore(rootDir) 完成骨架初始化（No-op is elegant）",
+      { rootDir },
+    );
+  }
+  validateRawIndex(paths, raw);
+  const store: Store = { rootDir, currentSeq: seqOfRaw(raw) };
+  registerStore(store, paths);
+  return store;
+}
+
 /** 已存在 store 的内部侧车补齐（仅缺失才写；不产生治理事实）。 */
 function ensureSidecars(paths: StorePaths): void {
   const writes: FileWrite[] = [];

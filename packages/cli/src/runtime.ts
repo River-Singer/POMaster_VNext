@@ -16,6 +16,10 @@
  *   permit check「非 allow 一律 exit 1」先例；
  * - 墙钟注入点（now/started_at）不进 CLI 面：盖章语义 = 基础设施印时刻，argv 申报
  *   即会话自报（D 线 S1「永不信任会话自报」）；测试确定性走 kernel API 直调；
+ * - 纯读命令零写装载（审查 H3）：session/lock/execution list 自述「纯读零写」，
+ *   装载走 kernel loadStoreReadOnly（零写副作用）而非 createStore（其 ensureSidecars
+ *   会在侧车缺失的存量 store 上静默重建空账，丢失信号被吞）——侧车缺失按「显式空/
+ *   缺席」呈现；
  * - 局部词（LOCK_BLOCKED、liveness 两值、execution 呈现两态）均带 TODO(vocab-pr)
  *   注记，禁私加 vocab.ts 主表（呈报项见 docs/wave3-p20-sec79-backfill-44-8.md）。
  */
@@ -31,6 +35,7 @@ import {
   listExecutionRecords,
   listLocks,
   listSessionRecords,
+  loadStoreReadOnly,
   pathsOf,
   refreshSession,
   releaseLock,
@@ -304,7 +309,8 @@ export interface SessionListResult {
   }[];
 }
 
-/** `session list`：会话清单（记录 + liveness 并排；纯读零写；空 = 显式空）。 */
+/** `session list`：会话清单（记录 + liveness 并排；纯读零写——装载走 loadStoreReadOnly
+ *  零写副作用，审查 H3；空/侧车缺失 = 显式空）。 */
 export async function runSessionList(
   rootDir: string,
 ): Promise<CommandOutcome<SessionListResult>> {
@@ -313,7 +319,7 @@ export async function runSessionList(
     return notInitializedFail("session list", initialized.error, { sessions: [] });
   }
   try {
-    const store = await createStore(rootDir);
+    const store = loadStoreReadOnly(rootDir);
     const rows = listSessionRecords(pathsOf(store));
     const result: SessionListResult = {
       sessions: rows.map((row) => ({
@@ -630,14 +636,15 @@ export interface LockListResult {
   }[];
 }
 
-/** `lock list`：锁清单（记录 + liveness 并排；纯读零写；空 = 显式空）。 */
+/** `lock list`：锁清单（记录 + liveness 并排；纯读零写——装载走 loadStoreReadOnly
+ *  零写副作用，审查 H3；空/侧车缺失 = 显式空）。 */
 export async function runLockList(rootDir: string): Promise<CommandOutcome<LockListResult>> {
   const initialized = await requireInitialized(rootDir);
   if ("error" in initialized) {
     return notInitializedFail("lock list", initialized.error, { locks: [] });
   }
   try {
-    const store = await createStore(rootDir);
+    const store = loadStoreReadOnly(rootDir);
     const rows = listLocks(pathsOf(store));
     const result: LockListResult = {
       locks: rows.map((row) => ({
@@ -814,7 +821,8 @@ export interface ExecutionListResult {
   }[];
 }
 
-/** `execution list`：执行身份档案清单（纯读零写；空 = 显式空）。 */
+/** `execution list`：执行身份档案清单（纯读零写——装载走 loadStoreReadOnly 零写副
+ *  作用，审查 H3；空/侧车缺失 = 显式空）。 */
 export async function runExecutionList(
   rootDir: string,
 ): Promise<CommandOutcome<ExecutionListResult>> {
@@ -823,7 +831,7 @@ export async function runExecutionList(
     return notInitializedFail("execution list", initialized.error, { executions: [] });
   }
   try {
-    const store = await createStore(rootDir);
+    const store = loadStoreReadOnly(rootDir);
     const records = listExecutionRecords(pathsOf(store));
     const result: ExecutionListResult = {
       executions: records.map((record) => ({

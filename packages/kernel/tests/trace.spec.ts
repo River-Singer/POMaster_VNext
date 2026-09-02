@@ -297,6 +297,41 @@ describe("compileExecutionTrace（投影派生）", () => {
     );
   });
 
+  it("收据缺键显式 fail-closed（G8）：gate_result inline 抽键 → SCHEMA_INVALID（禁 String()/Number() 强转出 \"undefined\"/NaN 垃圾收据）", async () => {
+    await seedObject();
+    const record = await beginExecution(store, { ...BASE, startedAt: "2026-08-30T00:00:00.000Z" });
+    await applyTransaction(store, {
+      ops: [{
+        op: "record_gate_run",
+        run: {
+          grn: "GRN-0008",
+          trigger: "on_demand",
+          executionId: record.execution_id,
+          result: gateResultFixture("GRN-0008"),
+        },
+      }],
+    });
+    // 手改抽键（tool / ran_at_seq）——原实现强转产出 tool:"undefined"、ran_at_seq:NaN
+    // 垃圾收据行；修复后缺键清单显式入 SCHEMA_INVALID details。
+    const runPath = join(root, ".pomaster", "evidence", "runs", "GRN-0008.json");
+    const tampered = JSON.parse(readFileSync(runPath, "utf8")) as {
+      gate_result: { result: Record<string, unknown> };
+    };
+    delete tampered.gate_result.result.tool;
+    delete tampered.gate_result.result.ran_at_seq;
+    writeFileSync(runPath, `${JSON.stringify(tampered, null, 2)}\n`, "utf8");
+    let thrown: unknown = null;
+    try {
+      compileExecutionTrace(pathsOf(store), record.execution_id);
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toMatchObject({ code: "SCHEMA_INVALID" });
+    const message = String((thrown as { message?: string }).message);
+    expect(message).toContain("gate_result.result.tool");
+    expect(message).toContain("gate_result.result.ran_at_seq");
+  });
+
   it("Case A（§16）：未登记身份 → EXECUTION_NOT_FOUND；EXEC-* 第二词形 → SCHEMA_INVALID（禁自造身份）", async () => {
     const paths = pathsOf(store);
     expect(() => compileExecutionTrace(paths, "AGX-2026-09999")).toThrow(

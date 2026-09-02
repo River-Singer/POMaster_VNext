@@ -229,6 +229,21 @@ describe("browser adapter：MCP 证据三件套判卷（P26 升级）", () => {
     expect(validate(doc)).toBe(true);
   });
 
+  it("三件齐备 + 1 条坏形杂讯条目 → passed 但问题明细呈报进 scopeNote（I5：complete=true 与 problems 非空可并存，禁静默丢弃）", () => {
+    // 三件套齐（complete=true）+ 第 4 条非 {tool, content[]} 词形杂讯 → 归一化产生
+    // problems 但判 passed——此前该分支静默吞掉 problems，明细必须可见（I5）。
+    const evidence = [...fullEvidence(), { garbage: true }];
+    const { record } = runWithEvidence(evidence);
+    expect(record.verdict).toBe("passed");
+    expect(record.scopeNote).toContain("问题明细");
+    expect(record.scopeNote).toContain("(entry-3)");
+    expect(record.scopeNote).toContain("条目词形非 {tool: string, content: array}");
+    // 03 序列化面同步可见（scope.note 是唯一明细位——items 仍空，无违规）。
+    const doc = toGateResultJson(record);
+    const scope = doc["scope"] as Record<string, unknown> | undefined;
+    expect(String(scope?.["note"])).toContain("问题明细");
+  });
+
   it("缺 screenshot → not_run（证据不完整=判卷不完整，非绿非红非默认值）+ 缺件词形入 scopeNote", () => {
     const evidence = fullEvidence().filter(
       (entry) => (entry as { tool: string }).tool !== "take_screenshot",

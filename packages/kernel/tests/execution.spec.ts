@@ -16,9 +16,9 @@
  * - 兼容裁定（decisions）：evidence 记录 execution_id 可选（存量零迁移）+ record 通路
  *   携带即强制校验（store.applyRecordClaim / applyRecordGateRun 联测）——缺席不伪造。
  */
-import { readFileSync, readdirSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
-import { beforeEach, describe, expect, it } from "vitest";
+import { readFileSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   applyTransaction,
   assertExecutionAttachable,
@@ -35,6 +35,27 @@ import {
 } from "@pomaster/kernel";
 import { pathsOf } from "../src/paths.js";
 import { AGENT, makeStore } from "./helpers.js";
+
+/**
+ * 并发窗口注入器（store.spec.ts 同款 vi.mock 委托式 hook）：默认 null = 纯透传
+ * （本文件其余用例零影响）。G2 回归在 captureOriginal（beginExecution 落盘前复核位）
+ * 上注入并发方落位动作，确定性复现「开卷检查通过 → 复核时对手已在盘」交错（不依赖
+ * OS 时序，禁 flake）。
+ */
+const ioInterceptor = vi.hoisted(() => ({
+  onCaptureOriginal: null as ((path: string) => void) | null,
+}));
+
+vi.mock("../src/io.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../src/io.js")>();
+  return {
+    ...actual,
+    captureOriginal: (path: string) => {
+      ioInterceptor.onCaptureOriginal?.(path);
+      return actual.captureOriginal(path);
+    },
+  };
+});
 
 let root: string;
 let store: Store;
@@ -111,6 +132,37 @@ describe("beginExecution（§25.4 登记）", () => {
     await expect(
       beginExecution(store, { ...BASE, identityKind: "daemon", startedAt: "2026-08-30T00:00:00.000Z" }),
     ).rejects.toMatchObject({ code: "VOCAB_INVALID_VALUE" });
+  });
+
+  it("落盘前复核（G2，A1 同族）：开卷检查后、落盘前插入并发同号写入 → EXECUTION_ALREADY_EXISTS 拒绝且先写者档案字节不变", async () => {
+    // 路径拼法与 executionRecordPath 同形（buildStorePaths 用 / 拼接——join 的 \
+    // 在 Windows 上与拦截目标字符串不相等）。
+    const target = `${root}/.pomaster/executions/AGX-2026-00777.json`;
+    // 并发先写者档案（在 beginExecution 的「检查-落盘」窗口内落位）。
+    const concurrentRecord = {
+      execution_id: "AGX-2026-00777",
+      schema: "pomaster.execution/v1",
+      role: "orchestrator",
+      started_at: "2026-08-30T00:00:00.000Z",
+    };
+    const concurrentBytes = `${JSON.stringify(concurrentRecord, null, 2)}\n`;
+    ioInterceptor.onCaptureOriginal = (path) => {
+      if (path === target) {
+        mkdirSync(dirname(target), { recursive: true });
+        writeFileSync(target, concurrentBytes, "utf8");
+      }
+    };
+    try {
+      await expect(
+        beginExecution(store, { ...BASE, executionId: "AGX-2026-00777", startedAt: "2026-08-30T00:01:00.000Z" }),
+      ).rejects.toMatchObject({ code: "EXECUTION_ALREADY_EXISTS" });
+    } finally {
+      ioInterceptor.onCaptureOriginal = null;
+    }
+    // 先写者档案字节不变（后写者零覆写——检查-落盘窗口封条）。
+    expect(readFileSync(target, "utf8")).toBe(concurrentBytes);
+    // 拒绝零副作用：journal 无 EXECUTION_BEGUN（本请求零落盘零事件）。
+    expect(journalEvents().some((event) => event.type === "EXECUTION_BEGUN")).toBe(false);
   });
 
   it("session_key 在场须已 attach（SESSION_NOT_FOUND）；session_key + harness 成对纪律", async () => {
@@ -197,6 +249,14 @@ describe("读取与分配（listExecutionRecords / allocateExecutionId / readExe
     const byId = readExecutionRecordById(paths, first.execution_id);
     expect(byId?.started_at).toBe("2026-08-30T00:00:00.000Z");
     expect(readExecutionRecordById(paths, "AGX-2026-09999")).toBeNull();
+  });
+
+  it("清单损坏档案 → SCHEMA_INVALID（头注承诺的 fail-closed，G8 禁裸 SyntaxError）", async () => {
+    await beginExecution(store, { ...BASE, startedAt: "2026-08-30T00:00:00.000Z" });
+    writeFileSync(join(root, ".pomaster", "executions", "AGX-2026-09999.json"), "{broken", "utf8");
+    expect(() => listExecutionRecords(pathsOf(store))).toThrow(
+      expect.objectContaining({ code: "SCHEMA_INVALID" }),
+    );
   });
 });
 

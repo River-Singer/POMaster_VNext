@@ -23,7 +23,7 @@
       "capabilities",
       "applicability_note"
     ],
-    "basis": "正文『平台 Owner 维护 HTTP Client、业务 Owner 维护 Domain API、契约 Owner 维护数据源』——请求族/API 契约域权属锚词面明确（Benchmark A 泄漏实测后补标，2026-09-01）"
+    "basis": "正文『平台 Owner 维护 HTTP Client，领域 Owner 维护 Domain API，契约 Owner 维护类型来源』（frontend-hard-spec 15-request-api-protocol.md L71 逐字）——请求族/API 契约域权属锚词面明确（Benchmark A 泄漏实测后补标，2026-09-01；I9② 2026-09-02 修正引文与源文逐字对齐：原『业务 Owner/数据源』为失真转述）"
   },
   "id": "AUTHORITY.WEB.API.REQUEST_OWNERS",
   "kind": "policy",

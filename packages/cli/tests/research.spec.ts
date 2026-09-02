@@ -410,6 +410,12 @@ describe("research inspect（§44.3；§81.4 判卷呈现）", () => {
     expect(outcome.ok).toBe(false);
     expect(outcome.human.join()).toContain("ARTIFACT_INCOMPLETE");
     expect(outcome.human.join()).toContain("risks-and-caveats.md");
+    // H1（二轮审查 §45 机读契约）：ok=false 必带非空 errors——缺失码位
+    // RESEARCH_ARTIFACT_INCOMPLETE 进 errors[0]，hint 携带缺失清单（机读方可取因）。
+    expect(outcome.errors).toHaveLength(1);
+    expect(outcome.errors[0]?.code).toBe("RESEARCH_ARTIFACT_INCOMPLETE");
+    expect(outcome.errors[0]?.message).toContain("risks-and-caveats.md");
+    expect(outcome.errors[0]?.hint).toContain("risks-and-caveats.md");
   });
 
   it("对抗（发现1 钉子）：AUTHORITATIVE 零 sources/零 caveats → RESEARCH_FINDING_INVALID + all_ok=false（幻觉洗白不放行）", async () => {

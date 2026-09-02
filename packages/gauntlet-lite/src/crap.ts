@@ -201,6 +201,11 @@ export interface CrapLegOutput {
   readonly complexityText: string | null;
   /** 覆盖率报告文本；null = 不可读（缺输入 → not_run 非默认值）。 */
   readonly coverageText: string | null;
+  /**
+   * I6 读面容纳闸拒绝原因（非空 = 配置声明的报告路径越出项目根，run 侧禁读禁判；
+   * null/缺席 = 无越权面）。与「输入缺席」分词：拒绝是治理语义，缺席是产出语义。
+   */
+  readonly readViolation?: string | null;
   readonly externalMs: number;
 }
 
@@ -236,6 +241,18 @@ export function normalizeCrapLeg(raw: CrapLegOutput, selfMs: number): GateResult
       plan,
       "blocked",
       `CRAP 腿收到合法缺席档位 tier=${plan.tier}——MINIMAL/LIGHT/FAST 应在 prepare 层 policy_skip 短路，到达 normalize 即管线契约破坏（blocked，禁静默）`,
+      selfMs,
+      raw.externalMs,
+    );
+  }
+
+  // —— I6 读面容纳闸拒绝态：越根路径 run 侧已禁读（读面拒绝 ≠ 输入缺席，分词留痕；
+  // 越根声明路径是治理对象外的任意文件读取面，禁读禁判，落 not_run 非绿非红）。
+  if (raw.readViolation != null && raw.readViolation.length > 0) {
+    return absenceRecord(
+      plan,
+      "not_run",
+      `${raw.readViolation}（not_run，非绿非红，禁静默当通过）`,
       selfMs,
       raw.externalMs,
     );

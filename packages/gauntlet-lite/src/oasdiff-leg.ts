@@ -4,13 +4,20 @@
  * 「oasdiff → CONTRACT | OpenAPI breaking-change diff」）。
  *
  * 职责边界（run + normalize；探测归 detectors.detectOasdiff，声明解析归 contract-adapter）：
- * - run：两次 spawn（pytest-leg 同款两段式）——
- *   ① `oasdiff --version` 版本探测（观测值与 policy 版本锚对账，C5 孪生；探测失败 →
- *   spawn_failed → not_run，禁猜测版本口径）；
+ * - run：三道闸前两闸 + 真执行（schemathesis/playwright 腿同款三道闸惯例）——
+ *   ①a 可执行体 PATH 探测（Windows cmd 缺席以 status=1+error=null 伪装执行失败，
+ *   spawn 前先证在位）→ spawn_failed → not_run；
+ *   ①b `oasdiff --version` 版本探测语义收紧（退出 0 **且**报出 semver 词形才算可执行；
+ *   观测值与 policy 版本锚对账，C5 孪生；探测失败 → spawn_failed → not_run，禁猜测
+ *   版本口径）；
  *   ② `oasdiff breaking --format json <base> <current>` 真执行（第三方文本止步于此）。
  * - normalize：七态判卷。判卷依据（C5 重算权威）与事实锚：
  *   · 退出码语义是 oasdiff 官方 CI 契约（oasdiff.com CLI 文档）：0 = 无 breaking changes、
  *   1 = 有 breaking changes；其余退出码（含 Go panic 的 101）= 工具执行错误 → not_run。
+ *   · exit 1 且明细不可解析（stdout 非合法 JSON 词形——panic 文本/垃圾输出）= 损坏
+ *   工具形态 → not_run（非绿非红；诚实下限只属于「输出词形合法」的场景，把损坏误判
+ *   成 failed 是假红）；exit 1 且明细可解析但为空 = 官方退出码已证有 breaking →
+ *   violations=1 诚实下限 + 留痕 failed。
  *   · violations = stdout JSON 明细的宽容重算（extractBreakingChanges：遍历 JSON 树收集
  *   叶子条目——oasdiff 各版本 JSON 形态按 breaking 类型分键且键名随版本演进，宽容提取器
  *   对形态漂移稳健且零第三方依赖 D13）；明细>0 → failed；明细=0 且 exit 1 → failed
@@ -27,7 +34,8 @@
  * - 版本探测 stdout 词形漂移：`oasdiff --version` 的输出词形随版本演进，sanitizeSemver
  *   不可提取 → observed=null——此时回退计划锚 plan.toolVersion 落盘（03 tool_version
  *   记录计划面锚），tool_version_drifted cap 不触发（观测缺席 = 漂移不可证，禁不可证
- *   指控）；run 侧版本探测仅在 spawn 层失败（error/status null）才 not_run。
+ *   指控）；run 侧版本探测语义收紧后（退出 0 且 semver 词形，I2），词形漂移即
+ *   spawn_failed → not_run（损坏工具禁继续真跑判卷）。
  * - extractBreakingChanges 宽容遍历的假红面：对 JSON 树的全叶收集在未来词形引入
  *   「非明细标量键」（如 meta/summary 标量叶子）时会误计为明细——该面偏严不偏假绿
  *   （violations 虚增只走 failed 方向），且 exit 0 矛盾检查（C5 重算权威）会把
@@ -45,6 +53,7 @@ import { performance } from "node:perf_hooks";
 import type { GateResult } from "@pomaster/kernel";
 import type { RunTriggerValue, VerdictValue } from "@pomaster/schemas";
 import type {
+  ExecutableProbeFn,
   GateDenominatorRefInput,
   GateResultItemInput,
   GateResultRecord,
@@ -52,7 +61,12 @@ import type {
   SpawnOutcome,
 } from "./adapter-types.js";
 import { SPAWN_MAX_BUFFER_BYTES } from "./adapter-types.js";
-import { sanitizeSemver, stripQuotesFromPathEnv } from "./detectors.js";
+import {
+  firstCommandToken,
+  platformExecutableProbe,
+  sanitizeSemver,
+  stripQuotesFromPathEnv,
+} from "./detectors.js";
 import { absenceRecord, capItems } from "./normalize-common.js";
 
 export const OASDIFF_TOOL_ID = "gauntlet:oasdiff";
@@ -109,6 +123,8 @@ export interface OasdiffLegPlan {
   /** 真执行命令（含引号包裹的 base/current 绝对路径；prepare 组装）。 */
   readonly command: string;
   readonly versionProbeCommand: string;
+  /** gate ①a 可执行体词形（版本探测命令首 token；schemathesis 腿同款）。 */
+  readonly executable: string;
   readonly timeoutMs: number;
   /** 仓内相对路径（items.location 与 scopeNote 的可移植词形）。 */
   readonly basePath: string;
@@ -129,17 +145,49 @@ export type OasdiffLegOutput = {
   readonly failureReason: string | null;
 };
 
-/** oasdiff 腿执行：版本探测 + breaking diff 真跑（pytest-leg 两段式同款）。 */
+/** oasdiff 腿 gate ①a 可执行体（firstCommandToken 同源；schemathesis 腿先例）。 */
+export function oasdiffLegExecutable(versionProbeCommand: string): string {
+  return firstCommandToken(versionProbeCommand);
+}
+
+/**
+ * oasdiff 腿执行：可执行体前置闸 + 版本探测收紧 + breaking diff 真跑
+ * （schemathesis/playwright 腿三道闸惯例同款；I2 对齐——此前缺闸 ①a 且 ①b 未收紧，
+ * 损坏工具（exit 1 + 非法输出词形）会一路走到判卷被误读）。
+ */
 export function runOasdiffLeg(
   plan: OasdiffLegPlan,
   spawnFn: SpawnFn = oasdiffSpawn,
+  executableProbe: ExecutableProbeFn = platformExecutableProbe,
 ): OasdiffLegOutput {
+  // —— 前置闸①a：可执行体 PATH 探测（Windows cmd 缺席以 status=1+error=null 伪装）。
+  const probeHit = executableProbe(plan.executable);
+  if (probeHit === null) {
+    return {
+      plan,
+      kind: "spawn_failed",
+      exitCode: null,
+      stdout: "",
+      stderr: "",
+      observedToolVersion: null,
+      externalMs: 0,
+      failureReason: `oasdiff 腿可执行体 ${plan.executable} 不在 PATH（工具缺席——Windows cmd 下会以 status=1+error=null 伪装成执行失败，故 spawn 前先证在位）；hint: 按探测面安装指引安装后重跑`,
+    };
+  }
+
+  // —— 前置闸①b：版本探测语义收紧（退出 0 且报出 semver 词形才算可执行）。
   const probeTimeoutMs = Math.min(plan.timeoutMs, 60_000);
   const probe: SpawnOutcome = spawnFn(plan.versionProbeCommand, {
     cwd: plan.projectRoot,
     timeoutMs: probeTimeoutMs,
   });
-  if (probe.error !== null || probe.status === null) {
+  const observedToolVersion = sanitizeSemver(probe.stdout);
+  if (
+    probe.error !== null ||
+    probe.status === null ||
+    probe.status !== 0 ||
+    observedToolVersion === null
+  ) {
     return {
       plan,
       kind: "spawn_failed",
@@ -148,10 +196,9 @@ export function runOasdiffLeg(
       stderr: probe.stderr,
       observedToolVersion: null,
       externalMs: probe.externalMs,
-      failureReason: `oasdiff 版本探测失败（status=${String(probe.status)}, error=${probe.error ?? "unknown"}）——oasdiff 不可执行；hint: 按探测面指引安装后重跑`,
+      failureReason: `oasdiff 版本探测失败（status=${String(probe.status)}, error=${probe.error ?? "unknown"}, 版本词形${observedToolVersion === null ? "不可得" : "可得"}）——工具缺席或损坏（Windows cmd 缺席形态即 status=1+error=null）；hint: 按探测面指引安装后重跑`,
     };
   }
-  const observedToolVersion = sanitizeSemver(probe.stdout);
 
   const run: SpawnOutcome = spawnFn(plan.command, {
     cwd: plan.projectRoot,
@@ -323,17 +370,28 @@ export function normalizeOasdiffLeg(
       violations = extracted.length;
       items = extracted;
       scopeNote = `${exitNote}；明细重算 ${extracted.length} 条（base=${plan.basePath} current=${plan.currentPath}）`;
+    } else if (extracted === null) {
+      // I2：exit 1 + stdout 非合法 JSON 词形（panic 文本/垃圾输出）= 损坏工具形态
+      // → not_run。「诚实下限 1」的前提是输出词形合法——把损坏工具的无效输出判成
+      // failed violations=1 是假红（把工具执行错误记成业务违规账）。
+      return absenceRecord(
+        plan,
+        "not_run",
+        `${exitNote} 且 stdout 明细不可解析（非合法 JSON 词形——损坏工具形态，如 panic 文本/垃圾输出；诚实下限只属于输出词形合法的场景，工具执行错误落 not_run）；stderr 摘录：${stderrSnippet || "(空)"}；stdout 摘录：${truncate(raw.stdout.slice(0, STDERR_SNIPPET_CHARS)) || "(空)"}（not_run，非绿非红，禁静默当通过）`,
+        selfMs,
+        raw.externalMs,
+      );
     } else {
-      // 明细不可得（不可解析 / 空 JSON）：退出码已证有 breaking → 诚实下限 1 + 留痕。
+      // 明细可解析但为空：退出码（官方 CI 契约词形）已证有 breaking → 诚实下限 1 + 留痕。
       violations = 1;
       items = [
         {
           rule: "oasdiff_breaking_change",
           location: plan.currentPath,
-          message: `oasdiff 报告存在 breaking changes，但明细${extracted === null ? "不可解析" : "为空"}；stdout 摘录：${truncate(raw.stdout.slice(0, STDERR_SNIPPET_CHARS)) || "(空)"}`,
+          message: `oasdiff 报告存在 breaking changes（官方退出码语义），但明细为空；stdout 摘录：${truncate(raw.stdout.slice(0, STDERR_SNIPPET_CHARS)) || "(空)"}`,
         },
       ];
-      scopeNote = `${exitNote} 且明细${extracted === null ? "不可解析" : "为空"}——violations 取诚实下限 1（base=${plan.basePath} current=${plan.currentPath}）`;
+      scopeNote = `${exitNote} 且明细为空——violations 取诚实下限 1（base=${plan.basePath} current=${plan.currentPath}）`;
     }
   } else {
     // 其余退出码（spec 加载失败 / Go panic 101 / 版本词形变更）= 工具执行错误 → not_run。

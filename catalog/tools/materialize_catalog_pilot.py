@@ -315,12 +315,16 @@ APPLICABILITY_AXES = {
     # —— Authority 锚（§90.2 Protected Set）API 族两条：正文词面明确绑定 API 契约域——
     "AUTHORITY.WEB.API.REQUEST_OWNERS": {
         "capabilities": ["CAPABILITY.API_CONTRACT"],
-        "basis": "正文『平台 Owner 维护 HTTP Client、业务 Owner 维护 Domain API、契约 Owner 维护"
-                 "数据源』——请求族/API 契约域权属锚词面明确（Benchmark A 泄漏实测后补标，2026-09-01）",
+        "basis": "正文『平台 Owner 维护 HTTP Client，领域 Owner 维护 Domain API，契约 Owner 维护"
+                 "类型来源』（frontend-hard-spec 15-request-api-protocol.md L71 逐字）——请求族/"
+                 "API 契约域权属锚词面明确（Benchmark A 泄漏实测后补标，2026-09-01；I9② "
+                 "2026-09-02 修正引文与源文逐字对齐：原『业务 Owner/数据源』为失真转述）",
     },
     "AUTHORITY.BE.API_CONTRACT_OWNERSHIP": {
         "capabilities": ["CAPABILITY.API_CONTRACT"],
-        "basis": "id 与正文『API 契约所有权』词面逐字——后端 API 契约域权属锚（同族补标）",
+        "basis": "正文『Backend 维护服务端契约，消费者确认联调与兼容结果』（backend-hard-spec "
+                 "12-api-contract-protocol.md L53 逐字）——后端 API 契约域权属锚（同族补标；"
+                 "I9② 2026-09-02 修正：原引『API 契约所有权』词形在源文零命中，改引真实逐字句）",
     },
     # —— change_classes：公共契约/依赖/呈现面变更动词面（保守逐例归类）——
     "POLICY.CHG.PRECHANGE_CONSUMER_SCAN": {

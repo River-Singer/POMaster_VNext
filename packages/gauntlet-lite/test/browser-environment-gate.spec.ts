@@ -19,10 +19,10 @@
  * （Benchmark E L2 形态）；READY 下三件套判卷语义与 @0.2.0 时代逐字不变由
  * browser-adapter.spec 既有矩阵钉住（全用例补 READY 回执）。
  */
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 import {
   BROWSER_GATE_DEF,
   createBrowserAdapter,
@@ -44,6 +44,11 @@ import {
 import { fakeFacts, posixJoin } from "./helpers.js";
 
 const ROOT = mkdtempSync(join(tmpdir(), "pomaster-browser-env-gate-"));
+
+// I8④：模块级临时目录用后清理（此前从不删除——遗留目录随测试次数线性累积）。
+afterAll(() => {
+  rmSync(ROOT, { recursive: true, force: true });
+});
 
 // ============================================================
 // §6.7 夹具：kernel 判定函数真判卷（runEnvironmentDoctor → buildEnvironmentReceipt）
@@ -289,8 +294,8 @@ describe("runBrowserGateLegs 环境供给面", () => {
     const [playwrightLeg, browserLeg] = runBrowserGateLegs(
       { projectRoot: ROOT, subjectId: null, denominatorRefs: [] },
       LEG_IDENTITIES,
-      // playwright 腿无 spawn 注入——本用例只断言交互腿与回执供给面（playwright 腿
-      // 会走真实探测缺席路径，但其 verdict 不在本用例断言面；互不牵连矩阵见下）。
+      // playwright 腿无 spawn 注入——本用例同时断言交互腿判卷与 playwright 腿的
+      // not_configured 缺席态（注释与断言面一致；互不牵连矩阵见下）。
       legsDeps(fullEvidence(), { environment: readyEnvironmentInput() }),
     );
     expect(playwrightLeg.verdict).toBe("not_configured");

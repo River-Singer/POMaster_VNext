@@ -7,8 +7,10 @@
  *   headless-CI 为显式申报位（source=declared——人的事实与环境意图在 repo 状态面
  *   无机器可判载体，禁自造探测冒充实测，S1 同源）；triggered = 满足其一（原文
  *   「满足其一即立项评估」逐字）；
- * - 链判定：长度 ≥ chainMinLength（缺省 2）的连续事件型序列，逐长度最左优先
- *   贪心不重叠计数；链内事件型 ≥2 种（TX_APPLIED×N 同型连发不是 SOP 链——去噪
+ * - 链判定：长度 ≥ chainMinLength（缺省 2）的连续事件型序列，逐长度**全起点滑窗**
+ *   出现计数（G2 审查修正：原「固定步长切瓦片」对错位重复系统性漏报——全起点计数
+ *   保证「计得次数 ≥ 真实次数」，宁超报不漏报；跨链接缝对同为真实重复序列，如实
+ *   计入）；链内事件型 ≥2 种（TX_APPLIED×N 同型连发不是 SOP 链——去噪
  *   规则）；阈值缺省 3（「≥3 次」逐字）；窗口=现存全量 journal（append-only 平面
  *   无墙钟，A4——周窗无合法锚，取全集是宁严不漏的观测近似，window 字段如实呈现）；
  * - 观测纪律（「观测面不施断」）：纯读零写入（journal/truth-index 字节不变），
@@ -159,9 +161,13 @@ describe("条件 (a)：同 SOP 链重复（journal 实测）", () => {
     expect(report.condition_sop_chain_repeat.triggered).toBe(false);
   });
 
-  it("达标链按 count 降序排序（count 高者置顶；不同链型并列呈现）", async () => {
+  it("达标链按 count 降序排序（count 高者置顶；接缝对与重叠窗口全起点计数如实入榜）", async () => {
     // 先 4 轮 [attach→begin]（[SA,EB]×4），再 3 轮 [exception→attach]（[ER,SA]×3）：
-    // 两条异型链各自贪心不重叠对齐，count 4 与 3 双双达标。
+    // 全起点滑窗下，除两条驱动链外，接缝对 [EB,SA]（前链尾+后链头 ×3）、重复块的
+    // 重叠窗口 [SA,EB,SA]（×3）/ [SA,EB,SA,EB]（×3）同为 journal 里真实出现的重复
+    // 序列——G2 审查修正后如实计入（原固定步长切瓦片只见单一对齐位，错位重复系统性
+    // 不可见，正是漏报病灶）；排序不变式 count 降序 → 链长降序 → 字典序（EXCEPTION_
+    // RECORDED 词形字典序小于 EXECUTION_BEGUN——第 3 位 'C' < 'E'）。
     for (const key of ["claude_a", "claude_b", "claude_c", "claude_d"]) {
       await driveSopChain(key);
     }
@@ -175,15 +181,54 @@ describe("条件 (a)：同 SOP 链重复（journal 实测）", () => {
     }
     const report = detectSupervisorTrigger(store);
     const chains = report.condition_sop_chain_repeat.chains;
-    expect(chains).toHaveLength(2);
+    expect(chains).toHaveLength(6);
     expect(chains[0]).toEqual({
       chain: ["SESSION_ATTACHED", "EXECUTION_BEGUN"],
       count: 4,
     });
+    // count=3 并列集：链长降序 → 字典序（EXECUTION_* 首字母 'E' < SESSION_* 的 'S'；
+    // EXCEPTION_* 与 EXECUTION_* 在第 3 位 'C' < 'E' 分先后）。
     expect(chains[1]).toEqual({
+      chain: ["SESSION_ATTACHED", "EXECUTION_BEGUN", "SESSION_ATTACHED", "EXECUTION_BEGUN"],
+      count: 3,
+    });
+    expect(chains[2]).toEqual({
+      chain: ["EXECUTION_BEGUN", "SESSION_ATTACHED", "EXECUTION_BEGUN"],
+      count: 3,
+    });
+    expect(chains[3]).toEqual({
+      chain: ["SESSION_ATTACHED", "EXECUTION_BEGUN", "SESSION_ATTACHED"],
+      count: 3,
+    });
+    expect(chains[4]).toEqual({
       chain: ["EXCEPTION_RECORDED", "SESSION_ATTACHED"],
       count: 3,
     });
+    expect(chains[5]).toEqual({
+      chain: ["EXECUTION_BEGUN", "SESSION_ATTACHED"],
+      count: 3,
+    });
+  });
+
+  it("错位重复不漏报（G2 审查 G1）：模式起点不落固定步长格点仍触发（宁严不漏方向）", async () => {
+    // journal 事件型序列 = [X, A, B, A, B, A, B]：重复链 [A,B] 起点全在奇数位——
+    // 固定步长切瓦片（@0,@2,@4 → [X,A][B,A][A,B] 各 1 次）系统性漏报；全起点滑窗
+    // 计数（@1,@3,@5 → 3 次）如实检出。阈值缺省 3。
+    writeFileSync(
+      journalPath(),
+      ["X_STEP", "A_STEP", "B_STEP", "A_STEP", "B_STEP", "A_STEP", "B_STEP"]
+        .map((type, index) => `${JSON.stringify({ type, seq: index })}\n`)
+        .join(""),
+      "utf8",
+    );
+    const report = detectSupervisorTrigger(store);
+    expect(report.journal_events_scanned).toBe(7);
+    expect(report.condition_sop_chain_repeat.triggered).toBe(true);
+    expect(report.condition_sop_chain_repeat.chains[0]).toEqual({
+      chain: ["A_STEP", "B_STEP"],
+      count: 3,
+    });
+    expect(report.triggered).toBe(true);
   });
 });
 

@@ -18,6 +18,9 @@
  * - Transition History → state/journal.jsonl TX_APPLIED 事件流中 changed_object_ids
  *   命中本对象的事件（seq + authority_ref；A4 事件拍非墙钟）。
  * 纯读零写入（§91.1：一个 State 多种 View——投影不产生治理事实）。
+ * 降级可见性（审查 H2）：implements_change 链上引用缺席/正文不可读 → warnings 显式
+ * 呈现 + 分母降级如实标注（与 view.ts 同一先例），禁把「affected_objects 读不到」
+ * 呈现成「没有 affected_objects」。
  */
 
 import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
@@ -251,15 +254,18 @@ function renderAuditMarkdown(subject: string, result: Omit<AuditResult, "markdow
   return lines.join("\n");
 }
 
-/** audit 共享主体：对给定对象 id 集合逐一装配七字段审计。 */
+/** audit 共享主体：对给定对象 id 集合逐一装配七字段审计。
+ *  initialWarnings：分母推导阶段（调用方）已产生的告警随信封透出（审查 H2——
+ *  implements_change 链降级与分母缺失必须可见，禁静默）。 */
 async function runAuditCore(
   rootDir: string,
   subject: string,
   scope: string | null,
   resolvedViaAlias: string | null,
   objectIds: readonly string[],
+  initialWarnings: readonly CliWarning[] = [],
 ): Promise<CommandOutcome<AuditResult>> {
-  const warnings: CliWarning[] = [];
+  const warnings: CliWarning[] = [...initialWarnings];
   const emptyResult: AuditResult = {
     view: "audit",
     subject,
@@ -372,16 +378,30 @@ export async function runAuditTask(
   );
   let changeRowId: string | null = null;
   let changeBody: UnknownRecord | null = null;
+  // H2（二轮审查）：implements_change 链的降级此前零告警静默——change.affected_objects
+  // 从审计分母无声消失（view.ts 同路径有 warning，audit 自述与 view 同等可见性）。
+  // 对齐 view.ts 先例：链上引用缺席/正文不可读 → 显式 warning，分母降级如实呈现。
+  const denominatorWarnings: CliWarning[] = [];
   if (implementsChange !== null) {
     const changeRow = findIndexRow(raw.index, implementsChange);
     if (changeRow !== null) {
       changeRowId = asString(changeRow.id);
       const changeBodyResult = await readBodyEnvelope(rootDir, changeRow);
       if ("error" in changeBodyResult) {
-        changeBody = null;
+        denominatorWarnings.push({
+          code: changeBodyResult.error.code,
+          message: `implements_change 链对象正文不可读（${implementsChange}）：${changeBodyResult.error.message}`,
+          hint: "影响面推导降级为 task/permit 分母（change.affected_objects 缺席本轮审计分母）；修复正文后重跑审计。",
+        });
       } else {
         changeBody = changeBodyResult.body;
       }
+    } else {
+      denominatorWarnings.push({
+        code: "REF_INTEGRITY",
+        message: `implements_change 引用不在 truth-index：${implementsChange}（如实呈现，不静默吞掉）`,
+        hint: "REF_INTEGRITY 完整判定归 reconcile/gate；本审计视图只做呈现层如实标注。",
+      });
     }
   }
   const permits = await readPermitFile(rootDir);
@@ -395,5 +415,12 @@ export async function runAuditTask(
     changeRowId,
     permits: permits.permits,
   });
-  return runAuditCore(rootDir, resolved.target, null, resolved.viaAlias, affectedIds);
+  return runAuditCore(
+    rootDir,
+    resolved.target,
+    null,
+    resolved.viaAlias,
+    affectedIds,
+    denominatorWarnings,
+  );
 }

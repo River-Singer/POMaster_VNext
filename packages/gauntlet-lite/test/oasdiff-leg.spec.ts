@@ -1,16 +1,18 @@
 /**
  * oasdiff-leg.spec.ts —— CONTRACT oasdiff breaking-change diff 执行腿（P22 / gaps A6）。
  *
- * 覆盖（三态 + 判卷矩阵 + 真实子进程链路）：
+ * 覆盖（三态 + 判卷矩阵 + 三道闸 + 真实子进程链路）：
  * - detect/prepare：breakingDiff 声明 + oasdiff 在位 → READY/declared；oasdiff 缺席 →
  *   NOT_INSTALLED / plan.absenceKind=tool_absent → 全链 not_run（非绿非红）；版本锚缺失
  *   → runner_not_ready（pytest 腿同款）；两口径混声明 → NOT_INSTALLED（互斥）；
  * - run/normalize 判卷矩阵（fake spawn 注入）：exit 1 + JSON 明细 → failed violations=N +
- *   items；exit 0 + 空 stdout → passed；exit 1 + 不可解析 → failed 下限 1；exit 7 →
- *   not_run；probe 失败 → not_run；exit 0 + 明细>0 矛盾 → failed（重算权威）；
- *   版本漂移 → passed 降 warning（failed 不洗白）；
+ *   items；exit 0 + 空 stdout → passed；exit 1 + 不可解析（损坏工具词形）→ not_run（I2）；
+ *   exit 1 + 可解析但空明细 → failed 下限 1（诚实下限，输出词形合法前提）；exit 7 →
+ *   not_run；gate ①a 可执行体缺席 / gate ①b 版本探测收紧（退出 0 且 semver 词形）失败 →
+ *   not_run；exit 0 + 明细>0 矛盾 → failed（重算权威）；版本漂移 → passed 降 warning
+ *   （failed 不洗白）；
  * - 真实子进程（fake oasdiff 脚本 × 真实 spawnSync 两段式，零安装零网络）：clean → passed、
- *   breaking → failed、garbage → failed 下限；
+ *   breaking → failed、garbage → not_run（I2 损坏工具形态）、emptyBreaking → failed 下限；
  * - 宿主 oasdiff 在场 e2e（临时目录构造旧/新 OpenAPI 对——删除必填字段 / 改类型两种
  *   breaking 形态 + 非 breaking 对照；宿主未装则 skip + 盲区说明——诚实缺席）；
  * - 三态 truth-index 记录互异（failed / passed / not_run 三份记录逐字段不同 + 过 03 schema）。
@@ -96,7 +98,11 @@ function fullPipeline(
   spawn: SpawnFn,
   gatePolicy: GatePolicy = policy(),
 ): GateResultRecord {
-  const adapter = createContractAdapter();
+  const adapter = createContractAdapter({
+    // gate ①a 可执行体探测注入 fake（宿主 PATH 无 oasdiff——判卷矩阵与宿主环境无关；
+    // 探测闸自身行为由下方「可执行体探测」用例专测）。
+    oasdiffExecutableProbe: () => "C:/fake/oasdiff-on-path",
+  });
   const plan = adapter.prepare({ projectRoot: facts.projectRoot }, gatePolicy, facts);
   const raw = adapter.run(plan, spawn);
   return adapter.normalize(raw, {});
@@ -271,7 +277,7 @@ describe("oasdiff 腿判卷矩阵", () => {
     expect(validate(toGateResultJson(record))).toBe(true);
   });
 
-  it("exit 1 + 明细不可解析 → failed violations=1（诚实下限）+ scopeNote 留痕", () => {
+  it("exit 1 + 明细不可解析（损坏工具词形）→ not_run（I2：诚实下限只属输出词形合法场景）", () => {
     const record = fullPipeline(
       READY_FACTS(),
       scriptedSpawn(
@@ -279,9 +285,23 @@ describe("oasdiff 腿判卷矩阵", () => {
         { status: 1, stdout: "panic: runtime error (非 JSON)" },
       ),
     );
+    expect(record.verdict).toBe("not_run");
+    expect(record.counts.violations).toBe(0);
+    expect(record.scopeNote).toMatch(/不可解析/);
+    expect(record.scopeNote).toMatch(/损坏工具/);
+    expect(validate(toGateResultJson(record))).toBe(true);
+  });
+
+  it("exit 1 + 明细可解析但为空 → failed violations=1（诚实下限：官方退出码已证有 breaking）", () => {
+    const record = fullPipeline(
+      READY_FACTS(),
+      scriptedSpawn(
+        { status: 0, stdout: "oasdiff 2.2.0" },
+        { status: 1, stdout: "{}" },
+      ),
+    );
     expect(record.verdict).toBe("failed");
     expect(record.counts.violations).toBe(1);
-    expect(record.items).toHaveLength(1);
     expect(record.scopeNote).toMatch(/下限/);
   });
 
@@ -305,6 +325,43 @@ describe("oasdiff 腿判卷矩阵", () => {
     );
     expect(record.verdict).toBe("not_run");
     expect(record.scopeNote).toMatch(/版本探测失败/);
+  });
+
+  it("gate ①a 可执行体不在 PATH → spawn_failed → not_run（I2 三道闸对齐，spawn 前先证在位）", () => {
+    const adapter = createContractAdapter({ oasdiffExecutableProbe: () => null });
+    const plan = adapter.prepare(
+      { projectRoot: "D:/contract-proj" },
+      policy(),
+      READY_FACTS(),
+    );
+    const raw = adapter.run(
+      plan,
+      scriptedSpawn({ status: 0, stdout: "oasdiff 2.2.0" }, { status: 0, stdout: "" }),
+    );
+    expect(raw.outcome).toBe("breaking_diff");
+    if (raw.outcome === "breaking_diff") {
+      expect(raw.leg.kind).toBe("spawn_failed");
+      expect(raw.leg.failureReason).toMatch(/不在 PATH/);
+    }
+    const record = adapter.normalize(raw, {});
+    expect(record.verdict).toBe("not_run");
+  });
+
+  it("gate ①b 版本探测收紧（退出 0 无版本词形 / 非零退出）→ not_run（I2：损坏工具禁真跑）", () => {
+    const noSemver = fullPipeline(
+      READY_FACTS(),
+      scriptedSpawn({ status: 0, stdout: "no version here" }, { status: 0, stdout: "" }),
+    );
+    expect(noSemver.verdict).toBe("not_run");
+    expect(noSemver.scopeNote).toMatch(/版本探测失败/);
+    expect(noSemver.scopeNote).toMatch(/损坏/);
+
+    const nonzero = fullPipeline(
+      READY_FACTS(),
+      scriptedSpawn({ status: 1, stdout: "", stderr: "command not found" }, {}),
+    );
+    expect(nonzero.verdict).toBe("not_run");
+    expect(nonzero.scopeNote).toMatch(/版本探测失败/);
   });
 
   it("exit 0 但 JSON 有明细（矛盾形态）→ failed（C5 重算权威）", () => {
@@ -383,6 +440,7 @@ const payloads = {
     }),
   },
   garbage: { code: 1, body: "panic: not json" },
+  emptyBreaking: { code: 1, body: "{}" },
 };
 const payload = payloads[mode] ?? payloads.clean;
 process.stdout.write(payload.body);
@@ -426,6 +484,7 @@ function legPlan(scriptPath: string, projectRoot: string): OasdiffLegPlan {
     projectRoot,
     command: `node "${scriptPath}" breaking --format json base.yaml current.yaml`,
     versionProbeCommand: `node "${scriptPath}" --version`,
+    executable: "node",
     timeoutMs: 30_000,
     basePath: "base.yaml",
     currentPath: "current.yaml",
@@ -456,8 +515,16 @@ describe("oasdiff 腿真实子进程（fake 脚本两段式）", () => {
     expect(validate(toGateResultJson(record))).toBe(true);
   });
 
-  it("garbage → 真两段 spawn → failed violations=1（诚实下限）", { timeout: 30_000 }, () => {
+  it("garbage → 真两段 spawn → not_run（I2：损坏工具形态禁判假红下限）", { timeout: 30_000 }, () => {
     const raw = runOasdiffLeg(legPlan(scriptPath, dir), realSpawnWithMode("garbage"));
+    const record = normalizeOasdiffLeg(raw, 0);
+    expect(record.verdict).toBe("not_run");
+    expect(record.counts.violations).toBe(0);
+    expect(record.scopeNote).toMatch(/不可解析/);
+  });
+
+  it("emptyBreaking（exit 1 + 可解析空明细）→ 真两段 spawn → failed violations=1（诚实下限存活）", { timeout: 30_000 }, () => {
+    const raw = runOasdiffLeg(legPlan(scriptPath, dir), realSpawnWithMode("emptyBreaking"));
     const record = normalizeOasdiffLeg(raw, 0);
     expect(record.verdict).toBe("failed");
     expect(record.counts.violations).toBe(1);
