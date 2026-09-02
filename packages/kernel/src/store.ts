@@ -13,6 +13,22 @@
  * - A8：gate_results/claims 只写 evidence/ 平面，结构性不入 truth-index。
  * - 原子性：staged 写入（tmp+rename）+ 失败回滚；回滚依据写入前捕获的原字节，
  *   不凭 exists() 推断删除原件（staged-replace 事故教训）。
+ * - A1 并发防线：提交前重读 truth-index 的 generation.seq 复核世代（P20 红队发现 4
+ *   同族修复，对照 locks.swapLockCas）——世代推进 → CONCURRENT_WRITE_DETECTED
+ *   显式拒绝（本事务零落盘，重开 store 重放即收敛），绝不静默丢事务。
+ * - A2 journal 纪律：TX_APPLIED 在 staged 批提交成功后 appendLine 原子追加
+ *   （locks/execution/session 同款；RMW 覆写会把并发 appendLine 家族刚写的整行抹掉）。
+ *   「index 先行、journal 缺行」= 可检出残态，比「journal 有幽灵行、index 未提交」诚实。
+ * - A3 证据防线：record_claim / record_gate_run 写前查既有文件——canonical 内容等价
+ *   → 幂等短路（零写入零 journal）；内容不同 → EVIDENCE_ALREADY_EXISTS 拒绝
+ *   （record 通道无权覆写既有证据，D20：禁翻转 verdict / 禁打回 UNVERIFIED）。
+ *   显式 canonicalizeOverwrite 凭据（op 契约位）是唯一覆写口：放行前 kernel 零成本
+ *   复核既有 claim 判定态，已判定（VERIFIED 等）仍拒——须走新 id；覆写在 journal
+ *   TX_APPLIED ops 记 *_canonicalize 可审计词形留痕。
+ * - A4 转移不豁免：upsert 对既有对象直改 lifecycle 与 transition_object 同判
+ *   （转移矩阵 + requires 的 authorityRef；SUPERSEDED→CURRENT 复活支线封死）。
+ * - A5 提交前复验：事务产出先过 01 schema 再落盘——op 层漏检的非法产出在此拦截
+ *   （防 store 变砖：非法索引一旦落盘，后续一切读写 SCHEMA_INVALID 只能从 git 恢复）。
  */
 import { readdirSync } from "node:fs";
 import * as ajvModule from "ajv";
@@ -43,13 +59,14 @@ import {
   type DigestScopeInput,
 } from "./digest.js";
 import {
+  appendLine,
   captureOriginal,
   ensureDir,
   executeWrites,
   readText,
   type FileWrite,
 } from "./io.js";
-import { KERNEL_TOOL, buildStorePaths, pathsOf, readRawIndex, registerStore, type StorePaths } from "./paths.js";
+import { KERNEL_TOOL, buildStorePaths, pathsOf, readCurrentSeq, readRawIndex, registerStore, type StorePaths } from "./paths.js";
 import { assertArtifactBlobsExist, assertArtifactRefs, artifactRefsToSnake } from "./evidence-artifacts.js";
 import { asGovernedId, normalizedKey } from "./id.js";
 import { validateTransition } from "./transitions.js";
@@ -571,6 +588,61 @@ function readBodyFor(paths: StorePaths, overlay: Map<string, UnknownRecord>, row
 }
 
 /**
+ * A1 提交时世代复核（P20 红队发现 4 同族修复：locks.swapLockCas 在锁面修的同类
+ * 「读-算-写」丢更新窗口——两进程各读 seq=N 各算 seq=N+1，后 rename 者静默抹掉
+ * 先提交者的整个事务，而先提交方已收到成功回执）。文件系统无 index 级 CAS，本防线
+ * 把窗口收窄到「复核 → rename」的最小缝隙：检测到世代推进即显式拒绝（fail-closed，
+ * 宁可拒绝重放、不可静默丢事务）；彻底闭环需索引级独占认领（同 swapLockCas 落法），
+ * 归后续 kernel PR。
+ */
+function assertCommitSeqUnchanged(paths: StorePaths, openedSeq: number): void {
+  const current = readCurrentSeq(paths);
+  if (current !== null && current !== openedSeq) {
+    throw new GovernanceError(
+      "CONCURRENT_WRITE_DETECTED",
+      `提交时世代复核失败：开卷 seq=${openedSeq}，落盘前 truth-index seq=${current}（另一进程/会话已先提交事务）`,
+      "重开 store 后重放本事务（本事务零落盘，重放安全）；多会话并发写同一 store 请经 change/unit 锁互斥（pomaster lock acquire）",
+      { opened_seq: openedSeq, current_seq: current },
+    );
+  }
+}
+
+/**
+ * A5 提交前 01 schema 复验（通用兜底防线）：op 层漏检的非法产出（如 envelope 字段为
+ * undefined 被 JSON.stringify 丢弃、行缺 required 键）在此拦截——非法索引一旦落盘，
+ * 后续一切读/写 SCHEMA_INVALID（store 变砖，只能从 git 恢复）。复验失败时事务零落盘。
+ */
+function assertWorkingIndexSchemaValid(working: UnknownRecord): void {
+  const validate = getIndexValidator();
+  if (validate(working)) return;
+  const errors = (validate.errors ?? [])
+    .map((error) => `${error.instancePath} ${error.message ?? ""}`)
+    .join("; ");
+  throw new GovernanceError(
+    "SCHEMA_INVALID",
+    `事务产出未通过 01-truth-index schema 提交前复验（op 层漏检拦截，防 store 变砖）：${errors}`,
+    "修正对应 op 的 envelope 输入后重放（本事务零落盘）；键值 undefined 会被 JSON.stringify 丢弃（如 titleZh），传 null 或合法值",
+    { errors: (validate.errors ?? []).length },
+  );
+}
+
+/**
+ * TX_APPLIED.ops 的 journal 词形：canonical 化覆写 op 以 *_canonicalize 后缀显式留痕
+ * （A3 契约位的可审计面——journal 读侧能机械区分「常规记录」与「判定可复核重录」）。
+ * 消费方兼容：reconcile REV_ADVANCING_OPS 只匹配 upsert/transition（record_* 不在
+ * 集合）；production loadRunLedger 锚集显式含 record_gate_run canonicalize 变体。
+ */
+function journalOpWordForm(op: TransactionOp): string {
+  if (
+    (op.op === "record_claim" || op.op === "record_gate_run") &&
+    op.canonicalizeOverwrite === true
+  ) {
+    return `${op.op}_canonicalize`;
+  }
+  return op.op;
+}
+
+/**
  * 唯一写入路径。语义见 docs/kernel-api.md §1（seq/rev 单调、digest 自动维护、
  * 幂等短路、DENOMINATOR 只许 supersede 不许删除、staged+回滚）。
  */
@@ -646,34 +718,43 @@ export async function applyTransaction(
   }
   finalizeGeneration(workspace, fingerprint);
 
+  // —— A5 提交前 01 schema 复验（op 层漏检在此拦截；失败时零落盘，store 不变砖） ——
+  assertWorkingIndexSchemaValid(working);
+
   // —— staged 落盘 + journal ——
   const writes: FileWrite[] = [];
   for (const [path, next] of workspace.files) {
     writes.push({ path, next, original: captureOriginal(path) });
   }
   writes.push({
-    path: paths.journalPath,
-    next:
-      `${readText(paths.journalPath) ?? ""}${JSON.stringify({
-        type: "TX_APPLIED",
-        seq: workspace.nextSeq,
-        authority_ref: tx.authorityRef ?? null,
-        // 事务级执行身份盖章（P21-Enforcement；§25.4 审计问题的 journal 兑现位；
-        // 缺席 = null 显式——C1，存量事件消费方只读既有键，向后兼容）。
-        execution_id: tx.executionId ?? null,
-        note: tx.note ?? null,
-        ops: tx.ops.map((op) => op.op),
-        changed_object_ids: [...workspace.changedObjectIds].sort(),
-        digest_warnings: workspace.digestWarnings.length,
-      })}\n`,
-    original: captureOriginal(paths.journalPath),
-  });
-  writes.push({
     path: paths.indexPath,
     next: `${JSON.stringify(working, null, 2)}\n`,
     original: captureOriginal(paths.indexPath),
   });
+  // A1 世代复核：置于 staged 计划就绪之后、executeWrites 之前——检测到并发世代推进
+  // 时本事务零落盘，重开 store 重放即收敛（P20 红队发现 4 同族修复）。
+  assertCommitSeqUnchanged(paths, curSeq);
   executeWrites(writes);
+  // A2：TX_APPLIED 不入 staged 批，在正文/索引提交成功后 appendLine 原子追加
+  // （locks/execution/session 同款纪律——RMW 覆写落法会把并发 appendLine 家族刚追加的
+  // 整行抹掉）。顺序取舍：op 失败零落盘不变量保持（正文/索引失败不追加）；崩溃窗口
+  // 从「journal 有幽灵行、index 没提交」改为「index 先行、journal 缺行」——后者是
+  // 可检出残态（changed_object_ids 对照磁盘可查缺），方向更诚实。
+  appendLine(
+    paths.journalPath,
+    `${JSON.stringify({
+      type: "TX_APPLIED",
+      seq: workspace.nextSeq,
+      authority_ref: tx.authorityRef ?? null,
+      // 事务级执行身份盖章（P21-Enforcement；§25.4 审计问题的 journal 兑现位；
+      // 缺席 = null 显式——C1，存量事件消费方只读既有键，向后兼容）。
+      execution_id: tx.executionId ?? null,
+      note: tx.note ?? null,
+      ops: tx.ops.map((op) => journalOpWordForm(op)),
+      changed_object_ids: [...workspace.changedObjectIds].sort(),
+      digest_warnings: workspace.digestWarnings.length,
+    })}\n`,
+  );
 
   return {
     appliedSeq: workspace.nextSeq,
@@ -745,7 +826,7 @@ function sweepDigestTampering(workspace: TxWorkspace): void {
 function applyOp(workspace: TxWorkspace, op: TransactionOp, tx: Transaction): void {
   switch (op.op) {
     case "upsert_object":
-      applyUpsertObject(workspace, op.envelope);
+      applyUpsertObject(workspace, op.envelope, tx);
       break;
     case "transition_object":
       applyTransitionObject(workspace, op, tx);
@@ -760,10 +841,10 @@ function applyOp(workspace: TxWorkspace, op: TransactionOp, tx: Transaction): vo
       applyAppendDenominator(workspace, op.entry);
       break;
     case "record_claim":
-      applyRecordClaim(workspace, op.claim);
+      applyRecordClaim(workspace, op);
       break;
     case "record_gate_run":
-      applyRecordGateRun(workspace, op.run);
+      applyRecordGateRun(workspace, op);
       break;
   }
 }
@@ -805,6 +886,7 @@ function requireNonNegativeInt(value: unknown, field: string, hint: string): num
 function applyUpsertObject(
   workspace: TxWorkspace,
   envelope: ObjectEnvelopeInput,
+  tx: Transaction,
 ): void {
   const { paths } = workspace;
   // 契约类型（ObjectEnvelopeInput）无索引签名；运行时词表/形状防线按动态键取值。
@@ -993,6 +1075,32 @@ function applyUpsertObject(
   const existingRow = (workspace.working.objects as RawRow[]).find(
     (row) => row.id === id,
   );
+  // A4：upsert 不豁免转移矩阵（transitions.ts 宣称「SUPERSEDED 的唯一再生方式是新建
+  // 对象并引用旧 id」，此前 upsert 通道可绕行复活）。对既有对象直改 lifecycle 与
+  // transition_object 同判：矩阵裁决 + requires 的 authorityRef 要求；
+  // SUPERSEDED→CURRENT 等终态出边在 upsert 通道同样 TRANSITION_ILLEGAL 封死。
+  if (existingRow !== undefined) {
+    const priorLifecycle = (existingRow.axes as UnknownRecord).lifecycle as string;
+    if (priorLifecycle !== axes.lifecycle) {
+      const outcome = validateTransition("lifecycle", priorLifecycle as never, axes.lifecycle as never);
+      if (!outcome.allowed) {
+        throw new GovernanceError(
+          "TRANSITION_ILLEGAL",
+          `${id}: upsert 直改 lifecycle ${priorLifecycle}→${String(axes.lifecycle)} 被拒（${outcome.reason}）`,
+          outcome.hint,
+          { id, from: priorLifecycle, to: axes.lifecycle, reason: outcome.reason },
+        );
+      }
+      if (outcome.requires.length > 0 && (tx.authorityRef === undefined || tx.authorityRef.length === 0)) {
+        throw new GovernanceError(
+          "EVOLUTION_REQUIRED",
+          `${id}: upsert 直改 lifecycle ${priorLifecycle}→${String(axes.lifecycle)} requires ${outcome.requires.join(" + ")}，但事务缺 authorityRef`,
+          "tx.authorityRef 提供 DECISION.* / CHANGE.* / PERMIT.* 引用（审批或迁移记录）；或先落对象再走 transition_object 通道（upsert 不豁免转移纪律）",
+          { id, requires: outcome.requires },
+        );
+      }
+    }
+  }
   const existingBody =
     existingRow === undefined
       ? null
@@ -1138,7 +1246,16 @@ function recomputeEvidenceSummary(workspace: TxWorkspace, id: string): UnknownRe
     else if (verdict === "REJECTED") counts.rejected += 1;
     else counts.unverified += 1; // UNVERIFIED 与 PARTIALLY_VERIFIED 均未完全验证
   };
-  // 已提交的 claims（磁盘）
+  // 本事务待写的 claims（staged 计划）先收集：同一 clm 以 staged（更新）为准——
+  // A7：磁盘扫描与 staged 扫描若无条件双计，重录场景同一 CLM 会计成 claims=2。
+  const claimsDirPrefix = `${paths.claimsDir}/`;
+  const stagedClaims = new Map<string, UnknownRecord>();
+  for (const [path, next] of workspace.files) {
+    if (!path.startsWith(claimsDirPrefix) || !path.endsWith(".json")) continue;
+    const claim = JSON.parse(next) as UnknownRecord;
+    stagedClaims.set(String(claim.clm), claim);
+  }
+  // 已提交的 claims（磁盘）；staged 已覆盖的 clm 跳过（同一 clm 只计一次）
   let files: string[] = [];
   try {
     files = readdirSync(paths.claimsDir);
@@ -1149,13 +1266,12 @@ function recomputeEvidenceSummary(workspace: TxWorkspace, id: string): UnknownRe
     if (!file.endsWith(".json")) continue;
     const text = readText(`${paths.claimsDir}/${file}`);
     if (text === null) continue;
-    countClaim(JSON.parse(text) as UnknownRecord);
+    const claim = JSON.parse(text) as UnknownRecord;
+    if (stagedClaims.has(String(claim.clm))) continue;
+    countClaim(claim);
   }
-  // 本事务待写的 claims（staged 计划；磁盘上还没有）
-  const claimsDirPrefix = `${paths.claimsDir}/`;
-  for (const [path, next] of workspace.files) {
-    if (!path.startsWith(claimsDirPrefix) || !path.endsWith(".json")) continue;
-    countClaim(JSON.parse(next) as UnknownRecord);
+  for (const claim of stagedClaims.values()) {
+    countClaim(claim);
   }
   return counts;
 }
@@ -1359,10 +1475,11 @@ function applyHeartbeat(
     wrote_object_ids: op.wroteObjectIds,
   })}\n`;
   const heartbeatPath = workspace.paths.heartbeatPath;
-  workspace.files.set(
-    heartbeatPath,
-    `${readText(heartbeatPath) ?? ""}${line}`,
-  );
+  // 拼接基底先取同事务既有 staged 计划（A6：第二个 heartbeat op 若读磁盘会把第一个
+  // op 已计划的行整体覆盖——同事务多心跳只剩一行而索引 liveness 却逐个更新）；
+  // 无 staged 计划才回读磁盘。
+  const stagedBase = workspace.files.get(heartbeatPath);
+  workspace.files.set(heartbeatPath, `${stagedBase ?? readText(heartbeatPath) ?? ""}${line}`);
   producer.liveness = {
     status: "active",
     runs_since_last_output: 0,
@@ -1444,12 +1561,90 @@ function applyAppendDenominator(workspace: TxWorkspace, entry: DenominatorEntry)
   workspace.anyChange = true;
 }
 
+// —— record_claim / record_gate_run 共用的存在性防线 ——
+
+/**
+ * 已判定态 claim verdict 词表（镜像 cli/evidence.ts 的 ADJUDICATED_VERIFICATION_VERDICTS；
+ * canonicalize 二道防线用——独立验证流判过的记录，record 通道不得经 canonicalize 打回）。
+ */
+const ADJUDICATED_CLAIM_VERDICTS: ReadonlySet<string> = new Set([
+  "VERIFIED",
+  "PARTIALLY_VERIFIED",
+  "REJECTED",
+]);
+
+/**
+ * A3 证据记录存在性防线（D20 纪律：record 通道无权覆写既有证据——对照
+ * cli/evidence.ts 的 skipped_adjudicated 守卫，CLI 层有守卫而 kernel 写权威此前裸奔：
+ * 实测重录把独立验证流判的 VERIFIED 打回 UNVERIFIED、同号 GRN 静默翻转 verdict）。
+ * 写前查既有文件（staged 计划优先，其次磁盘）：
+ * - 不存在 → 正常写入；
+ * - 存在且 canonical 内容等价（rev 剥离比对——rev 是事务自动维护字段非语义内容）→
+ *   幂等短路（零写入零 journal，重复入账不空转 seq，字节稳定）；
+ * - 存在但内容不同 → 默认 EVIDENCE_ALREADY_EXISTS 显式拒绝；既有文件损坏同样拒绝
+ *   （禁静默覆写损毁现场）；
+ * - 存在且内容不同、op 显式携 canonicalizeOverwrite 凭据 → 放行覆写（判定可复核的
+ *   canonical 化重录；TX_APPLIED ops 记 *_canonicalize 可审计词形留痕）。但 kernel
+ *   已能零成本读到既有记录，二道防线不留给 CLI 信任边界：既有 claim 处判定态时
+ *   canonicalize 亦拒（已判定记录不可 canonical 化，须走新 id——判定改判归独立
+ *   验证流通道）。run 无判定态概念，重放 verdict 翻转属 sanctioned 再判卷。
+ */
+function evidenceRecordDisposition(
+  workspace: TxWorkspace,
+  path: string,
+  record: UnknownRecord,
+  context: string,
+  options: {
+    readonly canonicalizeOverwrite: boolean;
+    readonly existingAdjudicated: (existing: UnknownRecord) => boolean;
+  },
+): "write" | "short_circuit" {
+  const existingText = workspace.files.get(path) ?? readText(path);
+  if (existingText === undefined || existingText === null) return "write";
+  let existing: UnknownRecord;
+  try {
+    existing = JSON.parse(existingText) as UnknownRecord;
+  } catch (error) {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      `${context}：既有证据文件无法解析（损坏或手改）：${path}`,
+      "从 git 恢复该证据文件，或人工核实后删除损坏文件再重录；禁静默覆写损毁现场",
+      { path, cause: String(error) },
+    );
+  }
+  const { rev: _existingRev, ...existingWithoutRev } = existing;
+  const { rev: _recordRev, ...recordWithoutRev } = record;
+  void _existingRev;
+  void _recordRev;
+  if (JSON.stringify(existingWithoutRev) === JSON.stringify(recordWithoutRev)) {
+    return "short_circuit";
+  }
+  if (!options.canonicalizeOverwrite) {
+    throw new GovernanceError(
+      "EVIDENCE_ALREADY_EXISTS",
+      `${context}：证据记录 id 冲突禁覆写（${path} 已存在且内容不同）`,
+      "record 通道无权覆写既有证据（D20）：新证据请分配新 id（CLM-*/GRN-* 由通路顺延）；同号修订属判定改判，走独立验证流通道，不经 record 重录",
+      { path },
+    );
+  }
+  if (options.existingAdjudicated(existing)) {
+    throw new GovernanceError(
+      "EVIDENCE_ALREADY_EXISTS",
+      `${context}：既有记录已处判定态，canonicalizeOverwrite 亦不可覆写（${path}）`,
+      "已判定记录不可 canonical 化，须走新 id（CLM-*/GRN-* 由通路顺延）；判定改判归独立验证流通道，record 通道（含显式 canonicalizeOverwrite）无权代行",
+      { path },
+    );
+  }
+  return "write";
+}
+
 // —— record_claim ——
 
 function applyRecordClaim(
   workspace: TxWorkspace,
-  claim: Extract<TransactionOp, { op: "record_claim" }>["claim"],
+  op: Extract<TransactionOp, { op: "record_claim" }>,
 ): void {
+  const claim = op.claim;
   const { paths } = workspace;
   if (typeof claim.clm !== "string" || !/^CLM-[0-9]+$/.test(claim.clm)) {
     throw new GovernanceError("SCHEMA_INVALID", `clm 词形非法（须 CLM-[0-9]+）：${String(claim.clm)}`, "claim 记录 id 词形（evidence/claims/CLM-*.json）", { clm: claim.clm });
@@ -1511,6 +1706,23 @@ function applyRecordClaim(
     rev: workspace.nextSeq,
     ...(claim.notesMd !== undefined ? { notes_md: claim.notesMd } : {}),
   };
+  // A3 存在性防线：同 clm 幂等短路（不重算计数、不进 changed ids）；异内容默认拒绝
+  // 覆写，显式 canonicalizeOverwrite 凭据放行——但既有判定态（VERIFIED 等）仍拒。
+  const disposition = evidenceRecordDisposition(
+    workspace,
+    `${paths.claimsDir}/${claim.clm}.json`,
+    record,
+    `record_claim（${claim.clm}）`,
+    {
+      canonicalizeOverwrite: op.canonicalizeOverwrite === true,
+      existingAdjudicated: (existing) => {
+        const verification = existing["verification"] as UnknownRecord | undefined;
+        const verdict = verification === undefined ? undefined : verification["verdict"];
+        return typeof verdict === "string" && ADJUDICATED_CLAIM_VERDICTS.has(verdict);
+      },
+    },
+  );
+  if (disposition === "short_circuit") return;
   workspace.files.set(
     `${paths.claimsDir}/${claim.clm}.json`,
     `${JSON.stringify(record, null, 2)}\n`,
@@ -1525,9 +1737,10 @@ function applyRecordClaim(
 
 function applyRecordGateRun(
   workspace: TxWorkspace,
-  run: Extract<TransactionOp, { op: "record_gate_run" }>["run"],
+  op: Extract<TransactionOp, { op: "record_gate_run" }>,
 ): void {
   const { paths } = workspace;
+  const run = op.run;
   const result = run.result;
   if (typeof run.grn !== "string" || !/^GRN-[0-9]+$/.test(run.grn)) {
     throw new GovernanceError("GRN_INVALID", `grn 词形非法（须 GRN-[0-9]+）：${String(run.grn)}`, "GRN id 由 GateRunner 分配（evidence/runs/GRN-*.json）", { grn: run.grn });
@@ -1569,6 +1782,20 @@ function applyRecordGateRun(
     ...(artifactRefs !== undefined ? { artifact_refs: artifactRefsToSnake(artifactRefs) } : {}),
     gate_result: { mode: "inline", result: gateResultToSnake(result) },
   };
+  // A3 存在性防线：同 grn 幂等短路；异内容（如 verdict 翻转）默认拒绝静默覆写，
+  // 显式 canonicalizeOverwrite 凭据放行。run 无判定态概念（verdict 是 run 本身内容，
+  // 非独立验证流的判定字段）——重放翻转属 sanctioned 再判卷，不设已判定态拦截。
+  const disposition = evidenceRecordDisposition(
+    workspace,
+    `${paths.runsDir}/${run.grn}.json`,
+    record,
+    `record_gate_run（${run.grn}）`,
+    {
+      canonicalizeOverwrite: op.canonicalizeOverwrite === true,
+      existingAdjudicated: () => false,
+    },
+  );
+  if (disposition === "short_circuit") return;
   workspace.files.set(
     `${paths.runsDir}/${run.grn}.json`,
     `${JSON.stringify(record, null, 2)}\n`,

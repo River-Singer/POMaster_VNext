@@ -76,6 +76,8 @@ function passingReport(): DoctorReport {
       { probe: "dead_producers_empty", status: "pass", detail: "ok" },
       { probe: "alias_conflicts_empty", status: "pass", detail: "ok" },
       { probe: "local_binding_probe_replayable", status: "pass", detail: "ok" },
+      // C8 第五探针（D20 反自批）——与 kernel doctorProbes 真实词形对齐。
+      { probe: "claim_self_approval_clean", status: "pass", detail: "ok" },
     ],
     ok: true,
   };
@@ -100,14 +102,14 @@ describe("doctor 四态矩阵", () => {
     );
   });
 
-  it("init 后（真实 kernel 已落地）→ kernel=READY：四探针全过，不冒充 DEFECT", async () => {
+  it("init 后（真实 kernel 已落地）→ kernel=READY：五探针全过（含 D20 反自批 claim_self_approval_clean），不冒充 DEFECT", async () => {
     await runInit(dir);
     const outcome = await runDoctor(dir);
     const kernel = outcome.result.probes.find(
       (p) => p.probe === "kernel_doctor_probes",
     );
     expect(kernel?.status).toBe("READY");
-    expect(kernel?.detail).toContain("4 kernel probes passed");
+    expect(kernel?.detail).toContain("5 kernel probes passed");
     expect(kernel?.hint).toBeNull();
   });
 

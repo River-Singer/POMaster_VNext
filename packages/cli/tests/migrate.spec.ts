@@ -12,7 +12,9 @@
  * 4) spec 目录缺席/空目录 = kernel NOT_CONFIGURED 透传（分母 fail-closed）；
  * 5) B1 golden：README 快速上手块广告 migrate 行（与注册表双向零漂移的另一锚——
  *    双向对账本体在 readme-command-surface.spec.ts，此处钉 migrate 行的逐字存在）；
- * 6) 纯读零写入：analyze 前后 fixture spec 目录与项目根字节不变、不建 .pomaster。
+ * 6) 纯读零写入：analyze 前后 fixture spec 目录与项目根字节不变、不建 .pomaster；
+ * 7) B2：未知词形（--bogus-flag 等，非 deferred 三词形）→ SCHEMA_INVALID 显式拒绝
+ *    （词形层禁 fail-open：静默吞掉 = 命令按默认行为跑完 exit 0）。
  */
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -214,6 +216,72 @@ describe("deferred 三词形（--propose/--diff/--apply：结构性未注册，�
     });
     expect(outcome.ok).toBe(false);
     expect(outcome.errors[0]?.code).toBe("COMMAND_DEFERRED");
+  });
+});
+
+describe("B2：未知词形显式拒绝（非 deferred 词形不静默吞）", () => {
+  it("对抗：--bogus-flag → SCHEMA_INVALID + 被拒词形入 message + exit 1（不再按默认行为跑完 exit 0）", async () => {
+    // 若防御失效：extras 只挑 deferred 三词形，--bogus-flag 既不报错也不警告，
+    // 命令按默认行为跑完 exit 0（词形层 fail-open）。
+    writeFixtureSpec();
+    const run = await runJson([
+      "migrate",
+      "trellis-spec",
+      "--analyze",
+      "--spec-root",
+      specDir,
+      "--bogus-flag",
+    ]);
+    expect(run.code).toBe(1);
+    const envelope = run.envelope as Record<string, unknown>;
+    expect(envelope.ok).toBe(false);
+    const errors = envelope.errors as readonly Record<string, unknown>[];
+    expect(errors[0]?.code).toBe("SCHEMA_INVALID");
+    expect(String(errors[0]?.message)).toContain("--bogus-flag");
+    expect(String(errors[0]?.hint)).toContain("--analyze");
+    // 显式拒绝 = 零分析产出（机读 result 不携带 report）。
+    const result = envelope.result as Record<string, unknown>;
+    expect(result).not.toHaveProperty("report");
+  });
+
+  it("deferred 词形之外的裸词（无 -- 前缀 extras）同样显式拒绝（extras 分母全拒）", async () => {
+    writeFixtureSpec();
+    const run = await runJson(["migrate", "trellis-spec", "--analyze", "--spec-root", specDir, "stray-word"]);
+    expect(run.code).toBe(1);
+    const envelope = run.envelope as Record<string, unknown>;
+    const errors = envelope.errors as readonly Record<string, unknown>[];
+    expect(errors[0]?.code).toBe("SCHEMA_INVALID");
+    expect(String(errors[0]?.message)).toContain("stray-word");
+  });
+
+  it("deferred 与未知词形同传 → COMMAND_DEFERRED 优先（既有词形层优先级保持）", async () => {
+    writeFixtureSpec();
+    const run = await runJson([
+      "migrate",
+      "trellis-spec",
+      "--analyze",
+      "--spec-root",
+      specDir,
+      "--apply",
+      "--bogus-flag",
+    ]);
+    expect(run.code).toBe(1);
+    const envelope = run.envelope as Record<string, unknown>;
+    const errors = envelope.errors as readonly Record<string, unknown>[];
+    expect(errors[0]?.code).toBe("COMMAND_DEFERRED");
+  });
+
+  it("函数面直调：unknownForms 入参 → SCHEMA_INVALID（gate 在 runMigrateTrellisSpec 收敛点）", async () => {
+    const outcome = await runMigrateTrellisSpec(fixtureRoot, {
+      analyze: true,
+      specRoot: specDir,
+      deferredForms: [],
+      unknownForms: ["--bogus-flag", "stray-word"],
+    });
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors[0]?.code).toBe("SCHEMA_INVALID");
+    expect(outcome.errors[0]?.message).toContain("--bogus-flag");
+    expect(outcome.errors[0]?.message).toContain("stray-word");
   });
 });
 

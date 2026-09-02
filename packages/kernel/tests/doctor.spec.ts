@@ -1,7 +1,8 @@
 /**
- * doctor.spec —— doctorProbes 四检（fail-closed，只读）正反例。
- * 判据：GOLDEN-L2-BOOTSTRAP-RECOVERY（四检全绿=冷启动可恢复）、C5（heartbeat 重算获胜）、
- * D 线风险备忘（本地盘假设破裂 → environment_error，禁静默）。
+ * doctor.spec —— doctorProbes 五检（fail-closed，只读）正反例。
+ * 判据：GOLDEN-L2-BOOTSTRAP-RECOVERY（五检全绿=冷启动可恢复）、C5（heartbeat 重算获胜）、
+ * D 线风险备忘（本地盘假设破裂 → environment_error，禁静默）、D20 反自批（探针 5：
+ * 同主体自填 VERIFIED 检出——07 x-actor-discipline 的唯一消费点）。
  */
 import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -37,18 +38,61 @@ function probeOf(
   return probe;
 }
 
-describe("doctorProbes（契约四检）", () => {
-  it("探针固定顺序与命名（vocab_lock_consistency / dead_producers_empty / alias_conflicts_empty / local_binding_probe_replayable）", async () => {
+function claimsDir(): string {
+  return join(root, ".pomaster", "evidence", "claims");
+}
+
+/** 手写 claim 记录（kernel record_claim 恒置 UNVERIFIED——VERIFIED 只能来自手改/绕过）。 */
+function writeClaimFixture(
+  fileName: string,
+  options: {
+    assertedActor: string;
+    recomputedActor: string;
+    assertedActorType?: string;
+    recomputedActorType?: string;
+    verdict?: string;
+  },
+): void {
+  writeFileSync(
+    join(claimsDir(), fileName),
+    `${JSON.stringify({
+      record_type: "claim",
+      clm: fileName.replace(/\.json$/, ""),
+      subject: { object_id: "PAGE.DASHBOARD" },
+      assertion: "断言正文（fixture）",
+      asserted_by: {
+        actor_type: options.assertedActorType ?? "agent",
+        actor: options.assertedActor,
+        self_attested: true,
+      },
+      evidence_refs: [],
+      verification: {
+        verdict: options.verdict ?? "VERIFIED",
+        recomputed_by: {
+          actor_type: options.recomputedActorType ?? "tool",
+          actor: options.recomputedActor,
+          self_attested: false,
+        },
+      },
+      rev: 1,
+    }, null, 2)}\n`,
+    "utf8",
+  );
+}
+
+describe("doctorProbes（契约五检）", () => {
+  it("探针固定顺序与命名（vocab_lock_consistency / dead_producers_empty / alias_conflicts_empty / local_binding_probe_replayable / claim_self_approval_clean）", async () => {
     const report = await doctorProbes(store);
     expect(report.probes.map((probe) => probe.probe)).toEqual([
       "vocab_lock_consistency",
       "dead_producers_empty",
       "alias_conflicts_empty",
       "local_binding_probe_replayable",
+      "claim_self_approval_clean",
     ]);
   });
 
-  it("新建 store 四检全绿 ok=true（GOLDEN-L2-BOOTSTRAP-RECOVERY 冷启动形态）", async () => {
+  it("新建 store 五检全绿 ok=true（GOLDEN-L2-BOOTSTRAP-RECOVERY 冷启动形态）", async () => {
     const report = await doctorProbes(store);
     expect(report.ok).toBe(true);
     for (const probe of report.probes) {
@@ -172,7 +216,7 @@ describe("doctorProbes（契约四检）", () => {
     expect(readFileSyncOf(join(root, ".pomaster", "state", "journal.jsonl"))).toBe(journalBefore);
   });
 
-  it("四检中任一 defect → ok=false（fail-closed 语义，不允许部分报绿）", async () => {
+  it("五检中任一 defect → ok=false（fail-closed 语义，不允许部分报绿）", async () => {
     await applyTransaction(store, { ops: [{
       op: "register_producer",
       record: producerRecord({
@@ -181,8 +225,61 @@ describe("doctorProbes（契约四检）", () => {
     }] });
     const report = await doctorProbes(store);
     const passCount = report.probes.filter((probe) => probe.status === "pass").length;
-    expect(passCount).toBe(3);
+    expect(passCount).toBe(4);
     expect(report.ok).toBe(false);
+  });
+});
+
+// ============================================================
+// probe5：claim_self_approval_clean（D20 反自批——07 x-actor-discipline 唯一消费点）
+// ============================================================
+
+describe("doctorProbes probe5（claim_self_approval_clean）", () => {
+  it("同主体自填 VERIFIED（手改 claim：recomputed_by==asserted_by）→ defect 且明细点名（D20）", async () => {
+    writeClaimFixture("CLM-9001.json", {
+      assertedActor: "claude/session-93",
+      recomputedActor: "claude/session-93",
+      recomputedActorType: "agent",
+    });
+    const report = await doctorProbes(store);
+    const probe = probeOf(report, "claim_self_approval_clean");
+    expect(probe.status).toBe("defect");
+    expect(probe.detail).toContain("CLM-9001");
+    expect(probe.detail).toContain("claude/session-93");
+    expect(report.ok).toBe(false);
+  });
+
+  it("重算主体与断言主体分离（合法 VERIFIED 形态）→ pass；非 VERIFIED 判定不参与自批判定", async () => {
+    writeClaimFixture("CLM-9001.json", {
+      assertedActor: "claude/session-93",
+      recomputedActor: "gauntlet:dom_probe@0.2.0",
+    });
+    writeClaimFixture("CLM-9002.json", {
+      assertedActor: "claude/session-93",
+      recomputedActor: "claude/session-93",
+      recomputedActorType: "agent",
+      verdict: "UNVERIFIED",
+    });
+    const report = await doctorProbes(store);
+    const probe = probeOf(report, "claim_self_approval_clean");
+    expect(probe.status).toBe("pass");
+    expect(probe.detail).toContain("2 条 claim");
+    expect(report.ok).toBe(true);
+  });
+
+  it("claim 平面损坏（手改坏 JSON）→ defect（禁静默当 clean）", async () => {
+    writeFileSync(join(claimsDir(), "CLM-9003.json"), "{broken", "utf8");
+    const report = await doctorProbes(store);
+    const probe = probeOf(report, "claim_self_approval_clean");
+    expect(probe.status).toBe("defect");
+    expect(probe.detail).toContain("CLM-9003");
+  });
+
+  it("零 claim 分母 → pass 且显式注明分母 0（显式缺席非通过判定）", async () => {
+    const report = await doctorProbes(store);
+    const probe = probeOf(report, "claim_self_approval_clean");
+    expect(probe.status).toBe("pass");
+    expect(probe.detail).toContain("分母 0");
   });
 });
 

@@ -35,8 +35,9 @@
  *      REPO_ROOT/.pomaster store（evidence/runs/<GRN>.json + journal TX_APPLIED 锚），
  *      成为正式治理事实——store 未初始化时 createStore 幂等建 skeleton（authority
  *      骨架按默认；record_gate_run 不需要 authority owner）。同 GRN 重复入账显式
- *      处理：同内容 already_entered 零写入、异内容 GRN_CONFLICT fail-closed（kernel
- *      applyRecordGateRun 对重复 GRN 无守卫，预检封死静默双写）。账本一致性纳入
+ *      处理：同内容 already_entered 零写入、异内容 GRN_CONFLICT fail-closed（静默
+ *      双写由双防线封死：kernel A3 存在性防线——EVIDENCE_ALREADY_EXISTS / op 层
+ *      canonicalizeOverwrite 显式契约位——+ CLI 入账预检）。账本一致性纳入
  *      --verify 对账面。REPO_ROOT/.pomaster 已入 .gitignore（保守裁定：账本留本机
  *      不入 git）；last-results.json 照旧是基准报告文件，与 store 账本并存。--verify
  *      的账本对账按环境依赖分层（Owner 设计修正 2026-09-01）：store 在座必查
@@ -863,7 +864,7 @@ async function runMeasurement() {
     // 自洽复核通过后、results 落盘前执行：入账失败 = exit 2（fail-closed——测量成功
     // 但账本写入失败不能静默绿；results 文件保持上一成功轮原貌，重跑复用同 seq/GRN
     // 重试入账）。同 GRN 重复入账由入账核心显式处理（同内容 already_entered 零写入、
-    // 异内容 GRN_CONFLICT 冲突拒绝——kernel 对重复 GRN 无守卫，预检封死静默双写）。
+    // 异内容 GRN_CONFLICT 冲突拒绝——kernel A3 存在性防线封死裸覆写，预检为双防线之一）。
     let ledgerOutcome;
     try {
       const kernel = await loadKernelDist();
@@ -957,7 +958,7 @@ async function runMeasurement() {
       },
       durationMs: { total: totalExternalMs },
       note:
-        "timestamp 禁入：运行序以 seq 整数标识（自增，append-only）；durationMs 允许。gate_record 已入正式账本（Owner 决议 2026-09-01 批准）：经 applyTransaction record_gate_run 落本仓 .pomaster store（evidence/runs/<GRN>.json + journal TX_APPLIED 锚）；last-results.json 仍是基准报告文件、store 账本是正式治理事实面，两者并存。GRN 词形 GRN-<results seq>（ran_at_seq 同源取 results seq）；GRN 序号空间与 store 事务 seq 相互独立。同 GRN 重复入账显式幂等：同内容 already_entered 零写入、异内容 GRN_CONFLICT fail-closed exit 2（kernel 对重复 GRN 无守卫，入账预检封死静默双写）。.pomaster 已入 .gitignore（账本留本机不入 git）。落盘结果与账本一致性可校验：node benchmarks/mutation-kill.mjs --verify（重放 harness_report 判卷锚——手改落盘分数/计数/killed 位必被检出——并对账 store 在账状态与 results gate_record 一致）。",
+        "timestamp 禁入：运行序以 seq 整数标识（自增，append-only）；durationMs 允许。gate_record 已入正式账本（Owner 决议 2026-09-01 批准）：经 applyTransaction record_gate_run 落本仓 .pomaster store（evidence/runs/<GRN>.json + journal TX_APPLIED 锚）；last-results.json 仍是基准报告文件、store 账本是正式治理事实面，两者并存。GRN 词形 GRN-<results seq>（ran_at_seq 同源取 results seq）；GRN 序号空间与 store 事务 seq 相互独立。同 GRN 重复入账显式幂等：同内容 already_entered 零写入、异内容 GRN_CONFLICT fail-closed exit 2（静默双写由双防线封死：kernel A3 守卫 EVIDENCE_ALREADY_EXISTS + canonicalizeOverwrite 显式契约位、CLI 入账预检）。.pomaster 已入 .gitignore（账本留本机不入 git）。落盘结果与账本一致性可校验：node benchmarks/mutation-kill.mjs --verify（重放 harness_report 判卷锚——手改落盘分数/计数/killed 位必被检出——并对账 store 在账状态与 results gate_record 一致）。",
     };
     writeFileSync(RESULTS_PATH, `${JSON.stringify(results, null, 2)}\n`, "utf8");
 

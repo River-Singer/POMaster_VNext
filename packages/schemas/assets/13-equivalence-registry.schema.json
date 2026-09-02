@@ -77,9 +77,13 @@
           "then": {
             "properties": {
               "declared_by": { "type": "null" },
-              "declaration_ref": { "type": "null" }
+              "declaration_ref": { "type": "null" },
+              "provenance": {
+                "type": "object",
+                "properties": { "declared_at_seq": { "type": "null" } }
+              }
             },
-            "description": "pending（未获声明的候选组，机械入册等裁决）不存在声明者与声明引用——非 null 即手改痕迹（装载面 SCHEMA_INVALID；「登记≠裁决」的形态面：机械入册永远写不出声明位）。"
+            "description": "pending（未获声明的候选组，机械入册等裁决）不存在声明者、声明引用与声明事件拍——三者任一非 null 即手改痕迹（装载面 SCHEMA_INVALID；「登记≠裁决」的形态面：机械入册永远写不出声明位）。declared_at_seq 与声明位同锁：pending 恒 null（provenance 定义自述），漏锁 = pending 可带声明时间拍冒充半声明态"
           }
         }
       ],

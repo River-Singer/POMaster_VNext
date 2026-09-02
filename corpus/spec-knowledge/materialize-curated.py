@@ -283,6 +283,79 @@ NEW_ID_SEGMENTS = {
 
 
 # ======================================================================
+# W1-A2 P0.5-1 T3 机器 applicability 标注表（PRD v0.5.2 §5.2/§14 + Owner 裁决 8 ②）
+# 保守派生：仅正文词面有明确证据才标；拿不准的留空回退 lane 缺省（O7 行为零变化）+
+# x-applicability-review 注记 human-review 候选。condition 降级为 applicability_note
+# 保留（PRD §5.2 允许自然语言保留为注记，kernel 契约要求 condition 字段仍在场）。
+# 本批 25 条全部 lane=any（不标 lanes，走缺省回退）。
+# ======================================================================
+APPLICABILITY_AXES = {
+    "POLICY.DEP.ADMISSION_SIX_DIMENSION_CHECK": {
+        "change_classes": ["DEPENDENCY_CHANGE"],
+        "basis": "condition『新增或升级依赖』——依赖面变更词面逐字",
+    },
+    "POLICY.DEP.CHANGE_SURFACE_REVIEW": {
+        "change_classes": ["DEPENDENCY_CHANGE"],
+        "basis": "condition『依赖变更与升级评审』",
+    },
+    "POLICY.DEP.INTRODUCTION_REVIEW": {
+        "change_classes": ["DEPENDENCY_CHANGE"],
+        "basis": "condition『引入新依赖』",
+    },
+    "POLICY.SEC.THIRD_PARTY_EXECUTION_REGISTER": {
+        "capabilities": ["CAPABILITY.API_CONTRACT"],
+        "basis": "沿 tests/integration/catalog-applicability-case-b.spec.ts（W1-A1 批1）先例标注；"
+                 "T3 实测词面证据弱（condition『页面引入第三方执行体』无契约动词面）——列 Human Review 复核",
+    },
+}
+
+APPLICABILITY_CAMPAIGN = "W1-A2 P0.5-1 T3 标注战役（PRD v0.5.2 §5.2/§14；Owner 裁决 8 ②，2026-09-01）"
+
+# 三个 materialize 工具共用的 producer 链 generated_by（同步落在
+# catalog/tools/materialize_catalog_pilot.py 与 catalog/tools/materialize_batch4_uplift.py；
+# 同串保证任一工具最后落锁不丢失其余批次的 provenance 注记）。
+LOCK_GENERATED_BY = (
+    "catalog/tools/materialize_catalog_pilot.py（pilot-0001 60 条；entries 按 id 排序）+ "
+    "catalog/tools/materialize_batch4_uplift.py（batch-4 语料批 Universal 上提追加 9 条）+ "
+    "corpus/spec-knowledge/materialize-curated.py（SPEC-D 汇总池 D5 精选追加 25 条）+ "
+    "catalog/sensors/（P1-5 Sensor Capability Catalog Lite 六条目登记，裁决 8 D6/D7）+ "
+    "W1-A2 P0.5-1 T3 标注战役（机器 applicability 字段批量标注 + 幂等重锁；PRD v0.5.2 §5.2/§14，裁决 8 ②）"
+)
+
+
+def applicability_parts(cid, lane, condition):
+    """机器 applicability 字段组装（本批 lane 全 any：不标 lanes 走缺省回退 O7）。"""
+    merged = {"lane": lane, "condition": condition}
+    axes_written = []
+    axes = APPLICABILITY_AXES.get(cid)
+    basis = None
+    if axes is not None:
+        basis = axes["basis"]
+        for key in ("capabilities", "change_classes"):
+            if key in axes:
+                merged[key] = list(axes[key])
+                axes_written.append(key)
+    merged["applicability_note"] = condition
+    axes_written.append("applicability_note")
+    if basis is not None:
+        review = {
+            "status": "annotated",
+            "campaign": APPLICABILITY_CAMPAIGN,
+            "axes": axes_written,
+            "basis": basis,
+        }
+    else:
+        review = {
+            "status": "human_review_candidate",
+            "campaign": APPLICABILITY_CAMPAIGN,
+            "axes": axes_written,
+            "note": "T3 保守派生未见明确词面证据——capabilities/change_classes 留空回退 lane 缺省"
+                    "（O7 行为零变化）；列 Human Review 复核议程",
+        }
+    return merged, review
+
+
+# ======================================================================
 # 汇总池选取
 # ======================================================================
 def load_pool():
@@ -474,6 +547,11 @@ def build_entry(rank, pool_rec, card, statement):
 
     new_segments = NEW_ID_SEGMENTS[cid]
     seg_note = ("；新 id 域段待登记：" + "/".join(new_segments)) if new_segments else ""
+    # W1-A2 P0.5-1 T3：机器 applicability 字段组装（保守派生——拿不准留空回退
+    # lane 缺省 O7；condition 降级为 applicability_note 保留）。
+    lane = (r.get("applies_when") or {}).get("lane", "any")
+    condition = (r.get("applies_when") or {}).get("condition", "")
+    applies_when, applicability_review = applicability_parts(cid, lane, condition)
     entry = {
         "x-vocab-pr": {
             "status": "vocab_pr_candidate",
@@ -495,6 +573,7 @@ def build_entry(rank, pool_rec, card, statement):
             "curated_rule": "UNIVERSAL + UNIVERSAL_POLICY + required_when_applicable + 无 uncertainty "
                             "+ 非 project_scope + 非重复 + 与既有 69 条零语义重复；按信息密度排序取前 25",
         },
+        "x-applicability-review": applicability_review,
         "id": cid,
         "kind": "policy",
         "axis_profile": "policy_default",
@@ -508,10 +587,7 @@ def build_entry(rank, pool_rec, card, statement):
         "title_zh": TITLES[cid],
         "statement_zh": statement,
         "statement_en_keywords": norm_keywords(card, cid),
-        "applies_when": {
-            "lane": (r.get("applies_when") or {}).get("lane", "any"),
-            "condition": (r.get("applies_when") or {}).get("condition", ""),
-        },
+        "applies_when": applies_when,
         "enforcement": "required_when_applicable",
         "authority": {
             "owner": "HUMAN_OWNER",
@@ -565,11 +641,7 @@ def merge_lock(old_lock, new_metas):
     paths = sorted(e["path"] for e in entries)
     assert len(paths) == len(set(paths)), "lock path 重复"
     lock = dict(old_lock)
-    lock["generated_by"] = (
-        "catalog/tools/materialize_batch4_uplift.py（batch-4 语料批 Universal 上提；entries 按 id 排序；"
-        "在 materialize_catalog_pilot.py 60 条基础上追加 9 条）+ "
-        "corpus/spec-knowledge/materialize-curated.py（SPEC-D 汇总池 D5 精选追加 25 条）"
-    )
+    lock["generated_by"] = LOCK_GENERATED_BY
     lock["controlled_children"] = dict(old_lock["controlled_children"])
     lock["controlled_children"]["allowed"] = paths
     lock["controlled_children"]["required"] = list(paths)

@@ -38,8 +38,44 @@ import {
   type DetectorFacts,
   type GatePolicy,
 } from "@pomaster/gauntlet-lite";
+import {
+  buildEnvironmentReceipt,
+  runEnvironmentDoctor,
+  type EnvironmentExpectation,
+  type EnvironmentObserved,
+  type EnvironmentReceipt,
+} from "@pomaster/kernel";
 import { gateResultSchema } from "@pomaster/schemas";
 import { fakeFacts, posixJoin } from "./helpers.js";
+
+// ============================================================
+// §6.7 环境回执夹具（P0.5-4b · @0.3.0 前置门）：kernel 判定函数真判卷构造
+// （runEnvironmentDoctor → buildEnvironmentReceipt——本 spec 全链路经同一判定面，
+// 禁手拼 doctor_verdict 字段；值取 PRD §6.7 yaml 例文同值族）。环境门矩阵
+// （null/blocked/次序）住 browser-environment-gate.spec.ts。
+// ============================================================
+
+const READY_EXPECTATION: EnvironmentExpectation = {
+  repository_ref: "POMASTER_PROJECT",
+  revision_ref: "d6afca3",
+  build_identity: null,
+  runtime_instance: "app-local-4173",
+  base_url: "http://127.0.0.1:4173",
+  environment_ref: "ENV.LOCAL.DEV",
+  dataset_ref: null,
+  auth_role: null,
+  feature_flags: null,
+};
+
+function readyObserved(): EnvironmentObserved {
+  return { ...READY_EXPECTATION };
+}
+
+/** READY 回执（九项确认全等）。 */
+function readyReceipt(executionId = "AGX-2026-00001"): EnvironmentReceipt {
+  const outcome = runEnvironmentDoctor(READY_EXPECTATION, readyObserved());
+  return buildEnvironmentReceipt(readyObserved(), executionId, outcome.verdict);
+}
 
 const adapter = createBrowserAdapter();
 
@@ -95,14 +131,18 @@ function fullEvidence(): readonly unknown[] {
   ];
 }
 
-/** 经注入面全链路：prepare → run（注入 smoke + 证据）→ normalize。 */
+/** 经注入面全链路：prepare → run（注入 smoke + 证据 + 环境回执）→ normalize。 */
 function runWithEvidence(
   evidence: readonly unknown[],
   facts: DetectorFacts = mcpRegisteredFacts(),
+  options: { readonly environment?: EnvironmentReceipt | null } = {},
 ) {
   const wired = createBrowserAdapter({
     smokeFn: () => ({ connected: true, pageTitle: null, failureReason: null }),
     mcpEvidenceProvider: () => evidence,
+    // @0.3.0 前置门缺省 READY（本 spec 主矩阵测证据判卷；环境门矩阵归
+    // browser-environment-gate.spec.ts——READY 回执下判卷语义与 @0.2.0 时代逐字不变）。
+    environment: options.environment === undefined ? readyReceipt() : options.environment,
   });
   const plan = wired.prepare({ projectRoot: ROOT }, policy(), facts);
   const raw = wired.run(plan);
@@ -261,6 +301,8 @@ describe("browser adapter：MCP 证据三件套判卷（P26 升级）", () => {
         failureReason: "连接被拒绝（ECONNREFUSED）",
       }),
       mcpEvidenceProvider: () => fullEvidence(),
+      // READY 回执在场——本用例钉连接失败门（环境门矩阵归 browser-environment-gate.spec）。
+      environment: readyReceipt(),
     });
     const plan = broken.prepare({ projectRoot: ROOT }, policy(), mcpRegisteredFacts());
     const record = broken.normalize(broken.run(plan), {});
@@ -280,6 +322,7 @@ describe("browser adapter：MCP 证据三件套判卷（P26 升级）", () => {
     const wired = createBrowserAdapter({
       smokeFn: () => ({ connected: true, pageTitle: null, failureReason: null }),
       mcpEvidenceProvider: () => fullEvidence(),
+      environment: readyReceipt(),
     });
     const plan = wired.prepare(
       { projectRoot: ROOT },
@@ -490,7 +533,11 @@ function fakeServerCommand(source: string): { command: string; dir: string } {
 describe("browser adapter：默认 smoke（spawnSync 握手）", () => {
   it("server 应答 initialize → connected=true（通道可达）；无证据供给 → 记录 not_run（P26 判卷锚升级）", { timeout: 30_000 }, () => {
     const { command } = fakeServerCommand(FAKE_MCP_SERVER_CJS);
-    const smokeAdapter = createBrowserAdapter({ smokeCommand: command, smokeTimeoutMs: 10_000 });
+    const smokeAdapter = createBrowserAdapter({
+      smokeCommand: command,
+      smokeTimeoutMs: 10_000,
+      environment: readyReceipt(),
+    });
     const plan = smokeAdapter.prepare({ projectRoot: ROOT }, policy(), mcpRegisteredFacts());
     const raw = smokeAdapter.run(plan);
     expect(raw.outcome).toBe("smoked");
@@ -502,7 +549,11 @@ describe("browser adapter：默认 smoke（spawnSync 握手）", () => {
 
   it("server 无应答退出 → connected=false + failureReason → normalize failed（fail-closed）", { timeout: 30_000 }, () => {
     const { command } = fakeServerCommand(SILENT_MCP_SERVER_CJS);
-    const smokeAdapter = createBrowserAdapter({ smokeCommand: command, smokeTimeoutMs: 10_000 });
+    const smokeAdapter = createBrowserAdapter({
+      smokeCommand: command,
+      smokeTimeoutMs: 10_000,
+      environment: readyReceipt(),
+    });
     const plan = smokeAdapter.prepare({ projectRoot: ROOT }, policy(), mcpRegisteredFacts());
     const raw = smokeAdapter.run(plan);
     expect(raw.smoke?.connected).toBe(false);
@@ -540,7 +591,12 @@ describe("browser adapter 真实 e2e", () => {
       );
       ctx.skip();
     }
-    const realAdapter = createBrowserAdapter();
+    const realAdapter = createBrowserAdapter({
+      // 真实通道 + READY 回执（kernel 判定函数构造）：本用例钉「通道可达而证据不完整
+      // → not_run」——环境门矩阵（null/blocked）归 browser-environment-gate.spec 与
+      // tests/integration/browser-legs-environment.spec（宿主真轨诚实 skip 同款纪律）。
+      environment: readyReceipt(),
+    });
     const plan = realAdapter.prepare(
       { projectRoot: process.cwd() },
       policy(),

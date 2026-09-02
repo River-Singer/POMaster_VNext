@@ -342,6 +342,14 @@ export function normalizePytestLeg(
       produced: filesProduced,
       escapeRatio:
         filesScanned === 0 ? 0 : (filesScanned - filesProduced) / filesScanned,
+      // C3 封条合规位：03 allOf「skipped_blindspot ⇒ blindspot.fixture_regression 必附」。
+      // 本腿的证据锚是盲区指标本身（被跳过用例数=估计未检数），引用词形指向该计数——
+      // 不是虚构的回归 fixture 名（禁伪造证据引用）。
+      ...(allSkippedBlindspot
+        ? {
+            fixtureRegression: `PYTEST_ALL_SKIPPED/unchecked_in_blindspot_estimated=${notApplicable}`,
+          }
+        : {}),
     },
     trust: {
       asserted,

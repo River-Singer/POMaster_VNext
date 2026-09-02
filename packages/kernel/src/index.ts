@@ -372,8 +372,26 @@ export type TransactionOp =
       readonly wroteObjectIds: readonly GovernedId[];
     }
   | { readonly op: "append_denominator"; readonly entry: DenominatorEntry }
-  | { readonly op: "record_claim"; readonly claim: ClaimRecordInput }
-  | { readonly op: "record_gate_run"; readonly run: GateRunRecordInput };
+  | {
+      readonly op: "record_claim";
+      readonly claim: ClaimRecordInput;
+      /**
+       * A3 显式 canonical 化覆写凭据（契约位收口，D20 边界注释）：缺席（默认）=
+       * record 通道无权覆写既有同 id 证据（canonical 等价→幂等短路；异内容→
+       * EVIDENCE_ALREADY_EXISTS）。置 true = 调用方声明「既有同 id 记录在场已知悉，
+       * 本次是判定可复核的 canonical 化重录」（仅 cli record --grn 重放与 evidence
+       * ingest 收编两条 sanctioned 通路传入）。kernel 保留二道防线：既有 claim 已处
+       * 判定态（verification.verdict ∈ VERIFIED/PARTIALLY_VERIFIED/REJECTED）时
+       * canonicalize 亦拒——已判定记录不可 canonical 化，须走新 id。
+       */
+      readonly canonicalizeOverwrite?: boolean;
+    }
+  | {
+      readonly op: "record_gate_run";
+      readonly run: GateRunRecordInput;
+      /** 同 record_claim.canonicalizeOverwrite；run 无判定态概念（verdict 是 run 本身内容），重放翻转属 sanctioned 再判卷。 */
+      readonly canonicalizeOverwrite?: boolean;
+    };
 
 export interface Transaction {
   readonly ops: readonly TransactionOp[];
@@ -1168,6 +1186,7 @@ export type { StorePaths } from "./paths.js";
 // write_blocking=false——lock 漂移 WARN 呈现，永不阻断）。消费方：projection 通道
 // （context compile 的 catalog 分区）与 CLI catalog status/explain（§44.10）。
 export {
+  catalogRootCandidates,
   loadCatalogPolicies,
   loadCatalogProjectionPresets,
   loadCatalogSensors,
@@ -1304,6 +1323,13 @@ export interface GateResult {
     readonly scanned: number;
     readonly produced: number;
     readonly escapeRatio: number;
+    /**
+     * 盲区回归 fixture 证据引用（03 blindspot.fixture_regression 同名位；C3 封条）：
+     * verdict=skipped_blindspot 必附（03 allOf 封条——无证据的盲区跳过不过 schema）。
+     * 值是证据锚引用（如 pytest 全 skipped 腿指向 unchecked_in_blindspot_estimated
+     * 计数词形），禁虚构不存在的回归 fixture 名。
+     */
+    readonly fixtureRegression?: string;
   };
   /** asserted=自报（CLAIMED，永不单独判卷）/ recomputed=重算（判卷唯一依据）；失配=一级信号。 */
   readonly trust: {
@@ -1652,7 +1678,7 @@ export type {
 } from "./vocab.js";
 
 // ============================================================
-// Doctor（D7 Portability 必检最小集四检；fail-closed）
+// Doctor（D7 Portability 必检最小集五检；fail-closed）
 // ============================================================
 
 /** 探针三态：环境异常禁静默（D 线风险备忘：单机本地盘假设破裂必须报 environment_error）。 */
@@ -1662,7 +1688,8 @@ export type DoctorProbeName =
   | "vocab_lock_consistency"
   | "dead_producers_empty"
   | "alias_conflicts_empty"
-  | "local_binding_probe_replayable";
+  | "local_binding_probe_replayable"
+  | "claim_self_approval_clean";
 
 export interface DoctorReport {
   readonly probes: readonly {
@@ -1675,9 +1702,10 @@ export interface DoctorReport {
 }
 
 /**
- * doctor 必检最小集四检（x-vocab-source: 06 x-pomaster-doctor-coupling / thread-A §7）：
+ * doctor 必检最小集五检（x-vocab-source: 06 x-pomaster-doctor-coupling / thread-A §7）：
  * 1) vocab_lock 一致（三指纹对账）；2) dead_producers 空（liveness=dead ⇒ DEFECT，fail-closed）；
- * 3) alias_conflicts 空（三重查重冲突非空即 FATAL 级 DEFECT）；4) LOCAL binding probe 可重放。
+ * 3) alias_conflicts 空（三重查重冲突非空即 FATAL 级 DEFECT）；4) LOCAL binding probe 可重放；
+ * 5) claim_self_approval_clean（D20 反自批：同主体自填 VERIFIED 检出）。
  * 只读：doctor 永不修改 store 状态。
  */
 export { doctorProbes } from "./doctor.js";
@@ -1738,3 +1766,64 @@ export type {
   SealedExecutionTrace,
   SealedTraceListRow,
 } from "./trace.js";
+
+// ============================================================
+// Perception 契约 + Environment Doctor + Observation Receipt（W1-D1 P0.5-4a 纯函数面 + W1-D2 P0.5-4b 接线）
+// ============================================================
+// 语义边界（perception.ts 头注为准；PRD v0.5.2 §6 全章 + §14 P0.5-4 + Benchmark E +
+// Case H）：Observation ≠ Verification ≠ Diagnosis ≠ Evidence；Tool Output ≠ Truth。
+// 纯函数零 IO 零 store 依赖零墙钟（同输入重放字节稳定，A4）；产品接线住消费方
+// （gauntlet-lite browser-adapter/browser-legs/browser-evidence——POLICY.GATE.BROWSER
+// @0.2.0 之上增 §6.7 环境身份前置门，verdict 七态零扩张：WRONG_OR_UNVERIFIED_INSTANCE
+// → blocked）。词形纪律：OBS-/ENVREC-/ENV./SENSOR./JOURNEY. 为感知平面通路/局部词形，
+// 非 governed 前缀不入 id_namespace 闭包（AGX-n 头注同款注记）；observation surface/
+// side-effect/负观察/doctor verdict 等词轴 TODO(vocab-pr-0005)——词表三镜像登记归
+// 主控批次（批 2 文件面互斥）；CAPABILITY_DEGRADED 与 §58 capability_degradation_report
+// 同词根不同概念（裁决 8 撞族消歧）。schema 载体 17-perception-receipts.schema.json。
+// barrel 撞名注记（W1-D2）：OBSERVATION_SURFACE_VALUES / ObservationSurfaceValue 已由
+// catalog.js（批 1 P1-5 sensor catalog 线）经本 barrel 导出——同一 PRD §6.4 八值字面
+// 同源（逐字全等）；perception.ts 模块常量是感知模块内部消费位（perception.spec 直连
+// 钉住），barrel 单一出口纪律下本块不重复导出（撞名 = esbuild Multiple exports 硬错）。
+export {
+  // —— 词形常量与词轴（TODO(vocab-pr-0005)） ——
+  SIDE_EFFECT_CLASS_VALUES,
+  PROBE_SIDE_EFFECT_RULES,
+  NEGATIVE_OBSERVATION_VALUES,
+  OBSERVATION_RESULT_VALUES,
+  ENVIRONMENT_DOCTOR_VERDICT_VALUES,
+  CAPABILITY_DEGRADED,
+  OBS_ID_PATTERN,
+  ENVREC_ID_PATTERN,
+  DOCTOR_CONFIRM_FIELDS,
+  DOCTOR_REQUIRED_EXPECTATION_FIELDS,
+  // —— §6.2/§6.3 四锚契约 ——
+  validateObservationRequest,
+  // —— §6.7 Environment Doctor + EnvironmentReceipt ——
+  runEnvironmentDoctor,
+  buildEnvironmentReceipt,
+  // —— §6.13 Observation Receipt（W1-D2：OBSERVED 必须 ≥1 条 artifact_refs 封条） ——
+  buildObservationReceipt,
+  // —— §6.14 负观察判定 ——
+  judgeNegativeObservation,
+} from "./perception.js";
+export type {
+  SideEffectClassValue,
+  NegativeObservationValue,
+  ObservationResultValue,
+  EnvironmentDoctorVerdict,
+  DoctorConfirmField,
+  DoctorRequiredExpectationField,
+  EnvironmentExpectation,
+  EnvironmentObserved,
+  EnvironmentDoctorRow,
+  EnvironmentDoctorOutcome,
+  EnvironmentReceipt,
+  ObservationTarget,
+  ObservationRequest,
+  ObservationReceiptArtifactRef,
+  ObservationReceiptInput,
+  ObservationReceipt,
+  DeclaredNegative,
+  NegativeObservationInput,
+  NegativeObservationOutcome,
+} from "./perception.js";

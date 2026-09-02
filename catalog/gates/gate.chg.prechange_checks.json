@@ -15,6 +15,15 @@
     "enforcement_note": "优先机器判卷；判卷步骤草案见 catalog/gates/ 同协议 recipe",
     "clean_room_note": "statement_zh 为独立改写（clean-room），零逐字拷贝源协议"
   },
+  "x-applicability-review": {
+    "status": "annotated",
+    "campaign": "W1-A2 P0.5-1 T3 标注战役（PRD v0.5.2 §5.2/§14；Owner 裁决 8 ②，2026-09-01）",
+    "axes": [
+      "change_classes",
+      "applicability_note"
+    ],
+    "basis": "condition『公共变更过门禁』"
+  },
   "id": "GATE.CHG.PRECHANGE_CHECKS",
   "kind": "gate_recipe",
   "axis_profile": "gate_recipe_default",
@@ -29,7 +38,11 @@
   "statement_zh": "变更门禁检查单：①根因层级明确 ②调用方清单完整 ③兼容/迁移/回滚可执行 ④测试示例通知已更新 ⑤Spec 元数据已登记 ⑥开发后规则回填已归类。",
   "applies_when": {
     "lane": "any",
-    "condition": "公共变更过门禁"
+    "condition": "公共变更过门禁",
+    "change_classes": [
+      "PUBLIC_CONTRACT_CHANGE"
+    ],
+    "applicability_note": "公共变更过门禁"
   },
   "enforcement": "deterministic_where_possible",
   "gate_def_draft": {

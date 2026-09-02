@@ -322,6 +322,10 @@ export async function runRecordGateRun(
   // —— grn 解析与幂等判定 ——
   let grn: string;
   let skippedCanonical = false;
+  // A3 显式 canonical 化覆写凭据：--grn 指向既有文件且内容有变（APPLIED 覆写）时传
+  // kernel（判定可复核重录；TX_APPLIED ops 记 record_gate_run_canonicalize 留痕）。
+  // 全新 GRN / canonical 等价短路路径不传（非覆写语义）。
+  let recordCanonicalizeOverwrite = false;
   if (input.grn !== undefined) {
     grn = input.grn;
     // --grn 同号重放：pending 字节判定（already_canonical → 跳过；内容有变 → canonical 化，
@@ -333,6 +337,8 @@ export async function runRecordGateRun(
     } catch {
       targetBytes = null;
     }
+    // 目标文件在场 = 本次写路径语义是覆写既有记录 → APPLIED 时向 kernel 显式申报。
+    recordCanonicalizeOverwrite = targetBytes !== null;
     if (targetBytes !== null) {
       const replayRanAtSeq = resolved.ranAtSeqClaimed
         ? resolved.ranAtSeq
@@ -423,6 +429,7 @@ export async function runRecordGateRun(
   const tx: Transaction = {
     ops: [{
       op: "record_gate_run",
+      ...(recordCanonicalizeOverwrite ? { canonicalizeOverwrite: true } : {}),
       run: {
         grn,
         trigger: context.trigger,
@@ -652,6 +659,9 @@ export async function runRecordClaim(
   // —— clm 解析与幂等判定（与 gate-run 同法：字节预比较补齐 kernel 无 per-op 幂等的缺口） ——
   let clm: string;
   let skippedCanonical = false;
+  // A3 显式 canonical 化覆写凭据：--clm 指向既有文件且内容有变（APPLIED 覆写）时传
+  // kernel（既有 verdict 为已判定态时 kernel 仍拒——已判定记录不可 canonical 化）。
+  let claimCanonicalizeOverwrite = false;
   if (input.clm !== undefined) {
     clm = input.clm;
     let targetBytes: string | null = null;
@@ -660,6 +670,8 @@ export async function runRecordClaim(
     } catch {
       targetBytes = null;
     }
+    // 目标文件在场 = 本次写路径语义是覆写既有记录 → APPLIED 时向 kernel 显式申报。
+    claimCanonicalizeOverwrite = targetBytes !== null;
     if (targetBytes !== null) {
       const replayRev = replayRevOf(targetBytes, curSeq + 1);
       try {
@@ -702,7 +714,11 @@ export async function runRecordClaim(
   }
 
   const tx: Transaction = {
-    ops: [{ op: "record_claim", claim: { ...claimInput, clm } }],
+    ops: [{
+      op: "record_claim",
+      ...(claimCanonicalizeOverwrite ? { canonicalizeOverwrite: true } : {}),
+      claim: { ...claimInput, clm },
+    }],
   };
   try {
     const applied = await applyTransaction(store, tx);

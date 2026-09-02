@@ -114,13 +114,13 @@ function entryWith(
 }
 
 describe("13-equivalence-registry（$id 与注册）", () => {
-  it("$id 形态对齐 v1-draft 契约且已注册进 allSchemas（17 份聚合，P34 增量 14→15；W1-C 增量 15→16；VB-PR1 增量 16→17）", () => {
+  it("$id 形态对齐 v1-draft 契约且已注册进 allSchemas（18 份聚合，P34 增量 14→15；W1-C 增量 15→16；VB-PR1 增量 16→17；W1-D2 增量 17→18）", () => {
     expect(equivalenceRegistrySchema.$id).toBe(
       "https://pomaster.dev/schemas/equivalence-registry/v1-draft.json",
     );
     expect(SCHEMA_VERSION).toBe("v1-draft");
     expect(allSchemas.equivalenceRegistry).toBe(equivalenceRegistrySchema);
-    expect(Object.keys(allSchemas).length).toBe(17);
+    expect(Object.keys(allSchemas).length).toBe(18);
   });
 
   it("正例：GRN-4402 场景 active 等价组（密度↔MIDU↔FIELD.MATERIAL-DB.MIDU，声明位齐备）与空表", () => {
@@ -174,7 +174,7 @@ describe("13-equivalence-registry（$id 与注册）", () => {
     ).toBe(false);
   });
 
-  it("登记≠裁决形态面：pending 携带 declared_by / declaration_ref 非空 → 拒绝（机械入册写不出声明位）", () => {
+  it("登记≠裁决形态面：pending 携带 declared_by / declaration_ref / declared_at_seq 非空 → 拒绝（机械入册写不出声明位）", () => {
     expect(
       validateRegistry(
         registryWith([
@@ -187,6 +187,17 @@ describe("13-equivalence-registry（$id 与注册）", () => {
     expect(
       validateRegistry(
         registryWith([entryWith(pendingEntryBase, { declaration_ref: "SELF-DECLARED" })]),
+      ),
+    ).toBe(false);
+    // C2 封条补强：pending 的 provenance.declared_at_seq 与声明位同锁（非 null 即
+    // 手改痕迹——pending 恒 null 是 provenance 定义自述，漏锁 = 可带声明时间拍冒充半声明态）。
+    expect(
+      validateRegistry(
+        registryWith([
+          entryWith(pendingEntryBase, {
+            provenance: { recorded_at_seq: 43, declared_at_seq: 5 },
+          }),
+        ]),
       ),
     ).toBe(false);
   });

@@ -287,8 +287,10 @@ export async function enterGateRecordInStore({ record, storeRoot, kernel }) {
   const grn = /** @type {string} */ (record.grn);
   const layout = storeLayout(storeRoot);
 
-  // —— 重复 GRN 显式处理（kernel 对重复 GRN 无守卫：新事务同 GRN 会静默覆盖 run 文件
-  // ——预检在此封死「静默双写」；同内容 already_entered 零写入，异内容冲突 fail-closed）。
+  // —— 重复 GRN 显式处理（原「kernel 对重复 GRN 无守卫」缺口已由 kernel A3 存在性
+  // ——防线封死：预检降级为双防线之一——同内容 already_entered 零写入，异内容冲突
+  // ——fail-closed；kernel 侧对裸覆写报 EVIDENCE_ALREADY_EXISTS，canonicalizeOverwrite
+  // ——凭据通路不经本入账核心）。
   const existing = readRunRecord(layout, grn);
   if (existing !== null) {
     const expected = expectedStoreRunRecord(record, kernel.gateResultToSnake);

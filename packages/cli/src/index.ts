@@ -94,6 +94,12 @@
  * - execution begin/end/list
  *                   D 线地基③执行身份命令面（P20；PRD §25.4：AGX-n 登记/封口/清单
  *                   ——record gate-run/claim --execution-id 的身份供给面）
+ * - trace show/list Execution Trace 命令面（W1-C2 · PRD v0.5.2 §8 + §14 P0.5-3；
+ *                   OD-5 已批词形，裁决 8 ②）：show <AGX> = 纯投影纯读（封存在座=
+ *                   封存快照 + stale 对账显式呈现；--seal --retention <四档> = 显式
+ *                   物化审计快照——EPHEMERAL 落 runtime/traces 可丢弃、其余 traces/
+ *                   durable 进 Git）/ list = 封存清单（双平面 durable 优先）；Trace
+ *                   是 Identity 的派生投影侧车，CLI 零判卷零 GC（retention 仅记录）
  * - agents status   §44.8 兑现（P20 建面 + P21-Contract 接入 DEF-SUP 观测位）：solo
  *                   运行时观测面（sessions/locks/executions 聚合 + DEF-GATEKEEPER
  *                   分身漂移信号 + DEF-SUP 触发制三条件观测；触发=warning 非阻断；
@@ -180,6 +186,7 @@ import {
   runSessionList,
   runSessionRefresh,
 } from "./runtime.js";
+import { runTraceList, runTraceShow } from "./trace.js";
 import { runAgentsStatus, runHandoff, runRun } from "./agents.js";
 import { MIGRATE_DEFERRED_FORMS, runMigrateTrellisSpec } from "./migrate.js";
 
@@ -416,6 +423,7 @@ export {
   runExecutionBegin,
   runExecutionEnd,
   runExecutionList,
+  parseExecutionIdArgv,
   LOCK_BLOCKED,
 } from "./runtime.js";
 export type {
@@ -508,6 +516,8 @@ export type {
   ProductionSelfImprovementRegisterResult,
   ProductionSelfImprovementListResult,
 } from "./production.js";
+export { runTraceShow, runTraceList } from "./trace.js";
+export type { TraceShowInput, TraceShowResult, TraceListResult } from "./trace.js";
 
 /** 一次命令执行的人读/机读产出记录（runCli 据此决定退出码与输出）。 */
 export interface CommandRun<TResult = unknown> {
@@ -1196,7 +1206,7 @@ export function createProgram(
   migrate
     .command("trellis-spec")
     .description(
-      "Trellis Spec Analyzer（§96 第 8 步「只分析，不 Apply」）：--analyze --spec-root <dir> 输出迁移分类清单（§93.3 八类候选 + §93.4 十二分类 + §93.6 六检 analyze 版；分母块恒呈现）；--propose/--diff/--apply 显式 deferred（传入即提示 exit 1，非静默吞参）；迁移纪律（§96 第 11 步）：不以一次迁完为完成条件——Tracer Bullet 先打通 3~5 个代表主题全链路",
+      "Trellis Spec Analyzer（§96 第 8 步「只分析，不 Apply」）：--analyze --spec-root <dir> 输出迁移分类清单（§93.3 八类候选 + §93.4 十二分类 + §93.6 六检 analyze 版；分母块恒呈现）；--propose/--diff/--apply 显式 deferred（传入即提示 exit 1，非静默吞参）；其余未知词形显式拒绝（SCHEMA_INVALID，非静默吞参）；迁移纪律（§96 第 11 步）：不以一次迁完为完成条件——Tracer Bullet 先打通 3~5 个代表主题全链路",
     )
     .option("--analyze", "运行分析（本阶段唯一接线词形；只读零写入）")
     .option(
@@ -1207,13 +1217,19 @@ export function createProgram(
     .argument("[extras...]")
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (extras: string[], _opts, command) => {
+      // extras 分流（B2）：命中 deferred 词形 → COMMAND_DEFERRED 专项提示；其余未知
+      // 词形 → runMigrateTrellisSpec 显式 SCHEMA_INVALID 拒绝——两路都不静默吞。
       const deferredForms = (extras as readonly string[]).filter((form) =>
         (MIGRATE_DEFERRED_FORMS as readonly string[]).includes(form),
+      );
+      const unknownForms = (extras as readonly string[]).filter(
+        (form) => !(MIGRATE_DEFERRED_FORMS as readonly string[]).includes(form),
       );
       const outcome = await runMigrateTrellisSpec(resolveDir(command), {
         analyze: command.opts().analyze === true,
         specRoot: command.opts().specRoot as string | undefined,
         deferredForms,
+        unknownForms,
       });
       record({
         command: "migrate trellis-spec",
@@ -2255,6 +2271,54 @@ export function createProgram(
         command: "execution list",
         outcome,
         asJson: command.opts().json === true,
+      });
+    });
+
+  // —— Execution Trace 命令面（W1-C2 · PRD v0.5.2 §8 + §14 P0.5-3 + §16 Case A） ——
+  // 判卷权威在 kernel trace.ts 三函数（compile/seal/readSealed/listSealed——批 1 W1-C
+  // 已落读取面）；本面只做 argv 收敛与呈现（§45 双输出），CLI 零判卷零 GC（OD-4 仅
+  // 记录不执法）。OD-5 词形 `trace show/list` 经 Owner 裁决 8 ②（2026-09-01）批准；
+  // 命令段契约 docs/kernel-api.md §23.3。
+  const trace = program
+    .command("trace")
+    .description(
+      "Execution Trace 命令面（§8/§14 P0.5-3）：show = 派生投影纯读（封存在座=封存快照+stale 对账显式；--seal --retention <四档> = 显式物化审计快照）/ list = 封存清单；Trace 是 Identity 的派生投影侧车（A19 Identity Is Not Trace），CLI 零判卷零 GC",
+    );
+  trace
+    .command("show")
+    .description(
+      "按 AGX 呈现 Execution Trace Manifest（§8.2 闭形态 12 键）：缺省 = 纯投影 on-demand（journal TX_APPLIED 写足迹 + evidence GRN/CLM 收据——零新采集器，同 state 重放字节稳定）；封存在座 = 封存快照 + canonical 重放对账（stale 显式呈现非错误——快照不冒充新鲜）；--seal --retention <档> = 显式物化（retention 必填成对：EPHEMERAL→runtime/traces 可丢弃，TASK/INCIDENT/AUDIT_RETENTION→traces/ durable 进 Git；仅记录不 GC——裁决 8 ②）；词形非法/未登记档案/词表外/重复封存原码透传（SCHEMA_INVALID/EXECUTION_NOT_FOUND/VOCAB_INVALID_VALUE/TRACE_ALREADY_SEALED）",
+    )
+    .argument("<execution-id>", "执行身份（AGX-<4位年份>-<序号>；禁自造第二种 EXEC-* 身份——§16 Case A）")
+    .option("--seal", "显式封存：物化当前投影为审计快照（与 --retention 成对必填；重复封存 TRACE_ALREADY_SEALED 显式拒绝）")
+    .option(
+      "--retention <retention>",
+      "留存档（PRD §8.3 四档逐字：EPHEMERAL | TASK_RETENTION | INCIDENT_RETENTION | AUDIT_RETENTION；词表外 VOCAB_INVALID_VALUE fail-closed——仅记录不 GC）",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (executionId: string, opts, command) => {
+      const outcome = await runTraceShow(resolveDir(command), executionId, {
+        seal: opts.seal === true,
+        retention: opts.retention as string | undefined,
+      });
+      record({
+        command: "trace show",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  trace
+    .command("list")
+    .description(
+      "封存 trace 清单（双平面扫描：traces/ + runtime/traces/；同号并存 durable 优先单行；execution_id 字典序；纯读零写，空 = 显式空）",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (_opts, command) => {
+      const outcome = await runTraceList(resolveDir(command));
+      record({
+        command: "trace list",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
       });
     });
 

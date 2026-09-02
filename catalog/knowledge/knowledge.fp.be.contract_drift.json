@@ -15,6 +15,16 @@
     "enforcement_note": "仅建议：任何 gate 永不因本条目单独 FAIL，至多产生 WARN/HINT 或进入 Human Review 议程",
     "clean_room_note": "statement_zh 为独立改写（clean-room），零逐字拷贝源协议"
   },
+  "x-applicability-review": {
+    "status": "annotated",
+    "campaign": "W1-A2 P0.5-1 T3 标注战役（PRD v0.5.2 §5.2/§14；Owner 裁决 8 ②，2026-09-01）",
+    "axes": [
+      "lanes",
+      "change_classes",
+      "applicability_note"
+    ],
+    "basis": "正文『只改实现不同步契约』——契约失同步词面"
+  },
   "x-advisory-gate-semantics": {
     "advisory": true,
     "gate_binding": "NEVER_FAIL",
@@ -39,7 +49,14 @@
   ],
   "applies_when": {
     "lane": "backend",
-    "condition": "变更收尾检查"
+    "condition": "变更收尾检查",
+    "lanes": [
+      "backend"
+    ],
+    "change_classes": [
+      "PUBLIC_CONTRACT_CHANGE"
+    ],
+    "applicability_note": "变更收尾检查"
   },
   "enforcement": "advisory",
   "authority": {

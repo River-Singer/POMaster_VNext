@@ -31,7 +31,9 @@
  *   不误伤；不满足 = 该件 malformed → not_run。
  *   MCP 内容块词形 = 官方 MCP 规范 content types（text/image）；词形之外
  *   （text-only 的 screenshot / 低于门槛的 snapshot 等）= 该件无效。
- * - **判卷**：连接失败 → failed（fail-closed 不变）；三件齐备且全部有效 →
+ * - **判卷**（@0.3.0 起门序：not_configured → blocked(§6.7 环境身份) → failed(连接)
+ *   → not_run(证据) → passed——P0.5-4b 环境前置门先于连接与证据判卷，见
+ *   BROWSER_GATE_DEF 版本化注记）：连接失败 → failed（fail-closed 不变）；三件齐备且全部有效 →
  *   passed（scopeNote 载清单：件名 + 体积留痕，证据字节由编排方入 evidence
  *   pack，记录只载清单——03 记录 8KB 预算纪律）；有件缺失/无效 → **not_run**
  *   （证据不完整 = 判卷不完整，非绿非红非默认值；问题明细随 scopeNote）。
@@ -68,7 +70,7 @@
  */
 import { spawnSync } from "node:child_process";
 import { performance } from "node:perf_hooks";
-import type { GateResult } from "@pomaster/kernel";
+import type { EnvironmentReceipt, GateResult } from "@pomaster/kernel";
 import type { RunTriggerValue, VerdictValue } from "@pomaster/schemas";
 import type {
   DetectionResult,
@@ -99,7 +101,7 @@ import {
 
 export const BROWSER_GATE_NAME = "BROWSER";
 /**
- * gate_def 版本化记录（裁决8④ D4=A，2026-09-01）：
+ * gate_def 版本化记录（裁决8④ D4=A，2026-09-01；W1-D2 批 2 增 @0.3.0）：
  * - @0.1.0 = 三件套清单判卷（连接失败→failed；三件齐备→passed；缺件→not_run）；
  * - @0.2.0 = +screenshot 存在性绑定条款（PRD §7/§14 P0.5-2）：passed 即存在性主张，
  *   screenshot 件的持久化字节必须与 Gate Result 引用同一（artifact_refs 绑定）；
@@ -110,8 +112,18 @@ export const BROWSER_GATE_NAME = "BROWSER";
  *   同样齐备）编排层照常附挂 refs 供篡改审计；条款判红只咬 passed（唯一 PASS 主张）。
  *   0.2.0 条款对 playwright 确定性腿空转（该腿证据空间无 screenshot artifact，无主张
  *   即无绑定义务）。
+ * - @0.3.0 = +§6.7 环境身份前置门（PRD §6.7/§14 P0.5-4；W1-D2 批 2。判卷语义变更
+ *   走 gate_def 版本化=裁决 8 ④ D4=A「判卷本体」同款路径，防口径静默漂移——研究
+ *   perception-doctor-journey.md §8 风险 2 明示 bump 为合规路径之一）：EnvironmentReceipt
+ *   缺席（编排方未供给 = 实例未确认）或 doctor_verdict 非 READY → **blocked**（七态
+ *   既有值零新增——PRD Case H「Verification BLOCKED」逐字；§6.7「WRONG_OR_UNVERIFIED_
+ *   INSTANCE，Verification 不得 PASS」）。门序钉死：not_configured → blocked(environment)
+ *   → failed(连接) → not_run(证据) → passed；READY 回执下三件套缺照旧 not_run（不被
+ *   本门吞掉）。0.2.0 绑定条款在 0.3.0 下原样承袭（判定逻辑零变更——本常量历史注记
+ *   即版本化登记）。对 playwright 确定性腿不适用（T2 边界：环境门只落 MCP 交互腿，
+ *   playwright 腿判卷语义零变更）。
  */
-export const BROWSER_GATE_DEF = "POLICY.GATE.BROWSER@0.2.0";
+export const BROWSER_GATE_DEF = "POLICY.GATE.BROWSER@0.3.0";
 export const BROWSER_TOOL_ID = "gauntlet:browser";
 /** P26 升级：口径从 smoke_connect 改为 interactive_evidence（判卷锚已升级为证据三件套）。 */
 export const BROWSER_METRIC_DIALECT = "browser:mcp_interactive_evidence";
@@ -428,6 +440,41 @@ function evidenceManifestNote(report: McpEvidenceReport): string {
   return parts.length > 0 ? parts.join(" / ") : "（无有效证据件）";
 }
 
+/**
+ * 环境门 blocked 的 scopeNote（报错带路标纪律：说清「为何 blocked、去哪补」）。
+ * WRONG_OR_UNVERIFIED_INSTANCE / Verification 不得 PASS 词形必须随注（PRD §6.7 逐字；
+ * Case H）；实测未确认位以 null 显式缺席呈现（禁占位词冒充已确认——Case H 的 blocked
+ * 证据链消费位）。receipt 缺席与 verdict 非 READY 两分支分呈（成因可辨）。
+ */
+function environmentBlockedNote(environment: EnvironmentReceipt | null): string {
+  if (environment === null) {
+    return (
+      "环境身份未确认：环境回执缺席（编排方未供给 EnvironmentReceipt——§6.7「观察之前必须有 Doctor」未运行）" +
+      "→ WRONG_OR_UNVERIFIED_INSTANCE 语义，Verification 不得 PASS → BLOCKED（PRD §6.7 验收句「未确认 base URL / runtime instance 不得判 PASS」+ Case H）。" +
+      "补路：编排方经 BrowserGateLegsDeps.environment 供给 expected×observed 判卷输入，" +
+      "kernel runEnvironmentDoctor 判 READY 后重跑；未确认实例下产出的截图/快照不是有效 Evidence（Benchmark E——Observation Receipt 不得冒充有效业务 Evidence）。"
+    );
+  }
+  const unconfirmed = (
+    [
+      ["environment_ref", environment.environment_ref],
+      ["repository_ref", environment.repository_ref],
+      ["revision_ref", environment.revision_ref],
+      ["runtime_instance", environment.runtime_instance],
+      ["base_url", environment.base_url],
+      ["dataset_ref", environment.dataset_ref],
+      ["auth_role", environment.auth_role],
+    ] as const
+  )
+    .filter(([, value]) => value === null)
+    .map(([field]) => field);
+  return (
+    `环境身份未确认：doctor_verdict=${environment.doctor_verdict}（§6.7 WRONG_OR_UNVERIFIED_INSTANCE——Verification 不得 PASS → BLOCKED，Case H「expected revision != runtime revision」同族）；` +
+    `execution_id=${environment.execution_id}；实测未确认位=[${unconfirmed.length > 0 ? unconfirmed.join(",") : "无"}]（null 显式缺席——禁占位词冒充已确认）；` +
+    "本次交互证据不得入 Evidence（Benchmark E——Observation Receipt 不得冒充有效业务 Evidence；修环境身份后重跑观察）。"
+  );
+}
+
 // ============================================================
 // smoke（通道可达前置证据：连接 + 可选取 title）
 // ============================================================
@@ -520,6 +567,14 @@ export interface BrowserGatePlan extends RecordPlanFields {
   /** 版本锚（policy 供给；normalize 对账 tool_version 漂移）。 */
   readonly expectedToolVersion: string | null;
   readonly trigger: RunTriggerValue;
+  /**
+   * 环境身份回执（P0.5-4b · §6.7 Environment Doctor 产物；编排方供给——「观察之前
+   * 必须有 Doctor」，prepare 前由 runEnvironmentDoctor 判卷、buildEnvironmentReceipt
+   * 组装，经 BrowserGateLegsDeps.environment 注入）。null = 未确认实例（fail-closed
+   * 一刀切：normalize 前置门 blocked，PRD §6.7 验收句 + Case H）；doctor_verdict 非
+   * READY（WRONG_OR_UNVERIFIED_INSTANCE）同 → blocked。@0.3.0 条款。
+   */
+  readonly environment: EnvironmentReceipt | null;
 }
 
 export type BrowserRunOutput = {
@@ -541,12 +596,20 @@ export function createBrowserAdapter(
      * MCP 证据供给面（编排方注入——交互腿真消费面）；缺省空集（诚实 not_run）。
      */
     readonly mcpEvidenceProvider?: McpEvidenceProvider;
+    /**
+     * 环境身份回执供给面（P0.5-4b · §6.7）：观察之前必须有 Doctor——编排方把
+     * runEnvironmentDoctor 判卷产物（buildEnvironmentReceipt 组装）在此交给本腿。
+     * 缺省 null = 实例未确认 → normalize 前置门 blocked（fail-closed 一刀切，
+     * PRD §6.7 验收句「未确认 base URL / runtime instance 不得判 PASS」）。
+     */
+    readonly environment?: EnvironmentReceipt | null;
   } = {},
 ): GateAdapter<DetectionResult, BrowserGatePlan, BrowserRunOutput> {
   const smokeFn = options.smokeFn ?? defaultMcpSmokeFn;
   const smokeCommand = options.smokeCommand ?? DEFAULT_MCP_SMOKE_COMMAND;
   const smokeTimeoutMs = options.smokeTimeoutMs ?? DEFAULT_MCP_SMOKE_TIMEOUT_MS;
   const mcpEvidenceProvider = options.mcpEvidenceProvider ?? emptyMcpEvidenceProvider;
+  const environment = options.environment ?? null;
   return {
     adapterId: "gauntlet-lite:browser",
 
@@ -578,6 +641,7 @@ export function createBrowserAdapter(
         smokeCommand,
         smokeTimeoutMs,
         expectedToolVersion: policy.expectedToolVersion ?? null,
+        environment,
       };
       if (detection.status !== "READY") {
         const absentReason =
@@ -638,6 +702,26 @@ export function createBrowserAdapter(
           plan,
           "not_configured",
           `chrome-devtools MCP 未注册——安装 chrome-devtools MCP：${plan.installHint ?? BROWSER_INSTALL_HINT}；${plan.absentReason ?? ""}`,
+          selfMs,
+          raw.externalMs,
+        );
+      }
+
+      // —— §6.7 环境身份前置门（P0.5-4b · @0.3.0 条款；W1-D2 批 2）——
+      // receipt 缺席（编排方未供给 = 实例未确认）或 doctor_verdict 非 READY → blocked
+      // （七态既有值零新增——PRD Case H「Verification BLOCKED」逐字 + §6.7「Verification
+      // 不得 PASS」）。门序钉死：not_configured → blocked(environment) → failed(连接) →
+      // not_run(证据) → passed——环境门先于连接/证据判卷（Benchmark E「Doctor != READY →
+      // Verification != PASS」字面：连不上也好、证据缺也好，都不洗掉「看的是谁未确认」）；
+      // READY 回执下三件套缺照旧 not_run（不被本门吞掉——次序矩阵测试钉死）。blocked
+      // 语义注记（研究 §8 风险 2）：本门的 blocked 是 §6.7 拒证语义，与 browser-legs
+      // 编排异常的 blocked（编排层兜底）同 verdict 不同成因，scopeNote 词形纪律区分。
+      const environment = plan.environment;
+      if (environment === null || environment.doctor_verdict !== "READY") {
+        return absenceRecord(
+          plan,
+          "blocked",
+          environmentBlockedNote(environment),
           selfMs,
           raw.externalMs,
         );

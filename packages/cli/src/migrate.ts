@@ -12,6 +12,10 @@
  *   用户传入时经 unknown-option 拦截显式提示「analyze-only 阶段（PRD §96 第 8 步），
  *   三词形 deferred 归后续批次」并 exit 1——**deferred 提示不是静默吞参**（run/handoff
  *   COMMAND_DEFERRED 先例）。
+ * - **其余未知词形显式拒绝（B2 fail-closed）**：unknown-option 放行位捕获的 extras 中
+ *   未命中 deferred 词形的剩余项（如 `--bogus-flag`）——既非注册选项也非 deferred 词形，
+ *   若静默吞掉则命令按默认行为跑完 exit 0（词形层 fail-open）。一律 SCHEMA_INVALID
+ *   显式报错 + hint 列出被拒词形。
  * - `--spec-root` 缺席 = fail-closed 显式报错（NOT_CONFIGURED）——**不猜测默认路径**
  *   （Analyzer 输入源必须显式声明；目录缺席/空目录沿 kernel NOT_CONFIGURED 透传）。
  *
@@ -67,6 +71,11 @@ export interface MigrateTrellisSpecInput {
   readonly specRoot?: string;
   /** unknown-option 拦截面捕获的 deferred 词形（如 "--apply"）；空数组 = 未传入。 */
   readonly deferredForms: readonly string[];
+  /**
+   * unknown-option 放行位捕获、且未命中 deferred 词形的剩余词形（B2）——缺省空数组
+   * 仅限程序化直调（无 argv 词形）；CLI 面（index.ts）恒传，禁静默吞未知词形。
+   */
+  readonly unknownForms?: readonly string[];
 }
 
 /** analyze 成功产物（report 整体承载；分母块在 report.denominator 恒在场）。 */
@@ -166,7 +175,29 @@ export async function runMigrateTrellisSpec(
     }
   }
 
-  // —— 2) 词形必选（不猜测默认行为——check --fast/--gates 先例） ——
+  // —— 2) 未知词形显式拒绝（B2 fail-closed：extras 中未命中 deferred 词形的剩余项
+  //    既非注册选项也非 deferred 词形——静默吞掉 = 命令按默认行为跑完 exit 0 的
+  //    词形层 fail-open。一律 SCHEMA_INVALID + hint 列出被拒词形） ——
+  const unknownForms = input.unknownForms ?? [];
+  if (unknownForms.length > 0) {
+    return failOutcome<MigrateDeferredResult>(
+      "migrate trellis-spec",
+      emptyDeferredResult([]),
+      [
+        {
+          code: "SCHEMA_INVALID",
+          message: `未知词形（既非本命令注册选项、也非 deferred 三词形）：${unknownForms.join(" ")}`,
+          hint: "analyze-only 阶段唯一接线词形是 --analyze；--propose/--diff/--apply 是显式 deferred（传入会得到 COMMAND_DEFERRED 专项提示）；其余词形一律显式拒绝——核对拼写，新词形走词汇表接线，绝不静默吞参。",
+        },
+      ],
+      [
+        `migrate trellis-spec: FAILED — SCHEMA_INVALID（未知词形：${unknownForms.join(" ")}）`,
+        "  hint: --analyze 是唯一接线词形；deferred 三词形有专项提示；其余词形不静默吞。",
+      ],
+    );
+  }
+
+  // —— 3) 词形必选（不猜测默认行为——check --fast/--gates 先例） ——
   if (!input.analyze) {
     return failOutcome<MigrateDeferredResult>(
       "migrate trellis-spec",
@@ -186,7 +217,7 @@ export async function runMigrateTrellisSpec(
     );
   }
 
-  // —— 3) --spec-root 缺席 = fail-closed（不猜测默认路径） ——
+  // —— 4) --spec-root 缺席 = fail-closed（不猜测默认路径） ——
   if (input.specRoot === undefined || input.specRoot.trim().length === 0) {
     return failOutcome<MigrateDeferredResult>(
       "migrate trellis-spec",
@@ -206,7 +237,7 @@ export async function runMigrateTrellisSpec(
     );
   }
 
-  // —— 4) analyze：kernel 只读分析入口（NOT_CONFIGURED 透传；零写通路） ——
+  // —— 5) analyze：kernel 只读分析入口（NOT_CONFIGURED 透传；零写通路） ——
   try {
     const report = analyzeSpecDir(input.specRoot);
     return okOutcome(

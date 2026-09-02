@@ -105,9 +105,25 @@ const LOCK_FILE_NAME = "catalog-lock.draft.json";
 // ============================================================
 
 /**
- * 定位 catalog/ 根目录。显式参数优先（测试/嵌入方注入）；缺省从本模块位置上溯仓库根
- * （src 与 dist 同构：packages/kernel/{src,dist}/catalog.js → ../../../catalog）。
- * 目录缺席 → NOT_CONFIGURED 显式报错（缺席显式，禁静默返回空路径）。
+ * catalog 根候选链（缺省定位的候选生成器；导出为纯函数便于测试注入）。
+ * 候选顺序即裁决：**仓库形态优先、包内资产兜底**——
+ * 1) `../../../catalog`：仓库布局（src 与 dist 同构：packages/kernel/{src,dist}/catalog.js
+ *    → 仓库根 catalog/；仓内行为零变化）；
+ * 2) `../catalog`：npm 安装形态的包内资产（bundle 位于 <pkg>/dist/ 时命中 <pkg>/catalog/
+ *    ——嵌入方未暴露 --catalog-root 时的缺省可解析位）。
+ */
+export function catalogRootCandidates(moduleUrl: string): readonly string[] {
+  return [
+    fileURLToPath(new URL("../../../catalog", moduleUrl)),
+    fileURLToPath(new URL("../catalog", moduleUrl)),
+  ];
+}
+
+/**
+ * 定位 catalog/ 根目录。显式参数优先（测试/嵌入方注入）；缺省按 catalogRootCandidates
+ * 候选链顺序取第一个实存目录（仓库布局优先、包内资产兜底——npm 安装形态不再因缺省定位
+ * 只兼容 monorepo 而全灭 NOT_CONFIGURED）。全部候选缺席 → NOT_CONFIGURED 显式报错
+ * （缺席显式，禁静默返回空路径；hint 提及两种布局与注入路标）。
  */
 export function resolveCatalogRoot(explicitRoot?: string): string {
   if (explicitRoot !== undefined) {
@@ -121,16 +137,16 @@ export function resolveCatalogRoot(explicitRoot?: string): string {
     }
     return explicitRoot;
   }
-  const defaultRoot = fileURLToPath(new URL("../../../catalog", import.meta.url));
-  if (!existsSync(defaultRoot)) {
-    throw new GovernanceError(
-      "NOT_CONFIGURED",
-      `catalog/ 目录未找到（缺省定位 ${defaultRoot}）`,
-      "catalog/ 是 POMaster_VNext 仓库资产：在仓库内运行，或显式注入 catalog 根目录。",
-      { catalogRoot: defaultRoot },
-    );
+  const candidates = catalogRootCandidates(import.meta.url);
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) return candidate;
   }
-  return defaultRoot;
+  throw new GovernanceError(
+    "NOT_CONFIGURED",
+    `catalog/ 目录未找到（候选均缺席: ${candidates.join(" 、 ")}）`,
+    "catalog/ 是 POMaster_VNext 仓库资产（仓库布局 packages/kernel/{src,dist} → 仓库根 catalog/）或 npm 安装形态的包内资产（<pkg>/dist/ → <pkg>/catalog/）；嵌入方无法命中时显式注入 catalog 根目录。",
+    { catalogRootCandidates: candidates },
+  );
 }
 
 /** 读 catalog-lock（缺失/坏形显式报错——lock 是 catalog 消费的完整性前提）。 */

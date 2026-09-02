@@ -371,6 +371,24 @@ describe("18-decision-graph.schema.json（$id 与挂载前形态）", () => {
       resolves_missing_facts: undefined,
     };
     expect(validateFindingLink(noDecisionRefs)).toBe(false);
+
+    // C1 封条补强：键整体缺席同样拒（then 须 required decision_refs——只写 minItems 时
+    // 缺键可绕过封条，laundering_guard「CONTRADICTS_PREMISE 必须指向 ≥1 个 Decision」空转）。
+    const contradictsNoKey = { ...noDecisionRefs } as Record<string, unknown>;
+    delete contradictsNoKey["decision_refs"];
+    expect(validateFindingLink(contradictsNoKey)).toBe(false);
+    const baseNoKey = { ...base } as Record<string, unknown>;
+    delete baseNoKey["decision_refs"];
+    expect(validateFindingLink(baseNoKey)).toBe(false);
+    // 正例对照：≥1 个 decision_refs 照常通过（封条只封空与缺席，不封合法引用；
+    // 顺带剥 resolves_missing_facts——反向锁定要求其仅在 RESOLVES_FACT 时在场）。
+    expect(
+      validateFindingLink({
+        ...base,
+        relation: "CONTRADICTS_PREMISE",
+        resolves_missing_facts: undefined,
+      }),
+    ).toBe(true);
   });
 
   it("$ref 子模式：research_handoff（§10.2 逐键）——缺 critical_caveat 拒", () => {

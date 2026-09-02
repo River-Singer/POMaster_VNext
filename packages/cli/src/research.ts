@@ -649,6 +649,34 @@ export async function runResearchInspect(
     );
   }
 
+  // —— B3（P1）fail-closed：findings 字段整体损坏（键存在但非数组）≠ 合法空分母 ——
+  // 此前 `Array.isArray(index.findings) ? index.findings : []` 把「键存在但非数组」
+  // 静默折叠为空数组 → 分母 0 → all_ok 假绿 exit 0（与合法空 findings 输出不可区分；
+  // 条目级损坏有 FINDING_MALFORMED 防线，字段级整体损坏恰好绕过）。JSON.parse 只在
+  // 键真缺席时产出 undefined——缺席走空分母骨架警示通路（合法），其余一律显式报错。
+  if (index.findings !== undefined && !Array.isArray(index.findings)) {
+    return failOutcome<ResearchInspectResult>(
+      "research inspect",
+      {
+        research_id: researchId,
+        artifact_root: artifactRoot,
+        files: [],
+        findings_total: 0,
+        skeleton: false,
+        handoff: null,
+        adjudication: null,
+      },
+      [
+        {
+          code: "INDEX_NOT_MACHINE_PARSEABLE",
+          message: `${artifactRoot}index.yaml 的 findings 字段损坏（键存在但非数组——损坏非缺席，禁静默折叠为空分母报绿）`,
+          hint: "「findings 键真缺席」才是合法空分母（骨架未填写）；键存在但非数组是整体字段损坏——修正为 findings: []（骨架形态）或合法 findings 数组后重跑。",
+        },
+      ],
+      [`research inspect: FAILED — INDEX_NOT_MACHINE_PARSEABLE（findings 字段损坏）`],
+    );
+  }
+
   // —— 四文件完整性（§81.6；缺文件 = artifact 不完整，fail-closed） ——
   const files = RESEARCH_ARTIFACT_FILES.map((f) => ({
     file: f,
@@ -659,6 +687,8 @@ export async function runResearchInspect(
   // —— findings 五级 Evidence 判卷（kernel adjudicateResearchFindings） ——
   // 形态不完整条目（缺 statement/evidence_type 字符串字段）不静默跳过——跳过即
   // fail-open（垃圾条目借「不进判卷分母」放行），显式 FINDING_MALFORMED 计入 errors。
+  // 字段级整体损坏（键存在但非数组）已在上方 B3 闸显式拒绝——此处只剩键真缺席
+  // （合法空分母，骨架未填写）与合法数组两形。
   const rawFindings = Array.isArray(index.findings) ? index.findings : [];
   const findings: ResearchFindingInput[] = [];
   const malformedFindingIndexes: number[] = [];

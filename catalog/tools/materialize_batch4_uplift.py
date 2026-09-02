@@ -282,6 +282,75 @@ FILE_META = {
 
 
 # ======================================================================
+# W1-A2 P0.5-1 T3 机器 applicability 标注表（PRD v0.5.2 §5.2/§14 + Owner 裁决 8 ②）
+# 保守派生：仅正文词面有明确证据才标（policy.web.api 族 → CAPABILITY.API_CONTRACT，
+# 与 tests/integration/catalog-applicability-case-b.spec.ts W1-A1 批1 fixture 同值同族）；
+# 其余留空回退 lane 缺省（O7 行为零变化）+ x-applicability-review human-review 候选。
+# condition 降级为 applicability_note 保留（PRD §5.2 允许自然语言保留为注记）。
+# ======================================================================
+APPLICABILITY_AXES = {
+    "POLICY.WEB.API.AUTH_APP_CLIENT_SPLIT": {
+        "capabilities": ["CAPABILITY.API_CONTRACT"],
+        "basis": "policy.web.api 族（case-b W1-A1 同族标注）；condition『搭建或调整请求客户端族时』",
+    },
+    "POLICY.WEB.API.SESSION_RECOVERY_SPLIT": {
+        "capabilities": ["CAPABILITY.API_CONTRACT"],
+        "basis": "policy.web.api 族（case-b W1-A1 同族标注）",
+    },
+    "POLICY.WEB.API.REQUEST_INFRASTRUCTURE": {
+        "capabilities": ["CAPABILITY.API_CONTRACT"],
+        "basis": "policy.web.api 族（case-b W1-A1 同族标注）；condition『搭建或调整请求基础设施时』",
+    },
+}
+
+APPLICABILITY_CAMPAIGN = "W1-A2 P0.5-1 T3 标注战役（PRD v0.5.2 §5.2/§14；Owner 裁决 8 ②，2026-09-01）"
+
+# 三个 materialize 工具共用的 producer 链 generated_by（同步落在
+# catalog/tools/materialize_catalog_pilot.py 与 corpus/spec-knowledge/materialize-curated.py；
+# 同串保证任一工具最后落锁不丢失其余批次的 provenance 注记）。
+LOCK_GENERATED_BY = (
+    "catalog/tools/materialize_catalog_pilot.py（pilot-0001 60 条；entries 按 id 排序）+ "
+    "catalog/tools/materialize_batch4_uplift.py（batch-4 语料批 Universal 上提追加 9 条）+ "
+    "corpus/spec-knowledge/materialize-curated.py（SPEC-D 汇总池 D5 精选追加 25 条）+ "
+    "catalog/sensors/（P1-5 Sensor Capability Catalog Lite 六条目登记，裁决 8 D6/D7）+ "
+    "W1-A2 P0.5-1 T3 标注战役（机器 applicability 字段批量标注 + 幂等重锁；PRD v0.5.2 §5.2/§14，裁决 8 ②）"
+)
+
+
+def applicability_parts(cid, condition):
+    """lanes 平移（frontend 显式 lane）+ 词面派生轴 + applicability_note 降级位 + review 注记。"""
+    merged = {"lane": "frontend", "condition": condition}
+    axes_written = ["lanes"]
+    merged["lanes"] = ["frontend"]
+    axes = APPLICABILITY_AXES.get(cid)
+    basis = None
+    if axes is not None:
+        basis = axes["basis"]
+        for key in ("capabilities", "change_classes"):
+            if key in axes:
+                merged[key] = list(axes[key])
+                axes_written.append(key)
+    merged["applicability_note"] = condition
+    axes_written.append("applicability_note")
+    if basis is not None:
+        review = {
+            "status": "annotated",
+            "campaign": APPLICABILITY_CAMPAIGN,
+            "axes": axes_written,
+            "basis": basis,
+        }
+    else:
+        review = {
+            "status": "human_review_candidate",
+            "campaign": APPLICABILITY_CAMPAIGN,
+            "axes": axes_written,
+            "note": "T3 保守派生未见明确词面证据——capabilities/change_classes 留空回退 lane 缺省"
+                    "（O7 行为零变化）；列 Human Review 复核议程",
+        }
+    return merged, review
+
+
+# ======================================================================
 # 通用只读工具
 # ======================================================================
 def norm_text(s):
@@ -415,6 +484,9 @@ def build_entries(halves):
         catalog_id = members[0]["catalog_id"]
         assert all(m["catalog_id"] == catalog_id for m in members)
 
+        # W1-A2 P0.5-1 T3：机器 applicability 字段组装（lanes 平移 / 词面派生轴 /
+        # applicability_note 降级位；保守派生——拿不准留空回退 lane 缺省 O7）。
+        applies_when, applicability_review = applicability_parts(catalog_id, meta["condition"])
         entry = {
             "x-vocab-pr": {
                 "status": "vocab_pr_candidate",
@@ -431,6 +503,7 @@ def build_entries(halves):
                 "evidence": "PLANNED",
                 "provenance": LEDGER_REF,
             },
+            "x-applicability-review": applicability_review,
             "id": catalog_id,
             "kind": "policy",
             "axis_profile": "policy_default",
@@ -440,7 +513,7 @@ def build_entries(halves):
             "title_zh": meta["title_zh"],
             "statement_zh": meta["statement_zh"],
             "statement_en_keywords": meta["statement_en_keywords"],
-            "applies_when": {"lane": "frontend", "condition": meta["condition"]},
+            "applies_when": applies_when,
             "enforcement": "required_when_applicable",
             "authority": {
                 "owner": "HUMAN_OWNER",
@@ -574,9 +647,7 @@ def merge_lock(new_entries):
     lock = {
         "catalog_version": old_lock["catalog_version"],
         "profile": old_lock["profile"],
-        "generated_by": "catalog/tools/materialize_batch4_uplift.py"
-                        "（batch-4 语料批 Universal 上提；entries 按 id 排序；"
-                        "在 materialize_catalog_pilot.py 60 条基础上追加 9 条）",
+        "generated_by": LOCK_GENERATED_BY,
         "x-digest-ethics": old_lock["x-digest-ethics"],
         "controlled_children": {
             "note": "catalog-lock 管辖面（vocab-lock PR-0001 catalog_layer_vocab 同段语义）："

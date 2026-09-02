@@ -614,6 +614,10 @@ export function planRunFile(input: {
       ran_at_seq: result.ranAtSeq,
       op: {
         op: "record_gate_run",
+        // A3 显式 canonical 化覆写凭据：本分支语义就是「既有同号文件在场且内容有变，
+        // 判定可复核的 canonical 化重录」——向 kernel 申报覆写凭据（journal ops 记
+        // record_gate_run_canonicalize 留痕）。already_canonical 快路径不触发写，不传。
+        canonicalizeOverwrite: true,
         run: {
           grn,
           trigger: resolved.context.trigger,
@@ -1020,7 +1024,11 @@ export function planClaimFile(input: {
       clm,
       relPath,
       action: "recorded",
-      op: { op: "record_claim", claim: extracted },
+      // A3 显式 canonical 化覆写凭据：规则 2 分支语义就是「既有同号 UNVERIFIED 文件
+      // 在场且 canonical 字节有变，判定可复核的 canonical 化重录」——规则 3（已判定）
+      // 已在上方先返；kernel 侧对既有 verdict 的复核是二道防线（journal ops 记
+      // record_claim_canonicalize 留痕）。
+      op: { op: "record_claim", canonicalizeOverwrite: true, claim: extracted },
     },
   };
 }

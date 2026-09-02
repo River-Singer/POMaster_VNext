@@ -15,6 +15,15 @@
     "enforcement_note": "命中 applies_when 条件时必须遵守；是否升 MUST、接入哪个 gate 由 Human Review 裁决",
     "clean_room_note": "statement_zh 为独立改写（clean-room），零逐字拷贝源协议"
   },
+  "x-applicability-review": {
+    "status": "human_review_candidate",
+    "campaign": "W1-A2 P0.5-1 T3 标注战役（PRD v0.5.2 §5.2/§14；Owner 裁决 8 ②，2026-09-01）",
+    "axes": [
+      "lanes",
+      "applicability_note"
+    ],
+    "note": "T3 保守派生未见明确词面证据——capabilities/change_classes 留空回退 lane 缺省（O7 行为零变化）；列 Human Review 复核议程"
+  },
   "id": "POLICY.WEB.GRID.CONFIG_ISOLATION",
   "kind": "policy",
   "axis_profile": "policy_default",
@@ -33,7 +42,11 @@
   ],
   "applies_when": {
     "lane": "frontend",
-    "condition": "表格配置可保存时"
+    "condition": "表格配置可保存时",
+    "lanes": [
+      "frontend"
+    ],
+    "applicability_note": "表格配置可保存时"
   },
   "enforcement": "required_when_applicable",
   "authority": {

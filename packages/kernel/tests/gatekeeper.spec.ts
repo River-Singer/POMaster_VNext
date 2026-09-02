@@ -6,8 +6,8 @@
  *   「ALLOW」↔ GRN verdict=passed（七态唯一「判卷放行」词形）；
  * - 触发语义：min(proposal_count, allow_count) >= threshold（D 线原文「≥N 次/周」
  *   N 未定值 → 缺省 1 宁严不漏；threshold/windowDays 显式入参，非法定值 SCHEMA_INVALID）；
- * - 周窗锚 = execution 档案 started_at（证据平面无墙钟——A4；档案缺失 = in_window
- *   true 宁严不漏 + 锚 null 显式）；
+ * - 周窗锚 = execution 档案 started_at（证据平面无墙钟——A4；档案缺失或锚不可解析
+ *   （C7：NaN 视同损坏）= in_window true 宁严不漏 + 锚 null 显式）；
  * - 分母：只收携带 execution_id 键的 GRN/CLM 词形文件（缺席不伪造——P20 裁定；
  *   非 GRN/CLM 词形文件不进分母）；
  * - fail-closed：损坏证据 SCHEMA_INVALID（观测面静默损坏 = 假绿）+ execution_id
@@ -307,6 +307,24 @@ describe("阈值与周窗", () => {
     await recordClaim("CLM-0001", agx);
     await recordRun("GRN-0001", agx, "passed");
     rmSync(executionPath(agx));
+    const report = detectGatekeeperDrift(store, { now: T0 });
+    expect(report.rows[0]).toMatchObject({
+      execution_started_at: null,
+      in_window: true,
+      drift: true,
+    });
+    expect(report.triggered).toBe(true);
+  });
+
+  it("档案 started_at 为不可解析日期串（手改 \"corrupt\"）→ 视同档案损坏：锚 null + in_window=true 宁严不漏（C7：NaN 不得静默降 out-of-window）", async () => {
+    await seedObject();
+    const agx = await beginAt("2026-08-30T08:00:00.000Z");
+    await recordClaim("CLM-0001", agx);
+    await recordRun("GRN-0001", agx, "passed");
+    // 单字段畸形：JSON 可解析、started_at 词形坏——修复前 Date.parse→NaN 使
+    // NaN >= windowStartMs 恒 false，in_window 静默降 false（漂移信号被吞）。
+    const bytes = readFileSync(executionPath(agx), "utf8");
+    writeFileSync(executionPath(agx), bytes.replace("2026-08-30T08:00:00.000Z", "corrupt"), "utf8");
     const report = detectGatekeeperDrift(store, { now: T0 });
     expect(report.rows[0]).toMatchObject({
       execution_started_at: null,

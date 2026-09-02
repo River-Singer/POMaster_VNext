@@ -19,6 +19,11 @@
   - R-C=b 裁决：CONTRACT_TEMPLATE 暂留 candidates-draft 不物化；gate 检查项③悬空引用已改内联字段清单
   - R-D 裁决：GATE.CHG.PRECHANGE_CHECKS 检查项⑤为机器预检元数据字段存在（转机器派生）
   - 幂等：同输入重跑 byte-stable（DEF-POM-002 教训）；entries 按 id 排序
+  - W1-A2 P0.5-1 T3 标注战役（PRD v0.5.2 §5.2/§14；Owner 裁决 8 ② 2026-09-01）：
+    applies_when 扩机器 applicability 字段（lanes 平移 / capabilities / change_classes /
+    applicability_note 降级位；保守派生——拿不准的留空回退 lane 缺省 O7 + x-applicability-review
+    注记 human-review 候选）；catalog-lock 改为合并重锁（60 条命名空间置换，基线零触碰），
+    不再整体覆写（batch4/SPEC-D/W1-E 已把 lock 推到 100 entries）
 """
 import hashlib
 import json
@@ -227,6 +232,219 @@ def axes_block():
     return {"lifecycle": "PROPOSED", "confidence": "UNRESOLVED", "evidence": "PLANNED", "change": "STABLE"}
 
 
+# ---------------------------------------------------------------- W1-A2 P0.5-1 T3 机器 applicability 标注表
+# PRD v0.5.2 §5.2/§14 + Owner 裁决 8 ②（2026-09-01：lanes 双读过渡 / change_classes 4 值 /
+# 未标注条目=lane 回退行为零变化 O7 / condition 降级 applicability_note）。
+# 保守派生纪律：仅正文词面有明确证据才标；拿不准的留空（lane 回退）+ x-applicability-review
+# 注记 human-review 候选。本表是本工具 60 条命名空间的标注事实源（batch4/curated 各持其表）。
+APPLICABILITY_AXES = {
+    # —— capabilities：API 契约面（与 tests/integration/catalog-applicability-case-b.spec.ts
+    #    W1-A1 批1 fixture 同值同族：policy.api.* + policy.web.api.*）——
+    "POLICY.API.BACKWARD_COMPAT_DEFAULTS": {
+        "capabilities": ["CAPABILITY.API_CONTRACT"],
+        "change_classes": ["API_EVOLUTION"],
+        "basis": "condition『接口演进』+ 正文『接口演进默认向后兼容』——API_EVOLUTION 逐字词面",
+    },
+    "POLICY.API.CONTRACT_IMPL_CONSISTENCY": {
+        "capabilities": ["CAPABILITY.API_CONTRACT"],
+        "change_classes": ["PUBLIC_CONTRACT_CHANGE"],
+        "basis": "condition『任何接口实现或变更』——公共契约面词面",
+    },
+    "POLICY.API.NO_INFORMAL_CONTRACT": {
+        "capabilities": ["CAPABILITY.API_CONTRACT"],
+        "change_classes": ["PUBLIC_CONTRACT_CHANGE"],
+        "basis": "condition『确定任何接口契约时』——公共契约确立词面",
+    },
+    "POLICY.WEB.API.DOMAIN_API_ONLY": {
+        "capabilities": ["CAPABILITY.API_CONTRACT"],
+        "basis": "policy.web.api 族（case-b W1-A1 同族标注）；正文请求层契约消费纪律",
+    },
+    "POLICY.WEB.API.SINGLE_HTTP_CLIENT": {
+        "capabilities": ["CAPABILITY.API_CONTRACT"],
+        "basis": "policy.web.api 族（case-b W1-A1 同族标注）；HTTP Client 契约消费面",
+    },
+    "POLICY.WEB.API.TYPED_DOMAIN_NAMING": {
+        "capabilities": ["CAPABILITY.API_CONTRACT"],
+        "basis": "policy.web.api 族（case-b W1-A1 同族标注）；请求函数契约类型面",
+    },
+    "POLICY.WEB.API.QUERY_CANCEL_STALE_DROP": {
+        "capabilities": ["CAPABILITY.API_CONTRACT"],
+        "basis": "policy.web.api 族（case-b W1-A1 同族标注）",
+    },
+    "POLICY.WEB.API.MUTATION_IDEMPOTENCY": {
+        "capabilities": ["CAPABILITY.API_CONTRACT"],
+        "basis": "policy.web.api 族（case-b W1-A1 同族标注）",
+    },
+    "POLICY.WEB.API.ERROR_NORMALIZATION": {
+        "capabilities": ["CAPABILITY.API_CONTRACT"],
+        "basis": "policy.web.api 族（case-b W1-A1 同族标注）",
+    },
+    "POLICY.WEB.API.TRANSPORT_VS_BUSINESS": {
+        "capabilities": ["CAPABILITY.API_CONTRACT"],
+        "basis": "policy.web.api 族（case-b W1-A1 同族标注）",
+    },
+    "POLICY.WEB.API.RETRY_DISCIPLINE": {
+        "capabilities": ["CAPABILITY.API_CONTRACT"],
+        "basis": "policy.web.api 族（case-b W1-A1 同族标注）",
+    },
+    "POLICY.WEB.API.LATE_RESULT_GUARD": {
+        "capabilities": ["CAPABILITY.API_CONTRACT"],
+        "basis": "policy.web.api 族（case-b W1-A1 同族标注）",
+    },
+    "POLICY.WEB.API.TRUSTED_ENDPOINT_SOURCE": {
+        "capabilities": ["CAPABILITY.API_CONTRACT"],
+        "basis": "policy.web.api 族（case-b W1-A1 同族标注）",
+    },
+    "POLICY.WEB.API.NO_NETWORK_OPTIMISM": {
+        "capabilities": ["CAPABILITY.API_CONTRACT"],
+        "basis": "policy.web.api 族（case-b W1-A1 同族标注）",
+    },
+    "POLICY.WEB.API.GENERATED_CLIENT": {
+        "capabilities": ["CAPABILITY.API_CONTRACT"],
+        "basis": "policy.web.api 族（case-b W1-A1 同族标注）；condition『正式契约已发布』契约面逐字",
+    },
+    "POLICY.WEB.API.SINGLE_LOADING_SOURCE": {
+        "capabilities": ["CAPABILITY.API_CONTRACT"],
+        "basis": "policy.web.api 族（case-b W1-A1 同族标注）",
+    },
+    "POLICY.WEB.API.CLIENT_CHANGE_IMPACT": {
+        "capabilities": ["CAPABILITY.API_CONTRACT"],
+        "change_classes": ["PUBLIC_CONTRACT_CHANGE"],
+        "basis": "condition『HTTP Client/Domain API 公共行为变更』——公共契约变更词面逐字",
+    },
+    # —— Authority 锚（§90.2 Protected Set）API 族两条：正文词面明确绑定 API 契约域——
+    "AUTHORITY.WEB.API.REQUEST_OWNERS": {
+        "capabilities": ["CAPABILITY.API_CONTRACT"],
+        "basis": "正文『平台 Owner 维护 HTTP Client、业务 Owner 维护 Domain API、契约 Owner 维护"
+                 "数据源』——请求族/API 契约域权属锚词面明确（Benchmark A 泄漏实测后补标，2026-09-01）",
+    },
+    "AUTHORITY.BE.API_CONTRACT_OWNERSHIP": {
+        "capabilities": ["CAPABILITY.API_CONTRACT"],
+        "basis": "id 与正文『API 契约所有权』词面逐字——后端 API 契约域权属锚（同族补标）",
+    },
+    # —— change_classes：公共契约/依赖/呈现面变更动词面（保守逐例归类）——
+    "POLICY.CHG.PRECHANGE_CONSUMER_SCAN": {
+        "change_classes": ["PUBLIC_CONTRACT_CHANGE"],
+        "basis": "condition 逐字『变更触及公共契约（公共组件/公共API/样式/状态/schema/平台能力）』",
+    },
+    "POLICY.CHG.COMPAT_MIGRATION_ROLLBACK": {
+        "change_classes": ["PUBLIC_CONTRACT_CHANGE"],
+        "basis": "condition『公共能力发生不兼容变更时』",
+    },
+    "POLICY.CHG.BREAKING_VERSIONING": {
+        "change_classes": ["PUBLIC_CONTRACT_CHANGE"],
+        "basis": "condition『破坏性变更或紧急修复』——破坏性公共契约变更词面",
+    },
+    "POLICY.CHG.DEPRECATE_BEFORE_DELETE": {
+        "change_classes": ["PUBLIC_CONTRACT_CHANGE"],
+        "basis": "condition『拟删除任何被依赖能力（props/事件/字段/状态/接口）』——被依赖公共面",
+    },
+    "POLICY.CHG.OBSERVABLE_EVOLUTION": {
+        "change_classes": ["API_EVOLUTION"],
+        "basis": "condition『契约演进方式选择』——演进词面逐字（PRD §5.2 示例词形）",
+    },
+    "POLICY.CHG.STAGED_ROLLOUT": {
+        "change_classes": ["PUBLIC_CONTRACT_CHANGE"],
+        "basis": "condition『破坏性公共变更』",
+    },
+    "POLICY.CHG.SYNC_CONTRACT_DOCS_TESTS": {
+        "change_classes": ["PUBLIC_CONTRACT_CHANGE"],
+        "basis": "condition『任何公共变更落地』",
+    },
+    "POLICY.CHG.AFFECT_TEMPLATES": {
+        "change_classes": ["PUBLIC_CONTRACT_CHANGE"],
+        "basis": "condition『公共变更评估』",
+    },
+    "KNOWLEDGE.CHG.EXAMPLE_PROP_MIGRATION": {
+        "change_classes": ["PUBLIC_CONTRACT_CHANGE"],
+        "basis": "condition『组件 props 演进』——props 组件公共契约面",
+    },
+    "KNOWLEDGE.CHG.EXAMPLE_COMPAT_WINDOW": {
+        "change_classes": ["API_EVOLUTION"],
+        "basis": "condition『字段级契约演进』",
+    },
+    "KNOWLEDGE.FP.API.FIELD_DRIFT_NO_CONTRACT": {
+        "change_classes": ["PUBLIC_CONTRACT_CHANGE"],
+        "basis": "condition『接口字段变更』",
+    },
+    "KNOWLEDGE.FP.BE.CONTRACT_DRIFT": {
+        "change_classes": ["PUBLIC_CONTRACT_CHANGE"],
+        "basis": "正文『只改实现不同步契约』——契约失同步词面",
+    },
+    "KNOWLEDGE.FP.CHG.PAGE_LOCAL_PADDING": {
+        "change_classes": ["PRESENTATION_CHANGE"],
+        "basis": "condition『公共样式/默认值类变更』——呈现面变更逐字",
+    },
+    "KNOWLEDGE.FP.GRID.GLOBAL_TD_WIDTH": {
+        "change_classes": ["PRESENTATION_CHANGE"],
+        "basis": "condition『表格样式变更』",
+    },
+    "GATE.CHG.PRECHANGE_CHECKS": {
+        "change_classes": ["PUBLIC_CONTRACT_CHANGE"],
+        "basis": "condition『公共变更过门禁』",
+    },
+    "GATE.BE.API.CONTRACT_CHECKS": {
+        "change_classes": ["PUBLIC_CONTRACT_CHANGE"],
+        "basis": "condition『接口变更过门禁』",
+    },
+    "GATE.BE.CHG.CONTRACT_CHANGE_CHECKS": {
+        "change_classes": ["PUBLIC_CONTRACT_CHANGE"],
+        "basis": "condition『契约变更过门禁』——词面逐字",
+    },
+    "GATE.WEB.GRID.CHECKS": {
+        "change_classes": ["PRESENTATION_CHANGE"],
+        "basis": "condition『表格相关变更过门禁』——呈现面变更",
+    },
+}
+
+APPLICABILITY_CAMPAIGN = "W1-A2 P0.5-1 T3 标注战役（PRD v0.5.2 §5.2/§14；Owner 裁决 8 ②，2026-09-01）"
+
+
+def applicability_parts(c):
+    """条目的机器 applicability 组装（lanes 平移 / 词面派生轴 / applicability_note 降级位 / review 注记）。
+
+    - lanes：显式 lane 平移为 lanes:[同值]（裁决 8 ② 双读过渡）；lane=any 不标 lanes
+      （走缺省回退，O7 行为零变化）；
+    - capabilities/change_classes：仅 APPLICABILITY_AXES 有明确词面证据的条目；
+    - applicability_note：condition 原文降级保留（PRD §5.2 允许自然语言保留为注记，
+      不得作为唯一机器路由条件；kernel 契约要求 condition 字段仍在场）；
+    - x-applicability-review：有机器轴 → annotated + basis；无机器轴 → human_review_candidate
+      （拿不准的留空回退 + 条目注记，Human Review 议程）。
+    """
+    aw = c["applies_when"]
+    merged = dict(aw)
+    axes_written = []
+    if aw.get("lane") != "any":
+        merged["lanes"] = [aw["lane"]]
+        axes_written.append("lanes")
+    axes = APPLICABILITY_AXES.get(c["candidate_id"])
+    basis = None
+    if axes is not None:
+        basis = axes["basis"]
+        for key in ("capabilities", "change_classes"):
+            if key in axes:
+                merged[key] = list(axes[key])
+                axes_written.append(key)
+    merged["applicability_note"] = aw["condition"]
+    axes_written.append("applicability_note")
+    if basis is not None:
+        review = {
+            "status": "annotated",
+            "campaign": APPLICABILITY_CAMPAIGN,
+            "axes": axes_written,
+            "basis": basis,
+        }
+    else:
+        review = {
+            "status": "human_review_candidate",
+            "campaign": APPLICABILITY_CAMPAIGN,
+            "axes": axes_written,
+            "note": "T3 保守派生未见明确词面证据——capabilities/change_classes 留空回退 lane 缺省"
+                    "（O7 行为零变化）；列 Human Review 复核议程",
+        }
+    return merged, review
+
+
 def authority_block():
     return {
         "owner": "HUMAN_OWNER",
@@ -291,6 +509,7 @@ def title_of(c):
 
 # ---------------------------------------------------------------- 构建器
 def build_policy(c):
+    applies_when, review = applicability_parts(c)
     return {
         "x-vocab-pr": {
             "status": "vocab_pr_candidate",
@@ -299,6 +518,7 @@ def build_policy(c):
             "locked_vocab_untouched": True,
         },
         "x-pilot-proposal": x_pilot(c),
+        "x-applicability-review": review,
         "id": c["candidate_id"],
         "kind": "policy",
         "axis_profile": "policy_default",
@@ -307,7 +527,7 @@ def build_policy(c):
         "title_zh": title_of(c),
         "statement_zh": c["statement_zh"],
         "statement_en_keywords": keywords_of(c),
-        "applies_when": c["applies_when"],
+        "applies_when": applies_when,
         "enforcement": c["enforcement"],
         "authority": authority_block(),
         "origin": "ingested",
@@ -318,6 +538,7 @@ def build_policy(c):
 
 
 def build_knowledge(c):
+    applies_when, review = applicability_parts(c)
     return {
         "x-vocab-pr": {
             "status": "no_new_enum__confirm_only",
@@ -326,6 +547,7 @@ def build_knowledge(c):
             "locked_vocab_untouched": True,
         },
         "x-pilot-proposal": x_pilot(c),
+        "x-applicability-review": review,
         "x-advisory-gate-semantics": {
             "advisory": True,
             "gate_binding": "NEVER_FAIL",
@@ -339,7 +561,7 @@ def build_knowledge(c):
         "title_zh": title_of(c),
         "statement_zh": c["statement_zh"],
         "statement_en_keywords": keywords_of(c),
-        "applies_when": c["applies_when"],
+        "applies_when": applies_when,
         "enforcement": "advisory",
         "authority": authority_block(),
         "origin": "ingested",
@@ -350,6 +572,7 @@ def build_knowledge(c):
 
 
 def build_gate(c, all_candidates):
+    applies_when, review = applicability_parts(c)
     policy_refs = sorted(
         p["candidate_id"] for p in all_candidates
         if p["classification"] in ("UNIVERSAL_POLICY", "LANE_POLICY")
@@ -364,6 +587,7 @@ def build_gate(c, all_candidates):
             "locked_vocab_untouched": True,
         },
         "x-pilot-proposal": x_pilot(c),
+        "x-applicability-review": review,
         "id": c["candidate_id"],
         "kind": "gate_recipe",
         "axis_profile": "gate_recipe_default",
@@ -371,7 +595,7 @@ def build_gate(c, all_candidates):
         "axes": axes_block(),
         "title_zh": title_of(c),
         "statement_zh": c["statement_zh"],
-        "applies_when": c["applies_when"],
+        "applies_when": applies_when,
         "enforcement": c["enforcement"],
         "gate_def_draft": {
             "anchor": anchor,
@@ -437,24 +661,73 @@ for c in candidates:
 
 written.sort(key=lambda e: e["id"])
 
-lock = {
-    "catalog_version": "0.1.0-pilot",
-    "profile": "web-standard@0",
-    "generated_by": "catalog/tools/materialize_catalog_pilot.py（幂等重生成；entries 按 id 排序；pilot-0001 Human Review 落账后重生成）",
-    "x-digest-ethics": {
-        "basis": "D24 / vocab-lock.digest_ethics",
-        "write_blocking": False,
-        "side": "read_only_service",
-        "usage": "identity / upgrade-diff / tamper-audit 抽验",
-        "human_touch": "forbidden",
-    },
-    "entries": written,
-    "note": "read-side 指纹（D24）：仅用于升级 diff 与防篡改抽验",
-}
-lock_path = os.path.join(ROOT, "catalog-lock.draft.json")
-lock_data = json.dumps(lock, ensure_ascii=False, indent=2) + "\n"
-with open(lock_path, "w", encoding="utf-8", newline="\n") as f:
-    f.write(lock_data)
+# ---------------------------------------------------------------- catalog-lock 合并重锁（W1-A2）
+# 旧版直接以本工具 60 条覆写整个 lock——在 batch4（+9）/SPEC-D curated（+25）/W1-E sensors
+# （+6）共推到 100 entries 的现状下重跑会摧毁 lock。W1-A2 T3 标注战役起改为合并重锁
+# （materialize_batch4_uplift.merge_lock 同款语义）：本工具命名空间（60 条）整体置换，
+# 基线条目零触碰（id 交叠即 fail-closed），controlled_children 按合并全集重算，
+# 全量 content_sha256 与落盘对账 0 mismatch 才放行（D24：人永不接触哈希）。
+LOCK_PATH = os.path.join(ROOT, "catalog-lock.draft.json")
+# 三个 materialize 工具共用的 producer 链 generated_by（同步落在
+# catalog/tools/materialize_batch4_uplift.py 与 corpus/spec-knowledge/materialize-curated.py；
+# 同串保证任一工具最后落锁不丢失其余批次的 provenance 注记）。
+LOCK_GENERATED_BY = (
+    "catalog/tools/materialize_catalog_pilot.py（pilot-0001 60 条；entries 按 id 排序）+ "
+    "catalog/tools/materialize_batch4_uplift.py（batch-4 语料批 Universal 上提追加 9 条）+ "
+    "corpus/spec-knowledge/materialize-curated.py（SPEC-D 汇总池 D5 精选追加 25 条）+ "
+    "catalog/sensors/（P1-5 Sensor Capability Catalog Lite 六条目登记，裁决 8 D6/D7）+ "
+    "W1-A2 P0.5-1 T3 标注战役（机器 applicability 字段批量标注 + 幂等重锁；PRD v0.5.2 §5.2/§14，裁决 8 ②）"
+)
+
+
+def merge_lock(new_entries):
+    with open(LOCK_PATH, encoding="utf-8") as f:
+        old_lock = json.load(f)
+    own_ids = {e["id"] for e in new_entries}
+    assert len(own_ids) == len(new_entries), "本工具条目 id 重复"
+    merged = {}
+    for e in old_lock["entries"]:
+        assert e["id"] not in merged, "旧 lock 重复 id: %s" % e["id"]
+        merged[e["id"]] = dict(e)
+    for e in new_entries:
+        if e["id"] in merged:
+            # 幂等重跑：同 id 以本工具产物为准（path 必须一致；sha 以本轮重算为准）。
+            assert merged[e["id"]]["path"] == e["path"], "条目 path 漂移: %s" % e["id"]
+        merged[e["id"]] = dict(e)
+    entries_out = sorted(merged.values(), key=lambda e: e["id"])
+    paths = sorted(e["path"] for e in entries_out)
+    assert len(paths) == len(set(paths)), "lock path 重复"
+
+    # 全量对账：lock 每条 content_sha256 与落盘文件 0 mismatch（fail-closed）。
+    for e in entries_out:
+        with open(os.path.join(ROOT, e["path"].replace("/", os.sep)), "rb") as f:
+            actual = "sha256:" + hashlib.sha256(f.read()).hexdigest()
+        if actual != e["content_sha256"]:
+            raise SystemExit(
+                "LOCK_DRIFT: %s（lock=%s disk=%s）——基线条目漂移说明先跑其归属 producer，"
+                "或物料被手改；本工具只重锁自己的命名空间" % (e["id"], e["content_sha256"], actual))
+
+    lock = {
+        "catalog_version": old_lock["catalog_version"],
+        "profile": old_lock["profile"],
+        "generated_by": LOCK_GENERATED_BY,
+        "x-digest-ethics": old_lock["x-digest-ethics"],
+        "controlled_children": {
+            "note": "catalog-lock 管辖面（vocab-lock PR-0001 catalog_layer_vocab 同段语义）："
+                    "allowed=登记在册可存在；required=必须存在。新增 catalog 文件须同步 allowed+required "
+                    "两处（batch-4 split-ledger catalog_scope_note 纪律；沿 pomaster directory-lock "
+                    "controlled_children 语义移植）。",
+            "allowed": list(paths),
+            "required": list(paths),
+        },
+        "entries": entries_out,
+        "note": old_lock["note"],
+    }
+    lock_data = json.dumps(lock, ensure_ascii=False, indent=2) + "\n"
+    assert lock_data == json.dumps(lock, ensure_ascii=False, indent=2) + "\n", "确定性序列化自检失败"
+    with open(LOCK_PATH, "w", encoding="utf-8", newline="\n") as f:
+        f.write(lock_data)
+    return len(old_lock["entries"]), len(entries_out)
 
 # ---------------------------------------------------------------- 统计
 mat_class = {}
@@ -462,6 +735,18 @@ for e in written:
     cid = e["id"]
     c = next(x for x in candidates if x["candidate_id"] == cid)
     mat_class[c["classification"]] = mat_class.get(c["classification"], 0) + 1
+
+before_entries, after_entries = merge_lock(written)
+annotated_ids = sorted(APPLICABILITY_AXES)
+materialized_cards = [
+    c for c in candidates
+    if (c.get("review") or {}).get("disposition") != "REJECT"
+    and c["classification"] in ("UNIVERSAL_POLICY", "LANE_POLICY", "KNOWLEDGE_PATTERN",
+                                "FAILURE_PATTERN", "GATE_RECIPE")
+]
+machine_total = sum(
+    1 for c in materialized_cards
+    if c["candidate_id"] in APPLICABILITY_AXES or c["applies_when"].get("lane") != "any")
 
 stats = {
     "candidates_total": len(candidates),
@@ -472,11 +757,21 @@ stats = {
         "gates": sum(1 for e in written if e["path"].startswith("gates/")),
     },
     "materialized_by_classification": mat_class,
+    "w1a2_applicability": {
+        "campaign": APPLICABILITY_CAMPAIGN,
+        "axes_annotated_ids": annotated_ids,
+        "lanes_shifted_any_skip": True,
+        "human_review_candidates": sum(
+            1 for c in materialized_cards
+            if c["candidate_id"] not in APPLICABILITY_AXES and c["applies_when"].get("lane") == "any"),
+        "machine_applicability_total": machine_total,
+    },
+    "lock": {"before_entries": before_entries, "after_entries": after_entries},
     "skipped_total": len(skipped),
     "skipped_by_classification": {
         k: sum(1 for s in skipped if s["classification"] == k) for k in sorted({s["classification"] for s in skipped})
     },
-    "lock_entries": len(lock["entries"]),
+    "lock_entries": after_entries,
     "class_count_all": class_count,
 }
 print(json.dumps(stats, ensure_ascii=False, indent=2))

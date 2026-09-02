@@ -52,7 +52,7 @@ import type { Actor, Store } from "./index.js";
 import { GovernanceError, GovernedIdParseError } from "./errors.js";
 import { governanceCodeForParseError } from "./errors.js";
 import { parseGovernedId, resolveAlias } from "./id.js";
-import { captureOriginal, executeWrites, readText } from "./io.js";
+import { appendLine, captureOriginal, executeWrites, readText } from "./io.js";
 import { pathsOf, readCurrentSeq, type StorePaths } from "./paths.js";
 import {
   EQUIVALENCE_STATUS_VALUES,
@@ -1229,25 +1229,21 @@ function notConfigured(store: Store): GovernanceError {
 
 /**
  * 唯一落盘点（registry staged write + journal 追加，模式同 knowledge.writeLibraryAndJournal）：
- * executeWrites 两写一事务，任一步失败回滚到事务前（captureOriginal 字节恢复），
- * 不落半写状态。
+ * executeWrites 提交 registry staged 批，成功后 appendLine 原子追加 journal 事件
+ * （A2 journal 纪律：RMW 覆写会抹掉并发 appendLine 家族刚写的整行；「台账先行、
+ * journal 缺行」是可检出残态）。任一步失败：staged 批回滚到事务前，不落半写状态。
  */
 function writeRegistryAndJournal(
   paths: StorePaths,
   nextFile: EquivalenceRegistryFile,
   event: Record<string, unknown>,
 ): void {
-  const journalLine = `${JSON.stringify(event)}\n`;
   executeWrites([
     {
       path: paths.equivalenceRegistryPath,
       next: `${JSON.stringify(nextFile, null, 2)}\n`,
       original: captureOriginal(paths.equivalenceRegistryPath),
     },
-    {
-      path: paths.journalPath,
-      next: `${readText(paths.journalPath) ?? ""}${journalLine}`,
-      original: captureOriginal(paths.journalPath),
-    },
   ]);
+  appendLine(paths.journalPath, `${JSON.stringify(event)}\n`);
 }

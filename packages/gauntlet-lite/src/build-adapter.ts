@@ -579,6 +579,11 @@ export function toGateResultJson(
       scanned: record.blindspot.scanned,
       produced: record.blindspot.produced,
       escape_ratio: record.blindspot.escapeRatio,
+      // C3 封条合规位：03 allOf「skipped_blindspot ⇒ blindspot.fixture_regression 必附」
+      // （pytest 全 skipped 腿设置；其余腿缺席 = 键缺席，schema 封条只锁 skipped_blindspot）。
+      ...(record.blindspot.fixtureRegression === undefined
+        ? {}
+        : { fixture_regression: record.blindspot.fixtureRegression }),
     },
     trust,
     duration_ms: {

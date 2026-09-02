@@ -203,9 +203,9 @@
     },
     "keybinding_table_ref": {
       "type": "string",
-      "pattern": "^KEYBINDING\\.[A-Z][A-Z0-9_]{0,31}(\\.[A-Z][A-Z0-9_]{0,31})*$",
+      "pattern": "^KEYBINDING\\.[A-Z][A-Z0-9_]{0,31}\\.[A-Z][A-Z0-9_]{0,31}(\\.[A-Z][A-Z0-9_]{0,31})*$",
       "title": "成员来源绑定表引用（via binding table）",
-      "description": "指向已登记的 KEYBINDING 绑定表 id（形态同 04-keybinding.definitions.keybinding_id，至少 DOMAIN.NAME 两段）。表为绑定行的分组视图；引用存在性由索引层 REF_INTEGRITY ref-exists 检查（DENOM_TABLE_005）。",
+      "description": "指向已登记的 KEYBINDING 绑定表 id（形态同 04-keybinding.definitions.keybinding_id，至少 DOMAIN.NAME 两段——第二段必需，与 04 pattern 同串；复制时曾丢必需段锚致 KEYBINDING.PAGE 一段式漏过，现已对齐）。表为绑定行的分组视图；引用存在性由索引层 REF_INTEGRITY ref-exists 检查（DENOM_TABLE_005）。",
       "examples": [
         "KEYBINDING.PAGE.V1",
         "KEYBINDING.PAGE（INVALID：仅一段——表 id 至少两段）"

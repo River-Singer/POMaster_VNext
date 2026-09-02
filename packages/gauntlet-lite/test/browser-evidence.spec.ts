@@ -1,6 +1,8 @@
 /**
  * browser-evidence spec —— P0.5-2 编排层单元矩阵（裁决8③④）：
- * - gate_def 版本化记录钉住（POLICY.GATE.BROWSER@0.2.0 = +screenshot 存在性绑定条款）；
+ * - gate_def 版本化记录钉住（POLICY.GATE.BROWSER@0.3.0 = @0.2.0 screenshot 存在性
+ *   绑定条款 + W1-D2 批 2 §6.7 环境身份前置门；本 spec 钉 0.2.0 条款语义——
+ *   @0.3.0 下原样承袭零变更）；
  * - payload 内存载荷位（判卷选中件与载荷字节同一；首条胜出确定性；text 件 tracer 范围外
  *   恒 null；载荷绝不入记录——scopeNote 清单只载体积披露）；
  * - adjudicateEvidenceBindingClause（0.2.0 绑定条款判卷本体：passed + 绑定不完整 → 判红；
@@ -61,9 +63,9 @@ function passedRecord(): GateResultRecord {
 // gate_def 版本化记录（裁决8④ D4=A）
 // ============================================================
 
-describe("gate_def 版本化（0.1.0 → 0.2.0）", () => {
-  it("BROWSER_GATE_DEF = POLICY.GATE.BROWSER@0.2.0（绑定条款进门禁判卷本体的版本化锚）", () => {
-    expect(BROWSER_GATE_DEF).toBe("POLICY.GATE.BROWSER@0.2.0");
+describe("gate_def 版本化（0.1.0 → 0.2.0 → 0.3.0）", () => {
+  it("BROWSER_GATE_DEF = POLICY.GATE.BROWSER@0.3.0（W1-D2 批 2：+§6.7 环境身份前置门；0.2.0 绑定条款原样承袭——本 spec 钉的绑定条款语义在 @0.3.0 下零变更）", () => {
+    expect(BROWSER_GATE_DEF).toBe("POLICY.GATE.BROWSER@0.3.0");
   });
 });
 

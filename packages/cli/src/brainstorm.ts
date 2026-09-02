@@ -635,8 +635,9 @@ export async function runBrainstormPromote(
   // —— tx 文件落点（P18 红队发现3：--tx-out 强制解析进 rootDir） ——
   // 绝对路径出仓 / 相对 .. 逃逸出仓 / 跨盘符（relative 无仓内相对形态）= 显式拒绝；
   // 相对路径以 rootDir 为基准解析（不以进程 CWD 为准——provenance 可移植 + 幂等）。
-  // 另拒受治理面（state/truth/objects/policies/evidence，§81.3 受治理面前缀复用）：
-  // tx 文件是 maintain --ops 的旁路输入文件，落进 store 写入面即遮蔽权威面文件。
+  // 另拒受治理面（state/truth/objects/policies/evidence + executions/runtime/traces，
+  // §81.3 受治理面前缀复用——kernel denylist 清单，brainstorm 与 research 越写闸共用）：
+  // tx 文件是 maintain --ops 的旁路输入文件，落进 store 写入/运行时面即遮蔽权威面文件。
   let txPath: string | null = null;
   let txOutError: CliError | null = null;
   if (input.txOut !== undefined) {
@@ -654,14 +655,20 @@ export async function runBrainstormPromote(
         hint: "tx 文件必须落在仓库根内：相对路径以 rootDir 为基准解析（不以进程 CWD 为准）；绝对路径仅收仓内位置。",
       };
     } else {
-      const governed = RESEARCH_FORBIDDEN_SURFACE_PREFIXES.find(
-        (prefix) => relPosix.startsWith(prefix) || `${relPosix}/`.startsWith(prefix),
-      );
+      // B1（P0）大小写归一：Windows NTFS / macOS 缺省文件系统大小写不敏感，
+      // `.POMASTER/state/...` 等大小写变体可绕过大小写敏感的 denylist 后直写 store
+      // 权威面（探针实锤：lowercase→REJECT，UPPERCASE/mixed→ALLOW）——比较前双方
+      // 归一小写再 startsWith（本闸语义是「受治理面禁旁路落盘」，按 FS 实际语义判）。
+      const relLower = relPosix.toLowerCase();
+      const governed = RESEARCH_FORBIDDEN_SURFACE_PREFIXES.find((prefix) => {
+        const prefixLower = prefix.toLowerCase();
+        return relLower.startsWith(prefixLower) || `${relLower}/`.startsWith(prefixLower);
+      });
       if (governed !== undefined) {
         txOutError = {
           code: "SCHEMA_INVALID",
           message: `--tx-out 落点命中受治理面 ${governed}（"${input.txOut}"）`,
-          hint: "state/truth/objects/policies/evidence 是 store 事务写入面——tx 文件是 maintain --ops 的输入件，落进治理面即旁路遮蔽权威文件；放 scratchpad 或仓内其它普通目录。",
+          hint: "state/truth/objects/policies/evidence/executions/runtime/traces 是 store 事务与运行时写入面——tx 文件是 maintain --ops 的输入件，落进治理面即旁路遮蔽权威文件；放 scratchpad 或仓内其它普通目录。",
         };
       } else {
         txPath = resolvedTx;

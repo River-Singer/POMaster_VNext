@@ -10,7 +10,7 @@
  *
  * 进度行协议（父进程观测中断点用）：
  *   READY     —— createStore 重开 + 校验完成（validator 已热）
- *   TX <i>    —— 第 i 个事务已 commit（index rename 完成）
+ *   TX <i>    —— 第 i 个事务已 commit（index rename + TX_APPLIED appendLine 均完成）
  *   DONE <n>  —— 全部事务完成（父进程断言本行在 kill 前**不**出现）
  */
 import { readFileSync, writeFileSync } from "node:fs";

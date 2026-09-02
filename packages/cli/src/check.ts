@@ -6,6 +6,9 @@
  * adapter 不可用 → NOT_INSTALLED（verdict=not_run），绝不静默通过——not_run 不是
  * passed，check 命令对非 passed 一律 ok=false（fail-closed；阻断语义的最终裁决归
  * closeout 编排层）。本腿保持纯读（G6 裁定：判卷层不叠写路径失败模式）。
+ * B5 假绿封死：两形态（最小契约/§59）共用的判卷收敛点 buildOutcomeFromRecord 做
+ * verdict⇔counts 自洽复算——passed+violations>0 = GATE_COUNTS_INVALID FATAL 不报绿
+ * （--gates 腿已统一过 kernel normalizeGateResult；--fast 腿为等价复算子集）。
  *
  * 腿 2 · `check --gates`（catalog gate recipes 腿，P12b 新增）：消费 catalog/gates/
  * 全部 recipe（分母 = CATALOG_GATE_RECIPES，目录对账自检测试钉死），每 recipe 经
@@ -364,6 +367,36 @@ function buildOutcomeFromRecord(
   if (!(VERDICT_VALUES as readonly string[]).includes(verdict)) {
     return malformedOutcome(
       `verdict "${verdict}" out of vocab (VERDICT_VALUES); verdict forced to blocked`,
+    );
+  }
+  // —— B5（P2）假绿封死：--fast 腿判卷收敛点同样做 verdict⇔counts 自洽复算 ——
+  // --gates 腿已在统一收敛点过 kernel normalizeGateResult 判卷复算（P12c，下文同款
+  // 注释）；--fast 腿此前只验「counts 为数字 + verdict ∈ 七态」就放行 passed——注入面
+  // 自报 passed+violations>0 照样报绿 exit 0。最小契约载荷无 grn/gate/tool 上下文、
+  // 无法直接喂 kernel 归一器，此处做等价复算子集（与 kernel GRN-0009 防线同一条七态
+  // 纪律：verdict=passed ⇔ counts.violations=0）：单源自相矛盾载荷判 FATAL 不报绿。
+  if (verdict === "passed" && counts.violations > 0) {
+    const contradiction: FastCheckResult = {
+      gate: FAST_CHECK_GATE,
+      status: "READY",
+      verdict: "blocked",
+      counts,
+      detail,
+    };
+    return failOutcome(
+      "check",
+      contradiction,
+      [
+        {
+          code: "GATE_COUNTS_INVALID",
+          message: `verdict=passed 但 counts.violations=${counts.violations}——自报载荷自相矛盾（passed 要求 violations=0；GRN-0009 实录缺陷类）`,
+          hint: "--fast 判卷收敛点与 --gates 腿同一条假绿封死线（kernel normalizeGateResult 同源复算）；修正 adapter 判卷或按 03-gate-result 携带 trust.asserted/recomputed 失配声明后重跑。",
+        },
+      ],
+      [
+        `check --fast ${FAST_CHECK_GATE}: blocked — passed 与 violations>0 自相矛盾（假绿封死）`,
+        `  counts: scanned=${counts.scanned} applicable=${counts.applicableScanned} violations=${counts.violations} notApplicable=${counts.notApplicable}`,
+      ],
     );
   }
   const result: FastCheckResult = {

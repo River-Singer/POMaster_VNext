@@ -13,7 +13,7 @@ import type { WritePolicyValue } from "./vocab.js";
 import { CATALOG_CHANGE_CLASS_VALUES, CATALOG_GOVERNANCE_PROFILE_VALUES } from "./vocab.js";
 import { GovernanceError, governanceCodeForParseError, GovernedIdParseError } from "./errors.js";
 import { parseGovernedId } from "./id.js";
-import { captureOriginal, executeWrites, readText } from "./io.js";
+import { appendLine, captureOriginal, executeWrites, readText } from "./io.js";
 import { pathsOf, readCurrentSeq, readRawIndex, type StorePaths } from "./paths.js";
 
 /** 缺省 TTL：168 拍（C9 TTL 168h 的拍数映射；A4 禁墙钟，只按 seq 判定）。 */
@@ -278,7 +278,18 @@ export async function issuePermit(
     stolen_reason: null,
   };
   file.permits.push(record);
-  const journalLine = `${JSON.stringify({
+  executeWrites([
+    {
+      path: paths.permitsPath,
+      next: `${JSON.stringify(file, null, 2)}\n`,
+      original: captureOriginal(paths.permitsPath),
+    },
+  ]);
+  // A2 journal 纪律：事件在台账 staged 批提交成功后 appendLine 原子追加（不再 RMW
+  // 覆写——会把并发 appendLine 家族刚写的整行抹掉）。顺序取舍：「台账先行、journal
+  // 缺行」是可检出残态（台账有签发记录可查缺事件），比「journal 有幽灵行、台账未
+  // 提交」诚实。
+  appendJournalLine(paths, {
     type: "PERMIT_ISSUED",
     seq: currentSeq,
     permit_ref: permitRef,
@@ -288,19 +299,7 @@ export async function issuePermit(
     capability_ids: capabilityRefs,
     change_class: record.change_class,
     governance_profile: record.governance_profile,
-  })}\n`;
-  executeWrites([
-    {
-      path: paths.permitsPath,
-      next: `${JSON.stringify(file, null, 2)}\n`,
-      original: captureOriginal(paths.permitsPath),
-    },
-    {
-      path: paths.journalPath,
-      next: `${readText(paths.journalPath) ?? ""}${journalLine}`,
-      original: captureOriginal(paths.journalPath),
-    },
-  ]);
+  });
   return {
     permitRef,
     expiresAtSeq,
@@ -481,6 +480,15 @@ export async function stealPermit(
   permit.stolen_at_seq = currentSeq;
   permit.stolen_by = { actor_type: by.actorType, actor: by.actor };
   permit.stolen_reason = reason;
+  // A2 journal 纪律：台账 staged 批先提交成功，再 appendLine 原子追加事件（原落法
+  // 是 RMW 覆写且先于台账——并发下抹掉他行，失败方向也不如实）。
+  executeWrites([
+    {
+      path: paths.permitsPath,
+      next: `${JSON.stringify(file, null, 2)}\n`,
+      original: captureOriginal(paths.permitsPath),
+    },
+  ]);
   appendJournalLine(paths, {
     type: "PERMIT_STOLEN",
     seq: currentSeq,
@@ -489,22 +497,11 @@ export async function stealPermit(
     by: { actor_type: by.actorType, actor: by.actor },
     reason,
   });
-  executeWrites([
-    {
-      path: paths.permitsPath,
-      next: `${JSON.stringify(file, null, 2)}\n`,
-      original: captureOriginal(paths.permitsPath),
-    },
-  ]);
   return { outcome: "stolen", eventSeq: currentSeq };
 }
 
 function appendJournalLine(paths: StorePaths, event: Record<string, unknown>): void {
-  executeWrites([
-    {
-      path: paths.journalPath,
-      next: `${readText(paths.journalPath) ?? ""}${JSON.stringify(event)}\n`,
-      original: captureOriginal(paths.journalPath),
-    },
-  ]);
+  // 原子追加（P20 红队发现 1 同病灶同修）：read-modify-write 覆写落法会把并发进程
+  // 刚追加的整行抹掉。O_APPEND/FILE_APPEND_DATA 单次 write 落位于当时文件尾。
+  appendLine(paths.journalPath, `${JSON.stringify(event)}\n`);
 }

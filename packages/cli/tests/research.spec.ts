@@ -9,7 +9,9 @@
  * - research list：宿主不存在 = 显式错误（与「存在无产物」= 显式空清单区分）；artifact
  *   呈现 findings 计数与 SKELETON 标记。
  * - research inspect：四文件完整性（缺 → RESEARCH_ARTIFACT_INCOMPLETE）；自由 yaml 显式
- *   INDEX_NOT_MACHINE_PARSEABLE；词表外 finding → RESEARCH_FINDING_INVALID exit 1；
+ *   INDEX_NOT_MACHINE_PARSEABLE；findings 字段级损坏（键存在但非数组）→ 显式
+ *   INDEX_NOT_MACHINE_PARSEABLE（B3：不静默折叠为空分母假绿，键真缺席仍合法空分母）；
+ *   词表外 finding → RESEARCH_FINDING_INVALID exit 1；
  *   CONFLICTS → escalation warning（发现不是裁决）；骨架占位 → SKELETON warning；
  *   **P18 红队修复面**：发现1 六字段存在性（AUTHORITATIVE 零 sources/caveats 幻觉洗白
  *   fail-closed + INFERENCE 豁免对照 + FINDING_MALFORMED 不跳出判卷分母）+ 发现4 宿主位
@@ -261,6 +263,40 @@ describe("research inspect（§44.3；§81.4 判卷呈现）", () => {
     const inspect = await runResearchInspect(root, `${host}research/`);
     expect(inspect.ok).toBe(false);
     expect(inspect.errors[0]?.code).toBe("INDEX_NOT_MACHINE_PARSEABLE");
+  });
+
+  it("对抗（B3）：findings 键存在但非数组 → INDEX_NOT_MACHINE_PARSEABLE exit 1（字段级损坏不折叠为空分母假绿）", async () => {
+    // 若防御失效：`Array.isArray(findings) ? findings : []` 把「键存在但非数组」
+    // 静默折叠为空数组 → 分母 0 → all_ok 假绿 exit 0（与合法空 findings 不可区分；
+    // 条目级损坏有 FINDING_MALFORMED 防线，字段级整体损坏恰好绕过）。
+    const host = ".pomaster/discovery/scratchpads/idea-f-broken/";
+    await runBrainstormStart(root, { id: "idea-f-broken" });
+    await runResearchStart(root, { topic: "t", host });
+    const indexPath = join(researchDirOf(host), "index.yaml");
+    const index = JSON.parse(readFileSync(indexPath, "utf8")) as Record<string, unknown>;
+    index.findings = "corrupted-not-an-array";
+    (await import("node:fs")).writeFileSync(indexPath, `${JSON.stringify(index, null, 2)}\n`);
+    const outcome = await runResearchInspect(root, `${host}research/`);
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors[0]?.code).toBe("INDEX_NOT_MACHINE_PARSEABLE");
+    expect(outcome.errors[0]?.message).toContain("findings");
+    expect(outcome.errors[0]?.message).toContain("损坏");
+    expect(outcome.errors[0]?.hint).toContain("缺席");
+  });
+
+  it("非恒真对照（B3）：findings 键真缺席 → 仍走空分母骨架警示通路（合法缺席不误伤）", async () => {
+    const host = ".pomaster/discovery/scratchpads/idea-f-absent/";
+    await runBrainstormStart(root, { id: "idea-f-absent" });
+    await runResearchStart(root, { topic: "t", host });
+    const indexPath = join(researchDirOf(host), "index.yaml");
+    const index = JSON.parse(readFileSync(indexPath, "utf8")) as Record<string, unknown>;
+    delete index.findings;
+    (await import("node:fs")).writeFileSync(indexPath, `${JSON.stringify(index, null, 2)}\n`);
+    const outcome = await runResearchInspect(root, `${host}research/`);
+    expect(outcome.ok).toBe(true);
+    const result = outcome.result as ResearchInspectResult;
+    expect(result.findings_total).toBe(0);
+    expect(outcome.warnings.map((w) => w.code)).toContain("RESEARCH_SKELETON");
   });
 
   it("骨架：四文件齐 + findings 空 + SKELETON warning + ok（骨架是合法中间态）", async () => {

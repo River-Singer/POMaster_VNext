@@ -15,6 +15,15 @@
     "enforcement_note": "优先机器判卷；判卷步骤草案见 catalog/gates/ 同协议 recipe",
     "clean_room_note": "statement_zh 为独立改写（clean-room），零逐字拷贝源协议"
   },
+  "x-applicability-review": {
+    "status": "human_review_candidate",
+    "campaign": "W1-A2 P0.5-1 T3 标注战役（PRD v0.5.2 §5.2/§14；Owner 裁决 8 ②，2026-09-01）",
+    "axes": [
+      "lanes",
+      "applicability_note"
+    ],
+    "note": "T3 保守派生未见明确词面证据——capabilities/change_classes 留空回退 lane 缺省（O7 行为零变化）；列 Human Review 复核议程"
+  },
   "id": "GATE.WEB.API.REQUEST_CHECKS",
   "kind": "gate_recipe",
   "axis_profile": "gate_recipe_default",
@@ -29,7 +38,11 @@
   "statement_zh": "请求层门禁检查单：①页面仅用 Domain API ②类型与错误统一 ③取消/重试/幂等明确 ④无重复 loading/认证逻辑 ⑤状态判定、旧结果防护与 endpoint 来源明确。",
   "applies_when": {
     "lane": "frontend",
-    "condition": "请求层过门禁"
+    "condition": "请求层过门禁",
+    "lanes": [
+      "frontend"
+    ],
+    "applicability_note": "请求层过门禁"
   },
   "enforcement": "deterministic_where_possible",
   "gate_def_draft": {

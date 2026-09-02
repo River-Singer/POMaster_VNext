@@ -15,6 +15,16 @@
     "enforcement_note": "仅建议：任何 gate 永不因本条目单独 FAIL，至多产生 WARN/HINT 或进入 Human Review 议程",
     "clean_room_note": "statement_zh 为独立改写（clean-room），零逐字拷贝源协议"
   },
+  "x-applicability-review": {
+    "status": "annotated",
+    "campaign": "W1-A2 P0.5-1 T3 标注战役（PRD v0.5.2 §5.2/§14；Owner 裁决 8 ②，2026-09-01）",
+    "axes": [
+      "lanes",
+      "change_classes",
+      "applicability_note"
+    ],
+    "basis": "condition『公共样式/默认值类变更』——呈现面变更逐字"
+  },
   "x-advisory-gate-semantics": {
     "advisory": true,
     "gate_binding": "NEVER_FAIL",
@@ -40,7 +50,14 @@
   ],
   "applies_when": {
     "lane": "frontend",
-    "condition": "公共样式/默认值类变更"
+    "condition": "公共样式/默认值类变更",
+    "lanes": [
+      "frontend"
+    ],
+    "change_classes": [
+      "PRESENTATION_CHANGE"
+    ],
+    "applicability_note": "公共样式/默认值类变更"
   },
   "enforcement": "advisory",
   "authority": {

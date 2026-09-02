@@ -58,7 +58,7 @@
  */
 import { GovernanceError, GovernedIdParseError } from "./errors.js";
 import { parseGovernedId } from "./id.js";
-import { captureOriginal, executeWrites, readText } from "./io.js";
+import { appendLine, captureOriginal, executeWrites, readText } from "./io.js";
 import { pathsOf, readCurrentSeq, type StorePaths } from "./paths.js";
 import { VERDICT_VALUES, type VerdictValue } from "./vocab.js";
 import {
@@ -711,10 +711,9 @@ function writeCoverageAndJournal(
       next: `${JSON.stringify({ version: 1, gates: sortedGates }, null, 2)}\n`,
       original: captureOriginal(paths.linkageCoveragePath),
     },
-    {
-      path: paths.journalPath,
-      next: `${readText(paths.journalPath) ?? ""}${JSON.stringify(event)}\n`,
-      original: captureOriginal(paths.journalPath),
-    },
   ]);
+  // A2 journal 纪律：事件在指标侧车 staged 批提交成功后 appendLine 原子追加
+  // （RMW 覆写会抹掉并发 appendLine 家族刚写的整行；「侧车先行、journal 缺行」
+  // 是可检出残态）。
+  appendLine(paths.journalPath, `${JSON.stringify(event)}\n`);
 }

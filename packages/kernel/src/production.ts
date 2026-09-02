@@ -1402,7 +1402,8 @@ function loadRunLedger(rootDir: string): {
   const paths = buildStorePaths(rootDir);
   const dir = paths.runsDir;
   if (!existsSync(dir)) return { rows: [], unreadable: 0, unanchored: 0 };
-  // journal 锚集（TX_APPLIED 事件 seq，ops 含 record_gate_run）——metrics 可算面
+  // journal 锚集（TX_APPLIED 事件 seq，ops 含 record_gate_run 及其 canonicalize
+  // 变体词形——A3 显式覆写契约位的 journal 留痕）——metrics 可算面。
   // 只收录有真实事务锚的 run 文件；直落台账的伪造文件显式拒收并计数披露。
   const anchors = new Set(
     readJournalLines(paths)
@@ -1410,7 +1411,10 @@ function loadRunLedger(rootDir: string): {
         (event) =>
           event.type === "TX_APPLIED" &&
           Array.isArray(event.ops) &&
-          (event.ops as unknown[]).includes("record_gate_run") &&
+          (event.ops as unknown[]).some(
+            (word) =>
+              word === "record_gate_run" || word === "record_gate_run_canonicalize",
+          ) &&
           typeof event.seq === "number",
       )
       .map((event) => event.seq as number),

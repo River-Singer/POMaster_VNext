@@ -84,8 +84,12 @@ describe("① context compile 实跑：catalog 派生分区在场且标明出处
       expect(entry.reason).toMatch(/^catalog: (policies|projection-presets)\//);
     }
     // policies 与 projection-presets 双消费（P14 出口判据范围锚）。
+    // W1-A2 T3 注记（PRD v0.5.2 §5.2/§14；裁决 8 ②）：无输入编译下 capabilities 标注条目
+    // （POLICY.WEB.API.SINGLE_HTTP_CLIENT 等 API 族）按「不可判定即不注入」确定性排除——
+    // 在场代表改钉 lanes 平移条目（T3 后无输入仍注入；排除面判卷归 case-b spec +
+    // benchmarks/applicability.mjs）。
     expect(
-      outcome.result.manifest.catalog_entries.some((entry) => entry.ref === "POLICY.WEB.API.SINGLE_HTTP_CLIENT"),
+      outcome.result.manifest.catalog_entries.some((entry) => entry.ref === "POLICY.WEB.STYLE.OWNERSHIP_MATRIX"),
     ).toBe(true);
     expect(
       outcome.result.manifest.catalog_entries.some((entry) => entry.ref === "registry-tree"),

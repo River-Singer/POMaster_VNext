@@ -113,7 +113,15 @@ export type GovernanceErrorCode =
   | "DIAGNOSIS_WITHOUT_BREACH_EVIDENCE"
   /** sealExecutionTrace 目标执行已有封存 trace（AGX 主键唯一；durable/ephemeral 双平面
    *  检查——重封存须显式删除旧文件后进行，禁静默覆盖审计快照；W1-C PRD v0.5.2 §8）。 */
-  | "TRACE_ALREADY_SEALED";
+  | "TRACE_ALREADY_SEALED"
+  /** 提交时世代复核失败（A1，P20 红队发现 4 同族）：开卷读 index → 内存计算 → staged
+   *  rename 提交的窗口内 truth-index seq 已被并发方推进——后 rename 者会静默抹掉先提交
+   *  者的整个事务，故显式拒绝提交（本事务零落盘，重开 store 重放即收敛）。 */
+  | "CONCURRENT_WRITE_DETECTED"
+  /** 证据记录 id 冲突禁覆写（A3，D20 纪律）：record_claim / record_gate_run 写前查既有，
+   *  同 id 且内容等价 → 幂等短路零写入；同 id 内容不同 → 显式拒绝（禁静默翻转 verdict、
+   *  禁把独立验证流的判定打回 UNVERIFIED）。 */
+  | "EVIDENCE_ALREADY_EXISTS";
 
 /** GovernanceError 判读上下文（错误详情结构化，机器可判读）。 */
 export interface GovernanceErrorDetails {

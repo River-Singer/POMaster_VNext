@@ -68,6 +68,14 @@ function expiredObservedCount(): number {
     .filter((line) => line.includes("PERMIT_EXPIRED_OBSERVED")).length;
 }
 
+/** journal 逐行解析（注入态 journal 行均为完整行——appendLine 行单位完整）。 */
+function journalEvents(dir: string): Record<string, unknown>[] {
+  return readJournal(dir)
+    .split("\n")
+    .filter((line) => line.trim().length > 0)
+    .map((line) => JSON.parse(line) as Record<string, unknown>);
+}
+
 // ============================================================
 // 威胁类 3：stale permit 重放（4 例）
 // ============================================================
@@ -236,9 +244,9 @@ describe("威胁类 4：部分写入失败伪装成功（无半写状态、不�
     expect(index.generation.seq).toBe(0);
   });
 
-  it("ADV-W2 staged 落盘阶段失败（tmp 路径被目录占用，pid 确定性注入）→ 拒绝且 index/journal/正文零字节变化、零 tmp 残留", async () => {
-    // 威胁类 4（staged tmp 写失败）：占住 truth-index 的 tmp 目标路径，令落盘第一步失败。
-    // 若防御失效：半写 index/journal（或残留 tmp 被下次误用）→ status 被污染且不可诊断。
+  it("ADV-W2 staged 落盘阶段失败（index 的 tmp 路径被目录占用，pid 确定性注入）→ 拒绝且 index/journal/正文零字节变化、零 tmp 残留（journal 已不在 staged 批：staged 失败时 journal 零追加）", async () => {
+    // 威胁类 4（staged tmp 写失败）：占住 truth-index 的 tmp 目标路径，令落盘中途失败。
+    // 若防御失效：半写 index（或残留 tmp 被下次误用）→ status 被污染且不可诊断。
     await applyTransaction(store, {
       ops: [
         {
@@ -260,8 +268,10 @@ describe("威胁类 4：部分写入失败伪装成功（无半写状态、不�
     const journalPath = join(root, ".pomaster", "state", "journal.jsonl");
     const indexBefore = readFileSync(indexPath, "utf8");
     const journalBefore = readFileSync(journalPath, "utf8");
-    // applyTransaction 写序 = [正文, journal, index]（同进程 pid 可预先占住第 3 个 tmp 路径）。
-    const planted = `${indexPath}.tmp-${process.pid}-2`;
+    // applyTransaction staged 写入集 = [正文…, index]（A2 journal 纪律后 journal 不在
+    // 批内——TX_APPLIED 在 index 提交后才 appendLine）；同进程 pid 预先占住第 2 个
+    //（index 的）tmp 路径。
+    const planted = `${indexPath}.tmp-${process.pid}-1`;
     mkdirSync(planted);
     try {
       await expect(
@@ -283,9 +293,11 @@ describe("威胁类 4：部分写入失败伪装成功（无半写状态、不�
           ],
         }),
       ).rejects.toThrow();
-      // 零字节变化：index/journal 原样、PAGE.SETTINGS 正文未落、PAGE.DASHBOARD 正文完好。
+      // 零字节变化：index/正文原样；journal 亦原样——A2 journal 纪律下 journal 不在
+      // staged 批，staged 失败时 TX_APPLIED 零追加（正向断言，非仅「恰好没写」）。
       expect(readFileSync(indexPath, "utf8")).toBe(indexBefore);
       expect(readFileSync(journalPath, "utf8")).toBe(journalBefore);
+      expect(journalEvents(root).filter((event) => event["type"] === "TX_APPLIED")).toHaveLength(1);
       expect(existsSync(join(root, ".pomaster", "truth", "objects", "page-surface", "page.settings.json"))).toBe(false);
       expect(readFileSync(join(root, ".pomaster", "truth", "objects", "page-surface", "page.dashboard.json"), "utf8")).toContain("仪表盘");
     } finally {

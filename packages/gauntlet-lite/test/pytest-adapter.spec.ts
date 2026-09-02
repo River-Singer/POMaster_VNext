@@ -230,8 +230,15 @@ describe("pytest 腿 normalize：七态判卷", () => {
     expect(record.counts.notApplicable).toBe(2);
     expect(record.counts.applicableScanned).toBe(0);
     expect(record.counts.uncheckedInBlindspotEstimated).toBe(2);
-    expect(record.blindspot).toEqual({ scanned: 1, produced: 0, escapeRatio: 1 });
-    // 03 schema 复验：附上指标的 skipped_blindspot 是合法文档（缺指标会被 kernel 入账层 FATAL）。
+    // C3 封条合规位：skipped_blindspot 必附盲区证据引用（指向计数词形，非虚构 fixture 名）。
+    expect(record.blindspot).toEqual({
+      scanned: 1,
+      produced: 0,
+      escapeRatio: 1,
+      fixtureRegression: "PYTEST_ALL_SKIPPED/unchecked_in_blindspot_estimated=2",
+    });
+    // 03 schema 复验：附上盲区指标 + fixture_regression 证据引用的 skipped_blindspot 是
+    // 合法文档（缺指标会被 kernel 入账层 FATAL；缺证据引用会被 03 allOf 封条拒绝）。
     const ajv = new Ajv({ strictSchema: false });
     addFormats(ajv);
     const validate = ajv.compile(gateResultSchema as unknown as Parameters<typeof ajv.compile>[0]);

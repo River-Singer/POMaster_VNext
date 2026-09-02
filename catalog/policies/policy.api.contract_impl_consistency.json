@@ -15,6 +15,16 @@
     "enforcement_note": "命中 applies_when 条件时必须遵守；是否升 MUST、接入哪个 gate 由 Human Review 裁决",
     "clean_room_note": "statement_zh 为独立改写（clean-room），零逐字拷贝源协议"
   },
+  "x-applicability-review": {
+    "status": "annotated",
+    "campaign": "W1-A2 P0.5-1 T3 标注战役（PRD v0.5.2 §5.2/§14；Owner 裁决 8 ②，2026-09-01）",
+    "axes": [
+      "capabilities",
+      "change_classes",
+      "applicability_note"
+    ],
+    "basis": "condition『任何接口实现或变更』——公共契约面词面"
+  },
   "id": "POLICY.API.CONTRACT_IMPL_CONSISTENCY",
   "kind": "policy",
   "axis_profile": "policy_default",
@@ -33,7 +43,14 @@
   ],
   "applies_when": {
     "lane": "any",
-    "condition": "任何接口实现或变更"
+    "condition": "任何接口实现或变更",
+    "capabilities": [
+      "CAPABILITY.API_CONTRACT"
+    ],
+    "change_classes": [
+      "PUBLIC_CONTRACT_CHANGE"
+    ],
+    "applicability_note": "任何接口实现或变更"
   },
   "enforcement": "required_when_applicable",
   "authority": {

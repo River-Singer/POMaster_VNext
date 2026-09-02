@@ -12,6 +12,15 @@
     "evidence": "PLANNED",
     "provenance": "POMaster_VNext/corpus/master/batch-4/split-ledger.yaml"
   },
+  "x-applicability-review": {
+    "status": "human_review_candidate",
+    "campaign": "W1-A2 P0.5-1 T3 标注战役（PRD v0.5.2 §5.2/§14；Owner 裁决 8 ②，2026-09-01）",
+    "axes": [
+      "lanes",
+      "applicability_note"
+    ],
+    "note": "T3 保守派生未见明确词面证据——capabilities/change_classes 留空回退 lane 缺省（O7 行为零变化）；列 Human Review 复核议程"
+  },
   "id": "POLICY.WEB.UIUX.PROVIDER_EVIDENCE_NOT_BUSINESS_TRUTH",
   "kind": "policy",
   "axis_profile": "policy_default",
@@ -31,7 +40,11 @@
   ],
   "applies_when": {
     "lane": "frontend",
-    "condition": "登记或消费原型抽取证据时"
+    "condition": "登记或消费原型抽取证据时",
+    "lanes": [
+      "frontend"
+    ],
+    "applicability_note": "登记或消费原型抽取证据时"
   },
   "enforcement": "required_when_applicable",
   "authority": {

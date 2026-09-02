@@ -129,6 +129,19 @@ const LEG_IDENTITIES = [
   { grn: "GRN-0002", ranAtSeq: 11 },
 ];
 
+// §6.7 READY 环境期望面（@0.3.0 前置门判卷分母；实测面由 runRound 展开全等拷贝）。
+const READY_EXPECTATION = {
+  repository_ref: "POMASTER_PROJECT",
+  revision_ref: "d6afca3",
+  build_identity: null,
+  runtime_instance: "app-local-4173",
+  base_url: "http://127.0.0.1:4173",
+  environment_ref: "ENV.LOCAL.DEV",
+  dataset_ref: null,
+  auth_role: null,
+  feature_flags: null,
+};
+
 function browserFacts(root) {
   const files = {
     [join(root, "browser-gate.json")]: JSON.stringify({
@@ -180,6 +193,14 @@ async function runRound() {
       smokeFn: () => ({ connected: true, pageTitle: null, failureReason: null }),
     },
     store,
+    // @0.3.0 环境身份前置门（P0.5-4b · W1-D2 批 2 · PRD §6.7）：缺省环境会
+    // fail-closed 成 blocked（「未确认 base URL / runtime instance 不得判 PASS」）——
+    // 本基准钉 @0.2.0 绑定语义，供给 READY 判卷输入（kernel runEnvironmentDoctor 真链）。
+    environment: {
+      expected: READY_EXPECTATION,
+      observed: { ...READY_EXPECTATION },
+      executionId: "AGX-2026-00001",
+    },
   });
   const evidenceDir = kernel.pathsOf(store).evidenceDir;
   const runsDir = join(root, ".pomaster", "evidence", "runs");

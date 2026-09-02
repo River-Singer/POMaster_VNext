@@ -15,6 +15,16 @@
     "enforcement_note": "命中 applies_when 条件时必须遵守；是否升 MUST、接入哪个 gate 由 Human Review 裁决",
     "clean_room_note": "statement_zh 为独立改写（clean-room），零逐字拷贝源协议"
   },
+  "x-applicability-review": {
+    "status": "annotated",
+    "campaign": "W1-A2 P0.5-1 T3 标注战役（PRD v0.5.2 §5.2/§14；Owner 裁决 8 ②，2026-09-01）",
+    "axes": [
+      "lanes",
+      "capabilities",
+      "applicability_note"
+    ],
+    "basis": "policy.web.api 族（case-b W1-A1 同族标注）"
+  },
   "id": "POLICY.WEB.API.QUERY_CANCEL_STALE_DROP",
   "kind": "policy",
   "axis_profile": "policy_default",
@@ -34,7 +44,14 @@
   ],
   "applies_when": {
     "lane": "frontend",
-    "condition": "查询类请求"
+    "condition": "查询类请求",
+    "lanes": [
+      "frontend"
+    ],
+    "capabilities": [
+      "CAPABILITY.API_CONTRACT"
+    ],
+    "applicability_note": "查询类请求"
   },
   "enforcement": "required_when_applicable",
   "authority": {

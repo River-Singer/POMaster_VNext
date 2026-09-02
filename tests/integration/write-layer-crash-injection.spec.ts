@@ -8,19 +8,22 @@
  * **重启路径**（重新 createStore）：state 完好或显式检出，绝不静默半状态（P16 出口判据
  * 「kill -9 注入后 state 完好测试入账」）。
  *
- * 依据的写入序事实（kernel store.ts applyTransaction → io.executeWrites）：
- *   写入批 = [对象正文…, evidence(claims/runs)…, journal, index]，两阶段：
+ * 依据的写入序事实（kernel store.ts applyTransaction → io.executeWrites + appendLine）：
+ *   写入批 = [对象正文…, evidence(claims/runs)…, index]，两阶段：
  *   ① staged：全部目标先写同目录 tmp（kill@① → 只留 tmp 碎片，目标原样）；
  *   ② commit：逐个 rename，**index 最后 rename = commit 点**（kill@②中途 → 前面的
  *      目标已新、index 仍旧 = 事务前状态；kill@commit 后 → 全量在场）。
- *   journal 先于 index rename = write-ahead log 语义：至多一行「已日志未提交」孤儿。
+ *   index 提交成功后 TX_APPLIED 才 appendLine 原子追加（A2 journal 纪律——journal 不入
+ *   staged 批，无 tmp 形态）：崩溃窗口 = index 已提交而 journal 缺行——可检出残态
+ *   （index seq 对照 journal 末行错位可机械检出），方向诚实；绝不产生「journal 有
+ *   TX_APPLIED 而 index 未提交」的幽灵行（journal 读侧永不先于状态权威看到未提交事务）。
  *
  * 注入手段两类（wave3-plan P16 范围锚「进程 kill（SIGKILL）或注入式半写」）：
  *   A 段 = 注入式半写（确定性重构 kill 在各时点的磁盘态：截断文件 / 回写事务前字节 /
  *          tmp 碎片），逐时点精确断言；
  *   B 段 = 真实 SIGKILL 子进程（kernel dist 二进制跑真实事务循环，观测 READY/TX 1
- *          后 kill），断言重启后的全局不变量（快照 k 精确一致 / journal 前缀无洞 /
- *          碎片形状 / 恢复事务干净）。
+ *          后 kill），断言重启后的全局不变量（快照 k 精确一致 / journal 前缀无洞且只
+ *          落后不领先 / 碎片形状 / 恢复事务干净）。
  */
 import { spawn } from "node:child_process";
 import {
@@ -28,7 +31,6 @@ import {
   mkdirSync,
   readdirSync,
   readFileSync,
-  rmSync,
   statSync,
   truncateSync,
   writeFileSync,
@@ -91,7 +93,8 @@ function snapshotTree(base: string): Map<string, string> {
   return snapshot;
 }
 
-/** journal 逐行解析为事件对象（每行必须是完整 JSON——rename 原子性的直接推论）。 */
+/** journal 逐行解析为事件对象（每行必须是完整 JSON；A 段注入态与 appendLine 行单位完整。
+ * B1 真实 kill 面的「撕裂只许末行」由其局部容错解析处理）。 */
 function journalEvents(dir: string): Record<string, unknown>[] {
   return readJournal(dir)
     .split("\n")
@@ -152,8 +155,9 @@ describe("A 段：注入式半写后重启（state 完好或显式检出，绝�
     // 若保证失效：tmp 残骸被重启路径当真值半状态消费（半字节 JSON 入索引/claims 扫描），
     // 或重启后 seq 跳号——崩溃变成永久性状态污染。
     const pomasterBase = join(root, ".pomaster");
-    // 复刻 phase-① 中途 kill 的磁盘态：正文与 journal 的 tmp 已写、目标原样
-    //（executeWrites 写序 [正文, journal, index] 的前两个 tmp；正文目录由 ensureDir 先建）。
+    // 复刻 phase-① 中途 kill 的磁盘态：正文与 index 的 tmp 已写、目标原样
+    //（executeWrites 写序 [正文…, index] 的两个 tmp；journal 不在批内——A2 journal
+    // 纪律后 TX_APPLIED 走 appendLine，journal 无 tmp 形态。正文目录由 ensureDir 先建）。
     mkdirSync(bodyPath(root, "page-surface", ""), { recursive: true });
     writeFileSync(
       bodyPath(root, "page-surface", "page.staged.json.tmp-424242-0"),
@@ -161,8 +165,8 @@ describe("A 段：注入式半写后重启（state 完好或显式检出，绝�
       "utf8",
     );
     writeFileSync(
-      statePath(root, "journal.jsonl.tmp-424242-1"),
-      '{"type":"TX_APPL',
+      statePath(root, "truth-index.json.tmp-424242-1"),
+      '{"generation":{"seq"',
       "utf8",
     );
     const killState = snapshotTree(pomasterBase);
@@ -187,54 +191,46 @@ describe("A 段：注入式半写后重启（state 完好或显式检出，绝�
     expect(after.objects.map((row) => row.id)).toEqual([gid("PAGE.STAGED")]);
   });
 
-  it("A2 kill@commit 中途（journal 已 rename、index 未 rename）→ 重启 = 事务前状态；WAL 孤儿行显式可检出；重放事务收敛且 seq 无空洞", async () => {
-    // 若保证失效：index 先于 journal rename（顺序颠倒）→「journal 无行但状态已变」的
-    // 静默提交丢失；或重启把孤儿行当已提交状态采纳 → 半状态静默转正。
-    const indexPath = statePath(root, "truth-index.json");
-    const indexBefore = readFileSync(indexPath, "utf8");
+  it("A2 kill@journal 追加前（index 已 rename=已提交、TX_APPLIED 未 appendLine）→ 重启 = 已提交状态；journal 缺行残态显式可检出；绝不反向产生幽灵行；重放幂等短路、下一事务从缺行点续写", async () => {
+    // 若保证失效：journal 先于 index 落位（write-ahead log 旧序）→ 重现「journal 有
+    // TX_APPLIED 而 index 未提交」的幽灵行（journal 读侧先于状态权威看到未提交事务，
+    // 消费面把未提交事务当既成事实）。A2 journal 纪律把窗口翻转成「index 先行、
+    // journal 缺行」——缺行是可检出残态，方向诚实（绝不静默丢事务：index 是权威）。
+    const journalPath = statePath(root, "journal.jsonl");
     await applyTransaction(store, {
       ops: [{ op: "upsert_object", envelope: pageEnvelope("PAGE.ORPHAN", "孤儿事务探针") as never }],
     });
-    const indexAfter = readFileSync(indexPath, "utf8");
+    // 重构 kill 态：index 已 rename（= commit 点已过、事务已提交），TX_APPLIED 尚未
+    // appendLine（journal 置回本事务前的空——等价于「追加前的窗口内 kill」真实形态）。
+    writeFileSync(journalPath, "", "utf8");
 
-    // 重构 kill 态：index 回到事务前字节（= rename 未发生），index 的 tmp 碎片留存
-    //（phase-① 已写满 3 个 tmp：正文/journal 已 rename，index tmp 成残骸）。
-    writeFileSync(indexPath, indexBefore, "utf8");
-    const debris = `${indexPath}.tmp-${process.pid}-2`;
-    writeFileSync(debris, indexAfter, "utf8");
-    try {
-      const reopened = await createStore(root);
-      // 状态权威层完好：index 是 commit 点，kill@commit 前 = 事务未发生。
-      const before = await loadTruthIndex(reopened);
-      expect(before.generation.seq).toBe(0);
-      expect(before.objects).toHaveLength(0);
-      // 正文已落（rename 序先于 index）——A1 成对语义的事中切面。
-      expect(existsSync(bodyPath(root, "page-surface", "page.orphan.json"))).toBe(true);
+    const reopened = await createStore(root);
+    // index 是 commit 点：kill 落在本窗口 = 事务已提交（状态权威层如实在新态）。
+    const committed = await loadTruthIndex(reopened);
+    expect(committed.generation.seq).toBe(1);
+    expect(committed.objects.map((row) => row.id)).toEqual([gid("PAGE.ORPHAN")]);
 
-      // 显式检出面：journal WAL 孤儿行与 index seq 错位可机械检出（测试显式对出，
-      // 不静默——是否自动清理归 Owner 裁决，本判据钉住「错位可见」这一事实）。
-      const events = journalEvents(root);
-      const last = events[events.length - 1] as Record<string, unknown>;
-      expect(last["type"]).toBe("TX_APPLIED");
-      expect(last["seq"]).toBe(1);
-      expect(last["seq"]).toBe((before.generation.seq as number) + 1);
+    // 显式检出面：journal 零行而 index seq=1，错位可机械检出（测试显式对出，不静默——
+    // 是否自动补记归 Owner 裁决，本判据钉住「缺行残态可见」这一事实）。
+    expect(journalEvents(root)).toHaveLength(0);
 
-      // 恢复：同一事务重放 → seq 复用 1（无空洞）、状态收敛、journal 双行留痕
-      //（审计流不撤回历史行：孤儿行 + 重放行都如实在场）。
-      const outcome = await applyTransaction(reopened, {
-        ops: [{ op: "upsert_object", envelope: pageEnvelope("PAGE.ORPHAN", "孤儿事务探针") as never }],
-      });
-      expect(outcome.appliedSeq).toBe(1);
-      expect(outcome.shortCircuited).toBe(false);
-      const after = await loadTruthIndex(reopened);
-      expect(after.generation.seq).toBe(1);
-      expect(after.objects.map((row) => row.id)).toEqual([gid("PAGE.ORPHAN")]);
-      expect(
-        journalEvents(root).filter((e) => e["type"] === "TX_APPLIED").map((e) => e["seq"]),
-      ).toEqual([1, 1]);
-    } finally {
-      rmSync(debris, { force: true });
-    }
+    // 重放同一事务 → 事务级 inputs 指纹命中幂等短路（零写入零 journal；index 是权威，
+    // 缺的历史行不回填、不重复入账）。
+    const replay = await applyTransaction(reopened, {
+      ops: [{ op: "upsert_object", envelope: pageEnvelope("PAGE.ORPHAN", "孤儿事务探针") as never }],
+    });
+    expect(replay.shortCircuited).toBe(true);
+    expect(journalEvents(root)).toHaveLength(0);
+
+    // 下一事务照常落账：TX_APPLIED 从缺行点续写（seq=2 在场、绝不回填幽灵 seq=1）。
+    const next = await applyTransaction(reopened, {
+      ops: [{ op: "upsert_object", envelope: pageEnvelope("PAGE.SETTINGS", "续写探针") as never }],
+    });
+    expect(next.appliedSeq).toBe(2);
+    expect(next.shortCircuited).toBe(false);
+    expect(
+      journalEvents(root).map((event) => event["seq"]),
+    ).toEqual([2]);
   });
 
   it("A3 kill@commit 后 → 重启全量在场零丢失：正文/索引/journal/摘要四方一致", async () => {
@@ -291,9 +287,7 @@ describe("A 段：注入式半写后重启（state 完好或显式检出，绝�
       },
     );
     const indexPath = statePath(root, "truth-index.json");
-    const journalPath = statePath(root, "journal.jsonl");
     const indexBefore = readFileSync(indexPath, "utf8");
-    const journalBefore = readFileSync(journalPath, "utf8");
     await applyTransaction(store, {
       ops: [
         { op: "upsert_object", envelope: taskEnvelope("TASK.EVIDENCE", "证据探针任务") as never },
@@ -311,8 +305,9 @@ describe("A 段：注入式半写后重启（state 完好或显式检出，绝�
       ],
     });
 
-    // 重构 kill 态：evidence + 正文已 rename，journal 与 index 回到事务前字节。
-    writeFileSync(journalPath, journalBefore, "utf8");
+    // 重构 kill 态：evidence + 正文已 rename，index 回到事务前字节（= index rename
+    // 未发生，仍是 commit 点之前）。journal 在新写入序下根本未被本事务写过——
+    // TX_APPLIED 要等 index 提交后才 appendLine，journal 无「回滚」概念、保持原样。
     writeFileSync(indexPath, indexBefore, "utf8");
 
     const reopened = await createStore(root);
@@ -411,7 +406,7 @@ const kernelDistEntry = join(repoRoot, "packages", "kernel", "dist", "index.js")
 
 describe("B 段：真实 kill -9 注入（子进程真实事务循环，任意时点硬中断）", () => {
   it(
-    "B1 SIGKILL 中断后重启：createStore 不抛（index 原子性）+ 快照 k 精确一致 + journal 前缀 1..m 无洞无重且 m-k≤1 + 碎片形状干净 + 恢复事务干净",
+    "B1 SIGKILL 中断后重启：createStore 不抛（index 原子性）+ 快照 k 精确一致 + journal 前缀 1..m 无洞无重且 0≤k-m≤1（journal 只落后不领先，幽灵行封死）+ 撕裂只许末行 + 碎片形状干净 + 恢复事务干净",
     async () => {
       // 若保证失效：kill 打断 rename 序列后 index 处于撕裂/混合态（第 i 个对象的新正文
       // 配第 j 个的旧索引），重启即 SCHEMA_INVALID 或静默混合快照——两阶段写入序破产。
@@ -501,13 +496,29 @@ describe("B 段：真实 kill -9 注入（子进程真实事务循环，任意�
         expect(sha256OfCanonical(JSON.parse(bodyText) as unknown)).toBe(row.bodySha256);
       }
 
-      // journal 前缀无洞无重：TX_APPLIED seq = 1..m 严格连续；m ∈ {k, k+1}
-      //（journal 先于 index rename 的 WAL 语义 → 至多一行「已日志未提交」孤儿）。
-      const appliedSeqs = journalEvents(root)
+      // journal 前缀无洞无重：TX_APPLIED seq = 1..m 严格连续；0 ≤ k-m ≤ 1
+      //（index commit 后才 appendLine——journal 只可能落后至多一行「已提交未落账」，
+      // 绝不可能领先：journal 读侧永不出现 index 未提交事务的幽灵行，A2 journal 纪律）。
+      // appendLine 是 O_APPEND 追加、可被 kill 打断——撕裂残片只许出现在末行（唯一
+      // 窗口）；中部撕裂 = 写入序破产，显式 fail。
+      const journalLines = readJournal(root)
+        .split("\n")
+        .filter((line) => line.trim().length > 0);
+      const parsedEvents: Record<string, unknown>[] = [];
+      journalLines.forEach((line, idx) => {
+        try {
+          parsedEvents.push(JSON.parse(line) as Record<string, unknown>);
+        } catch {
+          if (idx !== journalLines.length - 1) {
+            throw new Error(`journal 中部出现撕裂行（写入序破产）：${line}`);
+          }
+        }
+      });
+      const appliedSeqs = parsedEvents
         .filter((event) => event["type"] === "TX_APPLIED")
         .map((event) => event["seq"] as number);
       expect(appliedSeqs).toEqual(Array.from({ length: appliedSeqs.length }, (_, idx) => idx + 1));
-      expect(appliedSeqs.length === k || appliedSeqs.length === k + 1).toBe(true);
+      expect(appliedSeqs.length === k || appliedSeqs.length === k - 1).toBe(true);
 
       // 碎片形状：.pomaster 内每个文件要么是正常真值名（.json/.jsonl），要么是 tmp 残骸
       // 词形——kill 残骸永不呈现第三种（会被当真值消费的）形状。

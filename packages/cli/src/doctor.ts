@@ -381,7 +381,7 @@ async function runGauntletProbes(
 
 /**
  * 探测矩阵：
- * 1) kernel_doctor_probes —— 转调 kernel doctorProbes（四探针 fail-closed）；
+ * 1) kernel_doctor_probes —— 转调 kernel doctorProbes（五探针 fail-closed）；
  *    store 缺失 → MISSING_CONFIGURATION；kernel scaffold → NOT_INSTALLED；
  *    环境异常 → DEFECT（禁静默）。
  * 1.5) portability_runtime_rebuild —— P32 runtime 可重建探针（state 在=READY，

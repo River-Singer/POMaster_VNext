@@ -82,8 +82,9 @@ function notInitializedFail<TResult>(
   );
 }
 
-/** --execution-id 词形预检（AGX-n；档案存在性校验归 kernel——两检分离同 record 通路）。 */
-function parseExecutionIdArgv(
+/** --execution-id 词形预检（AGX-n；档案存在性校验归 kernel——两检分离同 record 通路）。
+ * 导出供 trace 命令组复用（W1-C2；单一实现禁两套 argv 词形预检）。 */
+export function parseExecutionIdArgv(
   raw: string | undefined,
 ): { readonly executionId: string | undefined } | { readonly error: CliError } {
   if (raw === undefined) return { executionId: undefined };

@@ -21,6 +21,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   adjudicateEvidenceBindingClause,
   runBrowserGateLegsWithScreenshotBinding,
+  type BrowserEnvironmentInput,
   type DetectorFacts,
   type GateResultRecord,
 } from "@pomaster/gauntlet-lite";
@@ -31,6 +32,7 @@ import {
   sha256OfBytes,
   verifyEvidenceBinding,
   EVIDENCE_BINDING_INCOMPLETE,
+  type EnvironmentExpectation,
   type Store,
 } from "@pomaster/kernel";
 // 直连模块（不经 @pomaster/cli barrel）：batch-1 文件面互斥期 cli/index.ts 归 W1-A1 线，
@@ -161,6 +163,32 @@ const LEG_IDENTITIES = [
   { grn: "GRN-0002", ranAtSeq: 11 },
 ] as const;
 
+/**
+ * §6.7 READY 环境判卷输入（P0.5-4b · W1-D2 批 2 · @0.3.0 前置门）：本 spec 钉的是
+ * @0.2.0 绑定条款语义（READY 回执下逐字不变）——缺省环境会 fail-closed 成 blocked
+ * （PRD §6.7 验收句「未确认 base URL / runtime instance 不得判 PASS」），绑定全链
+ * 不再到达 persist。判卷经 kernel runEnvironmentDoctor 真链（禁手拼回执）；Benchmark E
+ * 全链（环境错 → blocked → 无 persist 无 OBS 回执）归
+ * tests/integration/browser-legs-environment.spec.ts。
+ */
+const READY_EXPECTATION: EnvironmentExpectation = {
+  repository_ref: "POMASTER_PROJECT",
+  revision_ref: "d6afca3",
+  build_identity: null,
+  runtime_instance: "app-local-4173",
+  base_url: "http://127.0.0.1:4173",
+  environment_ref: "ENV.LOCAL.DEV",
+  dataset_ref: null,
+  auth_role: null,
+  feature_flags: null,
+};
+
+const READY_ENVIRONMENT: BrowserEnvironmentInput = {
+  expected: READY_EXPECTATION,
+  observed: { ...READY_EXPECTATION },
+  executionId: "AGX-2026-00001",
+};
+
 function browserFacts(): DetectorFacts {
   const suffixes = process.platform === "win32" ? ["", ".exe", ".cmd", ".bat"] : [""];
   const files: Record<string, string | null> = {
@@ -222,6 +250,8 @@ function runBindingFlow(input: { readonly browserVersion?: string } = {}): Retur
       smokeFn: () => ({ connected: true, pageTitle: null, failureReason: null }),
     },
     store,
+    // @0.3.0 前置门（W1-D2）：READY 供给——本 spec 钉 @0.2.0 绑定条款语义。
+    environment: READY_ENVIRONMENT,
   });
 }
 
@@ -297,6 +327,20 @@ describe("① 全链路（PRD §7.2 四环节）", () => {
     });
     const playwrightEnvelope = readEnvelope("GRN-0001");
     expect(playwrightEnvelope).not.toHaveProperty("artifact_refs");
+
+    // §6.13 Observation Receipt 最小通路（W1-D2 批 2 · @0.3.0）：READY + passed +
+    // persist 成功 → OBS 回执签发，artifact_refs 与 GRN 引用同一 blob 身份
+    // （EVR 衔接=裁决 8 ③ D1=A blob sha256 即身份）；Benchmark E 反向链（环境错 →
+    // 无回执）归 browser-legs-environment.spec.ts。
+    const receipt = outcome.observationReceipt;
+    expect(receipt).not.toBeNull();
+    expect(receipt?.result).toBe("OBSERVED");
+    expect(receipt?.observation_id).toBe("OBS-11");
+    expect(receipt?.execution_id).toBe("AGX-2026-00001");
+    expect(receipt?.captured_at_seq).toBe(11);
+    expect(receipt?.artifact_refs).toHaveLength(1);
+    expect(receipt?.artifact_refs[0]?.sha256).toBe(blobRef?.sha256);
+    expect(receipt?.artifact_refs[0]?.storagePath).toBe(blobRef?.storagePath);
 
     // 证据字节不入记录：base64 原文绝不进任何落盘 GRN。
     const ledgerText = readFileSync(join(runsDir(), "GRN-0002.json"), "utf8");

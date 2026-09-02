@@ -1,7 +1,7 @@
 {
   "schema": "pomaster.vnext.evidence-binding-benchmark/1",
-  "run_id": "eb-0004",
-  "seq": 4,
+  "run_id": "eb-0005",
+  "seq": 5,
   "ok": true,
   "benchmark": "evidence-binding-tamper",
   "prd_anchors": [
@@ -149,5 +149,5 @@
   ],
   "assertions_total": 24,
   "assertions_failed": 0,
-  "durationMs": 430
+  "durationMs": 379
 }

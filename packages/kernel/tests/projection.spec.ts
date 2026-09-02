@@ -140,6 +140,45 @@ describe("compileProjection（最小充分上下文）", () => {
     expect(entry?.reason).toContain(permit.permitRef);
   });
 
+  it("许可台账损坏 fail-closed（C6）：手改 permits.json 非法 JSON → SCHEMA_INVALID（禁静默当空台账）", async () => {
+    await applyTransaction(store, { ops: [{ op: "upsert_object", envelope: pageEnvelope() as never }] });
+    writeFileSync(join(root, ".pomaster", "state", "permits.json"), "{ not-json", "utf8");
+    await expect(
+      compileProjection(store, { role: "frontend", taskRef: "TASK.T0087" }),
+    ).rejects.toMatchObject({ code: "SCHEMA_INVALID" });
+  });
+
+  it("许可台账结构非法（permits 非数组）→ SCHEMA_INVALID（C6：范围静默收缩 = 判卷假绿可能）", async () => {
+    await applyTransaction(store, { ops: [{ op: "upsert_object", envelope: pageEnvelope() as never }] });
+    writeFileSync(
+      join(root, ".pomaster", "state", "permits.json"),
+      `${JSON.stringify({ version: 1, permits: "not-an-array" })}\n`,
+      "utf8",
+    );
+    await expect(
+      compileProjection(store, { role: "frontend", taskRef: "TASK.T0087" }),
+    ).rejects.toMatchObject({ code: "SCHEMA_INVALID" });
+  });
+
+  it("许可台账畸形行取舍（C6）：缺 permit_ref 行剔除不爆，其余行照常贡献 scope（宽松字段提取，坏 JSON/结构坏形才显式爆）", async () => {
+    await applyTransaction(store, { ops: [{ op: "upsert_object", envelope: pageEnvelope() as never }] });
+    writeFileSync(
+      join(root, ".pomaster", "state", "permits.json"),
+      `${JSON.stringify({
+        version: 1,
+        permits: [
+          { change_ref: "TASK.T0087", scope: { subject_ids: [gid("PAGE.DASHBOARD")] } }, // 畸形：缺 permit_ref
+          { permit_ref: "PERMIT.TASK.T0087.001", change_ref: "TASK.T0087", scope: { subject_ids: [gid("PAGE.DASHBOARD")] } },
+        ],
+      }, null, 2)}\n`,
+      "utf8",
+    );
+    const projection = await compileProjection(store, { role: "frontend", taskRef: "TASK.T0087" });
+    const entry = projection.manifest.mustEntries.find((candidate) => candidate.ref === "PAGE.DASHBOARD");
+    // 规整行照常命中（许可通道不因个别畸形行失效）；理由只来自规整行 permit_ref。
+    expect(entry?.reason).toContain("PERMIT.TASK.T0087.001");
+  });
+
   it("ADVISORY 区：同 authority 域 knowledge 条目注入且注明不进 gate 判卷", async () => {
     await seedScope();
     await applyTransaction(store, { ops: [{
@@ -265,11 +304,18 @@ describe("compileProjection catalog 分区（§69 步骤 12 运行时联结）",
       expect(entry.reason.startsWith("catalog: ")).toBe(true);
       expect(entry.reason).toMatch(/^catalog: (policies|projection-presets)\//);
     }
-    const client = projection.manifest.catalogEntries.find(
-      (entry) => entry.ref === "POLICY.WEB.API.SINGLE_HTTP_CLIENT",
+    // W1-A2 T3 后（PRD v0.5.2 §5.2/§14；裁决 8 ②）：无输入编译下 capabilities 标注条目
+    // （POLICY.WEB.API.SINGLE_HTTP_CLIENT 等 API 族）按「不可判定即不注入」排除——
+    // lane 检索代表改钉 lanes 平移条目（机器判定词形）+ lane=any 回退条目（O7 旧词形实证）。
+    const matrix = projection.manifest.catalogEntries.find(
+      (entry) => entry.ref === "POLICY.WEB.STYLE.OWNERSHIP_MATRIX",
     );
-    expect(client?.reason).toContain("lane=frontend");
-    expect(client?.reason).toContain("enforcement=required_when_applicable");
+    expect(matrix?.reason).toContain("lanes=frontend 命中 role=frontend");
+    expect(matrix?.reason).toContain("enforcement=required_when_applicable");
+    const fallback = projection.manifest.catalogEntries.find(
+      (entry) => entry.ref === "POLICY.WEB.COPY.SUPPRESSION_LEDGER_DISCIPLINE",
+    );
+    expect(fallback?.reason).toContain("lane=any 命中 role=frontend");
   });
 
   it("projection-presets 消费：registry-tree 身份三元组进 catalog 分区（ref=preset.name）", async () => {
@@ -285,8 +331,10 @@ describe("compileProjection catalog 分区（§69 步骤 12 运行时联结）",
     const backend = await compileProjection(store, { role: "backend" });
     const frontendRefs = frontend.manifest.catalogEntries.map((entry) => entry.ref);
     const backendRefs = backend.manifest.catalogEntries.map((entry) => entry.ref);
-    expect(frontendRefs).toContain("POLICY.WEB.API.SINGLE_HTTP_CLIENT");
-    expect(backendRefs).not.toContain("POLICY.WEB.API.SINGLE_HTTP_CLIENT");
+    // W1-A2 T3 后：POLICY.WEB.API.SINGLE_HTTP_CLIENT 等 capabilities 标注条目在无输入
+    // 编译下被排除（不可判定即不注入）——lane 检索钉 lanes 平移条目 OWNERSHIP_MATRIX。
+    expect(frontendRefs).toContain("POLICY.WEB.STYLE.OWNERSHIP_MATRIX");
+    expect(backendRefs).not.toContain("POLICY.WEB.STYLE.OWNERSHIP_MATRIX");
     for (const entry of backend.manifest.catalogEntries) {
       if (!entry.reason.includes("catalog: policies/")) continue; // preset 条目无 lane 轴
       expect(entry.reason).toContain("lane=any");
@@ -425,7 +473,8 @@ describe("compileProjection 结构化 applicability（P0.5-1 确定性过滤）"
     );
     const refs = projection.manifest.catalogEntries.map((entry) => entry.ref);
     expect(refs).not.toContain("POLICY.WEB.API.SINGLE_HTTP_CLIENT");
-    // 未声明机器字段的条目照常 lane 回退注入（O7 行为零变化——94 条存量不受影响）。
+    // 未声明 capabilities 的条目照常注入（O7 存量行为面；W1-A2 T3 后 OWNERSHIP_MATRIX
+    // 为 lanes 平移条目，无 capabilities 轴声明——capabilities 轴不参与其判定）。
     expect(refs).toContain("POLICY.WEB.STYLE.OWNERSHIP_MATRIX");
   });
 
@@ -547,7 +596,13 @@ describe("compileProjection 结构化 applicability（P0.5-1 确定性过滤）"
     ).rejects.toMatchObject({ code: "SCHEMA_INVALID" });
   });
 
-  it("O7 行为零变化：真实 catalog（94 条全未标注）下带 capability 输入的输出与不带逐字节一致", async () => {
+  it("O7 输入组合回归：capabilities/change_class/profile 与本体重合时 catalogEntries 与不带输入全等（T3 后语义）", async () => {
+    // W1-A2 T3 注记（2026-09-01）：本测试批1前提「真实 catalog 94 条全未标注」已消解。
+    // 现语义：该输入组合（PRESENTATION + PRESENTATION_CHANGE + MINIMAL）对 T3 标注面
+    // 不产生增量命中（API 族 capabilities 无交集、PCC/API_EVOLUTION/DEPENDENCY_CHANGE
+    // 条目 change_class 未命中、PRESENTATION_CHANGE 命中条目均在 knowledge/gates 分区
+    // 不进 catalogEntries）——故与无输入编译全等。fallback 子集逐字节一致棘轮见
+    // tests/integration/catalog-applicability-case-b.spec.ts 的 O7 describe。
     const withInput = await compileProjection(store, {
       role: "frontend",
       capabilities: ["CAPABILITY.PRESENTATION"],
@@ -619,12 +674,20 @@ describe("explainCatalogProjection（P0.5-1 决策记录面；PRD §5.4）", () 
     expect(apiEntry?.matched).toEqual({ lanes: ["frontend"] });
     expect(apiEntry?.fallback_lane).toBe(false);
 
+    // W1-A2 T3 后：OWNERSHIP_MATRIX 已 lanes 平移（declaresLanes=true → 机器判定词形，
+    // 不再是 lane 回退代表）；lane 回退代表改钉 lane=any 未标轴条目（O7 实证面）。
     const layoutEntry = byId.get("POLICY.WEB.STYLE.OWNERSHIP_MATRIX");
     expect(layoutEntry?.decision).toBe("included");
-    expect(layoutEntry?.why_included).toContain("lane=frontend 命中 role=frontend");
-    expect(layoutEntry?.why_included).toContain("lane 回退判定");
-    expect(layoutEntry?.fallback_lane).toBe(true);
+    expect(layoutEntry?.why_included).toContain("lanes=frontend 命中 role=frontend");
+    expect(layoutEntry?.why_included).toContain("机器 applicability 全字段判定通过");
+    expect(layoutEntry?.fallback_lane).toBe(false);
     expect(layoutEntry?.why_excluded).toBeNull();
+
+    const fallbackEntry = byId.get("POLICY.WEB.COPY.SUPPRESSION_LEDGER_DISCIPLINE");
+    expect(fallbackEntry?.decision).toBe("included");
+    expect(fallbackEntry?.why_included).toContain("lane=any 命中 role=frontend");
+    expect(fallbackEntry?.why_included).toContain("lane 回退判定");
+    expect(fallbackEntry?.fallback_lane).toBe(true);
 
     // 输入回显（判卷可重放）。
     expect(explanation.inputs).toEqual({

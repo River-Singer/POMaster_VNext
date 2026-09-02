@@ -489,6 +489,29 @@ describe("toGateResultJson × 03-gate-result schema（ajv）", () => {
     expect(ok).toBe(false);
   });
 
+  it("skipped_blindspot 封条（C3）：verdict=skipped_blindspot 而 blindspot 缺 fixture_regression → allOf 拒绝；附证据即过；其他 verdict 不受封条影响", () => {
+    const { doc } = validJsonDocument();
+    const blindspot = { ...(doc["blindspot"] as Record<string, unknown>) };
+    delete blindspot["fixture_regression"];
+    const stripped = { ...doc, verdict: "skipped_blindspot", blindspot };
+    // 「明知不可达」的诚实跳过必须附盲区回归 fixture 证据引用——无证据即拒。
+    expect(validate(stripped)).toBe(false);
+    expect(
+      validate.errors?.some(
+        (e) => e.keyword === "required" && e.params.missingProperty === "fixture_regression",
+      ),
+    ).toBe(true);
+    // 附证据引用（minLength 1 字符串，在场即非空）即过。
+    expect(
+      validate({
+        ...stripped,
+        blindspot: { ...blindspot, fixture_regression: "EV_TS_TEXT_ESCAPE_FIXTURE/passed" },
+      }),
+    ).toBe(true);
+    // 其他 verdict（passed 原文档剥 fixture_regression）不受封条影响。
+    expect(validate({ ...doc, blindspot })).toBe(true);
+  });
+
   it("schema verdict 枚举与 VERDICT_VALUES 镜像逐值相等（词表单一事实源对账）", () => {
     const schemaEnum = (
       gateResultSchema as {

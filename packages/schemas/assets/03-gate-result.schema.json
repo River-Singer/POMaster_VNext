@@ -173,6 +173,21 @@
         "required": ["subject_id"],
         "properties": { "subject_id": { "type": "string", "pattern": "^TEST\\." } }
       }
+    },
+    {
+      "$comment": "skipped_blindspot 封条：verdict=skipped_blindspot ⇒ blindspot.fixture_regression 必填（verdict 七态描述与 blindspot.fixture_regression description 双处明示的 MUST 落成机器封条——『明知不可达』的诚实跳过必须附盲区回归 fixture 证据引用，禁无证据的 skipped_blindspot 冒充终局性诚实报告；fixture_regression 是 minLength 1 的字符串，在场即非空）",
+      "if": {
+        "required": ["verdict"],
+        "properties": { "verdict": { "const": "skipped_blindspot" } }
+      },
+      "then": {
+        "properties": {
+          "blindspot": {
+            "type": "object",
+            "required": ["fixture_regression"]
+          }
+        }
+      }
     }
   ],
   "definitions": {

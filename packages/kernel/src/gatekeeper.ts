@@ -256,12 +256,21 @@ function assertExecutionWordForm(executionId: string, where: string): void {
 function readExecutionStartedAt(paths: StorePaths, executionId: string): string | null {
   const text = readText(`${paths.executionsDir}/${executionId}.json`);
   if (text === null) return null;
+  let startedAt: string | null = null;
   try {
     const parsed = JSON.parse(text) as { started_at?: unknown };
-    return typeof parsed.started_at === "string" ? parsed.started_at : null;
+    startedAt = typeof parsed.started_at === "string" ? parsed.started_at : null;
   } catch {
     // 档案损坏与证据损坏同罪，但此处锚缺失按「宁严不漏」降级为 null（in_window=true），
     // 不让单点档案损坏掩盖整份观测报告；证据平面损坏仍 fail-closed（主分母失真）。
+    startedAt = null;
+  }
+  // 「JSON 可解析但 started_at 是不可解析日期串」（手改 "corrupt" 等）同样视同档案
+  // 损坏：Date.parse → NaN 后 NaN >= windowStartMs 恒 false，in_window 会被单字段畸形
+  // 静默降为 out-of-window（分身漂移信号被吞——观测面禁静默）。降级 null → in_window=
+  // true 宁严不漏，与上方「缺失按宁严不漏降级 null」同一通道。
+  if (startedAt !== null && Number.isNaN(Date.parse(startedAt))) {
     return null;
   }
+  return startedAt;
 }

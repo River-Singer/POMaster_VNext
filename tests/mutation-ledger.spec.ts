@@ -36,8 +36,8 @@ import {
  * - GRN 落账 + journal TX_APPLIED 锚在座 + ran_at_seq 取 results seq（与 store 事务 seq
  *   独立——GRN 序号空间独立的注记事实化）；
  * - 幂等重入语义：同 GRN 同内容 already_entered 零写入；异内容 GRN_CONFLICT fail-closed
- *   （kernel applyRecordGateRun 对重复 GRN 无守卫——本 spec 直接钉死该缺口，证明预检是
- *   唯一防线）；
+ *   （原「kernel applyRecordGateRun 对重复 GRN 无守卫」缺口已由 A3 存在性防线封死——
+ *   预检降级为双防线之一，kernel 侧守卫由本 spec 直接钉死）；
  * - 失败语义 fail-closed：一切入账失败 LedgerEntryError.exitCode=2（测量成功但账本写入
  *   失败不能静默绿）；
  * - --verify 账本对账面（分层语义，Owner 设计修正 2026-09-01）：store 在座 → 在账一致
@@ -303,29 +303,40 @@ describe("enterGateRecordInStore（基准轮 gate record 入正式账本）", ()
     expect(readFileSync(storeLayout(root).runFile("GRN-7"), "utf8")).toBe(runBefore);
   });
 
-  it("kernel 对重复 GRN 无守卫（预检的存在理由）：直接 applyTransaction 同 GRN 异内容会静默覆盖——本 spec 钉死该缺口", async () => {
+  it("kernel A3 守卫封死重复 GRN 旁路（预检降级为双防线）：直调 kernel 同 GRN 异内容 → EVIDENCE_ALREADY_EXISTS；显式 canonicalizeOverwrite 凭据才放行且 journal 留痕 record_gate_run_canonicalize；同内容重放幂等短路", async () => {
     const root = fixtureRoot();
     const record = produceRecord(root, "GRN-7", 7);
     await enterGateRecordInStore({ record, storeRoot: root, kernel });
     const before = readFileSync(storeLayout(root).runFile("GRN-7"), "utf8");
 
-    // 绕过入账核心、直调 kernel（攻击形态：旁路预检）——kernel 不查重复 GRN，静默覆盖。
+    // 绕过入账核心、直调 kernel（攻击形态：旁路预检）——原「kernel 无守卫」缺口已由
+    // A3 存在性防线封死：裸覆写被显式拒绝（预检与 kernel 守卫构成双防线，本用例钉
+    // kernel 侧这道闸；预检侧 GRN_CONFLICT 由上一用例钉）。
     const conflicting = { ...record, verdict: "failed" };
     const store = await createStore(root);
     const tx = buildGateRunTx(conflicting) as unknown as Transaction;
-    await expect(applyTransaction(store, tx)).resolves.toMatchObject({ shortCircuited: false });
-
-    const after = readFileSync(storeLayout(root).runFile("GRN-7"), "utf8");
-    expect(after).not.toBe(before); // 覆盖真实发生——kernel 侧确无守卫
-    // 入账核心的预检正是为封死此通道：同 GRN 异内容走 enterGateRecordInStore 必被拒
-    //（上一用例已钉）。此处补充：覆盖后 verify 面对原 record 立即红。
-    const verify = verifyGateRecordInLedger({
-      results: { gate_record: record, ledger_entry: { status: "entered", grn: "GRN-7", applied_seq: 1 } },
-      storeRoot: root,
-      gateResultToSnake: toSnakeLoose,
+    await expect(applyTransaction(store, tx)).rejects.toMatchObject({
+      code: "EVIDENCE_ALREADY_EXISTS",
     });
-    expect(verify.ok).toBe(false);
-    expect(verify.problems.join("; ")).toContain("不一致");
+    expect(readFileSync(storeLayout(root).runFile("GRN-7"), "utf8")).toBe(before); // 拒绝即零触碰
+
+    // 唯一覆写口 = op 层显式 canonicalizeOverwrite 凭据（判定可复核的 canonical 化
+    // 重录）：放行且 TX_APPLIED ops 记 record_gate_run_canonicalize 可审计词形。
+    const canonicalizeTx = buildGateRunTx(conflicting) as unknown as Transaction;
+    (canonicalizeTx.ops[0] as Record<string, unknown>).canonicalizeOverwrite = true;
+    await expect(applyTransaction(store, canonicalizeTx)).resolves.toMatchObject({
+      shortCircuited: false,
+    });
+    const canonicalized = readFileSync(storeLayout(root).runFile("GRN-7"), "utf8");
+    expect(canonicalized).not.toBe(before); // 凭据路径覆盖真实发生
+    const events = journalEvents(root);
+    expect(events[events.length - 1]?.["ops"]).toContain("record_gate_run_canonicalize");
+
+    // 同内容重放（同凭据 → 同事务 inputs 指纹）→ 事务级幂等短路：零写入零 journal。
+    const replay = buildGateRunTx(conflicting) as unknown as Transaction;
+    (replay.ops[0] as Record<string, unknown>).canonicalizeOverwrite = true;
+    await expect(applyTransaction(store, replay)).resolves.toMatchObject({ shortCircuited: true });
+    expect(journalEvents(root)).toHaveLength(events.length);
   });
 
   it("词形防线：record.grn 非法 → GRN_WORDFORM_INVALID exit 2（store 触碰之前 fail-closed，零 .pomaster 创建）", async () => {

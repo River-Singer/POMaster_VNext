@@ -1,5 +1,7 @@
 /**
  * check.spec.ts —— FAST gate（BUILD 腿）：NOT_INSTALLED 绝不静默通过 + 七态契约。
+ * B5 假绿封死：判卷收敛点 verdict⇔counts 自洽复算——自报 passed+violations>0 =
+ * GATE_COUNTS_INVALID FATAL 不报绿；合规 passed（violations=0）仍 ok=true。
  */
 import { describe, expect, it, vi } from "vitest";
 import type { FastAdapterRun, FastBuildAdapter } from "@pomaster/cli";
@@ -56,7 +58,7 @@ describe("check --fast 缺席显式", () => {
 });
 
 describe("check --fast 转调 adapter（注入 fake）", () => {
-  it("verdict=passed → ok=true；rootDir 透传", async () => {
+  it("verdict=passed → ok=true；rootDir 透传（合规 passed：violations=0 才许报绿）", async () => {
     const adapter = adapterWith(async (input) => {
       expect(input.rootDir).toBe("D:/proj");
       return { verdict: "passed", counts: fullCounts() };
@@ -66,6 +68,28 @@ describe("check --fast 转调 adapter（注入 fake）", () => {
     expect(outcome.result.verdict).toBe("passed");
     expect(outcome.result.status).toBe("READY");
     expect(adapter.run).toHaveBeenCalledOnce();
+    // B5 复算闸的合法面：报绿前提是 counts.violations=0（非零见下方对抗用例）。
+    expect(outcome.result.counts.violations).toBe(0);
+  });
+
+  it("对抗（B5）：自报 passed + violations>0 → ok=false + GATE_COUNTS_INVALID（假绿封死）", async () => {
+    // 若防御失效：--fast 腿只验 counts 为数字 + verdict ∈ 七态就放行 passed——
+    // 注入面自报 passed+violations>0 照样报绿 exit 0（--gates 腿已过 kernel
+    // normalizeGateResult 判卷复算封死同款缺陷，--fast 腿此处收敛为同一条线）。
+    const outcome = await runCheckFast(process.cwd(), {
+      adapter: adapterWith(async () => ({
+        verdict: "passed",
+        counts: fullCounts({ violations: 5 }),
+      })),
+    });
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors[0]?.code).toBe("GATE_COUNTS_INVALID");
+    expect(outcome.errors[0]?.message).toContain("violations=5");
+    expect(outcome.errors[0]?.hint).toContain("假绿封死");
+    // 呈现态显式非绿：verdict=blocked（自报 passed 禁信任），counts 原样透传留痕。
+    expect(outcome.result.verdict).toBe("blocked");
+    expect(outcome.result.counts.violations).toBe(5);
+    expect(outcome.result.status).toBe("READY");
   });
 
   it("verdict=failed → ok=false + GATE_FAILED；violations 计数透传", async () => {

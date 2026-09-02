@@ -26,7 +26,7 @@
  */
 import type { Actor, Store } from "./index.js";
 import { GovernanceError } from "./errors.js";
-import { captureOriginal, executeWrites, readText } from "./io.js";
+import { appendLine, captureOriginal, executeWrites, readText } from "./io.js";
 import { pathsOf, readCurrentSeq, type StorePaths } from "./paths.js";
 import { EXCEPTION_CLASSIFICATION_VALUES, type ExceptionClassificationValue } from "./vocab.js";
 
@@ -198,7 +198,16 @@ export async function recordException(
     version: 1,
     entries: [...file.entries, entry],
   };
-  const journalLine = `${JSON.stringify({
+  executeWrites([
+    {
+      path: paths.exceptionLedgerPath,
+      next: `${JSON.stringify(updatedFile, null, 2)}\n`,
+      original: captureOriginal(paths.exceptionLedgerPath),
+    },
+  ]);
+  // A2 journal 纪律：事件在台账 staged 批提交成功后 appendLine 原子追加（RMW 覆写
+  // 会抹掉并发 appendLine 家族刚写的整行；「台账先行、journal 缺行」是可检出残态）。
+  appendLine(paths.journalPath, `${JSON.stringify({
     type: "EXCEPTION_RECORDED",
     seq: currentSeq,
     ledger_ref: entry.ledger_ref,
@@ -206,18 +215,6 @@ export async function recordException(
     object_ref: entry.object_ref,
     change_ref: entry.change_ref,
     recorded_by: entry.recorded_by,
-  })}\n`;
-  executeWrites([
-    {
-      path: paths.exceptionLedgerPath,
-      next: `${JSON.stringify(updatedFile, null, 2)}\n`,
-      original: captureOriginal(paths.exceptionLedgerPath),
-    },
-    {
-      path: paths.journalPath,
-      next: `${readText(paths.journalPath) ?? ""}${journalLine}`,
-      original: captureOriginal(paths.journalPath),
-    },
-  ]);
+  })}\n`);
   return entry;
 }

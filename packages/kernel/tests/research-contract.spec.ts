@@ -105,13 +105,16 @@ describe("checkResearchWriteContract（§81.3 写面判卷）", () => {
     }
   });
 
-  it("对抗：受治理面五前缀逐一 FATAL governed_surface（Current Truth/policies/证据平面）", () => {
+  it("对抗：受治理面八前缀逐一 FATAL governed_surface（Current Truth/policies/证据/执行与运行时平面）", () => {
     expect(RESEARCH_FORBIDDEN_SURFACE_PREFIXES).toEqual([
       ".pomaster/state/",
       ".pomaster/truth/",
       ".pomaster/objects/",
       ".pomaster/policies/",
       ".pomaster/evidence/",
+      ".pomaster/executions/",
+      ".pomaster/runtime/",
+      ".pomaster/traces/",
     ]);
     for (const prefix of RESEARCH_FORBIDDEN_SURFACE_PREFIXES) {
       const outcome = checkResearchWriteContract(HOST, `${prefix}x.json`);
@@ -124,6 +127,21 @@ describe("checkResearchWriteContract（§81.3 写面判卷）", () => {
     // evidence 面的 hint 特指 record 通路（Evidence Pack 合法入账走 store 事务）。
     const ev = checkResearchWriteContract(HOST, ".pomaster/evidence/runs/GRN-1.json");
     if (!ev.allowed) expect(ev.hint).toContain("record");
+
+    // B1（P0）denylist 缺口补齐钉子：kernel 唯一写通道平面（executions/runtime/traces）
+    // 此前不在清单——探针实锤 .pomaster/runtime/locks/change-CHG.1.lock → ALLOW 的
+    // 越写放行；三面逐一 REJECT（runtime 的子目录 sessions/locks/traces 全覆盖）。
+    for (const target of [
+      ".pomaster/executions/AGX-1.json",
+      ".pomaster/runtime/sessions/session-1.json",
+      ".pomaster/runtime/locks/change-CHG.1.lock",
+      ".pomaster/runtime/traces/AGX-1.json",
+      ".pomaster/traces/AGX-1.json",
+    ]) {
+      const outcome = checkResearchWriteContract(HOST, target);
+      expect(outcome.allowed, `写面 ${target} 应命中受治理面`).toBe(false);
+      if (!outcome.allowed) expect(outcome.reason).toBe("governed_surface");
+    }
   });
 });
 

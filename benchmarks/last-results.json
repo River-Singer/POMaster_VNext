@@ -1,11 +1,11 @@
 {
-  "schema": "pomaster.vnext.selfhosting-benchmark-results/3",
-  "run_id": "bench-0010",
-  "seq": 10,
+  "schema": "pomaster.vnext.selfhosting-benchmark-results/4",
+  "run_id": "bench-0011",
+  "seq": 11,
   "ok": true,
   "summary": {
-    "total": 3,
-    "passed": 3,
+    "total": 4,
+    "passed": 4,
     "failed": 0
   },
   "entries": [
@@ -19,7 +19,7 @@
       "matched_keywords": [
         "文案"
       ],
-      "durationMs": 324,
+      "durationMs": 318,
       "ok": true,
       "assertions": [
         {
@@ -50,7 +50,7 @@
       "matched_rule": "DEFAULT_NO_SIGNAL",
       "evidence_grade": "NOT_CONFIGURED",
       "matched_keywords": [],
-      "durationMs": 316,
+      "durationMs": 327,
       "ok": true,
       "assertions": [
         {
@@ -274,7 +274,7 @@
           "not_run_reason": "分母缺席：vNext 仓库自身无业务 subject 数据面，gate 真实判卷需在消费项目数据面执行（A3 裁定执行面=就绪校验；not_run 显式披露，禁假 passed）"
         }
       ],
-      "durationMs": 235,
+      "durationMs": 238,
       "ok": true,
       "assertions": [
         {
@@ -358,6 +358,142 @@
           "detail": "profile 值轴：constitutional 锚 catalog profile=\"web-standard@0\"，tiny=\"MINIMAL\"，normal=\"LIGHT\"（catalog 锚即档——A3 裁定 3，Owner 2026-09-01；triage 不物化 STRICT 档，无双轨）"
         }
       ]
+    },
+    {
+      "tier": "applicability",
+      "scenario": "README badge 文案调整",
+      "expected": "MINIMAL + catalog applicability exclusion（PRD v0.5.2 §15 Benchmark A）",
+      "profile": "MINIMAL",
+      "surface": "cli:context-applicability",
+      "matched_rule": "F_COPY_STYLE_ONLY",
+      "evidence_grade": "MEASURED",
+      "matched_keywords": [
+        "文案"
+      ],
+      "applicability": {
+        "compile_role": "frontend",
+        "compile_capabilities": [
+          "CAPABILITY.PRESENTATION"
+        ],
+        "catalog_entries_total": 46,
+        "excluded_api_sec_refs": [
+          "AUTHORITY.WEB.API.REQUEST_OWNERS",
+          "POLICY.API.BACKWARD_COMPAT_DEFAULTS",
+          "POLICY.API.CONTRACT_IMPL_CONSISTENCY",
+          "POLICY.API.NO_INFORMAL_CONTRACT",
+          "POLICY.SEC.THIRD_PARTY_EXECUTION_REGISTER",
+          "POLICY.WEB.API.AUTH_APP_CLIENT_SPLIT",
+          "POLICY.WEB.API.CLIENT_CHANGE_IMPACT",
+          "POLICY.WEB.API.DOMAIN_API_ONLY",
+          "POLICY.WEB.API.ERROR_NORMALIZATION",
+          "POLICY.WEB.API.GENERATED_CLIENT",
+          "POLICY.WEB.API.LATE_RESULT_GUARD",
+          "POLICY.WEB.API.MUTATION_IDEMPOTENCY",
+          "POLICY.WEB.API.NO_NETWORK_OPTIMISM",
+          "POLICY.WEB.API.QUERY_CANCEL_STALE_DROP",
+          "POLICY.WEB.API.REQUEST_INFRASTRUCTURE",
+          "POLICY.WEB.API.RETRY_DISCIPLINE",
+          "POLICY.WEB.API.SESSION_RECOVERY_SPLIT",
+          "POLICY.WEB.API.SINGLE_HTTP_CLIENT",
+          "POLICY.WEB.API.SINGLE_LOADING_SOURCE",
+          "POLICY.WEB.API.TRANSPORT_VS_BUSINESS",
+          "POLICY.WEB.API.TRUSTED_ENDPOINT_SOURCE",
+          "POLICY.WEB.API.TYPED_DOMAIN_NAMING"
+        ],
+        "decisions_total": 80,
+        "db_domain_entries_total": 0,
+        "honest_boundary": "真实 catalog 无 DB transaction / backend persistence 条目（Owner 裁决 8 ② O9 fixture-only）：DB 排除逻辑的真判卷由 catalog-applicability-case-b.spec 的 fixture DB 条目承载；本档判卷面=capabilities 轴（T3 标注的 API/Sec 族），change_class/profile 轴判卷由 kernel/集成 spec 承载。"
+      },
+      "path_signature": {
+        "applicability": {
+          "surface": "cli:context-applicability",
+          "profile": "MINIMAL",
+          "matched_rule": "F_COPY_STYLE_ONLY",
+          "gate_ids": [],
+          "artifacts": [
+            "triage-envelope",
+            "projection-manifest",
+            "explain-decision-record"
+          ]
+        },
+        "tiny": {
+          "surface": "cli:triage",
+          "profile": "MINIMAL",
+          "matched_rule": "F_COPY_STYLE_ONLY",
+          "gate_ids": [],
+          "artifacts": [
+            "triage-envelope"
+          ]
+        },
+        "normal": {
+          "surface": "cli:triage",
+          "profile": "LIGHT",
+          "matched_rule": "DEFAULT_NO_SIGNAL",
+          "gate_ids": [],
+          "artifacts": [
+            "triage-envelope"
+          ]
+        },
+        "constitutional": {
+          "surface": "kernel:catalog+gatekeeper",
+          "profile": "web-standard@0",
+          "matched_rule": null,
+          "gate_ids": [
+            "GATE.BE.API.CONTRACT_CHECKS",
+            "GATE.BE.CHG.CONTRACT_CHANGE_CHECKS",
+            "GATE.CHG.PRECHANGE_CHECKS",
+            "GATE.WEB.API.REQUEST_CHECKS",
+            "GATE.WEB.GRID.CHECKS"
+          ],
+          "artifacts": [
+            "catalog-lock-verification",
+            "catalog-authority-anchor",
+            "gate-judging-readiness-report",
+            "gate-result-fixture-red-green",
+            "gatekeeper-drift-report",
+            "three-tier-path-signature"
+          ]
+        }
+      },
+      "durationMs": 1180,
+      "ok": true,
+      "assertions": [
+        {
+          "name": "triage-profile-minimal",
+          "ok": true,
+          "detail": "triage profile=MINIMAL（rule=F_COPY_STYLE_ONLY；README 文案调整期望 MINIMAL——tiny 档同引擎）"
+        },
+        {
+          "name": "catalog-no-api-sec-entries",
+          "ok": true,
+          "detail": "catalogEntries 46 条零 API/Sec 族泄漏（capabilities=[CAPABILITY.PRESENTATION] 输入下确定性排除；T3 标注承载，现状全量注入被动正确已升级为主动判卷）"
+        },
+        {
+          "name": "no-architect-research-spawn-words",
+          "ok": true,
+          "detail": "raw 输出无禁入字样"
+        },
+        {
+          "name": "explain-decisions-why-complete",
+          "ok": true,
+          "detail": "decisions 80 条逐条 why 完整（included→why_included / excluded→why_excluded——PRD §5.4 决策记录面）"
+        },
+        {
+          "name": "explain-api-sec-excluded-with-capability-why",
+          "ok": true,
+          "detail": "excluded 的 API/Sec 族 22 条全部 why_excluded 携带 capabilities=[CAPABILITY.API_CONTRACT] 轴详情（22/22；「EXCLUDE unless contract affected」的机器语义可解释）"
+        },
+        {
+          "name": "db-domain-absence-disclosed",
+          "ok": true,
+          "detail": "真实 catalog 无 DB transaction / backend persistence 条目（O9 fixture-only 裁决；db_domain_entries_total=0 如实披露——DB 排除逻辑的真判卷由 catalog-applicability-case-b.spec 的 fixture DB 条目承载，本档不冒充空分母判卷）"
+        },
+        {
+          "name": "four-tier-path-signatures-distinct",
+          "ok": true,
+          "detail": "四档路径签名两两可区分（§90.3 同路=失败未触发）：surface=\"cli:context-applicability\"（context compile/explain 命令面）+ excluded_refs=22 条（本档独有判卷轴；surface/artifacts 为结构性常量词形——constitutional RT3 封条同款注记）"
+        }
+      ]
     }
   ],
   "a3_ruling": {
@@ -394,5 +530,5 @@
       }
     ]
   },
-  "note": "timestamp 禁入：运行序以 seq/run_id 标识（seq 即 C7 校准轮代号，见 calibration-template.md）。schema /3 向后兼容 /2//1：/3 将 a3_pending_items 更名为 a3_ruling（A3 三项裁定转正，Owner 2026-09-01）并在 constitutional 条目新增 constitutional_gate_readiness；readPrevSeq/summary 消费面不变。"
+  "note": "timestamp 禁入：运行序以 seq/run_id 标识（seq 即 C7 校准轮代号，见 calibration-template.md）。schema /4 向后兼容 /3//2//1：/2 新增 path_signature；/3 将 a3_pending_items 更名为 a3_ruling（A3 三项裁定转正，Owner 2026-09-01）并在 constitutional 条目新增 constitutional_gate_readiness；/4 新增第四档 applicability 条目（PRD v0.5.2 §15 Benchmark A，W1-A2——entries[] 多一条 tier=\"applicability\"，readPrevSeq/summary 消费面不变）。"
 }

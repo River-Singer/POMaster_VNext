@@ -1,4 +1,4 @@
-<!-- view: current-business-truth | generator: corpus/master/tools/build_human_views.py | batch_code: VIEW-M5 | inputs_fingerprint: 5d322d56b65a18cd45fee212b1f63b76f45dca5f95a97bdd893c6cb8aea3d31c -->
+<!-- view: current-business-truth | generator: corpus/master/tools/build_human_views.py | batch_code: VIEW-M5 | inputs_fingerprint: e0065c5b533ca6b8bc51e91ef8fc70aee6200dbfa749adc59bd06208e9eb890a -->
 
 # current-business-truth
 
@@ -6,7 +6,7 @@
 >
 > 本文件是 corpus truth 语料的**纯派生投影**（M5 Human View），不是事实源：禁止手工编辑（编辑无效，重建即覆盖）；不写 store、不产生治理事实、不进 truth-index。谱系约定：行内 citation 记号（`[SRC:` + 引用 + `]`），文法四形态见 `docs/p9-human-view-and-l5-contract.md` §1.5；「语料未覆盖」为显式留白（缺席 ≠ 通过）。
 >
-> 重建：`python corpus/master/tools/build_human_views.py --check`（同输入双跑 byte-stable；inputs_fingerprint=5d322d56b65a18cd45fee212b1f63b76f45dca5f95a97bdd893c6cb8aea3d31c）。
+> 重建：`python corpus/master/tools/build_human_views.py --check`（同输入双跑 byte-stable；inputs_fingerprint=e0065c5b533ca6b8bc51e91ef8fc70aee6200dbfa749adc59bd06208e9eb890a）。
 
 ## 1. 业务功能面总览
 

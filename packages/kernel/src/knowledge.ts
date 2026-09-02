@@ -12,7 +12,10 @@
  *   ② 类型层：KnowledgeEntry["authority"] 是 "ADVISORY" 字面量类型（TS 编译期
  *     写不出 AUTHORITATIVE）。
  *   ③ 通路层：knowledge 侧车走本模块专属写通路，**TransactionOp 联合无 knowledge
- *     op**——知识条目没有任何可经 store 事务入 truth-index（gate 对象分母）的键位。
+ *     op**——知识条目没有可经 store 事务写 knowledge 侧车的键位（upsert_object
+ *     携 kind=knowledge_entry 信封入 truth-index 的形态不属侧车写通路；该形态即使
+ *     借分母通道入索引，也被投影消费层防线挡在 MUST 区外——projection.ts MUST 循环
+ *     排除 kind=knowledge_entry，「知识恒 ADVISORY」在消费面闭环）。
  *   ④ 消费层：检索注入只产 [ADVISORY] 分区（§83.8）；PROMOTED 只是谱系状态，
  *     knowledge 本体恒 ADVISORY——强约束载体是提升后经 P11 maintain 面落地的
  *     Current Policy/Truth 对象（§83.10「只有 Promotion 完成后，才可成为强约束」）。
@@ -40,7 +43,7 @@ import type { Actor, Store } from "./index.js";
 import { GovernanceError, GovernedIdParseError } from "./errors.js";
 import { governanceCodeForParseError } from "./errors.js";
 import { parseGovernedId } from "./id.js";
-import { captureOriginal, executeWrites, readText } from "./io.js";
+import { appendLine, captureOriginal, executeWrites, readText } from "./io.js";
 import { pathsOf, readCurrentSeq, type StorePaths } from "./paths.js";
 import {
   KNOWLEDGE_CONFIDENCE_VALUES,
@@ -883,8 +886,9 @@ function replacedEntries(
 
 /**
  * 唯一落盘点（library staged write + journal 追加，模式同 ledger.recordException）：
- * executeWrites 两写一事务，任一步失败回滚到事务前（captureOriginal 字节恢复），
- * 不落半写状态。
+ * executeWrites 提交 library staged 批，成功后 appendLine 原子追加 journal 事件
+ * （A2 journal 纪律：RMW 覆写会抹掉并发 appendLine 家族刚写的整行；「库先行、
+ * journal 缺行」是可检出残态）。任一步失败：staged 批回滚到事务前，不落半写状态。
  */
 function writeLibraryAndJournal(
   paths: StorePaths,
@@ -895,17 +899,12 @@ function writeLibraryAndJournal(
     version: 1,
     entries: nextEntries,
   };
-  const journalLine = `${JSON.stringify(event)}\n`;
   executeWrites([
     {
       path: paths.knowledgeLibraryPath,
       next: `${JSON.stringify(updatedFile, null, 2)}\n`,
       original: captureOriginal(paths.knowledgeLibraryPath),
     },
-    {
-      path: paths.journalPath,
-      next: `${readText(paths.journalPath) ?? ""}${journalLine}`,
-      original: captureOriginal(paths.journalPath),
-    },
   ]);
+  appendLine(paths.journalPath, `${JSON.stringify(event)}\n`);
 }

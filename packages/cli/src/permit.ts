@@ -531,8 +531,9 @@ export interface PermitIssueInput {
 
 /**
  * 签发许可（事件写）。重复签发同一基底 → PERMIT.<BASE>.n 递增——没有 NO_CHANGE
- * 出口，这不是幂等命令（--help 明示，防误用）。结果字段从 kernel 台账回读呈现
- * （baseline_captured 是 kernel 派生值，CLI 不重算）。
+ * 出口，这不是幂等命令（--help 明示，防误用）。结果字段从 kernel 台账按 issuePermit
+ * 返回的 permitRef 回读呈现（B4：不取台账最后一条——并发签发下 last 是他方许可；
+ * baseline_captured 是 kernel 派生值，CLI 不重算）。
  */
 export async function runPermitIssue(
   rootDir: string,
@@ -578,9 +579,13 @@ export async function runPermitIssue(
   const initialized = await requireInitialized(rootDir);
   if ("error" in initialized) return fail(initialized.error);
 
+  let issuedRef: string | null = null;
   try {
     const store = await createStore(rootDir);
-    await issuePermit(store, {
+    // B4（P2）：接住 issuePermit 返回的 permitRef——呈现按返回 ref 精确回读，
+    // 绝不取台账最后一条（并发签发下 last 是他方许可——把他方许可当本次结果
+    // 报给调用方；steal 路径按 permit_ref find 已有同款先例）。
+    const permit = await issuePermit(store, {
       subjectIds,
       requestedBy: actor.actor,
       ...(input.changeRef !== undefined ? { changeRef: input.changeRef } : {}),
@@ -588,19 +593,23 @@ export async function runPermitIssue(
       ...(acceptanceShape !== undefined ? { acceptanceShape } : {}),
       ...(capabilityIds.length > 0 ? { capabilityIds } : {}),
     });
+    issuedRef = permit.permitRef;
   } catch (err) {
     return kernelFail<PermitIssueResult>("permit issue", err, ["permit issue: FAILED"]);
   }
 
   // 台账回读：五件套落台账的事实呈现（含 baseline_captured——kernel 派生，CLI 不重算）。
+  // 回读键 = issuePermit 返回的 permitRef；find 不到 = 显式错误，绝不回退取 last
+  // （回退即重新打开 B4 并发错配窗口）。
   const ledger = await readPermitLedger(rootDir);
   if ("error" in ledger) return fail(ledger.error);
-  const issued = ledger.permits[ledger.permits.length - 1] ?? null;
+  const issued =
+    ledger.permits.find((candidate) => candidate.permit_ref === issuedRef) ?? null;
   if (issued === null) {
     return fail({
       code: "SCHEMA_INVALID",
-      message: "签发后台账回读失败（state/permits.json 为空）",
-      hint: "issuePermit 已成功但台账不可读——检查磁盘/杀毒软件对 .pomaster 的干扰。",
+      message: `签发后台账回读失败（${issuedRef ?? "(kernel 未返回 permitRef)"} 不在 state/permits.json）`,
+      hint: "issuePermit 已成功但按返回 permit_ref 回读不到台账条目——检查磁盘/杀毒软件对 .pomaster 的干扰。",
     });
   }
   const result: PermitIssueResult = {

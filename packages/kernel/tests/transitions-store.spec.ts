@@ -70,10 +70,12 @@ const AXES: Record<LifecycleValue, Record<string, unknown>> = {
 async function seedAt(from: LifecycleValue): Promise<void> {
   if (from === "SUPERSEDED") {
     await applyTransaction(store, txOf(upsertOp({ id: gid("PAGE.DASHBOARD_V2"), titleZh: "V2 后继" })));
+    // A4 变严：upsert 直改 lifecycle（CURRENT→SUPERSEDED）requires transition_record，
+    // 种子事务补 authorityRef（免 authorityRef 直落 SUPERSEDED 已被 kernel 拒绝）。
     await applyTransaction(store, txOf(upsertOp({
       axes: AXES.SUPERSEDED,
       successorRef: gid("PAGE.DASHBOARD_V2"),
-    })));
+    }), "CHANGE.SEED_SUP_000"));
     return;
   }
   await applyTransaction(store, txOf(upsertOp({ axes: AXES[from] })));

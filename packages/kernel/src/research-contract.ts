@@ -50,7 +50,11 @@ export type ResearchArtifactFile = (typeof RESEARCH_ARTIFACT_FILES)[number];
  * 受治理面前缀（§81.3 禁写清单的路径投影；POSIX 相对形态）：
  * - state/truth/objects = Current Truth 面（store 事务唯一写入路径）；
  * - policies = §81.3 点名禁改 .pomaster/policies；
- * - evidence = Evidence 平面文件直写禁止（合法入账走 record 命令 → store 事务）。
+ * - evidence = Evidence 平面文件直写禁止（合法入账走 record 命令 → store 事务）；
+ * - executions/runtime/traces = kernel/CLI 唯一写通道平面（P20 Execution Identity
+ *   档案、sessions/locks/traces 运行时面、Execution Trace 双分区）——同属 store
+ *   维护面，旁路落盘即遮蔽权威文件（denylist 缺口补齐：三面此前不在清单，探针
+ *   实锤 .pomaster/runtime/locks/change-CHG.1.lock → ALLOW 的越写放行）。
  * Discovery scratchpad 面（.pomaster/discovery/**）不在此列——PRD §80.3 原文路径
  * 就在 .pomaster 下，是 Brainstorm 的合法维护面。
  */
@@ -60,6 +64,9 @@ export const RESEARCH_FORBIDDEN_SURFACE_PREFIXES = [
   ".pomaster/objects/",
   ".pomaster/policies/",
   ".pomaster/evidence/",
+  ".pomaster/executions/",
+  ".pomaster/runtime/",
+  ".pomaster/traces/",
 ] as const;
 
 export type ResearchWriteContractOutcome =

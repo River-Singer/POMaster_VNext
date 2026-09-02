@@ -1,0 +1,349 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://pomaster.dev/schemas/perception-receipts/v1-draft.json",
+  "title": "Perception Receipts（观察回执 OBS-* / 环境回执 ENVREC-* sidecar · PRD v0.5.2 §6.7/§6.13/§6.14 词形冻结面 · W1-D2）",
+  "description": "P0.5-4 Perception Receipts 的定义形态契约（W1-D2 批 2 · PRD §6.7 Environment & Instance Identity + §6.13 Observation Receipt + §6.14 Negative Observation；Owner 裁决 8 2026-09-01）。\n两记录族（root oneOf，record_type 判别）：\n- environment_receipt（§6.7 yaml 九键逐键 + record_type）：观察之前必须有 Doctor——「AI 有眼睛但看错环境，比没有眼睛更危险」。安全字段只记录可审计引用，不落 Secret（auth_role 是角色类别词非凭据）。实测未确认位 = null 显式缺席（Case H blocked 证据链消费位——实测 null 原样保留，禁空串/占位词冒充已确认）。\n- observation_receipt（§6.13 yaml 十三键逐键 + record_type）：「Agent 必须证明我看过」——Observation 不以 Agent 自报为凭证；基础设施负责证明工具调用与 Artifact 的存在。result=OBSERVED 必须 ≥1 条 blob 引用（allOf if/then 封条 = Benchmark E「Observation Receipt 不得冒充有效业务 Evidence」的 schema 级落点）；artifact_refs 收窄 blob 分支（裁决 8 ③ D1=A：blob sha256 即身份，不新增 EVR- id——EVR-* 仅 PRD 概念词；D3=A 同款 blob 分支收窄），绝对 $ref 复用 07 definitions.blob_ref（单一事实源禁二次镜像）。\n§6.13 铁律：Observation Receipt 进入 Trace/Evidence Sidecar，**不进入 Truth Index**（x-index-policy.admitted_to_truth_index=false；A8 判卷/证据产物都不是治理事实同构）。\n负观察（§6.14）：result 七负值与 OBSERVED 同轴（kernel OBSERVATION_RESULT_VALUES）；OBSERVED_ABSENT 四前提判定与 INCONCLUSIVE 兜底归 kernel judgeNegativeObservation（纯函数），本 schema 只冻结词形。\n落盘平面现状（诚实登记）：blob 字节平面 evidence/blobs/ 已通（kernel persistEvidenceArtifact，批 1 W1-B）；OBS/ENVREC 回执记录自身的落盘分区（evidence/observations/ vs trace sidecar——研究笔记 §7 位 5）**Owner 未裁**，批 2 W1-D2 最小通路 = 类型面 + 判定面 + 内存返回面 + blob 绑定，回执落盘平面随 Owner 呈报后启用（07 blob_ref「schema 先行、通路面缺位」同款先例）。",
+  "x-pomaster-file-role": "17-perception-receipts.schema.json —— Perception Receipt 记录形态契约（词形冻结面）。生产者：kernel buildEnvironmentReceipt / buildObservationReceipt（纯函数组装，本 schema 的机器形态权威）；消费者：gauntlet-lite browser 腿环境判卷门（EnvironmentReceipt.doctor_verdict 非 READY → Verification blocked，PRD §6.7「Verification 不得 PASS」+ Case H「Verification BLOCKED」）、runBrowserGateLegsWithScreenshotBinding（Observation Receipt 最小通路：persist blob → OBS receipt 携 artifact_refs）。落盘分区未定（Owner 位）——启用前本 schema 是 07 blob_ref「schema 先行」先例同款的前置冻结面。",
+  "x-pomaster-vocab-source": "词形轴 absent_in_vocab_lock__pending_vocab_pr（TODO(vocab-pr-0005)，批 2 文件面互斥——vocab 三镜像登记归主控批次，收编后以 vocab-lock 为准逐值镜像）：doctor_verdict 二值（READY / WRONG_OR_UNVERIFIED_INSTANCE——PRD §6.7 逐字）；observation_surface 八值（PRD §6.4 逐字；PRD 原文豁免「不要求立即成为新的 Closed-world Core Vocab」）；observation_result 九值（OBSERVED + §6.14 七负值行序）；sensor_capability 词形 SENSOR.<DOMAIN>.<KIND>（裁决 8 D6=A；SENSOR. 前缀不在 15 前缀闭包，catalog/sensors/ 物料标识先例）；journey_ref 词形 JOURNEY.*（P1-1 journey 投影落点，本批 null 显式）；通路编号 OBS-<n> / ENVREC-<n>（AGX/GRN/CLM 同族平面编号词形，非 governed 前缀不入 id_namespace 闭包）；schema 词形 pomaster.perception_receipt/v1（镜像 pomaster.execution_trace/v1 先例）。CAPABILITY_DEGRADED 与 §58 capability_degradation_report 同词根不同概念（裁决 8 撞族消歧）——感知域观察结果以 NOT_OBSERVABLE 为主词形，本 schema 的 result 轴结构性不含 CAPABILITY_DEGRADED。",
+  "x-pomaster-contract": {
+    "wrong_or_unverified_instance_no_pass": "§6.7「如果无法确认观察实例：WRONG_OR_UNVERIFIED_INSTANCE。Verification 不得 PASS」：消费门在 gauntlet-lite browser-adapter normalize 前置门（EnvironmentReceipt.doctor_verdict 非 READY → verdict=blocked，七态既有值零新增）；本 schema 冻结 verdict 词形与九项确认字段（PRD §6.7 Doctor 清单逐项——repository/worktree、revision、build identity、runtime instance、base URL、environment class、dataset、auth role、feature flags）。",
+    "observation_receipt_no_fake_evidence": "Benchmark E「Doctor != READY → Verification != PASS → Observation Receipt 不得冒充有效业务 Evidence」的 schema 级封条：observation_receipt.allOf if(result=OBSERVED) then(artifact_refs minItems 1)。负观察词形（§6.14 七值）不强制空 artifact_refs——Case I 留痕形态（截图在场而 network 不可观察）合法，NOT_OBSERVABLE 不是验证主张。",
+    "case_h_null_observed_preserved": "Case H（expected revision != runtime revision → WRONG_OR_UNVERIFIED_INSTANCE → Verification BLOCKED，不得使用该截图证明当前 Change 已通过）：environment_receipt 实测未确认/失配位以 null/异值原样落盘——blocked 判卷的证据链消费位，禁组装层洗成占位值。",
+    "sidecar_not_truth_index": "§6.13「Observation Receipt 进入 Trace/Evidence Sidecar，不进入 Truth Index」：x-index-policy.admitted_to_truth_index=false；receipt 是证据面通路记录（AGX/GRN/CLM 同族），非第五 State Axis（四克制 D3）。",
+    "zero_wall_clock": "A4 分层：本 schema 无任何墙钟时间戳键（时间锚恒 captured_at_seq / 事务 seq；铁律 5 时间戳禁入落盘 JSON 身份字段——16 号 x-pomaster-contract.zero_wall_clock 同款）。",
+    "infra_issued_identity": "裁决 8 ③ D1=A：receipt 的 artifact 身份 = blob sha256（基础设施产生，kernel persistEvidenceArtifact 唯一写入口）；human_touch forbidden（D24）——人不可计算/核对/传递任何 sha。"
+  },
+  "x-pomaster-digest-ethics-policy": "本 schema 顶层无新增 sha256 字段定义；observation_receipt.artifact_refs 经绝对 $ref 复用 07 definitions.blob_ref（其 sha256 携带 x-digest-ethics {write_blocking:false, side:read_only_service, human_touch:forbidden}）。未来任何 digest/sha256 字段加入时必须同样携带 x-digest-ethics 注记（D24 / vocab-lock digest_ethics）。",
+  "type": "object",
+  "oneOf": [
+    { "$ref": "#/definitions/environment_receipt" },
+    { "$ref": "#/definitions/observation_receipt" }
+  ],
+  "x-index-policy": {
+    "admitted_to_truth_index": false,
+    "storage_plane": "Trace/Evidence Sidecar（§6.13 逐字；OBS/ENVREC 落盘分区 Owner 未裁——研究 §7 位 5 呈报后启用）",
+    "source": "PRD v0.5.2 §6.13「Observation Receipt 进入 Trace/Evidence Sidecar，不进入 Truth Index」＋ A8：运行产物不入 truth-index"
+  },
+  "definitions": {
+    "obs_id": {
+      "type": "string",
+      "pattern": "^OBS-[0-9]+$",
+      "x-vocab-source": "PRD v0.5.2 §6.13 例文 observation_id: OBS-...；GRN-[0-9]+ 变宽先例（kernel OBS_ID_PATTERN 同源）",
+      "description": "Observation 通路编号（证据面通路编号词形，非 governed 前缀不入 id_namespace 闭包——AGX-n 头注同款注记）。structural 词形，非 vocab-lock 管辖（pending vocab-pr-0005）"
+    },
+    "envrec_id": {
+      "type": "string",
+      "pattern": "^ENVREC-[0-9]+$",
+      "x-vocab-source": "PRD v0.5.2 §6.13 例文 environment_receipt_ref: ENVREC-...（kernel ENVREC_ID_PATTERN 同源）",
+      "description": "Environment Receipt 通路编号（同 OBS- 族注记；environment_receipt 引用位词形）。structural，pending vocab-pr-0005"
+    },
+    "agx_execution_id": {
+      "type": "string",
+      "pattern": "^AGX-[0-9]{4}-[0-9]+$",
+      "x-vocab-source": "PRD v0.4 §25.4 Agent Execution Identity（例文 AGX-2026-00182）；07 同款词形镜像——单一事实源是 execution.ts assertExecutionAttachable",
+      "description": "执行身份引用（receipt 的通路锚；携带即 kernel 侧强制校验 AGX 词形 + executions/ 档案存在性，S1 禁自造身份）。"
+    },
+    "doctor_verdict": {
+      "type": "string",
+      "enum": ["READY", "WRONG_OR_UNVERIFIED_INSTANCE"],
+      "title": "Environment Doctor verdict 二值（PRD §6.7 逐字）",
+      "description": "READY = 九项确认完成（exempt 申报豁免非静默跳过）；WRONG_OR_UNVERIFIED_INSTANCE = 无法确认观察实例——Verification 不得 PASS（消费门 → blocked）。二态定案（W1-D1）：环境连探都探不了的情形不在此轴发明第三值，观察侧落 §6.14 ENVIRONMENT_INVALID 负观察词形。",
+      "$comment": "source: PRD v0.5.2 §6.7 L1373-1377 逐字 + Owner 裁决 8（2026-09-01，corpus/master/cutover/owner-adjudications.md）。",
+      "x-pomaster-vocab": {
+        "axis": "environment_doctor_verdict",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "todo": "vocab-pr-0005（批 2 文件面互斥：vocab 三镜像登记归主控批次；与感知簇词族批次合并呈报）",
+        "source": "PRD v0.5.2 §6.7 逐字二值"
+      }
+    },
+    "observation_surface": {
+      "type": "string",
+      "enum": [
+        "USER_SURFACE",
+        "INTERACTION_STATE",
+        "BOUNDARY_IO",
+        "RUNTIME_SIGNAL",
+        "DATA_STATE",
+        "RESOURCE_BEHAVIOR",
+        "STRUCTURAL_REALITY",
+        "PRODUCTION_REALITY"
+      ],
+      "title": "Observation Surface 八值（PRD §6.4 逐字，原文行序）",
+      "description": "「不要求立即成为新的 Closed-world Core Vocab」——PRD 原文豁免；机器可判闭包先住模块词轴 + 本 schema 冻结面，词汇表 PR 收编后以 vocab-lock 为准。",
+      "$comment": "source: PRD v0.5.2 §6.4 逐字八值 + Owner 裁决 8（2026-09-01）。",
+      "x-pomaster-vocab": {
+        "axis": "observation_surface",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "todo": "vocab-pr-0005（批 2 文件面互斥）",
+        "source": "PRD v0.5.2 §6.4 逐字八值"
+      }
+    },
+    "observation_result": {
+      "type": "string",
+      "enum": [
+        "OBSERVED",
+        "OBSERVED_ABSENT",
+        "NOT_OBSERVABLE",
+        "SENSOR_UNAVAILABLE",
+        "PERMISSION_DENIED",
+        "ENVIRONMENT_INVALID",
+        "PROBE_FAILED",
+        "INCONCLUSIVE"
+      ],
+      "title": "Observation result 全轴 = OBSERVED（§6.13 例文）+ 七负值（§6.14 逐字行序）",
+      "description": "单轴承载正负两向观察结果（分轴会造第二判卷位）。OBSERVED 只能由成功观察通路产出且必须 ≥1 条 artifact_refs（allOf 封条）；OBSERVED_ABSENT 须 §6.14 四前提全真（kernel judgeNegativeObservation 判定），否则 INCONCLUSIVE——「没看到」不能等于「不存在」。CAPABILITY_DEGRADED 结构性不在本轴（降级是能力面诚实申报非观察结果；裁决 8 撞族消歧——与 §58 capability_degradation_report 正交）。",
+      "$comment": "source: PRD v0.5.2 §6.13 result: OBSERVED + §6.14 逐字七值 + Owner 裁决 8（2026-09-01）。",
+      "x-pomaster-vocab": {
+        "axis": "observation_result",
+        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "todo": "vocab-pr-0005（批 2 文件面互斥）",
+        "source": "PRD v0.5.2 §6.13/§6.14 逐字"
+      }
+    },
+    "sensor_capability_ref": {
+      "type": "string",
+      "pattern": "^SENSOR\\.[A-Z][A-Z0-9_]*(\\.[A-Z][A-Z0-9_]*)+$",
+      "x-vocab-source": "裁决 8 D6=A：SENSOR.<DOMAIN>.<KIND> 点族词形（例文 §6.13 SENSOR.BROWSER.INTERACTIVE；catalog/sensors/ 物料标识先例——SENSOR. 前缀不在 15 前缀闭包，禁入 governed id 文法）",
+      "description": "Sensor 能力引用（catalog/sensors/sensor.browser.interactive.json 的 id 词形同源；「POMaster reasons about capability / Runtime binds concrete tool」——§6.5 原则）。pending vocab-pr-0005。"
+    },
+    "journey_ref": {
+      "type": ["string", "null"],
+      "pattern": "^JOURNEY\\.[A-Z][A-Z0-9_]*(\\.[A-Z][A-Z0-9_]*)+$",
+      "x-vocab-source": "PRD v0.5.2 §6.13 例文 JOURNEY.COST_ANALYSIS.ENTER（kernel journey 投影 P1-1 落点；JOURNEY. 局部词形 pending vocab-pr-0005）",
+      "description": "Verification Journey 引用（null = journey 投影未启用——批 2 最小通路诚实缺席，禁占位词冒充）。"
+    },
+    "blob_artifact_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref_type", "blob"],
+      "properties": {
+        "ref_type": { "const": "blob" },
+        "blob": { "$ref": "https://pomaster.dev/schemas/evidence-records/v1-draft.json#/definitions/blob_ref" }
+      },
+      "x-vocab-source": "structural（裁决 8 ③ D1=A blob sha256 即身份 + D3=A blob 分支收窄同款；07 run_record.artifact_refs 条目词形复用）",
+      "description": "blob 引用条目（绝对 $ref 复用 07 definitions.blob_ref——sha256 即身份、storage_path 纯派生、media 开放词；组合加载须注册 07）。EVR-* 仅 PRD 概念词，不新增 id（D1=A）。"
+    },
+    "environment_receipt": {
+      "title": "Environment Receipt（§6.7 yaml 九键逐键 + record_type）",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "record_type",
+        "environment_ref",
+        "execution_id",
+        "repository_ref",
+        "revision_ref",
+        "runtime_instance",
+        "base_url",
+        "dataset_ref",
+        "auth_role",
+        "doctor_verdict"
+      ],
+      "properties": {
+        "record_type": {
+          "const": "environment_receipt",
+          "description": "判别字段（root oneOf 分流）。"
+        },
+        "environment_ref": {
+          "type": ["string", "null"],
+          "pattern": "^ENV\\.[A-Z][A-Z0-9_]*(\\.[A-Z][A-Z0-9_]*)*$",
+          "x-vocab-source": "PRD v0.5.2 §6.3/§6.7 例文 ENV.LOCAL.DEV（ENV. 非 governed 前缀——15 前缀闭包无 ENV，kernel perception.ts 头注同款注记；pending vocab-pr-0005）",
+          "description": "环境类别引用（§6.7 Environment Class；null = 实测未确认显式缺席）。"
+        },
+        "execution_id": { "$ref": "#/definitions/agx_execution_id" },
+        "repository_ref": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "description": "Repository / Worktree Identity（§6.7 Doctor 清单项 1；null = 未确认）。"
+        },
+        "revision_ref": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "description": "Git Revision / Change Identity（§6.7 清单项 2；Case H 比对位——expected != observed → WRONG_OR_UNVERIFIED_INSTANCE）。"
+        },
+        "runtime_instance": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "description": "Runtime Instance（§6.7 清单项 4；P0.5-4 验收句「未确认 runtime instance 不得 PASS」的分母项）。"
+        },
+        "base_url": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "description": "Base URL / Endpoint（§6.7 清单项 5；P0.5-4 验收句「未确认 base URL 不得 PASS」的分母项）。安全字段纪律：只记录可审计引用，不落 Secret（§6.7 逐字）。"
+        },
+        "dataset_ref": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "description": "Data Fixture / Dataset Identity（§6.7 清单项 7；null = 申报豁免或未确认——kernel runEnvironmentDoctor exempt/missing 行序）。"
+        },
+        "auth_role": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "description": "Auth Role / Principal Class（§6.7 清单项 8；角色类别词非凭据——安全字段只记录可审计引用，不落 Secret）。"
+        },
+        "doctor_verdict": { "$ref": "#/definitions/doctor_verdict" }
+      },
+      "description": "环境回执（观察之前必须有 Doctor——「AI 有眼睛但看错环境，比没有眼睛更危险」）。九项确认中 build_identity / feature_flags 两项（§6.7 清单项 3/9）由 kernel EnvironmentExpectation 期望面承载、比对明细行（confirmed/missing/mismatch/exempt 四态）住 runEnvironmentDoctor 的 outcome（纯函数判定面）——本回执只落 §6.7 yaml 九键的机器形态（yaml 逐键即 kernel EnvironmentReceipt 类型面）。"
+    },
+    "observation_receipt": {
+      "title": "Observation Receipt（§6.13 yaml 十三键逐键 + record_type）",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "record_type",
+        "observation_id",
+        "execution_id",
+        "journey_ref",
+        "environment_receipt_ref",
+        "sensor_capability",
+        "adapter",
+        "operation",
+        "target_ref",
+        "surface",
+        "artifact_refs",
+        "normalized_facts",
+        "result",
+        "captured_at_seq"
+      ],
+      "properties": {
+        "record_type": {
+          "const": "observation_receipt",
+          "description": "判别字段（root oneOf 分流）。"
+        },
+        "observation_id": { "$ref": "#/definitions/obs_id" },
+        "execution_id": { "$ref": "#/definitions/agx_execution_id" },
+        "journey_ref": { "$ref": "#/definitions/journey_ref" },
+        "environment_receipt_ref": {
+          "oneOf": [
+            { "$ref": "#/definitions/envrec_id" },
+            { "type": "null" }
+          ],
+          "description": "环境回执引用（§6.13 例文 environment_receipt_ref: ENVREC-...；null = ENVREC 通路编号未签发——ENVREC 签发与落盘分区归 Owner 位，null 是诚实缺席）。"
+        },
+        "sensor_capability": { "$ref": "#/definitions/sensor_capability_ref" },
+        "adapter": {
+          "type": "string",
+          "minLength": 1,
+          "description": "执行工具标识（§6.13 例文 chrome-devtools-mcp；开放词——Tool 由 Sensor Resolution 后再绑定，§6.3）。"
+        },
+        "operation": {
+          "type": "string",
+          "minLength": 1,
+          "description": "观察动作（§6.13 例文 inspect_network；catalog/sensors operations 词族——「必须定义观察动作，而不能只有 Tool Name」§6.2 HOW 锚同词）。"
+        },
+        "target_ref": {
+          "oneOf": [
+            { "$ref": "https://pomaster.dev/schemas/evidence-records/v1-draft.json#/definitions/object_id" },
+            { "type": "null" }
+          ],
+          "description": "被观察治理对象（§6.13 例文 CAPABILITY.COST_ANALYSIS；closed-world 前缀 07 object_id 文法绝对 $ref——组合加载须注册 07；null = 编排未声明 subject，诚实缺席）。"
+        },
+        "surface": { "$ref": "#/definitions/observation_surface" },
+        "artifact_refs": {
+          "type": "array",
+          "minItems": 0,
+          "items": { "$ref": "#/definitions/blob_artifact_ref" },
+          "x-vocab-source": "structural（裁决 8 ③ D1=A/D3=A；07 run_record.artifact_refs 同款 blob 分支收窄——词形零新增，复用 definitions.blob_ref）",
+          "description": "Artifact 存在性引用（§6.13 artifact_refs；blob sha256 即身份——基础设施 persistEvidenceArtifact 签发，人禁手算 D24）。OBSERVED 时 minItems=1（allOf 封条）；负观察词形可空亦可留痕（Case I：截图在场而 network 不可观察——NOT_OBSERVABLE 不是验证主张）。"
+        },
+        "normalized_facts": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "机器可判事实清单（§6.13 例文 request_status: 200 / response_items: 0 词形；禁携带证据原文——体积披露/计数字级事实，证据字节住 blob 平面）。"
+        },
+        "result": { "$ref": "#/definitions/observation_result" },
+        "captured_at_seq": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "捕获锚（A4 单调 seq 非墙钟——时间戳禁入落盘 JSON 身份字段；§6.13 例文 captured_at_seq: 182）。"
+        }
+      },
+      "allOf": [
+        {
+          "$comment": "Benchmark E 封条（PRD §15 Benchmark E「Observation Receipt 不得冒充有效业务 Evidence」+ §6.13「基础设施负责证明工具调用与 Artifact 的存在」）：OBSERVED 主张必须 ≥1 条 blob 引用背书——无 artifact 的 OBSERVED = Agent 自报无凭，schema 级拒收。",
+          "if": {
+            "properties": { "result": { "const": "OBSERVED" } },
+            "required": ["result"]
+          },
+          "then": {
+            "properties": { "artifact_refs": { "type": "array", "minItems": 1 } }
+          }
+        }
+      ],
+      "description": "观察回执（§6.13「Agent 必须证明我看过」：Observation 不以 Agent 自报为凭证）。进 Trace/Evidence Sidecar 不进 Truth Index；Agent 可以写解释（notes 归消费方散文面），基础设施负责证明工具调用与 Artifact 的存在（artifact_refs 的 blob 身份）。"
+    }
+  },
+  "x-examples-note": "examples[0..2] 为正例（ex0=READY 环境回执 §6.7 yaml 逐键；ex1=OBSERVED 观察回执 §6.13 yaml 逐键含 blob 绑定；ex2=NOT_OBSERVABLE 负观察留痕——Case I 形态，artifact_refs 空亦合法）；examples[3] 为反例（故意非法：result=OBSERVED 而 artifact_refs 空数组——违反 Benchmark E 封条）。",
+  "examples": [
+    {
+      "record_type": "environment_receipt",
+      "environment_ref": "ENV.LOCAL.DEV",
+      "execution_id": "AGX-2026-00182",
+      "repository_ref": "POMASTER_PROJECT",
+      "revision_ref": "WORKTREE_CURRENT",
+      "runtime_instance": "app-local-4173",
+      "base_url": "http://127.0.0.1:4173",
+      "dataset_ref": "FIXTURE.COST_ANALYSIS.SMOKE",
+      "auth_role": "TEST_USER",
+      "doctor_verdict": "READY"
+    },
+    {
+      "record_type": "observation_receipt",
+      "observation_id": "OBS-182",
+      "execution_id": "AGX-2026-00182",
+      "journey_ref": null,
+      "environment_receipt_ref": "ENVREC-9",
+      "sensor_capability": "SENSOR.BROWSER.INTERACTIVE",
+      "adapter": "chrome-devtools-mcp",
+      "operation": "inspect_network",
+      "target_ref": "CAPABILITY.COST_ANALYSIS",
+      "surface": "BOUNDARY_IO",
+      "artifact_refs": [
+        {
+          "ref_type": "blob",
+          "blob": {
+            "sha256": "sha256:3fd9e1b7c2a4f56890bd1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b",
+            "media": "screenshot",
+            "byte_size": 2048,
+            "storage_path": "blobs/sha256/3f/d9e1b7c2a4f56890bd1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b"
+          }
+        }
+      ],
+      "normalized_facts": ["request_status: 200", "response_items: 0"],
+      "result": "OBSERVED",
+      "captured_at_seq": 182
+    },
+    {
+      "record_type": "observation_receipt",
+      "observation_id": "OBS-183",
+      "execution_id": "AGX-2026-00182",
+      "journey_ref": null,
+      "environment_receipt_ref": null,
+      "sensor_capability": "SENSOR.BROWSER.INTERACTIVE",
+      "adapter": "chrome-devtools-mcp",
+      "operation": "inspect_network",
+      "target_ref": "CAPABILITY.COST_ANALYSIS",
+      "surface": "BOUNDARY_IO",
+      "artifact_refs": [],
+      "normalized_facts": ["network_capture_empty: true"],
+      "result": "NOT_OBSERVABLE",
+      "captured_at_seq": 183
+    },
+    {
+      "record_type": "observation_receipt",
+      "observation_id": "OBS-184",
+      "execution_id": "AGX-2026-00182",
+      "journey_ref": null,
+      "environment_receipt_ref": null,
+      "sensor_capability": "SENSOR.BROWSER.INTERACTIVE",
+      "adapter": "chrome-devtools-mcp",
+      "operation": "inspect_network",
+      "target_ref": "CAPABILITY.COST_ANALYSIS",
+      "surface": "BOUNDARY_IO",
+      "artifact_refs": [],
+      "normalized_facts": [],
+      "result": "OBSERVED",
+      "captured_at_seq": 184
+    }
+  ]
+}

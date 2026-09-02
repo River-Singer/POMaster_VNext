@@ -49,6 +49,13 @@
  * 腿环境判卷门（T2）归批 2 W1-B；16-perception-receipts.schema.json defer 批 2
  * （16 号本批归 W1-C，schema 编号随批 2 定）；OBS-/ENVREC- 等新词形以
  * TODO(vocab-pr-0005) 注记承载，词表三镜像登记归主控批次（批 1 文件面互斥）。
+ *
+ * 批 2 W1-D2 增量（P0.5-4b · PRD §6.13/§14 + Benchmark E + Case H；研究 §5.2 T2）：
+ * - buildObservationReceipt（§6.13 Observation Receipt 最小通路类型面）：result=OBSERVED
+ *   必须 ≥1 条 artifact 引用（基础设施证明 Artifact 存在——Benchmark E「Observation
+ *   Receipt 不得冒充有效业务 Evidence」的本模块级封条）；落盘 schema 定号 **17**；
+ * - 产品接线归消费方：browser 腿环境判卷门（gauntlet-lite browser-adapter/browser-legs/
+ *   browser-evidence——本模块仍零 IO、零 store 依赖，接线不进本文件）。
  */
 
 import { GovernanceError } from "./errors.js";
@@ -458,7 +465,7 @@ export function runEnvironmentDoctor(
  * EnvironmentReceipt（PRD §6.7 yaml 形态逐键：八项确认字段 + doctor_verdict）。
  * 安全字段只记录可审计引用，不落 Secret（§6.7 逐字——本类型无任何凭据字段位，
  * auth_role 是角色类别词不是凭据）。不进 truth-index（§6.13 sidecar 纪律同族；
- * 落盘 schema 归批 2 定 16/17 号）。
+ * 落盘 schema 批 2 W1-D2 定号 17-perception-receipts.schema.json）。
  * execution_id 是 AGX 通路锚：词形与档案存在性校验归 execution.ts 通路
  * （EXECUTION_ID_PATTERN 单一镜像；本模块不复制正则防漂移），此处只校验在场。
  */
@@ -504,6 +511,172 @@ export function buildEnvironmentReceipt(
     auth_role: observed.auth_role,
     doctor_verdict: verdict,
   };
+}
+
+// ============================================================
+// §6.13 Observation Receipt（批 2 W1-D2 T2：最小通路类型面）
+// ============================================================
+
+/**
+ * blob 引用行（07-evidence-records definitions.blob_ref 词形同源；裁决 8 ③ D1=A：
+ * receipt 身份 = blob sha256 即身份，不新增 EVR- id——EVR-* 仅 PRD 概念词）。
+ * 四字段与 persistEvidenceArtifact 输出（PersistedEvidenceArtifact）逐一同构：
+ * 消费方把 persist 产物原样携带入 receipt（sha 由基础设施产生——D24 人禁手算；
+ * 本模块不重复校验 sha/storage_path 词形，落盘与装载边界的词形防线归 17 号
+ * schema 的绝对 $ref 07 definitions.blob_ref——单一事实源禁二次镜像）。
+ */
+export interface ObservationReceiptArtifactRef {
+  readonly sha256: string;
+  readonly media: string;
+  readonly byteSize: number;
+  readonly storagePath: string;
+}
+
+/**
+ * Observation Receipt 组装输入（camel 机器形态；落盘词形走 17 号 schema 的
+ * snake_case 面——与 artifactRefsToSnake 同款「落盘形态由映射决定」纪律）。
+ * journey_ref / environment_receipt_ref / target_ref 显式可空：journey 投影归
+ * P1-1、ENVREC 通路编号签发与 OBS receipt 落盘分区归 Owner 位呈报（研究 §7 位 5，
+ * 裁决 8 未裁）——null 是诚实缺席，禁占位词冒充。
+ */
+export interface ObservationReceiptInput {
+  /** OBS-<n>（OBS_ID_PATTERN 词形；通路编号非 governed 前缀）。 */
+  readonly observationId: string;
+  /** AGX 通路锚（词形与档案存在性校验归 execution.ts 通路，此处只校验在场）。 */
+  readonly executionId: string;
+  /** SENSOR.* 能力词形（裁决 8 D6=A；closed-world 校验归词汇表 PR 收编后）。 */
+  readonly sensorCapability: string;
+  /** 工具标识（§6.13 例文 chrome-devtools-mcp；开放词）。 */
+  readonly adapter: string;
+  /** 观察动作（§6.2 HOW 锚同词——「必须定义观察动作，而不能只有 Tool Name」）。 */
+  readonly operation: string;
+  /** §6.4 八值闭包。 */
+  readonly surface: ObservationSurfaceValue;
+  /** OBSERVED + 七负值单轴（OBSERVATION_RESULT_VALUES）。 */
+  readonly result: ObservationResultValue;
+  /** 捕获锚（A4 单调 seq 非墙钟；调用方供给——纯函数零 seq 纪律不变）。 */
+  readonly capturedAtSeq: number;
+  readonly journeyRef?: string | null;
+  /** ENVREC-<n>（ENVREC_ID_PATTERN 词形；非 governed 前缀）。 */
+  readonly environmentReceiptRef?: string | null;
+  /** 治理对象 id（closed-world 校验归消费通路——头注同款边界）。 */
+  readonly targetRef?: string | null;
+  /** blob 引用（persist 产物原样携带；OBSERVED 时必须 ≥1——见 buildObservationReceipt）。 */
+  readonly artifactRefs?: readonly ObservationReceiptArtifactRef[];
+  /** 机器可判事实清单（§6.13 例文 request_status: 200 词形；禁携带证据原文）。 */
+  readonly normalizedFacts?: readonly string[];
+}
+
+/**
+ * Observation Receipt（PRD §6.13 yaml 十三键逐键对齐：observation_id / execution_id /
+ * journey_ref / environment_receipt_ref / sensor_capability / adapter / operation /
+ * target_ref / surface / artifact_refs / normalized_facts / result / captured_at_seq）。
+ * 「Agent 可以写解释；基础设施负责证明工具调用与 Artifact 的存在」——receipt 是
+ * 证据面通路记录（AGX/GRN/CLM 同族），进 Trace/Evidence Sidecar，不进 Truth Index
+ * （§6.13 逐字；A8 同构）。零墙钟（时间锚恒 captured_at_seq）。
+ */
+export interface ObservationReceipt {
+  readonly observation_id: string;
+  readonly execution_id: string;
+  readonly journey_ref: string | null;
+  readonly environment_receipt_ref: string | null;
+  readonly sensor_capability: string;
+  readonly adapter: string;
+  readonly operation: string;
+  readonly target_ref: string | null;
+  readonly surface: ObservationSurfaceValue;
+  readonly artifact_refs: readonly ObservationReceiptArtifactRef[];
+  readonly normalized_facts: readonly string[];
+  readonly result: ObservationResultValue;
+  readonly captured_at_seq: number;
+}
+
+/**
+ * 组装 Observation Receipt（纯函数；违例 → GovernanceError(SCHEMA_INVALID)，
+ * details 聚合全部缺陷——validateObservationRequest 同款不首错即抛）。
+ * 关键封条（Benchmark E 的本模块级落点）：**result=OBSERVED 必须 ≥1 条
+ * artifact_refs**——「看到」的主张必须由基础设施签发的 blob 身份背书（§6.13
+ * 「基础设施负责证明工具调用与 Artifact 的存在」）；无 artifact 的 OBSERVED =
+ * Agent 自报无凭，结构性拒收。负观察词形不强制空 refs（Case I 留痕形态：截图
+ * 在场而 network 不可观察——result=NOT_OBSERVABLE 诚实申报，不构成验证主张）。
+ */
+export function buildObservationReceipt(
+  input: ObservationReceiptInput,
+): ObservationReceipt {
+  const missing: string[] = [];
+  const invalidValues: { readonly field: string; readonly value: unknown }[] = [];
+
+  if (!OBS_ID_PATTERN.test(input.observationId)) {
+    invalidValues.push({ field: "observationId", value: input.observationId });
+  }
+  if (!isNotBlank(input.executionId)) {
+    missing.push("executionId（AGX 通路锚必须在场——§6.13 证明义务，buildEnvironmentReceipt 同款）");
+  }
+  if (!isNotBlank(input.sensorCapability)) {
+    missing.push("sensorCapability（§6.13 sensor_capability）");
+  }
+  if (!isNotBlank(input.adapter)) {
+    missing.push("adapter（§6.13 adapter）");
+  }
+  if (!isNotBlank(input.operation)) {
+    missing.push("operation（§6.2 HOW 锚同词：必须定义观察动作）");
+  }
+  if (!OBSERVATION_SURFACE_VALUES.includes(input.surface)) {
+    invalidValues.push({ field: "surface", value: input.surface });
+  }
+  if (!OBSERVATION_RESULT_VALUES.includes(input.result)) {
+    invalidValues.push({ field: "result", value: input.result });
+  }
+  if (!Number.isInteger(input.capturedAtSeq) || input.capturedAtSeq < 0) {
+    invalidValues.push({ field: "capturedAtSeq", value: input.capturedAtSeq });
+  }
+  if (input.journeyRef !== undefined && input.journeyRef !== null && !isNotBlank(input.journeyRef)) {
+    invalidValues.push({ field: "journeyRef", value: input.journeyRef });
+  }
+  if (
+    input.environmentReceiptRef !== undefined &&
+    input.environmentReceiptRef !== null &&
+    !ENVREC_ID_PATTERN.test(input.environmentReceiptRef)
+  ) {
+    invalidValues.push({ field: "environmentReceiptRef", value: input.environmentReceiptRef });
+  }
+  if (input.targetRef !== undefined && input.targetRef !== null && !isNotBlank(input.targetRef)) {
+    invalidValues.push({ field: "targetRef", value: input.targetRef });
+  }
+  const artifactRefs = input.artifactRefs ?? [];
+  const normalizedFacts = input.normalizedFacts ?? [];
+  if (normalizedFacts.some((fact) => !isNotBlank(fact))) {
+    invalidValues.push({ field: "normalizedFacts", value: "含空白项" });
+  }
+  if (input.result === "OBSERVED" && artifactRefs.length === 0) {
+    missing.push(
+      "artifactRefs（result=OBSERVED 必须 ≥1 条 blob 引用——§6.13 基础设施证明 Artifact 存在；Benchmark E：Observation Receipt 不得冒充有效业务 Evidence）",
+    );
+  }
+
+  if (missing.length === 0 && invalidValues.length === 0) {
+    return {
+      observation_id: input.observationId,
+      execution_id: input.executionId.trim(),
+      journey_ref: input.journeyRef ?? null,
+      environment_receipt_ref: input.environmentReceiptRef ?? null,
+      sensor_capability: input.sensorCapability,
+      adapter: input.adapter,
+      operation: input.operation,
+      target_ref: input.targetRef ?? null,
+      surface: input.surface,
+      artifact_refs: artifactRefs,
+      normalized_facts: normalizedFacts,
+      result: input.result,
+      captured_at_seq: input.capturedAtSeq,
+    };
+  }
+  throw new GovernanceError(
+    "SCHEMA_INVALID",
+    `Observation Receipt 组装校验失败（§6.13 字段面 + Benchmark E 封条）`,
+    "observation_id 须 OBS-<n>、environment_receipt_ref 须 ENVREC-<n>、surface/result 落词轴闭包、OBSERVED 必须 ≥1 条 artifact_refs（先 persistEvidenceArtifact 再组装）",
+    { missing, invalid_values: invalidValues },
+  );
 }
 
 // ============================================================

@@ -790,13 +790,15 @@
             "required": ["relation"]
           },
           "then": {
+            "required": ["decision_refs"],
             "properties": {
               "decision_refs": {
+                "type": "array",
                 "minItems": 1
               }
             }
           },
-          "description": "证据性 relation（RESOLVES_FACT/SUPPORTS_OPTION/WEAKENS_OPTION/CONTRADICTS_PREMISE）⇒ decision_refs ≥1（矛盾必须可见、证据必须指向被影响方）；NO_DECISION_EFFECT/INSUFFICIENT_EVIDENCE 允许空"
+          "description": "证据性 relation（RESOLVES_FACT/SUPPORTS_OPTION/WEAKENS_OPTION/CONTRADICTS_PREMISE）⇒ decision_refs ≥1（矛盾必须可见、证据必须指向被影响方）；NO_DECISION_EFFECT/INSUFFICIENT_EVIDENCE 允许空。required 与 minItems 缺一不可：只写 minItems 时键整体缺席可绕过封条（封条空转=对抗面假绿，laundering_guard 落空）"
         },
         {
           "if": {

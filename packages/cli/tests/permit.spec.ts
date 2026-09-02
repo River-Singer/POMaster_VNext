@@ -212,6 +212,46 @@ describe("permit issue（签发）", () => {
     expect(second).toBe("PERMIT.CHANGE_MIGRATION_001.2");
   });
 
+  it("B4：呈现按返回 permit_ref 回读——返回 ref 与呈现 ref/字段逐键一致（不取台账最后一条）", async () => {
+    // 若防御失效：issuePermit 返回值被丢弃、呈现取台账最后一条——并发签发下会把
+    // 他方许可当本次结果报给调用方（scope/seq 全错配）。真并发窗口无法在单进程内
+    // 确定性复现，本用例钉可观测契约：每次调用的呈现字段（ref/scope/seq/ttl）必须
+    // 与台账中「返回 ref 对应条目」逐键一致——呈现源是 by-ref 回读而非位置取尾。
+    await seedStore();
+    const first = await runPermitIssue(root, {
+      subjects: ["PAGE.DASHBOARD"],
+      actor: "human:owner",
+      changeRef: "CHANGE.MIGRATION_001",
+    });
+    expect(first.ok).toBe(true);
+    const second = await runPermitIssue(root, {
+      subjects: ["PAGE.SETTINGS"],
+      actor: "agent:claude/session-77",
+      changeRef: "CHANGE.MIGRATION_001",
+      ttlBeats: "24",
+    });
+    expect(second.ok).toBe(true);
+    expect(second.result.permit_ref).toBe("PERMIT.CHANGE_MIGRATION_001.2");
+    const ledger = permitsFile().permits as Array<Record<string, unknown>>;
+    const mine = ledger.find((row) => row.permit_ref === second.result.permit_ref);
+    expect(mine).toBeDefined();
+    // 呈现字段 ⇔ 台账「返回 ref 对应条目」逐键一致（scope 是他方/本方最锐利分辨位）。
+    expect(second.result.scope).toEqual({
+      subject_ids: ["PAGE.SETTINGS"],
+      write_policy: "AGENT_WITH_PERMIT",
+    });
+    expect(second.result.scope).toEqual(mine?.scope);
+    expect(second.result.issued_at_seq).toBe(mine?.issued_at_seq);
+    expect(second.result.expires_at_seq).toBe(mine?.expires_at_seq);
+    expect(second.result.ttl_beats).toBe(24);
+    // 先签发的许可呈现不被第二次签发串位（各自 by-ref，错不开）。
+    expect(first.result.permit_ref).toBe("PERMIT.CHANGE_MIGRATION_001.1");
+    expect(first.result.scope).toEqual({
+      subject_ids: ["PAGE.DASHBOARD"],
+      write_policy: "AGENT_WITH_PERMIT",
+    });
+  });
+
   it("fail-closed：空 subject / 词表外 subject / 文法违规 / 非法 actor / 非法 ttl / 非法 acceptance", async () => {
     await seedStore();
     const empty = await runPermitIssue(root, { subjects: [], actor: "human:owner" });

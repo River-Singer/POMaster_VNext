@@ -379,6 +379,52 @@ describe("brainstorm promote --tx-out 落点闸（P18 红队发现3：强制解�
     expect(existsSync(join(root, ".pomaster", "state", "promote-tx.json"))).toBe(false);
   });
 
+  it("对抗（B1 大小写归一）：受治理面大小写变体（UPPERCASE/mixed）→ 全部 REJECT（NTFS 大小写不敏感语义）", async () => {
+    // 若防御失效：Windows NTFS 大小写不敏感，`.POMASTER/state/...` 大小写变体绕过
+    // 大小写敏感 denylist 后 writeFile 直接覆写 store 权威面（探针实锤：lowercase→
+    // REJECT，UPPERCASE/mixed→ALLOW）。三变体逐一 REJECT 且零落盘。
+    for (const [id, txOut] of [
+      ["idea-tx-upper", ".POMASTER/state/promote-tx.json"],
+      ["idea-tx-mixed", ".Pomaster/State/promote-tx.json"],
+      ["idea-tx-dot-upper", ".POMASTER/STATE/truth-index.json"],
+    ] as const) {
+      await seedReadyToPromote(id);
+      const outcome = await runBrainstormPromote(root, {
+        discoveryId: id,
+        to: "TASK",
+        basis: "msd_reached",
+        txOut,
+      });
+      expect(outcome.ok, `txOut=${txOut} 应 REJECT`).toBe(false);
+      expect(outcome.errors[0]?.code).toBe("SCHEMA_INVALID");
+      expect(outcome.errors[0]?.message).toContain("受治理面");
+      expect(existsSync(join(root, txOut))).toBe(false);
+    }
+  });
+
+  it("对抗（B1 denylist 缺口补齐）：kernel 唯一写通道平面（executions/runtime/traces）→ REJECT", async () => {
+    // 若防御失效：denylist 只覆盖 state/truth/objects/policies/evidence 五面，
+    // .pomaster/runtime/locks/change-CHG.1.lock 之类运行时面路径 ALLOW 旁路落盘
+    // （探针实锤）。三平面（含 runtime 子目录）逐一 REJECT 且零落盘。
+    for (const [id, segments] of [
+      ["idea-tx-exec", [".pomaster", "executions", "promote-tx.json"]],
+      ["idea-tx-locks", [".pomaster", "runtime", "locks", "change-CHG.1.lock"]],
+      ["idea-tx-trace", [".pomaster", "traces", "AGX-1.json"]],
+    ] as const) {
+      await seedReadyToPromote(id);
+      const outcome = await runBrainstormPromote(root, {
+        discoveryId: id,
+        to: "TASK",
+        basis: "msd_reached",
+        txOut: segments.join("/"),
+      });
+      expect(outcome.ok, `txOut=${segments.join("/")} 应 REJECT`).toBe(false);
+      expect(outcome.errors[0]?.code).toBe("SCHEMA_INVALID");
+      expect(outcome.errors[0]?.message).toContain("受治理面");
+      expect(existsSync(join(root, ...segments))).toBe(false);
+    }
+  });
+
   it("非恒真对照：仓内相对路径 → 以 rootDir 为基准落盘成功（不以进程 CWD 为准）", async () => {
     await seedReadyToPromote("idea-tx-rel");
     const outcome = await runBrainstormPromote(root, {

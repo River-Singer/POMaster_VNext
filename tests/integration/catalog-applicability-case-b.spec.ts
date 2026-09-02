@@ -11,11 +11,17 @@
  *   承载（临时 catalog 副本内新增，绝不改 repo 实物——§92.2 测试构造面）；
  * - API Compatibility 实体用真实 policy.api.* / policy.sec.* 条目（临时副本内补机器
  *   applicability 标注）承载——比合成条目更严的真断言（真实 id/真实正文参与判卷）；
- *   真实 catalog 本体的批量标注归 T3 标注战役（另行批次，不在本增量）；
- * - Frontend Layout 实体用真实 frontend-lane 条目（lane 回退代表，O7）承载。
+ * - Frontend Layout 实体用真实 frontend-lane 条目承载。
  *
- * 红线（裁决 8 ② O7）：真实 catalog（94 条全未标注）下，带/不带 applicability 输入的
- * 投影逐字节一致（行为零变化）。
+ * W1-A2 T3 标注战役落地后的 fixture 纪律（2026-09-01，裁决 8 ②）：
+ * - 真实 catalog 本体已由 T3 批量标注（capabilities + change_classes 多轴）；本 fixture
+ *   的 Case B 判卷面是 capabilities 单轴语义（「EXCLUDE unless contract affected」）——
+ *   fixture 副本内对 API/Sec 族**重置**机器轴为 capabilities 单轴（剥离 T3 的
+ *   change_classes 等其余轴），与真实本体标注的冲突以 T3 实测词面为准、fixture 自标注
+ *   隔离判卷面（change_classes 轴判卷归 kernel 单测 + benchmarks/applicability.mjs 注记）；
+ * - O7 棘轮的前提（批1时「真实 catalog 全未标注」）已被 T3 消解——棘轮改写为
+ *   「fallback_lane=true（未声明机器字段）条目子集带/不带输入逐字节一致」（见下方
+ *   O7 describe）。
  */
 import { cpSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -48,11 +54,19 @@ afterEach(() => {
   rmSync(dirname(catalogFixture), { recursive: true, force: true });
 });
 
-/** 在 fixture 条目的 applies_when 上追加机器 applicability 字段（D24：fixture 不入 lock 对账）。 */
-function annotate(policyFile: string, appliesWhenExtra: Record<string, unknown>): void {
+/**
+ * W1-A2 T3 后：fixture 副本内把条目的机器轴重置为 Case B 判卷面（capabilities 单轴）——
+ * 剥离 T3 在真实本体上标注的 change_classes/governance_profiles/object_kinds
+ * （真实本体标注以 T3 为准不改动；fixture 自标注隔离判卷面，裁决 8 ② O9 同款 fixture 纪律）。
+ */
+function resetToCapabilityOnly(policyFile: string, capability: string): void {
   const target = join(catalogFixture, policyFile);
   const body = JSON.parse(readFileSync(target, "utf8")) as Record<string, unknown>;
-  Object.assign(body["applies_when"] as Record<string, unknown>, appliesWhenExtra);
+  const appliesWhen = body["applies_when"] as Record<string, unknown>;
+  delete appliesWhen["change_classes"];
+  delete appliesWhen["governance_profiles"];
+  delete appliesWhen["object_kinds"];
+  appliesWhen["capabilities"] = [capability];
   writeFileSync(target, `${JSON.stringify(body, null, 2)}\n`, "utf8");
 }
 
@@ -85,16 +99,18 @@ function addDbTransactionFixture(): void {
   );
 }
 
-/** Case B 场景装配：API/Sec 条目补 capability 标注 + DB fixture 条目（Frontend Layout 用真实 lane 回退代表）。 */
+/** Case B 场景装配：API/Sec 条目重置为 capabilities 单轴标注 + DB fixture 条目（Frontend Layout 用真实 lanes 平移条目）。 */
 function assembleCaseBFixture(): void {
   // 真实 policy.api.*（3 条）+ policy.web.api.*（17 条）：API Compat 族的更严真断言承载
   // （真实 id/真实正文；capabilities 轴 = 契约面变更才适用——「EXCLUDE unless contract affected」）。
+  // W1-A2 T3 后：真实本体已带 change_classes 等多轴标注——fixture 内重置为 capabilities
+  // 单轴（resetToCapabilityOnly），隔离 Case B 的 capabilities 判卷面（见文件头注）。
   for (const policy of loadCatalogPolicies(catalogFixture)) {
     if (policy.id.startsWith("POLICY.API.") || policy.id.includes(".WEB.API.")) {
-      annotate(policy.file, { capabilities: ["CAPABILITY.API_CONTRACT"] });
+      resetToCapabilityOnly(policy.file, "CAPABILITY.API_CONTRACT");
     }
     if (policy.id === "POLICY.SEC.THIRD_PARTY_EXECUTION_REGISTER") {
-      annotate(policy.file, { capabilities: ["CAPABILITY.API_CONTRACT"] });
+      resetToCapabilityOnly(policy.file, "CAPABILITY.API_CONTRACT");
     }
   }
   addDbTransactionFixture();
@@ -133,7 +149,7 @@ describe("Case B：Vue 按钮布局 Change 的 catalog applicability（PRD §16/
     );
     const refs = projection.manifest.catalogEntries.map((entry) => entry.ref);
 
-    // Frontend Layout → INCLUDE（真实 frontend-lane 条目，lane 回退判定，O7）。
+    // Frontend Layout → INCLUDE（真实 frontend-lane 条目；W1-A2 T3 后为 lanes 平移机器判定）。
     expect(refs).toContain("POLICY.WEB.STYLE.OWNERSHIP_MATRIX");
     expect(refs).toContain("POLICY.WEB.GRID.COLUMN_SCHEMA_FIELDS");
 
@@ -185,10 +201,16 @@ describe("Case B：Vue 按钮布局 Change 的 catalog applicability（PRD §16/
     );
     const byId = new Map(explanation.decisions.map((decision) => [decision.ref, decision]));
 
-    // INCLUDE 决策可解释（lane 回退命中，O7）。
+    // INCLUDE 决策可解释（W1-A2 T3 后：OWNERSHIP_MATRIX 已 lanes 平移——机器判定词形；
+    // lane 回退代表见 fallback_lane 断言面）。
     const layout = byId.get("POLICY.WEB.STYLE.OWNERSHIP_MATRIX");
     expect(layout?.decision).toBe("included");
-    expect(layout?.why_included).toContain("lane=frontend 命中 role=frontend");
+    expect(layout?.why_included).toContain("lanes=frontend 命中 role=frontend");
+    // O7 lane 回退实证面：lane=any 未标轴条目保持旧词形 + fallback_lane=true。
+    const fallback = byId.get("POLICY.WEB.COPY.SUPPRESSION_LEDGER_DISCIPLINE");
+    expect(fallback?.decision).toBe("included");
+    expect(fallback?.why_included).toContain("lane=any 命中 role=frontend");
+    expect(fallback?.fallback_lane).toBe(true);
 
     // API Compat EXCLUDE 决策可解释（capabilities 轴无交集——「unless contract affected」的机器语义）。
     const api = byId.get("POLICY.WEB.API.SINGLE_HTTP_CLIENT");
@@ -268,34 +290,53 @@ describe("Case B：Vue 按钮布局 Change 的 catalog applicability（PRD §16/
 });
 
 // ============================================================
-// O7 行为零变化棘轮（裁决 8 ②：未标注条目=lane 回退，真实 catalog 行为零变化）
+// O7 行为零变化棘轮（裁决 8 ②：未标注条目=lane 回退，行为零变化）
+// W1-A2 T3 后改写（2026-09-01）：批1前提「真实 catalog 全未标注」已被 T3 标注战役消解——
+// 带全量输入 vs 不带输入的全量逐字节一致不再是有效不变量（标注条目按声明轴生效=设计内）。
+// 存活棘轮 = fallback_lane=true（未声明任何机器字段）条目子集：带/不带输入决策与
+// catalogEntries 原文逐字节一致（O7 的精确存活面）。
 // ============================================================
 
-describe("O7 行为零变化棘轮（真实 catalog 全未标注）", () => {
-  it("真实 catalog 上带全量 applicability 输入的输出与不带逐字节一致（catalogEntries + fingerprint）", async () => {
+describe("O7 行为零变化棘轮（T3 后：fallback 条目子集逐字节一致）", () => {
+  it("fallback_lane=true 条目：带全量 applicability 输入与不带输入决策+reason 逐字节一致", async () => {
     await runJson(["init"]);
     const store = await createStore(root);
-    const request = { role: "frontend" } as const;
-    const plain = await compileProjection(store, request);
-    const withInputs = await compileProjection(store, {
+    const plainRequest = { role: "frontend" } as const;
+    const fullInputs = {
       role: "frontend",
       capabilities: ["CAPABILITY.PRESENTATION", "CAPABILITY.API_CONTRACT"],
       changeClass: "PRESENTATION_CHANGE",
       governanceProfile: "STANDARD",
-    });
-    expect(withInputs.manifest.catalogEntries).toEqual(plain.manifest.catalogEntries);
-    expect(withInputs.inputsFingerprint).toBe(plain.inputsFingerprint);
-    // 决策面同源：全 included（lane 回退），零 excluded（preset 条目恒注入、非 lane 判定）。
-    const explanation = await explainCatalogProjection(store, {
-      role: "frontend",
-      capabilities: ["CAPABILITY.PRESENTATION"],
-    });
-    expect(explanation.decisions.every((d) => d.decision === "included")).toBe(true);
-    expect(
-      explanation.decisions
-        .filter((d) => d.file.startsWith("policies/"))
-        .every((d) => d.fallback_lane),
-    ).toBe(true);
+    } as const;
+    const plain = await compileProjection(store, plainRequest);
+    const withInputs = await compileProjection(store, fullInputs);
+    const plainExplain = await explainCatalogProjection(store, plainRequest);
+    const fullExplain = await explainCatalogProjection(store, fullInputs);
+
+    // fallback 分母非空（T3 后仍有大半条目未声明机器字段——保守派生纪律）。
+    const plainByRef = new Map(plainExplain.decisions.map((d) => [d.ref, d]));
+    const fullByRef = new Map(fullExplain.decisions.map((d) => [d.ref, d]));
+    const fallbackRefs = [...plainByRef.values()]
+      .filter((d) => d.fallback_lane && d.file.startsWith("policies/"))
+      .map((d) => d.ref);
+    expect(fallbackRefs.length).toBeGreaterThan(0);
+    // fallback 条目：两侧判定路径同为 lane 回退（带输入不切换判定模式）。
+    for (const ref of fallbackRefs) {
+      expect(fullByRef.get(ref)?.fallback_lane).toBe(true);
+    }
+
+    // 逐字节一致面：catalogEntries 中 fallback 条目的 {ref, reason} 两侧全等。
+    const pickFallback = (projection: typeof plain) =>
+      projection.manifest.catalogEntries.filter((entry) => fallbackRefs.includes(entry.ref));
+    expect(pickFallback(withInputs)).toEqual(pickFallback(plain));
+
+    // 对照：标注条目带输入生效（全量输入下 API 族 capabilities 命中恢复 INCLUDE——
+    // 与无输入编译的差集非空，证明输入轴真实参与判定，棘轮不是空转）。
+    const plainRefs = new Set(plain.manifest.catalogEntries.map((e) => e.ref));
+    const gained = withInputs.manifest.catalogEntries
+      .map((e) => e.ref)
+      .filter((ref) => !plainRefs.has(ref));
+    expect(gained).toContain("POLICY.WEB.API.SINGLE_HTTP_CLIENT");
   });
 
   it("repo 实物未被本验收触碰（§92.2 测试构造面纪律：fixture 全部落在 mkdtemp 副本内）", () => {

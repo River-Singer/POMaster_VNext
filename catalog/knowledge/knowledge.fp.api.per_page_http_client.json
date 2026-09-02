@@ -15,6 +15,15 @@
     "enforcement_note": "仅建议：任何 gate 永不因本条目单独 FAIL，至多产生 WARN/HINT 或进入 Human Review 议程",
     "clean_room_note": "statement_zh 为独立改写（clean-room），零逐字拷贝源协议"
   },
+  "x-applicability-review": {
+    "status": "human_review_candidate",
+    "campaign": "W1-A2 P0.5-1 T3 标注战役（PRD v0.5.2 §5.2/§14；Owner 裁决 8 ②，2026-09-01）",
+    "axes": [
+      "lanes",
+      "applicability_note"
+    ],
+    "note": "T3 保守派生未见明确词面证据——capabilities/change_classes 留空回退 lane 缺省（O7 行为零变化）；列 Human Review 复核议程"
+  },
   "x-advisory-gate-semantics": {
     "advisory": true,
     "gate_binding": "NEVER_FAIL",
@@ -39,7 +48,11 @@
   ],
   "applies_when": {
     "lane": "frontend",
-    "condition": "请求层架构评审"
+    "condition": "请求层架构评审",
+    "lanes": [
+      "frontend"
+    ],
+    "applicability_note": "请求层架构评审"
   },
   "enforcement": "advisory",
   "authority": {

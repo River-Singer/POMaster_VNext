@@ -337,7 +337,7 @@ describe("context explain（P0.5-1 决策记录面；PRD §5.4）", () => {
     expect(outcome.result.markdown).toContain("excluded 不进五分区 manifest");
   });
 
-  it("真实 kernel：repo catalog 全量决策逐条可解释（lane 回退分母下 excluded 显式为空）", async () => {
+  it("真实 kernel：repo catalog 全量决策逐条可解释（T3 标注后 excluded 显式非空）", async () => {
     await runInit(dir);
     const outcome = await runContextExplain(dir, "frontend", undefined, {
       capabilities: ["CAPABILITY.PRESENTATION"],
@@ -347,9 +347,14 @@ describe("context explain（P0.5-1 决策记录面；PRD §5.4）", () => {
     const included = outcome.result.decisions.filter((d) => d.decision === "included");
     const excluded = outcome.result.decisions.filter((d) => d.decision === "excluded");
     expect(included.length).toBeGreaterThan(0);
-    // 真实 catalog（94 条全未标注 → lane 回退全命中）下 excluded 为空是 O7 的诚实结果；
-    // excluded 判卷由 fixture 集成（tests/integration/catalog-applicability-case-b.spec.ts）承载。
-    expect(excluded.length).toBe(0);
+    // W1-A2 T3 标注战役后（PRD v0.5.2 §5.2/§14；裁决 8 ②）：capabilities=[PRESENTATION]
+    // 输入下 API/Sec 族（capabilities=[CAPABILITY.API_CONTRACT] 标注条目）被确定性排除——
+    // excluded 非空是标注生效的诚实结果（批1时「94 条全未标注 → excluded 为空」的前提
+    // 已被 T3 消解；O7 行为零变化只保未标注条目，棘轮见 case-b spec 的 O7 describe）。
+    expect(excluded.length).toBeGreaterThan(0);
+    expect(
+      excluded.every((d) => d.why_excluded?.includes("未命中（")),
+    ).toBe(true);
     for (const decision of outcome.result.decisions) {
       if (decision.decision === "included") {
         expect(decision.why_included).toBeTruthy();

@@ -72,3 +72,10 @@
 - **③ VB-B 架构落点包 5 位全按推荐**：schema=18-decision-graph；research_request/handoff 住决策图 schema（10 号零改动）；relation 六值与 authority_effect 轴划界注记；§19 六指标 P0.5 defer（禁问题计数指标）；投影指纹 kernel 自动维护（human_touch forbidden）。
 - **④ VB-C 载体命名包 4 位全按推荐**：§18 十 cases 两步走（P0.5 vitest 承载/P1 eval 账本化 decision-gate+grounding_gate 与 W2-A 协调）；CLI 六子命令照 PRD 逐字；Discovery Projection 解耦点火；converge=补全 DISCOVERY→READY_TO_PROMOTE 链断点。
 - **⑤ 点火节奏 = PR1 即刻并行**（与 v0.5.2 Wave 1 并行，研究确认零文件交集；PR2-4 错峰 Wave 1 落定后）。
+
+## 裁决 10：npm 发布形态决议（2026-09-02）
+
+- **决策渠道**：本会话 Owner 直答（AskUserQuestion，2026-09-02）。
+- **① 发布形态 = 单包 `pomaster`**：esbuild 把 kernel/gauntlet-lite/schemas 打进 CLI 单包，catalog+schema 资产随包分发，catalog 路径解析修复（`packages/kernel/src/catalog.ts:124` 的 `../../../catalog` 仓库布局相对路径在 npm 安装形态下断裂——主控侦察确认的发布前必修约束）；用户 `npm i -g pomaster` 一站式。无作用域名已核实可用（registry 404，2026-09-02 实测），无需建 org，1 次发布。
+- **② 版本与许可 = 0.1.0 + 保持双许可声明**：首发 0.1.0；license 字段 `PolyForm-Noncommercial-1.0.0`，包内注明商业使用需另行授权（COMMERCIAL_LICENSE.md 严格口径）。
+- **凭据边界**：npm granular token（90 天有效）暂存 `$HOME/.npm-token-pvnext`（600 权限，不入库不入 git，用后可删）；账号 `maotykase` 已 whoami 验证；官方 registry 直连可通（V2ray 代理备而未用）。

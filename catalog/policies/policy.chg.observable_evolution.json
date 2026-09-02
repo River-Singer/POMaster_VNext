@@ -15,6 +15,15 @@
     "enforcement_note": "仅建议：任何 gate 永不因本条目单独 FAIL，至多产生 WARN/HINT 或进入 Human Review 议程",
     "clean_room_note": "statement_zh 为独立改写（clean-room），零逐字拷贝源协议"
   },
+  "x-applicability-review": {
+    "status": "annotated",
+    "campaign": "W1-A2 P0.5-1 T3 标注战役（PRD v0.5.2 §5.2/§14；Owner 裁决 8 ②，2026-09-01）",
+    "axes": [
+      "change_classes",
+      "applicability_note"
+    ],
+    "basis": "condition『契约演进方式选择』——演进词面逐字（PRD §5.2 示例词形）"
+  },
   "id": "POLICY.CHG.OBSERVABLE_EVOLUTION",
   "kind": "policy",
   "axis_profile": "policy_default",
@@ -34,7 +43,11 @@
   ],
   "applies_when": {
     "lane": "any",
-    "condition": "契约演进方式选择"
+    "condition": "契约演进方式选择",
+    "change_classes": [
+      "API_EVOLUTION"
+    ],
+    "applicability_note": "契约演进方式选择"
   },
   "enforcement": "advisory",
   "authority": {

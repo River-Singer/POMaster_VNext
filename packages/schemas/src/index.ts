@@ -1,9 +1,9 @@
 /**
  * @pomaster/schemas —— POMaster vNext 公共 schema 资产导出与 FROZEN 词表镜像。
  *
- * 形态契约：assets/01..16+18 十七份 JSON Schema（draft-07，$id 形态
- * https://pomaster.dev/schemas/<name>/v1-draft.json；17 号编号位空缺——编号随资产
- * 批次不连续）＋ 02b-kind-payloads.md /
+ * 形态契约：assets/01..18 十八份 JSON Schema（draft-07，$id 形态
+ * https://pomaster.dev/schemas/<name>/v1-draft.json；编号随资产批次不连续）＋
+ * 02b-kind-payloads.md /
  * golden-seed-mapping.md 两份配套文档（原样随包分发，非运行时依赖）。
  *
  * P18 增量（08/09/10）：Discovery 状态链 / MSD-Uncertainty / Research Artifact
@@ -34,6 +34,20 @@
  * 与 schema 词形 pomaster.execution_trace/v1 absent_in_vocab_lock__pending_vocab_pr
  * ——TODO(vocab-pr-0005)，词表三镜像登记归主控批次（批 1 文件面互斥）。verdict 七态
  * 复用 03 definitions.verdict 绝对 $id 引用（单一事实源禁二次镜像）。
+ * W1-D2 增量（17）：Perception Receipts（PRD v0.5.2 §6.7/§6.13/§6.14 + §14 P0.5-4 +
+ * §15 Benchmark E + §16 Case H；Owner 裁决 8 2026-09-01）。双记录族 root oneOf：
+ * environment_receipt（§6.7 yaml 九键——Doctor 确认面，实测 null 显式缺席为 Case H
+ * blocked 证据链消费位）+ observation_receipt（§6.13 yaml 十三键——「Agent 必须证明
+ * 我看过」，result=OBSERVED 必须 ≥1 条 artifact_refs 的 allOf 封条 = Benchmark E
+ * 「Observation Receipt 不得冒充有效业务 Evidence」的 schema 级落点）。artifact_refs
+ * 复用 07 definitions.blob_ref / object_id 绝对 $id 引用（裁决 8 ③ D1=A blob sha256
+ * 即身份不新增 EVR- id；D3=A blob 分支收窄——组合加载须注册 07）。词形轴
+ * environment_doctor_verdict / observation_surface / observation_result /
+ * SENSOR./JOURNEY./ENV. 与通路编号 OBS-/ENVREC- 均 absent_in_vocab_lock__pending_vocab_pr
+ * ——TODO(vocab-pr-0005)，词表三镜像登记归主控批次（批 2 文件面互斥）。§6.13
+ * sidecar 纪律：admitted_to_truth_index=false；OBS/ENVREC 回执落盘分区 Owner 未裁
+ * （研究 §7 位 5）——本 schema 为「schema 先行、通路面缺位」先例（07 blob_ref 同款）
+ * 的前置冻结面。
  * VB-PR1 增量（18）：Grounded Decision Graph（PRD v0.5.3 §5/§16 Decision Graph +
  * §9/§10 research_request/research_handoff/finding_link 三平面 definitions 同住一份
  * schema——10 号零改动，Owner 裁决 9③）。词形纪律（Owner 裁决 9②）：DECISION./
@@ -53,7 +67,7 @@
  *
  * 装载提示（ajv）：schema 携带大量 x- 注记键（含 D24 强制在场的 x-digest-ethics），
  * 请以 `new Ajv({ strictSchema: false })` 装载，或逐个 ajv.addKeyword 注册注记键；
- * 跨文件 $ref 为绝对 $id 形态，组合装载须将全部 17 份 schema addSchema 注册。
+ * 跨文件 $ref 为绝对 $id 形态，组合装载须将全部 18 份 schema addSchema 注册。
  */
 import evidenceRecordsSchemaRaw from "../assets/07-evidence-records.schema.json" with { type: "json" };
 import denominatorSchemaRaw from "../assets/05-denominator.schema.json" with { type: "json" };
@@ -71,6 +85,7 @@ import equivalenceRegistrySchemaRaw from "../assets/13-equivalence-registry.sche
 import memoryHarvestSchemaRaw from "../assets/14-memory-harvest.schema.json" with { type: "json" };
 import productionBandSchemaRaw from "../assets/15-production-band.schema.json" with { type: "json" };
 import executionTraceSchemaRaw from "../assets/16-execution-trace.schema.json" with { type: "json" };
+import perceptionReceiptsSchemaRaw from "../assets/17-perception-receipts.schema.json" with { type: "json" };
 import decisionGraphSchemaRaw from "../assets/18-decision-graph.schema.json" with { type: "json" };
 
 export * from "./vocab.js";
@@ -115,6 +130,8 @@ const PRODUCTION_BAND_ID =
   "https://pomaster.dev/schemas/production-band/v1-draft.json";
 const EXECUTION_TRACE_ID =
   "https://pomaster.dev/schemas/execution-trace/v1-draft.json";
+const PERCEPTION_RECEIPTS_ID =
+  "https://pomaster.dev/schemas/perception-receipts/v1-draft.json";
 const DECISION_GRAPH_ID =
   "https://pomaster.dev/schemas/decision-graph/v1-draft.json";
 
@@ -179,12 +196,16 @@ export const executionTraceSchema = asSchema(
   executionTraceSchemaRaw,
   EXECUTION_TRACE_ID,
 );
+export const perceptionReceiptsSchema = asSchema(
+  perceptionReceiptsSchemaRaw,
+  PERCEPTION_RECEIPTS_ID,
+);
 export const decisionGraphSchema = asSchema(
   decisionGraphSchemaRaw,
   DECISION_GRAPH_ID,
 );
 
-/** 全部 17 份 schema 的聚合（组合装载：ajv.addSchema 逐个注册即可遍历本对象）。 */
+/** 全部 18 份 schema 的聚合（组合装载：ajv.addSchema 逐个注册即可遍历本对象）。 */
 export const allSchemas = {
   truthIndex: truthIndexSchema,
   objectEnvelope: objectEnvelopeSchema,
@@ -202,6 +223,7 @@ export const allSchemas = {
   memoryHarvest: memoryHarvestSchema,
   productionBand: productionBandSchema,
   executionTrace: executionTraceSchema,
+  perceptionReceipts: perceptionReceiptsSchema,
   decisionGraph: decisionGraphSchema,
 } as const;
 

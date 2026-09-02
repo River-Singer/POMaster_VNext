@@ -467,6 +467,10 @@ describe("模式 7（经验条目直接晋升 MUST）→ 投影分层：knowledg
           axisProfile: "knowledge_default",
           titleZh: "一次偶发修复的经验（试图晋升 MUST）",
           authority: { owner: "FRONTEND_CONTRACT", delegates: [] },
+          // 真实构造 scoped knowledge（修复前本测假绿的洞）：带 denominatorRefs 让知识对象
+          // 以分母通道命中 scope——MUST 排除防线（projection.ts）被该对抗形态真实触发，
+          // 而非在「无分母引用 → 空集恒真」上空转。
+          denominatorRefs: [{ id: gid("DENOMINATOR.PAGE.V1_SURFACE"), versionSeen: 1 }],
           payload: { failure_class: "csv", checks: ["escape"] },
         }) as never,
       },
@@ -477,7 +481,8 @@ describe("模式 7（经验条目直接晋升 MUST）→ 投影分层：knowledg
     });
     const mustRefs = projection.manifest.mustEntries.map((entry) => entry.ref);
     const advisoryRefs = projection.manifest.advisoryEntries.map((entry) => entry.ref);
-    // 即使 scope/authority 全命中：knowledge 也不在 MUST（gate 判卷输入）。
+    // 即使 scope/authority 全命中（本构造下 knowledge 的分母引用与请求交集非空）：
+    // knowledge 也不在 MUST（gate 判卷输入）。
     expect(advisoryRefs).toContain("KNOWLEDGE.ONE_OFF_CSV_FIX");
     expect(mustRefs).not.toContain("KNOWLEDGE.ONE_OFF_CSV_FIX");
     expect(mustRefs.every((ref) => !ref.startsWith("KNOWLEDGE."))).toBe(true);

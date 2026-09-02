@@ -13,11 +13,13 @@
  * §92.2 边界注记：本模块只读 catalog/（策展源，非第二套 Project Truth）；漂移检出
  * 不修复不阻断消费（D24 write_blocking=false），修复动作 = producer 工具重锁。
  */
-import { cpSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
+  catalogRootCandidates,
   loadCatalogPolicies,
   loadCatalogProjectionPresets,
   loadCatalogTools,
@@ -68,6 +70,34 @@ describe("resolveCatalogRoot（缺省定位与显式注入）", () => {
       expect.unreachable("必须抛出");
     } catch (error) {
       expect((error as { code?: string }).code).toBe("NOT_CONFIGURED");
+    }
+  });
+
+  it("候选链（C9）：仓库形态优先、包内资产兜底——<pkg>/dist/ + <pkg>/catalog/ 布局命中包内候选（npm 安装形态不再 NOT_CONFIGURED 全灭）", () => {
+    const pkgRoot = mkdtempSync(join(tmpdir(), "pomaster-catalog-pkg-"));
+    const pkgCatalog = join(pkgRoot, "catalog");
+    mkdirSync(pkgCatalog, { recursive: true });
+    mkdirSync(join(pkgRoot, "dist"), { recursive: true });
+    tempRoots.push(pkgCatalog); // afterEach 删 dirname=pkgRoot 全树
+    // 模拟 npm 安装形态：bundle 位于 <pkg>/dist/catalog.js（文件本体无需实存——候选
+    // 解析只依赖 URL 基底）。
+    const moduleUrl = pathToFileURL(join(pkgRoot, "dist", "catalog.js")).href;
+    const candidates = catalogRootCandidates(moduleUrl);
+    expect(candidates).toHaveLength(2);
+    // 候选 1 = 仓库布局（../.. 上溯，落在包外）；候选 2 = 包内资产 <pkg>/catalog。
+    expect(candidates[0]!.replace(/\\/g, "/").endsWith("/catalog")).toBe(true);
+    expect(candidates[0]).not.toBe(candidates[1]);
+    expect(candidates[1]).toBe(pkgCatalog);
+  });
+
+  it("候选链（C9）：两候选全缺席 → 纯函数产出的两候选均不在盘（NOT_CONFIGURED 前提形态）", () => {
+    const pkgRoot = mkdtempSync(join(tmpdir(), "pomaster-catalog-empty-"));
+    tempRoots.push(join(pkgRoot, "dist")); // afterEach 删 dirname=pkgRoot 全树
+    const moduleUrl = pathToFileURL(join(pkgRoot, "dist", "catalog.js")).href;
+    // 不创建任何 catalog 目录：全缺席场景（repo 布局上溯与包内兜底都落空）是
+    // resolveCatalogRoot 显式 NOT_CONFIGURED 的前提——候选生成是纯函数，缺席判定在盘上。
+    for (const candidate of catalogRootCandidates(moduleUrl)) {
+      expect(existsSync(candidate)).toBe(false);
     }
   });
 });
@@ -139,7 +169,12 @@ describe("loadCatalogPolicies（policies 物料读取）", () => {
 // ============================================================
 
 describe("loadCatalogPolicies 机器 applicability 字段（P0.5-1）", () => {
-  /** 取一条真实 policy、改写其 applies_when（临时副本内，绝不改 repo 实物）。 */
+  /**
+   * 取一条真实 policy、改写其 applies_when（临时副本内，绝不改 repo 实物）。
+   * W1-A2 T3 注记（2026-09-01）：T3 标注战役后真实条目已带机器字段（lanes/capabilities/
+   * applicability_note）——模拟「未声明机器字段」需先剥离（stripMachineAxes），
+   * 否则本块前提（干净 applies_when）不成立。
+   */
   function withAppliesWhen(
     mutate: (appliesWhen: Record<string, unknown>) => void,
   ): ReturnType<typeof loadCatalogPolicies> {
@@ -153,8 +188,20 @@ describe("loadCatalogPolicies 机器 applicability 字段（P0.5-1）", () => {
     )!;
   }
 
+  /** 剥离 T3 标注的机器 applicability 字段（临时副本内）——回退到「未声明」前提。 */
+  function stripMachineAxes(appliesWhen: Record<string, unknown>): void {
+    delete appliesWhen["lanes"];
+    delete appliesWhen["capabilities"];
+    delete appliesWhen["change_classes"];
+    delete appliesWhen["governance_profiles"];
+    delete appliesWhen["object_kinds"];
+    delete appliesWhen["applicability_note"];
+    delete appliesWhen["risk_at_least"];
+    delete appliesWhen["technologies"];
+  }
+
   it("未声明机器字段：hasMachineApplicability=false + lanes 双读回退 [lane]（O7 行为零变化）", () => {
-    const policy = withAppliesWhen(() => undefined);
+    const policy = withAppliesWhen(stripMachineAxes);
     expect(policy.hasMachineApplicability).toBe(false);
     expect(policy.declaresLanes).toBe(false);
     expect(policy.lanes).toEqual(["frontend"]);
@@ -191,6 +238,7 @@ describe("loadCatalogPolicies 机器 applicability 字段（P0.5-1）", () => {
 
   it("applicability_note 在场：优先于 condition（自然语言降级位，PRD §5.2）", () => {
     const policy = withAppliesWhen((appliesWhen) => {
+      stripMachineAxes(appliesWhen); // W1-A2 T3：先剥离真实条目的机器字段，隔离 note 单变量
       appliesWhen["applicability_note"] = "仅当构建请求基础设施时（人工复核注记）";
     });
     expect(policy.applicabilityNote).toBe("仅当构建请求基础设施时（人工复核注记）");
@@ -200,6 +248,7 @@ describe("loadCatalogPolicies 机器 applicability 字段（P0.5-1）", () => {
 
   it("risk_at_least/technologies 留位不登记（O4）：只检存在不解析值 + not_configured 呈现位", () => {
     const policy = withAppliesWhen((appliesWhen) => {
+      stripMachineAxes(appliesWhen); // W1-A2 T3：先剥离真实条目的机器字段，隔离留位轴单变量
       appliesWhen["risk_at_least"] = "任意值——本增量不解析";
       appliesWhen["technologies"] = ["react"];
     });

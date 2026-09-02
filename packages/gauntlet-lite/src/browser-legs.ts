@@ -12,8 +12,24 @@
  *
  * 身份供给（A4）：grn/ranAtSeq 由编排层按腿分配（两 GRN 独立，禁共享单锚）。
  * D24：本文件不计算任何 sha。
+ *
+ * 环境身份供给（P0.5-4b · W1-D2 批 2 · PRD §6.7/§14 P0.5-4）：deps.environment
+ * （BrowserEnvironmentInput = expected×observed×executionId）经 resolveBrowserEnvironment
+ * Receipt 消费 kernel perception.ts 判定函数（runEnvironmentDoctor →
+ * buildEnvironmentReceipt）产出回执，注入 MCP 交互腿 plan——@0.3.0 前置门（receipt
+ * 缺席或 verdict 非 READY → blocked，PRD Case H「Verification BLOCKED」）。缺省
+ * null = 实例未确认 → 交互腿 blocked（fail-closed）。receipt 最小通路（§6.13
+ * Observation Receipt：persist blob → OBS 回执）住 browser-evidence.ts（W1-B
+ * persistEvidenceArtifact 通路之上扩展）。
  */
 import type { RunTriggerValue } from "@pomaster/schemas";
+import {
+  buildEnvironmentReceipt,
+  runEnvironmentDoctor,
+  type EnvironmentExpectation,
+  type EnvironmentObserved,
+  type EnvironmentReceipt,
+} from "@pomaster/kernel";
 import type {
   DetectorFacts,
   ExecutableProbeFn,
@@ -35,6 +51,37 @@ export interface BrowserLegIdentity {
   readonly ranAtSeq: number;
 }
 
+/**
+ * §6.7 Environment Doctor 判卷输入（P0.5-4b · W1-D2 批 2；「观察之前必须有 Doctor」
+ * 的编排侧供给面）。期望面（判卷分母——Project State / verification bootstrap 供给，
+ * §6.17 不可推导事实）×实测面（观察时实际确认到的值；未确认 = null 显式缺席，
+ * fail-closed 输入形态）×通路锚（AGX-n）。判卷消费 kernel perception.ts 的判定
+ * 函数（单一镜像纪律——本文件不复制比对逻辑）：runEnvironmentDoctor →
+ * buildEnvironmentReceipt → 注入 MCP 交互腿 plan（@0.3.0 前置门消费）。
+ */
+export interface BrowserEnvironmentInput {
+  readonly expected: EnvironmentExpectation;
+  readonly observed: EnvironmentObserved;
+  /** 观察通路锚（AGX-n；词形与档案存在性校验归 execution.ts 通路）。 */
+  readonly executionId: string;
+}
+
+/**
+ * 解析环境回执（纯消费 kernel perception.ts 判定函数；不经 store、零 IO）。
+ * null 输入 → null 回执（编排方未供给 = 实例未确认 → 交互腿 blocked fail-closed）。
+ * 期望面身份核五项缺失 → kernel SCHEMA_INVALID 原样上抛（由 runLeg 编排异常通道
+ * 兜成该腿 blocked——连「该确认什么」都未申报的观察请求不得进入管线，研究 §5.1）。
+ */
+export function resolveBrowserEnvironmentReceipt(
+  input: BrowserEnvironmentInput | null | undefined,
+): EnvironmentReceipt | null {
+  if (input === null || input === undefined) {
+    return null;
+  }
+  const outcome = runEnvironmentDoctor(input.expected, input.observed);
+  return buildEnvironmentReceipt(input.observed, input.executionId, outcome.verdict);
+}
+
 export interface BrowserGateLegsDeps {
   readonly facts?: DetectorFacts;
   /** playwright 腿注入 spawn（测试 fake）；缺省 playwrightSpawn。 */
@@ -51,6 +98,17 @@ export interface BrowserGateLegsDeps {
   readonly smokeFn?: BrowserSmokeFn;
   /** MCP 交互腿证据供给面（编排方注入 MCP 工具结果）；缺省空集（诚实 not_run）。 */
   readonly mcpEvidenceProvider?: McpEvidenceProvider;
+  /**
+   * §6.7 环境身份供给面（P0.5-4b · W1-D2 批 2）：观察之前必须有 Doctor——
+   * expected×observed 交 kernel runEnvironmentDoctor 判卷 → EnvironmentReceipt 注入
+   * MCP 交互腿 plan（@0.3.0 前置门：null 或 verdict 非 READY → blocked）。
+   * 缺省 null = 实例未确认 → 交互腿 blocked（fail-closed 一刀切，PRD §6.7 验收句
+   * 「未确认 base URL / runtime instance 不得判 PASS」）。同一次观察同一环境：回执
+   * 由本编排面单点解析（两腿共享供给面）；playwright 确定性腿判卷零变更（T2 边界：
+   * 环境门只落 MCP 交互腿，另一腿互不牵连）。期望面身份核五项缺失 → kernel
+   * SCHEMA_INVALID → 该腿 blocked（编排异常通道，禁静默）。
+   */
+  readonly environment?: BrowserEnvironmentInput | null;
   readonly trigger?: RunTriggerValue;
   readonly timeoutMs?: number;
   /** 版本锚按腿供给（两腿版本各自独立，禁共享单锚）。 */
@@ -77,10 +135,6 @@ export function runBrowserGateLegs(
   const playwrightAdapter = createPlaywrightAdapter({
     spawnFn: deps.spawnFn,
     executableProbe: deps.executableProbe,
-  });
-  const browserAdapter = createBrowserAdapter({
-    smokeFn: deps.smokeFn,
-    mcpEvidenceProvider: deps.mcpEvidenceProvider,
   });
 
   const playwrightPolicy: GatePolicy = {
@@ -127,6 +181,15 @@ export function runBrowserGateLegs(
   );
 
   const browserRecord = runLeg(() => {
+    // §6.7 Doctor 先于观察（P0.5-4b · W1-D2 批 2）：环境回执解析（kernel 判定函数
+    // 消费）进 runLeg 异常通道——期望面身份核五项缺失（kernel SCHEMA_INVALID）兜成
+    // 本腿 blocked（禁静默；blocked 不牵连 playwright 确定性腿，互不牵连纪律不变）。
+    const environment = resolveBrowserEnvironmentReceipt(deps.environment);
+    const browserAdapter = createBrowserAdapter({
+      smokeFn: deps.smokeFn,
+      mcpEvidenceProvider: deps.mcpEvidenceProvider,
+      environment,
+    });
     const plan = browserAdapter.prepare(scope, browserPolicy, deps.facts);
     const raw = browserAdapter.run(plan);
     return browserAdapter.normalize(raw, context);

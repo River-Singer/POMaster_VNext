@@ -187,6 +187,42 @@ describe("consumeKnowledge（compileProjection 第五分区）", () => {
     ]);
   });
 
+  it("C5 消费层防线：kind=knowledge_entry 的 truth 对象即使带 denominatorRefs 命中分母通道，也绝不进 MUST（恒 ADVISORY——§83.2 铁律）", async () => {
+    await seedPage();
+    // 真实构造 scoped knowledge（修复前假绿的洞）：kind=knowledge_entry 是
+    // TRUTH_BODY_KINDS 十类闭包成员，upsert_object 可携其信封带 denominatorRefs 入
+    // truth-index——修复前该对象会借分母通道进入 MUST 区（AUTHORITATIVE 判卷输入）。
+    // 信封行 denominator_refs 须为 DENOMINATOR.*（store 写入侧校验），与请求同 id 才有交集。
+    const scopedDenoms = [{ id: gid("DENOMINATOR.PAGE.V1_SURFACE"), versionSeen: 1 }];
+    await applyTransaction(store, {
+      ops: [{
+        op: "upsert_object",
+        envelope: {
+          ...PAGE_SEED,
+          id: gid("KNOWLEDGE.FE.SCOPED_FIX"),
+          kind: "knowledge_entry",
+          axisProfile: "knowledge_default",
+          titleZh: "带分母引用的知识条目（试图晋升 MUST）",
+          // 真实构造 scoped knowledge：带 denominatorRefs 让该对象以分母通道命中 scope——
+          // 修复前会借该通道进 MUST（AUTHORITATIVE 判卷输入），测试在修复前真实变红。
+          denominatorRefs: scopedDenoms,
+          payload: { failure_class: "grid", checks: ["escape"] },
+        } as never,
+      }],
+    });
+    const projection = await compileProjection(store, {
+      role: "frontend",
+      denominatorRefs: scopedDenoms,
+    });
+    const mustRefs = projection.manifest.mustEntries.map((entry) => entry.ref);
+    expect(mustRefs).not.toContain("KNOWLEDGE.FE.SCOPED_FIX");
+    expect(mustRefs.every((ref) => !ref.startsWith("KNOWLEDGE."))).toBe(true);
+    // scope 全命中不改变 ADVISORY 归置：该对象照常进 ADVISORY 区（同 authority 域）。
+    expect(projection.manifest.advisoryEntries.map((entry) => entry.ref)).toContain(
+      "KNOWLEDGE.FE.SCOPED_FIX",
+    );
+  });
+
   it("注入分母生命周期语义：CANDIDATE 不注入 → VALIDATED 注入 → DEPRECATED 消失", async () => {
     await seedPage();
     await recordKnowledge(store, RECORD_HIT);

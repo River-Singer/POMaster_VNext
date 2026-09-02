@@ -1,14 +1,18 @@
 /**
- * doctor.ts —— doctor 必检最小集四检（D7 Portability；fail-closed，只读不修）
+ * doctor.ts —— doctor 必检最小集五检（D7 Portability；fail-closed，只读不修）
  * + 工具环境探针（CLI `pomaster doctor` 消费的超集，kernel 契约之外）。
  *
- * 四探针（x-vocab-source: 06 x-pomaster-doctor-coupling / thread-A §7）：
+ * 五探针（x-vocab-source: 06 x-pomaster-doctor-coupling / thread-A §7）：
  * 1) vocab_lock_consistency —— 三指纹对账（枚举多头拷贝免疫）；
  * 2) dead_producers_empty —— liveness 经 heartbeat 侧车重算（永不采信自报值，C5），
  *    dead 非空即 DEFECT（fail-closed）；
  * 3) alias_conflicts_empty —— 三重查重（canonical/normalized_key/aliases）冲突非空即 DEFECT；
  * 4) local_binding_probe_replayable —— LOCAL 探针可重放性：runtime 心跳侧车可读且
  *    逐行可解析（重算 liveness 的本地通道），文件缺失=本地盘假设破裂 → environment_error。
+ * 5) claim_self_approval_clean —— D20 反自批探针：扫描 evidence/claims/*.json，
+ *    verdict=VERIFIED 且 recomputed_by 与 asserted_by 主体相同（07 x-actor-discipline
+ *    「同主体自填 VERIFIED 属违规，doctor 探针负责检出」——draft-07 无法表达跨记录
+ *    主体比较，唯一消费点在此）非空即 DEFECT。
  *
  * 探针三态 pass/defect/environment_error——环境异常禁静默（D 线风险备忘）。
  * ok = 全部 probe=pass；任一 defect/environment_error → false（fail-closed）。
@@ -115,7 +119,70 @@ function computeConflicts(
   return conflicts;
 }
 
-/** doctor 必检最小集四检（契约见 docs/kernel-api.md §7）。只读：不修改 store 状态。 */
+/** 同主体自批违规行（D20 探针输出；clm 词形取记录自报，缺省回退文件名）。 */
+interface SelfApprovalViolation {
+  readonly file: string;
+  readonly clm: string;
+  readonly asserted_by: string;
+  readonly recomputed_by: string;
+}
+
+/**
+ * 扫描 evidence/claims/*.json 检出同主体自填 VERIFIED（07 x-actor-discipline：
+ * verification.recomputed_by 必须与 asserted_by 不同主体/不同工具，同主体自填
+ * VERIFIED 属违规）。分母与 store.recomputeEvidenceSummary 同面：claims 目录全部
+ * .json（kernel record_claim 落 CLM-n.json，非词形文件不豁免——kernel 之外的写入
+ * 一样可能自批）。损坏文件计入 damaged（fail-closed：探针对损坏报 defect，禁静默
+ * 当 clean——报绿的 doctor 比没有 doctor 更危险）。
+ */
+function scanClaimSelfApproval(claimsDir: string): {
+  scanned: number;
+  violations: SelfApprovalViolation[];
+  damaged: readonly string[];
+} {
+  let names: string[];
+  try {
+    names = readdirSync(claimsDir).filter((name) => name.endsWith(".json")).sort();
+  } catch {
+    return { scanned: 0, violations: [], damaged: [] };
+  }
+  const violations: SelfApprovalViolation[] = [];
+  const damaged: string[] = [];
+  for (const name of names) {
+    const text = readText(`${claimsDir}/${name}`);
+    if (text === null) continue;
+    let claim: UnknownRecord;
+    try {
+      claim = JSON.parse(text) as UnknownRecord;
+    } catch {
+      damaged.push(`evidence/claims/${name}（JSON 无法解析）`);
+      continue;
+    }
+    const verification = claim.verification as UnknownRecord | undefined;
+    const assertedBy = claim.asserted_by as UnknownRecord | undefined;
+    const recomputedBy = verification?.recomputed_by as UnknownRecord | undefined;
+    if (
+      verification?.verdict !== "VERIFIED" ||
+      assertedBy === undefined ||
+      recomputedBy === undefined
+    ) {
+      continue;
+    }
+    // 主体相同判定：actor_type + actor 二元组全等（self_attested 不参与主体判定——
+    // 重算方自报真实性归 journal 留痕审计；主体身份分离本身即 D20 结构性要求）。
+    if (assertedBy.actor_type === recomputedBy.actor_type && assertedBy.actor === recomputedBy.actor) {
+      violations.push({
+        file: `evidence/claims/${name}`,
+        clm: String(claim.clm ?? name),
+        asserted_by: String(assertedBy.actor ?? ""),
+        recomputed_by: String(recomputedBy.actor ?? ""),
+      });
+    }
+  }
+  return { scanned: names.length, violations, damaged };
+}
+
+/** doctor 必检最小集五检（契约见 docs/kernel-api.md §7）。只读：不修改 store 状态。 */
 export async function doctorProbes(store: Store): Promise<DoctorReport> {
   const paths = pathsOf(store);
   const raw = readRawIndex(paths);
@@ -127,6 +194,11 @@ export async function doctorProbes(store: Store): Promise<DoctorReport> {
       { probe: "alias_conflicts_empty", status: "defect", detail },
       {
         probe: "local_binding_probe_replayable",
+        status: "defect",
+        detail: `${detail}；先跑 createStore 初始化骨架`,
+      },
+      {
+        probe: "claim_self_approval_clean",
         status: "defect",
         detail: `${detail}；先跑 createStore 初始化骨架`,
       },
@@ -244,7 +316,36 @@ export async function doctorProbes(store: Store): Promise<DoctorReport> {
     }
   }
 
-  const probes: DoctorReport["probes"] = [probeVocab, probeDead, probeAlias, probeReplay];
+  // —— 5) claim_self_approval_clean（D20 反自批：recomputed_by 与 asserted_by 主体分离） ——
+  const selfApproval = scanClaimSelfApproval(paths.claimsDir);
+  let probeSelfApproval: DoctorReport["probes"][number];
+  if (selfApproval.damaged.length > 0) {
+    probeSelfApproval = {
+      probe: "claim_self_approval_clean",
+      status: "defect",
+      detail: `claim 平面损坏（fail-closed，禁静默当 clean）：${selfApproval.damaged.join("; ")}`,
+    };
+  } else if (selfApproval.violations.length > 0) {
+    probeSelfApproval = {
+      probe: "claim_self_approval_clean",
+      status: "defect",
+      detail: `同主体自填 VERIFIED 非空（D20 违规，07 x-actor-discipline：recomputed_by 必须与 asserted_by 主体分离）：${JSON.stringify(selfApproval.violations)}`,
+    };
+  } else {
+    probeSelfApproval = {
+      probe: "claim_self_approval_clean",
+      status: "pass",
+      detail: `同主体自批扫描（D20）零命中：${selfApproval.scanned} 条 claim${selfApproval.scanned === 0 ? "（分母 0——尚无 claim 记录，显式缺席非通过判定）" : "，VERIFIED 记录的重算主体与断言主体全部分离"}`,
+    };
+  }
+
+  const probes: DoctorReport["probes"] = [
+    probeVocab,
+    probeDead,
+    probeAlias,
+    probeReplay,
+    probeSelfApproval,
+  ];
   const ok = probes.every((probe) => probe.status === "pass");
   return { probes, ok };
 }

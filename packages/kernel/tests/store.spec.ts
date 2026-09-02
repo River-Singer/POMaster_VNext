@@ -7,9 +7,9 @@
  * ADV-D24-01/02（digest 失配/手改 → WARN + auto-regen，永不阻断）、ADV-D20-04（部分
  * 写入失败回滚）、A4（无墙钟：两实例同 ops → 同 canonical digest）。
  */
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, rmdirSync, statSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, rmdirSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   GovernanceError,
   applyTransaction,
@@ -30,6 +30,31 @@ import {
   readIndex,
   readJournal,
 } from "./helpers.js";
+
+/**
+ * 并发窗口注入器（vi.mock 委托式 hook）：默认双 hook 均为 null = 纯透传（本文件其余
+ * 用例零影响）。并发交错回归用例在调用前挂 hook，在 io 原语「读 → 落盘」窗口内注入
+ * 并发方动作，确定性复现双进程交错（不依赖 OS 时序，禁 flake）。
+ */
+const ioInterceptor = vi.hoisted(() => ({
+  beforeCaptureOriginal: null as ((path: string) => void) | null,
+  beforeExecuteWrites: null as ((writes: readonly unknown[]) => void) | null,
+}));
+
+vi.mock("../src/io.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../src/io.js")>();
+  return {
+    ...actual,
+    captureOriginal: (path: string) => {
+      ioInterceptor.beforeCaptureOriginal?.(path);
+      return actual.captureOriginal(path);
+    },
+    executeWrites: (writes: readonly Parameters<typeof actual.executeWrites>[0]) => {
+      ioInterceptor.beforeExecuteWrites?.(writes);
+      return actual.executeWrites(writes);
+    },
+  };
+});
 
 type EnvelopeOverridesLike = Record<string, unknown>;
 
@@ -339,18 +364,26 @@ describe("applyTransaction：upsert_object", () => {
     expect((bad as GovernanceError).code).toBe("SUCCESSOR_REQUIRED");
   });
 
-  it("SUPERSEDED 带 successorRef → 正文与行均落 successor_ref（机器归类 SUPERSEDED vs DEPRECATED）", async () => {
+  it("SUPERSEDED 带 successorRef + authorityRef（CURRENT→SUPERSEDED requires transition_record）→ 正文与行均落 successor_ref", async () => {
     await applyTransaction(store, txOf(upsertPage()));
     await applyTransaction(store, txOf(upsertPage({
       id: gid("PAGE.DASHBOARD_V2"),
       titleZh: "仪表盘 V2",
       supersedes: { id: gid("PAGE.DASHBOARD"), reasonShort: "信息架构重组" },
     })));
+    // A4 变严：upsert 直改既有对象 lifecycle 走转移矩阵同款裁决，CURRENT→SUPERSEDED
+    // 缺 authorityRef → EVOLUTION_REQUIRED（免 authorityRef 直落 SUPERSEDED 已封死）。
+    const withoutRef = await applyTransaction(store, txOf(upsertPage({
+      axes: { lifecycle: "SUPERSEDED", confidence: "LOCKED", evidence: "IMPLEMENTED", change: "STABLE" },
+      successorRef: gid("PAGE.DASHBOARD_V2"),
+      supersedes: { id: gid("PAGE.DASHBOARD_V2"), reasonShort: "被 V2 替代" },
+    }))).catch((e: unknown) => e);
+    expect((withoutRef as GovernanceError).code).toBe("EVOLUTION_REQUIRED");
     await applyTransaction(store, txOf(upsertPage({
       axes: { lifecycle: "SUPERSEDED", confidence: "LOCKED", evidence: "IMPLEMENTED", change: "STABLE" },
       successorRef: gid("PAGE.DASHBOARD_V2"),
       supersedes: { id: gid("PAGE.DASHBOARD_V2"), reasonShort: "被 V2 替代" },
-    })));
+    }), "CHANGE.MIGRATION_001"));
     const index = await loadTruthIndex(store);
     const oldRow = index.objects.find((row) => row.id === "PAGE.DASHBOARD");
     expect(oldRow?.axes.lifecycle).toBe("SUPERSEDED");
@@ -430,10 +463,11 @@ describe("applyTransaction：transition_object", () => {
     await applyTransaction(store, txOf([{ op: "transition_object", id: gid("PAGE.DASHBOARD"), patch: { lifecycle: "CURRENT" }, reasonShort: "x" }], "PERMIT.X.1"));
     const bad = await applyTransaction(store, txOf(upsertPage({ id: gid("PAGE.DASHBOARD_V2") })))
       .then(async () => {
+        // A4 变严：种子 upsert（CURRENT→SUPERSEDED）补 authorityRef（requires transition_record）。
         await applyTransaction(store, txOf(upsertPage({
           axes: { lifecycle: "SUPERSEDED", confidence: "LOCKED", evidence: "IMPLEMENTED", change: "STABLE" },
           successorRef: gid("PAGE.DASHBOARD_V2"),
-        })));
+        }), "CHANGE.SEED_SUP_001"));
         return applyTransaction(store, txOf([
           { op: "transition_object", id: gid("PAGE.DASHBOARD"), patch: { lifecycle: "CURRENT" }, reasonShort: "撤销" },
         ], "PERMIT.X.2"));
@@ -881,6 +915,379 @@ describe("staged 写入与回滚（ADV-D20-04 部分写入失败伪装成功免�
     const sizeBefore = statSync(path).size;
     await createStore(root);
     expect(statSync(path).size).toBe(sizeBefore);
+  });
+});
+
+// ============================================================
+// kernel 存储面防线（全盘审查修复批次：A1/A2/A3/A4/A5/A6/A7）
+// ============================================================
+
+const PROPOSED_AXES = { lifecycle: "PROPOSED", confidence: "UNRESOLVED", evidence: "PLANNED", change: "STABLE" };
+const SUPERSEDED_AXES = { lifecycle: "SUPERSEDED", confidence: "LOCKED", evidence: "IMPLEMENTED", change: "STABLE" };
+
+/** 合法 inline GateResult fixture（verdict/subject 可覆盖）。 */
+function gateResultFixture(grn: string, overrides: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    grn,
+    gate: "CONTENT_TRUTH",
+    gateDef: "POLICY.GATE.CONTENT_TRUTH@1.4.0",
+    tool: "gauntlet:ui_text_scanner",
+    toolVersion: "0.2.0",
+    metricDialect: "ui_text:carrier_file_count",
+    ranAtSeq: 1,
+    verdict: "passed",
+    verdictCapReason: null,
+    subjectId: gid("PAGE.DASHBOARD"),
+    isFixture: false,
+    denominatorRefs: [],
+    counts: { scanned: 10, applicableScanned: 8, violations: 0, notApplicable: 2 },
+    blindspot: { scanned: 10, produced: 8, escapeRatio: 0.2 },
+    trust: {
+      asserted: { value: { violations: 0 }, claimedBy: { actorType: "agent", actor: "a", selfAttested: true } },
+      recomputed: { violations: 0, matchesAsserted: true },
+    },
+    durationMs: { self: 5, external: 0 },
+    ...overrides,
+  };
+}
+
+const claimOp = (overrides: Record<string, unknown> = {}): Transaction["ops"] => [
+  {
+    op: "record_claim",
+    claim: {
+      clm: "CLM-10",
+      subjectId: gid("PAGE.DASHBOARD"),
+      assertion: "TITLE_COPIED：标题文案已按蓝图更新",
+      assertedBy: { actorType: "agent", actor: "claude/session-93", selfAttested: true },
+      evidenceRefs: [],
+      ...overrides,
+    },
+  },
+];
+
+describe("A1 提交时世代复核（并发写防线，P20 红队发现 4 同族）", () => {
+  it("开卷后落盘前 truth-index seq 被并发方推进 → CONCURRENT_WRITE_DETECTED，本事务零落盘", async () => {
+    await applyTransaction(store, txOf(upsertPage()));
+    const journalBefore = readJournal(root);
+    // 模拟并发提交方：在「staged 计划就绪 → 落盘」窗口内把磁盘 index 的 seq 推进
+    // （其余内容不动——复核只对账世代 seq）。
+    ioInterceptor.beforeCaptureOriginal = (path) => {
+      if (path.endsWith("truth-index.json")) {
+        const raw = JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
+        ((raw.generation) as Record<string, unknown>).seq = 99;
+        writeFileSync(path, `${JSON.stringify(raw, null, 2)}\n`, "utf8");
+      }
+    };
+    let bad: unknown;
+    try {
+      bad = await applyTransaction(store, txOf(upsertPage({ id: gid("PAGE.SETTINGS"), titleZh: "设置" }))).catch((e: unknown) => e);
+    } finally {
+      ioInterceptor.beforeCaptureOriginal = null;
+    }
+    expect(bad).toBeInstanceOf(GovernanceError);
+    expect((bad as GovernanceError).code).toBe("CONCURRENT_WRITE_DETECTED");
+    // 本事务零落盘：journal 无新行、磁盘 index 无本事务对象（并发方的推进如实留盘）
+    expect(readJournal(root)).toBe(journalBefore);
+    const disk = readIndex(root);
+    const ids = (disk.objects as Record<string, unknown>[]).map((row) => row.id);
+    expect(ids).not.toContain("PAGE.SETTINGS");
+    // store 仍可用：重开读到的就是并发新世代，重放事务正常收敛
+    const reopened = await createStore(root);
+    expect(reopened.currentSeq).toBe(99);
+    const ok = await applyTransaction(reopened, txOf(upsertPage({ id: gid("PAGE.SETTINGS"), titleZh: "设置" })));
+    expect(ok.shortCircuited).toBe(false);
+  });
+});
+
+describe("A2 journal 原子追加（appendLine 家族与 RMW 家族交错不丢行）", () => {
+  it("RMW 读→rename 窗口内并发 appendLine 行与 TX_APPLIED 双双留痕", async () => {
+    ioInterceptor.beforeExecuteWrites = () => {
+      // 模拟 appendLine 家族并发方（锁/会话/执行面事件）抢先落位一行——旧 RMW 覆写
+      // 落法（journal 读全量拼行进 staged 批）会把该行整体抹掉。
+      appendFileSync(
+        join(root, ".pomaster", "state", "journal.jsonl"),
+        `${JSON.stringify({ type: "CONCURRENT_FOREIGN_EVENT", seq: 0 })}\n`,
+        "utf8",
+      );
+    };
+    let result;
+    try {
+      result = await applyTransaction(store, txOf(upsertPage()));
+    } finally {
+      ioInterceptor.beforeExecuteWrites = null;
+    }
+    expect(result.shortCircuited).toBe(false);
+    const journal = readJournal(root);
+    expect(journal).toContain("CONCURRENT_FOREIGN_EVENT");
+    expect(journal).toContain("TX_APPLIED");
+    // 并发行在前、本事务 TX_APPLIED 追加在后（appendLine 语义：落位于当时文件尾）
+    expect(journal.indexOf("CONCURRENT_FOREIGN_EVENT")).toBeLessThan(journal.indexOf("TX_APPLIED"));
+  });
+
+  it("staged 批失败 → journal 零追加（op 失败零落盘不变量在 appendLine 时序下保持）", async () => {
+    const blocked = join(root, ".pomaster", "evidence", "claims", "CLM-77.json");
+    mkdirSync(blocked);
+    const journalBefore = readJournal(root);
+    await expect(
+      applyTransaction(store, txOf([{
+        op: "record_claim",
+        claim: {
+          clm: "CLM-77",
+          subjectId: gid("PAGE.NOPE"),
+          assertion: "x",
+          assertedBy: { actorType: "agent", actor: "a", selfAttested: true },
+          evidenceRefs: [],
+        },
+      }])),
+    ).rejects.toMatchObject({ code: "OBJECT_NOT_FOUND" });
+    expect(readJournal(root)).toBe(journalBefore);
+  });
+});
+
+describe("A3 证据记录存在性防线（record 通道无权覆写，D20）", () => {
+  it("重录同 CLM 同内容 → 幂等短路：rev 不随新事务推进（零覆写零重录）", async () => {
+    await applyTransaction(store, txOf(upsertPage()));
+    await applyTransaction(store, txOf(claimOp()));
+    const claimPath = join(root, ".pomaster", "evidence", "claims", "CLM-10.json");
+    const before = readFileSync(claimPath, "utf8");
+    // 异质事务（含另一对象的 upsert，inputs 指纹不同 → 不走事务级重放短路）
+    const result = await applyTransaction(store, txOf([
+      { op: "upsert_object", envelope: pageEnvelope({ id: gid("PAGE.SETTINGS"), titleZh: "设置" }) as never },
+      ...claimOp(),
+    ]));
+    expect(result.shortCircuited).toBe(false);
+    // rev 仍为首次入账 seq——若被重录会推进到新事务 seq（旧缺陷行为）
+    expect(readFileSync(claimPath, "utf8")).toBe(before);
+  });
+
+  it("重录同 CLM 异内容 → EVIDENCE_ALREADY_EXISTS 且原文件字节不变", async () => {
+    await applyTransaction(store, txOf(upsertPage()));
+    await applyTransaction(store, txOf(claimOp()));
+    const claimPath = join(root, ".pomaster", "evidence", "claims", "CLM-10.json");
+    const before = readFileSync(claimPath, "utf8");
+    const bad = await applyTransaction(store, txOf(claimOp({ assertion: "口径改了：另一条声称" }))).catch((e: unknown) => e);
+    expect(bad).toBeInstanceOf(GovernanceError);
+    expect((bad as GovernanceError).code).toBe("EVIDENCE_ALREADY_EXISTS");
+    expect(readFileSync(claimPath, "utf8")).toBe(before);
+  });
+
+  it("独立验证流判定 VERIFIED 后 kernel 重录 → 拒绝（判定不被打回 UNVERIFIED，A3 实测病灶回归）", async () => {
+    await applyTransaction(store, txOf(upsertPage()));
+    await applyTransaction(store, txOf(claimOp()));
+    const claimPath = join(root, ".pomaster", "evidence", "claims", "CLM-10.json");
+    const claim = JSON.parse(readFileSync(claimPath, "utf8")) as Record<string, unknown>;
+    ((claim.verification) as Record<string, unknown>).verdict = "VERIFIED";
+    writeFileSync(claimPath, `${JSON.stringify(claim, null, 2)}\n`, "utf8");
+    // 异质事务（含另一对象 upsert）：绕开事务级 inputs 指纹重放短路，直达 op 层防线——
+    // 真实病灶形态：跨会话/携其他变更的重录，指纹必异，op 层是最后一道闸。
+    const bad = await applyTransaction(store, txOf([
+      { op: "upsert_object", envelope: pageEnvelope({ id: gid("PAGE.SETTINGS"), titleZh: "设置" }) as never },
+      ...claimOp(),
+    ])).catch((e: unknown) => e);
+    expect(bad).toBeInstanceOf(GovernanceError);
+    expect((bad as GovernanceError).code).toBe("EVIDENCE_ALREADY_EXISTS");
+    const after = JSON.parse(readFileSync(claimPath, "utf8")) as Record<string, unknown>;
+    expect(((after.verification) as Record<string, unknown>).verdict).toBe("VERIFIED");
+  });
+
+  it("重录同 GRN 异 verdict → EVIDENCE_ALREADY_EXISTS 且原文件字节不变（禁翻转 passed→failed）", async () => {
+    await applyTransaction(store, txOf(upsertPage()));
+    await applyTransaction(store, txOf([{ op: "record_gate_run", run: { grn: "GRN-77", result: gateResultFixture("GRN-77"), trigger: "pre_closeout" } }]));
+    const runPath = join(root, ".pomaster", "evidence", "runs", "GRN-77.json");
+    const before = readFileSync(runPath, "utf8");
+    const flipped = gateResultFixture("GRN-77", {
+      verdict: "failed",
+      counts: { scanned: 10, applicableScanned: 8, violations: 1, notApplicable: 2 },
+    });
+    const bad = await applyTransaction(store, txOf([{ op: "record_gate_run", run: { grn: "GRN-77", result: flipped, trigger: "pre_closeout" } }])).catch((e: unknown) => e);
+    expect(bad).toBeInstanceOf(GovernanceError);
+    expect((bad as GovernanceError).code).toBe("EVIDENCE_ALREADY_EXISTS");
+    expect(readFileSync(runPath, "utf8")).toBe(before);
+  });
+
+  it("重录同 GRN 同内容 → 幂等短路零报错（与异内容拒绝形成判级对照）", async () => {
+    await applyTransaction(store, txOf(upsertPage()));
+    await applyTransaction(store, txOf([{ op: "record_gate_run", run: { grn: "GRN-78", result: gateResultFixture("GRN-78"), trigger: "pre_closeout" } }]));
+    const runPath = join(root, ".pomaster", "evidence", "runs", "GRN-78.json");
+    const before = readFileSync(runPath, "utf8");
+    const result = await applyTransaction(store, txOf([
+      { op: "upsert_object", envelope: pageEnvelope({ id: gid("PAGE.SETTINGS"), titleZh: "设置" }) as never },
+      { op: "record_gate_run", run: { grn: "GRN-78", result: gateResultFixture("GRN-78"), trigger: "pre_closeout" } },
+    ]));
+    expect(result.shortCircuited).toBe(false);
+    expect(readFileSync(runPath, "utf8")).toBe(before);
+  });
+
+  it("显式 canonicalizeOverwrite + 异内容 → 放行覆写，journal ops 记 record_claim_canonicalize 留痕", async () => {
+    await applyTransaction(store, txOf(upsertPage()));
+    await applyTransaction(store, txOf(claimOp()));
+    const claimPath = join(root, ".pomaster", "evidence", "claims", "CLM-10.json");
+    const result = await applyTransaction(store, txOf([
+      {
+        op: "record_claim",
+        canonicalizeOverwrite: true,
+        claim: {
+          clm: "CLM-10",
+          subjectId: gid("PAGE.DASHBOARD"),
+          assertion: "口径改了：另一条声称",
+          assertedBy: { actorType: "agent", actor: "claude/session-93", selfAttested: true },
+          evidenceRefs: [],
+        },
+      },
+    ]));
+    expect(result.shortCircuited).toBe(false);
+    // 覆写生效：assertion 更新；record 通道恒置 UNVERIFIED（判定归独立验证流）
+    const after = JSON.parse(readFileSync(claimPath, "utf8")) as Record<string, unknown>;
+    expect(after.assertion).toBe("口径改了：另一条声称");
+    expect(((after.verification) as Record<string, unknown>).verdict).toBe("UNVERIFIED");
+    // journal 留痕：TX_APPLIED.ops 记可审计词形（机械区分常规记录与判定可复核重录）
+    const lastEvent = JSON.parse(readJournal(root).trimEnd().split("\n").pop() as string) as { ops: string[] };
+    expect(lastEvent.ops).toContain("record_claim_canonicalize");
+  });
+
+  it("显式 canonicalizeOverwrite 撞已判定态 → 仍拒（已判定记录不可 canonical 化，须走新 id）", async () => {
+    await applyTransaction(store, txOf(upsertPage()));
+    await applyTransaction(store, txOf(claimOp()));
+    const claimPath = join(root, ".pomaster", "evidence", "claims", "CLM-10.json");
+    const claim = JSON.parse(readFileSync(claimPath, "utf8")) as Record<string, unknown>;
+    ((claim.verification) as Record<string, unknown>).verdict = "VERIFIED";
+    writeFileSync(claimPath, `${JSON.stringify(claim, null, 2)}\n`, "utf8");
+    const bad = await applyTransaction(store, txOf([
+      {
+        op: "record_claim",
+        canonicalizeOverwrite: true,
+        claim: {
+          clm: "CLM-10",
+          subjectId: gid("PAGE.DASHBOARD"),
+          assertion: "口径改了：另一条声称",
+          assertedBy: { actorType: "agent", actor: "claude/session-93", selfAttested: true },
+          evidenceRefs: [],
+        },
+      },
+    ])).catch((e: unknown) => e);
+    expect(bad).toBeInstanceOf(GovernanceError);
+    expect((bad as GovernanceError).code).toBe("EVIDENCE_ALREADY_EXISTS");
+    // 二道防线 hint 指路新 id（判定改判归独立验证流通道）
+    expect((bad as GovernanceError).hint).toContain("已判定记录不可 canonical 化");
+    const after = JSON.parse(readFileSync(claimPath, "utf8")) as Record<string, unknown>;
+    expect(((after.verification) as Record<string, unknown>).verdict).toBe("VERIFIED");
+  });
+
+  it("显式 canonicalizeOverwrite 同 GRN 异 verdict → 放行（run 无判定态概念），journal 记 record_gate_run_canonicalize", async () => {
+    await applyTransaction(store, txOf(upsertPage()));
+    await applyTransaction(store, txOf([{ op: "record_gate_run", run: { grn: "GRN-79", result: gateResultFixture("GRN-79"), trigger: "pre_closeout" } }]));
+    const runPath = join(root, ".pomaster", "evidence", "runs", "GRN-79.json");
+    const flipped = gateResultFixture("GRN-79", {
+      verdict: "failed",
+      counts: { scanned: 10, applicableScanned: 8, violations: 1, notApplicable: 2 },
+    });
+    const result = await applyTransaction(store, txOf([
+      {
+        op: "record_gate_run",
+        canonicalizeOverwrite: true,
+        run: { grn: "GRN-79", result: flipped as never, trigger: "pre_closeout" },
+      },
+    ]));
+    expect(result.shortCircuited).toBe(false);
+    const after = JSON.parse(readFileSync(runPath, "utf8")) as { gate_result: { result: { verdict: string } } };
+    expect(after.gate_result.result.verdict).toBe("failed");
+    const lastEvent = JSON.parse(readJournal(root).trimEnd().split("\n").pop() as string) as { ops: string[] };
+    expect(lastEvent.ops).toContain("record_gate_run_canonicalize");
+  });
+});
+
+describe("A4 upsert 直改 lifecycle 不豁免转移矩阵", () => {
+  it("upsert CURRENT→SUPERSEDED 缺 authorityRef → EVOLUTION_REQUIRED（免审批直落终态封死）", async () => {
+    await applyTransaction(store, txOf(upsertPage()));
+    const bad = await applyTransaction(store, txOf(upsertPage({
+      axes: SUPERSEDED_AXES,
+      successorRef: gid("PAGE.DASHBOARD_V2"),
+    }))).catch((e: unknown) => e);
+    expect(bad).toBeInstanceOf(GovernanceError);
+    expect((bad as GovernanceError).code).toBe("EVOLUTION_REQUIRED");
+  });
+
+  it("upsert SUPERSEDED→CURRENT 复活 → TRANSITION_ILLEGAL（撤销 supersede 支线在 upsert 通道封死）", async () => {
+    await applyTransaction(store, txOf(upsertPage()));
+    await applyTransaction(store, txOf(upsertPage({ id: gid("PAGE.DASHBOARD_V2"), titleZh: "V2" })));
+    await applyTransaction(store, txOf(upsertPage({
+      axes: SUPERSEDED_AXES,
+      successorRef: gid("PAGE.DASHBOARD_V2"),
+    }), "CHANGE.SEED_A4"));
+    const resurrect = await applyTransaction(store, txOf(upsertPage())).catch((e: unknown) => e);
+    expect(resurrect).toBeInstanceOf(GovernanceError);
+    expect((resurrect as GovernanceError).code).toBe("TRANSITION_ILLEGAL");
+    const index = await loadTruthIndex(store);
+    expect(index.objects.find((row) => row.id === "PAGE.DASHBOARD")?.axes.lifecycle).toBe("SUPERSEDED");
+  });
+
+  it("upsert 声明矩阵允许边（PROPOSED→CURRENT）带 authorityRef → 放行（合法迁移不误伤）", async () => {
+    await applyTransaction(store, txOf(upsertPage({ axes: PROPOSED_AXES, titleZh: "提案" })));
+    const result = await applyTransaction(store, txOf(upsertPage(), "DECISION.A4_LEGAL"));
+    expect(result.shortCircuited).toBe(false);
+    const index = await loadTruthIndex(store);
+    expect(index.objects[0]?.axes.lifecycle).toBe("CURRENT");
+  });
+});
+
+describe("A5 提交前 01 schema 复验（op 层漏检兜底）", () => {
+  it("titleZh=undefined 的 tx → SCHEMA_INVALID 拒绝提交、磁盘字节不变、store 仍可用", async () => {
+    const indexBefore = readFileSync(join(root, ".pomaster", "state", "truth-index.json"), "utf8");
+    const journalBefore = readJournal(root);
+    const bad = await applyTransaction(store, txOf(upsertPage({ titleZh: undefined }))).catch((e: unknown) => e);
+    expect(bad).toBeInstanceOf(GovernanceError);
+    expect((bad as GovernanceError).code).toBe("SCHEMA_INVALID");
+    // path detail：错误信息带 schema 违例定位（title_zh required）
+    expect(String((bad as GovernanceError).message)).toContain("title_zh");
+    expect(readFileSync(join(root, ".pomaster", "state", "truth-index.json"), "utf8")).toBe(indexBefore);
+    expect(readJournal(root)).toBe(journalBefore);
+    // store 不变砖：合法事务照常提交、读通路照常校验
+    const ok = await applyTransaction(store, txOf(upsertPage()));
+    expect(ok.shortCircuited).toBe(false);
+    const index = await loadTruthIndex(store);
+    expect(index.objects).toHaveLength(1);
+  });
+});
+
+describe("A6 同事务多 heartbeat op 不丢行", () => {
+  it("单事务两个 heartbeat op → heartbeat.jsonl 两行、双 producer liveness 均更新", async () => {
+    await applyTransaction(store, txOf([
+      { op: "register_producer", record: producerRecord() as never },
+      { op: "register_producer", record: producerRecord({ producerId: "prod.second_compiler" }) as never },
+    ]));
+    const result = await applyTransaction(store, txOf([
+      { op: "heartbeat", producerId: "prod.demo_compiler", wroteObjectIds: [] },
+      { op: "heartbeat", producerId: "prod.second_compiler", wroteObjectIds: [] },
+    ]));
+    const heartbeat = readFileSync(join(root, ".pomaster", "runtime", "producers", "heartbeat.jsonl"), "utf8");
+    expect(heartbeat.trim().split("\n")).toHaveLength(2);
+    const index = await loadTruthIndex(store);
+    for (const producerId of ["prod.demo_compiler", "prod.second_compiler"]) {
+      expect(index.producers.find((producer) => producer.producerId === producerId)?.liveness).toMatchObject({
+        status: "active",
+        runsSinceLastOutput: 0,
+        lastOutputSeq: result.appliedSeq,
+      });
+    }
+  });
+});
+
+describe("A7 重录同 CLM 的 evidence_summary 不双计", () => {
+  it("重录场景 claims 计数恒等磁盘逻辑文件数（staged 按 clm 覆盖磁盘扫描）", async () => {
+    await applyTransaction(store, txOf(upsertPage()));
+    await applyTransaction(store, txOf(claimOp()));
+    const claimsDir = join(root, ".pomaster", "evidence", "claims");
+    expect(readdirSync(claimsDir).filter((name) => name.endsWith(".json"))).toHaveLength(1);
+    // 重录事务：upsert 触发重算时磁盘已有 CLM-10（旧实现磁盘+staged 双计成 2）
+    const result = await applyTransaction(store, txOf([
+      { op: "upsert_object", envelope: pageEnvelope({ titleZh: "仪表盘（改）" }) as never },
+      ...claimOp(),
+    ]));
+    expect(result.shortCircuited).toBe(false);
+    const index = await loadTruthIndex(store);
+    const row = index.objects.find((candidate) => candidate.id === "PAGE.DASHBOARD");
+    expect(row?.evidenceSummary).toEqual({ claims: 1, verified: 0, unverified: 1, rejected: 0 });
+    expect(readdirSync(claimsDir).filter((name) => name.endsWith(".json"))).toHaveLength(1);
   });
 });
 

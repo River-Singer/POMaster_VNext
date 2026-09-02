@@ -521,23 +521,45 @@ interface PermitLedgerEntry {
 // （PermitRecord 新字段），本投影**不消费台账侧 applicability 输入**——请求侧直传
 // （ProjectionRequest.capabilities 等）是本增量唯一输入通路；切 readPermitsFile 单点
 // 属双头收敛改动，波及面未专项核查，留待后续 PR（研究 applicability.md R8 保守路径）。
+/**
+ * 读取许可台账（宽松字段提取面）。损坏处置取舍（C6）：
+ * - JSON 不可解析 / permits 非数组 → SCHEMA_INVALID 显式爆（对齐 readKnowledgeLibrary
+ *   与 readPermitsFile 装载面纪律：许可通道范围被静默收缩 = 判卷假绿可能——损坏的
+ *   台账不能伪装成「无许可」空台账）；
+ * - 缺 permit_ref 的畸形行保留静默剔除（与 knowledge 侧车宽松字段提取同款）：台账行
+ *   由 issuePermit 写入的规整形态保证，个别畸形行按「缺席不伪造」剔除不构成对分母的
+ *   系统性伪装；JSON/结构坏形才是手改痕迹，必须显性暴露。
+ */
 function readPermitLedger(store: Store): readonly PermitLedgerEntry[] {
   const paths = pathsOf(store);
   const text = readText(paths.permitsPath);
   if (text === null) return [];
+  let parsed: UnknownRecord;
   try {
-    const parsed = JSON.parse(text) as UnknownRecord;
-    const permits = parsed.permits;
-    if (!Array.isArray(permits)) return [];
-    return permits.filter(
-      (permit): permit is PermitLedgerEntry =>
-        typeof permit === "object" &&
-        permit !== null &&
-        typeof (permit as UnknownRecord).permit_ref === "string",
+    parsed = JSON.parse(text) as UnknownRecord;
+  } catch (error) {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      "state/permits.json 无法解析（损坏或手改）",
+      "许可台账损坏会让许可通道范围静默收缩（判卷假绿）；恢复 git 版本，台账由 kernel issuePermit 通路维护，禁止手改",
+      { permits_path: paths.permitsPath, cause: String(error) },
     );
-  } catch {
-    return [];
   }
+  const permits = parsed.permits;
+  if (!Array.isArray(permits)) {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      "state/permits.json 结构非法（permits 非数组）",
+      "许可台账损坏会让许可通道范围静默收缩（判卷假绿）；恢复 git 版本，台账由 kernel issuePermit 通路维护，禁止手改",
+      { permits_path: paths.permitsPath },
+    );
+  }
+  return permits.filter(
+    (permit): permit is PermitLedgerEntry =>
+      typeof permit === "object" &&
+      permit !== null &&
+      typeof (permit as UnknownRecord).permit_ref === "string",
+  );
 }
 
 /**
@@ -636,6 +658,13 @@ export async function compileProjection(
   // —— MUST 区（AUTHORITATIVE：进 gate 判卷输入） ——
   const mustEntries: ProjectionEntry[] = [];
   for (const row of index.objects) {
+    // §83.2 铁律·消费层防线：knowledge_entry 恒 ADVISORY，绝不进 MUST 判卷输入。
+    // 通路层封条③（knowledge.ts「TransactionOp 无 knowledge op」）只封了知识侧车语义
+    // 入口；kind=knowledge_entry 是 TRUTH_BODY_KINDS 十类闭包成员、KNOWLEDGE 前缀已
+    // 登记，upsert_object 仍可携该信封入 truth-index——不带本排除时，带 denominatorRefs
+    // 的知识对象会借分母通道进入 MUST 区（AUTHORITATIVE），「知识不能直接让 Gate FAIL」
+    // 被消费面架空。该对象照常进 ADVISORY 区（见下方 ADVISORY 循环），对抗测试钉住。
+    if (row.kind === "knowledge_entry") continue;
     const reasons = scopeReasons.get(entryId(row));
     if (reasons === undefined) continue;
     mustEntries.push({ ref: entryId(row), reason: [...reasons].sort().join("; ") });

@@ -17,6 +17,14 @@
  * ⑤ doctor 探测矩阵扩容：真实 runDoctor 呈现 playwright 探针（与
  *    chrome_devtools_mcp 探针并存——双通道各自显式呈现）。
  *
+ * @0.3.0 注记（P0.5-4b · W1-D2 批 2 · PRD §6.7/§14 P0.5-4）：MCP 交互腿增环境身份
+ * 前置门——EnvironmentReceipt 缺席或 doctor_verdict 非 READY → blocked（PRD Case H
+ * 「Verification BLOCKED」+ §6.7「Verification 不得 PASS」）。本 spec 主矩阵是
+ * P26 双腿判卷语义（@0.2.0 时代逐字不变），runLegs 统一供给 READY 环境判卷输入
+ * （经 kernel runEnvironmentDoctor 真判卷链，禁手拼回执）；环境门矩阵与 Benchmark E
+ * 全链归 packages/gauntlet-lite/test/browser-environment-gate.spec.ts 与
+ * tests/integration/browser-legs-environment.spec.ts。
+ *
  * 说明（recipe 分母边界）：BROWSER 双腿不经 catalog/gates recipe 派发（catalog
  * recipe 归 P29/CV 领域）；「同一次 check 跑双通道=两条 GRN」由 gauntlet-lite 的
  * runBrowserGateLegs 编排面承载，入账通路与 check --gates 同一 kernel 事务边界。
@@ -31,10 +39,11 @@ import {
   NETWORK_DIMENSION_ATTACHMENT,
   runBrowserGateLegs,
   playwrightReportAbsolutePath,
+  type BrowserEnvironmentInput,
   type DetectorFacts,
   type GateResultRecord,
 } from "@pomaster/gauntlet-lite";
-import type { Actor, Store } from "@pomaster/kernel";
+import type { Actor, EnvironmentExpectation, Store } from "@pomaster/kernel";
 import {
   applyTransaction,
   createStore,
@@ -259,6 +268,30 @@ const LEG_IDENTITIES = [
   { grn: "GRN-0002", ranAtSeq: 11 },
 ] as const;
 
+/**
+ * §6.7 READY 环境判卷输入（P0.5-4b · @0.3.0 前置门）：期望面五项身份核全申报 +
+ * 实测面全等（判卷经 kernel runEnvironmentDoctor 真链——本 spec 不手拼回执）。
+ * 本 spec 主矩阵钉的是 @0.2.0 时代双腿判卷语义（READY 回执下逐字不变）；环境门
+ * 矩阵归 browser-environment-gate.spec / browser-legs-environment.spec。
+ */
+const READY_EXPECTATION: EnvironmentExpectation = {
+  repository_ref: "POMASTER_PROJECT",
+  revision_ref: "d6afca3",
+  build_identity: null,
+  runtime_instance: "app-local-4173",
+  base_url: "http://127.0.0.1:4173",
+  environment_ref: "ENV.LOCAL.DEV",
+  dataset_ref: null,
+  auth_role: null,
+  feature_flags: null,
+};
+
+const READY_ENVIRONMENT: BrowserEnvironmentInput = {
+  expected: READY_EXPECTATION,
+  observed: { ...READY_EXPECTATION },
+  executionId: "AGX-2026-00001",
+};
+
 function runLegs(
   reportText: string | null,
   presence: LegPresence = {},
@@ -284,6 +317,9 @@ function runLegs(
       // EBUSY 有界重试耗尽）。真实连通性的 e2e 归
       // gauntlet-lite/test/browser-adapter.spec.ts（宿主未装诚实 skip——缺席链面）。
       smokeFn: () => ({ connected: true, pageTitle: null, failureReason: null }),
+      // @0.3.0 环境身份前置门（W1-D2）：READY 判卷输入——缺省会 fail-closed 成
+      // blocked（PRD §6.7 验收句），本 spec 钉的 @0.2.0 判卷语义须 READY 供给。
+      environment: READY_ENVIRONMENT,
     },
   );
 }
