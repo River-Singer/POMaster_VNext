@@ -22,8 +22,10 @@
  * - cursor → .cursor/rules/pomaster.mdc（frontmatter alwaysApply + 细指针正文）
  * - qoder  → .qoder/rules/pomaster.md（frontmatter trigger: always_on + 细指针正文）
  * 适配器存在即跳过（skipped-existing），绝不覆盖人类文件；`--platforms none` 只建
- * AGENTS.md + 状态骨架。TTY 人读模式无旗标时出编号清单交互一行选择；--json 恒走
- * 确定性缺省（机读通道禁交互阻塞）。
+ * AGENTS.md + 状态骨架。TTY 人读模式无旗标时出复选清单（◉/◯ 空格勾选 / ↑↓ 移动 /
+ * 回车确认，raw 模式 + 原地重绘；raw 启用失败降级编号输入）；--json 恒走确定性缺省
+ * （机读通道禁交互阻塞）。ANSI 序列只允许出现在本文件的交互渲染器内（§45 纪律：
+ * --json 信封与人读完成输出恒零 ANSI）。
  */
 
 import { readFile, stat, writeFile } from "node:fs/promises";
@@ -264,7 +266,8 @@ export interface InitInteractiveIo {
 }
 
 /**
- * TTY 交互 init：打印平台清单 → 读一行 stdin → 解析选择 → 交由 runInit 执行。
+ * TTY 交互 init（降级路径）：复选清单 raw 模式启用失败（非终端句柄等）时的
+ * 编号输入形态——打印平台清单 → 读一行 stdin → 解析选择 → 交由 runInit 执行。
  * 空行 = 缺省 claude；词形非法 = SCHEMA_INVALID fail-closed（零写入）。
  */
 export async function runInitInteractive(
@@ -289,6 +292,134 @@ export async function runInitInteractive(
     );
   }
   return runInit(rootDir, { platforms: parse.platforms.join(",") });
+}
+
+// ============================================================
+// F1 交互升级：平台复选清单（Trellis 形态——◉/◯ 空格勾选 / ↑↓ 移动 / 回车确认）
+// ============================================================
+// §45 纪律注记：本节的 ANSI 光标控制序列（\x1b[nA 上移 / \x1b[0K 清行）只允许出现在
+// redrawFrame 的出口、且只经 ChecklistIo.write 进入真实终端的 TTY 交互路径；
+// --json 信封与人读完成输出恒零 ANSI（纪律不破）。
+
+/** 清单按键词形闭包（raw 模式字节；测试与生产共用同一词表）。 */
+export const CHECKLIST_KEYS = {
+  /** ↑ */
+  up: "\x1b[A",
+  /** ↓ */
+  down: "\x1b[B",
+  /** 空格（0x20）：切换光标行选中态 */
+  toggle: " ",
+  /** 回车（\r；\n 亦收）：确认 */
+  confirm: "\r",
+  /** Ctrl+C：中止（终端恢复后由调用方退出） */
+  abort: "\x03",
+} as const;
+
+/** 复选清单 IO 注入（生产 = raw stdin + stdout 原块写；测试 = 预录按键序列驱动）。 */
+export interface ChecklistIo {
+  /** 帧写入（首帧为纯文本行集；重绘帧含 redrawFrame 的 ANSI 序列——仅 TTY 交互路径）。 */
+  readonly write: (chunk: string) => void;
+  /**
+   * 按键泵：逐键回调 handler；handler 返回 false = 停泵（确认/中止/流关闭）。
+   * resolve 于泵结束。
+   */
+  readonly pumpKeys: (handler: (key: string) => boolean) => Promise<void>;
+}
+
+export type ChecklistPromptResult =
+  | { readonly kind: "confirmed"; readonly platforms: readonly InitPlatform[] }
+  | { readonly kind: "aborted" };
+
+const CHECKLIST_HEADER = "? 启用哪些平台？（空格勾选 / ↑↓移动 / 回车确认）";
+
+/** codex 行的选中语义注记（AGENTS.md 即原生入口——选中不落盘）。 */
+const CHECKLIST_CODEX_NOTE = "（codex 原生读根 AGENTS.md，选中=已覆盖）";
+
+/** 单行渲染：光标行顶格、非光标行前导一空格；◉/◯ = 选中态；名称 padEnd(9) 对齐「→ 产出文件」。 */
+function checklistRow(
+  platform: InitPlatform,
+  file: string,
+  note: string,
+  checked: boolean,
+  isCursor: boolean,
+): string {
+  const mark = checked ? "◉" : "◯";
+  const prefix = isCursor ? "" : " ";
+  return `${prefix}${mark} ${platform.padEnd(9)}→ ${file}${note}`;
+}
+
+/**
+ * 渲染一帧（行集快照，零 ANSI——快照断言面；§45：本函数出口不含任何光标控制序列）。
+ */
+export function renderChecklistFrame(
+  checked: ReadonlySet<InitPlatform>,
+  cursor: number,
+): string {
+  const lines: string[] = [CHECKLIST_HEADER];
+  PLATFORM_ADAPTERS.forEach((spec, index) => {
+    const note = spec.coveredByAgentsMd ? CHECKLIST_CODEX_NOTE : "";
+    lines.push(
+      checklistRow(spec.name, spec.file, note, checked.has(spec.name), index === cursor),
+    );
+  });
+  return lines.join("\n");
+}
+
+/** 原地重绘序列：光标上移至帧首行首 + 逐行清行重写（ANSI 全仓唯一出口，仅 TTY 交互路径）。 */
+function redrawFrame(frame: string): string {
+  const lines = frame.split("\n");
+  return (
+    `\x1b[${lines.length - 1}A\r` +
+    lines
+      .map((line, i) => `\x1b[0K${line}${i < lines.length - 1 ? "\n" : ""}`)
+      .join("")
+  );
+}
+
+/**
+ * 复选清单交互：缺省选中 claude（与确定性缺省一致）；↑↓ 移动（顶/底行钳位）；
+ * 空格切换光标行选中态；回车确认（按注册表序返回选中集，空集 = --platforms none
+ * 等价）；Ctrl+C 中止。按键流耗尽未确认（EOF）按中止处理（fail-closed 不猜缺省）。
+ */
+export async function runChecklistPrompt(io: ChecklistIo): Promise<ChecklistPromptResult> {
+  let cursor = 0;
+  const checked = new Set<InitPlatform>(["claude"]);
+  let done: ChecklistPromptResult | null = null;
+
+  io.write(renderChecklistFrame(checked, cursor));
+
+  await io.pumpKeys((key) => {
+    if (done !== null) return false;
+    if (key === CHECKLIST_KEYS.up) {
+      cursor = Math.max(0, cursor - 1);
+    } else if (key === CHECKLIST_KEYS.down) {
+      cursor = Math.min(PLATFORM_ADAPTERS.length - 1, cursor + 1);
+    } else if (key === CHECKLIST_KEYS.toggle) {
+      const platform = PLATFORM_ADAPTERS[cursor]?.name;
+      if (platform !== undefined) {
+        if (checked.has(platform)) {
+          checked.delete(platform);
+        } else {
+          checked.add(platform);
+        }
+      }
+    } else if (key === CHECKLIST_KEYS.confirm || key === "\n") {
+      done = {
+        kind: "confirmed",
+        platforms: INIT_PLATFORMS.filter((platform) => checked.has(platform)),
+      };
+      return false;
+    } else if (key === CHECKLIST_KEYS.abort) {
+      done = { kind: "aborted" };
+      return false;
+    } else {
+      return true; // 词表外键忽略（零状态变化，不重绘）
+    }
+    io.write(redrawFrame(renderChecklistFrame(checked, cursor)));
+    return true;
+  });
+
+  return done ?? { kind: "aborted" };
 }
 
 /** 从 config.yaml 文本提取当前 profile（无 YAML 依赖的行级解析，容错：缺省 LIGHT）。 */

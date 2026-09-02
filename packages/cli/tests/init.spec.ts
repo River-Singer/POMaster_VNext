@@ -17,10 +17,14 @@ import {
   GENERATED_MARKER,
   QODER_RULES_RELATIVE,
   TRUTH_INDEX_RELATIVE,
+  CHECKLIST_KEYS,
   parsePlatformSelection,
+  renderChecklistFrame,
   renderPlatformMenu,
   runInit,
   runInitInteractive,
+  runChecklistPrompt,
+  type ChecklistIo,
 } from "@pomaster/cli";
 
 let dir: string;
@@ -727,5 +731,120 @@ describe("renderPlatformMenu（F1 清单形态）", () => {
     expect(lines[4]).toContain("4. qoder");
     expect(lines.join("\n")).toContain(CURSOR_RULES_RELATIVE);
     expect(lines[5]).toContain("a=全选");
+  });
+});
+
+// ============================================================
+// F1 交互升级：平台复选清单（◉/◯ 空格勾选 / ↑↓ 移动 / 回车确认）
+// ============================================================
+
+/** 预录按键序列驱动 io：记录写入帧（含重绘 ANSI），按键耗尽或 handler 停泵即 resolve。 */
+function scriptedChecklistIo(keys: readonly string[]): {
+  chunks: string[];
+  io: ChecklistIo;
+} {
+  const chunks: string[] = [];
+  return {
+    chunks,
+    io: {
+      write: (chunk) => chunks.push(chunk),
+      pumpKeys: async (handler) => {
+        for (const key of keys) {
+          if (!handler(key)) return;
+        }
+      },
+    },
+  };
+}
+
+describe("init 平台复选清单（F1 交互升级；ANSI 只在重绘帧、只在此交互器）", () => {
+  it("首帧逐字钉位：header + 四行（缺省选中 claude=◉、其余 ◯；光标行顶格、非光标行前导空格）", async () => {
+    const { chunks, io } = scriptedChecklistIo([CHECKLIST_KEYS.confirm]);
+    const result = await runChecklistPrompt(io);
+    expect(result).toEqual({ kind: "confirmed", platforms: ["claude"] });
+    expect(chunks).toHaveLength(1); // 无状态变化 → 只有首帧，无重绘
+    const first = chunks[0] ?? "";
+    expect(first).toContain("? 启用哪些平台？（空格勾选 / ↑↓移动 / 回车确认）");
+    expect(first).toContain("◉ claude   → CLAUDE.md");
+    expect(first).toContain(
+      " ◯ codex    → AGENTS.md（codex 原生读根 AGENTS.md，选中=已覆盖）",
+    );
+    expect(first).toContain(" ◯ cursor   → .cursor/rules/pomaster.mdc");
+    expect(first).toContain(" ◯ qoder    → .qoder/rules/pomaster.md");
+  });
+
+  it("空格切换 ◯→◉ 翻转：↓ 移到 codex 勾选 → 确认集 [claude, codex]", async () => {
+    const { chunks, io } = scriptedChecklistIo([
+      CHECKLIST_KEYS.down,
+      CHECKLIST_KEYS.toggle,
+      CHECKLIST_KEYS.confirm,
+    ]);
+    const result = await runChecklistPrompt(io);
+    expect(result).toEqual({
+      kind: "confirmed",
+      platforms: ["claude", "codex"],
+    });
+    // 翻转帧：codex 行成为光标行（顶格）且 ◯→◉；claude 失焦但保持勾选（前导空格 ◉）。
+    const flipped = chunks[chunks.length - 1] ?? "";
+    expect(flipped).toContain("\x1b[0K◉ codex    → AGENTS.md");
+    expect(flipped).toContain(" ◉ claude   → CLAUDE.md");
+  });
+
+  it("渲染帧快照：纯帧零 ANSI；重绘帧带光标上移（\\x1b[4A）与清行（\\x1b[0K）序列", async () => {
+    // 纯帧快照（快照断言面恒零 ANSI——§45：ANSI 只允许在重绘出口）。
+    const frame = renderChecklistFrame(new Set(["claude"]), 0);
+    expect(frame).not.toContain("\x1b[");
+    expect(frame.split("\n")).toHaveLength(5);
+    // 选中态翻转三态：光标行顶格 ◉ / 非光标已勾选带前导空格 ◉ / 未勾选 ◯。
+    expect(frame).toContain("◉ claude   → CLAUDE.md");
+    expect(renderChecklistFrame(new Set(["claude", "cursor"]), 0)).toContain(
+      " ◉ cursor",
+    );
+
+    // 重绘帧：唯一 ANSI 出口（光标上移 4 行到帧首 + 每行清行重写）。
+    const { chunks, io } = scriptedChecklistIo([CHECKLIST_KEYS.down]);
+    await runChecklistPrompt(io);
+    const redraw = chunks[1] ?? "";
+    expect(redraw.startsWith("\x1b[4A\r")).toBe(true);
+    expect(redraw).toContain("\x1b[0K");
+    expect(redraw).toContain(" ◉ claude");
+  });
+
+  it("↑↓ 钳位 / 取消全选=none 等价 / Ctrl+C 中止 / 词表外键忽略", async () => {
+    // 顶行再 ↑ 不动（光标保持 claude）；底行连按 ↓ 钳在 qoder。
+    const clampUp = scriptedChecklistIo([CHECKLIST_KEYS.up, CHECKLIST_KEYS.confirm]);
+    expect(await runChecklistPrompt(clampUp.io)).toEqual({
+      kind: "confirmed",
+      platforms: ["claude"],
+    });
+    const clampDown = scriptedChecklistIo([
+      CHECKLIST_KEYS.down,
+      CHECKLIST_KEYS.down,
+      CHECKLIST_KEYS.down,
+      CHECKLIST_KEYS.down,
+      CHECKLIST_KEYS.toggle,
+      CHECKLIST_KEYS.confirm,
+    ]);
+    expect(await runChecklistPrompt(clampDown.io)).toEqual({
+      kind: "confirmed",
+      platforms: ["claude", "qoder"],
+    });
+
+    // 取消全选后确认 = --platforms none 等价（空集合法）。
+    const none = scriptedChecklistIo([CHECKLIST_KEYS.toggle, CHECKLIST_KEYS.confirm]);
+    expect(await runChecklistPrompt(none.io)).toEqual({
+      kind: "confirmed",
+      platforms: [],
+    });
+
+    // Ctrl+C → aborted（终端恢复与退出归调用方）。
+    const abort = scriptedChecklistIo([CHECKLIST_KEYS.abort]);
+    expect(await runChecklistPrompt(abort.io)).toEqual({ kind: "aborted" });
+
+    // 词表外键忽略：零状态变化 → 不重绘（chunks 恒 1 帧）。
+    const ignored = scriptedChecklistIo(["x", "\x1b[C", CHECKLIST_KEYS.confirm]);
+    const result = await runChecklistPrompt(ignored.io);
+    expect(result).toEqual({ kind: "confirmed", platforms: ["claude"] });
+    expect(ignored.chunks).toHaveLength(1);
   });
 });

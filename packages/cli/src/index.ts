@@ -4,7 +4,8 @@
  * 命令面（PRD §44/§45；全部支持 --json 机读信封，禁止彩色自然语言当机读接口）：
  * - init            BOOTSTRAP：创建 .pomaster/ 最小骨架 + AGENTS.md 唯一事实源 +
  *                   平台适配器（F1：--platforms claude,codex,cursor,qoder / none；
- *                   TTY 人读模式无旗标时编号清单交互；幂等 NO_CHANGE）
+ *                   TTY 人读模式无旗标时出复选清单交互——◉/◯ 空格勾选 / ↑↓ 移动 /
+ *                   回车确认，raw 启用失败降级编号输入；幂等 NO_CHANGE）
  * - update          CLI 自更新（F2）：缺省 --check（npm view semver 比对，registry
  *                   不可达 fail-closed 显式呈现禁假绿）；--yes = npm install -g
  *                   pomaster@latest（stdio inherit；失败透传 exit 1）
@@ -123,7 +124,8 @@ import { Command, CommanderError } from "commander";
 import { createInterface } from "node:readline";
 import { CLI_NAME } from "./cli-info.js";
 import { toEnvelope, failOutcome, type CliEnvelope, type CommandOutcome } from "./envelope.js";
-import { runInit, runInitInteractive } from "./init.js";
+import { runInit, runChecklistPrompt, runInitInteractive } from "./init.js";
+import type { ChecklistPromptResult, InitResult } from "./init.js";
 import { runUpdate } from "./update.js";
 import { resolveCliVersion } from "./version.js";
 import { triageRequest } from "./triage.js";
@@ -208,9 +210,12 @@ export * from "./triage.js";
 export {
   runInit,
   runInitInteractive,
+  runChecklistPrompt,
   INIT_PLATFORMS,
+  CHECKLIST_KEYS,
   parsePlatformSelection,
   renderPlatformMenu,
+  renderChecklistFrame,
 } from "./init.js";
 export type {
   InitResult,
@@ -222,6 +227,8 @@ export type {
   InitPlatformReport,
   InitInteractiveIo,
   PlatformSelectionParse,
+  ChecklistIo,
+  ChecklistPromptResult,
 } from "./init.js";
 export { runUpdate, compareSemver, UPDATE_PACKAGE_NAME } from "./update.js";
 export type {
@@ -647,20 +654,17 @@ export function createProgram(
     )
     .option(
       "--platforms <platforms>",
-      "平台适配器逗号列表（claude|codex|cursor|qoder|none；缺省 claude；TTY 人读模式无旗标时出清单交互）",
+      "平台适配器逗号列表（claude|codex|cursor|qoder|none；缺省 claude；TTY 人读模式无旗标时出复选清单交互）",
     )
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (_opts, command) => {
       const platformsArg = command.opts().platforms as string | undefined;
       const asJson = command.opts().json === true;
       // F1 TTY 交互面：仅人读模式 + 未带旗标时启用（--json / 显式旗标恒走确定性
-      // 路径——机读通道禁交互阻塞）。
+      // 路径——机读通道禁交互阻塞）。内部带降级链：复选清单 raw 失败 → 编号输入。
       const outcome =
         platformsArg === undefined && !asJson && process.stdin.isTTY === true
-          ? await runInitInteractive(resolveDir(command), {
-              write: (line) => io.stdout(line),
-              readLine: readLineFromStdin,
-            })
+          ? await initInteractiveOutcome(resolveDir(command), io)
           : await runInit(resolveDir(command), { platforms: platformsArg });
       record({ command: "init", outcome, asJson });
     });
@@ -2494,6 +2498,112 @@ function readLineFromStdin(): Promise<string> {
       rl.close();
     });
     rl.once("close", () => resolve(""));
+  });
+}
+
+/**
+ * 从 raw 模式数据块提取一个键 token（F1 复选清单）：
+ * ESC[ A/B 方向键优先（可能跨 data 事件拆包，缓冲等待）；未知 ESC 序列按 ESC+下一
+ * 字节成对吞掉（prompt 侧词表外忽略）；其余按单字符。
+ */
+function takeKeyToken(buffer: string): { token: string; rest: string } | null {
+  if (buffer.startsWith("\x1b[A") || buffer.startsWith("\x1b[B")) {
+    return { token: buffer.slice(0, 3), rest: buffer.slice(3) };
+  }
+  if (buffer.startsWith("\x1b")) {
+    if (buffer.length === 1) return null; // 单 ESC：等下一字节
+    if (buffer[1] === "[" && buffer.length === 2) return null; // 不完整 CSI：等待
+    return { token: buffer.slice(0, 2), rest: buffer.slice(2) };
+  }
+  const head = buffer[0];
+  return head === undefined ? null : { token: head, rest: buffer.slice(1) };
+}
+
+/**
+ * F1 复选清单生产按键泵：stdin data 事件（raw 模式逐键到达）→ takeKeyToken 切词 →
+ * 逐键回调 handler；handler 返回 false（确认/中止）或流关闭（end/close）即清理监听
+ * 并 resolve。
+ */
+function pumpStdinKeys(handler: (key: string) => boolean): Promise<void> {
+  return new Promise((resolve) => {
+    let buffer = "";
+    const cleanup = (): void => {
+      process.stdin.removeListener("data", onData);
+      process.stdin.removeListener("end", onDone);
+      process.stdin.removeListener("close", onDone);
+    };
+    const onDone = (): void => {
+      cleanup();
+      resolve();
+    };
+    const onData = (chunk: Buffer | string): void => {
+      buffer += typeof chunk === "string" ? chunk : chunk.toString("utf8");
+      while (buffer.length > 0) {
+        const token = takeKeyToken(buffer);
+        if (token === null) break;
+        buffer = token.rest;
+        if (!handler(token.token)) {
+          cleanup();
+          resolve();
+          return;
+        }
+      }
+    };
+    process.stdin.on("data", onData);
+    process.stdin.once("end", onDone);
+    process.stdin.once("close", onDone);
+  });
+}
+
+/**
+ * F1 TTY 交互总入口（降级链）：复选清单（raw 模式 + 原地重绘，ANSI 只进真实终端）
+ * 优先；raw 启用失败（非终端句柄等）或 stdout 非 TTY → 既有编号输入降级；
+ * Ctrl+C/EOF → 恢复终端后 exit 130（SIGINT 惯例码）。确认集交由 runInit 执行。
+ */
+async function initInteractiveOutcome(
+  rootDir: string,
+  io: CliIo,
+): Promise<CommandOutcome<InitResult>> {
+  const stdin = process.stdin;
+  const restoreRaw = (): void => {
+    try {
+      stdin.setRawMode(false);
+    } catch {
+      // 恢复失败不吞流程（终端侧自行兜底）。
+    }
+    // 帧末行收尾换行（纯 \n 非 ANSI），让人读完成输出从新行开始。
+    process.stdout.write("\n");
+  };
+
+  if (typeof stdin.setRawMode === "function" && process.stdout.isTTY === true) {
+    let rawEnabled = false;
+    try {
+      stdin.setRawMode(true);
+      rawEnabled = true;
+    } catch {
+      rawEnabled = false; // 非终端句柄等 → 降级编号输入
+    }
+    if (rawEnabled) {
+      let result: ChecklistPromptResult;
+      try {
+        result = await runChecklistPrompt({
+          write: (chunk) => process.stdout.write(chunk),
+          pumpKeys: (handler) => pumpStdinKeys(handler),
+        });
+      } catch (err) {
+        restoreRaw();
+        throw err;
+      }
+      restoreRaw();
+      if (result.kind === "aborted") {
+        process.exit(130);
+      }
+      return runInit(rootDir, { platforms: result.platforms.join(",") });
+    }
+  }
+  return runInitInteractive(rootDir, {
+    write: (line) => io.stdout(line),
+    readLine: readLineFromStdin,
   });
 }
 
