@@ -1,0 +1,43 @@
+{
+  "id": "DATA_ARCHETYPE.MASTER_DATA",
+  "kind": "archetype",
+  "layer": "ARCHETYPE",
+  "title_zh": "主数据表",
+  "summary_zh": "主数据实体的表结构原型：业务码/名称/状态/审计四段公共字段 + 版本位；这些是 Archetype 默认，不是所有业务表强制字段。",
+  "semantic": {
+    "responsibility": "主数据实体的持久化形状基线（减少从零设计表结构）",
+    "when_to_use": "主数据类实体建表（v0.6.1 §90 Tracer：AI 不需要从零设计标准 Master Data 表结构）",
+    "when_not_to_use": "交易流水（走 TRANSACTION 原型——不默认软删）/层级/版本台账等专形"
+  },
+  "composition": {
+    "requires": [],
+    "optional": [],
+    "incompatible": []
+  },
+  "recommended_fields": [
+    "id",
+    "business_code",
+    "name",
+    "status",
+    "created_at",
+    "created_by",
+    "updated_at",
+    "updated_by",
+    "version"
+  ],
+  "optional_fields": [
+    "description",
+    "effective_from",
+    "effective_to",
+    "sort_order"
+  ],
+  "enforcement_note": "Archetype 默认非强制（v0.6.1 §48 逐字）；业务特有字段仍由业务决定",
+  "x-research-anchors": {
+    "sources": [
+      {
+        "url": "doc/POMaster-vNext-PRD-v0.6.1-Engineering-Substrate-Archetype-Catalog.md §47-§48",
+        "fetched": "2026-09-02"
+      }
+    ]
+  }
+}

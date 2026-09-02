@@ -19,10 +19,10 @@ schema_version: 1
 budget_limit: 16
 rule: 连续两个批次只增不减（具名条目数不减少）触发设计复审
 accounting_note: >-
-  批次 0（Model Constitution）首批登记 6 概念（加权 total_count=8）；
-  批次 1（Tracer Bullet）预计新增 archetype-instance-binding 与
-  new-entity-gate-recipe 两概念（delivered 后同批回填 status）。
-  状态词形 planned / delivered 二值闭包（守卫测试钉住）。
+  批次 0（Model Constitution）登记 6 概念（加权 8）；批次 1（Tracer Bullet）
+  新增 3 概念（archetype-instance-binding / new-entity-gate-recipe /
+  engineering-substrate-catalog，加权 5）——当前 9 概念加权 total_count=13，
+  预算 16 内。状态词形 planned / delivered 二值闭包（守卫测试钉住）。
 
 concepts:
   - name: Typed Relation sidecar（EDGE-<12hex> 内容寻址追加流；Graph 不是第六原语）
@@ -55,3 +55,18 @@ concepts:
     introduced_by_batch: batch-0
     status: delivered
     carrier: packages/schemas/assets/vocab-lock.draft.yaml（software_graph_vocab 段，v0.5-resolved）+ packages/schemas/src/vocab.ts
+  - name: Archetype 实例采用边（INSTANCE_OF + key_bindings 落地锚——D-2 边化落法；解析≠采用）
+    count: 1
+    introduced_by_batch: batch-1
+    status: delivered
+    carrier: packages/kernel/src/relations.ts + packages/kernel/src/new-entity.ts + tests/integration/v06-tracer-supplier.spec.ts
+  - name: New Entity Gate 判卷命令面（五否证明 kernel 机判 + catalog recipe 锚；空分母 NO_MATCH → skipped_blindspot）
+    count: 2
+    introduced_by_batch: batch-1
+    status: delivered
+    carrier: packages/kernel/src/new-entity.ts + catalog/gates/gate.new-entity.checks.json
+  - name: Engineering Substrate Catalog 首批物料（10 archetype 全联网核实锚定；catalog_kind/substrate_layer 词表闸）
+    count: 2
+    introduced_by_batch: batch-1
+    status: delivered
+    carrier: catalog/archetypes/ + catalog/tools/seed_v06_archetypes.py + catalog/tools/materialize_v06_relock.py

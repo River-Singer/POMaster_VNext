@@ -1,0 +1,78 @@
+{
+  "id": "COMPONENT_ARCHETYPE.DATA_GRID",
+  "kind": "archetype",
+  "layer": "PRIMITIVE",
+  "title_zh": "数据网格",
+  "summary_zh": "重量级数据网格：默认能力集（分页/排序/筛选/行选/固定/空态等）以 AntD Table demo 锚点为词表，role/键盘契约以 APG grid 为准，两源拼装各管一层。",
+  "semantic": {
+    "responsibility": "结构化数据的表格化呈现与行级交互",
+    "when_to_use": "主数据/查询结果的表格面；只读展示表可退回 table role（gating 条件）",
+    "when_not_to_use": "轻量静态表格（table role 语义足够时禁滥用 grid role）"
+  },
+  "composition": {
+    "requires": [],
+    "optional": [
+      "COMPONENT_ARCHETYPE.SEARCH_INPUT",
+      "COMPONENT_ARCHETYPE.BUTTON"
+    ],
+    "incompatible": []
+  },
+  "aria_pattern": "https://www.w3.org/WAI/ARIA/apg/patterns/grid/",
+  "default_capabilities": [
+    "pagination",
+    "sorting_single",
+    "sorting_multi",
+    "filtering",
+    "filter_reset",
+    "row_selection",
+    "fixed_header_columns",
+    "ellipsis",
+    "empty_state",
+    "summary",
+    "responsive"
+  ],
+  "extended_capabilities": [
+    "editable_cell",
+    "editable_row",
+    "expand",
+    "tree_data",
+    "drag_sort",
+    "virtual",
+    "grouping_columns"
+  ],
+  "keyboard_navigation": [
+    "ArrowRight",
+    "ArrowLeft",
+    "ArrowDown",
+    "ArrowUp",
+    "PageDown",
+    "PageUp",
+    "Home",
+    "End",
+    "Control+Home",
+    "Control+End"
+  ],
+  "keyboard_selection": [
+    "Control+Space",
+    "Shift+Space",
+    "Control+A",
+    "Shift+Arrow"
+  ],
+  "structural_contracts": [
+    "single_tab_stop",
+    "focus_managed_internally"
+  ],
+  "x-research-anchors": {
+    "note": "能力词表=AntD Table demo 锚点实抓（v6.6.2）；键盘/role 契约=APG grid pattern 实抓；virtual 为 AntD 一等 prop",
+    "sources": [
+      {
+        "url": "https://ant.design/components/table",
+        "fetched": "2026-09-02"
+      },
+      {
+        "url": "https://www.w3.org/WAI/ARIA/apg/patterns/grid/",
+        "fetched": "2026-09-02"
+      }
+    ]
+  }
+}

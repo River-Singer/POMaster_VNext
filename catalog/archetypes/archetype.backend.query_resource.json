@@ -1,0 +1,40 @@
+{
+  "id": "ARCHETYPE.BACKEND.QUERY_RESOURCE",
+  "kind": "archetype",
+  "layer": "ARCHETYPE",
+  "title_zh": "查询资源",
+  "summary_zh": "LIST/FILTER/SORT/PAGE/SEARCH 五能力的查询面原型：服务端分页、稳定排序、有界页大小、过滤字段有索引为默认档。",
+  "semantic": {
+    "responsibility": "实体的列表/检索读面（与 CRUD 写面分离）",
+    "when_to_use": "任何列表页/分析页的取数面；大表必须服务端分页",
+    "when_not_to_use": "单点 get（CRUD_RESOURCE.operations.get 承载）"
+  },
+  "composition": {
+    "requires": [],
+    "optional": [
+      "ARCHETYPE.BACKEND.CRUD_RESOURCE"
+    ],
+    "incompatible": []
+  },
+  "capabilities": [
+    "LIST",
+    "FILTER",
+    "SORT",
+    "PAGE",
+    "SEARCH"
+  ],
+  "defaults": [
+    "server_side_pagination",
+    "stable_sort",
+    "bounded_page_size",
+    "indexed_filter_fields"
+  ],
+  "x-research-anchors": {
+    "sources": [
+      {
+        "url": "doc/POMaster-vNext-PRD-v0.6.1-Engineering-Substrate-Archetype-Catalog.md §28",
+        "fetched": "2026-09-02"
+      }
+    ]
+  }
+}

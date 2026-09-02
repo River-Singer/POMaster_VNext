@@ -1,7 +1,7 @@
 {
   "catalog_version": "0.1.0-pilot",
   "profile": "web-standard@0",
-  "generated_by": "catalog/tools/materialize_catalog_pilot.py（pilot-0001 60 条；entries 按 id 排序）+ catalog/tools/materialize_batch4_uplift.py（batch-4 语料批 Universal 上提追加 9 条）+ corpus/spec-knowledge/materialize-curated.py（SPEC-D 汇总池 D5 精选追加 25 条）+ catalog/sensors/（P1-5 Sensor Capability Catalog Lite 六条目登记，裁决 8 D6/D7）+ W1-A2 P0.5-1 T3 标注战役（机器 applicability 字段批量标注 + 幂等重锁；PRD v0.5.2 §5.2/§14，裁决 8 ②）",
+  "generated_by": "catalog/tools/materialize_catalog_pilot.py（pilot-0001 60 条；entries 按 id 排序）+ catalog/tools/materialize_batch4_uplift.py（batch-4 语料批 Universal 上提追加 9 条）+ corpus/spec-knowledge/materialize-curated.py（SPEC-D 汇总池 D5 精选追加 25 条）+ catalog/sensors/（P1-5 Sensor Capability Catalog Lite 六条目登记，裁决 8 D6/D7）+ W1-A2 P0.5-1 T3 标注战役（机器 applicability 字段批量标注 + 幂等重锁；PRD v0.5.2 §5.2/§14，裁决 8 ②） + catalog/tools/seed_v06_archetypes.py + materialize_v06_relock.py（P-v06 批次 1：archetypes 十条目 + GATE.NEW_ENTITY.CHECKS 登记，D-2/D-4 裁决）",
   "x-digest-ethics": {
     "basis": "D24 / vocab-lock.digest_ethics",
     "write_blocking": false,
@@ -12,9 +12,20 @@
   "controlled_children": {
     "note": "catalog-lock 管辖面（vocab-lock PR-0001 catalog_layer_vocab 同段语义）：allowed=登记在册可存在；required=必须存在。新增 catalog 文件须同步 allowed+required 两处（batch-4 split-ledger catalog_scope_note 纪律；沿 pomaster directory-lock controlled_children 语义移植）。",
     "allowed": [
+      "archetypes/archetype.backend.crud_resource.json",
+      "archetypes/archetype.backend.query_resource.json",
+      "archetypes/archetype.component.button.json",
+      "archetypes/archetype.component.data_grid.json",
+      "archetypes/archetype.component.dialog.json",
+      "archetypes/archetype.component.search_input.json",
+      "archetypes/archetype.component.search_select.json",
+      "archetypes/archetype.data.master_data.json",
+      "archetypes/archetype.page.analysis.json",
+      "archetypes/archetype.page.master_data.json",
       "gates/gate.be.api.contract_checks.json",
       "gates/gate.be.chg.contract_change_checks.json",
       "gates/gate.chg.prechange_checks.json",
+      "gates/gate.new-entity.checks.json",
       "gates/gate.web.api.request_checks.json",
       "gates/gate.web.grid.checks.json",
       "knowledge/knowledge.api.example_stable_error_code.json",
@@ -114,9 +125,20 @@
       "sensors/sensor.production.metric.json"
     ],
     "required": [
+      "archetypes/archetype.backend.crud_resource.json",
+      "archetypes/archetype.backend.query_resource.json",
+      "archetypes/archetype.component.button.json",
+      "archetypes/archetype.component.data_grid.json",
+      "archetypes/archetype.component.dialog.json",
+      "archetypes/archetype.component.search_input.json",
+      "archetypes/archetype.component.search_select.json",
+      "archetypes/archetype.data.master_data.json",
+      "archetypes/archetype.page.analysis.json",
+      "archetypes/archetype.page.master_data.json",
       "gates/gate.be.api.contract_checks.json",
       "gates/gate.be.chg.contract_change_checks.json",
       "gates/gate.chg.prechange_checks.json",
+      "gates/gate.new-entity.checks.json",
       "gates/gate.web.api.request_checks.json",
       "gates/gate.web.grid.checks.json",
       "knowledge/knowledge.api.example_stable_error_code.json",
@@ -218,6 +240,18 @@
   },
   "entries": [
     {
+      "id": "ARCHETYPE.BACKEND.CRUD_RESOURCE",
+      "path": "archetypes/archetype.backend.crud_resource.json",
+      "content_sha256": "sha256:c1007e7ee368b837916773b4e1f449ed723368dfa75918a7b28819ff1fec2649",
+      "source_ref": "catalog/tools/seed_v06_archetypes.py（P-v06 批次 1；外部参照 external-design-references.md 2026-09-02 实抓锚）"
+    },
+    {
+      "id": "ARCHETYPE.BACKEND.QUERY_RESOURCE",
+      "path": "archetypes/archetype.backend.query_resource.json",
+      "content_sha256": "sha256:b610c1ac1cd33c3adf608135e6bf126780271412d9b5d44352326e7c057510e2",
+      "source_ref": "catalog/tools/seed_v06_archetypes.py（P-v06 批次 1；外部参照 external-design-references.md 2026-09-02 实抓锚）"
+    },
+    {
       "id": "AUTHORITY.BE.API_CONTRACT_OWNERSHIP",
       "path": "policies/authority.be.api_contract_ownership.json",
       "content_sha256": "sha256:ea32fd4f036903543c2e2242b635a7dc7edceee8cac72c20bed0062ace05a912",
@@ -248,6 +282,42 @@
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/30-data-grid-protocol.md"
     },
     {
+      "id": "COMPONENT_ARCHETYPE.BUTTON",
+      "path": "archetypes/archetype.component.button.json",
+      "content_sha256": "sha256:2f0285a346879df1c89945de8432e56b5c3c03fbcbea47b86966daee4a9451cc",
+      "source_ref": "catalog/tools/seed_v06_archetypes.py（P-v06 批次 1；外部参照 external-design-references.md 2026-09-02 实抓锚）"
+    },
+    {
+      "id": "COMPONENT_ARCHETYPE.DATA_GRID",
+      "path": "archetypes/archetype.component.data_grid.json",
+      "content_sha256": "sha256:fa59265960f95c891242dc84dd392e5d58d8af0a812eec08c608b998c5b06aca",
+      "source_ref": "catalog/tools/seed_v06_archetypes.py（P-v06 批次 1；外部参照 external-design-references.md 2026-09-02 实抓锚）"
+    },
+    {
+      "id": "COMPONENT_ARCHETYPE.DIALOG",
+      "path": "archetypes/archetype.component.dialog.json",
+      "content_sha256": "sha256:5529d78e400efc79cab8a50a1f20f803257e537b4f5f66bd6a8996fa68067fa0",
+      "source_ref": "catalog/tools/seed_v06_archetypes.py（P-v06 批次 1；外部参照 external-design-references.md 2026-09-02 实抓锚）"
+    },
+    {
+      "id": "COMPONENT_ARCHETYPE.SEARCH_INPUT",
+      "path": "archetypes/archetype.component.search_input.json",
+      "content_sha256": "sha256:81c817323a1a69f935e271ae6e28b82cba235d89c1eb17002662b69fc2a96e89",
+      "source_ref": "catalog/tools/seed_v06_archetypes.py（P-v06 批次 1；外部参照 external-design-references.md 2026-09-02 实抓锚）"
+    },
+    {
+      "id": "COMPONENT_ARCHETYPE.SEARCH_SELECT",
+      "path": "archetypes/archetype.component.search_select.json",
+      "content_sha256": "sha256:24578acd3818ff2894f422ece18ecd7827ba5183853b032226a5d9d3a19fa655",
+      "source_ref": "catalog/tools/seed_v06_archetypes.py（P-v06 批次 1；外部参照 external-design-references.md 2026-09-02 实抓锚）"
+    },
+    {
+      "id": "DATA_ARCHETYPE.MASTER_DATA",
+      "path": "archetypes/archetype.data.master_data.json",
+      "content_sha256": "sha256:1b8c646e33477575491dc61a1efa1b9242eeee2b0a4ec70bb0be29e55a0cb534",
+      "source_ref": "catalog/tools/seed_v06_archetypes.py（P-v06 批次 1；外部参照 external-design-references.md 2026-09-02 实抓锚）"
+    },
+    {
       "id": "GATE.BE.API.CONTRACT_CHECKS",
       "path": "gates/gate.be.api.contract_checks.json",
       "content_sha256": "sha256:4b8938397ee1c5abdd1395435e31ee5442e243123b05dff7b3e7e9b562069442",
@@ -264,6 +334,12 @@
       "path": "gates/gate.chg.prechange_checks.json",
       "content_sha256": "sha256:86f0fdcb146ecad551d5cc561cdce0f3280c22ad5adc9ab5886bb83d3cdad5f0",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/06-change-governance-protocol.md"
+    },
+    {
+      "id": "GATE.NEW_ENTITY.CHECKS",
+      "path": "gates/gate.new-entity.checks.json",
+      "content_sha256": "sha256:b10d08f869f9f1d45d4a05fb55b64f24269e0153b33cfb6eaa8bb62ee5812040",
+      "source_ref": "catalog/tools/materialize_v06_relock.py（P-v06 批次 1；v0.6.1 §75/§87 判卷定义锚）"
     },
     {
       "id": "GATE.WEB.API.REQUEST_CHECKS",
@@ -336,6 +412,18 @@
       "path": "knowledge/knowledge.web.grid.example_column_preset.json",
       "content_sha256": "sha256:131424299e976c0bafaa70f38fcc338469b6ace06600fa78164c5a124eefd3ee",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/30-data-grid-protocol.md"
+    },
+    {
+      "id": "PAGE_ARCHETYPE.ANALYSIS",
+      "path": "archetypes/archetype.page.analysis.json",
+      "content_sha256": "sha256:76c0f822254e5c6e3b5753fcc6e464ca62f803b5f006b77ca7795be0b4c551f3",
+      "source_ref": "catalog/tools/seed_v06_archetypes.py（P-v06 批次 1；外部参照 external-design-references.md 2026-09-02 实抓锚）"
+    },
+    {
+      "id": "PAGE_ARCHETYPE.MASTER_DATA",
+      "path": "archetypes/archetype.page.master_data.json",
+      "content_sha256": "sha256:db29d5c8d16966137ea9389bfaead5051fe3e9d6b974acdc5c7ad5a4fc0c8e0e",
+      "source_ref": "catalog/tools/seed_v06_archetypes.py（P-v06 批次 1；外部参照 external-design-references.md 2026-09-02 实抓锚）"
     },
     {
       "id": "POLICY.API.BACKWARD_COMPAT_DEFAULTS",

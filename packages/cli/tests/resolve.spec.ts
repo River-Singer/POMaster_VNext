@@ -113,7 +113,15 @@ describe("runResolve（NOT_CONFIGURED fail-closed 与解析三态）", () => {
 
   it("NO_MATCH：两分母在场零命中 → ok=true 显式缺席（exit 0 语义；不臆造）", async () => {
     await createStore(dir);
-    const outcome = await runResolve({ need: "跨车型成本比较", rootDir: dir });
+    // 注入空 catalog 分母（缺省 = 工具仓 catalog，首批已有 10 archetype——
+    // 「没查」≠「查了没有」，NO_MATCH 断言要求分母可控；显式根须实存）。
+    const emptyCatalog = join(dir, "empty-catalog");
+    mkdirSync(emptyCatalog, { recursive: true });
+    const outcome = await runResolve({
+      need: "跨车型成本比较",
+      catalogRoot: emptyCatalog,
+      rootDir: dir,
+    });
     expect(outcome.ok).toBe(true);
     expect(outcome.result?.match_class).toBe("NO_MATCH");
     expect(outcome.result?.matches).toEqual([]);

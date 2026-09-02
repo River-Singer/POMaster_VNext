@@ -1,0 +1,77 @@
+{
+  "id": "COMPONENT_ARCHETYPE.SEARCH_SELECT",
+  "kind": "archetype",
+  "layer": "PRIMITIVE",
+  "title_zh": "可搜索选择器",
+  "summary_zh": "可搜索的选项选择器：aria 模式=combobox（popup=listbox 变体）；四键键盘词表+两条行为契约（selection_follows_focus/single_select）；anatomy 词表照 Radix Select 16 部件。",
+  "semantic": {
+    "responsibility": "从大选项集中按关键词检索并选择（车型/供应商选择器类）",
+    "when_to_use": "选项多到需要搜索；可搜索选 combobox、纯选择选 listbox（aria_pattern 分型——核实差异表 #6）",
+    "when_not_to_use": "选项少（≤10）用纯 Select；自由文本用 Input"
+  },
+  "composition": {
+    "requires": [],
+    "optional": [],
+    "incompatible": []
+  },
+  "aria_pattern": "https://www.w3.org/WAI/ARIA/apg/patterns/combobox/",
+  "anatomy": [
+    "trigger",
+    "input",
+    "popup",
+    "option",
+    "clear_button"
+  ],
+  "anatomy_reference_radix": [
+    "Root",
+    "Trigger",
+    "Value",
+    "Icon",
+    "Portal",
+    "Content",
+    "Viewport",
+    "Item",
+    "ItemText",
+    "ItemIndicator",
+    "ScrollUpButton",
+    "ScrollDownButton",
+    "Group",
+    "Label",
+    "Separator",
+    "Arrow"
+  ],
+  "keyboard": [
+    "ArrowDown",
+    "ArrowUp",
+    "Enter",
+    "Escape"
+  ],
+  "keyboard_contracts": [
+    "selection_follows_focus",
+    "single_select",
+    "printable_characters_refocus_input"
+  ],
+  "variants": {
+    "selection": [
+      "single",
+      "multiple"
+    ]
+  },
+  "forbidden": [
+    "page_local_custom_select",
+    "anonymous_dropdown_copy"
+  ],
+  "x-research-anchors": {
+    "note": "四键语义按 APG combobox listbox-popup 段落核实并补两条契约（差异表 #6 裁决）；anatomy 全表为 Radix Select 页实抓",
+    "sources": [
+      {
+        "url": "https://www.w3.org/WAI/ARIA/apg/patterns/combobox/",
+        "fetched": "2026-09-02"
+      },
+      {
+        "url": "https://www.radix-ui.com/primitives/docs/components/select",
+        "fetched": "2026-09-02"
+      }
+    ]
+  }
+}

@@ -393,21 +393,22 @@ describe("八拍⑥ reconcile（clean → task 落账 → dirty，git repo 最�
 // ============================================================
 
 describe("八拍⑤ gate（git repo 最小工程）", () => {
-  it("check --gates exit 1：5 recipe 全派发 passed=0 + applied_seq=2（fail-closed 非绿）", () => {
+  it("check --gates exit 1：6 recipe 全派发 passed=0 + applied_seq=2（fail-closed 非绿；P-v06 增量 5→6）", () => {
     const rec = chain.gates;
     expect(rec.code).toBe(1);
     expect(env(rec).ok).toBe(false);
     const result = resultOf(rec);
-    expect(result["recipes_total"]).toBe(5);
+    expect(result["recipes_total"]).toBe(6);
     expect(result["passed"]).toBe(0);
     expect(result["applied_seq"]).toBe(2);
   });
 
-  it("rows 判卷词形：not_configured + not_run×4 + GRN-0001..0005 连号（缺席非绿非红）", () => {
+  it("rows 判卷词形：not_configured + not_run×5 + GRN-0001..0006 连号（缺席非绿非红；P-v06 增量）", () => {
     const rows = (resultOf(chain.gates)["rows"] ?? []) as Record<string, unknown>[];
-    expect(rows).toHaveLength(5);
+    expect(rows).toHaveLength(6);
     expect(rows.map((row) => row["verdict"])).toEqual([
       "not_configured",
+      "not_run",
       "not_run",
       "not_run",
       "not_run",
@@ -419,6 +420,7 @@ describe("八拍⑤ gate（git repo 最小工程）", () => {
       "GRN-0003",
       "GRN-0004",
       "GRN-0005",
+      "GRN-0006",
     ]);
     for (const row of rows) {
       expect(typeof row["gate"]).toBe("string");
@@ -426,7 +428,7 @@ describe("八拍⑤ gate（git repo 最小工程）", () => {
     }
   });
 
-  it("GRN 落盘 evidence/runs：5 文件 record_type=run + 三件套 + gate_def 词形 + counts 全零", () => {
+  it("GRN 落盘 evidence/runs：6 文件 record_type=run + 三件套 + gate_def 词形 + counts 全零", () => {
     const runsDir = join(root, ".pomaster", "evidence", "runs");
     expect(readdirSync(runsDir).sort()).toEqual([
       "GRN-0001.json",
@@ -434,6 +436,7 @@ describe("八拍⑤ gate（git repo 最小工程）", () => {
       "GRN-0003.json",
       "GRN-0004.json",
       "GRN-0005.json",
+      "GRN-0006.json",
     ]);
     for (const fileName of readdirSync(runsDir).sort()) {
       const record = JSON.parse(readFileSync(join(runsDir, fileName), "utf8")) as {
@@ -467,20 +470,20 @@ describe("八拍⑤ gate（git repo 最小工程）", () => {
     expect(String(result["detail"])).toContain("vitest");
   });
 
-  it("check --fast 纯读：runs 平面仍 5 文件（--fast 不落 GRN，G6 纪律）", () => {
+  it("check --fast 纯读：runs 平面仍 6 文件（--fast 不落 GRN，G6 纪律）", () => {
     const runsDir = join(root, ".pomaster", "evidence", "runs");
-    expect(readdirSync(runsDir)).toHaveLength(5);
+    expect(readdirSync(runsDir)).toHaveLength(6);
   });
 
-  it("gates 二次跑：GRN 续号 0006..0010 + applied_seq=3（观察追加非覆写）", async () => {
+  it("gates 二次跑：GRN 续号 0007..0012 + applied_seq=3（观察追加非覆写；P-v06 增量 5→6）", async () => {
     const second = await runJsonStep(root, ["check", "--gates"]);
     expect(second.code).toBe(1);
     const result = resultOf(second);
     const rows = (result["rows"] ?? []) as Record<string, unknown>[];
-    expect(rows[0]?.["grn"]).toBe("GRN-0006");
-    expect(rows[rows.length - 1]?.["grn"]).toBe("GRN-0010");
+    expect(rows[0]?.["grn"]).toBe("GRN-0007");
+    expect(rows[rows.length - 1]?.["grn"]).toBe("GRN-0012");
     expect(result["applied_seq"]).toBe(3);
-    expect(readdirSync(join(root, ".pomaster", "evidence", "runs"))).toHaveLength(10);
+    expect(readdirSync(join(root, ".pomaster", "evidence", "runs"))).toHaveLength(12);
   });
 });
 

@@ -53,7 +53,9 @@ import { readText } from "./io.js";
 type UnknownRecord = Record<string, unknown>;
 
 /** catalog/ 在仓库内的目录名（与 controlled_children 相对路径的基准）。 */
-const CATALOG_SECTIONS = ["gates", "knowledge", "policies", "sensors"] as const;
+// archetypes 是 P-v06 批次 1 新增管辖面（D-2 裁定：Engineering Substrate 标准件物料，
+// catalog-lock controlled_children 同款治理——sensors P1-5 扩面先例）。
+const CATALOG_SECTIONS = ["archetypes", "gates", "knowledge", "policies", "sensors"] as const;
 
 // ============================================================
 // catalog-lock 文档（catalog/catalog-lock.draft.json 的机器形态）

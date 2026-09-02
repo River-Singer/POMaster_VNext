@@ -1,0 +1,106 @@
+{
+  "x-p-v06": {
+    "status": "registered",
+    "note": "P-v06 批次 1（Owner 决议 D-4 2026-09-01/09-02）：New Entity Gate 判卷命令面（PRD v0.6.1 §75 五否证明 / §97 流程 / §87 Anti-Hallucination）。机判核心住 kernel runNewEntityGate（ref-integrity 同族 kernel 侧 gate——解析侧唯一判卷源 newEntityVerdictFromResolution「同一函数不两套」）；本 recipe 是判卷定义的 catalog 锚（人/hybrid 检查项 + gate_def 词形）。GATE.* 词形为 catalog 条目 id（kinds_registry.catalog_note 先例），不入 governed 前缀闭包；INSTANCE_OF 边、archetype kind 已随 vocab-pr-0006 收编 vocab-lock@v0.5-resolved。",
+    "locked_vocab_untouched": true
+  },
+  "id": "GATE.NEW_ENTITY.CHECKS",
+  "kind": "gate_recipe",
+  "axis_profile": "gate_recipe_default",
+  "classification": "GATE_RECIPE",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "新实体门禁检查单",
+  "statement_zh": "新实体门禁检查单：①Resolver 复用否决（已有等价对象禁新建）②配置/组合/扩展/适配五否逐项证明 ③拟用词形过 governed id 文法且不与在册对象撞名 ④INSTANCE_OF 边与 key_bindings 落地锚登记 ⑤NO_MATCH 分母在场（空分母的 NO_MATCH 不可信——盲区显式）。",
+  "applies_when": {
+    "lane": "any",
+    "condition": "任何新实体登记（组件/页面/模块/层/API/表/事件/缓存/依赖）",
+    "applicability_note": "v0.6.1 §75 适用面逐字：Component/Page Archetype/Module/Layer/API/Database Table/Event/Cache/Dependency"
+  },
+  "enforcement": "deterministic_where_possible",
+  "gate_def_draft": {
+    "anchor": "GATE.NEW_ENTITY.CHECKS@0.1.0",
+    "anchor_note": "03-gate-result.schema gate_def 要求 '<定义id>@semver' 且与 recipe id 同源（runner 分母自检强制）；kernel 侧 runNewEntityGate 的 gate_def 记账锚取 POLICY.GATE.NEW_ENTITY.CHECKS@0.1.0（REF_INTEGRITY 先例——03 gate_def 面与 recipe 投影面两词形各安其位，关系随本注记成文）",
+    "result_schema_ref": "POMaster_VNext/packages/schemas/assets/03-gate-result.schema.json",
+    "verdict_vocabulary": [
+      "passed",
+      "failed",
+      "warning",
+      "blocked",
+      "not_run",
+      "not_configured",
+      "skipped_blindspot"
+    ],
+    "judging_rules": {
+      "counts_not_applicable_required": "counts.not_applicable 必填（C1）",
+      "trust_twin": "asserted/recomputed 孪生字段组：判卷以 kernel resolveNeed 重算为准（C5）",
+      "blindspot_evidence": "verdict=skipped_blindspot 必须附 blindspot.fixture_regression 证据链；空分母（truth_rows=0 且 catalog_archetypes=0）的 NO_MATCH 判 allowed → skipped_blindspot（分母缺席显式，禁假绿）",
+      "aggregate_honesty": "聚合值不得吞没未判项的沉默（not_configured ≠ passed）"
+    }
+  },
+  "checks": [
+    {
+      "seq": 1,
+      "check_id": "resolver_reuse_denial",
+      "statement_zh": "Resolver 复用否决：需求词形命中在册对象（EXACT_MATCH）或标准件（CONFIGURABLE_MATCH）或可扩展对象（EXTENSIBLE_MATCH）时禁新建",
+      "judgeability": "machine",
+      "machine_support": "kernel resolveNeed → newEntityVerdictFromResolution（match_class 确定性派生；denied_by 证据链）"
+    },
+    {
+      "seq": 2,
+      "check_id": "five_noes_proof",
+      "statement_zh": "五否证明：No exact match / No valid configuration / No valid composition / No valid extension / No valid adapter 逐项成立才允许 Design New（v0.6.1 §75 逐字；批次 1 机判覆盖前三否，composition/adapter 两否批次 2+ 显式缺席）",
+      "judgeability": "hybrid",
+      "machine_support": "match_class ∈ {EXACT, CONFIGURABLE, EXTENSIBLE} → 结构性拒绝；NO_MATCH → 前三否成立",
+      "manual_part": "composition/adapter 两否终审在 Authority（批次 2+ 组合分析接手）"
+    },
+    {
+      "seq": 3,
+      "check_id": "word_form_grammar_and_collision",
+      "statement_zh": "拟用词形须过 governed id 文法（A5 closed-world）且不与在册对象/既有别名 normalized key 撞名",
+      "judgeability": "machine",
+      "machine_support": "parseGovernedId + truth-index objects 全等查册 + resolveAlias 收编检查"
+    },
+    {
+      "seq": 4,
+      "check_id": "instance_binding_registered",
+      "statement_zh": "命中标准件的对象实例必须显式登记 INSTANCE_OF 边（relation sidecar，带 provenance 五面）+ key_bindings 落地锚（D-2 裁定；解析≠采用）",
+      "judgeability": "machine",
+      "machine_support": "kernel readRelations 反查 INSTANCE_OF 边存在性（EDGE-<12hex> 内容寻址）"
+    },
+    {
+      "seq": 5,
+      "check_id": "no_match_denominator_on_record",
+      "statement_zh": "NO_MATCH 判定必须附分母披露（sources_examined）：truth_rows=0 且 catalog_archetypes=0 的 NO_MATCH 不可信——按 skipped_blindspot 呈现（Anti-Hallucination §87：分母缺席≠不存在）",
+      "judgeability": "machine",
+      "machine_support": "resolveNeed sources_examined 三分母计数 + runNewEntityGate 空分母 → skipped_blindspot 矩阵"
+    }
+  ],
+  "policy_refs": [
+    "POMaster_VNext/catalog/gates/gate.web.grid.checks.json（同构先例）"
+  ],
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "p-v06-batch1-human-review"
+  },
+  "origin": "ingested",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "doc/POMaster-vNext-PRD-v0.6.1-Engineering-Substrate-Archetype-Catalog.md",
+      "captured_by": "agent:claude/v06-fusion-batch1",
+      "locator": {
+        "section": "§75 New Entity Gate / §97 流程 / §87 Anti-Hallucination"
+      }
+    }
+  ],
+  "review_notes": [
+    "机判核心住 kernel runNewEntityGate（本 recipe 与 RECIPE_GATE_DISPATCH unbound 显式缺席并存——缺席诚实纪律：tool-adapter 绑定待批次 2 architecture 腿）；检查项①③④⑤机判、②hybrid"
+  ]
+}

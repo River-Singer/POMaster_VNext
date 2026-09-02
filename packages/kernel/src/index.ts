@@ -1868,7 +1868,22 @@ export {
   relationsTouching,
   reverseDependents,
   forwardDependencies,
+  impactClosure,
 } from "./relations.js";
+export type { ImpactClosureNode, ImpactClosure } from "./relations.js";
+export {
+  NEW_ENTITY_GATE,
+  runNewEntityGate,
+  instanceOfEdgesPresent,
+} from "./new-entity.js";
+export type {
+  NewEntityDisposition,
+  NewEntityJudgement,
+  NewEntityVerdictDecision,
+  NewEntityGateRun,
+  NewEntityCandidateInput,
+  NewEntityGateInput,
+} from "./new-entity.js";
 export type {
   RelationEndpoint,
   RelationProvenance,

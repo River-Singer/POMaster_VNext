@@ -1,0 +1,63 @@
+{
+  "id": "PAGE_ARCHETYPE.MASTER_DATA",
+  "kind": "archetype",
+  "layer": "ARCHETYPE",
+  "title_zh": "主数据管理页",
+  "summary_zh": "企业主数据（供应商/物料/客户等）的列表维护页：过滤→操作→网格→分页的标准组合，编辑走抽屉或对话框，默认假设远程数据+服务端分页。",
+  "semantic": {
+    "responsibility": "单一主数据实体的全生命周期维护入口（查/增/改/删/批操作）",
+    "when_to_use": "实体有独立维护入口、字段成表、需过滤检索与批量操作时（v0.6.1 §70 用户管理判例）",
+    "when_not_to_use": "纯展示分析页（走 PAGE_ARCHETYPE.ANALYSIS）；跨实体复杂工作流主页面"
+  },
+  "composition": {
+    "requires": [
+      "COMPONENT_ARCHETYPE.DATA_GRID",
+      "COMPONENT_ARCHETYPE.SEARCH_INPUT",
+      "COMPONENT_ARCHETYPE.BUTTON"
+    ],
+    "optional": [
+      "COMPONENT_ARCHETYPE.DIALOG",
+      "ARCHETYPE.BACKEND.IMPORT",
+      "ARCHETYPE.BACKEND.EXPORT",
+      "ARCHETYPE.BACKEND.BATCH",
+      "ARCHETYPE.BACKEND.AUDIT"
+    ],
+    "incompatible": []
+  },
+  "composition_order": [
+    "PageHeader",
+    "FilterBar",
+    "Toolbar",
+    "DataGrid",
+    "Pagination"
+  ],
+  "default_states": [
+    "LOADING",
+    "READY",
+    "EMPTY",
+    "ERROR",
+    "DIRTY",
+    "SAVING",
+    "FORBIDDEN"
+  ],
+  "backend_binding": [
+    "ARCHETYPE.BACKEND.CRUD_RESOURCE",
+    "ARCHETYPE.BACKEND.QUERY_RESOURCE"
+  ],
+  "data_binding": [
+    "DATA_ARCHETYPE.MASTER_DATA"
+  ],
+  "x-research-anchors": {
+    "note": "组合语义参照 AntD Table demo 锚点能力面（远程数据+分页为默认假设）",
+    "sources": [
+      {
+        "url": "https://ant.design/components/table",
+        "fetched": "2026-09-02"
+      },
+      {
+        "url": "https://ant.design/components/overview",
+        "fetched": "2026-09-02"
+      }
+    ]
+  }
+}

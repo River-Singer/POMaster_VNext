@@ -501,6 +501,83 @@ export function reverseDependents(
   );
 }
 
+/**
+ * Change Impact 闭包（§106-108 最小算子；PRD v0.6 §151 Graph Diff 的派生半边）：
+ * 从根端点出发沿反向依赖边（谁指向我）BFS，产出受影响对象集（去重、按 (depth, domain, id)
+ * 确定性排序）。maxDepth 缺省 4（防御环：relations 装载面已禁自环三元组，环只可能经
+ * 多跳形成——超深截断显式呈现 max_depth_reached，禁静默）。
+ */
+export interface ImpactClosureNode {
+  readonly endpoint: RelationEndpoint;
+  /** 距根的跳数（根的直接依赖者=1）。 */
+  readonly depth: number;
+  /** 经由哪条边到达（edge_id + type——影响链证据位）。 */
+  readonly via_edge_id: string;
+  readonly via_edge_type: RelationTypeValue;
+}
+
+export interface ImpactClosure {
+  readonly root: RelationEndpoint;
+  readonly affected: readonly ImpactClosureNode[];
+  readonly max_depth_reached: boolean;
+}
+
+export function impactClosure(
+  entries: readonly RelationEntry[],
+  root: RelationEndpointInput,
+  options?: { readonly maxDepth?: number },
+): ImpactClosure {
+  const maxDepth = options?.maxDepth ?? 4;
+  if (!Number.isInteger(maxDepth) || maxDepth < 1 || maxDepth > 16) {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      `maxDepth 非法：${String(maxDepth)}（须 1..16——防御失控 BFS）`,
+      "给出有界深度；超界影响面应走全量图 rebuild（批次 2+）",
+      { maxDepth },
+    );
+  }
+  const incoming = new Map<string, RelationEntry[]>();
+  for (const entry of entries) {
+    const key = `${entry.target.domain}:${entry.target.id}`;
+    const list = incoming.get(key) ?? [];
+    list.push(entry);
+    incoming.set(key, list);
+  }
+  const affected: ImpactClosureNode[] = [];
+  const visited = new Set<string>([`${root.domain}:${root.id}`]);
+  const frontier: { domain: string; id: string; depth: number }[] = [
+    { domain: root.domain, id: root.id, depth: 0 },
+  ];
+  let maxDepthReached = false;
+  while (frontier.length > 0) {
+    const current = frontier.shift() ?? (undefined as never);
+    if (current.depth >= maxDepth) {
+      maxDepthReached = true;
+      continue;
+    }
+    const edges = incoming.get(`${current.domain}:${current.id}`) ?? [];
+    for (const edge of edges) {
+      const sourceKey = `${edge.source.domain}:${edge.source.id}`;
+      if (visited.has(sourceKey)) continue;
+      visited.add(sourceKey);
+      affected.push({
+        endpoint: edge.source,
+        depth: current.depth + 1,
+        via_edge_id: edge.edge_id,
+        via_edge_type: edge.type,
+      });
+      frontier.push({ domain: edge.source.domain, id: edge.source.id, depth: current.depth + 1 });
+    }
+  }
+  affected.sort(
+    (a, b) =>
+      a.depth - b.depth ||
+      (a.endpoint.domain < b.endpoint.domain ? -1 : a.endpoint.domain > b.endpoint.domain ? 1 : 0) ||
+      (a.endpoint.id < b.endpoint.id ? -1 : 1),
+  );
+  return { root: { domain: root.domain, id: root.id }, affected, max_depth_reached: maxDepthReached };
+}
+
 /** 正向依赖（我指向谁）。 */
 export function forwardDependencies(
   entries: readonly RelationEntry[],

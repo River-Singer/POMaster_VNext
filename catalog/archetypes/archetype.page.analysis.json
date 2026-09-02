@@ -1,0 +1,39 @@
+{
+  "id": "PAGE_ARCHETYPE.ANALYSIS",
+  "kind": "archetype",
+  "layer": "ARCHETYPE",
+  "title_zh": "分析页",
+  "summary_zh": "指标/成本/差异类分析页：上下文→过滤→汇总→主分析面→下钻→导出的标准动线，适用于成本分析、经营分析、指标诊断、差异比较。",
+  "semantic": {
+    "responsibility": "围绕一个分析主题的多维探索与结论呈现",
+    "when_to_use": "成本分析/经营分析/指标诊断/差异比较（v0.6.1 §15 逐字）",
+    "when_not_to_use": "行级数据维护（走 PAGE_ARCHETYPE.MASTER_DATA）"
+  },
+  "composition": {
+    "requires": [
+      "COMPONENT_ARCHETYPE.SEARCH_INPUT",
+      "COMPONENT_ARCHETYPE.DATA_GRID"
+    ],
+    "optional": [
+      "COMPONENT_ARCHETYPE.DIALOG",
+      "ARCHETYPE.BACKEND.EXPORT"
+    ],
+    "incompatible": []
+  },
+  "composition_order": [
+    "ContextHeader",
+    "Filters",
+    "Summary",
+    "PrimaryAnalysisSurface",
+    "Drill-down",
+    "Action/Export"
+  ],
+  "x-research-anchors": {
+    "sources": [
+      {
+        "url": "doc/POMaster-vNext-PRD-v0.6.1-Engineering-Substrate-Archetype-Catalog.md §15",
+        "fetched": "2026-09-02"
+      }
+    ]
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "id": "COMPONENT_ARCHETYPE.SEARCH_INPUT",
+  "kind": "archetype",
+  "layer": "PRIMITIVE",
+  "title_zh": "搜索输入框",
+  "summary_zh": "文本输入触发的过滤/检索原语：企业站把它列为独立组件而非 Input 变体（Geist Search Input 独立词条佐证语义独立性）。",
+  "semantic": {
+    "responsibility": "按关键词过滤当前数据面（本地或远程）",
+    "when_to_use": "列表页/选择器的过滤区",
+    "when_not_to_use": "需要选项列表选择语义时（走 COMPONENT_ARCHETYPE.SEARCH_SELECT）"
+  },
+  "composition": {
+    "requires": [],
+    "optional": [
+      "COMPONENT_ARCHETYPE.SEARCH_SELECT"
+    ],
+    "incompatible": []
+  },
+  "states": [
+    "default",
+    "focus",
+    "filled",
+    "clearable",
+    "disabled"
+  ],
+  "x-research-anchors": {
+    "sources": [
+      {
+        "url": "https://vercel.com/geist/search-input",
+        "fetched": "2026-09-02"
+      }
+    ]
+  }
+}

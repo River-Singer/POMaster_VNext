@@ -1,0 +1,53 @@
+{
+  "id": "COMPONENT_ARCHETYPE.BUTTON",
+  "kind": "archetype",
+  "layer": "PRIMITIVE",
+  "title_zh": "按钮",
+  "summary_zh": "动作触发原语：状态变更动作用 Button、URL 导航用 Link、一行多个相关动作用 Menu/Split Button；variant 词表与 Best Practices 机器可核对（Geist 实抓）。",
+  "semantic": {
+    "responsibility": "触发一个明确的动作或事件",
+    "when_to_use": "表单提交/行操作/工具栏动作；表单提交必须 submit 类型",
+    "when_not_to_use": "页面导航（Link）；一组相关动作（Menu/SplitButton）"
+  },
+  "composition": {
+    "requires": [],
+    "optional": [],
+    "incompatible": []
+  },
+  "variants": [
+    "default",
+    "secondary",
+    "tertiary",
+    "error",
+    "warning"
+  ],
+  "states": [
+    "default",
+    "hover",
+    "active",
+    "loading",
+    "disabled"
+  ],
+  "usage_rules": [
+    "状态变更用 Button、改 URL 用 Link、多动作合并用 Menu/SplitButton",
+    "表单提交用 submit 类型；视觉 variant 与提交类型分离命名（Geist typeName 先例）",
+    "传 loading 而非替换 spinner——按钮保持可聚焦并向辅助技术播报忙态",
+    "仅在动作当前不可能时 disable，且配 Tooltip 解释原因",
+    "标签动词+名词、Title Case（Deploy Project）；破坏性动作与 toast 1:1 配对"
+  ],
+  "forbidden": [
+    "bare_verb_label",
+    "general_confirm_label",
+    "aria_label_on_text_button",
+    "spinner_swap_button"
+  ],
+  "x-research-anchors": {
+    "note": "variant 词表 Default/Secondary/Tertiary/Error/Warning 与 Best Practices 均为 Geist Button 页实抓；icon-only 缺 svgOnly+aria-label 时 validator 抛错=现成 fail-closed 先例",
+    "sources": [
+      {
+        "url": "https://vercel.com/geist/button",
+        "fetched": "2026-09-02"
+      }
+    ]
+  }
+}

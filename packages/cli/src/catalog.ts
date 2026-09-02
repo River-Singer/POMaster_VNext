@@ -15,6 +15,7 @@ import type {
   CatalogPolicyMaterial,
 } from "@pomaster/kernel";
 import {
+  loadCatalogArchetypes,
   loadCatalogPolicies,
   loadCatalogProjectionPresets,
   loadCatalogSensors,
@@ -37,6 +38,7 @@ export interface CatalogSectionCounts {
   readonly gates: number;
   readonly knowledge: number;
   readonly sensors: number;
+  readonly archetypes: number;
   readonly tools: number;
   readonly projection_presets: number;
 }
@@ -153,6 +155,7 @@ export async function runCatalogStatus(
       gates: lock.entries.filter((entry) => entry.path.startsWith("gates/")).length,
       knowledge: lock.entries.filter((entry) => entry.path.startsWith("knowledge/")).length,
       sensors: loadCatalogSensors(catalogRoot).length,
+      archetypes: loadCatalogArchetypes(catalogRoot).length,
       tools: loadCatalogTools(catalogRoot).length,
       projection_presets: loadCatalogProjectionPresets(catalogRoot).length,
     };
@@ -165,7 +168,7 @@ export async function runCatalogStatus(
         catalog_version: "",
         profile: "",
         entries_total: 0,
-        sections: { policies: 0, gates: 0, knowledge: 0, sensors: 0, tools: 0, projection_presets: 0 },
+        sections: { policies: 0, gates: 0, knowledge: 0, sensors: 0, archetypes: 0, tools: 0, projection_presets: 0 },
         lock_verification: { ok: false, entries_checked: 0, drifts: [] },
       },
       [
@@ -190,7 +193,7 @@ export async function runCatalogStatus(
   const human = [
     `catalog status: ${lock.catalog_version}（profile ${lock.profile}）`,
     `  root: ${catalogRoot}`,
-    `  entries: ${lock.entries.length}（policies ${sections.policies} / gates ${sections.gates} / knowledge ${sections.knowledge} / sensors ${sections.sensors}；tools ${sections.tools} / projection-presets ${sections.projection_presets}）`,
+    `  entries: ${lock.entries.length}（policies ${sections.policies} / gates ${sections.gates} / knowledge ${sections.knowledge} / sensors ${sections.sensors} / archetypes ${sections.archetypes}；tools ${sections.tools} / projection-presets ${sections.projection_presets}）`,
     verification.ok
       ? `  catalog-lock: ok（${verification.entries_checked} entries 哈希与管辖面对账通过）`
       : `  catalog-lock: DRIFT（${verification.drifts.length} 处——明细见 --json lock_verification.drifts）`,
@@ -265,6 +268,12 @@ export async function runCatalogExplain(
   }
 
   const policy = policies.find((candidate) => candidate.id === id);
+  // archetype 物料宽松提取（P-v06 批次 1；catalog_layer_vocab.catalog_kind=archetype）：
+  // title_zh/summary_zh（statement 位）/layer（classification 位）/when_to_use（condition 位）。
+  const archetype =
+    policy === undefined
+      ? loadCatalogArchetypes(catalogRoot).find((candidate) => candidate.id === id)
+      : undefined;
   const entryDrifts = verification.drifts.filter((drift) => drift.path === entry.path);
   const result: CatalogExplainResult = {
     id: entry.id,
@@ -273,9 +282,10 @@ export async function runCatalogExplain(
     source_ref: entry.source_ref,
     drifts: entryDrifts,
     material:
-      policy === undefined
+      policy === undefined && archetype === undefined
         ? emptyMaterial()
-        : {
+        : policy !== undefined
+          ? {
             title_zh: policy.titleZh,
             statement_zh: policy.statementZh,
             classification: policy.classification,
@@ -290,6 +300,24 @@ export async function runCatalogExplain(
             governance_profiles: axisOrNull(policy.governanceProfiles),
             object_kinds: axisOrNull(policy.objectKinds),
             applicability_note: policy.applicabilityNote,
+            risk_at_least: "not_configured",
+            technologies: "not_configured",
+          }
+        : {
+            title_zh: archetype.titleZh,
+            statement_zh: archetype.summaryZh,
+            classification: archetype.layer,
+            lane: null,
+            condition: archetype.semantic.whenToUse,
+            enforcement: null,
+            lifecycle: null,
+            authority_owner: null,
+            lanes: null,
+            capabilities: null,
+            change_classes: null,
+            governance_profiles: null,
+            object_kinds: null,
+            applicability_note: null,
             risk_at_least: "not_configured",
             technologies: "not_configured",
           },

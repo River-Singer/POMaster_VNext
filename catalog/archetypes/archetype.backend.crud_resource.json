@@ -1,0 +1,56 @@
+{
+  "id": "ARCHETYPE.BACKEND.CRUD_RESOURCE",
+  "kind": "archetype",
+  "layer": "ARCHETYPE",
+  "title_zh": "标准企业 CRUD 资源",
+  "summary_zh": "Create/Read/Update/Delete/List 五操作的标准资源原型：分页/校验/审计/乐观锁为默认档，软删/批量/导入/导出为可选档；错误契约与授权为强制约束。",
+  "semantic": {
+    "responsibility": "单实体的标准写面与单点读面（get）",
+    "when_to_use": "实体需要标准维护 API 时；业务决定字段/权限/删除策略（v0.6.1 §70）",
+    "when_not_to_use": "纯查询报表资源（配 QUERY_RESOURCE）；事件驱动写路径"
+  },
+  "composition": {
+    "requires": [],
+    "optional": [
+      "ARCHETYPE.BACKEND.QUERY_RESOURCE",
+      "DATA_ARCHETYPE.MASTER_DATA"
+    ],
+    "incompatible": []
+  },
+  "operations": [
+    "create",
+    "get",
+    "list",
+    "update",
+    "delete"
+  ],
+  "defaults": {
+    "pagination": true,
+    "validation": true,
+    "audit": true,
+    "optimistic_lock": true
+  },
+  "optional_capabilities": {
+    "soft_delete": null,
+    "batch": null,
+    "import": null,
+    "export": null
+  },
+  "constraints": [
+    "api_error_contract",
+    "authorization_required"
+  ],
+  "verification": [
+    "unit",
+    "contract",
+    "persistence"
+  ],
+  "x-research-anchors": {
+    "sources": [
+      {
+        "url": "doc/POMaster-vNext-PRD-v0.6.1-Engineering-Substrate-Archetype-Catalog.md §26-§27/§83",
+        "fetched": "2026-09-02"
+      }
+    ]
+  }
+}

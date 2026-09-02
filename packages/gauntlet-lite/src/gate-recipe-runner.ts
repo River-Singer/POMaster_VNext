@@ -92,6 +92,13 @@ export const CATALOG_GATE_RECIPES: readonly CatalogGateRecipeDescriptor[] = [
     titleZh: "表格门禁检查单",
     lane: "frontend",
   },
+  {
+    file: "gate.new-entity.checks.json",
+    id: "GATE.NEW_ENTITY.CHECKS",
+    gateDef: "GATE.NEW_ENTITY.CHECKS@0.1.0",
+    titleZh: "新实体门禁检查单",
+    lane: "any",
+  },
 ];
 
 // ============================================================
@@ -142,6 +149,11 @@ export const RECIPE_GATE_DISPATCH: Readonly<Record<string, GateRecipeDispatch>> 
     kind: "unbound",
     reason:
       "表格五项依赖 interaction-contract-registry 对账与列 schema 扫描，扫描器未建（check#5 registry 对账为 opt-in：registry 文件缺席 → not_configured 语义需专用 adapter 承载）；需 grid checklist adapter 后接线",
+  },
+  "GATE.NEW_ENTITY.CHECKS": {
+    kind: "unbound",
+    reason:
+      "五否证明机判核心住 kernel runNewEntityGate（ref-integrity 同族 kernel 侧 gate——resolveNeed/newEntityVerdictFromResolution 单一实现）；本 runner 是 tool-adapter 派发面，kernel 侧 gate 不经 adapter 管线（缺席诚实：tool-adapter 绑定待批次 2 architecture 腿）",
   },
 };
 

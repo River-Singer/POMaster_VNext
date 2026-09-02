@@ -1,0 +1,52 @@
+{
+  "id": "COMPONENT_ARCHETYPE.DIALOG",
+  "kind": "archetype",
+  "layer": "PRIMITIVE",
+  "title_zh": "对话框",
+  "summary_zh": "模态对话框原语：anatomy 八部件（Radix 实抓）中 Title/Description 为必配 a11y 部件；对话框族按模态/方向/风险分型（Modal/Drawer/Popconfirm/Result——AntD Feedback 分型）。",
+  "semantic": {
+    "responsibility": "中断式任务流（确认/编辑/呈现结果）的容器",
+    "when_to_use": "需要用户明确决策或输入且不能被后台打断时",
+    "when_not_to_use": "非阻断提示（Toast/Message）；轻确认用 Popconfirm 分型"
+  },
+  "composition": {
+    "requires": [],
+    "optional": [],
+    "incompatible": []
+  },
+  "aria_pattern": "https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/",
+  "anatomy": [
+    "Root",
+    "Trigger",
+    "Portal",
+    "Overlay",
+    "Content",
+    "Close",
+    "Title",
+    "Description"
+  ],
+  "required_bindings": [
+    "Title",
+    "Description"
+  ],
+  "family_variants": {
+    "modal_task": "任务模态",
+    "drawer_side": "侧滑面板",
+    "popconfirm_light": "轻确认",
+    "result_page": "结果页"
+  },
+  "props_convention": "受控/非受控成对命名（open/defaultOpen/onOpenChange——Radix 实抓约定）",
+  "x-research-anchors": {
+    "note": "anatomy 八部件与 modal prop 默认值为 Radix Dialog 页实抓；族分型参照 AntD Feedback 类（Modal/Drawer/Popconfirm/Result）",
+    "sources": [
+      {
+        "url": "https://www.radix-ui.com/primitives/docs/components/dialog",
+        "fetched": "2026-09-02"
+      },
+      {
+        "url": "https://ant.design/components/overview",
+        "fetched": "2026-09-02"
+      }
+    ]
+  }
+}
