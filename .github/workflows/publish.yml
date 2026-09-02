@@ -1,0 +1,121 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Publish（npm Trusted Publishing · 零凭据）
+#
+# 触发方式：
+# - push tag `v*`（正式发布路径，例：`git tag v0.2.0 && git push origin v0.2.0`）；
+# - workflow_dispatch（手动兜底；非 tag ref 触发时版本闸的 tag 比对段自动跳过
+#   并打日志明示，仍按 staging 里的 version 发布）。
+#
+# Trusted Publisher 配置位（npmjs.com → pomaster 包页 → Settings → Trusted
+# Publisher），各字段与本文件逐字对应：
+# - Repository：River-Singer/POMaster_VNext（owner / name 两栏）；
+# - Workflow filename：publish.yml（必须与本文件名逐字一致——npm 以此核验发起
+#   发布的 workflow 身份，不一致即拒绝 OIDC 换取，防其他 workflow 冒名发布）；
+# - Action：npm publish（发布动作即本 workflow 末步的命令本身）；
+# - Environment：留空（本 workflow 不使用 GitHub environments）。
+#
+# 为什么 Node 24：Trusted Publishing（OIDC 免 NODE_AUTH_TOKEN）要求 npm CLI
+# ≥ 11.5，Node 22 自带的 npm 10.x 不具备该流程；Node 24 自带 npm ≥ 11.5。
+# 该约束只作用于发布机：bundle 以 target node22 构建、staging engines 为
+# `>=22`，消费者侧不受发布机 Node 版本影响。发布前另有机器闸显式断言
+# npm ≥ 11.5（见下方 step）——runner 镜像漂移时给显式错误而非 registry 侧怪错。
+#
+# provenance 语义：`npm publish --provenance` 用 GitHub runner 的 OIDC token
+# （permissions.id-token: write）向 registry 提交可验证出处证明（SLSA
+# provenance），npmjs.com 包页显示 provenance 徽标；同一 OIDC 通道完成发布
+# 认证——Trusted Publishing 的意义就是零凭据：整个 workflow 无任何
+# token/secret 引用。
+#
+# 版本一致性闸（本仓 fail-closed 纪律）：tag 触发时强制 `v<version>` 与
+# stage/pomaster/package.json 的 version 逐字相等，失配显式 fail，防 tag 与
+# 包版本漂移（staging version 单点真源在 scripts/build-npm-package.mjs）。
+# ─────────────────────────────────────────────────────────────────────────────
+name: Publish (npm Trusted Publishing)
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+# 权限最小化：id-token: write 是 OIDC 出口的唯一额外授权（Trusted Publishing
+# 认证与 provenance 签名共用同一通道）；checkout 仅需 contents: read。
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # 免 corepack 首次下载 pnpm 的交互确认（与 ci.yml 同词形）。
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
+    steps:
+      - uses: actions/checkout@v4
+
+      # Node 24 = 自带 npm ≥ 11.5（Trusted Publishing 硬下限，理由见头注）。
+      # registry-url 落 workspace 根 .npmrc；publish 步在 stage/pomaster 下运行，
+      # npm 自 cwd 向上查找 per-project .npmrc 命中同一 registry + OIDC 通道。
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - name: Install (frozen lockfile)
+        run: corepack pnpm install --frozen-lockfile
+
+      # 四包 tsc dist（schemas 包自带 build.mjs：tsc + assets 拷贝；`-r` 按
+      # workspace 依赖拓扑序 schemas → kernel → gauntlet-lite → cli）。
+      - name: Build workspace packages
+        run: corepack pnpm -r build
+
+      # 产出 stage/pomaster/（esbuild 单文件 ESM bundle + catalog/ + 法务文档 +
+      # 生成的 package.json；含 staging 出口判据与 bundle 直载冒烟，失败即红）。
+      - name: Build npm staging package
+        run: node scripts/build-npm-package.mjs
+
+      # 发布前机器闸（fail-closed，防 runner 环境与版本口径漂移）：
+      # ① npm ≥ 11.5（Trusted Publishing CLI 硬下限）；
+      # ② tag ↔ staging version 逐字一致（workflow_dispatch 非 tag 触发时跳过
+      #    ② 并打日志明示）。
+      - name: Pre-publish gate (npm >= 11.5; tag/version consistency)
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          node --input-type=module -e '
+            import { execSync } from "node:child_process";
+            import { readFileSync } from "node:fs";
+
+            // 闸 1：npm ≥ 11.5。
+            const npmVersion = execSync("npm --version", { encoding: "utf8" }).trim();
+            const [npmMajor, npmMinor] = npmVersion.split(".").map(Number);
+            if (!(npmMajor > 11 || (npmMajor === 11 && npmMinor >= 5))) {
+              console.error(`::error::npm ${npmVersion} 低于 Trusted Publishing 硬下限 11.5——OIDC 免凭据发布不可用（Node 24 镜像应自带 npm ≥ 11.5；若 runner 镜像漂移请显式升级 npm）。`);
+              process.exit(1);
+            }
+
+            // 闸 2：git tag ↔ staging 版本一致性（防 tag 与包版本漂移）。
+            const stagePackageJson = JSON.parse(readFileSync("stage/pomaster/package.json", "utf8"));
+            const stageVersion = stagePackageJson.version;
+            if (process.env.REF_TYPE !== "tag") {
+              console.log(`[publish] workflow_dispatch 手动触发（ref=${process.env.REF_NAME}，非 tag）——无 tag 可比对，闸 2 跳过，按 staging version ${stageVersion} 发布。`);
+            } else {
+              if (!process.env.REF_NAME.startsWith("v")) {
+                console.error(`::error::触发 tag「${process.env.REF_NAME}」缺 v 前缀（触发器承诺 tags: [v*]，此处属防御性断言，正常不可达）。`);
+                process.exit(1);
+              }
+              const tagVersion = process.env.REF_NAME.slice(1);
+              if (tagVersion !== stageVersion) {
+                console.error(`::error::tag 与包版本漂移：tag ${process.env.REF_NAME}（= ${tagVersion}）≠ stage/pomaster/package.json version ${stageVersion}；对齐后再发布。`);
+                process.exit(1);
+              }
+              console.log(`[publish] 版本闸通过：npm ${npmVersion} ≥ 11.5；tag ${process.env.REF_NAME} ↔ staging version ${stageVersion}。`);
+            }
+          '
+
+      # OIDC 免凭据发布：无 NODE_AUTH_TOKEN、无 NPM_TOKEN、零 secret 引用；
+      # --access public 显式公开（非 scoped 包幂等无害，防未来 scoped 化时默认私有个数）。
+      - name: Publish (Trusted Publishing OIDC + provenance)
+        working-directory: stage/pomaster
+        run: npm publish --provenance --access public
