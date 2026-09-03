@@ -129,13 +129,13 @@ describe("① 三态 truth-index 记录互异（failed / passed / not_run 落盘
 
     // 落盘面：三条 GRN 文件逐一存在且 snake 形态互异。
     const runsDir = join(root, ".pomaster", "evidence", "runs");
-    expect(readdirSync(runsDir).sort()).toEqual([
+    expect(readdirSync(runsDir).filter((name) => name !== "README.md").sort()).toEqual([
       "GRN-0001.json",
       "GRN-0002.json",
       "GRN-0003.json",
     ]);
     const serialized: string[] = [];
-    for (const fileName of readdirSync(runsDir).sort()) {
+    for (const fileName of readdirSync(runsDir).filter((name) => name !== "README.md").sort()) {
       const record = JSON.parse(readFileSync(join(runsDir, fileName), "utf8")) as Record<string, unknown>;
       expect(record["record_type"]).toBe("run");
       const inline = ((record["gate_result"] as Record<string, unknown>)["result"] ?? {}) as Record<string, unknown>;
@@ -146,7 +146,7 @@ describe("① 三态 truth-index 记录互异（failed / passed / not_run 落盘
     // truth-index 记录互异：三份落盘字节互异（verdict/counts/scope 三轴至少一轴不同）。
     expect(new Set(serialized).size).toBe(3);
     // 逐轴差异抽验：failed 的 violations=2、passed 的 violations=0、not_run 的 counts 全零。
-    const verdicts = readdirSync(runsDir)
+    const verdicts = readdirSync(runsDir).filter((name) => name !== "README.md")
       .sort()
       .map((fileName) => {
         const record = JSON.parse(readFileSync(join(runsDir, fileName), "utf8")) as Record<string, unknown>;

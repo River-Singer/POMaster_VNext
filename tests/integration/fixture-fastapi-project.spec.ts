@@ -386,7 +386,7 @@ describe("八拍⑤ gate（FastAPI 工程）", () => {
 
   it("GRN 落盘 evidence/runs：6 文件 record_type=run + 三件套 + counts 全零显式", () => {
     const runsDir = join(root, ".pomaster", "evidence", "runs");
-    expect(readdirSync(runsDir).sort()).toEqual([
+    expect(readdirSync(runsDir).filter((name) => name !== "README.md").sort()).toEqual([
       "GRN-0001.json",
       "GRN-0002.json",
       "GRN-0003.json",
@@ -394,7 +394,7 @@ describe("八拍⑤ gate（FastAPI 工程）", () => {
       "GRN-0005.json",
       "GRN-0006.json",
     ]);
-    for (const fileName of readdirSync(runsDir).sort()) {
+    for (const fileName of readdirSync(runsDir).filter((name) => name !== "README.md").sort()) {
       const record = JSON.parse(readFileSync(join(runsDir, fileName), "utf8")) as {
         record_type?: unknown;
         gate_result?: { result?: Record<string, unknown> };
@@ -431,7 +431,7 @@ describe("八拍⑤ gate（FastAPI 工程）", () => {
 
   it("check --fast 纯读：runs 平面仍 6 文件（--fast 不落 GRN，G6 纪律）", () => {
     const runsDir = join(root, ".pomaster", "evidence", "runs");
-    expect(readdirSync(runsDir)).toHaveLength(6);
+    expect(readdirSync(runsDir).filter((name) => name !== "README.md")).toHaveLength(6);
   });
 
   it("gates 二次跑：GRN 续号 0007..0012 + applied_seq=3（观察追加非覆写；P-v06 增量 5→6）", async () => {
@@ -442,7 +442,7 @@ describe("八拍⑤ gate（FastAPI 工程）", () => {
     expect(rows[0]?.["grn"]).toBe("GRN-0007");
     expect(rows[rows.length - 1]?.["grn"]).toBe("GRN-0012");
     expect(result["applied_seq"]).toBe(3);
-    expect(readdirSync(join(root, ".pomaster", "evidence", "runs"))).toHaveLength(12);
+    expect(readdirSync(join(root, ".pomaster", "evidence", "runs")).filter((name) => name !== "README.md")).toHaveLength(12);
   });
 });
 
@@ -478,7 +478,12 @@ describe("八拍⑧ closeout 与终态（FastAPI 工程）", () => {
     expect(readFileSync(join(root, ".pomaster", "state", "journal.jsonl"), "utf8")).toBe(
       journalBefore,
     );
-    expect(existsSync(join(root, ".pomaster", "evidence", "claims"))).toBe(false);
+    // 宪法 §2 预铺后 claims 平面恒在（README 占位）；零产出 = 零记录（README 除外）。
+    expect(
+      existsSync(join(root, ".pomaster", "evidence", "claims"))
+        ? readdirSync(join(root, ".pomaster", "evidence", "claims")).filter((name) => name !== "README.md")
+        : [],
+    ).toEqual([]);
   });
 
   it("permit list 台账呈现：2 条签发记录全部 active（TTL 拍面未过期）", async () => {

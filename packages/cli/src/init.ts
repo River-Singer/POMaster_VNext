@@ -10,6 +10,13 @@
  * - light（显式退回）：既有轻入口形态（细指针适配器，静态、无运行时依赖、无 hook
  *   注入）；对已重入口项目执行时按平台清单移除重入口安装物（skills 库/hooks 注册项；
  *   AGENTS.md 重写回轻形态）——重→轻可逆。
+ * 预铺目录骨架（Owner 2026-09-04 修订裁定：**不分模式**——宪法 §2 Target Directory
+ * Tree 全量在 init 一次性建出，`--mode light` 与 heavy 的 .pomaster 目录树完全相同，
+ * mode 只影响 skills/hooks 注入层；「AI 自己判断是否是复杂还是简单需求或者项目，
+ * 对应激活相关目录」——激活提示落 layout.json activation_hint；此裁定覆盖宪法 §17
+ * Lazy Materialization 与早期 wired/planned 双状态设计）。layout.json 全目录
+ * status=wired + activation_hint + constitution_source；每目录 README；运行时物化
+ * 语义不变（kernel paths.ts 仍为唯一登记处，store-layout.ts 仅委托派生）。
  * 零运行时第三方依赖的 D13 原 facets 不变（hook 只是 shell form 调 `pomaster` 自身）。
  *
  * 幂等纪律（A4 / No-op is elegant）：连续两次 init，第二次必须 NO_CHANGE——
@@ -54,16 +61,24 @@ import {
   CONFIG_RELATIVE,
   CURSOR_RULES_RELATIVE,
   GENERATED_MARKER,
+  LEGACY_OBJECTS_DIR_RELATIVE,
+  POMASTER_DIR,
   QODER_RULES_RELATIVE,
   TRUTH_INDEX_RELATIVE,
+  TRUTH_OBJECTS_DIR_RELATIVE,
   authorityFilePath,
   configPath,
   ensureParentDir,
-  objectsDirPath,
   toPosix,
   truthIndexPath,
 } from "./store-layout.js";
 import { INIT_TOOL_ID, buildSkeletonLedger } from "./digest.js";
+import {
+  LAYOUT_DIRECTORIES,
+  LAYOUT_MANIFEST_RELATIVE,
+  renderLayoutManifest,
+  renderLayoutReadme,
+} from "./layout.js";
 import {
   CLAUDE_SETTINGS_RELATIVE,
   COMMAND_PANORAMA_LINES,
@@ -541,7 +556,7 @@ triage:
   ttl_hours: ${TRIAGE_TTL_HOURS}          # triage 结果有效期（C9）
 store:
   state: .pomaster/state/truth-index.json
-  objects: .pomaster/objects/
+  objects: .pomaster/truth/objects/   # canonical 正文层（宪法 §34-P0；legacy .pomaster/objects/ 禁新写）
 `;
 
 // ============================================================
@@ -671,6 +686,25 @@ const MACHINE_OUTPUT_LINES = [
   "一切命令支持 `--json`（§45）；禁止解析彩色自然语言判断状态——机读唯一接口是 JSON 信封。",
 ];
 
+/**
+ * 目录宪法速览（≤10 行节制；两模板共用——.pomaster 目录树 mode 无关。要点蒸馏自
+ * 宪法 §0-§12 七平面模型 + §32/§33 Agent 禁令/必令）。
+ * Canonical State 表述按宪法 §34-P2 统一：truth-index 是唯一 root index，
+ * truth/objects/** 是 Canonical Truth 正文。
+ */
+const DIRECTORY_CONSTITUTION_LINES = [
+  "## 目录宪法速览（.pomaster/ 七平面）",
+  "",
+  "- state = 控制平面元数据 + sidecars（index/authority/permits/journal/…）",
+  "- truth = Canonical Truth 正文（`truth/objects/<kind-slug>/<governed-id>.json` 一对象一文件）",
+  "- evidence = 证明（runs/claims/blobs）",
+  "- executions + traces = 执行身份与行为档案（durable 进 Git；runtime/traces 为易变层）",
+  "- runtime = 易变运行态（sessions/locks/heartbeat，删后可重建）",
+  "- discovery = 未确认思考区；memory = 候选记忆 staging；production = 生产反馈",
+  "- 禁令：Agent 禁绕过 API 直写 .pomaster；新概念默认是 governed object kind 不是新目录",
+  "- 完整规范：`.pomaster/layout.json`（各目录 activation_hint）与 dot-pomaster-directory-constitution.md",
+];
+
 /** light 入口（--mode light 显式退回形态；静态、无运行时依赖、无 hook 注入）。 */
 function renderEntryMarkdown(
   profile: TriageProfile,
@@ -679,7 +713,7 @@ function renderEntryMarkdown(
   return `# POMaster vNext — Agent 轻入口
 
 > 本文件由 \`${INIT_TOOL_ID}\` 的 \`pomaster init\` 生成（D13 2026-09-03 修订：重入口为默认，本形态为显式退回——静态、无运行时依赖、无 hook 注入，\`--mode light\`）。
-> 带生成标记的文件可由 init 重新生成；Canonical State 唯一权威在 \`.pomaster/state/truth-index.json\`。
+> 带生成标记的文件可由 init 重新生成；\`.pomaster/state/truth-index.json\` 是 Canonical State 的唯一 root index，受其引用的 \`truth/objects/**\` 是 Canonical Truth 正文（宪法 §34-P2）。
 
 ## 当前治理档位（profile）
 
@@ -691,6 +725,8 @@ ${stateSummary}
 ## 常用命令
 
 ${COMMON_COMMANDS_LINES.join("\n")}
+
+${DIRECTORY_CONSTITUTION_LINES.join("\n")}
 
 ${BROWSER_EYES_LINES.join("\n")}
 
@@ -717,7 +753,7 @@ function renderHeavyEntryMarkdown(
   return `# POMaster vNext — Agent 重入口
 
 > 本文件由 \`${INIT_TOOL_ID}\` 的 \`pomaster init\` 生成（D13 2026-09-03 修订：重入口为默认——skills 库 + hook 注入 + 每轮轻提醒；\`--mode light\` 显式退回轻入口）。
-> 带生成标记的文件可由 init 重新生成；Canonical State 唯一权威在 \`.pomaster/state/truth-index.json\`；skill 命令卡单一事实源 = \`pomaster --help\`。
+> 带生成标记的文件可由 init 重新生成；\`.pomaster/state/truth-index.json\` 是 Canonical State 的唯一 root index，受其引用的 \`truth/objects/**\` 是 Canonical Truth 正文（宪法 §34-P2）；skill 命令卡单一事实源 = \`pomaster --help\`。
 
 ## 当前治理档位（profile）
 
@@ -729,6 +765,8 @@ ${stateSummary}
 ## 常用命令
 
 ${COMMON_COMMANDS_LINES.join("\n")}
+
+${DIRECTORY_CONSTITUTION_LINES.join("\n")}
 
 ## 重入口安装物（init 维护；--mode light 按平台清单移除）
 
@@ -826,6 +864,31 @@ async function writeGeneratedFile(
 }
 
 /**
+ * layout.json 写盘（预铺布局清单的机器可读面；created/updated/unchanged 三态按字节
+ * 比较）。不带 GENERATED_MARKER——HTML 注释破坏 JSON 可解析性；本文件是机器派生
+ * 状态（唯一维护者 = init 重生成，内容全部来自 layout.ts 清单常量），人手改动会在
+ * 下次 init 被重写（renderLayoutManifest 头注同步声明）。
+ */
+async function writeLayoutManifestFile(
+  rootDir: string,
+  files: InitFileReport[],
+): Promise<void> {
+  const absolute = `${rootDir}/${LAYOUT_MANIFEST_RELATIVE}`;
+  const content = renderLayoutManifest();
+  const existing = await readIfExists(absolute);
+  if (existing === content) {
+    files.push({ file: LAYOUT_MANIFEST_RELATIVE, action: "unchanged" });
+    return;
+  }
+  await ensureParentDir(absolute);
+  await writeFile(absolute, content, "utf8");
+  files.push({
+    file: LAYOUT_MANIFEST_RELATIVE,
+    action: existing === null ? "created" : "updated",
+  });
+}
+
+/**
  * 执行 init。幂等：重复执行至第二次起 NO_CHANGE（字节稳定，零写入）。
  * F1：options.platforms 词形原文（undefined = 缺省 claude，现行为）；mode 词形原文
  * （undefined = heavy 重入口默认）。词形解析先于一切写盘——非法 fail-closed 零写入。
@@ -885,9 +948,33 @@ export async function runInit(
   const heavy = mode === "heavy" && selectedPlatforms.length > 0;
   const claudeSelected = selectedPlatforms.includes("claude");
 
-  // 1) 目录骨架（state/objects 由 ensureParentDir 与 mkdir 递归创建）。
-  const { mkdir } = await import("node:fs/promises");
-  await mkdir(objectsDirPath(rootDir), { recursive: true });
+  // 1) 目录骨架：宪法 §2 Target Directory Tree 全量预铺（Owner 2026-09-04 裁定
+  //    「把所有的目录全部建好，不分级别」——mode 无关，light/heavy 同树；激活由 AI
+  //    按 layout.json activation_hint 自行判断）。目录清单单源 = LAYOUT_DIRECTORIES
+  //    （layout.ts；与 kernel 登记常量守卫对账）。
+  // 1.5) legacy layout 检测（宪法 §3 条款 5/6）：.pomaster/objects/ 在场即显式报告
+  //      ——禁静默 merge、禁自动覆盖、禁猜测迁移（迁移必须可审计、可回滚，归人类
+  //      显式动作；旧 init 空壳残留同样报告，不静默吞）。
+  const { mkdir, readdir } = await import("node:fs/promises");
+  for (const spec of LAYOUT_DIRECTORIES) {
+    await mkdir(`${rootDir}/${POMASTER_DIR}/${spec.path}`, { recursive: true });
+  }
+  const legacyObjectsAbs = `${rootDir}/${LEGACY_OBJECTS_DIR_RELATIVE}`;
+  if (await pathExists(legacyObjectsAbs)) {
+    let legacyEntries = 0;
+    try {
+      legacyEntries = (await readdir(legacyObjectsAbs)).length;
+    } catch {
+      legacyEntries = -1; // 不可读也显式呈现（禁静默猜测）
+    }
+    warnings.push({
+      code: "LEGACY_OBJECTS_LAYOUT",
+      message:
+        `legacy layout detected: ${toPosix(LEGACY_OBJECTS_DIR_RELATIVE)}/ exists` +
+        (legacyEntries > 0 ? ` with ${legacyEntries} entr${legacyEntries === 1 ? "y" : "ies"}` : legacyEntries === 0 ? " (empty residue of pre-constitution init)" : " (unreadable)"),
+      hint: `canonical 正文层已收敛 ${toPosix(TRUTH_OBJECTS_DIR_RELATIVE)}/（宪法 §34-P0）；init 不自动 merge/覆盖/迁移——迁移必须可审计、可回滚，请显式核对后人工处置（或确认无价值后移除本目录）。`,
+    });
+  }
 
   // 2) truth-index 空账本：只在缺失时创建；存在但不可解析 → 显式 INVALID_STATE，绝不覆盖。
   const ledgerPath = truthIndexPath(rootDir);
@@ -993,6 +1080,21 @@ export async function runInit(
     }
     files.push({ file: toPosix(CONFIG_RELATIVE), action: "unchanged" });
   }
+
+  // 4.5) 预铺面收尾（宪法 §2 全树已在步骤 1 无条件建出——mode 无关）：每目录 README
+  //      + layout.json 机器清单。位置：config.yaml 之后、入口文件之前——README 与
+  //      layout.json 先于引用它们的入口内容生成，报告顺序与物理创建顺序一致。
+  for (const spec of LAYOUT_DIRECTORIES) {
+    await writeGeneratedFile(
+      rootDir,
+      `${POMASTER_DIR}/${spec.path}/README.md`,
+      renderLayoutReadme(spec),
+      files,
+      warnings,
+      "LAYOUT_README_FOREIGN",
+    );
+  }
+  await writeLayoutManifestFile(rootDir, files);
 
   // 5) 入口文件：AGENTS.md 恒生成（唯一事实源；heavy/light 双模板按模式与平台选择
   //    选形——heavy 且平台选择为空时无重入口安装物可描述，落 light 形态不走标记分叉）。

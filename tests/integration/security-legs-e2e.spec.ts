@@ -323,7 +323,7 @@ describe("① 三条 GRN 独立入账 truth-index（gitleaks 红 + pip-audit 绿
     expect(appliedSeq).toBeGreaterThan(0);
 
     // 落盘面：恰好三条 GRN 文件（无第四条聚合记录）。
-    const files = readdirSync(runsDir()).sort();
+    const files = readdirSync(runsDir()).filter((name) => name !== "README.md").sort();
     expect(files).toEqual(["GRN-0001.json", "GRN-0002.json", "GRN-0003.json"]);
 
     // 逐文件三态 + 三件套随腿区分（缺席腿的口径 = 本腿真实口径轴——腿身份已知，
@@ -380,7 +380,7 @@ describe("① 三条 GRN 独立入账 truth-index（gitleaks 红 + pip-audit 绿
       semgrep: SEMGREP_CLEAN,
     });
     await ledgerIngest(records);
-    const files = readdirSync(runsDir()).sort();
+    const files = readdirSync(runsDir()).filter((name) => name !== "README.md").sort();
     expect(files).toHaveLength(3);
     for (const fileName of files) {
       const inline = readRunInline(fileName);
@@ -414,7 +414,7 @@ describe("③ 互不牵连矩阵：缺席/红/绿组合三场景", () => {
       "passed",
     ]);
     await ledgerIngest([gitleaks, pipAudit, semgrep]);
-    const verdicts = readdirSync(runsDir())
+    const verdicts = readdirSync(runsDir()).filter((name) => name !== "README.md")
       .sort()
       .map((f) => readRunInline(f)["verdict"]);
     expect(verdicts).toEqual(["failed", "passed", "passed"]);
@@ -438,7 +438,7 @@ describe("③ 互不牵连矩阵：缺席/红/绿组合三场景", () => {
     expect(pipAudit.items?.[0]?.rule).toBe("GHSA-9wx4-h78v-vm56");
     expect(semgrep.verdict).toBe("passed");
     await ledgerIngest([gitleaks, pipAudit, semgrep]);
-    const verdicts = readdirSync(runsDir())
+    const verdicts = readdirSync(runsDir()).filter((name) => name !== "README.md")
       .sort()
       .map((f) => readRunInline(f)["verdict"]);
     expect(verdicts).toEqual(["not_run", "failed", "passed"]);
@@ -459,7 +459,7 @@ describe("③ 互不牵连矩阵：缺席/红/绿组合三场景", () => {
     // 三记录身份仍互异（缺席也是独立记录，非省略、非合并）。
     expect(new Set([gitleaks.grn, pipAudit.grn, semgrep.grn]).size).toBe(3);
     await ledgerIngest([gitleaks, pipAudit, semgrep]);
-    const verdicts = readdirSync(runsDir())
+    const verdicts = readdirSync(runsDir()).filter((name) => name !== "README.md")
       .sort()
       .map((f) => readRunInline(f)["verdict"]);
     expect(verdicts).toEqual(["not_configured", "not_configured", "failed"]);
@@ -479,7 +479,7 @@ describe("③ 互不牵连矩阵：缺席/红/绿组合三场景", () => {
     ]);
     await ledgerIngest([gitleaks, pipAudit, semgrep]);
     // 三条独立记录（不是一条三合一）。
-    expect(readdirSync(runsDir()).sort()).toEqual([
+    expect(readdirSync(runsDir()).filter((name) => name !== "README.md").sort()).toEqual([
       "GRN-0001.json",
       "GRN-0002.json",
       "GRN-0003.json",
@@ -691,7 +691,7 @@ describe("⑥ 宿主真实双分支 E2E：探测在座→真跑判卷；探测�
     // 显式缺席落盘：三记录逐条入账（check --gates 同款通路），缺席腿的 not_run
     // 逐字落 GRN 文件（非省略）；落盘 verdict 与在座判卷逐一对应。
     await ledgerIngest(records);
-    const verdicts = readdirSync(runsDir())
+    const verdicts = readdirSync(runsDir()).filter((name) => name !== "README.md")
       .sort()
       .map((f) => readRunInline(f)["verdict"]);
     expect(verdicts).toEqual(byRunner.map((leg) => leg.record.verdict));

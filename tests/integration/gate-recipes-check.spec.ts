@@ -72,7 +72,7 @@ describe("check --gates 全链路（init → 派发 6 recipe → 6 GRN 入账；
 
     // 证据平面：六条 GRN 文件逐一落盘且 inline 形态齐备（三件套强制上报纪律）。
     const runsDir = join(root, ".pomaster", "evidence", "runs");
-    expect(readdirSync(runsDir).sort()).toEqual([
+    expect(readdirSync(runsDir).filter((name) => name !== "README.md").sort()).toEqual([
       "GRN-0001.json",
       "GRN-0002.json",
       "GRN-0003.json",
@@ -80,7 +80,7 @@ describe("check --gates 全链路（init → 派发 6 recipe → 6 GRN 入账；
       "GRN-0005.json",
       "GRN-0006.json",
     ]);
-    for (const fileName of readdirSync(runsDir).sort()) {
+    for (const fileName of readdirSync(runsDir).filter((name) => name !== "README.md").sort()) {
       const record = JSON.parse(
         readFileSync(join(runsDir, fileName), "utf8"),
       ) as Record<string, unknown>;
@@ -151,8 +151,8 @@ describe("check --gates 全链路（init → 派发 6 recipe → 6 GRN 入账；
     const result = outcome.envelope.result as Record<string, unknown>;
     expect(result["gate"]).toBe("BUILD");
     expect(result["verdict"]).toBe("not_run");
-    // 纯读腿零落盘：runs 平面不存在或为空（init 不预建 evidence 目录）。
+    // 纯读腿零 JSON 记录：runs 平面仅宪法 §2 预铺 README 占位，无 gate 记录落盘。
     const runsDir = join(root, ".pomaster", "evidence", "runs");
-    expect(existsSync(runsDir) ? readdirSync(runsDir) : []).toEqual([]);
+    expect(existsSync(runsDir) ? readdirSync(runsDir).filter((name) => name !== "README.md") : []).toEqual([]);
   });
 });

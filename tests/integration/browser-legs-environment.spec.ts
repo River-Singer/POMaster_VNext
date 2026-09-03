@@ -293,13 +293,13 @@ describe("① Benchmark E 主链（Case H revision mismatch）", () => {
     expect(outcome.screenshotBlobRef).toBeNull();
     expect(outcome.observationReceipt).toBeNull();
     expect(outcome.binding).toBeNull();
-    expect(existsSync(blobsDir()) && readdirSync(blobsDir()).length > 0).toBe(false);
+    expect(existsSync(blobsDir()) && readdirSync(blobsDir()).filter((name) => name !== "README.md").length > 0).toBe(false);
 
     // 入账面：blocked GRN 照常入账（诚实缺席呈现）但不携 artifact_refs——环境错的
     // 观察没有任何可引用身份。
     const browserEnvelope = readEnvelope("GRN-0002");
     expect(browserEnvelope).not.toHaveProperty("artifact_refs");
-    expect(readdirSync(runsDir()).sort()).toEqual(["GRN-0001.json", "GRN-0002.json"]);
+    expect(readdirSync(runsDir()).filter((name) => name !== "README.md").sort()).toEqual(["GRN-0001.json", "GRN-0002.json"]);
 
     // 互不牵连：playwright 确定性腿照常真跑判卷（环境门只落 MCP 交互腿——T2 边界）。
     expect(outcome.legs[0]?.verdict).toBe("passed");

@@ -314,6 +314,26 @@ export type {
   HooksMergeOutcome,
   HooksStripOutcome,
 } from "./heavy-entry.js";
+export {
+  FORBIDDEN_SCRATCHPAD_FILENAMES,
+  LAYOUT_DIRECTORIES,
+  LAYOUT_MANIFEST_RELATIVE,
+  LAYOUT_NOTES,
+  LAYOUT_SCHEMA,
+  LAYOUT_STATUSES,
+  LAYOUT_STATUS_WIRED,
+  buildLayoutManifest,
+  derivePathsTsStoreDirs,
+  deriveRegisteredStoreDirs,
+  renderLayoutManifest,
+  renderLayoutReadme,
+} from "./layout.js";
+export type {
+  LayoutDirSpec,
+  LayoutManifest,
+  LayoutManifestDirEntry,
+  LayoutStatus,
+} from "./layout.js";
 export { runInspect } from "./inspect.js";
 export type {
   InspectInput,

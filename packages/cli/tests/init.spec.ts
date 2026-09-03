@@ -3,9 +3,11 @@
  * N7 authority 骨架（BOOTSTRAP 手工步骤自动化）、F1 平台选择（--platforms 词表闸 /
  * 适配器产出 / 幂等 / 交互解析）、重入口默认（D13 2026-09-03 修订：skills 双镜像 +
  * hooks settings.json 合并 + 加厚 rules）、--mode light 显式退回与重→轻可逆、
- * skill 命令卡与 pomaster --help 单一事实源对账钉版。
+ * skill 命令卡与 pomaster --help 单一事实源对账钉版、init 预铺 .pomaster/ 目录骨架
+ * （宪法 §2 全树不分模式：25 目录 README + layout.json，light/heavy 同树；守卫细则见
+ * layout-manifest.spec.ts）、legacy .pomaster/objects 检测（宪法 §34-P0 收敛）。
  */
-import { mkdtempSync, existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { mkdtempSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -18,6 +20,8 @@ import {
   CONFIG_RELATIVE,
   CURSOR_RULES_RELATIVE,
   GENERATED_MARKER,
+  LAYOUT_DIRECTORIES,
+  LAYOUT_MANIFEST_RELATIVE,
   QODER_RULES_RELATIVE,
   SKILL_MANIFEST,
   TRUTH_INDEX_RELATIVE,
@@ -46,7 +50,10 @@ function read(relative: string): string {
   return readFileSync(join(dir, relative), "utf8");
 }
 
-/** 重入口默认（claude 缺省）应产出的全部文件清单（骨架 4 + AGENTS/CLAUDE + settings + 15×2 skills）。 */
+/**
+ * 重入口默认（claude 缺省）应产出的全部文件清单（骨架 4 + AGENTS/CLAUDE + settings +
+ * 15×2 skills + 预铺 25 目录 README + layout.json——预铺面清单单源 layout.ts 常量）。
+ */
 function heavyDefaultExpectedFiles(): string[] {
   return [
     TRUTH_INDEX_RELATIVE,
@@ -59,11 +66,13 @@ function heavyDefaultExpectedFiles(): string[] {
       `.agents/skills/${spec.name}/SKILL.md`,
       `.claude/skills/${spec.name}/SKILL.md`,
     ]),
+    ...LAYOUT_DIRECTORIES.map((d) => `.pomaster/${d.path}/README.md`),
+    LAYOUT_MANIFEST_RELATIVE,
   ].sort();
 }
 
 describe("init 首次创建（CREATED）", () => {
-  it("空目录 init（重入口默认）→ change=CREATED，骨架 + AGENTS/CLAUDE + settings + 15×2 skills 全部 created", async () => {
+  it("空目录 init（重入口默认）→ change=CREATED，骨架 + AGENTS/CLAUDE + settings + 15×2 skills + 预铺 25 README/layout.json 全部 created", async () => {
     const outcome = await runInit(dir);
     expect(outcome.ok).toBe(true);
     expect(outcome.result.change).toBe("CREATED");
@@ -76,7 +85,7 @@ describe("init 首次创建（CREATED）", () => {
     ).toBe(true);
   });
 
-  it("磁盘上存在 .pomaster 骨架与 objects 目录、skills 双镜像与 hooks 注册文件", async () => {
+  it("磁盘上存在 .pomaster 骨架与 truth/objects 目录、skills 双镜像与 hooks 注册文件", async () => {
     await runInit(dir);
     expect(existsSync(join(dir, ".pomaster", "state", "truth-index.json"))).toBe(
       true,
@@ -84,7 +93,9 @@ describe("init 首次创建（CREATED）", () => {
     expect(existsSync(join(dir, ".pomaster", "state", "authority.json"))).toBe(
       true,
     );
-    expect(statSync(join(dir, ".pomaster", "objects")).isDirectory()).toBe(true);
+    // 宪法 §34-P0：canonical 正文层 = truth/objects（.pomaster/objects 不再由 init 创建）。
+    expect(statSync(join(dir, ".pomaster", "truth", "objects")).isDirectory()).toBe(true);
+    expect(existsSync(join(dir, ".pomaster", "objects"))).toBe(false);
     expect(existsSync(join(dir, "AGENTS.md"))).toBe(true);
     expect(existsSync(join(dir, "CLAUDE.md"))).toBe(true);
     expect(existsSync(join(dir, CLAUDE_SETTINGS_RELATIVE))).toBe(true);
@@ -1072,10 +1083,12 @@ describe("重入口 hooks settings.json 合并（claude 层）", () => {
 // ============================================================
 
 describe("--mode light 显式退回", () => {
-  it("light：零 skills/零 settings，AGENTS.md 为 light 标记轻形态", async () => {
+  it("light：零 skills/零 settings，AGENTS.md 为 light 标记轻形态；目录树与 heavy 全同（宪法 §2 不分模式）", async () => {
     const outcome = await runInit(dir, { mode: "light" });
     expect(outcome.ok).toBe(true);
     expect(outcome.result.mode).toBe("light");
+    // light/heavy 的 .pomaster 目录树完全相同（mode 只影响 skills/hooks 注入层）——
+    // light 也产出 25 目录 README + layout.json。
     expect(outcome.result.files.map((f) => f.file).sort()).toEqual(
       [
         TRUTH_INDEX_RELATIVE,
@@ -1083,13 +1096,104 @@ describe("--mode light 显式退回", () => {
         CONFIG_RELATIVE,
         AGENTS_MD_RELATIVE,
         CLAUDE_MD_RELATIVE,
+        ...LAYOUT_DIRECTORIES.map((d) => `.pomaster/${d.path}/README.md`),
+        LAYOUT_MANIFEST_RELATIVE,
       ].sort(),
     );
     const agents = read(AGENTS_MD_RELATIVE);
     expect(agents).toContain(GENERATED_MARKER);
     expect(agents).toContain("<!-- pomaster:entry-mode:light -->");
     expect(agents).toContain("轻入口");
+    // 目录宪法速览段两模板同在（.pomaster 树 mode 无关）。
+    expect(agents).toContain("目录宪法速览");
     expect(existsSync(join(dir, CLAUDE_SETTINGS_RELATIVE))).toBe(false);
+    expect(existsSync(join(dir, ".agents", "skills"))).toBe(false);
+    expect(statSync(join(dir, ".pomaster", "truth", "objects")).isDirectory()).toBe(true);
+  });
+
+  it("目录树模式无关性：heavy 与 light 各自 init 的 .pomaster 目录集合逐目录相等（宪法 §2 全量）", async () => {
+    const other = join(dir, "sibling-light");
+    mkdirSync(other, { recursive: true });
+    await runInit(dir, { mode: "heavy" });
+    await runInit(other, { mode: "light" });
+    // 只对比 .pomaster 子树（skills/hooks 注入层平台目录按定义随 mode/平台差异）。
+    const dirsOf = (root: string): string[] => {
+      const found: string[] = [];
+      const walk = (rel: string): void => {
+        for (const entry of readdirSync(join(root, ".pomaster", rel), { withFileTypes: true })) {
+          if (!entry.isDirectory()) continue;
+          const child = rel === "" ? entry.name : `${rel}/${entry.name}`;
+          found.push(child);
+          walk(child);
+        }
+      };
+      walk("");
+      return found.sort();
+    };
+    expect(dirsOf(dir)).toEqual(dirsOf(other));
+    // 全树在册：宪法 §2 逐平面抽查（state/truth/evidence/executions/traces/runtime/
+    // discovery/memory/production）。
+    for (const plane of [
+      "state",
+      "truth/objects",
+      "evidence/blobs",
+      "executions",
+      "traces",
+      "runtime/traces",
+      "discovery/scratchpads",
+      "memory/inbox",
+      "production/self-improvement",
+    ]) {
+      expect(existsSync(join(dir, ".pomaster", ...plane.split("/"))), plane).toBe(true);
+    }
+    expect(LAYOUT_DIRECTORIES.length).toBe(25);
+  });
+
+  it("layout.json：全目录 status=wired 单状态 + activation_hint/constitution_source 在场（Owner 修订形态）", async () => {
+    await runInit(dir);
+    const manifest = JSON.parse(read(LAYOUT_MANIFEST_RELATIVE)) as {
+      schema: string;
+      directories: Array<Record<string, unknown>>;
+      notes: readonly string[];
+    };
+    expect(manifest.schema).toBe("pomaster.layout-manifest/1");
+    expect(manifest.directories).toHaveLength(LAYOUT_DIRECTORIES.length);
+    for (const entry of manifest.directories) {
+      expect(entry.status).toBe("wired");
+      expect(typeof entry.activation_hint).toBe("string");
+      expect(String(entry.activation_hint).length).toBeGreaterThan(0);
+      expect(String(entry.constitution_source)).toContain("dot-pomaster-directory-constitution.md");
+      // 宪法 §34-P0：清单无 legacy objects 目录。
+      expect(entry.path).not.toBe("objects");
+    }
+    expect(manifest.notes.join("\n")).toContain("truth/objects");
+  });
+
+  it("legacy layout 检测（宪法 §3/§34-P0）：.pomaster/objects 在场 → LEGACY_OBJECTS_LAYOUT 显式告警 + 零触碰", async () => {
+    mkdirSync(join(dir, ".pomaster", "objects", "page_surface"), { recursive: true });
+    writeFileSync(
+      join(dir, ".pomaster", "objects", "page_surface", "PAGE.OLD.json"),
+      '{"id":"PAGE.OLD"}',
+      "utf8",
+    );
+    const outcome = await runInit(dir);
+    expect(outcome.ok).toBe(true);
+    const warning = outcome.warnings.find((w) => w.code === "LEGACY_OBJECTS_LAYOUT");
+    expect(warning).toBeDefined();
+    expect(warning?.message).toContain("legacy layout detected");
+    expect(warning?.message).toContain("1 entry");
+    expect(warning?.hint).toContain("truth/objects");
+    // 禁静默 merge/覆盖/迁移：legacy 目录内容原样保留。
+    expect(
+      readFileSync(join(dir, ".pomaster", "objects", "page_surface", "PAGE.OLD.json"), "utf8"),
+    ).toBe('{"id":"PAGE.OLD"}');
+    // canonical 正文层照常预铺。
+    expect(statSync(join(dir, ".pomaster", "truth", "objects")).isDirectory()).toBe(true);
+  });
+
+  it("config.yaml 模板 store.objects 指向 canonical truth/objects（宪法 §34-P0 条款 3）", async () => {
+    await runInit(dir);
+    expect(read(CONFIG_RELATIVE)).toContain("objects: .pomaster/truth/objects/");
   });
 
   it("重→轻：heavy 项目执行 light → 30 份 skill 移除（removed）、hooks 剥离（保留 Trellis 条目）、AGENTS.md 重写回轻形态", async () => {

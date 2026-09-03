@@ -347,7 +347,7 @@ describe("① 全链路（PRD §7.2 四环节）", () => {
     expect(ledgerText).not.toContain(SCREENSHOT_B64);
 
     // 入账文件全分母：恰好两 GRN。
-    expect(readdirSync(runsDir()).sort()).toEqual(["GRN-0001.json", "GRN-0002.json"]);
+    expect(readdirSync(runsDir()).filter((name) => name !== "README.md").sort()).toEqual(["GRN-0001.json", "GRN-0002.json"]);
   });
 });
 

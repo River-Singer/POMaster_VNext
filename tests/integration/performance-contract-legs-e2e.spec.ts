@@ -389,7 +389,7 @@ describe("P27 PERFORMANCE + CONTRACT legs E2E（FastAPI fixture 同源）", () =
     const appliedSeq = await ledgerIngest([...perfLegs, stLeg]);
     expect(appliedSeq).toBeGreaterThan(0);
 
-    const files = readdirSync(runsDir()).sort();
+    const files = readdirSync(runsDir()).filter((name) => name !== "README.md").sort();
     expect(files).toEqual(["GRN-0001.json", "GRN-0002.json", "GRN-0003.json"]);
 
     const inlines = files.map(readRunInline);
@@ -453,7 +453,7 @@ describe("P27 PERFORMANCE + CONTRACT legs E2E（FastAPI fixture 同源）", () =
       },
     );
     await ledgerIngest(perfLegs);
-    const files = readdirSync(runsDir()).sort();
+    const files = readdirSync(runsDir()).filter((name) => name !== "README.md").sort();
     expect(files).toEqual(["GRN-0001.json", "GRN-0002.json"]);
     const lighthouse = readRunInline("GRN-0001.json");
     expect(lighthouse["verdict"]).toBe("not_run");
@@ -482,7 +482,7 @@ describe("P27 PERFORMANCE + CONTRACT legs E2E（FastAPI fixture 同源）", () =
     const stLeg = runContractSchemathesisLeg("GRN-0003", 12);
     await ledgerIngest([...perfLegs, stLeg]);
 
-    const inlines = readdirSync(runsDir()).sort().map(readRunInline);
+    const inlines = readdirSync(runsDir()).filter((name) => name !== "README.md").sort().map(readRunInline);
     expect(inlines.map((inline) => inline["verdict"])).toEqual([
       "not_configured",
       "not_configured",
@@ -505,7 +505,7 @@ describe("P27 PERFORMANCE + CONTRACT legs E2E（FastAPI fixture 同源）", () =
 
     const perfLegs = runPerformanceLegs();
     await ledgerIngest(perfLegs);
-    const inlines = readdirSync(runsDir()).sort().map(readRunInline);
+    const inlines = readdirSync(runsDir()).filter((name) => name !== "README.md").sort().map(readRunInline);
     expect(inlines).toHaveLength(2);
     for (const inline of inlines) {
       expect(inline["tool"]).not.toBe("gauntlet:performance");
@@ -582,6 +582,11 @@ describe("P27 PERFORMANCE + CONTRACT legs E2E（FastAPI fixture 同源）", () =
     }
     // P12c 假绿封死：passed + violations>0 自相矛盾 → FATAL（GATE_COUNTS_INVALID 类）。
     expect(raised).toBeInstanceOf(GovernanceError);
-    expect(existsSync(runsDir())).toBe(false);
+    // 零残留（预铺基线后 runs/ 目录恒在——判据从「目录不存在」收敛为「零数据文件」）。
+    expect(
+      existsSync(runsDir())
+        ? readdirSync(runsDir()).filter((name) => name !== "README.md")
+        : [],
+    ).toEqual([]);
   });
 });

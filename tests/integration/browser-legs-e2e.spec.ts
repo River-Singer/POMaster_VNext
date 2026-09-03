@@ -380,7 +380,7 @@ describe("① BROWSER 双通道两条 GRN 独立入账（playwright 红 + MCP �
     const appliedSeq = await ledgerIngest(records);
     expect(appliedSeq).toBeGreaterThan(0);
 
-    const files = readdirSync(runsDir()).sort();
+    const files = readdirSync(runsDir()).filter((name) => name !== "README.md").sort();
     expect(files).toEqual(["GRN-0001.json", "GRN-0002.json"]);
 
     const inlines = files.map(readRunInline);
@@ -416,7 +416,7 @@ describe("① BROWSER 双通道两条 GRN 独立入账（playwright 红 + MCP �
       expect(["gauntlet:playwright", "gauntlet:browser"]).toContain(record.tool);
     }
     await ledgerIngest(records);
-    expect(readdirSync(runsDir()).sort()).toEqual(["GRN-0001.json", "GRN-0002.json"]);
+    expect(readdirSync(runsDir()).filter((name) => name !== "README.md").sort()).toEqual(["GRN-0001.json", "GRN-0002.json"]);
   });
 });
 
@@ -434,7 +434,7 @@ describe("③ 互不牵连：MCP 交互腿缺席，playwright 腿照常真跑判
     expect(browser.scopeNote).toContain("安装 chrome-devtools MCP");
     expect(new Set([playwright.grn, browser.grn]).size).toBe(2);
     await ledgerIngest([playwright, browser]);
-    const verdicts = readdirSync(runsDir())
+    const verdicts = readdirSync(runsDir()).filter((name) => name !== "README.md")
       .sort()
       .map((f) => readRunInline(f)["verdict"]);
     expect(verdicts).toEqual(["passed", "not_configured"]);
@@ -461,7 +461,7 @@ describe("④ 缺 console 维度的报告 → not_run（非默认值）入账边
     // 同批交互腿三件套齐备照常 passed（维度闸只落本腿）。
     expect(records[1].verdict).toBe("passed");
     await ledgerIngest(records);
-    const verdicts = readdirSync(runsDir())
+    const verdicts = readdirSync(runsDir()).filter((name) => name !== "README.md")
       .sort()
       .map((f) => readRunInline(f)["verdict"]);
     expect(verdicts).toEqual(["not_run", "passed"]);
@@ -472,7 +472,7 @@ describe("④ 缺 console 维度的报告 → not_run（非默认值）入账边
     const records = runLegs(CLEAN_REPORT);
     expect(records[0].verdict).toBe("passed");
     await ledgerIngest(records);
-    const verdicts = readdirSync(runsDir())
+    const verdicts = readdirSync(runsDir()).filter((name) => name !== "README.md")
       .sort()
       .map((f) => readRunInline(f)["verdict"]);
     expect(verdicts).toEqual(["passed", "passed"]);
