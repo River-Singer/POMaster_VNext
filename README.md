@@ -15,9 +15,10 @@ POMaster = State + Context + Transition + Evidence，在 Authority 与 Adaptive 
 POMaster 的全部能力收敛在一条 CLI（`pomaster`）——八拍 Change Loop 的每一拍都有对应命令面。先给一张**命令全景**（机器钉版，与 `pomaster --help` 零漂移；`#` 分节注释仅人读）。第一次使用？直接看下面 [install → init → 第一个 Change](#1-安装) 的全流程。
 
 ```text
-# 0 BOOTSTRAP —— 建基线 / 速览 / 装眼睛 / 可移植性 / 自更新
+# 0 BOOTSTRAP —— 建基线 / 速览 / 可行动项 / 装眼睛 / 可移植性 / 自更新
 pomaster init
 pomaster status
+pomaster alerts
 pomaster doctor
 pomaster portability bootstrap/check
 pomaster update --check/--yes
@@ -70,6 +71,8 @@ pomaster session attach/refresh/list
 pomaster lock acquire/heartbeat/release/steal/list
 pomaster execution begin/end/list
 pomaster trace show/list
+# pomaster session（不带子命令）= 治理速览投影（SessionStart 注入源；≤10k 字符，恒 exit 0）
+# pomaster alerts（重入口轻提醒源）= 可行动项过滤器（干净=空输出，恒 exit 0）
 ```
 
 ### 1. 安装
@@ -98,9 +101,19 @@ pomaster init
 | `.pomaster/state/truth-index.json` | Canonical State 唯一事实源（空账本起点） | 否（存在即跳过；损坏显式报错，绝不静默重建） |
 | `.pomaster/state/authority.json` | Authority Map 骨架（默认登记 `BOOTSTRAP_OWNER`） | 否（人类加注的 owner 一律不动） |
 | `.pomaster/config.yaml` | 治理配置（人类可编辑） | 否（只在缺失时创建） |
-| `AGENTS.md` / `CLAUDE.md` | Agent 轻入口（profile + 状态速览 + 常用命令） | 仅带生成标记的（`CLAUDE.md` 通过 `@AGENTS.md` 导入共享） |
+| `AGENTS.md` / `CLAUDE.md` | Agent 重入口（profile + 状态速览 + 常用命令 + 重入口安装物锚点） | 仅带生成标记的（`CLAUDE.md` 通过 `@AGENTS.md` 导入共享） |
 
-**多平台适配器**：`AGENTS.md` 恒为唯一事实源；`--platforms claude,codex,cursor,qoder` 追加各平台的细指针适配器（`CLAUDE.md` / 根 `AGENTS.md` 即 codex 原生入口 / `.cursor/rules/pomaster.mdc` / `.qoder/rules/pomaster.md`，已存在一律不覆盖）；`--platforms none` 只建 AGENTS.md + 状态骨架。TTY 交互终端直接 `pomaster init` 会出复选清单（◉/◯ 空格勾选 / ↑↓ 移动 / 回车确认；raw 模式不可用时降级为编号输入）；`--json` 恒走确定性缺省（claude）。
+**重入口默认**（D13 修订，2026-09-03）：init 缺省生成重入口全套，让 Agent 一开会话就自动看到治理状态、按需自动触发命令卡——
+
+- **skills 命令卡库**：`/pomaster` 路由全景 + `pomaster-bootstrap` … `pomaster-runtime` 等 15 份命令卡，双镜像安装到 `.agents/skills/`（通用层——Codex / Cursor / Gemini CLI / GitHub Copilot / VS Code / Amp / Warp / OpenCode / Droid 等原生读取）与 `.claude/skills/`（Claude Code 必需位），两份逐字节一致、同指 `pomaster --help` 单一事实源；
+- **hooks 注入（claude）**：`.claude/settings.json` 合并式注册 SessionStart → `pomaster session`（治理速览投影，≤10,000 字符硬上限）与 UserPromptSubmit → `pomaster alerts`（可行动项过滤器，干净=空输出恒 exit 0）；既有 hooks（人类/Trellis 条目）一律保留，坏 JSON fail-closed 不覆盖；
+- **cursor/qoder**：加厚版 rules（命令卡 + Browser Eyes 展开进 `.cursor/rules/pomaster.mdc` / `.qoder/rules/pomaster.md`）。
+
+**显式退回**：`pomaster init --mode light` 保留轻入口形态（细指针适配器，静态、无运行时依赖、无 hook 注入）；对已重入口项目执行时按平台清单移除上述安装物并重写入口文件回轻形态——重→轻可逆，不动人类文件。
+
+**多平台适配器**：`AGENTS.md` 恒为唯一事实源；`--platforms claude,codex,cursor,qoder` 追加各平台的适配器（`CLAUDE.md` / 根 `AGENTS.md` 即 codex 原生入口 / `.cursor/rules/pomaster.mdc` / `.qoder/rules/pomaster.md`，本包产物形态升级自动重写，人类异形内容一律不覆盖）；`--platforms none` 只建 AGENTS.md + 状态骨架。TTY 交互终端直接 `pomaster init` 会出复选清单（◉/◯ 空格勾选 / ↑↓ 移动 / 回车确认；raw 模式不可用时降级为编号输入）；`--json` 恒走确定性缺省（claude，重入口）。
+
+装好后 `pomaster session`（无子命令）就是 hook 看到的治理速览；`pomaster doctor` 会用 `heavy_entry_hooks` / `heavy_entry_skills` 探针核对重入口安装物（hooks 注册态 + 双镜像逐字节一致；light 退回形态报告 READY-符合预期）。
 
 ### 3. init 之后该配置什么（config.yaml）
 
@@ -192,7 +205,7 @@ flowchart TB
 ## SOP 编排：项目生命周期五段式
 
 ```text
-0 BOOTSTRAP ──── init 扫描 / Authority Map / catalog-lock / 轻入口生成
+0 BOOTSTRAP ──── init 扫描 / Authority Map / catalog-lock / 重入口生成（skills/hooks）
                   （有原型→活体走查提五件套；存量项目→纳管已有 registry/spec/记忆）
 1 主循环 ─────── N 次 Change，每次跑下面的八拍 Loop（项目的日常形态）
 2 周期事件 ────── 全量对账 / 紧缩 / 经验入库 / catalog 升级 diff / 自托管基准
@@ -355,6 +368,7 @@ Spec、Task、Gate、Knowledge、Brainstorm……全部是这五个原语的派�
 ## 哲学宪法（违者即是 bug）
 
 - Small Constitution：硬约束极少而精——不伪造事实、不越权、不静默冲突、不无证据宣称完成
+- Heavy Entry by Default（D13 修订，2026-09-03）：入口即治理——init 默认安装 skills 库 + hooks 注入，Agent 开会话即见状态；轻入口是显式退回（`--mode light`），不是默认；hook 注入内容永远是 Canonical State 的投影，不是第二事实源
 - No-op is elegant：没有必要的治理动作，零变化就是成功
 - Framework as Review Surface：框架约束好了的人，不需要读 AI 写的每一行代码——但前提是判卷器诚实，所以我们用对抗性用例持续攻击自己的 gate
 - Minimum Sufficient Governance：治理开销必须与变更风险成比例；小改动的体验是"几乎感觉不到 POMaster"

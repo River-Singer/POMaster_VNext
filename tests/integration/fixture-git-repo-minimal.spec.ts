@@ -141,7 +141,7 @@ describe("fixture 形态与 init（git repo 最小工程）", () => {
     expect(resultOf(rec)["change"]).toBe("CREATED");
   });
 
-  it("init 骨架关键件在场：truth-index / authority（BOOTSTRAP owner）/ AGENTS.md 轻入口", () => {
+  it("init 骨架关键件在场：truth-index / authority（BOOTSTRAP owner）/ AGENTS.md 入口（重入口默认）", () => {
     expect(existsSync(join(root, ".pomaster", "state", "truth-index.json"))).toBe(true);
     const authority = JSON.parse(
       readFileSync(join(root, ".pomaster", "state", "authority.json"), "utf8"),
@@ -160,7 +160,7 @@ describe("fixture 形态与 init（git repo 最小工程）", () => {
     expect(files.every((f) => f["action"] === "unchanged")).toBe(true);
   });
 
-  it("链后重跑 init：state 已变 → UPDATED（轻入口状态速览诚实跟随，非静默跳过）", async () => {
+  it("链后重跑 init：state 已变 → UPDATED（入口状态速览诚实跟随，非静默跳过）", async () => {
     const rerun = await runJsonStep(root, ["init"]);
     expect(rerun.code).toBe(0);
     expect(resultOf(rerun)["change"]).toBe("UPDATED");

@@ -1,5 +1,16 @@
 /**
- * init.ts —— `pomaster init`：BOOTSTRAP 段的骨架创建与轻入口生成（D13）。
+ * init.ts —— `pomaster init`：BOOTSTRAP 段的骨架创建与 Agent 入口生成。
+ *
+ * 入口模式（D13 2026-09-03 修订：重入口默认 + `--mode light` 显式退回）：
+ * - heavy（默认）：无旗标/交互确认/--json 均生成重入口全套——skills 命令卡库双镜像
+ *   （`.agents/skills/` 通用层 + `.claude/skills/` Claude Code 必需位，逐字节一致）+
+ *   claude hooks 注册（`.claude/settings.json` 读-合并-写回，SessionStart →
+ *   `pomaster session` 速览、UserPromptSubmit → `pomaster alerts` 轻提醒）+ cursor/
+ *   qoder 加厚版 rules（命令卡/Browser Eyes 展开）；
+ * - light（显式退回）：既有轻入口形态（细指针适配器，静态、无运行时依赖、无 hook
+ *   注入）；对已重入口项目执行时按平台清单移除重入口安装物（skills 库/hooks 注册项；
+ *   AGENTS.md 重写回轻形态）——重→轻可逆。
+ * 零运行时第三方依赖的 D13 原 facets 不变（hook 只是 shell form 调 `pomaster` 自身）。
  *
  * 幂等纪律（A4 / No-op is elegant）：连续两次 init，第二次必须 NO_CHANGE——
  * 全部产物字节稳定（禁墙钟时间：账本 seq=0 起点、入口文件无时间戳）；
@@ -13,14 +24,19 @@
  *   Minimum Sufficient Governance：只登记项目级 BOOTSTRAP_OWNER，细粒度 owner 划分等
  *   多人信号出现再演化）；存在但不可解析 / 结构不合 kernel 解析契约 → 显式报错
  *   INVALID_STATE，绝不静默覆盖；合法存在（含人类加注的 owner）→ 一律不动；
- * - AGENTS.md/CLAUDE.md 仅当缺失或带本包生成标记时重写（D13 轻入口）。
+ * - AGENTS.md/CLAUDE.md/技能卡/settings.json 仅当缺失或带本包生成标记时重写
+ *   （settings.json 另有结构校验：坏 JSON/结构不合 → fail-closed 跳过，绝不覆盖）。
  *
  * F1 平台选择：Trellis 惯例——一次 init 覆盖多平台 AI 入口目录。AGENTS.md 恒为唯一
- * 事实源；平台适配器（--platforms 逗号列表）是细指针：
- * - claude → CLAUDE.md（既有 D13 形态，@AGENTS.md 导入；缺省启用 = 现行为）
+ * 事实源；平台适配器（--platforms 逗号列表）：
+ * - claude → CLAUDE.md（@AGENTS.md 导入）+ `.claude/skills/` 镜像 + hooks 注册
+ *   （heavy；light 仅 CLAUDE.md）
  * - codex  → 根 AGENTS.md 即 codex 原生入口（零额外文件，呈现 covered）
- * - cursor → .cursor/rules/pomaster.mdc（frontmatter alwaysApply + 细指针正文）
- * - qoder  → .qoder/rules/pomaster.md（frontmatter trigger: always_on + 细指针正文）
+ * - cursor → .cursor/rules/pomaster.mdc（heavy=加厚版；light=细指针，≤8 行）
+ * - qoder  → .qoder/rules/pomaster.md（heavy=加厚版；light=细指针）
+ * `.agents/skills/` 通用层随任一非空平台选择生成（Codex/Cursor/Gemini CLI/Copilot/
+ * VS Code/Amp/Warp/OpenCode/Droid 等原生读取；Owner 扩裁：支持该规范的 agent 都应
+ * 支持）；`--platforms none` 只建 AGENTS.md + 状态骨架（零平台产物）。
  * 适配器存在即跳过（skipped-existing），绝不覆盖人类文件；`--platforms none` 只建
  * AGENTS.md + 状态骨架。TTY 人读模式无旗标时出复选清单（◉/◯ 空格勾选 / ↑↓ 移动 /
  * 回车确认，raw 模式 + 原地重绘；raw 启用失败降级编号输入）；--json 恒走确定性缺省
@@ -29,6 +45,8 @@
  */
 
 import { readFile, stat, writeFile } from "node:fs/promises";
+import { rmSync } from "node:fs";
+import { dirname } from "node:path";
 import {
   AGENTS_MD_RELATIVE,
   AUTHORITY_RELATIVE,
@@ -47,6 +65,19 @@ import {
 } from "./store-layout.js";
 import { INIT_TOOL_ID, buildSkeletonLedger } from "./digest.js";
 import {
+  CLAUDE_SETTINGS_RELATIVE,
+  COMMAND_PANORAMA_LINES,
+  ENTRY_MODE_HEAVY_MARKER,
+  ENTRY_MODE_LIGHT_MARKER,
+  INIT_MODES,
+  SKILL_MANIFEST,
+  SKILL_MIRROR_DIRS,
+  mergePomasterHooks,
+  renderSkillMd,
+  stripPomasterHooks,
+  type InitMode,
+} from "./heavy-entry.js";
+import {
   TRIAGE_PROFILES,
   TRIAGE_TTL_HOURS,
   type TriageProfile,
@@ -58,7 +89,9 @@ export type InitFileAction =
   | "created"
   | "updated"
   | "unchanged"
-  | "skipped_foreign";
+  | "skipped_foreign"
+  /** --mode light 重→轻可逆：本包安装物被移除（仅限带本包生成标记的产物）。 */
+  | "removed";
 
 export interface InitFileReport {
   readonly file: string;
@@ -66,6 +99,30 @@ export interface InitFileReport {
 }
 
 export type InitChange = "CREATED" | "UPDATED" | "NO_CHANGE";
+
+// ============================================================
+// 入口模式（--mode 词表闸；heavy 默认，light 显式退回）
+// ============================================================
+
+export type InitModeParse =
+  | { readonly ok: true; readonly mode: InitMode }
+  | { readonly ok: false; readonly error: CliError };
+
+/** 解析 --mode 词形：undefined = heavy（重入口默认）；词表外 → SCHEMA_INVALID fail-closed。 */
+export function parseInitMode(raw: string | undefined): InitModeParse {
+  if (raw === undefined) return { ok: true, mode: "heavy" };
+  if ((INIT_MODES as readonly string[]).includes(raw)) {
+    return { ok: true, mode: raw as InitMode };
+  }
+  return {
+    ok: false,
+    error: {
+      code: "SCHEMA_INVALID",
+      message: `非法模式词形：${raw}；合法词形：${INIT_MODES.join(" | ")}`,
+      hint: "heavy=重入口默认（skills 库 + hooks 注入 + 加厚 rules）；light=显式退回轻入口（可逆）。示例：--mode light。",
+    },
+  };
+}
 
 // ============================================================
 // F1：平台适配器注册表（claude / codex / cursor / qoder）
@@ -76,10 +133,11 @@ export const INIT_PLATFORMS = ["claude", "codex", "cursor", "qoder"] as const;
 export type InitPlatform = (typeof INIT_PLATFORMS)[number];
 
 /**
- * 平台段动作词形：created = 本次新建；skipped-existing = 适配器已在座（一律不覆盖）；
+ * 平台段动作词形：created = 本次新建；skipped-existing = 适配器已在座（同形在座或
+ * 人类异形文件，一律不覆盖）；updated = 本包产物形态升级（细指针↔加厚版重写）；
  * covered = 平台原生入口即 AGENTS.md，零额外文件（codex）。
  */
-export type InitPlatformAction = "created" | "skipped-existing" | "covered";
+export type InitPlatformAction = "created" | "skipped-existing" | "updated" | "covered";
 
 export interface InitPlatformReport {
   readonly name: InitPlatform;
@@ -92,6 +150,8 @@ export interface InitResult {
   readonly change: InitChange;
   readonly tool: typeof INIT_TOOL_ID;
   readonly profile: TriageProfile;
+  /** 入口模式（heavy=重入口默认；light=显式退回；--mode 词形解析结果）。 */
+  readonly mode: InitMode;
   readonly files: readonly InitFileReport[];
   /** F1 平台段：registry 顺序、仅含选中平台（--json result.platforms，§45 信封内结构化数据）。 */
   readonly platforms: readonly InitPlatformReport[];
@@ -103,9 +163,13 @@ export interface InitOptions {
    * undefined = 未携带：CLI 非交互路径缺省 claude（现行为）。
    */
   readonly platforms?: string | undefined;
+  /**
+   * --mode 词形原文（heavy | light）。undefined = heavy（重入口默认，D13 2026-09-03 修订）。
+   */
+  readonly mode?: string | undefined;
 }
 
-/** 细指针正文（cursor/qoder 适配器共用；标题 + 单行指针，配合 frontmatter 全文 ≤8 行）。 */
+/** 细指针正文（cursor/qoder 适配器 light 形态共用；标题 + 单行指针，配合 frontmatter 全文 ≤8 行）。 */
 const THIN_POINTER_BODY = [
   "# POMaster vNext — Agent 入口指针",
   "唯一事实源是仓库根的 `AGENTS.md`（由 `pomaster init` 生成，幂等）；先读根目录 `AGENTS.md`，遵循其「当前治理档位」与「常用命令」。",
@@ -117,8 +181,8 @@ interface PlatformAdapterSpec {
   readonly file: string;
   /** true = 平台原生入口即 AGENTS.md，零额外文件（呈现 covered，不落盘）。 */
   readonly coveredByAgentsMd: boolean;
-  /** 适配器内容（细指针；claude 走既有 D13 生命周期，本表仅登记清单呈现）。 */
-  readonly render: () => string;
+  /** 适配器内容（heavy=加厚版 / light=细指针；claude 走入口文件生命周期，本表仅登记清单呈现）。 */
+  render: (mode: InitMode) => string;
 }
 
 /**
@@ -143,7 +207,7 @@ const PLATFORM_ADAPTERS: readonly PlatformAdapterSpec[] = [
     name: "cursor",
     file: CURSOR_RULES_RELATIVE,
     coveredByAgentsMd: false,
-    render: () =>
+    render: (mode) =>
       [
         "---",
         "description: POMaster vNext 治理入口（唯一事实源：仓库根 AGENTS.md）",
@@ -151,23 +215,56 @@ const PLATFORM_ADAPTERS: readonly PlatformAdapterSpec[] = [
         "alwaysApply: true",
         "---",
         "",
-        THIN_POINTER_BODY,
+        mode === "heavy"
+          ? renderThickRulesBody(
+              "Cursor 原生读取 `.agents/skills/pomaster*/` 通用层 skills 库（本 rules 与 skills 双通道并存）。",
+            )
+          : THIN_POINTER_BODY,
       ].join("\n"),
   },
   {
     name: "qoder",
     file: QODER_RULES_RELATIVE,
     coveredByAgentsMd: false,
-    render: () =>
+    render: (mode) =>
       [
         "---",
         "trigger: always_on",
         "---",
         "",
-        THIN_POINTER_BODY,
+        mode === "heavy"
+          ? renderThickRulesBody(
+              "本 rules 文件即本平台重入口（Qoder 不读取 `.agents/skills/` 通用层）；命令卡单一事实源 = `pomaster --help`。",
+            )
+          : THIN_POINTER_BODY,
       ].join("\n"),
   },
 ];
+
+/**
+ * 加厚版 rules 正文（heavy 形态；PRD 裁决 2：AGENTS.md 的命令卡/Browser Eyes 内容
+ * 展开进各自 rules 文件——cursor/qoder 无 hooks 概念，rules 加厚即其重入口）。
+ * 命令全景与 router skill 共用同一常量（单一实现，零第二事实源）。
+ */
+function renderThickRulesBody(platformNote: string): string {
+  return [
+    "# POMaster vNext — Agent 入口（重入口 rules）",
+    "",
+    `唯一事实源是仓库根的 \`AGENTS.md\`（由 \`pomaster init\` 生成，幂等）；先读根目录 \`AGENTS.md\`，遵循其「当前治理档位」。${platformNote}`,
+    "",
+    "## 常用命令（与 `pomaster --help` 对账）",
+    "",
+    "```text",
+    ...COMMAND_PANORAMA_LINES,
+    "```",
+    "",
+    "## Browser Eyes（浏览器双眼）",
+    "",
+    "- chrome-devtools MCP = 观测眼：诊断「慢/报错/卡住」必须实测（performance trace / network / console），禁只看代码推断。",
+    "- playwright MCP = 验证眼：E2E smoke / 交互验证用 playwright 确定性驱动。",
+    "- 可用性自检：`pomaster doctor --json` 的 chrome_devtools_mcp / playwright_mcp 探针行。",
+  ].join("\n");
+}
 
 const PLATFORM_WORDS_HINT = `合法词形：${INIT_PLATFORMS.join(" | ")} | none`;
 
@@ -250,7 +347,7 @@ export function parsePlatformSelection(raw: string): PlatformSelectionParse {
 
 /** TTY 交互清单（编号 + 名称 + 产出文件路径；零依赖一行式选择，不做按键级 multiselect）。 */
 export function renderPlatformMenu(): readonly string[] {
-  const lines = ["可启用的平台适配器（AGENTS.md 恒生成，为唯一事实源）："];
+  const lines = ["可启用的平台适配器（AGENTS.md 恒生成，为唯一事实源；重入口默认）："];
   PLATFORM_ADAPTERS.forEach((spec, index) => {
     const note = spec.coveredByAgentsMd ? "（codex 原生入口，零额外文件）" : "";
     lines.push(`  ${index + 1}. ${spec.name.padEnd(7)} ${spec.file}${note}`);
@@ -269,6 +366,7 @@ export interface InitInteractiveIo {
  * TTY 交互 init（降级路径）：复选清单 raw 模式启用失败（非终端句柄等）时的
  * 编号输入形态——打印平台清单 → 读一行 stdin → 解析选择 → 交由 runInit 执行。
  * 空行 = 缺省 claude；词形非法 = SCHEMA_INVALID fail-closed（零写入）。
+ * 模式缺省 heavy（交互面无 mode 提问——重入口是默认，light 走显式旗标）。
  */
 export async function runInitInteractive(
   rootDir: string,
@@ -284,6 +382,7 @@ export async function runInitInteractive(
         change: "NO_CHANGE",
         tool: INIT_TOOL_ID,
         profile: "LIGHT",
+        mode: "heavy",
         files: [],
         platforms: [],
       },
@@ -508,6 +607,12 @@ function withMarker(content: string): string {
   return `${GENERATED_MARKER}\n${content}`;
 }
 
+/** 入口模式标记行（doctor 探针判定「应装未装」的机读依据；标记缺席视同 light，不猜测）。 */
+function withModeMarker(mode: InitMode, content: string): string {
+  const modeMarker = mode === "heavy" ? ENTRY_MODE_HEAVY_MARKER : ENTRY_MODE_LIGHT_MARKER;
+  return `${withMarker(modeMarker)}\n${content}`;
+}
+
 /**
  * 从 truth-index（磁盘 snake_case 形态）渲染状态速览计数。
  * 解析失败返回零值占位（调用方已另行告警）；渲染永远字节确定。
@@ -536,13 +641,44 @@ function renderStateSummary(index: Record<string, unknown> | null): string {
   ].join("\n");
 }
 
+// ============================================================
+// 入口文件模板（heavy / light 双形态；D13 2026-09-03 修订）
+// ============================================================
+
+const COMMON_COMMANDS_LINES = [
+  "- `pomaster init` — 补齐/重建治理骨架（幂等；重复执行 NO_CHANGE）",
+  "- `pomaster session` — 治理速览投影（SessionStart 注入源；≤10,000 字符硬上限）",
+  "- `pomaster alerts` — 可行动项过滤器（permit 到期/CHALLENGED 对象；干净=空输出）",
+  "- `pomaster triage \"<request>\"` — 八拍①：秒级判档（MINIMAL/LIGHT/STANDARD）",
+  "- `pomaster status --json` — 对象计数 / 分母状态 / permit 活性",
+  "- `pomaster context compile --role <role> --json` — 八拍③：最小充分上下文投影",
+  "- `pomaster doctor --json` — 内核 / harness MCP 探测（缺什么提示装什么）",
+  "- `pomaster check --fast --json` — 八拍⑤：FAST gate（BUILD）",
+];
+
+const BROWSER_EYES_LINES = [
+  "## Browser Eyes（浏览器双眼）",
+  "",
+  "- chrome-devtools MCP = 观测眼：诊断「慢/报错/卡住」必须实测（performance trace / network / console），禁只看代码推断。",
+  "- playwright MCP = 验证眼：E2E smoke / 交互验证用 playwright 确定性驱动（判卷锚 = @playwright/test 官方报告）。",
+  "- 两眼产物（快照/截图/trace/console/network 观测/官方报告）进 BROWSER gate 双通道证据链（GRN / OBS receipt），不停留在聊天记录里。",
+  "- 可用性自检：`pomaster doctor --json` 的 chrome_devtools_mcp / playwright_mcp 探针行。",
+];
+
+const MACHINE_OUTPUT_LINES = [
+  "## 机器可读输出",
+  "",
+  "一切命令支持 `--json`（§45）；禁止解析彩色自然语言判断状态——机读唯一接口是 JSON 信封。",
+];
+
+/** light 入口（--mode light 显式退回形态；静态、无运行时依赖、无 hook 注入）。 */
 function renderEntryMarkdown(
   profile: TriageProfile,
   stateSummary: string,
 ): string {
   return `# POMaster vNext — Agent 轻入口
 
-> 本文件由 \`${INIT_TOOL_ID}\` 的 \`pomaster init\` 生成（D13 轻入口：静态、无运行时依赖、无 hook 注入）。
+> 本文件由 \`${INIT_TOOL_ID}\` 的 \`pomaster init\` 生成（D13 2026-09-03 修订：重入口为默认，本形态为显式退回——静态、无运行时依赖、无 hook 注入，\`--mode light\`）。
 > 带生成标记的文件可由 init 重新生成；Canonical State 唯一权威在 \`.pomaster/state/truth-index.json\`。
 
 ## 当前治理档位（profile）
@@ -554,29 +690,61 @@ ${stateSummary}
 
 ## 常用命令
 
-- \`pomaster init\` — 补齐/重建治理骨架（幂等；重复执行 NO_CHANGE）
-- \`pomaster triage "<request>"\` — 八拍①：秒级判档（MINIMAL/LIGHT/STANDARD）
-- \`pomaster status --json\` — 对象计数 / 分母状态 / permit 活性
-- \`pomaster context compile --role <role> --json\` — 八拍③：最小充分上下文投影
-- \`pomaster doctor --json\` — 内核 / harness MCP 探测（缺什么提示装什么）
-- \`pomaster check --fast --json\` — 八拍⑤：FAST gate（BUILD）
+${COMMON_COMMANDS_LINES.join("\n")}
 
-## Browser Eyes（浏览器双眼）
+${BROWSER_EYES_LINES.join("\n")}
 
-- chrome-devtools MCP = 观测眼：诊断「慢/报错/卡住」必须实测（performance trace / network / console），禁只看代码推断。
-- playwright MCP = 验证眼：E2E smoke / 交互验证用 playwright 确定性驱动（判卷锚 = @playwright/test 官方报告）。
-- 两眼产物（快照/截图/trace/console/network 观测/官方报告）进 BROWSER gate 双通道证据链（GRN / OBS receipt），不停留在聊天记录里。
-- 可用性自检：\`pomaster doctor --json\` 的 chrome_devtools_mcp / playwright_mcp 探针行。
-
-## 机器可读输出
-
-一切命令支持 \`--json\`（§45）；禁止解析彩色自然语言判断状态——机读唯一接口是 JSON 信封。
+${MACHINE_OUTPUT_LINES.join("\n")}
 `;
 }
 
-const CLAUDE_ENTRY_CONTENT = `# POMaster vNext — Claude 轻入口
+/** heavy 入口（重入口默认；skills/hooks 安装物的锚点说明 + 降级路标）。 */
+function renderHeavyEntryMarkdown(
+  profile: TriageProfile,
+  stateSummary: string,
+  opts: { readonly claudeSelected: boolean },
+): string {
+  const claudeBlock = opts.claudeSelected
+    ? [
+        "- SessionStart 注入：`pomaster session`（治理速览投影，输出 ≤10,000 字符硬上限）——注册于 `.claude/settings.json`（合并式：既有 hooks（含人类/Trellis 条目）一律保留）。",
+        "- 每轮轻提醒：`pomaster alerts`（可行动项过滤器；干净=空输出恒 exit 0）——同一文件注册。",
+        "",
+      ].join("\n")
+    : "";
+  const mirrorNote = opts.claudeSelected
+    ? "与 `.claude/skills/pomaster*/`（Claude Code 必需镜像）逐字节一致"
+    : "（claude 平台未选中，未写 `.claude/skills/` 镜像）";
+  return `# POMaster vNext — Agent 重入口
 
-Claude harness 入口与 AGENTS.md 共享同一轻入口（D13）：
+> 本文件由 \`${INIT_TOOL_ID}\` 的 \`pomaster init\` 生成（D13 2026-09-03 修订：重入口为默认——skills 库 + hook 注入 + 每轮轻提醒；\`--mode light\` 显式退回轻入口）。
+> 带生成标记的文件可由 init 重新生成；Canonical State 唯一权威在 \`.pomaster/state/truth-index.json\`；skill 命令卡单一事实源 = \`pomaster --help\`。
+
+## 当前治理档位（profile）
+
+- profile: ${profile}
+- triage 结果 TTL: ${TRIAGE_TTL_HOURS}h（过期必须 re-triage，C9）
+
+${stateSummary}
+
+## 常用命令
+
+${COMMON_COMMANDS_LINES.join("\n")}
+
+## 重入口安装物（init 维护；--mode light 按平台清单移除）
+
+- skills 命令卡库：\`.agents/skills/pomaster/\` 等 ${SKILL_MANIFEST.length} 份（通用层——Codex/Cursor/Gemini CLI/GitHub Copilot/VS Code/Amp/Warp/OpenCode/Droid 等原生读取），${mirrorNote}。
+- 路由入口：\`/pomaster\`（命令全景 + 何时用哪个）；分段卡：pomaster-bootstrap / triage / permit / context / execute / verify / reconcile / compact / closeout / inspect / discovery / catalog / production / runtime。
+${claudeBlock}- 卸载/降级：\`pomaster init --mode light\` 移除上述安装物并重写本文件回轻形态（幂等；不动人类文件）。
+
+${BROWSER_EYES_LINES.join("\n")}
+
+${MACHINE_OUTPUT_LINES.join("\n")}
+`;
+}
+
+const CLAUDE_ENTRY_CONTENT = `# POMaster vNext — Claude 入口
+
+Claude harness 入口与 AGENTS.md 共享同一入口（D13 2026-09-03 修订：重入口默认，hooks/skills 见 AGENTS.md「重入口安装物」段；--mode light 退回轻形态）：
 
 @AGENTS.md
 `;
@@ -619,18 +787,48 @@ const INIT_BANNER_LINES: readonly string[] = [
   "Contact / commercial licensing: allenxujianyang@outlook.com",
 ];
 
-interface FileWritePlan {
-  readonly relative: string;
-  readonly absolute: string;
-  readonly content: string;
-  /** true = 仅当缺失或带生成标记时写入；false = 只在缺失时创建。 */
-  readonly mayUpdate: boolean;
+/**
+ * 生成文件统一写盘（marker 生命周期）：缺失 → created；无标记 → skipped_foreign +
+ * 告警（绝不覆盖人类文件）；同字节 → unchanged；带标记且异字节 → updated。
+ * 入口文件 / skills 命令卡共用同一纪律（clobber 防线单实现）。
+ */
+async function writeGeneratedFile(
+  rootDir: string,
+  relative: string,
+  content: string,
+  files: InitFileReport[],
+  warnings: CliWarning[],
+  foreignWarningCode: string,
+): Promise<void> {
+  const absolute = `${rootDir}/${relative}`;
+  const existing = await readIfExists(absolute);
+  if (existing === null) {
+    await ensureParentDir(absolute);
+    await writeFile(absolute, content, "utf8");
+    files.push({ file: relative, action: "created" });
+    return;
+  }
+  if (!existing.includes(GENERATED_MARKER)) {
+    warnings.push({
+      code: foreignWarningCode,
+      message: `${relative} exists without pomaster generated marker; left untouched`,
+      hint: `人工合并后加入标记 ${GENERATED_MARKER} 即可交由 init 维护。`,
+    });
+    files.push({ file: relative, action: "skipped_foreign" });
+    return;
+  }
+  if (existing === content) {
+    files.push({ file: relative, action: "unchanged" });
+    return;
+  }
+  await writeFile(absolute, content, "utf8");
+  files.push({ file: relative, action: "updated" });
 }
 
 /**
  * 执行 init。幂等：重复执行至第二次起 NO_CHANGE（字节稳定，零写入）。
- * F1：options.platforms 词形原文（undefined = 缺省 claude，现行为）；词形解析先于
- * 一切写盘——非法 fail-closed 零写入。
+ * F1：options.platforms 词形原文（undefined = 缺省 claude，现行为）；mode 词形原文
+ * （undefined = heavy 重入口默认）。词形解析先于一切写盘——非法 fail-closed 零写入。
  */
 export async function runInit(
   rootDir: string,
@@ -640,7 +838,7 @@ export async function runInit(
   const errors: CliError[] = [];
   const files: InitFileReport[] = [];
 
-  // 0) 平台选择（F1）：先解析后写盘；词形非法 → SCHEMA_INVALID 零写入。
+  // 0) 词形解析（platforms + mode）：先解析后写盘；非法 → SCHEMA_INVALID 零写入。
   const selection = parsePlatformSelection(options.platforms ?? "claude");
   if (!selection.ok) {
     return failOutcome(
@@ -649,6 +847,7 @@ export async function runInit(
         change: "NO_CHANGE",
         tool: INIT_TOOL_ID,
         profile: "LIGHT",
+        mode: "heavy",
         files: [],
         platforms: [],
       },
@@ -661,6 +860,30 @@ export async function runInit(
     );
   }
   const selectedPlatforms = selection.platforms;
+  const modeParse = parseInitMode(options.mode);
+  if (!modeParse.ok) {
+    return failOutcome(
+      "init",
+      {
+        change: "NO_CHANGE",
+        tool: INIT_TOOL_ID,
+        profile: "LIGHT",
+        mode: "heavy",
+        files: [],
+        platforms: [],
+      },
+      [modeParse.error],
+      [
+        "init: FAILED — SCHEMA_INVALID",
+        `  ${modeParse.error.message}`,
+        `  hint: ${modeParse.error.hint}`,
+      ],
+    );
+  }
+  const mode = modeParse.mode;
+  // heavy 产物面 = 重入口模式 且 平台选择非空（none = 显式最小形态，零平台产物）。
+  const heavy = mode === "heavy" && selectedPlatforms.length > 0;
+  const claudeSelected = selectedPlatforms.includes("claude");
 
   // 1) 目录骨架（state/objects 由 ensureParentDir 与 mkdir 递归创建）。
   const { mkdir } = await import("node:fs/promises");
@@ -771,57 +994,40 @@ export async function runInit(
     files.push({ file: toPosix(CONFIG_RELATIVE), action: "unchanged" });
   }
 
-  // 5) 轻入口（D13）：AGENTS.md 恒生成（唯一事实源）；claude 平台适配器（CLAUDE.md，
-  //    @AGENTS.md 导入）走既有 marker 生命周期——仅在选中 claude 时参与。
-  const entryMarkdown = renderEntryMarkdown(
-    profile,
-    renderStateSummary(ledgerForRender),
+  // 5) 入口文件：AGENTS.md 恒生成（唯一事实源；heavy/light 双模板按模式与平台选择
+  //    选形——heavy 且平台选择为空时无重入口安装物可描述，落 light 形态不走标记分叉）。
+  //    claude 平台适配器（CLAUDE.md，@AGENTS.md 导入）仅在选中 claude 时参与。
+  const entryMarkdown = heavy
+    ? renderHeavyEntryMarkdown(profile, renderStateSummary(ledgerForRender), {
+        claudeSelected,
+      })
+    : renderEntryMarkdown(profile, renderStateSummary(ledgerForRender));
+  await writeGeneratedFile(
+    rootDir,
+    AGENTS_MD_RELATIVE,
+    withModeMarker(mode === "heavy" && heavy ? "heavy" : "light", entryMarkdown),
+    files,
+    warnings,
+    "ENTRY_FILE_FOREIGN",
   );
-  const plans: FileWritePlan[] = [
-    {
-      relative: AGENTS_MD_RELATIVE,
-      absolute: `${rootDir}/${AGENTS_MD_RELATIVE}`,
-      content: withMarker(entryMarkdown),
-      mayUpdate: true,
-    },
-  ];
-  if (selectedPlatforms.includes("claude")) {
-    plans.push({
-      relative: CLAUDE_MD_RELATIVE,
-      absolute: `${rootDir}/${CLAUDE_MD_RELATIVE}`,
-      content: withMarker(CLAUDE_ENTRY_CONTENT),
-      mayUpdate: true,
-    });
-  }
-  for (const plan of plans) {
-    const existing = await readIfExists(plan.absolute);
-    if (existing === null) {
-      await ensureParentDir(plan.absolute);
-      await writeFile(plan.absolute, plan.content, "utf8");
-      files.push({ file: plan.relative, action: "created" });
-      continue;
-    }
-    if (!existing.includes(GENERATED_MARKER)) {
-      warnings.push({
-        code: "ENTRY_FILE_FOREIGN",
-        message: `${plan.relative} exists without pomaster generated marker; left untouched`,
-        hint: `人工合并后加入标记 ${GENERATED_MARKER} 即可交由 init 维护。`,
-      });
-      files.push({ file: plan.relative, action: "skipped_foreign" });
-      continue;
-    }
-    if (existing === plan.content) {
-      files.push({ file: plan.relative, action: "unchanged" });
-    } else {
-      await writeFile(plan.absolute, plan.content, "utf8");
-      files.push({ file: plan.relative, action: "updated" });
-    }
+  if (claudeSelected) {
+    await writeGeneratedFile(
+      rootDir,
+      CLAUDE_MD_RELATIVE,
+      withMarker(CLAUDE_ENTRY_CONTENT),
+      files,
+      warnings,
+      "ENTRY_FILE_FOREIGN",
+    );
   }
 
   // 6) 平台段（F1）：registry 顺序逐平台归因。codex = AGENTS.md 原生入口（covered，
   //    零落盘）；claude 的 CLAUDE.md 走步骤 5 既有生命周期，此处只做平台视角归因
   //    （created 之外的文件动作 = 适配器先前已在座 → skipped-existing）；cursor/qoder
-  //    细指针适配器只在缺失时创建——已存在一律不覆盖（skipped-existing，幂等纪律）。
+  //    适配器（heavy=加厚版 / light=细指针）缺失时创建；在座文件先做归属判定——
+  //    带本包生成标记、或字节等于本包任一形态渲染值（历史版本产物不带标记）→ 归本包
+  //    维护，形态与当前 mode 不同则重写（updated，细指针↔加厚版可逆）；人类异形内容
+  //    → skipped-existing 绝不覆盖。
   const platforms: InitPlatformReport[] = [];
   for (const spec of PLATFORM_ADAPTERS) {
     if (!selectedPlatforms.includes(spec.name)) continue;
@@ -839,21 +1045,129 @@ export async function runInit(
       continue;
     }
     const absolute = `${rootDir}/${spec.file}`;
-    if (await pathExists(absolute)) {
+    const existing = await readIfExists(absolute);
+    if (existing === null) {
+      await ensureParentDir(absolute);
+      await writeFile(absolute, spec.render(mode), "utf8");
+      platforms.push({ name: spec.name, file: spec.file, action: "created" });
+      continue;
+    }
+    // 归属判定：带本包生成标记，或字节等于本包任一形态渲染值（历史版本产物不带
+    // 标记——存量轻入口项目升级到重入口时细指针 rules 必须可被识别并重写为加厚版，
+    // 同时人类手写的异形内容一律 skipped-existing 不覆盖）。
+    const ours =
+      existing.includes(GENERATED_MARKER) ||
+      existing === spec.render("light") ||
+      existing === spec.render("heavy");
+    if (!ours) {
       platforms.push({ name: spec.name, file: spec.file, action: "skipped-existing" });
       continue;
     }
-    await ensureParentDir(absolute);
-    await writeFile(absolute, spec.render(), "utf8");
-    platforms.push({ name: spec.name, file: spec.file, action: "created" });
+    if (existing === spec.render(mode)) {
+      platforms.push({ name: spec.name, file: spec.file, action: "skipped-existing" });
+      continue;
+    }
+    await writeFile(absolute, spec.render(mode), "utf8");
+    platforms.push({ name: spec.name, file: spec.file, action: "updated" });
+  }
+
+  // 7) 重入口安装物（heavy）：skills 双镜像（marker 生命周期，clobber 防线同入口
+  //    文件）+ claude hooks settings.json 读-合并-写回（按 command 词形查重幂等；
+  //    坏 JSON/结构不合 → fail-closed 跳过并告警，绝不覆盖不可解析的人类配置）。
+  if (heavy) {
+    const mirrorDirs: readonly string[] = claudeSelected
+      ? SKILL_MIRROR_DIRS
+      : [SKILL_MIRROR_DIRS[0]!];
+    for (const mirrorDir of mirrorDirs) {
+      for (const spec of SKILL_MANIFEST) {
+        await writeGeneratedFile(
+          rootDir,
+          `${mirrorDir}/${spec.name}/SKILL.md`,
+          renderSkillMd(spec),
+          files,
+          warnings,
+          "SKILL_FILE_FOREIGN",
+        );
+      }
+    }
+    if (claudeSelected) {
+      const settingsAbsolute = `${rootDir}/${CLAUDE_SETTINGS_RELATIVE}`;
+      const existingText = await readIfExists(settingsAbsolute);
+      const merged = mergePomasterHooks(existingText);
+      if (merged.status === "skipped") {
+        warnings.push({
+          code: "HOOKS_SETTINGS_SKIPPED",
+          message: `${CLAUDE_SETTINGS_RELATIVE}: ${merged.reason}; hooks 未注册`,
+          hint: `修复该文件的 JSON/结构后重跑 pomaster init；init 绝不覆盖不可解析的人类配置（fail-closed）。`,
+        });
+      } else if (merged.status === "unchanged") {
+        files.push({ file: CLAUDE_SETTINGS_RELATIVE, action: "unchanged" });
+      } else {
+        await ensureParentDir(settingsAbsolute);
+        await writeFile(settingsAbsolute, merged.nextText, "utf8");
+        files.push({
+          file: CLAUDE_SETTINGS_RELATIVE,
+          action: merged.status === "created" ? "created" : "updated",
+        });
+      }
+    }
+  }
+
+  // 8) --mode light 重→轻可逆：按平台清单移除重入口安装物（skills 双镜像逐个清单名
+  //    移除——仅限带本包生成标记的产物，外来同名 skill 保留并告警；hooks 注册项按
+  //    command 词形剥除，其余内容逐字节保留）。
+  if (mode === "light") {
+    for (const mirrorDir of SKILL_MIRROR_DIRS) {
+      for (const spec of SKILL_MANIFEST) {
+        const relative = `${mirrorDir}/${spec.name}/SKILL.md`;
+        const absolute = `${rootDir}/${relative}`;
+        const existing = await readIfExists(absolute);
+        if (existing === null) continue;
+        if (!existing.includes(GENERATED_MARKER)) {
+          warnings.push({
+            code: "HEAVY_ARTIFACT_FOREIGN",
+            message: `${relative} exists without pomaster generated marker; not removed`,
+            hint: `外来同名 skill 保留（init 不动人类文件）；确属本包遗留时人工核对后移除。`,
+          });
+          continue;
+        }
+        rmSync(dirname(absolute), { recursive: true, force: true });
+        files.push({ file: relative, action: "removed" });
+      }
+    }
+    const settingsAbsolute = `${rootDir}/${CLAUDE_SETTINGS_RELATIVE}`;
+    const existingSettings = await readIfExists(settingsAbsolute);
+    if (existingSettings !== null) {
+      const stripped = stripPomasterHooks(existingSettings);
+      if ("error" in stripped) {
+        warnings.push({
+          code: "HOOKS_SETTINGS_SKIPPED",
+          message: `${CLAUDE_SETTINGS_RELATIVE}: ${stripped.error}; hooks 剥离跳过`,
+          hint: "修复该文件的 JSON/结构后重跑 pomaster init --mode light；init 绝不写坏不可解析的配置。",
+        });
+      } else if (stripped.changed) {
+        await writeFile(settingsAbsolute, stripped.nextText, "utf8");
+        files.push({ file: CLAUDE_SETTINGS_RELATIVE, action: "updated" });
+      }
+    }
   }
 
   const created =
     files.some((f) => f.action === "created") ||
     platforms.some((p) => p.action === "created");
-  const updated = files.some((f) => f.action === "updated");
-  const change: InitChange = created ? "CREATED" : updated ? "UPDATED" : "NO_CHANGE";
-  const result: InitResult = { change, tool: INIT_TOOL_ID, profile, files, platforms };
+  const updated =
+    files.some((f) => f.action === "updated") ||
+    platforms.some((p) => p.action === "updated");
+  const removed = files.some((f) => f.action === "removed");
+  const change: InitChange = created ? "CREATED" : updated || removed ? "UPDATED" : "NO_CHANGE";
+  const result: InitResult = {
+    change,
+    tool: INIT_TOOL_ID,
+    profile,
+    mode,
+    files,
+    platforms,
+  };
 
   if (errors.length > 0) {
     return failOutcome(
@@ -868,9 +1182,9 @@ export async function runInit(
     );
   }
 
-  // 人读结构：logo 横幅 → 空行 → 四产物输出 → 平台段 → 空行 → 哲学横幅（INIT_BANNER_LINES
-  // 自带前导空行）。logo/横幅仅此人读通道；--json 信封恒不受影响（平台段作为结构化
-  // platforms 数组进 result，非横幅文案）。
+  // 人读结构：logo 横幅 → 空行 → 四产物输出 → 平台段 → 入口模式 → profile → 哲学横幅
+  // （INIT_BANNER_LINES 自带前导空行）。logo/横幅仅此人读通道；--json 信封恒不受影响
+  // （平台段作为结构化 platforms 数组进 result，非横幅文案）。
   const platformLines: string[] = ["  platforms:"];
   if (platforms.length === 0) {
     platformLines.push("    none（--platforms none：未启用任何平台适配器）");
@@ -883,12 +1197,17 @@ export async function runInit(
       );
     }
   }
+  const modeLine =
+    mode === "heavy"
+      ? "  entry-mode: heavy（重入口默认：skills 库 + hooks 注入；--mode light 退回）"
+      : "  entry-mode: light（显式退回：轻入口形态；已移除本包重入口安装物）";
   const human = [
     ...INIT_LOGO_LINES,
     "",
     `init: ${change}`,
     ...files.map((f) => `  ${f.action.padEnd(15)} ${f.file}`),
     ...platformLines,
+    modeLine,
     `  profile: ${profile}`,
     ...INIT_BANNER_LINES,
   ];

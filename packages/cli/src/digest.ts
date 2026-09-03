@@ -38,9 +38,18 @@ import {
   LIFECYCLE_VALUES,
   TRUTH_BODY_KINDS,
 } from "@pomaster/schemas";
+import { resolveCliVersion } from "./version.js";
 
-/** init 落盘账本的生成工具锚（tool@semver，镜像 01 generation.tool pattern）。 */
-export const INIT_TOOL_ID = "pomaster-cli@0.0.0";
+/**
+ * init 落盘账本的生成工具锚（tool@semver，镜像 01 generation.tool pattern）。
+ * 版本经 version.ts 单点解析（F3 同源：typeof 守卫先例）——bundle 形态取 esbuild
+ * define 注入的发布版本（AGENTS.md 生成标记与 generation.tool 显示真实版本），
+ * dev 形态回落 cli package.json（0.0.0）。修复前恒硬编码 "pomaster-cli@0.0.0"
+ * （AGENTS.md 标记显示假版本——已知瑕疵，随重入口任务一并修复）。
+ * 注意：本值参与空账本 content_digest 授权范围（generation.tool）——版本变化只影响
+ * 新建账本；既有账本从不被 init 重写（缺失才建），kernel 事务侧自会重算摘要。
+ */
+export const INIT_TOOL_ID: string = `pomaster-cli@${resolveCliVersion()}`;
 
 /** 完整性规则集版本锚（镜像 01 integrity_ruleset pattern ^REF_INTEGRITY@v[0-9]+$）。 */
 export const INIT_INTEGRITY_RULESET = "REF_INTEGRITY@v1";

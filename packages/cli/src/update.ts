@@ -7,7 +7,7 @@
  *   纯函数 semver 比较（compareSemver，零依赖）→ 三态显式呈现：更新可用 / 已是最新 /
  *   registry 不可达。
  * - --yes：检查通过且更新可用 → `npm install -g pomaster@latest`（stdio inherit，
- *   timeout 300s）→ 转述 npm 结果 + 指路重新 `pomaster init`（幂等）刷新轻入口；
+ *   timeout 300s）→ 转述 npm 结果 + 指路重新 `pomaster init`（幂等）刷新入口；
  *   npm 失败透传 exit 1 + errors；已是最新 → 显式说明 exit 0；
  *   registry 不可达 + --yes → 拒绝执行（fail-closed，禁盲装）。
  *
@@ -182,7 +182,7 @@ export function runUpdate(
     const human = [
       `update: current ${current} / latest ${latest} → ${install.command}`,
       install.ok ? "npm install 完成" : "npm install 失败（详见上方 npm 透传输出）",
-      ...(install.ok ? ["重新运行 pomaster init（幂等）刷新轻入口。"] : []),
+      ...(install.ok ? ["重新运行 pomaster init（幂等）刷新入口（含重入口安装物）。"] : []),
     ];
     const result: UpdateResult = { current, latest, updateAvailable, check: "ok", install };
     if (install.ok) {

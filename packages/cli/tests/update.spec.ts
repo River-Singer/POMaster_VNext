@@ -105,7 +105,7 @@ describe("update --yes 执行与拒绝路径（F2）", () => {
     });
     const human = outcome.human.join("\n");
     expect(human).toContain("npm install -g pomaster@latest");
-    expect(human).toContain("重新运行 pomaster init（幂等）刷新轻入口");
+    expect(human).toContain("重新运行 pomaster init（幂等）刷新入口（含重入口安装物）。");
   });
 
   it("--yes + npm install 失败 → NPM_INSTALL_FAILED 透传 exit 1 + errors", () => {

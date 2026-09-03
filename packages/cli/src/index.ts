@@ -5,7 +5,13 @@
  * - init            BOOTSTRAP：创建 .pomaster/ 最小骨架 + AGENTS.md 唯一事实源 +
  *                   平台适配器（F1：--platforms claude,codex,cursor,qoder / none；
  *                   TTY 人读模式无旗标时出复选清单交互——◉/◯ 空格勾选 / ↑↓ 移动 /
- *                   回车确认，raw 启用失败降级编号输入；幂等 NO_CHANGE）
+ *                   回车确认，raw 启用失败降级编号输入；幂等 NO_CHANGE）。
+ *                   入口模式（D13 2026-09-03 修订）：重入口默认（--mode heavy 缺省）=
+ *                   skills 命令卡库双镜像（.agents/skills/ 通用层 + .claude/skills/）
+ *                   + claude hooks 注册（settings.json 读-合并-写回：SessionStart →
+ *                   session 速览、UserPromptSubmit → alerts 轻提醒）+ cursor/qoder
+ *                   加厚 rules；--mode light 显式退回轻入口（重→轻可逆：按平台清单
+ *                   移除重入口安装物）
  * - update          CLI 自更新（F2）：缺省 --check（npm view semver 比对，registry
  *                   不可达 fail-closed 显式呈现禁假绿）；--yes = npm install -g
  *                   pomaster@latest（stdio inherit；失败透传 exit 1）
@@ -41,6 +47,13 @@
  *                   （loadStoreReadOnly——「所有可视化都是 Projection」§1.6；零边=
  *                   「无边登记」不冒充无依赖；端点存在性不在本面判卷）
  * - status          读 .pomaster/state：对象计数/分母状态/permit 活性
+ * - session（裸形态）治理速览投影（重入口 SessionStart 注入源）：objects/permits/
+ *                   generation.seq 计数 + alerts 摘要 + Browser Eyes 一行 + 命令卡指针；
+ *                   输出 ≤10,000 字符硬上限（超限截断显式标记）；纯文本不以 { 开头；
+ *                   恒 exit 0（hook 契约）；带子命令词形时分发 attach/refresh/list
+ * - alerts          可行动项过滤器（重入口 UserPromptSubmit 轻提醒源）：permit 到期/
+ *                   CHALLENGED 对象（truth-index/permits 只读面派生）；干净=空输出；
+ *                   恒 exit 0（hook 契约）；triage TTL 显式登记为无派生源类目
  * - inspect         单对象检视：正文+证据+谱系纯读呈现（零写入；PRD §44.1 基础命令）
  * - maintain        受控变更（--ops 显式事务，判卷权威在 kernel applyTransaction）/
  *                   pre-dev 链（--phase pre-dev：triage→permit issue→context compile；PRD §44.4）
@@ -107,7 +120,8 @@
  *                   production 命令段）；错误词形族已随 vocab-pr-0004 收编
  * - session attach/refresh/list
  *                   D 线地基①会话命令面（P20；D 线 §1.2/§3.1：注册/刷新 liveness +
- *                   resumed_task 解析 + 清单并排呈现；A10「CLI 零 session 命令」闭合）
+ *                   resumed_task 解析 + 清单并排呈现；A10「CLI 零 session 命令」闭合；
+ *                   裸形态 = 治理速览投影，见上文 session（裸形态）条）
  * - lock acquire/heartbeat/release/steal/list
  *                   D 线地基②互斥锁命令面（P20；D 线 §3.3：三粒度获取/心跳/释放/
  *                   显式接管（--reason 仪式）/清单；blocked → exit 1 LOCK_BLOCKED
@@ -145,6 +159,8 @@ import { runUpdate } from "./update.js";
 import { resolveCliVersion } from "./version.js";
 import { triageRequest } from "./triage.js";
 import { runStatus } from "./status.js";
+import { runAlerts } from "./alerts.js";
+import { runSessionOverview } from "./session.js";
 import { runInspect } from "./inspect.js";
 import { runMaintain } from "./maintain.js";
 import { runContextCompile, runContextExplain } from "./context.js";
@@ -230,6 +246,7 @@ export {
   runChecklistPrompt,
   INIT_PLATFORMS,
   CHECKLIST_KEYS,
+  parseInitMode,
   parsePlatformSelection,
   renderPlatformMenu,
   renderChecklistFrame,
@@ -239,6 +256,8 @@ export type {
   InitFileReport,
   InitFileAction,
   InitOptions,
+  InitMode,
+  InitModeParse,
   InitPlatform,
   InitPlatformAction,
   InitPlatformReport,
@@ -257,6 +276,44 @@ export type {
   NpmRunResult,
 } from "./update.js";
 export { runStatus } from "./status.js";
+export {
+  runAlerts,
+  ALERT_KINDS,
+  ALERT_UNSOURCED_CATEGORIES,
+  ALERTS_OUTPUT_HARD_CAP,
+  capPlainOutput,
+  deriveAlerts,
+} from "./alerts.js";
+export type {
+  AlertsResult,
+  AlertItem,
+  AlertKind,
+  AlertsDerivation,
+} from "./alerts.js";
+export { runSessionOverview, SESSION_OUTPUT_HARD_CAP } from "./session.js";
+export type { SessionOverviewResult } from "./session.js";
+export {
+  INIT_MODES,
+  ENTRY_MODE_HEAVY_MARKER,
+  ENTRY_MODE_LIGHT_MARKER,
+  CLAUDE_SETTINGS_RELATIVE,
+  POMASTER_HOOK_COMMANDS,
+  POMASTER_HOOK_EVENT_COMMANDS,
+  SKILL_MANIFEST,
+  SKILL_MIRROR_DIRS,
+  COMMAND_PANORAMA_LINES,
+  renderSkillMd,
+  mergePomasterHooks,
+  stripPomasterHooks,
+} from "./heavy-entry.js";
+export type {
+  InitMode,
+  SkillSpec,
+  HookHandlerSpec,
+  HookMatcherGroup,
+  HooksMergeOutcome,
+  HooksStripOutcome,
+} from "./heavy-entry.js";
 export { runInspect } from "./inspect.js";
 export type {
   InspectInput,
@@ -287,12 +344,16 @@ export {
   runDoctor,
   probeChromeDevtoolsMcp,
   probePlaywrightMcp,
+  probeHeavyEntryInstall,
+  HEAVY_ENTRY_HOOKS_PROBE,
+  HEAVY_ENTRY_SKILLS_PROBE,
   detectionToDoctorProbe,
   portabilityProbeToDoctorProbe,
   CHROME_DEVTOOLS_MCP_HINT,
   PLAYWRIGHT_MCP_HINT,
   DOCTOR_PROBE_STATUSES,
 } from "./doctor.js";
+export type { EntryModeState } from "./doctor.js";
 export type {
   GauntletToolProbe,
   DoctorToolProbeDeps,
@@ -681,22 +742,31 @@ export function createProgram(
   program
     .command("init")
     .description(
-      "创建 .pomaster/ 最小骨架 + AGENTS.md 唯一事实源 + 平台适配器（F1：--platforms 逗号列表 claude,codex,cursor,qoder / none；幂等；重复执行 NO_CHANGE）",
+      "创建 .pomaster/ 最小骨架 + AGENTS.md 唯一事实源 + 平台适配器（F1：--platforms 逗号列表 claude,codex,cursor,qoder / none；幂等；重复执行 NO_CHANGE）；重入口默认（skills 库双镜像 + claude hooks 注册 + 加厚 rules），--mode light 显式退回轻入口（重→轻可逆）",
     )
     .option(
       "--platforms <platforms>",
       "平台适配器逗号列表（claude|codex|cursor|qoder|none；缺省 claude；TTY 人读模式无旗标时出复选清单交互）",
     )
+    .option(
+      "--mode <mode>",
+      "入口模式（heavy=重入口默认：skills 库 + hooks 注入 + 加厚 rules；light=显式退回轻入口；缺省 heavy）",
+    )
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (_opts, command) => {
       const platformsArg = command.opts().platforms as string | undefined;
+      const modeArg = command.opts().mode as string | undefined;
       const asJson = command.opts().json === true;
       // F1 TTY 交互面：仅人读模式 + 未带旗标时启用（--json / 显式旗标恒走确定性
       // 路径——机读通道禁交互阻塞）。内部带降级链：复选清单 raw 失败 → 编号输入。
+      // 交互面无 mode 提问（重入口是默认；light 走显式旗标）。
       const outcome =
         platformsArg === undefined && !asJson && process.stdin.isTTY === true
           ? await initInteractiveOutcome(resolveDir(command), io)
-          : await runInit(resolveDir(command), { platforms: platformsArg });
+          : await runInit(resolveDir(command), {
+              platforms: platformsArg,
+              mode: modeArg,
+            });
       record({ command: "init", outcome, asJson });
     });
 
@@ -706,7 +776,7 @@ export function createProgram(
   program
     .command("update")
     .description(
-      "检查/执行 CLI 自更新：缺省 --check（npm view 比对 semver，registry 不可达显式呈现禁假绿）；--yes = 更新可用时 npm install -g pomaster@latest（npm 失败透传 exit 1；完成后重新 pomaster init 刷新轻入口）",
+      "检查/执行 CLI 自更新：缺省 --check（npm view 比对 semver，registry 不可达显式呈现禁假绿）；--yes = 更新可用时 npm install -g pomaster@latest（npm 失败透传 exit 1；完成后重新 pomaster init 刷新入口）",
     )
     .option("--check", "检查更新（缺省行为，显式词形兼容）")
     .option("--yes", "检查到更新时执行 npm install -g pomaster@latest")
@@ -748,6 +818,25 @@ export function createProgram(
       const outcome = await runStatus(resolveDir(command));
       record({
         command: "status",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  // —— 可行动项过滤器（重入口 UserPromptSubmit 轻提醒源；hook 输出契约） ——
+  // 恒 ok=true → 恒 exit 0（非零 + stdout 会被 harness 呈现为 hook 错误通知）；
+  // 干净=空输出（零 token 噪声）；纯文本不以 { 开头（防被误判 JSON）；
+  // 降级走 warnings 留痕于 --json 信封，人读通道静默。
+  program
+    .command("alerts")
+    .description(
+      "可行动项过滤器（重入口 UserPromptSubmit 轻提醒源）：permit 到期/CHALLENGED 对象（truth-index/permits 只读面派生；triage TTL 显式登记为无派生源类目）；干净=空输出恒 exit 0（hook 契约）；降级走 warnings 不走 errors",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (_opts, command) => {
+      const outcome = await runAlerts(resolveDir(command));
+      record({
+        command: "alerts",
         outcome,
         asJson: command.opts().json === true,
       });
@@ -2216,11 +2305,22 @@ export function createProgram(
 
   // —— D 线地基命令面（P20：session/lock/execution 三原语 + §44.8 agents/run/handoff） ——
   // 判卷权威在 kernel session.ts/locks.ts/execution.ts；本面只编排呈现（§45 双输出）。
+  // session 组为 commander 混合模式（research list/inspect 先例）：裸形态 = 治理速览
+  // 投影（重入口 SessionStart 注入源；恒 exit 0、≤10k 硬上限），带子命令词形时分发。
   const session = program
     .command("session")
     .description(
-      "D 线地基①会话命令面（D 线 §1.2/§3.1）：注册/刷新 liveness + resumed_task 解析 + 清单并排呈现（runtime/sessions/ 侧车；首注册 journal SESSION_ATTACHED）",
-    );
+      "D 线地基①会话命令面（D 线 §1.2/§3.1）：注册/刷新 liveness + resumed_task 解析 + 清单并排呈现（runtime/sessions/ 侧车；首注册 journal SESSION_ATTACHED）；无子命令裸形态 = 治理速览投影（重入口 SessionStart 注入源：计数 + alerts 摘要 + 命令卡指针；≤10,000 字符硬上限，恒 exit 0）",
+    )
+    .option("--json", "machine-readable JSON output (§45)（裸速览形态）")
+    .action(async (_opts, command) => {
+      const outcome = await runSessionOverview(resolveDir(command));
+      record({
+        command: "session",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
   session
     .command("attach")
     .description(
@@ -2245,7 +2345,9 @@ export function createProgram(
       record({
         command: "session attach",
         outcome,
-        asJson: command.opts().json === true,
+        // 父命令 session（裸速览形态）自带 --json：--json 会被父命令先行消费——
+        // 本 action 须经 optsWithGlobals 读到全局值（research list/inspect 先例）。
+        asJson: command.optsWithGlobals().json === true,
       });
     });
   session
@@ -2258,7 +2360,8 @@ export function createProgram(
       record({
         command: "session refresh",
         outcome,
-        asJson: command.opts().json === true,
+        // 同 attach：经 optsWithGlobals 兜住被父命令先行消费的 --json（§45 契约）。
+        asJson: command.optsWithGlobals().json === true,
       });
     });
   session
@@ -2270,7 +2373,8 @@ export function createProgram(
       record({
         command: "session list",
         outcome,
-        asJson: command.opts().json === true,
+        // 同 attach：经 optsWithGlobals 兜住被父命令先行消费的 --json（§45 契约）。
+        asJson: command.optsWithGlobals().json === true,
       });
     });
 

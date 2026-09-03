@@ -44,7 +44,19 @@ import type {
   PortabilityRuntimeRebuildProbe,
 } from "@pomaster/kernel";
 import type { DetectionResult, DetectorFacts } from "@pomaster/gauntlet-lite";
-import { TRUTH_INDEX_RELATIVE, toPosix, truthIndexPath } from "./store-layout.js";
+import {
+  AGENTS_MD_RELATIVE,
+  GENERATED_MARKER,
+  TRUTH_INDEX_RELATIVE,
+  toPosix,
+  truthIndexPath,
+} from "./store-layout.js";
+import {
+  CLAUDE_SETTINGS_RELATIVE,
+  ENTRY_MODE_HEAVY_MARKER,
+  POMASTER_HOOK_EVENT_COMMANDS,
+  SKILL_MANIFEST,
+} from "./heavy-entry.js";
 import type { CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
 
@@ -249,6 +261,205 @@ export async function probePlaywrightMcp(
   });
 }
 
+// ============================================================
+// 重入口安装物探针（D13 2026-09-03 修订：重入口默认 + --mode light 显式退回）
+// ============================================================
+
+export const HEAVY_ENTRY_HOOKS_PROBE = "heavy_entry_hooks";
+export const HEAVY_ENTRY_SKILLS_PROBE = "heavy_entry_skills";
+
+/** 入口模式三态（AGENTS.md 生成标记 + 入口模式标记机读判定；标记缺席视同 light，不猜测）。 */
+export type EntryModeState = "not-installed" | "light" | "heavy";
+
+/** 共享实现（probeMcpServerConfigured 先例）：入口模式读取一次，hooks/skills 两探针共用。 */
+async function readEntryMode(rootDir: string): Promise<EntryModeState> {
+  let text: string;
+  try {
+    text = await readFile(`${rootDir}/${AGENTS_MD_RELATIVE}`, "utf8");
+  } catch {
+    return "not-installed";
+  }
+  if (!text.includes(GENERATED_MARKER)) return "not-installed";
+  return text.includes(ENTRY_MODE_HEAVY_MARKER) ? "heavy" : "light";
+}
+
+async function readTextOrNull(absolute: string): Promise<string | null> {
+  try {
+    return await readFile(absolute, "utf8");
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 重入口安装物探测（hooks 注册态 + skills 双镜像在位/逐字节一致；幂等可验——
+ * init 重跑零写入即本探针持续 READY）。探针按入口模式判「应装未装」而不一刀切：
+ * - not-installed → MISSING_CONFIGURATION（带 init 路标）；
+ * - light → READY（显式退回形态，hooks/skills 未安装符合预期——doctor 不把显式
+ *   opt-out 报成缺陷）；
+ * - heavy → hooks：settings.json 在座 + 两条注册项在场 = READY，文件缺失/注册项缺失
+ *   = MISSING_CONFIGURATION，坏 JSON/结构不合 = DEFECT（坏配置会被 harness 整体跳过、
+ *   hooks 静默失效）；skills：15 份 × 双镜像全在且逐字节一致 = READY，任一缺失 =
+ *   MISSING_CONFIGURATION，字节漂移 = DEFECT（双镜像漂移会使「哪份被加载」成为
+ *   行为分叉点——单一事实源纪律破坏）。
+ */
+export async function probeHeavyEntryInstall(
+  rootDir: string,
+): Promise<readonly [DoctorProbe, DoctorProbe]> {
+  const mode = await readEntryMode(rootDir);
+  if (mode === "not-installed") {
+    const detail = `no pomaster entry at ${toPosix(AGENTS_MD_RELATIVE)}`;
+    return [
+      {
+        probe: HEAVY_ENTRY_HOOKS_PROBE,
+        status: "MISSING_CONFIGURATION",
+        detail: `${detail}; heavy-entry hooks not installed`,
+        hint: "run: pomaster init（重入口默认：skills 库 + hooks 注入）；--mode light 显式退回轻入口。",
+      },
+      {
+        probe: HEAVY_ENTRY_SKILLS_PROBE,
+        status: "MISSING_CONFIGURATION",
+        detail: `${detail}; heavy-entry skills not installed`,
+        hint: "run: pomaster init（重入口默认）；--mode light 显式退回轻入口。",
+      },
+    ];
+  }
+  if (mode === "light") {
+    return [
+      {
+        probe: HEAVY_ENTRY_HOOKS_PROBE,
+        status: "READY",
+        detail: "light 模式（--mode light 显式退回）：hooks 未安装（符合预期）",
+        hint: null,
+      },
+      {
+        probe: HEAVY_ENTRY_SKILLS_PROBE,
+        status: "READY",
+        detail: "light 模式（--mode light 显式退回）：skills 镜像未安装（符合预期）",
+        hint: null,
+      },
+    ];
+  }
+
+  // heavy：hooks 注册态。
+  const hooksProbe: DoctorProbe = await (async () => {
+    const raw = await readTextOrNull(`${rootDir}/${CLAUDE_SETTINGS_RELATIVE}`);
+    if (raw === null) {
+      return {
+        probe: HEAVY_ENTRY_HOOKS_PROBE,
+        status: "MISSING_CONFIGURATION",
+        detail: `heavy 模式但 ${toPosix(CLAUDE_SETTINGS_RELATIVE)} 缺失`,
+        hint: "重跑 pomaster init（claude 平台选中时注册 SessionStart/UserPromptSubmit hooks）。",
+      };
+    }
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(raw);
+    } catch (err) {
+      return {
+        probe: HEAVY_ENTRY_HOOKS_PROBE,
+        status: "DEFECT",
+        detail: `${toPosix(CLAUDE_SETTINGS_RELATIVE)} 不是合法 JSON：${(err as Error).message}`,
+        hint: "修复 JSON 语法（坏配置会被 harness 整体跳过、hooks 静默失效）后重跑 pomaster init。",
+      };
+    }
+    const hooks =
+      parsed !== null && typeof parsed === "object" && !Array.isArray(parsed)
+        ? (parsed as Record<string, unknown>).hooks
+        : undefined;
+    if (
+      hooks === undefined ||
+      hooks === null ||
+      typeof hooks !== "object" ||
+      Array.isArray(hooks)
+    ) {
+      return {
+        probe: HEAVY_ENTRY_HOOKS_PROBE,
+        status: "MISSING_CONFIGURATION",
+        detail: "settings.json 无 hooks 对象（heavy 模式注册项缺席）",
+        hint: "重跑 pomaster init 合并注册项（既有内容保留）。",
+      };
+    }
+    const missing: string[] = [];
+    for (const { event, command } of POMASTER_HOOK_EVENT_COMMANDS) {
+      const groups = (hooks as Record<string, unknown>)[event];
+      const present =
+        Array.isArray(groups) &&
+        groups.some(
+          (group) =>
+            group !== null &&
+            typeof group === "object" &&
+            Array.isArray((group as Record<string, unknown>).hooks) &&
+            ((group as Record<string, unknown>).hooks as unknown[]).some(
+              (handler) =>
+                handler !== null &&
+                typeof handler === "object" &&
+                (handler as Record<string, unknown>).command === command,
+            ),
+        );
+      if (!present) missing.push(`${event}→${command}`);
+    }
+    if (missing.length > 0) {
+      return {
+        probe: HEAVY_ENTRY_HOOKS_PROBE,
+        status: "MISSING_CONFIGURATION",
+        detail: `hook 注册项缺席：${missing.join(" / ")}`,
+        hint: "重跑 pomaster init 合并注册项（按 command 词形幂等查重，既有内容保留）。",
+      };
+    }
+    return {
+      probe: HEAVY_ENTRY_HOOKS_PROBE,
+      status: "READY",
+      detail: `${POMASTER_HOOK_EVENT_COMMANDS.map((e) => e.event).join(" + ")} hooks registered（合并式，既有条目保留）`,
+      hint: null,
+    };
+  })();
+
+  // heavy：skills 双镜像全清单核对 + 逐字节一致。
+  const skillsProbe: DoctorProbe = await (async () => {
+    const missing: string[] = [];
+    const drifted: string[] = [];
+    for (const spec of SKILL_MANIFEST) {
+      const universal = await readTextOrNull(
+        `${rootDir}/.agents/skills/${spec.name}/SKILL.md`,
+      );
+      const claude = await readTextOrNull(
+        `${rootDir}/.claude/skills/${spec.name}/SKILL.md`,
+      );
+      if (universal === null) missing.push(`.agents/skills/${spec.name}`);
+      if (claude === null) missing.push(`.claude/skills/${spec.name}`);
+      if (universal !== null && claude !== null && universal !== claude) {
+        drifted.push(spec.name);
+      }
+    }
+    if (missing.length > 0) {
+      const shown = missing.slice(0, 4).join(", ");
+      return {
+        probe: HEAVY_ENTRY_SKILLS_PROBE,
+        status: "MISSING_CONFIGURATION",
+        detail: `heavy 模式但镜像缺失（${missing.length}）：${shown}${missing.length > 4 ? " …" : ""}`,
+        hint: "重跑 pomaster init 重建缺失镜像（双镜像逐字节一致是重复发现缓解的前提）。",
+      };
+    }
+    if (drifted.length > 0) {
+      return {
+        probe: HEAVY_ENTRY_SKILLS_PROBE,
+        status: "DEFECT",
+        detail: `双镜像字节漂移：${drifted.slice(0, 6).join(", ")}（OpenCode/Cursor/Warp/Amp 会重复发现两份——漂移即行为分叉点）`,
+        hint: "重跑 pomaster init 以单一实现重写（skill 命令卡单一事实源 = pomaster --help）。",
+      };
+    }
+    return {
+      probe: HEAVY_ENTRY_SKILLS_PROBE,
+      status: "READY",
+      detail: `${SKILL_MANIFEST.length} skills × 2 镜像（.agents + .claude）逐字节一致`,
+      hint: null,
+    };
+  })();
+
+  return [hooksProbe, skillsProbe];
+}
+
 /**
  * P32 kernel 探针 → doctor 四态矩阵映射（portability_runtime_rebuild）：
  * READY→READY；NOT_RUN→MISSING_CONFIGURATION（store 与 runtime 皆缺 = 依赖面未
@@ -451,6 +662,10 @@ async function runGauntletProbes(
  * 3) chrome_devtools_mcp / playwright_mcp —— D22 探测 + 一键引导文本（P26 起与 playwright
  *    确定性腿探针并存——BROWSER 双通道各自显式呈现；P-v06 批次 2.6 起 playwright MCP
  *    探针同款四态 fail-closed——双 MCP 在呈现面各自缺席显式，禁静默）。
+ * 3.5) heavy_entry_hooks / heavy_entry_skills —— 重入口安装物探针（D13 2026-09-03
+ *    修订：重入口默认 + --mode light 显式退回；hooks 注册态按 command 词形核对、
+ *    skills 15×2 双镜像逐字节一致核对；按入口模式判「应装未装」，light=READY 符合
+ *    预期不误报缺陷；共享 readEntryMode 单次读取——probeMcpServerConfigured 先例）。
  * 4) sensor_capability_catalog —— P1-5 catalog/sensors/ 载入（裁决 8 D7=A loader+doctor
  *    联结；availability_probe 声明式引用→既有行名解析，禁二次探测；catalog 缺席
  *    MISSING_CONFIGURATION / 物料坏形 DEFECT——坏物料 ≠ catalog 缺席，fail-closed 显式）。
@@ -566,6 +781,11 @@ export async function runDoctor(
   // 3) MCP 探测（D22 + P-v06 批次 2.6 Browser Eyes 双 MCP 各自显式）。
   probes.push(await probeChromeDevtoolsMcp(rootDir));
   probes.push(await probePlaywrightMcp(rootDir));
+
+  // 3.5) 重入口安装物探针（D13 2026-09-03 修订：重入口默认 + --mode light 显式退回）：
+  //      hooks 注册态 + skills 双镜像一致态；按入口模式判「应装未装」（light 显式
+  //      退回 = READY 符合预期，不把 opt-out 报成缺陷）。
+  probes.push(...(await probeHeavyEntryInstall(rootDir)));
 
   // 4) P1-5 Sensor Capability Catalog（裁决 8 D7=A：loader + doctor 联结）。
   //    只做声明式引用的行名解析（SENSOR_DETECTOR_TO_DOCTOR_PROBE），绝不二次探测；

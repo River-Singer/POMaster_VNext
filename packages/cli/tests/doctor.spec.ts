@@ -17,7 +17,7 @@
  * 扩容入矩阵（三探针独立呈现不聚合——防假绿纪律）。ok=true 的用例注入全 READY
  * fake 探针（宿主是否安装 oasdiff 等属于环境差异，不影响命令面判卷语义的断言）。
  */
-import { writeFileSync, rmSync } from "node:fs";
+import { writeFileSync, rmSync, readFileSync, existsSync, mkdirSync } from "node:fs";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -34,6 +34,11 @@ import {
   runDoctor,
   probeChromeDevtoolsMcp,
   probePlaywrightMcp,
+  probeHeavyEntryInstall,
+  HEAVY_ENTRY_HOOKS_PROBE,
+  HEAVY_ENTRY_SKILLS_PROBE,
+  SKILL_MANIFEST,
+  CLAUDE_SETTINGS_RELATIVE,
 } from "@pomaster/cli";
 
 /** 全 READY 工具探针 fake（宿主工具安装状态无关化；探测面语义另由缺席用例覆盖）。 */
@@ -475,5 +480,94 @@ describe("detectionToDoctorProbe 四态映射（gauntlet-lite → doctor 语义�
     expect(probe.status).toBe("NOT_INSTALLED");
     expect(probe.detail).toContain("未要求 CONTRACT 门禁");
     expect(probe.hint).toBeNull();
+  });
+});
+
+// ============================================================
+// 重入口安装物探针（D13 2026-09-03 修订：重入口默认 + --mode light 显式退回）
+// ============================================================
+
+describe("heavy_entry 探针（hooks 注册态 / skills 双镜像一致态；按入口模式判「应装未装」）", () => {
+  it("未安装（无 AGENTS.md）→ 双探针 MISSING_CONFIGURATION + init 路标", async () => {
+    const [hooks, skills] = await probeHeavyEntryInstall(dir);
+    expect(hooks.probe).toBe(HEAVY_ENTRY_HOOKS_PROBE);
+    expect(hooks.status).toBe("MISSING_CONFIGURATION");
+    expect(hooks.hint).toContain("pomaster init");
+    expect(skills.status).toBe("MISSING_CONFIGURATION");
+  });
+
+  it("heavy init 后 → 双探针 READY（hooks 注册 + 15×2 镜像逐字节一致）", async () => {
+    await runInit(dir);
+    const [hooks, skills] = await probeHeavyEntryInstall(dir);
+    expect(hooks.status).toBe("READY");
+    expect(hooks.detail).toContain("SessionStart");
+    expect(hooks.detail).toContain("UserPromptSubmit");
+    expect(skills.status).toBe("READY");
+    expect(skills.detail).toContain("15 skills × 2");
+  });
+
+  it("light 显式退回 → 双探针 READY（opt-out 是符合预期形态，不误报缺陷）", async () => {
+    await runInit(dir, { mode: "light" });
+    const [hooks, skills] = await probeHeavyEntryInstall(dir);
+    expect(hooks.status).toBe("READY");
+    expect(hooks.detail).toContain("light");
+    expect(skills.status).toBe("READY");
+    expect(skills.detail).toContain("light");
+  });
+
+  it("heavy 项目 skills 单侧镜像缺失 → MISSING_CONFIGURATION；字节漂移 → DEFECT（重复发现缓解破坏）", async () => {
+    await runInit(dir);
+    // 缺失：删掉 claude 侧 router skill。
+    rmSync(join(dir, ".claude", "skills", "pomaster", "SKILL.md"));
+    const missing = await probeHeavyEntryInstall(dir);
+    expect(missing[1].status).toBe("MISSING_CONFIGURATION");
+    expect(missing[1].detail).toContain(".claude/skills/pomaster");
+    // 漂移：改写 .agents 侧内容（仍带生成标记）。
+    await runInit(dir); // 重建缺失镜像回 READY 基线
+    const skillPath = join(dir, ".agents", "skills", "pomaster", "SKILL.md");
+    const original = readFileSync(skillPath, "utf8");
+    writeFileSync(skillPath, `${original}\n<!-- 人类或事故追加行 -->\n`, "utf8");
+    const drifted = await probeHeavyEntryInstall(dir);
+    expect(drifted[1].status).toBe("DEFECT");
+    expect(drifted[1].detail).toContain("字节漂移");
+    expect(drifted[1].hint).toContain("pomaster --help");
+  });
+
+  it("heavy 项目 hooks 注册项被移除 → MISSING_CONFIGURATION；settings.json 坏 JSON → DEFECT", async () => {
+    await runInit(dir);
+    // 剥离注册项（模拟用户手工移除）：
+    const settingsPath = join(dir, CLAUDE_SETTINGS_RELATIVE);
+    const settings = JSON.parse(readFileSync(settingsPath, "utf8")) as {
+      hooks: Record<string, unknown>;
+    };
+    delete settings.hooks.SessionStart;
+    writeFileSync(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+    const absent = await probeHeavyEntryInstall(dir);
+    expect(absent[0].status).toBe("MISSING_CONFIGURATION");
+    expect(absent[0].detail).toContain("SessionStart");
+    // 坏 JSON：
+    writeFileSync(settingsPath, "{oops", "utf8");
+    const corrupt = await probeHeavyEntryInstall(dir);
+    expect(corrupt[0].status).toBe("DEFECT");
+    expect(corrupt[0].detail).toContain("不是合法 JSON");
+  });
+
+  it("skills 探针全清单核对：缺失任一非 router skill 亦显式（分母 = 15×2，非只看 router）", async () => {
+    await runInit(dir);
+    const victim = join(dir, ".agents", "skills", SKILL_MANIFEST[SKILL_MANIFEST.length - 1]!.name, "SKILL.md");
+    rmSync(victim);
+    const probes = await probeHeavyEntryInstall(dir);
+    expect(probes[1].status).toBe("MISSING_CONFIGURATION");
+    expect(probes[1].detail).toContain(SKILL_MANIFEST[SKILL_MANIFEST.length - 1]!.name);
+    expect(existsSync(victim)).toBe(false);
+  });
+
+  it("runDoctor 矩阵接线：heavy init 后双探针入矩阵（mkdir 前置保障）", async () => {
+    mkdirSync(dir, { recursive: true });
+    await runInit(dir);
+    const outcome = await runDoctor(dir);
+    const byProbe = new Map(outcome.result.probes.map((p) => [p.probe, p]));
+    expect(byProbe.get(HEAVY_ENTRY_HOOKS_PROBE)?.status).toBe("READY");
+    expect(byProbe.get(HEAVY_ENTRY_SKILLS_PROBE)?.status).toBe("READY");
   });
 });
