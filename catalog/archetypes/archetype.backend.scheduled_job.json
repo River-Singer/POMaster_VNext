@@ -1,0 +1,69 @@
+{
+  "id": "ARCHETYPE.BACKEND.SCHEDULED_JOB",
+  "kind": "archetype",
+  "layer": "ARCHETYPE",
+  "title_zh": "定时任务原型",
+  "summary_zh": "分布式环境定时任务七要素原型（PRD §39 逐字）：计划/分布式锁/超时/重试/幂等/结果/告警；三选型口径并列锚现行文档——ShedLock 7.9.0（仅锁、跳过语义）、Quartz 2.5.2（仅 JDBC 存储可集群）、JobRunr 8.8.2（原子认领）。",
+  "semantic": {
+    "responsibility": "多节点部署下同一计划任务的防重复执行契约单点：并发防重、执行时限、失败重试、任务体幂等与结果告警全部显式定义而非默认假设",
+    "when_to_use": "周期/延时后台任务在多实例部署下需要防重复执行时；需要对错失执行与连续失败可观测、可告警时",
+    "when_not_to_use": "单实例部署的简单计划任务（无需分布式锁）；用户交互内实时请求（走写路径原型）；可靠事件外发（走发件箱事件原型）"
+  },
+  "composition": {
+    "requires": [],
+    "optional": [],
+    "incompatible": []
+  },
+  "seven_elements": {
+    "schedule": "cron 或间隔二选一必填",
+    "distributed_lock": "默认配置；lockAtMostFor 必须远大于正常执行时长（官方 MUST 级指引——超锁后多进程同时持锁行为不可预测）；lockAtLeastFor 覆盖短任务与节点间时钟漂移",
+    "timeout": "执行超时应远小于 lockAtMostFor（联动配置）",
+    "retry": "指数退避（JobRunr RetryFilter 口径）或框架外自管",
+    "idempotency": "任务体必须幂等——并发防重不等于成功保证（ShedLock 超锁行为不可预测、Quartz 无恢复标记不重放）",
+    "result": "执行结果留痕（成功/失败/跳过三态）",
+    "alert": "连续失败告警"
+  },
+  "selection_stances": {
+    "shedlock": "『ShedLock is just a lock』（官方自述）——不是分布式调度器；同任务他节点执行中不等待、直接跳过（skip 语义：错过即跳过、不排队补跑）；按任务名加锁",
+    "quartz": "集群仅 JDBC JobStore（JobStoreTX/JobStoreCMT）+ isClustered=true；每节点唯一 instanceId；同触发仅一节点执行；官方性能警示——集群锁在超过约三节点后随节点数退化",
+    "jobrunr": "任务持久化于既有库（重启/故障不丢）、轮询存储并原子认领（claims jobs atomically so the same job is never processed twice）、失败按指数退避重排、最长运行节点自动当选主节点做内务"
+  },
+  "constraints": [
+    "锁组件与调度组件职责分离——仅锁方案不提供排队/错失补跑（官方明示不要当调度器用）",
+    "at-most-once 并发保证不等于成功保证——任务体幂等是底线"
+  ],
+  "optional": {
+    "quartz_clustered_mode": "含 requests recovery 恢复标记位注记（标记的任务由余下节点重新执行）",
+    "jobrunr_storage_provider": "存储抽象覆盖关系库与 NoSQL；内置 Dashboard 观测",
+    "keep_alive_lock_provider": "锁中途续期（在 lockAtMostFor 中点续期——官方建议慎用）"
+  },
+  "x-research-anchors": {
+    "note": "三库定位/锁词形/集群条件/原子认领语义均为官方文档 2026-09-03 实抓；版本（ShedLock 7.9.0/Quartz 2.5.2/JobRunr 8.8.2 stable 线）取自 repo1.maven.org 官方 metadata",
+    "sources": [
+      {
+        "url": "https://github.com/lukas-krecan/ShedLock",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://www.quartz-scheduler.org/documentation/quartz-2.5.x/configuration/ConfigJDBCJobStoreClustering.html",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://www.jobrunr.io/en/documentation/",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://repo1.maven.org/maven2/net/javacrumbs/shedlock/shedlock-spring/maven-metadata.xml",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://repo1.maven.org/maven2/org/quartz-scheduler/quartz/maven-metadata.xml",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": ".trellis/tasks/09-02-vnext-prd-v06-governed-substrate/research/backend-references.md 题 5",
+        "fetched": "2026-09-03"
+      }
+    ]
+  }
+}

@@ -1,7 +1,7 @@
 {
   "catalog_version": "0.1.0-pilot",
   "profile": "web-standard@0",
-  "generated_by": "catalog/tools/materialize_catalog_pilot.py（pilot-0001 60 条；entries 按 id 排序）+ catalog/tools/materialize_batch4_uplift.py（batch-4 语料批 Universal 上提追加 9 条）+ corpus/spec-knowledge/materialize-curated.py（SPEC-D 汇总池 D5 精选追加 25 条）+ catalog/sensors/（P1-5 Sensor Capability Catalog Lite 六条目登记，裁决 8 D6/D7）+ W1-A2 P0.5-1 T3 标注战役（机器 applicability 字段批量标注 + 幂等重锁；PRD v0.5.2 §5.2/§14，裁决 8 ②） + catalog/tools/seed_v06_archetypes.py + materialize_v06_relock.py（P-v06 批次 1：archetypes 十条目 + GATE.NEW_ENTITY.CHECKS 登记，D-2/D-4 裁决） + catalog/tools/seed_v06_batch2_materials.py + materialize_v06_relock.py（P-v06 批次 2：STATE_ARCHETYPE 八态 + FRONTEND_ARCHETYPE 三型 + ERROR_TAXONOMY 十二条目，research frontend-state-references.md 2026-09-03 锚） + catalog/tools/materialize_v06_relock.py（P-v06 批次 2.6 Browser Eyes：SENSOR.BROWSER.* 双眼 implementations 显式化 + KNOWLEDGE.WEB.BROWSER.MCP_EYES 登记，Owner 指令 2026-09-03）",
+  "generated_by": "catalog/tools/materialize_catalog_pilot.py（pilot-0001 60 条；entries 按 id 排序）+ catalog/tools/materialize_batch4_uplift.py（batch-4 语料批 Universal 上提追加 9 条）+ corpus/spec-knowledge/materialize-curated.py（SPEC-D 汇总池 D5 精选追加 25 条）+ catalog/sensors/（P1-5 Sensor Capability Catalog Lite 六条目登记，裁决 8 D6/D7）+ W1-A2 P0.5-1 T3 标注战役（机器 applicability 字段批量标注 + 幂等重锁；PRD v0.5.2 §5.2/§14，裁决 8 ②） + catalog/tools/seed_v06_archetypes.py + materialize_v06_relock.py（P-v06 批次 1：archetypes 十条目 + GATE.NEW_ENTITY.CHECKS 登记，D-2/D-4 裁决） + catalog/tools/seed_v06_batch2_materials.py + materialize_v06_relock.py（P-v06 批次 2：STATE_ARCHETYPE 八态 + FRONTEND_ARCHETYPE 三型 + ERROR_TAXONOMY 十二条目，research frontend-state-references.md 2026-09-03 锚） + catalog/tools/materialize_v06_relock.py（P-v06 批次 2.6 Browser Eyes：SENSOR.BROWSER.* 双眼 implementations 显式化 + KNOWLEDGE.WEB.BROWSER.MCP_EYES 登记，Owner 指令 2026-09-03） + catalog/tools/seed_v06_batch3_materials.py + materialize_v06_relock.py（P-v06 批次 3：Backend/API/Data 原型十七条目，research backend-references.md 2026-09-03 锚）",
   "x-digest-ethics": {
     "basis": "D24 / vocab-lock.digest_ethics",
     "write_blocking": false,
@@ -12,14 +12,31 @@
   "controlled_children": {
     "note": "catalog-lock 管辖面（vocab-lock PR-0001 catalog_layer_vocab 同段语义）：allowed=登记在册可存在；required=必须存在。新增 catalog 文件须同步 allowed+required 两处（batch-4 split-ledger catalog_scope_note 纪律；沿 pomaster directory-lock controlled_children 语义移植）。",
     "allowed": [
+      "archetypes/archetype.api.error.json",
+      "archetypes/archetype.api.pagination.json",
+      "archetypes/archetype.api.resource.json",
+      "archetypes/archetype.backend.approval_workflow.json",
+      "archetypes/archetype.backend.audit.json",
       "archetypes/archetype.backend.crud_resource.json",
+      "archetypes/archetype.backend.export.json",
+      "archetypes/archetype.backend.external_integration.json",
+      "archetypes/archetype.backend.idempotent_command.json",
+      "archetypes/archetype.backend.import.json",
+      "archetypes/archetype.backend.master_data.json",
+      "archetypes/archetype.backend.outbox_event.json",
       "archetypes/archetype.backend.query_resource.json",
+      "archetypes/archetype.backend.scheduled_job.json",
+      "archetypes/archetype.backend.transactional_write.json",
       "archetypes/archetype.component.button.json",
       "archetypes/archetype.component.data_grid.json",
       "archetypes/archetype.component.dialog.json",
       "archetypes/archetype.component.search_input.json",
       "archetypes/archetype.component.search_select.json",
+      "archetypes/archetype.data.hierarchy.json",
+      "archetypes/archetype.data.ledger.json",
       "archetypes/archetype.data.master_data.json",
+      "archetypes/archetype.data.transaction.json",
+      "archetypes/archetype.data.versioned.json",
       "archetypes/archetype.frontend.error_taxonomy.json",
       "archetypes/archetype.frontend.feature_oriented.json",
       "archetypes/archetype.frontend.modular.json",
@@ -138,14 +155,31 @@
       "sensors/sensor.production.metric.json"
     ],
     "required": [
+      "archetypes/archetype.api.error.json",
+      "archetypes/archetype.api.pagination.json",
+      "archetypes/archetype.api.resource.json",
+      "archetypes/archetype.backend.approval_workflow.json",
+      "archetypes/archetype.backend.audit.json",
       "archetypes/archetype.backend.crud_resource.json",
+      "archetypes/archetype.backend.export.json",
+      "archetypes/archetype.backend.external_integration.json",
+      "archetypes/archetype.backend.idempotent_command.json",
+      "archetypes/archetype.backend.import.json",
+      "archetypes/archetype.backend.master_data.json",
+      "archetypes/archetype.backend.outbox_event.json",
       "archetypes/archetype.backend.query_resource.json",
+      "archetypes/archetype.backend.scheduled_job.json",
+      "archetypes/archetype.backend.transactional_write.json",
       "archetypes/archetype.component.button.json",
       "archetypes/archetype.component.data_grid.json",
       "archetypes/archetype.component.dialog.json",
       "archetypes/archetype.component.search_input.json",
       "archetypes/archetype.component.search_select.json",
+      "archetypes/archetype.data.hierarchy.json",
+      "archetypes/archetype.data.ledger.json",
       "archetypes/archetype.data.master_data.json",
+      "archetypes/archetype.data.transaction.json",
+      "archetypes/archetype.data.versioned.json",
       "archetypes/archetype.frontend.error_taxonomy.json",
       "archetypes/archetype.frontend.feature_oriented.json",
       "archetypes/archetype.frontend.modular.json",
@@ -266,16 +300,94 @@
   },
   "entries": [
     {
+      "id": "ARCHETYPE.API.ERROR",
+      "path": "archetypes/archetype.api.error.json",
+      "content_sha256": "sha256:2ae65f508682608ff614ec27416f605ee328f3587417792399ee722d8bdbc5d3",
+      "source_ref": "catalog/tools/seed_v06_batch3_materials.py（P-v06 批次 3；外部参照 backend-references.md 2026-09-03 实抓锚）"
+    },
+    {
+      "id": "ARCHETYPE.API.PAGINATION",
+      "path": "archetypes/archetype.api.pagination.json",
+      "content_sha256": "sha256:b019747489444e1d7b24d10316db0df1e73815c2eb7882f417c5c5128f47e721",
+      "source_ref": "catalog/tools/seed_v06_batch3_materials.py（P-v06 批次 3；外部参照 backend-references.md 2026-09-03 实抓锚）"
+    },
+    {
+      "id": "ARCHETYPE.API.RESOURCE",
+      "path": "archetypes/archetype.api.resource.json",
+      "content_sha256": "sha256:fdd32ed279914dc5d35e40e0acaa3c3ac488f9e826d6bc1f7c90028888b201b0",
+      "source_ref": "catalog/tools/seed_v06_batch3_materials.py（P-v06 批次 3；外部参照 backend-references.md 2026-09-03 实抓锚）"
+    },
+    {
+      "id": "ARCHETYPE.BACKEND.APPROVAL_WORKFLOW",
+      "path": "archetypes/archetype.backend.approval_workflow.json",
+      "content_sha256": "sha256:e211b021544d3089b25cf37978fbac76b7d5c06ff74071f3399d53e75850e1a4",
+      "source_ref": "catalog/tools/seed_v06_batch3_materials.py（P-v06 批次 3；外部参照 backend-references.md 2026-09-03 实抓锚）"
+    },
+    {
+      "id": "ARCHETYPE.BACKEND.AUDIT",
+      "path": "archetypes/archetype.backend.audit.json",
+      "content_sha256": "sha256:3dc2a1b31d8bf5e7a6ac569ff9d8c65c0dda6692d0061e13ff4bee42e99b2224",
+      "source_ref": "catalog/tools/seed_v06_batch3_materials.py（P-v06 批次 3；外部参照 backend-references.md 2026-09-03 实抓锚）"
+    },
+    {
       "id": "ARCHETYPE.BACKEND.CRUD_RESOURCE",
       "path": "archetypes/archetype.backend.crud_resource.json",
       "content_sha256": "sha256:c1007e7ee368b837916773b4e1f449ed723368dfa75918a7b28819ff1fec2649",
       "source_ref": "catalog/tools/seed_v06_archetypes.py（P-v06 批次 1；外部参照 external-design-references.md 2026-09-02 实抓锚）"
     },
     {
+      "id": "ARCHETYPE.BACKEND.EXPORT",
+      "path": "archetypes/archetype.backend.export.json",
+      "content_sha256": "sha256:4cdcc21bcc1f0a556b8f73be1928e1848c2be53774350fe2c25bc6f6f371dff4",
+      "source_ref": "catalog/tools/seed_v06_batch3_materials.py（P-v06 批次 3；外部参照 backend-references.md 2026-09-03 实抓锚）"
+    },
+    {
+      "id": "ARCHETYPE.BACKEND.EXTERNAL_INTEGRATION",
+      "path": "archetypes/archetype.backend.external_integration.json",
+      "content_sha256": "sha256:c508eb34dc844cb76f3c32dfbc139d943baea9b46556197e33f01f30186986b5",
+      "source_ref": "catalog/tools/seed_v06_batch3_materials.py（P-v06 批次 3；外部参照 backend-references.md 2026-09-03 实抓锚）"
+    },
+    {
+      "id": "ARCHETYPE.BACKEND.IDEMPOTENT_COMMAND",
+      "path": "archetypes/archetype.backend.idempotent_command.json",
+      "content_sha256": "sha256:b1fb862bf4b236eb91145dbe1d60b711fee217d031b2f75875edf68e1a724226",
+      "source_ref": "catalog/tools/seed_v06_batch3_materials.py（P-v06 批次 3；外部参照 backend-references.md 2026-09-03 实抓锚）"
+    },
+    {
+      "id": "ARCHETYPE.BACKEND.IMPORT",
+      "path": "archetypes/archetype.backend.import.json",
+      "content_sha256": "sha256:812e75f0cff5eac9f7c26352eae109015e0b28352fdb28bcb2ff4a01ede1888c",
+      "source_ref": "catalog/tools/seed_v06_batch3_materials.py（P-v06 批次 3；外部参照 backend-references.md 2026-09-03 实抓锚）"
+    },
+    {
+      "id": "ARCHETYPE.BACKEND.MASTER_DATA",
+      "path": "archetypes/archetype.backend.master_data.json",
+      "content_sha256": "sha256:05fc44c50348875a2787e1e19a83ea11e66061ac1fc299ebe49ec533c98423e3",
+      "source_ref": "catalog/tools/seed_v06_batch3_materials.py（P-v06 批次 3；外部参照 backend-references.md 2026-09-03 实抓锚）"
+    },
+    {
+      "id": "ARCHETYPE.BACKEND.OUTBOX_EVENT",
+      "path": "archetypes/archetype.backend.outbox_event.json",
+      "content_sha256": "sha256:f219ad490cd1ce3b534fca2648bea81667f349f130fa29ee0400e8287d02d997",
+      "source_ref": "catalog/tools/seed_v06_batch3_materials.py（P-v06 批次 3；外部参照 backend-references.md 2026-09-03 实抓锚）"
+    },
+    {
       "id": "ARCHETYPE.BACKEND.QUERY_RESOURCE",
       "path": "archetypes/archetype.backend.query_resource.json",
       "content_sha256": "sha256:b610c1ac1cd33c3adf608135e6bf126780271412d9b5d44352326e7c057510e2",
       "source_ref": "catalog/tools/seed_v06_archetypes.py（P-v06 批次 1；外部参照 external-design-references.md 2026-09-02 实抓锚）"
+    },
+    {
+      "id": "ARCHETYPE.BACKEND.SCHEDULED_JOB",
+      "path": "archetypes/archetype.backend.scheduled_job.json",
+      "content_sha256": "sha256:79d85951a83730aafb8efe4253967c825b579450822f033249c8d68052d7a743",
+      "source_ref": "catalog/tools/seed_v06_batch3_materials.py（P-v06 批次 3；外部参照 backend-references.md 2026-09-03 实抓锚）"
+    },
+    {
+      "id": "ARCHETYPE.BACKEND.TRANSACTIONAL_WRITE",
+      "path": "archetypes/archetype.backend.transactional_write.json",
+      "content_sha256": "sha256:9878d0c9f705984dae426c7d41a8399cc646ff89361640be8f2f53bb75d9c28d",
+      "source_ref": "catalog/tools/seed_v06_batch3_materials.py（P-v06 批次 3；外部参照 backend-references.md 2026-09-03 实抓锚）"
     },
     {
       "id": "AUTHORITY.BE.API_CONTRACT_OWNERSHIP",
@@ -338,10 +450,34 @@
       "source_ref": "catalog/tools/seed_v06_archetypes.py（P-v06 批次 1；外部参照 external-design-references.md 2026-09-02 实抓锚）"
     },
     {
+      "id": "DATA_ARCHETYPE.HIERARCHY",
+      "path": "archetypes/archetype.data.hierarchy.json",
+      "content_sha256": "sha256:b6a95b97a5492f35ce471b374b7997260b6139dcc1b8d99f21de04b69ac9e100",
+      "source_ref": "catalog/tools/seed_v06_batch3_materials.py（P-v06 批次 3；外部参照 backend-references.md 2026-09-03 实抓锚）"
+    },
+    {
+      "id": "DATA_ARCHETYPE.LEDGER",
+      "path": "archetypes/archetype.data.ledger.json",
+      "content_sha256": "sha256:7a7785192b1310a2a95d931ddd4c10c7d9fdf50069f8bb4b9e6b90cdb69ddf68",
+      "source_ref": "catalog/tools/seed_v06_batch3_materials.py（P-v06 批次 3；外部参照 backend-references.md 2026-09-03 实抓锚）"
+    },
+    {
       "id": "DATA_ARCHETYPE.MASTER_DATA",
       "path": "archetypes/archetype.data.master_data.json",
       "content_sha256": "sha256:1b8c646e33477575491dc61a1efa1b9242eeee2b0a4ec70bb0be29e55a0cb534",
       "source_ref": "catalog/tools/seed_v06_archetypes.py（P-v06 批次 1；外部参照 external-design-references.md 2026-09-02 实抓锚）"
+    },
+    {
+      "id": "DATA_ARCHETYPE.TRANSACTION",
+      "path": "archetypes/archetype.data.transaction.json",
+      "content_sha256": "sha256:441de6dd166853fbaee95da3f52712e91f3272ecd9777eab4787e2ae3835c225",
+      "source_ref": "catalog/tools/seed_v06_batch3_materials.py（P-v06 批次 3；外部参照 backend-references.md 2026-09-03 实抓锚）"
+    },
+    {
+      "id": "DATA_ARCHETYPE.VERSIONED",
+      "path": "archetypes/archetype.data.versioned.json",
+      "content_sha256": "sha256:6c8a938b5f09cdb2322cf5e99187f110c7734d12cee09ef99c6aac8a65595929",
+      "source_ref": "catalog/tools/seed_v06_batch3_materials.py（P-v06 批次 3；外部参照 backend-references.md 2026-09-03 实抓锚）"
     },
     {
       "id": "FRONTEND_ARCHETYPE.ERROR_TAXONOMY",

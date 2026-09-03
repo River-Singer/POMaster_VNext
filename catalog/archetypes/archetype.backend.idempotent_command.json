@@ -1,0 +1,65 @@
+{
+  "id": "ARCHETYPE.BACKEND.IDEMPOTENT_COMMAND",
+  "kind": "archetype",
+  "layer": "ARCHETYPE",
+  "title_zh": "幂等命令原型",
+  "summary_zh": "非幂等操作的容错重试原型（PRD §35 四件套）：键/作用域/过期/结果重放；标准现状如实锚定——IETF 草案 draft-ietf-httpapi-idempotency-key-header -07（2025-10-15）已过期未成标准，实践口径锚 Stripe 幂等请求与 Smithy 幂等令牌特质。",
+  "semantic": {
+    "responsibility": "以客户端生成键识别并丢弃重放请求：首个请求的结果（含失败形态）被保存，同键重放返回同一结果——幂等性是服务端承诺而非重试端自觉",
+    "when_to_use": "支付/递交/审批/导入/外部回调等非幂等写操作需要容错重试时（PRD §35 适用清单：payment/submit/approve/import/external callback）",
+    "when_not_to_use": "天然幂等的读操作；键无存储载体的纯内存操作；GET/删除类方法（收键无效果）"
+  },
+  "composition": {
+    "requires": [],
+    "optional": [],
+    "incompatible": []
+  },
+  "structure": {
+    "idempotency_key": "字符串 ≤255 字符，建议 UUID 或熵充足随机串（IETF RECOMMENDED + Stripe 建议 + Smithy 客户端自动填 UUID 三源一致）",
+    "scope": "唯一性作用域 + 载荷指纹（指纹候选枚举——IETF §2.4：整包校验和/选中元素校验和/字段值匹配/请求摘要或签名）",
+    "expiry": "默认 24h 保留窗口（Stripe 实践：键至少 24 小时后可自动清除）；过期策略必须写入 API 文档（IETF SHOULD）",
+    "result_replay": "保存首个请求的状态码与响应体（无论成败，含 5xx——Stripe 逐字口径：saving the resulting status code and body of the first request ... regardless of whether it succeeds or fails）"
+  },
+  "error_semantics": {
+    "missing_key": 400,
+    "in_flight_conflict": 409,
+    "payload_mismatch": 422,
+    "source": "IETF -07 正文错误语义（缺键 400；同键仍在处理中 409 Conflict；同键载荷不同 422——键不得跨不同载荷复用）"
+  },
+  "constraints": [
+    "仅对非幂等方法（POST/PATCH 类命令）启用；GET/删除类不收键（Stripe：Don't send idempotency keys in GET and DELETE requests because it has no effect.）",
+    "校验失败/并发冲突不落结果、可安全重试（Stripe：只在端点执行开始后才保存结果）",
+    "键禁含敏感数据（email/个人标识——Stripe）",
+    "标准状态如实引用：expired Internet-Draft（-07，2025-10-15，Intended status 字段为 None、无正式编号）+ Stripe/Smithy 实践——引用词形禁冒称已成正式标准"
+  ],
+  "optional": {
+    "fail_closed_on_missing_key": "缺键时拒绝（400）或忽略——服务自定（IETF SHOULD 级别留白）",
+    "retry_safety_baseline": "未标幂等令牌特质的操作默认应视为不可安全重试（Smithy 行为特质规范同页基线）",
+    "auto_client_key": "客户端实现可自动填键（Smithy MAY；AWS SDK 自动填 v4 UUID 先例）"
+  },
+  "x-research-anchors": {
+    "note": "【研究纠偏】任务问的 draft-ietf-httpapi-idempotency-key-resources 在 IETF datatracker 不存在（404）；真实词形为 draft-ietf-httpapi-idempotency-key-header，最新版 -07（2025-10-15）状态 Expired & archived、无正式编号——本物料全文不冒称已成正式标准（集成 spec 断言全文无该缩写词形）。Stripe（首个结果保存+24h 窗口+255 字符）与 Smithy idempotencyToken trait（服务端 MUST 在服务定义时段内防重放）为官方文档 2026-09-03 实抓",
+    "sources": [
+      {
+        "url": "https://datatracker.ietf.org/doc/draft-ietf-httpapi-idempotency-key-header/",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://datatracker.ietf.org/doc/html/draft-ietf-httpapi-idempotency-key-header-07",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://docs.stripe.com/api/idempotent_requests",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://smithy.io/2.0/spec/behavior-traits.html",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": ".trellis/tasks/09-02-vnext-prd-v06-governed-substrate/research/backend-references.md 题 3",
+        "fetched": "2026-09-03"
+      }
+    ]
+  }
+}

@@ -161,8 +161,9 @@ flowchart TB
   subgraph CAT["Engineering Catalog（随包分发）"]
     POL["policies 79"]:::cat
     KN["knowledge 11"]:::cat
-    GT["gates 5"]:::cat
+    GT["gates 6"]:::cat
     SEN["sensors 6"]:::cat
+    ARC["archetypes 39"]:::cat
   end
   AGENT["Agent Harness<br/>(Claude Code / Codex / …)"]:::ext
   HUMAN["Human Authority<br/>(Owner)"]:::ext

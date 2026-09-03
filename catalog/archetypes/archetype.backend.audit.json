@@ -1,0 +1,44 @@
+{
+  "id": "ARCHETYPE.BACKEND.AUDIT",
+  "kind": "archetype",
+  "layer": "ARCHETYPE",
+  "title_zh": "审计原型",
+  "summary_zh": "审计两档原型（PRD §41 逐字）：基础档四字段（创建/更新的时间与操作人）；严格档六要素（变更前后值/操作类型/理由/操作者/链路追踪）——档位由数据分级决定而非默认全量。",
+  "semantic": {
+    "responsibility": "『谁在何时对什么做了什么改动』的可回答性：基础档回答元数据层，严格档回答逐字段前后值与理由链——两档显式分档，禁默认全量严格审计",
+    "when_to_use": "任何标准写面的默认基础档（对应后端标准写读面物料的审计默认档）；台账/财务/权限类数据升级严格档",
+    "when_not_to_use": "外部系统调用的遥测（走外部集成原型可观测位）；只读检索面"
+  },
+  "composition": {
+    "requires": [],
+    "optional": [],
+    "incompatible": []
+  },
+  "basic_fields": [
+    "created_at",
+    "created_by",
+    "updated_at",
+    "updated_by"
+  ],
+  "strict_fields": [
+    "before",
+    "after",
+    "action",
+    "reason",
+    "actor",
+    "trace"
+  ],
+  "x-research-anchors": {
+    "note": "基础四字段与严格六要素为 PRD §41 逐字（2026-09-03 对照 backend-references.md 差异表无冲突确认）；与主数据表原型的审计四字段（批次 1 recommended_fields）同源",
+    "sources": [
+      {
+        "url": "doc/POMaster-vNext-PRD-v0.6.1-Engineering-Substrate-Archetype-Catalog.md §41",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": ".trellis/tasks/09-02-vnext-prd-v06-governed-substrate/research/backend-references.md",
+        "fetched": "2026-09-03"
+      }
+    ]
+  }
+}

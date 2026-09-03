@@ -1,0 +1,89 @@
+{
+  "id": "ARCHETYPE.BACKEND.EXTERNAL_INTEGRATION",
+  "kind": "archetype",
+  "layer": "ARCHETYPE",
+  "title_zh": "外部集成原型",
+  "summary_zh": "外部系统调用八要素原型（PRD §38 逐字）：超时/重试/断路器/限流感知/鉴权/错误映射/可观测/回退；韧性默认档锚 Resilience4j 2.4.0 六模块现行文档——限流以『周期时长+每周期许可数』二元组显式给定（库默认周期是纳秒级形参，禁照抄）。",
+  "semantic": {
+    "responsibility": "把对外部系统每次调用的失效模式显式化：超时有时限、重试有上界、故障有熔断、过载有限流、失败有映射与回退——每一项都是显式配置而非默认假设",
+    "when_to_use": "同步/异步调用外部系统（第三方服务/跨域内部服务）的集成点——每个远端被调方一个独立韧性实例（官方 Golden Rule：MUST NOT share）",
+    "when_not_to_use": "进程内函数调用；库与事件最终一致的可靠外发（走发件箱事件原型）；用户交互内的本域写路径（走事务性写原型）"
+  },
+  "composition": {
+    "requires": [],
+    "optional": [],
+    "incompatible": []
+  },
+  "eight_elements": {
+    "timeout": {
+      "timeout_duration": "1s",
+      "cancel_running_future": true
+    },
+    "retry": {
+      "max_attempts": 3,
+      "wait_duration": "500ms",
+      "backoff": "fixed（指数退避为可选位，需显式启用退避与抖动配置）"
+    },
+    "circuit_breaker": {
+      "failure_rate_threshold": "50%",
+      "sliding_window": "COUNT_BASED 100 次",
+      "minimum_number_of_calls": 100,
+      "wait_duration_in_open_state": "60s",
+      "permitted_number_of_calls_in_half_open_state": 10
+    },
+    "bulkhead": {
+      "max_concurrent_calls": 25,
+      "max_wait_duration": "0（快失败默认）"
+    },
+    "rate_limit_awareness": {
+      "form": "period_and_permits_pair——『周期时长 + 每周期许可数』二元组必须显式给定",
+      "note": "库默认周期是纳秒级形参（词形误导），禁照抄默认值；且此限流是客户端本侧限速（许可桶），不是对端服务保护"
+    },
+    "auth": "凭据注入与刷新单点",
+    "error_mapping": "外部错误到本域错误分型的单点映射链",
+    "observability": "每次调用埋点（时延/结果/重试次数/熔断态）",
+    "fallback": "降级回退（recover 语义承接）"
+  },
+  "constraints": [
+    "每个远端服务一个独立韧性实例（官方 Golden Rule 逐字：\"Create a unique instance (with a unique ID) for each protected remote service or backend you communicate with.\"——CircuitBreaker 属实例感知模式 MUST NOT share）",
+    "限流语义是客户端本侧限速，非对端服务保护"
+  ],
+  "module_map_note": "Resilience4j 2.4.0 六核心模块对照：circuitbreaker/ratelimiter/bulkhead/retry/timelimiter/cache（另有 hedge 与 spring-boot3/spring-boot4 等适配模块）；2.4.0（2026-03-14）起基线 JDK 17→21",
+  "x-research-anchors": {
+    "note": "六模块清单与五模块全部默认值为官方 README/docs 2026-09-03 逐字实抓；RateLimiter 默认值按研究裁定不照抄（纳秒级周期形参误导）——改写为显式二元组要求；版本 2.4.0 与 JDK 21 基线取自 repo1.maven.org 官方 metadata 与 release notes",
+    "sources": [
+      {
+        "url": "https://github.com/resilience4j/resilience4j",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://resilience4j.readme.io/docs/circuitbreaker",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://resilience4j.readme.io/docs/retry",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://resilience4j.readme.io/docs/ratelimiter",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://resilience4j.readme.io/docs/bulkhead",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://resilience4j.readme.io/docs/timeout",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://repo1.maven.org/maven2/io/github/resilience4j/resilience4j-bom/maven-metadata.xml",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": ".trellis/tasks/09-02-vnext-prd-v06-governed-substrate/research/backend-references.md 题 6a",
+        "fetched": "2026-09-03"
+      }
+    ]
+  }
+}

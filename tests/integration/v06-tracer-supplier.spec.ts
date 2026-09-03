@@ -196,10 +196,10 @@ describe("v0.6.1 §91 P0 Acceptance（八条）", () => {
     }
   });
 
-  it("⑦ Catalog 人类可完整浏览：catalog status 分母含 archetypes=22 + explain 单条目解释", async () => {
+  it("⑦ Catalog 人类可完整浏览：catalog status 分母含 archetypes=39 + explain 单条目解释", async () => {
     const status = await runCatalogStatus({ catalogRoot });
     expect(status.ok).toBe(true);
-    expect(status.result?.sections.archetypes).toBe(22);
+    expect(status.result?.sections.archetypes).toBe(39);
     expect(status.result?.lock_verification.ok).toBe(true);
 
     const explain = await runCatalogExplain("PAGE_ARCHETYPE.MASTER_DATA", { catalogRoot });
@@ -210,8 +210,8 @@ describe("v0.6.1 §91 P0 Acceptance（八条）", () => {
   it("⑧ Agent Context 只注入任务所需标准件：matches ⊂ 分母且 required_bindings 仅结构面", async () => {
     await seedSupplierObjects();
     const outcome = await resolveNeed(store, catalogRoot, { need: "供应商管理页 主数据" });
-    expect(outcome.sources_examined.catalog_archetypes).toBe(22);
-    expect(outcome.matches.length).toBeLessThan(22);
+    expect(outcome.sources_examined.catalog_archetypes).toBe(39);
+    expect(outcome.matches.length).toBeLessThan(39);
     for (const binding of outcome.required_bindings) {
       expect(binding).toMatch(/^[A-Z][A-Z0-9_]*(\.[A-Z][A-Z0-9_]+)+$/);
     }

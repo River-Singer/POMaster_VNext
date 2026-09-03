@@ -1,0 +1,55 @@
+{
+  "id": "ARCHETYPE.API.ERROR",
+  "kind": "archetype",
+  "layer": "ARCHETYPE",
+  "title_zh": "API 错误契约原型",
+  "summary_zh": "问题细节标准错误信封原型（PRD §44）：五个标准成员逐字（type/title/status/detail/instance）；业务码/链路追踪/字段级错误如实定位为扩展成员（客户端必须忽略未识别扩展——RFC 9457 §3.2 语义），以 application/problem+json 承载。",
+  "semantic": {
+    "responsibility": "错误响应的形状与语义单点：五个标准成员承载问题类型/概要/状态/详情/实例定位，扩展成员承载机器码与字段级错误——机器可判卷与人可读分层",
+    "when_to_use": "所有 HTTP 错误响应的信封（与 API 资源原型 error 绑定位配对）；前后端错误分型映射的契约源（前端错误目录的消费面对齐本原型）",
+    "when_not_to_use": "成功响应的包装信封（本原型只管错误面）；前端错误呈现分型本身（前端错误目录承载）"
+  },
+  "composition": {
+    "requires": [],
+    "optional": [],
+    "incompatible": []
+  },
+  "standard_members": {
+    "type": "URI 引用标识问题类型；建议绝对 URI；缺省 about:blank（注册类型：无超出 HTTP 状态码的额外语义）",
+    "title": "问题类型的简短人读概要——不应随出现次数变化（本地化除外）",
+    "status": "JSON 数字，仅建议性；必须与真实 HTTP 状态码一致（规范 MUST：Generators MUST use the same status code in the actual HTTP response）",
+    "detail": "本次出现的人读解释——消费者不应解析 detail 提取信息（扩展成员更适合机器消费）",
+    "instance": "标识本次问题具体发生处的 URI 引用；不可解引用时作不透明唯一标识"
+  },
+  "extensions": {
+    "members": [
+      "code",
+      "trace_id",
+      "field_errors"
+    ],
+    "positioning": "扩展成员（非标准成员）——规范 §3.2：问题类型定义可扩展附加成员，客户端 MUST ignore 未识别扩展",
+    "field_errors_note": "字段级错误建议对齐官方校验示例的 errors[] 数组形态（每条含 detail 与位置指针）"
+  },
+  "constraints": [
+    "status 必须与真实 HTTP 状态码一致（MUST）",
+    "media type 用 application/problem+json（canonical 形态）",
+    "引用现行规范 RFC 9457（已取代 RFC 7807——Appendix D 自述相对 7807 的变更）"
+  ],
+  "x-research-anchors": {
+    "note": "【研究纠偏·差异表 §44 行】PRD 把 code/trace_id/field_errors 与五成员并列列出，但三者不是标准成员而是扩展成员（客户端 MUST ignore 未识别扩展语义如实落位）；五成员逐字定义与 about:blank 注册类型为 RFC 9457 官方文本 2026-09-03 实抓",
+    "sources": [
+      {
+        "url": "https://www.rfc-editor.org/rfc/rfc9457.html",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "doc/POMaster-vNext-PRD-v0.6.1-Engineering-Substrate-Archetype-Catalog.md §44",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": ".trellis/tasks/09-02-vnext-prd-v06-governed-substrate/research/backend-references.md 题 4",
+        "fetched": "2026-09-03"
+      }
+    ]
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "id": "ARCHETYPE.BACKEND.EXPORT",
+  "kind": "archetype",
+  "layer": "ARCHETYPE",
+  "title_zh": "导出原型",
+  "summary_zh": "数据导出双档原型（PRD §33 逐字）：小量同步直出（SYNC_SMALL）；大量异步三段（ASYNC_LARGE）——请求立任务、产物落对象存储、下载凭据交付。",
+  "semantic": {
+    "responsibility": "导出的量级分档与产物生命周期单点化：异步档把长耗时产物移出请求生命周期，凭据化下载替代大文件直传",
+    "when_to_use": "列表/报表数据导出文件——按量级选档（小量同步、大量异步），异步档任务态可查询可重试",
+    "when_not_to_use": "系统间数据同步（走外部集成/发件箱事件原型）；实时流式取数（走查询面）"
+  },
+  "composition": {
+    "requires": [],
+    "optional": [],
+    "incompatible": []
+  },
+  "modes": [
+    "SYNC_SMALL",
+    "ASYNC_LARGE"
+  ],
+  "async_chain": [
+    "Request",
+    "Job",
+    "Object Storage",
+    "Download Token"
+  ],
+  "x-research-anchors": {
+    "note": "双档词形与异步四段链为 PRD §33 逐字（2026-09-03 对照 backend-references.md 差异表无冲突确认）；产物落对象存储与文件二进制不入关系库字段同向（§40 File Resource 原型边界）",
+    "sources": [
+      {
+        "url": "doc/POMaster-vNext-PRD-v0.6.1-Engineering-Substrate-Archetype-Catalog.md §33",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": ".trellis/tasks/09-02-vnext-prd-v06-governed-substrate/research/backend-references.md",
+        "fetched": "2026-09-03"
+      }
+    ]
+  }
+}

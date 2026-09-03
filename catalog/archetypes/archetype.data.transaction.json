@@ -1,0 +1,42 @@
+{
+  "id": "DATA_ARCHETYPE.TRANSACTION",
+  "kind": "archetype",
+  "layer": "ARCHETYPE",
+  "title_zh": "交易流水数据原型",
+  "summary_zh": "交易/流水类实体形状原型（PRD §49 五强调逐字）：不可变身份、业务状态、金额与数量的精度、交易时间、审计；不默认软删除——删除语义的补偿形态由业务定义。",
+  "semantic": {
+    "responsibility": "已发生的业务事实的持久化形状：身份不可变、状态随业务推进、数量金额精度显式、交易时间与审计留痕——事实记录不做软删除默认",
+    "when_to_use": "订单/支付/流水/库存变动等『已发生事实』类实体建表——金额数量字段走精度治理（精度/单位治理节）",
+    "when_not_to_use": "共享参照数据（走主数据表原型）；需要版本快照对照的配置类（走版本化数据原型）；只增不改的台账序列（走台账数据原型）"
+  },
+  "composition": {
+    "requires": [],
+    "optional": [],
+    "incompatible": []
+  },
+  "emphasis": [
+    "immutable identity",
+    "business state",
+    "financial / quantity precision",
+    "transaction time",
+    "audit"
+  ],
+  "soft_delete": {
+    "default": false,
+    "prd_wording": "不默认 Soft Delete。（PRD §49 逐字）",
+    "note": "软删保持 optional 位（与 CRUD 物料 optional.soft_delete 一致）；含个人数据的记录必须存在最终硬擦除路径（GDPR 第 17 条——详见台账数据原型对照注记）"
+  },
+  "x-research-anchors": {
+    "note": "五强调与不默认软删为 PRD §49 逐字；软删边界（GDPR Art.17 硬擦除路径/Dataverse 1-30 天保留窗口/工程代价社区共识级）为 backend-references.md 题 6b 2026-09-03 实抓",
+    "sources": [
+      {
+        "url": "doc/POMaster-vNext-PRD-v0.6.1-Engineering-Substrate-Archetype-Catalog.md §49",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": ".trellis/tasks/09-02-vnext-prd-v06-governed-substrate/research/backend-references.md 题 6b",
+        "fetched": "2026-09-03"
+      }
+    ]
+  }
+}

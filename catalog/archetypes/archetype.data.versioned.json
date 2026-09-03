@@ -1,0 +1,43 @@
+{
+  "id": "DATA_ARCHETYPE.VERSIONED",
+  "kind": "archetype",
+  "layer": "ARCHETYPE",
+  "title_zh": "版本化数据原型",
+  "summary_zh": "实体版本链形状原型（PRD §50 五字段逐字）：entity_id/revision/effective_from/effective_to/status；适用配置版本、车型版本、价格版本、规则版本四类。",
+  "semantic": {
+    "responsibility": "同一实体的多版本共存与生效区间单点化：版本行以生效区间切分，当前生效版本由区间+状态派生而非覆盖写",
+    "when_to_use": "配置/车型/价格/规则等需要版本快照、生效区间与历史回溯的实体（价格台账判例 §71 与台账数据原型组合）",
+    "when_not_to_use": "仅当前值无历史诉求的参照数据（主数据表原型）；事件日志类追加流（非版本链语义）"
+  },
+  "composition": {
+    "requires": [],
+    "optional": [],
+    "incompatible": []
+  },
+  "fields": [
+    "entity_id",
+    "revision",
+    "effective_from",
+    "effective_to",
+    "status"
+  ],
+  "applicable": [
+    "配置版本",
+    "车型版本",
+    "价格版本",
+    "规则版本"
+  ],
+  "x-research-anchors": {
+    "note": "五字段词形与四类适用清单为 PRD §50 逐字（2026-09-03 对照 backend-references.md 差异表 §47-§51 行无冲突确认）",
+    "sources": [
+      {
+        "url": "doc/POMaster-vNext-PRD-v0.6.1-Engineering-Substrate-Archetype-Catalog.md §50",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": ".trellis/tasks/09-02-vnext-prd-v06-governed-substrate/research/backend-references.md",
+        "fetched": "2026-09-03"
+      }
+    ]
+  }
+}

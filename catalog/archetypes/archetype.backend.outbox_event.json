@@ -1,0 +1,80 @@
+{
+  "id": "ARCHETYPE.BACKEND.OUTBOX_EVENT",
+  "kind": "archetype",
+  "layer": "ARCHETYPE",
+  "title_zh": "发件箱事件原型",
+  "summary_zh": "库与事件最终一致原型（PRD §37）：业务数据与发件箱同事务落库，提交后由发布器中继到消息通道；生命周期五态锚 Spring Modulith 事件发布注册表、默认表列形锚 Debezium 发件箱路由器现行文档。",
+  "semantic": {
+    "responsibility": "把『业务落库』与『事件外发』的原子性标准化：同事务写入业务数据与发件箱行，提交后异步中继——发布器不在业务事务内做网络调用",
+    "when_to_use": "库内状态变更需要可靠外发事件（跨服务最终一致）时；需要对失败事件可重投、可观测时",
+    "when_not_to_use": "纯进程内通知（普通事务事件监听即可，无需发件箱）；同步强一致调用（走事务性写原型）"
+  },
+  "composition": {
+    "requires": [],
+    "optional": [
+      "ARCHETYPE.BACKEND.TRANSACTIONAL_WRITE"
+    ],
+    "incompatible": []
+  },
+  "defaults": {
+    "write_scope": "same_transaction_as_business_data（Modulith EPR 逐字语义：writes entries for each of them into an event publication log as part of the original business transaction）",
+    "lifecycle_states": [
+      "PUBLISHED",
+      "PROCESSING",
+      "COMPLETED",
+      "FAILED",
+      "RESUBMITTED"
+    ],
+    "lifecycle_source": "Spring Modulith 2.x 事件发布注册表状态机（2.0 引入；每条记录追踪 completionAttempts 与 lastResubmissionDate）",
+    "outbox_table_columns": [
+      "id",
+      "aggregatetype",
+      "aggregateid",
+      "type",
+      "payload"
+    ],
+    "outbox_table_source": "Debezium Outbox Event Router 默认表列（Basic outbox table 逐字：id uuid not null / aggregatetype varchar(255) not null / aggregateid varchar(255) not null / type varchar(255) not null / payload jsonb）",
+    "route_by_field": "aggregatetype"
+  },
+  "constraints": [
+    "发布中继只发生在业务事务提交之后（publisher 不得在业务事务内做网络调用）",
+    "事件 id 全局唯一以支持消费端去重（Debezium：可用 id 移除重复消息）",
+    "CDC 形态需用 SMT predicate 把路由限定在发件箱表事件上（connector 还会发心跳/墓碑等消息）"
+  ],
+  "optional": {
+    "externalization": [
+      "kafka",
+      "amqp",
+      "jms",
+      "spring-messaging"
+    ],
+    "staleness_monitor": "超时未完成条目定时标失败（Modulith Staleness Monitor，默认全 0 即不启用）",
+    "resubmit": "失败重投 API（可配批量大小/最大并发/最小年龄/过滤器）",
+    "cdc_mode": "Debezium Outbox Event Router（Kafka Connect 生态，从库日志侧发事件——适合事件进消息通道且不在应用内做中继的场景，代价是新增一条运维面）"
+  },
+  "x-research-anchors": {
+    "note": "EPR 五态/同事务落库语义/外置基础设施为 Spring Modulith 官方文档 2026-09-03 实抓（版本 2.1.1）；默认表列五列与路由默认值为 Debezium 官方文档 2026-09-03 实抓（stable 3.6）。选型边界：Modulith=应用内库级方案（无独立部署面），Debezium=独立 CDC 基础设施（绑定 Kafka Connect）",
+    "sources": [
+      {
+        "url": "https://docs.spring.io/spring-modulith/reference/events.html",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://debezium.io/documentation/reference/stable/transformations/outbox-event-router.html",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://spring.io/projects/spring-modulith",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://repo1.maven.org/maven2/org/springframework/modulith/spring-modulith-bom/maven-metadata.xml",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": ".trellis/tasks/09-02-vnext-prd-v06-governed-substrate/research/backend-references.md 题 2",
+        "fetched": "2026-09-03"
+      }
+    ]
+  }
+}

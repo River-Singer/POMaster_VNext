@@ -1,0 +1,47 @@
+{
+  "id": "ARCHETYPE.BACKEND.IMPORT",
+  "kind": "archetype",
+  "layer": "ARCHETYPE",
+  "title_zh": "批量导入原型",
+  "summary_zh": "文件批量导入七步链原型（PRD §32 逐字）：上传→解析→校验→预览→确认→执行→结果；行级错误/部分失败/幂等/事务/审计五项必须预定义。",
+  "semantic": {
+    "responsibility": "把『文件进库』标准化为预览确认两段式：校验先行、人确认后才执行——执行形态（全量事务/部分失败）与行级错误报告显式预定义而非事后补",
+    "when_to_use": "电子表格/CSV 类批量建档与更新（参照数据初始化、期初导入等）——预定义五项缺一即契约不完整",
+    "when_not_to_use": "单条建档（走标准写面）；系统间定期同步（走外部集成/发件箱事件原型）"
+  },
+  "composition": {
+    "requires": [],
+    "optional": [],
+    "incompatible": []
+  },
+  "pipeline": [
+    "Upload",
+    "Parse",
+    "Validate",
+    "Preview",
+    "Confirm",
+    "Apply",
+    "Result"
+  ],
+  "predefined": [
+    "row_error",
+    "partial_failure",
+    "idempotency",
+    "transaction",
+    "audit"
+  ],
+  "predefined_source": "PRD §32 逐字：必须预定义：row error / partial failure / idempotency / transaction / audit。",
+  "x-research-anchors": {
+    "note": "七步链与预定义五项为 PRD §32 逐字（2026-09-03 对照 backend-references.md 差异表无冲突确认）；幂等项与幂等命令原型语义互链（重复导入以键防重）",
+    "sources": [
+      {
+        "url": "doc/POMaster-vNext-PRD-v0.6.1-Engineering-Substrate-Archetype-Catalog.md §32",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": ".trellis/tasks/09-02-vnext-prd-v06-governed-substrate/research/backend-references.md",
+        "fetched": "2026-09-03"
+      }
+    ]
+  }
+}

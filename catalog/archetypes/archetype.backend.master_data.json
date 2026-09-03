@@ -1,0 +1,45 @@
+{
+  "id": "ARCHETYPE.BACKEND.MASTER_DATA",
+  "kind": "archetype",
+  "layer": "ARCHETYPE",
+  "title_zh": "后端主数据原型",
+  "summary_zh": "标准主数据域后端原型（PRD §29）：增删改查写面与列表检索读面为基座，叠加审计、状态位、业务唯一键与可选版本位的六件套组合语义——组合语义定义住主数据域的标准后端形态。",
+  "semantic": {
+    "responsibility": "以六件套组合语义承载主数据域的标准后端形态：写面（新增/修改/删除）与读面分离，公共横切面（审计/状态/唯一键/版本）显式组合而非各自发明",
+    "when_to_use": "新建主数据域（组织/客商/物料字典等共享参照数据）的后端时——六件套组合即标准答案，不需要从零设计（v0.6.1 §90 Tracer：AI 不需要从零设计标准表结构）",
+    "when_not_to_use": "交易流水类（走交易流水数据原型——不默认软删）；纯一次性批量导入场景（导入原型承载流程而非实体形状）"
+  },
+  "composition": {
+    "requires": [
+      "ARCHETYPE.BACKEND.CRUD_RESOURCE",
+      "ARCHETYPE.BACKEND.QUERY_RESOURCE"
+    ],
+    "optional": [
+      "ARCHETYPE.BACKEND.AUDIT",
+      "DATA_ARCHETYPE.MASTER_DATA"
+    ],
+    "incompatible": []
+  },
+  "prd_combination": [
+    "CRUD_RESOURCE",
+    "QUERY_RESOURCE",
+    "AUDIT",
+    "STATUS",
+    "UNIQUE_BUSINESS_KEY",
+    "OPTIONAL_VERSION"
+  ],
+  "prd_combination_note": "PRD §29 组合清单逐字（CRUD_RESOURCE/QUERY_RESOURCE/AUDIT 三件为在册 catalog 物料——requires/optional 槽承载；STATUS/UNIQUE_BUSINESS_KEY/OPTIONAL_VERSION 三件为组合位词形，物理载体归 CRUD 物料的 defaults 审计/唯一约束/版本位）",
+  "x-research-anchors": {
+    "note": "组合语义为 PRD §29 逐字；与批次 1 在册物料的引用关系（CRUD/QUERY/DATA_ARCHETYPE.MASTER_DATA）经 backend-references.md 差异表 §47-§51 行 2026-09-03 对照无冲突；软删保持 optional 位（题 6b：GDPR Art.17 兼容但个人数据须有最终硬删路径）",
+    "sources": [
+      {
+        "url": "doc/POMaster-vNext-PRD-v0.6.1-Engineering-Substrate-Archetype-Catalog.md §29",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": ".trellis/tasks/09-02-vnext-prd-v06-governed-substrate/research/backend-references.md",
+        "fetched": "2026-09-03"
+      }
+    ]
+  }
+}

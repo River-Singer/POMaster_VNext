@@ -1,0 +1,68 @@
+{
+  "id": "ARCHETYPE.API.PAGINATION",
+  "kind": "archetype",
+  "layer": "ARCHETYPE",
+  "title_zh": "API 分页原型",
+  "summary_zh": "分页三批准模式原型（PRD §45 逐字闭包）：OFFSET/CURSOR/KEYSET 三选一；业界现行对照锚——Azure 服务端分页 value[]+nextLink、Stripe 对象 ID 游标、Relay Connections 不透明游标；Microsoft 原单一 REST 指南已废弃分拆（差异注记在场）。",
+  "semantic": {
+    "responsibility": "集合读取的分页契约单点：模式从批准闭包内选择、页大小有界、排序稳定、续页位形（has_more 或 next_link 二选一）固定",
+    "when_to_use": "任何列表/检索面的分页契约（与查询面原型配对）；深分页代价需要预先声明时（OFFSET 深翻页代价、KEYSET 需稳定排序键、CURSOR 需不透明令牌语义）",
+    "when_not_to_use": "一次性全量小数据（可不分页但须显式声明上界）；单体读取（API 资源原型 GET item 承载）"
+  },
+  "composition": {
+    "requires": [],
+    "optional": [],
+    "incompatible": []
+  },
+  "approved_modes": [
+    "OFFSET",
+    "CURSOR",
+    "KEYSET"
+  ],
+  "defaults": {
+    "page_size_bounded": true,
+    "stable_sort_required": true,
+    "continuation_field": "has_more 或 next_link 二选一的约定位",
+    "total_count": "不默认返回全量计数（Azure SHOULD NOT——全量计数可能代价高昂）"
+  },
+  "industry_anchors": {
+    "azure": "服务端分页：顶层 value[] + nextLink（绝对 URL、不透明续页令牌）；最后一页不返回 nextLink 字段（禁 null 值形态）；文档必须声明跨页可能跳过或重复；未支持查询参数必须报错",
+    "stripe": "cursor=对象 ID（按稳定序的 KEYSET——keyset-by-id 形态）；响应形 data[]+has_more；参数 limit/starting_after/ending_before；默认新→旧排序",
+    "relay": "GraphQL Relay Connections：Connection 必含 edges 与 pageInfo；Edge 必含 node 与 cursor；前向 first/after、后向 last/before；cursor 是不透明字符串"
+  },
+  "deprecation_note": "Microsoft 原单一 REST Guidelines 已废弃分拆（2026-09-03 实抓：原文档头部声明 deprecated，分拆为 Azure 与 Graph 两份现行指南）——引用时改引 Azure REST API Guidelines 并注明原文档已废弃",
+  "mode_note": "nextLink = CURSOR 的不透明服务端形态（opaque continuation token）——三批准模式闭包容纳业界现行形态（Azure/Stripe/Relay 对照均落回三模式之一）",
+  "constraints": [
+    "模式只能从三批准模式闭包内选择（PRD §45：项目只能选择批准模式）",
+    "最后一页禁返回 null 值 nextLink（Azure DO NOT 逐字）"
+  ],
+  "x-research-anchors": {
+    "note": "【差异注记·差异表 §45 行】三模式与业界现行实践兼容；Microsoft 现行形态是 opaque nextLink（CURSOR 的服务端形态），且原单一 REST Guidelines 已 deprecated 分拆为 Azure/Graph 两份——注记随物料在场。Azure/Stripe/Relay 三处词形为官方文档 2026-09-03 实抓",
+    "sources": [
+      {
+        "url": "https://github.com/microsoft/api-guidelines/blob/vNext/Guidelines.md",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/microsoft/api-guidelines/vNext/azure/Guidelines.md",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://docs.stripe.com/pagination",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://relay.dev/graphql/connections.htm",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "doc/POMaster-vNext-PRD-v0.6.1-Engineering-Substrate-Archetype-Catalog.md §45",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": ".trellis/tasks/09-02-vnext-prd-v06-governed-substrate/research/backend-references.md 题 4",
+        "fetched": "2026-09-03"
+      }
+    ]
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "id": "ARCHETYPE.BACKEND.APPROVAL_WORKFLOW",
+  "kind": "archetype",
+  "layer": "ARCHETYPE",
+  "title_zh": "审批流原型",
+  "summary_zh": "标准审批状态机原型（PRD §31 逐字链）：草稿经递交事件进入已递交态，审批通过转通过、驳回转驳回；可选撤回/重开转移与多级会签变体。",
+  "semantic": {
+    "responsibility": "审批单生命周期与合法转移的单点声明：四态两事件为标准链，扩展转移（撤回/重开）与多级会签变体为可选档——合法转移之外无隐式状态",
+    "when_to_use": "需要人审的单据类写流程（请假/报销/变更单等）——状态闭包显式登记，审批动作留痕进审计",
+    "when_not_to_use": "无审批环节的直写流程（走事务性写原型）；自由流程编排诉求（本原型是闭包状态机，非流程引擎）"
+  },
+  "composition": {
+    "requires": [],
+    "optional": [],
+    "incompatible": []
+  },
+  "states": [
+    "DRAFT",
+    "SUBMITTED",
+    "APPROVED",
+    "REJECTED"
+  ],
+  "transitions": [
+    {
+      "from": "DRAFT",
+      "event": "SUBMIT",
+      "to": "SUBMITTED"
+    },
+    {
+      "from": "SUBMITTED",
+      "event": "APPROVE",
+      "to": "APPROVED"
+    },
+    {
+      "from": "SUBMITTED",
+      "event": "REJECT",
+      "to": "REJECTED"
+    }
+  ],
+  "optional": {
+    "transitions": [
+      "WITHDRAW",
+      "REOPEN"
+    ],
+    "variants": [
+      "MULTI_STAGE"
+    ],
+    "source": "PRD §31 逐字：可选：WITHDRAW / REOPEN / MULTI_STAGE。"
+  },
+  "x-research-anchors": {
+    "note": "四态两事件链与三可选位为 PRD §31 逐字（2026-09-03 对照 backend-references.md 差异表无冲突确认）；状态机闭包词形与前端状态机原型（STATE_ARCHETYPE 族）同构，本原型是后端单据域实例化",
+    "sources": [
+      {
+        "url": "doc/POMaster-vNext-PRD-v0.6.1-Engineering-Substrate-Archetype-Catalog.md §31",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": ".trellis/tasks/09-02-vnext-prd-v06-governed-substrate/research/backend-references.md",
+        "fetched": "2026-09-03"
+      }
+    ]
+  }
+}

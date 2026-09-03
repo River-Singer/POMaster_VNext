@@ -1,0 +1,71 @@
+{
+  "id": "DATA_ARCHETYPE.HIERARCHY",
+  "kind": "archetype",
+  "layer": "ARCHETYPE",
+  "title_zh": "层级数据原型",
+  "summary_zh": "树形层级实体形状原型（PRD §51 三候选逐字）：邻接表/物化路径/闭包表——按读写比例、深度、子树查询与移动需求选定；邻接表路线以 PG 官方递归查询能力为官方级锚，闭包表证据等级如实标注为社区共识级。",
+  "semantic": {
+    "responsibility": "父子层级关系的实现路线选型与形状基线：三候选各有读写代价画像，选型由访问画像决定而非默认——选型依据（读写比例/深度/子树查询/移动需求）显式在案",
+    "when_to_use": "组织架构/分类目录/物料清单等树形实体建表——先按读写比例与移动频率选路线再定形状",
+    "when_not_to_use": "扁平两值关联（普通外键即可）；图状多对多（关联中间表语义）；单层父子无子树查询诉求（邻接表直配即可，无需本原型的选型面）"
+  },
+  "composition": {
+    "requires": [],
+    "optional": [],
+    "incompatible": []
+  },
+  "candidates": [
+    "ADJACENCY_LIST",
+    "MATERIALIZED_PATH",
+    "CLOSURE_TABLE"
+  ],
+  "resolver_basis": [
+    "读写比例",
+    "深度",
+    "子树查询",
+    "移动需求"
+  ],
+  "evidence": {
+    "ADJACENCY_LIST": {
+      "level": "official",
+      "anchor": "官方级——PG 18 官方文档：\"Recursive queries are typically used to deal with hierarchical or tree-structured data.\"（PG 14+ 官方提供 SEARCH 子句深度/广度优先排序与 CYCLE 子句环防护——邻接表递归遍历是一等公民且有官方环防护）"
+    },
+    "MATERIALIZED_PATH": {
+      "level": "official",
+      "anchor": "官方级——SQL Server hierarchyid 官方对比（子树查询显著更快、直接后代查询略慢、非叶子移动更慢）+ django-treebeard 选型文：MP 是最兼容与最常用实现（descendants 读取 0.7ms vs 邻接表 14ms）"
+    },
+    "CLOSURE_TABLE": {
+      "level": "community",
+      "anchor": "社区共识级（如实标注，禁冒充官方口径）——本轮未找到数据库官方文档背书（PG/MySQL/SQL Server 均无专门章节）；存祖先-后代全对、读一次 join 取全子树/全祖先、写放大=节点数×深度"
+    }
+  },
+  "optional_native": {
+    "sql_server": "hierarchyid（数据库原生物化路径实现）",
+    "postgresql": "ltree（treebeard 标注 experimental；官方文档在 PG 文档集）"
+  },
+  "x-research-anchors": {
+    "note": "【证据等级如实标注】closure table 选型指导为社区/书籍共识级（research 题 6b Caveats 段自述证据等级偏弱项），邻接表/物化路径两候选为官方级锚（PG 18 queries-with + SQL Server hierarchyid 对比 + treebeard 基准）——三候选与 PRD §51 逐字闭包一致，2026-09-03 实抓",
+    "sources": [
+      {
+        "url": "https://www.postgresql.org/docs/current/queries-with.html",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://learn.microsoft.com/en-us/sql/relational-databases/hierarchical-data-sql-server",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://django-treebeard.readthedocs.io/en/latest/choosing.html",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "doc/POMaster-vNext-PRD-v0.6.1-Engineering-Substrate-Archetype-Catalog.md §51",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": ".trellis/tasks/09-02-vnext-prd-v06-governed-substrate/research/backend-references.md 题 6b",
+        "fetched": "2026-09-03"
+      }
+    ]
+  }
+}

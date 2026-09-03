@@ -1,0 +1,79 @@
+{
+  "id": "ARCHETYPE.BACKEND.TRANSACTIONAL_WRITE",
+  "kind": "archetype",
+  "layer": "ARCHETYPE",
+  "title_zh": "事务性写原型",
+  "summary_zh": "单库用例写路径原型（PRD §36 五步链序）：用例入口开事务、领域变更、仓储落库、提交；回滚默认档锚 Spring 现行口径（运行时异常与错误默认回滚、受检异常默认不回滚）；关键库事务内禁慢外部网络调用。",
+  "semantic": {
+    "responsibility": "把一次用例写的原子性边界标准化为五步链序：Application Use Case → TX BEGIN → Domain Change → Repository Write → TX COMMIT——事务边界与领域变更的相对位置单点声明",
+    "when_to_use": "单库强一致写路径（一次用例一个库事务即可承载）——先检查是否真需要跨服务最终一致（是则配发件箱事件原型）",
+    "when_not_to_use": "跨服务最终一致写（配发件箱事件原型）；只读检索面；外部系统调用编排（走外部集成原型）"
+  },
+  "composition": {
+    "requires": [],
+    "optional": [],
+    "incompatible": []
+  },
+  "defaults": {
+    "chain": [
+      "Application Use Case",
+      "TX BEGIN",
+      "Domain Change",
+      "Repository Write",
+      "TX COMMIT"
+    ],
+    "propagation": "REQUIRED",
+    "isolation": "ISOLATION_DEFAULT",
+    "read_only": false,
+    "rollback_default": "RuntimeException|Error 默认回滚；checked Exception 默认不回滚（Spring Framework 7.0.x 现行文档逐字：\"Any RuntimeException or Error triggers rollback, and any checked Exception does not.\"——2026-09-03 实抓未变）",
+    "propagation_axis": [
+      "REQUIRED",
+      "SUPPORTS",
+      "MANDATORY",
+      "REQUIRES_NEW",
+      "NOT_SUPPORTED",
+      "NEVER",
+      "NESTED"
+    ],
+    "rollback_rule_note": "rollbackFor 类型规则按等于或子类匹配；pattern 规则是子串匹配（官方明示可能误伤 CustomExceptionV2 与嵌套类 CustomException$AnotherException）——pattern 必须写全限定名",
+    "strongest_matching_rule_wins": true
+  },
+  "constraints": [
+    "默认禁止在关键 DB Transaction 中包含慢外部网络调用（PRD §36 逐字）",
+    "REQUIRES_NEW 要求连接池容量适当超过并发线程数，否则连接耗尽/死锁（官方原文：\"Do not use PROPAGATION_REQUIRES_NEW unless your connection pool is appropriately sized, exceeding the number of concurrent threads by at least 1.\"）",
+    "REQUIRED 参与外层事务时本地 isolation/timeout/readOnly 被静默忽略；内层 rollback-only 标记会使外层提交抛 UnexpectedRollbackException（官方传播详解）"
+  ],
+  "optional": {
+    "propagation": [
+      "REQUIRES_NEW",
+      "NESTED"
+    ],
+    "nested_note": "NESTED 为单物理事务+保存点，通常映射到 JDBC savepoints——仅 JDBC 资源事务可用",
+    "global_rollback_switch": "Spring 6.2+ 可经 @EnableTransactionManagement(rollbackOn=ALL_EXCEPTIONS) 全局改默认回滚行为（事务级规则仍覆盖全局缺省）"
+  },
+  "x-research-anchors": {
+    "note": "回滚默认原文与七传播语义为 Spring 官方文档 2026-09-03 实抓（annotations.html/rolling-back.html/Propagation javadoc；版本 7.0.9/Boot 4.1.1 取自 repo1.maven.org 官方 metadata）；REQUIRES_NEW 连接池死锁警示与 rollbackFor 子串误伤为官方原文转写",
+    "sources": [
+      {
+        "url": "https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/annotations.html",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/rolling-back.html",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/transaction/annotation/Propagation.html",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://repo1.maven.org/maven2/org/springframework/spring-framework-bom/maven-metadata.xml",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": ".trellis/tasks/09-02-vnext-prd-v06-governed-substrate/research/backend-references.md 题 1",
+        "fetched": "2026-09-03"
+      }
+    ]
+  }
+}

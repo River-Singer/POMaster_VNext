@@ -12,8 +12,9 @@
  *   coreTokens 重叠的 token；命中 token 全 ∈ referenceTokens（core 零命中）→ refOnly；
  * - newEntityVerdictFromResolution 五否机判闭合：两新类 denied（组合否/参照否不成立）、
  *   词表外拒绝保持（§87 禁静默放行）。
- * - 真实 repo catalog 只读断言（resolveCatalogRoot 注入；"master data" 命中
- *   PAGE_ARCHETYPE.MASTER_DATA + COMPONENT_ARCHETYPE.DATA_GRID 的 requires 组合链）。
+ * - 真实 repo catalog 只读断言（resolveCatalogRoot 注入；"master data" 命中双组合链
+ *   ——ANALYSIS–GRID–PAGE_MASTER requires 链 + 批次 3 增量 BACKEND_MASTER–DATA_MASTER
+ *   optional 链；链外单命中 core 条目降位 alternatives）。
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -230,27 +231,38 @@ describe("New Entity Gate 五否机判闭合（v0.6.1 §75 批次 2 并拢）", 
 });
 
 describe("真实 repo catalog 只读断言（resolveCatalogRoot 注入；零物料改动）", () => {
-  it("「master data」命中 MASTER_DATA+DATA_GRID requires 组合链 → COMPOSABLE（链外 core 命中降位 alternatives）", async () => {
+  it("「master data」命中双组合链 → COMPOSABLE（批次 3 增量后双链参与 + 链外 core 命中降位 alternatives）", async () => {
     const outcome = await resolveNeed(store, resolveCatalogRoot(), { need: "master data" });
     expect(outcome.match_class).toBe("COMPOSABLE_MATCH");
-    // ANALYSIS 的 when_not_to_use 含「page_archetype_master_data」词形——semantic 三槽
-    // 入 coreTokens 后以 master+data 双 token 命中，且其 requires 含 DATA_GRID 构成链；
-    // 三者同链（ANALYSIS–GRID–PAGE_MASTER），matched_tokens 数降序、id 升序。
+    // 两个连通分量：ANALYSIS–GRID–PAGE_MASTER（requires 链，批次 1）+
+    // BACKEND_MASTER–DATA_MASTER（批次 3 增量：ARCHETYPE.BACKEND.MASTER_DATA 的
+    // composition.optional 含 DATA_ARCHETYPE.MASTER_DATA——两 id 词形自带 master+data
+    // token，不可避免入 core 命中集）；matched_tokens 数降序、id 升序。
     expect(outcome.matches.map((match) => match.id)).toEqual([
+      "ARCHETYPE.BACKEND.MASTER_DATA",
+      "DATA_ARCHETYPE.MASTER_DATA",
       "PAGE_ARCHETYPE.ANALYSIS",
       "PAGE_ARCHETYPE.MASTER_DATA",
       "COMPONENT_ARCHETYPE.DATA_GRID",
     ]);
-    expect(outcome.sources_examined.composable_links).toBe(2);
+    expect(outcome.sources_examined.composable_links).toBe(3);
     expect(outcome.required_bindings).toEqual([
+      "ARCHETYPE.BACKEND.CRUD_RESOURCE",
+      "ARCHETYPE.BACKEND.QUERY_RESOURCE",
       "COMPONENT_ARCHETYPE.BUTTON",
       "COMPONENT_ARCHETYPE.DATA_GRID",
       "COMPONENT_ARCHETYPE.SEARCH_INPUT",
     ]);
-    // 链外 core 命中（DATA_ARCHETYPE.MASTER_DATA 无组合边）不冒充参与链——降位披露。
-    expect(outcome.alternatives.map((match) => match.id)).toContain(
-      "DATA_ARCHETYPE.MASTER_DATA",
-    );
+    // 链外 core 命中（批次 3 四 DATA_ARCHETYPE.* 单命中、无组合边）不冒充参与链——
+    // 降位披露（原 DATA_ARCHETYPE.MASTER_DATA 降位 exemplar 升链后由 TRANSACTION 承接）。
+    for (const demoted of [
+      "DATA_ARCHETYPE.TRANSACTION",
+      "DATA_ARCHETYPE.VERSIONED",
+      "DATA_ARCHETYPE.HIERARCHY",
+      "DATA_ARCHETYPE.LEDGER",
+    ]) {
+      expect(outcome.alternatives.map((match) => match.id)).toContain(demoted);
+    }
   });
 
   it("批次 1 验收词形「供应商管理页 主数据」保持 CONFIGURABLE（单 core 命中不回退）", async () => {

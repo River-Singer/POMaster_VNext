@@ -1,0 +1,40 @@
+{
+  "id": "DATA_ARCHETYPE.LEDGER",
+  "kind": "archetype",
+  "layer": "ARCHETYPE",
+  "title_zh": "台账数据原型",
+  "summary_zh": "追加式台账实体形状原型（PRD §47 目录词形承载）：记录表列内只增不改不删、对账可重放；软删除注记对照——涉及个人数据时软删只能是中间态，必须存在最终硬擦除路径。",
+  "semantic": {
+    "responsibility": "不可篡改事实序列的表内承载：行只追加，修正以反向/补充记录表达，历史可完整重放——append-only 是台账形状的定义性特征",
+    "when_to_use": "价格台账（§71 判例与版本化数据原型组合）、余额流水、积分/额度变动等需要对账与审计重放的记录面",
+    "when_not_to_use": "可修正的当前值数据（主数据表原型/版本化数据原型）；一次性会话数据"
+  },
+  "composition": {
+    "requires": [],
+    "optional": [],
+    "incompatible": []
+  },
+  "append_only": true,
+  "soft_delete_note": "台账不默认软删除（与交易流水数据原型的 §49 不默认软删同向对照）；含个人数据的记录：GDPR 第 17 条被遗忘权要求『无不当延迟』擦除——软删只能作为中间态，保留窗口到期必须物理删除；业界平台级窗口量级参考：Dataverse 可恢复态保留天数 1-30 天可配（2026-09-03 官方实抓）",
+  "x-research-anchors": {
+    "note": "append-only 台账语义为 PRD §47 目录词形承载 + §71 价格台账判例组合位（与 DATA_ARCHETYPE.VERSIONED 组合）；GDPR Art.17 逐字（erasure without undue delay）与 Dataverse 1-30 天窗口为官方文档 2026-09-03 实抓；软删工程代价（查询需带未删过滤/唯一约束需部分索引）为社区共识级证据——如实标注不冒充官方口径",
+    "sources": [
+      {
+        "url": "https://gdpr-info.eu/art-17-gdpr/",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://learn.microsoft.com/en-us/power-platform/admin/restore-deleted-table-records",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "doc/POMaster-vNext-PRD-v0.6.1-Engineering-Substrate-Archetype-Catalog.md §47/§71",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": ".trellis/tasks/09-02-vnext-prd-v06-governed-substrate/research/backend-references.md 题 6b",
+        "fetched": "2026-09-03"
+      }
+    ]
+  }
+}

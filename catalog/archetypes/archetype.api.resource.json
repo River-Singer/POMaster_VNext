@@ -1,0 +1,45 @@
+{
+  "id": "ARCHETYPE.API.RESOURCE",
+  "kind": "archetype",
+  "layer": "ARCHETYPE",
+  "title_zh": "API 资源原型",
+  "summary_zh": "REST 风格标准端点五操作原型（PRD §43 逐字）：集合读取/单体读取/新建/单体修改/移除；授权/错误/分页/校验/兼容性五绑定必须配置——绑定缺失即契约不完整。",
+  "semantic": {
+    "responsibility": "单体实体的 HTTP 面形状基线：五操作闭包 + 五项强制绑定（authorization/error/pagination/validation/compatibility）——绑定面显式声明而非隐式约定",
+    "when_to_use": "实体需要标准 HTTP 面时（与后端标准写读面原型配对：操作闭包与其五操作一一对应）",
+    "when_not_to_use": "动词语义的业务命令面（配幂等命令原型）；事件订阅面（走发件箱事件原型的通道侧）"
+  },
+  "composition": {
+    "requires": [],
+    "optional": [],
+    "incompatible": []
+  },
+  "operations": [
+    "GET collection",
+    "GET item",
+    "POST item",
+    "PUT/PATCH item",
+    "DELETE item"
+  ],
+  "bindings": [
+    "authorization",
+    "error",
+    "pagination",
+    "validation",
+    "compatibility"
+  ],
+  "bindings_source": "PRD §43 逐字：必须绑定 authorization / error / pagination / validation / compatibility。",
+  "x-research-anchors": {
+    "note": "五操作与五绑定为 PRD §43 逐字（2026-09-03 对照 backend-references.md 题 4/差异表 §44-§45 行核实链）；error 绑定与 API 错误契约原型互链、pagination 绑定与分页原型互链",
+    "sources": [
+      {
+        "url": "doc/POMaster-vNext-PRD-v0.6.1-Engineering-Substrate-Archetype-Catalog.md §43",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": ".trellis/tasks/09-02-vnext-prd-v06-governed-substrate/research/backend-references.md 题 4",
+        "fetched": "2026-09-03"
+      }
+    ]
+  }
+}
