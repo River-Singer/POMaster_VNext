@@ -62,12 +62,12 @@ async function readCounts(
     }
     const index = parsed as Record<string, unknown>;
     const generation = index.generation;
+    const generationRecord =
+      generation !== null && typeof generation === "object"
+        ? (generation as Record<string, unknown>)
+        : undefined;
     const seq =
-      generation !== null &&
-      typeof generation === "object" &&
-      typeof (generation as Record<string, unknown>).seq === "number"
-        ? (generation as Record<string, unknown>).seq
-        : 0;
+      typeof generationRecord?.seq === "number" ? generationRecord.seq : 0;
     const countOf = (key: string): number => {
       const value = index[key];
       if (!Array.isArray(value)) {

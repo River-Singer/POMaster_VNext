@@ -256,7 +256,6 @@ export type {
   InitFileReport,
   InitFileAction,
   InitOptions,
-  InitMode,
   InitModeParse,
   InitPlatform,
   InitPlatformAction,

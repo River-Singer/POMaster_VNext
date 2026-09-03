@@ -174,10 +174,11 @@ export async function deriveAlerts(rootDir: string): Promise<AlertsDerivation> {
   }
 
   const generation = index.generation;
-  const currentSeq =
-    generation !== null && typeof generation === "object" && typeof (generation as Record<string, unknown>).seq === "number"
-      ? (generation as Record<string, unknown>).seq
-      : 0;
+  const generationRecord =
+    generation !== null && typeof generation === "object"
+      ? (generation as Record<string, unknown>)
+      : undefined;
+  const currentSeq = typeof generationRecord?.seq === "number" ? generationRecord.seq : 0;
 
   const alerts: AlertItem[] = [];
 

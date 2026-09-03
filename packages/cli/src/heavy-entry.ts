@@ -145,7 +145,8 @@ export function mergePomasterHooks(existingText: string | null): HooksMergeOutco
       ),
     );
     if (!alreadyRegistered) {
-      groups.push({ hooks: [{ type: "command", command }] satisfies HookMatcherGroup });
+      const group: HookMatcherGroup = { hooks: [{ type: "command", command }] };
+      groups.push(group);
       hooks[event] = groups;
       changed = true;
     }
