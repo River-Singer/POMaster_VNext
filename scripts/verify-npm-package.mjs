@@ -8,7 +8,7 @@
 //    依次实跑 `npx pomaster --help|init|status|catalog status|doctor`，断言退出码与
 //    关键词形。关键断言：catalog status 的 catalog_root 命中
 //    node_modules/pomaster/catalog（resolveCatalogRoot 候选链的包内资产候选，
-//    ok:true 且 100 entries 0 drift）。
+//    ok:true 且 143 entries 0 drift）。
 //
 // 冒烟产物（tgz 与 smoke 目录）留系统 temp 并在末尾打印路径，不进仓库
 // （stage/ 已在 .gitignore；temp 目录由操作系统清理策略兜底）。
@@ -79,7 +79,7 @@ const packedPaths = packReport.files.map((file) => file.path.replace(/\\/g, "/")
 // 1.1 bin 在座。
 assert(packedPaths.includes("dist/bin.js"), "bin 在座（dist/bin.js）");
 
-// 1.2 catalog 完整：打包文件集与仓库 catalog/ 全等 + lock 100 entries。
+// 1.2 catalog 完整：打包文件集与仓库 catalog/ 全等 + lock 143 entries。
 const repoCatalogFiles = walkFiles(p("catalog")).map((file) => `catalog/${file}`);
 const packedCatalogFiles = packedPaths.filter((file) => file.startsWith("catalog/"));
 const repoSet = new Set(repoCatalogFiles);
@@ -94,7 +94,7 @@ assert(
 const stageLock = JSON.parse(
   readFileSync(join(STAGE_PKG, "catalog", "catalog-lock.draft.json"), "utf8"),
 );
-assert(stageLock.entries.length === 100, "catalog-lock 100 entries", `实为 ${stageLock.entries.length}`);
+assert(stageLock.entries.length === 143, "catalog-lock 143 entries", `实为 ${stageLock.entries.length}`);
 
 // 1.3 无 node_modules。
 const nodeModulesLeak = packedPaths.filter((file) => file.split("/").includes("node_modules"));
@@ -124,7 +124,7 @@ assert(presentForbidden.length === 0, "零 dependencies（四字段全缺席）"
 assert(stageManifest.private === undefined, "private 不设（缺省可发布）");
 // 版本断言与 build-npm-package.mjs 的 POMASTER_VERSION 单点真源同步维护
 // （发布 tag v<version> 以该常量为锚，publish.yml 版本闸强制）。
-assert(stageManifest.name === "pomaster" && stageManifest.version === "0.1.1", "name/version = pomaster@0.1.1");
+assert(stageManifest.name === "pomaster" && stageManifest.version === "0.2.0", "name/version = pomaster@0.2.0");
 assert(stageManifest.license === "PolyForm-Noncommercial-1.0.0", "license = PolyForm-Noncommercial-1.0.0");
 assert(stageManifest.bin?.pomaster === "dist/bin.js", "bin.pomaster = dist/bin.js");
 assert(stageManifest.engines?.node === ">=22", "engines.node = >=22");
@@ -217,15 +217,15 @@ smoke("npx pomaster status", "pomaster status", {
   expectWords: ["status: .pomaster/state/truth-index.json (seq="],
 });
 
-// 2.4 `npx pomaster catalog status --json`（关键：包内资产候选命中 + 100 entries 0 drift）。
+// 2.4 `npx pomaster catalog status --json`（关键：包内资产候选命中 + 143 entries 0 drift）。
 const catalogEnvelope = smoke("npx pomaster catalog status --json", "pomaster catalog status --json", {
   expectExit: [0],
   json: true,
 });
 assert(catalogEnvelope.ok === true, "catalog status 信封 ok:true");
 assert(
-  catalogEnvelope.result?.entries_total === 100,
-  `catalog entries = 100（实为 ${catalogEnvelope.result?.entries_total}）`,
+  catalogEnvelope.result?.entries_total === 143,
+  `catalog entries = 143（实为 ${catalogEnvelope.result?.entries_total}）`,
 );
 assert(
   catalogEnvelope.result?.lock_verification?.ok === true &&

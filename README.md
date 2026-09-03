@@ -139,6 +139,8 @@ pomaster doctor        # 工具/MCP 探测：缺什么提示装什么
 
 doctor 探针覆盖：内核 / BUILD（tsc·eslint）/ CONTRACT（oasdiff·schemathesis）/ ARCHITECTURE（depcruise·import-linter）/ COVERAGE（c8·pytest-cov）/ MUTATION（mutmut·StrykerJS）/ SECURITY（gitleaks·pip-audit·semgrep）/ BROWSER（playwright·chrome-devtools MCP）/ PERFORMANCE（lighthouse·web-vitals）/ portability。**工具缺席=显式 NOT_RUN（非绿非红），绝不假绿**。
 
+**浏览器双眼（Browser Eyes）**：`chrome-devtools` MCP 是观测诊断面——页面慢/报错/卡住时直接读真实浏览器（性能 trace / 网络瀑布 / console），禁只看代码推断；`playwright` MCP 是确定性 E2E smoke 与交互验证面。两边产物都是证据链输入（perception receipt / BROWSER gate GRN）。`pomaster doctor` 对两个 MCP 各自出四态探针（未配置 → MISSING_CONFIGURATION + 一键安装路标）；`init` 生成的 AGENTS.md 已内置该分工引导。
+
 ---
 
 ## 为什么存在（三行读完的来历）
@@ -165,6 +167,7 @@ flowchart TB
     GT["gates 6"]:::cat
     SEN["sensors 6"]:::cat
     ARC["archetypes 41"]:::cat
+    TOO["tools 8"]:::cat
   end
   AGENT["Agent Harness<br/>(Claude Code / Codex / …)"]:::ext
   HUMAN["Human Authority<br/>(Owner)"]:::ext
@@ -184,6 +187,7 @@ flowchart TB
 - **Canonical State 是唯一事实源**：一切对象（PAGE/CAPABILITY/CHANGE/TASK…）带四轴状态（lifecycle/confidence/evidence/change）+ Authority + 完整生命周期。Markdown 文档只是它的投影。
 - **Agent 不直接写状态**：一切写经 `maintain <id> --ops <tx>` 显式事务 → kernel `applyTransaction` 判卷（写路径机器执行点 `exec-guard` 判卷器非写入器）。
 - **证据先于结论**：gate 运行结果走 `record gate-run` 产 GRN 收据入 evidence 平面；claim 必须显式绑定 GRN 分母——「证据缺失伪装完成」会被 closeout 硬阻断。
+- **先画靶子，再射箭（v0.6）**：随包分发 41 份 archetype 标准件（页面/组件/后端/数据/运行时，语义全部锚定官方文档实抓）——`pomaster resolve` 先在标准件与已有对象里选/配/组（EXACT/CONFIGURABLE/COMPOSABLE/EXTENSIBLE 确定性分类），真没有才设计新的，且新建必过 New Entity Gate 五否机判；`pomaster graph` 把对象图（采纳边/依赖/影响闭包）变成人看得见的投影。
 
 ## SOP 编排：项目生命周期五段式
 
@@ -360,7 +364,8 @@ Spec、Task、Gate、Knowledge、Brainstorm……全部是这五个原语的派�
 
 ```text
 packages/    kernel（状态与判卷权威）· cli（命令面）· gauntlet-lite（确定性 gate 腿）· schemas（FROZEN 词表 schema）
-catalog/     policies · knowledge · gates · sensors——随包分发的工程策展物料（catalog-lock 逐字节对账）
+catalog/     policies · knowledge · gates · sensors · archetypes · tools——随包分发的工程策展物料（catalog-lock 逐字节对账；手补物料后 `pomaster catalog relock` 一键重锁）
+references/  concept-ledger（治理概念账本）· external-sites-index（外部参照站点索引）
 tests/       单元 / 集成 / Golden / 对抗 / 行为 / 自托管基准（数量下限进 CI 棘轮，只升不降）
 benchmarks/  mutation-kill · constitutional · run-all
 legal/       THIRD_PARTY_NOTICES · PROVENANCE
