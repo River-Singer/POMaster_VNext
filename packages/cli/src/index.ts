@@ -32,6 +32,14 @@
  *                   match_class 确定性派生（EXACT/CONFIGURABLE/EXTENSIBLE/NO_MATCH）；
  *                   NO_MATCH 显式 exit 0 不臆造（Anti-Hallucination）；分母披露
  *                   sources_examined；纯读零写入（解析≠采用，INSTANCE_OF 边归显式采用动作）
+ * - graph           对象图视图（P-v06 批次 4；PRD §104-113 Studio 信息架构的最小 CLI
+ *                   投影 + §111 Trace Everything 读侧）：family/标题（truth-index 查册
+ *                   + familyOfId 派生）+ INSTANCE_OF 采纳边（单列，解析≠采用）+ 正向
+ *                   依赖/反向 dependents（按 type 分组）+ impact 邻域（kernel
+ *                   impactClosure 复用，maxDepth 缺省 4，超深 max_depth_reached 显式
+ *                   呈现禁静默）；--view impact 只出闭包段；纯读零写入
+ *                   （loadStoreReadOnly——「所有可视化都是 Projection」§1.6；零边=
+ *                   「无边登记」不冒充无依赖；端点存在性不在本面判卷）
  * - status          读 .pomaster/state：对象计数/分母状态/permit 活性
  * - inspect         单对象检视：正文+证据+谱系纯读呈现（零写入；PRD §44.1 基础命令）
  * - maintain        受控变更（--ops 显式事务，判卷权威在 kernel applyTransaction）/
@@ -151,6 +159,7 @@ import { runRecordClaim, runRecordGateRun } from "./record.js";
 import { runCloseout } from "./closeout.js";
 import { runCatalogStatus, runCatalogExplain, runCatalogRelock } from "./catalog.js";
 import { runResolve } from "./resolve.js";
+import { runGraph } from "./graph.js";
 import { runEval } from "./eval.js";
 import { runViewBlueprint, runViewTask } from "./view.js";
 import { runAuditBlueprint, runAuditTask } from "./audit.js";
@@ -358,6 +367,15 @@ export type {
 export { runCatalogStatus, runCatalogExplain, runCatalogRelock } from "./catalog.js";
 export { runResolve, renderResolve } from "./resolve.js";
 export type { ResolveInput, ResolveResult } from "./resolve.js";
+export { runGraph, renderGraph, DEFAULT_IMPACT_DEPTH } from "./graph.js";
+export type {
+  GraphInput,
+  GraphResult,
+  GraphObjectRow,
+  GraphEdgeView,
+  GraphEdgeGroup,
+  GraphImpactView,
+} from "./graph.js";
 export type {
   CatalogCommandDeps,
   CatalogExplainResult,
@@ -773,6 +791,34 @@ export function createProgram(
       });
       record({
         command: "resolve",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  // —— 对象图视图（P-v06 批次 4；PRD §104-113 Studio 最小 CLI 投影；纯读零写入） ——
+  // 数据全派生自 relations 台账 + truth-index（One Model Many Projections——零第二图
+  // 存储）；INSTANCE_OF 采纳边单列（解析≠采用——边只呈现登记事实）；impact 闭包 =
+  // Change Impact 最小算子（maxDepth 缺省 4，超深显式 max_depth_reached 禁静默）；
+  // 端点存在性不在本面判卷（关系面纪律：本面只解析命名，存在性归消费面）。
+  program
+    .command("graph")
+    .description(
+      "对象图视图（§104-113 Studio 最小 CLI 投影）：family/标题 + INSTANCE_OF 采纳边 + 正向依赖/反向 dependents + impact 邻域（闭包 maxDepth 缺省 4，超深显式呈现）；--view impact 只出闭包段；纯读零写入（所有可视化都是 Projection——§1.6；零边=「无边登记」不冒充无依赖）",
+    )
+    .argument("<governed-id>", "governed id（closed-world 文法 A5；kernel parseGovernedId 判卷）")
+    .option("--view <view>", "视图词形（all=全段（缺省）| impact=只出 impact 闭包段）")
+    .option("--max-depth <n>", "impact 闭包最大深度（1..16；缺省 4——防御失控 BFS）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (id: string, opts, command) => {
+      const outcome = await runGraph({
+        id,
+        view: opts.view as string | undefined,
+        maxDepth: opts.maxDepth as string | undefined,
+        rootDir: resolveDir(command),
+      });
+      record({
+        command: "graph",
         outcome,
         asJson: command.opts().json === true,
       });

@@ -53,9 +53,10 @@ pomaster memory capture/inspect/harvest/review/promote/audit
 # ⑧ CARRY —— DoD 判卷收口
 pomaster closeout <task-id>
 
-# 横切 —— 对象检视 / Discovery / Research / Eval / Catalog / 迁移 / 生产反馈 / 多 Agent / 执行身份
+# 横切 —— 对象检视 / 图视图 / Discovery / Research / Eval / Catalog / 迁移 / 生产反馈 / 多 Agent / 执行身份
 pomaster resolve "<need>" [--hints ...]
 pomaster inspect <governed-id>
+pomaster graph <governed-id> [--view impact]
 pomaster brainstorm start/status/promote
 pomaster research list/inspect
 pomaster eval --suite behavioral
@@ -163,7 +164,7 @@ flowchart TB
     KN["knowledge 11"]:::cat
     GT["gates 6"]:::cat
     SEN["sensors 6"]:::cat
-    ARC["archetypes 39"]:::cat
+    ARC["archetypes 41"]:::cat
   end
   AGENT["Agent Harness<br/>(Claude Code / Codex / …)"]:::ext
   HUMAN["Human Authority<br/>(Owner)"]:::ext

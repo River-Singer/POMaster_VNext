@@ -1,0 +1,93 @@
+{
+  "id": "RUNTIME_ARCHETYPE.OBSERVABILITY_BINDING",
+  "kind": "archetype",
+  "layer": "PATTERN",
+  "title_zh": "观测语义绑定模式",
+  "summary_zh": "观测语义绑定模式（PRD §85/§86/§102-§103）：OTel 是 Runtime Sensor Provider，POMaster 不替代 APM 只建立语义 Binding——信号对象、资源身份词形、按域成熟度三面绑定到 Runtime Graph，遥测本体留在 OTel/APM 侧。",
+  "semantic": {
+    "responsibility": "把 POMaster 对象系与 OTel 语义约定的对应关系单点化：每条绑定声明词形锚与成熟度档位（Stable/Release Candidate/Development/Mixed），禁把不同域当成统一标准引用——绑定是语义映射不是复制",
+    "when_to_use": "需要把 Runtime Graph/Deployment View 与遥测信号对齐时（§72 Version→service.version 一类映射）；§103 Runtime Sensor（SENSOR.OTEL.TRACE/SENSOR.OTEL.METRIC 词形锚）的语义消费面",
+    "when_not_to_use": "自建 APM/自研语义约定（OTel 是 Provider，POMaster 不复制其语义）；具体后端查询语句与仪表盘配置（APM 侧自有面）；采集器部署与采样策略运维（OTel Collector 自有面）"
+  },
+  "composition": {
+    "requires": [],
+    "optional": [],
+    "incompatible": []
+  },
+  "defaults": {
+    "signals": {
+      "bound": [
+        "traces",
+        "metrics",
+        "logs",
+        "profiles"
+      ],
+      "wording_source": "OTLP 四信号（Collector component-stability 文档明文列 profiles；OTel spec 侧有 Profiles Mappings/Pprof Profiles Data Format 章节——research 题 1 实抓）",
+      "gap_note": "PRD §85 信号对象清单（Trace/Metric/Log Event/Correlation ID/Span/Alert/Dashboard/SLO）漏 profiles——差异注记如实落位，Profile 对象待对象系增补（不私扩）"
+    },
+    "domain_status": {
+      "http": "Mixed",
+      "rpc": "Release Candidate",
+      "database": "Mixed",
+      "messaging": "Development",
+      "service": "Stable（实体 service/service.namespace/service.instance——§86 Service/Service Instance 映射经实体族成立）",
+      "service_instance": "Stable（service.instance.id 与 service.namespace,service.name 组成全局唯一三元组）",
+      "rule": "逐域附 Status 禁当统一标准——PRD §86 六个映射域成熟度不齐（research 2026-09-03 逐域 index.md 自述实抓：HTTP Mixed/Database Mixed/RPC Release Candidate/Messaging Development/FaaS Development）"
+    },
+    "resource_identity": {
+      "service.name": "Stable——逻辑服务名；未指定时 SDK 回落 unknown_service:<进程名>；水平扩缩全实例 MUST 同值",
+      "service.version": "Stable——服务组件版本串（格式不定义：2.0.0 或 git SHA 皆可）",
+      "deployment.environment.name": "Stable——部署环境名（well-known 值 development/production/staging/test）；不参与 service 唯一性约束",
+      "service.namespace": "Stable——命名空间（namespace 内 name 唯一）",
+      "service.instance.id": "Stable——全局唯一三元组成员；Collector 无法无歧义确定实例时不应代设（如按 pod.name 生成大概率错）"
+    },
+    "maturity_anchor": "semconv ≥ 现行版语义（禁硬编码版本号——semconv 月级发版，版本位入 x-research-anchors provenance；语义判卷以 registry attributes/entities 的 index.md 机器视图为准，/llms.txt 总索引可直接消费）",
+    "binding_form": "词形锚 + 成熟度档位 + 消费位三件式：每条绑定声明 OTel 词形、其 Status、以及 POMaster 侧消费对象（Runtime Graph 节点/Deployment View 字段）"
+  },
+  "binding_rule": "OTel 是 Runtime Sensor Provider：POMaster 只建立语义 Binding，不复制 APM（PRD §85 逐字：POMaster 不替代 APM，只建立语义 Binding。）——semconv 只定义属性/命名契约，观测本体（采集/存储/查询/告警）留在 OTel/APM 侧（研究题 1 差异表：与 OTel 定位一致，无冲突）",
+  "deprecated_wording_note": "resource 词形改名锚：deployment.environment（旧词形）已废弃（Deprecated：Replaced by deployment.environment.name——semconv deployment 属性族 2026-09-03 实抓）；本物料全文以新词形为准，旧词形仅在本注记出现",
+  "collector_status": "Collector 双版本线 v1.66.0/v0.160.0（2026-09-02 release，高频发版；组件标 1.x 要求至少一个 signal stable——traces/metrics/logs/profiles 各自独立稳定级，Development/Alpha/Beta/Stable/Deprecated/Unmaintained 阶梯）；代码基基于 OTLP protocol v1.10.0（Stable）构建——版本位随 provenance 更新，禁硬编码进 defaults",
+  "constraints": [
+    "§103 SENSOR.OTEL.TRACE/SENSOR.OTEL.METRIC 为 Runtime Sensor 词形锚（登记面）——本物料是语义 Binding 不登记 sensor 本体：OTel 无既有探测器/availability_probe 键可引，登记即假绿（『禁止空壳仪式』§10；真实 implementation 另批走 vocab/传感器 PR）",
+    "Config Hash/Migration Version/Traffic/Health 无 OTel 标准词形（research 差异表 §72 行）——Deployment View 后四项为 POMaster 自有词形（self-defined），禁误挂 semconv 锚",
+    "schema 变换引用须带 moratorium 意识（官方 Warning：暂停依赖 schema 变换实现遥测稳定性）——改名类变更以 schema 文件描述并发布，但消费面不做自动变换依赖；改名映射是单向注记不是自动变换（旧词形→新词形，见 deprecated 注记）",
+    "semconv 稳定性契约只保证属性 key/实体引用/span name 与 kind/metric name 与 unit/well-known 既有值——属性值本身、span links、metric description 不在保证范围（versioning-and-stability 官方原文语义）"
+  ],
+  "x-research-anchors": {
+    "note": "四信号（traces/metrics/logs/profiles）/逐域 Status/resource 词形与稳定级/Collector 双版本线均出自 runtime-references.md 题 1（2026-09-03 opentelemetry.io 官方文档 + GitHub API 实抓）；semconv 文档站与仓库 latest release 当时版本位 1.44.0（2026-08-04 发布）、Collector 当时 v0.160.0（2026-09-02 发布）记录于本注记作 provenance——按研究裁定禁入 defaults 硬编码（月级发版）；『POMaster 不替代 APM 只建立语义 Binding』为 PRD §85 逐字，与 OTel 定位无冲突（差异表 §85 行）",
+    "sources": [
+      {
+        "url": ".trellis/tasks/09-02-vnext-prd-v06-governed-substrate/research/runtime-references.md 题 1",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://opentelemetry.io/docs/specs/semconv/",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://opentelemetry.io/docs/specs/otel/document-status/",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://opentelemetry.io/docs/specs/otel/versioning-and-stability/",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://opentelemetry.io/docs/specs/semconv/registry/attributes/service/index.md",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://opentelemetry.io/docs/specs/semconv/registry/attributes/deployment/",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/open-telemetry/opentelemetry-collector/main/docs/component-stability.md",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "doc/POMaster-vNext-PRD-v0.6-Governed-Engineering-System.md §85/§86/§102/§103",
+        "fetched": "2026-09-03"
+      }
+    ]
+  }
+}

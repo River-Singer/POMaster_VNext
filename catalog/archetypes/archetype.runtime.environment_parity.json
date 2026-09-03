@@ -1,0 +1,178 @@
+{
+  "id": "RUNTIME_ARCHETYPE.ENVIRONMENT_PARITY",
+  "kind": "archetype",
+  "layer": "ARCHETYPE",
+  "title_zh": "环境一致性原型",
+  "summary_zh": "六维环境比对原型（PRD §215 逐字）：Runtime Version/Config/Feature Flag/DB Schema/Dependency/External Integration 逐维比对期望态与实际态，产出结构化 ENVIRONMENT_DRIFT（差异项 + severity + ignore_rules）；与 Perception 的 Wrong Runtime Instance 机制直接结合。",
+  "semantic": {
+    "responsibility": "把『环境之间是否一致』从印象问题标准化为逐维比对：每维声明事实源与比对方式，差异以结构化漂移产物承载（差异项、严重度、忽略规则三件齐备），而非散落在人脑与聊天记录",
+    "when_to_use": "多环境部署（PRD §215 五环境 LOCAL/DEV/TEST/STAGING/PRODUCTION）需要回答『dev 过而 production 挂』类问题时；环境迁移/复制部署/升级前需要预检漂移时",
+    "when_not_to_use": "单环境本地开发（无第二环境可比）；运行中服务的遥测观测（走观测语义绑定模式的信号面）；代码版本管理本身（版本比对只是六维之一）"
+  },
+  "composition": {
+    "requires": [],
+    "optional": [],
+    "incompatible": []
+  },
+  "defaults": {
+    "comparison_dimensions": {
+      "runtime_version": {
+        "source": "部署视图/镜像 tag；OTel 资源属性（service.version、deployment.id）",
+        "status": "verified",
+        "wording_anchors": [
+          "service.version"
+        ],
+        "note": "deployment.id/name/status 为 Development 级词形（非稳定锚，允许变更——research 2026-09-03 实抓）"
+      },
+      "config": {
+        "source": "应用 profile 分层（Spring profiles：spring.profiles.active/default/include/group + spring.config.activate.on-profile）+ k8s 分层渲染（kustomize base/overlays，template-free）+ 比对命令（kubectl diff：live vs would-be applied，恒输出 YAML，退出码 0=无差异/1=有差异/>1=出错）",
+        "status": "verified",
+        "wording_anchors": [
+          "spring.profiles.active",
+          "spring.profiles.group",
+          "spring.config.activate.on-profile",
+          "kustomize base/overlays",
+          "kubectl diff"
+        ],
+        "note": "配置项本体承载为 PRD 自有词形（Config Key/Default/Environment Override，§73）；OTel 无配置维度标准词形"
+      },
+      "feature_flag": {
+        "source": "OpenFeature（vendor-agnostic 标准层，CNCF incubating 现状，One SDK any backend）+ OTel 旗标求值属性族（全部 Release Candidate）",
+        "status": "verified",
+        "wording_anchors": [
+          "feature_flag.key",
+          "feature_flag.provider.name",
+          "feature_flag.result.value",
+          "feature_flag.result.reason"
+        ],
+        "note": "生命周期卫生项（rollout 完成未删 Flag/无 Owner/永久实验——§74）是 POMaster 增值层非外部标准复制品：引用 OpenFeature 只声明求值语义锚，Owner/Expiry 保持 self-defined"
+      },
+      "db_schema": {
+        "source": "迁移工具 drift 检测（Liquibase：diff 比对单库当前态 vs 上一态、diff-changelog 比对两个目标库并可生成 missing changesets 回填、Drift Report 人可读可接 CI/CD；Drift Report 为 Liquibase Secure 商业版功能，diff/diff-changelog 在 Community 分册）",
+        "status": "verified",
+        "wording_anchors": [
+          "diff",
+          "diff-changelog",
+          "Drift Report"
+        ],
+        "note": "Flyway 侧未核实，禁写入（research Caveats 明示）"
+      },
+      "dependency": {
+        "source": "self-defined——无单点主流工具（research 2026-09-03 如实裁定）；12factor 只给原则：backing service 禁 dev/production 异构（resist the urge to use different backing services——即使适配器理论上抹平差异也会造成 dev/staging 过而 production 挂的细微不兼容）",
+        "status": "self-defined",
+        "wording_anchors": [],
+        "note": "禁伪造『业界标准做法』引用（research 差异表 §215 行裁定）"
+      },
+      "external_integration": {
+        "source": "self-defined——无单点主流工具（research 2026-09-03 如实裁定）",
+        "status": "self-defined",
+        "wording_anchors": [],
+        "note": "调用侧韧性/错误映射语义归 ARCHETYPE.BACKEND.EXTERNAL_INTEGRATION（八要素），本维只管跨环境一致性"
+      }
+    },
+    "environment_name": {
+      "wording": "deployment.environment.name",
+      "level": "Stable",
+      "well_known_values": [
+        "development",
+        "production",
+        "staging",
+        "test"
+      ],
+      "prd_environment_mapping": {
+        "LOCAL": "development",
+        "DEV": "development",
+        "TEST": "test",
+        "STAGING": "staging",
+        "PRODUCTION": "production"
+      },
+      "mapping_note": "PRD 五环境词形保留为主键（差异表 §215 行裁定）；OTel 无 LOCAL/DEV——LOCAL/DEV 归并 development 或用 custom value（OTel 明文允许：otherwise, a custom value MAY be used）；TEST↔test 直接映射；环境值不参与 service 唯一性约束（service.name=frontend 在 production 与 staging 仍视为同一 service——semconv 脚注逐字语义）"
+    },
+    "drift_output": {
+      "name": "ENVIRONMENT_DRIFT",
+      "binding": "与 Perception 的 Wrong Runtime Instance 机制直接结合（PRD §215 逐字）",
+      "shape": "期望态（Git/manifest/would-be applied/changelog）vs 实际态（live/DB）的持续或即时比对 + 结构化差异输出 + 退出码/状态机（kubectl diff 退出码 0/1、Argo CD OutOfSync 状态、Liquibase Drift Report 三者同构——research 跨工具归纳）",
+      "fields": [
+        "dimension",
+        "expected",
+        "actual",
+        "severity",
+        "ignore_rules"
+      ],
+      "severity": {
+        "levels": [
+          "CRITICAL",
+          "MAJOR",
+          "MINOR"
+        ],
+        "rule": "每条差异项必须带严重度：CRITICAL=影响正确性/安全（如 production 缺失 DB Schema 迁移）；MAJOR=行为不一致（如 Flag 求值结果漂移、Config 覆盖缺失）；MINOR=呈现性差异；严重度缺失的差异项不得静默入账",
+        "note": "分级词形为 POMaster 自有（self-defined）——业界工具给退出码/状态不给分级，分级是门禁消费所需增量"
+      },
+      "ignore_rules": {
+        "forms": [
+          "field_path（对照 Argo CD jsonPointers / jqPathExpressions）",
+          "manager（对照 Argo CD managedFieldsManagers）",
+          "value_pattern（随机值类——randAlphaNum 型模板函数每次生成不同值）"
+        ],
+        "noise_sources": [
+          "controller/mutating webhook 改写对象",
+          "HPA 重排 spec.metrics",
+          "随机模板函数每次生成不同值",
+          "manifest 含 K8s 未知字段"
+        ],
+        "rule": "忽略规则必须显式登记（字段路径 + 理由）；未登记的忽略禁静默——漂移噪声治理是漂移检测的必要组成（Argo CD 实证：应用可在成功 Sync 后立即 OutOfSync，无 ignoreDifferences 则门禁因误报被关掉——research 题 2 关键结论）"
+      }
+    }
+  },
+  "deprecated_wording_note": "旧词形 deployment.environment 已废弃（Deprecated：Replaced by deployment.environment.name——semconv registry 部署属性族 2026-09-03 实抓）；本物料全文以新词形 deployment.environment.name 为准，旧词形仅在本注记出现作改名映射锚（读到旧词形按新词形归一并记 drift 事件；semconv 当前有 schema 变换 moratorium 警告——勿做自动 schema 变换依赖）",
+  "constraints": [
+    "六维中 Dependency 与 External Integration 两维如实标注 self-defined（无单点主流工具）——禁伪造『业界标准做法』引用",
+    "环境名只写新词形 deployment.environment.name；旧词形仅限 deprecated 注记（集成 spec 正则闸 deployment\\.environment(?!\\.name)）",
+    "四维实锚事实源引用与版本位以 x-research-anchors provenance 为准——物料正文不硬编码工具版本号（工具版本随 release 漂移，语义锚不随）"
+  ],
+  "x-research-anchors": {
+    "note": "六维比对语义为 PRD §215 逐字；六维事实源锚（Spring profiles/kustomize/kubectl diff/Argo CD ignoreDifferences/OpenFeature/Liquibase drift）与 Dependency/External Integration 两维 self-defined 裁定均出自 runtime-references.md 题 2（2026-09-03 官方站点实抓）；deployment.environment.name 词形与 well-known 四值出自 semconv deployment 属性族同日实抓；severity+ignore_rules 内置为 research 题 2 落点建议采纳",
+    "sources": [
+      {
+        "url": ".trellis/tasks/09-02-vnext-prd-v06-governed-substrate/research/runtime-references.md 题 2",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://12factor.net/dev-prod-parity",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://docs.spring.io/spring-boot/reference/features/profiles.html",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/README.md",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://kubernetes.io/docs/reference/kubectl/generated/kubectl_diff/",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://argo-cd.readthedocs.io/en/stable/user-guide/diffing/",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://openfeature.dev/",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://docs.liquibase.com/secure/user-guide-5-2-2/what-is-drift-detection",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://opentelemetry.io/docs/specs/semconv/registry/attributes/deployment/",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "doc/POMaster-vNext-PRD-v0.6-Governed-Engineering-System.md §215",
+        "fetched": "2026-09-03"
+      }
+    ]
+  }
+}

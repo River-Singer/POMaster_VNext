@@ -7,7 +7,7 @@ provenance 是人类可维护的登记位，沿 previous 不重写历史，仅�
   1. 全受控节扫描（archetypes/gates/knowledge/policies/sensors——kernel catalog.ts
      CATALOG_SECTIONS 同名五节闭包）逐文件计算 content_sha256；
   2. source_ref 分桶（历史分桶逻辑保留 + 本批增量）：
-     - archetypes/*.json            → 批次 1/2/3 按 id 前缀或精确 id 分桶（seed 工具
+     - archetypes/*.json            → 批次 1/2/3/4 按 id 前缀或精确 id 分桶（seed 工具
        实抓锚，如实到批；批次 3 分桶精确到不失真——CRUD/QUERY/DATA.MASTER_DATA
        仍归批次 1）；
      - gates/gate.new-entity.checks.json → 批次 1 relock 判卷定义锚；
@@ -19,7 +19,7 @@ provenance 是人类可维护的登记位，沿 previous 不重写历史，仅�
        previous 无此路径（理论上仅手工删除 lock 段的恢复场景）→ package://catalog/<path>。
   3. lock 全量重锁：entries（按 id 排序）/ controlled_children allowed+required
      （全部扫描路径——加删文件后三方自动对齐）；
-  4. generated_by 追加批次注记（幂等：已含则不重复追加；批次 1/2/2.6/3 各一记，历史留痕）。
+  4. generated_by 追加批次注记（幂等：已含则不重复追加；批次 1/2/2.6/3/4 各一记，历史留痕）。
 
 纪律：content_sha256 = sha256(utf-8 字节)（与 kernel verifyCatalogLock 同一算法，
 producer 与对账端共用同一计算）；幂等 byte-stable（DEF-POM-002 教训；A4 无时戳）；
@@ -45,6 +45,7 @@ GENERATED_BY_MARK = "catalog/tools/seed_v06_archetypes.py + materialize_v06_relo
 GENERATED_BY_MARK_BATCH2 = "catalog/tools/seed_v06_batch2_materials.py + materialize_v06_relock.py（P-v06 批次 2：STATE_ARCHETYPE 八态 + FRONTEND_ARCHETYPE 三型 + ERROR_TAXONOMY 十二条目，research frontend-state-references.md 2026-09-03 锚）"
 GENERATED_BY_MARK_BATCH26 = "catalog/tools/materialize_v06_relock.py（P-v06 批次 2.6 Browser Eyes：SENSOR.BROWSER.* 双眼 implementations 显式化 + KNOWLEDGE.WEB.BROWSER.MCP_EYES 登记，Owner 指令 2026-09-03）"
 GENERATED_BY_MARK_BATCH3 = "catalog/tools/seed_v06_batch3_materials.py + materialize_v06_relock.py（P-v06 批次 3：Backend/API/Data 原型十七条目，research backend-references.md 2026-09-03 锚）"
+GENERATED_BY_MARK_BATCH4 = "catalog/tools/seed_v06_batch4_materials.py + materialize_v06_relock.py（P-v06 批次 4：RUNTIME 物料两条目 ENVIRONMENT_PARITY/OBSERVABILITY_BINDING，research runtime-references.md 2026-09-03 锚）"
 
 # 批次 2 物料 id 前缀（provenance 如实到批：对应 research 报告不同，禁共用批次 1 词面）。
 BATCH2_ID_PREFIXES = ("STATE_ARCHETYPE.", "FRONTEND_ARCHETYPE.")
@@ -77,8 +78,17 @@ BATCH3_DATA_IDS = (
 )
 SOURCE_REF_BATCH3 = "catalog/tools/seed_v06_batch3_materials.py（P-v06 批次 3；外部参照 backend-references.md 2026-09-03 实抓锚）"
 
+# 批次 4 物料 id 分桶（provenance 如实到批：runtime-references.md 2026-09-03 实抓锚）。
+# RUNTIME_ARCHETYPE. 前缀与批次 1/2/3 各桶零交集（批次 1 ARCHETYPE.BACKEND.*/API.*
+# 精确枚举、批次 2 STATE_*/FRONTEND_* 前缀、批次 3 DATA_* 四精确 id）——整段前缀
+# 分桶不吞并历史条目，不失真。
+BATCH4_ID_PREFIXES = ("RUNTIME_ARCHETYPE.",)
+SOURCE_REF_BATCH4 = "catalog/tools/seed_v06_batch4_materials.py（P-v06 批次 4；外部参照 runtime-references.md 2026-09-03 实抓锚）"
+
 
 def source_ref_for(entry_id):
+    if entry_id.startswith(BATCH4_ID_PREFIXES):
+        return SOURCE_REF_BATCH4
     if entry_id in BATCH3_BACKEND_IDS or entry_id.startswith(BATCH3_API_PREFIX) or entry_id in BATCH3_DATA_IDS:
         return SOURCE_REF_BATCH3
     return (
@@ -189,8 +199,8 @@ def main():
     lock["controlled_children"]["allowed"] = list(scanned_paths)
     lock["controlled_children"]["required"] = list(scanned_paths)
 
-    # 3) generated_by 注记（幂等追加；批次 1/2/2.6/3 各一记，历史留痕）。
-    for mark in (GENERATED_BY_MARK, GENERATED_BY_MARK_BATCH2, GENERATED_BY_MARK_BATCH26, GENERATED_BY_MARK_BATCH3):
+    # 3) generated_by 注记（幂等追加；批次 1/2/2.6/3/4 各一记，历史留痕）。
+    for mark in (GENERATED_BY_MARK, GENERATED_BY_MARK_BATCH2, GENERATED_BY_MARK_BATCH26, GENERATED_BY_MARK_BATCH3, GENERATED_BY_MARK_BATCH4):
         if mark not in lock.get("generated_by", ""):
             lock["generated_by"] = lock.get("generated_by", "") + " + " + mark
 

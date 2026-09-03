@@ -114,8 +114,8 @@ describe("批次 3 十七条目全集（layer=ARCHETYPE；PRD 逐节词形）", 
     ]);
   });
 
-  it("批次 3 物料分母：repo archetypes 22→39（+17）", () => {
-    expect(materials.length).toBe(39);
+  it("批次 3 物料分母：repo archetypes 现值 41（批次 3 时点 22→39（+17）；批次 4 RUNTIME 两条目 39→41）", () => {
+    expect(materials.length).toBe(41);
   });
 });
 
