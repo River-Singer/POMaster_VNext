@@ -147,7 +147,7 @@ describe("runCli --json 机读契约（§45）", () => {
     expect(code).toBe(envelope.ok ? 0 : 1);
   });
 
-  it("doctor --json → 矩阵含 kernel / 三工具探针（P22）+ coverage 双腿（P23）+ mutation 双腿（P24）+ security 三腿（P25）+ playwright（P26）+ performance 双 runner 与 schemathesis（P27）/ chrome_devtools_mcp / portability_runtime_rebuild（P32）/ sensor_capability_catalog（P1-5 裁决 8-D7）十八探针", async () => {
+  it("doctor --json → 矩阵含 kernel / 三工具探针（P22）+ coverage 双腿（P23）+ mutation 双腿（P24）+ security 三腿（P25）+ playwright（P26）+ performance 双 runner 与 schemathesis（P27）/ chrome_devtools_mcp + playwright_mcp（批次 2.6 Browser Eyes 双 MCP 各自显式）/ portability_runtime_rebuild（P32）/ sensor_capability_catalog（P1-5 裁决 8-D7）十九探针", async () => {
     const io = capture();
     const code = await runCli(["--dir", dir, "doctor", "--json"], io);
     expect(code).toBe(1);
@@ -165,6 +165,7 @@ describe("runCli --json 机读契约（§45）", () => {
       "oasdiff",
       "pip_audit",
       "playwright",
+      "playwright_mcp",
       "portability_runtime_rebuild",
       "pytest_cov",
       "schemathesis",

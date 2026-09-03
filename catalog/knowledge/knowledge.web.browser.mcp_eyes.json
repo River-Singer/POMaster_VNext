@@ -1,0 +1,98 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_pending__source_type_append_only",
+    "finding": "knowledge_entry kind 已在 vocab-lock kinds_registry.truth_bodies；classification=ENGINEERING_PATTERN 是 §83.3 四类型词形（12-knowledge-entry knowledge_kind enum 在册）；triggers 是 12-knowledge-entry 既有字段（§83.8 检索键承载）；sources[].type=owner_directive 是 Owner 有意词形（Owner 指令 2026-09-03）——暂不在 SOURCE_TYPE_ALL_VALUES 九值来源闭包（packages/schemas/src/vocab.ts），复核确认零机器校验闸拒绝（12-knowledge-entry schema 无 sources/source_type 约束；catalog knowledge 物料无 loader 词形校验；lock 只锁 path+hash——2026-09-03 质检复核实测）",
+    "proposal": "vocab PR-0007 收编：source_types 轴 append-only 增值 owner_directive（主 agent 于批次 2.6 收尾处理）；收编前本条目零机器闸依赖该词形，词表文件零改动（locked_vocab_untouched）",
+    "locked_vocab_untouched": true
+  },
+  "x-advisory-gate-semantics": {
+    "advisory": true,
+    "gate_binding": "NEVER_FAIL",
+    "statement": "本条目为 advisory 知识：任何 gate 永不因本条目 FAIL；至多产生 WARN/HINT 或进入 Human Review 议程（§83.2 铁律「Knowledge 不能直接让 Gate FAIL」——knowledge 恒 ADVISORY 永不进 gate 判卷）"
+  },
+  "x-browser-eyes": {
+    "note": "浏览器双眼引导（P-v06 批次 2.6，Owner 指令 2026-09-03）：观测与验证两眼分工显式化。架构锚=gauntlet BROWSER 双通道（packages/gauntlet-lite/src/browser-legs.ts BROWSER_LEG_ORDER：Playwright ∥ chrome-devtools MCP，两腿两记录无聚合 verdict）+ Sensor Capability Catalog 双眼登记（catalog/sensors/sensor.browser.interactive.json / sensor.browser.deterministic.json）。",
+    "eyes": {
+      "observe": "chrome-devtools-mcp=交互观测/诊断面（performance trace / network 瀑布 / console）——诊断『慢/报错/卡住』必须实测（Owner 纪律：禁只看代码推断）",
+      "verify": "@playwright/mcp=确定性 E2E smoke/交互验证（判卷锚=@playwright/test 官方 JSONReport 全量重算）"
+    },
+    "evidence_chain": "两眼产物作为证据链输入（既有消费面，零新增通路）：MCP 侧经 browser-adapter 证据三件套（a11y_snapshot/screenshot/performance_trace）入 gauntlet BROWSER 腿 GRN 与 perception OBS receipt；playwright 侧经 playwright-adapter/playwright-leg 官方报告重算入账"
+  },
+  "id": "KNOWLEDGE.WEB.BROWSER.MCP_EYES",
+  "kind": "knowledge_entry",
+  "axis_profile": "knowledge_default",
+  "classification": "ENGINEERING_PATTERN",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "浏览器双眼：chrome-devtools MCP 观测 + playwright MCP 验证",
+  "statement_zh": "遇到界面『慢/报错/卡住』时，必须用 chrome-devtools MCP 实测诊断（performance trace / network 瀑布 / console 观测，禁只看代码推断——Owner 纪律）；需要 E2E smoke 或交互验证时，用 playwright MCP 确定性驱动（与 @playwright/test 官方报告腿同源判卷）。两眼不是替代关系：观测眼回答「实际发生了什么」，验证眼回答「行为是否仍然正确」；两眼产物（快照/截图/trace/console/network 观测/官方报告）都进入 BROWSER 双通道证据链，而不是停留在聊天记录里。",
+  "statement_en_keywords": [
+    "browser eyes",
+    "chrome-devtools mcp",
+    "playwright mcp",
+    "performance trace",
+    "network waterfall",
+    "console observation",
+    "e2e smoke",
+    "evidence chain"
+  ],
+  "triggers": [
+    "页面慢",
+    "页面报错",
+    "页面卡住",
+    "慢",
+    "报错",
+    "卡住",
+    "性能追踪",
+    "性能诊断",
+    "网络瀑布",
+    "控制台",
+    "console",
+    "浏览器验证",
+    "浏览器诊断",
+    "e2e",
+    "smoke",
+    "交互验证",
+    "browser",
+    "chrome-devtools",
+    "playwright"
+  ],
+  "applies_when": {
+    "lane": "frontend",
+    "condition": "浏览器侧诊断与端到端验证（页面慢/报错/卡住的实测诊断；E2E smoke/交互验证取证）",
+    "lanes": [
+      "frontend"
+    ],
+    "applicability_note": "浏览器侧诊断与端到端验证"
+  },
+  "enforcement": "advisory",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-pilot-human-review"
+  },
+  "origin": "natural",
+  "sources": [
+    {
+      "type": "owner_directive",
+      "ref": "Owner 指令（2026-09-03）：vNext 推荐/引导 AI 用 chrome-devtools MCP 与 playwright MCP 构建『眼睛』——chrome-devtools MCP=交互观测/诊断面，playwright MCP=确定性 E2E smoke/交互验证",
+      "captured_by": "agent:claude/p-v06-batch2.6-browser-eyes",
+      "locator": {
+        "section": "P-v06 批次 2.6 Browser Eyes 引导"
+      }
+    }
+  ],
+  "review_notes": [
+    "ADVISORY 引导条目：只引导不判卷——gate_binding=NEVER_FAIL（§83.2 铁律）；能力登记面见 SENSOR.BROWSER.INTERACTIVE / SENSOR.BROWSER.DETERMINISTIC（双眼的能力层），本条目是双眼的经验层引导"
+  ],
+  "review": {
+    "disposition": "ACCEPT",
+    "seq": "p-v06-batch2.6-0001",
+    "ref": "P-v06 批次 2.6 Browser Eyes（Owner 指令 2026-09-03）"
+  }
+}

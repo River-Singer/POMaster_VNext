@@ -160,7 +160,7 @@ flowchart TB
   end
   subgraph CAT["Engineering Catalog（随包分发）"]
     POL["policies 79"]:::cat
-    KN["knowledge 10"]:::cat
+    KN["knowledge 11"]:::cat
     GT["gates 5"]:::cat
     SEN["sensors 6"]:::cat
   end

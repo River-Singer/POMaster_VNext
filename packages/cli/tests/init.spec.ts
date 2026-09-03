@@ -131,6 +131,23 @@ describe("init 首次创建（CREATED）", () => {
     expect(read(CLAUDE_MD_RELATIVE)).toContain("@AGENTS.md");
   });
 
+  it("轻入口含 Browser Eyes 段（P-v06 批次 2.6：观测眼/验证眼分工 + 证据链 + doctor 探针行）", async () => {
+    await runInit(dir);
+    const agents = read(AGENTS_MD_RELATIVE);
+    // 分工词形：chrome-devtools MCP=观测 / playwright MCP=验证。
+    expect(agents).toContain("## Browser Eyes");
+    expect(agents).toContain("chrome-devtools MCP");
+    expect(agents).toContain("playwright MCP");
+    expect(agents).toContain("禁只看代码推断");
+    // 何时用哪个：慢/报错/卡住 → 观测眼实测；E2E smoke/交互验证 → 验证眼。
+    expect(agents).toContain("慢/报错/卡住");
+    expect(agents).toContain("E2E smoke");
+    // 产物进证据链 + doctor 探针行自检路标。
+    expect(agents).toContain("证据链");
+    expect(agents).toContain("chrome_devtools_mcp");
+    expect(agents).toContain("playwright_mcp");
+  });
+
   it("同一内容 digest 幂等：空账本 content_digest 等于重建值（字节稳定）", async () => {
     await runInit(dir);
     const first = read(TRUTH_INDEX_RELATIVE);

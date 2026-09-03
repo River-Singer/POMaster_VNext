@@ -30,6 +30,12 @@
  * loadCatalogSensors 载入；availability_probe 是声明式引用（四克制：防第二套探测机制，
  * catalog 是数据不执行），doctor 侧只做引用→既有探针行的名字解析（见
  * SENSOR_DETECTOR_TO_DOCTOR_PROBE），绝不二次探测——可用性事实仍由 2)/3) 既有行承载。
+ * P-v06 批次 2.6（Browser Eyes，Owner 指令 2026-09-03）起新增 playwright_mcp 探针——
+ * chrome_devtools_mcp 同款探测模式换目标（读项目 .mcp.json + 关键词命中 + 一键引导，
+ * 零新依赖零新探测机制），四态矩阵 fail-closed 同款：BROWSER 双通道（playwright ∥
+ * chrome-devtools，browser-legs.ts BROWSER_LEG_ORDER）与 Sensor Capability Catalog
+ * 双眼登记（SENSOR.BROWSER.DETERMINISTIC/INTERACTIVE）的两个 MCP 在 doctor 呈现面
+ * 各自显式缺席，禁静默。
  */
 
 import { readFile } from "node:fs/promises";
@@ -109,8 +115,18 @@ export const CHROME_DEVTOOLS_MCP_HINT =
   '在项目根 .mcp.json 写入 {"mcpServers":{"chrome-devtools":{"command":"npx","args":["-y","chrome-devtools-mcp@latest"]}}} ' +
   "（已存在 .mcp.json 时把 chrome-devtools 条目并入 mcpServers），然后重启 harness。";
 
+/**
+ * playwright MCP 一键引导文本（P-v06 批次 2.6 Browser Eyes）：chrome-devtools 同款形态，
+ * 官方包名 @playwright/mcp——粘贴即完成 playwright MCP 配置（生成 .mcp.json 或并入现有
+ * mcpServers）。观测/验证分工语义见 catalog/knowledge/knowledge.web.browser.mcp_eyes.json。
+ */
+export const PLAYWRIGHT_MCP_HINT =
+  '在项目根 .mcp.json 写入 {"mcpServers":{"playwright":{"command":"npx","args":["-y","@playwright/mcp@latest"]}}} ' +
+  "（已存在 .mcp.json 时把 playwright 条目并入 mcpServers），然后重启 harness。";
+
 const KERNEL_PROBE_NAME = "kernel_doctor_probes";
 const MCP_PROBE_NAME = "chrome_devtools_mcp";
+const PLAYWRIGHT_MCP_PROBE_NAME = "playwright_mcp";
 const SENSOR_CATALOG_PROBE_NAME = "sensor_capability_catalog";
 
 /**
@@ -130,9 +146,20 @@ export const SENSOR_DETECTOR_TO_DOCTOR_PROBE: Record<string, string> = {
   webVitals: "web_vitals",
 };
 
-/** 探测 .mcp.json 是否配置了 chrome-devtools MCP（D22：未配置 → MISSING_CONFIGURATION + 一键提示）。 */
-export async function probeChromeDevtoolsMcp(
+/**
+ * 项目 .mcp.json 探测共享实现（P-v06 批次 2.6 抽取：chrome-devtools 与 playwright 两个
+ * MCP 探针共用同一探测模式——读项目根 .mcp.json + 键名/值关键词命中 + 四态 fail-closed
+ * + 一键引导，禁两套探测口径漂移）。probeName 行名 / serverKeyword 命中词 /
+ * toolLabel detail 词形 / hint 一键引导逐参注入。
+ */
+async function probeMcpServerConfigured(
   rootDir: string,
+  spec: {
+    readonly probeName: string;
+    readonly serverKeyword: string;
+    readonly toolLabel: string;
+    readonly hint: string;
+  },
 ): Promise<DoctorProbe> {
   const mcpJsonPath = `${rootDir}/.mcp.json`;
   let raw: string;
@@ -140,10 +167,10 @@ export async function probeChromeDevtoolsMcp(
     raw = await readFile(mcpJsonPath, "utf8");
   } catch {
     return {
-      probe: MCP_PROBE_NAME,
+      probe: spec.probeName,
       status: "MISSING_CONFIGURATION",
-      detail: "no .mcp.json in project root; chrome-devtools MCP not configured",
-      hint: CHROME_DEVTOOLS_MCP_HINT,
+      detail: `no .mcp.json in project root; ${spec.toolLabel} MCP not configured`,
+      hint: spec.hint,
     };
   }
   let parsed: unknown;
@@ -151,10 +178,10 @@ export async function probeChromeDevtoolsMcp(
     parsed = JSON.parse(raw);
   } catch (err) {
     return {
-      probe: MCP_PROBE_NAME,
+      probe: spec.probeName,
       status: "DEFECT",
       detail: `.mcp.json is not valid JSON: ${(err as Error).message}`,
-      hint: `修复 .mcp.json 语法（该文件由 harness 解析；坏配置将静默失效）。配置样例：${CHROME_DEVTOOLS_MCP_HINT}`,
+      hint: `修复 .mcp.json 语法（该文件由 harness 解析；坏配置将静默失效）。配置样例：${spec.hint}`,
     };
   }
   const servers =
@@ -167,31 +194,59 @@ export async function probeChromeDevtoolsMcp(
       : null;
   if (servers === null) {
     return {
-      probe: MCP_PROBE_NAME,
+      probe: spec.probeName,
       status: "MISSING_CONFIGURATION",
-      detail: ".mcp.json has no mcpServers section; chrome-devtools MCP not configured",
-      hint: CHROME_DEVTOOLS_MCP_HINT,
+      detail: `.mcp.json has no mcpServers section; ${spec.toolLabel} MCP not configured`,
+      hint: spec.hint,
     };
   }
   for (const [key, value] of Object.entries(servers)) {
     if (
-      key.toLowerCase().includes("chrome-devtools") ||
-      JSON.stringify(value).toLowerCase().includes("chrome-devtools")
+      key.toLowerCase().includes(spec.serverKeyword) ||
+      JSON.stringify(value).toLowerCase().includes(spec.serverKeyword)
     ) {
       return {
-        probe: MCP_PROBE_NAME,
+        probe: spec.probeName,
         status: "READY",
-        detail: `chrome-devtools MCP configured (server key: ${key})`,
+        detail: `${spec.toolLabel} MCP configured (server key: ${key})`,
         hint: null,
       };
     }
   }
   return {
-    probe: MCP_PROBE_NAME,
+    probe: spec.probeName,
     status: "MISSING_CONFIGURATION",
-    detail: "mcpServers present but no chrome-devtools entry",
-    hint: CHROME_DEVTOOLS_MCP_HINT,
+    detail: `mcpServers present but no ${spec.serverKeyword} entry`,
+    hint: spec.hint,
   };
+}
+
+/** 探测 .mcp.json 是否配置了 chrome-devtools MCP（D22：未配置 → MISSING_CONFIGURATION + 一键提示）。 */
+export async function probeChromeDevtoolsMcp(
+  rootDir: string,
+): Promise<DoctorProbe> {
+  return probeMcpServerConfigured(rootDir, {
+    probeName: MCP_PROBE_NAME,
+    serverKeyword: "chrome-devtools",
+    toolLabel: "chrome-devtools",
+    hint: CHROME_DEVTOOLS_MCP_HINT,
+  });
+}
+
+/**
+ * 探测 .mcp.json 是否配置了 playwright MCP（P-v06 批次 2.6 Browser Eyes：与
+ * chrome_devtools_mcp 同款四态 fail-closed——BROWSER 双通道两 MCP 在 doctor 呈现面
+ * 各自显式缺席，禁静默）。关键词 playwright 同时命中键名与 @playwright/mcp 参数词形。
+ */
+export async function probePlaywrightMcp(
+  rootDir: string,
+): Promise<DoctorProbe> {
+  return probeMcpServerConfigured(rootDir, {
+    probeName: PLAYWRIGHT_MCP_PROBE_NAME,
+    serverKeyword: "playwright",
+    toolLabel: "playwright",
+    hint: PLAYWRIGHT_MCP_HINT,
+  });
 }
 
 /**
@@ -393,8 +448,9 @@ async function runGauntletProbes(
  *    双腿 + P25 security 三腿 + P26 playwright 确定性腿 + P27 performance 双 runner
  *    与 schemathesis 加强腿；转调 gauntlet-lite toolDetectors 单一探测面；缺席必带
  *    安装路标；P25 三探针独立呈现不聚合——B2-5 防假绿纪律）。
- * 3) chrome_devtools_mcp —— D22 探测 + 一键引导文本（P26 起与 playwright 确定性腿
- *    探针并存——BROWSER 双通道各自显式呈现）。
+ * 3) chrome_devtools_mcp / playwright_mcp —— D22 探测 + 一键引导文本（P26 起与 playwright
+ *    确定性腿探针并存——BROWSER 双通道各自显式呈现；P-v06 批次 2.6 起 playwright MCP
+ *    探针同款四态 fail-closed——双 MCP 在呈现面各自缺席显式，禁静默）。
  * 4) sensor_capability_catalog —— P1-5 catalog/sensors/ 载入（裁决 8 D7=A loader+doctor
  *    联结；availability_probe 声明式引用→既有行名解析，禁二次探测；catalog 缺席
  *    MISSING_CONFIGURATION / 物料坏形 DEFECT——坏物料 ≠ catalog 缺席，fail-closed 显式）。
@@ -507,8 +563,9 @@ export async function runDoctor(
     probes.push(...(await runGauntletProbes(gauntletProbes, facts)));
   }
 
-  // 3) chrome-devtools MCP 探测（D22）。
+  // 3) MCP 探测（D22 + P-v06 批次 2.6 Browser Eyes 双 MCP 各自显式）。
   probes.push(await probeChromeDevtoolsMcp(rootDir));
+  probes.push(await probePlaywrightMcp(rootDir));
 
   // 4) P1-5 Sensor Capability Catalog（裁决 8 D7=A：loader + doctor 联结）。
   //    只做声明式引用的行名解析（SENSOR_DETECTOR_TO_DOCTOR_PROBE），绝不二次探测；

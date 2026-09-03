@@ -561,6 +561,13 @@ ${stateSummary}
 - \`pomaster doctor --json\` — 内核 / harness MCP 探测（缺什么提示装什么）
 - \`pomaster check --fast --json\` — 八拍⑤：FAST gate（BUILD）
 
+## Browser Eyes（浏览器双眼）
+
+- chrome-devtools MCP = 观测眼：诊断「慢/报错/卡住」必须实测（performance trace / network / console），禁只看代码推断。
+- playwright MCP = 验证眼：E2E smoke / 交互验证用 playwright 确定性驱动（判卷锚 = @playwright/test 官方报告）。
+- 两眼产物（快照/截图/trace/console/network 观测/官方报告）进 BROWSER gate 双通道证据链（GRN / OBS receipt），不停留在聊天记录里。
+- 可用性自检：\`pomaster doctor --json\` 的 chrome_devtools_mcp / playwright_mcp 探针行。
+
 ## 机器可读输出
 
 一切命令支持 \`--json\`（§45）；禁止解析彩色自然语言判断状态——机读唯一接口是 JSON 信封。

@@ -8,8 +8,8 @@
   },
   "id": "SENSOR.BROWSER.DETERMINISTIC",
   "kind": "sensor_capability",
-  "title_zh": "浏览器确定性回归 Sensor（Playwright 通道）",
-  "statement_zh": "经 @playwright/test 官方 JSONReport 对用户界面做确定性回归观察：官方报告全量重算 + console/network 双维度完整性强制（缺维=not_run）；与 MCP 交互腿互不替代（§6.6）、互不牵连（两腿两记录，无聚合 verdict 位）。",
+  "title_zh": "浏览器确定性回归 Sensor（playwright 首选 + MCP 双眼）",
+  "statement_zh": "经 @playwright/test 官方 JSONReport 对用户界面做确定性回归观察：官方报告全量重算 + console/network 双维度完整性强制（缺维=not_run）。双眼分工（P-v06 批次 2.6 Browser Eyes）：playwright（@playwright/test 官方报告腿）=确定性 E2E smoke/交互验证首选；@playwright/mcp=确定性 smoke 的 MCP 形态；chrome-devtools-mcp=确定性快照/截图取证。与 MCP 交互观测腿互不替代（§6.6）、互不牵连（两腿两记录，无聚合 verdict 位）。",
   "surfaces": [
     "USER_SURFACE",
     "INTERACTION_STATE",
@@ -33,7 +33,9 @@
     "network_observation"
   ],
   "implementations": [
-    "playwright"
+    "playwright",
+    "@playwright/mcp",
+    "chrome-devtools-mcp"
   ],
   "availability_probe": {
     "surface": "toolDetectors",
@@ -46,8 +48,17 @@
   "fallback_note": "空数组=显式登记无降级（§6.6 明言 Browser MCP 与 Playwright 不是互相替代）；@playwright/test 缺席 → not_run 显式，禁静默。",
   "x-source-anchors": {
     "adapter": "packages/gauntlet-lite/src/playwright-adapter.ts + playwright-leg.ts（确定性腿：官方 JSONReport 词形解析）",
-    "doctor_row": "packages/cli/src/doctor.ts playwright 探针行",
-    "detector": "packages/gauntlet-lite/src/index.ts toolDetectors.playwright（15 探测器单一事实源）"
+    "doctor_row": "packages/cli/src/doctor.ts playwright 探针行 + playwright_mcp 探针行（P-v06 批次 2.6 同款四态）",
+    "detector": "packages/gauntlet-lite/src/index.ts toolDetectors.playwright（15 探测器单一事实源）",
+    "eyes_knowledge": "catalog/knowledge/knowledge.web.browser.mcp_eyes.json（KNOWLEDGE.WEB.BROWSER.MCP_EYES——双眼分工的 ADVISORY 检索引导）"
   },
-  "x-prd": "POMaster-vNext-PRD-v0.5.2 §6.5 + §14 P1-5；裁决 8（2026-09-01）D6=A/D7=A"
+  "x-browser-eyes": {
+    "note": "浏览器双眼·确定性验证面（P-v06 批次 2.6 Browser Eyes 引导）：E2E smoke/交互验证首选 playwright（@playwright/test 官方 JSONReport 全量重算）；@playwright/mcp 可跑确定性 smoke 的 MCP 形态；chrome-devtools-mcp 提供确定性快照/截图取证。产物经 playwright-adapter/playwright-leg 官方报告重算入 gauntlet BROWSER 腿 GRN 证据链；与交互观测面（SENSOR.BROWSER.INTERACTIVE）互不替代（§6.6）。",
+    "eyes": {
+      "verify_first": "playwright（确定性 E2E smoke 首选——官方 JSONReport 全量重算）",
+      "verify_mcp": "@playwright/mcp（确定性 smoke 的 MCP 形态）",
+      "snapshot": "chrome-devtools-mcp（确定性快照/截图）"
+    }
+  },
+  "x-prd": "POMaster-vNext-PRD-v0.5.2 §6.5 + §14 P1-5；裁决 8（2026-09-01）D6=A/D7=A；P-v06 批次 2.6 Browser Eyes 双眼显式化（Owner 指令 2026-09-03）"
 }

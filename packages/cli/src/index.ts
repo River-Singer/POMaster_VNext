@@ -277,9 +277,11 @@ export type {
 export {
   runDoctor,
   probeChromeDevtoolsMcp,
+  probePlaywrightMcp,
   detectionToDoctorProbe,
   portabilityProbeToDoctorProbe,
   CHROME_DEVTOOLS_MCP_HINT,
+  PLAYWRIGHT_MCP_HINT,
   DOCTOR_PROBE_STATUSES,
 } from "./doctor.js";
 export type {

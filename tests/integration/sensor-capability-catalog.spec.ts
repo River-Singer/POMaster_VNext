@@ -127,7 +127,15 @@ describe("① repo 实物：catalog/sensors/ 六条 sensor_capability（P1-5 只
       "console_observation",
       "performance_trace",
     ]);
-    expect(sensor!.implementations).toEqual(["chrome-devtools-mcp", "playwright"]);
+    // P-v06 批次 2.6 Browser Eyes：双眼 implementations 显式化（chrome-devtools-mcp 观测 +
+    // @playwright/mcp 验证；既有词形保留不删——物料侧登记面与本断言同步修订）。
+    expect(sensor!.implementations).toEqual(["chrome-devtools-mcp", "playwright", "@playwright/mcp"]);
+  });
+
+  it("SENSOR.BROWSER.DETERMINISTIC 双眼词形（批次 2.6 Browser Eyes）：playwright 首选 + @playwright/mcp + chrome-devtools-mcp（既有词形保留）", () => {
+    const sensor = loadCatalogSensors(REPO_CATALOG).find((s) => s.id === "SENSOR.BROWSER.DETERMINISTIC");
+    expect(sensor).toBeDefined();
+    expect(sensor!.implementations).toEqual(["playwright", "@playwright/mcp", "chrome-devtools-mcp"]);
   });
 
   it("六条目 surfaces 全 ⊆ PRD §6.4 Observation Surface 八面；side_effect_class 全在已登记值内", () => {

@@ -2,7 +2,8 @@
  * doctor.spec.ts —— 四态探测矩阵（kernel 探针 + P22 工具链机判腿探测 + P23 coverage
  * 双腿探测 + P24 mutation 双腿探测 + P25 security 三腿探测 + P26 playwright 确定性腿
  * 探测 + P27 performance 双 runner（lighthouse / web_vitals）与 schemathesis 加强腿
- * 探测 + chrome-devtools MCP 一键引导）。
+ * 探测 + chrome-devtools MCP 一键引导 + playwright MCP 一键引导（P-v06 批次 2.6
+ * Browser Eyes——双 MCP 各自显式，ok=true 前提 = 双 MCP 均配置）。
  *
  * TODO(integration-2026-08-28)：kernel 模块已由 kernel 建造者落地。原「init 后
  * kernel scaffold → NOT_INSTALLED」真实 kernel 场景已不存在，两处相关用例更新为
@@ -27,13 +28,13 @@ import type { GauntletToolProbe } from "@pomaster/cli";
 import {
   DOCTOR_PROBE_STATUSES,
   CHROME_DEVTOOLS_MCP_HINT,
+  PLAYWRIGHT_MCP_HINT,
   detectionToDoctorProbe,
   runInit,
   runDoctor,
   probeChromeDevtoolsMcp,
+  probePlaywrightMcp,
 } from "@pomaster/cli";
-
-let dir: string;
 
 /** 全 READY 工具探针 fake（宿主工具安装状态无关化；探测面语义另由缺席用例覆盖）。 */
 function readyGauntletProbes(): GauntletToolProbe[] {
@@ -60,6 +61,28 @@ function readyGauntletProbes(): GauntletToolProbe[] {
     }),
   }));
 }
+
+/**
+ * 双 MCP 齐备 fixture（P-v06 批次 2.6 起 doctor 全绿前提 = chrome-devtools + playwright
+ * 两个 MCP 均配置——BROWSER 双通道呈现面各自显式）。
+ */
+function writeBothMcpsConfig(root: string): void {
+  writeFileSync(
+    join(root, ".mcp.json"),
+    JSON.stringify({
+      mcpServers: {
+        "chrome-devtools": {
+          command: "npx",
+          args: ["-y", "chrome-devtools-mcp@latest"],
+        },
+        playwright: { command: "npx", args: ["@playwright/mcp@latest"] },
+      },
+    }),
+    "utf8",
+  );
+}
+
+let dir: string;
 
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), "pomaster-cli-doctor-"));
@@ -131,18 +154,7 @@ describe("doctor 四态矩阵", () => {
 
   it(".mcp.json 含 chrome-devtools → mcp=READY；真实 kernel 亦 READY → 全探针 READY ok=true", async () => {
     await runInit(dir);
-    writeFileSync(
-      join(dir, ".mcp.json"),
-      JSON.stringify({
-        mcpServers: {
-          "chrome-devtools": {
-            command: "npx",
-            args: ["-y", "chrome-devtools-mcp@latest"],
-          },
-        },
-      }),
-      "utf8",
-    );
+    writeBothMcpsConfig(dir);
     const outcome = await runDoctor(dir, { gauntletProbes: readyGauntletProbes() });
     const mcp = outcome.result.probes.find(
       (p) => p.probe === "chrome_devtools_mcp",
@@ -183,11 +195,7 @@ describe("doctor 四态矩阵", () => {
 
   it("注入 kernel 全 pass + mcp READY → 全探针 READY，ok=true", async () => {
     await runInit(dir);
-    writeFileSync(
-      join(dir, ".mcp.json"),
-      JSON.stringify({ mcpServers: { "chrome-devtools": { command: "npx" } } }),
-      "utf8",
-    );
+    writeBothMcpsConfig(dir);
     const kernel = fakeKernel(passingReport());
     const outcome = await runDoctor(dir, {
       ...kernel,
@@ -328,6 +336,88 @@ describe("probeChromeDevtoolsMcp 独立探测", () => {
     const probe = await probeChromeDevtoolsMcp(dir);
     expect(probe.status).toBe("READY");
     expect(probe.detail).toContain("web");
+  });
+});
+
+// ============================================================
+// P-v06 批次 2.6 Browser Eyes：playwright MCP 探针（chrome_devtools_mcp 同款
+// 探测模式换目标——四态 fail-closed + 一键引导；BROWSER 双通道双 MCP 各自显式）
+// ============================================================
+
+describe("probePlaywrightMcp 独立探测（P-v06 批次 2.6 Browser Eyes）", () => {
+  it("键名 playwright 命中 → READY；detail 携带键名且 hint 为 null", async () => {
+    writeFileSync(
+      join(dir, ".mcp.json"),
+      JSON.stringify({
+        mcpServers: { playwright: { command: "npx", args: ["@playwright/mcp@latest"] } },
+      }),
+      "utf8",
+    );
+    const probe = await probePlaywrightMcp(dir);
+    expect(probe.probe).toBe("playwright_mcp");
+    expect(probe.status).toBe("READY");
+    expect(probe.detail).toContain("playwright");
+    expect(probe.hint).toBeNull();
+  });
+
+  it("参数串含 @playwright/mcp 也能命中（键名不含时，chrome-devtools 同款宽容）", async () => {
+    writeFileSync(
+      join(dir, ".mcp.json"),
+      JSON.stringify({
+        mcpServers: { browser: { command: "npx", args: ["@playwright/mcp@latest"] } },
+      }),
+      "utf8",
+    );
+    const probe = await probePlaywrightMcp(dir);
+    expect(probe.status).toBe("READY");
+    expect(probe.detail).toContain("browser");
+  });
+
+  it("无 .mcp.json → MISSING_CONFIGURATION + 一键引导 hint（缺席显式非静默）", async () => {
+    const probe = await probePlaywrightMcp(dir);
+    expect(probe.probe).toBe("playwright_mcp");
+    expect(probe.status).toBe("MISSING_CONFIGURATION");
+    expect(probe.hint).toBe(PLAYWRIGHT_MCP_HINT);
+  });
+
+  it("mcpServers 在场但无 playwright 条目 → MISSING_CONFIGURATION（其他 server 不误命中）", async () => {
+    writeFileSync(
+      join(dir, ".mcp.json"),
+      JSON.stringify({ mcpServers: { other: { command: "uvx" } } }),
+      "utf8",
+    );
+    const probe = await probePlaywrightMcp(dir);
+    expect(probe.status).toBe("MISSING_CONFIGURATION");
+    expect(probe.detail).toContain("no playwright entry");
+  });
+
+  it(".mcp.json 语法坏 → DEFECT（环境/内容异常禁静默）", async () => {
+    writeFileSync(join(dir, ".mcp.json"), "{oops", "utf8");
+    const probe = await probePlaywrightMcp(dir);
+    expect(probe.status).toBe("DEFECT");
+  });
+
+  it("一键提示文本含 mcpServers 与 @playwright/mcp 安装指令（D22 同款一键引导）", () => {
+    expect(PLAYWRIGHT_MCP_HINT).toContain("mcpServers");
+    expect(PLAYWRIGHT_MCP_HINT).toContain("@playwright/mcp");
+    expect(PLAYWRIGHT_MCP_HINT).toContain(".mcp.json");
+  });
+
+  it("runDoctor 矩阵含 playwright_mcp 行：空目录 → MISSING_CONFIGURATION（与 chrome_devtools_mcp 并存各自显式）", async () => {
+    const outcome = await runDoctor(dir);
+    const byProbe = new Map(outcome.result.probes.map((p) => [p.probe, p]));
+    expect(byProbe.get("playwright_mcp")?.status).toBe("MISSING_CONFIGURATION");
+    expect(byProbe.get("chrome_devtools_mcp")?.status).toBe("MISSING_CONFIGURATION");
+    expect(outcome.ok).toBe(false);
+  });
+
+  it("runDoctor 双 MCP 齐备 → 双行 READY（BROWSER 双通道呈现面各自显式在场）", async () => {
+    await runInit(dir);
+    writeBothMcpsConfig(dir);
+    const outcome = await runDoctor(dir, { gauntletProbes: readyGauntletProbes() });
+    const byProbe = new Map(outcome.result.probes.map((p) => [p.probe, p]));
+    expect(byProbe.get("playwright_mcp")?.status).toBe("READY");
+    expect(byProbe.get("chrome_devtools_mcp")?.status).toBe("READY");
   });
 });
 
