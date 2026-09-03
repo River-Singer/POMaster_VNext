@@ -247,7 +247,7 @@ export async function runNewEntityGate(
           catalog_archetypes: resolution.sources_examined.catalog_archetypes,
         },
         rationale:
-          "五否证明前三否成立（NO_MATCH 显式；composition/adapter 两否归批次 2+ 组合分析——显式缺席不伪造）；允许进入 Design Synthesis，采用动作须登记 INSTANCE_OF 边 + key_bindings",
+          "五否证明成立（NO_MATCH：exact/configuration/composition/extension/adapter 五否全由 match_class 机判闭合——批次 2 起六分类派生面并拢）；允许进入 Design Synthesis，采用动作须登记 INSTANCE_OF 边 + key_bindings",
       });
       continue;
     }

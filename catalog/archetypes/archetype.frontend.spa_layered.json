@@ -1,0 +1,48 @@
+{
+  "id": "FRONTEND_ARCHETYPE.SPA_LAYERED",
+  "kind": "archetype",
+  "layer": "ARCHETYPE",
+  "title_zh": "分层 SPA 架构原型",
+  "summary_zh": "按稳定语义分层的单页应用架构原型：Page/Feature/Domain/API/Shared 五层共同稳定语义（PRD §18 逐字），依赖严格向下，层可选不强制齐备。",
+  "semantic": {
+    "responsibility": "以五层共同稳定语义承载 SPA 横向切分：页面/用例/领域模型/基础设施/共享件各归其位",
+    "when_to_use": "团队按层协作、领域模型复杂度需要独立承载的 SPA（v0.6.1 §18 共同稳定语义五层逐字：Page/Feature/Domain/API/Shared）",
+    "when_not_to_use": "按业务特性纵向切分优先的工程（FRONTEND_ARCHETYPE.FEATURE_ORIENTED）；小到无需分层的模块化页面集（FRONTEND_ARCHETYPE.MODULAR——本原型与其互斥）"
+  },
+  "composition": {
+    "requires": [],
+    "optional": [],
+    "incompatible": [
+      "FRONTEND_ARCHETYPE.MODULAR"
+    ]
+  },
+  "defaults": {
+    "layers_prd": [
+      "Page",
+      "Feature",
+      "Domain",
+      "API",
+      "Shared"
+    ],
+    "dependency_rule": "strictly_downward",
+    "layers_optional_note": "项目不一定需要所有层（§18 逐字）",
+    "layer_object_example": "§19 Layer Object：Domain 的 allowed_dependencies=[SHARED]/forbidden_dependencies=[PAGE]/public_api_required=true"
+  },
+  "forbidden": [
+    "Domain 依赖 Page（§19 Layer Object forbidden_dependencies 逐字）",
+    "下层 import 上层"
+  ],
+  "x-research-anchors": {
+    "note": "「项目不一定需要所有层」为 PRD §18 逐字；与 FSD「You don't have to use every layer」逐字同向（frontend-state-references.md 题 6/差异表 #4，2026-09-03 实抓）",
+    "sources": [
+      {
+        "url": "doc/POMaster-vNext-PRD-v0.6.1-Engineering-Substrate-Archetype-Catalog.md §18",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://feature-sliced.design/docs/reference/layers",
+        "fetched": "2026-09-03"
+      }
+    ]
+  }
+}

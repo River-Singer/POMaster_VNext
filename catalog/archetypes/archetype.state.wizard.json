@@ -1,0 +1,46 @@
+{
+  "id": "STATE_ARCHETYPE.WIZARD",
+  "kind": "archetype",
+  "layer": "PATTERN",
+  "title_zh": "分步向导状态机",
+  "summary_zh": "线性/分支多步流向导原型（XState 六概念承载）：步骤推进建模为嵌套 statechart，next/prev 事件经 guard 把关（如 stepValid），targeted self-transition 重置子状态的官方坑位写入已知风险。",
+  "semantic": {
+    "responsibility": "多步流程的步骤位置、每步合法性与推进事件的单点声明",
+    "when_to_use": "线性/分支多步流（分步创建向导类）——步骤间有顺序与守卫依赖（on: {next: {guard: 'stepValid', target: ...}} 模式，XState 六概念承载）",
+    "when_not_to_use": "无顺序依赖的自由表单（STATE_ARCHETYPE.FORM_EDIT）；远端取数（STATE_ARCHETYPE.SERVER_QUERY）"
+  },
+  "composition": {
+    "requires": [],
+    "optional": [],
+    "incompatible": []
+  },
+  "defaults": {
+    "step_transition": "guarded",
+    "child_state_reset_on_targeted_self_transition": true,
+    "vocabulary": [
+      "state",
+      "event",
+      "transition",
+      "guard",
+      "actor",
+      "input",
+      "output"
+    ]
+  },
+  "known_risks": [
+    "targeted self-transition 重置子状态（只想执行动作保留子状态必须用 targetless transition——官方文档实抓坑位）"
+  ],
+  "x-research-anchors": {
+    "note": "XState v5 嵌套态/self-transition 子状态重置/targetless 语义为 stately.ai transitions/states 页 2026-09-03 实抓（差异表 #1 判定：八值词形可承载、无冲突）",
+    "sources": [
+      {
+        "url": "https://stately.ai/docs/transitions",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://stately.ai/docs/states",
+        "fetched": "2026-09-03"
+      }
+    ]
+  }
+}

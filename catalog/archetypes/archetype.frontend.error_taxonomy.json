@@ -1,0 +1,99 @@
+{
+  "id": "FRONTEND_ARCHETYPE.ERROR_TAXONOMY",
+  "kind": "archetype",
+  "layer": "PATTERN",
+  "title_zh": "前端错误分类",
+  "summary_zh": "前端错误九分型逐字闭包（PRD §21）：每型绑定呈现/重试/遥测/用户话术四语义位；浏览器原生信号只够两分，细分映射责任在 HTTP Client 适配层。",
+  "semantic": {
+    "responsibility": "把运行时错误归类为九分型闭包，驱动呈现/重试/遥测/话术四列的确定性处置",
+    "when_to_use": "任何触发 HTTP/异步调用的页面组契约错误处置面——错误到分型的映射在 HTTP Client 适配层完成（WHATWG fetch 原生只给 TypeError 与 HTTP status 两分，§21 九分型的映射责任不在浏览器）",
+    "when_not_to_use": "非错误态的加载/空态呈现；后端错误信封字段结构本身（v0.6.1 §44 Error Archetype 承载 type/title/status/detail/instance 等成员）"
+  },
+  "composition": {
+    "requires": [],
+    "optional": [],
+    "incompatible": []
+  },
+  "categories": {
+    "TRANSPORT": {
+      "presentation_pattern": "error_banner_with_retry",
+      "retry_behavior": "retryable_exponential_backoff",
+      "telemetry": "error_event_with_network_detail",
+      "user_message": "网络连接异常，请稍后重试"
+    },
+    "AUTHENTICATION": {
+      "presentation_pattern": "redirect_to_login",
+      "retry_behavior": "never_retry_auto",
+      "telemetry": "auth_event_401",
+      "user_message": "登录已过期，请重新登录"
+    },
+    "AUTHORIZATION": {
+      "presentation_pattern": "forbidden_page",
+      "retry_behavior": "never_retry",
+      "telemetry": "authz_event_403",
+      "user_message": "没有执行该操作的权限"
+    },
+    "VALIDATION": {
+      "presentation_pattern": "inline_field_error",
+      "retry_behavior": "no_retry_fix_input",
+      "telemetry": "warn_event_400_422",
+      "user_message": "表单内容有误，请按提示修正"
+    },
+    "BUSINESS": {
+      "presentation_pattern": "message_toast",
+      "retry_behavior": "no_retry_rule_rejected",
+      "telemetry": "business_code_event",
+      "user_message": "按业务规则返回的提示（RFC 9457 type URI/extension member 承载——detail 不可机器解析）"
+    },
+    "CONFLICT": {
+      "presentation_pattern": "refresh_or_merge_prompt",
+      "retry_behavior": "no_auto_retry_reload_first",
+      "telemetry": "conflict_event_409",
+      "user_message": "数据已被他人修改，请刷新后重试"
+    },
+    "TIMEOUT": {
+      "presentation_pattern": "timeout_toast_with_retry",
+      "retry_behavior": "retryable_bounded",
+      "telemetry": "timeout_event",
+      "user_message": "请求超时，请重试"
+    },
+    "OFFLINE": {
+      "presentation_pattern": "offline_banner_persistent",
+      "retry_behavior": "auto_resume_on_reconnect",
+      "telemetry": "offline_event",
+      "user_message": "当前离线，恢复网络后自动同步"
+    },
+    "UNKNOWN": {
+      "presentation_pattern": "generic_error_page",
+      "retry_behavior": "no_auto_retry",
+      "telemetry": "unclassified_event",
+      "user_message": "出了点问题，请稍后重试"
+    }
+  },
+  "constraints": [
+    "浏览器原生信号只够两分：WHATWG fetch 网络失败 reject TypeError、HTTP 错误状态不 reject（查 Response.status）——TIMEOUT/OFFLINE/AUTHENTICATION 等细分全部依赖 client 适配层信号（axios code/AbortSignal/navigator.onLine/status 映射）",
+    "九分型映射责任在 HTTP Client Archetype 层而非浏览器",
+    "RFC 9457 about:blank（未给出更具体类型时的缺省）与 UNKNOWN 同构"
+  ],
+  "x-research-anchors": {
+    "note": "【待 Owner 裁定·差异表 #8 两项】①是否补 CANCELED 第十分型（axios ERR_CANCELED/fetch AbortError/TanStack cancelQueries 三处业界共识，retry 语义绝不重试——九分型缺位会把取消误归 UNKNOWN/TRANSPORT）②429 归属（ofetch 默认重试列表含 409/429 视作传输层瞬时错误，与 CONFLICT 语义有张力）——本物料保持九分型不扩，待裁定后走词汇表式修订。WHATWG fetch TypeError/RFC 9457 成员空间/axios error codes 全表/ofetch 重试列表为规范与官方文档 2026-09-03 实抓",
+    "sources": [
+      {
+        "url": "https://fetch.spec.whatwg.org/",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://www.rfc-editor.org/rfc/rfc9457.txt",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://axios.rest/pages/advanced/error-handling",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://github.com/unjs/ofetch",
+        "fetched": "2026-09-03"
+      }
+    ]
+  }
+}

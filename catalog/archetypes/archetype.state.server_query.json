@@ -1,0 +1,60 @@
+{
+  "id": "STATE_ARCHETYPE.SERVER_QUERY",
+  "kind": "archetype",
+  "layer": "PATTERN",
+  "title_zh": "服务端查询状态",
+  "summary_zh": "远端资源的异步取数状态原型（TanStack Query v5 词形锚定）：数据轴 status 与网络轴 fetchStatus 双轴分离，isPending/isFetching/isLoading 三词形语义各司其职，缓存与后台刷新默认档开箱即用。",
+  "semantic": {
+    "responsibility": "持有远端取数的缓存、去重与刷新生命周期（stale-while-revalidate），把「有没有数据」与「请求是否进行中」表达为两个正交词轴",
+    "when_to_use": "状态的所有权在远端：数据持久化在服务端、经异步 API 获取、可能被他人改动而过期（v0.6.1 §17 判定行「远端资源 → SERVER_QUERY」）——列表/详情/报表取数面默认归位",
+    "when_not_to_use": "可分享/可收藏筛选（STATE_ARCHETYPE.URL_FILTER）；未保存表单草稿（STATE_ARCHETYPE.FORM_EDIT）；纯本地交互态（STATE_ARCHETYPE.SELECTION）"
+  },
+  "composition": {
+    "requires": [],
+    "optional": [],
+    "incompatible": []
+  },
+  "defaults": {
+    "word_form_distinction": {
+      "isPending": "数据轴 status==='pending'——尚无任何数据（不等于请求进行中）",
+      "isFetching": "网络轴 fetchStatus==='fetching'——queryFn 正在抓取（含后台 refetch，任何 status 下可为 true）",
+      "isLoading": "isPending && isFetching——仅「无数据且在抓取」的首次加载词形（v4 isInitialLoading 改名，v5 现行口径）"
+    },
+    "status_axis": [
+      "pending",
+      "error",
+      "success"
+    ],
+    "fetch_status_axis": [
+      "fetching",
+      "paused",
+      "idle"
+    ],
+    "staleTime": 0,
+    "gcTime": "5min",
+    "retry": 3,
+    "structural_sharing": true
+  },
+  "forbidden": [
+    "单一扁平 loading 布尔同时表达数据有无与请求进行中（v5 拆分双轴）",
+    "v4 旧词形：status:'loading' / cacheTime / isInitialLoading",
+    "把 isPending 当「请求中」用（应表达为尚无数据）"
+  ],
+  "x-research-anchors": {
+    "note": "TanStack Query v5（npm 5.102.8）双轴模型与 Important Defaults（staleTime 0/gcTime 5min/retry 3/structural sharing）为官网 .md 文档实抓；isPending≠isFetching≠isLoading 三词形区分是 v4→v5 breaking 官方口径（2026-09-03 实抓）",
+    "sources": [
+      {
+        "url": "https://tanstack.com/query/latest/docs/framework/react/guides/queries.md",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://tanstack.com/query/latest/docs/framework/react/guides/important-defaults.md",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://tanstack.com/query/latest/docs/framework/react/guides/migrating-to-v5.md",
+        "fetched": "2026-09-03"
+      }
+    ]
+  }
+}

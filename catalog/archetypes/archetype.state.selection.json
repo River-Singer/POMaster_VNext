@@ -1,0 +1,35 @@
+{
+  "id": "STATE_ARCHETYPE.SELECTION",
+  "kind": "archetype",
+  "layer": "PATTERN",
+  "title_zh": "临时选中状态",
+  "summary_zh": "临时展开/选中类本地交互状态原型：生命周期限于当前视图实例，刷新即失、不入 URL、不进全局 Store——最便宜的所有权归最近持有者。",
+  "semantic": {
+    "responsibility": "持有视图实例私有的瞬时交互态（行选中/展开/焦点/tab 内高亮）",
+    "when_to_use": "临时展开/选中（v0.6.1 §17 判定行「临时展开/选中 → LOCAL_UI」）——组件本地 useState 即默认落点",
+    "when_not_to_use": "刷新后需保留的状态（升 STATE_ARCHETYPE.URL_FILTER 或 SERVER_QUERY）；跨页面会话（DOMAIN/SESSION 所有权，§17 判定行「跨页面业务 Session」）；「禁止默认全部放全局 Store」对本态最严格"
+  },
+  "composition": {
+    "requires": [],
+    "optional": [],
+    "incompatible": []
+  },
+  "defaults": {
+    "ownership": "component_local",
+    "persist_scope": "none",
+    "restore_on_refresh": false
+  },
+  "forbidden": [
+    "把临时选中提升进全局 Store（§17 禁默认全部放全局 Store）",
+    "把可分享筛选降格为本地位（应升 STATE_ARCHETYPE.URL_FILTER）"
+  ],
+  "x-research-anchors": {
+    "note": "所有权判定锚 PRD §17 State Ownership Resolver 判定表（2026-09-03 对照 frontend-state-references.md 差异表 #2/#3 无冲突确认）",
+    "sources": [
+      {
+        "url": "doc/POMaster-vNext-PRD-v0.6.1-Engineering-Substrate-Archetype-Catalog.md §17",
+        "fetched": "2026-09-03"
+      }
+    ]
+  }
+}

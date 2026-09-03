@@ -1,0 +1,45 @@
+{
+  "id": "STATE_ARCHETYPE.BACKGROUND_REFRESH",
+  "kind": "archetype",
+  "layer": "PATTERN",
+  "title_zh": "后台刷新状态",
+  "summary_zh": "stale-while-revalidate 后台刷新原型（TanStack v5 默认档）：staleTime 0 缓存即换，挂载/窗口聚焦/断线重连三触发自动 refetch；invalidateQueries 标 stale 并对渲染中查询后台补捞。",
+  "semantic": {
+    "responsibility": "远端缓存的过期判定与自动补捞触发面（mount/window_focus/reconnect 三触发+语义化 invalidation）",
+    "when_to_use": "STATE_ARCHETYPE.SERVER_QUERY 承载的远端资源的默认保鲜策略——mutation 后语义化 invalidation（前缀匹配 query key）也在本原型表达",
+    "when_not_to_use": "永不刷新的静态参照表（staleTime:'static'——invalidateQueries 对其无效）；仅一次性取数"
+  },
+  "composition": {
+    "requires": [],
+    "optional": [
+      "STATE_ARCHETYPE.SERVER_QUERY"
+    ],
+    "incompatible": []
+  },
+  "defaults": {
+    "refetch_on": [
+      "mount",
+      "window_focus",
+      "reconnect"
+    ],
+    "refetch_on_window_focus": true,
+    "invalidate_overrides_staleTime": true,
+    "invalidate_semantics": "标 stale+渲染中才后台 refetch（前缀匹配/exact:true/predicate）"
+  },
+  "forbidden": [
+    "假设 invalidateQueries 必发即时请求（仅标记 stale，正在渲染才后台 refetch）"
+  ],
+  "x-research-anchors": {
+    "note": "三触发默认与 invalidateQueries「覆盖 staleTime+渲染中才 refetch」语义为 TanStack Query v5 important-defaults/query-invalidation 官方文档 2026-09-03 实抓；与 SERVER_QUERY 经 composition.optional 互链（批次 2 组合链边）",
+    "sources": [
+      {
+        "url": "https://tanstack.com/query/latest/docs/framework/react/guides/important-defaults.md",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://tanstack.com/query/latest/docs/framework/react/guides/query-invalidation.md",
+        "fetched": "2026-09-03"
+      }
+    ]
+  }
+}

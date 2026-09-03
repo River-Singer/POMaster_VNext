@@ -6,7 +6,7 @@
  *    （vocab-lock catalog_layer_vocab，PR-0001），词表外/必填缺失 SCHEMA_INVALID
  *    fail-closed（坏物料 ≠ catalog 缺席，禁静默当空）。
  * 2) lock 校验（D24 read-side 指纹）：repo 实物全量对账 ok——producer 写入口径
- *    sha256(utf-8 字节) 与对账端同源；entries 分母 111（policies 79/gates 6/knowledge 10/sensors 6/archetypes 10——P1-5 sensors 六条目 + P-v06 批次 1 archetypes 十条目与 GATE.NEW_ENTITY.CHECKS 登记）。
+ *    sha256(utf-8 字节) 与对账端同源；entries 分母 123（policies 79/gates 6/knowledge 10/sensors 6/archetypes 22——P1-5 sensors 六条目 + P-v06 批次 1 archetypes 十条目与 GATE.NEW_ENTITY.CHECKS 登记 + P-v06 批次 2 archetypes 十二条目）。
  * 3) 漂移检出：临时 catalog 副本构造 content_drift / missing / unexpected_file /
  *    lock 缺失 → 显式检出（「catalog 物料被改而 lock 未重锁」的事故通道封死）。
  *
@@ -103,13 +103,13 @@ describe("resolveCatalogRoot（缺省定位与显式注入）", () => {
 });
 
 describe("readCatalogLock（lock 文档形态）", () => {
-  it("版本/profile/entries 分母与排序（分母锁：111 entries，id 确定性排序；P-v06 增量 100→111）", () => {
+  it("版本/profile/entries 分母与排序（分母锁：123 entries，id 确定性排序；P-v06 批次 2 增量 111→123）", () => {
     const lock = readCatalogLock(REPO_CATALOG);
     expect(lock.catalog_version).toBe("0.1.0-pilot");
     expect(lock.profile).toBe("web-standard@0");
-    expect(lock.entries.length).toBe(111);
-    expect(lock.controlled_children.allowed.length).toBe(111);
-    expect(lock.controlled_children.required.length).toBe(111);
+    expect(lock.entries.length).toBe(123);
+    expect(lock.controlled_children.allowed.length).toBe(123);
+    expect(lock.controlled_children.required.length).toBe(123);
     const sorted = [...lock.entries].sort((a, b) => (a.id < b.id ? -1 : 1));
     expect(lock.entries).toEqual(sorted);
   });
@@ -314,7 +314,7 @@ describe("loadCatalogPolicies 机器 applicability 字段（P0.5-1）", () => {
 });
 
 describe("loadCatalogTools / loadCatalogProjectionPresets", () => {
-  it("tools 消费：5 份实存工具（懒加载清单分母；P-v06 增量 3→5）", () => {
+  it("tools 消费：6 份实存工具（懒加载清单分母；P-v06 批次 2 增量 5→6）", () => {
     const tools = loadCatalogTools(REPO_CATALOG);
     expect(tools.map((tool) => tool.file).sort()).toEqual([
       "tools/apply_human_review_pilot_0001.py",
@@ -322,6 +322,7 @@ describe("loadCatalogTools / loadCatalogProjectionPresets", () => {
       "tools/materialize_catalog_pilot.py",
       "tools/materialize_v06_relock.py",
       "tools/seed_v06_archetypes.py",
+      "tools/seed_v06_batch2_materials.py",
     ]);
   });
 
@@ -343,9 +344,9 @@ describe("loadCatalogTools / loadCatalogProjectionPresets", () => {
 // ============================================================
 
 describe("verifyCatalogLock（repo 实物：producer 与对账端同口径）", () => {
-  it("全量对账 ok：111 entries 哈希 + 管辖面双向对账零漂移（P-v06 增量 100→111）", () => {
+  it("全量对账 ok：123 entries 哈希 + 管辖面双向对账零漂移（P-v06 批次 2 增量 111→123）", () => {
     const verification = verifyCatalogLock(REPO_CATALOG);
-    expect(verification).toEqual({ ok: true, entries_checked: 111, drifts: [] });
+    expect(verification).toEqual({ ok: true, entries_checked: 123, drifts: [] });
   });
 });
 

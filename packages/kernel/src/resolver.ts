@@ -21,12 +21,26 @@
  *    A6 机械别名（resolveAlias 本体零改动）→ 等价表 active 精确（resolveWordForm）；
  *    词形化复用 knowledgeQueryTokens（词级精确、CJK 整段、禁子串/模糊猜测——P28/
  *    P31 同源纪律）。本面只做门面组合与 match_class 派生，零发明第二套解析。
- * ② match_class 派生确定性（禁 LLM 主观判档——C5 判定来自工具信号同源纪律）：
- *    EXACT_MATCH=精确腿命中（id/alias/equivalence）；CONFIGURABLE_MATCH=archetype
- *    命中（标准件需实例化配置——v0.6.1 §70 用户管理判例）；EXTENSIBLE_MATCH=仅项目
- *    对象词形命中（现有对象可扩展承载）；NO_MATCH=两分母（truth 行 + archetype 条目）
- *    零命中。COMPOSABLE_MATCH / REFERENCE_MATCH 为批次 2+ 组合分析预留位（词表登记
- *    全闭包、派生覆盖子集——缺席显式不伪造）。
+ * ② match_class 派生确定性（禁 LLM 主观判档——C5 判定来自工具信号同源纪律）。
+ *    派生优先级固定序（批次 2 规则本体；v0.6.1 §69 六分类词表与派生面并拢）：
+ *    **EXACT > COMPOSABLE > CONFIGURABLE > EXTENSIBLE > REFERENCE > NO_MATCH**——
+ *    a) EXACT_MATCH=精确腿命中（id/alias/equivalence 在册）；
+ *    b) COMPOSABLE_MATCH=core 命中 archetype 集合 |C|≥2 且 C 内存在组合链——组合链=
+ *       core 命中集上的无向图，边=任一端 composition.requires / composition.optional
+ *       含另一端 id（或反向）；matches=参与链（连通分量 ≥2）的 archetype
+ *       （matched_tokens 数降序、id 升序）；sources_examined.composable_links 增计
+ *       链上边数；
+ *    c) CONFIGURABLE_MATCH=core 命中 ≥1 且无组合链（标准件需实例化配置——
+ *       v0.6.1 §70 用户管理判例）；
+ *    d) EXTENSIBLE_MATCH=core 零命中且 truth 词形命中 ≥1（现有对象可扩展承载）；
+ *    e) REFERENCE_MATCH=refOnly 命中 ≥1（sources_examined.reference_hits 增计；
+ *       外部参照体系命中——需求描述的是参照实现而非本项目对象，参照系已有落点）；
+ *    f) NO_MATCH=两分母（truth 行 + archetype 条目）零命中。
+ *    词形腿双 token 集（批次 2）：每 archetype 两组——coreTokens=knowledgeQueryTokens
+ *    （title + id + summary + semantic 三槽）；referenceTokens=knowledgeQueryTokens
+ *    （x-research-anchors.note + urls）且**剔除与 coreTokens 重叠的 token**。某
+ *    archetype 的命中 token 若全部 ∈ referenceTokens（coreTokens 零命中）→ refOnly
+ *    候选；否则 core 命中。sources_examined 新增字段向后兼容（只增不删）。
  * ③ 分母披露（禁「没查就说没有」）：sources_examined 披露 truth_rows /
  *    catalog_archetypes / equivalence_groups 三分母——NO_MATCH 的可信度来自分母
  *    在场（空 store 的 NO_MATCH 与 2000 行 store 的 NO_MATCH 语义不同，必须可判别）。
@@ -99,13 +113,21 @@ export interface ResolverOutcome {
   readonly required_gates: readonly string[];
   /** 人读 why（「为什么 match / 为什么 NO_MATCH」——§87 必答位）。 */
   readonly why: string;
-  /** 分母披露（禁「没查就说没有」——纪律③）。 */
+  /**
+   * 分母披露（禁「没查就说没有」——纪律③）。批次 2 增量两计数位向后兼容
+   * （只增不删）：composable_links=core 命中集上组合链边数；reference_hits=
+   * refOnly 候选数（参照词形命中、core 零命中的 archetype 数）。
+   */
   readonly sources_examined: {
     readonly truth_rows: number;
     readonly catalog_archetypes: number;
     readonly equivalence_groups: number;
     readonly exact_hits: number;
     readonly token_match_hits: number;
+    /** 批次 2：core 命中集上的组合链边数（composition.requires/optional 无向边）。 */
+    readonly composable_links: number;
+    /** 批次 2：refOnly 候选数（命中 token 全 ∈ referenceTokens 的 archetype 数）。 */
+    readonly reference_hits: number;
   };
 }
 
@@ -197,7 +219,7 @@ export async function resolveNeed(
     // why 显式记「文法命中但不在册」（禁猜测降级为词形命中）。
   }
 
-  // 腿④：词形命中（truth 行 + catalog archetype 两分母；词级精确禁子串）。
+  // 腿④：词形命中——truth 行分母（词级精确禁子串；knowledgeQueryTokens 同一实现）。
   const truthTokenHits: ResolverMatch[] = [];
   for (const row of truthIndex.objects) {
     if (exactHits.some((hit) => hit.id === row.id)) continue;
@@ -217,20 +239,45 @@ export async function resolveNeed(
       });
     }
   }
-  truthTokenHits.sort(
-    (a, b) =>
-      b.matched_tokens.length - a.matched_tokens.length ||
-      (a.id < b.id ? -1 : 1),
-  );
+  truthTokenHits.sort(resolverMatchOrder);
 
-  const archetypeHits: ResolverMatch[] = [];
+  // 腿④（catalog 分母；批次 2 双 token 集——模块头纪律②规则本体）：
+  // coreTokens = knowledgeQueryTokens(title + id + summary + semantic 三槽)；
+  // referenceTokens = knowledgeQueryTokens(x-research-anchors.note + urls) 且剔除与
+  // coreTokens 重叠的 token。命中 token 全 ∈ referenceTokens（core 零命中）→ refOnly
+  // 候选；否则 core 命中。
+  interface CatalogWordHit {
+    readonly match: ResolverMatch;
+    /** coreTokens 上的命中 token（refOnly 判定与组合链参与的依据位）。 */
+    readonly coreMatched: readonly string[];
+  }
+  const catalogHits: CatalogWordHit[] = [];
   for (const archetype of archetypes) {
-    const keyTokens = new Set<string>(
-      knowledgeQueryTokens(`${archetype.titleZh} ${archetype.id} ${archetype.summaryZh}`),
+    const coreKeyTokens = new Set<string>(
+      knowledgeQueryTokens(
+        [
+          archetype.titleZh,
+          archetype.id,
+          archetype.summaryZh,
+          archetype.semantic.responsibility ?? "",
+          archetype.semantic.whenToUse ?? "",
+          archetype.semantic.whenNotToUse ?? "",
+        ].join(" "),
+      ),
     );
-    const matched = [...queryTokens].filter((token) => keyTokens.has(token)).sort();
-    if (matched.length > 0) {
-      archetypeHits.push({
+    const referenceRaw = knowledgeQueryTokens(
+      [archetype.referenceAnchors.note ?? "", ...archetype.referenceAnchors.urls].join(" "),
+    );
+    const referenceKeyTokens = new Set(
+      referenceRaw.filter((token) => !coreKeyTokens.has(token)),
+    );
+    const matched = [...queryTokens]
+      .filter((token) => coreKeyTokens.has(token) || referenceKeyTokens.has(token))
+      .sort();
+    if (matched.length === 0) continue;
+    const coreMatched = matched.filter((token) => coreKeyTokens.has(token));
+    catalogHits.push({
+      match: {
         domain: "catalog",
         id: archetype.id,
         kind: archetype.kind,
@@ -238,30 +285,97 @@ export async function resolveNeed(
         via: "token_match",
         matched_tokens: matched,
         family: null,
-      });
+      },
+      coreMatched,
+    });
+  }
+  const coreHits: ResolverMatch[] = catalogHits
+    .filter((hit) => hit.coreMatched.length > 0)
+    .map((hit) => hit.match)
+    .sort(resolverMatchOrder);
+  const referenceOnlyHits: ResolverMatch[] = catalogHits
+    .filter((hit) => hit.coreMatched.length === 0)
+    .map((hit) => hit.match)
+    .sort(resolverMatchOrder);
+
+  // 组合链判定（批次 2；确定性图判定零主观）：core 命中集上的无向组合图——边=
+  // 任一端 composition.requires / composition.optional 含另一端 id（或反向）。
+  // 连通分量 ≥2 即链；matches=参与链的 archetype；composable_links=链上边数。
+  const archetypeById = new Map(archetypes.map((entry) => [entry.id, entry]));
+  const compositionLinked = (a: string, b: string): boolean => {
+    const materialA = archetypeById.get(a);
+    const materialB = archetypeById.get(b);
+    if (materialA === undefined || materialB === undefined) return false;
+    return (
+      materialA.composition.requires.includes(b) ||
+      materialA.composition.optional.includes(b) ||
+      materialB.composition.requires.includes(a) ||
+      materialB.composition.optional.includes(a)
+    );
+  };
+  const coreIds = coreHits.map((hit) => hit.id);
+  const adjacency = new Map<string, string[]>();
+  let composableLinks = 0;
+  for (let i = 0; i < coreIds.length; i += 1) {
+    for (let j = i + 1; j < coreIds.length; j += 1) {
+      const idA = coreIds[i] as string;
+      const idB = coreIds[j] as string;
+      if (!compositionLinked(idA, idB)) continue;
+      composableLinks += 1;
+      if (!adjacency.has(idA)) adjacency.set(idA, []);
+      if (!adjacency.has(idB)) adjacency.set(idB, []);
+      (adjacency.get(idA) as string[]).push(idB);
+      (adjacency.get(idB) as string[]).push(idA);
     }
   }
-  archetypeHits.sort(
-    (a, b) =>
-      b.matched_tokens.length - a.matched_tokens.length ||
-      (a.id < b.id ? -1 : 1),
-  );
+  const chainVisited = new Set<string>();
+  const participating = new Set<string>();
+  for (const root of coreIds) {
+    if (chainVisited.has(root)) continue;
+    const component: string[] = [];
+    const queue = [root];
+    chainVisited.add(root);
+    while (queue.length > 0) {
+      const current = queue.shift() as string;
+      component.push(current);
+      for (const next of adjacency.get(current) ?? []) {
+        if (!chainVisited.has(next)) {
+          chainVisited.add(next);
+          queue.push(next);
+        }
+      }
+    }
+    if (component.length >= 2) {
+      for (const id of component) participating.add(id);
+    }
+  }
+  const chainHits = coreHits.filter((hit) => participating.has(hit.id));
+  const nonChainCoreHits = coreHits.filter((hit) => !participating.has(hit.id));
 
-  // match_class 派生（纪律②；确定性、零主观判档）。
+  // match_class 派生（纪律②固定序：EXACT > COMPOSABLE > CONFIGURABLE > EXTENSIBLE
+  // > REFERENCE > NO_MATCH；确定性、零主观判档）。
   let matchClass: ResolutionMatchClassValue;
   let matches: readonly ResolverMatch[];
   let alternatives: readonly ResolverMatch[];
   if (exactHits.length > 0) {
     matchClass = "EXACT_MATCH";
     matches = exactHits;
-    alternatives = [...archetypeHits, ...truthTokenHits];
-  } else if (archetypeHits.length > 0) {
+    alternatives = [...coreHits, ...referenceOnlyHits, ...truthTokenHits];
+  } else if (participating.size >= 2) {
+    matchClass = "COMPOSABLE_MATCH";
+    matches = chainHits;
+    alternatives = [...nonChainCoreHits, ...referenceOnlyHits, ...truthTokenHits];
+  } else if (coreHits.length > 0) {
     matchClass = "CONFIGURABLE_MATCH";
-    matches = archetypeHits;
-    alternatives = truthTokenHits;
+    matches = coreHits;
+    alternatives = [...referenceOnlyHits, ...truthTokenHits];
   } else if (truthTokenHits.length > 0) {
     matchClass = "EXTENSIBLE_MATCH";
     matches = truthTokenHits;
+    alternatives = [...referenceOnlyHits];
+  } else if (referenceOnlyHits.length > 0) {
+    matchClass = "REFERENCE_MATCH";
+    matches = referenceOnlyHits;
     alternatives = [];
   } else {
     matchClass = "NO_MATCH";
@@ -292,7 +406,9 @@ export async function resolveNeed(
       catalog_archetypes: archetypes.length,
       equivalence_groups: registry.entries.filter((entry) => entry.status === "active").length,
       exact_hits: exactHits.length,
-      token_match_hits: truthTokenHits.length + archetypeHits.length,
+      token_match_hits: truthTokenHits.length + coreHits.length + referenceOnlyHits.length,
+      composable_links: composableLinks,
+      reference_hits: referenceOnlyHits.length,
     },
   };
 }
@@ -304,12 +420,13 @@ export async function resolveNeed(
 /**
  * New Entity Gate 的 resolver 判卷输入（gate recipe batch 1 落 catalog/gates/，
  * 本函数是解析侧唯一判卷源——「同一函数，不两套」纪律）。
- * 规则（§75 五否 → 本面 MVP 覆盖三否：exact/configuration/extension 三否由
- * match_class 结构性承载；composition/adapter 两否归批次 2+ 组合分析，缺席显式）：
+ * 规则（v0.6.1 §75 五否 → 批次 2 起五否全部由 match_class 结构性承载、机判闭合：
+ * exact/configuration/extension 三否由 EXACT/CONFIGURABLE/EXTENSIBLE 承载；
+ * composition 否由 COMPOSABLE_MATCH 承载——组合链命中即「多标准件组合可满足，
+ * 组合否不成立」；adapter/参照否由 REFERENCE_MATCH 承载——参照系已有落点）：
  * - NO_MATCH → 五否成立 → 允许 Design New（new_entity_allowed=true）；
- * - 其余 match_class → 必须复用/配置/扩展既有实体 → new_entity_allowed=false +
- *    denied_by 命中集（gate FAIL 的证据链位）。
- * COMPOSABLE/REFERENCE_MATCH 派生缺席（批次 2+）在 MVP 下不可能出现在输入——
+ * - 其余任一 match_class → 必须复用/配置/组合/扩展/参照既有面 →
+ *    new_entity_allowed=false + denied_by 命中集（gate FAIL 的证据链位）。
  * 词表外值显式拒绝（禁静默放行）。
  */
 export function newEntityVerdictFromResolution(
@@ -362,12 +479,24 @@ function whyOf(
     case "EXACT_MATCH":
       return `精确腿命中（via=${exactVia ?? "unknown"}）——需求词形指向在册项目对象「${need}」（EXACT_MATCH：复用既有对象，禁再建等价新实体）`;
     case "CONFIGURABLE_MATCH":
-      return "Engineering Substrate 标准件命中（CONFIGURABLE_MATCH：archetype 定义住 catalog 面，实例化时由业务决定字段/变体/权限——v0.6.1 §70 判例；实例采用走 INSTANCE_OF 边显式登记，解析≠采用）";
+      return "Engineering Substrate 标准件命中（CONFIGURABLE_MATCH：archetype 定义住 catalog 面，实例化时由业务决定字段/变体/权限——v0.6.1 §70 用户管理判例；实例采用走 INSTANCE_OF 边显式登记，解析≠采用）";
+    case "COMPOSABLE_MATCH":
+      return "多标准件组合可满足（COMPOSABLE_MATCH：命中标准件经 composition.requires/optional 构成组合链——v0.6.1 §69；组合可满足即组合否不成立，禁绕过标准件平行自造；matches=参与链的 archetype，链上边数见 sources_examined.composable_links）";
     case "EXTENSIBLE_MATCH":
       return "项目对象词形命中（EXTENSIBLE_MATCH：现有对象可扩展承载需求——先查扩展位，禁平行新建）";
+    case "REFERENCE_MATCH":
+      return "外部参照体系命中（REFERENCE_MATCH：需求描述的是参照实现而非本项目对象——参照系已有落点，adapter/参照否不成立；参照词形来自物料 x-research-anchors，命中数见 sources_examined.reference_hits）";
     case "NO_MATCH":
       return "两分母（truth 对象 + catalog 标准件）零命中（NO_MATCH：显式缺席——允许进入 Design Synthesis，但新实体必过 New Entity Gate 五否证明；分母计数见 sources_examined，advisory 面命中不改变本判定——advisory ≠ match，§87）";
     default:
-      return `match_class=${matchClass}（批次 2+ 组合分析预留位——MVP 派生不产出，显式缺席不伪造）`;
+      return `match_class=${matchClass}（词表外值——六分类闭包外派生不应出现，显式呈现禁静默）`;
   }
+}
+
+/** 词形命中排序（matched_tokens 数降序、id 升序——三处命中集共用的确定性序）。 */
+function resolverMatchOrder(a: ResolverMatch, b: ResolverMatch): number {
+  return (
+    b.matched_tokens.length - a.matched_tokens.length ||
+    (a.id < b.id ? -1 : 1)
+  );
 }

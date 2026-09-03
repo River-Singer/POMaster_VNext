@@ -1,0 +1,63 @@
+{
+  "id": "STATE_ARCHETYPE.ASYNC_COMMAND",
+  "kind": "archetype",
+  "layer": "PATTERN",
+  "title_zh": "异步命令状态机",
+  "summary_zh": "以 XState v5 六概念（state/event/transition/guard/actor/input/output）承载的异步命令原型：命令参数经 input 进入，状态经 guarded transition 确定性转移，final state 产出 output；非法组合经 transition contract 显式声明（实现侧绑定 state.can() 守卫位）。",
+  "semantic": {
+    "responsibility": "把一次异步命令（提交/保存/执行）建模为显式状态机：idle/running/done|error 转移全部声明在案，guard 纯同步布尔",
+    "when_to_use": "命令的合法状态转移需要显式契约时（非法组合必须可表达为「未声明的 transition 不存在」）；多步骤异步编排（invoke/spawn actor）",
+    "when_not_to_use": "远端取数缓存语义（STATE_ARCHETYPE.SERVER_QUERY）；无需显式转移契约的局部加载布尔"
+  },
+  "composition": {
+    "requires": [],
+    "optional": [],
+    "incompatible": []
+  },
+  "defaults": {
+    "vocabulary": [
+      "state",
+      "event",
+      "transition",
+      "guard",
+      "actor",
+      "input",
+      "output"
+    ],
+    "guard_nature": "pure_synchronous_boolean",
+    "guard_style": "serialized_named",
+    "transition_determinism": true,
+    "unmatched_event": "ignored_state_unchanged",
+    "output_semantics": "final_state_only"
+  },
+  "forbidden": [
+    "在 output 语义位放中途产物（output 仅到达 final state 时存在）",
+    "直接改 context（immutable，仅 assign 更新）",
+    "断言未匹配事件会运行时报错（XState v5 现实是静默忽略+state.can() 为 false——非法组合的表达位是 transition contract 声明与 can() 守卫位）"
+  ],
+  "x-research-anchors": {
+    "note": "【待 Owner 裁定·差异表 #7】PRD「Illegal Transition 必须可表达」在 XState v5（npm 5.32.6）无对应词形：未匹配/未启用事件=「no enabled transition → state does not change」静默忽略，state.can() 显式守卫为唯一查询位。本物料落 PRD 语义意图（非法组合经 transition contract 显式声明）+实现绑定注记 can() 守卫位；是否以治理层概念保留 Illegal Transition 词形待裁定。六概念词形与 guard 序列化命名推荐（reusability+visualization）均为 stately.ai 官方文档 2026-09-03 实抓",
+    "sources": [
+      {
+        "url": "https://stately.ai/docs/transitions",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://stately.ai/docs/guards",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://stately.ai/docs/input",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://stately.ai/docs/output",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://registry.npmjs.org/xstate",
+        "fetched": "2026-09-03"
+      }
+    ]
+  }
+}

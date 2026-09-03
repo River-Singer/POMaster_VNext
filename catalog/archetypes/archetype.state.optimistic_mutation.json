@@ -1,0 +1,48 @@
+{
+  "id": "STATE_ARCHETYPE.OPTIMISTIC_MUTATION",
+  "kind": "archetype",
+  "layer": "PATTERN",
+  "title_zh": "乐观更新 mutation",
+  "summary_zh": "写操作的乐观更新原型（TanStack Query v5 官方链序实抓）：onMutate 取消在飞 refetch→快照→乐观写入→返回快照；onError 回滚；onSettled 无条件 invalidate 并保持 pending 至 refetch 完成。",
+  "semantic": {
+    "responsibility": "把「先显示后确认」的写路径标准化为五步链序，rollback 与补捞（invalidate）不靠手写自觉",
+    "when_to_use": "多处联动感知写结果的 cache 路线（§17「远端资源」判定的写侧）；单处展示的临时项走 variables/isPending 的 UI 路线（免 rollback）——官方「When to use what」决策规则",
+    "when_not_to_use": "非远端同步的本地草稿（STATE_ARCHETYPE.FORM_EDIT）；无并发覆盖风险的低频写（直接 invalidate 亦可）"
+  },
+  "composition": {
+    "requires": [],
+    "optional": [],
+    "incompatible": []
+  },
+  "defaults": {
+    "sequence": [
+      "cancel_inflight_refetch",
+      "snapshot",
+      "optimistic_write",
+      "on_error_rollback",
+      "on_settled_invalidate"
+    ],
+    "sequence_note": "cancelQueries→getQueryData 快照→setQueryData→onError 回滚→onSettled 无条件 invalidateQueries（return promise 保持 pending 至 refetch 完成）——官方链序原样",
+    "invalidate_on_settled": true,
+    "await_invalidation": true,
+    "dual_route_note": "官方两路线：单处展示用 variables/isPending 的 UI 路线（无需 rollback）；多处联动用 cache 路线（本链序）"
+  },
+  "forbidden": [
+    "跳过 cancelQueries 直接写缓存（在飞 refetch 会覆盖乐观值）",
+    "只在 onError invalidate 而 onSettled 缺失（成功路径漏 refetch）",
+    "rollback 后不 invalidate"
+  ],
+  "x-research-anchors": {
+    "note": "五步链序与「onSettled 无条件 invalidate+return promise 保持 pending」为 TanStack Query v5 optimistic-updates/mutations 官方文档 2026-09-03 实抓（现行回调签名带 context 尾参）",
+    "sources": [
+      {
+        "url": "https://tanstack.com/query/latest/docs/framework/react/guides/optimistic-updates.md",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://tanstack.com/query/latest/docs/framework/react/guides/mutations.md",
+        "fetched": "2026-09-03"
+      }
+    ]
+  }
+}

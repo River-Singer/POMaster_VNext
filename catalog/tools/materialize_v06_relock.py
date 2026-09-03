@@ -1,12 +1,17 @@
 # -*- coding: utf-8 -*-
-"""P-v06 批次 1：archetype 物料 + New Entity Gate recipe 的 catalog-lock 重锁工具。
+"""P-v06：archetype 物料 + New Entity Gate recipe 的 catalog-lock 重锁工具。
 
 职责（沿 materialize_catalog_pilot.py 合并重锁先例——基线零触碰，只做增量合并）：
-  1. 扫描 catalog/archetypes/*.json（10 份首批物料）逐文件计算 content_sha256；
+  1. 扫描 catalog/archetypes/*.json（批次 1+2 全部物料）逐文件计算 content_sha256；
   2. 合并 catalog/gates/gate.new-entity.checks.json 登记；
   3. lock 合并重锁：entries（去旧 archetypes 段再并新）/ controlled_children
      allowed+required（archetypes 路径 + new gate recipe 路径双登记）；
   4. generated_by 追加本批注记（幂等：已含则不重复追加）。
+
+批次 2（2026-09-03）：source_ref 按 id 前缀派生（STATE_ARCHETYPE.*/FRONTEND_ARCHETYPE.*
+→ 批次 2 研究报告 frontend-state-references.md 2026-09-03 锚；其余 → 批次 1
+external-design-references.md 2026-09-02 锚）——provenance 如实到批，禁批次 2
+物料冒用批次 1 生产者词面；generated_by 追加批次 2 注记（幂等）。
 
 纪律：content_sha256 = sha256(utf-8 字节)（与 kernel verifyCatalogLock 同一算法，
 producer 与对账端共用同一计算）；幂等 byte-stable（DEF-POM-002 教训）；D24——
@@ -28,6 +33,20 @@ ARCH_DIR = os.path.join(ROOT, "archetypes")
 NEW_GATE = "gates/gate.new-entity.checks.json"
 NEW_GATE_ID = "GATE.NEW_ENTITY.CHECKS"
 GENERATED_BY_MARK = "catalog/tools/seed_v06_archetypes.py + materialize_v06_relock.py（P-v06 批次 1：archetypes 十条目 + GATE.NEW_ENTITY.CHECKS 登记，D-2/D-4 裁决）"
+GENERATED_BY_MARK_BATCH2 = "catalog/tools/seed_v06_batch2_materials.py + materialize_v06_relock.py（P-v06 批次 2：STATE_ARCHETYPE 八态 + FRONTEND_ARCHETYPE 三型 + ERROR_TAXONOMY 十二条目，research frontend-state-references.md 2026-09-03 锚）"
+
+# 批次 2 物料 id 前缀（provenance 如实到批：对应 research 报告不同，禁共用批次 1 词面）。
+BATCH2_ID_PREFIXES = ("STATE_ARCHETYPE.", "FRONTEND_ARCHETYPE.")
+SOURCE_REF_BATCH1 = "catalog/tools/seed_v06_archetypes.py（P-v06 批次 1；外部参照 external-design-references.md 2026-09-02 实抓锚）"
+SOURCE_REF_BATCH2 = "catalog/tools/seed_v06_batch2_materials.py（P-v06 批次 2；外部参照 frontend-state-references.md 2026-09-03 实抓锚）"
+
+
+def source_ref_for(entry_id):
+    return (
+        SOURCE_REF_BATCH2
+        if entry_id.startswith(BATCH2_ID_PREFIXES)
+        else SOURCE_REF_BATCH1
+    )
 
 
 def sha256_of_file(path):
@@ -55,7 +74,7 @@ def main():
                     "id": entry_id,
                     "path": path,
                     "content_sha256": sha256_of_file(os.path.join(ARCH_DIR, name)),
-                    "source_ref": "catalog/tools/seed_v06_archetypes.py（P-v06 批次 1；外部参照 external-design-references.md 2026-09-02 实抓锚）",
+                    "source_ref": source_ref_for(entry_id),
                 }
             )
             arch_paths.append(path)
@@ -89,9 +108,11 @@ def main():
     lock["controlled_children"]["allowed"] = sorted(allowed)
     lock["controlled_children"]["required"] = sorted(required)
 
-    # 4) generated_by 注记（幂等追加）。
+    # 4) generated_by 注记（幂等追加；批次 1/2 各一记，历史留痕）。
     if GENERATED_BY_MARK not in lock.get("generated_by", ""):
         lock["generated_by"] = lock.get("generated_by", "") + " + " + GENERATED_BY_MARK
+    if GENERATED_BY_MARK_BATCH2 not in lock.get("generated_by", ""):
+        lock["generated_by"] = lock.get("generated_by", "") + " + " + GENERATED_BY_MARK_BATCH2
 
     with open(LOCK, "w", encoding="utf-8", newline="\n") as f:
         json.dump(lock, f, ensure_ascii=False, indent=2)

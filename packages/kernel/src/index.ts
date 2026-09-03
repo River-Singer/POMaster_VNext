@@ -1926,6 +1926,29 @@ export type {
 } from "./resolver.js";
 export { loadCatalogArchetypes } from "./catalog.js";
 export type { CatalogArchetypeMaterial } from "./catalog.js";
+
+// —— import 静态扫描 Analyzer（P-v06 批次 2 Frontend 模型 kernel 逻辑半场） ——
+// 语义边界（analyzer-import-graph.ts 头注为准）：analyze-only 封条（spec-analyzer.ts
+// 先例——导出面无写函数、零 fs（内容注入）、零 store 依赖）；产出 CALLS 边**提案**
+// （不落盘——登记由消费方经 registerRelation 显式执行，EDGE 内容寻址幂等使重复
+// 扫描重放安全）+ §148 八字段报告（normalizeAnalyzerReport 单一实现判卷；置信级
+// 规则=unmapped 空 → deterministic / 非空 → probable）。已知边界诚实声明：不做
+// 注释内 import 剔除（误报风险由置信级承载）；只扫静态 import 与动态 import()
+// 两条正则（re-export/require/CSS 引用不在扫描面）；路径按 posix 精确匹配
+// mapping 键。词形纪律：mapping 值非法 → SCHEMA_INVALID 整体拒绝（A5）。
+export {
+  ANALYZER_IMPORT_GRAPH_ID,
+  IMPORT_EDGE_TYPE,
+  RELATIVE_IMPORT_CANDIDATE_SUFFIXES,
+  analyzeImportGraph,
+} from "./analyzer-import-graph.js";
+export type {
+  ImportGraphFileInput,
+  ImportGraphInput,
+  ImportGraphEdgeProposal,
+  ImportGraphUnmappedRow,
+  ImportGraphResult,
+} from "./analyzer-import-graph.js";
 // —— P-v06 词值常量再导出（软件图词轴；vocab-pr-0006 收编，唯一镜像 @pomaster/schemas） ——
 export {
   RELATION_TYPE_VALUES,

@@ -109,14 +109,16 @@ async function seedSupplierObjects(): Promise<void> {
 }
 
 describe("v0.6.1 §91 P0 Acceptance（八条）", () => {
-  it("①② 不自设计 Button/CRUD：resolve 命中标准件（CONFIGURABLE_MATCH + required_bindings 结构面）", async () => {
+  it("①② 不自设计 Button/CRUD：resolve 命中标准件（Button=CONFIGURABLE_MATCH；CRUD=COMPOSABLE_MATCH 批次 2 升判 + required_bindings 结构面）", async () => {
     await seedSupplierObjects();
     const button = await resolveNeed(store, catalogRoot, { need: "按钮 button 动作触发" });
     expect(button.match_class).toBe("CONFIGURABLE_MATCH");
     expect(button.matches.map((m) => m.id)).toContain("COMPONENT_ARCHETYPE.BUTTON");
 
     const crud = await resolveNeed(store, catalogRoot, { need: "CRUD 资源 create update delete" });
-    expect(crud.match_class).toBe("CONFIGURABLE_MATCH");
+    // 批次 2 派生升级：CRUD 与 QUERY 经 composition.optional 构成组合链（CRUD.optional
+    // 含 QUERY_RESOURCE id）→ COMPOSABLE_MATCH（批次 0 无组合分析时为 CONFIGURABLE）。
+    expect(crud.match_class).toBe("COMPOSABLE_MATCH");
     expect(crud.matches.map((m) => m.id)).toContain("ARCHETYPE.BACKEND.CRUD_RESOURCE");
     // required_bindings 只聚合 composition.requires（CRUD 原型 requires 为空——可选档
     // QUERY/DATA 走 optional 位，resolver 不冒充强约束）。
@@ -161,7 +163,11 @@ describe("v0.6.1 §91 P0 Acceptance（八条）", () => {
     expect(run.result.verdict).toBe("failed");
     const judgement = run.judgements[0];
     expect(judgement?.disposition).toBe("denied");
-    expect(judgement?.match_class).toBe("CONFIGURABLE_MATCH");
+    // 批次 2 派生升级：SEARCH_SELECT 与 SEARCH_INPUT 经 composition.optional 构成组合链
+    // （SEARCH_INPUT.optional 含 SEARCH_SELECT id）→ COMPOSABLE_MATCH（批次 0 无组合
+    // 分析时为 CONFIGURABLE）；判卷结论不变——denied / failed（组合否不成立照样拒新建）。
+    expect(judgement?.match_class).toBe("COMPOSABLE_MATCH");
+    expect(judgement?.denied_by).toEqual(["COMPOSABLE_MATCH"]);
     expect(judgement?.matches.map((m) => m.id)).toContain("COMPONENT_ARCHETYPE.SEARCH_SELECT");
   });
 
@@ -190,10 +196,10 @@ describe("v0.6.1 §91 P0 Acceptance（八条）", () => {
     }
   });
 
-  it("⑦ Catalog 人类可完整浏览：catalog status 分母含 archetypes=10 + explain 单条目解释", async () => {
+  it("⑦ Catalog 人类可完整浏览：catalog status 分母含 archetypes=22 + explain 单条目解释", async () => {
     const status = await runCatalogStatus({ catalogRoot });
     expect(status.ok).toBe(true);
-    expect(status.result?.sections.archetypes).toBe(10);
+    expect(status.result?.sections.archetypes).toBe(22);
     expect(status.result?.lock_verification.ok).toBe(true);
 
     const explain = await runCatalogExplain("PAGE_ARCHETYPE.MASTER_DATA", { catalogRoot });
@@ -204,8 +210,8 @@ describe("v0.6.1 §91 P0 Acceptance（八条）", () => {
   it("⑧ Agent Context 只注入任务所需标准件：matches ⊂ 分母且 required_bindings 仅结构面", async () => {
     await seedSupplierObjects();
     const outcome = await resolveNeed(store, catalogRoot, { need: "供应商管理页 主数据" });
-    expect(outcome.sources_examined.catalog_archetypes).toBe(10);
-    expect(outcome.matches.length).toBeLessThan(10);
+    expect(outcome.sources_examined.catalog_archetypes).toBe(22);
+    expect(outcome.matches.length).toBeLessThan(22);
     for (const binding of outcome.required_bindings) {
       expect(binding).toMatch(/^[A-Z][A-Z0-9_]*(\.[A-Z][A-Z0-9_]+)+$/);
     }

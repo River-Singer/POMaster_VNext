@@ -1,0 +1,45 @@
+{
+  "id": "STATE_ARCHETYPE.FORM_EDIT",
+  "kind": "archetype",
+  "layer": "PATTERN",
+  "title_zh": "表单编辑草稿状态",
+  "summary_zh": "未保存表单草稿的本地编辑状态原型：字段值、校验状态与脏标记归表单容器持有，不进全局 Store 也不写 URL；校验状态词形按 AntD Form validateStatus 四值锚定。",
+  "semantic": {
+    "responsibility": "持有未提交草稿的字段值/校验结果/脏标记，提交成功后交出所有权",
+    "when_to_use": "未保存表单草稿（v0.6.1 §17 判定行「未保存表单草稿 → FORM」）——编辑抽屉/对话框内草稿、多字段录入面",
+    "when_not_to_use": "已提交数据的远端缓存（STATE_ARCHETYPE.SERVER_QUERY）；可分享筛选（STATE_ARCHETYPE.URL_FILTER）"
+  },
+  "composition": {
+    "requires": [],
+    "optional": [],
+    "incompatible": []
+  },
+  "defaults": {
+    "ownership": "form_container_local",
+    "validation_status_words": [
+      "success",
+      "warning",
+      "error",
+      "validating"
+    ],
+    "validation_status_source": "AntD Form validateStatus 官方四值（external-design-references.md 2026-09-02 正文明抓）",
+    "dirty_tracking": "pristine/dirty 二态起点"
+  },
+  "forbidden": [
+    "草稿直写全局 Store（v0.6.1 §17「禁止默认全部放全局 Store」的表单形态）",
+    "校验状态自造第五词形（success/warning/error/validating 四值闭包外）"
+  ],
+  "x-research-anchors": {
+    "note": "校验状态四值 success/warning/error/validating 为 AntD Form API 正文明抓（external-design-references.md 对应锚，2026-09-02）；§17 判定行与禁全局 Store 语义为 PRD 事实源（2026-09-03 对照 frontend-state-references.md 差异表 #3 无冲突确认）",
+    "sources": [
+      {
+        "url": "https://ant.design/components/form",
+        "fetched": "2026-09-02"
+      },
+      {
+        "url": "doc/POMaster-vNext-PRD-v0.6.1-Engineering-Substrate-Archetype-Catalog.md §17",
+        "fetched": "2026-09-03"
+      }
+    ]
+  }
+}

@@ -21,8 +21,11 @@ rule: 连续两个批次只增不减（具名条目数不减少）触发设计�
 accounting_note: >-
   批次 0（Model Constitution）登记 6 概念（加权 8）；批次 1（Tracer Bullet）
   新增 3 概念（archetype-instance-binding / new-entity-gate-recipe /
-  engineering-substrate-catalog，加权 5）——当前 9 概念加权 total_count=13，
-  预算 16 内。状态词形 planned / delivered 二值闭包（守卫测试钉住）。
+  engineering-substrate-catalog，加权 5）；批次 2（Frontend 模型，kernel 逻辑
+  + catalog 物料两半场）新增 3 概念（state-archetype-family / five-no-verdict-
+  closure / import-graph-analyzer，加权 3）——当前 12 概念加权 total_count=16，
+  预算 16 满编：后续新概念须先合并或删除既有条目（记账规则硬闸）。
+  状态词形 planned / delivered 二值闭包（守卫测试钉住）。
 
 concepts:
   - name: Typed Relation sidecar（EDGE-<12hex> 内容寻址追加流；Graph 不是第六原语）
@@ -70,3 +73,18 @@ concepts:
     introduced_by_batch: batch-1
     status: delivered
     carrier: catalog/archetypes/ + catalog/tools/seed_v06_archetypes.py + catalog/tools/materialize_v06_relock.py
+  - name: State Archetype 族（八态+ownership 判定落位；PRD §16 逐字八值 + §17 判定行进 semantic）
+    count: 1
+    introduced_by_batch: batch-2
+    status: delivered
+    carrier: catalog/tools/seed_v06_batch2_materials.py + tests/integration/v06-batch2-materials.spec.ts
+  - name: 五否全机判闭合（COMPOSABLE/REFERENCE 派生+verdict 扩类；组合否/参照否由 match_class 结构性承载）
+    count: 1
+    introduced_by_batch: batch-2
+    status: delivered
+    carrier: packages/kernel/src/resolver.ts + packages/kernel/src/new-entity.ts + packages/kernel/tests/resolver-composable.spec.ts
+  - name: import-graph analyzer（analyze-only 边提案+映射外=unresolved；CALLS 边提案不落盘）
+    count: 1
+    introduced_by_batch: batch-2
+    status: delivered
+    carrier: packages/kernel/src/analyzer-import-graph.ts + packages/kernel/tests/analyzer-import-graph.spec.ts

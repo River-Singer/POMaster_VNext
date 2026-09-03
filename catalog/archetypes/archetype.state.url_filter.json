@@ -1,0 +1,47 @@
+{
+  "id": "STATE_ARCHETYPE.URL_FILTER",
+  "kind": "archetype",
+  "layer": "PATTERN",
+  "title_zh": "URL 筛选状态",
+  "summary_zh": "以 URL 查询串为事实源的筛选状态原型（nuqs 2.10.1：「the URL is the source of truth」）：筛选/分页/排序/tab 定位写入 URL 后天然可分享、可收藏、刷新保留、回退保留。",
+  "semantic": {
+    "responsibility": "把「可分享/可收藏/刷新保留/回退保留」四触发条件的筛选状态所有权交给 URL，序列化规则单点",
+    "when_to_use": "状态需要通过 URL 分享、收藏、刷新后保留或浏览器回退保留时（v0.6.1 §17 判定行「可分享/可收藏的筛选条件 → URL」）——列表筛选、分页、排序、tab 定位是典型",
+    "when_not_to_use": "大对象/不可序列化状态；临时展开/选中（STATE_ARCHETYPE.SELECTION）；高维筛选全量入参会参数爆炸（只放分享者视角关键参数）"
+  },
+  "composition": {
+    "requires": [],
+    "optional": [],
+    "incompatible": []
+  },
+  "defaults": {
+    "source_of_truth": "URL is the source of truth（nuqs 自我定位）",
+    "serialization": "search_params_string",
+    "read_only_view_client": true,
+    "replace_history_for_typed_input": true,
+    "push_history_for_discrete_changes": true,
+    "dual_surface_note": "Next.js App Router 双端形态：Client 侧 useSearchParams 只读同步（prerendered 路由须包 Suspense 边界）；Server 侧 Page searchParams prop 为 Promise 异步形态（v15 起，同步访问已标记将废弃）"
+  },
+  "forbidden": [
+    "Server Component 直接调 useSearchParams（Next.js 明确不支持）",
+    "prerendered 路由无 Suspense 边界使用 client searchParams hook",
+    "绕过序列化规则自造查询串格式（有 nuqs/框架 adapter 时应引用）"
+  ],
+  "x-research-anchors": {
+    "note": "nuqs npm latest 2.10.1 与 GitHub README「the URL is the source of truth」实抓；Next.js 16.3.4 文档 useSearchParams 只读 client 形态与 Page searchParams Promise 双端形态实抓（2026-09-03）",
+    "sources": [
+      {
+        "url": "https://registry.npmjs.org/nuqs",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://nextjs.org/docs/app/api-reference/functions/use-search-params.md",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://nextjs.org/docs/app/api-reference/file-conventions/page.md",
+        "fetched": "2026-09-03"
+      }
+    ]
+  }
+}

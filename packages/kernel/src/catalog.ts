@@ -916,6 +916,17 @@ export interface CatalogArchetypeMaterial {
     readonly whenToUse: string | null;
     readonly whenNotToUse: string | null;
   };
+  /**
+   * 研究锚（物料 x-research-anchors：note + sources[].url；P-v06 批次 2 resolver
+   * referenceTokens 消费位——参照系词形来源）。字段缺席（或槽位缺席）→ null/[]
+   * 诚实缺省：不新增必填校验（批次 1 既有 10 物料与全部既有测试零破坏——锚位是
+   * 增量消费位不是准入门槛）；槽位在场但形态非法仍 fail-closed（坏锚 ≠ 无锚，
+   * 禁静默丢弃——loadCatalogSensors 词表闸同法）。
+   */
+  readonly referenceAnchors: {
+    readonly note: string | null;
+    readonly urls: readonly string[];
+  };
 }
 
 /**
@@ -928,6 +939,8 @@ export interface CatalogArchetypeMaterial {
  * / kind 词表闸（catalog_kind，PR-0006）/ layer 词表闸（substrate_layer，PR-0006）/
  * title_zh/summary_zh 必填 / composition 三数组词形（catalog id）——坏物料显式爆，
  * 禁静默跳过。id 全目录唯一。返回按 id 字典序（确定性）。
+ * P-v06 批次 2 增量：x-research-anchors（note + sources[].url）可选装载——缺席
+ * null/[] 诚实缺省不设门槛，在场坏形 fail-closed（validateReferenceAnchors）。
  */
 export function loadCatalogArchetypes(catalogRoot: string): readonly CatalogArchetypeMaterial[] {
   const dir = join(catalogRoot, "archetypes");
@@ -973,6 +986,7 @@ export function loadCatalogArchetypes(catalogRoot: string): readonly CatalogArch
     }
     const composition = validateComposition(body["composition"], file, id);
     const semantic = validateSemantic(body["semantic"], file, id);
+    const referenceAnchors = validateReferenceAnchors(body["x-research-anchors"], file, id);
     if (materials.has(id)) {
       throw new GovernanceError(
         "SCHEMA_INVALID",
@@ -990,6 +1004,7 @@ export function loadCatalogArchetypes(catalogRoot: string): readonly CatalogArch
       summaryZh,
       composition,
       semantic,
+      referenceAnchors,
     });
   }
   return [...materials.values()].sort((a, b) => (a.id < b.id ? -1 : 1));
@@ -1074,5 +1089,76 @@ function validateSemantic(
     responsibility: pick("responsibility"),
     whenToUse: pick("when_to_use"),
     whenNotToUse: pick("when_not_to_use"),
+  };
+}
+
+/**
+ * x-research-anchors 校验（P-v06 批次 2；研究锚位）：整体缺席 → {note:null, urls:[]}
+ * 诚实缺省（锚位是增量消费位不是准入门槛——不新增必填校验）；整体在场则逐槽
+ * fail-closed：note 须为非空字符串或 null/缺席、sources 须为数组且每元素为对象、
+ * url 须为非空字符串（坏锚显式爆，禁静默丢弃——坏锚 ≠ 无锚）。fetched 等其余
+ * 槽位不消费不校验（本面只取 resolver referenceTokens 所需两件）。
+ */
+function validateReferenceAnchors(
+  value: unknown,
+  file: string,
+  id: string,
+): CatalogArchetypeMaterial["referenceAnchors"] {
+  if (value === undefined || value === null) {
+    return { note: null, urls: [] };
+  }
+  if (typeof value !== "object" || Array.isArray(value)) {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      `catalog archetype x-research-anchors 形态非法（须对象）: ${file}`,
+      "研究锚位是 P-v06 批次 2 resolver 参照词形来源；坏形物料显式爆。",
+      { file, id },
+    );
+  }
+  const record = value as UnknownRecord;
+  const noteSlot = record["note"];
+  if (noteSlot !== undefined && noteSlot !== null && (typeof noteSlot !== "string" || noteSlot.length === 0)) {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      `catalog archetype x-research-anchors.note 形态非法（须非空字符串或缺席/null）: ${file}`,
+      "note 是参照系词形来源之一；坏锚显式爆禁静默丢。",
+      { file, id },
+    );
+  }
+  const sources = record["sources"];
+  const urls: string[] = [];
+  if (sources !== undefined && sources !== null) {
+    if (!Array.isArray(sources)) {
+      throw new GovernanceError(
+        "SCHEMA_INVALID",
+        `catalog archetype x-research-anchors.sources 形态非法（须数组）: ${file}`,
+        "sources[].url 是参照系词形来源之一；坏锚显式爆禁静默丢。",
+        { file, id },
+      );
+    }
+    for (const item of sources) {
+      if (typeof item !== "object" || item === null || Array.isArray(item)) {
+        throw new GovernanceError(
+          "SCHEMA_INVALID",
+          `catalog archetype x-research-anchors.sources 元素形态非法（须对象）: ${file}`,
+          "sources[].url 是参照系词形来源之一；坏锚显式爆禁静默丢。",
+          { file, id },
+        );
+      }
+      const url = (item as UnknownRecord)["url"];
+      if (typeof url !== "string" || url.length === 0) {
+        throw new GovernanceError(
+          "SCHEMA_INVALID",
+          `catalog archetype x-research-anchors.sources[].url 缺失或非非空字符串: ${file}`,
+          "url 是参照系词形来源；坏锚显式爆禁静默丢。",
+          { file, id },
+        );
+      }
+      urls.push(url);
+    }
+  }
+  return {
+    note: typeof noteSlot === "string" ? noteSlot : null,
+    urls,
   };
 }

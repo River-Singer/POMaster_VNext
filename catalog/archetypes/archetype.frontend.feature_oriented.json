@@ -1,0 +1,59 @@
+{
+  "id": "FRONTEND_ARCHETYPE.FEATURE_ORIENTED",
+  "kind": "archetype",
+  "layer": "ARCHETYPE",
+  "title_zh": "特性导向架构原型",
+  "summary_zh": "按业务特性纵向切分的架构原型（FSD 现行词形锚定）：App/Pages/Widgets/Features/Entities/Shared 六有效层（Processes 已官方 deprecated），PRD 五稳定语义映射其上，slice 内只能 import 严格下层。",
+  "semantic": {
+    "responsibility": "以业务特性（feature slice）为第一切分轴，公共面下沉 Shared，实体面独立 Entities",
+    "when_to_use": "特性可高内聚切分、跨特性复用需要显式公共 API 门禁的工程（FSD import rule：每层只能依赖严格下层；App/Shared 为 layer=slice 例外）",
+    "when_not_to_use": "需要独立 Domain 横向层的分层 SPA（FRONTEND_ARCHETYPE.SPA_LAYERED）；无需层约束的小型页面集（FRONTEND_ARCHETYPE.MODULAR）"
+  },
+  "composition": {
+    "requires": [],
+    "optional": [],
+    "incompatible": []
+  },
+  "defaults": {
+    "fsd_effective_layers": [
+      "App",
+      "Pages",
+      "Widgets",
+      "Features",
+      "Entities",
+      "Shared"
+    ],
+    "deprecated_layers": [
+      "Processes"
+    ],
+    "prd_semantic_mapping": {
+      "Page": "Pages",
+      "Feature": "Features",
+      "Domain": "Entities",
+      "Shared": "Shared"
+    },
+    "api_layer_note": "PRD 五语义的 API/Infrastructure 在 FSD 参照下无独立层——api 是各层 segment（entities/api、features/api、shared/api）",
+    "widgets_note": "FSD widgets 无 PRD 对应层——本原型下作为 optional 位",
+    "import_rule": "slice 内模块只能 import 严格下层的 slice；禁同层互引（FSD 的 @x 显式交叉引用机制仅 Entities 层合法）",
+    "public_api": "index_reexports_only",
+    "custom_layers": "forbidden"
+  },
+  "forbidden": [
+    "wildcard export（export *）",
+    "下层 import 上层",
+    "自造新层（FSD：层语义已标准化，不推荐新增）"
+  ],
+  "x-research-anchors": {
+    "note": "【差异表 #4 部分差异】FSD 现行 7 层（Processes deprecated→有效 6 层）、无独立 API 层（api 是 segment）、widgets 无 PRD 对应、app 层 PRD 未纳入——四行声明随物料落位；import rule 严格向下与 Public API「contract+gate」定位（与 PRD §19 public_api_required 同构）为 feature-sliced.design 官方文档（v3 站点）2026-09-03 实抓",
+    "sources": [
+      {
+        "url": "https://feature-sliced.design/docs/reference/layers",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://feature-sliced.design/docs/reference/public-api",
+        "fetched": "2026-09-03"
+      }
+    ]
+  }
+}

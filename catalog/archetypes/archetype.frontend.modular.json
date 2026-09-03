@@ -1,0 +1,37 @@
+{
+  "id": "FRONTEND_ARCHETYPE.MODULAR",
+  "kind": "archetype",
+  "layer": "ARCHETYPE",
+  "title_zh": "模块化架构原型",
+  "summary_zh": "无强制分层的模块化架构原型：以页面/模块为自足单元，共享代码显式抽层，规模驱动演进——与 SPA_LAYERED 互斥（incompatible 双向登记）。",
+  "semantic": {
+    "responsibility": "以自足模块为切分单元承载小型/中型应用，不强制五层语义到位",
+    "when_to_use": "页面数量少、领域模型尚未复杂到需要独立 Domain/Feature 承载的工程——先模块化，规模触发再演进分层（「项目不一定需要所有层」的另一极端形态）",
+    "when_not_to_use": "需要层依赖约束治理的大型工程（SPA_LAYERED/FEATURE_ORIENTED）——本原型与 SPA_LAYERED 互斥"
+  },
+  "composition": {
+    "requires": [],
+    "optional": [],
+    "incompatible": [
+      "FRONTEND_ARCHETYPE.SPA_LAYERED"
+    ]
+  },
+  "defaults": {
+    "layering": "none_required",
+    "shared_extraction": "explicit_only",
+    "evolution": "scale_triggered"
+  },
+  "x-research-anchors": {
+    "note": "互斥语义为本批次裁定（FRONTEND_ARCHETYPE.SPA_LAYERED×MODULAR incompatible 双向登记——incompatible 槽首个真实用例）；「不必使用所有层」与 FSD「You don't have to use every layer」同向佐证模块化形态合法性（2026-09-03 实抓）",
+    "sources": [
+      {
+        "url": "doc/POMaster-vNext-PRD-v0.6.1-Engineering-Substrate-Archetype-Catalog.md §18",
+        "fetched": "2026-09-03"
+      },
+      {
+        "url": "https://feature-sliced.design/docs/reference/layers",
+        "fetched": "2026-09-03"
+      }
+    ]
+  }
+}
