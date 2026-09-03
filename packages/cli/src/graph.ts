@@ -343,7 +343,14 @@ export async function runGraph(input: GraphInput): Promise<CommandOutcome<GraphR
         emptyResult(input.id, view, maxDepth),
       );
     }
-    return failGraph(governanceErrorToCliError(error), emptyResult(input.id, view, maxDepth));
+    // as GovernanceError 断言（严格 tsc 清零；零运行时变更）：loadStoreReadOnly 的
+    // 故障面全为 GovernanceError（kernel fail-closed 契约），NOT_CONFIGURED 已前置
+    // 拦截，此处余量按同契约翻译（catch 形参 unknown 是 TS 无 distinguishable
+    // catch 的既定形态，非运行时异型信号）。
+    return failGraph(
+      governanceErrorToCliError(error as GovernanceError),
+      emptyResult(input.id, view, maxDepth),
+    );
   }
 
   // —— id 文法（A5 closed-world FATAL 同契约；kernel 权威，CLI 不自造映射） ——

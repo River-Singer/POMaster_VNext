@@ -484,11 +484,15 @@ export function relockCatalog(catalogRoot: string): CatalogRelockReport {
         : `${rawGeneratedBy} + ${CATALOG_RELOCK_GENERATED_BY_NOTE}`
       : CATALOG_RELOCK_GENERATED_BY_NOTE;
 
+  // as unknown as 双段断言（严格 tsc 清零；TS2352 建议的原话路径）：rawLock 的
+  // UnknownRecord 索引签名承载 catalog_version/profile 等已验证键（readCatalogLock
+  // 同文件已 fail-closed 验形——本函数入口 previous 即其产物），索引签名 unknown 与
+  // 必填 string 属性对 TS 不可证，运行时不变式由入口装载面保证。零运行时变更。
   const next = Object.assign({}, rawLock, {
     controlled_children: { allowed: scannedPaths, required: [...scannedPaths] },
     entries: scannedEntries,
     generated_by: generatedBy,
-  }) as CatalogRelockNextDocument;
+  }) as unknown as CatalogRelockNextDocument;
 
   return { previous, next, added, removed, refreshed };
 }

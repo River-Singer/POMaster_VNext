@@ -23,8 +23,14 @@ accounting_note: >-
   新增 3 概念（archetype-instance-binding / new-entity-gate-recipe /
   engineering-substrate-catalog，加权 5）；批次 2（Frontend 模型，kernel 逻辑
   + catalog 物料两半场）新增 3 概念（state-archetype-family / five-no-verdict-
-  closure / import-graph-analyzer，加权 3）——当前 12 概念加权 total_count=16，
-  预算 16 满编：后续新概念须先合并或删除既有条目（记账规则硬闸）。
+  closure / import-graph-analyzer，加权 3）——此前 12 概念加权 total_count=16
+  预算满编。收尾批次（batch-closeout）合并裁定：Analyzer Output Contract 与
+  盲区四态映射两概念本就是同一 carrier 文件（packages/kernel/src/analyzer-
+  contract.ts）承载的一体契约的两语义面（§148 八字段必答+确定性宣称杀手 ｜
+  §149 盲区四态映射零新词）——合并为单概念 Analyzer Contract（同文件同契约
+  一体，两 count-1 面合一腾出 1 加权位）；新概念「外部参照站点索引/library」
+  count 1 入账（references/external-sites-index.yaml + 双向钉守卫）。合并
+  腾位 + 新概念入账后仍 12 条目、满编 16/16（预算 16 硬闸不破）。
   状态词形 planned / delivered 二值闭包（守卫测试钉住）。
 
 concepts:
@@ -43,16 +49,11 @@ concepts:
     introduced_by_batch: batch-0
     status: delivered
     carrier: packages/kernel/src/resolver.ts + packages/cli/src/resolve.ts
-  - name: Analyzer Output Contract（§148 八字段必答；确定性宣称杀手）
+  - name: Analyzer Contract（§148 八字段必答+确定性宣称杀手；§149 盲区四态映射零新词——同一 carrier 的两语义面合一）
     count: 1
     introduced_by_batch: batch-0
     status: delivered
     carrier: packages/kernel/src/analyzer-contract.ts
-  - name: 盲区四态映射（§149 零新词——canonical ⊆ 既有 perception 词面；FAILED_TO_OBSERVE 恒盲区位）
-    count: 1
-    introduced_by_batch: batch-0
-    status: delivered
-    carrier: packages/kernel/src/analyzer-contract.ts（PRD_BLINDSPOT_STATE_MAPPING）
   - name: Software Graph 词表段（vocab-pr-0006：relation_type 首批/origin/endpoint_domain/confidence/match_class/substrate_layer/object_family/catalog_kind 八轴 + EDGE- 通路词形）
     count: 2
     introduced_by_batch: batch-0
@@ -88,3 +89,8 @@ concepts:
     introduced_by_batch: batch-2
     status: delivered
     carrier: packages/kernel/src/analyzer-import-graph.ts + packages/kernel/tests/analyzer-import-graph.spec.ts
+  - name: 外部参照站点索引/library（research 站点穷举+双向钉守卫；AI「眼睛」的取用面）
+    count: 1
+    introduced_by_batch: batch-closeout
+    status: delivered
+    carrier: references/external-sites-index.yaml + tests/integration/external-sites-index.spec.ts

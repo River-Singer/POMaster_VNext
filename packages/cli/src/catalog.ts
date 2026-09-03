@@ -290,10 +290,12 @@ export async function runCatalogExplain(
     source_ref: entry.source_ref,
     drifts: entryDrifts,
     material:
-      policy === undefined && archetype === undefined
-        ? emptyMaterial()
-        : policy !== undefined
-          ? {
+      // 分支序重排（严格 tsc 清零；真值表等价改写——逐 case 对账：policy 有定义→
+      // policy 物料；policy 缺席而 archetype 在场→archetype 物料；两者皆缺席→
+      // emptyMaterial。与原「两者皆缺席 → policy 判 → archetype」分支序产值全等，
+      // 重排使 archetype 在末支被前一判据真收窄，替代不可证的复合条件反推）。
+      policy !== undefined
+        ? {
             title_zh: policy.titleZh,
             statement_zh: policy.statementZh,
             classification: policy.classification,
@@ -311,24 +313,26 @@ export async function runCatalogExplain(
             risk_at_least: "not_configured",
             technologies: "not_configured",
           }
-        : {
-            title_zh: archetype.titleZh,
-            statement_zh: archetype.summaryZh,
-            classification: archetype.layer,
-            lane: null,
-            condition: archetype.semantic.whenToUse,
-            enforcement: null,
-            lifecycle: null,
-            authority_owner: null,
-            lanes: null,
-            capabilities: null,
-            change_classes: null,
-            governance_profiles: null,
-            object_kinds: null,
-            applicability_note: null,
-            risk_at_least: "not_configured",
-            technologies: "not_configured",
-          },
+        : archetype === undefined
+          ? emptyMaterial()
+          : {
+              title_zh: archetype.titleZh,
+              statement_zh: archetype.summaryZh,
+              classification: archetype.layer,
+              lane: null,
+              condition: archetype.semantic.whenToUse,
+              enforcement: null,
+              lifecycle: null,
+              authority_owner: null,
+              lanes: null,
+              capabilities: null,
+              change_classes: null,
+              governance_profiles: null,
+              object_kinds: null,
+              applicability_note: null,
+              risk_at_least: "not_configured",
+              technologies: "not_configured",
+            },
   };
   const applicabilityLines =
     policy === undefined

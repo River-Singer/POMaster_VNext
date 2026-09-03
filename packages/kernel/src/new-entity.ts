@@ -132,13 +132,20 @@ export async function runNewEntityGate(
   }
 
   const truthIndex = await loadTruthIndex(store);
-  const knownIds = new Set(truthIndex.objects.map((object) => object.id));
+  // Set<string> 显式标注：本集合的消费形态是「未验证候选词形/别名 canonical 的成员测试」
+  // （词形文法归①grammar 位单独判卷，alias canonical 不保证过文法——id.ts resolveAlias
+  // 注记），非已验证 governed id 分母；显式 string 元素类型使判卷面类型为真
+  // （严格 tsc 清零——运行时同一 Set，零行为变更）。
+  const knownIds = new Set<string>(truthIndex.objects.map((object) => object.id));
   const archetypes = loadCatalogArchetypes(catalogRoot);
 
   const judgements: NewEntityJudgement[] = [];
   for (const candidate of input.candidates) {
-    const wordForm = (candidate?.wordForm ?? "").trim();
-    const need = (candidate?.need ?? "").trim() || wordForm;
+    // wordForm/need 显式 string 标注：上方 Array.isArray 守卫词形是 `arg is any[]`
+    // （TS 内建不可泛型化），对 readonly 候选数组做交叠窄化会把循环变量刷成 any、
+    // 放逐本段全部字段检查——本地显式标注收回类型面（运行时零变更）。
+    const wordForm: string = (candidate?.wordForm ?? "").trim();
+    const need: string = (candidate?.need ?? "").trim() || wordForm;
     if (wordForm.length === 0) {
       throw new GovernanceError(
         "SCHEMA_INVALID",

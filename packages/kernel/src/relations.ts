@@ -141,6 +141,12 @@ export interface RelationRegistrationInput {
   readonly sourceRef: string;
   readonly locator?: string;
   readonly observationRef?: string;
+  /**
+   * 不确定性注记（confidence=probable 必填——§148 披露位；其余置信级携带显式拒绝，
+   * 与 buildEntry 互斥封条一致）。本字段此前只存在于 buildEntry 运行时读取与接口
+   * 文档注记中、接口声明缺位（严格 tsc 清零补齐——纯声明增量，零运行时变更）。
+   */
+  readonly uncertaintyNote?: string;
   readonly declaredBy?: string;
   readonly note?: string;
 }
@@ -506,6 +512,9 @@ export function reverseDependents(
  * 从根端点出发沿反向依赖边（谁指向我）BFS，产出受影响对象集（去重、按 (depth, domain, id)
  * 确定性排序）。maxDepth 缺省 4（防御环：relations 装载面已禁自环三元组，环只可能经
  * 多跳形成——超深截断显式呈现 max_depth_reached，禁静默）。
+ * root 参数类型 = RelationEndpoint（已解析端点，domain 过词表）：返回值 ImpactClosure.root
+ * 即按 RelationEndpoint 契约回传——入参收窄后回传词表值词形为真（严格 tsc 清零；
+ * 调用方契约不变——既有调用点均传已解析端点字面量）。
  */
 export interface ImpactClosureNode {
   readonly endpoint: RelationEndpoint;
@@ -524,7 +533,7 @@ export interface ImpactClosure {
 
 export function impactClosure(
   entries: readonly RelationEntry[],
-  root: RelationEndpointInput,
+  root: RelationEndpoint,
   options?: { readonly maxDepth?: number },
 ): ImpactClosure {
   const maxDepth = options?.maxDepth ?? 4;

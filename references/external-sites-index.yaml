@@ -1,0 +1,402 @@
+# =============================================================================
+# POMaster_VNext 外部参照站点索引（External Sites Index · P-v06 收尾批次）
+#
+# 定位：AI 开发时的「眼睛」外部参照取用面——按 domain/theme 检索站点 → 用
+# WebSearch / chrome-devtools MCP（观测诊断面）或 playwright MCP 抓取核实，
+# 禁止凭训练数据推测（Owner 纪律：外部专有名词必须联网核实）。
+#
+# 数据源：任务 09-02-vnext-prd-v06-governed-substrate 的 research/ 四份核实报告
+# （external-design-references / frontend-state-references / backend-references /
+# runtime-references）的站点穷举——每条 site 必带 verified 实抓日期 + source_research
+# 归属；页级 URL 收在 pages（双向钉守卫：
+# tests/integration/external-sites-index.spec.ts——index 里的 URL 必须真实出现在
+# research 文件中、research 文件里的 URL 必须被 index 覆盖，防手补假条目）。
+#
+# 时效纪律：所有 verified 均为单时点实抓（2026-09-02/03），页面内容可能随后变动；
+# 后续取用应重新核实并更新 verified 日期，不沿用陈旧锚冒充新事实。
+# =============================================================================
+
+document_type: external-sites-index
+schema_version: 1
+usage_note: >-
+  AI 开发时的「眼睛」外部参照取用面：按 domain/theme 检索站点 → 用 WebSearch /
+  chrome-devtools MCP（观测诊断面）或 playwright MCP 抓取核实（禁止凭训练数据推测
+  ——Owner 纪律）；核实产物落任务 research/ 并带 URL+日期锚。aliases/多 URL 站点
+  合并为单条 site（URL 取主入口，页级 URL 进 pages）；verified 为单时点实抓日期，
+  过期引用须重新核实。
+
+sites:
+  # ── 设计参照（external-design-references.md，2026-09-02 实抓） ──
+  - name: Vercel Geist
+    url: https://vercel.com/geist
+    pages:
+      - https://vercel.com/font
+    domains: [design, frontend]
+    themes: [design-foundations, component-taxonomy, usage-rules, fail-closed-validator]
+    used_for: Foundations 现状（colors/typography/materials，无 spacing foundation）/70 组件清单/组件页示例驱动 IA/Button variant+state 词表/Best Practices 机器可核对要点（icon-only validator 抛错=fail-closed 先例）
+    verified: 2026-09-02
+    source_research: external-design-references.md
+  - name: Ant Design
+    url: https://ant.design/components/overview
+    pages:
+      - https://ant.design/components/table
+      - https://ant.design/components/form
+    domains: [design, frontend]
+    themes: [component-taxonomy, data-grid-capabilities, form-validation]
+    used_for: 组件六分类+Other（v6.6.2 实抓）/Table 能力词表（demo 锚点即能力目录：分页/排序/筛选/行选择/编辑/展开/固定/虚拟滚动）/Form 校验状态四值 success|warning|error|validating
+    verified: 2026-09-02
+    source_research: external-design-references.md
+  - name: Radix UI Primitives
+    url: https://www.radix-ui.com/primitives
+    pages:
+      - https://www.radix-ui.com/primitives/docs/overview/introduction
+      - https://www.radix-ui.com/primitives/docs/overview/accessibility
+      - https://www.radix-ui.com/primitives/docs/components/select
+      - https://www.radix-ui.com/primitives/docs/components/dialog
+    domains: [design, frontend]
+    themes: [anatomy-parts-vocabulary, wai-aria-pattern-binding, controlled-uncontrolled-convention, component-page-ia]
+    used_for: 30 primitives+5 utilities 清单/WAI-ARIA APG 跟随声明/组件页统一模板（Features→Reference Links→Anatomy→API→Accessibility→Keyboard）/Select 16 部件与 Dialog 8 部件 anatomy 词表/受控非受控成对命名
+    verified: 2026-09-02
+    source_research: external-design-references.md
+  - name: WAI-ARIA Authoring Practices (APG)
+    url: https://www.w3.org/WAI/ARIA/apg/patterns
+    pages:
+      - https://www.w3.org/WAI/ARIA/apg/patterns/combobox/
+      - https://www.w3.org/WAI/ARIA/apg/patterns/grid/
+      - https://www.w3.org/WAI/ARIA/apg/patterns/listbox
+      - https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal
+      - https://www.w3.org/TR/wai-aria-practices/examples/combobox/combobox-select-only.html
+    domains: [design, frontend, standards]
+    themes: [keyboard-interaction, aria-pattern, data-grid-contract, selection-follows-focus]
+    used_for: combobox 四 popup 形态与键盘交互全文/grid pattern 导航七键+选择四键+single_tab_stop/focus_managed_internally 结构性契约/各交互组件 archetype 的 aria_pattern 取值锚
+    verified: 2026-09-02
+    source_research: external-design-references.md
+  - name: Storybook
+    url: https://storybook.js.org/docs/api/csf
+    pages:
+      - https://storybook.js.org/docs/writing-tests/interaction-testing
+    domains: [design, frontend]
+    themes: [csf-format, interaction-testing, play-function, test-automation-channel]
+    used_for: CSF 3 现行标准（CSF Next Preview）/story 即组件状态载体/play function 交互测试（userEvent+expect 自 storybook/test）/Vitest addon 优先+test-runner fallback 的自动化通道现状
+    verified: 2026-09-02
+    source_research: external-design-references.md
+
+  # ── 前端状态/模型参照（frontend-state-references.md，2026-09-03 实抓） ──
+  - name: TanStack Query
+    url: https://tanstack.com/query/latest/docs/framework/react/overview
+    pages:
+      - https://tanstack.com/query/latest/docs/framework/react/guides/query-keys.md
+      - https://tanstack.com/query/latest/docs/framework/react/guides/queries.md
+      - https://tanstack.com/query/latest/docs/framework/react/guides/migrating-to-v5.md
+      - https://tanstack.com/query/latest/docs/framework/react/guides/important-defaults.md
+      - https://tanstack.com/query/latest/docs/framework/react/guides/query-invalidation.md
+      - https://tanstack.com/query/latest/docs/framework/react/guides/filters.md
+      - https://tanstack.com/query/latest/docs/framework/react/guides/optimistic-updates.md
+      - https://tanstack.com/query/latest/docs/framework/react/guides/mutations.md
+    domains: [frontend]
+    themes: [server-state, status-fetchstatus-dual-axis, optimistic-update-chain, query-key-identity, stale-time-semantics]
+    used_for: SERVER_QUERY/BACKGROUND_REFRESH/OPTIMISTIC_MUTATION archetype 词表锚（v5 双轴 status×fetchStatus/isPending≠isFetching≠isLoading/staleTime static/invalidateQueries 语义/乐观更新 onMutate 链序 cancel→snapshot→write→rollback→invalidate）
+    verified: 2026-09-03
+    source_research: frontend-state-references.md
+  - name: npm Registry
+    url: https://registry.npmjs.org
+    domains: [frontend, backend, cross-cutting]
+    themes: [package-version-verification, dist-tags]
+    used_for: 包版本位核实通道（dist-tags latest——@tanstack/react-query 5.102.8 / nuqs 2.10.1 / xstate 5.32.6 均经此锚定；版本号进 provenance 不硬编码）
+    verified: 2026-09-03
+    source_research: frontend-state-references.md
+  - name: Next.js Docs
+    url: https://nextjs.org/docs/app/api-reference/functions/use-search-params.md
+    pages:
+      - https://nextjs.org/docs/app/api-reference/file-conventions/page.md
+    domains: [frontend]
+    themes: [url-as-state, search-params, server-client-contract]
+    used_for: URL_FILTER archetype 双端契约锚（useSearchParams 只读 Client Component+Suspense 约束/Page searchParams Promise 异步形态——server 侧 await/use()）
+    verified: 2026-09-03
+    source_research: frontend-state-references.md
+  - name: nuqs
+    url: https://github.com/47ng/nuqs
+    domains: [frontend]
+    themes: [url-as-state, type-safe-search-params, adapters]
+    used_for: URL_FILTER 参照实现（the URL is the source of truth；parsers/useQueryStates/history replace|push/shallow 默认/adapters 矩阵——Next/Remix/React Router/TanStack Router）
+    verified: 2026-09-03
+    source_research: frontend-state-references.md
+  - name: XState / Stately
+    url: https://stately.ai/docs/xstate
+    pages:
+      - https://stately.ai/docs/states
+      - https://stately.ai/docs/transitions
+      - https://stately.ai/docs/guards
+      - https://stately.ai/docs/actors
+      - https://stately.ai/docs/input
+      - https://stately.ai/docs/output
+      - https://stately.ai/docs/xstate-react
+    domains: [frontend]
+    themes: [state-machine-vocabulary, guarded-transition, actor-model, input-output-contract]
+    used_for: ASYNC_COMMAND/WIZARD archetype 词表锚（state/event/transition/guard/actor/input/output 官方定义；no enabled transition→state unchanged（无 illegal transition 词形——词形漂移锚）；targeted self-transition 重置子状态坑位）
+    verified: 2026-09-03
+    source_research: frontend-state-references.md
+  - name: WHATWG Fetch Standard
+    url: https://fetch.spec.whatwg.org/
+    domains: [frontend, standards]
+    themes: [network-error-definition, fetch-rejection-semantics]
+    used_for: 错误分类规范层锚（network error 权威定义 type=error status=0/fetch 网络失败 reject TypeError——原生信号只够 TRANSPORT/HTTP 两分的结构性事实）
+    verified: 2026-09-03
+    source_research: frontend-state-references.md
+  - name: MDN Web Docs
+    url: https://developer.mozilla.org/en-US/docs/Web/API/Window/fetch
+    domains: [frontend]
+    themes: [fetch-rejection-semantics, http-status-not-reject]
+    used_for: fetch 不因 HTTP 错误状态 reject 的权威表述（Response.ok/status 自查——错误映射链责任在 client 适配层的佐证锚）
+    verified: 2026-09-03
+    source_research: frontend-state-references.md
+  - name: RFC 9457 Problem Details
+    url: https://www.rfc-editor.org/rfc/rfc9457.html
+    pages:
+      - https://www.rfc-editor.org/rfc/rfc9457.txt
+    domains: [frontend, backend, standards]
+    themes: [api-error-envelope, problem-details-extensions, about-blank]
+    used_for: API Error archetype 五成员逐字锚（type/status/title/detail/instance）+ Extension Members 机制（code/trace_id/field_errors 定位为 extensions）/UNKNOWN 分型与 about:blank 同构/已取代 RFC 7807
+    verified: 2026-09-03
+    source_research: frontend-state-references.md
+  - name: axios
+    url: https://axios-http.com/docs/handling_errors
+    pages:
+      - https://axios.rest/pages/advanced/error-handling
+    domains: [frontend]
+    themes: [http-client-error-codes, timeout-vs-abort]
+    used_for: HTTP client 错误码词表锚（ERR_NETWORK/ECONNABORTED/ETIMEDOUT 需 clarifyTimeoutError 才分离/ERR_CANCELED 独立取消码——CANCELED 分型建议的三源共识之一）
+    verified: 2026-09-03
+    source_research: frontend-state-references.md
+  - name: ofetch
+    url: https://github.com/unjs/ofetch
+    domains: [frontend]
+    themes: [retry-status-codes, fetch-error-envelope]
+    used_for: retry 行业分歧锚（默认 retryStatusCodes 含 409/429 vs 业务语义/POST 默认不重试/error.data 信封——429 归属显式裁定的依据）
+    verified: 2026-09-03
+    source_research: frontend-state-references.md
+  - name: Feature-Sliced Design
+    url: https://feature-sliced.design/
+    pages:
+      - https://feature-sliced.design/docs/llms
+      - https://feature-sliced.design/docs/reference/layers
+      - https://feature-sliced.design/docs/reference/public-api
+    domains: [frontend]
+    themes: [layer-architecture, import-rule, public-api-gate, fsd-lint-steiger]
+    used_for: FRONTEND_ARCHETYPE.FEATURE_ORIENTED 层词表锚（7 层现行词形 Processes deprecated→有效 6 层/严格向下 import rule+App/Shared 例外/Public API=contract+gate 禁 wildcard/@x 交叉引用/Steiger lint）
+    verified: 2026-09-03
+    source_research: frontend-state-references.md
+
+  # ── 后端/数据参照（backend-references.md，2026-09-03 实抓） ──
+  - name: Spring
+    url: https://spring.io/projects/spring-framework
+    pages:
+      - https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/annotations.html
+      - https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/rolling-back.html
+      - https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/tx-propagation.html
+      - https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/transaction/annotation/Propagation.html
+      - https://docs.spring.io/spring-boot/reference/features/profiles.html
+    domains: [backend]
+    themes: [transaction-semantics, propagation-vocabulary, rollback-rules, spring-profiles]
+    used_for: TRANSACTIONAL_WRITE archetype 默认值锚（@Transactional 默认 REQUIRED/ISOLATION_DEFAULT/RuntimeException|Error 回滚 checked 不回滚/七传播官方词形/REQUIRES_NEW 连接池警示/rollbackFor 全限定名/Boot profiles 机制词形——环境奇联维度）
+    verified: 2026-09-03
+    source_research: backend-references.md
+  - name: Spring Modulith
+    url: https://spring.io/projects/spring-modulith
+    pages:
+      - https://docs.spring.io/spring-modulith/reference/events.html
+    domains: [backend]
+    themes: [transactional-outbox, event-publication-registry, module-verification]
+    used_for: OUTBOX_EVENT archetype 参照实现锚（Event Publication Registry 与业务同事务落库/五态生命周期 PUBLISHED|PROCESSING|COMPLETED|FAILED|RESUBMITTED/staleness monitor/resubmit API/外置基础设施 kafka|amqp|jms|messaging）
+    verified: 2026-09-03
+    source_research: backend-references.md
+  - name: Maven Central
+    url: https://repo1.maven.org/maven2/
+    domains: [backend, cross-cutting]
+    themes: [package-version-verification, maven-metadata]
+    used_for: JVM 组件版本位核实通道（maven-metadata.xml 官方权威——Spring 7.0.9/ShedLock 7.9.0/Quartz 2.5.2/JobRunr 8.8.2/Resilience4j 2.4.0 均经此锚定）
+    verified: 2026-09-03
+    source_research: backend-references.md
+  - name: Debezium
+    url: https://debezium.io/documentation/reference/stable/transformations/outbox-event-router.html
+    domains: [backend]
+    themes: [cdc-outbox, outbox-table-shape, event-routing]
+    used_for: OUTBOX_EVENT 默认表列形锚（id/aggregatetype/aggregateid/type/payload 五列）/route.by.field 路由/CDC 与应用内 relay 的适用边界对照
+    verified: 2026-09-03
+    source_research: backend-references.md
+  - name: IETF Datatracker
+    url: https://datatracker.ietf.org/doc/draft-ietf-httpapi-idempotency-key-header/
+    pages:
+      - https://datatracker.ietf.org/wg/httpapi/documents/
+      - https://datatracker.ietf.org/doc/html/draft-ietf-httpapi-idempotency-key-header-07
+      - https://datatracker.ietf.org/doc/draft-ietf-httpapi-idempotency-key-resources/
+    domains: [backend, standards]
+    themes: [idempotency-key, httpapi-wg, draft-status-verification]
+    used_for: IDEMPOTENT_COMMAND 标准状态锚（真实 draft 名=key-header -07 已 Expired 非 RFC——引用纪律锚/key 唯一性 MUST/指纹方案/400|409|422 错误语义/key-resources 404=证伪锚防幽灵引用）
+    verified: 2026-09-03
+    source_research: backend-references.md
+  - name: Stripe Docs
+    url: https://docs.stripe.com/api/idempotent_requests
+    pages:
+      - https://docs.stripe.com/pagination
+    domains: [backend]
+    themes: [idempotency-practice, cursor-pagination]
+    used_for: IDEMPOTENT_COMMAND 实践锚（保存首次结果 status+body 含 500/255 字符上限/24h 保留窗口/重放参数比对）+PAGINATION 实践锚（data[]+has_more/starting_after|ending_before 对象 ID cursor=按稳定序 KEYSET）
+    verified: 2026-09-03
+    source_research: backend-references.md
+  - name: Smithy (AWS)
+    url: https://smithy.io/2.0/spec/behavior-traits.html
+    domains: [backend, standards]
+    themes: [idempotency-token-trait, retry-safety-baseline]
+    used_for: IDEMPOTENT_COMMAND trait 层锚（idempotencyToken trait 识别并丢弃重放/服务端 MUST 定义防重放窗口/未标 trait 操作 SHOULD 视为不可安全重试）
+    verified: 2026-09-03
+    source_research: backend-references.md
+  - name: GraphQL Relay Connections
+    url: https://relay.dev/graphql/connections.htm
+    domains: [backend, frontend, standards]
+    themes: [cursor-pagination, edges-pageinfo-shape]
+    used_for: PAGINATION CURSOR 模式规范锚（edges+pageInfo 必备字段/first|after 与 last|before/cursor 为 opaque string/PageInfo hasNextPage|hasPreviousPage）
+    verified: 2026-09-03
+    source_research: backend-references.md
+  - name: Microsoft API Guidelines (Azure)
+    url: https://github.com/microsoft/api-guidelines/blob/vNext/Guidelines.md
+    pages:
+      - https://raw.githubusercontent.com/microsoft/api-guidelines/vNext/azure/Guidelines.md
+    domains: [backend, standards]
+    themes: [server-driven-pagination, nextlink-continuation, api-guideline-deprecation]
+    used_for: PAGINATION 服务端驱动锚（value[]+nextLink absolute opaque/末页不返回 null nextLink/不返回全量 count/跨页 skip|dup 必须文档声明）+原单一 REST Guidelines 已 deprecated 分拆 Azure/Graph 两册的现行状态锚
+    verified: 2026-09-03
+    source_research: backend-references.md
+  - name: ShedLock
+    url: https://github.com/lukas-krecan/ShedLock
+    domains: [backend]
+    themes: [distributed-lock, at-most-once-skip-semantics]
+    used_for: SCHEDULED_JOB 分布式锁词形锚（lockAtMostFor 须远大于正常执行时长/lockAtLeastFor 短任务防重/skip 语义不排队补跑/it's just a lock 职责边界——锁≠调度器）
+    verified: 2026-09-03
+    source_research: backend-references.md
+  - name: Quartz Scheduler
+    url: https://www.quartz-scheduler.org/documentation/quartz-2.5.x/configuration/ConfigJDBCJobStoreClustering.html
+    domains: [backend]
+    themes: [clustered-scheduling, jdbc-jobstore]
+    used_for: SCHEDULED_JOB 集群调度锚（集群仅 JDBC-JobStore/同触发仅一节点执行/requests recovery fail-over/超 3 节点性能退化警示）
+    verified: 2026-09-03
+    source_research: backend-references.md
+  - name: JobRunr
+    url: https://www.jobrunr.io/en/documentation/
+    domains: [backend]
+    themes: [background-job-queue, atomic-claim, exponential-backoff-retry]
+    used_for: SCHEDULED_JOB 持久化任务队列锚（fire-and-forget/delayed/recurring 三形态/StorageProvider DB 真相源/atomic claim 同任务不重复处理/RetryFilter 指数退避）
+    verified: 2026-09-03
+    source_research: backend-references.md
+  - name: Resilience4j
+    url: https://resilience4j.readme.io/docs/circuitbreaker
+    pages:
+      - https://resilience4j.readme.io/docs/retry
+      - https://resilience4j.readme.io/docs/ratelimiter
+      - https://resilience4j.readme.io/docs/bulkhead
+      - https://resilience4j.readme.io/docs/timeout
+      - https://github.com/resilience4j/resilience4j/releases
+    domains: [backend]
+    themes: [circuit-breaker, retry-defaults, bulkhead, rate-limiter, timelimiter]
+    used_for: EXTERNAL_INTEGRATION 五件默认值锚（CB failureRate 50%/窗口 100/minCalls 100/open 60s/half-open 10；Retry maxAttempts 3 固定 500ms；Bulkhead 25；TimeLimiter 1s）+Golden Rule 每远端服务独立实例+版本位（releases 通道）
+    verified: 2026-09-03
+    source_research: backend-references.md
+  - name: GDPR (gdpr-info.eu)
+    url: https://gdpr-info.eu/art-17-gdpr/
+    domains: [backend, standards]
+    themes: [right-to-erasure, soft-delete-boundary]
+    used_for: 软删除边界规范锚（第 17 条被遗忘权——涉个人数据 soft delete 只能是中间态、必须存在最终硬擦除路径与到期清理）
+    verified: 2026-09-03
+    source_research: backend-references.md
+  - name: Microsoft Learn
+    url: https://learn.microsoft.com/en-us/power-platform/admin/restore-deleted-table-records
+    pages:
+      - https://learn.microsoft.com/en-us/sql/relational-databases/hierarchical-data-sql-server
+    domains: [backend]
+    themes: [soft-delete-retention-window, hierarchyid-native-type]
+    used_for: 软删除平台级保留窗口量级锚（Dataverse 1-30 天可配）+层级建模 DB 原生类型锚（SQL Server hierarchyid=materialized path 原生实现、子树查询更快/移动更慢的官方对比）
+    verified: 2026-09-03
+    source_research: backend-references.md
+  - name: django-treebeard
+    url: https://django-treebeard.readthedocs.io/en/latest/choosing.html
+    domains: [backend]
+    themes: [hierarchy-modeling, adjacency-vs-materialized-path]
+    used_for: HIERARCHY 层级建模选型佐证锚（同一 API 四实现对照：AL 写快读慢/MP 最常用/NS 读快写贵/PG Ltree experimental+基准表——CLOSURE_TABLE 无官方背书只作 community 级）
+    verified: 2026-09-03
+    source_research: backend-references.md
+  - name: PostgreSQL Docs
+    url: https://www.postgresql.org/docs/current/queries-with.html
+    domains: [backend]
+    themes: [recursive-cte, adjacency-list-traversal]
+    used_for: ADJACENCY_LIST 标准读法锚（WITH RECURSIVE 处理层级数据=官方一等公民；PG 14+ SEARCH/CYCLE 子句深度广度排序与环防护）
+    verified: 2026-09-03
+    source_research: backend-references.md
+
+  # ── Runtime/可观测参照（runtime-references.md，2026-09-03 实抓） ──
+  - name: OpenTelemetry
+    url: https://opentelemetry.io/docs/specs/semconv/
+    pages:
+      - https://opentelemetry.io/docs/specs/semconv/registry/
+      - https://opentelemetry.io/docs/specs/semconv/registry/entities/index.md
+      - https://opentelemetry.io/docs/specs/semconv/registry/attributes/service/index.md
+      - https://opentelemetry.io/docs/specs/semconv/registry/attributes/deployment/
+      - https://opentelemetry.io/docs/specs/semconv/registry/attributes/feature-flag/index.md
+      - https://opentelemetry.io/docs/specs/semconv/http/index.md
+      - https://opentelemetry.io/docs/specs/otel/document-status/
+      - https://opentelemetry.io/docs/specs/otel/schemas/
+      - https://opentelemetry.io/docs/specs/otel/versioning-and-stability/
+      - https://opentelemetry.io/schemas/1.44.0
+      - https://api.github.com/repos/open-telemetry/semantic-conventions/releases/latest
+      - https://api.github.com/repos/open-telemetry/opentelemetry-collector/releases/latest
+      - https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/README.md
+      - https://raw.githubusercontent.com/open-telemetry/opentelemetry-collector/main/README.md
+      - https://raw.githubusercontent.com/open-telemetry/opentelemetry-collector/main/docs/component-stability.md
+    domains: [runtime, observability]
+    themes: [semantic-conventions, resource-attributes, deployment-environment-name, maturity-tracks, llms-txt-machine-view]
+    used_for: SENSOR.OTEL 词形锚表（service.name/namespace/instance.id/version Stable；deployment.environment.name Stable+旧词形 deprecated 映射/feature_flag.* RC/信号域 Status Mixed|RC|Development 分级/成熟度双层框架/schema_url 锚/GitHub release+raw README 为版本位核实通道/官方 llms.txt+每页 index.md 机器视图可直接采集）
+    verified: 2026-09-03
+    source_research: runtime-references.md
+  - name: 12factor (The Twelve-Factor App)
+    url: https://12factor.net/dev-prod-parity
+    domains: [runtime, standards]
+    themes: [dev-prod-parity, backing-service-parity]
+    used_for: ENVIRONMENT_PARITY 原则源头锚（dev/staging/prod 尽可能一致/time|personnel|tools 三 gap/backing services 禁 dev-prod 异构——Dependency|External Integration 维度仅原则无单点工具的自我定义依据）
+    verified: 2026-09-03
+    source_research: runtime-references.md
+  - name: Kustomize
+    url: https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/README.md
+    domains: [runtime]
+    themes: [config-layering, base-overlay, template-free-customization]
+    used_for: 环境配置分层锚（customize raw template-free YAML/base+overlay 叠加/kubectl 内嵌/configMapGenerator 环境配置生成——Config 维度事实源）
+    verified: 2026-09-03
+    source_research: runtime-references.md
+  - name: Kubernetes Docs (kubectl)
+    url: https://kubernetes.io/docs/reference/kubectl/generated/kubectl_diff/
+    domains: [runtime]
+    themes: [drift-detection, diff-exit-code-contract]
+    used_for: CONFIG 维度漂移比对锚（kubectl diff live vs would-be applied/退出码 0|1|>1 CI 可判/server-side apply 机制）
+    verified: 2026-09-03
+    source_research: runtime-references.md
+  - name: Argo CD
+    url: https://argo-cd.readthedocs.io/en/stable/user-guide/diffing/
+    domains: [runtime]
+    themes: [gitops-drift, out-of-sync, ignore-differences-noise-governance]
+    used_for: GitOps 持续漂移检测锚（OutOfSync 状态/漂移噪声四来源 mutating webhook|HPA 重排|随机模板|未知字段/ignoreDifferences 三机制=ignore_rules 概念的实证原型）
+    verified: 2026-09-03
+    source_research: runtime-references.md
+  - name: OpenFeature
+    url: https://openfeature.dev/
+    domains: [runtime, frontend]
+    themes: [feature-flag-standard, vendor-agnostic-sdk]
+    used_for: Feature Flag 标准层锚（vendor-agnostic 开放规范/CNCF incubating/One SDK any backend——只声明求值语义锚，生命周期卫生项保持 self-defined）
+    verified: 2026-09-03
+    source_research: runtime-references.md
+  - name: Liquibase
+    url: https://docs.liquibase.com/secure/user-guide-5-2-2/what-is-drift-detection
+    pages:
+      - https://docs.liquibase.com/sitemap/0.xml
+    domains: [runtime, backend]
+    themes: [db-schema-drift, drift-report, changelog-diff]
+    used_for: DB Schema 漂移检测锚（期望态 vs 实际态比对/diff 与 diff-changelog 命令/Drift Report 商业版边界/sitemap 分册结构证据——Flyway 侧未核实勿引用）
+    verified: 2026-09-03
+    source_research: runtime-references.md
