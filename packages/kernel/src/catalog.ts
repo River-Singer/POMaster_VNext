@@ -11,6 +11,16 @@
  * 本模块只读 catalog/、零写入、零治理事实；catalog 条目永不进 truth-index，lock 漂移
  * 永不阻断消费（D24 哈希伦理：write_blocking=false，失配 → WARN 呈现 + auto-regen hint）。
  *
+ * 完整性三层（P-v06 批次 2.5 成文）——哈希校验的是 pomaster 自身资产与治理状态的
+ * 「未被静默篡改」，不是项目过程文档的写作流程：
+ * 1) 工具自身资产（catalog/ 受控五节）= hash 强呈现：catalog status 漂移 exit 1
+ *    （体检命令异常显性，Owner 裁决 2026-09-03）+ `pomaster catalog relock` 恢复键
+ *    （幂等重算 sha256 是 D24 工具侧动作非治理事实——无授权闸、零时戳、字节幂等）；
+ * 2) 项目治理产物（.pomaster/**）= D24 只报不拦：reconcile content_drift 呈现，
+ *    写作流程不禁（Project Truth 的修正走治理面显式事务，不靠哈希闸拦写作）；
+ * 3) 词表/schema = VOCAB_MISMATCH FATAL：closed-world 根不属「项目文档」，词形外
+ *    值显式爆（本模块五节 loader 的词表闸同根）。
+ *
  * catalog-lock（read-side 指纹，D24 / x-digest-ethics）对账口径：
  * - content_sha256 = sha256(文件 utf-8 字节)——materialize_catalog_pilot.py /
  *   materialize_batch4_uplift.py 的写入口径，本模块按同一算法对账：漂移当且仅当
@@ -103,7 +113,8 @@ export interface CatalogLockVerification {
   readonly drifts: readonly CatalogLockDrift[];
 }
 
-const LOCK_FILE_NAME = "catalog-lock.draft.json";
+/** lock 文件名（kernel 读取位与 CLI relock 落盘位共用同一单点常量）。 */
+export const LOCK_FILE_NAME = "catalog-lock.draft.json";
 
 // ============================================================
 // 定位与读取
@@ -162,7 +173,7 @@ export function readCatalogLock(catalogRoot: string): CatalogLockDocument {
     throw new GovernanceError(
       "NOT_CONFIGURED",
       `catalog-lock 缺失: ${LOCK_FILE_NAME}`,
-      "catalog-lock 是 catalog 物料的 read-side 指纹（D24）；先跑 catalog/tools/materialize_*.py 物化并重锁。",
+      "catalog-lock 是 catalog 物料的 read-side 指纹（D24）；恢复键 = pomaster catalog relock 幂等重锁（lock 缺失形态 relock 拒绝初始化——需先重跑 catalog/tools/materialize_*.py 物化重生成）。",
       { lockPath },
     );
   }
@@ -173,7 +184,7 @@ export function readCatalogLock(catalogRoot: string): CatalogLockDocument {
     throw new GovernanceError(
       "SCHEMA_INVALID",
       `catalog-lock 不可解析（JSON 坏形）: ${LOCK_FILE_NAME}`,
-      "catalog-lock 被手改坏：重跑 catalog/tools/materialize_*.py 幂等重生成。",
+      "catalog-lock 被手改坏：恢复键 = pomaster catalog relock（幂等重锁要求完整 lock——本坏形形态先恢复原字节或重跑 catalog/tools/materialize_*.py 幂等重生成）。",
       { lockPath, cause: String(error) },
     );
   }
@@ -274,7 +285,7 @@ export function verifyCatalogLock(
       drifts.push({
         kind: "content_drift",
         path: entry.path,
-        detail: `物料被改而 lock 未重锁：期望 ${entry.content_sha256}，实算 ${actual}（id=${entry.id}；重跑 catalog/tools/materialize_*.py 幂等重锁）`,
+        detail: `物料被改而 lock 未重锁：期望 ${entry.content_sha256}，实算 ${actual}（id=${entry.id}；恢复键 = pomaster catalog relock 幂等重锁，或重跑 catalog/tools/materialize_*.py）`,
       });
     }
     if (!document.controlled_children.allowed.includes(entry.path)) {
@@ -318,6 +329,168 @@ export function verifyCatalogLock(
 
   drifts.sort((a, b) => (a.path === b.path ? (a.kind < b.kind ? -1 : 1) : a.path < b.path ? -1 : 1));
   return { ok: drifts.length === 0, entries_checked: document.entries.length, drifts };
+}
+
+// ============================================================
+// catalog-lock 重锁计算（relock：CLI 恢复键的判卷权威；P-v06 批次 2.5）
+// ============================================================
+
+/**
+ * relock 幂等注记（追加进 generated_by；已含则不重复）。
+ * 幂等重锁不含时戳（A4 禁墙钟）——同物料两次 relock 的 next 字节全等。
+ */
+export const CATALOG_RELOCK_GENERATED_BY_NOTE =
+  "pomaster catalog relock（CLI 恢复键；幂等重锁不含时戳——A4）";
+
+/**
+ * relock 重建的 lock 文档：CatalogLockDocument 的机器字段（除 file——它是
+ * readCatalogLock 的派生标签，落盘形态无此键）+ 原样保留的 lock 扩展键
+ * （generated_by / x-digest-ethics / note 等，索引签名承载；键序沿原 lock 文件）。
+ * CLI 落盘直接 JSON.stringify 本对象——扩展键保真是 relock 的硬约束（只重建
+ * controlled_children/entries/generated_by 三键，其余键原样透传）。
+ */
+export interface CatalogRelockNextDocument {
+  readonly catalog_version: string;
+  readonly profile: string;
+  readonly controlled_children: {
+    readonly allowed: readonly string[];
+    readonly required: readonly string[];
+  };
+  readonly entries: readonly CatalogLockEntry[];
+  /** producer 注记位（原值 + CATALOG_RELOCK_GENERATED_BY_NOTE 幂等追加）。 */
+  readonly generated_by?: string;
+  /** 其余扩展键原样保留（x-digest-ethics / note / 未来扩展——键序沿原文件）。 */
+  readonly [key: string]: unknown;
+}
+
+export interface CatalogRelockReport {
+  readonly previous: CatalogLockDocument;
+  readonly next: CatalogRelockNextDocument;
+  /** 新增物料路径（扫描有、previous 无；字典序）。 */
+  readonly added: readonly string[];
+  /** 消失物料路径（previous 有、扫描无；字典序）。 */
+  readonly removed: readonly string[];
+  /** 哈希刷新路径（两侧都在、content_sha256 变化；字典序）。 */
+  readonly refreshed: readonly string[];
+}
+
+/**
+ * catalog-lock 重锁计算（`pomaster catalog relock` 的判卷权威；纯计算零写盘——
+ * 返回 next 内容，落盘归 CLI 层，分层纪律同 status/explain）。
+ *
+ * 重建口径（与 verifyCatalogLock / materialize producer 同一算法）：
+ * - 扫描 CATALOG_SECTIONS 五节全部 *.json：逐文件读 id（缺失/非字符串 → SCHEMA_INVALID
+ *   fail-closed——坏物料 ≠ 可重锁，禁静默跳过）+ content_sha256 = sha256OfUtf8(文件字节)；
+ * - entries = 全部扫描条目按 id 排序（path = `<section>/<file>`；source_ref 沿用
+ *   previous 同路径条目——provenance 是人类可维护的登记位，relock 不重写历史；
+ *   全新条目 = `package://catalog/<path>` 确定性缺省）；id 跨节重复 → SCHEMA_INVALID
+ *   （身份面禁重复，loadCatalogSensors 同法）；
+ * - controlled_children.allowed = required = 全部扫描路径排序（加删文件后三方
+ *   entries/allowed/required 自动对齐）；
+ * - catalog_version / profile / x-digest-ethics / note 等扩展键原样保留（原键序）；
+ * - generated_by 幂等追加 CATALOG_RELOCK_GENERATED_BY_NOTE（已含则不重复；
+ *   缺席则置为注记；非字符串 → SCHEMA_INVALID）。
+ *
+ * 边界 fail-closed：lock 缺失/坏形 → 透传 readCatalogLock 的 NOT_CONFIGURED /
+ * SCHEMA_INVALID（relock 不是初始化工具，禁从零造账）。幂等：同物料两次 relock
+ * 的 next 字节全等（无时戳——A4；generated_by 注记只追加一次）。
+ */
+export function relockCatalog(catalogRoot: string): CatalogRelockReport {
+  const previous = readCatalogLock(catalogRoot);
+  const previousByPath = new Map(previous.entries.map((entry) => [entry.path, entry]));
+
+  const scannedEntries: CatalogLockEntry[] = [];
+  const scannedPaths: string[] = [];
+  const seenIds = new Set<string>();
+  for (const section of CATALOG_SECTIONS) {
+    const dir = join(catalogRoot, section);
+    if (!existsSync(dir)) continue;
+    for (const fileName of readdirSync(dir).filter((name) => name.endsWith(".json")).sort()) {
+      const path = `${section}/${fileName}`;
+      const raw = readFileSync(join(dir, fileName), "utf8");
+      let body: UnknownRecord;
+      try {
+        body = asRecord(JSON.parse(raw));
+      } catch (error) {
+        throw new GovernanceError(
+          "SCHEMA_INVALID",
+          `catalog 物料不可解析（relock 无法重锁坏形物料）: ${path}`,
+          "物料 JSON 坏形先恢复原字节（Git）或重跑 catalog/tools/materialize_*.py；relock 只重锁可解析物料。",
+          { file: path, cause: String(error) },
+        );
+      }
+      const id = body["id"];
+      if (typeof id !== "string" || id.length === 0) {
+        throw new GovernanceError(
+          "SCHEMA_INVALID",
+          `catalog 物料缺 id 字段（relock 以物料 id 重建 entries）: ${path}`,
+          "id 是 catalog 物料身份字段（五节物料统一要求）；对照同目录在册条目修复。",
+          { file: path },
+        );
+      }
+      if (seenIds.has(id)) {
+        throw new GovernanceError(
+          "SCHEMA_INVALID",
+          `catalog 物料 id 跨节重复（身份面禁重复）: ${id}`,
+          "id 是 lock entries 的身份分母；重复说明物料管理失序，删除或合并重复文件。",
+          { file: path, id },
+        );
+      }
+      seenIds.add(id);
+      scannedPaths.push(path);
+      scannedEntries.push({
+        id,
+        path,
+        content_sha256: sha256OfUtf8(raw),
+        source_ref: previousByPath.get(path)?.source_ref ?? `package://catalog/${path}`,
+      });
+    }
+  }
+  scannedEntries.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  scannedPaths.sort();
+
+  const scannedPathSet = new Set(scannedPaths);
+  const added = scannedPaths.filter((path) => !previousByPath.has(path));
+  const removed = [...new Set(previous.entries.map((entry) => entry.path))]
+    .filter((path) => !scannedPathSet.has(path))
+    .sort();
+  // refreshed 分母 = 两侧都在（added 路径 previous 无 entry——undefined !== hash 恒真，
+  // 不设 has 位会把新增物料重复计入 refreshed；与 doc 注记「两侧都在」对齐）。
+  const refreshed = scannedEntries
+    .filter(
+      (entry) =>
+        previousByPath.has(entry.path) &&
+        previousByPath.get(entry.path)?.content_sha256 !== entry.content_sha256,
+    )
+    .map((entry) => entry.path);
+
+  // 原样保留扩展键：只重建 controlled_children/entries/generated_by 三键，其余键
+  // 原值原键序透传（Object.assign 保序——原键在前、新增键按覆盖序追加在后）。
+  const lockPath = join(catalogRoot, LOCK_FILE_NAME);
+  const rawLock = JSON.parse(readFileSync(lockPath, "utf8")) as UnknownRecord;
+  const rawGeneratedBy = rawLock["generated_by"];
+  if (rawGeneratedBy !== undefined && typeof rawGeneratedBy !== "string") {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      `catalog-lock generated_by 形状非法（须字符串或缺席）: ${LOCK_FILE_NAME}`,
+      "generated_by 是 lock 的 producer 注记位；坏形先恢复原字节再重锁。",
+      { lockPath },
+    );
+  }
+  const generatedBy =
+    typeof rawGeneratedBy === "string"
+      ? rawGeneratedBy.includes(CATALOG_RELOCK_GENERATED_BY_NOTE)
+        ? rawGeneratedBy
+        : `${rawGeneratedBy} + ${CATALOG_RELOCK_GENERATED_BY_NOTE}`
+      : CATALOG_RELOCK_GENERATED_BY_NOTE;
+
+  const next = Object.assign({}, rawLock, {
+    controlled_children: { allowed: scannedPaths, required: [...scannedPaths] },
+    entries: scannedEntries,
+    generated_by: generatedBy,
+  }) as CatalogRelockNextDocument;
+
+  return { previous, next, added, removed, refreshed };
 }
 
 // ============================================================

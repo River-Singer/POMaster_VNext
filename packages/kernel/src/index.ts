@@ -1191,7 +1191,9 @@ export type { StorePaths } from "./paths.js";
 // ============================================================
 // 只读消费 catalog/ 物料与 catalog-lock（§92.2：策展源非第二真相；D24 哈希伦理
 // write_blocking=false——lock 漂移 WARN 呈现，永不阻断）。消费方：projection 通道
-// （context compile 的 catalog 分区）与 CLI catalog status/explain（§44.10）。
+// （context compile 的 catalog 分区）与 CLI catalog status/explain/relock（§44.10；
+// relock = P-v06 批次 2.5 漂移恢复键——kernel 纯计算返回 next，落盘归 CLI 层，
+// 本 barrel 仍无任何写 catalog/ 的函数）。
 export {
   catalogRootCandidates,
   loadCatalogPolicies,
@@ -1199,9 +1201,12 @@ export {
   loadCatalogSensors,
   loadCatalogTools,
   readCatalogLock,
+  relockCatalog,
   resolveCatalogRoot,
   sha256OfUtf8,
   verifyCatalogLock,
+  CATALOG_RELOCK_GENERATED_BY_NOTE,
+  LOCK_FILE_NAME,
   OBSERVATION_SURFACE_VALUES,
   SENSOR_ID_PATTERN,
   SENSOR_SIDE_EFFECT_CLASS_VALUES,
@@ -1216,6 +1221,8 @@ export type {
   CatalogLockVerification,
   CatalogPolicyMaterial,
   CatalogProjectionPresetMaterial,
+  CatalogRelockNextDocument,
+  CatalogRelockReport,
   CatalogSensorMaterial,
   CatalogToolMaterial,
   ObservationSurfaceValue,

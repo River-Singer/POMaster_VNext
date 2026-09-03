@@ -9,6 +9,8 @@
  *    sha256(utf-8 字节) 与对账端同源；entries 分母 123（policies 79/gates 6/knowledge 10/sensors 6/archetypes 22——P1-5 sensors 六条目 + P-v06 批次 1 archetypes 十条目与 GATE.NEW_ENTITY.CHECKS 登记 + P-v06 批次 2 archetypes 十二条目）。
  * 3) 漂移检出：临时 catalog 副本构造 content_drift / missing / unexpected_file /
  *    lock 缺失 → 显式检出（「catalog 物料被改而 lock 未重锁」的事故通道封死）。
+ * 4) 重锁计算（P-v06 批次 2.5）：relockCatalog 纯计算零写盘——漂移重算/幂等注记/
+ *    扩展键保真/fail-closed 边界（临时副本上验证，repo 实物零触碰）。
  *
  * §92.2 边界注记：本模块只读 catalog/（策展源，非第二套 Project Truth）；漂移检出
  * 不修复不阻断消费（D24 write_blocking=false），修复动作 = producer 工具重锁。
@@ -19,11 +21,13 @@ import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
+  CATALOG_RELOCK_GENERATED_BY_NOTE,
   catalogRootCandidates,
   loadCatalogPolicies,
   loadCatalogProjectionPresets,
   loadCatalogTools,
   readCatalogLock,
+  relockCatalog,
   resolveCatalogRoot,
   sha256OfUtf8,
   verifyCatalogLock,
@@ -419,5 +423,131 @@ describe("sha256OfUtf8（lock 同口径哈希）", () => {
     expect(entry).toBeDefined();
     const raw = readFileSync(join(REPO_CATALOG, entry?.path ?? ""), "utf8");
     expect(sha256OfUtf8(raw)).toBe(entry?.content_sha256);
+  });
+});
+
+// ============================================================
+// 4) relockCatalog（重锁计算：纯函数返回 next，零写盘；P-v06 批次 2.5）
+// ============================================================
+
+describe("relockCatalog（重锁计算：纯计算零写盘，Owner 裁决 2026-09-03）", () => {
+  it("漂移重算：next.entries 哈希 = 落盘实际字节；refreshed 精确指路；previous 与磁盘 lock 字节零触碰", () => {
+    const catalogRoot = trackTempCatalog();
+    const lockPath = join(catalogRoot, "catalog-lock.draft.json");
+    const target = join(catalogRoot, "archetypes", "archetype.page.master_data.json");
+    const original = readFileSync(target, "utf8");
+    const lockBefore = readFileSync(lockPath, "utf8");
+    writeFileSync(target, `${original}\n`, "utf8");
+    const report = relockCatalog(catalogRoot);
+    expect(report.added).toEqual([]);
+    expect(report.removed).toEqual([]);
+    expect(report.refreshed).toEqual(["archetypes/archetype.page.master_data.json"]);
+    const entry = report.next.entries.find(
+      (candidate) => candidate.path === "archetypes/archetype.page.master_data.json",
+    );
+    expect(entry?.content_sha256).toBe(sha256OfUtf8(readFileSync(target, "utf8")));
+    expect(report.next.entries).toHaveLength(123);
+    expect(report.previous.entries).toHaveLength(123);
+    expect(report.next.catalog_version).toBe(report.previous.catalog_version);
+    // 纯计算零写盘：lock 磁盘字节零变化（落盘归 CLI 层，分层纪律同 status/explain）。
+    expect(readFileSync(lockPath, "utf8")).toBe(lockBefore);
+  });
+
+  it("generated_by 幂等注记：首锁追加、再锁不重复；同物料两次重锁 next 字节全等（A4 无时戳）", () => {
+    const catalogRoot = trackTempCatalog();
+    const lockPath = join(catalogRoot, "catalog-lock.draft.json");
+    const first = relockCatalog(catalogRoot);
+    expect(first.next.generated_by).toContain(CATALOG_RELOCK_GENERATED_BY_NOTE);
+    expect(first.next.generated_by).toContain("materialize_catalog_pilot.py");
+    const firstBytes = `${JSON.stringify(first.next, null, 2)}\n`;
+    writeFileSync(lockPath, firstBytes, "utf8");
+    const second = relockCatalog(catalogRoot);
+    expect(second.added).toEqual([]);
+    expect(second.removed).toEqual([]);
+    expect(second.refreshed).toEqual([]);
+    expect(second.next.generated_by).toBe(first.next.generated_by);
+    expect(`${JSON.stringify(second.next, null, 2)}\n`).toBe(firstBytes);
+    expect(readFileSync(lockPath, "utf8")).toBe(firstBytes);
+  });
+
+  it("扩展键原样保留：x-digest-ethics/note 原值 + 键序沿原 lock 文件（落盘保真前提）", () => {
+    const catalogRoot = trackTempCatalog();
+    const rawBefore = JSON.parse(
+      readFileSync(join(catalogRoot, "catalog-lock.draft.json"), "utf8"),
+    ) as Record<string, unknown>;
+    const report = relockCatalog(catalogRoot);
+    expect(report.next["x-digest-ethics"]).toEqual(rawBefore["x-digest-ethics"]);
+    expect(report.next["note"]).toBe(rawBefore["note"]);
+    expect(Object.keys(report.next)).toEqual(Object.keys(rawBefore));
+    expect(report.next.profile).toBe(rawBefore["profile"]);
+  });
+
+  it("收敛：新增物料进 next（added + source_ref 确定性缺省）；删除物料出 next（removed）", () => {
+    const catalogRoot = trackTempCatalog();
+    const lockPath = join(catalogRoot, "catalog-lock.draft.json");
+    writeFileSync(
+      join(catalogRoot, "knowledge", "knowledge.relock.probe.json"),
+      `${JSON.stringify({ id: "KNOWLEDGE.RELOCK.PROBE" }, null, 2)}\n`,
+      "utf8",
+    );
+    const added = relockCatalog(catalogRoot);
+    expect(added.added).toEqual(["knowledge/knowledge.relock.probe.json"]);
+    expect(added.removed).toEqual([]);
+    // diff 互斥（分母「两侧都在」）：新增路径不计入 refreshed（否则 CLI 呈现 +/~ 双标）。
+    expect(added.refreshed).toEqual([]);
+    expect(added.next.entries).toHaveLength(124);
+    expect(added.next.controlled_children.allowed).toHaveLength(124);
+    expect(added.next.controlled_children.required).toHaveLength(124);
+    const probe = added.next.entries.find(
+      (candidate) => candidate.id === "KNOWLEDGE.RELOCK.PROBE",
+    );
+    expect(probe?.source_ref).toBe("package://catalog/knowledge/knowledge.relock.probe.json");
+    // relock 纯计算零写盘：removed 的 previous 分母来自盘上 lock——先模拟 CLI 落盘步，
+    // 再删文件重算（previous 含该条目 → removed 检出）。
+    writeFileSync(lockPath, `${JSON.stringify(added.next, null, 2)}\n`, "utf8");
+    unlinkSync(join(catalogRoot, "knowledge", "knowledge.relock.probe.json"));
+    const removed = relockCatalog(catalogRoot);
+    expect(removed.removed).toEqual(["knowledge/knowledge.relock.probe.json"]);
+    expect(removed.added).toEqual([]);
+    expect(removed.next.entries).toHaveLength(123);
+    expect(removed.next.controlled_children.allowed).toHaveLength(123);
+    expect(removed.next.controlled_children.required).toHaveLength(123);
+  });
+
+  it("fail-closed：物料缺 id → SCHEMA_INVALID；lock 缺失 → NOT_CONFIGURED（relock 不是初始化工具）", () => {
+    const catalogRoot = trackTempCatalog();
+    writeFileSync(join(catalogRoot, "knowledge", "knowledge.no-id.json"), "{}\n", "utf8");
+    try {
+      relockCatalog(catalogRoot);
+      expect.unreachable("必须抛出");
+    } catch (error) {
+      expect((error as { code?: string }).code).toBe("SCHEMA_INVALID");
+      expect((error as Error).message).toContain("knowledge/knowledge.no-id.json");
+    }
+    unlinkSync(join(catalogRoot, "knowledge", "knowledge.no-id.json"));
+    unlinkSync(join(catalogRoot, "catalog-lock.draft.json"));
+    try {
+      relockCatalog(catalogRoot);
+      expect.unreachable("必须抛出");
+    } catch (error) {
+      expect((error as { code?: string }).code).toBe("NOT_CONFIGURED");
+      expect((error as Error).message).toContain("catalog-lock 缺失");
+    }
+  });
+
+  it("fail-closed：id 跨节重复 → SCHEMA_INVALID（身份面禁重复，loadCatalogSensors 同法）", () => {
+    const catalogRoot = trackTempCatalog();
+    writeFileSync(
+      join(catalogRoot, "knowledge", "knowledge.dup.id.json"),
+      `${JSON.stringify({ id: "GATE.BE.API.CONTRACT_CHECKS" }, null, 2)}\n`,
+      "utf8",
+    );
+    try {
+      relockCatalog(catalogRoot);
+      expect.unreachable("必须抛出");
+    } catch (error) {
+      expect((error as { code?: string }).code).toBe("SCHEMA_INVALID");
+      expect((error as Error).message).toContain("跨节重复");
+    }
   });
 });

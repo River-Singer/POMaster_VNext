@@ -59,7 +59,7 @@ pomaster inspect <governed-id>
 pomaster brainstorm start/status/promote
 pomaster research list/inspect
 pomaster eval --suite behavioral
-pomaster catalog status/explain
+pomaster catalog status/explain/relock
 pomaster migrate trellis-spec --analyze --spec-root <dir>
 pomaster production band/evaluate/challenge/diagnose/metrics/self-improvement
 pomaster agents status

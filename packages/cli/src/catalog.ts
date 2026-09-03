@@ -1,26 +1,34 @@
 /**
- * catalog.ts —— `pomaster catalog status|explain`：Engineering Catalog 命令面（§44.10）。
+ * catalog.ts —— `pomaster catalog status|explain|relock`：Engineering Catalog 命令面（§44.10）。
  *
- * P14「Catalog→运行时联结」的查看命令：catalog 构成（status）与单条目解释（explain）。
+ * P14「Catalog→运行时联结」的查看命令：catalog 构成（status）与单条目解释（explain）；
+ * P-v06 批次 2.5（Owner 裁决 2026-09-03）补 relock = 漂移恢复键（幂等重算 sha256 是
+ * D24 工具侧动作非治理事实——无授权闸；status 漂移保持 exit 1，修复点 = 恢复键）。
  * 判卷/读取权威在 @pomaster/kernel 的 catalog 读取器（共享读取面，禁旁路 readdir），
- * 本模块只做编排与呈现（CLI 分层纪律）。
+ * 本模块只做编排与呈现；relock 的落盘是本模块唯一写位点（kernel 纯计算返回 next，
+ * CLI 落盘 + 写后 verifyCatalogLock 复验回绿——分层纪律同 status/explain）。
  *
- * §92.2 边界：catalog 是策展源非第二套 Project Truth——本命令纯读、零 store 依赖
- * （catalog/ 是工具侧资产，未 init 的目录同样可查）；lock 漂移 → CATALOG_LOCK_DRIFT
+ * §92.2 边界：catalog 是策展源非第二套 Project Truth——本命令组零 store 依赖
+ * （catalog/ 是工具侧资产，未 init 的目录同样可用）；lock 漂移 → CATALOG_LOCK_DRIFT
  * 显式 fail-closed 呈现（查看器呈现漂移 ≠ 阻断消费：投影侧 D24 WARN 语义不受影响）。
  */
+import { writeFileSync } from "node:fs";
+import { join } from "node:path";
 import type {
   CatalogLockDrift,
   CatalogLockVerification,
   CatalogPolicyMaterial,
+  CatalogRelockReport,
 } from "@pomaster/kernel";
 import {
+  LOCK_FILE_NAME,
   loadCatalogArchetypes,
   loadCatalogPolicies,
   loadCatalogProjectionPresets,
   loadCatalogSensors,
   loadCatalogTools,
   readCatalogLock,
+  relockCatalog,
   resolveCatalogRoot,
   verifyCatalogLock,
 } from "@pomaster/kernel";
@@ -131,7 +139,7 @@ function driftError(drifts: readonly CatalogLockDrift[]): CliError {
     message:
       `catalog-lock 漂移 ${drifts.length} 处（物料被改而 lock 未重锁）：\n  ${head}` +
       (drifts.length > 5 ? `\n  …共 ${drifts.length} 处` : ""),
-    hint: "重跑 catalog/tools/materialize_*.py 幂等重生成物料并重锁（content_sha256 = sha256(文件 utf-8 字节)，producer 与对账端同口径）。",
+    hint: "恢复键：pomaster catalog relock 直接幂等重锁（CLI 侧恢复，零依赖 python）；或重跑 catalog/tools/materialize_*.py 幂等重生成物料并重锁（content_sha256 = sha256(文件 utf-8 字节)，producer 与对账端同口径）。",
   };
 }
 
@@ -347,4 +355,95 @@ export async function runCatalogExplain(
       : `  lock 校验: DRIFT（${entryDrifts.map((drift) => drift.kind).join(", ")}）`,
   ].filter((line): line is string => line !== null);
   return okOutcome("catalog explain", result, human);
+}
+
+// ============================================================
+// catalog relock：漂移恢复键（P-v06 批次 2.5；Owner 裁决 2026-09-03）
+// ============================================================
+
+export interface CatalogRelockResult {
+  readonly catalog_root: string;
+  /** 重锁后 entries 分母（= 写后 verifyCatalogLock 的 entries_checked）。 */
+  readonly entries_total: number;
+  readonly added: readonly string[];
+  readonly removed: readonly string[];
+  readonly refreshed: readonly string[];
+}
+
+/** diff 路径呈现行（≤10 条全列，超出到 10 条 + 省略行）。 */
+function diffLines(label: string, paths: readonly string[]): string[] {
+  if (paths.length === 0) return [];
+  const lines = paths.slice(0, 10).map((path) => `    ${label} ${path}`);
+  if (paths.length > 10) lines.push(`    …共 ${paths.length} 条（仅列前 10）`);
+  return lines;
+}
+
+/**
+ * `pomaster catalog relock`：漂移恢复键（幂等重算 sha256 重锁 catalog-lock）。
+ * 编排：kernel relockCatalog（纯计算）→ 本模块字节落盘（indent=2 + 非 ASCII 原文 +
+ * 尾换行——与 materialize producer 落盘形态一致）→ 写后 verifyCatalogLock 复验 ok →
+ * 呈现 added/removed/refreshed 计数与路径 + `catalog-lock: relocked & verified`。
+ * 写后复验非 ok → CATALOG_LOCK_DRIFT fail-closed（重锁产物对账不过 = 内部不一致，
+ * 绝不假绿；磁盘上留下的是可对账的 next 字节，漂移明细照实呈现）。
+ * 无授权闸（Owner 裁决）：幂等重算是 D24 工具侧动作非治理事实；lock 缺失/坏形
+ * NOT_CONFIGURED/SCHEMA_INVALID 显式拒绝（relock 不是初始化工具）。
+ */
+export async function runCatalogRelock(
+  deps?: CatalogCommandDeps,
+): Promise<CommandOutcome<CatalogRelockResult>> {
+  let catalogRoot: string;
+  let report: CatalogRelockReport;
+  let verification: CatalogLockVerification;
+  try {
+    catalogRoot = catalogRootOf(deps);
+    report = relockCatalog(catalogRoot);
+    writeFileSync(
+      join(catalogRoot, LOCK_FILE_NAME),
+      `${JSON.stringify(report.next, null, 2)}\n`,
+      "utf8",
+    );
+    verification = verifyCatalogLock(catalogRoot);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return failOutcome<CatalogRelockResult>(
+      "catalog relock",
+      {
+        catalog_root: "",
+        entries_total: 0,
+        added: [],
+        removed: [],
+        refreshed: [],
+      },
+      [
+        {
+          code: "CATALOG_NOT_AVAILABLE",
+          message,
+          hint: "relock 不是初始化工具：lock 缺失/坏形或物料不可解析时显式拒绝；先恢复 lock 与物料完整性（Git 原字节或 catalog/tools/materialize_*.py）。",
+        },
+      ],
+      [`catalog relock: FAILED — ${message}`],
+    );
+  }
+  const result: CatalogRelockResult = {
+    catalog_root: catalogRoot,
+    entries_total: verification.entries_checked,
+    added: [...report.added],
+    removed: [...report.removed],
+    refreshed: [...report.refreshed],
+  };
+  const human = [
+    `catalog relock: ${report.next.catalog_version}（profile ${report.next.profile}）`,
+    `  root: ${catalogRoot}`,
+    `  diff: added ${result.added.length} / removed ${result.removed.length} / refreshed ${result.refreshed.length}（entries ${verification.entries_checked}）`,
+    ...diffLines("+", result.added),
+    ...diffLines("-", result.removed),
+    ...diffLines("~", result.refreshed),
+    verification.ok
+      ? `  catalog-lock: relocked & verified（${verification.entries_checked} entries）`
+      : `  catalog-lock: RELOCK VERIFY FAILED（${verification.drifts.length} 处——重锁产物对账不过，绝不假绿）`,
+  ];
+  if (!verification.ok) {
+    return failOutcome("catalog relock", result, [driftError(verification.drifts)], human);
+  }
+  return okOutcome("catalog relock", result, human);
 }

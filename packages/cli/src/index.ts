@@ -39,9 +39,11 @@
  * - context compile 八拍③：转调 kernel compileProjection，输出三分区 markdown
  * - doctor          内核探针 + chrome-devtools MCP 探测（D7/D22，四态矩阵 fail-closed）
  * - check --fast    八拍⑤：转调 gauntlet-lite build adapter（NOT_INSTALLED 绝不静默通过）
- * - catalog status/explain
+ * - catalog status/explain/relock
  *                   Engineering Catalog 命令面（§44.10；P14：catalog 构成与单条目解释，
- *                   catalog-lock 漂移显式检出；catalog 是策展源非第二套 Project Truth——§92.2）
+ *                   catalog-lock 漂移显式检出；relock = P-v06 批次 2.5 漂移恢复键——
+ *                   幂等重算 sha256 重锁，D24 工具侧动作无授权闸；catalog 是策展源
+ *                   非第二套 Project Truth——§92.2）
  * - migrate trellis-spec
  *                   Trellis Spec 迁移命令面（§93.6/§96 第 8 步；P30-Commands）：--analyze
  *                   消费 P30a Analyzer 内核输出迁移分类清单（分母 fail-closed 恒呈现；
@@ -147,7 +149,7 @@ import { runReconcile } from "./reconcile.js";
 import { runCompact } from "./compact.js";
 import { runRecordClaim, runRecordGateRun } from "./record.js";
 import { runCloseout } from "./closeout.js";
-import { runCatalogStatus, runCatalogExplain } from "./catalog.js";
+import { runCatalogStatus, runCatalogExplain, runCatalogRelock } from "./catalog.js";
 import { runResolve } from "./resolve.js";
 import { runEval } from "./eval.js";
 import { runViewBlueprint, runViewTask } from "./view.js";
@@ -351,12 +353,13 @@ export type {
   CloseoutDodEntry,
   CloseoutGateRow,
 } from "./closeout.js";
-export { runCatalogStatus, runCatalogExplain } from "./catalog.js";
+export { runCatalogStatus, runCatalogExplain, runCatalogRelock } from "./catalog.js";
 export { runResolve, renderResolve } from "./resolve.js";
 export type { ResolveInput, ResolveResult } from "./resolve.js";
 export type {
   CatalogCommandDeps,
   CatalogExplainResult,
+  CatalogRelockResult,
   CatalogSectionCounts,
   CatalogStatusResult,
 } from "./catalog.js";
@@ -1271,11 +1274,13 @@ export function createProgram(
 
   // —— Engineering Catalog 命令面（§44.10；P14 Catalog→运行时联结的查看面） ——
   // catalog/ 是工具侧策展资产（§92.2 非第二套 Project Truth）：本命令不依赖 store，
-  // 未 init 目录同样可查；lock 漂移 → CATALOG_LOCK_DRIFT 显式 fail-closed 呈现。
+  // 未 init 目录同样可查；lock 漂移 → CATALOG_LOCK_DRIFT 显式 fail-closed 呈现，
+  // 恢复键 = relock（P-v06 批次 2.5：幂等重算 sha256 重锁，落盘后 verifyCatalogLock
+  // 复验回绿——status 漂移保持 exit 1，修复点 = 恢复键，Owner 裁决 2026-09-03）。
   const catalog = program
     .command("catalog")
     .description(
-      "Engineering Catalog 命令面（§44.10）：查看 catalog 构成（status）与单条目解释（explain）；catalog-lock 漂移显式检出",
+      "Engineering Catalog 命令面（§44.10）：查看 catalog 构成（status）/单条目解释（explain）/漂移重锁恢复键（relock）；catalog-lock 漂移显式检出",
     );
   catalog
     .command("status")
@@ -1308,6 +1313,23 @@ export function createProgram(
       });
       record({
         command: "catalog explain",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+  catalog
+    .command("relock")
+    .description(
+      "漂移恢复键（P-v06 批次 2.5）：幂等重算 sha256 重锁 catalog-lock（受控五节全扫描重建 entries/allowed/required，generated_by 幂等注记）+ 写后复验回绿呈现 diff（added/removed/refreshed）；lock 缺失/坏形显式拒绝——relock 不是初始化工具",
+    )
+    .option("--catalog-root <path>", "注入 catalog 根目录（测试/嵌入面；缺省 = 工具仓库 catalog/）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runCatalogRelock({
+        catalogRoot: opts.catalogRoot as string | undefined,
+      });
+      record({
+        command: "catalog relock",
         outcome,
         asJson: command.opts().json === true,
       });
