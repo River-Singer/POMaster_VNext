@@ -61,11 +61,11 @@
   "x-vocab-extra": {
     "note": "非 vocab-lock 枚举：来自任务书 02 指令或 thread-A 基线，逐项注明出处并提请 vocab PR 收编；同样禁止在 $definitions 之外手抄字面量。",
     "source_type": {
-      "all": {"const": ["bp_blueprint", "design_seed", "human_directive", "code_refactor", "prototype_walkthrough", "prototype_html_scrape", "research_evidence", "openapi_contract", "ai_invention"]},
-      "allowed": {"const": ["bp_blueprint", "design_seed", "human_directive", "code_refactor", "prototype_walkthrough", "research_evidence", "openapi_contract"]},
+      "all": {"const": ["bp_blueprint", "design_seed", "human_directive", "owner_directive", "code_refactor", "prototype_walkthrough", "prototype_html_scrape", "research_evidence", "openapi_contract", "ai_invention"]},
+      "allowed": {"const": ["bp_blueprint", "design_seed", "human_directive", "owner_directive", "code_refactor", "prototype_walkthrough", "research_evidence", "openapi_contract"]},
       "forbidden": {"const": ["prototype_html_scrape", "ai_invention"]},
       "x-source": "任务书 02（object-envelope 指令）显式给定；forbidden 两值 schema 只保证可判别、不做硬拦，Transition/Gate 层判 FATAL 并留痕",
-      "x-vocab-status": "registered_in_vocab_lock__source_types（2026-08-27 随 FROZEN 一次收编，allowed/forbidden 两子集切分同构；本注记保留作宿主侧镜像）"
+      "x-vocab-status": "registered_in_vocab_lock__source_types（2026-08-27 随 FROZEN 一次收编，allowed/forbidden 两子集切分同构；2026-09-03 PR-0007 append-only 增值 owner_directive——Owner 有意词形（Owner 明令，区别于 human_directive 泛化人类指令），all/allowed 同步增值、forbidden 不动；本注记保留作宿主侧镜像）"
     },
     "origin": {"const": ["natural", "derived", "ingested"], "x-source": "01-truth-index 任务指派定案词形；thread-A-ir-schema.md §3.0 的 human_curated/migrated 为 legacy 词形，收编映射 human_curated→natural、migrated→ingested（2026-08-27 与 01 对齐）"},
     "write_policy": {"const": ["NONE", "AGENT_WITH_PERMIT", "CORRECTION_ONLY", "EVOLUTION_CHANNEL"], "x-source": "thread-A-ir-schema.md §3.4"},
@@ -414,11 +414,11 @@
       "description": "NONE=锁死；AGENT_WITH_PERMIT=Agent 持许可可写；CORRECTION_ONLY=仅纠错通道；EVOLUTION_CHANNEL=技术路线变更走 ACR。"
     },
     "SourceTypeAllowed": {
-      "title": "source.type 合法来源（7 值）",
+      "title": "source.type 合法来源（8 值）",
       "type": "string",
-      "enum": ["bp_blueprint", "design_seed", "human_directive", "code_refactor", "prototype_walkthrough", "research_evidence", "openapi_contract"],
-      "x-vocab-source": "x-vocab-extra.source_type.allowed（任务书 02 指令给定）",
-      "description": "合法来源集，供 Gate/Transition 层判别引用。"
+      "enum": ["bp_blueprint", "design_seed", "human_directive", "owner_directive", "code_refactor", "prototype_walkthrough", "research_evidence", "openapi_contract"],
+      "x-vocab-source": "x-vocab-extra.source_type.allowed（任务书 02 指令给定；2026-09-03 PR-0007 append-only 增值 owner_directive——vocab-lock source_types 收编）",
+      "description": "合法来源集，供 Gate/Transition 层判别引用。owner_directive=Owner 明令（区别于 human_directive 泛化人类指令——PR-0007 Owner 有意词形收编，knowledge.web.browser.mcp_eyes 物料 sources[].type 实录）。"
     },
     "SourceTypeForbidden": {
       "title": "source.type forbidden 两值（可判别·不硬拦）",
@@ -428,12 +428,12 @@
       "description": "provenance_check 依赖字段：本定义与 SourceTypeAllowed 分离，使 Gate 层可用 schema 判别非法来源。D24 精神：非法来源在 Transition 层 FATAL 并留痕，本信封不靠 schema 静默拦截、更不靠哈希兜底。"
     },
     "SourceTypeAll": {
-      "title": "source.type 全集（allowed ∪ forbidden = 9 值）",
+      "title": "source.type 全集（allowed ∪ forbidden = 10 值）",
       "oneOf": [
         {"$ref": "#/$definitions/SourceTypeAllowed"},
         {"$ref": "#/$definitions/SourceTypeForbidden"}
       ],
-      "x-vocab-source": "x-vocab-extra.source_type.all = allowed + forbidden（任务书 02 指令给定）",
+      "x-vocab-source": "x-vocab-extra.source_type.all = allowed + forbidden（任务书 02 指令给定；2026-09-03 PR-0007 随 allowed 增值 owner_directive）",
       "description": "字段约束用全集（schema 不拦）；判别需求用两个子集定义。"
     },
     "Sha256Digest": {
@@ -471,7 +471,7 @@
       "properties": {
         "type": {
           "$ref": "#/$definitions/SourceTypeAll",
-          "description": "9 值全集（含 forbidden 两值）。provenance_check：forbidden 两值经 SourceTypeForbidden 定义可被 Gate/Transition 层判别；本 schema 不拦（FATAL 语义在 Transition 层，D24 精神）。"
+          "description": "10 值全集（含 forbidden 两值；2026-09-03 PR-0007 增值 owner_directive）。provenance_check：forbidden 两值经 SourceTypeForbidden 定义可被 Gate/Transition 层判别；本 schema 不拦（FATAL 语义在 Transition 层，D24 精神）。"
         },
         "ref": {
           "type": "string",

@@ -460,7 +460,7 @@
     {
       "id": "KNOWLEDGE.WEB.BROWSER.MCP_EYES",
       "path": "knowledge/knowledge.web.browser.mcp_eyes.json",
-      "content_sha256": "sha256:6002a9fbbfdb15eba40d1b47775b16dd95db766f54b17c13b4ae38c534cf4655",
+      "content_sha256": "sha256:885f7e42a94195b1a55b9f64774a66c3560e98985178aa2bf250f81822d3edd5",
       "source_ref": "catalog/tools/materialize_v06_relock.py（P-v06 批次 2.6 Browser Eyes：KNOWLEDGE.WEB.BROWSER.MCP_EYES 新登记——浏览器双眼 ADVISORY 检索引导，gate_binding=NEVER_FAIL；Owner 指令 2026-09-03）"
     },
     {

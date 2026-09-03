@@ -1,8 +1,8 @@
 /**
  * vocab.spec —— kernel 词表引用入口（@pomaster/schemas re-export）与 FROZEN 词表逐值对账。
- * 词表纪律：以下断言值逐字镜像 vocab-lock@v0.4-resolved（v0.1-resolved FROZEN 后 PR-0001、
- * 2026-09-01 PR-0004、2026-09-01 PR-0005 三次 append-only 增补，v0.1/v0.2/v0.3 词值零删改）；
- * 改词表须同 commit 改这里。
+ * 词表纪律：以下断言值逐字镜像 vocab-lock@v0.6-resolved（v0.1-resolved FROZEN 后 PR-0001、
+ * 2026-09-01 PR-0004、2026-09-01 PR-0005、2026-09-02 PR-0006、2026-09-03 PR-0007 五次
+ * append-only 增补，v0.1~v0.5 词值零删改）；改词表须同 commit 改这里。
  */
 import { describe, expect, it } from "vitest";
 import {
@@ -79,18 +79,30 @@ describe("vocab mirror（FROZEN 词表唯一镜像点）", () => {
     ]);
   });
 
-  it("source_types 九值全集 = allowed(7) ∪ forbidden(2) 且两子集不相交", () => {
-    expect([...SOURCE_TYPE_ALL_VALUES]).toHaveLength(9);
-    expect([...SOURCE_TYPE_ALLOWED_VALUES]).toHaveLength(7);
+  it("source_types 十值全集 = allowed(8) ∪ forbidden(2) 且两子集不相交", () => {
+    expect([...SOURCE_TYPE_ALL_VALUES]).toEqual([
+      "bp_blueprint", "design_seed", "human_directive", "owner_directive", "code_refactor",
+      "prototype_walkthrough", "prototype_html_scrape", "research_evidence", "openapi_contract", "ai_invention",
+    ]);
+    expect([...SOURCE_TYPE_ALLOWED_VALUES]).toEqual([
+      "bp_blueprint", "design_seed", "human_directive", "owner_directive", "code_refactor",
+      "prototype_walkthrough", "research_evidence", "openapi_contract",
+    ]);
     expect([...SOURCE_TYPE_FORBIDDEN_VALUES]).toEqual(["prototype_html_scrape", "ai_invention"]);
     for (const forbidden of SOURCE_TYPE_FORBIDDEN_VALUES) {
       expect(SOURCE_TYPE_ALLOWED_VALUES.includes(forbidden)).toBe(false);
     }
     const union = new Set([...SOURCE_TYPE_ALLOWED_VALUES, ...SOURCE_TYPE_FORBIDDEN_VALUES]);
-    expect(union.size).toBe(9);
+    expect(union.size).toBe(10);
     for (const value of SOURCE_TYPE_ALL_VALUES) {
       expect(union.has(value)).toBe(true);
     }
+  });
+
+  it("PR-0007 增值 owner_directive（Owner 有意词形——append-only：all/allowed 含之、forbidden 不含之）", () => {
+    expect(SOURCE_TYPE_ALL_VALUES.includes("owner_directive")).toBe(true);
+    expect(SOURCE_TYPE_ALLOWED_VALUES.includes("owner_directive")).toBe(true);
+    expect(SOURCE_TYPE_FORBIDDEN_VALUES.includes("owner_directive" as never)).toBe(false);
   });
 
   it("binding_class 三轴（A7 类-前缀耦合）", () => {

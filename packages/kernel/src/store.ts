@@ -1014,7 +1014,7 @@ function applyUpsertObject(
     }
     for (const source of sources) {
       const entry = source as UnknownRecord;
-      assertVocabValue(entry.type, SOURCE_TYPE_ALL_VALUES, "sources[].type", `9 值全集：${SOURCE_TYPE_ALL_VALUES.join(" / ")}；forbidden 两值须走合法通道（如 Live Walkthrough）`);
+      assertVocabValue(entry.type, SOURCE_TYPE_ALL_VALUES, "sources[].type", `10 值全集：${SOURCE_TYPE_ALL_VALUES.join(" / ")}；forbidden 两值须走合法通道（如 Live Walkthrough）`);
       if (SOURCE_TYPE_FORBIDDEN_VALUES.includes(entry.type as never)) {
         throw new GovernanceError(
           "SOURCE_TYPE_FORBIDDEN",

@@ -3,7 +3,7 @@
  *
  * 词表纪律（违者=返工）：
  * - 本文件一切枚举/前缀/转移矩阵只能镜像 `assets/vocab-lock.draft.yaml`
- *   （pomaster.vocab/v0.5-resolved；v0.1-resolved 2026-08-27 FROZEN，2026-08-29 PR-0001
+ *   （pomaster.vocab/v0.6-resolved；v0.1-resolved 2026-08-27 FROZEN，2026-08-29 PR-0001
  *   append-only 纯增量增补（v0.1 词值零删改），2026-09-01 PR-0004 增补
  *   production_band_vocab 段 + id_namespace.state_plane_refs 五通路编号词形注记，
  *   2026-09-01 PR-0005 增补 catalog_layer_vocab 段 change_classes/governance_profiles
@@ -11,7 +11,9 @@
  *   2026-09-02 PR-0006 增补 software_graph_vocab 段六词轴 + catalog_layer_vocab
  *   catalog_kind 词轴 + id_namespace.state_plane_refs EDGE-<12hex> 通路词形注记
  *   ——Owner 四决议 D-1~D-4 2026-09-02（PRD v0.6/v0.6.1 融合批次 0 Model Constitution），
- *   v0.1/v0.2/v0.3/v0.4 词值零删改），逐值相等，禁止发明词表外值；
+ *   2026-09-03 PR-0007 增补 source_types 轴 owner_directive 词形（Owner 有意词形收编
+ *   ——knowledge.web.browser.mcp_eyes 物料 sources[].type 实录，append-only 纯增量），
+ *   v0.1~v0.5 词值零删改），逐值相等，禁止发明词表外值；
  * - 需要新值 → 留 `TODO(vocab-pr)` 注释走词汇表 PR，禁止就地添加；
  * - 标注「待词汇表 PR 收编」的词轴：词形已在 schema（01/02/03/05/06/07 及 P18 的
  *   08/09/10）的 x-vocab-extra / definitions 冻结，本文件照镜像并保留 TODO(vocab-pr)；
@@ -80,14 +82,17 @@ export const REALIZATION_VALUES = ["stub", "mock", "wired"] as const;
 export type RealizationValue = (typeof REALIZATION_VALUES)[number];
 
 // ============================================================
-// source_types（x-vocab-source: vocab-lock source_types，2026-08-27 收编 02 信封）
+// source_types（x-vocab-source: vocab-lock source_types，2026-08-27 收编 02 信封；
+// 2026-09-03 PR-0007 增值 owner_directive——Owner 明令（区别于 human_directive 泛化
+// 人类指令），knowledge.web.browser.mcp_eyes 物料 sources[].type 实录收编，append-only）
 // ============================================================
 
-/** 来源全集（allowed ∪ forbidden = 9 值）。 */
+/** 来源全集（allowed ∪ forbidden = 10 值；PR-0007 起含 owner_directive）。 */
 export const SOURCE_TYPE_ALL_VALUES = [
   "bp_blueprint",
   "design_seed",
   "human_directive",
+  "owner_directive",
   "code_refactor",
   "prototype_walkthrough",
   "prototype_html_scrape",
@@ -97,11 +102,12 @@ export const SOURCE_TYPE_ALL_VALUES = [
 ] as const;
 export type SourceTypeAllValue = (typeof SOURCE_TYPE_ALL_VALUES)[number];
 
-/** 合法来源（7 值）。 */
+/** 合法来源（8 值；PR-0007 增值 owner_directive）。 */
 export const SOURCE_TYPE_ALLOWED_VALUES = [
   "bp_blueprint",
   "design_seed",
   "human_directive",
+  "owner_directive",
   "code_refactor",
   "prototype_walkthrough",
   "research_evidence",
@@ -1318,7 +1324,7 @@ export type RelationTypeValue = (typeof RELATION_TYPE_VALUES)[number];
 
 /**
  * 边来源三值（PRD v0.6 §8 Graph Provenance source_type 语义的边侧承载）。与
- * SOURCE_TYPE_ALL_VALUES（02 信封对象侧九值来源词表）正交、值域不相交混用。
+ * SOURCE_TYPE_ALL_VALUES（02 信封对象侧十值来源词表，PR-0007 起）正交、值域不相交混用。
  * x-vocab-source: vocab-lock software_graph_vocab.relation_origin（PR-0006）。
  */
 export const RELATION_ORIGIN_VALUES = [

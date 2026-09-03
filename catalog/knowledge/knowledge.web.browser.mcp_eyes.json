@@ -1,9 +1,10 @@
 {
   "x-vocab-pr": {
-    "status": "vocab_pr_pending__source_type_append_only",
+    "status": "vocab_pr_registered__source_type_append_only",
     "finding": "knowledge_entry kind 已在 vocab-lock kinds_registry.truth_bodies；classification=ENGINEERING_PATTERN 是 §83.3 四类型词形（12-knowledge-entry knowledge_kind enum 在册）；triggers 是 12-knowledge-entry 既有字段（§83.8 检索键承载）；sources[].type=owner_directive 是 Owner 有意词形（Owner 指令 2026-09-03）——暂不在 SOURCE_TYPE_ALL_VALUES 九值来源闭包（packages/schemas/src/vocab.ts），复核确认零机器校验闸拒绝（12-knowledge-entry schema 无 sources/source_type 约束；catalog knowledge 物料无 loader 词形校验；lock 只锁 path+hash——2026-09-03 质检复核实测）",
     "proposal": "vocab PR-0007 收编：source_types 轴 append-only 增值 owner_directive（主 agent 于批次 2.6 收尾处理）；收编前本条目零机器闸依赖该词形，词表文件零改动（locked_vocab_untouched）",
-    "locked_vocab_untouched": true
+    "locked_vocab_untouched": true,
+    "resolution": "2026-09-03 vocab PR-0007 收编落地（vocab-lock@v0.6-resolved，三镜像同 commit）：source_types 轴 append-only 增值 owner_directive（置于 human_directive 之后，all/allowed 同步增值、forbidden 两值不动）——上记 pending 注记就此转正；finding/proposal/locked_vocab_untouched 为批次 2.6 创建时点历史记录原样保留"
   },
   "x-advisory-gate-semantics": {
     "advisory": true,
