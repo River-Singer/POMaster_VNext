@@ -6,7 +6,7 @@
  *    （vocab-lock catalog_layer_vocab，PR-0001），词表外/必填缺失 SCHEMA_INVALID
  *    fail-closed（坏物料 ≠ catalog 缺席，禁静默当空）。
  * 2) lock 校验（D24 read-side 指纹）：repo 实物全量对账 ok——producer 写入口径
- *    sha256(utf-8 字节) 与对账端同源；entries 分母 168（policies 104/gates 6/knowledge 11/sensors 6/archetypes 41——P1-5 sensors 六条目 + P-v06 批次 1 archetypes 十条目与 GATE.NEW_ENTITY.CHECKS 登记 + P-v06 批次 2 archetypes 十二条目 + P-v06 批次 2.6 Browser Eyes：knowledge 10→11（KNOWLEDGE.WEB.BROWSER.MCP_EYES）+ P-v06 批次 3 archetypes 十七条目（Backend/API/Data，backend-references.md 2026-09-03 锚）+ P-v06 批次 4 archetypes 两条目（RUNTIME：ENVIRONMENT_PARITY/OBSERVABILITY_BINDING，runtime-references.md 2026-09-03 锚）+ B6b-I FE 播种移植物料 25 条（policies 79→104：catalog/tools/seed_b6b_frontend.py——D5 精选 22 required + 3 advisory，x-b6-porting 注记 + enforcement 轴断言））。
+ *    sha256(utf-8 字节) 与对账端同源；entries 分母 193（policies 129/gates 6/knowledge 11/sensors 6/archetypes 41——P1-5 sensors 六条目 + P-v06 批次 1 archetypes 十条目与 GATE.NEW_ENTITY.CHECKS 登记 + P-v06 批次 2 archetypes 十二条目 + P-v06 批次 2.6 Browser Eyes：knowledge 10→11（KNOWLEDGE.WEB.BROWSER.MCP_EYES）+ P-v06 批次 3 archetypes 十七条目（Backend/API/Data，backend-references.md 2026-09-03 锚）+ P-v06 批次 4 archetypes 两条目（RUNTIME：ENVIRONMENT_PARITY/OBSERVABILITY_BINDING，runtime-references.md 2026-09-03 锚）+ B6b-I FE 播种移植物料 25 条（policies 79→104：catalog/tools/seed_b6b_frontend.py——D5 精选 22 required + 3 advisory，x-b6-porting 注记 + enforcement 轴断言）+ B6b-II FE 播种移植物料 25 条（policies 104→129：同工具 B6B-2 批——FE 24-45+index 分母，D5 上限 25/批内执行））。
  * 3) 漂移检出：临时 catalog 副本构造 content_drift / missing / unexpected_file /
  *    lock 缺失 → 显式检出（「catalog 物料被改而 lock 未重锁」的事故通道封死）。
  * 4) 重锁计算（P-v06 批次 2.5）：relockCatalog 纯计算零写盘——漂移重算/幂等注记/
@@ -107,13 +107,13 @@ describe("resolveCatalogRoot（缺省定位与显式注入）", () => {
 });
 
 describe("readCatalogLock（lock 文档形态）", () => {
-  it("版本/profile/entries 分母与排序（分母锁：168 entries，id 确定性排序；P-v06 批次 2 增量 111→123、批次 2.6 Browser Eyes 123→124、批次 3 Backend/API/Data 124→141、批次 4 RUNTIME 物料 141→143、B6b-I FE 移植 143→168）", () => {
+  it("版本/profile/entries 分母与排序（分母锁：193 entries，id 确定性排序；P-v06 批次 2 增量 111→123、批次 2.6 Browser Eyes 123→124、批次 3 Backend/API/Data 124→141、批次 4 RUNTIME 物料 141→143、B6b-I FE 移植 143→168、B6b-II FE 移植 168→193）", () => {
     const lock = readCatalogLock(REPO_CATALOG);
     expect(lock.catalog_version).toBe("0.1.0-pilot");
     expect(lock.profile).toBe("web-standard@0");
-    expect(lock.entries.length).toBe(168);
-    expect(lock.controlled_children.allowed.length).toBe(168);
-    expect(lock.controlled_children.required.length).toBe(168);
+    expect(lock.entries.length).toBe(193);
+    expect(lock.controlled_children.allowed.length).toBe(193);
+    expect(lock.controlled_children.required.length).toBe(193);
     const sorted = [...lock.entries].sort((a, b) => (a.id < b.id ? -1 : 1));
     expect(lock.entries).toEqual(sorted);
   });
@@ -127,8 +127,8 @@ describe("readCatalogLock（lock 文档形态）", () => {
 });
 
 describe("loadCatalogPolicies（policies 物料读取）", () => {
-  it("分母锁：104 条（authority.* 与 policy.* 同为 kind=policy；B6b-I FE 移植 +25：79→104）", () => {
-    expect(loadCatalogPolicies(REPO_CATALOG).length).toBe(104);
+  it("分母锁：129 条（authority.* 与 policy.* 同为 kind=policy；B6b-I FE 移植 +25：79→104；B6b-II FE 移植 +25：104→129）", () => {
+    expect(loadCatalogPolicies(REPO_CATALOG).length).toBe(129);
   });
 
   it("抽查正文策展字段（单条 HTTP Client 政策逐字段对账物料原文）", () => {
@@ -144,10 +144,10 @@ describe("loadCatalogPolicies（policies 物料读取）", () => {
     expect(policy?.classification).toBe("LANE_POLICY");
   });
 
-  it("lane 分布对账（any 68 / frontend 36 / backend 0；与 vocab-lock V7 词形一致；B6b-I 25 条 lane=any：43→68）", () => {
+  it("lane 分布对账（any 85 / frontend 44 / backend 0；与 vocab-lock V7 词形一致；B6b-I 25 条 lane=any：43→68；B6b-II 25 条 any 17 / frontend 8：68→85、36→44）", () => {
     const policies = loadCatalogPolicies(REPO_CATALOG);
-    expect(policies.filter((p) => p.lane === "any").length).toBe(68);
-    expect(policies.filter((p) => p.lane === "frontend").length).toBe(36);
+    expect(policies.filter((p) => p.lane === "any").length).toBe(85);
+    expect(policies.filter((p) => p.lane === "frontend").length).toBe(44);
     expect(policies.filter((p) => p.lane === "backend").length).toBe(0);
   });
 
@@ -351,9 +351,9 @@ describe("loadCatalogTools / loadCatalogProjectionPresets", () => {
 // ============================================================
 
 describe("verifyCatalogLock（repo 实物：producer 与对账端同口径）", () => {
-  it("全量对账 ok：168 entries 哈希 + 管辖面双向对账零漂移（P-v06 批次 2 增量 111→123、批次 2.6 Browser Eyes 123→124、批次 3 Backend/API/Data 124→141、批次 4 RUNTIME 物料 141→143、B6b-I FE 移植 143→168）", () => {
+  it("全量对账 ok：193 entries 哈希 + 管辖面双向对账零漂移（P-v06 批次 2 增量 111→123、批次 2.6 Browser Eyes 123→124、批次 3 Backend/API/Data 124→141、批次 4 RUNTIME 物料 141→143、B6b-I FE 移植 143→168、B6b-II FE 移植 168→193）", () => {
     const verification = verifyCatalogLock(REPO_CATALOG);
-    expect(verification).toEqual({ ok: true, entries_checked: 168, drifts: [] });
+    expect(verification).toEqual({ ok: true, entries_checked: 193, drifts: [] });
   });
 });
 
@@ -449,8 +449,8 @@ describe("relockCatalog（重锁计算：纯计算零写盘，Owner 裁决 2026-
       (candidate) => candidate.path === "archetypes/archetype.page.master_data.json",
     );
     expect(entry?.content_sha256).toBe(sha256OfUtf8(readFileSync(target, "utf8")));
-    expect(report.next.entries).toHaveLength(168);
-    expect(report.previous.entries).toHaveLength(168);
+    expect(report.next.entries).toHaveLength(193);
+    expect(report.previous.entries).toHaveLength(193);
     expect(report.next.catalog_version).toBe(report.previous.catalog_version);
     // 纯计算零写盘：lock 磁盘字节零变化（落盘归 CLI 层，分层纪律同 status/explain）。
     expect(readFileSync(lockPath, "utf8")).toBe(lockBefore);
@@ -498,9 +498,9 @@ describe("relockCatalog（重锁计算：纯计算零写盘，Owner 裁决 2026-
     expect(added.removed).toEqual([]);
     // diff 互斥（分母「两侧都在」）：新增路径不计入 refreshed（否则 CLI 呈现 +/~ 双标）。
     expect(added.refreshed).toEqual([]);
-    expect(added.next.entries).toHaveLength(169);
-    expect(added.next.controlled_children.allowed).toHaveLength(169);
-    expect(added.next.controlled_children.required).toHaveLength(169);
+    expect(added.next.entries).toHaveLength(194);
+    expect(added.next.controlled_children.allowed).toHaveLength(194);
+    expect(added.next.controlled_children.required).toHaveLength(194);
     const probe = added.next.entries.find(
       (candidate) => candidate.id === "KNOWLEDGE.RELOCK.PROBE",
     );
@@ -512,9 +512,9 @@ describe("relockCatalog（重锁计算：纯计算零写盘，Owner 裁决 2026-
     const removed = relockCatalog(catalogRoot);
     expect(removed.removed).toEqual(["knowledge/knowledge.relock.probe.json"]);
     expect(removed.added).toEqual([]);
-    expect(removed.next.entries).toHaveLength(168);
-    expect(removed.next.controlled_children.allowed).toHaveLength(168);
-    expect(removed.next.controlled_children.required).toHaveLength(168);
+    expect(removed.next.entries).toHaveLength(193);
+    expect(removed.next.controlled_children.allowed).toHaveLength(193);
+    expect(removed.next.controlled_children.required).toHaveLength(193);
   });
 
   it("fail-closed：物料缺 id → SCHEMA_INVALID；lock 缺失 → NOT_CONFIGURED（relock 不是初始化工具）", () => {

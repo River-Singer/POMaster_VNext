@@ -6,7 +6,7 @@
  *    relock refreshed 精确指路 → status 回绿 exit 0（lock 哈希 = 落盘实际字节）；
  * 2) 幂等 byte-stable：同物料两次 relock 第二次 diff 全空且 lock 文件字节全等
  *    （A4 无时戳；generated_by 注记只追加一次）；
- * 3) 收敛：新增物料 → added 且 entries/allowed/required 三方 168→169 对账绿；
+ * 3) 收敛：新增物料 → added 且 entries/allowed/required 三方 193→194 对账绿；
  *    删除物料 → removed 且对账绿（加删文件后三方自动对齐）；
  * 4) store 零依赖：无 .pomaster 的项目根同样可跑（catalog 是工具侧资产 §92.2）；
  *    lock 缺失 → fail-closed 拒绝（relock 不是初始化工具）。
@@ -118,17 +118,17 @@ describe("catalog relock（漂移恢复键：漂移→relock→回绿）", () =>
     const relocked = await runCatalogRelock({ catalogRoot });
     expect(relocked.ok).toBe(true);
     expect(relocked.errors).toEqual([]);
-    expect(relocked.result.entries_total).toBe(168);
+    expect(relocked.result.entries_total).toBe(193);
     expect(relocked.result.added).toEqual([]);
     expect(relocked.result.removed).toEqual([]);
     expect(relocked.result.refreshed).toEqual([TAMPER_PATH]);
     const human = relocked.human.join("\n");
-    expect(human).toContain("catalog-lock: relocked & verified（168 entries）");
+    expect(human).toContain("catalog-lock: relocked & verified（193 entries）");
     expect(human).toContain(`~ ${TAMPER_PATH}`);
 
     const green = await runCatalogStatus({ catalogRoot });
     expect(green.ok).toBe(true);
-    expect(green.result.lock_verification).toEqual({ ok: true, entries_checked: 168, drifts: [] });
+    expect(green.result.lock_verification).toEqual({ ok: true, entries_checked: 193, drifts: [] });
     // 重锁后 lock 登记哈希 = 落盘实际字节（与 verifyCatalogLock 同一口径的直算复核）。
     const entry = readCatalogLock(catalogRoot).entries.find(
       (candidate) => candidate.path === TAMPER_PATH,
@@ -185,11 +185,11 @@ describe("catalog relock（漂移恢复键：漂移→relock→回绿）", () =>
     };
     expect(after.controlled_children["note"]).toBe(note);
     // allowed/required 已按盘面重建，扩展键与清单键共存。
-    expect(after.controlled_children["allowed"]).toHaveLength(168);
-    expect(after.controlled_children["required"]).toHaveLength(168);
+    expect(after.controlled_children["allowed"]).toHaveLength(193);
+    expect(after.controlled_children["required"]).toHaveLength(193);
   });
 
-  it("收敛：新增物料 → added 含该路径且 entries/allowed/required 三方 168→169 对账绿；删除 → removed 且对账绿", async () => {
+  it("收敛：新增物料 → added 含该路径且 entries/allowed/required 三方 193→194 对账绿；删除 → removed 且对账绿", async () => {
     const catalogRoot = trackTempCatalog();
     const probePath = "knowledge/knowledge.relock.probe.json";
     writeFileSync(
@@ -203,11 +203,11 @@ describe("catalog relock（漂移恢复键：漂移→relock→回绿）", () =>
     expect(addedRun.result.removed).toEqual([]);
     // diff 互斥（分母「两侧都在」）：新增路径不计入 refreshed（呈现位 +/~ 不双标）。
     expect(addedRun.result.refreshed).toEqual([]);
-    expect(addedRun.result.entries_total).toBe(169);
+    expect(addedRun.result.entries_total).toBe(194);
     const lock = readCatalogLock(catalogRoot);
-    expect(lock.entries).toHaveLength(169);
-    expect(lock.controlled_children.allowed).toHaveLength(169);
-    expect(lock.controlled_children.required).toHaveLength(169);
+    expect(lock.entries).toHaveLength(194);
+    expect(lock.controlled_children.allowed).toHaveLength(194);
+    expect(lock.controlled_children.required).toHaveLength(194);
     expect(lock.controlled_children.allowed).toContain(probePath);
     expect(lock.controlled_children.required).toContain(probePath);
     // 新条目 source_ref 确定性缺省（package://catalog/<path>）。
@@ -216,15 +216,15 @@ describe("catalog relock（漂移恢复键：漂移→relock→回绿）", () =>
     expect(verifyCatalogLock(catalogRoot).ok).toBe(true);
     const greenStatus = await runCatalogStatus({ catalogRoot });
     expect(greenStatus.ok).toBe(true);
-    expect(greenStatus.result.entries_total).toBe(169);
+    expect(greenStatus.result.entries_total).toBe(194);
 
     unlinkSync(join(catalogRoot, probePath));
     const removedRun = await runCatalogRelock({ catalogRoot });
     expect(removedRun.ok).toBe(true);
     expect(removedRun.result.removed).toEqual([probePath]);
     expect(removedRun.result.added).toEqual([]);
-    expect(removedRun.result.entries_total).toBe(168);
-    expect(readCatalogLock(catalogRoot).entries).toHaveLength(168);
+    expect(removedRun.result.entries_total).toBe(193);
+    expect(readCatalogLock(catalogRoot).entries).toHaveLength(193);
     expect(verifyCatalogLock(catalogRoot).ok).toBe(true);
   });
 
@@ -244,7 +244,7 @@ describe("catalog relock（漂移恢复键：漂移→relock→回绿）", () =>
     expect(envelope.command).toBe("catalog relock");
     expect(envelope.ok).toBe(true);
     expect(envelope.errors).toEqual([]);
-    expect(envelope.result["entries_total"]).toBe(168);
+    expect(envelope.result["entries_total"]).toBe(193);
     expect(existsSync(join(projectRoot, ".pomaster"))).toBe(false);
   });
 

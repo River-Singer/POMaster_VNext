@@ -199,7 +199,7 @@ const stageLock = JSON.parse(
 );
 
 // ============================================================
-// 5.5) seeds/ 播种资产整目录拷贝（vNext Batch 6 B6b-I：bundle 后 seed-manifest
+// 5.5) seeds/ 播种资产整目录拷贝（vNext Batch 6 B6b：bundle 后 seed-manifest
 // 的 "../seeds" 相对 import.meta.url 解析为 <pkg>/seeds——catalog 同款包内资产位）
 // ============================================================
 

@@ -1,0 +1,93 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "kind='policy' 不在 vocab-lock kinds_registry.truth_bodies（POLICY. 前缀已冻结注册，closed-world）；新 id 域段待登记：HANDOFF",
+    "proposal": "词汇表 PR 登记 policy kind 及新域段；或 Owner 裁决 policy 条目住 catalog/ 而非 truth/objects 正文层（与前批 45+25 条同因同请，合并进同一 vocab PR）",
+    "locked_vocab_untouched": true
+  },
+  "x-spec-d-materialization": {
+    "status": "PROPOSAL",
+    "package": "B6b-II FE 播种移植（SPEC-D 池卡复用；分母=MASTer 池卡 + vendor 播种字节双锚）",
+    "human_review_required": true,
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/corpus/spec-knowledge/candidates/consolidated-pool.yaml",
+    "group": "FE-G4",
+    "candidate_id": "POLICY.WEB.HANDOFF.STATE_MATRIX_FULL",
+    "density_rank": null,
+    "density_score": 7.25,
+    "pool_statement_sha16": "69dc8b52ea098de0",
+    "curated_rule": "B6b-II 分母（FE 24-45 + index）required 池（ELIGIBLE 未物化 + MASTer 行锚落 MUST/MUST NOT）按池密度序取前 22 + advisory 池（SHOULD 源 backlog policy 卡 + 锚段全落建议段闭包）按同公式密度序取前 3 = 25（D5 上限/批内执行）；UNIVERSAL + UNIVERSAL_POLICY + 无 uncertainty + 非 project_scope + 非重复",
+    "denominator": "MASTer（池卡 source_protocol 锚）"
+  },
+  "x-b6-porting": {
+    "status": "PROPOSAL",
+    "batch": "B6B-2",
+    "human_review_required": true,
+    "enforcement_axis": {
+      "source_sections": [
+        "MUST",
+        "MUST NOT",
+        "SHOULD"
+      ],
+      "rule": "SHOULD/Change Policy 源条目 enforcement 必须 advisory（禁升 required）；MUST/MUST NOT 源条目 enforcement 必须 required_when_applicable（降级合法）",
+      "asserted_by": "packages/cli/tests/catalog-b6-porting.spec.ts"
+    },
+    "extra_master_sections": [],
+    "denominator": "vendor",
+    "vendor_pin": {
+      "path": "pomaster/components/frontend-hard-spec/assets/universal/41-design-handoff-protocol.md",
+      "sha256": "335df4991a29eb77222b0596de5db7fcc0bd5d9019ecf9bf882a08cea74c1937",
+      "bytes": 2048
+    },
+    "seeded_spec": ".pomaster/specs/hard/frontend/41-design-handoff-protocol.md",
+    "seed_manifest": "packages/cli/seeds/manifest.json"
+  },
+  "id": "POLICY.WEB.HANDOFF.STATE_MATRIX_FULL",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "UNIVERSAL_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "设计交付完整状态矩阵",
+  "statement_zh": "设计交付必须包含完整状态矩阵——默认、加载、空、错误、权限、禁用、长文本与小屏——并标注响应式、缩放、键盘与焦点要求；表格报表类交付须含列宽、固定列、大数据与导出状态；只交一张理想成功态一律禁止；高风险交互宜附可点击原型与键盘说明。",
+  "statement_en_keywords": [
+    "full state matrix",
+    "no ideal state only",
+    "table deliverable specs",
+    "clickable prototype"
+  ],
+  "applies_when": {
+    "lane": "frontend",
+    "condition": "评审设计交付完备性时",
+    "applicability_note": "评审设计交付完备性时"
+  },
+  "enforcement": "required_when_applicable",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-spec-decomposition"
+  },
+  "origin": "ingested",
+  "origin_note": "B6b-II FE 播种移植物化；statement 沿用 SPEC-D 候选卡独立措辞（clean-room），零逐字拷贝上游源文本；播种分母=vendor 字节（x-b6-porting.vendor_pin），分解分母=MASTer 池卡（x-spec-d-materialization）",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/corpus/spec-knowledge/candidates/FE-G4.yaml",
+      "captured_by": "agent:claude/spec-d-consolidation",
+      "locator": {
+        "candidate": "POLICY.WEB.HANDOFF.STATE_MATRIX_FULL",
+        "source_protocol": ".trellis/spec/frontend/41-design-handoff-protocol.md",
+        "lines": "L20-L23, L30, L36"
+      },
+      "clean_room_note": "independently rewritten from SPEC-D decomposition candidate cards; zero verbatim copy"
+    }
+  ],
+  "review_notes": [
+    "设计交付状态矩阵完备性在既有 168 条中无对应条目，零语义重复；多锚卡（MUST/MUST NOT + SHOULD 锚混合），主锚定强度 required——SHOULD 锚（可点击原型）不单独降级，锚证据混合时以最强段定强度（B6b-I 轴规则）。"
+  ]
+}

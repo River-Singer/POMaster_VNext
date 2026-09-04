@@ -2,14 +2,14 @@
 //
 // 两道验证，全部可复跑：
 // 1) `npm pack --dry-run` 断言：bin 在座 / catalog 完整（与仓库 catalog 文件集全等 +
-//    lock 168 entries）/ seeds 完整（与仓库 packages/cli/seeds 文件集全等 + 清单 23
+//    lock 193 entries）/ seeds 完整（与仓库 packages/cli/seeds 文件集全等 + 清单 46
 //    entries）/ 无 node_modules / 无 files 白名单外杂物 / 零 dependencies；
 // 2) fresh-install 冒烟：真实 `npm pack` 出 tgz → 系统 temp `pvnext-npm-smoke-<pid>`
 //    目录 `npm init -y` + `npm install <tgz>`（零 dependencies，不联网装依赖）→
 //    依次实跑 `npx pomaster --help|init|status|catalog status|doctor`，断言退出码与
 //    关键词形。关键断言：catalog status 的 catalog_root 命中
 //    node_modules/pomaster/catalog（resolveCatalogRoot 候选链的包内资产候选，
-//    ok:true 且 168 entries 0 drift）。
+//    ok:true 且 193 entries 0 drift）。
 //
 // 冒烟产物（tgz 与 smoke 目录）留系统 temp 并在末尾打印路径，不进仓库
 // （stage/ 已在 .gitignore；temp 目录由操作系统清理策略兜底）。
@@ -80,7 +80,7 @@ const packedPaths = packReport.files.map((file) => file.path.replace(/\\/g, "/")
 // 1.1 bin 在座。
 assert(packedPaths.includes("dist/bin.js"), "bin 在座（dist/bin.js）");
 
-// 1.2 catalog 完整：打包文件集与仓库 catalog/ 全等 + lock 168 entries。
+// 1.2 catalog 完整：打包文件集与仓库 catalog/ 全等 + lock 193 entries。
 const repoCatalogFiles = walkFiles(p("catalog")).map((file) => `catalog/${file}`);
 const packedCatalogFiles = packedPaths.filter((file) => file.startsWith("catalog/"));
 const repoSet = new Set(repoCatalogFiles);
@@ -95,9 +95,9 @@ assert(
 const stageLock = JSON.parse(
   readFileSync(join(STAGE_PKG, "catalog", "catalog-lock.draft.json"), "utf8"),
 );
-assert(stageLock.entries.length === 168, "catalog-lock 168 entries", `实为 ${stageLock.entries.length}`);
+assert(stageLock.entries.length === 193, "catalog-lock 193 entries", `实为 ${stageLock.entries.length}`);
 
-// 1.2.1 seeds 完整（B6b-I）：打包文件集与仓库 packages/cli/seeds/ 全等 + 清单
+// 1.2.1 seeds 完整（B6b 两批）：打包文件集与仓库 packages/cli/seeds/ 全等 + 清单
 //      schema/条目数（播种资产随包分发——装载器 fail-closed，缺 seeds = init 必炸）。
 const repoSeedsFiles = walkFiles(p("packages", "cli", "seeds")).map((file) => `seeds/${file}`);
 const packedSeedsFiles = packedPaths.filter((file) => file.startsWith("seeds/"));
@@ -119,8 +119,8 @@ assert(
   `实为 ${stageSeedManifest.schema}`,
 );
 assert(
-  stageSeedManifest.entries?.length === 23,
-  "stage seeds manifest 23 entries",
+  stageSeedManifest.entries?.length === 46,
+  "stage seeds manifest 46 entries",
   `实为 ${stageSeedManifest.entries?.length}`,
 );
 
@@ -238,7 +238,7 @@ smoke("npx pomaster --help", "pomaster --help", {
 });
 
 // 2.2 `npx pomaster init`：四产物落盘（truth-index / authority / config.yaml / AGENTS.md）
-//     + B6b-I 播种件落盘（23 份 FE 协议进 .pomaster/specs/hard/frontend——包内 seeds
+//     + B6b 播种件落盘（46 份 FE 协议进 .pomaster/specs/hard/frontend——包内 seeds
 //     资产位 + 装载器 fail-closed 的端到端实证：缺 seeds 的包 init 即炸）。
 smoke("npx pomaster init", "pomaster init", { expectExit: [0] });
 for (const artifact of [
@@ -258,15 +258,19 @@ const seededSpecs = existsSync(seededFrontendDir)
       .sort()
   : [];
 assert(
-  seededSpecs.length === 23,
-  "init 播种件落盘：specs/hard/frontend 23 份协议",
+  seededSpecs.length === 45,
+  "init 播种件落盘：specs/hard/frontend 45 份编号协议",
   `实为 ${seededSpecs.length}${seededSpecs.length ? `: ${seededSpecs.join(", ")}` : ""}`,
 );
 assert(
   seededSpecs[0] === "01-development-checklist-protocol.md" &&
-    seededSpecs[22] === "23-accessibility-protocol.md",
-  "init 播种件编号连续（01..23）",
-  `首末: ${seededSpecs[0]} .. ${seededSpecs[22]}`,
+    seededSpecs[44] === "45-browser-storage-protocol.md",
+  "init 播种件编号连续（01..45）",
+  `首末: ${seededSpecs[0]} .. ${seededSpecs[44]}`,
+);
+assert(
+  existsSync(join(seededFrontendDir, "index.md")),
+  "init 播种件落盘：specs/hard/frontend/index.md（FE 索引）",
 );
 
 // 2.3 `npx pomaster status`。
@@ -275,15 +279,15 @@ smoke("npx pomaster status", "pomaster status", {
   expectWords: ["status: .pomaster/state/truth-index.json (seq="],
 });
 
-// 2.4 `npx pomaster catalog status --json`（关键：包内资产候选命中 + 168 entries 0 drift）。
+// 2.4 `npx pomaster catalog status --json`（关键：包内资产候选命中 + 193 entries 0 drift）。
 const catalogEnvelope = smoke("npx pomaster catalog status --json", "pomaster catalog status --json", {
   expectExit: [0],
   json: true,
 });
 assert(catalogEnvelope.ok === true, "catalog status 信封 ok:true");
 assert(
-  catalogEnvelope.result?.entries_total === 168,
-  `catalog entries = 168（实为 ${catalogEnvelope.result?.entries_total}）`,
+  catalogEnvelope.result?.entries_total === 193,
+  `catalog entries = 193（实为 ${catalogEnvelope.result?.entries_total}）`,
 );
 assert(
   catalogEnvelope.result?.lock_verification?.ok === true &&

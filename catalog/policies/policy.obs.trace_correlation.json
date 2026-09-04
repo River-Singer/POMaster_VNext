@@ -1,0 +1,90 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "kind='policy' 不在 vocab-lock kinds_registry.truth_bodies（POLICY. 前缀已冻结注册，closed-world）",
+    "proposal": "词汇表 PR 登记 policy kind 及新域段；或 Owner 裁决 policy 条目住 catalog/ 而非 truth/objects 正文层（与前批 45+25 条同因同请，合并进同一 vocab PR）",
+    "locked_vocab_untouched": true
+  },
+  "x-spec-d-materialization": {
+    "status": "PROPOSAL",
+    "package": "B6b-II FE 播种移植（SPEC-D 池卡复用；分母=MASTer 池卡 + vendor 播种字节双锚）",
+    "human_review_required": true,
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/corpus/spec-knowledge/candidates/consolidated-pool.yaml",
+    "group": "FE-G1",
+    "candidate_id": "POLICY.OBS.TRACE_CORRELATION",
+    "density_rank": null,
+    "density_score": 33.38,
+    "pool_statement_sha16": "daf5221dd443b1c8",
+    "curated_rule": "B6b-II 分母（FE 24-45 + index）required 池（ELIGIBLE 未物化 + MASTer 行锚落 MUST/MUST NOT）按池密度序取前 22 + advisory 池（SHOULD 源 backlog policy 卡 + 锚段全落建议段闭包）按同公式密度序取前 3 = 25（D5 上限/批内执行）；UNIVERSAL + UNIVERSAL_POLICY + 无 uncertainty + 非 project_scope + 非重复",
+    "denominator": "MASTer（池卡 source_protocol 锚）"
+  },
+  "x-b6-porting": {
+    "status": "PROPOSAL",
+    "batch": "B6B-2",
+    "human_review_required": true,
+    "enforcement_axis": {
+      "source_sections": [
+        "SHOULD"
+      ],
+      "rule": "SHOULD/Change Policy 源条目 enforcement 必须 advisory（禁升 required）；MUST/MUST NOT 源条目 enforcement 必须 required_when_applicable（降级合法）",
+      "asserted_by": "packages/cli/tests/catalog-b6-porting.spec.ts"
+    },
+    "extra_master_sections": [],
+    "denominator": "vendor",
+    "vendor_pin": {
+      "path": "pomaster/components/frontend-hard-spec/assets/universal/34-monitoring-logging-protocol.md",
+      "sha256": "3c37c1c3aa3ade8d43532a1fcc7561e95aef42a19e46b6eb53d864054a2da013",
+      "bytes": 8248
+    },
+    "seeded_spec": ".pomaster/specs/hard/frontend/34-monitoring-logging-protocol.md",
+    "seed_manifest": "packages/cli/seeds/manifest.json"
+  },
+  "id": "POLICY.OBS.TRACE_CORRELATION",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "UNIVERSAL_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "追踪标识全链路关联",
+  "statement_zh": "用户操作、请求与异步任务应通过追踪标识关联；启用分布式追踪时应遵循标准化追踪上下文并验证跨源传播与信任策略。",
+  "statement_en_keywords": [
+    "trace correlation",
+    "w3c trace context",
+    "cross origin propagation trust"
+  ],
+  "applies_when": {
+    "lane": "any",
+    "condition": "分布式追踪接入",
+    "applicability_note": "分布式追踪接入"
+  },
+  "enforcement": "advisory",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-spec-decomposition"
+  },
+  "origin": "ingested",
+  "origin_note": "B6b-II FE 播种移植物化；statement 沿用 SPEC-D 候选卡独立措辞（clean-room），零逐字拷贝上游源文本；播种分母=vendor 字节（x-b6-porting.vendor_pin），分解分母=MASTer 池卡（x-spec-d-materialization）",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/corpus/spec-knowledge/candidates/FE-G1.yaml",
+      "captured_by": "agent:claude/spec-d-consolidation",
+      "locator": {
+        "candidate": "POLICY.OBS.TRACE_CORRELATION",
+        "source_protocol": ".trellis/spec/frontend/34-monitoring-logging-protocol.md",
+        "lines": "L37-L39"
+      },
+      "clean_room_note": "independently rewritten from SPEC-D decomposition candidate cards; zero verbatim copy"
+    }
+  ],
+  "review_notes": [
+    "advisory 物化（SHOULD 源）：追踪关联与 W3C Trace Context 跨源传播验证，源段 SHOULD——按八分类矩阵落 advisory 不升 required；enforcement 轴断言钉（catalog-b6-porting.spec）。"
+  ]
+}

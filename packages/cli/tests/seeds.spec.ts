@@ -11,7 +11,8 @@
  * SEEDABLE_STORE_DIRS 12 播种目录 allowlist 禁落盘——控制平面 kernel 登记目录同样
  * 拒绝 + 路径词形卫生 fail-closed throw + allowlist ⊆ kernel 登记派生集合对账）、
  * fresh 临时工程端到端（runInit 注入清单：init 后种子在位 → 重跑零变化 → 手改种子
- * 文件后重跑仍零变化）、B6b 清单现状 pin（缺省装载 23 份 FE 播种件）。
+ * 文件后重跑仍零变化）、B6b 清单现状 pin（缺省装载 46 份 FE 播种件 = 45 编号协议 +
+ * index，B6b-I/B6b-II 两批合并清单）。
  */
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -241,9 +242,9 @@ describe("runInit 步骤 4.6 播种端到端（fresh 临时工程 + 注入清单
     ).toBe("preserved");
   });
 
-  it("B6b-I 清单现状 pin：缺省装载 23 份 FE 播种件（01-23 分母；46 全量 B6b-II 补齐）——条目目标全落 specs/hard/frontend 播种 allowlist 面且 frontmatter 带 seed pin", () => {
+  it("B6b 清单现状 pin：缺省装载 46 份 FE 播种件（45 编号协议 + index；B6b-II 全量分母）——条目目标全落 specs/hard/frontend 播种 allowlist 面且 frontmatter 带 seed pin", () => {
     const entries = loadSeedManifestEntries();
-    expect(entries).toHaveLength(23);
+    expect(entries).toHaveLength(46);
     for (const entry of entries) {
       expect(entry.path.startsWith(".pomaster/specs/hard/frontend/")).toBe(true);
       expect(entry.path.endsWith(".md")).toBe(true);
@@ -252,24 +253,26 @@ describe("runInit 步骤 4.6 播种端到端（fresh 临时工程 + 注入清单
       // marker-free：播种件字节不带生成标记（引擎写入面 zero-marker 的内容侧前提）。
       expect(entry.content.includes(GENERATED_MARKER)).toBe(false);
     }
-    // 编号连续性：01..23 逐一在册（B6b-I 前半分母钉）。
-    for (let n = 1; n <= 23; n += 1) {
+    // 编号连续性：01..45 逐一在册 + index.md 在册（B6b-II 全量分母钉）。
+    for (let n = 1; n <= 45; n += 1) {
       const prefix = `.pomaster/specs/hard/frontend/${String(n).padStart(2, "0")}-`;
       expect(entries.some((e) => e.path.startsWith(prefix)), prefix).toBe(true);
     }
+    expect(entries.some((e) => e.path.endsWith("/index.md")), "index.md 在册").toBe(true);
   });
 
-  it("缺省（不注入）init：FE 23 份播种件在位（seeded 报告 + 幂等重跑全 preserved）", async () => {
+  it("缺省（不注入）init：FE 46 份播种件在位（seeded 报告 + 幂等重跑全 preserved）", async () => {
     const outcome = await runInit(dir);
     expect(outcome.ok).toBe(true);
     const seeded = outcome.result.files.filter((f) => f.action === "seeded");
-    expect(seeded).toHaveLength(23);
+    expect(seeded).toHaveLength(46);
     expect(existsSync(join(dir, ".pomaster", "specs", "hard", "frontend", "01-development-checklist-protocol.md"))).toBe(true);
-    expect(existsSync(join(dir, ".pomaster", "specs", "hard", "frontend", "23-accessibility-protocol.md"))).toBe(true);
+    expect(existsSync(join(dir, ".pomaster", "specs", "hard", "frontend", "45-browser-storage-protocol.md"))).toBe(true);
+    expect(existsSync(join(dir, ".pomaster", "specs", "hard", "frontend", "index.md"))).toBe(true);
     // 幂等：重跑全 preserved = NO_CHANGE。
     const second = await runInit(dir);
     expect(second.ok).toBe(true);
     expect(second.result.change).toBe("NO_CHANGE");
-    expect(second.result.files.filter((f) => f.action === "preserved")).toHaveLength(23);
+    expect(second.result.files.filter((f) => f.action === "preserved")).toHaveLength(46);
   });
 });

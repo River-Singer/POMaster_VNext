@@ -97,7 +97,7 @@ describe("① context compile 实跑：catalog 派生分区在场且标明出处
     // catalog 出处元信息：root + lock 校验注记。
     expect(outcome.result.catalog_source.status).toBe("catalog");
     expect(outcome.result.catalog_source.root).not.toBeNull();
-    expect(outcome.result.catalog_source.note).toContain("catalog-lock 校验通过（168 entries）");
+    expect(outcome.result.catalog_source.note).toContain("catalog-lock 校验通过（193 entries）");
     // lazyTools 消费 catalog/tools（projection.ts:177 显式空自注消灭的实跑验证）。
     expect(outcome.result.manifest.lazy_tools).toContain("tools/materialize_catalog_pilot.py");
   });

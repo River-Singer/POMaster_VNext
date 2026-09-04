@@ -1,0 +1,90 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "kind='policy' 不在 vocab-lock kinds_registry.truth_bodies（POLICY. 前缀已冻结注册，closed-world）；新 id 域段待登记：I18N",
+    "proposal": "词汇表 PR 登记 policy kind 及新域段；或 Owner 裁决 policy 条目住 catalog/ 而非 truth/objects 正文层（与前批 45+25 条同因同请，合并进同一 vocab PR）",
+    "locked_vocab_untouched": true
+  },
+  "x-spec-d-materialization": {
+    "status": "PROPOSAL",
+    "package": "B6b-II FE 播种移植（SPEC-D 池卡复用；分母=MASTer 池卡 + vendor 播种字节双锚）",
+    "human_review_required": true,
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/corpus/spec-knowledge/candidates/consolidated-pool.yaml",
+    "group": "FE-G4",
+    "candidate_id": "POLICY.WEB.I18N.RAW_VALUE_FOR_COMPUTE",
+    "density_rank": null,
+    "density_score": 32.25,
+    "pool_statement_sha16": "8d7223cd5378956d",
+    "curated_rule": "B6b-II 分母（FE 24-45 + index）required 池（ELIGIBLE 未物化 + MASTer 行锚落 MUST/MUST NOT）按池密度序取前 22 + advisory 池（SHOULD 源 backlog policy 卡 + 锚段全落建议段闭包）按同公式密度序取前 3 = 25（D5 上限/批内执行）；UNIVERSAL + UNIVERSAL_POLICY + 无 uncertainty + 非 project_scope + 非重复",
+    "denominator": "MASTer（池卡 source_protocol 锚）"
+  },
+  "x-b6-porting": {
+    "status": "PROPOSAL",
+    "batch": "B6B-2",
+    "human_review_required": true,
+    "enforcement_axis": {
+      "source_sections": [
+        "MUST NOT"
+      ],
+      "rule": "SHOULD/Change Policy 源条目 enforcement 必须 advisory（禁升 required）；MUST/MUST NOT 源条目 enforcement 必须 required_when_applicable（降级合法）",
+      "asserted_by": "packages/cli/tests/catalog-b6-porting.spec.ts"
+    },
+    "extra_master_sections": [],
+    "denominator": "vendor",
+    "vendor_pin": {
+      "path": "pomaster/components/frontend-hard-spec/assets/universal/38-internationalization-protocol.md",
+      "sha256": "68ed4e126042eee191f071786d58983b3b2df94a826a13b50fc52aaa6536c7fa",
+      "bytes": 14541
+    },
+    "seeded_spec": ".pomaster/specs/hard/frontend/38-internationalization-protocol.md",
+    "seed_manifest": "packages/cli/seeds/manifest.json"
+  },
+  "id": "POLICY.WEB.I18N.RAW_VALUE_FOR_COMPUTE",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "UNIVERSAL_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "计算排序用原始值",
+  "statement_zh": "计算与排序必须使用原始值；已经过格式化的显示字符串不得再参与运算或排序。",
+  "statement_en_keywords": [
+    "raw value for compute",
+    "formatted string not computable",
+    "no sort on display text"
+  ],
+  "applies_when": {
+    "lane": "any",
+    "condition": "对展示值做计算或排序时",
+    "applicability_note": "对展示值做计算或排序时"
+  },
+  "enforcement": "required_when_applicable",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-spec-decomposition"
+  },
+  "origin": "ingested",
+  "origin_note": "B6b-II FE 播种移植物化；statement 沿用 SPEC-D 候选卡独立措辞（clean-room），零逐字拷贝上游源文本；播种分母=vendor 字节（x-b6-porting.vendor_pin），分解分母=MASTer 池卡（x-spec-d-materialization）",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/corpus/spec-knowledge/candidates/FE-G4.yaml",
+      "captured_by": "agent:claude/spec-d-consolidation",
+      "locator": {
+        "candidate": "POLICY.WEB.I18N.RAW_VALUE_FOR_COMPUTE",
+        "source_protocol": ".trellis/spec/frontend/38-internationalization-protocol.md",
+        "lines": "L32"
+      },
+      "clean_room_note": "independently rewritten from SPEC-D decomposition candidate cards; zero verbatim copy"
+    }
+  ],
+  "review_notes": [
+    "原始值与显示值分离在既有 168 条中无对应条目（13 金额精度为金额特例未入册；本条为通用形态），零语义重复。"
+  ]
+}

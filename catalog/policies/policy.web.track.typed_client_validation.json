@@ -1,0 +1,90 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "kind='policy' 不在 vocab-lock kinds_registry.truth_bodies（POLICY. 前缀已冻结注册，closed-world）",
+    "proposal": "词汇表 PR 登记 policy kind 及新域段；或 Owner 裁决 policy 条目住 catalog/ 而非 truth/objects 正文层（与前批 45+25 条同因同请，合并进同一 vocab PR）",
+    "locked_vocab_untouched": true
+  },
+  "x-spec-d-materialization": {
+    "status": "PROPOSAL",
+    "package": "B6b-II FE 播种移植（SPEC-D 池卡复用；分母=MASTer 池卡 + vendor 播种字节双锚）",
+    "human_review_required": true,
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/corpus/spec-knowledge/candidates/consolidated-pool.yaml",
+    "group": "FE-G4",
+    "candidate_id": "POLICY.WEB.TRACK.TYPED_CLIENT_VALIDATION",
+    "density_rank": null,
+    "density_score": 32.38,
+    "pool_statement_sha16": "4f01e3654a6d34b3",
+    "curated_rule": "B6b-II 分母（FE 24-45 + index）required 池（ELIGIBLE 未物化 + MASTer 行锚落 MUST/MUST NOT）按池密度序取前 22 + advisory 池（SHOULD 源 backlog policy 卡 + 锚段全落建议段闭包）按同公式密度序取前 3 = 25（D5 上限/批内执行）；UNIVERSAL + UNIVERSAL_POLICY + 无 uncertainty + 非 project_scope + 非重复",
+    "denominator": "MASTer（池卡 source_protocol 锚）"
+  },
+  "x-b6-porting": {
+    "status": "PROPOSAL",
+    "batch": "B6B-2",
+    "human_review_required": true,
+    "enforcement_axis": {
+      "source_sections": [
+        "SHOULD"
+      ],
+      "rule": "SHOULD/Change Policy 源条目 enforcement 必须 advisory（禁升 required）；MUST/MUST NOT 源条目 enforcement 必须 required_when_applicable（降级合法）",
+      "asserted_by": "packages/cli/tests/catalog-b6-porting.spec.ts"
+    },
+    "extra_master_sections": [],
+    "denominator": "vendor",
+    "vendor_pin": {
+      "path": "pomaster/components/frontend-hard-spec/assets/universal/40-analytics-protocol.md",
+      "sha256": "f638c8054ba32d44a15f1dd4fa42b637e1f6ad39cd73c6e1d45cd5bfd71b2c56",
+      "bytes": 4190
+    },
+    "seeded_spec": ".pomaster/specs/hard/frontend/40-analytics-protocol.md",
+    "seed_manifest": "packages/cli/seeds/manifest.json"
+  },
+  "id": "POLICY.WEB.TRACK.TYPED_CLIENT_VALIDATION",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "UNIVERSAL_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "类型化采集客户端与校验",
+  "statement_zh": "宜经类型化分析客户端发出事件并做模式校验，同时监控事件质量、丢失率与重复率。",
+  "statement_en_keywords": [
+    "typed analytics client",
+    "schema validation",
+    "quality monitoring"
+  ],
+  "applies_when": {
+    "lane": "any",
+    "condition": "建设采集通道时",
+    "applicability_note": "建设采集通道时"
+  },
+  "enforcement": "advisory",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-spec-decomposition"
+  },
+  "origin": "ingested",
+  "origin_note": "B6b-II FE 播种移植物化；statement 沿用 SPEC-D 候选卡独立措辞（clean-room），零逐字拷贝上游源文本；播种分母=vendor 字节（x-b6-porting.vendor_pin），分解分母=MASTer 池卡（x-spec-d-materialization）",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/corpus/spec-knowledge/candidates/FE-G4.yaml",
+      "captured_by": "agent:claude/spec-d-consolidation",
+      "locator": {
+        "candidate": "POLICY.WEB.TRACK.TYPED_CLIENT_VALIDATION",
+        "source_protocol": ".trellis/spec/frontend/40-analytics-protocol.md",
+        "lines": "L39-L40"
+      },
+      "clean_room_note": "independently rewritten from SPEC-D decomposition candidate cards; zero verbatim copy"
+    }
+  ],
+  "review_notes": [
+    "advisory 物化（SHOULD 源）：类型化采集客户端与模式校验及质量监控，源段 SHOULD——advisory 落点；enforcement 轴断言钉。"
+  ]
+}

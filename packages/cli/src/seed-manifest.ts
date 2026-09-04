@@ -1,5 +1,5 @@
 /**
- * seed-manifest.ts —— 播种清单装载器（vNext Batch 6 B6b-I）。
+ * seed-manifest.ts —— 播种清单装载器（vNext Batch 6 B6b；B6b-I 定型、B6b-II 全量）。
  *
  * 职责（porting-design-proposal §4 B6b 行 + R5 提案）：把包内种子资产
  * （`<pkg>/seeds/`）装载为 seeds.ts 引擎的归约形态 SeedEntry[]（{path, content}）——
@@ -30,8 +30,9 @@
  * 全文协议形态的强度注记：MUST/MUST NOT 段 = required、SHOULD/Change Policy 段 =
  * advisory（禁升级 MUST——PRD §8.2 "SHOULD 不得被 Agent 偷偷升级为 MUST" 的
  * frontmatter 承载）、Examples 段 = NON-AUTHORITATIVE（纠错 §23 示例不当默认基线；
- * 21/23 份正文自带「内容示例，可删除」先例标注，2 份（04/23）无标注文件不插入正文
- * 字节，语义由本字段承载——字节级忠实断言优先）。
+ * 45 份编号协议正文 42 份自带「内容示例，可删除」先例标注，3 份（04/23/38）无标注
+ * 文件不插入正文字节，语义由本字段承载——字节级忠实断言优先；index.md 非 12 段
+ * 结构文件，同字段承载）。
  */
 
 import { createHash } from "node:crypto";
@@ -56,6 +57,8 @@ export interface SeedManifestEntryDoc {
   readonly source_sha256: string;
   /** vendor 源字节数。 */
   readonly source_bytes: number;
+  /** 播种批次代号（B6b-II 起在场；资产 frontmatter seed_version 同源）。 */
+  readonly seed_version?: string;
   /** 移植注记（R8 词形清洗登记等；零注记为空数组）。 */
   readonly porting_notes: readonly string[];
 }
@@ -63,12 +66,17 @@ export interface SeedManifestEntryDoc {
 /** manifest.json 文档形态（工具生成的只读数据；TS 侧零写入）。 */
 export interface SeedManifestDoc {
   readonly schema: typeof SEED_MANIFEST_SCHEMA;
+  /** 最近写入批次（B6b-II 起清单合并承载多批分母——逐批名单见 batches）。 */
   readonly batch: string;
+  /** 逐批播种目标名单（B6b-II 起在场；装载零消费——provenance 文档位）。 */
+  readonly batches?: Readonly<Record<string, readonly string[]>>;
   readonly generated_by: string;
   readonly denominator: {
     readonly batch_scope: string;
     readonly planted: number;
     readonly planted_total: number;
+    /** 本批新增条目数（B6b-II 起在场）。 */
+    readonly batch_new?: number;
   };
   readonly seed_semantics: string;
   readonly authority_scope: string;

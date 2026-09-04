@@ -1,15 +1,19 @@
 # -*- coding: utf-8 -*-
-"""B6b-I FE 协议移植工具（前 23 份播种资产 + provenance pin + D5 精选 policies）。
+"""B6b FE 协议移植工具（B6b-I 前 23 份 + B6b-II 后半 24-45/index；播种资产 + provenance
+pin + D5 精选 policies）。
 
 输入（只读）：
-  - pomaster/components/frontend-hard-spec/assets/universal/  vendor 播种源（01-23）
+  - pomaster/components/frontend-hard-spec/assets/universal/  vendor 播种源（46 文件分母）
   - corpus/spec-knowledge/candidates/consolidated-pool.yaml   SPEC-D 汇总池（卡分母=MASTer）
   - corpus/spec-knowledge/candidates/{FE-G1..FE-G4}.yaml      候选组卡（raw statement）
 
 输出：
-  - packages/cli/seeds/specs/hard/frontend/*.md   23 份播种件（统一 frontmatter + vendor 正文逐字节）
-  - packages/cli/seeds/manifest.json              播种清单单源（逐文件 vendor sha256/bytes pin）
-  - catalog/policies/policy.*.json                D5 精选 25 条（22 required + 3 advisory）
+  - packages/cli/seeds/specs/hard/frontend/*.md   播种件（统一 frontmatter + vendor 正文
+    逐字节；index.md 为唯一授权词形适配点，见 INDEX_ADAPTATIONS）
+  - packages/cli/seeds/manifest.json              播种清单单源（逐文件 vendor sha256/bytes
+    pin；两批合并清单——B6b-I 条目按 vendor 字节确定性重算逐字节不变）
+  - catalog/policies/policy.*.json                D5 精选（B6b-I 25 条 + B6b-II 25 条，
+    各批内 22 required + 3 advisory）
 
 移植形态定案（ADR-lite，Owner 裁定 B5/D20 框架内）：
   - 移植 = 分解 + 形态改造，技术内容零语义重写：播种件正文 = vendor 正文逐字节
@@ -17,25 +21,33 @@
     no-governed-id 默认：播种 spec 文件是项目可编辑自由文件，治理绑定住 catalog
     policy 面，Owner 未授权加 governed id 语义 → R6 词形裁定以 no-governed-id 回避）；
   - provenance pin（R1 漂移缓解，双分母如实标注）：清单逐条 vendor sha256+bytes
-    （播种分母）；FE 06/15（vendor↔MASTer 漂移文件，本批范围内 06 在、15 在）pin 由
-    spec-inventory pilot_verification 钉死值对账（测试侧同钉）——pin 对账通过 = 工具
-    取材确为 vendor 字节；池卡行号锚与 LCS 审计按 MASTer 消费树（分解分母）忠实执行，
-    MASTer 项目扩展段锚如实分流 extra_master_sections 不计入强度判定；
+    （播种分母）；FE 06/15/30（vendor↔MASTer 漂移文件，B6b-I 含 06/15、B6b-II 含
+    30）pin 由 spec-inventory pilot_verification 钉死值对账（全等断言——B6b-II 收紧，
+    去 64-bit 截断回退；测试侧同钉）——pin 对账通过 = 工具取材确为 vendor 字节；池卡
+    行号锚与 LCS 审计按 MASTer 消费树（分解分母）忠实执行，MASTer 项目扩展段锚如实
+    分流 extra_master_sections 不计入强度判定；
   - enforcement 轴（R2 MUST 通胀缓解）：每条 policy 物料带 x-b6-porting.source_sections
     （12 段闭包内的 MASTer 行锚段映射），主锚语义断言——全部锚 ∈ {SHOULD, Change
     Policy} → enforcement 必须 advisory（禁升 required）；锚含 MUST/MUST NOT →
     required_when_applicable（多锚卡主锚定强度；强度只降不升）。由
-    packages/cli/tests/catalog-b6-porting.spec.ts 机器断言（不靠自觉）；
-  - D5 保守精选（上限 25/批）：required 池 = FE23 分母未物化 ELIGIBLE 卡按池密度序
-    取前 22，逐卡 MASTer 行锚验证（行锚不落 MUST/MUST NOT 或全落项目扩展段的卡保守
-    排除留池待复核——池 enforcement 判定与锚证据矛盾时不猜 Owner 意图）；advisory 池 =
-    SHOULD 源 canonical_backlog policy 卡按同公式密度序取前 3；合计 25；
-    幂等重演：磁盘上 x-b6-porting.batch==本批 的条目原位收编（名单锁定），其余池卡
-    按同规则补位；
-  - A1 档位语义：前 23 份 vendor 正文零 MINIMAL/LIGHT/STANDARD 判档叙述（grep 实测
-    零命中）→ A1 清洗登记为空集；R8 旧机制词形：'finish 流程' 3 处（01 L25/L33、
-    03 L35）保留原文登记 porting_notes（内容忠实红线优先，词形改写等 Owner 授权
-    内容演进批次）。
+    packages/cli/tests/catalog-b6-porting.spec.ts 机器断言（不靠自觉）；逆向规则同钉
+    （source_sections 无 MUST/MUST NOT → 禁 required——防工具 biconditional 未来变更
+    漏拦）；B6b-II 起锚证据不足（无 12 段锚 / advisory 池锚段出建议段闭包）的池卡
+    同法保守排除留池待复核（index.md 卡天然无 12 段锚——index 非 12 段结构文件）；
+  - D5 保守精选（上限 25/批内执行）：required 池 = 各批分母内未物化 ELIGIBLE 卡按池
+    密度序取前 22，逐卡 MASTer 行锚验证（行锚不落 MUST/MUST NOT 或全落项目扩展段的
+    卡保守排除留池待复核——池 enforcement 判定与锚证据矛盾时不猜 Owner 意图）；
+    advisory 池 = SHOULD 源 canonical_backlog policy 卡按同公式密度序取前 3（锚段
+    全落建议段闭包方入选）；每批合计 25；幂等重演：磁盘上 x-b6-porting.batch==本批
+    的条目原位收编（名单锁定），其余池卡按同规则补位；
+  - A1 档位语义：46 文件 vendor 正文零 MINIMAL/LIGHT/STANDARD 判档叙述（grep 实测
+    零命中）→ A1 清洗登记为空集；R8 旧机制词形：协议件 'finish 流程' 3 处（01
+    L25/L33、03 L35）保留原文登记 porting_notes（内容忠实红线优先，词形改写等 Owner
+    授权内容演进批次）；index.md 为唯一授权词形适配点——自指路径 `.trellis/spec/
+    frontend/`（L44，注入矩阵段使用说明）按提案适配 vNext 播种面词形
+    `.pomaster/specs/hard/frontend/`（whitelist 单点、计数断言）；Trellis 专用词
+    （L47 task.py add-context / implement.jsonl / check.jsonl）与 'finish' 词形
+    （L72/L75）无 vNext 对应机制 → 沿 B6b-I 惯例保留原文登记 porting_notes。
 
 用法：
   python seed_b6b_frontend.py            # 物化（write_if_changed 幂等）
@@ -75,24 +87,33 @@ POOL_PATH = os.path.join(VNEXT, "corpus", "spec-knowledge", "candidates",
 CAND_DIR = os.path.join(VNEXT, "corpus", "spec-knowledge", "candidates")
 POLICY_DIR = os.path.join(VNEXT, "catalog", "policies")
 
-BATCH = "B6B-1"
-SEED_VERSION = "B6B-1"
+BATCH = "B6B-2"
 MANIFEST_SCHEMA = "pomaster.seed-manifest/1"
-BATCH_SCOPE = "B6b-I：FE 46 文件分母前半（01-23 编号协议；index 与 24-45 留 B6b-II）"
+BATCH_SCOPE = ("B6b-II：FE 46 文件分母后半（24-45 编号协议 + index.md；"
+               "01-23 已 B6b-I 在册——清单合并承载全量分母）")
 PLANTED_TOTAL = 46
-# 前 23 份分母（任务钉：B6b-I = 01..23；46 分母 B6b-II 补齐）
-BATCH_FILES = [f"{n:02d}" for n in range(1, 24)]
+# 两批分母（B6b-I：01..23 已落地；B6b-II：24..45 + index——播种件 seed_version
+# 按所属批记（B6b-I 件不重写，重算确定性逐字节不变）；清单合并承载 46 条全量分母。
+BATCHES = {
+    "B6B-1": [f"{n:02d}" for n in range(1, 24)],
+    "B6B-2": [f"{n:02d}" for n in range(24, 46)] + ["index"],
+}
+INDEX_NAME = "index.md"
 
 AUTHORITY_SCOPE = "mixed_required_and_advisory"
 LANE = "frontend"
 
 # R1 漂移对账锚（spec-inventory.yaml pilot_verification 钉死 vendor sha256；
-# 本批分母内 FE 06/15 在清单——pin 对账通过 = 取材确为 vendor 字节非 MASTer）
+# 各批分母内漂移文件在清单——pin 全等对账通过 = 取材确为 vendor 字节非 MASTer。
+# B6b-II 收紧：全等断言，去 64-bit 截断回退（截断回退允许前 16 hex 撞库假绿——
+# 取材分母漂移必须在工具侧即爆）。
 PILOT_VENDOR_SHA = {
     "06-change-governance-protocol.md":
         "2f19b46e451153cab35e9fb511d9da0f072f86424e7d3f7a6b307cd17a9d1b32",
     "15-request-api-protocol.md":
         "b9489d69e35a19b8d5ba2442108190e7b99989ef471c8cf413d9e4e408ca2969",
+    "30-data-grid-protocol.md":
+        "c702a9956fd5e7aac40e1eefebcdd7a3518b95bd1a750bfcb31cbaddb80f41ff",
 }
 
 # R8 旧机制词形清洗台账（内容零语义重写红线——保留原文、登记待授权清洗）
@@ -104,7 +125,24 @@ PORTING_NOTES = {
     "03-acceptance-gate-protocol.md": [
         "R8 词形登记：L35 'finish' 同上（旧包流程词形保留原文）",
     ],
+    "index.md": [
+        "R8 词形适配（唯一授权适配点，注入矩阵段使用说明）：L44 自指路径 '.trellis/spec/"
+        "frontend/' 按提案适配 vNext 播种面词形 '.pomaster/specs/hard/frontend/'"
+        "（whitelist 单点替换、计数断言；其余正文逐字节保留）",
+        "R8 词形登记：L47 'Trellis Phase 1.3 / task.py add-context / implement.jsonl / "
+        "check.jsonl' 为旧包任务机制词形，vNext 无对应机制——内容忠实红线保留原文，"
+        "词形清洗等 Owner 授权内容演进批次",
+        "R8 词形登记：L72/L75 'finish 流程/finish' 为旧包流程词形，vNext 无对应命令——"
+        "保留原文，同上",
+    ],
 }
+
+# index.md 注入矩阵段 vNext 词形适配（提案 §4 B6b 行授权的唯一内容适配文件）。
+# 仅路径词形：vendor 自指路径在 vNext 消费项目不存在，播种面为 .pomaster/specs/hard/
+# frontend/。替换逐条计数断言（漂移即爆，禁静默零替换）。
+INDEX_ADAPTATIONS = [
+    (".trellis/spec/frontend/", ".pomaster/specs/hard/frontend/", 1),
+]
 
 LCS_THRESHOLD = 20
 ADVISORY_CAP = 3
@@ -112,7 +150,12 @@ REQUIRED_CAP = 22
 CURATED_CAP = REQUIRED_CAP + ADVISORY_CAP  # 25 = D5 上限
 
 GROUPS = ["FE-G1", "FE-G2", "FE-G3", "FE-G4"]
+# B6b-I 分母前缀（01-23；池卡 source_protocol 词形）
 FE23_PREFIXES = tuple(f".trellis/spec/frontend/{n:02d}-" for n in range(1, 24))
+# B6b-II 分母（24-45 + index.md——池卡 source_protocol 词形；index 卡行锚天然落
+# index 自有段结构（12 段闭包外），required/advisory 池按锚证据保守排除）
+FE2_DENOM_PREFIXES = tuple(f".trellis/spec/frontend/{n:02d}-" for n in range(24, 46))
+INDEX_PROTOCOL = ".trellis/spec/frontend/index.md"
 POOL_REL = "POMaster_VNext/corpus/spec-knowledge/candidates/consolidated-pool.yaml"
 
 CLEAN_ROOM_NOTE = ("independently rewritten from SPEC-D decomposition candidate cards; "
@@ -165,6 +208,32 @@ TITLES = {
     "POLICY.TEST.PYRAMID_AND_CI_MATRIX": "测试金字塔与持续集成矩阵",
     "POLICY.PROC.CHECKLIST_CHANGE_POLICY": "检查清单条目变更纪律",
     "POLICY.AI.RULE_RELAXATION_APPROVAL": "AI 禁令放宽双重批准",
+    # ---- B6b-II（FE 24-45 + index 分母；D5 25/批内执行）----
+    "POLICY.FLAG.LIFECYCLE_METADATA": "功能开关登记六要素与期限",
+    "POLICY.OBS.NO_SENSITIVE_RAW_VALUES": "遥测不携带敏感原值",
+    "POLICY.OBS.TELEMETRY_LIFECYCLE_DECLARED": "遥测事件生命周期声明",
+    "POLICY.FLAG.CLEANUP_AFTER_FULL_ROLLOUT": "全量后清理开关旧路径",
+    "POLICY.WEB.TRACK.NO_SYNTHETIC_ACTIONS": "程序行为不记作用户操作",
+    "POLICY.FLAG.CONSISTENT_OFF_STATE": "开关关闭态全链路停用",
+    "POLICY.OBS.CONTEXT_FIELD_BASELINE": "日志定位字段基线",
+    "POLICY.WEB.TRACK.ATTEMPT_RESULT_CORRELATION": "操作发起与结果成对关联",
+    "POLICY.REL.TRACEABLE_BUILD": "构建携带可溯版本标识",
+    "POLICY.WEB.I18N.RAW_VALUE_FOR_COMPUTE": "计算排序用原始值",
+    "POLICY.FLAG.NOT_A_PERMISSION": "开关不承载权限语义",
+    "POLICY.OBS.SOURCE_MAP_ACCESS_CONTROL": "压缩映射受权限保护",
+    "POLICY.OBS.ALERT_WITH_OWNER": "关键告警带明确责任人",
+    "POLICY.REL.OBSERVABILITY_BEFORE_SHIP": "监控与映射发布前就位",
+    "POLICY.WEB.COPY.ERROR_NEXT_STEP": "错误文案三要素齐备",
+    "POLICY.WEB.COPY.ACTION_OBJECT_CLARITY": "操作文案动作对象明确",
+    "POLICY.WEB.HANDOFF.STATE_MATRIX_FULL": "设计交付完整状态矩阵",
+    "POLICY.WEB.COPY.ENUMERABLE_PLACEMENT": "用户可见文案静态可枚举",
+    "POLICY.WEB.PAGE.REGION_CONSISTENCY": "同类页面区域位置一致",
+    "POLICY.WEB.COMP.PUBLIC_CONTRACT_COMPLETENESS": "公共组件契约完备",
+    "POLICY.WEB.COMP.NO_TRIVIAL_OR_GOD_COMPONENT": "禁琐碎包装与万能组件",
+    "POLICY.WEB.I18N.COPY_KEY_DISCIPLINE": "文案稳定键引用纪律",
+    "POLICY.OBS.TRACE_CORRELATION": "追踪标识全链路关联",
+    "POLICY.WEB.TRACK.TYPED_CLIENT_VALIDATION": "类型化采集客户端与校验",
+    "POLICY.FLAG.KILL_SWITCH": "关键写操作紧急停用开关",
 }
 
 KEYWORDS = {
@@ -246,6 +315,90 @@ KEYWORDS = {
     ],
     "POLICY.AI.RULE_RELAXATION_APPROVAL": [
         "ai rule relaxation approval", "dual owner sign off", "new mistake to protocol",
+    ],
+    # ---- B6b-II ----
+    "POLICY.FLAG.LIFECYCLE_METADATA": [
+        "feature flag metadata", "owner and expiry", "no permanent temporary flag", "cleanup date",
+    ],
+    "POLICY.OBS.NO_SENSITIVE_RAW_VALUES": [
+        "no sensitive raw values", "no credentials in telemetry", "no pii in breadcrumbs",
+        "no high cardinality identifiers",
+    ],
+    "POLICY.OBS.TELEMETRY_LIFECYCLE_DECLARED": [
+        "telemetry event declaration", "schema version sampling", "retention deletion policy",
+        "telemetry failure non blocking",
+    ],
+    "POLICY.FLAG.CLEANUP_AFTER_FULL_ROLLOUT": [
+        "cleanup after full rollout", "remove flag branches", "migrate to config system",
+        "record flag retirement",
+    ],
+    "POLICY.WEB.TRACK.NO_SYNTHETIC_ACTIONS": [
+        "no synthetic actions", "rerender is not user action", "program retry excluded",
+        "real user intent only",
+    ],
+    "POLICY.FLAG.CONSISTENT_OFF_STATE": [
+        "consistent off state", "hide entry route and requests", "no background calls when off",
+    ],
+    "POLICY.OBS.CONTEXT_FIELD_BASELINE": [
+        "log context fields", "version env page trace id", "browser and timestamp fields",
+    ],
+    "POLICY.WEB.TRACK.ATTEMPT_RESULT_CORRELATION": [
+        "attempt result correlation", "operation id pairing", "end to end pairing analysis",
+    ],
+    "POLICY.REL.TRACEABLE_BUILD": [
+        "traceable build", "version identifier", "source commit traceability",
+        "no unlabeled release",
+    ],
+    "POLICY.WEB.I18N.RAW_VALUE_FOR_COMPUTE": [
+        "raw value for compute", "formatted string not computable", "no sort on display text",
+    ],
+    "POLICY.FLAG.NOT_A_PERMISSION": [
+        "flag is not permission", "dual gate flag and permission", "no business state in flags",
+    ],
+    "POLICY.OBS.SOURCE_MAP_ACCESS_CONTROL": [
+        "source map access control", "one to one with version", "no public deployment",
+    ],
+    "POLICY.OBS.ALERT_WITH_OWNER": [
+        "alert with owner", "error rate blank screen alert", "aggregation dimensions",
+    ],
+    "POLICY.REL.OBSERVABILITY_BEFORE_SHIP": [
+        "observability before ship", "monitoring ready pre release", "no post release rebuild",
+    ],
+    "POLICY.WEB.COPY.ERROR_NEXT_STEP": [
+        "error copy triad", "what happened recoverability next step", "no raw backend message",
+    ],
+    "POLICY.WEB.COPY.ACTION_OBJECT_CLARITY": [
+        "action object clarity", "no vague verbs", "button copy names the object",
+    ],
+    "POLICY.WEB.HANDOFF.STATE_MATRIX_FULL": [
+        "full state matrix", "no ideal state only", "table deliverable specs",
+        "clickable prototype",
+    ],
+    "POLICY.WEB.COPY.ENUMERABLE_PLACEMENT": [
+        "statically enumerable copy", "template or copy catalog only", "no script literals",
+    ],
+    "POLICY.WEB.PAGE.REGION_CONSISTENCY": [
+        "region consistency", "primary secondary action placement", "no monolithic page",
+        "consistent region order",
+    ],
+    "POLICY.WEB.COMP.PUBLIC_CONTRACT_COMPLETENESS": [
+        "public component contract", "typed props events slots", "docs tests single entry",
+        "owner purpose non goals",
+    ],
+    "POLICY.WEB.COMP.NO_TRIVIAL_OR_GOD_COMPONENT": [
+        "no trivial wrapper", "typed minimal props", "no god config object",
+    ],
+    "POLICY.WEB.I18N.COPY_KEY_DISCIPLINE": [
+        "stable copy keys", "no display text as key", "no copy component duplication",
+    ],
+    "POLICY.OBS.TRACE_CORRELATION": [
+        "trace correlation", "w3c trace context", "cross origin propagation trust",
+    ],
+    "POLICY.WEB.TRACK.TYPED_CLIENT_VALIDATION": [
+        "typed analytics client", "schema validation", "quality monitoring",
+    ],
+    "POLICY.FLAG.KILL_SWITCH": [
+        "kill switch", "emergency disable", "rollout rollback audit",
     ],
 }
 
@@ -351,6 +504,106 @@ REVIEW_NOTES = {
         "advisory 物化（Change Policy 源）：AI 禁令放宽的批准元规则，源段 Change Policy——advisory"
         " 落点；与 POLICY.SEC.RELAXATION_APPROVAL（安全放宽，同池未物化）不同域互引。",
     ],
+    # ---- B6b-II（零语义重复判定基准=B6b-I 落地后的 168 条；锚证据按 MASTer 行锚独立推导）----
+    "POLICY.FLAG.LIFECYCLE_METADATA": [
+        "功能开关生命周期登记在既有 168 条中无对应条目（FEATURE_ORIENTED 词形为组件形态轴），"
+        "零语义重复；双锚卡（36 L19+L29），36 文件不重复立卡。",
+    ],
+    "POLICY.OBS.NO_SENSITIVE_RAW_VALUES": [
+        "遥测敏感数据边界在既有 168 条中无对应条目（SEC 族管客户端可见面与凭据存储介质，"
+        "不管遥测载荷），零语义重复；多锚卡（34 L22+L29/L33），34 文件不重复立卡。",
+    ],
+    "POLICY.OBS.TELEMETRY_LIFECYCLE_DECLARED": [
+        "遥测事件治理元数据在既有 168 条中无对应条目，零语义重复；多锚卡（34 L24 MUST 锚 + "
+        "L54-L55 Checklist 锚同事实），主锚定强度 required。",
+    ],
+    "POLICY.FLAG.CLEANUP_AFTER_FULL_ROLLOUT": [
+        "开关收尾清理在既有 168 条中无对应条目；与 POLICY.CHG.DEPRECATE_BEFORE_DELETE（先废弃"
+        "后删除）相邻——彼管通用废弃时序，本管开关生命周期终局，互引不合并；多锚卡（MUST/"
+        "MUST NOT + Change Policy 锚），主锚定强度 required。",
+    ],
+    "POLICY.WEB.TRACK.NO_SYNTHETIC_ACTIONS": [
+        "行为事件真实性边界在既有 168 条中无对应条目，零语义重复。",
+    ],
+    "POLICY.FLAG.CONSISTENT_OFF_STATE": [
+        "开关关闭态一致性在既有 168 条中无对应条目；与 FLAG.LIFECYCLE_METADATA 正交（彼管登记"
+        "元数据，本管关闭态行为），零语义重复；双锚卡（36 L20+L30），36 文件不重复立卡。",
+    ],
+    "POLICY.OBS.CONTEXT_FIELD_BASELINE": [
+        "日志定位字段基线在既有 168 条中无对应条目，零语义重复。",
+    ],
+    "POLICY.WEB.TRACK.ATTEMPT_RESULT_CORRELATION": [
+        "成对事件关联在既有 168 条中无对应条目，零语义重复。",
+    ],
+    "POLICY.REL.TRACEABLE_BUILD": [
+        "构建可溯源性在既有 168 条中无对应条目；与 POLICY.DEP.BUILD_PATH_SUPPLY_CHAIN（B6b-I）"
+        "不同轴——彼管构建链路供应链治理，本管产物溯源标识，互引不合并。",
+    ],
+    "POLICY.WEB.I18N.RAW_VALUE_FOR_COMPUTE": [
+        "原始值与显示值分离在既有 168 条中无对应条目（13 金额精度为金额特例未入册；本条为通用"
+        "形态），零语义重复。",
+    ],
+    "POLICY.FLAG.NOT_A_PERMISSION": [
+        "开关与权限双判定边界在既有 168 条中无对应条目（17 权限协议面未入册；本条管开关不得"
+        "替代权限判定），零语义重复。",
+    ],
+    "POLICY.OBS.SOURCE_MAP_ACCESS_CONTROL": [
+        "压缩映射访问控制在既有 168 条中无对应条目（SEC 族无 sourcemap 词形），零语义重复；"
+        "双锚卡（34 L21+L32），34 文件不重复立卡。",
+    ],
+    "POLICY.OBS.ALERT_WITH_OWNER": [
+        "告警责任人义务在既有 168 条中无对应条目，零语义重复。",
+    ],
+    "POLICY.REL.OBSERVABILITY_BEFORE_SHIP": [
+        "发布前可观测性就位在既有 168 条中无对应条目；与 POLICY.GATE.RISK_FACTORS_CONFIRMED"
+        "（B6b-I 放行面）相邻——彼管阶段放行风险确认，本管监控/映射前置物，互引不合并。",
+    ],
+    "POLICY.WEB.COPY.ERROR_NEXT_STEP": [
+        "错误文案三要素在既有 168 条中无对应条目（WEB 错误态词族管组件与归一化，非文案面），"
+        "零语义重复；多锚卡（39 L19+L44/L46），39 文件不重复立卡。",
+    ],
+    "POLICY.WEB.COPY.ACTION_OBJECT_CLARITY": [
+        "操作文案明确性在既有 168 条中无对应条目，零语义重复；双锚卡（39 L18+L47），39 文件"
+        "不重复立卡。",
+    ],
+    "POLICY.WEB.HANDOFF.STATE_MATRIX_FULL": [
+        "设计交付状态矩阵完备性在既有 168 条中无对应条目，零语义重复；多锚卡（MUST/MUST NOT + "
+        "SHOULD 锚混合），主锚定强度 required——SHOULD 锚（可点击原型）不单独降级，锚证据混合"
+        "时以最强段定强度（B6b-I 轴规则）。",
+    ],
+    "POLICY.WEB.COPY.ENUMERABLE_PLACEMENT": [
+        "文案落点静态可枚举在既有 168 条中无对应条目，零语义重复；多锚卡（39 L28-L36 展开），"
+        "39 文件不重复立卡。",
+    ],
+    "POLICY.WEB.PAGE.REGION_CONSISTENCY": [
+        "页面区域位置一致性在既有 168 条中无对应条目（GRID 词族管表格数据面），零语义重复；"
+        "双锚卡（25 L20-L22+L77-L79），25 文件不重复立卡。",
+    ],
+    "POLICY.WEB.COMP.PUBLIC_CONTRACT_COMPLETENESS": [
+        "公共组件契约完备性在既有 168 条中无对应条目，零语义重复；多锚卡（MUST + SHOULD 锚），"
+        "主锚定强度 required。",
+    ],
+    "POLICY.WEB.COMP.NO_TRIVIAL_OR_GOD_COMPONENT": [
+        "组件形态禁令在既有 168 条中无对应条目（FEATURE_ORIENTED/MODULAR 为架构模式轴），"
+        "零语义重复。",
+    ],
+    "POLICY.WEB.I18N.COPY_KEY_DISCIPLINE": [
+        "文案键纪律在既有 168 条中无对应条目，零语义重复；多锚卡（38 L20+L30-L31），38 文件"
+        "不重复立卡。",
+    ],
+    "POLICY.OBS.TRACE_CORRELATION": [
+        "advisory 物化（SHOULD 源）：追踪关联与 W3C Trace Context 跨源传播验证，源段 SHOULD——"
+        "按八分类矩阵落 advisory 不升 required；enforcement 轴断言钉（catalog-b6-porting.spec）。",
+    ],
+    "POLICY.WEB.TRACK.TYPED_CLIENT_VALIDATION": [
+        "advisory 物化（SHOULD 源）：类型化采集客户端与模式校验及质量监控，源段 SHOULD——"
+        "advisory 落点；enforcement 轴断言钉。",
+    ],
+    "POLICY.FLAG.KILL_SWITCH": [
+        "advisory 物化（SHOULD 源）：紧急停用开关配备，源段 SHOULD——advisory 落点；与 FLAG 族 "
+        "required 条目同族不同时点（配备建议 vs 登记/清理纪律），互引不合并；enforcement 轴"
+        "断言钉。",
+    ],
 }
 
 # 新 id 域段（既有 catalog id 词面外；vocab-pr 登记诉求，照 materialize-curated 先例）
@@ -381,6 +634,32 @@ NEW_ID_SEGMENTS = {
     "POLICY.TEST.PYRAMID_AND_CI_MATRIX": ["TEST"],
     "POLICY.PROC.CHECKLIST_CHANGE_POLICY": [],
     "POLICY.AI.RULE_RELAXATION_APPROVAL": ["AI"],
+    # ---- B6b-II（既有 catalog id 词面外的新域段；照 materialize-curated 先例待 vocab PR）----
+    "POLICY.FLAG.LIFECYCLE_METADATA": ["FLAG"],
+    "POLICY.OBS.NO_SENSITIVE_RAW_VALUES": [],
+    "POLICY.OBS.TELEMETRY_LIFECYCLE_DECLARED": [],
+    "POLICY.FLAG.CLEANUP_AFTER_FULL_ROLLOUT": ["FLAG"],
+    "POLICY.WEB.TRACK.NO_SYNTHETIC_ACTIONS": [],
+    "POLICY.FLAG.CONSISTENT_OFF_STATE": ["FLAG"],
+    "POLICY.OBS.CONTEXT_FIELD_BASELINE": [],
+    "POLICY.WEB.TRACK.ATTEMPT_RESULT_CORRELATION": [],
+    "POLICY.REL.TRACEABLE_BUILD": [],
+    "POLICY.WEB.I18N.RAW_VALUE_FOR_COMPUTE": ["I18N"],
+    "POLICY.FLAG.NOT_A_PERMISSION": ["FLAG"],
+    "POLICY.OBS.SOURCE_MAP_ACCESS_CONTROL": [],
+    "POLICY.OBS.ALERT_WITH_OWNER": [],
+    "POLICY.REL.OBSERVABILITY_BEFORE_SHIP": [],
+    "POLICY.WEB.COPY.ERROR_NEXT_STEP": [],
+    "POLICY.WEB.COPY.ACTION_OBJECT_CLARITY": [],
+    "POLICY.WEB.HANDOFF.STATE_MATRIX_FULL": ["HANDOFF"],
+    "POLICY.WEB.COPY.ENUMERABLE_PLACEMENT": [],
+    "POLICY.WEB.PAGE.REGION_CONSISTENCY": ["PAGE"],
+    "POLICY.WEB.COMP.PUBLIC_CONTRACT_COMPLETENESS": ["COMP"],
+    "POLICY.WEB.COMP.NO_TRIVIAL_OR_GOD_COMPONENT": ["COMP"],
+    "POLICY.WEB.I18N.COPY_KEY_DISCIPLINE": ["I18N"],
+    "POLICY.OBS.TRACE_CORRELATION": [],
+    "POLICY.WEB.TRACK.TYPED_CLIENT_VALIDATION": [],
+    "POLICY.FLAG.KILL_SWITCH": ["FLAG"],
 }
 
 
@@ -472,14 +751,14 @@ def _lcs_len(a, b):
 
 
 # ======================================================================
-# 播种资产构建（frontmatter + vendor 正文逐字节）
+# 播种资产构建（frontmatter + vendor 正文逐字节；index.md 唯一授权词形适配点）
 # ======================================================================
-def build_frontmatter(source_rel, sha_hex):
+def build_frontmatter(source_rel, sha_hex, seed_version):
     lines = [
         "---",
         f"seed_source: {source_rel}",
         f"seed_source_sha256: {sha_hex}",
-        f"seed_version: {SEED_VERSION}",
+        f"seed_version: {seed_version}",
         f"lane: {LANE}",
         "status: CURRENT",
         f"authority_scope: {AUTHORITY_SCOPE}",
@@ -492,46 +771,80 @@ def build_frontmatter(source_rel, sha_hex):
     return ("\n".join(lines) + "\n").encode("utf-8")
 
 
+def vendor_file_for(num_or_index):
+    """批分母项（'01'..'45'/'index'）→ vendor 文件名（分母漂移即爆）。"""
+    if num_or_index == "index":
+        name = INDEX_NAME
+        assert os.path.isfile(os.path.join(VENDOR_DIR, name)), "vendor index.md 缺席"
+        return name
+    names = [n for n in os.listdir(VENDOR_DIR)
+             if n.startswith(num_or_index + "-") and n.endswith(".md")]
+    assert len(names) == 1, f"vendor 分母漂移（{num_or_index}-* 命中 {names}）"
+    return names[0]
+
+
+def seed_body_for(vendor_bytes, name, source_rel, sha_hex, seed_version):
+    """frontmatter + 正文；编号协议正文逐字节 == vendor；index.md 施加 whitelist
+    词形适配（逐条计数断言，漂移即爆）。"""
+    fm = build_frontmatter(source_rel, sha_hex, seed_version)
+    if name == INDEX_NAME:
+        adapted = vendor_bytes
+        for old, new, expect_count in INDEX_ADAPTATIONS:
+            old_b, new_b = old.encode("utf-8"), new.encode("utf-8")
+            found = adapted.count(old_b)
+            assert found == expect_count, (
+                f"index.md 适配点计数漂移：{old!r} 预期 {expect_count} 处，实测 {found} 处")
+            adapted = adapted.replace(old_b, new_b)
+        assert adapted != vendor_bytes, "index.md 适配未生效（授权适配点必须落地）"
+        return fm + adapted
+    body = fm + vendor_bytes
+    # A4/内容忠实断言：去 frontmatter 后正文与 vendor 逐字节相等（构建两遍同构）。
+    assert body[len(fm):] == vendor_bytes
+    return body
+
+
 def build_seed_assets():
-    """23 份播种件字节 + 清单。返回 (assets: {rel_path: bytes}, manifest_doc)。"""
+    """46 份播种件字节 + 清单（两批合并分母）。返回 (assets, manifest_doc)。"""
     assets = {}
     entries = []
-    for num in BATCH_FILES:
-        names = [n for n in os.listdir(VENDOR_DIR) if n.startswith(num + "-") and n.endswith(".md")]
-        assert len(names) == 1, f"vendor 分母漂移（{num}-* 命中 {names}）"
-        name = names[0]
-        vendor_bytes = open(os.path.join(VENDOR_DIR, name), "rb").read()
-        sha_hex = hashlib.sha256(vendor_bytes).hexdigest()
-        if name in PILOT_VENDOR_SHA:
-            expected = PILOT_VENDOR_SHA[name]
-            actual_full = sha_hex
-            assert actual_full == expected or actual_full[:16] == expected[:16], (
-                f"R1 pin 对账失败：{name} vendor sha 与 pilot_verification 钉死值不符 "
-                f"（取材分母漂移？）: {actual_full[:16]} vs {expected[:16]}")
-        source_rel = f"pomaster/components/frontend-hard-spec/assets/universal/{name}"
-        body = build_frontmatter(source_rel, sha_hex) + vendor_bytes
-        # A4/内容忠实断言：去 frontmatter 后正文与 vendor 逐字节相等（构建两遍同构）
-        assert body[len(build_frontmatter(source_rel, sha_hex)):] == vendor_bytes
-        rel = f"specs/hard/frontend/{name}"
-        assets[rel] = body
-        entry = {
-            "target": f".pomaster/{rel}",
-            "asset": rel,
-            "lane": LANE,
-            "source_path": source_rel,
-            "source_sha256": sha_hex,
-            "source_bytes": len(vendor_bytes),
-            "porting_notes": list(PORTING_NOTES.get(name, [])),
-        }
-        entries.append(entry)
+    batch_targets = {}
+    for batch, nums in BATCHES.items():
+        targets = []
+        for num in nums:
+            name = vendor_file_for(num)
+            vendor_bytes = open(os.path.join(VENDOR_DIR, name), "rb").read()
+            sha_hex = hashlib.sha256(vendor_bytes).hexdigest()
+            if name in PILOT_VENDOR_SHA:
+                # R1 pin 全等对账（B6b-II 收紧——截断回退已移除，取材分母漂移即爆）。
+                assert sha_hex == PILOT_VENDOR_SHA[name], (
+                    f"R1 pin 对账失败：{name} vendor sha 与 pilot_verification 钉死值不符 "
+                    f"（取材分母漂移？）: {sha_hex} vs {PILOT_VENDOR_SHA[name]}")
+            source_rel = f"pomaster/components/frontend-hard-spec/assets/universal/{name}"
+            body = seed_body_for(vendor_bytes, name, source_rel, sha_hex, batch)
+            rel = f"specs/hard/frontend/{name}"
+            assets[rel] = body
+            targets.append(f".pomaster/{rel}")
+            entries.append({
+                "target": f".pomaster/{rel}",
+                "asset": rel,
+                "seed_version": batch,
+                "lane": LANE,
+                "source_path": source_rel,
+                "source_sha256": sha_hex,
+                "source_bytes": len(vendor_bytes),
+                "porting_notes": list(PORTING_NOTES.get(name, [])),
+            })
+        batch_targets[batch] = targets
     manifest_doc = {
         "schema": MANIFEST_SCHEMA,
         "batch": BATCH,
+        "batches": batch_targets,
         "generated_by": "catalog/tools/seed_b6b_frontend.py",
         "denominator": {
             "batch_scope": BATCH_SCOPE,
             "planted": len(entries),
             "planted_total": PLANTED_TOTAL,
+            "batch_new": len(BATCHES[BATCH]),
         },
         "seed_semantics": "seed-once-missing-only（缺席才写 / 在座零触碰 / marker-free；"
                           "seeds.ts 单一实现；frontmatter 为 PRD §8.2 字段位减 id——"
@@ -624,15 +937,17 @@ def select_curated(pool, raw):
             if isinstance(m, dict) and m.get("candidate_id"):
                 materialized.add(m["candidate_id"])
 
-    fe23_rows = [r for r in ranked if r["source_protocol"].startswith(FE23_PREFIXES)]
+    fe2_rows = [r for r in ranked
+                if r["source_protocol"].startswith(FE2_DENOM_PREFIXES)
+                or r["source_protocol"] == INDEX_PROTOCOL]
 
     # required 池：ELIGIBLE 未物化 + 行锚段验证（MASTer 分母逐卡核锚）按池序取前 22。
     # 矛盾排除：池 enforcement=required 但行锚不落 MUST/MUST NOT 段（如 Change Policy
-    # 源）的卡保守排除——不猜 Owner 意图，留池待复核（强度只降不升；矛盾入选 = 以
-    # required 强度为源段背书，超出了锚证据）。
+    # 源 / index.md 卡天然无 12 段锚）的卡保守排除——不猜 Owner 意图，留池待复核
+    # （强度只降不升；矛盾入选 = 以 required 强度为源段背书，超出了锚证据）。
     required = []
     excluded = []
-    for r in fe23_rows:
+    for r in fe2_rows:
         cid = r["candidate_id"]
         if len(required) >= REQUIRED_CAP:
             break
@@ -651,7 +966,7 @@ def select_curated(pool, raw):
                 if not anchors["twelve"] else
                 "行锚段映射非 MUST/MUST NOT（池 enforcement 判定矛盾，保守排除待复核）"
             )
-            excluded.append({"candidate_id": cid, "reason": reason,
+            excluded.append({"pool": "required", "candidate_id": cid, "reason": reason,
                              "sections": anchors["twelve"], "extra": anchors["extra"]})
             continue
         required.append(r)
@@ -659,14 +974,16 @@ def select_curated(pool, raw):
 
     # advisory 池：SHOULD 源 canonical_backlog policy 卡按同公式密度序取前 3。
     # existing 本批卡**无条件收编**（重演名单锁定）；challenger 仅当收编数不足
-    # ADVISORY_CAP 时参与排序补位（防重演漂移）。
+    # ADVISORY_CAP 时参与排序补位（防重演漂移）。B6b-II 收紧：challenger 先过锚证据
+    # 预筛——无 12 段锚（index.md 卡）或锚段不全落建议段闭包（如 Ownership 源卡）的
+    # 保守排除留池待复核（与 required 池同法：池判定与锚证据矛盾时不猜 Owner 意图）。
     existing_adv_count = sum(
         1 for cid in existing_b6 if existing_b6[cid] == "advisory"
     )
     adv_rows = []
     for r in pool["canonical_backlog"]:
         sp = r.get("source_protocol", "")
-        if not sp.startswith(FE23_PREFIXES):
+        if not (sp.startswith(FE2_DENOM_PREFIXES) or sp == INDEX_PROTOCOL):
             continue
         if r.get("enforcement") != "advisory" or r.get("kind") != "policy":
             continue
@@ -684,6 +1001,20 @@ def select_curated(pool, raw):
         raw_card = raw.get(cid, {}).get("raw", {})
         stmt = raw_card.get("statement_zh", "")
         assert stmt, f"advisory 卡缺 statement: {cid}"
+        anchors = master_anchor_sections(str(raw_card.get("source_lines") or ""),
+                                         r["source_protocol"])
+        if not anchors["twelve"]:
+            excluded.append({
+                "pool": "advisory", "candidate_id": cid,
+                "reason": "行锚全落 MASTer 项目扩展段（12 段闭包外），无源段证据，保守排除待复核",
+                "sections": anchors["twelve"], "extra": anchors["extra"]})
+            continue
+        if not all(s in ("SHOULD", "Change Policy") for s in anchors["twelve"]):
+            excluded.append({
+                "pool": "advisory", "candidate_id": cid,
+                "reason": "行锚段映射非纯建议段（池 advisory 判定矛盾，保守排除待复核）",
+                "sections": anchors["twelve"], "extra": anchors["extra"]})
+            continue
         rec = dict(r, _density=density(stmt, r.get("applies_lane", "any")))
         adv_rows.append(rec)
     adv_rows.sort(key=lambda x: (-x["_density"], GROUPS.index(x["group"]), x["candidate_id"]))
@@ -719,6 +1050,15 @@ def id_to_path(cid):
     return "policies/" + cid.lower() + ".json"
 
 
+BATCH_LABEL = {"B6B-1": "B6b-I", "B6B-2": "B6b-II"}[BATCH]
+CURATED_RULE = (
+    f"{BATCH_LABEL} 分母（FE 24-45 + index）required 池（ELIGIBLE 未物化 + MASTer 行锚"
+    "落 MUST/MUST NOT）按池密度序取前 22 + advisory 池（SHOULD 源 backlog policy 卡 + "
+    "锚段全落建议段闭包）按同公式密度序取前 3 = 25（D5 上限/批内执行）；UNIVERSAL + "
+    "UNIVERSAL_POLICY + 无 uncertainty + 非 project_scope + 非重复"
+)
+
+
 def build_entry(pool_rec, card, statement, sections, sha_hex, vendor_bytes, seeded_target,
                 extra_sections):
     cid = pool_rec["candidate_id"]
@@ -746,7 +1086,8 @@ def build_entry(pool_rec, card, statement, sections, sha_hex, vendor_bytes, seed
         },
         "x-spec-d-materialization": {
             "status": "PROPOSAL",
-            "package": "B6b-I FE 播种移植（SPEC-D 池卡复用；分母=MASTer 池卡 + vendor 播种字节双锚）",
+            "package": f"{BATCH_LABEL} FE 播种移植（SPEC-D 池卡复用；分母=MASTer 池卡 + "
+                       "vendor 播种字节双锚）",
             "human_review_required": True,
             "evidence": "PLANNED",
             "provenance": POOL_REL,
@@ -755,10 +1096,7 @@ def build_entry(pool_rec, card, statement, sections, sha_hex, vendor_bytes, seed
             "density_rank": pool_rec.get("density_rank"),
             "density_score": pool_rec.get("density_score") or pool_rec.get("_density"),
             "pool_statement_sha16": pool_rec.get("statement_sha16"),
-            "curated_rule": "B6b-I 分母（FE 01-23）required 池（ELIGIBLE 未物化）按池密度序取前 22"
-                            " + advisory 池（SHOULD 源 backlog policy 卡）按同公式密度序取前 3 = 25"
-                            "（D5 上限）；UNIVERSAL + UNIVERSAL_POLICY + 无 uncertainty + 非 project_scope"
-                            " + 非重复",
+            "curated_rule": CURATED_RULE,
             "denominator": "MASTer（池卡 source_protocol 锚）",
         },
         "x-b6-porting": {
@@ -810,11 +1148,11 @@ def build_entry(pool_rec, card, statement, sections, sha_hex, vendor_bytes, seed
         },
         "origin": "ingested",
         "origin_note": (
-            "B6b-I FE 播种移植物化；statement 在物化层以独立措辞改写（clean-room；源卡语句"
+            f"{BATCH_LABEL} FE 播种移植物化；statement 在物化层以独立措辞改写（clean-room；源卡语句"
             "与上游存在逐字重合，已消除），零逐字拷贝上游源文本；播种分母=vendor 字节"
             "（x-b6-porting.vendor_pin），分解分母=MASTer 池卡（x-spec-d-materialization）"
         ) if cid in REWRITE_TEXT else (
-            "B6b-I FE 播种移植物化；statement 沿用 SPEC-D 候选卡独立措辞（clean-room），"
+            f"{BATCH_LABEL} FE 播种移植物化；statement 沿用 SPEC-D 候选卡独立措辞（clean-room），"
             "零逐字拷贝上游源文本；播种分母=vendor 字节（x-b6-porting.vendor_pin），"
             "分解分母=MASTer 池卡（x-spec-d-materialization）"
         ),
@@ -940,7 +1278,11 @@ def main():
           f"policies={len(built['entry_bytes'])} "
           f"(required={built['counts']['required']}, advisory={built['counts']['advisory']})")
     print("LCS audits max:", max(a["lcs_max"] for a in built["audits"]))
-    print("下一步：corepack pnpm pomaster catalog relock（143→168）")
+    if built["excluded"]:
+        print("保守排除留池待复核:")
+        for e in built["excluded"]:
+            print(f"  - [{e['pool']}] {e['candidate_id']}: {e['reason']}")
+    print("下一步：corepack pnpm pomaster catalog relock（168→193）")
 
 
 if __name__ == "__main__":
