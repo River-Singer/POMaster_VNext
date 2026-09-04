@@ -38,5 +38,15 @@ for (const pkg of packages) {
       { recursive: true },
     );
   }
+  if (pkg === "cli") {
+    // B6b-I 播种资产：seed-manifest.ts 的 '../seeds' 相对引用在 dist 布局下解析为
+    // dist/seeds/（src 形态解析为 packages/cli/seeds——两形态同词形，schemas
+    // dist/assets 同款先例）。
+    cpSync(
+      fileURLToPath(new URL("../packages/cli/seeds/", import.meta.url)),
+      fileURLToPath(new URL("../packages/cli/dist/seeds/", import.meta.url)),
+      { recursive: true },
+    );
+  }
 }
 console.log("[build-all] ok: schemas, kernel, gauntlet-lite, cli");

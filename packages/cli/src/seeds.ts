@@ -1,5 +1,5 @@
 /**
- * seeds.ts —— init 播种引擎（vNext Batch 6 B6a）：SEED_MANIFEST 单源 +
+ * seeds.ts —— init 播种引擎（vNext Batch 6 B6a；B6b 收窄守卫）：种子清单单源装载 +
  * seed-once-missing-only 三语义。
  *
  * 职责（porting-design-proposal §4 B6a 行 + prd.md R1）：把种子清单（路径→内容）
@@ -16,28 +16,55 @@
  *    永不进入「带标记即可重写」的入口文件生命周期（在座文件即使被贴上 marker 也
  *    依旧 preserved，两语义互不渗透）。
  *
- * 目录守卫（R4 红线：新目录未登记 kernel paths 前禁落盘）：每条目的父目录必须
- * 在 derivePathsTsStoreDirs（kernel paths.ts 登记集合的祖先闭包）内，且路径词形
- * 必须位于 `.pomaster/` 内（POSIX、无 `..`、无反斜杠、无前导/尾随斜杠）。违例 =
- * 结构性包缺陷 → throw fail-closed（零写入，绝不静默跳过）。
+ * 目录守卫（R4 红线：新目录未登记 kernel paths 前禁落盘）：每条目的父目录必须位于
+ * **播种目录 allowlist**（SEEDABLE_STORE_DIRS——baseline/**、specs/** 两播种子树的
+ * kernel 登记目录，B6b 起收窄），且路径词形必须位于 `.pomaster/` 内（POSIX、无 `..`、
+ * 无反斜杠、无前导/尾随斜杠）。违例 = 结构性包缺陷 → throw fail-closed（零写入，
+ * 绝不静默跳过）。
+ *
+ * ADR-lite（B6b-I，守卫收窄——B6a check 遗留 b）：B6a 守卫接受「任何 kernel 登记
+ * 目录」，播种面语义上只覆盖 12 播种目录（kernel StorePaths 12 播种字段：baseline
+ * 根+四分区、specs 根+hard 根+三分区+acceptance+evidence）——收窄为 allowlist 精确
+ * 匹配后，控制平面登记目录（state/truth/evidence/runtime/…）不再可能成为播种目标，
+ * 误清单（把状态文件写进种子清单）在守卫层即爆。allowlist 与 kernel 登记的关系由
+ * 测试对账（seeds.spec：allowlist ⊆ derivePathsTsStoreDirs 派生集合——收窄不脱离
+ * R4「登记先行」红线）。
  *
  * 幂等（A4 / init 幂等铁律「第二次 NO_CHANGE」）：缺席才写天然满足——重跑时全部
  * 条目在座 → 全 preserved（零写入）；preserved 不计入 CREATED/UPDATED 账面。
  *
  * ADR-lite（B6a 数据结构，按 porting-design-proposal §4 批次表定案）：本子批落
- * 引擎 + **空清单跑通**（SEED_MANIFEST = []；runInit 步骤 4.6 已接线，空表零
- * seeded/preserved 报告项），B6b 起逐子批灌内容（FE 46 → BE 33+stacks 28 →
- * baseline 25 → evidence 20，每子批一次 SEED_MANIFEST 增量）。条目形态取引擎
- * 最小面 {path, content}；R5 提案的 provenance pin（逐文件 id/sha256/来源词形）
- * 与 npm 包内资产（<pkg>/seeds/）装载是 B6b 移植工具的清单构建面——装载后仍归约
- * 为本形态，引擎零改动。
+ * 引擎 + **空清单跑通**（init 步骤 4.6 已接线，空表零 seeded/preserved 报告项），
+ * B6b 起逐子批灌内容（FE 46 → BE 33+stacks 28 → baseline 25 → evidence 20，每子批
+ * 一次清单增量）。条目形态取引擎最小面 {path, content}；清单 pin（逐文件 sha256/
+ * 来源词形）与 npm 包内资产（<pkg>/seeds/）装载是 B6b 移植工具的清单构建面
+ * （seed-manifest.ts）——装载后仍归约为本形态，引擎零改动。
  */
 
 import { buildStorePaths } from "@pomaster/kernel";
 import { dirname } from "node:path";
 import type { InitFileReport } from "./init.js";
-import { derivePathsTsStoreDirs } from "./layout.js";
 import { ensureParentDir, toPosix } from "./store-layout.js";
+
+/**
+ * 播种目录 allowlist（B6b-I 守卫收窄——B6a check 遗留 b）：kernel paths.ts 12 播种
+ * 登记目录的 POSIX 树内词形（相对 `.pomaster/`）。播种目标的父目录必须精确命中本
+ * 集合——控制平面目录（state/truth/evidence/runtime/sources/…）不可播种。
+ */
+export const SEEDABLE_STORE_DIRS: readonly string[] = [
+  "baseline",
+  "baseline/frontend",
+  "baseline/backend",
+  "baseline/data",
+  "baseline/platform",
+  "specs",
+  "specs/hard",
+  "specs/hard/frontend",
+  "specs/hard/backend",
+  "specs/hard/stacks",
+  "specs/acceptance",
+  "specs/evidence",
+];
 
 /** 单条种子（引擎最小面）：播种目标 + 内容字节（utf8 文本）。 */
 export interface SeedEntry {
@@ -51,11 +78,12 @@ export interface SeedEntry {
 }
 
 /**
- * 种子清单单源（仿 SKILL_MANIFEST 范式）。B6a = 空表跑通（ADR-lite：引擎先行、
- * 内容逐子批灌入）；B6b 起由移植工具按子批扩充（FE specs → BE specs+stacks →
- * baseline → evidence）。
+ * 种子清单装载：B6a = 空表跑通（ADR-lite：引擎先行、内容逐子批灌入）；B6b-I 起清单
+ * 单源移至包内资产 `packages/cli/seeds/`（manifest.json pin + 播种件字节——
+ * seed-manifest.ts loadSeedManifestEntries 装载，归约为本引擎 SeedEntry 形态，引擎
+ * 零改动）。init 步骤 4.6 缺省走 loadSeedManifestEntries()；注入面（InitOptions.
+ * seedManifest）保留供测试/嵌入方。
  */
-export const SEED_MANIFEST: readonly SeedEntry[] = [];
 
 /**
  * init 步骤 4.6 播种入口：对清单逐条执行 seed-once-missing-only 三语义。
@@ -69,7 +97,10 @@ export async function seedProjectAssets(
   entries: readonly SeedEntry[],
   files: InitFileReport[],
 ): Promise<void> {
-  const registered = derivePathsTsStoreDirs(rootDir);
+  // 播种目录 allowlist（B6b-I 收窄）：allowlist 即 kernel 12 播种登记目录的词形清单
+  // ——与 kernel 登记集合的对账由测试钉（allowlist ⊆ derivePathsTsStoreDirs），运行
+  // 时常量精确匹配零派生（收窄语义：控制平面登记目录不可播种）。
+  const registered = new Set<string>(SEEDABLE_STORE_DIRS);
   // 前置全量校验（fail-closed 先于任何 mkdir/write）：任一条目违例即整体拒——
   // 禁「前 k 条已播种、第 k+1 条才 throw」的部分落盘态（零写入承诺对整份清单成立，
   // 非逐条成立）。
@@ -91,9 +122,10 @@ export async function seedProjectAssets(
 }
 
 /**
- * 路径词形与登记守卫（fail-closed）：POSIX 词形、禁 `..`/反斜杠/绝对形/尾斜杠、
- * 必须位于 `.pomaster/` 内、父目录（含全部祖先——派生集合自带祖先闭包）必须在
- * kernel paths.ts 登记集合内。R4 红线的机器承载：未登记禁落盘。
+ * 路径词形与播种 allowlist 守卫（fail-closed）：POSIX 词形、禁 `..`/反斜杠/绝对形/
+ * 尾斜杠、必须位于 `.pomaster/` 内、父目录必须命中播种目录 allowlist
+ * （SEEDABLE_STORE_DIRS——kernel 12 播种登记目录；B6b-I 收窄后控制平面登记目录
+ * 一律拒绝）。R4 红线的机器承载：allowlist 之外禁落盘。
  */
 function assertSeedPathRegistered(
   path: string,
@@ -112,12 +144,15 @@ function assertSeedPathRegistered(
       `seed entry path escapes .pomaster (seeds live inside the store tree): ${path}`,
     );
   }
-  // 派生登记集合以 .pomaster/ 为根（layout.ts 同一口径）——父目录按树内词形比对。
+  // 播种 allowlist 以 .pomaster/ 为根的树内词形精确匹配——父目录不在 12 播种目录
+  // 集合即拒（收窄：kernel 登记但非播种面 → 同样拒）。
   const parent = toPosix(dirname(path.slice(pomasterPrefix.length)));
   if (!registered.has(parent)) {
     throw new Error(
-      `seed entry parent directory is not registered in kernel paths.ts ` +
-        `(R4: dirs must be registered before any seed write): ${pomasterPrefix}${parent} (entry: ${path})`,
+      `seed entry parent directory is not in the seeding allowlist ` +
+        `(SEEDABLE_STORE_DIRS: baseline/** + specs/** kernel-registered subset; ` +
+        `R4: dirs must be kernel-registered AND seedable before any seed write): ` +
+        `${pomasterPrefix}${parent} (entry: ${path})`,
     );
   }
 }

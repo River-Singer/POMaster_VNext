@@ -240,12 +240,15 @@ describe("smoke e2e：init → triage×2 → status --json → doctor --json", (
         "NO_CHANGE",
       );
       expect(
-        (result.files ?? []).every((f) => f.action === "unchanged"),
-        "第二次 init 全部产物应为 unchanged（字节稳定，无覆盖写）",
+        // preserved = B6b 播种件在座零触碰（幂等账面合法词形）。
+        (result.files ?? []).every(
+          (f) => f.action === "unchanged" || f.action === "preserved",
+        ),
+        "第二次 init 全部产物应为 unchanged/preserved（字节稳定，无覆盖写）",
       ).toBe(true);
       recordPassed(
         "init.idempotent",
-        "第二次 init change=NO_CHANGE、全部文件 unchanged（零变化即成功）",
+        "第二次 init change=NO_CHANGE、全部文件 unchanged/preserved（零变化即成功）",
       );
     } finally {
       rmSync(dir, { recursive: true, force: true });

@@ -126,7 +126,10 @@ describe("fixture 形态与 init（FastAPI 工程）", () => {
     expect(result["change"]).toBe("NO_CHANGE");
     const files = (result["files"] ?? []) as Record<string, unknown>[];
     expect(files.length).toBeGreaterThan(0);
-    expect(files.every((f) => f["action"] === "unchanged")).toBe(true);
+    // preserved = B6b 播种件在座零触碰（项目可编辑物，幂等账面合法词形）。
+    expect(
+      files.every((f) => f["action"] === "unchanged" || f["action"] === "preserved"),
+    ).toBe(true);
   });
 
   it("链后重跑 init：state 已变 → UPDATED（入口状态速览诚实跟随，非静默跳过）", async () => {

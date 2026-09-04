@@ -113,7 +113,7 @@ export interface LayoutDirSpec {
  * 目录树逐字；播种子树——目录登记先行于一切落盘，R4 红线「未登记 kernel paths
  * 禁落盘」由 layout 守卫 + seeds.ts 目录守卫双向钉死）。播种件落盘走 seeds.ts
  * seed-once-missing-only（缺失才写、在座零触碰、不带生成标记——项目可编辑物，
- * 禁被判 foreign/重写）；内容字节 B6b 起逐子批灌入（SEED_MANIFEST 单源）。
+ * 禁被判 foreign/重写）；内容字节 B6b 起逐子批灌入（packages/cli/seeds/ 清单单源）。
  */
 export const LAYOUT_DIRECTORIES: readonly LayoutDirSpec[] = [
   // ---- state：控制平面 Root Metadata + Governance Sidecars（宪法 §5） ----

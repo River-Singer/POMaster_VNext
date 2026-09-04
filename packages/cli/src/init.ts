@@ -33,10 +33,12 @@
  *   INVALID_STATE，绝不静默覆盖；合法存在（含人类加注的 owner）→ 一律不动；
  * - AGENTS.md/CLAUDE.md/技能卡/settings.json 仅当缺失或带本包生成标记时重写
  *   （settings.json 另有结构校验：坏 JSON/结构不合 → fail-closed 跳过，绝不覆盖）。
- * - 播种件（SEED_MANIFEST；步骤 4.6，vNext Batch 6 B6a）：seed-once-missing-only
+ * - 播种件（包内种子清单，seed-manifest.ts；步骤 4.6，vNext Batch 6 B6a/B6b-I）：
+ *   seed-once-missing-only
  *   三语义——缺席才写（action=seeded，marker-free）、在座恒零触碰（action=
  *   preserved，零告警禁被判 foreign——项目可编辑物，AI 禁静默覆盖）、目录守卫
- *   fail-closed（父目录未登记 kernel paths 禁落盘，R4 红线；seeds.ts 单一实现）。
+ *   fail-closed（父目录不在 12 播种目录 allowlist 禁落盘，R4 红线 + B6b-I 收窄；
+ *   seeds.ts 单一实现）。
  *   幂等铁律天然满足：重跑全 preserved = NO_CHANGE。
  *
  * F1 平台选择：Trellis 惯例——一次 init 覆盖多平台 AI 入口目录。AGENTS.md 恒为唯一
@@ -97,7 +99,8 @@ import {
 } from "./triage.js";
 import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
-import { SEED_MANIFEST, seedProjectAssets, type SeedEntry } from "./seeds.js";
+import { seedProjectAssets, type SeedEntry } from "./seeds.js";
+import { loadSeedManifestEntries } from "./seed-manifest.js";
 
 export type InitFileAction =
   | "created"
@@ -154,9 +157,10 @@ export interface InitOptions {
    */
   readonly platforms?: string | undefined;
   /**
-   * 播种清单注入（vNext Batch 6 B6a）：undefined = 缺省 SEED_MANIFEST（seeds.ts
-   * 单源）。注入面供测试/嵌入方在不动包内清单的前提下端到端驱动步骤 4.6——生产
-   * 路径恒走 SEED_MANIFEST。
+   * 播种清单注入（vNext Batch 6 B6a）：undefined = 缺省装载包内种子清单
+   * （seed-manifest.ts loadSeedManifestEntries——B6a 空表，B6b-I 起 FE 23 份在册）。
+   * 注入面供测试/嵌入方在不动包内清单的前提下端到端驱动步骤 4.6——生产路径恒走
+   * 包内清单装载。
    */
   readonly seedManifest?: readonly SeedEntry[] | undefined;
 }
@@ -1073,13 +1077,18 @@ export async function runInit(
   }
   await writeLayoutManifestFile(rootDir, files);
 
-  // 4.6) 播种（vNext Batch 6 B6a）：SEED_MANIFEST 单源 seed-once-missing-only——
-  //      缺席才写（action=seeded）、在座零触碰（action=preserved，禁被判 foreign/
-  //      重写——播种件是项目可编辑物不带生成标记）、目录守卫 fail-closed（父目录
-  //      未登记 kernel paths 即拒，R4 红线）。位置：README/layout.json 之后、入口
-  //      文件之前（目录与布局锚位先于播种，播种结果统计先于入口文件渲染）。空表
-  //      （B6a 现状）零 seeded/preserved 报告项——幂等铁律天然满足。
-  await seedProjectAssets(rootDir, options.seedManifest ?? SEED_MANIFEST, files);
+  // 4.6) 播种（vNext Batch 6 B6a 引擎 / B6b-I 内容在册）：包内种子清单装载
+  //      （seed-manifest.ts——manifest pin + 播种件资产，fail-closed 全量校验）+
+  //      seed-once-missing-only 三语义——缺席才写（action=seeded）、在座零触碰
+  //      （action=preserved，禁被判 foreign/重写——播种件是项目可编辑物不带生成
+  //      标记）、目录守卫 fail-closed（父目录不在 12 播种目录 allowlist 即拒，R4
+  //      红线 + B6b 收窄）。位置：README/layout.json 之后、入口文件之前（目录与
+  //      布局锚位先于播种，播种结果统计先于入口文件渲染）。
+  await seedProjectAssets(
+    rootDir,
+    options.seedManifest ?? loadSeedManifestEntries(),
+    files,
+  );
 
   // 5) 入口文件：AGENTS.md 恒生成（唯一事实源；平台选择非空 = 重入口正文 + heavy
   //    安装标记；`--platforms none` = 最小指针正文，无重入口安装物可描述）。

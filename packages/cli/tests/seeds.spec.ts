@@ -1,5 +1,5 @@
 /**
- * seeds.spec.ts —— init 播种引擎三语义守卫（vNext Batch 6 B6a；seeds.ts 单一实现）。
+ * seeds.spec.ts —— init 播种引擎三语义守卫（vNext Batch 6 B6a/B6b；seeds.ts 单一实现）。
  *
  * 红线三钉（prd.md R1 / porting-design-proposal R3/R4）：
  * - 缺席才写（seed-once）：目标缺席 → 原样写入 action=seeded；
@@ -7,10 +7,11 @@
  *   零告警零改写——禁被判 foreign/重写（可编辑性铁律）；
  * - marker-free：写入内容不带生成标记、引擎不读 marker——播种件永不进入入口文件
  *   的「带标记即可重写」生命周期。
- * 另钉：幂等（重跑全 preserved = 零写入）、目录守卫（父目录未登记 kernel paths
- * 禁落盘 + 路径词形卫生，fail-closed throw）、fresh 临时工程端到端（runInit 注入
- * 清单：init 后种子在位 → 重跑零变化 → 手改种子文件后重跑仍零变化）、B6a 空清单
- * 现状 pin（SEED_MANIFEST = []，缺省 init 零 seeded/preserved 报告项）。
+ * 另钉：幂等（重跑全 preserved = 零写入）、目录守卫（B6b-I 收窄：父目录不在
+ * SEEDABLE_STORE_DIRS 12 播种目录 allowlist 禁落盘——控制平面 kernel 登记目录同样
+ * 拒绝 + 路径词形卫生 fail-closed throw + allowlist ⊆ kernel 登记派生集合对账）、
+ * fresh 临时工程端到端（runInit 注入清单：init 后种子在位 → 重跑零变化 → 手改种子
+ * 文件后重跑仍零变化）、B6b 清单现状 pin（缺省装载 23 份 FE 播种件）。
  */
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -18,12 +19,14 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   GENERATED_MARKER,
-  SEED_MANIFEST,
+  SEEDABLE_STORE_DIRS,
+  loadSeedManifestEntries,
   runInit,
   seedProjectAssets,
   type InitFileReport,
   type SeedEntry,
 } from "@pomaster/cli";
+import { derivePathsTsStoreDirs } from "../src/layout.js";
 
 let dir: string;
 
@@ -108,17 +111,46 @@ describe("seedProjectAssets 引擎三语义（B6a 红线三钉）", () => {
   });
 });
 
-describe("seedProjectAssets 目录守卫（R4 红线：未登记禁落盘）", () => {
-  it("父目录未登记 kernel paths（.pomaster/tasks/）→ throw fail-closed + 零写入", async () => {
+describe("seedProjectAssets 目录守卫（R4 红线 + B6b-I 播种 allowlist 收窄）", () => {
+  it("父目录不在播种 allowlist（.pomaster/tasks/）→ throw fail-closed + 零写入", async () => {
     let thrown: unknown = null;
     try {
       await seed([{ path: ".pomaster/tasks/notes.md", content: "x" }]);
     } catch (error) {
       thrown = error;
     }
-    expect(String(thrown)).toContain("not registered in kernel paths.ts");
+    expect(String(thrown)).toContain("not in the seeding allowlist");
     expect(String(thrown)).toContain(".pomaster/tasks");
     expect(existsSync(join(dir, ".pomaster", "tasks"))).toBe(false);
+  });
+
+  it("B6b-I 收窄语义：kernel 已登记但非播种面的目录（truth/objects、state/contexts）→ 同样拒（控制平面不可播种）", async () => {
+    for (const target of [
+      ".pomaster/truth/objects/note/NOTE-1.json",
+      ".pomaster/state/contexts/evil.context.json",
+      ".pomaster/evidence/runs/x.json",
+      ".pomaster/sources/index.yaml",
+    ]) {
+      let thrown: unknown = null;
+      try {
+        await seed([{ path: target, content: "x" }]);
+      } catch (error) {
+        thrown = error;
+      }
+      expect(String(thrown), target).toContain("not in the seeding allowlist");
+      expect(existsSync(join(dir, ".pomaster"))).toBe(false);
+    }
+  });
+
+  it("播种 allowlist 是 kernel 登记派生集合的子集（收窄不脱离 R4「登记先行」红线——allowlist ⊆ derivePathsTsStoreDirs）", () => {
+    const registered = derivePathsTsStoreDirs(dir);
+    for (const seeded of SEEDABLE_STORE_DIRS) {
+      expect(registered.has(seeded), `allowlist member ${seeded} must be kernel-registered`).toBe(
+        true,
+      );
+    }
+    // 收窄口径：12 播种目录（baseline 根+四分区、specs 根+hard 根+三分区+acceptance+evidence）。
+    expect(SEEDABLE_STORE_DIRS).toHaveLength(12);
   });
 
   it("越出 .pomaster 的目标（AGENTS.md）→ throw + 零写入（种子只住 store 树内）", async () => {
@@ -160,7 +192,7 @@ describe("seedProjectAssets 目录守卫（R4 红线：未登记禁落盘）", (
     } catch (error) {
       thrown = error;
     }
-    expect(String(thrown)).toContain("not registered in kernel paths.ts");
+    expect(String(thrown)).toContain("not in the seeding allowlist");
     expect(existsSync(join(dir, ".pomaster", "specs", "index.md"))).toBe(false);
     expect(existsSync(join(dir, ".pomaster", "tasks"))).toBe(false);
   });
@@ -209,14 +241,35 @@ describe("runInit 步骤 4.6 播种端到端（fresh 临时工程 + 注入清单
     ).toBe("preserved");
   });
 
-  it("B6a 空清单现状 pin：SEED_MANIFEST = []（ADR-lite：引擎先行，内容 B6b 起逐子批灌入）；缺省 init 零 seeded/preserved 报告项", () => {
-    expect(SEED_MANIFEST).toHaveLength(0);
+  it("B6b-I 清单现状 pin：缺省装载 23 份 FE 播种件（01-23 分母；46 全量 B6b-II 补齐）——条目目标全落 specs/hard/frontend 播种 allowlist 面且 frontmatter 带 seed pin", () => {
+    const entries = loadSeedManifestEntries();
+    expect(entries).toHaveLength(23);
+    for (const entry of entries) {
+      expect(entry.path.startsWith(".pomaster/specs/hard/frontend/")).toBe(true);
+      expect(entry.path.endsWith(".md")).toBe(true);
+      expect(entry.content.startsWith("---\n")).toBe(true);
+      expect(entry.content.includes("seed_source_sha256: ")).toBe(true);
+      // marker-free：播种件字节不带生成标记（引擎写入面 zero-marker 的内容侧前提）。
+      expect(entry.content.includes(GENERATED_MARKER)).toBe(false);
+    }
+    // 编号连续性：01..23 逐一在册（B6b-I 前半分母钉）。
+    for (let n = 1; n <= 23; n += 1) {
+      const prefix = `.pomaster/specs/hard/frontend/${String(n).padStart(2, "0")}-`;
+      expect(entries.some((e) => e.path.startsWith(prefix)), prefix).toBe(true);
+    }
   });
 
-  it("缺省（不注入）init：报告内不出现 seeded/preserved 动作词形（空表零播种，既有账面零扰动）", async () => {
+  it("缺省（不注入）init：FE 23 份播种件在位（seeded 报告 + 幂等重跑全 preserved）", async () => {
     const outcome = await runInit(dir);
     expect(outcome.ok).toBe(true);
-    expect(outcome.result.files.some((f) => f.action === "seeded")).toBe(false);
-    expect(outcome.result.files.some((f) => f.action === "preserved")).toBe(false);
+    const seeded = outcome.result.files.filter((f) => f.action === "seeded");
+    expect(seeded).toHaveLength(23);
+    expect(existsSync(join(dir, ".pomaster", "specs", "hard", "frontend", "01-development-checklist-protocol.md"))).toBe(true);
+    expect(existsSync(join(dir, ".pomaster", "specs", "hard", "frontend", "23-accessibility-protocol.md"))).toBe(true);
+    // 幂等：重跑全 preserved = NO_CHANGE。
+    const second = await runInit(dir);
+    expect(second.ok).toBe(true);
+    expect(second.result.change).toBe("NO_CHANGE");
+    expect(second.result.files.filter((f) => f.action === "preserved")).toHaveLength(23);
   });
 });

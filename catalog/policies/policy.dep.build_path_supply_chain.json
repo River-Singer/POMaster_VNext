@@ -1,0 +1,92 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "kind='policy' 不在 vocab-lock kinds_registry.truth_bodies（POLICY. 前缀已冻结注册，closed-world）",
+    "proposal": "词汇表 PR 登记 policy kind 及新域段；或 Owner 裁决 policy 条目住 catalog/ 而非 truth/objects 正文层（与前批 45+25 条同因同请，合并进同一 vocab PR）",
+    "locked_vocab_untouched": true
+  },
+  "x-spec-d-materialization": {
+    "status": "PROPOSAL",
+    "package": "B6b-I FE 播种移植（SPEC-D 池卡复用；分母=MASTer 池卡 + vendor 播种字节双锚）",
+    "human_review_required": true,
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/corpus/spec-knowledge/candidates/consolidated-pool.yaml",
+    "group": "FE-G1",
+    "candidate_id": "POLICY.DEP.BUILD_PATH_SUPPLY_CHAIN",
+    "density_rank": null,
+    "density_score": 33.12,
+    "pool_statement_sha16": "8e7da01dd1b16710",
+    "curated_rule": "B6b-I 分母（FE 01-23）required 池（ELIGIBLE 未物化）按池密度序取前 22 + advisory 池（SHOULD 源 backlog policy 卡）按同公式密度序取前 3 = 25（D5 上限）；UNIVERSAL + UNIVERSAL_POLICY + 无 uncertainty + 非 project_scope + 非重复",
+    "denominator": "MASTer（池卡 source_protocol 锚）",
+    "clean_room_rewrite": true
+  },
+  "x-b6-porting": {
+    "status": "PROPOSAL",
+    "batch": "B6B-1",
+    "human_review_required": true,
+    "enforcement_axis": {
+      "source_sections": [
+        "MUST"
+      ],
+      "rule": "SHOULD/Change Policy 源条目 enforcement 必须 advisory（禁升 required）；MUST/MUST NOT 源条目 enforcement 必须 required_when_applicable（降级合法）",
+      "asserted_by": "packages/cli/tests/catalog-b6-porting.spec.ts"
+    },
+    "extra_master_sections": [],
+    "denominator": "vendor",
+    "vendor_pin": {
+      "path": "pomaster/components/frontend-hard-spec/assets/universal/11-dependency-package-management-protocol.md",
+      "sha256": "a0cc135edaf0dfd1f5122d2ff7298866143ef3a273ad4d45f5e1eff763691867",
+      "bytes": 2906
+    },
+    "seeded_spec": ".pomaster/specs/hard/frontend/11-dependency-package-management-protocol.md",
+    "seed_manifest": "packages/cli/seeds/manifest.json"
+  },
+  "id": "POLICY.DEP.BUILD_PATH_SUPPLY_CHAIN",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "UNIVERSAL_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "构建链路按供应链治理",
+  "statement_zh": "凡在构建与集成链路上执行的自动化环节——无论是构建期插件、流水线步骤、代码生成过程还是远端脚本——一律纳入供应链同级审查；对可漂移的引用形态必须消除，改为锁定版本或在受控策略下更新。",
+  "statement_en_keywords": [
+    "build supply chain",
+    "ci actions as dependencies",
+    "pinned references",
+    "code generators"
+  ],
+  "applies_when": {
+    "lane": "any",
+    "condition": "构建路径上的可执行依赖",
+    "applicability_note": "构建路径上的可执行依赖"
+  },
+  "enforcement": "required_when_applicable",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-spec-decomposition"
+  },
+  "origin": "ingested",
+  "origin_note": "B6b-I FE 播种移植物化；statement 在物化层以独立措辞改写（clean-room；源卡语句与上游存在逐字重合，已消除），零逐字拷贝上游源文本；播种分母=vendor 字节（x-b6-porting.vendor_pin），分解分母=MASTer 池卡（x-spec-d-materialization）",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/corpus/spec-knowledge/candidates/FE-G1.yaml",
+      "captured_by": "agent:claude/spec-d-consolidation",
+      "locator": {
+        "candidate": "POLICY.DEP.BUILD_PATH_SUPPLY_CHAIN",
+        "source_protocol": ".trellis/spec/frontend/11-dependency-package-management-protocol.md",
+        "lines": "L27"
+      },
+      "clean_room_note": "independently rewritten from SPEC-D decomposition candidate cards; zero verbatim copy"
+    }
+  ],
+  "review_notes": [
+    "与既有 POLICY.DEP.* 三条（准入/引入/变更面）为不同时点：本条管构建与 CI 链路按供应链治理，彼三条管依赖包引入与变更；零语义重复。"
+  ]
+}

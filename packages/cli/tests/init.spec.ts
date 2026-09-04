@@ -36,6 +36,7 @@ import {
   runInitInteractive,
   runChecklistPrompt,
   type ChecklistIo,
+  loadSeedManifestEntries,
 } from "@pomaster/cli";
 
 let dir: string;
@@ -54,9 +55,10 @@ function read(relative: string): string {
 
 /**
  * 重入口默认（claude 缺省）应产出的全部文件清单（骨架 4 + AGENTS/CLAUDE + settings +
- * 15×2 skills + 预铺 41 目录 README + layout.json——预铺面清单单源 layout.ts 常量
- * （Batch 2 D7/C9 增量 state/contexts + evidence/observations；Batch 6 B6a 增量
- * baseline/specs 播种面两子树——目录登记含其中，播种文件面 B6b 起灌内容））。
+ * 15×2 skills + 预铺 41 目录 README + layout.json + B6b-I 播种 23 份 FE 协议——预铺面
+ * 清单单源 layout.ts 常量（Batch 2 D7/C9 增量 state/contexts + evidence/observations；
+ * Batch 6 B6a 增量 baseline/specs 播种面两子树——目录登记含其中，播种文件面 B6b-I 起
+ * 在册）。
  */
 function heavyDefaultExpectedFiles(): string[] {
   return [
@@ -72,6 +74,7 @@ function heavyDefaultExpectedFiles(): string[] {
     ]),
     ...LAYOUT_DIRECTORIES.map((d) => `.pomaster/${d.path}/README.md`),
     LAYOUT_MANIFEST_RELATIVE,
+    ...loadSeedManifestEntries().map((e) => e.path),
   ].sort();
 }
 
@@ -83,8 +86,11 @@ describe("init 首次创建（CREATED）", () => {
     expect(outcome.result.files.map((f) => f.file).sort()).toEqual(
       heavyDefaultExpectedFiles(),
     );
+    // seeded = 播种件（B6b-I 23 份 FE）缺席写入——非 init 再生成物，与 created 分账。
     expect(
-      outcome.result.files.every((f) => f.action === "created"),
+      outcome.result.files.every(
+        (f) => f.action === "created" || f.action === "seeded",
+      ),
     ).toBe(true);
   });
 
@@ -201,14 +207,16 @@ describe("init 首次创建（CREATED）", () => {
 });
 
 describe("init 幂等（任务契约：连续两次 init 第二次 NO_CHANGE）", () => {
-  it("第二次 init → NO_CHANGE，全部 unchanged", async () => {
+  it("第二次 init → NO_CHANGE，动作词形仅 unchanged/preserved（preserved = B6b 播种件在座零触碰，项目可编辑物）", async () => {
     await runInit(dir);
     const second = await runInit(dir);
     expect(second.ok).toBe(true);
     expect(second.result.change).toBe("NO_CHANGE");
-    expect(second.result.files.every((f) => f.action === "unchanged")).toBe(
-      true,
-    );
+    expect(
+      second.result.files.every(
+        (f) => f.action === "unchanged" || f.action === "preserved",
+      ),
+    ).toBe(true);
   });
 
   it("第三次 init 仍 NO_CHANGE（不动点）", async () => {
@@ -1102,6 +1110,7 @@ describe("预铺目录骨架与 layout.json", () => {
         AGENTS_MD_RELATIVE,
         ...LAYOUT_DIRECTORIES.map((d) => `.pomaster/${d.path}/README.md`),
         LAYOUT_MANIFEST_RELATIVE,
+        ...loadSeedManifestEntries().map((e) => e.path),
       ].sort(),
     );
   });

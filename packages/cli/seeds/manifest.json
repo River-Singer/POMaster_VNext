@@ -1,0 +1,225 @@
+{
+  "schema": "pomaster.seed-manifest/1",
+  "batch": "B6B-1",
+  "generated_by": "catalog/tools/seed_b6b_frontend.py",
+  "denominator": {
+    "batch_scope": "B6b-I：FE 46 文件分母前半（01-23 编号协议；index 与 24-45 留 B6b-II）",
+    "planted": 23,
+    "planted_total": 46
+  },
+  "seed_semantics": "seed-once-missing-only（缺席才写 / 在座零触碰 / marker-free；seeds.ts 单一实现；frontmatter 为 PRD §8.2 字段位减 id——no-governed-id 默认，播种 spec 是项目可编辑自由文件）",
+  "authority_scope": "mixed_required_and_advisory",
+  "entries": [
+    {
+      "target": ".pomaster/specs/hard/frontend/01-development-checklist-protocol.md",
+      "asset": "specs/hard/frontend/01-development-checklist-protocol.md",
+      "lane": "frontend",
+      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/01-development-checklist-protocol.md",
+      "source_sha256": "fa8914b29dbf7af25c8128aa1b8936fd658e37854e0a4f457175e2e3c82c3a03",
+      "source_bytes": 2691,
+      "porting_notes": [
+        "R8 词形登记：L25/L33 'finish 流程' 为旧包流程词形，vNext 无对应命令——内容忠实红线保留原文，词形清洗等 Owner 授权内容演进批次"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/frontend/02-ai-generated-code-protocol.md",
+      "asset": "specs/hard/frontend/02-ai-generated-code-protocol.md",
+      "lane": "frontend",
+      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/02-ai-generated-code-protocol.md",
+      "source_sha256": "a80ea1c51c9afc0b96001cfffa0675edafb1572563652840bcf88770d81203c8",
+      "source_bytes": 2130,
+      "porting_notes": []
+    },
+    {
+      "target": ".pomaster/specs/hard/frontend/03-acceptance-gate-protocol.md",
+      "asset": "specs/hard/frontend/03-acceptance-gate-protocol.md",
+      "lane": "frontend",
+      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/03-acceptance-gate-protocol.md",
+      "source_sha256": "646dcbd7035d43d84ca592218a356c08a4baca36619109797322d90ba3d99b73",
+      "source_bytes": 2550,
+      "porting_notes": [
+        "R8 词形登记：L35 'finish' 同上（旧包流程词形保留原文）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/frontend/04-security-protocol.md",
+      "asset": "specs/hard/frontend/04-security-protocol.md",
+      "lane": "frontend",
+      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/04-security-protocol.md",
+      "source_sha256": "4d9bb6bd34a64fcc3e362c969492bc326533e16ef4c6d2284dc01442733504e6",
+      "source_bytes": 21948,
+      "porting_notes": []
+    },
+    {
+      "target": ".pomaster/specs/hard/frontend/05-environment-configuration-protocol.md",
+      "asset": "specs/hard/frontend/05-environment-configuration-protocol.md",
+      "lane": "frontend",
+      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/05-environment-configuration-protocol.md",
+      "source_sha256": "3affc23c84d64d10c8911b84bd9db82a34fcb9b675f7365672d554ecf34c8fb6",
+      "source_bytes": 1887,
+      "porting_notes": []
+    },
+    {
+      "target": ".pomaster/specs/hard/frontend/06-change-governance-protocol.md",
+      "asset": "specs/hard/frontend/06-change-governance-protocol.md",
+      "lane": "frontend",
+      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/06-change-governance-protocol.md",
+      "source_sha256": "2f19b46e451153cab35e9fb511d9da0f072f86424e7d3f7a6b307cd17a9d1b32",
+      "source_bytes": 2972,
+      "porting_notes": []
+    },
+    {
+      "target": ".pomaster/specs/hard/frontend/07-frontend-backend-communication-protocol.md",
+      "asset": "specs/hard/frontend/07-frontend-backend-communication-protocol.md",
+      "lane": "frontend",
+      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/07-frontend-backend-communication-protocol.md",
+      "source_sha256": "b14d2f8281198ff663e6e21e58df2e429c4683907cb77b6ebcdb6609d37f72d2",
+      "source_bytes": 9260,
+      "porting_notes": []
+    },
+    {
+      "target": ".pomaster/specs/hard/frontend/08-role-responsibility-protocol.md",
+      "asset": "specs/hard/frontend/08-role-responsibility-protocol.md",
+      "lane": "frontend",
+      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/08-role-responsibility-protocol.md",
+      "source_sha256": "732ac305cd16207e4a7bd4c95a6774d1aca33fb4e45cf29991ac0f6475605d6f",
+      "source_bytes": 1894,
+      "porting_notes": []
+    },
+    {
+      "target": ".pomaster/specs/hard/frontend/09-module-boundary-protocol.md",
+      "asset": "specs/hard/frontend/09-module-boundary-protocol.md",
+      "lane": "frontend",
+      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/09-module-boundary-protocol.md",
+      "source_sha256": "f9a3c194910bbb31cd322849cb277db5d2ae0fd74773eef7df34197b8ad89c4f",
+      "source_bytes": 1974,
+      "porting_notes": []
+    },
+    {
+      "target": ".pomaster/specs/hard/frontend/10-engineering-tooling-protocol.md",
+      "asset": "specs/hard/frontend/10-engineering-tooling-protocol.md",
+      "lane": "frontend",
+      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/10-engineering-tooling-protocol.md",
+      "source_sha256": "c628d47dcae1ddd58ea3651eeae9dd84ff5157365a3892a367bd7b5bf0af2b9d",
+      "source_bytes": 2782,
+      "porting_notes": []
+    },
+    {
+      "target": ".pomaster/specs/hard/frontend/11-dependency-package-management-protocol.md",
+      "asset": "specs/hard/frontend/11-dependency-package-management-protocol.md",
+      "lane": "frontend",
+      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/11-dependency-package-management-protocol.md",
+      "source_sha256": "a0cc135edaf0dfd1f5122d2ff7298866143ef3a273ad4d45f5e1eff763691867",
+      "source_bytes": 2906,
+      "porting_notes": []
+    },
+    {
+      "target": ".pomaster/specs/hard/frontend/12-business-rules-protocol.md",
+      "asset": "specs/hard/frontend/12-business-rules-protocol.md",
+      "lane": "frontend",
+      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/12-business-rules-protocol.md",
+      "source_sha256": "dda683a7c907989032c82a2c1c3e552b51226e0e0cd5bdf3b6068cc7f649c525",
+      "source_bytes": 1828,
+      "porting_notes": []
+    },
+    {
+      "target": ".pomaster/specs/hard/frontend/13-monetary-precision-protocol.md",
+      "asset": "specs/hard/frontend/13-monetary-precision-protocol.md",
+      "lane": "frontend",
+      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/13-monetary-precision-protocol.md",
+      "source_sha256": "4930246c7dfed2751d3a71d617a21e24b46b376131723451b39152582c7a3d4f",
+      "source_bytes": 1918,
+      "porting_notes": []
+    },
+    {
+      "target": ".pomaster/specs/hard/frontend/14-data-model-protocol.md",
+      "asset": "specs/hard/frontend/14-data-model-protocol.md",
+      "lane": "frontend",
+      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/14-data-model-protocol.md",
+      "source_sha256": "7d4e31ef04a1f57d88e982c01dabc22c421bafc850b7295a73d084ec3c6fc838",
+      "source_bytes": 2444,
+      "porting_notes": []
+    },
+    {
+      "target": ".pomaster/specs/hard/frontend/15-request-api-protocol.md",
+      "asset": "specs/hard/frontend/15-request-api-protocol.md",
+      "lane": "frontend",
+      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/15-request-api-protocol.md",
+      "source_sha256": "b9489d69e35a19b8d5ba2442108190e7b99989ef471c8cf413d9e4e408ca2969",
+      "source_bytes": 2666,
+      "porting_notes": []
+    },
+    {
+      "target": ".pomaster/specs/hard/frontend/16-error-handling-protocol.md",
+      "asset": "specs/hard/frontend/16-error-handling-protocol.md",
+      "lane": "frontend",
+      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/16-error-handling-protocol.md",
+      "source_sha256": "0c6adc425e01a003e1f3c83fcf51f1d287767c95a4da50c15f5f639d9104f07f",
+      "source_bytes": 1896,
+      "porting_notes": []
+    },
+    {
+      "target": ".pomaster/specs/hard/frontend/17-permission-protocol.md",
+      "asset": "specs/hard/frontend/17-permission-protocol.md",
+      "lane": "frontend",
+      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/17-permission-protocol.md",
+      "source_sha256": "3f51aeb30497c07a3b552c8f21ecff22730d276c85fd504fde16e9e17b622ec0",
+      "source_bytes": 1746,
+      "porting_notes": []
+    },
+    {
+      "target": ".pomaster/specs/hard/frontend/18-state-management-protocol.md",
+      "asset": "specs/hard/frontend/18-state-management-protocol.md",
+      "lane": "frontend",
+      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/18-state-management-protocol.md",
+      "source_sha256": "72445fcd0ac7e21ebea38a5f72849543f936c7a96eee54eb99330226acaaf400",
+      "source_bytes": 2720,
+      "porting_notes": []
+    },
+    {
+      "target": ".pomaster/specs/hard/frontend/19-cache-protocol.md",
+      "asset": "specs/hard/frontend/19-cache-protocol.md",
+      "lane": "frontend",
+      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/19-cache-protocol.md",
+      "source_sha256": "893d5651016233eec36333775441a935746fe1202c8924dc2edf753d61523daf",
+      "source_bytes": 1817,
+      "porting_notes": []
+    },
+    {
+      "target": ".pomaster/specs/hard/frontend/20-testing-protocol.md",
+      "asset": "specs/hard/frontend/20-testing-protocol.md",
+      "lane": "frontend",
+      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/20-testing-protocol.md",
+      "source_sha256": "477dc049d1e1ec72898a07615655ee374924c7796a0210741e8c97474644a4d6",
+      "source_bytes": 2831,
+      "porting_notes": []
+    },
+    {
+      "target": ".pomaster/specs/hard/frontend/21-design-system-protocol.md",
+      "asset": "specs/hard/frontend/21-design-system-protocol.md",
+      "lane": "frontend",
+      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/21-design-system-protocol.md",
+      "source_sha256": "317d4086949eb7d26ea2465adc6521ba6ebb611dca0d2f32aec2c57a985be4f3",
+      "source_bytes": 1827,
+      "porting_notes": []
+    },
+    {
+      "target": ".pomaster/specs/hard/frontend/22-theme-protocol.md",
+      "asset": "specs/hard/frontend/22-theme-protocol.md",
+      "lane": "frontend",
+      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/22-theme-protocol.md",
+      "source_sha256": "b93ed272a0def5abc689fe66d939b87cacf6f38cce5d6278cfd5c94d1754b3ec",
+      "source_bytes": 1739,
+      "porting_notes": []
+    },
+    {
+      "target": ".pomaster/specs/hard/frontend/23-accessibility-protocol.md",
+      "asset": "specs/hard/frontend/23-accessibility-protocol.md",
+      "lane": "frontend",
+      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/23-accessibility-protocol.md",
+      "source_sha256": "10557bf1221d1cf2748e29149820890e4523789701a35f7336e3f661fed82bfb",
+      "source_bytes": 15870,
+      "porting_notes": []
+    }
+  ]
+}

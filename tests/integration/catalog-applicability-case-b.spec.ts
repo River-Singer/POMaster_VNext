@@ -109,7 +109,10 @@ function assembleCaseBFixture(): void {
     if (policy.id.startsWith("POLICY.API.") || policy.id.includes(".WEB.API.")) {
       resetToCapabilityOnly(policy.file, "CAPABILITY.API_CONTRACT");
     }
-    if (policy.id === "POLICY.SEC.THIRD_PARTY_EXECUTION_REGISTER") {
+    // Sec 族（B6b-I 起 POLICY.SEC.* 扩至 8 条）：fixture 内统一重置为 capabilities
+    // 单轴（契约面变更才适用——「EXCLUDE unless contract affected」同 API 族语义；
+    // fixture 自标注隔离判卷面，真实本体 T3 标注状态以 human_review 台账为准）。
+    if (policy.id.startsWith("POLICY.SEC.")) {
       resetToCapabilityOnly(policy.file, "CAPABILITY.API_CONTRACT");
     }
   }

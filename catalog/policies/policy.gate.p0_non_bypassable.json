@@ -1,0 +1,91 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "kind='policy' 不在 vocab-lock kinds_registry.truth_bodies（POLICY. 前缀已冻结注册，closed-world）；新 id 域段待登记：GATE",
+    "proposal": "词汇表 PR 登记 policy kind 及新域段；或 Owner 裁决 policy 条目住 catalog/ 而非 truth/objects 正文层（与前批 45+25 条同因同请，合并进同一 vocab PR）",
+    "locked_vocab_untouched": true
+  },
+  "x-spec-d-materialization": {
+    "status": "PROPOSAL",
+    "package": "B6b-I FE 播种移植（SPEC-D 池卡复用；分母=MASTer 池卡 + vendor 播种字节双锚）",
+    "human_review_required": true,
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/corpus/spec-knowledge/candidates/consolidated-pool.yaml",
+    "group": "FE-G1",
+    "candidate_id": "POLICY.GATE.P0_NON_BYPASSABLE",
+    "density_rank": null,
+    "density_score": 32.75,
+    "pool_statement_sha16": "804ce97bc842bf81",
+    "curated_rule": "B6b-I 分母（FE 01-23）required 池（ELIGIBLE 未物化）按池密度序取前 22 + advisory 池（SHOULD 源 backlog policy 卡）按同公式密度序取前 3 = 25（D5 上限）；UNIVERSAL + UNIVERSAL_POLICY + 无 uncertainty + 非 project_scope + 非重复",
+    "denominator": "MASTer（池卡 source_protocol 锚）"
+  },
+  "x-b6-porting": {
+    "status": "PROPOSAL",
+    "batch": "B6B-1",
+    "human_review_required": true,
+    "enforcement_axis": {
+      "source_sections": [
+        "MUST",
+        "MUST NOT"
+      ],
+      "rule": "SHOULD/Change Policy 源条目 enforcement 必须 advisory（禁升 required）；MUST/MUST NOT 源条目 enforcement 必须 required_when_applicable（降级合法）",
+      "asserted_by": "packages/cli/tests/catalog-b6-porting.spec.ts"
+    },
+    "extra_master_sections": [],
+    "denominator": "vendor",
+    "vendor_pin": {
+      "path": "pomaster/components/frontend-hard-spec/assets/universal/03-acceptance-gate-protocol.md",
+      "sha256": "646dcbd7035d43d84ca592218a356c08a4baca36619109797322d90ba3d99b73",
+      "bytes": 2550
+    },
+    "seeded_spec": ".pomaster/specs/hard/frontend/03-acceptance-gate-protocol.md",
+    "seed_manifest": "packages/cli/seeds/manifest.json"
+  },
+  "id": "POLICY.GATE.P0_NON_BYPASSABLE",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "UNIVERSAL_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "最高级门禁不可绕过",
+  "statement_zh": "最高优先级门禁失败时禁止进入下一阶段；时间压力、人工代过或本地表现正常都不构成绕过理由。",
+  "statement_en_keywords": [
+    "p0 gate non bypassable",
+    "no human override",
+    "time pressure is not a reason"
+  ],
+  "applies_when": {
+    "lane": "any",
+    "condition": "P0 级门禁判定",
+    "applicability_note": "P0 级门禁判定"
+  },
+  "enforcement": "required_when_applicable",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-spec-decomposition"
+  },
+  "origin": "ingested",
+  "origin_note": "B6b-I FE 播种移植物化；statement 沿用 SPEC-D 候选卡独立措辞（clean-room），零逐字拷贝上游源文本；播种分母=vendor 字节（x-b6-porting.vendor_pin），分解分母=MASTer 池卡（x-spec-d-materialization）",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/corpus/spec-knowledge/candidates/FE-G1.yaml",
+      "captured_by": "agent:claude/spec-d-consolidation",
+      "locator": {
+        "candidate": "POLICY.GATE.P0_NON_BYPASSABLE",
+        "source_protocol": ".trellis/spec/frontend/03-acceptance-gate-protocol.md",
+        "lines": "L22, L31"
+      },
+      "clean_room_note": "independently rewritten from SPEC-D decomposition candidate cards; zero verbatim copy"
+    }
+  ],
+  "review_notes": [
+    "门禁不可绕过原则在既有 143 条中无对应条目（既有 GATE.* 为 gate recipe 检查单，非绕过禁令），零语义重复。"
+  ]
+}

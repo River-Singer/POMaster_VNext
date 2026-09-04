@@ -1,0 +1,92 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "kind='policy' 不在 vocab-lock kinds_registry.truth_bodies（POLICY. 前缀已冻结注册，closed-world）；新 id 域段待登记：CONTRACT",
+    "proposal": "词汇表 PR 登记 policy kind 及新域段；或 Owner 裁决 policy 条目住 catalog/ 而非 truth/objects 正文层（与前批 45+25 条同因同请，合并进同一 vocab PR）",
+    "locked_vocab_untouched": true
+  },
+  "x-spec-d-materialization": {
+    "status": "PROPOSAL",
+    "package": "B6b-I FE 播种移植（SPEC-D 池卡复用；分母=MASTer 池卡 + vendor 播种字节双锚）",
+    "human_review_required": true,
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/corpus/spec-knowledge/candidates/consolidated-pool.yaml",
+    "group": "FE-G1",
+    "candidate_id": "POLICY.CONTRACT.NO_INVENTED_FACTS",
+    "density_rank": null,
+    "density_score": 33.25,
+    "pool_statement_sha16": "2e8da7c1f824b8f5",
+    "curated_rule": "B6b-I 分母（FE 01-23）required 池（ELIGIBLE 未物化）按池密度序取前 22 + advisory 池（SHOULD 源 backlog policy 卡）按同公式密度序取前 3 = 25（D5 上限）；UNIVERSAL + UNIVERSAL_POLICY + 无 uncertainty + 非 project_scope + 非重复",
+    "denominator": "MASTer（池卡 source_protocol 锚）"
+  },
+  "x-b6-porting": {
+    "status": "PROPOSAL",
+    "batch": "B6B-1",
+    "human_review_required": true,
+    "enforcement_axis": {
+      "source_sections": [
+        "MUST"
+      ],
+      "rule": "SHOULD/Change Policy 源条目 enforcement 必须 advisory（禁升 required）；MUST/MUST NOT 源条目 enforcement 必须 required_when_applicable（降级合法）",
+      "asserted_by": "packages/cli/tests/catalog-b6-porting.spec.ts"
+    },
+    "extra_master_sections": [],
+    "denominator": "vendor",
+    "vendor_pin": {
+      "path": "pomaster/components/frontend-hard-spec/assets/universal/01-development-checklist-protocol.md",
+      "sha256": "fa8914b29dbf7af25c8128aa1b8936fd658e37854e0a4f457175e2e3c82c3a03",
+      "bytes": 2691
+    },
+    "seeded_spec": ".pomaster/specs/hard/frontend/01-development-checklist-protocol.md",
+    "seed_manifest": "packages/cli/seeds/manifest.json"
+  },
+  "id": "POLICY.CONTRACT.NO_INVENTED_FACTS",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "UNIVERSAL_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "未证实事实先补契约",
+  "statement_zh": "缺失正式依据的字段、状态、权限、接口或业务规则，必须先补全契约或显式阻塞等待确认，不得以推测值继续实现。",
+  "statement_en_keywords": [
+    "no invented facts",
+    "missing contract",
+    "block on confirmation",
+    "no guessed values"
+  ],
+  "applies_when": {
+    "lane": "any",
+    "condition": "实现中遭遇未定义事实时",
+    "applicability_note": "实现中遭遇未定义事实时"
+  },
+  "enforcement": "required_when_applicable",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-spec-decomposition"
+  },
+  "origin": "ingested",
+  "origin_note": "B6b-I FE 播种移植物化；statement 沿用 SPEC-D 候选卡独立措辞（clean-room），零逐字拷贝上游源文本；播种分母=vendor 字节（x-b6-porting.vendor_pin），分解分母=MASTer 池卡（x-spec-d-materialization）",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/corpus/spec-knowledge/candidates/FE-G1.yaml",
+      "captured_by": "agent:claude/spec-d-consolidation",
+      "locator": {
+        "candidate": "POLICY.CONTRACT.NO_INVENTED_FACTS",
+        "source_protocol": ".trellis/spec/frontend/01-development-checklist-protocol.md",
+        "lines": "L22"
+      },
+      "clean_room_note": "independently rewritten from SPEC-D decomposition candidate cards; zero verbatim copy"
+    }
+  ],
+  "review_notes": [
+    "与既有 POLICY.API.NO_INFORMAL_CONTRACT（接口契约不得来自非正式源）不同轴：本条管任何未定义事实先补契约或阻塞确认，彼条管契约来源正式性；池层已判零语义重复。",
+    "卡为双锚卡（01 L22 + 02 L28 AI 侧禁止形态），02 文件不重复立卡。"
+  ]
+}
