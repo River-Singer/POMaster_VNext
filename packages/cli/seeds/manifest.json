@@ -1,6 +1,6 @@
 {
   "schema": "pomaster.seed-manifest/1",
-  "batch": "B6C",
+  "batch": "B6D",
   "batches": {
     "B6B-1": [
       ".pomaster/specs/hard/frontend/01-development-checklist-protocol.md",
@@ -114,17 +114,44 @@
       ".pomaster/specs/hard/stacks/spring-webflux/spring-webflux-reactive-overlay.md",
       ".pomaster/specs/hard/stacks/tomcat/index.md",
       ".pomaster/specs/hard/stacks/tomcat/tomcat-runtime-overlay.md"
+    ],
+    "B6D": [
+      ".pomaster/baseline/backend/api-contract.md",
+      ".pomaster/baseline/backend/architecture.md",
+      ".pomaster/baseline/backend/data-access.md",
+      ".pomaster/baseline/backend/directory-structure.md",
+      ".pomaster/baseline/backend/integration-runtime.md",
+      ".pomaster/baseline/backend/quality.md",
+      ".pomaster/baseline/backend/stack.yaml",
+      ".pomaster/baseline/backend/transaction-concurrency.md",
+      ".pomaster/baseline/data/lineage.md",
+      ".pomaster/baseline/data/migration.md",
+      ".pomaster/baseline/data/model.md",
+      ".pomaster/baseline/data/precision-units.md",
+      ".pomaster/baseline/data/quality.md",
+      ".pomaster/baseline/frontend/api-and-error.md",
+      ".pomaster/baseline/frontend/architecture.md",
+      ".pomaster/baseline/frontend/design-system.md",
+      ".pomaster/baseline/frontend/directory-structure.md",
+      ".pomaster/baseline/frontend/quality.md",
+      ".pomaster/baseline/frontend/stack.yaml",
+      ".pomaster/baseline/frontend/state-and-data.md",
+      ".pomaster/baseline/manifest.yaml",
+      ".pomaster/baseline/platform/delivery.md",
+      ".pomaster/baseline/platform/environment.md",
+      ".pomaster/baseline/platform/observability.md",
+      ".pomaster/baseline/platform/security.md"
     ]
   },
-  "generated_by": "catalog/tools/seed_b6c_backend.py",
+  "generated_by": "catalog/tools/seed_b6d_baseline.py",
   "denominator": {
-    "batch_scope": "B6c：BE universal 33 文件（32 编号协议 + index）+ stacks 28 文件（14 目录 × index+overlay）全量播种 + profile 1 份走 catalog TECHNOLOGY_PROFILE 分类面不播种（B6b 两批 FE 46 条在册——清单合并承载全量分母）",
-    "planted": 107,
-    "planted_total": 107,
-    "batch_new": 61
+    "batch_scope": "B6d:baseline 体系 25 文件新著播种(manifest.yaml 1 + frontend 7 + backend 8 + data 5 + platform 4;UNKNOWN 起步,「待填写」词形零移植;B6b/B6c 107 条在册——清单合并承载全量分母 132)",
+    "planted": 132,
+    "planted_total": 132,
+    "batch_new": 25
   },
-  "seed_semantics": "seed-once-missing-only（缺席才写 / 在座零触碰 / marker-free；seeds.ts 单一实现；frontmatter 为 PRD §8.2 字段位减 id——no-governed-id 默认，播种 spec 是项目可编辑自由文件；B6c 起 BE 件含 vendor frontmatter 保留字段、stacks 件落 <slug> 子目录——SEEDABLE_STORE_DIRS 显式 slug 登记）",
-  "authority_scope": "mixed_required_and_advisory",
+  "seed_semantics": "seed-once-missing-only(缺席才写 / 在座零触碰 / marker-free;seeds.ts 单一实现;frontmatter 为 PRD §8.2 字段位减 id——no-governed-id 默认,播种 spec 是项目可编辑自由文件;B6c 起 BE 件含 vendor frontmatter 保留字段、stacks 件落 <slug> 子目录——SEEDABLE_STORE_DIRS 显式 slug 登记;B6d 起 baseline 件为新著纯正文(无 frontmatter——yaml 直接可解析/Owner 填写面零噪音;entry authoring=new,pin=资产自身字节指纹,装载器自指校验;UNKNOWN 起步,「待填写」词形零移植)",
+  "authority_scope": "specs 面 mixed_required_and_advisory;baseline 面 project_baseline_template(UNKNOWN 起步模板,非规则面)",
   "entries": [
     {
       "target": ".pomaster/specs/hard/frontend/01-development-checklist-protocol.md",
@@ -1299,6 +1326,356 @@
       "source_bytes": 693,
       "porting_notes": [
         "B6c 移植注记：本 overlay 随 14 组全量播种（installed=true）；bound（选中态）由 baseline/backend/stack.yaml 显式选型派生（B6d 落位），不作隐式基线（目录 index 原语义词形）"
+      ]
+    },
+    {
+      "target": ".pomaster/baseline/backend/api-contract.md",
+      "asset": "baseline/backend/api-contract.md",
+      "seed_version": "B6D",
+      "lane": "backend",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Consolidated-PRD.md#s3-baseline-tree(PRD §3 树职责注释逐字承载;新著无 vendor 字节源——语义祖先=旧 stack-baseline.schema + 02-technology-baseline 模板,仅参照)",
+      "source_sha256": "2b0dff3da22f843b6ebc69f038e57eb3a144fb4b83f4fea8a7c8eb6f4bceacf2",
+      "source_bytes": 1030,
+      "porting_notes": [
+        "B6d 新著件(非移植):旧包无 25 文件成套资产——语义祖先为运行时 factsource stack-baseline.schema 与 02-technology-baseline planned 模板(仅字段/词形参照,capability/status/supersedes/ACR 演化语义不并入一期,提案 §3);骨架章节照 PRD §3 baseline 树职责注释逐字;内容零发明:起步值一律 UNKNOWN,示例与默认值不住播种面(PRD §7.1 NON-AUTHORITATIVE——示例只住 PRD/catalog 注记)",
+        "B6d 形态注记:本件无 frontmatter(纯正文——yaml 直接可解析/md 零噪音,Owner 填写面);清单 pin=资产自身字节 sha256(authoring=new 自指指纹——新著无 vendor 源字节,防包内清单↔资产失同步,装载器按 authoring 分流校验)"
+      ]
+    },
+    {
+      "target": ".pomaster/baseline/backend/architecture.md",
+      "asset": "baseline/backend/architecture.md",
+      "seed_version": "B6D",
+      "lane": "backend",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Consolidated-PRD.md#s3-baseline-tree(PRD §3 树职责注释逐字承载;新著无 vendor 字节源——语义祖先=旧 stack-baseline.schema + 02-technology-baseline 模板,仅参照)",
+      "source_sha256": "d9da57fd8dcdb88e929dd41c5d12936da03a84f7db7027395e2c0ffc56b9a66c",
+      "source_bytes": 1114,
+      "porting_notes": [
+        "B6d 新著件(非移植):旧包无 25 文件成套资产——语义祖先为运行时 factsource stack-baseline.schema 与 02-technology-baseline planned 模板(仅字段/词形参照,capability/status/supersedes/ACR 演化语义不并入一期,提案 §3);骨架章节照 PRD §3 baseline 树职责注释逐字;内容零发明:起步值一律 UNKNOWN,示例与默认值不住播种面(PRD §7.1 NON-AUTHORITATIVE——示例只住 PRD/catalog 注记)",
+        "B6d 形态注记:本件无 frontmatter(纯正文——yaml 直接可解析/md 零噪音,Owner 填写面);清单 pin=资产自身字节 sha256(authoring=new 自指指纹——新著无 vendor 源字节,防包内清单↔资产失同步,装载器按 authoring 分流校验)"
+      ]
+    },
+    {
+      "target": ".pomaster/baseline/backend/data-access.md",
+      "asset": "baseline/backend/data-access.md",
+      "seed_version": "B6D",
+      "lane": "backend",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Consolidated-PRD.md#s3-baseline-tree(PRD §3 树职责注释逐字承载;新著无 vendor 字节源——语义祖先=旧 stack-baseline.schema + 02-technology-baseline 模板,仅参照)",
+      "source_sha256": "7315ce8bc3701d75ef21039e04b47d95a366fb24c20468fe38511afb35e95e55",
+      "source_bytes": 1098,
+      "porting_notes": [
+        "B6d 新著件(非移植):旧包无 25 文件成套资产——语义祖先为运行时 factsource stack-baseline.schema 与 02-technology-baseline planned 模板(仅字段/词形参照,capability/status/supersedes/ACR 演化语义不并入一期,提案 §3);骨架章节照 PRD §3 baseline 树职责注释逐字;内容零发明:起步值一律 UNKNOWN,示例与默认值不住播种面(PRD §7.1 NON-AUTHORITATIVE——示例只住 PRD/catalog 注记)",
+        "B6d 形态注记:本件无 frontmatter(纯正文——yaml 直接可解析/md 零噪音,Owner 填写面);清单 pin=资产自身字节 sha256(authoring=new 自指指纹——新著无 vendor 源字节,防包内清单↔资产失同步,装载器按 authoring 分流校验)"
+      ]
+    },
+    {
+      "target": ".pomaster/baseline/backend/directory-structure.md",
+      "asset": "baseline/backend/directory-structure.md",
+      "seed_version": "B6D",
+      "lane": "backend",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Consolidated-PRD.md#s3-baseline-tree(PRD §3 树职责注释逐字承载;新著无 vendor 字节源——语义祖先=旧 stack-baseline.schema + 02-technology-baseline 模板,仅参照)",
+      "source_sha256": "a7b8177bbfc4847ae009d8b99bfaaaeb62c937eae238bec9de05f97e6ea5db41",
+      "source_bytes": 657,
+      "porting_notes": [
+        "B6d 新著件(非移植):旧包无 25 文件成套资产——语义祖先为运行时 factsource stack-baseline.schema 与 02-technology-baseline planned 模板(仅字段/词形参照,capability/status/supersedes/ACR 演化语义不并入一期,提案 §3);骨架章节照 PRD §3 baseline 树职责注释逐字;内容零发明:起步值一律 UNKNOWN,示例与默认值不住播种面(PRD §7.1 NON-AUTHORITATIVE——示例只住 PRD/catalog 注记)",
+        "B6d 形态注记:本件无 frontmatter(纯正文——yaml 直接可解析/md 零噪音,Owner 填写面);清单 pin=资产自身字节 sha256(authoring=new 自指指纹——新著无 vendor 源字节,防包内清单↔资产失同步,装载器按 authoring 分流校验)"
+      ]
+    },
+    {
+      "target": ".pomaster/baseline/backend/integration-runtime.md",
+      "asset": "baseline/backend/integration-runtime.md",
+      "seed_version": "B6D",
+      "lane": "backend",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Consolidated-PRD.md#s3-baseline-tree(PRD §3 树职责注释逐字承载;新著无 vendor 字节源——语义祖先=旧 stack-baseline.schema + 02-technology-baseline 模板,仅参照)",
+      "source_sha256": "ae0b0755e216f817d9cec6088ea183ac6d93ee2ef2fa7508e9befcab801be47c",
+      "source_bytes": 958,
+      "porting_notes": [
+        "B6d 新著件(非移植):旧包无 25 文件成套资产——语义祖先为运行时 factsource stack-baseline.schema 与 02-technology-baseline planned 模板(仅字段/词形参照,capability/status/supersedes/ACR 演化语义不并入一期,提案 §3);骨架章节照 PRD §3 baseline 树职责注释逐字;内容零发明:起步值一律 UNKNOWN,示例与默认值不住播种面(PRD §7.1 NON-AUTHORITATIVE——示例只住 PRD/catalog 注记)",
+        "B6d 形态注记:本件无 frontmatter(纯正文——yaml 直接可解析/md 零噪音,Owner 填写面);清单 pin=资产自身字节 sha256(authoring=new 自指指纹——新著无 vendor 源字节,防包内清单↔资产失同步,装载器按 authoring 分流校验)"
+      ]
+    },
+    {
+      "target": ".pomaster/baseline/backend/quality.md",
+      "asset": "baseline/backend/quality.md",
+      "seed_version": "B6D",
+      "lane": "backend",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Consolidated-PRD.md#s3-baseline-tree(PRD §3 树职责注释逐字承载;新著无 vendor 字节源——语义祖先=旧 stack-baseline.schema + 02-technology-baseline 模板,仅参照)",
+      "source_sha256": "9c940b3a734b86e2f3025d82ac72341eef46a7d15b71892ab02206cb43d02d46",
+      "source_bytes": 1098,
+      "porting_notes": [
+        "B6d 新著件(非移植):旧包无 25 文件成套资产——语义祖先为运行时 factsource stack-baseline.schema 与 02-technology-baseline planned 模板(仅字段/词形参照,capability/status/supersedes/ACR 演化语义不并入一期,提案 §3);骨架章节照 PRD §3 baseline 树职责注释逐字;内容零发明:起步值一律 UNKNOWN,示例与默认值不住播种面(PRD §7.1 NON-AUTHORITATIVE——示例只住 PRD/catalog 注记)",
+        "B6d 形态注记:本件无 frontmatter(纯正文——yaml 直接可解析/md 零噪音,Owner 填写面);清单 pin=资产自身字节 sha256(authoring=new 自指指纹——新著无 vendor 源字节,防包内清单↔资产失同步,装载器按 authoring 分流校验)"
+      ]
+    },
+    {
+      "target": ".pomaster/baseline/backend/stack.yaml",
+      "asset": "baseline/backend/stack.yaml",
+      "seed_version": "B6D",
+      "lane": "backend",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Consolidated-PRD.md#s3-baseline-tree(PRD §3 树职责注释逐字承载;新著无 vendor 字节源——语义祖先=旧 stack-baseline.schema + 02-technology-baseline 模板,仅参照)",
+      "source_sha256": "6620c63677cad2996a7b6969846106f556c72e7ba92e836f0a23b1b7968fe82a",
+      "source_bytes": 723,
+      "porting_notes": [
+        "B6d 新著件(非移植):旧包无 25 文件成套资产——语义祖先为运行时 factsource stack-baseline.schema 与 02-technology-baseline planned 模板(仅字段/词形参照,capability/status/supersedes/ACR 演化语义不并入一期,提案 §3);骨架章节照 PRD §3 baseline 树职责注释逐字;内容零发明:起步值一律 UNKNOWN,示例与默认值不住播种面(PRD §7.1 NON-AUTHORITATIVE——示例只住 PRD/catalog 注记)",
+        "B6d 形态注记:本件无 frontmatter(纯正文——yaml 直接可解析/md 零噪音,Owner 填写面);清单 pin=资产自身字节 sha256(authoring=new 自指指纹——新著无 vendor 源字节,防包内清单↔资产失同步,装载器按 authoring 分流校验)"
+      ]
+    },
+    {
+      "target": ".pomaster/baseline/backend/transaction-concurrency.md",
+      "asset": "baseline/backend/transaction-concurrency.md",
+      "seed_version": "B6D",
+      "lane": "backend",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Consolidated-PRD.md#s3-baseline-tree(PRD §3 树职责注释逐字承载;新著无 vendor 字节源——语义祖先=旧 stack-baseline.schema + 02-technology-baseline 模板,仅参照)",
+      "source_sha256": "deb79e9ebbef094920a5702b0ba782228193953539f68173e8d18d6cc564e65b",
+      "source_bytes": 988,
+      "porting_notes": [
+        "B6d 新著件(非移植):旧包无 25 文件成套资产——语义祖先为运行时 factsource stack-baseline.schema 与 02-technology-baseline planned 模板(仅字段/词形参照,capability/status/supersedes/ACR 演化语义不并入一期,提案 §3);骨架章节照 PRD §3 baseline 树职责注释逐字;内容零发明:起步值一律 UNKNOWN,示例与默认值不住播种面(PRD §7.1 NON-AUTHORITATIVE——示例只住 PRD/catalog 注记)",
+        "B6d 形态注记:本件无 frontmatter(纯正文——yaml 直接可解析/md 零噪音,Owner 填写面);清单 pin=资产自身字节 sha256(authoring=new 自指指纹——新著无 vendor 源字节,防包内清单↔资产失同步,装载器按 authoring 分流校验)"
+      ]
+    },
+    {
+      "target": ".pomaster/baseline/data/lineage.md",
+      "asset": "baseline/data/lineage.md",
+      "seed_version": "B6D",
+      "lane": "data",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Consolidated-PRD.md#s3-baseline-tree(PRD §3 树职责注释逐字承载;新著无 vendor 字节源——语义祖先=旧 stack-baseline.schema + 02-technology-baseline 模板,仅参照)",
+      "source_sha256": "241447948d8a36040114242d6beaa363ed78e1949fbe61c05e4831206c7609c5",
+      "source_bytes": 653,
+      "porting_notes": [
+        "B6d 新著件(非移植):旧包无 25 文件成套资产——语义祖先为运行时 factsource stack-baseline.schema 与 02-technology-baseline planned 模板(仅字段/词形参照,capability/status/supersedes/ACR 演化语义不并入一期,提案 §3);骨架章节照 PRD §3 baseline 树职责注释逐字;内容零发明:起步值一律 UNKNOWN,示例与默认值不住播种面(PRD §7.1 NON-AUTHORITATIVE——示例只住 PRD/catalog 注记)",
+        "B6d 形态注记:本件无 frontmatter(纯正文——yaml 直接可解析/md 零噪音,Owner 填写面);清单 pin=资产自身字节 sha256(authoring=new 自指指纹——新著无 vendor 源字节,防包内清单↔资产失同步,装载器按 authoring 分流校验)"
+      ]
+    },
+    {
+      "target": ".pomaster/baseline/data/migration.md",
+      "asset": "baseline/data/migration.md",
+      "seed_version": "B6D",
+      "lane": "data",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Consolidated-PRD.md#s3-baseline-tree(PRD §3 树职责注释逐字承载;新著无 vendor 字节源——语义祖先=旧 stack-baseline.schema + 02-technology-baseline 模板,仅参照)",
+      "source_sha256": "a463c0dddbe09ac961a5126a27f61732ae8bbad912e089d123bb8520d1925ce9",
+      "source_bytes": 685,
+      "porting_notes": [
+        "B6d 新著件(非移植):旧包无 25 文件成套资产——语义祖先为运行时 factsource stack-baseline.schema 与 02-technology-baseline planned 模板(仅字段/词形参照,capability/status/supersedes/ACR 演化语义不并入一期,提案 §3);骨架章节照 PRD §3 baseline 树职责注释逐字;内容零发明:起步值一律 UNKNOWN,示例与默认值不住播种面(PRD §7.1 NON-AUTHORITATIVE——示例只住 PRD/catalog 注记)",
+        "B6d 形态注记:本件无 frontmatter(纯正文——yaml 直接可解析/md 零噪音,Owner 填写面);清单 pin=资产自身字节 sha256(authoring=new 自指指纹——新著无 vendor 源字节,防包内清单↔资产失同步,装载器按 authoring 分流校验)"
+      ]
+    },
+    {
+      "target": ".pomaster/baseline/data/model.md",
+      "asset": "baseline/data/model.md",
+      "seed_version": "B6D",
+      "lane": "data",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Consolidated-PRD.md#s3-baseline-tree(PRD §3 树职责注释逐字承载;新著无 vendor 字节源——语义祖先=旧 stack-baseline.schema + 02-technology-baseline 模板,仅参照)",
+      "source_sha256": "93b139b1fdb21a969064a287a2827f318b3abe0836eb39a172131a978feccbd1",
+      "source_bytes": 1103,
+      "porting_notes": [
+        "B6d 新著件(非移植):旧包无 25 文件成套资产——语义祖先为运行时 factsource stack-baseline.schema 与 02-technology-baseline planned 模板(仅字段/词形参照,capability/status/supersedes/ACR 演化语义不并入一期,提案 §3);骨架章节照 PRD §3 baseline 树职责注释逐字;内容零发明:起步值一律 UNKNOWN,示例与默认值不住播种面(PRD §7.1 NON-AUTHORITATIVE——示例只住 PRD/catalog 注记)",
+        "B6d 形态注记:本件无 frontmatter(纯正文——yaml 直接可解析/md 零噪音,Owner 填写面);清单 pin=资产自身字节 sha256(authoring=new 自指指纹——新著无 vendor 源字节,防包内清单↔资产失同步,装载器按 authoring 分流校验)"
+      ]
+    },
+    {
+      "target": ".pomaster/baseline/data/precision-units.md",
+      "asset": "baseline/data/precision-units.md",
+      "seed_version": "B6D",
+      "lane": "data",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Consolidated-PRD.md#s3-baseline-tree(PRD §3 树职责注释逐字承载;新著无 vendor 字节源——语义祖先=旧 stack-baseline.schema + 02-technology-baseline 模板,仅参照)",
+      "source_sha256": "ad8e73220d2b338d36751b9c60d1cb517d1ff5364c1664da6493e76b1de3153b",
+      "source_bytes": 1056,
+      "porting_notes": [
+        "B6d 新著件(非移植):旧包无 25 文件成套资产——语义祖先为运行时 factsource stack-baseline.schema 与 02-technology-baseline planned 模板(仅字段/词形参照,capability/status/supersedes/ACR 演化语义不并入一期,提案 §3);骨架章节照 PRD §3 baseline 树职责注释逐字;内容零发明:起步值一律 UNKNOWN,示例与默认值不住播种面(PRD §7.1 NON-AUTHORITATIVE——示例只住 PRD/catalog 注记)",
+        "B6d 形态注记:本件无 frontmatter(纯正文——yaml 直接可解析/md 零噪音,Owner 填写面);清单 pin=资产自身字节 sha256(authoring=new 自指指纹——新著无 vendor 源字节,防包内清单↔资产失同步,装载器按 authoring 分流校验)"
+      ]
+    },
+    {
+      "target": ".pomaster/baseline/data/quality.md",
+      "asset": "baseline/data/quality.md",
+      "seed_version": "B6D",
+      "lane": "data",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Consolidated-PRD.md#s3-baseline-tree(PRD §3 树职责注释逐字承载;新著无 vendor 字节源——语义祖先=旧 stack-baseline.schema + 02-technology-baseline 模板,仅参照)",
+      "source_sha256": "c270ffe1a97e015a116e8ac48a8f24a17a51bf714ba124a83ac63055b9aad390",
+      "source_bytes": 1090,
+      "porting_notes": [
+        "B6d 新著件(非移植):旧包无 25 文件成套资产——语义祖先为运行时 factsource stack-baseline.schema 与 02-technology-baseline planned 模板(仅字段/词形参照,capability/status/supersedes/ACR 演化语义不并入一期,提案 §3);骨架章节照 PRD §3 baseline 树职责注释逐字;内容零发明:起步值一律 UNKNOWN,示例与默认值不住播种面(PRD §7.1 NON-AUTHORITATIVE——示例只住 PRD/catalog 注记)",
+        "B6d 形态注记:本件无 frontmatter(纯正文——yaml 直接可解析/md 零噪音,Owner 填写面);清单 pin=资产自身字节 sha256(authoring=new 自指指纹——新著无 vendor 源字节,防包内清单↔资产失同步,装载器按 authoring 分流校验)"
+      ]
+    },
+    {
+      "target": ".pomaster/baseline/frontend/api-and-error.md",
+      "asset": "baseline/frontend/api-and-error.md",
+      "seed_version": "B6D",
+      "lane": "frontend",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Consolidated-PRD.md#s3-baseline-tree(PRD §3 树职责注释逐字承载;新著无 vendor 字节源——语义祖先=旧 stack-baseline.schema + 02-technology-baseline 模板,仅参照)",
+      "source_sha256": "e56e749fc9fbb0c9f2c4ef2a5426d21f12b766e92e17061cac3c17ec681ec6a7",
+      "source_bytes": 928,
+      "porting_notes": [
+        "B6d 新著件(非移植):旧包无 25 文件成套资产——语义祖先为运行时 factsource stack-baseline.schema 与 02-technology-baseline planned 模板(仅字段/词形参照,capability/status/supersedes/ACR 演化语义不并入一期,提案 §3);骨架章节照 PRD §3 baseline 树职责注释逐字;内容零发明:起步值一律 UNKNOWN,示例与默认值不住播种面(PRD §7.1 NON-AUTHORITATIVE——示例只住 PRD/catalog 注记)",
+        "B6d 形态注记:本件无 frontmatter(纯正文——yaml 直接可解析/md 零噪音,Owner 填写面);清单 pin=资产自身字节 sha256(authoring=new 自指指纹——新著无 vendor 源字节,防包内清单↔资产失同步,装载器按 authoring 分流校验)"
+      ]
+    },
+    {
+      "target": ".pomaster/baseline/frontend/architecture.md",
+      "asset": "baseline/frontend/architecture.md",
+      "seed_version": "B6D",
+      "lane": "frontend",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Consolidated-PRD.md#s3-baseline-tree(PRD §3 树职责注释逐字承载;新著无 vendor 字节源——语义祖先=旧 stack-baseline.schema + 02-technology-baseline 模板,仅参照)",
+      "source_sha256": "0272a23f715adb23bac47627928589ff7b07b065224eaa73a8e48be591a111c1",
+      "source_bytes": 1073,
+      "porting_notes": [
+        "B6d 新著件(非移植):旧包无 25 文件成套资产——语义祖先为运行时 factsource stack-baseline.schema 与 02-technology-baseline planned 模板(仅字段/词形参照,capability/status/supersedes/ACR 演化语义不并入一期,提案 §3);骨架章节照 PRD §3 baseline 树职责注释逐字;内容零发明:起步值一律 UNKNOWN,示例与默认值不住播种面(PRD §7.1 NON-AUTHORITATIVE——示例只住 PRD/catalog 注记)",
+        "B6d 形态注记:本件无 frontmatter(纯正文——yaml 直接可解析/md 零噪音,Owner 填写面);清单 pin=资产自身字节 sha256(authoring=new 自指指纹——新著无 vendor 源字节,防包内清单↔资产失同步,装载器按 authoring 分流校验)"
+      ]
+    },
+    {
+      "target": ".pomaster/baseline/frontend/design-system.md",
+      "asset": "baseline/frontend/design-system.md",
+      "seed_version": "B6D",
+      "lane": "frontend",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Consolidated-PRD.md#s3-baseline-tree(PRD §3 树职责注释逐字承载;新著无 vendor 字节源——语义祖先=旧 stack-baseline.schema + 02-technology-baseline 模板,仅参照)",
+      "source_sha256": "47869993842baef2b291155af99ad168102dd5db08667356cb4abdeb5ff88593",
+      "source_bytes": 937,
+      "porting_notes": [
+        "B6d 新著件(非移植):旧包无 25 文件成套资产——语义祖先为运行时 factsource stack-baseline.schema 与 02-technology-baseline planned 模板(仅字段/词形参照,capability/status/supersedes/ACR 演化语义不并入一期,提案 §3);骨架章节照 PRD §3 baseline 树职责注释逐字;内容零发明:起步值一律 UNKNOWN,示例与默认值不住播种面(PRD §7.1 NON-AUTHORITATIVE——示例只住 PRD/catalog 注记)",
+        "B6d 形态注记:本件无 frontmatter(纯正文——yaml 直接可解析/md 零噪音,Owner 填写面);清单 pin=资产自身字节 sha256(authoring=new 自指指纹——新著无 vendor 源字节,防包内清单↔资产失同步,装载器按 authoring 分流校验)"
+      ]
+    },
+    {
+      "target": ".pomaster/baseline/frontend/directory-structure.md",
+      "asset": "baseline/frontend/directory-structure.md",
+      "seed_version": "B6D",
+      "lane": "frontend",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Consolidated-PRD.md#s3-baseline-tree(PRD §3 树职责注释逐字承载;新著无 vendor 字节源——语义祖先=旧 stack-baseline.schema + 02-technology-baseline 模板,仅参照)",
+      "source_sha256": "539ebde2c8eda489d04d3b035dba8d9cbef07476684effe7023428e28302993a",
+      "source_bytes": 807,
+      "porting_notes": [
+        "B6d 新著件(非移植):旧包无 25 文件成套资产——语义祖先为运行时 factsource stack-baseline.schema 与 02-technology-baseline planned 模板(仅字段/词形参照,capability/status/supersedes/ACR 演化语义不并入一期,提案 §3);骨架章节照 PRD §3 baseline 树职责注释逐字;内容零发明:起步值一律 UNKNOWN,示例与默认值不住播种面(PRD §7.1 NON-AUTHORITATIVE——示例只住 PRD/catalog 注记)",
+        "B6d 形态注记:本件无 frontmatter(纯正文——yaml 直接可解析/md 零噪音,Owner 填写面);清单 pin=资产自身字节 sha256(authoring=new 自指指纹——新著无 vendor 源字节,防包内清单↔资产失同步,装载器按 authoring 分流校验)"
+      ]
+    },
+    {
+      "target": ".pomaster/baseline/frontend/quality.md",
+      "asset": "baseline/frontend/quality.md",
+      "seed_version": "B6D",
+      "lane": "frontend",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Consolidated-PRD.md#s3-baseline-tree(PRD §3 树职责注释逐字承载;新著无 vendor 字节源——语义祖先=旧 stack-baseline.schema + 02-technology-baseline 模板,仅参照)",
+      "source_sha256": "6a9374dac622f6018586bd27d948db1f8921a47230b820a3da0f5793b878614d",
+      "source_bytes": 1043,
+      "porting_notes": [
+        "B6d 新著件(非移植):旧包无 25 文件成套资产——语义祖先为运行时 factsource stack-baseline.schema 与 02-technology-baseline planned 模板(仅字段/词形参照,capability/status/supersedes/ACR 演化语义不并入一期,提案 §3);骨架章节照 PRD §3 baseline 树职责注释逐字;内容零发明:起步值一律 UNKNOWN,示例与默认值不住播种面(PRD §7.1 NON-AUTHORITATIVE——示例只住 PRD/catalog 注记)",
+        "B6d 形态注记:本件无 frontmatter(纯正文——yaml 直接可解析/md 零噪音,Owner 填写面);清单 pin=资产自身字节 sha256(authoring=new 自指指纹——新著无 vendor 源字节,防包内清单↔资产失同步,装载器按 authoring 分流校验)"
+      ]
+    },
+    {
+      "target": ".pomaster/baseline/frontend/stack.yaml",
+      "asset": "baseline/frontend/stack.yaml",
+      "seed_version": "B6D",
+      "lane": "frontend",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Consolidated-PRD.md#s3-baseline-tree(PRD §3 树职责注释逐字承载;新著无 vendor 字节源——语义祖先=旧 stack-baseline.schema + 02-technology-baseline 模板,仅参照)",
+      "source_sha256": "76ac1e166681e6bdaa8e3d36cf5552cd3f0c8f8051b1521344ea54a37ba84f8f",
+      "source_bytes": 795,
+      "porting_notes": [
+        "B6d 新著件(非移植):旧包无 25 文件成套资产——语义祖先为运行时 factsource stack-baseline.schema 与 02-technology-baseline planned 模板(仅字段/词形参照,capability/status/supersedes/ACR 演化语义不并入一期,提案 §3);骨架章节照 PRD §3 baseline 树职责注释逐字;内容零发明:起步值一律 UNKNOWN,示例与默认值不住播种面(PRD §7.1 NON-AUTHORITATIVE——示例只住 PRD/catalog 注记)",
+        "B6d 形态注记:本件无 frontmatter(纯正文——yaml 直接可解析/md 零噪音,Owner 填写面);清单 pin=资产自身字节 sha256(authoring=new 自指指纹——新著无 vendor 源字节,防包内清单↔资产失同步,装载器按 authoring 分流校验)"
+      ]
+    },
+    {
+      "target": ".pomaster/baseline/frontend/state-and-data.md",
+      "asset": "baseline/frontend/state-and-data.md",
+      "seed_version": "B6D",
+      "lane": "frontend",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Consolidated-PRD.md#s3-baseline-tree(PRD §3 树职责注释逐字承载;新著无 vendor 字节源——语义祖先=旧 stack-baseline.schema + 02-technology-baseline 模板,仅参照)",
+      "source_sha256": "ccede1c8b4bab728c4d359515a9a49150cf668133f2e86f5a647671c305d496e",
+      "source_bytes": 1068,
+      "porting_notes": [
+        "B6d 新著件(非移植):旧包无 25 文件成套资产——语义祖先为运行时 factsource stack-baseline.schema 与 02-technology-baseline planned 模板(仅字段/词形参照,capability/status/supersedes/ACR 演化语义不并入一期,提案 §3);骨架章节照 PRD §3 baseline 树职责注释逐字;内容零发明:起步值一律 UNKNOWN,示例与默认值不住播种面(PRD §7.1 NON-AUTHORITATIVE——示例只住 PRD/catalog 注记)",
+        "B6d 形态注记:本件无 frontmatter(纯正文——yaml 直接可解析/md 零噪音,Owner 填写面);清单 pin=资产自身字节 sha256(authoring=new 自指指纹——新著无 vendor 源字节,防包内清单↔资产失同步,装载器按 authoring 分流校验)"
+      ]
+    },
+    {
+      "target": ".pomaster/baseline/manifest.yaml",
+      "asset": "baseline/manifest.yaml",
+      "seed_version": "B6D",
+      "lane": "baseline",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Consolidated-PRD.md#s3-baseline-tree(PRD §3 树职责注释逐字承载;新著无 vendor 字节源——语义祖先=旧 stack-baseline.schema + 02-technology-baseline 模板,仅参照)",
+      "source_sha256": "6363d418013c2d750220b5c5ad4475bafda57dad75b726a5e8a8d6e85941f43b",
+      "source_bytes": 1271,
+      "porting_notes": [
+        "B6d 新著件(非移植):旧包无 25 文件成套资产——语义祖先为运行时 factsource stack-baseline.schema 与 02-technology-baseline planned 模板(仅字段/词形参照,capability/status/supersedes/ACR 演化语义不并入一期,提案 §3);骨架章节照 PRD §3 baseline 树职责注释逐字;内容零发明:起步值一律 UNKNOWN,示例与默认值不住播种面(PRD §7.1 NON-AUTHORITATIVE——示例只住 PRD/catalog 注记)",
+        "B6d 形态注记:本件无 frontmatter(纯正文——yaml 直接可解析/md 零噪音,Owner 填写面);清单 pin=资产自身字节 sha256(authoring=new 自指指纹——新著无 vendor 源字节,防包内清单↔资产失同步,装载器按 authoring 分流校验)"
+      ]
+    },
+    {
+      "target": ".pomaster/baseline/platform/delivery.md",
+      "asset": "baseline/platform/delivery.md",
+      "seed_version": "B6D",
+      "lane": "platform",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Consolidated-PRD.md#s3-baseline-tree(PRD §3 树职责注释逐字承载;新著无 vendor 字节源——语义祖先=旧 stack-baseline.schema + 02-technology-baseline 模板,仅参照)",
+      "source_sha256": "bcc640e27f7a2c1173a4fcc690db57d5edfcc15c0b11305569dd10e30aa37b6f",
+      "source_bytes": 1173,
+      "porting_notes": [
+        "B6d 新著件(非移植):旧包无 25 文件成套资产——语义祖先为运行时 factsource stack-baseline.schema 与 02-technology-baseline planned 模板(仅字段/词形参照,capability/status/supersedes/ACR 演化语义不并入一期,提案 §3);骨架章节照 PRD §3 baseline 树职责注释逐字;内容零发明:起步值一律 UNKNOWN,示例与默认值不住播种面(PRD §7.1 NON-AUTHORITATIVE——示例只住 PRD/catalog 注记)",
+        "B6d 形态注记:本件无 frontmatter(纯正文——yaml 直接可解析/md 零噪音,Owner 填写面);清单 pin=资产自身字节 sha256(authoring=new 自指指纹——新著无 vendor 源字节,防包内清单↔资产失同步,装载器按 authoring 分流校验)"
+      ]
+    },
+    {
+      "target": ".pomaster/baseline/platform/environment.md",
+      "asset": "baseline/platform/environment.md",
+      "seed_version": "B6D",
+      "lane": "platform",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Consolidated-PRD.md#s3-baseline-tree(PRD §3 树职责注释逐字承载;新著无 vendor 字节源——语义祖先=旧 stack-baseline.schema + 02-technology-baseline 模板,仅参照)",
+      "source_sha256": "57d7b485dae559789cd7c2075b69b820e5451d2968950df12d2abfba55d7c8be",
+      "source_bytes": 778,
+      "porting_notes": [
+        "B6d 新著件(非移植):旧包无 25 文件成套资产——语义祖先为运行时 factsource stack-baseline.schema 与 02-technology-baseline planned 模板(仅字段/词形参照,capability/status/supersedes/ACR 演化语义不并入一期,提案 §3);骨架章节照 PRD §3 baseline 树职责注释逐字;内容零发明:起步值一律 UNKNOWN,示例与默认值不住播种面(PRD §7.1 NON-AUTHORITATIVE——示例只住 PRD/catalog 注记)",
+        "B6d 形态注记:本件无 frontmatter(纯正文——yaml 直接可解析/md 零噪音,Owner 填写面);清单 pin=资产自身字节 sha256(authoring=new 自指指纹——新著无 vendor 源字节,防包内清单↔资产失同步,装载器按 authoring 分流校验)"
+      ]
+    },
+    {
+      "target": ".pomaster/baseline/platform/observability.md",
+      "asset": "baseline/platform/observability.md",
+      "seed_version": "B6D",
+      "lane": "platform",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Consolidated-PRD.md#s3-baseline-tree(PRD §3 树职责注释逐字承载;新著无 vendor 字节源——语义祖先=旧 stack-baseline.schema + 02-technology-baseline 模板,仅参照)",
+      "source_sha256": "defa904462ae07f6a65fca0a8a3694d5ecde826eff4b76b26c5539690baa03b1",
+      "source_bytes": 1050,
+      "porting_notes": [
+        "B6d 新著件(非移植):旧包无 25 文件成套资产——语义祖先为运行时 factsource stack-baseline.schema 与 02-technology-baseline planned 模板(仅字段/词形参照,capability/status/supersedes/ACR 演化语义不并入一期,提案 §3);骨架章节照 PRD §3 baseline 树职责注释逐字;内容零发明:起步值一律 UNKNOWN,示例与默认值不住播种面(PRD §7.1 NON-AUTHORITATIVE——示例只住 PRD/catalog 注记)",
+        "B6d 形态注记:本件无 frontmatter(纯正文——yaml 直接可解析/md 零噪音,Owner 填写面);清单 pin=资产自身字节 sha256(authoring=new 自指指纹——新著无 vendor 源字节,防包内清单↔资产失同步,装载器按 authoring 分流校验)"
+      ]
+    },
+    {
+      "target": ".pomaster/baseline/platform/security.md",
+      "asset": "baseline/platform/security.md",
+      "seed_version": "B6D",
+      "lane": "platform",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Consolidated-PRD.md#s3-baseline-tree(PRD §3 树职责注释逐字承载;新著无 vendor 字节源——语义祖先=旧 stack-baseline.schema + 02-technology-baseline 模板,仅参照)",
+      "source_sha256": "aa98250886f8269d9b229e248ff5c70b54cf268bb4f6645d2bec608a275ea8c7",
+      "source_bytes": 1035,
+      "porting_notes": [
+        "B6d 新著件(非移植):旧包无 25 文件成套资产——语义祖先为运行时 factsource stack-baseline.schema 与 02-technology-baseline planned 模板(仅字段/词形参照,capability/status/supersedes/ACR 演化语义不并入一期,提案 §3);骨架章节照 PRD §3 baseline 树职责注释逐字;内容零发明:起步值一律 UNKNOWN,示例与默认值不住播种面(PRD §7.1 NON-AUTHORITATIVE——示例只住 PRD/catalog 注记)",
+        "B6d 形态注记:本件无 frontmatter(纯正文——yaml 直接可解析/md 零噪音,Owner 填写面);清单 pin=资产自身字节 sha256(authoring=new 自指指纹——新著无 vendor 源字节,防包内清单↔资产失同步,装载器按 authoring 分流校验)"
       ]
     }
   ]

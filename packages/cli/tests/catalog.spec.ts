@@ -54,7 +54,7 @@ describe("catalog status（catalog 构成 + lock 校验）", () => {
       knowledge: 11,
       sensors: 6,
       archetypes: 41,
-      tools: 10,
+      tools: 11,
       projection_presets: 1,
     });
     expect(outcome.result.lock_verification).toEqual({

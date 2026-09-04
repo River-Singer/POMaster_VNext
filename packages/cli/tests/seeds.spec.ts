@@ -11,9 +11,10 @@
  * SEEDABLE_STORE_DIRS 12 播种目录 allowlist 禁落盘——控制平面 kernel 登记目录同样
  * 拒绝 + 路径词形卫生 fail-closed throw + allowlist ⊆ kernel 登记派生集合对账）、
  * fresh 临时工程端到端（runInit 注入清单：init 后种子在位 → 重跑零变化 → 手改种子
- * 文件后重跑仍零变化）、B6c 清单现状 pin（缺省装载 107 份播种件 = FE 46 + BE 33 +
- * stacks 28，B6b 两批 + B6C 三批合并清单；stacks slug 三面单源对账 + 未登记 slug
- * 守卫——B6c stacks 子目录 ADR 候选①显式叶登记）。
+ * 文件后重跑仍零变化）、B6d 清单现状 pin（缺省装载 132 份播种件 = FE 46 + BE 33 +
+ * stacks 28 + baseline 25，B6b 两批 + B6C + B6D 四批合并清单；stacks slug 三面单源
+ * 对账 + 未登记 slug 守卫——B6c stacks 子目录 ADR 候选①显式叶登记；baseline UNKNOWN
+ * 起步端到端——init 后在位可编辑）。
  */
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -311,23 +312,37 @@ describe("runInit 步骤 4.6 播种端到端（fresh 临时工程 + 注入清单
     ).toBe("preserved");
   });
 
-  it("B6c 清单现状 pin：缺省装载 107 份播种件（FE 46 + BE 33 + stacks 28；三批合并全量分母）——目标全落播种 allowlist 面且 frontmatter 带 seed pin", () => {
+  it("B6d 清单现状 pin：缺省装载 132 份播种件（FE 46 + BE 33 + stacks 28 + baseline 25；四批合并全量分母）——目标全落播种 allowlist 面且分面形态正确", () => {
     const entries = loadSeedManifestEntries();
-    expect(entries).toHaveLength(107);
+    expect(entries).toHaveLength(132);
     const fe = entries.filter((e) => e.path.startsWith(".pomaster/specs/hard/frontend/"));
     const be = entries.filter((e) => e.path.startsWith(".pomaster/specs/hard/backend/"));
     const stacks = entries.filter((e) => e.path.startsWith(".pomaster/specs/hard/stacks/"));
+    const baseline = entries.filter((e) => e.path.startsWith(".pomaster/baseline/"));
     expect(fe).toHaveLength(46);
     expect(be).toHaveLength(33);
     expect(stacks).toHaveLength(28);
+    expect(baseline).toHaveLength(25);
     for (const entry of entries) {
-      expect(
-        /^\.pomaster\/specs\/hard\/(frontend|backend|stacks\/[^/]+)\//.test(entry.path),
+      const inSpecs = /^\.pomaster\/specs\/hard\/(frontend|backend|stacks\/[^/]+)\//.test(
         entry.path,
-      ).toBe(true);
-      expect(entry.path.endsWith(".md")).toBe(true);
-      expect(entry.content.startsWith("---\n")).toBe(true);
-      expect(entry.content.includes("seed_source_sha256: ")).toBe(true);
+      );
+      const inBaseline =
+        entry.path === ".pomaster/baseline/manifest.yaml" ||
+        /^\.pomaster\/baseline\/(frontend|backend|data|platform)\/[a-z-]+\.(md|yaml)$/.test(
+          entry.path,
+        );
+      expect(inSpecs || inBaseline, entry.path).toBe(true);
+      if (inSpecs) {
+        // specs 面移植件：md 词形 + frontmatter pin 行在座（B6b/B6c 统一形态）。
+        expect(entry.path.endsWith(".md"), entry.path).toBe(true);
+        expect(entry.content.startsWith("---\n"), entry.path).toBe(true);
+        expect(entry.content.includes("seed_source_sha256: "), entry.path).toBe(true);
+      } else {
+        // baseline 面 B6d 新著件：纯正文（frontmatter 缺席——yaml 直解析/Owner 填写面）。
+        expect(entry.content.startsWith("---\n"), entry.path).toBe(false);
+        expect(entry.content.includes("UNKNOWN"), entry.path).toBe(true);
+      }
       // marker-free：播种件字节不带生成标记（引擎写入面 zero-marker 的内容侧前提）。
       expect(entry.content.includes(GENERATED_MARKER)).toBe(false);
     }
@@ -345,23 +360,64 @@ describe("runInit 步骤 4.6 播种端到端（fresh 临时工程 + 注入清单
     // stacks：14 slug × (index + overlay) 恰好划分 28。
     expect(stacks.filter((e) => e.path.endsWith("/index.md"))).toHaveLength(14);
     expect(stacks.filter((e) => e.path.endsWith("-overlay.md"))).toHaveLength(14);
+    // baseline：分区计数 1+7+8+5+4 = 25（B6d 分母钉；逐文件集合钉在 baseline-seeds.spec）。
+    expect(baseline.some((e) => e.path === ".pomaster/baseline/manifest.yaml")).toBe(true);
+    for (const [lane, count] of [
+      ["frontend", 7],
+      ["backend", 8],
+      ["data", 5],
+      ["platform", 4],
+    ] as const) {
+      expect(
+        baseline.filter((e) => e.path.startsWith(`.pomaster/baseline/${lane}/`)),
+        lane,
+      ).toHaveLength(count);
+    }
   });
 
-  it("缺省（不注入）init：107 份播种件在位（seeded 报告 + 幂等重跑全 preserved）", async () => {
+  it("缺省（不注入）init：132 份播种件在位（seeded 报告 + 幂等重跑全 preserved）", async () => {
     const outcome = await runInit(dir);
     expect(outcome.ok).toBe(true);
     const seeded = outcome.result.files.filter((f) => f.action === "seeded");
-    expect(seeded).toHaveLength(107);
+    expect(seeded).toHaveLength(132);
     expect(existsSync(join(dir, ".pomaster", "specs", "hard", "frontend", "01-development-checklist-protocol.md"))).toBe(true);
     expect(existsSync(join(dir, ".pomaster", "specs", "hard", "frontend", "index.md"))).toBe(true);
     expect(existsSync(join(dir, ".pomaster", "specs", "hard", "backend", "22-idempotency-protocol.md"))).toBe(true);
     expect(existsSync(join(dir, ".pomaster", "specs", "hard", "backend", "index.md"))).toBe(true);
     expect(existsSync(join(dir, ".pomaster", "specs", "hard", "stacks", "redis", "redis-cache-overlay.md"))).toBe(true);
     expect(existsSync(join(dir, ".pomaster", "specs", "hard", "stacks", "java", "index.md"))).toBe(true);
+    expect(existsSync(join(dir, ".pomaster", "baseline", "manifest.yaml"))).toBe(true);
+    expect(existsSync(join(dir, ".pomaster", "baseline", "frontend", "stack.yaml"))).toBe(true);
+    expect(existsSync(join(dir, ".pomaster", "baseline", "platform", "delivery.md"))).toBe(true);
     // 幂等：重跑全 preserved = NO_CHANGE。
     const second = await runInit(dir);
     expect(second.ok).toBe(true);
     expect(second.result.change).toBe("NO_CHANGE");
-    expect(second.result.files.filter((f) => f.action === "preserved")).toHaveLength(107);
+    expect(second.result.files.filter((f) => f.action === "preserved")).toHaveLength(132);
+  });
+
+  it("B6d baseline UNKNOWN 起步端到端：init 后在位可编辑——Owner 回填选型后重跑 init 不覆盖、零告警（可编辑性铁律在 baseline 面成立）", async () => {
+    const first = await runInit(dir);
+    expect(first.ok).toBe(true);
+    const stackPath = join(dir, ".pomaster", "baseline", "frontend", "stack.yaml");
+    const seededText = readFileSync(stackPath, "utf8");
+    expect(seededText).toContain("framework: UNKNOWN");
+    // Owner 决策回填：UNKNOWN → 项目选型（测试用中性占位词形——播种资产禁技术默认词，
+    // 项目侧回填值不受该纪律约束，此处的可编辑性才是断言对象）。
+    const ownerFilled = seededText.replace(
+      "framework: UNKNOWN",
+      "framework: owner-chosen-framework",
+    );
+    expect(ownerFilled).not.toBe(seededText);
+    writeFileSync(stackPath, ownerFilled, "utf8");
+    const second = await runInit(dir);
+    expect(second.ok).toBe(true);
+    expect(second.result.change).toBe("NO_CHANGE");
+    expect(second.warnings).toEqual([]);
+    expect(readFileSync(stackPath, "utf8")).toBe(ownerFilled);
+    expect(
+      second.result.files.find((f) => f.file === ".pomaster/baseline/frontend/stack.yaml")
+        ?.action,
+    ).toBe("preserved");
   });
 });

@@ -46,6 +46,17 @@
  * 3) profile（vendor profiles/java-enterprise-default.yaml）不播种——A1 档位机制零
  *    移植，走 catalog TECHNOLOGY_PROFILE 分类面（seed_b6c_backend.py 物化），清单
  *    无对应条目。
+ *
+ * ADR-lite（B6d，新著件分形——无 frontmatter + 自指指纹）：baseline 25 件为**新著**
+ * （旧包无 25 文件成套资产；PRD §3 树职责注释承载骨架，起步值一律 UNKNOWN——
+ * 「待填写」旧词形零移植），播种件为**纯正文**：yaml 直接可解析（frontmatter 块会
+ * 使 yaml.safe_load 取到错误文档——机器锚面零污染）、md 零噪音（Owner 填写面）。
+ * 清单 provenance 走 entry 级 `authoring: "new"`：装载对新著件不要求 frontmatter pin
+ * （移植件「frontmatter 双锚」语义不适用——新著无 vendor 源字节），改校验
+ * **自指指纹** = 资产自身字节 sha256/字节数与清单 pin 逐等（防包内清单↔资产失同步，
+ * 与移植件防源漂移功能等价）。lane 词形：B6D 条目 = 播种分区词形 frontend/backend/
+ * data/platform（与 target 同源；CATALOG_LANE_VALUES 是 catalog 条目 applicability
+ * 闭包，零扩值不受影响——本字段是播种 lane 注记非 catalog applicability）。
  */
 
 import { createHash } from "node:crypto";
@@ -62,8 +73,15 @@ export interface SeedManifestEntryDoc {
   readonly target: string;
   /** 包内资产路径（相对 seeds/ 根）。 */
   readonly asset: string;
-  /** lane 词形（CATALOG_LANE_VALUES 同源闭包）。 */
+  /** lane 词形（播种 lane 注记：specs 面沿用 CATALOG_LANE_VALUES 闭包词形 frontend/
+   *  backend；B6d baseline 面 = 播种分区词形 frontend/backend/data/platform——与
+   *  target 词形同源；catalog 条目 applicability 闭包零扩值不受影响）。 */
   readonly lane: string;
+  /**
+   * 新著件词形（B6d；缺席 = 移植件）："new" = 播种件为纯正文（无 frontmatter），
+   * 装载校验走自指指纹（资产字节 sha256/字节数 == 清单 pin）而非 frontmatter 双锚。
+   */
+  readonly authoring?: "new";
   /** vendor 源路径（分母锚；R8/A1 清洗登记在 porting_notes）。 */
   readonly source_path: string;
   /** vendor 源字节 sha256（hex 64——provenance pin）。 */
@@ -184,6 +202,11 @@ function assertManifestShape(doc: unknown): asserts doc is SeedManifestDoc {
       !/^[0-9a-f]{64}$/.test(entry["source_sha256"])) {
       throw new Error(`seed manifest entry source_sha256 is not hex64: ${entry["target"]}`);
     }
+    if (entry["authoring"] !== undefined && entry["authoring"] !== "new") {
+      throw new Error(
+        `seed manifest entry authoring must be "new" when present: ${entry["target"]}`,
+      );
+    }
     if (typeof entry["target"] === "string" && !entry["target"].startsWith(".pomaster/")) {
       throw new Error(`seed manifest entry target escapes .pomaster: ${entry["target"]}`);
     }
@@ -192,8 +215,11 @@ function assertManifestShape(doc: unknown): asserts doc is SeedManifestDoc {
 
 /**
  * 装载种子清单 → 引擎归约形态。fail-closed 全量校验先于任何返回（禁部分装载态）；
- * 逐条目断言：资产在座、frontmatter pin == 清单 pin（seed_source/seed_source_sha256
- * 双锚一致）。
+ * 逐条目断言按 authoring 分流（B6d ADR）：
+ * - 移植件（缺省）：frontmatter pin == 清单 pin（seed_source/seed_source_sha256 双锚
+ *   一致）；
+ * - 新著件（authoring="new"）：资产为纯正文（frontmatter 缺席——形面断言）+ 自指指纹
+ *   （资产字节 sha256/字节数 == 清单 pin）。
  */
 export function loadSeedManifestEntries(
   seedsRoot: string = locateSeedsRoot(import.meta.url),
@@ -213,6 +239,29 @@ export function loadSeedManifestEntries(
       assetText = readFileSync(assetPath, "utf8");
     } catch (error) {
       throw new Error(`seed asset missing (manifest ↔ assets drift): ${assetPath} (${String(error)})`);
+    }
+    if (entry.authoring === "new") {
+      // 新著件（B6d）：纯正文形面 + 自指指纹（防清单↔资产失同步）。
+      if (assetText.startsWith("---\n")) {
+        throw new Error(
+          `new-authoring seed asset must be plain body (no frontmatter): ${entry.asset}`,
+        );
+      }
+      const digest = sha256Hex(assetText);
+      if (digest !== entry.source_sha256) {
+        throw new Error(
+          `new-authoring seed asset fingerprint != manifest pin: ${entry.asset} ` +
+            `(${digest} vs ${entry.source_sha256})`,
+        );
+      }
+      const bytes = Buffer.byteLength(assetText, "utf8");
+      if (bytes !== entry.source_bytes) {
+        throw new Error(
+          `new-authoring seed asset byte length != manifest pin: ${entry.asset} ` +
+            `(${bytes} vs ${entry.source_bytes})`,
+        );
+      }
+      return { path: entry.target, content: assetText };
     }
     const pin = parseFrontmatterPin(assetText);
     if (pin.seed_source !== entry.source_path) {

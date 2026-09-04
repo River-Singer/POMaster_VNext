@@ -1,0 +1,32 @@
+# baseline/manifest.yaml —— Project Engineering Baseline 身份/seed 来源/版本/UNKNOWN 台账单源
+# 职责(PRD §3 树):baseline 身份/seed 来源/版本/UNKNOWN 台账。
+# 本文件由 pomaster init 播种(B6d);id/lanes/unknowns 是 baseline 体系的机器
+# 可读锚;unknowns 台账与 frontend/backend 两个 stack.yaml 的键集一一对应——
+# Owner 回填选型后逐条销账(台账之外的新选型键由 Owner 自行增补登记)。
+id: BASELINE.PROJECT
+schema_version: 1
+seed:
+  tool: pomaster init
+  seed_version: B6D
+  seed_manifest: package://seeds/manifest.json
+status: CURRENT
+lanes:
+  frontend: ./frontend
+  backend: ./backend
+  data: ./data
+  platform: ./platform
+unknowns:
+  - baseline/frontend/stack.yaml:framework
+  - baseline/frontend/stack.yaml:language
+  - baseline/frontend/stack.yaml:build
+  - baseline/frontend/stack.yaml:router
+  - baseline/frontend/stack.yaml:state
+  - baseline/frontend/stack.yaml:grid
+  - baseline/frontend/stack.yaml:ui
+  - baseline/frontend/stack.yaml:css
+  - baseline/frontend/stack.yaml:testing
+  - baseline/backend/stack.yaml:language
+  - baseline/backend/stack.yaml:framework
+  - baseline/backend/stack.yaml:persistence
+  - baseline/backend/stack.yaml:database
+  - baseline/backend/stack.yaml:cache

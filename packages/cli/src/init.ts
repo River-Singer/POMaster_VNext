@@ -158,7 +158,7 @@ export interface InitOptions {
   readonly platforms?: string | undefined;
   /**
    * 播种清单注入（vNext Batch 6 B6a）：undefined = 缺省装载包内种子清单
-   * （seed-manifest.ts loadSeedManifestEntries——B6a 空表，B6b-I/B6b-II 起 FE 46 份在册）。
+   * （seed-manifest.ts loadSeedManifestEntries——B6a 空表，B6b/B6c/B6d 起 132 份在册）。
    * 注入面供测试/嵌入方在不动包内清单的前提下端到端驱动步骤 4.6——生产路径恒走
    * 包内清单装载。
    */

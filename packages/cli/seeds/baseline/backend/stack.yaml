@@ -1,0 +1,13 @@
+# baseline/backend/stack.yaml —— 后端技术选型(工程决策记录;不复制构建清单)
+# 职责(PRD §3):language/framework/persistence/database/cache
+# 起步值一律 UNKNOWN;Owner 决策后逐键回填,并在 baseline/manifest.yaml 的
+# unknowns 台账对本键销账。
+# 选型承载 specs/hard/stacks/ overlay 的 bound 语义(显式选型 = 绑定;未选型 =
+# installed 未 bound——B6c 播种注记的 B6d 落位)。
+# catalog TECHNOLOGY_PROFILE 卡(含 PROFILE 组合清单)仅为信息性参考——不预填
+# 本文件(NON-AUTHORITATIVE:示例与组合建议只住 catalog 注记,不住项目基线)。
+language: UNKNOWN
+framework: UNKNOWN
+persistence: UNKNOWN
+database: UNKNOWN
+cache: UNKNOWN

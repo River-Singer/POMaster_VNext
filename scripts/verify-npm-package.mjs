@@ -97,8 +97,8 @@ const stageLock = JSON.parse(
 );
 assert(stageLock.entries.length === 228, "catalog-lock 228 entries", `实为 ${stageLock.entries.length}`);
 
-// 1.2.1 seeds 完整（B6b 两批 + B6c）：打包文件集与仓库 packages/cli/seeds/ 全等 + 清单
-//      schema/条目数（播种资产随包分发——装载器 fail-closed，缺 seeds = init 必炸）。
+// 1.2.1 seeds 完整（B6b 两批 + B6c + B6d）：打包文件集与仓库 packages/cli/seeds/ 全等 +
+//      清单 schema/条目数（播种资产随包分发——装载器 fail-closed，缺 seeds = init 必炸）。
 const repoSeedsFiles = walkFiles(p("packages", "cli", "seeds")).map((file) => `seeds/${file}`);
 const packedSeedsFiles = packedPaths.filter((file) => file.startsWith("seeds/"));
 const repoSeedsSet = new Set(repoSeedsFiles);
@@ -119,8 +119,8 @@ assert(
   `实为 ${stageSeedManifest.schema}`,
 );
 assert(
-  stageSeedManifest.entries?.length === 107,
-  "stage seeds manifest 107 entries",
+  stageSeedManifest.entries?.length === 132,
+  "stage seeds manifest 132 entries",
   `实为 ${stageSeedManifest.entries?.length}`,
 );
 
@@ -238,8 +238,9 @@ smoke("npx pomaster --help", "pomaster --help", {
 });
 
 // 2.2 `npx pomaster init`：四产物落盘（truth-index / authority / config.yaml / AGENTS.md）
-//     + B6b/B6c 播种件落盘（46 份 FE + 33 份 BE + 28 份 stacks 进 .pomaster/specs/hard/
-//     ——包内 seeds 资产位 + 装载器 fail-closed 的端到端实证：缺 seeds 的包 init 即炸）。
+//     + B6b/B6c/B6d 播种件落盘（46 份 FE + 33 份 BE + 28 份 stacks 进 .pomaster/specs/hard/
+//     + 25 份 baseline 进 .pomaster/baseline/——包内 seeds 资产位 + 装载器 fail-closed
+//     的端到端实证：缺 seeds 的包 init 即炸）。
 smoke("npx pomaster init", "pomaster init", { expectExit: [0] });
 for (const artifact of [
   join(".pomaster", "state", "truth-index.json"),
@@ -322,6 +323,38 @@ assert(
   "BE 播种件 frontmatter 形态（legacy_id 改形 + 统一字段在座）",
 );
 assert(!beSample.includes("GENERATED"), "播种件 marker-free 抽查（BE 协议件）");
+
+// baseline 面（B6d）：manifest 1 + frontend 7 + backend 8 + data 5 + platform 4 =
+// 25 件（UNKNOWN 起步；「待填写」旧词形零残留——R4 红线抽查）。
+const seededBaselineDir = join(SMOKE_DIR, ".pomaster", "baseline");
+assert(
+  existsSync(join(seededBaselineDir, "manifest.yaml")),
+  "init 播种件落盘：baseline/manifest.yaml（身份/unknowns 台账）",
+);
+const BASELINE_LANE_COUNTS = { frontend: 7, backend: 8, data: 5, platform: 4 };
+for (const [lane, count] of Object.entries(BASELINE_LANE_COUNTS)) {
+  const laneDir = join(seededBaselineDir, lane);
+  // 只数播种件（目录另含 init 布局步骤落的 README.md，非播种件——FE 面同款口径）。
+  const files = existsSync(laneDir)
+    ? readdirSync(laneDir).filter((name) => name !== "README.md").sort()
+    : [];
+  assert(
+    files.length === count,
+    `init 播种件落盘：baseline/${lane}/ ${count} 件`,
+    `实为 ${files.length}${files.length ? `: ${files.join(", ")}` : ""}`,
+  );
+}
+const feStackSeed = readFileSync(join(seededBaselineDir, "frontend", "stack.yaml"), "utf8");
+assert(
+  feStackSeed.includes("framework: UNKNOWN") &&
+    feStackSeed.includes("testing: UNKNOWN") &&
+    !feStackSeed.includes("待填写"),
+  "baseline stack.yaml UNKNOWN 起步（零「待填写」词形——R4 红线抽查）",
+);
+assert(
+  !feStackSeed.startsWith("---\n") && !feStackSeed.includes("GENERATED"),
+  "baseline 播种件纯正文（无 frontmatter）+ marker-free 抽查",
+);
 
 // 2.3 `npx pomaster status`。
 smoke("npx pomaster status", "pomaster status", {
