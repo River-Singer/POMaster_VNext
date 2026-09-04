@@ -57,6 +57,18 @@
  *   Receipt 不得冒充有效业务 Evidence」的本模块级封条）；落盘 schema 定号 **17**；
  * - 产品接线归消费方：browser 腿环境判卷门（gauntlet-lite browser-adapter/browser-legs/
  *   browser-evidence——本模块仍零 IO、零 store 依赖，接线不进本文件）。
+ *
+ * Batch 5 增量（09-04 vNext CRC 套件 · F 缝口收口，唯一产品判定改动）：buildObservationReceipt
+ * 增设 OBSERVED 的 screenshot-only 背书闸（纠错 §31 Case F「截图不能证明 API」/ §9B
+ * CRC-F；Case I 封条原只盖 NOT_OBSERVABLE 侧）——OBSERVED 且全部 artifact media 皆为
+ * "screenshot" 而 operation 非 "screenshot" → SCHEMA_INVALID。ADR-lite 最小性：只封
+ * 「screenshot-only 冒充」单一形态（混合 refs 辅证在场不拒；media↔operation 全量族
+ * 矩阵需词表裁定，不在本闸）；词面上 "screenshot" 取 catalog/sensors 材料
+ * operations/evidence_types 双侧既有词形 + 07 blob_ref media 开放词先例（
+ * SCREENSHOT_MEDIA_WORD 注记），零新词轴零词表私扩；17 号 schema 维持词形冻结面
+ * 不随动（media 开放词无轴可裁；absencePreconditions 四前提闸同款「组装层判定
+ * 严于 schema」分层先例——schema examples[1] 转录形态只证明词形合法、组装层不再
+ * 可达，已知分层差异登记不隐藏）。判定测试落 tests/constitutional/ CRC-F。
  */
 
 import { GovernanceError } from "./errors.js";
@@ -171,6 +183,14 @@ export const OBS_ID_PATTERN = /^OBS-[0-9]+$/;
 
 /** ENVREC 通路编号词形（PRD §6.13 environment_receipt_ref: ENVREC-...；OBS 同款先例注记）。 */
 export const ENVREC_ID_PATTERN = /^ENVREC-[0-9]+$/;
+
+/**
+ * CRC-F 缝口判定的双侧既有词形（零新词轴）：media 开放词（07 definitions.blob_ref）
+ * 与 §6.5 例文逐字 operation 词形在 catalog/sensors 材料的 operations/evidence_types
+ * 双侧既有在册（browser-evidence 落盘 screenshot blob 恒 media:"screenshot"）。
+ * 本常量只引用既有词形，不登记新轴——词表收编归词汇表批次（TODO(vocab-pr-0005)）。
+ */
+const SCREENSHOT_MEDIA_WORD = "screenshot";
 
 // ============================================================
 // §6.2/§6.3 Observation Request 契约 + 四锚校验
@@ -664,6 +684,30 @@ export function buildObservationReceipt(
       "artifactRefs（result=OBSERVED 必须 ≥1 条 blob 引用——§6.13 基础设施证明 Artifact 存在；Benchmark E：Observation Receipt 不得冒充有效业务 Evidence）",
     );
   }
+  // CRC-F 缝口（09-04 vNext Batch 5 ADR-lite · 最小判定，零新词轴）：OBSERVED 的
+  // screenshot-only 背书闸——result=OBSERVED 且全部 artifact_refs 的 media 皆为
+  // "screenshot" 而观察动作（operation）不是 "screenshot" 时，该「看到了」的主张
+  // 没有对应观察动作的证据产物背书：截图不能证明 API payload / 控制台 / 性能事实
+  // （纠错 §31 Case F / PRD §9B CRC-F「截图不能证明 API」；Case I 封条原只盖
+  // NOT_OBSERVABLE 侧，本闸收口 OBSERVED 侧同族缝口）。最小性论证：只封
+  // 「screenshot-only 冒充」单一形态——混合 refs（screenshot 作辅证在场）与
+  // media↔operation 全量族矩阵（需词表裁定新映射面）都不在本闸；词面纪律：
+  // "screenshot" 是 catalog/sensors 材料 operations/evidence_types 双侧既有词形 +
+  // 07 blob_ref media 开放词先例（SCREENSHOT_MEDIA_WORD 注记），零词表私扩。
+  // 分层边界：17 号 schema 维持词形冻结面不裁 media 一致性（media 开放词无轴可裁；
+  // absencePreconditions 四前提闸同款「组装层判定严于 schema」先例）——schema
+  // examples[1] 的转录形态只证明词形合法，组装层不再可达（已知分层差异，登记不隐藏）。
+  if (
+    input.result === "OBSERVED" &&
+    artifactRefs.length > 0 &&
+    input.operation !== SCREENSHOT_MEDIA_WORD &&
+    artifactRefs.every((ref) => ref.media === SCREENSHOT_MEDIA_WORD)
+  ) {
+    invalidValues.push({
+      field: "artifactRefs.media",
+      value: `全部为 "${SCREENSHOT_MEDIA_WORD}" 而观察动作 operation="${input.operation}"`,
+    });
+  }
   // §6.14 四前提绑定（G5）：OBSERVED_ABSENT 是「缺席是事实」的正主张，与 OBSERVED
   // 同族受闸——绑定缺失 = 绕过 judgeNegativeObservation 的手工组装，SCHEMA_INVALID；
   // 绑定在座但任一前提为 false = 判定器本应产出 INCONCLUSIVE 的形态，同拒。
@@ -716,8 +760,8 @@ export function buildObservationReceipt(
   }
   throw new GovernanceError(
     "SCHEMA_INVALID",
-    `Observation Receipt 组装校验失败（§6.13 字段面 + Benchmark E 封条）`,
-    "observation_id 须 OBS-<n>、environment_receipt_ref 须 ENVREC-<n>、surface/result 落词轴闭包、OBSERVED 必须 ≥1 条 artifact_refs（先 persistEvidenceArtifact 再组装）",
+    `Observation Receipt 组装校验失败（§6.13 字段面 + Benchmark E 封条 + CRC-F 缝口）`,
+    "observation_id 须 OBS-<n>、environment_receipt_ref 须 ENVREC-<n>、surface/result 落词轴闭包、OBSERVED 必须 ≥1 条 artifact_refs（先 persistEvidenceArtifact 再组装）；OBSERVED 的全部 artifact media 皆为 screenshot 时观察动作必须是 screenshot（CRC-F：截图不能证明 API/控制台/性能事实——payload 类事实需对应 sensor 的产物 media）",
     { missing, invalid_values: invalidValues },
   );
 }

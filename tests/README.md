@@ -75,6 +75,18 @@
   修改触发、未跟踪新文件不触发 / git 不可用 fail-closed）。
   `pomaster eval` 命令面契约在 `packages/cli/tests/eval.spec.ts`（L1）。
 
+- `constitutional/` —— Constitutional Regression Suite（vNext Batch 5；纠错清单 §31
+  八反例 + PRD 修订版 §9B CRC-A..H 行）：8 个永久回归 Case，命名 **CRC-A..CRC-H**
+  （禁裸用 "Case A-H"——与 PRD v0.4/0.5.2 §16 旧 Case 编号 / 目录宪法
+  §2·§11·§24·§34 / benchmarks `constitutional.mjs` §90.3 基准档三套既有语义显式
+  划界，区分声明落各文件头注）；每测试带规范锚注释。B/D/E/G=跨面联合锚（把分立
+  封闭测试串成场景级不变式），A/C/F/H=缺口端到端补齐（raw prompt 入口 / risk_score
+  点名 / sensor 失配判卷 + OBSERVED screenshot-only 背书闸（kernel perception.ts
+  最小判定，ADR 于该文件头注）/ PENDING→context 干净负例）。共享 fixture 居
+  `crc-lib.ts`（非 spec 不入账）。层次归类按执行形态：kernel 进程内联合锚
+  （B/C/D/E/F/G）计 L1 无域，runCli 端到端（A/H）计 L2——归类 ADR 见 floor.json
+  `notes.batch5_crc`。独立性：零网络/外部工具、确定性零墙钟、Windows 可跑。
+
 ## 显式 deferred 登记（防静默缺口）
 
 - ~~**并发会话锁（同一 store 多会话并发写互斥/检出语义）→ deferred 至 P20。**~~

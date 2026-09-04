@@ -348,7 +348,7 @@ describe("runEnvironmentDoctor 九项比对", () => {
     expect(outcome.mismatch).toEqual([]);
   });
 
-  it("Case H：expected revision ≠ 实测 revision → WRONG_OR_UNVERIFIED_INSTANCE + mismatch 明细", () => {
+  it("环境回执 revision 失配（PRD v0.5.2 §16 Case H——环境回执比对语义；Batch 5 加注：与纠错 §31 / CRC-H「Pending Memory 污染」重名不同义，本测试属 §16 旧编号）：expected revision ≠ 实测 revision → WRONG_OR_UNVERIFIED_INSTANCE + mismatch 明细", () => {
     const observed = { ...readyObserved(), revision_ref: "abc1234" };
     const outcome = runEnvironmentDoctor(readyExpectation(), observed);
     expect(outcome.verdict).toBe("WRONG_OR_UNVERIFIED_INSTANCE");
@@ -618,7 +618,19 @@ const SCREENSHOT_BLOB = {
   storagePath: "blobs/sha256/3f/d9e1b7c2a4f56890bd1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b",
 } as const;
 
-/** §6.13 yaml 例文转录（journey/ENVREC/target 置位形态）。 */
+/**
+ * network 观察产物 blob（media 词形取 catalog/sensors 材料 evidence_types 既有词
+ * "network_observation"——Batch 5 CRC-F 缝口收口后，inspect_network 的 OBSERVED
+ * 主张不能再由 screenshot-only refs 背书，正例 fixture 随之改用对应 sensor 产物）。
+ */
+const NETWORK_BLOB = {
+  sha256: "sha256:c2d3e4f5a6b7c8d9e0f1a2b3fd9e1b7c2a4f56890bd1e2f3a4b5c6d7e8f9a0b1",
+  media: "network_observation",
+  byteSize: 4096,
+  storagePath: "blobs/sha256/c2/d3e4f5a6b7c8d9e0f1a2b3fd9e1b7c2a4f56890bd1e2f3a4b5c6d7e8f9a0b1",
+} as const;
+
+/** §6.13 yaml 例文转录（journey/ENVREC/target 置位形态；media 为对应观察动作的产物词形）。 */
 function validObservedInput(): ObservationReceiptInput {
   return {
     observationId: "OBS-182",
@@ -630,7 +642,7 @@ function validObservedInput(): ObservationReceiptInput {
     journeyRef: "JOURNEY.COST_ANALYSIS.ENTER",
     environmentReceiptRef: "ENVREC-9",
     targetRef: "CAPABILITY.COST_ANALYSIS",
-    artifactRefs: [SCREENSHOT_BLOB],
+    artifactRefs: [NETWORK_BLOB],
     normalizedFacts: ["request_status: 200", "response_items: 0"],
     result: "OBSERVED",
     capturedAtSeq: 182,
@@ -649,7 +661,7 @@ describe("buildObservationReceipt（W1-D2 · §6.13 最小通路组装）", () =
     expect(receipt.operation).toBe("inspect_network");
     expect(receipt.target_ref).toBe("CAPABILITY.COST_ANALYSIS");
     expect(receipt.surface).toBe("BOUNDARY_IO");
-    expect(receipt.artifact_refs).toEqual([SCREENSHOT_BLOB]);
+    expect(receipt.artifact_refs).toEqual([NETWORK_BLOB]);
     expect(receipt.normalized_facts).toEqual(["request_status: 200", "response_items: 0"]);
     expect(receipt.result).toBe("OBSERVED");
     expect(receipt.captured_at_seq).toBe(182);
@@ -681,6 +693,7 @@ describe("buildObservationReceipt（W1-D2 · §6.13 最小通路组装）", () =
   it("负观察词形 + refs 留痕亦合法（Case I 留痕形态：截图在场而 network 不可观察）", () => {
     const receipt = buildObservationReceipt({
       ...validObservedInput(),
+      artifactRefs: [SCREENSHOT_BLOB],
       result: "NOT_OBSERVABLE",
     });
     expect(receipt.result).toBe("NOT_OBSERVABLE");
