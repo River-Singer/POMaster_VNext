@@ -13,7 +13,7 @@
  * - §49.2 入账：EXC-n 确定性递增；词表外 fail-closed；list 缺席显式空。
  */
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -331,6 +331,100 @@ describe("view task（Review View §49.1 + §53）", () => {
     const outcome = await runViewTask(root, { task: "TASK.T0001" });
     expect(outcome.ok).toBe(true);
     expect(snapshot()).toEqual(before);
+  });
+});
+
+// ============================================================
+// view task —— Outcome Review 附区（纠错 §20；Batch 3 R2）
+// ============================================================
+
+describe("view task Outcome Review（纠错 §20 收口首层）", () => {
+  it("§20 键组逐字渲染且不进 §53 十二步（不发明步骤；十二步仍是十二步）", async () => {
+    await seedWorld();
+    const outcome = await runViewTask(root, { task: "TASK.T0001" });
+    expect(outcome.ok).toBe(true);
+    expect(outcome.result.steps).toHaveLength(12);
+    const md = outcome.result.markdown;
+    expect(md).toContain("## Outcome Review（纠错 §20：任务收口首层——键组对位纠错 §20 清单）");
+    // 附区在十二步之后（§53 顺序不被插步）。
+    expect(md.indexOf("## 12. 必要时再查看 File Diff")).toBeLessThan(md.indexOf("## Outcome Review"));
+    // Original Intent / Expected Outcome / Actual Result / Machine Verified /
+    // Not Verified / Known Gaps / Artifacts / live preview 键名在位。
+    expect(md).toContain("- Original Intent: 重构仪表盘卡片布局为响应式栅格");
+    expect(md).toContain("- Expected Outcome: （无——payload 未申报 expected_outcome；申报走 maintain 修订路标，见三操作）");
+    expect(md).toContain("- Actual Result:");
+    expect(md).toContain("- Machine Verified:");
+    expect(md).toContain("- Not Verified / Unknown:");
+    expect(md).toContain("- Known Gaps:");
+    expect(md).toContain("- live preview: 无机器可汇编源——显式缺席（不伪造预览");
+  });
+
+  it("Expected Outcome 在场呈现（payload 自由区字段——零 schema 变化）", async () => {
+    await seedWorld();
+    const taskBodyPath = join(root, ".pomaster", "truth", "objects", "task-object", "task.t0001.json");
+    const taskBody = JSON.parse(readFileSync(taskBodyPath, "utf8")) as {
+      payload: Record<string, unknown>;
+    };
+    taskBody.payload.expected_outcome = "仪表盘卡片在 12 列栅格下响应式排布";
+    writeFileSync(taskBodyPath, `${JSON.stringify(taskBody, null, 2)}\n`);
+    const outcome = await runViewTask(root, { task: "TASK.T0001" });
+    expect(outcome.result.outcome_review.expected_outcome).toBe("仪表盘卡片在 12 列栅格下响应式排布");
+    expect(outcome.result.markdown).toContain("- Expected Outcome: 仪表盘卡片在 12 列栅格下响应式排布");
+  });
+
+  it("Actual Result 挂 class_scan_result + 受影响对象轴分布（机器可汇编现状投影）", async () => {
+    await seedWorld();
+    const outcome = await runViewTask(root, { task: "TASK.T0001" });
+    const actual = outcome.result.outcome_review.actual_result.join("\n");
+    expect(actual).toContain("class_scan_result: scope=src/** hits=1 fixed_count=1");
+    expect(actual).toContain("受影响对象现状轴分布");
+    expect(actual).toContain("完整判定不在机器面");
+  });
+
+  it("Known Gaps：acceptance criterion 未映射 claim 显式缺口（§47 DoD 缺口）+ 台账锚定缺口", async () => {
+    await seedWorld();
+    await seedLedger();
+    const outcome = await runViewTask(root, { task: "TASK.T0001" });
+    const gaps = outcome.result.outcome_review.known_gaps.join("\n");
+    // seed 的 acceptance = [{ criterion: "栅格断点齐备", claim: null }]。
+    expect(gaps).toContain("acceptance criterion「栅格断点齐备」未映射 claim");
+    // seedLedger 的 HARD_BLOCKER 锚 CHANGE.C0001（implements_change 链）→ 缺口在位。
+    expect(gaps).toContain("[HARD_BLOCKER]");
+    expect(gaps).toContain("报表数据源契约不存在");
+  });
+
+  it("三操作路标（符合/不符合/修改期望）逐字呈现且指向既有命令面", async () => {
+    await seedWorld();
+    const outcome = await runViewTask(root, { task: "TASK.T0001" });
+    const ops = outcome.result.outcome_review.operations;
+    expect(ops.map((op) => op.operation)).toEqual(["符合我的期望", "不符合", "修改期望"]);
+    expect(ops[0]?.route).toContain("pomaster closeout");
+    expect(ops[0]?.route).toContain("resolveDecision 外生 answer");
+    expect(ops[1]?.route).toContain("pomaster ledger record");
+    expect(ops[1]?.route).toContain("pomaster production challenge");
+    expect(ops[2]?.route).toContain("pomaster maintain");
+    const md = outcome.result.markdown;
+    expect(md).toContain("- [符合我的期望] → pomaster closeout");
+    expect(md).toContain("- [不符合] → 差异显式登记");
+    expect(md).toContain("- [修改期望] → pomaster maintain");
+  });
+
+  it("Machine Verified / Not Verified 二分：blocked run 归 Not Verified（七态二分呈现）", async () => {
+    await seedWorld();
+    const runsDir = join(root, ".pomaster", "evidence", "runs");
+    mkdirSync(runsDir, { recursive: true });
+    writeFileSync(
+      join(runsDir, "GRN-1.json"),
+      `${JSON.stringify({ subject_id: "PAGE.DASHBOARD", gate: "FAST", verdict: "blocked" }, null, 2)}\n`,
+      "utf8",
+    );
+    const outcome = await runViewTask(root, { task: "TASK.T0001" });
+    expect(outcome.result.outcome_review.machine_verified).toEqual([]);
+    expect(outcome.result.outcome_review.not_verified_unknown.join("\n")).toContain(
+      "`GRN-1` verdict=blocked",
+    );
+    const md = outcome.result.markdown;
+    expect(md).toContain("（无——无 passed/warning gate run 且无 VERIFIED claim）");
   });
 });
 

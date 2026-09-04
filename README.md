@@ -42,7 +42,7 @@ pomaster record gate-run/claim
 
 # ⑥ RECONCILE —— delta 三方对账 / 投影视图 / 审计 / 例外台账
 pomaster reconcile --permit <PERMIT.*>
-pomaster view blueprint/task
+pomaster view blueprint/task/attention/decision
 pomaster audit blueprint/task
 pomaster ledger record/list
 

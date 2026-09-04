@@ -82,9 +82,14 @@
  * - eval            Agent Behavioral Eval（§44.10）：跑 --suite behavioral（seeds 25 注册/
  *                   23 executable/2 retired；retired 显式呈现不计失败；executable 失败
  *                   fail-closed exit 1；§94.3 触发面配套——trigger-manifest + eval-trigger.mjs）
- * - view blueprint/task
- *                   三投影 Human 侧（§44.7/§49.1）：Narrative View（Stable Core 正文 +
- *                   Uncertainty Envelope）/ Review View（§53 十二步审查顺序）；纯读零写入
+ * - view blueprint/task/attention/decision
+ *                   三投影 Human 侧 + Batch 3 扩展（§44.7/§49.1/§6.3/§6A）：Narrative
+ *                   View（Stable Core 正文 + Uncertainty Envelope）/ Review View（§53
+ *                   十二步 + 纠错 §20 Outcome Review 收口首层附区与三操作路标）/
+ *                   attention = Human Attention Queue（§6.3/纠错 §19——五类既有对象
+ *                   数据源分组投影 + 处置路标，View not new database）/ decision =
+ *                   Decision Graph 呈现（§6A 词形纪律——推荐非已决、Decision Owner:
+ *                   HUMAN、五件套、INFERENCE 披露）；纯读零写入
  * - audit blueprint/task
  *                   三投影 Audit View（§44.7/§49.1）：七字段完整呈现（§91.3：Audit View
  *                   才逐项显示完整 State Axes）；纯读零写入
@@ -184,7 +189,7 @@ import { runCatalogStatus, runCatalogExplain, runCatalogRelock } from "./catalog
 import { runResolve } from "./resolve.js";
 import { runGraph } from "./graph.js";
 import { runEval } from "./eval.js";
-import { runViewBlueprint, runViewTask } from "./view.js";
+import { runViewAttention, runViewBlueprint, runViewDecision, runViewTask } from "./view.js";
 import { runAuditBlueprint, runAuditTask } from "./audit.js";
 import { runLedgerList, runLedgerRecord } from "./ledger.js";
 import {
@@ -548,8 +553,33 @@ export type {
   ResearchListResult,
   ResearchInspectResult,
 } from "./research.js";
-export { runViewBlueprint, runViewTask, REVIEW_STEPS } from "./view.js";
-export type { ViewBlueprintResult, ViewTaskResult, ReviewStepRow } from "./view.js";
+export {
+  runViewAttention,
+  runViewBlueprint,
+  runViewDecision,
+  runViewTask,
+  ATTENTION_KINDS,
+  OUTCOME_REVIEW_OPERATIONS,
+  REVIEW_STEPS,
+} from "./view.js";
+export type {
+  ViewBlueprintResult,
+  ViewTaskResult,
+  ViewAttentionResult,
+  ViewDecisionResult,
+  AttentionItem,
+  AttentionGroup,
+  AttentionKind,
+  OutcomeReviewBlock,
+  ReviewStepRow,
+} from "./view.js";
+export {
+  DECISION_PRESENTATION_FORBIDDEN_WORDFORMS,
+  DECISION_RECOMMENDATION_MARK,
+  renderDecisionCard,
+  renderDecisionGraphPresentation,
+} from "./decision-presentation.js";
+export type { DecisionPresentationCard } from "./decision-presentation.js";
 export { runAuditBlueprint, runAuditTask, AUDIT_FIELDS } from "./audit.js";
 export type { AuditResult, AuditObjectReport } from "./audit.js";
 export { runLedgerRecord, runLedgerList } from "./ledger.js";
@@ -2303,7 +2333,7 @@ export function createProgram(
   const view = program
     .command("view")
     .description(
-      "三投影 Human 侧（§44.7/§49.1）：view blueprint = Narrative View（Stable Core 正文 + Uncertainty Envelope，正常状态标签默认隐藏 §91.3）；view task = Review View（§53 十二步审查顺序，File Diff 降级证据层）",
+      "三投影 Human 侧（§44.7/§49.1）+ Batch 3 扩展：view blueprint = Narrative View（Stable Core 正文 + Uncertainty Envelope，正常状态标签默认隐藏 §91.3）；view task = Review View（§53 十二步审查顺序 + 纠错 §20 Outcome Review 附区，File Diff 降级证据层）；view attention = Human Attention Queue（§6.3/纠错 §19——五类既有对象数据源分组 + 处置路标，View not new database）；view decision = Decision Graph 呈现（§6A 推荐词形纪律——推荐非已决/Decision Owner: HUMAN/五件套/INFERENCE 披露）",
     );
   view
     .command("blueprint")
@@ -2325,7 +2355,7 @@ export function createProgram(
   view
     .command("task")
     .description(
-      "Review View（§49.1 + §53）：面向 PO/Architect/Tech Lead 的结构化审查视图——十二步默认审查顺序逐字渲染（不发明步骤），每步挂既有平面可汇编数据，缺席显式（无）；第 12 步 File Diff 只给 inspect 指路（降级为证据层）",
+      "Review View（§49.1 + §53）：面向 PO/Architect/Tech Lead 的结构化审查视图——十二步默认审查顺序逐字渲染（不发明步骤），每步挂既有平面可汇编数据，缺席显式（无）；第 12 步 File Diff 只给 inspect 指路（降级为证据层）；十二步后附纠错 §20 Outcome Review 收口首层（Original Intent/Expected Outcome、Actual Result、Machine Verified、Not Verified/Unknown、Known Gaps、Artifacts/live preview）+ 三操作路标（符合/不符合/修改期望——机器面复用既有通路零新语义）",
     )
     .argument("<task>", "任务对象 governed id（legacy 词形走 alias 收编）")
     .option("--json", "machine-readable JSON output (§45)")
@@ -2333,6 +2363,35 @@ export function createProgram(
       const outcome = await runViewTask(resolveDir(command), { task });
       record({
         command: "view task",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+  view
+    .command("attention")
+    .description(
+      "Human Attention Queue（§6.3/纠错 §19；Batch 3 R1）：首层投影「Human Attention Required」——Human 审不可外包的判断；五类既有对象数据源按 Attention 类型分组（escalate_owner 呈报位/decision-graph CONFLICT_REVIEW 素材/gate blocked/production challenges+self-improvement/exception ledger 高显著度异常），每条目带下一步处置命令路标；缺席显式呈现不静默空组；空队列显式「无可注意力项」非空白假绿；View not new database（纯读零写入）",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (_opts, command) => {
+      const outcome = await runViewAttention(resolveDir(command));
+      record({
+        command: "view attention",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+  view
+    .command("decision")
+    .description(
+      "Decision Graph 呈现（§6A Recommendation UX 词形纪律；Batch 3 R3）：读 scratchpad decision-graph sidecar（schema 18）逐 Decision 呈现——推荐以推荐身份标注不渲染成已决、Decision Owner: HUMAN 显式标注、五件套（options/basis/tradeoffs/impact/uncertainty）逐项呈现、INFERENCE 显式披露、§6A 禁词表生效（呈现行零禁词）；判卷函数零改动（View 层 words-only）；纯读零写入",
+    )
+    .argument("<discovery-id>", "Discovery scratchpad id（decision-graph.json sidecar 所在 scratchpad）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (discoveryId: string, _opts, command) => {
+      const outcome = await runViewDecision(resolveDir(command), { discoveryId });
+      record({
+        command: "view decision",
         outcome,
         asJson: command.opts().json === true,
       });
