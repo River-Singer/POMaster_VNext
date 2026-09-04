@@ -108,7 +108,9 @@ export interface PermitRecord {
    * P0.5-1 applicability 输入承载位（PRD §14 P0.5-1 最小实现二「Project Change / Permit
    * 能提供 capability/change_class/profile 等输入」；裁决 8 ②）：变更类目与治理档位。
    * ∈ CATALOG_CHANGE_CLASS_VALUES / CATALOG_GOVERNANCE_PROFILE_VALUES（O2），签发时
-   * fail-closed 校验；null = 未申报（缺席显式，非空串冒充）。
+   * fail-closed 词表校验；null = 未申报（缺席显式，非空串冒充）。
+   * A1 裁定（2026-09-04）：governance_profile 为**信息性申报位**——不参与 checkPermit
+   * 判卷（permit 判卷只按 scope 三元组 + 过期拍），签发台账/journal 记录保留。
    */
   change_class: string | null;
   governance_profile: string | null;
@@ -214,7 +216,7 @@ export async function issuePermit(
   const capabilityRefs = (request.capabilityIds ?? []).map((id) =>
     parseIdOrGovernanceError(id, "PermitRequest.capabilityIds[]"),
   );
-  // P0.5-1 applicability 输入 fail-closed 校验（词表外 = SCHEMA_INVALID，禁静默当未申报）。
+  // P0.5-1 applicability 输入 fail-closed 词表校验（词表外 = SCHEMA_INVALID，禁静默当未申报）。
   if (
     request.changeClass !== undefined &&
     !CATALOG_CHANGE_CLASS_VALUES.includes(request.changeClass as never)
@@ -226,6 +228,8 @@ export async function issuePermit(
       { changeClass: request.changeClass },
     );
   }
+  // A1 裁定（2026-09-04）：governanceProfile 是信息性申报位——词表校验保留（申报
+  // 词形纪律），但零判卷影响（checkPermit 只按 scope 三元组 + 过期拍）。
   if (
     request.governanceProfile !== undefined &&
     !CATALOG_GOVERNANCE_PROFILE_VALUES.includes(request.governanceProfile as never)
@@ -233,7 +237,7 @@ export async function issuePermit(
     throw new GovernanceError(
       "SCHEMA_INVALID",
       `PermitRequest.governanceProfile 词表外: ${request.governanceProfile}`,
-      `governanceProfile 须 ∈ CATALOG_GOVERNANCE_PROFILE_VALUES（O2：对齐 TRIAGE_PROFILES+STRICT）。`,
+      `governanceProfile 须 ∈ CATALOG_GOVERNANCE_PROFILE_VALUES（O2：对齐 TRIAGE_PROFILES+STRICT；A1 裁定后为信息性申报位，不参与判卷）。`,
       { governanceProfile: request.governanceProfile },
     );
   }

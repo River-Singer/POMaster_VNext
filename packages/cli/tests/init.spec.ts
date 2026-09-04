@@ -1,10 +1,11 @@
 /**
  * init.spec.ts —— 骨架创建、幂等（NO_CHANGE 契约）、不覆盖人类文件、D24 账本形态、
  * N7 authority 骨架（BOOTSTRAP 手工步骤自动化）、F1 平台选择（--platforms 词表闸 /
- * 适配器产出 / 幂等 / 交互解析）、重入口默认（D13 2026-09-03 修订：skills 双镜像 +
- * hooks settings.json 合并 + 加厚 rules）、--mode light 显式退回与重→轻可逆、
+ * 适配器产出 / 幂等 / 交互解析）、重入口默认（D13 2026-09-03 修订 + B7 裁定
+ * 2026-09-04：init 单一重入口——skills 双镜像 + hooks settings.json 合并 + 加厚 rules；
+ * 历史模式旗标与轻入口形态已删除，存量旧版产物经标记/字节识别升级）、
  * skill 命令卡与 pomaster --help 单一事实源对账钉版、init 预铺 .pomaster/ 目录骨架
- * （宪法 §2 全树不分模式：29 目录 README + layout.json，light/heavy 同树；守卫细则见
+ * （宪法 §2 全树不分形态：29 目录 README + layout.json；守卫细则见
  * layout-manifest.spec.ts）、legacy .pomaster/objects 检测（宪法 §34-P0 收敛）。
  */
 import { mkdtempSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
@@ -26,7 +27,7 @@ import {
   SKILL_MANIFEST,
   TRUTH_INDEX_RELATIVE,
   CHECKLIST_KEYS,
-  parseInitMode,
+  TRIAGE_PROFILES,
   parsePlatformSelection,
   renderChecklistFrame,
   renderPlatformMenu,
@@ -76,7 +77,6 @@ describe("init 首次创建（CREATED）", () => {
     const outcome = await runInit(dir);
     expect(outcome.ok).toBe(true);
     expect(outcome.result.change).toBe("CREATED");
-    expect(outcome.result.mode).toBe("heavy");
     expect(outcome.result.files.map((f) => f.file).sort()).toEqual(
       heavyDefaultExpectedFiles(),
     );
@@ -153,7 +153,7 @@ describe("init 首次创建（CREATED）", () => {
     expect(!/\d{4}-\d{2}-\d{2}T/.test(read(TRUTH_INDEX_RELATIVE))).toBe(true);
   });
 
-  it("入口文件含生成标记、入口模式标记、当前 profile 与常用命令（heavy 默认）", async () => {
+  it("入口文件含生成标记、重入口安装标记、当前 profile 与常用命令（重入口默认）", async () => {
     await runInit(dir);
     const agents = read(AGENTS_MD_RELATIVE);
     expect(agents).toContain(GENERATED_MARKER);
@@ -162,13 +162,12 @@ describe("init 首次创建（CREATED）", () => {
     expect(agents).toContain("pomaster triage");
     expect(agents).toContain("pomaster doctor");
     expect(agents).toContain(".pomaster/state/truth-index.json");
-    // 重入口安装物段：skills 库 + session/alerts hooks + 降级路标。
+    // 重入口安装物段：skills 库 + session/alerts hooks + 修复路标。
     expect(agents).toContain("重入口安装物");
     expect(agents).toContain(".agents/skills/pomaster/");
     expect(agents).toContain(".claude/skills/pomaster*");
     expect(agents).toContain("pomaster session");
     expect(agents).toContain("pomaster alerts");
-    expect(agents).toContain("--mode light");
     expect(read(CLAUDE_MD_RELATIVE)).toContain("@AGENTS.md");
   });
 
@@ -579,7 +578,7 @@ describe("init --platforms 合法组合（F1）", () => {
     ]);
   });
 
-  it("--platforms claude,cursor（heavy 默认）→ 双适配器产出；cursor 加厚版 rules（命令卡 + Browser Eyes 展开）", async () => {
+  it("--platforms claude,cursor（重入口默认）→ 双适配器产出；cursor 加厚版 rules（命令卡 + Browser Eyes 展开）", async () => {
     const outcome = await runInit(dir, { platforms: "claude,cursor" });
     expect(outcome.ok).toBe(true);
     expect(existsSync(join(dir, CLAUDE_MD_RELATIVE))).toBe(true);
@@ -600,23 +599,7 @@ describe("init --platforms 合法组合（F1）", () => {
     expect(outcome.result.change).toBe("CREATED");
   });
 
-  it("--mode light --platforms claude,cursor → 细指针 rules（3-8 行纪律；light 形态保留）", async () => {
-    const outcome = await runInit(dir, { platforms: "claude,cursor", mode: "light" });
-    expect(outcome.ok).toBe(true);
-    expect(outcome.result.mode).toBe("light");
-    const cursor = read(CURSOR_RULES_RELATIVE);
-    expect(cursor).toContain("alwaysApply: true");
-    expect(cursor).toContain("AGENTS.md");
-    expect(cursor.split("\n").length).toBeLessThanOrEqual(8);
-    // light：无 skills / hooks / settings。
-    expect(existsSync(join(dir, CLAUDE_SETTINGS_RELATIVE))).toBe(false);
-    expect(existsSync(join(dir, ".agents", "skills"))).toBe(false);
-    expect(
-      outcome.result.files.filter((f) => f.file.includes("skills/")),
-    ).toEqual([]);
-  });
-
-  it("--platforms cursor,qoder（heavy 默认）→ 不建 CLAUDE.md（平台外适配器零产出）；qoder 加厚版带 trigger frontmatter；通用层 skills 仍生成", async () => {
+  it("--platforms cursor,qoder（重入口默认）→ 不建 CLAUDE.md（平台外适配器零产出）；qoder 加厚版带 trigger frontmatter；通用层 skills 仍生成", async () => {
     const outcome = await runInit(dir, { platforms: "cursor,qoder" });
     expect(outcome.ok).toBe(true);
     expect(existsSync(join(dir, CLAUDE_MD_RELATIVE))).toBe(false);
@@ -669,6 +652,16 @@ describe("init --platforms 合法组合（F1）", () => {
       { name: "cursor", file: CURSOR_RULES_RELATIVE, action: "skipped-existing" },
     ]);
     expect(read(CURSOR_RULES_RELATIVE)).toBe(cursorBefore);
+  });
+
+  it("--platforms none 幂等：none 重跑 none → NO_CHANGE（最小形态字节稳定，A4 同款契约）", async () => {
+    await runInit(dir, { platforms: "none" });
+    const agentsBefore = read(AGENTS_MD_RELATIVE);
+    const second = await runInit(dir, { platforms: "none" });
+    expect(second.ok).toBe(true);
+    expect(second.result.change).toBe("NO_CHANGE");
+    expect(second.result.platforms).toEqual([]);
+    expect(read(AGENTS_MD_RELATIVE)).toBe(agentsBefore);
   });
 
   it("人读平台段：逐平台一行 [name] action file（created/skipped-existing/covered）", async () => {
@@ -1079,44 +1072,43 @@ describe("重入口 hooks settings.json 合并（claude 层）", () => {
 });
 
 // ============================================================
-// --mode light 显式退回（重→轻可逆）
+// 预铺目录骨架与 layout.json（宪法 §2 全树不分形态）
 // ============================================================
 
-describe("--mode light 显式退回", () => {
-  it("light：零 skills/零 settings，AGENTS.md 为 light 标记轻形态；目录树与 heavy 全同（宪法 §2 不分模式）", async () => {
-    const outcome = await runInit(dir, { mode: "light" });
+describe("预铺目录骨架与 layout.json", () => {
+  it("--platforms none 最小形态：入口文件为最小指针正文（无重入口安装标记），目录树仍全量预铺", async () => {
+    const outcome = await runInit(dir, { platforms: "none" });
     expect(outcome.ok).toBe(true);
-    expect(outcome.result.mode).toBe("light");
-    // light/heavy 的 .pomaster 目录树完全相同（mode 只影响 skills/hooks 注入层）——
-    // light 也产出 29 目录 README + layout.json。
-    expect(outcome.result.files.map((f) => f.file).sort()).toEqual(
+    // 最小形态：无重入口安装标记（doctor heavy_entry 探针按未安装呈现），
+    // 无 skills/无 settings；.pomaster 树照常 29 README + layout.json。
+    const agents = read(AGENTS_MD_RELATIVE);
+    expect(agents).toContain(GENERATED_MARKER);
+    expect(agents).not.toContain("<!-- pomaster:entry-mode:heavy -->");
+    expect(agents).toContain("最小形态");
+    expect(agents).toContain("目录宪法速览");
+    expect(existsSync(join(dir, CLAUDE_SETTINGS_RELATIVE))).toBe(false);
+    expect(existsSync(join(dir, ".agents", "skills"))).toBe(false);
+    expect(statSync(join(dir, ".pomaster", "truth", "objects")).isDirectory()).toBe(true);
+    expect(
+      outcome.result.files.map((f) => f.file).sort(),
+    ).toEqual(
       [
         TRUTH_INDEX_RELATIVE,
         AUTHORITY_RELATIVE,
         CONFIG_RELATIVE,
         AGENTS_MD_RELATIVE,
-        CLAUDE_MD_RELATIVE,
         ...LAYOUT_DIRECTORIES.map((d) => `.pomaster/${d.path}/README.md`),
         LAYOUT_MANIFEST_RELATIVE,
       ].sort(),
     );
-    const agents = read(AGENTS_MD_RELATIVE);
-    expect(agents).toContain(GENERATED_MARKER);
-    expect(agents).toContain("<!-- pomaster:entry-mode:light -->");
-    expect(agents).toContain("轻入口");
-    // 目录宪法速览段两模板同在（.pomaster 树 mode 无关）。
-    expect(agents).toContain("目录宪法速览");
-    expect(existsSync(join(dir, CLAUDE_SETTINGS_RELATIVE))).toBe(false);
-    expect(existsSync(join(dir, ".agents", "skills"))).toBe(false);
-    expect(statSync(join(dir, ".pomaster", "truth", "objects")).isDirectory()).toBe(true);
   });
 
-  it("目录树模式无关性：heavy 与 light 各自 init 的 .pomaster 目录集合逐目录相等（宪法 §2 全量）", async () => {
-    const other = join(dir, "sibling-light");
+  it("目录树与平台选择无关：缺省与 --platforms none 各自 init 的 .pomaster 目录集合逐目录相等（宪法 §2 全量）", async () => {
+    const other = join(dir, "sibling-none");
     mkdirSync(other, { recursive: true });
-    await runInit(dir, { mode: "heavy" });
-    await runInit(other, { mode: "light" });
-    // 只对比 .pomaster 子树（skills/hooks 注入层平台目录按定义随 mode/平台差异）。
+    await runInit(dir);
+    await runInit(other, { platforms: "none" });
+    // 只对比 .pomaster 子树（skills/hooks 注入层平台目录按定义随平台选择差异）。
     const dirsOf = (root: string): string[] => {
       const found: string[] = [];
       const walk = (rel: string): void => {
@@ -1198,66 +1190,42 @@ describe("--mode light 显式退回", () => {
     expect(read(CONFIG_RELATIVE)).toContain("objects: .pomaster/truth/objects/");
   });
 
-  it("重→轻：heavy 项目执行 light → 30 份 skill 移除（removed）、hooks 剥离（保留 Trellis 条目）、AGENTS.md 重写回轻形态", async () => {
-    const trellis = {
-      hooks: {
-        UserPromptSubmit: [
-          { hooks: [{ type: "command", command: "python inject-workflow-state.py" }] },
-        ],
-      },
-    };
-    mkdirSync(join(dir, ".claude"), { recursive: true });
+  it("存量旧版入口升级：历史形态标记的 AGENTS.md 重跑 init → 重写 heavy + skills created + hooks 合并（B7 迁移路）", async () => {
+    // 模拟旧版（B7 前历史形态）产物：生成标记 + 历史入口标记 + 轻正文。
+    mkdirSync(join(dir, ".pomaster"), { recursive: true });
     writeFileSync(
-      join(dir, CLAUDE_SETTINGS_RELATIVE),
-      `${JSON.stringify(trellis, null, 2)}\n`,
+      join(dir, AGENTS_MD_RELATIVE),
+      `${GENERATED_MARKER}\n<!-- pomaster:entry-mode:light -->\n# POMaster vNext — 旧版入口\n`,
       "utf8",
     );
-    await runInit(dir); // heavy 安装
-    const light = await runInit(dir, { mode: "light" });
-    expect(light.ok).toBe(true);
-    expect(
-      light.result.files.filter((f) => f.action === "removed"),
-    ).toHaveLength(SKILL_MANIFEST.length * 2);
-    for (const spec of SKILL_MANIFEST) {
-      expect(existsSync(join(dir, ".agents", "skills", spec.name))).toBe(false);
-      expect(existsSync(join(dir, ".claude", "skills", spec.name))).toBe(false);
-    }
-    const settings = JSON.parse(read(CLAUDE_SETTINGS_RELATIVE));
-    expect(settings.hooks.UserPromptSubmit).toEqual(trellis.hooks.UserPromptSubmit);
-    expect(settings.hooks.SessionStart).toBeUndefined();
-    expect(JSON.stringify(settings)).not.toContain("pomaster alerts");
-    const agents = read(AGENTS_MD_RELATIVE);
-    expect(agents).toContain("<!-- pomaster:entry-mode:light -->");
-    expect(
-      light.result.files.find((f) => f.file === AGENTS_MD_RELATIVE)?.action,
-    ).toBe("updated");
-    expect(light.result.change).toBe("UPDATED");
-  });
-
-  it("light 幂等：light 化后再跑 light → NO_CHANGE", async () => {
-    await runInit(dir);
-    await runInit(dir, { mode: "light" });
-    const second = await runInit(dir, { mode: "light" });
-    expect(second.result.change).toBe("NO_CHANGE");
-  });
-
-  it("外来同名 skill 不被移除：无标记的 SKILL.md → HEAVY_ARTIFACT_FOREIGN 告警 + 原样保留", async () => {
-    await runInit(dir);
-    const foreignRelative = ".claude/skills/pomaster-triage/SKILL.md";
-    mkdirSync(join(dir, ".claude", "skills", "pomaster-triage"), { recursive: true });
-    writeFileSync(join(dir, foreignRelative), "# 我自己的 triage 笔记\n", "utf8");
-    const light = await runInit(dir, { mode: "light" });
-    expect(light.warnings.map((w) => w.code)).toContain("HEAVY_ARTIFACT_FOREIGN");
-    expect(read(foreignRelative)).toBe("# 我自己的 triage 笔记\n");
-  });
-
-  it("存量轻入口升级：light 项目重跑默认 heavy → AGENTS.md 重写 heavy + skills created + hooks 合并", async () => {
-    await runInit(dir, { mode: "light" });
     const upgrade = await runInit(dir);
     expect(upgrade.ok).toBe(true);
+    // 存量工程只预置了旧版 AGENTS.md——重跑 init 补建全树（created 优先于 updated，
+    // InitChange 判定序），AGENTS.md 本身是 updated 重写为 heavy 形态。
     expect(upgrade.result.change).toBe("CREATED");
+    expect(
+      upgrade.result.files.find((f) => f.file === AGENTS_MD_RELATIVE)?.action,
+    ).toBe("updated");
     expect(read(AGENTS_MD_RELATIVE)).toContain("<!-- pomaster:entry-mode:heavy -->");
+    expect(read(AGENTS_MD_RELATIVE)).not.toContain("entry-mode:light");
     expect(existsSync(join(dir, CLAUDE_SETTINGS_RELATIVE))).toBe(true);
+  });
+
+  it("最小形态升级：--platforms none 项目重跑缺省 init → 升级重入口全套（skills 双镜像 + hooks 合并 + AGENTS.md heavy 标记）", async () => {
+    await runInit(dir, { platforms: "none" });
+    expect(existsSync(join(dir, ".agents", "skills"))).toBe(false);
+    expect(existsSync(join(dir, CLAUDE_SETTINGS_RELATIVE))).toBe(false);
+    const upgrade = await runInit(dir);
+    expect(upgrade.ok).toBe(true);
+    expect(read(AGENTS_MD_RELATIVE)).toContain("<!-- pomaster:entry-mode:heavy -->");
+    expect(existsSync(join(dir, ".agents", "skills", "pomaster", "SKILL.md"))).toBe(true);
+    expect(existsSync(join(dir, ".claude", "skills", "pomaster", "SKILL.md"))).toBe(true);
+    expect(existsSync(join(dir, CLAUDE_SETTINGS_RELATIVE))).toBe(true);
+    const settings = JSON.parse(read(CLAUDE_SETTINGS_RELATIVE)) as {
+      hooks: Record<string, unknown>;
+    };
+    expect(settings.hooks.SessionStart).toBeDefined();
+    expect(settings.hooks.UserPromptSubmit).toBeDefined();
   });
 
   it("存量细指针 rules 升级：旧版（无标记）cursor rules 在 heavy 重跑时被识别为本包产物并升级为加厚版；人类异形内容仍不覆盖", async () => {
@@ -1289,24 +1257,28 @@ describe("--mode light 显式退回", () => {
   });
 });
 
-describe("--mode 词表闸（fail-closed）", () => {
-  it("词表外模式 → SCHEMA_INVALID 列出合法词形，且零写入", async () => {
-    const outcome = await runInit(dir, { mode: "turbo" });
-    expect(outcome.ok).toBe(false);
-    expect(outcome.errors[0]?.code).toBe("SCHEMA_INVALID");
-    expect(outcome.errors[0]?.message).toContain("turbo");
-    expect(outcome.errors[0]?.message).toContain("heavy");
-    expect(outcome.errors[0]?.message).toContain("light");
-    expect(existsSync(join(dir, ".pomaster"))).toBe(false);
-    expect(existsSync(join(dir, AGENTS_MD_RELATIVE))).toBe(false);
+// ============================================================
+// A1 档位信息性（vNext Batch 4 R1）：轴词形保留 + 呈现注记落盘
+// ============================================================
+
+describe("A1 档位信息性（vNext Batch 4 R1）", () => {
+  it("TRIAGE_PROFILES 轴词形在册（判卷力解除但轴保留——PR-0005/裁决 8② 不 supersede）", () => {
+    expect(TRIAGE_PROFILES).toEqual(["MINIMAL", "LIGHT", "STANDARD"]);
   });
 
-  it("parseInitMode：undefined=heavy；heavy/light 合法；大小写敏感拒绝", () => {
-    expect(parseInitMode(undefined)).toEqual({ ok: true, mode: "heavy" });
-    expect(parseInitMode("heavy")).toEqual({ ok: true, mode: "heavy" });
-    expect(parseInitMode("light")).toEqual({ ok: true, mode: "light" });
-    const bad = parseInitMode("HEAVY");
-    expect(bad.ok).toBe(false);
-    if (!bad.ok) expect(bad.error.code).toBe("SCHEMA_INVALID");
+  it("A1 词形注记落盘：config.yaml 模板与重入口/最小两形态入口均含「信息性人类偏好」注记", async () => {
+    await runInit(dir);
+    expect(read(CONFIG_RELATIVE)).toContain("信息性人类偏好");
+    expect(read(AGENTS_MD_RELATIVE)).toContain("信息性人类偏好");
+    // 最小形态（--platforms none）入口同注记——A1 呈现词形与平台选择无关。
+    const minimal = mkdtempSync(join(tmpdir(), "pomaster-cli-init-minimal-"));
+    try {
+      await runInit(minimal, { platforms: "none" });
+      expect(readFileSync(join(minimal, AGENTS_MD_RELATIVE), "utf8")).toContain(
+        "信息性人类偏好",
+      );
+    } finally {
+      rmSync(minimal, { recursive: true, force: true });
+    }
   });
 });

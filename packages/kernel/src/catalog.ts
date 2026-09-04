@@ -488,8 +488,25 @@ export function relockCatalog(catalogRoot: string): CatalogRelockReport {
   // UnknownRecord 索引签名承载 catalog_version/profile 等已验证键（readCatalogLock
   // 同文件已 fail-closed 验形——本函数入口 previous 即其产物），索引签名 unknown 与
   // 必填 string 属性对 TS 不可证，运行时不变式由入口装载面保证。零运行时变更。
+  // controlled_children 内扩展键（如管辖面语义 note——batch-4 split-ledger
+  // catalog_scope_note 纪律注记）原值保留、只重建 allowed/required 两键（vNext
+  // Batch 4 R3 教训修复：整键重建曾把 note 丢弃——无增删文件时 controlled_children
+  // 语义应不变，扩展键丢失即多余 diff；顶层扩展键透传语义向嵌套层对齐）。
+  const rawChildren = rawLock["controlled_children"];
+  const childrenExtras: UnknownRecord =
+    rawChildren !== null && typeof rawChildren === "object" && !Array.isArray(rawChildren)
+      ? Object.fromEntries(
+          Object.entries(rawChildren as UnknownRecord).filter(
+            ([key]) => key !== "allowed" && key !== "required",
+          ),
+        )
+      : {};
   const next = Object.assign({}, rawLock, {
-    controlled_children: { allowed: scannedPaths, required: [...scannedPaths] },
+    controlled_children: {
+      ...childrenExtras,
+      allowed: scannedPaths,
+      required: [...scannedPaths],
+    },
     entries: scannedEntries,
     generated_by: generatedBy,
   }) as unknown as CatalogRelockNextDocument;
@@ -526,11 +543,19 @@ export interface CatalogPolicyMaterial {
   readonly capabilities: readonly string[];
   /** 变更类目清单（applies_when.change_classes ∈ CATALOG_CHANGE_CLASS_VALUES，PR-0005 词轴）。 */
   readonly changeClasses: readonly CatalogChangeClassValue[];
-  /** 治理档位清单（applies_when.governance_profiles ∈ CATALOG_GOVERNANCE_PROFILE_VALUES，O2 对齐）。 */
+  /**
+   * 治理档位清单（applies_when.governance_profiles ∈ CATALOG_GOVERNANCE_PROFILE_VALUES，O2 对齐）。
+   * A1 裁定（2026-09-04）：informational 元数据轴——判卷力已解除，不参与 applicability
+   * 过滤（投影消费面以 informational 注记披露，PR-0005/裁决 8 ② 不 supersede）。
+   */
   readonly governanceProfiles: readonly CatalogGovernanceProfileValue[];
   /** 治理对象 kind 清单（applies_when.object_kinds ∈ TRUTH_BODY_KINDS——复用十类零新轴）。 */
   readonly objectKinds: readonly TruthBodyKind[];
-  /** 声明了任一机器 applicability 字段（true=全字段确定性判定；false=lane 回退判定，O7）。 */
+  /**
+   * 声明了任一参与判卷的机器 applicability 字段（true=全字段确定性判定；false=lane 回退
+   * 判定，O7）。governance_profiles 不计入（A1 裁定 2026-09-04：informational 轴不触发
+   * 机器判定——档位声明不改变条目的过滤路径）。
+   */
   readonly hasMachineApplicability: boolean;
   /**
    * 声明了留位不登记词轴（applies_when.risk_at_least / technologies——Owner 裁决 8 ② O4：
@@ -559,8 +584,9 @@ function asRecord(value: unknown): UnknownRecord {
  * → SCHEMA_INVALID（坏物料显式爆，禁静默跳过——静默跳过 = 消费面假绿）。
  * P0.5-1（PRD §5.2/vocab-pr-0005）：applies_when 机器 applicability 字段同款
  * fail-closed 解析——lanes 值集对账 V7、capabilities 过 governed id 文法+CAPABILITY
- * 前缀闭包、change_classes/governance_profiles/object_kinds 对账 PR-0005 词轴与
- * truth_bodies；risk_at_least/technologies 只检存在不解析值（O4 留位不登记）。
+ * 前缀闭包、change_classes/object_kinds 对账 PR-0005 词轴与 truth_bodies；
+ * governance_profiles 解析保留（A1 裁定 2026-09-04：informational 元数据轴，
+ * 词表对账不变、判卷力解除）；risk_at_least/technologies 只检存在不解析值（O4 留位不登记）。
  */
 export function loadCatalogPolicies(catalogRoot: string): readonly CatalogPolicyMaterial[] {
   const dir = join(catalogRoot, "policies");
@@ -738,7 +764,6 @@ export function loadCatalogPolicies(catalogRoot: string): readonly CatalogPolicy
       declaresLanes ||
       capabilities.length > 0 ||
       changeClasses.length > 0 ||
-      governanceProfiles.length > 0 ||
       objectKinds.length > 0;
     materials.push({
       file,

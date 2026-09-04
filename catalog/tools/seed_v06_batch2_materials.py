@@ -10,13 +10,13 @@ research/frontend-state-references.md，2026-09-03 官网/规范实抓；FORM_ED
 - FRONTEND_ARCHETYPE 三型（§18 逐字）：SPA_LAYERED×MODULAR incompatible 双向登记
   （incompatible 槽首个真实用例）；FEATURE_ORIENTED 承载差异表 #4 的 FSD 现行
   6 有效层（Processes deprecated）/无独立 API 层差异声明。
-- FRONTEND_ARCHETYPE.ERROR_TAXONOMY（§21 逐字九分型闭包）：每型绑定四列语义位；
-  待裁定两项（CANCELED 第十分型/429 归属，差异表 #8）在 x-research-anchors.note
-  在场，本物料保持九分型不扩。
-- ASYNC_COMMAND 头号注记（差异表 #7）：PRD「Illegal Transition 必须可表达」在
-  XState v5 无对应词形（未匹配事件=静默忽略+state.can() 显式守卫）——物料落
-  PRD 语义意图（非法组合经 transition contract 显式声明）+实现绑定注记，差异待
-  Owner 裁定。
+- FRONTEND_ARCHETYPE.ERROR_TAXONOMY（§21 九分型 + Owner 2026-09-04 裁定补
+  CANCELED 第十分型=十分型闭包）：每型绑定四列语义位；已裁定两项（CANCELED
+  第十分型入 categories/429 归重试处置注记入 constraints，差异表 #8）随裁定落位。
+- ASYNC_COMMAND 头号注记（差异表 #7，Owner 2026-09-04 已裁定）：Illegal
+  Transition 不引入治理层词形——XState v5 对未匹配事件静默忽略，state.can()
+  守卫为唯一预检位；PRD「非法组合必须可表达」由「可检测（transition contract
+  声明 + state.can() 守卫预检）」承载。
 词形纪律：STATE_*/FRONTEND_* 为 catalog 词形空间（批次 2 PRD：不走 governed
 前缀 PR）；id 至少两段 SCREAMING_SNAKE（loadCatalogArchetypes 同一闸）。
 token 纪律：物料 core 词面（title/id/summary/semantic 三槽）避开既有 repo 级
@@ -184,10 +184,10 @@ materials["archetype.state.async_command.json"] = {
     "kind": "archetype",
     "layer": "PATTERN",
     "title_zh": "异步命令状态机",
-    "summary_zh": "以 XState v5 六概念（state/event/transition/guard/actor/input/output）承载的异步命令原型：命令参数经 input 进入，状态经 guarded transition 确定性转移，final state 产出 output；非法组合经 transition contract 显式声明（实现侧绑定 state.can() 守卫位）。",
+    "summary_zh": "以 XState v5 六概念（state/event/transition/guard/actor/input/output）承载的异步命令原型：命令参数经 input 进入，状态经 guarded transition 确定性转移，final state 产出 output；非法组合可检测——未声明 transition 不存在（XState v5 运行时静默忽略），state.can() 守卫为唯一预检位（Owner 2026-09-04 裁定差异表 #7）。",
     "semantic": {
         "responsibility": "把一次异步命令（提交/保存/执行）建模为显式状态机：idle/running/done|error 转移全部声明在案，guard 纯同步布尔",
-        "when_to_use": "命令的合法状态转移需要显式契约时（非法组合必须可表达为「未声明的 transition 不存在」）；多步骤异步编排（invoke/spawn actor）",
+        "when_to_use": "命令的合法状态转移需要显式契约时（非法组合可检测：「未声明的 transition 不存在」——XState v5 对未匹配事件静默忽略，state.can() 守卫预检）；多步骤异步编排（invoke/spawn actor）",
         "when_not_to_use": "远端取数缓存语义（STATE_ARCHETYPE.SERVER_QUERY）；无需显式转移契约的局部加载布尔",
     },
     "composition": {"requires": [], "optional": [], "incompatible": []},
@@ -202,10 +202,10 @@ materials["archetype.state.async_command.json"] = {
     "forbidden": [
         "在 output 语义位放中途产物（output 仅到达 final state 时存在）",
         "直接改 context（immutable，仅 assign 更新）",
-        "断言未匹配事件会运行时报错（XState v5 现实是静默忽略+state.can() 为 false——非法组合的表达位是 transition contract 声明与 can() 守卫位）",
+        "断言未匹配事件会运行时报错（XState v5 现实是静默忽略+state.can() 为 false——非法组合的可检测位是 transition contract 声明与 can() 守卫预检，Owner 2026-09-04 裁定）",
     ],
     "x-research-anchors": {
-        "note": "【待 Owner 裁定·差异表 #7】PRD「Illegal Transition 必须可表达」在 XState v5（npm 5.32.6）无对应词形：未匹配/未启用事件=「no enabled transition → state does not change」静默忽略，state.can() 显式守卫为唯一查询位。本物料落 PRD 语义意图（非法组合经 transition contract 显式声明）+实现绑定注记 can() 守卫位；是否以治理层概念保留 Illegal Transition 词形待裁定。六概念词形与 guard 序列化命名推荐（reusability+visualization）均为 stately.ai 官方文档 2026-09-03 实抓",
+        "note": "【已裁定 2026-09-04·差异表 #7】Illegal Transition 不引入治理层词形：XState v5（npm 5.32.6）对未匹配/未启用事件按「no enabled transition → state does not change」静默忽略，state.can() 显式守卫为唯一预检位——PRD「非法组合必须可表达」由「可检测（transition contract 声明 + state.can() 守卫预检）」承载。六概念词形与 guard 序列化命名推荐（reusability+visualization）均为 stately.ai 官方文档 2026-09-03 实抓",
         "sources": [
             {"url": "https://stately.ai/docs/transitions", "fetched": FETCH},
             {"url": "https://stately.ai/docs/guards", "fetched": FETCH},
@@ -371,7 +371,7 @@ materials["archetype.frontend.feature_oriented.json"] = {
         "自造新层（FSD：层语义已标准化，不推荐新增）",
     ],
     "x-research-anchors": {
-        "note": "【差异表 #4 部分差异】FSD 现行 7 层（Processes deprecated→有效 6 层）、无独立 API 层（api 是 segment）、widgets 无 PRD 对应、app 层 PRD 未纳入——四行声明随物料落位；import rule 严格向下与 Public API「contract+gate」定位（与 PRD §19 public_api_required 同构）为 feature-sliced.design 官方文档（v3 站点）2026-09-03 实抓",
+        "note": "【已裁定 2026-09-04·差异表 #4】FSD v2 现行映射采纳（六有效层 + Processes deprecated + api 是 segment）：上述 defaults 四行声明即裁定正文——FSD 现行 7 层（Processes deprecated→有效 6 层）、无独立 API 层（api 是各层 segment）、widgets 无 PRD 对应层（optional 位）、app 层为 FSD v2 新增有效层；import rule 严格向下与 Public API「contract+gate」定位（与 PRD §19 public_api_required 同构）为 feature-sliced.design 官方文档（v3 站点）2026-09-03 实抓",
         "sources": [
             {"url": "https://feature-sliced.design/docs/reference/layers", "fetched": FETCH},
             {"url": "https://feature-sliced.design/docs/reference/public-api", "fetched": FETCH},
@@ -402,7 +402,8 @@ materials["archetype.frontend.modular.json"] = {
 }
 
 # ============================================================
-# FRONTEND_ARCHETYPE.ERROR_TAXONOMY（v0.6.1 §21 逐字九分型；layer=PATTERN）
+# FRONTEND_ARCHETYPE.ERROR_TAXONOMY（v0.6.1 §21 九分型 + Owner 2026-09-04 裁定
+# 补 CANCELED 第十分型=十分型闭包；layer=PATTERN）
 # ============================================================
 
 materials["archetype.frontend.error_taxonomy.json"] = {
@@ -410,10 +411,10 @@ materials["archetype.frontend.error_taxonomy.json"] = {
     "kind": "archetype",
     "layer": "PATTERN",
     "title_zh": "前端错误分类",
-    "summary_zh": "前端错误九分型逐字闭包（PRD §21）：每型绑定呈现/重试/遥测/用户话术四语义位；浏览器原生信号只够两分，细分映射责任在 HTTP Client 适配层。",
+    "summary_zh": "前端错误十分型闭包（PRD §21 九分型 + Owner 2026-09-04 裁定补 CANCELED 第十分型）：每型绑定呈现/重试/遥测/用户话术四语义位；浏览器原生信号只够两分，细分映射责任在 HTTP Client 适配层。",
     "semantic": {
-        "responsibility": "把运行时错误归类为九分型闭包，驱动呈现/重试/遥测/话术四列的确定性处置",
-        "when_to_use": "任何触发 HTTP/异步调用的页面组契约错误处置面——错误到分型的映射在 HTTP Client 适配层完成（WHATWG fetch 原生只给 TypeError 与 HTTP status 两分，§21 九分型的映射责任不在浏览器）",
+        "responsibility": "把运行时错误归类为十分型闭包，驱动呈现/重试/遥测/话术四列的确定性处置",
+        "when_to_use": "任何触发 HTTP/异步调用的页面组契约错误处置面——错误到分型的映射在 HTTP Client 适配层完成（WHATWG fetch 原生只给 TypeError 与 HTTP status 两分，十分型的映射责任不在浏览器）",
         "when_not_to_use": "非错误态的加载/空态呈现；后端错误信封字段结构本身（v0.6.1 §44 Error Archetype 承载 type/title/status/detail/instance 等成员）",
     },
     "composition": {"requires": [], "optional": [], "incompatible": []},
@@ -460,6 +461,12 @@ materials["archetype.frontend.error_taxonomy.json"] = {
             "telemetry": "timeout_event",
             "user_message": "请求超时，请重试",
         },
+        "CANCELED": {
+            "presentation_pattern": "cancelled_state_quiet_dismissal",
+            "retry_behavior": "never_retry_user_cancelled",
+            "telemetry": "cancel_event_aborted",
+            "user_message": "操作已取消",
+        },
         "OFFLINE": {
             "presentation_pattern": "offline_banner_persistent",
             "retry_behavior": "auto_resume_on_reconnect",
@@ -475,11 +482,13 @@ materials["archetype.frontend.error_taxonomy.json"] = {
     },
     "constraints": [
         "浏览器原生信号只够两分：WHATWG fetch 网络失败 reject TypeError、HTTP 错误状态不 reject（查 Response.status）——TIMEOUT/OFFLINE/AUTHENTICATION 等细分全部依赖 client 适配层信号（axios code/AbortSignal/navigator.onLine/status 映射）",
-        "九分型映射责任在 HTTP Client Archetype 层而非浏览器",
+        "十分型映射责任在 HTTP Client Archetype 层而非浏览器",
+        "CANCELED 第十分型（Owner 2026-09-04 裁定）：axios ERR_CANCELED / fetch AbortError / TanStack cancelQueries 三源业界共识——用户主动取消绝不自动重试，呈现为安静取消态而非错误横幅（九分型缺位会把取消误归 UNKNOWN/TRANSPORT）",
+        "429 归重试处置（Owner 2026-09-04 裁定注记）：ofetch 默认重试列表含 409/429 视作传输层瞬时错误——429 不归 CONFLICT 分型，按 retryable 瞬时处置；409 仍归 CONFLICT（语义张力如实登记）",
         "RFC 9457 about:blank（未给出更具体类型时的缺省）与 UNKNOWN 同构",
     ],
     "x-research-anchors": {
-        "note": "【待 Owner 裁定·差异表 #8 两项】①是否补 CANCELED 第十分型（axios ERR_CANCELED/fetch AbortError/TanStack cancelQueries 三处业界共识，retry 语义绝不重试——九分型缺位会把取消误归 UNKNOWN/TRANSPORT）②429 归属（ofetch 默认重试列表含 409/429 视作传输层瞬时错误，与 CONFLICT 语义有张力）——本物料保持九分型不扩，待裁定后走词汇表式修订。WHATWG fetch TypeError/RFC 9457 成员空间/axios error codes 全表/ofetch 重试列表为规范与官方文档 2026-09-03 实抓",
+        "note": "【已裁定 2026-09-04·差异表 #8 两项】①补 CANCELED 第十分型（九→十）：axios ERR_CANCELED/fetch AbortError/TanStack cancelQueries 三处业界共识，retry 语义绝不重试——已入 categories 且四列绑定齐全；②429 归重试处置：ofetch 默认重试列表含 409/429 视作传输层瞬时错误，429 不归 CONFLICT、按 retryable 瞬时处置注记入 constraints。WHATWG fetch TypeError/RFC 9457 成员空间/axios error codes 全表/ofetch 重试列表为规范与官方文档 2026-09-03 实抓",
         "sources": [
             {"url": "https://fetch.spec.whatwg.org/", "fetched": FETCH},
             {"url": "https://www.rfc-editor.org/rfc/rfc9457.txt", "fetched": FETCH},

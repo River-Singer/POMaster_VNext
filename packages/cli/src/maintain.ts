@@ -13,8 +13,8 @@
  * - pre-dev 链（--phase pre-dev）：八拍①②③薄编排——triage（规则桶，纯函数）→
  *   permit issue（kernel issuePermit 五件套台账，唯一写通道）→ context compile
  *   （kernel compileProjection，taskRef=change-or-task 命中许可通道派生 MUST 范围）。
- *   串既有能力、零新原语、零分支政策（triage 档位只呈现不裁决——不发明
- *   「MINIMAL 就跳过 permit」之类的政策，编排永远三步全走）。
+ *   串既有能力、零新原语、零分支政策（triage 档位只呈现不裁决——A1 裁定 2026-09-04
+ *   已实现为代码事实：档位不传投影、不进 permit 判卷，编排永远三步全走）。
  *
  * fail-closed：--ops 与 --phase 互斥且必给其一（静默无操作不是合法出口）；
  * --phase 词表外值（in-dev/post-dev）显式拒绝（P11 载体只有 pre-dev 链，其余拍由
@@ -472,15 +472,17 @@ async function runMaintainPreDev(
 
   // —— ③ context compile（kernel compileProjection；taskRef 命中 ② 签发许可的许可通道） ——
   // P0.5-1（PRD §5.3；裁决 8 ②）：链已持有的 applicability 输入传给投影——
-  // triage 档位（①产出）与 --capability 清单（与 ② permit 同源），零新原语。
+  // --capability 清单（与 ② permit 同源），零新原语。
   // 未提供 --capability 时该输入缺席（声明 capabilities 轴的条目按缺席显式排除）。
+  // A1 裁定（2026-09-04，vNext Batch 4 R1）：triage 档位不再传入投影 governanceProfile
+  // ——档位信息性呈现（①产出只进呈现视图），不参与 catalog applicability 判卷；
+  // 激活语义由 lane/taskRef/capability 既有机制承担。
   let projection: Projection;
   try {
     const store = await createStore(rootDir);
     projection = await compileProjection(store, {
       role,
       taskRef: changeOrTask,
-      governanceProfile: triage.profile,
       ...(input.capabilities !== undefined && input.capabilities.length > 0
         ? { capabilities: input.capabilities }
         : {}),

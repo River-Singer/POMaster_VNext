@@ -159,6 +159,36 @@ describe("catalog relock（漂移恢复键：漂移→relock→回绿）", () =>
     expect(readFileSync(lockPath, "utf8")).toBe(afterFirst);
   });
 
+  it("controlled_children 内扩展键保留（vNext Batch 4 R3 教训修复：note 是管辖面语义注记，重建 allowed/required 不得丢弃扩展键）", async () => {
+    const catalogRoot = trackTempCatalog();
+    const lockPath = join(catalogRoot, "catalog-lock.draft.json");
+    const lockBody = JSON.parse(readFileSync(lockPath, "utf8")) as {
+      controlled_children: Record<string, unknown>;
+    };
+    const note =
+      "catalog-lock 管辖面（vocab-lock PR-0001 catalog_layer_vocab 同段语义）：allowed=登记在册可存在；required=必须存在。新增 catalog 文件须同步 allowed+required 两处。扩展键保留回归锚 marker。";
+    // marker note 归一注入（剥离既有 note/清单键后重组——note 在前，repo lock 历史键序）。
+    const existing = lockBody.controlled_children;
+    const extras = Object.fromEntries(
+      Object.entries(existing).filter(([key]) => key !== "note" && key !== "allowed" && key !== "required"),
+    );
+    lockBody.controlled_children = { note, ...extras, ...(existing["allowed"] !== undefined ? { allowed: existing["allowed"] } : {}), ...(existing["required"] !== undefined ? { required: existing["required"] } : {}) };
+    writeFileSync(lockPath, `${JSON.stringify(lockBody, null, 2)}\n`, "utf8");
+
+    tamperArchetype(catalogRoot);
+    const relocked = await runCatalogRelock({ catalogRoot });
+    expect(relocked.ok).toBe(true);
+    expect(relocked.result.refreshed).toEqual([TAMPER_PATH]);
+
+    const after = JSON.parse(readFileSync(lockPath, "utf8")) as {
+      controlled_children: Record<string, unknown>;
+    };
+    expect(after.controlled_children["note"]).toBe(note);
+    // allowed/required 已按盘面重建，扩展键与清单键共存。
+    expect(after.controlled_children["allowed"]).toHaveLength(143);
+    expect(after.controlled_children["required"]).toHaveLength(143);
+  });
+
   it("收敛：新增物料 → added 含该路径且 entries/allowed/required 三方 143→144 对账绿；删除 → removed 且对账绿", async () => {
     const catalogRoot = trackTempCatalog();
     const probePath = "knowledge/knowledge.relock.probe.json";

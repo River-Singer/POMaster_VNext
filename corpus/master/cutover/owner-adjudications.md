@@ -79,3 +79,24 @@
 - **① 发布形态 = 单包 `pomaster`**：esbuild 把 kernel/gauntlet-lite/schemas 打进 CLI 单包，catalog+schema 资产随包分发，catalog 路径解析修复（`packages/kernel/src/catalog.ts:124` 的 `../../../catalog` 仓库布局相对路径在 npm 安装形态下断裂——主控侦察确认的发布前必修约束）；用户 `npm i -g pomaster` 一站式。无作用域名已核实可用（registry 404，2026-09-02 实测），无需建 org，1 次发布。
 - **② 版本与许可 = 0.1.0 + 保持双许可声明**：首发 0.1.0；license 字段 `PolyForm-Noncommercial-1.0.0`，包内注明商业使用需另行授权（COMMERCIAL_LICENSE.md 严格口径）。
 - **凭据边界**：npm granular token（90 天有效）暂存 `$HOME/.npm-token-pvnext`（600 权限，不入库不入 git，用后可删）；账号 `maotykase` 已 whoami 验证；官方 registry 直连可通（V2ray 代理备而未用）。
+
+## 裁决 11：Consolidated PRD 纠错映射 16 项裁定包（2026-09-04）
+
+- **决策渠道**：本会话 Owner 直答（AskUserQuestion，2026-09-04）。呈报件：`.trellis/tasks/09-04-pomaster-vnext-consolidated-prd/research/correction-mapping.md`（纠错清单 §1-§31 → PRD × POMaster_VNext 实盘映射，A→B→C→D→E 五组）。本条目是 vNext 仓内侧记（映射表为逐项真源；PRD §0.4 矩阵由 PRD-REV 落笔，本台账零重复正文）。
+- **① A1 治理档位 = 折中（选项 3）**：档位（MINIMAL/LIGHT/STANDARD）降为信息性输出——不进任何 gate/permit 判卷、不决定激活；激活语义由 context compile 既有机制（lane/role/capability applicability）承担。推论处置（vNext Batch 4 R1）：maintain 投影消费解除 + permit.governance_profile 复查（信息性申报位）+ config.yaml profile 保留人类信息性偏好 + TRIAGE_PROFILES 词轴保留标 informational（PR-0005/裁决 8② 不 supersede，仅判卷力解除）。triage 命令保留（信息性判档呈现）。
+- **② A2 wired/planned = 选项 A 正式批准单状态 wired**：目录接线状态=能力账面，不影响 governance verdict，激活由 activation_hint 承载；与 vocab.ts realization 轴 `wired` 词同源轴不同（文档注记区分）。
+- **③ A3 maintain 决策枚举 = 选项 1 PRD 向实盘对齐**：删「Maintain 八决策」叙述；实盘模型=apply（APPLIED/NO_CHANGE 二值）+ pre-dev 链（triage 信息性→permit→projection）+ 判卷=GovernanceErrorCode 码位表 + gate verdict 七态。纠错 §30.1「恢复 8 类」不采纳（前提不存在）。
+- **④ B2 三组物料差异（批次 2 落料已按保守默认 + 差异注记）**：①Illegal Transition 不引入治理层词形——XState v5 静默忽略 + state.can() 守卫预检，「必须可表达」由「可检测」承载；②FSD v2 现行映射采纳（六有效层 + Processes deprecated + api 是 segment）；③错误分类学补 CANCELED 第十分型（九→十，四列绑定随补）+ 429 归重试处置注记。随 vNext Batch 4 R3 生效（物料修订 + relock）。
+- **⑤ B3 宪法 §3 条款 6 强度 = warning-only 观测层**：维持实盘三层（authorityRef 非空闸 + doctor D20 事后探针 + gatekeeper 分身漂移观测呈报）；不建写路径硬闸批次。
+- **⑥ B4 宪法文档 = 不随 npm 包**：npm 包只带运行时产物；消费项目 constitution_source 引用指向开发仓；打包清单排除宪法（build stage 守卫，vNext Batch 4 R4 落地）。
+- **⑦ B5 播种源 = 列为移植批次目标**：旧资产（45FE+32BE+14 overlays+19 evidence specs）按纠错 §22 八分类语义分解后入 catalog/corpus 再播种；PRD §1/§10.2 双改写（短期如实标注「规划中」）；D-3「旧 Hard Spec 全播种」经移植批次兑现。
+- **⑧ B7 `--mode light` = 删除**：init 单一重入口（INIT_MODES 词表 + stripPomasterHooks/light 移除逻辑 + parseInitMode + doctor hint + 测试随删）；research --mode 六模式是另一轴不受影响。vNext Batch 4 R2 落地。
+- **⑨ C1 附带小裁定 ASSUMPTION = 并入 gate 词表**：question-gate 处置第六词形（DEFERABLE 判定后可联动登记）；与 §49.2 异常轴同词两轴，文档加区分注记（随 D1 接线批次改——已由 Batch 1 R1 落地）。
+- **⑩ C9 附带小裁定 OBS/ENVREC 回执落盘 = evidence/observations/**：新增分区（layout 25→26 目录+宪法同步+锁重算；已由 Batch 2 R6/C9 落地，layout 后随 D7 增至 29 目录）。
+- **⑪ D2 Source Authority = 补正交权威轴**：sources/index.yaml 新增 authoritative_for/non_authoritative_for；schema 轴 + 消费面（装配进 resolve/投影）；MasterGrid Case 为 constitutional regression 锚（负封条 + 正轴双层）——已由 Batch 1 R3 落地。
+- **⑫ D6 Evidence Spec = 建独立一等对象**：schema（要求面）+ 生命周期 + 消费面（closeout 判卷读 Spec→比对 Evidence）；acceptance.criterion→Spec 迁移映射在批次内定义；「挪证」缝随对象化收口——已由 Batch 2 R1/R3 落地。
+- **⑬ D7 context manifest = 最小闭环落盘**：.pomaster/state/contexts/ 落盘 + generated_at_seq/compiler 字段 + stale→recompile 检测（STALE_GROUNDING 词形启用）——已由 Batch 2 R2 落地。
+- **⑭ D8 分区词形 = 实现改词形对齐纠错 §15**：AUTHORITATIVE PROJECT STATE / REQUIRED POLICY / ADVISORY KNOWLEDGE / CATALOG / VERIFICATION 五分区；LAZY TOOLS 并入 CATALOG——已由 Batch 2 R3 落地。
+- **⑮ D15 Handoff = 扩九键对齐纠错 §24**：补 expected_outcome/completed_work/remaining_work 等九键；closed form 封条解除（词表+schema+测试+分母随改）——已由 Batch 2 R5 落地（十七键 §9A 形态）。
+- **⑯ D17 Catalog Lock = 接受现状语义**：锁定=内容寻址字节状态对账；升级=relock 显式 diff；npm 包版本即版本单元；「项目锁 v12 装 v16」按现状显式声明不可表达（零实现）。
+- **批次归属**：PRD-REV（文档）→ Batch 1（先修语义/接线，已落地 044e690）→ Batch 2（工件契约，已落地 e41b955）→ Batch 4（迁移清理：A1/B7/B2/B4/裁定入账/遗留壳登记）→ Batch 3（Human UX）→ Batch 5（CRC）→ Batch 6（播种移植）。

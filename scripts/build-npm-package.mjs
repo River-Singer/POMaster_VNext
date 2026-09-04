@@ -288,6 +288,20 @@ const stagedFiles = walkFiles(STAGE_PKG);
 const totalBytes = stagedFiles.reduce((sum, file) => sum + statSync(file).size, 0);
 const bundleBytes = statSync(STAGE_BIN).size;
 
+// B4 裁定（Owner 2026-09-04）stage 守卫：宪法文档本体不随 npm 包分发——目录宪法
+// 文档（dot-pomaster-directory-constitution.md）只住开发仓治理档案，npm 包只带
+// 运行时产物（dist bundle + catalog 资产 + 法务文档）。stage 是显式白名单制
+// （LEGAL_COPIES + catalog/），宪法文档本就不在清单内；本守卫是防未来扩清单时
+// 误纳入的回归锚（stage 出现宪法文档词形即 fail，禁静默放行）。
+const constitutionStrays = stagedFiles
+  .map((file) => file.split("\\").join("/"))
+  .filter((file) => file.includes("dot-pomaster-directory-constitution"));
+if (constitutionStrays.length > 0) {
+  fail(
+    `B4 裁定（2026-09-04）违例：宪法文档本体不得随 npm 包分发: ${constitutionStrays.join(", ")}`,
+  );
+}
+
 console.log("[build-npm-package] staging 构建完成");
 console.log(`  stage:            ${STAGE_PKG}`);
 console.log(`  files:            ${stagedFiles.length}`);

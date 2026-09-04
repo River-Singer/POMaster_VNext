@@ -14,8 +14,8 @@
 import { describe, expect, it } from "vitest";
 import {
   FORBIDDEN_SCRATCHPAD_FILENAMES,
-  INIT_MODES,
   LAYOUT_DIRECTORIES,
+  LAYOUT_NOTES,
   LAYOUT_SCHEMA,
   LAYOUT_STATUSES,
   LAYOUT_STATUS_WIRED,
@@ -153,11 +153,15 @@ describe("layout 预铺清单守卫（宪法 §2/§24/§34）", () => {
     }
   });
 
-  it("清单与模式正交：宪法 §2 全树不分模式（INIT_MODES 词表在册，mode 只影响注入层）", () => {
-    expect(INIT_MODES).toEqual(["heavy", "light"]);
-    // 目录清单不携带任何模式字段——树对所有 mode 同一清单（结构级钉住）。
+  it("清单与入口形态正交：宪法 §2 全树与入口形态/平台选择无关（目录条目无 mode 字段；无模式注记在场）", () => {
+    // B7 裁定 2026-09-04：init 单一重入口（历史 --mode 旗标已删除）——目录清单
+    // 结构级钉住：条目不携带任何模式/形态字段。
     for (const spec of LAYOUT_DIRECTORIES) {
       expect(Object.keys(spec)).not.toContain("mode");
     }
+    // LAYOUT_NOTES 保留「目录树与入口形态无关」现状注记（历史裁定记录陈述化）。
+    expect(
+      LAYOUT_NOTES.some((note) => note.includes("目录树与入口形态无关")),
+    ).toBe(true);
   });
 });

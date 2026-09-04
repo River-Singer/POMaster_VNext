@@ -116,7 +116,9 @@ export function classifyKernelError(err: unknown): CliError {
   };
 }
 
-/** context compile/explain 共享的结构化 applicability 输入（P0.5-1；全 optional 零破坏）。 */
+/** context compile/explain 共享的结构化 applicability 输入（P0.5-1；全 optional 零破坏）。
+ * A1 裁定（2026-09-04，vNext Batch 4 R1）：治理档位不设输入位——档位信息性，
+ * 不参与 catalog applicability 判卷。 */
 export interface ContextApplicabilityInputs {
   /** CHANGE.* / TASK.* 引用（透传 taskRef——激活许可通道）。 */
   readonly change?: string;
@@ -124,8 +126,6 @@ export interface ContextApplicabilityInputs {
   readonly capabilities?: readonly string[];
   /** ∈ CATALOG_CHANGE_CLASS_VALUES（kernel 侧 fail-closed 校验）。 */
   readonly changeClass?: string;
-  /** ∈ CATALOG_GOVERNANCE_PROFILE_VALUES（O2 对齐 TRIAGE_PROFILES+STRICT）。 */
-  readonly governanceProfile?: string;
 }
 
 /** applicability 输入 → ProjectionRequest 增量字段（缺席字段零键——禁 undefined 值键污染）。 */
@@ -139,9 +139,6 @@ function applicabilityRequestFields(
       ? { capabilities: inputs.capabilities }
       : {}),
     ...(inputs.changeClass !== undefined ? { changeClass: inputs.changeClass } : {}),
-    ...(inputs.governanceProfile !== undefined
-      ? { governanceProfile: inputs.governanceProfile }
-      : {}),
   };
 }
 
@@ -150,7 +147,6 @@ export interface ApplicabilityInputsView {
   readonly change: string | null;
   readonly capabilities: readonly string[];
   readonly change_class: string | null;
-  readonly governance_profile: string | null;
 }
 
 function applicabilityViewOf(inputs?: ContextApplicabilityInputs): ApplicabilityInputsView {
@@ -158,7 +154,6 @@ function applicabilityViewOf(inputs?: ContextApplicabilityInputs): Applicability
     change: inputs?.change ?? null,
     capabilities: [...(inputs?.capabilities ?? [])],
     change_class: inputs?.changeClass ?? null,
-    governance_profile: inputs?.governanceProfile ?? null,
   };
 }
 
@@ -168,8 +163,7 @@ function hasAnyApplicabilityInput(inputs?: ContextApplicabilityInputs): boolean 
     inputs !== undefined &&
     (inputs.change !== undefined ||
       (inputs.capabilities !== undefined && inputs.capabilities.length > 0) ||
-      inputs.changeClass !== undefined ||
-      inputs.governanceProfile !== undefined)
+      inputs.changeClass !== undefined)
   );
 }
 
@@ -182,9 +176,6 @@ function applicabilityInputsLine(inputs?: ContextApplicabilityInputs): string | 
     parts.push(`capabilities=${inputs.capabilities.join("/")}`);
   }
   if (inputs?.changeClass !== undefined) parts.push(`change_class=${inputs.changeClass}`);
-  if (inputs?.governanceProfile !== undefined) {
-    parts.push(`profile=${inputs.governanceProfile}`);
-  }
   return `> applicability: ${parts.join("；")}`;
 }
 

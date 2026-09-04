@@ -1,10 +1,11 @@
 /**
- * heavy-entry.ts —— 重入口交付面（D13 2026-09-03 修订：重入口默认 + `--mode light` 显式退回）。
+ * heavy-entry.ts —— 重入口交付面（D13 2026-09-03 修订：重入口默认；B7 裁定 2026-09-04：
+ * init 单一重入口，早期 `--mode` 双模式旗标已删除）。
  *
- * 修订前的 D13 =「静态轻入口、无 hook 注入」；Owner 裁决（2026-09-03，任务
- * 09-03-vnext-heavy-entry）将其翻转为「重入口默认」：init 无旗标/交互确认/--json 均
- * 生成 skills 库 + hook 注入 + 加厚平台 rules；`--mode light` 是显式退回形态（可逆：
- * 对已重入口项目执行时按平台清单移除本包安装物并重写入口文件回轻形态）。
+ * D13 原裁定 =「重入口默认」：init 无旗标/交互确认/--json 均生成 skills 库 + hook 注入
+ * + 加厚平台 rules。B7 裁定（Owner 2026-09-04，vNext Batch 4 R2）删除轻入口退回形态
+ * ——`--mode` flag、轻入口模板、重→轻移除逻辑（stripPomasterHooks）全部移除，init
+ * 单一重入口；`--platforms none` 仍可选（零平台产物形态，入口文件落最小指针正文）。
  * 零运行时第三方依赖的 D13 原 facets 不变——hook 只是 shell form 调 `pomaster` 自身。
  *
  * 三条设计铁律（研究件收敛，research/agents-skills-spec.md + claude-hooks-reference.md）：
@@ -22,20 +23,14 @@
  */
 
 // ============================================================
-// 模式词表与入口模式标记
+// 入口模式标记
 // ============================================================
 
-/** init 入口模式词表闭包（--mode 词形；词表外 → SCHEMA_INVALID fail-closed）。 */
-export const INIT_MODES = ["heavy", "light"] as const;
-
-export type InitMode = (typeof INIT_MODES)[number];
-
 /**
- * 入口模式机读标记（AGENTS.md 首两行之一；doctor 探针据此判定「应装未装」而
- * 不误伤 --mode light 显式退回形态——标记缺席视同 light，不猜测）。
+ * 入口模式机读标记（AGENTS.md 首两行之一；doctor 探针据此判定重入口安装物「应装
+ * 未装」——标记缺席 = 未安装/最小形态，指路重跑 init，不猜测）。
  */
 export const ENTRY_MODE_HEAVY_MARKER = "<!-- pomaster:entry-mode:heavy -->";
-export const ENTRY_MODE_LIGHT_MARKER = "<!-- pomaster:entry-mode:light -->";
 
 /** claude 平台 hook 注册文件（项目级，可提交仓库——团队共享重入口是合法形态）。 */
 export const CLAUDE_SETTINGS_RELATIVE = ".claude/settings.json";
@@ -162,75 +157,6 @@ export function mergePomasterHooks(existingText: string | null): HooksMergeOutco
   };
 }
 
-/** 剥离结果词形：changed=true 时 nextText 为剥除后的写盘文本；error = fail-closed 不动文件。 */
-export type HooksStripOutcome =
-  | { readonly changed: true; readonly nextText: string }
-  | { readonly changed: false }
-  | { readonly error: string };
-
-/**
- * 读-剥离-写回（纯函数；--mode light 重→轻可逆的 hooks 半边）：按 command 词形
- * 移除本包 handler——组内剥除后为空则丢组、事件数组为空则丢事件键、hooks 对象
- * 为空则丢 hooks 键（恢复安装前形态）；其余内容逐字节保留。
- */
-export function stripPomasterHooks(existingText: string): HooksStripOutcome {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(existingText);
-  } catch (err) {
-    return { error: `不是合法 JSON：${(err as Error).message}` };
-  }
-  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
-    return { error: "顶层不是 JSON 对象" };
-  }
-  const record = parsed as Record<string, unknown>;
-  const rawHooks = record.hooks;
-  if (rawHooks === undefined) return { changed: false };
-  if (rawHooks === null || typeof rawHooks !== "object" || Array.isArray(rawHooks)) {
-    return { error: "hooks 键不是对象" };
-  }
-  let changed = false;
-  const nextHooks: Record<string, unknown> = {};
-  for (const [event, raw] of Object.entries(rawHooks as Record<string, unknown>)) {
-    const ownCommands = POMASTER_HOOK_EVENT_COMMANDS
-      .filter((entry) => entry.event === event)
-      .map((entry) => entry.command);
-    if (!Array.isArray(raw) || ownCommands.length === 0) {
-      nextHooks[event] = raw;
-      continue;
-    }
-    const nextGroups: unknown[] = [];
-    for (const group of raw as unknown[]) {
-      if (group === null || typeof group !== "object" || Array.isArray(group)) {
-        nextGroups.push(group);
-        continue;
-      }
-      const handlers = (group as Record<string, unknown>).hooks;
-      if (!Array.isArray(handlers)) {
-        nextGroups.push(group);
-        continue;
-      }
-      const kept = (handlers as unknown[]).filter(
-        (handler) =>
-          !(
-            handler !== null &&
-            typeof handler === "object" &&
-            ownCommands.includes((handler as Record<string, unknown>).command as string)
-          ),
-      );
-      if (kept.length !== (handlers as unknown[]).length) changed = true;
-      if (kept.length > 0) {
-        nextGroups.push({ ...(group as Record<string, unknown>), hooks: kept });
-      }
-    }
-    if (nextGroups.length > 0) nextHooks[event] = nextGroups;
-  }
-  if (!changed) return { changed: false };
-  if (Object.keys(nextHooks).length > 0) record.hooks = nextHooks;
-  else delete record.hooks;
-  return { changed: true, nextText: `${JSON.stringify(record, null, 2)}\n` };
-}
-
 // ============================================================
 // Skill 库（15 份 × 2 镜像；frontmatter 标准公共分母 name+description）
 // ============================================================
@@ -322,7 +248,7 @@ const SKILL_SOURCE_LINES: readonly string[] = [
   "## 单一事实源",
   "",
   "本卡片与 `pomaster --help` 对账（init 钉版测试防漂移）；机读输出一律走 `--json` 信封（§45）。",
-  "本文件由 `pomaster init` 生成（重入口 skills 库；`--mode light` 移除）。",
+  "本文件由 `pomaster init` 生成（重入口 skills 库；重跑 init 即修复/重建）。",
   "",
   "<!-- pomaster:generated -->",
 ];

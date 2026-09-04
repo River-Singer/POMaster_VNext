@@ -272,16 +272,17 @@ export async function probePlaywrightMcp(
 }
 
 // ============================================================
-// 重入口安装物探针（D13 2026-09-03 修订：重入口默认 + --mode light 显式退回）
+// 重入口安装物探针（D13 2026-09-03 修订：重入口默认；B7 裁定 2026-09-04：init 单一
+// 重入口——hooks/skills 未装即指路重跑 init）
 // ============================================================
 
 export const HEAVY_ENTRY_HOOKS_PROBE = "heavy_entry_hooks";
 export const HEAVY_ENTRY_SKILLS_PROBE = "heavy_entry_skills";
 
-/** 入口模式三态（AGENTS.md 生成标记 + 入口模式标记机读判定；标记缺席视同 light，不猜测）。 */
-export type EntryModeState = "not-installed" | "light" | "heavy";
+/** 入口形态二态（AGENTS.md 生成标记 + 重入口安装标记机读判定；标记缺席 = 未安装/最小形态，不猜测）。 */
+export type EntryModeState = "not-installed" | "heavy";
 
-/** 共享实现（probeMcpServerConfigured 先例）：入口模式读取一次，hooks/skills 两探针共用。 */
+/** 共享实现（probeMcpServerConfigured 先例）：入口形态读取一次，hooks/skills 两探针共用。 */
 async function readEntryMode(rootDir: string): Promise<EntryModeState> {
   let text: string;
   try {
@@ -290,7 +291,7 @@ async function readEntryMode(rootDir: string): Promise<EntryModeState> {
     return "not-installed";
   }
   if (!text.includes(GENERATED_MARKER)) return "not-installed";
-  return text.includes(ENTRY_MODE_HEAVY_MARKER) ? "heavy" : "light";
+  return text.includes(ENTRY_MODE_HEAVY_MARKER) ? "heavy" : "not-installed";
 }
 
 async function readTextOrNull(absolute: string): Promise<string | null> {
@@ -303,10 +304,10 @@ async function readTextOrNull(absolute: string): Promise<string | null> {
 
 /**
  * 重入口安装物探测（hooks 注册态 + skills 双镜像在位/逐字节一致；幂等可验——
- * init 重跑零写入即本探针持续 READY）。探针按入口模式判「应装未装」而不一刀切：
- * - not-installed → MISSING_CONFIGURATION（带 init 路标）；
- * - light → READY（显式退回形态，hooks/skills 未安装符合预期——doctor 不把显式
- *   opt-out 报成缺陷）；
+ * init 重跑零写入即本探针持续 READY）。探针按入口形态判「应装未装」而不一刀切：
+ * - not-installed（无 AGENTS.md / 无重入口安装标记——含历史已删除形态的存量标记）→
+ *   MISSING_CONFIGURATION（带 init 路标：重入口为默认，hooks/skills 未装直接指路
+ *   重跑 init——B7 裁定 2026-09-04）；
  * - heavy → hooks：settings.json 在座 + 两条注册项在场 = READY，文件缺失/注册项缺失
  *   = MISSING_CONFIGURATION，坏 JSON/结构不合 = DEFECT（坏配置会被 harness 整体跳过、
  *   hooks 静默失效）；skills：15 份 × 双镜像全在且逐字节一致 = READY，任一缺失 =
@@ -318,35 +319,19 @@ export async function probeHeavyEntryInstall(
 ): Promise<readonly [DoctorProbe, DoctorProbe]> {
   const mode = await readEntryMode(rootDir);
   if (mode === "not-installed") {
-    const detail = `no pomaster entry at ${toPosix(AGENTS_MD_RELATIVE)}`;
+    const detail = `no pomaster heavy entry at ${toPosix(AGENTS_MD_RELATIVE)}`;
     return [
       {
         probe: HEAVY_ENTRY_HOOKS_PROBE,
         status: "MISSING_CONFIGURATION",
         detail: `${detail}; heavy-entry hooks not installed`,
-        hint: "run: pomaster init（重入口默认：skills 库 + hooks 注入）；--mode light 显式退回轻入口。",
+        hint: "run: pomaster init（重入口默认：skills 库 + hooks 注入）。",
       },
       {
         probe: HEAVY_ENTRY_SKILLS_PROBE,
         status: "MISSING_CONFIGURATION",
         detail: `${detail}; heavy-entry skills not installed`,
-        hint: "run: pomaster init（重入口默认）；--mode light 显式退回轻入口。",
-      },
-    ];
-  }
-  if (mode === "light") {
-    return [
-      {
-        probe: HEAVY_ENTRY_HOOKS_PROBE,
-        status: "READY",
-        detail: "light 模式（--mode light 显式退回）：hooks 未安装（符合预期）",
-        hint: null,
-      },
-      {
-        probe: HEAVY_ENTRY_SKILLS_PROBE,
-        status: "READY",
-        detail: "light 模式（--mode light 显式退回）：skills 镜像未安装（符合预期）",
-        hint: null,
+        hint: "run: pomaster init（重入口默认）。",
       },
     ];
   }
@@ -673,9 +658,10 @@ async function runGauntletProbes(
  *    确定性腿探针并存——BROWSER 双通道各自显式呈现；P-v06 批次 2.6 起 playwright MCP
  *    探针同款四态 fail-closed——双 MCP 在呈现面各自缺席显式，禁静默）。
  * 3.5) heavy_entry_hooks / heavy_entry_skills —— 重入口安装物探针（D13 2026-09-03
- *    修订：重入口默认 + --mode light 显式退回；hooks 注册态按 command 词形核对、
- *    skills 15×2 双镜像逐字节一致核对；按入口模式判「应装未装」，light=READY 符合
- *    预期不误报缺陷；共享 readEntryMode 单次读取——probeMcpServerConfigured 先例）。
+ *    修订：重入口默认；B7 裁定 2026-09-04 init 单一重入口——hooks 注册态按 command
+ *    词形核对、skills 15×2 双镜像逐字节一致核对；重入口安装标记缺席 = 未安装 →
+ *    MISSING_CONFIGURATION 指路重跑 init；共享 readEntryMode 单次读取——
+ *    probeMcpServerConfigured 先例）。
  * 4) sensor_capability_catalog —— P1-5 catalog/sensors/ 载入（裁决 8 D7=A loader+doctor
  *    联结；availability_probe 声明式引用→既有行名解析，禁二次探测；catalog 缺席
  *    MISSING_CONFIGURATION / 物料坏形 DEFECT——坏物料 ≠ catalog 缺席，fail-closed 显式）。
@@ -792,9 +778,9 @@ export async function runDoctor(
   probes.push(await probeChromeDevtoolsMcp(rootDir));
   probes.push(await probePlaywrightMcp(rootDir));
 
-  // 3.5) 重入口安装物探针（D13 2026-09-03 修订：重入口默认 + --mode light 显式退回）：
-  //      hooks 注册态 + skills 双镜像一致态；按入口模式判「应装未装」（light 显式
-  //      退回 = READY 符合预期，不把 opt-out 报成缺陷）。
+  // 3.5) 重入口安装物探针（D13 2026-09-03 修订：重入口默认；B7 裁定 2026-09-04
+  //      init 单一重入口）：hooks 注册态 + skills 双镜像一致态；重入口安装标记缺席
+  //      = 未安装 → MISSING_CONFIGURATION 指路重跑 init。
   probes.push(...(await probeHeavyEntryInstall(rootDir)));
 
   // 4) P1-5 Sensor Capability Catalog（裁决 8 D7=A：loader + doctor 联结）。

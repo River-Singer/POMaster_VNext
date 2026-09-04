@@ -6,12 +6,11 @@
  *                   平台适配器（F1：--platforms claude,codex,cursor,qoder / none；
  *                   TTY 人读模式无旗标时出复选清单交互——◉/◯ 空格勾选 / ↑↓ 移动 /
  *                   回车确认，raw 启用失败降级编号输入；幂等 NO_CHANGE）。
- *                   入口模式（D13 2026-09-03 修订）：重入口默认（--mode heavy 缺省）=
- *                   skills 命令卡库双镜像（.agents/skills/ 通用层 + .claude/skills/）
- *                   + claude hooks 注册（settings.json 读-合并-写回：SessionStart →
- *                   session 速览、UserPromptSubmit → alerts 轻提醒）+ cursor/qoder
- *                   加厚 rules；--mode light 显式退回轻入口（重→轻可逆：按平台清单
- *                   移除重入口安装物）
+ *                   入口形态（D13 2026-09-03 修订 + B7 裁定 2026-09-04：单一重入口
+ *                   无模式旗标）：skills 命令卡库双镜像（.agents/skills/ 通用层 +
+ *                   .claude/skills/）+ claude hooks 注册（settings.json 读-合并-写回：
+ *                   SessionStart → session 速览、UserPromptSubmit → alerts 轻提醒）+
+ *                   cursor/qoder 加厚 rules；--platforms none = 零平台产物最小形态
  * - update          CLI 自更新（F2）：缺省 --check（npm view semver 比对，registry
  *                   不可达 fail-closed 显式呈现禁假绿）；--yes = npm install -g
  *                   pomaster@latest（stdio inherit；失败透传 exit 1）
@@ -259,7 +258,6 @@ export {
   runChecklistPrompt,
   INIT_PLATFORMS,
   CHECKLIST_KEYS,
-  parseInitMode,
   parsePlatformSelection,
   renderPlatformMenu,
   renderChecklistFrame,
@@ -269,7 +267,6 @@ export type {
   InitFileReport,
   InitFileAction,
   InitOptions,
-  InitModeParse,
   InitPlatform,
   InitPlatformAction,
   InitPlatformReport,
@@ -305,9 +302,7 @@ export type {
 export { runSessionOverview, SESSION_OUTPUT_HARD_CAP } from "./session.js";
 export type { SessionOverviewResult } from "./session.js";
 export {
-  INIT_MODES,
   ENTRY_MODE_HEAVY_MARKER,
-  ENTRY_MODE_LIGHT_MARKER,
   CLAUDE_SETTINGS_RELATIVE,
   POMASTER_HOOK_COMMANDS,
   POMASTER_HOOK_EVENT_COMMANDS,
@@ -316,15 +311,12 @@ export {
   COMMAND_PANORAMA_LINES,
   renderSkillMd,
   mergePomasterHooks,
-  stripPomasterHooks,
 } from "./heavy-entry.js";
 export type {
-  InitMode,
   SkillSpec,
   HookHandlerSpec,
   HookMatcherGroup,
   HooksMergeOutcome,
-  HooksStripOutcome,
 } from "./heavy-entry.js";
 export {
   FORBIDDEN_SCRATCHPAD_FILENAMES,
@@ -791,30 +783,23 @@ export function createProgram(
   program
     .command("init")
     .description(
-      "创建 .pomaster/ 最小骨架 + AGENTS.md 唯一事实源 + 平台适配器（F1：--platforms 逗号列表 claude,codex,cursor,qoder / none；幂等；重复执行 NO_CHANGE）；重入口默认（skills 库双镜像 + claude hooks 注册 + 加厚 rules），--mode light 显式退回轻入口（重→轻可逆）",
+      "创建 .pomaster/ 最小骨架 + AGENTS.md 唯一事实源 + 平台适配器（F1：--platforms 逗号列表 claude,codex,cursor,qoder / none；幂等；重复执行 NO_CHANGE）；重入口默认（skills 库双镜像 + claude hooks 注册 + 加厚 rules）",
     )
     .option(
       "--platforms <platforms>",
       "平台适配器逗号列表（claude|codex|cursor|qoder|none；缺省 claude；TTY 人读模式无旗标时出复选清单交互）",
     )
-    .option(
-      "--mode <mode>",
-      "入口模式（heavy=重入口默认：skills 库 + hooks 注入 + 加厚 rules；light=显式退回轻入口；缺省 heavy）",
-    )
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (_opts, command) => {
       const platformsArg = command.opts().platforms as string | undefined;
-      const modeArg = command.opts().mode as string | undefined;
       const asJson = command.opts().json === true;
       // F1 TTY 交互面：仅人读模式 + 未带旗标时启用（--json / 显式旗标恒走确定性
       // 路径——机读通道禁交互阻塞）。内部带降级链：复选清单 raw 失败 → 编号输入。
-      // 交互面无 mode 提问（重入口是默认；light 走显式旗标）。
       const outcome =
         platformsArg === undefined && !asJson && process.stdin.isTTY === true
           ? await initInteractiveOutcome(resolveDir(command), io)
           : await runInit(resolveDir(command), {
               platforms: platformsArg,
-              mode: modeArg,
             });
       record({ command: "init", outcome, asJson });
     });
@@ -982,7 +967,6 @@ export function createProgram(
       [],
     )
     .option("--change-class <class>", "变更类目（∈ CATALOG_CHANGE_CLASS_VALUES，vocab-pr-0005 词轴）")
-    .option("--profile <profile>", "治理档位（∈ CATALOG_GOVERNANCE_PROFILE_VALUES；对齐 triage+STRICT）")
     .option("--check", "纯读比对现盘 manifest 呈现 stale 状态（FRESH/STALE_GROUNDING/ABSENT），零写入")
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (opts, command) => {
@@ -992,7 +976,6 @@ export function createProgram(
           ? { capabilities: opts.capability as string[] }
           : {}),
         ...(opts.changeClass !== undefined ? { changeClass: opts.changeClass as string } : {}),
-        ...(opts.profile !== undefined ? { governanceProfile: opts.profile as string } : {}),
       }, { check: opts.check === true });
       record({
         command: "context compile",
@@ -1017,7 +1000,6 @@ export function createProgram(
       [],
     )
     .option("--change-class <class>", "变更类目（∈ CATALOG_CHANGE_CLASS_VALUES，vocab-pr-0005 词轴）")
-    .option("--profile <profile>", "治理档位（∈ CATALOG_GOVERNANCE_PROFILE_VALUES；对齐 triage+STRICT）")
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (opts, command) => {
       const outcome = await runContextExplain(resolveDir(command), opts.role, undefined, {
@@ -1026,7 +1008,6 @@ export function createProgram(
           ? { capabilities: opts.capability as string[] }
           : {}),
         ...(opts.changeClass !== undefined ? { changeClass: opts.changeClass as string } : {}),
-        ...(opts.profile !== undefined ? { governanceProfile: opts.profile as string } : {}),
       });
       record({
         command: "context explain",

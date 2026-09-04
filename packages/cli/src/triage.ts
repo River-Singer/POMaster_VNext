@@ -6,6 +6,9 @@
  * - design-synthesis-decisions.md C1/C9：规则桶 + triage 结果 TTL 168h；
  * - 跨线共识 2：四态/缺席显式哲学贯穿 gate 与 triage 两侧——Triage 自己也不许报绿，
  *   判定必附「缺席了哪些信号」（absent_signals）。
+ * - A1 裁定（Owner 2026-09-04，vNext Batch 4 R1）：判档结果为**信息性呈现**——
+ *   不进任何 gate/permit 判卷、不决定激活；激活语义由 context compile 既有机制
+ *   （lane/role/capability applicability）承担。triage 命令保留（信息性判档呈现）。
  *
  * 词表纪律：profile 档位与证据级不在 vocab-lock 管辖内（它们是 Router 层局部词），
  * 词形镜像 thread-C 五值证据级（本 P0 CLI 只暴露其中三值）与 PRD §7.1/thread-C 档位；
@@ -17,6 +20,8 @@
 /**
  * 治理档位（x-vocab-source: PRD §7.1 + thread-C §3.2；词表外局部词 → TODO(vocab-pr)）。
  * MINIMAL=几乎感觉不到治理；LIGHT=默认兜底；STANDARD=跨域/契约面升级档。
+ * A1 裁定（2026-09-04）：本轴降为信息性呈现词形——不进任何 gate/permit 判卷、
+ * 不决定激活；TRIAGE_PROFILES 词形保留。
  */
 export const TRIAGE_PROFILES = ["MINIMAL", "LIGHT", "STANDARD"] as const;
 export type TriageProfile = (typeof TRIAGE_PROFILES)[number];

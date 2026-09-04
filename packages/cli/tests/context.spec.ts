@@ -12,7 +12,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CatalogProjectionExplanation, Projection, Store } from "@pomaster/kernel";
-import { runInit, runContextCompile, runContextExplain } from "@pomaster/cli";
+import { runCli, runInit, runContextCompile, runContextExplain } from "@pomaster/cli";
 
 let dir: string;
 
@@ -242,7 +242,7 @@ describe("context compile 转调 kernel（注入 fake）", () => {
 // ============================================================
 
 describe("context compile applicability 输入（P0.5-1）", () => {
-  it("inputs 透传 kernel（change→taskRef / capabilities / changeClass / governanceProfile）", async () => {
+  it("inputs 透传 kernel（change→taskRef / capabilities / changeClass；A1 裁定后无档位输入位）", async () => {
     await runInit(dir);
     const kernel = fakeKernel(fakeProjection());
     const outcome = await runContextCompile(
@@ -253,7 +253,6 @@ describe("context compile applicability 输入（P0.5-1）", () => {
         change: "CHANGE.C0042",
         capabilities: ["CAPABILITY.PRESENTATION"],
         changeClass: "PRESENTATION_CHANGE",
-        governanceProfile: "MINIMAL",
       },
     );
     expect(outcome.ok).toBe(true);
@@ -262,14 +261,12 @@ describe("context compile applicability 输入（P0.5-1）", () => {
       taskRef: "CHANGE.C0042",
       capabilities: ["CAPABILITY.PRESENTATION"],
       changeClass: "PRESENTATION_CHANGE",
-      governanceProfile: "MINIMAL",
     });
     // 输入回显（机读面 snake_case；缺席显式）。
     expect(outcome.result.applicability).toEqual({
       change: "CHANGE.C0042",
       capabilities: ["CAPABILITY.PRESENTATION"],
       change_class: "PRESENTATION_CHANGE",
-      governance_profile: "MINIMAL",
     });
   });
 
@@ -298,6 +295,25 @@ describe("context compile applicability 输入（P0.5-1）", () => {
     expect(outcome.errors[0]?.code).toBe("KERNEL_ERROR");
     expect(outcome.errors[0]?.message).toContain("changeClass 词表外");
   });
+
+  it("CLI 面 --profile 输入位已删（A1 裁定 vNext Batch 4 R1）→ 未知 option 拒绝 exit 1（UNEXPECTED_ERROR 信封）", async () => {
+    await runInit(dir);
+    const out: string[] = [];
+    const err: string[] = [];
+    const code = await runCli(
+      ["--dir", dir, "context", "compile", "--role", "frontend", "--profile", "MINIMAL", "--json"],
+      {
+        stdout: (line) => out.push(line),
+        stderr: (line) => err.push(line),
+      },
+    );
+    expect(code).toBe(1);
+    expect(JSON.parse(out.join("\n"))).toMatchObject({
+      ok: false,
+      errors: [{ code: "UNEXPECTED_ERROR" }],
+    });
+    expect(err.join("\n")).toContain("unknown option '--profile'");
+  });
 });
 
 describe("context explain（P0.5-1 决策记录面；PRD §5.4）", () => {
@@ -308,7 +324,6 @@ describe("context explain（P0.5-1 决策记录面；PRD §5.4）", () => {
         taskRef: null,
         capabilities: ["CAPABILITY.PRESENTATION"],
         changeClass: null,
-        governanceProfile: null,
       },
       decisions: [
         {

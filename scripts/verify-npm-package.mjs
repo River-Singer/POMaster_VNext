@@ -116,6 +116,13 @@ const strays = packedPaths.filter(
 );
 assert(strays.length === 0, "无白名单外杂物", strays.join(", "));
 
+// 1.4.1 B4 裁定（Owner 2026-09-04）：宪法文档本体不得出现在 tarball——只住开发仓
+//      治理档案（stage 白名单本不含；本断言防未来扩清单时回归）。
+const constitutionLeak = packedPaths.filter((file) =>
+  file.includes("dot-pomaster-directory-constitution"),
+);
+assert(constitutionLeak.length === 0, "tarball 无宪法文档本体（B4）", constitutionLeak.join(", "));
+
 // 1.5 零 dependencies + 可发布形态（Owner 裁决 10）。
 const stageManifest = JSON.parse(readFileSync(join(STAGE_PKG, "package.json"), "utf8"));
 const forbiddenFields = ["dependencies", "peerDependencies", "optionalDependencies", "devDependencies"];

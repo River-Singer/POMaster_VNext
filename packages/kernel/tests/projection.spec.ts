@@ -531,27 +531,34 @@ describe("compileProjection 结构化 applicability（P0.5-1 确定性过滤）"
     ).toContain("POLICY.WEB.STYLE.OWNERSHIP_MATRIX");
   });
 
-  it("governance_profile 维度：STRICT-only 条目在 MINIMAL 下排除、STRICT 下 include（O2 词形）", async () => {
+  it("governance_profile 轴判卷力解除（A1 裁定 2026-09-04）：声明该轴的条目不再因档位排除，决策面以 informational 注记披露", async () => {
     const catalogRoot = makeTempCatalog();
     annotate(catalogRoot, "policies/policy.web.arch.public_api_barrel.json", {
       governance_profiles: ["STRICT"],
     });
-    const minimal = await compileProjection(
+    // A1：档位信息性——不带档位输入（请求面已无该输入位），声明 governance_profiles
+    // 的条目按其余轴判定（本条目 lanes 未声明 → lane 回退命中）→ include。
+    const projection = await compileProjection(
       store,
-      { role: "frontend", governanceProfile: "MINIMAL" },
+      { role: "frontend" },
       { catalogRoot },
     );
     expect(
-      minimal.manifest.catalogEntries.map((entry) => entry.ref),
-    ).not.toContain("POLICY.WEB.ARCH.PUBLIC_API_BARREL");
-    const strict = await compileProjection(
-      store,
-      { role: "frontend", governanceProfile: "STRICT" },
-      { catalogRoot },
-    );
-    expect(
-      strict.manifest.catalogEntries.map((entry) => entry.ref),
+      projection.manifest.catalogEntries.map((entry) => entry.ref),
     ).toContain("POLICY.WEB.ARCH.PUBLIC_API_BARREL");
+    // explain 决策面如实披露「轴在场但判卷力解除」（informational 注记）。
+    const explanation = await explainCatalogProjection(
+      store,
+      { role: "frontend" },
+      { catalogRoot },
+    );
+    const decision = explanation.decisions.find(
+      (d) => d.ref === "POLICY.WEB.ARCH.PUBLIC_API_BARREL",
+    );
+    expect(decision?.decision).toBe("included");
+    expect(decision?.why_included).toContain("informational");
+    expect(decision?.why_included).toContain("A1");
+    rmSync(dirname(catalogRoot), { recursive: true, force: true });
   });
 
   it("object_kinds 维度：与范围内对象 kind 交集判定（分母通道 page_surface 命中）", async () => {
@@ -579,12 +586,9 @@ describe("compileProjection 结构化 applicability（P0.5-1 确定性过滤）"
     ).not.toContain("POLICY.WEB.GRID.COLUMN_SCHEMA_FIELDS");
   });
 
-  it("请求侧输入 fail-closed：changeClass/governanceProfile 词表外、capability 词形非法 → 显式拒绝（A5 同款码位透传）", async () => {
+  it("请求侧输入 fail-closed：changeClass 词表外、capability 词形非法 → 显式拒绝（A5 同款码位透传）", async () => {
     await expect(
       compileProjection(store, { role: "frontend", changeClass: "NOT_A_CLASS" }),
-    ).rejects.toMatchObject({ code: "SCHEMA_INVALID" });
-    await expect(
-      compileProjection(store, { role: "frontend", governanceProfile: "CRITICAL" }),
     ).rejects.toMatchObject({ code: "SCHEMA_INVALID" });
     // 未知前缀 → A5 closed-world 原码透传（与 permit capabilityRefs 同款语义）。
     await expect(
@@ -596,9 +600,9 @@ describe("compileProjection 结构化 applicability（P0.5-1 确定性过滤）"
     ).rejects.toMatchObject({ code: "SCHEMA_INVALID" });
   });
 
-  it("O7 输入组合回归：capabilities/change_class/profile 与本体重合时 catalogEntries 与不带输入全等（T3 后语义）", async () => {
+  it("O7 输入组合回归：capabilities/change_class 与本体重合时 catalogEntries 与不带输入全等（T3 后语义）", async () => {
     // W1-A2 T3 注记（2026-09-01）：本测试批1前提「真实 catalog 94 条全未标注」已消解。
-    // 现语义：该输入组合（PRESENTATION + PRESENTATION_CHANGE + MINIMAL）对 T3 标注面
+    // 现语义：该输入组合（PRESENTATION + PRESENTATION_CHANGE）对 T3 标注面
     // 不产生增量命中（API 族 capabilities 无交集、PCC/API_EVOLUTION/DEPENDENCY_CHANGE
     // 条目 change_class 未命中、PRESENTATION_CHANGE 命中条目均在 knowledge/gates 分区
     // 不进 catalogEntries）——故与无输入编译全等。fallback 子集逐字节一致棘轮见
@@ -607,7 +611,6 @@ describe("compileProjection 结构化 applicability（P0.5-1 确定性过滤）"
       role: "frontend",
       capabilities: ["CAPABILITY.PRESENTATION"],
       changeClass: "PRESENTATION_CHANGE",
-      governanceProfile: "MINIMAL",
     });
     const withoutInput = await compileProjection(store, { role: "frontend" });
     expect(withInput.manifest.catalogEntries).toEqual(withoutInput.manifest.catalogEntries);
@@ -689,13 +692,12 @@ describe("explainCatalogProjection（P0.5-1 决策记录面；PRD §5.4）", () 
     expect(fallbackEntry?.why_included).toContain("lane 回退判定");
     expect(fallbackEntry?.fallback_lane).toBe(true);
 
-    // 输入回显（判卷可重放）。
+    // 输入回显（判卷可重放；A1 裁定后无档位输入位）。
     expect(explanation.inputs).toEqual({
       role: "frontend",
       taskRef: null,
       capabilities: ["CAPABILITY.PRESENTATION"],
       changeClass: null,
-      governanceProfile: null,
     });
     expect(explanation.catalogSource.status).toBe("catalog");
     rmSync(dirname(catalogRoot), { recursive: true, force: true });

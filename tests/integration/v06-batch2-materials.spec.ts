@@ -1,19 +1,20 @@
 /**
  * v06-batch2-materials.spec.ts —— P-v06 批次 2 catalog 物料半场验收
  * （v0.6.1 §16 STATE_ARCHETYPE 八态 / §17 State Ownership 判定表落位 /
- *   §18 FRONTEND_ARCHETYPE 三型 + §21 前端错误九分型；研究锚纪律）。
+ *   §18 FRONTEND_ARCHETYPE 三型 + §21 前端错误十分型；研究锚纪律）。
  *
  * 判据锚：
  * - §16 八 id 词形逐字闭包 + layer=PATTERN（loadCatalogArchetypes 实读 repo catalog——
  *   词形闸/词表闸经 kernel 单一读取面生效，坏物料本调用即爆）；
  * - §17 ownership 判定行逐条落进各态 semantic（远端资源/URL/FORM/LOCAL_UI）；
  * - defaults/链序词形锚定研究报告（TanStack v5 双轴三词形/乐观链序五步/refetch 三触发/
- *   XState v5 六概念）；Illegal Transition 差异注记（研究差异表 #7）在
- *   x-research-anchors.note 在场（待 Owner 裁定）；
+ *   XState v5 六概念）；Illegal Transition 裁定注记（研究差异表 #7，Owner 2026-09-04
+ *   已裁定）在 x-research-anchors.note 在场；
  * - SPA_LAYERED×MODULAR incompatible 双向对称（incompatible 槽首个真实用例）；
  *   三型 composition.requires=[]（架构选择不由其他标准件组成）；
- * - §21 九分型逐字闭包 + 每型四列绑定（presentation_pattern/retry_behavior/
- *   telemetry/user_message）+ 待裁定两项（差异表 #8）在 note 在场；
+ * - §21 十分型闭包（九分型 + Owner 2026-09-04 裁定补 CANCELED）+ 每型四列绑定
+ *   （presentation_pattern/retry_behavior/telemetry/user_message）+ 已裁定两项
+ *   （差异表 #8：CANCELED 入 categories / 429 归重试处置入 constraints）；
  * - 每个 STATE_ARCHETYPE 物料 x-research-anchors.sources 非空且带 2026-09-03 日期锚
  *   （防「无锚物料」回潮——批次 1 物料全部带锚的纪律延续）。
  * 深层字段（defaults/categories/sources[].fetched）经原样 JSON 直读（tracer spec ③④
@@ -124,7 +125,7 @@ describe("§16 STATE_ARCHETYPE 八态族（逐字闭包 + §17 ownership 判定�
     ]);
   });
 
-  it("ASYNC_COMMAND：XState 六概念词形齐 + Illegal Transition 差异注记在 x-research-anchors.note（差异表 #7，待 Owner 裁定）", () => {
+  it("ASYNC_COMMAND：XState 六概念词形齐 + Illegal Transition 裁定注记在 x-research-anchors.note（差异表 #7，Owner 2026-09-04 已裁定）", () => {
     const body = rawMaterial("STATE_ARCHETYPE.ASYNC_COMMAND") as {
       defaults: { vocabulary: string[] };
     };
@@ -138,10 +139,11 @@ describe("§16 STATE_ARCHETYPE 八态族（逐字闭包 + §17 ownership 判定�
       "output",
     ]);
     const entry = byId.get("STATE_ARCHETYPE.ASYNC_COMMAND")!;
-    expect(entry.referenceAnchors.note).toContain("待 Owner 裁定");
+    // 裁定转正：Illegal Transition 不引入治理层词形，「必须可表达」由「可检测」承载。
+    expect(entry.referenceAnchors.note).toContain("已裁定");
     expect(entry.referenceAnchors.note).toContain("Illegal Transition");
-    // 差异注记落「PRD 语义意图 + 实现绑定注记」两半：transition contract 声明 +
-    // can() 守卫位，且明记 v5 现实（静默忽略）非运行时报错。
+    // 裁定注记落「可检测」两半：transition contract 声明 + state.can() 守卫预检，
+    // 且明记 v5 现实（静默忽略）非运行时报错。
     expect(entry.referenceAnchors.note).toContain("transition contract");
     expect(entry.referenceAnchors.note).toContain("state.can()");
     expect(body.defaults.vocabulary).not.toContain("illegal_transition");
@@ -243,11 +245,12 @@ describe("§18 FRONTEND_ARCHETYPE 三型 + ERROR_TAXONOMY（layer=ARCHETYPE/PATT
     expect(entry.referenceAnchors.note).toContain("差异表 #4");
   });
 
-  it("§21 ERROR_TAXONOMY：九分型逐字闭包 + 每型四列绑定（presentation/retry/telemetry/user_message）", () => {
+  it("§21 ERROR_TAXONOMY：十分型闭包（九分型 + CANCELED 裁定补入）+ 每型四列绑定（presentation/retry/telemetry/user_message）", () => {
     const body = rawMaterial("FRONTEND_ARCHETYPE.ERROR_TAXONOMY") as {
       categories: Record<string, Record<string, string>>;
     };
-    // §21 逐字九分型：key 集全等（多一型少一型都算闭包破坏——待裁定两项不私扩）。
+    // 十分型闭包：key 集全等（多一型少一型都算闭包破坏——CANCELED 为 Owner 2026-09-04
+    // 裁定扩入的第十分型，非私扩）。
     expect(Object.keys(body.categories).sort()).toEqual(
       [
         "TRANSPORT",
@@ -257,6 +260,7 @@ describe("§18 FRONTEND_ARCHETYPE 三型 + ERROR_TAXONOMY（layer=ARCHETYPE/PATT
         "BUSINESS",
         "CONFLICT",
         "TIMEOUT",
+        "CANCELED",
         "OFFLINE",
         "UNKNOWN",
       ].sort(),
@@ -277,15 +281,22 @@ describe("§18 FRONTEND_ARCHETYPE 三型 + ERROR_TAXONOMY（layer=ARCHETYPE/PATT
     );
   });
 
-  it("§21 待裁定两项在 ERROR_TAXONOMY x-research-anchors.note 在场（CANCELED 第十分型 / 429 归属），本物料保持九分型不扩", () => {
+  it("§21 已裁定两项落位（差异表 #8，Owner 2026-09-04）：CANCELED 第十分型四列齐 + 429 归重试处置注记入 constraints", () => {
     const entry = byId.get("FRONTEND_ARCHETYPE.ERROR_TAXONOMY")!;
-    expect(entry.referenceAnchors.note).toContain("待 Owner 裁定");
+    // 裁定转正：note 记录已裁定状态，不再是待裁定注记。
+    expect(entry.referenceAnchors.note).toContain("已裁定");
     expect(entry.referenceAnchors.note).toContain("CANCELED");
     expect(entry.referenceAnchors.note).toContain("429");
     const body = rawMaterial("FRONTEND_ARCHETYPE.ERROR_TAXONOMY") as {
-      categories: Record<string, unknown>;
+      categories: Record<string, Record<string, string>>;
+      constraints: string[];
     };
-    expect(Object.keys(body.categories)).not.toContain("CANCELED");
+    // CANCELED 第十分型在场且四列绑定齐全（cancel 语义绝不自动重试）。
+    const canceled = body.categories["CANCELED"];
+    expect(canceled).toBeDefined();
+    expect(canceled!.retry_behavior).toBe("never_retry_user_cancelled");
+    // 429 归重试处置注记在 constraints（不归 CONFLICT，按 retryable 瞬时处置）。
+    expect(body.constraints.join("\n")).toContain("429 归重试处置");
   });
 });
 

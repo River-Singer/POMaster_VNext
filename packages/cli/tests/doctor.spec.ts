@@ -484,10 +484,10 @@ describe("detectionToDoctorProbe 四态映射（gauntlet-lite → doctor 语义�
 });
 
 // ============================================================
-// 重入口安装物探针（D13 2026-09-03 修订：重入口默认 + --mode light 显式退回）
+// 重入口安装物探针（D13 2026-09-03 修订：重入口默认；B7 裁定 2026-09-04 init 单一重入口）
 // ============================================================
 
-describe("heavy_entry 探针（hooks 注册态 / skills 双镜像一致态；按入口模式判「应装未装」）", () => {
+describe("heavy_entry 探针（hooks 注册态 / skills 双镜像一致态；重入口标记缺席即未安装）", () => {
   it("未安装（无 AGENTS.md）→ 双探针 MISSING_CONFIGURATION + init 路标", async () => {
     const [hooks, skills] = await probeHeavyEntryInstall(dir);
     expect(hooks.probe).toBe(HEAVY_ENTRY_HOOKS_PROBE);
@@ -496,7 +496,7 @@ describe("heavy_entry 探针（hooks 注册态 / skills 双镜像一致态；按
     expect(skills.status).toBe("MISSING_CONFIGURATION");
   });
 
-  it("heavy init 后 → 双探针 READY（hooks 注册 + 15×2 镜像逐字节一致）", async () => {
+  it("init 后 → 双探针 READY（hooks 注册 + 15×2 镜像逐字节一致）", async () => {
     await runInit(dir);
     const [hooks, skills] = await probeHeavyEntryInstall(dir);
     expect(hooks.status).toBe("READY");
@@ -506,13 +506,33 @@ describe("heavy_entry 探针（hooks 注册态 / skills 双镜像一致态；按
     expect(skills.detail).toContain("15 skills × 2");
   });
 
-  it("light 显式退回 → 双探针 READY（opt-out 是符合预期形态，不误报缺陷）", async () => {
-    await runInit(dir, { mode: "light" });
+  it("历史形态标记（B7 前旧版产物）→ 未安装：双探针 MISSING_CONFIGURATION 指路重跑 init（hooks/skills 未装即修，B7 裁定）", async () => {
+    // 模拟旧版（历史入口标记）AGENTS.md：有生成标记、无重入口安装标记。
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      join(dir, "AGENTS.md"),
+      `<!-- pomaster:generated -->\n<!-- pomaster:entry-mode:light -->\n# 旧版入口\n`,
+      "utf8",
+    );
     const [hooks, skills] = await probeHeavyEntryInstall(dir);
-    expect(hooks.status).toBe("READY");
-    expect(hooks.detail).toContain("light");
-    expect(skills.status).toBe("READY");
-    expect(skills.detail).toContain("light");
+    expect(hooks.status).toBe("MISSING_CONFIGURATION");
+    expect(hooks.hint).toContain("pomaster init");
+    expect(hooks.hint).not.toContain("mode");
+    expect(skills.status).toBe("MISSING_CONFIGURATION");
+  });
+
+  it("none 最小形态（生成标记在场 + 无重入口标记）→ 双探针 MISSING_CONFIGURATION；hint 零 mode/light 词形（B7 后单一重入口词面钉住）", async () => {
+    // 与历史形态场景的区别：none 形态是现行 init 产物（--platforms none），
+    // 入口带生成标记但无任何模式标记行——探针按「未安装」呈现。
+    await runInit(dir, { platforms: "none" });
+    const [hooks, skills] = await probeHeavyEntryInstall(dir);
+    expect(hooks.status).toBe("MISSING_CONFIGURATION");
+    expect(hooks.detail).toContain("no pomaster heavy entry");
+    expect(hooks.hint).toContain("pomaster init");
+    expect(hooks.hint).not.toContain("mode");
+    expect(hooks.hint).not.toContain("light");
+    expect(skills.status).toBe("MISSING_CONFIGURATION");
+    expect(skills.hint).not.toContain("light");
   });
 
   it("heavy 项目 skills 单侧镜像缺失 → MISSING_CONFIGURATION；字节漂移 → DEFECT（重复发现缓解破坏）", async () => {

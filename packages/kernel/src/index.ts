@@ -818,7 +818,11 @@ export interface PermitRequest {
    * Project Change / Permit 侧 applicability 输入承载位（PRD §14 P0.5-1 最小实现二）。
    */
   readonly changeClass?: string;
-  /** 治理档位（P0.5-1；∈ CATALOG_GOVERNANCE_PROFILE_VALUES，O2 对齐 TRIAGE_PROFILES+STRICT）。 */
+  /**
+   * 治理档位（P0.5-1；∈ CATALOG_GOVERNANCE_PROFILE_VALUES，O2 对齐 TRIAGE_PROFILES+STRICT）。
+   * A1 裁定（2026-09-04）：信息性申报位——不参与 checkPermit 判卷（permit 判卷只按
+   * scope 三元组 + 过期拍），签发台账/journal 记录保留。
+   */
   readonly governanceProfile?: string;
 }
 
@@ -928,13 +932,14 @@ export interface ProjectionRequest {
   /**
    * P0.5-1 结构化 applicability 输入（PRD §5.2/§5.3；vocab-pr-0005；裁决 8 ② 2026-09-01）。
    * 全部 optional → 既有调用零破坏；词形 fail-closed 校验（capabilities=CAPABILITY.*
-   * governed id / changeClass ∈ CATALOG_CHANGE_CLASS_VALUES / governanceProfile ∈
-   * CATALOG_GOVERNANCE_PROFILE_VALUES）。未提供时，声明了对应机器字段的 catalog 条目
-   * 按「不可判定即不注入」确定性排除（缺席显式，禁假绿——PRD §5.3 确定性排除优先）。
+   * governed id / changeClass ∈ CATALOG_CHANGE_CLASS_VALUES）。未提供时，声明了对应
+   * 机器字段的 catalog 条目按「不可判定即不注入」确定性排除（缺席显式，禁假绿——
+   * PRD §5.3 确定性排除优先）。
+   * A1 裁定（2026-09-04）：不设 governanceProfile 输入——治理档位降信息性，
+   * 不参与 catalog applicability 判卷（物料 governance_profiles 轴保留为元数据）。
    */
   readonly capabilities?: readonly string[];
   readonly changeClass?: string;
-  readonly governanceProfile?: string;
 }
 
 export interface ProjectionEntry {

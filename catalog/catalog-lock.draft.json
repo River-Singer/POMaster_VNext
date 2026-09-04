@@ -1,7 +1,7 @@
 {
   "catalog_version": "0.1.0-pilot",
   "profile": "web-standard@0",
-  "generated_by": "catalog/tools/materialize_catalog_pilot.py（pilot-0001 60 条；entries 按 id 排序）+ catalog/tools/materialize_batch4_uplift.py（batch-4 语料批 Universal 上提追加 9 条）+ corpus/spec-knowledge/materialize-curated.py（SPEC-D 汇总池 D5 精选追加 25 条）+ catalog/sensors/（P1-5 Sensor Capability Catalog Lite 六条目登记，裁决 8 D6/D7）+ W1-A2 P0.5-1 T3 标注战役（机器 applicability 字段批量标注 + 幂等重锁；PRD v0.5.2 §5.2/§14，裁决 8 ②） + catalog/tools/seed_v06_archetypes.py + materialize_v06_relock.py（P-v06 批次 1：archetypes 十条目 + GATE.NEW_ENTITY.CHECKS 登记，D-2/D-4 裁决） + catalog/tools/seed_v06_batch2_materials.py + materialize_v06_relock.py（P-v06 批次 2：STATE_ARCHETYPE 八态 + FRONTEND_ARCHETYPE 三型 + ERROR_TAXONOMY 十二条目，research frontend-state-references.md 2026-09-03 锚） + catalog/tools/materialize_v06_relock.py（P-v06 批次 2.6 Browser Eyes：SENSOR.BROWSER.* 双眼 implementations 显式化 + KNOWLEDGE.WEB.BROWSER.MCP_EYES 登记，Owner 指令 2026-09-03） + catalog/tools/seed_v06_batch3_materials.py + materialize_v06_relock.py（P-v06 批次 3：Backend/API/Data 原型十七条目，research backend-references.md 2026-09-03 锚） + catalog/tools/seed_v06_batch4_materials.py + materialize_v06_relock.py（P-v06 批次 4：RUNTIME 物料两条目 ENVIRONMENT_PARITY/OBSERVABILITY_BINDING，research runtime-references.md 2026-09-03 锚）",
+  "generated_by": "catalog/tools/materialize_catalog_pilot.py（pilot-0001 60 条；entries 按 id 排序）+ catalog/tools/materialize_batch4_uplift.py（batch-4 语料批 Universal 上提追加 9 条）+ corpus/spec-knowledge/materialize-curated.py（SPEC-D 汇总池 D5 精选追加 25 条）+ catalog/sensors/（P1-5 Sensor Capability Catalog Lite 六条目登记，裁决 8 D6/D7）+ W1-A2 P0.5-1 T3 标注战役（机器 applicability 字段批量标注 + 幂等重锁；PRD v0.5.2 §5.2/§14，裁决 8 ②） + catalog/tools/seed_v06_archetypes.py + materialize_v06_relock.py（P-v06 批次 1：archetypes 十条目 + GATE.NEW_ENTITY.CHECKS 登记，D-2/D-4 裁决） + catalog/tools/seed_v06_batch2_materials.py + materialize_v06_relock.py（P-v06 批次 2：STATE_ARCHETYPE 八态 + FRONTEND_ARCHETYPE 三型 + ERROR_TAXONOMY 十二条目，research frontend-state-references.md 2026-09-03 锚） + catalog/tools/materialize_v06_relock.py（P-v06 批次 2.6 Browser Eyes：SENSOR.BROWSER.* 双眼 implementations 显式化 + KNOWLEDGE.WEB.BROWSER.MCP_EYES 登记，Owner 指令 2026-09-03） + catalog/tools/seed_v06_batch3_materials.py + materialize_v06_relock.py（P-v06 批次 3：Backend/API/Data 原型十七条目，research backend-references.md 2026-09-03 锚） + catalog/tools/seed_v06_batch4_materials.py + materialize_v06_relock.py（P-v06 批次 4：RUNTIME 物料两条目 ENVIRONMENT_PARITY/OBSERVABILITY_BINDING，research runtime-references.md 2026-09-03 锚） + pomaster catalog relock（CLI 恢复键；幂等重锁不含时戳——A4）",
   "x-digest-ethics": {
     "basis": "D24 / vocab-lock.digest_ethics",
     "write_blocking": false,
@@ -486,13 +486,13 @@
     {
       "id": "FRONTEND_ARCHETYPE.ERROR_TAXONOMY",
       "path": "archetypes/archetype.frontend.error_taxonomy.json",
-      "content_sha256": "sha256:eff9f10f0702ab502af8a81b5c884afc3736eeb45f2d3f1f8724689e8b9af327",
+      "content_sha256": "sha256:31fd889c99ac7b4a5d967bf05f1856c2c155a08c5c1d5ce979114ade2d96152b",
       "source_ref": "catalog/tools/seed_v06_batch2_materials.py（P-v06 批次 2；外部参照 frontend-state-references.md 2026-09-03 实抓锚）"
     },
     {
       "id": "FRONTEND_ARCHETYPE.FEATURE_ORIENTED",
       "path": "archetypes/archetype.frontend.feature_oriented.json",
-      "content_sha256": "sha256:6c31a17870effff68e7f205af56313d32be1f31e722cbf1a56ff722838c6bf05",
+      "content_sha256": "sha256:b97d2338d75b9291cc5d74da755d0f2e59bf40d0317d39dc3a555c6cc4b84767",
       "source_ref": "catalog/tools/seed_v06_batch2_materials.py（P-v06 批次 2；外部参照 frontend-state-references.md 2026-09-03 实抓锚）"
     },
     {
@@ -1116,7 +1116,7 @@
     {
       "id": "STATE_ARCHETYPE.ASYNC_COMMAND",
       "path": "archetypes/archetype.state.async_command.json",
-      "content_sha256": "sha256:6f0ece6752cb063dba920b68790fac134ad30c5093beb6df31a99bf57004df82",
+      "content_sha256": "sha256:041a8a3373c6512986a862a58fe965d0ed3125d2f8ded119a0f6c23d451438e3",
       "source_ref": "catalog/tools/seed_v06_batch2_materials.py（P-v06 批次 2；外部参照 frontend-state-references.md 2026-09-03 实抓锚）"
     },
     {

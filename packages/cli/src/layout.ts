@@ -1,13 +1,12 @@
 /**
  * layout.ts —— init 预铺 `.pomaster/` 目录骨架的布局清单（数据驱动单源）。
  *
- * Owner 裁定（2026-09-04 修订，任务 09-03-vnext-heavy-entry）：init **不分模式**一次性
- * 建出目录宪法 §2 Target Directory Tree 全量（「依然想一开始的时候把所有的目录全部
- * 建好，就不要分什么 light standard 的级别了，AI 自己判断是否是复杂还是简单需求或者
- * 项目，对应激活相关目录就好了」）——`--mode light` 与 heavy 的 `.pomaster/` 目录树
- * **完全相同**（mode 只影响 skills/hooks 注入层）。此裁定有意覆盖宪法 §17 Lazy
- * Materialization（宪法 §22「Owner 明确批准」条款达成）与早期 wired/planned 双状态
- * 设计（全 wired 单状态）。
+ * Owner 裁定（2026-09-04 修订，任务 09-03-vnext-heavy-entry）：init 不分入口形态
+ * 一次性建出目录宪法 §2 Target Directory Tree 全量（Owner 原话裁定：全部目录建好、
+ * 不分档级，AI 自行判断需求/项目复杂度并激活相应目录；原引语含已废除的档级词形，
+ * 现状陈述见 LAYOUT_NOTES）——`.pomaster/` 目录树与平台选择/入口形态**完全无关**
+ * （此裁定有意覆盖宪法 §17 Lazy Materialization 与早期 wired/planned 双状态设计，
+ * 全 wired 单状态）。
  *
  * 预铺纪律三条款（本模块即其唯一落点）：
  * - 全目录 status=wired（全部有代码承载——kernel paths.ts/production.ts/memory-harvest.ts
@@ -76,6 +75,9 @@ export interface LayoutDirSpec {
   /**
    * 宪法来源（dot-pomaster-directory-constitution.md §引用 + 代码登记处锚；
    * README 与 layout.json 逐字共用）。
+   * ADR-lite（B4 裁定 Owner 2026-09-04）：宪法文档本体不随 npm 包分发，只住开发仓
+   * 治理档案（本仓不含该文档文件——content 为文档名锚非包内相对路径；消费侧按
+   * 文档名在开发仓治理档案检索，代码登记处锚 kernel paths.ts 在包内可直接定位）。
    */
   readonly constitution_source: string;
   /** 对应命令（如有；README 尾行 `- 命令: \`...\``）。 */
@@ -89,8 +91,8 @@ export interface LayoutDirSpec {
 // ============================================================
 
 /**
- * 预铺目录清单（宪法 §2 全树 + §3A sources 平面 + Batch 2 两增量平面；**不分模式**
- * ——light/heavy 同树）。state/ 的已登记文件位不单独落文件——kernel
+ * 预铺目录清单（宪法 §2 全树 + §3A sources 平面 + Batch 2 两增量平面；**与入口
+ * 形态/平台选择无关**——恒同一棵树）。state/ 的已登记文件位不单独落文件——kernel
  * createStore/applyTransaction 按需创建，README 注记文件位清单。禁铺形态（宪法 §15
  * policies/、§10.1 顶层 research/、§21 kind-as-directory）不在清单——新概念默认是
  * governed object kind，不是新目录。
@@ -390,7 +392,7 @@ export const LAYOUT_NOTES: readonly string[] = [
   "objects 路径收敛（宪法 §34-P0，Owner 裁定落地）：canonical 正文层为 .pomaster/truth/objects/（kernel paths.ts 单一来源）；.pomaster/objects/ 为 legacy deny-list（store-layout.ts LEGACY_OBJECTS_DIR_RELATIVE）——init 仅显式检测报告，禁静默 merge/覆盖/猜测迁移，迁移必须可审计可回滚。",
   "六禁铺裁定（P53 §16 逐字反面清单）：questions.json / answers.json / decisions.json / frontier.json / recommendations.json / grill-state.json 六文件名绝不物化于预铺面——Frontier 应由 Decision Graph 动态计算、Human Narrative 应由 Graph 编译生成（P53 §16/§21「不新增」封条）。",
   "evidence 产物命名裁定：PRD v0.5.2 §7.3 词形 evidence/artifacts/ 与 kernel paths.ts 现行词形 evidence/blobs/（内容寻址）冲突——以现行 evidence/blobs 为准预铺，artifacts 词形不落盘。",
-  "目录树模式无关（Owner 2026-09-04 裁定）：--mode light 与 heavy 的 .pomaster/ 目录树完全相同（宪法 §2 全量预铺）；mode 只影响 skills/hooks 注入层；激活由 AI 按 activation_hint 与项目复杂度自行判断——目录存在 ≠ 已激活 ≠ 已检查。",
+  "目录树与入口形态无关（Owner 2026-09-04 裁定，现状陈述：init 单一重入口——历史上与重入口并存的 --mode light 旗标已按 B7 裁定 2026-09-04 删除，当时两形态的目录树本就完全相同）：.pomaster/ 目录树恒为宪法 §2 全量预铺，与平台选择无关；激活由 AI 按 activation_hint 与项目复杂度自行判断——目录存在 ≠ 已激活 ≠ 已检查。",
 ];
 
 // ============================================================

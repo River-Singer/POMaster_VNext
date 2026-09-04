@@ -129,18 +129,17 @@ export const CONFIG_RELATIVE = ".pomaster/config.yaml";
 export const LEGACY_OBJECTS_DIR_RELATIVE = ".pomaster/objects";
 
 /**
- * 入口文件（D13 2026-09-03 修订：重入口默认 + --mode light 显式退回；init 同步生成，
- * 零运行时依赖）。AGENTS.md 恒为入口唯一事实源；heavy 形态另述重入口安装物（skills
- * 库 + hooks）；light 形态为显式退回。
+ * 入口文件（D13 2026-09-03 修订：重入口默认；B7 裁定 2026-09-04 init 单一重入口；
+ * init 同步生成，零运行时依赖）。AGENTS.md 恒为入口唯一事实源；重入口形态另述
+ * 重入口安装物（skills 库 + hooks）。
  */
 export const AGENTS_MD_RELATIVE = "AGENTS.md";
 export const CLAUDE_MD_RELATIVE = "CLAUDE.md";
 
 /**
- * 平台适配器文件（F1：init 平台选择；heavy=加厚版（命令卡/Browser Eyes 展开），
- * light=细指针 3-8 行指向 AGENTS.md 唯一事实源；字节等于本包任一形态渲染值的在座
- * 文件归本包维护，人类异形内容一律不覆盖）。claude 适配器 = CLAUDE.md（上文）；
- * codex 原生入口即根 AGENTS.md，零额外文件。
+ * 平台适配器文件（F1：init 平台选择；加厚版——命令卡/Browser Eyes 展开进 rules；
+ * 字节等于本包渲染值的在座文件归本包维护，人类异形内容一律不覆盖）。claude 适配器 =
+ * CLAUDE.md（上文）；codex 原生入口即根 AGENTS.md，零额外文件。
  */
 export const CURSOR_RULES_RELATIVE = ".cursor/rules/pomaster.mdc";
 export const QODER_RULES_RELATIVE = ".qoder/rules/pomaster.md";

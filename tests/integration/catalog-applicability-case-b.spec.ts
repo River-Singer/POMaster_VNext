@@ -264,7 +264,6 @@ describe("Case B：Vue 按钮布局 Change 的 catalog applicability（PRD §16/
       "--role", "frontend",
       "--capability", "CAPABILITY.PRESENTATION",
       "--change-class", "PRESENTATION_CHANGE",
-      "--profile", "MINIMAL",
     ]);
     expect(compile.code).toBe(0);
     expect((compile.envelope.result as { applicability?: Record<string, unknown> }).applicability)
@@ -272,7 +271,6 @@ describe("Case B：Vue 按钮布局 Change 的 catalog applicability（PRD §16/
         change: null,
         capabilities: ["CAPABILITY.PRESENTATION"],
         change_class: "PRESENTATION_CHANGE",
-        governance_profile: "MINIMAL",
       });
     const explain = await runJson([
       "context", "explain",
@@ -306,7 +304,6 @@ describe("O7 行为零变化棘轮（T3 后：fallback 条目子集逐字节一�
       role: "frontend",
       capabilities: ["CAPABILITY.PRESENTATION", "CAPABILITY.API_CONTRACT"],
       changeClass: "PRESENTATION_CHANGE",
-      governanceProfile: "STANDARD",
     } as const;
     const plain = await compileProjection(store, plainRequest);
     const withInputs = await compileProjection(store, fullInputs);

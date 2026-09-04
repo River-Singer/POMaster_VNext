@@ -42,7 +42,6 @@ import { readAuthorityFaces } from "./authority.js";
 import { loadTruthIndex } from "./store.js";
 import {
   CATALOG_CHANGE_CLASS_VALUES,
-  CATALOG_GOVERNANCE_PROFILE_VALUES,
 } from "./vocab.js";
 import {
   loadCatalogPolicies,
@@ -102,7 +101,7 @@ export interface CatalogEntryDecision {
   readonly why_included: string | null;
   /** excluded 时非 null：未命中轴片段（缺席显式——请求侧输入缺席同样明示）。 */
   readonly why_excluded: string | null;
-  /** 命中轴 → 命中值（轴键：lane/lanes/capabilities/change_class/governance_profile/object_kinds）。 */
+  /** 命中轴 → 命中值（轴键：lane/lanes/capabilities/change_class/object_kinds）。 */
   readonly matched: Readonly<Record<string, readonly string[]>>;
   /** lane 回退判定（未声明机器 applicability 字段，O7 行为零变化）。 */
   readonly fallback_lane: boolean;
@@ -116,7 +115,6 @@ export interface CatalogProjectionExplanation {
     readonly taskRef: string | null;
     readonly capabilities: readonly string[];
     readonly changeClass: string | null;
-    readonly governanceProfile: string | null;
   };
   /** 全量决策（policies included+excluded 与 presets included；ref 确定性排序）。 */
   readonly decisions: readonly CatalogEntryDecision[];
@@ -134,21 +132,23 @@ function driftSummary(drifts: readonly CatalogLockDrift[]): string {
 
 /**
  * catalog 结构化 applicability 输入（P0.5-1；PRD §5.3 确定性包含管线的中三层输入）。
- * 由 ProjectionRequest 派生（role/capabilities/changeClass/governanceProfile）+
+ * 由 ProjectionRequest 派生（role/capabilities/changeClass）+
  * store 范围派生（inScopeObjectKinds——分母/许可通道命中的对象 kind 集）。
+ * A1 裁定（2026-09-04）：治理档位（governance_profile）不作为 applicability 输入
+ * ——档位信息性，不参与 catalog 判卷（TRIAGE_PROFILES 轴保留为物料元数据）。
  */
 interface CatalogApplicabilityInput {
   readonly role: string;
   readonly capabilities: readonly string[];
   readonly changeClass: string | null;
-  readonly governanceProfile: string | null;
   readonly inScopeObjectKinds: readonly string[];
 }
 
 /**
  * 单条 policy 的 applicability 判定结果（确定性、纯派生、同输入重放字节稳定）。
  * hitSegments/failedSegments 是 reason / why_excluded 的轴级片段（轴序固定：
- * lanes → capabilities → change_class → governance_profile → object_kinds）。
+ * lanes → capabilities → change_class → object_kinds；governance_profiles 轴
+ * 已按 A1 裁定 2026-09-04 解除判卷力——档位信息性，不参与过滤）。
  */
 interface PolicyApplicabilityOutcome {
   readonly included: boolean;
@@ -172,14 +172,30 @@ function unregisteredAxisNote(policy: CatalogPolicyMaterial): string {
 }
 
 /**
+ * informational 词轴的消费面呈现（A1 裁定 2026-09-04）：物料声明了
+ * applies_when.governance_profiles 时如实披露「该轴在场但已解除判卷力」——
+ * 轴保留为物料元数据（PR-0005/裁决 8 ② 不 supersede），仅过滤维度移除。
+ */
+function informationalAxisNote(policy: CatalogPolicyMaterial): string {
+  if (policy.governanceProfiles.length === 0) return "";
+  return (
+    `；另声明 governance_profiles=[${policy.governanceProfiles.join("/")}]` +
+    `（informational：A1 裁定 2026-09-04——档位降信息性，不参与 applicability 判卷）`
+  );
+}
+
+/**
  * 结构化确定性判定核（P0.5-1；PRD §5.3 Deterministic Inclusion + A20 Applicability
- * Before Utility）。语义（vocab-pr-0005 applicability_fields 注记逐字承载）：
+ * Before Utility）。语义（vocab-pr-0005 applicability_fields 注记承载；A1
+ * 裁定 2026-09-04 修订——governance_profiles 轴解除判卷力）：
  * - 未声明任一机器字段 → lane 回退判定（lane ∈ {any, role}；现行行为逐字节保留，O7）；
  * - 声明了任一机器字段 → 全字段确定性判定（声明轴全部命中才 include）：
  *   角色判定恒在场（lanes 缺席回退 lane 单值，同一双读语义）；capabilities/
- *   change_classes/governance_profiles/object_kinds 各轴按声明参与（交集/成员判定），
+ *   change_classes/object_kinds 各轴按声明参与（交集/成员判定），
  *   请求侧对应输入缺席 = 不可判定即不注入（缺席显式，禁假绿——PRD §5.3
  *   「先做确定性排除」；explain 面逐条 why_excluded 可纠偏）；
+ *   governance_profiles 轴不参与判定（A1：档位信息性，物料元数据保留；
+ *   声明了该轴以 informational 注记呈现）；
  * - risk_at_least/technologies 不参与判定（O4 留位不登记），仅以 not_configured
  *   注记显式呈现。
  */
@@ -252,25 +268,9 @@ function evaluatePolicyApplicability(
       );
     }
   }
-  // ④ governance_profiles 轴（成员判定；O2 词形对齐 triage+STRICT）。
-  if (policy.governanceProfiles.length > 0) {
-    if (
-      input.governanceProfile !== null &&
-      policy.governanceProfiles.includes(input.governanceProfile as never)
-    ) {
-      hitSegments.push(`governance_profile 命中=${input.governanceProfile}`);
-      matched["governance_profile"] = [input.governanceProfile];
-    } else if (input.governanceProfile === null) {
-      failedSegments.push(
-        `governance_profiles=[${policy.governanceProfiles.join("/")}] 而请求未提供 governance_profile（缺席显式）`,
-      );
-    } else {
-      failedSegments.push(
-        `governance_profiles=[${policy.governanceProfiles.join("/")}] 未命中请求 governance_profile=${input.governanceProfile}`,
-      );
-    }
-  }
-  // ⑤ object_kinds 轴（与投影范围内对象 kind 集交集——PRD §5.3 管线「Governed Object Scope」层）。
+  // governance_profiles 轴：A1 裁定（2026-09-04）解除判卷力——档位降信息性，
+  // 不参与 applicability 过滤；物料元数据保留（见 informationalAxisNote 呈现）。
+  // ④ object_kinds 轴（与投影范围内对象 kind 集交集——PRD §5.3 管线「Governed Object Scope」层）。
   if (policy.objectKinds.length > 0) {
     const hits = policy.objectKinds.filter((kind) => input.inScopeObjectKinds.includes(kind));
     if (hits.length > 0) {
@@ -342,17 +342,6 @@ function validateApplicabilityInputs(request: ProjectionRequest): void {
       { changeClass: request.changeClass },
     );
   }
-  if (
-    request.governanceProfile !== undefined &&
-    !CATALOG_GOVERNANCE_PROFILE_VALUES.includes(request.governanceProfile as never)
-  ) {
-    throw new GovernanceError(
-      "SCHEMA_INVALID",
-      `ProjectionRequest.governanceProfile 词表外: ${request.governanceProfile}`,
-      `governanceProfile 须 ∈ CATALOG_GOVERNANCE_PROFILE_VALUES（O2：对齐 TRIAGE_PROFILES+STRICT）。`,
-      { governanceProfile: request.governanceProfile },
-    );
-  }
 }
 
 /**
@@ -400,16 +389,16 @@ function consumeCatalog(
     role: request.role,
     capabilities: request.capabilities ?? [],
     changeClass: request.changeClass ?? null,
-    governanceProfile: request.governanceProfile ?? null,
     inScopeObjectKinds,
   };
   // 结构化确定性过滤（P0.5-1）：lane 回退 + 机器全字段判定；include reason 保留
-  // 现行词形（回退条目逐字节不变——O7），机器条目扩展命中轴详情。
+  // 现行词形（回退条目逐字节不变——O7），机器条目扩展命中轴详情；governance_profiles
+  // 轴声明以 informational 注记披露（A1 裁定 2026-09-04：判卷力解除）。
   const catalogEntries: ProjectionEntry[] = [];
   const decisions: CatalogEntryDecision[] = [];
   for (const policy of policies as readonly CatalogPolicyMaterial[]) {
     const outcome = evaluatePolicyApplicability(policy, input);
-    const note = unregisteredAxisNote(policy);
+    const note = unregisteredAxisNote(policy) + informationalAxisNote(policy);
     if (outcome.included) {
       catalogEntries.push({ ref: policy.id, reason: includeReasonOf(policy, outcome) });
       decisions.push({
@@ -991,7 +980,6 @@ export async function explainCatalogProjection(
       taskRef: request.taskRef ?? null,
       capabilities: [...(request.capabilities ?? [])],
       changeClass: request.changeClass ?? null,
-      governanceProfile: request.governanceProfile ?? null,
     },
     decisions,
     catalogSource,

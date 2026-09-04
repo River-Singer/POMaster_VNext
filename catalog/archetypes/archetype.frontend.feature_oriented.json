@@ -44,7 +44,7 @@
     "自造新层（FSD：层语义已标准化，不推荐新增）"
   ],
   "x-research-anchors": {
-    "note": "【差异表 #4 部分差异】FSD 现行 7 层（Processes deprecated→有效 6 层）、无独立 API 层（api 是 segment）、widgets 无 PRD 对应、app 层 PRD 未纳入——四行声明随物料落位；import rule 严格向下与 Public API「contract+gate」定位（与 PRD §19 public_api_required 同构）为 feature-sliced.design 官方文档（v3 站点）2026-09-03 实抓",
+    "note": "【已裁定 2026-09-04·差异表 #4】FSD v2 现行映射采纳（六有效层 + Processes deprecated + api 是 segment）：上述 defaults 四行声明即裁定正文——FSD 现行 7 层（Processes deprecated→有效 6 层）、无独立 API 层（api 是各层 segment）、widgets 无 PRD 对应层（optional 位）、app 层为 FSD v2 新增有效层；import rule 严格向下与 Public API「contract+gate」定位（与 PRD §19 public_api_required 同构）为 feature-sliced.design 官方文档（v3 站点）2026-09-03 实抓",
     "sources": [
       {
         "url": "https://feature-sliced.design/docs/reference/layers",
