@@ -18,6 +18,9 @@
  * NOT_RUN 入账（非绿非红，绝不静默跳过不记绿）。P12c 假绿封死：全部 runner/adapter
  * 产物在入账前统一过 kernel normalizeGateResult 判卷复算（verdict ⇔ counts 自洽、
  * verdict_cap 降级、七态词表）——畸形产物 FATAL 且事务零落账，禁自报绕过。
+ * R5 增量（09-04 Batch 1）：GATE.NEW_ENTITY.CHECKS 经 runGateRecipeAsync 以
+ * kernel-native 直调形态派发（runNewEntityGate 单一判卷源；候选集恒空 → not_run
+ * 显式缺席，候选施断面 = pomaster new-entity check <governed-id>）。
  *
  * 双形态探测（TODO(gauntlet-builder)：收敛到单一契约后可简化）：
  * - §59 完整桥接（真实 gauntlet-lite 模块）：detect(platformDetectorFacts) → 四态缺席显式；
@@ -44,15 +47,17 @@ import {
 } from "@pomaster/kernel";
 import type {
   CatalogGateRecipeDescriptor,
+  GateRecipeRunInput,
   GateResultRecord,
   RecipeAdapterKey,
   RecipeExecutor,
 } from "@pomaster/gauntlet-lite";
 import {
   CATALOG_GATE_RECIPES,
-  runGateRecipe,
+  runGateRecipeAsync,
 } from "@pomaster/gauntlet-lite";
 import { allocateEvidenceRef } from "./evidence.js";
+import { newEntityKernelGateExecutor } from "./new-entity.js";
 import { TRUTH_INDEX_RELATIVE } from "./store-layout.js";
 import { runsDirPath } from "./store-layout.js";
 import { requireInitialized } from "./permit.js";
@@ -499,6 +504,14 @@ export interface CheckGatesDeps {
   readonly recipes?: readonly CatalogGateRecipeDescriptor[];
   /** 注入执行器（测试；按 adapter 键覆盖默认注册表）。 */
   readonly executors?: Readonly<Partial<Record<RecipeAdapterKey, RecipeExecutor>>>;
+  /**
+   * kernel-native gate 执行器注入面（09-04 Batch 1 R5：GATE.NEW_ENTITY.CHECKS 直调
+   * kernel runNewEntityGate——runner 零 store 依赖，执行器由命令面供给；缺省 =
+   * newEntityKernelGateExecutor()）。注入该键的测试可覆盖。
+   */
+  readonly kernelGates?: Readonly<
+    Record<string, (input: GateRecipeRunInput) => Promise<GateResultRecord>>
+  >;
   /** 注入 store 句柄（测试）；缺省 = createStore(rootDir)。 */
   readonly store?: Store;
 }
@@ -573,15 +586,21 @@ export async function runCheckGates(
   const ranAtSeq = store.currentSeq ?? initialized.seq;
 
   // 派发执行（runner 纯计算；身份坏形 FATAL → SCHEMA_INVALID fail-closed）。
+  // kernel-native gate（GATE.NEW_ENTITY.CHECKS）经 runGateRecipeAsync 直调 kernel
+  // 判卷核心（deps.kernelGates 注入；缺省 newEntityKernelGateExecutor——R5 接线）。
+  const kernelGates =
+    deps?.kernelGates ?? {
+      "GATE.NEW_ENTITY.CHECKS": newEntityKernelGateExecutor(),
+    };
   const grns = allocateGateRecipeGrns(runsDirPath(rootDir), recipes.length);
   const records: GateResultRecord[] = [];
   try {
     for (let index = 0; index < recipes.length; index += 1) {
       const recipe = recipes[index] as CatalogGateRecipeDescriptor;
-      const record = runGateRecipe(
+      const record = await runGateRecipeAsync(
         recipe,
         { projectRoot: rootDir, grn: grns[index] as string, ranAtSeq },
-        { executors: deps?.executors },
+        { executors: deps?.executors, kernelGates },
       );
       records.push(record);
     }

@@ -22,11 +22,16 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import Ajv from "ajv";
 import { allSchemas, discoveryStateChainSchema } from "@pomaster/schemas";
 import {
+  QUESTION_GATE_CATEGORIES,
+} from "@pomaster/kernel";
+import {
   runBrainstormPromote,
+  runBrainstormQuestionGate,
   runBrainstormStart,
   runBrainstormStatus,
   runMaintain,
   type BrainstormPromoteResult,
+  type BrainstormQuestionGateResult,
   type BrainstormStartResult,
   type BrainstormStatusResult,
 } from "@pomaster/cli";
@@ -456,5 +461,207 @@ describe("brainstorm promote --tx-out 落点闸（P18 红队发现3：强制解�
     expect(result.suggested_command).toContain("tx-custom-rel.json");
     const tx = JSON.parse(readFileSync(landed, "utf8")) as { ops: { op: string }[] };
     expect(tx.ops[0]?.op).toBe("upsert_object");
+  });
+});
+
+// ============================================================
+// question-gate（§80.4 产品消费面；09-04 Batch 1 R2/D1+C1）
+// ============================================================
+
+describe("brainstorm question-gate（kernel evaluateQuestionGate 消费面；判卷零旁移）", () => {
+  /** 七关申报基线：Q1-Q6 不命中 + Q7 阻塞。 */
+  const BASE_FLAGS = {
+    q1: "false",
+    q2: "false",
+    q3: "false",
+    q4: "false",
+    q5: "false",
+    q6: "false",
+    q7: "true",
+  } as const;
+
+  it("start --prompt 登记 raw prompt + Intent Framing 四分拣（§4A 入口载体——§31 CRC-A 零载体层补齐）", async () => {
+    const outcome = await runBrainstormStart(root, {
+      id: "idea-payment-oneliner",
+      prompt: "帮我做一个支付系统",
+      framing: {
+        known: ["需要订单创建"],
+        unknown: ["用哪个支付 provider"],
+        conflict: [],
+        assumption: ["用户会自行配置 API key"],
+      },
+    });
+    expect(outcome.ok).toBe(true);
+    const meta = JSON.parse(
+      readFileSync(join(scratchpadDir("idea-payment-oneliner"), "meta.json"), "utf8"),
+    ) as Record<string, unknown>;
+    expect(meta["prompt"]).toBe("帮我做一个支付系统");
+    expect(meta["framing"]).toEqual({
+      known: ["需要订单创建"],
+      unknown: ["用哪个支付 provider"],
+      conflict: [],
+      assumption: ["用户会自行配置 API key"],
+    });
+  });
+
+  it("start 无 prompt → meta 无 prompt/framing 键（既有调用方零行为变更）", async () => {
+    await runBrainstormStart(root, { id: "idea-plain" });
+    const meta = JSON.parse(
+      readFileSync(join(scratchpadDir("idea-plain"), "meta.json"), "utf8"),
+    ) as Record<string, unknown>;
+    expect("prompt" in meta).toBe(false);
+    expect("framing" in meta).toBe(false);
+  });
+
+  it("ASK_HUMAN：七关全过 + BLOCKING_AUTHORITY → may_ask_human（一次一问路标在场）", async () => {
+    await runBrainstormStart(root, { id: "idea-ask" });
+    const outcome = await runBrainstormQuestionGate(root, {
+      discoveryId: "idea-ask",
+      category: "BLOCKING_AUTHORITY",
+      ...BASE_FLAGS,
+    });
+    expect(outcome.ok).toBe(true);
+    const result = outcome.result as BrainstormQuestionGateResult;
+    expect(result.verdict).toBe("ASK_HUMAN");
+    expect(result.may_ask_human).toBe(true);
+    expect(outcome.human.join("\n")).toContain("One-question-at-a-time");
+  });
+
+  it("DERIVABLE：Q3 命中 → 处置 DERIVABLE@Q3（判卷以七关重算为准）", async () => {
+    await runBrainstormStart(root, { id: "idea-deriv" });
+    const outcome = await runBrainstormQuestionGate(root, {
+      discoveryId: "idea-deriv",
+      category: "BLOCKING_AUTHORITY",
+      ...BASE_FLAGS,
+      q3: "true",
+    });
+    expect(outcome.ok).toBe(true);
+    const result = outcome.result as BrainstormQuestionGateResult;
+    expect(result.verdict).toBe("DERIVABLE");
+    expect(result.stopped_at_gate).toBe("Q3");
+    expect(result.declared_consistent).toBe(false);
+  });
+
+  it("DEFERABLE：q7=false 无 assume → DEFERABLE（缺省零行为变更）", async () => {
+    await runBrainstormStart(root, { id: "idea-defer" });
+    const outcome = await runBrainstormQuestionGate(root, {
+      discoveryId: "idea-defer",
+      category: "DEFERABLE",
+      ...BASE_FLAGS,
+      q7: "false",
+    });
+    const result = outcome.result as BrainstormQuestionGateResult;
+    expect(result.verdict).toBe("DEFERABLE");
+  });
+
+  it("ASSUMPTION：q7=false + 五条件全 --assume → ASSUMPTION + §49.2 登记指路（Owner 裁定 C1）", async () => {
+    await runBrainstormStart(root, { id: "idea-assume" });
+    const outcome = await runBrainstormQuestionGate(root, {
+      discoveryId: "idea-assume",
+      category: "DEFERABLE",
+      ...BASE_FLAGS,
+      q7: "false",
+      assume: [
+        "low_risk",
+        "reversible",
+        "within_permit",
+        "no_authority_conflict",
+        "acceptance_testable",
+      ],
+    });
+    expect(outcome.ok).toBe(true);
+    const result = outcome.result as BrainstormQuestionGateResult;
+    expect(result.verdict).toBe("ASSUMPTION");
+    expect(outcome.human.join("\n")).toContain("--classification ASSUMPTION");
+    expect(outcome.human.join("\n")).toContain("同词两轴");
+  });
+
+  it("ASSUMPTION 缺一条件（只申报四条件）→ DEFERABLE（禁缺省放行）", async () => {
+    await runBrainstormStart(root, { id: "idea-partial" });
+    const outcome = await runBrainstormQuestionGate(root, {
+      discoveryId: "idea-partial",
+      category: "DEFERABLE",
+      ...BASE_FLAGS,
+      q7: "false",
+      assume: ["low_risk", "reversible", "within_permit", "no_authority_conflict"],
+    });
+    const result = outcome.result as BrainstormQuestionGateResult;
+    expect(result.verdict).toBe("DEFERABLE");
+  });
+
+  it("ASK_REJECTED fail-closed：七关全过 + DEFERABLE 申报 → ok=false + ASK_REJECTED 码位", async () => {
+    await runBrainstormStart(root, { id: "idea-reject" });
+    const outcome = await runBrainstormQuestionGate(root, {
+      discoveryId: "idea-reject",
+      category: "DEFERABLE",
+      ...BASE_FLAGS,
+    });
+    expect(outcome.ok).toBe(false);
+    const result = outcome.result as BrainstormQuestionGateResult;
+    expect(result.verdict).toBe("ASK_REJECTED");
+    expect(outcome.errors[0]?.code).toBe("ASK_REJECTED");
+  });
+
+  it("fail-closed 闸：id 词形外 / scratchpad 不在册 / category 词表外（ASSUMPTION 是处置位非申报位）/ 七关缺位 / 词形外 / assume 词表外", async () => {
+    const badId = await runBrainstormQuestionGate(root, {
+      discoveryId: "../escape",
+      category: "BLOCKING_AUTHORITY",
+      ...BASE_FLAGS,
+    });
+    expect(badId.ok).toBe(false);
+    expect(badId.errors[0]?.code).toBe("SCHEMA_INVALID");
+
+    const notFound = await runBrainstormQuestionGate(root, {
+      discoveryId: "idea-ghost",
+      category: "BLOCKING_AUTHORITY",
+      ...BASE_FLAGS,
+    });
+    expect(notFound.ok).toBe(false);
+    expect(notFound.errors[0]?.code).toBe("SCRATCHPAD_NOT_FOUND");
+
+    await runBrainstormStart(root, { id: "idea-badcat" });
+    const badCategory = await runBrainstormQuestionGate(root, {
+      discoveryId: "idea-badcat",
+      category: "ASSUMPTION",
+      ...BASE_FLAGS,
+    });
+    expect(badCategory.ok).toBe(false);
+    expect(badCategory.errors[0]?.code).toBe("SCHEMA_INVALID");
+    expect(badCategory.errors[0]?.message).toContain("--category");
+    expect(QUESTION_GATE_CATEGORIES).not.toContain("ASSUMPTION");
+
+    const missingGate = await runBrainstormQuestionGate(root, {
+      discoveryId: "idea-badcat",
+      category: "BLOCKING_AUTHORITY",
+      q1: "false",
+      q2: "false",
+      q3: "false",
+      q5: "false",
+      q6: "false",
+      q7: "true",
+    } as unknown as Parameters<typeof runBrainstormQuestionGate>[1]);
+    expect(missingGate.ok).toBe(false);
+    expect((missingGate.result as BrainstormQuestionGateResult).reason).toBe("input_invalid");
+
+    const badFlag = await runBrainstormQuestionGate(root, {
+      discoveryId: "idea-badcat",
+      category: "BLOCKING_AUTHORITY",
+      ...BASE_FLAGS,
+      q1: "maybe",
+    });
+    expect(badFlag.ok).toBe(false);
+    expect(badFlag.errors[0]?.message).toContain("true|false");
+    // 旗标名镜像真实 CLI 面（--q1..--q7），不派生出 --q1currenttruth 幻影词形。
+    expect(badFlag.errors[0]?.message).toContain("--q1 ");
+
+    const badAssume = await runBrainstormQuestionGate(root, {
+      discoveryId: "idea-badcat",
+      category: "DEFERABLE",
+      ...BASE_FLAGS,
+      q7: "false",
+      assume: ["low_risk", "risk_score"],
+    });
+    expect(badAssume.ok).toBe(false);
+    expect(badAssume.errors[0]?.message).toContain("--assume");
   });
 });

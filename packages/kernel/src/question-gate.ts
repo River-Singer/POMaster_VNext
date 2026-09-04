@@ -12,6 +12,13 @@
  * - §80.7 Diverge → Converge：输出必须明确分区 current_increment/future_considerations/
  *   out_of_scope（原文 yaml 三键）；future_considerations 不得自动进入当前实现范围。
  *
+ * 处置词形（Owner 裁定 C1，2026-09-04 vNext Batch 1 R1）：在 §80.4 五词形处置面外
+ * 增设第六值 ASSUMPTION——申报分类五词形不变（ASSUMPTION 是处置位不是申报位）；
+ * 语义 = Q7 不阻塞且低风险/可逆/permit 内/无权威冲突/验收可测五条件显式申报成立时，
+ * DEFERABLE 的显式升级（§4A「DEFERABLE + ASSUMPTION 显式记录，不得伪装成 Truth」）。
+ * 与 §49.2 异常轴 ASSUMPTION 同词两轴（gate 轴=问题处置 / 异常轴=治理异常登记），
+ * 区分注记见 QuestionVerdict 与 cli/projection-common.ts 两侧，不合并。
+ *
  * 纪律：
  * - 七关 answerable 判定是调用方提供的上游检查结果（本模块是判卷器不是检索器）；
  *   判卷以七关重算为准（C5），申报分类只做一致性对账，不替代重算。
@@ -25,7 +32,14 @@
 // §80.4 Question Gate
 // ============================================================
 
-/** 问题分类五词形（PRD §80.4 逐字；词轴待词汇表 PR 收编 TODO(vocab-pr)）。 */
+/**
+ * 问题分类五词形（PRD §80.4 逐字；词轴待词汇表 PR 收编 TODO(vocab-pr)）。
+ *
+ * 词表管辖处置留痕（09-04 vNext Batch 1 R1 核实）：QUESTION_GATE 词族
+ * （分类/处置/七关 id）不在 assets/vocab-lock.draft.yaml 管辖面内——与
+ * cli/triage.ts TRIAGE_PROFILES（Router 层局部词 TODO(vocab-pr) 未入锁）同一先例：
+ * 词形以本模块常量为单一事实源，收编归独立词汇表批，不走 vocab-lock relock。
+ */
 export const QUESTION_GATE_CATEGORIES = [
   "BLOCKING_AUTHORITY",
   "PREFERENCE",
@@ -68,15 +82,64 @@ export interface QuestionGateAnswerable {
 export interface QuestionGateInput {
   readonly category: QuestionGateCategory;
   readonly answerable: QuestionGateAnswerable;
+  /**
+   * ASSUMPTION 联动申报（09-04 Batch 1 R1 / Owner 裁定 C1；PRD §4A「低风险 + 可逆 +
+   * permit 内 + 无权威冲突 + 验收可测」五条件的显式申报位）。缺席 = 不申报 = 不触发
+   * （既有调用方零行为变更）；任一条件未显式申报 true 即不满足——ASSUMPTION 是
+   * DEFERABLE 处置的显式升级，禁由缺省布尔静默放行。
+   */
+  readonly assumption?: QuestionAssumptionDeclaration;
 }
 
-/** 七关重算处置词形。ASK_REJECTED = 七关全过但申报分类非可问类（矛盾，禁 ASK）。 */
+/**
+ * ASSUMPTION 联动五条件申报（纯判卷输入位，零新状态轴——申报不落盘，处置词形才
+ * 是输出）。判定词形语义：全五条件显式 true 且 Q7 不阻塞 → 处置 ASSUMPTION
+ * （DEFERABLE 基础上细化——显式假设记录，不得伪装成 Truth）。
+ */
+export interface QuestionAssumptionDeclaration {
+  /** 低风险（错了他可承受）。 */
+  readonly low_risk: boolean;
+  /** 可逆（错了能回退）。 */
+  readonly reversible: boolean;
+  /** permit 内（在已签发许可范围内）。 */
+  readonly within_permit: boolean;
+  /** 无权威冲突（不与既有 Authority 决定相抵触）。 */
+  readonly no_authority_conflict: boolean;
+  /** 验收可测（该假设的兑现可被验收判定）。 */
+  readonly acceptance_testable: boolean;
+}
+
+/** 五条件词形运行时镜像（QuestionAssumptionDeclaration 键的单一事实源；CLI 词表闸复用）。 */
+export const QUESTION_ASSUMPTION_CONDITIONS = [
+  "low_risk",
+  "reversible",
+  "within_permit",
+  "no_authority_conflict",
+  "acceptance_testable",
+] as const;
+export type QuestionAssumptionCondition = (typeof QUESTION_ASSUMPTION_CONDITIONS)[number];
+
+/**
+ * 七关重算处置词形（六值闭包）。ASK_REJECTED = 七关全过但申报分类非可问类（矛盾，
+ * 禁 ASK）；ASSUMPTION = Q7 不阻塞且联动五条件全满足（DEFERABLE 的显式升级）。
+ *
+ * 【同词两轴区分注记（Owner 裁定 C1，2026-09-04）】本词形是 **gate 处置轴**：
+ * 「这个 Unknown 以显式假设方式处置」——登记动作由调用方联动 §49.2 异常轴完成。
+ * §49.2 异常五分类的 ASSUMPTION（cli/projection-common.ts LEDGER_AGGREGATED_CLASSES、
+ * schemas vocab MSD_UNKNOWN_CLASSIFICATION_VALUES）是 **异常登记轴**：治理台账里的
+ * 异常分类位。两轴同词不同义、不合并：gate 轴回答「怎么处置这个问题」，异常轴回答
+ * 「这笔登记在台账里算什么」——gate 判定 ASSUMPTION 后经异常轴显式登记，登记 ≠ 判定。
+ *
+ * 词表管辖：QUESTION_GATE 词族为 kernel 局部词（TODO(vocab-pr)，triage 先例），
+ * 见 QUESTION_GATE_CATEGORIES 注记。
+ */
 export type QuestionVerdict =
   | "ASK_HUMAN"
   | "ASK_REJECTED"
   | "DERIVABLE"
   | "RESEARCHABLE"
-  | "DEFERABLE";
+  | "DEFERABLE"
+  | "ASSUMPTION";
 
 export type QuestionGateOutcome =
   | {
@@ -90,7 +153,7 @@ export type QuestionGateOutcome =
     }
   | {
       readonly mayAskHuman: false;
-      readonly verdict: "DERIVABLE" | "RESEARCHABLE" | "DEFERABLE";
+      readonly verdict: "DERIVABLE" | "RESEARCHABLE" | "DEFERABLE" | "ASSUMPTION";
       readonly declaredCategory: QuestionGateCategory;
       readonly stoppedAtGate: QuestionGateId;
       readonly declaredConsistent: boolean;
@@ -126,9 +189,14 @@ const GATE_ORDER: readonly {
  * 依次检查 Q1→Q7（原文行序，不跳关）：首个「上游能回答」的关卡决定处置——
  * Q1-Q5 → DERIVABLE（Q5 命中即走 Knowledge 低风险默认，仍是 DERIVABLE 类处置）；
  * Q6 → RESEARCHABLE（Research-first §80.6：技术问题不要求业务人员凭空回答）；
- * Q7 不阻塞 → DEFERABLE。七关全过且申报分类 ∈ ASKABLE → ASK_HUMAN；
+ * Q7 不阻塞 → DEFERABLE；**Q7 不阻塞且 assumption 五条件全显式 true → ASSUMPTION**
+ * （DEFERABLE 的显式升级——低风险可逆 Unknown 以显式假设记录处置，Owner 裁定 C1；
+ * 调用方须联动 §49.2 异常轴登记 ASSUMPTION 分类，不得伪装成 Truth）。
+ * 七关全过且申报分类 ∈ ASKABLE → ASK_HUMAN；
  * 七关全过但申报分类 ∉ ASKABLE → ASK_REJECTED（矛盾显式拒绝，绝不静默放行）。
- * declaredConsistent = 申报分类与七关重算处置一致（对账信号，不替代重算）。
+ * declaredConsistent = 申报分类与七关重算处置一致（对账信号，不替代重算；
+ * ASSUMPTION 处置的申报一致性仍对 DEFERABLE 申报位判定——ASSUMPTION 是处置位
+ * 不是申报位，申报分类五词形不变）。
  */
 export function evaluateQuestionGate(input: QuestionGateInput): QuestionGateOutcome {
   for (const step of GATE_ORDER) {
@@ -150,6 +218,27 @@ export function evaluateQuestionGate(input: QuestionGateInput): QuestionGateOutc
   }
   if (!input.answerable.q7_blocking_increment) {
     const consistent = input.category === "DEFERABLE";
+    const declaration = input.assumption;
+    const assumptionEligible =
+      declaration !== undefined &&
+      declaration.low_risk === true &&
+      declaration.reversible === true &&
+      declaration.within_permit === true &&
+      declaration.no_authority_conflict === true &&
+      declaration.acceptance_testable === true;
+    if (assumptionEligible) {
+      return {
+        mayAskHuman: false,
+        verdict: "ASSUMPTION",
+        declaredCategory: input.category,
+        stoppedAtGate: "Q7",
+        declaredConsistent: consistent,
+        reason:
+          "Q7 判定：不回答并不真的阻塞当前 Increment，且低风险/可逆/permit 内/无权威冲突/验收可测五条件全满足（Owner 裁定 C1：DEFERABLE 的显式升级）",
+        hint:
+          "登记为显式 Assumption（§49.2 异常轴 ASSUMPTION 分类 + §82.4 风险三级申报），不得伪装成 Truth——「Unknown must remain unknown until evidence resolves it」；假设兑现随验收判定复核。",
+      };
+    }
     return {
       mayAskHuman: false,
       verdict: "DEFERABLE",

@@ -591,7 +591,8 @@ export type {
  * Question Gate Q1-Q7 判卷（纯函数，§80.4）：Brainstorm 提问前依次检查七关（不跳关），
  * 只有最后仍为「需要人类裁决」且申报分类 ∈ ASKABLE（BLOCKING_AUTHORITY/PREFERENCE）
  * 才 ASK_HUMAN；Q1-Q5 命中 → DERIVABLE、Q6 → RESEARCHABLE（Research-first §80.6）、
- * Q7 不阻塞 → DEFERABLE；七关全过但分类非可问类 → ASK_REJECTED（矛盾显式拒绝）。
+ * Q7 不阻塞 → DEFERABLE（assumption 五条件全显式申报成立时升级 ASSUMPTION——
+ * Owner 裁定 C1）；七关全过但分类非可问类 → ASK_REJECTED（矛盾显式拒绝）。
  * declaredConsistent 是申报分类与七关重算的对账信号——判卷以七关重算为准（C5）。
  */
 export { evaluateQuestionGate } from "./question-gate.js";
@@ -610,6 +611,7 @@ export {
   QUESTION_GATES,
   QUESTION_PRIORITY_DESCRIPTIONS,
   CONVERGENCE_ZONE_KEYS,
+  QUESTION_ASSUMPTION_CONDITIONS,
 } from "./question-gate.js";
 export type {
   QuestionPriority,
@@ -618,6 +620,8 @@ export type {
   ConvergenceZoneKey,
   ConvergencePartition,
   ConvergenceOutcome,
+  QuestionAssumptionDeclaration,
+  QuestionAssumptionCondition,
 } from "./question-gate.js";
 /**
  * One-question-at-a-time 选择器（纯函数，§80.5）：一次只返回价值最高的一个问题
@@ -872,6 +876,45 @@ export type StealResult =
  * 未过期 → rejected_not_expired（显式拒绝，不静默）。
  */
 export { stealPermit } from "./permits.js";
+
+// ============================================================
+// Authority Precedence 机器面 + authority.json 读侧消费（09-04 Batch 1 R4/D3）
+// ============================================================
+
+/**
+ * PRD §3B 权威优先级链（纯数据九级常量，首位最高）+ map/boundary_rules 读侧最小
+ * 消费面（warning-only：B3 红线——零写路径消费，store/permits 判卷通路不 import）。
+ * map 条目 owner 词形校验、boundary_rules deny 规则投影只读呈现；损坏 fail-closed
+ * 读侧 SCHEMA_INVALID（文件缺席 = 空面，诚实缺席）。ADR-lite 见 authority.ts 头注。
+ */
+export {
+  AUTHORITY_PRECEDENCE_ORDER,
+  AUTHORITY_PRECEDENCE_TOP,
+  AUTHORITY_PRECEDENCE_BOTTOM,
+  AUTHORITY_CONFLICT_RULE,
+  AUTHORITY_OWNER_PATTERN,
+  authorityPrecedenceRank,
+  readAuthorityFaces,
+} from "./authority.js";
+export type {
+  AuthorityPrecedenceLevel,
+  AuthorityMapEntry,
+  AuthorityBoundaryRule,
+  AuthorityFaces,
+} from "./authority.js";
+
+// ============================================================
+// Sources Authority Registry（09-04 Batch 1 R3/D2——PRD §3A 正交权威轴）
+// ============================================================
+
+/**
+ * sources/index.yaml 装载与校验（fail-closed：损坏/双轴相交/id 重复 →
+ * SCHEMA_INVALID；文件缺席 → null = opt-in 平面显式缺席）。sources 不入 store
+ * 事务（非 governed object 起步）；投影消费见 compileProjection consumeSources。
+ * ADR-lite 见 sources.ts 头注。
+ */
+export { loadSourcesRegistry } from "./sources.js";
+export type { SourceAuthorityEntry, SourcesRegistry } from "./sources.js";
 
 // ============================================================
 // 投影（八拍③ PROJECTION：最小充分上下文）
@@ -1183,7 +1226,7 @@ export type {
 // review-candidates）不建账读侧车——路径派生与 createStore 同源（buildStorePaths
 // 是纯函数，不写任何文件），装载面防线（authority/status 词形 fail-closed）与
 // kernel 写通路共享同一 readKnowledgeLibrary 实现。
-export { pathsOf, buildStorePaths } from "./paths.js";
+export { pathsOf, buildStorePaths, KERNEL_TOOL } from "./paths.js";
 export type { StorePaths } from "./paths.js";
 
 // ============================================================

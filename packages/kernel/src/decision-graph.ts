@@ -46,6 +46,7 @@
  * - invalidateDependentDecisions（§7.4 Upstream Change Invalidation）留 P1：
  *   TODO(v053-p1)——P0.5 frontier 对上游非 ACCEPT/CHANGE resolution 的下游一律保守排除。
  */
+import { AUTHORITY_OWNER_PATTERN, AUTHORITY_PRECEDENCE_ORDER } from "./authority.js";
 import { canonicalJson, sha256OfCanonical } from "./digest.js";
 import {
   RESEARCH_EVIDENCE_LEVEL_VALUES,
@@ -233,8 +234,6 @@ const LOOSE_REF_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._\-/:]*$/;
 /** option 词形（INCLUDE_CURRENT_INCREMENT / DEFER，PRD §5.2 options）。 */
 const OPTION_PATTERN = /^[A-Z][A-Z0-9_]{0,63}$/;
 
-/** authority.owner 词形（对齐 owner_registry SCREAMING_SNAKE 风格；存在性对账归消费面）。 */
-const AUTHORITY_OWNER_PATTERN = /^[A-Z][A-Z0-9_]{1,63}$/;
 
 /** graph_fingerprint 词形（sha256:64hex，01 definitions.sha256_digest 同族）。 */
 const SHA256_PATTERN = /^sha256:[0-9a-f]{64}$/;
@@ -1079,7 +1078,7 @@ export function evaluateDecisionGrounding(input: DecisionGroundingInput): Decisi
   if (!AUTHORITY_OWNER_PATTERN.test(node.authority.owner)) {
     fail("G8", `authority.owner "${node.authority.owner}" 缺失或词形非法（§6.1 G8：若最终需要 Human Decision，必须知道谁有权决定；词形对齐 owner_registry）`);
   } else {
-    pass("G8", `authority.owner=${node.authority.owner}（存在性对账归 authority.json 消费面）`);
+    pass("G8", `authority.owner=${node.authority.owner}（存在性对账归 authority.json 消费面）；冲突裁决按 PRD §3B 权威优先级链 AUTHORITY_PRECEDENCE_ORDER（顶层 ${AUTHORITY_PRECEDENCE_ORDER[0]}，AI Invention 零权威）`);
   }
 
   // —— G5 Conflict Visibility（§12.3：已披露冲突 → CONFLICT_REVIEW，禁自行挑答案） ——

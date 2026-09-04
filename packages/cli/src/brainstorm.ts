@@ -1,22 +1,41 @@
 /**
- * brainstorm.ts —— §44.3 六命令之 brainstorm 三命令（P18）。
+ * brainstorm.ts —— §44.3 六命令之 brainstorm 三命令（P18）+ question-gate 接线
+ * （09-04 vNext Batch 1 R2，Owner 裁定 D1/C1——PRD §4A Intent Framing & Question Gate）。
  *
- * - `brainstorm start [--ephemeral]`：创建 Discovery scratchpad（.pomaster/discovery/
+ * ADR-lite（接线形态选择）：候选 a（maintain pre-dev 链增 ⓪ 步）/ b（brainstorm 面
+ * 接线）/ c（独立 intent 命令）中选 **b**：§80.4 原文「Brainstorm 提问前必须依次检查
+ * 七关」——Question Gate 的产品宿主就是 brainstorm 面（kernel question-gate 的
+ * Diverge→Converge 分区判卷同面；§31 CRC-A 的 raw prompt 入口唯一零载体层也在
+ * discovery scratchpad）；maintain pre-dev 链保持 triage→permit→compile 三步原样
+ * （⓪ 步会在编排链签名里塞入七关申报位，违反最小约束——宪法 §31）。零新对象：
+ * raw prompt 与 Intent Framing 四分拣承载 = scratchpad meta.json（CLI 局部注记位，
+ * 非治理对象）最小扩展——Discovery 平面自留（§80.2 权限清单明文授权维护面）。
+ *
+ * - `brainstorm start [--ephemeral] [--prompt <raw>] [--known/--unknown/--conflict/
+ *   --assumption <text>...]`：创建 Discovery scratchpad（.pomaster/discovery/
  *   scratchpads/<id>/，PRD §80.3 原文路径）并进入 DISCOVERY 态——Ephemeral 纪律：
  *   不复制「Brainstorm Step 0 永远创建 Task」的假设（§80.3），普通讨论驻留 scratchpad。
+ *   --prompt 登记 raw prompt 原文（Intent Framing 前的入口载体，禁 Raw Prompt →
+ *   Task → Code）；四分拣旗标登记 Intent Framing 产物。
+ * - `brainstorm question-gate <discovery-id>`：Question Gate 七问判卷的产品消费面
+ *   （kernel evaluateQuestionGate 单一判卷源）：申报分类 + 七关上游检查结果申报 →
+ *   处置词形呈现（ASK_HUMAN/ASK_REJECTED/DERIVABLE/RESEARCHABLE/DEFERABLE/
+ *   ASSUMPTION）。ASSUMPTION = Q7 不阻塞 + 低风险/可逆/permit 内/无权威冲突/验收
+ *   可测五条件显式申报成立（--assume 条件词，Owner 裁定 C1）→ 联动 §49.2 异常轴
+ *   登记（ledger record --classification ASSUMPTION），不得伪装成 Truth。
+ *   One-question-at-a-time 队列不持久化（P53 §16 禁增 questions.json——队列由调用方
+ *   持题随队传递 kernel selectNextQuestion 的 gateVerdict 凭证）。
  * - `brainstorm status`：呈现全部 scratchpad 的状态链位置（§44.3）。
  * - `brainstorm promote <discovery-id> --to CHANGE|TASK --basis <basis>`：提升面。
- *   **提升写入走 P11 maintain 面**（受控写入唯一面；Discovery 层不私造第二写入通道）：
- *   本命令只做链判定（kernel validateDiscoveryTransition）+ 组装 kernel Transaction
- *   + 落 tx 文件；`--apply` 时把 tx 文件交给 runMaintain（maintain --ops 的同一入口
- *   函数、同一 applyTransaction 判卷权威）——字面同通道，零旁移。
+ *   **提升写入走 P11 maintain 面**（受控写入唯一面；Discovery 层不私造第二写入通道）。
  *
  * 写面纪律：本命令只写 Discovery 平面文件（scratchpad 内 state.json（08 信封逐字）/
  * meta.json（CLI 局部注记）/ promote-tx.json（maintain --ops 输入形态））——
  * §80.2 权限清单「维护 Discovery Scratchpad」明文授权；治理 store 零直写。
  * --tx-out 落点强制解析进 rootDir（出仓/受治理面显式拒绝；相对路径相对 rootDir 而非
  * 进程 CWD——P18 红队发现3）。
- * 词表纪律：状态链/晋升依据词形全部来自 @pomaster/schemas 镜像（TODO(vocab-pr)）。
+ * 词表纪律：状态链/晋升依据词形全部来自 @pomaster/schemas 镜像（TODO(vocab-pr)）；
+ * question-gate 判卷输入词形（分类五词形/五条件词形）复用 kernel 常量单一事实源。
  * fail-closed：非法转移/词表外 basis/非法目标 id/幂等残缺一律显式码位 + hint。
  */
 import { existsSync } from "node:fs";
@@ -29,9 +48,15 @@ import {
 } from "@pomaster/schemas";
 import {
   GovernedIdParseError,
+  QUESTION_ASSUMPTION_CONDITIONS,
+  QUESTION_GATE_CATEGORIES,
   RESEARCH_FORBIDDEN_SURFACE_PREFIXES,
+  evaluateQuestionGate,
   parseGovernedId,
   validateDiscoveryTransition,
+  type QuestionAssumptionCondition,
+  type QuestionAssumptionDeclaration,
+  type QuestionGateAnswerable,
 } from "@pomaster/kernel";
 import type { CliError, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
@@ -71,6 +96,24 @@ export interface DiscoveryMetaFile {
   readonly title: string;
   readonly ephemeral: boolean;
   readonly chain: readonly string[];
+  /**
+   * raw prompt 原文（09-04 Batch 1 R2：§4A「Raw Human Intent」入口载体——Intent
+   * Framing 前的原文登记位；§31 CRC-A 的唯一零载体层补齐）。缺席 = 未登记（显式）。
+   */
+  readonly prompt?: string;
+  /**
+   * Intent Framing 四分拣产物（§4A Known/Unknown/Conflict/Assumption 显式分拣；
+   * 零新对象承载——meta.json 自由注记位，登记理由见模块头 ADR-lite）。
+   */
+  readonly framing?: DiscoveryFraming;
+}
+
+/** Intent Framing 四分拣（§4A 逐键；字符串清单，空数组 = 该桶显式空）。 */
+export interface DiscoveryFraming {
+  readonly known: readonly string[];
+  readonly unknown: readonly string[];
+  readonly conflict: readonly string[];
+  readonly assumption: readonly string[];
 }
 
 export interface BrainstormStartResult {
@@ -175,6 +218,10 @@ export interface BrainstormStartInput {
   readonly ephemeral?: boolean;
   readonly id?: string;
   readonly title?: string;
+  /** raw prompt 原文（Intent Framing 前的入口载体；§4A/R2——禁 Raw Prompt → Task → Code）。 */
+  readonly prompt?: string;
+  /** Intent Framing 四分拣产物（§4A；零新对象承载——meta.json 注记位）。 */
+  readonly framing?: DiscoveryFraming;
 }
 
 /**
@@ -291,6 +338,8 @@ export async function runBrainstormStart(
     title: input.title ?? id,
     ephemeral: input.ephemeral === true,
     chain: ["IDEA", "DISCOVERY"],
+    ...(input.prompt !== undefined ? { prompt: input.prompt } : {}),
+    ...(input.framing !== undefined ? { framing: input.framing } : {}),
   };
   try {
     await mkdir(padDir, { recursive: true });
@@ -324,8 +373,13 @@ export async function runBrainstormStart(
       change: "CREATED",
     },
     [
-      `brainstorm start → CREATED (discovery=${id}, state=DISCOVERY${input.ephemeral ? ", ephemeral" : ""})`,
+      `brainstorm start → CREATED (discovery=${id}, state=DISCOVERY${input.ephemeral ? ", ephemeral" : ""}${input.prompt !== undefined ? ", prompt=registered" : ""}${input.framing !== undefined ? ", framing=registered" : ""})`,
       `  scratchpad: ${scratchpadRef}`,
+      ...(input.prompt !== undefined
+        ? [
+            "  raw prompt 已登记（§4A 入口载体）——Intent Framing 四分拣后经 brainstorm question-gate 逐问过闸，禁 Raw Prompt → Task → Code（§31 CRC-A）",
+          ]
+        : []),
       "  Ephemeral 纪律（§80.3）：普通讨论驻留 scratchpad，不创建 Task；晋升走 brainstorm promote（P11 maintain 面）",
     ],
   );
@@ -404,6 +458,243 @@ export async function runBrainstormStatus(
     "  状态链（§80.3）：IDEA → DISCOVERY → READY_TO_PROMOTE → CHANGE/TASK（提升走 brainstorm promote）",
   ];
   return okOutcome<BrainstormStatusResult>("brainstorm status", { scratchpads }, human, warnings);
+}
+
+// ============================================================
+// brainstorm question-gate（§80.4 产品消费面；09-04 Batch 1 R2/D1+C1）
+// ============================================================
+
+/** question-gate 七关申报的原始词形（CLI argv 字符串；runXxx 内收窄为布尔）。 */
+export type QuestionGateFlagArg = "true" | "false";
+
+export interface BrainstormQuestionGateInput {
+  readonly discoveryId: string;
+  readonly category?: string;
+  /** --question：问题原文注记（呈现位，meta 不改写——判卷零写面）。 */
+  readonly question?: string;
+  /** --q1..--q7：七关上游检查结果申报（"true"/"false"；缺任一 = 缺判卷输入，fail-closed）。 */
+  readonly q1?: string;
+  readonly q2?: string;
+  readonly q3?: string;
+  readonly q4?: string;
+  readonly q5?: string;
+  readonly q6?: string;
+  readonly q7?: string;
+  /** --assume <cond>：ASSUMPTION 联动五条件显式申报（可重复；未申报 = 未满足）。 */
+  readonly assume?: readonly string[];
+}
+
+export interface BrainstormQuestionGateResult {
+  readonly discovery_id: string;
+  readonly declared_category: string;
+  readonly question: string | null;
+  readonly verdict: string;
+  readonly stopped_at_gate: string | null;
+  readonly declared_consistent: boolean;
+  readonly may_ask_human: boolean;
+  readonly reason: string | null;
+  readonly hint: string | null;
+  readonly notes: readonly string[];
+}
+
+/**
+ * Question Gate 七问判卷（判卷零旁移——kernel evaluateQuestionGate 单一实现，本函数
+ * 只做申报词形收窄与呈现）。七关上游检查结果是调用方（Agent/人）对 Q1-Q6 检索面的
+ * 申报，判卷以七关重算为准（C5）；申报分类 ∉ ASKABLE 且七关全过 → ASK_REJECTED
+ * fail-closed。ASSUMPTION 联动：五条件全显式申报 + Q7 不阻塞 → ASSUMPTION 处置，
+ * hint 指路 §49.2 异常轴登记（pomaster ledger record --classification ASSUMPTION）。
+ * 零写面：本命令纯判卷呈现，不写 scratchpad/meta/store。
+ */
+export async function runBrainstormQuestionGate(
+  rootDir: string,
+  input: BrainstormQuestionGateInput,
+): Promise<CommandOutcome<BrainstormQuestionGateResult>> {
+  const emptyResult = (declaredCategory: string): BrainstormQuestionGateResult => ({
+    discovery_id: input.discoveryId,
+    declared_category: declaredCategory,
+    question: input.question ?? null,
+    verdict: "",
+    stopped_at_gate: null,
+    declared_consistent: false,
+    may_ask_human: false,
+    reason: "input_invalid",
+    hint: "",
+    notes: [],
+  });
+  const fail = (error: CliError, declaredCategory: string, human: string[]): CommandOutcome<BrainstormQuestionGateResult> =>
+    failOutcome<BrainstormQuestionGateResult>("brainstorm question-gate", emptyResult(declaredCategory), [error], human);
+
+  // —— 闸 1：discovery id 词形（与 start/promote 同款 DISCOVERY_ID_PATTERN 闸） ——
+  if (!DISCOVERY_ID_PATTERN.test(input.discoveryId)) {
+    return fail(
+      {
+        code: "SCHEMA_INVALID",
+        message: `discovery id "${input.discoveryId}" 不匹配词形（08 scratchpad_ref 目录段：[A-Za-z0-9][A-Za-z0-9_-]{0,63}）`,
+        hint: "pomaster brainstorm status 查看现有 discovery。",
+      },
+      input.category ?? "",
+      [`brainstorm question-gate: FAILED — SCHEMA_INVALID (discovery id 词形非法: ${input.discoveryId})`],
+    );
+  }
+
+  // —— 闸 1.5：scratchpad 在册（state.json 可解析——问题必须挂在一个真实 discovery 上，
+  //     禁对虚构 id 判卷冒充已过闸；纯读，不校验具体链位——gate 是判卷不是生命周期） ——
+  const rawState = await readJsonFile(stateFilePath(rootDir, input.discoveryId));
+  if (rawState === null || typeof rawState !== "object") {
+    return fail(
+      {
+        code: "SCRATCHPAD_NOT_FOUND",
+        message: `discovery "${input.discoveryId}" 不存在或 state.json 不可解析`,
+        hint: "pomaster brainstorm status 查看现有 discovery；先 brainstorm start 创建。",
+      },
+      input.category ?? "",
+      [`brainstorm question-gate: FAILED — SCRATCHPAD_NOT_FOUND (${input.discoveryId})`],
+    );
+  }
+
+  // —— 闸 2：申报分类词表（分类五词形不变——ASSUMPTION 是处置位不是申报位） ——
+  const declaredCategory = input.category;
+  if (
+    declaredCategory === undefined ||
+    !(QUESTION_GATE_CATEGORIES as readonly string[]).includes(declaredCategory)
+  ) {
+    return fail(
+      {
+        code: "SCHEMA_INVALID",
+        message: `--category 缺失或词表外：${String(declaredCategory)}`,
+        hint: `申报分类五词形（§80.4 逐字）：${QUESTION_GATE_CATEGORIES.join(" | ")}；可问类只有 BLOCKING_AUTHORITY/PREFERENCE。`,
+      },
+      String(declaredCategory ?? ""),
+      ["brainstorm question-gate: FAILED — SCHEMA_INVALID (--category)"],
+    );
+  }
+
+  // —— 闸 3：七关申报齐备且词形合法（缺任一 = 缺判卷输入，绝不静默当 false——
+  //     q7 缺席被当「不阻塞」会系统性放行，缺席显式纪律） ——
+  const rawFlags: readonly (readonly [keyof QuestionGateAnswerable, string | undefined])[] = [
+    ["q1_current_truth", input.q1],
+    ["q2_existing_docs", input.q2],
+    ["q3_repo_code", input.q3],
+    ["q4_existing_evidence", input.q4],
+    ["q5_knowledge_default", input.q5],
+    ["q6_research", input.q6],
+    ["q7_blocking_increment", input.q7],
+  ];
+  const missing = rawFlags.filter(([, raw]) => raw === undefined).map(([key]) => key);
+  const answerable: Record<keyof QuestionGateAnswerable, boolean> = {
+    q1_current_truth: false,
+    q2_existing_docs: false,
+    q3_repo_code: false,
+    q4_existing_evidence: false,
+    q5_knowledge_default: false,
+    q6_research: false,
+    q7_blocking_increment: false,
+  };
+  if (missing.length > 0) {
+    return fail(
+      {
+        code: "SCHEMA_INVALID",
+        message: `七关申报缺位：${missing.join(", ")}`,
+        hint: "七关上游检查结果是判卷输入（必答）；--q1..--q7 各给 true/false。Q7 语义相反：true = 真的阻塞当前 Increment。",
+      },
+      declaredCategory,
+      ["brainstorm question-gate: FAILED — SCHEMA_INVALID (七关申报缺位)"],
+    );
+  }
+  for (const [key, raw] of rawFlags) {
+    const value = raw as string;
+    if (value !== "true" && value !== "false") {
+      return fail(
+        {
+          code: "SCHEMA_INVALID",
+          message: `--${key.split("_")[0]} 词形外："${value}"（须 true|false）`,
+          hint: "七关申报只收 true/false（Q7：true = 真的阻塞当前 Increment）。",
+        },
+        declaredCategory,
+        ["brainstorm question-gate: FAILED — SCHEMA_INVALID (七关申报词形)"],
+      );
+    }
+    answerable[key] = value === "true";
+  }
+
+  // —— 闸 4：ASSUMPTION 五条件申报（词形 = kernel QUESTION_ASSUMPTION_CONDITIONS 单源） ——
+  const declaredConditions = new Set<QuestionAssumptionCondition>();
+  for (const raw of input.assume ?? []) {
+    if (!(QUESTION_ASSUMPTION_CONDITIONS as readonly string[]).includes(raw)) {
+      return fail(
+        {
+          code: "SCHEMA_INVALID",
+          message: `--assume 词表外："${raw}"`,
+          hint: `五条件词形（§4A 低风险/可逆/permit 内/无权威冲突/验收可测）：${QUESTION_ASSUMPTION_CONDITIONS.join(" | ")}；可重复申报，全部在册才触发 ASSUMPTION。`,
+        },
+        declaredCategory,
+        ["brainstorm question-gate: FAILED — SCHEMA_INVALID (--assume)"],
+      );
+    }
+    declaredConditions.add(raw as QuestionAssumptionCondition);
+  }
+  const assumption: QuestionAssumptionDeclaration | undefined =
+    declaredConditions.size > 0
+      ? {
+          low_risk: declaredConditions.has("low_risk"),
+          reversible: declaredConditions.has("reversible"),
+          within_permit: declaredConditions.has("within_permit"),
+          no_authority_conflict: declaredConditions.has("no_authority_conflict"),
+          acceptance_testable: declaredConditions.has("acceptance_testable"),
+        }
+      : undefined;
+
+  // —— 判卷（kernel 单一实现；本面零判卷逻辑） ——
+  const outcome = evaluateQuestionGate({
+    category: declaredCategory as (typeof QUESTION_GATE_CATEGORIES)[number],
+    answerable,
+    ...(assumption !== undefined ? { assumption } : {}),
+  });
+  const base = {
+    discovery_id: input.discoveryId,
+    declared_category: declaredCategory,
+    question: input.question ?? null,
+    verdict: outcome.verdict,
+    stopped_at_gate: outcome.mayAskHuman ? null : outcome.stoppedAtGate,
+    declared_consistent: outcome.mayAskHuman ? true : outcome.declaredConsistent,
+    may_ask_human: outcome.mayAskHuman,
+    reason: outcome.mayAskHuman ? null : outcome.reason,
+    hint: outcome.mayAskHuman ? null : outcome.hint,
+    notes: outcome.mayAskHuman ? outcome.notes : [],
+  };
+  const human = [
+    `brainstorm question-gate: verdict=${outcome.verdict} (discovery=${input.discoveryId}, category=${declaredCategory})`,
+    ...(input.question !== undefined ? [`  问题: ${input.question}`] : []),
+    `  stoppedAtGate: ${base.stopped_at_gate ?? "(无——七关全过)"}`,
+    `  declaredConsistent: ${base.declared_consistent}`,
+    ...(outcome.mayAskHuman ? outcome.notes.map((note) => `  note: ${note}`) : []),
+    ...(!outcome.mayAskHuman ? [`  reason: ${outcome.reason}`, `  hint: ${outcome.hint}`] : []),
+    ...(outcome.verdict === "ASSUMPTION"
+      ? [
+          "  处置 ASSUMPTION = 显式假设记录，不得伪装成 Truth——联动 §49.2 异常轴登记：",
+          "    pomaster ledger record --classification ASSUMPTION --statement <假设陈述> --actor <type>:<name>",
+          "  （gate 轴（本命令）≠ 异常轴（ledger）：同词两轴，登记 ≠ 判定——Owner 裁定 C1）",
+        ]
+      : []),
+    ...(outcome.mayAskHuman
+      ? ["  ASK HUMAN 走 One-question-at-a-time（§80.5）：一次只问当前价值最高的一个问题"]
+      : []),
+  ];
+  if (outcome.verdict === "ASK_REJECTED") {
+    return failOutcome<BrainstormQuestionGateResult>(
+      "brainstorm question-gate",
+      base,
+      [
+        {
+          code: "ASK_REJECTED",
+          message: `矛盾申报（七关全过但申报分类 ${declaredCategory} 非可问类）——${outcome.reason}`,
+          hint: outcome.hint,
+        },
+      ],
+      human,
+    );
+  }
+  return okOutcome<BrainstormQuestionGateResult>("brainstorm question-gate", base, human);
 }
 
 // ============================================================

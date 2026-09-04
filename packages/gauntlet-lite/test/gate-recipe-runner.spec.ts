@@ -30,7 +30,9 @@ import {
   bindRecipeExecutor,
   createContractAdapter,
   deriveGateName,
+  absenceRecord,
   runGateRecipe,
+  runGateRecipeAsync,
   toGateResultJson,
   type CatalogGateRecipeDescriptor,
   type GateResultRecord,
@@ -604,5 +606,133 @@ describe("P12c 对抗 d：adapter 非常规崩溃 → blocked 显式留痕（禁
     expect(record.verdict).toBe("blocked");
     expect(record.scopeNote).toContain("run 执行异常");
     expect(record.scopeNote).toContain("exited with code 137");
+  });
+});
+
+// ============================================================
+// kernel-native 直调派发（09-04 Batch 1 R5：GATE.NEW_ENTITY.CHECKS 解除 unbound）
+// ============================================================
+
+describe("kernel_native 派发（GATE.NEW_ENTITY.CHECKS；kernel runNewEntityGate 直调形态）", () => {
+  const NEW_ENTITY_RECIPE = CATALOG_GATE_RECIPES.find(
+    (candidate) => candidate.id === "GATE.NEW_ENTITY.CHECKS",
+  ) as CatalogGateRecipeDescriptor;
+
+  it("派发登记：NEW_ENTITY = kernel_native（解除 unbound；零孤儿键守卫由分母自检钉住）", () => {
+    expect(RECIPE_GATE_DISPATCH["GATE.NEW_ENTITY.CHECKS"]).toEqual({ kind: "kernel_native" });
+    expect(NEW_ENTITY_RECIPE.lane).toBe("any");
+  });
+
+  it("同步面 kernel_native → not_run 显式指路异步入口（禁静默伪装执行）", () => {
+    const record = runGateRecipe(NEW_ENTITY_RECIPE, {
+      projectRoot: "D:/any-project",
+      grn: "GRN-41",
+      ranAtSeq: 40,
+    });
+    expect(record.verdict).toBe("not_run");
+    expect(record.scopeNote).toContain("runGateRecipeAsync");
+    expect(record.gate).toBe("GATE_NEW_ENTITY_CHECKS");
+    expect(record.gateDef).toBe("GATE.NEW_ENTITY.CHECKS@0.1.0");
+  });
+
+  it("async 直调：注入 kernel 执行器 → 产出重绑 recipe 身份（gate/gateDef 重绑，tool 三件套保留 kernel 执行者）", async () => {
+    const kernelRecord = absenceRecord(
+      {
+        grn: "GRN-42",
+        gate: "NEW_ENTITY",
+        gateDef: "POLICY.GATE.NEW_ENTITY.CHECKS@0.1.0",
+        ranAtSeq: 41,
+        subjectId: null,
+        denominatorRefs: [],
+        tool: "kernel:run_new_entity_gate",
+        toolVersion: "0.0.0",
+        metricDialect: "kernel:new_entity_gate",
+      },
+      "not_run",
+      "零候选：check --gates 分母无新建实体申报（零分母禁当满分）",
+      0,
+      0,
+    );
+    const record = await runGateRecipeAsync(
+      NEW_ENTITY_RECIPE,
+      { projectRoot: "D:/any-project", grn: "GRN-42", ranAtSeq: 41 },
+      {
+        kernelGates: {
+          "GATE.NEW_ENTITY.CHECKS": async () => kernelRecord,
+        },
+      },
+    );
+    expect(record.verdict).toBe("not_run");
+    expect(record.gate).toBe("GATE_NEW_ENTITY_CHECKS");
+    expect(record.gateDef).toBe("GATE.NEW_ENTITY.CHECKS@0.1.0");
+    expect(record.tool).toBe("kernel:run_new_entity_gate");
+    expect(record.metricDialect).toBe("kernel:new_entity_gate");
+    expect(record.scopeNote).toContain("零候选");
+    if (!validate(toGateResultJson(record))) console.error(validate.errors);
+    expect(validate(toGateResultJson(record))).toBe(true);
+  });
+
+  it("async 直调：执行器未注入 → not_run 缺席诚实（本 runner 零 store 依赖）", async () => {
+    const record = await runGateRecipeAsync(NEW_ENTITY_RECIPE, {
+      projectRoot: "D:/any-project",
+      grn: "GRN-43",
+      ranAtSeq: 42,
+    });
+    expect(record.verdict).toBe("not_run");
+    expect(record.scopeNote).toContain("未注入");
+  });
+
+  it("async 直调：执行器异常 → blocked（禁静默）；policySkip 短路与同步面同一条线", async () => {
+    const blocked = await runGateRecipeAsync(
+      NEW_ENTITY_RECIPE,
+      { projectRoot: "D:/any-project", grn: "GRN-44", ranAtSeq: 43 },
+      {
+        kernelGates: {
+          "GATE.NEW_ENTITY.CHECKS": async () => {
+            throw new Error("store 未初始化");
+          },
+        },
+      },
+    );
+    expect(blocked.verdict).toBe("blocked");
+    expect(blocked.scopeNote).toContain("store 未初始化");
+
+    const skipped = await runGateRecipeAsync(
+      NEW_ENTITY_RECIPE,
+      {
+        projectRoot: "D:/any-project",
+        grn: "GRN-45",
+        ranAtSeq: 44,
+        policySkip: { reason: "governance profile 排除本 gate" },
+      },
+      {
+        kernelGates: {
+          "GATE.NEW_ENTITY.CHECKS": async () => {
+            throw new Error("策略排除后不应进入执行器");
+          },
+        },
+      },
+    );
+    expect(skipped.verdict).toBe("not_run");
+    expect(skipped.metricDialect).toBe("gate_recipe:policy_skip");
+    expect(skipped.counts.notApplicable).toBe(1);
+  });
+
+  it("async 直调：adapter 形态 recipe 原样委托同步面（两入口行为一致）", async () => {
+    const prechange = CATALOG_GATE_RECIPES.find(
+      (candidate) => candidate.id === "GATE.CHG.PRECHANGE_CHECKS",
+    ) as CatalogGateRecipeDescriptor;
+    const syncRecord = runGateRecipe(prechange, {
+      projectRoot: "D:/p",
+      grn: "GRN-46",
+      ranAtSeq: 45,
+    });
+    const asyncRecord = await runGateRecipeAsync(prechange, {
+      projectRoot: "D:/p",
+      grn: "GRN-46",
+      ranAtSeq: 45,
+    });
+    expect(asyncRecord.verdict).toBe(syncRecord.verdict);
+    expect(asyncRecord.gate).toBe(syncRecord.gate);
   });
 });

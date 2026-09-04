@@ -34,6 +34,11 @@
  * - traces/AGX-*.json           durable manifest（TASK/INCIDENT/AUDIT 留存档，进 Git）
  * - runtime/traces/AGX-*.json   EPHEMERAL manifest（易变平面；§85.4 可删除测试 runtime/
  *                               判据豁免——删后投影可重建，Benchmark C raw 可丢弃）
+ *
+ * Sources 平面（PRD vNext §3/§3A；09-04 vNext Batch 1 R3 / Owner 裁定 D2）：
+ * - sources/index.yaml          来源工件权威边界 registry（sources.ts 装载只读；
+ *                               非 governed object——不入 store 事务、不进 content_digest）
+ * - sources/snapshots/          外部材料不可重取时的快照（原始字节面，零 schema）
  */
 import { GovernanceError } from "./errors.js";
 import { isNotFoundError, readJsonText } from "./io.js";
@@ -77,6 +82,12 @@ export interface StorePaths {
   readonly tracesDir: string;
   /** runtime/traces/（W1-C §8.3：EPHEMERAL trace 易变平面，可丢弃；trace.ts 维护）。 */
   readonly rawTracesDir: string;
+  /** sources/（§3A 来源工件权威边界平面；sources.ts 装载只读，init 预铺）。 */
+  readonly sourcesDir: string;
+  /** sources/snapshots/（外部材料快照面——原始字节，零 schema）。 */
+  readonly sourcesSnapshotsDir: string;
+  /** sources/index.yaml（来源权威边界 registry 载体；开放词表维度 + 双轴结构闭包）。 */
+  readonly sourcesIndexPath: string;
 }
 
 export function buildStorePaths(rootDir: string): StorePaths {
@@ -108,6 +119,9 @@ export function buildStorePaths(rootDir: string): StorePaths {
     executionsDir: `${pomasterDir}/executions`,
     tracesDir: `${pomasterDir}/traces`,
     rawTracesDir: `${pomasterDir}/runtime/traces`,
+    sourcesDir: `${pomasterDir}/sources`,
+    sourcesSnapshotsDir: `${pomasterDir}/sources/snapshots`,
+    sourcesIndexPath: `${pomasterDir}/sources/index.yaml`,
   };
 }
 

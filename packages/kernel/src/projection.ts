@@ -33,6 +33,8 @@ import { sha256OfCanonical } from "./digest.js";
 import { readText } from "./io.js";
 import { parseGovernedId } from "./id.js";
 import { pathsOf, readRawIndex, type StorePaths } from "./paths.js";
+import { loadSourcesRegistry } from "./sources.js";
+import { readAuthorityFaces } from "./authority.js";
 import { loadTruthIndex } from "./store.js";
 import {
   CATALOG_CHANGE_CLASS_VALUES,
@@ -562,6 +564,98 @@ function readPermitLedger(store: Store): readonly PermitLedgerEntry[] {
   );
 }
 
+// ============================================================
+// sources 正交权威轴消费（09-04 Batch 1 R3 / Owner 裁定 D2——PRD §3A/§4 表：
+// sources/index.yaml → AUTHORITATIVE「被本次 Change 引用的 source」）
+// ============================================================
+
+/**
+ * Change 对 sources 的引用载体（最小实现，零新对象）：task/change 对象 payload
+ * 自由区的 `source_refs` 字符串数组（02 信封 payload 层 additionalProperties true
+ * ——affected_objects 同款自由区词位，不新增 schema 字段）。缺席/异形 → 无引用
+ * （诚实缺席；taskRef 对象不在 store 或正文缺失同样按无引用——引用对账只在对象
+ * 在册时进行，不猜测）。
+ */
+function referencedSourceIds(
+  request: ProjectionRequest,
+  paths: StorePaths,
+  index: TruthIndex,
+): readonly string[] {
+  if (request.taskRef === undefined) return [];
+  const row = index.objects.find((candidate) => candidate.id === request.taskRef);
+  if (row === undefined) return [];
+  const text = readText(`${paths.pomasterDir}/${row.bodyRef}`);
+  if (text === null) return [];
+  let body: UnknownRecord;
+  try {
+    const parsed: unknown = JSON.parse(text);
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return [];
+    body = parsed as UnknownRecord;
+  } catch {
+    return [];
+  }
+  const payload = body.payload;
+  if (typeof payload !== "object" || payload === null || Array.isArray(payload)) return [];
+  const refs = (payload as UnknownRecord).source_refs;
+  if (!Array.isArray(refs)) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const ref of refs) {
+    if (typeof ref !== "string" || ref.trim().length === 0) continue;
+    if (seen.has(ref)) continue;
+    seen.add(ref);
+    out.push(ref);
+  }
+  return out;
+}
+
+/**
+ * sources 消费（MUST 区呈现；被 Change 引用的 source 带 authoritative_for 注记）：
+ * - registry 缺席（sources/index.yaml 不存在）→ 空分区（opt-in 平面——项目未登记
+ *   来源是合法状态；不冒充「已查无来源」也不杜撰条目）；
+ * - registry 在场但损坏 → loadSourcesRegistry 原样抛 SCHEMA_INVALID（fail-closed，
+ *   catalog 坏物料同款纪律——读侧呈现面禁静默当空表）；
+ * - 引用的 id 不在册 → MUST 条目显式「不在册」注记（引用悬空必须可见，禁静默丢弃
+ *   ——引用了未申报权威边界的来源，判卷输入必须知道这件事）。
+ * 纪律：resolve 侧 advisory 不改变 match_class（resolver.ts anti-hallucination）不
+ * 受本消费面影响；sources 不入 store 事务（非 governed object 起步）。
+ */
+function consumeSources(
+  request: ProjectionRequest,
+  paths: StorePaths,
+  index: TruthIndex,
+): readonly ProjectionEntry[] {
+  const registry = loadSourcesRegistry(paths);
+  if (registry === null) return [];
+  const referenced = referencedSourceIds(request, paths, index);
+  if (referenced.length === 0) return [];
+  const byId = new Map(registry.sources.map((entry) => [entry.id, entry]));
+  const entries: ProjectionEntry[] = [];
+  for (const id of referenced) {
+    const source = byId.get(id);
+    if (source === undefined) {
+      entries.push({
+        ref: id,
+        reason: `source 引用不在册：sources/index.yaml 无 id=${id}（缺席显式——权威边界未申报，禁默认放行判卷；在 sources/index.yaml 登记该来源的 authority 双轴）`,
+      });
+      continue;
+    }
+    entries.push({
+      ref: id,
+      reason:
+        `AUTHORITATIVE: source ${id}（§3A 正交权威轴；type=${source.type}` +
+        `${source.version === null ? "" : `；version=${source.version}`}` +
+        `；location=${source.location}）——` +
+        `authoritative_for=[${source.authoritative_for.join(", ")}]；` +
+        `non_authoritative_for=[${source.non_authoritative_for.join(", ")}]` +
+        (source.non_authoritative_for.length > 0
+          ? "（无发言权维度不得充当实现/设计权威——来源与 Baseline 冲突时按 §3B precedence 归 Baseline）"
+          : ""),
+    });
+  }
+  return entries;
+}
+
 /**
  * 范围派生（compileProjection / explainCatalogProjection 共享；确定性、可判卷）：
  * - 分母通道：request.denominatorRefs 命中的对象（信封行 denominator_refs 交集）；
@@ -621,7 +715,12 @@ function inScopeObjectKindsOf(index: TruthIndex, scopeReasons: Map<string, Set<s
  *   机器全字段确定性判定注入独立分区 + tools 懒加载清单（§92.2：出处 catalog 的
  *   策展源，独立于 store 派生的三通道）；
  * - knowledge 通道（P28-Commands）：knowledge 侧车按 Change Localization 检索
- *   命中注入独立分区（§83.8 检索而非全量；[ADVISORY] 分区，永不进判卷输入）。
+ *   命中注入独立分区（§83.8 检索而非全量；[ADVISORY] 分区，永不进判卷输入）；
+ * - authority 边界呈现（09-04 Batch 1 R4/D3）：authority.json boundary_rules 的
+ *   deny 规则只读呈现进 MUST 区（B3 warning-only 红线：呈现不阻断写路径）；
+ * - sources 权威轴呈现（09-04 Batch 1 R3/D2）：被 Change payload source_refs 引用的
+ *   来源按 §3A 双轴注记呈现进 MUST 区（sources/index.yaml 损坏 fail-closed；
+ *   resolve 侧 advisory 不改变 match_class 纪律不受影响）。
  * 范围为空 → manifest 的 store 派生分区为空（诚实缺席，不杜撰「全域上下文」）；
  * catalog/knowledge 分区按各自检索语义在场（与 store 范围正交——策展源不依赖任务分母）。
  */
@@ -696,6 +795,23 @@ export async function compileProjection(
       reason: `policy 治理域命中：authority owner=${row.authorityOwner} 的范围内对象受其约束（kind=${row.kind}）`,
     });
   }
+  // —— authority boundary_rules 只读呈现（09-04 Batch 1 R4 / Owner 裁定 D3；B3 红线：
+  // 呈现不阻断——本面是读侧消费，store/permits 写路径不 import authority 消费面） ——
+  const authorityFaces = readAuthorityFaces(pathsOf(store));
+  for (const rule of authorityFaces.boundary_rules) {
+    if (rule.effect !== "deny") continue;
+    mustEntries.push({
+      ref: rule.rule_id,
+      reason:
+        `authority boundary deny（authority.json boundary_rules 只读呈现——D3/B3：呈现不阻断写路径）：` +
+        `scope=${rule.scope}` +
+        (rule.owner === null ? "" : `；owner=${rule.owner}`) +
+        (rule.reason === null ? "" : `；reason=${rule.reason}`),
+    });
+  }
+  // —— sources 正交权威轴呈现（09-04 Batch 1 R3 / Owner 裁定 D2；PRD §4 表
+  // sources/index.yaml → AUTHORITATIVE「被本次 Change 引用的 source」） ——
+  mustEntries.push(...consumeSources(request, pathsOf(store), index));
 
   // —— ADVISORY 区（不进 gate 判卷输入） ——
   const advisoryEntries: ProjectionEntry[] = [];

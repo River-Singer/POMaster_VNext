@@ -102,6 +102,16 @@ export { MEMORY_INBOX_RELATIVE as MEMORY_INBOX_DIR_RELATIVE } from "@pomaster/ke
  */
 export const DISCOVERY_SCRATCHPADS_RELATIVE = ".pomaster/discovery/scratchpads";
 
+/**
+ * .pomaster/sources/{,snapshots/}（09-04 vNext Batch 1 R3：来源工件权威边界平面，
+ * PRD §3/§3A——kernel paths.ts sourcesDir/sourcesSnapshotsDir 已登记，本常量从
+ * kernel 派生（单一来源纪律）；装载/校验在 kernel sources.ts，投影 AUTHORITATIVE
+ * 区呈现被 Change 引用的 source）。
+ */
+export const SOURCES_DIR_RELATIVE = relOf(KERNEL_EMPTY_ROOT.sourcesDir);
+export const SOURCES_SNAPSHOTS_DIR_RELATIVE = relOf(KERNEL_EMPTY_ROOT.sourcesSnapshotsDir);
+export const SOURCES_INDEX_RELATIVE = relOf(KERNEL_EMPTY_ROOT.sourcesIndexPath);
+
 /** scratchpad <id> 词形（08 schema scratchpad_ref pattern 的目录名段逐字镜像）。 */
 export const DISCOVERY_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
 

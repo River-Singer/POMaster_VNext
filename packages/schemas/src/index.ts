@@ -62,6 +62,13 @@
  * 词形轴 relation_type/relation_origin/relation_endpoint_domain/relation_confidence
  * 已随 vocab-pr-0006 收编 vocab-lock@v0.5-resolved 主表 software_graph_vocab 段
  * （EDGE-<12hex> 通路词形同批注记 id_namespace.state_plane_refs）。
+ * vNext Batch 1 增量（20）：Sources Authority Registry（PRD vNext §3/§3A；Owner 裁定
+ * D2 2026-09-04）。来源工件权威边界 registry（.pomaster/sources/index.yaml）：每条
+ * source 声明正交权威双轴 authoritative_for / non_authoritative_for（维度开放词表 +
+ * 轴结构闭包，两轴不相交由装载侧 fail-closed 补齐——draft-07 不可表达）。负封条零
+ * 改动：02 信封 source_types 十值闭包是另一轴（对象出处面），本 registry 的 type
+ * 开放词形零关联（x-pomaster-contract.negative_seal_untouched）。词形轴
+ * absent_in_vocab_lock__pending_vocab_pr——TODO(vocab-pr)。
  *
  * 词表纪律：一切枚举唯一来源是 assets/vocab-lock.draft.yaml（FROZEN）；
  * 代码侧唯一镜像点在 ./vocab.js（本文件 re-export）。YAML 资产仅作人读/工具对账，
@@ -94,6 +101,7 @@ import executionTraceSchemaRaw from "../assets/16-execution-trace.schema.json" w
 import perceptionReceiptsSchemaRaw from "../assets/17-perception-receipts.schema.json" with { type: "json" };
 import decisionGraphSchemaRaw from "../assets/18-decision-graph.schema.json" with { type: "json" };
 import softwareGraphRelationsSchemaRaw from "../assets/19-software-graph-relations.schema.json" with { type: "json" };
+import sourcesAuthoritySchemaRaw from "../assets/20-sources-authority.schema.json" with { type: "json" };
 
 export * from "./vocab.js";
 
@@ -143,6 +151,8 @@ const DECISION_GRAPH_ID =
   "https://pomaster.dev/schemas/decision-graph/v1-draft.json";
 const SOFTWARE_GRAPH_RELATIONS_ID =
   "https://pomaster.dev/schemas/software-graph-relations/v1-draft.json";
+const SOURCES_AUTHORITY_ID =
+  "https://pomaster.dev/schemas/sources-authority/v1-draft.json";
 
 function asSchema(raw: unknown, expectedId: string): JsonSchemaObject {
   const schema = raw as JsonSchemaObject;
@@ -217,8 +227,12 @@ export const softwareGraphRelationsSchema = asSchema(
   softwareGraphRelationsSchemaRaw,
   SOFTWARE_GRAPH_RELATIONS_ID,
 );
+export const sourcesAuthoritySchema = asSchema(
+  sourcesAuthoritySchemaRaw,
+  SOURCES_AUTHORITY_ID,
+);
 
-/** 全部 18 份 schema 的聚合（组合装载：ajv.addSchema 逐个注册即可遍历本对象）。 */
+/** 全部 schema 的聚合（组合装载：ajv.addSchema 逐个注册即可遍历本对象）。 */
 export const allSchemas = {
   truthIndex: truthIndexSchema,
   objectEnvelope: objectEnvelopeSchema,
@@ -239,6 +253,7 @@ export const allSchemas = {
   perceptionReceipts: perceptionReceiptsSchema,
   decisionGraph: decisionGraphSchema,
   softwareGraphRelations: softwareGraphRelationsSchema,
+  sourcesAuthority: sourcesAuthoritySchema,
 } as const;
 
 // ============================================================

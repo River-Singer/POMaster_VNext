@@ -420,6 +420,13 @@ export function collectAffectedIds(input: {
  * §91.3 投影可见性二分的 ledger 消费（词形即 §91.3 原文）：
  * - CONFLICT / HARD_BLOCKER → 高显著度异常区块；
  * - ASSUMPTION / OPEN_QUESTION / DEFERRED_DECISION → 聚合到对应章节。
+ *
+ * 【同词两轴区分注记（Owner 裁定 C1，2026-09-04 vNext Batch 1 R1）】本轴的
+ * ASSUMPTION 是 **§49.2 异常登记轴**（治理台账里的异常分类位——§49.2 五分类闭包）。
+ * kernel question-gate.ts 的 QuestionVerdict.ASSUMPTION 是 **gate 处置轴**（问题
+ * 判定后的处置词形，09-04 批次增设第六值）。两轴同词不同义、不合并：gate 轴回答
+ * 「这个 Unknown 怎么处置」，异常轴回答「这笔登记在台账里算什么」——gate 判定
+ * ASSUMPTION 后由调用方联动本轴显式登记，登记 ≠ 判定。
  */
 export const LEDGER_PROMINENT_CLASSES = ["CONFLICT", "HARD_BLOCKER"] as const;
 export const LEDGER_AGGREGATED_CLASSES = [

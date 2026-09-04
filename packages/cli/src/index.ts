@@ -25,10 +25,18 @@
  * - record          证据入账通路：gate-run/claim 显式单条落账 evidence 平面（G6）
  * - closeout        八拍⑧：DoD 判卷（acceptance→VERIFIED claim 硬绑）+ gate 阻断施断
  *                   COMPLETED（transition evidence→VERIFIED；A9）
- * - brainstorm start/status/promote
+ * - brainstorm start/status/promote/question-gate
  *                   Discovery Plane（§44.3/§80）：scratchpad 讨论面（Ephemeral 纪律，
  *                   §80.3 状态链）+ 提升面（READY_TO_PROMOTE→CHANGE/TASK 经 P11
- *                   maintain --ops 落库——不私造第二写入通道）
+ *                   maintain --ops 落库——不私造第二写入通道）+ question-gate 七问
+ *                   判卷消费面（§80.4；kernel evaluateQuestionGate 单一判卷源——
+ *                   09-04 Batch 1 R2/D1 接线：--prompt raw prompt 载体 + Intent
+ *                   Framing 四分拣 + ASSUMPTION 第六处置词形联动 §49.2 登记指路）
+ * - new-entity check
+ *                   New Entity Gate 施断面（v0.6.1 §75 五否证明；09-04 Batch 1 R5/D5
+ *                   运行时接线）：kernel runNewEntityGate 判卷 + verdict 呈现 +
+ *                   exit code 施断（failed 非 0；不改 store applyTransaction 创建
+ *                   路径——创建路径前置施断留 Proposal，宪法 §9/C4）
  * - research <topic>/list/inspect
  *                   Research 命令面（§44.3/§81）：Read-only Contract 写面判卷
  *                   （越写=FATAL，§81.3）+ 四文件骨架（§81.6）+ 五级 Evidence 判读
@@ -190,9 +198,14 @@ import {
 } from "./knowledge.js";
 import {
   runBrainstormPromote,
+  runBrainstormQuestionGate,
   runBrainstormStart,
   runBrainstormStatus,
+  type DiscoveryFraming,
 } from "./brainstorm.js";
+import {
+  runNewEntityCheck,
+} from "./new-entity.js";
 import {
   runMemoryAudit,
   runMemoryCapture,
@@ -385,6 +398,18 @@ export {
   runCheckGates,
   allocateGateRecipeGrns,
 } from "./check.js";
+export {
+  runNewEntityCheck,
+  newEntityKernelGateExecutor,
+  newEntityGateRunToRecord,
+  NEW_ENTITY_TOOL_ID,
+  NEW_ENTITY_METRIC_DIALECT,
+} from "./new-entity.js";
+export type {
+  NewEntityCheckResult,
+  NewEntityCheckInput,
+  NewEntityJudgementView,
+} from "./new-entity.js";
 export type { GateRecipeRunRow, GatesCheckResult, CheckGatesDeps } from "./check.js";
 export {
   runPermitIssue,
@@ -498,6 +523,7 @@ export type {
 } from "./eval.js";
 export {
   runBrainstormStart,
+  runBrainstormQuestionGate,
   runBrainstormStatus,
   runBrainstormPromote,
   PROMOTE_TARGETS,
@@ -509,6 +535,9 @@ export type {
   BrainstormStatusResult,
   BrainstormPromoteInput,
   BrainstormPromoteResult,
+  BrainstormQuestionGateInput,
+  BrainstormQuestionGateResult,
+  DiscoveryFraming,
   DiscoveryStateFile,
   DiscoveryMetaFile,
   PromoteTarget,
@@ -1106,6 +1135,38 @@ export function createProgram(
       });
     });
 
+  // —— New Entity Gate 施断面（09-04 vNext Batch 1 R5 / Owner 裁定 D5——PRD §5A） ——
+  // 判卷权威在 kernel runNewEntityGate（解析侧唯一判卷源「同一函数，不两套」）；
+  // 本组只做编排与呈现 + exit code 施断（failed → 非 0）。强度登记：不改 store
+  // applyTransaction 创建路径（创建路径前置施断属新治理语义 → Proposal，宪法 §9/C4）。
+  const newEntity = program
+    .command("new-entity")
+    .description(
+      "New Entity Gate 命令面（v0.6.1 §75 五否证明 / §87 Anti-Hallucination；09-04 Batch 1 R5 运行时接线）：只有 NO_MATCH 才允许进入 Design Synthesis；check = 候选施断面（verdict 呈现 + 五否明细 + failed 非 0 exit）",
+    );
+  newEntity
+    .command("check")
+    .description(
+      "候选施断：调 kernel runNewEntityGate 判卷拟新建实体（词形文法→在册撞名→resolver 五否→空分母防护），呈现 verdict + 五否明细；passed → exit 0，failed/skipped_blindspot/not_run → 非 0（缺席显式，绝不静默通过）；composition/adapter 两否维持 hybrid/manual 终审在 Authority（gate.new-entity.checks.json）",
+    )
+    .argument("<governed-id>", "拟新建实体词形（truth 面 governed id 文法预检；文法外词形 = skipped_blindspot 盲区显式）")
+    .option("--need <text>", "判卷需求词形（该实体「为了什么」——resolver 检索语义；缺省 = governed-id 原文）")
+    .option("--catalog-root <dir>", "catalog 根目录注入（缺省工具侧资产定位）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (governedId: string, opts, command) => {
+      const outcome = await runNewEntityCheck({
+        governedId,
+        ...(opts.need !== undefined ? { need: opts.need as string } : {}),
+        ...(opts.catalogRoot !== undefined ? { catalogRoot: opts.catalogRoot as string } : {}),
+        rootDir: resolveDir(command),
+      });
+      record({
+        command: "new-entity check",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
   // —— 八拍② FRAMEWORK LOCK：permit 命令面（G1；设计 docs/eight-beat-carriers-design.md §1） ——
   const permit = program
     .command("permit")
@@ -1562,25 +1623,86 @@ export function createProgram(
   const brainstorm = program
     .command("brainstorm")
     .description(
-      "Discovery Plane（§80）：scratchpad 讨论面（Ephemeral 纪律——不复制「Step 0 永远创建 Task」假设）；状态链 IDEA→DISCOVERY→READY_TO_PROMOTE→CHANGE/TASK，提升走 P11 maintain 面",
+      "Discovery Plane（§80）：scratchpad 讨论面（Ephemeral 纪律——不复制「Step 0 永远创建 Task」假设）；状态链 IDEA→DISCOVERY→READY_TO_PROMOTE→CHANGE/TASK，提升走 P11 maintain 面；question-gate = 七问判卷消费面（§80.4，09-04 Batch 1 R2 接线）",
     );
   brainstorm
     .command("start")
     .description(
-      "创建 scratchpad 并进入 DISCOVERY 态（.pomaster/discovery/scratchpads/<id>/，§80.3 原文路径；--ephemeral 登记 Ephemeral 标记；同 id 重复=NO_CHANGE 幂等）",
+      "创建 scratchpad 并进入 DISCOVERY 态（.pomaster/discovery/scratchpads/<id>/，§80.3 原文路径；--ephemeral 登记 Ephemeral 标记；--prompt 登记 raw prompt 原文（§4A 入口载体，禁 Raw Prompt → Task → Code）；--known/--unknown/--conflict/--assumption 登记 Intent Framing 四分拣；同 id 重复=NO_CHANGE 幂等）",
     )
     .option("--ephemeral", "登记 Ephemeral Discovery 标记（§80.3：普通讨论驻留 scratchpad，未达晋升条件不创建 Task）")
     .option("--id <id>", "显式 discovery id（[A-Za-z0-9][A-Za-z0-9_-]{0,63}；缺省自动编号 idea-001 起）")
     .option("--title <text>", "讨论标题注记（meta 注记位）")
+    .option("--prompt <text>", "raw prompt 原文（§4A Raw Human Intent 入口载体；meta.json 注记位——§31 CRC-A 零载体层补齐）")
+    .option("--known <text>", "Intent Framing：Known 分拣（可重复）", collectValues, [])
+    .option("--unknown <text>", "Intent Framing：Unknown 分拣（可重复）", collectValues, [])
+    .option("--conflict <text>", "Intent Framing：Conflict 分拣（可重复）", collectValues, [])
+    .option("--assumption <text>", "Intent Framing：Assumption 分拣（可重复）", collectValues, [])
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (opts, command) => {
+      const known = opts.known as string[] | undefined;
+      const unknownList = opts.unknown as string[] | undefined;
+      const conflict = opts.conflict as string[] | undefined;
+      const assumptionList = opts.assumption as string[] | undefined;
+      const hasFraming =
+        (known !== undefined && known.length > 0) ||
+        (unknownList !== undefined && unknownList.length > 0) ||
+        (conflict !== undefined && conflict.length > 0) ||
+        (assumptionList !== undefined && assumptionList.length > 0);
+      const framing: DiscoveryFraming | undefined = hasFraming
+        ? {
+            known: known ?? [],
+            unknown: unknownList ?? [],
+            conflict: conflict ?? [],
+            assumption: assumptionList ?? [],
+          }
+        : undefined;
       const outcome = await runBrainstormStart(resolveDir(command), {
         ephemeral: opts.ephemeral === true,
         id: opts.id as string | undefined,
         title: opts.title as string | undefined,
+        ...(opts.prompt !== undefined ? { prompt: opts.prompt as string } : {}),
+        ...(framing !== undefined ? { framing } : {}),
       });
       record({
         command: "brainstorm start",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+  brainstorm
+    .command("question-gate")
+    .description(
+      "Question Gate 七问判卷（§80.4；kernel evaluateQuestionGate 单一判卷源）：申报分类 + 七关上游检查结果申报（--q1..--q7 必答）→ 处置词形呈现（ASK_HUMAN/ASK_REJECTED/DERIVABLE/RESEARCHABLE/DEFERABLE/ASSUMPTION）；ASSUMPTION = Q7 不阻塞 + 五条件 --assume 全申报（Owner 裁定 C1），登记走 ledger record --classification ASSUMPTION；纯判卷零写面",
+    )
+    .argument("<discovery-id>", "scratchpad id（brainstorm start 产出的 id；问题必须挂在真实 discovery 上）")
+    .requiredOption("--category <category>", "申报分类五词形（§80.4：BLOCKING_AUTHORITY|PREFERENCE|DERIVABLE|RESEARCHABLE|DEFERABLE——可问类只有前两者）")
+    .option("--question <text>", "问题原文注记（呈现位）")
+    .option("--q1 <bool>", "Q1 Current Truth 能回答？（true|false）")
+    .option("--q2 <bool>", "Q2 Existing Docs/BP/Prototype 能回答？（true|false）")
+    .option("--q3 <bool>", "Q3 Repo/Code/OpenAPI 能回答？（true|false）")
+    .option("--q4 <bool>", "Q4 Existing Evidence 能回答？（true|false）")
+    .option("--q5 <bool>", "Q5 Knowledge 能提供低风险默认/诊断？（true|false）")
+    .option("--q6 <bool>", "Q6 Research 能回答？（true|false）")
+    .option("--q7 <bool>", "Q7 不回答真的阻塞当前 Increment？（true|false——语义相反，true=阻塞）")
+    .option("--assume <condition>", "ASSUMPTION 联动条件申报（可重复：low_risk|reversible|within_permit|no_authority_conflict|acceptance_testable；全部申报才触发 ASSUMPTION）", collectValues, [])
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (discoveryId: string, opts, command) => {
+      const outcome = await runBrainstormQuestionGate(resolveDir(command), {
+        discoveryId,
+        category: opts.category as string | undefined,
+        ...(opts.question !== undefined ? { question: opts.question as string } : {}),
+        ...(opts.q1 !== undefined ? { q1: opts.q1 as string } : {}),
+        ...(opts.q2 !== undefined ? { q2: opts.q2 as string } : {}),
+        ...(opts.q3 !== undefined ? { q3: opts.q3 as string } : {}),
+        ...(opts.q4 !== undefined ? { q4: opts.q4 as string } : {}),
+        ...(opts.q5 !== undefined ? { q5: opts.q5 as string } : {}),
+        ...(opts.q6 !== undefined ? { q6: opts.q6 as string } : {}),
+        ...(opts.q7 !== undefined ? { q7: opts.q7 as string } : {}),
+        assume: opts.assume as string[],
+      });
+      record({
+        command: "brainstorm question-gate",
         outcome,
         asJson: command.opts().json === true,
       });

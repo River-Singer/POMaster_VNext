@@ -83,15 +83,21 @@ export interface LayoutDirSpec {
 }
 
 // ============================================================
-// 预铺清单（宪法 §2 Target Directory Tree 全量：25 目录；数组顺序 = layout.json
+// 预铺清单（宪法 §2 Target Directory Tree 全量 + PRD §3/§3A sources 平面增量：
+// 27 目录；数组顺序 = layout.json
 // directories 顺序 = 磁盘创建顺序）
 // ============================================================
 
 /**
- * 预铺目录清单（宪法 §2 全树；**不分模式**——light/heavy 同树）。state/ 的 9 个已
- * 登记文件位不单独落文件——kernel createStore/applyTransaction 按需创建，README 注记
- * 文件位清单。禁铺形态（宪法 §15 policies/、§10.1 顶层 research/、§21 kind-as-directory）
- * 不在清单——新概念默认是 governed object kind，不是新目录。
+ * 预铺目录清单（宪法 §2 全树 + §3A sources 平面增量；**不分模式**——light/heavy
+ * 同树）。state/ 的 9 个已登记文件位不单独落文件——kernel createStore/applyTransaction
+ * 按需创建，README 注记文件位清单。禁铺形态（宪法 §15 policies/、§10.1 顶层 research/、
+ * §21 kind-as-directory）不在清单——新概念默认是 governed object kind，不是新目录。
+ *
+ * ADR-lite（09-04 vNext Batch 1 R3，Owner 裁定 D2）：sources/ + sources/snapshots/
+ * 是宪法 §2 全树之外的唯一增量平面（PRD §3 目录树逐字；Source Artifact Authority
+ * 正交权威轴的落盘载体）——宪法文档补记随归档批次，constitution_source 字段如实
+ * 双锚（宪法 §2 全树 + PRD §3/§3A 增量裁定）。
  */
 export const LAYOUT_DIRECTORIES: readonly LayoutDirSpec[] = [
   // ---- state：控制平面 Root Metadata + Governance Sidecars（宪法 §5） ----
@@ -243,6 +249,27 @@ export const LAYOUT_DIRECTORIES: readonly LayoutDirSpec[] = [
       "dot-pomaster-directory-constitution.md §10.1；CLI brainstorm 平面登记（store-layout.ts）",
     command: "pomaster brainstorm start/status/promote",
   },
+  // ---- sources：来源工件权威边界（PRD §3/§3A；Batch 1 R3/D2 增量平面） ----
+  {
+    path: "sources",
+    status: "wired",
+    purpose:
+      "来源工件权威边界（sources/index.yaml：id/type/location/version + authority 正交双轴 authoritative_for / non_authoritative_for；PRD §3A——一份 Artifact 可以在某些维度是 Authority，在另一些维度完全没有发言权）。",
+    activation_hint:
+      "项目存在 BP 原型/设计稿/外部契约等需要申报权威边界的输入工件时激活；纯代码项目可为空。",
+    constitution_source:
+      "dot-pomaster-directory-constitution.md §2 全树 + PRD vNext §3/§3A（Owner 裁定 D2 增量平面）；kernel paths.ts（sourcesDir）+ kernel sources.ts（装载）",
+    command: "pomaster context compile",
+  },
+  {
+    path: "sources/snapshots",
+    status: "wired",
+    purpose:
+      "外部材料快照（来源不可重取时留存原始字节——快照是原始材料不是治理对象；blob 同族禁反向成为 Truth）。",
+    activation_hint: "登记的 source 失效风险高（外链/易变材料）需要留档时激活。",
+    constitution_source:
+      "dot-pomaster-directory-constitution.md §2 全树 + PRD vNext §3/§3A（Owner 裁定 D2 增量平面）；kernel paths.ts（sourcesSnapshotsDir）",
+  },
   // ---- memory：候选记忆 staging（宪法 §11） ----
   {
     path: "memory",
@@ -387,6 +414,8 @@ export function derivePathsTsStoreDirs(rootDir: string): ReadonlySet<string> {
     paths.rawTracesDir,
     paths.executionsDir,
     paths.tracesDir,
+    paths.sourcesDir,
+    paths.sourcesSnapshotsDir,
   ]) {
     const posix = toPosixSlash(absolute);
     if (!posix.startsWith(base)) {

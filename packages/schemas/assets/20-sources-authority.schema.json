@@ -1,0 +1,114 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://pomaster.dev/schemas/sources-authority/v1-draft.json",
+  "title": "Sources Authority Registry（.pomaster/sources/index.yaml · 来源工件权威边界，vNext Batch 1 R3 · Owner 裁定 D2 2026-09-04）",
+  "description": "PRD vNext §3/§3A Source Artifact Authority 的机器形态：一份 Artifact 可以在某些维度是 Authority，在另一些维度完全没有发言权。每条 source 声明正交权威双轴 authority.authoritative_for（有资格决定什么）与 authority.non_authoritative_for（完全无发言权什么）——维度词形是开放词表（项目特定，如 business_information / css / grid_library），轴结构闭包（双轴必填 + 两轴不相交，装载校验 fail-closed）。\n典型 BP Prototype：authoritative_for=[business_information, information_architecture, interaction_intent, business_flow]，non_authoritative_for=[css, class_name, dom_implementation, grid_library, component_implementation, framework]（§3A 逐字例）。\n边界登记：sources 不入 store 事务（非 governed object 起步——本 registry 是项目平面文件不是 Current Truth）；消费面（kernel loadSourcesRegistry → 投影 AUTHORITATIVE 区呈现）按 D2 最小实现，resolve 侧 advisory 不改变 match_class 纪律不受影响。",
+  "x-pomaster-file-role": "20-sources-authority.schema.json —— 来源工件权威边界 registry（vNext Batch 1 R3，Owner 裁定 D2 2026-09-04）。落盘载体 .pomaster/sources/index.yaml（schema 描述其编译后 JSON 同构形态——yaml 装载经 kernel sources.ts 逐条映射后校验）；snapshots/ 子目录存放外部材料不可重取时的快照（无 schema——快照是原始字节不是治理对象）。",
+  "x-pomaster-vocab-source": "PRD vNext §3/§3A（Owner 裁定 D2 2026-09-04）：authoritative_for / non_authoritative_for 两轴键名逐字；维度词形开放词表（项目特定——项目自报维度词，禁机器预置枚举私扩）；id/location/version 词形本文件冻结。词形轴 absent_in_vocab_lock__pending_vocab_pr——TODO(vocab-pr) 收编归独立词汇表批（question-gate/triage 局部词先例）。",
+  "x-pomaster-contract": {
+    "orthogonal_authority_axis": "§3A 双层模型之正交权威轴（Batch 1 落地）：authoritative_for 与 non_authoritative_for 双轴必填且**两轴不相交**（同一维度不得同时出现在两轴——交集即申报自相矛盾，装载 fail-closed SCHEMA_INVALID；不相交性 draft-07 不可表达，由 kernel loadSourcesRegistry 结构校验补齐）。两轴并集可少于项目全维度——未声明的维度 = 该来源权威未申报（非 AUTHORITATIVE 非 FORBIDDEN，显式中立）。",
+    "negative_seal_untouched": "负封条零改动：对象出处面的 source_types 十值闭包（02 信封 sources[].type；prototype_html_scrape / ai_invention = FORBIDDEN 注册即 FATAL）是另一轴（对象 provenance 面），本 registry 的 type 字段不接入该闭包、不受其判卷——本 type 是来源工件的类型描述（开放词形），MasterGrid 语义的机器封条仍是对象注册面的 SOURCE_TYPE_FORBIDDEN，正轴判卷由 authority 两轴承载（双层模型：负封条 FATAL + 正轴维度判卷）。",
+    "fail_closed_loading": "装载校验 fail-closed：authority 块必填、两轴不相交、id 唯一、id/location/type 词形——任一违反即 SCHEMA_INVALID（坏 registry ≠ 无 registry，禁静默当空表消费；catalog 坏物料同款纪律）。文件缺席 → 显式空（sources 平面 opt-in：项目未登记来源是合法状态）。",
+    "not_governed_object": "本 registry 条目不是 governed object：不进 truth-index、不走 store 事务、无 lifecycle/authority.owner 信封——来源权威边界是项目对**输入工件**的申报面，与 store 内对象的 authority.owner（谁有权改）正交。提升为治理事实须走既有对象通路（本项目无自动提升通路）。"
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["sources"],
+  "properties": {
+    "sources": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/source_entry"
+      },
+      "title": "来源条目清单",
+      "description": "项目全部外部/内部输入工件的权威边界申报。空数组合法（显式零来源）。id 唯一（装载校验）。"
+    }
+  },
+  "definitions": {
+    "dimension_word": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9][a-z0-9_]*$",
+      "title": "权威维度词（开放词表——项目特定）",
+      "description": "项目自报的权威维度（如 business_information / information_architecture / interaction_intent / business_flow / css / class_name / dom_implementation / grid_library / component_implementation / framework——§3A BP Prototype 例逐字）。开放词表：机器不预置枚举、不判词形正误，只判结构（非空 + 词形卫生 + 两轴不相交）。"
+    },
+    "source_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "location", "authority"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+          "title": "来源 id（项目内稳定锚；投影呈现 ref 词形）",
+          "description": "项目内唯一、稳定的来源锚（如 bp-carline）。被 Change/task payload（source_refs 自由区）引用时按此 id 对账。非 governed id——不过 parseGovernedId、不进 truth-index。"
+        },
+        "type": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "title": "来源工件类型（开放词形）",
+          "description": "描述性类型（如 bp_prototype / design_doc / api_contract / meeting_notes）。开放词形（项目特定）——不是 02 信封 source_types 十值闭包（对象出处轴 + FORBIDDEN 负封条，本字段零关联）。"
+        },
+        "location": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512,
+          "pattern": "^[^\\s]+$",
+          "title": "来源位置（repo 相对路径或 URL）",
+          "description": "工件可取回的位置：仓库相对路径（prototypes/carline/index.html）或外部 URL。禁空白字符。"
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "title": "来源版本注记（可选）",
+          "description": "工件版本/日期/rev 注记（自由词形）。缺席 = 未申报（显式，不冒充已锚定）。"
+        },
+        "authority": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["authoritative_for", "non_authoritative_for"],
+          "anyOf": [
+            {
+              "required": ["authoritative_for"],
+              "properties": {
+                "authoritative_for": {
+                  "minItems": 1
+                }
+              }
+            },
+            {
+              "required": ["non_authoritative_for"],
+              "properties": {
+                "non_authoritative_for": {
+                  "minItems": 1
+                }
+              }
+            }
+          ],
+          "title": "正交权威双轴（§3A；两轴必填、不相交——装载 fail-closed）",
+          "properties": {
+            "authoritative_for": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/dimension_word"
+              },
+              "title": "有资格决定什么",
+              "description": "本来源作为 Authority 的维度清单（§3A 逐字键名）。"
+            },
+            "non_authoritative_for": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/dimension_word"
+              },
+              "title": "完全无发言权什么",
+              "description": "本来源被显式剥夺发言权的维度清单（§3A 逐字键名）。MasterGrid 语义的载体位：BP 原型在此申报 non_authoritative_for=[grid_library, ...] 后，grid 实现权威归 Baseline，原型 grid 库被忽略。"
+            }
+          }
+        }
+      }
+    }
+  }
+}

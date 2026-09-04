@@ -11,6 +11,10 @@
  *   tool/tool_version/metric_dialect 三件套保留 adapter 实际执行者身份（强制上报纪律）；
  * - 无执行器的 recipe：显式 not_run（非绿非红；counts 全零 + scopeNote 说清缺什么、
  *   去哪补）——缺席显式，绝不静默跳过当通过（C1）；
+ * - 机判核心住 kernel 的 recipe（GATE.NEW_ENTITY.CHECKS，09-04 Batch 1 R5 解除
+ *   unbound）：kernel_native 直调形态——不经 §59 adapter 管线（kernel 判卷核心有
+ *   单一实现），执行器由命令面经 deps.kernelGates 注入（本模块零 store 依赖），
+ *   异步入口 runGateRecipeAsync 为其唯一直调通路；
  * - 入账归 CLI 层（store 事务 record_gate_run）；本模块纯计算零 store 依赖。
  *
  * recipe 分母纪律（P12b 交付 5）：CATALOG_GATE_RECIPES 是 catalog/gates/ 的机器可读
@@ -112,19 +116,32 @@ export type RecipeAdapterKey = "build" | "contract" | "architecture" | "browser"
  * 派发登记条目：
  * - adapter：recipe 的机判核心与该 adapter 的归一口径一致（绑定是派发层显式决策，
  *   绑错口径 = 派发缺陷，由 spec 的登记表复核测试守门）；
+ * - kernel_native：机判核心住 kernel 的 gate（ref-integrity 同族 kernel 侧 gate）——
+ *   直调形态，**不经 §59 adapter 管线**（prepare/run/normalize 归一口径是 tool-adapter
+ *   面，kernel 判卷核心有自己的单一实现，硬套 adapter 管线 = 第二实现）。本 runner
+ *   保持零 store 依赖：kernel 执行器由命令面经 deps.kernelGates 注入，缺席显式 not_run；
  * - unbound：本 recipe 尚无机器执行器（设计 seed 的 human/hybrid 检查项无对应工具腿）
  *   ——显式 not_run，理由必须说清缺什么执行器（报错带路标纪律）。
  */
 export type GateRecipeDispatch =
   | { readonly kind: "adapter"; readonly adapterKey: RecipeAdapterKey }
+  | { readonly kind: "kernel_native" }
   | { readonly kind: "unbound"; readonly reason: string };
 
 /**
- * recipe → 执行器绑定登记表（P12b 时点）：
+ * recipe → 执行器绑定登记表（09-04 vNext Batch 1 R5 解除 NEW_ENTITY unbound 后形态）：
  * - GATE.BE.API.CONTRACT_CHECKS 的机判核心是「契约(OpenAPI)已同步 = operationId
  *   机器键对账」（recipe check#1 machine_support 原文），与 contract adapter 的
  *   operation_id_existence 归一口径一致 → 绑定；其余四项检查（实现/生成客户端/
  *   测试/handoff 同步）无对应工具腿，由 counts/blindspot 的诚实口径承载未覆盖面；
+ * - GATE.NEW_ENTITY.CHECKS → kernel_native 直调形态：五否证明机判核心住 kernel
+ *   runNewEntityGate（解析侧唯一判卷源 newEntityVerdictFromResolution「同一函数，
+ *   不两套」），不经 tool-adapter 管线；kernel 执行器由命令面注入（本 runner 零
+ *   store 依赖）。落账强度登记：施断 = verdict 呈现 + exit code（pomaster
+ *   new-entity check；failed → 非 0），**不改 store applyTransaction 创建路径**
+ *   （创建路径前置施断属新治理语义 → Proposal，宪法 §9/C4）；recipe ② 的
+ *   composition/adapter 两否维持 hybrid/manual 终审在 Authority
+ *   （gate.new-entity.checks.json:54-60 现状不变）；
  * - 其余四份 recipe 的检查项均无机器执行器（五类消费者对账 / prechange 六项 /
  *   请求层静态扫描 / 表格 registry 对账）→ unbound 显式缺席。
  */
@@ -150,11 +167,7 @@ export const RECIPE_GATE_DISPATCH: Readonly<Record<string, GateRecipeDispatch>> 
     reason:
       "表格五项依赖 interaction-contract-registry 对账与列 schema 扫描，扫描器未建（check#5 registry 对账为 opt-in：registry 文件缺席 → not_configured 语义需专用 adapter 承载）；需 grid checklist adapter 后接线",
   },
-  "GATE.NEW_ENTITY.CHECKS": {
-    kind: "unbound",
-    reason:
-      "五否证明机判核心住 kernel runNewEntityGate（ref-integrity 同族 kernel 侧 gate——resolveNeed/newEntityVerdictFromResolution 单一实现）；本 runner 是 tool-adapter 派发面，kernel 侧 gate 不经 adapter 管线（缺席诚实：tool-adapter 绑定待批次 2 architecture 腿）",
-  },
+  "GATE.NEW_ENTITY.CHECKS": { kind: "kernel_native" },
 };
 
 // ============================================================
@@ -264,6 +277,15 @@ export interface GateRecipeRunInput {
 export interface GateRecipeRunnerDeps {
   /** 测试注入面：按 adapter 键覆盖默认执行器（未覆盖键回落 RECIPE_EXECUTORS）。 */
   readonly executors?: Readonly<Partial<Record<RecipeAdapterKey, RecipeExecutor>>>;
+  /**
+   * kernel-native gate 执行器注入面（kernel_native 派发专用；命令面提供——本模块
+   * 零 store 依赖纪律）。键 = recipe id；执行器自行完成 kernel 判卷调用（如
+   * runNewEntityGate）并产出 GateResultRecord（gate/gateDef 身份由本 runner 重绑
+   * recipe，tool 三件套保留 kernel 实际执行者身份——强制上报纪律）。
+   */
+  readonly kernelGates?: Readonly<
+    Record<string, (input: GateRecipeRunInput) => Promise<GateResultRecord>>
+  >;
 }
 
 /**
@@ -330,6 +352,17 @@ export function runGateRecipe(
       ),
     );
   }
+  if (dispatch.kind === "kernel_native") {
+    // kernel 判卷核心是 async（store 只读装载 await）；同步派发面无 await 能力——
+    // 显式缺席指路异步入口，禁静默伪装执行（runGateRecipeAsync 为唯一直调通路）。
+    return stamp(
+      runnerAbsenceRecord(
+        policy,
+        "not_run",
+        `kernel-native gate 须经 runGateRecipeAsync 派发（kernel 判卷核心 async，同步面缺席显式；缺席诚实：改用异步入口重跑）`,
+      ),
+    );
+  }
 
   const executor =
     deps?.executors?.[dispatch.adapterKey] ?? RECIPE_EXECUTORS[dispatch.adapterKey];
@@ -392,6 +425,78 @@ export function runGateRecipe(
     );
   }
   return stamp(record);
+}
+
+// ============================================================
+// kernel-native 直调派发（09-04 Batch 1 R5；GATE.NEW_ENTITY.CHECKS 通路）
+// ============================================================
+
+/**
+ * 异步派发入口（kernel-native gate 的唯一直调通路；adapter/unbound recipe 原样
+ * 委托同步 runGateRecipe——两入口对 adapter 形态行为逐字一致）。kernel_native 语义：
+ * - policySkip 短路与同步面同一条线（策略排除的 gate 不进入执行，映射现轴 not_run）；
+ * - kernel 执行器未注入 → 显式 not_run（缺席诚实：本 runner 零 store 依赖，执行器
+ *   由命令面按 deps.kernelGates 注入）；
+ * - 执行器异常 → blocked（禁静默）；产出 record 经 stamp 重绑 recipe 身份
+ *   （gate/gateDef ← recipe；tool/toolVersion/metricDialect 保留 kernel 实际执行者
+ *   三件套）。
+ * 判卷复算边界不变：产出在入账前仍须过 kernel normalizeGateResult（P12c 假绿封死，
+ * CLI check --gates 统一收敛点）。
+ */
+export async function runGateRecipeAsync(
+  recipe: CatalogGateRecipeDescriptor,
+  input: GateRecipeRunInput,
+  deps?: GateRecipeRunnerDeps,
+): Promise<GateResultRecord> {
+  assertRecipeIdentity(recipe);
+  const dispatch = RECIPE_GATE_DISPATCH[recipe.id];
+  if (dispatch?.kind !== "kernel_native") {
+    return runGateRecipe(recipe, input, deps);
+  }
+  const gate = deriveGateName(recipe.id);
+  const stamp = (record: GateResultRecord): GateResultRecord => ({
+    ...record,
+    gate,
+    gateDef: recipe.gateDef,
+  });
+
+  // 策略排除短路（与同步面同语义：策略排除的 gate 不进入执行）。
+  if (input.policySkip !== undefined) {
+    const reason = input.policySkip.reason;
+    if (typeof reason !== "string" || reason.trim().length === 0) {
+      throw new Error(
+        "policySkip.reason 缺失——SKIPPED_BY_POLICY 必须说清排除依据（哪条 profile/策略），空理由禁落账",
+      );
+    }
+    return stamp(
+      policySkipRecord(
+        { grn: input.grn, ranAtSeq: input.ranAtSeq, trigger: input.trigger ?? "on_demand", expectedToolVersion: input.expectedToolVersion ?? null },
+        reason,
+      ),
+    );
+  }
+
+  const executor = deps?.kernelGates?.[recipe.id];
+  if (executor === undefined) {
+    return stamp(
+      runnerAbsenceRecord(
+        { grn: input.grn, ranAtSeq: input.ranAtSeq, trigger: input.trigger ?? "on_demand", expectedToolVersion: input.expectedToolVersion ?? null },
+        "not_run",
+        "kernel-native gate 执行器未注入（deps.kernelGates 缺本 recipe——缺席诚实：本 runner 零 store 依赖，kernel 直调执行器由命令面注入）",
+      ),
+    );
+  }
+  try {
+    return stamp(await executor(input));
+  } catch (err) {
+    return stamp(
+      runnerAbsenceRecord(
+        { grn: input.grn, ranAtSeq: input.ranAtSeq, trigger: input.trigger ?? "on_demand", expectedToolVersion: input.expectedToolVersion ?? null },
+        "blocked",
+        `kernel-native gate 执行异常（blocked，禁静默）：${errText(err)}`,
+      ),
+    );
+  }
 }
 
 // ============================================================

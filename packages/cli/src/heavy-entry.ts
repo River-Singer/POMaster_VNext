@@ -292,7 +292,8 @@ export const COMMAND_PANORAMA_LINES: readonly string[] = [
   'pomaster resolve "<need>" [--hints ...]',
   "pomaster inspect <governed-id>",
   "pomaster graph <governed-id> [--view impact]",
-  "pomaster brainstorm start/status/promote",
+  "pomaster new-entity check <governed-id> [--need ...]",
+  "pomaster brainstorm start/question-gate/status/promote",
   "pomaster research list/inspect",
   "pomaster eval --suite behavioral",
   "pomaster catalog status/explain/relock",
@@ -555,7 +556,7 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "- research 产物判读（五级 Evidence）；行为评测（fail-closed）。",
       "",
       ...commandBlock([
-        "pomaster brainstorm start/status/promote",
+        "pomaster brainstorm start/question-gate/status/promote",
         "pomaster research list/inspect",
         "pomaster eval --suite behavioral",
       ]),

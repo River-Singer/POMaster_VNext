@@ -11,6 +11,7 @@ import { describe, expect, it } from "vitest";
 import {
   ASKABLE_CATEGORIES,
   CONVERGENCE_ZONE_KEYS,
+  QUESTION_ASSUMPTION_CONDITIONS,
   QUESTION_GATE_CATEGORIES,
   QUESTION_GATES,
   QUESTION_PRIORITY_DESCRIPTIONS,
@@ -18,6 +19,7 @@ import {
   evaluateQuestionGate,
   selectNextQuestion,
   type PrioritizedQuestion,
+  type QuestionAssumptionDeclaration,
   type QuestionGateAnswerable,
 } from "@pomaster/kernel";
 
@@ -413,5 +415,122 @@ describe("Diverge → Converge（§80.7）", () => {
       expect(outcome.details[0]).toContain("current_increment");
       expect(outcome.hint).toContain("偷渡");
     }
+  });
+});
+
+// ============================================================
+// ASSUMPTION 第六处置词形（09-04 Batch 1 R1 / Owner 裁定 C1——PRD §4A）
+// ============================================================
+
+/** 五条件全满足申报。 */
+const ALL_TRUE: QuestionAssumptionDeclaration = {
+  low_risk: true,
+  reversible: true,
+  within_permit: true,
+  no_authority_conflict: true,
+  acceptance_testable: true,
+};
+
+/** 五条件任意一个 false 的变体（逐条件排除——缺一不可的机械展开）。 */
+const FIVE_CONDITIONS = [
+  "low_risk",
+  "reversible",
+  "within_permit",
+  "no_authority_conflict",
+  "acceptance_testable",
+] as const;
+
+describe("ASSUMPTION 第六处置词形（§4A DEFERABLE 显式升级；申报分类五词形不变）", () => {
+  it("五条件词形冻结（QUESTION_ASSUMPTION_CONDITIONS 单源——CLI --assume 词表闸复用）", () => {
+    expect(QUESTION_ASSUMPTION_CONDITIONS).toEqual([
+      "low_risk",
+      "reversible",
+      "within_permit",
+      "no_authority_conflict",
+      "acceptance_testable",
+    ]);
+  });
+
+  it("Q7 不阻塞 + 五条件全显式申报 → ASSUMPTION（Q7 位 stoppedAtGate；申报 DEFERABLE 一致）", () => {
+    const outcome = evaluateQuestionGate({
+      category: "DEFERABLE",
+      answerable: { ...NONE_ANSWERABLE, q7_blocking_increment: false },
+      assumption: ALL_TRUE,
+    });
+    expect(outcome.mayAskHuman).toBe(false);
+    if (!outcome.mayAskHuman) {
+      expect(outcome.verdict).toBe("ASSUMPTION");
+      expect(outcome.stoppedAtGate).toBe("Q7");
+      expect(outcome.declaredConsistent).toBe(true);
+      expect(outcome.hint).toContain("不得伪装成 Truth");
+      expect(outcome.hint).toContain("§49.2");
+    } else {
+      expect.unreachable("五条件满足必须 ASSUMPTION");
+    }
+  });
+
+  it("逐条件缺席排除：任一条件未申报/false → 回落 DEFERABLE（缺一不可，禁缺省放行）", () => {
+    for (const omitted of FIVE_CONDITIONS) {
+      const partial = { ...ALL_TRUE, [omitted]: false } as QuestionAssumptionDeclaration;
+      const outcome = evaluateQuestionGate({
+        category: "DEFERABLE",
+        answerable: { ...NONE_ANSWERABLE, q7_blocking_increment: false },
+        assumption: partial,
+      });
+      if (!outcome.mayAskHuman) {
+        expect(outcome.verdict, `条件 ${omitted}=false 必须回落 DEFERABLE`).toBe("DEFERABLE");
+      } else {
+        expect.unreachable("五条件缺一不许 ASSUMPTION");
+      }
+    }
+  });
+
+  it("无申报（assumption 缺位）→ DEFERABLE（既有调用方零行为变更）", () => {
+    const outcome = evaluateQuestionGate({
+      category: "DEFERABLE",
+      answerable: { ...NONE_ANSWERABLE, q7_blocking_increment: false },
+    });
+    if (!outcome.mayAskHuman) {
+      expect(outcome.verdict).toBe("DEFERABLE");
+    } else {
+      expect.unreachable("无申报不许 ASSUMPTION");
+    }
+  });
+
+  it("Q7 阻塞（七关全过）时五条件申报不参与 → 仍走 ASK_HUMAN/ASK_REJECTED 双闸", () => {
+    const blocking = evaluateQuestionGate({
+      category: "BLOCKING_AUTHORITY",
+      answerable: NONE_ANSWERABLE,
+      assumption: ALL_TRUE,
+    });
+    expect(blocking.mayAskHuman).toBe(true);
+    const rejected = evaluateQuestionGate({
+      category: "DEFERABLE",
+      answerable: NONE_ANSWERABLE,
+      assumption: ALL_TRUE,
+    });
+    expect(rejected.mayAskHuman).toBe(false);
+    if (!rejected.mayAskHuman) {
+      expect(rejected.verdict).toBe("ASK_REJECTED");
+    }
+  });
+
+  it("Q1-Q6 命中时五条件申报不参与（gate 序在前——Q1 命中 → DERIVABLE 非 ASSUMPTION）", () => {
+    const outcome = evaluateQuestionGate({
+      category: "DERIVABLE",
+      answerable: withGateHit(1),
+      assumption: ALL_TRUE,
+    });
+    if (!outcome.mayAskHuman) {
+      expect(outcome.verdict).toBe("DERIVABLE");
+      expect(outcome.stoppedAtGate).toBe("Q1");
+    } else {
+      expect.unreachable("Q1 命中必须 DERIVABLE");
+    }
+  });
+
+  it("ASSUMPTION 是处置位不是申报位：申报分类五词形闭包不变（TODO(vocab-pr) 局部词纪律）", () => {
+    expect(QUESTION_GATE_CATEGORIES).toHaveLength(5);
+    expect(QUESTION_GATE_CATEGORIES).not.toContain("ASSUMPTION");
   });
 });

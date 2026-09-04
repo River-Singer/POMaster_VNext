@@ -82,13 +82,13 @@ function knowledgeWith(
 }
 
 describe("12-knowledge-entry（$id 与注册）", () => {
-  it("$id 形态对齐 v1-draft 契约且已注册进 allSchemas（19 份聚合，P34 增量 14→15；W1-C 增量 15→16；VB-PR1 增量 16→17；W1-D2 增量 17→18；P-v06 增量 18→19）", () => {
+  it("$id 形态对齐 v1-draft 契约且已注册进 allSchemas（20 份聚合，P34 增量 14→15；W1-C 增量 15→16；VB-PR1 增量 16→17；W1-D2 增量 17→18；P-v06 增量 18→19；Batch 1 R3 增量 19→20）", () => {
     expect(knowledgeEntrySchema.$id).toBe(
       "https://pomaster.dev/schemas/knowledge-entry/v1-draft.json",
     );
     expect(SCHEMA_VERSION).toBe("v1-draft");
     expect(allSchemas.knowledgeEntry).toBe(knowledgeEntrySchema);
-    expect(Object.keys(allSchemas).length).toBe(19);
+    expect(Object.keys(allSchemas).length).toBe(20);
   });
 
   it("正例：§83.4 例文逐值形态（DECISION_HEURISTIC/VALIDATED/HIGH/ADVISORY + last_validated_at 事件拍形态）", () => {

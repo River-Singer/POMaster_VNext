@@ -56,9 +56,10 @@ pomaster closeout <task-id>
 
 # 横切 —— 对象检视 / 图视图 / Discovery / Research / Eval / Catalog / 迁移 / 生产反馈 / 多 Agent / 执行身份
 pomaster resolve "<need>" [--hints ...]
+pomaster new-entity check <governed-id> [--need ...]
 pomaster inspect <governed-id>
 pomaster graph <governed-id> [--view impact]
-pomaster brainstorm start/status/promote
+pomaster brainstorm start/question-gate/status/promote
 pomaster research list/inspect
 pomaster eval --suite behavioral
 pomaster catalog status/explain/relock
@@ -103,7 +104,7 @@ pomaster init
 | `.pomaster/config.yaml` | 治理配置（人类可编辑） | 否（只在缺失时创建） |
 | `AGENTS.md` / `CLAUDE.md` | Agent 重入口（profile + 状态速览 + 常用命令 + 重入口安装物锚点） | 仅带生成标记的（`CLAUDE.md` 通过 `@AGENTS.md` 导入共享） |
 
-**目录宪法全树预铺**（Owner 裁定 2026-09-04，不分模式）：init 一次性建出 `.pomaster/` 目录宪法 §2 全树（state / truth/objects / evidence 三区 / executions / traces / runtime 四区 / discovery/scratchpads / memory/inbox / production 六区，25 目录 × 各带 README）+ `.pomaster/layout.json` 机器清单（全目录 status=wired + activation_hint——什么样的项目/需求激活该平面由 AI 按项目复杂度自行判断，目录存在 ≠ 已激活）。`--mode light` 与 heavy 的 `.pomaster/` 目录树**完全相同**（mode 只影响 skills/hooks 注入层）；canonical 正文层为 `.pomaster/truth/objects/`，legacy `.pomaster/objects/` 在场会被显式告警（禁静默 merge/覆盖/迁移）。完整规范见 `.pomaster/layout.json` 与目录宪法文档。
+**目录宪法全树预铺**（Owner 裁定 2026-09-04，不分模式）：init 一次性建出 `.pomaster/` 目录宪法 §2 全树（state / truth/objects / evidence 三区 / executions / traces / runtime 四区 / discovery/scratchpads / memory/inbox / production 六区，27 目录 × 各带 README——含 09-04 Batch 1 增量 sources/ 来源权威边界平面）+ `.pomaster/layout.json` 机器清单（全目录 status=wired + activation_hint——什么样的项目/需求激活该平面由 AI 按项目复杂度自行判断，目录存在 ≠ 已激活）。`--mode light` 与 heavy 的 `.pomaster/` 目录树**完全相同**（mode 只影响 skills/hooks 注入层）；canonical 正文层为 `.pomaster/truth/objects/`，legacy `.pomaster/objects/` 在场会被显式告警（禁静默 merge/覆盖/迁移）。完整规范见 `.pomaster/layout.json` 与目录宪法文档。
 
 **重入口默认**（D13 修订，2026-09-03）：init 缺省生成重入口全套，让 Agent 一开会话就自动看到治理状态、按需自动触发命令卡——
 
