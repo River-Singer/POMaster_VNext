@@ -1,0 +1,96 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "kind='policy' 不在 vocab-lock kinds_registry.truth_bodies（POLICY. 前缀已冻结注册，closed-world）；新 id 域段待登记：DEPLOY",
+    "proposal": "词汇表 PR 登记 policy kind 及新域段；或 Owner 裁决 policy 条目住 catalog/ 而非 truth/objects 正文层（与前批 45+25+9 条同因同请，合并进同一 vocab PR）",
+    "locked_vocab_untouched": true
+  },
+  "x-spec-d-materialization": {
+    "status": "PROPOSAL",
+    "package": "B6c BE 播种移植（SPEC-D 池卡复用；分母=MASTer 池卡 + vendor 播种字节双锚）",
+    "human_review_required": true,
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/corpus/spec-knowledge/candidates/consolidated-pool.yaml",
+    "group": "BE-G4",
+    "candidate_id": "POLICY.DEPLOY.RUNTIME_FACT_RECORD",
+    "density_rank": "UNIVERSAL",
+    "density_score": 11.19,
+    "pool_statement_sha16": "ecea52aa3de42c27",
+    "curated_rule": "B6c 分母（BE universal 33：32 编号协议 + index）required 池（ELIGIBLE 未物化 + 卡层锚落 MUST/MUST NOT 且与 MASTer 行锚交叉验证）按池密度序取前 22 + advisory 池（SHOULD 源 backlog policy 卡 + 行锚全落建议段闭包）按同公式密度序取前 3 = 25（D5 上限/批内执行）；UNIVERSAL + UNIVERSAL_POLICY + 无 uncertainty + 非 project_scope + 非重复",
+    "denominator": "MASTer（池卡 source 锚）"
+  },
+  "x-b6-porting": {
+    "status": "PROPOSAL",
+    "batch": "B6C",
+    "human_review_required": true,
+    "classification_face": "policy",
+    "enforcement_axis": {
+      "source_sections": [
+        "MUST"
+      ],
+      "rule": "SHOULD/Change Policy 源条目 enforcement 必须 advisory（禁升 required）；MUST/MUST NOT 源条目 enforcement 必须 required_when_applicable（降级合法）",
+      "asserted_by": "packages/cli/tests/catalog-b6-porting.spec.ts"
+    },
+    "extra_master_sections": [],
+    "denominator": "vendor",
+    "vendor_pin": {
+      "path": "pomaster/components/backend-hard-spec/assets/universal/31-runtime-deployment-protocol.md",
+      "sha256": "c791451de0be3aa0629fd562e2b43cc54066e4b10d786264fa7a333c561ef23a",
+      "bytes": 1410
+    },
+    "seeded_spec": ".pomaster/specs/hard/backend/31-runtime-deployment-protocol.md",
+    "seed_manifest": "packages/cli/seeds/manifest.json"
+  },
+  "id": "POLICY.DEPLOY.RUNTIME_FACT_RECORD",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "UNIVERSAL_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "交付记录七类运行时事实",
+  "statement_zh": "交付物必须如实记录打包形态、启动方式、监听端口、对外协议、实例拓扑、状态依赖与配置来源七类运行时事实。",
+  "statement_en_keywords": [
+    "runtime fact record",
+    "packaging",
+    "startup",
+    "port",
+    "protocol",
+    "instance topology",
+    "state dependency",
+    "config source"
+  ],
+  "applies_when": {
+    "lane": "backend",
+    "condition": "交付任何可部署单元",
+    "applicability_note": "交付任何可部署单元"
+  },
+  "enforcement": "required_when_applicable",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-spec-decomposition"
+  },
+  "origin": "ingested",
+  "origin_note": "B6c BE 播种移植物化；statement 沿用 SPEC-D 候选卡独立措辞（clean-room），零逐字拷贝上游源文本；播种分母=vendor 字节（x-b6-porting.vendor_pin），分解分母=MASTer 池卡（x-spec-d-materialization）",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/corpus/spec-knowledge/candidates/BE-G4.yaml",
+      "captured_by": "agent:claude/spec-d-consolidation",
+      "locator": {
+        "candidate": "POLICY.DEPLOY.RUNTIME_FACT_RECORD",
+        "source_protocol": ".trellis/spec/backend/31-runtime-deployment-protocol.md",
+        "lines": ""
+      },
+      "clean_room_note": "independently rewritten from SPEC-D decomposition candidate cards; zero verbatim copy"
+    }
+  ],
+  "review_notes": [
+    "运行时事实七类记录在既有 193 条中无对应条目（CFG.SCHEMA_BACKED_CONFIG 管配置结构化），零语义重复。"
+  ]
+}

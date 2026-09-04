@@ -1,0 +1,94 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "kind='policy' 不在 vocab-lock kinds_registry.truth_bodies（POLICY. 前缀已冻结注册，closed-world）；新 id 域段待登记：PERF",
+    "proposal": "词汇表 PR 登记 policy kind 及新域段；或 Owner 裁决 policy 条目住 catalog/ 而非 truth/objects 正文层（与前批 45+25+9 条同因同请，合并进同一 vocab PR）",
+    "locked_vocab_untouched": true
+  },
+  "x-spec-d-materialization": {
+    "status": "PROPOSAL",
+    "package": "B6c BE 播种移植（SPEC-D 池卡复用；分母=MASTer 池卡 + vendor 播种字节双锚）",
+    "human_review_required": true,
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/corpus/spec-knowledge/candidates/consolidated-pool.yaml",
+    "group": "BE-G4",
+    "candidate_id": "POLICY.PERF.EVIDENCE_BINDING",
+    "density_rank": "UNIVERSAL",
+    "density_score": 33.06,
+    "pool_statement_sha16": "52460200ce0b7697",
+    "curated_rule": "B6c 分母（BE universal 33：32 编号协议 + index）required 池（ELIGIBLE 未物化 + 卡层锚落 MUST/MUST NOT 且与 MASTer 行锚交叉验证）按池密度序取前 22 + advisory 池（SHOULD 源 backlog policy 卡 + 行锚全落建议段闭包）按同公式密度序取前 3 = 25（D5 上限/批内执行）；UNIVERSAL + UNIVERSAL_POLICY + 无 uncertainty + 非 project_scope + 非重复",
+    "denominator": "MASTer（池卡 source 锚）"
+  },
+  "x-b6-porting": {
+    "status": "PROPOSAL",
+    "batch": "B6C",
+    "human_review_required": true,
+    "classification_face": "policy",
+    "enforcement_axis": {
+      "source_sections": [
+        "MUST"
+      ],
+      "rule": "SHOULD/Change Policy 源条目 enforcement 必须 advisory（禁升 required）；MUST/MUST NOT 源条目 enforcement 必须 required_when_applicable（降级合法）",
+      "asserted_by": "packages/cli/tests/catalog-b6-porting.spec.ts"
+    },
+    "extra_master_sections": [],
+    "denominator": "vendor",
+    "vendor_pin": {
+      "path": "pomaster/components/backend-hard-spec/assets/universal/30-performance-capacity-protocol.md",
+      "sha256": "b575dd07e4bb6def646acb55c3d62d086a9fd12035b2ab359ec353bf443773e5",
+      "bytes": 1326
+    },
+    "seeded_spec": ".pomaster/specs/hard/backend/30-performance-capacity-protocol.md",
+    "seed_manifest": "packages/cli/seeds/manifest.json"
+  },
+  "id": "POLICY.PERF.EVIDENCE_BINDING",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "UNIVERSAL_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "性能结论五要素绑定",
+  "statement_zh": "任何性能结论必须同时绑定其负载模型、数据规模、运行环境、被测版本与统计口径，缺一即不构成有效结论。",
+  "statement_en_keywords": [
+    "performance claim binding",
+    "load model",
+    "data scale",
+    "environment",
+    "tested version",
+    "statistics caliber"
+  ],
+  "applies_when": {
+    "lane": "any",
+    "condition": "给出任何性能结论",
+    "applicability_note": "给出任何性能结论"
+  },
+  "enforcement": "required_when_applicable",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-spec-decomposition"
+  },
+  "origin": "ingested",
+  "origin_note": "B6c BE 播种移植物化；statement 沿用 SPEC-D 候选卡独立措辞（clean-room），零逐字拷贝上游源文本；播种分母=vendor 字节（x-b6-porting.vendor_pin），分解分母=MASTer 池卡（x-spec-d-materialization）",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/corpus/spec-knowledge/candidates/BE-G4.yaml",
+      "captured_by": "agent:claude/spec-d-consolidation",
+      "locator": {
+        "candidate": "POLICY.PERF.EVIDENCE_BINDING",
+        "source_protocol": ".trellis/spec/backend/30-performance-capacity-protocol.md",
+        "lines": ""
+      },
+      "clean_room_note": "independently rewritten from SPEC-D decomposition candidate cards; zero verbatim copy"
+    }
+  ],
+  "review_notes": [
+    "性能结论证据绑定在既有 193 条中无对应条目（B6b-II REL.OBSERVABILITY_BEFORE_SHIP 管监控前置物，不管结论要素绑定），零语义重复。"
+  ]
+}

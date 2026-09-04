@@ -1,6 +1,6 @@
 {
   "schema": "pomaster.seed-manifest/1",
-  "batch": "B6B-2",
+  "batch": "B6C",
   "batches": {
     "B6B-1": [
       ".pomaster/specs/hard/frontend/01-development-checklist-protocol.md",
@@ -51,16 +51,79 @@
       ".pomaster/specs/hard/frontend/44-privacy-data-lifecycle-protocol.md",
       ".pomaster/specs/hard/frontend/45-browser-storage-protocol.md",
       ".pomaster/specs/hard/frontend/index.md"
+    ],
+    "B6C": [
+      ".pomaster/specs/hard/backend/01-architecture-governance-protocol.md",
+      ".pomaster/specs/hard/backend/02-project-structure-governance-protocol.md",
+      ".pomaster/specs/hard/backend/03-directory-boundary-protocol.md",
+      ".pomaster/specs/hard/backend/04-layering-architecture-protocol.md",
+      ".pomaster/specs/hard/backend/05-task-workflow-protocol.md",
+      ".pomaster/specs/hard/backend/06-ai-generated-code-protocol.md",
+      ".pomaster/specs/hard/backend/07-evidence-acceptance-protocol.md",
+      ".pomaster/specs/hard/backend/08-contract-change-protocol.md",
+      ".pomaster/specs/hard/backend/09-role-responsibility-protocol.md",
+      ".pomaster/specs/hard/backend/10-security-protocol.md",
+      ".pomaster/specs/hard/backend/11-environment-configuration-protocol.md",
+      ".pomaster/specs/hard/backend/12-api-contract-protocol.md",
+      ".pomaster/specs/hard/backend/13-privacy-data-lifecycle-protocol.md",
+      ".pomaster/specs/hard/backend/14-business-rules-state-protocol.md",
+      ".pomaster/specs/hard/backend/15-data-model-protocol.md",
+      ".pomaster/specs/hard/backend/16-error-code-protocol.md",
+      ".pomaster/specs/hard/backend/17-permission-authorization-protocol.md",
+      ".pomaster/specs/hard/backend/18-database-schema-migration-protocol.md",
+      ".pomaster/specs/hard/backend/19-query-index-sql-protocol.md",
+      ".pomaster/specs/hard/backend/20-transaction-boundary-protocol.md",
+      ".pomaster/specs/hard/backend/21-concurrency-locking-protocol.md",
+      ".pomaster/specs/hard/backend/22-idempotency-protocol.md",
+      ".pomaster/specs/hard/backend/23-cache-redis-consistency-protocol.md",
+      ".pomaster/specs/hard/backend/24-external-integration-resilience-protocol.md",
+      ".pomaster/specs/hard/backend/25-async-job-scheduler-protocol.md",
+      ".pomaster/specs/hard/backend/26-engineering-tooling-protocol.md",
+      ".pomaster/specs/hard/backend/27-dependency-supply-chain-protocol.md",
+      ".pomaster/specs/hard/backend/28-testing-protocol.md",
+      ".pomaster/specs/hard/backend/29-observability-logging-tracing-protocol.md",
+      ".pomaster/specs/hard/backend/30-performance-capacity-protocol.md",
+      ".pomaster/specs/hard/backend/31-runtime-deployment-protocol.md",
+      ".pomaster/specs/hard/backend/32-release-versioning-rollback-protocol.md",
+      ".pomaster/specs/hard/backend/index.md",
+      ".pomaster/specs/hard/stacks/java/index.md",
+      ".pomaster/specs/hard/stacks/java/java-language-overlay.md",
+      ".pomaster/specs/hard/stacks/jpa/index.md",
+      ".pomaster/specs/hard/stacks/jpa/jpa-persistence-overlay.md",
+      ".pomaster/specs/hard/stacks/kubernetes-ingress/index.md",
+      ".pomaster/specs/hard/stacks/kubernetes-ingress/kubernetes-ingress-overlay.md",
+      ".pomaster/specs/hard/stacks/messaging/index.md",
+      ".pomaster/specs/hard/stacks/messaging/messaging-reliability-overlay.md",
+      ".pomaster/specs/hard/stacks/mybatis/index.md",
+      ".pomaster/specs/hard/stacks/mybatis/mybatis-persistence-overlay.md",
+      ".pomaster/specs/hard/stacks/mysql/index.md",
+      ".pomaster/specs/hard/stacks/mysql/mysql-database-overlay.md",
+      ".pomaster/specs/hard/stacks/nginx/index.md",
+      ".pomaster/specs/hard/stacks/nginx/nginx-proxy-overlay.md",
+      ".pomaster/specs/hard/stacks/postgresql/index.md",
+      ".pomaster/specs/hard/stacks/postgresql/postgresql-database-overlay.md",
+      ".pomaster/specs/hard/stacks/redis/index.md",
+      ".pomaster/specs/hard/stacks/redis/redis-cache-overlay.md",
+      ".pomaster/specs/hard/stacks/spring-batch/index.md",
+      ".pomaster/specs/hard/stacks/spring-batch/spring-batch-job-overlay.md",
+      ".pomaster/specs/hard/stacks/spring-boot/index.md",
+      ".pomaster/specs/hard/stacks/spring-boot/spring-boot-application-overlay.md",
+      ".pomaster/specs/hard/stacks/spring-mvc/index.md",
+      ".pomaster/specs/hard/stacks/spring-mvc/spring-mvc-web-overlay.md",
+      ".pomaster/specs/hard/stacks/spring-webflux/index.md",
+      ".pomaster/specs/hard/stacks/spring-webflux/spring-webflux-reactive-overlay.md",
+      ".pomaster/specs/hard/stacks/tomcat/index.md",
+      ".pomaster/specs/hard/stacks/tomcat/tomcat-runtime-overlay.md"
     ]
   },
-  "generated_by": "catalog/tools/seed_b6b_frontend.py",
+  "generated_by": "catalog/tools/seed_b6c_backend.py",
   "denominator": {
-    "batch_scope": "B6b-II：FE 46 文件分母后半（24-45 编号协议 + index.md；01-23 已 B6b-I 在册——清单合并承载全量分母）",
-    "planted": 46,
-    "planted_total": 46,
-    "batch_new": 23
+    "batch_scope": "B6c：BE universal 33 文件（32 编号协议 + index）+ stacks 28 文件（14 目录 × index+overlay）全量播种 + profile 1 份走 catalog TECHNOLOGY_PROFILE 分类面不播种（B6b 两批 FE 46 条在册——清单合并承载全量分母）",
+    "planted": 107,
+    "planted_total": 107,
+    "batch_new": 61
   },
-  "seed_semantics": "seed-once-missing-only（缺席才写 / 在座零触碰 / marker-free；seeds.ts 单一实现；frontmatter 为 PRD §8.2 字段位减 id——no-governed-id 默认，播种 spec 是项目可编辑自由文件）",
+  "seed_semantics": "seed-once-missing-only（缺席才写 / 在座零触碰 / marker-free；seeds.ts 单一实现；frontmatter 为 PRD §8.2 字段位减 id——no-governed-id 默认，播种 spec 是项目可编辑自由文件；B6c 起 BE 件含 vendor frontmatter 保留字段、stacks 件落 <slug> 子目录——SEEDABLE_STORE_DIRS 显式 slug 登记）",
   "authority_scope": "mixed_required_and_advisory",
   "entries": [
     {
@@ -529,6 +592,713 @@
         "R8 词形适配（唯一授权适配点，注入矩阵段使用说明）：L44 自指路径 '.trellis/spec/frontend/' 按提案适配 vNext 播种面词形 '.pomaster/specs/hard/frontend/'（whitelist 单点替换、计数断言；其余正文逐字节保留）",
         "R8 词形登记：L47 'Trellis Phase 1.3 / task.py add-context / implement.jsonl / check.jsonl' 为旧包任务机制词形，vNext 无对应机制——内容忠实红线保留原文，词形清洗等 Owner 授权内容演进批次",
         "R8 词形登记：L72/L75 'finish 流程/finish' 为旧包流程词形，vNext 无对应命令——保留原文，同上"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/backend/01-architecture-governance-protocol.md",
+      "asset": "specs/hard/backend/01-architecture-governance-protocol.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/universal/01-architecture-governance-protocol.md",
+      "source_sha256": "726502f4e5a5dcf2e8076fafa943b33de4b7ab9bd0fc2d8551479b43385e7636",
+      "source_bytes": 1394,
+      "porting_notes": [
+        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/backend/02-project-structure-governance-protocol.md",
+      "asset": "specs/hard/backend/02-project-structure-governance-protocol.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/universal/02-project-structure-governance-protocol.md",
+      "source_sha256": "add6e21ffa5dd45940dda725e8d4e234c9d2a49775139c895cc7ad5f7caf7bf0",
+      "source_bytes": 1343,
+      "porting_notes": [
+        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/backend/03-directory-boundary-protocol.md",
+      "asset": "specs/hard/backend/03-directory-boundary-protocol.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/universal/03-directory-boundary-protocol.md",
+      "source_sha256": "95a917cfe3c929b5a0a40de5f6215b25ef4a358a4e7f1c7cb2daa08defcf6bcc",
+      "source_bytes": 1224,
+      "porting_notes": [
+        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/backend/04-layering-architecture-protocol.md",
+      "asset": "specs/hard/backend/04-layering-architecture-protocol.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/universal/04-layering-architecture-protocol.md",
+      "source_sha256": "4a2ab2aa695a7b78136a2fd96076a869c367bb008a417be508756c632ad4ed6e",
+      "source_bytes": 1350,
+      "porting_notes": [
+        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/backend/05-task-workflow-protocol.md",
+      "asset": "specs/hard/backend/05-task-workflow-protocol.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/universal/05-task-workflow-protocol.md",
+      "source_sha256": "b0d176f1f2d19cd14739ff4de39d77659036516ab1377b83c261ecc53a2de2dd",
+      "source_bytes": 1177,
+      "porting_notes": [
+        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/backend/06-ai-generated-code-protocol.md",
+      "asset": "specs/hard/backend/06-ai-generated-code-protocol.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/universal/06-ai-generated-code-protocol.md",
+      "source_sha256": "a88614806137f33161b741d2a9fbc6ee310fa4f0cbf6acd222de07c14aee3d75",
+      "source_bytes": 1288,
+      "porting_notes": [
+        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/backend/07-evidence-acceptance-protocol.md",
+      "asset": "specs/hard/backend/07-evidence-acceptance-protocol.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/universal/07-evidence-acceptance-protocol.md",
+      "source_sha256": "fb86312eaadaec81d21e20abfb979e0127138002731ddc4fb1ead9ec90cd10bb",
+      "source_bytes": 1280,
+      "porting_notes": [
+        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/backend/08-contract-change-protocol.md",
+      "asset": "specs/hard/backend/08-contract-change-protocol.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/universal/08-contract-change-protocol.md",
+      "source_sha256": "805c146b31c70d08f876631bc19273076eb242d78fcb3b3a3bd33437e28a6953",
+      "source_bytes": 1279,
+      "porting_notes": [
+        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/backend/09-role-responsibility-protocol.md",
+      "asset": "specs/hard/backend/09-role-responsibility-protocol.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/universal/09-role-responsibility-protocol.md",
+      "source_sha256": "603b285faa271b77140f28e1038f850cd01b17ed1813b965898c4746233b342f",
+      "source_bytes": 1246,
+      "porting_notes": [
+        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/backend/10-security-protocol.md",
+      "asset": "specs/hard/backend/10-security-protocol.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/universal/10-security-protocol.md",
+      "source_sha256": "56387f03edd35df50a5a701f4daab174b744d490663393f43331cf5401149f67",
+      "source_bytes": 1385,
+      "porting_notes": [
+        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/backend/11-environment-configuration-protocol.md",
+      "asset": "specs/hard/backend/11-environment-configuration-protocol.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/universal/11-environment-configuration-protocol.md",
+      "source_sha256": "eb9e82e9df64ce238501bc51cd359f36150f911c149904e2ed5a43d9b652b1bd",
+      "source_bytes": 1362,
+      "porting_notes": [
+        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/backend/12-api-contract-protocol.md",
+      "asset": "specs/hard/backend/12-api-contract-protocol.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/universal/12-api-contract-protocol.md",
+      "source_sha256": "35519d81548cabff729de888e0bf9e0d5b40a0274c9fa3684641b50e75938ca0",
+      "source_bytes": 1305,
+      "porting_notes": [
+        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/backend/13-privacy-data-lifecycle-protocol.md",
+      "asset": "specs/hard/backend/13-privacy-data-lifecycle-protocol.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/universal/13-privacy-data-lifecycle-protocol.md",
+      "source_sha256": "df20ccb85008f8744ea16db3ea64e54bdf9fd19d7aa3098c45dc44fff94c3d8d",
+      "source_bytes": 1381,
+      "porting_notes": [
+        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/backend/14-business-rules-state-protocol.md",
+      "asset": "specs/hard/backend/14-business-rules-state-protocol.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/universal/14-business-rules-state-protocol.md",
+      "source_sha256": "fb255dd2331ac35e73a1ad222e4de4ec2f5fb3a09e675de0e1919d80022ac291",
+      "source_bytes": 1287,
+      "porting_notes": [
+        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/backend/15-data-model-protocol.md",
+      "asset": "specs/hard/backend/15-data-model-protocol.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/universal/15-data-model-protocol.md",
+      "source_sha256": "21cdd88fac93c9dc834a51d62978b51453ca02eca68f223859aeca0ada99c3f2",
+      "source_bytes": 1288,
+      "porting_notes": [
+        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/backend/16-error-code-protocol.md",
+      "asset": "specs/hard/backend/16-error-code-protocol.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/universal/16-error-code-protocol.md",
+      "source_sha256": "aa80ee60f7431e14859f61e563784e71b2002f35e220964170a779800fdde090",
+      "source_bytes": 1298,
+      "porting_notes": [
+        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/backend/17-permission-authorization-protocol.md",
+      "asset": "specs/hard/backend/17-permission-authorization-protocol.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/universal/17-permission-authorization-protocol.md",
+      "source_sha256": "d85a431b682a3a7c3dd4a6ee1f67fc375b54edb4a8e7fe98d283103b64a6b41e",
+      "source_bytes": 1378,
+      "porting_notes": [
+        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/backend/18-database-schema-migration-protocol.md",
+      "asset": "specs/hard/backend/18-database-schema-migration-protocol.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/universal/18-database-schema-migration-protocol.md",
+      "source_sha256": "e7d0b660673dc1978653c39c9efcc7ad7d9b2809c4a88040a6fcf74839bc82c0",
+      "source_bytes": 1409,
+      "porting_notes": [
+        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/backend/19-query-index-sql-protocol.md",
+      "asset": "specs/hard/backend/19-query-index-sql-protocol.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/universal/19-query-index-sql-protocol.md",
+      "source_sha256": "60a660730a82a4f911bc6c18d5f6808a320f722df27d397a4e4b13835111610d",
+      "source_bytes": 1332,
+      "porting_notes": [
+        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/backend/20-transaction-boundary-protocol.md",
+      "asset": "specs/hard/backend/20-transaction-boundary-protocol.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/universal/20-transaction-boundary-protocol.md",
+      "source_sha256": "4c4634b71f1e07e9cae074f9790fa50b3425f0af71300ab2ac12e644b521eff4",
+      "source_bytes": 1323,
+      "porting_notes": [
+        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/backend/21-concurrency-locking-protocol.md",
+      "asset": "specs/hard/backend/21-concurrency-locking-protocol.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/universal/21-concurrency-locking-protocol.md",
+      "source_sha256": "6141612e1135cc67ccd9d47553ea5fa7b9c00e05b6e50706f8e117c80d3b8d95",
+      "source_bytes": 1308,
+      "porting_notes": [
+        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/backend/22-idempotency-protocol.md",
+      "asset": "specs/hard/backend/22-idempotency-protocol.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/universal/22-idempotency-protocol.md",
+      "source_sha256": "c97d003622b9075f0c094ec5c5bfa950a977e18b2f4ce8ffc9bc014858e27670",
+      "source_bytes": 1310,
+      "porting_notes": [
+        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/backend/23-cache-redis-consistency-protocol.md",
+      "asset": "specs/hard/backend/23-cache-redis-consistency-protocol.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/universal/23-cache-redis-consistency-protocol.md",
+      "source_sha256": "073da5821658adfc0580798873fde95c49dc9d993a63949b3b1543a9c0e18a11",
+      "source_bytes": 1316,
+      "porting_notes": [
+        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/backend/24-external-integration-resilience-protocol.md",
+      "asset": "specs/hard/backend/24-external-integration-resilience-protocol.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/universal/24-external-integration-resilience-protocol.md",
+      "source_sha256": "e6b0626c9169e9126319bd08ee5d5bdbe38421cfa175509524145aee30ff539a",
+      "source_bytes": 1346,
+      "porting_notes": [
+        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/backend/25-async-job-scheduler-protocol.md",
+      "asset": "specs/hard/backend/25-async-job-scheduler-protocol.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/universal/25-async-job-scheduler-protocol.md",
+      "source_sha256": "36af3b4466b4e617a9c552a404d98ab74604752b7410e15756d7f132394fb980",
+      "source_bytes": 1351,
+      "porting_notes": [
+        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/backend/26-engineering-tooling-protocol.md",
+      "asset": "specs/hard/backend/26-engineering-tooling-protocol.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/universal/26-engineering-tooling-protocol.md",
+      "source_sha256": "b0fcecee17a3acdb11f59f065ae7cac269cc292e999dd39444e5293565d38fe1",
+      "source_bytes": 1263,
+      "porting_notes": [
+        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/backend/27-dependency-supply-chain-protocol.md",
+      "asset": "specs/hard/backend/27-dependency-supply-chain-protocol.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/universal/27-dependency-supply-chain-protocol.md",
+      "source_sha256": "7e0817507039ab5f633ff4cb7eb3590d8755a547b8db91867f92bc702a64ddfe",
+      "source_bytes": 1317,
+      "porting_notes": [
+        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/backend/28-testing-protocol.md",
+      "asset": "specs/hard/backend/28-testing-protocol.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/universal/28-testing-protocol.md",
+      "source_sha256": "f5df73dd7bec4ccf4132c3d7a9918a6f1cb0dd9682aa17956cb24446aa406ad7",
+      "source_bytes": 1267,
+      "porting_notes": [
+        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/backend/29-observability-logging-tracing-protocol.md",
+      "asset": "specs/hard/backend/29-observability-logging-tracing-protocol.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/universal/29-observability-logging-tracing-protocol.md",
+      "source_sha256": "e871f5d7d1e9fe68956881877baba94f376a5539753441853f8cfa12939f5ebd",
+      "source_bytes": 1387,
+      "porting_notes": [
+        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/backend/30-performance-capacity-protocol.md",
+      "asset": "specs/hard/backend/30-performance-capacity-protocol.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/universal/30-performance-capacity-protocol.md",
+      "source_sha256": "b575dd07e4bb6def646acb55c3d62d086a9fd12035b2ab359ec353bf443773e5",
+      "source_bytes": 1326,
+      "porting_notes": [
+        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/backend/31-runtime-deployment-protocol.md",
+      "asset": "specs/hard/backend/31-runtime-deployment-protocol.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/universal/31-runtime-deployment-protocol.md",
+      "source_sha256": "c791451de0be3aa0629fd562e2b43cc54066e4b10d786264fa7a333c561ef23a",
+      "source_bytes": 1410,
+      "porting_notes": [
+        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/backend/32-release-versioning-rollback-protocol.md",
+      "asset": "specs/hard/backend/32-release-versioning-rollback-protocol.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/universal/32-release-versioning-rollback-protocol.md",
+      "source_sha256": "26a6a23928fc24338f69fb34199ecdea5f654e21534a76ac53a7c0b78030b3c8",
+      "source_bytes": 1359,
+      "porting_notes": [
+        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/backend/index.md",
+      "asset": "specs/hard/backend/index.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/universal/index.md",
+      "source_sha256": "b50c1fdcab5d1a3217a6e28059580195f681b6e68f465eb8e055bd8e5310c479",
+      "source_bytes": 14733,
+      "porting_notes": [
+        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）",
+        "R8 词形登记：L136 'Trellis context reason' 为旧包任务机制词形，vNext 无对应机制——内容忠实红线保留原文，词形清洗等 Owner 授权内容演进批次",
+        "R8 词形登记：正文'使用规则/默认注入基线/任务 Trigger 矩阵'段为旧包注入机制叙述，vNext 播种面无注入器机制——内容忠实红线保留原文（其中'只补齐缺失文件、不覆盖已存在'叙述与 vNext seed-once 播种语义一致），词形清洗等 Owner 授权内容演进批次",
+        "R8 词形注记：正文 'stacks/<slug>/<slug>-overlay.md' 相对词形（L18/L54）在 vNext 播种面（.pomaster/specs/hard/）下自洽指向 specs/hard/stacks/<slug>/<slug>-overlay.md——零改写保留原文"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/stacks/java/index.md",
+      "asset": "specs/hard/stacks/java/index.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/stacks/java/index.md",
+      "source_sha256": "b7a9c253b74acaf5fbda84dc9650cb807838a74ad062393c08679701029d6cd4",
+      "source_bytes": 263,
+      "porting_notes": []
+    },
+    {
+      "target": ".pomaster/specs/hard/stacks/java/java-language-overlay.md",
+      "asset": "specs/hard/stacks/java/java-language-overlay.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/stacks/java/java-language-overlay.md",
+      "source_sha256": "38b592a5beaa899abb45e871e5097cafedeea80502baee00bcfbfcfa313dab85",
+      "source_bytes": 684,
+      "porting_notes": [
+        "B6c 移植注记：本 overlay 随 14 组全量播种（installed=true）；bound（选中态）由 baseline/backend/stack.yaml 显式选型派生（B6d 落位），不作隐式基线（目录 index 原语义词形）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/stacks/jpa/index.md",
+      "asset": "specs/hard/stacks/jpa/index.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/stacks/jpa/index.md",
+      "source_sha256": "6a1bb930d58d7ee19a65f871829e7f347bbb83eee93412def4c3720a32f2d1f5",
+      "source_bytes": 213,
+      "porting_notes": []
+    },
+    {
+      "target": ".pomaster/specs/hard/stacks/jpa/jpa-persistence-overlay.md",
+      "asset": "specs/hard/stacks/jpa/jpa-persistence-overlay.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/stacks/jpa/jpa-persistence-overlay.md",
+      "source_sha256": "e43479fd8659b89863cf47dee9fee3c52727cc2978ffd1b854ea17c777b1e9e6",
+      "source_bytes": 647,
+      "porting_notes": [
+        "B6c 移植注记：本 overlay 随 14 组全量播种（installed=true）；bound（选中态）由 baseline/backend/stack.yaml 显式选型派生（B6d 落位），不作隐式基线（目录 index 原语义词形）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/stacks/kubernetes-ingress/index.md",
+      "asset": "specs/hard/stacks/kubernetes-ingress/index.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/stacks/kubernetes-ingress/index.md",
+      "source_sha256": "847ab143549d2776913bdb403abe4283143e188fdc665ae4a045fd2699d8bb30",
+      "source_bytes": 258,
+      "porting_notes": []
+    },
+    {
+      "target": ".pomaster/specs/hard/stacks/kubernetes-ingress/kubernetes-ingress-overlay.md",
+      "asset": "specs/hard/stacks/kubernetes-ingress/kubernetes-ingress-overlay.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/stacks/kubernetes-ingress/kubernetes-ingress-overlay.md",
+      "source_sha256": "4369b51a677453c24b5ec4d4b97001c91932918fc779c55562012ebc6b312bf5",
+      "source_bytes": 695,
+      "porting_notes": [
+        "B6c 移植注记：本 overlay 随 14 组全量播种（installed=true）；bound（选中态）由 baseline/backend/stack.yaml 显式选型派生（B6d 落位），不作隐式基线（目录 index 原语义词形）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/stacks/messaging/index.md",
+      "asset": "specs/hard/stacks/messaging/index.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/stacks/messaging/index.md",
+      "source_sha256": "ab5a2cf4ab18168ea59e1788e1c156d00a059ead9eb509e24266c684feb7b5ea",
+      "source_bytes": 258,
+      "porting_notes": []
+    },
+    {
+      "target": ".pomaster/specs/hard/stacks/messaging/messaging-reliability-overlay.md",
+      "asset": "specs/hard/stacks/messaging/messaging-reliability-overlay.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/stacks/messaging/messaging-reliability-overlay.md",
+      "source_sha256": "ed7f82208521675510ab4a42b229f9be269a52514cf5188c9bf83323d7590572",
+      "source_bytes": 687,
+      "porting_notes": [
+        "B6c 移植注记：本 overlay 随 14 组全量播种（installed=true）；bound（选中态）由 baseline/backend/stack.yaml 显式选型派生（B6d 落位），不作隐式基线（目录 index 原语义词形）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/stacks/mybatis/index.md",
+      "asset": "specs/hard/stacks/mybatis/index.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/stacks/mybatis/index.md",
+      "source_sha256": "3248739d1cca70a4d95c62553cddcc308ebe8e85dac8bde0c98440b03d250410",
+      "source_bytes": 229,
+      "porting_notes": []
+    },
+    {
+      "target": ".pomaster/specs/hard/stacks/mybatis/mybatis-persistence-overlay.md",
+      "asset": "specs/hard/stacks/mybatis/mybatis-persistence-overlay.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/stacks/mybatis/mybatis-persistence-overlay.md",
+      "source_sha256": "968bfa7df9b4c675161427809fd3d4e9e5b62b2b53a880420f36af00d2c60e57",
+      "source_bytes": 651,
+      "porting_notes": [
+        "B6c 移植注记：本 overlay 随 14 组全量播种（installed=true）；bound（选中态）由 baseline/backend/stack.yaml 显式选型派生（B6d 落位），不作隐式基线（目录 index 原语义词形）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/stacks/mysql/index.md",
+      "asset": "specs/hard/stacks/mysql/index.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/stacks/mysql/index.md",
+      "source_sha256": "d3b40d3d12bfb2b6f2af4aa918dade0c8ee762b02e7a1290e1a0a6064400b355",
+      "source_bytes": 216,
+      "porting_notes": []
+    },
+    {
+      "target": ".pomaster/specs/hard/stacks/mysql/mysql-database-overlay.md",
+      "asset": "specs/hard/stacks/mysql/mysql-database-overlay.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/stacks/mysql/mysql-database-overlay.md",
+      "source_sha256": "a47d8c61959c120707bb907275e74ce13b4b36b03fa493bc09cc7d47fcc949d7",
+      "source_bytes": 693,
+      "porting_notes": [
+        "B6c 移植注记：本 overlay 随 14 组全量播种（installed=true）；bound（选中态）由 baseline/backend/stack.yaml 显式选型派生（B6d 落位），不作隐式基线（目录 index 原语义词形）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/stacks/nginx/index.md",
+      "asset": "specs/hard/stacks/nginx/index.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/stacks/nginx/index.md",
+      "source_sha256": "b5046069aec65ff56187cec0f237e996821ac46c85693164f7f2cb118ffa74b0",
+      "source_bytes": 204,
+      "porting_notes": []
+    },
+    {
+      "target": ".pomaster/specs/hard/stacks/nginx/nginx-proxy-overlay.md",
+      "asset": "specs/hard/stacks/nginx/nginx-proxy-overlay.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/stacks/nginx/nginx-proxy-overlay.md",
+      "source_sha256": "442da24b2bb5274003978636cf793bae02b25f24aa080fcc926c5347da39ce19",
+      "source_bytes": 707,
+      "porting_notes": [
+        "B6c 移植注记：本 overlay 随 14 组全量播种（installed=true）；bound（选中态）由 baseline/backend/stack.yaml 显式选型派生（B6d 落位），不作隐式基线（目录 index 原语义词形）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/stacks/postgresql/index.md",
+      "asset": "specs/hard/stacks/postgresql/index.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/stacks/postgresql/index.md",
+      "source_sha256": "1321160386166639c011a3a9af649ee54668282343160305b0a451f4abcb677a",
+      "source_bytes": 236,
+      "porting_notes": []
+    },
+    {
+      "target": ".pomaster/specs/hard/stacks/postgresql/postgresql-database-overlay.md",
+      "asset": "specs/hard/stacks/postgresql/postgresql-database-overlay.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/stacks/postgresql/postgresql-database-overlay.md",
+      "source_sha256": "dbe9f21a72c1124519375176efb2b2b4138b21c45becebfc66eaa2ab41def16e",
+      "source_bytes": 708,
+      "porting_notes": [
+        "B6c 移植注记：本 overlay 随 14 组全量播种（installed=true）；bound（选中态）由 baseline/backend/stack.yaml 显式选型派生（B6d 落位），不作隐式基线（目录 index 原语义词形）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/stacks/redis/index.md",
+      "asset": "specs/hard/stacks/redis/index.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/stacks/redis/index.md",
+      "source_sha256": "707ec932880648c55219a73f46a8b219bb91ff76de45b924ad336a67035f3ffb",
+      "source_bytes": 223,
+      "porting_notes": []
+    },
+    {
+      "target": ".pomaster/specs/hard/stacks/redis/redis-cache-overlay.md",
+      "asset": "specs/hard/stacks/redis/redis-cache-overlay.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/stacks/redis/redis-cache-overlay.md",
+      "source_sha256": "6ae4d18ce2658a77d34bb3cf2a2c38745b646a730eb3c270c2a4c2a0a24497c7",
+      "source_bytes": 668,
+      "porting_notes": [
+        "B6c 移植注记：本 overlay 随 14 组全量播种（installed=true）；bound（选中态）由 baseline/backend/stack.yaml 显式选型派生（B6d 落位），不作隐式基线（目录 index 原语义词形）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/stacks/spring-batch/index.md",
+      "asset": "specs/hard/stacks/spring-batch/index.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/stacks/spring-batch/index.md",
+      "source_sha256": "946bfff0f9ec268cb33e9492053ceba842f7b0aa663eb8d847e601e7f39e00a0",
+      "source_bytes": 246,
+      "porting_notes": []
+    },
+    {
+      "target": ".pomaster/specs/hard/stacks/spring-batch/spring-batch-job-overlay.md",
+      "asset": "specs/hard/stacks/spring-batch/spring-batch-job-overlay.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/stacks/spring-batch/spring-batch-job-overlay.md",
+      "source_sha256": "58f710fcfeeaeafcaa19fd4ef27bce22c3c34d8d1ef7992f95f65a3e1bd9cd78",
+      "source_bytes": 729,
+      "porting_notes": [
+        "B6c 移植注记：本 overlay 随 14 组全量播种（installed=true）；bound（选中态）由 baseline/backend/stack.yaml 显式选型派生（B6d 落位），不作隐式基线（目录 index 原语义词形）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/stacks/spring-boot/index.md",
+      "asset": "specs/hard/stacks/spring-boot/index.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/stacks/spring-boot/index.md",
+      "source_sha256": "afa8f211cc66a0baeff8cf4e837f4dc88da24a690bbbe637d56423a09e4c03cb",
+      "source_bytes": 268,
+      "porting_notes": []
+    },
+    {
+      "target": ".pomaster/specs/hard/stacks/spring-boot/spring-boot-application-overlay.md",
+      "asset": "specs/hard/stacks/spring-boot/spring-boot-application-overlay.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/stacks/spring-boot/spring-boot-application-overlay.md",
+      "source_sha256": "c8b2afe8de6c5af245035381a272644acee75d4e7d0efea901cac1f45d18d2a4",
+      "source_bytes": 719,
+      "porting_notes": [
+        "B6c 移植注记：本 overlay 随 14 组全量播种（installed=true）；bound（选中态）由 baseline/backend/stack.yaml 显式选型派生（B6d 落位），不作隐式基线（目录 index 原语义词形）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/stacks/spring-mvc/index.md",
+      "asset": "specs/hard/stacks/spring-mvc/index.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/stacks/spring-mvc/index.md",
+      "source_sha256": "8ec06aab6382d0f33ac13d6a8c083f3628081e2ee2defaa871dfcba21a73fb07",
+      "source_bytes": 243,
+      "porting_notes": []
+    },
+    {
+      "target": ".pomaster/specs/hard/stacks/spring-mvc/spring-mvc-web-overlay.md",
+      "asset": "specs/hard/stacks/spring-mvc/spring-mvc-web-overlay.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/stacks/spring-mvc/spring-mvc-web-overlay.md",
+      "source_sha256": "19a75e281d7406d4ce38accd4aa528496e9cb666a8d123bc489c7404cb67fcb6",
+      "source_bytes": 765,
+      "porting_notes": [
+        "B6c 移植注记：本 overlay 随 14 组全量播种（installed=true）；bound（选中态）由 baseline/backend/stack.yaml 显式选型派生（B6d 落位），不作隐式基线（目录 index 原语义词形）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/stacks/spring-webflux/index.md",
+      "asset": "specs/hard/stacks/spring-webflux/index.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/stacks/spring-webflux/index.md",
+      "source_sha256": "f6f8a2719772d4b7e35b38aa604b4017abaa8cf9d558779239a863af4e3666ce",
+      "source_bytes": 259,
+      "porting_notes": []
+    },
+    {
+      "target": ".pomaster/specs/hard/stacks/spring-webflux/spring-webflux-reactive-overlay.md",
+      "asset": "specs/hard/stacks/spring-webflux/spring-webflux-reactive-overlay.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/stacks/spring-webflux/spring-webflux-reactive-overlay.md",
+      "source_sha256": "4d2045c5bfa66004516dffa55e965e90958270adba9599f116990ac27cc489f8",
+      "source_bytes": 720,
+      "porting_notes": [
+        "B6c 移植注记：本 overlay 随 14 组全量播种（installed=true）；bound（选中态）由 baseline/backend/stack.yaml 显式选型派生（B6d 落位），不作隐式基线（目录 index 原语义词形）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/stacks/tomcat/index.md",
+      "asset": "specs/hard/stacks/tomcat/index.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/stacks/tomcat/index.md",
+      "source_sha256": "669d418601ec7a26507179f0bfe085621d7d45fd75ba2d297048431ccd91b43d",
+      "source_bytes": 235,
+      "porting_notes": []
+    },
+    {
+      "target": ".pomaster/specs/hard/stacks/tomcat/tomcat-runtime-overlay.md",
+      "asset": "specs/hard/stacks/tomcat/tomcat-runtime-overlay.md",
+      "seed_version": "B6C",
+      "lane": "backend",
+      "source_path": "pomaster/components/backend-hard-spec/assets/stacks/tomcat/tomcat-runtime-overlay.md",
+      "source_sha256": "133f15dbb7866e9e06cecf4e2cfcc2b2f14eeb06d9ea3d29be68c9e11cdd1e11",
+      "source_bytes": 693,
+      "porting_notes": [
+        "B6c 移植注记：本 overlay 随 14 组全量播种（installed=true）；bound（选中态）由 baseline/backend/stack.yaml 显式选型派生（B6d 落位），不作隐式基线（目录 index 原语义词形）"
       ]
     }
   ]

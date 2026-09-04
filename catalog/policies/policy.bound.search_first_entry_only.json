@@ -1,0 +1,90 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "kind='policy' 不在 vocab-lock kinds_registry.truth_bodies（POLICY. 前缀已冻结注册，closed-world）；新 id 域段待登记：BOUND",
+    "proposal": "词汇表 PR 登记 policy kind 及新域段；或 Owner 裁决 policy 条目住 catalog/ 而非 truth/objects 正文层（与前批 45+25+9 条同因同请，合并进同一 vocab PR）",
+    "locked_vocab_untouched": true
+  },
+  "x-spec-d-materialization": {
+    "status": "PROPOSAL",
+    "package": "B6c BE 播种移植（SPEC-D 池卡复用；分母=MASTer 池卡 + vendor 播种字节双锚）",
+    "human_review_required": true,
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/corpus/spec-knowledge/candidates/consolidated-pool.yaml",
+    "group": "BE-G1",
+    "candidate_id": "POLICY.BOUND.SEARCH_FIRST_ENTRY_ONLY",
+    "density_rank": "UNIVERSAL",
+    "density_score": 32.31,
+    "pool_statement_sha16": "5e0f8379b7a9cb1f",
+    "curated_rule": "B6c 分母（BE universal 33：32 编号协议 + index）required 池（ELIGIBLE 未物化 + 卡层锚落 MUST/MUST NOT 且与 MASTer 行锚交叉验证）按池密度序取前 22 + advisory 池（SHOULD 源 backlog policy 卡 + 行锚全落建议段闭包）按同公式密度序取前 3 = 25（D5 上限/批内执行）；UNIVERSAL + UNIVERSAL_POLICY + 无 uncertainty + 非 project_scope + 非重复",
+    "denominator": "MASTer（池卡 source 锚）"
+  },
+  "x-b6-porting": {
+    "status": "PROPOSAL",
+    "batch": "B6C",
+    "human_review_required": true,
+    "classification_face": "policy",
+    "enforcement_axis": {
+      "source_sections": [
+        "MUST"
+      ],
+      "rule": "SHOULD/Change Policy 源条目 enforcement 必须 advisory（禁升 required）；MUST/MUST NOT 源条目 enforcement 必须 required_when_applicable（降级合法）",
+      "asserted_by": "packages/cli/tests/catalog-b6-porting.spec.ts"
+    },
+    "extra_master_sections": [],
+    "denominator": "vendor",
+    "vendor_pin": {
+      "path": "pomaster/components/backend-hard-spec/assets/universal/03-directory-boundary-protocol.md",
+      "sha256": "95a917cfe3c929b5a0a40de5f6215b25ef4a358a4e7f1c7cb2daa08defcf6bcc",
+      "bytes": 1224
+    },
+    "seeded_spec": ".pomaster/specs/hard/backend/03-directory-boundary-protocol.md",
+    "seed_manifest": "packages/cli/seeds/manifest.json"
+  },
+  "id": "POLICY.BOUND.SEARCH_FIRST_ENTRY_ONLY",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "UNIVERSAL_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "改前检索且只依赖公开入口",
+  "statement_zh": "动手修改前必须先检索既有实现；依赖关系只允许指向目标模块已声明的公开入口。",
+  "statement_en_keywords": [
+    "search before modify",
+    "public entry only"
+  ],
+  "applies_when": {
+    "lane": "any",
+    "condition": "实现阶段任何写入",
+    "applicability_note": "实现阶段任何写入"
+  },
+  "enforcement": "required_when_applicable",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-spec-decomposition"
+  },
+  "origin": "ingested",
+  "origin_note": "B6c BE 播种移植物化；statement 沿用 SPEC-D 候选卡独立措辞（clean-room），零逐字拷贝上游源文本；播种分母=vendor 字节（x-b6-porting.vendor_pin），分解分母=MASTer 池卡（x-spec-d-materialization）",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/corpus/spec-knowledge/candidates/BE-G1.yaml",
+      "captured_by": "agent:claude/spec-d-consolidation",
+      "locator": {
+        "candidate": "POLICY.BOUND.SEARCH_FIRST_ENTRY_ONLY",
+        "source_protocol": ".trellis/spec/backend/03-directory-boundary-protocol.md",
+        "lines": "25"
+      },
+      "clean_room_note": "independently rewritten from SPEC-D decomposition candidate cards; zero verbatim copy"
+    }
+  ],
+  "review_notes": [
+    "与既有 POLICY.AI.READ_SEARCH_VERIFY_BEFORE_WRITE（本批）为通则与依赖方向特例：彼管写前三步，本管依赖只指向声明公开入口，互引不合并；零语义重复。"
+  ]
+}

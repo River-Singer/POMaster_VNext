@@ -11,16 +11,19 @@
  * SEEDABLE_STORE_DIRS 12 播种目录 allowlist 禁落盘——控制平面 kernel 登记目录同样
  * 拒绝 + 路径词形卫生 fail-closed throw + allowlist ⊆ kernel 登记派生集合对账）、
  * fresh 临时工程端到端（runInit 注入清单：init 后种子在位 → 重跑零变化 → 手改种子
- * 文件后重跑仍零变化）、B6b 清单现状 pin（缺省装载 46 份 FE 播种件 = 45 编号协议 +
- * index，B6b-I/B6b-II 两批合并清单）。
+ * 文件后重跑仍零变化）、B6c 清单现状 pin（缺省装载 107 份播种件 = FE 46 + BE 33 +
+ * stacks 28，B6b 两批 + B6C 三批合并清单；stacks slug 三面单源对账 + 未登记 slug
+ * 守卫——B6c stacks 子目录 ADR 候选①显式叶登记）。
  */
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
+import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   GENERATED_MARKER,
   SEEDABLE_STORE_DIRS,
+  STACK_SEED_SLUGS,
   loadSeedManifestEntries,
   runInit,
   seedProjectAssets,
@@ -143,15 +146,81 @@ describe("seedProjectAssets 目录守卫（R4 红线 + B6b-I 播种 allowlist �
     }
   });
 
-  it("播种 allowlist 是 kernel 登记派生集合的子集（收窄不脱离 R4「登记先行」红线——allowlist ⊆ derivePathsTsStoreDirs）", () => {
+  it("播种 allowlist ⊆ kernel 登记派生集合（R4「登记先行」红线——12 布局目录精确命中；B6c stacks slug 叶为数据面：其父目录 specs/hard/stacks 已 kernel 登记，slug 目录不膨胀 kernel paths）", () => {
     const registered = derivePathsTsStoreDirs(dir);
     for (const seeded of SEEDABLE_STORE_DIRS) {
+      if (STACK_SEED_SLUGS.some((slug) => seeded === `specs/hard/stacks/${slug}`)) {
+        // B6c stacks 子目录 ADR 候选①：slug 叶目录 = specs/hard/stacks（kernel 登记面）
+        // 树内的数据分母词形——守卫语义 = 父目录已 kernel 登记 + allowlist 精确匹配。
+        expect(registered.has("specs/hard/stacks"), `${seeded} 的父目录须 kernel-registered`)
+          .toBe(true);
+        continue;
+      }
       expect(registered.has(seeded), `allowlist member ${seeded} must be kernel-registered`).toBe(
         true,
       );
     }
-    // 收窄口径：12 播种目录（baseline 根+四分区、specs 根+hard 根+三分区+acceptance+evidence）。
-    expect(SEEDABLE_STORE_DIRS).toHaveLength(12);
+    // 收窄口径：12 播种目录（baseline 根+四分区、specs 根+hard 根+三分区+acceptance+
+    // evidence）+ B6c stacks 14 slug 播种叶目录。
+    expect(SEEDABLE_STORE_DIRS).toHaveLength(12 + STACK_SEED_SLUGS.length);
+    for (const slug of STACK_SEED_SLUGS) {
+      expect(SEEDABLE_STORE_DIRS).toContain(`specs/hard/stacks/${slug}`);
+    }
+  });
+
+  it("B6c stacks slug 集 == 种子清单 stacks 分母派生集合（三面单源对账——slug 漂移即爆）", () => {
+    const entries = loadSeedManifestEntries();
+    const fromManifest = new Set(
+      entries
+        .map((e) => e.path.match(/^\.pomaster\/specs\/hard\/stacks\/([^/]+)\//)?.[1])
+        .filter((slug): slug is string => slug !== undefined),
+    );
+    expect(fromManifest).toEqual(new Set(STACK_SEED_SLUGS));
+    // vendor stacks 分母侧（播种源目录——profiles/ 除外，slug 目录恰 14 个）。
+    const vendorStacks = join(
+      fileURLToPath(new URL("../../../", import.meta.url)),
+      "..",
+      "pomaster",
+      "components",
+      "backend-hard-spec",
+      "assets",
+      "stacks",
+    );
+    const slugs = readdirSync(vendorStacks, { withFileTypes: true })
+      .filter((d) => d.isDirectory() && d.name !== "profiles")
+      .map((d) => d.name)
+      .sort();
+    expect(slugs).toEqual([...STACK_SEED_SLUGS].sort());
+  });
+
+  it("B6c stacks 子目录守卫：未登记 slug（specs/hard/stacks/nonexistent/）→ throw 零写入（allowlist 封闭集合，候选①显式叶登记）", async () => {
+    let thrown: unknown = null;
+    try {
+      await seed([{ path: ".pomaster/specs/hard/stacks/nonexistent/x.md", content: "x" }]);
+    } catch (error) {
+      thrown = error;
+    }
+    expect(String(thrown)).toContain("not in the seeding allowlist");
+    expect(existsSync(join(dir, ".pomaster", "specs", "hard", "stacks", "nonexistent"))).toBe(
+      false,
+    );
+    // stacks 叶下再嵌套一层（specs/hard/stacks/<slug>/deeper/x.md）同样拒绝——
+    // 只开一层叶，无通配递归。
+    let thrown2: unknown = null;
+    try {
+      await seed([{ path: ".pomaster/specs/hard/stacks/redis/deeper/x.md", content: "x" }]);
+    } catch (error) {
+      thrown2 = error;
+    }
+    expect(String(thrown2)).toContain("not in the seeding allowlist");
+  });
+
+  it("B6c stacks 播种叶目录可播种（specs/hard/stacks/redis/…，已登记 slug）→ 正常 seeded", async () => {
+    const files = await seed([
+      { path: ".pomaster/specs/hard/stacks/redis/demo-overlay.md", content: "# demo\n" },
+    ]);
+    expect(files.map((f) => f.action)).toEqual(["seeded"]);
+    expect(read(".pomaster/specs/hard/stacks/redis/demo-overlay.md")).toBe("# demo\n");
   });
 
   it("越出 .pomaster 的目标（AGENTS.md）→ throw + 零写入（种子只住 store 树内）", async () => {
@@ -242,37 +311,57 @@ describe("runInit 步骤 4.6 播种端到端（fresh 临时工程 + 注入清单
     ).toBe("preserved");
   });
 
-  it("B6b 清单现状 pin：缺省装载 46 份 FE 播种件（45 编号协议 + index；B6b-II 全量分母）——条目目标全落 specs/hard/frontend 播种 allowlist 面且 frontmatter 带 seed pin", () => {
+  it("B6c 清单现状 pin：缺省装载 107 份播种件（FE 46 + BE 33 + stacks 28；三批合并全量分母）——目标全落播种 allowlist 面且 frontmatter 带 seed pin", () => {
     const entries = loadSeedManifestEntries();
-    expect(entries).toHaveLength(46);
+    expect(entries).toHaveLength(107);
+    const fe = entries.filter((e) => e.path.startsWith(".pomaster/specs/hard/frontend/"));
+    const be = entries.filter((e) => e.path.startsWith(".pomaster/specs/hard/backend/"));
+    const stacks = entries.filter((e) => e.path.startsWith(".pomaster/specs/hard/stacks/"));
+    expect(fe).toHaveLength(46);
+    expect(be).toHaveLength(33);
+    expect(stacks).toHaveLength(28);
     for (const entry of entries) {
-      expect(entry.path.startsWith(".pomaster/specs/hard/frontend/")).toBe(true);
+      expect(
+        /^\.pomaster\/specs\/hard\/(frontend|backend|stacks\/[^/]+)\//.test(entry.path),
+        entry.path,
+      ).toBe(true);
       expect(entry.path.endsWith(".md")).toBe(true);
       expect(entry.content.startsWith("---\n")).toBe(true);
       expect(entry.content.includes("seed_source_sha256: ")).toBe(true);
       // marker-free：播种件字节不带生成标记（引擎写入面 zero-marker 的内容侧前提）。
       expect(entry.content.includes(GENERATED_MARKER)).toBe(false);
     }
-    // 编号连续性：01..45 逐一在册 + index.md 在册（B6b-II 全量分母钉）。
+    // FE 编号连续性：01..45 逐一在册 + index.md 在册（B6b 全量分母钉）。
     for (let n = 1; n <= 45; n += 1) {
       const prefix = `.pomaster/specs/hard/frontend/${String(n).padStart(2, "0")}-`;
-      expect(entries.some((e) => e.path.startsWith(prefix)), prefix).toBe(true);
+      expect(fe.some((e) => e.path.startsWith(prefix)), prefix).toBe(true);
     }
-    expect(entries.some((e) => e.path.endsWith("/index.md")), "index.md 在册").toBe(true);
+    // BE 编号连续性：01..32 逐一在册 + index.md 在册（B6c 分母钉）。
+    for (let n = 1; n <= 32; n += 1) {
+      const prefix = `.pomaster/specs/hard/backend/${String(n).padStart(2, "0")}-`;
+      expect(be.some((e) => e.path.startsWith(prefix)), prefix).toBe(true);
+    }
+    expect(be.some((e) => e.path.endsWith("/index.md")), "BE index.md 在册").toBe(true);
+    // stacks：14 slug × (index + overlay) 恰好划分 28。
+    expect(stacks.filter((e) => e.path.endsWith("/index.md"))).toHaveLength(14);
+    expect(stacks.filter((e) => e.path.endsWith("-overlay.md"))).toHaveLength(14);
   });
 
-  it("缺省（不注入）init：FE 46 份播种件在位（seeded 报告 + 幂等重跑全 preserved）", async () => {
+  it("缺省（不注入）init：107 份播种件在位（seeded 报告 + 幂等重跑全 preserved）", async () => {
     const outcome = await runInit(dir);
     expect(outcome.ok).toBe(true);
     const seeded = outcome.result.files.filter((f) => f.action === "seeded");
-    expect(seeded).toHaveLength(46);
+    expect(seeded).toHaveLength(107);
     expect(existsSync(join(dir, ".pomaster", "specs", "hard", "frontend", "01-development-checklist-protocol.md"))).toBe(true);
-    expect(existsSync(join(dir, ".pomaster", "specs", "hard", "frontend", "45-browser-storage-protocol.md"))).toBe(true);
     expect(existsSync(join(dir, ".pomaster", "specs", "hard", "frontend", "index.md"))).toBe(true);
+    expect(existsSync(join(dir, ".pomaster", "specs", "hard", "backend", "22-idempotency-protocol.md"))).toBe(true);
+    expect(existsSync(join(dir, ".pomaster", "specs", "hard", "backend", "index.md"))).toBe(true);
+    expect(existsSync(join(dir, ".pomaster", "specs", "hard", "stacks", "redis", "redis-cache-overlay.md"))).toBe(true);
+    expect(existsSync(join(dir, ".pomaster", "specs", "hard", "stacks", "java", "index.md"))).toBe(true);
     // 幂等：重跑全 preserved = NO_CHANGE。
     const second = await runInit(dir);
     expect(second.ok).toBe(true);
     expect(second.result.change).toBe("NO_CHANGE");
-    expect(second.result.files.filter((f) => f.action === "preserved")).toHaveLength(46);
+    expect(second.result.files.filter((f) => f.action === "preserved")).toHaveLength(107);
   });
 });

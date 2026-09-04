@@ -1,0 +1,90 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "kind='policy' 不在 vocab-lock kinds_registry.truth_bodies（POLICY. 前缀已冻结注册，closed-world）；新 id 域段待登记：STRUCT",
+    "proposal": "词汇表 PR 登记 policy kind 及新域段；或 Owner 裁决 policy 条目住 catalog/ 而非 truth/objects 正文层（与前批 45+25+9 条同因同请，合并进同一 vocab PR）",
+    "locked_vocab_untouched": true
+  },
+  "x-spec-d-materialization": {
+    "status": "PROPOSAL",
+    "package": "B6c BE 播种移植（SPEC-D 池卡复用；分母=MASTer 池卡 + vendor 播种字节双锚）",
+    "human_review_required": true,
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/corpus/spec-knowledge/candidates/consolidated-pool.yaml",
+    "group": "BE-G1",
+    "candidate_id": "POLICY.STRUCT.NO_UNEXPLAINED_TOP_LEVEL_DIR",
+    "density_rank": "UNIVERSAL",
+    "density_score": 31.88,
+    "pool_statement_sha16": "3101acd0c8eac5cb",
+    "curated_rule": "B6c 分母（BE universal 33：32 编号协议 + index）required 池（ELIGIBLE 未物化 + 卡层锚落 MUST/MUST NOT 且与 MASTer 行锚交叉验证）按池密度序取前 22 + advisory 池（SHOULD 源 backlog policy 卡 + 行锚全落建议段闭包）按同公式密度序取前 3 = 25（D5 上限/批内执行）；UNIVERSAL + UNIVERSAL_POLICY + 无 uncertainty + 非 project_scope + 非重复",
+    "denominator": "MASTer（池卡 source 锚）"
+  },
+  "x-b6-porting": {
+    "status": "PROPOSAL",
+    "batch": "B6C",
+    "human_review_required": true,
+    "classification_face": "policy",
+    "enforcement_axis": {
+      "source_sections": [
+        "MUST NOT"
+      ],
+      "rule": "SHOULD/Change Policy 源条目 enforcement 必须 advisory（禁升 required）；MUST/MUST NOT 源条目 enforcement 必须 required_when_applicable（降级合法）",
+      "asserted_by": "packages/cli/tests/catalog-b6-porting.spec.ts"
+    },
+    "extra_master_sections": [],
+    "denominator": "vendor",
+    "vendor_pin": {
+      "path": "pomaster/components/backend-hard-spec/assets/universal/02-project-structure-governance-protocol.md",
+      "sha256": "add6e21ffa5dd45940dda725e8d4e234c9d2a49775139c895cc7ad5f7caf7bf0",
+      "bytes": 1343
+    },
+    "seeded_spec": ".pomaster/specs/hard/backend/02-project-structure-governance-protocol.md",
+    "seed_manifest": "packages/cli/seeds/manifest.json"
+  },
+  "id": "POLICY.STRUCT.NO_UNEXPLAINED_TOP_LEVEL_DIR",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "UNIVERSAL_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "禁无职责顶层目录",
+  "statement_zh": "禁止创建说不出职责的顶层目录，禁止把业务逻辑放进通用工具区。",
+  "statement_en_keywords": [
+    "no unexplained top-level directory",
+    "no business logic in utility area"
+  ],
+  "applies_when": {
+    "lane": "any",
+    "condition": "新增或整理目录结构时",
+    "applicability_note": "新增或整理目录结构时"
+  },
+  "enforcement": "required_when_applicable",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-spec-decomposition"
+  },
+  "origin": "ingested",
+  "origin_note": "B6c BE 播种移植物化；statement 沿用 SPEC-D 候选卡独立措辞（clean-room），零逐字拷贝上游源文本；播种分母=vendor 字节（x-b6-porting.vendor_pin），分解分母=MASTer 池卡（x-spec-d-materialization）",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/corpus/spec-knowledge/candidates/BE-G1.yaml",
+      "captured_by": "agent:claude/spec-d-consolidation",
+      "locator": {
+        "candidate": "POLICY.STRUCT.NO_UNEXPLAINED_TOP_LEVEL_DIR",
+        "source_protocol": ".trellis/spec/backend/02-project-structure-governance-protocol.md",
+        "lines": "29"
+      },
+      "clean_room_note": "independently rewritten from SPEC-D decomposition candidate cards; zero verbatim copy"
+    }
+  ],
+  "review_notes": [
+    "顶层目录职责禁令在既有 193 条中无对应条目，零语义重复；与 POLICY.STRUCT.MODULE_ENTRY_DEPENDENCY_DECLARED（本批）正交互引。"
+  ]
+}

@@ -343,7 +343,7 @@ export type {
   LayoutManifestDirEntry,
   LayoutStatus,
 } from "./layout.js";
-export { SEEDABLE_STORE_DIRS, seedProjectAssets } from "./seeds.js";
+export { SEEDABLE_STORE_DIRS, STACK_SEED_SLUGS, seedProjectAssets } from "./seeds.js";
 export type { SeedEntry } from "./seeds.js";
 export {
   SEED_MANIFEST_SCHEMA,

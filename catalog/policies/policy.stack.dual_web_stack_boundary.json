@@ -1,0 +1,92 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "kind='policy' 不在 vocab-lock kinds_registry.truth_bodies（POLICY. 前缀已冻结注册，closed-world）；classification=TECHNOLOGY_PROFILE 为 §93.4 十二值现成词形（零扩值）；PROFILE 前缀 id 域段待登记",
+    "proposal": "词汇表 PR 登记 policy kind 及 PROFILE 前缀域段；或 Owner 裁决 policy 条目住 catalog/ 而非 truth/objects 正文层（与前批 45+25+9 条同因同请，合并进同一 vocab PR）",
+    "locked_vocab_untouched": true
+  },
+  "x-spec-d-materialization": {
+    "status": "PROPOSAL",
+    "package": "B6c stacks 播种移植（SPEC-D 池卡复用；分母=MASTer 池卡 + vendor 播种字节双锚）",
+    "human_review_required": true,
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/corpus/spec-knowledge/candidates/consolidated-pool.yaml",
+    "group": "BE-G5",
+    "candidate_id": "POLICY.STACK.DUAL_WEB_STACK_BOUNDARY",
+    "density_rank": "UNIVERSAL",
+    "density_score": 2.56,
+    "pool_statement_sha16": "7ddec77fac42a3fc",
+    "curated_rule": "B6c stacks 分母（14 目录 × index+overlay = 28 + profile 1）TECHNOLOGY_PROFILE 分类面：BE-G5 池 9 条未物化 POLICY.STACK.* ELIGIBLE 卡（池序全量）+ 1 条 PROFILE backlog 卡；classification=TECHNOLOGY_PROFILE 不混入 policy 强度面（§92.5 激活输入非被激活规则本体——enforcement 禁 required：STACK 卡池判 required 降级 advisory[强度只降不升]，PROFILE 卡池判 deterministic_where_possible 原样）",
+    "denominator": "MASTer（池卡 source 锚）"
+  },
+  "x-b6-porting": {
+    "status": "PROPOSAL",
+    "batch": "B6C",
+    "human_review_required": true,
+    "classification_face": "technology_profile",
+    "enforcement_axis": {
+      "source_sections": [
+        "Rules"
+      ],
+      "rule": "TECHNOLOGY_PROFILE 面禁 required_when_applicable（§92.5 激活输入非被激活规则本体；STACK 卡池判 required 降级 advisory，PROFILE 卡池判 deterministic_where_possible 原样——强度只降不升）",
+      "asserted_by": "packages/cli/tests/catalog-b6-porting.spec.ts"
+    },
+    "extra_master_sections": [],
+    "denominator": "vendor",
+    "vendor_pin": {
+      "path": "pomaster/components/backend-hard-spec/assets/stacks/spring-mvc/spring-mvc-web-overlay.md",
+      "sha256": "19a75e281d7406d4ce38accd4aa528496e9cb666a8d123bc489c7404cb67fcb6",
+      "bytes": 765
+    },
+    "seeded_spec": ".pomaster/specs/hard/stacks/spring-mvc/spring-mvc-web-overlay.md",
+    "seed_manifest": "packages/cli/seeds/manifest.json",
+    "notes": []
+  },
+  "id": "POLICY.STACK.DUAL_WEB_STACK_BOUNDARY",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "TECHNOLOGY_PROFILE",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "双 Web 执行模型边界登记",
+  "statement_zh": "多种 Web 执行模型（如阻塞式与响应式）并存时，模块、端口或应用级边界必须记录可查。",
+  "statement_en_keywords": [
+    "dual web stack",
+    "execution model boundary",
+    "module port app boundary"
+  ],
+  "applies_when": {
+    "lane": "backend",
+    "condition": "同一项目并存两种 Web 执行模型",
+    "applicability_note": "同一项目并存两种 Web 执行模型"
+  },
+  "enforcement": "advisory",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-spec-decomposition"
+  },
+  "origin": "ingested",
+  "origin_note": "B6c stacks 播种移植物化（TECHNOLOGY_PROFILE 分类面——提案 §1 矩阵 TECHNOLOGY_OVERLAY 落位，不混入 policy 强度面）；statement 沿用 SPEC-D 候选卡独立措辞（clean-room），零逐字拷贝上游源文本；播种分母=vendor 字节（x-b6-porting.vendor_pin），分解分母=MASTer 池卡（x-spec-d-materialization）",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/corpus/spec-knowledge/candidates/BE-G5.yaml",
+      "captured_by": "agent:claude/spec-d-consolidation",
+      "locator": {
+        "candidate": "POLICY.STACK.DUAL_WEB_STACK_BOUNDARY",
+        "source_protocol": ".trellis/spec/backend/stacks/spring-mvc/spring-mvc-web-overlay.md",
+        "lines": "L20"
+      },
+      "clean_room_note": "independently rewritten from SPEC-D decomposition candidate cards; zero verbatim copy"
+    }
+  ],
+  "review_notes": [
+    "TECHNOLOGY_PROFILE 物化：spring-mvc/webflux 镜像表述正本锚 spring-mvc 侧（池卡notes）；强度降级同上。"
+  ]
+}

@@ -1,0 +1,95 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "kind='policy' 不在 vocab-lock kinds_registry.truth_bodies（POLICY. 前缀已冻结注册，closed-world）；classification=TECHNOLOGY_PROFILE 为 §93.4 十二值现成词形（零扩值）；PROFILE 前缀 id 域段待登记",
+    "proposal": "词汇表 PR 登记 policy kind 及 PROFILE 前缀域段；或 Owner 裁决 policy 条目住 catalog/ 而非 truth/objects 正文层（与前批 45+25+9 条同因同请，合并进同一 vocab PR）",
+    "locked_vocab_untouched": true
+  },
+  "x-spec-d-materialization": {
+    "status": "PROPOSAL",
+    "package": "B6c stacks 播种移植（SPEC-D 池卡复用；分母=MASTer 池卡 + vendor 播种字节双锚）",
+    "human_review_required": true,
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/corpus/spec-knowledge/candidates/consolidated-pool.yaml",
+    "group": "BE-G5",
+    "candidate_id": "PROFILE.BASELINE.JAVA_ENTERPRISE_DEFAULT",
+    "density_rank": "PROJECT",
+    "density_score": 3.12,
+    "pool_statement_sha16": "fe497cd91bd6b9ea",
+    "curated_rule": "B6c stacks 分母（14 目录 × index+overlay = 28 + profile 1）TECHNOLOGY_PROFILE 分类面：BE-G5 池 9 条未物化 POLICY.STACK.* ELIGIBLE 卡（池序全量）+ 1 条 PROFILE backlog 卡；classification=TECHNOLOGY_PROFILE 不混入 policy 强度面（§92.5 激活输入非被激活规则本体——enforcement 禁 required：STACK 卡池判 required 降级 advisory[强度只降不升]，PROFILE 卡池判 deterministic_where_possible 原样）",
+    "denominator": "MASTer（池卡 source 锚）"
+  },
+  "x-b6-porting": {
+    "status": "PROPOSAL",
+    "batch": "B6C",
+    "human_review_required": true,
+    "classification_face": "technology_profile",
+    "enforcement_axis": {
+      "source_sections": [
+        "L1-13（includes 9 项 + excludes 空）"
+      ],
+      "rule": "TECHNOLOGY_PROFILE 面禁 required_when_applicable（§92.5 激活输入非被激活规则本体；STACK 卡池判 required 降级 advisory，PROFILE 卡池判 deterministic_where_possible 原样——强度只降不升）",
+      "asserted_by": "packages/cli/tests/catalog-b6-porting.spec.ts"
+    },
+    "extra_master_sections": [],
+    "denominator": "vendor",
+    "vendor_pin": {
+      "path": "pomaster/components/backend-hard-spec/assets/stacks/profiles/java-enterprise-default.yaml",
+      "sha256": "e1e80227485516b58b94278ae252a443015cbc6971d1e59c0244bbd46ba81899",
+      "bytes": 167
+    },
+    "seeded_spec": null,
+    "seed_manifest": "packages/cli/seeds/manifest.json",
+    "notes": [
+      "A1 档位裁定登记：旧包 profile（java-enterprise-default）为注入档位机制物料，vNext 档位机制零移植（PRD A1 档位信息性裁定）——本条目为 TECHNOLOGY_PROFILE 信息性登记，includes 9 项组合可作 baseline/backend/stack.yaml 起步预填参考（信息性，非强制），选中态由 stack.yaml 显式选型承载（B6d 落位）",
+      "A1 清洗登记：vendor profile 文件零 MINIMAL/LIGHT/STANDARD 判档词形（grep 实测零命中）——判档叙述清洗登记为空集；profile 文件本体不播种（提案 §1 矩阵播种面只列 28 文件）"
+    ]
+  },
+  "id": "PROFILE.BASELINE.JAVA_ENTERPRISE_DEFAULT",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "TECHNOLOGY_PROFILE",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "Java 企业默认组合参考清单",
+  "statement_zh": "项目默认技术基线以显式 includes/excludes 清单声明所选能力组合；清单之外不作隐式扩充。",
+  "statement_en_keywords": [
+    "default stack profile",
+    "explicit includes excludes",
+    "baseline manifest"
+  ],
+  "applies_when": {
+    "lane": "backend",
+    "condition": "项目声明默认技术基线",
+    "applicability_note": "项目声明默认技术基线"
+  },
+  "enforcement": "deterministic_where_possible",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-spec-decomposition"
+  },
+  "origin": "ingested",
+  "origin_note": "B6c stacks 播种移植物化（TECHNOLOGY_PROFILE 分类面——提案 §1 矩阵 TECHNOLOGY_OVERLAY 落位，不混入 policy 强度面）；statement 沿用 SPEC-D 候选卡独立措辞（clean-room），零逐字拷贝上游源文本；播种分母=vendor 字节（x-b6-porting.vendor_pin），分解分母=MASTer 池卡（x-spec-d-materialization）",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/corpus/spec-knowledge/candidates/BE-G5.yaml",
+      "captured_by": "agent:claude/spec-d-consolidation",
+      "locator": {
+        "candidate": "PROFILE.BASELINE.JAVA_ENTERPRISE_DEFAULT",
+        "source_protocol": ".trellis/spec/backend/stacks/profiles/java-enterprise-default.yaml",
+        "lines": "L1-13（includes 9 项 + excludes 空）"
+      },
+      "clean_room_note": "independently rewritten from SPEC-D decomposition candidate cards; zero verbatim copy"
+    }
+  ],
+  "review_notes": [
+    "TECHNOLOGY_PROFILE 物化（profile 分类落位 ADR）：池卡词形 project_baseline_template（catalog 层，非 truth 信封实例）——物化 kind 按词表闭包落 policy、classification=TECHNOLOGY_PROFILE 承载 profile 语义；池判 deterministic_where_possible 原样（includes/excludes 机器可核清单）；A1 档位机制零移植，本条目为信息性登记（notes 详见 x-b6-porting.notes）。"
+  ]
+}

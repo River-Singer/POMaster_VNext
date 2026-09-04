@@ -1,0 +1,92 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "kind='policy' 不在 vocab-lock kinds_registry.truth_bodies（POLICY. 前缀已冻结注册，closed-world）；classification=TECHNOLOGY_PROFILE 为 §93.4 十二值现成词形（零扩值）；PROFILE 前缀 id 域段待登记",
+    "proposal": "词汇表 PR 登记 policy kind 及 PROFILE 前缀域段；或 Owner 裁决 policy 条目住 catalog/ 而非 truth/objects 正文层（与前批 45+25+9 条同因同请，合并进同一 vocab PR）",
+    "locked_vocab_untouched": true
+  },
+  "x-spec-d-materialization": {
+    "status": "PROPOSAL",
+    "package": "B6c stacks 播种移植（SPEC-D 池卡复用；分母=MASTer 池卡 + vendor 播种字节双锚）",
+    "human_review_required": true,
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/corpus/spec-knowledge/candidates/consolidated-pool.yaml",
+    "group": "BE-G5",
+    "candidate_id": "POLICY.STACK.UPGRADE_COMPAT_VERIFIED",
+    "density_rank": "UNIVERSAL",
+    "density_score": 33.25,
+    "pool_statement_sha16": "c7fe58b7e830f31c",
+    "curated_rule": "B6c stacks 分母（14 目录 × index+overlay = 28 + profile 1）TECHNOLOGY_PROFILE 分类面：BE-G5 池 9 条未物化 POLICY.STACK.* ELIGIBLE 卡（池序全量）+ 1 条 PROFILE backlog 卡；classification=TECHNOLOGY_PROFILE 不混入 policy 强度面（§92.5 激活输入非被激活规则本体——enforcement 禁 required：STACK 卡池判 required 降级 advisory[强度只降不升]，PROFILE 卡池判 deterministic_where_possible 原样）",
+    "denominator": "MASTer（池卡 source 锚）"
+  },
+  "x-b6-porting": {
+    "status": "PROPOSAL",
+    "batch": "B6C",
+    "human_review_required": true,
+    "classification_face": "technology_profile",
+    "enforcement_axis": {
+      "source_sections": [
+        "Rules"
+      ],
+      "rule": "TECHNOLOGY_PROFILE 面禁 required_when_applicable（§92.5 激活输入非被激活规则本体；STACK 卡池判 required 降级 advisory，PROFILE 卡池判 deterministic_where_possible 原样——强度只降不升）",
+      "asserted_by": "packages/cli/tests/catalog-b6-porting.spec.ts"
+    },
+    "extra_master_sections": [],
+    "denominator": "vendor",
+    "vendor_pin": {
+      "path": "pomaster/components/backend-hard-spec/assets/stacks/java/java-language-overlay.md",
+      "sha256": "38b592a5beaa899abb45e871e5097cafedeea80502baee00bcfbfcfa313dab85",
+      "bytes": 684
+    },
+    "seeded_spec": ".pomaster/specs/hard/stacks/java/java-language-overlay.md",
+    "seed_manifest": "packages/cli/seeds/manifest.json",
+    "notes": []
+  },
+  "id": "POLICY.STACK.UPGRADE_COMPAT_VERIFIED",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "TECHNOLOGY_PROFILE",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "升级兼容全链验证",
+  "statement_zh": "基础语言或运行时版本演进时，必须沿构建产物、执行行为、测试结果到部署环境的链条逐环验证兼容性后方可落地。",
+  "statement_en_keywords": [
+    "upgrade compatibility",
+    "full-chain verification",
+    "runtime evolution"
+  ],
+  "applies_when": {
+    "lane": "any",
+    "condition": "升级基础运行时、编译目标或工具链版本",
+    "applicability_note": "升级基础运行时、编译目标或工具链版本"
+  },
+  "enforcement": "advisory",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-spec-decomposition"
+  },
+  "origin": "ingested",
+  "origin_note": "B6c stacks 播种移植物化（TECHNOLOGY_PROFILE 分类面——提案 §1 矩阵 TECHNOLOGY_OVERLAY 落位，不混入 policy 强度面）；statement 沿用 SPEC-D 候选卡独立措辞（clean-room），零逐字拷贝上游源文本；播种分母=vendor 字节（x-b6-porting.vendor_pin），分解分母=MASTer 池卡（x-spec-d-materialization）",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/corpus/spec-knowledge/candidates/BE-G5.yaml",
+      "captured_by": "agent:claude/spec-d-consolidation",
+      "locator": {
+        "candidate": "POLICY.STACK.UPGRADE_COMPAT_VERIFIED",
+        "source_protocol": ".trellis/spec/backend/stacks/java/java-language-overlay.md",
+        "lines": "L20"
+      },
+      "clean_room_note": "independently rewritten from SPEC-D decomposition candidate cards; zero verbatim copy"
+    }
+  ],
+  "review_notes": [
+    "TECHNOLOGY_PROFILE 物化（提案 §1 矩阵 TECHNOLOGY_OVERLAY 落位）：池判 required 降级 advisory——TECHNOLOGY_PROFILE 是 §92.5 激活输入非被激活规则本体，强度只降不升；锚 java overlay Rules 段（be-g5 池 ELIGIBLE 未物化）。"
+  ]
+}

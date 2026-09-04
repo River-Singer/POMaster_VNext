@@ -47,22 +47,22 @@ describe("catalog status（catalog 构成 + lock 校验）", () => {
     expect(outcome.errors).toEqual([]);
     expect(outcome.result.catalog_version).toBe("0.1.0-pilot");
     expect(outcome.result.profile).toBe("web-standard@0");
-    expect(outcome.result.entries_total).toBe(193);
+    expect(outcome.result.entries_total).toBe(228);
     expect(outcome.result.sections).toEqual({
-      policies: 129,
+      policies: 164,
       gates: 6,
       knowledge: 11,
       sensors: 6,
       archetypes: 41,
-      tools: 9,
+      tools: 10,
       projection_presets: 1,
     });
     expect(outcome.result.lock_verification).toEqual({
       ok: true,
-      entries_checked: 193,
+      entries_checked: 228,
       drifts: [],
     });
-    expect(outcome.human.join("\n")).toContain("catalog-lock: ok（193 entries");
+    expect(outcome.human.join("\n")).toContain("catalog-lock: ok（228 entries");
   });
 
   it("漂移检出：改 policy 字节不重锁 → ok=false + CATALOG_LOCK_DRIFT（fail-closed 呈现）", async () => {

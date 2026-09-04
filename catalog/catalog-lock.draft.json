@@ -77,11 +77,15 @@
       "policies/authority.web.grid.ownership.json",
       "policies/policy.ai.change_plan_first.json",
       "policies/policy.ai.fact_inference_separation.json",
+      "policies/policy.ai.read_search_verify_before_write.json",
       "policies/policy.ai.rule_relaxation_approval.json",
       "policies/policy.api.backward_compat_defaults.json",
       "policies/policy.api.contract_impl_consistency.json",
       "policies/policy.api.no_informal_contract.json",
       "policies/policy.arch.decision_tradeoff_record.json",
+      "policies/policy.arch.no_convenience_over_boundary.json",
+      "policies/policy.arch.prefer_verifiable_option.json",
+      "policies/policy.bound.search_first_entry_only.json",
       "policies/policy.boundary.validate_in_encode_out.json",
       "policies/policy.cache.lifecycle_definition.json",
       "policies/policy.cfg.production_safe_defaults.json",
@@ -102,7 +106,12 @@
       "policies/policy.dep.build_path_supply_chain.json",
       "policies/policy.dep.change_surface_review.json",
       "policies/policy.dep.introduction_review.json",
+      "policies/policy.dep.no_untrusted_source_no_lock_bypass.json",
+      "policies/policy.deploy.no_dev_env_as_production_fact.json",
+      "policies/policy.deploy.runtime_fact_record.json",
       "policies/policy.derived.single_implementation.json",
+      "policies/policy.evid.acceptance_binds_verifiable_evidence.json",
+      "policies/policy.evid.no_unverifiable_pass.json",
       "policies/policy.flag.cleanup_after_full_rollout.json",
       "policies/policy.flag.consistent_off_state.json",
       "policies/policy.flag.kill_switch.json",
@@ -111,17 +120,23 @@
       "policies/policy.gate.p0_non_bypassable.json",
       "policies/policy.gate.risk_factors_confirmed.json",
       "policies/policy.guard.no_check_weakening.json",
+      "policies/policy.integration.call_definition_minimum.json",
+      "policies/policy.job.lifecycle_definition.json",
+      "policies/policy.job.no_unmanaged_execution.json",
       "policies/policy.obs.alert_with_owner.json",
       "policies/policy.obs.context_field_baseline.json",
       "policies/policy.obs.correlation_context_minimum.json",
+      "policies/policy.obs.no_sensitive_or_unbounded_logging.json",
       "policies/policy.obs.no_sensitive_raw_values.json",
       "policies/policy.obs.rum_dimension_whitelist.json",
       "policies/policy.obs.source_map_access_control.json",
       "policies/policy.obs.telemetry_lifecycle_declared.json",
       "policies/policy.obs.trace_correlation.json",
+      "policies/policy.perf.evidence_binding.json",
       "policies/policy.proc.checklist_change_policy.json",
       "policies/policy.proc.pre_code_declaration.json",
       "policies/policy.proc.scope_drift_reclassify.json",
+      "policies/policy.rel.no_irreversible_unmonitored_full_release.json",
       "policies/policy.rel.observability_before_ship.json",
       "policies/policy.rel.pre_release_confirmation.json",
       "policies/policy.rel.traceable_build.json",
@@ -143,10 +158,27 @@
       "policies/policy.spec.procedural_record_not_surrogate.json",
       "policies/policy.spec.semantic_identity.json",
       "policies/policy.spec.unresolved_ledger_gate.json",
+      "policies/policy.stack.derived_store_not_authority.json",
+      "policies/policy.stack.dual_web_stack_boundary.json",
+      "policies/policy.stack.entry_chain_recorded.json",
+      "policies/policy.stack.entry_limits_aligned.json",
+      "policies/policy.stack.local_form_not_prod_fact.json",
+      "policies/policy.stack.multi_datastore_ownership.json",
       "policies/policy.stack.no_implicit_selection.json",
+      "policies/policy.stack.persistence_coexistence_scope.json",
+      "policies/policy.stack.toolchain_versions_pinned.json",
+      "policies/policy.stack.upgrade_compat_verified.json",
+      "policies/policy.struct.module_entry_dependency_declared.json",
+      "policies/policy.struct.no_unexplained_top_level_dir.json",
+      "policies/policy.struct.reuse_proven_structure.json",
+      "policies/policy.test.control_nondeterminism_keep_diagnosis.json",
       "policies/policy.test.isolation_and_cleanup.json",
+      "policies/policy.test.no_synthetic_stability.json",
       "policies/policy.test.pyramid_and_ci_matrix.json",
+      "policies/policy.test.risk_driven_plan.json",
       "policies/policy.test.stable_observable_assertions.json",
+      "policies/policy.tool.discoverable_toolchain.json",
+      "policies/policy.tool.no_hand_edit_generated_no_ci_drift.json",
       "policies/policy.tool.no_vendored_body_edits.json",
       "policies/policy.tool.scoped_scan_boundary.json",
       "policies/policy.web.api.auth_app_client_split.json",
@@ -199,6 +231,9 @@
       "policies/policy.web.track.stable_event_keys.json",
       "policies/policy.web.track.typed_client_validation.json",
       "policies/policy.web.uiux.provider_evidence_not_business_truth.json",
+      "policies/policy.wf.no_planned_as_verified.json",
+      "policies/policy.wf.task_facts_preconfirm.json",
+      "policies/profile.baseline.java_enterprise_default.json",
       "sensors/sensor.browser.deterministic.json",
       "sensors/sensor.browser.interactive.json",
       "sensors/sensor.build.static.json",
@@ -272,11 +307,15 @@
       "policies/authority.web.grid.ownership.json",
       "policies/policy.ai.change_plan_first.json",
       "policies/policy.ai.fact_inference_separation.json",
+      "policies/policy.ai.read_search_verify_before_write.json",
       "policies/policy.ai.rule_relaxation_approval.json",
       "policies/policy.api.backward_compat_defaults.json",
       "policies/policy.api.contract_impl_consistency.json",
       "policies/policy.api.no_informal_contract.json",
       "policies/policy.arch.decision_tradeoff_record.json",
+      "policies/policy.arch.no_convenience_over_boundary.json",
+      "policies/policy.arch.prefer_verifiable_option.json",
+      "policies/policy.bound.search_first_entry_only.json",
       "policies/policy.boundary.validate_in_encode_out.json",
       "policies/policy.cache.lifecycle_definition.json",
       "policies/policy.cfg.production_safe_defaults.json",
@@ -297,7 +336,12 @@
       "policies/policy.dep.build_path_supply_chain.json",
       "policies/policy.dep.change_surface_review.json",
       "policies/policy.dep.introduction_review.json",
+      "policies/policy.dep.no_untrusted_source_no_lock_bypass.json",
+      "policies/policy.deploy.no_dev_env_as_production_fact.json",
+      "policies/policy.deploy.runtime_fact_record.json",
       "policies/policy.derived.single_implementation.json",
+      "policies/policy.evid.acceptance_binds_verifiable_evidence.json",
+      "policies/policy.evid.no_unverifiable_pass.json",
       "policies/policy.flag.cleanup_after_full_rollout.json",
       "policies/policy.flag.consistent_off_state.json",
       "policies/policy.flag.kill_switch.json",
@@ -306,17 +350,23 @@
       "policies/policy.gate.p0_non_bypassable.json",
       "policies/policy.gate.risk_factors_confirmed.json",
       "policies/policy.guard.no_check_weakening.json",
+      "policies/policy.integration.call_definition_minimum.json",
+      "policies/policy.job.lifecycle_definition.json",
+      "policies/policy.job.no_unmanaged_execution.json",
       "policies/policy.obs.alert_with_owner.json",
       "policies/policy.obs.context_field_baseline.json",
       "policies/policy.obs.correlation_context_minimum.json",
+      "policies/policy.obs.no_sensitive_or_unbounded_logging.json",
       "policies/policy.obs.no_sensitive_raw_values.json",
       "policies/policy.obs.rum_dimension_whitelist.json",
       "policies/policy.obs.source_map_access_control.json",
       "policies/policy.obs.telemetry_lifecycle_declared.json",
       "policies/policy.obs.trace_correlation.json",
+      "policies/policy.perf.evidence_binding.json",
       "policies/policy.proc.checklist_change_policy.json",
       "policies/policy.proc.pre_code_declaration.json",
       "policies/policy.proc.scope_drift_reclassify.json",
+      "policies/policy.rel.no_irreversible_unmonitored_full_release.json",
       "policies/policy.rel.observability_before_ship.json",
       "policies/policy.rel.pre_release_confirmation.json",
       "policies/policy.rel.traceable_build.json",
@@ -338,10 +388,27 @@
       "policies/policy.spec.procedural_record_not_surrogate.json",
       "policies/policy.spec.semantic_identity.json",
       "policies/policy.spec.unresolved_ledger_gate.json",
+      "policies/policy.stack.derived_store_not_authority.json",
+      "policies/policy.stack.dual_web_stack_boundary.json",
+      "policies/policy.stack.entry_chain_recorded.json",
+      "policies/policy.stack.entry_limits_aligned.json",
+      "policies/policy.stack.local_form_not_prod_fact.json",
+      "policies/policy.stack.multi_datastore_ownership.json",
       "policies/policy.stack.no_implicit_selection.json",
+      "policies/policy.stack.persistence_coexistence_scope.json",
+      "policies/policy.stack.toolchain_versions_pinned.json",
+      "policies/policy.stack.upgrade_compat_verified.json",
+      "policies/policy.struct.module_entry_dependency_declared.json",
+      "policies/policy.struct.no_unexplained_top_level_dir.json",
+      "policies/policy.struct.reuse_proven_structure.json",
+      "policies/policy.test.control_nondeterminism_keep_diagnosis.json",
       "policies/policy.test.isolation_and_cleanup.json",
+      "policies/policy.test.no_synthetic_stability.json",
       "policies/policy.test.pyramid_and_ci_matrix.json",
+      "policies/policy.test.risk_driven_plan.json",
       "policies/policy.test.stable_observable_assertions.json",
+      "policies/policy.tool.discoverable_toolchain.json",
+      "policies/policy.tool.no_hand_edit_generated_no_ci_drift.json",
       "policies/policy.tool.no_vendored_body_edits.json",
       "policies/policy.tool.scoped_scan_boundary.json",
       "policies/policy.web.api.auth_app_client_split.json",
@@ -394,6 +461,9 @@
       "policies/policy.web.track.stable_event_keys.json",
       "policies/policy.web.track.typed_client_validation.json",
       "policies/policy.web.uiux.provider_evidence_not_business_truth.json",
+      "policies/policy.wf.no_planned_as_verified.json",
+      "policies/policy.wf.task_facts_preconfirm.json",
+      "policies/profile.baseline.java_enterprise_default.json",
       "sensors/sensor.browser.deterministic.json",
       "sensors/sensor.browser.interactive.json",
       "sensors/sensor.build.static.json",
@@ -734,6 +804,12 @@
       "source_ref": "package://catalog/policies/policy.ai.fact_inference_separation.json"
     },
     {
+      "id": "POLICY.AI.READ_SEARCH_VERIFY_BEFORE_WRITE",
+      "path": "policies/policy.ai.read_search_verify_before_write.json",
+      "content_sha256": "sha256:19e81b73ed86ffac39e2bf4644976971cdcd845a5bd520c4d1a3438399baf559",
+      "source_ref": "package://catalog/policies/policy.ai.read_search_verify_before_write.json"
+    },
+    {
       "id": "POLICY.AI.RULE_RELAXATION_APPROVAL",
       "path": "policies/policy.ai.rule_relaxation_approval.json",
       "content_sha256": "sha256:4afa8e5926f41bb1a194afab33529d92a144240c4ee41ee340ac4c9925ede726",
@@ -762,6 +838,24 @@
       "path": "policies/policy.arch.decision_tradeoff_record.json",
       "content_sha256": "sha256:05d9895b333a5c0245628f7986b81095e0a77b90705d005a9ee5c2a3af6344d2",
       "source_ref": "POMaster_VNext/corpus/spec-knowledge/candidates/BE-G1.yaml"
+    },
+    {
+      "id": "POLICY.ARCH.NO_CONVENIENCE_OVER_BOUNDARY",
+      "path": "policies/policy.arch.no_convenience_over_boundary.json",
+      "content_sha256": "sha256:e1aaafdeef1af048da7109c11028eb4211ce44e84f89df4c80bbfc24a4f8b25e",
+      "source_ref": "package://catalog/policies/policy.arch.no_convenience_over_boundary.json"
+    },
+    {
+      "id": "POLICY.ARCH.PREFER_VERIFIABLE_OPTION",
+      "path": "policies/policy.arch.prefer_verifiable_option.json",
+      "content_sha256": "sha256:7f2680556bf24e7fcd4d62f2f6c986b0a37bd3af2470aefe879ce401a0fd49c8",
+      "source_ref": "package://catalog/policies/policy.arch.prefer_verifiable_option.json"
+    },
+    {
+      "id": "POLICY.BOUND.SEARCH_FIRST_ENTRY_ONLY",
+      "path": "policies/policy.bound.search_first_entry_only.json",
+      "content_sha256": "sha256:1e9d02d452d8066869280ce74a2cb9fb9bf8136c5da7bb730708a8b525bf32bb",
+      "source_ref": "package://catalog/policies/policy.bound.search_first_entry_only.json"
     },
     {
       "id": "POLICY.BOUNDARY.VALIDATE_IN_ENCODE_OUT",
@@ -884,10 +978,40 @@
       "source_ref": "POMaster_VNext/corpus/spec-knowledge/candidates/FE-G1.yaml"
     },
     {
+      "id": "POLICY.DEP.NO_UNTRUSTED_SOURCE_NO_LOCK_BYPASS",
+      "path": "policies/policy.dep.no_untrusted_source_no_lock_bypass.json",
+      "content_sha256": "sha256:5d1d6b7c13060fbdb1523cd6393289ab8421dc088e6839dd1191a502520fb3f9",
+      "source_ref": "package://catalog/policies/policy.dep.no_untrusted_source_no_lock_bypass.json"
+    },
+    {
+      "id": "POLICY.DEPLOY.NO_DEV_ENV_AS_PRODUCTION_FACT",
+      "path": "policies/policy.deploy.no_dev_env_as_production_fact.json",
+      "content_sha256": "sha256:bae7ea7a501df4b70348c8a379072f81b702569c665588a51c04a691d9365980",
+      "source_ref": "package://catalog/policies/policy.deploy.no_dev_env_as_production_fact.json"
+    },
+    {
+      "id": "POLICY.DEPLOY.RUNTIME_FACT_RECORD",
+      "path": "policies/policy.deploy.runtime_fact_record.json",
+      "content_sha256": "sha256:0aaa04c8554bf0735cff30f56c24054d49d340cca98493d6d052e361c2acbe76",
+      "source_ref": "package://catalog/policies/policy.deploy.runtime_fact_record.json"
+    },
+    {
       "id": "POLICY.DERIVED.SINGLE_IMPLEMENTATION",
       "path": "policies/policy.derived.single_implementation.json",
       "content_sha256": "sha256:46b442c851ba903e165740d92162453408295c2dde8a0a358ca1de414a14d5b6",
       "source_ref": "POMaster_VNext/corpus/spec-knowledge/candidates/GUIDES.yaml"
+    },
+    {
+      "id": "POLICY.EVID.ACCEPTANCE_BINDS_VERIFIABLE_EVIDENCE",
+      "path": "policies/policy.evid.acceptance_binds_verifiable_evidence.json",
+      "content_sha256": "sha256:507d3f65a06441ef6d74ac15022c95ab0a6881dc072b4b0a33efccfbff465584",
+      "source_ref": "package://catalog/policies/policy.evid.acceptance_binds_verifiable_evidence.json"
+    },
+    {
+      "id": "POLICY.EVID.NO_UNVERIFIABLE_PASS",
+      "path": "policies/policy.evid.no_unverifiable_pass.json",
+      "content_sha256": "sha256:2099924ded627db88b9adeb235aaf270e3f829e919ec1aa488aaf848d8ab3c9c",
+      "source_ref": "package://catalog/policies/policy.evid.no_unverifiable_pass.json"
     },
     {
       "id": "POLICY.FLAG.CLEANUP_AFTER_FULL_ROLLOUT",
@@ -938,6 +1062,24 @@
       "source_ref": "package://catalog/policies/policy.guard.no_check_weakening.json"
     },
     {
+      "id": "POLICY.INTEGRATION.CALL_DEFINITION_MINIMUM",
+      "path": "policies/policy.integration.call_definition_minimum.json",
+      "content_sha256": "sha256:cafd25ef9aaf227baf363802877c6be91abb536cc9bb4c47e3b7059d7fc5d7a9",
+      "source_ref": "package://catalog/policies/policy.integration.call_definition_minimum.json"
+    },
+    {
+      "id": "POLICY.JOB.LIFECYCLE_DEFINITION",
+      "path": "policies/policy.job.lifecycle_definition.json",
+      "content_sha256": "sha256:039bac0b853284c532b432999fb9f6bb3f9761d394dc2932fdd2d55de1e491b4",
+      "source_ref": "package://catalog/policies/policy.job.lifecycle_definition.json"
+    },
+    {
+      "id": "POLICY.JOB.NO_UNMANAGED_EXECUTION",
+      "path": "policies/policy.job.no_unmanaged_execution.json",
+      "content_sha256": "sha256:71eeea026f47e6a4e405151054e032a2b09269247607095f63d9d13127d520d4",
+      "source_ref": "package://catalog/policies/policy.job.no_unmanaged_execution.json"
+    },
+    {
       "id": "POLICY.OBS.ALERT_WITH_OWNER",
       "path": "policies/policy.obs.alert_with_owner.json",
       "content_sha256": "sha256:969ce585e7991de6089b67735fa0f43ad47a9d524aa64d2a4b45dd74c07b6359",
@@ -954,6 +1096,12 @@
       "path": "policies/policy.obs.correlation_context_minimum.json",
       "content_sha256": "sha256:50069a77ebef43041521a26808137b8d2cf5fdc5e85b2457df5687ed0c805473",
       "source_ref": "POMaster_VNext/corpus/spec-knowledge/candidates/BE-G4.yaml"
+    },
+    {
+      "id": "POLICY.OBS.NO_SENSITIVE_OR_UNBOUNDED_LOGGING",
+      "path": "policies/policy.obs.no_sensitive_or_unbounded_logging.json",
+      "content_sha256": "sha256:469be4bd9643cc043098071f4199694f79e5d6fffaf30963bcd830befd2a5a22",
+      "source_ref": "package://catalog/policies/policy.obs.no_sensitive_or_unbounded_logging.json"
     },
     {
       "id": "POLICY.OBS.NO_SENSITIVE_RAW_VALUES",
@@ -986,6 +1134,12 @@
       "source_ref": "package://catalog/policies/policy.obs.trace_correlation.json"
     },
     {
+      "id": "POLICY.PERF.EVIDENCE_BINDING",
+      "path": "policies/policy.perf.evidence_binding.json",
+      "content_sha256": "sha256:5ad7dd8061e17f1d2d35c0036fecd1a717b2975cf0defa830f0c3399fe5a00d4",
+      "source_ref": "package://catalog/policies/policy.perf.evidence_binding.json"
+    },
+    {
       "id": "POLICY.PROC.CHECKLIST_CHANGE_POLICY",
       "path": "policies/policy.proc.checklist_change_policy.json",
       "content_sha256": "sha256:fa05f80e462bd4ee1cf82d4163c2a5db92a6707d08c9668934231eef13c60d48",
@@ -1002,6 +1156,12 @@
       "path": "policies/policy.proc.scope_drift_reclassify.json",
       "content_sha256": "sha256:9546b5eb38adf1aea66ee22dbbd5afc500d649febc0e48e4fd6a9261e6c39b70",
       "source_ref": "package://catalog/policies/policy.proc.scope_drift_reclassify.json"
+    },
+    {
+      "id": "POLICY.REL.NO_IRREVERSIBLE_UNMONITORED_FULL_RELEASE",
+      "path": "policies/policy.rel.no_irreversible_unmonitored_full_release.json",
+      "content_sha256": "sha256:1c3759d20e4ed5f655544eff877069e55bd23f0e6890ce9d958e53504194989f",
+      "source_ref": "package://catalog/policies/policy.rel.no_irreversible_unmonitored_full_release.json"
     },
     {
       "id": "POLICY.REL.OBSERVABILITY_BEFORE_SHIP",
@@ -1130,10 +1290,88 @@
       "source_ref": "POMaster_VNext/corpus/spec-knowledge/candidates/FE-G4.yaml"
     },
     {
+      "id": "POLICY.STACK.DERIVED_STORE_NOT_AUTHORITY",
+      "path": "policies/policy.stack.derived_store_not_authority.json",
+      "content_sha256": "sha256:f4e377d5cbd5197c5f9ec378f9e94c7d12bf3bdee178d009c93eb72442bd8a81",
+      "source_ref": "package://catalog/policies/policy.stack.derived_store_not_authority.json"
+    },
+    {
+      "id": "POLICY.STACK.DUAL_WEB_STACK_BOUNDARY",
+      "path": "policies/policy.stack.dual_web_stack_boundary.json",
+      "content_sha256": "sha256:877cfcf98bc281bcddbcbc989cf316256275beb87b25f13e6f2b244c65be95c9",
+      "source_ref": "package://catalog/policies/policy.stack.dual_web_stack_boundary.json"
+    },
+    {
+      "id": "POLICY.STACK.ENTRY_CHAIN_RECORDED",
+      "path": "policies/policy.stack.entry_chain_recorded.json",
+      "content_sha256": "sha256:08130903d1b1dd9971c298d6ed7fe3b94f87d1e29fb3de3a7d034d2aad1eec76",
+      "source_ref": "package://catalog/policies/policy.stack.entry_chain_recorded.json"
+    },
+    {
+      "id": "POLICY.STACK.ENTRY_LIMITS_ALIGNED",
+      "path": "policies/policy.stack.entry_limits_aligned.json",
+      "content_sha256": "sha256:6c0fc1d569b40bebc177d3d62aaed3e00e3ee45160850ac00c821fc9a537b18c",
+      "source_ref": "package://catalog/policies/policy.stack.entry_limits_aligned.json"
+    },
+    {
+      "id": "POLICY.STACK.LOCAL_FORM_NOT_PROD_FACT",
+      "path": "policies/policy.stack.local_form_not_prod_fact.json",
+      "content_sha256": "sha256:69f32df83c4339d7fca6faded0295161ae12d5baf6a5627143627b8ba690436e",
+      "source_ref": "package://catalog/policies/policy.stack.local_form_not_prod_fact.json"
+    },
+    {
+      "id": "POLICY.STACK.MULTI_DATASTORE_OWNERSHIP",
+      "path": "policies/policy.stack.multi_datastore_ownership.json",
+      "content_sha256": "sha256:06c191ec1e5f1c19a3d521df26348bc8bf2f343fc9f93bf68200db22fe6bf5ef",
+      "source_ref": "package://catalog/policies/policy.stack.multi_datastore_ownership.json"
+    },
+    {
       "id": "POLICY.STACK.NO_IMPLICIT_SELECTION",
       "path": "policies/policy.stack.no_implicit_selection.json",
       "content_sha256": "sha256:42058339a4e003d8c9765c2d9d5ffde20f7f0528c6ee56eef998ef710f30193b",
       "source_ref": "POMaster_VNext/corpus/spec-knowledge/candidates/BE-G5.yaml"
+    },
+    {
+      "id": "POLICY.STACK.PERSISTENCE_COEXISTENCE_SCOPE",
+      "path": "policies/policy.stack.persistence_coexistence_scope.json",
+      "content_sha256": "sha256:b2d6ebf5a1d17561fae6ba16016630560c7abae33b001e43088b24e31ae076d6",
+      "source_ref": "package://catalog/policies/policy.stack.persistence_coexistence_scope.json"
+    },
+    {
+      "id": "POLICY.STACK.TOOLCHAIN_VERSIONS_PINNED",
+      "path": "policies/policy.stack.toolchain_versions_pinned.json",
+      "content_sha256": "sha256:6ee34431c2ebe65c7cf456b55c27450c74ec9379ec63a719d5ec79416fee7026",
+      "source_ref": "package://catalog/policies/policy.stack.toolchain_versions_pinned.json"
+    },
+    {
+      "id": "POLICY.STACK.UPGRADE_COMPAT_VERIFIED",
+      "path": "policies/policy.stack.upgrade_compat_verified.json",
+      "content_sha256": "sha256:e9812d60c72e02b106dc935f5dee9df100f51259cb31cebf1db793b7fbbfa216",
+      "source_ref": "package://catalog/policies/policy.stack.upgrade_compat_verified.json"
+    },
+    {
+      "id": "POLICY.STRUCT.MODULE_ENTRY_DEPENDENCY_DECLARED",
+      "path": "policies/policy.struct.module_entry_dependency_declared.json",
+      "content_sha256": "sha256:57496ed966e5993623646bdca1418277032ee3c60b184cc6a83eec10f10fcb00",
+      "source_ref": "package://catalog/policies/policy.struct.module_entry_dependency_declared.json"
+    },
+    {
+      "id": "POLICY.STRUCT.NO_UNEXPLAINED_TOP_LEVEL_DIR",
+      "path": "policies/policy.struct.no_unexplained_top_level_dir.json",
+      "content_sha256": "sha256:fc832288cb2c1c8fe2901f8a35a187006e1fa650f63be410f1f63969196b155f",
+      "source_ref": "package://catalog/policies/policy.struct.no_unexplained_top_level_dir.json"
+    },
+    {
+      "id": "POLICY.STRUCT.REUSE_PROVEN_STRUCTURE",
+      "path": "policies/policy.struct.reuse_proven_structure.json",
+      "content_sha256": "sha256:1a724d32b0fb62f41eb42ed3864137fd8fa6313f5f30806e29f4cb4a8246c486",
+      "source_ref": "package://catalog/policies/policy.struct.reuse_proven_structure.json"
+    },
+    {
+      "id": "POLICY.TEST.CONTROL_NONDETERMINISM_KEEP_DIAGNOSIS",
+      "path": "policies/policy.test.control_nondeterminism_keep_diagnosis.json",
+      "content_sha256": "sha256:96c4b13cbdd42a195713fc59fc972e9fe29cbd03b768b4e7b14e921e658fb5f0",
+      "source_ref": "package://catalog/policies/policy.test.control_nondeterminism_keep_diagnosis.json"
     },
     {
       "id": "POLICY.TEST.ISOLATION_AND_CLEANUP",
@@ -1142,16 +1380,40 @@
       "source_ref": "package://catalog/policies/policy.test.isolation_and_cleanup.json"
     },
     {
+      "id": "POLICY.TEST.NO_SYNTHETIC_STABILITY",
+      "path": "policies/policy.test.no_synthetic_stability.json",
+      "content_sha256": "sha256:37c5c87f41b9c15e352cb5ca26b518301a00c134e7ac8ff35f0763f99a31ee67",
+      "source_ref": "package://catalog/policies/policy.test.no_synthetic_stability.json"
+    },
+    {
       "id": "POLICY.TEST.PYRAMID_AND_CI_MATRIX",
       "path": "policies/policy.test.pyramid_and_ci_matrix.json",
       "content_sha256": "sha256:15840d2636423101515c927cef0d0d09899e95816221149ee626a1d975c27d16",
       "source_ref": "package://catalog/policies/policy.test.pyramid_and_ci_matrix.json"
     },
     {
+      "id": "POLICY.TEST.RISK_DRIVEN_PLAN",
+      "path": "policies/policy.test.risk_driven_plan.json",
+      "content_sha256": "sha256:6dc6b3e2d506b908a175d078edebc70dd88990696eebb49544f6a3abe78e10c3",
+      "source_ref": "package://catalog/policies/policy.test.risk_driven_plan.json"
+    },
+    {
       "id": "POLICY.TEST.STABLE_OBSERVABLE_ASSERTIONS",
       "path": "policies/policy.test.stable_observable_assertions.json",
       "content_sha256": "sha256:ad8a917e6d429b574f3b8c575bf02580adb926c57c58c983fe7a456b2a15aeab",
       "source_ref": "package://catalog/policies/policy.test.stable_observable_assertions.json"
+    },
+    {
+      "id": "POLICY.TOOL.DISCOVERABLE_TOOLCHAIN",
+      "path": "policies/policy.tool.discoverable_toolchain.json",
+      "content_sha256": "sha256:e72eb56f2bdbc4c0376ef2f40bf0b699a172df83ffcd38022f9082483eb43d7b",
+      "source_ref": "package://catalog/policies/policy.tool.discoverable_toolchain.json"
+    },
+    {
+      "id": "POLICY.TOOL.NO_HAND_EDIT_GENERATED_NO_CI_DRIFT",
+      "path": "policies/policy.tool.no_hand_edit_generated_no_ci_drift.json",
+      "content_sha256": "sha256:2e7174c9f1b9c1bd6e75c790bc436b95c655eecc64a73df5cc978e80158e0ab2",
+      "source_ref": "package://catalog/policies/policy.tool.no_hand_edit_generated_no_ci_drift.json"
     },
     {
       "id": "POLICY.TOOL.NO_VENDORED_BODY_EDITS",
@@ -1464,6 +1726,24 @@
       "path": "policies/policy.web.uiux.provider_evidence_not_business_truth.json",
       "content_sha256": "sha256:11166f8d112732b605dfcbdff4b72806dd82ebb50259b9dc1e8a54ccc22e53bf",
       "source_ref": "POMaster_VNext/corpus/master/batch-4/split-ledger.yaml"
+    },
+    {
+      "id": "POLICY.WF.NO_PLANNED_AS_VERIFIED",
+      "path": "policies/policy.wf.no_planned_as_verified.json",
+      "content_sha256": "sha256:b4ecec88d33313c073a4400e15c04cc173116da162cf79257f7d91ee0be534dd",
+      "source_ref": "package://catalog/policies/policy.wf.no_planned_as_verified.json"
+    },
+    {
+      "id": "POLICY.WF.TASK_FACTS_PRECONFIRM",
+      "path": "policies/policy.wf.task_facts_preconfirm.json",
+      "content_sha256": "sha256:b87cddbcad96120fc491e5b17cc99ef0ae7e2a1464e896cdfefe9cc61ca742a3",
+      "source_ref": "package://catalog/policies/policy.wf.task_facts_preconfirm.json"
+    },
+    {
+      "id": "PROFILE.BASELINE.JAVA_ENTERPRISE_DEFAULT",
+      "path": "policies/profile.baseline.java_enterprise_default.json",
+      "content_sha256": "sha256:51796f8fe294711358e8325fccb94565912fbaabb5df9870540d9c5f4db4fd7d",
+      "source_ref": "package://catalog/policies/profile.baseline.java_enterprise_default.json"
     },
     {
       "id": "RUNTIME_ARCHETYPE.ENVIRONMENT_PARITY",

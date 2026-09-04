@@ -33,6 +33,19 @@
  * 45 份编号协议正文 42 份自带「内容示例，可删除」先例标注，3 份（04/23/38）无标注
  * 文件不插入正文字节，语义由本字段承载——字节级忠实断言优先；index.md 非 12 段
  * 结构文件，同字段承载）。
+ *
+ * ADR-lite（B6c，装载器零改动扩展）：清单增量 BE 33 + stacks 28（batch=B6C）——
+ * 1) BE frontmatter 兼容（BE vendor 文件自带 6 字段 frontmatter）：播种件 = 统一
+ *    9 字段 + vendor frontmatter 保留字段（原字段名原值；id 改形 legacy_id——旧包
+ *    内部语义 ID 非 governed 词形；injection_mode 类字段降级 info 注记——R8/A1 对齐，
+ *    不引入执行语义），正文（vendor 去原 frontmatter）逐字节；装载器 pin 解析只读
+ *    seed_source/seed_source_sha256 两行，legacy 字段零干扰；
+ * 2) stacks 落 <slug> 子目录（target .pomaster/specs/hard/stacks/<slug>/…）——守卫
+ *    由 seeds.ts SEEDABLE_STORE_DIRS 显式 slug 叶登记（候选①），装载器 target 校验
+ *    （.pomaster/ 前缀 + POSIX 词形）对子目录词形天然成立；
+ * 3) profile（vendor profiles/java-enterprise-default.yaml）不播种——A1 档位机制零
+ *    移植，走 catalog TECHNOLOGY_PROFILE 分类面（seed_b6c_backend.py 物化），清单
+ *    无对应条目。
  */
 
 import { createHash } from "node:crypto";

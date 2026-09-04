@@ -47,10 +47,29 @@ import type { InitFileReport } from "./init.js";
 import { ensureParentDir, toPosix } from "./store-layout.js";
 
 /**
- * 播种目录 allowlist（B6b-I 守卫收窄——B6a check 遗留 b）：kernel paths.ts 12 播种
- * 登记目录的 POSIX 树内词形（相对 `.pomaster/`）。播种目标的父目录必须精确命中本
- * 集合——控制平面目录（state/truth/evidence/runtime/sources/…）不可播种。
+ * 播种目录 allowlist（B6b-I 守卫收窄；B6c stacks 子目录扩展）：kernel paths.ts 12 播种
+ * 登记目录的 POSIX 树内词形（相对 `.pomaster/`）+ stacks 播种叶目录（14 slug——B6c
+ * stacks 子目录守卫 ADR，候选 ①显式叶登记：精确匹配机制零改动，allowlist 保持封闭
+ * 集合；未登记 slug 一律拒绝，新 slug 属内容演进批次）。控制平面目录
+ * （state/truth/evidence/runtime/sources/…）不可播种。
  */
+export const STACK_SEED_SLUGS: readonly string[] = [
+  "java",
+  "jpa",
+  "kubernetes-ingress",
+  "messaging",
+  "mybatis",
+  "mysql",
+  "nginx",
+  "postgresql",
+  "redis",
+  "spring-batch",
+  "spring-boot",
+  "spring-mvc",
+  "spring-webflux",
+  "tomcat",
+];
+
 export const SEEDABLE_STORE_DIRS: readonly string[] = [
   "baseline",
   "baseline/frontend",
@@ -62,6 +81,9 @@ export const SEEDABLE_STORE_DIRS: readonly string[] = [
   "specs/hard/frontend",
   "specs/hard/backend",
   "specs/hard/stacks",
+  // B6c stacks 播种叶目录（STACK_SEED_SLUGS 显式登记——slug 集 == 种子清单 stacks
+  // 分母派生集合，对账由 seeds.spec 测试钉）。
+  ...STACK_SEED_SLUGS.map((slug) => `specs/hard/stacks/${slug}`),
   "specs/acceptance",
   "specs/evidence",
 ];

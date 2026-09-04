@@ -326,7 +326,7 @@ describe("compileProjection catalog 分区（§69 步骤 12 运行时联结）",
     );
   });
 
-  it("lane 检索：frontend 命中 any+frontend；backend 不见 lane=frontend 条目", async () => {
+  it("lane 检索：frontend 命中 any+frontend；backend 不见 lane=frontend 条目（B6c 起 backend 命中 any+backend——BE 协议移植物料 lane=backend 在册）", async () => {
     const frontend = await compileProjection(store, { role: "frontend" });
     const backend = await compileProjection(store, { role: "backend" });
     const frontendRefs = frontend.manifest.catalogEntries.map((entry) => entry.ref);
@@ -337,7 +337,13 @@ describe("compileProjection catalog 分区（§69 步骤 12 运行时联结）",
     expect(backendRefs).not.toContain("POLICY.WEB.STYLE.OWNERSHIP_MATRIX");
     for (const entry of backend.manifest.catalogEntries) {
       if (!entry.reason.includes("catalog: policies/")) continue; // preset 条目无 lane 轴
-      expect(entry.reason).toContain("lane=any");
+      // B6c 起 catalog 有 lane=backend 条目（BE 协议移植物料）——backend 分区命中
+      // any+backend 两类词形；lane=frontend 条目仍不可见（lane 检索隔离语义不变）。
+      expect(
+        entry.reason.includes("lane=any") || entry.reason.includes("lane=backend"),
+        entry.reason,
+      ).toBe(true);
+      expect(entry.reason.includes("lane=frontend"), entry.reason).toBe(false);
     }
   });
 

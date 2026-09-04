@@ -95,9 +95,9 @@ assert(
 const stageLock = JSON.parse(
   readFileSync(join(STAGE_PKG, "catalog", "catalog-lock.draft.json"), "utf8"),
 );
-assert(stageLock.entries.length === 193, "catalog-lock 193 entries", `实为 ${stageLock.entries.length}`);
+assert(stageLock.entries.length === 228, "catalog-lock 228 entries", `实为 ${stageLock.entries.length}`);
 
-// 1.2.1 seeds 完整（B6b 两批）：打包文件集与仓库 packages/cli/seeds/ 全等 + 清单
+// 1.2.1 seeds 完整（B6b 两批 + B6c）：打包文件集与仓库 packages/cli/seeds/ 全等 + 清单
 //      schema/条目数（播种资产随包分发——装载器 fail-closed，缺 seeds = init 必炸）。
 const repoSeedsFiles = walkFiles(p("packages", "cli", "seeds")).map((file) => `seeds/${file}`);
 const packedSeedsFiles = packedPaths.filter((file) => file.startsWith("seeds/"));
@@ -119,8 +119,8 @@ assert(
   `实为 ${stageSeedManifest.schema}`,
 );
 assert(
-  stageSeedManifest.entries?.length === 46,
-  "stage seeds manifest 46 entries",
+  stageSeedManifest.entries?.length === 107,
+  "stage seeds manifest 107 entries",
   `实为 ${stageSeedManifest.entries?.length}`,
 );
 
@@ -238,8 +238,8 @@ smoke("npx pomaster --help", "pomaster --help", {
 });
 
 // 2.2 `npx pomaster init`：四产物落盘（truth-index / authority / config.yaml / AGENTS.md）
-//     + B6b 播种件落盘（46 份 FE 协议进 .pomaster/specs/hard/frontend——包内 seeds
-//     资产位 + 装载器 fail-closed 的端到端实证：缺 seeds 的包 init 即炸）。
+//     + B6b/B6c 播种件落盘（46 份 FE + 33 份 BE + 28 份 stacks 进 .pomaster/specs/hard/
+//     ——包内 seeds 资产位 + 装载器 fail-closed 的端到端实证：缺 seeds 的包 init 即炸）。
 smoke("npx pomaster init", "pomaster init", { expectExit: [0] });
 for (const artifact of [
   join(".pomaster", "state", "truth-index.json"),
@@ -250,8 +250,8 @@ for (const artifact of [
 ]) {
   assert(existsSync(join(SMOKE_DIR, artifact)), `init 产物落盘: ${artifact}`);
 }
+// FE 面：只数编号协议件（目录另含 init 布局步骤落的 README.md，非播种件）。
 const seededFrontendDir = join(SMOKE_DIR, ".pomaster", "specs", "hard", "frontend");
-// 只数编号协议件（目录另含 init 布局步骤落的 README.md，非播种件）。
 const seededSpecs = existsSync(seededFrontendDir)
   ? readdirSync(seededFrontendDir)
       .filter((name) => /^\d{2}-.*-protocol\.md$/.test(name))
@@ -272,6 +272,56 @@ assert(
   existsSync(join(seededFrontendDir, "index.md")),
   "init 播种件落盘：specs/hard/frontend/index.md（FE 索引）",
 );
+// BE 面（B6c）：32 编号协议 + index。
+const seededBackendDir = join(SMOKE_DIR, ".pomaster", "specs", "hard", "backend");
+const seededBackendProtocols = existsSync(seededBackendDir)
+  ? readdirSync(seededBackendDir)
+      .filter((name) => /^\d{2}-.*-protocol\.md$/.test(name))
+      .sort()
+  : [];
+assert(
+  seededBackendProtocols.length === 32,
+  "init 播种件落盘：specs/hard/backend 32 份编号协议（B6c）",
+  `实为 ${seededBackendProtocols.length}`,
+);
+assert(
+  seededBackendProtocols[0] === "01-architecture-governance-protocol.md" &&
+    seededBackendProtocols[31] === "32-release-versioning-rollback-protocol.md",
+  "init 播种件 BE 编号连续（01..32）",
+  `首末: ${seededBackendProtocols[0]} .. ${seededBackendProtocols[31]}`,
+);
+assert(
+  existsSync(join(seededBackendDir, "index.md")),
+  "init 播种件落盘：specs/hard/backend/index.md（BE 索引）",
+);
+// stacks 面（B6c）：14 slug 子目录 × (index + overlay)。
+const STACK_SLUGS = [
+  "java", "jpa", "kubernetes-ingress", "messaging", "mybatis", "mysql",
+  "nginx", "postgresql", "redis", "spring-batch", "spring-boot", "spring-mvc",
+  "spring-webflux", "tomcat",
+];
+const seededStacksDir = join(SMOKE_DIR, ".pomaster", "specs", "hard", "stacks");
+for (const slug of STACK_SLUGS) {
+  const slugDir = join(seededStacksDir, slug);
+  const files = existsSync(slugDir) ? readdirSync(slugDir).sort() : [];
+  assert(
+    files.length === 2 && files[0] === "index.md" && files[1].endsWith("-overlay.md"),
+    `init 播种件落盘：specs/hard/stacks/${slug}/（index + overlay）`,
+    `实为 ${files.join(", ")}`,
+  );
+}
+// marker-free 抽查 + BE frontmatter legacy 字段抽查（B6c BE frontmatter 兼容 ADR）。
+const beSample = readFileSync(
+  join(seededBackendDir, "22-idempotency-protocol.md"),
+  "utf8",
+);
+assert(
+  beSample.startsWith("---\n") &&
+    beSample.includes("legacy_id: backend:idempotency-protocol") &&
+    !beSample.includes("\nid: backend:"),
+  "BE 播种件 frontmatter 形态（legacy_id 改形 + 统一字段在座）",
+);
+assert(!beSample.includes("GENERATED"), "播种件 marker-free 抽查（BE 协议件）");
 
 // 2.3 `npx pomaster status`。
 smoke("npx pomaster status", "pomaster status", {
@@ -279,15 +329,15 @@ smoke("npx pomaster status", "pomaster status", {
   expectWords: ["status: .pomaster/state/truth-index.json (seq="],
 });
 
-// 2.4 `npx pomaster catalog status --json`（关键：包内资产候选命中 + 193 entries 0 drift）。
+// 2.4 `npx pomaster catalog status --json`（关键：包内资产候选命中 + 228 entries 0 drift）。
 const catalogEnvelope = smoke("npx pomaster catalog status --json", "pomaster catalog status --json", {
   expectExit: [0],
   json: true,
 });
 assert(catalogEnvelope.ok === true, "catalog status 信封 ok:true");
 assert(
-  catalogEnvelope.result?.entries_total === 193,
-  `catalog entries = 193（实为 ${catalogEnvelope.result?.entries_total}）`,
+  catalogEnvelope.result?.entries_total === 228,
+  `catalog entries = 228（实为 ${catalogEnvelope.result?.entries_total}）`,
 );
 assert(
   catalogEnvelope.result?.lock_verification?.ok === true &&
