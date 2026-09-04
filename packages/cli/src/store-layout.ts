@@ -112,6 +112,26 @@ export const SOURCES_DIR_RELATIVE = relOf(KERNEL_EMPTY_ROOT.sourcesDir);
 export const SOURCES_SNAPSHOTS_DIR_RELATIVE = relOf(KERNEL_EMPTY_ROOT.sourcesSnapshotsDir);
 export const SOURCES_INDEX_RELATIVE = relOf(KERNEL_EMPTY_ROOT.sourcesIndexPath);
 
+/**
+ * .pomaster/baseline/{,frontend,backend,data,platform}/ 与
+ * .pomaster/specs/{,hard,hard/frontend,hard/backend,hard/stacks,acceptance,evidence}/
+ * （09-04 vNext Batch 6 B6a：播种面目录登记——PRD §3 目录树；kernel paths.ts 已登记，
+ * 本常量从 kernel 派生（单一来源纪律）。播种件落盘语义 = seed-once-missing-only
+ * （seeds.ts），目录守卫拒绝未登记父目录（R4 红线：未登记禁落盘）。
+ */
+export const BASELINE_DIR_RELATIVE = relOf(KERNEL_EMPTY_ROOT.baselineDir);
+export const BASELINE_FRONTEND_DIR_RELATIVE = relOf(KERNEL_EMPTY_ROOT.baselineFrontendDir);
+export const BASELINE_BACKEND_DIR_RELATIVE = relOf(KERNEL_EMPTY_ROOT.baselineBackendDir);
+export const BASELINE_DATA_DIR_RELATIVE = relOf(KERNEL_EMPTY_ROOT.baselineDataDir);
+export const BASELINE_PLATFORM_DIR_RELATIVE = relOf(KERNEL_EMPTY_ROOT.baselinePlatformDir);
+export const SPECS_DIR_RELATIVE = relOf(KERNEL_EMPTY_ROOT.specsDir);
+export const SPECS_HARD_DIR_RELATIVE = relOf(KERNEL_EMPTY_ROOT.specsHardDir);
+export const SPECS_HARD_FRONTEND_DIR_RELATIVE = relOf(KERNEL_EMPTY_ROOT.specsHardFrontendDir);
+export const SPECS_HARD_BACKEND_DIR_RELATIVE = relOf(KERNEL_EMPTY_ROOT.specsHardBackendDir);
+export const SPECS_HARD_STACKS_DIR_RELATIVE = relOf(KERNEL_EMPTY_ROOT.specsHardStacksDir);
+export const SPECS_ACCEPTANCE_DIR_RELATIVE = relOf(KERNEL_EMPTY_ROOT.specsAcceptanceDir);
+export const SPECS_EVIDENCE_DIR_RELATIVE = relOf(KERNEL_EMPTY_ROOT.specsEvidenceDir);
+
 /** scratchpad <id> 词形（08 schema scratchpad_ref pattern 的目录名段逐字镜像）。 */
 export const DISCOVERY_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
 

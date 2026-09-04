@@ -86,16 +86,16 @@ export interface LayoutDirSpec {
 
 // ============================================================
 // 预铺清单（宪法 §2 Target Directory Tree 全量 + PRD §3/§3A sources 平面增量 +
-// vNext Batch 2 D7/C9 两增量平面：29 目录；数组顺序 = layout.json
-// directories 顺序 = 磁盘创建顺序）
+// vNext Batch 2 D7/C9 两增量平面 + vNext Batch 6 B6a 播种面两子树：41 目录；
+// 数组顺序 = layout.json directories 顺序 = 磁盘创建顺序）
 // ============================================================
 
 /**
- * 预铺目录清单（宪法 §2 全树 + §3A sources 平面 + Batch 2 两增量平面；**与入口
- * 形态/平台选择无关**——恒同一棵树）。state/ 的已登记文件位不单独落文件——kernel
- * createStore/applyTransaction 按需创建，README 注记文件位清单。禁铺形态（宪法 §15
- * policies/、§10.1 顶层 research/、§21 kind-as-directory）不在清单——新概念默认是
- * governed object kind，不是新目录。
+ * 预铺目录清单（宪法 §2 全树 + §3A sources 平面 + Batch 2 两增量平面 + Batch 6
+ * 播种面两子树；**与入口形态/平台选择无关**——恒同一棵树）。state/ 的已登记文件位
+ * 不单独落文件——kernel createStore/applyTransaction 按需创建，README 注记文件位
+ * 清单。禁铺形态（宪法 §15 policies/、§10.1 顶层 research/、§21 kind-as-directory）
+ * 不在清单——新概念默认是 governed object kind，不是新目录。
  *
  * ADR-lite（09-04 vNext Batch 1 R3，Owner 裁定 D2）：sources/ + sources/snapshots/
  * 是宪法 §2 全树之外的增量平面（PRD §3 目录树逐字；Source Artifact Authority
@@ -107,6 +107,13 @@ export interface LayoutDirSpec {
  * observations/（C9——OBS/ENVREC 感知回执记录 sidecar 分区，blob 平面不变）是
  * Batch 2 增量平面（PRD vNext §8.1⑤/§3 树/§5B）——constitution_source 字段同样
  * 如实双锚。
+ *
+ * ADR-lite（09-04 vNext Batch 6 R1/B6a，Owner 裁定 B5 2026-09-04）：baseline/
+ * 四分区与 specs/ 五分区是宪法 §2 全树之外的第二个 sources/ 同款增量裁定（PRD §3
+ * 目录树逐字；播种子树——目录登记先行于一切落盘，R4 红线「未登记 kernel paths
+ * 禁落盘」由 layout 守卫 + seeds.ts 目录守卫双向钉死）。播种件落盘走 seeds.ts
+ * seed-once-missing-only（缺失才写、在座零触碰、不带生成标记——项目可编辑物，
+ * 禁被判 foreign/重写）；内容字节 B6b 起逐子批灌入（SEED_MANIFEST 单源）。
  */
 export const LAYOUT_DIRECTORIES: readonly LayoutDirSpec[] = [
   // ---- state：控制平面 Root Metadata + Governance Sidecars（宪法 §5） ----
@@ -383,6 +390,117 @@ export const LAYOUT_DIRECTORIES: readonly LayoutDirSpec[] = [
       "dot-pomaster-directory-constitution.md §12.6；kernel production.ts（PRD §90.4）",
     command: "pomaster production self-improvement",
   },
+  // ---- baseline：Project Engineering Baseline 播种子树（vNext Batch 6 B6a 增量平面；PRD §3/§7） ----
+  {
+    path: "baseline",
+    status: "wired",
+    purpose:
+      "Project Engineering Baseline 子树根（Expected 面工程基线载体——manifest.yaml 身份/seed 来源/UNKNOWN 起步台账 + frontend/backend/data/platform 四 lane 分区；播种件项目可编辑，init seed-once-missing-only，在座零触碰不带生成标记，AI 禁静默覆盖）。",
+    activation_hint:
+      "init 播种后目录恒在；Owner 回填 UNKNOWN 起步值后 baseline/stack.yaml 即成为 context compile 的 AUTHORITATIVE 输入（PRD §7）。",
+    constitution_source:
+      "dot-pomaster-directory-constitution.md §2 全树 + PRD vNext §3 树/§7（Batch 6 B6a 增量平面，播种移植）；kernel paths.ts（baselineDir）",
+  },
+  {
+    path: "baseline/frontend",
+    status: "wired",
+    purpose:
+      "前端 lane 工程基线（stack.yaml 结构化选型 + architecture/directory-structure/design-system/state-and-data/api-and-error/quality 六模板；起步值一律 UNKNOWN——「待填写」旧词形不移植）。",
+    activation_hint: "任务涉及前端时消费（context compile AUTHORITATIVE 命中 baseline/frontend/stack.yaml，PRD §7）。",
+    constitution_source:
+      "dot-pomaster-directory-constitution.md §2 全树 + PRD vNext §3 树/§7（Batch 6 B6a 增量平面）；kernel paths.ts（baselineFrontendDir）",
+  },
+  {
+    path: "baseline/backend",
+    status: "wired",
+    purpose:
+      "后端 lane 工程基线（stack.yaml + architecture/directory-structure/api-contract/data-access/transaction-concurrency/integration-runtime/quality 七模板；起步值一律 UNKNOWN）。",
+    activation_hint: "任务涉及后端时消费（context compile AUTHORITATIVE 命中 baseline/backend/stack.yaml，PRD §7）。",
+    constitution_source:
+      "dot-pomaster-directory-constitution.md §2 全树 + PRD vNext §3 树/§7（Batch 6 B6a 增量平面）；kernel paths.ts（baselineBackendDir）",
+  },
+  {
+    path: "baseline/data",
+    status: "wired",
+    purpose:
+      "数据基线（model/precision-units/migration/lineage/quality 五模板——Money/Scale/Rounding、expand-migrate-contract、Source→Transform→Target；起步值一律 UNKNOWN）。",
+    activation_hint: "项目持有持久化数据模型/迁移链时消费；纯前端无库项目可为空。",
+    constitution_source:
+      "dot-pomaster-directory-constitution.md §2 全树 + PRD vNext §3 树/§7（Batch 6 B6a 增量平面）；kernel paths.ts（baselineDataDir）",
+  },
+  {
+    path: "baseline/platform",
+    status: "wired",
+    purpose:
+      "平台基线（security/environment/observability/delivery 四模板——auth/secret、环境差异规则、log/metric/trace、build/CI/release/rollback；起步值一律 UNKNOWN）。",
+    activation_hint: "部署面/安全面/可观测面进入治理视野时消费；本地原型项目可为空。",
+    constitution_source:
+      "dot-pomaster-directory-constitution.md §2 全树 + PRD vNext §3 树/§7（Batch 6 B6a 增量平面）；kernel paths.ts（baselinePlatformDir）",
+  },
+  // ---- specs：POMaster-native Spec Workspace 播种子树（vNext Batch 6 B6a 增量平面；PRD §3/§8） ----
+  {
+    path: "specs",
+    status: "wired",
+    purpose:
+      "POMaster-native Spec Workspace 子树根（index.md Expected≠Actual/Authority precedence/激活规则 + hard/acceptance/evidence 三分区；播种件项目可编辑，同 seed-once-missing-only 语义）。",
+    activation_hint: "init 播种后目录恒在；协议全文按 Change Class + Capability 命中注入（PRD §7 REQUIRED POLICY 面）。",
+    constitution_source:
+      "dot-pomaster-directory-constitution.md §2 全树 + PRD vNext §3 树/§8（Batch 6 B6a 增量平面，播种移植）；kernel paths.ts（specsDir）",
+  },
+  {
+    path: "specs/hard",
+    status: "wired",
+    purpose:
+      "Hard Spec 全文面根——REQUIRED POLICY 的项目内散文载体（frontend/backend/stacks 三分区；catalog policies 是机器条目面、本目录是全文面，两面对同一语义各持一份，来源 pin 同锚、禁双向自动同步）。",
+    activation_hint: "变更命中对应协议主题时由 context compile/agent 按需注入；项目 Owner 就地个性化（变更走 Git 追溯，AI 禁静默覆盖）。",
+    constitution_source:
+      "dot-pomaster-directory-constitution.md §2 全树 + PRD vNext §3 树/§8.2（Batch 6 B6a 增量平面）；kernel paths.ts（specsHardDir）",
+  },
+  {
+    path: "specs/hard/frontend",
+    status: "wired",
+    purpose:
+      "前端协议播种位（45 编号协议 + index = 46 文件；vendor 字节移植 + 统一 frontmatter——B6b 灌内容，本批只登记目录）。",
+    activation_hint: "前端任务命中协议主题（P0/P1/P2 协议地图）时注入对应全文；项目可就地编辑。",
+    constitution_source:
+      "dot-pomaster-directory-constitution.md §2 全树 + PRD vNext §3 树/§8.2（Batch 6 B6a 增量平面）；kernel paths.ts（specsHardFrontendDir）",
+  },
+  {
+    path: "specs/hard/backend",
+    status: "wired",
+    purpose:
+      "后端协议播种位（32 编号协议 + index = 33 文件——B6c 灌内容，本批只登记目录）。",
+    activation_hint: "后端任务命中协议主题（index 路由表）时注入对应全文；项目可就地编辑。",
+    constitution_source:
+      "dot-pomaster-directory-constitution.md §2 全树 + PRD vNext §3 树/§8.2（Batch 6 B6a 增量平面）；kernel paths.ts（specsHardBackendDir）",
+  },
+  {
+    path: "specs/hard/stacks",
+    status: "wired",
+    purpose:
+      "stack overlay 播种位（14 组 × index+overlay = 28 文件；installed=true 全量播种不用也在座，bound 语义由 baseline/stack.yaml 选型派生——B6c 灌内容，本批只登记目录）。",
+    activation_hint: "项目技术栈命中对应 overlay 时注入；bound 与否由 baseline 选型派生，目录存在 ≠ 已绑定。",
+    constitution_source:
+      "dot-pomaster-directory-constitution.md §2 全树 + PRD vNext §3 树/§11（Batch 6 B6a 增量平面）；kernel paths.ts（specsHardStacksDir）",
+  },
+  {
+    path: "specs/acceptance",
+    status: "wired",
+    purpose:
+      "业务期望自由文件面（Owner 的「结果是什么」——业务验收期望载体，区别于 specs/evidence 的证据要求规范）。",
+    activation_hint: "Owner 落业务验收期望的项目激活；无业务验收诉求可为空。",
+    constitution_source:
+      "dot-pomaster-directory-constitution.md §2 全树 + PRD vNext §3 树（Batch 6 B6a 增量平面）；kernel paths.ts（specsAcceptanceDir）",
+  },
+  {
+    path: "specs/evidence",
+    status: "wired",
+    purpose:
+      "Evidence Spec Kit 播种位（19 spec + index；持要求不持判定——verdict 只在 Verification/Gate Result，B6e 新著灌内容，本批只登记目录）。",
+    activation_hint: "closeout DoD / gate 绑定需要证据要求规范的项目激活（catalog gates ↔ evidence spec 引用，B6e 接线）。",
+    constitution_source:
+      "dot-pomaster-directory-constitution.md §2 全树 + PRD vNext §3 树/§13（Batch 6 B6a 增量平面）；kernel paths.ts（specsEvidenceDir）",
+  },
 ];
 
 /**
@@ -393,6 +511,7 @@ export const LAYOUT_NOTES: readonly string[] = [
   "六禁铺裁定（P53 §16 逐字反面清单）：questions.json / answers.json / decisions.json / frontier.json / recommendations.json / grill-state.json 六文件名绝不物化于预铺面——Frontier 应由 Decision Graph 动态计算、Human Narrative 应由 Graph 编译生成（P53 §16/§21「不新增」封条）。",
   "evidence 产物命名裁定：PRD v0.5.2 §7.3 词形 evidence/artifacts/ 与 kernel paths.ts 现行词形 evidence/blobs/（内容寻址）冲突——以现行 evidence/blobs 为准预铺，artifacts 词形不落盘。",
   "目录树与入口形态无关（Owner 2026-09-04 裁定，现状陈述：init 单一重入口——历史上与重入口并存的 --mode light 旗标已按 B7 裁定 2026-09-04 删除，当时两形态的目录树本就完全相同）：.pomaster/ 目录树恒为宪法 §2 全量预铺，与平台选择无关；激活由 AI 按 activation_hint 与项目复杂度自行判断——目录存在 ≠ 已激活 ≠ 已检查。",
+  "播种面语义（vNext Batch 6 B6a）：baseline/** 与 specs/** 是播种目录——init 按种子清单 seed-once-missing-only（缺失才写；在座文件项目自有可编辑，init 恒零触碰且播种件不带生成标记，禁被判 foreign/重写）；重播种/刷新只走显式 opt-in（旧 --refresh-protocols 先例），AI 禁静默覆盖项目对播种件的就地修改。",
 ];
 
 // ============================================================
@@ -449,6 +568,18 @@ export function derivePathsTsStoreDirs(rootDir: string): ReadonlySet<string> {
     paths.tracesDir,
     paths.sourcesDir,
     paths.sourcesSnapshotsDir,
+    paths.baselineDir,
+    paths.baselineFrontendDir,
+    paths.baselineBackendDir,
+    paths.baselineDataDir,
+    paths.baselinePlatformDir,
+    paths.specsDir,
+    paths.specsHardDir,
+    paths.specsHardFrontendDir,
+    paths.specsHardBackendDir,
+    paths.specsHardStacksDir,
+    paths.specsAcceptanceDir,
+    paths.specsEvidenceDir,
   ]) {
     const posix = toPosixSlash(absolute);
     if (!posix.startsWith(base)) {

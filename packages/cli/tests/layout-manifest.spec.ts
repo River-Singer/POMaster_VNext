@@ -43,7 +43,7 @@ describe("layout 预铺清单守卫（宪法 §2/§24/§34）", () => {
     }
   });
 
-  it("全 wired 单状态 + activation_hint/constitution_source 必填在场（Owner 修订形态）", () => {
+  it("全 wired 单状态 + activation_hint/constitution_source 必填在场（Owner 修订形态；B6a 播种面两子树登记后 41 目录）", () => {
     expect(LAYOUT_STATUSES).toEqual(["wired"]);
     for (const spec of LAYOUT_DIRECTORIES) {
       expect(spec.status, spec.path).toBe(LAYOUT_STATUS_WIRED);
@@ -56,10 +56,10 @@ describe("layout 预铺清单守卫（宪法 §2/§24/§34）", () => {
         `${spec.path} 的 constitution_source 必须指向宪法文档`,
       ).toBe(true);
     }
-    expect(LAYOUT_DIRECTORIES.length).toBe(29);
+    expect(LAYOUT_DIRECTORIES.length).toBe(41);
   });
 
-  it("宪法 §2 全树逐平面在册（config/state 九文件位/truth/evidence 三区/executions/traces/runtime 四区/discovery/memory/production 六区）+ §3A sources 平面增量（Batch 1 R3/D2）+ Batch 2 D7/C9 增量平面", () => {
+  it("宪法 §2 全树逐平面在册（config/state 九文件位/truth/evidence 三区/executions/traces/runtime 四区/discovery/memory/production 六区）+ §3A sources 平面增量（Batch 1 R3/D2）+ Batch 2 D7/C9 增量平面 + Batch 6 B6a 播种面两子树（baseline 四分区 + specs 五分区，12 目录）", () => {
     const paths = new Set(LAYOUT_DIRECTORIES.map((d) => d.path));
     for (const required of [
       "state",
@@ -85,6 +85,19 @@ describe("layout 预铺清单守卫（宪法 §2/§24/§34）", () => {
       "production/challenges",
       "production/diagnoses",
       "production/self-improvement",
+      // Batch 6 B6a 播种面两子树（PRD §3 目录树逐字；kernel paths.ts 已登记）。
+      "baseline",
+      "baseline/frontend",
+      "baseline/backend",
+      "baseline/data",
+      "baseline/platform",
+      "specs",
+      "specs/hard",
+      "specs/hard/frontend",
+      "specs/hard/backend",
+      "specs/hard/stacks",
+      "specs/acceptance",
+      "specs/evidence",
     ]) {
       expect(paths.has(required), `宪法 §2 目录 ${required} 必须在清单`).toBe(true);
     }
@@ -163,5 +176,13 @@ describe("layout 预铺清单守卫（宪法 §2/§24/§34）", () => {
     expect(
       LAYOUT_NOTES.some((note) => note.includes("目录树与入口形态无关")),
     ).toBe(true);
+  });
+
+  it("播种面语义注记在册（B6a）：LAYOUT_NOTES 载 seed-once-missing-only 三语义（缺席才写 / 在座零触碰不带生成标记 / 刷新走显式 opt-in）", () => {
+    const notes = LAYOUT_NOTES.join("\n");
+    expect(notes).toContain("seed-once-missing-only");
+    expect(notes).toContain("在座文件项目自有可编辑");
+    expect(notes).toContain("不带生成标记");
+    expect(notes).toContain("显式 opt-in");
   });
 });

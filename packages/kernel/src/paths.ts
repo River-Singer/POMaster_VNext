@@ -48,6 +48,17 @@
  *                               schema x-index-policy.storage_plane；回执是 sidecar
  *                               不是 truth object——admitted_to_truth_index=false 维持；
  *                               blob 字节平面 evidence/blobs/ 零改动）
+ *
+ * vNext Batch 6 播种面（B6a 目录登记先行——R4 红线：未登记禁落盘；
+ * layout 目录口径 29→41；PRD §3 目录树 baseline/specs 两子树逐字）：
+ * - baseline/{,frontend,backend,data,platform}/   Project Engineering Baseline
+ *                               （Expected 面工程基线载体：manifest.yaml + 四 lane
+ *                               分区；播种件项目可编辑——init seed-once-missing-only，
+ *                               在座零触碰不带生成标记，AI 禁静默覆盖）
+ * - specs/{,hard,hard/frontend,hard/backend,hard/stacks,acceptance,evidence}/
+ *                               POMaster-native Spec Workspace（REQUIRED POLICY 的
+ *                               项目内全文面——catalog policies 是机器条目面，两面对
+ *                               同一语义各持一份，禁双向自动同步；同 seed-once 语义）
  */
 import { GovernanceError } from "./errors.js";
 import { isNotFoundError, readJsonText } from "./io.js";
@@ -101,6 +112,30 @@ export interface StorePaths {
   readonly sourcesSnapshotsDir: string;
   /** sources/index.yaml（来源权威边界 registry 载体；开放词表维度 + 双轴结构闭包）。 */
   readonly sourcesIndexPath: string;
+  /** baseline/（vNext Batch 6 B6a：Project Engineering Baseline 播种子树根）。 */
+  readonly baselineDir: string;
+  /** baseline/frontend/（前端 lane 工程基线分区）。 */
+  readonly baselineFrontendDir: string;
+  /** baseline/backend/（后端 lane 工程基线分区）。 */
+  readonly baselineBackendDir: string;
+  /** baseline/data/（数据基线分区）。 */
+  readonly baselineDataDir: string;
+  /** baseline/platform/（平台基线分区）。 */
+  readonly baselinePlatformDir: string;
+  /** specs/（vNext Batch 6 B6a：POMaster-native Spec Workspace 播种子树根）。 */
+  readonly specsDir: string;
+  /** specs/hard/（Hard Spec 全文面根）。 */
+  readonly specsHardDir: string;
+  /** specs/hard/frontend/（前端协议 46 文件播种位）。 */
+  readonly specsHardFrontendDir: string;
+  /** specs/hard/backend/（后端协议 33 文件播种位）。 */
+  readonly specsHardBackendDir: string;
+  /** specs/hard/stacks/（14 stack overlay 播种位）。 */
+  readonly specsHardStacksDir: string;
+  /** specs/acceptance/（业务期望自由文件面）。 */
+  readonly specsAcceptanceDir: string;
+  /** specs/evidence/（Evidence Spec Kit 播种位）。 */
+  readonly specsEvidenceDir: string;
 }
 
 export function buildStorePaths(rootDir: string): StorePaths {
@@ -137,6 +172,18 @@ export function buildStorePaths(rootDir: string): StorePaths {
     sourcesDir: `${pomasterDir}/sources`,
     sourcesSnapshotsDir: `${pomasterDir}/sources/snapshots`,
     sourcesIndexPath: `${pomasterDir}/sources/index.yaml`,
+    baselineDir: `${pomasterDir}/baseline`,
+    baselineFrontendDir: `${pomasterDir}/baseline/frontend`,
+    baselineBackendDir: `${pomasterDir}/baseline/backend`,
+    baselineDataDir: `${pomasterDir}/baseline/data`,
+    baselinePlatformDir: `${pomasterDir}/baseline/platform`,
+    specsDir: `${pomasterDir}/specs`,
+    specsHardDir: `${pomasterDir}/specs/hard`,
+    specsHardFrontendDir: `${pomasterDir}/specs/hard/frontend`,
+    specsHardBackendDir: `${pomasterDir}/specs/hard/backend`,
+    specsHardStacksDir: `${pomasterDir}/specs/hard/stacks`,
+    specsAcceptanceDir: `${pomasterDir}/specs/acceptance`,
+    specsEvidenceDir: `${pomasterDir}/specs/evidence`,
   };
 }
 

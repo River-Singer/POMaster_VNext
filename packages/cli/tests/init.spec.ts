@@ -5,7 +5,8 @@
  * 2026-09-04：init 单一重入口——skills 双镜像 + hooks settings.json 合并 + 加厚 rules；
  * 历史模式旗标与轻入口形态已删除，存量旧版产物经标记/字节识别升级）、
  * skill 命令卡与 pomaster --help 单一事实源对账钉版、init 预铺 .pomaster/ 目录骨架
- * （宪法 §2 全树不分形态：29 目录 README + layout.json；守卫细则见
+ * （宪法 §2 全树不分形态：41 目录 README + layout.json——B6a 播种面两子树登记后
+ * 口径；守卫细则见
  * layout-manifest.spec.ts）、legacy .pomaster/objects 检测（宪法 §34-P0 收敛）。
  */
 import { mkdtempSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
@@ -53,7 +54,9 @@ function read(relative: string): string {
 
 /**
  * 重入口默认（claude 缺省）应产出的全部文件清单（骨架 4 + AGENTS/CLAUDE + settings +
- * 15×2 skills + 预铺 29 目录 README + layout.json——预铺面清单单源 layout.ts 常量（Batch 2 D7/C9 增量 state/contexts + evidence/observations））。
+ * 15×2 skills + 预铺 41 目录 README + layout.json——预铺面清单单源 layout.ts 常量
+ * （Batch 2 D7/C9 增量 state/contexts + evidence/observations；Batch 6 B6a 增量
+ * baseline/specs 播种面两子树——目录登记含其中，播种文件面 B6b 起灌内容））。
  */
 function heavyDefaultExpectedFiles(): string[] {
   return [
@@ -73,7 +76,7 @@ function heavyDefaultExpectedFiles(): string[] {
 }
 
 describe("init 首次创建（CREATED）", () => {
-  it("空目录 init（重入口默认）→ change=CREATED，骨架 + AGENTS/CLAUDE + settings + 15×2 skills + 预铺 29 README/layout.json 全部 created", async () => {
+  it("空目录 init（重入口默认）→ change=CREATED，骨架 + AGENTS/CLAUDE + settings + 15×2 skills + 预铺 41 README/layout.json 全部 created", async () => {
     const outcome = await runInit(dir);
     expect(outcome.ok).toBe(true);
     expect(outcome.result.change).toBe("CREATED");
@@ -1080,7 +1083,7 @@ describe("预铺目录骨架与 layout.json", () => {
     const outcome = await runInit(dir, { platforms: "none" });
     expect(outcome.ok).toBe(true);
     // 最小形态：无重入口安装标记（doctor heavy_entry 探针按未安装呈现），
-    // 无 skills/无 settings；.pomaster 树照常 29 README + layout.json。
+    // 无 skills/无 settings；.pomaster 树照常 41 README + layout.json。
     const agents = read(AGENTS_MD_RELATIVE);
     expect(agents).toContain(GENERATED_MARKER);
     expect(agents).not.toContain("<!-- pomaster:entry-mode:heavy -->");
@@ -1140,7 +1143,7 @@ describe("预铺目录骨架与 layout.json", () => {
     ]) {
       expect(existsSync(join(dir, ".pomaster", ...plane.split("/"))), plane).toBe(true);
     }
-    expect(LAYOUT_DIRECTORIES.length).toBe(29);
+    expect(LAYOUT_DIRECTORIES.length).toBe(41);
   });
 
   it("layout.json：全目录 status=wired 单状态 + activation_hint/constitution_source 在场（Owner 修订形态）", async () => {

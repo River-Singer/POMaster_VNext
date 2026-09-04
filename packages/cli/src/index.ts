@@ -343,6 +343,8 @@ export type {
   LayoutManifestDirEntry,
   LayoutStatus,
 } from "./layout.js";
+export { SEED_MANIFEST, seedProjectAssets } from "./seeds.js";
+export type { SeedEntry } from "./seeds.js";
 export { runInspect } from "./inspect.js";
 export type {
   InspectInput,

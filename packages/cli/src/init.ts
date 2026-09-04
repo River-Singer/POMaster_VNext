@@ -33,6 +33,11 @@
  *   INVALID_STATE，绝不静默覆盖；合法存在（含人类加注的 owner）→ 一律不动；
  * - AGENTS.md/CLAUDE.md/技能卡/settings.json 仅当缺失或带本包生成标记时重写
  *   （settings.json 另有结构校验：坏 JSON/结构不合 → fail-closed 跳过，绝不覆盖）。
+ * - 播种件（SEED_MANIFEST；步骤 4.6，vNext Batch 6 B6a）：seed-once-missing-only
+ *   三语义——缺席才写（action=seeded，marker-free）、在座恒零触碰（action=
+ *   preserved，零告警禁被判 foreign——项目可编辑物，AI 禁静默覆盖）、目录守卫
+ *   fail-closed（父目录未登记 kernel paths 禁落盘，R4 红线；seeds.ts 单一实现）。
+ *   幂等铁律天然满足：重跑全 preserved = NO_CHANGE。
  *
  * F1 平台选择：Trellis 惯例——一次 init 覆盖多平台 AI 入口目录。AGENTS.md 恒为唯一
  * 事实源；平台适配器（--platforms 逗号列表）：
@@ -92,12 +97,17 @@ import {
 } from "./triage.js";
 import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
+import { SEED_MANIFEST, seedProjectAssets, type SeedEntry } from "./seeds.js";
 
 export type InitFileAction =
   | "created"
   | "updated"
   | "unchanged"
-  | "skipped_foreign";
+  | "skipped_foreign"
+  // 播种面词形（vNext Batch 6 B6a）：seeded = 种子缺席本次写入（marker-free）；
+  // preserved = 播种件在座零触碰（项目可编辑物，禁被判 foreign/重写——R3 红线）。
+  | "seeded"
+  | "preserved";
 
 export interface InitFileReport {
   readonly file: string;
@@ -143,6 +153,12 @@ export interface InitOptions {
    * undefined = 未携带：CLI 非交互路径缺省 claude（现行为）。
    */
   readonly platforms?: string | undefined;
+  /**
+   * 播种清单注入（vNext Batch 6 B6a）：undefined = 缺省 SEED_MANIFEST（seeds.ts
+   * 单源）。注入面供测试/嵌入方在不动包内清单的前提下端到端驱动步骤 4.6——生产
+   * 路径恒走 SEED_MANIFEST。
+   */
+  readonly seedManifest?: readonly SeedEntry[] | undefined;
 }
 
 /**
@@ -1057,6 +1073,14 @@ export async function runInit(
   }
   await writeLayoutManifestFile(rootDir, files);
 
+  // 4.6) 播种（vNext Batch 6 B6a）：SEED_MANIFEST 单源 seed-once-missing-only——
+  //      缺席才写（action=seeded）、在座零触碰（action=preserved，禁被判 foreign/
+  //      重写——播种件是项目可编辑物不带生成标记）、目录守卫 fail-closed（父目录
+  //      未登记 kernel paths 即拒，R4 红线）。位置：README/layout.json 之后、入口
+  //      文件之前（目录与布局锚位先于播种，播种结果统计先于入口文件渲染）。空表
+  //      （B6a 现状）零 seeded/preserved 报告项——幂等铁律天然满足。
+  await seedProjectAssets(rootDir, options.seedManifest ?? SEED_MANIFEST, files);
+
   // 5) 入口文件：AGENTS.md 恒生成（唯一事实源；平台选择非空 = 重入口正文 + heavy
   //    安装标记；`--platforms none` = 最小指针正文，无重入口安装物可描述）。
   //    claude 平台适配器（CLAUDE.md，@AGENTS.md 导入）仅在选中 claude 时参与。
@@ -1176,11 +1200,12 @@ export async function runInit(
   }
 
   const created =
-    files.some((f) => f.action === "created") ||
+    files.some((f) => f.action === "created" || f.action === "seeded") ||
     platforms.some((p) => p.action === "created");
   const updated =
     files.some((f) => f.action === "updated") ||
     platforms.some((p) => p.action === "updated");
+  // preserved（播种件在座零触碰）不计入任何 change 桶——重跑全 preserved = NO_CHANGE。
   const change: InitChange = created ? "CREATED" : updated ? "UPDATED" : "NO_CHANGE";
   const result: InitResult = {
     change,
