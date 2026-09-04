@@ -51,7 +51,7 @@ declare const governedIdBrand: unique symbol;
 
 /**
  * 受治理对象 canonical id（closed-world，A5）。
- * 文法：PREFIX . SEGMENT ( . SEGMENT )* [ . SEQ]；PREFIX ∈ GOVERNED_ID_PREFIXES（15 前缀）；
+ * 文法：PREFIX . SEGMENT ( . SEGMENT )* [ . SEQ]；PREFIX ∈ GOVERNED_ID_PREFIXES（16 前缀）；
  * SEGMENT=[A-Z][A-Z0-9_]{0,31}（不允许数字开头）；SEQ 纯数字仅可为末段。
  * 未知前缀 = 解析即 FATAL（A5）。legacy 拼写（KB-*、GRID.*、PAGE-TASK-STEP-*、TASK-*、
  * CHANGE-*、ISSUE.*、FTA-*、FB-*）
@@ -992,11 +992,12 @@ export interface Projection {
  * 纯派生视图：投影不产生治理事实，不写 store。
  * 可选 options.catalogRoot 注入 catalog 根（测试/嵌入方；缺省仓库 catalog/）。
  */
-export { compileProjection, explainCatalogProjection } from "./projection.js";
+export { compileProjection, explainCatalogProjection, boundEvidenceSpecRefs } from "./projection.js";
 export type {
   CatalogEntryDecision,
   CatalogDecisionWord,
   CatalogProjectionExplanation,
+  EvidenceSpecRefView,
   ProjectionCatalogOptions,
 } from "./projection.js";
 
@@ -1181,15 +1182,19 @@ export type {
   RoleExecutionPlan,
 } from "./runtime-adapter.js";
 
-// Handoff Protocol 语义落地面（P21-Enforcement · PRD §24）：Handoff Packet 形态
-// （§24 yaml 九键 closed form——「必须通过 Handoff Packet」的唯一形态；extra 键
-// SCHEMA_INVALID 即「不得直接继承完整聊天上下文」的结构封条）+ 消费面
-// （compileHandoffContext =「Agent 出生 → 获取最小 Context」的机器形态）。
-// 纯函数零 IO；`pomaster handoff` 命令仍显式 deferred（DEF-SUP 触发制门槛）——
+// Handoff Protocol 语义落地面（P21-Enforcement · PRD §24 + vNext Batch 2 R5 / D15
+// §9A 字段集）：Handoff Packet 形态（§9A 十七键 closed form——「必须通过 Handoff
+// Packet」的唯一形态；extra 键 SCHEMA_INVALID 即「不得直接继承完整聊天上下文」的
+// 结构封条）+ 消费面（compileHandoffContext =「Agent 出生 → 获取最小 Context」的
+// 机器形态，十五内容键分母）。**Handoff 摘要 ≠ Truth**（HANDOFF_NOT_TRUTH_NOTE）。
+// 纯函数零 IO；`pomaster agents handoff` 命令仍显式 deferred（DEF-SUP 触发制门槛）——
 // 本节是其 deferred 下的契约面（runtime-adapter「契约与执行分层」同构）。
 export {
   HANDOFF_FAST_GATE_VALUES,
+  HANDOFF_NOT_TRUTH_NOTE,
   HANDOFF_PACKET_KEYS,
+  HANDOFF_STRING_ARRAY_KEYS,
+  HANDOFF_STRING_KEYS,
   validateHandoffPacket,
   compileHandoffContext,
 } from "./handoff.js";
@@ -1452,10 +1457,13 @@ export { sha256OfBytes } from "./digest.js";
 export {
   EVIDENCE_BINDING_INCOMPLETE,
   EVIDENCE_BINDING_INCOMPLETE_REASONS,
+  OBSERVATION_RECORD_TYPES,
   artifactRefsToSnake,
   assertArtifactBlobsExist,
   assertArtifactRefs,
+  countObservationRecords,
   persistEvidenceArtifact,
+  persistObservationRecord,
   storagePathOfSha256,
   verifyEvidenceBinding,
 } from "./evidence-artifacts.js";
@@ -1463,6 +1471,7 @@ export type {
   EvidenceArtifactRefInput,
   EvidenceBindingIncompleteReason,
   EvidenceBindingOutcome,
+  ObservationRecordType,
   PersistEvidenceArtifactInput,
   PersistedEvidenceArtifact,
 } from "./evidence-artifacts.js";

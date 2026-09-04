@@ -69,6 +69,13 @@
  * 改动：02 信封 source_types 十值闭包是另一轴（对象出处面），本 registry 的 type
  * 开放词形零关联（x-pomaster-contract.negative_seal_untouched）。词形轴
  * absent_in_vocab_lock__pending_vocab_pr——TODO(vocab-pr)。
+ * vNext Batch 2 增量（21）：Evidence Spec（PRD vNext §9.2 四概念分离；Owner 裁定
+ * D6 2026-09-04）。要求面一等对象（「需要什么证明」）：kind=business_rule 承载 +
+ * payload.spec_kind=evidence_spec 判别的 kind profile 收窄面（01/02 FROZEN 面零改动
+ * ——kind 闭包十类不变）；requirements[] 每条 = 需要的证明类型 + 判定资格条件
+ * （claim_refs/gate_refs 资格清单 + subject_ref 归属绑定——挪证缝收口）；Spec 持要求
+ * 不持判定（无 verdict 词位）；SPEC. 前缀随 PR-0008 入 prefixes_v0 闭包（三镜像同批）。
+ * 词形轴 proof_type/spec_kind absent_in_vocab_lock__pending_vocab_pr——TODO(vocab-pr)。
  *
  * 词表纪律：一切枚举唯一来源是 assets/vocab-lock.draft.yaml（FROZEN）；
  * 代码侧唯一镜像点在 ./vocab.js（本文件 re-export）。YAML 资产仅作人读/工具对账，
@@ -102,6 +109,7 @@ import perceptionReceiptsSchemaRaw from "../assets/17-perception-receipts.schema
 import decisionGraphSchemaRaw from "../assets/18-decision-graph.schema.json" with { type: "json" };
 import softwareGraphRelationsSchemaRaw from "../assets/19-software-graph-relations.schema.json" with { type: "json" };
 import sourcesAuthoritySchemaRaw from "../assets/20-sources-authority.schema.json" with { type: "json" };
+import evidenceSpecSchemaRaw from "../assets/21-evidence-spec.schema.json" with { type: "json" };
 
 export * from "./vocab.js";
 
@@ -153,6 +161,8 @@ const SOFTWARE_GRAPH_RELATIONS_ID =
   "https://pomaster.dev/schemas/software-graph-relations/v1-draft.json";
 const SOURCES_AUTHORITY_ID =
   "https://pomaster.dev/schemas/sources-authority/v1-draft.json";
+const EVIDENCE_SPEC_ID =
+  "https://pomaster.dev/schemas/evidence-spec/v1-draft.json";
 
 function asSchema(raw: unknown, expectedId: string): JsonSchemaObject {
   const schema = raw as JsonSchemaObject;
@@ -231,6 +241,10 @@ export const sourcesAuthoritySchema = asSchema(
   sourcesAuthoritySchemaRaw,
   SOURCES_AUTHORITY_ID,
 );
+export const evidenceSpecSchema = asSchema(
+  evidenceSpecSchemaRaw,
+  EVIDENCE_SPEC_ID,
+);
 
 /** 全部 schema 的聚合（组合装载：ajv.addSchema 逐个注册即可遍历本对象）。 */
 export const allSchemas = {
@@ -254,6 +268,7 @@ export const allSchemas = {
   decisionGraph: decisionGraphSchema,
   softwareGraphRelations: softwareGraphRelationsSchema,
   sourcesAuthority: sourcesAuthoritySchema,
+  evidenceSpec: evidenceSpecSchema,
 } as const;
 
 // ============================================================

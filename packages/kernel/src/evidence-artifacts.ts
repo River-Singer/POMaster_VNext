@@ -12,6 +12,11 @@
  *   rule + 稳定码并用——本模块产出稳定码 outcome，门内 rule 词形由 gate 侧判卷
  *   消费本 outcome 落 items[].rule）。
  *
+ * - **persistObservationRecord**（vNext Batch 2 R6 / C9 2026-09-04）：OBS/ENVREC
+ *   感知回执记录自身落盘 evidence/observations/<id>.json（17 schema「落盘平面现状」
+ *   的通路面兑现；sidecar 不是 truth object——admitted_to_truth_index=false 维持，
+ *   blob 字节平面零改动；同 id 字节分叉 fail-closed）。
+ *
  * 裁决落点（裁决8，2026-09-01）：
  * - D1=A：receipt 不新增 id 词形——blob sha256 即身份（四克制最优；EVR-* 仅 PRD 概念词）；
  * - D3=A：artifact_refs 条目收窄 blob 分支（tracer 只绑 screenshot，PRD §14）；
@@ -25,7 +30,7 @@
  * 内存字节，哈希在本模块产生。sha256OfBytes（raw 字节摘要）与 sha256OfCanonical
  * （canonical-JSON 摘要）是两种不同哈希对象（R3），禁止互替。
  */
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { GovernanceError } from "./errors.js";
 import { sha256OfBytes } from "./digest.js";
@@ -290,6 +295,140 @@ export function assertArtifactBlobsExist(
         { storagePath: ref.storagePath, sha256: ref.sha256 },
       );
     }
+  }
+}
+
+// ============================================================
+// persistObservationRecord（vNext Batch 2 R6 / Owner 裁定 C9 2026-09-04：
+// OBS/ENVREC 感知回执记录自身落盘 evidence/observations/）
+// ============================================================
+
+/** 感知回执记录两族判别词（17-perception-receipts schema root oneOf record_type 同源）。 */
+export const OBSERVATION_RECORD_TYPES = [
+  "observation_receipt",
+  "environment_receipt",
+] as const;
+export type ObservationRecordType = (typeof OBSERVATION_RECORD_TYPES)[number];
+
+/** OBS 通路编号词形（17 schema definitions.obs_id pattern 同源；单一事实源是 perception.ts OBS_ID_PATTERN）。 */
+const OBS_ID_PATTERN = /^OBS-[0-9]+$/;
+/** ENVREC 通路编号词形（17 schema definitions.envrec_id pattern 同源）。 */
+const ENVREC_ID_PATTERN = /^ENVREC-[0-9]+$/;
+
+/**
+ * 感知回执记录落盘（evidence/observations/<id>.json）——17 schema「落盘平面现状」
+ * 诚实登记的通路面兑现（Owner 裁定 C9 2026-09-04；layout 目录口径 +1 evidence/
+ * observations/）。纪律：
+ * - **sidecar 不是 truth object**：不写 store 事务、不进 truth-index、不进
+ *   content_digest（x-index-policy.admitted_to_truth_index=false 维持；§6.13「进入
+ *   Trace/Evidence Sidecar，不进入 Truth Index」逐字）；
+ * - **blob 平面零改动**：本函数只落回执记录 JSON 自身，不触碰 evidence/blobs/
+ *   （artifact 身份仍由 persistEvidenceArtifact 唯一产生，D24）；
+ * - **字节稳定（A4）**：canonical 序列化（indent 2 + 尾换行），零墙钟零随机——
+ *   同一 record 重放逐字节相等；本函数不注入任何字段（时间锚恒 captured_at_seq）；
+ * - **fail-closed**：同 id 已存在且字节不同 → REF_INTEGRITY_VIOLATION（回执记录与
+ *   GRN/CLM 同族是 append-only 事实，禁静默覆写）；同字节幂等命中 → 零写入 no-op；
+ * - **id 词形**：observation_receipt → record.observation_id（^OBS-[0-9]+$，17 schema
+ *   obs_id 同源）；environment_receipt → 显式 recordId（^ENVREC-[0-9]+$）——17 schema
+ *   environment_receipt 九键无自 id 键（冻结面零改动），落盘 id 由通路调用方供给
+ *   （ENVREC-<n> 词形已在 schema 词面，零新增词形）；OBS 记录禁止供给 recordId
+ *   （单一身份，双 id = 拒收）；
+ * - 非法 record_type / 词形越界 → SCHEMA_INVALID（禁静默 Guess 文件名）。
+ */
+export function persistObservationRecord(
+  evidenceDir: string,
+  record: UnknownRecord,
+  options?: { readonly recordId?: string },
+): { readonly id: string; readonly relativePath: string; readonly idempotentHit: boolean } {
+  if (record === null || typeof record !== "object" || Array.isArray(record)) {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      "observation record 须为 JSON 对象（17-perception-receipts root oneOf 形态）",
+      "先经 buildObservationReceipt / buildEnvironmentReceipt 组装再落盘（类型面权威在 perception 契约）",
+      {},
+    );
+  }
+  const recordType = record.record_type;
+  if (
+    typeof recordType !== "string" ||
+    !(OBSERVATION_RECORD_TYPES as readonly string[]).includes(recordType)
+  ) {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      `observation record.record_type 词表外：${String(recordType)}（17 schema root oneOf 判别键）`,
+      `合法词形：${OBSERVATION_RECORD_TYPES.join(" | ")}`,
+      { record_type: String(recordType) },
+    );
+  }
+  let id: string;
+  if (recordType === "observation_receipt") {
+    if (options?.recordId !== undefined) {
+      throw new GovernanceError(
+        "SCHEMA_INVALID",
+        "observation_receipt 自带 observation_id，禁止再供给 recordId（单一身份，双 id = 拒收）",
+        "ENVREC 记录才需要显式 recordId（environment_receipt 九键无自 id 键——17 schema 冻结面零改动）",
+        { recordId: options.recordId },
+      );
+    }
+    const observationId = record.observation_id;
+    if (typeof observationId !== "string" || !OBS_ID_PATTERN.test(observationId)) {
+      throw new GovernanceError(
+        "SCHEMA_INVALID",
+        `observation_receipt.observation_id 词形非法（须 OBS-<n>）：${String(observationId)}`,
+        "17 schema definitions.obs_id pattern；id 词形权威在 perception.ts OBS_ID_PATTERN（单一镜像）",
+        { observation_id: String(observationId) },
+      );
+    }
+    id = observationId;
+  } else {
+    const recordId = options?.recordId;
+    if (typeof recordId !== "string" || !ENVREC_ID_PATTERN.test(recordId)) {
+      throw new GovernanceError(
+        "SCHEMA_INVALID",
+        `environment_receipt 落盘缺合法 recordId（须 ENVREC-<n>）：${String(recordId)}`,
+        "environment_receipt 九键无自 id 键（17 schema 冻结面零改动）；落盘 id 由通路调用方供给（ENVREC-<n> 词形已在 schema 词面）",
+        { record_id: String(recordId) },
+      );
+    }
+    id = recordId;
+  }
+  const relativePath = `observations/${id}.json`;
+  const absolutePath = `${evidenceDir}/${relativePath}`;
+  // canonical 序列化（indent 2 + 尾换行；A4 字节稳定——同 record 重放逐字节相等）。
+  const bytes = Buffer.from(`${JSON.stringify(record, null, 2)}\n`, "utf8");
+  if (existsSync(absolutePath)) {
+    const existing = readFileSync(absolutePath);
+    if (!existing.equals(bytes)) {
+      throw new GovernanceError(
+        "REF_INTEGRITY_VIOLATION",
+        `observation record 已存在且字节不同（同 id 回执禁覆写）：${relativePath}`,
+        "回执记录与 GRN/CLM 同族是 append-only 事实；同 id 重放应字节全等（幂等 no-op），分叉 = 手改或组装层不确定性，禁止覆盖既有记录",
+        { relativePath, id },
+      );
+    }
+    // 同字节幂等命中：零写入。
+    return { id, relativePath, idempotentHit: true };
+  }
+  try {
+    mkdirSync(dirname(absolutePath), { recursive: true });
+    writeFileSync(absolutePath, bytes);
+  } catch (error) {
+    throw new GovernanceError(
+      "ENVIRONMENT_ERROR",
+      `observation record 写入失败：${relativePath}`,
+      "检查磁盘可写性后重试；evidence/observations/ 是感知回执记录的唯一落盘分区（C9）",
+      { relativePath, cause: String(error) },
+    );
+  }
+  return { id, relativePath, idempotentHit: false };
+}
+
+/** 统计 evidence/observations/ 分区回执记录数（doctor/inspect 呈现位；目录缺席 = 0 显式缺席）。 */
+export function countObservationRecords(evidenceDir: string): number {
+  try {
+    return readdirSync(`${evidenceDir}/observations`).filter((name) => name.endsWith(".json")).length;
+  } catch {
+    return 0;
   }
 }
 

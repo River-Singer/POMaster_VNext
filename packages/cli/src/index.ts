@@ -468,6 +468,7 @@ export type {
   CloseoutResult,
   CloseoutDodEntry,
   CloseoutGateRow,
+  CloseoutSpecClauseEntry,
 } from "./closeout.js";
 export { runCatalogStatus, runCatalogExplain, runCatalogRelock } from "./catalog.js";
 export { runResolve, renderResolve } from "./resolve.js";
@@ -967,7 +968,7 @@ export function createProgram(
   context
     .command("compile")
     .description(
-      "转调 kernel compileProjection，输出五分区 markdown（MUST/ADVISORY/KNOWLEDGE/CATALOG/LAZY TOOLS）；catalog 分区按结构化 applicability 确定性过滤（P0.5-1，PRD §5.2/§5.3）",
+      "转调 kernel compileProjection，输出五分区 markdown（AUTHORITATIVE PROJECT STATE / REQUIRED POLICY / ADVISORY KNOWLEDGE / REUSE / CATALOG / VERIFICATION——Batch 2 D8 词形闭包）；context manifest 默认落盘 .pomaster/state/contexts/（Batch 2 D7：generated_at_seq/compiler/inputs_fingerprint/五分区 entries；stale 比对 STALE_GROUNDING 呈现不静默覆盖；--check 纯读零写入）",
     )
     .requiredOption(
       "--role <role>",
@@ -982,6 +983,7 @@ export function createProgram(
     )
     .option("--change-class <class>", "变更类目（∈ CATALOG_CHANGE_CLASS_VALUES，vocab-pr-0005 词轴）")
     .option("--profile <profile>", "治理档位（∈ CATALOG_GOVERNANCE_PROFILE_VALUES；对齐 triage+STRICT）")
+    .option("--check", "纯读比对现盘 manifest 呈现 stale 状态（FRESH/STALE_GROUNDING/ABSENT），零写入")
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (opts, command) => {
       const outcome = await runContextCompile(resolveDir(command), opts.role, undefined, {
@@ -991,7 +993,7 @@ export function createProgram(
           : {}),
         ...(opts.changeClass !== undefined ? { changeClass: opts.changeClass as string } : {}),
         ...(opts.profile !== undefined ? { governanceProfile: opts.profile as string } : {}),
-      });
+      }, { check: opts.check === true });
       record({
         command: "context compile",
         outcome,
@@ -2808,7 +2810,7 @@ export function createProgram(
   program
     .command("handoff")
     .description(
-      "§44.8 会话交接——显式 deferred（P21-Enforcement 复核：§24 Handoff Packet 契约面已落 kernel handoff.ts——九键 closed form + validateHandoffPacket/compileHandoffContext 消费面；托管编排执行面受 DEF-SUP 触发制门槛；COMMAND_DEFERRED 提示非静默缺席）",
+      "§44.8 会话交接——显式 deferred（P21-Enforcement 复核：§24 Handoff Packet 契约面已落 kernel handoff.ts——§9A 十七键 closed form（Batch 2 R5 扩键定案；「Handoff 摘要 ≠ Truth」）+ validateHandoffPacket/compileHandoffContext 消费面；托管编排执行面受 DEF-SUP 触发制门槛；COMMAND_DEFERRED 提示非静默缺席）",
     )
     .argument("<task>", "任务对象 governed id")
     .requiredOption("--to <role>", "交接目标角色（PRD §44.8 例文 --to cleaner）")

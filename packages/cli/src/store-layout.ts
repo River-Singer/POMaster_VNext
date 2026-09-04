@@ -181,6 +181,16 @@ export function claimsDirPath(rootDir: string): string {
   return buildStorePaths(rootDir).claimsDir;
 }
 
+/** <rootDir>/.pomaster/evidence/observations（vNext Batch 2 R6/C9 感知回执记录 sidecar 分区）。 */
+export function observationsDirPath(rootDir: string): string {
+  return buildStorePaths(rootDir).observationsDir;
+}
+
+/** <rootDir>/.pomaster/state/contexts（vNext Batch 2 R2/D7 Task Context Manifest 落盘位）。 */
+export function contextsDirPath(rootDir: string): string {
+  return buildStorePaths(rootDir).contextsDir;
+}
+
 /** <rootDir>/.pomaster/executions（P20 Execution Identity 正式档案平面）。 */
 export function executionsDirPath(rootDir: string): string {
   return buildStorePaths(rootDir).executionsDir;

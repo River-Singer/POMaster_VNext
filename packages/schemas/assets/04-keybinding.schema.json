@@ -189,12 +189,12 @@
   "definitions": {
     "vocab_prefix_closure": {
       "title": "ID 前缀闭包镜像（vocab prefix closure mirror）",
-      "$comment": "source: vocab-lock@v0.1-resolved → id_namespace.prefixes_v0（逐字镜像；扩展走词表 PR 后同步改写 governed_id pattern 与本数组）。此定义仅供人读与工具核对正则同步，实际约束由 governed_id 的 pattern 承载。",
-      "const": ["PAGE.", "CAPABILITY.", "COMPONENT.", "API_REQ.", "ERR.", "FIELD.", "KNOWLEDGE.", "CHANGE.", "TASK.", "DENOMINATOR.", "KEYBINDING.", "POLICY.", "PROFILE.", "AUTHORITY.", "TEST."]
+      "$comment": "source: vocab-lock@v0.1-resolved → id_namespace.prefixes_v0（逐字镜像；扩展走词表 PR 后同步改写 governed_id pattern 与本数组）。此定义仅供人读与工具核对正则同步，实际约束由 governed_id 的 pattern 承载。PR-0008（2026-09-04，vNext Batch 2 R1 / D6）append-only 增补 SPEC.（Evidence Spec 一等对象）。",
+      "const": ["PAGE.", "CAPABILITY.", "COMPONENT.", "API_REQ.", "ERR.", "FIELD.", "KNOWLEDGE.", "CHANGE.", "TASK.", "DENOMINATOR.", "KEYBINDING.", "POLICY.", "PROFILE.", "AUTHORITY.", "TEST.", "SPEC."]
     },
     "governed_id": {
       "type": "string",
-      "pattern": "^(PAGE|CAPABILITY|COMPONENT|API_REQ|ERR|FIELD|KNOWLEDGE|CHANGE|TASK|DENOMINATOR|KEYBINDING|POLICY|PROFILE|AUTHORITY|TEST)\\.[A-Z][A-Z0-9_]{0,31}(\\.[A-Z][A-Z0-9_]{0,31})*(\\.[0-9]+)?$",
+      "pattern": "^(PAGE|CAPABILITY|COMPONENT|API_REQ|ERR|FIELD|KNOWLEDGE|CHANGE|TASK|DENOMINATOR|KEYBINDING|POLICY|PROFILE|AUTHORITY|TEST|SPEC)\\.[A-Z][A-Z0-9_]{0,31}(\\.[A-Z][A-Z0-9_]{0,31})*(\\.[0-9]+)?$",
       "title": "规范对象 id（canonical governed id，closed-world）",
       "description": "PREFIX 取 vocab-lock@v0.1-resolved prefixes_v0 闭包（与 01-truth-index.definitions.governed_id 同一机械镜像，两文件必须同步改写）。文法：PREFIX . SEGMENT (. SEGMENT)* [. SEQ]；SEGMENT 大写下划线、[A-Z] 开头、段长≤32；SEQ 纯数字仅可为末段。A5 closed-world：未登记前缀=解析即 FATAL。A6：legacy 拼写只入 legacy_id，不得作为本字段值。",
       "examples": [

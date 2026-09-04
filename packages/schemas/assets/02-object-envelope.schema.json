@@ -83,7 +83,7 @@
     "A2": "lifecycle 六值超集镜像（vocab-lock state_axes.lifecycle）",
     "A3": "realization 独立正交块，不入 evidence 轴",
     "A4": "rev 单调事件序号；全信封零墙钟字段（DEF-POM-002 幂等教训）",
-    "A5": "closed-world：IdCanonical 正则白名单 15 前缀，未知前缀即校验失败（解析即 FATAL）",
+    "A5": "closed-world：IdCanonical 正则白名单 16 前缀（v0.7-resolved；PR-0008 增补 SPEC.），未知前缀即校验失败（解析即 FATAL）",
     "A6": "aliases[] rename-on-ingest 双向链（只减不增），存量 GRID.* / KB-* / PAGE-TASK-STEP-* / TASK-* / CHANGE-* 收编",
     "A7": "key_bindings 宿主结构；page↔dir / contract_operation↔operationId / capability↔file 三类 P0 映射的落点",
     "A8": "GateResult 不入信封（evidence/runs/ 平面存证）；信封仅持 evidence_refs 摘要行"
@@ -353,8 +353,8 @@
     "IdCanonical": {
       "title": "canonical id 文法（closed-world，A5）",
       "type": "string",
-      "pattern": "^(PAGE|CAPABILITY|COMPONENT|API_REQ|ERR|FIELD|KNOWLEDGE|CHANGE|TASK|DENOMINATOR|KEYBINDING|POLICY|PROFILE|AUTHORITY|TEST)\\.[A-Z][A-Z0-9_]{0,31}(?:\\.[A-Z][A-Z0-9_]{0,31})*(?:\\.[0-9]+)?$",
-      "x-vocab-source": "vocab-lock@v0.1-resolved / id_namespace.prefixes_v0（15 前缀逐字白名单）+ thread-A §3.1 SEGMENT/SEQ 文法",
+      "pattern": "^(PAGE|CAPABILITY|COMPONENT|API_REQ|ERR|FIELD|KNOWLEDGE|CHANGE|TASK|DENOMINATOR|KEYBINDING|POLICY|PROFILE|AUTHORITY|TEST|SPEC)\\.[A-Z][A-Z0-9_]{0,31}(?:\\.[A-Z][A-Z0-9_]{0,31})*(?:\\.[0-9]+)?$",
+      "x-vocab-source": "vocab-lock@v0.7-resolved / id_namespace.prefixes_v0（16 前缀逐字白名单——PR-0008（2026-09-04）append-only 增补 SPEC.）+ thread-A §3.1 SEGMENT/SEQ 文法",
       "description": "canonical_id := PREFIX . SEGMENT ( . SEGMENT )* [ . SEQ]；SEGMENT=[A-Z][A-Z0-9_]{0,31}，SEQ（纯数字）仅可为末段。未知前缀在本正则下直接校验失败 = 解析即 FATAL（A5 closed-world）。扩展前缀走词汇表 PR，改此正则与 vocab-lock 同 commit。"
     },
     "KindValue": {

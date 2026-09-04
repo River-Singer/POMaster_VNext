@@ -70,13 +70,13 @@ async function runJson(
 }
 
 describe("① context compile 实跑：catalog 派生分区在场且标明出处", () => {
-  it("临时工程 init → context compile --role frontend：CATALOG 分区 + catalog 出处 + lazyTools 非空", async () => {
+  it("临时工程 init → context compile --role frontend：REUSE / CATALOG 分区 + catalog 出处 + lazyTools 非空", async () => {
     expect((await runJson(["init"])).code).toBe(0);
     const outcome = await runContextCompile(root, "frontend");
     expect(outcome.ok).toBe(true);
-    // 分区在场：markdown 四分区 + catalog 标题逐字标明出处语义（§92.2）。
+    // 分区在场：markdown 五分区（Batch 2 D8 词形）+ catalog 标题逐字标明出处语义（§92.2）。
     expect(outcome.result.markdown).toContain(
-      "## CATALOG（catalog 策展注入；出处 catalog，非 project state——§92.2）",
+      "## REUSE / CATALOG（catalog 策展 + lazy tools；出处 catalog，非 project state——§92.2）",
     );
     // 逐条出处：每条 reason 以 catalog: + catalog 内路径开头（策展源可溯源）。
     expect(outcome.result.manifest.catalog_entries.length).toBeGreaterThan(0);

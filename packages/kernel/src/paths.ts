@@ -39,6 +39,15 @@
  * - sources/index.yaml          来源工件权威边界 registry（sources.ts 装载只读；
  *                               非 governed object——不入 store 事务、不进 content_digest）
  * - sources/snapshots/          外部材料不可重取时的快照（原始字节面，零 schema）
+ *
+ * vNext Batch 2 增量平面（Owner 裁定 D7/C9 2026-09-04；layout 目录口径 27→29）：
+ * - state/contexts/             Task Context Manifest 落盘位（<task-id>.context.json；
+ *                               编译产物非第二配置源——宪法 §19；只读服务面禁手改，
+ *                               重编译覆盖同 id 文件字节稳定可比对；A4 零墙钟）
+ * - evidence/observations/      OBS/ENVREC 感知回执记录落盘位（17-perception-receipts
+ *                               schema x-index-policy.storage_plane；回执是 sidecar
+ *                               不是 truth object——admitted_to_truth_index=false 维持；
+ *                               blob 字节平面 evidence/blobs/ 零改动）
  */
 import { GovernanceError } from "./errors.js";
 import { isNotFoundError, readJsonText } from "./io.js";
@@ -64,12 +73,16 @@ export interface StorePaths {
   readonly linkageCoveragePath: string;
   /** state/relations.jsonl（P-v06 Typed Relation sidecar 台账；relations.ts 维护）。 */
   readonly relationsPath: string;
+  /** state/contexts/（vNext Batch 2 D7：Task Context Manifest 落盘位；编译产物只读服务面）。 */
+  readonly contextsDir: string;
   readonly journalPath: string;
   readonly truthObjectsDir: string;
   readonly evidenceDir: string;
   readonly runsDir: string;
   readonly claimsDir: string;
   readonly blobsDir: string;
+  /** evidence/observations/（vNext Batch 2 C9：OBS/ENVREC 感知回执记录 sidecar 分区）。 */
+  readonly observationsDir: string;
   readonly runtimeDir: string;
   readonly heartbeatPath: string;
   /** runtime/sessions/（D 线 §1.3：活跃会话注册；session.ts 维护）。 */
@@ -106,12 +119,14 @@ export function buildStorePaths(rootDir: string): StorePaths {
     equivalenceRegistryPath: `${stateDir}/equivalence-registry.json`,
     linkageCoveragePath: `${stateDir}/linkage-coverage.json`,
     relationsPath: `${stateDir}/relations.jsonl`,
+    contextsDir: `${stateDir}/contexts`,
     journalPath: `${stateDir}/journal.jsonl`,
     truthObjectsDir: `${pomasterDir}/truth/objects`,
     evidenceDir,
     runsDir: `${evidenceDir}/runs`,
     claimsDir: `${evidenceDir}/claims`,
     blobsDir: `${evidenceDir}/blobs`,
+    observationsDir: `${evidenceDir}/observations`,
     runtimeDir,
     heartbeatPath: `${runtimeDir}/heartbeat.jsonl`,
     sessionsDir: `${pomasterDir}/runtime/sessions`,

@@ -41,7 +41,8 @@
  *
  * 纯函数纪律（runtime-adapter.ts 同款）：全部导出零 IO、零 store 依赖、零墙钟、
  * 零 seq（同输入重放字节稳定，A4）；时间戳禁入任何字段（W1 铁律 5——身份与判定
- * 面无时间维度）。env_ref 词形 ENV.* 非 governed 前缀（15 前缀闭包无 ENV），
+ * 面无时间维度）。env_ref 词形 ENV.* 非 governed 前缀（16 前缀闭包无 ENV——PR-0008
+ * 增补 SPEC. 后闭包 16，ENV./SENSOR. 仍均不在），
  * capability_ref 的 governed closed-world 校验归消费通路（projection/store），
  * 本模块不私设第二套 id 校验（单一镜像纪律）。
  *

@@ -1,0 +1,109 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://pomaster.dev/schemas/evidence-spec/v1-draft.json",
+  "title": "Evidence Spec（证据要求规范——要求面一等对象 · vNext Batch 2 R1 / Owner 裁定 D6 2026-09-04）",
+  "description": "PRD vNext §9.2 四概念分离（Acceptance / Evidence Spec / Evidence / Verification Result 禁止混用）的机器落点：Evidence Spec = 需要什么证明（要求面）。\n定位（kind profile 收窄面）：02 信封 kind 枚举是 FROZEN 十类闭包（batch 2 不改 01/02 冻结面），Evidence Spec 对象以 kind=business_rule 承载（MIG-B1 §3 先例：truth 正文规范性条款走 business_rule），本 schema 是该类对象 payload 的 kind profile 收窄（02 明文：「其余逐类收窄由 kind profile schemas（03-* 系列）承担；kind profile 可加必填/收窄类型，但不得重定义本信封核心字段」）。判别锚 payload.spec_kind=const \"evidence_spec\"（payload 自由区的形态收窄词，非新 kind）。\n字段最小集（prd R1）：绑定 task/change ref（至少其一，anyOf 封条）+ 要求条款 requirements[]（每条 = 需要的证明类型 proof_type + 判定资格条件：哪些 claim（claim_refs）/gate run（gate_refs）可满足 + 归属绑定 subject_ref——挪证缝收口：claim 归属（subject/unit 匹配）从「引用映射」升级为「资格判定」）+ 适用性（applies_to governed id 清单，开放呈现位——机器消费分母恒为 task/change 绑定，applicability 词轴化收窄归后续批次，禁发明第二套 applicability 轴）。\n生命周期：走 store 六值主轴（PROPOSED→CURRENT 等，零新状态轴）；唯一写通道 applyTransaction（upsert_object/transition_object）。判卷分母资格：lifecycle=CURRENT 才绑定（CLI closeout 消费纪律；非 CURRENT 绑定 Spec 显式呈现不判卷）。\n禁令（PRD §9.2 逐字）：Evidence Spec 自身被写 PASS/FAIL——判卷值只存在于 Verification Result（claim 四态）/ Gate Result（七态），本 schema 无任何 verdict 字段位（additionalProperties 封闭）。声称方不可自填 VERIFIED（record_claim 强制 UNVERIFIED 起步 + A3 不可覆写 + D20 主体分离——store 纪律零改动，本 schema 不复制不镜像）。\nA4 零墙钟：本 schema 无任何墙钟时间戳键；事件序锚住信封层 rev / 事务 seq（16 号 x-pomaster-contract.zero_wall_clock 同款）。",
+  "x-pomaster-file-role": "21-evidence-spec.schema.json —— Evidence Spec payload kind profile（要求面契约）。生产者：maintain/record 通路经 applyTransaction upsert_object（kind=business_rule + payload.spec_kind=evidence_spec）；消费者：CLI closeout DoD Spec 维度（按 requirements 资格条件判卷——有 Spec 绑定的任务按 Spec 资格条件判卷，无 Spec 任务走 acceptance.criterion 双轨过渡，PRD §9.2 声明）。",
+  "x-pomaster-vocab-source": "词形纪律：SPEC. 前缀已随 PR-0008 入 vocab-lock prefixes_v0 闭包（三镜像：schemas vocab.ts GOVERNED_ID_PREFIXES / 07 id_prefix+object_id pattern / kernel family.ts PREFIX_FAMILY_MAP SPEC→EVIDENCE）；CLM-/GRN- 词形镜像 07 definitions（平面编号词形）；其余词形（proof_type 开放词 / spec_kind 判别词）absent_in_vocab_lock__pending_vocab_pr——TODO(vocab-pr)，登记归词汇表批次。",
+  "x-pomaster-contract": {
+    "spec_holds_requirements_not_verdicts": "PRD §9.2「禁止 Evidence Spec 自身被写 PASS/FAIL——判卷值只存在于 Verification Result / Gate Result」：本 schema 无 verdict 词位（root additionalProperties:false 封闭）；closeout 消费时判定值只从 claims/runs 平面读取（D20 同线）。",
+    "qualification_binding_blocks_evidence_drift": "挪证缝收口（prd R1）：requirements[].claim_refs 是资格清单（哪些 claim 可满足）；closeout 逐条核 claim.subject.object_id == 资格归属（subject_ref 缺省回退 bound_task_ref / bound_change_ref）——跨对象借证 / 未列清单的 claim 一律不满足本条款（既有 DOD_CLAIM_UNANNOTATED_SHARED / acceptance_index 机制保留并衔接）。",
+    "dual_track_transition": "双轨过渡（PRD §9.2 已声明）：无 Spec 绑定的任务走既有 acceptance.criterion 判卷（行为零变化）；有 Spec 绑定的任务在既有轨之上增 Spec 资格判定维度——Spec 维度失败同样阻断 COMPLETED（closeout 机器判卷）。",
+    "zero_wall_clock": "A4 分层：本 schema 无任何墙钟时间戳键（时间锚恒信封 rev / 事务 seq；铁律 5 时间戳禁入落盘 JSON 身份字段）。",
+    "frozen_envelope_untouched": "01 truth-index / 02 object-envelope FROZEN 面零改动：kind 闭包十类不变（business_rule 承载），本 schema 只收窄 payload 自由区（02 kind profile 扩展纪律原文 sanctioned）。"
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["spec_kind", "requirements", "title"],
+  "properties": {
+    "spec_kind": {
+      "const": "evidence_spec",
+      "title": "payload 判别词（kind profile 收窄锚；非新 kind——kind 恒 business_rule）",
+      "description": "形态收窄判别位：business_rule payload 携带本词形即声明 Evidence Spec 语义，接受本 schema 全量判卷；无本词形的 business_rule 不受本 profile 约束（零破坏收窄）。"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "description": "要求规范的人读标题（非空；对应信封 title_zh 的 payload 级补充呈现位）。"
+    },
+    "bound_task_ref": {
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "#/definitions/governed_id" }
+      ],
+      "description": "绑定 task（TASK.* governed id）；与 bound_change_ref 至少其一非 null（anyOf 封条）。closeout 绑定匹配主键。"
+    },
+    "bound_change_ref": {
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "#/definitions/governed_id" }
+      ],
+      "description": "绑定 change（CHANGE.* governed id）；经 task payload.implements_change 间接绑定本 Change 名下全部任务。与 bound_task_ref 至少其一非 null。"
+    },
+    "applies_to": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/governed_id" },
+      "uniqueItems": true,
+      "description": "适用性（开放呈现位）：本 Spec 适用对象 governed id 清单（CAPABILITY.*/PAGE.* 等）。机器消费分母恒为 task/change 绑定——本字段首版只呈现，不参与 closeout 判卷分母（applicability 词轴化收窄禁私扩，登记待后续批次）。"
+    },
+    "requirements": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/requirement_clause" },
+      "description": "要求条款清单（要求面分母；可为空数组=显式无条款——Spec 骨架先行，条款逐批登记；空数组 Spec 绑定任务时 closeout 显式呈现零条款不判卷不假绿）。"
+    }
+  },
+  "anyOf": [
+    { "properties": { "bound_task_ref": { "type": "string" } }, "required": ["bound_task_ref"] },
+    { "properties": { "bound_change_ref": { "type": "string" } }, "required": ["bound_change_ref"] }
+  ],
+  "definitions": {
+    "governed_id": {
+      "type": "string",
+      "pattern": "^(PAGE|CAPABILITY|COMPONENT|API_REQ|ERR|FIELD|KNOWLEDGE|CHANGE|TASK|DENOMINATOR|KEYBINDING|POLICY|PROFILE|AUTHORITY|TEST|SPEC)\\.[A-Z][A-Z0-9_]{0,31}(\\.[A-Z][A-Z0-9_]{0,31})*(\\.[0-9]+)?$",
+      "x-vocab-source": "镜像 07 definitions.object_id（同源闭包含 PR-0008 SPEC.；单一事实源禁二次发明文法）",
+      "description": "governed id（A5 closed-world 文法；本 schema 是词形冻结面，运行期权威解析归 kernel parseGovernedId）。"
+    },
+    "requirement_clause": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["clause_id", "proof_type", "description", "claim_refs", "gate_refs"],
+      "properties": {
+        "clause_id": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]{0,31}$",
+          "description": "条款号（Spec 内唯一呈现锚，如 R1/R2； uniqueness 归装载消费侧核验——draft-07 无法表达数组内唯一键）。"
+        },
+        "proof_type": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "需要的证明类型（开放词登记，如 browser_observation / api_payload_check / build_gate——禁发明第二套证明类型枚举轴，词形收编归词汇表批次按真实消费逐例登记）。"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "description": "条款要求的人读陈述（非空；「需要什么证明」的具体化）。"
+        },
+        "subject_ref": {
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/definitions/governed_id" }
+          ],
+          "description": "资格归属绑定（挪证缝收口）：可满足本条款的 claim/run 的主体（subject）词形。null/缺席 = 回退 Spec 级绑定（bound_task_ref 优先，其次 bound_change_ref）——closeout 逐条核 claim.subject.object_id / run.subject_id 与之全等，不等即资格不成立（跨对象借证显式阻断）。"
+        },
+        "claim_refs": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^CLM-[0-9]+$" },
+          "uniqueItems": true,
+          "description": "可满足本条款的 claim 资格清单（CLM 词形镜像 07；空数组=尚未登记可满足 claim——closeout 判条款不满足，禁「任意 VERIFIED claim 皆可」的引用映射洗白）。"
+        },
+        "gate_refs": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^GRN-[0-9]+$" },
+          "uniqueItems": true,
+          "description": "可满足本条款的 gate run 资格清单（GRN 词形镜像 07；判定纪律同 claim_refs——资格外 run 不满足条款）。"
+        }
+      }
+    }
+  }
+}

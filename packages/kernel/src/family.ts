@@ -13,20 +13,22 @@
  *   不发明前缀、不扩 OBJECT_FAMILY_VALUES（该轴 vocab-lock@v0.5-resolved
  *   software_graph_vocab.object_family，PR-0006 收编；本文件不发明词值）。
  *
- * 纪律：映射必须对 GOVERNED_ID_PREFIXES 15 前缀**全总**（漏前缀=装载期 FATAL——
+ * 纪律：映射必须对 GOVERNED_ID_PREFIXES 16 前缀**全总**（漏前缀=装载期 FATAL——
  * 新前缀入闭包而映射未跟，deriveFamily 立即红，禁静默 null）；五族暂无前缀映射
  * （RUNTIME/RESOURCE/RELIABILITY/SECURITY/DELIVERY）是**登记在案的缺席**而非漏洞
  * ——真实对象（table/service/deployment…）出现时随其前缀的词汇表 PR 同批补映射。
+ * PR-0008（2026-09-04，vNext Batch 2 R1 / D6）：SPEC.（Evidence Spec 一等对象）入
+ * 闭包同批补映射 SPEC→EVIDENCE（要求面住证据族——Spec 持要求不持判定）。
  */
 import { parseGovernedId } from "./id.js";
 import { GOVERNED_ID_PREFIXES, OBJECT_FAMILY_VALUES, type GovernedIdPrefix, type ObjectFamilyValue } from "./vocab.js";
 
 /**
- * 前缀 → family 派生映射（全总；v0.5-resolved 时点 15 前缀）。
+ * 前缀 → family 派生映射（全总；v0.7-resolved 时点 16 前缀）。
  * 派生锚（PRD §6.1 族语义）：PAGE/COMPONENT→UI；CAPABILITY→PRODUCT；
  * API_REQ/ERR→INTERFACE；FIELD→DATA；KEYBINDING→CODE（ID↔源码锚定面）；
  * KNOWLEDGE/CHANGE/TASK/DENOMINATOR/POLICY/PROFILE/AUTHORITY→GOVERNANCE；
- * TEST→EVIDENCE。
+ * TEST/SPEC→EVIDENCE（TEST=fixture 证据；SPEC=证据要求规范——要求面住证据族）。
  */
 export const PREFIX_FAMILY_MAP: Readonly<
   Record<GovernedIdPrefix, ObjectFamilyValue>
@@ -46,6 +48,7 @@ export const PREFIX_FAMILY_MAP: Readonly<
   PROFILE: "GOVERNANCE",
   AUTHORITY: "GOVERNANCE",
   TEST: "EVIDENCE",
+  SPEC: "EVIDENCE",
 } as const satisfies Readonly<Record<GovernedIdPrefix, ObjectFamilyValue>>;
 
 /** 暂无前缀映射的五族（PRD §163 Phase C 显式缺席登记——禁猜测派生）。 */

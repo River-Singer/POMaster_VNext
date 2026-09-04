@@ -2,7 +2,8 @@
  * family.spec.ts / analyzer-contract.spec.ts 合并 —— P-v06 批次 0 Model Constitution。
  *
  * family（PRD v0.6 §6.1 + §1.2 Derived Facts + §163 Phase A/C）：
- * - family=派生视图：PREFIX_FAMILY_MAP 对 15 前缀全总（装载期自检已封死漏前缀）；
+ * - family=派生视图：PREFIX_FAMILY_MAP 对 16 前缀全总（装载期自检已封死漏前缀；
+ *   PR-0008 增补 SPEC.→EVIDENCE 同批映射）；
  * - 五族显式缺席（RUNTIME/RESOURCE/RELIABILITY/SECURITY/DELIVERY）——禁猜测派生；
  * - 零信封改动：family 不入 01/02（01 additionalProperties:false 封条不动）。
  *
@@ -31,14 +32,14 @@ import {
 } from "@pomaster/kernel";
 
 describe("family 派生视图（Derived Facts Must Be Derived）", () => {
-  it("PREFIX_FAMILY_MAP 对 15 前缀全总（装载期自检同源）", () => {
+  it("PREFIX_FAMILY_MAP 对 16 前缀全总（装载期自检同源；PR-0008 SPEC.→EVIDENCE 同批映射）", () => {
     for (const prefix of GOVERNED_ID_PREFIXES) {
       expect(PREFIX_FAMILY_MAP[prefix], `漏前缀 ${prefix}`).toBeDefined();
       expect(OBJECT_FAMILY_VALUES).toContain(PREFIX_FAMILY_MAP[prefix]);
     }
   });
 
-  it("familyOfId：既有词族派生（PAGE/COMPONENT→UI、CAPABILITY→PRODUCT、API_REQ/ERR→INTERFACE、FIELD→DATA、TEST→EVIDENCE）", () => {
+  it("familyOfId：既有词族派生（PAGE/COMPONENT→UI、CAPABILITY→PRODUCT、API_REQ/ERR→INTERFACE、FIELD→DATA、TEST/SPEC→EVIDENCE）", () => {
     expect(familyOfId("PAGE.SUPPLIER_MANAGEMENT")).toBe("UI");
     expect(familyOfId("COMPONENT.SEARCH_INPUT")).toBe("UI");
     expect(familyOfId("CAPABILITY.GRID.EDITABLE_GRID")).toBe("PRODUCT");
@@ -46,6 +47,7 @@ describe("family 派生视图（Derived Facts Must Be Derived）", () => {
     expect(familyOfId("ERR.PERMISSION.FORBIDDEN")).toBe("INTERFACE");
     expect(familyOfId("FIELD.SUPPLIER.NAME")).toBe("DATA");
     expect(familyOfId("TEST.FIXTURE.SUPPLIER")).toBe("EVIDENCE");
+    expect(familyOfId("SPEC.CALC_EXPORT_EVIDENCE.1")).toBe("EVIDENCE");
     expect(familyOfId("POLICY.WEB.API.SINGLE_HTTP_CLIENT")).toBe("GOVERNANCE");
   });
 

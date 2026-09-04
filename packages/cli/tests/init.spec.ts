@@ -4,7 +4,7 @@
  * 适配器产出 / 幂等 / 交互解析）、重入口默认（D13 2026-09-03 修订：skills 双镜像 +
  * hooks settings.json 合并 + 加厚 rules）、--mode light 显式退回与重→轻可逆、
  * skill 命令卡与 pomaster --help 单一事实源对账钉版、init 预铺 .pomaster/ 目录骨架
- * （宪法 §2 全树不分模式：27 目录 README + layout.json，light/heavy 同树；守卫细则见
+ * （宪法 §2 全树不分模式：29 目录 README + layout.json，light/heavy 同树；守卫细则见
  * layout-manifest.spec.ts）、legacy .pomaster/objects 检测（宪法 §34-P0 收敛）。
  */
 import { mkdtempSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
@@ -52,7 +52,7 @@ function read(relative: string): string {
 
 /**
  * 重入口默认（claude 缺省）应产出的全部文件清单（骨架 4 + AGENTS/CLAUDE + settings +
- * 15×2 skills + 预铺 27 目录 README + layout.json——预铺面清单单源 layout.ts 常量）。
+ * 15×2 skills + 预铺 29 目录 README + layout.json——预铺面清单单源 layout.ts 常量（Batch 2 D7/C9 增量 state/contexts + evidence/observations））。
  */
 function heavyDefaultExpectedFiles(): string[] {
   return [
@@ -72,7 +72,7 @@ function heavyDefaultExpectedFiles(): string[] {
 }
 
 describe("init 首次创建（CREATED）", () => {
-  it("空目录 init（重入口默认）→ change=CREATED，骨架 + AGENTS/CLAUDE + settings + 15×2 skills + 预铺 27 README/layout.json 全部 created", async () => {
+  it("空目录 init（重入口默认）→ change=CREATED，骨架 + AGENTS/CLAUDE + settings + 15×2 skills + 预铺 29 README/layout.json 全部 created", async () => {
     const outcome = await runInit(dir);
     expect(outcome.ok).toBe(true);
     expect(outcome.result.change).toBe("CREATED");
@@ -1088,7 +1088,7 @@ describe("--mode light 显式退回", () => {
     expect(outcome.ok).toBe(true);
     expect(outcome.result.mode).toBe("light");
     // light/heavy 的 .pomaster 目录树完全相同（mode 只影响 skills/hooks 注入层）——
-    // light 也产出 27 目录 README + layout.json。
+    // light 也产出 29 目录 README + layout.json。
     expect(outcome.result.files.map((f) => f.file).sort()).toEqual(
       [
         TRUTH_INDEX_RELATIVE,
@@ -1132,11 +1132,13 @@ describe("--mode light 显式退回", () => {
     };
     expect(dirsOf(dir)).toEqual(dirsOf(other));
     // 全树在册：宪法 §2 逐平面抽查（state/truth/evidence/executions/traces/runtime/
-    // discovery/memory/production）。
+    // discovery/memory/production）+ Batch 2 D7/C9 增量平面。
     for (const plane of [
       "state",
+      "state/contexts",
       "truth/objects",
       "evidence/blobs",
+      "evidence/observations",
       "executions",
       "traces",
       "runtime/traces",
@@ -1146,7 +1148,7 @@ describe("--mode light 显式退回", () => {
     ]) {
       expect(existsSync(join(dir, ".pomaster", ...plane.split("/"))), plane).toBe(true);
     }
-    expect(LAYOUT_DIRECTORIES.length).toBe(27);
+    expect(LAYOUT_DIRECTORIES.length).toBe(29);
   });
 
   it("layout.json：全目录 status=wired 单状态 + activation_hint/constitution_source 在场（Owner 修订形态）", async () => {

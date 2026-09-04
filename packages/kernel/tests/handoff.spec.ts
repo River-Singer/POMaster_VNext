@@ -1,43 +1,57 @@
 /**
- * handoff.spec.ts —— §24 Handoff Protocol 语义落地面（P21-Enforcement）。
+ * handoff.spec.ts —— §24/§9A Handoff Protocol 语义落地面（P21-Enforcement +
+ * vNext Batch 2 R5 / D15 扩键）。
  *
  * 判据锚（handoff.ts 头注裁定 mechanical mirror）：
- * - §24 逐字：「Agent 之间不得直接继承完整聊天上下文。必须通过 Handoff Packet：」
- *   + yaml 九键例文（task/from/to/intent/changed_units/contracts_changed/
- *   evidence{fast_gate}/known_issues/open_questions）；
+ * - §24 逐字：「Agent 之间不得直接继承完整聊天上下文。必须通过 Handoff Packet：」；
+ *   §9A 字段集十七键（vNext Batch 2 R5 扩键定案：task/from/to/expected_outcome/
+ *   intent/completed_work/remaining_work/changed_units/contracts_changed/
+ *   authoritative_refs/required_policy_refs/known_issues/known_unknowns/
+ *   open_questions/evidence/write_permissions/next_action）；
  * - closed form：extra 顶层键 / evidence 内 extra 键 → SCHEMA_INVALID——
  *   「完整聊天上下文」等轨迹载体无键位可表达（结构封条，非黑名单枚举）；
- * - from/to ∈ §25.3 十二角色闭包（AGENT_ROLE_POOL_VALUES；§24 例文 IMPLEMENTER/
- *   CLEANER 即词形裁定锚）；task canonical/legacy 双读（resolveAlias 收编判定）；
- * - fast_gate 词形闭包 PASS|FAIL（§24 例文 `fast_gate: PASS` 逐字 + FAIL 同族）；
+ * - from/to ∈ §25.3 十二角色闭包（AGENT_ROLE_POOL_VALUES）；task canonical/legacy
+ *   双读（resolveAlias 收编判定）；
+ * - fast_gate 词形闭包 PASS|FAIL（§24 例文逐字 + FAIL 同族）；evidence 键语义保持：
+ *   唯 fast_gate 一键，其余证据走 evidence 平面（GRN/CLM）；
  * - 消费面：compileHandoffContext =「Agent 出生 → 获取最小 Context」的机器形态
- *   （七内容键恰为分母——路由两键 from/to 归 §25.1 Runtime Adapter 信封职责面）；
- * - 显式缺席纪律（C1）：known_issues/open_questions 空数组合法（§24 例文逐字），
- *   键省略不合法；数组内空串不合法。
- * 纯函数零 IO 零墙钟：`pomaster handoff` 命令仍 deferred（DEF-SUP 触发制），
+ *   （十五内容键恰为分母——路由两键 from/to 归 §25.1 Runtime Adapter 信封职责面）；
+ * - 显式缺席纪律（C1）：数组键空数组合法、省键不合法、数组内空串不合法；字符串键
+ *   （task/expected_outcome/intent/next_action）非空；
+ * - 「Handoff 摘要 ≠ Truth」标记在场（PRD §9A 逐字；呈现层常量）。
+ * 纯函数零 IO 零墙钟：`pomaster agents handoff` 命令仍 deferred（DEF-SUP 触发制），
  * 本套件钉的是 deferred 下的契约面。
  */
 import { describe, expect, it } from "vitest";
 import {
   compileHandoffContext,
   HANDOFF_FAST_GATE_VALUES,
+  HANDOFF_NOT_TRUTH_NOTE,
   HANDOFF_PACKET_KEYS,
   validateHandoffPacket,
   type HandoffPacket,
 } from "@pomaster/kernel";
 
-/** §24 yaml 例文的完整镜像（PRD 逐字词形：TASK-0173 legacy 词形合法入参）。 */
+/** §9A 字段集的完整镜像（PRD 逐字词形：TASK-0173 legacy 词形合法入参）。 */
 function packetFixture(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
     task: "TASK-0173",
     from: "IMPLEMENTER",
     to: "CLEANER",
+    expected_outcome: "formula_parser 输出与旧实现逐 case 一致",
     intent: "custom_formula_validation",
+    completed_work: ["FormulaAST 重构落地", "CONTRACT gate 重跑 passed"],
+    remaining_work: [],
     changed_units: ["FE.CALCULATION.FORMULA_PARSER"],
     contracts_changed: ["FormulaAST"],
-    evidence: { fast_gate: "PASS" },
+    authoritative_refs: [],
+    required_policy_refs: [],
     known_issues: [],
+    known_unknowns: [],
     open_questions: [],
+    evidence: { fast_gate: "PASS" },
+    write_permissions: [],
+    next_action: "CLEANER 按 changed_units 收尾清理",
     ...overrides,
   };
 }
@@ -54,33 +68,53 @@ function expectInvalid(input: unknown, messagePart?: string): void {
   }
 }
 
-describe("§24 closed form（「必须通过 Handoff Packet」的唯一形态）", () => {
-  it("分母自检：九键词形与 PRD §24 yaml 例文键序逐字一致", () => {
+describe("§9A closed form（「必须通过 Handoff Packet」的唯一形态）", () => {
+  it("分母自检：十七键词形与 PRD §9A 字段集行序逐字一致（D15 扩键定案）", () => {
     expect([...HANDOFF_PACKET_KEYS]).toEqual([
       "task",
       "from",
       "to",
+      "expected_outcome",
       "intent",
+      "completed_work",
+      "remaining_work",
       "changed_units",
       "contracts_changed",
-      "evidence",
+      "authoritative_refs",
+      "required_policy_refs",
       "known_issues",
+      "known_unknowns",
       "open_questions",
+      "evidence",
+      "write_permissions",
+      "next_action",
     ]);
     expect([...HANDOFF_FAST_GATE_VALUES]).toEqual(["PASS", "FAIL"]);
   });
 
-  it("§24 例文全键合法 → 冻结 Packet（键序/词形逐字；legacy task 词形 TASK-0173 双读放行）", () => {
+  it("「Handoff 摘要 ≠ Truth」标记常量在场（PRD §9A 逐字；呈现层消费）", () => {
+    expect(HANDOFF_NOT_TRUTH_NOTE).toContain("≠ Truth");
+  });
+
+  it("§9A 全键合法 → 冻结 Packet（键序/词形逐字；legacy task 词形 TASK-0173 双读放行）", () => {
     const packet = validateHandoffPacket(packetFixture());
     expect(packet.task).toBe("TASK-0173");
     expect(packet.from).toBe("IMPLEMENTER");
     expect(packet.to).toBe("CLEANER");
+    expect(packet.expected_outcome).toContain("逐 case 一致");
     expect(packet.intent).toBe("custom_formula_validation");
+    expect(packet.completed_work).toEqual(["FormulaAST 重构落地", "CONTRACT gate 重跑 passed"]);
+    expect(packet.remaining_work).toEqual([]);
     expect(packet.changed_units).toEqual(["FE.CALCULATION.FORMULA_PARSER"]);
     expect(packet.contracts_changed).toEqual(["FormulaAST"]);
-    expect(packet.evidence).toEqual({ fast_gate: "PASS" });
+    expect(packet.authoritative_refs).toEqual([]);
+    expect(packet.required_policy_refs).toEqual([]);
     expect(packet.known_issues).toEqual([]);
+    expect(packet.known_unknowns).toEqual([]);
     expect(packet.open_questions).toEqual([]);
+    expect(packet.evidence).toEqual({ fast_gate: "PASS" });
+    expect(packet.write_permissions).toEqual([]);
+    expect(packet.next_action).toContain("CLEANER");
     expect(Object.isFrozen(packet)).toBe(true);
   });
 
@@ -102,14 +136,14 @@ describe("§24 closed form（「必须通过 Handoff Packet」的唯一形态）
     }
   });
 
-  it("evidence 内 extra 键 → SCHEMA_INVALID（evidence closed 于 fast_gate 一键）", () => {
+  it("evidence 内 extra 键 → SCHEMA_INVALID（evidence closed 于 fast_gate 一键；其余证据走 evidence 平面）", () => {
     expectInvalid(
       packetFixture({ evidence: { fast_gate: "PASS", gate_report: "GRN-0001" } }),
       "evidence 键超闭包",
     );
   });
 
-  it("九键缺一 → SCHEMA_INVALID（显式缺席纪律：省键不合法，空数组才合法）", () => {
+  it("十七键缺一 → SCHEMA_INVALID（显式缺席纪律：省键不合法，空数组才合法）", () => {
     const base = packetFixture();
     for (const key of HANDOFF_PACKET_KEYS) {
       const absent = { ...base };
@@ -125,7 +159,7 @@ describe("§24 closed form（「必须通过 Handoff Packet」的唯一形态）
   });
 });
 
-describe("§24 词形闭包（角色 / fast_gate / 条目）", () => {
+describe("§9A 词形闭包（角色 / fast_gate / 条目 / 字符串键）", () => {
   it("from/to 词表外（orchestrator 小写自造值）→ VOCAB_INVALID_VALUE（§25.3 十二角色闭包）", () => {
     for (const field of ["from", "to"] as const) {
       try {
@@ -153,10 +187,22 @@ describe("§24 词形闭包（角色 / fast_gate / 条目）", () => {
       packetFixture({ evidence: { fast_gate: "FAIL" }, known_issues: ["FormulaAST 未过 CONTRACT gate"] }),
     );
     expect(packet.evidence).toEqual({ fast_gate: "FAIL" });
+    expect(packet.known_issues).toEqual(["FormulaAST 未过 CONTRACT gate"]);
   });
 
-  it("数组条目空串/非字符串 → SCHEMA_INVALID（空数组 [] 合法——§24 例文逐字）", () => {
-    for (const field of ["changed_units", "contracts_changed", "known_issues", "open_questions"] as const) {
+  it("数组键条目空串/非字符串 → SCHEMA_INVALID（空数组 [] 合法——显式缺席而非省键）", () => {
+    for (const field of [
+      "completed_work",
+      "remaining_work",
+      "changed_units",
+      "contracts_changed",
+      "authoritative_refs",
+      "required_policy_refs",
+      "known_issues",
+      "known_unknowns",
+      "open_questions",
+      "write_permissions",
+    ] as const) {
       expectInvalid(packetFixture({ [field]: [""] }));
       expectInvalid(packetFixture({ [field]: [42] }));
       const emptyOk = validateHandoffPacket(packetFixture({ [field]: [] }));
@@ -164,22 +210,43 @@ describe("§24 词形闭包（角色 / fast_gate / 条目）", () => {
     }
   });
 
-  it("intent 空串 / task 不可收编（自造 id）→ SCHEMA_INVALID", () => {
+  it("字符串键（expected_outcome/intent/next_action/task）空串 → SCHEMA_INVALID（§9A 最小义务位）", () => {
+    expectInvalid(packetFixture({ expected_outcome: "   " }), "expected_outcome");
     expectInvalid(packetFixture({ intent: "   " }), "intent");
+    expectInvalid(packetFixture({ next_action: "" }), "next_action");
     expectInvalid(packetFixture({ task: "TASK.自造_词形" }), "不可收编");
   });
 });
 
-describe("§24 原则消费面（「Agent 出生 → 获取最小 Context」）", () => {
-  it("compileHandoffContext：七内容键恰为分母——路由两键 from/to 不入接收方 Context（§25.1 Runtime Adapter 信封职责面）", () => {
+describe("§24 原则消费面（「Agent 出生 → 获取最小 Context」；R5 分母同步）", () => {
+  it("compileHandoffContext：十五内容键恰为分母——路由两键 from/to 不入接收方 Context（§25.1 Runtime Adapter 信封职责面）", () => {
     const packet: HandoffPacket = validateHandoffPacket(packetFixture());
     const context = compileHandoffContext(packet);
     expect(Object.keys(context).sort()).toEqual(
-      ["changed_units", "contracts_changed", "evidence", "intent", "known_issues", "open_questions", "task"].sort(),
+      [
+        "task",
+        "expected_outcome",
+        "intent",
+        "completed_work",
+        "remaining_work",
+        "changed_units",
+        "contracts_changed",
+        "authoritative_refs",
+        "required_policy_refs",
+        "known_issues",
+        "known_unknowns",
+        "open_questions",
+        "evidence",
+        "write_permissions",
+        "next_action",
+      ].sort(),
     );
+    expect(Object.keys(context)).toHaveLength(HANDOFF_PACKET_KEYS.length - 2);
     expect(Object.isFrozen(context)).toBe(true);
     expect(context.task).toBe("TASK-0173");
     expect(context.evidence).toEqual({ fast_gate: "PASS" });
+    expect(context.expected_outcome).toContain("逐 case 一致");
+    expect(context.next_action).toContain("CLEANER");
   });
 
   it("closed form 联动：Context 无任何轨迹键位——「最小 Context」是结构事实而非纪律劝告", () => {
@@ -195,7 +262,10 @@ describe("§24 原则消费面（「Agent 出生 → 获取最小 Context」）"
     const first = validateHandoffPacket(packetFixture());
     const second = validateHandoffPacket(packetFixture());
     expect(compileHandoffContext(first)).toEqual(compileHandoffContext(second));
-    const other = validateHandoffPacket(packetFixture({ intent: "cleanup_after_removal" }));
+    const other = validateHandoffPacket(
+      packetFixture({ intent: "cleanup_after_removal", remaining_work: ["删除 legacy 分支"] }),
+    );
     expect(compileHandoffContext(other).intent).toBe("cleanup_after_removal");
+    expect(compileHandoffContext(other).remaining_work).toEqual(["删除 legacy 分支"]);
   });
 });

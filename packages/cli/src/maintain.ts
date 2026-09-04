@@ -31,7 +31,9 @@ import {
   compileProjection,
   createStore,
   loadTruthIndex,
+  readKnowledgeLibrary,
 } from "@pomaster/kernel";
+import { buildStorePaths } from "@pomaster/kernel";
 import { loadOpsFile } from "./compact.js";
 import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
@@ -55,6 +57,14 @@ export const MAINTAIN_PHASES = ["pre-dev"] as const;
 
 export type MaintainPhase = (typeof MAINTAIN_PHASES)[number];
 
+/** PROMOTED knowledge → POLICY.* 登记建议条目（vNext Batch 2 R4/D9 呈现位）。 */
+export interface PolicyRegistrationSuggestion {
+  readonly knowledge_id: string;
+  readonly promoted_ref: string | null;
+  /** 机械派生的建议 id（KNOWLEDGE.A.B → POLICY.A.B）；纯呈现建议非治理事实。 */
+  readonly suggested_policy_ref: string;
+}
+
 /** apply 结果（字段与 compact 结果同线：APPLIED/NO_CHANGE 二值 + seq 锚定）。 */
 export interface MaintainApplyResult {
   readonly mode: "apply";
@@ -72,6 +82,13 @@ export interface MaintainApplyResult {
   readonly ops_counts: Readonly<Record<string, number>> | null;
   readonly changed_object_ids: readonly string[] | null;
   readonly digest_warnings: readonly string[] | null;
+  /**
+   * PROMOTED knowledge → POLICY.* 登记建议呈现（vNext Batch 2 R4 / D9；零强制零新
+   * 状态轴——只是呈现位，不自动落地不阻断）：PROMOTED 知识的 promoted_ref 未对应
+   * 在册 POLICY.* 对象时逐条呈现登记建议（强约束载体经 P11 maintain 面落地——§83.10；
+   * knowledge 本体恒 ADVISORY 不变）。无 PROMOTED 知识 = 空数组（显式缺席）。
+   */
+  readonly policy_registration_suggestions: readonly PolicyRegistrationSuggestion[];
 }
 
 /** triage 档位呈现（triageRequest 结果的 snake 投影——① 拍词形，CLI 局部词 TODO(vocab-pr)）。 */
@@ -162,7 +179,49 @@ function emptyApplyResult(changeOrTask: string): MaintainApplyResult {
     ops_counts: null,
     changed_object_ids: null,
     digest_warnings: null,
+    policy_registration_suggestions: [],
   };
+}
+
+/**
+ * PROMOTED knowledge → POLICY.* 登记建议派生（vNext Batch 2 R4 / D9；零强制）：
+ * PROMOTED 且 promoted_ref 非在册 POLICY.* 对象的 knowledge 逐条呈现建议。
+ * suggested_policy_ref 机械派生自 knowledge id 段（KNOWLEDGE.A.B → POLICY.A.B——
+ * 纯呈现建议位，非治理事实；采纳与否归 maintain 显式 upsert）。
+ */
+function derivePolicyRegistrationSuggestions(
+  rootDir: string,
+  registeredIds: ReadonlySet<string>,
+): readonly PolicyRegistrationSuggestion[] {
+  let entries;
+  try {
+    entries = readKnowledgeLibrary(buildStorePaths(rootDir)).entries;
+  } catch {
+    // 如实登记的呈现面边界：knowledge 侧车损坏时本建议面按空建议呈现（零杜撰）；
+    // 侧车损坏的 fail-closed 判卷归 knowledge 命令自身的装载面（不复制不镜像）。
+    return [];
+  }
+  const suggestions: PolicyRegistrationSuggestion[] = [];
+  for (const entry of entries) {
+    if (entry.status !== "PROMOTED") continue;
+    const promotedRef = entry.promoted_ref;
+    const policyLanded =
+      typeof promotedRef === "string" &&
+      promotedRef.startsWith("POLICY.") &&
+      registeredIds.has(promotedRef);
+    if (policyLanded) continue;
+    const segments = entry.id.split(".").slice(1);
+    const suggested =
+      segments.length > 0
+        ? `POLICY.${segments.join(".")}`
+        : "POLICY.<segment 派生缺席——knowledge id 无段可派生，请手工指定>";
+    suggestions.push({
+      knowledge_id: entry.id,
+      promoted_ref: promotedRef ?? null,
+      suggested_policy_ref: suggested,
+    });
+  }
+  return suggestions.sort((a, b) => (a.knowledge_id < b.knowledge_id ? -1 : 1));
 }
 
 function emptyPreDevResult(
@@ -305,6 +364,17 @@ async function runMaintainApply(
   for (const op of ops) {
     opsCounts[op.op] = (opsCounts[op.op] ?? 0) + 1;
   }
+  // R4/D9：PROMOTED knowledge → POLICY.* 登记建议呈现（零强制；强约束载体经
+  // P11 maintain 面落地——§83.10；knowledge 本体恒 ADVISORY 不进判卷）。
+  const registeredIds = new Set<string>(changedObjectIds);
+  try {
+    const loadedIndex = await loadTruthIndex(store);
+    for (const row of loadedIndex.objects) registeredIds.add(row.id);
+  } catch {
+    // 主事务已成功；建议面退化（不杜撰在册集合）——changedObjectIds 仍是真分母子集，
+    // 可能多出建议（呈现位零强制，宁可多建议不可假绿「已落地」）。
+  }
+  const policySuggestions = derivePolicyRegistrationSuggestions(rootDir, registeredIds);
   const result: MaintainApplyResult = {
     mode: "apply",
     change_or_task: input.changeOrTask,
@@ -317,6 +387,7 @@ async function runMaintainApply(
     ops_counts: opsCounts,
     changed_object_ids: [...changedObjectIds],
     digest_warnings: [...digestWarnings],
+    policy_registration_suggestions: policySuggestions,
   };
   const countsText = Object.entries(opsCounts)
     .map(([op, count]) => `${op}×${count}`)
@@ -326,6 +397,10 @@ async function runMaintainApply(
     `  authority: ${result.authority_ref ?? "(none)"}`,
     `  execution: ${result.execution_id ?? "(unstamped)"}`,
     `  changed: ${changedObjectIds.length > 0 ? changedObjectIds.join(", ") : "(none)"}`,
+    ...policySuggestions.map(
+      (suggestion) =>
+        `  建议（零强制，§83.10 强约束载体经 P11 maintain 面）：PROMOTED knowledge ${suggestion.knowledge_id}（promoted_ref=${suggestion.promoted_ref ?? "null"}）尚未对应在册 POLICY.* 对象——如需成为 gate/政策级约束，upsert ${suggestion.suggested_policy_ref}（建议词形，采纳与否归显式 maintain upsert）`,
+    ),
   ];
   return okOutcome("maintain", result, human, warnings);
 }

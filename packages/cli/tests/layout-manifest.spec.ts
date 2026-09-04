@@ -56,17 +56,19 @@ describe("layout 预铺清单守卫（宪法 §2/§24/§34）", () => {
         `${spec.path} 的 constitution_source 必须指向宪法文档`,
       ).toBe(true);
     }
-    expect(LAYOUT_DIRECTORIES.length).toBe(27);
+    expect(LAYOUT_DIRECTORIES.length).toBe(29);
   });
 
-  it("宪法 §2 全树逐平面在册（config/state 九文件位/truth/evidence 三区/executions/traces/runtime 四区/discovery/memory/production 六区）+ §3A sources 平面增量（Batch 1 R3/D2）", () => {
+  it("宪法 §2 全树逐平面在册（config/state 九文件位/truth/evidence 三区/executions/traces/runtime 四区/discovery/memory/production 六区）+ §3A sources 平面增量（Batch 1 R3/D2）+ Batch 2 D7/C9 增量平面", () => {
     const paths = new Set(LAYOUT_DIRECTORIES.map((d) => d.path));
     for (const required of [
       "state",
+      "state/contexts",
       "truth/objects",
       "evidence/runs",
       "evidence/claims",
       "evidence/blobs",
+      "evidence/observations",
       "executions",
       "traces",
       "runtime/producers",

@@ -70,46 +70,83 @@ describe("context compile 缺席显式", () => {
     expect(outcome.errors[0]?.code).toBe("NOT_INITIALIZED");
   });
 
-  it("init 后（真实 kernel 已落地）→ 编译成功：五分区标题在场、空区显式缺席、catalog 分区真消费 repo catalog", async () => {
+  it("init 后（真实 kernel 已落地）→ 编译成功：五分区标题在场、空区显式缺席、catalog 分区真消费 repo catalog、manifest 默认落盘（Batch 2 D7/D8）", async () => {
     await runInit(dir);
     const outcome = await runContextCompile(dir, "frontend");
     expect(outcome.ok).toBe(true);
     expect(outcome.result.markdown).toContain(
       "# Context Projection — role: frontend",
     );
-    expect(outcome.result.markdown).toContain("## MUST（[AUTHORITATIVE] gate 判卷输入）");
-    expect(outcome.result.markdown).toContain("无 MUST 注入项");
+    expect(outcome.result.markdown).toContain("## AUTHORITATIVE PROJECT STATE（[AUTHORITATIVE] gate 判卷输入）");
+    expect(outcome.result.markdown).toContain("无 AUTHORITATIVE PROJECT STATE 注入项");
     expect(outcome.result.markdown).toContain(
-      "## KNOWLEDGE（[ADVISORY] 知识检索注入；出处 state/knowledge-library.json——§83.8 检索而非全量注入）",
+      "## ADVISORY KNOWLEDGE（[ADVISORY] 经验注入；不进 gate 判卷输入——出处逐条在 reason）",
     );
-    expect(outcome.result.markdown).toContain("检索而非全量注入");
-    expect(outcome.result.markdown).toContain("## CATALOG（catalog 策展注入；出处 catalog，非 project state——§92.2）");
+    expect(outcome.result.markdown).toContain("## REUSE / CATALOG（catalog 策展 + lazy tools；出处 catalog，非 project state——§92.2）");
+    expect(outcome.result.markdown).toContain("## VERIFICATION（Evidence Spec 绑定引用；判卷对象面——消费在八拍⑤/⑧）");
     // P14：catalog 分区真实消费 repo catalog（frontend lane 命中非空 + lock 注记）。
     expect(outcome.result.catalog_source.status).toBe("catalog");
     expect(outcome.result.manifest.catalog_entries.length).toBeGreaterThan(0);
     expect(outcome.result.manifest.catalog_entries[0]?.reason.startsWith("catalog:")).toBe(true);
+    // Batch 2 D7：manifest 默认落盘（state/contexts/<role>.context.json——无 taskRef 时 role 键名）。
+    expect(outcome.result.persisted).toBe(true);
+    expect(outcome.result.manifest_path).toBe(".pomaster/state/contexts/frontend.context.json");
+    expect(outcome.result.stale_check.state).toBe("absent");
     expect(outcome.errors).toEqual([]);
   });
 });
 
 describe("context compile 转调 kernel（注入 fake）", () => {
-  it("五分区 markdown：MUST / ADVISORY / KNOWLEDGE / CATALOG / LAZY TOOLS 标题与条目（§83.8 分区词形逐字）", async () => {
+  it("五分区 markdown：AUTHORITATIVE PROJECT STATE / REQUIRED POLICY / ADVISORY KNOWLEDGE / REUSE / CATALOG / VERIFICATION 标题与条目（Batch 2 D8 词形闭包逐字）", async () => {
     await runInit(dir);
     const kernel = fakeKernel(fakeProjection());
     const outcome = await runContextCompile(dir, "frontend", kernel);
     expect(outcome.ok).toBe(true);
     expect(kernel.compileProjection).toHaveBeenCalledOnce();
-    expect(outcome.result.markdown).toContain("## MUST（[AUTHORITATIVE] gate 判卷输入）");
-    expect(outcome.result.markdown).toContain("## ADVISORY（[ADVISORY] 按触发条件注入；不进 gate 判卷输入）");
+    // MUST 区一分为二（D8 内容映射 ADR）：POLICY.* → REQUIRED POLICY；其余 → AUTHORITATIVE。
+    expect(outcome.result.markdown).toContain("## AUTHORITATIVE PROJECT STATE（[AUTHORITATIVE] gate 判卷输入）");
+    expect(outcome.result.markdown).toContain("## REQUIRED POLICY（[AUTHORITATIVE] POLICY.* 判卷输入）");
     expect(outcome.result.markdown).toContain(
-      "## KNOWLEDGE（[ADVISORY] 知识检索注入；出处 state/knowledge-library.json——§83.8 检索而非全量注入）",
+      "## ADVISORY KNOWLEDGE（[ADVISORY] 经验注入；不进 gate 判卷输入——出处逐条在 reason）",
     );
     expect(outcome.result.markdown).toContain("`KNOWLEDGE.FE.DASH.STACK_CLIP` — ADVISORY: knowledge 检索命中");
-    expect(outcome.result.markdown).toContain("## CATALOG（catalog 策展注入；出处 catalog，非 project state——§92.2）");
-    expect(outcome.result.markdown).toContain("## LAZY TOOLS");
-    expect(outcome.result.markdown).toContain("`POLICY.PAGE.TTL` — 本任务触碰 PAGE.* 分母");
+    expect(outcome.result.markdown).toContain("## REUSE / CATALOG（catalog 策展 + lazy tools；出处 catalog，非 project state——§92.2）");
+    expect(outcome.result.markdown).toContain("## VERIFICATION（Evidence Spec 绑定引用；判卷对象面——消费在八拍⑤/⑧）");
+    // POLICY.* 前缀条目归 REQUIRED POLICY 分区（fakeProjection 的 mustEntries 唯一条目是 POLICY.PAGE.TTL）。
+    const authoritativeSection = outcome.result.markdown.split("## REQUIRED POLICY")[0];
+    const requiredPolicySection = (outcome.result.markdown.split("## REQUIRED POLICY")[1] ?? "").split("## ADVISORY KNOWLEDGE")[0] ?? "";
+    expect(requiredPolicySection).toContain("`POLICY.PAGE.TTL` — 本任务触碰 PAGE.* 分母");
+    expect(authoritativeSection).not.toContain("`POLICY.PAGE.TTL`");
     expect(outcome.result.markdown).toContain("`POLICY.WEB.API.SINGLE_HTTP_CLIENT` — catalog: policies/");
-    expect(outcome.result.markdown).toContain("- playwright");
+    expect(outcome.result.markdown).toContain("- lazy tool: playwright");
+  });
+
+  it("D8 判卷输入等价性：POLICY.* → REQUIRED POLICY、非 POLICY → AUTHORITATIVE（两区并集恰为 must_entries，零增删）", async () => {
+    await runInit(dir);
+    const mixed = fakeProjection({
+      manifest: {
+        mustEntries: [
+          { ref: "POLICY.WEB.TTL", reason: "policy 治理域命中" },
+          { ref: "CAPABILITY.GRID.EDITABLE_GRID", reason: "in_scope: 分母命中" },
+          { ref: "DENOMINATOR.SHARED_COMPONENTS", reason: "coverage denominator anchor" },
+        ],
+        advisoryEntries: [],
+        catalogEntries: [],
+        knowledgeEntries: [],
+        lazyTools: [],
+      },
+    });
+    const outcome = await runContextCompile(dir, "frontend", fakeKernel(mixed));
+    expect(outcome.ok).toBe(true);
+    const authoritativeSection = outcome.result.markdown.split("## REQUIRED POLICY")[0];
+    expect(authoritativeSection).toContain("`CAPABILITY.GRID.EDITABLE_GRID`");
+    expect(authoritativeSection).toContain("`DENOMINATOR.SHARED_COMPONENTS`");
+    expect(authoritativeSection).not.toContain("`POLICY.WEB.TTL`");
+    const rest = outcome.result.markdown.split("## REQUIRED POLICY")[1] ?? "";
+    const requiredPolicySection = rest.split("## ADVISORY KNOWLEDGE")[0] ?? "";
+    expect(requiredPolicySection).toContain("`POLICY.WEB.TTL`");
+    // 机器判卷输入语义零变更：must_entries 原样三条（等价性 ADR 的机器面）。
+    expect(outcome.result.manifest.must_entries).toHaveLength(3);
   });
 
   it("catalog_source 呈现：root + lock 注记进 markdown（出处显式，§92.2）", async () => {
@@ -149,7 +186,7 @@ describe("context compile 转调 kernel（注入 fake）", () => {
     expect(outcome.result.manifest.lazy_tools).toEqual(["playwright"]);
   });
 
-  it("空 manifest → markdown 显式标注空区（缺席显式，不渲染成有内容；knowledge 空区含检索而非全量措辞）", async () => {
+  it("空 manifest → markdown 显式标注空区（缺席显式，不渲染成有内容）", async () => {
     await runInit(dir);
     const empty = fakeProjection({
       manifest: {
@@ -162,10 +199,12 @@ describe("context compile 转调 kernel（注入 fake）", () => {
     });
     const outcome = await runContextCompile(dir, "designer", fakeKernel(empty));
     expect(outcome.ok).toBe(true);
-    expect(outcome.result.markdown).toContain("无 MUST 注入项");
-    expect(outcome.result.markdown).toContain("无触发条件命中");
-    expect(outcome.result.markdown).toContain("无 Change Localization 检索命中的知识条目");
+    expect(outcome.result.markdown).toContain("无 AUTHORITATIVE PROJECT STATE 注入项");
+    expect(outcome.result.markdown).toContain("无 REQUIRED POLICY 注入项");
+    expect(outcome.result.markdown).toContain("无触发条件命中/检索命中的经验注入");
     expect(outcome.result.markdown).toContain("无 lane 命中的 catalog 条目");
+    // VERIFICATION 显式空区（缺席诚实——不冒充零验证义务）。
+    expect(outcome.result.markdown).toContain("本任务无 CURRENT 生命周期 Evidence Spec 绑定");
   });
 
   it("kernel 抛非 not-implemented 错误 → KERNEL_ERROR（带原消息）", async () => {

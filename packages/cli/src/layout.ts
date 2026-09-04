@@ -83,21 +83,28 @@ export interface LayoutDirSpec {
 }
 
 // ============================================================
-// 预铺清单（宪法 §2 Target Directory Tree 全量 + PRD §3/§3A sources 平面增量：
-// 27 目录；数组顺序 = layout.json
+// 预铺清单（宪法 §2 Target Directory Tree 全量 + PRD §3/§3A sources 平面增量 +
+// vNext Batch 2 D7/C9 两增量平面：29 目录；数组顺序 = layout.json
 // directories 顺序 = 磁盘创建顺序）
 // ============================================================
 
 /**
- * 预铺目录清单（宪法 §2 全树 + §3A sources 平面增量；**不分模式**——light/heavy
- * 同树）。state/ 的 9 个已登记文件位不单独落文件——kernel createStore/applyTransaction
- * 按需创建，README 注记文件位清单。禁铺形态（宪法 §15 policies/、§10.1 顶层 research/、
- * §21 kind-as-directory）不在清单——新概念默认是 governed object kind，不是新目录。
+ * 预铺目录清单（宪法 §2 全树 + §3A sources 平面 + Batch 2 两增量平面；**不分模式**
+ * ——light/heavy 同树）。state/ 的已登记文件位不单独落文件——kernel
+ * createStore/applyTransaction 按需创建，README 注记文件位清单。禁铺形态（宪法 §15
+ * policies/、§10.1 顶层 research/、§21 kind-as-directory）不在清单——新概念默认是
+ * governed object kind，不是新目录。
  *
  * ADR-lite（09-04 vNext Batch 1 R3，Owner 裁定 D2）：sources/ + sources/snapshots/
- * 是宪法 §2 全树之外的唯一增量平面（PRD §3 目录树逐字；Source Artifact Authority
+ * 是宪法 §2 全树之外的增量平面（PRD §3 目录树逐字；Source Artifact Authority
  * 正交权威轴的落盘载体）——宪法文档补记随归档批次，constitution_source 字段如实
  * 双锚（宪法 §2 全树 + PRD §3/§3A 增量裁定）。
+ *
+ * ADR-lite（09-04 vNext Batch 2 R2/R6，Owner 裁定 D7/C9）：state/contexts/（D7——
+ * Task Context Manifest 落盘位，编译产物非第二配置源，宪法 §19）与 evidence/
+ * observations/（C9——OBS/ENVREC 感知回执记录 sidecar 分区，blob 平面不变）是
+ * Batch 2 增量平面（PRD vNext §8.1⑤/§3 树/§5B）——constitution_source 字段同样
+ * 如实双锚。
  */
 export const LAYOUT_DIRECTORIES: readonly LayoutDirSpec[] = [
   // ---- state：控制平面 Root Metadata + Governance Sidecars（宪法 §5） ----
@@ -111,6 +118,18 @@ export const LAYOUT_DIRECTORIES: readonly LayoutDirSpec[] = [
     constitution_source:
       "dot-pomaster-directory-constitution.md §5；kernel paths.ts（StorePaths.stateDir）",
     command: "pomaster status --json",
+  },
+  // ---- state/contexts：Task Context Manifest 落盘位（vNext Batch 2 R2/D7 增量平面） ----
+  {
+    path: "state/contexts",
+    status: "wired",
+    purpose:
+      "Task Context Manifest 落盘位（<task-id>.context.json；八拍③ 编译产物——context.json 是编译产物不是第二配置源（宪法 §19）：generated_at_seq/compiler/inputs_fingerprint/五分区 entries/catalog_source 全记录，禁手改（只读服务面，D24），重编译覆盖同 id 文件字节稳定可比对；inputs_fingerprint 漂移 = STALE_GROUNDING，指路重编译不静默）。",
+    activation_hint:
+      "跑过 pomaster context compile / maintain pre-dev 链的项目激活（A4 零墙钟：manifest 无时间戳，seq 锚）。",
+    constitution_source:
+      "dot-pomaster-directory-constitution.md §2 全树 + PRD vNext §8.1⑤/§3 树（Owner 裁定 D7 增量平面）；kernel paths.ts（contextsDir）",
+    command: "pomaster context compile --check",
   },
   // ---- truth：Canonical Truth 正文层（宪法 §4；§34-P0 canonical） ----
   {
@@ -166,6 +185,16 @@ export const LAYOUT_DIRECTORIES: readonly LayoutDirSpec[] = [
     activation_hint: "gate 产物需要原始报告留档的项目激活（adapter 落账即用）。",
     constitution_source:
       "dot-pomaster-directory-constitution.md §6.3；kernel paths.ts（blobsDir）",
+  },
+  {
+    path: "evidence/observations",
+    status: "wired",
+    purpose:
+      "感知回执记录 sidecar 分区（OBS-*.json / ENVREC-*.json；PRD §5B Provenance Receipt——回执是证据面通路记录不是 truth object：admitted_to_truth_index=false 维持，blob 字节平面 evidence/blobs/ 零改动）。",
+    activation_hint:
+      "使用感知通路（buildObservationReceipt/buildEnvironmentReceipt 落盘消费方）的项目激活；纯文档/原型项目可为空。",
+    constitution_source:
+      "dot-pomaster-directory-constitution.md §2 全树 + PRD vNext §5B（Owner 裁定 C9 增量平面）；kernel paths.ts（observationsDir）",
   },
   // ---- executions + traces：身份与行为（宪法 §7/§8） ----
   {
@@ -403,11 +432,13 @@ export function derivePathsTsStoreDirs(rootDir: string): ReadonlySet<string> {
   const set = new Set<string>();
   for (const absolute of [
     paths.stateDir,
+    paths.contextsDir,
     paths.truthObjectsDir,
     paths.evidenceDir,
     paths.runsDir,
     paths.claimsDir,
     paths.blobsDir,
+    paths.observationsDir,
     paths.runtimeDir,
     paths.sessionsDir,
     paths.locksDir,

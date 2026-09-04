@@ -155,7 +155,8 @@ export type ProbeResultValue = (typeof PROBE_RESULT_VALUES)[number];
 // ============================================================
 
 /**
- * 前缀闭包 v0（15 前缀；未登记前缀=解析即 FATAL；扩展走词汇表 PR）。
+ * 前缀闭包 v0（16 前缀——PR-0008（2026-09-04，vNext Batch 2 R1）append-only 增补 SPEC.；
+ * 未登记前缀=解析即 FATAL；扩展走词汇表 PR）。
  * PR-0001 注记（vocab-lock id_namespace.state_plane_refs）：`PERMIT.<BASE>.<SEQ>` 是状态面
  * 台账键词形（state/permits.json 内部台账；A8 同族不入 truth-index），**不是 governed 前缀**
  * ——不入本闭包、不过 parseGovernedId，解析归台账存在性 + 显式四态 outcome（kernel permits.ts
@@ -177,6 +178,14 @@ export const GOVERNED_ID_PREFIXES = [
   "PROFILE",
   "AUTHORITY",
   "TEST",
+  // vocab-pr-0008 增补（append-only；vNext Batch 2 R1 / Owner 裁定 D6 2026-09-04）：
+  // SPEC. = Evidence Spec 一等对象（要求面——「需要什么证明」，PRD vNext §9.2 四概念）。
+  // 裁定留痕（prd R1「入闭包或新前缀，留痕理由」）：15 前缀无语义适配位（TASK. 是工作
+  // 单元非要求面；POLICY. 是强约束载体非证明要求；KNOWLEDGE. 恒 ADVISORY——Spec 是
+  // AUTHORITATIVE 要求面），故增前缀入闭包（词表管辖「留痕或入锁」纪律的入锁形态：
+  // 三镜像同步 = 本文件 + vocab-lock.draft.yaml prefixes_v0 + 07 id_prefix/object_id
+  // pattern + kernel family.ts PREFIX_FAMILY_MAP 同批补映射 SPEC→EVIDENCE）。
+  "SPEC",
 ] as const;
 export type GovernedIdPrefix = (typeof GOVERNED_ID_PREFIXES)[number];
 

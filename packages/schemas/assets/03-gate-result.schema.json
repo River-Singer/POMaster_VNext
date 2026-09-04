@@ -204,13 +204,13 @@
     },
     "object_id": {
       "type": "string",
-      "pattern": "^(PAGE|CAPABILITY|COMPONENT|API_REQ|ERR|FIELD|KNOWLEDGE|CHANGE|TASK|DENOMINATOR|KEYBINDING|POLICY|PROFILE|AUTHORITY|TEST)\\.[A-Z][A-Z0-9_]{0,31}(\\.[A-Z][A-Z0-9_]{0,31})*(\\.[0-9]+)?$",
-      "x-vocab-source": "vocab-lock@v0.1-resolved id_namespace.prefixes_v0 ＋ rules（separator=. / SCREAMING_SNAKE / unknown_prefix=FATAL，A5 closed-world）",
+      "pattern": "^(PAGE|CAPABILITY|COMPONENT|API_REQ|ERR|FIELD|KNOWLEDGE|CHANGE|TASK|DENOMINATOR|KEYBINDING|POLICY|PROFILE|AUTHORITY|TEST|SPEC)\\.[A-Z][A-Z0-9_]{0,31}(\\.[A-Z][A-Z0-9_]{0,31})*(\\.[0-9]+)?$",
+      "x-vocab-source": "vocab-lock@v0.1-resolved id_namespace.prefixes_v0 ＋ rules（separator=. / SCREAMING_SNAKE / unknown_prefix=FATAL，A5 closed-world）；PR-0008（2026-09-04）增补 SPEC.（Evidence Spec 一等对象，vNext Batch 2 R1）",
       "description": "治理对象 canonical id。文法：PREFIX '.' SEGMENT('.' SEGMENT)*['.' SEQ]，SEGMENT=[A-Z][A-Z0-9_]{0,31}，SEQ 仅可为最后一段。pattern 与 definitions/id_prefix 枚举同源闭包（扩前缀两者须同步，build 期由 vocab codegen 生成）；未知前缀 = 解析即 FATAL（A5）"
     },
     "id_prefix": {
-      "enum": ["PAGE.", "CAPABILITY.", "COMPONENT.", "API_REQ.", "ERR.", "FIELD.", "KNOWLEDGE.", "CHANGE.", "TASK.", "DENOMINATOR.", "KEYBINDING.", "POLICY.", "PROFILE.", "AUTHORITY.", "TEST."],
-      "x-vocab-source": "vocab-lock@v0.1-resolved id_namespace.prefixes_v0（P0/tracer bullet 最小闭包；扩展走词汇表 PR 流程）",
+      "enum": ["PAGE.", "CAPABILITY.", "COMPONENT.", "API_REQ.", "ERR.", "FIELD.", "KNOWLEDGE.", "CHANGE.", "TASK.", "DENOMINATOR.", "KEYBINDING.", "POLICY.", "PROFILE.", "AUTHORITY.", "TEST.", "SPEC."],
+      "x-vocab-source": "vocab-lock@v0.1-resolved id_namespace.prefixes_v0（P0/tracer bullet 最小闭包；扩展走词汇表 PR 流程）；PR-0008（2026-09-04）append-only 增补 SPEC.（vNext Batch 2 R1 / D6）",
       "description": "closed-world 前缀注册表镜像（A5）。与 object_id 的 pattern 保持同一闭包（G-vocab-2 黄金快照纪律）。TEST. = fixture 专用域（Q3 已决）：对象身份合法；doctor 将『生产代码引用 TEST.*』列为违规探针"
     },
     "actor": {

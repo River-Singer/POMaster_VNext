@@ -571,3 +571,53 @@ describe("heavy_entry 探针（hooks 注册态 / skills 双镜像一致态；按
     expect(byProbe.get(HEAVY_ENTRY_SKILLS_PROBE)?.status).toBe("READY");
   });
 });
+
+// ============================================================
+// R6/C9：感知回执落盘计数呈现（加法字段，不改 ok 语义）
+// ============================================================
+
+describe("doctor 感知回执计数呈现（R6/C9）", () => {
+  it("evidence/observations/ 落盘回执 → observation_receipts.count 计数 + human 行呈现；空分区 = 0 显式缺席", async () => {
+    mkdirSync(dir, { recursive: true });
+    await runInit(dir);
+    const plain = await runDoctor(dir, { gauntletProbes: readyGauntletProbes() });
+    // 空分区 = 0（显式缺席；ok 语义与既有探针行一致——MCP 缺席照旧 ok=false，本用例不依赖）。
+    expect(plain.result.observation_receipts?.count).toBe(0);
+
+    // 落两条回执（kernel persistObservationRecord 通路——R6 唯一写入口）。
+    const { persistObservationRecord } = await import("@pomaster/kernel");
+    const evidenceDir = join(dir, ".pomaster", "evidence");
+    persistObservationRecord(evidenceDir, {
+      record_type: "observation_receipt",
+      observation_id: "OBS-0001",
+      execution_id: "AGX-2026-00042",
+      journey_ref: null,
+      environment_receipt_ref: null,
+      sensor_capability: "SENSOR.BROWSER.SNAPSHOT",
+      adapter: "chrome-devtools-mcp",
+      operation: "take_snapshot",
+      target_ref: null,
+      surface: "USER_SURFACE",
+      artifact_refs: [],
+      normalized_facts: [],
+      result: "NOT_OBSERVABLE",
+      captured_at_seq: 42,
+    });
+    persistObservationRecord(evidenceDir, {
+      record_type: "environment_receipt",
+      environment_ref: "ENV.WEB.STAGING",
+      execution_id: "AGX-2026-00042",
+      repository_ref: null,
+      revision_ref: null,
+      runtime_instance: null,
+      base_url: null,
+      dataset_ref: null,
+      auth_role: null,
+      doctor_verdict: "READY",
+    }, { recordId: "ENVREC-0001" });
+
+    const counted = await runDoctor(dir, { gauntletProbes: readyGauntletProbes() });
+    expect(counted.result.observation_receipts?.count).toBe(2);
+    expect(counted.human.join("\n")).toContain("observation receipts: 2 条");
+  });
+});

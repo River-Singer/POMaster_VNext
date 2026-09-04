@@ -71,11 +71,11 @@ describe("vocab mirror（FROZEN 词表唯一镜像点）", () => {
     expect([...REALIZATION_VALUES]).toEqual(["stub", "mock", "wired"]);
   });
 
-  it("前缀闭包 15 前缀（A5 closed-world）", () => {
+  it("前缀闭包 16 前缀（A5 closed-world；PR-0008 append-only 增补 SPEC.——Evidence Spec 要求面，vNext Batch 2 R1）", () => {
     expect([...GOVERNED_ID_PREFIXES]).toEqual([
       "PAGE", "CAPABILITY", "COMPONENT", "API_REQ", "ERR", "FIELD", "KNOWLEDGE",
       "CHANGE", "TASK", "DENOMINATOR", "KEYBINDING", "POLICY", "PROFILE",
-      "AUTHORITY", "TEST",
+      "AUTHORITY", "TEST", "SPEC",
     ]);
   });
 

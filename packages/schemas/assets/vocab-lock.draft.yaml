@@ -9,15 +9,16 @@
 > 2026-09-01 PR-0005 增补（append-only 纯增量，v0.1/v0.2/v0.3 词值零删改；Owner 裁决 8 ② 2026-09-01 批准——corpus/master/cutover/owner-adjudications.md#裁决8，PRD v0.5.2 §5 Structured Applicability / P0.5-1）：catalog_layer_vocab 段新增 change_classes 词轴（首批 4 值最小闭包，PRD §5.2 示例词形 API_EVOLUTION 逐字 + corpus 实测词面锚）与 governance_profiles 词轴（对齐 CLI TRIAGE_PROFILES 三值 + STRICT，消 STANDARD 两义）；新增 applicability_fields 字段面注记（lanes 双读过渡 / capabilities governed id / object_kinds 复用 truth_bodies / applicability_note 自然语言降级位 / risk_at_least·technologies 留位不登记 O4）。既有 @v0.3-resolved 引用保留不改：其引用语义是「该值集镜像自 v0.3 基线」，v0.4 对这些镜像子集零改动，引用继续为真。
 > 2026-09-02 PR-0006 增补（append-only 纯增量，v0.1/v0.2/v0.3/v0.4 词值零删改；Owner 四决议 D-1~D-4 2026-09-02 批准——.trellis/tasks/09-02-vnext-prd-v06-governed-substrate/prd.md Owner 决议表，PRD v0.6 §6-8/§111/§148-149/§162-163 + PRD v0.6.1 §2/§69/§73/§75）：新增 software_graph_vocab 段（Software Graph / Engineering Substrate 六词轴：relation_type 首批 8 值「只收真实消费」/ relation_origin / relation_endpoint_domain / relation_confidence / resolution_match_class 六值逐字 / object_family 十二值派生视图）；catalog_layer_vocab 段新增 catalog_kind 词轴（既有四词形实测登记 + archetype 新词形——D-2 裁定「Archetype 定义住 catalog 面」）；id_namespace.state_plane_refs 补 EDGE-<12hex> 通路词形注记（照 PERMIT./POB- 先例，非 governed 前缀）。既有 @v0.4-resolved 引用保留不改：其引用语义是「该值集镜像自 v0.4 基线」，v0.5 对这些镜像子集零改动，引用继续为真。
 > 2026-09-03 PR-0007 增补（append-only 纯增量，v0.1~v0.5 词值零删改；Owner 有意词形确认 2026-09-03——knowledge.web.browser.mcp_eyes 物料 sources[].type 实录收编，批次 2.6 该物料 x-vocab-pr pending 注记转正）：source_types 轴 all/allowed 增 owner_directive（置于 human_directive 之后；语义注记：owner_directive=Owner 明令，区别于 human_directive 泛化人类指令——knowledge 物料 x-vocab-pr 注记先例）；forbidden 两值（prototype_html_scrape/ai_invention）语义无关不动。既有 @v0.5-resolved 引用保留不改：其引用语义是「该值集镜像自 v0.5 基线」，v0.6 对这些镜像子集零改动，引用继续为真。
+> 2026-09-04 PR-0008 增补（append-only 纯增量，v0.1~v0.6 词值零删改；vNext Batch 2 R1 / Owner 裁定 D6 2026-09-04——PRD vNext §9.2 四概念分离，Evidence Spec 一等对象落地批）：id_namespace.prefixes_v0 增 SPEC. 前缀（证据要求规范——要求面「需要什么证明」；15 前缀无语义适配位：TASK. 是工作单元非要求面、POLICY. 是强约束载体非证明要求、KNOWLEDGE. 恒 ADVISORY 与 Spec 的 AUTHORITATIVE 要求面相悖；裁定留痕=prd R1「入闭包或新前缀，留痕理由」的入锁形态，三镜像同批同步：schemas/src/vocab.ts GOVERNED_ID_PREFIXES + 07-evidence-records id_prefix/object_id pattern + kernel family.ts PREFIX_FAMILY_MAP SPEC→EVIDENCE 同批补映射）。既有 @v0.6-resolved 引用保留不改：其引用语义是「该值集镜像自 v0.6 基线」，v0.7 对这些镜像子集零改动，引用继续为真。
 > 消费方：②后续全部 schemas、③Kernel 转移引擎、Behavioral Eval 种子。
 
 ```yaml
 # ============================================================
-# pomaster.vocab/v0.6-resolved   （2026-09-03 PR-0007 增补；append-only 纯增量，v0.1~v0.5 词值零删改）
+# pomaster.vocab/v0.7-resolved   （2026-09-04 PR-0008 增补；append-only 纯增量，v0.1~v0.6 词值零删改）
 # 历史：原 v0-draft（三开放问题已于 2026-08-27 会话裁决）→ v0.1-resolved（2026-08-27 FROZEN）
 #       → v0.2-resolved（2026-08-29 PR-0001 增补）→ v0.3-resolved（2026-09-01 PR-0004 增补）
 #       → v0.4-resolved（2026-09-01 PR-0005 增补）→ v0.5-resolved（2026-09-02 PR-0006 增补）
-#       → v0.6-resolved（2026-09-03 PR-0007 增补）
+#       → v0.6-resolved（2026-09-03 PR-0007 增补）→ v0.7-resolved（2026-09-04 PR-0008 增补）
 # ============================================================
 
 ir_schema: pomaster.truth-index/v1-draft
@@ -85,6 +86,11 @@ id_namespace:           # closed-world（A5）：未登记前缀 = 解析即 FAT
     AUTHORITY.     : Authority Map 条目
     TEST.          : fixture 专用域（Q3 已决）：对象身份合法；
                      doctor 将「生产代码引用 TEST.*」列为违规探针
+    # PR-0008（2026-09-04，vNext Batch 2 R1 / D6）增补：Evidence Spec 一等对象
+    # （要求面——「需要什么证明」，PRD vNext §9.2 四概念分离）。append-only：
+    # 15 前缀无语义适配位（裁定留痕见头部 PR-0008 段）；family 派生 SPEC→EVIDENCE。
+    SPEC.          : 证据要求规范（Evidence Spec 一等对象——要求面；Spec 持要求
+                     不持判定，判卷值只住 Verification Result / Gate Result）
   state_plane_refs:     # PR-0001 文档化收编：状态面台账键词形（非 governed 前缀——不入 prefixes_v0、不过 parseGovernedId）
     - form: "PERMIT.<BASE>.<SEQ>"
       plane: state/permits.json（kernel 内部台账；A8 同族不入 truth-index）
@@ -297,8 +303,9 @@ software_graph_vocab:   # P-v06 Software Graph / Engineering Substrate 词轴（
   object_family:         # 十二 Object Family（PRD v0.6 §6.1 Object Family 十二族逐字）——**family=派生视图**（PRD §1.2 Derived Facts Must Be Derived：由前缀映射机器派生，零信封改动；PREFIX_FAMILY_MAP 见 kernel family.ts；PRD §163 Phase C：新 family 待真实对象出现走词汇表 PR 增前缀，本轴不扩值）
     values: [PRODUCT, UI, INTERFACE, CODE, DATA, RUNTIME, RESOURCE, RELIABILITY, SECURITY, DELIVERY, GOVERNANCE, EVIDENCE]
     note: >-
-      既有 15 前缀的派生映射：PAGE/COMPONENT→UI；CAPABILITY→PRODUCT；API_REQ/ERR→INTERFACE；FIELD→DATA；
+      既有 15 前缀的派生映射（v0.6 时点）：PAGE/COMPONENT→UI；CAPABILITY→PRODUCT；API_REQ/ERR→INTERFACE；FIELD→DATA；
       KEYBINDING→CODE；KNOWLEDGE/CHANGE/TASK/DENOMINATOR/POLICY/PROFILE/AUTHORITY→GOVERNANCE；TEST→EVIDENCE。
+      PR-0008（v0.7）同批补映射：SPEC→EVIDENCE（Evidence Spec 要求面住证据族——Spec 持要求不持判定）。
       RUNTIME/RESOURCE/RELIABILITY/SECURITY/DELIVERY 五族暂无前缀映射（派生为 null 显式缺席——禁猜测，§163 Phase C 逐批落）
 
 digest_ethics:          # D24 落地注记 —— 全局适用于一切 sha256/digest 字段

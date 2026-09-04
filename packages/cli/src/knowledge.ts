@@ -643,6 +643,7 @@ export async function runKnowledgePromote(
     const human = [
       `knowledge promote → ${result.id}（${result.from_status}→${result.status}；权威位=${result.promotion_authority} ref=${result.authority_ref}）`,
       `  promoted_ref: ${result.promoted_ref ?? "null"}（§83.10「只有 Promotion 完成后，才可成为强约束」——强约束载体是 maintain 面落地的 Policy/Truth 对象）`,
+      `  经 P11 maintain 落 Policy/Gate：maintain apply upsert POLICY.* 对象（Batch 2 D9 显式通路——promote 不自动落 policy，零强制；maintain apply 会对未落地的 PROMOTED 呈现登记建议）`,
       `  knowledge 本体 authority=${result.authority} 恒 ADVISORY：PROMOTED 只是谱系状态，永不进 gate 判卷输入（§83.2 铁律）`,
     ];
     return okOutcome(command, result, human);

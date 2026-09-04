@@ -290,6 +290,8 @@ describe("knowledge promote（§44.10 / §83.10 权威位闸 CLI 面）", () => 
     expect(outcome.result.promoted_ref).toBe("POLICY.FE.DASH.OWNERSHIP");
     expect(outcome.result.authority).toBe("ADVISORY");
     expect(outcome.human.join("\n")).toContain("恒 ADVISORY");
+    // R4/D9 显式通路路标：promote 成功呈现「经 P11 maintain 落 Policy/Gate」（零强制）。
+    expect(outcome.human.join("\n")).toContain("经 P11 maintain 落 Policy/Gate");
   });
 
   it("非权威位 KNOWLEDGE_CURATOR → AUTHORITY_REQUIRED（§25.5 ⑦ 机器化；零落盘）", async () => {

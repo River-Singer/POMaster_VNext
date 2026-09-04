@@ -32,7 +32,7 @@
 | field_definition | `FIELD.` | — |
 | page_surface | `PAGE.` | `PAGE-TASK-STEP-* → PAGE.*`（token 重排） |
 | knowledge_entry | `KNOWLEDGE.` | `KB-* → KNOWLEDGE.*` |
-| business_rule | `POLICY.`（暂挂，见 §14） | — |
+| business_rule | `POLICY.`（暂挂，见 §14）；Evidence Spec 载体走 `SPEC.`（PR-0008 2026-09-04 收编，见 §9 注记） | — |
 | change_object | `CHANGE.` | — |
 | task_object | `TASK.` | — |
 
@@ -280,6 +280,15 @@ payload:
 | scope_refs | string[] | 选填 | 作用对象（Governed id 列表） |
 | decision_refs | string[] | 选填 | `DECISION.*` / `CHANGE.*` 裁决链引用（D3 adjudication ledger 消费方） |
 
+> **Evidence Spec 载体注记（vNext Batch 2 R1 / Owner 裁定 D6 2026-09-04；PR-0008）**：
+> Evidence Spec（证据要求规范——要求面一等对象，「需要什么证明」；PRD vNext §9.2 四概念
+> 分离）以 kind=business_rule 承载（规范性条款先例），id 前缀 `SPEC.`（PR-0008 入
+> prefixes_v0 闭包；family 派生 SPEC→EVIDENCE），payload 携
+> `spec_kind: "evidence_spec"` 判别词并收窄于 **21-evidence-spec.schema.json**
+> （kind profile：bound_task_ref/bound_change_ref 至少其一 + requirements[] 资格条款 +
+> applies_to；Spec 持要求不持判定——payload 无 verdict 词位）。消费面：closeout DoD
+> Spec 维度（资格判定——挪证缝收口；无 Spec 绑定走 acceptance 双轨过渡）。
+
 ---
 
 ## 10. change_object（变更对象）
@@ -340,6 +349,7 @@ payload:
 ## 14. 开放点（移交词汇表 PR / 后续文件）
 
 1. **business_rule 暂挂 `POLICY.`**：POLICY 前缀语义是「目录策略引用条目」，business_rule 是否独立前缀（如 `RULE.`）待词汇表 PR 裁决；本表先行按暂挂形态登记。
+   **部分 resolved（PR-0008，2026-09-04）**：Evidence Spec 的承载形态已裁定——kind=business_rule + `SPEC.` 前缀（payload.spec_kind=evidence_spec 判别）；其余 business_rule 条目仍按 `POLICY.` 暂挂形态登记。
 2. **控制面 kind 注册**：key_binding_table / denominator / producer / authority / profile / test-fixture 对象族的 kind 值不在 truth_bodies 十类内，登记后复用 02 信封（KindValue 扩展点）。
 3. **TASK_LIFECYCLE 词表**（task 的 lifecycle 轴替换）未入 vocab-lock v0.1 → 词汇表 PR 清单；登记前 task_object 的 lifecycle 暂用六值主轴。
 4. **source_type / liveness_status / match_rule / write_policy / origin / verification_verdict 六个 envelope-local 枚举**已按 x-vocab-extra 注记出处（任务书 02 指令 / thread-A §3/§5）：source_type 已随 vocab-lock 增设 source_types 词轴收编（2026-08-27，allowed/forbidden 两子集切分同构）；其余五个提请随 vocab-lock v0.2 收编。

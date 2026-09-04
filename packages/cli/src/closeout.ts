@@ -43,6 +43,22 @@
  * - VERIFIED claim 附带 07 执行层规则核验：evidence_refs 为空 ⇒ 判定无效
  *   （07 schema「空数组合法，但此时 verification 不得为 VERIFIED」）——零证据的 VERIFIED
  *   正是「证据缺失伪装完成」，closeout 拒绝消费。
+ * - DoD Spec 维度（vNext Batch 2 R1 / Owner 裁定 D6 2026-09-04；PRD §9.2 四概念分离）：
+ *   truth-index 中 SPEC.*（PR-0008 前缀闭包）对象按 21-evidence-spec.schema.json
+ *   payload（kind=business_rule 承载，spec_kind=evidence_spec 判别）读绑定与要求条款：
+ *   绑定匹配（bound_task_ref 直绑，或 bound_change_ref 经 task implements_change 间绑）
+ *   且 lifecycle=CURRENT 的 Spec 进入判卷分母（非 CURRENT 绑定 → SPEC_NOT_BINDING
+ *   warning 显式呈现不判卷；草稿/废弃不绑定）。每条 requirement 按资格条件判卷——
+ *   claim_refs/gate_refs 是资格清单（清单外证据不满足条款：挪证缝收口，从「引用映射」
+ *   升级为「资格判定」）；claim 须 subject 与资格归属（clause.subject_ref 缺省回退
+ *   Spec 绑定）全等 + verdict=VERIFIED + 非空 evidence_refs；gate 须 subject 全等 +
+ *   verdict=passed；空资格清单 = UNSATISFIABLE 显式阻断（禁「任意 VERIFIED claim 皆可」
+ *   洗白）；无注记 claim 跨条款双消费 → 第二条款判不满足（detail 显式挪证通道，与
+ *   acceptance 侧 DOD_CLAIM_UNANNOTATED_SHARED 同形挪证封堵，两机制保留并衔接；
+ *   聚合码 DOD_SPEC_CLAUSE_UNSATISFIED）。Spec 持要求不持
+ *   判定（21 schema 无 verdict 词位）——判定值只从 claims/runs 平面读取（D20 同线）；
+ *   record_claim 强制 UNVERIFIED / A3 不可覆写 / D20 主体分离（store.ts）零改动。
+ *   无 Spec 绑定的任务走既有 acceptance.criterion 双轨（过渡期，PRD §9.2 已声明）。
  * - 阻断路径零写入（staged 写从未发起）；成功路径同 inputs 重放由 kernel 指纹短路
  *   （short_circuited=true 零写入）。
  */
@@ -104,6 +120,20 @@ export interface CloseoutGateRow {
   readonly latest: boolean;
 }
 
+/**
+ * Spec 维度逐条款判卷行（vNext Batch 2 R1 / D6；cli 局部判卷码位 TODO(vocab-pr)）。
+ */
+export interface CloseoutSpecClauseEntry {
+  readonly spec: string;
+  readonly clause_id: string;
+  /** 需要的证明类型（21 schema proof_type 透传；缺席显式 null）。 */
+  readonly proof_type: string | null;
+  readonly ok: boolean;
+  /** 满足位（如 "claim CLM-0001" / "gate GRN-0001"）；不满足 = null。 */
+  readonly satisfied_by: string | null;
+  readonly detail: string | null;
+}
+
 export interface CloseoutResult {
   /** argv 原词形。 */
   readonly task: string;
@@ -117,6 +147,17 @@ export interface CloseoutResult {
     readonly acceptance_total: number;
     readonly verified: number;
     readonly entries: readonly CloseoutDodEntry[];
+    /**
+     * Spec 维度（vNext Batch 2 R1/D6）：null = 无绑定 Evidence Spec（双轨过渡——
+     * acceptance 轨独跑，行为与 Batch 2 前逐字节一致）；非 null = 绑定 CURRENT Spec
+     * 的资格判定分账（有 Spec 绑定的任务按 Spec 资格条件判卷——PRD §9.2 声明）。
+     */
+    readonly spec: {
+      readonly bound_spec_refs: readonly string[];
+      readonly clauses_total: number;
+      readonly clauses_satisfied: number;
+      readonly entries: readonly CloseoutSpecClauseEntry[];
+    } | null;
   } | null;
   readonly gates: {
     readonly bound_runs: number;
@@ -529,6 +570,274 @@ export async function runCloseout(
   }
 
   // ============================================================
+  // ①b DoD Spec 维度（vNext Batch 2 R1 / D6）：绑定 Evidence Spec 资格判定
+  //    （Spec 持要求不持判定；判定值只读 claims/runs 平面——D20 同线）
+  // ============================================================
+
+  const specEntries: CloseoutSpecClauseEntry[] = [];
+  const specErrors: CliError[] = [];
+  const specWarnings: CliWarning[] = [];
+  const boundSpecRefs: string[] = [];
+  // Spec 级无注记 claim 单消费登记（挪证封堵与 acceptance 侧同形：claimRef → 消费它的
+  // 条款锚；只在 claim 真实判过（VERIFIED + 非空证据）后登记）。
+  const specUnannotatedConsumed = new Map<string, string>();
+  const taskImplementsChange =
+    typeof payload.implements_change === "string" ? payload.implements_change : null;
+  const claimsDirForSpec = claimsDirPath(rootDir);
+  const specRows = index.objects.filter((row) => row.id.startsWith("SPEC."));
+  for (const specRow of specRows) {
+    // —— Spec 正文读取（A1 成对纪律：索引行在而正文缺失 = REF 异常形态，必 fail） ——
+    const specBodyPath = join(rootDir, POMASTER_DIR, ...specRow.bodyRef.split("/"));
+    let specRaw: string;
+    try {
+      specRaw = await readFile(specBodyPath, "utf8");
+    } catch {
+      specErrors.push({
+        code: "OBJECT_BODY_MISSING",
+        message: `Spec 索引行在而正文缺失（A1 成对纪律）：${toPosix(`${POMASTER_DIR}/${specRow.bodyRef}`)}`,
+        hint: "正文文件被删或未落盘——从 git 恢复，或用 maintain 重新 upsert 该对象（禁手补索引行）。",
+      });
+      continue;
+    }
+    let specBody: UnknownRecord;
+    try {
+      const parsedSpec: unknown = JSON.parse(specRaw);
+      if (!isRecord(parsedSpec)) throw new TypeError("spec body is not an object");
+      specBody = parsedSpec;
+    } catch (err) {
+      specErrors.push({
+        code: "SCHEMA_INVALID",
+        message: `Spec 正文无法解析（对象 ${specRow.id}）：${(err as Error).message}`,
+        hint: "正文文件由 kernel 事务维护（staged 原子写）；从 git 恢复该文件，禁手改正文。",
+      });
+      continue;
+    }
+    const specPayload = isRecord(specBody.payload) ? specBody.payload : null;
+    if (specPayload === null || specPayload.spec_kind !== "evidence_spec") {
+      specErrors.push({
+        code: "SCHEMA_INVALID",
+        message: `SPEC.* 对象 ${specRow.id} 缺 payload.spec_kind=evidence_spec 判别词（21-evidence-spec kind profile 词形）`,
+        hint: "SPEC.* 前缀命名空间保留给 Evidence Spec 一等对象；对照 21-evidence-spec.schema.json 修复 payload 后重跑。",
+      });
+      continue;
+    }
+    // —— 绑定匹配（direct = bound_task_ref；change = bound_change_ref 经 implements_change） ——
+    const boundTaskRef = typeof specPayload.bound_task_ref === "string" ? specPayload.bound_task_ref : null;
+    const boundChangeRef = typeof specPayload.bound_change_ref === "string" ? specPayload.bound_change_ref : null;
+    const directBind = boundTaskRef === target;
+    const changeBind =
+      boundChangeRef !== null && taskImplementsChange !== null && boundChangeRef === taskImplementsChange;
+    if (!directBind && !changeBind) continue; // 不绑定本任务：不在本任务判卷分母（诚实缺席）。
+    boundSpecRefs.push(specRow.id);
+    if (specRow.axes.lifecycle !== "CURRENT") {
+      // 绑定分母资格：只有 CURRENT 承担判卷绑定（草稿/废弃不绑定）——显式呈现不静默。
+      specWarnings.push({
+        code: "SPEC_NOT_BINDING",
+        message: `Evidence Spec ${specRow.id} 绑定本任务但 lifecycle=${specRow.axes.lifecycle}（非 CURRENT）——不进入判卷分母`,
+        hint: "绑定判卷分母资格 = lifecycle CURRENT（六值主轴）；将 Spec 推进到 CURRENT（maintain transition）后重跑 closeout。",
+      });
+      continue;
+    }
+    const requirements = Array.isArray(specPayload.requirements) ? specPayload.requirements : null;
+    if (requirements === null) {
+      specErrors.push({
+        code: "SCHEMA_INVALID",
+        message: `Evidence Spec ${specRow.id} 缺 requirements 数组（21 schema required）`,
+        hint: "requirements 是要求面分母（可为空数组显式无条款，缺席不合法）；对照 21-evidence-spec.schema.json 修复。",
+      });
+      continue;
+    }
+    // —— 逐条款资格判定（claim_refs/gate_refs 是资格清单——清单外证据不满足条款） ——
+    for (let clauseIndex = 0; clauseIndex < requirements.length; clauseIndex += 1) {
+      const requirement = requirements[clauseIndex];
+      if (!isRecord(requirement)) {
+        specErrors.push({
+          code: "SCHEMA_INVALID",
+          message: `Evidence Spec ${specRow.id} requirements[${clauseIndex}] 非对象（21 schema 词形）`,
+          hint: "对照 21-evidence-spec.schema.json requirement_clause 修复。",
+        });
+        continue;
+      }
+      const clauseId = asString(requirement.clause_id) ?? `REQ_${clauseIndex + 1}`;
+      const proofType = asString(requirement.proof_type);
+      const description = asString(requirement.description);
+      const subjectRef =
+        typeof requirement.subject_ref === "string" && requirement.subject_ref.length > 0
+          ? requirement.subject_ref
+          : null;
+      // 资格归属：clause.subject_ref 缺省回退 Spec 级绑定（task 优先，其次 change）。
+      // 资格归属集合（挪证缝收口）：clause.subject_ref 显式指定时唯它合法；缺省回退
+      // 「Spec 绑定面 ∪ 本任务」——直接绑定时 subject=本任务合法；change 绑定时
+      // subject=bound_change 或实现该 change 的本任务均合法（归属语义，非放开挪证：
+      // 清单外对象依旧一律不满足）。
+      const effectiveSubjects: readonly string[] =
+        subjectRef !== null
+          ? [subjectRef]
+          : [...new Set([boundTaskRef, target, boundChangeRef].filter((ref): ref is string => ref !== null))];
+      const clauseClaimRefs = Array.isArray(requirement.claim_refs)
+        ? requirement.claim_refs.filter((item): item is string => typeof item === "string")
+        : [];
+      const clauseGateRefs = Array.isArray(requirement.gate_refs)
+        ? requirement.gate_refs.filter((item): item is string => typeof item === "string")
+        : [];
+      const clauseAnchor = `${specRow.id}#${clauseId}`;
+      const failClause = (code: string, detail: string, hint: string): void => {
+        specEntries.push({ spec: specRow.id, clause_id: clauseId, proof_type: proofType, ok: false, satisfied_by: null, detail });
+        specErrors.push({ code, message: `${clauseAnchor}（${description ?? "无描述"}）：${detail}`, hint });
+      };
+      if (clauseClaimRefs.length === 0 && clauseGateRefs.length === 0) {
+        failClause(
+          "DOD_SPEC_CLAUSE_UNSATISFIABLE",
+          "资格清单为空（claim_refs 与 gate_refs 均无条目）——无任何证据可满足本条款",
+          "空资格清单 = 条款不可满足（禁「任意 VERIFIED claim 皆可」洗白）；在 Spec 登记资格清单（claim_refs/gate_refs）后重跑。",
+        );
+        continue;
+      }
+      let satisfiedBy: string | null = null;
+      const claimFindings: string[] = [];
+      for (const claimRef of clauseClaimRefs) {
+        if (!/^CLM-[0-9]+$/.test(claimRef)) {
+          claimFindings.push(`${claimRef}: 词形非法（须 CLM-[0-9]+）`);
+          continue;
+        }
+        const view = await readClaimRecord(claimsDirForSpec, `${claimRef}.json`);
+        if ("missing" in view) {
+          claimFindings.push(`${claimRef}: 不在 claims 平面（悬空资格引用）`);
+          continue;
+        }
+        if ("damage" in view) {
+          claimFindings.push(`${claimRef}: ${view.damage}`);
+          continue;
+        }
+        // 资格归属核验（挪证缝收口）：claim 主体必须 ∈ 条款资格归属集合。
+        if (effectiveSubjects.length > 0 && !effectiveSubjects.includes(String(view.subject))) {
+          claimFindings.push(
+            `${claimRef}: subject=${String(view.subject)} ∉ 资格归属 [${effectiveSubjects.join(", ")}]（跨对象借证不满足本条款——挪证封堵）`,
+          );
+          continue;
+        }
+        const verdict = view.verdict;
+        if (verdict !== "VERIFIED") {
+          claimFindings.push(`${claimRef}: verdict=${verdict ?? "缺失"}，不是 VERIFIED（判定来自 claims 平面，D20）`);
+          continue;
+        }
+        const evidenceRefs = Array.isArray(view.evidenceRefs) ? view.evidenceRefs : null;
+        if (evidenceRefs === null || evidenceRefs.length === 0) {
+          claimFindings.push(`${claimRef}: VERIFIED 但 evidence_refs 为空（零证据 VERIFIED 拒绝消费）`);
+          continue;
+        }
+        // 无注记 claim 跨条款单消费（挪证封堵，acceptance 侧同形）。
+        if (!Number.isInteger(view.acceptanceIndex)) {
+          const firstConsumer = specUnannotatedConsumed.get(claimRef);
+          if (firstConsumer !== undefined) {
+            claimFindings.push(
+              `${claimRef}: 无 subject.acceptance_index 注记已被条款 ${firstConsumer} 消费，本条款再引用 = 静默共用一条 VERIFIED 证据（挪证通道）`,
+            );
+            continue;
+          }
+          specUnannotatedConsumed.set(claimRef, clauseAnchor);
+        }
+        satisfiedBy = `claim ${claimRef}`;
+        break;
+      }
+      if (satisfiedBy === null) {
+        for (const gateRef of clauseGateRefs) {
+          if (!/^GRN-[0-9]+$/.test(gateRef)) {
+            specEntries.push({
+              spec: specRow.id,
+              clause_id: clauseId,
+              proof_type: proofType,
+              ok: false,
+              satisfied_by: null,
+              detail: `${gateRef}: gate 资格引用词形非法（须 GRN-[0-9]+）`,
+            });
+            specErrors.push({
+              code: "SCHEMA_INVALID",
+              message: `${clauseAnchor} gate 资格引用 ${gateRef} 词形非法（须 GRN-[0-9]+）`,
+              hint: "对照 21-evidence-spec.schema.json gate_refs 词形修复。",
+            });
+            continue;
+          }
+          const view = await readRunRecord(runsDirPath(rootDir), `${gateRef}.json`);
+          if ("damage" in view) {
+            specEntries.push({
+              spec: specRow.id,
+              clause_id: clauseId,
+              proof_type: proofType,
+              ok: false,
+              satisfied_by: null,
+              detail: `${gateRef}: ${view.damage}`,
+            });
+            specErrors.push({
+              code: "EVIDENCE_MALFORMED",
+              message: `${clauseAnchor} gate 资格引用 ${gateRef} 损坏：${view.damage}`,
+              hint: "判卷分母内证据损坏禁静默跳过；修复后走 record/compact canonical 化，或从 git 恢复。",
+            });
+            continue;
+          }
+          if (effectiveSubjects.length > 0 && !effectiveSubjects.includes(String(view.subject))) {
+            specEntries.push({
+              spec: specRow.id,
+              clause_id: clauseId,
+              proof_type: proofType,
+              ok: false,
+              satisfied_by: null,
+              detail: `${gateRef}: subject=${String(view.subject)} ∉ 资格归属 [${effectiveSubjects.join(", ")}]（跨对象借证不满足本条款）`,
+            });
+            specErrors.push({
+              code: "DOD_SPEC_GATE_SUBJECT_MISMATCH",
+              message: `${clauseAnchor} gate 资格引用 ${gateRef} 绑定对象是 ${String(view.subject)}，∉ 资格归属 [${effectiveSubjects.join(", ")}]`,
+              hint: "gate run 的 subject_id 必须属于条款资格归属集合（挪证封堵）；跨对象 run 不满足本条款。",
+            });
+            continue;
+          }
+          if (view.verdict !== "passed") {
+            specEntries.push({
+              spec: specRow.id,
+              clause_id: clauseId,
+              proof_type: proofType,
+              ok: false,
+              satisfied_by: null,
+              detail: `${gateRef}: verdict=${view.verdict ?? "缺失"}，不是 passed`,
+            });
+            specErrors.push({
+              code: "DOD_SPEC_GATE_NOT_PASSED",
+              message: `${clauseAnchor} gate 资格引用 ${gateRef} verdict=${view.verdict ?? "缺失"}，不是 passed`,
+              hint: "重跑该 gate 至 passed（最新判卷取代旧判）后重跑 closeout。",
+            });
+            continue;
+          }
+          satisfiedBy = `gate ${gateRef}`;
+          break;
+        }
+      }
+      if (satisfiedBy !== null) {
+        specEntries.push({
+          spec: specRow.id,
+          clause_id: clauseId,
+          proof_type: proofType,
+          ok: true,
+          satisfied_by: satisfiedBy,
+          detail: null,
+        });
+        continue;
+      }
+      // 逐条 claim 资格核验后仍无满足位且无 gate 硬错误接管 → 聚合为条款不满足。
+      const clauseHasHardGateError = specEntries.some(
+        (candidate) => candidate.spec === specRow.id && candidate.clause_id === clauseId && !candidate.ok,
+      );
+      if (!clauseHasHardGateError) {
+        failClause(
+          "DOD_SPEC_CLAUSE_UNSATISFIED",
+          `资格清单内无一条证据成立：${claimFindings.length > 0 ? claimFindings.join("；") : "gate 资格引用均不满足"}`,
+          "按 Spec 资格条件补证据：追证 claim 至 VERIFIED（subject 须与资格归属全等）或重跑清单内 gate 至 passed；清单外证据不满足条款（挪证缝收口——资格判定非引用映射）。",
+        );
+      }
+    }
+  }
+  boundSpecRefs.sort();
+
+  // ============================================================
   // ② gate 阻断语义（本层施加）：subject 绑定 run 最新判卷必须全 passed
   // ============================================================
 
@@ -627,6 +936,15 @@ export async function runCloseout(
       Array.isArray(acceptanceRaw) ? acceptanceRaw.length : 0,
     verified: dodEntries.filter((entry) => entry.ok).length,
     entries: dodEntries,
+    spec:
+      boundSpecRefs.length > 0
+        ? {
+            bound_spec_refs: boundSpecRefs,
+            clauses_total: specEntries.length,
+            clauses_satisfied: specEntries.filter((entry) => entry.ok).length,
+            entries: specEntries,
+          }
+        : null,
   };
   const gates: CloseoutResult["gates"] = {
     bound_runs: boundRuns,
@@ -636,13 +954,17 @@ export async function runCloseout(
   };
   const judged: CloseoutResult = { ...withKind, dod, gates };
 
-  const errors = [...dodErrors, ...gateErrors];
+  const errors = [...dodErrors, ...specErrors, ...gateErrors];
+  const specSummary =
+    dod.spec === null
+      ? "spec: 无绑定 Evidence Spec（双轨过渡——acceptance 轨）"
+      : `spec: ${dod.spec.clauses_satisfied}/${dod.spec.clauses_total} 条款资格成立（${dod.spec.bound_spec_refs.join(", ")}）`;
   if (errors.length > 0) {
     const human = [
-      `closeout ${target} → BLOCKED（dod ${dod.verified}/${dod.acceptance_total} acceptance VERIFIED, gates ${gates.gates_passed}/${gates.gates_judged} passed）`,
+      `closeout ${target} → BLOCKED（dod ${dod.verified}/${dod.acceptance_total} acceptance VERIFIED, gates ${gates.gates_passed}/${gates.gates_judged} passed；${specSummary}）`,
       ...errors.map((error) => `  ${error.code}: ${error.message}`),
     ];
-    return failOutcome<CloseoutResult>("closeout", judged, errors, human, gateWarnings);
+    return failOutcome<CloseoutResult>("closeout", judged, errors, human, [...gateWarnings, ...specWarnings]);
   }
 
   // ============================================================
@@ -675,10 +997,11 @@ export async function runCloseout(
       [
         `closeout ${target} → COMPLETED (applied_seq=${result.applied_seq}${applied.shortCircuited ? ", short_circuited 零写入" : ""})`,
         `  dod: ${dod.verified}/${dod.acceptance_total} acceptance VERIFIED`,
+        `  ${specSummary}`,
         `  gates: ${gates.gates_passed}/${gates.gates_judged} passed`,
         `  transition: evidence → VERIFIED（kernel applyTransaction 唯一写通道；COMPLETED 是呈现词 TODO(vocab-pr)）`,
       ],
-      gateWarnings,
+      [...gateWarnings, ...specWarnings],
     );
   } catch (err) {
     // kernel staged 回滚保证零残留；施断判卷（跨轴断言等）全部 kernel 侧，原码透传。
@@ -692,7 +1015,7 @@ export async function runCloseout(
         `  ${error.code}: ${error.message}`,
         `  hint: ${error.hint}`,
       ],
-      gateWarnings,
+      [...gateWarnings, ...specWarnings],
     );
   }
 }

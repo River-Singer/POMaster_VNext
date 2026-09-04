@@ -15,7 +15,14 @@ import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSyn
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { applyTransaction, beginExecution, createStore } from "@pomaster/kernel";
+import {
+  applyTransaction,
+  applyKnowledgeTransition,
+  beginExecution,
+  createStore,
+  promoteKnowledge,
+  recordKnowledge,
+} from "@pomaster/kernel";
 import {
   runCli,
   runMaintain,
@@ -464,5 +471,87 @@ describe("maintain 事务级 execution 盖章（--execution-id → TX_APPLIED）
       .filter((event) => event.type === "TX_APPLIED")
       .at(-1);
     expect(applied?.execution_id).toBe(null);
+  });
+});
+
+// ============================================================
+// R4/D9：PROMOTED knowledge → POLICY.* 登记建议呈现（零强制零新状态轴）
+// ============================================================
+
+describe("maintain apply policy 登记建议呈现（R4/D9）", () => {
+  /** 登记 PROMOTED 知识（VALIDATED→PROMOTED 唯一通路；promotedRef 指向给定引用）。 */
+  async function seedPromotedKnowledge(id: string, promotedRef: string): Promise<void> {
+    const s = await createStore(root);
+    await recordKnowledge(s, {
+      id,
+      kind: "DIAGNOSTIC_PLAYBOOK",
+      title: "stacking context clip",
+      triggers: ["dashboard widget clipped"],
+      confidence: "HIGH",
+      recordedBy: { actorType: "agent", actor: "curator", selfAttested: true },
+    });
+    await applyKnowledgeTransition(s, {
+      id,
+      to: "VALIDATED",
+      reasonShort: "validation",
+      transitionedBy: { actorType: "human", actor: "reviewer", selfAttested: true },
+    });
+    await promoteKnowledge(s, {
+      id,
+      promotionAuthority: "MAINTAIN",
+      authorityRef: "DECISION.77",
+      promotedRef,
+      promotedBy: "human:maintain",
+    });
+  }
+
+  it("PROMOTED 未落 Policy → 建议呈现（suggested_policy_ref 机械派生；零强制）", async () => {
+    await seedStore();
+    await seedPromotedKnowledge("KNOWLEDGE.FE.DASH.STACK_CLIP", "DECISION.77");
+    const txPath = writeTx("tx.json", UPSERT_TX);
+    const outcome = await runMaintain(root, { changeOrTask: ANCHOR, opsFile: txPath });
+    expect(outcome.ok).toBe(true);
+    const result = outcome.result as MaintainApplyResult;
+    expect(result.change).toBe("APPLIED");
+    expect(result.policy_registration_suggestions).toHaveLength(1);
+    const suggestion = result.policy_registration_suggestions[0];
+    expect(suggestion?.knowledge_id).toBe("KNOWLEDGE.FE.DASH.STACK_CLIP");
+    expect(suggestion?.promoted_ref).toBe("DECISION.77");
+    expect(suggestion?.suggested_policy_ref).toBe("POLICY.FE.DASH.STACK_CLIP");
+    // 零强制：主事务结果不受建议影响（change 仍 APPLIED，零新状态轴——知识本体仍 ADVISORY 侧车）。
+    expect(outcome.human.join("\n")).toContain("零强制");
+  });
+
+  it("promoted_ref 已是在册 POLICY.* 对象 → 不重复建议；无 PROMOTED 知识 → 空数组显式缺席", async () => {
+    await seedStore();
+    // 在册 POLICY 对象（promoted_ref 指向它 → 已落地，不再建议）。
+    const s = await createStore(root);
+    await applyTransaction(s, {
+      ops: [
+        {
+          op: "upsert_object",
+          envelope: {
+            id: "POLICY.FE.DASH.LANDED",
+            kind: "business_rule",
+            axisProfile: "rule_default",
+            axes: { lifecycle: "CURRENT", confidence: "PROVISIONAL", evidence: "IMPLEMENTED", change: "STABLE" },
+            titleZh: "已落地策略",
+            authority: { owner: "BUSINESS_OWNER", delegates: [] },
+            origin: "natural",
+            payload: {},
+          } as never,
+        },
+      ],
+    });
+    await seedPromotedKnowledge("KNOWLEDGE.FE.DASH.LANDED_CLIP", "POLICY.FE.DASH.LANDED");
+    // 第二条 PROMOTED 未落地 → 仍建议。
+    await seedPromotedKnowledge("KNOWLEDGE.FE.DASH.OTHER_CLIP", "DECISION.78");
+    const txPath = writeTx("tx.json", UPSERT_TX);
+    const outcome = await runMaintain(root, { changeOrTask: ANCHOR, opsFile: txPath });
+    expect(outcome.ok).toBe(true);
+    const result = outcome.result as MaintainApplyResult;
+    expect(result.policy_registration_suggestions.map((entry) => entry.knowledge_id)).toEqual([
+      "KNOWLEDGE.FE.DASH.OTHER_CLIP",
+    ]);
   });
 });

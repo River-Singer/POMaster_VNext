@@ -227,9 +227,9 @@
     },
     "governed_id": {
       "type": "string",
-      "pattern": "^(PAGE|CAPABILITY|COMPONENT|API_REQ|ERR|FIELD|KNOWLEDGE|CHANGE|TASK|DENOMINATOR|KEYBINDING|POLICY|PROFILE|AUTHORITY|TEST)\\.[A-Z][A-Z0-9_]{0,31}(\\.[A-Z][A-Z0-9_]{0,31})*(\\.[0-9]+)?$",
+      "pattern": "^(PAGE|CAPABILITY|COMPONENT|API_REQ|ERR|FIELD|KNOWLEDGE|CHANGE|TASK|DENOMINATOR|KEYBINDING|POLICY|PROFILE|AUTHORITY|TEST|SPEC)\\.[A-Z][A-Z0-9_]{0,31}(\\.[A-Z][A-Z0-9_]{0,31})*(\\.[0-9]+)?$",
       "title": "受治理对象 id（governed object id，closed-world）",
-      "description": "生成方式：PREFIX 取 vocab-lock@v0.1-resolved prefixes_v0 闭包（本 pattern 为其机械镜像；扩展走词汇表 PR 流程后同步改写本 pattern 与 prefixes 指纹）。文法：PREFIX . SEGMENT (. SEGMENT)* [. SEQ]；SEGMENT 大写下划线、[A-Z] 开头、全长≤32；SEQ 纯数字、仅可为最后一段。A5 closed-world：未登记前缀=解析即 FATAL。A6 rename-on-ingest：legacy 拼写（KB-*、GRID.*、PAGE-TASK-STEP-*、TASK-*、CHANGE-*）只入 alias 双向链，不得作为本字段值。",
+      "description": "生成方式：PREFIX 取 vocab-lock@v0.1-resolved prefixes_v0 闭包（本 pattern 为其机械镜像；扩展走词汇表 PR 流程后同步改写本 pattern 与 prefixes 指纹——PR-0008（2026-09-04，vNext Batch 2 R1/D6）已随增补 SPEC. 同步本 pattern）。文法：PREFIX . SEGMENT (. SEGMENT)* [. SEQ]；SEGMENT 大写下划线、[A-Z] 开头、全长≤32；SEQ 纯数字、仅可为最后一段。A5 closed-world：未登记前缀=解析即 FATAL。A6 rename-on-ingest：legacy 拼写（KB-*、GRID.*、PAGE-TASK-STEP-*、TASK-*、CHANGE-*）只入 alias 双向链，不得作为本字段值。",
       "examples": [
         "PAGE.BIND_CARLINE",
         "GRID.EDITABLE_GRID（INVALID：GRID. 仅是 alias 前缀（A6 收编链 legacy），canonical 为 CAPABILITY.GRID.EDITABLE_GRID；未登记前缀= FATAL）"

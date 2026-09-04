@@ -52,6 +52,10 @@ import {
   truthIndexPath,
 } from "./store-layout.js";
 import {
+  buildStorePaths,
+  countObservationRecords,
+} from "@pomaster/kernel";
+import {
   CLAUDE_SETTINGS_RELATIVE,
   ENTRY_MODE_HEAVY_MARKER,
   POMASTER_HOOK_EVENT_COMMANDS,
@@ -86,6 +90,12 @@ export interface DoctorResult {
    * 结果，禁二次探测；缺省缺席 = catalog 载入失败时的探针行 detail 承载）。
    */
   readonly sensors?: readonly SensorCapabilityAvailability[];
+  /**
+   * 感知回执落盘计数（vNext Batch 2 R6 / C9；加法字段不改 ok 语义）：统计
+   * evidence/observations/ 分区回执记录数（OBS-*.json / ENVREC-*.json）——
+   * 巡检呈现位（形态最小），非探针行；目录缺席 = 0（显式缺席）。
+   */
+  readonly observation_receipts?: { readonly count: number };
 }
 
 /** P1-5 Sensor Capability 联结呈现形态（DoctorResult.sensors 条目）。 */
@@ -844,13 +854,29 @@ export async function runDoctor(
   }
 
   const ok = probes.every((p) => p.status === "READY");
-  const result: DoctorResult = sensors === undefined ? { ok, probes } : { ok, probes, sensors };
+  // 感知回执落盘计数（vNext Batch 2 R6 / C9）：加法呈现字段，不改 ok 语义；
+  // kernel countObservationRecords 单一实现（目录缺席 = 0 显式缺席）。
+  // kernel 依赖与本文件顶部静态 import 同源（buildStorePaths 已静态引入 kernel）；
+  // try/catch 只兜 countObservationRecords 运行时异常（呈现位失败归 0，不炸 doctor）。
+  let observationCount = 0;
+  try {
+    observationCount = countObservationRecords(buildStorePaths(rootDir).evidenceDir);
+  } catch {
+    observationCount = 0;
+  }
+  const result: DoctorResult = {
+    ok,
+    probes,
+    ...(sensors !== undefined ? { sensors } : {}),
+    observation_receipts: { count: observationCount },
+  };
   const human = [
     `doctor: ${ok ? "READY" : "NOT READY"}`,
     ...probes.map(
       (p) =>
         `  ${p.status.padEnd(22)} ${p.probe} — ${p.detail}${p.hint ? `\n${" ".repeat(26)}hint: ${p.hint}` : ""}`,
     ),
+    `  observation receipts: ${observationCount} 条（evidence/observations/ sidecar 分区；0 = 显式缺席）`,
   ];
   return ok
     ? okOutcome("doctor", result, human)

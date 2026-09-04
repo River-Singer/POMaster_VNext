@@ -6,8 +6,12 @@
  *   对象的 authority owner 治理域时注入，理由字段写明经谁关联）；
  * - MUST/ADVISORY 分层可见：MUST 区（AUTHORITATIVE，进 gate 判卷输入）与 ADVISORY 区
  *   （按触发条件注入的经验/漂移预警，不进 gate 判卷输入）物理分离——契约的
- *   mustEntries/advisoryEntries 两分区即 §74 三分区的前两轴（VERIFICATION 判卷
- *   输入 = MUST 区；gate 归一走 normalizeGateResult）；
+ *   mustEntries/advisoryEntries 两分区即 §74 三分区的前两轴（gate 归一走
+ *   normalizeGateResult）。vNext Batch 2 R3（D8）分区词形对齐后，呈现层把 MUST 区
+ *   一分为二（分母对象/锚行 → AUTHORITATIVE PROJECT STATE；POLICY.* → REQUIRED
+ *   POLICY）——机器判卷输入仍是 mustEntries 整体（= AUTHORITATIVE PROJECT STATE ∪
+ *   REQUIRED POLICY；VERIFICATION 是 R1 Evidence Spec 呈现分区，不进本 manifest、
+ *   不进 inputsFingerprint，等价性论证见 cli context.ts 头注 ADR）；
  * - catalogEntries 独立第四分区（P14，§92.2）：catalog/ 策展源的检索式注入，
  *   出处逐条标明 catalog 路径，绝不混入 mustEntries 判卷输入——Catalog 不是
  *   第二套 Project Truth，catalog 物料变更只影响本分区与 inputsFingerprint，
@@ -865,6 +869,86 @@ export async function compileProjection(
     manifest,
   });
   return { manifest, catalogSource, inputsFingerprint };
+}
+
+// ============================================================
+// Evidence Spec 绑定引用派生（vNext Batch 2 R1/R3 / Owner 裁定 D6；context compile
+// VERIFICATION 分区呈现位 + closeout 判卷同语义分母）
+// ============================================================
+
+/** 绑定任务的 Evidence Spec 引用行（呈现面；lifecycle 恒 CURRENT——非 CURRENT 不绑定）。 */
+export interface EvidenceSpecRefView {
+  readonly ref: string;
+  /** 恒 "CURRENT"（绑定分母资格：六值主轴中只有 CURRENT 承担判卷绑定）。 */
+  readonly lifecycle: "CURRENT";
+  /** 绑定通路：direct = bound_task_ref 命中；change = bound_change_ref 经 implements_change 命中。 */
+  readonly via: "direct" | "change";
+}
+
+/**
+ * 派生绑定任务的 Evidence Spec 引用清单（纯读；PR-0008 SPEC. 前缀闭包）。
+ * - 绑定匹配：Spec payload.bound_task_ref === taskRef（direct），或
+ *   payload.bound_change_ref === 任务 payload.implements_change（change）；
+ * - 生命周期资格：只有 axes.lifecycle=CURRENT 的 Spec 进入绑定分母（非 CURRENT 的
+ *   SPEC.* 对象如实缺席——判卷绑定是 AUTHORITATIVE 面，草稿/废弃不绑定）；
+ * - 正文缺失 / payload 非对象：显式跳过（本函数是呈现面，fail-closed 判卷归 closeout
+ *   消费侧——SPEC.* 正文缺失在 closeout 是硬阻断，呈现面不重复报错）；
+ * - 纯派生只读：不写 store，**不进 inputsFingerprint**（VERIFICATION 是呈现分区，
+ *   gate 判卷输入语义零变更——R3 等价性 ADR，见 context.ts 头注）。
+ */
+export async function boundEvidenceSpecRefs(
+  store: Store,
+  taskRef: string,
+): Promise<readonly EvidenceSpecRefView[]> {
+  const paths = pathsOf(store);
+  const index = await loadTruthIndex(store);
+  const taskRow = index.objects.find((row) => row.id === taskRef);
+  let taskChangeRef: string | null = null;
+  if (taskRow !== undefined) {
+    const text = readText(`${paths.pomasterDir}/${taskRow.bodyRef}`);
+    if (text !== null) {
+      try {
+        const body = JSON.parse(text) as UnknownRecord;
+        const payload = body.payload;
+        if (typeof payload === "object" && payload !== null && !Array.isArray(payload)) {
+          const implementsChange = (payload as UnknownRecord).implements_change;
+          taskChangeRef = typeof implementsChange === "string" ? implementsChange : null;
+        }
+      } catch {
+        taskChangeRef = null;
+      }
+    }
+  }
+  const out: EvidenceSpecRefView[] = [];
+  for (const row of index.objects) {
+    if (!row.id.startsWith("SPEC.")) continue;
+    if (row.axes.lifecycle !== "CURRENT") continue;
+    const text = readText(`${paths.pomasterDir}/${row.bodyRef}`);
+    if (text === null) continue;
+    let boundTaskRef: unknown = null;
+    let boundChangeRef: unknown = null;
+    try {
+      const body = JSON.parse(text) as UnknownRecord;
+      const payload = body.payload;
+      if (typeof payload !== "object" || payload === null || Array.isArray(payload)) continue;
+      boundTaskRef = (payload as UnknownRecord).bound_task_ref;
+      boundChangeRef = (payload as UnknownRecord).bound_change_ref;
+    } catch {
+      continue;
+    }
+    if (boundTaskRef === taskRef) {
+      out.push({ ref: row.id, lifecycle: "CURRENT", via: "direct" });
+      continue;
+    }
+    if (
+      taskChangeRef !== null &&
+      typeof boundChangeRef === "string" &&
+      boundChangeRef === taskChangeRef
+    ) {
+      out.push({ ref: row.id, lifecycle: "CURRENT", via: "change" });
+    }
+  }
+  return out.sort((a, b) => (a.ref < b.ref ? -1 : a.ref > b.ref ? 1 : 0));
 }
 
 /**
