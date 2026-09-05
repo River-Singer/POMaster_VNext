@@ -21,7 +21,8 @@
  *   去原 frontmatter 正文逐字节（BE index 例外——R8 清洗整行替换恰等）；stack index =
  *   纯统一 frontmatter + vendor 全文逐字节；FE index.md 为 FE 唯一授权词形适配点
  *   （路径 + R8 清洗）；marker-free；
- * - R8 清洗执行（裁决 12/D5 授权内容演进批次，2026-09-05）：FE 01/03/index + BE index
+ * - R8 清洗执行（裁决 12/D5 授权内容演进批次，2026-09-05；批 F 同类授权延伸同日）：
+ *   FE 01/03/index + BE index
  *   按 R8 清洗表整行替换（本 spec 内镜像表 + 恰一次出现断言钉清洗后基线——vendor 漂移
  *   即爆）；porting_notes 承载清洗前后对照记录；清洗词形（finish/task.py/Trellis）
  *   播种面零残留；A1 档位词形全播种件零命中 = 空集登记。
@@ -165,6 +166,50 @@ const FE_INDEX_R8_CLEANLINES: Cleanline[] = [
     "- Spec Update Review 的输出属于验收证据；不得把归档、finish、发布记录当成 spec review 的替代品。\n",
     "- Spec Update Review 的输出属于验收证据；不得把归档、收口、发布记录当成 spec review 的替代品。\n",
   ],
+  // ---- 裁定批 F（D5 同类授权延伸，2026-09-05）：index 注入机制叙述残留 13 行 vNext 化。
+  [
+    "- 新增、废弃、合并或拆分属于协议架构变更，必须更新索引、注入矩阵、职责边界和目录验证；已发布文件先废弃和迁移，不得静默删除或复用其 ID。\n",
+    "- 新增、废弃、合并或拆分属于协议架构变更，必须更新索引、命中矩阵、职责边界和目录验证；已发布文件先废弃和迁移，不得静默删除或复用其 ID。\n",
+  ],
+  [
+    "1. 默认注入 P0 基线和任务命中的专项协议。\n",
+    "1. 默认激活 P0 基线和任务命中的专项协议。\n",
+  ],
+  [
+    "- [ ] 读取「默认注入基线」，再按「按任务追加注入」选择本次命中的协议；多行命中取并集。\n",
+    "- [ ] 读取「默认激活基线」，再按「按任务追加激活」选择本次命中的协议；多行命中取并集。\n",
+  ],
+  [
+    "| P0 | 治理、安全、环境和跨层契约底座 | 默认注入；失败即阻塞开发或放行 |\n",
+    "| P0 | 治理、安全、环境和跨层契约底座 | 默认激活；失败即阻塞开发或放行 |\n",
+  ],
+  [
+    "| P1 | 核心架构、数据、UI 和高频工程协议 | 命中场景时强制注入；不得降级为建议 |\n",
+    "| P1 | 核心架构、数据、UI 和高频工程协议 | 命中场景时强制激活；不得降级为建议 |\n",
+  ],
+  [
+    "| P2 | 发布、运营、兼容和协作完善协议 | 命中场景时强制执行；未命中可不注入 |\n",
+    "| P2 | 发布、运营、兼容和协作完善协议 | 命中场景时强制执行；未命中可不激活 |\n",
+  ],
+  [
+    "P2 表示默认注入优先级较低，不表示协议中的 MUST 可以忽略。\n",
+    "P2 表示默认激活优先级较低，不表示协议中的 MUST 可以忽略。\n",
+  ],
+  [
+    "与任务注入矩阵，保持双向索引完整。\n",
+    "与任务命中矩阵，保持双向索引完整。\n",
+  ],
+  [
+    "重跑注入默认只补齐缺失文件、不覆盖已存在的协议，所以就地维护不会被覆盖。\n",
+    "重跑播种（init）默认只补齐缺失文件、不覆盖已存在的协议，所以就地维护不会被覆盖。\n",
+  ],
+  ["## 默认注入基线\n", "## 默认激活基线\n"],
+  ["使用本规范时默认注入：\n", "使用本规范时默认激活：\n"],
+  ["## 按任务追加注入\n", "## 按任务追加激活\n"],
+  [
+    "同一任务命中多行时取并集；数字用于查表，实际注入必须使用文档 ID。\n",
+    "同一任务命中多行时取并集；数字用于查表，实际激活必须使用文档 ID。\n",
+  ],
 ];
 const BE_INDEX_R8_CLEANLINES: Cleanline[] = [
   [
@@ -194,6 +239,16 @@ const BE_INDEX_R8_CLEANLINES: Cleanline[] = [
   [
     "矩阵只产生候选 trigger；注入器必须对结果继续执行 stage、injection mode、显式 reference、Overlay 依赖与冲突校验，并在 Trellis context reason 中记录 semantic ID、stage、命中原因和 provider hash。\n",
     "矩阵只产生候选特征；实际纳入由 `pomaster context compile --role <role>` 投影承载（Overlay 依赖与冲突按「冲突与责任边界」收窄），纳入/排除决策可经 `pomaster context explain` 逐条审计。\n",
+  ],
+  // ---- 裁定批 F（D5 同类授权延伸，2026-09-05）：BE index 注入机制叙述残留 2 行；
+  // '注入防护'（协议目录 10 号行）为安全领域词非机制词形——零改写（porting_notes 注记）。
+  [
+    "本目录包含 32 个编号协议和本索引。语义 ID、编号和 canonical filename 是稳定地址；编号只追加，不表示 criticality 或注入优先级。协议正文只定义跨项目治理，不保存项目 endpoint、table、column、业务状态、环境阈值或责任人。\n",
+    "本目录包含 32 个编号协议和本索引。语义 ID、编号和 canonical filename 是稳定地址；编号只追加，不表示 criticality 或激活优先级。协议正文只定义跨项目治理，不保存项目 endpoint、table、column、业务状态、环境阈值或责任人。\n",
+  ],
+  [
+    "协议编号、语义 ID 与 canonical filename 只追加不重排。新增或修改规则必须同步索引、模板、注入器测试和 provider bytes/hash；废弃规则必须提供替代 ID、兼容窗口和迁移说明。\n",
+    "协议编号、语义 ID 与 canonical filename 只追加不重排。新增或修改规则必须同步索引、模板、播种清单与 catalog 锁校验；废弃规则必须提供替代 ID、兼容窗口和迁移说明。\n",
   ],
 ];
 
@@ -590,10 +645,10 @@ describe("播种件字节形态：统一 frontmatter + 正文逐字节忠实（F
     ).toThrow();
   });
 
-  it("R8 清洗执行登记（裁决 12/D5，2026-09-05）：porting_notes 清洗记录在册（FE 3 文件 + BE 32 协议 frontmatter 注记 + BE index 4 注记 + stacks 14 overlay 注记）；清洗词形播种面零残留；A1 档位词形全播种件零命中", () => {
+  it("R8 清洗执行登记（裁决 12/D5，2026-09-05 + 批 F 同类授权延伸）：porting_notes 清洗记录在册（FE 3 文件 + BE 32 协议 frontmatter 注记 + BE index 5 注记 + stacks 14 overlay 注记）；清洗词形播种面零残留；A1 档位词形全播种件零命中", () => {
     // 移植件面（specs 107）——baseline 新著件的 notes 由 B6d describe 断言。
     const noted = PORTED_ENTRIES.filter((e) => e.porting_notes.length > 0);
-    // FE 3（01/03/index）+ BE 33（32 协议 frontmatter 注记 + index 4 条）+ stacks 14 overlay。
+    // FE 3（01/03/index）+ BE 33（32 协议 frontmatter 注记 + index 5 条）+ stacks 14 overlay。
     const feNoted = noted.filter((e) => e.lane === "frontend");
     const beNoted = noted.filter((e) => e.asset.startsWith("specs/hard/backend/"));
     const stackNoted = noted.filter((e) => e.asset.startsWith("specs/hard/stacks/"));
@@ -607,12 +662,16 @@ describe("播种件字节形态：统一 frontmatter + 正文逐字节忠实（F
         entry.asset,
       ).toBe(true);
     }
-    // BE index：4 注记形态不变——frontmatter 注记 + 清洗尾句记录 + 清洗三段记录 + 相对词形注记；
+    // BE index：5 注记形态——frontmatter 注记 + 清洗尾句记录 + 清洗三段记录 + 相对词形
+    // 注记 + 批 F 残留 2 行清洗记录（含'注入防护'安全领域词零改写注记）；
     // 清洗前词形对照（Trellis context reason）在册可溯。
     const beIndex = beNoted.find((e) => e.asset.endsWith("/index.md"))!;
-    expect(beIndex.porting_notes.length).toBe(4);
+    expect(beIndex.porting_notes.length).toBe(5);
     expect(beIndex.porting_notes.some((n) => n.includes("R8 词形清洗（已执行"))).toBe(true);
     expect(beIndex.porting_notes.some((n) => n.includes("Trellis context reason"))).toBe(true);
+    expect(
+      beIndex.porting_notes.some((n) => n.includes("注入防护") && n.includes("零改写")),
+    ).toBe(true);
     // stacks overlay：installed/bound 注记恰一条/份；stack index 零注记。
     for (const entry of stackNoted) {
       expect(entry.asset.endsWith("-overlay.md")).toBe(true);

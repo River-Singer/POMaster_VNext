@@ -15,7 +15,7 @@ stages: [prepare, implement, check, release]
 
 # 后端通用硬规范索引
 
-本目录包含 32 个编号协议和本索引。语义 ID、编号和 canonical filename 是稳定地址；编号只追加，不表示 criticality 或注入优先级。协议正文只定义跨项目治理，不保存项目 endpoint、table、column、业务状态、环境阈值或责任人。
+本目录包含 32 个编号协议和本索引。语义 ID、编号和 canonical filename 是稳定地址；编号只追加，不表示 criticality 或激活优先级。协议正文只定义跨项目治理，不保存项目 endpoint、table、column、业务状态、环境阈值或责任人。
 
 ## 使用规则
 
@@ -174,4 +174,4 @@ backend:evidence-acceptance-protocol
 
 ## 维护规则
 
-协议编号、语义 ID 与 canonical filename 只追加不重排。新增或修改规则必须同步索引、模板、注入器测试和 provider bytes/hash；废弃规则必须提供替代 ID、兼容窗口和迁移说明。
+协议编号、语义 ID 与 canonical filename 只追加不重排。新增或修改规则必须同步索引、模板、播种清单与 catalog 锁校验；废弃规则必须提供替代 ID、兼容窗口和迁移说明。

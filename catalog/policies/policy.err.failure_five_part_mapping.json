@@ -1,0 +1,100 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "id 域段待登记：ERR（vocab-lock@v0.8-resolved policy_id_domains 32 段未含——PR-0009 后新用域段沿用候选注记先例，词汇表 PR 增补）",
+    "proposal": "词汇表 PR 增补新 id 域段至 catalog_layer_vocab.policy_id_domains（与 PR-0009 同轴追加，append-only）",
+    "locked_vocab_untouched": true
+  },
+  "x-spec-d-materialization": {
+    "status": "PROPOSAL",
+    "package": "裁定批 F/D3-R1 排除卡逐卡复核物化（SPEC-D 池卡复用；分母=MASTer 池卡 + vendor 播种字节双锚）",
+    "human_review_required": true,
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/corpus/spec-knowledge/candidates/consolidated-pool.yaml",
+    "group": "BE-G2",
+    "candidate_id": "POLICY.ERR.FAILURE_FIVE_PART_MAPPING",
+    "pool_statement_sha16": "740894a55867b725",
+    "curated_rule": "D3 逐卡复核批（Owner 2026-09-05 裁定 D3=逐卡复核；72 张保守排除卡逐卡核锚）：required 9（D3b source=null 补锚落 MUST/MUST NOT 且与 MASTer 行锚交叉验证）+ advisory 16（Change Policy 锚 14 张降 advisory[行内容含「必须」行为规范、强度只降不升] + 池密度序前 2）= 25（D6 合并上限 policy+TP 合计 25/批内执行；超出 17 张 advisory 留 D3-R2 轮次台账）；维持排除 30（Ownership 归属说明族）",
+    "denominator": "MASTer（池卡锚）"
+  },
+  "x-b6-porting": {
+    "status": "PROPOSAL",
+    "batch": "D3-R1",
+    "human_review_required": true,
+    "classification_face": "policy",
+    "enforcement_axis": {
+      "source_sections": [
+        "MUST"
+      ],
+      "rule": "SHOULD/Change Policy 源条目 enforcement 必须 advisory（禁升 required）；MUST/MUST NOT 源条目 enforcement 必须 required_when_applicable（降级合法）",
+      "asserted_by": "packages/cli/tests/catalog-b6-porting.spec.ts"
+    },
+    "extra_master_sections": [],
+    "denominator": "vendor",
+    "vendor_pin": {
+      "path": "pomaster/components/backend-hard-spec/assets/universal/16-error-code-protocol.md",
+      "sha256": "aa80ee60f7431e14859f61e563784e71b2002f35e220964170a779800fdde090",
+      "bytes": 1298
+    },
+    "seeded_spec": ".pomaster/specs/hard/backend/16-error-code-protocol.md",
+    "seed_manifest": "packages/cli/seeds/manifest.json",
+    "d3_review": {
+      "excluded_from_batch": "B6C",
+      "exclusion_reason_at_seed": "卡层 source=null（锚证据不足），保守排除待复核",
+      "adjudication": "D3 逐卡复核（Owner 2026-09-05 裁定 D3=逐卡复核，裁定批 F 落地 2026-09-05）：本卡原属 B6C 保守排除留池（排除理由：卡层 source=null（锚证据不足），保守排除待复核）；复核补锚回 vendor/MASTer 源取得行级证据，锚段=MUST，按强度入册（MUST/MUST NOT 行锚 required 原样）",
+      "anchor_evidence": "MASTer 16-error-code-protocol.md 25「- 失败必须映射到稳定 code、适当状态、可选字段错误、retryable 与 TraceId。」",
+      "pool_enforcement_at_seed": "required_when_applicable"
+    }
+  },
+  "id": "POLICY.ERR.FAILURE_FIVE_PART_MAPPING",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "UNIVERSAL_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "失败响应五成分构成",
+  "statement_zh": "每一次失败响应必须由五个成分构成：稳定的机器错误码、恰当的状态码、（如适用）字段级错误明细、是否可重试的标记、全链路 TraceId。",
+  "statement_en_keywords": [
+    "failure mapping",
+    "stable code",
+    "status",
+    "field errors",
+    "retryable flag",
+    "trace id"
+  ],
+  "applies_when": {
+    "lane": "backend",
+    "condition": "构造任何失败响应",
+    "applicability_note": "构造任何失败响应"
+  },
+  "enforcement": "required_when_applicable",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-spec-decomposition"
+  },
+  "origin": "ingested",
+  "origin_note": "裁定批 F/D3-R1 D3 逐卡复核物化（原 B6C 保守排除卡补锚收编）；statement 沿用 SPEC-D 候选卡独立措辞（clean-room），零逐字拷贝上游源文本；播种分母=vendor 字节（x-b6-porting.vendor_pin），分解分母=MASTer 池卡（x-spec-d-materialization）",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/corpus/spec-knowledge/candidates/BE-G2.yaml",
+      "captured_by": "agent:claude/spec-d-consolidation",
+      "locator": {
+        "candidate": "POLICY.ERR.FAILURE_FIVE_PART_MAPPING",
+        "source_protocol": ".trellis/spec/backend/16-error-code-protocol.md",
+        "lines": "25"
+      },
+      "clean_room_note": "independently rewritten from SPEC-D decomposition candidate cards; zero verbatim copy"
+    }
+  ],
+  "review_notes": [
+    "失败响应五成分在既有 228 条中无对应条目（ERR 域段本批新用，待词汇表 PR；knowledge.api.example_stable_error_code 为示例知识非规则本体）；与同批 NO_INTERNAL_DETAIL_EXPOSURE 同协议正交（响应构成 vs 泄露禁令），互引。",
+    "D3b 补锚：MASTer 16-error-code-protocol.md L25（MUST 段）。"
+  ]
+}

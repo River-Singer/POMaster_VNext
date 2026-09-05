@@ -82,12 +82,20 @@
       "policies/policy.api.backward_compat_defaults.json",
       "policies/policy.api.contract_impl_consistency.json",
       "policies/policy.api.no_informal_contract.json",
+      "policies/policy.arch.adr_immutable_history.json",
       "policies/policy.arch.decision_tradeoff_record.json",
       "policies/policy.arch.no_convenience_over_boundary.json",
       "policies/policy.arch.prefer_verifiable_option.json",
+      "policies/policy.authz.no_gating_proxy_trust.json",
+      "policies/policy.authz.permission_scope_expansion_gate.json",
+      "policies/policy.authz.server_five_factor_verification.json",
       "policies/policy.bound.search_first_entry_only.json",
       "policies/policy.boundary.validate_in_encode_out.json",
       "policies/policy.cache.lifecycle_definition.json",
+      "policies/policy.cache.schema_versioning.json",
+      "policies/policy.cfg.config_attribute_completeness.json",
+      "policies/policy.cfg.key_rename_dual_read.json",
+      "policies/policy.cfg.no_secret_dispersal.json",
       "policies/policy.cfg.production_safe_defaults.json",
       "policies/policy.cfg.schema_backed_config.json",
       "policies/policy.chg.affect_templates.json",
@@ -107,10 +115,15 @@
       "policies/policy.dep.change_surface_review.json",
       "policies/policy.dep.introduction_review.json",
       "policies/policy.dep.no_untrusted_source_no_lock_bypass.json",
+      "policies/policy.dep.time_boxed_urgent_exception.json",
       "policies/policy.deploy.no_dev_env_as_production_fact.json",
       "policies/policy.deploy.runtime_fact_record.json",
       "policies/policy.derived.single_implementation.json",
+      "policies/policy.err.failure_five_part_mapping.json",
+      "policies/policy.err.no_internal_detail_exposure.json",
+      "policies/policy.err.published_code_immutable.json",
       "policies/policy.evid.acceptance_binds_verifiable_evidence.json",
+      "policies/policy.evid.no_silent_gate_removal.json",
       "policies/policy.evid.no_unverifiable_pass.json",
       "policies/policy.flag.cleanup_after_full_rollout.json",
       "policies/policy.flag.consistent_off_state.json",
@@ -129,24 +142,34 @@
       "policies/policy.obs.no_sensitive_or_unbounded_logging.json",
       "policies/policy.obs.no_sensitive_raw_values.json",
       "policies/policy.obs.rum_dimension_whitelist.json",
+      "policies/policy.obs.signal_change_impact.json",
       "policies/policy.obs.source_map_access_control.json",
       "policies/policy.obs.telemetry_lifecycle_declared.json",
       "policies/policy.obs.trace_correlation.json",
+      "policies/policy.perf.budget_change_retest.json",
       "policies/policy.perf.evidence_binding.json",
       "policies/policy.proc.checklist_change_policy.json",
       "policies/policy.proc.pre_code_declaration.json",
       "policies/policy.proc.scope_drift_reclassify.json",
+      "policies/policy.prv.processing_scope_re_review.json",
+      "policies/policy.prv.sensitive_data_six_facts.json",
+      "policies/policy.registry.human_fields_validated_decorrelated.json",
       "policies/policy.rel.no_irreversible_unmonitored_full_release.json",
       "policies/policy.rel.observability_before_ship.json",
       "policies/policy.rel.pre_release_confirmation.json",
+      "policies/policy.rel.process_change_needs_drill_audit.json",
       "policies/policy.rel.traceable_build.json",
       "policies/policy.role.domain_decision_authority.json",
       "policies/policy.role.human_signs_for_ai.json",
       "policies/policy.sec.authn_policy_unified.json",
+      "policies/policy.sec.no_client_side_trust.json",
       "policies/policy.sec.no_longterm_security_disable.json",
       "policies/policy.sec.no_script_readable_credentials.json",
       "policies/policy.sec.no_secrets_in_client_surface.json",
+      "policies/policy.sec.relaxation_approval.json",
+      "policies/policy.sec.security_relaxation_gate.json",
       "policies/policy.sec.third_party_execution_register.json",
+      "policies/policy.sec.trust_boundary_enforcement.json",
       "policies/policy.sec.upload_download_server_recheck.json",
       "policies/policy.sec.url_source_allowlist.json",
       "policies/policy.spec.admission_criteria.json",
@@ -175,12 +198,14 @@
       "policies/policy.test.isolation_and_cleanup.json",
       "policies/policy.test.no_synthetic_stability.json",
       "policies/policy.test.pyramid_and_ci_matrix.json",
+      "policies/policy.test.removal_needs_substitute_evidence.json",
       "policies/policy.test.risk_driven_plan.json",
       "policies/policy.test.stable_observable_assertions.json",
       "policies/policy.tool.discoverable_toolchain.json",
       "policies/policy.tool.no_hand_edit_generated_no_ci_drift.json",
       "policies/policy.tool.no_vendored_body_edits.json",
       "policies/policy.tool.scoped_scan_boundary.json",
+      "policies/policy.tool.upgrade_verify_lock_rollback.json",
       "policies/policy.web.api.auth_app_client_split.json",
       "policies/policy.web.api.client_change_impact.json",
       "policies/policy.web.api.domain_api_only.json",
@@ -312,12 +337,20 @@
       "policies/policy.api.backward_compat_defaults.json",
       "policies/policy.api.contract_impl_consistency.json",
       "policies/policy.api.no_informal_contract.json",
+      "policies/policy.arch.adr_immutable_history.json",
       "policies/policy.arch.decision_tradeoff_record.json",
       "policies/policy.arch.no_convenience_over_boundary.json",
       "policies/policy.arch.prefer_verifiable_option.json",
+      "policies/policy.authz.no_gating_proxy_trust.json",
+      "policies/policy.authz.permission_scope_expansion_gate.json",
+      "policies/policy.authz.server_five_factor_verification.json",
       "policies/policy.bound.search_first_entry_only.json",
       "policies/policy.boundary.validate_in_encode_out.json",
       "policies/policy.cache.lifecycle_definition.json",
+      "policies/policy.cache.schema_versioning.json",
+      "policies/policy.cfg.config_attribute_completeness.json",
+      "policies/policy.cfg.key_rename_dual_read.json",
+      "policies/policy.cfg.no_secret_dispersal.json",
       "policies/policy.cfg.production_safe_defaults.json",
       "policies/policy.cfg.schema_backed_config.json",
       "policies/policy.chg.affect_templates.json",
@@ -337,10 +370,15 @@
       "policies/policy.dep.change_surface_review.json",
       "policies/policy.dep.introduction_review.json",
       "policies/policy.dep.no_untrusted_source_no_lock_bypass.json",
+      "policies/policy.dep.time_boxed_urgent_exception.json",
       "policies/policy.deploy.no_dev_env_as_production_fact.json",
       "policies/policy.deploy.runtime_fact_record.json",
       "policies/policy.derived.single_implementation.json",
+      "policies/policy.err.failure_five_part_mapping.json",
+      "policies/policy.err.no_internal_detail_exposure.json",
+      "policies/policy.err.published_code_immutable.json",
       "policies/policy.evid.acceptance_binds_verifiable_evidence.json",
+      "policies/policy.evid.no_silent_gate_removal.json",
       "policies/policy.evid.no_unverifiable_pass.json",
       "policies/policy.flag.cleanup_after_full_rollout.json",
       "policies/policy.flag.consistent_off_state.json",
@@ -359,24 +397,34 @@
       "policies/policy.obs.no_sensitive_or_unbounded_logging.json",
       "policies/policy.obs.no_sensitive_raw_values.json",
       "policies/policy.obs.rum_dimension_whitelist.json",
+      "policies/policy.obs.signal_change_impact.json",
       "policies/policy.obs.source_map_access_control.json",
       "policies/policy.obs.telemetry_lifecycle_declared.json",
       "policies/policy.obs.trace_correlation.json",
+      "policies/policy.perf.budget_change_retest.json",
       "policies/policy.perf.evidence_binding.json",
       "policies/policy.proc.checklist_change_policy.json",
       "policies/policy.proc.pre_code_declaration.json",
       "policies/policy.proc.scope_drift_reclassify.json",
+      "policies/policy.prv.processing_scope_re_review.json",
+      "policies/policy.prv.sensitive_data_six_facts.json",
+      "policies/policy.registry.human_fields_validated_decorrelated.json",
       "policies/policy.rel.no_irreversible_unmonitored_full_release.json",
       "policies/policy.rel.observability_before_ship.json",
       "policies/policy.rel.pre_release_confirmation.json",
+      "policies/policy.rel.process_change_needs_drill_audit.json",
       "policies/policy.rel.traceable_build.json",
       "policies/policy.role.domain_decision_authority.json",
       "policies/policy.role.human_signs_for_ai.json",
       "policies/policy.sec.authn_policy_unified.json",
+      "policies/policy.sec.no_client_side_trust.json",
       "policies/policy.sec.no_longterm_security_disable.json",
       "policies/policy.sec.no_script_readable_credentials.json",
       "policies/policy.sec.no_secrets_in_client_surface.json",
+      "policies/policy.sec.relaxation_approval.json",
+      "policies/policy.sec.security_relaxation_gate.json",
       "policies/policy.sec.third_party_execution_register.json",
+      "policies/policy.sec.trust_boundary_enforcement.json",
       "policies/policy.sec.upload_download_server_recheck.json",
       "policies/policy.sec.url_source_allowlist.json",
       "policies/policy.spec.admission_criteria.json",
@@ -405,12 +453,14 @@
       "policies/policy.test.isolation_and_cleanup.json",
       "policies/policy.test.no_synthetic_stability.json",
       "policies/policy.test.pyramid_and_ci_matrix.json",
+      "policies/policy.test.removal_needs_substitute_evidence.json",
       "policies/policy.test.risk_driven_plan.json",
       "policies/policy.test.stable_observable_assertions.json",
       "policies/policy.tool.discoverable_toolchain.json",
       "policies/policy.tool.no_hand_edit_generated_no_ci_drift.json",
       "policies/policy.tool.no_vendored_body_edits.json",
       "policies/policy.tool.scoped_scan_boundary.json",
+      "policies/policy.tool.upgrade_verify_lock_rollback.json",
       "policies/policy.web.api.auth_app_client_split.json",
       "policies/policy.web.api.client_change_impact.json",
       "policies/policy.web.api.domain_api_only.json",
@@ -834,6 +884,12 @@
       "source_ref": "pomaster/components/backend-hard-spec/assets/universal/12-api-contract-protocol.md"
     },
     {
+      "id": "POLICY.ARCH.ADR_IMMUTABLE_HISTORY",
+      "path": "policies/policy.arch.adr_immutable_history.json",
+      "content_sha256": "sha256:e7666a1b06b6f953f4a7c06c68ea60a7dc8f95a21b3b3e68964f77df98f1526c",
+      "source_ref": "package://catalog/policies/policy.arch.adr_immutable_history.json"
+    },
+    {
       "id": "POLICY.ARCH.DECISION_TRADEOFF_RECORD",
       "path": "policies/policy.arch.decision_tradeoff_record.json",
       "content_sha256": "sha256:cf84e5d1e5223a830ed1e4d6d3a5901e819d06c0ef4b49b03799f0eef484250a",
@@ -852,6 +908,24 @@
       "source_ref": "package://catalog/policies/policy.arch.prefer_verifiable_option.json"
     },
     {
+      "id": "POLICY.AUTHZ.NO_GATING_PROXY_TRUST",
+      "path": "policies/policy.authz.no_gating_proxy_trust.json",
+      "content_sha256": "sha256:192e6a0b95aa79677d3734ff839d20a3e69b39c149aa259730317db70a612eff",
+      "source_ref": "package://catalog/policies/policy.authz.no_gating_proxy_trust.json"
+    },
+    {
+      "id": "POLICY.AUTHZ.PERMISSION_SCOPE_EXPANSION_GATE",
+      "path": "policies/policy.authz.permission_scope_expansion_gate.json",
+      "content_sha256": "sha256:4317577ed5061fe690d3da1438489212157fcb3ed827a81030aae39f09d1677e",
+      "source_ref": "package://catalog/policies/policy.authz.permission_scope_expansion_gate.json"
+    },
+    {
+      "id": "POLICY.AUTHZ.SERVER_FIVE_FACTOR_VERIFICATION",
+      "path": "policies/policy.authz.server_five_factor_verification.json",
+      "content_sha256": "sha256:51f0514a97c762de8f50318d7035075b44331d1098c45ab55a3a3bf9d4a74762",
+      "source_ref": "package://catalog/policies/policy.authz.server_five_factor_verification.json"
+    },
+    {
       "id": "POLICY.BOUND.SEARCH_FIRST_ENTRY_ONLY",
       "path": "policies/policy.bound.search_first_entry_only.json",
       "content_sha256": "sha256:8c9a9cacb159fb183148e561dec59033e78ceb6ed73582afdf642b39b70f5506",
@@ -868,6 +942,30 @@
       "path": "policies/policy.cache.lifecycle_definition.json",
       "content_sha256": "sha256:e76aec82e2f0dd7271bb4d8a11330f4ed67038d5b928acf7a67452ccf2aa307c",
       "source_ref": "POMaster_VNext/corpus/spec-knowledge/candidates/BE-G4.yaml"
+    },
+    {
+      "id": "POLICY.CACHE.SCHEMA_VERSIONING",
+      "path": "policies/policy.cache.schema_versioning.json",
+      "content_sha256": "sha256:4c60adb7ebce74371cd1358aa3b3cfa2aee4e519ebd500a287c8672bfb6dd10b",
+      "source_ref": "package://catalog/policies/policy.cache.schema_versioning.json"
+    },
+    {
+      "id": "POLICY.CFG.CONFIG_ATTRIBUTE_COMPLETENESS",
+      "path": "policies/policy.cfg.config_attribute_completeness.json",
+      "content_sha256": "sha256:29d3999c2ae69df2c61681527d1521760b7b49ffc38be2f729bd389e36b2fdec",
+      "source_ref": "package://catalog/policies/policy.cfg.config_attribute_completeness.json"
+    },
+    {
+      "id": "POLICY.CFG.KEY_RENAME_DUAL_READ",
+      "path": "policies/policy.cfg.key_rename_dual_read.json",
+      "content_sha256": "sha256:b23264c27419148590e574cb7c6e89555bd283b35431dc5a650ff3db41e2c42b",
+      "source_ref": "package://catalog/policies/policy.cfg.key_rename_dual_read.json"
+    },
+    {
+      "id": "POLICY.CFG.NO_SECRET_DISPERSAL",
+      "path": "policies/policy.cfg.no_secret_dispersal.json",
+      "content_sha256": "sha256:894e2ce6f4228d394f443f46dfa97bfc4580a135e36c1d186452a3c0db0784ca",
+      "source_ref": "package://catalog/policies/policy.cfg.no_secret_dispersal.json"
     },
     {
       "id": "POLICY.CFG.PRODUCTION_SAFE_DEFAULTS",
@@ -984,6 +1082,12 @@
       "source_ref": "package://catalog/policies/policy.dep.no_untrusted_source_no_lock_bypass.json"
     },
     {
+      "id": "POLICY.DEP.TIME_BOXED_URGENT_EXCEPTION",
+      "path": "policies/policy.dep.time_boxed_urgent_exception.json",
+      "content_sha256": "sha256:7520218fa8e374718a0b9968e2de13f6ca8286c5df58e8b168b57e94b23d1349",
+      "source_ref": "package://catalog/policies/policy.dep.time_boxed_urgent_exception.json"
+    },
+    {
       "id": "POLICY.DEPLOY.NO_DEV_ENV_AS_PRODUCTION_FACT",
       "path": "policies/policy.deploy.no_dev_env_as_production_fact.json",
       "content_sha256": "sha256:f79a711a1df690787a195c762849b8f5233a24dfbfbc68e6c9522bf36a2e3b08",
@@ -1002,10 +1106,34 @@
       "source_ref": "POMaster_VNext/corpus/spec-knowledge/candidates/GUIDES.yaml"
     },
     {
+      "id": "POLICY.ERR.FAILURE_FIVE_PART_MAPPING",
+      "path": "policies/policy.err.failure_five_part_mapping.json",
+      "content_sha256": "sha256:221521102e5c5bd1bb305da321285e4a2706ff3749ca910452e13328cb189ad6",
+      "source_ref": "package://catalog/policies/policy.err.failure_five_part_mapping.json"
+    },
+    {
+      "id": "POLICY.ERR.NO_INTERNAL_DETAIL_EXPOSURE",
+      "path": "policies/policy.err.no_internal_detail_exposure.json",
+      "content_sha256": "sha256:6e2647ad97c3a6d153e29944373117b70453687315b07e85e8457d9dcb35bf0d",
+      "source_ref": "package://catalog/policies/policy.err.no_internal_detail_exposure.json"
+    },
+    {
+      "id": "POLICY.ERR.PUBLISHED_CODE_IMMUTABLE",
+      "path": "policies/policy.err.published_code_immutable.json",
+      "content_sha256": "sha256:1bf17413550ed20dbc1b6f1028a86ff4d4e2993c48b1b5d5cd0bc2203114d19e",
+      "source_ref": "package://catalog/policies/policy.err.published_code_immutable.json"
+    },
+    {
       "id": "POLICY.EVID.ACCEPTANCE_BINDS_VERIFIABLE_EVIDENCE",
       "path": "policies/policy.evid.acceptance_binds_verifiable_evidence.json",
       "content_sha256": "sha256:080e895228689150edb4f3cb24f05428d3e23aa28051e96ae729ddb2bd3eddba",
       "source_ref": "package://catalog/policies/policy.evid.acceptance_binds_verifiable_evidence.json"
+    },
+    {
+      "id": "POLICY.EVID.NO_SILENT_GATE_REMOVAL",
+      "path": "policies/policy.evid.no_silent_gate_removal.json",
+      "content_sha256": "sha256:11edd4ff67147be9af442692af807156821e00a68c19a12f3a9f612d62eb79e0",
+      "source_ref": "package://catalog/policies/policy.evid.no_silent_gate_removal.json"
     },
     {
       "id": "POLICY.EVID.NO_UNVERIFIABLE_PASS",
@@ -1116,6 +1244,12 @@
       "source_ref": "POMaster_VNext/corpus/spec-knowledge/candidates/FE-G1.yaml"
     },
     {
+      "id": "POLICY.OBS.SIGNAL_CHANGE_IMPACT",
+      "path": "policies/policy.obs.signal_change_impact.json",
+      "content_sha256": "sha256:597ae4c0579036e61bc294fae67b59079887feec5c4d7100e8724f1449a9624d",
+      "source_ref": "package://catalog/policies/policy.obs.signal_change_impact.json"
+    },
+    {
       "id": "POLICY.OBS.SOURCE_MAP_ACCESS_CONTROL",
       "path": "policies/policy.obs.source_map_access_control.json",
       "content_sha256": "sha256:4ee2cd86512b177a6b2ba358385323f6310fdaf34a8071cf4d50ff7f93187925",
@@ -1132,6 +1266,12 @@
       "path": "policies/policy.obs.trace_correlation.json",
       "content_sha256": "sha256:0a193358a963f9948e13906f28075b1657b0f1a1279ecb8566bee3e6e481e5a5",
       "source_ref": "package://catalog/policies/policy.obs.trace_correlation.json"
+    },
+    {
+      "id": "POLICY.PERF.BUDGET_CHANGE_RETEST",
+      "path": "policies/policy.perf.budget_change_retest.json",
+      "content_sha256": "sha256:0855f91f112b2e1d182c5db336c5cbd0fc1376d63f1a744be4799f6c0c397ca7",
+      "source_ref": "package://catalog/policies/policy.perf.budget_change_retest.json"
     },
     {
       "id": "POLICY.PERF.EVIDENCE_BINDING",
@@ -1158,6 +1298,24 @@
       "source_ref": "package://catalog/policies/policy.proc.scope_drift_reclassify.json"
     },
     {
+      "id": "POLICY.PRV.PROCESSING_SCOPE_RE_REVIEW",
+      "path": "policies/policy.prv.processing_scope_re_review.json",
+      "content_sha256": "sha256:b4a39f78636205a171412ea7929df4a5d9478b2ca538f35627a6bc0fcc6195d8",
+      "source_ref": "package://catalog/policies/policy.prv.processing_scope_re_review.json"
+    },
+    {
+      "id": "POLICY.PRV.SENSITIVE_DATA_SIX_FACTS",
+      "path": "policies/policy.prv.sensitive_data_six_facts.json",
+      "content_sha256": "sha256:c8e6132ea6a6a67292753bb1445e125b15f8584b606cc2a78f5344562c876e4a",
+      "source_ref": "package://catalog/policies/policy.prv.sensitive_data_six_facts.json"
+    },
+    {
+      "id": "POLICY.REGISTRY.HUMAN_FIELDS_VALIDATED_DECORRELATED",
+      "path": "policies/policy.registry.human_fields_validated_decorrelated.json",
+      "content_sha256": "sha256:c1f323db29cbaceb67c0883c5e4a437d9a1cb41a0e9fe0ba1e3196f1e6ac0bc6",
+      "source_ref": "package://catalog/policies/policy.registry.human_fields_validated_decorrelated.json"
+    },
+    {
       "id": "POLICY.REL.NO_IRREVERSIBLE_UNMONITORED_FULL_RELEASE",
       "path": "policies/policy.rel.no_irreversible_unmonitored_full_release.json",
       "content_sha256": "sha256:6fdac4023566e4e54cd66070923191828963bdfde1000ab8a3aed76c6194fa5b",
@@ -1174,6 +1332,12 @@
       "path": "policies/policy.rel.pre_release_confirmation.json",
       "content_sha256": "sha256:b4579adf68c108a68093474a91e3d48caa44cd989e11cfdaa4a5c6cd7ab07d8e",
       "source_ref": "POMaster_VNext/corpus/spec-knowledge/candidates/BE-G1.yaml"
+    },
+    {
+      "id": "POLICY.REL.PROCESS_CHANGE_NEEDS_DRILL_AUDIT",
+      "path": "policies/policy.rel.process_change_needs_drill_audit.json",
+      "content_sha256": "sha256:e7967aa091d025d8214d699a130ead9772702e4fdf08c77f1ea2927b28536085",
+      "source_ref": "package://catalog/policies/policy.rel.process_change_needs_drill_audit.json"
     },
     {
       "id": "POLICY.REL.TRACEABLE_BUILD",
@@ -1200,6 +1364,12 @@
       "source_ref": "package://catalog/policies/policy.sec.authn_policy_unified.json"
     },
     {
+      "id": "POLICY.SEC.NO_CLIENT_SIDE_TRUST",
+      "path": "policies/policy.sec.no_client_side_trust.json",
+      "content_sha256": "sha256:4ca06f88f15ac7ca5120736142491c43757796085ff55fd5b453c4b3fb0b201d",
+      "source_ref": "package://catalog/policies/policy.sec.no_client_side_trust.json"
+    },
+    {
       "id": "POLICY.SEC.NO_LONGTERM_SECURITY_DISABLE",
       "path": "policies/policy.sec.no_longterm_security_disable.json",
       "content_sha256": "sha256:5a3ac40f8b4e7b884703c669d0e3e4a28a7b7aa14c9570bb24d4e16b7f8811cd",
@@ -1218,10 +1388,28 @@
       "source_ref": "package://catalog/policies/policy.sec.no_secrets_in_client_surface.json"
     },
     {
+      "id": "POLICY.SEC.RELAXATION_APPROVAL",
+      "path": "policies/policy.sec.relaxation_approval.json",
+      "content_sha256": "sha256:5fb20bd46ca2abde7d6a22a318c8dd45039c64356be7bba3f05cb45e8988b627",
+      "source_ref": "package://catalog/policies/policy.sec.relaxation_approval.json"
+    },
+    {
+      "id": "POLICY.SEC.SECURITY_RELAXATION_GATE",
+      "path": "policies/policy.sec.security_relaxation_gate.json",
+      "content_sha256": "sha256:66ce0866674aaab4f8466dc17c366d4886ec40eadd29d6cef0c768c669d1239e",
+      "source_ref": "package://catalog/policies/policy.sec.security_relaxation_gate.json"
+    },
+    {
       "id": "POLICY.SEC.THIRD_PARTY_EXECUTION_REGISTER",
       "path": "policies/policy.sec.third_party_execution_register.json",
       "content_sha256": "sha256:5a2fa2a09ee744b814a6ea69a4bf888e8b960b613365b22c5a96442f77aa8934",
       "source_ref": "POMaster_VNext/corpus/spec-knowledge/candidates/FE-G1.yaml"
+    },
+    {
+      "id": "POLICY.SEC.TRUST_BOUNDARY_ENFORCEMENT",
+      "path": "policies/policy.sec.trust_boundary_enforcement.json",
+      "content_sha256": "sha256:33e85b6d1133a5bfb7d24f86d940b2f90ab9ea82ca1dea7c98d08a76e7669c12",
+      "source_ref": "package://catalog/policies/policy.sec.trust_boundary_enforcement.json"
     },
     {
       "id": "POLICY.SEC.UPLOAD_DOWNLOAD_SERVER_RECHECK",
@@ -1392,6 +1580,12 @@
       "source_ref": "package://catalog/policies/policy.test.pyramid_and_ci_matrix.json"
     },
     {
+      "id": "POLICY.TEST.REMOVAL_NEEDS_SUBSTITUTE_EVIDENCE",
+      "path": "policies/policy.test.removal_needs_substitute_evidence.json",
+      "content_sha256": "sha256:58295fb057b4c9fbdacb0557626ab306c912081aa3a06c21f35ece48ef799557",
+      "source_ref": "package://catalog/policies/policy.test.removal_needs_substitute_evidence.json"
+    },
+    {
       "id": "POLICY.TEST.RISK_DRIVEN_PLAN",
       "path": "policies/policy.test.risk_driven_plan.json",
       "content_sha256": "sha256:8344a23c2c86a12322f65b36ce61a442f079edd3932ff2d5beac54d8510a9f00",
@@ -1426,6 +1620,12 @@
       "path": "policies/policy.tool.scoped_scan_boundary.json",
       "content_sha256": "sha256:a89e377b437a1bfa676ec2d29c4d005a5e0ccc0c85895f3126f0d683f677108d",
       "source_ref": "POMaster_VNext/corpus/spec-knowledge/candidates/FE-G1.yaml"
+    },
+    {
+      "id": "POLICY.TOOL.UPGRADE_VERIFY_LOCK_ROLLBACK",
+      "path": "policies/policy.tool.upgrade_verify_lock_rollback.json",
+      "content_sha256": "sha256:64a9c1012949debd9e1c58c46766283d5949332848a2303619d2657a96abd558",
+      "source_ref": "package://catalog/policies/policy.tool.upgrade_verify_lock_rollback.json"
     },
     {
       "id": "POLICY.WEB.API.AUTH_APP_CLIENT_SPLIT",

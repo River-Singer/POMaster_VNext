@@ -1,0 +1,92 @@
+{
+  "x-spec-d-materialization": {
+    "status": "PROPOSAL",
+    "package": "裁定批 F/D3-R1 排除卡逐卡复核物化（SPEC-D 池卡复用；分母=MASTer 池卡 + vendor 播种字节双锚）",
+    "human_review_required": true,
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/corpus/spec-knowledge/candidates/consolidated-pool.yaml",
+    "group": "BE-G2",
+    "candidate_id": "POLICY.SEC.NO_CLIENT_SIDE_TRUST",
+    "pool_statement_sha16": "fc887b4bd6cf9086",
+    "curated_rule": "D3 逐卡复核批（Owner 2026-09-05 裁定 D3=逐卡复核；72 张保守排除卡逐卡核锚）：required 9（D3b source=null 补锚落 MUST/MUST NOT 且与 MASTer 行锚交叉验证）+ advisory 16（Change Policy 锚 14 张降 advisory[行内容含「必须」行为规范、强度只降不升] + 池密度序前 2）= 25（D6 合并上限 policy+TP 合计 25/批内执行；超出 17 张 advisory 留 D3-R2 轮次台账）；维持排除 30（Ownership 归属说明族）",
+    "denominator": "MASTer（池卡锚）"
+  },
+  "x-b6-porting": {
+    "status": "PROPOSAL",
+    "batch": "D3-R1",
+    "human_review_required": true,
+    "classification_face": "policy",
+    "enforcement_axis": {
+      "source_sections": [
+        "MUST NOT"
+      ],
+      "rule": "SHOULD/Change Policy 源条目 enforcement 必须 advisory（禁升 required）；MUST/MUST NOT 源条目 enforcement 必须 required_when_applicable（降级合法）",
+      "asserted_by": "packages/cli/tests/catalog-b6-porting.spec.ts"
+    },
+    "extra_master_sections": [],
+    "denominator": "vendor",
+    "vendor_pin": {
+      "path": "pomaster/components/backend-hard-spec/assets/universal/10-security-protocol.md",
+      "sha256": "56387f03edd35df50a5a701f4daab174b744d490663393f43331cf5401149f67",
+      "bytes": 1385
+    },
+    "seeded_spec": ".pomaster/specs/hard/backend/10-security-protocol.md",
+    "seed_manifest": "packages/cli/seeds/manifest.json",
+    "d3_review": {
+      "excluded_from_batch": "B6C",
+      "exclusion_reason_at_seed": "卡层 source=null（锚证据不足），保守排除待复核",
+      "adjudication": "D3 逐卡复核（Owner 2026-09-05 裁定 D3=逐卡复核，裁定批 F 落地 2026-09-05）：本卡原属 B6C 保守排除留池（排除理由：卡层 source=null（锚证据不足），保守排除待复核）；复核补锚回 vendor/MASTer 源取得行级证据，锚段=MUST NOT，按强度入册（MUST/MUST NOT 行锚 required 原样）",
+      "anchor_evidence": "MASTer 10-security-protocol.md 29「- 不得信任前端隐藏、客户端校验、代理头或用户提供的资源归属。」",
+      "pool_enforcement_at_seed": "required_when_applicable"
+    }
+  },
+  "id": "POLICY.SEC.NO_CLIENT_SIDE_TRUST",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "UNIVERSAL_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "客户端信号不作授权依据",
+  "statement_zh": "客户端侧的任何信号——隐藏字段、前端校验结论、代理附加头、调用方自述的资源归属——一律不得作为服务端授权判定或数据归属认定的依据。",
+  "statement_en_keywords": [
+    "no client-side trust",
+    "hidden fields",
+    "proxy headers",
+    "self-declared ownership"
+  ],
+  "applies_when": {
+    "lane": "backend",
+    "condition": "服务端处理任何携带客户端来源信息的请求",
+    "applicability_note": "服务端处理任何携带客户端来源信息的请求"
+  },
+  "enforcement": "required_when_applicable",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-spec-decomposition"
+  },
+  "origin": "ingested",
+  "origin_note": "裁定批 F/D3-R1 D3 逐卡复核物化（原 B6C 保守排除卡补锚收编）；statement 沿用 SPEC-D 候选卡独立措辞（clean-room），零逐字拷贝上游源文本；播种分母=vendor 字节（x-b6-porting.vendor_pin），分解分母=MASTer 池卡（x-spec-d-materialization）",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/corpus/spec-knowledge/candidates/BE-G2.yaml",
+      "captured_by": "agent:claude/spec-d-consolidation",
+      "locator": {
+        "candidate": "POLICY.SEC.NO_CLIENT_SIDE_TRUST",
+        "source_protocol": ".trellis/spec/backend/10-security-protocol.md",
+        "lines": "29"
+      },
+      "clean_room_note": "independently rewritten from SPEC-D decomposition candidate cards; zero verbatim copy"
+    }
+  ],
+  "review_notes": [
+    "客户端信号不可作授权依据在既有 228 条中无对应条目（B6b-I SEC 族管秘密可见面与凭据介质）；与同批 AUTHZ.NO_GATING_PROXY_TRUST 同域相邻——彼管门禁表象（路由/按钮），本管数据归属判定依据面，互引不合并。",
+    "D3b 补锚：MASTer 10-security-protocol.md L29（MUST NOT 段），required 入册。"
+  ]
+}

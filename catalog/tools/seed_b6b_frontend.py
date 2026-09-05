@@ -151,6 +151,13 @@ PORTING_NOTES = {
         "'收口（closeout）流程'、L75 '归档、finish、发布记录' → '归档、收口、发布记录'"
         "（pomaster closeout 对应物，同 01 文件口径）。原登记（B6b-II）：旧包流程词形"
         "保留待授权清洗（已由本批清洗收口）",
+        "R8 词形清洗（已执行，裁决 12/D5 同类授权延伸，裁定批 F，2026-09-05）：index "
+        "注入机制叙述残留 13 行 vNext 化——'注入矩阵/任务注入矩阵'→'命中矩阵/任务命中"
+        "矩阵'（沿批 C BE index 段名词形惯例）、段名 '默认注入基线'→'默认激活基线'、"
+        "'按任务追加注入'→'按任务追加激活'（两段名的 Checklist 引用随改）、'默认注入/"
+        "强制注入/可不注入/注入优先级/实际注入'→'激活'词形、'重跑注入'→'重跑播种"
+        "（init）'（seed-once 语义句保留）。协议地图/追加矩阵行数据零触碰。原登记"
+        "（B6b-II）：未登记注入叙述段留待授权清洗（本批收口）",
     ],
 }
 
@@ -191,6 +198,35 @@ INDEX_R8_CLEANLINES = [
      "review 的替代品。\n",
      "- Spec Update Review 的输出属于验收证据；不得把归档、收口、发布记录当成 spec "
      "review 的替代品。\n", 1),
+    # ---- 裁定批 F（D5 同类授权延伸，2026-09-05）：index 注入机制叙述残留 13 行 vNext 化。
+    # 词形惯例沿批 C BE index 清洗（注入→激活/命中、重跑注入→重跑播种）；矩阵行数据零触碰。
+    ("- 新增、废弃、合并或拆分属于协议架构变更，必须更新索引、注入矩阵、职责边界和目录"
+     "验证；已发布文件先废弃和迁移，不得静默删除或复用其 ID。\n",
+     "- 新增、废弃、合并或拆分属于协议架构变更，必须更新索引、命中矩阵、职责边界和目录"
+     "验证；已发布文件先废弃和迁移，不得静默删除或复用其 ID。\n", 1),
+    ("1. 默认注入 P0 基线和任务命中的专项协议。\n",
+     "1. 默认激活 P0 基线和任务命中的专项协议。\n", 1),
+    ("- [ ] 读取「默认注入基线」，再按「按任务追加注入」选择本次命中的协议；多行命中取"
+     "并集。\n",
+     "- [ ] 读取「默认激活基线」，再按「按任务追加激活」选择本次命中的协议；多行命中取"
+     "并集。\n", 1),
+    ("| P0 | 治理、安全、环境和跨层契约底座 | 默认注入；失败即阻塞开发或放行 |\n",
+     "| P0 | 治理、安全、环境和跨层契约底座 | 默认激活；失败即阻塞开发或放行 |\n", 1),
+    ("| P1 | 核心架构、数据、UI 和高频工程协议 | 命中场景时强制注入；不得降级为建议 |\n",
+     "| P1 | 核心架构、数据、UI 和高频工程协议 | 命中场景时强制激活；不得降级为建议 |\n", 1),
+    ("| P2 | 发布、运营、兼容和协作完善协议 | 命中场景时强制执行；未命中可不注入 |\n",
+     "| P2 | 发布、运营、兼容和协作完善协议 | 命中场景时强制执行；未命中可不激活 |\n", 1),
+    ("P2 表示默认注入优先级较低，不表示协议中的 MUST 可以忽略。\n",
+     "P2 表示默认激活优先级较低，不表示协议中的 MUST 可以忽略。\n", 1),
+    ("与任务注入矩阵，保持双向索引完整。\n",
+     "与任务命中矩阵，保持双向索引完整。\n", 1),
+    ("重跑注入默认只补齐缺失文件、不覆盖已存在的协议，所以就地维护不会被覆盖。\n",
+     "重跑播种（init）默认只补齐缺失文件、不覆盖已存在的协议，所以就地维护不会被覆盖。\n", 1),
+    ("## 默认注入基线\n", "## 默认激活基线\n", 1),
+    ("使用本规范时默认注入：\n", "使用本规范时默认激活：\n", 1),
+    ("## 按任务追加注入\n", "## 按任务追加激活\n", 1),
+    ("同一任务命中多行时取并集；数字用于查表，实际注入必须使用文档 ID。\n",
+     "同一任务命中多行时取并集；数字用于查表，实际激活必须使用文档 ID。\n", 1),
 ]
 
 LCS_THRESHOLD = 20
@@ -214,6 +250,19 @@ POOL_REL = "POMaster_VNext/corpus/spec-knowledge/candidates/consolidated-pool.ya
 
 CLEAN_ROOM_NOTE = ("independently rewritten from SPEC-D decomposition candidate cards; "
                    "zero verbatim copy")
+
+# x-vocab-pr resolution 转正词形（裁定批 B/D4=vocab PR-0009 落地，2026-09-05；裁定批 F
+# 工具-目录漂移修复纳入 builder 常量——ADR：常量纳编而非 merge_preserving，保工具单源
+# 重演语义，最小改动；与 catalog/policies 在册条目 resolution 逐字节一致）。
+VOCAB_PR_RESOLUTION_POLICY = (
+    "2026-09-05 vocab PR-0009 收编落地（vocab-lock@v0.8-resolved，三镜像同 commit；"
+    "Owner 裁定 D4=(a) 2026-09-05）：kind='policy' 是 catalog 物料分类词形"
+    "（catalog_layer_vocab.catalog_kind 在册——PR-0006，不受 kinds_registry.truth_bodies "
+    "闭包管辖），POLICY. 前缀为 governed 闭包既有前缀，id 域段词形随 "
+    "catalog_layer_vocab.policy_id_domains / policy_web_domains 收编；本 pending 注记就此"
+    "转正（finding/proposal/locked_vocab_untouched 为创建时点历史记录原样保留——"
+    "mcp_eyes 先例）"
+)
 
 # 物化层 clean-room 改写（materialize-curated.py REWRITE_TEXT 同款机制）：
 # 卡层 statement 与上游源文存在逐字重合（LCS>=20 字审计失败）时，在此以独立措辞改写，
@@ -906,23 +955,37 @@ def build_seed_assets():
                 "porting_notes": list(PORTING_NOTES.get(name, [])),
             })
         batch_targets[batch] = targets
-    manifest_doc = {
-        "schema": MANIFEST_SCHEMA,
-        "batch": BATCH,
-        "batches": batch_targets,
-        "generated_by": "catalog/tools/seed_b6b_frontend.py",
-        "denominator": {
-            "batch_scope": BATCH_SCOPE,
-            "planted": len(entries),
-            "planted_total": PLANTED_TOTAL,
-            "batch_new": len(BATCHES[BATCH]),
-        },
-        "seed_semantics": "seed-once-missing-only（缺席才写 / 在座零触碰 / marker-free；"
-                          "seeds.ts 单一实现；frontmatter 为 PRD §8.2 字段位减 id——"
-                          "no-governed-id 默认，播种 spec 是项目可编辑自由文件）",
-        "authority_scope": AUTHORITY_SCOPE,
-        "entries": entries,
-    }
+    # manifest（merge_preserving——裁定批 F 工具-目录漂移修复 ADR：磁盘清单自 B6c 起
+    # 为多批合并单源（B6b 两批 + B6c/B6d/B6e 追加），本工具重演只重算 B6b 两批名单与
+    # 条目；其余批的批次名单、条目与磁盘头部字段（batch/generated_by/denominator/
+    # seed_semantics/authority_scope）**原样保留**——纯重建形态会覆写后续批追加内容
+    # （批 B resolution 转正与 B6d/B6e 清单追加曾同因漂移），merge_preserving 同类
+    # 语义收口；本批重算与磁盘逐字差异由 --verify 字节比对如实暴露）。
+    old_doc = json.loads(open(MANIFEST_PATH, encoding="utf-8").read())
+    assert old_doc["schema"] == MANIFEST_SCHEMA
+    old_entries = old_doc["entries"]
+    old_batches = old_doc.get("batches") or {}
+    assert set(BATCHES) <= set(old_batches), "磁盘清单缺 B6b 两批名单"
+    # 原位替换（磁盘键序/条目序恒保持——merge 收敛性：B6b/B6c 交替重演不漂移）。
+    by_target = {e["target"]: e for e in entries}
+    merged_entries = []
+    seen = set()
+    for e in old_entries:
+        if e["target"] in by_target:
+            merged_entries.append(by_target[e["target"]])
+            seen.add(e["target"])
+        else:
+            merged_entries.append(e)
+    missing = set(by_target) - seen
+    assert not missing, f"本批条目在磁盘清单缺席（名单漂移）: {sorted(missing)}"
+    merged_batches = {}
+    for k, v in old_batches.items():
+        merged_batches[k] = list(batch_targets[k]) if k in BATCHES else list(v)
+    manifest_doc = dict(old_doc)
+    manifest_doc["batches"] = merged_batches
+    manifest_doc["entries"] = merged_entries
+    assert len(manifest_doc["entries"]) == old_doc["denominator"]["planted"], \
+        "manifest 合并分母与磁盘 denominator.planted 漂移"
     return assets, manifest_doc
 
 
@@ -1154,6 +1217,7 @@ def build_entry(pool_rec, card, statement, sections, sha_hex, vendor_bytes, seed
             "finding": "kind='policy' 不在 vocab-lock kinds_registry.truth_bodies（POLICY. 前缀已冻结注册，closed-world）" + seg_note,
             "proposal": "词汇表 PR 登记 policy kind 及新域段；或 Owner 裁决 policy 条目住 catalog/ 而非 truth/objects 正文层（与前批 45+25 条同因同请，合并进同一 vocab PR）",
             "locked_vocab_untouched": True,
+            "resolution": VOCAB_PR_RESOLUTION_POLICY,
         },
         "x-spec-d-materialization": {
             "status": "PROPOSAL",

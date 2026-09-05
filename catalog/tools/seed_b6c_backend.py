@@ -165,6 +165,15 @@ PORTING_NOTES = {
         "R8 词形注记：正文 'stacks/<slug>/<slug>-overlay.md' 相对词形（L18/L54）在 "
         "vNext 播种面（.pomaster/specs/hard/）下自洽指向 specs/hard/stacks/<slug>/"
         "<slug>-overlay.md——零改写保留原文",
+        "R8 词形清洗（已执行，裁决 12/D5 同类授权延伸，裁定批 F，2026-09-05）：BE index "
+        "注入机制叙述残留 2 行 vNext 化——引言行 '不表示 criticality 或注入优先级'→"
+        "'激活优先级'；维护规则段 '同步索引、模板、注入器测试和 provider bytes/hash'→"
+        "'同步索引、模板、播种清单与 catalog 锁校验'（vNext 对应物 = seeds manifest "
+        "source sha256/bytes pin + catalog relock）。'注入防护'（协议目录 10 号安全协议"
+        "行）为安全领域词（SQL/脚本注入防护语义）非旧包注入机制词形——零改写保留原文；"
+        "frontmatter injection_mode 保留字段与协议目录表 always/triggered 行数据为既登记 "
+        "info 性注记/零触碰面，维持不动。原登记（B6c）：残留注入词形留待授权清洗（本批"
+        "收口）",
     ],
 }
 
@@ -202,6 +211,20 @@ BE_INDEX_R8_CLEANLINES = [
      "矩阵只产生候选特征；实际纳入由 `pomaster context compile --role <role>` 投影承载"
      "（Overlay 依赖与冲突按「冲突与责任边界」收窄），纳入/排除决策可经 `pomaster "
      "context explain` 逐条审计。\n", 1),
+    # ---- 裁定批 F（D5 同类授权延伸，2026-09-05）：BE index 注入机制叙述残留 2 行
+    # vNext 化；'注入防护'（协议目录 10 号行）为安全领域词非机制词形——零改写（注记在
+    # PORTING_NOTES）。
+    ("本目录包含 32 个编号协议和本索引。语义 ID、编号和 canonical filename 是稳定地址；"
+     "编号只追加，不表示 criticality 或注入优先级。协议正文只定义跨项目治理，不保存项目 "
+     "endpoint、table、column、业务状态、环境阈值或责任人。\n",
+     "本目录包含 32 个编号协议和本索引。语义 ID、编号和 canonical filename 是稳定地址；"
+     "编号只追加，不表示 criticality 或激活优先级。协议正文只定义跨项目治理，不保存项目 "
+     "endpoint、table、column、业务状态、环境阈值或责任人。\n", 1),
+    ("协议编号、语义 ID 与 canonical filename 只追加不重排。新增或修改规则必须同步索引、"
+     "模板、注入器测试和 provider bytes/hash；废弃规则必须提供替代 ID、兼容窗口和迁移"
+     "说明。\n",
+     "协议编号、语义 ID 与 canonical filename 只追加不重排。新增或修改规则必须同步索引、"
+     "模板、播种清单与 catalog 锁校验；废弃规则必须提供替代 ID、兼容窗口和迁移说明。\n", 1),
 ]
 DEFAULT_BE_NOTES = [NOTE_FRONTMATTER]
 STACK_OVERLAY_NOTE = (
@@ -394,38 +417,37 @@ def build_seed_assets(pilot_pins):
     profile_path = os.path.join(STACKS_VENDOR_DIR, "profiles", "java-enterprise-default.yaml")
     assert os.path.isfile(profile_path), "vendor profile 缺席"
 
-    # manifest（B6b 两批条目原样保留 + B6C 追加——单源合并分母 107）。
+    # manifest（merge_preserving——裁定批 F 工具-目录漂移修复 ADR：磁盘清单为多批
+    # 合并单源，本工具重演只重算 B6C 名单与条目；其余批（B6b 两批/B6D/B6E…）的批次
+    # 名单、条目与磁盘头部字段（batch/generated_by/denominator/seed_semantics/
+    # authority_scope）**原样保留**——原 kept 硬编码 B6b 两批 + 头部纯重建形态会把
+    # B6d/B6e 追加内容覆写掉（清单漂移源），同类语义收口；本批重算与磁盘逐字差异
+    # 由 --verify 字节比对如实暴露）。
     old_doc = json.loads(open(MANIFEST_PATH, encoding="utf-8").read())
     assert old_doc["schema"] == MANIFEST_SCHEMA
     old_entries = old_doc["entries"]
     old_batches = old_doc.get("batches") or {}
-    kept_batches = {k: list(v) for k, v in old_batches.items() if k in ("B6B-1", "B6B-2")}
-    assert set(kept_batches) == {"B6B-1", "B6B-2"}, "磁盘清单缺 B6b 两批名单"
-    kept_targets = set(kept_batches["B6B-1"]) | set(kept_batches["B6B-2"])
-    kept_entries = [e for e in old_entries if e["target"] in kept_targets]
-    assert len(kept_entries) == 46, f"B6b 条目数漂移: {len(kept_entries)}"
-    assert not (kept_targets & set(b6c_targets)), "B6C 目标与 B6b 条目撞名"
-    batch_targets = dict(kept_batches)
-    batch_targets[BATCH] = b6c_targets
-    manifest_doc = {
-        "schema": MANIFEST_SCHEMA,
-        "batch": BATCH,
-        "batches": batch_targets,
-        "generated_by": "catalog/tools/seed_b6c_backend.py",
-        "denominator": {
-            "batch_scope": BATCH_SCOPE,
-            "planted": len(kept_entries) + len(b6c_entries),
-            "planted_total": PLANTED_TOTAL,
-            "batch_new": len(b6c_entries),
-        },
-        "seed_semantics": "seed-once-missing-only（缺席才写 / 在座零触碰 / marker-free；"
-                          "seeds.ts 单一实现；frontmatter 为 PRD §8.2 字段位减 id——"
-                          "no-governed-id 默认，播种 spec 是项目可编辑自由文件；B6c 起 "
-                          "BE 件含 vendor frontmatter 保留字段、stacks 件落 <slug> 子"
-                          "目录——SEEDABLE_STORE_DIRS 显式 slug 登记）",
-        "authority_scope": AUTHORITY_SCOPE,
-        "entries": kept_entries + b6c_entries,
-    }
+    assert BATCH in old_batches, "磁盘清单缺 B6C 批名单"
+    # 原位替换（磁盘键序/条目序恒保持——merge 收敛性：B6b/B6c 交替重演不漂移）。
+    by_target = {e["target"]: e for e in b6c_entries}
+    merged_entries = []
+    seen = set()
+    for e in old_entries:
+        if e["target"] in by_target:
+            merged_entries.append(by_target[e["target"]])
+            seen.add(e["target"])
+        else:
+            merged_entries.append(e)
+    missing = set(by_target) - seen
+    assert not missing, f"本批条目在磁盘清单缺席（名单漂移）: {sorted(missing)}"
+    batch_targets = {}
+    for k, v in old_batches.items():
+        batch_targets[k] = list(b6c_targets) if k == BATCH else list(v)
+    manifest_doc = dict(old_doc)
+    manifest_doc["batches"] = batch_targets
+    manifest_doc["entries"] = merged_entries
+    assert len(manifest_doc["entries"]) == old_doc["denominator"]["planted"], \
+        "manifest 合并分母与磁盘 denominator.planted 漂移"
     return assets, manifest_doc, b6c_entries
 
 
@@ -447,6 +469,28 @@ GRANDFATHERED_TP_B6C = 10    # B6c TP 面 Owner 追认例外（裁决 12①）
 POOL_REL = "POMaster_VNext/corpus/spec-knowledge/candidates/consolidated-pool.yaml"
 CLEAN_ROOM_NOTE = ("independently rewritten from SPEC-D decomposition candidate cards; "
                    "zero verbatim copy")
+
+# x-vocab-pr resolution 转正词形（裁定批 B/D4=vocab PR-0009 落地，2026-09-05；裁定批 F
+# 工具-目录漂移修复纳入 builder 常量——ADR：常量纳编而非 merge_preserving，保工具单源
+# 重演语义，最小改动；与 catalog/policies 在册条目 resolution 逐字节一致。policy 面
+# 与 TECHNOLOGY_PROFILE 面两词形——TP 面含 classification/PROFILE/BASELINE 专段）。
+VOCAB_PR_RESOLUTION_POLICY = (
+    "2026-09-05 vocab PR-0009 收编落地（vocab-lock@v0.8-resolved，三镜像同 commit；"
+    "Owner 裁定 D4=(a) 2026-09-05）：kind='policy' 是 catalog 物料分类词形"
+    "（catalog_layer_vocab.catalog_kind 在册——PR-0006，不受 kinds_registry.truth_bodies "
+    "闭包管辖），POLICY. 前缀为 governed 闭包既有前缀，id 域段词形随 "
+    "catalog_layer_vocab.policy_id_domains / policy_web_domains 收编；本 pending 注记就此"
+    "转正（finding/proposal/locked_vocab_untouched 为创建时点历史记录原样保留——"
+    "mcp_eyes 先例）"
+)
+VOCAB_PR_RESOLUTION_TP = (
+    "2026-09-05 vocab PR-0009 收编落地（vocab-lock@v0.8-resolved，三镜像同 commit；"
+    "Owner 裁定 D4=(a) 2026-09-05）：kind='policy' 是 catalog 物料分类词形"
+    "（catalog_layer_vocab.catalog_kind 在册——PR-0006）；classification=TECHNOLOGY_PROFILE "
+    "为 §93.4 十二值现成词形（零扩值）；PROFILE 前缀为 governed 闭包既有前缀，BASELINE "
+    "域段随 catalog_layer_vocab.authority_knowledge_profile_domains 收编；本 pending 注记"
+    "就此转正（finding/proposal/locked_vocab_untouched 为创建时点历史记录原样保留）"
+)
 POOL_SELF_ANCHOR = {
     "eligible": 180,
     "canonical": 895,
@@ -717,6 +761,7 @@ def build_policy_entry(pool_rec, card, statement, sections, extra_sections):
             "finding": "kind='policy' 不在 vocab-lock kinds_registry.truth_bodies（POLICY. 前缀已冻结注册，closed-world）" + seg_note,
             "proposal": "词汇表 PR 登记 policy kind 及新域段；或 Owner 裁决 policy 条目住 catalog/ 而非 truth/objects 正文层（与前批 45+25+9 条同因同请，合并进同一 vocab PR）",
             "locked_vocab_untouched": True,
+            "resolution": VOCAB_PR_RESOLUTION_POLICY,
         },
         "x-spec-d-materialization": {
             "status": "PROPOSAL",
@@ -834,6 +879,7 @@ def build_tp_entry(pool_rec, card, statement, sections, extra_sections, seeded_s
             "finding": "kind='policy' 不在 vocab-lock kinds_registry.truth_bodies（POLICY. 前缀已冻结注册，closed-world）；classification=TECHNOLOGY_PROFILE 为 §93.4 十二值现成词形（零扩值）；PROFILE 前缀 id 域段待登记",
             "proposal": "词汇表 PR 登记 policy kind 及 PROFILE 前缀域段；或 Owner 裁决 policy 条目住 catalog/ 而非 truth/objects 正文层（与前批 45+25+9 条同因同请，合并进同一 vocab PR）",
             "locked_vocab_untouched": True,
+            "resolution": VOCAB_PR_RESOLUTION_TP,
         },
         "x-spec-d-materialization": {
             "status": "PROPOSAL",

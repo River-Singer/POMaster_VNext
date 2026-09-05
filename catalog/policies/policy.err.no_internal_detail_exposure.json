@@ -1,0 +1,96 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "id 域段待登记：ERR（vocab-lock@v0.8-resolved policy_id_domains 32 段未含——PR-0009 后新用域段沿用候选注记先例，词汇表 PR 增补）",
+    "proposal": "词汇表 PR 增补新 id 域段至 catalog_layer_vocab.policy_id_domains（与 PR-0009 同轴追加，append-only）",
+    "locked_vocab_untouched": true
+  },
+  "x-spec-d-materialization": {
+    "status": "PROPOSAL",
+    "package": "裁定批 F/D3-R1 排除卡逐卡复核物化（SPEC-D 池卡复用；分母=MASTer 池卡 + vendor 播种字节双锚）",
+    "human_review_required": true,
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/corpus/spec-knowledge/candidates/consolidated-pool.yaml",
+    "group": "BE-G2",
+    "candidate_id": "POLICY.ERR.NO_INTERNAL_DETAIL_EXPOSURE",
+    "pool_statement_sha16": "464dc02c840c02f0",
+    "curated_rule": "D3 逐卡复核批（Owner 2026-09-05 裁定 D3=逐卡复核；72 张保守排除卡逐卡核锚）：required 9（D3b source=null 补锚落 MUST/MUST NOT 且与 MASTer 行锚交叉验证）+ advisory 16（Change Policy 锚 14 张降 advisory[行内容含「必须」行为规范、强度只降不升] + 池密度序前 2）= 25（D6 合并上限 policy+TP 合计 25/批内执行；超出 17 张 advisory 留 D3-R2 轮次台账）；维持排除 30（Ownership 归属说明族）",
+    "denominator": "MASTer（池卡锚）"
+  },
+  "x-b6-porting": {
+    "status": "PROPOSAL",
+    "batch": "D3-R1",
+    "human_review_required": true,
+    "classification_face": "policy",
+    "enforcement_axis": {
+      "source_sections": [
+        "MUST NOT"
+      ],
+      "rule": "SHOULD/Change Policy 源条目 enforcement 必须 advisory（禁升 required）；MUST/MUST NOT 源条目 enforcement 必须 required_when_applicable（降级合法）",
+      "asserted_by": "packages/cli/tests/catalog-b6-porting.spec.ts"
+    },
+    "extra_master_sections": [],
+    "denominator": "vendor",
+    "vendor_pin": {
+      "path": "pomaster/components/backend-hard-spec/assets/universal/16-error-code-protocol.md",
+      "sha256": "aa80ee60f7431e14859f61e563784e71b2002f35e220964170a779800fdde090",
+      "bytes": 1298
+    },
+    "seeded_spec": ".pomaster/specs/hard/backend/16-error-code-protocol.md",
+    "seed_manifest": "packages/cli/seeds/manifest.json",
+    "d3_review": {
+      "excluded_from_batch": "B6C",
+      "exclusion_reason_at_seed": "卡层 source=null（锚证据不足），保守排除待复核",
+      "adjudication": "D3 逐卡复核（Owner 2026-09-05 裁定 D3=逐卡复核，裁定批 F 落地 2026-09-05）：本卡原属 B6C 保守排除留池（排除理由：卡层 source=null（锚证据不足），保守排除待复核）；复核补锚回 vendor/MASTer 源取得行级证据，锚段=MUST NOT，按强度入册（MUST/MUST NOT 行锚 required 原样）",
+      "anchor_evidence": "MASTer 16-error-code-protocol.md 29「- 不得向调用方返回堆栈、SQL、secret 或不稳定内部异常文本。」",
+      "pool_enforcement_at_seed": "required_when_applicable"
+    }
+  },
+  "id": "POLICY.ERR.NO_INTERNAL_DETAIL_EXPOSURE",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "UNIVERSAL_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "错误响应禁内部细节泄露",
+  "statement_zh": "堆栈文本、SQL 语句、secret、不稳定的内部异常原文——任何一样都不允许出现在给调用方的响应里。",
+  "statement_en_keywords": [
+    "no internal detail exposure",
+    "stack/sql/secret/raw exception forbidden in responses"
+  ],
+  "applies_when": {
+    "lane": "backend",
+    "condition": "错误响应出站方向",
+    "applicability_note": "错误响应出站方向"
+  },
+  "enforcement": "required_when_applicable",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-spec-decomposition"
+  },
+  "origin": "ingested",
+  "origin_note": "裁定批 F/D3-R1 D3 逐卡复核物化（原 B6C 保守排除卡补锚收编）；statement 沿用 SPEC-D 候选卡独立措辞（clean-room），零逐字拷贝上游源文本；播种分母=vendor 字节（x-b6-porting.vendor_pin），分解分母=MASTer 池卡（x-spec-d-materialization）",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/corpus/spec-knowledge/candidates/BE-G2.yaml",
+      "captured_by": "agent:claude/spec-d-consolidation",
+      "locator": {
+        "candidate": "POLICY.ERR.NO_INTERNAL_DETAIL_EXPOSURE",
+        "source_protocol": ".trellis/spec/backend/16-error-code-protocol.md",
+        "lines": "29"
+      },
+      "clean_room_note": "independently rewritten from SPEC-D decomposition candidate cards; zero verbatim copy"
+    }
+  ],
+  "review_notes": [
+    "内部细节泄露禁令在既有 228 条中无对应条目；与同批 FAILURE_FIVE_PART_MAPPING 互引。",
+    "D3b 补锚：MASTer 16-error-code-protocol.md L29（MUST NOT 段）。"
+  ]
+}

@@ -1,0 +1,91 @@
+{
+  "x-spec-d-materialization": {
+    "status": "PROPOSAL",
+    "package": "裁定批 F/D3-R1 排除卡逐卡复核物化（SPEC-D 池卡复用；分母=MASTer 池卡 + vendor 播种字节双锚）",
+    "human_review_required": true,
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/corpus/spec-knowledge/candidates/consolidated-pool.yaml",
+    "group": "BE-G1",
+    "candidate_id": "POLICY.ARCH.ADR_IMMUTABLE_HISTORY",
+    "pool_statement_sha16": "c625fdf153e9ef45",
+    "curated_rule": "D3 逐卡复核批（Owner 2026-09-05 裁定 D3=逐卡复核；72 张保守排除卡逐卡核锚）：required 9（D3b source=null 补锚落 MUST/MUST NOT 且与 MASTer 行锚交叉验证）+ advisory 16（Change Policy 锚 14 张降 advisory[行内容含「必须」行为规范、强度只降不升] + 池密度序前 2）= 25（D6 合并上限 policy+TP 合计 25/批内执行；超出 17 张 advisory 留 D3-R2 轮次台账）；维持排除 30（Ownership 归属说明族）",
+    "denominator": "MASTer（池卡锚）"
+  },
+  "x-b6-porting": {
+    "status": "PROPOSAL",
+    "batch": "D3-R1",
+    "human_review_required": true,
+    "classification_face": "policy",
+    "enforcement_axis": {
+      "source_sections": [
+        "Change Policy"
+      ],
+      "rule": "SHOULD/Change Policy 源条目 enforcement 必须 advisory（禁升 required）；MUST/MUST NOT 源条目 enforcement 必须 required_when_applicable（降级合法）",
+      "asserted_by": "packages/cli/tests/catalog-b6-porting.spec.ts"
+    },
+    "extra_master_sections": [],
+    "denominator": "vendor",
+    "vendor_pin": {
+      "path": "pomaster/components/backend-hard-spec/assets/universal/01-architecture-governance-protocol.md",
+      "sha256": "726502f4e5a5dcf2e8076fafa943b33de4b7ab9bd0fc2d8551479b43385e7636",
+      "bytes": 1394
+    },
+    "seeded_spec": ".pomaster/specs/hard/backend/01-architecture-governance-protocol.md",
+    "seed_manifest": "packages/cli/seeds/manifest.json",
+    "d3_review": {
+      "excluded_from_batch": "B6C",
+      "exclusion_reason_at_seed": "行锚段映射非 MUST/MUST NOT（池 enforcement 判定矛盾，保守排除待复核）",
+      "adjudication": "D3 逐卡复核（Owner 2026-09-05 裁定 D3=逐卡复核，裁定批 F 落地 2026-09-05）：本卡原属 B6C 保守排除留池（排除理由：行锚段映射非 MUST/MUST NOT（池 enforcement 判定矛盾，保守排除待复核））；复核补锚回 vendor/MASTer 源取得行级证据，锚段=Change Policy，按强度入册（行内容含「必须」行为规范、Change Policy 段 advisory 落点（强度只降不升））",
+      "anchor_evidence": "MASTer 01-architecture-governance-protocol.md 57「改变已采用架构必须新增或替代 ADR，不得静默改写历史结论。」",
+      "pool_enforcement_at_seed": "required_when_applicable"
+    }
+  },
+  "id": "POLICY.ARCH.ADR_IMMUTABLE_HISTORY",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "UNIVERSAL_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "架构结论禁静默改写",
+  "statement_zh": "推翻既有架构结论必须新增或显式替代既有决策记录，禁止静默改写历史结论。",
+  "statement_en_keywords": [
+    "immutable decision history",
+    "supersede",
+    "no silent rewrite"
+  ],
+  "applies_when": {
+    "lane": "any",
+    "condition": "改变已采用架构时",
+    "applicability_note": "改变已采用架构时"
+  },
+  "enforcement": "advisory",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-spec-decomposition"
+  },
+  "origin": "ingested",
+  "origin_note": "裁定批 F/D3-R1 D3 逐卡复核物化（原 B6C 保守排除卡补锚收编）；statement 沿用 SPEC-D 候选卡独立措辞（clean-room），零逐字拷贝上游源文本；播种分母=vendor 字节（x-b6-porting.vendor_pin），分解分母=MASTer 池卡（x-spec-d-materialization）",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/corpus/spec-knowledge/candidates/BE-G1.yaml",
+      "captured_by": "agent:claude/spec-d-consolidation",
+      "locator": {
+        "candidate": "POLICY.ARCH.ADR_IMMUTABLE_HISTORY",
+        "source_protocol": ".trellis/spec/backend/01-architecture-governance-protocol.md",
+        "lines": "57"
+      },
+      "clean_room_note": "independently rewritten from SPEC-D decomposition candidate cards; zero verbatim copy"
+    }
+  ],
+  "review_notes": [
+    "决策记录禁静默改写在既有 228 条中无对应条目；与 kernel decision-graph 冻结纪律（投影指纹 human_touch forbidden）语义呼应不同层。",
+    "Change Policy 锚（MASTer 01 L57）——降 advisory 入册。"
+  ]
+}

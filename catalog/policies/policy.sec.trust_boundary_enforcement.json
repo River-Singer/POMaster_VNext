@@ -1,0 +1,93 @@
+{
+  "x-spec-d-materialization": {
+    "status": "PROPOSAL",
+    "package": "裁定批 F/D3-R1 排除卡逐卡复核物化（SPEC-D 池卡复用；分母=MASTer 池卡 + vendor 播种字节双锚）",
+    "human_review_required": true,
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/corpus/spec-knowledge/candidates/consolidated-pool.yaml",
+    "group": "BE-G2",
+    "candidate_id": "POLICY.SEC.TRUST_BOUNDARY_ENFORCEMENT",
+    "pool_statement_sha16": "f951cc095101d9e6",
+    "curated_rule": "D3 逐卡复核批（Owner 2026-09-05 裁定 D3=逐卡复核；72 张保守排除卡逐卡核锚）：required 9（D3b source=null 补锚落 MUST/MUST NOT 且与 MASTer 行锚交叉验证）+ advisory 16（Change Policy 锚 14 张降 advisory[行内容含「必须」行为规范、强度只降不升] + 池密度序前 2）= 25（D6 合并上限 policy+TP 合计 25/批内执行；超出 17 张 advisory 留 D3-R2 轮次台账）；维持排除 30（Ownership 归属说明族）",
+    "denominator": "MASTer（池卡锚）"
+  },
+  "x-b6-porting": {
+    "status": "PROPOSAL",
+    "batch": "D3-R1",
+    "human_review_required": true,
+    "classification_face": "policy",
+    "enforcement_axis": {
+      "source_sections": [
+        "MUST"
+      ],
+      "rule": "SHOULD/Change Policy 源条目 enforcement 必须 advisory（禁升 required）；MUST/MUST NOT 源条目 enforcement 必须 required_when_applicable（降级合法）",
+      "asserted_by": "packages/cli/tests/catalog-b6-porting.spec.ts"
+    },
+    "extra_master_sections": [],
+    "denominator": "vendor",
+    "vendor_pin": {
+      "path": "pomaster/components/backend-hard-spec/assets/universal/10-security-protocol.md",
+      "sha256": "56387f03edd35df50a5a701f4daab174b744d490663393f43331cf5401149f67",
+      "bytes": 1385
+    },
+    "seeded_spec": ".pomaster/specs/hard/backend/10-security-protocol.md",
+    "seed_manifest": "packages/cli/seeds/manifest.json",
+    "d3_review": {
+      "excluded_from_batch": "B6C",
+      "exclusion_reason_at_seed": "卡层 source=null（锚证据不足），保守排除待复核",
+      "adjudication": "D3 逐卡复核（Owner 2026-09-05 裁定 D3=逐卡复核，裁定批 F 落地 2026-09-05）：本卡原属 B6C 保守排除留池（排除理由：卡层 source=null（锚证据不足），保守排除待复核）；复核补锚回 vendor/MASTer 源取得行级证据，锚段=MUST，按强度入册（MUST/MUST NOT 行锚 required 原样）",
+      "anchor_evidence": "MASTer 10-security-protocol.md 25「- 所有信任边界必须执行服务端校验、最小权限、失败关闭和安全审计。」",
+      "pool_enforcement_at_seed": "required_when_applicable"
+    }
+  },
+  "id": "POLICY.SEC.TRUST_BOUNDARY_ENFORCEMENT",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "UNIVERSAL_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "信任边界服务端四动作",
+  "statement_zh": "数据或调用每次从较低信任域进入较高权限域时，必须由服务端一侧完成四项动作——输入校验、最小权限授予、默认拒绝（fail-closed）与审计留痕——任何一项不可省略。",
+  "statement_en_keywords": [
+    "trust boundary",
+    "server-side validation",
+    "least privilege",
+    "fail-closed",
+    "audit trail"
+  ],
+  "applies_when": {
+    "lane": "backend",
+    "condition": "任何跨信任域的数据流或调用入口",
+    "applicability_note": "任何跨信任域的数据流或调用入口"
+  },
+  "enforcement": "required_when_applicable",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-spec-decomposition"
+  },
+  "origin": "ingested",
+  "origin_note": "裁定批 F/D3-R1 D3 逐卡复核物化（原 B6C 保守排除卡补锚收编）；statement 沿用 SPEC-D 候选卡独立措辞（clean-room），零逐字拷贝上游源文本；播种分母=vendor 字节（x-b6-porting.vendor_pin），分解分母=MASTer 池卡（x-spec-d-materialization）",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/corpus/spec-knowledge/candidates/BE-G2.yaml",
+      "captured_by": "agent:claude/spec-d-consolidation",
+      "locator": {
+        "candidate": "POLICY.SEC.TRUST_BOUNDARY_ENFORCEMENT",
+        "source_protocol": ".trellis/spec/backend/10-security-protocol.md",
+        "lines": "25"
+      },
+      "clean_room_note": "independently rewritten from SPEC-D decomposition candidate cards; zero verbatim copy"
+    }
+  ],
+  "review_notes": [
+    "信任边界四动作义务在既有 228 条中无对应条目（B6b-I BOUNDARY.VALIDATE_IN_ENCODE_OUT 管数据入口校验/出口编码通则，本管跨信任域提权的四动作闭环），零语义重复；与 BOUNDARY.VALIDATE_IN_ENCODE_OUT 互引（通则/专项）。",
+    "D3b 补锚：卡层 source=null，复核回 MASTer 10-security-protocol.md L25（MUST 段）取得行级证据，required 入册（强度沿池判原样）。"
+  ]
+}

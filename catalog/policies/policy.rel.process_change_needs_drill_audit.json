@@ -1,0 +1,91 @@
+{
+  "x-spec-d-materialization": {
+    "status": "PROPOSAL",
+    "package": "裁定批 F/D3-R1 排除卡逐卡复核物化（SPEC-D 池卡复用；分母=MASTer 池卡 + vendor 播种字节双锚）",
+    "human_review_required": true,
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/corpus/spec-knowledge/candidates/consolidated-pool.yaml",
+    "group": "BE-G1",
+    "candidate_id": "POLICY.REL.PROCESS_CHANGE_NEEDS_DRILL_AUDIT",
+    "pool_statement_sha16": "7f8bb32c02f2ca05",
+    "curated_rule": "D3 逐卡复核批（Owner 2026-09-05 裁定 D3=逐卡复核；72 张保守排除卡逐卡核锚）：required 9（D3b source=null 补锚落 MUST/MUST NOT 且与 MASTer 行锚交叉验证）+ advisory 16（Change Policy 锚 14 张降 advisory[行内容含「必须」行为规范、强度只降不升] + 池密度序前 2）= 25（D6 合并上限 policy+TP 合计 25/批内执行；超出 17 张 advisory 留 D3-R2 轮次台账）；维持排除 30（Ownership 归属说明族）",
+    "denominator": "MASTer（池卡锚）"
+  },
+  "x-b6-porting": {
+    "status": "PROPOSAL",
+    "batch": "D3-R1",
+    "human_review_required": true,
+    "classification_face": "policy",
+    "enforcement_axis": {
+      "source_sections": [
+        "Change Policy"
+      ],
+      "rule": "SHOULD/Change Policy 源条目 enforcement 必须 advisory（禁升 required）；MUST/MUST NOT 源条目 enforcement 必须 required_when_applicable（降级合法）",
+      "asserted_by": "packages/cli/tests/catalog-b6-porting.spec.ts"
+    },
+    "extra_master_sections": [],
+    "denominator": "vendor",
+    "vendor_pin": {
+      "path": "pomaster/components/backend-hard-spec/assets/universal/32-release-versioning-rollback-protocol.md",
+      "sha256": "26a6a23928fc24338f69fb34199ecdea5f654e21534a76ac53a7c0b78030b3c8",
+      "bytes": 1359
+    },
+    "seeded_spec": ".pomaster/specs/hard/backend/32-release-versioning-rollback-protocol.md",
+    "seed_manifest": "packages/cli/seeds/manifest.json",
+    "d3_review": {
+      "excluded_from_batch": "B6C",
+      "exclusion_reason_at_seed": "行锚段映射非 MUST/MUST NOT（池 enforcement 判定矛盾，保守排除待复核）",
+      "adjudication": "D3 逐卡复核（Owner 2026-09-05 裁定 D3=逐卡复核，裁定批 F 落地 2026-09-05）：本卡原属 B6C 保守排除留池（排除理由：行锚段映射非 MUST/MUST NOT（池 enforcement 判定矛盾，保守排除待复核））；复核补锚回 vendor/MASTer 源取得行级证据，锚段=Change Policy，按强度入册（行内容含「必须」行为规范、Change Policy 段 advisory 落点（强度只降不升））",
+      "anchor_evidence": "MASTer 32-release-versioning-rollback-protocol.md 57「发布流程和阻断门禁变化必须通过演练与审计后生效。」",
+      "pool_enforcement_at_seed": "required_when_applicable"
+    }
+  },
+  "id": "POLICY.REL.PROCESS_CHANGE_NEEDS_DRILL_AUDIT",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "UNIVERSAL_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "发布流程变化先演练审计",
+  "statement_zh": "发布流程或阻断门禁的变化必须先经演练与审计方可生效。",
+  "statement_en_keywords": [
+    "release process change",
+    "drill",
+    "audit"
+  ],
+  "applies_when": {
+    "lane": "any",
+    "condition": "修改发布流程或阻断门禁",
+    "applicability_note": "修改发布流程或阻断门禁"
+  },
+  "enforcement": "advisory",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-spec-decomposition"
+  },
+  "origin": "ingested",
+  "origin_note": "裁定批 F/D3-R1 D3 逐卡复核物化（原 B6C 保守排除卡补锚收编）；statement 沿用 SPEC-D 候选卡独立措辞（clean-room），零逐字拷贝上游源文本；播种分母=vendor 字节（x-b6-porting.vendor_pin），分解分母=MASTer 池卡（x-spec-d-materialization）",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/corpus/spec-knowledge/candidates/BE-G1.yaml",
+      "captured_by": "agent:claude/spec-d-consolidation",
+      "locator": {
+        "candidate": "POLICY.REL.PROCESS_CHANGE_NEEDS_DRILL_AUDIT",
+        "source_protocol": ".trellis/spec/backend/32-release-versioning-rollback-protocol.md",
+        "lines": "57"
+      },
+      "clean_room_note": "independently rewritten from SPEC-D decomposition candidate cards; zero verbatim copy"
+    }
+  ],
+  "review_notes": [
+    "发布流程变化先演练审计在既有 228 条中无对应条目；与 GATE.P0_NON_BYPASSABLE、同批 NO_SILENT_GATE_REMOVAL 门禁变更三域族互引。",
+    "Change Policy 锚（MASTer 32 L57）——降 advisory 入册。"
+  ]
+}

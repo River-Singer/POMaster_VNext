@@ -19,7 +19,7 @@ related_tools: []
 - 本目录当前包含 `01`–`45` 共 45 个编号协议，另有一个不计入协议数的 `index.md`。
 - 优先级由协议地图中的 P0/P1/P2 决定，不由编号推断。已发布编号与文件名 append-only；新增协议追加新编号，不重排既有文件。
 - 文档 ID 是稳定身份。内部引用 MUST 使用 `universal:<semantic-id>`，不得只引用数字。
-- 新增、废弃、合并或拆分属于协议架构变更，必须更新索引、注入矩阵、职责边界和目录验证；已发布文件先废弃和迁移，不得静默删除或复用其 ID。
+- 新增、废弃、合并或拆分属于协议架构变更，必须更新索引、命中矩阵、职责边界和目录验证；已发布文件先废弃和迁移，不得静默删除或复用其 ID。
 
 ## 通用规则准入与维护来源
 
@@ -46,7 +46,7 @@ related_tools: []
 
 使用本目录时：
 
-1. 默认注入 P0 基线和任务命中的专项协议。
+1. 默认激活 P0 基线和任务命中的专项协议。
 2. 已确认规则写成 MUST / MUST NOT / SHOULD 和具体 Contract。
 3. 暂未决策项保留 `TODO_CONFIRM`，AI 不得在代码中临场发明。
 4. 开发结束按验收门禁提供证据，而不是只声明“已完成”。
@@ -54,7 +54,7 @@ related_tools: []
 ## Pre-Development Checklist
 
 - [ ] 确认 `.pomaster/specs/hard/frontend/` 已安装并通过本目录的双向索引校验；项目事实和项目选型写入独立项目 overlay，不修改 universal 文件。
-- [ ] 读取「默认注入基线」，再按「按任务追加注入」选择本次命中的协议；多行命中取并集。
+- [ ] 读取「默认激活基线」，再按「按任务追加激活」选择本次命中的协议；多行命中取并集。
 - [ ] 使用 semantic ID 记录选择理由，不用编号代替协议身份。
 - [ ] 所选协议（semantic ID 形态）以 vNext 上下文投影承载：`pomaster context compile --role <role>` 按 role/capability applicability 检索激活；不得修改 pomaster 工具、hook 或配置来实现自动加载。
 - [ ] 开发前声明本次命中的 MUST/MUST NOT、需要项目确认的阈值/选型和验证方式。
@@ -90,11 +90,11 @@ related_tools: []
 
 | 等级 | 含义 | 执行规则 |
 |---|---|---|
-| P0 | 治理、安全、环境和跨层契约底座 | 默认注入；失败即阻塞开发或放行 |
-| P1 | 核心架构、数据、UI 和高频工程协议 | 命中场景时强制注入；不得降级为建议 |
-| P2 | 发布、运营、兼容和协作完善协议 | 命中场景时强制执行；未命中可不注入 |
+| P0 | 治理、安全、环境和跨层契约底座 | 默认激活；失败即阻塞开发或放行 |
+| P1 | 核心架构、数据、UI 和高频工程协议 | 命中场景时强制激活；不得降级为建议 |
+| P2 | 发布、运营、兼容和协作完善协议 | 命中场景时强制执行；未命中可不激活 |
 
-P2 表示默认注入优先级较低，不表示协议中的 MUST 可以忽略。
+P2 表示默认激活优先级较低，不表示协议中的 MUST 可以忽略。
 
 ## 单个协议文件标准结构
 
@@ -195,9 +195,9 @@ P2 表示默认注入优先级较低，不表示协议中的 MUST 可以忽略�
 | localStorage/sessionStorage/IndexedDB/Cookie | `45-browser-storage-protocol.md` |
 
 只有当一条规则在上表里**找不到任何归属主题**时，才允许新增协议文件；此时必须同步下方「协议地图」
-与任务注入矩阵，保持双向索引完整。
+与任务命中矩阵，保持双向索引完整。
 
-重跑注入默认只补齐缺失文件、不覆盖已存在的协议，所以就地维护不会被覆盖。
+重跑播种（init）默认只补齐缺失文件、不覆盖已存在的协议，所以就地维护不会被覆盖。
 
 ## 协议地图
 
@@ -249,9 +249,9 @@ P2 表示默认注入优先级较低，不表示协议中的 MUST 可以忽略�
 | 44 | P0 | `universal:privacy-data-lifecycle-protocol` | `44-privacy-data-lifecycle-protocol.md` | 数据最小化、目的、用户控制、保留和清理 |
 | 45 | P1 | `universal:browser-storage-protocol` | `45-browser-storage-protocol.md` | 客户端存储选择、隔离、迁移、配额和清理 |
 
-## 默认注入基线
+## 默认激活基线
 
-使用本规范时默认注入：
+使用本规范时默认激活：
 
 ```text
 universal:index
@@ -268,7 +268,7 @@ universal:privacy-data-lifecycle-protocol
 
 环境、API 或运行行为相关任务追加 `universal:environment-configuration-protocol` 和 `universal:frontend-backend-communication-protocol`。
 
-## 按任务追加注入
+## 按任务追加激活
 
 | 任务类型 | 必须追加的协议 |
 |---|---|
@@ -289,7 +289,7 @@ universal:privacy-data-lifecycle-protocol
 | Cookie、Web Storage、IndexedDB、离线缓存 | 04、18、19、20、44、45 |
 | 个人信息、敏感权限、第三方 SDK | 04、08、20、34、40、44、45 |
 
-同一任务命中多行时取并集；数字用于查表，实际注入必须使用文档 ID。
+同一任务命中多行时取并集；数字用于查表，实际激活必须使用文档 ID。
 
 ## 重复职责边界
 

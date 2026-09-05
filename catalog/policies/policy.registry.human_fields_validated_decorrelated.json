@@ -1,0 +1,93 @@
+{
+  "x-spec-d-materialization": {
+    "status": "PROPOSAL",
+    "package": "裁定批 F/D3-R1 排除卡逐卡复核物化（SPEC-D 池卡复用；分母=MASTer 池卡 + vendor 播种字节双锚）",
+    "human_review_required": true,
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/corpus/spec-knowledge/candidates/consolidated-pool.yaml",
+    "group": "FE-G1",
+    "candidate_id": "POLICY.REGISTRY.HUMAN_FIELDS_VALIDATED_DECORRELATED",
+    "pool_statement_sha16": "1adb9d5e6c01c888",
+    "curated_rule": "D3 逐卡复核批（Owner 2026-09-05 裁定 D3=逐卡复核；72 张保守排除卡逐卡核锚）：required 9（D3b source=null 补锚落 MUST/MUST NOT 且与 MASTer 行锚交叉验证）+ advisory 16（Change Policy 锚 14 张降 advisory[行内容含「必须」行为规范、强度只降不升] + 池密度序前 2）= 25（D6 合并上限 policy+TP 合计 25/批内执行；超出 17 张 advisory 留 D3-R2 轮次台账）；维持排除 30（Ownership 归属说明族）",
+    "denominator": "MASTer（池卡锚）"
+  },
+  "x-b6-porting": {
+    "status": "PROPOSAL",
+    "batch": "D3-R1",
+    "human_review_required": true,
+    "classification_face": "policy",
+    "enforcement_axis": {
+      "source_sections": [
+        "本地 ESLint 规则与 Registry 校验"
+      ],
+      "rule": "SHOULD/Change Policy 源条目 enforcement 必须 advisory（禁升 required）；MUST/MUST NOT 源条目 enforcement 必须 required_when_applicable（降级合法）",
+      "asserted_by": "packages/cli/tests/catalog-b6-porting.spec.ts"
+    },
+    "extra_master_sections": [
+      "本地 ESLint 规则与 Registry 校验"
+    ],
+    "denominator": "vendor",
+    "vendor_pin": {
+      "path": "pomaster/components/frontend-hard-spec/assets/universal/10-engineering-tooling-protocol.md",
+      "sha256": "c628d47dcae1ddd58ea3651eeae9dd84ff5157365a3892a367bd7b5bf0af2b9d",
+      "bytes": 2782
+    },
+    "seeded_spec": ".pomaster/specs/hard/frontend/10-engineering-tooling-protocol.md",
+    "seed_manifest": "packages/cli/seeds/manifest.json",
+    "d3_review": {
+      "excluded_from_batch": "B6B-1",
+      "exclusion_reason_at_seed": "行锚全落 MASTer 项目扩展段（12 段闭包外），无源强度证据，保守排除待复核",
+      "adjudication": "D3 逐卡复核（Owner 2026-09-05 裁定 D3=逐卡复核，裁定批 F 落地 2026-09-05）：本卡原属 B6B-1 保守排除留池（排除理由：行锚全落 MASTer 项目扩展段（12 段闭包外），无源强度证据，保守排除待复核）；复核按锚行内容裁定 advisory 入册（锚行行为规范成分、无段级强度词形 advisory 落点）",
+      "anchor_evidence": "MASTer 10-engineering-tooling-protocol.md L71-L74「`tools/scripts/validate-governance-factsources.js` 独立断言规划登记表中人工裁决字段的完整性，与生成登记表的工具解耦：」",
+      "pool_enforcement_at_seed": "required_when_applicable"
+    }
+  },
+  "id": "POLICY.REGISTRY.HUMAN_FIELDS_VALIDATED_DECORRELATED",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "UNIVERSAL_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "人工裁决字段独立校验",
+  "statement_zh": "登记表中人工裁决字段的完整性必须由与生成器解耦的独立校验断言；生成器不得覆盖或清空人工字段。",
+  "statement_en_keywords": [
+    "human fields independent validation",
+    "generator decoupled assertion",
+    "no silent overwrite"
+  ],
+  "applies_when": {
+    "lane": "any",
+    "condition": "生成器产出含人工裁决字段的登记表",
+    "applicability_note": "生成器产出含人工裁决字段的登记表"
+  },
+  "enforcement": "advisory",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-spec-decomposition"
+  },
+  "origin": "ingested",
+  "origin_note": "裁定批 F/D3-R1 D3 逐卡复核物化（原 B6B-1 保守排除卡补锚收编）；statement 沿用 SPEC-D 候选卡独立措辞（clean-room），零逐字拷贝上游源文本；播种分母=vendor 字节（x-b6-porting.vendor_pin），分解分母=MASTer 池卡（x-spec-d-materialization）",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/corpus/spec-knowledge/candidates/FE-G1.yaml",
+      "captured_by": "agent:claude/spec-d-consolidation",
+      "locator": {
+        "candidate": "POLICY.REGISTRY.HUMAN_FIELDS_VALIDATED_DECORRELATED",
+        "source_protocol": ".trellis/spec/frontend/10-engineering-tooling-protocol.md",
+        "lines": "L71-L74"
+      },
+      "clean_room_note": "independently rewritten from SPEC-D decomposition candidate cards; zero verbatim copy"
+    }
+  ],
+  "review_notes": [
+    "人工字段独立校验在既有 228 条中无对应条目；与 POLICY.TOOL.NO_HAND_EDIT_GENERATED_NO_CI_DRIFT（B6c：生成产物禁手改与门禁双标）相邻——彼管产物手改禁令，本管人工字段与生成器解耦的独立校验义务，互引不合并。",
+    "锚落 MASTer 项目扩展段（本地 ESLint 规则与 Registry 校验，FE10 L71-L74）——D3 复核按锚行内容行为规范（生成器覆盖/清空人工字段时独立校验即失败的断言义务）advisory 入册，extra_master_sections 如实登记（池密度序 32.88 为 advisory 补位第 1）。"
+  ]
+}

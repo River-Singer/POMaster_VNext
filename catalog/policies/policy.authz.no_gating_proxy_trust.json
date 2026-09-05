@@ -1,0 +1,98 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "id 域段待登记：AUTHZ（vocab-lock@v0.8-resolved policy_id_domains 32 段未含——PR-0009 后新用域段沿用候选注记先例，词汇表 PR 增补）",
+    "proposal": "词汇表 PR 增补新 id 域段至 catalog_layer_vocab.policy_id_domains（与 PR-0009 同轴追加，append-only）",
+    "locked_vocab_untouched": true
+  },
+  "x-spec-d-materialization": {
+    "status": "PROPOSAL",
+    "package": "裁定批 F/D3-R1 排除卡逐卡复核物化（SPEC-D 池卡复用；分母=MASTer 池卡 + vendor 播种字节双锚）",
+    "human_review_required": true,
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/corpus/spec-knowledge/candidates/consolidated-pool.yaml",
+    "group": "BE-G2",
+    "candidate_id": "POLICY.AUTHZ.NO_GATING_PROXY_TRUST",
+    "pool_statement_sha16": "f57a38b345fbc8b6",
+    "curated_rule": "D3 逐卡复核批（Owner 2026-09-05 裁定 D3=逐卡复核；72 张保守排除卡逐卡核锚）：required 9（D3b source=null 补锚落 MUST/MUST NOT 且与 MASTer 行锚交叉验证）+ advisory 16（Change Policy 锚 14 张降 advisory[行内容含「必须」行为规范、强度只降不升] + 池密度序前 2）= 25（D6 合并上限 policy+TP 合计 25/批内执行；超出 17 张 advisory 留 D3-R2 轮次台账）；维持排除 30（Ownership 归属说明族）",
+    "denominator": "MASTer（池卡锚）"
+  },
+  "x-b6-porting": {
+    "status": "PROPOSAL",
+    "batch": "D3-R1",
+    "human_review_required": true,
+    "classification_face": "policy",
+    "enforcement_axis": {
+      "source_sections": [
+        "MUST NOT"
+      ],
+      "rule": "SHOULD/Change Policy 源条目 enforcement 必须 advisory（禁升 required）；MUST/MUST NOT 源条目 enforcement 必须 required_when_applicable（降级合法）",
+      "asserted_by": "packages/cli/tests/catalog-b6-porting.spec.ts"
+    },
+    "extra_master_sections": [],
+    "denominator": "vendor",
+    "vendor_pin": {
+      "path": "pomaster/components/backend-hard-spec/assets/universal/17-permission-authorization-protocol.md",
+      "sha256": "d85a431b682a3a7c3dd4a6ee1f67fc375b54edb4a8e7fe98d283103b64a6b41e",
+      "bytes": 1378
+    },
+    "seeded_spec": ".pomaster/specs/hard/backend/17-permission-authorization-protocol.md",
+    "seed_manifest": "packages/cli/seeds/manifest.json",
+    "d3_review": {
+      "excluded_from_batch": "B6C",
+      "exclusion_reason_at_seed": "卡层 source=null（锚证据不足），保守排除待复核",
+      "adjudication": "D3 逐卡复核（Owner 2026-09-05 裁定 D3=逐卡复核，裁定批 F 落地 2026-09-05）：本卡原属 B6C 保守排除留池（排除理由：卡层 source=null（锚证据不足），保守排除待复核）；复核补锚回 vendor/MASTer 源取得行级证据，锚段=MUST NOT，按强度入册（MUST/MUST NOT 行锚 required 原样）",
+      "anchor_evidence": "MASTer 17-permission-authorization-protocol.md 29「- 不得只依赖路由隐藏、按钮状态或客户端传入的租户与 owner。」",
+      "pool_enforcement_at_seed": "required_when_applicable"
+    }
+  },
+  "id": "POLICY.AUTHZ.NO_GATING_PROXY_TRUST",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "UNIVERSAL_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "门禁表象不作授权凭据",
+  "statement_zh": "路由不可见、按钮置灰、或请求方自行声明的租户与归属字段——这些客户端侧表象一律不得当作授权通过的凭据。",
+  "statement_en_keywords": [
+    "no gating proxy trust",
+    "route hiding",
+    "button state",
+    "client-declared tenant/owner"
+  ],
+  "applies_when": {
+    "lane": "backend",
+    "condition": "服务端授权判定",
+    "applicability_note": "服务端授权判定"
+  },
+  "enforcement": "required_when_applicable",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-spec-decomposition"
+  },
+  "origin": "ingested",
+  "origin_note": "裁定批 F/D3-R1 D3 逐卡复核物化（原 B6C 保守排除卡补锚收编）；statement 沿用 SPEC-D 候选卡独立措辞（clean-room），零逐字拷贝上游源文本；播种分母=vendor 字节（x-b6-porting.vendor_pin），分解分母=MASTer 池卡（x-spec-d-materialization）",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/corpus/spec-knowledge/candidates/BE-G2.yaml",
+      "captured_by": "agent:claude/spec-d-consolidation",
+      "locator": {
+        "candidate": "POLICY.AUTHZ.NO_GATING_PROXY_TRUST",
+        "source_protocol": ".trellis/spec/backend/17-permission-authorization-protocol.md",
+        "lines": "29"
+      },
+      "clean_room_note": "independently rewritten from SPEC-D decomposition candidate cards; zero verbatim copy"
+    }
+  ],
+  "review_notes": [
+    "客户端门禁表象禁令在既有 228 条中无对应条目；与同批 SERVER_FIVE_FACTOR_VERIFICATION 互引（正反两面）。",
+    "D3b 补锚：MASTer 17-permission-authorization-protocol.md L29（MUST NOT 段）。"
+  ]
+}

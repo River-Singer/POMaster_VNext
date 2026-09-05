@@ -1,0 +1,92 @@
+{
+  "x-spec-d-materialization": {
+    "status": "PROPOSAL",
+    "package": "裁定批 F/D3-R1 排除卡逐卡复核物化（SPEC-D 池卡复用；分母=MASTer 池卡 + vendor 播种字节双锚）",
+    "human_review_required": true,
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/corpus/spec-knowledge/candidates/consolidated-pool.yaml",
+    "group": "FE-G1",
+    "candidate_id": "POLICY.SEC.RELAXATION_APPROVAL",
+    "pool_statement_sha16": "8d6ba2a3a1ba1c58",
+    "curated_rule": "D3 逐卡复核批（Owner 2026-09-05 裁定 D3=逐卡复核；72 张保守排除卡逐卡核锚）：required 9（D3b source=null 补锚落 MUST/MUST NOT 且与 MASTer 行锚交叉验证）+ advisory 16（Change Policy 锚 14 张降 advisory[行内容含「必须」行为规范、强度只降不升] + 池密度序前 2）= 25（D6 合并上限 policy+TP 合计 25/批内执行；超出 17 张 advisory 留 D3-R2 轮次台账）；维持排除 30（Ownership 归属说明族）",
+    "denominator": "MASTer（池卡锚）"
+  },
+  "x-b6-porting": {
+    "status": "PROPOSAL",
+    "batch": "D3-R1",
+    "human_review_required": true,
+    "classification_face": "policy",
+    "enforcement_axis": {
+      "source_sections": [
+        "Change Policy"
+      ],
+      "rule": "SHOULD/Change Policy 源条目 enforcement 必须 advisory（禁升 required）；MUST/MUST NOT 源条目 enforcement 必须 required_when_applicable（降级合法）",
+      "asserted_by": "packages/cli/tests/catalog-b6-porting.spec.ts"
+    },
+    "extra_master_sections": [],
+    "denominator": "vendor",
+    "vendor_pin": {
+      "path": "pomaster/components/frontend-hard-spec/assets/universal/04-security-protocol.md",
+      "sha256": "4d9bb6bd34a64fcc3e362c969492bc326533e16ef4c6d2284dc01442733504e6",
+      "bytes": 21948
+    },
+    "seeded_spec": ".pomaster/specs/hard/frontend/04-security-protocol.md",
+    "seed_manifest": "packages/cli/seeds/manifest.json",
+    "d3_review": {
+      "excluded_from_batch": "B6B-1",
+      "exclusion_reason_at_seed": "行锚段映射非 MUST/MUST NOT（池 enforcement 判定矛盾，保守排除待复核）",
+      "adjudication": "D3 逐卡复核（Owner 2026-09-05 裁定 D3=逐卡复核，裁定批 F 落地 2026-09-05）：本卡原属 B6B-1 保守排除留池（排除理由：行锚段映射非 MUST/MUST NOT（池 enforcement 判定矛盾，保守排除待复核））；复核按锚行内容裁定 advisory 入册（行内容含「必须」行为规范、Change Policy 段 advisory 落点（强度只降不升））",
+      "anchor_evidence": "MASTer 04-security-protocol.md L84「任何安全放宽必须经过风险评估、批准和期限；高危问题修复优先于交互便利性。」",
+      "pool_enforcement_at_seed": "required_when_applicable"
+    }
+  },
+  "id": "POLICY.SEC.RELAXATION_APPROVAL",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "UNIVERSAL_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "安全放宽三要素与优先级",
+  "statement_zh": "任何安全放宽必须附带风险评估、批准人与有效期；高危漏洞修复优先于交互便利。",
+  "statement_en_keywords": [
+    "security relaxation approval",
+    "risk assessment",
+    "approver and expiry",
+    "fix over convenience"
+  ],
+  "applies_when": {
+    "lane": "any",
+    "condition": "安全约束放宽决策",
+    "applicability_note": "安全约束放宽决策"
+  },
+  "enforcement": "advisory",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-spec-decomposition"
+  },
+  "origin": "ingested",
+  "origin_note": "裁定批 F/D3-R1 D3 逐卡复核物化（原 B6B-1 保守排除卡补锚收编）；statement 沿用 SPEC-D 候选卡独立措辞（clean-room），零逐字拷贝上游源文本；播种分母=vendor 字节（x-b6-porting.vendor_pin），分解分母=MASTer 池卡（x-spec-d-materialization）",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/corpus/spec-knowledge/candidates/FE-G1.yaml",
+      "captured_by": "agent:claude/spec-d-consolidation",
+      "locator": {
+        "candidate": "POLICY.SEC.RELAXATION_APPROVAL",
+        "source_protocol": ".trellis/spec/frontend/04-security-protocol.md",
+        "lines": "L84"
+      },
+      "clean_room_note": "independently rewritten from SPEC-D decomposition candidate cards; zero verbatim copy"
+    }
+  ],
+  "review_notes": [
+    "前端安全放宽三要素在既有 228 条中无对应条目；与 B6b-I AI.RULE_RELAXATION_APPROVAL、本批 SECURITY_RELAXATION_GATE（BE）放宽批准三域族互引不合并。",
+    "Change Policy 锚（FE04 L84，行内容含「必须」）——advisory 落点（池密度序 32.31 为 advisory 补位第 2）。"
+  ]
+}

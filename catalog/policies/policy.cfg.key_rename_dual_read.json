@@ -1,0 +1,92 @@
+{
+  "x-spec-d-materialization": {
+    "status": "PROPOSAL",
+    "package": "裁定批 F/D3-R1 排除卡逐卡复核物化（SPEC-D 池卡复用；分母=MASTer 池卡 + vendor 播种字节双锚）",
+    "human_review_required": true,
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/corpus/spec-knowledge/candidates/consolidated-pool.yaml",
+    "group": "BE-G2",
+    "candidate_id": "POLICY.CFG.KEY_RENAME_DUAL_READ",
+    "pool_statement_sha16": "31201d16fd6f1086",
+    "curated_rule": "D3 逐卡复核批（Owner 2026-09-05 裁定 D3=逐卡复核；72 张保守排除卡逐卡核锚）：required 9（D3b source=null 补锚落 MUST/MUST NOT 且与 MASTer 行锚交叉验证）+ advisory 16（Change Policy 锚 14 张降 advisory[行内容含「必须」行为规范、强度只降不升] + 池密度序前 2）= 25（D6 合并上限 policy+TP 合计 25/批内执行；超出 17 张 advisory 留 D3-R2 轮次台账）；维持排除 30（Ownership 归属说明族）",
+    "denominator": "MASTer（池卡锚）"
+  },
+  "x-b6-porting": {
+    "status": "PROPOSAL",
+    "batch": "D3-R1",
+    "human_review_required": true,
+    "classification_face": "policy",
+    "enforcement_axis": {
+      "source_sections": [
+        "Change Policy"
+      ],
+      "rule": "SHOULD/Change Policy 源条目 enforcement 必须 advisory（禁升 required）；MUST/MUST NOT 源条目 enforcement 必须 required_when_applicable（降级合法）",
+      "asserted_by": "packages/cli/tests/catalog-b6-porting.spec.ts"
+    },
+    "extra_master_sections": [],
+    "denominator": "vendor",
+    "vendor_pin": {
+      "path": "pomaster/components/backend-hard-spec/assets/universal/11-environment-configuration-protocol.md",
+      "sha256": "eb9e82e9df64ce238501bc51cd359f36150f911c149904e2ed5a43d9b652b1bd",
+      "bytes": 1362
+    },
+    "seeded_spec": ".pomaster/specs/hard/backend/11-environment-configuration-protocol.md",
+    "seed_manifest": "packages/cli/seeds/manifest.json",
+    "d3_review": {
+      "excluded_from_batch": "B6C",
+      "exclusion_reason_at_seed": "卡层 source=null（锚证据不足），保守排除待复核",
+      "adjudication": "D3 逐卡复核（Owner 2026-09-05 裁定 D3=逐卡复核，裁定批 F 落地 2026-09-05）：本卡原属 B6C 保守排除留池（排除理由：卡层 source=null（锚证据不足），保守排除待复核）；复核补锚回 vendor/MASTer 源取得行级证据，锚段=Change Policy，按强度入册（行内容含「必须」行为规范、Change Policy 段 advisory 落点（强度只降不升））",
+      "anchor_evidence": "MASTer 11-environment-configuration-protocol.md 57「配置键重命名必须提供双读或迁移窗口并验证旧值清理。」",
+      "pool_enforcement_at_seed": "required_when_applicable"
+    }
+  },
+  "id": "POLICY.CFG.KEY_RENAME_DUAL_READ",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "UNIVERSAL_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "配置键更名双读过渡",
+  "statement_zh": "配置键更名属于兼容性变更：必须维持新旧双读过渡期或给出迁移窗口，并以验证手段确认旧值已清理干净后方可收口。",
+  "statement_en_keywords": [
+    "config key rename",
+    "dual-read window",
+    "migration window",
+    "old-value cleanup verification"
+  ],
+  "applies_when": {
+    "lane": "backend",
+    "condition": "重命名或替换配置键",
+    "applicability_note": "重命名或替换配置键"
+  },
+  "enforcement": "advisory",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-spec-decomposition"
+  },
+  "origin": "ingested",
+  "origin_note": "裁定批 F/D3-R1 D3 逐卡复核物化（原 B6C 保守排除卡补锚收编）；statement 沿用 SPEC-D 候选卡独立措辞（clean-room），零逐字拷贝上游源文本；播种分母=vendor 字节（x-b6-porting.vendor_pin），分解分母=MASTer 池卡（x-spec-d-materialization）",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/corpus/spec-knowledge/candidates/BE-G2.yaml",
+      "captured_by": "agent:claude/spec-d-consolidation",
+      "locator": {
+        "candidate": "POLICY.CFG.KEY_RENAME_DUAL_READ",
+        "source_protocol": ".trellis/spec/backend/11-environment-configuration-protocol.md",
+        "lines": "57"
+      },
+      "clean_room_note": "independently rewritten from SPEC-D decomposition candidate cards; zero verbatim copy"
+    }
+  ],
+  "review_notes": [
+    "配置键更名双读过渡在既有 228 条中无对应条目；与 POLICY.CHG.COMPAT_MIGRATION_ROLLBACK（通用兼容迁移）不同轴（配置键专项），互引。",
+    "Change Policy 锚（MASTer 11 L57）——降 advisory 入册。"
+  ]
+}

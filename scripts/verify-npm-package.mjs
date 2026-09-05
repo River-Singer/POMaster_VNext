@@ -95,7 +95,7 @@ assert(
 const stageLock = JSON.parse(
   readFileSync(join(STAGE_PKG, "catalog", "catalog-lock.draft.json"), "utf8"),
 );
-assert(stageLock.entries.length === 228, "catalog-lock 228 entries", `实为 ${stageLock.entries.length}`);
+assert(stageLock.entries.length === 253, "catalog-lock 253 entries", `实为 ${stageLock.entries.length}`);
 
 // 1.2.1 seeds 完整（B6b 两批 + B6c + B6d + B6e）：打包文件集与仓库 packages/cli/seeds/ 全等 +
 //      清单 schema/条目数（播种资产随包分发——装载器 fail-closed，缺 seeds = init 必炸）。
@@ -421,15 +421,15 @@ smoke("npx pomaster status", "pomaster status", {
   ],
 });
 
-// 2.4 `npx pomaster catalog status --json`（关键：包内资产候选命中 + 228 entries 0 drift）。
+// 2.4 `npx pomaster catalog status --json`（关键：包内资产候选命中 + 253 entries 0 drift）。
 const catalogEnvelope = smoke("npx pomaster catalog status --json", "pomaster catalog status --json", {
   expectExit: [0],
   json: true,
 });
 assert(catalogEnvelope.ok === true, "catalog status 信封 ok:true");
 assert(
-  catalogEnvelope.result?.entries_total === 228,
-  `catalog entries = 228（实为 ${catalogEnvelope.result?.entries_total}）`,
+  catalogEnvelope.result?.entries_total === 253,
+  `catalog entries = 253（实为 ${catalogEnvelope.result?.entries_total}）`,
 );
 assert(
   catalogEnvelope.result?.lock_verification?.ok === true &&
