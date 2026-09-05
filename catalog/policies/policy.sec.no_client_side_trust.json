@@ -59,6 +59,9 @@
     "self-declared ownership"
   ],
   "applies_when": {
+    "capabilities": [
+      "CAPABILITY.API_CONTRACT"
+    ],
     "lane": "backend",
     "condition": "服务端处理任何携带客户端来源信息的请求",
     "applicability_note": "服务端处理任何携带客户端来源信息的请求"

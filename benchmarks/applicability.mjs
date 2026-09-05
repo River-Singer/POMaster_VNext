@@ -312,15 +312,23 @@ export async function runApplicabilityBenchmark(options = {}) {
     catalogScanError = error instanceof Error ? error.message : String(error);
   }
   const dbDomainCatalogIds = catalogIds.filter(DB_DOMAIN_ID);
+  const dbDomainDecisions = allDecisions.filter((decision) => DB_DOMAIN_ID(decision.ref));
   assertions.push({
-    name: "db-domain-absence-disclosed",
-    ok: catalogScanError === null && dbDomainCatalogIds.length === 0,
+    name: "db-domain-excluded-disclosed",
+    ok:
+      catalogScanError === null &&
+      dbDomainCatalogIds.length > 0 &&
+      dbDomainDecisions.length === dbDomainCatalogIds.length &&
+      dbDomainDecisions.every((d) => d.decision === "excluded" && d.why_excluded.length > 0),
     detail:
       catalogScanError !== null
         ? `catalog 锁不可读（${path.relative(REPO_ROOT, CATALOG_LOCK_PATH)}）：${catalogScanError}——绊线分母不可得，按失败处理（fail-closed）`
         : dbDomainCatalogIds.length === 0
-          ? `真实 catalog 锁 ${catalogIds.length} 条零 DB 域条目（O9 fixture-only 裁决；db_domain_entries_total=0 如实披露——绊线扫 catalog 全集而非编译分母，I8③ 修正；DB 排除逻辑的真判卷仍由 catalog-applicability-case-b.spec 的 fixture DB 条目承载，本档不冒充空分母判卷）`
-          : `真实 catalog 出现 DB 域条目：${dbDomainCatalogIds.join(", ")}——绊线触发，需重审本断言面与 O9 裁决前提`,
+          ? `真实 catalog 锁 ${catalogIds.length} 条零 DB 域条目（O9 fixture-only 裁决；db_domain_entries_total=0 如实披露——绊线扫 catalog 全集而非编译分母，I8③ 修正）`
+          : dbDomainDecisions.length === dbDomainCatalogIds.length &&
+              dbDomainDecisions.every((d) => d.decision === "excluded" && d.why_excluded.length > 0)
+            ? `DB 域条目 ${dbDomainCatalogIds.length} 条（${dbDomainCatalogIds.slice(0, 3).join(", ")}…）全部 excluded 且 why_excluded 携带排除详情——O9 前提经 B6 播种移植（D3 逐卡入册）推翻后改判卷式：出现不再是绊线，无排除详情才是（泄漏语义与 API/Sec 族同构）；真判卷仍由 catalog-applicability-case-b.spec fixture 承载`
+            : `DB 域条目 ${dbDomainCatalogIds.length} 条中 ${dbDomainDecisions.length} 条有 explain 决策，且存在非 excluded 或 why 残缺——泄漏/残缺判红`,
   });
 
   // ============================================================

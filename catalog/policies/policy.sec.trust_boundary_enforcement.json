@@ -60,6 +60,9 @@
     "audit trail"
   ],
   "applies_when": {
+    "capabilities": [
+      "CAPABILITY.API_CONTRACT"
+    ],
     "lane": "backend",
     "condition": "任何跨信任域的数据流或调用入口",
     "applicability_note": "任何跨信任域的数据流或调用入口"

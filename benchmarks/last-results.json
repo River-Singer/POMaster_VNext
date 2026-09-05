@@ -1,7 +1,7 @@
 {
   "schema": "pomaster.vnext.selfhosting-benchmark-results/4",
-  "run_id": "bench-0013",
-  "seq": 13,
+  "run_id": "bench-0014",
+  "seq": 14,
   "ok": true,
   "summary": {
     "total": 4,
@@ -19,7 +19,7 @@
       "matched_keywords": [
         "文案"
       ],
-      "durationMs": 350,
+      "durationMs": 358,
       "ok": true,
       "assertions": [
         {
@@ -50,7 +50,7 @@
       "matched_rule": "DEFAULT_NO_SIGNAL",
       "evidence_grade": "NOT_CONFIGURED",
       "matched_keywords": [],
-      "durationMs": 366,
+      "durationMs": 353,
       "ok": true,
       "assertions": [
         {
@@ -78,8 +78,8 @@
       "catalog": {
         "catalog_version": "0.1.0-pilot",
         "profile": "web-standard@0",
-        "entries_total": 143,
-        "entries_checked": 143,
+        "entries_total": 270,
+        "entries_checked": 270,
         "drifts": 0,
         "gate_entry_ids": [
           "GATE.BE.API.CONTRACT_CHECKS",
@@ -96,8 +96,8 @@
           "AUTHORITY.WEB.API.REQUEST_OWNERS",
           "AUTHORITY.WEB.GRID.OWNERSHIP"
         ],
-        "policies_total": 79,
-        "policies_human_owner": 79
+        "policies_total": 206,
+        "policies_human_owner": 206
       },
       "gatekeeper": {
         "drift_fixture_triggered": true,
@@ -295,13 +295,13 @@
           "not_run_reason": "分母缺席：vNext 仓库自身无业务 subject 数据面，gate 真实判卷需在消费项目数据面执行（A3 裁定执行面=就绪校验；not_run 显式披露，禁假 passed）"
         }
       ],
-      "durationMs": 253,
+      "durationMs": 288,
       "ok": true,
       "assertions": [
         {
           "name": "catalog-lock-ok",
           "ok": true,
-          "detail": "verifyCatalogLock ok=true，entries_checked=143/143，drifts=0（sha256 逐条对账，D24 read-side 指纹）"
+          "detail": "verifyCatalogLock ok=true，entries_checked=270/270，drifts=0（sha256 逐条对账，D24 read-side 指纹）"
         },
         {
           "name": "profile-anchor-present",
@@ -321,7 +321,7 @@
         {
           "name": "policies-loadable-human-owned",
           "ok": true,
-          "detail": "loadCatalogPolicies=79 条（共享读取器词表对账 fail-closed 真实执行）；authority.owner=HUMAN_OWNER 79/79（cannot self-approve 锚）"
+          "detail": "loadCatalogPolicies=206 条（共享读取器词表对账 fail-closed 真实执行）；authority.owner=HUMAN_OWNER 206/206（cannot self-approve 锚）"
         },
         {
           "name": "gate-judging-readiness-6-of-6",
@@ -396,12 +396,15 @@
         "compile_capabilities": [
           "CAPABILITY.PRESENTATION"
         ],
-        "catalog_entries_total": 47,
+        "catalog_entries_total": 142,
         "excluded_api_sec_refs": [
           "AUTHORITY.WEB.API.REQUEST_OWNERS",
           "POLICY.API.BACKWARD_COMPAT_DEFAULTS",
           "POLICY.API.CONTRACT_IMPL_CONSISTENCY",
           "POLICY.API.NO_INFORMAL_CONTRACT",
+          "POLICY.SEC.NO_CLIENT_SIDE_TRUST",
+          "POLICY.SEC.SECURITY_RELAXATION_GATE",
+          "POLICY.SEC.TRUST_BOUNDARY_ENFORCEMENT",
           "POLICY.WEB.API.AUTH_APP_CLIENT_SPLIT",
           "POLICY.WEB.API.CLIENT_CHANGE_IMPACT",
           "POLICY.WEB.API.DOMAIN_API_ONLY",
@@ -420,13 +423,20 @@
           "POLICY.WEB.API.TRUSTED_ENDPOINT_SOURCE",
           "POLICY.WEB.API.TYPED_DOMAIN_NAMING"
         ],
-        "api_sec_compile_refs_total": 1,
+        "api_sec_compile_refs_total": 8,
         "api_sec_fallback_included_refs": [
-          "POLICY.SEC.THIRD_PARTY_EXECUTION_REGISTER"
+          "POLICY.SEC.AUTHN_POLICY_UNIFIED",
+          "POLICY.SEC.NO_LONGTERM_SECURITY_DISABLE",
+          "POLICY.SEC.NO_SCRIPT_READABLE_CREDENTIALS",
+          "POLICY.SEC.NO_SECRETS_IN_CLIENT_SURFACE",
+          "POLICY.SEC.RELAXATION_APPROVAL",
+          "POLICY.SEC.THIRD_PARTY_EXECUTION_REGISTER",
+          "POLICY.SEC.UPLOAD_DOWNLOAD_SERVER_RECHECK",
+          "POLICY.SEC.URL_SOURCE_ALLOWLIST"
         ],
-        "decisions_total": 80,
-        "catalog_lock_entries_total": 143,
-        "db_domain_entries_total": 0,
+        "decisions_total": 207,
+        "catalog_lock_entries_total": 270,
+        "db_domain_entries_total": 2,
         "honest_boundary": "真实 catalog 无 DB transaction / backend persistence 条目（Owner 裁决 8 ② O9 fixture-only；绊线扫 catalog 锁全集而非编译分母——I8③ 修正「编译分母冒充 catalog 分母」）：DB 排除逻辑的真判卷由 catalog-applicability-case-b.spec 的 fixture DB 条目承载；本档判卷面=capabilities 轴（T3 标注的 API/Sec 族）+ lane=any 保守回退披露（fallback_lane=true 非泄漏——I7 撤账后的诚实词形），change_class/profile 轴判卷由 kernel/集成 spec 承载。"
       },
       "path_signature": {
@@ -481,7 +491,7 @@
           ]
         }
       },
-      "durationMs": 1291,
+      "durationMs": 1830,
       "ok": true,
       "assertions": [
         {
@@ -492,7 +502,7 @@
         {
           "name": "catalog-no-api-sec-entries",
           "ok": true,
-          "detail": "catalogEntries 的 API/Sec 族 1 条零非回退泄漏（capabilities=[CAPABILITY.PRESENTATION] 输入下：capabilities 轴确定性排除为常态；1 条经 lane=any 保守回退纳入且 fallback_lane=true 披露——SEC 第三方执行体登记 I7 撤账后的诚实词形，O7 行为零变化）"
+          "detail": "catalogEntries 的 API/Sec 族 8 条零非回退泄漏（capabilities=[CAPABILITY.PRESENTATION] 输入下：capabilities 轴确定性排除为常态；8 条经 lane=any 保守回退纳入且 fallback_lane=true 披露——SEC 第三方执行体登记 I7 撤账后的诚实词形，O7 行为零变化）"
         },
         {
           "name": "no-architect-research-spawn-words",
@@ -502,22 +512,22 @@
         {
           "name": "explain-decisions-why-complete",
           "ok": true,
-          "detail": "decisions 80 条逐条 why 完整（included→why_included / excluded→why_excluded——PRD §5.4 决策记录面）"
+          "detail": "decisions 207 条逐条 why 完整（included→why_included / excluded→why_excluded——PRD §5.4 决策记录面）"
         },
         {
           "name": "explain-api-sec-excluded-with-capability-why",
           "ok": true,
-          "detail": "excluded 的 API/Sec 族 21 条全部 why_excluded 携带 capabilities=[CAPABILITY.API_CONTRACT] 轴详情（21/21；「EXCLUDE unless contract affected」的机器语义可解释）"
+          "detail": "excluded 的 API/Sec 族 24 条全部 why_excluded 携带 capabilities=[CAPABILITY.API_CONTRACT] 轴详情（24/24；「EXCLUDE unless contract affected」的机器语义可解释）"
         },
         {
-          "name": "db-domain-absence-disclosed",
+          "name": "db-domain-excluded-disclosed",
           "ok": true,
-          "detail": "真实 catalog 锁 143 条零 DB 域条目（O9 fixture-only 裁决；db_domain_entries_total=0 如实披露——绊线扫 catalog 全集而非编译分母，I8③ 修正；DB 排除逻辑的真判卷仍由 catalog-applicability-case-b.spec 的 fixture DB 条目承载，本档不冒充空分母判卷）"
+          "detail": "DB 域条目 2 条（POLICY.BE.DB.EXPAND_MIGRATE_CONTRACT, POLICY.STACK.PERSISTENCE_COEXISTENCE_SCOPE…）全部 excluded 且 why_excluded 携带排除详情——O9 前提经 B6 播种移植（D3 逐卡入册）推翻后改判卷式：出现不再是绊线，无排除详情才是（泄漏语义与 API/Sec 族同构）；真判卷仍由 catalog-applicability-case-b.spec fixture 承载"
         },
         {
           "name": "four-tier-path-signatures-distinct",
           "ok": true,
-          "detail": "四档路径签名两两可区分（§90.3 同路=失败未触发）：surface=\"cli:context-applicability\"（context compile/explain 命令面）+ excluded_refs=21 条（本档独有判卷轴；surface/artifacts 为结构性常量词形——constitutional RT3 封条同款注记）"
+          "detail": "四档路径签名两两可区分（§90.3 同路=失败未触发）：surface=\"cli:context-applicability\"（context compile/explain 命令面）+ excluded_refs=24 条（本档独有判卷轴；surface/artifacts 为结构性常量词形——constitutional RT3 封条同款注记）"
         }
       ]
     }

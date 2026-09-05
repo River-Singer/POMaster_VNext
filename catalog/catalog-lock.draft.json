@@ -1478,7 +1478,7 @@
     {
       "id": "POLICY.SEC.NO_CLIENT_SIDE_TRUST",
       "path": "policies/policy.sec.no_client_side_trust.json",
-      "content_sha256": "sha256:4ca06f88f15ac7ca5120736142491c43757796085ff55fd5b453c4b3fb0b201d",
+      "content_sha256": "sha256:ed53e60a6ec056a9d4b139c4544b2b8a0f4af25638d0330f9e7234829e9319a3",
       "source_ref": "package://catalog/policies/policy.sec.no_client_side_trust.json"
     },
     {
@@ -1508,7 +1508,7 @@
     {
       "id": "POLICY.SEC.SECURITY_RELAXATION_GATE",
       "path": "policies/policy.sec.security_relaxation_gate.json",
-      "content_sha256": "sha256:66ce0866674aaab4f8466dc17c366d4886ec40eadd29d6cef0c768c669d1239e",
+      "content_sha256": "sha256:1ab9e5bee3175375201d271ce90a9d4b0375847180b19940efbd60eb7ff4470c",
       "source_ref": "package://catalog/policies/policy.sec.security_relaxation_gate.json"
     },
     {
@@ -1520,7 +1520,7 @@
     {
       "id": "POLICY.SEC.TRUST_BOUNDARY_ENFORCEMENT",
       "path": "policies/policy.sec.trust_boundary_enforcement.json",
-      "content_sha256": "sha256:33e85b6d1133a5bfb7d24f86d940b2f90ab9ea82ca1dea7c98d08a76e7669c12",
+      "content_sha256": "sha256:1e996580a6aa599c3fb130d688d2fc8e98399c8833914da55ec0685bc63c01cf",
       "source_ref": "package://catalog/policies/policy.sec.trust_boundary_enforcement.json"
     },
     {

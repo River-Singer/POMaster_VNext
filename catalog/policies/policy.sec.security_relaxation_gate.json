@@ -59,6 +59,9 @@
     "expiry review"
   ],
   "applies_when": {
+    "capabilities": [
+      "CAPABILITY.API_CONTRACT"
+    ],
     "lane": "backend",
     "condition": "放宽任何安全控制时",
     "applicability_note": "放宽任何安全控制时"
