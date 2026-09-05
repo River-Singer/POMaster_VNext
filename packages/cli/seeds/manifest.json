@@ -184,7 +184,7 @@
       "source_sha256": "fa8914b29dbf7af25c8128aa1b8936fd658e37854e0a4f457175e2e3c82c3a03",
       "source_bytes": 2691,
       "porting_notes": [
-        "R8 词形登记：L25/L33 'finish 流程' 为旧包流程词形，vNext 无对应命令——内容忠实红线保留原文，词形清洗等 Owner 授权内容演进批次"
+        "R8 词形清洗（已执行，裁决 12/D5 授权内容演进批次，2026-09-05）：vendor L25 'finish 流程' → '收口（closeout）流程'、L33 'finish' → '收口'（旧包任务完结流程词形；vNext 对应物 = pomaster closeout 任务收口）。原登记（B6b-I）：旧包流程词形，vNext 无对应命令——内容忠实红线保留待授权清洗（已由本批清洗收口）"
       ]
     },
     {
@@ -206,7 +206,7 @@
       "source_sha256": "646dcbd7035d43d84ca592218a356c08a4baca36619109797322d90ba3d99b73",
       "source_bytes": 2550,
       "porting_notes": [
-        "R8 词形登记：L35 'finish' 同上（旧包流程词形保留原文）"
+        "R8 词形清洗（已执行，裁决 12/D5，2026-09-05）：vendor L35 'finish' → '收口（closeout）'（同 01 文件口径——pomaster closeout 对应物）。原登记（B6b-I）：旧包流程词形保留待授权清洗（已由本批清洗收口）"
       ]
     },
     {
@@ -639,8 +639,8 @@
       "source_bytes": 22578,
       "porting_notes": [
         "R8 词形适配（唯一授权适配点，注入矩阵段使用说明）：L44 自指路径 '.trellis/spec/frontend/' 按提案适配 vNext 播种面词形 '.pomaster/specs/hard/frontend/'（whitelist 单点替换、计数断言；其余正文逐字节保留）",
-        "R8 词形登记：L47 'Trellis Phase 1.3 / task.py add-context / implement.jsonl / check.jsonl' 为旧包任务机制词形，vNext 无对应机制——内容忠实红线保留原文，词形清洗等 Owner 授权内容演进批次",
-        "R8 词形登记：L72/L75 'finish 流程/finish' 为旧包流程词形，vNext 无对应命令——保留原文，同上"
+        "R8 词形清洗（已执行，裁决 12/D5，2026-09-05）：vendor L47 Trellis 任务机制叙述整行改写——'在 Trellis Phase 1.3 使用原生 task.py add-context，把所选文件分别加入当前 task 的 implement.jsonl 和 check.jsonl；不得修改 Trellis 脚本、hook 或配置来实现自动加载。' → '所选协议（semantic ID 形态）以 vNext 上下文投影承载：pomaster context compile --role <role> 按 role/capability applicability 检索激活；不得修改 pomaster 工具、hook 或配置来实现自动加载。'（旧机制叙述删除，pomaster 命令面真实存在）。原登记（B6b-II）：旧包任务机制词形保留待授权清洗（已由本批清洗收口）",
+        "R8 词形清洗（已执行，裁决 12/D5，2026-09-05）：vendor L72 'finish 流程' → '收口（closeout）流程'、L75 '归档、finish、发布记录' → '归档、收口、发布记录'（pomaster closeout 对应物，同 01 文件口径）。原登记（B6b-II）：旧包流程词形保留待授权清洗（已由本批清洗收口）"
       ]
     },
     {
@@ -1037,8 +1037,8 @@
       "source_bytes": 14733,
       "porting_notes": [
         "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）",
-        "R8 词形登记：L136 'Trellis context reason' 为旧包任务机制词形，vNext 无对应机制——内容忠实红线保留原文，词形清洗等 Owner 授权内容演进批次",
-        "R8 词形登记：正文'使用规则/默认注入基线/任务 Trigger 矩阵'段为旧包注入机制叙述，vNext 播种面无注入器机制——内容忠实红线保留原文（其中'只补齐缺失文件、不覆盖已存在'叙述与 vNext seed-once 播种语义一致），词形清洗等 Owner 授权内容演进批次",
+        "R8 词形清洗（已执行，裁决 12/D5，2026-09-05）：'任务 Trigger 矩阵'段尾句整行改写——'矩阵只产生候选 trigger；注入器必须对结果继续执行 stage、injection mode、显式 reference、Overlay 依赖与冲突校验，并在 Trellis context reason 中记录 semantic ID、stage、命中原因和 provider hash。' → '矩阵只产生候选特征；实际纳入由 pomaster context compile --role <role> 投影承载（Overlay 依赖与冲突按「冲突与责任边界」收窄），纳入/排除决策可经 pomaster context explain 逐条审计。'（旧包注入器/Trellis context reason/provider hash 机制叙述删除；pomaster 命令面真实存在——context compile/explain）。原登记（B6c）：旧包任务机制词形保留待授权清洗（已由本批清洗收口）",
+        "R8 词形清洗（已执行，裁决 12/D5，2026-09-05）：'使用规则/默认注入基线/任务 Trigger 矩阵'三段 vNext 化改写——注入顺序叙述 → init 播种（seed-once）+ pomaster context compile 投影激活语义；段名 '默认注入基线'→'默认激活基线'、'任务 Trigger 矩阵'→'任务命中矩阵'（维护段交叉引用随改）；表列 '实际默认加载'→'建议纳入上下文'、'always 协议'→'基线协议'、'建议 Trigger'→'建议命中的协议特征'；'重跑注入'→'重跑播种（init）'（seed-once 语义句保留——原登记注记的一致面）。协议清单/矩阵行数据零触碰。原登记（B6c）：旧包注入机制叙述保留待授权清洗（已由本批清洗收口）",
         "R8 词形注记：正文 'stacks/<slug>/<slug>-overlay.md' 相对词形（L18/L54）在 vNext 播种面（.pomaster/specs/hard/）下自洽指向 specs/hard/stacks/<slug>/<slug>-overlay.md——零改写保留原文"
       ]
     },

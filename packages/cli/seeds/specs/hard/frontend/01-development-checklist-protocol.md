@@ -34,7 +34,7 @@ P0。把规范转成每次开发前、开发中、开发后的强制动作，适
 - 缺少正式字段、状态、权限、接口或业务规则时先补契约或阻塞确认。
 - 开发中发现范围扩大时重新分类并更新计划。
 - 开发后提供检查结果、影响说明和残余风险。
-- 开发后、任务关闭或 finish 流程前必须完成 Spec Update Review。
+- 开发后、任务关闭或收口（closeout）流程前必须完成 Spec Update Review。
 - 发现新规则、重复坑点、接口/组件/目录/测试约定时必须更新对应 spec；无更新时必须记录原因。
 
 ## MUST NOT
@@ -42,7 +42,7 @@ P0。把规范转成每次开发前、开发中、开发后的强制动作，适
 - MUST NOT 先实现后补范围。
 - MUST NOT 用“应该没问题”代替证据。
 - MUST NOT 混入无关清理、升级或重构。
-- MUST NOT 跳过 Spec Update Review 后直接归档、finish 或发布。
+- MUST NOT 跳过 Spec Update Review 后直接归档、收口或发布。
 - MUST NOT 将一次性实现细节写入长期 spec。
 
 ## SHOULD

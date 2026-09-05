@@ -7,8 +7,9 @@
  *
  * 钉面（prd.md R2/R3 / porting-design-proposal §1 矩阵 + R2 风险）：
  * - 分母钉：x-b6-porting 注记条目恰 85（D5 保守精选上限 25/批内执行——policy 强度面
- *   三批各 25；B6c 另有 TECHNOLOGY_PROFILE 登记面 10 条，非 policy 强度面不分食 D5
- *   上限且全量分母 < 上限）；
+ *   三批各 25；B6c 另有 TECHNOLOGY_PROFILE 登记面 10 条 = **Owner 追认例外**——
+ *   裁决 12①/D6=(b)：TP 面计入 D5 上限，B6c 已落 10 条维持现状不改写，未来批
+ *   TP+policy 合并计入 25/批不再豁免，见 D6 describe）；
  * - enforcement 轴断言（B6b 定型的机器守卫，双向往返全钉，扩展到 B6c policy 分母）：
  *   source_sections 全 ∈ {SHOULD, Change Policy} → enforcement 必须 advisory（禁升
  *   required）；source_sections 含 MUST/MUST NOT → 必须 required_when_applicable
@@ -338,6 +339,40 @@ describe("双面同源 pin（R1）：catalog 条目面 ↔ 播种全文面同一
         note.vendor_pin.path,
       ).toBe(true);
     }
+  });
+});
+
+describe("D6 TP 口径（Owner 裁决 12①，2026-09-05）：TECHNOLOGY_PROFILE 面计入 D5 上限", () => {
+  const D5_CAP_PER_BATCH = 25;
+  const GRANDFATHERED_BATCHES = new Set(["B6B-1", "B6B-2", "B6C"]);
+
+  it("B6c 追认例外恰等：批内 policy 面 25（= D5 上限）+ TP 面 10（追认例外）= 35，零第三形态", () => {
+    const b6c = b6Entries.filter((e) => e.note.batch === "B6C");
+    expect(policyFace.filter((e) => e.note.batch === "B6C")).toHaveLength(25);
+    expect(tpFace.filter((e) => e.note.batch === "B6C")).toHaveLength(10);
+    expect(b6c).toHaveLength(D5_CAP_PER_BATCH + 10);
+    // 追认例外面形态核对：TP 面禁 required（§92.5 激活输入非规则本体——既有钉复述）。
+    for (const { body } of tpFace) {
+      expect(body.enforcement).not.toBe("required_when_applicable");
+    }
+  });
+
+  it("未来批合并上限守卫（D6=(b) 不再豁免）：任何新批 x-b6-porting 条目 policy+TP 合计 ≤ 25/批；当前分母零未来批——新批入选必须先更新追认名单再过本守卫（漏改即红）", () => {
+    const futureBatches = new Set(
+      b6Entries.map((e) => e.note.batch).filter((b) => !GRANDFATHERED_BATCHES.has(b)),
+    );
+    for (const batch of futureBatches) {
+      const inBatch = b6Entries.filter((e) => e.note.batch === batch);
+      expect(
+        inBatch.length,
+        `${batch}: D6 口径 policy+TP 合并上限 ${D5_CAP_PER_BATCH}/批（裁决 12①——TP 面不再豁免）`,
+      ).toBeLessThanOrEqual(D5_CAP_PER_BATCH);
+    }
+    // 当前分母恰 = 三个追认批（未来批落地时本断言先红，强制显式更新 GRANDFATHERED_
+    // BATCHES 并接受 ≤25 合并判卷——禁静默扩池）。
+    expect(
+      b6Entries.every((e) => GRANDFATHERED_BATCHES.has(e.note.batch)),
+    ).toBe(true);
   });
 });
 

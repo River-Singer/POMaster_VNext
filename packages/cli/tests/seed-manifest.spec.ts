@@ -14,14 +14,17 @@
  * - R1 vendor 取材证明：FE 06/15/30 + BE 08/12（vendor↔MASTer byte_identical 钉值）
  *   pin 对账 spec-inventory pilot_verification 钉死 vendor sha256 全等——pin 相等 =
  *   移植取材确为 vendor 字节非 MASTer（分母漂移的机器证明）；
- * - 内容忠实（形态改造面）：FE 播种件 = 统一 frontmatter + vendor 全文逐字节；BE/ stacks
- *   overlay = 统一 frontmatter + vendor frontmatter 保留字段（B6c BE frontmatter 兼容
- *   ADR：id 改形 legacy_id、applies_to 并入统一字段、injection_mode 类字段降级 info
- *   注记——R8 授权）+ vendor 去原 frontmatter 正文逐字节；stack index = 纯统一
- *   frontmatter + vendor 全文逐字节；FE index.md 为 FE 唯一授权词形适配点；marker-free；
- * - R8/A1 清洗登记：porting_notes 在册（FE 'finish 流程' 3 处 + index 适配注记；
- *   BE 32 协议 frontmatter 降级注记 + BE index Trellis/注入叙述/相对词形 4 注记；
- *   stacks 14 overlay installed/bound 注记；A1 档位词形全播种件零命中 = 空集登记）。
+ * - 内容忠实（形态改造面）：FE 播种件 = 统一 frontmatter + vendor 全文逐字节（43/45
+ *   编号协议；01/03 例外——R8 清洗整行替换恰等）；BE/ stacks overlay = 统一 frontmatter
+ *   + vendor frontmatter 保留字段（B6c BE frontmatter 兼容 ADR：id 改形 legacy_id、
+ *   applies_to 并入统一字段、injection_mode 类字段降级 info 注记——R8 授权）+ vendor
+ *   去原 frontmatter 正文逐字节（BE index 例外——R8 清洗整行替换恰等）；stack index =
+ *   纯统一 frontmatter + vendor 全文逐字节；FE index.md 为 FE 唯一授权词形适配点
+ *   （路径 + R8 清洗）；marker-free；
+ * - R8 清洗执行（裁决 12/D5 授权内容演进批次，2026-09-05）：FE 01/03/index + BE index
+ *   按 R8 清洗表整行替换（本 spec 内镜像表 + 恰一次出现断言钉清洗后基线——vendor 漂移
+ *   即爆）；porting_notes 承载清洗前后对照记录；清洗词形（finish/task.py/Trellis）
+ *   播种面零残留；A1 档位词形全播种件零命中 = 空集登记。
  * - B6d baseline 面（25 件新著）分母/分面/装载兼容在册；词形纪律与台账对账钉在
  *   baseline-seeds.spec.ts（B6d 专属面，避免双重维护）。
  * - B6e evidence 面（20 件新著）装载兼容在册；十七段结构/判卷四值词形/SPEC 词形映射
@@ -123,6 +126,86 @@ function vendorBodyAfterFrontmatter(text: string): string {
   if (!text.startsWith("---\n")) return text;
   const end = text.indexOf("\n---\n", 4);
   return text.slice(end + 5);
+}
+
+/**
+ * R8 词形清洗基线表（裁决 12/D5 授权内容演进批次，2026-09-05 执行）——与
+ * catalog/tools/seed_b6b_frontend.py（R8_CLEANLINES/INDEX_R8_CLEANLINES）、
+ * catalog/tools/seed_b6c_backend.py（BE_INDEX_R8_CLEANLINES）逐字镜像；整行替换 +
+ * 恰一次出现断言（vendor 漂移即爆，禁静默零替换）。测试钉清洗后基线：expected =
+ * vendor 正文 + 本表替换；清洗前后对照记录在 manifest porting_notes。
+ */
+type Cleanline = [oldLine: string, newLine: string];
+const FE_01_R8_CLEANLINES: Cleanline[] = [
+  [
+    "- 开发后、任务关闭或 finish 流程前必须完成 Spec Update Review。\n",
+    "- 开发后、任务关闭或收口（closeout）流程前必须完成 Spec Update Review。\n",
+  ],
+  [
+    "- MUST NOT 跳过 Spec Update Review 后直接归档、finish 或发布。\n",
+    "- MUST NOT 跳过 Spec Update Review 后直接归档、收口或发布。\n",
+  ],
+];
+const FE_03_R8_CLEANLINES: Cleanline[] = [
+  [
+    "- MUST NOT 将 finish、归档、发布记录当作 Spec Update Review 的替代品。\n",
+    "- MUST NOT 将收口（closeout）、归档、发布记录当作 Spec Update Review 的替代品。\n",
+  ],
+];
+const FE_INDEX_R8_CLEANLINES: Cleanline[] = [
+  [
+    "- [ ] 在 Trellis Phase 1.3 使用原生 `task.py add-context`，把所选文件分别加入当前 task 的 `implement.jsonl` 和 `check.jsonl`；不得修改 Trellis 脚本、hook 或配置来实现自动加载。\n",
+    "- [ ] 所选协议（semantic ID 形态）以 vNext 上下文投影承载：`pomaster context compile --role <role>` 按 role/capability applicability 检索激活；不得修改 pomaster 工具、hook 或配置来实现自动加载。\n",
+  ],
+  [
+    "- 每次开发完成后、任务关闭或 finish 流程前，MUST 进行一次 Spec Update Review。\n",
+    "- 每次开发完成后、任务关闭或收口（closeout）流程前，MUST 进行一次 Spec Update Review。\n",
+  ],
+  [
+    "- Spec Update Review 的输出属于验收证据；不得把归档、finish、发布记录当成 spec review 的替代品。\n",
+    "- Spec Update Review 的输出属于验收证据；不得把归档、收口、发布记录当成 spec review 的替代品。\n",
+  ],
+];
+const BE_INDEX_R8_CLEANLINES: Cleanline[] = [
+  [
+    "注入顺序固定为：按当前 stage 过滤、加入 always 基线、加入命中 trigger 的 triggered 协议、加入显式请求的 reference 协议，最后去重并校验依赖。`criticality` 只决定违规严重度，不参与默认选择。\n",
+    "本目录协议由 init 一次性播种到 `.pomaster/specs/hard/backend/`（seed-once：缺席才写、在座零触碰）；开发/验收上下文的协议激活由 `pomaster context compile --role <role>` 投影承载（frontmatter 的 injection_mode/stages/triggers 为移植保留的 info 性注记，非执行语义）。`criticality` 只决定违规严重度，不参与默认选择。\n",
+  ],
+  [
+    "下方「协议目录」与「任务 Trigger 矩阵」，保持双向索引完整。\n",
+    "下方「协议目录」与「任务命中矩阵」，保持双向索引完整。\n",
+  ],
+  [
+    "重跑注入默认只补齐缺失文件、不覆盖已存在的协议，所以就地维护不会被覆盖。\n",
+    "重跑播种（init）默认只补齐缺失文件、不覆盖已存在的协议，所以就地维护不会被覆盖。\n",
+  ],
+  ["## 默认注入基线\n", "## 默认激活基线\n"],
+  [
+    "候选基线严格只有以下 5 个短协议和索引；实际选择继续接受 stage 过滤。\n",
+    "默认激活面严格只有以下 5 个短协议和索引；实际命中按任务特征（见「任务命中矩阵」）继续收窄。\n",
+  ],
+  ["| Stage | 实际默认加载 |\n", "| Stage | 建议纳入上下文 |\n"],
+  [
+    "| check | index 加全部 5 个 always 协议 |\n",
+    "| check | index 加全部 5 个基线协议 |\n",
+  ],
+  ["## 任务 Trigger 矩阵\n", "## 任务命中矩阵\n"],
+  ["| 任务特征 | 建议 Trigger |\n", "| 任务特征 | 建议命中的协议特征 |\n"],
+  [
+    "矩阵只产生候选 trigger；注入器必须对结果继续执行 stage、injection mode、显式 reference、Overlay 依赖与冲突校验，并在 Trellis context reason 中记录 semantic ID、stage、命中原因和 provider hash。\n",
+    "矩阵只产生候选特征；实际纳入由 `pomaster context compile --role <role>` 投影承载（Overlay 依赖与冲突按「冲突与责任边界」收窄），纳入/排除决策可经 `pomaster context explain` 逐条审计。\n",
+  ],
+];
+
+/** 整行替换镜像（恰一次出现断言——vendor 漂移即爆，禁静默零替换）。 */
+function applyCleanlines(text: string, pairs: Cleanline[]): string {
+  let out = text;
+  for (const [oldLine, newLine] of pairs) {
+    const hits = out.split(oldLine).length - 1;
+    expect(hits, `R8 清洗锚点恰一次：${oldLine.slice(0, 30)}…`).toBe(1);
+    out = out.replace(oldLine, newLine);
+  }
+  return out;
 }
 
 const UNIFIED_FIELDS = [
@@ -374,22 +457,40 @@ describe("播种件字节形态：统一 frontmatter + 正文逐字节忠实（F
     }
   });
 
-  it("FE 内容忠实：45 份编号协议正文与 vendor 源逐字节等（移植 = 分解 + 形态改造，frontmatter 外零改写）", () => {
-    for (const entry of FE_ENTRIES) {
-      if (!/specs\/hard\/frontend\/\d{2}-.*-protocol\.md$/.test(entry.asset)) continue;
+  it("FE 内容忠实：43 份编号协议正文与 vendor 源逐字节等；01/03 = vendor + R8 清洗整行替换恰等（裁决 12/D5 清洗后基线；45 份编号协议分母不漂移）", () => {
+    const numbered = FE_ENTRIES.filter((e) =>
+      /specs\/hard\/frontend\/\d{2}-.*-protocol\.md$/.test(e.asset),
+    );
+    expect(numbered).toHaveLength(45);
+    for (const entry of numbered) {
       const vendor = readFileSync(join(VENDOR_UNIVERSAL, entry.asset.split("/").pop()!), "utf8");
+      if (entry.asset.endsWith("01-development-checklist-protocol.md")) {
+        expect(seedBody(entry.asset)).toBe(applyCleanlines(vendor, FE_01_R8_CLEANLINES));
+        continue;
+      }
+      if (entry.asset.endsWith("03-acceptance-gate-protocol.md")) {
+        expect(seedBody(entry.asset)).toBe(applyCleanlines(vendor, FE_03_R8_CLEANLINES));
+        continue;
+      }
       expect(seedBody(entry.asset), `${entry.asset} 正文逐字节`).toBe(vendor);
     }
   });
 
-  it("FE index.md 唯一授权适配点：body == vendor + whitelist 单点路径替换（`.trellis/spec/frontend/` → `.pomaster/specs/hard/frontend/`，差集恰为该替换）", () => {
+  it("FE index.md 授权适配面：body == vendor + whitelist 路径替换 + R8 清洗整行替换（裁决 12/D5 清洗后基线；差集恰为登记适配面）", () => {
     const entry = FE_ENTRIES.find((e) => e.asset.endsWith("/index.md"))!;
     const vendor = readFileSync(join(VENDOR_UNIVERSAL, "index.md"), "utf8");
     const body = seedBody(entry.asset);
+    // 路径适配：vendor 恰 1 处自指路径（计数断言——vendor 漂移即爆）。
+    expect(vendor.split(".trellis/spec/frontend/").length - 1).toBe(1);
+    let expected = vendor.replaceAll(
+      ".trellis/spec/frontend/",
+      ".pomaster/specs/hard/frontend/",
+    );
+    expected = applyCleanlines(expected, FE_INDEX_R8_CLEANLINES);
     expect(body).not.toBe(vendor);
-    expect(body).toBe(vendor.replaceAll(".trellis/spec/frontend/", ".pomaster/specs/hard/frontend/"));
-    expect(vendor.indexOf(".trellis/spec/frontend/")).toBeGreaterThanOrEqual(0);
+    expect(body).toBe(expected);
     expect(body.includes(".trellis/")).toBe(false);
+    expect(body.includes("task.py")).toBe(false);
     // 12 段结构断言不适用于 index（非 12 段结构文件——路由表/注入矩阵索引形态）。
   });
 
@@ -421,7 +522,15 @@ describe("播种件字节形态：统一 frontmatter + 正文逐字节忠实（F
         }
       }
       const vendor = readFileSync(join(VENDOR_BE, name), "utf8");
-      expect(body, `${doc.asset} 正文逐字节`).toBe(vendorBodyAfterFrontmatter(vendor));
+      if (name === "index.md") {
+        // BE index：R8 清洗整行替换恰等（裁决 12/D5 清洗后基线——品牌词 + 注入机制
+        // 叙述段 vNext 化；32 编号协议仍逐字节，清洗面恰此一件）。
+        expect(body, `${doc.asset} R8 清洗后基线`).toBe(
+          applyCleanlines(vendorBodyAfterFrontmatter(vendor), BE_INDEX_R8_CLEANLINES),
+        );
+      } else {
+        expect(body, `${doc.asset} 正文逐字节`).toBe(vendorBodyAfterFrontmatter(vendor));
+      }
     }
   });
 
@@ -481,7 +590,7 @@ describe("播种件字节形态：统一 frontmatter + 正文逐字节忠实（F
     ).toThrow();
   });
 
-  it("R8/A1 清洗登记：porting_notes 在册（FE 3 文件 + BE 32 协议 frontmatter 注记 + BE index 4 注记 + stacks 14 overlay 注记；A1 档位词形全播种件零命中）", () => {
+  it("R8 清洗执行登记（裁决 12/D5，2026-09-05）：porting_notes 清洗记录在册（FE 3 文件 + BE 32 协议 frontmatter 注记 + BE index 4 注记 + stacks 14 overlay 注记）；清洗词形播种面零残留；A1 档位词形全播种件零命中", () => {
     // 移植件面（specs 107）——baseline 新著件的 notes 由 B6d describe 断言。
     const noted = PORTED_ENTRIES.filter((e) => e.porting_notes.length > 0);
     // FE 3（01/03/index）+ BE 33（32 协议 frontmatter 注记 + index 4 条）+ stacks 14 overlay。
@@ -491,9 +600,18 @@ describe("播种件字节形态：统一 frontmatter + 正文逐字节忠实（F
     expect(feNoted).toHaveLength(3);
     expect(beNoted).toHaveLength(33);
     expect(stackNoted).toHaveLength(14);
-    // BE index：适配/词形登记（Trellis 词形 + 注入叙述 + 相对词形 + frontmatter 注记）。
+    // R8 清洗件（01/03/index×2 面）：porting_notes 含「已执行」清洗记录（前后对照留痕）。
+    for (const entry of feNoted) {
+      expect(
+        entry.porting_notes.some((n) => n.includes("R8 词形清洗（已执行")),
+        entry.asset,
+      ).toBe(true);
+    }
+    // BE index：4 注记形态不变——frontmatter 注记 + 清洗尾句记录 + 清洗三段记录 + 相对词形注记；
+    // 清洗前词形对照（Trellis context reason）在册可溯。
     const beIndex = beNoted.find((e) => e.asset.endsWith("/index.md"))!;
     expect(beIndex.porting_notes.length).toBe(4);
+    expect(beIndex.porting_notes.some((n) => n.includes("R8 词形清洗（已执行"))).toBe(true);
     expect(beIndex.porting_notes.some((n) => n.includes("Trellis context reason"))).toBe(true);
     // stacks overlay：installed/bound 注记恰一条/份；stack index 零注记。
     for (const entry of stackNoted) {
@@ -504,6 +622,13 @@ describe("播种件字节形态：统一 frontmatter + 正文逐字节忠实（F
     // A1：107 件播种件正文零档位判档词形（MINIMAL/LIGHT/STANDARD 判档叙述零移植）。
     for (const entry of loaded) {
       expect(/\b(MINIMAL|LIGHT|STANDARD)\b/.test(entry.content), entry.path).toBe(false);
+    }
+    // R8 清洗词形播种面零残留（资产 content 面——manifest notes 的清洗前对照记录
+    // 不在此面）：finish / task.py / Trellis 全分母（152 件）零命中。
+    for (const entry of loaded) {
+      expect(entry.content.includes("finish"), entry.path).toBe(false);
+      expect(entry.content.includes("task.py"), entry.path).toBe(false);
+      expect(entry.content.includes("Trellis"), entry.path).toBe(false);
     }
   });
 });

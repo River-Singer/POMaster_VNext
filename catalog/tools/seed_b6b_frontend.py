@@ -41,13 +41,16 @@ pin + D5 精选 policies）。
     全落建议段闭包方入选）；每批合计 25；幂等重演：磁盘上 x-b6-porting.batch==本批
     的条目原位收编（名单锁定），其余池卡按同规则补位；
   - A1 档位语义：46 文件 vendor 正文零 MINIMAL/LIGHT/STANDARD 判档叙述（grep 实测
-    零命中）→ A1 清洗登记为空集；R8 旧机制词形：协议件 'finish 流程' 3 处（01
-    L25/L33、03 L35）保留原文登记 porting_notes（内容忠实红线优先，词形改写等 Owner
-    授权内容演进批次）；index.md 为唯一授权词形适配点——自指路径 `.trellis/spec/
-    frontend/`（L44，注入矩阵段使用说明）按提案适配 vNext 播种面词形
-    `.pomaster/specs/hard/frontend/`（whitelist 单点、计数断言）；Trellis 专用词
-    （L47 task.py add-context / implement.jsonl / check.jsonl）与 'finish' 词形
-    （L72/L75）无 vNext 对应机制 → 沿 B6b-I 惯例保留原文登记 porting_notes。
+    零命中）→ A1 清洗登记为空集；R8 词形清洗（**已执行**——裁决 12/D5 授权内容
+    演进批次，2026-09-05）：协议件 'finish 流程' 3 处（01 vendor L25/L33、03 vendor
+    L35）+ index.md vendor L47 Trellis 任务机制叙述行（task.py add-context /
+    implement.jsonl / check.jsonl）与 L72/L75 'finish' 词形——按 R8_CLEANLINES /
+    INDEX_R8_CLEANLINES 整行替换清洗（逐条计数断言漂移即爆；'finish' → '收口
+    （closeout）'，vNext 对应命令面 pomaster closeout；Trellis 机制行 → pomaster
+    context compile 投影语义）；未登记词形/段零触碰（其余正文仍逐字节 == vendor）；
+    index.md 为唯一授权词形适配点——自指路径 `.trellis/spec/frontend/`（L44，注入
+    矩阵段使用说明）按提案适配 vNext 播种面词形 `.pomaster/specs/hard/frontend/`
+    （whitelist 单点、计数断言）。清洗前后对照记录在 porting_notes（清单钉）。
 
 用法：
   python seed_b6b_frontend.py            # 物化（write_if_changed 幂等）
@@ -116,24 +119,38 @@ PILOT_VENDOR_SHA = {
         "c702a9956fd5e7aac40e1eefebcdd7a3518b95bd1a750bfcb31cbaddb80f41ff",
 }
 
-# R8 旧机制词形清洗台账（内容零语义重写红线——保留原文、登记待授权清洗）
+# R8 词形清洗台账（裁决 12/D5 授权内容演进批次，2026-09-05 执行）：
+# - 清洗记录（porting_notes 承载，前后对照留痕）+ 清洗表（R8_CLEANLINES /
+#   INDEX_R8_CLEANLINES——整行替换 + 逐条计数断言，vendor 漂移即爆）；
+# - 最小改写纪律：只动登记过的词形/行，其余正文仍逐字节 == vendor。
 PORTING_NOTES = {
     "01-development-checklist-protocol.md": [
-        "R8 词形登记：L25/L33 'finish 流程' 为旧包流程词形，vNext 无对应命令——内容忠实"
-        "红线保留原文，词形清洗等 Owner 授权内容演进批次",
+        "R8 词形清洗（已执行，裁决 12/D5 授权内容演进批次，2026-09-05）：vendor L25 "
+        "'finish 流程' → '收口（closeout）流程'、L33 'finish' → '收口'（旧包任务完结"
+        "流程词形；vNext 对应物 = pomaster closeout 任务收口）。原登记（B6b-I）：旧包"
+        "流程词形，vNext 无对应命令——内容忠实红线保留待授权清洗（已由本批清洗收口）",
     ],
     "03-acceptance-gate-protocol.md": [
-        "R8 词形登记：L35 'finish' 同上（旧包流程词形保留原文）",
+        "R8 词形清洗（已执行，裁决 12/D5，2026-09-05）：vendor L35 'finish' → "
+        "'收口（closeout）'（同 01 文件口径——pomaster closeout 对应物）。原登记"
+        "（B6b-I）：旧包流程词形保留待授权清洗（已由本批清洗收口）",
     ],
     "index.md": [
         "R8 词形适配（唯一授权适配点，注入矩阵段使用说明）：L44 自指路径 '.trellis/spec/"
         "frontend/' 按提案适配 vNext 播种面词形 '.pomaster/specs/hard/frontend/'"
         "（whitelist 单点替换、计数断言；其余正文逐字节保留）",
-        "R8 词形登记：L47 'Trellis Phase 1.3 / task.py add-context / implement.jsonl / "
-        "check.jsonl' 为旧包任务机制词形，vNext 无对应机制——内容忠实红线保留原文，"
-        "词形清洗等 Owner 授权内容演进批次",
-        "R8 词形登记：L72/L75 'finish 流程/finish' 为旧包流程词形，vNext 无对应命令——"
-        "保留原文，同上",
+        "R8 词形清洗（已执行，裁决 12/D5，2026-09-05）：vendor L47 Trellis 任务机制"
+        "叙述整行改写——'在 Trellis Phase 1.3 使用原生 task.py add-context，把所选文件"
+        "分别加入当前 task 的 implement.jsonl 和 check.jsonl；不得修改 Trellis 脚本、"
+        "hook 或配置来实现自动加载。' → '所选协议（semantic ID 形态）以 vNext 上下文"
+        "投影承载：pomaster context compile --role <role> 按 role/capability "
+        "applicability 检索激活；不得修改 pomaster 工具、hook 或配置来实现自动加载。'"
+        "（旧机制叙述删除，pomaster 命令面真实存在）。原登记（B6b-II）：旧包任务机制"
+        "词形保留待授权清洗（已由本批清洗收口）",
+        "R8 词形清洗（已执行，裁决 12/D5，2026-09-05）：vendor L72 'finish 流程' → "
+        "'收口（closeout）流程'、L75 '归档、finish、发布记录' → '归档、收口、发布记录'"
+        "（pomaster closeout 对应物，同 01 文件口径）。原登记（B6b-II）：旧包流程词形"
+        "保留待授权清洗（已由本批清洗收口）",
     ],
 }
 
@@ -144,10 +161,47 @@ INDEX_ADAPTATIONS = [
     (".trellis/spec/frontend/", ".pomaster/specs/hard/frontend/", 1),
 ]
 
+# R8 词形清洗表（裁决 12/D5 授权内容演进批次，2026-09-05 执行）：整行替换 +
+# 逐条计数断言（vendor 漂移即爆，禁静默零替换）；未列文件正文仍逐字节 == vendor。
+# 对照记录（前后词形）在 PORTING_NOTES；测试镜像钉在
+# packages/cli/tests/seed-manifest.spec.ts（清洗后基线）。
+R8_CLEANLINES = {
+    "01-development-checklist-protocol.md": [
+        ("- 开发后、任务关闭或 finish 流程前必须完成 Spec Update Review。\n",
+         "- 开发后、任务关闭或收口（closeout）流程前必须完成 Spec Update Review。\n", 1),
+        ("- MUST NOT 跳过 Spec Update Review 后直接归档、finish 或发布。\n",
+         "- MUST NOT 跳过 Spec Update Review 后直接归档、收口或发布。\n", 1),
+    ],
+    "03-acceptance-gate-protocol.md": [
+        ("- MUST NOT 将 finish、归档、发布记录当作 Spec Update Review 的替代品。\n",
+         "- MUST NOT 将收口（closeout）、归档、发布记录当作 Spec Update Review 的替代品。\n", 1),
+    ],
+}
+INDEX_R8_CLEANLINES = [
+    ("- [ ] 在 Trellis Phase 1.3 使用原生 `task.py add-context`，把所选文件分别加入当前"
+     " task 的 `implement.jsonl` 和 `check.jsonl`；不得修改 Trellis 脚本、hook 或配置来"
+     "实现自动加载。\n",
+     "- [ ] 所选协议（semantic ID 形态）以 vNext 上下文投影承载：`pomaster context "
+     "compile --role <role>` 按 role/capability applicability 检索激活；不得修改 "
+     "pomaster 工具、hook 或配置来实现自动加载。\n", 1),
+    ("- 每次开发完成后、任务关闭或 finish 流程前，MUST 进行一次 Spec Update Review。\n",
+     "- 每次开发完成后、任务关闭或收口（closeout）流程前，MUST 进行一次 Spec Update "
+     "Review。\n", 1),
+    ("- Spec Update Review 的输出属于验收证据；不得把归档、finish、发布记录当成 spec "
+     "review 的替代品。\n",
+     "- Spec Update Review 的输出属于验收证据；不得把归档、收口、发布记录当成 spec "
+     "review 的替代品。\n", 1),
+]
+
 LCS_THRESHOLD = 20
 ADVISORY_CAP = 3
 REQUIRED_CAP = 22
 CURATED_CAP = REQUIRED_CAP + ADVISORY_CAP  # 25 = D5 上限
+# D6 TP 口径（Owner 裁决 12①，2026-09-05）：D5 上限 25/批自此对 TECHNOLOGY_PROFILE
+# 登记面一并计入（未来批 TP+policy 合并判卷，不再豁免）。FE 移植无 TP 面，本工具
+# 批合计恒 = 25；B6c 已落 10 条 TP 为 Owner 追认例外维持现状（钉在
+# seed_b6c_backend.py D5_CAP_PER_BATCH/GRANDFATHERED_TP_B6C +
+# tests/integration/catalog-b6-porting.spec.ts D6 describe）。
 
 GROUPS = ["FE-G1", "FE-G2", "FE-G3", "FE-G4"]
 # B6b-I 分母前缀（01-23；池卡 source_protocol 词形）
@@ -783,9 +837,22 @@ def vendor_file_for(num_or_index):
     return names[0]
 
 
+def apply_r8_cleanups(body, cleanlines):
+    """R8 清洗（裁决 12/D5 授权内容演进批次，2026-09-05）：整行替换 + 逐条计数断言
+    （vendor 漂移即爆，禁静默零替换）；最小改写——未列词形/行零触碰。"""
+    for old, new, expect_count in cleanlines:
+        old_b, new_b = old.encode("utf-8"), new.encode("utf-8")
+        found = body.count(old_b)
+        assert found == expect_count, (
+            f"R8 清洗锚点计数漂移：{old[:36]!r}… 预期 {expect_count} 处，实测 {found} 处")
+        body = body.replace(old_b, new_b)
+    return body
+
+
 def seed_body_for(vendor_bytes, name, source_rel, sha_hex, seed_version):
-    """frontmatter + 正文；编号协议正文逐字节 == vendor；index.md 施加 whitelist
-    词形适配（逐条计数断言，漂移即爆）。"""
+    """frontmatter + 正文；编号协议正文逐字节 == vendor（01/03 除外——R8 清洗整行
+    替换恰等，裁决 12/D5）；index.md 施加 whitelist 词形适配（逐条计数断言，漂移
+    即爆）。"""
     fm = build_frontmatter(source_rel, sha_hex, seed_version)
     if name == INDEX_NAME:
         adapted = vendor_bytes
@@ -795,8 +862,12 @@ def seed_body_for(vendor_bytes, name, source_rel, sha_hex, seed_version):
             assert found == expect_count, (
                 f"index.md 适配点计数漂移：{old!r} 预期 {expect_count} 处，实测 {found} 处")
             adapted = adapted.replace(old_b, new_b)
+        adapted = apply_r8_cleanups(adapted, INDEX_R8_CLEANLINES)
         assert adapted != vendor_bytes, "index.md 适配未生效（授权适配点必须落地）"
         return fm + adapted
+    cleanlines = R8_CLEANLINES.get(name)
+    if cleanlines:
+        return fm + apply_r8_cleanups(vendor_bytes, cleanlines)
     body = fm + vendor_bytes
     # A4/内容忠实断言：去 frontmatter 后正文与 vendor 逐字节相等（构建两遍同构）。
     assert body[len(fm):] == vendor_bytes

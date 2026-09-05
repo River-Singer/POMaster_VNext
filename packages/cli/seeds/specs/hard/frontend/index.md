@@ -56,7 +56,7 @@ related_tools: []
 - [ ] 确认 `.pomaster/specs/hard/frontend/` 已安装并通过本目录的双向索引校验；项目事实和项目选型写入独立项目 overlay，不修改 universal 文件。
 - [ ] 读取「默认注入基线」，再按「按任务追加注入」选择本次命中的协议；多行命中取并集。
 - [ ] 使用 semantic ID 记录选择理由，不用编号代替协议身份。
-- [ ] 在 Trellis Phase 1.3 使用原生 `task.py add-context`，把所选文件分别加入当前 task 的 `implement.jsonl` 和 `check.jsonl`；不得修改 Trellis 脚本、hook 或配置来实现自动加载。
+- [ ] 所选协议（semantic ID 形态）以 vNext 上下文投影承载：`pomaster context compile --role <role>` 按 role/capability applicability 检索激活；不得修改 pomaster 工具、hook 或配置来实现自动加载。
 - [ ] 开发前声明本次命中的 MUST/MUST NOT、需要项目确认的阈值/选型和验证方式。
 - [ ] 若 universal 与项目 overlay 冲突，按「协议冲突优先级」停止并记录裁决，不在代码中临场发明。
 
@@ -81,10 +81,10 @@ related_tools: []
 
 ## 开发后 Spec Update Review
 
-- 每次开发完成后、任务关闭或 finish 流程前，MUST 进行一次 Spec Update Review。
+- 每次开发完成后、任务关闭或收口（closeout）流程前，MUST 进行一次 Spec Update Review。
 - 若本次任务产生可复用规则、约定、坑点、接口契约、组件边界、目录规则、测试门禁或 AI 误改防护，MUST 更新对应 spec。
 - 若没有新知识，MUST 明确记录“本次无需更新 spec”及原因。
-- Spec Update Review 的输出属于验收证据；不得把归档、finish、发布记录当成 spec review 的替代品。
+- Spec Update Review 的输出属于验收证据；不得把归档、收口、发布记录当成 spec review 的替代品。
 
 ## 优先级定义
 

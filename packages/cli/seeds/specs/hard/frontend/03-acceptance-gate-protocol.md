@@ -44,7 +44,7 @@ P0。定义变更何时可以进入 Review、提测和上线，以及各阶段�
 - MUST NOT 在测试失败、契约未冻结或回滚不可用时放行。
 - MUST NOT 将未知风险标记为通过。
 - MUST NOT 在 spec 仍为 Draft 且无批准 Candidate 的情况下进入正式开发。
-- MUST NOT 将 finish、归档、发布记录当作 Spec Update Review 的替代品。
+- MUST NOT 将收口（closeout）、归档、发布记录当作 Spec Update Review 的替代品。
 
 ## SHOULD
 

@@ -44,15 +44,17 @@ D5 精选 policies + TECHNOLOGY_PROFILE 分类面）。
     includes 9 项组合为信息性参考（A1 档位信息性裁定：等价物 = baseline stack.yaml
     显式选型 [B6d 落位] + 起步值可预填该组合，非强制）。A1 判档词形（MINIMAL/LIGHT/
     STANDARD）vendor 全资产 grep 零命中（工具断言）——清洗登记为空集；
-  - catalog 双面（D5 上限 25/批内执行）：BE universal 33 分母 → policy 面 25 条
-    （required 22 + advisory 3，BE-G1..G4 池；kind=policy + UNIVERSAL_POLICY，enforcement
-    轴纪律与逆向规则测试扩展到 B6c 分母）；stacks 28+profile 分母 → TECHNOLOGY_PROFILE
-    面 10 条（BE-G5 池 9 条未物化 POLICY.STACK.* ELIGIBLE 卡 + 1 条 PROFILE backlog 卡；
-    classification=TECHNOLOGY_PROFILE 不混入 policy 强度面——TECHNOLOGY_PROFILE 是
-    §92.5 激活输入非被激活规则本体，enforcement 禁 required：9 STACK 池判 required
-    降级 advisory[强度只降不升]，PROFILE 卡池判 deterministic_where_possible 原样）；
-    两面合计 35 条 ≤ 25+25 双面上限论证（policy 面 25 = D5 上限；TP 面 10 = 登记面
-    全量分母 < 上限，D5 精选纪律对 policy 强度面成立）；
+  - catalog 双面（D5 上限 25/批内执行；D6 口径见裁决 12① 注记）：BE universal 33
+    分母 → policy 面 25 条（required 22 + advisory 3，BE-G1..G4 池；kind=policy +
+    UNIVERSAL_POLICY，enforcement 轴纪律与逆向规则测试扩展到 B6c 分母）；stacks
+    28+profile 分母 → TECHNOLOGY_PROFILE 面 10 条（BE-G5 池 9 条未物化 POLICY.STACK.*
+    ELIGIBLE 卡 + 1 条 PROFILE backlog 卡；classification=TECHNOLOGY_PROFILE 不混入
+    policy 强度面——TECHNOLOGY_PROFILE 是 §92.5 激活输入非被激活规则本体，enforcement
+    禁 required：9 STACK 池判 required 降级 advisory[强度只降不升]，PROFILE 卡池判
+    deterministic_where_possible 原样）；批合计 35 = policy 面 25（D5 上限）+ TP 面
+    10（**Owner 追认例外**——裁决 12①：B6c 已落 10 条 TP 维持现状不改写；未来批
+    TP 面与 policy 面合并计入 25/批上限，不再豁免，恰等断言 +
+    catalog-b6-porting.spec.ts D6 describe 钉）；
   - provenance 双锚（R1，B6b 同款收紧）：清单逐条 vendor sha256+bytes（播种分母）；
     BE 08/12（spec-inventory pilot_verification 钉死 byte_identical）pin 全等对账
     （取材确为 vendor 字节）；vendor↔MASTer 32/33 逐字节一致（唯一漂移 index.md，
@@ -128,9 +130,12 @@ PILOT_PINNED_FILES = ["08-contract-change-protocol.md", "12-api-contract-protoco
 # A1 档位词形（判档叙述零移植——A1 裁定；vendor 全资产零命中断言 = 空集登记）。
 A1_GRADE_PATTERN = re.compile(r"\b(MINIMAL|LIGHT|STANDARD)\b")
 
-# R8 旧机制词形清洗台账（内容零语义重写红线——保留原文、登记待授权清洗）。
-# BE 32 编号协议正文实测零命中（finish/.trellis/Trellis 词形零命中）——统一登记
-# frontmatter 降级注记；index.md 另有 Trellis 词形 + 注入机制叙述段登记。
+# R8 词形清洗台账（裁决 12/D5 授权内容演进批次，2026-09-05 执行）：
+# - frontmatter 保留字段注记（NOTE_FRONTMATTER）为移植形态登记（info 性字段保留
+#   决策），非清洗对象——维持原样；
+# - BE 32 编号协议正文实测零命中（finish/.trellis/Trellis 词形零命中）——清洗表为
+#   空集；index.md 品牌词 + 注入机制叙述段已清洗（BE_INDEX_R8_CLEANLINES 整行替换
+#   + 计数断言；前后对照在 porting_notes）。
 NOTE_FRONTMATTER = (
     "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包"
     "注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位"
@@ -140,17 +145,64 @@ NOTE_FRONTMATTER = (
 PORTING_NOTES = {
     "index.md": [
         NOTE_FRONTMATTER,
-        "R8 词形登记：L136 'Trellis context reason' 为旧包任务机制词形，vNext 无对应"
-        "机制——内容忠实红线保留原文，词形清洗等 Owner 授权内容演进批次",
-        "R8 词形登记：正文'使用规则/默认注入基线/任务 Trigger 矩阵'段为旧包注入机制"
-        "叙述，vNext 播种面无注入器机制——内容忠实红线保留原文（其中'只补齐缺失文件、"
-        "不覆盖已存在'叙述与 vNext seed-once 播种语义一致），词形清洗等 Owner 授权"
-        "内容演进批次",
+        "R8 词形清洗（已执行，裁决 12/D5，2026-09-05）：'任务 Trigger 矩阵'段尾句整行"
+        "改写——'矩阵只产生候选 trigger；注入器必须对结果继续执行 stage、injection "
+        "mode、显式 reference、Overlay 依赖与冲突校验，并在 Trellis context reason 中"
+        "记录 semantic ID、stage、命中原因和 provider hash。' → '矩阵只产生候选特征；"
+        "实际纳入由 pomaster context compile --role <role> 投影承载（Overlay 依赖与冲突"
+        "按「冲突与责任边界」收窄），纳入/排除决策可经 pomaster context explain 逐条"
+        "审计。'（旧包注入器/Trellis context reason/provider hash 机制叙述删除；"
+        "pomaster 命令面真实存在——context compile/explain）。原登记（B6c）：旧包任务"
+        "机制词形保留待授权清洗（已由本批清洗收口）",
+        "R8 词形清洗（已执行，裁决 12/D5，2026-09-05）：'使用规则/默认注入基线/任务 "
+        "Trigger 矩阵'三段 vNext 化改写——注入顺序叙述 → init 播种（seed-once）+ "
+        "pomaster context compile 投影激活语义；段名 '默认注入基线'→'默认激活基线'、"
+        "'任务 Trigger 矩阵'→'任务命中矩阵'（维护段交叉引用随改）；表列 '实际默认加载'"
+        "→'建议纳入上下文'、'always 协议'→'基线协议'、'建议 Trigger'→'建议命中的协议"
+        "特征'；'重跑注入'→'重跑播种（init）'（seed-once 语义句保留——原登记注记的"
+        "一致面）。协议清单/矩阵行数据零触碰。原登记（B6c）：旧包注入机制叙述保留待"
+        "授权清洗（已由本批清洗收口）",
         "R8 词形注记：正文 'stacks/<slug>/<slug>-overlay.md' 相对词形（L18/L54）在 "
         "vNext 播种面（.pomaster/specs/hard/）下自洽指向 specs/hard/stacks/<slug>/"
         "<slug>-overlay.md——零改写保留原文",
     ],
 }
+
+# R8 词形清洗表（裁决 12/D5 授权内容演进批次，2026-09-05 执行）：整行替换 + 逐条
+# 计数断言（vendor 漂移即爆，禁静默零替换）；只动登记过的词形/段（'使用规则/默认
+# 注入基线/任务 Trigger 矩阵'三段 + 尾句品牌词 + 段名交叉引用一致性），其余正文
+# 仍逐字节 == vendor 去原 frontmatter。对照记录在 PORTING_NOTES；测试镜像钉在
+# packages/cli/tests/seed-manifest.spec.ts（清洗后基线）。
+BE_INDEX_R8_CLEANLINES = [
+    ("注入顺序固定为：按当前 stage 过滤、加入 always 基线、加入命中 trigger 的 "
+     "triggered 协议、加入显式请求的 reference 协议，最后去重并校验依赖。`criticality`"
+     " 只决定违规严重度，不参与默认选择。\n",
+     "本目录协议由 init 一次性播种到 `.pomaster/specs/hard/backend/`（seed-once：缺席"
+     "才写、在座零触碰）；开发/验收上下文的协议激活由 `pomaster context compile --role "
+     "<role>` 投影承载（frontmatter 的 injection_mode/stages/triggers 为移植保留的 "
+     "info 性注记，非执行语义）。`criticality` 只决定违规严重度，不参与默认选择。\n",
+     1),
+    ("下方「协议目录」与「任务 Trigger 矩阵」，保持双向索引完整。\n",
+     "下方「协议目录」与「任务命中矩阵」，保持双向索引完整。\n", 1),
+    ("重跑注入默认只补齐缺失文件、不覆盖已存在的协议，所以就地维护不会被覆盖。\n",
+     "重跑播种（init）默认只补齐缺失文件、不覆盖已存在的协议，所以就地维护不会被覆盖。\n",
+     1),
+    ("## 默认注入基线\n", "## 默认激活基线\n", 1),
+    ("候选基线严格只有以下 5 个短协议和索引；实际选择继续接受 stage 过滤。\n",
+     "默认激活面严格只有以下 5 个短协议和索引；实际命中按任务特征（见「任务命中矩阵」）"
+     "继续收窄。\n", 1),
+    ("| Stage | 实际默认加载 |\n", "| Stage | 建议纳入上下文 |\n", 1),
+    ("| check | index 加全部 5 个 always 协议 |\n",
+     "| check | index 加全部 5 个基线协议 |\n", 1),
+    ("## 任务 Trigger 矩阵\n", "## 任务命中矩阵\n", 1),
+    ("| 任务特征 | 建议 Trigger |\n", "| 任务特征 | 建议命中的协议特征 |\n", 1),
+    ("矩阵只产生候选 trigger；注入器必须对结果继续执行 stage、injection mode、显式 "
+     "reference、Overlay 依赖与冲突校验，并在 Trellis context reason 中记录 semantic "
+     "ID、stage、命中原因和 provider hash。\n",
+     "矩阵只产生候选特征；实际纳入由 `pomaster context compile --role <role>` 投影承载"
+     "（Overlay 依赖与冲突按「冲突与责任边界」收窄），纳入/排除决策可经 `pomaster "
+     "context explain` 逐条审计。\n", 1),
+]
 DEFAULT_BE_NOTES = [NOTE_FRONTMATTER]
 STACK_OVERLAY_NOTE = (
     "B6c 移植注记：本 overlay 随 14 组全量播种（installed=true）；bound（选中态）由 "
@@ -223,14 +275,29 @@ def build_unified_frontmatter(source_rel, sha_hex, seed_version, lane, vendor_fm
     return ("\n".join(lines) + "\n").encode("utf-8")
 
 
-def seed_body_for(vendor_bytes, source_rel, sha_hex, seed_version, lane):
-    """统一 frontmatter + 正文；正文逐字节 == vendor 去原 frontmatter（构建两遍同构）。"""
-    fm_lines, body = split_vendor_frontmatter(vendor_bytes)
+def apply_r8_cleanups(body, cleanlines):
+    """R8 清洗（裁决 12/D5 授权内容演进批次，2026-09-05）：整行替换 + 逐条计数断言
+    （vendor 漂移即爆，禁静默零替换）；最小改写——未列词形/段零触碰。"""
+    for old, new, expect_count in cleanlines:
+        old_b, new_b = old.encode("utf-8"), new.encode("utf-8")
+        found = body.count(old_b)
+        assert found == expect_count, (
+            f"R8 清洗锚点计数漂移：{old[:36]!r}… 预期 {expect_count} 处，实测 {found} 处")
+        body = body.replace(old_b, new_b)
+    return body
+
+
+def seed_body_for(vendor_bytes, source_rel, sha_hex, seed_version, lane,
+                  r8_cleanlines=None):
+    """统一 frontmatter + 正文；正文逐字节 == vendor 去原 frontmatter（构建两遍同构；
+    r8_cleanlines 在座时施加 R8 清洗整行替换——裁决 12/D5，仅登记面）。"""
+    fm_lines, vendor_body = split_vendor_frontmatter(vendor_bytes)
+    body = apply_r8_cleanups(vendor_body, r8_cleanlines) if r8_cleanlines else vendor_body
     fm = build_unified_frontmatter(source_rel, sha_hex, seed_version, lane, fm_lines)
     seeded = fm + body
     assert seeded[len(fm):] == body
-    _, body_again = split_vendor_frontmatter(vendor_bytes)
-    assert body_again == body
+    _, vendor_body_again = split_vendor_frontmatter(vendor_bytes)
+    assert vendor_body_again == vendor_body
     return seeded
 
 
@@ -272,7 +339,9 @@ def build_seed_assets(pilot_pins):
                 f"R1 pin 对账失败：{name} vendor sha 与 pilot_verification 钉死值不符 "
                 f"（取材分母漂移？）: {sha_hex} vs {expected}")
         source_rel = f"pomaster/components/backend-hard-spec/assets/universal/{name}"
-        body = seed_body_for(vendor_bytes, source_rel, sha_hex, BATCH, BE_LANES)
+        body = seed_body_for(vendor_bytes, source_rel, sha_hex, BATCH, BE_LANES,
+                             r8_cleanlines=BE_INDEX_R8_CLEANLINES
+                             if name == "index.md" else None)
         rel = f"specs/hard/backend/{name}"
         assets[rel] = body
         target = f".pomaster/{rel}"
@@ -368,6 +437,13 @@ LCS_THRESHOLD = 20
 REQUIRED_CAP = 22
 ADVISORY_CAP = 3
 CURATED_CAP = REQUIRED_CAP + ADVISORY_CAP  # 25 = D5 上限（policy 强度面）
+# D6 TP 口径（Owner 裁决 12①，2026-09-05）：D5 上限 25/批自此对 TECHNOLOGY_PROFILE
+# 登记面一并计入——未来批 TP+policy 合并判卷，不再豁免。B6c 已落 10 条 TP 为
+# **Owner 追认例外**维持现状不改写：批合计 = 25（policy 面）+ 10（TP 追认例外），
+# 恰等断言钉死（select_curated）；测试钉 = tests/integration/catalog-b6-porting.
+# spec.ts D6 describe（追认例外恰等 + 未来批合并上限守卫）。
+D5_CAP_PER_BATCH = 25        # D5 保守上限（裁决 12① 起 = policy + TP 合并口径）
+GRANDFATHERED_TP_B6C = 10    # B6c TP 面 Owner 追认例外（裁决 12①）
 POOL_REL = "POMaster_VNext/corpus/spec-knowledge/candidates/consolidated-pool.yaml"
 CLEAN_ROOM_NOTE = ("independently rewritten from SPEC-D decomposition candidate cards; "
                    "zero verbatim copy")
@@ -1203,7 +1279,10 @@ def select_curated(pool, raw):
           [r["candidate_id"] for r in advisory] + \
           [r["candidate_id"] for r in tp_rows] + \
           [profile_row[0]["candidate_id"]]
-    assert len(set(ids)) == CURATED_CAP + 10, "精选集 id 重复"
+    # D6 口径（裁决 12①）：本批合计恰 = D5 上限 25 + TP 追认例外 10（零第三形态——
+    # 未来批 TP+policy 合并计入 25/批，不再走追认例外）。
+    assert len(set(ids)) == D5_CAP_PER_BATCH + GRANDFATHERED_TP_B6C, (
+        "精选集 id 重复或 D6 口径漂移（policy 25 + TP 追认例外 10 恰等被破坏）")
     return required, advisory, tp_rows, profile_row[0], excluded
 
 

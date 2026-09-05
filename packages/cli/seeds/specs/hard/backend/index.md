@@ -19,7 +19,7 @@ stages: [prepare, implement, check, release]
 
 ## 使用规则
 
-注入顺序固定为：按当前 stage 过滤、加入 always 基线、加入命中 trigger 的 triggered 协议、加入显式请求的 reference 协议，最后去重并校验依赖。`criticality` 只决定违规严重度，不参与默认选择。
+本目录协议由 init 一次性播种到 `.pomaster/specs/hard/backend/`（seed-once：缺席才写、在座零触碰）；开发/验收上下文的协议激活由 `pomaster context compile --role <role>` 投影承载（frontmatter 的 injection_mode/stages/triggers 为移植保留的 info 性注记，非执行语义）。`criticality` 只决定违规严重度，不参与默认选择。
 
 ## 维护 spec：主题 → 协议路由表
 
@@ -64,9 +64,9 @@ stages: [prepare, implement, check, release]
 | 语言/框架/中间件特有细则（Java、Spring、MyBatis、MySQL、Redis、Nginx…） | `stacks/<slug>/<slug>-overlay.md` |
 
 只有当一条规则在上表与所有 overlay 里**找不到任何归属主题**时，才允许新增协议文件；此时必须同步
-下方「协议目录」与「任务 Trigger 矩阵」，保持双向索引完整。
+下方「协议目录」与「任务命中矩阵」，保持双向索引完整。
 
-重跑注入默认只补齐缺失文件、不覆盖已存在的协议，所以就地维护不会被覆盖。
+重跑播种（init）默认只补齐缺失文件、不覆盖已存在的协议，所以就地维护不会被覆盖。
 
 ## 协议目录
 
@@ -105,9 +105,9 @@ stages: [prepare, implement, check, release]
 | 31 | `backend:runtime-deployment-protocol` | `31-runtime-deployment-protocol.md` | critical | triggered | prepare,implement,check,release | runtime,deployment,configuration | 运行时、入口与部署拓扑 |
 | 32 | `backend:release-versioning-rollback-protocol` | `32-release-versioning-rollback-protocol.md` | critical | triggered | prepare,check,release | release,rollback,versioning | 发布、版本与恢复 |
 
-## 默认注入基线
+## 默认激活基线
 
-候选基线严格只有以下 5 个短协议和索引；实际选择继续接受 stage 过滤。
+默认激活面严格只有以下 5 个短协议和索引；实际命中按任务特征（见「任务命中矩阵」）继续收窄。
 
 ```text
 backend:index
@@ -118,16 +118,16 @@ backend:contract-change-protocol
 backend:evidence-acceptance-protocol
 ```
 
-| Stage | 实际默认加载 |
+| Stage | 建议纳入上下文 |
 |---|---|
 | prepare | index、task workflow、AI generated code、contract change、evidence acceptance |
 | implement | index、task workflow、AI generated code、directory boundary、contract change |
-| check | index 加全部 5 个 always 协议 |
+| check | index 加全部 5 个基线协议 |
 | release | index、task workflow、contract change、evidence acceptance |
 
-## 任务 Trigger 矩阵
+## 任务命中矩阵
 
-| 任务特征 | 建议 Trigger |
+| 任务特征 | 建议命中的协议特征 |
 |---|---|
 | 架构、技术栈或部署形态选择 | 显式展开 `backend:architecture-governance-protocol`，并命中 `project-structure`、`layering`、`environment-configuration`、`build`、`dependency`、`performance`、`runtime`、`release` |
 | 新增或修改 API | `api-contract`、`data-model`、`error-code`、`data-scope`、`idempotency`、`testing`、`observability`、`release` |
@@ -143,7 +143,7 @@ backend:evidence-acceptance-protocol
 | 依赖升级 | `build`、`dependency`、`supply-chain`、`testing`、`performance`、`release` |
 | 发布、灰度或回滚 | `environment-configuration`、`testing`、`observability`、`performance`、`deployment`、`release`、`rollback` |
 
-矩阵只产生候选 trigger；注入器必须对结果继续执行 stage、injection mode、显式 reference、Overlay 依赖与冲突校验，并在 Trellis context reason 中记录 semantic ID、stage、命中原因和 provider hash。
+矩阵只产生候选特征；实际纳入由 `pomaster context compile --role <role>` 投影承载（Overlay 依赖与冲突按「冲突与责任边界」收窄），纳入/排除决策可经 `pomaster context explain` 逐条审计。
 
 ## 协议固定结构
 
