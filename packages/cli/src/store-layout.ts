@@ -132,6 +132,21 @@ export const SPECS_HARD_STACKS_DIR_RELATIVE = relOf(KERNEL_EMPTY_ROOT.specsHardS
 export const SPECS_ACCEPTANCE_DIR_RELATIVE = relOf(KERNEL_EMPTY_ROOT.specsAcceptanceDir);
 export const SPECS_EVIDENCE_DIR_RELATIVE = relOf(KERNEL_EMPTY_ROOT.specsEvidenceDir);
 
+/**
+ * .pomaster/baseline/<lane>/stack.yaml 与 .pomaster/baseline/manifest.yaml（B6d 播种
+ * 件；R-M 2026-09-05：init 技术栈问卷逐键回填 + `pomaster baseline set` 后补销账的
+ * 唯一写入位——两路径从既有 baseline 目录常量机械派生，零第二套路径声明）。unknowns
+ * 台账词形 = `baseline/<lane>/stack.yaml:<key>`（seed 头注销账契约，与
+ * baseline-seeds.spec 钉定词形一致）。
+ */
+export type BaselineStackLane = "frontend" | "backend";
+export function baselineStackRelative(lane: BaselineStackLane): string {
+  const dir =
+    lane === "frontend" ? BASELINE_FRONTEND_DIR_RELATIVE : BASELINE_BACKEND_DIR_RELATIVE;
+  return `${dir}/stack.yaml`;
+}
+export const BASELINE_MANIFEST_RELATIVE = `${BASELINE_DIR_RELATIVE}/manifest.yaml`;
+
 /** scratchpad <id> 词形（08 schema scratchpad_ref pattern 的目录名段逐字镜像）。 */
 export const DISCOVERY_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
 

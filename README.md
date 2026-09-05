@@ -22,6 +22,7 @@ pomaster alerts
 pomaster doctor
 pomaster portability bootstrap/check
 pomaster update --check/--yes
+pomaster baseline set --lane <frontend|backend> --key <key> --value <value>
 
 # ① TRIAGE —— 秒级判档（MINIMAL/LIGHT/STANDARD；NO-OP 合法）
 pomaster triage "<request>"
@@ -114,6 +115,8 @@ pomaster init
 - **cursor/qoder**：加厚版 rules（命令卡 + Browser Eyes 展开进 `.cursor/rules/pomaster.mdc` / `.qoder/rules/pomaster.md`）。
 
 **多平台适配器**：`AGENTS.md` 恒为唯一事实源；`--platforms claude,codex,cursor,qoder` 追加各平台的适配器（`CLAUDE.md` / 根 `AGENTS.md` 即 codex 原生入口 / `.cursor/rules/pomaster.mdc` / `.qoder/rules/pomaster.md`，本包产物形态升级自动重写，人类异形内容一律不覆盖）；`--platforms none` 只建 AGENTS.md + 状态骨架。TTY 交互终端直接 `pomaster init` 会出复选清单（◉/◯ 空格勾选 / ↑↓ 移动 / 回车确认；raw 模式不可用时降级为编号输入）；`--json` 恒走确定性缺省（claude，重入口）。
+
+**技术栈问卷与后补销账**（R-M 裁定，2026-09-05）：TTY 交互 init 在平台选择后接技术栈逐键问卷——前端 9 键 + 后端 5 键逐项必答（无缺省不预填，候选含实战栈与常见占位，末行可自由输入；中断 = 零写入），答完即把选型写回 `.pomaster/baseline/<lane>/stack.yaml` 并在 `baseline/manifest.yaml` 的 unknowns 台账对已答键销账；重跑 init 幂等——已答键不重复问，全销账则问卷整体跳过。非交互通道（`--json` / CI）问卷整体跳过、UNKNOWN 显式缺席，后补用 `pomaster baseline set --lane <frontend|backend> --key <key> --value <value>`（键词形 fail-closed；同值重放幂等；已答键改型与已确认基线的修改显式拒绝——修改走治理通路）。分层/职责等架构叙述住播种骨架 `baseline/<lane>/architecture.md`（Owner 就地填写；问卷不程序化改写 md 骨架）。
 
 装好后 `pomaster session`（无子命令）就是 hook 看到的治理速览——**八段分段投影**（分母/任务执行锁状态/**Next-Action 确定性路由**/许可例外/可行动项/attention/完整性微探针/八拍路标，带逐段预算与缺席诚实）；`pomaster status` 尾行 `next:` 给同一张路由表的当前建议；`pomaster alerts` 在有活跃任务时追加单行 breadcrumb。`pomaster doctor` 会用 `heavy_entry_hooks` / `heavy_entry_skills` 探针核对重入口安装物（hooks 注册态 + 双镜像逐字节一致；未安装 → MISSING_CONFIGURATION 并指路重跑 `pomaster init`）。
 

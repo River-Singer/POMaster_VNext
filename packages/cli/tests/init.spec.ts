@@ -764,16 +764,26 @@ describe("parsePlatformSelection 纯函数（F1 交互词形）", () => {
 });
 
 describe("runInitInteractive（F1 TTY 交互，io 注入零 TTY）", () => {
+  /**
+   * fake io（R-M 问卷批更新）：首次读行应答平台选择；随后进入 baseline 技术栈问卷
+   * （14 键逐键必答——编号 1 = 首位候选），答完 EOF（null = 中止信号）。
+   * 平台词形非法时问卷不会启动（解析 fail-closed 先行），单次读行即返回。
+   */
   function fakeIo(answer: string): {
     written: string[];
-    io: { write: (line: string) => void; readLine: () => Promise<string> };
+    io: { write: (line: string) => void; readLine: () => Promise<string | null> };
   } {
     const written: string[] = [];
+    let calls = 0;
     return {
       written,
       io: {
         write: (line) => written.push(line),
-        readLine: () => Promise.resolve(answer),
+        readLine: () => {
+          calls += 1;
+          if (calls === 1) return Promise.resolve(answer);
+          return Promise.resolve(calls <= 15 ? "1" : null); // 2..15 = 问卷 14 键
+        },
       },
     };
   }
@@ -785,6 +795,8 @@ describe("runInitInteractive（F1 TTY 交互，io 注入零 TTY）", () => {
     expect(outcome.result.platforms).toEqual([
       { name: "claude", file: CLAUDE_MD_RELATIVE, action: "created" },
     ]);
+    // R-M：问卷随交互流程接手并答完——stack 回填 + 台账销账零残留。
+    expect(outcome.result.baseline).toEqual({ asked: 14, answered: 14, skipped: null });
     expect(written.join("\n")).toContain("1. claude");
     expect(written.join("\n")).toContain(CLAUDE_MD_RELATIVE);
     expect(written.join("\n")).toContain("a=全选");

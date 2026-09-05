@@ -184,6 +184,7 @@ export const COMMAND_PANORAMA_LINES: readonly string[] = [
   "pomaster doctor",
   "pomaster portability bootstrap/check",
   "pomaster update --check/--yes",
+  "pomaster baseline set --lane <frontend|backend> --key <key> --value <value>",
   "",
   "# ① TRIAGE —— 秒级判档（MINIMAL/LIGHT/STANDARD；NO-OP 合法）",
   'pomaster triage "<request>"',

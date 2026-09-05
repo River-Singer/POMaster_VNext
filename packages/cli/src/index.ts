@@ -170,6 +170,8 @@ import { CLI_NAME } from "./cli-info.js";
 import { toEnvelope, failOutcome, type CliEnvelope, type CommandOutcome } from "./envelope.js";
 import { runInit, runChecklistPrompt, runInitInteractive } from "./init.js";
 import type { ChecklistPromptResult, InitResult } from "./init.js";
+import { collectStackAnswers, runBaselineSet } from "./baseline.js";
+import type { StackQuestionnaireOutcome } from "./baseline.js";
 import { runUpdate } from "./update.js";
 import { resolveCliVersion } from "./version.js";
 import { triageRequest } from "./triage.js";
@@ -271,6 +273,31 @@ export {
   renderPlatformMenu,
   renderChecklistFrame,
 } from "./init.js";
+export {
+  collectStackAnswers,
+  resolveRemainingQuestions,
+  applyStackAnswers,
+  runBaselineSet,
+  BASELINE_LANES,
+  FRONTEND_STACK_KEYS,
+  BACKEND_STACK_KEYS,
+  STACK_KEYS,
+  STACK_QUESTIONS,
+  STACK_VALUE_PATTERN,
+  unknownsWordForm,
+  renderBaselineQuizHumanLine,
+} from "./baseline.js";
+// baselineStackRelative / BASELINE_MANIFEST_RELATIVE 经 export * from store-layout.js 已公开。
+export type {
+  StackAnswer,
+  StackQuestionSpec,
+  StackQuestionnaireOutcome,
+  BaselineQuizResult,
+  BaselineQuizSkip,
+  QuestionnaireIo,
+  BaselineSetInput,
+  BaselineSetResult,
+} from "./baseline.js";
 export type {
   InitResult,
   InitFileReport,
@@ -875,7 +902,7 @@ export function createProgram(
   program
     .command("init")
     .description(
-      "创建 .pomaster/ 最小骨架 + AGENTS.md 唯一事实源 + 平台适配器（F1：--platforms 逗号列表 claude,codex,cursor,qoder / none；幂等；重复执行 NO_CHANGE）；重入口默认（skills 库双镜像 + claude hooks 注册 + 加厚 rules）",
+      "创建 .pomaster/ 最小骨架 + AGENTS.md 唯一事实源 + 平台适配器（F1：--platforms 逗号列表 claude,codex,cursor,qoder / none；幂等；重复执行 NO_CHANGE）；重入口默认（skills 库双镜像 + claude hooks 注册 + 加厚 rules）；TTY 交互在平台选择后接技术栈逐键问卷（R-M：FE 9 + BE 5 必答，答答回填 baseline stack.yaml + unknowns 销账；非交互跳过后补 baseline set）",
     )
     .option(
       "--platforms <platforms>",
@@ -887,6 +914,7 @@ export function createProgram(
       const asJson = command.opts().json === true;
       // F1 TTY 交互面：仅人读模式 + 未带旗标时启用（--json / 显式旗标恒走确定性
       // 路径——机读通道禁交互阻塞）。内部带降级链：复选清单 raw 失败 → 编号输入。
+      // R-M：两形态在平台选择后都接技术栈逐键问卷（TTY 必答 / 非交互跳过后补）。
       const outcome =
         platformsArg === undefined && !asJson && process.stdin.isTTY === true
           ? await initInteractiveOutcome(resolveDir(command), io)
@@ -894,6 +922,44 @@ export function createProgram(
               platforms: platformsArg,
             });
       record({ command: "init", outcome, asJson });
+    });
+
+  // —— baseline 技术栈后补销账通路（R-M Step A；TTY init 问卷的非交互孪生） ——
+  // CI/脚本场景的单键显式写入：stack.yaml 逐键回填 + manifest unknowns 台账同步销
+  // 账（seed 头注现成销账契约）；键词形 fail-closed（lane/key 闭包 + 值词形）；
+  // 已答键改型显式拒绝、manifest 确认态占位拒绝（Step B confirm gate 接口预留，
+  // 见 baseline.ts ADR-6）。写通路与 init 问卷共用同一行级最小改写实现。
+  const baseline = program
+    .command("baseline")
+    .description(
+      "Project Engineering Baseline 后补销账通路（R-M）：set = 单键显式写入 .pomaster/baseline/<lane>/stack.yaml 并同步销账 manifest unknowns 台账（TTY init 技术栈问卷的非交互孪生——CI/脚本场景；键词形 fail-closed；已答键改型拒绝——确认 gate 治理通路随 baseline confirm 接线）",
+    );
+  baseline
+    .command("set")
+    .description(
+      "单键后补销账：--lane <frontend|backend> --key <lane 键集闭包> --value <选型值>（UNKNOWN 起步词形不可作值；同值重放幂等 NO_CHANGE 并自愈台账漏销；异值改型 BASELINE_KEY_ALREADY_SET 显式拒绝；manifest 确认态在座 BASELINE_ALREADY_CONFIRMED 拒绝）",
+    )
+    .requiredOption("--lane <lane>", "技术栈 lane（frontend | backend）")
+    .requiredOption(
+      "--key <key>",
+      "stack.yaml 键（lane 键集闭包：frontend framework|language|build|router|state|grid|ui|css|testing；backend language|framework|persistence|database|cache）",
+    )
+    .requiredOption(
+      "--value <value>",
+      "选型值（保守词形：[A-Za-z0-9] 起始、[A-Za-z0-9 _./+#()-]、≤120 字符；UNKNOWN 不可作值）",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runBaselineSet(resolveDir(command), {
+        lane: opts.lane as string,
+        key: opts.key as string,
+        value: opts.value as string,
+      });
+      record({
+        command: "baseline set",
+        outcome,
+        asJson: command.opts().json === true,
+      });
     });
 
   // —— CLI 自更新（F2）：缺省 --check 查 registry 比对版本；--yes 才执行全局安装 ——
@@ -3059,16 +3125,17 @@ function collectValues(value: string, previous: string[] | undefined): string[] 
 
 /**
  * F1 交互缺省读行：process.stdin 单行（零依赖 readline 接口）。
- * 行事件与流关闭（EOF/Ctrl-D）双监听——close 先到按空串处理，调用方落缺省 claude。
+ * 行事件返回行原文（可为空串）；流关闭（EOF/Ctrl-D）返回 null——由调用方分流
+ * （平台菜单按空串落缺省 claude，既有行为；baseline 问卷按中止零写入）。
  */
-function readLineFromStdin(): Promise<string> {
+function readLineFromStdin(): Promise<string | null> {
   const rl = createInterface({ input: process.stdin });
-  return new Promise<string>((resolve) => {
+  return new Promise<string | null>((resolve) => {
     rl.once("line", (line) => {
       resolve(line);
       rl.close();
     });
-    rl.once("close", () => resolve(""));
+    rl.once("close", () => resolve(null));
   });
 }
 
@@ -3128,8 +3195,11 @@ function pumpStdinKeys(handler: (key: string) => boolean): Promise<void> {
 
 /**
  * F1 TTY 交互总入口（降级链）：复选清单（raw 模式 + 原地重绘，ANSI 只进真实终端）
- * 优先；raw 启用失败（非终端句柄等）或 stdout 非 TTY → 既有编号输入降级；
- * Ctrl+C/EOF → 恢复终端后 exit 130（SIGINT 惯例码）。确认集交由 runInit 执行。
+ * 优先；raw 启用失败（非终端句柄等）或 stdout 非 TTY → 既有编号输入降级。
+ * R-M：确认集之后接 baseline 技术栈逐键问卷（raw 单选帧形态；编号降级形态在
+ * runInitInteractive 内部同构接线）。Ctrl+C/EOF（平台清单或问卷）→ 恢复终端后
+ * exit 130（SIGINT 惯例码）——问卷任一时点中断，runInit 不被调用（零写入）。
+ * 确认集与问卷答案交由 runInit 执行。
  */
 async function initInteractiveOutcome(
   rootDir: string,
@@ -3156,20 +3226,33 @@ async function initInteractiveOutcome(
     }
     if (rawEnabled) {
       let result: ChecklistPromptResult;
+      let quiz: StackQuestionnaireOutcome | null = null;
       try {
         result = await runChecklistPrompt({
           write: (chunk) => process.stdout.write(chunk),
           pumpKeys: (handler) => pumpStdinKeys(handler),
         });
+        if (result.kind === "confirmed") {
+          // R-M：平台确认后接技术栈问卷（raw 单选帧；仍处 raw 模式，restoreRaw
+          // 统一在问卷之后执行）。
+          quiz = await collectStackAnswers(rootDir, {
+            write: (chunk) => process.stdout.write(chunk),
+            pumpKeys: (handler) => pumpStdinKeys(handler),
+          });
+        }
       } catch (err) {
         restoreRaw();
         throw err;
       }
       restoreRaw();
-      if (result.kind === "aborted") {
+      if (result.kind === "aborted" || quiz === null) {
+        // 平台清单中止或问卷中止：零写入退出（SIGINT 惯例码）。
         process.exit(130);
       }
-      return runInit(rootDir, { platforms: result.platforms.join(",") });
+      return runInit(rootDir, {
+        platforms: result.platforms.join(","),
+        stackQuestionnaire: quiz,
+      });
     }
   }
   return runInitInteractive(rootDir, {

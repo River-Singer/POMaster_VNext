@@ -60,8 +60,12 @@
  * 适配器存在即跳过（skipped-existing），绝不覆盖人类文件；`--platforms none` 只建
  * AGENTS.md + 状态骨架。TTY 人读模式无旗标时出复选清单（◉/◯ 空格勾选 / ↑↓ 移动 /
  * 回车确认，raw 模式 + 原地重绘；raw 启用失败降级编号输入）；--json 恒走确定性缺省
- * （机读通道禁交互阻塞）。ANSI 序列只允许出现在本文件的交互渲染器内（§45 纪律：
- * --json 信封与人读完成输出恒零 ANSI）。
+ * （机读通道禁交互阻塞）。R-M 裁定（2026-09-05）：TTY 交互在 platform 选择之后接
+ * 技术栈逐键问卷（FE 9 键 + BE 5 键，无缺省必答；答案经 InitOptions.stackQuestionnaire
+ * 注入 runInit 步骤 4.8 落盘——问卷中断 = runInit 不被调用 = 结构性零写入；非交互
+ * 通道问卷整体跳过，后补走 `pomaster baseline set`，见 baseline.ts）。ANSI 序列只
+ * 允许出现在 interactive-keys.ts 的重绘渲染器出口、且只经交互 io 进入真实终端的
+ * TTY 路径（§45 纪律：--json 信封与人读完成输出恒零 ANSI）。
  */
 
 import { readFile, stat, writeFile } from "node:fs/promises";
@@ -109,6 +113,14 @@ import { failOutcome, okOutcome } from "./envelope.js";
 import { seedProjectAssets, type SeedEntry } from "./seeds.js";
 import { loadSeedManifestEntries } from "./seed-manifest.js";
 import { runSpecPreplant } from "./spec-preplant.js";
+import type { BaselineQuizResult, StackQuestionnaireOutcome } from "./baseline.js";
+import { applyStackAnswers, collectStackAnswers, renderBaselineQuizHumanLine } from "./baseline.js";
+
+// 按键词表与原地重绘渲染器（init 平台复选清单与 baseline 问卷共用——单一实现；
+// 本文件 re-export 保持既有公共 API 词形不变）。
+import { CHECKLIST_KEYS, redrawFrame } from "./interactive-keys.js";
+export { CHECKLIST_KEYS };
+export { redrawFrame };
 
 export type InitFileAction =
   | "created"
@@ -168,6 +180,14 @@ export interface InitResult {
     readonly preserved: number;
     readonly skipped: boolean;
   } | null;
+  /**
+   * baseline 技术栈问卷结果（R-M 2026-09-05；baseline.ts ADR-9）：asked = 本次呈现
+   * 的问题数；answered = 实际回填并销账的键数；skipped = 跳过原因词形（non_interactive
+   * = 非交互通道/未注入问卷产出——后补路标 baseline set；all_resolved = 全部键已销账
+   * 幂等跳过；baseline_unreadable = 基线文件不可读 fail-closed 跳过）；null = 问卷
+   * 参与且答完。向后兼容：既有字段零改动，本字段恒在座。
+   */
+  readonly baseline: BaselineQuizResult;
 }
 
 export interface InitOptions {
@@ -190,6 +210,13 @@ export interface InitOptions {
    * 呈现——测试与特殊项目需要）。仅注入面，不加 CLI 旗标（命令面零扩张）。
    */
   readonly specPreplant?: boolean | undefined;
+  /**
+   * TTY 交互问卷产出（R-M 2026-09-05；baseline.ts collectStackAnswers 收集，runInit
+   * 步骤 4.8 消费落盘）。undefined = 问卷未参与（非交互通道/--json/程序化直调）——
+   * 结果面 baseline.skipped = "non_interactive"，UNKNOWN 显式缺席 init 不阻塞。
+   * 仅注入面，不加 CLI 旗标（命令面零扩张——后补走 `pomaster baseline set`）。
+   */
+  readonly stackQuestionnaire?: StackQuestionnaireOutcome | undefined;
 }
 
 /**
@@ -399,20 +426,26 @@ export function renderPlatformMenu(): readonly string[] {
 /** 交互面 IO 注入（index.ts 接 process.stdin/stdout；测试注入 fake 零 TTY）。 */
 export interface InitInteractiveIo {
   readonly write: (line: string) => void;
-  readonly readLine: () => Promise<string>;
+  /**
+   * 读一行 stdin；返回 null = 流关闭（EOF/Ctrl-D）——平台菜单按空串落缺省（既有
+   * 行为），baseline 问卷按中止处理（fail-closed 零写入，不猜缺省）。
+   */
+  readonly readLine: () => Promise<string | null>;
 }
 
 /**
  * TTY 交互 init（降级路径）：复选清单 raw 模式启用失败（非终端句柄等）时的
- * 编号输入形态——打印平台清单 → 读一行 stdin → 解析选择 → 交由 runInit 执行。
- * 空行 = 缺省 claude；词形非法 = SCHEMA_INVALID fail-closed（零写入）。
+ * 编号输入形态——打印平台清单 → 读一行 stdin → 解析选择 → R-M 技术栈问卷（同
+ * 编号形态）→ 交由 runInit 执行。空行 = 缺省 claude；词形非法 = SCHEMA_INVALID
+ * fail-closed（零写入）；问卷中止（EOF）= INIT_INTERRUPTED 零写入。
  */
 export async function runInitInteractive(
   rootDir: string,
   interactive: InitInteractiveIo,
 ): Promise<CommandOutcome<InitResult>> {
   for (const line of renderPlatformMenu()) interactive.write(line);
-  const raw = (await interactive.readLine()).trim();
+  const line = await interactive.readLine();
+  const raw = (line ?? "").trim();
   const parse = parsePlatformSelection(raw === "" ? "claude" : raw);
   if (!parse.ok) {
     return failOutcome(
@@ -424,34 +457,53 @@ export async function runInitInteractive(
         files: [],
         platforms: [],
         specPreplant: null,
+        baseline: { asked: 0, answered: 0, skipped: "non_interactive" },
       },
       [parse.error],
       ["init: FAILED — SCHEMA_INVALID", `  ${parse.error.message}`, `  hint: ${parse.error.hint}`],
     );
   }
-  return runInit(rootDir, { platforms: parse.platforms.join(",") });
+  // R-M：编号降级路径同样接技术栈问卷（与 raw 复选路径同构；EOF = 中止零写入）。
+  const quiz = await collectStackAnswers(rootDir, {
+    write: interactive.write,
+    readLine: interactive.readLine,
+  });
+  if (quiz === null) {
+    return failOutcome(
+      "init",
+      {
+        change: "NO_CHANGE",
+        tool: INIT_TOOL_ID,
+        profile: "LIGHT",
+        files: [],
+        platforms: [],
+        specPreplant: null,
+        baseline: { asked: 0, answered: 0, skipped: "non_interactive" },
+      },
+      [
+        {
+          code: "INIT_INTERRUPTED",
+          message: "baseline 技术栈问卷中断（EOF）；零写入",
+          hint: "重新运行 pomaster init 继续问卷（已答键幂等不重复问）；或用 pomaster baseline set 非交互逐键后补。",
+        },
+      ],
+      ["init: FAILED — INIT_INTERRUPTED", "  baseline 技术栈问卷中断（EOF）；零写入。"],
+    );
+  }
+  return runInit(rootDir, {
+    platforms: parse.platforms.join(","),
+    stackQuestionnaire: quiz,
+  });
 }
 
 // ============================================================
 // F1 交互升级：平台复选清单（Trellis 形态——◉/◯ 空格勾选 / ↑↓ 移动 / 回车确认）
 // ============================================================
-// §45 纪律注记：本节的 ANSI 光标控制序列（\x1b[nA 上移 / \x1b[0K 清行）只允许出现在
-// redrawFrame 的出口、且只经 ChecklistIo.write 进入真实终端的 TTY 交互路径；
-// --json 信封与人读完成输出恒零 ANSI（纪律不破）。
-
-/** 清单按键词形闭包（raw 模式字节；测试与生产共用同一词表）。 */
-export const CHECKLIST_KEYS = {
-  /** ↑ */
-  up: "\x1b[A",
-  /** ↓ */
-  down: "\x1b[B",
-  /** 空格（0x20）：切换光标行选中态 */
-  toggle: " ",
-  /** 回车（\r；\n 亦收）：确认 */
-  confirm: "\r",
-  /** Ctrl+C：中止（终端恢复后由调用方退出） */
-  abort: "\x03",
-} as const;
+// §45 纪律注记：本节的帧渲染是行集快照恒零 ANSI；ANSI 光标控制序列（\x1b[nA 上移 /
+// \x1b[0K 清行）只在 interactive-keys.ts 的 redrawFrame 出口（与 baseline 技术栈
+// 问卷共用同一渲染器），且只经 ChecklistIo.write 进入真实终端的 TTY 交互路径；
+// --json 信封与人读完成输出恒零 ANSI（纪律不破）。按键词表 CHECKLIST_KEYS 亦移驻
+// interactive-keys.ts（本文件 re-export 保持既有公共 API 词形）。
 
 /** 复选清单 IO 注入（生产 = raw stdin + stdout 原块写；测试 = 预录按键序列驱动）。 */
 export interface ChecklistIo {
@@ -501,17 +553,6 @@ export function renderChecklistFrame(
     );
   });
   return lines.join("\n");
-}
-
-/** 原地重绘序列：光标上移至帧首行首 + 逐行清行重写（ANSI 全仓唯一出口，仅 TTY 交互路径）。 */
-function redrawFrame(frame: string): string {
-  const lines = frame.split("\n");
-  return (
-    `\x1b[${lines.length - 1}A\r` +
-    lines
-      .map((line, i) => `\x1b[0K${line}${i < lines.length - 1 ? "\n" : ""}`)
-      .join("")
-  );
 }
 
 /**
@@ -943,6 +984,7 @@ export async function runInit(
         files: [],
         platforms: [],
         specPreplant: null,
+        baseline: { asked: 0, answered: 0, skipped: "non_interactive" },
       },
       [selection.error],
       [
@@ -1153,6 +1195,25 @@ export async function runInit(
     }
   }
 
+  // 4.8) baseline 技术栈问卷回填（R-M 2026-09-05；baseline.ts ADR）：TTY 交互收集的
+  //      答案经 InitOptions.stackQuestionnaire 注入；问卷本体在 runInit 之前运行——
+  //      「未答完不落盘」的零写入纪律由此结构性成立（中断/abort 时 runInit 不被调
+  //      用）。销账契约 = 播种件头注（stack.yaml 逐键回填 + manifest unknowns 台账
+  //      同词形销账）；落盘 = 行级最小改写（头注/注释/键序字节不动）。幂等：问卷只
+  //      问 UNKNOWN 键；全销账 = skipped=all_resolved。位置：播种之后（目标文件已
+  //      在座）、入口渲染之前。
+  let baseline: BaselineQuizResult;
+  if (options.stackQuestionnaire === undefined) {
+    baseline = { asked: 0, answered: 0, skipped: "non_interactive" };
+  } else {
+    const quiz = options.stackQuestionnaire;
+    const answered =
+      quiz.answers.length > 0
+        ? await applyStackAnswers(rootDir, quiz.answers, files, errors)
+        : 0;
+    baseline = { asked: quiz.asked, answered, skipped: quiz.skipped };
+  }
+
   // 5) 入口文件：AGENTS.md 恒生成（唯一事实源；平台选择非空 = 重入口正文 + heavy
   //    安装标记；`--platforms none` = 最小指针正文，无重入口安装物可描述）。
   //    claude 平台适配器（CLAUDE.md，@AGENTS.md 导入）仅在选中 claude 时参与。
@@ -1290,6 +1351,7 @@ export async function runInit(
     files,
     platforms,
     specPreplant,
+    baseline,
   };
 
   if (errors.length > 0) {
@@ -1323,6 +1385,9 @@ export async function runInit(
   const entryLine = heavy
     ? "  entry: 重入口默认（skills 库 + hooks 注入；修复/重建 = 重跑 pomaster init）"
     : "  entry: 最小形态（--platforms none：零平台产物，无重入口安装物）";
+  // baseline 问卷行（恒一行，profile 之前——横幅前导空行锚在 profile 行后，版式契约
+  // 由 init.spec 钉住：logo→init:→files→platforms→entry→baseline→profile→横幅）。
+  const baselineLine = renderBaselineQuizHumanLine(baseline);
   const human = [
     ...INIT_LOGO_LINES,
     "",
@@ -1330,6 +1395,7 @@ export async function runInit(
     ...files.map((f) => `  ${f.action.padEnd(15)} ${f.file}`),
     ...platformLines,
     entryLine,
+    baselineLine,
     `  profile: ${profile}`,
     ...INIT_BANNER_LINES,
   ];
