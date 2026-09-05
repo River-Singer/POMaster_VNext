@@ -359,6 +359,23 @@ export {
   sha256Hex,
 } from "./seed-manifest.js";
 export type { SeedManifestDoc, SeedManifestEntryDoc } from "./seed-manifest.js";
+export {
+  SPEC_PREPLANT_PROOF_TYPE,
+  SPEC_PREPLANT_SKIPPED_WARNING,
+  SPEC_PREPLANT_TX_NOTE,
+  buildSpecPreplantPlan,
+  parseEvidenceSpecSeed,
+  readSpecPreplantPresentation,
+  runSpecPreplant,
+  specPreplantHumanLine,
+  specPreplantKitSize,
+} from "./spec-preplant.js";
+export type {
+  SpecPreplantClause,
+  SpecPreplantOutcome,
+  SpecPreplantPlanEntry,
+  SpecPreplantPresentation,
+} from "./spec-preplant.js";
 export { runInspect } from "./inspect.js";
 export type {
   InspectInput,

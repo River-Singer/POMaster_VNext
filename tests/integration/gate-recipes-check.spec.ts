@@ -50,7 +50,8 @@ describe("check --gates 全链路（init → 派发 6 recipe → 6 GRN 入账；
     const result = check.envelope.result as Record<string, unknown>;
     expect(result["recipes_total"]).toBe(6);
     expect(result["passed"]).toBe(0);
-    expect(result["applied_seq"]).toBe(1);
+    // 裁定批 D D2：init 预植占 seq=1 → check --gates 单事务 applied_seq=2。
+    expect(result["applied_seq"]).toBe(2);
     const rows = result["rows"] as Record<string, unknown>[];
     expect(rows).toHaveLength(6);
     expect(rows.map((row) => row["verdict"])).toEqual([
@@ -110,9 +111,9 @@ describe("check --gates 全链路（init → 派发 6 recipe → 6 GRN 入账；
     expect(notRunInline["gate_def"]).toBe("GATE.CHG.PRECHANGE_CHECKS@0.1.0");
     expect(notRunInline["tool"]).toBe("gauntlet:gate_recipe_runner");
 
-    // 账本推进：generation.seq 0 → 1（单事务入账六条）。
+    // 账本推进：init 预植 seq=1 → check --gates 单事务入账六条 → seq=2。
     const status = await runJson(["status"]);
-    expect(status.envelope.result["generation_seq"]).toBe(1);
+    expect(status.envelope.result["generation_seq"]).toBe(2);
   });
 
   it("幂等再跑：二次 check --gates 分配新 GRN（每次运行是新观察，追加非覆写）", async () => {
@@ -122,7 +123,8 @@ describe("check --gates 全链路（init → 派发 6 recipe → 6 GRN 入账；
     const result = second.envelope.result as Record<string, unknown>;
     const rows = result["rows"] as Record<string, unknown>[];
     expect(rows[0]?.["grn"]).toBe("GRN-0007"); // 续号不重号（evidence 平面追加语义；P-v06 6 recipe 后二次从 0007 起）
-    expect(result["applied_seq"]).toBe(2);
+    // 裁定批 D D2：init 预植 seq=1、首次 check seq=2 → 二次 check applied_seq=3。
+    expect(result["applied_seq"]).toBe(3);
   });
 
   it("③ 零腿（无 --fast / --gates）→ 结构化 SCHEMA_INVALID exit 1", async () => {

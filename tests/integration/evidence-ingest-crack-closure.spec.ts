@@ -6,8 +6,9 @@
  * generation_seq 的关系如何对账」通路未定义。本 spec 以真实 CLI 全流程钉死闭合定义
  * （docs/eight-beat-carriers-design.md §4.2/§4.8）：
  *
- * before：init → 预置 GRN-0001/CLM-0001 夹具 → status generation_seq=0（证据在、账本空）；
- * after ：compact → generation_seq=1（accounted）、runs 文件覆写为 kernel canonical 形态
+ * before：init（裁定批 D D2：预植 seq=1 起步）→ 预置 GRN-0001/CLM-0001 夹具 →
+ *         status generation_seq=1（证据在、账本仅预植底账）；
+ * after ：compact → generation_seq=2（accounted）、runs 文件覆写为 kernel canonical 形态
  *         （平面分叉闭合）、ahead_evidence={GRN-0001@3} 显式披露存量倒挂（不静默改写）；
  * 幂等  ：二次 compact → NO_CHANGE 且 .pomaster 全树字节不变；连续 status 读 byte-stable
  *         （读侧 NO_CHANGE 语义不因写侧演进破坏）；record 通路新 run 采样 store seq
@@ -141,14 +142,14 @@ function snapshot(): string[] {
 // 裂缝闭合 E2E
 // ============================================================
 
-describe("GRN-0001.ran_at_seq=3 而 status generation_seq=0 —— 裂缝闭合", () => {
+describe("GRN-0001.ran_at_seq=3 领先 status generation_seq —— 裂缝闭合", () => {
   it("before：证据在、账本空（裂缝形态复现；status 连续读 byte-stable）", async () => {
     expect((await runJson(["init"])).code).toBe(0);
     seedEvidencePlane();
 
     const first = await runJson(["status"]);
     expect(first.code).toBe(0);
-    expect((first.envelope.result.generation_seq as number)).toBe(0); // 账本零入账
+    expect((first.envelope.result.generation_seq as number)).toBe(1); // 账本仅 init 预植底账（裁定批 D D2）
 
     const second = await runJson(["status"]);
     expect(JSON.stringify(second.envelope)).toBe(JSON.stringify(first.envelope)); // 读侧幂等
@@ -158,30 +159,30 @@ describe("GRN-0001.ran_at_seq=3 而 status generation_seq=0 —— 裂缝闭合"
       readFileSync(join(root, ".pomaster", "evidence", "runs", "GRN-0001.json"), "utf8"),
     ) as { ran_at_seq: number };
     expect(fixture.ran_at_seq).toBe(3);
-    expect((await statusSeq())).toBe(0); // ran_at_seq=3 而 generation_seq=0
+    expect((await statusSeq())).toBe(1); // ran_at_seq=3 领先 generation_seq=1（倒挂仍在）
   });
 
   it("after：compact → generation_seq 推进、runs 文件 canonical 化、ahead_evidence 显式披露", async () => {
     expect((await runJson(["init"])).code).toBe(0);
     seedEvidencePlane();
-    expect(await statusSeq()).toBe(0);
+    expect(await statusSeq()).toBe(1); // init 预植 seq=1 起步（裁定批 D D2）
 
     const compact = await runJson(["compact"]);
     expect(compact.code).toBe(0);
     expect(compact.envelope.ok).toBe(true);
     expect(compact.envelope.result.change).toBe("APPLIED");
-    expect(compact.envelope.result.applied_seq).toBe(1);
+    expect(compact.envelope.result.applied_seq).toBe(2);
     expect(compact.envelope.result.ingested).toMatchObject({
       runs: [{ grn: "GRN-0001", action: "canonicalized", ran_at_seq: 3, ran_at_seq_ahead: true }],
       claims: [{ clm: "CLM-0001", action: "skipped_adjudicated" }], // VERIFIED 独立判定无权覆写（D20）
     });
     expect(compact.envelope.result.ledger_seq_view).toEqual({
-      generation_seq: 1,
+      generation_seq: 2,
       ahead_evidence: [{ grn: "GRN-0001", ran_at_seq: 3 }], // 存量倒挂永远显式，不静默改写
     });
 
-    // 裂缝闭合主断言：账本推进（generation_seq 0 → 1）。
-    expect(await statusSeq()).toBe(1);
+    // 裂缝闭合主断言：账本推进（generation_seq 1 → 2）。
+    expect(await statusSeq()).toBe(2);
     const statusAfter = await runJson(["status"]);
     const statusAgain = await runJson(["status"]);
     expect(JSON.stringify(statusAgain.envelope)).toBe(JSON.stringify(statusAfter.envelope)); // 读侧幂等不破坏
@@ -242,11 +243,11 @@ describe("GRN-0001.ran_at_seq=3 而 status generation_seq=0 —— 裂缝闭合"
     expect(recorded.ok).toBe(true);
     expect(recorded.result.change).toBe("APPLIED");
     expect(recorded.result.grn).toBe("GRN-0002"); // 缺省分配 = 最大序号 +1
-    expect(recorded.result.ran_at_seq).toBe(1); // 采样自 store 当前 seq
-    expect(recorded.result.applied_seq).toBe(2);
+    expect(recorded.result.ran_at_seq).toBe(2); // 采样自 store 当前 seq（init 预植 seq=1 后）
+    expect(recorded.result.applied_seq).toBe(3);
     expect(recorded.result.ran_at_seq_ahead).toBe(false); // ran_at_seq < appliedSeq 恒成立
 
-    expect(await statusSeq()).toBe(2);
+    expect(await statusSeq()).toBe(3);
     expect(snapshot()).not.toEqual(before);
   });
 });

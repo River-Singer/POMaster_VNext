@@ -83,13 +83,15 @@ describe("status 缺席显式", () => {
 });
 
 describe("status 计数", () => {
-  it("init 后空账本 → 全零计数、seq=0、dialect_match=true", async () => {
+  it("init 后 → 预植分母计数（19 SPEC 对象 by_kind/by_lifecycle）、seq=1、dialect_match=true", async () => {
     await runInit(dir);
     const outcome = await runStatus(dir);
     expect(outcome.ok).toBe(true);
-    expect(outcome.result.objects.total).toBe(0);
-    expect(outcome.result.objects.by_kind.page_surface).toBe(0);
-    expect(outcome.result.generation_seq).toBe(0);
+    // 裁定批 D D2：init 预植 19 个 SPEC.* 对象（PROPOSED 起步）——计数照实呈现。
+    expect(outcome.result.objects.total).toBe(19);
+    expect(outcome.result.objects.by_kind.business_rule).toBe(19);
+    expect(outcome.result.objects.by_lifecycle.PROPOSED).toBe(19);
+    expect(outcome.result.generation_seq).toBe(1);
     expect(outcome.result.dialect_match).toBe(true);
     expect(outcome.result.permits.unique_active_refs).toEqual([]);
   });

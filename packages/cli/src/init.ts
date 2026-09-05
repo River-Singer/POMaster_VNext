@@ -40,6 +40,13 @@
  *   fail-closed（父目录不在 12 播种目录 allowlist 禁落盘，R4 红线 + B6b-I 收窄；
  *   seeds.ts 单一实现）。
  *   幂等铁律天然满足：重跑全 preserved = NO_CHANGE。
+ * - SPEC.* Evidence Spec 对象预植（步骤 4.7，裁定批 D D2 / Owner 2026-09-05 裁定
+ *   (a)：**init 预植——新治理语义，init 从此写 store**）：逐 evidence spec 预植
+ *   SPEC.* 对象（kernel applyTransaction 单事务 upsert——seq/journal 正常前进，
+ *   零墙钟）；requirements 从播种件判定条款段机械派生（零凭空发明）；生命周期
+ *   PROPOSED 起步（不绑定 closeout 判卷——B2 SPEC_NOT_BINDING 既有裁定）；
+ *   authority.owner = BOOTSTRAP_OWNER；seed-once——对象在座零触碰、缺席才预植；
+ *   off-switch = InitOptions.specPreplant。引擎与 ADR 详见 spec-preplant.ts。
  *
  * F1 平台选择：Trellis 惯例——一次 init 覆盖多平台 AI 入口目录。AGENTS.md 恒为唯一
  * 事实源；平台适配器（--platforms 逗号列表）：
@@ -101,6 +108,7 @@ import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
 import { seedProjectAssets, type SeedEntry } from "./seeds.js";
 import { loadSeedManifestEntries } from "./seed-manifest.js";
+import { runSpecPreplant } from "./spec-preplant.js";
 
 export type InitFileAction =
   | "created"
@@ -148,6 +156,18 @@ export interface InitResult {
   readonly files: readonly InitFileReport[];
   /** F1 平台段：registry 顺序、仅含选中平台（--json result.platforms，§45 信封内结构化数据）。 */
   readonly platforms: readonly InitPlatformReport[];
+  /**
+   * SPEC.* Evidence Spec 对象预植结果（裁定批 D D2 / Owner 2026-09-05 裁定 (a)——
+   * init 预植，新治理语义：init 从此写 store）。planted = 本次缺席写入数；
+   * preserved = 已在座零触碰数（seed-once）；skipped = store 不可用/owner 幽灵
+   * 跳过（warning SPEC_PREPLANT_SKIPPED 已呈现）。null = off-switch 关闭
+   * （InitOptions.specPreplant=false）。
+   */
+  readonly specPreplant: {
+    readonly planted: number;
+    readonly preserved: number;
+    readonly skipped: boolean;
+  } | null;
 }
 
 export interface InitOptions {
@@ -163,6 +183,13 @@ export interface InitOptions {
    * 包内清单装载。
    */
   readonly seedManifest?: readonly SeedEntry[] | undefined;
+  /**
+   * SPEC.* Evidence Spec 对象预植 off-switch（裁定批 D D2 2026-09-05；ADR-7）：
+   * undefined/false 语义分离——undefined = 缺省开（init 预植 19 个 SPEC.* 对象，
+   * 经 kernel applyTransaction 单事务）；false = 显式关闭（零 store 写入，零预植
+   * 呈现——测试与特殊项目需要）。仅注入面，不加 CLI 旗标（命令面零扩张）。
+   */
+  readonly specPreplant?: boolean | undefined;
 }
 
 /**
@@ -396,6 +423,7 @@ export async function runInitInteractive(
         profile: "LIGHT",
         files: [],
         platforms: [],
+        specPreplant: null,
       },
       [parse.error],
       ["init: FAILED — SCHEMA_INVALID", `  ${parse.error.message}`, `  hint: ${parse.error.hint}`],
@@ -914,6 +942,7 @@ export async function runInit(
         profile: "LIGHT",
         files: [],
         platforms: [],
+        specPreplant: null,
       },
       [selection.error],
       [
@@ -1084,11 +1113,45 @@ export async function runInit(
   //      标记）、目录守卫 fail-closed（父目录不在 12 播种目录 allowlist 即拒，R4
   //      红线 + B6b 收窄）。位置：README/layout.json 之后、入口文件之前（目录与
   //      布局锚位先于播种，播种结果统计先于入口文件渲染）。
-  await seedProjectAssets(
-    rootDir,
-    options.seedManifest ?? loadSeedManifestEntries(),
-    files,
-  );
+  //      清单装载单次共享：步骤 4.7 SPEC.* 预植与播种同源（派生零第二事实源）。
+  const seedEntries = options.seedManifest ?? loadSeedManifestEntries();
+  await seedProjectAssets(rootDir, seedEntries, files);
+
+  // 4.7) SPEC.* Evidence Spec 对象预植（裁定批 D D2 / Owner 2026-09-05 裁定 (a)：
+  //      init 预植——新治理语义，init 从此写 store；详见 spec-preplant.ts ADR）。
+  //      派生单源 = 步骤 4.6 同一清单（头行 对象面词形 即对象 id；requirements 从
+  //      判定条款段机械派生——零凭空发明）；写通路 = kernel applyTransaction 单事务
+  //      upsert 缺席对象（seq 正常前进、journal TX_APPLIED 留痕、零墙钟）；seed-once
+  //      语义同播种件——对象已在座（任意字节）零触碰，缺席才预植；off-switch =
+  //      InitOptions.specPreplant=false。位置：播种之后（同源清单 + authority 骨架
+  //      已在——BOOTSTRAP_OWNER 可解析）、入口渲染之前（状态速览呈现预植后账面；
+  //      预植 seed-once → 重跑零变化，幂等铁律不破）。
+  let specPreplant: InitResult["specPreplant"] = null;
+  if (options.specPreplant !== false) {
+    const preplant = await runSpecPreplant(
+      rootDir,
+      seedEntries,
+      BOOTSTRAP_OWNER,
+      warnings,
+    );
+    specPreplant = {
+      planted: preplant.planted,
+      preserved: preplant.preserved,
+      skipped: preplant.skipped,
+    };
+    if (preplant.planted > 0) {
+      // 状态速览刷新（入口渲染呈现预植后账面——单一事实源 = 落盘账本；解析失败
+      // 静默保留旧渲染值：损坏账本已由步骤 2 显式报错，此处不二次报）。
+      const refreshed = await readIfExists(ledgerPath);
+      if (refreshed !== null) {
+        try {
+          ledgerForRender = JSON.parse(refreshed) as Record<string, unknown>;
+        } catch {
+          // 步骤 2 已报 INVALID_STATE；渲染保持预植前值（诚实滞后优于猜测）。
+        }
+      }
+    }
+  }
 
   // 5) 入口文件：AGENTS.md 恒生成（唯一事实源；平台选择非空 = 重入口正文 + heavy
   //    安装标记；`--platforms none` = 最小指针正文，无重入口安装物可描述）。
@@ -1210,11 +1273,15 @@ export async function runInit(
 
   const created =
     files.some((f) => f.action === "created" || f.action === "seeded") ||
-    platforms.some((p) => p.action === "created");
+    platforms.some((p) => p.action === "created") ||
+    // 预植入账（planted>0 = store 新增治理事实）计入 CREATED 桶——账面诚实：
+    // 对象被删后重跑 init 补植，change 不得假报 NO_CHANGE。
+    (specPreplant?.planted ?? 0) > 0;
   const updated =
     files.some((f) => f.action === "updated") ||
     platforms.some((p) => p.action === "updated");
-  // preserved（播种件在座零触碰）不计入任何 change 桶——重跑全 preserved = NO_CHANGE。
+  // preserved（播种件在座零触碰 / 预植对象在座零触碰）不计入任何 change 桶——
+  // 重跑全 preserved = NO_CHANGE。
   const change: InitChange = created ? "CREATED" : updated ? "UPDATED" : "NO_CHANGE";
   const result: InitResult = {
     change,
@@ -1222,6 +1289,7 @@ export async function runInit(
     profile,
     files,
     platforms,
+    specPreplant,
   };
 
   if (errors.length > 0) {

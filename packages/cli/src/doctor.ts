@@ -66,6 +66,11 @@ import {
   seededAssetsHumanLine,
   type SeededAssetCounts,
 } from "./seeds.js";
+import {
+  readSpecPreplantPresentation,
+  specPreplantHumanLine,
+  type SpecPreplantPresentation,
+} from "./spec-preplant.js";
 import type { CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
 
@@ -107,6 +112,12 @@ export interface DoctorResult {
    * 项目可编辑物，计数 ≠ 清单分母对账）；目录缺席 = 0（显式缺席）。
    */
   readonly seeded_assets?: SeededAssetCounts;
+  /**
+   * SPEC.* 预植呈现（裁定批 D D2 2026-09-05；加法字段不改 ok 语义）：in_place =
+   * truth-index 中 SPEC.* 对象行数 / kit = 包内清单 evidence spec 分母——纯读呈现位
+   * （seeded_assets 先例）；truth-index 不可读或清单缺席 → 字段缺席（显式缺席）。
+   */
+  readonly spec_preplant?: SpecPreplantPresentation;
 }
 
 /** P1-5 Sensor Capability 联结呈现形态（DoctorResult.sensors 条目）。 */
@@ -870,12 +881,21 @@ export async function runDoctor(
   } catch {
     seededAssets = null;
   }
+  // SPEC.* 预植呈现（裁定批 D D2）：纯读加法字段（seeded_assets 同款纪律——异常归
+  // 缺席不炸 doctor；truth-index 不可读/清单缺席 → 字段缺席显式）。
+  let specPreplant: SpecPreplantPresentation | null = null;
+  try {
+    specPreplant = await readSpecPreplantPresentation(rootDir);
+  } catch {
+    specPreplant = null;
+  }
   const result: DoctorResult = {
     ok,
     probes,
     ...(sensors !== undefined ? { sensors } : {}),
     observation_receipts: { count: observationCount },
     ...(seededAssets !== null ? { seeded_assets: seededAssets } : {}),
+    ...(specPreplant !== null ? { spec_preplant: specPreplant } : {}),
   };
   const human = [
     `doctor: ${ok ? "READY" : "NOT READY"}`,
@@ -885,6 +905,7 @@ export async function runDoctor(
     ),
     `  observation receipts: ${observationCount} 条（evidence/observations/ sidecar 分区；0 = 显式缺席）`,
     ...(seededAssets !== null ? [seededAssetsHumanLine(seededAssets)] : []),
+    ...(specPreplant !== null ? [specPreplantHumanLine(specPreplant)] : []),
   ];
   return ok
     ? okOutcome("doctor", result, human)

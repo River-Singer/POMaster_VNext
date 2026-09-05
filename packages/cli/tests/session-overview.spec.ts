@@ -44,8 +44,8 @@ describe("session 速览投影（SessionStart 注入源）", () => {
     expect(text.startsWith("POMaster")).toBe(true);
     expect(text.startsWith("{")).toBe(false);
     expect(text.length).toBeLessThanOrEqual(SESSION_OUTPUT_HARD_CAP);
-    expect(text).toContain("objects: 0");
-    expect(text).toContain("generation.seq: 0");
+    expect(text).toContain("objects: 19");
+    expect(text).toContain("generation.seq: 1");
     expect(text).toContain("alerts: 干净");
     expect(text).toContain("Browser Eyes");
     expect(text).toContain("pomaster --help");

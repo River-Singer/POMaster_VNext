@@ -254,7 +254,8 @@ describe("八拍①②③ maintain --phase pre-dev（Vue3 工程）", () => {
     const permit = resultOf(chain.predev)["permit"] as Record<string, unknown>;
     expect(permit["permit_ref"]).toBe("PERMIT.TASK_V0001.1");
     expect(permit["ttl_beats"]).toBe(168);
-    expect(permit["issued_at_seq"]).toBe(0);
+    // 裁定批 D D2：init 预植 SPEC.* 占 seq=1 → permit 签发锚 issued_at_seq=1。
+    expect(permit["issued_at_seq"]).toBe(1);
     const scope = permit["scope"] as Record<string, unknown>;
     expect(scope["subject_ids"]).toEqual([TASK_ID]);
   });
@@ -324,8 +325,9 @@ describe("八拍⑥ reconcile（clean → task 落账 → dirty，Vue3 工程）
     expect(env(rec).ok).toBe(true);
     const result = resultOf(rec);
     expect(result["clean"]).toBe(true);
-    expect(result["baseline_at_seq"]).toBe(0);
-    expect(result["current_seq"]).toBe(0);
+    // 裁定批 D D2：init 预植后 seq=1 → reconcile 基线锚 1（零审阅合法出口不变）。
+    expect(result["baseline_at_seq"]).toBe(1);
+    expect(result["current_seq"]).toBe(1);
     expect(result["permit_ref"]).toBe("PERMIT.TASK_V0001.1");
   });
 
@@ -351,9 +353,9 @@ describe("八拍⑥ reconcile（clean → task 落账 → dirty，Vue3 工程）
     expect(result["ops_counts"]).toEqual({ upsert_object: 1 });
   });
 
-  it("首个事务 applied_seq=1 且 digest_warnings 空（D24 零口径分叉）", () => {
+  it("首个治理事务 applied_seq=2 且 digest_warnings 空（init 预植 seq=1；D24 零口径分叉）", () => {
     const result = resultOf(chain.opsApply);
-    expect(result["applied_seq"]).toBe(1);
+    expect(result["applied_seq"]).toBe(2);
     expect(result["short_circuited"]).toBe(false);
     expect(result["digest_warnings"]).toEqual([]);
   });
@@ -365,7 +367,7 @@ describe("八拍⑥ reconcile（clean → task 落账 → dirty，Vue3 工程）
     expect(env(rec).errors[0]?.code).toBe("RECONCILE_DIRTY");
     const result = resultOf(rec);
     expect(result["clean"]).toBe(false);
-    expect(result["current_seq"]).toBe(1);
+    expect(result["current_seq"]).toBe(2);
     const changed = result["changed_objects"] as Record<string, unknown>[];
     expect(changed.map((row) => row["id"])).toEqual([TASK_ID]);
     expect(changed[0]?.["kind"]).toBe("materialized");
@@ -388,11 +390,11 @@ describe("八拍⑥ reconcile（clean → task 落账 → dirty，Vue3 工程）
     expect(second.stdout).toBe(first.stdout);
   });
 
-  it("链后 status：generation_seq=2（ops 1 + gates 入账 1）+ by_lifecycle CURRENT=1", async () => {
+  it("链后 status：generation_seq=3（init 预植 1 + ops 1 + gates 入账 1）+ by_lifecycle CURRENT=1", async () => {
     const status = await runJsonStep(root, ["status"]);
     expect(status.code).toBe(0);
     const objects = (resultOf(status)["objects"] ?? {}) as Record<string, unknown>;
-    expect(resultOf(status)["generation_seq"]).toBe(2);
+    expect(resultOf(status)["generation_seq"]).toBe(3);
     expect((objects["by_lifecycle"] ?? {})["CURRENT"]).toBe(1);
   });
 });
@@ -409,7 +411,8 @@ describe("八拍⑤ gate（Vue3 工程）", () => {
     const result = resultOf(rec);
     expect(result["recipes_total"]).toBe(6);
     expect(result["passed"]).toBe(0);
-    expect(result["applied_seq"]).toBe(2);
+    // 裁定批 D D2：init 预植 seq=1 + ops 入账 seq=2 → 首轮 gates 单事务 applied_seq=3。
+    expect(result["applied_seq"]).toBe(3);
   });
 
   it("rows 判卷词形：not_configured + not_run×5 + GRN-0001..0006 连号（缺席非绿非红；P-v06 增量）", () => {
@@ -498,7 +501,8 @@ describe("八拍⑤ gate（Vue3 工程）", () => {
     const rows = (result["rows"] ?? []) as Record<string, unknown>[];
     expect(rows[0]?.["grn"]).toBe("GRN-0007");
     expect(rows[rows.length - 1]?.["grn"]).toBe("GRN-0012");
-    expect(result["applied_seq"]).toBe(3);
+    // 首轮 gates seq=3 → 二次 gates applied_seq=4。
+    expect(result["applied_seq"]).toBe(4);
     expect(readdirSync(join(root, ".pomaster", "evidence", "runs")).filter((name) => name !== "README.md")).toHaveLength(12);
   });
 });
@@ -554,11 +558,11 @@ describe("八拍⑧ closeout 与终态（Vue3 工程）", () => {
     expect(permits.every((entry) => entry["status"] === "active")).toBe(true);
   });
 
-  it("终态 status：generation_seq=3（ops 1 + gates×2）+ CURRENT=1", async () => {
+  it("终态 status：generation_seq=4（init 预植 1 + ops 1 + gates×2）+ CURRENT=1", async () => {
     const status = await runJsonStep(root, ["status"]);
     expect(status.code).toBe(0);
     const result = resultOf(status);
-    expect(result["generation_seq"]).toBe(3);
+    expect(result["generation_seq"]).toBe(4);
     const objects = (result["objects"] ?? {}) as Record<string, unknown>;
     expect((objects["by_lifecycle"] ?? {})["CURRENT"]).toBe(1);
   });

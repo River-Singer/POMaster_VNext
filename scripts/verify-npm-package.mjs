@@ -385,12 +385,39 @@ assert(
 );
 assert(!evidenceSample.includes("GENERATED"), "播种件 marker-free 抽查（evidence 件）");
 
-// 2.3 `npx pomaster status`：播种分面计数呈现（B6e——B6a 未尽事项 1 接线冒烟）。
+// SPEC.* 预植（裁定批 D D2 / Owner 2026-09-05 裁定 (a)：init 预植——init 从此写
+// store）：fresh init 后 truth-index 19 个 SPEC.* 对象在册（PROPOSED 起步），
+// seq=1（骨架 + 预植单事务）。
+const smokeTruthIndex = JSON.parse(
+  readFileSync(join(SMOKE_DIR, ".pomaster", "state", "truth-index.json"), "utf8"),
+);
+const specPreplantRows = (smokeTruthIndex.objects ?? []).filter((row) =>
+  String(row.id).startsWith("SPEC."),
+);
+assert(
+  specPreplantRows.length === 19,
+  "init 预植对象 19 在册（SPEC.* Evidence Spec——裁定批 D D2）",
+  `实为 ${specPreplantRows.length}`,
+);
+assert(
+  specPreplantRows.every((row) => row.kind === "business_rule") &&
+    specPreplantRows.every((row) => row.axes?.lifecycle === "PROPOSED"),
+  "预植对象形态抽查（kind=business_rule + lifecycle=PROPOSED 起步）",
+);
+assert(
+  smokeTruthIndex.generation?.seq === 1,
+  "init 预植事务 seq=1（骨架 + 预植单事务，journal 正常前进）",
+  `实为 ${smokeTruthIndex.generation?.seq}`,
+);
+
+// 2.3 `npx pomaster status`：播种分面计数呈现（B6e——B6a 未尽事项 1 接线冒烟）+
+//     SPEC 预植计数呈现（裁定批 D D2）。
 smoke("npx pomaster status", "pomaster status", {
   expectExit: [0],
   expectWords: [
-    "status: .pomaster/state/truth-index.json (seq=",
+    "status: .pomaster/state/truth-index.json (seq=1)",
     "seeded assets: frontend 46 / backend 33 / stacks 28 / evidence 20 / baseline 25",
+    "spec preplant: 19/19 in place",
   ],
 });
 

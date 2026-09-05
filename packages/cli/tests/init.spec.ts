@@ -115,7 +115,7 @@ describe("init 首次创建（CREATED）", () => {
     expect(SKILL_MANIFEST).toHaveLength(15);
   });
 
-  it("空账本含 01 schema 全部顶层键且计数为零、seq=0", async () => {
+  it("init 后账本含 01 schema 全部顶层键 + D2 预植 19 SPEC 对象（seq=1、denominators/producers 空）", async () => {
     await runInit(dir);
     const ledger = JSON.parse(read(TRUTH_INDEX_RELATIVE)) as Record<
       string,
@@ -134,10 +134,15 @@ describe("init 首次创建（CREATED）", () => {
     ]) {
       expect(ledger).toHaveProperty(key);
     }
-    expect(ledger.objects).toEqual([]);
+    // 裁定批 D D2（Owner 2026-09-05）：init 预植——19 个 SPEC.* Evidence Spec 对象
+    // 在册（kind=business_rule 承载；PROPOSED 起步不绑定判卷）。
+    const objects = ledger.objects as Array<Record<string, unknown>>;
+    expect(objects).toHaveLength(19);
+    expect(objects.every((row) => String(row.id).startsWith("SPEC."))).toBe(true);
+    expect(objects.every((row) => row.kind === "business_rule")).toBe(true);
     expect(ledger.denominators).toEqual([]);
     expect(ledger.producers).toEqual([]);
-    expect((ledger.generation as Record<string, unknown>).seq).toBe(0);
+    expect((ledger.generation as Record<string, unknown>).seq).toBe(1);
     expect(ledger.ir_schema).toBe("pomaster.truth-index/v1-draft");
   });
 

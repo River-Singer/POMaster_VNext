@@ -23,6 +23,11 @@ import {
   seededAssetsHumanLine,
   type SeededAssetCounts,
 } from "./seeds.js";
+import {
+  readSpecPreplantPresentation,
+  specPreplantHumanLine,
+  type SpecPreplantPresentation,
+} from "./spec-preplant.js";
 import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
 
@@ -96,6 +101,12 @@ export interface StatusResult {
    * 项目可编辑物，计数 ≠ 清单分母对账）；目录缺席 = 0（显式缺席）。
    */
   readonly seeded_assets?: SeededAssetCounts;
+  /**
+   * SPEC.* 预植呈现（裁定批 D D2 2026-09-05；加法呈现字段）：in_place = truth-index
+   * 中 SPEC.* 对象行数 / kit = 包内清单 evidence spec 分母——纯读呈现位非判定；
+   * truth-index/清单缺席 → 字段缺席（显式缺席纪律）。
+   */
+  readonly spec_preplant?: SpecPreplantPresentation;
 }
 
 /**
@@ -254,6 +265,15 @@ export async function runStatus(
     seededAssets = null;
   }
 
+  // SPEC.* 预植呈现（裁定批 D D2）：纯读加法字段（seeded_assets 同款——异常归缺席
+  // 不炸 status 读路径；truth-index 不可读/清单缺席 → 字段缺席显式）。
+  let specPreplant: SpecPreplantPresentation | null = null;
+  try {
+    specPreplant = await readSpecPreplantPresentation(rootDir);
+  } catch {
+    specPreplant = null;
+  }
+
   const result: StatusResult = {
     state_path: statePath,
     dialect_match: dialectMatch,
@@ -276,6 +296,7 @@ export async function runStatus(
     producers: { total: producerRows.length, dead },
     worst_blindspot: worstBlindspot,
     ...(seededAssets !== null ? { seeded_assets: seededAssets } : {}),
+    ...(specPreplant !== null ? { spec_preplant: specPreplant } : {}),
   };
 
   const human = [
@@ -288,6 +309,7 @@ export async function runStatus(
     `  permits: ${result.permits.unique_active_refs.length} active / ${result.objects.total} objects`,
     `  producers: ${result.producers.total} (dead: ${result.producers.dead.length})`,
     ...(seededAssets !== null ? [seededAssetsHumanLine(seededAssets)] : []),
+    ...(specPreplant !== null ? [specPreplantHumanLine(specPreplant)] : []),
   ];
   return okOutcome("status", result, human, warnings);
 }
