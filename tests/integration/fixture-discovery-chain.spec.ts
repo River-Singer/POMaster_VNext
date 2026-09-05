@@ -4,9 +4,11 @@
  *
  * 链（全部真实 runCli——L2 的意义是集成命令面，不绕过 CLI 直调内核）：
  *   init → brainstorm start（IDEA→DISCOVERY，08 信封落盘）→ research 挂同一宿主
- *   （§81.6 四文件骨架 + inspect SKELETON 判读）→ brainstorm status → §80.2 授权面
- *   推进 READY_TO_PROMOTE（scratchpad 维护面直写 state.json——权限清单「维护
- *   Discovery Scratchpad」明文授权）→ brainstorm promote --apply（三闸 kernel 判卷 +
+ *   （§81.6 四文件骨架 + inspect SKELETON 判读）→ **brainstorm decide 公开推进链**
+ *   （审计 F3 修复：--ready 判定不足 fail-closed 状态零变更 → --set 建图 → --answer
+ *   逐节点决议 → --ready §15 全绿写 READY_TO_PROMOTE（promotion_basis=msd_reached，
+ *   schema 18 机器判据面）——全程零手写 state.json，不再走「§80.2 授权面直写」旧路）
+ *   → brainstorm promote --apply（三闸 kernel 判卷 +
  *   经 runMaintain 同一通路落库，提升走 P11 面零旁移）→ inspect TASK.*（PROPOSED/
  *   PLANNED 提升诚实初值）→ closeout 续接四拍（与 P13 消费闭环）：
  *     ① 提升时刻诚实初值 → DOD_ACCEPTANCE_EMPTY + GATE_EVIDENCE_MISSING 双阻断零写入；
@@ -17,9 +19,10 @@
  *     ④ PROPOSED→CURRENT（maintain --ops transition + authorityRef 满足
  *        authority_approval）→ closeout COMPLETED（evidence→VERIFIED 落 store）。
  *   → 终态对账：brainstorm status（state=TASK + promoted_ref）+ inspect（CURRENT/
- *   VERIFIED）+ meta 链 [IDEA,DISCOVERY,TASK] + journal 留痕。
+ *   VERIFIED）+ meta 链 [IDEA,DISCOVERY,READY_TO_PROMOTE,TASK] + journal 留痕。
  *
- * 出口判据（wave3-plan P18）：状态链在临时 fixture 走通；提升落账后 closeout 链可
+ * 出口判据（wave3-plan P18）：状态链在临时 fixture 走通；DISCOVERY→READY 推进只经
+ * 公开命令（判定不足 fail-closed 有负向拍钉死）；提升落账后 closeout 链可
  * 续接（P18×P13 闭环）；全程轴语义（跨轴断言/晋升条件词形）不被绕过。
  */
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -41,6 +44,12 @@ interface Steps {
   start: StepRecord;
   research: StepRecord;
   statusDiscovery: StepRecord;
+  readyBlocked: StepRecord;
+  statusAfterBlocked: StepRecord;
+  setGraph: StepRecord;
+  answerGrid: StepRecord;
+  answerScope: StepRecord;
+  ready: StepRecord;
   statusReady: StepRecord;
   discoveryStateFile: Record<string, unknown>;
   discoveryMetaChain: string[];
@@ -94,16 +103,67 @@ beforeAll(async () => {
   steps.discoveryStateFile = stateFileOnDisk();
   steps.discoveryMetaChain = metaFileOnDisk().chain;
 
-  // —— §80.2 授权面：scratchpad 维护推进 READY_TO_PROMOTE（promotion_basis 记录所据条件） ——
+  // —— brainstorm decide 公开推进链（审计 F3 修复：DISCOVERY→READY 只经公开命令） ——
+  // 拍序：--set 建图 → 判定不足 fail-closed（OPEN 在场，状态零变更）→ --answer 逐节点
+  // 决议 → --ready §15 全绿写 READY_TO_PROMOTE。零手写 state.json。
   writeFileSync(
-    join(root, ...`${PAD}state.json`.split("/")),
-    `${JSON.stringify(
-      { state: "READY_TO_PROMOTE", scratchpad_ref: PAD, promotion_basis: BASE_BASIS },
-      null,
-      2,
-    )}\n`,
+    join(root, "decide-candidates.json"),
+    `${JSON.stringify(decideCandidates(), null, 2)}\n`,
     "utf8",
   );
+  steps.setGraph = await runJsonStep(root, [
+    "brainstorm",
+    "decide",
+    ID,
+    "--set",
+    join(root, "decide-candidates.json"),
+    "--retrieved",
+    "CURRENT_TRUTH",
+    "--retrieved",
+    "REPO",
+  ]);
+  steps.readyBlocked = await runJsonStep(root, [
+    "brainstorm",
+    "decide",
+    ID,
+    "--ready",
+    "--msd-goal",
+    "true",
+    "--msd-scope",
+    "true",
+    "--msd-acceptance",
+    "true",
+  ]);
+  steps.statusAfterBlocked = await runJsonStep(root, ["brainstorm", "status"]);
+  steps.answerGrid = await runJsonStep(root, [
+    "brainstorm",
+    "decide",
+    ID,
+    "--answer",
+    "DECISION.CARLINE_GRID",
+    "--accept",
+  ]);
+  steps.answerScope = await runJsonStep(root, [
+    "brainstorm",
+    "decide",
+    ID,
+    "--answer",
+    "DECISION.CARLINE_SCOPE",
+    "--value",
+    "SCOPE_LIST_PAGE_ONLY",
+  ]);
+  steps.ready = await runJsonStep(root, [
+    "brainstorm",
+    "decide",
+    ID,
+    "--ready",
+    "--msd-goal",
+    "true",
+    "--msd-scope",
+    "true",
+    "--msd-acceptance",
+    "true",
+  ]);
   steps.statusReady = await runJsonStep(root, ["brainstorm", "status"]);
 
   // —— 提升落账（P11 maintain 面） ——
@@ -226,6 +286,62 @@ afterAll(() => {
 // ============================================================
 // fixture 助手
 // ============================================================
+
+/**
+ * 候选图（§5.1 Grill 产物 → §5.2 buildDecisionGraph 输入；schema 18 正例词形）：
+ * 两节点 DAG（GRID → SCOPE），grounding 十键全显式、missing_facts 显式空——
+ * G-Gate 全过（配合 --retrieved 申报）后节点可被 --answer 决议。
+ */
+function decideCandidates(): readonly Record<string, unknown>[] {
+  const grounding = {
+    intent_refs: ["DISCOVERY.INTENT.001"],
+    truth_refs: ["baseline/frontend/stack.yaml"],
+    contract_refs: [],
+    architecture_refs: [],
+    implementation_refs: [],
+    evidence_refs: [],
+    knowledge_refs: [],
+    research_finding_refs: [],
+    conflicts: [],
+    missing_facts: [],
+  };
+  const recommendation = {
+    option: "INCLUDE_CURRENT_INCREMENT",
+    basis_refs: ["baseline/frontend/stack.yaml"],
+    rationale: "Current Truth 已登记清单页需求。",
+    tradeoff: "先锁最小范围，延后项走 DEFER。",
+    uncertainty: "范围若在实现期失效需重开本决策。",
+    source: "PROJECT_GROUNDED",
+  };
+  const scopeRecommendation = {
+    ...recommendation,
+    option: "SCOPE_LIST_PAGE_ONLY",
+  };
+  return [
+    {
+      decision_id: "DECISION.CARLINE_GRID",
+      class: "SCOPE",
+      prompt: "车系导入清单页的 grid 方案是否纳入当前 Increment？",
+      depends_on: [],
+      affects: [],
+      grounding,
+      options: ["INCLUDE_CURRENT_INCREMENT", "DEFER"],
+      recommendation,
+      authority: { owner: "BOOTSTRAP_OWNER" },
+    },
+    {
+      decision_id: "DECISION.CARLINE_SCOPE",
+      class: "SCOPE",
+      prompt: "车系导入的范围是否收敛到清单页？",
+      depends_on: ["DECISION.CARLINE_GRID"],
+      affects: [],
+      grounding,
+      options: ["SCOPE_LIST_PAGE_ONLY", "DEFER"],
+      recommendation: scopeRecommendation,
+      authority: { owner: "BOOTSTRAP_OWNER" },
+    },
+  ];
+}
 
 /** .pomaster 全树字节快照（「closeout 阻断零写入」的字节级对比基线）。 */
 function snapshotPomaster(): string[] {
@@ -389,7 +505,50 @@ describe("Discovery 状态链 × closeout 全链（P18×P13 闭环）", () => {
     expect(result.files.every((f) => f.present)).toBe(true);
   });
 
-  it("段3 status 呈现链上位置：DISCOVERY → §80.2 授权面推进后 READY_TO_PROMOTE（promotion_basis 可见）", () => {
+  it("段3 brainstorm decide 公开推进链（F3）：判定不足 fail-closed（状态零变更）→ --set 建图 → --answer 逐节点决议 → --ready 全绿", () => {
+    // 负向拍：OPEN 在场时 --ready 被拒（§15 sufficiency 缺口可读 + fail-closed 状态零变更）。
+    expect(steps.readyBlocked.code).toBe(1);
+    const blocked = envelopeOf(steps.readyBlocked);
+    expect(blocked.ok).toBe(false);
+    expect(blocked.errors[0]?.code).toBe("DECISION_SUFFICIENCY_BLOCKED");
+    const blockedResult = blocked.result as { state: string; sufficient: boolean; blocking: { decision_id: string | null; detail: string }[] };
+    expect(blockedResult.sufficient).toBe(false);
+    expect(blockedResult.state).toBe("DISCOVERY");
+    expect(blockedResult.blocking.length).toBeGreaterThan(0);
+    // 判定不足不推进：紧随其后的 status 仍是 DISCOVERY（真实存档，非推断）。
+    const afterBlocked = envelopeOf(steps.statusAfterBlocked).result as {
+      scratchpads: { discovery_id: string; state: string }[];
+    };
+    expect(afterBlocked.scratchpads[0]?.state).toBe("DISCOVERY");
+
+    // 正向拍：--set 建图（build + grounding 判定呈现）→ 两节点全 READY_FOR_DECISION。
+    expect(steps.setGraph.code).toBe(0);
+    const setResult = envelopeOf(steps.setGraph).result as {
+      change: string;
+      decisions_total: number;
+      verdicts: { decision_id: string; verdict: string; answerable: boolean }[];
+      frontier: string[];
+    };
+    expect(setResult.change).toBe("CREATED");
+    expect(setResult.decisions_total).toBe(2);
+    expect(setResult.verdicts.every((v) => v.verdict === "READY_FOR_DECISION" && v.answerable)).toBe(true);
+    expect(setResult.frontier).toEqual(["DECISION.CARLINE_GRID"]);
+
+    // --answer：上游 ACCEPT + 下游 CHANGE（人工新 option）。
+    expect(steps.answerGrid.code).toBe(0);
+    expect((envelopeOf(steps.answerGrid).result as { answer_changed: boolean }).answer_changed).toBe(true);
+    expect(steps.answerScope.code).toBe(0);
+    expect((envelopeOf(steps.answerScope).result as { answer_changed: boolean }).answer_changed).toBe(true);
+
+    // --ready 全绿：DISCOVERY→READY_TO_PROMOTE（promotion_basis=msd_reached 机器判据面）。
+    expect(steps.ready.code).toBe(0);
+    const readyResult = envelopeOf(steps.ready).result as { change: string; state: string; promotion_basis: string };
+    expect(readyResult.change).toBe("PROMOTABLE");
+    expect(readyResult.state).toBe("READY_TO_PROMOTE");
+    expect(readyResult.promotion_basis).toBe("msd_reached");
+  });
+
+  it("段3b status 呈现链上位置：DISCOVERY → 公开推进链后 READY_TO_PROMOTE（promotion_basis 可见）", () => {
     const discovery = envelopeOf(steps.statusDiscovery).result as {
       scratchpads: { discovery_id: string; state: string }[];
     };
@@ -422,7 +581,7 @@ describe("Discovery 状态链 × closeout 全链（P18×P13 闭环）", () => {
     expect(stateFile.state).toBe("TASK");
     expect(stateFile.promotion_basis).toBe(BASE_BASIS);
     expect(stateFile.promoted_ref).toBe(TASK_REF);
-    expect(metaFileOnDisk().chain).toEqual(["IDEA", "DISCOVERY", "TASK"]);
+    expect(metaFileOnDisk().chain).toEqual(["IDEA", "DISCOVERY", "READY_TO_PROMOTE", "TASK"]);
     // store 权威面：提升对象可检视，轴面是提升诚实初值（inspect 的 body 信封）。
     expect(steps.inspectPromoted.code).toBe(0);
     const axes = (

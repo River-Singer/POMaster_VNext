@@ -59,7 +59,7 @@ pomaster resolve "<need>" [--hints ...]
 pomaster new-entity check <governed-id> [--need ...]
 pomaster inspect <governed-id>
 pomaster graph <governed-id> [--view impact]
-pomaster brainstorm start/question-gate/status/promote
+pomaster brainstorm start/question-gate/status/decide/promote
 pomaster research list/inspect
 pomaster eval --suite behavioral
 pomaster catalog status/explain/relock

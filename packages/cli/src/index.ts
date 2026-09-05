@@ -24,13 +24,16 @@
  * - record          证据入账通路：gate-run/claim 显式单条落账 evidence 平面（G6）
  * - closeout        八拍⑧：DoD 判卷（acceptance→VERIFIED claim 硬绑）+ gate 阻断施断
  *                   COMPLETED（transition evidence→VERIFIED；A9）
- * - brainstorm start/status/promote/question-gate
+ * - brainstorm start/status/promote/question-gate/decide
  *                   Discovery Plane（§44.3/§80）：scratchpad 讨论面（Ephemeral 纪律，
  *                   §80.3 状态链）+ 提升面（READY_TO_PROMOTE→CHANGE/TASK 经 P11
  *                   maintain --ops 落库——不私造第二写入通道）+ question-gate 七问
  *                   判卷消费面（§80.4；kernel evaluateQuestionGate 单一判卷源——
  *                   09-04 Batch 1 R2/D1 接线：--prompt raw prompt 载体 + Intent
  *                   Framing 四分拣 + ASSUMPTION 第六处置词形联动 §49.2 登记指路）
+ *                   + decide 公开推进链（审计 F3 修复：DISCOVERY→READY_TO_PROMOTE
+ *                   的 kernel decision-graph 判卷入口——--set 建图/--answer 决议/
+ *                   --ready 收敛三子动作，判卷不足 fail-closed 输出缺口）
  * - new-entity check
  *                   New Entity Gate 施断面（v0.6.1 §75 五否证明；09-04 Batch 1 R5/D5
  *                   运行时接线）：kernel runNewEntityGate 判卷 + verdict 呈现 +
@@ -201,6 +204,7 @@ import {
   runKnowledgeSearch,
 } from "./knowledge.js";
 import {
+  runBrainstormDecide,
   runBrainstormPromote,
   runBrainstormQuestionGate,
   runBrainstormStart,
@@ -572,7 +576,9 @@ export {
   runBrainstormQuestionGate,
   runBrainstormStatus,
   runBrainstormPromote,
+  runBrainstormDecide,
   PROMOTE_TARGETS,
+  UNKNOWN_TRIAGE_KEYS,
 } from "./brainstorm.js";
 export type {
   BrainstormStartInput,
@@ -583,10 +589,16 @@ export type {
   BrainstormPromoteResult,
   BrainstormQuestionGateInput,
   BrainstormQuestionGateResult,
+  BrainstormDecideInput,
+  BrainstormDecideResult,
+  BrainstormDecideVerdictEntry,
+  BrainstormDecideBlockingItem,
+  DecisionInputsFile,
   DiscoveryFraming,
   DiscoveryStateFile,
   DiscoveryMetaFile,
   PromoteTarget,
+  UnknownTriageKey,
 } from "./brainstorm.js";
 export {
   runResearchStart,
@@ -1814,6 +1826,58 @@ export function createProgram(
       });
       record({
         command: "brainstorm promote",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+  // —— decide（审计 F3 修复：DISCOVERY→READY_TO_PROMOTE 公开推进链） ——
+  // 单命令三互斥子动作（--set 建图 / --answer 决议 / --ready 收敛），判卷全部复用
+  // kernel decision-graph 纯函数（零新治理语义）；写面 = scratchpad 授权维护面内的
+  // decision-graph.json（schema 18 sidecar）+ decision-inputs.json（CLI 局部注记）+
+  // state.json/meta.chain（既有机制，零新状态轴）；不足 fail-closed 输出缺口。
+  brainstorm
+    .command("decide")
+    .description(
+      "DISCOVERY→READY_TO_PROMOTE 公开推进链（§5/§6/§13/§15；kernel decision-graph 单一判卷源）：--set <file> 载入候选图（build+grounding 判定呈现+frontier，图落 scratchpad/decision-graph.json）→ --answer <DECISION.*> 决议（--accept|--value|--unknown --triage 六问|--defer；grounding READY_FOR_DECISION 前置闸）→ --ready 收敛判定（--msd-goal/--msd-scope/--msd-acceptance 三轴必答 + --residual 合法残留；全绿→READY_TO_PROMOTE，不足 fail-closed 列缺口状态不动）。暂不接线：research request/handoff 消费面（PR-4）——缺失事实消解出路随 hint 指路；其余晋升依据词形不经本命令判卷（不私造无判卷放行通道）",
+    )
+    .argument("<discovery-id>", "scratchpad id（brainstorm start 产出的 id；state 必须 DISCOVERY）")
+    .option("--set <file>", "子动作①：候选图 JSON 文件（§5.2 十键候选节点数组；按进程 CWD 解析）")
+    .option("--retrieved <surface>", "G2 检索面申报（可重复：CURRENT_TRUTH|DOCS|REPO|EVIDENCE；Knowledge 不入判卷 §83.2）", collectValues, [])
+    .option("--route <fact=route>", "G6 缺失事实路由申报（可重复：<FACT.*>=<DERIVABLE|RESEARCHABLE>）", collectValues, [])
+    .option("--answer <decision-id>", "子动作②：决议目标（图内 DECISION.*）")
+    .option("--accept", "答面 ACCEPT：采纳 recommendation.option（§13.2）")
+    .option("--value <option>", "答面 CHANGE：人工新 option（§13.2 必带值）")
+    .option("--unknown", "答面 UNKNOWN：六问重分类（§14 必带 --triage 六键）")
+    .option("--defer", "答面 DEFER：显式延后（§15 合法残留）")
+    .option("--triage <key=bool>", "UNKNOWN 六问申报（可重复：can_derive|can_research|can_safely_assume|can_defer|can_prototype_observe|blocks_current_increment = true|false；六键全必给）", collectValues, [])
+    .option("--seq <n>", "事件拍（≥1 整数；零墙钟 A4，可选）")
+    .option("--ready", "子动作③：§15 收敛判定（全绿→READY_TO_PROMOTE）")
+    .option("--msd-goal <bool>", "MSD 三轴申报：goal_defined（true|false；--ready 必答）")
+    .option("--msd-scope <bool>", "MSD 三轴申报：scope_defined（true|false；--ready 必答）")
+    .option("--msd-acceptance <bool>", "MSD 三轴申报：acceptance_verifiable（true|false；--ready 必答）")
+    .option("--residual <class:statement>", "§15 合法残留登记（可重复：<ASSUMPTION|DEFERRED_DECISION|FUTURE_CONSIDERATION|SOFT_UNCERTAINTY>:<statement>）", collectValues, [])
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (discoveryId: string, opts, command) => {
+      const outcome = await runBrainstormDecide(resolveDir(command), {
+        discoveryId,
+        ...(opts.set !== undefined ? { set: opts.set as string } : {}),
+        retrieved: opts.retrieved as string[],
+        route: opts.route as string[],
+        ...(opts.answer !== undefined ? { answer: opts.answer as string } : {}),
+        accept: opts.accept === true,
+        ...(opts.value !== undefined ? { value: opts.value as string } : {}),
+        unknown: opts.unknown === true,
+        defer: opts.defer === true,
+        triage: opts.triage as string[],
+        ...(opts.seq !== undefined ? { seq: opts.seq as string } : {}),
+        ready: opts.ready === true,
+        ...(opts.msdGoal !== undefined ? { msdGoal: opts.msdGoal as string } : {}),
+        ...(opts.msdScope !== undefined ? { msdScope: opts.msdScope as string } : {}),
+        ...(opts.msdAcceptance !== undefined ? { msdAcceptance: opts.msdAcceptance as string } : {}),
+        residual: opts.residual as string[],
+      });
+      record({
+        command: "brainstorm decide",
         outcome,
         asJson: command.opts().json === true,
       });
