@@ -1,6 +1,6 @@
 {
   "schema": "pomaster.seed-manifest/1",
-  "batch": "B6D",
+  "batch": "B6E",
   "batches": {
     "B6B-1": [
       ".pomaster/specs/hard/frontend/01-development-checklist-protocol.md",
@@ -141,17 +141,39 @@
       ".pomaster/baseline/platform/environment.md",
       ".pomaster/baseline/platform/observability.md",
       ".pomaster/baseline/platform/security.md"
+    ],
+    "B6E": [
+      ".pomaster/specs/evidence/accessibility.md",
+      ".pomaster/specs/evidence/architecture.md",
+      ".pomaster/specs/evidence/browser-e2e.md",
+      ".pomaster/specs/evidence/build.md",
+      ".pomaster/specs/evidence/business-acceptance.md",
+      ".pomaster/specs/evidence/complexity-crap.md",
+      ".pomaster/specs/evidence/contract.md",
+      ".pomaster/specs/evidence/coverage.md",
+      ".pomaster/specs/evidence/data-migration.md",
+      ".pomaster/specs/evidence/dead-code-duplicate.md",
+      ".pomaster/specs/evidence/dependency-supply-chain.md",
+      ".pomaster/specs/evidence/index.md",
+      ".pomaster/specs/evidence/mutation.md",
+      ".pomaster/specs/evidence/performance.md",
+      ".pomaster/specs/evidence/release.md",
+      ".pomaster/specs/evidence/runtime-observability.md",
+      ".pomaster/specs/evidence/security.md",
+      ".pomaster/specs/evidence/typecheck-lint.md",
+      ".pomaster/specs/evidence/unit-component-integration.md",
+      ".pomaster/specs/evidence/visual-regression.md"
     ]
   },
-  "generated_by": "catalog/tools/seed_b6d_baseline.py",
+  "generated_by": "catalog/tools/seed_b6e_evidence.py",
   "denominator": {
-    "batch_scope": "B6d:baseline 体系 25 文件新著播种(manifest.yaml 1 + frontend 7 + backend 8 + data 5 + platform 4;UNKNOWN 起步,「待填写」词形零移植;B6b/B6c 107 条在册——清单合并承载全量分母 132)",
-    "planted": 132,
-    "planted_total": 132,
-    "batch_new": 25
+    "batch_scope": "B6e:Evidence Spec Kit 20 文件新著播种(index 1 + 19 份证据要求面;PRD §13 清单+§13.1 十七段结构;要求面非证据面——持要求不持判定,判卷四值词形闭包;gates 绑定=登记级注记;B6b/B6c/B6d 132 条在册——清单合并承载全量分母 152)",
+    "planted": 152,
+    "planted_total": 152,
+    "batch_new": 20
   },
-  "seed_semantics": "seed-once-missing-only(缺席才写 / 在座零触碰 / marker-free;seeds.ts 单一实现;frontmatter 为 PRD §8.2 字段位减 id——no-governed-id 默认,播种 spec 是项目可编辑自由文件;B6c 起 BE 件含 vendor frontmatter 保留字段、stacks 件落 <slug> 子目录——SEEDABLE_STORE_DIRS 显式 slug 登记;B6d 起 baseline 件为新著纯正文(无 frontmatter——yaml 直接可解析/Owner 填写面零噪音;entry authoring=new,pin=资产自身字节指纹,装载器自指校验;UNKNOWN 起步,「待填写」词形零移植)",
-  "authority_scope": "specs 面 mixed_required_and_advisory;baseline 面 project_baseline_template(UNKNOWN 起步模板,非规则面)",
+  "seed_semantics": "seed-once-missing-only(缺席才写 / 在座零触碰 / marker-free;seeds.ts 单一实现;frontmatter 为 PRD §8.2 字段位减 id——no-governed-id 默认,播种 spec 是项目可编辑自由文件;B6c 起 BE 件含 vendor frontmatter 保留字段、stacks 件落 <slug> 子目录——SEEDABLE_STORE_DIRS 显式 slug 登记;B6d 起 baseline 件为新著纯正文(无 frontmatter——yaml 直接可解析/Owner 填写面零噪音;entry authoring=new,pin=资产自身字节指纹,装载器自指校验;UNKNOWN 起步,「待填写」词形零移植);B6e 起 specs/evidence 件同 authoring=new 纯正文通路——十七段结构照 PRD §13.1,要求面非证据面(持要求不持判定,判卷四值词形闭包),gates 绑定=登记级注记)",
+  "authority_scope": "specs 面 mixed_required_and_advisory;baseline 面 project_baseline_template(UNKNOWN 起步模板,非规则面);specs/evidence 面 evidence_spec_requirements(要求面规范——持要求不持判定,判定值只在 Verification Result/Gate Result)",
   "entries": [
     {
       "target": ".pomaster/specs/hard/frontend/01-development-checklist-protocol.md",
@@ -1676,6 +1698,286 @@
       "porting_notes": [
         "B6d 新著件(非移植):旧包无 25 文件成套资产——语义祖先为运行时 factsource stack-baseline.schema 与 02-technology-baseline planned 模板(仅字段/词形参照,capability/status/supersedes/ACR 演化语义不并入一期,提案 §3);骨架章节照 PRD §3 baseline 树职责注释逐字;内容零发明:起步值一律 UNKNOWN,示例与默认值不住播种面(PRD §7.1 NON-AUTHORITATIVE——示例只住 PRD/catalog 注记)",
         "B6d 形态注记:本件无 frontmatter(纯正文——yaml 直接可解析/md 零噪音,Owner 填写面);清单 pin=资产自身字节 sha256(authoring=new 自指指纹——新著无 vendor 源字节,防包内清单↔资产失同步,装载器按 authoring 分流校验)"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/evidence/accessibility.md",
+      "asset": "specs/evidence/accessibility.md",
+      "seed_version": "B6E",
+      "lane": "evidence",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
+      "source_sha256": "9a7e6cd188ffd2d24f190b239746f0ee421f888702b6afebb65b5277dceae7db",
+      "source_bytes": 3965,
+      "porting_notes": [
+        "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/evidence/architecture.md",
+      "asset": "specs/evidence/architecture.md",
+      "seed_version": "B6E",
+      "lane": "evidence",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
+      "source_sha256": "53f0039e994f2b8a9373b0cfea9ff211da8176256f1e9c306df13be084da9ddc",
+      "source_bytes": 4020,
+      "porting_notes": [
+        "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/evidence/browser-e2e.md",
+      "asset": "specs/evidence/browser-e2e.md",
+      "seed_version": "B6E",
+      "lane": "evidence",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
+      "source_sha256": "c1ae42fd3f383765d7218d4e684afff169ec5744c18d7cff3daa686598b4038d",
+      "source_bytes": 4188,
+      "porting_notes": [
+        "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/evidence/build.md",
+      "asset": "specs/evidence/build.md",
+      "seed_version": "B6E",
+      "lane": "evidence",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
+      "source_sha256": "66171d1fe9522760ed3beda7fcd192fc3389b20461c4f638e083d1722f8dc8cf",
+      "source_bytes": 4209,
+      "porting_notes": [
+        "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/evidence/business-acceptance.md",
+      "asset": "specs/evidence/business-acceptance.md",
+      "seed_version": "B6E",
+      "lane": "evidence",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
+      "source_sha256": "35ae384a18e57c646d8669fbbb51aee63cff92876c28c6daed14d307d1f41091",
+      "source_bytes": 4253,
+      "porting_notes": [
+        "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/evidence/complexity-crap.md",
+      "asset": "specs/evidence/complexity-crap.md",
+      "seed_version": "B6E",
+      "lane": "evidence",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
+      "source_sha256": "6aba64e3388900f9b8044f3501732dfa427424a29f8a88fb4b939dd4da1214a5",
+      "source_bytes": 4373,
+      "porting_notes": [
+        "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/evidence/contract.md",
+      "asset": "specs/evidence/contract.md",
+      "seed_version": "B6E",
+      "lane": "evidence",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
+      "source_sha256": "7067e4a5bfda9f1440c0e8289fd56f54a03fe7a51d541267dc4e88118962759f",
+      "source_bytes": 4168,
+      "porting_notes": [
+        "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/evidence/coverage.md",
+      "asset": "specs/evidence/coverage.md",
+      "seed_version": "B6E",
+      "lane": "evidence",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
+      "source_sha256": "803c640d5ea7f32e7339fd4d65d7072521613f7a5bc2fa01e68c1e375c69470d",
+      "source_bytes": 4093,
+      "porting_notes": [
+        "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/evidence/data-migration.md",
+      "asset": "specs/evidence/data-migration.md",
+      "seed_version": "B6E",
+      "lane": "evidence",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
+      "source_sha256": "4ff54af72a57b4dc2847278ea631cb18136b46f3882f886682f7263108a1f2d5",
+      "source_bytes": 4202,
+      "porting_notes": [
+        "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/evidence/dead-code-duplicate.md",
+      "asset": "specs/evidence/dead-code-duplicate.md",
+      "seed_version": "B6E",
+      "lane": "evidence",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
+      "source_sha256": "4949af5844e50c058bf82449ef1b5c84ed8ec4265a631bc0c8edd36beeca1ee4",
+      "source_bytes": 3919,
+      "porting_notes": [
+        "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/evidence/dependency-supply-chain.md",
+      "asset": "specs/evidence/dependency-supply-chain.md",
+      "seed_version": "B6E",
+      "lane": "evidence",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
+      "source_sha256": "93c05c3b6898802f64a8870e6a3291abde0ff25cb940108dd83486fa5616ce9a",
+      "source_bytes": 4098,
+      "porting_notes": [
+        "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/evidence/index.md",
+      "asset": "specs/evidence/index.md",
+      "seed_version": "B6E",
+      "lane": "evidence",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
+      "source_sha256": "a7001385ada31e4d705a03a2297219225ff274fb756171c4aa0d4971fb42b14f",
+      "source_bytes": 5663,
+      "porting_notes": [
+        "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/evidence/mutation.md",
+      "asset": "specs/evidence/mutation.md",
+      "seed_version": "B6E",
+      "lane": "evidence",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
+      "source_sha256": "bc3fb6502a0c777d347554dfec28a82a1f107540331497cbeda381830573755b",
+      "source_bytes": 4019,
+      "porting_notes": [
+        "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/evidence/performance.md",
+      "asset": "specs/evidence/performance.md",
+      "seed_version": "B6E",
+      "lane": "evidence",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
+      "source_sha256": "7784d2fefc6d61d9a14d567d0ab6029f491688ff8f5897580e0ac6e72c17cc7c",
+      "source_bytes": 4074,
+      "porting_notes": [
+        "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/evidence/release.md",
+      "asset": "specs/evidence/release.md",
+      "seed_version": "B6E",
+      "lane": "evidence",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
+      "source_sha256": "a6faf66bd371a84f8b874078f6d90061b4af7645cab3c742a57e81d787f29600",
+      "source_bytes": 4071,
+      "porting_notes": [
+        "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/evidence/runtime-observability.md",
+      "asset": "specs/evidence/runtime-observability.md",
+      "seed_version": "B6E",
+      "lane": "evidence",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
+      "source_sha256": "8593e6c4745d021e598ee9b47ec933e7526cbea507b014e3120b860d0fa5e147",
+      "source_bytes": 4234,
+      "porting_notes": [
+        "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/evidence/security.md",
+      "asset": "specs/evidence/security.md",
+      "seed_version": "B6E",
+      "lane": "evidence",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
+      "source_sha256": "208444bc757eb8ff66e3e9807af5ad445f3edd6e607eaec582768d6e1e9bf375",
+      "source_bytes": 4087,
+      "porting_notes": [
+        "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/evidence/typecheck-lint.md",
+      "asset": "specs/evidence/typecheck-lint.md",
+      "seed_version": "B6E",
+      "lane": "evidence",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
+      "source_sha256": "e17bd93f303ee471e860e41d59f9067d1a2b93360ec1a70ca11ed3d32f1120da",
+      "source_bytes": 4178,
+      "porting_notes": [
+        "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/evidence/unit-component-integration.md",
+      "asset": "specs/evidence/unit-component-integration.md",
+      "seed_version": "B6E",
+      "lane": "evidence",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
+      "source_sha256": "6ab0db1e8f528f3b3adc1f75da2f31d36be9288d4abd4159dba277cdfbe40e60",
+      "source_bytes": 4179,
+      "porting_notes": [
+        "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/evidence/visual-regression.md",
+      "asset": "specs/evidence/visual-regression.md",
+      "seed_version": "B6E",
+      "lane": "evidence",
+      "authoring": "new",
+      "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
+      "source_sha256": "feec4946b8190d3351346fd42ae3f9b010abb2a951b16810dbbc7dbab98d920d",
+      "source_bytes": 3939,
+      "porting_notes": [
+        "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
       ]
     }
   ]

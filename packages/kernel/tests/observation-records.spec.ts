@@ -5,7 +5,8 @@
  * 判据锚（kernel evidence-artifacts.ts 头注 ADR + 17-perception-receipts.schema.json
  * x-index-policy）：
  * - 落盘位 evidence/observations/OBS-<n>.json / ENVREC-<n>.json（17 schema
- *   storage_plane 词形；layout 目录口径 29 含本分区）；
+ *   storage_plane 词形；layout 目录口径 41 含本分区——B6a 登记 12 播种目录后为 41，
+ *   paths.ts 为准）；
  * - **blob 平面零改动**：本通路只落回执记录 JSON 自身，evidence/blobs/ 仍由
  *   persistEvidenceArtifact 唯一承载（裁决 8 ③ D1=A 不动摇）；
  * - sidecar 不是 truth object：不进 truth-index（admitted_to_truth_index=false 维持

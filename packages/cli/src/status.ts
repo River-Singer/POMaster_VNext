@@ -18,6 +18,11 @@ import {
   TRUTH_BODY_KINDS,
 } from "@pomaster/schemas";
 import { TRUTH_INDEX_RELATIVE, toPosix, truthIndexPath } from "./store-layout.js";
+import {
+  countSeededAssets,
+  seededAssetsHumanLine,
+  type SeededAssetCounts,
+} from "./seeds.js";
 import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
 
@@ -85,6 +90,12 @@ export interface StatusResult {
     readonly dead: readonly string[];
   };
   readonly worst_blindspot: { readonly gate: string; readonly escape_ratio: number } | null;
+  /**
+   * 播种分面计数（vNext Batch 6 B6e 收口——B6a 未尽事项 1；加法呈现字段）：
+   * .pomaster 播种面五分面磁盘实况计数（README 不计）——呈现位非判定（播种件是
+   * 项目可编辑物，计数 ≠ 清单分母对账）；目录缺席 = 0（显式缺席）。
+   */
+  readonly seeded_assets?: SeededAssetCounts;
 }
 
 /**
@@ -233,6 +244,16 @@ export async function runStatus(
   const generation = asRecord(index.generation) ?? {};
   const seq = typeof generation.seq === "number" ? generation.seq : 0;
 
+  // 播种分面计数（vNext Batch 6 B6e 收口——B6a 未尽事项 1）：纯读呈现位；磁盘实况
+  // 照实呈现（countSeededAssets 单一实现——目录缺席 = 0 显式缺席；异常归空不炸
+  // status 读路径）。
+  let seededAssets: SeededAssetCounts | null = null;
+  try {
+    seededAssets = await countSeededAssets(rootDir);
+  } catch {
+    seededAssets = null;
+  }
+
   const result: StatusResult = {
     state_path: statePath,
     dialect_match: dialectMatch,
@@ -254,6 +275,7 @@ export async function runStatus(
     },
     producers: { total: producerRows.length, dead },
     worst_blindspot: worstBlindspot,
+    ...(seededAssets !== null ? { seeded_assets: seededAssets } : {}),
   };
 
   const human = [
@@ -265,6 +287,7 @@ export async function runStatus(
     `  denominators: ${result.denominators.total}`,
     `  permits: ${result.permits.unique_active_refs.length} active / ${result.objects.total} objects`,
     `  producers: ${result.producers.total} (dead: ${result.producers.dead.length})`,
+    ...(seededAssets !== null ? [seededAssetsHumanLine(seededAssets)] : []),
   ];
   return okOutcome("status", result, human, warnings);
 }

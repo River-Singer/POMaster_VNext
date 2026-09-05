@@ -97,7 +97,7 @@ const stageLock = JSON.parse(
 );
 assert(stageLock.entries.length === 228, "catalog-lock 228 entries", `实为 ${stageLock.entries.length}`);
 
-// 1.2.1 seeds 完整（B6b 两批 + B6c + B6d）：打包文件集与仓库 packages/cli/seeds/ 全等 +
+// 1.2.1 seeds 完整（B6b 两批 + B6c + B6d + B6e）：打包文件集与仓库 packages/cli/seeds/ 全等 +
 //      清单 schema/条目数（播种资产随包分发——装载器 fail-closed，缺 seeds = init 必炸）。
 const repoSeedsFiles = walkFiles(p("packages", "cli", "seeds")).map((file) => `seeds/${file}`);
 const packedSeedsFiles = packedPaths.filter((file) => file.startsWith("seeds/"));
@@ -119,8 +119,8 @@ assert(
   `实为 ${stageSeedManifest.schema}`,
 );
 assert(
-  stageSeedManifest.entries?.length === 132,
-  "stage seeds manifest 132 entries",
+  stageSeedManifest.entries?.length === 152,
+  "stage seeds manifest 152 entries",
   `实为 ${stageSeedManifest.entries?.length}`,
 );
 
@@ -238,9 +238,9 @@ smoke("npx pomaster --help", "pomaster --help", {
 });
 
 // 2.2 `npx pomaster init`：四产物落盘（truth-index / authority / config.yaml / AGENTS.md）
-//     + B6b/B6c/B6d 播种件落盘（46 份 FE + 33 份 BE + 28 份 stacks 进 .pomaster/specs/hard/
-//     + 25 份 baseline 进 .pomaster/baseline/——包内 seeds 资产位 + 装载器 fail-closed
-//     的端到端实证：缺 seeds 的包 init 即炸）。
+//     + B6b-B6e 播种件落盘（46 份 FE + 33 份 BE + 28 份 stacks 进 .pomaster/specs/hard/
+//     + 25 份 baseline 进 .pomaster/baseline/ + 20 份 evidence 进 .pomaster/specs/evidence/
+//     ——包内 seeds 资产位 + 装载器 fail-closed 的端到端实证：缺 seeds 的包 init 即炸）。
 smoke("npx pomaster init", "pomaster init", { expectExit: [0] });
 for (const artifact of [
   join(".pomaster", "state", "truth-index.json"),
@@ -356,10 +356,42 @@ assert(
   "baseline 播种件纯正文（无 frontmatter）+ marker-free 抽查",
 );
 
-// 2.3 `npx pomaster status`。
+// evidence 面（B6e）：index + 19 spec（十七段结构 + 判卷四值词形锚词形抽查）。
+const seededEvidenceDir = join(SMOKE_DIR, ".pomaster", "specs", "evidence");
+const seededEvidenceFiles = existsSync(seededEvidenceDir)
+  ? readdirSync(seededEvidenceDir)
+      .filter((name) => name.endsWith(".md") && name !== "README.md")
+      .sort()
+  : [];
+assert(
+  seededEvidenceFiles.length === 20,
+  "init 播种件落盘：specs/evidence 20 件（index + 19 spec，B6e）",
+  `实为 ${seededEvidenceFiles.length}${seededEvidenceFiles.length ? `: ${seededEvidenceFiles.join(", ")}` : ""}`,
+);
+assert(
+  seededEvidenceFiles.includes("index.md") &&
+    seededEvidenceFiles.includes("complexity-crap.md") &&
+    seededEvidenceFiles.includes("mutation.md") &&
+    seededEvidenceFiles.includes("release.md"),
+  "init 播种件落盘：specs/evidence 关键件在座（index/complexity-crap/mutation/release）",
+);
+const evidenceSample = readFileSync(join(seededEvidenceDir, "complexity-crap.md"), "utf8");
+assert(
+  evidenceSample.includes("CRAP = Complexity² × (1 - Coverage)³ + Complexity") &&
+    evidenceSample.includes("### PASS") &&
+    evidenceSample.includes("### NOT_RUN") &&
+    !evidenceSample.startsWith("---\n"),
+  "evidence 播种件形态抽查（十七段结构 + 四值词位 + 纯正文无 frontmatter）",
+);
+assert(!evidenceSample.includes("GENERATED"), "播种件 marker-free 抽查（evidence 件）");
+
+// 2.3 `npx pomaster status`：播种分面计数呈现（B6e——B6a 未尽事项 1 接线冒烟）。
 smoke("npx pomaster status", "pomaster status", {
   expectExit: [0],
-  expectWords: ["status: .pomaster/state/truth-index.json (seq="],
+  expectWords: [
+    "status: .pomaster/state/truth-index.json (seq=",
+    "seeded assets: frontend 46 / backend 33 / stacks 28 / evidence 20 / baseline 25",
+  ],
 });
 
 // 2.4 `npx pomaster catalog status --json`（关键：包内资产候选命中 + 228 entries 0 drift）。

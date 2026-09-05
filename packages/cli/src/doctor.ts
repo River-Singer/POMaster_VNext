@@ -61,6 +61,11 @@ import {
   POMASTER_HOOK_EVENT_COMMANDS,
   SKILL_MANIFEST,
 } from "./heavy-entry.js";
+import {
+  countSeededAssets,
+  seededAssetsHumanLine,
+  type SeededAssetCounts,
+} from "./seeds.js";
 import type { CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
 
@@ -96,6 +101,12 @@ export interface DoctorResult {
    * 巡检呈现位（形态最小），非探针行；目录缺席 = 0（显式缺席）。
    */
   readonly observation_receipts?: { readonly count: number };
+  /**
+   * 播种分面计数（vNext Batch 6 B6e 收口——B6a 未尽事项 1；加法字段不改 ok 语义）：
+   * .pomaster 播种面五分面磁盘实况计数（README 不计）——呈现位非判定（播种件是
+   * 项目可编辑物，计数 ≠ 清单分母对账）；目录缺席 = 0（显式缺席）。
+   */
+  readonly seeded_assets?: SeededAssetCounts;
 }
 
 /** P1-5 Sensor Capability 联结呈现形态（DoctorResult.sensors 条目）。 */
@@ -850,11 +861,21 @@ export async function runDoctor(
   } catch {
     observationCount = 0;
   }
+  // 播种分面计数（vNext Batch 6 B6e 收口——B6a 未尽事项 1）：加法呈现字段，不改 ok
+  // 语义；countSeededAssets 单一实现（目录缺席 = 0 显式缺席；异常归零不炸 doctor——
+  // observation_receipts 同款呈现位纪律）。
+  let seededAssets: SeededAssetCounts | null = null;
+  try {
+    seededAssets = await countSeededAssets(rootDir);
+  } catch {
+    seededAssets = null;
+  }
   const result: DoctorResult = {
     ok,
     probes,
     ...(sensors !== undefined ? { sensors } : {}),
     observation_receipts: { count: observationCount },
+    ...(seededAssets !== null ? { seeded_assets: seededAssets } : {}),
   };
   const human = [
     `doctor: ${ok ? "READY" : "NOT READY"}`,
@@ -863,6 +884,7 @@ export async function runDoctor(
         `  ${p.status.padEnd(22)} ${p.probe} — ${p.detail}${p.hint ? `\n${" ".repeat(26)}hint: ${p.hint}` : ""}`,
     ),
     `  observation receipts: ${observationCount} 条（evidence/observations/ sidecar 分区；0 = 显式缺席）`,
+    ...(seededAssets !== null ? [seededAssetsHumanLine(seededAssets)] : []),
   ];
   return ok
     ? okOutcome("doctor", result, human)

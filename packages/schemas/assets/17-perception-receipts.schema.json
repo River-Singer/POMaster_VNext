@@ -21,7 +21,7 @@
   ],
   "x-index-policy": {
     "admitted_to_truth_index": false,
-    "storage_plane": "evidence/observations/（2026-09-04 vNext Batch 2 R6 / Owner 裁定 C9：OBS-*.json / ENVREC-*.json sidecar 分区；kernel persistObservationRecord 唯一写入口；blob 字节平面 evidence/blobs/ 零改动；layout 目录口径 29 含本分区）",
+    "storage_plane": "evidence/observations/（2026-09-04 vNext Batch 2 R6 / Owner 裁定 C9：OBS-*.json / ENVREC-*.json sidecar 分区；kernel persistObservationRecord 唯一写入口；blob 字节平面 evidence/blobs/ 零改动；layout 目录口径 41 含本分区——B6 批次 2 时点 29，B6a 登记 12 播种目录后为 41，paths.ts 为准）",
     "source": "PRD v0.5.2 §6.13「Observation Receipt 进入 Trace/Evidence Sidecar，不进入 Truth Index」＋ PRD vNext §5B（C9 裁定落盘分区）＋ A8：运行产物不入 truth-index"
   },
   "definitions": {

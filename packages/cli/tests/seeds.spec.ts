@@ -11,8 +11,9 @@
  * SEEDABLE_STORE_DIRS 12 播种目录 allowlist 禁落盘——控制平面 kernel 登记目录同样
  * 拒绝 + 路径词形卫生 fail-closed throw + allowlist ⊆ kernel 登记派生集合对账）、
  * fresh 临时工程端到端（runInit 注入清单：init 后种子在位 → 重跑零变化 → 手改种子
- * 文件后重跑仍零变化）、B6d 清单现状 pin（缺省装载 132 份播种件 = FE 46 + BE 33 +
- * stacks 28 + baseline 25，B6b 两批 + B6C + B6D 四批合并清单；stacks slug 三面单源
+ * 文件后重跑仍零变化）、B6e 清单现状 pin（缺省装载 152 份播种件 = FE 46 + BE 33 +
+ * stacks 28 + baseline 25 + evidence 20，B6b 两批 + B6C + B6D + B6E 五批合并清单；
+ * stacks slug 三面单源
  * 对账 + 未登记 slug 守卫——B6c stacks 子目录 ADR 候选①显式叶登记；baseline UNKNOWN
  * 起步端到端——init 后在位可编辑）。
  */
@@ -312,17 +313,19 @@ describe("runInit 步骤 4.6 播种端到端（fresh 临时工程 + 注入清单
     ).toBe("preserved");
   });
 
-  it("B6d 清单现状 pin：缺省装载 132 份播种件（FE 46 + BE 33 + stacks 28 + baseline 25；四批合并全量分母）——目标全落播种 allowlist 面且分面形态正确", () => {
+  it("B6e 清单现状 pin：缺省装载 152 份播种件（FE 46 + BE 33 + stacks 28 + baseline 25 + evidence 20；五批合并全量分母）——目标全落播种 allowlist 面且分面形态正确", () => {
     const entries = loadSeedManifestEntries();
-    expect(entries).toHaveLength(132);
+    expect(entries).toHaveLength(152);
     const fe = entries.filter((e) => e.path.startsWith(".pomaster/specs/hard/frontend/"));
     const be = entries.filter((e) => e.path.startsWith(".pomaster/specs/hard/backend/"));
     const stacks = entries.filter((e) => e.path.startsWith(".pomaster/specs/hard/stacks/"));
     const baseline = entries.filter((e) => e.path.startsWith(".pomaster/baseline/"));
+    const evidence = entries.filter((e) => e.path.startsWith(".pomaster/specs/evidence/"));
     expect(fe).toHaveLength(46);
     expect(be).toHaveLength(33);
     expect(stacks).toHaveLength(28);
     expect(baseline).toHaveLength(25);
+    expect(evidence).toHaveLength(20);
     for (const entry of entries) {
       const inSpecs = /^\.pomaster\/specs\/hard\/(frontend|backend|stacks\/[^/]+)\//.test(
         entry.path,
@@ -332,12 +335,24 @@ describe("runInit 步骤 4.6 播种端到端（fresh 临时工程 + 注入清单
         /^\.pomaster\/baseline\/(frontend|backend|data|platform)\/[a-z-]+\.(md|yaml)$/.test(
           entry.path,
         );
-      expect(inSpecs || inBaseline, entry.path).toBe(true);
+      const inEvidence = /^\.pomaster\/specs\/evidence\/[a-z0-9-]+\.md$/.test(entry.path);
+      expect(inSpecs || inBaseline || inEvidence, entry.path).toBe(true);
       if (inSpecs) {
         // specs 面移植件：md 词形 + frontmatter pin 行在座（B6b/B6c 统一形态）。
         expect(entry.path.endsWith(".md"), entry.path).toBe(true);
         expect(entry.content.startsWith("---\n"), entry.path).toBe(true);
         expect(entry.content.includes("seed_source_sha256: "), entry.path).toBe(true);
+      } else if (inEvidence) {
+        // evidence 面 B6e 新著件：纯正文（authoring=new 通路复用）；spec 件带十七段
+        // 结构锚词形，index 件带登记级衔接注记（结构面在 evidence-seeds.spec 全量钉）。
+        expect(entry.content.startsWith("---\n"), entry.path).toBe(false);
+        if (entry.path.endsWith("/index.md")) {
+          expect(entry.content.includes("对象面衔接"), entry.path).toBe(true);
+        } else {
+          expect(entry.content.includes("## Assertions"), entry.path).toBe(true);
+          expect(entry.content.includes("## Purpose"), entry.path).toBe(true);
+          expect(entry.content.includes("SPEC."), entry.path).toBe(true);
+        }
       } else {
         // baseline 面 B6d 新著件：纯正文（frontmatter 缺席——yaml 直解析/Owner 填写面）。
         expect(entry.content.startsWith("---\n"), entry.path).toBe(false);
@@ -375,11 +390,11 @@ describe("runInit 步骤 4.6 播种端到端（fresh 临时工程 + 注入清单
     }
   });
 
-  it("缺省（不注入）init：132 份播种件在位（seeded 报告 + 幂等重跑全 preserved）", async () => {
+  it("缺省（不注入）init：152 份播种件在位（seeded 报告 + 幂等重跑全 preserved）", async () => {
     const outcome = await runInit(dir);
     expect(outcome.ok).toBe(true);
     const seeded = outcome.result.files.filter((f) => f.action === "seeded");
-    expect(seeded).toHaveLength(132);
+    expect(seeded).toHaveLength(152);
     expect(existsSync(join(dir, ".pomaster", "specs", "hard", "frontend", "01-development-checklist-protocol.md"))).toBe(true);
     expect(existsSync(join(dir, ".pomaster", "specs", "hard", "frontend", "index.md"))).toBe(true);
     expect(existsSync(join(dir, ".pomaster", "specs", "hard", "backend", "22-idempotency-protocol.md"))).toBe(true);
@@ -389,11 +404,25 @@ describe("runInit 步骤 4.6 播种端到端（fresh 临时工程 + 注入清单
     expect(existsSync(join(dir, ".pomaster", "baseline", "manifest.yaml"))).toBe(true);
     expect(existsSync(join(dir, ".pomaster", "baseline", "frontend", "stack.yaml"))).toBe(true);
     expect(existsSync(join(dir, ".pomaster", "baseline", "platform", "delivery.md"))).toBe(true);
+    // evidence 面（B6e）：index + 19 spec 全落（十七段结构锚词形抽查；README.md 是
+    // init 布局预铺物非播种件，不计——npm 冒烟同款口径）。
+    const evidenceDir = join(dir, ".pomaster", "specs", "evidence");
+    const evidenceFiles = existsSync(evidenceDir)
+      ? readdirSync(evidenceDir).filter((name) => name.endsWith(".md") && name !== "README.md").sort()
+      : [];
+    expect(evidenceFiles).toHaveLength(20);
+    expect(evidenceFiles[0]).toBe("accessibility.md");
+    expect(evidenceFiles.includes("index.md")).toBe(true);
+    expect(evidenceFiles.includes("complexity-crap.md")).toBe(true);
+    expect(evidenceFiles[19]).toBe("visual-regression.md");
+    const crapSeed = readFileSync(join(evidenceDir, "complexity-crap.md"), "utf8");
+    expect(crapSeed.includes("## Purpose") && crapSeed.includes("### NOT_RUN")).toBe(true);
+    expect(crapSeed.startsWith("---\n")).toBe(false);
     // 幂等：重跑全 preserved = NO_CHANGE。
     const second = await runInit(dir);
     expect(second.ok).toBe(true);
     expect(second.result.change).toBe("NO_CHANGE");
-    expect(second.result.files.filter((f) => f.action === "preserved")).toHaveLength(132);
+    expect(second.result.files.filter((f) => f.action === "preserved")).toHaveLength(152);
   });
 
   it("B6d baseline UNKNOWN 起步端到端：init 后在位可编辑——Owner 回填选型后重跑 init 不覆盖、零告警（可编辑性铁律在 baseline 面成立）", async () => {

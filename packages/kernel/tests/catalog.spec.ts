@@ -318,7 +318,7 @@ describe("loadCatalogPolicies 机器 applicability 字段（P0.5-1）", () => {
 });
 
 describe("loadCatalogTools / loadCatalogProjectionPresets", () => {
-  it("tools 消费：11 份实存工具（懒加载清单分母；P-v06 批次 2 增量 5→6、批次 3 增量 6→7、批次 4 增量 7→8、B6b-I 移植工具 8→9、B6c BE 移植工具 9→10、B6d baseline 新著工具 10→11）", () => {
+  it("tools 消费：12 份实存工具（懒加载清单分母；P-v06 批次 2 增量 5→6、批次 3 增量 6→7、批次 4 增量 7→8、B6b-I 移植工具 8→9、B6c BE 移植工具 9→10、B6d baseline 新著工具 10→11、B6e evidence 新著工具 11→12）", () => {
     const tools = loadCatalogTools(REPO_CATALOG);
     expect(tools.map((tool) => tool.file).sort()).toEqual([
       "tools/apply_human_review_pilot_0001.py",
@@ -328,6 +328,7 @@ describe("loadCatalogTools / loadCatalogProjectionPresets", () => {
       "tools/seed_b6b_frontend.py",
       "tools/seed_b6c_backend.py",
       "tools/seed_b6d_baseline.py",
+      "tools/seed_b6e_evidence.py",
       "tools/seed_v06_archetypes.py",
       "tools/seed_v06_batch2_materials.py",
       "tools/seed_v06_batch3_materials.py",

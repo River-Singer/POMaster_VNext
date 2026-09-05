@@ -641,3 +641,37 @@ describe("doctor 感知回执计数呈现（R6/C9）", () => {
     expect(counted.human.join("\n")).toContain("observation receipts: 2 条");
   });
 });
+
+// ============================================================
+// B6e：播种分面计数呈现（B6a 未尽事项 1 接线；加法字段，不改 ok 语义）
+// ============================================================
+
+describe("doctor 播种分面计数呈现（B6e）", () => {
+  it("init 后五分面计数 = 播种清单分母（46/33/28/20/25）+ human 行呈现；README 预铺物不计", async () => {
+    mkdirSync(dir, { recursive: true });
+    await runInit(dir);
+    const outcome = await runDoctor(dir, { gauntletProbes: readyGauntletProbes() });
+    expect(outcome.result.seeded_assets).toEqual({
+      specs_hard_frontend: 46,
+      specs_hard_backend: 33,
+      specs_hard_stacks: 28,
+      specs_evidence: 20,
+      baseline: 25,
+    });
+    expect(outcome.human.join("\n")).toContain(
+      "seeded assets: frontend 46 / backend 33 / stacks 28 / evidence 20 / baseline 25",
+    );
+  });
+
+  it("空目录（未 init）→ 五分面全 0（显式缺席呈现位，目录缺席 = 0）", async () => {
+    mkdirSync(dir, { recursive: true });
+    const outcome = await runDoctor(dir, { gauntletProbes: readyGauntletProbes() });
+    expect(outcome.result.seeded_assets).toEqual({
+      specs_hard_frontend: 0,
+      specs_hard_backend: 0,
+      specs_hard_stacks: 0,
+      specs_evidence: 0,
+      baseline: 0,
+    });
+  });
+});

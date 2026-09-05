@@ -214,3 +214,37 @@ describe("status 跨轴与词表纪律（显式呈现，不静默）", () => {
     });
   });
 });
+
+// ============================================================
+// B6e：播种分面计数呈现（加法呈现字段——B6a 未尽事项 1 接线）
+// ============================================================
+
+describe("status 播种分面计数呈现（B6e）", () => {
+  it("init 后 seeded_assets = 五分面清单分母（46/33/28/20/25）+ human 行呈现", async () => {
+    await runInit(dir);
+    const outcome = await runStatus(dir);
+    expect(outcome.ok).toBe(true);
+    expect(outcome.result.seeded_assets).toEqual({
+      specs_hard_frontend: 46,
+      specs_hard_backend: 33,
+      specs_hard_stacks: 28,
+      specs_evidence: 20,
+      baseline: 25,
+    });
+    expect(outcome.human.join("\n")).toContain(
+      "seeded assets: frontend 46 / backend 33 / stacks 28 / evidence 20 / baseline 25",
+    );
+  });
+
+  it("项目增删播种件 → 计数照实呈现（磁盘实况呈现位，非清单分母对账）", async () => {
+    await runInit(dir);
+    mkdirSync(join(dir, ".pomaster", "specs", "evidence"), { recursive: true });
+    writeFileSync(
+      join(dir, ".pomaster", "specs", "evidence", "owner-custom.md"),
+      "# owner 自定义要求面\n",
+      "utf8",
+    );
+    const outcome = await runStatus(dir);
+    expect(outcome.result.seeded_assets?.specs_evidence).toBe(21);
+  });
+});

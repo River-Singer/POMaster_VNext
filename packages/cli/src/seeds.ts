@@ -192,3 +192,87 @@ async function writeFileExact(path: string, content: string): Promise<void> {
   const { writeFile } = await import("node:fs/promises");
   await writeFile(path, content, "utf8");
 }
+
+// ============================================================
+// 播种分面计数（vNext Batch 6 B6e 收口——B6a 未尽事项 1：首批内容已灌，接线呈现）
+// ============================================================
+
+/**
+ * 播种分面词形（doctor/status 呈现键；词形 = 播种分面点名，与 SEEDABLE_STORE_DIRS
+ * 的 specs/baseline 两子树一一对应——evidence 落位由 B6e 补齐五分面全景）。
+ */
+export const SEEDED_ASSET_FACETS = [
+  "specs_hard_frontend",
+  "specs_hard_backend",
+  "specs_hard_stacks",
+  "specs_evidence",
+  "baseline",
+] as const;
+
+export type SeededAssetFacet = (typeof SEEDED_ASSET_FACETS)[number];
+
+/** 播种分面计数（磁盘实况呈现位——非治理判定；目录缺席 = 0 显式缺席）。 */
+export interface SeededAssetCounts {
+  readonly specs_hard_frontend: number;
+  readonly specs_hard_backend: number;
+  readonly specs_hard_stacks: number;
+  readonly specs_evidence: number;
+  readonly baseline: number;
+}
+
+/** 分面 → .pomaster/ 树内目录（相对词形）。 */
+const FACET_DIR: Record<SeededAssetFacet, string> = {
+  specs_hard_frontend: "specs/hard/frontend",
+  specs_hard_backend: "specs/hard/backend",
+  specs_hard_stacks: "specs/hard/stacks",
+  specs_evidence: "specs/evidence",
+  baseline: "baseline",
+};
+
+/**
+ * 播种分面计数：逐分面递归统计磁盘文件数（.pomaster/ 树内；README.md 不计——
+ * init 布局步骤会在这些目录预铺 README.md，非播种件，verify-npm-package 冒烟同款
+ * 口径）。纯读呈现位（B6a 未尽事项 1 收口）：磁盘实况照实呈现——项目可增删播种件
+ * （可编辑物），计数不等于清单分母，不做对账判定；目录缺席 = 0 显式缺席。
+ */
+export async function countSeededAssets(rootDir: string): Promise<SeededAssetCounts> {
+  const { readdir } = await import("node:fs/promises");
+  const { join } = await import("node:path");
+  const pomasterDir = toPosix(buildStorePaths(rootDir).pomasterDir);
+  async function countFiles(relative: string): Promise<number> {
+    const absolute = join(pomasterDir, ...relative.split("/"));
+    let entries;
+    try {
+      entries = await readdir(absolute, { withFileTypes: true });
+    } catch {
+      return 0; // 目录缺席 = 0（显式缺席，与 observation_receipts 呈现语义一致）。
+    }
+    let count = 0;
+    for (const entry of entries) {
+      if (entry.isFile()) {
+        if (entry.name !== "README.md") count += 1;
+      } else if (entry.isDirectory()) {
+        count += await countFiles(`${relative}/${entry.name}`);
+      }
+    }
+    return count;
+  }
+  const values = await Promise.all(
+    SEEDED_ASSET_FACETS.map((facet) => countFiles(FACET_DIR[facet])),
+  );
+  const counts = {} as Record<SeededAssetFacet, number>;
+  SEEDED_ASSET_FACETS.forEach((facet, i) => {
+    counts[facet] = values[i] ?? 0;
+  });
+  return counts as SeededAssetCounts;
+}
+
+/** 播种分面计数的 human 行词形（doctor/status 共用——单一实现禁两套口径漂移）。 */
+export function seededAssetsHumanLine(counts: SeededAssetCounts): string {
+  return (
+    `  seeded assets: frontend ${counts.specs_hard_frontend} / backend ${counts.specs_hard_backend}` +
+    ` / stacks ${counts.specs_hard_stacks} / evidence ${counts.specs_evidence}` +
+    ` / baseline ${counts.baseline}` +
+    "（.pomaster 播种面五分面计数；README 不计；0=显式缺席）"
+  );
+}
