@@ -74,6 +74,13 @@ const VENDOR_STACKS = join(
   "stacks",
 );
 
+// vendor 源在座性（宿主缺席诚实 skip 先例——同宿主工具缺席即 not_run）：旧包
+// pomaster/ 是 POMaster_VNext 的平级只读依赖，fresh clone/CI 无此兄弟目录。
+// 缺席 → vendor 保真断言显式 skip（移植期锚，非 CI 可跑面）；manifest/装载器/
+// 新著 authoring 面断言不受影响。
+const VENDOR_PRESENT =
+  existsSync(VENDOR_UNIVERSAL) && existsSync(VENDOR_BE) && existsSync(VENDOR_STACKS);
+
 const manifest = JSON.parse(
   readFileSync(join(seedsRoot, "manifest.json"), "utf8"),
 ) as Parameters<typeof Object>[0] & {
@@ -512,7 +519,7 @@ describe("播种件字节形态：统一 frontmatter + 正文逐字节忠实（F
     }
   });
 
-  it("FE 内容忠实：43 份编号协议正文与 vendor 源逐字节等；01/03 = vendor + R8 清洗整行替换恰等（裁决 12/D5 清洗后基线；45 份编号协议分母不漂移）", () => {
+  it.skipIf(!VENDOR_PRESENT)("FE 内容忠实：43 份编号协议正文与 vendor 源逐字节等；01/03 = vendor + R8 清洗整行替换恰等（裁决 12/D5 清洗后基线；45 份编号协议分母不漂移）", () => {
     const numbered = FE_ENTRIES.filter((e) =>
       /specs\/hard\/frontend\/\d{2}-.*-protocol\.md$/.test(e.asset),
     );
@@ -531,7 +538,7 @@ describe("播种件字节形态：统一 frontmatter + 正文逐字节忠实（F
     }
   });
 
-  it("FE index.md 授权适配面：body == vendor + whitelist 路径替换 + R8 清洗整行替换（裁决 12/D5 清洗后基线；差集恰为登记适配面）", () => {
+  it.skipIf(!VENDOR_PRESENT)("FE index.md 授权适配面：body == vendor + whitelist 路径替换 + R8 清洗整行替换（裁决 12/D5 清洗后基线；差集恰为登记适配面）", () => {
     const entry = FE_ENTRIES.find((e) => e.asset.endsWith("/index.md"))!;
     const vendor = readFileSync(join(VENDOR_UNIVERSAL, "index.md"), "utf8");
     const body = seedBody(entry.asset);
@@ -559,7 +566,7 @@ describe("播种件字节形态：统一 frontmatter + 正文逐字节忠实（F
     }
   });
 
-  it("B6c BE frontmatter 兼容形态：32 协议 = 统一 9 字段 + legacy 6 字段（id 改形 legacy_id、原字段名原值保留）；正文与 vendor 去原 frontmatter 逐字节等", () => {
+  it.skipIf(!VENDOR_PRESENT)("B6c BE frontmatter 兼容形态：32 协议 = 统一 9 字段 + legacy 6 字段（id 改形 legacy_id、原字段名原值保留）；正文与 vendor 去原 frontmatter 逐字节等", () => {
     for (const doc of BE_ENTRIES) {
       const { fields, body } = seedSplit(doc.asset);
       const name = doc.asset.split("/").pop()!;
@@ -589,7 +596,7 @@ describe("播种件字节形态：统一 frontmatter + 正文逐字节忠实（F
     }
   });
 
-  it("B6c stacks overlay 形态：统一 9 字段 + legacy 6 字段（legacy_id 词形 backend-stack:<slug>）；正文与 vendor 去原 frontmatter 逐字节等", () => {
+  it.skipIf(!VENDOR_PRESENT)("B6c stacks overlay 形态：统一 9 字段 + legacy 6 字段（legacy_id 词形 backend-stack:<slug>）；正文与 vendor 去原 frontmatter 逐字节等", () => {
     for (const doc of STACK_ENTRIES) {
       if (!doc.asset.endsWith("-overlay.md")) continue;
       const { fields, body } = seedSplit(doc.asset);
@@ -602,7 +609,7 @@ describe("播种件字节形态：统一 frontmatter + 正文逐字节忠实（F
     }
   });
 
-  it("B6c stack index 形态：纯统一 9 字段（vendor 无 frontmatter）；正文与 vendor 全文逐字节等", () => {
+  it.skipIf(!VENDOR_PRESENT)("B6c stack index 形态：纯统一 9 字段（vendor 无 frontmatter）；正文与 vendor 全文逐字节等", () => {
     for (const doc of STACK_ENTRIES) {
       if (!doc.asset.endsWith("/index.md")) continue;
       const { fields, body } = seedSplit(doc.asset);

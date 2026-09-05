@@ -69,6 +69,20 @@ async function seed(entries: readonly SeedEntry[]): Promise<InitFileReport[]> {
   return files;
 }
 
+// vendor stacks 分母侧目录（旧包 pomaster/ 平级只读依赖；fresh clone/CI 无此
+// 兄弟目录 → vendor 侧断言显式 skip，manifest 侧单源断言不受影响——宿主缺席
+// 诚实 not_run 先例）。
+const VENDOR_STACKS_DIR = join(
+  fileURLToPath(new URL("../../../", import.meta.url)),
+  "..",
+  "pomaster",
+  "components",
+  "backend-hard-spec",
+  "assets",
+  "stacks",
+);
+const VENDOR_STACKS_PRESENT = existsSync(VENDOR_STACKS_DIR);
+
 describe("seedProjectAssets 引擎三语义（B6a 红线三钉）", () => {
   it("缺席才写：种子缺席 → 原样写入（字节逐等）+ action=seeded；嵌套父目录自动创建", async () => {
     const files = await seed(DEMO_ENTRIES);
@@ -170,7 +184,7 @@ describe("seedProjectAssets 目录守卫（R4 红线 + B6b-I 播种 allowlist �
     }
   });
 
-  it("B6c stacks slug 集 == 种子清单 stacks 分母派生集合（三面单源对账——slug 漂移即爆）", () => {
+  it.skipIf(!VENDOR_STACKS_PRESENT)("B6c stacks slug 集 == 种子清单 stacks 分母派生集合（三面单源对账——slug 漂移即爆；vendor 平级目录缺席时宿主诚实 skip）", () => {
     const entries = loadSeedManifestEntries();
     const fromManifest = new Set(
       entries
@@ -179,15 +193,7 @@ describe("seedProjectAssets 目录守卫（R4 红线 + B6b-I 播种 allowlist �
     );
     expect(fromManifest).toEqual(new Set(STACK_SEED_SLUGS));
     // vendor stacks 分母侧（播种源目录——profiles/ 除外，slug 目录恰 14 个）。
-    const vendorStacks = join(
-      fileURLToPath(new URL("../../../", import.meta.url)),
-      "..",
-      "pomaster",
-      "components",
-      "backend-hard-spec",
-      "assets",
-      "stacks",
-    );
+    const vendorStacks = VENDOR_STACKS_DIR;
     const slugs = readdirSync(vendorStacks, { withFileTypes: true })
       .filter((d) => d.isDirectory() && d.name !== "profiles")
       .map((d) => d.name)
