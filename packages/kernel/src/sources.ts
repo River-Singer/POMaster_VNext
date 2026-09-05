@@ -19,8 +19,8 @@
  * - **sources 不入 store 事务**（非 governed object 起步——D2 边界登记）：无
  *   lifecycle、无 authority.owner 信封、不进 truth-index/content_digest；本模块
  *   纯读零写入（B3 红线同源：零写路径消费）。
- * - 词形轴 absent_in_vocab_lock__pending_vocab_pr——TODO(vocab-pr)（question-gate/
- *   triage 局部词先例），收编归独立词汇表批。
+ * - 词形轴已随 PR-0009 登记（vocab-lock sources_authority_vocab.fields_note 字段面注记——question-gate/
+ *   triage 局部词先例同批转正）。
  */
 import * as ajvModule from "ajv";
 import type { ValidateFunction } from "ajv";

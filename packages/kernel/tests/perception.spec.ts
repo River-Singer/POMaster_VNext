@@ -110,7 +110,7 @@ function caught(err: unknown): GovernanceError {
 // 词轴逐字冻结
 // ============================================================
 
-describe("词轴常量（TODO(vocab-pr-0005)：三镜像登记归主控批次）", () => {
+describe("词轴常量（vocab-lock trace_perception_vocab——PR-0009 收编镜像）", () => {
   it("Observation Surface 八值 §6.4 逐字 + 原文行序", () => {
     expect(OBSERVATION_SURFACE_VALUES).toEqual([
       "USER_SURFACE",

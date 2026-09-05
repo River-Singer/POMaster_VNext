@@ -324,8 +324,8 @@ describe("13-equivalence-registry（$id 与注册）", () => {
     const statusDef = definitions["equivalence_status"] as Record<string, unknown>;
     expect(statusDef["enum"]).toEqual([...EQUIVALENCE_STATUS_VALUES]);
     const domainVocab = domainDef["x-pomaster-vocab"] as Record<string, unknown>;
-    expect(domainVocab["status"]).toBe("absent_in_vocab_lock__pending_vocab_pr");
+    expect(domainVocab["status"]).toBe("registered_in_vocab_lock__vocab_pr_0009");
     const statusVocab = statusDef["x-pomaster-vocab"] as Record<string, unknown>;
-    expect(statusVocab["status"]).toBe("absent_in_vocab_lock__pending_vocab_pr");
+    expect(statusVocab["status"]).toBe("registered_in_vocab_lock__vocab_pr_0009");
   });
 });

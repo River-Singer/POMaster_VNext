@@ -8,16 +8,16 @@
  *
  * P18 增量（08/09/10）：Discovery 状态链 / MSD-Uncertainty / Research Artifact
  * 三份 schema 的词形按 PRD 原文落在各自 definitions 冻结（新状态面，不混入既有
- * 对象轴词表），提请词汇表 PR 收编；代码镜像点 ./vocab.js「待词汇表 PR 收编」段。
- * P19 增量（11）：Exception Ledger（§49.2 异常登记面，五分类词轴 pending_vocab_pr）。
+ * 对象轴词表），已随 PR-0009 收编（vocab-lock discovery_vocab）；代码镜像点 ./vocab.js。
+ * P19 增量（11）：Exception Ledger（§49.2 异常登记面，五分类词轴——vocab-lock discovery_vocab，PR-0009 收编）。
  * P28 增量（12）：Knowledge Entry（§83 内核，四类型/五状态/提升权威位/置信三级/
- * Context 分区词轴 pending_vocab_pr；authority 恒 ADVISORY——§83.2 铁律形态封条）。
+ * Context 分区词轴——vocab-lock knowledge_vocab，PR-0009 收编；authority 恒 ADVISORY——§83.2 铁律形态封条）。
  * P31 增量（13）：Equivalence Registry（跨域联结词形等价登记表，GRN-4402 转译 /
- * A13 · OPEN-M6-12；domain 轴/status 轴 pending_vocab_pr；declared-equivalence-only
+ * A13 · OPEN-M6-12；domain 轴/status 轴——vocab-lock equivalence_vocab，PR-0009 收编；declared-equivalence-only
  * ——登记≠裁决、禁启发式猜测、未登记词形 pending 桶绝不假绿）。
  * P33 增量（14）：Memory Harvest Inbox Entry（harvest 台账管线，PRD §48.2/§48.4/§44.10
  * + thread-B §4 迁移设计；bucket/memory_class/review_state/source/confidence 五词轴
- * pending_vocab_pr；内容原文零改写铁律 + review_state 默认 PENDING 封条 + Case N
+ * 五词轴已随 PR-0009 收编（vocab-lock memory_harvest_vocab）；内容原文零改写铁律 + review_state 默认 PENDING 封条 + Case N
  * 不得自动成为 Truth 的 staging 形态封条）。
  * P34 增量（15）：Production Control Band（§95 全节 + §30 第四态 + §55.1/§90.4；
  * phase_timeline/production_signal_source/band_predicate_operator/
@@ -31,8 +31,8 @@
  * Identity 的派生投影/侧车（A19，不新增第二套身份）；reads/agent_spawns 恒空数组
  * 显式（Lite 边界 =「不先采集完整 read trace」）；§8.4 隐私封条 = 闭形态
  * additionalProperties:false 无自由文本载荷位。trace_retention 轴（§8.3 逐字四档）
- * 与 schema 词形 pomaster.execution_trace/v1 absent_in_vocab_lock__pending_vocab_pr
- * ——TODO(vocab-pr-0005)，词表三镜像登记归主控批次（批 1 文件面互斥）。verdict 七态
+ * 与 schema 词形 pomaster.execution_trace/v1 已随 PR-0009 收编（vocab-lock
+ * trace_perception_vocab）。verdict 七态
  * 复用 03 definitions.verdict 绝对 $id 引用（单一事实源禁二次镜像）。
  * W1-D2 增量（17）：Perception Receipts（PRD v0.5.2 §6.7/§6.13/§6.14 + §14 P0.5-4 +
  * §15 Benchmark E + §16 Case H；Owner 裁决 8 2026-09-01）。双记录族 root oneOf：
@@ -43,8 +43,8 @@
  * 复用 07 definitions.blob_ref / object_id 绝对 $id 引用（裁决 8 ③ D1=A blob sha256
  * 即身份不新增 EVR- id；D3=A blob 分支收窄——组合加载须注册 07）。词形轴
  * environment_doctor_verdict / observation_surface / observation_result /
- * SENSOR./JOURNEY./ENV. 与通路编号 OBS-/ENVREC- 均 absent_in_vocab_lock__pending_vocab_pr
- * ——TODO(vocab-pr-0005)，词表三镜像登记归主控批次（批 2 文件面互斥）。§6.13
+ * SENSOR./JOURNEY./ENV. 与通路编号 OBS-/ENVREC- 已随 PR-0009 收编（vocab-lock
+ * trace_perception_vocab + id_namespace.state_plane_refs + catalog_layer_vocab.material_id_prefixes）。§6.13
  * sidecar 纪律：admitted_to_truth_index=false；OBS/ENVREC 回执落盘分区 Owner 未裁
  * （研究 §7 位 5）——本 schema 为「schema 先行、通路面缺位」先例（07 blob_ref 同款）
  * 的前置冻结面。
@@ -55,7 +55,7 @@
  * governed prefixes、不过 parseGovernedId），GRILLING/GRILLED/GRILL_CONFIRMED
  * 禁词负例登记（§1.1 不新增 State Axis）；Grounding Verdict 五值是**派生判定不落盘**
  * （§6.2 不进 Canonical Object State Axis）——schema 18 无 verdict 字段。
- * TODO(vocab-pr) 词形三镜像收编归独立词汇表批。
+ * 词形已随 PR-0009 入锁（vocab-lock decision_graph_vocab 段 + state_plane_refs Discovery 平面注记）。
  * P-v06 增量（19）：Software Graph Relations（PRD v0.6 §6-8 + Owner 四决议 D-1~D-4
  * 2026-09-02；批次 0 Model Constitution）。Typed Relation sidecar 台账形态契约
  * （state/relations.jsonl 追加流侧车：不建图库、不改 01、不进 content_digest）；
@@ -68,14 +68,14 @@
  * 轴结构闭包，两轴不相交由装载侧 fail-closed 补齐——draft-07 不可表达）。负封条零
  * 改动：02 信封 source_types 十值闭包是另一轴（对象出处面），本 registry 的 type
  * 开放词形零关联（x-pomaster-contract.negative_seal_untouched）。词形轴
- * absent_in_vocab_lock__pending_vocab_pr——TODO(vocab-pr)。
+ * 已随 PR-0009 登记（vocab-lock sources_authority_vocab.fields_note 字段面注记）。
  * vNext Batch 2 增量（21）：Evidence Spec（PRD vNext §9.2 四概念分离；Owner 裁定
  * D6 2026-09-04）。要求面一等对象（「需要什么证明」）：kind=business_rule 承载 +
  * payload.spec_kind=evidence_spec 判别的 kind profile 收窄面（01/02 FROZEN 面零改动
  * ——kind 闭包十类不变）；requirements[] 每条 = 需要的证明类型 + 判定资格条件
  * （claim_refs/gate_refs 资格清单 + subject_ref 归属绑定——挪证缝收口）；Spec 持要求
  * 不持判定（无 verdict 词位）；SPEC. 前缀随 PR-0008 入 prefixes_v0 闭包（三镜像同批）。
- * 词形轴 proof_type/spec_kind absent_in_vocab_lock__pending_vocab_pr——TODO(vocab-pr)。
+ * 词形轴 proof_type/spec_kind 已随 PR-0009 登记（vocab-lock evidence_spec_vocab）。
  *
  * 词表纪律：一切枚举唯一来源是 assets/vocab-lock.draft.yaml（FROZEN）；
  * 代码侧唯一镜像点在 ./vocab.js（本文件 re-export）。YAML 资产仅作人读/工具对账，

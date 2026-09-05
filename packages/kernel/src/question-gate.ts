@@ -33,11 +33,11 @@
 // ============================================================
 
 /**
- * 问题分类五词形（PRD §80.4 逐字；词轴待词汇表 PR 收编 TODO(vocab-pr)）。
+ * 问题分类五词形（PRD §80.4 逐字；x-vocab-source: vocab-lock question_gate_vocab.classification——PR-0009 收编）。
  *
  * 词表管辖处置留痕（09-04 vNext Batch 1 R1 核实）：QUESTION_GATE 词族
  * （分类/处置/七关 id）不在 assets/vocab-lock.draft.yaml 管辖面内——与
- * cli/triage.ts TRIAGE_PROFILES（Router 层局部词 TODO(vocab-pr) 未入锁）同一先例：
+ * cli/triage.ts TRIAGE_PROFILES（Router 局部词，PR-0009 已入锁 presentation_axes.triage_profiles）同一先例：
  * 词形以本模块常量为单一事实源，收编归独立词汇表批，不走 vocab-lock relock。
  */
 export const QUESTION_GATE_CATEGORIES = [
@@ -130,7 +130,7 @@ export type QuestionAssumptionCondition = (typeof QUESTION_ASSUMPTION_CONDITIONS
  * 异常分类位。两轴同词不同义、不合并：gate 轴回答「怎么处置这个问题」，异常轴回答
  * 「这笔登记在台账里算什么」——gate 判定 ASSUMPTION 后经异常轴显式登记，登记 ≠ 判定。
  *
- * 词表管辖：QUESTION_GATE 词族为 kernel 局部词（TODO(vocab-pr)，triage 先例），
+ * 词表管辖：QUESTION_GATE 词族已随 PR-0009 入锁 vocab-lock question_gate_vocab 段（triage 先例），
  * 见 QUESTION_GATE_CATEGORIES 注记。
  */
 export type QuestionVerdict =

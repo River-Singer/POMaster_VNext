@@ -4,7 +4,7 @@
   "title": "Decision Graph（Grounded Decision Graph · Discovery scratchpad 平面 sidecar，v0.5.3 P0.5 / VB-PR1）",
   "description": "PRD v0.5.3 §5/§16 的 schema 落地。Decision Graph 表达 Decision → Prerequisite Decisions → Factual Premises → Affected Governed Objects → Options → Recommendation → Trade-offs → Downstream Decisions → Authority → Required Evidence（§5.1）；Grill 的核心产物是 Decision Graph 而不是一串独立问题。\n本 schema 是 decision-graph.json（.pomaster/discovery/scratchpads/<id>/ 内 sidecar）的产物形态冻结：§5.2 十键节点一次锁全（additionalProperties:false，Owner 位 O-9 全锁——字段演化走 Schema PR，禁就地改，SCHEMA_VERSION=v1-draft）。\n身份纪律：不进 truth-index、不走 store 事务（scratchpad 平面 sidecar——Ephemeral Discovery 产物，晋升即消亡或转写为 CHANGE/TASK payload）；Frontier 由 Graph 动态计算（computeDecisionFrontier），Human Narrative 由 Graph 编译生成——本 schema 无 frontier/verdict/card 字段（§16 禁增的 questions/answers/decisions/frontier/recommendations/grill-state 六文件全部不出现）。\n写入纪律：本文件归 Brainstorm 命令面在 scratchpad 授权维护面内读写；Discovery 的提升仍必须走 P11 maintain 面（promote→maintain 零改动复用，§21 禁绕过）。\n执行面：buildDecisionGraph / computeDecisionFrontier / evaluateDecisionGrounding / createResearchRequest / applyResearchHandoff / resolveDecision / evaluateDiscoverySufficiency 住 @pomaster/kernel decision-graph 模块（纯函数、零 IO、不 throw、fail-closed）。",
   "x-pomaster-file-role": "18-decision-graph.schema.json —— Grounded Decision Graph 产物形态（v0.5.3 P0.5 · VB-PR1）。定义 §5.2 十键节点（decision_id/class/prompt/depends_on/affects/grounding 十槽/options/recommendation/authority/resolution）、§9.1 research_request 九键形态、§10.2 research_handoff + finding_link 联结形态（research_request/handoff 住本 schema——10 号 research-artifact 零改动，Owner 裁决9③）。被 Brainstorm 命令面（ground/grill/answer/explain/converge，PR-2~PR-4）消费。",
-  "x-pomaster-vocab-source": "PRD v0.5.3 §5.2/§6.1/§9.1/§10.1/§13.2 词形逐字 + Owner 裁决9（2026-09-01）②③：\n- DECISION. / RESEARCH.REQ. / FINDING. / DISCOVERY.INTENT. / FACT. 是 **Discovery 平面局部词形**（vocab-lock id_namespace.state_plane_refs 先例：PERMIT.<BASE>.<SEQ> / POB-<12hex> / AGX-n 同族）——不入 GOVERNED_ID_PREFIXES 闭包、不过 parseGovernedId，校验 = 本 schema 词形正则 + 图内/台账存在性对账；\n- decision class 闭包 = SCOPE 单值起步（裁决9②：SCOPE 单值起步，schema 冻结 + pending_vocab_pr，扩值走词汇表 PR）；\n- CONTRACT.* 是 PRD §5.2 示意词形——现词表无此前缀（governed 前缀是 API_REQ），affects/contract_refs 等外部引用槽按 loose_ref 宽松词形放行（存在性对账归 Truth 对账面）；\n- 禁词负例：GRILLING / GRILLED / GRILL_CONFIRMED 不得成为任何词形位取值（§1.1 不新增 State Axis；09-msd-uncertainty definitions.unknown_classification x-pomaster-vocab.forbidden_wordforms 先例；机器拒绝面在 kernel buildDecisionGraph）；\n- Grounding Verdict 五值（READY_FOR_DECISION/NEEDS_DERIVATION/NEEDS_RESEARCH/CONFLICT_REVIEW/INSUFFICIENT_GROUNDING，§6.2）是**派生判定不落盘、不进 Canonical Object State Axis**——本 schema 刻意无 verdict 字段；同族派生词形（§6.1 G2 检索面四面、G6 缺失事实路由、§15 八维显著改变、§9.3 mode 路由 gap 词形、UNKNOWN 六问处置）同样只住 kernel 模块常量；\n- finding↔decision relation 六值（RESOLVES_FACT/SUPPORTS_OPTION/WEAKENS_OPTION/CONTRADICTS_PREMISE/NO_DECISION_EFFECT/INSUFFICIENT_EVIDENCE）与 RESEARCH_AUTHORITY_EFFECT_VALUES（NONE/SUPPORTS/CONFLICTS）**划界注记（裁决9③）**：relation 管「finding 对某个 Decision 的证据关系」，authority_effect 管「finding 对既有 Authority 的效应」——两轴并存禁互填。\n以上词形全部 absent_in_vocab_lock__pending_vocab_pr：提请词汇表独立批（VB-A）收编；代码镜像点 @pomaster/kernel/src/decision-graph.ts 模块常量（TODO(vocab-pr)）。",
+  "x-pomaster-vocab-source": "PRD v0.5.3 §5.2/§6.1/§9.1/§10.1/§13.2 词形逐字 + Owner 裁决9（2026-09-01）②③：\n- DECISION. / RESEARCH.REQ. / FINDING. / DISCOVERY.INTENT. / FACT. 是 **Discovery 平面局部词形**（vocab-lock id_namespace.state_plane_refs 先例：PERMIT.<BASE>.<SEQ> / POB-<12hex> / AGX-n 同族）——不入 GOVERNED_ID_PREFIXES 闭包、不过 parseGovernedId，校验 = 本 schema 词形正则 + 图内/台账存在性对账；\n- decision class 闭包 = SCOPE 单值起步（裁决9②：SCOPE 单值起步，schema 冻结 + pending_vocab_pr，扩值走词汇表 PR）；\n- CONTRACT.* 是 PRD §5.2 示意词形——现词表无此前缀（governed 前缀是 API_REQ），affects/contract_refs 等外部引用槽按 loose_ref 宽松词形放行（存在性对账归 Truth 对账面）；\n- 禁词负例：GRILLING / GRILLED / GRILL_CONFIRMED 不得成为任何词形位取值（§1.1 不新增 State Axis；09-msd-uncertainty definitions.unknown_classification x-pomaster-vocab.forbidden_wordforms 先例；机器拒绝面在 kernel buildDecisionGraph）；\n- Grounding Verdict 五值（READY_FOR_DECISION/NEEDS_DERIVATION/NEEDS_RESEARCH/CONFLICT_REVIEW/INSUFFICIENT_GROUNDING，§6.2）是**派生判定不落盘、不进 Canonical Object State Axis**——本 schema 刻意无 verdict 字段；同族派生词形（§6.1 G2 检索面四面、G6 缺失事实路由、§15 八维显著改变、§9.3 mode 路由 gap 词形、UNKNOWN 六问处置）同样只住 kernel 模块常量；\n- finding↔decision relation 六值（RESOLVES_FACT/SUPPORTS_OPTION/WEAKENS_OPTION/CONTRADICTS_PREMISE/NO_DECISION_EFFECT/INSUFFICIENT_EVIDENCE）与 RESEARCH_AUTHORITY_EFFECT_VALUES（NONE/SUPPORTS/CONFLICTS）**划界注记（裁决9③）**：relation 管「finding 对某个 Decision 的证据关系」，authority_effect 管「finding 对既有 Authority 的效应」——两轴并存禁互填。\n以上词形已随 vocab-pr-0009 全部收编（vocab-lock decision_graph_vocab + id_namespace.state_plane_refs Discovery 平面注记）；代码镜像点 @pomaster/kernel/src/decision-graph.ts 模块常量。",
   "x-pomaster-contract": {
     "anti_hallucination_schema_half": "§12 反幻觉规则的 schema 半边：recommendation.basis_refs minItems 1（§12.1 No Unreferenced Project Fact / §12.2 Recommendation Must Have Basis）、tradeoff/uncertainty/rationale 非空、source=INFERENCE 显式披露位（只有模型经验必须申报 INFERENCE，不得说「根据项目现状建议」却没有任何项目引用）。跨字段判卷（basis ∩ missing_facts = ∅、G1-G8 全量、五值 verdict 派生）由 kernel evaluateDecisionGrounding 机器化——schema 锁形态，kernel 锁语义。",
     "laundering_guard": "§12.4 Research Cannot Launder Inference into Fact 的 schema 半边：finding_link 上 evidence_type=INFERENCE 时 sources 空数组豁免（推断自既有证据组合），但 relation=RESOLVES_FACT 与 evidence_type=INFERENCE 互斥（allOf 强制——INFERENCE 不因进入 handoff 就升级为项目事实）；finding_link.relation=CONTRADICTS_PREMISE 必须指向 ≥1 个 Decision（矛盾必须可见、必须指向被矛盾方）。",
@@ -69,10 +69,10 @@
       "pattern": "^DECISION\\.[A-Z][A-Z0-9_]{0,31}(\\.[0-9]+)?$",
       "title": "Decision id（DECISION.<SEGMENT>[.SEQ]，Discovery 平面局部词形）",
       "description": "Discovery 平面局部词形（state_plane_refs 先例，Owner 裁决9②）：不入 GOVERNED_ID_PREFIXES、不过 parseGovernedId——Decision 生命周期完全住在 scratchpad decision-graph.json（§16），晋升即消亡或转写为 CHANGE/TASK payload，不是长期治理对象。SEGMENT 文法对齐 governed SEGMENT（[A-Z] 开头、≤32、不允许数字/小写/连字符开头）。\n禁词：GRILLING/GRILLED/GRILL_CONFIRMED 不得作为本词形任何取值或片段（§1.1 不新增 State Axis——词形正则对 DECISION.GRILLED 不设防，机器拒绝面在 kernel buildDecisionGraph forbidden_wordform + 禁词负例注记）。",
-      "$comment": "source: PRD v0.5.3 §5.2 decision_id: DECISION.D017；词形归 Discovery 平面（pending_vocab_pr，axis=discovery_plane_refs）。",
+      "$comment": "source: PRD v0.5.3 §5.2 decision_id: DECISION.D017；词形归 Discovery 平面（已随 vocab-pr-0009 收编——vocab-lock id_namespace.state_plane_refs Discovery 平面注记，axis=discovery_plane_refs）。",
       "x-pomaster-vocab": {
         "axis": "decision_id",
-        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "status": "registered_in_vocab_lock__vocab_pr_0009",
         "plane": "discovery_local_refs__not_governed_prefixes",
         "forbidden_wordforms": ["GRILLING", "GRILLED", "GRILL_CONFIRMED"],
         "source": "PRD v0.5.3 §5.2 + Owner 裁决9②"
@@ -87,10 +87,10 @@
       "enum": ["SCOPE"],
       "title": "Decision class（裁决9②：SCOPE 单值起步）",
       "description": "decision class 闭包（Owner 裁决9②：SCOPE 单值起步——PRD §5.2 示例只给 SCOPE 一值；研究侧建议的七值/九维对齐全集属发明风险，扩值走词汇表 PR，禁止实现侧私扩）。class 承载 §15「显著改变维度」映射（当前 SCOPE → Scope 维；其余维度映射待词表批扩容后并入——PRD §15 原文第九维 Critical Failure Behavior 同批）。\n禁词：GRILLING/GRILLED/GRILL_CONFIRMED 不在枚举（§1.1——Grill 过程词不得变成状态词形）。",
-      "$comment": "source: PRD v0.5.3 §5.2 class: SCOPE 示例 + Owner 裁决9②；提请词汇表 PR 收编（pending_vocab_pr）。",
+      "$comment": "source: PRD v0.5.3 §5.2 class: SCOPE 示例 + Owner 裁决9②；已随 vocab-pr-0009 收编（vocab-lock decision_graph_vocab 对应轴）。",
       "x-pomaster-vocab": {
         "axis": "decision_class",
-        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "status": "registered_in_vocab_lock__vocab_pr_0009",
         "forbidden_wordforms": ["GRILLING", "GRILLED", "GRILL_CONFIRMED"],
         "source": "PRD v0.5.3 §5.2 示例 + Owner 裁决9②（SCOPE 单值起步）"
       },
@@ -240,10 +240,10 @@
       "enum": ["PROJECT_GROUNDED", "INFERENCE"],
       "title": "Recommendation source 披露位（§12.2）",
       "description": "PROJECT_GROUNDED = basis_refs 全部携带 Ref；INFERENCE = 只有模型经验，必须显式披露（§12.2 逐字：如果只有模型经验，Recommendation Source = INFERENCE 必须明确披露；不得说「根据项目现状建议」却没有任何项目引用——kernel G7 判卷 PROJECT_GROUNDED 但零 basis 的矛盾）。",
-      "$comment": "source: PRD v0.5.3 §12.2 语义词形化；提请词汇表 PR 收编（pending_vocab_pr）。",
+      "$comment": "source: PRD v0.5.3 §12.2 语义词形化；已随 vocab-pr-0009 收编（vocab-lock decision_graph_vocab 对应轴）。",
       "x-pomaster-vocab": {
         "axis": "recommendation_source",
-        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "status": "registered_in_vocab_lock__vocab_pr_0009",
         "source": "PRD v0.5.3 §12.2"
       },
       "examples": [
@@ -319,10 +319,10 @@
       ],
       "title": "UNKNOWN 重分类处置（§14 六问输出）",
       "description": "§14：Human 回答 UNKNOWN 不是失败，但必须重新分类（Can derive? / Can research? / Can safely assume? / Can defer? / Can prototype-observe? / Does it truly block?——行序取第一个 yes；只有 No/No/No/No/No/Yes 才是真正 Blocker）。词源复用零新轴：DERIVABLE/RESEARCHABLE = Question Gate 分类；ASSUMPTION/DEFERRED_DECISION/DISCOVERY_REQUIRED/BLOCKER_CANDIDATE = MSD 十分类子集。BLOCKER_CANDIDATE（非 HARD_BLOCKER）是唯一 blocker 出口——升级 HARD_BLOCKER 必须走 09 blocker_triage 八问升级通路（高风险且无法安全假设），本 schema 刻意不收录 HARD_BLOCKER 词形。",
-      "$comment": "source: PRD v0.5.3 §14 六问 + 09-msd-uncertainty 分类词形复用；提请词汇表 PR 收编（pending_vocab_pr，axis=unknown_disposition，词源复用注记）。",
+      "$comment": "source: PRD v0.5.3 §14 六问 + 09-msd-uncertainty 分类词形复用；已随 vocab-pr-0009 收编（vocab-lock decision_graph_vocab.unknown_disposition，词源复用注记）。",
       "x-pomaster-vocab": {
         "axis": "unknown_disposition",
-        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "status": "registered_in_vocab_lock__vocab_pr_0009",
         "reuse_note": "词源复用 QUESTION_GATE_CATEGORIES（DERIVABLE/RESEARCHABLE）+ MSD_UNKNOWN_CLASSIFICATION_VALUES 子集（ASSUMPTION/DEFERRED_DECISION/DISCOVERY_REQUIRED/BLOCKER_CANDIDATE）——零新分类词",
         "source": "PRD v0.5.3 §14"
       },
@@ -343,10 +343,10 @@
           "type": "string",
           "enum": ["ACCEPT", "CHANGE", "UNKNOWN", "DEFER"],
           "title": "答面（answer，§13.2 四词形）",
-          "$comment": "source: PRD v0.5.3 §13.2；提请词汇表 PR 收编（pending_vocab_pr，axis=decision_answer）。",
+          "$comment": "source: PRD v0.5.3 §13.2；已随 vocab-pr-0009 收编（vocab-lock decision_graph_vocab.decision_answer）。",
           "x-pomaster-vocab": {
             "axis": "decision_answer",
-            "status": "absent_in_vocab_lock__pending_vocab_pr",
+            "status": "registered_in_vocab_lock__vocab_pr_0009",
             "source": "PRD v0.5.3 §13.2"
           }
         },
@@ -513,10 +513,10 @@
       "pattern": "^DISCOVERY\\.INTENT\\.[0-9]+$",
       "title": "Intent 引用词形（DISCOVERY.INTENT.<n>）",
       "description": "Discovery 平面局部词形（Owner 裁决9②）：G1 Intent Anchor 的判卷输入——Decision 必须锚定到当前 Intent/Scope，悬浮 Decision 不许问。",
-      "$comment": "source: PRD v0.5.3 §5.2 grounding.intent_refs: DISCOVERY.INTENT.001；pending_vocab_pr。",
+      "$comment": "source: PRD v0.5.3 §5.2 grounding.intent_refs: DISCOVERY.INTENT.001；已随 vocab-pr-0009 收编（vocab-lock id_namespace.state_plane_refs Discovery 平面注记）。",
       "x-pomaster-vocab": {
         "axis": "discovery_plane_refs",
-        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "status": "registered_in_vocab_lock__vocab_pr_0009",
         "source": "PRD v0.5.3 §5.2 + Owner 裁决9②"
       },
       "examples": ["DISCOVERY.INTENT.001"]
@@ -526,10 +526,10 @@
       "pattern": "^FACT\\.[A-Z][A-Z0-9_]{0,31}(\\.[A-Z][A-Z0-9_]{0,31}){0,3}$",
       "title": "缺失事实词形（FACT.<SEGMENT>(.SEGMENT)*）",
       "description": "Discovery 平面局部词形（Owner 裁决9②）：缺失事实的 Hypothesis/Unknown 形态（§5.3/§12.1）——missing_facts 成员不得进入 recommendation.basis_refs（kernel G4/build 双层拒绝）。",
-      "$comment": "source: PRD v0.5.3 §5.2 missing_facts: FACT.CROSS_MODEL.MATCHING_SEMANTICS；pending_vocab_pr。",
+      "$comment": "source: PRD v0.5.3 §5.2 missing_facts: FACT.CROSS_MODEL.MATCHING_SEMANTICS；已随 vocab-pr-0009 收编（vocab-lock id_namespace.state_plane_refs Discovery 平面注记）。",
       "x-pomaster-vocab": {
         "axis": "discovery_plane_refs",
-        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "status": "registered_in_vocab_lock__vocab_pr_0009",
         "source": "PRD v0.5.3 §5.2 + Owner 裁决9②"
       },
       "examples": ["FACT.CROSS_MODEL.MATCHING_SEMANTICS"]
@@ -539,10 +539,10 @@
       "pattern": "^RESEARCH\\.REQ\\.[0-9]+$",
       "title": "Research Request id 词形（RESEARCH.REQ.<n>）",
       "description": "Discovery 平面局部词形（Owner 裁决9②）：id 由 createResearchRequest 按 nextSeq 机械派生（零墙钟——序号靠 seq 不靠钟）。",
-      "$comment": "source: PRD v0.5.3 §9.1 id: RESEARCH.REQ.017；pending_vocab_pr。",
+      "$comment": "source: PRD v0.5.3 §9.1 id: RESEARCH.REQ.017；已随 vocab-pr-0009 收编（vocab-lock id_namespace.state_plane_refs Discovery 平面注记）。",
       "x-pomaster-vocab": {
         "axis": "discovery_plane_refs",
-        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "status": "registered_in_vocab_lock__vocab_pr_0009",
         "source": "PRD v0.5.3 §9.1 + Owner 裁决9②"
       },
       "examples": ["RESEARCH.REQ.017"]
@@ -552,10 +552,10 @@
       "pattern": "^FINDING\\.R[0-9]+\\.[0-9]+$",
       "title": "Finding id 词形（FINDING.R<n>.<n>）",
       "description": "Discovery 平面局部词形（Owner 裁决9②）：finding 在 handoff key_findings 与 decision grounding.research_finding_refs 的引用形态。",
-      "$comment": "source: PRD v0.5.3 §10.2 key_findings: FINDING.R017.1；pending_vocab_pr。",
+      "$comment": "source: PRD v0.5.3 §10.2 key_findings: FINDING.R017.1；已随 vocab-pr-0009 收编（vocab-lock id_namespace.state_plane_refs Discovery 平面注记）。",
       "x-pomaster-vocab": {
         "axis": "discovery_plane_refs",
-        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "status": "registered_in_vocab_lock__vocab_pr_0009",
         "source": "PRD v0.5.3 §10.2 + Owner 裁决9②"
       },
       "examples": ["FINDING.R017.1"]
@@ -588,10 +588,10 @@
       ],
       "title": "finding↔decision relation 六值（§10.1 闭包逐字）",
       "description": "§10.1：relation 只是 Evidence 与 Decision 的关系描述，不是 Research 替 Brainstorm 作决策（Research 有发现权无裁决权）。划界注记（Owner 裁决9③）：relation 管「finding 对某个 Decision 的证据关系」；RESEARCH_AUTHORITY_EFFECT_VALUES（NONE/SUPPORTS/CONFLICTS）管「finding 对既有 Authority 的效应」——两轴并存禁互填。",
-      "$comment": "source: PRD v0.5.3 §10.1 relation 闭包逐字 + Owner 裁决9③ 划界注记；提请词汇表 PR 收编（pending_vocab_pr）。",
+      "$comment": "source: PRD v0.5.3 §10.1 relation 闭包逐字 + Owner 裁决9③ 划界注记；已随 vocab-pr-0009 收编（vocab-lock decision_graph_vocab 对应轴）。",
       "x-pomaster-vocab": {
         "axis": "decision_relation",
-        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "status": "registered_in_vocab_lock__vocab_pr_0009",
         "orthogonal_to": "research_authority_effect（NONE/SUPPORTS/CONFLICTS）",
         "boundary_note": "relation=Decision 证据关系；authority_effect=既有 Authority 效应——并存禁互填（裁决9③）",
         "source": "PRD v0.5.3 §10.1"

@@ -388,7 +388,7 @@ export async function acquireLock(
     throw new GovernanceError(
       "VOCAB_INVALID_VALUE",
       `lock kind 词表外：${String(input.kind)}（D 线 §3.3.1 三粒度闭包）`,
-      `合法词形：${LOCK_KIND_VALUES.join(" | ")}；扩值走词汇表 PR（pending_vocab_pr）`,
+      `合法词形：${LOCK_KIND_VALUES.join(" | ")}；已随 PR-0009 入锁，扩值走词汇表 PR`,
       { kind: input.kind },
     );
   }

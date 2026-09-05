@@ -34,7 +34,7 @@
  * §80.2 权限清单「维护 Discovery Scratchpad」明文授权；治理 store 零直写。
  * --tx-out 落点强制解析进 rootDir（出仓/受治理面显式拒绝；相对路径相对 rootDir 而非
  * 进程 CWD——P18 红队发现3）。
- * 词表纪律：状态链/晋升依据词形全部来自 @pomaster/schemas 镜像（TODO(vocab-pr)）；
+ * 词表纪律：状态链/晋升依据词形全部来自 @pomaster/schemas 镜像（vocab-lock discovery_vocab——PR-0009 收编）；
  * question-gate 判卷输入词形（分类五词形/五条件词形）复用 kernel 常量单一事实源。
  * fail-closed：非法转移/词表外 basis/非法目标 id/幂等残缺一律显式码位 + hint。
  */
@@ -90,7 +90,7 @@ export interface DiscoveryStateFile {
   readonly promoted_ref?: string;
 }
 
-/** meta.json（CLI 局部注记，Discovery 平面自留；非治理对象，词形 TODO(vocab-pr)）。 */
+/** meta.json（CLI 局部注记，Discovery 平面自留；非治理对象工作文件——词形维持局部不收编，PR-0009 处置注记）。 */
 export interface DiscoveryMetaFile {
   readonly discovery_id: string;
   readonly title: string;

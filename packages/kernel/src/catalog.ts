@@ -90,7 +90,7 @@ export interface CatalogLockDocument {
   readonly entries: readonly CatalogLockEntry[];
 }
 
-/** 漂移种类（kind 词为 CLI 呈现与测试对账的局部词，TODO(vocab-pr) 不进词表闭包）。 */
+/** 漂移种类（x-vocab-source: vocab-lock presentation_axes.catalog_lock_drift_kinds——PR-0009 收编）。 */
 export type CatalogLockDriftKind =
   | "lock_unreadable"
   | "lock_malformed"
@@ -881,7 +881,8 @@ export function loadCatalogProjectionPresets(
 
 /**
  * SENSOR.<DOMAIN>.<KIND> 点族词形（裁决 8 D6=A，照研究侧推荐实施）。
- * 非 governed 前缀（catalog 物料身份非 governed id）——x-vocab-pr 注记沿
+ * 非 governed 前缀（catalog 物料身份非 governed id；词形已随 PR-0009 登记 vocab-lock
+ * catalog_layer_vocab.material_id_prefixes）——x-vocab-pr 注记沿
  * catalog/gates/gate.web.api.request_checks.json 的 GATE. 先例，登记歧义不消歧。
  */
 export const SENSOR_ID_PATTERN = /^SENSOR\.[A-Z0-9_]+\.[A-Z0-9_]+$/;
@@ -889,7 +890,7 @@ export const SENSOR_ID_PATTERN = /^SENSOR\.[A-Z0-9_]+\.[A-Z0-9_]+$/;
 /**
  * Observation Surface 词表（PRD §6.4 八面逐字；§6.4 明言「不要求立即成为新的
  * Closed-world Core Vocab」——开放枚举登记于此单点，扩值走词汇表 PR。
- * TODO(vocab-pr-0005)：词表三镜像登记归主控批次，本常量为暂载位。
+ * x-vocab-source: vocab-lock trace_perception_vocab.observation_surface（PR-0009 收编；开放枚举，本常量为承载位）。
  */
 export const OBSERVATION_SURFACE_VALUES = [
   "USER_SURFACE",
@@ -906,7 +907,7 @@ export type ObservationSurfaceValue = (typeof OBSERVATION_SURFACE_VALUES)[number
 /**
  * side_effect_class 已登记值（开放枚举单点登记；PRD §6.5 例文两值 + 新登记
  * SANDBOXED_EXECUTION=观察动作在沙箱内执行被测代码、副作用限于可丢弃产物）。
- * TODO(vocab-pr-0005)：同上，扩值走词汇表 PR。
+ * x-vocab-source: vocab-lock trace_perception_vocab.side_effect_class（PR-0009 收编；开放枚举）。
  */
 export const SENSOR_SIDE_EFFECT_CLASS_VALUES = [
   "INTERACTIVE_REVERSIBLE",
@@ -923,7 +924,7 @@ export type SensorSideEffectClassValue = (typeof SENSOR_SIDE_EFFECT_CLASS_VALUES
  * - gateAdapters  —— gauntlet-lite gateAdapters adapter registry（BUILD 无独立探测器键，
  *   探测在 build-adapter.detect 内联于 adapter 契约）；
  * - kernel        —— kernel 侧数据/判定面（SENSOR_KERNEL_SURFACE_KEYS 键闭包）。
- * TODO(vocab-pr-0005)：同上，扩值走词汇表 PR。
+ * x-vocab-source: vocab-lock trace_perception_vocab.availability_probe_surface（PR-0009 收编）。
  */
 export const SENSOR_AVAILABILITY_SURFACE_VALUES = [
   "toolDetectors",
@@ -1035,7 +1036,7 @@ export function loadCatalogSensors(catalogRoot: string): readonly CatalogSensorM
       throw new GovernanceError(
         "SCHEMA_INVALID",
         `catalog sensor_capability surfaces 词表外: ${file}（${JSON.stringify(surfaces)}）`,
-        `surfaces 须 ⊆ OBSERVATION_SURFACE_VALUES（PRD §6.4 八面）；扩值走词汇表 PR（TODO(vocab-pr-0005)）。`,
+        `surfaces 须 ⊆ OBSERVATION_SURFACE_VALUES（PRD §6.4 八面）；已随 PR-0009 入锁，扩值走词汇表 PR。`,
         { file, id },
       );
     }
@@ -1043,7 +1044,7 @@ export function loadCatalogSensors(catalogRoot: string): readonly CatalogSensorM
       throw new GovernanceError(
         "SCHEMA_INVALID",
         `catalog sensor_capability side_effect_class 词表外: ${file}（${String(sideEffectClass)}）`,
-        `side_effect_class 须 ∈ SENSOR_SIDE_EFFECT_CLASS_VALUES；扩值走词汇表 PR（TODO(vocab-pr-0005)）。`,
+        `side_effect_class 须 ∈ SENSOR_SIDE_EFFECT_CLASS_VALUES；已随 PR-0009 入锁，扩值走词汇表 PR。`,
         { file, id, side_effect_class: String(sideEffectClass) },
       );
     }

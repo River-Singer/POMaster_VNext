@@ -4,7 +4,7 @@
   "title": "Equivalence Registry（跨域联结词形等价登记表 · P31 / GRN-4402 转译 · A13 / OPEN-M6-12）",
   "description": "把「跨域引用联结键」升为一等治理对象的词形轴落地（docs/wave3-research-gaps.md §3 GRN-4402 产品需求转译，line 105 逐字：词形等价登记表（中文↔拼音↔缩写/压缩记法，declared-equivalence-only、禁启发式猜测）+ 未登记词形 pending 桶（机械入册、Owner 裁决）+ 联结覆盖率盲区指标）。\nGRN-4402 断链三层（gaps §3 line 99-102）：①工具内硬编码映射表不是治理对象；②公式侧中文（密度/单价/夹紧力）vs 源 id 侧拼音（FIELD.MATERIAL-DB.MIDU）精确命中 0、无等价登记；③页域散文词形（数量(#5) / KPI#5 [RMB/pc.]）没有 governed 联结键。\n三条现行纪律（gaps §3 line 103 逐字，本 schema 结构性保住）：词形漂移对只登记不裁决（登记≠批准等价，等价表是声明性事实不是裁决权行使）；禁子串猜测（启发式≠机械等价，等价必须显式声明）；判不了显式 skipped_blindspot 而非假绿（未登记词形落 pending 桶 + 盲区指标，绝不静默记绿）。",
   "x-pomaster-file-role": "13-equivalence-registry.schema.json —— state/equivalence-registry.json 侧车的形态契约（kernel equivalence.ts 维护，写入唯一通路；kernel 内部补充状态，不进 content_digest）。消费方 = D15 Key Binding / A6 alias 双向链上的联结键解析面（resolveLinkageWordForm 三腿链：精确 id → active 等价登记 → pending 机械入册）与联结覆盖率盲区指标（03 FROZEN 盲区证据链同型）。",
-  "x-pomaster-vocab-source": "词形轴 absent_in_vocab_lock__pending_vocab_pr：domain 轴（zh-formal/pinyin/abbrev/compressed 取 gaps §3 line 105「中文↔拼音↔缩写/压缩记法」逐字转译；canonical 取 A6 canonical governed id 既有词形 + gaps §3 line 101「源 id 侧」结构性必需位；unknown = 机械入册不判域的显式未知——禁启发式判域，域标记由 Authority 声明时补登）；status 轴（active/pending 取 gaps §3 line 105「未登记词形 pending 桶」词形）。词形已在本文件 definitions 冻结并镜像于 @pomaster/schemas vocab.ts 待收编段（WORD_FORM_DOMAIN_VALUES / EQUIVALENCE_STATUS_VALUES），提请词汇表 PR 收编（pending_vocab_pr）。equivalence_group 的 EQG-n 是通路编号词形（GRN-/CLM-/EXC-/AGX-/SA-nnnn 同族先例），非 governed 前缀，不入 id_namespace prefixes_v0 闭包、不过 parseGovernedId。",
+  "x-pomaster-vocab-source": "词形轴已随 vocab-pr-0009 收编（vocab-lock equivalence_vocab）：domain 轴（zh-formal/pinyin/abbrev/compressed 取 gaps §3 line 105「中文↔拼音↔缩写/压缩记法」逐字转译；canonical 取 A6 canonical governed id 既有词形 + gaps §3 line 101「源 id 侧」结构性必需位；unknown = 机械入册不判域的显式未知——禁启发式判域，域标记由 Authority 声明时补登）；status 轴（active/pending 取 gaps §3 line 105「未登记词形 pending 桶」词形）。词形已在本文件 definitions 冻结并镜像于 @pomaster/schemas vocab.ts （WORD_FORM_DOMAIN_VALUES / EQUIVALENCE_STATUS_VALUES），已随 vocab-pr-0009 收编（vocab-lock equivalence_vocab）。equivalence_group 的 EQG-n 是通路编号词形（GRN-/CLM-/EXC-/AGX-/SA-nnnn 同族先例），非 governed 前缀，不入 id_namespace prefixes_v0 闭包、不过 parseGovernedId。",
   "x-pomaster-contract": {
     "register_not_adjudicate": "纪律①（gaps §3 line 103 逐字「词形漂移对只登记不裁决」）的结构性落法：本表是声明性事实（declared_by + declaration_ref 记录谁声明的等价），不是裁决权行使——kernel 不判申报真（C5 自报），只要求显式声明（declared-equivalence-only）：无 declared_by 显式声明的等价对一律落 pending 桶（status=pending），不存在「kernel 自己认定等价」的形态通道（active 条目 declared_by 必非空，allOf 条件式封死）。",
     "declared_equivalence_only": "纪律②（「禁子串猜测（启发式≠机械等价）」）的结构性落法：解析面只做 active 登记 word_forms[].text 的全等精确匹配——禁子串、禁大小写/NFKC 折叠、禁编辑距离、禁任何模糊/启发式匹配（FE↔frontend、MIDU↔密度 未登记等价一律不猜测，P28 检索纪律同源）；词形域标记（domain）机械入册时恒 unknown（机器不判域——判域即启发式），由 Authority 声明时显式补登。",
@@ -187,10 +187,10 @@
       "enum": ["zh-formal", "pinyin", "abbrev", "compressed", "canonical", "unknown"],
       "title": "词形语言域标记（word form domain）",
       "description": "词形所在语言域（gaps §3 line 105「中文↔拼音↔缩写/压缩记法」逐字转译 + 结构性必需位）：\n- zh-formal：中文正式词形（gaps §3 L101「公式侧中文（密度/单价/夹紧力）」）；\n- pinyin：拼音词形（gaps §3 L101「源 id 侧拼音（FIELD.MATERIAL-DB.MIDU）」——id 的段即拼音转写）；\n- abbrev：缩写记法（「缩写」，如 FE）；\n- compressed：压缩记法（「压缩记法」，如 数量(#5) / KPI#5 [RMB/pc.]——gaps §3 L102 页域散文词形）；\n- canonical：governed id 词形（A6 canonical 既有词形 + gaps §3 L101「源 id 侧」结构性必需位——active 组的联结产物位；文本须过 governed id 文法）；\n- unknown：机械入册不判域（禁启发式判域——判域即启发式；显式未知非猜测，域标记由 Authority 声明时补登）。\n与既有词轴正交：不入 MATCH_RULE_VALUES（那是 02 信封匹配规则轴）、不入 CATALOG_CLASSIFICATION_VALUES（catalog 分类轴）。",
-      "$comment": "source: docs/wave3-research-gaps.md §3 L101/L102/L105（GRN-4402 转译）+ A6 canonical 词形先例。提请词汇表 PR 收编（pending_vocab_pr）。",
+      "$comment": "source: docs/wave3-research-gaps.md §3 L101/L102/L105（GRN-4402 转译）+ A6 canonical 词形先例。已随 vocab-pr-0009 收编（vocab-lock equivalence_vocab 对应轴）。",
       "x-pomaster-vocab": {
         "axis": "word_form_domain",
-        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "status": "registered_in_vocab_lock__vocab_pr_0009",
         "source": "docs/wave3-research-gaps.md §3 L101/L102/L105"
       },
       "examples": ["zh-formal", "pinyin", "unknown"]
@@ -200,10 +200,10 @@
       "enum": ["active", "pending"],
       "title": "等价组状态（equivalence status）",
       "description": "active：已获显式声明（declared_by + declaration_ref + declared_at_seq 齐备），解析面 resolveWordForm 唯一可命中的状态；pending：未获声明的候选组（机械入册等裁决——gaps §3 line 105「未登记词形 pending 桶（机械入册、Owner 裁决）」），解析面永不命中（禁假绿）。两值封闭：不存在 draft/expired 等中间态（裁决走声明登记 + 重叠 pending 处置，不引入第三态）。",
-      "$comment": "source: docs/wave3-research-gaps.md §3 L103/L105（只登记不裁决 + pending 桶词形）。提请词汇表 PR 收编（pending_vocab_pr）。",
+      "$comment": "source: docs/wave3-research-gaps.md §3 L103/L105（只登记不裁决 + pending 桶词形）。已随 vocab-pr-0009 收编（vocab-lock equivalence_vocab 对应轴）。",
       "x-pomaster-vocab": {
         "axis": "equivalence_status",
-        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "status": "registered_in_vocab_lock__vocab_pr_0009",
         "source": "docs/wave3-research-gaps.md §3 L103/L105"
       },
       "examples": ["active", "pending"]

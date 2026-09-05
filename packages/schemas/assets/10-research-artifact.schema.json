@@ -4,7 +4,7 @@
   "title": "Research Artifact（四文件结构 · §81.6，P18）",
   "description": "PRD §81.6 Research Artifact 的文件形态定义：\n<task-or-discovery>/research/\n├── index.yaml\n├── current-implementation.md\n├── external-options.md\n└── risks-and-caveats.md\nindex.yaml 的 findings 条目形态按 §81.4 逐字段冻结（statement / evidence_type 五级 / sources / confidence / authority_effect / caveats）。主 Agent Handoff 只传：artifact path + one-line summary + critical caveat（§81.6 原文），避免把原始网页/日志全部污染主 Context。Research 有发现权，没有裁决权（§81.1）。",
   "x-pomaster-file-role": "10-research-artifact.schema.json —— Research 产物文件形态（P18）。定义 research/ 四文件结构、index.yaml findings 条目（§81.4 五级 Evidence）与 handoff 三件；被 Research Agent（Read-only Contract，§81.3）与后续 Discovery 命令面消费。",
-  "x-pomaster-vocab-source": "PRD v0.4 §81.2/§81.4 词形逐字（六模式、五级 Evidence、confidence 三级、authority_effect 三值）；vocab-lock@v0.2-resolved 尚无对应词轴——词形在本文件 definitions 冻结，提请词汇表 PR 收编；代码镜像点 @pomaster/schemas/src/vocab.ts「待词汇表 PR 收编」段。",
+  "x-pomaster-vocab-source": "PRD v0.4 §81.2/§81.4 词形逐字（六模式、五级 Evidence、confidence 三级、authority_effect 三值）；vocab-lock@v0.2-resolved 尚无对应词轴——词形在本文件 definitions 冻结，已随 vocab-pr-0009 收编（vocab-lock discovery_vocab）；代码镜像点 @pomaster/schemas/src/vocab.ts。",
   "x-pomaster-contract": {
     "read_only_contract_prd": "PRD §81.3 Read-only Contract——允许：Read / Search / Grep / AST/Index Query；Web/Docs/Repo research；写 research/** 和 Evidence Pack。禁止：改业务代码；改 Current Truth；改 Architecture；改 .pomaster/policies；approve/deny proposal；自行把 research conclusion 变成 MUST。违规写入=对抗测试 FATAL 面（wave3-plan P18 出口判据）。",
     "evidence_levels_prd": "PRD §81.4 Evidence 等级建议统一枚举（逐字）：AUTHORITATIVE（Human/Owner 批准、正式 Contract、法律/标准权威源）/ PRIMARY（官方产品文档、原始需求材料、OpenAPI、正式设计稿）/ IMPLEMENTATION（当前代码/配置/运行事实；证明「存在」，不自动证明「正确」）/ SECONDARY（社区文章、第三方实践、比较资料）/ INFERENCE（Agent 基于证据推断）。",
@@ -146,10 +146,10 @@
       ],
       "title": "Evidence 等级（§81.4 五级，逐字冻结）",
       "description": "PRD §81.4 逐字：AUTHORITATIVE（Human/Owner 批准、正式 Contract、法律/标准权威源）/ PRIMARY（官方产品文档、原始需求材料、OpenAPI、正式设计稿）/ IMPLEMENTATION（当前代码/配置/运行事实；证明「存在」，不自动证明「正确」——§81.5）/ SECONDARY（社区文章、第三方实践、比较资料）/ INFERENCE（Agent 基于证据推断）。",
-      "$comment": "source: PRD v0.4 §81.4 Evidence 等级列表逐字；提请词汇表 PR 收编（pending_vocab_pr）。",
+      "$comment": "source: PRD v0.4 §81.4 Evidence 等级列表逐字；已随 vocab-pr-0009 收编（vocab-lock discovery_vocab 对应轴）。",
       "x-pomaster-vocab": {
         "axis": "research_evidence_level",
-        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "status": "registered_in_vocab_lock__vocab_pr_0009",
         "source": "PRD v0.4 §81.4"
       },
       "examples": [
@@ -162,10 +162,10 @@
       "enum": ["HIGH", "MEDIUM", "LOW"],
       "title": "置信度（confidence 三级，§81.4 finding 逐键）",
       "description": "§81.4 finding yaml 逐键：HIGH | MEDIUM | LOW。与 state_axes.confidence（UNRESOLVED/EXPERIMENTAL/PROVISIONAL/LOCKED，§18.2 对象置信轴）正交：本词轴是单条 finding 的证据置信，不入对象轴。",
-      "$comment": "source: PRD v0.4 §81.4 finding yaml confidence 行逐字；提请词汇表 PR 收编（pending_vocab_pr）。",
+      "$comment": "source: PRD v0.4 §81.4 finding yaml confidence 行逐字；已随 vocab-pr-0009 收编（vocab-lock discovery_vocab 对应轴）。",
       "x-pomaster-vocab": {
         "axis": "research_finding_confidence",
-        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "status": "registered_in_vocab_lock__vocab_pr_0009",
         "orthogonal_to": "state_axes.confidence",
         "source": "PRD v0.4 §81.4"
       },
@@ -179,10 +179,10 @@
       "enum": ["NONE", "SUPPORTS", "CONFLICTS"],
       "title": "权威效应（authority_effect 三值，§81.4 finding 逐键）",
       "description": "§81.4 finding yaml 逐键：NONE（对 Authority 无效应）/ SUPPORTS（支持既有 Authority 结论）/ CONFLICTS（与既有 Authority 结论冲突——冲突是发现不是裁决：Research 无权改判，CONFLICTS 条目须上报走正式治理面）。§81.5：IMPLEMENTATION 级 evidence 申报 SUPPORTS 前必须完成与 Architecture Truth / ADR / Technology Registry 对账。",
-      "$comment": "source: PRD v0.4 §81.4 finding yaml authority_effect 行逐字；提请词汇表 PR 收编（pending_vocab_pr）。",
+      "$comment": "source: PRD v0.4 §81.4 finding yaml authority_effect 行逐字；已随 vocab-pr-0009 收编（vocab-lock discovery_vocab 对应轴）。",
       "x-pomaster-vocab": {
         "axis": "research_authority_effect",
-        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "status": "registered_in_vocab_lock__vocab_pr_0009",
         "source": "PRD v0.4 §81.4"
       },
       "examples": [
@@ -231,7 +231,7 @@
       ],
       "x-pomaster-vocab": {
         "axis": "research_mode",
-        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "status": "registered_in_vocab_lock__vocab_pr_0009",
         "consumed_by_fields": "none__reserved_for_command_surface",
         "source": "PRD v0.4 §81.2"
       }

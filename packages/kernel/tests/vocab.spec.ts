@@ -1,8 +1,9 @@
 /**
  * vocab.spec —— kernel 词表引用入口（@pomaster/schemas re-export）与 FROZEN 词表逐值对账。
- * 词表纪律：以下断言值逐字镜像 vocab-lock@v0.6-resolved（v0.1-resolved FROZEN 后 PR-0001、
- * 2026-09-01 PR-0004、2026-09-01 PR-0005、2026-09-02 PR-0006、2026-09-03 PR-0007 五次
- * append-only 增补，v0.1~v0.5 词值零删改）；改词表须同 commit 改这里。
+ * 词表纪律：以下断言值逐字镜像 vocab-lock@v0.8-resolved（v0.1-resolved FROZEN 后 PR-0001、
+ * 2026-09-01 PR-0004、2026-09-01 PR-0005、2026-09-02 PR-0006、2026-09-03 PR-0007、
+ * 2026-09-04 PR-0008、2026-09-05 PR-0009 七次 append-only 增补，v0.1~v0.7 词值零删改）；
+ * 改词表须同 commit 改这里。
  */
 import { describe, expect, it } from "vitest";
 import {
@@ -41,6 +42,51 @@ import {
   SOURCE_TYPE_FORBIDDEN_VALUES,
   TRUTH_BODY_KINDS,
   VERDICT_VALUES,
+  // —— PR-0009 收编词轴（vocab-lock@v0.8-resolved 十一新段镜像断言用）——
+  ACTOR_TYPE_VALUES,
+  BLUEPRINT_ENVELOPE_STATUS_VALUES,
+  CONTEXT_AUTHORITY_PARTITION_VALUES,
+  DENOMINATOR_STATUS_VALUES,
+  DISCOVERY_CHAIN_TRANSITIONS,
+  DISCOVERY_CHAIN_VALUES,
+  DISCOVERY_PROMOTION_BASIS_VALUES,
+  EQUIVALENCE_STATUS_VALUES,
+  EXCEPTION_CLASSIFICATION_VALUES,
+  EXECUTION_IDENTITY_KIND_VALUES,
+  EXECUTION_RUNTIME_VALUES,
+  EXECUTION_ROLE_VALUES,
+  HARVEST_BUCKET_VALUES,
+  HARVEST_CONFIDENCE_VALUES,
+  HARVEST_SOURCE_VALUES,
+  KNOWLEDGE_CONFIDENCE_VALUES,
+  KNOWLEDGE_KIND_VALUES,
+  KNOWLEDGE_PROMOTION_AUTHORITY_VALUES,
+  KNOWLEDGE_STATUS_VALUES,
+  KNOWLEDGE_TRANSITIONS,
+  LIVENESS_STATUS_VALUES,
+  LOCK_KIND_VALUES,
+  MATCH_RULE_VALUES,
+  MEMORY_CLI_ERROR_VALUES,
+  MEMORY_CLASS_VALUES,
+  MEMORY_DRIFT,
+  MSD_ASSUMPTION_RISK_VALUES,
+  MSD_UNKNOWN_CLASSIFICATION_VALUES,
+  ORIGIN_VALUES,
+  OWNER_ESCALATION_REQUIRED,
+  PORTABILITY_CANONICAL_SET_VALUES,
+  PORTABILITY_CHECK_STATUS_VALUES,
+  PORTABILITY_FORBIDDEN_DEPENDENCY_VALUES,
+  PORTABILITY_RUNTIME_REBUILD_VALUES,
+  PRODUCER_KIND_VALUES,
+  RESEARCH_AUTHORITY_EFFECT_VALUES,
+  RESEARCH_EVIDENCE_LEVEL_VALUES,
+  RESEARCH_FINDING_CONFIDENCE_VALUES,
+  RESEARCH_MODE_VALUES,
+  REVIEW_STATE_VALUES,
+  RUN_TRIGGER_VALUES,
+  VERIFICATION_VERDICT_VALUES,
+  WORD_FORM_DOMAIN_VALUES,
+  WRITE_POLICY_VALUES,
 } from "../src/vocab.js";
 
 describe("vocab mirror（FROZEN 词表唯一镜像点）", () => {
@@ -285,7 +331,7 @@ describe("vocab mirror（FROZEN 词表唯一镜像点）", () => {
     });
   });
 
-  it("P21 Capability Pool 词轴（§25.3 十二角色 pending_vocab_pr；词形裁定见 schemas vocab.ts P21 段）", async () => {
+  it("P21 Capability Pool 词轴（§25.3 十二角色——vocab-lock execution_identity_vocab，PR-0009 收编；词形裁定见 schemas vocab.ts P21 段）", async () => {
     const {
       AGENT_ROLE_POOL_PRD_HEADINGS,
       AGENT_ROLE_POOL_VALUES,
@@ -314,5 +360,108 @@ describe("vocab mirror（FROZEN 词表唯一镜像点）", () => {
       "sequential_fallback", "context_recompile_per_role",
       "no_concurrency_masquerade", "capability_degradation_report",
     ]);
+  });
+
+  // —— PR-0009 收编词轴（vocab-lock@v0.8-resolved；裁定批 B / Owner 裁定 D4=(a) 2026-09-05）——
+  // 改词表须同 commit 改这里：以下断言逐值镜像 vocab-lock@v0.8-resolved 新段。
+  describe("PR-0009 收编词轴（裁定批 B 全量在用新词形入锁）", () => {
+    it("runtime_semantics_axes 十轴（原「词表外局部枚举」段转正）", () => {
+      expect([...ORIGIN_VALUES]).toEqual(["natural", "derived", "ingested"]);
+      expect([...WRITE_POLICY_VALUES]).toEqual(["NONE", "AGENT_WITH_PERMIT", "CORRECTION_ONLY", "EVOLUTION_CHANNEL"]);
+      expect([...MATCH_RULE_VALUES]).toEqual(["mechanical", "manual_confirmed"]);
+      expect([...VERIFICATION_VERDICT_VALUES]).toEqual(["VERIFIED", "PARTIALLY_VERIFIED", "UNVERIFIED", "REJECTED"]);
+      expect([...LIVENESS_STATUS_VALUES]).toEqual(["active", "stale", "dead"]);
+      expect([...PRODUCER_KIND_VALUES]).toEqual(["builtin", "project"]);
+      expect([...ACTOR_TYPE_VALUES]).toEqual(["agent", "human", "tool", "kernel"]);
+      expect([...RUN_TRIGGER_VALUES]).toEqual(["pre_closeout", "pre_commit", "post_edit", "on_demand", "scheduled"]);
+      expect([...DENOMINATOR_STATUS_VALUES]).toEqual(["PROPOSED", "CURRENT", "SUPERSEDED"]);
+      // denominator_status 是 lifecycle 的 kind 级收窄子集（只禁不扩）。
+      for (const status of DENOMINATOR_STATUS_VALUES) {
+        expect(LIFECYCLE_VALUES.includes(status)).toBe(true);
+      }
+    });
+
+    it("discovery_vocab 状态链 + 转移矩阵 + 晋升依据", () => {
+      expect([...DISCOVERY_CHAIN_VALUES]).toEqual(["IDEA", "DISCOVERY", "READY_TO_PROMOTE", "CHANGE", "TASK"]);
+      expect(DISCOVERY_CHAIN_TRANSITIONS.IDEA).toEqual(["DISCOVERY"]);
+      expect(DISCOVERY_CHAIN_TRANSITIONS.DISCOVERY).toEqual(["READY_TO_PROMOTE"]);
+      expect(DISCOVERY_CHAIN_TRANSITIONS.READY_TO_PROMOTE).toEqual(["CHANGE", "TASK"]);
+      expect(DISCOVERY_CHAIN_TRANSITIONS.CHANGE).toEqual([]);
+      expect(DISCOVERY_CHAIN_TRANSITIONS.TASK).toEqual([]);
+      expect([...DISCOVERY_PROMOTION_BASIS_VALUES]).toEqual([
+        "user_explicit_request", "msd_reached", "needs_formal_resources", "needs_cross_session_tracking",
+      ]);
+      // Discovery 状态链与 state_axes.lifecycle 值域不相交（新状态面）。
+      for (const value of DISCOVERY_CHAIN_VALUES) {
+        expect(LIFECYCLE_VALUES.includes(value as never)).toBe(false);
+      }
+    });
+
+    it("discovery_vocab Unknown 十分类 / 风险三级 / 蓝图四态 / Research 五轴 / 异常五分类", () => {
+      expect([...MSD_UNKNOWN_CLASSIFICATION_VALUES]).toEqual([
+        "BLOCKER_CANDIDATE", "HARD_BLOCKER", "SOFT_UNCERTAINTY", "ASSUMPTION", "DEFERRED_DECISION",
+        "DISCOVERY_REQUIRED", "SUSPECTED_ISSUE", "NON_BLOCKING_GAP", "FUTURE_CONSIDERATION", "OUT_OF_SCOPE",
+      ]);
+      expect([...MSD_ASSUMPTION_RISK_VALUES]).toEqual(["LOW", "MEDIUM", "HIGH"]);
+      expect([...BLUEPRINT_ENVELOPE_STATUS_VALUES]).toEqual(["ACCEPTED", "CONDITIONALLY_ACCEPTED", "BLOCKED", "REJECTED"]);
+      expect([...RESEARCH_FINDING_CONFIDENCE_VALUES]).toEqual(["HIGH", "MEDIUM", "LOW"]);
+      expect([...RESEARCH_EVIDENCE_LEVEL_VALUES]).toEqual(["AUTHORITATIVE", "PRIMARY", "IMPLEMENTATION", "SECONDARY", "INFERENCE"]);
+      expect([...RESEARCH_AUTHORITY_EFFECT_VALUES]).toEqual(["NONE", "SUPPORTS", "CONFLICTS"]);
+      expect([...RESEARCH_MODE_VALUES]).toEqual(["INTERNAL", "EXTERNAL", "MIXED", "COMPARATIVE", "IMPACT", "FORENSIC"]);
+      expect([...EXCEPTION_CLASSIFICATION_VALUES]).toEqual(["ASSUMPTION", "OPEN_QUESTION", "DEFERRED_DECISION", "CONFLICT", "HARD_BLOCKER"]);
+    });
+
+    it("knowledge_vocab 五轴 + 转移矩阵（唯一权威边 VALIDATED→PROMOTED）", () => {
+      expect([...KNOWLEDGE_KIND_VALUES]).toEqual(["ENGINEERING_PATTERN", "FAILURE_PATTERN", "DIAGNOSTIC_PLAYBOOK", "DECISION_HEURISTIC"]);
+      expect([...KNOWLEDGE_STATUS_VALUES]).toEqual(["CANDIDATE", "VALIDATED", "PROMOTED", "DEPRECATED", "REJECTED"]);
+      expect(KNOWLEDGE_TRANSITIONS.CANDIDATE).toEqual(["VALIDATED", "REJECTED"]);
+      expect(KNOWLEDGE_TRANSITIONS.VALIDATED).toEqual(["PROMOTED", "DEPRECATED"]);
+      expect(KNOWLEDGE_TRANSITIONS.PROMOTED).toEqual(["DEPRECATED"]);
+      expect(KNOWLEDGE_TRANSITIONS.DEPRECATED).toEqual([]);
+      expect(KNOWLEDGE_TRANSITIONS.REJECTED).toEqual([]);
+      expect([...KNOWLEDGE_PROMOTION_AUTHORITY_VALUES]).toEqual(["MAINTAIN", "AUTHORITY", "GATEKEEPER"]);
+      expect([...CONTEXT_AUTHORITY_PARTITION_VALUES]).toEqual(["AUTHORITATIVE", "ADVISORY"]);
+      expect([...KNOWLEDGE_CONFIDENCE_VALUES]).toEqual(["HIGH", "MEDIUM", "LOW"]);
+    });
+
+    it("execution_identity_vocab D 线四轴（runtime/identity_kind/role/lock）", () => {
+      expect([...EXECUTION_RUNTIME_VALUES]).toEqual(["claude-code", "codex", "script"]);
+      expect([...EXECUTION_IDENTITY_KIND_VALUES]).toEqual(["interactive", "subagent", "script"]);
+      expect([...EXECUTION_ROLE_VALUES]).toEqual(["owner", "orchestrator", "research", "implementer", "qa", "script"]);
+      expect([...LOCK_KIND_VALUES]).toEqual(["change", "task", "unit"]);
+    });
+
+    it("equivalence_vocab 两轴 + portability_vocab 五轴（PR-0009 闭合 FAIL/NOT_RUN 补位词呈报位）", () => {
+      expect([...WORD_FORM_DOMAIN_VALUES]).toEqual(["zh-formal", "pinyin", "abbrev", "compressed", "canonical", "unknown"]);
+      expect([...EQUIVALENCE_STATUS_VALUES]).toEqual(["active", "pending"]);
+      expect([...PORTABILITY_CHECK_STATUS_VALUES]).toEqual(["PASS", "FAIL", "NOT_RUN"]);
+      expect([...PORTABILITY_CANONICAL_SET_VALUES]).toEqual(["truth", "architecture", "decisions", "knowledge", "evidence"]);
+      expect([...PORTABILITY_RUNTIME_REBUILD_VALUES]).toEqual(["contexts", "harness-bootstrap"]);
+      expect([...PORTABILITY_FORBIDDEN_DEPENDENCY_VALUES]).toEqual(["user-home-project-memory", "untracked-local-spec"]);
+      expect(MEMORY_DRIFT).toBe("MEMORY_DRIFT");
+    });
+
+    it("memory_harvest_vocab 七轴（分桶/七类/review 三态/来源/置信/CLI 错误词形族/呈报词形）", () => {
+      expect([...HARVEST_BUCKET_VALUES]).toEqual([
+        "TRUTH", "KNOWLEDGE", "EPISODE", "PREFERENCE", "AUTHORITY_POLICY", "INVALID_EXPIRED", "UNCLASSIFIED_PENDING",
+      ]);
+      expect([...MEMORY_CLASS_VALUES]).toEqual(["TRUTH", "KNOWLEDGE", "EPISODE", "DECISION", "EVIDENCE", "USER", "HARNESS_RUNTIME"]);
+      expect([...REVIEW_STATE_VALUES]).toEqual(["PENDING", "PROMOTED", "REJECTED"]);
+      expect([...HARVEST_SOURCE_VALUES]).toEqual(["user_capture", "memory_harvest", "memory_drift_audit"]);
+      expect([...HARVEST_CONFIDENCE_VALUES]).toEqual(["HIGH", "MEDIUM", "LOW"]);
+      expect([...MEMORY_CLI_ERROR_VALUES]).toEqual([
+        "MEMORY_ENTRY_NOT_FOUND", "MEMORY_ALREADY_REVIEWED", "MEMORY_REVIEW_REQUIRED",
+        "MEMORY_ALREADY_PROMOTED", "MEMORY_PROMOTE_OWNER_REQUIRED", "MEMORY_CAPTURE_DUPLICATE",
+        "MEMORY_HARVEST_NOT_RUN",
+      ]);
+      expect(OWNER_ESCALATION_REQUIRED).toBe("OWNER_ESCALATION_REQUIRED");
+    });
+
+    it("governed 前缀闭包 PR-0009 零扩（16 前缀不动——GATE./SENSOR./archetype 族住 catalog 物料标识，非 governed）", () => {
+      expect(GOVERNED_ID_PREFIXES).toHaveLength(16);
+      for (const prefix of ["GATE", "SENSOR", "ARCHETYPE", "STATE_ARCHETYPE", "DECISION"] as const) {
+        expect(GOVERNED_ID_PREFIXES.includes(prefix as never)).toBe(false);
+      }
+    });
   });
 });

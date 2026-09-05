@@ -7,7 +7,7 @@
  * - DEFAULT_NO_SIGNAL（LIGHT/NOT_CONFIGURED）：无命中兜底与词形精确性边界。
  * 每条用例对应 triageRequest 的真实判定行或词表字面项（词形级 Eval 载体，
  * 「每条规则可单测可入 Eval」——triage.ts TriageResult.matched_rule 注）；
- * 词表字面锁定测试是 TODO(vocab-pr) 扩词纪律的机器化：扩词必须显式改测试。
+ * 词表字面锁定测试是词汇表 PR 扩词纪律的机器化（PR-0009 收编后纪律不变）：扩词必须显式改测试。
  */
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -168,7 +168,7 @@ describe("Router 判定矩阵——短路快道 F_COPY_STYLE_ONLY 逐词形", ()
     expectRow(triageRequest("restyling the widget"), "LIGHT", "NOT_CONFIGURED", "DEFAULT_NO_SIGNAL");
   });
 
-  it("英文 color 不在词表 → LIGHT（词表只有中文「颜色」；扩词须走 TODO(vocab-pr)，不投机同义扩）", () => {
+  it("英文 color 不在词表 → LIGHT（词表只有中文「颜色」；扩词须走词汇表 PR——PR-0009 后纪律不变，不投机同义扩）", () => {
     expectRow(triageRequest("adjust color palette"), "LIGHT", "NOT_CONFIGURED", "DEFAULT_NO_SIGNAL");
   });
 });
@@ -233,7 +233,7 @@ describe("Router 判定矩阵——规则·档位·证据级绑定映射", () =>
     expect([...TRIAGE_EVIDENCE_GRADES]).toEqual(["MEASURED", "INFERRED", "NOT_CONFIGURED"]);
   });
 
-  it("TRIAGE_ESCALATION_KEYWORDS 字面锁死 7 词（词表序；扩词/改序必须显式过 TODO(vocab-pr) 并更新本测试）", () => {
+  it("TRIAGE_ESCALATION_KEYWORDS 字面锁死 7 词（词表序；扩词/改序必须显式过词汇表 PR——PR-0009 收编后纪律不变——并更新本测试）", () => {
     expect([...TRIAGE_ESCALATION_KEYWORDS]).toEqual([
       "contract",
       "契约",

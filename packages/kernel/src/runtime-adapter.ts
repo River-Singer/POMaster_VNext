@@ -34,7 +34,7 @@
  * 保守读法，不发明第三条件。
  *
  * 纯函数纪律：本模块全部导出零 IO、零 store 依赖、零墙钟（同输入重放字节稳定，
- * A4）；词汇闭包走 @pomaster/schemas 十二角色轴（pending_vocab_pr，不私加主表）。
+ * A4）；词汇闭包走 @pomaster/schemas 十二角色轴（vocab-lock execution_identity_vocab——PR-0009 收编）。
  */
 import {
   AGENT_ROLE_POOL_VALUES,
@@ -49,7 +49,7 @@ import { GovernanceError } from "./errors.js";
 
 /**
  * 伪装并发错误码位（GovernanceErrorCode 同名成员的常量镜像；reason_code 独立
- * 维度不入 vocab 词表——GOLDEN-L3-CASE-C 精神。TODO(vocab-pr) 注记随本批呈报）。
+ * 维度不入 vocab 词表——GOLDEN-L3-CASE-C 精神；码位词形已随 PR-0009 登记（vocab-lock execution_identity_vocab.concurrency_masquerade_code））。
  */
 export const RUNTIME_CONCURRENCY_MASQUERADE = "RUNTIME_CONCURRENCY_MASQUERADE" as const;
 
@@ -290,7 +290,7 @@ export function planRoleExecution(input: RoleExecutionPlanInput): RoleExecutionP
     if (matched === undefined) {
       throw new GovernanceError(
         "VOCAB_INVALID_VALUE",
-        `角色词表外：${role}（PRD §25.3 十二角色轴，pending_vocab_pr）`,
+        `角色词表外：${role}（PRD §25.3 十二角色轴——vocab-lock execution_identity_vocab.agent_role_pool，PR-0009）`,
         `合法词形：${AGENT_ROLE_POOL_VALUES.join(" | ")}；扩值走词汇表 PR`,
         { role },
       );

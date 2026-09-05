@@ -32,7 +32,7 @@ import {
 import type { CliWarning, CommandOutcome } from "./envelope.js";
 import { okOutcome } from "./envelope.js";
 
-/** 可行动项种类词表（CLI 局部词闭包 TODO(vocab-pr)）。 */
+/** 可行动项种类词表（x-vocab-source: vocab-lock presentation_axes.alert_kinds——PR-0009 收编）。 */
 export const ALERT_KINDS = ["PERMIT_EXPIRED", "OBJECT_CHALLENGED"] as const;
 
 export type AlertKind = (typeof ALERT_KINDS)[number];

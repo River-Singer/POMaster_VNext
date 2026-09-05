@@ -29,7 +29,7 @@
  * 词形纪律（Owner 裁决9②③，词表三镜像不动——VB-A 独立批）：
  * - DECISION./RESEARCH.REQ./FINDING./DISCOVERY.INTENT./FACT. 是 **Discovery 平面局部词形**
  *   （state_plane_refs 先例：PERMIT/POB/AGX 同族），不入 GOVERNED_ID_PREFIXES、不过
- *   parseGovernedId，校验=本模块词形正则 + 图内存在性；TODO(vocab-pr) 待独立词汇表批收编；
+ *   parseGovernedId，校验=本模块词形正则 + 图内存在性；词形已随 PR-0009 入锁（state_plane_refs 注记 + decision_graph_vocab 段）；
  * - CONTRACT.* 是 PRD §5.2 示意词形（现词表无此前缀——实测张力随裁决9② 定案按示意处理），
  *   truth_refs/contract_refs 等外部引用槽按宽松词形（存在性对账归 Truth 对账面，P1）；
  * - 禁词 GRILLING/GRILLED/GRILL_CONFIRMED（§1.1 不新增 State Axis）以负例登记（09 号
@@ -56,7 +56,7 @@ import {
 } from "./vocab.js";
 
 // ============================================================
-// 词形常量（Discovery 平面局部词形 + 派生词轴；TODO(vocab-pr) 独立批收编）
+// 词形常量（Discovery 平面局部词形 + 派生词轴；x-vocab-source: vocab-lock decision_graph_vocab——PR-0009 收编）
 // ============================================================
 
 /**
@@ -87,7 +87,7 @@ export const MISSING_FACT_REF_PATTERN =
   /^FACT\.[A-Z][A-Z0-9_]{0,31}(\.[A-Z][A-Z0-9_]{0,31}){0,3}$/;
 
 /**
- * decision class 闭包（Owner 裁决9②：SCOPE 单值起步——schema 冻结 + pending_vocab_pr；
+ * decision class 闭包（Owner 裁决9②：SCOPE 单值起步——vocab-lock decision_graph_vocab.decision_class，PR-0009 收编；
  * 扩值走词汇表 PR，禁止实现侧私扩）。x-vocab-source: PRD v0.5.3 §5.2 示例词形。
  */
 export const DECISION_CLASS_VALUES = ["SCOPE"] as const;
@@ -129,7 +129,7 @@ export type DecisionAnswer = (typeof DECISION_ANSWER_VALUES)[number];
 /**
  * Recommendation source 披露位（PRD §12.2：如果只有模型经验，Recommendation Source =
  * INFERENCE 必须明确披露；不得说「根据项目现状建议」却没有任何项目引用）。
- * PROJECT_GROUNDED = basis_refs 全部携带 Ref。TODO(vocab-pr)。
+ * PROJECT_GROUNDED = basis_refs 全部携带 Ref。x-vocab-source: vocab-lock decision_graph_vocab.recommendation_source（PR-0009）。
  */
 export const RECOMMENDATION_SOURCE_VALUES = ["PROJECT_GROUNDED", "INFERENCE"] as const;
 export type RecommendationSourceValue = (typeof RECOMMENDATION_SOURCE_VALUES)[number];
@@ -149,7 +149,7 @@ export type GroundingSurfaceValue = (typeof GROUNDING_SURFACE_VALUES)[number];
 /**
  * G6 缺失事实路由词形（PRD §6.1 G6：缺少的是事实时，标为 Derivable / Researchable，
  * 而不是直接 Ask Human——ASK_HUMAN 刻意不在本轴：事实型问题禁止问 Human，PRD §8 逐字）。
- * 词源复用 Question Gate 分类（DERIVABLE/RESEARCHABLE）。TODO(vocab-pr)。
+ * 词源复用 Question Gate 分类（DERIVABLE/RESEARCHABLE）。x-vocab-source: vocab-lock decision_graph_vocab.missing_fact_route（PR-0009）。
  */
 export const MISSING_FACT_ROUTE_VALUES = ["DERIVABLE", "RESEARCHABLE"] as const;
 export type MissingFactRouteValue = (typeof MISSING_FACT_ROUTE_VALUES)[number];

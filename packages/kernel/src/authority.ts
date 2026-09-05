@@ -14,7 +14,7 @@
  *   store.ts/applyTransaction/permits 判卷通路不 import 本模块；boundary deny 规则
  *   在投影面只读呈现，绝不构成新增写路径阻断。权威裁决仍是 D3 明文的「字段级
  *   precedence 由正式 Authority Contract 定义」的后续 Proposal，本面不预支。
- * - 词形纪律：precedence 九级词形为 kernel 局部词（TODO(vocab-pr)，triage.ts 先例），
+ * - 词形纪律：precedence 九级词形已随 PR-0009 入锁（vocab-lock presentation_axes.authority_precedence，triage 先例），
  *   PRD §3B 原文层级逐级对位（"Ratified Project Contract / Approved Policy" 合并
  *   一级、"Measured Evidence / Derived Observation" 合并一级——原文斜杠并列同位）。
  *   维度词形（map.scope / boundary_rules.scope）开放词表（项目特定，§3A 同款），

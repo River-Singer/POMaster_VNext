@@ -10,7 +10,7 @@
  *   ④Capability Degradation 报告必附——rules_applied 四位逐条可测；
  * - §25.2 solo 零开销锚：direct 形态（主 Harness 直接执行）不经能力判定、
  *   零 spawn 步、零降级报告——solo 默认运行形态不变的契约层证明；
- * - 词汇闭包：§25.3 十二角色 + 十二标题逐字（pending_vocab_pr，词形裁定见
+ * - 词汇闭包：§25.3 十二角色 + 十二标题逐字（vocab-lock execution_identity_vocab——PR-0009 收编，词形裁定见
  *   schemas/src/vocab.ts P21 段注记）；词表外角色 VOCAB_INVALID_VALUE。
  *
  * 纯函数纪律：全部断言零 store、零 IO、零墙钟（同输入重放 deep equal，A4）。
@@ -329,7 +329,7 @@ describe("§25.2 solo 零开销锚（direct 形态）", () => {
 // ============================================================
 
 describe("Capability Pool 词汇闭包（§25.3 十二角色）", () => {
-  it("十二角色机器词形逐值（pending_vocab_pr；词形裁定见 schemas vocab.ts P21 段）", () => {
+  it("十二角色机器词形逐值（vocab-lock execution_identity_vocab.agent_role_pool——PR-0009 收编；词形裁定见 schemas vocab.ts P21 段）", () => {
     expect([...AGENT_ROLE_POOL_VALUES]).toEqual([
       "SUPERVISOR",
       "BRAINSTORM",

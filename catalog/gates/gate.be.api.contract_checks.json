@@ -3,7 +3,8 @@
     "status": "vocab_pr_candidate",
     "finding": "GATE. 前缀不在 prefixes_v0 15 前缀闭包内（closed-world：未登记前缀解析即 FATAL）；且 kind='gate_recipe' 不在 kinds_registry.truth_bodies",
     "proposal": "词汇表 PR 登记 GATE. 前缀与 gate_recipe kind；备选落法：gate recipe 住 catalog/gates/ 非 truth 对象层，门禁定义锚沿用 03-gate-result.schema gate_def 的 POLICY.GATE.<NAME>@semver 词形（两种落法待 Owner 裁决，meta.vocab_findings[1]）",
-    "locked_vocab_untouched": true
+    "locked_vocab_untouched": true,
+    "resolution": "2026-09-05 vocab PR-0009 收编落地（vocab-lock@v0.8-resolved，三镜像同 commit；Owner 裁定 D4=(a) 2026-09-05）：GATE. 前缀按注记备选落法定案=catalog 物料标识词形（gates/ 条目住 catalog 面非 truth 对象层——D-2「Catalog 不是第二套 Project Truth」；词形随 catalog_layer_vocab.material_id_prefixes 收编，非 governed 前缀不过 parseGovernedId）；gate_recipe kind 在 catalog_layer_vocab.catalog_kind 在册；本 pending 注记就此转正（历史记录原样保留）"
   },
   "x-pilot-proposal": {
     "status": "PROPOSAL",

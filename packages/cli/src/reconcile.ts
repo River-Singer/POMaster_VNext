@@ -15,7 +15,7 @@
  *   stride 抽样保证同 state 重放字节稳定；零墙钟。
  * - 词表纪律：RECONCILE_DIRTY / RECONCILE_BASELINE_MISSING 为 CLI 本地错误码
  *   （复用 kernel GovernanceError 同义码位约定）；报告 kind 词形是呈现层局部词
- *   → TODO(vocab-pr)（注记在 kernel reconcile.ts）。
+ *   → 已入锁（vocab-lock presentation_axes.reconcile_delta_kinds——PR-0001 收编段）。
  */
 import type { ReconcileReport } from "@pomaster/kernel";
 import {

@@ -24,7 +24,7 @@
  * fail-closed 纪律（本模块三态语义，禁静默绿）：
  * - PASS / FAIL / NOT_RUN 三态显式（词形见 @pomaster/schemas
  *   PORTABILITY_CHECK_STATUS_VALUES；PASS 是 §85.2 逐字，FAIL/NOT_RUN 是
- *   「缺项=FAIL 或 NOT_RUN」纪律补位词——TODO(vocab-pr)）。
+ *   「缺项=FAIL 或 NOT_RUN」纪律补位词——PR-0009 随 vocab-lock portability_vocab.check_status 一并登记）。
  * - 应存在而缺席/损坏/判违 = FAIL；环境性缺席（上游条件不成立无法执行检查本身）
  *   = NOT_RUN；两者都绝不静默 PASS。
  *

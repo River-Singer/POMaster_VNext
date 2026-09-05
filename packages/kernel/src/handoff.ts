@@ -56,7 +56,7 @@ import type { AgentContext } from "./runtime-adapter.js";
 export const HANDOFF_NOT_TRUTH_NOTE = "Handoff 摘要 ≠ Truth" as const;
 
 /** §24 例文 `fast_gate: PASS` 词形闭包（大写逐字；FAIL 同族放行——PRD §9A「evidence：fast_gate: PASS|FAIL + 其余走 evidence 平面」）。
- * TODO(vocab-pr)：局部词轴 pending_vocab_pr——收编与否随词汇表 PR 裁定（SUPERVISOR_TRIGGER_OBSERVED 同批先例）。 */
+ * x-vocab-source: vocab-lock presentation_axes.handoff_fast_gate（PR-0009 收编——SUPERVISOR_TRIGGER_OBSERVED 同批转正先例）。 */
 export const HANDOFF_FAST_GATE_VALUES = ["PASS", "FAIL"] as const;
 export type HandoffFastGateValue = (typeof HANDOFF_FAST_GATE_VALUES)[number];
 
@@ -154,7 +154,7 @@ function assertRole(value: unknown, field: "from" | "to"): AgentRolePoolValue {
   if (matched === undefined) {
     throw new GovernanceError(
       "VOCAB_INVALID_VALUE",
-      `Handoff Packet.${field} 角色词表外：${value}（PRD §25.3 十二角色轴，pending_vocab_pr）`,
+      `Handoff Packet.${field} 角色词表外：${value}（PRD §25.3 十二角色轴——vocab-lock execution_identity_vocab.agent_role_pool，PR-0009）`,
       `合法词形：${AGENT_ROLE_POOL_VALUES.join(" | ")}；扩值走词汇表 PR`,
       { field, role: value },
     );

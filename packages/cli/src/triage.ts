@@ -12,13 +12,13 @@
  *
  * 词表纪律：profile 档位与证据级不在 vocab-lock 管辖内（它们是 Router 层局部词），
  * 词形镜像 thread-C 五值证据级（本 P0 CLI 只暴露其中三值）与 PRD §7.1/thread-C 档位；
- * 扩值走词汇表 PR 后再扩本文件 → TODO(vocab-pr)。
+ * 词形已随 PR-0009 入锁（vocab-lock presentation_axes.triage_profiles/triage_evidence_grades，informational——A1 裁定）。
  * STRICT/CRITICAL 在 P0 为 prompt_only（C5 裁定：命中输出 PROFILE_CANDIDATE 并落 STANDARD），
  * 本 CLI 关键词引擎不产出 STRICT/CRITICAL。
  */
 
 /**
- * 治理档位（x-vocab-source: PRD §7.1 + thread-C §3.2；词表外局部词 → TODO(vocab-pr)）。
+ * 治理档位（x-vocab-source: PRD §7.1 + thread-C §3.2 + vocab-lock presentation_axes.triage_profiles——PR-0009 收编）。
  * MINIMAL=几乎感觉不到治理；LIGHT=默认兜底；STANDARD=跨域/契约面升级档。
  * A1 裁定（2026-09-04）：本轴降为信息性呈现词形——不进任何 gate/permit 判卷、
  * 不决定激活；TRIAGE_PROFILES 词形保留。
@@ -28,7 +28,8 @@ export type TriageProfile = (typeof TRIAGE_PROFILES)[number];
 
 /**
  * 判定证据级（x-vocab-source: thread-C §0.2 五值证据级的 P0-CLI 三值子集；
- * SELF_REPORTED/NOT_YET_AVAILABLE 未暴露 → TODO(vocab-pr)）。
+ * SELF_REPORTED/NOT_YET_AVAILABLE 未暴露——词源五值闭包的显式子集；vocab-lock
+ * presentation_axes.triage_evidence_grades——PR-0009 收编）。
  * - MEASURED：决定性、毫秒级、对被测对象本体的直接测量；
  * - INFERRED：规则轻推断（推断结论指向输入文本之外的世界）；
  * - NOT_CONFIGURED：信号源缺席——缺席必须显式表达，禁止静默当通过。

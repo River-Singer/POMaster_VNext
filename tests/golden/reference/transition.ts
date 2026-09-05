@@ -12,7 +12,7 @@
  * - PROPOSED→{CURRENT,REJECTED} requires: authority_approval；
  * - CURRENT→{SUPERSEDED,DEPRECATED} requires: transition_record；
  * - SUPERSEDED 终态（to:[]，successor_ref 必填）；RETIRED/REJECTED 终态；
- * - DEPRECATED→RETIRED 附加 grace_policy: config（宽限期策略键待词表登记 → TODO(vocab-pr)）。
+ * - DEPRECATED→RETIRED 附加 grace_policy: config（宽限期策略键词形已随 PR-0009 在 vocab-lock transitions 块转正登记）。
  * 跨轴耦合断言（VERIFIED⇒wired、MIGRATING⇒ACTIVE PERMIT、LOCKED 挑战⇒决策引用）归
  * applyTransaction/REF_INTEGRITY，不进本纯函数（kernel 契约明示）。
  */
@@ -87,7 +87,7 @@ export function validateTransitionReference(
       allowed: true,
       requires: [],
       gracePolicyConfig: true,
-      notes: ["grace_policy: config（宽限期策略键待词表登记 → TODO(vocab-pr)）"],
+      notes: ["grace_policy: config（宽限期策略键词形——vocab-lock transitions 块 PR-0009 已登记）"],
     };
   }
   const notes: string[] = [];

@@ -54,9 +54,9 @@
  * - .pomaster/runtime/traces/AGX-*.json   EPHEMERAL manifest（易变平面，可丢弃语义
  *   免费来自 §85.4 可删除测试的 runtime/ 判据豁免——删后投影可重建）。
  *
- * 词表纪律（批 1 文件面互斥）：TRACE_RETENTION_VALUES / pomaster.execution_trace/v1
- * 等**新词形以 TODO(vocab-pr-0005) 注记承载**，模块常量写死；vocab.ts / vocab-lock
- * 三镜像登记归主控批次，本模块零触碰三镜像文件。
+ * 词表纪律：TRACE_RETENTION_VALUES / pomaster.execution_trace/v1 等新词形已随
+ * PR-0009 入锁（vocab-lock trace_perception_vocab，三镜像同批）；本模块常量为承载位，
+ * 扩值走词汇表 PR。
  */
 import { readdirSync } from "node:fs";
 import type { Store } from "./index.js";
@@ -66,9 +66,8 @@ import { pathsOf, readCurrentSeq, readJournalLines, type StorePaths } from "./pa
 import { assertExecutionAttachable, EXECUTION_ID_PATTERN } from "./execution.js";
 
 // ============================================================
-// 词形常量（TODO(vocab-pr-0005)：词表三镜像登记归主控批次——批 1 文件面互斥，
-// vocab.ts ×2 / vocab-lock.draft.yaml 仅允许 W1-A1 线触碰；词形字符串按研究
-// 笔记定案在此写死为模块常量，收编后迁 @pomaster/schemas vocab.ts 逐值镜像）
+// 词形常量（已随 PR-0009 入锁 vocab-lock trace_perception_vocab；词形字符串按研究
+// 笔记定案在本模块承载（x-vocab-source 指向 vocab-lock）——扩值走词汇表 PR）
 // ============================================================
 
 /** trace 分区相对路径（durable manifest；裁决 8 ②「trace 独立 traces/ 分区」）。 */
@@ -86,8 +85,8 @@ export const EXECUTION_TRACE_VERSION = 1 as const;
 /**
  * retention 四档（PRD §8.3 逐字词形；裁决 8 ②「retention 四档逐字仅记录不 GC」——
  * OD-3：词形有源不发明；OD-4：仅记录，无 GC 无 prune 命令）。
- * TODO(vocab-pr-0005)：absent_in_vocab_lock__pending_vocab_pr，收编后以 vocab-lock
- * 为准逐值镜像（随 O-Q4 trace 族词汇批次；与 perception 簇同族词形合并呈报）。
+ * 已随 PR-0009 收编（vocab-lock trace_perception_vocab.trace_retention；原 O-Q4 trace
+ * 族词汇批次预留注记就此闭合）。
  */
 export const TRACE_RETENTION_VALUES = [
   "EPHEMERAL",

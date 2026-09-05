@@ -3,7 +3,8 @@
     "status": "vocab_pr_candidate",
     "finding": "kind='policy' 不在 vocab-lock kinds_registry.truth_bodies（POLICY. 前缀已冻结注册，closed-world）；新 id 域段待登记：GATE",
     "proposal": "词汇表 PR 登记 policy kind 及新域段；或 Owner 裁决 policy 条目住 catalog/ 而非 truth/objects 正文层（与前批 45+25 条同因同请，合并进同一 vocab PR）",
-    "locked_vocab_untouched": true
+    "locked_vocab_untouched": true,
+    "resolution": "2026-09-05 vocab PR-0009 收编落地（vocab-lock@v0.8-resolved，三镜像同 commit；Owner 裁定 D4=(a) 2026-09-05）：kind='policy' 是 catalog 物料分类词形（catalog_layer_vocab.catalog_kind 在册——PR-0006，不受 kinds_registry.truth_bodies 闭包管辖），POLICY. 前缀为 governed 闭包既有前缀，id 域段词形随 catalog_layer_vocab.policy_id_domains / policy_web_domains 收编；本 pending 注记就此转正（finding/proposal/locked_vocab_untouched 为创建时点历史记录原样保留——mcp_eyes 先例）"
   },
   "x-spec-d-materialization": {
     "status": "PROPOSAL",

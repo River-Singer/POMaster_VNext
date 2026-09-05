@@ -14,8 +14,8 @@
  *   capability / side_effect 必须机器可判；Tool 由 Sensor Resolution 后再绑定
  *   （本契约面不写死 chrome-devtools-mcp 等工具名）。
  * - §6.4 Observation Surface 八值（「不要求立即成为新的 Closed-world Core Vocab」
- *   ——PRD 原文豁免，词轴先住模块常量 TODO(vocab-pr-0005)，词表三镜像登记归
- *   词汇表 PR 批次）。
+ *   ——PRD 原文豁免，开放枚举已随 PR-0009 收编（vocab-lock
+ *   trace_perception_vocab.observation_surface，模块常量为承载位））。
  * - §6.7 Environment & Instance Identity：观察之前必须有 Doctor，至少确认九项
  *   （Repository/Worktree、Git Revision、Build Identity、Runtime Instance、
  *   Base URL、Environment Class、Data Fixture/Dataset、Auth Role、Feature Flags）；
@@ -49,7 +49,7 @@
  * 批 1 边界（W1-D1 简报逐字）：纯函数 + 词形常量 + 测试，零产品接线——browser
  * 腿环境判卷门（T2）归批 2 W1-B；16-perception-receipts.schema.json defer 批 2
  * （16 号本批归 W1-C，schema 编号随批 2 定）；OBS-/ENVREC- 等新词形以
- * TODO(vocab-pr-0005) 注记承载，词表三镜像登记归主控批次（批 1 文件面互斥）。
+ * 已随 PR-0009 收编（vocab-lock trace_perception_vocab——原批 1 文件面互斥注记转正）。
  *
  * 批 2 W1-D2 增量（P0.5-4b · PRD §6.13/§14 + Benchmark E + Case H；研究 §5.2 T2）：
  * - buildObservationReceipt（§6.13 Observation Receipt 最小通路类型面）：result=OBSERVED
@@ -74,13 +74,13 @@
 import { GovernanceError } from "./errors.js";
 
 // ============================================================
-// 词轴（模块常量；TODO(vocab-pr-0005) 词表三镜像登记归主控批次）
+// 词轴（模块常量承载位；已随 PR-0009 入锁 vocab-lock trace_perception_vocab）
 // ============================================================
 
 /**
  * Observation Surface 八值（PRD §6.4 逐字，原文行序）。
  * PRD 明言「不要求立即成为新的 Closed-world Core Vocab」——模块局部词轴 +
- * TODO(vocab-pr-0005)，词汇表 PR 批准前禁入 vocab-lock 主表（词表冻结纪律）。
+ * 已随 PR-0009 收编（开放枚举登记——vocab-lock trace_perception_vocab.observation_surface）。
  */
 export const OBSERVATION_SURFACE_VALUES = [
   "USER_SURFACE",
@@ -162,7 +162,7 @@ export const ENVIRONMENT_DOCTOR_VERDICT_VALUES = [
 export type EnvironmentDoctorVerdict = (typeof ENVIRONMENT_DOCTOR_VERDICT_VALUES)[number];
 
 /**
- * 感知域降级呈现词（PRD §6.16 词形）。TODO(vocab-pr-0005)。
+ * 感知域降级呈现词（PRD §6.16 词形）——已随 PR-0009 收编（vocab-lock trace_perception_vocab.presentation_word_forms）。
  * 撞族消歧（Owner 裁决 8）：与 RUNTIME_DEGRADATION_RULE_IDS.capability_degradation_report
  * （§58 agent 池降级规则 id）同词根不同概念——本词形是感知域 scopeNote 呈现词，
  * 不入 RUNTIME_DEGRADATION_RULE_IDS 通路；感知域观察结果以 NOT_OBSERVABLE
@@ -174,7 +174,7 @@ export const CAPABILITY_DEGRADED = "CAPABILITY_DEGRADED" as const;
 /**
  * OBS 通路编号词形（PRD §6.13 observation_id: OBS-...；GRN-[0-9]+ 变宽先例）。
  * 状态/证据面通路编号词形，非 governed 前缀，不入 id_namespace 闭包
- * （AGX-n 头注同款注记，execution.ts §25.4 先例）。TODO(vocab-pr-0005)。
+ * （AGX-n 头注同款注记，execution.ts §25.4 先例）——已随 PR-0009 登记（id_namespace.state_plane_refs OBS-/ENVREC- 注记）。
  * 注：PRD §6.11 hypothesis supports 例文另现 OBS.NETWORK.17 点形——那是诊断假设
  * 对观察的引用记法（P1-1b 落点），与本通路编号词形的归一随词汇表 PR 裁定，
  * 本批只登记 OBS- 通路编号形（研究 §5.1 定案）。
@@ -188,7 +188,7 @@ export const ENVREC_ID_PATTERN = /^ENVREC-[0-9]+$/;
  * CRC-F 缝口判定的双侧既有词形（零新词轴）：media 开放词（07 definitions.blob_ref）
  * 与 §6.5 例文逐字 operation 词形在 catalog/sensors 材料的 operations/evidence_types
  * 双侧既有在册（browser-evidence 落盘 screenshot blob 恒 media:"screenshot"）。
- * 本常量只引用既有词形，不登记新轴——词表收编归词汇表批次（TODO(vocab-pr-0005)）。
+ * 本常量只引用既有词形，不登记新轴——媒体词形维持局部不设轴（PR-0009 处置注记）。
  */
 const SCREENSHOT_MEDIA_WORD = "screenshot";
 
@@ -212,12 +212,12 @@ export interface ObservationTarget {
  * - WHERE 锚 = surface（§6.4 八值闭包）+ target（看的是谁）；
  * - HOW 锚 = operation（观察动作——「必须定义观察动作，而不能只有 Tool Name」；
  *   词形与 §6.13 receipt.operation 对齐，请求→回执链同词）；
- * - WITH WHAT 锚 = sensor_capability（sensor 能力要求；词形轴 SENSOR.* 登记归
- *   P1-5 簇 TODO(vocab-pr-0005)，本契约只校验在场非空——Tool 由 Sensor Resolution
+ * - WITH WHAT 锚 = sensor_capability（sensor 能力要求；词形轴 SENSOR.* 已随 PR-0009 收编
+ *   （catalog_layer_vocab.material_id_prefixes），本契约只校验在场非空——Tool 由 Sensor Resolution
  *   后再绑定，§6.3 逐字）。
  */
 export interface ObservationRequest {
-  /** 观察意图（§6.3 例文 REPRODUCE；PRD 仅此一词形不成轴，扩值走词汇表 PR TODO(vocab-pr-0005)；可空显式）。 */
+  /** 观察意图（§6.3 例文 REPRODUCE；PRD 仅此一词形不成轴——单值维持局部不设轴，PR-0009 处置注记；可空显式）。 */
   readonly intent: string | null;
   readonly question: string;
   readonly operation: string;

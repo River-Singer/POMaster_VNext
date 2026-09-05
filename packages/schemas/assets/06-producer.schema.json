@@ -129,8 +129,8 @@
       "enum": ["builtin", "project"],
       "title": "producer 来源（kind）",
       "description": "builtin=随 kernel 发行版内置（升级随版本走）；project=项目仓自有编译器（随项目演进）。",
-      "$comment": "source: task 指定（builtin|project）。候选新词轴。",
-      "x-pomaster-vocab-status": "absent_in_vocab_lock__pending_vocab_pr",
+      "$comment": "source: task 指定（builtin|project）。已随 vocab-pr-0009 收编（vocab-lock runtime_semantics_axes.producer_kind）。",
+      "x-pomaster-vocab-status": "registered_in_vocab_lock__vocab_pr_0009",
       "examples": [
         "builtin",
         "external（INVALID：词表外值）"
@@ -189,8 +189,8 @@
           "type": "string",
           "enum": ["active", "stale", "dead"],
           "title": "活性三态（liveness tri-state）",
-          "$comment": "source: task 指定。候选新词轴（vocab-lock 未含）。",
-          "x-pomaster-vocab-status": "absent_in_vocab_lock__pending_vocab_pr",
+          "$comment": "source: task 指定。已随 vocab-pr-0009 收编（vocab-lock runtime_semantics_axes.liveness_status）。",
+          "x-pomaster-vocab-status": "registered_in_vocab_lock__vocab_pr_0009",
           "examples": [
             "active",
             "suspect_stale（INVALID：thread A 行文用词，本词表收敛为 stale）"

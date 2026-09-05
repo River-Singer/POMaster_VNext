@@ -41,7 +41,7 @@ import { failOutcome, okOutcome } from "./envelope.js";
 import { governanceErrorToCliError } from "./permit.js";
 
 // ============================================================
-// 词形（本模块局部词 TODO(vocab-pr)：deferred 码位沿用 COMMAND_DEFERRED 先例）
+// 词形（deferred 码位沿用 COMMAND_DEFERRED 先例——码位已入锁 vocab-lock presentation_axes.cli_presentation_codes，PR-0009；--propose/--diff/--apply 旗标为命令面词形维持局部——PR-0004 命令名先例）
 // ============================================================
 
 /** §93.6 四词形中的三个 deferred 词形（本阶段不接线；结构上不注册为 commander 选项）。 */

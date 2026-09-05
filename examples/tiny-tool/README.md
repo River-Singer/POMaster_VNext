@@ -38,7 +38,10 @@ node index.js     # 解析→序列化→往返自检（= GRN-0001 的 CSV_ROUND
 - **幂等（A4）**：对象无 created_at/updated_at，只有事务分配的 `rev` / `last_run_seq`。
 - **人类散文唯一入口**：叙事在 `notes_md`（02 信封），机器不解析其内容判卷。
 
-## 已知待收编（TODO(vocab-pr)）
+## 已知未收编（PR-0009 后仍维持的词形缺口）
+
+> 2026-09-05 vocab PR-0009（vocab-lock@v0.8-resolved）已批量收编全仓在用词形；
+> 以下两项因**零实盘消费**不满足收编判据，维持登记位（纯样例诉求不入锁）。
 
 - `test-fixture` 对象族的 kind 值不在 `truth_bodies` 十类内（02b §14.2）——故 TEST.*
   fixture 对象样例按 07 evidence-plane run record 形态落盘（03/07 的 `is_fixture`

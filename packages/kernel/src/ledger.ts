@@ -10,8 +10,8 @@
  *   ASSUMPTION / OPEN_QUESTION / DEFERRED_DECISION / CONFLICT / HARD_BLOCKER；
  *   §91.3 可见性规则按分类二分：CONFLICT/HARD_BLOCKER = 高显著度异常区块，
  *   ASSUMPTION/OPEN_QUESTION/DEFERRED_DECISION = 聚合到对应章节；
- * - 词表纪律：五分类词轴 absent_in_vocab_lock__pending_vocab_pr（镜像点
- *   @pomaster/schemas vocab.ts 待收编段，x-vocab-source: PRD §49.2/§91.3）；
+ * - 词表纪律：五分类词轴已随 PR-0009 入锁（vocab-lock discovery_vocab.exception_classification，
+ *   镜像点 @pomaster/schemas vocab.ts，x-vocab-source: PRD §49.2/§91.3）；
  *   EXC-n 是 ledger 平面内通路编号词形（GRN-n/CLM-n 同款；状态面台账键，非
  *   governed 前缀，不入 id_namespace 闭包）。
  *
@@ -157,7 +157,7 @@ export async function recordException(
     throw new GovernanceError(
       "SCHEMA_INVALID",
       `classification 词表外：${classificationCandidate}（§49.2 五分类闭包）`,
-      `合法词形：${EXCEPTION_CLASSIFICATION_VALUES.join(" | ")}；扩值走词汇表 PR（pending_vocab_pr）`,
+      `合法词形：${EXCEPTION_CLASSIFICATION_VALUES.join(" | ")}；已随 PR-0009 入锁，扩值走词汇表 PR`,
       { classification: classificationCandidate },
     );
   }

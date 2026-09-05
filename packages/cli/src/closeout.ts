@@ -21,7 +21,7 @@
  * - 施断 = kernel 唯一写通道 applyTransaction：transition_object patch
  *   evidence=VERIFIED。「COMPLETED」在四轴模型的词表合法承载是 evidence 轴 VERIFIED
  *   （EVIDENCE_VALUES 词表值；lifecycle 六值闭包无 COMPLETED，禁私加词表——「COMPLETED」
- *   仅作 CLI 呈现层局部词 TODO(vocab-pr)）。kernel 对施断的判卷（CROSS_AXIS_ASSERTION：
+ *   仅作 CLI 呈现层局部词——词形已随 PR-0009 入锁 vocab-lock presentation_axes.closeout_change_presentation）。kernel 对施断的判卷（CROSS_AXIS_ASSERTION：
  *   PROPOSED ⇒ evidence=PLANNED 等）原码透传，本层不预判不豁免。
  *
  * 判卷分母诚实纪律：
@@ -121,7 +121,7 @@ export interface CloseoutGateRow {
 }
 
 /**
- * Spec 维度逐条款判卷行（vNext Batch 2 R1 / D6；cli 局部判卷码位 TODO(vocab-pr)）。
+ * Spec 维度逐条款判卷行（vNext Batch 2 R1 / D6；判卷行字段词形透传 21 schema proof_type——vocab-lock evidence_spec_vocab.proof_type，PR-0009 收编开放词面）。
  */
 export interface CloseoutSpecClauseEntry {
   readonly spec: string;
@@ -165,7 +165,7 @@ export interface CloseoutResult {
     readonly gates_passed: number;
     readonly rows: readonly CloseoutGateRow[];
   } | null;
-  /** 施断成功时的 CLI 呈现层局部词（TODO(vocab-pr)；非词表新增——轴面承载是 evidence=VERIFIED）。 */
+  /** 施断成功时的 CLI 呈现层局部词（vocab-lock presentation_axes.closeout_change_presentation——PR-0009；非词表新增——轴面承载是 evidence=VERIFIED）。 */
   readonly change: "COMPLETED" | null;
   readonly applied_seq: number | null;
   readonly short_circuited: boolean | null;
@@ -999,7 +999,7 @@ export async function runCloseout(
         `  dod: ${dod.verified}/${dod.acceptance_total} acceptance VERIFIED`,
         `  ${specSummary}`,
         `  gates: ${gates.gates_passed}/${gates.gates_judged} passed`,
-        `  transition: evidence → VERIFIED（kernel applyTransaction 唯一写通道；COMPLETED 是呈现词 TODO(vocab-pr)）`,
+        `  transition: evidence → VERIFIED（kernel applyTransaction 唯一写通道；COMPLETED 是呈现词——vocab-lock presentation_axes.closeout_change_presentation）`,
       ],
       [...gateWarnings, ...specWarnings],
     );

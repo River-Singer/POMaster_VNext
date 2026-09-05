@@ -28,7 +28,7 @@
  *   处置都是触发制升级信号，呈报 Owner 裁定，非本命令职权（对齐 status 命令
  *   「词表外观测值 warning 不改 ok 语义」先例）；
  * - 词形纪律：本命令局部词（GATEKEEPER_DRIFT_OBSERVED / SUPERVISOR_TRIGGER_OBSERVED /
- *   COMMAND_DEFERRED / execution 呈现两态）均带 TODO(vocab-pr) 注记。
+ *   COMMAND_DEFERRED / execution 呈现两态）已随 PR-0009 入锁（vocab-lock presentation_axes 观测信号码位/CLI 呈现码位/execution_presentation_status 各轴）。
  */
 import {
   detectGatekeeperDrift,
@@ -116,10 +116,10 @@ export interface AgentsStatusResult {
   };
 }
 
-/** GATEKEEPER_DRIFT_OBSERVED（CLI 局部词 TODO(vocab-pr)）：观测信号 warning 位。 */
+/** GATEKEEPER_DRIFT_OBSERVED（x-vocab-source: vocab-lock presentation_axes.observation_signal_codes——PR-0009）：观测信号 warning 位。 */
 export const GATEKEEPER_DRIFT_OBSERVED = "GATEKEEPER_DRIFT_OBSERVED";
 
-/** SUPERVISOR_TRIGGER_OBSERVED（CLI 局部词 TODO(vocab-pr)）：DEF-SUP 触发信号 warning 位。 */
+/** SUPERVISOR_TRIGGER_OBSERVED（x-vocab-source: vocab-lock presentation_axes.observation_signal_codes——PR-0009）：DEF-SUP 触发信号 warning 位。 */
 export const SUPERVISOR_TRIGGER_OBSERVED = "SUPERVISOR_TRIGGER_OBSERVED";
 
 /** agents status 观测输入（DEF-SUP 申报位；缺省 = 未申报）。 */
@@ -307,7 +307,7 @@ function emptyAgentsStatus(): AgentsStatusResult {
 // run / handoff（§44.8 显式 deferred：P21 AgentRuntime 面）
 // ============================================================
 
-/** COMMAND_DEFERRED（CLI 局部码 TODO(vocab-pr)）：命令已注册但实现显式 deferred。 */
+/** COMMAND_DEFERRED（x-vocab-source: vocab-lock presentation_axes.cli_presentation_codes——PR-0009）：命令已注册但实现显式 deferred。 */
 export const COMMAND_DEFERRED = "COMMAND_DEFERRED";
 
 /**

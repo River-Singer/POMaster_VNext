@@ -566,31 +566,31 @@
     {
       "id": "AUTHORITY.BE.API_CONTRACT_OWNERSHIP",
       "path": "policies/authority.be.api_contract_ownership.json",
-      "content_sha256": "sha256:ea32fd4f036903543c2e2242b635a7dc7edceee8cac72c20bed0062ace05a912",
+      "content_sha256": "sha256:ab0ba13167f2ea3f33698fd59d30c6a46eaed2cd42d7d77256de479c49f21368",
       "source_ref": "pomaster/components/backend-hard-spec/assets/universal/12-api-contract-protocol.md"
     },
     {
       "id": "AUTHORITY.BE.CONTRACT_OWNERSHIP",
       "path": "policies/authority.be.contract_ownership.json",
-      "content_sha256": "sha256:85f643c6687d9e7dc1910197ae555e218d145c3d4a8f0f821d5367ce49c2e694",
+      "content_sha256": "sha256:3b363c63ed2480b2f05d7726855eaaa3982afda5217f3746391181800b4b1a24",
       "source_ref": "pomaster/components/backend-hard-spec/assets/universal/08-contract-change-protocol.md"
     },
     {
       "id": "AUTHORITY.CHG.CHANGE_OWNERS",
       "path": "policies/authority.chg.change_owners.json",
-      "content_sha256": "sha256:967a41d84d4ee1511a51def82af90b8b42a5939d096d54daaf7d5658cdf9c9f1",
+      "content_sha256": "sha256:b08cad7325a47a4a5b4cd52f358eef25e725cab4ce18856469aa1d3bf255a5a6",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/06-change-governance-protocol.md"
     },
     {
       "id": "AUTHORITY.WEB.API.REQUEST_OWNERS",
       "path": "policies/authority.web.api.request_owners.json",
-      "content_sha256": "sha256:c6e2d913af5eb5eefb5ea0cf9af6adc1e96bdbd95f49024eee47cf3ae3c1eef4",
+      "content_sha256": "sha256:1278194037ef46edede667c3b3b0a351e3d0333872b49007f4f17849b63ea36d",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/15-request-api-protocol.md"
     },
     {
       "id": "AUTHORITY.WEB.GRID.OWNERSHIP",
       "path": "policies/authority.web.grid.ownership.json",
-      "content_sha256": "sha256:f2bcb074de783d1ff6bab5c2a7e36c1aa97cc520e550b08da8dd277660e4129c",
+      "content_sha256": "sha256:058dcd0aca7da174903266ad63ad6e89910310e5c466c36a3e9c1755e6cdee16",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/30-data-grid-protocol.md"
     },
     {
@@ -680,19 +680,19 @@
     {
       "id": "GATE.BE.API.CONTRACT_CHECKS",
       "path": "gates/gate.be.api.contract_checks.json",
-      "content_sha256": "sha256:4b8938397ee1c5abdd1395435e31ee5442e243123b05dff7b3e7e9b562069442",
+      "content_sha256": "sha256:4153f4f77bca98ffd664a21c182173e0b4941bc643637d6cc32e674141919019",
       "source_ref": "pomaster/components/backend-hard-spec/assets/universal/12-api-contract-protocol.md"
     },
     {
       "id": "GATE.BE.CHG.CONTRACT_CHANGE_CHECKS",
       "path": "gates/gate.be.chg.contract_change_checks.json",
-      "content_sha256": "sha256:6b53322302fa40a73d276c40cc8f2ca0fce6e5e9d1a33f88635331fc94dda3dc",
+      "content_sha256": "sha256:5899bd3be7465265ffeb0733299efd7933ca2351de8f9ee4862f59fdb9ea50f5",
       "source_ref": "pomaster/components/backend-hard-spec/assets/universal/08-contract-change-protocol.md"
     },
     {
       "id": "GATE.CHG.PRECHANGE_CHECKS",
       "path": "gates/gate.chg.prechange_checks.json",
-      "content_sha256": "sha256:86f0fdcb146ecad551d5cc561cdce0f3280c22ad5adc9ab5886bb83d3cdad5f0",
+      "content_sha256": "sha256:3c683ff9f1f90cb8c32b4504217cf83df6b5804604431f19d8fd26c353ce45d2",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/06-change-governance-protocol.md"
     },
     {
@@ -704,67 +704,67 @@
     {
       "id": "GATE.WEB.API.REQUEST_CHECKS",
       "path": "gates/gate.web.api.request_checks.json",
-      "content_sha256": "sha256:6b49d5111634ceb768a5e426db7ff34231a91943f0c1b2117d4986e1564e0cf3",
+      "content_sha256": "sha256:7aa88bedfa777ec4e43f55461128813ed1222762f1ee8232239e66dd6d05df83",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/15-request-api-protocol.md"
     },
     {
       "id": "GATE.WEB.GRID.CHECKS",
       "path": "gates/gate.web.grid.checks.json",
-      "content_sha256": "sha256:cf7e571efd93f8ae29334ad0bc1445033ece680a51835ce474d40d8a31d07619",
+      "content_sha256": "sha256:a76aea4df29abbffe2806f2c7bb2ef34cac12f540fe7ff68282b941c41a5a1c3",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/30-data-grid-protocol.md"
     },
     {
       "id": "KNOWLEDGE.API.EXAMPLE_STABLE_ERROR_CODE",
       "path": "knowledge/knowledge.api.example_stable_error_code.json",
-      "content_sha256": "sha256:8def854ff85f5448b231a82fabfb63cb4ecdf3c51661d4551e386dd667dbc5c6",
+      "content_sha256": "sha256:37bf3957591366e65f728bc61c68ebd7841d6bebd161d3eb2fbb1bf739990b0c",
       "source_ref": "pomaster/components/backend-hard-spec/assets/universal/12-api-contract-protocol.md"
     },
     {
       "id": "KNOWLEDGE.CHG.EXAMPLE_COMPAT_WINDOW",
       "path": "knowledge/knowledge.chg.example_compat_window.json",
-      "content_sha256": "sha256:31e4a6a1a0898e319fd341535e11c71ef7d55183059e8d7c96a4628c54245448",
+      "content_sha256": "sha256:2aa1023b84a551c8a94699313ba9c170e2d2625b601e2982010a8f88797449d3",
       "source_ref": "pomaster/components/backend-hard-spec/assets/universal/08-contract-change-protocol.md"
     },
     {
       "id": "KNOWLEDGE.CHG.EXAMPLE_PROP_MIGRATION",
       "path": "knowledge/knowledge.chg.example_prop_migration.json",
-      "content_sha256": "sha256:d372a4941abecaafd6d53331d5eac8fe13595333276ae8350f16aac29df94de0",
+      "content_sha256": "sha256:1a6ace8962656c140db70f89e32b966f9876207b7b1cbc33d0695dab522f148b",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/06-change-governance-protocol.md"
     },
     {
       "id": "KNOWLEDGE.FP.API.FIELD_DRIFT_NO_CONTRACT",
       "path": "knowledge/knowledge.fp.api.field_drift_no_contract.json",
-      "content_sha256": "sha256:e2182eb5b67c6c71e82ca37cb17a6d063541fc3d7f8f5e778ecfaea47d0207ca",
+      "content_sha256": "sha256:9dae37dd10e9d93b67e7c65f371d6368ac54a4129aa093756be04b22cd9f4675",
       "source_ref": "pomaster/components/backend-hard-spec/assets/universal/12-api-contract-protocol.md"
     },
     {
       "id": "KNOWLEDGE.FP.API.PER_PAGE_HTTP_CLIENT",
       "path": "knowledge/knowledge.fp.api.per_page_http_client.json",
-      "content_sha256": "sha256:627907901169077da6d53a5b52162445b18cc5671afb4bcdb6be3571567f1aeb",
+      "content_sha256": "sha256:89cbedc21c13c3f0755b3517af5ac01761cba9b56c6999c99342c05ebf7fe194",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/15-request-api-protocol.md"
     },
     {
       "id": "KNOWLEDGE.FP.BE.CONTRACT_DRIFT",
       "path": "knowledge/knowledge.fp.be.contract_drift.json",
-      "content_sha256": "sha256:871eba9fbf646b43dec353e8b66d9a9a8153c2dbd7803617f3ee8ff46dcdb93a",
+      "content_sha256": "sha256:1d68e6f6072f8008e9d5418e5cbbfb039c09a7dd25dc1e234ba997ff1e572636",
       "source_ref": "pomaster/components/backend-hard-spec/assets/universal/08-contract-change-protocol.md"
     },
     {
       "id": "KNOWLEDGE.FP.CHG.PAGE_LOCAL_PADDING",
       "path": "knowledge/knowledge.fp.chg.page_local_padding.json",
-      "content_sha256": "sha256:74c2e8fad33ad38af354d8bcf9ce5b9a4c4285605361dc5768f5d1cd89e65bc3",
+      "content_sha256": "sha256:86ab2667528d2d1b9d10db71a10c8988326b06716545ccb711145334546e7f8e",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/06-change-governance-protocol.md"
     },
     {
       "id": "KNOWLEDGE.FP.GRID.GLOBAL_TD_WIDTH",
       "path": "knowledge/knowledge.fp.grid.global_td_width.json",
-      "content_sha256": "sha256:3bf580c79d851921c227fc8fabb57b9dce8e8a4e73cc30f54a22d9972ef7031d",
+      "content_sha256": "sha256:88016e2c8cc8668413470754f6d73c8fb90064cbf97ca65bd9a91b9be7bd853b",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/30-data-grid-protocol.md"
     },
     {
       "id": "KNOWLEDGE.WEB.API.EXAMPLE_GET_ENTITY_LIST",
       "path": "knowledge/knowledge.web.api.example_get_entity_list.json",
-      "content_sha256": "sha256:e179dacbb1ba29a80c88a7ca812ddc463a31d8dcf835e87ffd2fd32e9a0ef755",
+      "content_sha256": "sha256:a8baada5dbd5f22c0665c3ea873e37be8afc0aa52c119f8c8f6dc388b8511a88",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/15-request-api-protocol.md"
     },
     {
@@ -776,7 +776,7 @@
     {
       "id": "KNOWLEDGE.WEB.GRID.EXAMPLE_COLUMN_PRESET",
       "path": "knowledge/knowledge.web.grid.example_column_preset.json",
-      "content_sha256": "sha256:131424299e976c0bafaa70f38fcc338469b6ace06600fa78164c5a124eefd3ee",
+      "content_sha256": "sha256:6752745bb7ed1a584b3864c36255848115704d52a8db5a6b6284673f9d8a6673",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/30-data-grid-protocol.md"
     },
     {
@@ -794,955 +794,955 @@
     {
       "id": "POLICY.AI.CHANGE_PLAN_FIRST",
       "path": "policies/policy.ai.change_plan_first.json",
-      "content_sha256": "sha256:f04bdaf93fb2e216f6416a7600fd7279e3566606fbe77ce4527437d8e518360c",
+      "content_sha256": "sha256:247dccf745dd3dc6dc5bf04bb47748f242c085b70ce0d8f8b161ac9ab898f191",
       "source_ref": "package://catalog/policies/policy.ai.change_plan_first.json"
     },
     {
       "id": "POLICY.AI.FACT_INFERENCE_SEPARATION",
       "path": "policies/policy.ai.fact_inference_separation.json",
-      "content_sha256": "sha256:c9f8607e6d395ac69b7efd9f2d66c99ead78a7af29edb551761e5bb4d796940e",
+      "content_sha256": "sha256:708a44464a2ec989eaf8a3e80bc3371fc6178673e89aea1cd1b260446cf60979",
       "source_ref": "package://catalog/policies/policy.ai.fact_inference_separation.json"
     },
     {
       "id": "POLICY.AI.READ_SEARCH_VERIFY_BEFORE_WRITE",
       "path": "policies/policy.ai.read_search_verify_before_write.json",
-      "content_sha256": "sha256:19e81b73ed86ffac39e2bf4644976971cdcd845a5bd520c4d1a3438399baf559",
+      "content_sha256": "sha256:89ee24dc5ee0be14d28e13b9995598aba5a1c796dae34f5b8de797441d0a6ba6",
       "source_ref": "package://catalog/policies/policy.ai.read_search_verify_before_write.json"
     },
     {
       "id": "POLICY.AI.RULE_RELAXATION_APPROVAL",
       "path": "policies/policy.ai.rule_relaxation_approval.json",
-      "content_sha256": "sha256:4afa8e5926f41bb1a194afab33529d92a144240c4ee41ee340ac4c9925ede726",
+      "content_sha256": "sha256:f4be14610a9dcfba92bf2c3346b7db3598cb2efb4aac6abf667b7be894dc3b35",
       "source_ref": "package://catalog/policies/policy.ai.rule_relaxation_approval.json"
     },
     {
       "id": "POLICY.API.BACKWARD_COMPAT_DEFAULTS",
       "path": "policies/policy.api.backward_compat_defaults.json",
-      "content_sha256": "sha256:9391d1e52b2f32e4f93c8691790d9c04b34614538a15c78636e7db1436fb8271",
+      "content_sha256": "sha256:c918fe158be7d3fb0b0be7ba6393b1ae7d02fd933378cd48a06641ad97cdd77f",
       "source_ref": "pomaster/components/backend-hard-spec/assets/universal/12-api-contract-protocol.md"
     },
     {
       "id": "POLICY.API.CONTRACT_IMPL_CONSISTENCY",
       "path": "policies/policy.api.contract_impl_consistency.json",
-      "content_sha256": "sha256:482986487e479e8ea5828a33e14913dd0b8fa71ec18f6201cbc491acd26b26b9",
+      "content_sha256": "sha256:660e13138f86c63c9faef8624946d13bb03a3264a93c1314b6cf3f429354b972",
       "source_ref": "pomaster/components/backend-hard-spec/assets/universal/12-api-contract-protocol.md"
     },
     {
       "id": "POLICY.API.NO_INFORMAL_CONTRACT",
       "path": "policies/policy.api.no_informal_contract.json",
-      "content_sha256": "sha256:51e62f446a9a09904b15409cbf532430d2b2afab35f67788e4421e76913456cb",
+      "content_sha256": "sha256:d8b61a1fbcd06fddc4e7236f9f3c9b70f3c957f77dbba28ffa0aa17e6c9ca50f",
       "source_ref": "pomaster/components/backend-hard-spec/assets/universal/12-api-contract-protocol.md"
     },
     {
       "id": "POLICY.ARCH.DECISION_TRADEOFF_RECORD",
       "path": "policies/policy.arch.decision_tradeoff_record.json",
-      "content_sha256": "sha256:05d9895b333a5c0245628f7986b81095e0a77b90705d005a9ee5c2a3af6344d2",
+      "content_sha256": "sha256:cf84e5d1e5223a830ed1e4d6d3a5901e819d06c0ef4b49b03799f0eef484250a",
       "source_ref": "POMaster_VNext/corpus/spec-knowledge/candidates/BE-G1.yaml"
     },
     {
       "id": "POLICY.ARCH.NO_CONVENIENCE_OVER_BOUNDARY",
       "path": "policies/policy.arch.no_convenience_over_boundary.json",
-      "content_sha256": "sha256:e1aaafdeef1af048da7109c11028eb4211ce44e84f89df4c80bbfc24a4f8b25e",
+      "content_sha256": "sha256:551081c7928bc2690ba35b5872e683969fd4abc0d4ae1739889d3890cea41a67",
       "source_ref": "package://catalog/policies/policy.arch.no_convenience_over_boundary.json"
     },
     {
       "id": "POLICY.ARCH.PREFER_VERIFIABLE_OPTION",
       "path": "policies/policy.arch.prefer_verifiable_option.json",
-      "content_sha256": "sha256:7f2680556bf24e7fcd4d62f2f6c986b0a37bd3af2470aefe879ce401a0fd49c8",
+      "content_sha256": "sha256:0406182aae9a42763fee0026e01c2d32b3d9713c04eedd908b4bdee289f85df6",
       "source_ref": "package://catalog/policies/policy.arch.prefer_verifiable_option.json"
     },
     {
       "id": "POLICY.BOUND.SEARCH_FIRST_ENTRY_ONLY",
       "path": "policies/policy.bound.search_first_entry_only.json",
-      "content_sha256": "sha256:1e9d02d452d8066869280ce74a2cb9fb9bf8136c5da7bb730708a8b525bf32bb",
+      "content_sha256": "sha256:8c9a9cacb159fb183148e561dec59033e78ceb6ed73582afdf642b39b70f5506",
       "source_ref": "package://catalog/policies/policy.bound.search_first_entry_only.json"
     },
     {
       "id": "POLICY.BOUNDARY.VALIDATE_IN_ENCODE_OUT",
       "path": "policies/policy.boundary.validate_in_encode_out.json",
-      "content_sha256": "sha256:9b2d99a51641bff55c814110233ad6a1aa25e698238a64c234bcb705aee010f1",
+      "content_sha256": "sha256:2fbf067da85d25a5009b9d940fb79932125f2b9ec4bd89a4910dae26b4b69df4",
       "source_ref": "package://catalog/policies/policy.boundary.validate_in_encode_out.json"
     },
     {
       "id": "POLICY.CACHE.LIFECYCLE_DEFINITION",
       "path": "policies/policy.cache.lifecycle_definition.json",
-      "content_sha256": "sha256:41935230c5eb30609e28d5e164b99815acc2ada90a67f70543adfa3855ac1b3b",
+      "content_sha256": "sha256:e76aec82e2f0dd7271bb4d8a11330f4ed67038d5b928acf7a67452ccf2aa307c",
       "source_ref": "POMaster_VNext/corpus/spec-knowledge/candidates/BE-G4.yaml"
     },
     {
       "id": "POLICY.CFG.PRODUCTION_SAFE_DEFAULTS",
       "path": "policies/policy.cfg.production_safe_defaults.json",
-      "content_sha256": "sha256:ff257b8ac497fad964ccb361aa981f15f4daf3645884a727ad8f281955bfdc93",
+      "content_sha256": "sha256:364c19d247e7ae63e66070e4489bbbb8d6a94f54df47f3d2e8e963e71c1d5ec0",
       "source_ref": "package://catalog/policies/policy.cfg.production_safe_defaults.json"
     },
     {
       "id": "POLICY.CFG.SCHEMA_BACKED_CONFIG",
       "path": "policies/policy.cfg.schema_backed_config.json",
-      "content_sha256": "sha256:8b311de0b1cd7413cd87162649a3b8d1a3b0c37df4af5ad6622d4bbceb295e6b",
+      "content_sha256": "sha256:ef305fcd69f641778cdc421d302e67fb4bb0d461813c26d6eff464a4e454f25b",
       "source_ref": "package://catalog/policies/policy.cfg.schema_backed_config.json"
     },
     {
       "id": "POLICY.CHG.AFFECT_TEMPLATES",
       "path": "policies/policy.chg.affect_templates.json",
-      "content_sha256": "sha256:b4d113bcef7a428d4ab9c6f0179f19f7fde3f9abf0ef7640bcf14bf75fe69b40",
+      "content_sha256": "sha256:b2e44677b89a2ae7965a1a5b5f6640052d3cff14fde24f0a1601ba4b0d86c54a",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/06-change-governance-protocol.md"
     },
     {
       "id": "POLICY.CHG.BREAKING_VERSIONING",
       "path": "policies/policy.chg.breaking_versioning.json",
-      "content_sha256": "sha256:19cae0081fca61d2b54348b88b4a2b4b456727de7f0cd4effcbdf2f1bb85451e",
+      "content_sha256": "sha256:f715e9d1f11bee0cd87d38d1b11dfe00f5b54c69e425007afb4d6f77e127eaf6",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/06-change-governance-protocol.md"
     },
     {
       "id": "POLICY.CHG.COMPAT_MIGRATION_ROLLBACK",
       "path": "policies/policy.chg.compat_migration_rollback.json",
-      "content_sha256": "sha256:9940a8a608e276a1d1a855086cfce4a25ef0dfbf0b15ad994ff1bbdc783e8cf7",
+      "content_sha256": "sha256:8b67ed67c6f48fa07f3ebd39b0e71c3e7f27c47b33f0c85fe7a38fa6875c9fd0",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/06-change-governance-protocol.md"
     },
     {
       "id": "POLICY.CHG.DEPRECATE_BEFORE_DELETE",
       "path": "policies/policy.chg.deprecate_before_delete.json",
-      "content_sha256": "sha256:b9f87998d5400b0af2e2a9fcfe9eecaacd2d92c4b4fef4fa45a7189e11bbcdfc",
+      "content_sha256": "sha256:b41e0f193c55b4eda17f012b8add322f29745c712eabb717a03f55909b630202",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/06-change-governance-protocol.md"
     },
     {
       "id": "POLICY.CHG.FIX_AT_ROOT_CAUSE_LEVEL",
       "path": "policies/policy.chg.fix_at_root_cause_level.json",
-      "content_sha256": "sha256:e5ddc6242ebd9d611c382f20a294b4a172f28b98700bd89ad49cc59ec99f0961",
+      "content_sha256": "sha256:3034bb19c97f0bd165e25348246997f5e2eb0ca935d712045abe212065ea7680",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/06-change-governance-protocol.md"
     },
     {
       "id": "POLICY.CHG.NO_UNRELATED_CHANGES",
       "path": "policies/policy.chg.no_unrelated_changes.json",
-      "content_sha256": "sha256:14cbf7d017da3e71c9c93faf1a8a81e9ba4a944fbd9603913de4f8b7062f3fef",
+      "content_sha256": "sha256:6fa71d9a21556e5ddd7f2b1f3b42682fe8774de58fae3325d83c2cad3d4b3b47",
       "source_ref": "package://catalog/policies/policy.chg.no_unrelated_changes.json"
     },
     {
       "id": "POLICY.CHG.OBSERVABLE_EVOLUTION",
       "path": "policies/policy.chg.observable_evolution.json",
-      "content_sha256": "sha256:51bc1e3ea738a2c4a277f1195484b24bb410b9f4a21ace0cb3668b958b04122d",
+      "content_sha256": "sha256:2791da08e24da473dc4c8d5d6675cc8eb4b60acba93a7a253587571a00fe3f77",
       "source_ref": "pomaster/components/backend-hard-spec/assets/universal/08-contract-change-protocol.md"
     },
     {
       "id": "POLICY.CHG.PRECHANGE_CONSUMER_SCAN",
       "path": "policies/policy.chg.prechange_consumer_scan.json",
-      "content_sha256": "sha256:e2e625878f81f282f2ddfe6f547bbce3d1414f377a80a1f7b7eb2b1aa692f6ea",
+      "content_sha256": "sha256:bb1ffec84c661b9a3c52c7dcc4ae87e87e248d49dbca24ec7fa71d0c71102ff1",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/06-change-governance-protocol.md"
     },
     {
       "id": "POLICY.CHG.STAGED_ROLLOUT",
       "path": "policies/policy.chg.staged_rollout.json",
-      "content_sha256": "sha256:3a44137a8de1ed95db7da427c3ae7d78a8fe808b2bbfac25ebc2d713ed8ad986",
+      "content_sha256": "sha256:9e54a42fc332c6df6223dc6316f2cd892cfb9bb2903f87970e2b5709fe630a46",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/06-change-governance-protocol.md"
     },
     {
       "id": "POLICY.CHG.SYNC_CONTRACT_DOCS_TESTS",
       "path": "policies/policy.chg.sync_contract_docs_tests.json",
-      "content_sha256": "sha256:d8a7b163e10d0de226b6eefa1f74fcaec2b1225fa61c3df682e759f5944c1fc2",
+      "content_sha256": "sha256:054f06a1c9410bc69e025cde710b8da72e01e349c3900b65d57ab74e7645ab77",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/06-change-governance-protocol.md"
     },
     {
       "id": "POLICY.CONFLICT.PRIORITY_LADDER",
       "path": "policies/policy.conflict.priority_ladder.json",
-      "content_sha256": "sha256:c0f3e8fc8d6c9a767cb3568c84bf01aa48f9cf18cdf6a7f4ed956b3f394b7191",
+      "content_sha256": "sha256:29572ced15e5c9e27280031dd2b98a270de56fd6873b4de8e55b694207e4bcc3",
       "source_ref": "POMaster_VNext/corpus/spec-knowledge/candidates/FE-G1.yaml"
     },
     {
       "id": "POLICY.CONTRACT.NO_INVENTED_FACTS",
       "path": "policies/policy.contract.no_invented_facts.json",
-      "content_sha256": "sha256:a8ef4694308ddc271324d02626933c10a86d4b5ab65cfd75e833c270e6d40dbe",
+      "content_sha256": "sha256:f0bde64549b7887f441facd0d747f7becb78f21e3bac1b779070b30e894c0551",
       "source_ref": "package://catalog/policies/policy.contract.no_invented_facts.json"
     },
     {
       "id": "POLICY.DEP.ADMISSION_SIX_DIMENSION_CHECK",
       "path": "policies/policy.dep.admission_six_dimension_check.json",
-      "content_sha256": "sha256:789c44b7a661fc60c6785eea4c68c0d5337ca35525602ee0d90cecdf8a1f9ec1",
+      "content_sha256": "sha256:a455873cb16953571abfff1e2db7caea15e53c367d798ce98320151dd9a8e0fe",
       "source_ref": "POMaster_VNext/corpus/spec-knowledge/candidates/BE-G1.yaml"
     },
     {
       "id": "POLICY.DEP.BUILD_PATH_SUPPLY_CHAIN",
       "path": "policies/policy.dep.build_path_supply_chain.json",
-      "content_sha256": "sha256:c4ced9b8372b63c581686c1e83b9026cc01d9921a95e73dcad6977391d422704",
+      "content_sha256": "sha256:1bd1751e8c8cb822d4bbbdd82ed658909176ebb45d92afdbd7eca682cfeda3fd",
       "source_ref": "package://catalog/policies/policy.dep.build_path_supply_chain.json"
     },
     {
       "id": "POLICY.DEP.CHANGE_SURFACE_REVIEW",
       "path": "policies/policy.dep.change_surface_review.json",
-      "content_sha256": "sha256:ba8e31a76c2e6dbddeb75294e8a77720bf225f761cd277a4d5cbabfde56aa48b",
+      "content_sha256": "sha256:e6cbf017bf01c4b2837c01458ebd5821f6293fe2cecba25fea3be5eef93dc62a",
       "source_ref": "POMaster_VNext/corpus/spec-knowledge/candidates/FE-G1.yaml"
     },
     {
       "id": "POLICY.DEP.INTRODUCTION_REVIEW",
       "path": "policies/policy.dep.introduction_review.json",
-      "content_sha256": "sha256:a1f14397d363055d40444af6d356024fc4c47bfaa7115242959eff111f981bb7",
+      "content_sha256": "sha256:07141959f1d2fde68405e9c0b1bdc51142792dadeff04a6a2cc85231477040b9",
       "source_ref": "POMaster_VNext/corpus/spec-knowledge/candidates/FE-G1.yaml"
     },
     {
       "id": "POLICY.DEP.NO_UNTRUSTED_SOURCE_NO_LOCK_BYPASS",
       "path": "policies/policy.dep.no_untrusted_source_no_lock_bypass.json",
-      "content_sha256": "sha256:5d1d6b7c13060fbdb1523cd6393289ab8421dc088e6839dd1191a502520fb3f9",
+      "content_sha256": "sha256:25cb7bde5a102e1145d6cdc3d135b1f1cc0b05c409a7063f2f1d1b542e6cc575",
       "source_ref": "package://catalog/policies/policy.dep.no_untrusted_source_no_lock_bypass.json"
     },
     {
       "id": "POLICY.DEPLOY.NO_DEV_ENV_AS_PRODUCTION_FACT",
       "path": "policies/policy.deploy.no_dev_env_as_production_fact.json",
-      "content_sha256": "sha256:bae7ea7a501df4b70348c8a379072f81b702569c665588a51c04a691d9365980",
+      "content_sha256": "sha256:f79a711a1df690787a195c762849b8f5233a24dfbfbc68e6c9522bf36a2e3b08",
       "source_ref": "package://catalog/policies/policy.deploy.no_dev_env_as_production_fact.json"
     },
     {
       "id": "POLICY.DEPLOY.RUNTIME_FACT_RECORD",
       "path": "policies/policy.deploy.runtime_fact_record.json",
-      "content_sha256": "sha256:0aaa04c8554bf0735cff30f56c24054d49d340cca98493d6d052e361c2acbe76",
+      "content_sha256": "sha256:5229c5653639d01e80b107ddc50f509ddda411cb9d49b383cb7d9328548bdab0",
       "source_ref": "package://catalog/policies/policy.deploy.runtime_fact_record.json"
     },
     {
       "id": "POLICY.DERIVED.SINGLE_IMPLEMENTATION",
       "path": "policies/policy.derived.single_implementation.json",
-      "content_sha256": "sha256:46b442c851ba903e165740d92162453408295c2dde8a0a358ca1de414a14d5b6",
+      "content_sha256": "sha256:daf7f387fd934139f3cdcef5830699aa6bd302b3a5d0cf6c5c84a82bf415845a",
       "source_ref": "POMaster_VNext/corpus/spec-knowledge/candidates/GUIDES.yaml"
     },
     {
       "id": "POLICY.EVID.ACCEPTANCE_BINDS_VERIFIABLE_EVIDENCE",
       "path": "policies/policy.evid.acceptance_binds_verifiable_evidence.json",
-      "content_sha256": "sha256:507d3f65a06441ef6d74ac15022c95ab0a6881dc072b4b0a33efccfbff465584",
+      "content_sha256": "sha256:080e895228689150edb4f3cb24f05428d3e23aa28051e96ae729ddb2bd3eddba",
       "source_ref": "package://catalog/policies/policy.evid.acceptance_binds_verifiable_evidence.json"
     },
     {
       "id": "POLICY.EVID.NO_UNVERIFIABLE_PASS",
       "path": "policies/policy.evid.no_unverifiable_pass.json",
-      "content_sha256": "sha256:2099924ded627db88b9adeb235aaf270e3f829e919ec1aa488aaf848d8ab3c9c",
+      "content_sha256": "sha256:7173259eaa8a628cbebec10592f5e62389ee5e5fe6a598c25fda03d8492211ce",
       "source_ref": "package://catalog/policies/policy.evid.no_unverifiable_pass.json"
     },
     {
       "id": "POLICY.FLAG.CLEANUP_AFTER_FULL_ROLLOUT",
       "path": "policies/policy.flag.cleanup_after_full_rollout.json",
-      "content_sha256": "sha256:040472107e65bba3c141f92558cc3c82f752d4290743f45ea5b976814d6c6981",
+      "content_sha256": "sha256:8c3c5ab972bd64c60ed3e6426144084b5fb43bb07ea0165011f96426fce5e85e",
       "source_ref": "package://catalog/policies/policy.flag.cleanup_after_full_rollout.json"
     },
     {
       "id": "POLICY.FLAG.CONSISTENT_OFF_STATE",
       "path": "policies/policy.flag.consistent_off_state.json",
-      "content_sha256": "sha256:a9f708ef3c542f62251874cd2662b6f08ba719e5bf2b8e55f2f1b98ee7b53801",
+      "content_sha256": "sha256:1d2941a5a176796f4e2ecc2692814da8f0e6bc1f141fa2616f5f99ed20e4572e",
       "source_ref": "package://catalog/policies/policy.flag.consistent_off_state.json"
     },
     {
       "id": "POLICY.FLAG.KILL_SWITCH",
       "path": "policies/policy.flag.kill_switch.json",
-      "content_sha256": "sha256:0c2311b9b75ea026dc45e23ea31c820e90f397503054e1231bfbdd141065e335",
+      "content_sha256": "sha256:627820649d0d16636f982170a566e63779f481ec591dc908827b26a3cb9c259e",
       "source_ref": "package://catalog/policies/policy.flag.kill_switch.json"
     },
     {
       "id": "POLICY.FLAG.LIFECYCLE_METADATA",
       "path": "policies/policy.flag.lifecycle_metadata.json",
-      "content_sha256": "sha256:6bef2836fc708f7b483601068245c3d535c359d5437f9097c843633de3683113",
+      "content_sha256": "sha256:6068d63c4ae50f4f825477c24a42b2dcb84cffcf40d084cda80842c807ec8aed",
       "source_ref": "package://catalog/policies/policy.flag.lifecycle_metadata.json"
     },
     {
       "id": "POLICY.FLAG.NOT_A_PERMISSION",
       "path": "policies/policy.flag.not_a_permission.json",
-      "content_sha256": "sha256:b38630a57044200621d20f231674c3400fd488240b95873d2cfb8ba685564083",
+      "content_sha256": "sha256:7e4947ea754ed1174c40fecce930617ae47810d1cf726400221177b2c017fdf7",
       "source_ref": "package://catalog/policies/policy.flag.not_a_permission.json"
     },
     {
       "id": "POLICY.GATE.P0_NON_BYPASSABLE",
       "path": "policies/policy.gate.p0_non_bypassable.json",
-      "content_sha256": "sha256:f3ed813e48711b2b454b5c110d091288eff441066f46bf78c75e24a98e75a0f2",
+      "content_sha256": "sha256:20ab9dad2a430ed97394c3eb3093b39bff7ba696998822793d14e0372e9827ad",
       "source_ref": "package://catalog/policies/policy.gate.p0_non_bypassable.json"
     },
     {
       "id": "POLICY.GATE.RISK_FACTORS_CONFIRMED",
       "path": "policies/policy.gate.risk_factors_confirmed.json",
-      "content_sha256": "sha256:1a78f5be1baa2a0690a617bd4fd1fc6c63ba11476716669b7a4c29fcd163f0a2",
+      "content_sha256": "sha256:8922c87bfa0886194cfedd40aa773aae67bbe16ec549f639862851e080d14cf7",
       "source_ref": "package://catalog/policies/policy.gate.risk_factors_confirmed.json"
     },
     {
       "id": "POLICY.GUARD.NO_CHECK_WEAKENING",
       "path": "policies/policy.guard.no_check_weakening.json",
-      "content_sha256": "sha256:48f77e264423a1346ac73a44be6077f44c9e4fcbab22dbabe1d33410fb859b21",
+      "content_sha256": "sha256:1ba4e18fe94b835bac373036a97bceaeb2f2fd39dc4656627d5791724c6afdda",
       "source_ref": "package://catalog/policies/policy.guard.no_check_weakening.json"
     },
     {
       "id": "POLICY.INTEGRATION.CALL_DEFINITION_MINIMUM",
       "path": "policies/policy.integration.call_definition_minimum.json",
-      "content_sha256": "sha256:cafd25ef9aaf227baf363802877c6be91abb536cc9bb4c47e3b7059d7fc5d7a9",
+      "content_sha256": "sha256:aa47613012e1f83f32780c28ec280bbbf639de0ff224f9c3ab889e073923683d",
       "source_ref": "package://catalog/policies/policy.integration.call_definition_minimum.json"
     },
     {
       "id": "POLICY.JOB.LIFECYCLE_DEFINITION",
       "path": "policies/policy.job.lifecycle_definition.json",
-      "content_sha256": "sha256:039bac0b853284c532b432999fb9f6bb3f9761d394dc2932fdd2d55de1e491b4",
+      "content_sha256": "sha256:63a9aea1a8cb48e2c2ca4a5fcaa860bbf917db98790022085abd1daeb46ccbc4",
       "source_ref": "package://catalog/policies/policy.job.lifecycle_definition.json"
     },
     {
       "id": "POLICY.JOB.NO_UNMANAGED_EXECUTION",
       "path": "policies/policy.job.no_unmanaged_execution.json",
-      "content_sha256": "sha256:71eeea026f47e6a4e405151054e032a2b09269247607095f63d9d13127d520d4",
+      "content_sha256": "sha256:aaea873c1c3ec504c869935b08a460fce82f34ac94d8aa9697df3142b461f36d",
       "source_ref": "package://catalog/policies/policy.job.no_unmanaged_execution.json"
     },
     {
       "id": "POLICY.OBS.ALERT_WITH_OWNER",
       "path": "policies/policy.obs.alert_with_owner.json",
-      "content_sha256": "sha256:969ce585e7991de6089b67735fa0f43ad47a9d524aa64d2a4b45dd74c07b6359",
+      "content_sha256": "sha256:7c466413e3d28c8727f60ff9b52ff7c6229ad479fa3397d9a387d3f5d6cb0b3c",
       "source_ref": "package://catalog/policies/policy.obs.alert_with_owner.json"
     },
     {
       "id": "POLICY.OBS.CONTEXT_FIELD_BASELINE",
       "path": "policies/policy.obs.context_field_baseline.json",
-      "content_sha256": "sha256:f4e7330ba644f98d207fc1f4590456cfabdecaa9f52c0bfc9b418b7aa62ab589",
+      "content_sha256": "sha256:18b2086c62c99a70ec83760b1526da94400e50f8d363085425bc334672f04a22",
       "source_ref": "package://catalog/policies/policy.obs.context_field_baseline.json"
     },
     {
       "id": "POLICY.OBS.CORRELATION_CONTEXT_MINIMUM",
       "path": "policies/policy.obs.correlation_context_minimum.json",
-      "content_sha256": "sha256:50069a77ebef43041521a26808137b8d2cf5fdc5e85b2457df5687ed0c805473",
+      "content_sha256": "sha256:4d764d66e7bbcf9475c9939bfcb75c6aa8d9e6f335794f39289a28416ac8ea8e",
       "source_ref": "POMaster_VNext/corpus/spec-knowledge/candidates/BE-G4.yaml"
     },
     {
       "id": "POLICY.OBS.NO_SENSITIVE_OR_UNBOUNDED_LOGGING",
       "path": "policies/policy.obs.no_sensitive_or_unbounded_logging.json",
-      "content_sha256": "sha256:469be4bd9643cc043098071f4199694f79e5d6fffaf30963bcd830befd2a5a22",
+      "content_sha256": "sha256:65cf2ba0017cae6e76879b0cad0b363414c2ab6f14b2b70152fe95deeebb8d03",
       "source_ref": "package://catalog/policies/policy.obs.no_sensitive_or_unbounded_logging.json"
     },
     {
       "id": "POLICY.OBS.NO_SENSITIVE_RAW_VALUES",
       "path": "policies/policy.obs.no_sensitive_raw_values.json",
-      "content_sha256": "sha256:d3f1ad4feea1f4b183a47b292f8cc33aa6c2b6f0f3ab426454550e3320eead2e",
+      "content_sha256": "sha256:9fb21eb483bc0eb2dae8004dc57a64705a82125ed5c80c783520e030a697f883",
       "source_ref": "package://catalog/policies/policy.obs.no_sensitive_raw_values.json"
     },
     {
       "id": "POLICY.OBS.RUM_DIMENSION_WHITELIST",
       "path": "policies/policy.obs.rum_dimension_whitelist.json",
-      "content_sha256": "sha256:991ef5189f8ae6c15e730e7aa0873f44524e516bc2bbaa7d840271d59f17a0fa",
+      "content_sha256": "sha256:be0a8d5573a25a0fc1ed0dfdb10b5a5fd2ea2e802f89966efef5265c8da8e802",
       "source_ref": "POMaster_VNext/corpus/spec-knowledge/candidates/FE-G1.yaml"
     },
     {
       "id": "POLICY.OBS.SOURCE_MAP_ACCESS_CONTROL",
       "path": "policies/policy.obs.source_map_access_control.json",
-      "content_sha256": "sha256:9d58e0ef96a96e16b6aff1e88b36881f35bed0bd3bd4cf74a1ef831ced9d8a9c",
+      "content_sha256": "sha256:4ee2cd86512b177a6b2ba358385323f6310fdaf34a8071cf4d50ff7f93187925",
       "source_ref": "package://catalog/policies/policy.obs.source_map_access_control.json"
     },
     {
       "id": "POLICY.OBS.TELEMETRY_LIFECYCLE_DECLARED",
       "path": "policies/policy.obs.telemetry_lifecycle_declared.json",
-      "content_sha256": "sha256:0dd8f1ad9c6547f673f911fc9a6aa02e844c121963173a388f8e1e180447084e",
+      "content_sha256": "sha256:a3d14368e2e2f2f638b8d67f3dd1d4ce7b89aa0da75fa85adac8a68247fb6185",
       "source_ref": "package://catalog/policies/policy.obs.telemetry_lifecycle_declared.json"
     },
     {
       "id": "POLICY.OBS.TRACE_CORRELATION",
       "path": "policies/policy.obs.trace_correlation.json",
-      "content_sha256": "sha256:0c3fe3d0187ae34d58d68f61b0c5d3d43529e87c23b624cb19364c5f614f5cc3",
+      "content_sha256": "sha256:0a193358a963f9948e13906f28075b1657b0f1a1279ecb8566bee3e6e481e5a5",
       "source_ref": "package://catalog/policies/policy.obs.trace_correlation.json"
     },
     {
       "id": "POLICY.PERF.EVIDENCE_BINDING",
       "path": "policies/policy.perf.evidence_binding.json",
-      "content_sha256": "sha256:5ad7dd8061e17f1d2d35c0036fecd1a717b2975cf0defa830f0c3399fe5a00d4",
+      "content_sha256": "sha256:c423e2a47348855e87c2ee5ba73f3b208e3038260cf091922781b0001047ba1a",
       "source_ref": "package://catalog/policies/policy.perf.evidence_binding.json"
     },
     {
       "id": "POLICY.PROC.CHECKLIST_CHANGE_POLICY",
       "path": "policies/policy.proc.checklist_change_policy.json",
-      "content_sha256": "sha256:fa05f80e462bd4ee1cf82d4163c2a5db92a6707d08c9668934231eef13c60d48",
+      "content_sha256": "sha256:2b17a6b7ac5324980f5520fc9c013855a03a87e334c2a28fa15ddc02f7d76e25",
       "source_ref": "package://catalog/policies/policy.proc.checklist_change_policy.json"
     },
     {
       "id": "POLICY.PROC.PRE_CODE_DECLARATION",
       "path": "policies/policy.proc.pre_code_declaration.json",
-      "content_sha256": "sha256:d32e2bf8c544aa203f46d4880181c3a4fd0b65fbfb80a940902dc73b1b0a6943",
+      "content_sha256": "sha256:25bec1449f13a19b7ed366889fac0e447a87c7f8a823685255d4bc5c12ad8c97",
       "source_ref": "POMaster_VNext/corpus/spec-knowledge/candidates/FE-G1.yaml"
     },
     {
       "id": "POLICY.PROC.SCOPE_DRIFT_RECLASSIFY",
       "path": "policies/policy.proc.scope_drift_reclassify.json",
-      "content_sha256": "sha256:9546b5eb38adf1aea66ee22dbbd5afc500d649febc0e48e4fd6a9261e6c39b70",
+      "content_sha256": "sha256:21d52844470008620a9358e6da9093a0b34e3eb3c7c9b44e760af19015f318fd",
       "source_ref": "package://catalog/policies/policy.proc.scope_drift_reclassify.json"
     },
     {
       "id": "POLICY.REL.NO_IRREVERSIBLE_UNMONITORED_FULL_RELEASE",
       "path": "policies/policy.rel.no_irreversible_unmonitored_full_release.json",
-      "content_sha256": "sha256:1c3759d20e4ed5f655544eff877069e55bd23f0e6890ce9d958e53504194989f",
+      "content_sha256": "sha256:6fdac4023566e4e54cd66070923191828963bdfde1000ab8a3aed76c6194fa5b",
       "source_ref": "package://catalog/policies/policy.rel.no_irreversible_unmonitored_full_release.json"
     },
     {
       "id": "POLICY.REL.OBSERVABILITY_BEFORE_SHIP",
       "path": "policies/policy.rel.observability_before_ship.json",
-      "content_sha256": "sha256:267551a649f93cee6bcde27b81bd99a200ddd5c57e5dc345c6b6fdbb411bdcf6",
+      "content_sha256": "sha256:4699561e79c77874e2a0407b1efd1eaacb69a77464698b83dee77ed4958474e2",
       "source_ref": "package://catalog/policies/policy.rel.observability_before_ship.json"
     },
     {
       "id": "POLICY.REL.PRE_RELEASE_CONFIRMATION",
       "path": "policies/policy.rel.pre_release_confirmation.json",
-      "content_sha256": "sha256:1837323cd3674f5a01a29b13422b877ea03e8a5a00829cff0d6a75024f907f6d",
+      "content_sha256": "sha256:b4579adf68c108a68093474a91e3d48caa44cd989e11cfdaa4a5c6cd7ab07d8e",
       "source_ref": "POMaster_VNext/corpus/spec-knowledge/candidates/BE-G1.yaml"
     },
     {
       "id": "POLICY.REL.TRACEABLE_BUILD",
       "path": "policies/policy.rel.traceable_build.json",
-      "content_sha256": "sha256:19915e7cb605e51b8004bdbd2c2df285f804d948507050ca328b06710e6874c6",
+      "content_sha256": "sha256:27552d868a1cc381d40ce54f5252fabb817ae9cce29161520f8d4e128b538f63",
       "source_ref": "package://catalog/policies/policy.rel.traceable_build.json"
     },
     {
       "id": "POLICY.ROLE.DOMAIN_DECISION_AUTHORITY",
       "path": "policies/policy.role.domain_decision_authority.json",
-      "content_sha256": "sha256:635a7607dd0305046fbe42431ae6e97b41665acea94fad6af80395339f23278a",
+      "content_sha256": "sha256:986615dcb29b581e7ed06d80ce6bcdca87d4d0d927df71eeaf4a9e41da497a96",
       "source_ref": "POMaster_VNext/corpus/spec-knowledge/candidates/FE-G1.yaml"
     },
     {
       "id": "POLICY.ROLE.HUMAN_SIGNS_FOR_AI",
       "path": "policies/policy.role.human_signs_for_ai.json",
-      "content_sha256": "sha256:cb4115977ea236231aab0b473ed178471a145810596b22b5ab8ddd66f6ec8864",
+      "content_sha256": "sha256:febbc42cebbdee983251cae37c21380bf2eb6127659a9828329aeb4859717e62",
       "source_ref": "package://catalog/policies/policy.role.human_signs_for_ai.json"
     },
     {
       "id": "POLICY.SEC.AUTHN_POLICY_UNIFIED",
       "path": "policies/policy.sec.authn_policy_unified.json",
-      "content_sha256": "sha256:6834c6da18c183b4524192d90fda98c6f525d9fc75696d688532fecf6c165de4",
+      "content_sha256": "sha256:1da34cab89a731cad49dd2e6c788aa94407c40a9a140bc677343913f64ed1fbb",
       "source_ref": "package://catalog/policies/policy.sec.authn_policy_unified.json"
     },
     {
       "id": "POLICY.SEC.NO_LONGTERM_SECURITY_DISABLE",
       "path": "policies/policy.sec.no_longterm_security_disable.json",
-      "content_sha256": "sha256:0c623ef5ab13a2302cb409612b92afb06a246384fb2d58eae0ceada356273f25",
+      "content_sha256": "sha256:5a3ac40f8b4e7b884703c669d0e3e4a28a7b7aa14c9570bb24d4e16b7f8811cd",
       "source_ref": "package://catalog/policies/policy.sec.no_longterm_security_disable.json"
     },
     {
       "id": "POLICY.SEC.NO_SCRIPT_READABLE_CREDENTIALS",
       "path": "policies/policy.sec.no_script_readable_credentials.json",
-      "content_sha256": "sha256:42bcc3740f2aecf84b05e333c238a22ac95afe5d7f6e4c315fa87aa74d4b2112",
+      "content_sha256": "sha256:9c892e1b8b1cc516f2194ede3265fef3733c0b8ce4214723ce7f4fd8ef64ad21",
       "source_ref": "package://catalog/policies/policy.sec.no_script_readable_credentials.json"
     },
     {
       "id": "POLICY.SEC.NO_SECRETS_IN_CLIENT_SURFACE",
       "path": "policies/policy.sec.no_secrets_in_client_surface.json",
-      "content_sha256": "sha256:dd53a1ca8b68f811689858cef0b2474c457dfe3d0de2f654b20860c2594234ed",
+      "content_sha256": "sha256:f99caa3ca7bf775126ae46b68738a8894d0905233325e407237a894340b39191",
       "source_ref": "package://catalog/policies/policy.sec.no_secrets_in_client_surface.json"
     },
     {
       "id": "POLICY.SEC.THIRD_PARTY_EXECUTION_REGISTER",
       "path": "policies/policy.sec.third_party_execution_register.json",
-      "content_sha256": "sha256:a87b0f4ffbd1a7eb3b2fca73d94c4cca51925379b0348fa67ac28e241c33feef",
+      "content_sha256": "sha256:5a2fa2a09ee744b814a6ea69a4bf888e8b960b613365b22c5a96442f77aa8934",
       "source_ref": "POMaster_VNext/corpus/spec-knowledge/candidates/FE-G1.yaml"
     },
     {
       "id": "POLICY.SEC.UPLOAD_DOWNLOAD_SERVER_RECHECK",
       "path": "policies/policy.sec.upload_download_server_recheck.json",
-      "content_sha256": "sha256:f180dfcede999faffa92cd66936479c0cff21cbc16ca256acfd4387185d4ed53",
+      "content_sha256": "sha256:53f1a1ffd39a9ae930da445363e7bead7dfaf498d781f2db1acbfe0a063d5c8e",
       "source_ref": "package://catalog/policies/policy.sec.upload_download_server_recheck.json"
     },
     {
       "id": "POLICY.SEC.URL_SOURCE_ALLOWLIST",
       "path": "policies/policy.sec.url_source_allowlist.json",
-      "content_sha256": "sha256:cc95c328f623a4e937426e66ec4b37415bcc9a53fe9905282d3073f07776ed42",
+      "content_sha256": "sha256:0d01c92c8796ea3875dafbbf826f1a47ebc03c690943e1ff8314db74e0bc330b",
       "source_ref": "package://catalog/policies/policy.sec.url_source_allowlist.json"
     },
     {
       "id": "POLICY.SPEC.ADMISSION_CRITERIA",
       "path": "policies/policy.spec.admission_criteria.json",
-      "content_sha256": "sha256:8512e88b7003040c6d176345ffbe4e077435ea166b7b358a5c580e8f3c37d58f",
+      "content_sha256": "sha256:ccb3349abe97e26c2471582f3139c8d6d3a4536f77deeea085a4a8fb502a43aa",
       "source_ref": "POMaster_VNext/corpus/spec-knowledge/candidates/FE-G1.yaml"
     },
     {
       "id": "POLICY.SPEC.DERIVED_VIEW_REGENERATION",
       "path": "policies/policy.spec.derived_view_regeneration.json",
-      "content_sha256": "sha256:c979686e6f2dcc5857644b1c151b2099b697af512335c7bda37123155e2594b4",
+      "content_sha256": "sha256:59ec61f3b1afdc36f1bf0bc3b32d96b3d83963a4e9e7b37df49c030ede44d716",
       "source_ref": "POMaster_VNext/corpus/spec-knowledge/candidates/FE-G4.yaml"
     },
     {
       "id": "POLICY.SPEC.DRAFT_NOT_BASELINE",
       "path": "policies/policy.spec.draft_not_baseline.json",
-      "content_sha256": "sha256:abfcca9c3730a08454f1adaebf6ef8c9d2d2b92b24683b3310f8fb74909df3c2",
+      "content_sha256": "sha256:871690ecd796b782fe4f750c29dc5354c5c2f0d69a6df6d5c57d03e759b88ab7",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/06-change-governance-protocol.md"
     },
     {
       "id": "POLICY.SPEC.FILE_STRUCTURE_CONTRACT",
       "path": "policies/policy.spec.file_structure_contract.json",
-      "content_sha256": "sha256:0a2265eee325f1fc748ffc3f649e11e1a54c42a87a18be9aadf57bbabedf1e2b",
+      "content_sha256": "sha256:452d9e8ada9330a5d647fb254d7ff6c85f4d97cc210365b7b861bd1761e01014",
       "source_ref": "POMaster_VNext/corpus/spec-knowledge/candidates/FE-G1.yaml"
     },
     {
       "id": "POLICY.SPEC.METADATA_REQUIRED",
       "path": "policies/policy.spec.metadata_required.json",
-      "content_sha256": "sha256:35a16c6ed12adc464c15984cb5cc2277924ef2067b5d851eab79976210140c6e",
+      "content_sha256": "sha256:230bc1a4614777d0da799f374ae257911ab72a27f8a88bbe708ebbcbdf1e1602",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/06-change-governance-protocol.md"
     },
     {
       "id": "POLICY.SPEC.POST_DEV_BACKFILL_CLASSIFY",
       "path": "policies/policy.spec.post_dev_backfill_classify.json",
-      "content_sha256": "sha256:b1b014d2f9761141c8066c0907581d8cae4a6e003fa12c8c22dd4132207527f8",
+      "content_sha256": "sha256:255a22c6949cfb9d753d389f4f98f9f24a73210e66d12987e4fea22a8e3ba3c1",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/06-change-governance-protocol.md"
     },
     {
       "id": "POLICY.SPEC.PROCEDURAL_RECORD_NOT_SURROGATE",
       "path": "policies/policy.spec.procedural_record_not_surrogate.json",
-      "content_sha256": "sha256:3d1a3f2a469cd8b13d9b1627bd3730cd3f0080712890bdbfdea1ad619e6dc7c4",
+      "content_sha256": "sha256:45830125c62a6cd4550be46b8d6143f7eb2eaf1ca2b3cd3040c5b64983846431",
       "source_ref": "POMaster_VNext/corpus/spec-knowledge/candidates/FE-G1.yaml"
     },
     {
       "id": "POLICY.SPEC.SEMANTIC_IDENTITY",
       "path": "policies/policy.spec.semantic_identity.json",
-      "content_sha256": "sha256:aa1122f51aff6ad8097df48121e8a6d5f4e81bf6544f98025ff742318b8b4bb9",
+      "content_sha256": "sha256:1dece51125c5af40ff61f7ada1b512f62fe17e08b60fc9c3f9bd5958011c1d7d",
       "source_ref": "POMaster_VNext/corpus/spec-knowledge/candidates/FE-G1.yaml"
     },
     {
       "id": "POLICY.SPEC.UNRESOLVED_LEDGER_GATE",
       "path": "policies/policy.spec.unresolved_ledger_gate.json",
-      "content_sha256": "sha256:a68e15bc4fd2c1a26e54da0175b74c74486680bda24db7db950d635b40e5e120",
+      "content_sha256": "sha256:c7cd10d7f02a8af1131c50de086f671337005a3bf7a15fea8329f5b8c1b77c71",
       "source_ref": "POMaster_VNext/corpus/spec-knowledge/candidates/FE-G4.yaml"
     },
     {
       "id": "POLICY.STACK.DERIVED_STORE_NOT_AUTHORITY",
       "path": "policies/policy.stack.derived_store_not_authority.json",
-      "content_sha256": "sha256:f4e377d5cbd5197c5f9ec378f9e94c7d12bf3bdee178d009c93eb72442bd8a81",
+      "content_sha256": "sha256:8ff0c9bff78d71bd06b6738d7bbee46474794de07357fa70a36702ec39406435",
       "source_ref": "package://catalog/policies/policy.stack.derived_store_not_authority.json"
     },
     {
       "id": "POLICY.STACK.DUAL_WEB_STACK_BOUNDARY",
       "path": "policies/policy.stack.dual_web_stack_boundary.json",
-      "content_sha256": "sha256:877cfcf98bc281bcddbcbc989cf316256275beb87b25f13e6f2b244c65be95c9",
+      "content_sha256": "sha256:8696752a211f3d5193fdab771fb3f7675409e949a0b3ab527c5bee533696f9ca",
       "source_ref": "package://catalog/policies/policy.stack.dual_web_stack_boundary.json"
     },
     {
       "id": "POLICY.STACK.ENTRY_CHAIN_RECORDED",
       "path": "policies/policy.stack.entry_chain_recorded.json",
-      "content_sha256": "sha256:08130903d1b1dd9971c298d6ed7fe3b94f87d1e29fb3de3a7d034d2aad1eec76",
+      "content_sha256": "sha256:5655859ced746d0cca13f87e896680cebfcb4ad1b7b27a69c3499f7a3dd20b3e",
       "source_ref": "package://catalog/policies/policy.stack.entry_chain_recorded.json"
     },
     {
       "id": "POLICY.STACK.ENTRY_LIMITS_ALIGNED",
       "path": "policies/policy.stack.entry_limits_aligned.json",
-      "content_sha256": "sha256:6c0fc1d569b40bebc177d3d62aaed3e00e3ee45160850ac00c821fc9a537b18c",
+      "content_sha256": "sha256:fb2e53fd3a599fecb11896c99bd5805d8a4ba0e020bdae6452dcdfe3977d1944",
       "source_ref": "package://catalog/policies/policy.stack.entry_limits_aligned.json"
     },
     {
       "id": "POLICY.STACK.LOCAL_FORM_NOT_PROD_FACT",
       "path": "policies/policy.stack.local_form_not_prod_fact.json",
-      "content_sha256": "sha256:69f32df83c4339d7fca6faded0295161ae12d5baf6a5627143627b8ba690436e",
+      "content_sha256": "sha256:2bcc0e65480a27ab29956b7dcdd0b744297cf097d49677f094f05c4e1a21fe64",
       "source_ref": "package://catalog/policies/policy.stack.local_form_not_prod_fact.json"
     },
     {
       "id": "POLICY.STACK.MULTI_DATASTORE_OWNERSHIP",
       "path": "policies/policy.stack.multi_datastore_ownership.json",
-      "content_sha256": "sha256:06c191ec1e5f1c19a3d521df26348bc8bf2f343fc9f93bf68200db22fe6bf5ef",
+      "content_sha256": "sha256:63ee92800d6670e7bd98cba54dc1112a96eb5819ba8178bf3df3ddd3bf8e94f2",
       "source_ref": "package://catalog/policies/policy.stack.multi_datastore_ownership.json"
     },
     {
       "id": "POLICY.STACK.NO_IMPLICIT_SELECTION",
       "path": "policies/policy.stack.no_implicit_selection.json",
-      "content_sha256": "sha256:42058339a4e003d8c9765c2d9d5ffde20f7f0528c6ee56eef998ef710f30193b",
+      "content_sha256": "sha256:9764eef31a5f5feaa65b133caa53a9bbca9c783b9d5b06678fe2a5991c407710",
       "source_ref": "POMaster_VNext/corpus/spec-knowledge/candidates/BE-G5.yaml"
     },
     {
       "id": "POLICY.STACK.PERSISTENCE_COEXISTENCE_SCOPE",
       "path": "policies/policy.stack.persistence_coexistence_scope.json",
-      "content_sha256": "sha256:b2d6ebf5a1d17561fae6ba16016630560c7abae33b001e43088b24e31ae076d6",
+      "content_sha256": "sha256:f90a373d6262c5e1a998766c4f11fde619c3a5eba718a9ae4af0f90c5f7e4e96",
       "source_ref": "package://catalog/policies/policy.stack.persistence_coexistence_scope.json"
     },
     {
       "id": "POLICY.STACK.TOOLCHAIN_VERSIONS_PINNED",
       "path": "policies/policy.stack.toolchain_versions_pinned.json",
-      "content_sha256": "sha256:6ee34431c2ebe65c7cf456b55c27450c74ec9379ec63a719d5ec79416fee7026",
+      "content_sha256": "sha256:93fe5da4c6f2f9d1e8a6e11b9a1d0b375194d5e459c772eddc5dbe159fb87b03",
       "source_ref": "package://catalog/policies/policy.stack.toolchain_versions_pinned.json"
     },
     {
       "id": "POLICY.STACK.UPGRADE_COMPAT_VERIFIED",
       "path": "policies/policy.stack.upgrade_compat_verified.json",
-      "content_sha256": "sha256:e9812d60c72e02b106dc935f5dee9df100f51259cb31cebf1db793b7fbbfa216",
+      "content_sha256": "sha256:46f2ecbeafd12eece42863fe5c76d82778f38e6696e6db3b208b59aef8cd110a",
       "source_ref": "package://catalog/policies/policy.stack.upgrade_compat_verified.json"
     },
     {
       "id": "POLICY.STRUCT.MODULE_ENTRY_DEPENDENCY_DECLARED",
       "path": "policies/policy.struct.module_entry_dependency_declared.json",
-      "content_sha256": "sha256:57496ed966e5993623646bdca1418277032ee3c60b184cc6a83eec10f10fcb00",
+      "content_sha256": "sha256:29f0dfb0e88ce815a4d380aff1228d5b3f637e61a53b518b0ce6e5701a700601",
       "source_ref": "package://catalog/policies/policy.struct.module_entry_dependency_declared.json"
     },
     {
       "id": "POLICY.STRUCT.NO_UNEXPLAINED_TOP_LEVEL_DIR",
       "path": "policies/policy.struct.no_unexplained_top_level_dir.json",
-      "content_sha256": "sha256:fc832288cb2c1c8fe2901f8a35a187006e1fa650f63be410f1f63969196b155f",
+      "content_sha256": "sha256:1d1488fbb105139b4c4a19f7f0e2d463892bbd130bf0abba025e193fc7835200",
       "source_ref": "package://catalog/policies/policy.struct.no_unexplained_top_level_dir.json"
     },
     {
       "id": "POLICY.STRUCT.REUSE_PROVEN_STRUCTURE",
       "path": "policies/policy.struct.reuse_proven_structure.json",
-      "content_sha256": "sha256:1a724d32b0fb62f41eb42ed3864137fd8fa6313f5f30806e29f4cb4a8246c486",
+      "content_sha256": "sha256:b53c7b71d65aca2597f9ca45f37753701513d91b7cd1dfe78a4a64f4d18614b3",
       "source_ref": "package://catalog/policies/policy.struct.reuse_proven_structure.json"
     },
     {
       "id": "POLICY.TEST.CONTROL_NONDETERMINISM_KEEP_DIAGNOSIS",
       "path": "policies/policy.test.control_nondeterminism_keep_diagnosis.json",
-      "content_sha256": "sha256:96c4b13cbdd42a195713fc59fc972e9fe29cbd03b768b4e7b14e921e658fb5f0",
+      "content_sha256": "sha256:83af75a16c5acb62cd1e8a0a19599a0957344b056385e72062e5c42d2599ba36",
       "source_ref": "package://catalog/policies/policy.test.control_nondeterminism_keep_diagnosis.json"
     },
     {
       "id": "POLICY.TEST.ISOLATION_AND_CLEANUP",
       "path": "policies/policy.test.isolation_and_cleanup.json",
-      "content_sha256": "sha256:a966bdc3fdea3c692a83c50ee0939a0d6497f73e89e6ef881c218d84d6b7fbe8",
+      "content_sha256": "sha256:3f48cd70546cff7583d7d8d472b7ae0430be6354c190dd244d8b1a19b4997a80",
       "source_ref": "package://catalog/policies/policy.test.isolation_and_cleanup.json"
     },
     {
       "id": "POLICY.TEST.NO_SYNTHETIC_STABILITY",
       "path": "policies/policy.test.no_synthetic_stability.json",
-      "content_sha256": "sha256:37c5c87f41b9c15e352cb5ca26b518301a00c134e7ac8ff35f0763f99a31ee67",
+      "content_sha256": "sha256:5cbd06d941a3b27fe54f6987a22e0a6b186b024983d8709742db3d624172028d",
       "source_ref": "package://catalog/policies/policy.test.no_synthetic_stability.json"
     },
     {
       "id": "POLICY.TEST.PYRAMID_AND_CI_MATRIX",
       "path": "policies/policy.test.pyramid_and_ci_matrix.json",
-      "content_sha256": "sha256:15840d2636423101515c927cef0d0d09899e95816221149ee626a1d975c27d16",
+      "content_sha256": "sha256:dffa808da8b4580b42ba6bc7311a9c691b8c1dd01d2768fd36f27350c0f91e64",
       "source_ref": "package://catalog/policies/policy.test.pyramid_and_ci_matrix.json"
     },
     {
       "id": "POLICY.TEST.RISK_DRIVEN_PLAN",
       "path": "policies/policy.test.risk_driven_plan.json",
-      "content_sha256": "sha256:6dc6b3e2d506b908a175d078edebc70dd88990696eebb49544f6a3abe78e10c3",
+      "content_sha256": "sha256:8344a23c2c86a12322f65b36ce61a442f079edd3932ff2d5beac54d8510a9f00",
       "source_ref": "package://catalog/policies/policy.test.risk_driven_plan.json"
     },
     {
       "id": "POLICY.TEST.STABLE_OBSERVABLE_ASSERTIONS",
       "path": "policies/policy.test.stable_observable_assertions.json",
-      "content_sha256": "sha256:ad8a917e6d429b574f3b8c575bf02580adb926c57c58c983fe7a456b2a15aeab",
+      "content_sha256": "sha256:482715885d3cfb909c572a2007e4a3f884adf162ab466a65e813d60051fab8ed",
       "source_ref": "package://catalog/policies/policy.test.stable_observable_assertions.json"
     },
     {
       "id": "POLICY.TOOL.DISCOVERABLE_TOOLCHAIN",
       "path": "policies/policy.tool.discoverable_toolchain.json",
-      "content_sha256": "sha256:e72eb56f2bdbc4c0376ef2f40bf0b699a172df83ffcd38022f9082483eb43d7b",
+      "content_sha256": "sha256:80078ec0eae476fc1cb97ac7d0dc8033c2c5db8aa1c1b2a901f496ad6e2ae481",
       "source_ref": "package://catalog/policies/policy.tool.discoverable_toolchain.json"
     },
     {
       "id": "POLICY.TOOL.NO_HAND_EDIT_GENERATED_NO_CI_DRIFT",
       "path": "policies/policy.tool.no_hand_edit_generated_no_ci_drift.json",
-      "content_sha256": "sha256:2e7174c9f1b9c1bd6e75c790bc436b95c655eecc64a73df5cc978e80158e0ab2",
+      "content_sha256": "sha256:92b678e5d048045095394243dbb0a7e740860c4b866bbfc55550504587c7e18e",
       "source_ref": "package://catalog/policies/policy.tool.no_hand_edit_generated_no_ci_drift.json"
     },
     {
       "id": "POLICY.TOOL.NO_VENDORED_BODY_EDITS",
       "path": "policies/policy.tool.no_vendored_body_edits.json",
-      "content_sha256": "sha256:0fa53fb79b4f18a04f1671a564c63bce350576f86448e75d1c8888e383a60630",
+      "content_sha256": "sha256:4a2a944e0f08d731d8ee6d85cd870a1ad9e268119939b70f84f60a68536c32b1",
       "source_ref": "package://catalog/policies/policy.tool.no_vendored_body_edits.json"
     },
     {
       "id": "POLICY.TOOL.SCOPED_SCAN_BOUNDARY",
       "path": "policies/policy.tool.scoped_scan_boundary.json",
-      "content_sha256": "sha256:696ec965298e8cce7257875cb0401535a48b4f00527a552404b24d845c60a368",
+      "content_sha256": "sha256:a89e377b437a1bfa676ec2d29c4d005a5e0ccc0c85895f3126f0d683f677108d",
       "source_ref": "POMaster_VNext/corpus/spec-knowledge/candidates/FE-G1.yaml"
     },
     {
       "id": "POLICY.WEB.API.AUTH_APP_CLIENT_SPLIT",
       "path": "policies/policy.web.api.auth_app_client_split.json",
-      "content_sha256": "sha256:0901949ef126bed1ee3f7bbb74c70152ae06e92ca6ce8b5bc600d685df233959",
+      "content_sha256": "sha256:22577c5e4f650c433838fc5ce0445abe7fcc6d02cfa78b9b24d85b1f4a415913",
       "source_ref": "POMaster_VNext/corpus/master/batch-4/split-ledger.yaml"
     },
     {
       "id": "POLICY.WEB.API.CLIENT_CHANGE_IMPACT",
       "path": "policies/policy.web.api.client_change_impact.json",
-      "content_sha256": "sha256:54948aa42fb61af21386c76a88feabf819a33d16cad3bd9417db2f6df5e210d4",
+      "content_sha256": "sha256:41b666a168e8897d1ba2f0ab9aad9abc6bcce00122f4fe26eefe2c5fec7fc075",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/15-request-api-protocol.md"
     },
     {
       "id": "POLICY.WEB.API.DOMAIN_API_ONLY",
       "path": "policies/policy.web.api.domain_api_only.json",
-      "content_sha256": "sha256:04003181afc7c7d55cbb44e131ec0d65ae76d4d6f17b00dee8733145a28278d5",
+      "content_sha256": "sha256:d9163157a56ac24c9afefda9fb383bdf524f82932178203e4d961ab900a396ac",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/15-request-api-protocol.md"
     },
     {
       "id": "POLICY.WEB.API.ERROR_NORMALIZATION",
       "path": "policies/policy.web.api.error_normalization.json",
-      "content_sha256": "sha256:f997c25d8d585934efb151b655735d9cbdee6ceaee6332400f3a11907df100b6",
+      "content_sha256": "sha256:688af371a47f4f6417ae572067b1bcf4beedd7135ef67aee7442f37cef20fe34",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/15-request-api-protocol.md"
     },
     {
       "id": "POLICY.WEB.API.GENERATED_CLIENT",
       "path": "policies/policy.web.api.generated_client.json",
-      "content_sha256": "sha256:31f15f21f9d07d53ef031c852957700b0140b29042807434c37cd43a6b1b5ee4",
+      "content_sha256": "sha256:d758aced04674ddc6a0a52232c75f5f30d024f890d065524716613ab145eac35",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/15-request-api-protocol.md"
     },
     {
       "id": "POLICY.WEB.API.LATE_RESULT_GUARD",
       "path": "policies/policy.web.api.late_result_guard.json",
-      "content_sha256": "sha256:63eeaeb1ebc346425752dbc34cec63536300ff6fb4daf1ecfc1f5da5140f166f",
+      "content_sha256": "sha256:56f9a3c1fa54fd74ee326476b44c75e48d2e301d2c54bec222b143c4946ab512",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/15-request-api-protocol.md"
     },
     {
       "id": "POLICY.WEB.API.MUTATION_IDEMPOTENCY",
       "path": "policies/policy.web.api.mutation_idempotency.json",
-      "content_sha256": "sha256:6e02103e00c24453c7224aa9e8a91b01dbb8d46a900bf1130d711911675ff4f3",
+      "content_sha256": "sha256:aa54ea3ddd686c173e85d2ba70a5e95c9888c140066baaf7922d3b9da99cb061",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/15-request-api-protocol.md"
     },
     {
       "id": "POLICY.WEB.API.NO_NETWORK_OPTIMISM",
       "path": "policies/policy.web.api.no_network_optimism.json",
-      "content_sha256": "sha256:bc1d7b5b09992ffc1b132f269ffe0af7dcef27068339e0ec58ba241fbd8255dd",
+      "content_sha256": "sha256:a3f9d7ea7c4b0379933931a8caa336aae782af34d021565bb6cf183763d2860e",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/15-request-api-protocol.md"
     },
     {
       "id": "POLICY.WEB.API.QUERY_CANCEL_STALE_DROP",
       "path": "policies/policy.web.api.query_cancel_stale_drop.json",
-      "content_sha256": "sha256:ed50ec800f23afb4e7965bc6a560d241d53589aec190dca403310c2b02ebfd5c",
+      "content_sha256": "sha256:90ef6be5962d8cc8b3ad31ebe93d0c619626512bde147efb90515e1209d069aa",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/15-request-api-protocol.md"
     },
     {
       "id": "POLICY.WEB.API.REQUEST_INFRASTRUCTURE",
       "path": "policies/policy.web.api.request_infrastructure.json",
-      "content_sha256": "sha256:9a9768f1ce73afa70355b3ca0378372654d8be6a418847524eff0eafb89dc797",
+      "content_sha256": "sha256:ef2210afce2a4b46a1271d50901cc034421e06ff38afc4e23fd8b928050238ef",
       "source_ref": "POMaster_VNext/corpus/master/batch-4/split-ledger.yaml"
     },
     {
       "id": "POLICY.WEB.API.RETRY_DISCIPLINE",
       "path": "policies/policy.web.api.retry_discipline.json",
-      "content_sha256": "sha256:f49013f3bea9763cf86da25ea22c37d8a556496e7a49850c42c9b1ffa596b1a0",
+      "content_sha256": "sha256:23a83a191382c63fc7a56f0fc836a9f62bf5daab19e43554a7ca45a105097710",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/15-request-api-protocol.md"
     },
     {
       "id": "POLICY.WEB.API.SESSION_RECOVERY_SPLIT",
       "path": "policies/policy.web.api.session_recovery_split.json",
-      "content_sha256": "sha256:d64abcd2551e1eba5af1ce21d7296733555279682c9b47037eb8f457357d8a16",
+      "content_sha256": "sha256:09412b76ecca318f52b08abdf60efc034b711db1bc737a1fdb7b41e87a1ac1b6",
       "source_ref": "POMaster_VNext/corpus/master/batch-4/split-ledger.yaml"
     },
     {
       "id": "POLICY.WEB.API.SINGLE_HTTP_CLIENT",
       "path": "policies/policy.web.api.single_http_client.json",
-      "content_sha256": "sha256:2f040f3de18b3776791f911f6564b21bc2b993f7a272b6541588a348d14fac02",
+      "content_sha256": "sha256:330299245176cd57839d194457917c5a446c50c4fd8ed00dea395af5039392c1",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/15-request-api-protocol.md"
     },
     {
       "id": "POLICY.WEB.API.SINGLE_LOADING_SOURCE",
       "path": "policies/policy.web.api.single_loading_source.json",
-      "content_sha256": "sha256:7070fecdc3d892a3d3d499eec39edae8a2347dafbfecf1fdf65f7aa198044ec0",
+      "content_sha256": "sha256:8c338bdac7d46a95d3c1a5c1b7ff9e7ccf5f781c37caadf4bc6104d606cdbae9",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/15-request-api-protocol.md"
     },
     {
       "id": "POLICY.WEB.API.TRANSPORT_VS_BUSINESS",
       "path": "policies/policy.web.api.transport_vs_business.json",
-      "content_sha256": "sha256:323b674d3cb78283da598ed6b26334e4ddee277635a252b4bc7e5b3deaec0e42",
+      "content_sha256": "sha256:da60d2cdcb9aa81e0c8441006ad413bb80d8fa2a4168d89314878b69f13a6bea",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/15-request-api-protocol.md"
     },
     {
       "id": "POLICY.WEB.API.TRUSTED_ENDPOINT_SOURCE",
       "path": "policies/policy.web.api.trusted_endpoint_source.json",
-      "content_sha256": "sha256:babdb69c717aa9fa90be6f7ac71f64ac2bb1019b5ffb3bc882628824d55f1b19",
+      "content_sha256": "sha256:d5aa9f753460b1f67d5855ea8d6b7da8c66fb8b343e305c12f319fefeeeaae7c",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/15-request-api-protocol.md"
     },
     {
       "id": "POLICY.WEB.API.TYPED_DOMAIN_NAMING",
       "path": "policies/policy.web.api.typed_domain_naming.json",
-      "content_sha256": "sha256:6a8dc6389a848e09e9abbd1ec9eba70385c7b3bef4d9b8b59dcb873e853e83b2",
+      "content_sha256": "sha256:e8195d0ee69835db65012ff1ad50198405edee5ab40ce2fdaff8f32c34f250de",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/15-request-api-protocol.md"
     },
     {
       "id": "POLICY.WEB.ARCH.LAYER_ISOLATION",
       "path": "policies/policy.web.arch.layer_isolation.json",
-      "content_sha256": "sha256:f22cb344f315360a17f0c8584f78b2b76f7882ad70e3b01b1ffd3ef84952558b",
+      "content_sha256": "sha256:1d07912dd95e168d6ed7fa93e209e2b7e87e057230d81700fb9d7fd3166909aa",
       "source_ref": "POMaster_VNext/corpus/master/batch-4/split-ledger.yaml"
     },
     {
       "id": "POLICY.WEB.ARCH.NAMING_CONVENTIONS",
       "path": "policies/policy.web.arch.naming_conventions.json",
-      "content_sha256": "sha256:77720ea57bc35bf145338487ae8492cc6d3765a89471f9d74d3c85ffc90eaa33",
+      "content_sha256": "sha256:8247f945329ebb6e809daffac692384833ce23d9a64f5d3766041b66fe94fb52",
       "source_ref": "POMaster_VNext/corpus/master/batch-4/split-ledger.yaml"
     },
     {
       "id": "POLICY.WEB.ARCH.PUBLIC_API_BARREL",
       "path": "policies/policy.web.arch.public_api_barrel.json",
-      "content_sha256": "sha256:7898033964629e6f04f0be3c43d5ebd584f534fd0580084f8d5670906462d6a6",
+      "content_sha256": "sha256:f1163cfd413bb0399368fd748af002e7ad4bc8f5fca2aa1ef24e5a26aa817ef5",
       "source_ref": "POMaster_VNext/corpus/master/batch-4/split-ledger.yaml"
     },
     {
       "id": "POLICY.WEB.CHG.CONTROLLED_CHANGE_TRIGGERS",
       "path": "policies/policy.web.chg.controlled_change_triggers.json",
-      "content_sha256": "sha256:d14df5908831547b2b9f903d795dc709dcb64d7761325024db698f7776486bf7",
+      "content_sha256": "sha256:e12a4abb0ff88295b7db07c8ce38e282d66a467ae476d069cae43f7c9c02eafd",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/06-change-governance-protocol.md"
     },
     {
       "id": "POLICY.WEB.COMP.NO_TRIVIAL_OR_GOD_COMPONENT",
       "path": "policies/policy.web.comp.no_trivial_or_god_component.json",
-      "content_sha256": "sha256:99920ae408e18a762c61318c3479bfcbdab166a9d48584e27137ad197de0c2f4",
+      "content_sha256": "sha256:7275c862af8a8dfe780e8764d4a77851f1cb1569d5344d029469bb6c30d67d34",
       "source_ref": "package://catalog/policies/policy.web.comp.no_trivial_or_god_component.json"
     },
     {
       "id": "POLICY.WEB.COMP.PUBLIC_CONTRACT_COMPLETENESS",
       "path": "policies/policy.web.comp.public_contract_completeness.json",
-      "content_sha256": "sha256:9e4bb213a2d34571af8e9611a527a780007a01eab847f59c4ddb429c44d5291a",
+      "content_sha256": "sha256:d6d4c1a7f97542478fe0165d4e956392a8e6771a8b755e8b0c75ced55b1bbc63",
       "source_ref": "package://catalog/policies/policy.web.comp.public_contract_completeness.json"
     },
     {
       "id": "POLICY.WEB.COPY.ACTION_OBJECT_CLARITY",
       "path": "policies/policy.web.copy.action_object_clarity.json",
-      "content_sha256": "sha256:5a69d77f0f2a20fdc905202d994e0a30039cf5127aed066b65cbc0550d4f1bf1",
+      "content_sha256": "sha256:b27112be09d9392071c534c2be47516426a0e425a5c9ad501a1610ebe2c54613",
       "source_ref": "package://catalog/policies/policy.web.copy.action_object_clarity.json"
     },
     {
       "id": "POLICY.WEB.COPY.ENUMERABLE_PLACEMENT",
       "path": "policies/policy.web.copy.enumerable_placement.json",
-      "content_sha256": "sha256:3588c6f45d44a2cd222ff7f0695a3187d893fd5cc0bcd01d668840a30e2756ed",
+      "content_sha256": "sha256:dcc00dd98bdce2e06dec2b795747280303d02da9b195567fc75ba35cf59d77c5",
       "source_ref": "package://catalog/policies/policy.web.copy.enumerable_placement.json"
     },
     {
       "id": "POLICY.WEB.COPY.ERROR_NEXT_STEP",
       "path": "policies/policy.web.copy.error_next_step.json",
-      "content_sha256": "sha256:4b8ed253fca2c319edf5101d59ae926192cadcac7b29f804b05fa8197194a2bf",
+      "content_sha256": "sha256:32f3d395154e681204e567195dc39e3f8c65d4bbf76d100941daadeac6afc578",
       "source_ref": "package://catalog/policies/policy.web.copy.error_next_step.json"
     },
     {
       "id": "POLICY.WEB.COPY.SUPPRESSION_LEDGER_DISCIPLINE",
       "path": "policies/policy.web.copy.suppression_ledger_discipline.json",
-      "content_sha256": "sha256:c6e392a87f1bd8f6e55adbe4b975f9c247eeb0f84c5f3227f6acd14a1c5ed589",
+      "content_sha256": "sha256:0cddf63ea40d537b84cc8e0b7606945327cdb1f2109d7dc5bb9cffb028efbb3a",
       "source_ref": "POMaster_VNext/corpus/spec-knowledge/candidates/FE-G4.yaml"
     },
     {
       "id": "POLICY.WEB.GRID.COLUMN_SCHEMA_FIELDS",
       "path": "policies/policy.web.grid.column_schema_fields.json",
-      "content_sha256": "sha256:12b574bf8f7bc19e9826b0beb1bc5fac930c8f038c902fd656e36fb615aa30de",
+      "content_sha256": "sha256:bec0f4c10460d4b3aa6fbdbdb7d2e032105d1f3a65d3fe1e3af4e26224b52af3",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/30-data-grid-protocol.md"
     },
     {
       "id": "POLICY.WEB.GRID.CONFIG_ISOLATION",
       "path": "policies/policy.web.grid.config_isolation.json",
-      "content_sha256": "sha256:f20e6d69ecfc763194238c75356419c7439b19efbcee5001b80c3bf3e3c7466f",
+      "content_sha256": "sha256:8fddd7c81f562795c824bd0d4bda7f52c58b5ea4a0a6fa3b41ccd2d9011d5502",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/30-data-grid-protocol.md"
     },
     {
       "id": "POLICY.WEB.GRID.FREEZE_KEY_COLUMNS",
       "path": "policies/policy.web.grid.freeze_key_columns.json",
-      "content_sha256": "sha256:a38ede2c756f7d97d719f552b492741e72c2f9c3f8c7937cae1f507a130c0efc",
+      "content_sha256": "sha256:b690fc2e428865dbcbb8425a5bb204b718a93d81aafb4ab3445a60db89b1bb93",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/30-data-grid-protocol.md"
     },
     {
       "id": "POLICY.WEB.GRID.INTERACTION_REGISTRY",
       "path": "policies/policy.web.grid.interaction_registry.json",
-      "content_sha256": "sha256:f8d90f27516359b5728661b97022059a479613fd95dbd2debab220599cdb88c0",
+      "content_sha256": "sha256:27c3992c2d3be7dda030bfcc999ad3096ff4a457e64a37f7089b20dcb507f52a",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/30-data-grid-protocol.md"
     },
     {
       "id": "POLICY.WEB.GRID.KEYBOARD_CLIPBOARD",
       "path": "policies/policy.web.grid.keyboard_clipboard.json",
-      "content_sha256": "sha256:979a838c1f779a8ab41498c79643ffc18543cb52f4f87f4f82faff118e4bce0d",
+      "content_sha256": "sha256:1ddeb39ebe556864e23b8b1fbedd2a485467d1d20e3e2465f074604a0ecd794d",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/30-data-grid-protocol.md"
     },
     {
       "id": "POLICY.WEB.GRID.SCHEMA_DRIVEN_SHELL",
       "path": "policies/policy.web.grid.schema_driven_shell.json",
-      "content_sha256": "sha256:68b2e00625e342117aa1500e64a365a6b6219755cb80469006f8acfb5d28351c",
+      "content_sha256": "sha256:384c075a97265c6d1099fe0bb5cc557b00bd1d44b4625d04f66e08460dcff6b8",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/30-data-grid-protocol.md"
     },
     {
       "id": "POLICY.WEB.GRID.SCHEMA_VERSIONING",
       "path": "policies/policy.web.grid.schema_versioning.json",
-      "content_sha256": "sha256:5849dec2842d0f45d9534de2bdbc5d297c1b2db4056935c18505c95282a56f1a",
+      "content_sha256": "sha256:fb9cb748bd8a5d1f4c0cd9edd7f17cc640a18b251fc957e7b665ee138764057c",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/30-data-grid-protocol.md"
     },
     {
       "id": "POLICY.WEB.GRID.SERVER_OPS_VIRTUALIZATION",
       "path": "policies/policy.web.grid.server_ops_virtualization.json",
-      "content_sha256": "sha256:6864cfb98d35aba2df6986c9941acc1ce2213ffb2937b1a95eba7b85256145e0",
+      "content_sha256": "sha256:3d4d87dc05135af24f1b395017811b57d9ed77962eb4ab8c79f337c3bf559f44",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/30-data-grid-protocol.md"
     },
     {
       "id": "POLICY.WEB.GRID.SHELL_CHANGE_MATRIX",
       "path": "policies/policy.web.grid.shell_change_matrix.json",
-      "content_sha256": "sha256:e1edb0e1def27432ae9433e03a03b49b9331bd55aef435e82538648e5f44ef7d",
+      "content_sha256": "sha256:9279c893f9a34674862380340e48151c0ec2050f244418f2a92f13af7ec559a0",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/30-data-grid-protocol.md"
     },
     {
       "id": "POLICY.WEB.GRID.WIDTH_FIX_LADDER",
       "path": "policies/policy.web.grid.width_fix_ladder.json",
-      "content_sha256": "sha256:c8d6e84c118e17a7b369b17c0bb84b4cb735544430603ee954f77e4bdb677c01",
+      "content_sha256": "sha256:ed660183d70e075e84124cd3812da2e94892b1f8b2a7ca730401cf022c58ddde",
       "source_ref": "pomaster/components/frontend-hard-spec/assets/universal/30-data-grid-protocol.md"
     },
     {
       "id": "POLICY.WEB.HANDOFF.STATE_MATRIX_FULL",
       "path": "policies/policy.web.handoff.state_matrix_full.json",
-      "content_sha256": "sha256:2859d31b897163afb55e27b4337e1cc3e5c5f7851b329f641dc988507dce1b2e",
+      "content_sha256": "sha256:78496b0ced8557bd180dc0e4787933845890bbb78ef49b977e39c4d8092e561e",
       "source_ref": "package://catalog/policies/policy.web.handoff.state_matrix_full.json"
     },
     {
       "id": "POLICY.WEB.I18N.COPY_KEY_DISCIPLINE",
       "path": "policies/policy.web.i18n.copy_key_discipline.json",
-      "content_sha256": "sha256:093c7e577c1a05db6f0c161498175fa4727b24bb9eb4b86c03c078b5d13bb11d",
+      "content_sha256": "sha256:1b9d438f00592cde0dad9a3cf918d5b8d4f4dee099acd800e88a37ee3cbadd72",
       "source_ref": "package://catalog/policies/policy.web.i18n.copy_key_discipline.json"
     },
     {
       "id": "POLICY.WEB.I18N.RAW_VALUE_FOR_COMPUTE",
       "path": "policies/policy.web.i18n.raw_value_for_compute.json",
-      "content_sha256": "sha256:7175fe744129bf426a94ca44e443faf4ced3dce95ae69bee8cab252ec4820f13",
+      "content_sha256": "sha256:50cca2b85ae43ada65e3e3c2f8adc7c286e747accb0c8d3dfb81f6eda07b5093",
       "source_ref": "package://catalog/policies/policy.web.i18n.raw_value_for_compute.json"
     },
     {
       "id": "POLICY.WEB.PAGE.REGION_CONSISTENCY",
       "path": "policies/policy.web.page.region_consistency.json",
-      "content_sha256": "sha256:7ca116ca02b51353597e583d959ea1e60ba2c6bc90f691df9d55c89e195b3bdd",
+      "content_sha256": "sha256:a6e95025b50b929b2494340933599b2d783a4e572be2993944b2ee1b7fccc973",
       "source_ref": "package://catalog/policies/policy.web.page.region_consistency.json"
     },
     {
       "id": "POLICY.WEB.PERF.BUDGET_SKELETON",
       "path": "policies/policy.web.perf.budget_skeleton.json",
-      "content_sha256": "sha256:ef8d31e9a571e1139e3e17a603d03616500364e41aaf12a5601265846df8d872",
+      "content_sha256": "sha256:24e6c99ee7fd52eb60a7104289225eb4bdfa3c1e5189dca69cb2fbae5c860034",
       "source_ref": "POMaster_VNext/corpus/master/batch-4/split-ledger.yaml"
     },
     {
       "id": "POLICY.WEB.STYLE.OWNERSHIP_MATRIX",
       "path": "policies/policy.web.style.ownership_matrix.json",
-      "content_sha256": "sha256:24da44f9d446b51cf103c296600b75a7c1a8e2692d3ead932dd49a7741e84572",
+      "content_sha256": "sha256:aac376bcd0d42a68b5ac4a2e73ed428feeab0bdfdb06b71a46e899029e6202da",
       "source_ref": "POMaster_VNext/corpus/master/batch-4/split-ledger.yaml"
     },
     {
       "id": "POLICY.WEB.TRACK.ATTEMPT_RESULT_CORRELATION",
       "path": "policies/policy.web.track.attempt_result_correlation.json",
-      "content_sha256": "sha256:d68908ce02bf9c0522b8eb7d5db87eeb949464c804625d538cfd4a3ebd7c65da",
+      "content_sha256": "sha256:290e4d111a00c628504a4038cada02a8375d8e03838546c544758cf1bee4d181",
       "source_ref": "package://catalog/policies/policy.web.track.attempt_result_correlation.json"
     },
     {
       "id": "POLICY.WEB.TRACK.CONSENT_LIFECYCLE",
       "path": "policies/policy.web.track.consent_lifecycle.json",
-      "content_sha256": "sha256:2755b7e87c9aaa00bc558c306886cc5e8a1e57b1efbba3b381204c1b62f7d12f",
+      "content_sha256": "sha256:2d2b0b91a0a21efae5103ff8689d0f730f479e5ae4783dddf7fbdc4297d675f9",
       "source_ref": "POMaster_VNext/corpus/spec-knowledge/candidates/FE-G4.yaml"
     },
     {
       "id": "POLICY.WEB.TRACK.NO_SYNTHETIC_ACTIONS",
       "path": "policies/policy.web.track.no_synthetic_actions.json",
-      "content_sha256": "sha256:524423d94e86aae296360ca1dafba1865bf137237b329bb59a51d0c92974748c",
+      "content_sha256": "sha256:2157103e7ebc024e77a82c906b3e2bcf8561cf199d9998cef1a981ddb4e8bb7a",
       "source_ref": "package://catalog/policies/policy.web.track.no_synthetic_actions.json"
     },
     {
       "id": "POLICY.WEB.TRACK.PRIVACY_DEFAULT_DENY",
       "path": "policies/policy.web.track.privacy_default_deny.json",
-      "content_sha256": "sha256:0f5a8ddcf3c951713601b20d097aeed6ae7ecf5c727083dcc41e5c2a2bc380f4",
+      "content_sha256": "sha256:9c92cc6a928cd02852a3c0e614f5036e66acced7fc3287be434aa69594f5c383",
       "source_ref": "POMaster_VNext/corpus/spec-knowledge/candidates/FE-G4.yaml"
     },
     {
       "id": "POLICY.WEB.TRACK.STABLE_EVENT_KEYS",
       "path": "policies/policy.web.track.stable_event_keys.json",
-      "content_sha256": "sha256:601cb1a5a514cf06398b053e0e76ca0a25f314938d405c814624f7c143a91173",
+      "content_sha256": "sha256:ae45a16f6764175dba85817d21383a878683371fc8724013a50436d7602ff889",
       "source_ref": "POMaster_VNext/corpus/spec-knowledge/candidates/FE-G4.yaml"
     },
     {
       "id": "POLICY.WEB.TRACK.TYPED_CLIENT_VALIDATION",
       "path": "policies/policy.web.track.typed_client_validation.json",
-      "content_sha256": "sha256:6ff19396f4a3a82297d3574c86f032ae0954ef3955f5f1d51c882ba26dc0d5d9",
+      "content_sha256": "sha256:ef9e548a01e4623a0827097c44e85c8df198f3ee4ee7232c2dfa15a6b8ad928d",
       "source_ref": "package://catalog/policies/policy.web.track.typed_client_validation.json"
     },
     {
       "id": "POLICY.WEB.UIUX.PROVIDER_EVIDENCE_NOT_BUSINESS_TRUTH",
       "path": "policies/policy.web.uiux.provider_evidence_not_business_truth.json",
-      "content_sha256": "sha256:11166f8d112732b605dfcbdff4b72806dd82ebb50259b9dc1e8a54ccc22e53bf",
+      "content_sha256": "sha256:e25dc41a255f86c91e26de9ce546e7d08efb8c291bd133977ff8a844ef3186fb",
       "source_ref": "POMaster_VNext/corpus/master/batch-4/split-ledger.yaml"
     },
     {
       "id": "POLICY.WF.NO_PLANNED_AS_VERIFIED",
       "path": "policies/policy.wf.no_planned_as_verified.json",
-      "content_sha256": "sha256:b4ecec88d33313c073a4400e15c04cc173116da162cf79257f7d91ee0be534dd",
+      "content_sha256": "sha256:d95b9c49cade87620aaadd1e10c4a0408f8dd908415a5b7694650b5c3647eaf3",
       "source_ref": "package://catalog/policies/policy.wf.no_planned_as_verified.json"
     },
     {
       "id": "POLICY.WF.TASK_FACTS_PRECONFIRM",
       "path": "policies/policy.wf.task_facts_preconfirm.json",
-      "content_sha256": "sha256:b87cddbcad96120fc491e5b17cc99ef0ae7e2a1464e896cdfefe9cc61ca742a3",
+      "content_sha256": "sha256:5ac963e30b6904fd8f267577c20c1a482a671fd85a75cbf2a20d4a449b8de57c",
       "source_ref": "package://catalog/policies/policy.wf.task_facts_preconfirm.json"
     },
     {
       "id": "PROFILE.BASELINE.JAVA_ENTERPRISE_DEFAULT",
       "path": "policies/profile.baseline.java_enterprise_default.json",
-      "content_sha256": "sha256:51796f8fe294711358e8325fccb94565912fbaabb5df9870540d9c5f4db4fd7d",
+      "content_sha256": "sha256:98f16c0fbe99165425c43a08cd4009e72ed3a4234ea7be2734495050824c0762",
       "source_ref": "package://catalog/policies/profile.baseline.java_enterprise_default.json"
     },
     {
@@ -1760,37 +1760,37 @@
     {
       "id": "SENSOR.BROWSER.DETERMINISTIC",
       "path": "sensors/sensor.browser.deterministic.json",
-      "content_sha256": "sha256:6efdb9e2d5003949280561040cb77a66ee54089e4db0f1ddee5e0a8a78083ca5",
+      "content_sha256": "sha256:ef9e5979c3f4856604bbe44e05aaa2a570ebe35b4b5c66e6ce645a1b01d3bcaf",
       "source_ref": "catalog/tools/materialize_v06_relock.py（P-v06 批次 2.6 Browser Eyes：SENSOR.BROWSER.* 双眼 implementations 显式化——chrome-devtools-mcp 观测 + @playwright/mcp 验证；Owner 指令 2026-09-03）"
     },
     {
       "id": "SENSOR.BROWSER.INTERACTIVE",
       "path": "sensors/sensor.browser.interactive.json",
-      "content_sha256": "sha256:158863e7e47c50e73043bbc784ab78ffd367e25c939654b21605dbdf2e7a029b",
+      "content_sha256": "sha256:ef243f1bc89d1368b48b8cb371d1a179441882ab338613d54e89bea015a4981a",
       "source_ref": "catalog/tools/materialize_v06_relock.py（P-v06 批次 2.6 Browser Eyes：SENSOR.BROWSER.* 双眼 implementations 显式化——chrome-devtools-mcp 观测 + @playwright/mcp 验证；Owner 指令 2026-09-03）"
     },
     {
       "id": "SENSOR.BUILD.STATIC",
       "path": "sensors/sensor.build.static.json",
-      "content_sha256": "sha256:cd1c965677e08ef3f0b92c9014ee4a3c8fa967419fbfabd1079590b6746ef462",
+      "content_sha256": "sha256:6607225ed2e099c3b57321a481ea3fbde312e0adf3e8f06f0626242c81ebdc34",
       "source_ref": "doc/POMaster-vNext-PRD-v0.5.2-agent-perception.md §14 P1-5（W1-E 线登记；仓库外路径——PRD 住 POMaster 工作区根 doc/，不在本仓；I9① 2026-09-02 修正原悬空词形 POMaster_VNext/doc/…）"
     },
     {
       "id": "SENSOR.CONTRACT.CONFORMANCE",
       "path": "sensors/sensor.contract.conformance.json",
-      "content_sha256": "sha256:cf961ae80c9472c1e7d5ffc85bc5d3c975a0dd390b1c52986cfccee1c1373194",
+      "content_sha256": "sha256:59edec7340264c9e40e325accb377c177ca9262d58aa8da6d4fc09f2a1f77db7",
       "source_ref": "doc/POMaster-vNext-PRD-v0.5.2-agent-perception.md §14 P1-5（W1-E 线登记；仓库外路径——PRD 住 POMaster 工作区根 doc/，不在本仓；I9① 2026-09-02 修正原悬空词形 POMaster_VNext/doc/…）"
     },
     {
       "id": "SENSOR.PERFORMANCE.BUDGET",
       "path": "sensors/sensor.performance.budget.json",
-      "content_sha256": "sha256:6bf3c3a8eeca97f59400fca0217522016d4fbfe8b2de00891a3173d715875798",
+      "content_sha256": "sha256:b4e2e1d7a021f583d2d2825fcaff9f4374ea46470cecb5c1378d1e0bb245df8a",
       "source_ref": "doc/POMaster-vNext-PRD-v0.5.2-agent-perception.md §14 P1-5（W1-E 线登记；仓库外路径——PRD 住 POMaster 工作区根 doc/，不在本仓；I9① 2026-09-02 修正原悬空词形 POMaster_VNext/doc/…）"
     },
     {
       "id": "SENSOR.PRODUCTION.METRIC",
       "path": "sensors/sensor.production.metric.json",
-      "content_sha256": "sha256:969954331cfb8267524e614de72a8605c7cb8195c0f0e5867acf7adf82f52361",
+      "content_sha256": "sha256:7ba56fba3e4435a219592898fe009673df0ac61ea30828081ed65614fc3ed441",
       "source_ref": "doc/POMaster-vNext-PRD-v0.5.2-agent-perception.md §14 P1-5（W1-E 线登记；仓库外路径——PRD 住 POMaster 工作区根 doc/，不在本仓；I9① 2026-09-02 修正原悬空词形 POMaster_VNext/doc/…）"
     },
     {

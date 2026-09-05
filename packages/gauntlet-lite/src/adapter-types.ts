@@ -11,7 +11,7 @@
  * 全局纪律锚：
  * - 词表纪律：DetectionStatus 四态来自 research/testing-toolchain-shipping-plan.md「缺席语义」
  *   （READY/DRIFTED/NOT_INSTALLED/NOT_REQUIRED_BY_PROFILE），vocabulary-lock 尚无此轴
- *   → TODO(vocab-pr)：待词汇表 PR 收编，收编前冻结于本文件（禁止就地扩值）。
+ *   → 已随 PR-0009 收编（vocab-lock presentation_axes.tool_detection_status；禁止就地扩值）。
  *   verdict 七态一律取 @pomaster/schemas 的 VERDICT_VALUES（唯一镜像点），本文件不复制词值。
  * - C1 门禁四态/缺席显式哲学：adapter 无法执行时必须产出显式状态（not_run 等），
  *   禁止静默跳过当通过；SKIPPED_BY_POLICY（not_run 收敛义）与 PASS 在账本中是不同记录。
@@ -31,7 +31,7 @@ import type { RunTriggerValue } from "@pomaster/schemas";
  * 工具探测四态（x-vocab-source: research/testing-toolchain-shipping-plan.md「缺席语义」）：
  * READY=找到且匹配 | DRIFTED=版本漂移（判卷降级 WARNING）| NOT_INSTALLED=缺席（→ not_run，非绿非红）|
  * NOT_REQUIRED_BY_PROFILE=profile 未要求（合法缺席，显式计数，非静默跳过）。
- * TODO(vocab-pr)：四态词形待词汇表 PR 收编 vocab-lock，收编前禁止扩值。
+ * x-vocab-source: vocab-lock presentation_axes.tool_detection_status（PR-0009 收编）；禁止扩值。
  */
 export type DetectionStatus =
   | "READY"
@@ -118,8 +118,8 @@ export interface DetectorFacts {
 /**
  * 门禁判卷强度轴（P23；x-vocab-source: PRD §27.1 Governance Profile 词形
  * MINIMAL/LIGHT/STANDARD + §27.2 Gate Profile 词形 FAST/STANDARD/HARDENING）。
- * TODO(vocab-pr)：五词形全部 PRD 出处（不发明新词形），但「两轴并置为单轴」的
- * 收编裁定待词汇表 PR/A4——随版计划 B2-2 原文「HARDENING-only 生效（PRD §27.2
+ * 五词形全部 PRD 出处（不发明新词形）；「两轴并置为单轴」的收编裁定随 PR-0009
+ * 入锁（vocab-lock presentation_axes.gate_judgment_intensity——并置如实登记）——随版计划 B2-2 原文「HARDENING-only 生效（PRD §27.2
  * Gate Profile）」与 wave3-plan.md P23 出口判据「MINIMAL/LIGHT 档合法缺席」把
  * Governance/Gate 两 Profile 的词形并置在同一个判卷强度决策位，本轴如实承载该
  * 并置；STRICT/CRITICAL（§27.1）不入本轴——其「映射到 HARDENING 强度」是编排层

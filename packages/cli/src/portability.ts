@@ -17,7 +17,7 @@
  * 分层纪律：判卷权威在 @pomaster/kernel（portabilityCheck/portabilityBootstrap），
  * 本包只做编排与呈现；check 纯读零写入（kernel 端只读探测）。
  * 词表纪律：PASS 是 §85.2 逐字；FAIL/NOT_RUN/PORTABILITY_CHECK_FAILED/
- * PORTABILITY_MANIFEST_DRIFT 为本命令面局部词 TODO(vocab-pr)。
+ * PORTABILITY_MANIFEST_DRIFT 码位已随 PR-0009 入锁（vocab-lock presentation_axes.cli_presentation_codes）。
  */
 import {
   GovernanceError,
@@ -31,7 +31,7 @@ import type { CliError, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
 import { governanceErrorToCliError } from "./permit.js";
 
-/** check 失败码位（本命令面局部词 TODO(vocab-pr)；fail-closed exit 1 载体）。 */
+/** check 失败码位（vocab-lock presentation_axes.cli_presentation_codes——PR-0009；fail-closed exit 1 载体）。 */
 export const PORTABILITY_CHECK_FAILED = "PORTABILITY_CHECK_FAILED";
 /** manifest 声明漂移码位（在座非 canonical；bootstrap 不覆盖显式拒绝）。 */
 export const PORTABILITY_MANIFEST_DRIFT = "PORTABILITY_MANIFEST_DRIFT";

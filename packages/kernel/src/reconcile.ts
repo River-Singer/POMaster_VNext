@@ -85,9 +85,9 @@ export type ReconcileDeltaKind = (typeof RECONCILE_DELTA_KINDS)[number];
  *   行锚的形态）、或 rev 动了但找不到解释事务；unexplained 条目原样升格计入 exceptions
  *   （人审队列；clean 语义不变——升格不新增 fail 面，changed_objects 已 fail）。
  *
- * 词表纪律：v0.2（PR-0001）刚 FROZEN，本轮不得再动词表——本词形作为 reconcile 报告呈现层
- * 局部词定义于本文件，TODO(vocab-pr-0002) 登记进 vocab-lock presentation_axes（与 PR-0001
- * 的呈现层局部词先例同构；登记前扩值必须走词汇表 PR，禁止就地添加）。
+ * 词表纪律：v0.2（PR-0001）FROZEN 时本词形作为 reconcile 报告呈现层局部词定义于本文件；
+ * 已随 PR-0009 收编进 vocab-lock presentation_axes.reconcile_drift_origins（与 PR-0001
+ * 的呈现层局部词先例同构；扩值必须走词汇表 PR，禁止就地添加）。
  */
 export const RECONCILE_DRIFT_ORIGINS = ["transaction", "unexplained"] as const;
 
@@ -127,7 +127,8 @@ export interface ReconcileEvidenceEntry {
  * N6：drift_origin=unexplained 的 content_drift 条目**原样升格**入例外段（同一行双呈现：
  * changed_objects 保 delta 分母完整，exceptions 入人审队列——D20/D21）。判别走字段位
  * drift_origin（证据条目无此键；content_tamper 的 kind 属 RECONCILE_EXCEPTION_KINDS
- * 词形），不发明新例外 kind 词——v0.2 FROZEN，词形收编归 TODO(vocab-pr-0002)。
+ * 词形），不发明新例外 kind 词——v0.2 FROZEN；RECONCILE_EXCEPTION_KINDS 已在 vocab-lock
+ * presentation_axes（PR-0001）。
  */
 export type ReconcileUnexplainedDriftEntry = ReconcileChangedObject & {
   readonly drift_origin: "unexplained";

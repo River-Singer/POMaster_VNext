@@ -34,7 +34,7 @@
  *
  * 词形纪律：一切枚举唯一镜像点 @pomaster/schemas vocab.ts P33 段
  * （HARVEST_BUCKET_VALUES / MEMORY_CLASS_VALUES / REVIEW_STATE_VALUES /
- * HARVEST_SOURCE_VALUES / HARVEST_CONFIDENCE_VALUES，pending_vocab_pr）；
+ * HARVEST_SOURCE_VALUES / HARVEST_CONFIDENCE_VALUES——vocab-lock memory_harvest_vocab，PR-0009 收编）；
  * MEMORY_DRIFT 词形复用 P32；id 词形 HM-<12hex> 是通路编号词形（GRN-/CLM-/EXC-/
  * EQG-/AGX-/SA-nnnn 同族先例，非 governed 前缀不过 parseGovernedId），
  * 内容寻址（text 的 sha256 前 12 hex——同文同 id：重复捕获/收割显式检出，
@@ -215,7 +215,7 @@ function requireVocab<T extends string>(
     throw new GovernanceError(
       "SCHEMA_INVALID",
       `${field} 词表外：${value}（${source}）`,
-      `合法词形：${values.join(" | ")}；扩值走词汇表 PR（pending_vocab_pr）`,
+      `合法词形：${values.join(" | ")}；已随 PR-0009 入锁，扩值走词汇表 PR`,
       { [field]: value },
     );
   }

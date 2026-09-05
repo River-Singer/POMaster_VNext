@@ -50,8 +50,8 @@ import { triageRequest } from "./triage.js";
 // ============================================================
 
 /**
- * maintain 支持的编排相（PRD §44.4 --phase 词形的 P11 已落地子集；CLI 局部词
- * TODO(vocab-pr)）。in-dev/post-dev 未实现且显式拒绝——fail-closed，绝不静默当 pre-dev。
+ * maintain 支持的编排相（PRD §44.4 --phase 词形的 P11 已落地子集；x-vocab-source:
+ * vocab-lock presentation_axes.maintain_phases——PR-0009 收编）。in-dev/post-dev 未实现且显式拒绝——fail-closed，绝不静默当 pre-dev。
  */
 export const MAINTAIN_PHASES = ["pre-dev"] as const;
 
@@ -91,7 +91,7 @@ export interface MaintainApplyResult {
   readonly policy_registration_suggestions: readonly PolicyRegistrationSuggestion[];
 }
 
-/** triage 档位呈现（triageRequest 结果的 snake 投影——① 拍词形，CLI 局部词 TODO(vocab-pr)）。 */
+/** triage 档位呈现（triageRequest 结果的 snake 投影——① 拍词形，vocab-lock presentation_axes.triage_profiles 同源 informational——PR-0009）。 */
 export interface MaintainTriageView {
   readonly profile: string;
   readonly evidence_grade: string;

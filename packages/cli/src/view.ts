@@ -829,7 +829,7 @@ export async function runViewTask(
 // ============================================================
 
 /**
- * Attention 类型词闭包（CLI 局部词 TODO(vocab-pr)：alerts ALERT_KINDS 先例）。
+ * Attention 类型词闭包（x-vocab-source: vocab-lock presentation_axes.attention_kinds——PR-0009 收编；alerts ALERT_KINDS 同批先例）。
  * 六组 = R1 五类数据源（question-gate 凭证位并入 CONFLICT_REVIEW 组注记）；
  * §6.3 词形映射（ASK_HUMAN/Pending Approval/Conflict/Risk Acceptance/
  * Architecture Decision/Production Destructive Permit）见 markdown 头注记——

@@ -63,7 +63,7 @@ const GRN_REF_PATTERN = /^GRN-[0-9]+$/;
 export const EVIDENCE_MALFORMED_CODE = "EVIDENCE_MALFORMED";
 
 /**
- * ingested.action 词形（CLI 呈现层局部词 → TODO(vocab-pr)，设计 §4.3 逐字）：
+ * ingested.action 词形（x-vocab-source: vocab-lock presentation_axes.ingest_actions——PR-0009 收编；设计 §4.3 逐字）：
  * runs：canonicalized（入账并覆写为 canonical 形态）/ already_canonical（字节已等价，跳过）；
  * claims：recorded / already_canonical / skipped_adjudicated（已带独立判定，无权覆写）。
  */

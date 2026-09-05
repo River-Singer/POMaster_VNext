@@ -529,7 +529,7 @@ describe("ASSUMPTION 第六处置词形（§4A DEFERABLE 显式升级；申报�
     }
   });
 
-  it("ASSUMPTION 是处置位不是申报位：申报分类五词形闭包不变（TODO(vocab-pr) 局部词纪律）", () => {
+  it("ASSUMPTION 是处置位不是申报位：申报分类五词形闭包不变（vocab-lock question_gate_vocab——PR-0009 收编）", () => {
     expect(QUESTION_GATE_CATEGORIES).toHaveLength(5);
     expect(QUESTION_GATE_CATEGORIES).not.toContain("ASSUMPTION");
   });

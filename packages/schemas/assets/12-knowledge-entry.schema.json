@@ -4,7 +4,7 @@
   "title": "Knowledge Entry（Engineering Knowledge 内核，P28）",
   "description": "PRD §83 的 schema 落地。核心语义（§83.1 逐字）：Spec / Current Truth 管「这个项目现在必须相信/遵守什么」；Knowledge 管「遇到这种问题时，有什么值得想起的经验、失败模式、诊断方法与启发」——身份不同，不互相替代。\n§83.8 检索纪律：Knowledge 是「定期沉淀 + 按 Change Localization 检索注入」，不是「每次开发把所有经验塞进 Prompt」；Context 按 [AUTHORITATIVE] / [ADVISORY] 明显分区。",
   "x-pomaster-file-role": "12-knowledge-entry.schema.json —— §83.3/83.4 Knowledge 形态（P28-Kernel）。store 侧车 state/knowledge-library.json 的形态契约（kernel knowledge.ts 维护，写入唯一通路；不进 content_digest）；消费方 = 检索注入投影与 §44.10 knowledge 命令面（纯读）。Knowledge 对象永不进 gate 判卷输入（§83.2 铁律 / GOLDEN-L8-3）。",
-  "x-pomaster-vocab-source": "PRD v0.4 §83.3 四类型（ENGINEERING_PATTERN/FAILURE_PATTERN/DIAGNOSTIC_PLAYBOOK/DECISION_HEURISTIC）+ §83.9 五状态（CANDIDATE/VALIDATED/PROMOTED/DEPRECATED/REJECTED）+ §83.8 分区词形（AUTHORITATIVE/ADVISORY）+ §83.4 例文 confidence: HIGH（全集取 §81.4 同款三级 HIGH/MEDIUM/LOW——知识候选上游是 Research 产物，P18）；vocab-lock@v0.2-resolved 尚无对应词轴——词形在本文件 definitions 冻结并镜像于 @pomaster/schemas vocab.ts 待收编段（KNOWLEDGE_*_VALUES），提请词汇表 PR 收编。",
+  "x-pomaster-vocab-source": "PRD v0.4 §83.3 四类型（ENGINEERING_PATTERN/FAILURE_PATTERN/DIAGNOSTIC_PLAYBOOK/DECISION_HEURISTIC）+ §83.9 五状态（CANDIDATE/VALIDATED/PROMOTED/DEPRECATED/REJECTED）+ §83.8 分区词形（AUTHORITATIVE/ADVISORY）+ §83.4 例文 confidence: HIGH（全集取 §81.4 同款三级 HIGH/MEDIUM/LOW——知识候选上游是 Research 产物，P18）；vocab-lock@v0.2-resolved 尚无对应词轴——词形在本文件 definitions 冻结并镜像于 @pomaster/schemas vocab.ts（KNOWLEDGE_*_VALUES），已随 vocab-pr-0009 收编（vocab-lock knowledge_vocab）。",
   "x-pomaster-contract": {
     "authority_isolation_prd": "PRD §83.2 铁律：「Knowledge 不能直接让 Gate FAIL。」Authority 隔离表：Engineering Knowledge / Pattern / Failure Pattern / Diagnostic Playbook / Heuristic 权威性 NO、不可直接阻断。结构性落法：本 schema authority 字段为 const ADVISORY——知识对象在形态层面不存在 AUTHORITATIVE 选项（不是禁止后惩罚，是写不出）；kernel 装载面对 authority ≠ ADVISORY 的条目 fail-closed 拒绝（SCHEMA_INVALID）。",
     "lifecycle_prd": "PRD §83.9 生命周期五状态（CANDIDATE/VALIDATED/PROMOTED/DEPRECATED/REJECTED）+ §83.10 提升链（Knowledge Candidate → Validation → Governance Proposal → maintain → Authority / Gatekeeper → Current Policy/Truth）+ §83.11 降级链（Hard Rule → Architecture/Governance Review → Demote → Recommended Pattern / Heuristic）。",
@@ -112,7 +112,7 @@
           },
           "x-pomaster-vocab": {
             "axis": "context_authority_partition",
-            "status": "absent_in_vocab_lock__pending_vocab_pr",
+            "status": "registered_in_vocab_lock__vocab_pr_0009",
             "source": "PRD v0.4 §83.8"
           }
         },
@@ -186,10 +186,10 @@
       ],
       "title": "知识类型（§83.3 四类型，逐字冻结）",
       "description": "PRD §83.3 逐字四类型：\n- ENGINEERING_PATTERN：工程模式（怎么做更好的可复用形态）；\n- FAILURE_PATTERN：失败模式（§83.6 案例 B：CSV naïve split——quoted delimiter/embedded newline/BOM… 检查清单）；\n- DIAGNOSTIC_PLAYBOOK：诊断手册（§83.5 案例 A：组件边框被遮挡——按顺序检查 computed box/overflow/stacking context…）；\n- DECISION_HEURISTIC：决策启发（§83.7 案例 C：Visual Identity ≠ Semantic Identity 判断问题集）。",
-      "$comment": "source: PRD v0.4 §83.3；案例身份锚 §83.5/83.6/83.7。提请词汇表 PR 收编（pending_vocab_pr）。",
+      "$comment": "source: PRD v0.4 §83.3；案例身份锚 §83.5/83.6/83.7。已随 vocab-pr-0009 收编（vocab-lock knowledge_vocab 对应轴）。",
       "x-pomaster-vocab": {
         "axis": "knowledge_kind",
-        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "status": "registered_in_vocab_lock__vocab_pr_0009",
         "source": "PRD v0.4 §83.3"
       },
       "examples": [
@@ -208,7 +208,7 @@
       ],
       "title": "知识生命周期状态（§83.9，逐字冻结）",
       "description": "PRD §83.9 逐字五状态。登记起点恒 CANDIDATE（§25.3 Knowledge Curator「生成 Knowledge Candidate」）；DEPRECATED/REJECTED 为终态。",
-      "$comment": "source: PRD v0.4 §83.9。提请词汇表 PR 收编（pending_vocab_pr）。",
+      "$comment": "source: PRD v0.4 §83.9。已随 vocab-pr-0009 收编（vocab-lock knowledge_vocab 对应轴）。",
       "x-pomaster-transition-matrix": {
         "CANDIDATE": ["VALIDATED", "REJECTED"],
         "VALIDATED": ["PROMOTED", "DEPRECATED"],
@@ -232,7 +232,7 @@
       },
       "x-pomaster-vocab": {
         "axis": "knowledge_status",
-        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "status": "registered_in_vocab_lock__vocab_pr_0009",
         "source": "PRD v0.4 §83.9/83.10/83.11"
       },
       "examples": [
@@ -246,10 +246,10 @@
       "enum": ["HIGH", "MEDIUM", "LOW"],
       "title": "置信三级（knowledge confidence）",
       "description": "§83.4 例文 confidence: HIGH。全集取 §81.4 Research Finding 置信三级（HIGH/MEDIUM/LOW）同词形——知识候选上游是 Research 产物（P18），词形复用不发明新值。",
-      "$comment": "source: PRD v0.4 §83.4 例文 HIGH + §81.4 三级同词形。提请词汇表 PR 收编（pending_vocab_pr）。",
+      "$comment": "source: PRD v0.4 §83.4 例文 HIGH + §81.4 三级同词形。已随 vocab-pr-0009 收编（vocab-lock knowledge_vocab 对应轴）。",
       "x-pomaster-vocab": {
         "axis": "knowledge_confidence",
-        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "status": "registered_in_vocab_lock__vocab_pr_0009",
         "source": "PRD v0.4 §83.4/§81.4"
       },
       "examples": [

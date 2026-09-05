@@ -4,7 +4,7 @@
   "title": "MSD 与不确定性治理（Minimum Sufficient Definition & Uncertainty，P18）",
   "description": "PRD §82 的 schema 落地。核心原则（§82.1 原文）：需求不完整是合法状态；不完整不等于阻塞。POMaster 的职责是判断「当前 Increment 是否已经足够确定，可以安全推进」，而不是「是否所有问题都已经被回答」。\n三块语义：\n- unknowns —— Unknown 分类登记（§82.2 十分类，禁止统一使用 UNRESOLVED/BLOCKER）+ AI Blocker 防幻觉算法（§82.3 八问，blocker 初始只能是 BLOCKER_CANDIDATE）；\n- msd_assessment —— Minimum Sufficient Definition 判定（§80.3 晋升条件 b 的判据面：Goal/Scope/Acceptance）；\n- blueprint_envelope —— Blueprint Acceptance Envelope（§82.5 四态；CONDITIONALLY_ACCEPTED 是合法状态，要求 HARD_BLOCKER=0）。",
   "x-pomaster-file-role": "09-msd-uncertainty.schema.json —— MSD/Uncertainty 登记形态（P18）。Discovery/Brainstorm 产物的不确定度登记与 MSD 判定面；被 08-discovery-state-chain 的 promotion_basis=msd_reached 引用，被后续 Discovery 命令面消费。",
-  "x-pomaster-vocab-source": "PRD v0.4 §82.2/§82.4/§82.5 词形逐字（unknown 十分类大写枚举、assumption_risk 三级、blueprint envelope 四态）；vocab-lock@v0.2-resolved 尚无对应词轴——词形在本文件 definitions 冻结，提请词汇表 PR 收编；代码镜像点 @pomaster/schemas/src/vocab.ts「待词汇表 PR 收编」段。",
+  "x-pomaster-vocab-source": "PRD v0.4 §82.2/§82.4/§82.5 词形逐字（unknown 十分类大写枚举、assumption_risk 三级、blueprint envelope 四态）；vocab-lock@v0.2-resolved 尚无对应词轴——词形在本文件 definitions 冻结，已随 vocab-pr-0009 收编（vocab-lock discovery_vocab）；代码镜像点 @pomaster/schemas/src/vocab.ts。",
   "x-pomaster-contract": {
     "unknown_classification_prd": "PRD §82.2：禁止统一使用 UNRESOLVED/BLOCKER。必须至少区分十分类（逐字）：BLOCKER_CANDIDATE / HARD_BLOCKER / SOFT_UNCERTAINTY / ASSUMPTION / DEFERRED_DECISION / DISCOVERY_REQUIRED / SUSPECTED_ISSUE / NON_BLOCKING_GAP / FUTURE_CONSIDERATION / OUT_OF_SCOPE。",
     "blocker_algorithm_prd": "PRD §82.3：任何 Agent 提出的 blocker，初始只能是 BLOCKER_CANDIDATE；必须回答八问（见 definitions.blocker_triage 逐字段）；只有满足高风险且无法安全假设时才升级 HARD_BLOCKER。",
@@ -205,10 +205,10 @@
       ],
       "title": "Unknown 分类（§82.2 十分类，逐字冻结）",
       "description": "PRD §82.2 逐字：禁止统一使用 UNRESOLVED/BLOCKER，必须至少区分——\n- BLOCKER_CANDIDATE：blocker 候选（一切 Agent 申报的 blocker 的唯一初始态，§82.3）；\n- HARD_BLOCKER：硬阻塞（经八问升级，高风险且无法安全假设）；\n- SOFT_UNCERTAINTY：软不确定（不阻塞当前 Increment）；\n- ASSUMPTION：显式假设（附 assumption_risk 分级）；\n- DEFERRED_DECISION：显式延后的决策；\n- DISCOVERY_REQUIRED：需要进一步 Discovery；\n- SUSPECTED_ISSUE：疑似问题（未证实）；\n- NON_BLOCKING_GAP：非阻塞缺口（如空态文案）；\n- FUTURE_CONSIDERATION：未来考量（§80.7：不得自动进入当前实现范围）；\n- OUT_OF_SCOPE：明确出界。",
-      "$comment": "source: PRD v0.4 §82.2 分类列表逐字；提请词汇表 PR 收编（pending_vocab_pr）。",
+      "$comment": "source: PRD v0.4 §82.2 分类列表逐字；已随 vocab-pr-0009 收编（vocab-lock discovery_vocab 对应轴）。",
       "x-pomaster-vocab": {
         "axis": "msd_unknown_classification",
-        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "status": "registered_in_vocab_lock__vocab_pr_0009",
         "source": "PRD v0.4 §82.2",
         "forbidden_wordforms": ["UNRESOLVED", "BLOCKER"]
       },
@@ -233,7 +233,7 @@
       ],
       "title": "AI Blocker 防幻觉算法八问（§82.3 逐问词形化）",
       "description": "PRD §82.3 八问逐字段（任何 Agent 提出的 blocker 初始只能是 BLOCKER_CANDIDATE，必须回答八问；只有满足高风险且无法安全假设时才升级 HARD_BLOCKER）。upgrade_to_hard=true 的语义等价式 = high_risk_domain=true 且 safe_assumption_available=false（高风险且无法安全假设）——字段级自洽由消费方对账，schema 锁必答与升级通路。",
-      "$comment": "source: PRD v0.4 §82.3 八问列表逐问词形化（中文原文逐条入 description）；提请词汇表 PR 收编。",
+      "$comment": "source: PRD v0.4 §82.3 八问列表逐问词形化（中文原文逐条入 description）；已随 vocab-pr-0009 收编（vocab-lock discovery_vocab.unknown_classification）。",
       "properties": {
         "missing_fact": {
           "type": "string",
@@ -289,10 +289,10 @@
       "enum": ["LOW", "MEDIUM", "HIGH"],
       "title": "假设风险分级（§82.4 三级）",
       "description": "PRD §82.4 逐字：\n- LOW —— 易回滚、局部 UI/默认交互；\n- MEDIUM —— 会产生一定重构，但不会破坏数据/权限；\n- HIGH —— 数据语义、不可逆写、权限、安全、财务/合规、核心 Contract。\nLOW/MEDIUM 可以在明确记录条件下继续；HIGH 默认需要 Authority（requires_authority=true 由 allOf 强制）。",
-      "$comment": "source: PRD v0.4 §82.4 分级列表逐字；提请词汇表 PR 收编（pending_vocab_pr）。",
+      "$comment": "source: PRD v0.4 §82.4 分级列表逐字；已随 vocab-pr-0009 收编（vocab-lock discovery_vocab 对应轴）。",
       "x-pomaster-vocab": {
         "axis": "msd_assumption_risk",
-        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "status": "registered_in_vocab_lock__vocab_pr_0009",
         "source": "PRD v0.4 §82.4"
       },
       "examples": [
@@ -306,7 +306,7 @@
       "required": ["goal_defined", "scope_defined", "acceptance_verifiable", "msd_reached"],
       "title": "Minimum Sufficient Definition 判定（Goal/Scope/Acceptance）",
       "description": "PRD §80.3 晋升条件 b（Goal/Scope/Acceptance 已达到 Minimum Sufficient Definition）的判据面；语义锚定 §82.5 CONDITIONALLY_ACCEPTED 要求：当前 Increment Goal 清楚（goal_defined）、主业务对象与主路径足够清楚（scope_defined）、Acceptance 可验证（acceptance_verifiable）。三者全 true ⇒ msd_reached 必须 true（allOf 强制，禁止三轴全绿却申报未达成）。§82.6：MSD 达成只证明当前 Increment 可安全推进，不证明产品需求永久完整。",
-      "$comment": "source: PRD v0.4 §80.3 条件 b + §82.5/§82.6；提请词汇表 PR 收编（字段轴 pending_vocab_pr）。",
+      "$comment": "source: PRD v0.4 §80.3 条件 b + §82.5/§82.6；已随 vocab-pr-0009 收编（字段轴——vocab-lock discovery_vocab.blueprint_envelope_status）。",
       "properties": {
         "goal_defined": {
           "type": "boolean",
@@ -382,7 +382,7 @@
       "required": ["status"],
       "title": "Blueprint Acceptance Envelope（§82.5）",
       "description": "Blueprint 验收状态四态（§82.5 逐字）：ACCEPTED / CONDITIONALLY_ACCEPTED / BLOCKED / REJECTED。CONDITIONALLY_ACCEPTED 是合法状态（「当前 Increment 已达到可开发的最小充分定义」的正式形态）；结构与 §82.5 示例 yaml 逐键同源（confirmed/assumptions/deferred/non_blocking_gaps/blockers）。unknowns 含 HARD_BLOCKER ⇒ status 不得为 ACCEPTED/CONDITIONALLY_ACCEPTED（顶层 allOf 强制）。",
-      "$comment": "source: PRD v0.4 §82.5 状态列表与示例 yaml 逐键；提请词汇表 PR 收编（pending_vocab_pr）。",
+      "$comment": "source: PRD v0.4 §82.5 状态列表与示例 yaml 逐键；已随 vocab-pr-0009 收编（vocab-lock discovery_vocab 对应轴）。",
       "properties": {
         "status": {
           "$ref": "#/definitions/blueprint_envelope_status"
@@ -434,10 +434,10 @@
       "enum": ["ACCEPTED", "CONDITIONALLY_ACCEPTED", "BLOCKED", "REJECTED"],
       "title": "Blueprint 状态（§82.5 四态，逐字冻结）",
       "description": "PRD §82.5 逐字：ACCEPTED（全量确认）/ CONDITIONALLY_ACCEPTED（合法状态：带显式假设与延后项的有条件通过，要求 HARD_BLOCKER=0）/ BLOCKED（硬阻塞在场）/ REJECTED（拒绝）。",
-      "$comment": "source: PRD v0.4 §82.5 状态列表逐字；提请词汇表 PR 收编（pending_vocab_pr）。",
+      "$comment": "source: PRD v0.4 §82.5 状态列表逐字；已随 vocab-pr-0009 收编（vocab-lock discovery_vocab 对应轴）。",
       "x-pomaster-vocab": {
         "axis": "blueprint_envelope_status",
-        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "status": "registered_in_vocab_lock__vocab_pr_0009",
         "source": "PRD v0.4 §82.5"
       },
       "examples": [

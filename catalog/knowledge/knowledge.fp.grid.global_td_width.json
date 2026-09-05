@@ -3,7 +3,8 @@
     "status": "no_new_enum__confirm_only",
     "finding": "knowledge_entry kind 已在 vocab-lock kinds_registry.truth_bodies——试点纪律所称『knowledge 无正式 kind』与 vocab-lock 实况不符",
     "proposal": "无需新 kind；payload 变体（KNOWLEDGE_PATTERN/FAILURE_PATTERN）作为 knowledge_entry 的 kind profile 承载，提请词汇表 PR 时一并确认，不新增枚举值（meta.vocab_findings[2]）",
-    "locked_vocab_untouched": true
+    "locked_vocab_untouched": true,
+    "resolution": "2026-09-05 vocab PR-0009 复核闭合（vocab-lock@v0.8-resolved）：knowledge_entry kind 已在 kinds_registry.truth_bodies（零词值改动）；knowledge 词形域段随 catalog_layer_vocab.authority_knowledge_profile_domains 收编登记；本 confirm-only 注记就此闭合"
   },
   "x-pilot-proposal": {
     "status": "PROPOSAL",

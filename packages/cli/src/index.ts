@@ -159,7 +159,7 @@
  * 分层纪律：判卷权威在 @pomaster/kernel，本包只做编排与呈现，禁止旁路写状态
  * （例外：check/exec-guard 对过期许可追加 PERMIT_EXPIRED_OBSERVED 为 kernel 契约行为）。
  * 词表纪律：本包局部词（triage 档位/证据级、doctor 四态、permit list status 三值、
- * maintain --phase 相值）均带 TODO(vocab-pr) 注记。
+ * maintain --phase 相值）已随 PR-0009 入锁（vocab-lock presentation_axes 各轴）。
  */
 import { Command, CommanderError } from "commander";
 import { createInterface } from "node:readline";
@@ -1291,7 +1291,7 @@ export function createProgram(
     .option("--change-ref <ref>", "按契约引用过滤（缺省=全部，不做静默过滤）")
     .option(
       "--state <state>",
-      "按呈现态过滤：active | expired | stolen（CLI 局部词 TODO(vocab-pr)；缺省=全部）",
+      "按呈现态过滤：active | expired | stolen（vocab-lock presentation_axes.permit_presentation_states——PR-0009 收编；缺省=全部）",
     )
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (opts, command) => {

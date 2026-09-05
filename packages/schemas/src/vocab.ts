@@ -3,7 +3,7 @@
  *
  * 词表纪律（违者=返工）：
  * - 本文件一切枚举/前缀/转移矩阵只能镜像 `assets/vocab-lock.draft.yaml`
- *   （pomaster.vocab/v0.6-resolved；v0.1-resolved 2026-08-27 FROZEN，2026-08-29 PR-0001
+ *   （pomaster.vocab/v0.8-resolved；v0.1-resolved 2026-08-27 FROZEN，2026-08-29 PR-0001
  *   append-only 纯增量增补（v0.1 词值零删改），2026-09-01 PR-0004 增补
  *   production_band_vocab 段 + id_namespace.state_plane_refs 五通路编号词形注记，
  *   2026-09-01 PR-0005 增补 catalog_layer_vocab 段 change_classes/governance_profiles
@@ -13,10 +13,12 @@
  *   ——Owner 四决议 D-1~D-4 2026-09-02（PRD v0.6/v0.6.1 融合批次 0 Model Constitution），
  *   2026-09-03 PR-0007 增补 source_types 轴 owner_directive 词形（Owner 有意词形收编
  *   ——knowledge.web.browser.mcp_eyes 物料 sources[].type 实录，append-only 纯增量），
- *   v0.1~v0.5 词值零删改），逐值相等，禁止发明词表外值；
- * - 需要新值 → 留 `TODO(vocab-pr)` 注释走词汇表 PR，禁止就地添加；
- * - 标注「待词汇表 PR 收编」的词轴：词形已在 schema（01/02/03/05/06/07 及 P18 的
- *   08/09/10）的 x-vocab-extra / definitions 冻结，本文件照镜像并保留 TODO(vocab-pr)；
+ *   2026-09-04 PR-0008 增补 GOVERNED_ID_PREFIXES SPEC. 前缀（vNext Batch 2 R1 / D6），
+ *   2026-09-05 PR-0009 增补裁定批 B 全量在用新词形收编（Owner 裁定 D4=(a) 2026-09-05
+ *   ——十一新段 + catalog/presentation 两段扩轴 + Discovery 平面 state_plane_refs 注记；
+ *   本文件原「待词汇表 PR 收编」各段就地转正为 vocab-lock 镜像段，词值零改动，
+ *   v0.1~v0.7 词值零删改），逐值相等，禁止发明词表外值；
+ * - 需要新值 → 走词汇表 PR（append-only），禁止就地添加；
  * - 每个数组都带 x-vocab-source 行，改 vocab-lock 时同 commit 同步本文件。
  */
 
@@ -62,7 +64,8 @@ export type ChangeValue = (typeof CHANGE_VALUES)[number];
  * - PROPOSED→CURRENT requires: authority_approval；
  * - CURRENT→SUPERSEDED|DEPRECATED requires: transition_record；
  * - SUPERSEDED 终态且 successor_ref 必填；RETIRED/REJECTED 终态；
- * - DEPRECATED→RETIRED 附加 grace_policy: config（宽限期策略键待词表登记 → TODO(vocab-pr)）。
+ * - DEPRECATED→RETIRED 附加 grace_policy: config（宽限期策略键词形已随 PR-0009 在
+ *   vocab-lock transitions 块转正登记——kernel GRACE_POLICY_CONFIG_EDGES 边集承载）。
  */
 export const LIFECYCLE_TRANSITIONS = {
   PROPOSED: ["CURRENT", "REJECTED"],
@@ -329,9 +332,10 @@ export const RECONCILE_DELTA_KINDS = [
 export const RECONCILE_EXCEPTION_KINDS = ["content_tamper"] as const;
 
 // ============================================================
-// 以下为「词表外局部枚举」：词形已在各 schema 冻结，待词汇表 PR 收编。
-// TODO(vocab-pr)：逐轴随后续词汇表 PR 收编（v0.2/PR-0001 已收编 catalog_layer_vocab 与
-// presentation_axes 两段；本节词轴尚未入 vocab-lock）；扩值必须走词汇表 PR，禁止就地添加。
+// 运行语义词轴（x-vocab-source: vocab-lock runtime_semantics_axes，PR-0009 收编；
+// 原「词表外局部枚举」待收编段就此转正——词形已在 schema 01/02/03/05/06/07 的
+// x-vocab-extra / definitions 冻结，PR-0009 统一入锁，本文件逐值镜像）。
+// 扩值必须走词汇表 PR，禁止就地添加。
 // ============================================================
 
 /** gate verdict 七态超集（x-vocab-source: 03-gate-result definitions.verdict 候选冻结来源；C1 四态必答位=前四者）。 */
@@ -403,11 +407,11 @@ export const DENOMINATOR_STATUS_VALUES = [
 export type DenominatorStatusValue = (typeof DENOMINATOR_STATUS_VALUES)[number];
 
 // ============================================================
-// P18 Discovery 词轴（x-vocab-source: 08/09/10 schema definitions 冻结来源；
-// PRD v0.4 §80.3/§81/§82 原文词形，逐字）。
-// TODO(vocab-pr)：Discovery 状态链是**新状态面**（Discovery 讨论生命周期），
-// 不混入既有对象轴 state_axes.lifecycle（该轴 FROZEN 且值域不相交）；下列词轴
-// 全部 absent_in_vocab_lock__pending_vocab_pr，收编后以 vocab-lock 为准逐值镜像。
+// P18 Discovery 词轴（x-vocab-source: vocab-lock discovery_vocab，PR-0009 收编；
+// 08/09/10 schema definitions 冻结来源；PRD v0.4 §80.3/§81/§82 原文词形，逐字）。
+// Discovery 状态链是**新状态面**（Discovery 讨论生命周期），不混入既有对象轴
+// state_axes.lifecycle（该轴 FROZEN 且值域不相交）；PR-0009 入锁后以 vocab-lock
+// 为准逐值镜像，扩值走词汇表 PR。
 // ============================================================
 
 /**
@@ -543,8 +547,8 @@ export type ResearchModeValue = (typeof RESEARCH_MODE_VALUES)[number];
  * Unknown 十分类正交（那是 Discovery 未决项分类面；本轴管 Exception Ledger 登记面，
  * P19 投影视图按 §91.3 消费：CONFLICT/HARD_BLOCKER = 高显著度异常区块，其余三类
  * 聚合到对应章节）。x-vocab-source: PRD v0.4 §49.2/§91.3；schema 落点
- * 11-exception-ledger definitions.exception_classification。
- * TODO(vocab-pr)：absent_in_vocab_lock__pending_vocab_pr，收编后以 vocab-lock 为准。
+ * 11-exception-ledger definitions.exception_classification；
+ * vocab-lock discovery_vocab.exception_classification（PR-0009 收编）。
  */
 export const EXCEPTION_CLASSIFICATION_VALUES = [
   "ASSUMPTION",
@@ -557,11 +561,11 @@ export type ExceptionClassificationValue =
   (typeof EXCEPTION_CLASSIFICATION_VALUES)[number];
 
 // ============================================================
-// P28 Knowledge 词轴（x-vocab-source: PRD v0.4 §83 原文词形，逐字）。
-// TODO(vocab-pr)：Knowledge 是 §83 独立平面（ADVISORY 策展源，永不进 gate 判卷
-// 输入——§83.2 铁律 / GOLDEN-L8-3 锚），词轴 absent_in_vocab_lock__pending_vocab_pr，
-// 收编后以 vocab-lock 为准逐值镜像。schema 落点 12-knowledge-entry definitions
-// （x-pomaster-transition-matrix/-requirements 与本段 KNOWLEDGE_TRANSITIONS 逐值同源）。
+// P28 Knowledge 词轴（x-vocab-source: vocab-lock knowledge_vocab，PR-0009 收编；
+// PRD v0.4 §83 原文词形，逐字）。Knowledge 是 §83 独立平面（ADVISORY 策展源，
+// 永不进 gate 判卷输入——§83.2 铁律 / GOLDEN-L8-3 锚）。schema 落点
+// 12-knowledge-entry definitions（x-pomaster-transition-matrix/-requirements 与本段
+// KNOWLEDGE_TRANSITIONS 逐值同源）。扩值走词汇表 PR。
 // ============================================================
 
 /**
@@ -658,14 +662,13 @@ export const KNOWLEDGE_CONFIDENCE_VALUES = [
 export type KnowledgeConfidenceValue = (typeof KNOWLEDGE_CONFIDENCE_VALUES)[number];
 
 // ============================================================
-// P20 D 线地基词轴（x-vocab-source: PRD v0.4 §25.4 Agent Execution Identity +
-// research/design-thread-D-solo-form.md §1.2/§1.3/§2.1/§3.3.1/§4 原文词形）。
-// TODO(vocab-pr)：Execution Identity / session / lock 是 D 线自有 P0 状态面
-// （wave3-plan.md P20 范围锚「D 线 §7 ①②」），与既有对象轴 state_axes 正交、
-// 值域不相交；下列词轴全部 absent_in_vocab_lock__pending_vocab_pr，收编后以
-// vocab-lock 为准逐值镜像。AGX-n 执行编号与 session_key / lock_id 同 GRN-n/
+// P20 D 线地基词轴（x-vocab-source: vocab-lock execution_identity_vocab，PR-0009 收编；
+// PRD v0.4 §25.4 Agent Execution Identity + research/design-thread-D-solo-form.md
+// §1.2/§1.3/§2.1/§3.3.1/§4 原文词形）。Execution Identity / session / lock 是 D 线
+// 自有 P0 状态面（wave3-plan.md P20 范围锚「D 线 §7 ①②」），与既有对象轴
+// state_axes 正交、值域不相交。AGX-n 执行编号与 session_key / lock_id 同 GRN-n/
 // CLM-n/EXC-n 先例：状态/证据面通路编号词形，非 governed 前缀，不入
-// id_namespace 闭包。
+// id_namespace 闭包。扩值走词汇表 PR。
 // ============================================================
 
 /**
@@ -719,17 +722,15 @@ export const LOCK_KIND_VALUES = ["change", "task", "unit"] as const;
 export type LockKindValue = (typeof LOCK_KIND_VALUES)[number];
 
 // ============================================================
-// P21 Capability Pool 词轴（x-vocab-source: PRD v0.4 §25.3 十二角色标题词形 +
-// §25.2 池选图短词形 + §24 Handoff 例文 from: IMPLEMENTER / to: CLEANER +
-// §25.4 role: IMPLEMENTER yaml 词形）。
-// TODO(vocab-pr)：Capability Pool 是 P1 capability 面（wave3-plan.md P21 范围锚；
-// R2 重分类裁定「P0=地基，P1=池」——docs/wave3-p20-r2-reclassification.md），
-// 十二角色词轴 absent_in_vocab_lock__pending_vocab_pr，收编后以 vocab-lock 为准
-// 逐值镜像。与 P0 六值 EXECUTION_ROLE_VALUES 分层不相交（该轴注记同源预告）：
-// P0 轴是执行身份档案的小写角色标签（配置可扩展、非内置人格），本轴是 §25.3
-// 池角色的机器词形。solo 默认运行形态不变（§25.2 MINIMAL→主 Harness 直接执行
-// = D 线 §1.1 SOLO-DIRECT 的 PRD 内生依据）：本词轴是 capability 面，
-// 不触发池时零消费。
+// P21 Capability Pool 词轴（x-vocab-source: vocab-lock execution_identity_vocab，
+// PR-0009 收编；PRD v0.4 §25.3 十二角色标题词形 + §25.2 池选图短词形 + §24 Handoff
+// 例文 from: IMPLEMENTER / to: CLEANER + §25.4 role: IMPLEMENTER yaml 词形）。
+// Capability Pool 是 P1 capability 面（wave3-plan.md P21 范围锚；R2 重分类裁定
+// 「P0=地基，P1=池」——docs/wave3-p20-r2-reclassification.md）。与 P0 六值
+// EXECUTION_ROLE_VALUES 分层不相交（该轴注记同源预告）：P0 轴是执行身份档案的
+// 小写角色标签（配置可扩展、非内置人格），本轴是 §25.3 池角色的机器词形。
+// solo 默认运行形态不变（§25.2 MINIMAL→主 Harness 直接执行 = D 线 §1.1 SOLO-DIRECT
+// 的 PRD 内生依据）：本词轴是 capability 面，不触发池时零消费。
 // ============================================================
 
 /**
@@ -826,11 +827,10 @@ export type RuntimeDegradationRuleId =
   (typeof RUNTIME_DEGRADATION_RULE_IDS)[number];
 
 // ============================================================
-// P31 跨域联结词形轴（x-vocab-source: docs/wave3-research-gaps.md §3 GRN-4402
-// 产品需求转译原文词形，A13 / OPEN-M6-12）。
-// TODO(vocab-pr)：跨域联结键词形轴 absent_in_vocab_lock__pending_vocab_pr，
-// 收编后以 vocab-lock 为准逐值镜像。schema 落点 13-equivalence-registry
-// definitions（word_form_domain / equivalence_status 与本段逐值同源）。
+// P31 跨域联结词形轴（x-vocab-source: vocab-lock equivalence_vocab，PR-0009 收编；
+// docs/wave3-research-gaps.md §3 GRN-4402 产品需求转译原文词形，A13 / OPEN-M6-12）。
+// schema 落点 13-equivalence-registry definitions（word_form_domain /
+// equivalence_status 与本段逐值同源）。扩值走词汇表 PR。
 // ============================================================
 
 /**
@@ -869,12 +869,11 @@ export const EQUIVALENCE_STATUS_VALUES = ["active", "pending"] as const;
 export type EquivalenceStatusValue = (typeof EQUIVALENCE_STATUS_VALUES)[number];
 
 // ============================================================
-// P32 Portability Kernel 词形轴（x-vocab-source: PRD §85.2/§85.3/§84.6 逐字 +
-// kernel fail-closed 纪律补位词）。
-// TODO(vocab-pr)：absent_in_vocab_lock__pending_vocab_pr，收编后以 vocab-lock
-// 为准逐值镜像。§85.2/§85.3 的词形是 PRD 逐字承载（非本仓发明）；FAIL/NOT_RUN
-// 两态是「缺项=FAIL 或 NOT_RUN 显式，绝不静默绿」fail-closed 纪律的补位词
-// （PRD §85.2 逐字只给 PASS），随本轴一并提请词汇表 PR 裁决。
+// P32 Portability Kernel 词形轴（x-vocab-source: vocab-lock portability_vocab，
+// PR-0009 收编；PRD §85.2/§85.3/§84.6 逐字 + kernel fail-closed 纪律补位词）。
+// §85.2/§85.3 的词形是 PRD 逐字承载（非本仓发明）；FAIL/NOT_RUN 两态是
+// 「缺项=FAIL 或 NOT_RUN 显式，绝不静默绿」fail-closed 纪律的补位词
+// （PRD §85.2 逐字只给 PASS），随本轴一并登记（原 TODO 呈报位就此闭合）。
 // ============================================================
 
 /**
@@ -917,11 +916,10 @@ export type PortabilityForbiddenDependencyValue =
 export const MEMORY_DRIFT = "MEMORY_DRIFT" as const;
 
 // ============================================================
-// P33 Memory Harvest 台账管线词形轴（x-vocab-source: PRD §48.2/§48.4/§44.10 逐字 +
-// thread-B §4 迁移设计词形（research/design-thread-B-migration.md）+ kernel
-// fail-closed 纪律补位词）。
-// TODO(vocab-pr)：absent_in_vocab_lock__pending_vocab_pr，收编后以 vocab-lock
-// 为准逐值镜像。schema 落点 14-memory-harvest definitions（与本段逐值同源）。
+// P33 Memory Harvest 台账管线词形轴（x-vocab-source: vocab-lock memory_harvest_vocab，
+// PR-0009 收编；PRD §48.2/§48.4/§44.10 逐字 + thread-B §4 迁移设计词形
+// （research/design-thread-B-migration.md）+ kernel fail-closed 纪律补位词）。
+// schema 落点 14-memory-harvest definitions（与本段逐值同源）。扩值走词汇表 PR。
 // ============================================================
 
 /**
@@ -1023,9 +1021,9 @@ export type HarvestConfidenceValue = (typeof HARVEST_CONFIDENCE_VALUES)[number];
 
 // ============================================================
 // P33b Memory CLI 命令面词形（§44.10 六命令错误面 + 呈报位）。
-// TODO(vocab-pr)：absent_in_vocab_lock__pending_vocab_pr，收编后以 vocab-lock
-// 为准逐值镜像。无 PRD 逐字出处的自创补位词与本批任务定案词形均在此登记，
-// 随 P33 呈报件同批呈报 Owner（词汇表 PR 收编前禁进 vocab-lock 主表）。
+// x-vocab-source: vocab-lock memory_harvest_vocab.cli_error_codes / owner_escalation
+// （PR-0009 收编）。P33b 任务定案自创补位词在本段登记（原「词汇表 PR 收编前禁进
+// vocab-lock 主表」注记就此闭合）；扩值走词汇表 PR。
 // ============================================================
 
 /**

@@ -6,7 +6,7 @@
  * IDEA → DISCOVERY → READY_TO_PROMOTE → CHANGE/TASK）。
  * Discovery 状态链是**新状态面**（Discovery 讨论生命周期），与既有对象轴
  * state_axes.lifecycle（PROPOSED/CURRENT/…，FROZEN）正交，值域不相交、禁止互转互填；
- * 词轴待词汇表 PR 收编（TODO(vocab-pr)，镜像点 schemas/vocab.ts「待收编」段）。
+ * 词轴已随 PR-0009 入锁（vocab-lock discovery_vocab.discovery_chain，镜像点 schemas/vocab.ts）。
  *
  * requires 映射逐字镜像 08 x-pomaster-transition-requirements：
  * - IDEA>DISCOVERY / DISCOVERY>READY_TO_PROMOTE 无前置；

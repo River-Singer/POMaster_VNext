@@ -121,7 +121,7 @@ export interface DenominatorRefRow {
 }
 
 /** 绑定摘要（D15：binding 是期望声明不是豁免证书；not_configured=终局性诚实报告）。
- * 词形镜像 01-truth-index binding_summary.probe_status —— TODO(vocab-pr)：待收编。 */
+ * 词形镜像 01-truth-index binding_summary.probe_status —— x-vocab-source: vocab-lock runtime_semantics_axes.binding_probe_status（PR-0009 收编）。 */
 export interface BindingSummary {
   readonly declared: number;
   readonly probeStatus: "all_verified" | "has_unverified" | "not_configured";
@@ -460,7 +460,7 @@ export type TransitionOutcome =
 
 /**
  * 状态轴转移校验（纯函数）。vocab-lock v0.1 仅有 lifecycle 轴转移矩阵（LIFECYCLE_TRANSITIONS），
- * 其余轴（confidence/evidence/change）无矩阵——扩轴走词汇表 PR 后再扩本签名 → TODO(vocab-pr)。
+ * 其余轴（confidence/evidence/change）无矩阵——扩轴走词汇表 PR 后再扩本签名（流程注记维持）。
  * 跨轴耦合断言（lifecycle∈{PROPOSED,REJECTED}⇒evidence=PLANNED、evidence=VERIFIED⇒realization=wired、
  * change=MIGRATING 必持 ACTIVE PERMIT、LOCKED+STABLE→CHALLENGED 必持 DECISION/CHANGE 引用）
  * 归 applyTransaction/REF_INTEGRITY，不在本纯函数内。
@@ -476,7 +476,7 @@ export { validateTransition } from "./transitions.js";
  * 状态链（PRD §80.3 原文词形）：IDEA → DISCOVERY → READY_TO_PROMOTE → CHANGE/TASK；
  * 拓扑唯一来源 DISCOVERY_CHAIN_TRANSITIONS（@pomaster/schemas，镜像 08-discovery-state-chain
  * x-pomaster-transition-matrix）。Discovery 状态链是新状态面（Discovery 讨论生命周期），
- * 与 state_axes.lifecycle 正交、值域不相交；词轴待词汇表 PR 收编（TODO(vocab-pr)）。
+ * 与 state_axes.lifecycle 正交、值域不相交；词轴已随 PR-0009 入锁（vocab-lock discovery_vocab.discovery_chain）。
  * 非法迁移（跳步/倒退/自环/词表外值）不 throw——返回 allowed:false 显式拒绝（fail-closed）；
  * 提升边（READY_TO_PROMOTE→CHANGE/TASK）requires ["promotion_basis"]（§80.3 四条晋升条件
  * 任一满足），且提升写入必须走 P11 maintain 面（受控写入唯一面，Discovery 层不私造第二
@@ -502,11 +502,11 @@ export type {
 // DISCOVERY.INTENT./FACT. 是 Discovery 平面局部词形（state_plane_refs 先例）——不入
 // GOVERNED_ID_PREFIXES、不过 parseGovernedId，校验=本模块词形正则 + 图内存在性；
 // GRILLING/GRILLED/GRILL_CONFIRMED 禁词负例（§1.1 不新增 State Axis，09 号
-// forbidden_wordforms 先例）；TODO(vocab-pr) 词形三镜像收编归独立词汇表批。
+// forbidden_wordforms 先例）；词形已随 PR-0009 入锁（vocab-lock decision_graph_vocab）。
 // schema 载体 18-decision-graph.schema.json（research_request/research_handoff/
 // finding_link 三平面 definitions 同住决策图 schema，10 号零改动——Owner 裁决 9③）。
 export {
-  // —— 词形常量（Discovery 平面局部词形 + 派生词轴；TODO(vocab-pr)） ——
+  // —— 词形常量（Discovery 平面局部词形 + 派生词轴；vocab-lock decision_graph_vocab，PR-0009） ——
   DECISION_GRAPH_FORBIDDEN_WORDFORMS,
   DECISION_ID_PATTERN,
   RESEARCH_REQUEST_ID_PATTERN,
@@ -717,8 +717,8 @@ export { resolveAlias } from "./id.js";
 // 三腿链（精确 id → A6 机械别名 canonical 化 → active 等价登记 → pending 桶），
 // resolveAlias 本体零改动。侧车 state/equivalence-registry.json（staged write +
 // 损坏 fail-closed + journal EQUIVALENCE_* 事件流；不进 content_digest）。
-// 词形轴 pending_vocab_pr（WORD_FORM_DOMAIN_VALUES / EQUIVALENCE_STATUS_VALUES，
-// 13-equivalence-registry definitions 镜像）。
+// 词形轴已随 PR-0009 入锁（vocab-lock equivalence_vocab；WORD_FORM_DOMAIN_VALUES /
+// EQUIVALENCE_STATUS_VALUES，13-equivalence-registry definitions 镜像）。
 export {
   EQUIVALENCE_REGISTRY_RELATIVE,
   EQUIVALENCE_GROUP_PATTERN,
@@ -1522,8 +1522,8 @@ export type {
 // （harness-local 记忆位仅探测存在性，内容不读取不入库；禁自动写入 Canonical
 // State，必须 classification/review）。bootstrap 只重建 runtime 面（缺失才写，
 // 零治理事实零 journal 事件——重建非变更，A4；§85.4 state equivalent 的
-// 字节可判定性前提）。词形轴 pending_vocab_pr（PORTABILITY_* / MEMORY_DRIFT，
-// PRD §85/§84.6 逐字 + FAIL/NOT_RUN fail-closed 补位词）。
+// 字节可判定性前提）。词形轴已随 PR-0009 入锁（vocab-lock portability_vocab——
+// PORTABILITY_* / MEMORY_DRIFT，PRD §85/§84.6 逐字 + FAIL/NOT_RUN fail-closed 补位词）。
 export {
   PORTABILITY_MANIFEST_RELATIVE,
   PORTABILITY_CHECK_IDS,
@@ -1585,7 +1585,7 @@ export {
 // auditMemory 消费 P32 MEMORY_DRIFT 探测（词形复用），drift 项自动进 inbox。数据
 // 落点全部在 .pomaster/memory/ 子树（绝不触碰 .pomaster/state/truth；零 journal）；
 // id=HM-<12hex> 内容寻址（同文同 id 重复显式检出，A4 无墙钟无随机）；词形轴
-// pending_vocab_pr（HARVEST_*/MEMORY_CLASS/REVIEW_STATE，schemas vocab.ts P33 段）。
+// 已随 PR-0009 入锁（vocab-lock memory_harvest_vocab；HARVEST_*/MEMORY_CLASS/REVIEW_STATE）。
 export {
   MEMORY_INBOX_RELATIVE,
   USER_MEMORY_LEDGER_FILENAME,
@@ -1644,7 +1644,7 @@ export {
   REVIEW_STATE_VALUES,
   HARVEST_SOURCE_VALUES,
   HARVEST_CONFIDENCE_VALUES,
-  // P33b CLI 命令面词形（错误词形族 + 呈报词形；同段 pending_vocab_pr）。
+  // P33b CLI 命令面词形（错误词形族 + 呈报词形；vocab-lock memory_harvest_vocab，PR-0009）。
   MEMORY_CLI_ERROR_VALUES,
   OWNER_ESCALATION_REQUIRED,
 } from "./vocab.js";
@@ -1848,15 +1848,15 @@ export type {
 // @0.2.0 之上增 §6.7 环境身份前置门，verdict 七态零扩张：WRONG_OR_UNVERIFIED_INSTANCE
 // → blocked）。词形纪律：OBS-/ENVREC-/ENV./SENSOR./JOURNEY. 为感知平面通路/局部词形，
 // 非 governed 前缀不入 id_namespace 闭包（AGX-n 头注同款注记）；observation surface/
-// side-effect/负观察/doctor verdict 等词轴 TODO(vocab-pr-0005)——词表三镜像登记归
-// 主控批次（批 2 文件面互斥）；CAPABILITY_DEGRADED 与 §58 capability_degradation_report
+// side-effect/负观察/doctor verdict 等词轴已随 PR-0009 入锁（vocab-lock
+// trace_perception_vocab）；CAPABILITY_DEGRADED 与 §58 capability_degradation_report
 // 同词根不同概念（裁决 8 撞族消歧）。schema 载体 17-perception-receipts.schema.json。
 // barrel 撞名注记（W1-D2）：OBSERVATION_SURFACE_VALUES / ObservationSurfaceValue 已由
 // catalog.js（批 1 P1-5 sensor catalog 线）经本 barrel 导出——同一 PRD §6.4 八值字面
 // 同源（逐字全等）；perception.ts 模块常量是感知模块内部消费位（perception.spec 直连
 // 钉住），barrel 单一出口纪律下本块不重复导出（撞名 = esbuild Multiple exports 硬错）。
 export {
-  // —— 词形常量与词轴（TODO(vocab-pr-0005)） ——
+  // —— 词形常量与词轴（vocab-lock trace_perception_vocab，PR-0009） ——
   SIDE_EFFECT_CLASS_VALUES,
   PROBE_SIDE_EFFECT_RULES,
   NEGATIVE_OBSERVATION_VALUES,

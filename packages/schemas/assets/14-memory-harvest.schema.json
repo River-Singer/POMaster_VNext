@@ -4,7 +4,7 @@
   "title": "Memory Harvest Inbox Entry（harvest 台账 inbox 条目 · P33 · PRD §48.2/§48.4/§44.10 + thread-B §4 迁移设计）",
   "description": "thread-B §4 半自动 inbox 管线（迁移工作台简版）的条目形态契约：机器做全量读取→逐条打分类提案+置信度→冲突检测位→落 inbox；人做唯一环节是 batch review，只改分类标签，不改写内容原文（原始文本逐字保真）。四桶初筛（TRUTH/KNOWLEDGE/EPISODE/PREFERENCE）+ 两条特殊出口（AUTHORITY_POLICY 升格、INVALID_EXPIRED 淘汰）+ 机械判不了的 UNCLASSIFIED_PENDING 拒绝位（禁模糊猜测）。\n数据落点 .pomaster/memory/inbox/<batch>/<id>.json（batch 目录式）。inbox 是 staging 平面不是 Canonical State：MEMORY_DRIFT 产物与本管线任何条目都不得自动成为 Truth（PRD Case N 逐字「不得自动成为 Truth」；§84.6 禁自动写入 Canonical State）。",
   "x-pomaster-file-role": "14-memory-harvest.schema.json —— .pomaster/memory/inbox/<batch>/<id>.json 条目形态契约（kernel memory-harvest.ts 维护，写入唯一通路；kernel 内部补充状态，不进 content_digest）。消费方 = memory review/promote/audit 命令面（§44.10）与 Memory Curator batch review（thread-B §4.2）。",
-  "x-pomaster-vocab-source": "词形轴 absent_in_vocab_lock__pending_vocab_pr：bucket 轴（四桶 + 两特殊出口取 thread-B §4.1 表逐字；UNCLASSIFIED_PENDING 为禁模糊猜测的机械拒绝位，equivalence unknown 词形同源纪律）；memory_class 轴（PRD §48.2 七类逐字大写化）；review_state 轴（thread-B §4.2 例文 PENDING + §48.4 Review/Promotion 词形）；source 轴（user_capture/memory_harvest/memory_drift_audit 通路词形）；confidence 轴（§81.4/§83.4 三级同词形复用，不发明新值）。词形已在本文件 definitions 冻结并镜像于 @pomaster/schemas vocab.ts 待收编段，提请词汇表 PR 收编（pending_vocab_pr）。id 词形 HM-<12hex> 是通路编号词形（GRN-/CLM-/EXC-/EQG-/AGX-/SA-nnnn 同族先例），非 governed 前缀，不入 id_namespace prefixes_v0 闭包、不过 parseGovernedId。",
+  "x-pomaster-vocab-source": "词形轴已随 vocab-pr-0009 收编（vocab-lock memory_harvest_vocab）：bucket 轴（四桶 + 两特殊出口取 thread-B §4.1 表逐字；UNCLASSIFIED_PENDING 为禁模糊猜测的机械拒绝位，equivalence unknown 词形同源纪律）；memory_class 轴（PRD §48.2 七类逐字大写化）；review_state 轴（thread-B §4.2 例文 PENDING + §48.4 Review/Promotion 词形）；source 轴（user_capture/memory_harvest/memory_drift_audit 通路词形）；confidence 轴（§81.4/§83.4 三级同词形复用，不发明新值）。词形已在本文件 definitions 冻结并镜像于 @pomaster/schemas vocab.ts 待收编段，已随 vocab-pr-0009 收编（vocab-lock memory_harvest_vocab 对应轴）。id 词形 HM-<12hex> 是通路编号词形（GRN-/CLM-/EXC-/EQG-/AGX-/SA-nnnn 同族先例），非 governed 前缀，不入 id_namespace prefixes_v0 闭包、不过 parseGovernedId。",
   "x-pomaster-contract": {
     "verbatim_text": "内容原文零改写铁律（thread-B §4.2「只改分类标签，不改写内容原文」逐字）的结构性落法：text 字段承载收割/捕获原文逐字字节；kernel decideInboxEntry 签名无 text 参数位（结构上写不出改写动作），评审只经 reclassify 位改 proposal.bucket/memory_class（分类标签）。",
     "pending_default_seal": "review_state 默认 PENDING 且不可缺省为 PROMOTED：kernel buildInboxEntry 结构性只写 PENDING；本 schema allOf 封条——review_state 字段缺席的条目不得携带任何已决痕迹（reviewed_by/promoted_route 必须为 null），缺省语义恒 PENDING（kernel 装载面同式 ?? PENDING）。",
@@ -215,10 +215,10 @@
       "enum": ["TRUTH", "KNOWLEDGE", "EPISODE", "PREFERENCE", "AUTHORITY_POLICY", "INVALID_EXPIRED", "UNCLASSIFIED_PENDING"],
       "title": "harvest 分桶（thread-B §4.1 四桶初筛 + 两条特殊出口 + 机械拒绝位）",
       "description": "四桶（thread-B §4.1 判别规则逐字）：TRUTH=陈述现状基线值/规模/栈/权威指针；KNOWLEDGE=失败模式/诊断法/教训，不随 M6 失效；EPISODE=事件史/时间线/翻案过程；PREFERENCE=个人工作偏好。两条特殊出口：AUTHORITY_POLICY=type=feedback 且属用户明令——从 PREFERENCE/TRUTH 中升格（升格须显式声明，默认拒绝）；INVALID_EXPIRED=被后续事实推翻。UNCLASSIFIED_PENDING=机械判不了的显式拒绝位（confidence 恒 LOW——禁模糊猜测，promote 面拒绝未分拣条目）。",
-      "$comment": "source: thread-B §4.1 表逐字（research/design-thread-B-migration.md）+ kernel UNCLASSIFIED_PENDING 补位词。提请词汇表 PR 收编（pending_vocab_pr）。",
+      "$comment": "source: thread-B §4.1 表逐字（research/design-thread-B-migration.md）+ kernel UNCLASSIFIED_PENDING 补位词。已随 vocab-pr-0009 收编（vocab-lock memory_harvest_vocab 对应轴）。",
       "x-pomaster-vocab": {
         "axis": "harvest_bucket",
-        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "status": "registered_in_vocab_lock__vocab_pr_0009",
         "source": "thread-B §4.1 + kernel fail-closed 补位词"
       },
       "examples": ["TRUTH", "KNOWLEDGE", "UNCLASSIFIED_PENDING"]
@@ -228,10 +228,10 @@
       "enum": ["TRUTH", "KNOWLEDGE", "EPISODE", "DECISION", "EVIDENCE", "USER", "HARNESS_RUNTIME"],
       "title": "PRD §48.2 七类长期记忆分类（七类闭集）",
       "description": "Truth Memory（当前系统是什么；权威）/ Experience Memory / Knowledge（过去踩过什么坑、有哪些模式；非权威）/ Episode Memory（某个 Task/Incident/Migration 发生过什么；历史证据）/ Decision Memory（为什么形成当前架构/业务决策；ADR/ACR）/ Evidence Memory（什么证明 Claim 成立）/ User Memory（个人偏好，默认不进入项目 Git）/ Harness Runtime Memory（平台本地状态；可丢弃）。",
-      "$comment": "source: PRD v0.4 §48.2 L3236-3242 逐字（标题词形大写化，§91.3 先例）。提请词汇表 PR 收编（pending_vocab_pr）。",
+      "$comment": "source: PRD v0.4 §48.2 L3236-3242 逐字（标题词形大写化，§91.3 先例）。已随 vocab-pr-0009 收编（vocab-lock memory_harvest_vocab 对应轴）。",
       "x-pomaster-vocab": {
         "axis": "memory_class",
-        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "status": "registered_in_vocab_lock__vocab_pr_0009",
         "source": "PRD v0.4 §48.2"
       },
       "examples": ["TRUTH", "USER", "HARNESS_RUNTIME"]
@@ -241,10 +241,10 @@
       "enum": ["PENDING", "PROMOTED", "REJECTED"],
       "title": "review 三态（默认 PENDING；已决再决 fail-closed）",
       "description": "PENDING：待 batch review（新建条目唯一合法起点，缺省语义亦 PENDING）；PROMOTED：评审通过待晋升路由；REJECTED：评审否决（终态，无路由产物）。已决条目再决 = kernel fail-closed 拒绝（TRANSITION_ILLEGAL——三态封闭，无回退边）。",
-      "$comment": "source: thread-B §4.2 例文 review_state: PENDING + PRD §48.4「Review/Promotion」。提请词汇表 PR 收编（pending_vocab_pr）。",
+      "$comment": "source: thread-B §4.2 例文 review_state: PENDING + PRD §48.4「Review/Promotion」。已随 vocab-pr-0009 收编（vocab-lock memory_harvest_vocab 对应轴）。",
       "x-pomaster-vocab": {
         "axis": "review_state",
-        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "status": "registered_in_vocab_lock__vocab_pr_0009",
         "source": "thread-B §4.2 + PRD §48.4"
       },
       "examples": ["PENDING", "PROMOTED", "REJECTED"]
@@ -254,10 +254,10 @@
       "enum": ["user_capture", "memory_harvest", "memory_drift_audit"],
       "title": "条目来源通路（三值闭集）",
       "description": "user_capture = 用户显式「记住」请求（STRICT 模式统一入口，§48.5）；memory_harvest = harness memory 目录批量收割（COMPATIBILITY 模式，§48.5）；memory_drift_audit = memory audit 的 MEMORY_DRIFT 探测产物自动入 inbox（Case N「进入 inbox」半边——不得自动成为 Truth）。",
-      "$comment": "source: PRD §44.10/§48.4/§48.5 + Case N。提请词汇表 PR 收编（pending_vocab_pr）。",
+      "$comment": "source: PRD §44.10/§48.4/§48.5 + Case N。已随 vocab-pr-0009 收编（vocab-lock memory_harvest_vocab 对应轴）。",
       "x-pomaster-vocab": {
         "axis": "harvest_source",
-        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "status": "registered_in_vocab_lock__vocab_pr_0009",
         "source": "PRD §44.10/§48.4/§48.5 + Case N"
       },
       "examples": ["user_capture", "memory_drift_audit"]
@@ -267,10 +267,10 @@
       "enum": ["HIGH", "MEDIUM", "LOW"],
       "title": "分类提案置信三级（§81.4/§83.4 同词形复用，不发明新值）",
       "description": "HIGH = 头部 metadata 显式声明（机器可读自述）；MEDIUM = 文件名/头部关键词机械命中（词面证据）；LOW = 无规则命中（UNCLASSIFIED_PENDING 恒 LOW——判不了显式降级，禁模糊猜测）。",
-      "$comment": "source: thread-B §4.2 + §81.4/§83.4 三级词形复用裁定。提请词汇表 PR 收编（pending_vocab_pr）。",
+      "$comment": "source: thread-B §4.2 + §81.4/§83.4 三级词形复用裁定。已随 vocab-pr-0009 收编（vocab-lock memory_harvest_vocab 对应轴）。",
       "x-pomaster-vocab": {
         "axis": "harvest_confidence",
-        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "status": "registered_in_vocab_lock__vocab_pr_0009",
         "source": "thread-B §4.2 + §81.4/§83.4 词形复用"
       },
       "examples": ["HIGH", "MEDIUM", "LOW"]

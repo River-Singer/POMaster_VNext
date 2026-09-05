@@ -25,7 +25,7 @@
  *                          property-based 用例；FastAPI profile 招牌件」；PATH 线索；
  *                          run 期 `schemathesis --version` 实测对账）
  *
- * 词表纪律：DetectionStatus 四态词形冻结于 adapter-types.ts（TODO(vocab-pr)），禁止就地扩值。
+ * 词表纪律：DetectionStatus 四态词形已随 PR-0009 入锁（vocab-lock presentation_axes.tool_detection_status），禁止就地扩值。
  * 探测为纯函数（DetectorFacts 注入），零隐式 I/O；真实事实源 platformDetectorFacts（node:fs）。
  */
 import { statSync, readFileSync } from "node:fs";

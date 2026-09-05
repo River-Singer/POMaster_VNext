@@ -5,7 +5,7 @@
  * markdown。vNext Batch 2 R3（Owner 裁定 D8 2026-09-04）：分区词形对齐 PRD §8.1④
  * 五分区闭包——AUTHORITATIVE PROJECT STATE / REQUIRED POLICY / ADVISORY KNOWLEDGE /
  * REUSE / CATALOG（LAZY TOOLS 并入）/ VERIFICATION（词形闭包常量
- * CONTEXT_PARTITION_TITLES；cli 局部呈现词 TODO(vocab-pr)，登记归词汇表批次）。
+ * CONTEXT_PARTITION_TITLES；x-vocab-source: vocab-lock presentation_axes.context_partition_titles——PR-0009 收编）。
  *
  * **判卷输入等价性 ADR（R3；语义保持等价的机器论证）**：
  * - 机器现实：gate 判卷输入 = kernel manifest.mustEntries（不变量，本批零改动；
@@ -44,7 +44,7 @@
  * - **stale→recompile**：落盘/检查时比对现盘 manifest 的 inputs_fingerprint → 漂移
  *   即 STALE_GROUNDING 显式呈现 + 指路重编译，不静默覆盖（词形启用 18 号
  *   decision-graph schema 的 P1 预留位 STALE_GROUNDING——schema 词面已在，启用不新增；
- *   TODO(vocab-pr) 收编归词汇表批次）；现盘文件不可解析同按 STALE_GROUNDING 处置
+ *   词形已随 PR-0009 入锁 vocab-lock presentation_axes.context_manifest_words）；现盘文件不可解析同按 STALE_GROUNDING 处置
  *   （必然不是 fresh，呈现细节区分）；
  * - `--check`：纯读比对呈现（FRESH/STALE_GROUNDING/ABSENT 三态 + 现盘 fingerprint
  *   回显），零写入；stale 不阻断（ok=true，呈现不阻断是 D24 read_only_service 姿态；
@@ -79,13 +79,13 @@ import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
 
 // ============================================================
-// 分区词形闭包（vNext Batch 2 R3 / D8；cli 局部呈现词 TODO(vocab-pr)）
+// 分区词形闭包（vNext Batch 2 R3 / D8；x-vocab-source: vocab-lock presentation_axes.context_partition_titles——PR-0009 收编）
 // ============================================================
 
 /**
  * 五分区标题词形（PRD §8.1④ 2026-09-04 裁定 D8 逐字；呈现层闭包——markdown 标题与
- * 落盘 manifest partitions 键的唯一词源）。TODO(vocab-pr)：cli 局部词 pending_vocab_pr
- * （词表管辖「留痕或入锁」纪律的留痕形态——triage 先例；登记归词汇表批次）。
+ * 落盘 manifest partitions 键的唯一词源）。x-vocab-source: vocab-lock
+ * presentation_axes.context_partition_titles（PR-0009 收编——「留痕或入锁」留痕形态转正为入锁）。
  */
 export const CONTEXT_PARTITION_TITLES = [
   "AUTHORITATIVE PROJECT STATE",
@@ -96,7 +96,7 @@ export const CONTEXT_PARTITION_TITLES = [
 ] as const;
 export type ContextPartitionTitle = (typeof CONTEXT_PARTITION_TITLES)[number];
 
-/** 落盘 manifest schema 词形（vNext Batch 2 R2/D7；cli 局部词 TODO(vocab-pr)）。 */
+/** 落盘 manifest schema 词形（vNext Batch 2 R2/D7；x-vocab-source: vocab-lock presentation_axes.context_manifest_words.schema_word_form——PR-0009 收编）。 */
 export const CONTEXT_MANIFEST_SCHEMA = "pomaster.context-manifest/1" as const;
 
 /** kernel 错误分类：not-implemented → NOT_INSTALLED（缺席显式）；其余 → KERNEL_ERROR。 */

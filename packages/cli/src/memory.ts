@@ -32,7 +32,7 @@
  * 分层纪律：判卷/落盘权威在 @pomaster/kernel memory-harvest.ts（P33a 语义入口唯一）；
  * 本包只做 argv 收敛、错误词形映射与呈现。§84.6 铁律：本命令面没有任何写
  * Canonical State 的通路——TRUTH/DECISION/EVIDENCE 晋升只呈报不落 Canonical。
- * 错误词形纪律：MEMORY_CLI_ERROR_VALUES（schemas vocab.ts P33b 段，pending_vocab_pr）
+ * 错误词形纪律：MEMORY_CLI_ERROR_VALUES（schemas vocab.ts P33b 段——vocab-lock memory_harvest_vocab，PR-0009 收编）
  * 经元组解构取词（单一镜像点）；kernel GovernanceError 码位 → 命令面词形映射全部
  * 由确定性前置检查承载（读条目现状判分支），禁子串/模糊猜测映射。
  */

@@ -11,9 +11,9 @@
  * thread-C §3.2 的 F3/F5（cosmetic type、依赖清单变更）未出现在 §7 config 样例的规则登记中，
  * 本参考实现不收录（不发明规则 id；届时随 rule_v0 catalog 落地再扩）。
  *
- * TODO(vocab-pr)：档位词 MINIMAL/LIGHT/STANDARD（及 prompt_only 预留的 STRICT/CRITICAL）
- * 尚未入 vocab-lock@v0.3-resolved（词源：thread-C §3.2/§7 + 根 README 八拍①；
- * PR-0001/PR-0004 未收编本词轴）；词轴收编前本文件只消费上述四词形，禁止扩值。
+ * 档位词 MINIMAL/LIGHT/STANDARD（及 prompt_only 预留的 STRICT/CRITICAL——CRITICAL
+ * 维持 PR-0005 裁定不入）已随 PR-0009 入锁（vocab-lock presentation_axes.triage_profiles，
+ * informational——A1 裁定）；本文件只消费上述四词形，扩值走词汇表 PR。
  *
  * 纪律镜像：
  * - C1 条件触发规则桶：不打分、不 LLM 裁决，每条规则可单测；
@@ -32,7 +32,7 @@
  * kernel triage 面落地后按 golden.harness 同款「kernel 优先、回落参考」升级。
  */
 
-// TODO(vocab-pr)：档位词轴待 vocab-lock 收编；收编前此处为 thread-C §7 词形镜像。
+// 档位词轴已随 PR-0009 入锁（vocab-lock presentation_axes.triage_profiles）；此处为 thread-C §7 词形镜像。
 export const PROFILE_LADDER = ["MINIMAL", "LIGHT", "STANDARD"] as const;
 export type ProfileName = (typeof PROFILE_LADDER)[number];
 

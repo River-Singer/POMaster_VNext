@@ -9,6 +9,6 @@
  * - 本文件**不复制任何词值**，仅 re-export，保证「单一镜像点」纪律不被 kernel 内部
  *   多入口引用破坏（kernel 各模块一律从本文件取词值）；
  * - 需要新值 → 在 vocab-lock 走词汇表 PR → 同 commit 同步 @pomaster/schemas/vocab.ts，
- *   kernel 零改动（TODO(vocab-pr) 注记落点在 schemas 侧）。
+ *   kernel 零改动（词汇表 PR 注记落点在 schemas 侧——PR-0009 已收编转正）。
  */
 export * from "@pomaster/schemas";

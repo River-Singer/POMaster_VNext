@@ -26,8 +26,8 @@
  *    skipped_blindspot 证据链纪律）。
  *
  * 词表纪律：domain 轴（WORD_FORM_DOMAIN_VALUES 六值）/ status 轴
- * （EQUIVALENCE_STATUS_VALUES 两值）唯一来源 @pomaster/schemas vocab.ts 待收编段
- * （镜像 13-equivalence-registry definitions；pending_vocab_pr 提请词汇表 PR 收编，
+ * （EQUIVALENCE_STATUS_VALUES 两值）唯一来源 @pomaster/schemas vocab.ts
+ * （镜像 13-equivalence-registry definitions；已随 PR-0009 入锁 vocab-lock equivalence_vocab，
  * 本文件不发明词值）。EQG-n 是通路编号词形（GRN-/CLM-/EXC-/AGX-/SA-nnnn 同族先例），
  * 非 governed 前缀，不入 GOVERNED_ID_PREFIXES 闭包、不过 parseGovernedId。
  *
@@ -266,7 +266,7 @@ export function normalizeWordFormDomain(value: string): WordFormDomainValue {
     throw new GovernanceError(
       "SCHEMA_INVALID",
       `domain 词表外：${value}（13-equivalence-registry definitions.word_form_domain 六值闭包）`,
-      `合法词形：${WORD_FORM_DOMAIN_VALUES.join(" | ")}；扩值走词汇表 PR（pending_vocab_pr）`,
+      `合法词形：${WORD_FORM_DOMAIN_VALUES.join(" | ")}；已随 PR-0009 入锁，扩值走词汇表 PR`,
       { domain: value },
     );
   }

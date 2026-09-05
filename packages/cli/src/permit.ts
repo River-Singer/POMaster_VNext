@@ -17,7 +17,8 @@
  * - self_attested 恒为 true：凡经本进程 argv 传入的主体身份都是调用方自报（C5
  *   自报值永不单独判卷），不提供 --attested 假开关；
  * - 词表纪律：op 三值 / actor 四型取既有词表闭包，零新词值；list 的 status 三值
- *   （active/expired/stolen）是 CLI 呈现层局部词 → TODO(vocab-pr)；
+ *   （active/expired/stolen）是 CLI 呈现层局部词——PR-0009 已入锁（vocab-lock
+ *   presentation_axes.permit_presentation_states）；
  * - fail-closed：一切失败 ok=false（runCli 据此 exit 1），错误码复用 kernel
  *   GovernanceError 同义码位约定（docs/kernel-api.md §9），每错必带 hint 路标。
  */
@@ -55,7 +56,7 @@ export type PermitWriteOp = (typeof PERMIT_WRITE_OPS)[number];
 
 /**
  * list 呈现态三值（由 stolen 标记 + current_seq vs expires_at_seq 机械派生）。
- * CLI 呈现层局部词 → TODO(vocab-pr)（待词汇表 PR 收编）。
+ * x-vocab-source: vocab-lock presentation_axes.permit_presentation_states（PR-0009 收编）。
  */
 export const PERMIT_LIST_STATES = ["active", "expired", "stolen"] as const;
 
@@ -863,7 +864,7 @@ export interface PermitListInput {
 
 /**
  * 台账纯读呈现（--json 同 state 重跑字节稳定）。--change-ref / --state 过滤缺省
- * = 全部（不做静默过滤）；status 由 stolen 标记 + seq 机械派生（CLI 局部词 TODO(vocab-pr)）。
+ * = 全部（不做静默过滤）；status 由 stolen 标记 + seq 机械派生（vocab-lock presentation_axes.permit_presentation_states——PR-0009）。
  */
 export async function runPermitList(
   rootDir: string,
@@ -881,7 +882,7 @@ export async function runPermitList(
     return fail({
       code: "SCHEMA_INVALID",
       message: `--state 词表外值：${input.state}`,
-      hint: `呈现态三值（CLI 局部词 TODO(vocab-pr)）：${PERMIT_LIST_STATES.join(" | ")}；缺省=全部。`,
+      hint: `呈现态三值（vocab-lock presentation_axes.permit_presentation_states——PR-0009 收编）：${PERMIT_LIST_STATES.join(" | ")}；缺省=全部。`,
     });
   }
   const initialized = await requireInitialized(rootDir);

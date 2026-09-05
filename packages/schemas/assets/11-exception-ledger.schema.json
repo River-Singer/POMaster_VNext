@@ -4,7 +4,7 @@
   "title": "Exception Ledger（异常状态登记面，P19）",
   "description": "PRD §49.2 的 schema 落地。核心语义（§49.2 逐字）：Narrative 文档不得在每个句子后追加 [已确认]/[待确认]/[冲突] 标签；正文 = 当前可成立的完整世界，Exception Ledger = 当前世界边界之外仍需处理的异常状态。状态负责组织文档，不负责打断文档。\n本登记面是 Human State Visibility（§49）三投影（§49.1 Narrative/Review/Audit，§91.1 一个 State 多种 View）的异常项机器事实源：view blueprint 的 Uncertainty Envelope（§91.2）与高显著度异常区块（§91.3）从这里聚合。",
   "x-pomaster-file-role": "11-exception-ledger.schema.json —— §49.2 Exception Ledger 登记形态（P19）。store 侧车 state/exception-ledger.json 的形态契约（kernel recordException 维护，写入唯一通路；不进 content_digest）；消费方 = view/audit 投影命令面（纯读）。",
-  "x-pomaster-vocab-source": "PRD v0.4 §49.2 分类五值（Assumption/Open Question/Deferred Decision/Conflict/Hard Blocker）+ §91.3 词形（ASSUMPTION/OPEN_QUESTION/DEFERRED/CONFLICT/HARD_BLOCKER）；vocab-lock@v0.2-resolved 尚无对应词轴——词形在本文件 definitions 冻结并镜像于 @pomaster/schemas vocab.ts 待收编段（EXCEPTION_CLASSIFICATION_VALUES），提请词汇表 PR 收编。",
+  "x-pomaster-vocab-source": "PRD v0.4 §49.2 分类五值（Assumption/Open Question/Deferred Decision/Conflict/Hard Blocker）+ §91.3 词形（ASSUMPTION/OPEN_QUESTION/DEFERRED/CONFLICT/HARD_BLOCKER）；vocab-lock@v0.2-resolved 尚无对应词轴——词形在本文件 definitions 冻结并镜像于 @pomaster/schemas vocab.ts（EXCEPTION_CLASSIFICATION_VALUES），已随 vocab-pr-0009 收编（vocab-lock discovery_vocab.exception_classification）。",
   "x-pomaster-contract": {
     "ledger_semantics_prd": "PRD §49.2：正文 = 当前可成立的完整世界；Exception Ledger = 当前世界边界之外仍需处理的异常状态。至少分类五值逐字：Assumption；Open Question；Deferred Decision；Conflict；Hard Blocker。",
     "visibility_rule_prd": "PRD §91.3：CONFLICT / HARD_BLOCKER → 高显著度异常区块；ASSUMPTION / OPEN_QUESTION / DEFERRED → 聚合到对应章节。投影渲染规则按分类二分执行，不发明第三种呈现。",
@@ -102,10 +102,10 @@
       ],
       "title": "异常分类（§49.2 五分类，逐字语义冻结）",
       "description": "PRD §49.2「至少分类」逐字：\n- ASSUMPTION：显式假设（当前世界按其成立，但边界外待确认）；\n- OPEN_QUESTION：开放问题（答案未定）；\n- DEFERRED_DECISION：显式延后的决策；\n- CONFLICT：冲突（两个可成立陈述不相容）；\n- HARD_BLOCKER：硬阻塞（不消除则无法继续）。\n§91.3 投影可见性二分：CONFLICT/HARD_BLOCKER = 高显著度异常区块；其余三类聚合到对应章节。",
-      "$comment": "source: PRD v0.4 §49.2 分类列表 + §91.3 词形；提请词汇表 PR 收编（pending_vocab_pr）。",
+      "$comment": "source: PRD v0.4 §49.2 分类列表 + §91.3 词形；已随 vocab-pr-0009 收编（vocab-lock discovery_vocab.exception_classification）。",
       "x-pomaster-vocab": {
         "axis": "exception_classification",
-        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "status": "registered_in_vocab_lock__vocab_pr_0009",
         "source": "PRD v0.4 §49.2/§91.3"
       },
       "examples": [

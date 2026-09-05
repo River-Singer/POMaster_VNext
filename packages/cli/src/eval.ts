@@ -26,8 +26,8 @@
  * - 报告自洽守卫（EVAL_REPORT_INCONSISTENT）——执行器自身被改坏时拒绝判卷。
  * 幂等：纯函数 + 零墙钟——同 seeds 字节级同报告（GOLDEN-L8-1 判据同款）。
  *
- * TODO(vocab-pr)：suite 词形 behavioral 为本命令局部词轴（词源 PRD §44.10/§94），
- * 词轴收编前禁止私扩值；词表扩容须同步 tests/behavioral/trigger-manifest.json suites。
+ * x-vocab-source: vocab-lock presentation_axes.eval_suites（PR-0009 收编；suite 词形
+ * behavioral 词源 PRD §44.10/§94）；词表扩容须同步 tests/behavioral/trigger-manifest.json suites。
  */
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";

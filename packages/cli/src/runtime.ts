@@ -20,8 +20,8 @@
  *   装载走 kernel loadStoreReadOnly（零写副作用）而非 createStore（其 ensureSidecars
  *   会在侧车缺失的存量 store 上静默重建空账，丢失信号被吞）——侧车缺失按「显式空/
  *   缺席」呈现；
- * - 局部词（LOCK_BLOCKED、liveness 两值、execution 呈现两态）均带 TODO(vocab-pr)
- *   注记，禁私加 vocab.ts 主表（呈报项见 docs/wave3-p20-sec79-backfill-44-8.md）。
+ * - 局部词（LOCK_BLOCKED、liveness 两值、execution 呈现两态）已随 PR-0009 入锁
+ *   （vocab-lock presentation_axes.cli_presentation_codes 等轴——原呈报项转正）。
  */
 import {
   acquireLock,
@@ -383,7 +383,7 @@ export type LockAcquireResult =
       readonly holder_session_missing: boolean;
     };
 
-/** LOCK_BLOCKED（CLI 局部码 TODO(vocab-pr)）：blocked 非静默成功——判卷语义对齐 permit check。 */
+/** LOCK_BLOCKED（x-vocab-source: vocab-lock presentation_axes.cli_presentation_codes——PR-0009）：blocked 非静默成功——判卷语义对齐 permit check。 */
 export const LOCK_BLOCKED = "LOCK_BLOCKED";
 
 function emptyLockAcquire(): LockAcquireResult {
@@ -814,7 +814,7 @@ export interface ExecutionListResult {
     readonly runtime: string;
     readonly identity_kind: string;
     readonly session_key: string | null;
-    /** 呈现两态（CLI 局部词 TODO(vocab-pr)）：ended_at null=active；interrupted 状态归 journal 面。 */
+    /** 呈现两态（x-vocab-source: vocab-lock presentation_axes.execution_presentation_status——PR-0009）：ended_at null=active；interrupted 状态归 journal 面。 */
     readonly status: "active" | "ended";
     readonly started_at: string;
     readonly ended_at: string | null;

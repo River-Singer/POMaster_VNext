@@ -4,7 +4,7 @@
   "title": "Execution Trace Manifest（执行行为侧车 · W1-C Lite · PRD v0.5.2 §8/§14 P0.5-3 词形冻结面）",
   "description": "P0.5-3 Execution Trace Manifest Lite 的定义形态契约：Trace 是 Execution Identity 的**派生投影/侧车**（§8.1「Execution Identity 必须保持短、稳定、Git durable；行为轨迹另建 Execution Trace Manifest」——A19 Identity Is Not Trace，不新增第二套身份）。\n零新采集器（PRD §14 P0.5-3「只记录 execution_id / write footprint / tool receipts / evidence refs；不先采集完整 read trace」）：kernel compileExecutionTrace 从既有平面派生——state/journal.jsonl TX_APPLIED.changed_object_ids（execution_id 过滤）→ writes、ops 计数 → transition_proposals、evidence/runs/GRN-*.json 与 evidence/claims/CLM-*.json 文件自报 execution_id（P20 执行身份贯穿证据链落盘位）→ tool_receipts/evidence_refs；reads/agent_spawns 恒空数组**显式**（Lite 边界非缺席）。\n§8.4 隐私封条：manifest 闭形态（additionalProperties:false + 无任何自由文本载荷键位）禁私有思维链/隐藏推理/凭据——只存 observable actions / resource refs / tool receipts / state transitions / artifact references。\n数据落点双平面（Owner 裁决 8 ② 2026-09-01「trace 独立 traces/ 分区 + 投影 + 可选 --seal」）：.pomaster/traces/AGX-*.json（durable，TASK/INCIDENT/AUDIT 留存档进 Git）与 .pomaster/runtime/traces/AGX-*.json（EPHEMERAL 易变平面——§85.4 可删除测试 runtime/ 判据豁免，删后投影可重建，§15 Benchmark C「删除可丢弃 raw trace 后核心 Identity/Evidence Audit 仍可理解」）。retention 四档**仅记录不 GC**（裁决 8 ②；OD-4）。",
   "x-pomaster-file-role": "16-execution-trace.schema.json —— .pomaster/traces/AGX-*.json（durable）与 .pomaster/runtime/traces/AGX-*.json（EPHEMERAL）封存 manifest 形态契约（kernel trace.ts sealExecutionTrace 唯一写入通路）。投影形态（retention/derived_from_seq 双 null）为 on-demand 派生视图不落盘；消费方 = readSealedExecutionTrace（canonical 重放对账——重算投影派生视图逐字节比对，漂移 stale 显式）、listSealedExecutionTraces（双平面清单）、批 2 CLI `trace show/list` 编排。",
-  "x-pomaster-vocab-source": "词形轴 absent_in_vocab_lock__pending_vocab_pr（TODO(vocab-pr-0005)，批 1 文件面互斥——vocab 三镜像登记归主控批次，收编后以 vocab-lock 为准逐值镜像）：trace_retention 轴（PRD v0.5.2 §8.3 逐字四档 EPHEMERAL/TASK_RETENTION/INCIDENT_RETENTION/AUDIT_RETENTION；Owner 裁决 8 ② 2026-09-01「retention 四档逐字仅记录不 GC」批准）；schema 词形 pomaster.execution_trace/v1（镜像 pomaster.execution/v1 先例）；trace_version=1（§8.2 例文逐字）。execution_id 词形沿用 07 同款 ^AGX-[0-9]{4}-[0-9]+$（PRD §25.4 例文；证据面通路编号词形，非 governed 前缀）。verdict 七态复用 03 definitions.verdict（$ref 绝对 $id 形态——单一事实源禁二次镜像）。",
+  "x-pomaster-vocab-source": "词形轴已随 vocab-pr-0009 收编（vocab-lock trace_perception_vocab——原批 1 文件面互斥注记转正，以 vocab-lock 为准逐值镜像）：trace_retention 轴（PRD v0.5.2 §8.3 逐字四档 EPHEMERAL/TASK_RETENTION/INCIDENT_RETENTION/AUDIT_RETENTION；Owner 裁决 8 ② 2026-09-01「retention 四档逐字仅记录不 GC」批准）；schema 词形 pomaster.execution_trace/v1（镜像 pomaster.execution/v1 先例）；trace_version=1（§8.2 例文逐字）。execution_id 词形沿用 07 同款 ^AGX-[0-9]{4}-[0-9]+$（PRD §25.4 例文；证据面通路编号词形，非 governed 前缀）。verdict 七态复用 03 definitions.verdict（$ref 绝对 $id 形态——单一事实源禁二次镜像）。",
   "x-pomaster-contract": {
     "case_a_identity_reuse": "§16 Case A「Trace 只能引用已有 AGX，不得自造第二种 EXEC-* 身份」：execution_id 复用 kernel assertExecutionAttachable 严格通道（词形非法 SCHEMA_INVALID / executions/ 档案缺失 EXECUTION_NOT_FOUND——零新错误码）。",
     "identity_not_trace": "§8.2「这里不重复 runtime/model/permit/policy_lock/context_manifest——这些属于 Execution Identity」：manifest 键位结构性不含上述五面（A19）。",
@@ -40,7 +40,7 @@
     "schema": {
       "const": "pomaster.execution_trace/v1",
       "title": "trace 档案 schema 词形（镜像 pomaster.execution/v1 先例）",
-      "description": "TODO(vocab-pr-0005)：absent_in_vocab_lock__pending_vocab_pr（批 1 文件面互斥，词形登记归主控批次）。"
+      "description": "已随 vocab-pr-0009 收编（vocab-lock trace_perception_vocab.schema_word_forms）。"
     },
     "trace_version": {
       "type": "integer",
@@ -107,8 +107,8 @@
       "$comment": "source: PRD v0.5.2 §8.3 L2163-2168 逐字 + Owner 裁决 8 ②（2026-09-01，corpus/master/cutover/owner-adjudications.md）。",
       "x-pomaster-vocab": {
         "axis": "trace_retention",
-        "status": "absent_in_vocab_lock__pending_vocab_pr",
-        "todo": "vocab-pr-0005（批 1 文件面互斥：vocab 三镜像登记归主控批次；与 O-Q4 trace 族词汇批次合并呈报）",
+        "status": "registered_in_vocab_lock__vocab_pr_0009",
+        "todo": "已闭合（vocab-pr-0009 收编——vocab-lock trace_perception_vocab.trace_retention）",
         "source": "PRD v0.5.2 §8.3 逐字四档"
       }
     },

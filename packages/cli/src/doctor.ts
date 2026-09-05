@@ -2,7 +2,7 @@
  * doctor.ts —— `pomaster doctor`：环境/内核/工具链/MCP 探测矩阵（D7 Portability +
  * D22 一键引导 + P22 工具链执行腿探测）。
  *
- * 四态矩阵（探测层缺席显式，禁静默跳过当通过；词表外局部词 → TODO(vocab-pr)）：
+ * 四态矩阵（探测层缺席显式，禁静默跳过当通过；词形已随 PR-0009 入锁 vocab-lock presentation_axes.doctor_probe_statuses）：
  * - READY               —— 探测项可用且通过；
  * - NOT_INSTALLED       —— 依赖模块/工具未落地（kernel scaffold not-implemented；
  *                          oasdiff / import-linter / dependency-cruiser 缺席——P22 起
@@ -69,7 +69,7 @@ import {
 import type { CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
 
-/** 探测四态（x-vocab-source: D7/D22 语义；词表外局部词 → TODO(vocab-pr)）。 */
+/** 探测四态（x-vocab-source: D7/D22 语义 + vocab-lock presentation_axes.doctor_probe_statuses——PR-0009 收编）。 */
 export const DOCTOR_PROBE_STATUSES = [
   "READY",
   "NOT_INSTALLED",
@@ -168,7 +168,7 @@ const SENSOR_CATALOG_PROBE_NAME = "sensor_capability_catalog";
  * 行名 = 本文件探测矩阵既有呈现名（snake_case）。声明式引用的漂移防线：
  * tests/integration/sensor-capability-catalog.spec.ts 断言 catalog 引用键 ⊆ 本映射
  * keys ⊆ toolDetectors/gateAdapters/kernel 三面闭包（两头造册必漂的结构防线）。
- * TODO(vocab-pr-0005)：行名词形随词表批次统一登记。
+ * 行名词形（probe 名）为命令面命名维持局部——PR-0009 处置注记（命令名先例，非词表管辖）。
  */
 export const SENSOR_DETECTOR_TO_DOCTOR_PROBE: Record<string, string> = {
   chromeDevtoolsMcp: MCP_PROBE_NAME,

@@ -87,7 +87,7 @@ export function assertCommonGates(
     fail(
       "verdict_out_of_vocab",
       `declaredVerdict="${context.declaredVerdict}" 不在七态词表`,
-      `七态 = ${VERDICT_VALUES.join(" / ")}（@pomaster/schemas VERDICT_VALUES）；扩值走词汇表 PR（TODO(vocab-pr)），禁止就地添加`,
+      `七态 = ${VERDICT_VALUES.join(" / ")}（@pomaster/schemas VERDICT_VALUES / vocab-lock runtime_semantics_axes.gate_verdict）；扩值走词汇表 PR，禁止就地添加`,
     );
   }
   const subjectIsFixture =

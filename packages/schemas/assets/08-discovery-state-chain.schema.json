@@ -4,7 +4,7 @@
   "title": "Discovery 状态链（Discovery State Chain · Ephemeral Discovery 原语，P18）",
   "description": "PRD §80.3 Ephemeral Discovery 的状态链原语。POMaster 不复制 Trellis「Brainstorm Step 0 永远创建 Task」的假设：普通讨论允许驻留 ephemeral 态（IDEA/DISCOVERY），只有满足任一晋升条件才进入 READY_TO_PROMOTE，并最终晋升为正式 CHANGE/TASK。\n状态链原文（PRD §80.3，词形逐字冻结）：\nIDEA → DISCOVERY → READY_TO_PROMOTE → CHANGE/TASK。\n本 schema 是状态原语与合法转移的冻结来源（fail-closed：矩阵外转移一律显式拒绝，跳步与倒退均不在矩阵）；执行面（转移校验纯函数）住 @pomaster/kernel discovery-chain 模块。\n写入纪律：Discovery 的提升（promote）必须走 P11 maintain 面——Discovery 层不私造第二写入通道；本 schema 只定义状态与合法性判定，不含任何写入通道。",
   "x-pomaster-file-role": "08-discovery-state-chain.schema.json —— Discovery 状态链原语（P18）。定义 IDEA→DISCOVERY→READY_TO_PROMOTE→CHANGE/TASK 的状态枚举、合法转移矩阵与晋升前置（promotion_basis）；被后续 Discovery 命令面（wave3-plan P18）消费。",
-  "x-pomaster-vocab-source": "PRD v0.4 §80.3 状态链原文词形（IDEA/DISCOVERY/READY_TO_PROMOTE/CHANGE/TASK 逐字）；vocab-lock@v0.2-resolved 尚无 discovery_chain 词轴——本词轴是新状态面（Discovery 生命周期），不得混入既有对象轴 state_axes.lifecycle（该轴 FROZEN：PROPOSED/CURRENT/SUPERSEDED/DEPRECATED/RETIRED/REJECTED）。词形在本文件 definitions 冻结，提请词汇表 PR 收编；代码镜像点 @pomaster/schemas/src/vocab.ts「待词汇表 PR 收编」段。",
+  "x-pomaster-vocab-source": "PRD v0.4 §80.3 状态链原文词形（IDEA/DISCOVERY/READY_TO_PROMOTE/CHANGE/TASK 逐字）；vocab-lock@v0.2-resolved 尚无 discovery_chain 词轴——本词轴是新状态面（Discovery 生命周期），不得混入既有对象轴 state_axes.lifecycle（该轴 FROZEN：PROPOSED/CURRENT/SUPERSEDED/DEPRECATED/RETIRED/REJECTED）。词形在本文件 definitions 冻结，已随 vocab-pr-0009 收编（vocab-lock discovery_vocab.discovery_chain）；代码镜像点 @pomaster/schemas/src/vocab.ts。",
   "x-pomaster-transition-matrix": {
     "$comment": "合法转移矩阵（拓扑部分，与 kernel DISCOVERY_CHAIN_TRANSITIONS 逐值同源；矩阵外转移一律显式拒绝）。提升（READY_TO_PROMOTE→CHANGE/TASK）前置条件见 x-pomaster-transition-requirements。",
     "IDEA": ["DISCOVERY"],
@@ -108,10 +108,10 @@
       "enum": ["IDEA", "DISCOVERY", "READY_TO_PROMOTE", "CHANGE", "TASK"],
       "title": "Discovery 状态（discovery_chain 词轴）",
       "description": "PRD §80.3 状态链原文词形逐字冻结：IDEA（原始想法）→ DISCOVERY（Brainstorm/Research 进行中）→ READY_TO_PROMOTE（满足任一晋升条件，待晋升）→ CHANGE/TASK（晋升落点，本链终态）。\n与 state_axes.lifecycle 的边界：lifecycle 管 governance 对象（PROPOSED/CURRENT/…），本轴管 Discovery 讨论的生命周期——两轴正交，值域不相交，禁止互转互填。",
-      "$comment": "source: PRD v0.4 §80.3 状态链原文；提请词汇表 PR 收编为新词轴 discovery_chain（pending_vocab_pr）。",
+      "$comment": "source: PRD v0.4 §80.3 状态链原文；已随 vocab-pr-0009 收编为新词轴 discovery_chain（vocab-lock discovery_vocab.discovery_chain）。",
       "x-pomaster-vocab": {
         "axis": "discovery_chain",
-        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "status": "registered_in_vocab_lock__vocab_pr_0009",
         "orthogonal_to": "state_axes.lifecycle",
         "source": "PRD v0.4 §80.3"
       },
@@ -131,10 +131,10 @@
       ],
       "title": "晋升依据（promotion_basis，§80.3 四条件词形化）",
       "description": "PRD §80.3「只有满足以下任一条件才晋升正式 Change/Task」的四条件词形化（任一满足即合法晋升）：\n- user_explicit_request —— 用户明确要求推进开发；\n- msd_reached —— Goal/Scope/Acceptance 已达到 Minimum Sufficient Definition（判据面见 09-msd-uncertainty definitions.msd_assessment）；\n- needs_formal_resources —— 需要正式 Research/Architecture/Governance 资源；\n- needs_cross_session_tracking —— 需要跨 Session 持续追踪。\n四条是「任一 OR」而非「全部 AND」——schema 不要求多选；具体依据随 promotion_basis 单值留档。",
-      "$comment": "source: PRD v0.4 §80.3 晋升条件列表的词形化（中文原文逐条入 description）；提请词汇表 PR 收编。",
+      "$comment": "source: PRD v0.4 §80.3 晋升条件列表的词形化（中文原文逐条入 description）；已随 vocab-pr-0009 收编（vocab-lock discovery_vocab.promotion_basis）。",
       "x-pomaster-vocab": {
         "axis": "discovery_promotion_basis",
-        "status": "absent_in_vocab_lock__pending_vocab_pr",
+        "status": "registered_in_vocab_lock__vocab_pr_0009",
         "source": "PRD v0.4 §80.3"
       },
       "examples": [

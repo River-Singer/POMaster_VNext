@@ -10,15 +10,17 @@
 > 2026-09-02 PR-0006 增补（append-only 纯增量，v0.1/v0.2/v0.3/v0.4 词值零删改；Owner 四决议 D-1~D-4 2026-09-02 批准——.trellis/tasks/09-02-vnext-prd-v06-governed-substrate/prd.md Owner 决议表，PRD v0.6 §6-8/§111/§148-149/§162-163 + PRD v0.6.1 §2/§69/§73/§75）：新增 software_graph_vocab 段（Software Graph / Engineering Substrate 六词轴：relation_type 首批 8 值「只收真实消费」/ relation_origin / relation_endpoint_domain / relation_confidence / resolution_match_class 六值逐字 / object_family 十二值派生视图）；catalog_layer_vocab 段新增 catalog_kind 词轴（既有四词形实测登记 + archetype 新词形——D-2 裁定「Archetype 定义住 catalog 面」）；id_namespace.state_plane_refs 补 EDGE-<12hex> 通路词形注记（照 PERMIT./POB- 先例，非 governed 前缀）。既有 @v0.4-resolved 引用保留不改：其引用语义是「该值集镜像自 v0.4 基线」，v0.5 对这些镜像子集零改动，引用继续为真。
 > 2026-09-03 PR-0007 增补（append-only 纯增量，v0.1~v0.5 词值零删改；Owner 有意词形确认 2026-09-03——knowledge.web.browser.mcp_eyes 物料 sources[].type 实录收编，批次 2.6 该物料 x-vocab-pr pending 注记转正）：source_types 轴 all/allowed 增 owner_directive（置于 human_directive 之后；语义注记：owner_directive=Owner 明令，区别于 human_directive 泛化人类指令——knowledge 物料 x-vocab-pr 注记先例）；forbidden 两值（prototype_html_scrape/ai_invention）语义无关不动。既有 @v0.5-resolved 引用保留不改：其引用语义是「该值集镜像自 v0.5 基线」，v0.6 对这些镜像子集零改动，引用继续为真。
 > 2026-09-04 PR-0008 增补（append-only 纯增量，v0.1~v0.6 词值零删改；vNext Batch 2 R1 / Owner 裁定 D6 2026-09-04——PRD vNext §9.2 四概念分离，Evidence Spec 一等对象落地批）：id_namespace.prefixes_v0 增 SPEC. 前缀（证据要求规范——要求面「需要什么证明」；15 前缀无语义适配位：TASK. 是工作单元非要求面、POLICY. 是强约束载体非证明要求、KNOWLEDGE. 恒 ADVISORY 与 Spec 的 AUTHORITATIVE 要求面相悖；裁定留痕=prd R1「入闭包或新前缀，留痕理由」的入锁形态，三镜像同批同步：schemas/src/vocab.ts GOVERNED_ID_PREFIXES + 07-evidence-records id_prefix/object_id pattern + kernel family.ts PREFIX_FAMILY_MAP SPEC→EVIDENCE 同批补映射）。既有 @v0.6-resolved 引用保留不改：其引用语义是「该值集镜像自 v0.6 基线」，v0.7 对这些镜像子集零改动，引用继续为真。
+> 2026-09-05 PR-0009 增补（append-only 纯增量，v0.1~v0.7 词值零删改；Owner 裁定 D4=(a) 2026-09-05——裁定批 B「一次 vocab PR 批量收编全部在用新词形」，台账 .trellis/tasks/09-04-pomaster-vnext-consolidated-prd/research/owner-decisions-pending.md D4）：全仓 TODO(vocab-pr)/x-vocab-pr 扫描后每条有处置的一次性收编批。**governed 前缀闭包零扩**（16 前缀不动；GATE./SENSOR./ARCHETYPE./*_ARCHETYPE./DECISION. 等一律按既有裁定住 catalog 面/Discovery 平面，非 governed——SENSOR_ID_PATTERN 先例、裁决 9②、裁决 8 ③ D6=A），故 family 映射（kernel PREFIX_FAMILY_MAP）本批零改动。新增十一段：runtime_semantics_axes（03/02/06/07/05 schema 冻结轴十轴 + binding_probe_status）、discovery_vocab（08/09/10/11 schema 冻结词轴）、knowledge_vocab（12 schema）、execution_identity_vocab（D 线原语 + §25.3 Capability Pool + §58 降级规则）、question_gate_vocab（分类五/处置六/五条件申报——Owner 裁定 C1 已裁 ASSUMPTION 第六处置）、decision_graph_vocab（裁决 9②③ 已裁词族 + 禁词负例两族 + STALE_GROUNDING P1 预留启用）、equivalence_vocab（13 schema）、portability_vocab（§85/§84.6）、memory_harvest_vocab（14 schema + P33b 命令面错误词形族）、trace_perception_vocab（16/17 schema 冻结轴 + schema 词形两枚）、sources_authority_vocab / evidence_spec_vocab（字段面注记——applicability_fields 先例）；catalog_layer_vocab 段增 policy_id_domains / policy_web_domains / authority_knowledge_profile_domains / material_id_prefixes / sensor_open_enums 五轴（B6 移植 policy id 域段 + PROFILE.BASELINE + GATE./SENSOR./archetype 物料标识词形——D4 主标的）；presentation_axes 段增二十二轴（CLI/kernel 呈现层局部词转正——CONTEXT_PARTITION_TITLES 五分区〔裁定 D8〕/STALE_GROUNDING 三态〔裁定 D7〕/ATTENTION_KINDS/ALERT_KINDS/permit 呈现态/doctor 探测四态/观测信号码位/CLI 呈现码位/catalog 漂移种类/工具探测四态/权威优先级九级/TRIAGE_PROFILES 信息性注记〔裁定 A1〕/triage 证据级/升级关键词七词〔裁决 2 T-1〕/eval suite/ingest 动作/执行呈现态/maintain 相/handoff fast_gate/closeout 呈现词）；id_namespace.state_plane_refs 增 Discovery 平面五前缀词形注记（裁决 9②——不入 governed 闭包）与 OBS-/ENVREC-/JOURNEY.* 通路词形注记。不收编（逐条理由）：CLI 命令名与旗标词形（PR-0004 先例：词表只收错误词形族不收命令名——migrate --propose/--diff/--apply 等维持模块局部）；纯文档词形（无物料/代码消费不硬收）；CRITICAL 档位词（PR-0005 裁定不入，维持）；CONTRACT.*（PRD §5.2 示意词形，裁决 9② 已裁按示意处理）。既有 @v0.7-resolved 引用保留不改：其引用语义是「该值集镜像自 v0.7 基线」，v0.8 对这些镜像子集零改动，引用继续为真。
 > 消费方：②后续全部 schemas、③Kernel 转移引擎、Behavioral Eval 种子。
 
 ```yaml
 # ============================================================
-# pomaster.vocab/v0.7-resolved   （2026-09-04 PR-0008 增补；append-only 纯增量，v0.1~v0.6 词值零删改）
+# pomaster.vocab/v0.8-resolved   （2026-09-05 PR-0009 增补；append-only 纯增量，v0.1~v0.7 词值零删改）
 # 历史：原 v0-draft（三开放问题已于 2026-08-27 会话裁决）→ v0.1-resolved（2026-08-27 FROZEN）
 #       → v0.2-resolved（2026-08-29 PR-0001 增补）→ v0.3-resolved（2026-09-01 PR-0004 增补）
 #       → v0.4-resolved（2026-09-01 PR-0005 增补）→ v0.5-resolved（2026-09-02 PR-0006 增补）
 #       → v0.6-resolved（2026-09-03 PR-0007 增补）→ v0.7-resolved（2026-09-04 PR-0008 增补）
+#       → v0.8-resolved（2026-09-05 PR-0009 增补）
 # ============================================================
 
 ir_schema: pomaster.truth-index/v1-draft
@@ -31,6 +33,8 @@ state_axes:
       CURRENT:     { to: [SUPERSEDED, DEPRECATED], requires: transition_record }
       SUPERSEDED:  { to: [], notes: terminal; successor_ref 必填 }
       DEPRECATED:  { to: [RETIRED], grace_policy: config }
+      # PR-0009 转正注记：grace_policy 键与 config 值即宽限期策略键词形本体（本行即登记；
+      # kernel GRACE_POLICY_CONFIG_EDGES 边集承载，无需另立词轴——原 TODO(vocab-pr) 闭合）。
       RETIRED:     { to: [] }
       REJECTED:    { to: [] }
   confidence:           # 决策置信（PRD §18.2 四值不动）
@@ -118,6 +122,35 @@ id_namespace:           # closed-world（A5）：未登记前缀 = 解析即 FAT
     - form: "EDGE-<12hex>"
       plane: .pomaster/state/relations.jsonl（Typed Relation sidecar 台账；D-3 裁定 2026-09-02：append-only 追加流 + journal RELATION_* 事件流 + 不进 content_digest；A8 同族不入 truth-index——01 additionalProperties:false 封条不动）
       validation: 词形正则 ^EDGE-[0-9a-f]{12}$ + 台账存在性；id=内容寻址（canonical 序列化 sha256 前 12 hex——同 (source,type,target) 重登记 dedupe noop 幂等）；edge 词形校验归 kernel relations.ts 装载面（19-relations definitions 镜像）
+    # —— PR-0009 增补（Discovery 平面前缀词形注记；Owner 裁决 9② 2026-09-01「不入 governed
+    #    prefixes（Discovery 平面局部词形，state_plane_refs 先例）」定案的登记位；非 governed
+    #    前缀不过 parseGovernedId，校验=18-decision-graph schema 词形正则 + 图内/台账存在性）——
+    - form: "DECISION.<SLUG>"
+      plane: .pomaster/scratchpad/decision-graph sidecar（Grounded Decision Graph 节点 id）
+      validation: 18 schema DECISION_ID_PATTERN 正则 + 图内存在性；PR-0009 登记（裁决 9②）
+    - form: "RESEARCH.REQ.<SLUG>"
+      plane: decision-graph sidecar research_request 平面（§9.1 research_request id）
+      validation: 18 schema RESEARCH_REQUEST_ID_PATTERN 正则 + 图内存在性；PR-0009 登记（裁决 9②）
+    - form: "FINDING.<SLUG>"
+      plane: decision-graph sidecar finding_link 平面（§10.1 finding id）
+      validation: 18 schema FINDING_ID_PATTERN 正则 + 图内/台账存在性；PR-0009 登记（裁决 9②）
+    - form: "DISCOVERY.INTENT.<SLUG>"
+      plane: decision-graph sidecar（§5.x intent 四分拣 meta 承载位）
+      validation: 18 schema DISCOVERY_INTENT_REF_PATTERN 正则；PR-0009 登记（裁决 9②）
+    - form: "FACT.<SLUG>"
+      plane: decision-graph sidecar（missing fact / grounding fact 引用位）
+      validation: 18 schema MISSING_FACT_REF_PATTERN 正则；PR-0009 登记（裁决 9②）
+    # —— PR-0009 增补（感知/回执通路编号词形注记；17-perception-receipts x-pomaster-vocab-source
+    #    pending 注记转正——AGX/GRN/CLM/EXC/EQG 同族平面编号词形，非 governed 前缀）——
+    - form: "OBS-<n> / ENVREC-<n>"
+      plane: .pomaster/evidence/observations/（感知回执记录落盘分区——2026-09-04 裁定 C9 启用；OBS 自带 observation_id，ENVREC 落盘 id 由通路调用方供给）
+      validation: 17-perception-receipts schema 词形 + 台账存在性；PR-0009 登记
+    - form: "JOURNEY.<...>"
+      plane: P1-1 journey 投影落点（17 schema journey_ref 引用词形；本批 null 显式——登记词形不登记消费）
+      validation: 词形引用面登记（17 schema journey_ref pattern）；PR-0009 登记
+    - form: "ENV.<...>"
+      plane: perception 观察目标 environment_ref 引用词形（§6.3 例文 ENV.LOCAL.DEV；非 governed 前缀）
+      validation: 17-perception-receipts schema 词形；PR-0009 登记
   aliases_v0:           # 存量资产收编的 rename-on-ingest 双向链（A6）
     - { legacy: "KB-*",              canonical: "KNOWLEDGE.*" }
     - { legacy: "GRID.*",            canonical: "CAPABILITY.GRID.*" }
@@ -193,6 +226,67 @@ catalog_layer_vocab:     # catalog/ 目录条目词轴（PR-0001 收编；catalo
   knowledge_note: >-     # V3 确认项：不新增枚举值
     KNOWLEDGE_PATTERN / FAILURE_PATTERN 以 knowledge_entry 的 payload 变体（classification 值）承载，
     gate_binding=NEVER_FAIL（advisory 豁免）随条目 x-advisory-gate-semantics 登记。
+  # —— PR-0009 增补（B6 移植 policy id 域段 + 物料标识词形收编；Owner 裁定 D4=(a) 2026-09-05
+  #    主标的——catalog/policies|gates|sensors|knowledge|archetypes 实盘 184 条 x-vocab-pr
+  #    注记一次收编。纪律：catalog 物料身份**非 governed id**（catalog_note PR-0001 +
+  #    SENSOR_ID_PATTERN 先例 + D-2「Catalog 不是第二套 Project Truth」）——下列域段/前缀词形
+  #    是 catalog 物料标识词形登记，**不增 governed 前缀、不动 16 前缀闭包、零 family 映射改动**；
+  #    新域段扩值走词汇表 PR（以实盘在册物料为准盘点，PR-0009 时点 catalog-lock 228 条目）。）——
+  policy_id_domains:      # POLICY.<DOMAIN>.* 第二段词形（policies/ 164 条目实盘盘点）
+    values: [AI, API, ARCH, BOUND, BOUNDARY, CACHE, CFG, CHG, CONFLICT, CONTRACT,
+             DEP, DEPLOY, DERIVED, EVID, FLAG, GATE, GUARD, INTEGRATION, JOB,
+             OBS, PERF, PROC, REL, ROLE, SEC, SPEC, STACK, STRUCT, TEST, TOOL,
+             WEB, WF]
+    note: >-
+      POLICY. 前缀已在 prefixes_v0 闭包（governed）；本轴登记其下第二段域词形（B6b/B6c 播种
+      移植批在用——D4=(a)「新 policy id 域段一次收编」）。POLICY.GATE.* 与 gate_recipe kind
+      的 gate_def 锚词形（03 schema POLICY.GATE.<NAME>@semver）分立不混。x-vocab-pr 候选注记
+      97+55 条随本轴转正（历史 finding/proposal 原样保留——PR-0007 mcp_eyes 先例）。
+  policy_web_domains:     # POLICY.WEB.<DOMAIN>.* 第三段词形（50 条目实盘盘点）
+    values: [API, ARCH, CHG, COMP, COPY, GRID, HANDOFF, I18N, PAGE, PERF,
+             STYLE, TRACK, UIUX]
+    note: web 域第三段（B6b-I FE 播种批在用）；与 policy_id_domains 同批登记。
+  authority_knowledge_profile_domains:  # AUTHORITY./KNOWLEDGE./PROFILE. 在 catalog 物料位的域段词形
+    values: [AUTHORITY.BE, AUTHORITY.CHG, AUTHORITY.WEB,
+             KNOWLEDGE.API, KNOWLEDGE.CHG, KNOWLEDGE.FP, KNOWLEDGE.WEB,
+             PROFILE.BASELINE]
+    note: >-
+      三前缀均为 governed 闭包既有前缀（catalog 物料复用 governed 词形：AUTHORITY 5 条目 /
+      knowledge 11 条目 / profile.baseline 1 条目）；域段词形随本轴登记。knowledge 条目
+      no_new_enum__confirm_only 注记 10 条随本轴转正（knowledge_entry kind 已在
+      kinds_registry.truth_bodies——试点纪律所称『knowledge 无正式 kind』与 vocab-lock 实况
+      不符的确认注记就此闭合）。
+  material_id_prefixes:   # catalog 专属物料标识前缀词形（非 governed——登记不闭包）
+    prefixes: [GATE, SENSOR, ARCHETYPE, COMPONENT_ARCHETYPE, DATA_ARCHETYPE,
+               FRONTEND_ARCHETYPE, PAGE_ARCHETYPE, RUNTIME_ARCHETYPE, STATE_ARCHETYPE]
+    domains:
+      GATE: [BE, CHG, NEW_ENTITY, WEB]
+      SENSOR: [BROWSER, BUILD, CONTRACT, PERFORMANCE, PRODUCTION]
+      ARCHETYPE: [API, BACKEND]
+      COMPONENT_ARCHETYPE: [BUTTON, DATA_GRID, DIALOG, SEARCH_INPUT, SEARCH_SELECT]
+      DATA_ARCHETYPE: [HIERARCHY, LEDGER, MASTER_DATA, TRANSACTION, VERSIONED]
+      FRONTEND_ARCHETYPE: [ERROR_TAXONOMY, FEATURE_ORIENTED, MODULAR, SPA_LAYERED]
+      PAGE_ARCHETYPE: [ANALYSIS, MASTER_DATA]
+      RUNTIME_ARCHETYPE: [ENVIRONMENT_PARITY, OBSERVABILITY_BINDING]
+      STATE_ARCHETYPE: [ASYNC_COMMAND, BACKGROUND_REFRESH, FORM_EDIT, OPTIMISTIC_MUTATION,
+                        SELECTION, SERVER_QUERY, URL_FILTER, WIZARD]
+    note: >-
+      六条 x-vocab-pr 候选注记（SENSOR. 5 + GATE. 5 中前缀候选拆分后归此）随本轴转正：GATE./
+      SENSOR. 前缀按「备选落法」定案=catalog 物料标识（gates 6 条目 / sensors 6 条目，裁决 8 ③
+      D6=A SENSOR.<DOMAIN>.<KIND> 词形 + kernel SENSOR_ID_PATTERN 校验锚）；archetype 七前缀
+      族（41 条目）沿 D-2 裁定定义住 catalog 面。校验锚=各装载面词形正则（kernel catalog.ts），
+      存在性=catalog-lock entries 分母。**不入 prefixes_v0、不过 parseGovernedId、零 family 映射**。
+  sensor_open_enums:      # sensor 物料开放枚举三轴（PRD §6.4「不要求立即成为 Closed-world Core Vocab」豁免的登记位——开放轴显式标记，扩值走词汇表 PR）
+    observation_surface:
+      values: [USER_SURFACE, INTERACTION_STATE, BOUNDARY_IO, RUNTIME_SIGNAL,
+               DATA_STATE, RESOURCE_BEHAVIOR, STRUCTURAL_REALITY, PRODUCTION_REALITY]
+      note: PRD §6.4 逐字八面（开放枚举）；kernel OBSERVATION_SURFACE_VALUES + 17 schema 同轴镜像
+    side_effect_class:
+      values: [INTERACTIVE_REVERSIBLE, READ_ONLY, SANDBOXED_EXECUTION]
+      note: §6.5 例文两值 + SANDBOXED_EXECUTION 补位（观察动作沙箱化）；开放枚举
+    availability_probe_surface:
+      values: [toolDetectors, gateAdapters, kernel]
+      note: 声明式引用面（防第二套探测机制=四克制）；kernel SENSOR_AVAILABILITY_SURFACE_VALUES 承载
 
 presentation_axes:      # 呈现层词轴（PR-0001 收编；kernel/CLI 报告局部词，非治理事实枚举，不进七态 verdict 闭包；扩值走词汇表 PR）
   reconcile_delta_kinds:    # ⑥拍 reconcile changed_objects[].kind
@@ -204,6 +298,106 @@ presentation_axes:      # 呈现层词轴（PR-0001 收编；kernel/CLI 报告�
   reconcile_exception_kinds:  # ⑥拍 reconcile exceptions[] 判别词
     values: [content_tamper]
     note: row 级正文探测失配（只读只报不拦写，D24）；证据条目（runs/claims）无 kind 字段，本词形是例外段唯一判别词形。
+  reconcile_drift_origins:    # content_drift 行的漂移来源两值（N6 unexplained 升格语义）
+    values: [transaction, unexplained]
+    note: transaction=可锚定解释事务（转移行锚的形态）；unexplained=rev 动了但找不到解释事务（原样升格计入 exceptions 人审队列——升格不新增 fail 面，changed_objects 已 fail）；kernel RECONCILE_DRIFT_ORIGINS 承载（PR-0009 收编——原 TODO(vocab-pr-0002) 闭合）
+  # —— PR-0009 增补（CLI/kernel 呈现层局部词批量转正——D4=(a) 全量在用词形收编；
+  #    本段各轴原为模块局部词 TODO(vocab-pr)，登记后词值变更走词汇表 PR；呈现轴不进
+  #    七态 verdict 闭包、不进治理事实枚举的纪律沿用本段头部注记）——
+  context_partition_titles:   # context compile 五分区标题（vNext Batch 2 R3 / 裁定 D8）
+    values: ["AUTHORITATIVE PROJECT STATE", "REQUIRED POLICY", "ADVISORY KNOWLEDGE",
+             "REUSE / CATALOG", "VERIFICATION"]
+    note: PRD §8.1④ 裁定 D8 逐字（LAZY TOOLS 并入 REUSE / CATALOG）；cli CONTEXT_PARTITION_TITLES 承载（markdown 标题与落盘 manifest partitions 键唯一词源）
+  context_manifest_words:     # context manifest 落盘/检查词形族（vNext Batch 2 R2 / 裁定 D7）
+    schema_word_form: "pomaster.context-manifest/1"
+    check_states: [absent, fresh, stale_grounding]
+    stale_signal: STALE_GROUNDING
+    note: >-
+      manifest schema 词形 + --check 三态（大写呈现词形 STALE_GROUNDING=18 schema P1 预留位
+      启用——裁定 D7「STALE_GROUNDING 词形启用」；机器态小写 stale_grounding 承载判定）；
+      cli context.ts CONTEXT_MANIFEST_SCHEMA/stale 检查面承载。
+  attention_kinds:            # view attention 六组（Human Attention Queue；vNext Batch 3 R1）
+    values: [ESCALATE_OWNER_PENDING, ASK_HUMAN_CONFLICT_REVIEW, GATE_BLOCKED,
+             PRODUCTION_CHALLENGE, SELF_IMPROVEMENT_CANDIDATE, EXCEPTION_BLOCKER]
+    note: §6.3 六词形映射注记见 view markdown 头注（Production Destructive Permit 无派生数据源——裁定 D16 延后显式缺席位）；cli ATTENTION_KINDS 承载
+  alert_kinds:                # alerts 可行动项两值 + 显式缺席类目（/alerts 命令面）
+    values: [PERMIT_EXPIRED, OBJECT_CHALLENGED]
+    unsourced_categories: [triage_ttl]
+    note: unsourced=有语义、无派生源的缺席披露（分母披露纪律——不冒充「检查过且干净」）；cli ALERT_KINDS/ALERT_UNSOURCED_CATEGORIES 承载
+  permit_presentation_states: # permit list 呈现态三值（stolen 标记 + seq 机械派生）
+    values: [active, expired, stolen]
+    note: P34 permit 台账呈现面；cli PERMIT_LIST_STATES 承载（--state 过滤词形同源）
+  doctor_probe_statuses:      # doctor 探测四态（探测层缺席显式，禁静默跳过当通过）
+    values: [READY, NOT_INSTALLED, MISSING_CONFIGURATION, DEFECT]
+    note: 非 READY 必带 hint（报错不说去哪修的报错是缺陷）；cli DOCTOR_PROBE_STATUSES 承载
+  observation_signal_codes:   # agents status 观测信号码位（触发制升级信号，warning 非阻断）
+    values: [GATEKEEPER_DRIFT_OBSERVED, SUPERVISOR_TRIGGER_OBSERVED]
+    note: DEF-GATEKEEPER 分身漂移 / DEF-SUP 触发信号观测位；cli agents.ts 承载
+  cli_presentation_codes:     # CLI 命令面呈现码位（判卷语义对齐 kernel GovernanceError 码位之上的命令面）
+    values: [COMMAND_DEFERRED, LOCK_BLOCKED, PORTABILITY_MANIFEST_DRIFT]
+    note: >-
+      COMMAND_DEFERRED=命令已注册但实现显式 deferred（非静默缺席——run/handoff/migrate 共用）；
+      LOCK_BLOCKED=blocked 非静默成功（判卷语义对齐 permit check）；PORTABILITY_MANIFEST_DRIFT=
+      portability check 失败码位（fail-closed exit 1 载体）；cli agents/runtime/portability 承载
+  catalog_lock_drift_kinds:   # catalog-lock 漂移种类七值（catalog check 呈现面）
+    values: [lock_unreadable, lock_malformed, missing, content_drift,
+             entry_not_allowed, missing_required, unexpected_file]
+    note: kernel CatalogLockDriftKind 承载（原「CLI 呈现与测试对账的局部词」注记转正）
+  tool_detection_status:      # 工具探测四态（gauntlet-lite adapter detect 面；缺席语义）
+    values: [READY, DRIFTED, NOT_INSTALLED, NOT_REQUIRED_BY_PROFILE]
+    note: >-
+      research/testing-toolchain-shipping-plan.md「缺席语义」词源：READY=找到且匹配 /
+      DRIFTED=版本漂移（判卷降级 WARNING）/ NOT_INSTALLED=缺席（→ not_run 非绿非红）/
+      NOT_REQUIRED_BY_PROFILE=profile 未要求（合法缺席显式计数）；gauntlet-lite DetectionStatus 承载
+  authority_precedence:       # §3B 权威优先级链九级（顺序即语义，首位最高）
+    values: [EXPLICIT_OWNER_DECISION, RATIFIED_PROJECT_CONTRACT, DOMAIN_AUTHORITATIVE_SOURCE,
+             PROJECT_BASELINE, MEASURED_EVIDENCE, PROJECT_KNOWLEDGE, INFERENCE,
+             INFERRED_INTENT, AI_INVENTION]
+    note: PRD §3B 逐级对位（「Ratified Project Contract / Approved Policy」合并一级、「Measured Evidence / Derived Observation」合并一级——原文斜杠并列同位）；kernel AUTHORITY_PRECEDENCE_ORDER 承载（纯数据零判卷——字段级 precedence 归正式 Authority Contract，B3 warning-only 红线）
+  triage_profiles:            # 治理档位三值（**informational**——裁定 A1 判卷力解除）
+    values: [MINIMAL, LIGHT, STANDARD]
+    note: >-
+      A1 裁定（2026-09-04，裁决 11 ①）：本轴降为信息性输出——不进任何 gate/permit 判卷、
+      不决定激活；TRIAGE_PROFILES 词形保留（PR-0005/裁决 8② 不 supersede，仅判卷力解除）。
+      与 catalog_layer_vocab.governance_profiles 前三值同词形同义（STRICT 对位 constitutional 档
+      见彼处注记；prompt_only 预留 STRICT/CRITICAL 词形不消费——CRITICAL 不入维持 PR-0005 裁定）；
+      cli TRIAGE_PROFILES / triage-rule-v0 PROFILE_LADDER 承载。
+  triage_evidence_grades:     # triage 判定证据级三值（thread-C §0.2 五值的 P0-CLI 子集）
+    values: [MEASURED, INFERRED, NOT_CONFIGURED]
+    note: SELF_REPORTED/NOT_YET_AVAILABLE 未暴露（词源五值闭包的显式子集，扩值走词汇表 PR）；cli TRIAGE_EVIDENCE_GRADES 承载
+  triage_escalation_keywords: # triage 升级关键词七词（裁决 2 T-1 批准词表）
+    values: ["contract", "契约", "openapi", "api_req", "跨域", "cross-domain", "global"]
+    note: 裁决 2（2026-08-29）T-1 提案批准（global 追加——修复 replay-R2-008 系统性低判；语料 2/53 命中 0 反例；中文「全局」0 命中未提案不投机扩词）；cli TRIAGE_ESCALATION_KEYWORDS 承载（字面锁死测试=扩词纪律机器化）
+  eval_suites:                # eval 命令 suite 词形（词源 PRD §44.10/§94）
+    values: [behavioral]
+    note: 单值起步（扩值走词汇表 PR + 同步 tests/behavioral/trigger-manifest.json suites）；cli eval.ts 承载
+  ingest_actions:             # evidence ingest 动作词形（设计 §4.3 逐字）
+    runs: [canonicalized, already_canonical]
+    claims: [recorded, already_canonical, skipped_adjudicated]
+    note: runs=入账覆写/字节等价跳过；claims 多 skipped_adjudicated（已带独立判定无权覆写）；cli RUN_INGEST_ACTIONS/CLAIM_INGEST_ACTIONS 承载
+  execution_presentation_status:  # execution list 呈现两态（ended_at 机械派生）
+    values: [active, ended]
+    note: ended_at null=active；interrupted 状态归 journal 面；cli runtime.ts 承载
+  maintain_phases:            # maintain --phase 已落地子集（PRD §44.4 词形）
+    values: [pre-dev]
+    note: in-dev/post-dev 未实现且显式拒绝（fail-closed 绝不静默当 pre-dev）；cli MAINTAIN_PHASES 承载
+  handoff_fast_gate:          # §24 例文 fast_gate 词形闭包
+    values: [PASS, FAIL]
+    note: PRD §9A「evidence：fast_gate PASS|FAIL + 其余走 evidence 平面」逐字大写；kernel HANDOFF_FAST_GATE_VALUES 承载
+  binding_probe_status:       # binding_summary.probe_status 三值（D15 绑定期望声明面）
+    values: [all_verified, has_unverified, not_configured]
+    note: 01-truth-index binding_summary 词形镜像（not_configured=终局性诚实报告——D15 binding 是期望声明不是豁免证书）；kernel BindingSummary 承载
+  closeout_change_presentation:   # closeout 施断成功呈现词（非词表新增——轴面承载是 evidence=VERIFIED）
+    values: [COMPLETED]
+    note: kernel applyTransaction 唯一写通道的 CLI 呈现词（轴面真值=evidence VERIFIED 三态既有值）；cli closeout.ts 承载
+  gate_judgment_intensity:    # 门禁判卷强度轴五词形（P23；coverage/CRAP/mutation/security 判卷强度承载——Governance Profile 与 Gate Profile 两轴并置如实登记）
+    values: [MINIMAL, LIGHT, FAST, STANDARD, HARDENING]
+    note: >-
+      五词形全部 PRD 出处（MINIMAL/LIGHT/STANDARD=§27.1 Governance Profile 词形；FAST/STANDARD/
+      HARDENING=§27.2 Gate Profile 词形）——「两轴并置为单轴」的并置如实登记（gauntlet-lite
+      JUDGMENT_INTENSITY 承载；STRICT/CRITICAL 不入——其「映射到 HARDENING 强度」是编排层决策，
+      CRITICAL 维持 PR-0005 裁定不入）。MINIMAL/LIGHT/FAST→合法缺席（SKIPPED_BY_POLICY 收敛义）；
+      与 presentation_axes.triage_profiles（informational，A1）不同面：本轴是 adapter 判卷强度决策位非治理档位呈现。
 
 production_band_vocab:  # P34 Production Feedback / Control Band 词轴（PR-0004 收编；Owner 决议 2026-09-01 批准；§95/§30/§55.1/§90.4 逐字 + P34 任务定案补位词；schema 冻结锚 15-production-band definitions + kernel production.ts；扩值走词汇表 PR）
   phase_timeline:             # §30 开发时间轴四态（PRD L2554-2563 逐字）
@@ -307,6 +501,270 @@ software_graph_vocab:   # P-v06 Software Graph / Engineering Substrate 词轴（
       KEYBINDING→CODE；KNOWLEDGE/CHANGE/TASK/DENOMINATOR/POLICY/PROFILE/AUTHORITY→GOVERNANCE；TEST→EVIDENCE。
       PR-0008（v0.7）同批补映射：SPEC→EVIDENCE（Evidence Spec 要求面住证据族——Spec 持要求不持判定）。
       RUNTIME/RESOURCE/RELIABILITY/SECURITY/DELIVERY 五族暂无前缀映射（派生为 null 显式缺席——禁猜测，§163 Phase C 逐批落）
+
+# ============================================================
+# PR-0009 新段（2026-09-05；append-only 纯增量——v0.1~v0.7 词值零删改。
+# 各段词形原为 schema 冻结/模块局部词（TODO(vocab-pr) 注记），本批按 Owner 裁定
+# D4=(a)「一次 vocab PR 收编全部在用新词形」统一入锁；收编判据=实盘在用（有
+# schema 冻结 + kernel/CLI 消费），纯文档词形不硬收；代码镜像点注记随本批转正。）
+# ============================================================
+
+runtime_semantics_axes:  # 运行语义十轴 + 绑定探针轴（schemas/src/vocab.ts「词表外局部枚举」段转正——schema 01/02/03/05/06/07 x-vocab-extra/definitions 冻结 + kernel/CLI 全量消费）
+  gate_verdict:          # gate verdict 七态超集（03-gate-result definitions.verdict 候选冻结来源；C1 四态必答位=前四者）
+    values: [passed, failed, warning, blocked, not_run, not_configured, skipped_blindspot]
+    note: skipped_blindspot 为 09-03 复盘批假绿封堵补位态；七态与 production band 判定三态正交
+  object_origin:         # 对象来源（01/02 x-vocab-extra.origin）
+    values: [natural, derived, ingested]
+    note: human_curated→natural、migrated→ingested 收编映射
+  write_policy:          # 写策略（02 WritePolicyValue，thread-A §3.4）
+    values: [NONE, AGENT_WITH_PERMIT, CORRECTION_ONLY, EVOLUTION_CHANNEL]
+  match_rule:            # 匹配规则（02 MatchRuleValue，thread-A §3.2）
+    values: [mechanical, manual_confirmed]
+    note: manual_confirmed 占比=机器键债务指标
+  verification_verdict:  # claim/verification 判卷四值（02/07 verification_verdict，thread-A §5）
+    values: [VERIFIED, PARTIALLY_VERIFIED, UNVERIFIED, REJECTED]
+  liveness_status:       # producer 活性三态（06 liveness.status）
+    values: [active, stale, dead]
+    note: suspect_stale→stale、dead_view→dead 已收敛（06 schema 冻结）
+  producer_kind:         # producer 来源（06 producer_kind）
+    values: [builtin, project]
+    note: builtin=随 kernel 发行版内置；project=项目仓自有编译器
+  actor_type:            # 行为主体类型（structural——03/07 actor.actor_type；非治理事实枚举）
+    values: [agent, human, tool, kernel]
+  run_trigger:           # gate 运行触发方式（structural——03/07 run_trigger.type；扩值须同步 Kernel GateRunner）
+    values: [pre_closeout, pre_commit, post_edit, on_demand, scheduled]
+  denominator_status:    # 分母生命周期（05 denominator_status——vocab lifecycle 的 kind 级收窄子集，只禁不扩）
+    values: [PROPOSED, CURRENT, SUPERSEDED]
+    note: 封死 DEPRECATED/RETIRED/REJECTED（DENOMINATOR 只许 supersede 不许删除的同源纪律）
+  binding_probe_status:  # binding_summary.probe_status（01-truth-index；D15）
+    values: [all_verified, has_unverified, not_configured]
+    note: 01-truth-index binding_summary 词形（not_configured=终局性诚实报告——D15 binding 是期望声明不是豁免证书）；kernel BindingSummary 承载
+
+discovery_vocab:         # P18/P19 Discovery 面词轴（08/09/10/11 schema definitions 冻结；kernel discovery-chain 消费；PRD v0.4 §80.3/§81/§82/§49.2/§91.3 逐字）
+  discovery_chain:       # Discovery 状态链（新状态面——Discovery 讨论生命周期，与 state_axes.lifecycle 正交值域不相交）
+    values: [IDEA, DISCOVERY, READY_TO_PROMOTE, CHANGE, TASK]
+    transitions:
+      IDEA:             { to: [DISCOVERY] }
+      DISCOVERY:        { to: [READY_TO_PROMOTE], requires: [promotion_basis] }
+      READY_TO_PROMOTE: { to: [CHANGE, TASK], requires: [promotion_basis] }
+      CHANGE:           { to: [] }
+      TASK:             { to: [] }
+    note: PRD §80.3 原文词形逐字；矩阵外转移 fail-closed 显式拒绝；提升写入走 P11 maintain 面（§81.3 Discovery 不写 .pomaster/state/）
+  promotion_basis:       # 晋升依据四值（§80.3 四条晋升条件词形化，任一满足即合法晋升）
+    values: [user_explicit_request, msd_reached, needs_formal_resources, needs_cross_session_tracking]
+  unknown_classification:  # Unknown 分类十分类（§82.2 逐字；禁裸词形 UNRESOLVED/BLOCKER）
+    values: [BLOCKER_CANDIDATE, HARD_BLOCKER, SOFT_UNCERTAINTY, ASSUMPTION, DEFERRED_DECISION,
+             DISCOVERY_REQUIRED, SUSPECTED_ISSUE, NON_BLOCKING_GAP, FUTURE_CONSIDERATION, OUT_OF_SCOPE]
+    note: 与 state_axes.confidence 的 UNRESOLVED 正交（对象治理置信轴 vs Discovery 未决项分类）
+  assumption_risk:       # 假设风险三级（§82.4 逐字；HIGH 默认需要 Authority）
+    values: [LOW, MEDIUM, HIGH]
+  blueprint_envelope_status:  # Blueprint Acceptance Envelope 四态（§82.5 逐字；CONDITIONALLY_ACCEPTED 要求 HARD_BLOCKER=0）
+    values: [ACCEPTED, CONDITIONALLY_ACCEPTED, BLOCKED, REJECTED]
+  research_finding_confidence:  # Research Finding 置信三级（§81.4；与 state_axes.confidence 正交）
+    values: [HIGH, MEDIUM, LOW]
+  research_evidence_level:  # Evidence 五级（§81.4 逐字；IMPLEMENTATION 证明「存在」不自动证明「正确」——§81.5）
+    values: [AUTHORITATIVE, PRIMARY, IMPLEMENTATION, SECONDARY, INFERENCE]
+  research_authority_effect:  # authority_effect 三值（§81.4；CONFLICTS 是发现不是裁决——上报走正式治理面）
+    values: [NONE, SUPPORTS, CONFLICTS]
+  research_mode:         # Research 六模式全量镜像（§81.2 逐字；本版 Artifact 层无 mode 字段消费——05 lifecycle_full_mirror 全量镜像模式）
+    values: [INTERNAL, EXTERNAL, MIXED, COMPARATIVE, IMPACT, FORENSIC]
+  exception_classification:  # Exception Ledger 分类五值（§49.2「至少分类」+ §91.3 词形大写化）
+    values: [ASSUMPTION, OPEN_QUESTION, DEFERRED_DECISION, CONFLICT, HARD_BLOCKER]
+    note: 与 §82.2 十分类正交（登记面 vs Discovery 分类面）；「Deferred Decision」取 §82.2 同词形先例
+
+knowledge_vocab:         # P28 Knowledge 词轴（12-knowledge-entry schema 冻结；kernel knowledge 消费；PRD §83 逐字）
+  knowledge_kind:        # 四类型（§83.3 逐字）
+    values: [ENGINEERING_PATTERN, FAILURE_PATTERN, DIAGNOSTIC_PLAYBOOK, DECISION_HEURISTIC]
+  knowledge_status:      # 生命周期五态（§83.9 逐字；起点恒 CANDIDATE——§25.3 Curator 生成候选）
+    values: [CANDIDATE, VALIDATED, PROMOTED, DEPRECATED, REJECTED]
+    transitions:
+      CANDIDATE: { to: [VALIDATED, REJECTED] }
+      VALIDATED: { to: [PROMOTED, DEPRECATED] }
+      PROMOTED:  { to: [DEPRECATED], note: §83.11 去僵化——被推翻的提升经验显式淘汰 }
+      DEPRECATED: { to: [] }
+      REJECTED:  { to: [] }
+    note: 唯一权威边 VALIDATED→PROMOTED requires [promotion_authority]（§83.10——唯一通路 promoteKnowledge；矩阵外 fail-closed）
+  promotion_authority:   # 提升权威位三值（§25.3/§83.10 角色词形大写化——§91.3 先例）
+    values: [MAINTAIN, AUTHORITY, GATEKEEPER]
+    note: Curator 词形不在闭包（promote 词形闸显式拒绝）；kernel 不判申报真（C5），词形闸 + authorityRef 审批引用留痕
+  context_authority_partition:  # Context 分区词形（§83.8 [AUTHORITATIVE]/[ADVISORY] 逐字；knowledge 条目恒 ADVISORY——§83.2 铁律）
+    values: [AUTHORITATIVE, ADVISORY]
+    note: 与 research_evidence_level / CATALOG_ENFORCEMENT_VALUES（小写 advisory）正交值域不相交
+  knowledge_confidence:  # Knowledge 置信三级（§83.4 例文 HIGH；全集取 §81.4 同词形——词形复用不发明新值）
+    values: [HIGH, MEDIUM, LOW]
+
+execution_identity_vocab:  # P20/P21 Execution Identity / Capability Pool 词轴（D 线 §1-§5 + PRD §25.2-§25.4/§58 逐字；kernel sessions/locks/execution/runtime-adapter/handoff 消费）
+  execution_runtime:     # 执行载体（D 线 §2.1 必填枚举逐字）
+    values: [claude-code, codex, script]
+  execution_identity_kind:  # 身份种类（D 线 §2.1 逐字；后台脚本文凭上二等公民，audit 可单独过滤）
+    values: [interactive, subagent, script]
+  execution_role:        # P0 执行角色标签六值（D 线 §4 roles_vocabulary_p0 逐字；配置可扩展非内置人格）
+    values: [owner, orchestrator, research, implementer, qa, script]
+    note: research 是唯一内置 sub-role（read-only contract）；与 agent_role_pool 分层不相交（P0=地基，P1=池——R2 重分类裁定）
+  lock_kind:             # 锁三粒度（D 线 §3.3.1 表逐字）
+    values: [change, task, unit]
+    note: change=单驱动者强排他 / task=多读单写意图登记 / unit=Governed Code Unit 写写互斥读写共享
+  agent_role_pool:       # §25.3 十二角色机器词形（SCREAMING_SNAKE；词形裁定落档 docs/wave3-p20-sec79-backfill-44-8.md P21 注记）
+    values: [SUPERVISOR, BRAINSTORM, RESEARCH, ARCHITECT, GOVERNANCE_WRITER, GATEKEEPER,
+             IMPLEMENTER, CLEANER, STRENGTHENER, QA, RECONCILIATION, KNOWLEDGE_CURATOR]
+    prd_headings:
+      SUPERVISOR: Supervisor
+      BRAINSTORM: Brainstorm Agent
+      RESEARCH: Research Agent
+      ARCHITECT: Architect Agent
+      GOVERNANCE_WRITER: Governance Writer
+      GATEKEEPER: Governance Gatekeeper
+      IMPLEMENTER: Implementation Agent
+      CLEANER: Cleaner Agent
+      STRENGTHENER: Strengthener Agent
+      QA: QA Agent
+      RECONCILIATION: Reconciliation Agent
+      KNOWLEDGE_CURATOR: Knowledge Curator Agent
+    note: 一词二形成文收编（content_drift 先例）——IMPLEMENTER/CLEANER 锚 §24/§25.4 yaml 词形，六短词形锚 §25.2 池选图大写化，四标题机械映射（不发明缩写）
+  runtime_execution_mode:  # 角色执行形态三值（§58 四条降级规则 + §25.2 solo 内生形态机器词形）
+    values: [direct, sequential, parallel]
+    note: direct=不经池零开销（§25.2 MINIMAL + D 线 SOLO-DIRECT）；parallel=真并发（禁伪装并发封条唯一放行形）
+  runtime_capability:    # §58 三探针判别词（方法名 snake_case 机械映射）
+    values: [parallel, tool_permissions, context_isolation]
+    note: 探针方法名本身是 §58 interface 契约面非词表管辖（runtime-adapter 头注）；本轴是降级报告 rows 的判别词
+  runtime_degradation_rules:  # §58 四条降级规则 id（四 bullet 一一对应 mechanical mirror）
+    values: [sequential_fallback, context_recompile_per_role, no_concurrency_masquerade, capability_degradation_report]
+    note: no_concurrency_masquerade 恒真封条——mode 派生不可申报
+  concurrency_masquerade_code:  # 伪装并发错误码位（kernel GovernanceErrorCode 同名成员常量镜像）
+    values: [RUNTIME_CONCURRENCY_MASQUERADE]
+    note: reason_code 独立维度不入词表（GOLDEN-L3-CASE-C 精神）——登记的是码位词形本身
+
+question_gate_vocab:     # §80.4 Question Gate 词族（kernel question-gate 承载；Owner 裁定 C1 已裁 ASSUMPTION 第六处置——裁决 11 ⑨）
+  classification:        # 问题分类五词形（PRD §80.4 逐字）
+    values: [BLOCKING_AUTHORITY, PREFERENCE, DERIVABLE, RESEARCHABLE, DEFERABLE]
+    note: 只能主动问的两类=BLOCKING_AUTHORITY/PREFERENCE（「只能主动问」逐字）
+  disposition:           # 七关重算处置词形六值闭包（gate 处置轴）
+    values: [ASK_HUMAN, ASK_REJECTED, DERIVABLE, RESEARCHABLE, DEFERABLE, ASSUMPTION]
+    note: >-
+      同词两轴区分（Owner 裁定 C1 成文）：ASSUMPTION 此处是 **gate 处置轴**（「这个 Unknown 以
+      显式假设方式处置」），§49.2/MSD 十分类的 ASSUMPTION 是**异常登记轴**（「这笔登记算什么」）
+      ——登记 ≠ 判定，两轴不合并。ASK_REJECTED=七关全过但申报分类非可问类（矛盾禁 ASK）。
+  assumption_conditions: # ASSUMPTION 联动五条件申报键（§4A 五条件；纯判卷输入位零新状态轴——申报不落盘）
+    values: [low_risk, reversible, within_permit, no_authority_conflict, acceptance_testable]
+    note: 全五条件显式 true 且 Q7 不阻塞 → 处置 ASSUMPTION（DEFERABLE 显式升级，禁缺省布尔静默放行）
+  gates:                 # 七关 id（原文行序 Q1..Q7；问句逐字以 kernel QUESTION_GATES 承载）
+    values: [Q1, Q2, Q3, Q4, Q5, Q6, Q7]
+    note: Q7 语义相反位（true=真的阻塞当前 Increment）；Q1-Q7 id 词形登记，问句原文非词表管辖
+
+decision_graph_vocab:    # Grounded Decision Graph 词族（18-decision-graph schema 冻结 + kernel decision-graph 承载；Owner 裁决 9②③ 已裁）
+  decision_class:        # Decision class（SCOPE 单值起步——裁决 9②）
+    values: [SCOPE]
+    note: 未映射 class 一律保守按显著处理（fail-closed）；第九维 Critical Failure Behavior 的 class 词形待扩容呈报（不悄悄吞并不悄悄丢弃）
+  grounding_verdict:     # Grounding Verdict 五值（§6.2；**派生判定不落盘、不进 Canonical Object State Axis**——18 schema 刻意无 verdict 字段）
+    values: [READY_FOR_DECISION, NEEDS_DERIVATION, NEEDS_RESEARCH, CONFLICT_REVIEW, INSUFFICIENT_GROUNDING]
+  decision_relation:     # finding↔decision relation 六值（与 research_authority_effect 划界注记——裁决 9③：relation 管 finding→Decision 证据关系，authority_effect 管 finding→Authority 效应；两轴并存禁互填）
+    values: [RESOLVES_FACT, SUPPORTS_OPTION, WEAKENS_OPTION, CONTRADICTS_PREMISE, NO_DECISION_EFFECT, INSUFFICIENT_EVIDENCE]
+  decision_answer:       # Human 答面四词形（§13.2 逐字）
+    values: [ACCEPT, CHANGE, UNKNOWN, DEFER]
+  recommendation_source:  # Recommendation source 披露位（§12.2——只有模型经验必须显式披露 INFERENCE）
+    values: [PROJECT_GROUNDED, INFERENCE]
+  grounding_surface:     # G2 检索面四面（§6.1 逐字；刻意不含 KNOWLEDGE——§83.2 永不进 gate 判卷输入）
+    values: [CURRENT_TRUTH, DOCS, REPO, EVIDENCE]
+  missing_fact_route:    # G6 缺失事实路由两值（§6.1；ASK_HUMAN 刻意不在——事实型问题禁止问 Human §8 逐字）
+    values: [DERIVABLE, RESEARCHABLE]
+    note: 词源复用 question_gate_vocab.classification（零新分类词——四克制）
+  unknown_disposition:   # UNKNOWN 六问重分类处置六值（§14；MSD 十分类子集零新词）
+    values: [DERIVABLE, RESEARCHABLE, ASSUMPTION, DEFERRED_DECISION, DISCOVERY_REQUIRED, BLOCKER_CANDIDATE]
+  sufficiency_dimensions:  # §15 Sufficiency 显著改变维度八维（任务口径；PRD 原文第九维 Critical Failure Behavior 待 class 扩容后并入——显式呈报位）
+    values: [GOAL, SCOPE, BEHAVIOR, AUTHORITY, ACCEPTANCE, CRITICAL_CONTRACT, ARCHITECTURE_BOUNDARY, IRREVERSIBLE]
+  sufficiency_residual_classifications:  # §15 残留合法分类四值（§15 逐字；MSD 十分类子集零新词——SOFT_UNCERTAINTY 承载 Known Unknown）
+    values: [ASSUMPTION, DEFERRED_DECISION, FUTURE_CONSIDERATION, SOFT_UNCERTAINTY]
+  forbidden_wordforms:   # 禁词负例（§1.1 不新增 State Axis——Grill 过程词不得变成状态词形；09 号 x-pomaster-vocab.forbidden_wordforms 同款登记位）
+    values: [GRILLING, GRILLED, GRILL_CONFIRMED]
+    note: 不得出现在 decision_id/class/options 词形位；机器拒绝面在 kernel buildDecisionGraph
+  decision_presentation_forbidden_wordforms:  # §6A Recommendation UX 呈现禁词（vNext Batch 3 R3）
+    values: ["[AI recommended]"]
+    note: 呈现行零禁词（引注否定也算写出——实施中发现并修正两处）；与 forbidden_wordforms 分立（呈现层 vs 词形位）
+
+equivalence_vocab:       # P31 跨域联结词形轴（13-equivalence-registry schema 冻结；kernel equivalence 消费）
+  word_form_domain:      # 词形语言域标记六值（gaps §3 逐字转译 + 结构性必需位）
+    values: [zh-formal, pinyin, abbrev, compressed, canonical, unknown]
+    note: unknown=机械入册不判域（禁启发式判域——显式未知非猜测，域标记 Authority 声明时补登）
+  equivalence_status:    # 等价组状态两值（只登记不裁决 + pending 桶词形）
+    values: [active, pending]
+    note: active=显式声明齐备（解析面唯一可命中）；pending=机械入册等裁决（解析面永不命中——禁假绿）；两值封闭无第三态
+
+portability_vocab:       # P32 Portability 词形轴（PRD §85.2/§85.3/§84.6 逐字 + kernel fail-closed 补位词）
+  check_status:          # §85.2 八项检查结果三态
+    values: [PASS, FAIL, NOT_RUN]
+    note: PASS=§85.2 逐字；FAIL=应存在而缺席/损坏/判违；NOT_RUN=环境性缺席；「缺项=FAIL 或 NOT_RUN 显式，绝不静默绿」fail-closed 补位词两枚随本轴一并登记（原 TODO 呈报位就此闭合）
+  canonical_sets:        # §85.3 required_canonical_sets 五族闭集（manifest 读侧校验 ⊇ 五族）
+    values: [truth, architecture, decisions, knowledge, evidence]
+  runtime_rebuild:       # §85.3 required_runtime_rebuild 两项
+    values: [contexts, harness-bootstrap]
+  forbidden_dependencies:  # §85.3 forbidden_dependencies 两项（命中检测 fail-closed）
+    values: [user-home-project-memory, untracked-local-spec]
+  memory_drift:          # §84.6 Hidden Memory Drift 判定词形（单词常量承载——POMASTER_SELF_IMPROVEMENT_CANDIDATE 同款先例）
+    values: [MEMORY_DRIFT]
+
+memory_harvest_vocab:    # P33 Memory Harvest 词形轴（14-memory-harvest schema 冻结 + kernel memory-harvest 消费；thread-B §4 迁移设计 + PRD §48/§44.10 逐字）
+  harvest_bucket:        # 分桶七值（thread-B §4.1 四桶 + 两条特殊出口 + UNCLASSIFIED_PENDING 拒绝位）
+    values: [TRUTH, KNOWLEDGE, EPISODE, PREFERENCE, AUTHORITY_POLICY, INVALID_EXPIRED, UNCLASSIFIED_PENDING]
+    note: 四桶初筛位=前四值（HARVEST_PRIMARY_BUCKETS）；特殊出口=AUTHORITY_POLICY 升格（须显式声明）/INVALID_EXPIRED 淘汰；UNCLASSIFIED_PENDING=机械判不了显式 unknown（confidence 恒 LOW 禁模糊猜测）
+  memory_class:          # PRD §48.2 七类长期记忆分类（§48.2 标题词形大写化——§91.3 先例）
+    values: [TRUTH, KNOWLEDGE, EPISODE, DECISION, EVIDENCE, USER, HARNESS_RUNTIME]
+    note: 桶是 harvest 初筛位、类是 promote 后归属位（映射 MEMORY_CLASS_OF_BUCKET）；与 harvest_bucket 分轴正交
+  review_state:          # inbox 条目 review 三态（fail-closed 纪律补位词；起点恒 PENDING——kernel buildInboxEntry 结构性只写）
+    values: [PENDING, PROMOTED, REJECTED]
+    note: 已决条目再决 fail-closed 拒绝；batch review 是唯一人工闸
+  harvest_source:        # inbox 条目来源三值（P33a 通路词形）
+    values: [user_capture, memory_harvest, memory_drift_audit]
+  harvest_confidence:    # 分类提案置信三级（词形复用 §81.4/§83.4 三级——词形复用不发明新值先例）
+    values: [HIGH, MEDIUM, LOW]
+  cli_error_codes:       # memory CLI 错误词形族七值（P33b-Commands 补位词；kernel GovernanceError 码位之上的命令面呈现码——确定性一一对应映射，禁子串/模糊猜测映射）
+    values: [MEMORY_ENTRY_NOT_FOUND, MEMORY_ALREADY_REVIEWED, MEMORY_REVIEW_REQUIRED,
+             MEMORY_ALREADY_PROMOTED, MEMORY_PROMOTE_OWNER_REQUIRED, MEMORY_CAPTURE_DUPLICATE,
+             MEMORY_HARVEST_NOT_RUN]
+    note: 命令组词形 memory + 子命令名非本词表管辖（PR-0004 命令名先例——词表只收错误词形族不收命令名）
+  owner_escalation:      # memory promote 呈报词形（P33b 任务定案；exit 0 不冒充失败也不冒充普通成功）
+    values: [OWNER_ESCALATION_REQUIRED]
+    note: envelope warnings 携带 + result.owner_escalation 非空（Case N「不得自动成为 Truth」命令面正向镜像）
+
+trace_perception_vocab:  # P0.5-3/4 Trace & Perception 词轴（16/17 schema definitions 冻结；原 vocab-pr-0005 预留注记本批转正）
+  trace_retention:       # trace 留存四档（PRD v0.5.2 §8.3 逐字；裁决 8 ②「retention 四档逐字仅记录不 GC」批准）
+    values: [EPHEMERAL, TASK_RETENTION, INCIDENT_RETENTION, AUDIT_RETENTION]
+  doctor_verdict:        # environment receipt doctor 判定二值（§6.7 逐字；非 READY → Verification blocked）
+    values: [READY, WRONG_OR_UNVERIFIED_INSTANCE]
+    note: 「如果无法确认观察实例：WRONG_OR_UNVERIFIED_INSTANCE。Verification 不得 PASS」逐字
+  observation_surface:   # Observation Surface 八面（PRD §6.4 逐字；原文豁免「不要求立即成为新的 Closed-world Core Vocab」——开放枚举登记，扩值走词汇表 PR）
+    values: [USER_SURFACE, INTERACTION_STATE, BOUNDARY_IO, RUNTIME_SIGNAL,
+             DATA_STATE, RESOURCE_BEHAVIOR, STRUCTURAL_REALITY, PRODUCTION_REALITY]
+    note: kernel OBSERVATION_SURFACE_VALUES + catalog_layer_vocab.sensor_open_enums.observation_surface 同轴同值（登记位在本段，catalog 段为物料对账索引）
+  observation_result:    # Observation result 八值（OBSERVED + §6.14 七负值行序含 INCONCLUSIVE 兜底）
+    values: [OBSERVED, OBSERVED_ABSENT, NOT_OBSERVABLE, SENSOR_UNAVAILABLE, PERMISSION_DENIED,
+             ENVIRONMENT_INVALID, PROBE_FAILED, INCONCLUSIVE]
+    note: OBSERVED 必须 ≥1 blob 引用（§6.13 allOf 封条）；负观察判定归 kernel judgeNegativeObservation（本轴只冻结词形）；CAPABILITY_DEGRADED 与 §58 capability_degradation_report 同词根不同概念（裁决 8 撞族消歧——NOT_OBSERVABLE 为主词形）
+  side_effect_class:     # sensor 副作用类三值（§6.5 例文两值 + SANDBOXED_EXECUTION 补位；开放枚举）
+    values: [INTERACTIVE_REVERSIBLE, READ_ONLY, SANDBOXED_EXECUTION]
+    note: §6.4「Production Observation 默认不得产生业务写副作用」
+  availability_probe_surface:  # availability_probe 声明式引用面三值（防第二套探测机制=四克制）
+    values: [toolDetectors, gateAdapters, kernel]
+  schema_word_forms:     # 档案 schema 方言词形两枚（pomaster.execution/v1 先例镜像）
+    values: ["pomaster.execution_trace/v1", "pomaster.perception_receipt/v1"]
+    note: 16/17 信封 schema 字段 const 逐字
+  presentation_word_forms:   # 感知域独立呈现词形（非轴成员）
+    values: [CAPABILITY_DEGRADED]
+    note: §6.16 感知域降级呈现词（撞族消歧——裁决 8：与 §58 capability_degradation_report 同词根不同概念；observation_result 轴结构性不含——降级不是观察结果，是能力面诚实申报）；kernel perception.ts CAPABILITY_DEGRADED 承载
+
+sources_authority_vocab: # Sources Authority Registry 字段面注记（20 schema；Owner 裁定 11 ⑪ D2；字段面注记形态——applicability_fields 先例）
+  fields_note: >-
+    authoritative_for / non_authoritative_for 两轴键名逐字（维度=开放词表——项目自报维度词，
+    禁机器预置枚举私扩；两轴相交由装载侧 fail-closed 补齐——draft-07 不可表达）。id/location/version
+    词形由 20 schema 冻结。与 02 信封 source_types 十值闭包（对象出处轴）正交零关联——负封条
+    FORBIDDEN 两值零改动（D2 明文）。sources 不入 store 事务（非 governed object 起步——D2 边界）。
+    字段面注记不设值轴（维度开放），登记的是轴键名与开放性本身。
+
+evidence_spec_vocab:     # Evidence Spec 词形面（21 schema；Owner 裁定 11 ⑫ D6；SPEC. 前缀已随 PR-0008 入闭包）
+  spec_kind:             # Spec 判别词（payload.spec_kind kind profile 收窄面）
+    values: [evidence_spec]
+    note: kind=business_rule 承载 + payload.spec_kind 判别（01/02 FROZEN 面零改动——kind 闭包十类不变）
+  proof_type:            # 需要的证明类型（开放词——21 schema requirements[].proof_type；实盘词形随物料增）
+    note: 开放词面（开放枚举同款纪律：登记开放性，扩值随实盘物料走词汇表 PR）；requirements[] 每条 = 证明类型 + 判定资格条件（claim_refs/gate_refs + subject_ref 归属绑定——挪证缝收口）；Spec 持要求不持判定（无 verdict 词位）
 
 digest_ethics:          # D24 落地注记 —— 全局适用于一切 sha256/digest 字段
   write_blocking: false           # digest 永不作为写入门闸

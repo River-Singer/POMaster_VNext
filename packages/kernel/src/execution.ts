@@ -273,7 +273,7 @@ function assertVocabValue<T extends string>(
     throw new GovernanceError(
       "VOCAB_INVALID_VALUE",
       `${field} 词表外：${value}（${source}）`,
-      `合法词形：${values.join(" | ")}；扩值走词汇表 PR（pending_vocab_pr）`,
+      `合法词形：${values.join(" | ")}；已随 PR-0009 入锁，扩值走词汇表 PR`,
       { [field]: value },
     );
   }
