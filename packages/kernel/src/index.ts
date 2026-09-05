@@ -42,6 +42,7 @@ import type {
   WritePolicyValue,
 } from "@pomaster/schemas";
 import type { EvidenceArtifactRefInput } from "./evidence-artifacts.js";
+import type { VerificationMethodValue } from "./store.js";
 
 // ============================================================
 // 基础标识
@@ -363,6 +364,29 @@ export interface GateRunRecordInput {
   readonly artifactRefs?: readonly EvidenceArtifactRefInput[];
 }
 
+/**
+ * evidence/claims/CLM-* 的判定回写输入（verify_claim op；独立验证流的公开生产入口）。
+ * verifiedBy 是 CLAIMED——kernel 不验其真（B3 warning-only 边界同线），只登记 +
+ * D20 主体分离归 doctor 探针 claim_self_approval_clean 检出。
+ */
+export interface VerifyClaimInput {
+  readonly clm: string; // CLM-[0-9]+
+  /** 重算主体（07 verification.recomputed_by；应与 asserted_by 主体分离——D20）。 */
+  readonly verifiedBy: Actor;
+  /**
+   * 追加证据引用（裸引用三分型同 ClaimRecordInput.evidenceRefs：GRN-* / 治理对象 /
+   * blob 原文）。与既有 evidence_refs 合并（禁重复）；合并后空集 → VERIFICATION_
+   * EVIDENCE_EMPTY（07 执行层规则：空证据引用的 verification 不得为 VERIFIED）。
+   */
+  readonly evidenceRefs?: readonly string[];
+  /** 验证方式申报（07 verification_method 三值闭包 VERIFICATION_METHOD_VALUES；缺席 = 键缺席）。 */
+  readonly method?: VerificationMethodValue;
+}
+
+/** verification_method 三值闭包（07 schema definitions.verification_method，structural——非 vocab-lock 管辖）。实现位 store.ts，此处契约 re-export。 */
+export { VERIFICATION_METHOD_VALUES } from "./store.js";
+export type { VerificationMethodValue } from "./store.js";
+
 export type TransactionOp =
   | { readonly op: "upsert_object"; readonly envelope: ObjectEnvelopeInput }
   | {
@@ -398,6 +422,20 @@ export type TransactionOp =
       readonly run: GateRunRecordInput;
       /** 同 record_claim.canonicalizeOverwrite；run 无判定态概念（verdict 是 run 本身内容），重放翻转属 sanctioned 再判卷。 */
       readonly canonicalizeOverwrite?: boolean;
+    }
+  | {
+      /**
+       * verify_claim：独立验证流的判定回写（W2 生产入口；D20 判定通路的 kernel 兑现位）。
+       * 语义（A3 单向守恒）：读既有 claim → UNVERIFIED 才可判 → verification 块整体替换为
+       * VERIFIED（recomputed_by = verifiedBy，at_seq = 本事务 seq）+ rev 推进 + subject
+       * evidence_summary 重算。守卫：目标缺失 CLAIM_NOT_FOUND / 已判定
+       * （VERIFIED/PARTIALLY_VERIFIED/REJECTED）CLAIM_ALREADY_ADJUDICATED（改判/回退不在
+       * 本通道射程）/ 合并证据空集 VERIFICATION_EVIDENCE_EMPTY / method 词表外
+       * VOCAB_INVALID_VALUE。只改判定块与 rev——claim 其余字段逐字节保留（不重建记录，
+       * 不新增第三处 claim 形态构造点，A1）。
+       */
+      readonly op: "verify_claim";
+      readonly claim: VerifyClaimInput;
     };
 
 export interface Transaction {

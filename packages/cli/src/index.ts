@@ -186,7 +186,7 @@ import { runPermitCheck, runPermitIssue, runPermitList, runPermitSteal } from ".
 import { runExecGuard } from "./exec-guard.js";
 import { runReconcile } from "./reconcile.js";
 import { runCompact } from "./compact.js";
-import { runRecordClaim, runRecordGateRun } from "./record.js";
+import { runRecordClaim, runRecordGateRun, runRecordVerification } from "./record.js";
 import { runCloseout } from "./closeout.js";
 import { runCatalogStatus, runCatalogExplain, runCatalogRelock } from "./catalog.js";
 import { runResolve } from "./resolve.js";
@@ -504,12 +504,14 @@ export type {
   CompactClaimEntry,
   CompactMalformedEntry,
 } from "./compact.js";
-export { runRecordGateRun, runRecordClaim } from "./record.js";
+export { runRecordGateRun, runRecordClaim, runRecordVerification } from "./record.js";
 export type {
   RecordGateRunInput,
   RecordGateRunResult,
   RecordClaimInput,
   RecordClaimResult,
+  RecordVerificationInput,
+  RecordVerificationResult,
 } from "./record.js";
 export { runCloseout } from "./closeout.js";
 export type {
@@ -1468,7 +1470,7 @@ export function createProgram(
   const recordCommand = program
     .command("record")
     .description(
-      "证据入账通路：把 gate 运行结果 / claim 经 store 事务显式落账 evidence 平面（check 保持纯读；入账决定权归 ⑦ 拍编排）",
+      "证据入账通路：把 gate 运行结果 / claim / 独立验证判定经 store 事务显式落账 evidence 平面（check 保持纯读；入账决定权归 ⑦ 拍编排；verification = W2 判定生产入口，UNVERIFIED→VERIFIED 单向）",
     );
 
   recordCommand
@@ -1534,6 +1536,50 @@ export function createProgram(
       });
       record({
         command: "record claim",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  recordCommand
+    .command("verification")
+    .description(
+      "独立验证流的判定回写（W2 生产入口；D20 判定通路）：对既有 UNVERIFIED claim 施 VERIFIED 判定——单向一次性（A3 禁覆写已判定；已 VERIFIED/PARTIALLY_VERIFIED/REJECTED → NO_CHANGE exit 0 零写入回显既有判定，改判/回退不在射程）。回写走 kernel 唯一写权威 applyTransaction（verify_claim op：只替换 verification 块+合并 evidence_refs+推进 rev，其余字段逐字节保留）。错误码：CLAIM_NOT_FOUND（目标缺席）/ EVIDENCE_MALFORMED（损坏）/ SCHEMA_INVALID / VERIFICATION_EVIDENCE_EMPTY（07：空证据引用不得 VERIFIED）/ VOCAB_INVALID_VALUE（method 词表外）/ EXECUTION_NOT_FOUND",
+    )
+    .requiredOption("--clm <CLM-n>", "目标 claim（evidence/claims/CLM-*.json，须已入账且 verdict=UNVERIFIED；验证回写不新造 CLM）")
+    .requiredOption(
+      "--verifier <type>:<name>",
+      "重算主体（07 verification.recomputed_by；type ∈ agent/human/tool/kernel；应与 asserted_by 主体分离——D20，同主体仅 warning 不阻断，不验真主体 B3 边界；doctor 探针检出）",
+    )
+    .option(
+      "--method <m>",
+      "验证方式申报（07 verification_method 三值闭包：recompute / independent_probe / human_attest；缺席 = 键缺席）",
+    )
+    .option(
+      "--evidence <ref>",
+      "追加证据引用（可重复；GRN-*/治理对象 id/blob 原文；与既有 evidence_refs 合并后不得为空——空集 VERIFICATION_EVIDENCE_EMPTY；禁重复）",
+      collectValues,
+    )
+    .option("--authority-ref <ref>", "审批/决策引用（随事务落 journal）")
+    .option("--note <text>", "事务注记")
+    .option(
+      "--execution-id <AGX-n>",
+      "事务级执行身份盖章（§25.4；同 maintain --execution-id：校验 AGX 词形 + executions/ 档案存在性并盖进 TX_APPLIED 事件）",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runRecordVerification(resolveDir(command), {
+        clm: opts.clm as string,
+        verifier: opts.verifier as string,
+        method: opts.method as string | undefined,
+        // 可重复选项不带缺省值：argv 未携带 → undefined（未声明，非显式空数组）。
+        evidence: opts.evidence as string[] | undefined,
+        authorityRef: opts.authorityRef as string | undefined,
+        note: opts.note as string | undefined,
+        executionId: opts.executionId as string | undefined,
+      });
+      record({
+        command: "record verification",
         outcome,
         asJson: command.opts().json === true,
       });

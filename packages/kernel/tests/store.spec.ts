@@ -1291,6 +1291,128 @@ describe("A7 重录同 CLM 的 evidence_summary 不双计", () => {
   });
 });
 
+// ============================================================
+// verify_claim —— 独立验证流判定回写（W2 生产入口；UNVERIFIED→VERIFIED 单向一次性）
+// ============================================================
+
+const verifyOp = (overrides: Record<string, unknown> = {}): Transaction["ops"] => [
+  {
+    op: "verify_claim",
+    claim: {
+      clm: "CLM-10",
+      verifiedBy: { actorType: "tool", actor: "verifier@0.1.0", selfAttested: false },
+      evidenceRefs: ["GRN-77"],
+      method: "recompute",
+      ...overrides,
+    },
+  },
+];
+
+describe("verify_claim 判定回写（独立验证流通道）", () => {
+  it("APPLIED：verification 块替换为 VERIFIED（recomputed_by/at_seq）+ 追加引用分型 + rev 推进；其余字段逐字节保留；evidence_summary 即时 verified=1", async () => {
+    await applyTransaction(store, txOf(upsertPage()));
+    await applyTransaction(store, txOf(claimOp()));
+    const claimPath = join(root, ".pomaster", "evidence", "claims", "CLM-10.json");
+    const before = JSON.parse(readFileSync(claimPath, "utf8")) as Record<string, unknown>;
+    const result = await applyTransaction(store, txOf(verifyOp()));
+    expect(result.shortCircuited).toBe(false);
+    expect(result.changedObjectIds).toContain("PAGE.DASHBOARD");
+    const after = JSON.parse(readFileSync(claimPath, "utf8")) as Record<string, unknown>;
+    // 判定块：07 schema 键序（verdict / method / recomputed_by / at_seq）
+    expect(after.verification).toEqual({
+      verdict: "VERIFIED",
+      method: "recompute",
+      recomputed_by: { actor_type: "tool", actor: "verifier@0.1.0", self_attested: false },
+      at_seq: result.appliedSeq,
+    });
+    // 其余字段逐字节保留（不重建记录）：断言/断言主体/subject 原样
+    expect(after.assertion).toBe(before.assertion);
+    expect(after.asserted_by).toEqual(before.asserted_by);
+    expect(after.subject).toEqual(before.subject);
+    expect(after.record_type).toBe("claim");
+    // 追加引用走同一分型规则（GRN-* → gate_result）+ rev 推进到本事务 seq
+    expect(after.evidence_refs).toEqual([{ ref_type: "gate_result", grn: "GRN-77" }]);
+    expect(after.rev).toBe(result.appliedSeq);
+    // subject evidence_summary 即时重算（status/inspect 消费面）
+    const index = await loadTruthIndex(store);
+    const row = index.objects.find((candidate) => candidate.id === "PAGE.DASHBOARD");
+    expect(row?.evidenceSummary).toEqual({ claims: 1, verified: 1, unverified: 0, rejected: 0 });
+    // journal 留痕：verify_claim 词形
+    const lastEvent = JSON.parse(readJournal(root).trimEnd().split("\n").pop() as string) as { ops: string[] };
+    expect(lastEvent.ops).toContain("verify_claim");
+  });
+
+  it("同事务 record_claim → verify_claim 串联合法（staged 覆盖层读取，先立后证同拍闭环）", async () => {
+    await applyTransaction(store, txOf(upsertPage()));
+    const result = await applyTransaction(store, txOf([
+      ...claimOp({ evidenceRefs: [] }),
+      ...verifyOp(),
+    ]));
+    expect(result.shortCircuited).toBe(false);
+    const claim = JSON.parse(
+      readFileSync(join(root, ".pomaster", "evidence", "claims", "CLM-10.json"), "utf8"),
+    ) as Record<string, unknown>;
+    expect(((claim.verification) as Record<string, unknown>).verdict).toBe("VERIFIED");
+  });
+
+  it("目标缺失 → CLAIM_NOT_FOUND（判定只落已入账记录）", async () => {
+    await applyTransaction(store, txOf(upsertPage()));
+    const bad = await applyTransaction(store, txOf(verifyOp())).catch((e: unknown) => e);
+    expect(bad).toBeInstanceOf(GovernanceError);
+    expect((bad as GovernanceError).code).toBe("CLAIM_NOT_FOUND");
+  });
+
+  it("已判定（VERIFIED）→ CLAIM_ALREADY_ADJUDICATED 零写入（UNVERIFIED→VERIFIED 单向一次性，A3）", async () => {
+    await applyTransaction(store, txOf(upsertPage()));
+    await applyTransaction(store, txOf(claimOp()));
+    await applyTransaction(store, txOf(verifyOp()));
+    const claimPath = join(root, ".pomaster", "evidence", "claims", "CLM-10.json");
+    const before = readFileSync(claimPath, "utf8");
+    const bad = await applyTransaction(store, txOf([
+      { op: "upsert_object", envelope: pageEnvelope({ titleZh: "仪表盘（二）" }) as never },
+      ...verifyOp({ verifiedBy: { actorType: "human", actor: "other-verifier", selfAttested: true } }),
+    ])).catch((e: unknown) => e);
+    expect(bad).toBeInstanceOf(GovernanceError);
+    expect((bad as GovernanceError).code).toBe("CLAIM_ALREADY_ADJUDICATED");
+    expect((bad as GovernanceError).hint).toContain("改判/回退不在");
+    expect(readFileSync(claimPath, "utf8")).toBe(before); // 零写入：不静默二次判定
+  });
+
+  it("合并证据空集 → VERIFICATION_EVIDENCE_EMPTY（07：空 evidence_refs 的 verification 不得为 VERIFIED）", async () => {
+    await applyTransaction(store, txOf(upsertPage()));
+    await applyTransaction(store, txOf(claimOp({ evidenceRefs: [] })));
+    const bad = await applyTransaction(store, txOf(verifyOp({ evidenceRefs: [] }))).catch((e: unknown) => e);
+    expect(bad).toBeInstanceOf(GovernanceError);
+    expect((bad as GovernanceError).code).toBe("VERIFICATION_EVIDENCE_EMPTY");
+  });
+
+  it("引用重复 → SCHEMA_INVALID（与既有条目重复或追加内部重复，禁静默归并）", async () => {
+    await applyTransaction(store, txOf(upsertPage()));
+    await applyTransaction(store, txOf(claimOp({ evidenceRefs: ["GRN-77"] })));
+    const dupExisting = await applyTransaction(store, txOf(verifyOp())).catch((e: unknown) => e);
+    expect(dupExisting).toBeInstanceOf(GovernanceError);
+    expect((dupExisting as GovernanceError).code).toBe("SCHEMA_INVALID");
+
+    const dupWithin = await applyTransaction(store, txOf(verifyOp({
+      evidenceRefs: ["GRN-88", "GRN-88"],
+    }))).catch((e: unknown) => e);
+    expect(dupWithin).toBeInstanceOf(GovernanceError);
+    expect((dupWithin as GovernanceError).code).toBe("SCHEMA_INVALID");
+  });
+
+  it("method 词表外 → VOCAB_INVALID_VALUE；clm 词形非法 → SCHEMA_INVALID", async () => {
+    await applyTransaction(store, txOf(upsertPage()));
+    await applyTransaction(store, txOf(claimOp()));
+    const badMethod = await applyTransaction(store, txOf(verifyOp({ method: "vibes" }))).catch((e: unknown) => e);
+    expect(badMethod).toBeInstanceOf(GovernanceError);
+    expect((badMethod as GovernanceError).code).toBe("VOCAB_INVALID_VALUE");
+
+    const badClm = await applyTransaction(store, txOf(verifyOp({ clm: "CLAIM-10" }))).catch((e: unknown) => e);
+    expect(badClm).toBeInstanceOf(GovernanceError);
+    expect((badClm as GovernanceError).code).toBe("SCHEMA_INVALID");
+  });
+});
+
 function rmDir(dir: string): void {
   rmdirSync(dir);
 }

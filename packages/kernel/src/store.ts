@@ -25,6 +25,9 @@
  *   显式 canonicalizeOverwrite 凭据（op 契约位）是唯一覆写口：放行前 kernel 零成本
  *   复核既有 claim 判定态，已判定（VERIFIED 等）仍拒——须走新 id；覆写在 journal
  *   TX_APPLIED ops 记 *_canonicalize 可审计词形留痕。
+ *   判定的 sanctioned 正面 = verify_claim op（独立验证流生产入口，公开面 `pomaster
+ *   record verification`）：UNVERIFIED→VERIFIED 单向一次性，已判定拒（CLAIM_ALREADY_
+ *   ADJUDICATED），改判/回退不在该通道射程。
  * - A4 转移不豁免：upsert 对既有对象直改 lifecycle 与 transition_object 同判
  *   （转移矩阵 + requires 的 authorityRef；SUPERSEDED→CURRENT 复活支线封死）。
  * - A5 提交前复验：事务产出先过 01 schema 再落盘——op 层漏检的非法产出在此拦截
@@ -870,6 +873,9 @@ function applyOp(workspace: TxWorkspace, op: TransactionOp, tx: Transaction): vo
     case "record_gate_run":
       applyRecordGateRun(workspace, op);
       break;
+    case "verify_claim":
+      applyVerifyClaim(workspace, op);
+      break;
   }
 }
 
@@ -1585,11 +1591,46 @@ function applyAppendDenominator(workspace: TxWorkspace, entry: DenominatorEntry)
   workspace.anyChange = true;
 }
 
+// —— record_claim / verify_claim 共用的证据引用分型 ——
+
+/**
+ * verification_method 三值闭包（07 schema definitions.verification_method，structural——
+ * 非 vocab-lock 管辖：recompute = 重算 / independent_probe = 独立探针 / human_attest =
+ * 人审）。verify_claim 通道的可选申报位：缺席 = 键缺席（与 07 canonical 形态兼容）；
+ * 词表外 → VOCAB_INVALID_VALUE（禁就地发明）。index.ts 契约面 re-export。
+ */
+export const VERIFICATION_METHOD_VALUES = [
+  "recompute",
+  "independent_probe",
+  "human_attest",
+] as const;
+export type VerificationMethodValue = (typeof VERIFICATION_METHOD_VALUES)[number];
+
+/**
+ * 裸引用 → 07 evidence_refs 三分型（GRN-* / 治理对象 / blob 内容寻址）。
+ * record_claim 与 verify_claim 共用单点（A1 收敛纪律：分型规则禁第三处拷贝）。
+ */
+function typedEvidenceRef(ref: string, context: string): UnknownRecord {
+  if (/^GRN-[0-9]+$/.test(ref)) {
+    return { ref_type: "gate_result", grn: ref };
+  }
+  try {
+    parseIdOrWrap(ref, context);
+    return { ref_type: "truth_object", object_id: ref };
+  } catch {
+    return {
+      ref_type: "blob",
+      blob: { sha256: sha256OfCanonical({ ref }), media: "text" },
+    };
+  }
+}
+
 // —— record_claim / record_gate_run 共用的存在性防线 ——
 
 /**
  * 已判定态 claim verdict 词表（镜像 cli/evidence.ts 的 ADJUDICATED_VERIFICATION_VERDICTS；
- * canonicalize 二道防线用——独立验证流判过的记录，record 通道不得经 canonicalize 打回）。
+ * record_claim canonicalize 二道防线与 verify_claim 单向守卫共用——独立验证流判过的
+ * 记录，record 通道不得经 canonicalize 打回，verify_claim 不得二次判定）。
  */
 const ADJUDICATED_CLAIM_VERDICTS: ReadonlySet<string> = new Set([
   "VERIFIED",
@@ -1694,20 +1735,9 @@ function applyRecordClaim(
   }
   const isFixture = subjectId.startsWith("TEST.");
   const evidenceRefs = (claim.evidenceRefs as readonly string[] | undefined) ?? [];
-  const typedRefs = evidenceRefs.map((ref) => {
-    if (/^GRN-[0-9]+$/.test(ref)) {
-      return { ref_type: "gate_result", grn: ref } as UnknownRecord;
-    }
-    try {
-      parseIdOrWrap(ref, "record_claim.claim.evidenceRefs[]");
-      return { ref_type: "truth_object", object_id: ref } as UnknownRecord;
-    } catch {
-      return {
-        ref_type: "blob",
-        blob: { sha256: sha256OfCanonical({ ref }), media: "text" },
-      } as UnknownRecord;
-    }
-  });
+  const typedRefs = evidenceRefs.map((ref) =>
+    typedEvidenceRef(ref, "record_claim.claim.evidenceRefs[]"),
+  );
   const record: UnknownRecord = {
     record_type: "claim",
     clm: claim.clm,
@@ -1752,6 +1782,164 @@ function applyRecordClaim(
     `${JSON.stringify(record, null, 2)}\n`,
   );
   // evidence_summary 只认 kernel 登记的判定（当前 UNVERIFIED）——重算保持计数诚实。
+  row.evidence_summary = recomputeEvidenceSummary(workspace, subjectId);
+  workspace.changedObjectIds.add(subjectId);
+  workspace.anyChange = true;
+}
+
+// —— verify_claim（独立验证流的判定回写；W2 生产入口） ——
+
+/**
+ * 独立验证流判定回写（D20 判定通路的 kernel 兑现位；UNVERIFIED→VERIFIED 单向一次性，
+ * A3 禁覆写已判定的 sanctioned 正面——record 通道恒置 UNVERIFIED，判定只能从本通道进）。
+ *
+ * 形态纪律：只替换既有记录的 verification 块、合并 evidence_refs、推进 rev——其余字段
+ * （subject/assertion/asserted_by/execution_id/notes_md 及 evidence_refs 既有条目）从
+ * 磁盘或同事务 staged 计划原样保留，不重建 claim 形态（A1：不新增第三处全量构造点）。
+ * 键序保持既有 canonical 文件的键位（spread 保位），verification 块内键序沿 07 schema
+ * 定义序（verdict / method / recomputed_by / at_seq）。
+ *
+ * 守卫与码位（公开入口 = CLI `record verification`，本函数是写权威与二道防线）：
+ * - clm 词形 / method 词表外 → SCHEMA_INVALID / VOCAB_INVALID_VALUE；
+ * - 目标缺失 → CLAIM_NOT_FOUND（判定只落已入账记录，禁对悬空引用施判）；
+ * - 既有文件损坏 / 身份键错位 / subject 缺失 / 判定块缺失或词表外 → SCHEMA_INVALID
+ *   （禁静默跳过损坏证据）；
+ * - 已判定（VERIFIED/PARTIALLY_VERIFIED/REJECTED）→ CLAIM_ALREADY_ADJUDICATED
+ *   （改判/回退属其他治理语义，不经本通道；CLI 公开入口先行以 NO_CHANGE 显式披露）；
+ * - 追加引用与既有条目重复 → SCHEMA_INVALID（禁静默归并）；
+ * - 合并证据空集 → VERIFICATION_EVIDENCE_EMPTY（07 执行层规则：空 evidence_refs 的
+ *   verification 不得为 VERIFIED——closeout DOD_CLAIM_EVIDENCE_EMPTY 的写入侧执法位）。
+ *
+ * 落盘后 subject evidence_summary 重算（verified 计数即时可见——status/inspect 消费面）。
+ */
+function applyVerifyClaim(
+  workspace: TxWorkspace,
+  op: Extract<TransactionOp, { op: "verify_claim" }>,
+): void {
+  const adjudication = op.claim;
+  const { paths } = workspace;
+  if (typeof adjudication.clm !== "string" || !/^CLM-[0-9]+$/.test(adjudication.clm)) {
+    throw new GovernanceError("SCHEMA_INVALID", `clm 词形非法（须 CLM-[0-9]+）：${String(adjudication.clm)}`, "claim 记录 id 词形（evidence/claims/CLM-*.json）", { clm: adjudication.clm });
+  }
+  if (adjudication.method !== undefined) {
+    assertVocabValue(adjudication.method, VERIFICATION_METHOD_VALUES, "verify_claim.claim.method", `验证方式三值闭包（07 verification_method，structural）：${VERIFICATION_METHOD_VALUES.join(" / ")}`);
+  }
+  const claimPath = `${paths.claimsDir}/${adjudication.clm}.json`;
+  const existingText = workspace.files.get(claimPath) ?? readText(claimPath);
+  if (existingText === undefined || existingText === null) {
+    throw new GovernanceError(
+      "CLAIM_NOT_FOUND",
+      `verify_claim 目标 claim 不在 claims 平面：${claimPath}`,
+      "判定只能落在已入账的 claim 上：先 record claim / compact 入账，再对既有 CLM 施判（禁对悬空引用施判）",
+      { clm: adjudication.clm },
+    );
+  }
+  let existing: UnknownRecord;
+  try {
+    existing = JSON.parse(existingText) as UnknownRecord;
+  } catch (error) {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      `verify_claim：既有 claim 文件无法解析（损坏或手改）：${claimPath}`,
+      "从 git 恢复该证据文件，或人工核实后走 record/compact canonical 化；禁静默覆写损毁现场",
+      { path: claimPath, cause: String(error) },
+    );
+  }
+  if (existing["record_type"] !== "claim" || existing["clm"] !== adjudication.clm) {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      `verify_claim：既有文件身份键与目标错位（record_type=${String(existing["record_type"])}，clm=${String(existing["clm"])}）：${claimPath}`,
+      "文件身份键（record_type/clm）与路径派生身份须一致；从 git 恢复或 canonical 化修复后重试",
+      { path: claimPath },
+    );
+  }
+  const existingVerification = existing["verification"] as UnknownRecord | undefined;
+  const verdict = existingVerification === undefined ? undefined : existingVerification["verdict"];
+  if (typeof verdict === "string" && ADJUDICATED_CLAIM_VERDICTS.has(verdict)) {
+    throw new GovernanceError(
+      "CLAIM_ALREADY_ADJUDICATED",
+      `verify_claim：${adjudication.clm} 已处判定态（verdict=${verdict}）——UNVERIFIED→VERIFIED 单向一次性（A3）`,
+      "改判/回退不在 verify_claim 通道射程（那是别的治理语义）；记录保持既有判定，须走新 id 或对应进化通道",
+      { clm: adjudication.clm, verdict },
+    );
+  }
+  if (verdict !== "UNVERIFIED") {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      `verify_claim：${adjudication.clm} 的 verification.verdict 缺失或词表外：${String(verdict)}`,
+      "判定块是 claim canonical 形态必读位（四值闭包 VERIFIED/PARTIALLY_VERIFIED/UNVERIFIED/REJECTED）；从 git 恢复或 canonical 化修复",
+      { clm: adjudication.clm, verdict: verdict === undefined ? null : verdict },
+    );
+  }
+  const subject = existing["subject"] as UnknownRecord | undefined;
+  const subjectId = subject === undefined ? undefined : subject["object_id"];
+  if (typeof subjectId !== "string" || subjectId.length === 0) {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      `verify_claim：${adjudication.clm} 的 subject.object_id 缺失（损坏）`,
+      "claim 的 subject 绑定是 evidence_summary 重算与 closeout 判卷的必读位；从 git 恢复该记录",
+      { clm: adjudication.clm },
+    );
+  }
+  const objects = workspace.working.objects as RawRow[];
+  const row = objects.find((candidate) => candidate.id === subjectId);
+  if (row === undefined) {
+    throw new GovernanceError(
+      "OBJECT_NOT_FOUND",
+      `verify_claim：claim ${adjudication.clm} 的 subject 对象不在 truth-index：${subjectId}`,
+      "claim 主体须在 objects[] 登记（evidence_summary 计数挂对象信封行）；先恢复该对象再施判",
+      { clm: adjudication.clm, subjectId },
+    );
+  }
+
+  // —— 证据引用合并：既有分型条目原样保留，追加引用走同一分型规则（禁重复） ——
+  const existingRefs = Array.isArray(existing["evidence_refs"])
+    ? (existing["evidence_refs"] as UnknownRecord[])
+    : [];
+  const additions = (adjudication.evidenceRefs as readonly string[] | undefined) ?? [];
+  const seen = new Set(existingRefs.map((entry) => JSON.stringify(entry)));
+  const typedAdditions = additions.map((ref) => {
+    const typed = typedEvidenceRef(ref, "verify_claim.claim.evidenceRefs[]");
+    const key = JSON.stringify(typed);
+    if (seen.has(key)) {
+      throw new GovernanceError(
+        "SCHEMA_INVALID",
+        `verify_claim：证据引用重复（${ref} 已在 ${adjudication.clm} 的 evidence_refs 或本次追加中重复）`,
+        "追加引用不得与既有条目重复；确认引用内容后去除重复项重试",
+        { clm: adjudication.clm, ref },
+      );
+    }
+    seen.add(key);
+    return typed;
+  });
+  const mergedRefs = [...existingRefs, ...typedAdditions];
+  if (mergedRefs.length === 0) {
+    throw new GovernanceError(
+      "VERIFICATION_EVIDENCE_EMPTY",
+      `verify_claim：${adjudication.clm} 合并证据引用后仍为空集——空 evidence_refs 的 verification 不得为 VERIFIED（07 执行层规则）`,
+      "独立验证须先挂证据引用（先 record gate-run 产 GRN 再 --evidence 引用，或引用治理对象/blob）",
+      { clm: adjudication.clm },
+    );
+  }
+
+  // —— 判定块替换 + rev 推进；其余字段逐字节保留（spread 保位，不重建记录） ——
+  const record: UnknownRecord = {
+    ...existing,
+    verification: {
+      verdict: "VERIFIED",
+      ...(adjudication.method !== undefined ? { method: adjudication.method } : {}),
+      recomputed_by: {
+        actor_type: adjudication.verifiedBy.actorType,
+        actor: adjudication.verifiedBy.actor,
+        self_attested: adjudication.verifiedBy.selfAttested,
+      },
+      at_seq: workspace.nextSeq,
+    },
+    evidence_refs: mergedRefs,
+    rev: workspace.nextSeq,
+  };
+  workspace.files.set(claimPath, `${JSON.stringify(record, null, 2)}\n`);
+  // evidence_summary 只认 kernel 登记的判定——VERIFIED 即时进 verified 计数（诚实重算）。
   row.evidence_summary = recomputeEvidenceSummary(workspace, subjectId);
   workspace.changedObjectIds.add(subjectId);
   workspace.anyChange = true;

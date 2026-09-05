@@ -38,7 +38,7 @@ pomaster maintain <change-or-task> --ops <tx>
 
 # ⑤ VERIFY —— FAST gate / gate recipes 派发 / 证据入账
 pomaster check --fast/--gates
-pomaster record gate-run/claim
+pomaster record gate-run/claim/verification
 
 # ⑥ RECONCILE —— delta 三方对账 / 投影视图 / 审计 / 例外台账
 pomaster reconcile --permit <PERMIT.*>

@@ -121,7 +121,17 @@ export type GovernanceErrorCode =
   /** 证据记录 id 冲突禁覆写（A3，D20 纪律）：record_claim / record_gate_run 写前查既有，
    *  同 id 且内容等价 → 幂等短路零写入；同 id 内容不同 → 显式拒绝（禁静默翻转 verdict、
    *  禁把独立验证流的判定打回 UNVERIFIED）。 */
-  | "EVIDENCE_ALREADY_EXISTS";
+  | "EVIDENCE_ALREADY_EXISTS"
+  /** verify_claim 目标 claim 不在 claims 平面（evidence/claims/CLM-*.json 缺失）——
+   *  判定只能落在已入账的记录上，禁对悬空引用施判。 */
+  | "CLAIM_NOT_FOUND"
+  /** verify_claim 目标已处判定态（verification.verdict ∈ VERIFIED/PARTIALLY_VERIFIED/
+   *  REJECTED）——UNVERIFIED→VERIFIED 单向一次性（A3）：改判/回退不在本通道射程
+   *  （那是别的治理语义），禁静默二次判定。 */
+  | "CLAIM_ALREADY_ADJUDICATED"
+  /** verify_claim 合并证据引用后仍为空集（07 执行层规则「空 evidence_refs 的
+   *  verification 不得为 VERIFIED」的 kernel 写入侧执法位）。 */
+  | "VERIFICATION_EVIDENCE_EMPTY";
 
 /** GovernanceError 判读上下文（错误详情结构化，机器可判读）。 */
 export interface GovernanceErrorDetails {

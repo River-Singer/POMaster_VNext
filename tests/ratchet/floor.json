@@ -121,6 +121,10 @@
         "layer": "L1",
         "domain": "permit_evidence"
       },
+      "packages/cli/tests/record-verification.spec.ts": {
+        "layer": "L1",
+        "domain": "permit_evidence"
+      },
       "packages/cli/tests/reconcile.spec.ts": {
         "layer": "L1",
         "domain": "permit_evidence"
@@ -482,6 +486,9 @@
         "layer": "L2"
       },
       "tests/integration/evidence-binding-e2e.spec.ts": {
+        "layer": "L2"
+      },
+      "tests/integration/claim-verification-e2e.spec.ts": {
         "layer": "L2"
       },
       "tests/integration/sensor-capability-catalog.spec.ts": {

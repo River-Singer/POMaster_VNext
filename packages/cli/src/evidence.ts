@@ -76,8 +76,8 @@ export const CLAIM_INGEST_ACTIONS = [
 ] as const;
 export type ClaimIngestAction = (typeof CLAIM_INGEST_ACTIONS)[number];
 
-/** verification 判定四值中的「已独立判定」子集（record_claim 通道无权覆写）。 */
-const ADJUDICATED_VERIFICATION_VERDICTS = [
+/** verification 判定四值中的「已独立判定」子集（record_claim 通道无权覆写；verify_claim 单向守卫镜像 kernel ADJUDICATED_CLAIM_VERDICTS）。 */
+export const ADJUDICATED_VERIFICATION_VERDICTS = [
   "VERIFIED",
   "PARTIALLY_VERIFIED",
   "REJECTED",

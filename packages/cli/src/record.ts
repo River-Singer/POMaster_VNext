@@ -1,5 +1,6 @@
 /**
- * record.ts —— `pomaster record gate-run / record claim`：证据入账通路的显式单条路径（G6）。
+ * record.ts —— `pomaster record gate-run / record claim / record verification`：证据入账
+ * 通路的显式单条路径（G6）。
  *
  * 设计契约：docs/eight-beat-carriers-design.md §4.1/§4.4/§4.6。裁定组合：check 保持纯读
  * （--record 方案否决——判卷层不叠写路径失败模式），本命令 = 显式单条入账（B），compact
@@ -15,6 +16,10 @@
  *   （恒 ran_at_seq < appliedSeq，倒挂不再新增）；存量倒挂经 ran_at_seq_ahead 显式披露；
  * - record claim 恒置 UNVERIFIED（D20：声称方不可自填 VERIFIED）；已带独立判定
  *   （VERIFIED/PARTIALLY_VERIFIED/REJECTED）的文件 → SKIPPED_ADJUDICATED 零写入；
+ *   判定的 sanctioned 正面 = record verification（W2 生产入口）：目标 claim 须
+ *   UNVERIFIED，UNVERIFIED→VERIFIED 单向一次性（已判定 → NO_CHANGE exit 0 零写入，
+ *   改判/回退不在射程）；回写走 kernel verify_claim op（唯一写权威 applyTransaction，
+ *   只替换判定块不重建记录）；
  * - fail-closed：--from 文件畸形 / normalize FATAL（kernel 原码透传）/ subject 不存在
  *   （OBJECT_NOT_FOUND）/ store 未初始化 → exit 1；单条路径的畸形即是失败，无 warnings 通道。
  * - subject 绑定机复核（N5）：--subject 显式声明的「本 run 证据属于这些对象」在入账时
@@ -30,13 +35,14 @@ import {
   type Store,
   type Transaction,
   type TruthIndex,
+  type VerificationMethodValue,
   GovernanceError,
   applyTransaction,
   createStore,
   loadTruthIndex,
 } from "@pomaster/kernel";
 import { CLM_FILE_PATTERN, GRN_FILE_PATTERN } from "./evidence.js";
-import { EVIDENCE_MALFORMED_CODE } from "./evidence.js";
+import { ADJUDICATED_VERIFICATION_VERDICTS, EVIDENCE_MALFORMED_CODE } from "./evidence.js";
 import {
   allocateEvidenceRef,
   canonicalClaimBytes,
@@ -58,7 +64,7 @@ import {
 } from "./evidence.js";
 import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
-import { governanceErrorToCliError, requireInitialized } from "./permit.js";
+import { governanceErrorToCliError, parseActorArgv, requireInitialized } from "./permit.js";
 import { claimsDirPath, executionsDirPath, runsDirPath } from "./store-layout.js";
 
 // ============================================================
@@ -754,4 +760,242 @@ function replayRevOf(targetBytes: string, fallback: number): number {
   if ("error" in parsed) return fallback;
   const rev = parsed.record.rev;
   return typeof rev === "number" && Number.isInteger(rev) && rev >= 0 ? rev : fallback;
+}
+
+// ============================================================
+// record verification（独立验证流的判定回写——W2 生产入口）
+// ============================================================
+
+export interface RecordVerificationInput {
+  /** 目标 claim（CLM-[0-9]+；须已在 claims 平面且 verification.verdict=UNVERIFIED）。 */
+  readonly clm: string;
+  /** 重算主体 --verifier <type>:<name>（07 verification.recomputed_by；D20 主体分离归 doctor 探针检出——本命令仅 warning，不验真主体，B3 边界）。 */
+  readonly verifier: string;
+  /** 验证方式（07 verification_method 三值闭包；缺席 = 键缺席；词表外 kernel VOCAB_INVALID_VALUE）。 */
+  readonly method?: string;
+  /** 追加证据引用（可重复；GRN-n / 治理对象 id / blob 原文；与既有 evidence_refs 合并后不得为空，禁重复）。 */
+  readonly evidence?: readonly string[];
+  /** 审批/决策引用（随事务落 journal TX_APPLIED）。 */
+  readonly authorityRef?: string;
+  /** 事务注记。 */
+  readonly note?: string;
+  /** 事务级执行身份盖章（P21-Enforcement；同 maintain --execution-id 语义）。 */
+  readonly executionId?: string;
+}
+
+export interface RecordVerificationResult {
+  readonly clm: string | null;
+  /** APPLIED = 判定回写落账；NO_CHANGE = 已处判定态显式披露零写入（A3 禁静默改判）。 */
+  readonly change: "APPLIED" | "NO_CHANGE" | null;
+  readonly applied_seq: number | null;
+  /** APPLIED = VERIFIED；NO_CHANGE = 既有判定如实回显。 */
+  readonly verification: string | null;
+  /** 本次追加并落账的证据引用（APPLIED 路径；NO_CHANGE 恒 []——零写入）。 */
+  readonly evidence_refs_added: readonly string[];
+}
+
+function emptyVerificationResult(): RecordVerificationResult {
+  return { clm: null, change: null, applied_seq: null, verification: null, evidence_refs_added: [] };
+}
+
+function verificationFail(error: CliError): CommandOutcome<RecordVerificationResult> {
+  return failOutcome<RecordVerificationResult>(
+    "record verification",
+    emptyVerificationResult(),
+    [error],
+    [`record verification: FAILED — ${error.code}\n  hint: ${error.hint}`],
+  );
+}
+
+/** D20 同主体自批风险 warning 码位（CLI 本地词形；检出权威 = doctor claim_self_approval_clean 探针）。 */
+const CLAIM_SELF_APPROVAL = "CLAIM_SELF_APPROVAL";
+
+/**
+ * 独立验证流的公开判定回写入口（`pomaster record verification`；kernel verify_claim op
+ * 的 CLI 编排——W2：claim 到 VERIFIED 的可定位生产通路）。
+ *
+ * 契约（D20：声称方不可自填 VERIFIED，判定来自独立验证侧；本命令即该侧的受控写面）：
+ * - 输入：--clm 目标 claim + --verifier 重算主体（必填）+ --method / --evidence（可选）
+ *   + --authority-ref / --note / --execution-id（事务留痕位）；
+ * - 守卫：目标缺失 CLAIM_NOT_FOUND / 损坏 EVIDENCE_MALFORMED / --clm 与 --verifier 词形
+ *   SCHEMA_INVALID / 已判定 → NO_CHANGE exit 0（回显既有判定，零写入——UNVERIFIED→
+ *   VERIFIED 单向一次性，改判/回退不在本命令射程）；kernel 二道防线
+ *   CLAIM_ALREADY_ADJUDICATED / VERIFICATION_EVIDENCE_EMPTY / VOCAB_INVALID_VALUE 原码透传；
+ * - 回写：唯一写权威 applyTransaction（verify_claim op）——只替换 verification 块、合并
+ *   evidence_refs、推进 rev，claim 其余字段逐字节保留（不新增 claim 形态构造点，A1）；
+ *   subject evidence_summary 随事务重算（verified 计数即时可见）。
+ */
+export async function runRecordVerification(
+  rootDir: string,
+  input: RecordVerificationInput,
+): Promise<CommandOutcome<RecordVerificationResult>> {
+  // —— argv 形状前置校验（在任何 IO 之前 fail-closed） ——
+  if (!CLM_FILE_PATTERN.test(`${input.clm}.json`)) {
+    return verificationFail({
+      code: "SCHEMA_INVALID",
+      message: `--clm 词形非法（须 CLM-[0-9]+）：${input.clm}`,
+      hint: "目标 claim 由 record claim / compact 通路分配（evidence/claims/CLM-*.json）；验证回写既有记录，不新造 CLM。",
+    });
+  }
+  const verifier = parseActorArgv(input.verifier);
+  if ("error" in verifier) {
+    return verificationFail({
+      code: verifier.error.code,
+      message: `--verifier 词形非法：${input.verifier}`,
+      hint: verifier.error.hint,
+    });
+  }
+
+  const initialized = await requireInitialized(rootDir);
+  if ("error" in initialized) return verificationFail(initialized.error);
+
+  let store: Store;
+  try {
+    store = await createStore(rootDir);
+  } catch (err) {
+    return verificationFail(
+      err instanceof GovernanceError
+        ? governanceErrorToCliError(err)
+        : {
+            code: "KERNEL_ERROR",
+            message: err instanceof Error ? err.message : String(err),
+            hint: "store 打开失败；查看 docs/kernel-api.md §1。",
+          },
+    );
+  }
+  const curSeq = store.currentSeq ?? initialized.seq;
+
+  // —— 目标 claim 预读（判定态裁决先行，与 record claim 的 SKIPPED_ADJUDICATED 同线） ——
+  const claimPath = `${claimsDirPath(rootDir)}/${input.clm}.json`;
+  let bytes: string | null = null;
+  try {
+    bytes = readFileSync(claimPath, "utf8");
+  } catch {
+    bytes = null;
+  }
+  if (bytes === null) {
+    return verificationFail({
+      code: "CLAIM_NOT_FOUND",
+      message: `目标 claim 不在 claims 平面：${claimPath}`,
+      hint: "判定只能落在已入账的 claim 上：先 record claim / compact 入账，再对既有 CLM 施判（验证回写不新造 CLM）。",
+    });
+  }
+  const parsed = parseClaimFile(bytes);
+  if ("error" in parsed) {
+    return verificationFail({
+      code: EVIDENCE_MALFORMED_CODE,
+      message: `既有 claim 文件无法解析：${parsed.error}`,
+      hint: "判卷分母内证据损坏禁静默跳过（可能正是被藏起来的失败记录）；从 git 恢复或走 record/compact canonical 化后重试。",
+    });
+  }
+  const verdict = parsed.verificationVerdict;
+  if (typeof verdict === "string" && (ADJUDICATED_VERIFICATION_VERDICTS as readonly string[]).includes(verdict)) {
+    // NO_CHANGE：已判定 → 显式披露既有判定并零写入（A3 禁覆写已判定；改判/回退属
+    // 其他治理语义，不经本命令）。kernel 侧二道防线 = CLAIM_ALREADY_ADJUDICATED。
+    const noChange: RecordVerificationResult = {
+      clm: input.clm,
+      change: "NO_CHANGE",
+      applied_seq: curSeq,
+      verification: verdict,
+      evidence_refs_added: [],
+    };
+    return okOutcome(
+      "record verification",
+      noChange,
+      [
+        `record verification → NO_CHANGE clm=${input.clm} (verification=${verdict} 已处判定态——UNVERIFIED→VERIFIED 单向一次性，A3；零写入 exit 0)`,
+        "  改判/回退不在本命令射程（独立治理语义）；重复验证不静默改判",
+      ],
+    );
+  }
+  if (verdict !== "UNVERIFIED") {
+    return verificationFail({
+      code: EVIDENCE_MALFORMED_CODE,
+      message: `${input.clm} 的 verification.verdict 缺失或词表外（四值闭包：VERIFIED / PARTIALLY_VERIFIED / UNVERIFIED / REJECTED）：${String(verdict)}`,
+      hint: "判定块是 claim canonical 形态必读位（禁静默跳过损坏证据）；从 git 恢复或走 record/compact canonical 化修复。",
+    });
+  }
+
+  // —— 执行身份盖章校验（P21-Enforcement；与 maintain 事务级同法） ——
+  const executionResolution = resolveExecutionId(input.executionId, undefined);
+  if ("fail" in executionResolution) {
+    return verificationFail({
+      code: "SCHEMA_INVALID",
+      message: executionResolution.fail,
+      hint: "execution_id 由 beginExecution 分配（AGX-<年份>-<序号>）；先登记执行身份再落事务（S1：禁自造身份）。",
+    });
+  }
+  const executionId = executionResolution.executionId;
+  if (executionId !== null && !existsSync(`${executionsDirPath(rootDir)}/${executionId}.json`)) {
+    return verificationFail({
+      code: "EXECUTION_NOT_FOUND",
+      message: `execution_id 未登记（executions/ 档案缺失）：${executionId}`,
+      hint: "先 beginExecution 登记执行身份（.pomaster/executions/AGX-*.json 是身份唯一事实源）。",
+    });
+  }
+
+  // —— D20 同主体自批风险披露（warning-only：不验真主体，B3 边界；检出权威 = doctor） ——
+  const assertedBy = parsed.record["asserted_by"];
+  const assertedBox =
+    assertedBy !== null && typeof assertedBy === "object"
+      ? (assertedBy as Record<string, unknown>)
+      : {};
+  const selfApprovalWarnings: CliWarning[] =
+    assertedBox["actor_type"] === verifier.actor.actorType && assertedBox["actor"] === verifier.actor.actor
+      ? [
+          {
+            code: CLAIM_SELF_APPROVAL,
+            message: `${input.clm} 的验证主体与断言主体相同（${verifier.actor.actorType}:${verifier.actor.actor}）——D20 反自批姿态（07 x-actor-discipline）`,
+            hint: "不阻断（不验真主体，B3 warning-only 边界）；doctor 探针 claim_self_approval_clean 会把同主体 VERIFIED 记为 defect，建议换独立验证主体。",
+          },
+        ]
+      : [];
+
+  // —— APPLIED：经 store 事务落账（kernel 唯一写通道；verify_claim op 守卫见 store.applyVerifyClaim） ——
+  const addedRefs = input.evidence ?? [];
+  const tx: Transaction = {
+    ops: [
+      {
+        op: "verify_claim",
+        claim: {
+          clm: input.clm,
+          verifiedBy: verifier.actor,
+          ...(addedRefs.length > 0 ? { evidenceRefs: addedRefs } : {}),
+          ...(input.method !== undefined ? { method: input.method as VerificationMethodValue } : {}),
+        },
+      },
+    ],
+    ...(input.authorityRef !== undefined ? { authorityRef: input.authorityRef } : {}),
+    ...(input.note !== undefined ? { note: input.note } : {}),
+    ...(executionId !== null ? { executionId } : {}),
+  };
+  try {
+    const applied = await applyTransaction(store, tx);
+    const result: RecordVerificationResult = {
+      clm: input.clm,
+      change: "APPLIED",
+      applied_seq: applied.appliedSeq,
+      verification: "VERIFIED",
+      evidence_refs_added: addedRefs,
+    };
+    return okOutcome(
+      "record verification",
+      result,
+      [
+        `record verification → APPLIED clm=${input.clm} (applied_seq=${applied.appliedSeq}, verification=VERIFIED, verifier=${input.verifier}, evidence_refs_added=${addedRefs.length === 0 ? "0" : addedRefs.join(",")})`,
+        ...(selfApprovalWarnings.length > 0 ? [`  warning ${CLAIM_SELF_APPROVAL}: ${selfApprovalWarnings[0]?.message}`] : []),
+      ],
+      selfApprovalWarnings,
+    );
+  } catch (err) {
+    return verificationFail(
+      err instanceof GovernanceError
+        ? governanceErrorToCliError(err)
+        : {
+            code: "KERNEL_ERROR",
+            message: err instanceof Error ? err.message : String(err),
+            hint: "applyTransaction 失败（kernel staged 回滚保证零残留）；verify_claim 契约与错误码见 docs/kernel-api.md §1。",
+          },
+    );
+  }
 }
