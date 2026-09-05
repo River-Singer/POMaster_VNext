@@ -100,3 +100,10 @@
 - **⑮ D15 Handoff = 扩九键对齐纠错 §24**：补 expected_outcome/completed_work/remaining_work 等九键；closed form 封条解除（词表+schema+测试+分母随改）——已由 Batch 2 R5 落地（十七键 §9A 形态）。
 - **⑯ D17 Catalog Lock = 接受现状语义**：锁定=内容寻址字节状态对账；升级=relock 显式 diff；npm 包版本即版本单元；「项目锁 v12 装 v16」按现状显式声明不可表达（零实现）。
 - **批次归属**：PRD-REV（文档）→ Batch 1（先修语义/接线，已落地 044e690）→ Batch 2（工件契约，已落地 e41b955）→ Batch 4（迁移清理：A1/B7/B2/B4/裁定入账/遗留壳登记）→ Batch 3（Human UX）→ Batch 5（CRC）→ Batch 6（播种移植）。
+
+## 裁决 12：收口批 A — D6/D7/D9 裁定入账 + D8 小修批执行（2026-09-05）
+
+- **决策渠道**：Owner 全程裁定 D1-D9（2026-09-05；台账：.trellis/tasks/09-04-pomaster-vnext-consolidated-prd/research/owner-decisions-pending.md，已全部裁定）。本条目入账其中登记面三项；D8=(a) 小修批随收口批 A 执行落地（三小修 ADR 留痕在改动处头注：kernel loadCatalogTools `__pycache__` 过滤 / context-manifest.spec 口径锚去数字化 / trellis-gap-audit D13 注记补 B7 指向）。
+- **① D6 TP 面口径 = (b) TECHNOLOGY_PROFILE 面计入 D5 上限**：25/批保守上限自此将 TP 登记面计入。B6c 已落 10 条 TP（policies 129→164 批内：BE policy 面 25 + TP 面 10 未分食）作为 **Owner 追认例外**维持现状不改写；未来批次 TP 面与 policy 面合并计入 25/批上限，不再豁免。
+- **② D7 evidence 禁词表三豁免 = (a) 确认**：baseline 禁词表对 vitest / playwright / java 三词豁免确认维持（依据 PRD §2.8 词形池与 §13.2「允许 Java:Complexity source + JaCoCo」逐字），不另起收编词形批次。
+- **③ D9 B6d 六项裁剪性 ADR = (a) 全部确认**：catalog_version 省略 / 零 profile 预填（PRD UNKNOWN 纪律优先于 B6c PROFILE 卡预填许可）/ stack.yaml 测试级校验（无消费者不加机制）/ lane 词形=播种分区 / 根条目 lane="baseline" / 无运行时 schema——六项全部维持，无异义项。

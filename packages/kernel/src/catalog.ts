@@ -802,13 +802,20 @@ export interface CatalogToolMaterial {
   readonly name: string;
 }
 
-/** 读 tools/ 全部文件（readdir 确定性排序；空目录 = 显式空清单，由调用方呈现）。 */
+/**
+ * 读 tools/ 全部文件（readdir 确定性排序；空目录 = 显式空清单，由调用方呈现）。
+ * 滤 `__pycache__`（D8-1 / 裁决 12）：Python import 缓存生成目录属非策展物料，
+ * 与点开头文件同类排除——混入会污染懒加载清单分母（B6b/B6c check 各撞一次的
+ * 既有弱点）。只滤词形不收窄「全部文件」语义：未来非 Python 工具落地时不得
+ * 被静默丢弃（缺席诚实）。
+ */
 export function loadCatalogTools(catalogRoot: string): readonly CatalogToolMaterial[] {
   const dir = join(catalogRoot, "tools");
   if (!existsSync(dir)) return [];
   return readdirSync(dir)
     .filter((name) => name !== "." && name !== "..")
     .filter((name) => !name.startsWith("."))
+    .filter((name) => name !== "__pycache__")
     .sort()
     .map((name) => ({ file: `tools/${name}`, name }));
 }

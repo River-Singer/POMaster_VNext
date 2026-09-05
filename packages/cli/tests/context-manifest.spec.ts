@@ -4,7 +4,9 @@
  *
  * 判据锚（cli/src/context.ts 头注 ADR）：
  * - 落盘位 `.pomaster/state/contexts/<task-id>.context.json`（无 taskRef → role 键名
- *   ——§58 context_recompile_per_role 词形；ADR 留痕）；layout 目录口径 28（D7）；
+ *   ——§58 context_recompile_per_role 词形；ADR 留痕）；layout 目录口径不在此锚死
+ *   数字——全量登记见 kernel paths.ts 增量注记与 cli layout.ts LAYOUT_DIRECTORIES
+ *   （现口径 41，B6a 播种目录登记后；D8-2，封堵 28→41 式口径漂移再现）；
  * - manifest 字段：task_ref / generated_at_seq（store seq，A4 零墙钟）/ compiler
  *   （tool id + kernel 版本锚）/ inputs_fingerprint / 五分区 entries（每条 ref+reason）
  *   / catalog_source；编译产物非第二配置源（宪法 §19）——禁手改只读服务面；

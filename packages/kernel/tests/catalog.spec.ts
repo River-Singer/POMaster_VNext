@@ -336,6 +336,18 @@ describe("loadCatalogTools / loadCatalogProjectionPresets", () => {
     ]);
   });
 
+  it("tools 消费滤 `__pycache__`：Python import 缓存目录不进分母（D8-1 / 裁决 12；B6b/B6c check 各撞一次的弱点封堵）", () => {
+    const catalogRoot = trackTempCatalog();
+    mkdirSync(join(catalogRoot, "tools", "__pycache__"));
+    writeFileSync(
+      join(catalogRoot, "tools", "__pycache__", "seed_b6e_evidence.cpython-312.pyc"),
+      "cached bytecode",
+    );
+    const tools = loadCatalogTools(catalogRoot);
+    expect(tools.map((tool) => tool.file)).not.toContain("tools/__pycache__");
+    expect(tools).toHaveLength(12); // 12 份实存 .py 分母不被缓存目录污染
+  });
+
   it("projection-presets 消费：registry-tree 身份三元组（name/kind/status）", () => {
     const presets = loadCatalogProjectionPresets(REPO_CATALOG);
     expect(presets).toEqual([
