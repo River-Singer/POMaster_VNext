@@ -103,8 +103,9 @@ pomaster init
 | `.pomaster/state/authority.json` | Authority Map 骨架（默认登记 `BOOTSTRAP_OWNER`） | 否（人类加注的 owner 一律不动） |
 | `.pomaster/config.yaml` | 治理配置（人类可编辑） | 否（只在缺失时创建） |
 | `AGENTS.md` / `CLAUDE.md` | Agent 重入口（profile + 状态速览 + 常用命令 + 重入口安装物锚点） | 仅带生成标记的（`CLAUDE.md` 通过 `@AGENTS.md` 导入共享） |
+| `SPEC.*` 预植对象 ×19 | Evidence Spec Kit 的 store 对象面（PROPOSED 起步；项目经 maintain→CURRENT 采纳后进 closeout 判卷） | 否（在座零触碰，幂等；`--json` 信封可查） |
 
-**目录宪法全树预铺**（Owner 裁定 2026-09-04，不分档级）：init 一次性建出 `.pomaster/` 目录宪法 §2 全树（state / truth/objects / evidence 三区 / executions / traces / runtime 四区 / discovery/scratchpads / memory/inbox / production 六区，41 目录 × 各带 README——含 09-04 Batch 1 增量 sources/ 来源权威边界平面 + Batch 2 增量 state/contexts/（Task Context Manifest 落盘位）与 evidence/observations/（感知回执 sidecar 分区）+ Batch 6 增量 baseline/（Project Engineering Baseline 四 lane 分区）与 specs/（Spec Workspace：hard/frontend、hard/backend、hard/stacks、acceptance、evidence）两棵播种子树）+ `.pomaster/layout.json` 机器清单（全目录 status=wired + activation_hint——什么样的项目/需求激活该平面由 AI 按项目复杂度自行判断，目录存在 ≠ 已激活）。目录树与入口形态/平台选择**完全无关**（B7 裁定：init 单一重入口，无模式旗标）；canonical 正文层为 `.pomaster/truth/objects/`，legacy `.pomaster/objects/` 在场会被显式告警（禁静默 merge/覆盖/迁移）。播种面语义（Batch 6）：`baseline/**` 与 `specs/**` 下的内容文件由 init 按种子清单 **seed-once-missing-only** 落盘——缺失才写、在座零触碰、播种件不带生成标记（项目自有可编辑，重跑 init 永不覆盖你的修改；AI 禁静默覆盖）。完整规范见 `.pomaster/layout.json` 与目录宪法文档。
+**目录宪法全树预铺**（Owner 裁定 2026-09-04，不分档级）：init 一次性建出 `.pomaster/` 目录宪法 §2 全树（state / truth/objects / evidence 三区 / executions / traces / runtime 四区 / discovery/scratchpads / memory/inbox / production 六区，41 目录 × 各带 README——含 09-04 Batch 1 增量 sources/ 来源权威边界平面 + Batch 2 增量 state/contexts/（Task Context Manifest 落盘位）与 evidence/observations/（感知回执 sidecar 分区）+ Batch 6 增量 baseline/（Project Engineering Baseline 四 lane 分区）与 specs/（Spec Workspace：hard/frontend、hard/backend、hard/stacks、acceptance、evidence）两棵播种子树）+ `.pomaster/layout.json` 机器清单（全目录 status=wired + activation_hint——什么样的项目/需求激活该平面由 AI 按项目复杂度自行判断，目录存在 ≠ 已激活）。目录树与入口形态/平台选择**完全无关**（B7 裁定：init 单一重入口，无模式旗标）；canonical 正文层为 `.pomaster/truth/objects/`，legacy `.pomaster/objects/` 在场会被显式告警（禁静默 merge/覆盖/迁移）。播种面语义（Batch 6）：`baseline/**` 与 `specs/**` 下的内容文件由 init 按种子清单 **seed-once-missing-only** 落盘——缺失才写、在座零触碰、播种件不带生成标记（项目自有可编辑，重跑 init 永不覆盖你的修改；AI 禁静默覆盖）。播种分母 = **152 份内容文件**（specs/hard 107：FE 45+index / BE 32+index / stacks 14×2；specs/evidence 20；baseline 25）+ manifest 单源。完整规范见 `.pomaster/layout.json` 与目录宪法文档。
 
 **重入口默认**（D13 修订，2026-09-03）：init 缺省生成重入口全套，让 Agent 一开会话就自动看到治理状态、按需自动触发命令卡——
 
@@ -114,7 +115,7 @@ pomaster init
 
 **多平台适配器**：`AGENTS.md` 恒为唯一事实源；`--platforms claude,codex,cursor,qoder` 追加各平台的适配器（`CLAUDE.md` / 根 `AGENTS.md` 即 codex 原生入口 / `.cursor/rules/pomaster.mdc` / `.qoder/rules/pomaster.md`，本包产物形态升级自动重写，人类异形内容一律不覆盖）；`--platforms none` 只建 AGENTS.md + 状态骨架。TTY 交互终端直接 `pomaster init` 会出复选清单（◉/◯ 空格勾选 / ↑↓ 移动 / 回车确认；raw 模式不可用时降级为编号输入）；`--json` 恒走确定性缺省（claude，重入口）。
 
-装好后 `pomaster session`（无子命令）就是 hook 看到的治理速览；`pomaster doctor` 会用 `heavy_entry_hooks` / `heavy_entry_skills` 探针核对重入口安装物（hooks 注册态 + 双镜像逐字节一致；未安装 → MISSING_CONFIGURATION 并指路重跑 `pomaster init`）。
+装好后 `pomaster session`（无子命令）就是 hook 看到的治理速览——**八段分段投影**（分母/任务执行锁状态/**Next-Action 确定性路由**/许可例外/可行动项/attention/完整性微探针/八拍路标，带逐段预算与缺席诚实）；`pomaster status` 尾行 `next:` 给同一张路由表的当前建议；`pomaster alerts` 在有活跃任务时追加单行 breadcrumb。`pomaster doctor` 会用 `heavy_entry_hooks` / `heavy_entry_skills` 探针核对重入口安装物（hooks 注册态 + 双镜像逐字节一致；未安装 → MISSING_CONFIGURATION 并指路重跑 `pomaster init`）。
 
 ### 3. init 之后该配置什么（config.yaml）
 
@@ -175,13 +176,13 @@ flowchart TB
     EVI["Evidence 平面<br/>GRN / blobs / claims"]:::core
     PROJ["Context Projection<br/>MUST/ADVISORY/KNOWLEDGE/<br/>CATALOG/LAZY TOOLS"]:::core
   end
-  subgraph CAT["Engineering Catalog（随包分发）"]
-    POL["policies 79"]:::cat
+  subgraph CAT["Engineering Catalog（随包分发，catalog-lock 逐字节对账）"]
+    POL["policies 206"]:::cat
     KN["knowledge 11"]:::cat
     GT["gates 6"]:::cat
     SEN["sensors 6"]:::cat
     ARC["archetypes 41"]:::cat
-    TOO["tools 8"]:::cat
+    TOO["tools 13"]:::cat
   end
   AGENT["Agent Harness<br/>(Claude Code / Codex / …)"]:::ext
   HUMAN["Human Authority<br/>(Owner)"]:::ext
@@ -371,7 +372,7 @@ Spec、Task、Gate、Knowledge、Brainstorm……全部是这五个原语的派�
 - Small Constitution：硬约束极少而精——不伪造事实、不越权、不静默冲突、不无证据宣称完成
 - Heavy Entry by Default（D13 修订 2026-09-03 + B7 裁定 2026-09-04）：入口即治理——init 默认安装 skills 库 + hooks 注入，Agent 开会话即见状态；单一重入口、无模式旗标；hook 注入内容永远是 Canonical State 的投影，不是第二事实源
 - No-op is elegant：没有必要的治理动作，零变化就是成功
-- Framework as Review Surface：框架约束好了的人，不需要读 AI 写的每一行代码——但前提是判卷器诚实，所以我们用对抗性用例持续攻击自己的 gate
+- Framework as Review Surface：框架约束好了的人，不需要读 AI 写的每一行代码——但前提是判卷器诚实，所以我们用对抗性用例持续攻击自己的 gate（8 个宪法回归 Case **CRC-A..H** 永久套件守护核心不变式：一句话需求必须过 grounding、原型实现无权威、agent 不得自批、观察失败≠不存在、截图≠payload……）
 - Minimum Sufficient Governance：治理开销必须与变更风险成比例；小改动的体验是"几乎感觉不到 POMaster"
 - Memory Sovereignty：删掉本机缓存 + fresh clone + bootstrap ≈ 项目认知完全恢复
 
