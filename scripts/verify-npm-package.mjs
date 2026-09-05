@@ -168,7 +168,7 @@ assert(presentForbidden.length === 0, "零 dependencies（四字段全缺席）"
 assert(stageManifest.private === undefined, "private 不设（缺省可发布）");
 // 版本断言与 build-npm-package.mjs 的 POMASTER_VERSION 单点真源同步维护
 // （发布 tag v<version> 以该常量为锚，publish.yml 版本闸强制）。
-assert(stageManifest.name === "pomaster" && stageManifest.version === "0.3.0", "name/version = pomaster@0.3.0");
+assert(stageManifest.name === "pomaster" && stageManifest.version === "0.4.0", "name/version = pomaster@0.4.0");
 assert(stageManifest.license === "PolyForm-Noncommercial-1.0.0", "license = PolyForm-Noncommercial-1.0.0");
 assert(stageManifest.bin?.pomaster === "dist/bin.js", "bin.pomaster = dist/bin.js");
 assert(stageManifest.engines?.node === ">=22", "engines.node = >=22");

@@ -44,7 +44,7 @@ const p = (...parts) => join(repoRoot, ...parts);
  * （publish.yml 版本闸强制逐字相等）；verify-npm-package.mjs 的版本断言随本常量
  * 同步维护。改版本只改这一行。
  */
-const POMASTER_VERSION = "0.3.0";
+const POMASTER_VERSION = "0.4.0";
 
 const STAGE_PKG = p("stage", "pomaster");
 const STAGE_BIN = join(STAGE_PKG, "dist", "bin.js");
