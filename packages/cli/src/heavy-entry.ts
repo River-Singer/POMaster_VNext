@@ -22,6 +22,8 @@
  *   输出契约由 `pomaster session` / `pomaster alerts` 承担，见 session.ts / alerts.ts）。
  */
 
+import { CONTEXT_PARTITION_TITLES } from "./context.js";
+
 // ============================================================
 // 入口模式标记
 // ============================================================
@@ -358,7 +360,7 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "",
       "## 何时用",
       "",
-      "- 为角色 lane 取最小充分上下文（MUST/ADVISORY/KNOWLEDGE/CATALOG/LAZY TOOLS 五分区）。",
+      `- 为角色 lane 取最小充分上下文（${CONTEXT_PARTITION_TITLES.join(" · ")} 五分区——context compile markdown 同名标题，词形与 context.ts 同源闭包）。`,
       "- 需要解释 catalog 物料为何被纳入/排除时（决策面与 Agent Context 严格隔离）。",
       "",
       ...commandBlock(["pomaster context compile/explain"]),

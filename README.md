@@ -174,7 +174,7 @@ flowchart TB
     STATE["Canonical State<br/>truth-index + objects<br/>四轴状态"]:::core
     PERMIT["Permit / Transition<br/>谁有权改什么"]:::core
     EVI["Evidence 平面<br/>GRN / blobs / claims"]:::core
-    PROJ["Context Projection<br/>MUST/ADVISORY/KNOWLEDGE/<br/>CATALOG/LAZY TOOLS"]:::core
+    PROJ["Context Projection<br/>AUTHORITATIVE PROJECT STATE / REQUIRED POLICY /<br/>ADVISORY KNOWLEDGE / REUSE / CATALOG / VERIFICATION"]:::core
   end
   subgraph CAT["Engineering Catalog（随包分发，catalog-lock 逐字节对账）"]
     POL["policies 206"]:::cat

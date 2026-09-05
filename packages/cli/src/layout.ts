@@ -397,7 +397,7 @@ export const LAYOUT_DIRECTORIES: readonly LayoutDirSpec[] = [
     purpose:
       "Project Engineering Baseline 子树根（Expected 面工程基线载体——manifest.yaml 身份/seed 来源/UNKNOWN 起步台账 + frontend/backend/data/platform 四 lane 分区；播种件项目可编辑，init seed-once-missing-only，在座零触碰不带生成标记，AI 禁静默覆盖）。",
     activation_hint:
-      "init 播种后目录恒在；Owner 回填 UNKNOWN 起步值后 baseline/stack.yaml 即成为 context compile 的 AUTHORITATIVE 输入（PRD §7）。",
+      "init 播种后目录恒在；stack 选型按 lane 分区在 frontend/backend 两个 stack.yaml 逐键回填，并在 manifest.yaml unknowns 台账逐条销账；当前 context compile 不消费 baseline（D9 在册裁剪），运行时消费面由已裁定的 baseline confirm gate 特性批接线。",
     constitution_source:
       "dot-pomaster-directory-constitution.md §2 全树 + PRD vNext §3 树/§7（Batch 6 B6a 增量平面，播种移植）；kernel paths.ts（baselineDir）",
   },
@@ -406,7 +406,8 @@ export const LAYOUT_DIRECTORIES: readonly LayoutDirSpec[] = [
     status: "wired",
     purpose:
       "前端 lane 工程基线（stack.yaml 结构化选型 + architecture/directory-structure/design-system/state-and-data/api-and-error/quality 六模板；起步值一律 UNKNOWN——「待填写」旧词形不移植）。",
-    activation_hint: "任务涉及前端时消费（context compile AUTHORITATIVE 命中 baseline/frontend/stack.yaml，PRD §7）。",
+    activation_hint:
+      "Owner 前端选型逐键回填并在 manifest.yaml unknowns 台账销账；当前无运行时消费者（context compile 不读 baseline——D9 在册裁剪），消费面由已裁定的 baseline confirm gate 特性批接线。",
     constitution_source:
       "dot-pomaster-directory-constitution.md §2 全树 + PRD vNext §3 树/§7（Batch 6 B6a 增量平面）；kernel paths.ts（baselineFrontendDir）",
   },
@@ -415,7 +416,8 @@ export const LAYOUT_DIRECTORIES: readonly LayoutDirSpec[] = [
     status: "wired",
     purpose:
       "后端 lane 工程基线（stack.yaml + architecture/directory-structure/api-contract/data-access/transaction-concurrency/integration-runtime/quality 七模板；起步值一律 UNKNOWN）。",
-    activation_hint: "任务涉及后端时消费（context compile AUTHORITATIVE 命中 baseline/backend/stack.yaml，PRD §7）。",
+    activation_hint:
+      "Owner 后端选型逐键回填并在 manifest.yaml unknowns 台账销账；当前无运行时消费者（context compile 不读 baseline——D9 在册裁剪），消费面由已裁定的 baseline confirm gate 特性批接线。",
     constitution_source:
       "dot-pomaster-directory-constitution.md §2 全树 + PRD vNext §3 树/§7（Batch 6 B6a 增量平面）；kernel paths.ts（baselineBackendDir）",
   },
@@ -478,8 +480,9 @@ export const LAYOUT_DIRECTORIES: readonly LayoutDirSpec[] = [
     path: "specs/hard/stacks",
     status: "wired",
     purpose:
-      "stack overlay 播种位（14 组 × index+overlay = 28 文件；installed=true 全量播种不用也在座，bound 语义由 baseline/stack.yaml 选型派生——B6c 灌内容，本批只登记目录）。",
-    activation_hint: "项目技术栈命中对应 overlay 时注入；bound 与否由 baseline 选型派生，目录存在 ≠ 已绑定。",
+      "stack overlay 播种位（14 组 × index+overlay = 28 文件；installed=true 全量播种不用也在座，bound 语义以 stack.yaml 显式选型为约定载体（显式选型 = 绑定，未选型 = installed 未 bound）——B6c 灌内容，本批只登记目录）。",
+    activation_hint:
+      "项目技术栈命中对应 overlay 时注入；bound 与否看 stack.yaml 是否已显式选型（定义性约定，当前无运行时派生消费），目录存在 ≠ 已绑定。",
     constitution_source:
       "dot-pomaster-directory-constitution.md §2 全树 + PRD vNext §3 树/§11（Batch 6 B6a 增量平面）；kernel paths.ts（specsHardStacksDir）",
   },

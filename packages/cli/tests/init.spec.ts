@@ -4,7 +4,8 @@
  * 适配器产出 / 幂等 / 交互解析）、重入口默认（D13 2026-09-03 修订 + B7 裁定
  * 2026-09-04：init 单一重入口——skills 双镜像 + hooks settings.json 合并 + 加厚 rules；
  * 历史模式旗标与轻入口形态已删除，存量旧版产物经标记/字节识别升级）、
- * skill 命令卡与 pomaster --help 单一事实源对账钉版、init 预铺 .pomaster/ 目录骨架
+ * skill 命令卡与 pomaster --help 单一事实源对账钉版（含 pomaster-context 五分区词形
+ * 与 CONTEXT_PARTITION_TITLES 同源钉——D8 旧词形零残留）、init 预铺 .pomaster/ 目录骨架
  * （宪法 §2 全树不分形态：41 目录 README + layout.json——B6a 播种面两子树登记后
  * 口径；守卫细则见
  * layout-manifest.spec.ts）、legacy .pomaster/objects 检测（宪法 §34-P0 收敛）。
@@ -38,6 +39,7 @@ import {
   type ChecklistIo,
   loadSeedManifestEntries,
 } from "@pomaster/cli";
+import { CONTEXT_PARTITION_TITLES } from "../src/context.js";
 
 let dir: string;
 
@@ -998,6 +1000,15 @@ describe("重入口 skills 双镜像", () => {
       }
     }
     expect(checkedLines).toBeGreaterThan(30); // 分母自检：命令行解析为空 = 假绿
+  });
+
+  it("钉版：pomaster-context 卡五分区词形与 CONTEXT_PARTITION_TITLES 同源（context.ts 唯一词源；D8 旧词形 LAZY TOOLS 零残留）", async () => {
+    await runInit(dir);
+    const text = read(".agents/skills/pomaster-context/SKILL.md");
+    for (const title of CONTEXT_PARTITION_TITLES) {
+      expect(text.includes(title), `分区标题「${title}」必须在 pomaster-context 卡在座`).toBe(true);
+    }
+    expect(text).not.toContain("LAZY TOOLS");
   });
 });
 
