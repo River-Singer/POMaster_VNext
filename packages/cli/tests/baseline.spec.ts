@@ -1,6 +1,7 @@
 /**
  * baseline.spec.ts —— R-M Step A：init 技术栈问卷 + `pomaster baseline set` 后补
- * 销账通路（09-05-init-questionnaire-baseline-gate 子任务验收面）。
+ * 销账通路；R-L Step B：`pomaster baseline confirm` 确认 gate + set --change 治理
+ * 通路 + doctor/status 呈现位（09-05-init-questionnaire-baseline-gate 子任务验收面）。
  *
  * 钉面（对齐任务验收条逐条）：
  * - 键集单源（ADR-1）：问卷 14 键 = B6d seed stack.yaml 键序逐字（FE 9 + BE 5）；
@@ -16,17 +17,29 @@
  *   信封 + 人读行 + 重跑 NO_CHANGE 不动点 + 中断零写入；
  * - baseline set：正向销账 / 同值幂等自愈台账 / 非法 lane/key/值 fail-closed /
  *   未播种 NOT_CONFIGURED / 损坏 INVALID_STATE / 已答键改型 BASELINE_KEY_ALREADY_SET
- *   / 确认态占位 BASELINE_ALREADY_CONFIRMED（Step B 接口预留，ADR-6）；
- * - 程序面：非 TTY init --json 问卷跳过（skipped=non_interactive）；baseline set
- *   命令注册与词形闸（runCli 实跑）。
+ *   / 确认态在座 BASELINE_ALREADY_CONFIRMED（R-L gate 本体）；
+ * - baseline confirm（R-L Step B，ADR-10~13）：未销账完 BASELINE_UNKNOWNS_REMAINING
+ *   fail-closed 逐条列出 / 全销账 CONFIRMED 写记录（at_seq + 四 digest）/ 重复
+ *   confirm 幂等 NO_CHANGE 零写入 / 漂移后重确认重新快照 / 损坏块修复；
+ * - 治理通路（ADR-14）：确认后无 --change 拒绝 / 无效词形 SCHEMA_INVALID / 不存在
+ *   OBJECT_NOT_FOUND / kind 失配 SCHEMA_INVALID / 死生命周期
+ *   BASELINE_CHANGE_NOT_ACTIVE / 有效 --change 写入 + 确认记录失效 / 同值重放不失效
+ *   / 无确认时携带 --change SCHEMA_INVALID；
+ * - closeout gate 判卷（baselineGateErrors）：缺席不适用 / 在场未确认 /
+ *   BASELINE_DRIFT（stack 与 architecture.md 双形态）/ 确认 fresh 空；
+ * - doctor/status 呈现（R-L）：三态 + unknowns 计数 + 漂移清单 + human 行；
+ * - 程序面：非 TTY init --json 问卷跳过（skipped=non_interactive）；baseline
+ *   set/confirm 命令注册与词形闸（runCli 实跑）。
  */
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import yaml from "js-yaml";
+import { applyTransaction, createStore, sha256OfUtf8 } from "@pomaster/kernel";
 import {
   BACKEND_STACK_KEYS,
+  BASELINE_CONFIRM_TARGETS,
   BASELINE_LANES,
   BASELINE_MANIFEST_RELATIVE,
   CHECKLIST_KEYS,
@@ -35,10 +48,14 @@ import {
   STACK_QUESTIONS,
   STACK_VALUE_PATTERN,
   applyStackAnswers,
+  baselineConfirmationHumanLine,
+  baselineGateErrors,
   baselineStackRelative,
   collectStackAnswers,
   createProgram,
+  readBaselineConfirmationPresentation,
   resolveRemainingQuestions,
+  runBaselineConfirm,
   runBaselineSet,
   runCli,
   runInit,
@@ -641,7 +658,43 @@ describe("程序面（非 TTY 问卷跳过 + baseline set 命令面 + numbered �
 
     const program = createProgram();
     const baselineCommand = program.commands.find((command) => command.name() === "baseline");
-    expect(baselineCommand?.commands.map((sub) => sub.name())).toEqual(["set"]);
+    expect(baselineCommand?.commands.map((sub) => sub.name())).toEqual(["set", "confirm"]);
+  });
+
+  it("baseline confirm 命令面：未销账完 exit 1 BASELINE_UNKNOWNS_REMAINING；全销账 exit 0 CONFIRMED；--json 信封词形", async () => {
+    await runInit(dir);
+    const failLines: string[] = [];
+    const failCode = await runCli(["--dir", dir, "baseline", "confirm", "--json"], {
+      stdout: (line) => failLines.push(line),
+      stderr: (line) => failLines.push(line),
+    });
+    expect(failCode).toBe(1);
+    const failEnvelope = JSON.parse(failLines.join("\n")) as {
+      command: string;
+      ok: boolean;
+      errors: Array<{ code: string; message: string }>;
+    };
+    expect(failEnvelope.command).toBe("baseline confirm");
+    expect(failEnvelope.ok).toBe(false);
+    expect(failEnvelope.errors[0]?.code).toBe("BASELINE_UNKNOWNS_REMAINING");
+    expect(failEnvelope.errors[0]?.message).toContain("baseline/frontend/stack.yaml:framework");
+
+    await fillAllKeys();
+    const okLines: string[] = [];
+    const okCode = await runCli(["--dir", dir, "baseline", "confirm", "--json"], {
+      stdout: (line) => okLines.push(line),
+      stderr: (line) => okLines.push(line),
+    });
+    expect(okCode).toBe(0);
+    const okEnvelope = JSON.parse(okLines.join("\n")) as {
+      command: string;
+      ok: boolean;
+      result: { change: string; at_seq: number; digests: unknown[] };
+    };
+    expect(okEnvelope.ok).toBe(true);
+    expect(okEnvelope.result.change).toBe("CONFIRMED");
+    expect(okEnvelope.result.at_seq).toBeGreaterThan(0);
+    expect(okEnvelope.result.digests).toHaveLength(4);
   });
 
   it("runInitInteractive（编号降级全流程）：平台 claude + 14 问全答 → 回填销账；问卷 EOF → INIT_INTERRUPTED 零写入", async () => {
@@ -661,5 +714,355 @@ describe("程序面（非 TTY 问卷跳过 + baseline set 命令面 + numbered �
     expect(abortedOutcome.ok).toBe(false);
     expect(abortedOutcome.errors[0]?.code).toBe("INIT_INTERRUPTED");
     expect(existsSync(join(abortedDir, ".pomaster"))).toBe(false);
+  });
+});
+
+// ============================================================
+// Step B（R-L）：`pomaster baseline confirm` 确认 gate
+// ============================================================
+
+/** 全量销账：14 键逐键 set（走后补通路把 unknowns 清零——confirm 的前提）。 */
+async function fillAllKeys(): Promise<void> {
+  for (const lane of BASELINE_LANES) {
+    for (const key of STACK_KEYS[lane]) {
+      const outcome = await runBaselineSet(dir, {
+        lane,
+        key,
+        value: key === "cache" || key === "grid" ? "none" : `${key}-value`,
+      });
+      expect(outcome.ok, `${lane}.${key}`).toBe(true);
+    }
+  }
+}
+
+/**
+ * 治理通路对象夹具（kernel applyTransaction 唯一写通道；R4 class_scan 必填）。
+ * 跨轴断言：PROPOSED ⇒ evidence=PLANNED（kernel 判卷，夹具照办）；kind 参数支撑
+ * kind 失配负例（TASK.* 不能授权基线修改）。
+ */
+async function seedGovernedFixture(
+  id: string,
+  kind: "change_object" | "task_object" = "change_object",
+  lifecycle: "PROPOSED" | "CURRENT" | "SUPERSEDED" = "CURRENT",
+): Promise<void> {
+  const store = await createStore(dir);
+  const evidence = lifecycle === "PROPOSED" ? "PLANNED" : "IMPLEMENTED";
+  const payload =
+    kind === "change_object"
+      ? {
+          motivation: "治理通路授权的基线修改",
+          affected_objects: ["CAPABILITY.DEMO"],
+          reopen_count: 0,
+          class_scan_result: {
+            scope: "src/shared/**",
+            hits: 0,
+            fixed_count: 0,
+            regression_case_ref: "GRN-0001",
+          },
+        }
+      : {
+          intent: "普通任务（非授权载体负例）",
+          acceptance: [],
+          class_scan_result: {
+            scope: "src/shared/**",
+            hits: 0,
+            fixed_count: 0,
+            regression_case_ref: "GRN-0001",
+          },
+        };
+  await applyTransaction(store, {
+    ops: [
+      {
+        op: "upsert_object",
+        envelope: {
+          id,
+          kind,
+          axisProfile: kind === "change_object" ? "change_default" : "task_default",
+          axes: { lifecycle, confidence: "PROVISIONAL", evidence, change: "STABLE" },
+          titleZh: "治理通路夹具",
+          authority: { owner: "BOOTSTRAP_OWNER", delegates: [] },
+          origin: "natural",
+          // SUPERSEDED ⇒ successor_ref 必填（kernel SUCCESSOR_REQUIRED；终态夹具）。
+          ...(lifecycle === "SUPERSEDED" ? { successorRef: "CHANGE.C0001" } : {}),
+          payload,
+        } as never,
+      },
+    ],
+  });
+}
+
+describe("baseline confirm（R-L Step B：三态 + 幂等 + 漂移重快照）", () => {
+  it("未销账完 fail-closed：BASELINE_UNKNOWNS_REMAINING 逐条列出缺键；零写入", async () => {
+    await runInit(dir);
+    const manifestBefore = read(BASELINE_MANIFEST_RELATIVE);
+    const outcome = await runBaselineConfirm(dir);
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors[0]?.code).toBe("BASELINE_UNKNOWNS_REMAINING");
+    expect(outcome.errors[0]?.message).toContain("14 键");
+    expect(outcome.errors[0]?.message).toContain("baseline/frontend/stack.yaml:framework");
+    expect(outcome.errors[0]?.message).toContain("baseline/backend/stack.yaml:cache");
+    expect(outcome.result.unknowns_remaining).toBe(14);
+    expect(read(BASELINE_MANIFEST_RELATIVE)).toBe(manifestBefore);
+  });
+
+  it("部分销账：列出剩余键（12 条）；台账清而值未销的不一致形态同闸（fail-closed）", async () => {
+    await runInit(dir);
+    await runBaselineSet(dir, { lane: "frontend", key: "framework", value: "vue3" });
+    await runBaselineSet(dir, { lane: "backend", key: "cache", value: "redis" });
+    const outcome = await runBaselineConfirm(dir);
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors[0]?.message).toContain("12 键");
+    expect(outcome.errors[0]?.message).not.toContain("baseline/frontend/stack.yaml:framework");
+    expect(outcome.errors[0]?.message).not.toContain("baseline/backend/stack.yaml:cache");
+    expect(outcome.errors[0]?.message).toContain("baseline/backend/stack.yaml:database");
+
+    // 台账漏销（条目缺席而值仍 UNKNOWN）：值侧判卷兜住，不冒充可确认。
+    const manifestPath = join(dir, BASELINE_MANIFEST_RELATIVE);
+    writeFileSync(
+      manifestPath,
+      read(BASELINE_MANIFEST_RELATIVE).replace("  - baseline/frontend/stack.yaml:language\n", ""),
+      "utf8",
+    );
+    const inconsistent = await runBaselineConfirm(dir);
+    expect(inconsistent.ok).toBe(false);
+    expect(inconsistent.errors[0]?.code).toBe("BASELINE_UNKNOWNS_REMAINING");
+    expect(inconsistent.errors[0]?.message).toContain("stack.yaml:language");
+  });
+
+  it("全销账 confirm 成功：CONFIRMED + at_seq + 四 digest 快照在座；gate 判卷转绿", async () => {
+    await runInit(dir);
+    await fillAllKeys();
+    const outcome = await runBaselineConfirm(dir);
+    expect(outcome.ok).toBe(true);
+    expect(outcome.result.change).toBe("CONFIRMED");
+    expect(typeof outcome.result.at_seq).toBe("number");
+    expect((outcome.result.at_seq ?? 0)).toBeGreaterThan(0);
+    expect(outcome.result.digests.map((d) => d.file)).toEqual([...BASELINE_CONFIRM_TARGETS]);
+    for (const digest of outcome.result.digests) {
+      expect(digest.sha256).toMatch(/^sha256:[0-9a-f]{64}$/);
+      expect(digest.sha256).toBe(sha256OfUtf8(read(`.pomaster/${digest.file}`)));
+    }
+    const manifestText = read(BASELINE_MANIFEST_RELATIVE);
+    expect(manifestText).toContain("confirmed:");
+    expect(manifestText).toContain(`at_seq: ${outcome.result.at_seq}`);
+    expect(manifestText).toContain("  digests:");
+    expect(outcome.human.join("\n")).toContain("baseline confirm: CONFIRMED");
+    expect(await baselineGateErrors(dir)).toEqual([]);
+  });
+
+  it("重复 confirm 幂等 NO_CHANGE：manifest 字节零变化（at_seq 不比——重跑不重写）", async () => {
+    await runInit(dir);
+    await fillAllKeys();
+    const first = await runBaselineConfirm(dir);
+    expect(first.ok).toBe(true);
+    const manifestBefore = read(BASELINE_MANIFEST_RELATIVE);
+    const replay = await runBaselineConfirm(dir);
+    expect(replay.ok).toBe(true);
+    expect(replay.result.change).toBe("NO_CHANGE");
+    expect(replay.result.at_seq).toBe(first.result.at_seq);
+    expect(read(BASELINE_MANIFEST_RELATIVE)).toBe(manifestBefore);
+    expect(replay.human.join("\n")).toContain("幂等零写入");
+  });
+
+  it("漂移后重确认 = 重新快照（治理通路终点）：CONFIRMED + digest 更新 + gate 转绿", async () => {
+    await runInit(dir);
+    await fillAllKeys();
+    await runBaselineConfirm(dir);
+    // 漂移：治理通路 set --change 改 framework（下一 describe 的语义，这里只造漂移盘面）。
+    await seedGovernedFixture("CHANGE.B0001");
+    const gateChange = await runBaselineSet(dir, {
+      lane: "frontend", key: "framework", value: "react", change: "CHANGE.B0001",
+    });
+    expect(gateChange.ok).toBe(true);
+    expect(await baselineGateErrors(dir)).toEqual([
+      expect.objectContaining({ code: "BASELINE_NOT_CONFIRMED" }),
+    ]);
+    const reconfirm = await runBaselineConfirm(dir);
+    expect(reconfirm.ok).toBe(true);
+    expect(reconfirm.result.change).toBe("CONFIRMED");
+    expect(await baselineGateErrors(dir)).toEqual([]);
+  });
+
+  it("manifest 缺席 NOT_CONFIGURED；stack.yaml 缺席 NOT_CONFIGURED；损坏 confirmed 块被重确认修复", async () => {
+    const absent = await runBaselineConfirm(dir);
+    expect(absent.ok).toBe(false);
+    expect(absent.errors[0]?.code).toBe("NOT_CONFIGURED");
+
+    await runInit(dir);
+    await fillAllKeys();
+    rmSync(join(dir, baselineStackRelative("backend")));
+    const missing = await runBaselineConfirm(dir);
+    expect(missing.ok).toBe(false);
+    expect(missing.errors[0]?.code).toBe("NOT_CONFIGURED");
+
+    await runInit(dir);
+    await fillAllKeys();
+    const manifestPath = join(dir, BASELINE_MANIFEST_RELATIVE);
+    writeFileSync(manifestPath, `${read(BASELINE_MANIFEST_RELATIVE)}confirmed:\n  手工残缺块\n`, "utf8");
+    expect((await baselineGateErrors(dir))[0]?.code).toBe("BASELINE_NOT_CONFIRMED");
+    const repair = await runBaselineConfirm(dir);
+    expect(repair.ok).toBe(true);
+    expect(repair.result.change).toBe("CONFIRMED");
+    expect(read(BASELINE_MANIFEST_RELATIVE)).not.toContain("手工残缺块");
+    expect(await baselineGateErrors(dir)).toEqual([]);
+  });
+});
+
+// ============================================================
+// Step B（R-L）：baseline set --change 治理通路（闭环）
+// ============================================================
+
+describe("baseline set --change（确认后修改走治理通路）", () => {
+  it("闭环：确认后无 --change 拒 → 有效 --change 允许 + 确认失效 → closeout gate 阻断 → 重确认恢复", async () => {
+    await runInit(dir);
+    await fillAllKeys();
+    expect((await runBaselineConfirm(dir)).ok).toBe(true);
+    expect(await baselineGateErrors(dir)).toEqual([]);
+
+    // 无 --change：BASELINE_ALREADY_CONFIRMED（gate 本体），零写入。
+    const stackBefore = read(baselineStackRelative("frontend"));
+    const rejected = await runBaselineSet(dir, { lane: "frontend", key: "framework", value: "react" });
+    expect(rejected.ok).toBe(false);
+    expect(rejected.errors[0]?.code).toBe("BASELINE_ALREADY_CONFIRMED");
+    expect(read(baselineStackRelative("frontend"))).toBe(stackBefore);
+    expect(await baselineGateErrors(dir)).toEqual([]);
+
+    // 有效 --change：写入 + 确认记录整块移除（失效）→ gate 阻断（未确认）。
+    await seedGovernedFixture("CHANGE.C0001");
+    const governed = await runBaselineSet(dir, {
+      lane: "frontend", key: "framework", value: "react", change: "CHANGE.C0001",
+    });
+    expect(governed.ok).toBe(true);
+    expect(governed.result).toMatchObject({ change: "UPDATED", confirmation_invalidated: true });
+    expect(stackValues("frontend").framework).toBe("react");
+    expect(read(BASELINE_MANIFEST_RELATIVE)).not.toContain("confirmed:");
+    expect((await baselineGateErrors(dir))[0]?.code).toBe("BASELINE_NOT_CONFIRMED");
+
+    // 重确认 → closeout gate 恢复不阻断（digest 重新快照）。
+    const reconfirm = await runBaselineConfirm(dir);
+    expect(reconfirm.ok).toBe(true);
+    expect(reconfirm.result.change).toBe("CONFIRMED");
+    expect(await baselineGateErrors(dir)).toEqual([]);
+  });
+
+  it("fail-closed 词形与对象闸：词形非法 / 不在册 / kind 失配 / 死生命周期，全部零写入", async () => {
+    await runInit(dir);
+    await fillAllKeys();
+    await runBaselineConfirm(dir);
+    const stackBefore = read(baselineStackRelative("frontend"));
+    const manifestBefore = read(BASELINE_MANIFEST_RELATIVE);
+    const cases: readonly { readonly change: string; readonly code: string }[] = [
+      { change: "TASK.T0001", code: "SCHEMA_INVALID" },
+      { change: "not-a-change", code: "SCHEMA_INVALID" },
+      { change: "CHANGE.MISSING", code: "OBJECT_NOT_FOUND" },
+    ];
+    for (const testCase of cases) {
+      const outcome = await runBaselineSet(dir, {
+        lane: "frontend", key: "framework", value: "react", change: testCase.change,
+      });
+      expect(outcome.ok, testCase.change).toBe(false);
+      expect(outcome.errors[0]?.code, testCase.change).toBe(testCase.code);
+    }
+    await seedGovernedFixture("CHANGE.SUPER", "change_object", "SUPERSEDED");
+    const dead = await runBaselineSet(dir, {
+      lane: "frontend", key: "framework", value: "react", change: "CHANGE.SUPER",
+    });
+    expect(dead.ok).toBe(false);
+    expect(dead.errors[0]?.code).toBe("BASELINE_CHANGE_NOT_ACTIVE");
+    expect(read(baselineStackRelative("frontend"))).toBe(stackBefore);
+    expect(read(BASELINE_MANIFEST_RELATIVE)).toBe(manifestBefore);
+  });
+
+  it("kind 失配 → SCHEMA_INVALID；同值重放持 --change 不失效确认（快照字节未变）；无确认时携带 --change → SCHEMA_INVALID", async () => {
+    await runInit(dir);
+    await fillAllKeys();
+    // CHANGE.* 词形而 kind 非 change_object 的病态在册对象（防御性 kind 闸负例）。
+    await seedGovernedFixture("CHANGE.WRONGKIND", "task_object");
+    await runBaselineConfirm(dir);
+    const wrongKind = await runBaselineSet(dir, {
+      lane: "frontend", key: "framework", value: "react", change: "CHANGE.WRONGKIND",
+    });
+    expect(wrongKind.ok).toBe(false);
+    expect(wrongKind.errors[0]?.code).toBe("SCHEMA_INVALID");
+    expect(wrongKind.errors[0]?.message).toContain("change_object");
+
+    await seedGovernedFixture("CHANGE.C0002", "change_object", "PROPOSED");
+    const replay = await runBaselineSet(dir, {
+      lane: "frontend", key: "ui", value: "ui-value", change: "CHANGE.C0002",
+    });
+    expect(replay.ok).toBe(true);
+    expect(replay.result).toMatchObject({ change: "NO_CHANGE", confirmation_invalidated: false });
+    expect(read(BASELINE_MANIFEST_RELATIVE)).toContain("confirmed:");
+    expect(await baselineGateErrors(dir)).toEqual([]);
+
+    // 重确认解除后（失效态再次确认前）先测无确认记录的 set --change：诚实拒绝。
+    await runBaselineSet(dir, {
+      lane: "frontend", key: "framework", value: "react", change: "CHANGE.C0002",
+    });
+    expect(read(BASELINE_MANIFEST_RELATIVE)).not.toContain("confirmed:");
+    const noGate = await runBaselineSet(dir, {
+      lane: "frontend", key: "ui", value: "geist", change: "CHANGE.C0002",
+    });
+    expect(noGate.ok).toBe(false);
+    expect(noGate.errors[0]?.code).toBe("SCHEMA_INVALID");
+    expect(noGate.errors[0]?.message).toContain("无确认记录");
+  });
+});
+
+// ============================================================
+// Step B（R-L）：closeout gate 判卷 + doctor/status 呈现（单元面）
+// ============================================================
+
+describe("baselineGateErrors 与确认态呈现（R-L）", () => {
+  it("四漂移形态：stack 值改 / architecture.md 改 / 快照目标缺席 / manifest 无记录", async () => {
+    await runInit(dir);
+    // 无确认记录 → BASELINE_NOT_CONFIRMED（manifest 在场即在适用域）。
+    expect((await baselineGateErrors(dir))[0]?.code).toBe("BASELINE_NOT_CONFIRMED");
+    await fillAllKeys();
+    await runBaselineConfirm(dir);
+    expect(await baselineGateErrors(dir)).toEqual([]);
+
+    // architecture.md 漂移（自由文本骨架在快照分母内）。
+    writeFileSync(join(dir, ".pomaster", BASELINE_CONFIRM_TARGETS[2] ?? ""), "# drifted\n", "utf8");
+    const drifted = await baselineGateErrors(dir);
+    expect(drifted[0]?.code).toBe("BASELINE_DRIFT");
+    expect(drifted[0]?.message).toContain(BASELINE_CONFIRM_TARGETS[2] ?? "");
+
+    // 快照目标缺席（刪除 frontend stack.yaml）→ BASELINE_DRIFT（缺席注记）。
+    await runBaselineConfirm(dir);
+    rmSync(join(dir, baselineStackRelative("frontend")));
+    const absent = await baselineGateErrors(dir);
+    expect(absent[0]?.code).toBe("BASELINE_DRIFT");
+    expect(absent[0]?.message).toContain("缺席");
+  });
+
+  it("呈现位三态 + unknowns 计数 + human 行；manifest 缺席 → null（字段缺席）", async () => {
+    const absent = await readBaselineConfirmationPresentation(dir);
+    expect(absent).toBeNull();
+
+    await runInit(dir);
+    const unconfirmed = await readBaselineConfirmationPresentation(dir);
+    expect(unconfirmed).toEqual({
+      state: "unconfirmed",
+      unknowns_remaining: 14,
+      at_seq: null,
+      drifted_files: [],
+    });
+    expect(baselineConfirmationHumanLine(unconfirmed!)).toContain("未确认");
+    expect(baselineConfirmationHumanLine(unconfirmed!)).toContain("unknowns remaining: 14");
+
+    await fillAllKeys();
+    await runBaselineConfirm(dir);
+    const confirmed = await readBaselineConfirmationPresentation(dir);
+    expect(confirmed?.state).toBe("confirmed");
+    expect(confirmed?.unknowns_remaining).toBe(0);
+    expect(baselineConfirmationHumanLine(confirmed!)).toContain("已确认");
+
+    writeFileSync(join(dir, baselineStackRelative("backend")), "language: UNKNOWN\nframework: spring\npersistence: mybatis\ndatabase: mysql\ncache: redis\n", "utf8");
+    const drifted = await readBaselineConfirmationPresentation(dir);
+    expect(drifted?.state).toBe("drifted");
+    expect(drifted?.drifted_files).toEqual(["baseline/backend/stack.yaml"]);
+    expect(baselineConfirmationHumanLine(drifted!)).toContain("已漂移");
+    expect(baselineConfirmationHumanLine(drifted!)).toContain("pomaster baseline confirm");
   });
 });

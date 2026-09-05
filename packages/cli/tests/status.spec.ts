@@ -250,3 +250,62 @@ describe("status 播种分面计数呈现（B6e）", () => {
     expect(outcome.result.seeded_assets?.specs_evidence).toBe(21);
   });
 });
+
+// ============================================================
+// baseline 确认态呈现（R-L Step B：加法呈现字段，不改 ok 语义）
+// ============================================================
+
+describe("status baseline 确认态呈现（R-L）", () => {
+  it("init 后未确认：state=unconfirmed + unknowns_remaining=14 + human 行；空目录字段缺席", async () => {
+    const absent = await runStatus(dir);
+    expect(absent.result.baseline_confirmation).toBeUndefined();
+
+    mkdirSync(dir, { recursive: true });
+    await runInit(dir);
+    const outcome = await runStatus(dir);
+    expect(outcome.ok).toBe(true);
+    expect(outcome.result.baseline_confirmation).toEqual({
+      state: "unconfirmed",
+      unknowns_remaining: 14,
+      at_seq: null,
+      drifted_files: [],
+    });
+    expect(outcome.human.join("\n")).toContain("baseline gate: 未确认");
+    expect(outcome.human.join("\n")).toContain("unknowns remaining: 14");
+  });
+
+  it("全销账 + confirm → confirmed（at_seq 在座）；漂移 → drifted + 漂移文件清单", async () => {
+    mkdirSync(dir, { recursive: true });
+    await runInit(dir);
+    const { BASELINE_LANES, STACK_KEYS, runBaselineSet, runBaselineConfirm } = await import("@pomaster/cli");
+    for (const lane of BASELINE_LANES) {
+      for (const key of STACK_KEYS[lane]) {
+        const set = await runBaselineSet(dir, {
+          lane,
+          key,
+          value: key === "cache" || key === "grid" ? "none" : `${key}-value`,
+        });
+        expect(set.ok, `${lane}.${key}`).toBe(true);
+      }
+    }
+    const confirmedOutcome = await runBaselineConfirm(dir);
+    expect(confirmedOutcome.ok).toBe(true);
+    const confirmed = await runStatus(dir);
+    expect(confirmed.result.baseline_confirmation?.state).toBe("confirmed");
+    expect(confirmed.result.baseline_confirmation?.at_seq).toBeGreaterThan(0);
+    expect(confirmed.human.join("\n")).toContain("baseline gate: 已确认");
+
+    // 漂移：手工改写快照内文件（绕过治理通路的形态）。
+    writeFileSync(
+      join(dir, ".pomaster", "baseline", "frontend", "architecture.md"),
+      "# 漂移\n",
+      "utf8",
+    );
+    const drifted = await runStatus(dir);
+    expect(drifted.result.baseline_confirmation?.state).toBe("drifted");
+    expect(drifted.result.baseline_confirmation?.drifted_files).toEqual([
+      "baseline/frontend/architecture.md",
+    ]);
+    expect(drifted.human.join("\n")).toContain("baseline gate: 已漂移");
+  });
+});

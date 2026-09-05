@@ -675,3 +675,59 @@ describe("doctor 播种分面计数呈现（B6e）", () => {
     });
   });
 });
+
+// ============================================================
+// baseline 确认态呈现（R-L Step B：加法呈现字段，不改 ok 语义）
+// ============================================================
+
+describe("doctor baseline 确认态呈现（R-L）", () => {
+  it("init 后未确认 → unconfirmed + unknowns_remaining=14 + human 行；空目录字段缺席", async () => {
+    mkdirSync(dir, { recursive: true });
+    const empty = await runDoctor(dir, { gauntletProbes: readyGauntletProbes() });
+    expect(empty.result.baseline_confirmation).toBeUndefined();
+
+    await runInit(dir);
+    const outcome = await runDoctor(dir, { gauntletProbes: readyGauntletProbes() });
+    expect(outcome.result.baseline_confirmation).toEqual({
+      state: "unconfirmed",
+      unknowns_remaining: 14,
+      at_seq: null,
+      drifted_files: [],
+    });
+    expect(outcome.human.join("\n")).toContain("baseline gate: 未确认");
+    expect(outcome.human.join("\n")).toContain("pomaster baseline confirm");
+  });
+
+  it("confirm 后 → confirmed（human 行含 at_seq）；快照漂移 → drifted + 漂移清单", async () => {
+    mkdirSync(dir, { recursive: true });
+    await runInit(dir);
+    const { BASELINE_LANES, STACK_KEYS, runBaselineSet, runBaselineConfirm } = await import("@pomaster/cli");
+    for (const lane of BASELINE_LANES) {
+      for (const key of STACK_KEYS[lane]) {
+        const set = await runBaselineSet(dir, {
+          lane,
+          key,
+          value: key === "cache" || key === "grid" ? "none" : `${key}-value`,
+        });
+        expect(set.ok, `${lane}.${key}`).toBe(true);
+      }
+    }
+    expect((await runBaselineConfirm(dir)).ok).toBe(true);
+    const confirmed = await runDoctor(dir, { gauntletProbes: readyGauntletProbes() });
+    expect(confirmed.result.baseline_confirmation?.state).toBe("confirmed");
+    expect(confirmed.human.join("\n")).toContain("baseline gate: 已确认");
+
+    writeFileSync(
+      join(dir, ".pomaster", "baseline", "backend", "stack.yaml"),
+      "language: UNKNOWN\nframework: spring\npersistence: mybatis\ndatabase: mysql\ncache: redis\n",
+      "utf8",
+    );
+    const drifted = await runDoctor(dir, { gauntletProbes: readyGauntletProbes() });
+    expect(drifted.result.baseline_confirmation?.state).toBe("drifted");
+    expect(drifted.result.baseline_confirmation?.drifted_files).toEqual([
+      "baseline/backend/stack.yaml",
+    ]);
+    expect(drifted.human.join("\n")).toContain("已漂移");
+    expect(drifted.human.join("\n")).toContain("重确认: pomaster baseline confirm");
+  });
+});

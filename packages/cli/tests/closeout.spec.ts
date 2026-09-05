@@ -22,6 +22,7 @@
  *   closeout 无权改判）；施断被 kernel 拒（PROPOSED ⇒ evidence=PLANNED 跨轴断言）→
  *   kernel 原码透传零写入。
  */
+import { createHash } from "node:crypto";
 import {
   mkdirSync,
   mkdtempSync,
@@ -31,7 +32,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { applyTransaction, createStore } from "@pomaster/kernel";
 import { runCli, runCloseout, type CloseoutResult } from "@pomaster/cli";
@@ -812,5 +813,110 @@ describe("closeout 编排边界：身份/kind/kernel 施断判卷", () => {
     expect(envelope.command).toBe("closeout");
     expect(envelope.ok).toBe(false);
     expect(envelope.errors[0]?.code).toBe("GATE_EVIDENCE_MISSING");
+  });
+});
+
+// ============================================================
+// baseline 确认 gate（R-L 2026-09-05）：closeout 聚合单点两阻塞码
+// ============================================================
+
+/** baseline 快照目标内容（确定性文本；四件 = confirm 的 digest 分母）。 */
+function baselineFileContents(): Map<string, string> {
+  return new Map([
+    [".pomaster/baseline/frontend/stack.yaml", "framework: vue3\nlanguage: typescript\n"],
+    [".pomaster/baseline/backend/stack.yaml", "language: java\nframework: spring\n"],
+    [".pomaster/baseline/frontend/architecture.md", "# 前端架构\n"],
+    [".pomaster/baseline/backend/architecture.md", "# 后端架构\n"],
+  ]);
+}
+
+/**
+ * 播种 baseline 子树（fixture 最小 store 默认无 baseline——适用域边界的正面构造）；
+ * confirmed = true 时按四件真实 digest 写 manifest 确认记录（R-L confirmed 块契约）。
+ */
+function seedBaseline(confirmed: boolean): void {
+  const contents = baselineFileContents();
+  for (const [relative, content] of contents) {
+    const target = join(root, ...relative.split("/"));
+    mkdirSync(dirname(target), { recursive: true });
+    writeFileSync(target, content);
+  }
+  if (!confirmed) {
+    writeFileSync(
+      join(root, ".pomaster", "baseline", "manifest.yaml"),
+      "id: BASELINE.PROJECT\nschema_version: 1\nstatus: CURRENT\nunknowns: []\n",
+    );
+    return;
+  }
+  const digestLines = [...contents.entries()]
+    .map(([relative, content]) => {
+      const digest = `sha256:${createHash("sha256").update(content, "utf8").digest("hex")}`;
+      return `    ${relative.replace(".pomaster/", "")}: ${digest}`;
+    })
+    .join("\n");
+  writeFileSync(
+    join(root, ".pomaster", "baseline", "manifest.yaml"),
+    `id: BASELINE.PROJECT\nschema_version: 1\nstatus: CURRENT\nunknowns: []\nconfirmed:\n  at_seq: 2\n  digests:\n${digestLines}\n`,
+  );
+}
+
+describe("closeout baseline 确认 gate（R-L：BASELINE_NOT_CONFIRMED / BASELINE_DRIFT）", () => {
+  it("无 baseline（fixture 最小 store）→ 门不适用：happy path 照常 COMPLETED（既有行为零改动锚）", async () => {
+    await initStore();
+    await seedTask();
+    await seedHappyEvidence();
+    const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
+    expect(outcome.ok).toBe(true);
+    expect((outcome.result as CloseoutResult).change).toBe("COMPLETED");
+    expect(outcome.errors).toEqual([]);
+  });
+
+  it("baseline 在场未确认 → BASELINE_NOT_CONFIRMED 阻断且零写入", async () => {
+    await initStore();
+    await seedTask();
+    await seedHappyEvidence();
+    seedBaseline(false);
+    const before = snapshot();
+    const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors.map((error) => error.code)).toContain("BASELINE_NOT_CONFIRMED");
+    expect(outcome.human.join("\n")).toContain("BASELINE_NOT_CONFIRMED");
+    expect(outcome.errors.find((error) => error.code === "BASELINE_NOT_CONFIRMED")?.hint).toContain(
+      "pomaster baseline confirm",
+    );
+    expect((outcome.result as CloseoutResult).blocked).toBe(true);
+    expect(snapshot()).toEqual(before);
+  });
+
+  it("确认后 stack.yaml 漂移 → BASELINE_DRIFT 阻断（检出谁改了架构）；重确认对齐后恢复放行", async () => {
+    await initStore();
+    await seedTask();
+    await seedHappyEvidence();
+    seedBaseline(true);
+    // 漂移：确认快照之外的手工改写（模拟绕过治理通路的直接修改）。
+    const feStack = join(root, ".pomaster", "baseline", "frontend", "stack.yaml");
+    writeFileSync(feStack, "framework: react\nlanguage: typescript\n");
+
+    const blocked = await runCloseout(root, { taskId: "TASK.T0001" });
+    expect(blocked.ok).toBe(false);
+    expect(blocked.errors.map((error) => error.code)).toContain("BASELINE_DRIFT");
+    expect(blocked.human.join("\n")).toContain("baseline/frontend/stack.yaml");
+
+    // 重确认（重新快照 = 治理通路终点）→ gate 转绿，closeout 恢复放行。
+    const contents = baselineFileContents();
+    contents.set(".pomaster/baseline/frontend/stack.yaml", "framework: react\nlanguage: typescript\n");
+    const digestLines = [...contents.entries()]
+      .map(([relative, content]) => {
+        const digest = `sha256:${createHash("sha256").update(content, "utf8").digest("hex")}`;
+        return `    ${relative.replace(".pomaster/", "")}: ${digest}`;
+      })
+      .join("\n");
+    writeFileSync(
+      join(root, ".pomaster", "baseline", "manifest.yaml"),
+      `id: BASELINE.PROJECT\nschema_version: 1\nstatus: CURRENT\nunknowns: []\nconfirmed:\n  at_seq: 3\n  digests:\n${digestLines}\n`,
+    );
+    const released = await runCloseout(root, { taskId: "TASK.T0001" });
+    expect(released.ok).toBe(true);
+    expect((released.result as CloseoutResult).change).toBe("COMPLETED");
   });
 });

@@ -33,6 +33,11 @@ import {
   specPreplantHumanLine,
   type SpecPreplantPresentation,
 } from "./spec-preplant.js";
+import {
+  baselineConfirmationHumanLine,
+  readBaselineConfirmationPresentation,
+  type BaselineConfirmationPresentation,
+} from "./baseline.js";
 import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
 
@@ -122,6 +127,12 @@ export interface StatusResult {
    * truth-index/清单缺席 → 字段缺席（显式缺席纪律）。
    */
   readonly spec_preplant?: SpecPreplantPresentation;
+  /**
+   * baseline 确认态呈现（R-L Step B 2026-09-05；加法呈现字段）：未确认/已确认/
+   * 已漂移三态 + unknowns 剩余计数 + 漂移文件——纯读呈现位非判定（seeded_assets
+   * 先例）；baseline/manifest.yaml 缺席/不可读 → 字段缺席（显式缺席纪律）。
+   */
+  readonly baseline_confirmation?: BaselineConfirmationPresentation;
   /**
    * Next-Action 确定性路由建议（裁定批 E P2；加法呈现字段——TASK 状态 × 产物/账面
    * 在场性 → 唯一建议命令，八拍命令化；与 session/alerts 同表共享，next-action.ts
@@ -297,6 +308,15 @@ export async function runStatus(
     specPreplant = null;
   }
 
+  // baseline 确认态呈现（R-L Step B）：纯读加法字段（seeded_assets 同款——异常归
+  // 缺席不炸 status 读路径；baseline/manifest.yaml 缺席/不可读 → 字段缺席显式）。
+  let baselineConfirmation: BaselineConfirmationPresentation | null = null;
+  try {
+    baselineConfirmation = await readBaselineConfirmationPresentation(rootDir);
+  } catch {
+    baselineConfirmation = null;
+  }
+
   // Next-Action 确定性路由（裁定批 E P2）：与 session/alerts 同表共享（单一实现）；
   // 快照装配降级走 warnings（hook/读路径不失败），command=null = 诚实无法判定。
   const nextActionSnapshot = await collectNextActionSnapshot(rootDir, warnings);
@@ -326,6 +346,7 @@ export async function runStatus(
     next_action: nextAction,
     ...(seededAssets !== null ? { seeded_assets: seededAssets } : {}),
     ...(specPreplant !== null ? { spec_preplant: specPreplant } : {}),
+    ...(baselineConfirmation !== null ? { baseline_confirmation: baselineConfirmation } : {}),
   };
 
   const human = [
@@ -339,6 +360,7 @@ export async function runStatus(
     `  producers: ${result.producers.total} (dead: ${result.producers.dead.length})`,
     ...(seededAssets !== null ? [seededAssetsHumanLine(seededAssets)] : []),
     ...(specPreplant !== null ? [specPreplantHumanLine(specPreplant)] : []),
+    ...(baselineConfirmation !== null ? [baselineConfirmationHumanLine(baselineConfirmation)] : []),
     nextAction.command === null
       ? `  next: ${nextAction.reason}`
       : `  next: ${nextAction.command}（八拍${nextAction.beat}——${nextAction.reason}）`,

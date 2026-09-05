@@ -71,6 +71,11 @@ import {
   specPreplantHumanLine,
   type SpecPreplantPresentation,
 } from "./spec-preplant.js";
+import {
+  baselineConfirmationHumanLine,
+  readBaselineConfirmationPresentation,
+  type BaselineConfirmationPresentation,
+} from "./baseline.js";
 import type { CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
 
@@ -118,6 +123,13 @@ export interface DoctorResult {
    * （seeded_assets 先例）；truth-index 不可读或清单缺席 → 字段缺席（显式缺席）。
    */
   readonly spec_preplant?: SpecPreplantPresentation;
+  /**
+   * baseline 确认态呈现（R-L Step B 2026-09-05；加法呈现字段不改 ok 语义）：
+   * 未确认/已确认/已漂移三态 + unknowns 剩余计数 + 漂移文件——纯读呈现位
+   * （seeded_assets/spec_preplant 先例）；baseline/manifest.yaml 缺席/不可读 →
+   * 字段缺席（显式缺席）。
+   */
+  readonly baseline_confirmation?: BaselineConfirmationPresentation;
 }
 
 /** P1-5 Sensor Capability 联结呈现形态（DoctorResult.sensors 条目）。 */
@@ -889,6 +901,14 @@ export async function runDoctor(
   } catch {
     specPreplant = null;
   }
+  // baseline 确认态呈现（R-L Step B）：纯读加法字段（seeded_assets 同款纪律——
+  // 异常归缺席不炸 doctor；baseline/manifest.yaml 缺席/不可读 → 字段缺席显式）。
+  let baselineConfirmation: BaselineConfirmationPresentation | null = null;
+  try {
+    baselineConfirmation = await readBaselineConfirmationPresentation(rootDir);
+  } catch {
+    baselineConfirmation = null;
+  }
   const result: DoctorResult = {
     ok,
     probes,
@@ -896,6 +916,7 @@ export async function runDoctor(
     observation_receipts: { count: observationCount },
     ...(seededAssets !== null ? { seeded_assets: seededAssets } : {}),
     ...(specPreplant !== null ? { spec_preplant: specPreplant } : {}),
+    ...(baselineConfirmation !== null ? { baseline_confirmation: baselineConfirmation } : {}),
   };
   const human = [
     `doctor: ${ok ? "READY" : "NOT READY"}`,
@@ -906,6 +927,7 @@ export async function runDoctor(
     `  observation receipts: ${observationCount} 条（evidence/observations/ sidecar 分区；0 = 显式缺席）`,
     ...(seededAssets !== null ? [seededAssetsHumanLine(seededAssets)] : []),
     ...(specPreplant !== null ? [specPreplantHumanLine(specPreplant)] : []),
+    ...(baselineConfirmation !== null ? [baselineConfirmationHumanLine(baselineConfirmation)] : []),
   ];
   return ok
     ? okOutcome("doctor", result, human)

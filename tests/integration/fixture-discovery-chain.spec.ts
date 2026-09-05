@@ -58,6 +58,8 @@ interface Steps {
   closeout1: StepRecord;
   beforeCloseout1: string[];
   afterCloseout1: string[];
+  baselineSet: StepRecord[];
+  baselineConfirm: StepRecord;
   maintainAcceptance: StepRecord;
   closeout2: StepRecord;
   closeout3: StepRecord;
@@ -183,6 +185,36 @@ beforeAll(async () => {
   steps.beforeCloseout1 = snapshotPomaster();
   steps.closeout1 = await runJsonStep(root, ["closeout", TASK_REF]);
   steps.afterCloseout1 = snapshotPomaster();
+
+  // —— closeout 续接②前置（R-L baseline gate 接线新增）：closeout① 的阻断集里
+  // 含 BASELINE_NOT_CONFIRMED（init 工作区 baseline 恒在场——确认 gate 适用域，
+  // 检出判卷式零写入）。此处走非交互后补销账通路把 14 unknowns 清零并 confirm
+  // （digest 快照），后续 closeout 判卷在基线已确认前提下续接；漂移检出与
+  // 重确认闭环归单元面（baseline.spec / closeout.spec）。 ——
+  const baselineKeyPlan: readonly (readonly [lane: string, key: string])[] = [
+    ...(["framework", "language", "build", "router", "state", "grid", "ui", "css", "testing"] as const).map(
+      (key) => ["frontend", key] as const,
+    ),
+    ...(["language", "framework", "persistence", "database", "cache"] as const).map(
+      (key) => ["backend", key] as const,
+    ),
+  ];
+  steps.baselineSet = [];
+  for (const [lane, key] of baselineKeyPlan) {
+    steps.baselineSet.push(
+      await runJsonStep(root, [
+        "baseline",
+        "set",
+        "--lane",
+        lane,
+        "--key",
+        key,
+        "--value",
+        key === "grid" || key === "cache" ? "none" : `${lane}-${key}-value`,
+      ]),
+    );
+  }
+  steps.baselineConfirm = await runJsonStep(root, ["baseline", "confirm"]);
 
   // —— closeout 续接②前置：P11 面补 acceptance（maintain --ops upsert） ——
   // tx 路径用绝对路径（--ops 相对路径按 cwd 解析，与 --dir 无关——真实用户在仓内
@@ -598,12 +630,24 @@ describe("Discovery 状态链 × closeout 全链（P18×P13 闭环）", () => {
     const codes = env.errors.map((e) => e.code);
     expect(codes).toContain("DOD_ACCEPTANCE_EMPTY");
     expect(codes).toContain("GATE_EVIDENCE_MISSING");
+    // R-L baseline gate（init 工作区适用域）：未确认基线与 DoD/gate 阻断共存呈现。
+    expect(codes).toContain("BASELINE_NOT_CONFIRMED");
     // 阻断零写入：closeout 前后两次全树字节快照逐字节一致（提升初值不被 closeout 污染）。
     expect(steps.afterCloseout1).toEqual(steps.beforeCloseout1);
     expect((envelopeOf(steps.closeout1).result as { blocked: boolean }).blocked).toBe(true);
   });
 
   it("段6 closeout②③：补 acceptance 后 gate 分母空仍阻断；证据齐后施断被 CROSS_AXIS_ASSERTION 拒（proposal 态不许伪装 COMPLETED）", () => {
+    // 基线确认前提（R-L 接线）：14 unknowns 非交互销账全过 + confirm digest 快照落盘。
+    expect(steps.baselineSet).toHaveLength(14);
+    expect(steps.baselineSet.every((step) => step.code === 0)).toBe(true);
+    expect(steps.baselineConfirm.code).toBe(0);
+    expect(
+      envelopeOf(steps.baselineConfirm).result as { change: string; digests: unknown[] },
+    ).toMatchObject({ change: "CONFIRMED" });
+    expect(
+      (envelopeOf(steps.baselineConfirm).result as { digests: unknown[] }).digests,
+    ).toHaveLength(4);
     expect(steps.maintainAcceptance.code).toBe(0);
     expect(steps.closeout2.code).toBe(1);
     const codes2 = envelopeOf(steps.closeout2).errors.map((e) => e.code);

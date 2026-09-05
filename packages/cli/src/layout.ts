@@ -397,7 +397,7 @@ export const LAYOUT_DIRECTORIES: readonly LayoutDirSpec[] = [
     purpose:
       "Project Engineering Baseline 子树根（Expected 面工程基线载体——manifest.yaml 身份/seed 来源/UNKNOWN 起步台账 + frontend/backend/data/platform 四 lane 分区；播种件项目可编辑，init seed-once-missing-only，在座零触碰不带生成标记，AI 禁静默覆盖）。",
     activation_hint:
-      "init 播种后目录恒在；stack 选型按 lane 分区在 frontend/backend 两个 stack.yaml 逐键回填，并在 manifest.yaml unknowns 台账逐条销账；当前 context compile 不消费 baseline（D9 在册裁剪），运行时消费面由已裁定的 baseline confirm gate 特性批接线。",
+      "init 播种后目录恒在；stack 选型按 lane 分区在 frontend/backend 两个 stack.yaml 逐键回填，并在 manifest.yaml unknowns 台账逐条销账；确认 gate 已接线（R-L 2026-09-05）：baseline confirm 写 confirmed digest 快照，closeout 阻断码（BASELINE_NOT_CONFIRMED/BASELINE_DRIFT）与 doctor/status 确认态呈现消费；context compile 仍不消费 baseline（D9 在册裁剪未推翻）。",
     constitution_source:
       "dot-pomaster-directory-constitution.md §2 全树 + PRD vNext §3 树/§7（Batch 6 B6a 增量平面，播种移植）；kernel paths.ts（baselineDir）",
   },
@@ -407,7 +407,7 @@ export const LAYOUT_DIRECTORIES: readonly LayoutDirSpec[] = [
     purpose:
       "前端 lane 工程基线（stack.yaml 结构化选型 + architecture/directory-structure/design-system/state-and-data/api-and-error/quality 六模板；起步值一律 UNKNOWN——「待填写」旧词形不移植）。",
     activation_hint:
-      "Owner 前端选型逐键回填并在 manifest.yaml unknowns 台账销账；当前无运行时消费者（context compile 不读 baseline——D9 在册裁剪），消费面由已裁定的 baseline confirm gate 特性批接线。",
+      "Owner 前端选型逐键回填并在 manifest.yaml unknowns 台账销账；运行时消费者 = baseline confirm gate（R-L 2026-09-05 接线：confirm digest 快照 + closeout 阻断码 + doctor/status 确认态；context compile 仍不读 baseline——D9 在册裁剪未推翻）。",
     constitution_source:
       "dot-pomaster-directory-constitution.md §2 全树 + PRD vNext §3 树/§7（Batch 6 B6a 增量平面）；kernel paths.ts（baselineFrontendDir）",
   },
@@ -417,7 +417,7 @@ export const LAYOUT_DIRECTORIES: readonly LayoutDirSpec[] = [
     purpose:
       "后端 lane 工程基线（stack.yaml + architecture/directory-structure/api-contract/data-access/transaction-concurrency/integration-runtime/quality 七模板；起步值一律 UNKNOWN）。",
     activation_hint:
-      "Owner 后端选型逐键回填并在 manifest.yaml unknowns 台账销账；当前无运行时消费者（context compile 不读 baseline——D9 在册裁剪），消费面由已裁定的 baseline confirm gate 特性批接线。",
+      "Owner 后端选型逐键回填并在 manifest.yaml unknowns 台账销账；运行时消费者 = baseline confirm gate（R-L 2026-09-05 接线：confirm digest 快照 + closeout 阻断码 + doctor/status 确认态；context compile 仍不读 baseline——D9 在册裁剪未推翻）。",
     constitution_source:
       "dot-pomaster-directory-constitution.md §2 全树 + PRD vNext §3 树/§7（Batch 6 B6a 增量平面）；kernel paths.ts（baselineBackendDir）",
   },

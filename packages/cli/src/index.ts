@@ -170,7 +170,7 @@ import { CLI_NAME } from "./cli-info.js";
 import { toEnvelope, failOutcome, type CliEnvelope, type CommandOutcome } from "./envelope.js";
 import { runInit, runChecklistPrompt, runInitInteractive } from "./init.js";
 import type { ChecklistPromptResult, InitResult } from "./init.js";
-import { collectStackAnswers, runBaselineSet } from "./baseline.js";
+import { collectStackAnswers, runBaselineConfirm, runBaselineSet } from "./baseline.js";
 import type { StackQuestionnaireOutcome } from "./baseline.js";
 import { runUpdate } from "./update.js";
 import { resolveCliVersion } from "./version.js";
@@ -278,12 +278,18 @@ export {
   resolveRemainingQuestions,
   applyStackAnswers,
   runBaselineSet,
+  runBaselineConfirm,
+  baselineGateErrors,
+  readBaselineConfirmationPresentation,
+  baselineConfirmationHumanLine,
   BASELINE_LANES,
   FRONTEND_STACK_KEYS,
   BACKEND_STACK_KEYS,
   STACK_KEYS,
   STACK_QUESTIONS,
   STACK_VALUE_PATTERN,
+  BASELINE_CONFIRM_TARGETS,
+  BASELINE_CHANGE_ACTIVE_LIFECYCLES,
   unknownsWordForm,
   renderBaselineQuizHumanLine,
 } from "./baseline.js";
@@ -297,6 +303,10 @@ export type {
   QuestionnaireIo,
   BaselineSetInput,
   BaselineSetResult,
+  BaselineConfirmedRecord,
+  BaselineConfirmResult,
+  BaselineConfirmationState,
+  BaselineConfirmationPresentation,
 } from "./baseline.js";
 export type {
   InitResult,
@@ -924,20 +934,23 @@ export function createProgram(
       record({ command: "init", outcome, asJson });
     });
 
-  // —— baseline 技术栈后补销账通路（R-M Step A；TTY init 问卷的非交互孪生） ——
+  // —— baseline 后补销账 + 确认 gate 通路（R-M Step A / R-L Step B） ——
   // CI/脚本场景的单键显式写入：stack.yaml 逐键回填 + manifest unknowns 台账同步销
   // 账（seed 头注现成销账契约）；键词形 fail-closed（lane/key 闭包 + 值词形）；
-  // 已答键改型显式拒绝、manifest 确认态占位拒绝（Step B confirm gate 接口预留，
-  // 见 baseline.ts ADR-6）。写通路与 init 问卷共用同一行级最小改写实现。
+  // 已答键改型显式拒绝；确认态在座 = gate 本体（无 --change 拒绝 / 持有效 --change
+  // 走治理通路——kernel 校验 CHANGE.* 在册 + 活性）。confirm = 确认施断命令（沿
+  // New Entity Gate 先例：verdict + exit code）：14 unknowns 全销账为前提，manifest
+  // 写 confirmed 记录（at_seq + 四确认目标 sha256 快照）；closeout 聚合单点消费
+  // BASELINE_NOT_CONFIRMED / BASELINE_DRIFT，doctor/status 呈现确认态。
   const baseline = program
     .command("baseline")
     .description(
-      "Project Engineering Baseline 后补销账通路（R-M）：set = 单键显式写入 .pomaster/baseline/<lane>/stack.yaml 并同步销账 manifest unknowns 台账（TTY init 技术栈问卷的非交互孪生——CI/脚本场景；键词形 fail-closed；已答键改型拒绝——确认 gate 治理通路随 baseline confirm 接线）",
+      "Project Engineering Baseline 销账与确认 gate 通路（R-M/R-L）：set = 单键显式写入 .pomaster/baseline/<lane>/stack.yaml 并同步销账 manifest unknowns 台账（TTY init 技术栈问卷的非交互孪生——CI/脚本场景；键词形 fail-closed；已答键改型拒绝）；confirm = 基线确认施断（14 unknowns 全销账后 manifest 记 confirmed digest 快照；确认后修改走 CHANGE.* 治理通路；closeout/doctor/status 消费确认态）",
     );
   baseline
     .command("set")
     .description(
-      "单键后补销账：--lane <frontend|backend> --key <lane 键集闭包> --value <选型值>（UNKNOWN 起步词形不可作值；同值重放幂等 NO_CHANGE 并自愈台账漏销；异值改型 BASELINE_KEY_ALREADY_SET 显式拒绝；manifest 确认态在座 BASELINE_ALREADY_CONFIRMED 拒绝）",
+      "单键后补销账/治理通路修改：--lane <frontend|backend> --key <lane 键集闭包> --value <选型值>（UNKNOWN 起步词形不可作值；同值重放幂等 NO_CHANGE 并自愈台账漏销；异值改型 BASELINE_KEY_ALREADY_SET 显式拒绝；确认态在座无 --change → BASELINE_ALREADY_CONFIRMED，持 --change <CHANGE-id> 且对象在册、lifecycle 合法 → 写入并使确认记录失效）",
     )
     .requiredOption("--lane <lane>", "技术栈 lane（frontend | backend）")
     .requiredOption(
@@ -948,15 +961,34 @@ export function createProgram(
       "--value <value>",
       "选型值（保守词形：[A-Za-z0-9] 起始、[A-Za-z0-9 _./+#()-]、≤120 字符；UNKNOWN 不可作值）",
     )
+    .option(
+      "--change <change-id>",
+      "治理通路授权（仅确认态在座时被消费）：CHANGE.* 对象在册且 lifecycle ∈ PROPOSED|CURRENT（kernel 校验）；写入同时使确认记录失效，重确认前 closeout 阻断",
+    )
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (opts, command) => {
       const outcome = await runBaselineSet(resolveDir(command), {
         lane: opts.lane as string,
         key: opts.key as string,
         value: opts.value as string,
+        ...(opts.change !== undefined ? { change: opts.change as string } : {}),
       });
       record({
         command: "baseline set",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+  baseline
+    .command("confirm")
+    .description(
+      "基线确认施断（R-L gate；verdict + exit code）：前提 = 14 unknowns 全销账（BASELINE_UNKNOWNS_REMAINING fail-closed 逐条列出缺键）；动作 = manifest.yaml 写 confirmed 确认记录（at_seq 时点锚 + baseline/<lane>/stack.yaml 与 baseline/<lane>/architecture.md 四文件 sha256 digest 快照）；幂等 = 已确认且 digest 无漂移 → NO_CHANGE 零写入，漂移后重确认 = 重新快照（治理通路终点）；closeout 消费：BASELINE_NOT_CONFIRMED / BASELINE_DRIFT 两阻塞码",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (_opts, command) => {
+      const outcome = await runBaselineConfirm(resolveDir(command));
+      record({
+        command: "baseline confirm",
         outcome,
         asJson: command.opts().json === true,
       });

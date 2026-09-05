@@ -65,6 +65,11 @@
  *   判定（21 schema 无 verdict 词位）——判定值只从 claims/runs 平面读取（D20 同线）；
  *   record_claim 强制 UNVERIFIED / A3 不可覆写 / D20 主体分离（store.ts）零改动。
  *   无 Spec 绑定的任务走既有 acceptance.criterion 双轨（过渡期，PRD §9.2 已声明）。
+ * - baseline 确认 gate（R-L 2026-09-05，本层聚合单点消费）：baseline/manifest.yaml
+ *   在场项目须持有效确认记录（confirmed 块 + 四确认目标 digest 与现盘全等）——
+ *   无记录/记录损坏 → BASELINE_NOT_CONFIRMED，digest 漂移 → BASELINE_DRIFT（确认 +
+ *   检出判卷式，写时不拦截——R-L 对 D9 的显式增补见父 PRD Technical Notes）。
+ *   manifest 缺席（fixture 最小 store）→ 门不适用；判卷实现单源 baseline.ts。
  * - 阻断路径零写入（staged 写从未发起）；成功路径同 inputs 重放由 kernel 指纹短路
  *   （short_circuited=true 零写入）。
  */
@@ -91,6 +96,7 @@ import {
   GRN_FILE_PATTERN,
   listPlaneFiles,
 } from "./evidence.js";
+import { baselineGateErrors } from "./baseline.js";
 import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
 import {
@@ -956,6 +962,16 @@ export async function runCloseout(
   }
 
   // ============================================================
+  // ②.5 baseline 确认 gate（R-L 2026-09-05）：manifest 在场项目的架构确认判卷
+  // （确认+检出判卷式——写时不拦截，收口单点阻断；词形 R-L 已定：
+  // BASELINE_NOT_CONFIRMED / BASELINE_DRIFT。适用域 = baseline/manifest.yaml 在场
+  // 的项目：init 工作区恒在场；fixture 最小 store 无 baseline → 门不适用。判卷
+  // 实现单源在 baseline.baselineGateErrors——closeout 只聚合不旁移）。
+  // ============================================================
+
+  const baselineErrors = [...(await baselineGateErrors(rootDir))];
+
+  // ============================================================
   // ③ 聚合裁决：一切阻断显式（code + hint），零写入
   // ============================================================
 
@@ -982,7 +998,7 @@ export async function runCloseout(
   };
   const judged: CloseoutResult = { ...withKind, dod, gates };
 
-  const errors = [...dodErrors, ...specErrors, ...gateErrors];
+  const errors = [...dodErrors, ...specErrors, ...gateErrors, ...baselineErrors];
   const specSummary =
     dod.spec === null
       ? "spec: 无绑定 Evidence Spec（双轨过渡——acceptance 轨）"

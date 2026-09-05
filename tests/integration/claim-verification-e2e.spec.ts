@@ -103,8 +103,27 @@ describe("W2 正向链：record claim → record verification → closeout 全�
     ]);
     expect(claimRecord.code).toBe(0);
 
-    // —— ④ closeout（判定前）：claim 维度阻断（UNVERIFIED ≠ VERIFIED） ——
+    // —— ④ closeout（判定前）：claim 维度阻断（UNVERIFIED ≠ VERIFIED）＋ R-L baseline
+    // gate 阻断共存（init 工作区 baseline 恒在场——检出判卷式零写入） ——
     closeoutBlocked = await runJsonStep(root, ["closeout", "TASK.VERIF_CHAIN"]);
+
+    // —— ④b baseline 确认前提（R-L gate 接线）：非交互后补销账 14 unknowns +
+    // confirm digest 快照；未确认态与既有码共存的呈现归 closeout.spec 单元面。 ——
+    const baselineKeyPlan: readonly (readonly [lane: string, keys: readonly string[]])[] = [
+      ["frontend", ["framework", "language", "build", "router", "state", "grid", "ui", "css", "testing"]],
+      ["backend", ["language", "framework", "persistence", "database", "cache"]],
+    ];
+    for (const [lane, keys] of baselineKeyPlan) {
+      for (const key of keys) {
+        const set = await runJsonStep(root, [
+          "baseline", "set", "--lane", lane, "--key", key,
+          "--value", key === "grid" || key === "cache" ? "none" : `${lane}-${key}-value`,
+        ]);
+        expect(set.code).toBe(0);
+      }
+    }
+    const baselineConfirm = await runJsonStep(root, ["baseline", "confirm"]);
+    expect(baselineConfirm.code).toBe(0);
 
     // —— ⑤ 独立验证探针产 GRN（record gate-run；subject 绑定本任务） ——
     gateRun = await runJsonStep(root, [
@@ -160,6 +179,8 @@ describe("W2 正向链：record claim → record verification → closeout 全�
     const envelope = envelopeOf(closeoutBlocked);
     expect(envelope.ok).toBe(false);
     expect(envelope.errors.map((error) => error.code)).toContain("DOD_CLAIM_NOT_VERIFIED");
+    // R-L baseline gate：未确认基线与 claim 阻断共存呈现（init 工作区适用域）。
+    expect(envelope.errors.map((error) => error.code)).toContain("BASELINE_NOT_CONFIRMED");
     const dod = (envelope.result as Record<string, unknown>).dod as Record<string, unknown>;
     expect(dod.acceptance_total).toBe(1);
     expect(dod.verified).toBe(0);
