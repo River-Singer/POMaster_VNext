@@ -6,7 +6,7 @@
   + `mapping` 全部 spec 文件 → 层/域归类 + `notes` 归类口径）。战略值出处：
   `docs/wave3-research-toolchain.md` §2 与 `docs/wave3-plan.md` P15。
 - `ratchet/baseline.json` —— 首跑基线存档：记录棘轮首次全绿时的全仓用例数与用例构成（供审计回溯；不参与 CI 判定）。
-- `ratchet/ratchet.mjs` —— 棘轮检查：`corepack pnpm exec vitest run --reporter=json` 统计用例数，低于 floor 退出码 1（CI 强制执行 `pnpm ratchet`）；含 `ledger` 段时按类 fail-below-floor（任何层/域实测计数低于其 floor 即退出码 1，输出分类明细），并做 mapping 封闭分母三查（未归类 spec / stale 条目 / 逐文件和与总数分叉，均红）；实测分解落 `coverage/ratchet-ledger.json`（策略在 floor.json，测量在 coverage）。
+- `ratchet/ratchet.mjs` —— 棘轮检查：`corepack pnpm exec vitest run --reporter=json` 统计用例数，低于 floor 退出码 1（CI 强制执行 `pnpm ratchet`）；含 `ledger` 段时按类 fail-below-floor（任何层/域实测计数低于其 floor 即退出码 1，输出分类明细），并做 mapping 封闭分母三查（未归类 spec / stale 条目 / 逐文件和与总数分叉，均红）；实测分解落 `coverage/ratchet-ledger.json`（策略在 floor.json，测量在 coverage）。测量新鲜度：报告走本次运行唯一的临时路径，读毕即清——子进程失败/报告缺席/空文件/不可解析 JSON 一律显式失败，绝不复用上一次运行的统计。
 - `ratchet/ledger.spec.ts` —— 账本契约测试：floor 钉住战略值、mapping 与磁盘 spec 分母双向闭合、词形合法、内部相容（运行时计数判定归棘轮，本文件防账本本身被改坏）。
 - 测试命名纪律：`*.spec.ts`；测试框架 vitest 2.x；根 `vitest.config.ts` 收集 `tests/**/*.spec.ts` 与 `packages/**/*.spec.ts`。
 - `golden/` —— Golden P0 用例账本（`cases.json`，25 条：首批 20 条转写自

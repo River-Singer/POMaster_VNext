@@ -19,9 +19,22 @@
  * 实现注记：以 process.execPath 直连 vitest.mjs（shell:false + 参数数组），
  * 不经 cmd/PowerShell/corepack 解析——规避 Windows script-shell 差异、
  * PATH 截断与含空格路径的引号问题；CI（ubuntu）与本机行为一致。
+ *
+ * 测量新鲜度（审计 09-05 · F6）：报告写入每次运行唯一的临时路径
+ * vitest-report.<uuid>.json，读取后立即删除——上一次运行的报告在结构上不可达，
+ * 子进程失败/报告缺席/空文件/不可解析 JSON 一律显式失败（非 0 退出），绝不沿用
+ * 旧统计。vitest 退出码非 0 但报告可读时仍只判数量（正确性归 CI 独立执行的
+ * pnpm test，见 tests/README.md）；内部超时另属静态健壮性风险，本脚本不涉。
  */
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { randomUUID } from "node:crypto";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -30,7 +43,9 @@ const scriptDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(scriptDir, "..", "..");
 const floorPath = join(scriptDir, "floor.json");
 const outDir = join(repoRoot, "coverage");
-const outPath = join(outDir, "vitest-report.json");
+// 测量新鲜度（审计 F6）：报告路径每次运行唯一（uuid），上一次运行的报告结构性
+// 不可达；读毕即清，不留可被后续运行误消费的残留。
+const runOutPath = join(outDir, `vitest-report.${randomUUID()}.json`);
 const ledgerOutPath = join(outDir, "ratchet-ledger.json");
 
 function fail(message) {
@@ -76,7 +91,7 @@ const res = spawnSync(
     vitestEntry,
     "run",
     "--reporter=json",
-    `--outputFile=${outPath}`,
+    `--outputFile=${runOutPath}`,
     "--passWithNoTests",
   ],
   { cwd: repoRoot, encoding: "utf8" },
@@ -87,12 +102,18 @@ if (res.error) {
 }
 
 let report = null;
-if (existsSync(outPath)) {
+if (existsSync(runOutPath)) {
   try {
-    report = JSON.parse(readFileSync(outPath, "utf8"));
+    report = JSON.parse(readFileSync(runOutPath, "utf8"));
   } catch {
-    report = null;
+    report = null; // 空文件/截断/非 JSON：统一走下方显式失败
   }
+}
+// 读毕即清（无论解析成败）：路径本次运行唯一，残留不可能被后续运行消费。
+try {
+  rmSync(runOutPath, { force: true });
+} catch {
+  // 清理失败不影响判定。
 }
 if (report === null && typeof res.stdout === "string") {
   // 兜底：json reporter 的单行 JSON 在 stdout 末段（前面可能有测试自身的 console 输出）。
@@ -116,7 +137,8 @@ if (report === null) {
   } else {
     const tail = `${res.stdout ?? ""}\n${res.stderr ?? ""}`.slice(-2000);
     fail(
-      `vitest 报告缺失/不可解析。vitest 退出码=${res.status}\n--- 输出尾部 ---\n${tail}`,
+      `vitest 报告缺失/不可解析（ratchet 只消费本次运行产出，绝不沿用旧报告）。` +
+        `vitest 退出码=${res.status}\n--- 输出尾部 ---\n${tail}`,
     );
   }
 }
