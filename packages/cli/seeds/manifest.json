@@ -1,6 +1,6 @@
 {
   "schema": "pomaster.seed-manifest/1",
-  "batch": "B6E",
+  "batch": "B6F",
   "batches": {
     "B6B-1": [
       ".pomaster/specs/hard/frontend/01-development-checklist-protocol.md",
@@ -163,16 +163,24 @@
       ".pomaster/specs/evidence/typecheck-lint.md",
       ".pomaster/specs/evidence/unit-component-integration.md",
       ".pomaster/specs/evidence/visual-regression.md"
+    ],
+    "B6F": [
+      ".pomaster/specs/hard/stacks/antdesign/antdesign-ui-overlay.md",
+      ".pomaster/specs/hard/stacks/antdesign/index.md",
+      ".pomaster/specs/hard/stacks/geist/geist-design-system-overlay.md",
+      ".pomaster/specs/hard/stacks/geist/index.md",
+      ".pomaster/specs/hard/stacks/vue3/index.md",
+      ".pomaster/specs/hard/stacks/vue3/vue3-framework-overlay.md"
     ]
   },
-  "generated_by": "catalog/tools/seed_b6e_evidence.py",
+  "generated_by": "catalog/tools/seed_b6e_evidence.py; B6F 增量=09-05-overlay-asset-batch(manifest 手工增量登记,sha256 pin 由 seed-manifest.spec 双锚对账)",
   "denominator": {
-    "batch_scope": "B6e:Evidence Spec Kit 20 文件新著播种(index 1 + 19 份证据要求面;PRD §13 清单+§13.1 十七段结构;要求面非证据面——持要求不持判定,判卷四值词形闭包;gates 绑定=登记级注记;B6b/B6c/B6d 132 条在册——清单合并承载全量分母 152)",
-    "planted": 152,
-    "planted_total": 152,
-    "batch_new": 20
+    "batch_scope": "B6e:Evidence Spec Kit 20 文件新著播种(index 1 + 19 份证据要求面;PRD §13 清单+§13.1 十七段结构;要求面非证据面——持要求不持判定,判卷四值词形闭包;gates 绑定=登记级注记;B6b/B6c/B6d 132 条在册——清单合并承载全量分母 152);B6f:stacks 前端族 6 文件(3 组×2:vue3/antdesign/geist——09-05-overlay-asset-batch 实战栈首批;源=旧线 pomaster/components/frontend-hard-spec/assets/stacks/ 新著 vendor 件移植通路;frontmatter x-research-anchors=官方 URL+实抓日期+版本位研究锚,与 archetype 卡同构;css 体系 overlay 未建——css 键候选清单在册待 Owner 选型,缺席诚实 pending;B6b/B6c/B6d/B6e 152 条在册——清单合并承载全量分母 158)",
+    "planted": 158,
+    "planted_total": 158,
+    "batch_new": 6
   },
-  "seed_semantics": "seed-once-missing-only(缺席才写 / 在座零触碰 / marker-free;seeds.ts 单一实现;frontmatter 为 PRD §8.2 字段位减 id——no-governed-id 默认,播种 spec 是项目可编辑自由文件;B6c 起 BE 件含 vendor frontmatter 保留字段、stacks 件落 <slug> 子目录——SEEDABLE_STORE_DIRS 显式 slug 登记;B6d 起 baseline 件为新著纯正文(无 frontmatter——yaml 直接可解析/Owner 填写面零噪音;entry authoring=new,pin=资产自身字节指纹,装载器自指校验;UNKNOWN 起步,「待填写」词形零移植);B6e 起 specs/evidence 件同 authoring=new 纯正文通路——十七段结构照 PRD §13.1,要求面非证据面(持要求不持判定,判卷四值词形闭包),gates 绑定=登记级注记)",
+  "seed_semantics": "seed-once-missing-only(缺席才写 / 在座零触碰 / marker-free;seeds.ts 单一实现;frontmatter 为 PRD §8.2 字段位减 id——no-governed-id 默认,播种 spec 是项目可编辑自由文件;B6c 起 BE 件含 vendor frontmatter 保留字段、stacks 件落 <slug> 子目录——SEEDABLE_STORE_DIRS 显式 slug 登记;B6d 起 baseline 件为新著纯正文(无 frontmatter——yaml 直接可解析/Owner 填写面零噪音;entry authoring=new,pin=资产自身字节指纹,装载器自指校验;UNKNOWN 起步,「待填写」词形零移植);B6e 起 specs/evidence 件同 authoring=new 纯正文通路——十七段结构照 PRD §13.1,要求面非证据面(持要求不持判定,判卷四值词形闭包),gates 绑定=登记级注记);B6f 起 stacks 前端族(vue3/antdesign/geist)走移植件通路落地(源=旧线 frontend-hard-spec/assets/stacks/ 新著 vendor 件——统一 9 字段+vendor 保留字段 id→legacy_id/applies_to 并入+x-research-anchors 研究锚透传;installed=播种态全量在册,bound=选中态由 baseline/frontend/stack.yaml 显式选型派生,不作隐式基线——B6c 注记语义同源)",
   "authority_scope": "specs 面 mixed_required_and_advisory;baseline 面 project_baseline_template(UNKNOWN 起步模板,非规则面);specs/evidence 面 evidence_spec_requirements(要求面规范——持要求不持判定,判定值只在 Verification Result/Gate Result)",
   "entries": [
     {
@@ -2000,6 +2008,72 @@
         "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
         "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)",
         "裁定批 G 陈旧声明清洗(2026-09-05,D5=(a) 同类授权延伸——D2 预植落地后的内容演进,最小改写只动登记面):对象面词形头行旧词形「对象登记时机由项目运行时 applyTransaction 决定,init 播种不写 store 对象」→「对应对象由 init 步骤 4.7 预植 SPEC.* store 对象(PROPOSED 起步,裁定批 D D2);本文件为该对象 requirements 的播种底稿,对象演进归项目运行时 applyTransaction」(index 登记通路行同步改写);生成器模板+manifest 自指指纹 pin 同批重算,旧词形播种面零残留(测试钉)"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/stacks/antdesign/antdesign-ui-overlay.md",
+      "asset": "specs/hard/stacks/antdesign/antdesign-ui-overlay.md",
+      "seed_version": "B6F",
+      "lane": "frontend",
+      "source_path": "pomaster/components/frontend-hard-spec/assets/stacks/antdesign/antdesign-ui-overlay.md",
+      "source_sha256": "e70a6dad3fedbf8c4a182d92af9c9229e13cc368f880b3ccd96fe11ccdbdd7be",
+      "source_bytes": 2259,
+      "porting_notes": [
+        "B6f 移植注记：本 overlay 为前端族首批新著 vendor 件（09-05-overlay-asset-batch——源 pomaster/components/frontend-hard-spec/assets/stacks/，非既有旧包资产）；frontmatter x-research-anchors 承载研究锚（官方 URL+实抓日期+版本位）；随前端族 3 组全量播种（installed=true）；bound（选中态）由 baseline/frontend/stack.yaml 显式选型派生，不作隐式基线（B6c 注记语义同源）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/stacks/antdesign/index.md",
+      "asset": "specs/hard/stacks/antdesign/index.md",
+      "seed_version": "B6F",
+      "lane": "frontend",
+      "source_path": "pomaster/components/frontend-hard-spec/assets/stacks/antdesign/index.md",
+      "source_sha256": "261b20e682f7907813dbf46d10391022bf9212e62e6964c33d1d7cbf57128b45",
+      "source_bytes": 340,
+      "porting_notes": []
+    },
+    {
+      "target": ".pomaster/specs/hard/stacks/geist/geist-design-system-overlay.md",
+      "asset": "specs/hard/stacks/geist/geist-design-system-overlay.md",
+      "seed_version": "B6F",
+      "lane": "frontend",
+      "source_path": "pomaster/components/frontend-hard-spec/assets/stacks/geist/geist-design-system-overlay.md",
+      "source_sha256": "a9edc3d23708ccef6aeade6669dd638117f341052c47e0145347a5b51e085680",
+      "source_bytes": 1951,
+      "porting_notes": [
+        "B6f 移植注记：本 overlay 为前端族首批新著 vendor 件（09-05-overlay-asset-batch——源 pomaster/components/frontend-hard-spec/assets/stacks/，非既有旧包资产）；frontmatter x-research-anchors 承载研究锚（官方 URL+实抓日期+版本位）；随前端族 3 组全量播种（installed=true）；bound（选中态）由 baseline/frontend/stack.yaml 显式选型派生，不作隐式基线（B6c 注记语义同源）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/stacks/geist/index.md",
+      "asset": "specs/hard/stacks/geist/index.md",
+      "seed_version": "B6F",
+      "lane": "frontend",
+      "source_path": "pomaster/components/frontend-hard-spec/assets/stacks/geist/index.md",
+      "source_sha256": "af0097581fdcac786ff234938bed8237be3185b72ed64d9c19e1a43f7b7a79df",
+      "source_bytes": 320,
+      "porting_notes": []
+    },
+    {
+      "target": ".pomaster/specs/hard/stacks/vue3/index.md",
+      "asset": "specs/hard/stacks/vue3/index.md",
+      "seed_version": "B6F",
+      "lane": "frontend",
+      "source_path": "pomaster/components/frontend-hard-spec/assets/stacks/vue3/index.md",
+      "source_sha256": "1d17431560308ce46ea300f9200a7ebb007b5a52c21bbfeda2362516a3b5cbc8",
+      "source_bytes": 329,
+      "porting_notes": []
+    },
+    {
+      "target": ".pomaster/specs/hard/stacks/vue3/vue3-framework-overlay.md",
+      "asset": "specs/hard/stacks/vue3/vue3-framework-overlay.md",
+      "seed_version": "B6F",
+      "lane": "frontend",
+      "source_path": "pomaster/components/frontend-hard-spec/assets/stacks/vue3/vue3-framework-overlay.md",
+      "source_sha256": "15e7fd3808760bb330933f4a0479e4e95e3e07d0e24485d1b9b860019a708935",
+      "source_bytes": 3210,
+      "porting_notes": [
+        "B6f 移植注记：本 overlay 为前端族首批新著 vendor 件（09-05-overlay-asset-batch——源 pomaster/components/frontend-hard-spec/assets/stacks/，非既有旧包资产）；frontmatter x-research-anchors 承载研究锚（官方 URL+实抓日期+版本位）；随前端族 3 组全量播种（installed=true）；bound（选中态）由 baseline/frontend/stack.yaml 显式选型派生，不作隐式基线（B6c 注记语义同源）"
       ]
     }
   ]

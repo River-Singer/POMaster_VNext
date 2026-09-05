@@ -7,12 +7,14 @@
 #
 # 数据源：任务 09-02-vnext-prd-v06-governed-substrate 的 research/ 四份核实报告
 # （external-design-references / frontend-state-references / backend-references /
-# runtime-references）的站点穷举——每条 site 必带 verified 实抓日期 + source_research
+# runtime-references）的站点穷举 + 任务 09-05-overlay-asset-batch 的 research/ 两份
+# 核实报告（vue3-official-docs / css-system-anchors——overlay 资产批研究先行）——
+# 每条 site 必带 verified 实抓日期 + source_research
 # 归属；页级 URL 收在 pages（双向钉守卫：
 # tests/integration/external-sites-index.spec.ts——index 里的 URL 必须真实出现在
 # research 文件中、research 文件里的 URL 必须被 index 覆盖，防手补假条目）。
 #
-# 时效纪律：所有 verified 均为单时点实抓（2026-09-02/03），页面内容可能随后变动；
+# 时效纪律：所有 verified 均为单时点实抓（2026-09-02/03/05），页面内容可能随后变动；
 # 后续取用应重新核实并更新 verified 日期，不沿用陈旧锚冒充新事实。
 # =============================================================================
 
@@ -400,3 +402,70 @@ sites:
     used_for: DB Schema 漂移检测锚（期望态 vs 实际态比对/diff 与 diff-changelog 命令/Drift Report 商业版边界/sitemap 分册结构证据——Flyway 侧未核实勿引用）
     verified: 2026-09-03
     source_research: runtime-references.md
+
+  # ── 前端框架/UI 体系参照（09-05-overlay-asset-batch research，2026-09-05 实抓） ──
+  - name: Vue.js
+    url: https://vuejs.org/guide/essentials/component-basics.html
+    pages:
+      - https://vuejs.org/guide/scaling-up/sfc.html
+      - https://vuejs.org/api/sfc-spec.html
+      - https://vuejs.org/api/sfc-css-features.html
+      - https://vuejs.org/guide/essentials/reactivity-fundamentals.html
+      - https://vuejs.org/guide/extras/reactivity-in-depth.html
+      - https://vuejs.org/guide/reusability/composables.html
+      - https://vuejs.org/guide/essentials/lifecycle.html
+      - https://vuejs.org/guide/scaling-up/state-management.html
+      - https://vuejs.org/guide/scaling-up/routing.html
+      - https://vuejs.org/guide/typescript/overview.html
+      - https://vuejs.org/style-guide/
+      - https://vuejs.org/guide/best-practices/performance.html
+      - https://v2.vuejs.org/lts/
+    domains: [frontend]
+    themes: [component-model, sfc-syntax, scoped-css-features, reactivity-system, composables-conventions, lifecycle-hooks, official-state-routing, typescript-support, style-guide-priority, performance-optimizations, vue2-eol]
+    used_for: vue3 overlay 锚（vue 3.5.42 时点滚动站）——组件模型/SFC 语法规范（lang 预处理器官方口径）/scoped CSS+CSS Modules+v-bind() 特性页/ref-reactive 语义（reactive proxy 局限官方小节；reactivity-in-depth 正路径在 guide/extras/）/组合式函数约定（命名/入参/返回值/副作用/使用限制）/生命周期/Pinia 官方推荐原文（Vuex maintenance mode）/Vue Router 官方推荐/vue-tsc+@vue/tsconfig 口径/风格指南 A·B·C 三档/性能指南（page-load 与 update optimizations 词形）/Vue 2 EOL 原文
+    verified: 2026-09-05
+    source_research: vue3-official-docs.md
+  - name: Pinia
+    url: https://pinia.vuejs.org/
+    domains: [frontend]
+    themes: [client-state, vue-official-store, devtools-support]
+    used_for: Vue 官方 store 站点锚（Type Safe / Extensible / Modular by design tagline + devtools 支持；cookbook 侧栏 migration-vuex / HMR / Testing 入口在册）——vue3 overlay 状态轴锚；版本位 pinia 4.0.3（npm registry 单源，GitHub releases/latest 因 monorepo 多包标签不作包版本证据）
+    verified: 2026-09-05
+    source_research: vue3-official-docs.md
+  - name: Vue Router
+    url: https://router.vuejs.org/
+    domains: [frontend]
+    themes: [spa-routing, vue-official-router]
+    used_for: Vue 官方 router 站点锚（"The official Router for Vue.js"）——vue3 overlay 路由轴锚；版本位 vue-router 5.3.1（npm registry + GitHub tag 双源一致）
+    verified: 2026-09-05
+    source_research: vue3-official-docs.md
+  - name: Ant Design Vue
+    url: https://antdv.com/docs/vue/introduce
+    pages:
+      - https://antdv.com/docs/vue/customize-theme
+      - https://antdv.com/docs/vue/migration-v4
+    domains: [design, frontend]
+    themes: [component-library, cssinjs-theming, design-token, preset-algorithm, v4-migration-entry]
+    used_for: antdesign overlay 锚（4.2.6 双源一致；JS 渲染站点经 chrome-devtools 实载取证）——全局重置 reset.css / unplugin-vue-components+AntDesignVueResolver 按需（importStyle:false 旁注 css in js）/v4 主题 = CSS-in-JS 官方原文（ConfigProvider theme：Design Token Seed→Map→Alias 三层 + default/dark/compact 三算法 + 组件级 Component Token + useToken；v3 less 降级静态消费 = defaultAlgorithm(defaultSeed)+less-loader modifyVars）/migration-v4 仅入口存活确认（正文未展开抓取，引用迁移细节前须补抓）；React 版 Ant Design（ant.design v6.6.2，既有锚）仅作跨栈对照
+    verified: 2026-09-05
+    source_research: css-system-anchors.md
+  - name: Tailwind CSS
+    url: https://tailwindcss.com/docs/installation
+    pages:
+      - https://tailwindcss.com/docs/installation/using-vite
+    domains: [design, frontend]
+    themes: [utility-first, vite-integration]
+    used_for: css 键候选锚（tailwindcss 4.3.3 npm 实抓；官方文档页未展示小版本号，版本位以 npm registry 为准）——4.x 线官方 Vite 集成为 @tailwindcss/vite 插件；css 体系 overlay 本批未建（选型权在 Owner，候选清单在册待选型）
+    verified: 2026-09-05
+    source_research: css-system-anchors.md
+  - name: W3C CSS
+    url: https://www.w3.org/Style/CSS/
+    pages:
+      - https://www.w3.org/TR/CSS/
+      - https://www.w3.org/TR/css/
+      - https://www.w3.org/TR/css-variables-1/
+    domains: [standards, frontend]
+    themes: [css-specs-portal, css-snapshot-2026, css-custom-properties]
+    used_for: CSS 规范伞锚（Style/CSS 官方门户；TR/CSS 301 → TR/css = CSS Snapshot 2026 规范集快照；css-variables-1 = 原生 CSS 自定义属性规范）——css 键候选清单的规范层锚
+    verified: 2026-09-05
+    source_research: css-system-anchors.md

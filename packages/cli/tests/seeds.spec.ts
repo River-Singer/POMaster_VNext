@@ -11,8 +11,8 @@
  * SEEDABLE_STORE_DIRS 12 播种目录 allowlist 禁落盘——控制平面 kernel 登记目录同样
  * 拒绝 + 路径词形卫生 fail-closed throw + allowlist ⊆ kernel 登记派生集合对账）、
  * fresh 临时工程端到端（runInit 注入清单：init 后种子在位 → 重跑零变化 → 手改种子
- * 文件后重跑仍零变化）、B6e 清单现状 pin（缺省装载 152 份播种件 = FE 46 + BE 33 +
- * stacks 28 + baseline 25 + evidence 20，B6b 两批 + B6C + B6D + B6E 五批合并清单；
+ * 文件后重跑仍零变化）、B6f 清单现状 pin（缺省装载 158 份播种件 = FE 46 + BE 33 +
+ * stacks 34 + baseline 25 + evidence 20，B6b 两批 + B6C + B6D + B6E + B6F 六批合并清单；
  * stacks slug 三面单源
  * 对账 + 未登记 slug 守卫——B6c stacks 子目录 ADR 候选①显式叶登记；baseline UNKNOWN
  * 起步端到端——init 后在位可编辑）。
@@ -69,19 +69,29 @@ async function seed(entries: readonly SeedEntry[]): Promise<InitFileReport[]> {
   return files;
 }
 
-// vendor stacks 分母侧目录（旧包 pomaster/ 平级只读依赖；fresh clone/CI 无此
-// 兄弟目录 → vendor 侧断言显式 skip，manifest 侧单源断言不受影响——宿主缺席
-// 诚实 not_run 先例）。
-const VENDOR_STACKS_DIR = join(
+// vendor stacks 分母侧目录（旧包 pomaster/ 平级只读依赖；B6c 后端族 = backend-hard-
+// spec、B6f 前端族 = frontend-hard-spec；fresh clone/CI 无此兄弟目录 → vendor 侧断言
+// 显式 skip，manifest 侧单源断言不受影响——宿主缺席诚实 not_run 先例）。
+const VENDOR_REPO_COMPONENTS = join(
   fileURLToPath(new URL("../../../", import.meta.url)),
   "..",
   "pomaster",
   "components",
+);
+const VENDOR_STACKS_DIR = join(
+  VENDOR_REPO_COMPONENTS,
   "backend-hard-spec",
   "assets",
   "stacks",
 );
-const VENDOR_STACKS_PRESENT = existsSync(VENDOR_STACKS_DIR);
+const VENDOR_FSTACKS_DIR = join(
+  VENDOR_REPO_COMPONENTS,
+  "frontend-hard-spec",
+  "assets",
+  "stacks",
+);
+const VENDOR_STACKS_PRESENT =
+  existsSync(VENDOR_STACKS_DIR) && existsSync(VENDOR_FSTACKS_DIR);
 
 describe("seedProjectAssets 引擎三语义（B6a 红线三钉）", () => {
   it("缺席才写：种子缺席 → 原样写入（字节逐等）+ action=seeded；嵌套父目录自动创建", async () => {
@@ -192,12 +202,13 @@ describe("seedProjectAssets 目录守卫（R4 红线 + B6b-I 播种 allowlist �
         .filter((slug): slug is string => slug !== undefined),
     );
     expect(fromManifest).toEqual(new Set(STACK_SEED_SLUGS));
-    // vendor stacks 分母侧（播种源目录——profiles/ 除外，slug 目录恰 14 个）。
-    const vendorStacks = VENDOR_STACKS_DIR;
-    const slugs = readdirSync(vendorStacks, { withFileTypes: true })
-      .filter((d) => d.isDirectory() && d.name !== "profiles")
-      .map((d) => d.name)
-      .sort();
+    // vendor stacks 分母侧（播种源目录——后端族 B6c 14 slug + 前端族 B6f 3 slug，
+    // profiles/ 除外，恰 17 个）。
+    const vendorSlugs = (dir: string) =>
+      readdirSync(dir, { withFileTypes: true })
+        .filter((d) => d.isDirectory() && d.name !== "profiles")
+        .map((d) => d.name);
+    const slugs = [...vendorSlugs(VENDOR_STACKS_DIR), ...vendorSlugs(VENDOR_FSTACKS_DIR)].sort();
     expect(slugs).toEqual([...STACK_SEED_SLUGS].sort());
   });
 
@@ -319,9 +330,9 @@ describe("runInit 步骤 4.6 播种端到端（fresh 临时工程 + 注入清单
     ).toBe("preserved");
   });
 
-  it("B6e 清单现状 pin：缺省装载 152 份播种件（FE 46 + BE 33 + stacks 28 + baseline 25 + evidence 20；五批合并全量分母）——目标全落播种 allowlist 面且分面形态正确", () => {
+  it("B6f 清单现状 pin：缺省装载 158 份播种件（FE 46 + BE 33 + stacks 34 + baseline 25 + evidence 20；六批合并全量分母）——目标全落播种 allowlist 面且分面形态正确", () => {
     const entries = loadSeedManifestEntries();
-    expect(entries).toHaveLength(152);
+    expect(entries).toHaveLength(158);
     const fe = entries.filter((e) => e.path.startsWith(".pomaster/specs/hard/frontend/"));
     const be = entries.filter((e) => e.path.startsWith(".pomaster/specs/hard/backend/"));
     const stacks = entries.filter((e) => e.path.startsWith(".pomaster/specs/hard/stacks/"));
@@ -329,7 +340,7 @@ describe("runInit 步骤 4.6 播种端到端（fresh 临时工程 + 注入清单
     const evidence = entries.filter((e) => e.path.startsWith(".pomaster/specs/evidence/"));
     expect(fe).toHaveLength(46);
     expect(be).toHaveLength(33);
-    expect(stacks).toHaveLength(28);
+    expect(stacks).toHaveLength(34);
     expect(baseline).toHaveLength(25);
     expect(evidence).toHaveLength(20);
     for (const entry of entries) {
@@ -378,9 +389,9 @@ describe("runInit 步骤 4.6 播种端到端（fresh 临时工程 + 注入清单
       expect(be.some((e) => e.path.startsWith(prefix)), prefix).toBe(true);
     }
     expect(be.some((e) => e.path.endsWith("/index.md")), "BE index.md 在册").toBe(true);
-    // stacks：14 slug × (index + overlay) 恰好划分 28。
-    expect(stacks.filter((e) => e.path.endsWith("/index.md"))).toHaveLength(14);
-    expect(stacks.filter((e) => e.path.endsWith("-overlay.md"))).toHaveLength(14);
+    // stacks：17 slug × (index + overlay) 恰好划分 34（B6c 后端 14 + B6f 前端 3）。
+    expect(stacks.filter((e) => e.path.endsWith("/index.md"))).toHaveLength(17);
+    expect(stacks.filter((e) => e.path.endsWith("-overlay.md"))).toHaveLength(17);
     // baseline：分区计数 1+7+8+5+4 = 25（B6d 分母钉；逐文件集合钉在 baseline-seeds.spec）。
     expect(baseline.some((e) => e.path === ".pomaster/baseline/manifest.yaml")).toBe(true);
     for (const [lane, count] of [
@@ -396,17 +407,20 @@ describe("runInit 步骤 4.6 播种端到端（fresh 临时工程 + 注入清单
     }
   });
 
-  it("缺省（不注入）init：152 份播种件在位（seeded 报告 + 幂等重跑全 preserved）", async () => {
+  it("缺省（不注入）init：158 份播种件在位（seeded 报告 + 幂等重跑全 preserved）", async () => {
     const outcome = await runInit(dir);
     expect(outcome.ok).toBe(true);
     const seeded = outcome.result.files.filter((f) => f.action === "seeded");
-    expect(seeded).toHaveLength(152);
+    expect(seeded).toHaveLength(158);
     expect(existsSync(join(dir, ".pomaster", "specs", "hard", "frontend", "01-development-checklist-protocol.md"))).toBe(true);
     expect(existsSync(join(dir, ".pomaster", "specs", "hard", "frontend", "index.md"))).toBe(true);
     expect(existsSync(join(dir, ".pomaster", "specs", "hard", "backend", "22-idempotency-protocol.md"))).toBe(true);
     expect(existsSync(join(dir, ".pomaster", "specs", "hard", "backend", "index.md"))).toBe(true);
     expect(existsSync(join(dir, ".pomaster", "specs", "hard", "stacks", "redis", "redis-cache-overlay.md"))).toBe(true);
     expect(existsSync(join(dir, ".pomaster", "specs", "hard", "stacks", "java", "index.md"))).toBe(true);
+    // B6f 前端族抽查：vue3 index/overlay 落位。
+    expect(existsSync(join(dir, ".pomaster", "specs", "hard", "stacks", "vue3", "index.md"))).toBe(true);
+    expect(existsSync(join(dir, ".pomaster", "specs", "hard", "stacks", "vue3", "vue3-framework-overlay.md"))).toBe(true);
     expect(existsSync(join(dir, ".pomaster", "baseline", "manifest.yaml"))).toBe(true);
     expect(existsSync(join(dir, ".pomaster", "baseline", "frontend", "stack.yaml"))).toBe(true);
     expect(existsSync(join(dir, ".pomaster", "baseline", "platform", "delivery.md"))).toBe(true);
@@ -428,7 +442,7 @@ describe("runInit 步骤 4.6 播种端到端（fresh 临时工程 + 注入清单
     const second = await runInit(dir);
     expect(second.ok).toBe(true);
     expect(second.result.change).toBe("NO_CHANGE");
-    expect(second.result.files.filter((f) => f.action === "preserved")).toHaveLength(152);
+    expect(second.result.files.filter((f) => f.action === "preserved")).toHaveLength(158);
   });
 
   it("B6d baseline UNKNOWN 起步端到端：init 后在位可编辑——Owner 回填选型后重跑 init 不覆盖、零告警（可编辑性铁律在 baseline 面成立）", async () => {

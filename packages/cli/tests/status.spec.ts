@@ -222,19 +222,19 @@ describe("status 跨轴与词表纪律（显式呈现，不静默）", () => {
 // ============================================================
 
 describe("status 播种分面计数呈现（B6e）", () => {
-  it("init 后 seeded_assets = 五分面清单分母（46/33/28/20/25）+ human 行呈现", async () => {
+  it("init 后 seeded_assets = 五分面清单分母（46/33/34/20/25）+ human 行呈现", async () => {
     await runInit(dir);
     const outcome = await runStatus(dir);
     expect(outcome.ok).toBe(true);
     expect(outcome.result.seeded_assets).toEqual({
       specs_hard_frontend: 46,
       specs_hard_backend: 33,
-      specs_hard_stacks: 28,
+      specs_hard_stacks: 34,
       specs_evidence: 20,
       baseline: 25,
     });
     expect(outcome.human.join("\n")).toContain(
-      "seeded assets: frontend 46 / backend 33 / stacks 28 / evidence 20 / baseline 25",
+      "seeded assets: frontend 46 / backend 33 / stacks 34 / evidence 20 / baseline 25",
     );
   });
 

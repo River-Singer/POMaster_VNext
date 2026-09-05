@@ -1,22 +1,24 @@
 /**
- * external-sites-index.spec.ts —— 外部参照站点索引守卫（P-v06 收尾批次）。
+ * external-sites-index.spec.ts —— 外部参照站点索引守卫（P-v06 收尾批次；B6f 批扩展
+ * 09-05-overlay-asset-batch 两份 research）。
  *
  * 守卫面（双向钉，防手补假条目）：
  * - schema 形状（document_type/schema_version/usage_note/sites 必备）；
  * - 每条 site 必备七字段（name/url/domains/themes/used_for/verified/source_research）
- *   + verified 日期闭包（2026-09-02 / 2026-09-03 两日实抓锚）+ source_research
- *   闭包（任务 research 四份核实报告之一，在位时实存对账）；
+ *   + verified 日期闭包（2026-09-02 / 2026-09-03 / 2026-09-05 三日实抓锚——逐批任务
+ *   research 的 Date 头逐字对齐）+ source_research 闭包（任务 research 六份核实报告
+ *   之一，在位时实存对账）；
  * - URL 词形卫生（https:// 开头、无绝对盘符、无 file://、无模板占位符——
  *   x-path-ethics 同源纪律）；
  * - 双向钉闭包：index 全部 URL（url + pages）必须真实出现在至少一份 research
- *   文件中（反向——防手编假条目）；research 四文件提取的全部 URL（去 query/锚、
+ *   文件中（反向——防手编假条目）；research 六文件提取的全部 URL（去 query/锚、
  *   截断 CJK 粘带、滤模板占位符）必须被 index 某条 URL 前缀覆盖（正向——防漏收）。
  *   覆盖判据 = 精确相等或以「URL/」为界前缀命中（站点主入口统辖其页级 URL）。
  *
- * 环境依赖：research 目录在 .trellis 任务空间（POMaster_VNext 仓库外）。
- * 缺席 = skip 语义放行（concept-ledger.spec.ts 读旧体系账本同款先例——CI 快
- * 照自包含，本地/消费方全量环境实钉）。schema/词形/唯一性守卫不依赖外部目录，
- * 任何环境恒执行。
+ * 环境依赖：research 目录在 .trellis 任务空间（POMaster_VNext 仓库外，逐任务目录
+ * 登记——RESEARCH_SOURCES）。缺席 = skip 语义放行（concept-ledger.spec.ts 读旧体系
+ * 账本同款先例——CI 快照自包含，本地/消费方全量环境实钉；任务归档后目录迁移同理
+ * 放行，登记条目本体不受影响）。schema/词形/唯一性守卫不依赖外部目录，任何环境恒执行。
  */
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -26,29 +28,34 @@ import yaml from "js-yaml";
 
 const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
 const indexPath = join(repoRoot, "references", "external-sites-index.yaml");
-const researchDir = join(
-  repoRoot,
-  "..",
-  ".trellis",
-  "tasks",
-  "09-02-vnext-prd-v06-governed-substrate",
-  "research",
-);
+const tasksRoot = join(repoRoot, "..", ".trellis", "tasks");
 
-const RESEARCH_FILES = [
-  "external-design-references.md",
-  "frontend-state-references.md",
-  "backend-references.md",
-  "runtime-references.md",
+/** 逐任务 research 登记（目录 + 报告文件名单——source_research 闭包与双向钉分母）。 */
+const RESEARCH_SOURCES = [
+  {
+    dir: join(tasksRoot, "09-02-vnext-prd-v06-governed-substrate", "research"),
+    files: [
+      "external-design-references.md",
+      "frontend-state-references.md",
+      "backend-references.md",
+      "runtime-references.md",
+    ],
+  },
+  {
+    dir: join(tasksRoot, "09-05-overlay-asset-batch", "research"),
+    files: ["vue3-official-docs.md", "css-system-anchors.md"],
+  },
 ] as const;
+
+const RESEARCH_FILES = RESEARCH_SOURCES.flatMap((source) => source.files);
 
 /** js-yaml 时间戳类型归一：裸 YYYY-MM-DD 被解析成 Date → ISO yyyy-mm-dd 词形；string 原样。 */
 function normalizeVerified(value: string | Date): string {
   return value instanceof Date ? value.toISOString().slice(0, 10) : value;
 }
 
-/** 索引本体闭包：verified 只认两日实抓锚（报告 Date 头逐字对齐）。 */
-const VERIFIED_DATE_CLOSURE = new Set(["2026-09-02", "2026-09-03"]);
+/** 索引本体闭包：verified 只认三日实抓锚（逐批报告 Date 头逐字对齐）。 */
+const VERIFIED_DATE_CLOSURE = new Set(["2026-09-02", "2026-09-03", "2026-09-05"]);
 
 interface SiteEntry {
   readonly name: string;
@@ -112,8 +119,19 @@ function indexUrls(sites: readonly SiteEntry[]): string[] {
   return urls;
 }
 
-function researchFileTexts(): string[] {
-  return RESEARCH_FILES.map((file) => readFileSync(join(researchDir, file), "utf8"));
+/**
+ * 在位 research 报告文本（file → text；缺席任务目录 = 该源零贡献——skip 语义放行，
+ * 任务归档后目录迁移同理放行，登记条目本体不受影响）。
+ */
+function presentResearchTexts(): Map<string, string> {
+  const texts = new Map<string, string>();
+  for (const source of RESEARCH_SOURCES) {
+    if (!existsSync(source.dir)) continue;
+    for (const file of source.files) {
+      texts.set(file, readFileSync(join(source.dir, file), "utf8"));
+    }
+  }
+  return texts;
 }
 
 describe("外部参照站点索引守卫（references/external-sites-index.yaml）", () => {
@@ -167,18 +185,19 @@ describe("外部参照站点索引守卫（references/external-sites-index.yaml�
     }
   });
 
-  it("source_research 闭包（四份任务核实报告之一；research 目录在位时实存对账）", () => {
+  it("source_research 闭包（六份任务核实报告之一；research 目录在位时实存对账）", () => {
     const closed = new Set<string>(RESEARCH_FILES);
     for (const site of sites) {
       expect(
         closed.has(site.source_research),
-        `${site.name} source_research 非四份报告之一：${site.source_research}`,
+        `${site.name} source_research 非登记报告之一：${site.source_research}`,
       ).toBe(true);
     }
-    if (existsSync(researchDir)) {
-      for (const file of RESEARCH_FILES) {
+    for (const source of RESEARCH_SOURCES) {
+      if (!existsSync(source.dir)) continue;
+      for (const file of source.files) {
         expect(
-          existsSync(join(researchDir, file)),
+          existsSync(join(source.dir, file)),
           `research 文件缺席：${file}`,
         ).toBe(true);
       }
@@ -195,33 +214,38 @@ describe("外部参照站点索引守卫（references/external-sites-index.yaml�
     }
   });
 
-  it("双向钉·反向：index 全部 URL 都真实出现在至少一份 research 文件（防手补假条目）", () => {
-    if (!existsSync(researchDir)) return; // skip 语义放行（环境无 .trellis 任务空间）
-    const texts = researchFileTexts();
-    for (const url of indexUrls(sites)) {
-      const hit = texts.some((text) => text.includes(url));
-      expect(
-        hit,
-        `index URL 未见于任何 research 文件（手补假条目嫌疑）：${url}`,
-      ).toBe(true);
+  it("双向钉·反向：index URL 都真实出现在 research 报告中（防手补假条目；site 的 source_research 报告缺席 = 该 site skip 放行——归档安全）", () => {
+    const textsByName = presentResearchTexts();
+    const texts = [...textsByName.values()];
+    for (const site of sites) {
+      if (!textsByName.has(site.source_research)) continue; // 该 site 的 research 报告缺席（任务归档）——放行
+      for (const url of [site.url, ...(site.pages ?? [])]) {
+        const hit = texts.some((text) => text.includes(url));
+        expect(
+          hit,
+          `index URL 未见于任何在位 research 报告——手补假条目嫌疑：${url}`,
+        ).toBe(true);
+      }
     }
   });
 
-  it("双向钉·正向：research 四文件全部 URL 都被 index 覆盖（精确或站点前缀——防漏收）", () => {
-    if (!existsSync(researchDir)) return; // skip 语义放行（环境无 .trellis 任务空间）
+  it("双向钉·正向：research 六文件全部 URL 都被 index 覆盖（精确或站点前缀——防漏收）", () => {
     const coverSet = indexUrls(sites);
     const uncovered: string[] = [];
-    for (const file of RESEARCH_FILES) {
-      const text = readFileSync(join(researchDir, file), "utf8");
-      const tokens = text.match(URL_TOKEN_PATTERN) ?? [];
-      const normalized = new Set<string>();
-      for (const token of tokens) {
-        const url = normalizeUrlToken(token);
-        if (url !== null) normalized.add(url);
-      }
-      for (const url of normalized) {
-        if (!coverSet.some((cover) => covers(cover, url))) {
-          uncovered.push(`${file}: ${url}`);
+    for (const source of RESEARCH_SOURCES) {
+      if (!existsSync(source.dir)) continue; // 缺席任务目录 = 该源零贡献（skip 语义放行）
+      for (const file of source.files) {
+        const text = readFileSync(join(source.dir, file), "utf8");
+        const tokens = text.match(URL_TOKEN_PATTERN) ?? [];
+        const normalized = new Set<string>();
+        for (const token of tokens) {
+          const url = normalizeUrlToken(token);
+          if (url !== null) normalized.add(url);
+        }
+        for (const url of normalized) {
+          if (!coverSet.some((cover) => covers(cover, url))) {
+            uncovered.push(`${file}: ${url}`);
+          }
         }
       }
     }

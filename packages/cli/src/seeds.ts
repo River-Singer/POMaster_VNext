@@ -47,13 +47,17 @@ import type { InitFileReport } from "./init.js";
 import { ensureParentDir, toPosix } from "./store-layout.js";
 
 /**
- * 播种目录 allowlist（B6b-I 守卫收窄；B6c stacks 子目录扩展）：kernel paths.ts 12 播种
- * 登记目录的 POSIX 树内词形（相对 `.pomaster/`）+ stacks 播种叶目录（14 slug——B6c
- * stacks 子目录守卫 ADR，候选 ①显式叶登记：精确匹配机制零改动，allowlist 保持封闭
- * 集合；未登记 slug 一律拒绝，新 slug 属内容演进批次）。控制平面目录
+ * 播种目录 allowlist（B6b-I 守卫收窄；B6c stacks 子目录扩展；B6f 前端族扩展）：kernel
+ * paths.ts 12 播种登记目录的 POSIX 树内词形（相对 `.pomaster/`）+ stacks 播种叶目录
+ * （17 slug——B6c stacks 子目录守卫 ADR，候选 ①显式叶登记：精确匹配机制零改动，
+ * allowlist 保持封闭集合；未登记 slug 一律拒绝，新 slug 属内容演进批次。B6f 起新增
+ * 前端族 3 slug（vue3/antdesign/geist——09-05-overlay-asset-batch 实战栈首批；css 体系
+ * overlay 未建：css 键候选清单在册待 Owner 选型，缺席诚实 pending）。控制平面目录
  * （state/truth/evidence/runtime/sources/…）不可播种。
  */
 export const STACK_SEED_SLUGS: readonly string[] = [
+  "antdesign",
+  "geist",
   "java",
   "jpa",
   "kubernetes-ingress",
@@ -68,6 +72,7 @@ export const STACK_SEED_SLUGS: readonly string[] = [
   "spring-mvc",
   "spring-webflux",
   "tomcat",
+  "vue3",
 ];
 
 export const SEEDABLE_STORE_DIRS: readonly string[] = [
