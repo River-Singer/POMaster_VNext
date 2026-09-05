@@ -24,7 +24,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "no
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { applyTransaction, createStore } from "@pomaster/kernel";
+import { applyTransaction, createStore, issuePermit, sha256OfCanonical } from "@pomaster/kernel";
 import { runInit, runContextCompile } from "@pomaster/cli";
 
 let root: string;
@@ -302,5 +302,106 @@ describe("VERIFICATION 分区（R3/D8 词形 + R1 联动）", () => {
     expect(outcome.result.markdown).toContain("## ADVISORY KNOWLEDGE");
     expect(outcome.result.markdown).toContain("## REUSE / CATALOG");
     expect(outcome.result.markdown).toContain("## VERIFICATION");
+  });
+});
+
+// ============================================================
+// 审计 F2 回归（R-G 修复批 2026-09-06）：任务正文漂移必须检出
+// 判据锚（cli/src/context.ts 头注 ADR + kernel scopeContentRowsOf 契约注记）：
+// 指纹绑定范围内对象正文摘要（rev/body_sha256）后，正文演进必判 stale_grounding。
+// ============================================================
+
+const F2_ACTOR = { actorType: "human", actor: "owner", selfAttested: false } as const;
+
+/** 登记/修改 TASK.T0087 的 intent（maintain「修改任务意图」的等价事务——rev 递增、body_sha256 变）。 */
+async function seedTaskIntent(intent: string): Promise<void> {
+  const store = await createStore(root);
+  await applyTransaction(store, {
+    ops: [
+      {
+        op: "upsert_object",
+        envelope: {
+          id: "TASK.T0087",
+          kind: "task_object",
+          axisProfile: "task_default",
+          axes: { lifecycle: "CURRENT", confidence: "PROVISIONAL", evidence: "IMPLEMENTED", change: "STABLE" },
+          titleZh: "审计复现任务",
+          authority: { owner: "BUSINESS_OWNER", delegates: [] },
+          origin: "natural",
+          payload: {
+            intent,
+            class_scan_result: {
+              scope: "src/shared/**",
+              hits: 0,
+              fixed_count: 0,
+              regression_case_ref: "GRN-F2",
+            },
+          },
+        } as never,
+      },
+    ],
+  });
+}
+
+/** pre-dev「签发带任务归属的许可」等价：change_ref=TASK.T0087、scope 含任务本体。 */
+async function issueTaskPermit(): Promise<void> {
+  const store = await createStore(root);
+  await issuePermit(store, {
+    subjectIds: ["TASK.T0087"] as never,
+    requestedBy: F2_ACTOR,
+    changeRef: "TASK.T0087",
+  });
+}
+
+describe("审计 F2 回归：任务正文漂移检出（R-G 修复批）", () => {
+  it("compile 存 manifest → 修改同任务 intent → --check 返回 stale_grounding（不再 fresh）；重编译恢复 fresh", async () => {
+    await initStore();
+    await seedTaskIntent("初始意图");
+    await issueTaskPermit();
+    // 显式 context compile 保存 manifest（审计复现步骤 1）。
+    await runContextCompile(root, "frontend", undefined, { change: "TASK.T0087" });
+    // maintain 修改同一任务 intent（审计复现步骤 2：正文 rev=1→2、store seq +1、body_sha256 已变）。
+    await seedTaskIntent("变更后意图");
+    // 修复判据（审计复现步骤 3）：--check 判 stale，不再是 fresh。
+    const check = await runContextCompile(root, "frontend", undefined, { change: "TASK.T0087" }, { check: true });
+    expect(check.ok).toBe(true);
+    expect(check.result.stale_check.state).toBe("stale_grounding");
+    expect(check.result.stale_check.detail).toContain("STALE_GROUNDING");
+    // stale→recompile 闭环：重编译覆盖后恢复 fresh。
+    await runContextCompile(root, "frontend", undefined, { change: "TASK.T0087" });
+    const refreshed = await runContextCompile(root, "frontend", undefined, { change: "TASK.T0087" }, { check: true });
+    expect(refreshed.result.stale_check.state).toBe("fresh");
+  });
+
+  it("旧版编译器指纹（修复前算法值，无正文绑定）→ --check 判 stale（一次性升级漂移检出，可接受语义）", async () => {
+    await initStore();
+    await seedTaskIntent("初始意图");
+    await issueTaskPermit();
+    const outcome = await runContextCompile(root, "frontend", undefined, { change: "TASK.T0087" });
+    expect(outcome.ok).toBe(true);
+    // 按修复前算法重算指纹（旧输入 = {role, taskRef, denominatorRefs: [], manifest}——
+    // 无 scopeContent 绑定；manifest 逐字段取自本次编译，修复不改变 manifest 词形——
+    // 旧盲区正是 ref+reason 不变时指纹不变）。
+    const legacyFingerprint = sha256OfCanonical({
+      role: "frontend",
+      taskRef: "TASK.T0087",
+      denominatorRefs: [],
+      manifest: {
+        mustEntries: outcome.result.manifest.must_entries,
+        advisoryEntries: outcome.result.manifest.advisory_entries,
+        catalogEntries: outcome.result.manifest.catalog_entries,
+        knowledgeEntries: outcome.result.manifest.knowledge_entries,
+        lazyTools: outcome.result.manifest.lazy_tools,
+      },
+    });
+    expect(legacyFingerprint).not.toBe(outcome.result.inputs_fingerprint);
+    // 现盘 manifest 回写为旧算法指纹（模拟升级前落盘的旧 manifest）。
+    const path = manifestPath("TASK.T0087.context.json");
+    const doc = JSON.parse(readFileSync(path, "utf8")) as ContextManifestDoc;
+    writeFileSync(path, `${JSON.stringify({ ...doc, inputs_fingerprint: legacyFingerprint }, null, 2)}\n`);
+    // 旧指纹与新值域不可区分 → 按漂移检出处置是唯一诚实语义（一次性升级漂移，
+    // 重编译覆盖后恢复 fresh——头注 ADR 注记）。
+    const check = await runContextCompile(root, "frontend", undefined, { change: "TASK.T0087" }, { check: true });
+    expect(check.result.stale_check.state).toBe("stale_grounding");
   });
 });

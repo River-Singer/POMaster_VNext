@@ -986,7 +986,12 @@ export interface Projection {
   };
   /** catalog 消费出处与 lock 校验呈现（P14）。 */
   readonly catalogSource: CatalogProjectionSource;
-  /** 投影输入指纹——同输入重放字节稳定（D24：事务/store 自动维护，短路重跑依据）。 */
+  /**
+   * 投影输入指纹——由 manifest+request+范围内正文内容绑定（scopeContent）派生：
+   * 同输入重放字节稳定（D24：只读服务）；范围内对象正文演进（rev/body_sha256 变化）
+   * 必然改变指纹（审计 F2 修复——context manifest fresh/stale 判定据此检出正文漂移；
+   * 「范围内」边界与排除面见 projection.ts scopeContentRowsOf 契约注记）。
+   */
   readonly inputsFingerprint: string;
 }
 

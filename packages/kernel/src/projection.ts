@@ -21,7 +21,10 @@
  *   标明 state/knowledge-library.json，绝不混入 mustEntries 判卷输入——§83.2
  *   铁律「Knowledge 不能直接让 Gate FAIL」（GOLDEN-L8-3），分区边界由对抗测试钉住；
  * - 每 entry 必带 reason（why-injected，可判卷；无理由注入=噪声）；
- * - inputsFingerprint 由 manifest+request 派生：同输入重放字节稳定（D24：只读服务）。
+ * - inputsFingerprint 由 manifest+request+范围内正文内容绑定（scopeContent）派生：
+ *   同输入重放字节稳定（D24：只读服务）；范围内对象正文演进（rev/body_sha256 变化）
+ *   必然改变指纹——context manifest 的 fresh/stale 判定据此检出正文漂移（审计 F2
+ *   修复，2026-09-06 R-G 批；「范围内」精确边界与排除面见 scopeContentRowsOf 契约注记）。
  * 纯派生视图：只读 store 与 catalog/，不产生治理事实，不写任何文件。
  */
 import type {
@@ -700,6 +703,75 @@ function inScopeObjectKindsOf(index: TruthIndex, scopeReasons: Map<string, Set<s
   )].sort();
 }
 
+// ============================================================
+// 指纹的范围内正文内容绑定（审计 F2 修复；R-G 修复批 2026-09-06）
+// ============================================================
+
+/** 范围内正文绑定行（id + rev + body_sha256；事务自动维护值，D24 人不可计算/传递）。 */
+interface ScopeContentRow {
+  readonly id: string;
+  readonly rev: number;
+  readonly body_sha256: string | null;
+}
+
+/**
+ * 指纹的「范围内」正文内容绑定行集（确定性排序；进 inputsFingerprint 输入）。
+ *
+ * 病灶（审计 F2，P1）：inputsFingerprint 原仅含 role/taskRef/denominatorRefs/由
+ * ref+reason 构成的 manifest——范围内对象正文经事务演进（rev 递增、body_sha256 变化）
+ * 但注入理由词形不变时（典型：maintain 修改 TASK intent，任务条目的 in_scope reason
+ * 与 kind/lifecycle 词形全不变），重编译指纹不变，context compile --check 把已漂移的
+ * Truth 误判 fresh。修复：指纹追加绑定范围内对象的正文内容摘要，正文演进必然 stale。
+ *
+ * 「范围内」精确边界（最小上下文契约：范围内变化必须 stale；范围外无关变化不得触发
+ * stale——审计明示禁止把全仓 seq 一律当输入）——绑定三类，逐类边界依据：
+ * ① scopeReasons 命中的对象行（deriveScopeReasons 的分母通道 + 许可通道命中集）：
+ *    即 AUTHORITATIVE PROJECT STATE 分区实际承载的对象正文（mustEntries 的对象条目
+ *    由本集驱动）；
+ * ② 注入 REQUIRED POLICY 分区的 POLICY.* 对象行（authority owner 治理域命中，
+ *    compileProjection 的 policyScopeIds）：判卷输入实际承载的治理对象正文；
+ * ③ request.taskRef 命中的对象行（若在册）：taskRef 是请求输入（其词形本已在指纹），
+ *    其正文派生 sources 引用（referencedSourceIds 读 payload.source_refs）与 Evidence
+ *    Spec 绑定通路（boundEvidenceSpecRefs 读 payload.implements_change）——是上下文
+ *    实际派生面，正文内容此前不在指纹。
+ *
+ * 明确排除面（负向验收②的边界依据）：
+ * - 范围外无关对象行：不在上述三类的对象不进指纹——无关对象的事务演进不误伤 freshness；
+ * - 全仓 generation.seq / content_digest / generation.inputsFingerprint（store 信封层）：
+ *   任何范围外事务都会推 seq，一律当输入等于放弃最小上下文契约（审计 F2 明示）；
+ * - knowledge 侧车内容：§83.2 铁律 knowledge 恒 ADVISORY 不进判卷；「VALIDATED→
+ *   PROMOTED 前后 manifest/inputsFingerprint 字节一致」是既有裁决形态（knowledge.spec /
+ *   knowledge-projection.spec 钉住），绑定侧车内容会破坏该语义；
+ * - catalog 物料正文：Catalog 不是第二套 Project Truth（§92.2）；物料变更已有
+ *   catalog-lock 漂移 WARN 呈现通道，且 included 条目的 title/enforcement/轴变化本就
+ *   经 catalogEntries reason 进入 manifest → 指纹，无需重复绑定文件字节。
+ *
+ * 绑定值口径 = 索引信封行的事务自动维护 rev + body_sha256（D24）：手改正文不经事务
+ * 的完整性问题归 content_digest 抽验 / sweepDigestTampering / reconcile 域，本指纹
+ * 不重复读正文文件（读信封行即可判卷，纯派生零额外 IO）。排序按 id，canonicalJson
+ * 键序确定 → 同 store 状态重放字节稳定（A4）。
+ */
+function scopeContentRowsOf(
+  index: TruthIndex,
+  scopeReasons: Map<string, Set<string>>,
+  request: ProjectionRequest,
+  policyScopeIds: ReadonlySet<string>,
+): readonly ScopeContentRow[] {
+  const taskRef = request.taskRef;
+  return index.objects
+    .filter((row) =>
+      scopeReasons.has(entryId(row)) ||
+      policyScopeIds.has(row.id) ||
+      (taskRef !== undefined && row.id === taskRef),
+    )
+    .map((row) => ({
+      id: row.id,
+      rev: row.rev,
+      body_sha256: row.bodySha256 ?? null,
+    }))
+    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+}
+
 /**
  * 编译最小充分上下文投影。范围派生（确定性、可判卷）：
  * - 分母通道：request.denominatorRefs 命中的对象（信封行 denominator_refs 交集）；
@@ -775,6 +847,9 @@ export async function compileProjection(
     });
   }
   // POLICY.*：仅当其 authority owner 治理范围内对象时注入（task-agnostic POLICY=0 不变量）。
+  // 注入集同步登记进 policyScopeIds——这批治理对象正文是上下文实际承载内容，
+  // 其 rev/body_sha256 参与指纹正文绑定（scopeContentRowsOf 边界②）。
+  const policyScopeIds = new Set<string>();
   const scopeOwners = new Set(
     index.objects
       .filter((row) => scopeReasons.has(entryId(row)))
@@ -783,6 +858,7 @@ export async function compileProjection(
   for (const row of index.objects) {
     if (!row.id.startsWith("POLICY.")) continue;
     if (!scopeOwners.has(row.authorityOwner)) continue;
+    policyScopeIds.add(row.id);
     mustEntries.push({
       ref: row.id,
       reason: `policy 治理域命中：authority owner=${row.authorityOwner} 的范围内对象受其约束（kind=${row.kind}）`,
@@ -851,11 +927,16 @@ export async function compileProjection(
     knowledgeEntries,
     lazyTools,
   };
+  // 范围内正文内容绑定（审计 F2 修复；边界依据见 scopeContentRowsOf 契约注记）：
+  // 任务对象正文 / 分母与许可通道命中对象 / 注入 REQUIRED POLICY 的治理对象正文
+  // 演进（rev/body_sha256 变化）必然改变指纹——正文漂移不再被 ref+reason 词形不变遮蔽。
+  const scopeContent = scopeContentRowsOf(index, scopeReasons, request, policyScopeIds);
   const inputsFingerprint = sha256OfCanonical({
     role: request.role,
     taskRef: request.taskRef ?? null,
     denominatorRefs: requestedDenoms,
     manifest,
+    scopeContent,
   });
   return { manifest, catalogSource, inputsFingerprint };
 }

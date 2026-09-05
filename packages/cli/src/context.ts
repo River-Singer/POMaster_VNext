@@ -46,6 +46,11 @@
  *   decision-graph schema 的 P1 预留位 STALE_GROUNDING——schema 词面已在，启用不新增；
  *   词形已随 PR-0009 入锁 vocab-lock presentation_axes.context_manifest_words）；现盘文件不可解析同按 STALE_GROUNDING 处置
  *   （必然不是 fresh，呈现细节区分）；
+ *   审计 F2 修复（2026-09-06 R-G 批）后指纹额外绑定范围内对象正文摘要（rev/body_sha256
+ *   ——kernel scopeContentRowsOf），**旧版编译器落盘的 manifest 首跑 --check 必判
+ *   stale_grounding**：旧指纹不含正文绑定，与新算法值域不可区分——按漂移检出处置是
+ *   唯一诚实语义（一次性升级漂移，重编译覆盖后恢复 fresh；回归钉
+ *   context-manifest.spec 旧指纹用例）。
  * - `--check`：纯读比对呈现（FRESH/STALE_GROUNDING/ABSENT 三态 + 现盘 fingerprint
  *   回显），零写入；stale 不阻断（ok=true，呈现不阻断是 D24 read_only_service 姿态；
  *   ADR 留痕）。

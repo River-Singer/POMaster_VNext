@@ -27,6 +27,7 @@ import {
   makeStore,
   pageEnvelope,
   producerRecord,
+  readIndex,
 } from "./helpers.js";
 
 let root: string;
@@ -759,5 +760,138 @@ describe("explainCatalogProjection（P0.5-1 决策记录面；PRD §5.4）", () 
     );
     expect(explanation.decisions).toEqual([]);
     expect(explanation.catalogSource.status).toBe("absent");
+  });
+});
+
+// ============================================================
+// 指纹正文绑定（审计 F2 修复；R-G 修复批 2026-09-06）
+// 判据锚（projection.ts scopeContentRowsOf 契约注记）：范围内对象正文演进
+// （rev/body_sha256 变化）必须使 inputsFingerprint 漂移；范围外无关变化不得漂移
+// （最小上下文契约——禁全仓 seq 当输入）。
+// ============================================================
+
+/** R4 必备的同类扫描记录（task_object 信封强制；portability-deletability.spec 同款）。 */
+const F2_CLASS_SCAN = {
+  scope: "pages/**",
+  hits: 0,
+  fixed_count: 0,
+  regression_case_ref: "GRN-F2",
+};
+
+/** task_object 信封（closeout-evidence-spec 同款轴形态；payload.intent 可替换模拟 maintain 改意图）。 */
+function f2TaskEnvelope(intent: string): Record<string, unknown> {
+  return {
+    id: gid("TASK.F2_INTENT"),
+    kind: "task_object",
+    axisProfile: "task_default",
+    axes: { lifecycle: "CURRENT", confidence: "PROVISIONAL", evidence: "IMPLEMENTED", change: "STABLE" },
+    titleZh: "F2 审计复现任务",
+    authority: { owner: "BUSINESS_OWNER", delegates: [] },
+    origin: "natural",
+    payload: { intent, class_scan_result: F2_CLASS_SCAN },
+  };
+}
+
+describe("指纹正文绑定（审计 F2：范围内正文漂移必须 stale、范围外必须 fresh）", () => {
+  it("审计 F2 复现：任务 intent 变更（rev 1→2、body_sha256 变）→ ref+reason 词形不变而指纹必变", async () => {
+    await applyTransaction(store, { ops: [{ op: "upsert_object", envelope: f2TaskEnvelope("初始意图 v1") as never }] });
+    await issuePermit(store, {
+      subjectIds: [gid("TASK.F2_INTENT")],
+      requestedBy: HUMAN,
+      changeRef: "TASK.F2_INTENT",
+    });
+    const request = { role: "frontend", taskRef: "TASK.F2_INTENT" };
+    const before = await compileProjection(store, request);
+
+    // maintain「修改 intent」的等价事务：upsert 同 id 新 payload（rev 1→2、store seq +1、
+    // body_sha256 变——对齐审计复现 evidence/context-truth-update.json）。
+    await applyTransaction(store, { ops: [{ op: "upsert_object", envelope: f2TaskEnvelope("变更后意图 v2") as never }] });
+
+    const rowBefore = (readIndex(root).objects as readonly Record<string, unknown>[]).find(
+      (row) => row.id === "TASK.F2_INTENT",
+    );
+    expect(rowBefore?.rev).toBe(2); // 正文 rev 已递增（审计同款）
+    const after = await compileProjection(store, request);
+
+    // 病灶钉住：任务条目的 ref+reason 词形不变（旧指纹只看 manifest → 对此漂移全盲）。
+    expect(JSON.stringify(after.manifest)).toBe(JSON.stringify(before.manifest));
+    // 修复判据：正文绑定（scopeContent）使指纹必然漂移——context --check 据此判 stale。
+    expect(after.inputsFingerprint).not.toBe(before.inputsFingerprint);
+  });
+
+  it("最小上下文契约负向控制：范围外无关对象正文变更 → 指纹不变（全仓 seq 推进也不入指纹）", async () => {
+    await applyTransaction(store, { ops: [
+      { op: "upsert_object", envelope: f2TaskEnvelope("初始意图 v1") as never },
+      // 范围外对象：不在许可 scope、无分母命中、非 taskRef。
+      { op: "upsert_object", envelope: pageEnvelope({ id: gid("PAGE.UNRELATED"), titleZh: "无关页" }) as never },
+    ] });
+    await issuePermit(store, {
+      subjectIds: [gid("TASK.F2_INTENT")],
+      requestedBy: HUMAN,
+      changeRef: "TASK.F2_INTENT",
+    });
+    const request = { role: "frontend", taskRef: "TASK.F2_INTENT" };
+    const before = await compileProjection(store, request);
+    const seqBefore = (readIndex(root).generation as Record<string, unknown>).seq;
+
+    // 范围外对象演进（rev 1→2、正文变化）——store seq 必然推进。
+    await applyTransaction(store, { ops: [
+      { op: "upsert_object", envelope: pageEnvelope({ id: gid("PAGE.UNRELATED"), titleZh: "无关页（已改）", payload: { surface: "V2" } }) as never },
+    ] });
+
+    const seqAfter = (readIndex(root).generation as Record<string, unknown>).seq;
+    expect(seqAfter).toBeGreaterThan(seqBefore as number); // 证明确实发生了事务（非短路假绿）
+    const after = await compileProjection(store, request);
+    // 无关变更不得误伤 freshness（审计 F2 明示：不把全仓 seq 一律当输入）。
+    expect(after.inputsFingerprint).toBe(before.inputsFingerprint);
+  });
+
+  it("相关 Policy 正文变更 → 指纹必变（REQUIRED POLICY 承载的治理对象在上下文嵌入时）", async () => {
+    await applyTransaction(store, { ops: [
+      { op: "upsert_object", envelope: f2TaskEnvelope("初始意图 v1") as never },
+      // 与任务同 authority owner（BUSINESS_OWNER）→ 经治理域通道注入 REQUIRED POLICY。
+      { op: "upsert_object", envelope: pageEnvelope({
+        id: gid("POLICY.F2_RULE"),
+        kind: "business_rule",
+        axisProfile: "rule_default",
+        titleZh: "F2 治理规则",
+        payload: { statement_structured: { condition: "f2 v1", action: "check" }, enforcement_point: "closeout" },
+      }) as never },
+    ] });
+    await issuePermit(store, {
+      subjectIds: [gid("TASK.F2_INTENT")],
+      requestedBy: HUMAN,
+      changeRef: "TASK.F2_INTENT",
+    });
+    const request = { role: "frontend", taskRef: "TASK.F2_INTENT" };
+    const before = await compileProjection(store, request);
+    // 前置实证：该 Policy 确实嵌入本上下文（mustEntries 在场——「范围内」资格成立）。
+    expect(before.manifest.mustEntries.some((entry) => entry.ref === "POLICY.F2_RULE")).toBe(true);
+
+    await applyTransaction(store, { ops: [
+      { op: "upsert_object", envelope: pageEnvelope({
+        id: gid("POLICY.F2_RULE"),
+        kind: "business_rule",
+        axisProfile: "rule_default",
+        titleZh: "F2 治理规则",
+        payload: { statement_structured: { condition: "f2 v2（已改）", action: "check" }, enforcement_point: "closeout" },
+      }) as never },
+    ] });
+
+    const after = await compileProjection(store, request);
+    expect(after.inputsFingerprint).not.toBe(before.inputsFingerprint);
+  });
+
+  it("边界③：taskRef 对象无许可（无 mustEntries 承载）时正文变更 → 指纹仍变（sources/VERIFICATION 派生面）", async () => {
+    await applyTransaction(store, { ops: [{ op: "upsert_object", envelope: f2TaskEnvelope("初始意图 v1") as never }] });
+    const request = { role: "frontend", taskRef: "TASK.F2_INTENT" };
+    const before = await compileProjection(store, request);
+    // 无许可 → 任务对象不进 mustEntries（manifest 对正文漂移盲——本用例隔离出边界③）。
+    expect(before.manifest.mustEntries.some((entry) => entry.ref === "TASK.F2_INTENT")).toBe(false);
+
+    await applyTransaction(store, { ops: [{ op: "upsert_object", envelope: f2TaskEnvelope("变更后意图 v2") as never }] });
+
+    const after = await compileProjection(store, request);
+    expect(after.inputsFingerprint).not.toBe(before.inputsFingerprint);
   });
 });
