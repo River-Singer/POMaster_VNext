@@ -52,7 +52,13 @@
  *   claim_refs/gate_refs 是资格清单（清单外证据不满足条款：挪证缝收口，从「引用映射」
  *   升级为「资格判定」）；claim 须 subject 与资格归属（clause.subject_ref 缺省回退
  *   Spec 绑定）全等 + verdict=VERIFIED + 非空 evidence_refs；gate 须 subject 全等 +
- *   verdict=passed；空资格清单 = UNSATISFIABLE 显式阻断（禁「任意 VERIFIED claim 皆可」
+ *   （gate_refs 候选内同 gate 多次运行按 (ran_at_seq, GRN 序) 取最新判卷——F5 聚合
+ *   语义，与 subject 级 gate 维度同源同规则，重跑合法取代旧判；任一 gate 最新判卷
+ *   passed 即满足）= passed。「候选未满足」（全部合格候选最新判卷均非 passed）=
+ *   条款级 DOD_SPEC_GATE_NOT_PASSED（一条条款计一条分母，候选排列置换不变）；
+ *   「证据结构损坏」（词形非法/引用缺席/回执不可解析/subject 失配）= 独立错误码
+ *   路径（SCHEMA_INVALID / EVIDENCE_MALFORMED / DOD_SPEC_GATE_SUBJECT_MISMATCH），
+ *   两者不混算；空资格清单 = UNSATISFIABLE 显式阻断（禁「任意 VERIFIED claim 皆可」
  *   洗白）；无注记 claim 跨条款双消费 → 第二条款判不满足（detail 显式挪证通道，与
  *   acceptance 侧 DOD_CLAIM_UNANNOTATED_SHARED 同形挪证封堵，两机制保留并衔接；
  *   聚合码 DOD_SPEC_CLAUSE_UNSATISFIED）。Spec 持要求不持
@@ -740,77 +746,11 @@ export async function runCloseout(
         satisfiedBy = `claim ${claimRef}`;
         break;
       }
-      if (satisfiedBy === null) {
-        for (const gateRef of clauseGateRefs) {
-          if (!/^GRN-[0-9]+$/.test(gateRef)) {
-            specEntries.push({
-              spec: specRow.id,
-              clause_id: clauseId,
-              proof_type: proofType,
-              ok: false,
-              satisfied_by: null,
-              detail: `${gateRef}: gate 资格引用词形非法（须 GRN-[0-9]+）`,
-            });
-            specErrors.push({
-              code: "SCHEMA_INVALID",
-              message: `${clauseAnchor} gate 资格引用 ${gateRef} 词形非法（须 GRN-[0-9]+）`,
-              hint: "对照 21-evidence-spec.schema.json gate_refs 词形修复。",
-            });
-            continue;
-          }
-          const view = await readRunRecord(runsDirPath(rootDir), `${gateRef}.json`);
-          if ("damage" in view) {
-            specEntries.push({
-              spec: specRow.id,
-              clause_id: clauseId,
-              proof_type: proofType,
-              ok: false,
-              satisfied_by: null,
-              detail: `${gateRef}: ${view.damage}`,
-            });
-            specErrors.push({
-              code: "EVIDENCE_MALFORMED",
-              message: `${clauseAnchor} gate 资格引用 ${gateRef} 损坏：${view.damage}`,
-              hint: "判卷分母内证据损坏禁静默跳过；修复后走 record/compact canonical 化，或从 git 恢复。",
-            });
-            continue;
-          }
-          if (effectiveSubjects.length > 0 && !effectiveSubjects.includes(String(view.subject))) {
-            specEntries.push({
-              spec: specRow.id,
-              clause_id: clauseId,
-              proof_type: proofType,
-              ok: false,
-              satisfied_by: null,
-              detail: `${gateRef}: subject=${String(view.subject)} ∉ 资格归属 [${effectiveSubjects.join(", ")}]（跨对象借证不满足本条款）`,
-            });
-            specErrors.push({
-              code: "DOD_SPEC_GATE_SUBJECT_MISMATCH",
-              message: `${clauseAnchor} gate 资格引用 ${gateRef} 绑定对象是 ${String(view.subject)}，∉ 资格归属 [${effectiveSubjects.join(", ")}]`,
-              hint: "gate run 的 subject_id 必须属于条款资格归属集合（挪证封堵）；跨对象 run 不满足本条款。",
-            });
-            continue;
-          }
-          if (view.verdict !== "passed") {
-            specEntries.push({
-              spec: specRow.id,
-              clause_id: clauseId,
-              proof_type: proofType,
-              ok: false,
-              satisfied_by: null,
-              detail: `${gateRef}: verdict=${view.verdict ?? "缺失"}，不是 passed`,
-            });
-            specErrors.push({
-              code: "DOD_SPEC_GATE_NOT_PASSED",
-              message: `${clauseAnchor} gate 资格引用 ${gateRef} verdict=${view.verdict ?? "缺失"}，不是 passed`,
-              hint: "重跑该 gate 至 passed（最新判卷取代旧判）后重跑 closeout。",
-            });
-            continue;
-          }
-          satisfiedBy = `gate ${gateRef}`;
-          break;
-        }
-      }
+      // —— gate 资格候选聚合判卷（F5：资格候选清单的置换不变语义）——
+      // gate_refs 是资格候选清单（21 schema：Spec 持要求不持判定）：条款满足判定 =
+      // 候选中同 gate 多次运行按 (ran_at_seq, GRN 序) 取最新判卷（与 subject 级 gate
+      // 维度同源同规则——消两处语义冲突），任一 gate 最新判卷 passed 即满足。候选
+      // 集合与输入排列无关 → clauses_total / clauses_satisfied / 错误集置换不变。
       if (satisfiedBy !== null) {
         specEntries.push({
           spec: specRow.id,
@@ -822,17 +762,105 @@ export async function runCloseout(
         });
         continue;
       }
-      // 逐条 claim 资格核验后仍无满足位且无 gate 硬错误接管 → 聚合为条款不满足。
-      const clauseHasHardGateError = specEntries.some(
-        (candidate) => candidate.spec === specRow.id && candidate.clause_id === clauseId && !candidate.ok,
-      );
-      if (!clauseHasHardGateError) {
+      if (clauseGateRefs.length === 0) {
         failClause(
           "DOD_SPEC_CLAUSE_UNSATISFIED",
-          `资格清单内无一条证据成立：${claimFindings.length > 0 ? claimFindings.join("；") : "gate 资格引用均不满足"}`,
+          `资格清单内无一条证据成立：${claimFindings.join("；")}`,
           "按 Spec 资格条件补证据：追证 claim 至 VERIFIED（subject 须与资格归属全等）或重跑清单内 gate 至 passed；清单外证据不满足条款（挪证缝收口——资格判定非引用映射）。",
         );
+        continue;
       }
+      // 「证据结构损坏」结构扫描（词形非法/引用缺席/回执不可解析/subject 失配）：
+      // 独立错误码路径，与「候选未满足」不混算。按 GRN 序确定性遍历（去重 + 排序——
+      // 候选集合与输入排列无关，错误集亦置换不变）。
+      const gateFindings: string[] = [];
+      const qualifiedGateViews: { readonly view: RunRecordView; readonly ordinal: number }[] = [];
+      for (const gateRef of [...new Set(clauseGateRefs)].sort((a, b) => grnOrdinal(a) - grnOrdinal(b))) {
+        if (!/^GRN-[0-9]+$/.test(gateRef)) {
+          gateFindings.push(`${gateRef}: gate 资格引用词形非法（须 GRN-[0-9]+）`);
+          specErrors.push({
+            code: "SCHEMA_INVALID",
+            message: `${clauseAnchor} gate 资格引用 ${gateRef} 词形非法（须 GRN-[0-9]+）`,
+            hint: "对照 21-evidence-spec.schema.json gate_refs 词形修复。",
+          });
+          continue;
+        }
+        const view = await readRunRecord(runsDirPath(rootDir), `${gateRef}.json`);
+        if ("damage" in view) {
+          gateFindings.push(`${gateRef}: ${view.damage}`);
+          specErrors.push({
+            code: "EVIDENCE_MALFORMED",
+            message: `${clauseAnchor} gate 资格引用 ${gateRef} 损坏：${view.damage}`,
+            hint: "判卷分母内证据损坏禁静默跳过；修复后走 record/compact canonical 化，或从 git 恢复。",
+          });
+          continue;
+        }
+        if (effectiveSubjects.length > 0 && !effectiveSubjects.includes(String(view.subject))) {
+          gateFindings.push(
+            `${gateRef}: subject=${String(view.subject)} ∉ 资格归属 [${effectiveSubjects.join(", ")}]（跨对象借证不满足本条款）`,
+          );
+          specErrors.push({
+            code: "DOD_SPEC_GATE_SUBJECT_MISMATCH",
+            message: `${clauseAnchor} gate 资格引用 ${gateRef} 绑定对象是 ${String(view.subject)}，∉ 资格归属 [${effectiveSubjects.join(", ")}]`,
+            hint: "gate run 的 subject_id 必须属于条款资格归属集合（挪证封堵）；跨对象 run 不满足本条款。",
+          });
+          continue;
+        }
+        qualifiedGateViews.push({ view, ordinal: grnOrdinal(view.grn) });
+      }
+      // 「候选未满足」聚合判定：同 gate 取 (ran_at_seq, GRN 序) 最大者为最新判卷
+      // （A4 单调锚，重跑合法取代旧判——append-only 平面不删历史回执）。gate 字段
+      // 缺席的 run 无法归组 → 以自身 GRN 自成一组（不与任何候选互相取代，逐 run
+      // 诚实判定）。
+      const latestSpecGateByGate = new Map<string, RunRecordView>();
+      for (const { view } of [...qualifiedGateViews].sort(
+        (a, b) => (a.view.ranAtSeq ?? 0) - (b.view.ranAtSeq ?? 0) || a.ordinal - b.ordinal,
+      )) {
+        latestSpecGateByGate.set(view.gate ?? view.grn, view);
+      }
+      const latestSpecGateViews = [...latestSpecGateByGate.values()].sort(
+        (a, b) => grnOrdinal(a.grn) - grnOrdinal(b.grn),
+      );
+      const latestPassingGate =
+        latestSpecGateViews
+          .filter((view) => view.verdict === "passed")
+          .sort((a, b) => (a.ranAtSeq ?? 0) - (b.ranAtSeq ?? 0) || grnOrdinal(a.grn) - grnOrdinal(b.grn))
+          .at(-1) ?? null;
+      if (latestPassingGate !== null) {
+        specEntries.push({
+          spec: specRow.id,
+          clause_id: clauseId,
+          proof_type: proofType,
+          ok: true,
+          satisfied_by: `gate ${latestPassingGate.grn}`,
+          detail: null,
+        });
+        continue;
+      }
+      if (latestSpecGateViews.length > 0) {
+        // 候选未满足（全部合格候选最新判卷均非 passed）→ 条款级一处不满足（F5：
+        // 一条条款计一条分母，不逐 GRN 重复计入）。
+        const unmetSummaries = latestSpecGateViews.map(
+          (view) =>
+            `${view.grn}(${view.gate ?? "gate 缺席"}) verdict=${view.verdict ?? "缺失"} (ran_at_seq=${view.ranAtSeq ?? "缺失"})`,
+        );
+        failClause(
+          "DOD_SPEC_GATE_NOT_PASSED",
+          `gate 资格候选最新判卷均非 passed：${unmetSummaries.join("；")}${gateFindings.length > 0 ? `；${gateFindings.join("；")}` : ""}`,
+          "gate_refs 是资格候选清单：清单内同 gate 多次运行按 (ran_at_seq, GRN 序) 取最新判卷——重跑该 gate 至 passed 并把新 GRN 纳入本条款 gate_refs 后重跑 closeout（append-only 平面不删旧记录）。",
+        );
+        continue;
+      }
+      // 全部 gate 候选结构损坏（零合格候选可判卷）→ 结构错误已独立显式，条款分母
+      // 照常计一条不满足（损坏证据禁静默跳过）。
+      specEntries.push({
+        spec: specRow.id,
+        clause_id: clauseId,
+        proof_type: proofType,
+        ok: false,
+        satisfied_by: null,
+        detail: [...claimFindings, ...gateFindings].join("；") || "gate 资格引用全部损坏",
+      });
     }
   }
   boundSpecRefs.sort();

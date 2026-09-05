@@ -12,6 +12,12 @@
  * - 无注记 claim 跨条款双消费 → 挪证通道显式呈现（与 acceptance 侧
  *   DOD_CLAIM_UNANNOTATED_SHARED 同形——既有机制保留并衔接）；
  * - 非 CURRENT 绑定 Spec → SPEC_NOT_BINDING warning 显式呈现不判卷；
+ * - gate_refs 资格候选聚合（审计 F5）：候选内同 gate 多次运行按 (ran_at_seq, GRN 序)
+ *   取最新判卷（与 subject 级 gate 维度同源同规则，重跑合法取代旧判）；任一 gate
+ *   最新判卷 passed 即满足；候选排列置换不变 + 重跑通过覆盖旧失败回归；「候选未
+ *   满足」（DOD_SPEC_GATE_NOT_PASSED，一条条款计一条分母）与「证据结构损坏」
+ *   （EVIDENCE_MALFORMED / SCHEMA_INVALID / DOD_SPEC_GATE_SUBJECT_MISMATCH）分码位
+ *   不混算；
  * - 无 Spec 绑定 → dod.spec === null（双轨过渡——acceptance 轨独跑，行为零变化）；
  * - Spec 持要求不持判定（21 schema 无 verdict 词位）：判定值只从 claims/runs 平面
  *   读取（D20 同线）；record_claim 强制 UNVERIFIED / A3 不可覆写 / D20 主体分离
@@ -190,14 +196,16 @@ function runFixture(overrides: {
   readonly subject?: string | null;
   readonly gate?: string;
   readonly verdict?: string;
+  readonly ranAtSeq?: number;
 } = {}): Record<string, unknown> {
   const grn = overrides.grn ?? "GRN-0001";
   const verdict = overrides.verdict ?? "passed";
+  const ranAtSeq = overrides.ranAtSeq ?? 3;
   const violations = verdict === "passed" ? 0 : 2;
   return {
     record_type: "run",
     grn,
-    ran_at_seq: 3,
+    ran_at_seq: ranAtSeq,
     trigger: { type: "pre_closeout" },
     gate_result: {
       mode: "inline",
@@ -208,7 +216,7 @@ function runFixture(overrides: {
         tool: "demo:build",
         tool_version: "0.1.0",
         metric_dialect: "demo:case_count",
-        ran_at_seq: 3,
+        ran_at_seq: ranAtSeq,
         verdict,
         subject_id: overrides.subject === undefined ? "TASK.T0001" : overrides.subject,
         is_fixture: (overrides.subject ?? "TASK.T0001").startsWith("TEST."),
@@ -381,5 +389,134 @@ describe("closeout DoD Spec 维度（R1/D6：资格判定非引用映射）", ()
     const result = outcome.result as CloseoutResult;
     expect(result.dod?.spec).toBe(null);
     expect(result.change).toBe("COMPLETED");
+  });
+});
+
+// ============================================================
+// 审计 F5 回归：gate 资格候选聚合（置换不变 + 重跑覆盖 + 损坏分离）
+// ============================================================
+
+/** F5 场景夹具：acceptance 轨绿（VERIFIED claim）；Spec 条款只持 gate 资格清单。 */
+async function seedF5Scenario(gateRefs: readonly string[]): Promise<void> {
+  await initStore();
+  await seedTask();
+  seedClaim({});
+  await seedSpec({
+    clauses: [clauseFixture({ claimRefs: [], gateRefs: [...gateRefs] })],
+  });
+}
+
+describe("closeout DoD Spec gate 资格候选聚合（审计 F5：置换不变 + 重跑覆盖）", () => {
+  it("审计复现回归：同 gate 旧 failed + 新 passed 候选任意排列 → 条款 1/1、无 DOD_SPEC_GATE_NOT_PASSED、重跑通过覆盖旧失败（置换不变）", async () => {
+    const permutations: readonly (readonly string[])[] = [
+      ["GRN-0001", "GRN-0002"],
+      ["GRN-0002", "GRN-0001"],
+      ["GRN-0002", "GRN-0001", "GRN-0001"],
+    ];
+    const observations: {
+      readonly ok: boolean;
+      readonly clauses_total: number | undefined;
+      readonly clauses_satisfied: number | undefined;
+      readonly satisfied_by: string | null | undefined;
+      readonly errorCodes: readonly string[];
+      readonly warningCodes: readonly string[];
+    }[] = [];
+    for (const gateRefs of permutations) {
+      // 每个排列独立全新 store（候选集合相同，仅 gate_refs 排列不同）。
+      rmSync(root, { recursive: true, force: true });
+      root = mkdtempSync(join(tmpdir(), "pomaster-cli-closeout-spec-f5-"));
+      await seedF5Scenario(gateRefs);
+      seedRun({ grn: "GRN-0001", gate: "BUILD", verdict: "failed", ranAtSeq: 3 });
+      seedRun({ grn: "GRN-0002", gate: "BUILD", verdict: "passed", ranAtSeq: 9 });
+      const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
+      expect(outcome.ok).toBe(true);
+      const result = outcome.result as CloseoutResult;
+      expect(result.dod?.spec?.clauses_total).toBe(1);
+      expect(result.dod?.spec?.clauses_satisfied).toBe(1);
+      expect(result.dod?.spec?.entries).toHaveLength(1);
+      expect(result.dod?.spec?.entries[0]?.ok).toBe(true);
+      expect(result.dod?.spec?.entries[0]?.satisfied_by).toBe("gate GRN-0002");
+      expect(result.change).toBe("COMPLETED");
+      observations.push({
+        ok: outcome.ok,
+        clauses_total: result.dod?.spec?.clauses_total,
+        clauses_satisfied: result.dod?.spec?.clauses_satisfied,
+        satisfied_by: result.dod?.spec?.entries[0]?.satisfied_by,
+        errorCodes: outcome.errors.map((error) => error.code),
+        warningCodes: outcome.warnings.map((warning) => warning.code),
+      });
+    }
+    // 置换不变性：clauses_total / clauses_satisfied / satisfied_by / 错误集全排列一致。
+    for (const observation of observations.slice(1)) {
+      expect(observation).toEqual(observations[0]);
+    }
+  });
+
+  it("重跑方向语义：新 failed（ran_at_seq 大）+ 旧 passed（ran_at_seq 小）→ 条款不满足（最新判卷裁决，旧通过不洗白）且分母计一条", async () => {
+    await seedF5Scenario(["GRN-0001", "GRN-0002"]);
+    seedRun({ grn: "GRN-0001", gate: "BUILD", verdict: "passed", ranAtSeq: 3 });
+    seedRun({ grn: "GRN-0002", gate: "BUILD", verdict: "failed", ranAtSeq: 9 });
+    const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
+    expect(outcome.ok).toBe(false);
+    const notPassed = outcome.errors.filter((error) => error.code === "DOD_SPEC_GATE_NOT_PASSED");
+    expect(notPassed).toHaveLength(1); // 一条条款一处阻断，不逐 GRN 重复计入
+    expect(notPassed[0]?.message).toContain("GRN-0002"); // 点名最新判卷
+    const result = outcome.result as CloseoutResult;
+    expect(result.dod?.spec?.clauses_total).toBe(1);
+    expect(result.dod?.spec?.clauses_satisfied).toBe(0);
+    expect(result.dod?.spec?.entries).toHaveLength(1);
+    expect(result.dod?.spec?.entries[0]?.ok).toBe(false);
+    expect(result.change).toBeNull();
+  });
+
+  it("多 gate 候选（不同 gate）：任一 gate 最新判卷 passed 即满足条款（资格 OR——另一 gate 最新 failed 不推翻本条款，由 subject 级 gate 维度另行阻断）", async () => {
+    await seedF5Scenario(["GRN-0002", "GRN-0001"]);
+    seedRun({ grn: "GRN-0001", gate: "BUILD", verdict: "passed", ranAtSeq: 3 });
+    seedRun({ grn: "GRN-0002", gate: "CONTRACT", verdict: "failed", ranAtSeq: 9 });
+    const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
+    expect(outcome.errors.map((error) => error.code)).toContain("GATE_FAILED"); // subject 级 gate 维度
+    expect(outcome.errors.map((error) => error.code)).not.toContain("DOD_SPEC_GATE_NOT_PASSED");
+    const result = outcome.result as CloseoutResult;
+    expect(result.dod?.spec?.clauses_satisfied).toBe(1);
+    expect(result.dod?.spec?.entries[0]?.satisfied_by).toBe("gate GRN-0001");
+  });
+
+  it("同 ran_at_seq 平局按 GRN 序取最新（与 subject 级 gate 维度同规则）", async () => {
+    await seedF5Scenario(["GRN-0002", "GRN-0001"]);
+    seedRun({ grn: "GRN-0001", gate: "BUILD", verdict: "passed", ranAtSeq: 3 });
+    seedRun({ grn: "GRN-0002", gate: "BUILD", verdict: "failed", ranAtSeq: 3 });
+    const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
+    expect(outcome.errors.map((error) => error.code)).toContain("DOD_SPEC_GATE_NOT_PASSED");
+    const result = outcome.result as CloseoutResult;
+    expect(result.dod?.spec?.clauses_satisfied).toBe(0);
+  });
+
+  it("证据结构损坏与候选未满足分离：引用不存在 GRN → 仅 EVIDENCE_MALFORMED，无 DOD_SPEC_GATE_NOT_PASSED / UNSATISFIED；条款分母仍计一条", async () => {
+    await seedF5Scenario(["GRN-9999"]);
+    const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
+    expect(outcome.ok).toBe(false);
+    const codes = outcome.errors.map((error) => error.code);
+    expect(codes).toContain("EVIDENCE_MALFORMED");
+    expect(codes).not.toContain("DOD_SPEC_GATE_NOT_PASSED");
+    expect(codes).not.toContain("DOD_SPEC_CLAUSE_UNSATISFIED");
+    const result = outcome.result as CloseoutResult;
+    expect(result.dod?.spec?.clauses_total).toBe(1);
+    expect(result.dod?.spec?.clauses_satisfied).toBe(0);
+    expect(result.dod?.spec?.entries).toHaveLength(1);
+  });
+
+  it("损坏候选不静默：损坏引用 + 合格 passed 候选 → 条款满足但 EVIDENCE_MALFORMED 仍独立阻断（两码位不混算不互抵）", async () => {
+    await seedF5Scenario(["GRN-9999", "GRN-0002", "GRN-0001"]);
+    seedRun({ grn: "GRN-0001", gate: "BUILD", verdict: "failed", ranAtSeq: 3 });
+    seedRun({ grn: "GRN-0002", gate: "BUILD", verdict: "passed", ranAtSeq: 9 });
+    const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
+    expect(outcome.ok).toBe(false);
+    const codes = outcome.errors.map((error) => error.code);
+    expect(codes).toContain("EVIDENCE_MALFORMED");
+    expect(codes).not.toContain("DOD_SPEC_GATE_NOT_PASSED");
+    const result = outcome.result as CloseoutResult;
+    expect(result.dod?.spec?.clauses_total).toBe(1);
+    expect(result.dod?.spec?.clauses_satisfied).toBe(1);
+    expect(result.dod?.spec?.entries[0]?.satisfied_by).toBe("gate GRN-0002");
   });
 });
