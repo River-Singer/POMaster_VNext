@@ -490,6 +490,9 @@ async function promptQuestionRaw(
     io.write(redrawFrame(renderQuestionFrame(question, cursor, buffer, progress, error)));
     return true;
   });
+  // 帧末收尾换行（纯 \n 非 ANSI；index.ts restoreRaw 同款收尾纪律）：raw io 不逐行
+  // 加换行，缺此行则下一问帧/init 完成输出胶在本帧末行行尾（TTY 呈现粘连）。
+  io.write("\n");
   return done ?? { kind: "aborted" }; // 按键流耗尽（EOF）= 中止，fail-closed 不猜缺省
 }
 
@@ -552,10 +555,12 @@ export async function collectStackAnswers(
   const resolved = await resolveRemainingQuestions(rootDir);
   if (resolved.kind === "unreadable") {
     io.write(`? baseline 技术栈问卷跳过：基线文件不可读（fail-closed 不猜测）——${resolved.detail}`);
+    if (rawMode) io.write("\n"); // 帧末收尾换行（raw io 不逐行加换行；防后续输出粘连）
     return { asked: 0, answers: [], skipped: "baseline_unreadable" };
   }
   if (resolved.questions.length === 0) {
     io.write("? baseline 技术栈问卷跳过：选型键全部已销账（幂等不重复问）");
+    if (rawMode) io.write("\n"); // 同上
     return { asked: 0, answers: [], skipped: "all_resolved" };
   }
   const answers: StackAnswer[] = [];

@@ -247,6 +247,9 @@ describe("raw 形态问卷（scripted 按键；逐键必答不许跳）", () => 
     const redraw = chunks[2] ?? "";
     expect(redraw.startsWith("\x1b[")).toBe(true);
     expect(redraw).toContain("\x1b[0K");
+    // 帧末收尾换行（raw io 不逐行加换行）：问与问之间零粘连——下一问帧自起新行。
+    expect(chunks[4]).toBe("\n");
+    expect(chunks[5]?.startsWith("? 前端语言（frontend.language")).toBe(true);
   });
 
   it("非法自定义值回车被拒（错误行在帧内呈现，不结算）→ ↑ 改选候选后继续", async () => {
