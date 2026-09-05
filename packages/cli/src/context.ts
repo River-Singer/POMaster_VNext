@@ -1,6 +1,12 @@
 /**
  * context.ts —— `pomaster context compile --role X`：八拍③ PROJECTION 的命令面。
  *
+ * **共享完整编排契约入口（审计 F4 修复，2026-09-06 R-G 批）**：runContextCompile 是
+ * 「context compile」的单一编排权威——显式命令（index.ts context compile）与 maintain
+ * pre-dev 链第 ③ 步（cli/src/maintain.ts）都经本入口，manifest 落盘、stale 处理、
+ * VERIFICATION 分区派生、F2 正文绑定指纹语义在此单点承载（F2 升级语义见下文注记，
+ * 经共享入口天然继承，两入口不再分叉；maintain 链上禁再裸调 kernel compileProjection）。
+ *
  * 只做编排与呈现：转调 kernel compileProjection（唯一判卷/派生权威），渲染五分区
  * markdown。vNext Batch 2 R3（Owner 裁定 D8 2026-09-04）：分区词形对齐 PRD §8.1④
  * 五分区闭包——AUTHORITATIVE PROJECT STATE / REQUIRED POLICY / ADVISORY KNOWLEDGE /

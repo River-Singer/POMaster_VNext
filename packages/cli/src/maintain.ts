@@ -12,7 +12,13 @@
  *   （零证据平面扫描）， Discovery 提升等任意时点可用。
  * - pre-dev 链（--phase pre-dev）：八拍①②③薄编排——triage（规则桶，纯函数）→
  *   permit issue（kernel issuePermit 五件套台账，唯一写通道）→ context compile
- *   （kernel compileProjection，taskRef=change-or-task 命中许可通道派生 MUST 范围）。
+ *   （**共享完整编排契约 runContextCompile**（cli/src/context.ts）——审计 F4 修复
+ *   （2026-09-06 R-G 批）后 ③ 不再裸调 kernel compileProjection：旧实现绕过 manifest
+ *   落盘/stale 处理/VERIFICATION 分区派生，maintain 与显式 `pomaster context compile`
+ *   两个入口的「context compile」不等价（pre-dev 成功却查无 manifest）。修复后 ③ 走
+ *   与显式命令同一编排入口，manifest 真实落盘 .pomaster/state/contexts/<锚>.context.json、
+ *   STALE_GROUNDING 处理、VERIFICATION 分区、F2 正文绑定指纹语义全部单点承载——
+ *   两入口不再分叉，maintain 链上零裸 kernel 投影调用）。
  *   串既有能力、零新原语、零分支政策（triage 档位只呈现不裁决——A1 裁定 2026-09-04
  *   已实现为代码事实：档位不传投影、不进 permit 判卷，编排永远三步全走）。
  *
@@ -22,18 +28,17 @@
  */
 
 import {
-  type Projection,
   type Store,
   type TransactionOp,
   GovernanceError,
   GovernedIdParseError,
   applyTransaction,
-  compileProjection,
   createStore,
   loadTruthIndex,
   readKnowledgeLibrary,
 } from "@pomaster/kernel";
 import { buildStorePaths } from "@pomaster/kernel";
+import { runContextCompile } from "./context.js";
 import { loadOpsFile } from "./compact.js";
 import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
@@ -133,6 +138,18 @@ export interface MaintainPreDevResult {
   readonly triage: MaintainTriageView | null;
   readonly permit: MaintainPermitView | null;
   readonly projection: MaintainProjectionView | null;
+  /**
+   * ③ context manifest 落盘结果（审计 F4 修复，2026-09-06 R-G 批——**向后兼容加法
+   * 字段**：旧消费者不读此键零影响）。③ 改走共享完整编排契约 runContextCompile 后，
+   * pre-dev 的 context compile 步骤与显式命令一样真实落盘 manifest——本字段呈现落盘
+   * 位/是否落盘/stale 三态，链的写面诚实可见（不再「声称 compile 却查无 manifest」）。
+   * 链在 context compile 步失败时为 null（与 permit/projection 同款缺席显式）。
+   */
+  readonly context_manifest: {
+    readonly manifest_path: string | null;
+    readonly persisted: boolean;
+    readonly stale_state: "absent" | "fresh" | "stale_grounding";
+  } | null;
 }
 
 export type MaintainResult = MaintainApplyResult | MaintainPreDevResult;
@@ -238,6 +255,7 @@ function emptyPreDevResult(
     triage,
     permit: null,
     projection: null,
+    context_manifest: null,
   };
 }
 
@@ -273,30 +291,6 @@ function triageViewOf(request: string): MaintainTriageView {
     matched_keywords: [...triage.matched_keywords],
     absent_signals: [...triage.absent_signals],
     ttl_hours: triage.ttl_hours,
-  };
-}
-
-function projectionViewOf(role: string, projection: Projection): MaintainProjectionView {
-  return {
-    role,
-    inputs_fingerprint: projection.inputsFingerprint,
-    must_entries: projection.manifest.mustEntries.map((entry) => ({
-      ref: entry.ref,
-      reason: entry.reason,
-    })),
-    advisory_entries: projection.manifest.advisoryEntries.map((entry) => ({
-      ref: entry.ref,
-      reason: entry.reason,
-    })),
-    catalog_entries: projection.manifest.catalogEntries.map((entry) => ({
-      ref: entry.ref,
-      reason: entry.reason,
-    })),
-    knowledge_entries: projection.manifest.knowledgeEntries.map((entry) => ({
-      ref: entry.ref,
-      reason: entry.reason,
-    })),
-    lazy_tools: [...projection.manifest.lazyTools],
   };
 }
 
@@ -470,31 +464,48 @@ async function runMaintainPreDev(
     scope: issued.scope,
   };
 
-  // —— ③ context compile（kernel compileProjection；taskRef 命中 ② 签发许可的许可通道） ——
-  // P0.5-1（PRD §5.3；裁决 8 ②）：链已持有的 applicability 输入传给投影——
-  // --capability 清单（与 ② permit 同源），零新原语。
-  // 未提供 --capability 时该输入缺席（声明 capabilities 轴的条目按缺席显式排除）。
+  // —— ③ context compile（共享完整编排契约 runContextCompile——审计 F4 修复，2026-09-06 R-G 批） ——
+  // 本步与显式 `pomaster context compile --change <锚> --role <role>` 走**同一编排入口**
+  // （cli/src/context.ts）：manifest 真实落盘、stale 三态判定（覆盖写时 STALE_GROUNDING
+  // warning 透传进本链 warnings——可见不静默）、VERIFICATION 分区派生、F2 正文绑定指纹
+  // 语义（审计 F2 修复在共享入口单点生效）全部由共享入口承载，maintain 链上零裸 kernel
+  // compileProjection 调用、零另抄的持久化/分区规则。
+  // P0.5-1（PRD §5.3；裁决 8 ②）：链已持有的 applicability 输入传给共享入口——
+  // change=<change-or-task>（透传 taskRef，命中 ② 签发许可的许可通道）、--capability
+  // 清单（与 ② permit 同源）。未提供 --capability 时该输入缺席（声明 capabilities 轴的
+  // 条目按缺席显式排除）。
   // A1 裁定（2026-09-04，vNext Batch 4 R1）：triage 档位不再传入投影 governanceProfile
-  // ——档位信息性呈现（①产出只进呈现视图），不参与 catalog applicability 判卷；
-  // 激活语义由 lane/taskRef/capability 既有机制承担。
-  let projection: Projection;
-  try {
-    const store = await createStore(rootDir);
-    projection = await compileProjection(store, {
-      role,
-      taskRef: changeOrTask,
-      ...(input.capabilities !== undefined && input.capabilities.length > 0
-        ? { capabilities: input.capabilities }
-        : {}),
-    });
-  } catch (err) {
-    return failMaintain(
-      kernelErrorOf(err),
+  // ——档位信息性呈现（①产出只进呈现视图），不参与 catalog applicability 判卷。
+  // 失败码位 = 共享入口原码透传（NOT_INITIALIZED / KERNEL_ERROR / KERNEL_NOT_INSTALLED /
+  // ENVIRONMENT_ERROR——与显式 context compile 同形；CLI 不改判 kernel/编排码位）。
+  const compileOutcome = await runContextCompile(rootDir, role, undefined, {
+    change: changeOrTask,
+    ...(input.capabilities !== undefined && input.capabilities.length > 0
+      ? { capabilities: input.capabilities }
+      : {}),
+  });
+  if (!compileOutcome.ok) {
+    return failOutcome<MaintainResult>(
+      "maintain",
       emptyPreDevResult(changeOrTask, phase, "context compile", triage),
-      "context compile 步骤",
+      compileOutcome.errors,
+      [
+        `maintain ${changeOrTask} --phase pre-dev → FAILED at context compile`,
+        ...compileOutcome.human,
+        ...compileOutcome.errors.map((error) => `  ${error.code}: ${error.hint}`),
+      ],
     );
   }
-  const projectionView = projectionViewOf(role, projection);
+  const compiled = compileOutcome.result;
+  const projectionView: MaintainProjectionView = {
+    role: compiled.role,
+    inputs_fingerprint: compiled.inputs_fingerprint,
+    must_entries: compiled.manifest.must_entries,
+    advisory_entries: compiled.manifest.advisory_entries,
+    catalog_entries: compiled.manifest.catalog_entries,
+    knowledge_entries: compiled.manifest.knowledge_entries,
+    lazy_tools: compiled.manifest.lazy_tools,
+  };
 
   const result: MaintainPreDevResult = {
     mode: "pre_dev_chain",
@@ -504,6 +515,11 @@ async function runMaintainPreDev(
     triage,
     permit,
     projection: projectionView,
+    context_manifest: {
+      manifest_path: compiled.manifest_path,
+      persisted: compiled.persisted,
+      stale_state: compiled.stale_check.state,
+    },
   };
   const human = [
     `maintain ${changeOrTask} --phase pre-dev → triage ${triage.profile} (rule ${triage.matched_rule}, grade=${triage.evidence_grade})`,
@@ -511,8 +527,11 @@ async function runMaintainPreDev(
     `  scope: ${permit.scope?.subject_ids.join(", ") ?? "(none)"}`,
     `  projection: role=${projectionView.role} must=${projectionView.must_entries.length} advisory=${projectionView.advisory_entries.length} knowledge=${projectionView.knowledge_entries.length} lazy_tools=${projectionView.lazy_tools.length}`,
     ...projectionView.must_entries.map((entry) => `    MUST ${entry.ref} — ${entry.reason}`),
+    // F4 修复后 ③ 的写面诚实呈现（落盘位 + stale 三态；与显式命令同语义）。
+    `  context manifest: ${compiled.persisted ? `已落盘 ${compiled.manifest_path}` : "未落盘"}（stale=${compiled.stale_check.state}）`,
   ];
-  return okOutcome("maintain", result, human);
+  // 共享入口的 warnings 透传（STALE_GROUNDING 覆盖写等可见不静默）。
+  return okOutcome("maintain", result, human, compileOutcome.warnings);
 }
 
 // ============================================================
