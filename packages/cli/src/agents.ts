@@ -40,9 +40,19 @@ import {
   loadStoreReadOnly,
   type SupervisorTriggerSource,
 } from "@pomaster/kernel";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
 import { governanceErrorToCliError, requireInitialized } from "./permit.js";
+import {
+  asString,
+  findIndexRow,
+  isRecord,
+  readBodyEnvelope,
+  readRawIndexOrFail,
+  resolveRowTargetId,
+} from "./projection-common.js";
+import { contextsDirPath, toPosix } from "./store-layout.js";
 import { runtimeStorePaths } from "./runtime.js";
 
 // ============================================================
@@ -301,6 +311,289 @@ function emptyAgentsStatus(): AgentsStatusResult {
       triggered: false,
     },
   };
+}
+
+// ============================================================
+// agents dispatch-pack（裁定批 E P4：子代理派发包——09-05 提案 §2 P4）
+// ============================================================
+
+/**
+ * 派发包分段标题（cli 局部词——批 D 先例；x-vocab-source 待词汇表批扫收编）。
+ * 三段 = 提案 §2 P4 组成：任务 prd 摘要 + 关联 mapping/manifest 引用 + 红线摘要。
+ */
+export const DISPATCH_PACK_SECTION_TITLES = ["任务 PRD 摘要", "关联引用", "红线摘要"] as const;
+
+/**
+ * 预算（ADR 沿 Trellis PreToolUse 物化先例 32KB/文件·128KB 总预算折算 vNext 值）：
+ * 单段 8192 字符（与 session 单段预算同量级）/ 总 32768 字符（32KB 先例逐字）；
+ * 超限降级指针行（「详情跑 pomaster X」），禁静默切尾。
+ */
+export const DISPATCH_PACK_SECTION_BUDGET = 8_192;
+export const DISPATCH_PACK_TOTAL_BUDGET = 32_768;
+
+/** --out 落盘失败码位（cli 局部词；显式失败非静默降级为纯 stdout——context compile 先例）。 */
+export const DISPATCH_PACK_WRITE_FAILED = "IO_WRITE_FAILED";
+
+/** 派发包逐段自检行。 */
+export interface DispatchPackSectionView {
+  readonly title: string;
+  readonly characters: number;
+  readonly truncated: boolean;
+}
+
+export interface DispatchPackResult {
+  /** argv 原词形。 */
+  readonly task: string;
+  readonly resolved_id: string | null;
+  readonly resolved_via_alias: string | null;
+  readonly sections: readonly DispatchPackSectionView[];
+  readonly total_characters: number;
+  readonly truncated: boolean;
+  /** --out 落盘路径（posix 词形）；缺省 stdout 形态 = null（零写入）。 */
+  readonly out_file: string | null;
+}
+
+/** 单段装配产物（内部形态）。 */
+interface DispatchPackSection {
+  readonly title: (typeof DISPATCH_PACK_SECTION_TITLES)[number];
+  readonly lines: readonly string[];
+  readonly pointer: string;
+}
+
+/** 关联引用段：context manifest 精确词形（context.ts taskRef 规则镜像）+ 绑定许可 + 检视路标。 */
+async function referenceSection(
+  rootDir: string,
+  taskId: string,
+  warnings: CliWarning[],
+): Promise<DispatchPackSection> {
+  const lines: string[] = [];
+  const manifestPath = `${contextsDirPath(rootDir)}/${taskId}.context.json`;
+  if (existsSync(manifestPath)) {
+    let generatedAtSeq: number | null = null;
+    try {
+      const parsed: unknown = JSON.parse(readFileSync(manifestPath, "utf8"));
+      const seq = isRecord(parsed) ? parsed.generated_at_seq : undefined;
+      if (typeof seq === "number") generatedAtSeq = seq;
+    } catch {
+      generatedAtSeq = null;
+    }
+    lines.push(
+      `- context manifest: ${toPosix(`.pomaster/state/contexts/${taskId}.context.json`)}` +
+        `（generated_at_seq=${generatedAtSeq ?? "缺席"}；stale 比对: pomaster context compile --check --role <role> --change ${taskId}）`,
+    );
+  } else {
+    lines.push(
+      `- context manifest: 缺席（显式——编译: pomaster context compile --role <role> --change ${taskId}）`,
+    );
+  }
+  const index = await readRawIndexOrFail(rootDir);
+  if (!("error" in index)) {
+    const row = findIndexRow(index.index, taskId);
+    const permitsActive =
+      row !== null && Array.isArray(row.permits_active)
+        ? row.permits_active.map((ref) => asString(ref)).filter((ref): ref is string => ref !== null)
+        : [];
+    lines.push(
+      permitsActive.length > 0
+        ? `- 绑定许可: ${permitsActive.join(", ")}（活性判定: pomaster permit check；台账: pomaster permit list）`
+        : "- 绑定许可: 缺席（显式——写路径开工前签发: pomaster permit issue --subject " +
+            `${taskId} --actor <type>:<name>）`,
+    );
+  } else {
+    warnings.push({
+      code: index.error.code,
+      message: `绑定许可引用读取失败（truth-index 不可读）：${index.error.message}`,
+      hint: index.error.hint,
+    });
+  }
+  lines.push(`- 对象检视: pomaster inspect ${taskId}；任务审查视图: pomaster view task ${taskId}`);
+  return { title: "关联引用", lines, pointer: "详情跑 pomaster inspect " + taskId };
+}
+
+/** 红线摘要段（既有治理语义的静态呈现行 + 绑定事实透传——零新词形语义，每行附命令指针）。 */
+function redlineSection(taskId: string): DispatchPackSection {
+  return {
+    title: "红线摘要",
+    lines: [
+      "- 受控变更唯一通路: pomaster maintain <change-or-task> --ops <tx>（kernel applyTransaction 唯一写入路径）——禁绕过治理面直写 .pomaster。",
+      "- 写尝试判卷: pomaster exec-guard --attempt <file|->（严格判卷器非写入器；非 allow 一律拒绝）。",
+      "- 证据入账: pomaster record gate-run/claim（record claim 恒 UNVERIFIED——VERIFIED 归独立验证流，D20：声称方不可自填判定）。",
+      "- 完成判定: pomaster closeout " + taskId + "（DoD 判卷：acceptance→VERIFIED claim 硬绑；证据缺失伪装完成硬阻断）。",
+      "- 执行身份: --execution-id <AGX-n> 盖章（S1 禁自造身份；登记: pomaster execution begin）。",
+      "- 禁 git commit / git push / git merge（实现代理交付边界；提交动作归上游裁决）。",
+    ],
+    pointer: "红线词形权威: 治理命令卡（pomaster --help）",
+  };
+}
+
+/** prd 摘要段（task payload 机器可汇编子集；缺席显式）。 */
+function prdSection(
+  taskId: string,
+  rowTitle: string | null,
+  row: Record<string, unknown>,
+  payload: Record<string, unknown>,
+): DispatchPackSection {
+  const axes = isRecord(row.axes) ? row.axes : {};
+  const lines: string[] = [
+    `- id: ${taskId}`,
+    `- title: ${rowTitle ?? "(missing title)"}`,
+    `- axes: lifecycle=${asString(axes.lifecycle) ?? "?"} evidence=${asString(axes.evidence) ?? "?"} change=${asString(axes.change) ?? "?"}`,
+  ];
+  const intent = asString(payload.intent);
+  lines.push(`- intent: ${intent ?? "（无——payload 未申报 intent）"}`);
+  const expectedOutcome = asString(payload.expected_outcome);
+  lines.push(`- expected_outcome: ${expectedOutcome ?? "（无——payload 未申报 expected_outcome）"}`);
+  const implementsChange = asString(payload.implements_change);
+  lines.push(`- implements_change: ${implementsChange ?? "（无——未申报实现锚）"}`);
+  const acceptance = Array.isArray(payload.acceptance) ? payload.acceptance : [];
+  if (acceptance.length === 0) {
+    lines.push("- acceptance: （无——payload 未登记 acceptance 条目）");
+  } else {
+    acceptance.forEach((entry, i) => {
+      const criterion = isRecord(entry) ? asString(entry.criterion) : null;
+      const claim = isRecord(entry) ? asString(entry.claim) : null;
+      lines.push(
+        `- acceptance[${i}]: ${criterion ?? "(missing criterion)"}（claim: ${claim ?? "未映射——收口前须补证"}）`,
+      );
+    });
+  }
+  return { title: "任务 PRD 摘要", lines, pointer: "详情跑 pomaster inspect " + taskId };
+}
+
+/** 逐段预算截断（贪心保留 + 指针行——降级可见，禁静默切尾）。 */
+function renderPackSections(
+  sections: readonly DispatchPackSection[],
+): { readonly lines: string[]; readonly views: DispatchPackSectionView[] } {
+  const lines: string[] = [];
+  const views: DispatchPackSectionView[] = [];
+  for (const section of sections) {
+    const contentLength = section.lines.join("\n").length;
+    let kept: readonly string[] = section.lines;
+    let truncated = false;
+    if (contentLength > DISPATCH_PACK_SECTION_BUDGET) {
+      const keep: string[] = [];
+      let used = 0;
+      for (const line of section.lines) {
+        if (used + line.length + 1 > DISPATCH_PACK_SECTION_BUDGET) break;
+        keep.push(line);
+        used += line.length + 1;
+      }
+      kept = keep;
+      truncated = true;
+    }
+    views.push({ title: section.title, characters: contentLength, truncated });
+    lines.push(`## ${section.title}`);
+    lines.push(...kept);
+    if (truncated) {
+      lines.push(`- …（超单段预算 ${DISPATCH_PACK_SECTION_BUDGET} 字符已截断；${section.pointer}）`);
+    }
+  }
+  return { lines, views };
+}
+
+/**
+ * `agents dispatch-pack <task>`（裁定批 E P4）：子代理派发包——任务 prd 摘要 +
+ * 关联 mapping/manifest 引用 + 红线摘要，预算截断（单段 8KB/总 32KB，沿 Trellis
+ * PreToolUse 物化 32KB/文件先例折算）；缺省 stdout 零写入，--out <path> 落盘。
+ * 纯组装既有读取面零新治理语义（View not new database 同线：本包是投影非事实源，
+ * 判卷权威在 kernel/治理命令面）。
+ */
+export async function runAgentsDispatchPack(
+  rootDir: string,
+  input: { readonly task: string; readonly out?: string },
+): Promise<CommandOutcome<DispatchPackResult>> {
+  const command = "agents dispatch-pack";
+  const emptyResult: DispatchPackResult = {
+    task: input.task,
+    resolved_id: null,
+    resolved_via_alias: null,
+    sections: [],
+    total_characters: 0,
+    truncated: false,
+    out_file: null,
+  };
+  const failPack = (error: CliError): CommandOutcome<DispatchPackResult> =>
+    failOutcome(command, emptyResult, [error], [
+      `${command}: FAILED — ${error.code}\n  hint: ${error.hint}`,
+    ]);
+
+  const initialized = await requireInitialized(rootDir);
+  if ("error" in initialized) return failPack(initialized.error);
+
+  const resolved = resolveRowTargetId(input.task);
+  if ("error" in resolved) return failPack(resolved.error);
+
+  const raw = await readRawIndexOrFail(rootDir);
+  if ("error" in raw) return failPack(raw.error);
+  const row = findIndexRow(raw.index, resolved.target);
+  if (row === null) {
+    return failPack({
+      code: "OBJECT_NOT_FOUND",
+      message: `任务不在 truth-index：${resolved.target}${resolved.viaAlias === null ? "" : `（由 ${resolved.viaAlias} 收编解析）`}`,
+      hint: "pomaster status --json 查看对象清单；dispatch-pack 只服务 TASK.* 任务对象。",
+    });
+  }
+
+  const warnings: CliWarning[] = [];
+  const bodyResult = await readBodyEnvelope(rootDir, row);
+  if ("error" in bodyResult) return failPack(bodyResult.error);
+  const payload = isRecord(bodyResult.body.payload) ? bodyResult.body.payload : {};
+
+  const sections: DispatchPackSection[] = [
+    prdSection(resolved.target, asString(row.title_zh), row, payload),
+    await referenceSection(rootDir, resolved.target, warnings),
+    redlineSection(resolved.target),
+  ];
+  const rendered = renderPackSections(sections);
+  const header = [
+    `POMaster 子代理派发包 — ${resolved.target}（裁定批 E P4；纯组装既有读取面零新治理语义）`,
+    `> 预算：单段 ≤${DISPATCH_PACK_SECTION_BUDGET} 字符 / 总 ≤${DISPATCH_PACK_TOTAL_BUDGET} 字符（超限降级指针行）；本包是投影非事实源——判卷权威在 kernel/治理命令面。`,
+    `> task: ${resolved.target}${resolved.viaAlias === null ? "" : `（由 ${resolved.viaAlias} 收编解析）`}`,
+    "",
+  ];
+  let packLines: readonly string[] = [...header, ...rendered.lines];
+  let truncated = rendered.views.some((view) => view.truncated);
+  if (packLines.join("\n").length > DISPATCH_PACK_TOTAL_BUDGET) {
+    const capped = capPlainPack(packLines, DISPATCH_PACK_TOTAL_BUDGET);
+    packLines = capped;
+    truncated = true;
+  }
+
+  let outFile: string | null = null;
+  if (input.out !== undefined) {
+    try {
+      writeFileSync(input.out, `${packLines.join("\n")}\n`, "utf8");
+      outFile = toPosix(input.out);
+    } catch (err) {
+      return failOutcome(command, { ...emptyResult, sections: rendered.views }, [
+        {
+          code: DISPATCH_PACK_WRITE_FAILED,
+          message: `--out 落盘失败：${err instanceof Error ? err.message : String(err)}`,
+          hint: "核查路径可写性后重试；失败不静默降级为纯 stdout（context compile R2/D7 先例）。",
+        },
+      ], [`${command}: FAILED — ${DISPATCH_PACK_WRITE_FAILED}`]);
+    }
+  }
+
+  const result: DispatchPackResult = {
+    task: input.task,
+    resolved_id: resolved.target,
+    resolved_via_alias: resolved.viaAlias,
+    sections: rendered.views,
+    total_characters: packLines.join("\n").length,
+    truncated,
+    out_file: outFile,
+  };
+  return okOutcome(command, result, packLines, warnings);
+}
+
+/** 总预算截断（capPlainOutput 同式语义——本模块自带实现避免 alerts 依赖倒挂）。 */
+function capPlainPack(lines: readonly string[], cap: number): readonly string[] {
+  const text = lines.join("\n");
+  if (text.length <= cap) return lines;
+  const marker = `…[POMaster] 派发包超过 ${cap} 字符总预算，已截断（明细: pomaster inspect <task-id>）`;
+  const keep = Math.max(0, cap - marker.length);
+  return `${text.slice(0, keep)}${marker}`.split("\n");
 }
 
 // ============================================================

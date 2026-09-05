@@ -12,7 +12,15 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { runInit, runCli, runSessionOverview, SESSION_OUTPUT_HARD_CAP } from "@pomaster/cli";
+import {
+  runInit,
+  runCli,
+  runSessionOverview,
+  SESSION_OUTPUT_HARD_CAP,
+  SESSION_SEGMENT_BUDGET,
+  SESSION_SEGMENT_TITLES,
+  SESSION_TOTAL_BUDGET,
+} from "@pomaster/cli";
 
 let dir: string;
 
@@ -144,6 +152,137 @@ describe("session 速览投影（SessionStart 注入源）", () => {
     const listEnvelope = JSON.parse(listOut.join("\n")) as { command: string; result: { sessions: unknown[] } };
     expect(listEnvelope.command).toBe("session list");
     expect(listEnvelope.result.sessions).toEqual([]);
+  });
+});
+
+// ============================================================
+// P1 分段注入（裁定批 E：分段标题 + 每段预算 + 空段省略 + Next-Action 路由）
+// ============================================================
+
+function permitRows(count: number, expiresAtSeq: number): unknown[] {
+  return Array.from({ length: count }, (_, i) => ({
+    permit_ref: `PERMIT.BULK.${i + 1}`,
+    issued_at_seq: 1,
+    expires_at_seq: expiresAtSeq,
+    scope: { subject_ids: ["PAGE.X"], write_policy: "AGENT_WITH_PERMIT" },
+    requested_by: { actor_type: "human", actor: "owner", self_attested: true },
+    change_ref: "CHANGE.X",
+    stolen_at_seq: null,
+    stolen_by: null,
+    stolen_reason: null,
+  }));
+}
+
+describe("session 分段注入（P1：分段标题 + 预算纪律 + 空段省略）", () => {
+  it("fresh init → 恒在段齐备（分母/Next-Action/可行动项/完整性/八拍路标），空段省略（任务/许可/attention 无标题）", async () => {
+    await runInit(dir);
+    const outcome = await runSessionOverview(dir);
+    const text = outcome.human.join("\n");
+    for (const title of ["分母", "Next-Action", "可行动项", "完整性", "八拍路标"]) {
+      expect(text).toContain(`【${title}】`);
+    }
+    for (const title of ["任务/执行/锁", "许可/例外", "attention"]) {
+      expect(text).not.toContain(`【${title}】`);
+    }
+    // 分段 meta 与标题词表闭合。
+    const titles = outcome.result.segments.map((segment) => segment.title);
+    expect(titles).toEqual(["分母", "Next-Action", "可行动项", "完整性", "八拍路标"]);
+    for (const title of titles) expect(SESSION_SEGMENT_TITLES).toContain(title);
+    for (const segment of outcome.result.segments) {
+      expect(segment.characters).toBeGreaterThan(0);
+      expect(segment.truncated).toBe(false);
+    }
+  });
+
+  it("Next-Action 段（P2 同源）：fresh init → 八拍① triage 路标；next_action 结构化字段同源", async () => {
+    await runInit(dir);
+    const outcome = await runSessionOverview(dir);
+    expect(outcome.result.next_action?.route_id).toBe("R_NO_ACTIVE_TASK");
+    expect(outcome.human.join("\n")).toContain(
+      "- 建议: pomaster triage \"<request>\"（八拍①——",
+    );
+  });
+
+  it("活跃任务 → Next-Action 变换为八拍② permit issue 路标（路由同表共享）", async () => {
+    await runInit(dir);
+    const raw = await import("node:fs/promises");
+    const ledgerPath = join(dir, ".pomaster", "state", "truth-index.json");
+    const ledger = JSON.parse(await raw.readFile(ledgerPath, "utf8")) as Record<string, unknown>;
+    ledger.objects = [
+      ...(ledger.objects as unknown[]),
+      {
+        id: "TASK.T1",
+        kind: "task_object",
+        axes: { lifecycle: "PROPOSED", confidence: "PROVISIONAL", evidence: "PLANNED", change: "STABLE" },
+        permits_active: [],
+      },
+    ];
+    writeLedger(ledger);
+    const outcome = await runSessionOverview(dir);
+    expect(outcome.result.next_action?.route_id).toBe("R_PERMIT_MISSING");
+    expect(outcome.human.join("\n")).toContain(
+      "- 建议: pomaster permit issue --subject TASK.T1 --actor <type>:<name>（八拍②——",
+    );
+  });
+
+  it("八拍路标段：①-⑧ 全拍 enforcement 行恒在（P5 不变量的呈现载体）", async () => {
+    await runInit(dir);
+    const outcome = await runSessionOverview(dir);
+    const text = outcome.human.join("\n");
+    expect(text).toContain("【八拍路标】");
+    expect(text).toContain("- ① TRIAGE: pomaster triage");
+    expect(text).toContain("- ⑧ CARRY: pomaster closeout <task-id>");
+  });
+
+  it("例外台账 CONFLICT 在座 → 许可/例外段与 attention 段出现（有项才出段）", async () => {
+    await runInit(dir);
+    mkdirSync(join(dir, ".pomaster", "state"), { recursive: true });
+    writeFileSync(
+      join(dir, ".pomaster", "state", "exception-ledger.json"),
+      `${JSON.stringify(
+        {
+          entries: [
+            {
+              ledger_ref: "EXC-0001",
+              classification: "CONFLICT",
+              statement: "两处权威冲突待裁",
+              recorded_at_seq: 1,
+              recorded_by: { actor_type: "human", actor: "owner", self_attested: true },
+              note: "",
+            },
+          ],
+        },
+        null,
+        2,
+      )}\n`,
+      "utf8",
+    );
+    const outcome = await runSessionOverview(dir);
+    const text = outcome.human.join("\n");
+    expect(text).toContain("【许可/例外】");
+    expect(text).toContain("- 例外台账高显著度: 1 条");
+    expect(text).toContain("【attention】");
+    expect(text).toContain("- attention: 1 项待 Human 注意（pomaster view attention）");
+  });
+
+  it("预算钉：大量活跃许可 → 许可/例外段单段截断（指针行降级可见）+ 总输出 ≤ 硬上限", async () => {
+    await runInit(dir);
+    mkdirSync(join(dir, ".pomaster", "state"), { recursive: true });
+    writeFileSync(
+      join(dir, ".pomaster", "state", "permits.json"),
+      `${JSON.stringify({ version: 1, permits: permitRows(400, 999_999) }, null, 2)}\n`,
+      "utf8",
+    );
+    const outcome = await runSessionOverview(dir);
+    const permitSegment = outcome.result.segments.find((segment) => segment.title === "许可/例外");
+    expect(permitSegment?.truncated).toBe(true);
+    const text = outcome.human.join("\n");
+    expect(text).toContain("【许可/例外】");
+    expect(text).toContain(`超单段预算 ${SESSION_SEGMENT_BUDGET} 字符已截断`);
+    expect(text).toContain("详情跑 pomaster permit list");
+    expect(outcome.result.output_characters).toBeLessThanOrEqual(SESSION_OUTPUT_HARD_CAP);
+    expect(outcome.result.truncated).toBe(true);
+    expect(text.length).toBeLessThanOrEqual(SESSION_TOTAL_BUDGET + 200);
   });
 });
 

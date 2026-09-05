@@ -17,6 +17,11 @@ import {
   LIFECYCLE_VALUES,
   TRUTH_BODY_KINDS,
 } from "@pomaster/schemas";
+import {
+  collectNextActionSnapshot,
+  evaluateNextAction,
+  type NextAction,
+} from "./next-action.js";
 import { TRUTH_INDEX_RELATIVE, toPosix, truthIndexPath } from "./store-layout.js";
 import {
   countSeededAssets,
@@ -33,6 +38,16 @@ import { failOutcome, okOutcome } from "./envelope.js";
 
 function zeroCounts(keys: readonly string[]): Record<string, number> {
   return Object.fromEntries(keys.map((k) => [k, 0]));
+}
+
+/** 失败路径的诚实缺席路由（store 不可读 → 无法判定非乱指；P2 显式缺席纪律）。 */
+function undeterminedNextAction(): NextAction {
+  return {
+    route_id: "R_UNDETERMINED",
+    beat: null,
+    command: null,
+    reason: "无法判定（store 不可读）——诚实缺席非乱指",
+  };
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -107,6 +122,12 @@ export interface StatusResult {
    * truth-index/清单缺席 → 字段缺席（显式缺席纪律）。
    */
   readonly spec_preplant?: SpecPreplantPresentation;
+  /**
+   * Next-Action 确定性路由建议（裁定批 E P2；加法呈现字段——TASK 状态 × 产物/账面
+   * 在场性 → 唯一建议命令，八拍命令化；与 session/alerts 同表共享，next-action.ts
+   * 单一实现）。command=null = 诚实「无法判定」非乱指。
+   */
+  readonly next_action: NextAction;
 }
 
 /**
@@ -145,6 +166,7 @@ export async function runStatus(
       },
       producers: { total: 0, dead: [] },
       worst_blindspot: null,
+      next_action: undeterminedNextAction(),
     }, errors, [`status: FAILED — ${errors[0]?.code}`]);
   }
 
@@ -174,6 +196,7 @@ export async function runStatus(
       },
       producers: { total: 0, dead: [] },
       worst_blindspot: null,
+      next_action: undeterminedNextAction(),
     }, errors, [`status: FAILED — INVALID_STATE`]);
   }
 
@@ -274,6 +297,11 @@ export async function runStatus(
     specPreplant = null;
   }
 
+  // Next-Action 确定性路由（裁定批 E P2）：与 session/alerts 同表共享（单一实现）；
+  // 快照装配降级走 warnings（hook/读路径不失败），command=null = 诚实无法判定。
+  const nextActionSnapshot = await collectNextActionSnapshot(rootDir, warnings);
+  const nextAction = evaluateNextAction(nextActionSnapshot);
+
   const result: StatusResult = {
     state_path: statePath,
     dialect_match: dialectMatch,
@@ -295,6 +323,7 @@ export async function runStatus(
     },
     producers: { total: producerRows.length, dead },
     worst_blindspot: worstBlindspot,
+    next_action: nextAction,
     ...(seededAssets !== null ? { seeded_assets: seededAssets } : {}),
     ...(specPreplant !== null ? { spec_preplant: specPreplant } : {}),
   };
@@ -310,6 +339,9 @@ export async function runStatus(
     `  producers: ${result.producers.total} (dead: ${result.producers.dead.length})`,
     ...(seededAssets !== null ? [seededAssetsHumanLine(seededAssets)] : []),
     ...(specPreplant !== null ? [specPreplantHumanLine(specPreplant)] : []),
+    nextAction.command === null
+      ? `  next: ${nextAction.reason}`
+      : `  next: ${nextAction.command}（八拍${nextAction.beat}——${nextAction.reason}）`,
   ];
   return okOutcome("status", result, human, warnings);
 }

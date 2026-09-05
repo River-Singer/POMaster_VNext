@@ -4,7 +4,8 @@
  * hook 输出契约（research/claude-hooks-reference.md 逐条核实，优先级高于通用命令纪律）：
  * - 恒 exit 0：非零退出 + stdout 会被 harness 呈现为 hook 错误通知；exit 2 会阻断
  *   prompt 处理——本命令永不失败（降级走 warnings 留痕于 --json 信封，人读通道静默）；
- * - 干净=空输出：无可行动项时零字节 stdout（exit 0 + 空 stdout = 合法静默，零 token 噪声）；
+ * - 干净=空输出：无可行动项且无活跃任务时零字节 stdout（exit 0 + 空 stdout = 合法
+ *   静默，零 token 噪声；裁定批 E P3 起有活跃 TASK 时尾部追加一行 breadcrumb）；
  * - 纯文本不以 `{` 开头：exit 0 + `{`…`}` 包裹的 stdout 会被尝试按 JSON 解析——
  *   本命令人读输出恒以 `POMaster` 词形开头；
  * - 亚秒级：只读 truth-index / permits 台账两个小文件，零现场扫描、零写副作用；
@@ -22,6 +23,12 @@
 
 import { readFile } from "node:fs/promises";
 import { CHANGE_VALUES } from "@pomaster/schemas";
+import {
+  collectNextActionSnapshot,
+  evaluateNextAction,
+  renderBreadcrumb,
+  type NextAction,
+} from "./next-action.js";
 import {
   PERMITS_RELATIVE,
   TRUTH_INDEX_RELATIVE,
@@ -67,6 +74,13 @@ export interface AlertsResult {
   readonly alerts: readonly AlertItem[];
   /** 有语义但暂无持久化派生源的类目（显式缺席，禁冒充已检查）。 */
   readonly unsourced_categories: readonly string[];
+  /**
+   * 面包屑行（裁定批 E P3——有活跃 TASK 时单行「拍位 + 下一命令」；无任务/未初始
+   * 化 = null 调用方静默；路由与 status/session 同表共享，P2 next-action.ts）。
+   */
+  readonly breadcrumb: string | null;
+  /** P3 面包屑的结构化同源（command=null = 诚实无法判定；未初始化 = null 缺席显式）。 */
+  readonly next_action: NextAction | null;
 }
 
 /** 派生内部形态（warnings 一并携带——hook 契约恒 exit 0，降级只留痕不失败）。 */
@@ -236,14 +250,23 @@ export async function deriveAlerts(rootDir: string): Promise<AlertsDerivation> {
   return { initialized: true, current_seq: currentSeq, permits_active: permitsActive, alerts, warnings };
 }
 
-/** 人读渲染：干净=零行（零字节 stdout）；有项=短头 + 每项事实行 + next 路标行。 */
-function renderAlertsHuman(alerts: readonly AlertItem[]): readonly string[] {
-  if (alerts.length === 0) return [];
-  const lines: string[] = [`POMaster alerts（${alerts.length} 项可行动；干净=空输出）:`];
-  for (const alert of alerts) {
-    const changeRef = alert.change_ref === null ? "" : `（change_ref=${alert.change_ref}）`;
-    lines.push(`- [${alert.kind}] ${alert.ref}${changeRef} — ${alert.detail}`);
-    lines.push(`  next: ${alert.next}`);
+/** 人读渲染：无任务且干净=零行（零字节 stdout）；有项=短头 + 每项事实行 + next 路标行；有活跃任务=尾部 breadcrumb 一行（P3）。 */
+function renderAlertsHuman(
+  alerts: readonly AlertItem[],
+  breadcrumb: string | null,
+): readonly string[] {
+  if (alerts.length === 0 && breadcrumb === null) return [];
+  const lines: string[] = [];
+  if (alerts.length > 0) {
+    lines.push(`POMaster alerts（${alerts.length} 项可行动）:`);
+    for (const alert of alerts) {
+      const changeRef = alert.change_ref === null ? "" : `（change_ref=${alert.change_ref}）`;
+      lines.push(`- [${alert.kind}] ${alert.ref}${changeRef} — ${alert.detail}`);
+      lines.push(`  next: ${alert.next}`);
+    }
+  }
+  if (breadcrumb !== null) {
+    lines.push(breadcrumb);
   }
   const capped = capPlainOutput(lines, ALERTS_OUTPUT_HARD_CAP);
   return capped.text.split("\n");
@@ -251,16 +274,33 @@ function renderAlertsHuman(alerts: readonly AlertItem[]): readonly string[] {
 
 /**
  * `pomaster alerts`：恒 ok=true（hook 契约——退出码由 runCli 依 ok 判定，恒 0）；
- * 干净=空输出；降级走 warnings 不走 errors。
+ * 无活跃任务且干净=空输出；降级走 warnings 不走 errors。
+ * P3（裁定批 E）：有活跃 TASK 时尾部追加一行 breadcrumb（拍位 + 下一命令——与
+ * status/session 同一路由表，P2 next-action.ts）；无任务静默零输出（Trellis 同款
+ * 纪律：面包屑只在有状态时占用 token）。
  */
 export async function runAlerts(rootDir: string): Promise<CommandOutcome<AlertsResult>> {
   const derivation = await deriveAlerts(rootDir);
+  // —— P3 breadcrumb（快照装配降级走 warnings，hook 契约恒 exit 0）。未初始化跳过
+  // 快照装配：deriveAlerts 已留痕缺席告警（重复告警禁入信封），且无任务时
+  // breadcrumb 反正为 null——next_action=null 与 session 未初始化缺席形态一致。 ——
+  let breadcrumb: string | null = null;
+  let nextAction: NextAction | null = null;
+  const breadcrumbWarnings: CliWarning[] = [];
+  if (derivation.initialized) {
+    const snapshot = await collectNextActionSnapshot(rootDir, breadcrumbWarnings);
+    nextAction = evaluateNextAction(snapshot);
+    breadcrumb = renderBreadcrumb(nextAction, snapshot);
+  }
   const result: AlertsResult = {
     initialized: derivation.initialized,
     current_seq: derivation.current_seq,
     permits_active: derivation.permits_active,
     alerts: derivation.alerts,
     unsourced_categories: [...ALERT_UNSOURCED_CATEGORIES],
+    breadcrumb,
+    next_action: nextAction,
   };
-  return okOutcome("alerts", result, renderAlertsHuman(derivation.alerts), derivation.warnings);
+  const warnings: CliWarning[] = [...derivation.warnings, ...breadcrumbWarnings];
+  return okOutcome("alerts", result, renderAlertsHuman(derivation.alerts, breadcrumb), warnings);
 }

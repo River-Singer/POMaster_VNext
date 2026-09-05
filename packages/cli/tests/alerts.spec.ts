@@ -265,6 +265,80 @@ describe("capPlainOutput（session/alerts 共享截断语义）", () => {
 });
 
 // ============================================================
+// P3 breadcrumb（裁定批 E：有活跃 TASK=单行拍位+下一命令；无任务=静默）
+// ============================================================
+
+function writeTaskRowLedger(): void {
+  const ledger = baseLedger(10);
+  ledger.objects = [
+    {
+      id: "TASK.T1",
+      kind: "task_object",
+      axes: { lifecycle: "PROPOSED", confidence: "PROVISIONAL", evidence: "PLANNED", change: "STABLE" },
+      permits_active: [],
+    },
+  ];
+  writeLedger(ledger);
+}
+
+describe("alerts breadcrumb（P3：路由与 status/session 同表共享）", () => {
+  it("无活跃任务 → breadcrumb=null 且 human 零行（零 token 噪声不变）", async () => {
+    writeLedger(baseLedger(3));
+    const outcome = await runAlerts(dir);
+    expect(outcome.result.breadcrumb).toBeNull();
+    expect(outcome.result.next_action).not.toBeNull();
+    expect(outcome.result.next_action?.route_id).toBe("R_NO_ACTIVE_TASK");
+    expect(outcome.human).toEqual([]);
+  });
+
+  it("有活跃任务且零告警 → human 仅 breadcrumb 一行（八拍② permit issue 路标）", async () => {
+    writeTaskRowLedger();
+    const outcome = await runAlerts(dir);
+    expect(outcome.ok).toBe(true);
+    expect(outcome.result.alerts).toEqual([]);
+    expect(outcome.result.next_action?.route_id).toBe("R_PERMIT_MISSING");
+    expect(outcome.result.breadcrumb).toBe(
+      "POMaster breadcrumb: TASK.T1（八拍②）→ pomaster permit issue --subject TASK.T1 --actor <type>:<name>",
+    );
+    expect(outcome.human).toEqual([outcome.result.breadcrumb]);
+  });
+
+  it("有活跃任务且有告警 → alerts 行在前、breadcrumb 收尾（共单行；≤10k 契约不变）", async () => {
+    const ledger = baseLedger(10);
+    ledger.objects = [
+      {
+        id: "TASK.T1",
+        kind: "task_object",
+        axes: { lifecycle: "PROPOSED", confidence: "PROVISIONAL", evidence: "PLANNED", change: "STABLE" },
+        permits_active: [],
+      },
+      {
+        id: "PAGE.CHALLENGED",
+        kind: "page_surface",
+        axes: { change: "CHALLENGED" },
+        permits_active: [],
+      },
+    ];
+    writeLedger(ledger);
+    const outcome = await runAlerts(dir);
+    expect(outcome.result.alerts).toHaveLength(1);
+    expect(outcome.human).toHaveLength(4);
+    expect(outcome.human[0]).toContain("POMaster alerts（1 项可行动）:");
+    expect(outcome.human[1]).toContain("[OBJECT_CHALLENGED]");
+    expect(outcome.human[outcome.human.length - 1]).toBe(outcome.result.breadcrumb);
+    expect(outcome.human.join("\n").length).toBeLessThanOrEqual(10_000);
+  });
+
+  it("未初始化 → 零输出（面包屑缺席显式，hook 静默纪律不变）+ next_action=null + 缺席告警不重复", async () => {
+    const outcome = await runAlerts(dir);
+    expect(outcome.human).toEqual([]);
+    expect(outcome.result.breadcrumb).toBeNull();
+    expect(outcome.result.next_action).toBeNull();
+    expect(outcome.warnings.filter((warning) => warning.code === "NOT_INITIALIZED")).toHaveLength(1);
+  });
+});
+
+// ============================================================
 // 纯读零写入字节锚（§1.6 投影纪律；view.spec 先例同款）
 // ============================================================
 

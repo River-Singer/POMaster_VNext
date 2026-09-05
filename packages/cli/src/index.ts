@@ -247,7 +247,7 @@ import {
   runSessionRefresh,
 } from "./runtime.js";
 import { runTraceList, runTraceShow } from "./trace.js";
-import { runAgentsStatus, runHandoff, runRun } from "./agents.js";
+import { runAgentsDispatchPack, runAgentsStatus, runHandoff, runRun } from "./agents.js";
 import { MIGRATE_DEFERRED_FORMS, runMigrateTrellisSpec } from "./migrate.js";
 
 export { CLI_NAME, CLI_VERSION } from "./cli-info.js";
@@ -304,8 +304,23 @@ export type {
   AlertKind,
   AlertsDerivation,
 } from "./alerts.js";
-export { runSessionOverview, SESSION_OUTPUT_HARD_CAP } from "./session.js";
+export { runSessionOverview, SESSION_OUTPUT_HARD_CAP, SESSION_TOTAL_BUDGET, SESSION_SEGMENT_BUDGET, SESSION_SEGMENT_TITLES } from "./session.js";
 export type { SessionOverviewResult } from "./session.js";
+export {
+  collectNextActionSnapshot,
+  evaluateNextAction,
+  renderBreadcrumb,
+  EIGHT_BEAT_ENFORCEMENT_LINES,
+  NEXT_ACTION_ROUTE_IDS,
+  NEXT_ACTION_ROUTE_TABLE,
+  NEXT_ACTION_SNAPSHOT_INCOMPLETE,
+} from "./next-action.js";
+export type {
+  NextAction,
+  NextActionRouteId,
+  NextActionSnapshot,
+  NextActionTaskRow,
+} from "./next-action.js";
 export {
   ENTRY_MODE_HEAVY_MARKER,
   CLAUDE_SETTINGS_RELATIVE,
@@ -680,8 +695,8 @@ export type {
   ExecutionEndResult,
   ExecutionListResult,
 } from "./runtime.js";
-export { runAgentsStatus, runRun, runHandoff, COMMAND_DEFERRED, GATEKEEPER_DRIFT_OBSERVED, SUPERVISOR_TRIGGER_OBSERVED } from "./agents.js";
-export type { AgentsStatusResult, AgentsStatusInput, DeferredCommandResult } from "./agents.js";
+export { runAgentsStatus, runRun, runHandoff, runAgentsDispatchPack, COMMAND_DEFERRED, GATEKEEPER_DRIFT_OBSERVED, SUPERVISOR_TRIGGER_OBSERVED, DISPATCH_PACK_SECTION_TITLES, DISPATCH_PACK_SECTION_BUDGET, DISPATCH_PACK_TOTAL_BUDGET, DISPATCH_PACK_WRITE_FAILED } from "./agents.js";
+export type { AgentsStatusResult, AgentsStatusInput, DeferredCommandResult, DispatchPackResult, DispatchPackSectionView } from "./agents.js";
 export {
   runMigrateTrellisSpec,
   MIGRATE_DEFERRED_FORMS,
@@ -2858,6 +2873,28 @@ export function createProgram(
       });
       record({
         command: "agents status",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  // —— 子代理派发包（裁定批 E P4；09-05 提案 §2 P4——Trellis PreToolUse 物化的
+  // vNext 形态）：纯组装既有读取面零新治理语义；缺省 stdout 零写入，--out 落盘。 ——
+  agents
+    .command("dispatch-pack")
+    .description(
+      "产出子代理派发包（裁定批 E P4）：任务 prd 摘要（intent/expected_outcome/acceptance）+ 关联引用（context manifest/绑定许可/检视路标）+ 红线摘要（写路径/证据/完成判定纪律）；预算截断（单段 8192 / 总 32768 字符，超限降级指针行）；缺省 stdout 零写入，--out <path> 落盘；纯读投影非事实源——判卷权威在 kernel/治理命令面",
+    )
+    .argument("<task>", "任务对象 governed id（TASK.*；legacy 词形自动收编）")
+    .option("--out <path>", "派发包落盘路径（缺省仅 stdout；落盘失败显式报错非静默降级）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (task: string, opts, command) => {
+      const outcome = await runAgentsDispatchPack(resolveDir(command), {
+        task,
+        ...(opts.out !== undefined ? { out: opts.out as string } : {}),
+      });
+      record({
+        command: "agents dispatch-pack",
         outcome,
         asJson: command.opts().json === true,
       });

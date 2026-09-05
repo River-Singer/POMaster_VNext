@@ -65,7 +65,7 @@ pomaster eval --suite behavioral
 pomaster catalog status/explain/relock
 pomaster migrate trellis-spec --analyze --spec-root <dir>
 pomaster production band/evaluate/challenge/diagnose/metrics/self-improvement
-pomaster agents status
+pomaster agents status/dispatch-pack
 pomaster run <task>
 pomaster handoff <task> --to <role>
 pomaster session attach/refresh/list
