@@ -8,3 +8,9 @@ docs/
 # 仓库根本机治理账本（Owner 决议 2026-09-01：基准轮 gate record 入账；保守裁定账本留本机
 # 不入 git）。前导 / 锚定仓库根——examples/tiny-tool/.pomaster/ 演示 fixture 已入库，不受影响。
 /.pomaster/
+# CI 诊断临时文件
+.runs.json
+.jobs.json
+.jobs_url.txt
+.job_id.txt
+.win-ci.log
