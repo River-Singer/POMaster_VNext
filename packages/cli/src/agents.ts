@@ -49,6 +49,7 @@ import {
   findIndexRow,
   isRecord,
   readBodyEnvelope,
+  readPermitFile,
   readRawIndexOrFail,
   resolveRowTargetId,
 } from "./projection-common.js";
@@ -386,24 +387,31 @@ async function referenceSection(
       `- context manifest: 缺席（显式——编译: pomaster context compile --role <role> --change ${taskId}）`,
     );
   }
-  const index = await readRawIndexOrFail(rootDir);
-  if (!("error" in index)) {
-    const row = findIndexRow(index.index, taskId);
-    const permitsActive =
-      row !== null && Array.isArray(row.permits_active)
-        ? row.permits_active.map((ref) => asString(ref)).filter((ref): ref is string => ref !== null)
-        : [];
+  // —— 绑定许可（R-H 单一解析，与 next-action 路由同口径）：任务绑定唯一呈现源 =
+  // permits 台账 change_ref 命中 taskId 的非 stolen 行（活跃/过期都呈现，活性判定
+  // 指路 permit check）；对象索引 permits_active 只是 MIGRATING 迁移仪式产物，不再
+  // 作为绑定呈现源。台账不可读 → warning 留痕且不冒充缺席（permit_ledger_ok 同精神）。
+  const permits = await readPermitFile(rootDir);
+  if (!("error" in permits)) {
+    const boundRefs: string[] = [];
+    for (const row of permits.permits) {
+      const changeRef = asString(row.change_ref);
+      if (changeRef === null || changeRef !== taskId) continue;
+      if (row.stolen_at_seq !== null && row.stolen_at_seq !== undefined) continue;
+      const ref = asString(row.permit_ref);
+      if (ref !== null) boundRefs.push(ref);
+    }
     lines.push(
-      permitsActive.length > 0
-        ? `- 绑定许可: ${permitsActive.join(", ")}（活性判定: pomaster permit check；台账: pomaster permit list）`
+      boundRefs.length > 0
+        ? `- 绑定许可: ${boundRefs.sort().join(", ")}（活性判定: pomaster permit check；台账: pomaster permit list）`
         : "- 绑定许可: 缺席（显式——写路径开工前签发: pomaster permit issue --subject " +
-            `${taskId} --actor <type>:<name>）`,
+            `${taskId} --actor <type>:<name> --change-ref ${taskId}）`,
     );
   } else {
     warnings.push({
-      code: index.error.code,
-      message: `绑定许可引用读取失败（truth-index 不可读）：${index.error.message}`,
-      hint: index.error.hint,
+      code: permits.error.code,
+      message: `绑定许可台账读取失败（state/permits.json 不可解析）：${permits.error.message}`,
+      hint: permits.error.hint,
     });
   }
   lines.push(`- 对象检视: pomaster inspect ${taskId}；任务审查视图: pomaster view task ${taskId}`);

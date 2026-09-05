@@ -6,8 +6,10 @@
  * 全部为既有只读面：
  * - truth-index：活跃任务行（id 前缀 `TASK.` + lifecycle∈{PROPOSED,CURRENT} +
  *   evidence≠VERIFIED；kernel portability Active Task Recovery 的同前缀判定先例）；
- * - permits 台账：任务绑定 refs 的过期/活性分类（与 alerts / permit list 同式：
- *   未盗取 且 current_seq >= expires_at_seq = 过期——A4 零墙钟，seq 判定）；
+ * - permits 台账（R-H 单一解析）：任务↔许可绑定的唯一解析源 = 台账 change_ref 命中
+ *   活跃任务 id（对象索引 permits_active 回归 transition_object MIGRATING 迁移仪式
+ *   产物语义，不再是绑定源）；过期/活性分类与 alerts / permit list 同式：未盗取 且
+ *   current_seq >= expires_at_seq = 过期——A4 零墙钟，seq 判定；
  * - context manifest：`contexts/<task-id>.context.json` 精确词形（context.ts
  *   contextManifestFileName 的 taskRef 规则镜像——role 级 manifest 不算任务投影在场）；
  * - 证据平面：runs+claims 计数与 claim verdict（readEvidencePlane 同源装配，零第二解析）；
@@ -103,7 +105,6 @@ export interface NextActionTaskRow {
   readonly id: string;
   readonly lifecycle: string | null;
   readonly evidence: string | null;
-  readonly permits_active: readonly string[];
 }
 
 /** Next-Action 路由快照（全部字段缺席显式——诚实呈现禁伪造）。 */
@@ -117,7 +118,10 @@ export interface NextActionSnapshot {
   readonly expired_bound_refs: readonly string[];
   /** 任务绑定 refs ∩ 台账活跃 refs（未盗取且未过期；字典序）。 */
   readonly active_bound_refs: readonly string[];
-  /** 任务绑定 refs 全集（台账不可读时的降级判定面——index 行 permits_active）。 */
+  /**
+   * 任务绑定 refs 全集（R-H 台账单一解析：change_ref 命中活跃任务 id 的非 stolen 行
+   * = expired ∪ active；台账不可读 = 空，且许可两行路由条件不可判跳过）。
+   */
   readonly bound_refs: readonly string[];
   /** 任务级投影 manifest 在场（contexts/<task-id>.context.json 精确词形）。 */
   readonly task_manifest_present: boolean;
@@ -209,24 +213,22 @@ export async function collectNextActionSnapshot(
     if (lifecycle === null || !ACTIVE_LIFECYCLE_VALUES.includes(lifecycle)) continue;
     const evidence = asString(axes.evidence);
     if (evidence === "VERIFIED") continue;
-    const permitsActive = Array.isArray(row.permits_active)
-      ? row.permits_active
-          .map((ref) => asString(ref))
-          .filter((ref): ref is string => ref !== null)
-      : [];
-    activeTasks.push({ id, lifecycle, evidence, permits_active: [...permitsActive].sort() });
+    activeTasks.push({ id, lifecycle, evidence });
   }
   activeTasks.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 
-  const boundRefs = [...new Set(activeTasks.flatMap((task) => task.permits_active))].sort();
+  const activeTaskIds = new Set(activeTasks.map((task) => task.id));
 
   const generation = isRecord(index.generation) ? index.generation : {};
   const currentSeq = typeof generation.seq === "number" ? generation.seq : 0;
 
-  // —— permits 台账分类（与 alerts 过期判定同式；坏形 → permit_ledger_ok=false）。 ——
+  // —— permits 台账（R-H 单一解析：绑定 = change_ref 命中活跃任务 id 的非 stolen 行；
+  // 对象索引 permits_active 不参与绑定；过期/活性分类与 alerts 过期判定同式；坏形 →
+  // permit_ledger_ok=false，许可两行条件不可判跳过不乱指）。 ——
   let permitLedgerOk = false;
   let expiredBoundRefs: readonly string[] = [];
   let activeBoundRefs: readonly string[] = [];
+  let boundRefs: readonly string[] = [];
   const permitsFile = await readPermitFile(rootDir);
   if ("error" in permitsFile) {
     warnings.push({
@@ -248,11 +250,10 @@ export async function collectNextActionSnapshot(
       }
       rows.push(parsed);
     }
-    const boundSet = new Set(boundRefs);
     const expired: string[] = [];
     const active: string[] = [];
     for (const row of rows) {
-      if (!boundSet.has(row.permit_ref)) continue;
+      if (row.change_ref === null || !activeTaskIds.has(row.change_ref)) continue;
       if (row.stolen_at_seq !== null && row.stolen_at_seq !== undefined) continue;
       if (currentSeq >= row.expires_at_seq) expired.push(row.permit_ref);
       else active.push(row.permit_ref);
@@ -260,6 +261,7 @@ export async function collectNextActionSnapshot(
     permitLedgerOk = true;
     expiredBoundRefs = expired.sort();
     activeBoundRefs = active.sort();
+    boundRefs = [...expiredBoundRefs, ...activeBoundRefs].sort();
   }
 
   // —— 任务级 manifest（首活跃任务；contexts/<task-id>.context.json 精确词形）。 ——
@@ -416,11 +418,15 @@ export const NEXT_ACTION_ROUTE_TABLE: readonly NextActionRouteRow[] = [
   },
   {
     id: "R_PERMIT_MISSING",
-    when: (s) => (s.bound_refs.length === 0 ? true : false),
+    when: (s) => {
+      if (!s.permit_ledger_ok) return null; // 台账不可读 → 绑定不可判（诚实跳过，不乱指）
+      return s.bound_refs.length === 0;
+    },
     render: (s) => ({
       beat: "②",
-      command: `pomaster permit issue --subject ${firstTaskOr(s, "<TASK.*>")} --actor <type>:<name>`,
-      reason: "活跃任务无绑定许可——写路径开工前先签发（五件套）",
+      command: `pomaster permit issue --subject ${firstTaskOr(s, "<TASK.*>")} --actor <type>:<name> --change-ref ${firstTaskOr(s, "<TASK.*>")}`,
+      reason:
+        "活跃任务在 permits 台账无绑定许可（change_ref=任务 id 单一解析）——签发须带 --change-ref（投影许可通道按它把任务带入上下文）",
     }),
   },
   {

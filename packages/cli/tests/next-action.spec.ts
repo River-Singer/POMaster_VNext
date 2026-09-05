@@ -4,13 +4,17 @@
  * 钉版面：路由表行 id 词表闭合（表驱动分母）；每行 = (条件, 建议) 首中即停的
  * 表驱动 fixtures；诚实降级（permits 台账不可读 → 许可两行跳过不乱指 +
  * NEXT_ACTION_SNAPSHOT_INCOMPLETE 留痕；store 不可读 → R_UNDETERMINED 显式缺席）；
- * status 集成（next_action 字段 + human next 行 + 失败路径诚实缺席）。
+ * status 集成（next_action 字段 + human next 行 + 失败路径诚实缺席）；
+ * R-H 单一解析（09-05 审计 F1 修复）：任务绑定唯一源 = permits 台账 change_ref——
+ * 对象索引 permits_active 手填不再满足路由退出条件；建议命令补 --change-ref 后
+ * 公开命令正向链（status → permit issue → status → context compile → status）推进闭合。
  */
-import { mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { mkdirSync, writeFileSync, rmSync, readFileSync } from "node:fs";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { applyTransaction, createStore } from "@pomaster/kernel";
 import {
   collectNextActionSnapshot,
   evaluateNextAction,
@@ -18,6 +22,8 @@ import {
   NEXT_ACTION_ROUTE_TABLE,
   NEXT_ACTION_SNAPSHOT_INCOMPLETE,
   renderBreadcrumb,
+  runContextCompile,
+  runPermitIssue,
   runStatus,
   type NextActionRouteId,
   type NextActionSnapshot,
@@ -86,6 +92,9 @@ function taskRow(overrides: Record<string, unknown>): Record<string, unknown> {
   };
 }
 
+// 注（R-H）：fixture 的 permits_active 只是索引行合法字段——绑定断言一律走台账
+// change_ref；手填该字段的负向控制在「双源消除」用例里显式证明其不再参与绑定。
+
 function writeTaskBody(payload: Record<string, unknown>): void {
   mkdirSync(join(dir, ".pomaster", "truth", "objects", "task-object"), { recursive: true });
   writeFileSync(
@@ -111,7 +120,7 @@ function permitRow(overrides: Record<string, unknown>): Record<string, unknown> 
     expires_at_seq: 99,
     scope: { subject_ids: ["TASK.T1"], write_policy: "AGENT_WITH_PERMIT" },
     requested_by: { actor_type: "human", actor: "owner", self_attested: true },
-    change_ref: "CHANGE.T1",
+    change_ref: "TASK.T1",
     stolen_at_seq: null,
     stolen_by: null,
     stolen_reason: null,
@@ -162,7 +171,7 @@ function snap(overrides: Partial<NextActionSnapshot>): NextActionSnapshot {
   };
 }
 
-const TASK = { id: "TASK.T1", lifecycle: "PROPOSED", evidence: "PLANNED", permits_active: [] as readonly string[] };
+const TASK = { id: "TASK.T1", lifecycle: "PROPOSED", evidence: "PLANNED" };
 
 /** 每路由行一枚 fixtures（R_UNDETERMINED 为全表未中兜底——纯函数层用畸构快照触发）。 */
 const ROUTE_FIXTURES: readonly { readonly route: NextActionRouteId; readonly snapshot: NextActionSnapshot }[] = [
@@ -178,7 +187,7 @@ const ROUTE_FIXTURES: readonly { readonly route: NextActionRouteId; readonly sna
   {
     route: "R_PERMIT_EXPIRED",
     snapshot: snap({
-      active_tasks: [{ ...TASK, permits_active: ["PERMIT.T1.1"] }],
+      active_tasks: [TASK],
       bound_refs: ["PERMIT.T1.1"],
       expired_bound_refs: ["PERMIT.T1.1"],
     }),
@@ -190,7 +199,7 @@ const ROUTE_FIXTURES: readonly { readonly route: NextActionRouteId; readonly sna
   {
     route: "R_MANIFEST_MISSING",
     snapshot: snap({
-      active_tasks: [{ ...TASK, permits_active: ["PERMIT.T1.1"] }],
+      active_tasks: [TASK],
       bound_refs: ["PERMIT.T1.1"],
       active_bound_refs: ["PERMIT.T1.1"],
     }),
@@ -198,7 +207,7 @@ const ROUTE_FIXTURES: readonly { readonly route: NextActionRouteId; readonly sna
   {
     route: "R_VERIFY_ENTRY",
     snapshot: snap({
-      active_tasks: [{ ...TASK, permits_active: ["PERMIT.T1.1"] }],
+      active_tasks: [TASK],
       bound_refs: ["PERMIT.T1.1"],
       active_bound_refs: ["PERMIT.T1.1"],
       task_manifest_present: true,
@@ -207,7 +216,7 @@ const ROUTE_FIXTURES: readonly { readonly route: NextActionRouteId; readonly sna
   {
     route: "R_RECONCILE",
     snapshot: snap({
-      active_tasks: [{ ...TASK, permits_active: ["PERMIT.T1.1"] }],
+      active_tasks: [TASK],
       bound_refs: ["PERMIT.T1.1"],
       active_bound_refs: ["PERMIT.T1.1"],
       task_manifest_present: true,
@@ -248,7 +257,9 @@ describe("next-action 路由表（P2 表驱动：每行 = 条件 + 建议）", (
     expect(byRoute.get("R_NO_ACTIVE_TASK")).toContain('pomaster triage "<request>"');
     expect(byRoute.get("R_CLOSEOUT_READY")).toContain("pomaster closeout TASK.T1");
     expect(byRoute.get("R_PERMIT_EXPIRED")).toContain("pomaster permit steal --permit PERMIT.T1.1");
-    expect(byRoute.get("R_PERMIT_MISSING")).toContain("pomaster permit issue --subject TASK.T1");
+    expect(byRoute.get("R_PERMIT_MISSING")).toBe(
+      "pomaster permit issue --subject TASK.T1 --actor <type>:<name> --change-ref TASK.T1",
+    );
     expect(byRoute.get("R_MANIFEST_MISSING")).toContain("pomaster context compile --role <role> --change TASK.T1");
     expect(byRoute.get("R_VERIFY_ENTRY")).toContain("pomaster check --fast");
     expect(byRoute.get("R_RECONCILE")).toContain("pomaster reconcile --permit PERMIT.T1.1");
@@ -305,25 +316,48 @@ describe("next-action 快照装配（既有只读面）", () => {
     expect(snapshot.active_tasks.map((task) => task.id)).toEqual(["TASK.T1"]);
   });
 
-  it("过期分类：seq 判定（current_seq >= expires_at_seq = 过期，A4 零墙钟）；stolen 不入两列", async () => {
+  it("绑定与过期分类（R-H 台账单一解析）：change_ref 命中活跃任务 id 才算绑定；seq 判过期；stolen 与他任务许可不入两列", async () => {
     const ledger = baseLedger(10);
-    ledger.objects = [taskRow({ permits_active: ["PERMIT.A.1", "PERMIT.B.1", "PERMIT.C.1"] })];
+    ledger.objects = [taskRow({})];
     writeLedger(ledger);
     writePermits([
       permitRow({ permit_ref: "PERMIT.A.1", expires_at_seq: 5 }),
       permitRow({ permit_ref: "PERMIT.B.1", expires_at_seq: 99 }),
       permitRow({ permit_ref: "PERMIT.C.1", expires_at_seq: 5, stolen_at_seq: 6 }),
+      permitRow({ permit_ref: "PERMIT.D.1", expires_at_seq: 5, change_ref: "CHANGE.OTHER" }),
     ]);
     const warnings: { code: string; message: string; hint?: string }[] = [];
     const snapshot = await collectNextActionSnapshot(dir, warnings);
     expect(snapshot.expired_bound_refs).toEqual(["PERMIT.A.1"]);
     expect(snapshot.active_bound_refs).toEqual(["PERMIT.B.1"]);
+    expect(snapshot.bound_refs).toEqual(["PERMIT.A.1", "PERMIT.B.1"]);
     expect(evaluateNextAction(snapshot).route_id).toBe("R_PERMIT_EXPIRED");
+  });
+
+  it("双源消除（R-H 回归）：对象索引 permits_active 手填不再是绑定依据——台账无 change_ref 绑定仍 R_PERMIT_MISSING；台账 change_ref 绑定（对象零手填）即跳出该行", async () => {
+    // 负向控制：对象行手填 permits_active 但台账该许可 change_ref=null（不绑任务）→ 死循环退出条件不被假满足。
+    const ledger = baseLedger(10);
+    ledger.objects = [taskRow({ permits_active: ["PERMIT.GHOST.1"] })];
+    writeLedger(ledger);
+    writePermits([permitRow({ permit_ref: "PERMIT.GHOST.1", change_ref: null })]);
+    const warnings: { code: string; message: string; hint?: string }[] = [];
+    const handFilled = await collectNextActionSnapshot(dir, warnings);
+    expect(handFilled.bound_refs).toEqual([]);
+    expect(evaluateNextAction(handFilled).route_id).toBe("R_PERMIT_MISSING");
+
+    // 正向：台账 change_ref=TASK.T1（permitRow 缺省）即绑定；对象行零手填。
+    const cleanLedger = baseLedger(10);
+    cleanLedger.objects = [taskRow({})];
+    writeLedger(cleanLedger);
+    writePermits([permitRow({})]);
+    const ledgerBound = await collectNextActionSnapshot(dir, warnings);
+    expect(ledgerBound.bound_refs).toEqual(["PERMIT.TASK_T1.1"]);
+    expect(evaluateNextAction(ledgerBound).route_id).toBe("R_MANIFEST_MISSING");
   });
 
   it("诚实降级：permits 台账不可读 → 许可两行跳过（不乱指）+ 落到可判行 + 告警留痕", async () => {
     const ledger = baseLedger(10);
-    ledger.objects = [taskRow({ permits_active: ["PERMIT.A.1"] })];
+    ledger.objects = [taskRow({})];
     writeLedger(ledger);
     writePermits([]);
     writeFileSync(join(dir, ".pomaster", "state", "permits.json"), "{nope", "utf8");
@@ -331,6 +365,7 @@ describe("next-action 快照装配（既有只读面）", () => {
     const snapshot = await collectNextActionSnapshot(dir, warnings);
     expect(snapshot.permit_ledger_ok).toBe(false);
     expect(snapshot.expired_bound_refs).toEqual([]);
+    expect(snapshot.bound_refs).toEqual([]);
     const nextAction = evaluateNextAction(snapshot);
     expect(nextAction.route_id).not.toBe("R_PERMIT_EXPIRED");
     expect(nextAction.route_id).not.toBe("R_PERMIT_MISSING");
@@ -340,10 +375,10 @@ describe("next-action 快照装配（既有只读面）", () => {
   it("DoD claims 侧预览：acceptance 全映射 VERIFIED → dod_ready；读取失败 → dod_judgeable=false 行跳过", async () => {
     const ledger = baseLedger(5);
     ledger.objects = [
-      taskRow({ permits_active: ["PERMIT.A.1"], body_ref: "truth/objects/task-object/task.t1.json" }),
+      taskRow({ body_ref: "truth/objects/task-object/task.t1.json" }),
     ];
     writeLedger(ledger);
-    writePermits([permitRow({ permit_ref: "PERMIT.A.1" })]);
+    writePermits([permitRow({})]);
     writeContextManifest("TASK.T1");
     writeClaim("CLM-1", "VERIFIED");
     writeTaskBody({
@@ -364,7 +399,7 @@ describe("next-action 快照装配（既有只读面）", () => {
     // 正文缺失（A1）→ closeout 行跳过（不乱指），落到 judgeable 后续行。
     const brokenLedger = baseLedger(5);
     brokenLedger.objects = [
-      taskRow({ permits_active: ["PERMIT.A.1"], body_ref: "truth/objects/task-object/absent.json" }),
+      taskRow({ body_ref: "truth/objects/task-object/absent.json" }),
     ];
     writeLedger(brokenLedger);
     const broken = await collectNextActionSnapshot(dir, warnings);
@@ -383,13 +418,16 @@ describe("status next_action 字段（P2 集成）", () => {
     expect(outcome.human.join("\n")).toContain("next: pomaster triage");
   });
 
-  it("活跃任务无许可 → R_PERMIT_MISSING + 命令携带 --subject TASK.T1", async () => {
+  it("活跃任务无许可 → R_PERMIT_MISSING + 命令携带 --subject 与 --change-ref（R-H：不带 change_ref 的签发无法通过台账解析满足本行退出条件）", async () => {
     const ledger = baseLedger(3);
     ledger.objects = [taskRow({})];
     writeLedger(ledger);
     const outcome = await runStatus(dir);
     expect(outcome.result.next_action.route_id).toBe("R_PERMIT_MISSING");
     expect(outcome.result.next_action.beat).toBe("②");
+    expect(outcome.result.next_action.command).toBe(
+      "pomaster permit issue --subject TASK.T1 --actor <type>:<name> --change-ref TASK.T1",
+    );
     expect(outcome.human.join("\n")).toContain("pomaster permit issue --subject TASK.T1");
   });
 
@@ -398,5 +436,92 @@ describe("status next_action 字段（P2 集成）", () => {
     expect(outcome.ok).toBe(false);
     expect(outcome.result.next_action.route_id).toBe("R_UNDETERMINED");
     expect(outcome.result.next_action.command).toBeNull();
+  });
+});
+
+// ============================================================
+// R-H 单一解析正向链（09-05 审计 F1 验收：公开命令回归，禁手填状态）
+// ============================================================
+
+describe("R-H 正向链（公开命令：status 提示 → 照做 → 合理推进）", () => {
+  /** 合法 TASK 入库（kernel 事务登记；authority owner 沿 closeout.spec 先例补登记）。 */
+  async function seedTaskViaKernel(): Promise<void> {
+    await createStore(dir);
+    const authPath = join(dir, ".pomaster", "state", "authority.json");
+    const auth = JSON.parse(readFileSync(authPath, "utf8")) as {
+      authorities: Record<string, unknown>;
+    };
+    auth.authorities["BUSINESS_OWNER"] = {};
+    writeFileSync(authPath, `${JSON.stringify(auth, null, 2)}\n`, "utf8");
+    const store = await createStore(dir);
+    await applyTransaction(store, {
+      ops: [
+        {
+          op: "upsert_object",
+          envelope: {
+            id: "TASK.T1",
+            kind: "task_object",
+            axisProfile: "task_default",
+            axes: {
+              lifecycle: "CURRENT",
+              confidence: "PROVISIONAL",
+              evidence: "IMPLEMENTED",
+              change: "STABLE",
+            },
+            titleZh: "正向链回归任务",
+            authority: { owner: "BUSINESS_OWNER", delegates: [] },
+            origin: "natural",
+            payload: {
+              intent: "审计 F1 正向链回归",
+              acceptance: [],
+              class_scan_result: {
+                scope: "src/**",
+                hits: 0,
+                fixed_count: 0,
+                regression_case_ref: "GRN-0001",
+              },
+            },
+          } as never,
+        },
+      ],
+    });
+  }
+
+  it("status 建议 permit issue（含 --change-ref）→ 照做签发 → 下一步 status 不再 R_PERMIT_MISSING；context compile must_entries 包含该任务；再下一步推进到 ⑤", async () => {
+    await seedTaskViaKernel();
+
+    // ① status → R_PERMIT_MISSING；建议命令补齐 --change-ref（审计 F1 第二层病灶修复锚）。
+    const before = await runStatus(dir);
+    expect(before.ok).toBe(true);
+    expect(before.result.next_action.route_id).toBe("R_PERMIT_MISSING");
+    expect(before.result.next_action.command).toBe(
+      "pomaster permit issue --subject TASK.T1 --actor <type>:<name> --change-ref TASK.T1",
+    );
+
+    // ② 照做（建议命令参数 ↔ runPermitIssue 输入逐参对应；签发只写台账——R-H 下
+    //    台账即唯一绑定解析源，无需任何对象索引回写）。
+    const issued = await runPermitIssue(dir, {
+      subjects: ["TASK.T1"],
+      actor: "human:owner",
+      changeRef: "TASK.T1",
+    });
+    expect(issued.ok).toBe(true);
+    expect(issued.result.change_ref).toBe("TASK.T1");
+
+    // ③ 下一步 status：退出条件由台账满足 → 不再 R_PERMIT_MISSING，推进到 ③ PROJECTION。
+    const after = await runStatus(dir);
+    expect(after.result.next_action.route_id).toBe("R_MANIFEST_MISSING");
+
+    // ④ 照做 context compile（--change TASK.T1）→ 投影许可通道按 changeRef 命中台账 →
+    //    must_entries 包含该任务（审计 F1 验收「must_entries 包含该任务」）。
+    const compiled = await runContextCompile(dir, "frontend", undefined, { change: "TASK.T1" });
+    expect(compiled.ok).toBe(true);
+    const taskEntry = compiled.result.manifest.must_entries.find((entry) => entry.ref === "TASK.T1");
+    expect(taskEntry).toBeDefined();
+    expect(taskEntry?.reason).toContain("permit");
+
+    // ⑤ 再下一步 status：manifest 已在座 → 推进到 ⑤ VERIFY（正问链每一步都发生合理推进）。
+    const afterCompile = await runStatus(dir);
+    expect(afterCompile.result.next_action.route_id).toBe("R_VERIFY_ENTRY");
   });
 });

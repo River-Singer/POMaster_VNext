@@ -84,7 +84,6 @@ function taskRow(overrides: Record<string, unknown>): Record<string, unknown> {
     denominator_refs: [],
     binding_summary: { declared: 0, probe_status: "not_configured" },
     evidence_summary: { claims: 0, verified: 0, unverified: 0, rejected: 0 },
-    permits_active: ["PERMIT.TASK_T1.1"],
     ...overrides,
   };
 }
@@ -114,7 +113,7 @@ function permitRow(): Record<string, unknown> {
     expires_at_seq: 99,
     scope: { subject_ids: ["TASK.T1"], write_policy: "AGENT_WITH_PERMIT" },
     requested_by: { actor_type: "human", actor: "owner", self_attested: true },
-    change_ref: "CHANGE.T1",
+    change_ref: "TASK.T1",
     stolen_at_seq: null,
     stolen_by: null,
     stolen_reason: null,
@@ -201,6 +200,7 @@ describe("agents dispatch-pack（P4：子代理派发包）", () => {
     expect(text).toContain("- acceptance[1]: 验收二（未映射）（claim: 未映射——收口前须补证）");
     expect(text).toContain("context manifest: .pomaster/state/contexts/TASK.T1.context.json");
     expect(text).toContain("generated_at_seq=4");
+    // R-H 单一解析：绑定许可从台账 change_ref=TASK.T1 解析（fixture 对象行零手填 permits_active）。
     expect(text).toContain("- 绑定许可: PERMIT.TASK_T1.1");
     expect(text).toContain("pomaster maintain");
     expect(text).toContain("pomaster exec-guard");
@@ -212,6 +212,41 @@ describe("agents dispatch-pack（P4：子代理派发包）", () => {
       expect(section.truncated).toBe(false);
     }
     expect(outcome.result.total_characters).toBeLessThanOrEqual(DISPATCH_PACK_TOTAL_BUDGET);
+  });
+
+  it("R-H 双源消除（绑定许可呈现）：对象 permits_active 手填不再是呈现源——台账无 change_ref 绑定 → 显式缺席 + 建议命令带 --change-ref（防 F1 死循环第一圈）", async () => {
+    const ledger = baseLedger(5);
+    ledger.objects = [taskRow({ permits_active: ["PERMIT.GHOST.1"] })];
+    writeLedger(ledger);
+    writeTaskBody({ intent: "交付一个功能" });
+    writePermits([
+      {
+        ...permitRow(),
+        permit_ref: "PERMIT.GHOST.1",
+        change_ref: null,
+      },
+    ]);
+    const outcome = await runAgentsDispatchPack(dir, { task: "TASK.T1" });
+    expect(outcome.ok).toBe(true);
+    const text = outcome.human.join("\n");
+    expect(text).toContain(
+      "- 绑定许可: 缺席（显式——写路径开工前签发: pomaster permit issue --subject TASK.T1 --actor <type>:<name> --change-ref TASK.T1）",
+    );
+    // 对象行手填的引用不得被当作绑定事实呈现。
+    expect(text).not.toContain("PERMIT.GHOST.1");
+  });
+
+  it("台账不可读 → 绑定许可诚实降级：warning 留痕且不冒充缺席（与 next-action permit_ledger_ok 同精神）", async () => {
+    const ledger = baseLedger(5);
+    ledger.objects = [taskRow({})];
+    writeLedger(ledger);
+    writeTaskBody({ intent: "交付一个功能" });
+    mkdirSync(join(dir, ".pomaster", "state"), { recursive: true });
+    writeFileSync(join(dir, ".pomaster", "state", "permits.json"), "{nope", "utf8");
+    const outcome = await runAgentsDispatchPack(dir, { task: "TASK.T1" });
+    expect(outcome.ok).toBe(true);
+    expect(outcome.warnings.map((warning) => warning.code)).toContain("SCHEMA_INVALID");
+    expect(outcome.human.join("\n")).not.toContain("绑定许可");
   });
 
   it("缺省 stdout 零写入：执行前后 .pomaster 全树字节不变", async () => {

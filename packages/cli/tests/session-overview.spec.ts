@@ -222,7 +222,7 @@ describe("session 分段注入（P1：分段标题 + 预算纪律 + 空段省略
     const outcome = await runSessionOverview(dir);
     expect(outcome.result.next_action?.route_id).toBe("R_PERMIT_MISSING");
     expect(outcome.human.join("\n")).toContain(
-      "- 建议: pomaster permit issue --subject TASK.T1 --actor <type>:<name>（八拍②——",
+      "- 建议: pomaster permit issue --subject TASK.T1 --actor <type>:<name> --change-ref TASK.T1（八拍②——",
     );
   });
 

@@ -298,7 +298,7 @@ describe("alerts breadcrumb（P3：路由与 status/session 同表共享）", ()
     expect(outcome.result.alerts).toEqual([]);
     expect(outcome.result.next_action?.route_id).toBe("R_PERMIT_MISSING");
     expect(outcome.result.breadcrumb).toBe(
-      "POMaster breadcrumb: TASK.T1（八拍②）→ pomaster permit issue --subject TASK.T1 --actor <type>:<name>",
+      "POMaster breadcrumb: TASK.T1（八拍②）→ pomaster permit issue --subject TASK.T1 --actor <type>:<name> --change-ref TASK.T1",
     );
     expect(outcome.human).toEqual([outcome.result.breadcrumb]);
   });
