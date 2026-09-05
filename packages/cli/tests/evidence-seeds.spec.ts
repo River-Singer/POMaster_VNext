@@ -261,6 +261,20 @@ describe("B6e gates 绑定登记级（无消费者不加机制——文件↔对
     expect(index.includes("requirements[].claim_refs/gate_refs")).toBe(true);
     expect(index.includes("不新增词形不动 catalog")).toBe(true);
   });
+
+  it("批 G 陈旧声明清洗（D2 预植现状——裁定批 G，D5=(a) 同类授权延伸）：20 件旧词形「init 播种不写 store 对象」零残留 + 新词形「init 步骤 4.7 预植」全量在座（spec 头行含播种底稿词形）", () => {
+    for (const entry of evidenceSeeds) {
+      expect(entry.content.includes("init 播种不写 store 对象"), entry.path).toBe(false);
+      expect(entry.content.includes("init 步骤 4.7 预植"), entry.path).toBe(true);
+    }
+    for (const slug of PRD13_SPECS) {
+      const text = assetText(`specs/evidence/${slug}.md`);
+      expect(text.includes("本文件为该对象 requirements 的播种底稿"), slug).toBe(true);
+      expect(text.includes("对象演进归项目运行时 applyTransaction"), slug).toBe(true);
+    }
+    const index = assetText("specs/evidence/index.md");
+    expect(index.includes("此后对象演进归项目运行时 applyTransaction")).toBe(true);
+  });
 });
 
 describe("B6e 词形纪律（零新治理语义红线——20 件全量）", () => {

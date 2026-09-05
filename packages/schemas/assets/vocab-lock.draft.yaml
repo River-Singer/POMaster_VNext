@@ -11,16 +11,17 @@
 > 2026-09-03 PR-0007 增补（append-only 纯增量，v0.1~v0.5 词值零删改；Owner 有意词形确认 2026-09-03——knowledge.web.browser.mcp_eyes 物料 sources[].type 实录收编，批次 2.6 该物料 x-vocab-pr pending 注记转正）：source_types 轴 all/allowed 增 owner_directive（置于 human_directive 之后；语义注记：owner_directive=Owner 明令，区别于 human_directive 泛化人类指令——knowledge 物料 x-vocab-pr 注记先例）；forbidden 两值（prototype_html_scrape/ai_invention）语义无关不动。既有 @v0.5-resolved 引用保留不改：其引用语义是「该值集镜像自 v0.5 基线」，v0.6 对这些镜像子集零改动，引用继续为真。
 > 2026-09-04 PR-0008 增补（append-only 纯增量，v0.1~v0.6 词值零删改；vNext Batch 2 R1 / Owner 裁定 D6 2026-09-04——PRD vNext §9.2 四概念分离，Evidence Spec 一等对象落地批）：id_namespace.prefixes_v0 增 SPEC. 前缀（证据要求规范——要求面「需要什么证明」；15 前缀无语义适配位：TASK. 是工作单元非要求面、POLICY. 是强约束载体非证明要求、KNOWLEDGE. 恒 ADVISORY 与 Spec 的 AUTHORITATIVE 要求面相悖；裁定留痕=prd R1「入闭包或新前缀，留痕理由」的入锁形态，三镜像同批同步：schemas/src/vocab.ts GOVERNED_ID_PREFIXES + 07-evidence-records id_prefix/object_id pattern + kernel family.ts PREFIX_FAMILY_MAP SPEC→EVIDENCE 同批补映射）。既有 @v0.6-resolved 引用保留不改：其引用语义是「该值集镜像自 v0.6 基线」，v0.7 对这些镜像子集零改动，引用继续为真。
 > 2026-09-05 PR-0009 增补（append-only 纯增量，v0.1~v0.7 词值零删改；Owner 裁定 D4=(a) 2026-09-05——裁定批 B「一次 vocab PR 批量收编全部在用新词形」，台账 .trellis/tasks/09-04-pomaster-vnext-consolidated-prd/research/owner-decisions-pending.md D4）：全仓 TODO(vocab-pr)/x-vocab-pr 扫描后每条有处置的一次性收编批。**governed 前缀闭包零扩**（16 前缀不动；GATE./SENSOR./ARCHETYPE./*_ARCHETYPE./DECISION. 等一律按既有裁定住 catalog 面/Discovery 平面，非 governed——SENSOR_ID_PATTERN 先例、裁决 9②、裁决 8 ③ D6=A），故 family 映射（kernel PREFIX_FAMILY_MAP）本批零改动。新增十一段：runtime_semantics_axes（03/02/06/07/05 schema 冻结轴十轴 + binding_probe_status）、discovery_vocab（08/09/10/11 schema 冻结词轴）、knowledge_vocab（12 schema）、execution_identity_vocab（D 线原语 + §25.3 Capability Pool + §58 降级规则）、question_gate_vocab（分类五/处置六/五条件申报——Owner 裁定 C1 已裁 ASSUMPTION 第六处置）、decision_graph_vocab（裁决 9②③ 已裁词族 + 禁词负例两族 + STALE_GROUNDING P1 预留启用）、equivalence_vocab（13 schema）、portability_vocab（§85/§84.6）、memory_harvest_vocab（14 schema + P33b 命令面错误词形族）、trace_perception_vocab（16/17 schema 冻结轴 + schema 词形两枚）、sources_authority_vocab / evidence_spec_vocab（字段面注记——applicability_fields 先例）；catalog_layer_vocab 段增 policy_id_domains / policy_web_domains / authority_knowledge_profile_domains / material_id_prefixes / sensor_open_enums 五轴（B6 移植 policy id 域段 + PROFILE.BASELINE + GATE./SENSOR./archetype 物料标识词形——D4 主标的）；presentation_axes 段增二十二轴（CLI/kernel 呈现层局部词转正——CONTEXT_PARTITION_TITLES 五分区〔裁定 D8〕/STALE_GROUNDING 三态〔裁定 D7〕/ATTENTION_KINDS/ALERT_KINDS/permit 呈现态/doctor 探测四态/观测信号码位/CLI 呈现码位/catalog 漂移种类/工具探测四态/权威优先级九级/TRIAGE_PROFILES 信息性注记〔裁定 A1〕/triage 证据级/升级关键词七词〔裁决 2 T-1〕/eval suite/ingest 动作/执行呈现态/maintain 相/handoff fast_gate/closeout 呈现词）；id_namespace.state_plane_refs 增 Discovery 平面五前缀词形注记（裁决 9②——不入 governed 闭包）与 OBS-/ENVREC-/JOURNEY.* 通路词形注记。不收编（逐条理由）：CLI 命令名与旗标词形（PR-0004 先例：词表只收错误词形族不收命令名——migrate --propose/--diff/--apply 等维持模块局部）；纯文档词形（无物料/代码消费不硬收）；CRITICAL 档位词（PR-0005 裁定不入，维持）；CONTRACT.*（PRD §5.2 示意词形，裁决 9② 已裁按示意处理）。既有 @v0.7-resolved 引用保留不改：其引用语义是「该值集镜像自 v0.7 基线」，v0.8 对这些镜像子集零改动，引用继续为真。
+> 2026-09-05 PR-0010 增补（append-only 纯增量，v0.1~v0.8 词值零删改；Owner 2026-09-05 第二轮裁定开放项 2 全做——裁定批 G 收尾批，台账 owner-decisions-pending.md）：catalog_layer_vocab.policy_id_domains 轴扩值 AUTHZ/PRV/ERR 三域段（32→35 段，与 PR-0009 同轴追加）——D3-R1 复核批（裁定批 F）在册 8 条 POLICY.AUTHZ.*/POLICY.PRV.*/POLICY.ERR.* 卡的 x-vocab-pr 候选注记随本轴转正（resolution 注记，finding/proposal 原样保留——mcp_eyes 先例）。governed 前缀闭包零扩（POLICY. 前缀已闭合，域段是其下第二段词形登记——catalog 物料标识，非 governed、零 family 映射）；词值零改动纪律（既有 32 段原样）。既有 @v0.8-resolved 引用保留不改：其引用语义是「该值集镜像自 v0.8 基线」，v0.9 对这些镜像子集零改动，引用继续为真。
 > 消费方：②后续全部 schemas、③Kernel 转移引擎、Behavioral Eval 种子。
 
 ```yaml
 # ============================================================
-# pomaster.vocab/v0.8-resolved   （2026-09-05 PR-0009 增补；append-only 纯增量，v0.1~v0.7 词值零删改）
+# pomaster.vocab/v0.9-resolved   （2026-09-05 PR-0010 增补；append-only 纯增量，v0.1~v0.8 词值零删改）
 # 历史：原 v0-draft（三开放问题已于 2026-08-27 会话裁决）→ v0.1-resolved（2026-08-27 FROZEN）
 #       → v0.2-resolved（2026-08-29 PR-0001 增补）→ v0.3-resolved（2026-09-01 PR-0004 增补）
 #       → v0.4-resolved（2026-09-01 PR-0005 增补）→ v0.5-resolved（2026-09-02 PR-0006 增补）
 #       → v0.6-resolved（2026-09-03 PR-0007 增补）→ v0.7-resolved（2026-09-04 PR-0008 增补）
-#       → v0.8-resolved（2026-09-05 PR-0009 增补）
+#       → v0.8-resolved（2026-09-05 PR-0009 增补）→ v0.9-resolved（2026-09-05 PR-0010 增补）
 # ============================================================
 
 ir_schema: pomaster.truth-index/v1-draft
@@ -232,16 +233,21 @@ catalog_layer_vocab:     # catalog/ 目录条目词轴（PR-0001 收编；catalo
   #    SENSOR_ID_PATTERN 先例 + D-2「Catalog 不是第二套 Project Truth」）——下列域段/前缀词形
   #    是 catalog 物料标识词形登记，**不增 governed 前缀、不动 16 前缀闭包、零 family 映射改动**；
   #    新域段扩值走词汇表 PR（以实盘在册物料为准盘点，PR-0009 时点 catalog-lock 228 条目）。）——
-  policy_id_domains:      # POLICY.<DOMAIN>.* 第二段词形（policies/ 164 条目实盘盘点）
+  policy_id_domains:      # POLICY.<DOMAIN>.* 第二段词形（policies/ 164 条目实盘盘点；PR-0010 扩值 AUTHZ/PRV/ERR 32→35 段）
     values: [AI, API, ARCH, BOUND, BOUNDARY, CACHE, CFG, CHG, CONFLICT, CONTRACT,
              DEP, DEPLOY, DERIVED, EVID, FLAG, GATE, GUARD, INTEGRATION, JOB,
              OBS, PERF, PROC, REL, ROLE, SEC, SPEC, STACK, STRUCT, TEST, TOOL,
-             WEB, WF]
+             WEB, WF,
+             # PR-0010（v0.9-resolved，裁定批 G）扩值：D3-R1 复核批（裁定批 F）在册 8 条
+             # 新用域段——append-only 同轴追加，既有 32 段词值零改动。
+             AUTHZ, PRV, ERR]
     note: >-
       POLICY. 前缀已在 prefixes_v0 闭包（governed）；本轴登记其下第二段域词形（B6b/B6c 播种
-      移植批在用——D4=(a)「新 policy id 域段一次收编」）。POLICY.GATE.* 与 gate_recipe kind
+      移植批在用——D4=(a)「新 policy id 域段一次收编」；D3 复核批新段 AUTHZ/PRV/ERR 随
+      PR-0010 追加）。POLICY.GATE.* 与 gate_recipe kind
       的 gate_def 锚词形（03 schema POLICY.GATE.<NAME>@semver）分立不混。x-vocab-pr 候选注记
-      97+55 条随本轴转正（历史 finding/proposal 原样保留——PR-0007 mcp_eyes 先例）。
+      97+55 条随本轴转正（历史 finding/proposal 原样保留——PR-0007 mcp_eyes 先例）；D3-R1
+      8 条 AUTHZ/PRV/ERR 候选注记随 PR-0010 扩值转正（resolution 注记）。
   policy_web_domains:     # POLICY.WEB.<DOMAIN>.* 第三段词形（50 条目实盘盘点）
     values: [API, ARCH, CHG, COMP, COPY, GRID, HANDOFF, I18N, PAGE, PERF,
              STYLE, TRACK, UIUX]

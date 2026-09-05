@@ -1,0 +1,93 @@
+{
+  "x-spec-d-materialization": {
+    "status": "PROPOSAL",
+    "package": "裁定批 G/D3-R2 排除卡逐卡复核物化·R2 轮（SPEC-D 池卡复用；分母=MASTer 池卡 + vendor 播种字节双锚）",
+    "human_review_required": true,
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/corpus/spec-knowledge/candidates/consolidated-pool.yaml",
+    "group": "FE-G1",
+    "candidate_id": "POLICY.SPEC.PRIMARY_SOURCE_BASIS",
+    "pool_statement_sha16": "2636f79bb511d651",
+    "curated_rule": "D3 逐卡复核批 R2 轮（Owner 2026-09-05 裁定 D3=逐卡复核；裁定批 G 收尾批）：R1 入册 25（required 9 + advisory 16）后余量 17 张 advisory 全量入册——SHOULD 锚 13（卡层行锚缺席，复核回 MASTer 源取得行级证据：B6c BE-G4 六 + BE-G3 七）+ 非 12 段锚 4（B6b-II FE index 2 / B6c BE index 冲突优先序 1 / B6b-I FE20 Change Policy 锚 1，extra_master_sections 如实登记）；全部 advisory（池判 required 卡强度只降不升）；D6 合并口径 ≤25/批满足（17 ≤ 25）；72 张总账=R1 25 + R2 17 + 维持排除 30",
+    "denominator": "MASTer（池卡锚）"
+  },
+  "x-b6-porting": {
+    "status": "PROPOSAL",
+    "batch": "D3-R2",
+    "human_review_required": true,
+    "classification_face": "policy",
+    "enforcement_axis": {
+      "source_sections": [
+        "通用规则准入与维护来源"
+      ],
+      "rule": "SHOULD/Change Policy 源条目 enforcement 必须 advisory（禁升 required）；MUST/MUST NOT 源条目 enforcement 必须 required_when_applicable（降级合法）",
+      "asserted_by": "packages/cli/tests/catalog-b6-porting.spec.ts"
+    },
+    "extra_master_sections": [
+      "通用规则准入与维护来源"
+    ],
+    "denominator": "vendor",
+    "vendor_pin": {
+      "path": "pomaster/components/frontend-hard-spec/assets/universal/index.md",
+      "sha256": "37fc443ce1f90eaa2584a82e12300d8281760332ec69d55a52b26cb22a2b2375",
+      "bytes": 22578
+    },
+    "seeded_spec": ".pomaster/specs/hard/frontend/index.md",
+    "seed_manifest": "packages/cli/seeds/manifest.json",
+    "d3_review": {
+      "excluded_from_batch": "B6B-2",
+      "exclusion_reason_at_seed": "行锚全落 MASTer 项目扩展段（12 段闭包外），无源强度证据，保守排除待复核",
+      "adjudication": "D3 逐卡复核 R2 轮（Owner 2026-09-05 裁定 D3=逐卡复核，裁定批 G 落地 2026-09-05）：本卡原属 B6B-2 保守排除留池（排除理由：行锚全落 MASTer 项目扩展段（12 段闭包外），无源强度证据，保守排除待复核）；复核按锚行内容裁定 advisory 入册（锚行行为规范成分、无段级强度词形 advisory 落点）",
+      "anchor_evidence": "MASTer index.md L20, L23-L31「5. 使用官方标准、官方文档或一手仓库作为规则依据；二手文章只能提供检索线索。 / 首选维护来源包括：」",
+      "pool_enforcement_at_seed": "required_when_applicable"
+    }
+  },
+  "id": "POLICY.SPEC.PRIMARY_SOURCE_BASIS",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "UNIVERSAL_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "规则依据一手来源",
+  "statement_zh": "规则依据必须取自官方标准、官方文档或一手仓库；二手文章只能充当检索线索。",
+  "statement_en_keywords": [
+    "primary source basis",
+    "official standards and documentation",
+    "second-hand articles as search leads only"
+  ],
+  "applies_when": {
+    "lane": "any",
+    "condition": "规则依据引用",
+    "applicability_note": "规则依据引用"
+  },
+  "enforcement": "advisory",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-spec-decomposition"
+  },
+  "origin": "ingested",
+  "origin_note": "裁定批 G/D3-R2 D3 逐卡复核物化·R2 轮（原 B6B-2 保守排除卡补锚收编）；statement 沿用 SPEC-D 候选卡独立措辞（clean-room），零逐字拷贝上游源文本；播种分母=vendor 字节（x-b6-porting.vendor_pin），分解分母=MASTer 池卡（x-spec-d-materialization）",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/corpus/spec-knowledge/candidates/FE-G1.yaml",
+      "captured_by": "agent:claude/spec-d-consolidation",
+      "locator": {
+        "candidate": "POLICY.SPEC.PRIMARY_SOURCE_BASIS",
+        "source_protocol": ".trellis/spec/frontend/index.md",
+        "lines": "L20, L23-L31"
+      },
+      "clean_room_note": "independently rewritten from SPEC-D decomposition candidate cards; zero verbatim copy"
+    }
+  ],
+  "review_notes": [
+    "规则依据一手来源在既有 228 条中无对应条目；与 POLICY.AI.READ_SEARCH_VERIFY_BEFORE_WRITE（B6c：先读后写）相邻不同轴——彼管检索-核实流程，本管依据来源资格（官方标准/官方文档/一手仓库，二手仅检索线索）；与 SPEC.* 族登记纪律互补。",
+    "锚落 MASTer FE index 自有段「通用规则准入与维护来源」（L20/L23-L31，index 卡天然无 12 段锚）——D3 复核按锚行行为规范成分 advisory 入册（池判 required 强度只降不升；标准源清单 L23-L31 为参考列表 annex 不入正本语句），extra_master_sections 如实登记。"
+  ]
+}

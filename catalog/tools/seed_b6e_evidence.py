@@ -41,8 +41,15 @@
     21-evidence-spec kind profile)已以 requirements[].claim_refs/gate_refs 承载资格
     判定,closeout 消费分母恒为 store 对象;最小接线 = 每份 spec 头行「对象面词形:
     SPEC.*」+ index 映射表(登记/注记级),catalog gate recipe 零改动(gate_def_draft
-    已含 verdict_vocabulary,无 evidence spec 引用字段位);对象登记时机 = 项目运行时
-    applyTransaction(init 播种不写 store 对象);
+    已含 verdict_vocabulary,无 evidence spec 引用字段位);对象登记 = init 步骤 4.7
+    预植 SPEC.* store 对象(PROPOSED 起步,裁定批 D D2——init 写 store),此后对象演进
+    归项目运行时 applyTransaction;
+  - **批 G 陈旧声明清洗**(2026-09-05,D5=(a) 同类授权延伸;D2 预植落地后的内容演进):
+    头行与 index 登记通路行的旧词形「对象登记时机由项目运行时 applyTransaction 决定,
+    init 播种不写 store 对象」按 D2 预植现状改写——头行改为「对应对象由 init 步骤 4.7
+    预植 SPEC.* store 对象(PROPOSED 起步,裁定批 D D2);本文件为该对象 requirements 的
+    播种底稿,对象演进归项目运行时 applyTransaction」,index 登记通路行同步改写;
+    旧词形播种面零残留(生成器模板+重演逐字节承载,manifest 自指指纹 pin 同批重算);
   - **播种件无 frontmatter**(authoring:new 通路复用,B6d 先例):纯正文 + 清单
     自指指纹 pin(资产自身字节 sha256/字节数);lane 词形 = 播种分区词形 evidence;
   - **播种面零变更**:SEEDABLE_STORE_DIRS 已含 specs/evidence(B6a),kernel/layout
@@ -97,6 +104,12 @@ NEW_AUTHORING_NOTES = [
     "字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 "
     "SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema "
     "requirements 已承载资格判定)",
+    "裁定批 G 陈旧声明清洗(2026-09-05,D5=(a) 同类授权延伸——D2 预植落地后的内容演进,"
+    "最小改写只动登记面):对象面词形头行旧词形「对象登记时机由项目运行时 applyTransaction "
+    "决定,init 播种不写 store 对象」→「对应对象由 init 步骤 4.7 预植 SPEC.* store 对象"
+    "(PROPOSED 起步,裁定批 D D2);本文件为该对象 requirements 的播种底稿,对象演进归项目"
+    "运行时 applyTransaction」(index 登记通路行同步改写);生成器模板+manifest 自指指纹 pin "
+    "同批重算,旧词形播种面零残留(测试钉)",
 ]
 
 # ======================================================================
@@ -977,8 +990,9 @@ def spec_document(spec):
         "\n",
         f"- 路径:specs/evidence/{spec['slug']}.md\n",
         f"- 对象面词形:{spec['spec_id']}(B2 Evidence Spec 一等对象——kind=business_rule + "
-        "payload.spec_kind=evidence_spec 判别;本文件是项目可编辑要求面,对象登记时机由项目"
-        "运行时 applyTransaction 决定,init 播种不写 store 对象)\n",
+        "payload.spec_kind=evidence_spec 判别;本文件是项目可编辑要求面,对应对象由 init "
+        "步骤 4.7 预植 SPEC.* store 对象(PROPOSED 起步,裁定批 D D2);本文件为该对象 "
+        "requirements 的播种底稿,对象演进归项目运行时 applyTransaction)\n",
         "- 语义锚:Project-Store PRD §13(Evidence Spec Kit)——要求面非证据面:持要求不持"
         "判定,判定值只在 Verification Result(claim 四态)/Gate Result(七态)。\n",
         "\n",
@@ -1082,9 +1096,10 @@ def build_index_md():
     out.append("- 登记词形:SPEC.* governed id(21-evidence-spec kind profile:kind="
                "business_rule + payload.spec_kind=evidence_spec 判别;词形随 PR-0008 在 "
                "vocab-lock prefixes_v0 闭包)。\n")
-    out.append("- 登记通路:项目运行时 applyTransaction upsert_object(init 播种不写 store "
-               "对象);requirements[].claim_refs/gate_refs 是资格清单——closeout 按资格"
-               "判卷,资格外 claim/run 不满足条款。\n")
+    out.append("- 登记通路:对应 store 对象由 init 步骤 4.7 预植(裁定批 D D2——kernel "
+               "applyTransaction upsert_object 单事务,PROPOSED 起步,seed-once);此后对象"
+               "演进归项目运行时 applyTransaction。requirements[].claim_refs/gate_refs 是"
+               "资格清单——closeout 按资格判卷,资格外 claim/run 不满足条款。\n")
     out.append("- 文件↔对象绑定 = 登记级(本索引映射表 + 各 spec 头行词形),无第二套机器"
                "绑定机制(无消费者不加机制——对象面 requirements 已承载资格判定)。\n")
     out.append("- catalog gate recipe 零引用字段位:gate recipe 判卷走 03-gate-result 七态"
@@ -1141,6 +1156,10 @@ def build_seed_assets():
         assert f"- 对象面词形:{spec['spec_id']}(" in text, rel
         assert text.count(spec["spec_id"]) == 1, f"{rel} SPEC 词形出现次数漂移"
         assert "- 语义锚:Project-Store PRD §13" in text, rel
+        # 批 G 陈旧声明清洗:D2 预植现状新词形在座 + 旧词形零残留(计数断言——批 C 同款)。
+        assert "init 步骤 4.7 预植" in text, f"{rel} 批 G 清洗新词形缺席"
+        assert "本文件为该对象 requirements 的播种底稿" in text, f"{rel} 播种底稿词形缺席"
+        assert "init 播种不写 store 对象" not in text, f"{rel} 批 G 清洗旧词形残留"
         assert "持要求不持判定" in text, f"{rel} 要求面声明缺席"
         assert "Verification Result" in text and "Gate Result" in text, rel
         # SPEC 词形过 governed 文法(21 schema definitions.governed_id SPEC 面镜像)。
@@ -1154,6 +1173,9 @@ def build_seed_assets():
     assert "无第二套机器绑定机制" in idx_text and "applyTransaction" in idx_text, \
         "gates 绑定登记级 ADR 注记缺席"
     assert "持要求不持判定" in idx_text
+    # 批 G 陈旧声明清洗:index 登记通路行同批改写(新词形在座+旧词形零残留)。
+    assert "init 步骤 4.7 预植" in idx_text, "index 批 G 清洗新词形缺席"
+    assert "init 播种不写 store 对象" not in idx_text, "index 批 G 清洗旧词形残留"
 
     # 4) 逐件词形纪律。
     for rel, data in sorted(assets.items()):

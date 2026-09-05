@@ -1,28 +1,32 @@
 # -*- coding: utf-8 -*-
-"""裁定批 F——D3 排除卡逐卡复核物化工具（Owner 2026-09-05 裁定 D3=逐卡复核；台账
-corpus/master/cutover/owner-adjudications.md 裁决 13）。
+"""裁定批 F/G——D3 排除卡逐卡复核物化工具（Owner 2026-09-05 裁定 D3=逐卡复核；台账
+corpus/master/cutover/owner-adjudications.md 裁决 13 + 裁决 14）。
 
 背景：B6b-I/B6b-II/B6c 播种移植批按「不猜 Owner 意图」保守排除 72 张池卡留池待复核
-（B6b-I 3 + B6b-II 9 + B6c 60）。本工具执行 D3 逐卡复核结论：
+（B6b-I 3 + B6b-II 9 + B6c 60）。本工具执行 D3 逐卡复核全部两轮结论：
   - 维持排除 30 张：Ownership 段锚族（锚行=权责归属默认分配陈述，「X Owner 维护 Y」
     词形，零行为规范成分；归属语义由 catalog authority 轴/owner_registry 既有机制与
     播种件正文承载，不入 policy 强度面）——D3_EXCLUDED_KEEP 常量在册；
-  - 入册 25 张（本工具物化，D3-R1 批）：required 9（D3b 补锚 MUST/MUST NOT）+
+  - 入册 25 张（D3-R1 轮，裁定批 F 物化）：required 9（D3b 补锚 MUST/MUST NOT）+
     advisory 16（Change Policy 锚 14 张降 advisory[行内容含「必须」行为规范、强度只降
     不升] + 密度序前 2 张：REGISTRY 扩展段锚 / FE04 Change Policy 锚）；
-  - 留 D3-R2 17 张（全部 advisory，D6 合并上限 25/批超出部分按强度优先序留下一轮——
-    轮次台账在 D3_R2_DEFERRED 常量 + owner-adjudications 裁决 13）。
+  - 入册 17 张（D3-R2 轮，裁定批 G 物化）：R1 后按池密度序余量 17 张 advisory 全量
+    入册——SHOULD 锚 13（卡层行锚缺席，复核回 MASTer 源取得行级证据：B6c BE-G4 六 +
+    BE-G3 七）+ 非 12 段锚 4（B6b-II FE index 2 / B6c BE index 冲突优先序 1[extra_
+    master_sections 如实登记] + B6b-I FE20 Change Policy 锚 1）；17 ≤ D6 合并上限
+    25/批满足。
 
 输入（只读）：
   - corpus/spec-knowledge/candidates/consolidated-pool.yaml   SPEC-D 汇总池（池行对账）
-  - corpus/spec-knowledge/candidates/{BE-G1,BE-G2,FE-G1}.yaml  候选组卡
+  - corpus/spec-knowledge/candidates/{BE-G1,BE-G2,BE-G3,BE-G4,FE-G1}.yaml  候选组卡
   - MASTer_master/.trellis/spec/{frontend,backend}/            池卡行锚分母（锚核验+LCS）
   - pomaster/components/{frontend,backend}-hard-spec/assets/   vendor 播种字节（pin）
 
 输出：
-  - catalog/policies/policy.*.json                             D3-R1 25 条（x-b6-porting
-    batch="D3-R1" + d3_review 复核注记；x-vocab-pending 仅对未收编 id 域段 AUTHZ/PRV/
-    ERR 的 8 条——PR-0009 已收编集外新段沿用候选注记先例）
+  - catalog/policies/policy.*.json                             D3-R1 25 + D3-R2 17（x-b6-porting
+    batch="D3-R1"/"D3-R2" + d3_review 复核注记）；R1 轮 8 条 AUTHZ/PRV/ERR 的 x-vocab-pr
+    候选注记已随 PR-0010 转正（resolution 注记，v0.9-resolved）；R2 轮新用域段 BE 的 7 条
+    带新 x-vocab-pr 候选注记（PR-0010 后新段沿用候选注记先例，词汇表 PR 增补）
 
 用法：
   python seed_d3_review.py            # 物化（write_if_changed 幂等）
@@ -60,13 +64,23 @@ POOL_PATH = os.path.join(CAND_DIR, "consolidated-pool.yaml")
 POLICY_DIR = os.path.join(VNEXT, "catalog", "policies")
 
 BATCH = "D3-R1"
+BATCH_R2 = "D3-R2"
 BATCH_LABEL = "裁定批 F/D3-R1"
+BATCH_LABEL_R2 = "裁定批 G/D3-R2"
 CURATED_RULE = (
     "D3 逐卡复核批（Owner 2026-09-05 裁定 D3=逐卡复核；72 张保守排除卡逐卡核锚）："
     "required 9（D3b source=null 补锚落 MUST/MUST NOT 且与 MASTer 行锚交叉验证）+ "
     "advisory 16（Change Policy 锚 14 张降 advisory[行内容含「必须」行为规范、强度只降"
     "不升] + 池密度序前 2）= 25（D6 合并上限 policy+TP 合计 25/批内执行；超出 17 张 "
     "advisory 留 D3-R2 轮次台账）；维持排除 30（Ownership 归属说明族）"
+)
+CURATED_RULE_R2 = (
+    "D3 逐卡复核批 R2 轮（Owner 2026-09-05 裁定 D3=逐卡复核；裁定批 G 收尾批）："
+    "R1 入册 25（required 9 + advisory 16）后余量 17 张 advisory 全量入册——SHOULD 锚 13"
+    "（卡层行锚缺席，复核回 MASTer 源取得行级证据：B6c BE-G4 六 + BE-G3 七）+ 非 12 段锚 "
+    "4（B6b-II FE index 2 / B6c BE index 冲突优先序 1 / B6b-I FE20 Change Policy 锚 1，"
+    "extra_master_sections 如实登记）；全部 advisory（池判 required 卡强度只降不升）；"
+    "D6 合并口径 ≤25/批满足（17 ≤ 25）；72 张总账=R1 25 + R2 17 + 维持排除 30"
 )
 POOL_REL = "POMaster_VNext/corpus/spec-knowledge/candidates/consolidated-pool.yaml"
 CLEAN_ROOM_NOTE = ("independently rewritten from SPEC-D decomposition candidate cards; "
@@ -75,15 +89,29 @@ LCS_THRESHOLD = 20
 D5_CAP_PER_BATCH = 25
 
 # PR-0009 已收编 policy id 域段（vocab-lock@v0.8-resolved catalog_layer_vocab.
-# policy_id_domains 32 段 + policy_web_domains 13 段）。本批新用域段（AUTHZ/PRV/ERR）
-# 走 x-vocab-pr 候选注记（B6b/B6c 先例——新段待词汇表 PR 增补）。
+# policy_id_domains 32 段 + policy_web_domains 13 段）。D3-R1 新用域段（AUTHZ/PRV/ERR）
+# 的 8 条候选注记已随 PR-0010 转正（vocab-lock@v0.9-resolved 35 段——裁定批 G）；
+# D3-R2 新用域段（BE）走 x-vocab-pr 候选注记（B6b/B6c/D3-R1 先例——新段待词汇表 PR 增补）。
 REGISTERED_DOMAINS = {
     "AI", "API", "ARCH", "BOUND", "BOUNDARY", "CACHE", "CFG", "CHG", "CONFLICT",
     "CONTRACT", "DEP", "DEPLOY", "DERIVED", "EVID", "FLAG", "GATE", "GUARD",
     "INTEGRATION", "JOB", "OBS", "PERF", "PROC", "REL", "ROLE", "SEC", "SPEC",
     "STACK", "STRUCT", "TEST", "TOOL", "WEB", "WF",
+    # PR-0010（vocab-lock@v0.9-resolved，裁定批 G）收编 D3-R1 三域段。
+    "AUTHZ", "PRV", "ERR",
 }
-NEW_DOMAINS_IN_BATCH = {"AUTHZ", "PRV", "ERR"}
+NEW_DOMAINS_IN_BATCH_R1 = {"AUTHZ", "PRV", "ERR"}  # 已随 PR-0010 转正（resolution 注记）。
+NEW_DOMAINS_IN_BATCH_R2 = {"BE"}  # R2 新用域段——候选注记在册待词汇表 PR。
+
+# PR-0010 转正词形（裁定批 G；与 b6b/b6c 工具 VOCAB_PR_RESOLUTION_* 同款常量纳编先例——
+# 保工具单源重演语义；与 catalog/policies 在册 8 条 resolution 逐字节一致）。
+VOCAB_PR_0010_RESOLUTION = (
+    "2026-09-05 vocab PR-0010 增补落地（vocab-lock@v0.9-resolved，append-only 纯增量；"
+    "Owner 2026-09-05 第二轮裁定开放项 2 全做——裁定批 G 收尾批）：AUTHZ/PRV/ERR 三 id "
+    "域段随 catalog_layer_vocab.policy_id_domains 扩值收编（32→35 段，与 PR-0009 同轴"
+    "追加，词值零改动）；本 pending 注记就此转正（finding/proposal/locked_vocab_untouched "
+    "为创建时点历史记录原样保留——mcp_eyes 先例）"
+)
 
 D3_EXCLUSION_NOTE = (
     "D3 逐卡复核（Owner 2026-09-05 裁定 D3=逐卡复核，裁定批 F 落地 2026-09-05）：本卡"
@@ -94,6 +122,17 @@ D3_EXCLUSION_NOTE_FE = (
     "D3 逐卡复核（Owner 2026-09-05 裁定 D3=逐卡复核，裁定批 F 落地 2026-09-05）：本卡"
     "原属 B6B-1 保守排除留池（排除理由：{reason}）；复核按锚行内容裁定 advisory 入册"
     "（{basis}）"
+)
+# R2 轮（裁定批 G）复核注记——R1 模板字节冻结不动（在册 25 条重演恒等），R2 用独立模板。
+D3_R2_EXCLUSION_NOTE = (
+    "D3 逐卡复核 R2 轮（Owner 2026-09-05 裁定 D3=逐卡复核，裁定批 G 落地 2026-09-05）："
+    "本卡原属 {origin} 保守排除留池（排除理由：{reason}）；复核补锚回 MASTer 源取得行级"
+    "证据，锚段={sections}，按强度入册（{basis}）"
+)
+D3_R2_EXCLUSION_NOTE_FE = (
+    "D3 逐卡复核 R2 轮（Owner 2026-09-05 裁定 D3=逐卡复核，裁定批 G 落地 2026-09-05）："
+    "本卡原属 {origin} 保守排除留池（排除理由：{reason}）；复核按锚行内容裁定 advisory "
+    "入册（{basis}）"
 )
 
 # ----------------------------------------------------------------------
@@ -340,6 +379,120 @@ REVIEW_NOTES = {
         "Change Policy 锚（FE04 L84，行内容含「必须」）——advisory 落点（池密度序 32.31 "
         "为 advisory 补位第 2）。",
     ],
+    # ---- D3-R2 轮 17 张（裁定批 G）----
+    "POLICY.CACHE.FAILURE_MODE_GUARDS": [
+        "缓存穿透/击穿/雪崩/热 key 限制与观测在既有 228 条中无对应条目；与 POLICY.CACHE."
+        "LIFECYCLE_DEFINITION（B6b-I：缓存生命周期定义）及同批 SCHEMA_VERSIONING（变更"
+        "纪律）不同轴——彼管结构形态/演进，本管失效模式防护设计面，互引不合并。",
+        "D3-R2 补锚：卡层 source_lines=null，复核回 MASTer 23 L31-33（SHOULD 段）取得"
+        "行级证据，advisory 原样（池判一致）。",
+    ],
+    "POLICY.INTEGRATION.FAULT_CONTAINMENT": [
+        "隔离/熔断/限流/降级/对账控散在既有 228 条中无对应条目；与 POLICY.INTEGRATION."
+        "CALL_DEFINITION_MINIMUM（B6b-II：外部调用最小定义面）不同轴（声明面 vs 故障"
+        "控制面），互引。",
+        "D3-R2 补锚：MASTer 24 L31-33（SHOULD 段），advisory 原样（池判一致）。",
+    ],
+    "POLICY.JOB.OPERATIONAL_FEATURES": [
+        "异步任务进度/心跳/并发限制/失败恢复/过期清理在既有 228 条中无对应条目；与 "
+        "POLICY.JOB.LIFECYCLE_DEFINITION、JOB.NO_UNMANAGED_EXECUTION（B6c：任务生命周期"
+        "与托管禁令）不同轴——彼管登记纪律，本管运维能力设计面，互引。",
+        "D3-R2 补锚：MASTer 25 L31-33（SHOULD 段），advisory 原样（池判一致）。",
+    ],
+    "POLICY.OBS.ACTIONABLE_SIGNALS": [
+        "关键失败/延迟/容量/依赖的可行动指标与告警在既有 228 条中无对应条目；与 "
+        "POLICY.OBS.ALERT_WITH_OWNER（B6b-II：告警必须有属主）互引（告警存在性/可行动性 "
+        "vs 属主指派）；与同批 SIGNAL_CHANGE_IMPACT 变更轴正交。",
+        "D3-R2 补锚：MASTer 29 L31-33（SHOULD 段），advisory 原样（池判一致）。",
+    ],
+    "POLICY.PERF.OBSERVATION_DIMENSIONS": [
+        "尾延迟/错误率/资源/排队/背压/依赖瓶颈六维观测在既有 228 条中无对应条目；与 "
+        "POLICY.PERF.EVIDENCE_BINDING、BUDGET_CHANGE_RETEST 不同轴——彼管证据绑定与"
+        "变更复测，本管观测维度完备性，互引。",
+        "D3-R2 补锚：MASTer 30 L31-33（SHOULD 段），advisory 原样（池判一致）。",
+    ],
+    "POLICY.DEPLOY.OPERATIONAL_CAPABILITIES": [
+        "优雅启停/健康检查/滚动发布/最小权限/故障隔离在既有 228 条中无对应条目；与 "
+        "POLICY.DEPLOY.NO_DEV_ENV_AS_PRODUCTION_FACT、RUNTIME_FACT_RECORD（B6b-I：部署"
+        "事实登记）不同轴——彼管事实记录，本管部署单元能力设计面，互引。",
+        "D3-R2 补锚：MASTer 31 L31-33（SHOULD 段），advisory 原样（池判一致）。",
+    ],
+    "POLICY.BE.STATE.SINGLE_RULE_SOURCE": [
+        "同一权威规则集中表达在既有 228 条中无对应条目；与 POLICY.DERIVED."
+        "SINGLE_IMPLEMENTATION（B6b-I：单一实现）相邻不同轴——彼管实现派生面，本管业务"
+        "规则表达唯一权威源；边界与非法转移测试义务与同批 MODEL.SINGLE_BOUNDARY_CONVERSION "
+        "的 round-trip 验证正交，互引。",
+        "D3-R2 补锚：MASTer 14 L33（SHOULD 段），advisory 原样（池判一致）。",
+    ],
+    "POLICY.BE.MODEL.SINGLE_BOUNDARY_CONVERSION": [
+        "边界单次转换+契约/round-trip 验证在既有 228 条中无对应条目；与 POLICY.DERIVED."
+        "SINGLE_IMPLEMENTATION 互引不同轴（实现唯一 vs 转换次数唯一）；与 WEB.API."
+        "TRANSPORT_VS_BUSINESS（B6b-I：传输与业务模型分界）正交互补。",
+        "D3-R2 补锚：MASTer 15 L33（SHOULD 段），advisory 原样（池判一致）。",
+    ],
+    "POLICY.BE.DB.EXPAND_MIGRATE_CONTRACT": [
+        "expand/migrate/contract 三阶段在既有 228 条中无对应条目；与 POLICY.CHG."
+        "COMPAT_MIGRATION_ROLLBACK（B6b-I：通用兼容迁移回滚）、FLAG.CLEANUP_AFTER_FULL_"
+        "ROLLOUT（存量清退）互引——本卡管库表结构并行的专项时序，应用侧迁移通用纪律不重复。",
+        "D3-R2 补锚：MASTer 18 L33（SHOULD 段），advisory 原样（池判一致）。",
+    ],
+    "POLICY.BE.SQL.INDEX_FOR_KNOWN_QUERIES": [
+        "索引服务已知查询+写放大/存储取舍记录在既有 228 条中无对应条目；与 POLICY.PERF.* "
+        "族不同轴（观测/预算 vs 索引设计取真理）；「取舍记录」义务与 ARCH."
+        "DECISION_TRADEOFF_RECORD（决策取舍留痕）语义呼应不同层。",
+        "D3-R2 补锚：MASTer 19 L33（SHOULD 段），advisory 原样（池判一致）。",
+    ],
+    "POLICY.BE.TXN.SHORT_LOCKS_COMPENSATION": [
+        "短锁持有+外部副作用可重试/可补偿在既有 228 条中无对应条目；与同批 INTEGRATION."
+        "FAULT_CONTAINMENT 互引（事务边界时序 vs 集成故障隔离）；与 REL."
+        "NO_IRREVERSIBLE_UNMONITORED_FULL_RELEASE 不同轴。",
+        "D3-R2 补锚：MASTer 20 L33（SHOULD 段），advisory 原样（池判一致）。",
+    ],
+    "POLICY.BE.CONC.PREFER_DB_CONSTRAINTS": [
+        "数据库约束/版本条件原子更新优先在既有 228 条中无对应条目；与同批 TXN."
+        "SHORT_LOCKS_COMPENSATION 同协议正交（不变量保护机制选型 vs 锁时长设计），互引；"
+        "与 STACK.* 池卡不同层（通用并发纪律 vs 技术栈登记）。",
+        "D3-R2 补锚：MASTer 21 L33（SHOULD 段），advisory 原样（池判一致）。",
+    ],
+    "POLICY.BE.IDEM.KEY_PAYLOAD_CONFLICT": [
+        "相同 key 不同 payload 稳定冲突响应在既有 228 条中无对应条目；与 POLICY.WEB.API."
+        "MUTATION_IDEMPOTENCY（B6b-I：前端变更幂等）前后端同族互引——彼管客户端重试面，"
+        "本管服务端键语义，不合并。",
+        "D3-R2 补锚：MASTer 22 L33（SHOULD 段），advisory 原样（池判一致）。",
+    ],
+    "POLICY.SPEC.PRIMARY_SOURCE_BASIS": [
+        "规则依据一手来源在既有 228 条中无对应条目；与 POLICY.AI.READ_SEARCH_VERIFY_"
+        "BEFORE_WRITE（B6c：先读后写）相邻不同轴——彼管检索-核实流程，本管依据来源资格"
+        "（官方标准/官方文档/一手仓库，二手仅检索线索）；与 SPEC.* 族登记纪律互补。",
+        "锚落 MASTer FE index 自有段「通用规则准入与维护来源」（L20/L23-L31，index 卡"
+        "天然无 12 段锚）——D3 复核按锚行行为规范成分 advisory 入册（池判 required 强度"
+        "只降不升；标准源清单 L23-L31 为参考列表 annex 不入正本语句），extra_master_"
+        "sections 如实登记。",
+    ],
+    "POLICY.SPEC.FREEZE_BEFORE_USE": [
+        "规格消费前冻结时点在既有 228 条中无对应条目；与 POLICY.SPEC.DRAFT_NOT_BASELINE、"
+        "SPEC.ADMISSION_CRITERIA（B6b-I：草稿非基线/准入判据）同族互引——彼管草稿状态"
+        "判定与准入，本管逐类规格的冻结时点安排（「可作开发依据」非「永不修改」，修改走"
+        "受控变更）。",
+        "锚落 MASTer FE index 自有段「Spec 生命周期」（L63-L68）——D3 复核按锚行内容 "
+        "advisory 入册（池判 advisory 原样），extra_master_sections 如实登记。",
+    ],
+    "POLICY.SPEC.FAMILY_CONFLICT_PRECEDENCE": [
+        "协议族冲突裁决优先序在既有 228 条中无对应条目（CONFLICT.PRIORITY_LADDER 管跨域"
+        "冲突优先阶梯——本管协议族内语义冲突的整序裁决，互引不合并；「正式契约优先」子句"
+        "与 API.NO_INFORMAL_CONTRACT 互补）；卡自带 uncertainty 注记「本卡价值在整序」"
+        "如实承袭。",
+        "锚落 MASTer BE index 自有段「冲突与责任边界」（L158-163）——D3 复核按锚行内容 "
+        "advisory 入册（池判 advisory 原样；定义性优先序声明无段级强度词形），extra_"
+        "master_sections 如实登记。",
+    ],
+    "POLICY.TEST.REMOVAL_JUSTIFICATION": [
+        "测试删除证明与门禁降级审批在既有 228 条中无对应条目；与 D3-R1 同域卡 TEST."
+        "REMOVAL_NEEDS_SUBSTITUTE_EVIDENCE（BE28 锚）前后端同族互引——彼管替代证据义务，"
+        "本管删除证明+降级审批双要件；R1 注记预告的「前后端同族互引随 R2 登记」就此闭合。",
+        "Change Policy 锚（MASTer FE20 L76，行内容含「必须」行为规范）——D3 复核按裁定"
+        "精神降 advisory 入册（池判 required 强度只降不升）。",
+    ],
 }
 
 # ----------------------------------------------------------------------
@@ -370,29 +523,79 @@ D3_EXCLUDED_KEEP = [
 ]
 assert len(D3_EXCLUDED_KEEP) == 30
 
-# 留 D3-R2 17 张（全部 advisory；D6 合并上限 25/批超出部分按强度优先序——required 9 +
-# Change Policy 降 advisory 14 全量入册后，SHOULD/扩展段 advisory 按池密度序仅余 2 席，
-# 其余 17 张留下一轮；轮次台账同录 owner-adjudications 裁决 13）。
-D3_R2_DEFERRED = [
-    ("POLICY.TEST.REMOVAL_JUSTIFICATION", 32.25),
-    ("POLICY.SPEC.PRIMARY_SOURCE_BASIS", 32.25),
-    ("POLICY.SPEC.FAMILY_CONFLICT_PRECEDENCE", 30.0),
-    ("POLICY.CACHE.FAILURE_MODE_GUARDS", 30.0),
-    ("POLICY.DEPLOY.OPERATIONAL_CAPABILITIES", 30.0),
-    ("POLICY.INTEGRATION.FAULT_CONTAINMENT", 30.0),
-    ("POLICY.JOB.OPERATIONAL_FEATURES", 30.0),
-    ("POLICY.OBS.ACTIONABLE_SIGNALS", 30.0),
-    ("POLICY.PERF.OBSERVATION_DIMENSIONS", 30.0),
-    ("POLICY.SPEC.FREEZE_BEFORE_USE", 30.0),
-    ("POLICY.BE.CONC.PREFER_DB_CONSTRAINTS", 0.0),
-    ("POLICY.BE.DB.EXPAND_MIGRATE_CONTRACT", 0.0),
-    ("POLICY.BE.IDEM.KEY_PAYLOAD_CONFLICT", 0.0),
-    ("POLICY.BE.MODEL.SINGLE_BOUNDARY_CONVERSION", 0.0),
-    ("POLICY.BE.SQL.INDEX_FOR_KNOWN_QUERIES", 0.0),
-    ("POLICY.BE.STATE.SINGLE_RULE_SOURCE", 0.0),
-    ("POLICY.BE.TXN.SHORT_LOCKS_COMPENSATION", 0.0),
+# ----------------------------------------------------------------------
+# D3-R2 轮入册 17 张（裁定批 G；R1 后按池密度序余量，全部 advisory——裁决 13 留账
+# 双锚[密度序 32.25×2/30.0×8/0.0×7] + 裁决 14 同口径入册。锚行=复核回 MASTer 源
+# 实证的行级证据，禁止凭印象——同一锚核验+LCS 机制逐卡执行）。
+# 元组同 R1：（id, group, origin_batch, master_file, lines, sections, reason_key, title）。
+# reason_key 新增三值对应原排除词形：anchor_missing（池行行锚缺席）/ extra_section_
+# advisory（advisory 池扩展段变体）/ not_advisory_section（锚段映射非纯建议段）。
+# ----------------------------------------------------------------------
+# ---- SHOULD 锚 6（B6c BE-G4：卡层 source_lines=null，复核回 MASTer L31-33 SHOULD 段）----
+_D3_R2_BEG4_SHOULD = [
+    ("POLICY.CACHE.FAILURE_MODE_GUARDS", "BE-G4", "B6C",
+     "23-cache-redis-consistency-protocol.md", "L31-L33", ["SHOULD"], "anchor_missing",
+     "缓存失效模式防护"),
+    ("POLICY.INTEGRATION.FAULT_CONTAINMENT", "BE-G4", "B6C",
+     "24-external-integration-resilience-protocol.md", "L31-L33", ["SHOULD"], "anchor_missing",
+     "外部集成故障隔离"),
+    ("POLICY.JOB.OPERATIONAL_FEATURES", "BE-G4", "B6C",
+     "25-async-job-scheduler-protocol.md", "L31-L33", ["SHOULD"], "anchor_missing",
+     "异步任务运维能力"),
+    ("POLICY.OBS.ACTIONABLE_SIGNALS", "BE-G4", "B6C",
+     "29-observability-logging-tracing-protocol.md", "L31-L33", ["SHOULD"], "anchor_missing",
+     "可行动指标与告警"),
+    ("POLICY.PERF.OBSERVATION_DIMENSIONS", "BE-G4", "B6C",
+     "30-performance-capacity-protocol.md", "L31-L33", ["SHOULD"], "anchor_missing",
+     "性能观测六维"),
+    ("POLICY.DEPLOY.OPERATIONAL_CAPABILITIES", "BE-G4", "B6C",
+     "31-runtime-deployment-protocol.md", "L31-L33", ["SHOULD"], "anchor_missing",
+     "部署运行能力六项"),
 ]
-assert len(D3_R2_DEFERRED) == 17
+# ---- SHOULD 锚 7（B6c BE-G3 overlay 卡：卡层 source_lines=null，复核回 MASTer L33）----
+_D3_R2_BEG3_SHOULD = [
+    ("POLICY.BE.STATE.SINGLE_RULE_SOURCE", "BE-G3", "B6C",
+     "14-business-rules-state-protocol.md", "L33", ["SHOULD"], "anchor_missing",
+     "权威规则单点表达"),
+    ("POLICY.BE.MODEL.SINGLE_BOUNDARY_CONVERSION", "BE-G3", "B6C",
+     "15-data-model-protocol.md", "L33", ["SHOULD"], "anchor_missing",
+     "模型边界单次转换"),
+    ("POLICY.BE.DB.EXPAND_MIGRATE_CONTRACT", "BE-G3", "B6C",
+     "18-database-schema-migration-protocol.md", "L33", ["SHOULD"], "anchor_missing",
+     "结构变更三阶段并行部署"),
+    ("POLICY.BE.SQL.INDEX_FOR_KNOWN_QUERIES", "BE-G3", "B6C",
+     "19-query-index-sql-protocol.md", "L33", ["SHOULD"], "anchor_missing",
+     "索引服务已知查询"),
+    ("POLICY.BE.TXN.SHORT_LOCKS_COMPENSATION", "BE-G3", "B6C",
+     "20-transaction-boundary-protocol.md", "L33", ["SHOULD"], "anchor_missing",
+     "短锁持有与副作用补偿"),
+    ("POLICY.BE.CONC.PREFER_DB_CONSTRAINTS", "BE-G3", "B6C",
+     "21-concurrency-locking-protocol.md", "L33", ["SHOULD"], "anchor_missing",
+     "不变量保护优先数据库约束"),
+    ("POLICY.BE.IDEM.KEY_PAYLOAD_CONFLICT", "BE-G3", "B6C",
+     "22-idempotency-protocol.md", "L33", ["SHOULD"], "anchor_missing",
+     "幂等键冲突稳定响应"),
+]
+# ---- 非 12 段锚 4（MASTer 扩展段/Change Policy 锚——extra_master_sections 如实登记）----
+_D3_R2_EXTRA_ANCHOR = [
+    # B6b-II FE index 2（index 卡天然无 12 段锚——锚落 index 自有段，池 advisory/required 混合）。
+    ("POLICY.SPEC.PRIMARY_SOURCE_BASIS", "FE-G1", "B6B-2",
+     "index.md", "L20, L23-L31", ["通用规则准入与维护来源"], "extra_section",
+     "规则依据一手来源"),
+    ("POLICY.SPEC.FREEZE_BEFORE_USE", "FE-G1", "B6B-2",
+     "index.md", "L63-L68", ["Spec 生命周期"], "extra_section_advisory",
+     "规格消费前冻结"),
+    # B6c BE index 冲突优先序 1（裁决 13：BE index 冲突与责任边界段 L158-163）。
+    ("POLICY.SPEC.FAMILY_CONFLICT_PRECEDENCE", "BE-G1", "B6C",
+     "index.md", "158-163", ["冲突与责任边界"], "not_advisory_section",
+     "协议冲突裁决优先序"),
+    # B6b-I FE20 Change Policy 锚 1（锚行含「必须」行为规范——池判 required 降 advisory）。
+    ("POLICY.TEST.REMOVAL_JUSTIFICATION", "FE-G1", "B6B-1",
+     "20-testing-protocol.md", "L76", ["Change Policy"], "change_policy",
+     "测试删除证明与降级审批"),
+]
+D3_R2_REGISTERED = _D3_R2_BEG4_SHOULD + _D3_R2_BEG3_SHOULD + _D3_R2_EXTRA_ANCHOR
+assert len(D3_R2_REGISTERED) == 17
 
 # FE 卡人工英文关键词（FE 候选卡不带 statement_en_keywords 字段——B6b 先例人工审定）。
 FE_KEYWORDS = {
@@ -404,13 +607,29 @@ FE_KEYWORDS = {
         "security relaxation approval", "risk assessment", "approver and expiry",
         "fix over convenience",
     ],
+    "POLICY.TEST.REMOVAL_JUSTIFICATION": [
+        "test removal justification", "behavior deleted or equivalent coverage",
+        "gate test downgrade approval",
+    ],
+    "POLICY.SPEC.PRIMARY_SOURCE_BASIS": [
+        "primary source basis", "official standards and documentation",
+        "second-hand articles as search leads only",
+    ],
+    "POLICY.SPEC.FREEZE_BEFORE_USE": [
+        "freeze before use", "requirement spec frozen before development",
+        "baseline after first vertical slice",
+    ],
 }
 
-# 原排除理由（种子工具排除记录词形，d3_review 注记引用）。
+# 原排除理由（种子工具排除记录词形，d3_review 注记引用；R2 轮新增三值对应
+# B6b/B6c advisory 池与扩展段变体——词形与原工具排除记录逐字一致）。
 ORIGIN_REASON = {
     "source_null": "卡层 source=null（锚证据不足），保守排除待复核",
     "change_policy": "行锚段映射非 MUST/MUST NOT（池 enforcement 判定矛盾，保守排除待复核）",
     "extra_section": "行锚全落 MASTer 项目扩展段（12 段闭包外），无源强度证据，保守排除待复核",
+    "anchor_missing": "池行行锚缺席（锚证据不足，保守排除待复核）",
+    "extra_section_advisory": "行锚全落 MASTer 项目扩展段（12 段闭包外），无源段证据，保守排除待复核",
+    "not_advisory_section": "行锚段映射非纯建议段（池 advisory 判定矛盾，保守排除待复核）",
 }
 
 
@@ -488,10 +707,12 @@ def clean_room_audit(cid, statement, base, name, lines_str):
 
 
 def verify_anchors():
-    """逐卡锚核验：行锚落声明段 + 锚行原文在座（禁凭印象）。返回 {cid: 锚行原文}。"""
+    """逐卡锚核验（R1+R2 全量）：行锚落声明段 + 锚行原文在座（禁凭印象）。返回 {cid: 锚行原文}。"""
     out = {}
-    for (cid, _g, _o, name, lines_str, sections, _rk, _title) in D3_REGISTERED:
-        base = MASTER_FE if name in FE_MASTER_FILES else MASTER_BE
+    for (cid, group, _o, name, lines_str, sections, _rk, _title) in \
+            D3_REGISTERED + D3_R2_REGISTERED:
+        # lane 判定按卡组（FE/BE 两树同名文件并存——index.md 双侧在座，禁按文件名判）。
+        base = MASTER_FE if group.startswith("FE") else MASTER_BE
         marks, raw_lines = master_marks_and_lines(base, name)
         mapped = sections_for_lines(marks, raw_lines, lines_str)
         for s in sections:
@@ -508,7 +729,8 @@ def verify_anchors():
     return out
 
 
-FE_MASTER_FILES = {c[3] for c in D3_REGISTERED if c[1].startswith("FE")}
+FE_MASTER_FILES = {c[3] for c in D3_REGISTERED + D3_R2_REGISTERED
+                   if c[1].startswith("FE")}
 
 
 # ======================================================================
@@ -528,7 +750,7 @@ def load_raw_cards():
             for v in node:
                 walk(v, out)
 
-    for group in ("BE-G1", "BE-G2", "BE-G4", "FE-G1"):
+    for group in ("BE-G1", "BE-G2", "BE-G3", "BE-G4", "FE-G1"):
         doc = yaml.safe_load(open(os.path.join(CAND_DIR, group + ".yaml"),
                                   encoding="utf-8"))
         found = []
@@ -593,17 +815,32 @@ def build_entry(rec, card, statement, anchor_snippet, sections, extra_sections):
         "source_protocol": ref,
         "lines": rec["lines"],
     }
-    new_domains = sorted({domain_of(cid)} & NEW_DOMAINS_IN_BATCH)
+    batch = rec["batch"]
+    is_r2 = batch == BATCH_R2
+    new_domains = sorted({domain_of(cid)} & (NEW_DOMAINS_IN_BATCH_R2 if is_r2
+                                             else NEW_DOMAINS_IN_BATCH_R1))
     if new_domains:
-        vocab_block = {
-            "status": "vocab_pr_candidate",
-            "finding": "id 域段待登记：" + "/".join(new_domains)
-                       + "（vocab-lock@v0.8-resolved policy_id_domains 32 段未含——PR-0009 "
-                         "后新用域段沿用候选注记先例，词汇表 PR 增补）",
-            "proposal": "词汇表 PR 增补新 id 域段至 catalog_layer_vocab.policy_id_domains"
-                        "（与 PR-0009 同轴追加，append-only）",
-            "locked_vocab_untouched": True,
-        }
+        if is_r2:
+            vocab_block = {
+                "status": "vocab_pr_candidate",
+                "finding": "id 域段待登记：" + "/".join(new_domains)
+                           + "（vocab-lock@v0.9-resolved policy_id_domains 35 段未含——PR-0010 "
+                             "后新用域段沿用候选注记先例，词汇表 PR 增补）",
+                "proposal": "词汇表 PR 增补新 id 域段至 catalog_layer_vocab.policy_id_domains"
+                            "（与 PR-0009/PR-0010 同轴追加，append-only）",
+                "locked_vocab_untouched": True,
+            }
+        else:
+            vocab_block = {
+                "status": "vocab_pr_candidate",
+                "finding": "id 域段待登记：" + "/".join(new_domains)
+                           + "（vocab-lock@v0.8-resolved policy_id_domains 32 段未含——PR-0009 "
+                             "后新用域段沿用候选注记先例，词汇表 PR 增补）",
+                "proposal": "词汇表 PR 增补新 id 域段至 catalog_layer_vocab.policy_id_domains"
+                            "（与 PR-0009 同轴追加，append-only）",
+                "locked_vocab_untouched": True,
+                "resolution": VOCAB_PR_0010_RESOLUTION,
+            }
     else:
         vocab_block = None
     origin_reason = ORIGIN_REASON[rec["reason_key"]]
@@ -612,25 +849,63 @@ def build_entry(rec, card, statement, anchor_snippet, sections, extra_sections):
     elif rec["sections"] == ["Change Policy"]:
         basis = ("行内容含「必须」行为规范、Change Policy 段 advisory 落点（强度只降"
                  "不升）")
+    elif is_r2 and rec["sections"] == ["SHOULD"]:
+        basis = "SHOULD 行锚 advisory 原样（池判一致；复核行锚补证）"
     else:
         basis = "锚行行为规范成分、无段级强度词形 advisory 落点"
+    if is_r2:
+        adjudication = (
+            D3_R2_EXCLUSION_NOTE_FE.format(origin=rec["origin_batch"],
+                                           reason=origin_reason, basis=basis)
+            if rec["origin_batch"].startswith("B6B") else
+            D3_R2_EXCLUSION_NOTE.format(origin=rec["origin_batch"],
+                                        reason=origin_reason,
+                                        sections="/".join(rec["sections"]),
+                                        basis=basis)
+        )
+        materialized_package = ("裁定批 G/D3-R2 排除卡逐卡复核物化·R2 轮（SPEC-D 池卡复用；"
+                                "分母=MASTer 池卡 + vendor 播种字节双锚）")
+        curated = CURATED_RULE_R2
+        origin_note = (
+            f"{BATCH_LABEL_R2} D3 逐卡复核物化·R2 轮（原 {rec['origin_batch']} 保守排除卡"
+            "补锚收编）；statement 沿用 SPEC-D 候选卡独立措辞（clean-room），零逐字拷贝上游"
+            "源文本；播种分母=vendor 字节（x-b6-porting.vendor_pin），分解分母=MASTer 池卡"
+            "（x-spec-d-materialization）"
+        )
+    else:
+        adjudication = (
+            D3_EXCLUSION_NOTE_FE.format(reason=origin_reason, basis=basis)
+            if rec["origin_batch"] == "B6B-1" else
+            D3_EXCLUSION_NOTE.format(origin=rec["origin_batch"],
+                                     reason=origin_reason,
+                                     sections="/".join(rec["sections"]),
+                                     basis=basis)
+        )
+        materialized_package = ("裁定批 F/D3-R1 排除卡逐卡复核物化（SPEC-D 池卡复用；分母="
+                                "MASTer 池卡 + vendor 播种字节双锚）")
+        curated = CURATED_RULE
+        origin_note = (
+            f"{BATCH_LABEL} D3 逐卡复核物化（原 {rec['origin_batch']} 保守排除卡补锚收编）；"
+            "statement 沿用 SPEC-D 候选卡独立措辞（clean-room），零逐字拷贝上游源文本；"
+            "播种分母=vendor 字节（x-b6-porting.vendor_pin），分解分母=MASTer 池卡"
+            "（x-spec-d-materialization）"
+        )
     entry = {
         "x-spec-d-materialization": {
             "status": "PROPOSAL",
-            "package": "裁定批 F/D3-R1 排除卡逐卡复核物化（SPEC-D 池卡复用；分母=MASTer "
-                       "池卡 + vendor 播种字节双锚）",
+            "package": materialized_package,
             "human_review_required": True,
             "evidence": "PLANNED",
             "provenance": POOL_REL,
             "group": group,
             "candidate_id": cid,
             "pool_statement_sha16": rec["pool_row"].get("statement_sha16"),
-            "curated_rule": CURATED_RULE,
+            "curated_rule": curated,
             "denominator": "MASTer（池卡锚）",
         },
         "x-b6-porting": {
             "status": "PROPOSAL",
-            "batch": BATCH,
+            "batch": batch,
             "human_review_required": True,
             "classification_face": "policy",
             "enforcement_axis": {
@@ -647,13 +922,7 @@ def build_entry(rec, card, statement, anchor_snippet, sections, extra_sections):
             "d3_review": {
                 "excluded_from_batch": rec["origin_batch"],
                 "exclusion_reason_at_seed": origin_reason,
-                "adjudication": D3_EXCLUSION_NOTE_FE.format(
-                    reason=origin_reason, basis=basis)
-                if rec["origin_batch"] == "B6B-1" else
-                D3_EXCLUSION_NOTE.format(origin=rec["origin_batch"],
-                                         reason=origin_reason,
-                                         sections="/".join(rec["sections"]),
-                                         basis=basis),
+                "adjudication": adjudication,
                 "anchor_evidence": f"MASTer {rec['master_file']} {rec['lines']}「{anchor_snippet}」",
                 "pool_enforcement_at_seed": rec["pool_row"].get("enforcement"),
             },
@@ -685,12 +954,7 @@ def build_entry(rec, card, statement, anchor_snippet, sections, extra_sections):
             "escalation_hint": "catalog-spec-decomposition",
         },
         "origin": "ingested",
-        "origin_note": (
-            f"{BATCH_LABEL} D3 逐卡复核物化（原 {rec['origin_batch']} 保守排除卡补锚收编）；"
-            "statement 沿用 SPEC-D 候选卡独立措辞（clean-room），零逐字拷贝上游源文本；"
-            "播种分母=vendor 字节（x-b6-porting.vendor_pin），分解分母=MASTer 池卡"
-            "（x-spec-d-materialization）"
-        ),
+        "origin_note": origin_note,
         "sources": [
             {
                 "type": "design_seed",
@@ -730,20 +994,28 @@ def write_if_changed(path, data):
 # 主流程
 # ======================================================================
 def build_all():
+    # D6 合并口径（裁决 12①）逐批守卫：R1 恰等 25；R2 = 17 ≤ 25（收尾轮余量全量入册）。
     assert len(D3_REGISTERED) == D5_CAP_PER_BATCH, (
-        f"D6 合并上限漂移: {len(D3_REGISTERED)} != {D5_CAP_PER_BATCH}/批")
+        f"D6 合并上限漂移(R1): {len(D3_REGISTERED)} != {D5_CAP_PER_BATCH}/批")
+    assert len(D3_R2_REGISTERED) <= D5_CAP_PER_BATCH, (
+        f"D6 合并上限漂移(R2): {len(D3_R2_REGISTERED)} > {D5_CAP_PER_BATCH}/批")
     required_n = sum(1 for c in D3_REGISTERED
                      if any(s in ("MUST", "MUST NOT") for s in c[5]))
     assert required_n == D3_REQUIRED_CAP, "required 分母漂移"
-    for c in D3_REGISTERED:
+    for c in D3_REGISTERED + D3_R2_REGISTERED:
         assert registered_enforcement(c[5]) in ("required_when_applicable", "advisory"), \
             f"enforcement 推导越界: {c[0]}"
-    # 排除/deferred 集与入册集两两不交。
+    # R2 轮全量 advisory（裁决 13 留账口径：required 已在 R1 全量入册，余量全为 advisory）。
+    r2_required = sum(1 for c in D3_R2_REGISTERED
+                      if any(s in ("MUST", "MUST NOT") for s in c[5]))
+    assert r2_required == 0, "R2 轮混入 required 卡（强度只降不升越界）"
+    # 排除集与两轮入册集两两不交；72 张总账三集恰等（R1 25 + R2 17 + 排除 30）。
     reg = {c[0] for c in D3_REGISTERED}
+    reg_r2 = {c[0] for c in D3_R2_REGISTERED}
     assert not (reg & set(D3_EXCLUDED_KEEP)), "入册/排除集相交"
-    assert not (reg & {d[0] for d in D3_R2_DEFERRED}), "入册/deferred 集相交"
-    assert len({c[0] for c in D3_REGISTERED}) == 72 - len(D3_EXCLUDED_KEEP) \
-        - len(D3_R2_DEFERRED), "72 张总账漂移"
+    assert not (reg_r2 & set(D3_EXCLUDED_KEEP)), "R2 入册/排除集相交"
+    assert not (reg & reg_r2), "R1/R2 入册集相交"
+    assert len(reg | reg_r2) == 72 - len(D3_EXCLUDED_KEEP), "72 张总账漂移"
 
     anchors = verify_anchors()
     raw = load_raw_cards()
@@ -751,32 +1023,34 @@ def build_all():
 
     entry_bytes = {}
     audits = []
-    for c in D3_REGISTERED:
-        cid, group, _origin, name, lines_str, sections, reason_key, title = c
-        card = raw.get(cid)
-        assert card is not None, f"候选卡缺席: {cid}"
-        row = pool_rows.get(cid)
-        assert row is not None, f"池行缺席: {cid}"
-        r = card["raw"]
-        statement = r["statement_zh"]
-        assert statement and statement.strip(), f"卡缺 statement: {cid}"
-        rec = {
-            "cid": cid, "group": group, "origin_batch": _origin,
-            "master_file": name, "lines": lines_str, "sections": sections,
-            "enforcement": registered_enforcement(sections), "title": title,
-            "reason_key": reason_key, "pool_row": row,
-        }
-        # 池行对账：statement 与池一致（词形规范化）。
-        pool_stmt = row.get("statement_zh")
-        if pool_stmt is not None:
-            assert _norm_ws(statement) == _norm_ws(pool_stmt), \
-                f"卡 statement 与池不一致: {cid}"
-        base = MASTER_FE if group.startswith("FE") else MASTER_BE
-        extra = [] if sections_in_twelve(sections) else list(sections)
-        worst = clean_room_audit(cid, statement, base, name, lines_str)
-        audits.append({"id": cid, "lcs_max": worst})
-        entry = build_entry(rec, card, statement, anchors[cid], sections, extra)
-        entry_bytes[id_to_path(cid)] = serialize(entry).encode("utf-8")
+    for batch, cards in ((BATCH, D3_REGISTERED), (BATCH_R2, D3_R2_REGISTERED)):
+        for c in cards:
+            cid, group, _origin, name, lines_str, sections, reason_key, title = c
+            card = raw.get(cid)
+            assert card is not None, f"候选卡缺席: {cid}"
+            row = pool_rows.get(cid)
+            assert row is not None, f"池行缺席: {cid}"
+            r = card["raw"]
+            statement = r["statement_zh"]
+            assert statement and statement.strip(), f"卡缺 statement: {cid}"
+            rec = {
+                "cid": cid, "group": group, "origin_batch": _origin,
+                "master_file": name, "lines": lines_str, "sections": sections,
+                "enforcement": registered_enforcement(sections), "title": title,
+                "reason_key": reason_key, "pool_row": row,
+                "batch": batch,
+            }
+            # 池行对账：statement 与池一致（词形规范化）。
+            pool_stmt = row.get("statement_zh")
+            if pool_stmt is not None:
+                assert _norm_ws(statement) == _norm_ws(pool_stmt), \
+                    f"卡 statement 与池不一致: {cid}"
+            base = MASTER_FE if group.startswith("FE") else MASTER_BE
+            extra = [] if sections_in_twelve(sections) else list(sections)
+            worst = clean_room_audit(cid, statement, base, name, lines_str)
+            audits.append({"id": cid, "lcs_max": worst})
+            entry = build_entry(rec, card, statement, anchors[cid], sections, extra)
+            entry_bytes[id_to_path(cid)] = serialize(entry).encode("utf-8")
 
     return {
         "entry_bytes": entry_bytes,
@@ -785,8 +1059,8 @@ def build_all():
             "registered": len(D3_REGISTERED),
             "required": required_n,
             "advisory": len(D3_REGISTERED) - required_n,
+            "registered_r2": len(D3_R2_REGISTERED),
             "excluded_keep": len(D3_EXCLUDED_KEEP),
-            "deferred_r2": len(D3_R2_DEFERRED),
         },
     }
 
@@ -819,11 +1093,12 @@ def main():
             print("WROTE:", os.path.relpath(path, VNEXT))
     counts = built["counts"]
     print(f"[seed_d3_review] ok: {len(outputs)} outputs（{changed} changed / "
-          f"{len(outputs) - changed} unchanged）；registered={counts['registered']}"
+          f"{len(outputs) - changed} unchanged）；r1={counts['registered']}"
           f"（required={counts['required']}, advisory={counts['advisory']}）、"
-          f"excluded_keep={counts['excluded_keep']}、deferred_r2={counts['deferred_r2']}")
+          f"r2={counts['registered_r2']}（advisory 全量）、"
+          f"excluded_keep={counts['excluded_keep']}")
     print("LCS audits max:", max(a["lcs_max"] for a in built["audits"]))
-    print("下一步：corepack pnpm pomaster catalog relock（228→253）")
+    print("下一步：corepack pnpm pomaster catalog relock（253→270）")
 
 
 if __name__ == "__main__":

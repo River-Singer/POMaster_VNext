@@ -1,0 +1,93 @@
+{
+  "x-spec-d-materialization": {
+    "status": "PROPOSAL",
+    "package": "裁定批 G/D3-R2 排除卡逐卡复核物化·R2 轮（SPEC-D 池卡复用；分母=MASTer 池卡 + vendor 播种字节双锚）",
+    "human_review_required": true,
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/corpus/spec-knowledge/candidates/consolidated-pool.yaml",
+    "group": "FE-G1",
+    "candidate_id": "POLICY.SPEC.FREEZE_BEFORE_USE",
+    "pool_statement_sha16": "5a23173d38de9041",
+    "curated_rule": "D3 逐卡复核批 R2 轮（Owner 2026-09-05 裁定 D3=逐卡复核；裁定批 G 收尾批）：R1 入册 25（required 9 + advisory 16）后余量 17 张 advisory 全量入册——SHOULD 锚 13（卡层行锚缺席，复核回 MASTer 源取得行级证据：B6c BE-G4 六 + BE-G3 七）+ 非 12 段锚 4（B6b-II FE index 2 / B6c BE index 冲突优先序 1 / B6b-I FE20 Change Policy 锚 1，extra_master_sections 如实登记）；全部 advisory（池判 required 卡强度只降不升）；D6 合并口径 ≤25/批满足（17 ≤ 25）；72 张总账=R1 25 + R2 17 + 维持排除 30",
+    "denominator": "MASTer（池卡锚）"
+  },
+  "x-b6-porting": {
+    "status": "PROPOSAL",
+    "batch": "D3-R2",
+    "human_review_required": true,
+    "classification_face": "policy",
+    "enforcement_axis": {
+      "source_sections": [
+        "Spec 生命周期"
+      ],
+      "rule": "SHOULD/Change Policy 源条目 enforcement 必须 advisory（禁升 required）；MUST/MUST NOT 源条目 enforcement 必须 required_when_applicable（降级合法）",
+      "asserted_by": "packages/cli/tests/catalog-b6-porting.spec.ts"
+    },
+    "extra_master_sections": [
+      "Spec 生命周期"
+    ],
+    "denominator": "vendor",
+    "vendor_pin": {
+      "path": "pomaster/components/frontend-hard-spec/assets/universal/index.md",
+      "sha256": "37fc443ce1f90eaa2584a82e12300d8281760332ec69d55a52b26cb22a2b2375",
+      "bytes": 22578
+    },
+    "seeded_spec": ".pomaster/specs/hard/frontend/index.md",
+    "seed_manifest": "packages/cli/seeds/manifest.json",
+    "d3_review": {
+      "excluded_from_batch": "B6B-2",
+      "exclusion_reason_at_seed": "行锚全落 MASTer 项目扩展段（12 段闭包外），无源段证据，保守排除待复核",
+      "adjudication": "D3 逐卡复核 R2 轮（Owner 2026-09-05 裁定 D3=逐卡复核，裁定批 G 落地 2026-09-05）：本卡原属 B6B-2 保守排除留池（排除理由：行锚全落 MASTer 项目扩展段（12 段闭包外），无源段证据，保守排除待复核）；复核按锚行内容裁定 advisory 入册（锚行行为规范成分、无段级强度词形 advisory 落点）",
+      "anchor_evidence": "MASTer index.md L63-L68「- Frozen/Baseline 表示“可以作为开发依据”，不是永远不能改。」",
+      "pool_enforcement_at_seed": "advisory"
+    }
+  },
+  "id": "POLICY.SPEC.FREEZE_BEFORE_USE",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "UNIVERSAL_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "规格消费前冻结",
+  "statement_zh": "各类规格应在被消费前冻结：需求规格在进入开发前、接口规格在联调前、公共组件规格在首次公共复用前、整体基线在首个垂直切片完成后。",
+  "statement_en_keywords": [
+    "freeze before use",
+    "requirement spec frozen before development",
+    "baseline after first vertical slice"
+  ],
+  "applies_when": {
+    "lane": "any",
+    "condition": "规格冻结时点安排",
+    "applicability_note": "规格冻结时点安排"
+  },
+  "enforcement": "advisory",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-spec-decomposition"
+  },
+  "origin": "ingested",
+  "origin_note": "裁定批 G/D3-R2 D3 逐卡复核物化·R2 轮（原 B6B-2 保守排除卡补锚收编）；statement 沿用 SPEC-D 候选卡独立措辞（clean-room），零逐字拷贝上游源文本；播种分母=vendor 字节（x-b6-porting.vendor_pin），分解分母=MASTer 池卡（x-spec-d-materialization）",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/corpus/spec-knowledge/candidates/FE-G1.yaml",
+      "captured_by": "agent:claude/spec-d-consolidation",
+      "locator": {
+        "candidate": "POLICY.SPEC.FREEZE_BEFORE_USE",
+        "source_protocol": ".trellis/spec/frontend/index.md",
+        "lines": "L63-L68"
+      },
+      "clean_room_note": "independently rewritten from SPEC-D decomposition candidate cards; zero verbatim copy"
+    }
+  ],
+  "review_notes": [
+    "规格消费前冻结时点在既有 228 条中无对应条目；与 POLICY.SPEC.DRAFT_NOT_BASELINE、SPEC.ADMISSION_CRITERIA（B6b-I：草稿非基线/准入判据）同族互引——彼管草稿状态判定与准入，本管逐类规格的冻结时点安排（「可作开发依据」非「永不修改」，修改走受控变更）。",
+    "锚落 MASTer FE index 自有段「Spec 生命周期」（L63-L68）——D3 复核按锚行内容 advisory 入册（池判 advisory 原样），extra_master_sections 如实登记。"
+  ]
+}

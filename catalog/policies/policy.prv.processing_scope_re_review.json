@@ -3,7 +3,8 @@
     "status": "vocab_pr_candidate",
     "finding": "id 域段待登记：PRV（vocab-lock@v0.8-resolved policy_id_domains 32 段未含——PR-0009 后新用域段沿用候选注记先例，词汇表 PR 增补）",
     "proposal": "词汇表 PR 增补新 id 域段至 catalog_layer_vocab.policy_id_domains（与 PR-0009 同轴追加，append-only）",
-    "locked_vocab_untouched": true
+    "locked_vocab_untouched": true,
+    "resolution": "2026-09-05 vocab PR-0010 增补落地（vocab-lock@v0.9-resolved，append-only 纯增量；Owner 2026-09-05 第二轮裁定开放项 2 全做——裁定批 G 收尾批）：AUTHZ/PRV/ERR 三 id 域段随 catalog_layer_vocab.policy_id_domains 扩值收编（32→35 段，与 PR-0009 同轴追加，词值零改动）；本 pending 注记就此转正（finding/proposal/locked_vocab_untouched 为创建时点历史记录原样保留——mcp_eyes 先例）"
   },
   "x-spec-d-materialization": {
     "status": "PROPOSAL",

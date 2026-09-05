@@ -1,15 +1,15 @@
 // npm 单包发布 staging 验证（Owner 裁决 10 配套；`scripts/build-npm-package.mjs` 之后跑）。
 //
 // 两道验证，全部可复跑：
-// 1) `npm pack --dry-run` 断言：bin 在座 / catalog 完整（与仓库 catalog 文件集全等 +
-//    lock 193 entries）/ seeds 完整（与仓库 packages/cli/seeds 文件集全等 + 清单 46
-//    entries）/ 无 node_modules / 无 files 白名单外杂物 / 零 dependencies；
+// 1) `npm pack --dry-run` 断言：bin 在座 / catalog 完整（与仓库 catalog 文件集全等[
+//    __pycache__ 排除] + lock 270 entries）/ seeds 完整（与仓库 packages/cli/seeds 文件集
+//    全等 + 清单 152 entries）/ 无 node_modules / 无 files 白名单外杂物 / 零 dependencies；
 // 2) fresh-install 冒烟：真实 `npm pack` 出 tgz → 系统 temp `pvnext-npm-smoke-<pid>`
 //    目录 `npm init -y` + `npm install <tgz>`（零 dependencies，不联网装依赖）→
 //    依次实跑 `npx pomaster --help|init|status|catalog status|doctor`，断言退出码与
 //    关键词形。关键断言：catalog status 的 catalog_root 命中
 //    node_modules/pomaster/catalog（resolveCatalogRoot 候选链的包内资产候选，
-//    ok:true 且 193 entries 0 drift）。
+//    ok:true 且 270 entries 0 drift）。
 //
 // 冒烟产物（tgz 与 smoke 目录）留系统 temp 并在末尾打印路径，不进仓库
 // （stage/ 已在 .gitignore；temp 目录由操作系统清理策略兜底）。
@@ -49,8 +49,14 @@ function walkFiles(dir, relativeTo = dir) {
   const out = [];
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const full = join(dir, entry.name);
-    if (entry.isDirectory()) out.push(...walkFiles(full, relativeTo));
-    else out.push(full.slice(relativeTo.length + 1).split(sep).join("/"));
+    if (entry.isDirectory()) {
+      // __pycache__ 排除（裁定批 G / D8-1 同款纪律——裁决 12 loadCatalogTools 先例）：
+      // Python import 缓存目录属本机运行残留（catalog/tools 下跑种子工具即生成），
+      // 非策展物料；不排除会让「仓库 catalog 文件集」混入缓存文件、与打包文件集
+      // （npm files 白名单天然不含）假性失配——根除「计数差需人工清理」依赖。
+      if (entry.name === "__pycache__") continue;
+      out.push(...walkFiles(full, relativeTo));
+    } else out.push(full.slice(relativeTo.length + 1).split(sep).join("/"));
   }
   return out.sort();
 }
@@ -80,7 +86,7 @@ const packedPaths = packReport.files.map((file) => file.path.replace(/\\/g, "/")
 // 1.1 bin 在座。
 assert(packedPaths.includes("dist/bin.js"), "bin 在座（dist/bin.js）");
 
-// 1.2 catalog 完整：打包文件集与仓库 catalog/ 全等 + lock 193 entries。
+// 1.2 catalog 完整：打包文件集与仓库 catalog/ 全等（__pycache__ 排除）+ lock 270 entries。
 const repoCatalogFiles = walkFiles(p("catalog")).map((file) => `catalog/${file}`);
 const packedCatalogFiles = packedPaths.filter((file) => file.startsWith("catalog/"));
 const repoSet = new Set(repoCatalogFiles);
@@ -95,7 +101,7 @@ assert(
 const stageLock = JSON.parse(
   readFileSync(join(STAGE_PKG, "catalog", "catalog-lock.draft.json"), "utf8"),
 );
-assert(stageLock.entries.length === 253, "catalog-lock 253 entries", `实为 ${stageLock.entries.length}`);
+assert(stageLock.entries.length === 270, "catalog-lock 270 entries", `实为 ${stageLock.entries.length}`);
 
 // 1.2.1 seeds 完整（B6b 两批 + B6c + B6d + B6e）：打包文件集与仓库 packages/cli/seeds/ 全等 +
 //      清单 schema/条目数（播种资产随包分发——装载器 fail-closed，缺 seeds = init 必炸）。
@@ -421,15 +427,15 @@ smoke("npx pomaster status", "pomaster status", {
   ],
 });
 
-// 2.4 `npx pomaster catalog status --json`（关键：包内资产候选命中 + 253 entries 0 drift）。
+// 2.4 `npx pomaster catalog status --json`（关键：包内资产候选命中 + 270 entries 0 drift）。
 const catalogEnvelope = smoke("npx pomaster catalog status --json", "pomaster catalog status --json", {
   expectExit: [0],
   json: true,
 });
 assert(catalogEnvelope.ok === true, "catalog status 信封 ok:true");
 assert(
-  catalogEnvelope.result?.entries_total === 253,
-  `catalog entries = 253（实为 ${catalogEnvelope.result?.entries_total}）`,
+  catalogEnvelope.result?.entries_total === 270,
+  `catalog entries = 270（实为 ${catalogEnvelope.result?.entries_total}）`,
 );
 assert(
   catalogEnvelope.result?.lock_verification?.ok === true &&

@@ -1,16 +1,16 @@
 /**
  * catalog-b6-porting.spec.ts —— B6 播种移植 catalog 面验收：
  * D5 精选 50 条 policies（B6b-I 25 + B6b-II 25）+ B6c 35 条（policy 面 25：22 required
- * + 3 advisory；TECHNOLOGY_PROFILE 分类面 10：9 STACK + 1 PROFILE）+ D3-R1 复核批 25 条
- * （D3 逐卡复核：required 9 补锚 + advisory 16）+
+ * + 3 advisory；TECHNOLOGY_PROFILE 分类面 10：9 STACK + 1 PROFILE）+ D3 复核批 42 条
+ * （D3-R1 25：required 9 补锚 + advisory 16；D3-R2 17：advisory 全量——裁定批 G 收尾轮）+
  * enforcement 轴工具级断言（R2 MUST 通胀缓解：SHOULD→advisory 由本 spec 机器守卫，
  * 不靠自觉；B6c 起 TP 面禁 required 同钉）。
  *
- * 钉面（prd.md R2/R3 / porting-design-proposal §1 矩阵 + R2 风险 + 裁决 13 D3 复核）：
- * - 分母钉：x-b6-porting 注记条目恰 110（D5 保守精选上限 25/批内执行——policy 强度面
+ * 钉面（prd.md R2/R3 / porting-design-proposal §1 矩阵 + R2 风险 + 裁决 13/14 D3 复核）：
+ * - 分母钉：x-b6-porting 注记条目恰 127（D5 保守精选上限 25/批内执行——policy 强度面
  *   三批各 25；B6c 另有 TECHNOLOGY_PROFILE 登记面 10 条 = **Owner 追认例外**——
- *   裁决 12①/D6=(b)：TP 面计入 D5 上限，B6c 已落 10 条维持现状不改写；D3-R1 复核批
- *   25 条 = D6 合并口径首个守卫批（policy+TP 合并 ≤25/批恰等）；
+ *   裁决 12①/D6=(b)：TP 面计入 D5 上限，B6c 已落 10 条维持现状不改写；D3 复核两轮
+ *   = D6 合并口径守卫批（R1 恰等 25；R2 = 17 ≤ 25）；
  * - enforcement 轴断言（B6b 定型的机器守卫，双向往返全钉，扩展到 B6c policy 分母）：
  *   source_sections 全 ∈ {SHOULD, Change Policy} → enforcement 必须 advisory（禁升
  *   required）；source_sections 含 MUST/MUST NOT → 必须 required_when_applicable
@@ -73,10 +73,15 @@ function readPolicy(fileName: string): PolicyBody {
 }
 
 const ADVISORY_SECTIONS = new Set(["SHOULD", "Change Policy"]);
-const B6_BATCHES = new Set(["B6B-1", "B6B-2", "B6C", "D3-R1"]);
+const B6_BATCHES = new Set(["B6B-1", "B6B-2", "B6C", "D3-R1", "D3-R2"]);
 // D3 复核批扩展段锚白名单（MASTer 项目扩展段词形——12 段闭包外锚行含行为规范成分，
 // D3 逐卡复核裁定 advisory 入册；extra_master_sections 同值如实登记）。
-const D3_EXTRA_SECTION_WHITELIST = new Set(["本地 ESLint 规则与 Registry 校验"]);
+const D3_EXTRA_SECTION_WHITELIST = new Set([
+  "本地 ESLint 规则与 Registry 校验", // D3-R1：FE10 扩展段
+  "冲突与责任边界", // D3-R2：BE index 自有段（冲突优先序）
+  "通用规则准入与维护来源", // D3-R2：FE index 自有段（一手来源）
+  "Spec 生命周期", // D3-R2：FE index 自有段（冻结时点）
+]);
 
 const b6Entries: Array<{ file: string; body: PolicyBody; note: PortingNote }> = (function collect() {
   // 直读目录清单（relock/readdir 单点在 kernel；此处只挑 x-b6-porting 注记条目）。
@@ -94,9 +99,9 @@ const b6Entries: Array<{ file: string; body: PolicyBody; note: PortingNote }> = 
 const policyFace = b6Entries.filter((e) => e.note.classification_face !== "technology_profile");
 const tpFace = b6Entries.filter((e) => e.note.classification_face === "technology_profile");
 
-describe("B6b/B6c catalog 双面：D5 精选分母 + 注记形态（四批合并，含 D3-R1 复核批）", () => {
-  it("x-b6-porting 注记条目恰 110（B6b-I/B6b-II policy 面各 25 + B6c policy 面 25 + B6c TP 面 10 + D3-R1 复核批 25）", () => {
-    expect(b6Entries).toHaveLength(110);
+describe("B6b/B6c catalog 双面：D5 精选分母 + 注记形态（五批合并，含 D3-R1/R2 复核批）", () => {
+  it("x-b6-porting 注记条目恰 127（B6b-I/B6b-II policy 面各 25 + B6c policy 面 25 + B6c TP 面 10 + D3-R1 25 + D3-R2 17）", () => {
+    expect(b6Entries).toHaveLength(127);
     for (const batch of ["B6B-1", "B6B-2"]) {
       const inBatch = b6Entries.filter((e) => e.note.batch === batch);
       expect(inBatch, batch).toHaveLength(25);
@@ -121,6 +126,11 @@ describe("B6b/B6c catalog 双面：D5 精选分母 + 注记形态（四批合并
     expect(d3).toHaveLength(25);
     expect(d3.filter((e) => e.body.enforcement === "required_when_applicable")).toHaveLength(9);
     expect(d3.filter((e) => e.body.enforcement === "advisory")).toHaveLength(16);
+    // D3-R2 收尾轮（裁定批 G）：advisory 全量 17（required 已在 R1 全量入册）。
+    const d3r2 = b6Entries.filter((e) => e.note.batch === "D3-R2");
+    expect(d3r2).toHaveLength(17);
+    expect(d3r2.filter((e) => e.body.enforcement === "advisory")).toHaveLength(17);
+    expect(d3r2.filter((e) => e.body.enforcement === "required_when_applicable")).toHaveLength(0);
   });
 
   it("注记形态：batch ∈ 三批闭包 + denominator=vendor + human_review_required + vendor_pin hex64 + 断言器自指 + classification_face 词形", () => {
@@ -193,10 +203,10 @@ describe("enforcement 轴工具级断言（R2 MUST 通胀守卫——双向往�
     }
     // policy 面九条 advisory（B6b 两批 3+3 + B6c 3）的 source_sections 确为纯建议段
     // （分母侧反向核对；TP 面 9 条 advisory 由 TECHNOLOGY_PROFILE describe 单独钉；
-    // D3-R1 批 16 条 advisory 另测——REGISTRY 扩展段锚白名单除外）。
+    // D3 复核两轮 16+17 条 advisory 另测——扩展段锚白名单除外）。
     const advisoryPolicyB6 = policyFace.filter(
       (e) => e.body.enforcement === "advisory" && B6_BATCHES.has(e.note.batch)
-        && e.note.batch !== "D3-R1",
+        && e.note.batch !== "D3-R1" && e.note.batch !== "D3-R2",
     );
     expect(advisoryPolicyB6).toHaveLength(9);
     for (const { note } of advisoryPolicyB6) {
@@ -220,6 +230,29 @@ describe("enforcement 轴工具级断言（R2 MUST 通胀守卫——双向往�
     expect(d3Extra[0].note.extra_master_sections).toEqual(
       d3Extra[0].note.enforcement_axis.source_sections,
     );
+    // D3-R2 批 advisory 17：13 条 SHOULD 建议 + 扩展段锚 3（BE index 冲突序 + FE index
+    // 双段——白名单例外，双注记）；零 required（强度只降不升——池判 required 卡降档）。
+    const d3r2Advisory = policyFace.filter(
+      (e) => e.body.enforcement === "advisory" && e.note.batch === "D3-R2",
+    );
+    expect(d3r2Advisory).toHaveLength(17);
+    const d3r2Extra = d3r2Advisory.filter(
+      (e) => !e.note.enforcement_axis.source_sections.every((s) => ADVISORY_SECTIONS.has(s)),
+    );
+    expect(d3r2Extra).toHaveLength(3);
+    expect(new Set(d3r2Extra.map((e) => e.body.id))).toEqual(
+      new Set([
+        "POLICY.SPEC.PRIMARY_SOURCE_BASIS",
+        "POLICY.SPEC.FREEZE_BEFORE_USE",
+        "POLICY.SPEC.FAMILY_CONFLICT_PRECEDENCE",
+      ]),
+    );
+    for (const { note } of d3r2Extra) {
+      expect(note.extra_master_sections).toEqual(note.enforcement_axis.source_sections);
+      for (const section of note.enforcement_axis.source_sections) {
+        expect(D3_EXTRA_SECTION_WHITELIST.has(section), `D3-R2 段词形 ${section}`).toBe(true);
+      }
+    }
   });
 
   it("source_sections 含 MUST/MUST NOT → enforcement 必须 required_when_applicable（主锚定强度；禁静默降 knowledge/gate；B6c 分母含 22 条 MUST/MUST NOT 锚实物）", () => {
@@ -263,23 +296,23 @@ describe("enforcement 轴工具级断言（R2 MUST 通胀守卫——双向往�
     }
   });
 
-  it("policy 面 source_sections 词形闭包：B6 三批只出现 12 段名（零私扩段词形）；D3-R1 批 12 段 + 复核扩展段白名单", () => {
+  it("policy 面 source_sections 词形闭包：B6 三批只出现 12 段名（零私扩段词形）；D3 两轮 12 段 + 复核扩展段白名单", () => {
     const allowed = new Set([
       "Scope", "Non-Scope", "Terms", "MUST", "MUST NOT", "SHOULD",
       "Contract", "Checklist", "Examples", "Anti-patterns", "Ownership", "Change Policy",
     ]);
     for (const { note } of policyFace) {
-      if (note.batch === "D3-R1") continue;
+      if (note.batch === "D3-R1" || note.batch === "D3-R2") continue;
       for (const section of note.enforcement_axis.source_sections) {
         expect(allowed.has(section), `段词形 ${section}`).toBe(true);
       }
     }
     for (const { note } of policyFace) {
-      if (note.batch !== "D3-R1") continue;
+      if (note.batch !== "D3-R1" && note.batch !== "D3-R2") continue;
       for (const section of note.enforcement_axis.source_sections) {
         expect(
           allowed.has(section) || D3_EXTRA_SECTION_WHITELIST.has(section),
-          `D3-R1 段词形 ${section}`,
+          `D3 段词形 ${section}`,
         ).toBe(true);
       }
     }
@@ -338,7 +371,7 @@ describe("B6c TECHNOLOGY_PROFILE 面（提案 §1 矩阵 TECHNOLOGY_OVERLAY 落�
 });
 
 describe("双面同源 pin（R1）：catalog 条目面 ↔ 播种全文面同一 vendor 字节锚", () => {
-  it("x-b6-porting.vendor_pin == packages/cli/seeds/manifest.json 同文件 pin（110 条全量——B6b FE 面 + B6c BE/stacks 面 + D3-R1 复核批 FE/BE 面）", () => {
+  it("x-b6-porting.vendor_pin == packages/cli/seeds/manifest.json 同文件 pin（127 条全量——B6b FE 面 + B6c BE/stacks 面 + D3 两轮复核批 FE/BE 面）", () => {
     const manifest = JSON.parse(
       readFileSync(join(repoRoot, "packages", "cli", "seeds", "manifest.json"), "utf8"),
     ) as {
@@ -398,7 +431,7 @@ describe("D6 TP 口径（Owner 裁决 12①，2026-09-05）：TECHNOLOGY_PROFILE
     }
   });
 
-  it("未来批合并上限守卫（D6=(b) 不再豁免）：任何新批 x-b6-porting 条目 policy+TP 合计 ≤ 25/批（D3-R1 复核批在守卫内恰等 25）；未知新批入选必须先过本守卫并更新分母名单（漏改即红）", () => {
+  it("未来批合并上限守卫（D6=(b) 不再豁免）：任何新批 x-b6-porting 条目 policy+TP 合计 ≤ 25/批（D3-R1 恰等 25；D3-R2 收尾轮 17 在限内）；未知新批入选必须先过本守卫并更新分母名单（漏改即红）", () => {
     const futureBatches = new Set(
       b6Entries.map((e) => e.note.batch).filter((b) => !GRANDFATHERED_BATCHES.has(b)),
     );
@@ -409,17 +442,18 @@ describe("D6 TP 口径（Owner 裁决 12①，2026-09-05）：TECHNOLOGY_PROFILE
         `${batch}: D6 口径 policy+TP 合并上限 ${D5_CAP_PER_BATCH}/批（裁决 12①——TP 面不再豁免）`,
       ).toBeLessThanOrEqual(D5_CAP_PER_BATCH);
     }
-    // 当前分母恰 = 三个追认批 + D3-R1 守卫批（恰等上限；未知批落地时本断言先红，
-    // 强制显式接受 ≤25 合并判卷——禁静默扩池）。
+    // 当前分母恰 = 三个追认批 + D3 两轮守卫批（R1 恰等上限、R2 = 17 在限内；未知批落地
+    // 时本断言先红，强制显式接受 ≤25 合并判卷——禁静默扩池）。
     expect(
       b6Entries.every(
-        (e) => GRANDFATHERED_BATCHES.has(e.note.batch) || e.note.batch === "D3-R1",
+        (e) => GRANDFATHERED_BATCHES.has(e.note.batch) || e.note.batch === "D3-R1"
+          || e.note.batch === "D3-R2",
       ),
     ).toBe(true);
   });
 });
 
-describe("D3 逐卡复核批（Owner 2026-09-05 裁定 D3=逐卡复核；裁定批 F 落地）", () => {
+describe("D3 逐卡复核批（Owner 2026-09-05 裁定 D3=逐卡复核；裁定批 F=D3-R1 + 裁定批 G=D3-R2 两轮落地）", () => {
   const D3_REGISTERED_IDS = [
     // required 9（D3b source=null 补锚 MUST/MUST NOT）
     "POLICY.SEC.TRUST_BOUNDARY_ENFORCEMENT",
@@ -469,7 +503,9 @@ describe("D3 逐卡复核批（Owner 2026-09-05 裁定 D3=逐卡复核；裁定�
     "AUTHORITY.BE.JOB_OWNERSHIP", "AUTHORITY.BE.OBS_OWNERSHIP",
     "AUTHORITY.BE.PERF_OWNERSHIP", "AUTHORITY.BE.DEPLOY_OWNERSHIP",
   ];
-  const D3_R2_DEFERRED_IDS = [
+  // D3-R2 轮（裁定批 G）：原留账 17 张全部转在册（裁决 13 密度序双锚留账 → 裁决 14
+  // 同口径入册；id 名单与 seed_d3_review.py D3_R2_REGISTERED 恰等）。
+  const D3_R2_REGISTERED_IDS = [
     "POLICY.TEST.REMOVAL_JUSTIFICATION", "POLICY.SPEC.PRIMARY_SOURCE_BASIS",
     "POLICY.SPEC.FAMILY_CONFLICT_PRECEDENCE", "POLICY.CACHE.FAILURE_MODE_GUARDS",
     "POLICY.DEPLOY.OPERATIONAL_CAPABILITIES", "POLICY.INTEGRATION.FAULT_CONTAINMENT",
@@ -481,11 +517,11 @@ describe("D3 逐卡复核批（Owner 2026-09-05 裁定 D3=逐卡复核；裁定�
     "POLICY.BE.TXN.SHORT_LOCKS_COMPENSATION",
   ];
 
-  it("D3 总账恰等 72 = 入册 25 + 维持排除 30 + 留 D3-R2 17；三集两两不交", () => {
+  it("D3 总账恰等 72 = R1 入册 25 + R2 入册 17 + 维持排除 30；三集两两不交", () => {
     expect(D3_REGISTERED_IDS).toHaveLength(25);
+    expect(D3_R2_REGISTERED_IDS).toHaveLength(17);
     expect(D3_EXCLUDED_KEEP_IDS).toHaveLength(30);
-    expect(D3_R2_DEFERRED_IDS).toHaveLength(17);
-    const sets = [new Set(D3_REGISTERED_IDS), new Set(D3_EXCLUDED_KEEP_IDS), new Set(D3_R2_DEFERRED_IDS)];
+    const sets = [new Set(D3_REGISTERED_IDS), new Set(D3_EXCLUDED_KEEP_IDS), new Set(D3_R2_REGISTERED_IDS)];
     const union = new Set([...sets[0], ...sets[1], ...sets[2]]);
     expect(union.size).toBe(72);
   });
@@ -503,8 +539,35 @@ describe("D3 逐卡复核批（Owner 2026-09-05 裁定 D3=逐卡复核；裁定�
     }
   });
 
-  it("d3_review 复核注记形态：原排除批 ∈ {B6B-1, B6C} + 排除理由词形 + 锚行证据在座（禁凭印象）", () => {
-    const d3 = b6Entries.filter((e) => e.note.batch === "D3-R1");
+  it("D3-R2 入册名单恰等（裁决 13 留账 → 裁决 14 转在册：逐 id batch=D3-R2 + advisory 全量 + d3_review 注记在座）", () => {
+    const d3r2 = b6Entries.filter((e) => e.note.batch === "D3-R2");
+    expect(new Set(d3r2.map((e) => e.body.id))).toEqual(new Set(D3_R2_REGISTERED_IDS));
+    for (const { body, note } of d3r2) {
+      // 全量 advisory（强度只降不升——R2 无 MUST 锚、零 required）。
+      expect(
+        note.enforcement_axis.source_sections.some((s) => s === "MUST" || s === "MUST NOT"),
+        `${body.id} R2 无 MUST 锚`,
+      ).toBe(false);
+      expect(body.enforcement).toBe("advisory");
+      const review = (note as unknown as {
+        d3_review?: { excluded_from_batch: string; anchor_evidence: string };
+      }).d3_review;
+      expect(review, body.id).toBeDefined();
+      expect(review!.anchor_evidence).toContain("MASTer ");
+    }
+    // 13 条 SHOULD 锚（B6c BE-G4 六 + BE-G3 七）+ 4 条 Change Policy/扩展段锚
+    // （后三者已由扩展段白名单 describe 钉——此处钉 SHOULD 分母恰 13）。
+    const shouldAnchored = d3r2.filter((e) =>
+      e.note.enforcement_axis.source_sections.every((s) => ADVISORY_SECTIONS.has(s))
+      && e.note.enforcement_axis.source_sections.includes("SHOULD"),
+    );
+    expect(shouldAnchored).toHaveLength(13);
+  });
+
+  it("d3_review 复核注记形态：原排除批 ∈ {B6B-1, B6B-2, B6C} + 排除理由词形 + 锚行证据在座（禁凭印象）+ 轮次词形分立（R1=裁定批 F / R2=裁定批 G）", () => {
+    const d3 = b6Entries.filter(
+      (e) => e.note.batch === "D3-R1" || e.note.batch === "D3-R2",
+    );
     for (const { note } of d3) {
       const review = (note as unknown as {
         d3_review?: {
@@ -516,18 +579,26 @@ describe("D3 逐卡复核批（Owner 2026-09-05 裁定 D3=逐卡复核；裁定�
         };
       }).d3_review;
       expect(review, note.seeded_spec ?? undefined).toBeDefined();
-      expect(["B6B-1", "B6C"]).toContain(review!.excluded_from_batch);
+      expect(["B6B-1", "B6B-2", "B6C"]).toContain(review!.excluded_from_batch);
       expect(review!.exclusion_reason_at_seed).toContain("保守排除待复核");
       expect(review!.adjudication).toContain("D3 逐卡复核");
       expect(review!.anchor_evidence).toContain("MASTer ");
       expect(review!.pool_enforcement_at_seed).toBeDefined();
+      if (note.batch === "D3-R1") {
+        expect(review!.adjudication).toContain("裁定批 F");
+        expect(review!.adjudication).not.toContain("R2 轮");
+      } else {
+        expect(review!.adjudication).toContain("R2 轮");
+        expect(review!.adjudication).toContain("裁定批 G");
+      }
     }
   });
 
-  it("新 id 域段词形（AUTHZ/PRV/ERR——PR-0009 收编集外）恰 8 条带 x-vocab-pr 候选注记；其余 17 条零 pending", () => {
-    const d3 = b6Entries.filter((e) => e.note.batch === "D3-R1");
-    const withPending = d3.filter((e) => "x-vocab-pr" in e.body);
-    expect(withPending.map((e) => e.body.id).sort()).toEqual(
+  it("x-vocab-pr 注记两态恰等：R1 新域段 8 条（AUTHZ/PRV/ERR）随 PR-0010 转正（resolution 在座，历史 finding/proposal 原样保留）；R2 新域段 7 条（BE）候选注记在册待词汇表 PR", () => {
+    // R1 面：恰 8 条带注记且全部已转正（resolution 含 PR-0010 词形）——裸 pending 零残留。
+    const d3r1 = b6Entries.filter((e) => e.note.batch === "D3-R1");
+    const r1Resolved = d3r1.filter((e) => "x-vocab-pr" in e.body);
+    expect(r1Resolved.map((e) => e.body.id).sort()).toEqual(
       [
         "POLICY.AUTHZ.NO_GATING_PROXY_TRUST",
         "POLICY.AUTHZ.PERMISSION_SCOPE_EXPANSION_GATE",
@@ -539,24 +610,55 @@ describe("D3 逐卡复核批（Owner 2026-09-05 裁定 D3=逐卡复核；裁定�
         "POLICY.PRV.SENSITIVE_DATA_SIX_FACTS",
       ],
     );
-    for (const { body } of withPending) {
-      const vocab = (body as unknown as Record<string, { status?: string; locked_vocab_untouched?: boolean }>)[
-        "x-vocab-pr"
-      ];
+    for (const { body } of r1Resolved) {
+      const vocab = (body as unknown as Record<string, {
+        status?: string; locked_vocab_untouched?: boolean; resolution?: string;
+      }>)["x-vocab-pr"];
       expect(vocab!.status).toBe("vocab_pr_candidate");
       expect(vocab!.locked_vocab_untouched).toBe(true);
+      expect(vocab!.resolution).toContain("PR-0010");
+      expect(vocab!.resolution).toContain("vocab-lock@v0.9-resolved");
     }
+    // R2 面：恰 7 条 BE 域段候选注记（无 resolution——待下一个词汇表 PR）。
+    const d3r2 = b6Entries.filter((e) => e.note.batch === "D3-R2");
+    const r2Pending = d3r2.filter((e) => "x-vocab-pr" in e.body);
+    expect(r2Pending.map((e) => e.body.id).sort()).toEqual(
+      [
+        "POLICY.BE.CONC.PREFER_DB_CONSTRAINTS",
+        "POLICY.BE.DB.EXPAND_MIGRATE_CONTRACT",
+        "POLICY.BE.IDEM.KEY_PAYLOAD_CONFLICT",
+        "POLICY.BE.MODEL.SINGLE_BOUNDARY_CONVERSION",
+        "POLICY.BE.SQL.INDEX_FOR_KNOWN_QUERIES",
+        "POLICY.BE.STATE.SINGLE_RULE_SOURCE",
+        "POLICY.BE.TXN.SHORT_LOCKS_COMPENSATION",
+      ],
+    );
+    for (const { body } of r2Pending) {
+      const vocab = (body as unknown as Record<string, {
+        status?: string; locked_vocab_untouched?: boolean; resolution?: string;
+      }>)["x-vocab-pr"];
+      expect(vocab!.status).toBe("vocab_pr_candidate");
+      expect(vocab!.locked_vocab_untouched).toBe(true);
+      expect(vocab!.resolution).toBeUndefined();
+    }
+    // 两轮其余条目零注记。
+    const withNote = d3r1.filter((e) => "x-vocab-pr" in e.body).length
+      + d3r2.filter((e) => "x-vocab-pr" in e.body).length;
+    expect(withNote).toBe(15);
   });
 
-  it("维持排除 30 张（Ownership 归属说明族）与留 D3-R2 17 张均不在册（catalog/policies 零文件）", () => {
+  it("维持排除 30 张（Ownership 归属说明族）不在册（catalog/policies 零文件）；D3 两轮 42 张全量在册", () => {
     const presentIds = new Set(b6Entries.map((e) => e.body.id));
-    for (const id of [...D3_EXCLUDED_KEEP_IDS, ...D3_R2_DEFERRED_IDS]) {
+    for (const id of D3_EXCLUDED_KEEP_IDS) {
       expect(presentIds.has(id), `${id} 应维持留池不在册`).toBe(false);
+    }
+    for (const id of [...D3_REGISTERED_IDS, ...D3_R2_REGISTERED_IDS]) {
+      expect(presentIds.has(id), `${id} 应在册`).toBe(true);
     }
   });
 });
 
-describe("kernel 装载面：全量 policies 词表闸实读生效（含 B6/B6b/B6c/D3-R1 110 条）", () => {
+describe("kernel 装载面：全量 policies 词表闸实读生效（含 B6/B6b/B6c/D3 两轮 127 条）", () => {
   it("loadCatalogPolicies 全量装载成功（fail-closed 词表/必填校验零爆——词形闸经 kernel 单一生效；TECHNOLOGY_PROFILE classification 在词表闭包内实读通过）", () => {
     const materials = loadCatalogPolicies(CATALOG);
     expect(materials.length).toBeGreaterThanOrEqual(129);

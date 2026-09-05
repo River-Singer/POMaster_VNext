@@ -1,4 +1,4 @@
-<!-- view: executive-system-map | generator: corpus/master/tools/build_human_views.py | batch_code: VIEW-M5 | inputs_fingerprint: 3733fa4e3fa86006b24bb21e8cfbe9a4f9b004a5baf04d145ebce8063e1ec951 -->
+<!-- view: executive-system-map | generator: corpus/master/tools/build_human_views.py | batch_code: VIEW-M5 | inputs_fingerprint: 17de59314bbe660beb27c2631cb07d2976a26c2a2c35f7a645dcbeff874ba46d -->
 
 # executive-system-map
 
@@ -6,7 +6,7 @@
 >
 > 本文件是 corpus truth 语料的**纯派生投影**（M5 Human View），不是事实源：禁止手工编辑（编辑无效，重建即覆盖）；不写 store、不产生治理事实、不进 truth-index。谱系约定：行内 citation 记号（`[SRC:` + 引用 + `]`），文法四形态见 `docs/p9-human-view-and-l5-contract.md` §1.5；「语料未覆盖」为显式留白（缺席 ≠ 通过）。
 >
-> 重建：`python corpus/master/tools/build_human_views.py --check`（同输入双跑 byte-stable；inputs_fingerprint=3733fa4e3fa86006b24bb21e8cfbe9a4f9b004a5baf04d145ebce8063e1ec951）。
+> 重建：`python corpus/master/tools/build_human_views.py --check`（同输入双跑 byte-stable；inputs_fingerprint=17de59314bbe660beb27c2631cb07d2976a26c2a2c35f7a645dcbeff874ba46d）。
 
 ## 1. 项目一句话
 
@@ -47,7 +47,7 @@ gate-run 共 40 份：passed 18 / failed 13 / skipped_blindspot 8 / not_configur
 - 输入域：五批 truth/objects + gate-runs + inventory/authority/pending 登记/calibration/episodes 归档（消费文件集清单与指纹见 build-manifest.json；对象域分母口径声明位 [SRC: MIG-B1/authority.json#statistics.object_total.denominator_source]）。
 ```text
 generator : corpus/master/tools/build_human_views.py（批次代号 VIEW-M5，零墙钟，同输入双跑 byte-stable）
-fingerprint: inputs_fingerprint=3733fa4e3fa86006b24bb21e8cfbe9a4f9b004a5baf04d145ebce8063e1ec951（消费文件集 relpath+sha256 确定性指纹，明细见 build-manifest.json）
+fingerprint: inputs_fingerprint=17de59314bbe660beb27c2631cb07d2976a26c2a2c35f7a645dcbeff874ba46d（消费文件集 relpath+sha256 确定性指纹，明细见 build-manifest.json）
 rebuild   : python corpus/master/tools/build_human_views.py --check
 exit      : 删掉 views/ 重生成 diff=0 为 M5 退出判据；单向流——本目录产物
             永不作为任何 compiler/ingest 的输入，消费方按此拒收。

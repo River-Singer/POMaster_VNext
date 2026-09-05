@@ -1,0 +1,94 @@
+{
+  "x-spec-d-materialization": {
+    "status": "PROPOSAL",
+    "package": "裁定批 G/D3-R2 排除卡逐卡复核物化·R2 轮（SPEC-D 池卡复用；分母=MASTer 池卡 + vendor 播种字节双锚）",
+    "human_review_required": true,
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/corpus/spec-knowledge/candidates/consolidated-pool.yaml",
+    "group": "BE-G4",
+    "candidate_id": "POLICY.INTEGRATION.FAULT_CONTAINMENT",
+    "pool_statement_sha16": "55db248117fd513f",
+    "curated_rule": "D3 逐卡复核批 R2 轮（Owner 2026-09-05 裁定 D3=逐卡复核；裁定批 G 收尾批）：R1 入册 25（required 9 + advisory 16）后余量 17 张 advisory 全量入册——SHOULD 锚 13（卡层行锚缺席，复核回 MASTer 源取得行级证据：B6c BE-G4 六 + BE-G3 七）+ 非 12 段锚 4（B6b-II FE index 2 / B6c BE index 冲突优先序 1 / B6b-I FE20 Change Policy 锚 1，extra_master_sections 如实登记）；全部 advisory（池判 required 卡强度只降不升）；D6 合并口径 ≤25/批满足（17 ≤ 25）；72 张总账=R1 25 + R2 17 + 维持排除 30",
+    "denominator": "MASTer（池卡锚）"
+  },
+  "x-b6-porting": {
+    "status": "PROPOSAL",
+    "batch": "D3-R2",
+    "human_review_required": true,
+    "classification_face": "policy",
+    "enforcement_axis": {
+      "source_sections": [
+        "SHOULD"
+      ],
+      "rule": "SHOULD/Change Policy 源条目 enforcement 必须 advisory（禁升 required）；MUST/MUST NOT 源条目 enforcement 必须 required_when_applicable（降级合法）",
+      "asserted_by": "packages/cli/tests/catalog-b6-porting.spec.ts"
+    },
+    "extra_master_sections": [],
+    "denominator": "vendor",
+    "vendor_pin": {
+      "path": "pomaster/components/backend-hard-spec/assets/universal/24-external-integration-resilience-protocol.md",
+      "sha256": "e6b0626c9169e9126319bd08ee5d5bdbe38421cfa175509524145aee30ff539a",
+      "bytes": 1346
+    },
+    "seeded_spec": ".pomaster/specs/hard/backend/24-external-integration-resilience-protocol.md",
+    "seed_manifest": "packages/cli/seeds/manifest.json",
+    "d3_review": {
+      "excluded_from_batch": "B6C",
+      "exclusion_reason_at_seed": "池行行锚缺席（锚证据不足，保守排除待复核）",
+      "adjudication": "D3 逐卡复核 R2 轮（Owner 2026-09-05 裁定 D3=逐卡复核，裁定批 G 落地 2026-09-05）：本卡原属 B6C 保守排除留池（排除理由：池行行锚缺席（锚证据不足，保守排除待复核））；复核补锚回 MASTer 源取得行级证据，锚段=SHOULD，按强度入册（SHOULD 行锚 advisory 原样（池判一致；复核行锚补证））",
+      "anchor_evidence": "MASTer 24-external-integration-resilience-protocol.md L31-L33「## SHOULD」",
+      "pool_enforcement_at_seed": "advisory"
+    }
+  },
+  "id": "POLICY.INTEGRATION.FAULT_CONTAINMENT",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "UNIVERSAL_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "外部集成故障隔离",
+  "statement_zh": "对外部依赖宜组合隔离、熔断、限流、降级与定期对账手段，把供应方故障的扩散范围约束在局部。",
+  "statement_en_keywords": [
+    "bulkhead",
+    "circuit breaker",
+    "rate limiting",
+    "degradation",
+    "reconciliation",
+    "blast radius containment"
+  ],
+  "applies_when": {
+    "lane": "any",
+    "condition": "外部依赖故障控制设计",
+    "applicability_note": "外部依赖故障控制设计"
+  },
+  "enforcement": "advisory",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-spec-decomposition"
+  },
+  "origin": "ingested",
+  "origin_note": "裁定批 G/D3-R2 D3 逐卡复核物化·R2 轮（原 B6C 保守排除卡补锚收编）；statement 沿用 SPEC-D 候选卡独立措辞（clean-room），零逐字拷贝上游源文本；播种分母=vendor 字节（x-b6-porting.vendor_pin），分解分母=MASTer 池卡（x-spec-d-materialization）",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/corpus/spec-knowledge/candidates/BE-G4.yaml",
+      "captured_by": "agent:claude/spec-d-consolidation",
+      "locator": {
+        "candidate": "POLICY.INTEGRATION.FAULT_CONTAINMENT",
+        "source_protocol": ".trellis/spec/backend/24-external-integration-resilience-protocol.md",
+        "lines": "L31-L33"
+      },
+      "clean_room_note": "independently rewritten from SPEC-D decomposition candidate cards; zero verbatim copy"
+    }
+  ],
+  "review_notes": [
+    "隔离/熔断/限流/降级/对账控散在既有 228 条中无对应条目；与 POLICY.INTEGRATION.CALL_DEFINITION_MINIMUM（B6b-II：外部调用最小定义面）不同轴（声明面 vs 故障控制面），互引。",
+    "D3-R2 补锚：MASTer 24 L31-33（SHOULD 段），advisory 原样（池判一致）。"
+  ]
+}

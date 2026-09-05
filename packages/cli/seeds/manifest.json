@@ -1709,11 +1709,12 @@
       "lane": "evidence",
       "authoring": "new",
       "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
-      "source_sha256": "9a7e6cd188ffd2d24f190b239746f0ee421f888702b6afebb65b5277dceae7db",
-      "source_bytes": 3965,
+      "source_sha256": "8845bbfd04f251919261bb6845646f55178571c309bda6ed1c0d7495737d7cdb",
+      "source_bytes": 4063,
       "porting_notes": [
         "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
-        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)",
+        "裁定批 G 陈旧声明清洗(2026-09-05,D5=(a) 同类授权延伸——D2 预植落地后的内容演进,最小改写只动登记面):对象面词形头行旧词形「对象登记时机由项目运行时 applyTransaction 决定,init 播种不写 store 对象」→「对应对象由 init 步骤 4.7 预植 SPEC.* store 对象(PROPOSED 起步,裁定批 D D2);本文件为该对象 requirements 的播种底稿,对象演进归项目运行时 applyTransaction」(index 登记通路行同步改写);生成器模板+manifest 自指指纹 pin 同批重算,旧词形播种面零残留(测试钉)"
       ]
     },
     {
@@ -1723,11 +1724,12 @@
       "lane": "evidence",
       "authoring": "new",
       "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
-      "source_sha256": "53f0039e994f2b8a9373b0cfea9ff211da8176256f1e9c306df13be084da9ddc",
-      "source_bytes": 4020,
+      "source_sha256": "435dc8445bc7bb1eef285e8bb44e2ddc8349e7a0b93c28f5cce4612da213344a",
+      "source_bytes": 4118,
       "porting_notes": [
         "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
-        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)",
+        "裁定批 G 陈旧声明清洗(2026-09-05,D5=(a) 同类授权延伸——D2 预植落地后的内容演进,最小改写只动登记面):对象面词形头行旧词形「对象登记时机由项目运行时 applyTransaction 决定,init 播种不写 store 对象」→「对应对象由 init 步骤 4.7 预植 SPEC.* store 对象(PROPOSED 起步,裁定批 D D2);本文件为该对象 requirements 的播种底稿,对象演进归项目运行时 applyTransaction」(index 登记通路行同步改写);生成器模板+manifest 自指指纹 pin 同批重算,旧词形播种面零残留(测试钉)"
       ]
     },
     {
@@ -1737,11 +1739,12 @@
       "lane": "evidence",
       "authoring": "new",
       "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
-      "source_sha256": "c1ae42fd3f383765d7218d4e684afff169ec5744c18d7cff3daa686598b4038d",
-      "source_bytes": 4188,
+      "source_sha256": "059317dddec5d54a415914f8051af79c95504f9b72cab15bff25f216e3f8d250",
+      "source_bytes": 4286,
       "porting_notes": [
         "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
-        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)",
+        "裁定批 G 陈旧声明清洗(2026-09-05,D5=(a) 同类授权延伸——D2 预植落地后的内容演进,最小改写只动登记面):对象面词形头行旧词形「对象登记时机由项目运行时 applyTransaction 决定,init 播种不写 store 对象」→「对应对象由 init 步骤 4.7 预植 SPEC.* store 对象(PROPOSED 起步,裁定批 D D2);本文件为该对象 requirements 的播种底稿,对象演进归项目运行时 applyTransaction」(index 登记通路行同步改写);生成器模板+manifest 自指指纹 pin 同批重算,旧词形播种面零残留(测试钉)"
       ]
     },
     {
@@ -1751,11 +1754,12 @@
       "lane": "evidence",
       "authoring": "new",
       "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
-      "source_sha256": "66171d1fe9522760ed3beda7fcd192fc3389b20461c4f638e083d1722f8dc8cf",
-      "source_bytes": 4209,
+      "source_sha256": "c8f7a4b371a1b361a7413d4fe2412bda123d31605d1abb0f071e60dcb3b2d366",
+      "source_bytes": 4307,
       "porting_notes": [
         "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
-        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)",
+        "裁定批 G 陈旧声明清洗(2026-09-05,D5=(a) 同类授权延伸——D2 预植落地后的内容演进,最小改写只动登记面):对象面词形头行旧词形「对象登记时机由项目运行时 applyTransaction 决定,init 播种不写 store 对象」→「对应对象由 init 步骤 4.7 预植 SPEC.* store 对象(PROPOSED 起步,裁定批 D D2);本文件为该对象 requirements 的播种底稿,对象演进归项目运行时 applyTransaction」(index 登记通路行同步改写);生成器模板+manifest 自指指纹 pin 同批重算,旧词形播种面零残留(测试钉)"
       ]
     },
     {
@@ -1765,11 +1769,12 @@
       "lane": "evidence",
       "authoring": "new",
       "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
-      "source_sha256": "35ae384a18e57c646d8669fbbb51aee63cff92876c28c6daed14d307d1f41091",
-      "source_bytes": 4253,
+      "source_sha256": "a8f4da5203cd876f87ed1ca3e6d650c96699cba0a006ffa3e6b048bbdc6eeb51",
+      "source_bytes": 4351,
       "porting_notes": [
         "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
-        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)",
+        "裁定批 G 陈旧声明清洗(2026-09-05,D5=(a) 同类授权延伸——D2 预植落地后的内容演进,最小改写只动登记面):对象面词形头行旧词形「对象登记时机由项目运行时 applyTransaction 决定,init 播种不写 store 对象」→「对应对象由 init 步骤 4.7 预植 SPEC.* store 对象(PROPOSED 起步,裁定批 D D2);本文件为该对象 requirements 的播种底稿,对象演进归项目运行时 applyTransaction」(index 登记通路行同步改写);生成器模板+manifest 自指指纹 pin 同批重算,旧词形播种面零残留(测试钉)"
       ]
     },
     {
@@ -1779,11 +1784,12 @@
       "lane": "evidence",
       "authoring": "new",
       "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
-      "source_sha256": "6aba64e3388900f9b8044f3501732dfa427424a29f8a88fb4b939dd4da1214a5",
-      "source_bytes": 4373,
+      "source_sha256": "2cb900e40b37093e58eb9e0c39c2bc56d3bfe332434f39bcde4a3fe58c860a3a",
+      "source_bytes": 4471,
       "porting_notes": [
         "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
-        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)",
+        "裁定批 G 陈旧声明清洗(2026-09-05,D5=(a) 同类授权延伸——D2 预植落地后的内容演进,最小改写只动登记面):对象面词形头行旧词形「对象登记时机由项目运行时 applyTransaction 决定,init 播种不写 store 对象」→「对应对象由 init 步骤 4.7 预植 SPEC.* store 对象(PROPOSED 起步,裁定批 D D2);本文件为该对象 requirements 的播种底稿,对象演进归项目运行时 applyTransaction」(index 登记通路行同步改写);生成器模板+manifest 自指指纹 pin 同批重算,旧词形播种面零残留(测试钉)"
       ]
     },
     {
@@ -1793,11 +1799,12 @@
       "lane": "evidence",
       "authoring": "new",
       "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
-      "source_sha256": "7067e4a5bfda9f1440c0e8289fd56f54a03fe7a51d541267dc4e88118962759f",
-      "source_bytes": 4168,
+      "source_sha256": "de02013af0042e9ee656d310e2465095d26fde434865c16e6227a22168cb6506",
+      "source_bytes": 4266,
       "porting_notes": [
         "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
-        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)",
+        "裁定批 G 陈旧声明清洗(2026-09-05,D5=(a) 同类授权延伸——D2 预植落地后的内容演进,最小改写只动登记面):对象面词形头行旧词形「对象登记时机由项目运行时 applyTransaction 决定,init 播种不写 store 对象」→「对应对象由 init 步骤 4.7 预植 SPEC.* store 对象(PROPOSED 起步,裁定批 D D2);本文件为该对象 requirements 的播种底稿,对象演进归项目运行时 applyTransaction」(index 登记通路行同步改写);生成器模板+manifest 自指指纹 pin 同批重算,旧词形播种面零残留(测试钉)"
       ]
     },
     {
@@ -1807,11 +1814,12 @@
       "lane": "evidence",
       "authoring": "new",
       "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
-      "source_sha256": "803c640d5ea7f32e7339fd4d65d7072521613f7a5bc2fa01e68c1e375c69470d",
-      "source_bytes": 4093,
+      "source_sha256": "1a363ef4443cf39addf9cc1436fe5407a3bf9c072685aa54fa46a4d596696393",
+      "source_bytes": 4191,
       "porting_notes": [
         "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
-        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)",
+        "裁定批 G 陈旧声明清洗(2026-09-05,D5=(a) 同类授权延伸——D2 预植落地后的内容演进,最小改写只动登记面):对象面词形头行旧词形「对象登记时机由项目运行时 applyTransaction 决定,init 播种不写 store 对象」→「对应对象由 init 步骤 4.7 预植 SPEC.* store 对象(PROPOSED 起步,裁定批 D D2);本文件为该对象 requirements 的播种底稿,对象演进归项目运行时 applyTransaction」(index 登记通路行同步改写);生成器模板+manifest 自指指纹 pin 同批重算,旧词形播种面零残留(测试钉)"
       ]
     },
     {
@@ -1821,11 +1829,12 @@
       "lane": "evidence",
       "authoring": "new",
       "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
-      "source_sha256": "4ff54af72a57b4dc2847278ea631cb18136b46f3882f886682f7263108a1f2d5",
-      "source_bytes": 4202,
+      "source_sha256": "64a2f4005031c1890923e42d694bb7bbd0db53ce33e5601ba2c303e0744b42db",
+      "source_bytes": 4300,
       "porting_notes": [
         "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
-        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)",
+        "裁定批 G 陈旧声明清洗(2026-09-05,D5=(a) 同类授权延伸——D2 预植落地后的内容演进,最小改写只动登记面):对象面词形头行旧词形「对象登记时机由项目运行时 applyTransaction 决定,init 播种不写 store 对象」→「对应对象由 init 步骤 4.7 预植 SPEC.* store 对象(PROPOSED 起步,裁定批 D D2);本文件为该对象 requirements 的播种底稿,对象演进归项目运行时 applyTransaction」(index 登记通路行同步改写);生成器模板+manifest 自指指纹 pin 同批重算,旧词形播种面零残留(测试钉)"
       ]
     },
     {
@@ -1835,11 +1844,12 @@
       "lane": "evidence",
       "authoring": "new",
       "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
-      "source_sha256": "4949af5844e50c058bf82449ef1b5c84ed8ec4265a631bc0c8edd36beeca1ee4",
-      "source_bytes": 3919,
+      "source_sha256": "40c4487144f86fd701c62f028c31bc7a56de6c75333d2e44dba41079ccaa4dd7",
+      "source_bytes": 4017,
       "porting_notes": [
         "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
-        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)",
+        "裁定批 G 陈旧声明清洗(2026-09-05,D5=(a) 同类授权延伸——D2 预植落地后的内容演进,最小改写只动登记面):对象面词形头行旧词形「对象登记时机由项目运行时 applyTransaction 决定,init 播种不写 store 对象」→「对应对象由 init 步骤 4.7 预植 SPEC.* store 对象(PROPOSED 起步,裁定批 D D2);本文件为该对象 requirements 的播种底稿,对象演进归项目运行时 applyTransaction」(index 登记通路行同步改写);生成器模板+manifest 自指指纹 pin 同批重算,旧词形播种面零残留(测试钉)"
       ]
     },
     {
@@ -1849,11 +1859,12 @@
       "lane": "evidence",
       "authoring": "new",
       "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
-      "source_sha256": "93c05c3b6898802f64a8870e6a3291abde0ff25cb940108dd83486fa5616ce9a",
-      "source_bytes": 4098,
+      "source_sha256": "c609a26c996fbf65bfb1441565e6a065550e631a296071eb627d2592e6f11810",
+      "source_bytes": 4196,
       "porting_notes": [
         "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
-        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)",
+        "裁定批 G 陈旧声明清洗(2026-09-05,D5=(a) 同类授权延伸——D2 预植落地后的内容演进,最小改写只动登记面):对象面词形头行旧词形「对象登记时机由项目运行时 applyTransaction 决定,init 播种不写 store 对象」→「对应对象由 init 步骤 4.7 预植 SPEC.* store 对象(PROPOSED 起步,裁定批 D D2);本文件为该对象 requirements 的播种底稿,对象演进归项目运行时 applyTransaction」(index 登记通路行同步改写);生成器模板+manifest 自指指纹 pin 同批重算,旧词形播种面零残留(测试钉)"
       ]
     },
     {
@@ -1863,11 +1874,12 @@
       "lane": "evidence",
       "authoring": "new",
       "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
-      "source_sha256": "a7001385ada31e4d705a03a2297219225ff274fb756171c4aa0d4971fb42b14f",
-      "source_bytes": 5663,
+      "source_sha256": "78ca9441deec13939505cddf7879b03440265cc895fd6c05e643acf1f050b912",
+      "source_bytes": 5781,
       "porting_notes": [
         "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
-        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)",
+        "裁定批 G 陈旧声明清洗(2026-09-05,D5=(a) 同类授权延伸——D2 预植落地后的内容演进,最小改写只动登记面):对象面词形头行旧词形「对象登记时机由项目运行时 applyTransaction 决定,init 播种不写 store 对象」→「对应对象由 init 步骤 4.7 预植 SPEC.* store 对象(PROPOSED 起步,裁定批 D D2);本文件为该对象 requirements 的播种底稿,对象演进归项目运行时 applyTransaction」(index 登记通路行同步改写);生成器模板+manifest 自指指纹 pin 同批重算,旧词形播种面零残留(测试钉)"
       ]
     },
     {
@@ -1877,11 +1889,12 @@
       "lane": "evidence",
       "authoring": "new",
       "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
-      "source_sha256": "bc3fb6502a0c777d347554dfec28a82a1f107540331497cbeda381830573755b",
-      "source_bytes": 4019,
+      "source_sha256": "c9f9d569401bf55aba1e9f64af99a1ea95e224971bfb2ab19b1179e065ad68e5",
+      "source_bytes": 4117,
       "porting_notes": [
         "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
-        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)",
+        "裁定批 G 陈旧声明清洗(2026-09-05,D5=(a) 同类授权延伸——D2 预植落地后的内容演进,最小改写只动登记面):对象面词形头行旧词形「对象登记时机由项目运行时 applyTransaction 决定,init 播种不写 store 对象」→「对应对象由 init 步骤 4.7 预植 SPEC.* store 对象(PROPOSED 起步,裁定批 D D2);本文件为该对象 requirements 的播种底稿,对象演进归项目运行时 applyTransaction」(index 登记通路行同步改写);生成器模板+manifest 自指指纹 pin 同批重算,旧词形播种面零残留(测试钉)"
       ]
     },
     {
@@ -1891,11 +1904,12 @@
       "lane": "evidence",
       "authoring": "new",
       "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
-      "source_sha256": "7784d2fefc6d61d9a14d567d0ab6029f491688ff8f5897580e0ac6e72c17cc7c",
-      "source_bytes": 4074,
+      "source_sha256": "6ea05e9067de553fd4d2b1e9cc3b37c4627182c6f7312678d6781fb0242e1725",
+      "source_bytes": 4172,
       "porting_notes": [
         "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
-        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)",
+        "裁定批 G 陈旧声明清洗(2026-09-05,D5=(a) 同类授权延伸——D2 预植落地后的内容演进,最小改写只动登记面):对象面词形头行旧词形「对象登记时机由项目运行时 applyTransaction 决定,init 播种不写 store 对象」→「对应对象由 init 步骤 4.7 预植 SPEC.* store 对象(PROPOSED 起步,裁定批 D D2);本文件为该对象 requirements 的播种底稿,对象演进归项目运行时 applyTransaction」(index 登记通路行同步改写);生成器模板+manifest 自指指纹 pin 同批重算,旧词形播种面零残留(测试钉)"
       ]
     },
     {
@@ -1905,11 +1919,12 @@
       "lane": "evidence",
       "authoring": "new",
       "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
-      "source_sha256": "a6faf66bd371a84f8b874078f6d90061b4af7645cab3c742a57e81d787f29600",
-      "source_bytes": 4071,
+      "source_sha256": "6e4ac3ce503d64c5cb99bbb301e8aaa312e2e7763b284b5297ad93584348fad2",
+      "source_bytes": 4169,
       "porting_notes": [
         "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
-        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)",
+        "裁定批 G 陈旧声明清洗(2026-09-05,D5=(a) 同类授权延伸——D2 预植落地后的内容演进,最小改写只动登记面):对象面词形头行旧词形「对象登记时机由项目运行时 applyTransaction 决定,init 播种不写 store 对象」→「对应对象由 init 步骤 4.7 预植 SPEC.* store 对象(PROPOSED 起步,裁定批 D D2);本文件为该对象 requirements 的播种底稿,对象演进归项目运行时 applyTransaction」(index 登记通路行同步改写);生成器模板+manifest 自指指纹 pin 同批重算,旧词形播种面零残留(测试钉)"
       ]
     },
     {
@@ -1919,11 +1934,12 @@
       "lane": "evidence",
       "authoring": "new",
       "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
-      "source_sha256": "8593e6c4745d021e598ee9b47ec933e7526cbea507b014e3120b860d0fa5e147",
-      "source_bytes": 4234,
+      "source_sha256": "6d410b7665a2308a58426fb1d3a4d9cb8c39ba8ef9e0547d81ff3d0b05a5801b",
+      "source_bytes": 4332,
       "porting_notes": [
         "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
-        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)",
+        "裁定批 G 陈旧声明清洗(2026-09-05,D5=(a) 同类授权延伸——D2 预植落地后的内容演进,最小改写只动登记面):对象面词形头行旧词形「对象登记时机由项目运行时 applyTransaction 决定,init 播种不写 store 对象」→「对应对象由 init 步骤 4.7 预植 SPEC.* store 对象(PROPOSED 起步,裁定批 D D2);本文件为该对象 requirements 的播种底稿,对象演进归项目运行时 applyTransaction」(index 登记通路行同步改写);生成器模板+manifest 自指指纹 pin 同批重算,旧词形播种面零残留(测试钉)"
       ]
     },
     {
@@ -1933,11 +1949,12 @@
       "lane": "evidence",
       "authoring": "new",
       "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
-      "source_sha256": "208444bc757eb8ff66e3e9807af5ad445f3edd6e607eaec582768d6e1e9bf375",
-      "source_bytes": 4087,
+      "source_sha256": "a78a564fdfa6e0c0d0b134a16c2e779d9356959255d11f4e671e6bd2627523a5",
+      "source_bytes": 4185,
       "porting_notes": [
         "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
-        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)",
+        "裁定批 G 陈旧声明清洗(2026-09-05,D5=(a) 同类授权延伸——D2 预植落地后的内容演进,最小改写只动登记面):对象面词形头行旧词形「对象登记时机由项目运行时 applyTransaction 决定,init 播种不写 store 对象」→「对应对象由 init 步骤 4.7 预植 SPEC.* store 对象(PROPOSED 起步,裁定批 D D2);本文件为该对象 requirements 的播种底稿,对象演进归项目运行时 applyTransaction」(index 登记通路行同步改写);生成器模板+manifest 自指指纹 pin 同批重算,旧词形播种面零残留(测试钉)"
       ]
     },
     {
@@ -1947,11 +1964,12 @@
       "lane": "evidence",
       "authoring": "new",
       "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
-      "source_sha256": "e17bd93f303ee471e860e41d59f9067d1a2b93360ec1a70ca11ed3d32f1120da",
-      "source_bytes": 4178,
+      "source_sha256": "63e95a64a5269f35d6b128e7cdc83f63241fa7788508fa69ca536f5a165e0e38",
+      "source_bytes": 4276,
       "porting_notes": [
         "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
-        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)",
+        "裁定批 G 陈旧声明清洗(2026-09-05,D5=(a) 同类授权延伸——D2 预植落地后的内容演进,最小改写只动登记面):对象面词形头行旧词形「对象登记时机由项目运行时 applyTransaction 决定,init 播种不写 store 对象」→「对应对象由 init 步骤 4.7 预植 SPEC.* store 对象(PROPOSED 起步,裁定批 D D2);本文件为该对象 requirements 的播种底稿,对象演进归项目运行时 applyTransaction」(index 登记通路行同步改写);生成器模板+manifest 自指指纹 pin 同批重算,旧词形播种面零残留(测试钉)"
       ]
     },
     {
@@ -1961,11 +1979,12 @@
       "lane": "evidence",
       "authoring": "new",
       "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
-      "source_sha256": "6ab0db1e8f528f3b3adc1f75da2f31d36be9288d4abd4159dba277cdfbe40e60",
-      "source_bytes": 4179,
+      "source_sha256": "bffec2f5b0c144911f55b8506d16110c41d11af12dcefe9520e262d3811458ef",
+      "source_bytes": 4277,
       "porting_notes": [
         "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
-        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)",
+        "裁定批 G 陈旧声明清洗(2026-09-05,D5=(a) 同类授权延伸——D2 预植落地后的内容演进,最小改写只动登记面):对象面词形头行旧词形「对象登记时机由项目运行时 applyTransaction 决定,init 播种不写 store 对象」→「对应对象由 init 步骤 4.7 预植 SPEC.* store 对象(PROPOSED 起步,裁定批 D D2);本文件为该对象 requirements 的播种底稿,对象演进归项目运行时 applyTransaction」(index 登记通路行同步改写);生成器模板+manifest 自指指纹 pin 同批重算,旧词形播种面零残留(测试钉)"
       ]
     },
     {
@@ -1975,11 +1994,12 @@
       "lane": "evidence",
       "authoring": "new",
       "source_path": "doc/POMaster-vNext-Project-Store-Spec-Baseline-Evidence-Tooling-Studio-PRD.md#s13-evidence-spec-kit(PRD §13 清单逐字+§13.1 十七段结构;新著无 vendor 字节源——语义祖先=旧 evidence-model/20_verified 模板/quality-architecture-gate references,仅参照)",
-      "source_sha256": "feec4946b8190d3351346fd42ae3f9b010abb2a951b16810dbbc7dbab98d920d",
-      "source_bytes": 3939,
+      "source_sha256": "15a0408e4affc3be3b1267b6f563f12fa7315fabb3071642f931e4d33de177fe",
+      "source_bytes": 4037,
       "porting_notes": [
         "B6e 新著件(非移植):旧包无 19 件成套 evidence specs——源=Project-Store PRD §13 清单(PRD 文本非 vendor 字节);语义祖先=旧 evidence-model 五类原始证据/20_verified 模板/quality-architecture-gate references(仅参照);内容=规范性要求新著(要求面——持要求不持判定,判定值只在 Verification Result/Gate Result),十七段结构照 PRD §13.1,判卷四值词形闭包(PASS/FAIL/UNKNOWN/NOT_RUN)禁发明第五值;阈值/工具具体选型项目化(baseline 面决策),零通用阈值零新治理语义",
-        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)"
+        "B6e 形态注记:本件无 frontmatter(纯正文——authoring:new 通路复用);清单 pin=资产自身字节 sha256(自指指纹,装载器按 authoring 分流校验);gates 绑定=登记级注记(对象面词形 SPEC.* 头行+index 映射表),无第二套机器绑定机制(无消费者不加机制——对象面 21 schema requirements 已承载资格判定)",
+        "裁定批 G 陈旧声明清洗(2026-09-05,D5=(a) 同类授权延伸——D2 预植落地后的内容演进,最小改写只动登记面):对象面词形头行旧词形「对象登记时机由项目运行时 applyTransaction 决定,init 播种不写 store 对象」→「对应对象由 init 步骤 4.7 预植 SPEC.* store 对象(PROPOSED 起步,裁定批 D D2);本文件为该对象 requirements 的播种底稿,对象演进归项目运行时 applyTransaction」(index 登记通路行同步改写);生成器模板+manifest 自指指纹 pin 同批重算,旧词形播种面零残留(测试钉)"
       ]
     }
   ]

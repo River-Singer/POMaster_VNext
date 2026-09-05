@@ -43,7 +43,7 @@ Assertions 段带四个判定词位:PASS / FAIL / UNKNOWN / NOT_RUN。
 ## 对象面衔接(B2 Evidence Spec 一等对象——gates 绑定登记级)
 
 - 登记词形:SPEC.* governed id(21-evidence-spec kind profile:kind=business_rule + payload.spec_kind=evidence_spec 判别;词形随 PR-0008 在 vocab-lock prefixes_v0 闭包)。
-- 登记通路:项目运行时 applyTransaction upsert_object(init 播种不写 store 对象);requirements[].claim_refs/gate_refs 是资格清单——closeout 按资格判卷,资格外 claim/run 不满足条款。
+- 登记通路:对应 store 对象由 init 步骤 4.7 预植(裁定批 D D2——kernel applyTransaction upsert_object 单事务,PROPOSED 起步,seed-once);此后对象演进归项目运行时 applyTransaction。requirements[].claim_refs/gate_refs 是资格清单——closeout 按资格判卷,资格外 claim/run 不满足条款。
 - 文件↔对象绑定 = 登记级(本索引映射表 + 各 spec 头行词形),无第二套机器绑定机制(无消费者不加机制——对象面 requirements 已承载资格判定)。
 - catalog gate recipe 零引用字段位:gate recipe 判卷走 03-gate-result 七态词表,与本 Kit 的衔接经由对象面 requirements.gate_refs,不新增词形不动 catalog。
 

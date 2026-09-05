@@ -1,0 +1,96 @@
+{
+  "x-vocab-pr": {
+    "status": "vocab_pr_candidate",
+    "finding": "id 域段待登记：BE（vocab-lock@v0.9-resolved policy_id_domains 35 段未含——PR-0010 后新用域段沿用候选注记先例，词汇表 PR 增补）",
+    "proposal": "词汇表 PR 增补新 id 域段至 catalog_layer_vocab.policy_id_domains（与 PR-0009/PR-0010 同轴追加，append-only）",
+    "locked_vocab_untouched": true
+  },
+  "x-spec-d-materialization": {
+    "status": "PROPOSAL",
+    "package": "裁定批 G/D3-R2 排除卡逐卡复核物化·R2 轮（SPEC-D 池卡复用；分母=MASTer 池卡 + vendor 播种字节双锚）",
+    "human_review_required": true,
+    "evidence": "PLANNED",
+    "provenance": "POMaster_VNext/corpus/spec-knowledge/candidates/consolidated-pool.yaml",
+    "group": "BE-G3",
+    "candidate_id": "POLICY.BE.TXN.SHORT_LOCKS_COMPENSATION",
+    "pool_statement_sha16": "7de9ba8459cce310",
+    "curated_rule": "D3 逐卡复核批 R2 轮（Owner 2026-09-05 裁定 D3=逐卡复核；裁定批 G 收尾批）：R1 入册 25（required 9 + advisory 16）后余量 17 张 advisory 全量入册——SHOULD 锚 13（卡层行锚缺席，复核回 MASTer 源取得行级证据：B6c BE-G4 六 + BE-G3 七）+ 非 12 段锚 4（B6b-II FE index 2 / B6c BE index 冲突优先序 1 / B6b-I FE20 Change Policy 锚 1，extra_master_sections 如实登记）；全部 advisory（池判 required 卡强度只降不升）；D6 合并口径 ≤25/批满足（17 ≤ 25）；72 张总账=R1 25 + R2 17 + 维持排除 30",
+    "denominator": "MASTer（池卡锚）"
+  },
+  "x-b6-porting": {
+    "status": "PROPOSAL",
+    "batch": "D3-R2",
+    "human_review_required": true,
+    "classification_face": "policy",
+    "enforcement_axis": {
+      "source_sections": [
+        "SHOULD"
+      ],
+      "rule": "SHOULD/Change Policy 源条目 enforcement 必须 advisory（禁升 required）；MUST/MUST NOT 源条目 enforcement 必须 required_when_applicable（降级合法）",
+      "asserted_by": "packages/cli/tests/catalog-b6-porting.spec.ts"
+    },
+    "extra_master_sections": [],
+    "denominator": "vendor",
+    "vendor_pin": {
+      "path": "pomaster/components/backend-hard-spec/assets/universal/20-transaction-boundary-protocol.md",
+      "sha256": "4c4634b71f1e07e9cae074f9790fa50b3425f0af71300ab2ac12e644b521eff4",
+      "bytes": 1323
+    },
+    "seeded_spec": ".pomaster/specs/hard/backend/20-transaction-boundary-protocol.md",
+    "seed_manifest": "packages/cli/seeds/manifest.json",
+    "d3_review": {
+      "excluded_from_batch": "B6C",
+      "exclusion_reason_at_seed": "池行行锚缺席（锚证据不足，保守排除待复核）",
+      "adjudication": "D3 逐卡复核 R2 轮（Owner 2026-09-05 裁定 D3=逐卡复核，裁定批 G 落地 2026-09-05）：本卡原属 B6C 保守排除留池（排除理由：池行行锚缺席（锚证据不足，保守排除待复核））；复核补锚回 MASTer 源取得行级证据，锚段=SHOULD，按强度入册（SHOULD 行锚 advisory 原样（池判一致；复核行锚补证））",
+      "anchor_evidence": "MASTer 20-transaction-boundary-protocol.md L33「- 应缩短锁持有时间，并将外部副作用设计为可重试或可补偿。」",
+      "pool_enforcement_at_seed": "advisory"
+    }
+  },
+  "id": "POLICY.BE.TXN.SHORT_LOCKS_COMPENSATION",
+  "kind": "policy",
+  "axis_profile": "policy_default",
+  "classification": "UNIVERSAL_POLICY",
+  "axes": {
+    "lifecycle": "PROPOSED",
+    "confidence": "UNRESOLVED",
+    "evidence": "PLANNED",
+    "change": "STABLE"
+  },
+  "title_zh": "短锁持有与副作用补偿",
+  "statement_zh": "应尽量压缩锁的持有时长，并把对外部系统产生的副作用设计成可重试或可补偿的形态。",
+  "statement_en_keywords": [
+    "short lock hold time",
+    "retryable or compensable external side effects"
+  ],
+  "applies_when": {
+    "lane": "backend",
+    "condition": "设计事务与外部系统交互时",
+    "applicability_note": "设计事务与外部系统交互时"
+  },
+  "enforcement": "advisory",
+  "authority": {
+    "owner": "HUMAN_OWNER",
+    "delegates": [],
+    "write_policy": "EVOLUTION_CHANNEL",
+    "escalation_hint": "catalog-spec-decomposition"
+  },
+  "origin": "ingested",
+  "origin_note": "裁定批 G/D3-R2 D3 逐卡复核物化·R2 轮（原 B6C 保守排除卡补锚收编）；statement 沿用 SPEC-D 候选卡独立措辞（clean-room），零逐字拷贝上游源文本；播种分母=vendor 字节（x-b6-porting.vendor_pin），分解分母=MASTer 池卡（x-spec-d-materialization）",
+  "sources": [
+    {
+      "type": "design_seed",
+      "ref": "POMaster_VNext/corpus/spec-knowledge/candidates/BE-G3.yaml",
+      "captured_by": "agent:claude/spec-d-consolidation",
+      "locator": {
+        "candidate": "POLICY.BE.TXN.SHORT_LOCKS_COMPENSATION",
+        "source_protocol": ".trellis/spec/backend/20-transaction-boundary-protocol.md",
+        "lines": "L33"
+      },
+      "clean_room_note": "independently rewritten from SPEC-D decomposition candidate cards; zero verbatim copy"
+    }
+  ],
+  "review_notes": [
+    "短锁持有+外部副作用可重试/可补偿在既有 228 条中无对应条目；与同批 INTEGRATION.FAULT_CONTAINMENT 互引（事务边界时序 vs 集成故障隔离）；与 REL.NO_IRREVERSIBLE_UNMONITORED_FULL_RELEASE 不同轴。",
+    "D3-R2 补锚：MASTer 20 L33（SHOULD 段），advisory 原样（池判一致）。"
+  ]
+}
