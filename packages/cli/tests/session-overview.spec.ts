@@ -80,7 +80,8 @@ describe("session 速览投影（SessionStart 注入源）", () => {
     expect(outcome.result.initialized).toBe(false);
   });
 
-  it("计数投影：objects/denominators/producers 与 seq 从账本照实呈现", async () => {
+  // CI windows 慢 runner 实证：session 速览拉全账本投影，5s 默认超时不够（批 H 终验）。
+  it("计数投影：objects/denominators/producers 与 seq 从账本照实呈现", { timeout: 60_000 }, async () => {
     await runInit(dir);
     const raw = await import("node:fs/promises");
     const ledgerPath = join(dir, ".pomaster", "state", "truth-index.json");

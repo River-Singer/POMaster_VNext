@@ -1,0 +1,890 @@
+﻿2026-09-05T12:42:17.7869968Z Current runner version: '2.337.0'
+2026-09-05T12:42:17.7910298Z ##[group]Runner Image Provisioner
+2026-09-05T12:42:17.7911627Z Hosted Compute Agent
+2026-09-05T12:42:17.7912263Z Version: 20260819.586
+2026-09-05T12:42:17.7912922Z Commit: 3cc4a88dfa507ef76119ad1bb3eccc6378bb2b76
+2026-09-05T12:42:17.7913759Z Build Date: 2026-08-18T23:20:18Z
+2026-09-05T12:42:17.7914480Z Worker ID: {e2afb05e-31d7-439e-b660-59f2b1616ee8}
+2026-09-05T12:42:17.7915220Z Azure Region: centralus
+2026-09-05T12:42:17.7915872Z ##[endgroup]
+2026-09-05T12:42:17.7917447Z ##[group]Operating System
+2026-09-05T12:42:17.7918193Z Microsoft Windows Server 2025
+2026-09-05T12:42:17.7918857Z 10.0.26100
+2026-09-05T12:42:17.7919436Z Datacenter
+2026-09-05T12:42:17.7920016Z ##[endgroup]
+2026-09-05T12:42:17.7920608Z ##[group]Runner Image
+2026-09-05T12:42:17.7921446Z Image: windows-2025-vs2026
+2026-09-05T12:42:17.7922191Z Version: 20260824.214.3
+2026-09-05T12:42:17.7923840Z Included Software: https://github.com/actions/runner-images/blob/win25-vs2026/20260824.214/images/windows/Windows2025-VS2026-Readme.md
+2026-09-05T12:42:17.7925494Z Image Release: https://github.com/actions/runner-images/releases/tag/win25-vs2026%2F20260824.214
+2026-09-05T12:42:17.7926482Z ##[endgroup]
+2026-09-05T12:42:17.7927813Z ##[group]GITHUB_TOKEN Permissions
+2026-09-05T12:42:17.7930684Z Contents: read
+2026-09-05T12:42:17.7931301Z Metadata: read
+2026-09-05T12:42:17.7931848Z Packages: read
+2026-09-05T12:42:17.7932497Z ##[endgroup]
+2026-09-05T12:42:17.7934820Z Secret source: Actions
+2026-09-05T12:42:17.7935990Z Prepare workflow directory
+2026-09-05T12:42:17.8311087Z Prepare all required actions
+2026-09-05T12:42:17.8361934Z Getting action download info
+2026-09-05T12:42:18.0044750Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-09-05T12:42:18.5158220Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2026-09-05T12:42:18.9516087Z Complete job name: ci (windows-latest)
+2026-09-05T12:42:19.1747255Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-05T12:42:19.1756865Z ##[group]Run actions/checkout@v4
+2026-09-05T12:42:19.1758270Z with:
+2026-09-05T12:42:19.1759055Z   repository: River-Singer/POMaster_VNext
+2026-09-05T12:42:19.1763818Z   token: ***
+2026-09-05T12:42:19.1764548Z   ssh-strict: true
+2026-09-05T12:42:19.1765257Z   ssh-user: git
+2026-09-05T12:42:19.1765955Z   persist-credentials: true
+2026-09-05T12:42:19.1766694Z   clean: true
+2026-09-05T12:42:19.1767387Z   sparse-checkout-cone-mode: true
+2026-09-05T12:42:19.1768296Z   fetch-depth: 1
+2026-09-05T12:42:19.1769065Z   fetch-tags: false
+2026-09-05T12:42:19.1769825Z   show-progress: true
+2026-09-05T12:42:19.1770552Z   lfs: false
+2026-09-05T12:42:19.1771469Z   submodules: false
+2026-09-05T12:42:19.1772182Z   set-safe-directory: true
+2026-09-05T12:42:19.1772938Z   allow-unsafe-pr-checkout: false
+2026-09-05T12:42:19.1774034Z env:
+2026-09-05T12:42:19.1774727Z   COREPACK_ENABLE_DOWNLOAD_PROMPT: 0
+2026-09-05T12:42:19.1775669Z ##[endgroup]
+2026-09-05T12:42:19.3618225Z Syncing repository: River-Singer/POMaster_VNext
+2026-09-05T12:42:19.3623068Z ##[group]Getting Git version info
+2026-09-05T12:42:19.3625735Z Working directory is 'D:\a\POMaster_VNext\POMaster_VNext'
+2026-09-05T12:42:19.4700705Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-09-05T12:42:20.3273088Z git version 2.55.0.windows.5
+2026-09-05T12:42:20.3333058Z ##[endgroup]
+2026-09-05T12:42:20.3353442Z Temporarily overriding HOME='D:\a\_temp\defd42b7-cade-4330-aca0-2c95b4d94148' before making global git config changes
+2026-09-05T12:42:20.3357301Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-05T12:42:20.3368185Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\POMaster_VNext\POMaster_VNext
+2026-09-05T12:42:20.4335496Z Deleting the contents of 'D:\a\POMaster_VNext\POMaster_VNext'
+2026-09-05T12:42:20.4342698Z ##[group]Initializing the repository
+2026-09-05T12:42:20.4353545Z [command]"C:\Program Files\Git\bin\git.exe" init D:\a\POMaster_VNext\POMaster_VNext
+2026-09-05T12:42:20.6337826Z Initialized empty Git repository in D:/a/POMaster_VNext/POMaster_VNext/.git/
+2026-09-05T12:42:20.6410320Z [command]"C:\Program Files\Git\bin\git.exe" remote add origin https://github.com/River-Singer/POMaster_VNext
+2026-09-05T12:42:20.8805087Z ##[endgroup]
+2026-09-05T12:42:20.8806637Z ##[group]Disabling automatic garbage collection
+2026-09-05T12:42:20.8818142Z [command]"C:\Program Files\Git\bin\git.exe" config --local gc.auto 0
+2026-09-05T12:42:20.9113519Z ##[endgroup]
+2026-09-05T12:42:20.9114745Z ##[group]Setting up auth
+2026-09-05T12:42:20.9127218Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-09-05T12:42:20.9420574Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-09-05T12:42:23.8625823Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-05T12:42:23.8959325Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-09-05T12:42:24.4237698Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-05T12:42:24.4527439Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-09-05T12:42:24.9968303Z [command]"C:\Program Files\Git\bin\git.exe" config --local http.https://github.com/.extraheader "AUTHORIZATION: basic ***"
+2026-09-05T12:42:25.0266891Z ##[endgroup]
+2026-09-05T12:42:25.0268562Z ##[group]Fetching the repository
+2026-09-05T12:42:25.0284613Z [command]"C:\Program Files\Git\bin\git.exe" -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +3e1d9ae867c8cd79002a5200aa59378f946311ab:refs/remotes/origin/main
+2026-09-05T12:42:26.5792868Z From https://github.com/River-Singer/POMaster_VNext
+2026-09-05T12:42:26.5794267Z  * [new ref]         3e1d9ae867c8cd79002a5200aa59378f946311ab -> origin/main
+2026-09-05T12:42:26.5842571Z ##[endgroup]
+2026-09-05T12:42:26.5844161Z ##[group]Determining the checkout info
+2026-09-05T12:42:26.5845833Z ##[endgroup]
+2026-09-05T12:42:26.5855704Z [command]"C:\Program Files\Git\bin\git.exe" sparse-checkout disable
+2026-09-05T12:42:26.6312943Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset-all extensions.worktreeConfig
+2026-09-05T12:42:26.6615886Z ##[group]Checking out the ref
+2026-09-05T12:42:26.6624839Z [command]"C:\Program Files\Git\bin\git.exe" checkout --progress --force -B main refs/remotes/origin/main
+2026-09-05T12:42:27.4689169Z Switched to a new branch 'main'
+2026-09-05T12:42:27.4752725Z branch 'main' set up to track 'origin/main'.
+2026-09-05T12:42:27.4833554Z ##[endgroup]
+2026-09-05T12:42:27.5216608Z [command]"C:\Program Files\Git\bin\git.exe" log -1 --format=%H
+2026-09-05T12:42:27.5492460Z 3e1d9ae867c8cd79002a5200aa59378f946311ab
+2026-09-05T12:42:27.6005703Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-05T12:42:27.6008242Z ##[group]Run actions/setup-node@v4
+2026-09-05T12:42:27.6009509Z with:
+2026-09-05T12:42:27.6009791Z   node-version: 22
+2026-09-05T12:42:27.6010141Z   always-auth: false
+2026-09-05T12:42:27.6010481Z   check-latest: false
+2026-09-05T12:42:27.6013108Z   token: ***
+2026-09-05T12:42:27.6013408Z env:
+2026-09-05T12:42:27.6013762Z   COREPACK_ENABLE_DOWNLOAD_PROMPT: 0
+2026-09-05T12:42:27.6014134Z ##[endgroup]
+2026-09-05T12:42:27.8038279Z Found in cache @ C:\hostedtoolcache\windows\node\22.23.2\x64
+2026-09-05T12:42:27.8046260Z (node:2404) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-05T12:42:27.8047386Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-05T12:42:27.8049748Z ##[group]Environment details
+2026-09-05T12:42:33.7494073Z node: v22.23.2
+2026-09-05T12:42:33.7494819Z npm: 10.9.8
+2026-09-05T12:42:33.7495261Z yarn: 1.22.22
+2026-09-05T12:42:33.7496421Z ##[endgroup]
+2026-09-05T12:42:33.7841791Z ##[group]Run corepack pnpm install
+2026-09-05T12:42:33.7842391Z [36;1mcorepack pnpm install[0m
+2026-09-05T12:42:34.2912796Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-09-05T12:42:34.2913321Z env:
+2026-09-05T12:42:34.2913752Z   COREPACK_ENABLE_DOWNLOAD_PROMPT: 0
+2026-09-05T12:42:34.2914154Z ##[endgroup]
+2026-09-05T12:42:43.1029943Z Scope: all 5 workspace projects
+2026-09-05T12:42:43.1418097Z Lockfile is up to date, resolution step is skipped
+2026-09-05T12:42:43.1649046Z Progress: resolved 1, reused 0, downloaded 0, added 0
+2026-09-05T12:42:43.1996871Z Packages: +159
+2026-09-05T12:42:43.1998682Z ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+2026-09-05T12:42:44.1682591Z Progress: resolved 159, reused 0, downloaded 18, added 10
+2026-09-05T12:42:45.1670998Z Progress: resolved 159, reused 0, downloaded 133, added 125
+2026-09-05T12:42:45.6666336Z Progress: resolved 159, reused 0, downloaded 159, added 159, done
+2026-09-05T12:42:45.8104157Z .../esbuild@0.21.5/node_modules/esbuild postinstall$ node install.js
+2026-09-05T12:42:45.8245439Z .../esbuild@0.28.2/node_modules/esbuild postinstall$ node install.js
+2026-09-05T12:42:46.0007771Z .../esbuild@0.21.5/node_modules/esbuild postinstall: Done
+2026-09-05T12:42:46.0033914Z .../esbuild@0.28.2/node_modules/esbuild postinstall: Done
+2026-09-05T12:42:46.0617266Z 
+2026-09-05T12:42:46.0618450Z devDependencies:
+2026-09-05T12:42:46.0619062Z + @types/node 22.20.1
+2026-09-05T12:42:46.0619462Z + ajv 8.20.0
+2026-09-05T12:42:46.0619791Z + ajv-formats 3.0.1
+2026-09-05T12:42:46.0620119Z + esbuild 0.28.2
+2026-09-05T12:42:46.0620476Z + eslint 9.39.5
+2026-09-05T12:42:46.0620765Z + js-yaml 4.3.2
+2026-09-05T12:42:46.0621100Z + typescript 5.9.3
+2026-09-05T12:42:46.0621442Z + typescript-eslint 8.68.0
+2026-09-05T12:42:46.0621782Z + vitest 2.1.9
+2026-09-05T12:42:46.0621978Z 
+2026-09-05T12:42:46.0961977Z Done in 3.6s using pnpm v9.15.9
+2026-09-05T12:42:46.2588698Z ##[group]Run corepack pnpm build
+2026-09-05T12:42:46.2589182Z [36;1mcorepack pnpm build[0m
+2026-09-05T12:42:46.2685539Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-09-05T12:42:46.2685993Z env:
+2026-09-05T12:42:46.2686571Z   COREPACK_ENABLE_DOWNLOAD_PROMPT: 0
+2026-09-05T12:42:46.2686941Z ##[endgroup]
+2026-09-05T12:42:46.9480598Z 
+2026-09-05T12:42:46.9482036Z > pomaster-vnext@0.0.0 build D:\a\POMaster_VNext\POMaster_VNext
+2026-09-05T12:42:46.9482693Z > node scripts/build-all.mjs
+2026-09-05T12:42:46.9482894Z 
+2026-09-05T12:42:58.5230936Z [build-all] ok: schemas, kernel, gauntlet-lite, cli
+2026-09-05T12:42:58.6752724Z ##[group]Run corepack pnpm mutation:verify
+2026-09-05T12:42:58.6753302Z [36;1mcorepack pnpm mutation:verify[0m
+2026-09-05T12:42:58.6852969Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-09-05T12:42:58.6853452Z env:
+2026-09-05T12:42:58.6853773Z   COREPACK_ENABLE_DOWNLOAD_PROMPT: 0
+2026-09-05T12:42:58.6854160Z ##[endgroup]
+2026-09-05T12:42:59.3583584Z 
+2026-09-05T12:42:59.3585653Z > pomaster-vnext@0.0.0 mutation:verify D:\a\POMaster_VNext\POMaster_VNext
+2026-09-05T12:42:59.3587261Z > node benchmarks/mutation-kill.mjs --verify
+2026-09-05T12:42:59.3587549Z 
+2026-09-05T12:42:59.5904684Z [verify] OK——seq=4 score=100%（30/30）经判卷锚重放对账一致
+2026-09-05T12:42:59.5920888Z [verify] 账本对账跳过：本机 store 缺席（.pomaster 为 Owner 决议的本机账本，不入 git——fresh clone 属预期形态），判卷锚重放层已全绿；results 声称 GRN GRN-4 的在账对账未执行（显式披露非静默；store 建立后重跑 --verify 即补全对账）
+2026-09-05T12:42:59.7603637Z ##[group]Run corepack pnpm notices:verify
+2026-09-05T12:42:59.7604293Z [36;1mcorepack pnpm notices:verify[0m
+2026-09-05T12:42:59.7704985Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-09-05T12:42:59.7705440Z env:
+2026-09-05T12:42:59.7705802Z   COREPACK_ENABLE_DOWNLOAD_PROMPT: 0
+2026-09-05T12:42:59.7706165Z ##[endgroup]
+2026-09-05T12:43:00.4430362Z 
+2026-09-05T12:43:00.4432069Z > pomaster-vnext@0.0.0 notices:verify D:\a\POMaster_VNext\POMaster_VNext
+2026-09-05T12:43:00.4433040Z > node legal/verify_notices.mjs
+2026-09-05T12:43:00.4433380Z 
+2026-09-05T12:43:00.5248975Z [verify-notices] OK——§A 6 行 + §B 198 行 = 204 包，包名唯一，证据等级词形一致，B1 锚 148 个文件逐个核对通过
+2026-09-05T12:43:00.6687359Z ##[group]Run python -m pip install pyyaml
+2026-09-05T12:43:00.6687897Z [36;1mpython -m pip install pyyaml[0m
+2026-09-05T12:43:00.6782731Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-09-05T12:43:00.6783205Z env:
+2026-09-05T12:43:00.6783543Z   COREPACK_ENABLE_DOWNLOAD_PROMPT: 0
+2026-09-05T12:43:00.6783931Z ##[endgroup]
+2026-09-05T12:43:07.5928662Z Collecting pyyaml
+2026-09-05T12:43:07.8174575Z   Downloading pyyaml-6.0.3-cp312-cp312-win_amd64.whl.metadata (2.4 kB)
+2026-09-05T12:43:07.9966907Z Downloading pyyaml-6.0.3-cp312-cp312-win_amd64.whl (154 kB)
+2026-09-05T12:43:08.6833277Z Installing collected packages: pyyaml
+2026-09-05T12:43:08.8240558Z Successfully installed pyyaml-6.0.3
+2026-09-05T12:43:09.0916293Z ##[group]Run corepack pnpm test
+2026-09-05T12:43:09.0916831Z [36;1mcorepack pnpm test[0m
+2026-09-05T12:43:09.1027093Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-09-05T12:43:09.1027760Z env:
+2026-09-05T12:43:09.1028193Z   COREPACK_ENABLE_DOWNLOAD_PROMPT: 0
+2026-09-05T12:43:09.1028663Z ##[endgroup]
+2026-09-05T12:43:09.7561759Z 
+2026-09-05T12:43:09.7563241Z > pomaster-vnext@0.0.0 test D:\a\POMaster_VNext\POMaster_VNext
+2026-09-05T12:43:09.7564168Z > vitest run --passWithNoTests
+2026-09-05T12:43:09.7564854Z 
+2026-09-05T12:43:10.3532932Z 
+2026-09-05T12:43:10.3536140Z [1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90mD:/a/POMaster_VNext/POMaster_VNext[39m
+2026-09-05T12:43:10.3536594Z 
+2026-09-05T12:43:11.9520600Z  [32m✓[39m packages/kernel/tests/decision-graph.spec.ts [2m([22m[2m85 tests[22m[2m)[22m[90m 114[2mms[22m[39m
+2026-09-05T12:43:14.6931980Z [90mstderr[2m | packages/gauntlet-lite/test/coverage-adapter.spec.ts[2m > [22m[2mcoverage 腿宿主真实 e2e（宿主未装则诚实 skip）[2m > [22m[2m真实 c8（corepack pnpm exec c8）：宿主在位时全链真跑判卷
+2026-09-05T12:43:14.6935706Z [22m[39m[盲区说明] 宿主未安装 c8 —— c8 真实覆盖率 e2e 跳过（诚实缺席，非通过）；判卷矩阵与真实子进程链路已由 fake spawn / fake 脚本覆盖
+2026-09-05T12:43:14.6936831Z 
+2026-09-05T12:43:14.6938501Z [90mstderr[2m | packages/gauntlet-lite/test/coverage-adapter.spec.ts[2m > [22m[2mcoverage 腿宿主真实 e2e（宿主未装则诚实 skip）[2m > [22m[2m真实 pytest-cov（python -m pytest --cov）：宿主在位时全链真跑判卷
+2026-09-05T12:43:14.6940605Z [22m[39m[盲区说明] 宿主未安装 pytest/pytest-cov —— Python 覆盖率腿真实 e2e 跳过（诚实缺席，非通过；D17 pytest-cov 先行的 run 期判卷矩阵已由 fake spawn 覆盖）
+2026-09-05T12:43:14.6942688Z  [32m✓[39m packages/gauntlet-lite/test/coverage-adapter.spec.ts [2m([22m[2m81 tests[22m[2m | [22m[33m2 skipped[39m[2m)[22m[33m 1370[2mms[22m[39m
+2026-09-05T12:43:14.6944291Z 
+2026-09-05T12:43:16.2598729Z  [32m✓[39m packages/kernel/tests/store.spec.ts [2m([22m[2m80 tests[22m[2m)[22m[33m 3648[2mms[22m[39m
+2026-09-05T12:43:16.2608909Z    [33m[2m✓[22m[39m A3 证据记录存在性防线（record 通道无权覆写，D20）[2m > [22m重录同 CLM 同内容 → 幂等短路：rev 不随新事务推进（零覆写零重录） [33m582[2mms[22m[39m
+2026-09-05T12:43:16.4631507Z [90mstderr[2m | packages/gauntlet-lite/test/performance-adapter.spec.ts[2m > [22m[2mperformance 腿真实 e2e[2m > [22m[2m宿主 lighthouse 真装时：全链路真实判卷
+2026-09-05T12:43:16.4636461Z [22m[39m[盲区说明] 宿主未安装 lighthouse —— lighthouse 腿真实 e2e 跳过（诚实缺席，非通过；真实 LHR 词形为已登记盲区）
+2026-09-05T12:43:16.4637445Z 
+2026-09-05T12:43:16.4645710Z  [32m✓[39m packages/gauntlet-lite/test/performance-adapter.spec.ts [2m([22m[2m55 tests[22m[2m | [22m[33m1 skipped[39m[2m)[22m[33m 976[2mms[22m[39m
+2026-09-05T12:43:16.4649240Z    [33m[2m✓[22m[39m readPerformanceGateConfig（performance-gate.json 配置面）[2m > [22m文件缺席 → not ok + 配置指引（诚实缺席非静默） [33m381[2mms[22m[39m
+2026-09-05T12:43:18.2573584Z [90mstderr[2m | packages/gauntlet-lite/test/security-adapter.spec.ts[2m > [22m[2msecurity 三腿宿主真实 e2e（宿主未装则诚实 skip）[2m > [22m[2m真实 gitleaks/pip-audit/semgrep：宿主在位时全链真跑判卷
+2026-09-05T12:43:18.2575732Z [22m[39m[盲区说明] 宿主未安装 gitleaks / pip-audit / semgrep —— SECURITY 三腿真实 e2e 跳过（诚实缺席，非通过）；判卷矩阵与真实子进程链路已由 fake spawn / fake 脚本覆盖
+2026-09-05T12:43:18.2576433Z 
+2026-09-05T12:43:18.2585046Z  [32m✓[39m packages/gauntlet-lite/test/security-adapter.spec.ts [2m([22m[2m44 tests[22m[2m | [22m[33m1 skipped[39m[2m)[22m[33m 904[2mms[22m[39m
+2026-09-05T12:43:18.3028721Z [90mstderr[2m | packages/gauntlet-lite/test/mutation-adapter.spec.ts[2m > [22m[2mmutation 双腿宿主真实 e2e（宿主未装则诚实 skip）[2m > [22m[2m真实 StrykerJS：宿主在位时全链真跑判卷
+2026-09-05T12:43:18.3031623Z [22m[39m[盲区说明] 宿主未安装 @stryker-mutator/core —— StrykerJS 真实变异 e2e 跳过（诚实缺席，非通过）；判卷矩阵与真实子进程链路已由 fake spawn / fake 脚本覆盖
+2026-09-05T12:43:18.3032252Z 
+2026-09-05T12:43:18.3037324Z [90mstderr[2m | packages/gauntlet-lite/test/mutation-adapter.spec.ts[2m > [22m[2mmutation 双腿宿主真实 e2e（宿主未装则诚实 skip）[2m > [22m[2m真实 mutmut：宿主在位时全链真跑判卷
+2026-09-05T12:43:18.3044853Z [22m[39m[盲区说明] 宿主未安装 mutmut —— Python 变异腿真实 e2e 跳过（诚实缺席，非通过；B2-4 run 期判卷矩阵已由 fake spawn 覆盖）
+2026-09-05T12:43:18.3046960Z  [32m✓[39m packages/gauntlet-lite/test/mutation-adapter.spec.ts [2m([22m[2m63 tests[22m[2m | [22m[33m2 skipped[39m[2m)[22m[33m 1151[2mms[22m[39m
+2026-09-05T12:43:18.3048072Z 
+2026-09-05T12:43:19.7122178Z [90mstderr[2m | packages/gauntlet-lite/test/playwright-adapter.spec.ts[2m > [22m[2mplaywright 腿真实 e2e[2m > [22m[2m宿主 browser-gate.json + @playwright/test 真装时：全链路真实判卷
+2026-09-05T12:43:19.7124139Z [22m[39m[盲区说明] 宿主未声明 @playwright/test 或 browser-gate.json —— playwright 腿真实 e2e 跳过（诚实缺席，非通过；真实报告词形为已登记盲区）
+2026-09-05T12:43:19.7124826Z 
+2026-09-05T12:43:19.7134241Z  [32m✓[39m packages/gauntlet-lite/test/playwright-adapter.spec.ts [2m([22m[2m45 tests[22m[2m | [22m[33m1 skipped[39m[2m)[22m[33m 527[2mms[22m[39m
+2026-09-05T12:43:21.3471068Z  [32m✓[39m packages/kernel/tests/memory-harvest.spec.ts [2m([22m[2m42 tests[22m[2m)[22m[33m 968[2mms[22m[39m
+2026-09-05T12:43:21.3475655Z    [33m[2m✓[22m[39m auditMemory 分母封闭与 MEMORY_DRIFT[2m > [22mKNOWLEDGE 通路产物与 P28 生命周期同源：harvest 晋升的 CANDIDATE 可经既有语义入口 VALIDATED（不旁路证据） [33m352[2mms[22m[39m
+2026-09-05T12:43:22.0799292Z  [32m✓[39m packages/kernel/tests/spec-analyzer.spec.ts [2m([22m[2m44 tests[22m[2m)[22m[90m 50[2mms[22m[39m
+2026-09-05T12:43:22.3872300Z  [32m✓[39m packages/kernel/tests/production.spec.ts [2m([22m[2m69 tests[22m[2m)[22m[33m 3283[2mms[22m[39m
+2026-09-05T12:43:22.3876236Z    [33m[2m✓[22m[39m evaluateControlBand 三态全分支（§95.2 Deterministic Detection）[2m > [22m纯函数确定性：同输入两次判定 deep-equal（A4 同输入重放字节稳定） [33m360[2mms[22m[39m
+2026-09-05T12:43:22.3878260Z    [33m[2m✓[22m[39m challengeFromBreach（§95.3 State Challenge 零旁路）[2m > [22m非 CURRENT 对象 = TRANSITION_ILLEGAL（§95.3 链头前置：Capability=CURRENT） [33m353[2mms[22m[39m
+2026-09-05T12:43:22.8632336Z  [32m✓[39m packages/cli/tests/seed-manifest.spec.ts [2m([22m[2m28 tests[22m[2m | [22m[33m5 skipped[39m[2m)[22m[90m 294[2mms[22m[39m
+2026-09-05T12:43:23.1779676Z [90mstderr[2m | packages/kernel/tests/perception.spec.ts
+2026-09-05T12:43:23.1782089Z [22m[39mstrict mode: missing type "object" for keyword "required" at "https://pomaster.dev/schemas/evidence-records/v1-draft.json#/allOf/0/if/properties/subject" (strictTypes)
+2026-09-05T12:43:23.1796693Z strict mode: missing type "object" for keyword "properties" at "https://pomaster.dev/schemas/evidence-records/v1-draft.json#/allOf/0/if/properties/subject" (strictTypes)
+2026-09-05T12:43:23.1799438Z strict mode: missing type "object" for keyword "properties" at "https://pomaster.dev/schemas/evidence-records/v1-draft.json#/allOf/1/then/properties/subject" (strictTypes)
+2026-09-05T12:43:23.1801472Z unknown format "date-time" ignored in schema at path "#/properties/recorded_at_utc"
+2026-09-05T12:43:23.1802846Z unknown format "date-time" ignored in schema at path "#/properties/recorded_at_utc"
+2026-09-05T12:43:23.1804135Z unknown format "date-time" ignored in schema at path "#/properties/ran_at_utc"
+2026-09-05T12:43:23.1806315Z unknown format "date-time" ignored in schema at path "#/properties/ran_at_utc"
+2026-09-05T12:43:23.1807473Z unknown format "date-time" ignored in schema at path "#/properties/ran_at_utc"
+2026-09-05T12:43:23.1808417Z unknown format "date-time" ignored in schema at path "#/properties/ran_at_utc"
+2026-09-05T12:43:23.1809394Z 
+2026-09-05T12:43:23.2243194Z  [32m✓[39m packages/kernel/tests/perception.spec.ts [2m([22m[2m53 tests[22m[2m)[22m[90m 40[2mms[22m[39m
+2026-09-05T12:43:25.0965784Z  [32m✓[39m packages/cli/tests/production.spec.ts [2m([22m[2m28 tests[22m[2m)[22m[33m 1218[2mms[22m[39m
+2026-09-05T12:43:29.0244404Z  [32m✓[39m packages/kernel/tests/transitions-store.spec.ts [2m([22m[2m95 tests[22m[2m)[22m[33m 4995[2mms[22m[39m
+2026-09-05T12:43:29.0247624Z    [33m[2m✓[22m[39m 同值 lifecycle 补丁与词表外 patch 值[2m > [22mCURRENT 对象 patch lifecycle=CURRENT（同值）→ 轴补丁非迁移：不走矩阵、成功应用 rev+1 [33m728[2mms[22m[39m
+2026-09-05T12:43:29.0249385Z    [33m[2m✓[22m[39m requires 审批判定的边界与顺序[2m > [22mCURRENT→SUPERSEDED 已预登记 successor_ref 但缺 authorityRef → EVOLUTION_REQUIRED（顺序反面） [33m370[2mms[22m[39m
+2026-09-05T12:43:32.2828237Z  [32m✓[39m packages/kernel/tests/knowledge.spec.ts [2m([22m[2m42 tests[22m[2m)[22m[33m 2624[2mms[22m[39m
+2026-09-05T12:43:32.2830495Z    [33m[2m✓[22m[39m demoteSpecToKnowledge（§83.11 Hard Rule 降级落库）[2m > [22m缺 demotedFrom / 缺 reviewRef 各自拒绝（§83.11 链：Architecture/Governance Review 是降级必经前提） [33m424[2mms[22m[39m
+2026-09-05T12:43:32.2833203Z    [33m[2m✓[22m[39m Authority 隔离对抗（§83.2 铁律 · 结构性保证）[2m > [22m消费层零耦合：knowledge 状态全遍历（CANDIDATE→VALIDATED→PROMOTED）前后 compileProjection 的 manifest 与 inputsFingerprint 字节一致（knowledge 平面不进 gate 判卷输入分区，§83.8 [ADVISORY] 分区） [33m531[2mms[22m[39m
+2026-09-05T12:43:36.2208430Z  [32m✓[39m packages/kernel/tests/equivalence.spec.ts [2m([22m[2m26 tests[22m[2m)[22m[33m 3266[2mms[22m[39m
+2026-09-05T12:43:36.2210723Z    [33m[2m✓[22m[39m registerEquivalence（声明 → active；无声明 → pending）[2m > [22m携带 declaredBy + declarationRef → active（声明位齐备 + declared_at_seq 事件拍） [33m369[2mms[22m[39m
+2026-09-05T12:43:36.2213748Z    [33m[2m✓[22m[39m registerEquivalence（声明 → active；无声明 → pending）[2m > [22m输入面 fail-closed：域词表外 / 空 text / 缺 sourceRef / 条目内重复词形 全部 SCHEMA_INVALID [33m629[2mms[22m[39m
+2026-09-05T12:43:36.2216372Z    [33m[2m✓[22m[39m computeLinkageCoverage（resolved+pending+unresolved=total 三查）[2m > [22m零分母禁当满分：total=0 → coverageRatio=0 + zeroDenominator=true（P26 零分母假绿封死同款） [33m788[2mms[22m[39m
+2026-09-05T12:43:37.0830015Z [90mstderr[2m | packages/kernel/tests/trace.spec.ts
+2026-09-05T12:43:37.0834765Z [22m[39munknown format "date-time" ignored in schema at path "#/properties/ran_at_utc"
+2026-09-05T12:43:37.0840137Z unknown format "date-time" ignored in schema at path "#/properties/ran_at_utc"
+2026-09-05T12:43:37.0842925Z 
+2026-09-05T12:43:38.6567374Z  [32m✓[39m packages/kernel/tests/trace.spec.ts [2m([22m[2m25 tests[22m[2m)[22m[33m 1581[2mms[22m[39m
+2026-09-05T12:43:38.6569364Z    [33m[2m✓[22m[39m Benchmark C（Trace/Identity 分离）[2m > [22mIdentity unchanged：compile 与 seal 前后 ExecutionRecord 档案字节恒等（trace 是纯读侧车） [33m474[2mms[22m[39m
+2026-09-05T12:43:39.4829980Z  [32m✓[39m tests/integration/catalog-b6-porting.spec.ts [2m([22m[2m23 tests[22m[2m)[22m[90m 96[2mms[22m[39m
+2026-09-05T12:43:42.5933451Z  [32m✓[39m packages/kernel/tests/portability.spec.ts [2m([22m[2m33 tests[22m[2m)[22m[33m 2517[2mms[22m[39m
+2026-09-05T12:43:42.5938811Z    [33m[2m✓[22m[39m Portability Manifest（§85.3 键值逐字）[2m > [22mwrite-if-missing：缺失（读 = null）→ written=true 落盘 canonical JSON；重复 → written=false 零覆盖 [33m583[2mms[22m[39m
+2026-09-05T12:43:42.6173363Z  [32m✓[39m packages/kernel/tests/projection.spec.ts [2m([22m[2m38 tests[22m[2m)[22m[33m 16947[2mms[22m[39m
+2026-09-05T12:43:42.6176020Z    [33m[2m✓[22m[39m compileProjection（最小充分上下文）[2m > [22m分母通道：范围内对象与分母锚入 MUST 区，每 entry 带 reason [33m807[2mms[22m[39m
+2026-09-05T12:43:42.6185157Z    [33m[2m✓[22m[39m compileProjection（最小充分上下文）[2m > [22m范围外的对象不注入（最小充分；无分母请求 → manifest 显式为空） [33m414[2mms[22m[39m
+2026-09-05T12:43:42.6188261Z    [33m[2m✓[22m[39m compileProjection catalog 分区（§69 步骤 12 运行时联结）[2m > [22m§92.2 边界：catalog 变更只影响投影（catalogEntries/指纹变），store state 字节不变 [33m789[2mms[22m[39m
+2026-09-05T12:43:42.6209096Z    [33m[2m✓[22m[39m compileProjection catalog 分区（§69 步骤 12 运行时联结）[2m > [22mlock 漂移 → 投影仍成功（D24 WARN 不阻断），catalogSource.note 显式漂移摘要 [33m499[2mms[22m[39m
+2026-09-05T12:43:42.6217224Z    [33m[2m✓[22m[39m compileProjection catalog 分区（§69 步骤 12 运行时联结）[2m > [22m坏物料（lane 词表外）→ SCHEMA_INVALID fail-closed（坏物料 ≠ catalog 缺席） [33m634[2mms[22m[39m
+2026-09-05T12:43:42.6224811Z    [33m[2m✓[22m[39m compileProjection 结构化 applicability（P0.5-1 确定性过滤）[2m > [22mcapability 维度：frontend+CAPABILITY.PRESENTATION 不见 capabilities=[API_CONTRACT] 条目（Case B 核心语义） [33m768[2mms[22m[39m
+2026-09-05T12:43:42.6227664Z    [33m[2m✓[22m[39m compileProjection 结构化 applicability（P0.5-1 确定性过滤）[2m > [22mcapability 命中：请求 capabilities 含声明值 → include 且 reason 携带命中详情（PRD §5.4 reason 保留+扩展） [33m800[2mms[22m[39m
+2026-09-05T12:43:42.6236570Z    [33m[2m✓[22m[39m compileProjection 结构化 applicability（P0.5-1 确定性过滤）[2m > [22m请求侧 capabilities 缺席：声明了 capabilities 轴的条目确定性排除（不可判定即不注入——缺席显式） [33m820[2mms[22m[39m
+2026-09-05T12:43:42.6241853Z    [33m[2m✓[22m[39m compileProjection 结构化 applicability（P0.5-1 确定性过滤）[2m > [22mchange_class 维度：声明轴未命中 → 排除；命中 → include（词形对账 PR-0005） [33m1426[2mms[22m[39m
+2026-09-05T12:43:42.6245660Z    [33m[2m✓[22m[39m compileProjection 结构化 applicability（P0.5-1 确定性过滤）[2m > [22mgovernance_profile 轴判卷力解除（A1 裁定 2026-09-04）：声明该轴的条目不再因档位排除，决策面以 informational 注记披露 [33m2450[2mms[22m[39m
+2026-09-05T12:43:42.6248625Z    [33m[2m✓[22m[39m compileProjection 结构化 applicability（P0.5-1 确定性过滤）[2m > [22mobject_kinds 维度：与范围内对象 kind 交集判定（分母通道 page_surface 命中） [33m399[2mms[22m[39m
+2026-09-05T12:43:42.6256071Z    [33m[2m✓[22m[39m compileProjection 结构化 applicability（P0.5-1 确定性过滤）[2m > [22m§92.2 红线回归：机器过滤不改变分区边界（catalog 条目仍不进 MUST；store state 字节不变） [33m1052[2mms[22m[39m
+2026-09-05T12:43:42.6267004Z    [33m[2m✓[22m[39m explainCatalogProjection（P0.5-1 决策记录面；PRD §5.4）[2m > [22mincluded/excluded 逐条 why：命中条目 why_included、未命中条目 why_excluded（缺席显式） [33m427[2mms[22m[39m
+2026-09-05T12:43:42.6270413Z    [33m[2m✓[22m[39m explainCatalogProjection（P0.5-1 决策记录面；PRD §5.4）[2m > [22m与 manifest 一致：included 决策集 = catalogEntries ref 集（同一判定核的两面） [33m1115[2mms[22m[39m
+2026-09-05T12:43:42.6273110Z    [33m[2m✓[22m[39m explainCatalogProjection（P0.5-1 决策记录面；PRD §5.4）[2m > [22m同输入重放字节稳定（纯派生只读决策面） [33m1509[2mms[22m[39m
+2026-09-05T12:43:42.6276434Z    [33m[2m✓[22m[39m explainCatalogProjection（P0.5-1 决策记录面；PRD §5.4）[2m > [22m决策记录与指纹隔离：explanation 形状无 manifest/fingerprint 面（R2 隔离纪律） [33m810[2mms[22m[39m
+2026-09-05T12:43:45.5254056Z  [32m✓[39m packages/cli/tests/record.spec.ts [2m([22m[2m26 tests[22m[2m)[22m[33m 1909[2mms[22m[39m
+2026-09-05T12:43:45.5256162Z    [33m[2m✓[22m[39m record gate-run 入账通路正例[2m > [22mAPPLIED：evidence/runs 出现 canonical GRN 记录且 status generation_seq 推进 [33m738[2mms[22m[39m
+2026-09-05T12:43:45.5258565Z    [33m[2m✓[22m[39m record claim[2m > [22m已带 VERIFIED 独立判定的夹具 → SKIPPED_ADJUDICATED 零写入 exit 0（无权打回 UNVERIFIED） [33m363[2mms[22m[39m
+2026-09-05T12:43:46.2219124Z  [32m✓[39m packages/cli/tests/closeout.spec.ts [2m([22m[2m41 tests[22m[2m)[22m[33m 2606[2mms[22m[39m
+2026-09-05T12:43:46.2221274Z    [33m[2m✓[22m[39m closeout happy path：DoD 全过 → 施断 COMPLETED[2m > [22mVERIFIED claim + passed gate → ok / change=COMPLETED / evidence→VERIFIED 落盘 [33m806[2mms[22m[39m
+2026-09-05T12:43:46.2223203Z    [33m[2m✓[22m[39m closeout DoD 判卷：acceptance 无 VERIFIED claim 硬阻断 COMPLETED[2m > [22mVERIFIED 但 evidence_refs 为空 → DOD_CLAIM_EVIDENCE_EMPTY（07 执行层规则） [33m318[2mms[22m[39m
+2026-09-05T12:43:51.2345869Z  [32m✓[39m tests/integration/security-legs-e2e.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 4026[2mms[22m[39m
+2026-09-05T12:43:51.2348423Z    [33m[2m✓[22m[39m ① 三条 GRN 独立入账 truth-index（gitleaks 红 + pip-audit 绿 + semgrep not_run）[2m > [22m三腿真跑（fake spawn × 真实归一）→ P12c 复算 → 单事务三 GRN 落盘，三态互异 [33m988[2mms[22m[39m
+2026-09-05T12:43:51.2350470Z    [33m[2m✓[22m[39m ① 三条 GRN 独立入账 truth-index（gitleaks 红 + pip-audit 绿 + semgrep not_run）[2m > [22m② 无聚合呈现面：账本零「gauntlet:security」聚合 run；三记录各态独立 [33m590[2mms[22m[39m
+2026-09-05T12:43:51.2352123Z    [33m[2m✓[22m[39m ③ 互不牵连矩阵：缺席/红/绿组合三场景[2m > [22m单缺席（工具缺席）：gitleaks not_run → pip-audit 照常真跑判红（缺席不牵连真跑判卷） [33m437[2mms[22m[39m
+2026-09-05T12:43:51.2355025Z    [33m[2m✓[22m[39m ⑤ 对抗：伪造 SECURITY 聚合 passed + violations>0 → normalizeGateResult FATAL[2m > [22mpassed + violations=2 的自相矛盾记录 FATAL——事务零落账、GRN 文件零残留、seq 零推进 [33m1096[2mms[22m[39m
+2026-09-05T12:43:51.2357281Z    [33m[2m✓[22m[39m ⑥ 宿主真实双分支 E2E：探测在座→真跑判卷；探测缺席→诚实缺席链[2m > [22mrunSecurityGateLegs 全真实探测/执行/归一，三 GRN 独立入账落盘（两分支各按本环境诚实形态严格断言） [33m720[2mms[22m[39m
+2026-09-05T12:43:52.9263957Z  [32m✓[39m packages/cli/tests/memory.spec.ts [2m([22m[2m26 tests[22m[2m)[22m[33m 745[2mms[22m[39m
+2026-09-05T12:44:00.4198493Z view task: FAILED — OBJECT_NOT_FOUND
+2026-09-05T12:44:00.4199642Z   hint: pomaster status --json 查看对象清单；task 审查视图只服务 task_object 分母。
+2026-09-05T12:44:00.4292423Z  [32m✓[39m packages/cli/tests/view.spec.ts [2m([22m[2m30 tests[22m[2m)[22m[33m 6667[2mms[22m[39m
+2026-09-05T12:44:00.4294910Z    [33m[2m✓[22m[39m view task（Review View §49.1 + §53）[2m > [22mBusiness Intent 步挂 task payload；File Diff 降级为证据层（§53，只给 inspect 指路） [33m592[2mms[22m[39m
+2026-09-05T12:44:00.4296490Z    [33m[2m✓[22m[39m audit（Audit View §49.1/§91.3）[2m > [22mimplements_change 链正文不可读 → 显式 warning + 分母降级（审查 H2，禁静默） [33m313[2mms[22m[39m
+2026-09-05T12:44:00.4299421Z    [33m[2m✓[22m[39m runCli 集成（view/audit/ledger 程序面）[2m > [22mrunCli --json：ledger record ok 信封；词表外分类 exit 1 fail-closed [33m1091[2mms[22m[39m
+2026-09-05T12:44:00.4301002Z    [33m[2m✓[22m[39m runCli 集成（view/audit/ledger 程序面）[2m > [22mrunCli：view blueprint / view task / audit blueprint / audit task 可执行且 exit 0 [33m2598[2mms[22m[39m
+2026-09-05T12:44:00.4302579Z    [33m[2m✓[22m[39m runCli 集成（view/audit/ledger 程序面）[2m > [22mrunCli：view task 缺席任务 exit 1（fail-closed 退出码语义） [33m350[2mms[22m[39m
+2026-09-05T12:44:01.7601939Z [90mstderr[2m | packages/gauntlet-lite/test/browser-adapter.spec.ts[2m > [22m[2mbrowser adapter 真实 e2e[2m > [22m[2m宿主 .mcp.json 注册 chrome-devtools 时：默认 smoke 握手真实连通；vitest 进程无 MCP 编排会话 → 记录诚实 not_run
+2026-09-05T12:44:01.7603311Z [22m[39m[盲区说明] 宿主未注册 chrome-devtools MCP —— BROWSER 交互腿真实 e2e 跳过（诚实缺席，非通过）
+2026-09-05T12:44:01.7603695Z 
+2026-09-05T12:44:01.7610069Z  [32m✓[39m packages/gauntlet-lite/test/browser-adapter.spec.ts [2m([22m[2m26 tests[22m[2m | [22m[33m1 skipped[39m[2m)[22m[33m 495[2mms[22m[39m
+2026-09-05T12:44:01.7611891Z    [33m[2m✓[22m[39m browser adapter：默认 smoke（spawnSync 握手）[2m > [22mserver 无应答退出 → connected=false + failureReason → normalize failed（fail-closed） [33m366[2mms[22m[39m
+2026-09-05T12:44:02.5134748Z  [32m✓[39m packages/kernel/tests/catalog.spec.ts [2m([22m[2m36 tests[22m[2m)[22m[33m 16320[2mms[22m[39m
+2026-09-05T12:44:02.5153930Z    [33m[2m✓[22m[39m loadCatalogPolicies（policies 物料读取）[2m > [22m坏物料 fail-closed：lane 词表外 → SCHEMA_INVALID（禁静默跳过当空） [33m396[2mms[22m[39m
+2026-09-05T12:44:02.5156429Z    [33m[2m✓[22m[39m loadCatalogPolicies 机器 applicability 字段（P0.5-1）[2m > [22m未声明机器字段：hasMachineApplicability=false + lanes 双读回退 [lane]（O7 行为零变化） [33m387[2mms[22m[39m
+2026-09-05T12:44:02.5158409Z    [33m[2m✓[22m[39m loadCatalogPolicies 机器 applicability 字段（P0.5-1）[2m > [22mlanes 复数在场：双读取数组；capabilities CAPABILITY.* governed id 解析 [33m394[2mms[22m[39m
+2026-09-05T12:44:02.5162377Z    [33m[2m✓[22m[39m loadCatalogPolicies 机器 applicability 字段（P0.5-1）[2m > [22mchange_classes/governance_profiles/object_kinds 解析（PR-0005 词轴 + truth_bodies 复用） [33m642[2mms[22m[39m
+2026-09-05T12:44:02.5164457Z    [33m[2m✓[22m[39m loadCatalogPolicies 机器 applicability 字段（P0.5-1）[2m > [22mapplicability_note 在场：优先于 condition（自然语言降级位，PRD §5.2） [33m369[2mms[22m[39m
+2026-09-05T12:44:02.5191838Z    [33m[2m✓[22m[39m loadCatalogPolicies 机器 applicability 字段（P0.5-1）[2m > [22mrisk_at_least/technologies 留位不登记（O4）：只检存在不解析值 + not_configured 呈现位 [33m556[2mms[22m[39m
+2026-09-05T12:44:02.5195025Z    [33m[2m✓[22m[39m loadCatalogPolicies 机器 applicability 字段（P0.5-1）[2m > [22mfail-closed：lanes 词表外 → SCHEMA_INVALID [33m1066[2mms[22m[39m
+2026-09-05T12:44:02.5199994Z    [33m[2m✓[22m[39m loadCatalogPolicies 机器 applicability 字段（P0.5-1）[2m > [22mfail-closed：capabilities 非 CAPABILITY 前缀 governed id → SCHEMA_INVALID（A5 同款） [33m380[2mms[22m[39m
+2026-09-05T12:44:02.5203707Z    [33m[2m✓[22m[39m loadCatalogPolicies 机器 applicability 字段（P0.5-1）[2m > [22mfail-closed：capabilities 词形非法（未知前缀）→ FATAL_UNKNOWN_PREFIX 透传 [33m398[2mms[22m[39m
+2026-09-05T12:44:02.5226942Z    [33m[2m✓[22m[39m loadCatalogPolicies 机器 applicability 字段（P0.5-1）[2m > [22mfail-closed：change_classes / governance_profiles / object_kinds 词表外 → SCHEMA_INVALID [33m1427[2mms[22m[39m
+2026-09-05T12:44:02.5230243Z    [33m[2m✓[22m[39m loadCatalogPolicies 机器 applicability 字段（P0.5-1）[2m > [22mfail-closed：机器字段非数组形状 → SCHEMA_INVALID（禁静默当缺席） [33m408[2mms[22m[39m
+2026-09-05T12:44:02.5233648Z    [33m[2m✓[22m[39m loadCatalogTools / loadCatalogProjectionPresets[2m > [22mtools 消费滤 `__pycache__`：Python import 缓存目录不进分母（D8-1 / 裁决 12；B6b/B6c check 各撞一次的弱点封堵） [33m1113[2mms[22m[39m
+2026-09-05T12:44:02.5236160Z    [33m[2m✓[22m[39m verifyCatalogLock（漂移场景：物料被改而 lock 未重锁 → 显式检出）[2m > [22mcontent_drift：改一个 policy 字节不重锁 → 精确指向该文件 [33m749[2mms[22m[39m
+2026-09-05T12:44:02.5237844Z    [33m[2m✓[22m[39m verifyCatalogLock（漂移场景：物料被改而 lock 未重锁 → 显式检出）[2m > [22mmissing + missing_required：删 required 管辖文件 → 双面检出 [33m1001[2mms[22m[39m
+2026-09-05T12:44:02.5239563Z    [33m[2m✓[22m[39m verifyCatalogLock（漂移场景：物料被改而 lock 未重锁 → 显式检出）[2m > [22munexpected_file：管辖目录新增未登记文件 → 检出（allowed+required 双登记纪律） [33m744[2mms[22m[39m
+2026-09-05T12:44:02.5241176Z    [33m[2m✓[22m[39m verifyCatalogLock（漂移场景：物料被改而 lock 未重锁 → 显式检出）[2m > [22mlock 缺失 → lock_unreadable（不抛异常，结构化漂移行呈现） [33m392[2mms[22m[39m
+2026-09-05T12:44:02.5242588Z    [33m[2m✓[22m[39m verifyCatalogLock（漂移场景：物料被改而 lock 未重锁 → 显式检出）[2m > [22m手动恢复字节（等价重锁语义）→ 校验回绿（漂移可修复性） [33m585[2mms[22m[39m
+2026-09-05T12:44:02.5244185Z    [33m[2m✓[22m[39m relockCatalog（重锁计算：纯计算零写盘，Owner 裁决 2026-09-03）[2m > [22m漂移重算：next.entries 哈希 = 落盘实际字节；refreshed 精确指路；previous 与磁盘 lock 字节零触碰 [33m1817[2mms[22m[39m
+2026-09-05T12:44:02.5246365Z    [33m[2m✓[22m[39m relockCatalog（重锁计算：纯计算零写盘，Owner 裁决 2026-09-03）[2m > [22mgenerated_by 幂等注记：首锁追加、再锁不重复；同物料两次重锁 next 字节全等（A4 无时戳） [33m599[2mms[22m[39m
+2026-09-05T12:44:02.5248981Z    [33m[2m✓[22m[39m relockCatalog（重锁计算：纯计算零写盘，Owner 裁决 2026-09-03）[2m > [22m扩展键原样保留：x-digest-ethics/note 原值 + 键序沿原 lock 文件（落盘保真前提） [33m741[2mms[22m[39m
+2026-09-05T12:44:02.5251705Z    [33m[2m✓[22m[39m relockCatalog（重锁计算：纯计算零写盘，Owner 裁决 2026-09-03）[2m > [22m收敛：新增物料进 next（added + source_ref 确定性缺省）；删除物料出 next（removed） [33m492[2mms[22m[39m
+2026-09-05T12:44:02.5255916Z    [33m[2m✓[22m[39m relockCatalog（重锁计算：纯计算零写盘，Owner 裁决 2026-09-03）[2m > [22mfail-closed：物料缺 id → SCHEMA_INVALID；lock 缺失 → NOT_CONFIGURED（relock 不是初始化工具） [33m1119[2mms[22m[39m
+2026-09-05T12:44:02.5258791Z    [33m[2m✓[22m[39m relockCatalog（重锁计算：纯计算零写盘，Owner 裁决 2026-09-03）[2m > [22mfail-closed：id 跨节重复 → SCHEMA_INVALID（身份面禁重复，loadCatalogSensors 同法） [33m394[2mms[22m[39m
+2026-09-05T12:44:03.5199229Z  [32m✓[39m packages/gauntlet-lite/test/crap.spec.ts [2m([22m[2m46 tests[22m[2m)[22m[90m 135[2mms[22m[39m
+2026-09-05T12:44:03.8400094Z [90mstderr[2m | packages/gauntlet-lite/test/oasdiff-leg.spec.ts[2m > [22m[2moasdiff 腿宿主真实 e2e（临时目录构造旧/新 OpenAPI 对）[2m > [22m[2m真实 oasdiff：删除必填字段 + 改类型 breaking 形态 → failed violations>0
+2026-09-05T12:44:03.8404055Z [22m[39m[盲区说明] 宿主未安装 oasdiff —— breaking-change 真实 diff e2e 跳过（诚实缺席，非通过）；判卷矩阵与真实子进程链路已由 fake spawn / fake 脚本覆盖
+2026-09-05T12:44:03.8405104Z 
+2026-09-05T12:44:03.8410483Z  [32m✓[39m packages/gauntlet-lite/test/oasdiff-leg.spec.ts [2m([22m[2m24 tests[22m[2m | [22m[33m1 skipped[39m[2m)[22m[33m 1273[2mms[22m[39m
+2026-09-05T12:44:03.8413607Z    [33m[2m✓[22m[39m oasdiff 腿大输出 maxBuffer（默认 spawn 64MB）[2m > [22m>1MB 合法 JSON 走通两段 spawn 与判卷（passed，零 breaking，stdout 字节数精确恒等） [33m445[2mms[22m[39m
+2026-09-05T12:44:06.6224686Z  [32m✓[39m packages/cli/tests/permit.spec.ts [2m([22m[2m26 tests[22m[2m)[22m[33m 1789[2mms[22m[39m
+2026-09-05T12:44:06.6226104Z    [33m[2m✓[22m[39m permit steal（显式接管）[2m > [22m许可不存在 → PERMIT_NOT_FOUND；缺 reason → SCHEMA_INVALID；未初始化 → NOT_INITIALIZED [33m674[2mms[22m[39m
+2026-09-05T12:44:07.0008532Z  [32m✓[39m packages/cli/tests/brainstorm.spec.ts [2m([22m[2m32 tests[22m[2m)[22m[33m 2432[2mms[22m[39m
+2026-09-05T12:44:07.0010171Z    [33m[2m✓[22m[39m brainstorm promote（提升面：READY_TO_PROMOTE→CHANGE/TASK 走 P11 maintain 面）[2m > [22m--apply 经 runMaintain（P11 面）落库：store 出现提升对象 + scratchpad 推进终态（08 信封） [33m784[2mms[22m[39m
+2026-09-05T12:44:07.0011715Z    [33m[2m✓[22m[39m brainstorm promote（提升面：READY_TO_PROMOTE→CHANGE/TASK 走 P11 maintain 面）[2m > [22m等价性钉死：promote --apply 与显式 maintain --ops 直跑产生同型 store 结果（同通道零旁移） [33m1409[2mms[22m[39m
+2026-09-05T12:44:07.8309838Z  [32m✓[39m packages/cli/tests/init.spec.ts [2m([22m[2m65 tests[22m[2m)[22m[33m 53614[2mms[22m[39m
+2026-09-05T12:44:07.8312541Z    [33m[2m✓[22m[39m init 首次创建（CREATED）[2m > [22m空目录 init（重入口默认）→ change=CREATED，骨架 + AGENTS/CLAUDE + settings + 15×2 skills + 预铺 41 README/layout.json 全部 created [33m1021[2mms[22m[39m
+2026-09-05T12:44:07.8314421Z    [33m[2m✓[22m[39m init 首次创建（CREATED）[2m > [22m磁盘上存在 .pomaster 骨架与 truth/objects 目录、skills 双镜像与 hooks 注册文件 [33m1198[2mms[22m[39m
+2026-09-05T12:44:07.8316131Z    [33m[2m✓[22m[39m init 首次创建（CREATED）[2m > [22minit 后账本含 01 schema 全部顶层键 + D2 预植 19 SPEC 对象（seq=1、denominators/producers 空） [33m765[2mms[22m[39m
+2026-09-05T12:44:07.8318454Z    [33m[2m✓[22m[39m init 首次创建（CREATED）[2m > [22mdigest 字段符合 sha256: 形态（D24：机器事务自动维护，非人类计算） [33m701[2mms[22m[39m
+2026-09-05T12:44:07.8319756Z    [33m[2m✓[22m[39m init 首次创建（CREATED）[2m > [22m账本禁墙钟时间（A4）：全文无 ISO 时间戳词形 [33m559[2mms[22m[39m
+2026-09-05T12:44:07.8321066Z    [33m[2m✓[22m[39m init 首次创建（CREATED）[2m > [22m入口文件含生成标记、重入口安装标记、当前 profile 与常用命令（重入口默认） [33m852[2mms[22m[39m
+2026-09-05T12:44:07.8322484Z    [33m[2m✓[22m[39m init 首次创建（CREATED）[2m > [22m入口文件含 Browser Eyes 段（P-v06 批次 2.6：观测眼/验证眼分工 + 证据链 + doctor 探针行） [33m1134[2mms[22m[39m
+2026-09-05T12:44:07.8323929Z    [33m[2m✓[22m[39m init 首次创建（CREATED）[2m > [22m同一内容 digest 幂等：空账本 content_digest 等于重建值（字节稳定） [33m1686[2mms[22m[39m
+2026-09-05T12:44:07.8325698Z    [33m[2m✓[22m[39m init 幂等（任务契约：连续两次 init 第二次 NO_CHANGE）[2m > [22m第二次 init → NO_CHANGE，动作词形仅 unchanged/preserved（preserved = B6b 播种件在座零触碰，项目可编辑物） [33m643[2mms[22m[39m
+2026-09-05T12:44:07.8327180Z    [33m[2m✓[22m[39m init 幂等（任务契约：连续两次 init 第二次 NO_CHANGE）[2m > [22m第三次 init 仍 NO_CHANGE（不动点） [33m784[2mms[22m[39m
+2026-09-05T12:44:07.8328489Z    [33m[2m✓[22m[39m init 不覆盖人类文件[2m > [22m无标记的 AGENTS.md → skipped_foreign + ENTRY_FILE_FOREIGN，内容不动 [33m737[2mms[22m[39m
+2026-09-05T12:44:07.8332326Z    [33m[2m✓[22m[39m init 不覆盖人类文件[2m > [22m带标记被手改的 AGENTS.md → updated，change=UPDATED [33m795[2mms[22m[39m
+2026-09-05T12:44:07.8336132Z    [33m[2m✓[22m[39m init 不覆盖人类文件[2m > [22m已存在的 config.yaml 不被覆盖；profile 从中解析 [33m2066[2mms[22m[39m
+2026-09-05T12:44:07.8338745Z    [33m[2m✓[22m[39m init 不覆盖人类文件[2m > [22mconfig.yaml 无 profile 键 → 回退 LIGHT + CONFIG_PROFILE_MISSING 告警 [33m696[2mms[22m[39m
+2026-09-05T12:44:07.8340689Z    [33m[2m✓[22m[39m init 不覆盖人类文件[2m > [22m已存在但不可解析的 truth-index → INVALID_STATE ok=false 且原文件保留 [33m788[2mms[22m[39m
+2026-09-05T12:44:07.8342635Z    [33m[2m✓[22m[39m init 不覆盖人类文件[2m > [22m已存在合法 truth-index（含对象）→ 保持不动，入口渲染真实计数 [33m1150[2mms[22m[39m
+2026-09-05T12:44:07.8347447Z    [33m[2m✓[22m[39m init 人读输出与信封[2m > [22m人读行包含 change 汇总与 profile [33m592[2mms[22m[39m
+2026-09-05T12:44:07.8349852Z    [33m[2m✓[22m[39m init 人读输出与信封[2m > [22m人读输出顶部带 ASCII logo：首行前缀 ██████╗、含 VNext，结构 logo→空行→产物输出 [33m1124[2mms[22m[39m
+2026-09-05T12:44:07.8355632Z    [33m[2m✓[22m[39m init 人读输出与信封[2m > [22m人读输出尾部带品牌横幅：哲学文案与联系邮箱逐字钉位（完成输出收尾段） [33m947[2mms[22m[39m
+2026-09-05T12:44:07.8358412Z    [33m[2m✓[22m[39m init 人读输出与信封[2m > [22m品牌横幅零进入机读信封原料（§45 单信封：result/warnings/errors 均无文案与 logo） [33m2077[2mms[22m[39m
+2026-09-05T12:44:07.8366670Z    [33m[2m✓[22m[39m init authority 骨架（N7）[2m > [22m骨架形态确定：kernel 契约段 + 语料批 batch-1 形态段，单人项目默认形态（Minimum Sufficient Governance） [33m2396[2mms[22m[39m
+2026-09-05T12:44:07.8368925Z    [33m[2m✓[22m[39m init authority 骨架（N7）[2m > [22m骨架字节稳定（A4）：同目录重建字节全等，且全文无墙钟时间戳 [33m1695[2mms[22m[39m
+2026-09-05T12:44:07.8370241Z    [33m[2m✓[22m[39m init authority 骨架（N7）[2m > [22m二次 init NO_CHANGE：authority 已存在则不动（字节不变） [33m634[2mms[22m[39m
+2026-09-05T12:44:07.8372355Z    [33m[2m✓[22m[39m init authority 骨架（N7）[2m > [22m合法已存在（人类 BOOTSTRAP 手工登记的多 owner）→ 一律不动 [33m1026[2mms[22m[39m
+2026-09-05T12:44:07.8373784Z    [33m[2m✓[22m[39m init authority 骨架（N7）[2m > [22m损坏（不可解析 JSON）→ INVALID_STATE fail-closed，绝不静默覆盖 [33m1671[2mms[22m[39m
+2026-09-05T12:44:07.8375384Z    [33m[2m✓[22m[39m init authority 骨架（N7）[2m > [22m结构损坏（authorities 缺失/非对象，kernel 解析契约破坏）→ INVALID_STATE fail-closed [33m749[2mms[22m[39m
+2026-09-05T12:44:07.8378039Z    [33m[2m✓[22m[39m init authority 骨架（N7）[2m > [22m端到端：fresh init 后 permit issue + compact upsert（owner=BOOTSTRAP_OWNER）无需手工 BOOTSTRAP 即走通 [33m657[2mms[22m[39m
+2026-09-05T12:44:07.8379850Z    [33m[2m✓[22m[39m init authority 骨架（N7）[2m > [22m幽灵 owner 纪律不被骨架削弱：未登记 owner 仍 GHOST_AUTHORITY_OWNER fail-closed [33m1227[2mms[22m[39m
+2026-09-05T12:44:07.8383129Z    [33m[2m✓[22m[39m init --platforms 合法组合（F1）[2m > [22m缺省（非 TTY 无旗标）= 现行为：claude 适配器 CLAUDE.md created，platforms 恰一行 [33m938[2mms[22m[39m
+2026-09-05T12:44:07.8385010Z    [33m[2m✓[22m[39m init --platforms 合法组合（F1）[2m > [22m--platforms claude,cursor（重入口默认）→ 双适配器产出；cursor 加厚版 rules（命令卡 + Browser Eyes 展开） [33m647[2mms[22m[39m
+2026-09-05T12:44:07.8386917Z    [33m[2m✓[22m[39m init --platforms 合法组合（F1）[2m > [22m--platforms cursor,qoder（重入口默认）→ 不建 CLAUDE.md（平台外适配器零产出）；qoder 加厚版带 trigger frontmatter；通用层 skills 仍生成 [33m537[2mms[22m[39m
+2026-09-05T12:44:07.8388830Z    [33m[2m✓[22m[39m init --platforms 合法组合（F1）[2m > [22m--platforms claude,codex → codex 零额外文件（covered：根 AGENTS.md 即原生入口） [33m542[2mms[22m[39m
+2026-09-05T12:44:07.8392477Z    [33m[2m✓[22m[39m init --platforms 合法组合（F1）[2m > [22m--platforms none → 只建 AGENTS.md + 状态骨架：不建 CLAUDE.md，platforms 空数组 [33m681[2mms[22m[39m
+2026-09-05T12:44:07.8394148Z    [33m[2m✓[22m[39m init --platforms 合法组合（F1）[2m > [22m幂等二次跑：适配器已在座 → skipped-existing（字节不动），change=NO_CHANGE [33m606[2mms[22m[39m
+2026-09-05T12:44:07.8395864Z    [33m[2m✓[22m[39m init --platforms 合法组合（F1）[2m > [22m--platforms none 幂等：none 重跑 none → NO_CHANGE（最小形态字节稳定，A4 同款契约） [33m1475[2mms[22m[39m
+2026-09-05T12:44:07.8397438Z    [33m[2m✓[22m[39m init --platforms 合法组合（F1）[2m > [22m人读平台段：逐平台一行 [name] action file（created/skipped-existing/covered） [33m569[2mms[22m[39m
+2026-09-05T12:44:07.8399131Z    [33m[2m✓[22m[39m runInitInteractive（F1 TTY 交互，io 注入零 TTY）[2m > [22m回车空行 → 缺省 claude；清单先于读行打印（编号+名称+产出文件路径） [33m482[2mms[22m[39m
+2026-09-05T12:44:07.8400662Z    [33m[2m✓[22m[39m runInitInteractive（F1 TTY 交互，io 注入零 TTY）[2m > [22m编号输入 2,4 → codex（covered）+ qoder（created） [33m602[2mms[22m[39m
+2026-09-05T12:44:07.8402395Z    [33m[2m✓[22m[39m runInitInteractive（F1 TTY 交互，io 注入零 TTY）[2m > [22ma=全选 → 四平台；非法词形 → SCHEMA_INVALID fail-closed 零写入 [33m808[2mms[22m[39m
+2026-09-05T12:44:07.8404735Z    [33m[2m✓[22m[39m 重入口 skills 双镜像[2m > [22m双镜像逐字节一致；frontmatter name=目录名、description 承载触发语义、带生成标记 [33m585[2mms[22m[39m
+2026-09-05T12:44:07.8406823Z    [33m[2m✓[22m[39m 重入口 skills 双镜像[2m > [22m钉版：每份 SKILL.md 的命令词形必须在 CLI 注册表中存在（顶层 + 子命令双层对账，防文档漂移） [33m1943[2mms[22m[39m
+2026-09-05T12:44:07.8411287Z    [33m[2m✓[22m[39m 重入口 hooks settings.json 合并（claude 层）[2m > [22m生成 shell form 注册项：SessionStart→pomaster session、UserPromptSubmit→pomaster alerts；无 args 无 if 字段 [33m750[2mms[22m[39m
+2026-09-05T12:44:07.8413542Z    [33m[2m✓[22m[39m 重入口 hooks settings.json 合并（claude 层）[2m > [22m合并式：既有 Trellis 形态 hooks（三事件 matcher-group）全部保留，本包条目追加 [33m821[2mms[22m[39m
+2026-09-05T12:44:07.8415445Z    [33m[2m✓[22m[39m 重入口 hooks settings.json 合并（claude 层）[2m > [22m幂等：重跑 init → settings 字节不动（unchanged），change=NO_CHANGE [33m1329[2mms[22m[39m
+2026-09-05T12:44:07.8417098Z    [33m[2m✓[22m[39m 重入口 hooks settings.json 合并（claude 层）[2m > [22m坏 JSON fail-closed：不可解析的 settings.json → 跳过 + 告警，内容零改写 [33m1381[2mms[22m[39m
+2026-09-05T12:44:07.8419226Z    [33m[2m✓[22m[39m 预铺目录骨架与 layout.json[2m > [22m--platforms none 最小形态：入口文件为最小指针正文（无重入口安装标记），目录树仍全量预铺 [33m646[2mms[22m[39m
+2026-09-05T12:44:07.8420700Z    [33m[2m✓[22m[39m 预铺目录骨架与 layout.json[2m > [22m目录树与平台选择无关：缺省与 --platforms none 各自 init 的 .pomaster 目录集合逐目录相等（宪法 §2 全量） [33m2018[2mms[22m[39m
+2026-09-05T12:44:07.8422207Z    [33m[2m✓[22m[39m 预铺目录骨架与 layout.json[2m > [22mlayout.json：全目录 status=wired 单状态 + activation_hint/constitution_source 在场（Owner 修订形态） [33m522[2mms[22m[39m
+2026-09-05T12:44:07.8423950Z    [33m[2m✓[22m[39m 预铺目录骨架与 layout.json[2m > [22mlegacy layout 检测（宪法 §3/§34-P0）：.pomaster/objects 在场 → LEGACY_OBJECTS_LAYOUT 显式告警 + 零触碰 [33m977[2mms[22m[39m
+2026-09-05T12:44:07.8425801Z    [33m[2m✓[22m[39m 预铺目录骨架与 layout.json[2m > [22mconfig.yaml 模板 store.objects 指向 canonical truth/objects（宪法 §34-P0 条款 3） [33m484[2mms[22m[39m
+2026-09-05T12:44:07.8427279Z    [33m[2m✓[22m[39m 预铺目录骨架与 layout.json[2m > [22m存量旧版入口升级：历史形态标记的 AGENTS.md 重跑 init → 重写 heavy + skills created + hooks 合并（B7 迁移路） [33m586[2mms[22m[39m
+2026-09-05T12:44:07.8428884Z    [33m[2m✓[22m[39m 预铺目录骨架与 layout.json[2m > [22m最小形态升级：--platforms none 项目重跑缺省 init → 升级重入口全套（skills 双镜像 + hooks 合并 + AGENTS.md heavy 标记） [33m676[2mms[22m[39m
+2026-09-05T12:44:07.8430310Z    [33m[2m✓[22m[39m 预铺目录骨架与 layout.json[2m > [22m存量细指针 rules 升级：旧版（无标记）cursor rules 在 heavy 重跑时被识别为本包产物并升级为加厚版；人类异形内容仍不覆盖 [33m1432[2mms[22m[39m
+2026-09-05T12:44:07.8431740Z    [33m[2m✓[22m[39m A1 档位信息性（vNext Batch 4 R1）[2m > [22mA1 词形注记落盘：config.yaml 模板与重入口/最小两形态入口均含「信息性人类偏好」注记 [33m1181[2mms[22m[39m
+2026-09-05T12:44:09.2061706Z  [32m✓[39m packages/kernel/tests/reconcile.spec.ts [2m([22m[2m24 tests[22m[2m)[22m[33m 1521[2mms[22m[39m
+2026-09-05T12:44:09.4383375Z  [32m✓[39m tests/mutation-ledger.spec.ts [2m([22m[2m17 tests[22m[2m)[22m[33m 833[2mms[22m[39m
+2026-09-05T12:44:10.4020465Z [90mstderr[2m | packages/gauntlet-lite/test/schemathesis-leg.spec.ts[2m > [22m[2mschemathesis 腿真实子进程（fake 脚本 × 真实 spawnSync 两段式）[2m > [22m[2m宿主 schemathesis 真装时：全链路真实判卷
+2026-09-05T12:44:10.4023266Z [22m[39m[盲区说明] 宿主未安装 schemathesis —— schemathesis 腿真实 e2e 跳过（诚实缺席，非通过；真实 NDJSON 词形为已登记盲区）
+2026-09-05T12:44:10.4023851Z 
+2026-09-05T12:44:10.4061172Z  [32m✓[39m packages/gauntlet-lite/test/schemathesis-leg.spec.ts [2m([22m[2m31 tests[22m[2m | [22m[33m1 skipped[39m[2m)[22m[33m 458[2mms[22m[39m
+2026-09-05T12:44:10.8889654Z [90mstderr[2m | packages/gauntlet-lite/test/dependency-cruiser-leg.spec.ts[2m > [22m[2mdependency-cruiser 腿宿主真实 e2e[2m > [22m[2m宿主安装 dependency-cruiser 时：真实 depcruise 全链路 → 结构性判卷（不恒真）
+2026-09-05T12:44:10.8893762Z [22m[39m[盲区说明] 宿主未安装 dependency-cruiser —— 真实 depcruise e2e 跳过（诚实缺席，非通过）；判卷矩阵与真实子进程链路已由 fake spawn / fake 脚本覆盖
+2026-09-05T12:44:10.8894780Z 
+2026-09-05T12:44:10.8899619Z  [32m✓[39m packages/gauntlet-lite/test/dependency-cruiser-leg.spec.ts [2m([22m[2m20 tests[22m[2m | [22m[33m1 skipped[39m[2m)[22m[33m 615[2mms[22m[39m
+2026-09-05T12:44:11.3289335Z  [32m✓[39m packages/gauntlet-lite/test/gate-recipe-runner.spec.ts [2m([22m[2m29 tests[22m[2m)[22m[90m 54[2mms[22m[39m
+2026-09-05T12:44:12.4428867Z  [32m✓[39m packages/cli/tests/research.spec.ts [2m([22m[2m30 tests[22m[2m)[22m[33m 561[2mms[22m[39m
+2026-09-05T12:44:15.0101896Z  [32m✓[39m tests/integration/write-layer-crash-injection.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 1759[2mms[22m[39m
+2026-09-05T12:44:15.0104902Z    [33m[2m✓[22m[39m A 段：注入式半写后重启（state 完好或显式检出，绝不静默半状态）[2m > [22mA5 index 半字节截断（部分字节注入）→ createStore 显式 SCHEMA_INVALID 检出（绝不静默当空索引/缺失） [33m382[2mms[22m[39m
+2026-09-05T12:44:15.0108132Z    [33m[2m✓[22m[39m B 段：真实 kill -9 注入（子进程真实事务循环，任意时点硬中断）[2m > [22mB1 SIGKILL 中断后重启：createStore 不抛（index 原子性）+ 快照 k 精确一致 + journal 前缀 1..m 无洞无重且 0≤k-m≤1（journal 只落后不领先，幽灵行封死）+ 撕裂只许末行 + 碎片形状干净 + 恢复事务干净 [33m796[2mms[22m[39m
+2026-09-05T12:44:15.1941510Z  [32m✓[39m tests/integration/concurrent-session-locks.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 2997[2mms[22m[39m
+2026-09-05T12:44:15.1944396Z    [33m[2m✓[22m[39m A 段：双会话互斥与检出（两窗口两句柄）[2m > [22munit 锁跨 change 真并行语义：不同会话不同 unit 各自持锁（互不相扰）；同 unit 撞锁检出 [33m327[2mms[22m[39m
+2026-09-05T12:44:15.1948552Z    [33m[2m✓[22m[39m B 段：锁持有者崩溃后的回收路径（P16 kill -9 手段同源）[2m > [22m子进程持锁被 SIGKILL：锁文件原样留盘 → stale 显式检出（heartbeat_expired）→ steal 回收 + 原 execution 封口 interrupted + state 完好 [33m606[2mms[22m[39m
+2026-09-05T12:44:15.1951428Z    [33m[2m✓[22m[39m D 段：重入语义（互斥无豁免 + 零副作用 + 合法再入通路）[2m > [22m同会话重入 acquire → blocked 自见（互斥无豁免）：锁文件字节 / journal / held_locks 三面零副作用（重入尝试是纯读检出） [33m312[2mms[22m[39m
+2026-09-05T12:44:15.1953402Z    [33m[2m✓[22m[39m D 段：重入语义（互斥无豁免 + 零副作用 + 合法再入通路）[2m > [22m重入被拒不掩盖持有者活性：合法续期唯一通路 = 持有人心跳（fence 不动）；双锁交错互斥各见对方 [33m410[2mms[22m[39m
+2026-09-05T12:44:15.1955122Z    [33m[2m✓[22m[39m E 段：跨进程并发 steal 争用（P20 红队发现 1 修复回归）[2m > [22m双子进程同拍 steal 同一把锁：串行化成功、fence 严格单调（2→3）、LOCK_STOLEN 双条留痕、磁盘终态无双重凭据 [33m537[2mms[22m[39m
+2026-09-05T12:44:15.1957157Z    [33m[2m✓[22m[39m E 段：跨进程并发 steal 争用（P20 红队发现 1 修复回归）[2m > [22m失败方显式错误（争用耗尽非静默）：人为占满重试窗口的锁争用以 ENVIRONMENT_ERROR 收场 [33m452[2mms[22m[39m
+2026-09-05T12:44:15.6834104Z [90mstderr[2m | packages/kernel/tests/discovery-schema.spec.ts
+2026-09-05T12:44:15.6842215Z [22m[39mstrict mode: missing type "array" for keyword "contains" at "https://pomaster.dev/schemas/msd-uncertainty/v1-draft.json#/allOf/0/if/properties/unknowns" (strictTypes)
+2026-09-05T12:44:15.6845169Z strict mode: missing type "object" for keyword "required" at "https://pomaster.dev/schemas/msd-uncertainty/v1-draft.json#/allOf/0/if/properties/unknowns/contains" (strictTypes)
+2026-09-05T12:44:15.6847907Z strict mode: missing type "object" for keyword "properties" at "https://pomaster.dev/schemas/msd-uncertainty/v1-draft.json#/allOf/0/if/properties/unknowns/contains" (strictTypes)
+2026-09-05T12:44:15.6851750Z strict mode: missing type "object" for keyword "properties" at "https://pomaster.dev/schemas/msd-uncertainty/v1-draft.json#/allOf/0/then/properties/blueprint_envelope" (strictTypes)
+2026-09-05T12:44:15.6854216Z strict mode: missing type "object" for keyword "required" at "https://pomaster.dev/schemas/msd-uncertainty/v1-draft.json#/allOf/0/then/properties/blocker_triage" (strictTypes)
+2026-09-05T12:44:15.6856961Z strict mode: missing type "object" for keyword "properties" at "https://pomaster.dev/schemas/msd-uncertainty/v1-draft.json#/allOf/0/then/properties/blocker_triage" (strictTypes)
+2026-09-05T12:44:15.6858146Z 
+2026-09-05T12:44:15.7062620Z  [32m✓[39m packages/kernel/tests/discovery-schema.spec.ts [2m([22m[2m37 tests[22m[2m)[22m[90m 23[2mms[22m[39m
+2026-09-05T12:44:17.5467931Z  [32m✓[39m packages/kernel/tests/locks.spec.ts [2m([22m[2m19 tests[22m[2m)[22m[33m 1107[2mms[22m[39m
+2026-09-05T12:44:17.5472986Z    [33m[2m✓[22m[39m stale 判定与显式接管（D2）[2m > [22m锁周期代绑定（G4）：release→re-acquire 新周期上，同 fence 旧周期凭据 stale_fence（僵尸凭据回魂封条）；steal 过户周期代不变 [33m408[2mms[22m[39m
+2026-09-05T12:44:19.0526390Z  [32m✓[39m packages/kernel/tests/ref-integrity.spec.ts [2m([22m[2m19 tests[22m[2m)[22m[33m 866[2mms[22m[39m
+2026-09-05T12:44:19.5193655Z  [32m✓[39m packages/kernel/tests/vocab.spec.ts [2m([22m[2m37 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+2026-09-05T12:44:21.1118049Z  [32m✓[39m tests/integration/performance-contract-legs-e2e.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 4927[2mms[22m[39m
+2026-09-05T12:44:21.1120324Z    [33m[2m✓[22m[39m P27 PERFORMANCE + CONTRACT legs E2E（FastAPI fixture 同源）[2m > [22m② 三腿真跑 → P12c 复算 → 单事务三 GRN 落盘：lighthouse 红（预算超标）+ web-vitals 绿 + schemathesis 红 [33m1059[2mms[22m[39m
+2026-09-05T12:44:21.1122569Z    [33m[2m✓[22m[39m P27 PERFORMANCE + CONTRACT legs E2E（FastAPI fixture 同源）[2m > [22m③ 零分母闸 L2 面：budget 只声明非承载字段 → lighthouse not_run 落盘（非绿非红显式缺席） [33m544[2mms[22m[39m
+2026-09-05T12:44:21.1124611Z    [33m[2m✓[22m[39m P27 PERFORMANCE + CONTRACT legs E2E（FastAPI fixture 同源）[2m > [22m④ 配置缺席不牵连：performance-gate.json 缺席 → 双腿 not_configured×2；schemathesis 腿照常真跑判红 [33m854[2mms[22m[39m
+2026-09-05T12:44:21.1126260Z    [33m[2m✓[22m[39m P27 PERFORMANCE + CONTRACT legs E2E（FastAPI fixture 同源）[2m > [22m⑤ 无聚合呈现面：账本零「gauntlet:performance」聚合 run（双腿逐腿罗列） [33m513[2mms[22m[39m
+2026-09-05T12:44:21.1127545Z    [33m[2m✓[22m[39m P27 PERFORMANCE + CONTRACT legs E2E（FastAPI fixture 同源）[2m > [22m⑥ 真实 runDoctor 呈现 P27 三探针（lighthouse / web_vitals / schemathesis 缺席非静默 + 安装路标） [33m922[2mms[22m[39m
+2026-09-05T12:44:21.1128831Z    [33m[2m✓[22m[39m P27 PERFORMANCE + CONTRACT legs E2E（FastAPI fixture 同源）[2m > [22m⑦ 对抗：伪造「passed + violations>0」自相矛盾记录在 P12c 边界 FATAL——事务零落账零残留 [33m1018[2mms[22m[39m
+2026-09-05T12:44:21.7639102Z  [32m✓[39m tests/integration/v06-batch3-materials.spec.ts [2m([22m[2m27 tests[22m[2m)[22m[90m 32[2mms[22m[39m
+2026-09-05T12:44:21.8742564Z  [32m✓[39m packages/cli/tests/maintain.spec.ts [2m([22m[2m21 tests[22m[2m)[22m[33m 1496[2mms[22m[39m
+2026-09-05T12:44:21.8744646Z    [33m[2m✓[22m[39m maintain apply 模式（--ops 受控变更）[2m > [22mhappy path：APPLIED + change-or-task 锚兜底 authorityRef + journal 留痕 [33m566[2mms[22m[39m
+2026-09-05T12:44:23.1701534Z  [32m✓[39m packages/kernel/tests/forbidden-patterns.spec.ts [2m([22m[2m15 tests[22m[2m)[22m[33m 705[2mms[22m[39m
+2026-09-05T12:44:23.3873386Z  [32m✓[39m packages/cli/tests/doctor.spec.ts [2m([22m[2m39 tests[22m[2m)[22m[33m 15797[2mms[22m[39m
+2026-09-05T12:44:23.3875814Z    [33m[2m✓[22m[39m doctor 四态矩阵[2m > [22minit 后（真实 kernel 已落地）→ kernel=READY：五探针全过（含 D20 反自批 claim_self_approval_clean），不冒充 DEFECT [33m1073[2mms[22m[39m
+2026-09-05T12:44:23.3878299Z    [33m[2m✓[22m[39m doctor 四态矩阵[2m > [22m注入 kernel 抛 not-implemented → NOT_INSTALLED（缺席显式，禁冒充 DEFECT） [33m972[2mms[22m[39m
+2026-09-05T12:44:23.3880894Z    [33m[2m✓[22m[39m doctor 四态矩阵[2m > [22m.mcp.json 含 chrome-devtools → mcp=READY；真实 kernel 亦 READY → 全探针 READY ok=true [33m1745[2mms[22m[39m
+2026-09-05T12:44:23.3882077Z    [33m[2m✓[22m[39m doctor 四态矩阵[2m > [22m注入 kernel 全 pass + mcp READY → 全探针 READY，ok=true [33m895[2mms[22m[39m
+2026-09-05T12:44:23.3883255Z    [33m[2m✓[22m[39m doctor 四态矩阵[2m > [22m注入 kernel 带 defect 探针 → kernel=DEFECT + 明细 [33m1277[2mms[22m[39m
+2026-09-05T12:44:23.3884499Z    [33m[2m✓[22m[39m doctor 四态矩阵[2m > [22m注入 kernel 抛意外错误 → DEFECT（禁静默，D 线风险备忘） [33m1097[2mms[22m[39m
+2026-09-05T12:44:23.3885886Z    [33m[2m✓[22m[39m doctor 四态矩阵[2m > [22mP22/P23/P24/P25/P26/P27 工具探针：缺省探测面在空目录 → 十四工具显式缺席 + 安装路标 + ok=false [33m913[2mms[22m[39m
+2026-09-05T12:44:23.3887353Z    [33m[2m✓[22m[39m doctor 四态矩阵[2m > [22mP24 mutation 双腿探针：mutmut/stryker 缺席 NOT_INSTALLED 的 reason 保留能力落差/runner 词形 [33m668[2mms[22m[39m
+2026-09-05T12:44:23.3889050Z    [33m[2m✓[22m[39m probePlaywrightMcp 独立探测（P-v06 批次 2.6 Browser Eyes）[2m > [22mrunDoctor 双 MCP 齐备 → 双行 READY（BROWSER 双通道呈现面各自显式在场） [33m927[2mms[22m[39m
+2026-09-05T12:44:23.3890729Z    [33m[2m✓[22m[39m heavy_entry 探针（hooks 注册态 / skills 双镜像一致态；重入口标记缺席即未安装）[2m > [22minit 后 → 双探针 READY（hooks 注册 + 15×2 镜像逐字节一致） [33m651[2mms[22m[39m
+2026-09-05T12:44:23.3892585Z    [33m[2m✓[22m[39m heavy_entry 探针（hooks 注册态 / skills 双镜像一致态；重入口标记缺席即未安装）[2m > [22mnone 最小形态（生成标记在场 + 无重入口标记）→ 双探针 MISSING_CONFIGURATION；hint 零 mode/light 词形（B7 后单一重入口词面钉住） [33m652[2mms[22m[39m
+2026-09-05T12:44:23.3894583Z    [33m[2m✓[22m[39m heavy_entry 探针（hooks 注册态 / skills 双镜像一致态；重入口标记缺席即未安装）[2m > [22mheavy 项目 skills 单侧镜像缺失 → MISSING_CONFIGURATION；字节漂移 → DEFECT（重复发现缓解破坏） [33m757[2mms[22m[39m
+2026-09-05T12:44:23.3896708Z    [33m[2m✓[22m[39m heavy_entry 探针（hooks 注册态 / skills 双镜像一致态；重入口标记缺席即未安装）[2m > [22mheavy 项目 hooks 注册项被移除 → MISSING_CONFIGURATION；settings.json 坏 JSON → DEFECT [33m729[2mms[22m[39m
+2026-09-05T12:44:23.3900081Z    [33m[2m✓[22m[39m heavy_entry 探针（hooks 注册态 / skills 双镜像一致态；重入口标记缺席即未安装）[2m > [22mskills 探针全清单核对：缺失任一非 router skill 亦显式（分母 = 15×2，非只看 router） [33m1009[2mms[22m[39m
+2026-09-05T12:44:23.3903791Z    [33m[2m✓[22m[39m heavy_entry 探针（hooks 注册态 / skills 双镜像一致态；重入口标记缺席即未安装）[2m > [22mrunDoctor 矩阵接线：heavy init 后双探针入矩阵（mkdir 前置保障） [33m828[2mms[22m[39m
+2026-09-05T12:44:23.3907425Z    [33m[2m✓[22m[39m doctor 感知回执计数呈现（R6/C9）[2m > [22mevidence/observations/ 落盘回执 → observation_receipts.count 计数 + human 行呈现；空分区 = 0 显式缺席 [33m624[2mms[22m[39m
+2026-09-05T12:44:23.3910764Z    [33m[2m✓[22m[39m doctor 播种分面计数呈现（B6e）[2m > [22minit 后五分面计数 = 播种清单分母（46/33/28/20/25）+ human 行呈现；README 预铺物不计 [33m622[2mms[22m[39m
+2026-09-05T12:44:24.6532881Z  [32m✓[39m tests/integration/fixture-git-repo-minimal.spec.ts [2m([22m[2m34 tests[22m[2m)[22m[33m 1795[2mms[22m[39m
+2026-09-05T12:44:28.8908609Z  [32m✓[39m packages/cli/tests/seeds.spec.ts [2m([22m[2m18 tests[22m[2m | [22m[33m1 skipped[39m[2m)[22m[33m 3264[2mms[22m[39m
+2026-09-05T12:44:28.8910937Z    [33m[2m✓[22m[39m runInit 步骤 4.6 播种端到端（fresh 临时工程 + 注入清单）[2m > [22m缺省（不注入）init：152 份播种件在位（seeded 报告 + 幂等重跑全 preserved） [33m888[2mms[22m[39m
+2026-09-05T12:44:28.8912864Z    [33m[2m✓[22m[39m runInit 步骤 4.6 播种端到端（fresh 临时工程 + 注入清单）[2m > [22mB6d baseline UNKNOWN 起步端到端：init 后在位可编辑——Owner 回填选型后重跑 init 不覆盖、零告警（可编辑性铁律在 baseline 面成立） [33m2009[2mms[22m[39m
+2026-09-05T12:44:36.8797293Z  [32m✓[39m packages/cli/tests/check.spec.ts [2m([22m[2m22 tests[22m[2m)[22m[33m 7252[2mms[22m[39m
+2026-09-05T12:44:36.8798668Z    [33m[2m✓[22m[39m check --gates：全部 recipe 派发 + 每 recipe 一条 GRN 入账[2m > [22m真实六 recipe 全量实跑（裸工程）：1 not_configured + 5 not_run，六条 GRN 单事务入账（P-v06 增量 5→6） [33m655[2mms[22m[39m
+2026-09-05T12:44:36.8800023Z    [33m[2m✓[22m[39m check --gates：全部 recipe 派发 + 每 recipe 一条 GRN 入账[2m > [22m绑定腿注入 fake passed 执行器 → 该 recipe 真判卷 passed，其余五腿保持 not_run（P-v06 5→6） [33m457[2mms[22m[39m
+2026-09-05T12:44:36.8801292Z    [33m[2m✓[22m[39m check --gates：全部 recipe 派发 + 每 recipe 一条 GRN 入账[2m > [22m注入空分母 → SCHEMA_INVALID fail-closed（零 recipe = 零判卷，禁静默空跑） [33m1644[2mms[22m[39m
+2026-09-05T12:44:36.8802277Z    [33m[2m✓[22m[39m check --gates：P12c 假绿封死对抗用例[2m > [22m对抗 a：工具缺席（not_run）与 PASS 在账本是不同记录——缺席绝不计绿 [33m3228[2mms[22m[39m
+2026-09-05T12:44:36.8803365Z    [33m[2m✓[22m[39m check --gates：P12c 假绿封死对抗用例[2m > [22m对抗 b'：自报 passed 踩失配重算 → normalizeGateResult 降级 warning 入账（禁原始自报绕过） [33m319[2mms[22m[39m
+2026-09-05T12:44:36.8804372Z    [33m[2m✓[22m[39m check --gates：P12c 假绿封死对抗用例[2m > [22m对抗 d：adapter 崩溃（非 Error throw）→ blocked 显式错误态且崩溃留痕入账 [33m523[2mms[22m[39m
+2026-09-05T12:44:42.0207322Z  [32m✓[39m tests/integration/portability-deletability.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 17637[2mms[22m[39m
+2026-09-05T12:44:42.0209790Z    [33m[2m✓[22m[39m §85.4 端到端：init → seed → bootstrap → rm -rf runtime → 再 bootstrap → state equivalent[2m > [22m真 CLI 全链：state 逐侧车哈希集相等 + runtime 恢复 + manifest 不重写 + check 八项全 PASS + doctor 探针 READY [33m852[2mms[22m[39m
+2026-09-05T12:44:42.0212970Z    [33m[2m✓[22m[39m 破坏性对照：删 state/truth-index.json → project_truth FAIL + 下游 NOT_RUN[2m > [22m对照绿（删前 check exit 0）→ 删侧车 → exit 1 PORTABILITY_CHECK_FAILED + project_truth FAIL（应存在而缺席，非 NOT_RUN） [33m752[2mms[22m[39m
+2026-09-05T12:44:42.0215769Z    [33m[2m✓[22m[39m §84.6 MEMORY_DRIFT 集成：harness 位存在 + 项目记忆平面空[2m > [22mhidden_memory_dependency FAIL + [MEMORY_DRIFT] + user-home-project-memory 命中 + secret 内容零泄漏 + 处置注记呈现 [33m708[2mms[22m[39m
+2026-09-05T12:44:42.0220122Z    [33m[2m✓[22m[39m §84.6 MEMORY_DRIFT 集成：harness 位存在 + 项目记忆平面空[2m > [22m同一 fixture 补齐项目记忆平面（KNOWLEDGE）→ hidden 转 PASS（drift 机判条件解除） [33m1607[2mms[22m[39m
+2026-09-05T12:44:42.0222867Z    [33m[2m✓[22m[39m runDeletabilityTest 执行器 × CLI-init 账本（OPEN-M6-07/08 闭环集成载体）[2m > [22m真跑：removedRuntime/rebuilt/stateEquivalent/doctorOkAfterRebuild 全真 + 判据注记非空 [33m7228[2mms[22m[39m
+2026-09-05T12:44:42.0225869Z    [33m[2m✓[22m[39m runDeletabilityTest 执行器 × CLI-init 账本（OPEN-M6-07/08 闭环集成载体）[2m > [22m结构性防线在集成面同样成立：无标记 root 拒绝（ENVIRONMENT_ERROR）且字节零变 [33m6488[2mms[22m[39m
+2026-09-05T12:44:44.9000662Z  [32m✓[39m packages/kernel/tests/execution.spec.ts [2m([22m[2m21 tests[22m[2m)[22m[33m 2256[2mms[22m[39m
+2026-09-05T12:44:44.9002141Z    [33m[2m✓[22m[39m 事务级 execution 盖章（Transaction.executionId → TX_APPLIED 事件）[2m > [22m携带已登记 execution_id → TX_APPLIED 事件带 execution_id 键（§25.4 事务级审计兑现） [33m535[2mms[22m[39m
+2026-09-05T12:44:46.3545514Z  [32m✓[39m packages/gauntlet-lite/test/import-linter-leg.spec.ts [2m([22m[2m19 tests[22m[2m)[22m[33m 699[2mms[22m[39m
+2026-09-05T12:44:48.8330482Z  [32m✓[39m tests/integration/adversarial-research-write-contract.spec.ts [2m([22m[2m15 tests[22m[2m)[22m[33m 11195[2mms[22m[39m
+2026-09-05T12:44:48.8333782Z    [33m[2m✓[22m[39m 威胁类 7：Research 越写旁路（越写即 FATAL + 字节级零落盘）[2m > [22mADV-R1 越写治理 state 面（truth-index）→ FATAL governed_surface + 全树字节零变 [33m4841[2mms[22m[39m
+2026-09-05T12:44:48.8335830Z    [33m[2m✓[22m[39m 威胁类 8：提升写入通道旁路（store 是唯一权威面）[2m > [22mADV-C1 伪造 scratchpad 终态（state=TASK + promoted_ref）→ store 零事实：inspect/closeout 均 OBJECT_NOT_FOUND [33m1748[2mms[22m[39m
+2026-09-05T12:44:48.8337841Z    [33m[2m✓[22m[39m 威胁类 8：提升写入通道旁路（store 是唯一权威面）[2m > [22mADV-C2 缺省 promote（无 --apply）→ store 字节零变 + 指路命令引回 maintain 面 [33m1997[2mms[22m[39m
+2026-09-05T12:44:48.8340147Z    [33m[2m✓[22m[39m 威胁类 8：提升写入通道旁路（store 是唯一权威面）[2m > [22mADV-C4 真实终态（promote --apply 落库到 TASK）后再 promote → 终态无出边 + store 不二次触发 [33m1045[2mms[22m[39m
+2026-09-05T12:44:48.8341315Z    [33m[2m✓[22m[39m 威胁类 8：提升写入通道旁路（store 是唯一权威面）[2m > [22mADV-C6 伪造 CHANGE 终态再企图提升 → 终态无出边 + CHANGE.SNEAKY 零事实 [33m1165[2mms[22m[39m
+2026-09-05T12:44:48.9237685Z  [32m✓[39m tests/integration/fixture-fastapi-project.spec.ts [2m([22m[2m35 tests[22m[2m)[22m[33m 1749[2mms[22m[39m
+2026-09-05T12:44:49.5105686Z  [32m✓[39m packages/kernel/tests/gate-result.spec.ts [2m([22m[2m39 tests[22m[2m)[22m[90m 20[2mms[22m[39m
+2026-09-05T12:44:50.0586175Z [90mstdout[2m | tests/golden/golden.spec.ts
+2026-09-05T12:44:50.0587929Z [22m[39m[golden][pending] GOLDEN-FIX-01-CAPABILITY — 需 kernel applyTransaction 落库 ＋ REF_INTEGRITY/COMPONENT 交叉校验 ＋ key_bindings probe 重放（store/GateRunner 未在本批三类可执行判定面内）
+2026-09-05T12:44:50.0590133Z [golden][pending] GOLDEN-FIX-02-CONTRACT — 需 CONTRACT gate 执行面（GateRunner 重扫现实＋probe 重算＋normalizeGateResult 归一），三类可执行判定面不含 gate 执行
+2026-09-05T12:44:50.0591761Z [golden][pending] GOLDEN-FIX-03-KNOWLEDGE — 需 kind profile（knowledge_default 空绑定豁免显式化）＋ origin=natural 免 producer 义务的 REF_INTEGRITY 校验执行面
+2026-09-05T12:44:50.0593109Z [golden][pending] ADV-D20-01 — 需 CONTENT_TRUTH 扫描器与 blindspot 计数执行面（gauntlet-lite 未接入）；『两道门都绿结构不可能』无执行器可判
+2026-09-05T12:44:50.0595053Z [golden][pending] ADV-D20-02 — 需 COVERAGE gate ＋ DENOMINATOR (id, version_seen) 对账执行面（kernel store/gate runner 未接入）
+2026-09-05T12:44:50.0596442Z [golden][pending] ADV-D20-03 — 需 Permit 事务执行面（issuePermit/checkPermit/journal 事件留痕），三类可执行判定面不含 Permit
+2026-09-05T12:44:50.0597819Z [golden][pending] ADV-D20-04 — 需 applyTransaction staged 写入＋崩溃注入执行面（批量原子性不可在本批纯函数判定面复演）
+2026-09-05T12:44:50.0598695Z [golden][pending] ADV-D20-05 — 需 GateRunner trust asserted/recomputed 孪生重算执行面（kernel normalizeGateResult 未接入）
+2026-09-05T12:44:50.0599669Z [golden][pending] GOLDEN-L1-DENOM-NO-DELETE — 需 applyTransaction DENOMINATOR 删除请求 FATAL 语义执行面（写事务面未接入）
+2026-09-05T12:44:50.0600567Z [golden][pending] GOLDEN-L1-DENOM-SUPERSEDE — 需 append_denominator ＋ health.orphaned_objects 重算执行面（kernel store 未接入）
+2026-09-05T12:44:50.0601639Z [golden][pending] GOLDEN-L1-DERIVED-NEEDS-PRODUCER — 需 applyTransaction upsert_object 的 C3 条件校验执行面（信封条件式 1 属写事务语义）
+2026-09-05T12:44:50.0602583Z [golden][pending] GOLDEN-L1-REF-EXISTS — 需 REF_INTEGRITY ref-exists 检查执行面（跨实体引用完整性属索引层语义）
+2026-09-05T12:44:50.0603657Z [golden][pending] GOLDEN-L1-LOCKED-CHALLENGE — 跨轴耦合断言归 applyTransaction/REF_INTEGRITY（kernel 契约明示不进 validateTransition 纯函数；confidence/change 轴亦无转移矩阵）
+2026-09-05T12:44:50.0604909Z [golden][pending] GOLDEN-L1-WALLCLOCK — 需 applyTransaction digest 授权域校验执行面（A4 禁墙钟在写路径强制，纯函数面无法复演）
+2026-09-05T12:44:50.0606699Z [golden][pending] GOLDEN-L1-ROUTER-GLOBAL-ESCALATION — golden 本批三类可执行判定面的 triage 走 reference/triage.ts rule_v0（只消费结构化信号 contractSurfaceHit/blastRadius/…，无请求词形信号落点；其纪律禁止发明规则 id，故不镜像关键词表）；词形 global → STANDARD 判定归 packages/cli/src/triage.ts 关键词引擎（唯一实现），钉住手段＝packages/cli/tests/triage.spec.ts T-1 单测 ＋ benchmarks/run-all.mjs 矩阵；kernel triage 面落地后本用例升级为可执行
+2026-09-05T12:44:50.0610015Z [golden][pending] GOLDEN-L3-CASE-C-EVOLUTION — 数据驱动四类纯函数判定面（transition/id-parse/alias/triage）不判 store 事务执行面；kernel 真实判决载体（applyTransitionObject 转移缺 authorityRef → GovernanceError EVOLUTION_REQUIRED，store.ts hint 直注 GOLDEN-L3-CASE-C）已在本 spec「GOLDEN-L3 点名种子 · 执行面对照」describe 跑实（wave3-plan P17 补录）；L1 覆盖=packages/kernel/tests/store.spec.ts/transitions-store.spec.ts。形态映射 concern：种子的 write_policy=EVOLUTION_CHANNEL（对象变更申请维度）在 kernel 尚无独立 write-policy 执行面，判决以转移 authorityRef 强制承载（语义家族相同、载体不同——如实呈报不冒充同形）
+2026-09-05T12:44:50.0612779Z [golden][pending] GOLDEN-L3-SCRAPE-FATAL — 数据驱动四类纯函数判定面不判 store 事务执行面；kernel 真实判决载体（upsert_object sources[].type ∈ SOURCE_TYPE_FORBIDDEN_VALUES 两值闭表 → GovernanceError SOURCE_TYPE_FORBIDDEN，store.ts hint 直注 GOLDEN-L3-SCRAPE-FATAL）已在本 spec「GOLDEN-L3 点名种子 · 执行面对照」describe 跑实（wave3-plan P17 补录）；L1 覆盖=packages/kernel/tests/store.spec.ts
+2026-09-05T12:44:50.0615049Z [golden][pending] GOLDEN-L3-STATE-SUBSET — 结构性缺席：代码现实无 PAGE states/domain_states 派生执行面（kernel/cli/schemas 全仓 grep 零命中；kernel lifecycle 轴为对象生命周期六值，不含页面 UI 态全集概念）——本条登记在场性防决策漂移，执行面落地前为显式 pending（禁静默跳过当通过）；转正属 PRD 现范围外的派生面工程，已呈报 Owner
+2026-09-05T12:44:50.0616607Z [golden][pending] GOLDEN-L3-COMPACT-IDEMPOTENT — 数据驱动四类纯函数判定面不判 CLI 编排执行面；真实转正执行（runCompact --ops 双跑：首次 APPLIED → 二次 NO_CHANGE＋state 字节不变）已在本 spec「GOLDEN-L3 点名种子 · 执行面对照」describe 落地（wave3-plan P17 补录）；L1 覆盖=packages/cli/tests/compact.spec.ts
+2026-09-05T12:44:50.0617673Z [golden] 6 passed / 0 failed / 19 pending（共 25；evaluator kernel=4 reference=2）
+2026-09-05T12:44:50.0618829Z 
+2026-09-05T12:44:50.0619318Z  [32m✓[39m tests/golden/golden.spec.ts [2m([22m[2m64 tests[22m[2m)[22m[90m 238[2mms[22m[39m
+2026-09-05T12:44:50.4014050Z [90mstdout[2m | tests/behavioral/behavioral.spec.ts
+2026-09-05T12:44:50.4018680Z [22m[39m[behavioral][retired] L5-F-02-churn-cluster-escalation-pending — P17-Seeds 显式退役（可执行前置不成立，禁静默 pending 滞留）：原 pendingReason=E7 churn 信号 NOT_CONFIGURED（bench-0002 占位 churn_hits_watch=4-per-14d 未实现为信号源；语料证据 replay-round2-input.md §3.4 九目录簇）——现盘 triage.ts/triage-rule-v0.ts 零 churn 词形（代码现实 grep 实证），翻转前置条件不成立；expect 留空无可执行断言（簇级升档断言形态依赖 E7 落地形态，缺席显式不臆造——契约裁决 4）。原 expect_flip_when『E7 churn 信号实现（S-2b）落地后翻转为 executable 并定义簇级升档断言』随退役关闭。单请求形态边界已由 L5-F-01 executable 锚定；E7/S-2b 信号源落地时以新 seed 重新登记（本 id 保留退役谱系，不复用、不复活）。
+2026-09-05T12:44:50.4025707Z [behavioral][retired] L5-X-01-capability-router-no-architect-pending — P17-Seeds 显式退役（可执行前置不成立，禁静默 pending 滞留）：原 pendingReason=capability router 未实现（thread-C §1 调用时点）——现盘 kernel/cli 无 capability 路由与 spawn architect 原语（代码现实 grep 实证零命中），MINIMAL 侧输入断言（profile=MINIMAL）已由 L5-A-01 executable 覆盖，本 seed 独有价值（禁 spawn architect 能力断言）无被测对象。原 expect_flip_when『capability router 实现（thread-C §1 调用时点）→ 翻转为 executable 并新增禁 spawn architect 断言』随退役关闭。capability router 落地时以新 seed 重新登记（期望断言集只增不减纪律由新 seed 承接；本 id 保留退役谱系，不复用、不复活）。
+2026-09-05T12:44:50.4029696Z [behavioral] 23 passed / 0 failed / 0 pending / 2 retired（共 25，executable 23；evaluator cli_keyword=17 rule_v0=6）
+2026-09-05T12:44:50.4030353Z 
+2026-09-05T12:44:50.4031100Z  [32m✓[39m tests/behavioral/behavioral.spec.ts [2m([22m[2m41 tests[22m[2m)[22m[90m 19[2mms[22m[39m
+2026-09-05T12:44:51.1987585Z  [32m✓[39m tests/integration/production-feedback-chain.spec.ts [2m([22m[2m1 test[22m[2m)[22m[90m 268[2mms[22m[39m
+2026-09-05T12:44:53.1972040Z  [32m✓[39m tests/integration/fixture-discovery-chain.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 1032[2mms[22m[39m
+2026-09-05T12:44:59.3079312Z  [32m✓[39m tests/integration/browser-legs-e2e.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 8047[2mms[22m[39m
+2026-09-05T12:44:59.3081230Z    [33m[2m✓[22m[39m ① BROWSER 双通道两条 GRN 独立入账（playwright 红 + MCP 绿）[2m > [22m双腿真判卷 → P12c 复算 → 单事务两 GRN 落盘，tool/metric_dialect/verdict 随腿互异 [33m726[2mms[22m[39m
+2026-09-05T12:44:59.3084152Z    [33m[2m✓[22m[39m ① BROWSER 双通道两条 GRN 独立入账（playwright 红 + MCP 绿）[2m > [22m② 无聚合呈现面：账本零「BROWSER 聚合」第三条记录；二元组类型上无聚合 verdict 位 [33m731[2mms[22m[39m
+2026-09-05T12:44:59.3085611Z    [33m[2m✓[22m[39m ③ 互不牵连：MCP 交互腿缺席，playwright 腿照常真跑判卷[2m > [22mMCP 未注册 → 交互腿 not_configured + 安装路标；playwright 腿独立判卷（干净 → passed） [33m756[2mms[22m[39m
+2026-09-05T12:44:59.3086886Z    [33m[2m✓[22m[39m ④ 缺 console 维度的报告 → not_run（非默认值）入账边界[2m > [22m维度不完整报告在 kernel 复算后仍 not_run（诚实缺席，非绿非红） [33m3433[2mms[22m[39m
+2026-09-05T12:44:59.3087998Z    [33m[2m✓[22m[39m ④ 缺 console 维度的报告 → not_run（非默认值）入账边界[2m > [22m完全干净报告（双维度空数组齐备）→ passed 入账（空数组=干净是合法维度） [33m1564[2mms[22m[39m
+2026-09-05T12:44:59.3089433Z    [33m[2m✓[22m[39m ⑤ doctor 探测矩阵扩容：playwright 探针呈现（双通道并存的探测面）[2m > [22m真实 runDoctor 呈现 playwright 探针（缺席 NOT_INSTALLED 非静默 + 安装路标；真装容忍 READY） [33m830[2mms[22m[39m
+2026-09-05T12:45:00.6642312Z  [32m✓[39m tests/integration/fixture-vue3-project.spec.ts [2m([22m[2m35 tests[22m[2m)[22m[33m 36513[2mms[22m[39m
+2026-09-05T12:45:01.2998893Z  [32m✓[39m packages/cli/tests/runtime-commands.spec.ts [2m([22m[2m20 tests[22m[2m)[22m[33m 1099[2mms[22m[39m
+2026-09-05T12:45:01.3848425Z  [32m✓[39m packages/cli/tests/program.spec.ts [2m([22m[2m36 tests[22m[2m)[22m[33m 7286[2mms[22m[39m
+2026-09-05T12:45:01.3850490Z    [33m[2m✓[22m[39m runCli --json 机读契约（§45）[2m > [22minit --json 幂等链：第一次 exit 0 CREATED；第二次 NO_CHANGE [33m3540[2mms[22m[39m
+2026-09-05T12:45:01.3852407Z    [33m[2m✓[22m[39m runCli --json 机读契约（§45）[2m > [22minit --json：信封恒单通道（§45）——品牌横幅与 logo 文案不得污染机读 stdout（新增负向判卷） [33m1052[2mms[22m[39m
+2026-09-05T12:45:01.3854184Z    [33m[2m✓[22m[39m runCli --json 机读契约（§45）[2m > [22mcontext compile --role --json（真实 kernel）→ exit 0，信封 ok=true（kernel 落地后自动升级） [33m1075[2mms[22m[39m
+2026-09-05T12:45:01.3855601Z    [33m[2m✓[22m[39m runCli 人读双输出[2m > [22minit 人读：stdout 尾部带品牌横幅与联系邮箱（完成输出收尾段，人读通道专属） [33m881[2mms[22m[39m
+2026-09-05T12:45:01.3857152Z    [33m[2m✓[22m[39m F1/F2 程序面（init --platforms / update）[2m > [22minit --platforms cursor --json → 信封 result.platforms 数组（{name,file,action}） [33m521[2mms[22m[39m
+2026-09-05T12:45:02.5872260Z  [32m✓[39m packages/gauntlet-lite/test/seed-mutant-library.spec.ts [2m([22m[2m38 tests[22m[2m)[22m[33m 1046[2mms[22m[39m
+2026-09-05T12:45:02.5874949Z    [33m[2m✓[22m[39m seed 库全链路：fake 工具 × 真实 spawnSync × 三道闸 × 判卷入账（P24 出口判据 3 落地面）[2m > [22m三态 truth-index 记录互异（seed 库面：failed / passed / not_run） [33m562[2mms[22m[39m
+2026-09-05T12:45:02.7084865Z  [32m✓[39m packages/cli/tests/compact.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 442[2mms[22m[39m
+2026-09-05T12:45:03.4769102Z  [32m✓[39m packages/gauntlet-lite/test/normalize-gate-result.spec.ts [2m([22m[2m37 tests[22m[2m)[22m[90m 39[2mms[22m[39m
+2026-09-05T12:45:05.8506289Z  [32m✓[39m tests/integration/adversarial-verdict-hash-ethics.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 1613[2mms[22m[39m
+2026-09-05T12:45:05.8508608Z    [33m[2m✓[22m[39m 威胁类 5：四态混淆探测（not_configured ≠ passed 的四态纪律）[2m > [22mADV-V2 scope 外的 skipped_blindspot 不阻断 clean 但 census 全量可见（聚合值永不吞没未声明的静默跳过） [33m314[2mms[22m[39m
+2026-09-05T12:45:05.8510346Z    [33m[2m✓[22m[39m 威胁类 6：D24 哈希伦理（WARN + auto-regen 永不拦写；人永不计算哈希）[2m > [22mADV-H1 双重篡改（content_digest + 行 body_sha256 同伪造）→ 写入仍成功 + 两条 WARN + 双字段自动重算覆盖 [33m567[2mms[22m[39m
+2026-09-05T12:45:10.6364466Z [90mstderr[2m | tests/integration/browser-legs-environment.spec.ts[2m > [22m[2m宿主真轨（真实 chrome-devtools MCP 通道）[2m > [22m[2m宿主注册时：真实通道可达 + 环境错 → blocked（环境门先于连接判卷在真通道上同样成立）；宿主未注册 → skip + 盲区说明
+2026-09-05T12:45:10.6367446Z [22m[39m[盲区说明] 宿主未注册 chrome-devtools MCP —— Benchmark E 宿主真轨跳过（诚实缺席，非通过）
+2026-09-05T12:45:10.6371430Z  [32m✓[39m tests/integration/browser-legs-environment.spec.ts [2m([22m[2m7 tests[22m[2m | [22m[33m1 skipped[39m[2m)[22m[33m 7084[2mms[22m[39m
+2026-09-05T12:45:10.6372737Z 
+2026-09-05T12:45:10.6374364Z    [33m[2m✓[22m[39m ① Benchmark E 主链（Case H revision mismatch）[2m > [22mdoctor 判 WRONG_OR_UNVERIFIED_INSTANCE → 交互腿 blocked → 无 persist 无 OBS 回执 → blocked GRN 零 artifact_refs [33m2343[2mms[22m[39m
+2026-09-05T12:45:10.6376910Z    [33m[2m✓[22m[39m ② 环境缺省（§6.7 验收句字面 fail-closed）[2m > [22menvironment 未供给 → blocked + 无回执（未确认 base URL / runtime instance 不得判 PASS） [33m661[2mms[22m[39m
+2026-09-05T12:45:10.6378863Z    [33m[2m✓[22m[39m ② 环境缺省（§6.7 验收句字面 fail-closed）[2m > [22menvironment 显式 null → 同 fail-closed（显式缺席与缺省同语义） [33m612[2mms[22m[39m
+2026-09-05T12:45:10.6381755Z    [33m[2m✓[22m[39m ③ READY 对照链（回执引用基础设施签发的同一身份，非冒充）[2m > [22mdoctor READY → passed + persist + OBS 回执 artifact_refs == GRN artifact_refs == blob 文件身份 [33m730[2mms[22m[39m
+2026-09-05T12:45:10.6383566Z    [33m[2m✓[22m[39m ④ READY + 三件套缺件（门序钉死）[2m > [22mscreenshot 缺 → not_run + 无 persist 无回执（READY 只开环境位，不豁免证据判卷） [33m840[2mms[22m[39m
+2026-09-05T12:45:10.6385237Z    [33m[2m✓[22m[39m ⑤ blocked GRN 落盘形态[2m > [22mblocked 记录：verdict=blocked + counts 全零 + 无 items + scopeNote 载 doctor 拒证词形 [33m964[2mms[22m[39m
+2026-09-05T12:45:12.6310051Z  [32m✓[39m packages/cli/tests/trace-cli.spec.ts [2m([22m[2m22 tests[22m[2m)[22m[33m 1009[2mms[22m[39m
+2026-09-05T12:45:13.3742409Z  [32m✓[39m packages/kernel/tests/question-gate.spec.ts [2m([22m[2m38 tests[22m[2m)[22m[90m 19[2mms[22m[39m
+2026-09-05T12:45:14.8296474Z  [32m✓[39m packages/kernel/tests/evidence-artifacts.spec.ts [2m([22m[2m21 tests[22m[2m)[22m[33m 754[2mms[22m[39m
+2026-09-05T12:45:14.8299934Z    [33m[2m✓[22m[39m record_gate_run artifact_refs（信封扩展）[2m > [22m字节兼容：不携 refs 的存量 GRN 信封零 artifact_refs 键（键缺席，already_canonical 不破） [33m489[2mms[22m[39m
+2026-09-05T12:45:15.3198520Z  [32m✓[39m packages/cli/tests/context.spec.ts [2m([22m[2m17 tests[22m[2m)[22m[33m 12988[2mms[22m[39m
+2026-09-05T12:45:15.3201285Z    [33m[2m✓[22m[39m context compile 缺席显式[2m > [22minit 后（真实 kernel 已落地）→ 编译成功：五分区标题在场、空区显式缺席、catalog 分区真消费 repo catalog、manifest 默认落盘（Batch 2 D7/D8） [33m808[2mms[22m[39m
+2026-09-05T12:45:15.3204419Z    [33m[2m✓[22m[39m context compile 转调 kernel（注入 fake）[2m > [22m五分区 markdown：AUTHORITATIVE PROJECT STATE / REQUIRED POLICY / ADVISORY KNOWLEDGE / REUSE / CATALOG / VERIFICATION 标题与条目（Batch 2 D8 词形闭包逐字） [33m1976[2mms[22m[39m
+2026-09-05T12:45:15.3206821Z    [33m[2m✓[22m[39m context compile 转调 kernel（注入 fake）[2m > [22mD8 判卷输入等价性：POLICY.* → REQUIRED POLICY、非 POLICY → AUTHORITATIVE（两区并集恰为 must_entries，零增删） [33m1180[2mms[22m[39m
+2026-09-05T12:45:15.3208653Z    [33m[2m✓[22m[39m context compile 转调 kernel（注入 fake）[2m > [22mcatalog_source 呈现：root + lock 注记进 markdown（出处显式，§92.2） [33m614[2mms[22m[39m
+2026-09-05T12:45:15.3210185Z    [33m[2m✓[22m[39m context compile 转调 kernel（注入 fake）[2m > [22mrole 透传 kernel；inputs_fingerprint 原样回显 [33m711[2mms[22m[39m
+2026-09-05T12:45:15.3211666Z    [33m[2m✓[22m[39m context compile 转调 kernel（注入 fake）[2m > [22mmanifest 字段机读映射（must/advisory/catalog/knowledge_entries/lazy_tools） [33m692[2mms[22m[39m
+2026-09-05T12:45:15.3215280Z    [33m[2m✓[22m[39m context compile 转调 kernel（注入 fake）[2m > [22m空 manifest → markdown 显式标注空区（缺席显式，不渲染成有内容） [33m1027[2mms[22m[39m
+2026-09-05T12:45:15.3218182Z    [33m[2m✓[22m[39m context compile 转调 kernel（注入 fake）[2m > [22mkernel 抛非 not-implemented 错误 → KERNEL_ERROR（带原消息） [33m1029[2mms[22m[39m
+2026-09-05T12:45:15.3219757Z    [33m[2m✓[22m[39m context compile 转调 kernel（注入 fake）[2m > [22mkernel 抛 not-implemented（注入形态）→ KERNEL_NOT_INSTALLED [33m570[2mms[22m[39m
+2026-09-05T12:45:15.3223712Z    [33m[2m✓[22m[39m context compile applicability 输入（P0.5-1）[2m > [22minputs 透传 kernel（change→taskRef / capabilities / changeClass；A1 裁定后无档位输入位） [33m595[2mms[22m[39m
+2026-09-05T12:45:15.3227829Z    [33m[2m✓[22m[39m context compile applicability 输入（P0.5-1）[2m > [22m无输入时 markdown 零新增行（O7 输入面字节零变化）；有输入时 applicability 行在场 [33m684[2mms[22m[39m
+2026-09-05T12:45:15.3229891Z    [33m[2m✓[22m[39m context compile applicability 输入（P0.5-1）[2m > [22mkernel 词形拒绝 → KERNEL_ERROR 透传原消息（fail-closed 命令面；真实 kernel 校验，注入 fake 会绕过判卷） [33m634[2mms[22m[39m
+2026-09-05T12:45:15.3232517Z    [33m[2m✓[22m[39m context compile applicability 输入（P0.5-1）[2m > [22mCLI 面 --profile 输入位已删（A1 裁定 vNext Batch 4 R1）→ 未知 option 拒绝 exit 1（UNEXPECTED_ERROR 信封） [33m632[2mms[22m[39m
+2026-09-05T12:45:15.3235636Z    [33m[2m✓[22m[39m context explain（P0.5-1 决策记录面；PRD §5.4）[2m > [22minclude/exclude 逐条 why 渲染（PRD §5.4 词形逐字）+ 输入透传 [33m563[2mms[22m[39m
+2026-09-05T12:45:15.3238887Z    [33m[2m✓[22m[39m context explain（P0.5-1 决策记录面；PRD §5.4）[2m > [22m真实 kernel：repo catalog 全量决策逐条可解释（T3 标注后 excluded 显式非空） [33m1262[2mms[22m[39m
+2026-09-05T12:45:15.4864784Z  [32m✓[39m packages/kernel/tests/research-contract.spec.ts [2m([22m[2m33 tests[22m[2m)[22m[90m 16[2mms[22m[39m
+2026-09-05T12:45:16.7190862Z  [32m✓[39m packages/cli/tests/spec-preplant.spec.ts [2m([22m[2m14 tests[22m[2m)[22m[33m 9933[2mms[22m[39m
+2026-09-05T12:45:16.7194588Z    [33m[2m✓[22m[39m init 端到端预植（D2 ADR-2/5/6/10）[2m > [22mfresh init：19 对象单事务入账（seq=1、journal TX_APPLIED、PROPOSED 起步、BOOTSTRAP_OWNER、正文成对） [33m833[2mms[22m[39m
+2026-09-05T12:45:16.7196456Z    [33m[2m✓[22m[39m init 端到端预植（D2 ADR-2/5/6/10）[2m > [22mpayload 形态：spec_kind=evidence_spec + 判定条款段锚 + provenance pin（digest = 种子字节） [33m672[2mms[22m[39m
+2026-09-05T12:45:16.7198115Z    [33m[2m✓[22m[39m init 端到端预植（D2 ADR-2/5/6/10）[2m > [22m零墙钟（A4）：truth-index / journal / 对象正文无 ISO 时间戳词形 [33m1122[2mms[22m[39m
+2026-09-05T12:45:16.7199672Z    [33m[2m✓[22m[39m init 端到端预植（D2 ADR-2/5/6/10）[2m > [22mA3/store 纪律零改动：预植走对象 upsert 非 claim 通路——claims/runs 平面零文件 [33m1074[2mms[22m[39m
+2026-09-05T12:45:16.7201305Z    [33m[2m✓[22m[39m 幂等与重入（D2 ADR-6 seed-once）[2m > [22m重跑 init → NO_CHANGE + preserved=19；账本字节不变；journal 零增行 [33m742[2mms[22m[39m
+2026-09-05T12:45:16.7202836Z    [33m[2m✓[22m[39m 幂等与重入（D2 ADR-6 seed-once）[2m > [22m对象缺席才预植：删行+删正文后重跑 → planted=1 preserved=18，SPEC.BUILD 恢复 [33m887[2mms[22m[39m
+2026-09-05T12:45:16.7204378Z    [33m[2m✓[22m[39m 幂等与重入（D2 ADR-6 seed-once）[2m > [22m在座零触碰：项目把 SPEC.BUILD 转移 CURRENT 后重跑 init → preserved 不回写 PROPOSED [33m780[2mms[22m[39m
+2026-09-05T12:45:16.7206651Z    [33m[2m✓[22m[39m off-switch、doctor/status 呈现与失败语义（D2 ADR-7/8/9）[2m > [22moff-switch：specPreplant=false → 结果 null、零对象、seq=0；随后缺省重跑补植 19 [33m706[2mms[22m[39m
+2026-09-05T12:45:16.7208581Z    [33m[2m✓[22m[39m off-switch、doctor/status 呈现与失败语义（D2 ADR-7/8/9）[2m > [22mdoctor/status 呈现：spec_preplant {in_place, kit} + human 行（seeded_assets 先例） [33m669[2mms[22m[39m
+2026-09-05T12:45:16.7210821Z    [33m[2m✓[22m[39m off-switch、doctor/status 呈现与失败语义（D2 ADR-7/8/9）[2m > [22m呈现缺席显式：未初始化 → status spec_preplant 字段缺席；off-switch 项目 → 0/19 in place [33m1217[2mms[22m[39m
+2026-09-05T12:45:16.7212811Z    [33m[2m✓[22m[39m off-switch、doctor/status 呈现与失败语义（D2 ADR-7/8/9）[2m > [22m幽灵 owner（人类演进 authority 后无 BOOTSTRAP_OWNER）→ SPEC_PREPLANT_SKIPPED warning + init 照常完成 [33m595[2mms[22m[39m
+2026-09-05T12:45:16.7214690Z    [33m[2m✓[22m[39m closeout 协同（预植对象无绑定 → 诚实缺席）[2m > [22m预植 SPEC 对象零绑定：closeout 判卷分母无 Spec 维度（dod.spec=null，零 SPEC_NOT_BINDING） [33m590[2mms[22m[39m
+2026-09-05T12:45:17.4637878Z  [32m✓[39m packages/cli/tests/graph.spec.ts [2m([22m[2m15 tests[22m[2m)[22m[33m 1005[2mms[22m[39m
+2026-09-05T12:45:17.4640429Z    [33m[2m✓[22m[39m runGraph --view impact（只出闭包段）[2m > [22mmax-depth=0 → kernel 域闸 SCHEMA_INVALID fail-closed（防御失控 BFS） [33m381[2mms[22m[39m
+2026-09-05T12:45:17.5940386Z  [32m✓[39m tests/integration/ref-integrity-grn4402-regression.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 260[2mms[22m[39m
+2026-09-05T12:45:19.5023409Z  [32m✓[39m packages/cli/tests/view-attention.spec.ts [2m([22m[2m14 tests[22m[2m)[22m[33m 922[2mms[22m[39m
+2026-09-05T12:45:19.5025279Z    [33m[2m✓[22m[39m runCli 集成（view attention 程序面）[2m > [22mrunCli --json：view attention ok 信封 + 空队列显式词形 [33m419[2mms[22m[39m
+2026-09-05T12:45:20.9533378Z  [32m✓[39m tests/integration/evidence-binding-e2e.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 4829[2mms[22m[39m
+2026-09-05T12:45:20.9534641Z    [33m[2m✓[22m[39m ① 全链路（PRD §7.2 四环节）[2m > [22m双腿 → persist screenshot → GRN 携 artifact_refs 入账 → 同一性三方一致（§7.4） [33m759[2mms[22m[39m
+2026-09-05T12:45:20.9536200Z    [33m[2m✓[22m[39m ② Case E：入账后替换持久化 blob → binding FAIL 绝不维持 PASS[2m > [22m篡改 blob 字节 → verifyEvidenceBinding FAIL（artifact_bytes_tampered）+ 0.2.0 判卷映射红 [33m857[2mms[22m[39m
+2026-09-05T12:45:20.9537797Z    [33m[2m✓[22m[39m ② Case E：入账后替换持久化 blob → binding FAIL 绝不维持 PASS[2m > [22mwarning（capped passed：tool_version 漂移）腿同样附挂 refs——篡改审计链不断 [33m508[2mms[22m[39m
+2026-09-05T12:45:20.9539460Z    [33m[2m✓[22m[39m ③ 绑定 blob 文件缺失 → FAIL（artifact_file_missing）[2m > [22m删除 blob 后 verify FAIL（存在性主张悬空被检出） [33m595[2mms[22m[39m
+2026-09-05T12:45:20.9541316Z    [33m[2m✓[22m[39m ④ 字节兼容：canonical 重放[2m > [22m无 artifact_refs 的存量 GRN：重放字节不变（already_canonical 快路径不破） [33m583[2mms[22m[39m
+2026-09-05T12:45:20.9542365Z    [33m[2m✓[22m[39m ④ 字节兼容：canonical 重放[2m > [22m带 artifact_refs 的 GRN：重放字节不变（重入账不静默剥绑定字段） [33m946[2mms[22m[39m
+2026-09-05T12:45:20.9543332Z    [33m[2m✓[22m[39m ④ 字节兼容：canonical 重放[2m > [22mrecord 通路对带 refs 的 canonical 文件 → SKIPPED_CANONICAL 零写入（refs 不丢） [33m578[2mms[22m[39m
+2026-09-05T12:45:30.7436377Z  [32m✓[39m tests/integration/catalog-applicability-case-b.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 10413[2mms[22m[39m
+2026-09-05T12:45:30.7439119Z    [33m[2m✓[22m[39m Case B：Vue 按钮布局 Change 的 catalog applicability（PRD §16/§5.2-§5.4）[2m > [22mfrontend+CAPABILITY.PRESENTATION：Frontend Layout INCLUDE / API Compat 全族 EXCLUDE / DB Transaction EXCLUDE [33m1750[2mms[22m[39m
+2026-09-05T12:45:30.7440921Z    [33m[2m✓[22m[39m Case B：Vue 按钮布局 Change 的 catalog applicability（PRD §16/§5.2-§5.4）[2m > [22munless contract affected：声明 CAPABILITY.API_CONTRACT 后 API Compat 全族恢复 INCLUDE（Case B 分支语义） [33m1217[2mms[22m[39m
+2026-09-05T12:45:30.7442384Z    [33m[2m✓[22m[39m Case B：Vue 按钮布局 Change 的 catalog applicability（PRD §16/§5.2-§5.4）[2m > [22m每个决定可解释（PRD §5.4）：explain 决策面逐条 why，included/excluded 两面分母全量 [33m2221[2mms[22m[39m
+2026-09-05T12:45:30.7443730Z    [33m[2m✓[22m[39m Case B：Vue 按钮布局 Change 的 catalog applicability（PRD §16/§5.2-§5.4）[2m > [22mCLI 面实跑：context explain --role --capability 逐条 why + context compile 的 CATALOG 分区不含 API/Sec [33m1531[2mms[22m[39m
+2026-09-05T12:45:30.7445235Z    [33m[2m✓[22m[39m Case B：Vue 按钮布局 Change 的 catalog applicability（PRD §16/§5.2-§5.4）[2m > [22m全命令面冒烟：runCli context compile/explain 词汇形与旗标注册（真实 catalog，exit 0） [33m1837[2mms[22m[39m
+2026-09-05T12:45:30.7447952Z    [33m[2m✓[22m[39m O7 行为零变化棘轮（T3 后：fallback 条目子集逐字节一致）[2m > [22mfallback_lane=true 条目：带全量 applicability 输入与不带输入决策+reason 逐字节一致 [33m1513[2mms[22m[39m
+2026-09-05T12:45:30.7451153Z    [33m[2m✓[22m[39m O7 行为零变化棘轮（T3 后：fallback 条目子集逐字节一致）[2m > [22mrepo 实物未被本验收触碰（§92.2 测试构造面纪律：fixture 全部落在 mkdtemp 副本内） [33m342[2mms[22m[39m
+2026-09-05T12:45:31.3030557Z  [32m✓[39m tests/integration/sensor-capability-catalog.spec.ts [2m([22m[2m21 tests[22m[2m)[22m[33m 12833[2mms[22m[39m
+2026-09-05T12:45:31.3038288Z    [33m[2m✓[22m[39m ① repo 实物：catalog/sensors/ 六条 sensor_capability（P1-5 只收编真实存在）[2m > [22mloadCatalogSensors：恰好六条、id 词形合法、按 id 字典序（确定性） [33m408[2mms[22m[39m
+2026-09-05T12:45:31.3041313Z    [33m[2m✓[22m[39m ① repo 实物：catalog/sensors/ 六条 sensor_capability（P1-5 只收编真实存在）[2m > [22mSENSOR.BROWSER.INTERACTIVE 与 PRD §6.5 例文逐字对账（surfaces/operations/side_effect_class/evidence_types/implementations） [33m335[2mms[22m[39m
+2026-09-05T12:45:31.3044497Z    [33m[2m✓[22m[39m ① repo 实物：catalog/sensors/ 六条 sensor_capability（P1-5 只收编真实存在）[2m > [22mSENSOR.BROWSER.DETERMINISTIC 双眼词形（批次 2.6 Browser Eyes）：playwright 首选 + @playwright/mcp + chrome-devtools-mcp（既有词形保留） [33m365[2mms[22m[39m
+2026-09-05T12:45:31.3047402Z    [33m[2m✓[22m[39m ① repo 实物：catalog/sensors/ 六条 sensor_capability（P1-5 只收编真实存在）[2m > [22m六条目 surfaces 全 ⊆ PRD §6.4 Observation Surface 八面；side_effect_class 全在已登记值内 [33m743[2mms[22m[39m
+2026-09-05T12:45:31.3049400Z    [33m[2m✓[22m[39m ② availability_probe 声明式引用闭包（双向；防第二套探测机制=四克制）[2m > [22m正向：catalog 引用键 ⊆ 既有单一事实源面闭包（toolDetectors/gateAdapters/kernel） [33m376[2mms[22m[39m
+2026-09-05T12:45:31.3051196Z    [33m[2m✓[22m[39m ② availability_probe 声明式引用闭包（双向；防第二套探测机制=四克制）[2m > [22m反向：被引用 toolDetectors 键全集 = 研究定案六键（catalog 侧漏登/乱引与 toolDetectors 侧改名双向即抓） [33m428[2mms[22m[39m
+2026-09-05T12:45:31.3053331Z    [33m[2m✓[22m[39m ② availability_probe 声明式引用闭包（双向；防第二套探测机制=四克制）[2m > [22mfallback 引用闭包：fallback id ⊆ 已载入 sensor id 集 [33m520[2mms[22m[39m
+2026-09-05T12:45:31.3055300Z    [33m[2m✓[22m[39m ③ D7 联结：runDoctor 呈现 sensor_capability_catalog + 引用解析名 ⊆ 既有探针行[2m > [22mrunDoctor：sensor_capability_catalog 探针行 READY；sensors 六条且 doctor_probe_names 解析正确 [33m673[2mms[22m[39m
+2026-09-05T12:45:31.3057822Z    [33m[2m✓[22m[39m ③ D7 联结：runDoctor 呈现 sensor_capability_catalog + 引用解析名 ⊆ 既有探针行[2m > [22m声明式引用真的联结到探测矩阵：每个解析名都命中 runDoctor 既有探针行（禁第二套探测） [33m672[2mms[22m[39m
+2026-09-05T12:45:31.3059987Z    [33m[2m✓[22m[39m ③ D7 联结：runDoctor 呈现 sensor_capability_catalog + 引用解析名 ⊆ 既有探针行[2m > [22msensors 目录缺失 → sensor_capability_catalog 显式 MISSING_CONFIGURATION（禁静默当空） [33m1474[2mms[22m[39m
+2026-09-05T12:45:31.3062477Z    [33m[2m✓[22m[39m ④ catalog-lock 三处同步与漂移矩阵（加文件硬纪律）[2m > [22m六条目在 allowed+required+entries 三处同步登记（content_sha256 与落盘一致） [33m992[2mms[22m[39m
+2026-09-05T12:45:31.3065024Z    [33m[2m✓[22m[39m ④ catalog-lock 三处同步与漂移矩阵（加文件硬纪律）[2m > [22mnegative：sensors/ 新增未登记 .json → unexpected_file；重锁后回绿（sensors/ 已入管辖面） [33m725[2mms[22m[39m
+2026-09-05T12:45:31.3067999Z    [33m[2m✓[22m[39m ④ catalog-lock 三处同步与漂移矩阵（加文件硬纪律）[2m > [22mnegative：sensors 物料被改而 lock 未重锁 → content_drift；字节恢复后回绿 [33m444[2mms[22m[39m
+2026-09-05T12:45:31.3069810Z    [33m[2m✓[22m[39m ④ catalog-lock 三处同步与漂移矩阵（加文件硬纪律）[2m > [22mnegative：sensors 在册文件被删 → missing + missing_required 同源双报 [33m813[2mms[22m[39m
+2026-09-05T12:45:31.3071538Z    [33m[2m✓[22m[39m ⑤ loader fail-closed：坏物料 SCHEMA_INVALID 显式爆（fixture 全 mkdtemp）[2m > [22mid 词形非法（非 SENSOR.<DOMAIN>.<KIND>）→ SCHEMA_INVALID [33m586[2mms[22m[39m
+2026-09-05T12:45:31.3073345Z    [33m[2m✓[22m[39m ⑤ loader fail-closed：坏物料 SCHEMA_INVALID 显式爆（fixture 全 mkdtemp）[2m > [22msurfaces 词表外 → SCHEMA_INVALID（Observation Surface 八面闭包） [33m826[2mms[22m[39m
+2026-09-05T12:45:31.3074964Z    [33m[2m✓[22m[39m ⑤ loader fail-closed：坏物料 SCHEMA_INVALID 显式爆（fixture 全 mkdtemp）[2m > [22mside_effect_class 词表外 → SCHEMA_INVALID [33m402[2mms[22m[39m
+2026-09-05T12:45:31.3076739Z    [33m[2m✓[22m[39m ⑤ loader fail-closed：坏物料 SCHEMA_INVALID 显式爆（fixture 全 mkdtemp）[2m > [22mavailability_probe.surface 词表外 → SCHEMA_INVALID（只许声明式引用既有面） [33m471[2mms[22m[39m
+2026-09-05T12:45:31.3079181Z    [33m[2m✓[22m[39m ⑤ loader fail-closed：坏物料 SCHEMA_INVALID 显式爆（fixture 全 mkdtemp）[2m > [22mkernel 面键闭包外 → SCHEMA_INVALID（kernel 引用键 ⊆ SENSOR_KERNEL_SURFACE_KEYS） [33m492[2mms[22m[39m
+2026-09-05T12:45:31.3080945Z    [33m[2m✓[22m[39m ⑤ loader fail-closed：坏物料 SCHEMA_INVALID 显式爆（fixture 全 mkdtemp）[2m > [22mid 重复（身份面禁重复）→ SCHEMA_INVALID；合法 fixture 载入按 id 字典序 [33m477[2mms[22m[39m
+2026-09-05T12:45:31.3082488Z    [33m[2m✓[22m[39m ⑤ loader fail-closed：坏物料 SCHEMA_INVALID 显式爆（fixture 全 mkdtemp）[2m > [22m空目录 = 显式空清单（不抛）；缺必填字段 → SCHEMA_INVALID [33m609[2mms[22m[39m
+2026-09-05T12:45:32.0904928Z  [32m✓[39m tests/integration/adversarial-blindspot-denominator.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 370[2mms[22m[39m
+2026-09-05T12:45:32.8802930Z  [32m✓[39m packages/gauntlet-lite/test/browser-environment-gate.spec.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+2026-09-05T12:45:33.0636354Z  [32m✓[39m tests/integration/adversarial-permit-write-integrity.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 738[2mms[22m[39m
+2026-09-05T12:45:33.9249030Z  [32m✓[39m packages/cli/tests/migrate.spec.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 115[2mms[22m[39m
+2026-09-05T12:45:34.6384363Z  [32m✓[39m packages/cli/tests/record-execution-threading.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 619[2mms[22m[39m
+2026-09-05T12:45:35.3915727Z  [32m✓[39m tests/mutation-harness-core.spec.ts [2m([22m[2m30 tests[22m[2m)[22m[90m 22[2mms[22m[39m
+2026-09-05T12:45:35.5118333Z  [32m✓[39m packages/kernel/tests/gatekeeper.spec.ts [2m([22m[2m17 tests[22m[2m)[22m[33m 892[2mms[22m[39m
+2026-09-05T12:45:36.4509443Z  [32m✓[39m packages/cli/tests/next-action.spec.ts [2m([22m[2m21 tests[22m[2m)[22m[90m 97[2mms[22m[39m
+2026-09-05T12:45:39.9758698Z  [32m✓[39m tests/integration/smoke.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 16719[2mms[22m[39m
+2026-09-05T12:45:39.9760167Z    [33m[2m✓[22m[39m smoke e2e：init → triage×2 → status --json → doctor --json[2m > [22minit：JSON 命令信封 ok 语义（BOOTSTRAP） [33m2385[2mms[22m[39m
+2026-09-05T12:45:39.9761525Z    [33m[2m✓[22m[39m smoke e2e：init → triage×2 → status --json → doctor --json[2m > [22minit 幂等：同一目录重复 init → change=NO_CHANGE 且零写入（A4/No-op is elegant） [33m1701[2mms[22m[39m
+2026-09-05T12:45:39.9763016Z    [33m[2m✓[22m[39m smoke e2e：init → triage×2 → status --json → doctor --json[2m > [22mtriage 请求 A（文案微调）：判档 MINIMAL 且缺席信号显式（八拍①） [33m2216[2mms[22m[39m
+2026-09-05T12:45:39.9764277Z    [33m[2m✓[22m[39m smoke e2e：init → triage×2 → status --json → doctor --json[2m > [22mtriage 幂等：同一请求重放字节全等（GOLDEN-L8-1 判据） [33m2049[2mms[22m[39m
+2026-09-05T12:45:39.9765510Z    [33m[2m✓[22m[39m smoke e2e：init → triage×2 → status --json → doctor --json[2m > [22mtriage 请求 B（契约/跨域）：升档可区分且自身确定性 [33m2543[2mms[22m[39m
+2026-09-05T12:45:39.9766647Z    [33m[2m✓[22m[39m smoke e2e：init → triage×2 → status --json → doctor --json[2m > [22mstatus --json：状态读面词形纪律（lifecycle/分母 status 必须走 FROZEN 词表） [33m1806[2mms[22m[39m
+2026-09-05T12:45:39.9768320Z    [33m[2m✓[22m[39m smoke e2e：init → triage×2 → status --json → doctor --json[2m > [22mdoctor --json：探测四态矩阵（READY/NOT_INSTALLED/MISSING_CONFIGURATION/DEFECT） [33m1900[2mms[22m[39m
+2026-09-05T12:45:39.9769599Z    [33m[2m✓[22m[39m smoke e2e：init → triage×2 → status --json → doctor --json[2m > [22mdoctor --json：fail-closed 一致性（ok = 全 READY）且非 READY 必带 hint [33m2112[2mms[22m[39m
+2026-09-05T12:45:39.9770454Z [90mstdout[2m | tests/integration/smoke.spec.ts
+2026-09-05T12:45:39.9770976Z [22m[39m[smoke] CLI 就绪：端到端断言全量执行
+2026-09-05T12:45:39.9771233Z 
+2026-09-05T12:45:40.7040327Z  [32m✓[39m tests/integration/v06-batch4-materials.spec.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 17[2mms[22m[39m
+2026-09-05T12:45:41.3510802Z  [32m✓[39m tests/integration/v06-batch2-materials.spec.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 21[2mms[22m[39m
+2026-09-05T12:45:41.9970333Z  [32m✓[39m packages/kernel/tests/runtime-adapter.spec.ts [2m([22m[2m23 tests[22m[2m)[22m[90m 18[2mms[22m[39m
+2026-09-05T12:45:43.5414767Z  [32m✓[39m packages/cli/tests/portability.spec.ts [2m([22m[2m13 tests[22m[2m)[22m[33m 6194[2mms[22m[39m
+2026-09-05T12:45:43.5418535Z    [33m[2m✓[22m[39m pomaster portability bootstrap（§85.4 bootstrap 步命令面）[2m > [22minit 后 → exit 0：canonical §85.3 manifest 落盘；重跑幂等 NO_CHANGE（manifest_written=false） [33m1307[2mms[22m[39m
+2026-09-05T12:45:43.5424851Z    [33m[2m✓[22m[39m pomaster portability bootstrap（§85.4 bootstrap 步命令面）[2m > [22mmanifest 被改非 canonical → exit 1 PORTABILITY_MANIFEST_DRIFT 且字节零覆盖（禁静默改写声明） [33m599[2mms[22m[39m
+2026-09-05T12:45:43.5433840Z    [33m[2m✓[22m[39m pomaster portability bootstrap（§85.4 bootstrap 步命令面）[2m > [22m直调 runPortabilityBootstrap：人读摘要含 §85.4/A4 注记与三命令序列路标 [33m1029[2mms[22m[39m
+2026-09-05T12:45:43.5436949Z    [33m[2m✓[22m[39m doctor portability_runtime_rebuild 探针（四态映射）[2m > [22minit 后实跑 runDoctor → probe READY（state+runtime 在座） [33m895[2mms[22m[39m
+2026-09-05T12:45:43.5441265Z    [33m[2m✓[22m[39m doctor portability_runtime_rebuild 探针（四态映射）[2m > [22mmanifest 非 canonical 实跑 runDoctor → probe DEFECT + detail 含 DRIFTED（声明与实况矛盾） [33m808[2mms[22m[39m
+2026-09-05T12:45:43.5445960Z    [33m[2m✓[22m[39m doctor portability_runtime_rebuild 探针（四态映射）[2m > [22mruntime 删而 state 在 → probe 仍 READY（可重建语义，§85.4） [33m1320[2mms[22m[39m
+2026-09-05T12:45:43.5815818Z  [32m✓[39m packages/cli/tests/closeout-evidence-spec.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 767[2mms[22m[39m
+2026-09-05T12:45:44.7996072Z [90mstderr[2m | packages/gauntlet-lite/test/pytest-adapter.spec.ts[2m > [22m[2mpytest 腿真实 e2e（临时 fixture 工程）[2m > [22m[2m宿主有 pytest：1 过 1 挂两用例全链路 → failed violations=1，产物过 03 schema
+2026-09-05T12:45:44.7999817Z [22m[39m[盲区说明] 宿主无 python -m pytest —— pytest 腿真实 e2e 跳过（诚实缺席，非通过）
+2026-09-05T12:45:44.8001203Z 
+2026-09-05T12:45:44.8017174Z  [32m✓[39m packages/gauntlet-lite/test/pytest-adapter.spec.ts [2m([22m[2m14 tests[22m[2m | [22m[33m1 skipped[39m[2m)[22m[90m 234[2mms[22m[39m
+2026-09-05T12:45:44.8283336Z  [32m✓[39m tests/behavioral/eval-carrier.spec.ts [2m([22m[2m19 tests[22m[2m)[22m[90m 46[2mms[22m[39m
+2026-09-05T12:45:45.6355157Z  [32m✓[39m packages/cli/tests/evidence-seeds.spec.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 90[2mms[22m[39m
+2026-09-05T12:45:45.8215243Z  [32m✓[39m packages/cli/tests/triage-matrix.spec.ts [2m([22m[2m42 tests[22m[2m)[22m[90m 67[2mms[22m[39m
+2026-09-05T12:45:46.6074289Z  [32m✓[39m packages/gauntlet-lite/test/build-adapter.spec.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 250[2mms[22m[39m
+2026-09-05T12:45:47.0194746Z  [32m✓[39m packages/kernel/tests/evidence-recompute.spec.ts [2m([22m[2m13 tests[22m[2m)[22m[33m 559[2mms[22m[39m
+2026-09-05T12:45:47.8419252Z  [32m✓[39m tests/integration/memory-harvest-caseN.spec.ts [2m([22m[2m1 test[22m[2m)[22m[90m 267[2mms[22m[39m
+2026-09-05T12:45:48.2599647Z  [32m✓[39m packages/cli/tests/decision-presentation.spec.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 253[2mms[22m[39m
+2026-09-05T12:45:48.8603141Z  [32m✓[39m packages/cli/tests/knowledge-commands.spec.ts [2m([22m[2m17 tests[22m[2m)[22m[33m 12397[2mms[22m[39m
+2026-09-05T12:45:48.8605048Z    [33m[2m✓[22m[39m knowledge search（§44.10 / §83.8）[2m > [22m命中呈现：matched_tokens + authority=ADVISORY 逐条标明；库内总数在场 [33m883[2mms[22m[39m
+2026-09-05T12:45:48.8606835Z    [33m[2m✓[22m[39m knowledge search（§44.10 / §83.8）[2m > [22m未命中显式空（检索而非全量：库内有知识但不全量倾倒） [33m760[2mms[22m[39m
+2026-09-05T12:45:48.8608609Z    [33m[2m✓[22m[39m knowledge search（§44.10 / §83.8）[2m > [22m侧车损坏 fail-closed（SCHEMA_INVALID 禁静默当空库） [33m1025[2mms[22m[39m
+2026-09-05T12:45:48.8610127Z    [33m[2m✓[22m[39m knowledge inspect（§44.10）[2m > [22m单条目全字段呈现（含谱系字段与 authority=ADVISORY 恒值标注） [33m913[2mms[22m[39m
+2026-09-05T12:45:48.8611406Z    [33m[2m✓[22m[39m knowledge inspect（§44.10）[2m > [22m不在册 OBJECT_NOT_FOUND（显式拒绝不静默） [33m642[2mms[22m[39m
+2026-09-05T12:45:48.8612804Z    [33m[2m✓[22m[39m knowledge record（候选登记通道；§25.3 + §83 上游 P18）[2m > [22m直登形态：status 恒 CANDIDATE 起步 + authority 恒 ADVISORY + 侧车落盘 [33m1073[2mms[22m[39m
+2026-09-05T12:45:48.8614102Z    [33m[2m✓[22m[39m knowledge record（候选登记通道；§25.3 + §83 上游 P18）[2m > [22m--from-research 通道：finding 机械搬运登记 + review-candidates 即可见（候选通道走通） [33m486[2mms[22m[39m
+2026-09-05T12:45:48.8615756Z    [33m[2m✓[22m[39m knowledge record（候选登记通道；§25.3 + §83 上游 P18）[2m > [22m--from-research artifact 不存在 / --finding 越界 / 缺 --finding 各自显式拒绝 [33m1393[2mms[22m[39m
+2026-09-05T12:45:48.8617743Z    [33m[2m✓[22m[39m knowledge record（候选登记通道；§25.3 + §83 上游 P18）[2m > [22m对抗（审查 H6a）：findings 键存在但非数组 → INDEX_NOT_MACHINE_PARSEABLE（与 inspect B3 闸同码，禁静默折叠空数组） [33m1027[2mms[22m[39m
+2026-09-05T12:45:48.8618905Z    [33m[2m✓[22m[39m knowledge review-candidates（§83.10 等待面）[2m > [22m空库显式空；VALIDATED 后离开候选分母 [33m735[2mms[22m[39m
+2026-09-05T12:45:48.8620033Z    [33m[2m✓[22m[39m knowledge promote（§44.10 / §83.10 权威位闸 CLI 面）[2m > [22mGATEKEEPER 位全链提升：VALIDATED→PROMOTED + promoted_ref 留痕；knowledge 本体仍 ADVISORY [33m901[2mms[22m[39m
+2026-09-05T12:45:48.8621212Z    [33m[2m✓[22m[39m knowledge promote（§44.10 / §83.10 权威位闸 CLI 面）[2m > [22m非权威位 KNOWLEDGE_CURATOR → AUTHORITY_REQUIRED（§25.5 ⑦ 机器化；零落盘） [33m595[2mms[22m[39m
+2026-09-05T12:45:48.8622385Z    [33m[2m✓[22m[39m knowledge promote（§44.10 / §83.10 权威位闸 CLI 面）[2m > [22mCANDIDATE 直接 promote → TRANSITION_ILLEGAL（提升必经 Validation——§83.10 链） [33m482[2mms[22m[39m
+2026-09-05T12:45:48.8623620Z    [33m[2m✓[22m[39m knowledge promote（§44.10 / §83.10 权威位闸 CLI 面）[2m > [22m必填参数缺席各自 SCHEMA_INVALID（--promotion-authority / --authority-ref / --promoted-ref） [33m472[2mms[22m[39m
+2026-09-05T12:45:48.8624718Z    [33m[2m✓[22m[39m knowledge demote（§44.10 / §83.11 去僵化 CLI 面）[2m > [22mVALIDATED→DEPRECATED：reason 必填留痕；去僵化呈现 [33m515[2mms[22m[39m
+2026-09-05T12:45:48.8625900Z    [33m[2m✓[22m[39m knowledge demote（§44.10 / §83.11 去僵化 CLI 面）[2m > [22m--reason 缺席 → SCHEMA_INVALID（淘汰不留原因 = 静默降级，禁） [33m491[2mms[22m[39m
+2026-09-05T12:45:49.2514182Z  [32m✓[39m tests/integration/eval-trigger.spec.ts [2m([22m[2m19 tests[22m[2m)[22m[33m 979[2mms[22m[39m
+2026-09-05T12:45:49.2516668Z    [33m[2m✓[22m[39m eval-trigger.mjs 消费脚本[2m > [22mgit diff 检测端到端：临时仓库 tracked 修改触发 Router；未跟踪新文件不触发（检测语义 = git diff） [33m468[2mms[22m[39m
+2026-09-05T12:45:50.2068010Z  [32m✓[39m packages/kernel/tests/supervisor-trigger.spec.ts [2m([22m[2m15 tests[22m[2m)[22m[33m 636[2mms[22m[39m
+2026-09-05T12:45:50.2771984Z  [32m✓[39m packages/kernel/tests/session.spec.ts [2m([22m[2m14 tests[22m[2m)[22m[33m 337[2mms[22m[39m
+2026-09-05T12:45:51.5944654Z  [32m✓[39m packages/cli/tests/eval.spec.ts [2m([22m[2m16 tests[22m[2m)[22m[33m 457[2mms[22m[39m
+2026-09-05T12:45:51.5947254Z    [33m[2m✓[22m[39m runEval · fail-closed 面[2m > [22mretired 结构违规三型 → SEEDS_INVALID：reason_md 空 / 与 pendingReason 并存 / 与 expect_flip_when 并存（互斥 fail-closed） [33m386[2mms[22m[39m
+2026-09-05T12:45:51.8048845Z  [32m✓[39m packages/cli/tests/alerts.spec.ts [2m([22m[2m16 tests[22m[2m)[22m[33m 2607[2mms[22m[39m
+2026-09-05T12:45:51.8053041Z    [33m[2m✓[22m[39m alerts hook 输出契约（恒 exit 0 / 空=静默 / 非化 JSON 词形）[2m > [22mfresh init（空账本）→ ok=true、alerts 空、human 零行（零字节 stdout） [33m797[2mms[22m[39m
+2026-09-05T12:45:51.8055549Z    [33m[2m✓[22m[39m alerts hook 输出契约（恒 exit 0 / 空=静默 / 非化 JSON 词形）[2m > [22mrunCli alerts → exit 0 且 stdout 为空（干净=零 token 噪声；hook 静默合法） [33m494[2mms[22m[39m
+2026-09-05T12:45:51.8057583Z    [33m[2m✓[22m[39m alerts 纯读零写入字节锚（§1.6：hook 源是投影，绝不写 store）[2m > [22m初始化项目：alerts 执行前后 .pomaster 全树字节不变；未初始化目录：零创建 [33m1225[2mms[22m[39m
+2026-09-05T12:45:52.3821547Z  [32m✓[39m packages/cli/tests/baseline-seeds.spec.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 40[2mms[22m[39m
+2026-09-05T12:45:54.3362732Z  [32m✓[39m packages/kernel/tests/resolver-composable.spec.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 1141[2mms[22m[39m
+2026-09-05T12:45:54.3366209Z    [33m[2m✓[22m[39m REFERENCE_MATCH（refOnly 派生；x-research-anchors 词形来源）[2m > [22mREFERENCE 优先级低于 CONFIGURABLE：core 命中 + refOnly 并存 → CONFIGURABLE（ref token 降位披露） [33m359[2mms[22m[39m
+2026-09-05T12:46:02.4333501Z  [32m✓[39m packages/cli/tests/exec-guard.spec.ts [2m([22m[2m13 tests[22m[2m)[22m[33m 7382[2mms[22m[39m
+2026-09-05T12:46:02.4335496Z    [33m[2m✓[22m[39m exec-guard 判卷四态[2m > [22mallowed → ok=true；context 原样回显；checked_at_seq 锚定 store seq [33m2443[2mms[22m[39m
+2026-09-05T12:46:02.4337495Z    [33m[2m✓[22m[39m exec-guard 判卷四态[2m > [22m范围外 → denied outside_scope → PERMIT_SCOPE_DENIED + ok=false（非 allow 一律 fail-closed） [33m2163[2mms[22m[39m
+2026-09-05T12:46:02.4339487Z    [33m[2m✓[22m[39m exec-guard 判卷四态[2m > [22mdelete → denied policy_forbidden → PERMIT_POLICY_FORBIDDEN（v0 无删除通道） [33m2351[2mms[22m[39m
+2026-09-05T12:46:04.6922681Z  [32m✓[39m packages/kernel/tests/knowledge-projection.spec.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 1661[2mms[22m[39m
+2026-09-05T12:46:04.6925711Z    [33m[2m✓[22m[39m consumeKnowledge（compileProjection 第五分区）[2m > [22m带命中场景下 VALIDATED→PROMOTED 前后 manifest/inputsFingerprint 字节一致（reason 不含 status——knowledge 平面零影响投影） [33m474[2mms[22m[39m
+2026-09-05T12:46:06.2075956Z  [32m✓[39m packages/cli/tests/agents-commands.spec.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 605[2mms[22m[39m
+2026-09-05T12:46:07.4778314Z  [31m❯[39m packages/cli/tests/context-manifest.spec.ts [2m([22m[2m9 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 16234[2mms[22m[39m
+2026-09-05T12:46:07.4781562Z    [33m[2m✓[22m[39m context manifest 落盘（R2/D7）[2m > [22mcompile --change TASK.* → 落盘 <task-id>.context.json（字段集齐备；A4 零墙钟零时戳） [33m1229[2mms[22m[39m
+2026-09-05T12:46:07.4783353Z    [33m[2m✓[22m[39m context manifest 落盘（R2/D7）[2m > [22m无 taskRef → role 键名 <role>.context.json（§58 context_recompile_per_role 词形；ADR 留痕） [33m852[2mms[22m[39m
+2026-09-05T12:46:07.4785408Z    [33m[2m✓[22m[39m context manifest 落盘（R2/D7）[2m > [22m同输入重编译 → 字节稳定（重编译覆盖同 id 文件逐字节相等；A4） [33m4088[2mms[22m[39m
+2026-09-05T12:46:07.4787656Z [31m   [31m×[31m context manifest 落盘（R2/D7）[2m > [22m指纹漂移 → STALE_GROUNDING 显式 warning + 覆盖写（不静默覆盖）[33m 5307[2mms[22m[31m[39m
+2026-09-05T12:46:07.4788769Z [31m     → Test timed out in 5000ms.
+2026-09-05T12:46:07.4790144Z If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".[39m
+2026-09-05T12:46:07.4791890Z    [33m[2m✓[22m[39m context manifest 落盘（R2/D7）[2m > [22m现盘 manifest 不可解析（手改/损坏）→ 同按 STALE_GROUNDING 处置（禁手改纪律） [33m879[2mms[22m[39m
+2026-09-05T12:46:07.4794155Z    [33m[2m✓[22m[39m context manifest 落盘（R2/D7）[2m > [22m--check：纯读零写入（absent 不建文件 / fresh / stale 三态呈现，ok 恒 true——ADR 呈现不阻断） [33m1180[2mms[22m[39m
+2026-09-05T12:46:07.4796252Z    [33m[2m✓[22m[39m VERIFICATION 分区（R3/D8 词形 + R1 联动）[2m > [22m绑定 CURRENT Spec（direct）→ verification 分区与 markdown 呈现 Spec 引用；机器判卷输入零变更 [33m913[2mms[22m[39m
+2026-09-05T12:46:07.4797985Z    [33m[2m✓[22m[39m VERIFICATION 分区（R3/D8 词形 + R1 联动）[2m > [22m非 CURRENT Spec 绑定 → 显式空区（缺席诚实，不冒充无验证义务） [33m660[2mms[22m[39m
+2026-09-05T12:46:07.4799518Z    [33m[2m✓[22m[39m VERIFICATION 分区（R3/D8 词形 + R1 联动）[2m > [22m无任何 Spec → VERIFICATION 显式空区（五分区词形在场——D8 闭包） [33m1125[2mms[22m[39m
+2026-09-05T12:46:08.0553324Z [90mstderr[2m | packages/kernel/tests/equivalence-schema.spec.ts
+2026-09-05T12:46:08.0555359Z [22m[39mstrict mode: missing type "array" for keyword "minItems" at "https://pomaster.dev/schemas/equivalence-registry/v1-draft.json#/allOf/0/then/properties/word_forms" (strictTypes)
+2026-09-05T12:46:08.0557552Z strict mode: missing type "object" for keyword "properties" at "https://pomaster.dev/schemas/equivalence-registry/v1-draft.json#/allOf/0/then/properties/provenance" (strictTypes)
+2026-09-05T12:46:08.0559438Z strict mode: missing type "array" for keyword "contains" at "https://pomaster.dev/schemas/equivalence-registry/v1-draft.json#/allOf/1/then/properties/word_forms" (strictTypes)
+2026-09-05T12:46:08.0561165Z 
+2026-09-05T12:46:08.0738152Z  [32m✓[39m packages/kernel/tests/equivalence-schema.spec.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 16[2mms[22m[39m
+2026-09-05T12:46:09.6235391Z  [31m❯[39m packages/cli/tests/session-overview.spec.ts [2m([22m[2m13 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 17030[2mms[22m[39m
+2026-09-05T12:46:09.6237563Z    [33m[2m✓[22m[39m session 速览投影（SessionStart 注入源）[2m > [22mfresh init → ok=true；输出含计数/seq/alerts/Browser Eyes/命令卡指针；纯文本非 { 开头且 ≤10k [33m964[2mms[22m[39m
+2026-09-05T12:46:09.6239403Z [31m   [31m×[31m session 速览投影（SessionStart 注入源）[2m > [22m计数投影：objects/denominators/producers 与 seq 从账本照实呈现[33m 8066[2mms[22m[31m[39m
+2026-09-05T12:46:09.6240582Z [31m     → Test timed out in 5000ms.
+2026-09-05T12:46:09.6242141Z If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".[39m
+2026-09-05T12:46:09.6244389Z    [33m[2m✓[22m[39m session 速览投影（SessionStart 注入源）[2m > [22malerts 计数贯通：存在可行动项时速览呈现项数与明细指针（派生同源，零第二事实源） [33m1417[2mms[22m[39m
+2026-09-05T12:46:09.6246117Z    [33m[2m✓[22m[39m session 速览投影（SessionStart 注入源）[2m > [22mrunCli 裸形态 → exit 0 纯文本；--json 信封 ok=true；session list 子命令分发不受影响 [33m1328[2mms[22m[39m
+2026-09-05T12:46:09.6247959Z    [33m[2m✓[22m[39m session 分段注入（P1：分段标题 + 预算纪律 + 空段省略）[2m > [22mfresh init → 恒在段齐备（分母/Next-Action/可行动项/完整性/八拍路标），空段省略（任务/许可/attention 无标题） [33m632[2mms[22m[39m
+2026-09-05T12:46:09.6251078Z    [33m[2m✓[22m[39m session 分段注入（P1：分段标题 + 预算纪律 + 空段省略）[2m > [22mNext-Action 段（P2 同源）：fresh init → 八拍① triage 路标；next_action 结构化字段同源 [33m757[2mms[22m[39m
+2026-09-05T12:46:09.6252429Z    [33m[2m✓[22m[39m session 分段注入（P1：分段标题 + 预算纪律 + 空段省略）[2m > [22m活跃任务 → Next-Action 变换为八拍② permit issue 路标（路由同表共享） [33m619[2mms[22m[39m
+2026-09-05T12:46:09.6253480Z    [33m[2m✓[22m[39m session 分段注入（P1：分段标题 + 预算纪律 + 空段省略）[2m > [22m八拍路标段：①-⑧ 全拍 enforcement 行恒在（P5 不变量的呈现载体） [33m1105[2mms[22m[39m
+2026-09-05T12:46:09.6254422Z    [33m[2m✓[22m[39m session 分段注入（P1：分段标题 + 预算纪律 + 空段省略）[2m > [22m例外台账 CONFLICT 在座 → 许可/例外段与 attention 段出现（有项才出段） [33m590[2mms[22m[39m
+2026-09-05T12:46:09.6255744Z    [33m[2m✓[22m[39m session 分段注入（P1：分段标题 + 预算纪律 + 空段省略）[2m > [22m预算钉：大量活跃许可 → 许可/例外段单段截断（指针行降级可见）+ 总输出 ≤ 硬上限 [33m688[2mms[22m[39m
+2026-09-05T12:46:09.6256810Z    [33m[2m✓[22m[39m session 速览纯读零写入字节锚（§1.6：SessionStart 源是投影，绝不写 store）[2m > [22m初始化项目：速览执行前后 .pomaster 全树字节不变；未初始化目录：零创建 [33m854[2mms[22m[39m
+2026-09-05T12:46:09.9141090Z  [32m✓[39m tests/integration/v06-tracer-supplier.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 969[2mms[22m[39m
+2026-09-05T12:46:11.0631484Z  [32m✓[39m packages/kernel/tests/relations.spec.ts [2m([22m[2m19 tests[22m[2m)[22m[33m 759[2mms[22m[39m
+2026-09-05T12:46:11.3083617Z  [32m✓[39m packages/kernel/tests/doctor.spec.ts [2m([22m[2m18 tests[22m[2m)[22m[33m 725[2mms[22m[39m
+2026-09-05T12:46:11.9348484Z  [32m✓[39m packages/cli/tests/catalog-relock.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 4458[2mms[22m[39m
+2026-09-05T12:46:11.9351010Z    [33m[2m✓[22m[39m catalog relock（漂移恢复键：漂移→relock→回绿）[2m > [22m手改 archetype 不重锁 → status exit 1（CATALOG_LOCK_DRIFT）→ relock → status 回绿 exit 0（added=0/refreshed=1） [33m653[2mms[22m[39m
+2026-09-05T12:46:11.9354334Z    [33m[2m✓[22m[39m catalog relock（漂移恢复键：漂移→relock→回绿）[2m > [22m幂等 byte-stable：一致 catalog 首锁零 diff（仅 generated_by 注记追加）；再锁全空且 lock 文件字节全等 [33m644[2mms[22m[39m
+2026-09-05T12:46:11.9356863Z    [33m[2m✓[22m[39m catalog relock（漂移恢复键：漂移→relock→回绿）[2m > [22mcontrolled_children 内扩展键保留（vNext Batch 4 R3 教训修复：note 是管辖面语义注记，重建 allowed/required 不得丢弃扩展键） [33m645[2mms[22m[39m
+2026-09-05T12:46:11.9358755Z    [33m[2m✓[22m[39m catalog relock（漂移恢复键：漂移→relock→回绿）[2m > [22m收敛：新增物料 → added 含该路径且 entries/allowed/required 三方 270→271 对账绿；删除 → removed 且对账绿 [33m851[2mms[22m[39m
+2026-09-05T12:46:11.9362063Z    [33m[2m✓[22m[39m catalog relock（漂移恢复键：漂移→relock→回绿）[2m > [22mstore 零依赖：无 .pomaster 的项目根同样可跑（catalog 是工具侧资产 §92.2；runCli exit 0 + §45 信封） [33m609[2mms[22m[39m
+2026-09-05T12:46:11.9363300Z    [33m[2m✓[22m[39m catalog relock（漂移恢复键：漂移→relock→回绿）[2m > [22mlock 缺失 → CATALOG_NOT_AVAILABLE fail-closed（relock 不是初始化工具，禁从零造账） [33m503[2mms[22m[39m
+2026-09-05T12:46:11.9364470Z    [33m[2m✓[22m[39m catalog relock（漂移恢复键：漂移→relock→回绿）[2m > [22m写后复验非 ok → CATALOG_LOCK_DRIFT 拒绝（重锁产物对账不过绝不假绿；并发窗口注入） [33m550[2mms[22m[39m
+2026-09-05T12:46:13.0366220Z  [32m✓[39m packages/kernel/tests/ir-invariants-store.spec.ts [2m([22m[2m26 tests[22m[2m)[22m[33m 1301[2mms[22m[39m
+2026-09-05T12:46:13.0384332Z    [33m[2m✓[22m[39m resolveAlias 三新族机械映射的失败与分流分支[2m > [22mISSUE.1（纯 SEQ 点段、无段体）→ canonical=null（yields no segments 分支） [33m491[2mms[22m[39m
+2026-09-05T12:46:13.2069786Z  [32m✓[39m packages/kernel/tests/sources.spec.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 1229[2mms[22m[39m
+2026-09-05T12:46:13.2136837Z    [33m[2m✓[22m[39m 投影消费（sources/index.yaml → AUTHORITATIVE 区注记）[2m > [22m引用悬空（source_refs 指向不在册 id）→ MUST 区显式「不在册」注记（缺席显式非静默丢弃） [33m499[2mms[22m[39m
+2026-09-05T12:46:13.3404584Z  [32m✓[39m packages/cli/tests/inspect.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 611[2mms[22m[39m
+2026-09-05T12:46:13.3415922Z    [33m[2m✓[22m[39m inspect happy path（正文+证据+谱系）[2m > [22m单对象三维齐备：index_row/body 原样、claim/run 按 subject 入列、lineage 投影 [33m402[2mms[22m[39m
+2026-09-05T12:46:13.7790890Z  [32m✓[39m packages/kernel/tests/id.spec.ts [2m([22m[2m42 tests[22m[2m)[22m[90m 23[2mms[22m[39m
+2026-09-05T12:46:13.9197931Z  [32m✓[39m packages/kernel/tests/handoff.spec.ts [2m([22m[2m18 tests[22m[2m)[22m[90m 21[2mms[22m[39m
+2026-09-05T12:46:14.6311688Z  [32m✓[39m packages/kernel/tests/permits.spec.ts [2m([22m[2m20 tests[22m[2m)[22m[33m 575[2mms[22m[39m
+2026-09-05T12:46:16.9748565Z  [32m✓[39m packages/cli/tests/dispatch-pack.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 1506[2mms[22m[39m
+2026-09-05T12:46:16.9750518Z    [33m[2m✓[22m[39m agents dispatch-pack（P4：子代理派发包）[2m > [22minit 重入口产物在座不干扰（existsSync 探测位；fresh init 后 dispatch-pack 走 OBJECT_NOT_FOUND） [33m1443[2mms[22m[39m
+2026-09-05T12:46:17.2045766Z  [32m✓[39m tests/integration/contract-arch-legs-e2e.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 2473[2mms[22m[39m
+2026-09-05T12:46:17.2048628Z    [33m[2m✓[22m[39m ① 三态 truth-index 记录互异（failed / passed / not_run 落盘）[2m > [22m三条 GRN 经 kernel 复算入账：verdict 互异、snake 落盘逐字段互异、三件套区分腿口径 [33m1427[2mms[22m[39m
+2026-09-05T12:46:17.2050121Z    [33m[2m✓[22m[39m ② 宿主 oasdiff 缺席的真跑验证（真实 adapter 零 fake）[2m > [22mbreakingDiff 声明 + 宿主无 oasdiff → GRN-0001 verdict=not_run（非绿非红）+ scope.note 安装路标 [33m961[2mms[22m[39m
+2026-09-05T12:46:17.5928791Z  [32m✓[39m packages/kernel/tests/knowledge-schema.spec.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+2026-09-05T12:46:17.9773774Z  [32m✓[39m tests/integration/external-sites-index.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 21[2mms[22m[39m
+2026-09-05T12:46:18.2383627Z  [32m✓[39m tests/integration/migrate-tracer-bullet-golden.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 93[2mms[22m[39m
+2026-09-05T12:46:18.7530422Z  [32m✓[39m packages/gauntlet-lite/test/detectors.spec.ts [2m([22m[2m19 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+2026-09-05T12:46:18.9080442Z  [32m✓[39m tests/integration/evidence-ingest-crack-closure.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 4054[2mms[22m[39m
+2026-09-05T12:46:18.9082676Z    [33m[2m✓[22m[39m GRN-0001.ran_at_seq=3 领先 status generation_seq —— 裂缝闭合[2m > [22mbefore：证据在、账本空（裂缝形态复现；status 连续读 byte-stable） [33m1423[2mms[22m[39m
+2026-09-05T12:46:18.9084567Z    [33m[2m✓[22m[39m GRN-0001.ran_at_seq=3 领先 status generation_seq —— 裂缝闭合[2m > [22mafter：compact → generation_seq 推进、runs 文件 canonical 化、ahead_evidence 显式披露 [33m961[2mms[22m[39m
+2026-09-05T12:46:18.9086471Z    [33m[2m✓[22m[39m GRN-0001.ran_at_seq=3 领先 status generation_seq —— 裂缝闭合[2m > [22m幂等：二次 compact → NO_CHANGE 全树字节不变；三次输出与二次 byte-stable [33m838[2mms[22m[39m
+2026-09-05T12:46:18.9088310Z    [33m[2m✓[22m[39m GRN-0001.ran_at_seq=3 领先 status generation_seq —— 裂缝闭合[2m > [22mrecord 通路新 run：采样 store seq（恒 ran_at_seq < appliedSeq，倒挂不再新增）且 status 推进 [33m830[2mms[22m[39m
+2026-09-05T12:46:19.6251160Z  [32m✓[39m packages/gauntlet-lite/test/architecture-adapter.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[90m 23[2mms[22m[39m
+2026-09-05T12:46:19.6920127Z  [32m✓[39m packages/cli/tests/reconcile.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 549[2mms[22m[39m
+2026-09-05T12:46:22.6805831Z  [32m✓[39m packages/cli/tests/status.spec.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 2056[2mms[22m[39m
+2026-09-05T12:46:22.6807829Z    [33m[2m✓[22m[39m status 计数[2m > [22minit 后 → 预植分母计数（19 SPEC 对象 by_kind/by_lifecycle）、seq=1、dialect_match=true [33m926[2mms[22m[39m
+2026-09-05T12:46:22.6809563Z    [33m[2m✓[22m[39m status 播种分面计数呈现（B6e）[2m > [22minit 后 seeded_assets = 五分面清单分母（46/33/28/20/25）+ human 行呈现 [33m483[2mms[22m[39m
+2026-09-05T12:46:22.6810861Z    [33m[2m✓[22m[39m status 播种分面计数呈现（B6e）[2m > [22m项目增删播种件 → 计数照实呈现（磁盘实况呈现位，非清单分母对账） [33m584[2mms[22m[39m
+2026-09-05T12:46:23.6507719Z  [32m✓[39m packages/kernel/tests/authority.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 347[2mms[22m[39m
+2026-09-05T12:46:23.8330885Z  [32m✓[39m tests/integration/catalog-runtime-binding.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 3985[2mms[22m[39m
+2026-09-05T12:46:23.8333178Z    [33m[2m✓[22m[39m ① context compile 实跑：catalog 派生分区在场且标明出处[2m > [22m临时工程 init → context compile --role frontend：REUSE / CATALOG 分区 + catalog 出处 + lazyTools 非空 [33m1116[2mms[22m[39m
+2026-09-05T12:46:23.8335067Z    [33m[2m✓[22m[39m ② catalog-lock 漂移检测（物料被改而 lock 未重锁 → 显式检出）[2m > [22mverifyCatalogLock：content_drift 精确指向被改文件；恢复字节后回绿 [33m774[2mms[22m[39m
+2026-09-05T12:46:23.8337121Z    [33m[2m✓[22m[39m ② catalog-lock 漂移检测（物料被改而 lock 未重锁 → 显式检出）[2m > [22mcatalog status 命令面：漂移 → CATALOG_LOCK_DRIFT exit 1（fail-closed 检出） [33m392[2mms[22m[39m
+2026-09-05T12:46:23.8338853Z    [33m[2m✓[22m[39m ② catalog-lock 漂移检测（物料被改而 lock 未重锁 → 显式检出）[2m > [22mcatalog explain 命令面：单条目 lock 身份 + 正文策展字段实跑（--catalog-root 注入面） [33m410[2mms[22m[39m
+2026-09-05T12:46:23.8340442Z    [33m[2m✓[22m[39m ② catalog-lock 漂移检测（物料被改而 lock 未重锁 → 显式检出）[2m > [22mcatalog explain 未登记 id → CATALOG_ENTRY_NOT_FOUND exit 1 [33m358[2mms[22m[39m
+2026-09-05T12:46:23.8342502Z    [33m[2m✓[22m[39m ③ §92.2 边界：catalog 变更只影响投影，store state 零变更[2m > [22m改 catalog 副本 → catalogEntries/inputsFingerprint 变，.pomaster 全树字节全等 [33m934[2mms[22m[39m
+2026-09-05T12:46:24.6667773Z  [32m✓[39m tests/constitutional/crc-c-risk-score-proposal-only.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 174[2mms[22m[39m
+2026-09-05T12:46:25.5024131Z  [32m✓[39m packages/kernel/tests/analyzer-import-graph.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[90m 246[2mms[22m[39m
+2026-09-05T12:46:26.1163639Z  [32m✓[39m tests/constitutional/crc-f-screenshot-not-api.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+2026-09-05T12:46:26.8589901Z  [32m✓[39m packages/gauntlet-lite/test/contract-adapter.spec.ts [2m([22m[2m11 tests[22m[2m)[22m[90m 29[2mms[22m[39m
+2026-09-05T12:46:27.0767636Z  [32m✓[39m tests/integration/catalog-lock-drift-matrix.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 2518[2mms[22m[39m
+2026-09-05T12:46:27.0770405Z    [33m[2m✓[22m[39m catalog-lock 漂移矩阵（P14 content_drift 之外的缺口 kind，逐 kind 显式检出 + 回绿）[2m > [22mmissing：lock 在册文件被删 → kind=missing 精确指路（本 catalog 全部在册条目亦为 required，missing_required 同源双报）；字节恢复后回绿 [33m360[2mms[22m[39m
+2026-09-05T12:46:27.0772757Z    [33m[2m✓[22m[39m catalog-lock 漂移矩阵（P14 content_drift 之外的缺口 kind，逐 kind 显式检出 + 回绿）[2m > [22munexpected_file：管辖目录新增未登记 .json → kind=unexpected_file；catalog status 命令面 fail-closed exit 1；清除后回绿 [33m696[2mms[22m[39m
+2026-09-05T12:46:27.0775182Z    [33m[2m✓[22m[39m catalog-lock 漂移矩阵（P14 content_drift 之外的缺口 kind，逐 kind 显式检出 + 回绿）[2m > [22mentry_not_allowed：entries 登记了 controlled_children.allowed 之外的路径（lock 内部失自洽）→ 独立检出（检查先过文件存在性，与 unexpected_file 同源双报） [33m377[2mms[22m[39m
+2026-09-05T12:46:27.0777381Z    [33m[2m✓[22m[39m catalog-lock 漂移矩阵（P14 content_drift 之外的缺口 kind，逐 kind 显式检出 + 回绿）[2m > [22mmissing_required：controlled_children.required 声明的文件缺失 → kind=missing_required [33m434[2mms[22m[39m
+2026-09-05T12:46:27.0779777Z    [33m[2m✓[22m[39m catalog-lock 漂移矩阵（P14 content_drift 之外的缺口 kind，逐 kind 显式检出 + 回绿）[2m > [22mlock_unreadable：lock JSON 坏形与 lock 缺失两种形态均显式检出（kind=lock_unreadable 指向 lock 文件自身），恢复后回绿 [33m648[2mms[22m[39m
+2026-09-05T12:46:27.5947662Z  [32m✓[39m packages/gauntlet-lite/test/browser-evidence.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+2026-09-05T12:46:28.0598661Z  [32m✓[39m packages/cli/tests/update.spec.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+2026-09-05T12:46:28.6673633Z  [32m✓[39m packages/cli/tests/layout-manifest.spec.ts [2m([22m[2m11 tests[22m[2m)[22m[90m 35[2mms[22m[39m
+2026-09-05T12:46:28.7694135Z  [32m✓[39m packages/kernel/tests/discovery-chain.spec.ts [2m([22m[2m35 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+2026-09-05T12:46:29.5873064Z  [32m✓[39m tests/constitutional/crc-g-claims-cannot-complete-task.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 174[2mms[22m[39m
+2026-09-05T12:46:29.9706427Z  [32m✓[39m packages/kernel/tests/ledger.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 426[2mms[22m[39m
+2026-09-05T12:46:30.9590700Z  [32m✓[39m packages/kernel/tests/observation-records.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 306[2mms[22m[39m
+2026-09-05T12:46:30.9957937Z  [32m✓[39m packages/kernel/tests/resolver.spec.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 746[2mms[22m[39m
+2026-09-05T12:46:31.6749779Z  [32m✓[39m packages/kernel/tests/family-analyzer.spec.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 17[2mms[22m[39m
+2026-09-05T12:46:31.7048649Z  [32m✓[39m tests/constitutional/crc-d-recommendation-not-decision.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+2026-09-05T12:46:33.0793218Z  [32m✓[39m packages/cli/tests/pure-read-zero-write.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 432[2mms[22m[39m
+2026-09-05T12:46:34.9817798Z  [32m✓[39m tests/constitutional/crc-a-raw-prompt-no-coding.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 2298[2mms[22m[39m
+2026-09-05T12:46:35.2992893Z  [32m✓[39m tests/integration/ci-workflow-contract.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 14[2mms[22m[39m
+2026-09-05T12:46:36.4073385Z  [32m✓[39m packages/cli/tests/new-entity.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 2424[2mms[22m[39m
+2026-09-05T12:46:36.4076322Z    [33m[2m✓[22m[39m new-entity check（kernel runNewEntityGate 施断面）[2m > [22mpassed：NO_MATCH 且分母在场 → verdict=passed + ok=true（五否证明成立的显式放行） [33m1436[2mms[22m[39m
+2026-09-05T12:46:36.4077954Z    [33m[2m✓[22m[39m new-entity check（kernel runNewEntityGate 施断面）[2m > [22mskipped_blindspot：文法外词形 → verdict=skipped_blindspot + ok=false（盲区显式非假红） [33m540[2mms[22m[39m
+2026-09-05T12:46:37.0382473Z  [32m✓[39m tests/integration/catalog-knowledge-fp-family-mapping.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+2026-09-05T12:46:37.3752151Z  [32m✓[39m tests/ratchet/ledger.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 29[2mms[22m[39m
+2026-09-05T12:46:38.6208655Z  [32m✓[39m tests/constitutional/crc-b-mastergrid-source-authority.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 703[2mms[22m[39m
+2026-09-05T12:46:39.7411813Z  [32m✓[39m packages/kernel/tests/io-write-retry.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 475[2mms[22m[39m
+2026-09-05T12:46:41.7266181Z  [32m✓[39m tests/constitutional/crc-h-pending-memory-not-in-context.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 1083[2mms[22m[39m
+2026-09-05T12:46:42.6775110Z  [32m✓[39m tests/integration/cli-ledger-kernel-contract.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 174[2mms[22m[39m
+2026-09-05T12:46:43.5900045Z  [32m✓[39m tests/integration/gate-recipes-check.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 7284[2mms[22m[39m
+2026-09-05T12:46:43.5901927Z    [33m[2m✓[22m[39m check --gates 全链路（init → 派发 6 recipe → 6 GRN 入账；P-v06 增量 5→6）[2m > [22m① + ②：六 recipe 全量消费、六条 GRN 落盘、seq 推进、缺席显式非绿 [33m3223[2mms[22m[39m
+2026-09-05T12:46:43.5903552Z    [33m[2m✓[22m[39m check --gates 全链路（init → 派发 6 recipe → 6 GRN 入账；P-v06 增量 5→6）[2m > [22m幂等再跑：二次 check --gates 分配新 GRN（每次运行是新观察，追加非覆写） [33m1163[2mms[22m[39m
+2026-09-05T12:46:43.5905385Z    [33m[2m✓[22m[39m check --gates 全链路（init → 派发 6 recipe → 6 GRN 入账；P-v06 增量 5→6）[2m > [22m③ 零腿（无 --fast / --gates）→ 结构化 SCHEMA_INVALID exit 1 [33m822[2mms[22m[39m
+2026-09-05T12:46:43.5907399Z    [33m[2m✓[22m[39m check --gates 全链路（init → 派发 6 recipe → 6 GRN 入账；P-v06 增量 5→6）[2m > [22m③ 双腿同选（--fast --gates）→ 结构化 SCHEMA_INVALID exit 1（ok 语义不混合） [33m1361[2mms[22m[39m
+2026-09-05T12:46:43.5908827Z    [33m[2m✓[22m[39m check --gates 全链路（init → 派发 6 recipe → 6 GRN 入账；P-v06 增量 5→6）[2m > [22m既有 --fast 腿行为不变：空工程 → NOT_INSTALLED / not_run / exit 1（纯读，零 GRN 落盘） [33m712[2mms[22m[39m
+2026-09-05T12:46:43.9234100Z  [32m✓[39m packages/cli/tests/resolve.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 344[2mms[22m[39m
+2026-09-05T12:46:44.3146866Z  [32m✓[39m packages/kernel/tests/environment.spec.ts [2m([22m[2m11 tests[22m[2m)[22m[90m 32[2mms[22m[39m
+2026-09-05T12:46:44.9473727Z  [32m✓[39m tests/constitutional/crc-e-observe-fail-vs-no-match.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 218[2mms[22m[39m
+2026-09-05T12:46:45.4173854Z  [32m✓[39m packages/cli/tests/triage.spec.ts [2m([22m[2m20 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+2026-09-05T12:46:46.7058431Z  [32m✓[39m packages/cli/tests/readme-command-surface.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 100[2mms[22m[39m
+2026-09-05T12:46:47.0424319Z  [32m✓[39m packages/cli/tests/catalog.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 961[2mms[22m[39m
+2026-09-05T12:46:47.0441904Z    [33m[2m✓[22m[39m catalog status（catalog 构成 + lock 校验）[2m > [22m漂移检出：改 policy 字节不重锁 → ok=false + CATALOG_LOCK_DRIFT（fail-closed 呈现） [33m379[2mms[22m[39m
+2026-09-05T12:46:47.0473254Z    [33m[2m✓[22m[39m catalog explain（单条目解释）[2m > [22m漂移条目：该条目 lock 哈希失配 → result.drifts 精确携带本条目漂移行 [33m390[2mms[22m[39m
+2026-09-05T12:46:47.2366711Z  [32m✓[39m packages/kernel/tests/digest.spec.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+2026-09-05T12:46:47.8891870Z  [32m✓[39m packages/kernel/tests/transitions.spec.ts [2m([22m[2m37 tests[22m[2m)[22m[90m 24[2mms[22m[39m
+2026-09-05T12:46:47.9449323Z  [32m✓[39m packages/gauntlet-lite/test/performance-budget-schema.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+2026-09-05T12:46:48.2825788Z  [32m✓[39m tests/integration/concept-ledger.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+2026-09-05T12:46:48.9199494Z [90mstderr[2m | packages/kernel/tests/denominator-schema.spec.ts
+2026-09-05T12:46:48.9210442Z [22m[39mstrict mode: use allowUnionTypes to allow union type keyword at "https://pomaster.dev/schemas/denominator/v1-draft.json#/properties/filter/additionalProperties" (strictTypes)
+2026-09-05T12:46:48.9231765Z 
+2026-09-05T12:46:48.9303901Z  [32m✓[39m packages/kernel/tests/denominator-schema.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+2026-09-05T12:46:49.5952384Z  [32m✓[39m packages/kernel/tests/helpers-cleanup.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 24[2mms[22m[39m
+2026-09-05T12:46:50.0988019Z  [32m✓[39m packages/cli/tests/eight-beat-invariant.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 1205[2mms[22m[39m
+2026-09-05T12:46:50.0990125Z    [33m[2m✓[22m[39m 八拍 enforcement 行不变量（P5：session 输出缺行即红）[2m > [22m初始化项目 session 输出：每拍 enforcement 行在场（表驱动逐拍断言——缺任一行即红） [33m619[2mms[22m[39m
+2026-09-05T12:46:50.0991813Z    [33m[2m✓[22m[39m 八拍 enforcement 行不变量（P5：session 输出缺行即红）[2m > [22m渲染器与不变量锚单一词形源：session 路标行 = EIGHT_BEAT_ENFORCEMENT_LINES 逐行机械渲染（零漂移） [33m577[2mms[22m[39m
+2026-09-05T12:47:43.1631177Z  [32m✓[39m tests/integration/human-views.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 83105[2mms[22m[39m
+2026-09-05T12:47:43.1633814Z    [33m[2m✓[22m[39m build_human_views canonical 验收（契约 §1.6）[2m > [22m--check 全绿：双跑 byte-stable + drift=0 files=5（§1.6.1/3/5/6） [33m39574[2mms[22m[39m
+2026-09-05T12:47:43.1635790Z    [33m[2m✓[22m[39m build_human_views 幂等与 fail-closed（临时目录工作流）[2m > [22m重生成 → NO_CHANGE 零写入且字节稳定；篡改现盘 → --check 红灯（§1.6.2 + fail-closed） [33m43528[2mms[22m[39m
+2026-09-05T12:47:43.1836901Z 
+2026-09-05T12:47:43.1962351Z [31m⎯⎯⎯⎯⎯⎯⎯[1m[7m Failed Tests 2 [27m[22m⎯⎯⎯⎯⎯⎯⎯[39m
+2026-09-05T12:47:43.1963918Z 
+2026-09-05T12:47:43.1966908Z [31m[1m[7m FAIL [27m[22m[39m packages/cli/tests/context-manifest.spec.ts[2m > [22mcontext manifest 落盘（R2/D7）[2m > [22m指纹漂移 → STALE_GROUNDING 显式 warning + 覆盖写（不静默覆盖）
+2026-09-05T12:47:43.1969730Z [31m[1m[7m FAIL [27m[22m[39m packages/cli/tests/session-overview.spec.ts[2m > [22msession 速览投影（SessionStart 注入源）[2m > [22m计数投影：objects/denominators/producers 与 seq 从账本照实呈现
+2026-09-05T12:47:43.1973994Z [2m Test Files [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m179 passed[39m[22m[90m (181)[39m
+2026-09-05T12:47:43.1975099Z [31m[1mError[22m: Test timed out in 5000ms.
+2026-09-05T12:47:43.1977117Z If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".[39m
+2026-09-05T12:47:43.1978366Z [31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯[22m[39m
+2026-09-05T12:47:43.1998079Z [2m      Tests [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m3643 passed[39m[22m[2m | [22m[33m19 skipped[39m[90m (3664)[39m
+2026-09-05T12:47:43.1999760Z 
+2026-09-05T12:47:43.2000337Z [2m   Start at [22m 12:43:10
+2026-09-05T12:47:43.2024992Z [2m   Duration [22m 272.84s[2m (transform 5.88s, setup 0ms, collect 89.97s, tests 559.32s, environment 47ms, prepare 22.20s)[22m
+2026-09-05T12:47:43.2026466Z 
+2026-09-05T12:47:45.3436070Z  ELIFECYCLE  Test failed. See above for more details.
+2026-09-05T12:47:45.7063986Z ##[error]Process completed with exit code 1.
+2026-09-05T12:47:45.7391090Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-09-05T12:47:45.7392687Z Post job cleanup.
+2026-09-05T12:47:45.9146983Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-09-05T12:47:45.9419563Z git version 2.55.0.windows.5
+2026-09-05T12:47:45.9493875Z Temporarily overriding HOME='D:\a\_temp\2e3f3560-03f1-4c05-8433-1cb30fb75759' before making global git config changes
+2026-09-05T12:47:45.9495188Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-05T12:47:45.9504777Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\POMaster_VNext\POMaster_VNext
+2026-09-05T12:47:45.9804311Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-09-05T12:47:46.0097294Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-09-05T12:47:46.5598567Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-05T12:47:46.5877998Z http.https://github.com/.extraheader
+2026-09-05T12:47:46.5922175Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset-all http.https://github.com/.extraheader
+2026-09-05T12:47:46.6206068Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-09-05T12:47:47.3225581Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-05T12:47:47.3518758Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-09-05T12:47:48.4030795Z Cleaning up orphan processes
+2026-09-05T12:47:48.4883407Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

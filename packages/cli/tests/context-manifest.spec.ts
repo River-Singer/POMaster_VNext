@@ -181,7 +181,8 @@ describe("context manifest 落盘（R2/D7）", () => {
     expect(outcomeStaleState(await runContextCompile(root, "frontend", undefined, { change: "TASK.T0087" }))).toBe("fresh");
   });
 
-  it("指纹漂移 → STALE_GROUNDING 显式 warning + 覆盖写（不静默覆盖）", async () => {
+  // CI windows 慢 runner 实证：本例跑完整 init（152 seeds + SPEC 预植）+ 二次编译，5s 默认超时不够（裁决批 H 终验）。
+  it("指纹漂移 → STALE_GROUNDING 显式 warning + 覆盖写（不静默覆盖）", { timeout: 60_000 }, async () => {
     await initStore();
     await runContextCompile(root, "frontend", undefined, { change: "TASK.T0087" });
     // 模拟漂移：现盘 manifest 指纹被替换为异值（真实漂移 = Truth/Policy/catalog 更新
