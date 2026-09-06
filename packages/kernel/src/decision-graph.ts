@@ -2096,6 +2096,79 @@ export function evaluateDiscoverySufficiency(
 }
 
 // ============================================================
+// syncDecisionRequestRefs（PR-4 接线批 09-06：request_refs 机械同步）
+// ============================================================
+
+export type SyncDecisionRequestRefsOutcome =
+  | {
+      readonly ok: true;
+      /** false = 同批 refs 重放幂等 NO_CHANGE（对齐 brainstorm start/resolve 幂等纪律）。 */
+      readonly changed: boolean;
+      readonly graph: DecisionGraph;
+      readonly notes: readonly string[];
+    }
+  | {
+      readonly ok: false;
+      readonly reason: "request_ref_invalid";
+      readonly details: readonly string[];
+      readonly hint: string;
+    };
+
+/**
+ * syncDecisionRequestRefs（纯函数）：把已在 research/index.yaml 落档的 request id
+ * 同步进 graph.request_refs（§16：正式 requests 住 research/index.yaml，图侧只留
+ * 同步标记）。机械同步零新治理语义：词形校验与 buildDecisionGraph 的
+ * request_ref_invalid 同式（单一词形闸）、append-only 去重、graph_fingerprint 由
+ * 本模块既有 fingerprintOf 自动重算（D24：人类禁算哈希——CLI 侧绝不自算指纹），
+ * resolutions/decisions 一概不动（决议历史只经 resolveDecision 写入）。
+ * 幂等：同批 refs 重放 = changed:false NO_CHANGE。CLI 消费面 = `research request`
+ * （PR-4 命令链，2026-09-06）：request 落档 index.yaml 后调用本函数回写
+ * decision-graph.json，applyResearchHandoff 的 request_refs 对账才能通过。
+ */
+export function syncDecisionRequestRefs(
+  graph: DecisionGraph,
+  refs: readonly string[],
+): SyncDecisionRequestRefsOutcome {
+  const merged = [...graph.request_refs];
+  const changedIds: string[] = [];
+  for (const ref of refs) {
+    if (!RESEARCH_REQUEST_ID_PATTERN.test(ref)) {
+      return {
+        ok: false,
+        reason: "request_ref_invalid",
+        details: [`request_refs 条目 "${ref}" 不是 RESEARCH.REQ.<n> 词形`],
+        hint: "request id 由 createResearchRequest 产出（RESEARCH.REQ.<n>）；CLI 侧不自造词形",
+      };
+    }
+    if (!merged.includes(ref)) {
+      merged.push(ref);
+      changedIds.push(ref);
+    }
+  }
+  if (changedIds.length === 0) {
+    return {
+      ok: true,
+      changed: false,
+      graph,
+      notes: ["同批 request_refs 重放：同步标记未变化——NO_CHANGE（幂等）"],
+    };
+  }
+  const nextGraph: DecisionGraph = {
+    ...graph,
+    graph_fingerprint: fingerprintOf(graph.projection_fingerprint, graph.decisions, merged),
+    request_refs: merged,
+  };
+  return {
+    ok: true,
+    changed: true,
+    graph: nextGraph,
+    notes: [
+      `request_refs 同步 +${changedIds.length}（${changedIds.join("、")}）；graph_fingerprint 已重算（decisions/resolutions 不动）`,
+    ],
+  };
+}
+
+// ============================================================
 // TODO(v053-p1)：invalidateDependentDecisions（§7.4 Upstream Change Invalidation）
 // ============================================================
 // P1 项（PRD §20 P1「Upstream Decision Invalidation」逐字）：graph + changed decision ids

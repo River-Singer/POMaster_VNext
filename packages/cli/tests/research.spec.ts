@@ -8,6 +8,10 @@
  *   且零落盘（判卷失败一个字节都不写）；合法路径产出四文件骨架（§81.6），幂等。
  * - research list：宿主不存在 = 显式错误（与「存在无产物」= 显式空清单区分）；artifact
  *   呈现 findings 计数与 SKELETON 标记。
+ * - research request / research handoff（PR-4 命令链 09-06 R5）：request 发起（kernel
+ *   createResearchRequest 单一判卷源；index.yaml requests 落档 + 图侧 request_refs
+ *   同步）→ handoff 回填（kernel applyResearchHandoff 单一判卷源；missing_facts 消解 +
+ *   index 入账）→ decide --ready 可重判；两命令 DISCOVERY 态闸与图锚定闸钉死。
  * - research inspect：四文件完整性（缺 → RESEARCH_ARTIFACT_INCOMPLETE）；自由 yaml 显式
  *   INDEX_NOT_MACHINE_PARSEABLE；findings 字段级损坏（键存在但非数组）→ 显式
  *   INDEX_NOT_MACHINE_PARSEABLE（B3：不静默折叠为空分母假绿，键真缺席仍合法空分母）；
@@ -18,17 +22,23 @@
  *   词形/存在性校验（../../ 穿透封死）；**发现2**：--host 三道闸（src 拒绝/未登记拒绝/
  *   tasks 目录合法对照）。
  */
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import type { DecisionNodeCandidate } from "@pomaster/kernel";
 import {
+  runBrainstormDecide,
   runBrainstormStart,
+  runResearchHandoff,
   runResearchInspect,
   runResearchList,
+  runResearchRequest,
   runResearchStart,
   type ResearchInspectResult,
   type ResearchListResult,
+  type ResearchRequestResult,
+  type ResearchHandoffResult,
   type ResearchStartResult,
 } from "@pomaster/cli";
 
@@ -539,5 +549,264 @@ describe("research inspect（§44.3；§81.4 判卷呈现）", () => {
     );
     expect(outcome.ok).toBe(false);
     expect(outcome.errors[0]?.code).toBe("RESEARCH_HOST_NOT_FOUND");
+  });
+});
+
+// ============================================================
+// research request / research handoff（PR-4 命令链 09-06 R5：缺口公开消解）
+// ============================================================
+
+/** 带 missing_facts 的候选节点（--route RESEARCHABLE 后 grounding = NEEDS_RESEARCH）。 */
+function rschCandidate(): DecisionNodeCandidate {
+  return {
+    decision_id: "DECISION.RSCH",
+    class: "SCOPE",
+    prompt: "跨车型匹配是否纳入当前 Increment？",
+    depends_on: [],
+    affects: [],
+    grounding: {
+      intent_refs: ["DISCOVERY.INTENT.001"],
+      truth_refs: ["baseline/frontend/stack.yaml"],
+      contract_refs: [],
+      architecture_refs: [],
+      implementation_refs: [],
+      evidence_refs: [],
+      knowledge_refs: [],
+      research_finding_refs: [],
+      conflicts: [],
+      missing_facts: ["FACT.RSCH.MATCHING_KEY"],
+    },
+    options: ["INCLUDE_CURRENT_INCREMENT", "DEFER"],
+    recommendation: {
+      option: "INCLUDE_CURRENT_INCREMENT",
+      basis_refs: ["baseline/frontend/stack.yaml"],
+      rationale: "Current Truth 已登记清单页需求。",
+      tradeoff: "先锁最小范围，延后项走 DEFER。",
+      uncertainty: "匹配键是否存在尚无证据。",
+      source: "PROJECT_GROUNDED",
+    },
+    authority: { owner: "BOOTSTRAP_OWNER" },
+  };
+}
+
+/** 起「start → decide --set（missing_facts + RESEARCHABLE 路由）」的公共前拍。 */
+async function setupDiscoveryWithGap(): Promise<void> {
+  await runBrainstormStart(root, { id: "idea-rsch" });
+  const candidatesPath = join(root, "rsch-candidates.json");
+  writeFileSync(candidatesPath, `${JSON.stringify([rschCandidate()], null, 2)}\n`, "utf8");
+  await runBrainstormDecide(root, {
+    discoveryId: "idea-rsch",
+    set: candidatesPath,
+    retrieved: ["CURRENT_TRUTH"],
+    route: ["FACT.RSCH.MATCHING_KEY=RESEARCHABLE"],
+  });
+}
+
+function handoffFileFor(): Record<string, unknown> {
+  return {
+    artifact_ref: ".pomaster/discovery/scratchpads/idea-rsch/research/",
+    answered_requests: ["RESEARCH.REQ.1"],
+    affected_decisions: ["DECISION.RSCH"],
+    key_findings: [
+      {
+        finding_id: "FINDING.R1.1",
+        statement: "现有数据模型已存在统一匹配键（IMPLEMENTATION 级实抓）。",
+        evidence_type: "IMPLEMENTATION",
+        sources: ["repo://src/db/schema.ts#customer_id"],
+        caveats: ["存在不证明正确——语义对账未完成（§81.5）"],
+        request_refs: ["RESEARCH.REQ.1"],
+        decision_refs: ["DECISION.RSCH"],
+        relation: "RESOLVES_FACT",
+        resolves_missing_facts: ["FACT.RSCH.MATCHING_KEY"],
+      },
+    ],
+    unresolved_requests: [],
+    one_line_summary: "匹配键事实已取证：IMPLEMENTATION 级确认统一键存在",
+    critical_caveat: "证据仅证明字段存在；跨系统语义一致性未对账",
+  };
+}
+
+/** request 发起的公共词形（正向链与幂等对照共用）。 */
+function requestInput(overrides: Partial<Parameters<typeof runResearchRequest>[1]> = {}): Parameters<typeof runResearchRequest>[1] {
+  return {
+    discoveryId: "idea-rsch",
+    decisions: ["DECISION.RSCH"],
+    proposition: "现有数据中是否存在统一匹配键",
+    why: "DECISION.RSCH 的 Recommendation 依赖匹配复杂度判断",
+    evidence: "IMPLEMENTATION",
+    gap: "CURRENT_REALITY",
+    stopWhen: ["定位到权威字段或证明不存在"],
+    forbid: "Research 不得裁决",
+    ...overrides,
+  };
+}
+
+describe("research request（PR-4 R5：发起——kernel createResearchRequest 消费面）", () => {
+  it("正向：request 落档 index.yaml（status=open）+ 图侧 request_refs 同步（fingerprint 重算，决议不动）；--mode 小写词形映射", async () => {
+    await setupDiscoveryWithGap();
+    const outcome = await runResearchRequest(root, requestInput({ gap: undefined, mode: "internal" }));
+    expect(outcome.ok).toBe(true);
+    const result = outcome.result as ResearchRequestResult;
+    expect(result.request_id).toBe("RESEARCH.REQ.1");
+    expect(result.mode).toBe("INTERNAL");
+    expect(result.graph_sync).toBe("SYNCED");
+    expect(result.index_created).toBe(true);
+    // index.yaml requests 落档（kernel 九键 + status 注记）。
+    const index = JSON.parse(
+      readFileSync(join(root, ".pomaster", "discovery", "scratchpads", "idea-rsch", "research", "index.yaml"), "utf8"),
+    ) as { requests: { id: string; status: string; required_evidence: string }[] };
+    expect(index.requests).toHaveLength(1);
+    expect(index.requests[0]).toMatchObject({ id: "RESEARCH.REQ.1", status: "open", required_evidence: "IMPLEMENTATION" });
+    // 图侧同步：request_refs 在座 + fingerprint 重算（sha256 词形）；decisions 原样全 OPEN。
+    const graph = JSON.parse(
+      readFileSync(join(root, ".pomaster", "discovery", "scratchpads", "idea-rsch", "decision-graph.json"), "utf8"),
+    ) as { request_refs: string[]; graph_fingerprint: string; decisions: { resolution: unknown }[] };
+    expect(graph.request_refs).toEqual(["RESEARCH.REQ.1"]);
+    expect(graph.graph_fingerprint).toMatch(/^sha256:[0-9a-f]{64}$/);
+    expect(graph.decisions[0]?.resolution).toBeNull();
+  });
+
+  it("序号派生（零墙钟 A4）：重跑同词形 = 新请求 RESEARCH.REQ.2（最小未占用序号推进——新请求非幂等重放）", async () => {
+    await setupDiscoveryWithGap();
+    expect((await runResearchRequest(root, requestInput())).ok).toBe(true);
+    const second = await runResearchRequest(root, requestInput({ proposition: "另一事实主张", why: "另一依据" }));
+    expect(second.ok).toBe(true);
+    expect((second.result as ResearchRequestResult).request_id).toBe("RESEARCH.REQ.2");
+  });
+
+  it("fail-closed 闸：id 词形外 / scratchpad 不在册 / 非 DISCOVERY 态 / 图缺席 / 来源 Decision 不在图内 / mode+gap 双缺 kernel 拒透传 / --gap 词表外", async () => {
+    const badId = await runResearchRequest(root, requestInput({ discoveryId: "../escape" }));
+    expect(badId.ok).toBe(false);
+    expect(badId.errors[0]?.code).toBe("SCHEMA_INVALID");
+
+    const notFound = await runResearchRequest(root, requestInput({ discoveryId: "idea-ghost" }));
+    expect(notFound.ok).toBe(false);
+    expect(notFound.errors[0]?.code).toBe("SCRATCHPAD_NOT_FOUND");
+
+    // 图缺席（未 --set 先 request）：
+    await runBrainstormStart(root, { id: "idea-nograph" });
+    const noGraph = await runResearchRequest(root, requestInput({ discoveryId: "idea-nograph" }));
+    expect(noGraph.ok).toBe(false);
+    expect(noGraph.errors[0]?.code).toBe("DECISION_GRAPH_NOT_FOUND");
+
+    await setupDiscoveryWithGap();
+    // 来源 Decision 不在图内（decide --answer 的 DECISION_NOT_FOUND 同款 CLI 闸）：
+    const unknownDecision = await runResearchRequest(root, requestInput({ decisions: ["DECISION.NOT_IN_GRAPH"] }));
+    expect(unknownDecision.ok).toBe(false);
+    expect(unknownDecision.errors[0]?.code).toBe("DECISION_NOT_FOUND");
+
+    // mode+gap 双缺 → kernel §9.3 零缺省政策透传：
+    const noMode = await runResearchRequest(root, requestInput({ gap: undefined }));
+    expect(noMode.ok).toBe(false);
+    expect(noMode.errors[0]?.code).toBe("RESEARCH_REQUEST_MODE_UNRESOLVABLE");
+
+    // --gap 词表外 → CLI 词形闸：
+    const badGap = await runResearchRequest(root, requestInput({ gap: "EVERYTHING" }));
+    expect(badGap.ok).toBe(false);
+    expect(badGap.errors[0]?.code).toBe("SCHEMA_INVALID");
+
+    // 非 DISCOVERY 态（READY_TO_PROMOTE）→ 态闸拒绝（decide 同款语义：回填会改 grounding 判定面）：
+    const statePath = join(root, ".pomaster", "discovery", "scratchpads", "idea-rsch", "state.json");
+    writeFileSync(
+      statePath,
+      `${JSON.stringify({ state: "READY_TO_PROMOTE", scratchpad_ref: ".pomaster/discovery/scratchpads/idea-rsch/", promotion_basis: "msd_reached" }, null, 2)}\n`,
+      "utf8",
+    );
+    const wrongState = await runResearchRequest(root, requestInput());
+    expect(wrongState.ok).toBe(false);
+    expect(wrongState.errors[0]?.code).toBe("RESEARCH_REQUIRES_DISCOVERY");
+  });
+});
+
+describe("research handoff（PR-4 R5：回填入账——kernel applyResearchHandoff 消费面）", () => {
+  it("正向：RESOLVES_FACT 消解 missing_facts（evidence 挂回节点）+ index 入账（status=answered + handoff 三件非骨架）；inspect SKELETON 消失", async () => {
+    await setupDiscoveryWithGap();
+    // 四文件骨架先在座（research <topic> 幂等产出；inspect 的产物完整性前提）。
+    const scaffold = await runResearchStart(root, {
+      topic: "跨车型匹配现状",
+      host: ".pomaster/discovery/scratchpads/idea-rsch/",
+      mode: "internal",
+    });
+    expect(scaffold.ok).toBe(true);
+    expect((await runResearchRequest(root, requestInput())).ok).toBe(true);
+    const handoffPath = join(root, "handoff.json");
+    writeFileSync(handoffPath, `${JSON.stringify(handoffFileFor(), null, 2)}\n`, "utf8");
+    const outcome = await runResearchHandoff(root, { discoveryId: "idea-rsch", file: handoffPath });
+    expect(outcome.ok).toBe(true);
+    const result = outcome.result as ResearchHandoffResult;
+    expect(result.graph_changed).toBe(true);
+    expect(result.request_statuses).toEqual([{ id: "RESEARCH.REQ.1", status: "answered" }]);
+    // 图侧：missing_facts 消解 + research_finding_refs 增量。
+    const graph = JSON.parse(
+      readFileSync(join(root, ".pomaster", "discovery", "scratchpads", "idea-rsch", "decision-graph.json"), "utf8"),
+    ) as { decisions: { grounding: { missing_facts: string[]; research_finding_refs: string[] } }[] };
+    expect(graph.decisions[0]?.grounding.missing_facts).toEqual([]);
+    expect(graph.decisions[0]?.grounding.research_finding_refs).toEqual(["FINDING.R1.1"]);
+    // 判卷输入申报同拍同步（R6 重算制）：消解后路由申报清空——残留会被重算判「路由越界」。
+    const inputs = JSON.parse(
+      readFileSync(join(root, ".pomaster", "discovery", "scratchpads", "idea-rsch", "decision-inputs.json"), "utf8"),
+    ) as { missing_fact_routing: Record<string, string> };
+    expect(inputs.missing_fact_routing).toEqual({});
+    // index 入账：requests status=answered + handoff 三件（SKELETON 占位被替换）。
+    const index = JSON.parse(
+      readFileSync(join(root, ".pomaster", "discovery", "scratchpads", "idea-rsch", "research", "index.yaml"), "utf8"),
+    ) as {
+      requests: { id: string; status: string }[];
+      handoff: { one_line_summary: string; key_findings: unknown[] };
+    };
+    expect(index.requests[0]?.status).toBe("answered");
+    expect(index.handoff.one_line_summary).toContain("匹配键事实已取证");
+    expect(index.handoff.key_findings).toHaveLength(1);
+    // inspect 联动：SKELETON 标记消失（handoff 三件已填）。
+    const inspect = await runResearchInspect(root, ".pomaster/discovery/scratchpads/idea-rsch/research/");
+    expect(inspect.ok).toBe(true);
+    expect((inspect.result as ResearchInspectResult).skeleton).toBe(false);
+  });
+
+  it("幂等重放：同 handoff 第二次 → graph_changed=false（NO_CHANGE 零图写入语义）", async () => {
+    await setupDiscoveryWithGap();
+    expect((await runResearchRequest(root, requestInput())).ok).toBe(true);
+    const handoffPath = join(root, "handoff.json");
+    writeFileSync(handoffPath, `${JSON.stringify(handoffFileFor(), null, 2)}\n`, "utf8");
+    const first = await runResearchHandoff(root, { discoveryId: "idea-rsch", file: handoffPath });
+    expect((first.result as ResearchHandoffResult).graph_changed).toBe(true);
+    const replay = await runResearchHandoff(root, { discoveryId: "idea-rsch", file: handoffPath });
+    expect(replay.ok).toBe(true);
+    expect((replay.result as ResearchHandoffResult).graph_changed).toBe(false);
+  });
+
+  it("fail-closed 闸：id 词形外 / 图缺席 / handoff 形态畸形（形状预检）/ kernel 拒绝透传（未知 request 引用）/ 文件不可读", async () => {
+    const badId = await runResearchHandoff(root, { discoveryId: "../escape", file: "h.json" });
+    expect(badId.ok).toBe(false);
+    expect(badId.errors[0]?.code).toBe("SCHEMA_INVALID");
+
+    await runBrainstormStart(root, { id: "idea-ghost2" });
+    const handoffPath = join(root, "handoff.json");
+    writeFileSync(handoffPath, `${JSON.stringify(handoffFileFor(), null, 2)}\n`, "utf8");
+    // 形态畸形（缺数组位）→ 形状预检 SCHEMA_INVALID（kernel 深判卷之前，零 throw 纪律）：
+    const malformedPath = join(root, "malformed.json");
+    writeFileSync(malformedPath, `${JSON.stringify({ artifact_ref: "x" }, null, 2)}\n`, "utf8");
+    const malformed = await runResearchHandoff(root, { discoveryId: "idea-ghost2", file: malformedPath });
+    expect(malformed.ok).toBe(false);
+    expect(malformed.errors[0]?.code).toBe("SCHEMA_INVALID");
+
+    // 图缺席：
+    const noGraph = await runResearchHandoff(root, { discoveryId: "idea-ghost2", file: handoffPath });
+    expect(noGraph.ok).toBe(false);
+    expect(noGraph.errors[0]?.code).toBe("DECISION_GRAPH_NOT_FOUND");
+
+    // kernel 拒绝透传：request 未落档（图 request_refs 空）→ unknown_request_ref：
+    await setupDiscoveryWithGap();
+    const unknownReq = await runResearchHandoff(root, { discoveryId: "idea-rsch", file: handoffPath });
+    expect(unknownReq.ok).toBe(false);
+    expect(unknownReq.errors[0]?.code).toBe("RESEARCH_HANDOFF_UNKNOWN_REQUEST_REF");
+
+    // 文件不可读：
+    const missingFile = await runResearchHandoff(root, {
+      discoveryId: "idea-rsch",
+      file: join(root, "no-such-handoff.json"),
+    });
+    expect(missingFile.ok).toBe(false);
+    expect(missingFile.errors[0]?.code).toBe("IO_ERROR");
   });
 });

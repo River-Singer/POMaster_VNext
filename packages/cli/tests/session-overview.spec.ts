@@ -20,6 +20,7 @@ import {
   SESSION_SEGMENT_BUDGET,
   SESSION_SEGMENT_TITLES,
   SESSION_TOTAL_BUDGET,
+  SESSION_FIRST_REPLY_LINES,
 } from "@pomaster/cli";
 
 let dir: string;
@@ -320,6 +321,46 @@ describe("session 速览纯读零写入字节锚（§1.6：SessionStart 源是�
       expect(existsSync(join(bare, ".pomaster"))).toBe(false);
     } finally {
       rmSync(bare, { recursive: true, force: true });
+    }
+  });
+});
+
+// ============================================================
+// R2 首答确认协议（2026-09-06：注入尾部模型指令段——首轮可见确认 + Next-Action 转述）
+// ============================================================
+
+describe("session 首答确认协议（R2：注入尾部模型指令段）", () => {
+  it("初始化态：注入尾部带首答确认指令（①可见确认「POMaster 治理速览已注入」②报告 Next-Action 路由）；≤10k 硬上限保持", async () => {
+    await runInit(dir);
+    const outcome = await runSessionOverview(dir);
+    expect(outcome.ok).toBe(true);
+    const text = outcome.human.join("\n");
+    expect(text).toContain("【首答确认协议】");
+    expect(text).toContain("POMaster 治理速览已注入");
+    expect(text).toContain("Next-Action 路由建议");
+    // 指令段在尾部（Browser Eyes 行之后追加——「注入文本尾部」逐字语义）。
+    const lines = outcome.human;
+    expect(lines[lines.length - 1]).toBe(SESSION_FIRST_REPLY_LINES[SESSION_FIRST_REPLY_LINES.length - 1]);
+    for (const line of SESSION_FIRST_REPLY_LINES) {
+      expect(text).toContain(line);
+    }
+    expect(text.length).toBeLessThanOrEqual(SESSION_OUTPUT_HARD_CAP);
+    expect(outcome.result.truncated).toBe(false);
+  });
+
+  it("未初始化态：指令段同样携带（注入即协议，与状态无关）", async () => {
+    const outcome = await runSessionOverview(dir);
+    expect(outcome.result.initialized).toBe(false);
+    expect(outcome.human.join("\n")).toContain("【首答确认协议】");
+    expect(outcome.human.join("\n")).toContain("POMaster 治理速览已注入");
+  });
+
+  it("指令段不进 segments meta（是模型指令不是状态投影段）——标题词表闭合不被打破", async () => {
+    await runInit(dir);
+    const outcome = await runSessionOverview(dir);
+    for (const segment of outcome.result.segments) {
+      expect(SESSION_SEGMENT_TITLES).toContain(segment.title);
+      expect(segment.title).not.toBe("首答确认协议");
     }
   });
 });

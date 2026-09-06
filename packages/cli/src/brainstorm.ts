@@ -43,9 +43,11 @@
  *      --msd-scope/--msd-acceptance 申报 + §15 合法残留 --residual）——全绿才写
  *      READY_TO_PROMOTE（promotion_basis=msd_reached，schema 18 promotion_still_via_maintain
  *      逐字），不足 fail-closed 输出全部缺口且状态零变更；OPEN 节点 grounding 复核前置。
- *   暂不接线（诚实指路）：research request / handoff 消费面（PR-4）——missing_facts 非
- *   空的节点在公开链上无法消解（G6 判卷后 NEEDS_*），hint 指向后续批次；其余三条晋升
- *   依据（user_explicit_request 等申报词形）不经 --ready 判卷，不私造无判卷放行通道。
+ *   research 消解出路（PR-4 命令链，09-06 R5 接线）：NEEDS_RESEARCH 节点的 missing_facts
+ *   走 `pomaster research request`（发起，request 落档 <host>/research/index.yaml +
+ *   request_refs 同步进图）→ `pomaster research handoff`（回填，evidence 挂回节点）→
+ *   重跑 --ready 重判（research.ts 消费本面导出的图装载器，单一装载实现零漂移）；
+ *   其余三条晋升依据（user_explicit_request 等申报词形）不经 --ready 判卷，不私造无判卷放行通道。
  * - `brainstorm promote <discovery-id> --to CHANGE|TASK --basis <basis>`：提升面。
  *   **提升写入走 P11 maintain 面**（受控写入唯一面；Discovery 层不私造第二写入通道）。
  *
@@ -1181,6 +1183,14 @@ export type UnknownTriageKey = (typeof UNKNOWN_TRIAGE_KEYS)[number];
 const DECISION_GRAPH_FILENAME = "decision-graph.json";
 
 /**
+ * decision-graph.json 绝对路径（research request/handoff 消费面共用——图 sidecar
+ * 读写归 CLI 命令面，两命令组共享同一寻址位，禁第二套路径声明）。
+ */
+export function decisionGraphPath(rootDir: string, id: string): string {
+  return join(discoveryScratchpadDirPath(rootDir, id), DECISION_GRAPH_FILENAME);
+}
+
+/**
  * decision-inputs.json（CLI 局部注记位，与 meta.json 同纪律：非治理对象、Discovery
  * 平面自留；承载 G2 检索面申报 / G6 缺失事实路由申报——grounding 判卷是重算制（R6），
  * 申报落盘供 --answer/--ready 复用重算，不随申报漂移）。
@@ -1269,20 +1279,21 @@ type DecisionGraphLoad =
   | { readonly ok: true; readonly graph: DecisionGraph; readonly inputs: DecisionInputsFile }
   | { readonly ok: false; readonly error: CliError };
 
-function decisionGraphPath(rootDir: string, id: string): string {
-  return join(discoveryScratchpadDirPath(rootDir, id), DECISION_GRAPH_FILENAME);
-}
-
-function decisionInputsPath(rootDir: string, id: string): string {
+/**
+ * decision-inputs.json 绝对路径（G2/G6 判卷输入申报位；research handoff 的路由申报
+ * 同拍同步共用——禁第二套路径声明）。
+ */
+export function decisionInputsPath(rootDir: string, id: string): string {
   return join(discoveryScratchpadDirPath(rootDir, id), DECISION_INPUTS_FILENAME);
 }
 
 /**
  * 装载 scratchpad 内的图 + 判卷输入申报（防御位：graph 由 kernel 产出落盘，手改畸形
  * 在此显式拒——零 throw 纪律的 CLI 侧入口闸；图完整性以 frontier 重算兜底，D24 指纹
- * 失配 auto-regen 不拦写，本面不自算哈希）。
+ * 失配 auto-regen 不拦写，本面不自算哈希）。research request/handoff 消费面共用
+ * （单一装载实现零漂移——PR-4 命令链 09-06 R5）。
  */
-async function loadDecisionGraph(
+export async function loadDecisionGraph(
   rootDir: string,
   id: string,
 ): Promise<DecisionGraphLoad> {
@@ -1711,7 +1722,7 @@ export async function runBrainstormDecide(
       `  判卷输入: ${toPosix(inputsPath)}（G2 检索面 ${retrieved.length} 面 / G6 路由 ${Object.keys(routing).length} 条申报）`,
       ...verdicts.some((v) => !v.answerable)
         ? [
-            "  有节点未达 READY_FOR_DECISION（§6.2 不可问人）：补 --retrieved 检索面申报，或消解 missing_facts（research handoff 消费面为后续批次 PR-4——当前出路=修正候选材料后重 --set）",
+            "  有节点未达 READY_FOR_DECISION（§6.2 不可问人）：补 --retrieved 检索面申报；NEEDS_RESEARCH 节点的缺失事实走 research 消解链——pomaster research request <id> --decision <DECISION.*> … 发起，回填后 pomaster research handoff <id> --file <handoff.json>",
           ]
         : [],
       "  决议：pomaster brainstorm decide <id> --answer <DECISION.*> --accept|--value <option>|--unknown --triage ...|--defer",
@@ -1861,7 +1872,7 @@ export async function runBrainstormDecide(
         {
           code: "GROUNDING_NOT_READY",
           message: `decision ${decisionId} 未达 READY_FOR_DECISION——§6.2：仅此 verdict 允许进入人机交互路径（问人/决议）`,
-          hint: "补 --retrieved 检索面申报或修正候选 grounding 后重 --set；缺失事实的消解出路（research handoff）为后续批次 PR-4。",
+          hint: "补 --retrieved 检索面申报或修正候选 grounding 后重 --set；NEEDS_RESEARCH 缺失事实的消解出路：pomaster research request 发起 → research handoff 回填 → 重试。",
         },
         [
           `brainstorm decide --answer: FAILED — GROUNDING_NOT_READY (${decisionId})`,
@@ -2043,7 +2054,7 @@ export async function runBrainstormDecide(
       {
         code: "GROUNDING_NOT_READY",
         message: `${String(openNodes.length)} 个 OPEN decision 未达 READY_FOR_DECISION——§6.2：未过 grounding 的节点不得问人，更不得随收敛晋升`,
-        hint: "按缺口逐项补 --retrieved 检索面申报或修正候选 grounding 后重 --set；缺失事实消解（research handoff）为后续批次 PR-4。",
+        hint: "按缺口逐项补 --retrieved 检索面申报或修正候选 grounding 后重 --set；NEEDS_RESEARCH 缺失事实消解：pomaster research request 发起 → research handoff 回填 → 重跑 --ready 重判。",
       },
       [
         `brainstorm decide --ready: FAILED — GROUNDING_NOT_READY (OPEN 未过 grounding ${String(openNodes.length)} 个)`,

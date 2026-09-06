@@ -1,9 +1,12 @@
 /**
- * alerts.spec.ts —— `pomaster alerts`（重入口 UserPromptSubmit 轻提醒源）。
+ * alerts.spec.ts —— `pomaster alerts`（重入口 UserPromptSubmit 源：可行动项过滤器 +
+ * workflow 路由器）。
  *
- * hook 输出契约钉版：恒 exit 0（ok=true 恒成立）、干净=空输出（零字节 stdout）、
- * 纯文本不以 { 开头（防被误判 JSON）、≤10,000 字符硬上限；降级走 warnings 不走
- * errors（hook 通道永不失败）。可行动项派生自 truth-index/permits 只读面：过期
+ * hook 输出契约钉版：恒 exit 0（ok=true 恒成立）、初始化后恒带 ≤3 行 workflow 路由段
+ * （R3 2026-09-06：干净=非空但极简——无活跃 TASK 给判档/讨论双入口【需求讨论走
+ * pomaster-discovery 卡】，有活跃 TASK 给八拍位置 + 下一拍命令 + 分段卡名）、未初始化
+ * =零输出静默、纯文本不以 { 开头（防被误判 JSON）、≤10,000 字符硬上限；降级走 warnings
+ * 不走 errors（hook 通道永不失败）。可行动项派生自 truth-index/permits 只读面：过期
  * 判定与 permit list 同式（未盗取 且 current_seq >= expires_at_seq）；CHALLENGED
  * 对象按 change 轴判定；triage TTL 显式登记为无派生源类目（分母披露，不冒充已检查）。
  */
@@ -12,7 +15,7 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { runAlerts, runInit, runCli, capPlainOutput } from "@pomaster/cli";
+import { runAlerts, runInit, runCli, capPlainOutput, BEAT_CARD_NAMES, SKILL_MANIFEST } from "@pomaster/cli";
 
 let dir: string;
 
@@ -98,19 +101,25 @@ function permitRow(overrides: Record<string, unknown>): Record<string, unknown> 
   };
 }
 
-describe("alerts hook 输出契约（恒 exit 0 / 空=静默 / 非化 JSON 词形）", () => {
-  it("fresh init（空账本）→ ok=true、alerts 空、human 零行（零字节 stdout）", async () => {
+describe("alerts hook 输出契约（恒 exit 0 / 干净=非空但极简 / 非化 JSON 词形）", () => {
+  it("fresh init（空账本）→ ok=true、alerts 空、human=workflow 路由段（无活跃 TASK 双入口，R3 干净=非空但极简）", async () => {
     await runInit(dir);
     const outcome = await runAlerts(dir);
     expect(outcome.ok).toBe(true);
     expect(outcome.errors).toEqual([]);
     expect(outcome.result.initialized).toBe(true);
     expect(outcome.result.alerts).toEqual([]);
-    expect(outcome.human).toEqual([]);
+    // R3 路由段：无活跃 TASK → 双入口行 + 命令词形行（≤3 行）。
+    expect(outcome.result.workflow_routing.length).toBeGreaterThan(0);
+    expect(outcome.result.workflow_routing.length).toBeLessThanOrEqual(3);
+    expect(outcome.result.workflow_routing[0]).toContain("无活跃 TASK");
+    expect(outcome.result.workflow_routing[0]).toContain("八拍① triage 或 brainstorm start");
+    expect(outcome.result.workflow_routing[0]).toContain("pomaster-discovery");
+    expect(outcome.human).toEqual([...outcome.result.workflow_routing]);
     expect(outcome.result.unsourced_categories).toEqual(["triage_ttl"]);
   });
 
-  it("runCli alerts → exit 0 且 stdout 为空（干净=零 token 噪声；hook 静默合法）", async () => {
+  it("runCli alerts → exit 0 且 stdout=路由段非空（R3 干净态不再空注入；恒 exit 0 不变）", async () => {
     await runInit(dir);
     const out: string[] = [];
     const err: string[] = [];
@@ -119,7 +128,8 @@ describe("alerts hook 输出契约（恒 exit 0 / 空=静默 / 非化 JSON 词�
       stderr: (line) => err.push(line),
     });
     expect(code).toBe(0);
-    expect(out).toEqual([]);
+    expect(out.length).toBeGreaterThan(0);
+    expect(out.join("\n")).toContain("无活跃 TASK");
     expect(err).toEqual([]);
   });
 
@@ -281,17 +291,21 @@ function writeTaskRowLedger(): void {
   writeLedger(ledger);
 }
 
-describe("alerts breadcrumb（P3：路由与 status/session 同表共享）", () => {
-  it("无活跃任务 → breadcrumb=null 且 human 零行（零 token 噪声不变）", async () => {
+describe("alerts workflow 路由段（R3）与 breadcrumb（P3 机读字段：路由与 status/session 同表共享）", () => {
+  it("无活跃任务 → breadcrumb=null；human=路由段两行（双入口 + pomaster-discovery 卡名）", async () => {
     writeLedger(baseLedger(3));
     const outcome = await runAlerts(dir);
     expect(outcome.result.breadcrumb).toBeNull();
     expect(outcome.result.next_action).not.toBeNull();
     expect(outcome.result.next_action?.route_id).toBe("R_NO_ACTIVE_TASK");
-    expect(outcome.human).toEqual([]);
+    expect(outcome.human.length).toBe(2);
+    expect(outcome.human[0]).toContain("无活跃 TASK");
+    expect(outcome.human[0]).toContain("pomaster-discovery 卡");
+    expect(outcome.human[1]).toContain('pomaster triage "<request>"');
+    expect(outcome.human[1]).toContain("pomaster brainstorm start");
   });
 
-  it("有活跃任务且零告警 → human 仅 breadcrumb 一行（八拍② permit issue 路标）", async () => {
+  it("有活跃任务且零告警 → human=路由段（八拍②位置 + 下一拍命令 + 分段卡名）；breadcrumb 机读字段同源", async () => {
     writeTaskRowLedger();
     const outcome = await runAlerts(dir);
     expect(outcome.ok).toBe(true);
@@ -300,10 +314,17 @@ describe("alerts breadcrumb（P3：路由与 status/session 同表共享）", ()
     expect(outcome.result.breadcrumb).toBe(
       "POMaster breadcrumb: TASK.T1（八拍②）→ pomaster permit issue --subject TASK.T1 --actor <type>:<name> --change-ref TASK.T1",
     );
-    expect(outcome.human).toEqual([outcome.result.breadcrumb]);
+    // R3 路由段：八拍位置 + 拍名 + 下一拍命令（首行）+ 分段卡（次行）。
+    expect(outcome.result.workflow_routing).toHaveLength(2);
+    expect(outcome.result.workflow_routing[0]).toBe(
+      "POMaster workflow: TASK.T1 当前八拍② FRAMEWORK LOCK → 下一拍: pomaster permit issue --subject TASK.T1 --actor <type>:<name> --change-ref TASK.T1",
+    );
+    expect(outcome.result.workflow_routing[1]).toContain("分段卡: pomaster-permit");
+    expect(outcome.human).toEqual([...outcome.result.workflow_routing]);
+    expect(outcome.human.length).toBeLessThanOrEqual(10);
   });
 
-  it("有活跃任务且有告警 → alerts 行在前、breadcrumb 收尾（共单行；≤10k 契约不变）", async () => {
+  it("有活跃任务且有告警 → alerts 块在前、路由段收尾（共 ≤10 行；≤10k 契约不变）", async () => {
     const ledger = baseLedger(10);
     ledger.objects = [
       {
@@ -322,19 +343,28 @@ describe("alerts breadcrumb（P3：路由与 status/session 同表共享）", ()
     writeLedger(ledger);
     const outcome = await runAlerts(dir);
     expect(outcome.result.alerts).toHaveLength(1);
-    expect(outcome.human).toHaveLength(4);
+    expect(outcome.human.length).toBeLessThanOrEqual(10);
     expect(outcome.human[0]).toContain("POMaster alerts（1 项可行动）:");
     expect(outcome.human[1]).toContain("[OBJECT_CHALLENGED]");
-    expect(outcome.human[outcome.human.length - 1]).toBe(outcome.result.breadcrumb);
+    expect(outcome.human.join("\n")).toContain("POMaster workflow: TASK.T1 当前八拍②");
     expect(outcome.human.join("\n").length).toBeLessThanOrEqual(10_000);
   });
 
-  it("未初始化 → 零输出（面包屑缺席显式，hook 静默纪律不变）+ next_action=null + 缺席告警不重复", async () => {
+  it("未初始化 → 零输出（路由段空数组 + 面包屑缺席显式，hook 静默纪律不变）+ next_action=null + 缺席告警不重复", async () => {
     const outcome = await runAlerts(dir);
     expect(outcome.human).toEqual([]);
+    expect(outcome.result.workflow_routing).toEqual([]);
     expect(outcome.result.breadcrumb).toBeNull();
     expect(outcome.result.next_action).toBeNull();
     expect(outcome.warnings.filter((warning) => warning.code === "NOT_INITIALIZED")).toHaveLength(1);
+  });
+
+  it("BEAT_CARD_NAMES 与 SKILL_MANIFEST 卡名双向闭合（路由段分段卡名不许指向不存在的卡）", () => {
+    const cardNames = new Set(SKILL_MANIFEST.map((spec) => spec.name));
+    for (const card of Object.values(BEAT_CARD_NAMES)) {
+      expect(cardNames.has(card), `分段卡 ${card} 必须在 SKILL_MANIFEST 注册表`).toBe(true);
+    }
+    expect(Object.keys(BEAT_CARD_NAMES)).toHaveLength(8);
   });
 });
 

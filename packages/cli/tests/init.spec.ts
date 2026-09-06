@@ -1031,6 +1031,85 @@ describe("重入口 skills 双镜像", () => {
   });
 });
 
+// ============================================================
+// R1（09-06）：pomaster-discovery 升格方法论长卡——三层结构 + 生命周期全图钉版
+// ============================================================
+
+describe("pomaster-discovery 方法论长卡（R1：Grill Strategy 主轴 / 对话形式层 / 机器闸 / 生命周期全图）", () => {
+  function discoveryCard(): string {
+    return read(".agents/skills/pomaster-discovery/SKILL.md");
+  }
+
+  it("description 含自然语言触发词（需求讨论/想法澄清/brainstorm/怎么规划/新功能探索/拷问需求）", async () => {
+    await runInit(dir);
+    const text = discoveryCard();
+    for (const word of ["需求讨论", "想法澄清", "brainstorm", "怎么规划", "新功能探索", "拷问需求"]) {
+      expect(text.includes(word), `触发词「${word}」必须在 discovery 卡 frontmatter 在座`).toBe(true);
+    }
+  });
+
+  it("三层结构在座：Grill Strategy 主轴（先 Ground 后 Grill / 九类 Expose / Frontier / Upstream Invalidation）+ 对话形式层 + 机器闸命令链", async () => {
+    await runInit(dir);
+    const text = discoveryCard();
+    // 第一层：Grill Strategy 主轴。
+    expect(text).toContain("Grill Strategy");
+    expect(text).toContain("先 Ground 后 Grill");
+    expect(text).toContain("Grill does not ask more questions");
+    expect(text).toContain("discovers the questions worth answering");
+    expect(text).toContain("Expose Hidden Decision");
+    expect(text).toContain("Expose Hidden Assumption");
+    expect(text).toContain("Expose Dependency");
+    expect(text).toContain("Expose Conflict");
+    expect(text).toContain("Expose Reversibility Boundary");
+    expect(text).toContain("Expose Failure Behavior");
+    expect(text).toContain("Expose Authority Boundary");
+    expect(text).toContain("Expose Acceptance Gap");
+    expect(text).toContain("Expose Evidence Gap");
+    expect(text).toContain("Frontier");
+    expect(text).toContain("Upstream Change Invalidation");
+    expect(text).toContain("Decision Graph");
+    // 第二层：对话形式纪律。
+    expect(text).toContain("task-first");
+    expect(text).toContain("先查后问");
+    expect(text).toContain("一次一问");
+    expect(text).toContain("research-first");
+    expect(text).toContain("Out of Scope");
+    // 第三层：机器闸命令链。
+    for (const word of ["brainstorm start", "question-gate", "decide --set", "decide --answer", "decide --ready", "promote --apply"]) {
+      expect(text).toContain(word);
+    }
+  });
+
+  it("任务生命周期全图在座：discovery（promote 即建任务）→ research（request→回填）→ 八拍②-⑧ → closeout 终点", async () => {
+    await runInit(dir);
+    const text = discoveryCard();
+    expect(text).toContain("任务生命周期全图");
+    expect(text).toContain("promote 即建任务");
+    for (const word of ["research request", "research handoff", "八拍", "closeout"]) {
+      expect(text).toContain(word);
+    }
+    for (const beat of ["②", "③", "④", "⑤", "⑥", "⑦", "⑧"]) {
+      expect(text.includes(beat), `八拍${beat} 必须在生命周期全图在座`).toBe(true);
+    }
+  });
+
+  it("「行为纪律 vs 机器闸」分工小节在座（拷问是模型行为；decide --ready 不足照样 fail-closed）", async () => {
+    await runInit(dir);
+    const text = discoveryCard();
+    expect(text).toContain("行为纪律 vs 机器闸");
+    expect(text).toContain("fail-closed");
+  });
+
+  it("卡体量与方法论级对齐（trellis-brainstorm 同量级下限钉：≥120 行正文），且不复制 --help 全文（零 pomaster 命令全景分节）", async () => {
+    await runInit(dir);
+    const text = discoveryCard();
+    expect(text.split("\n").length).toBeGreaterThanOrEqual(120);
+    // 单一事实源纪律：卡不复制 --help 全文（命令全景只住 pomaster 路由卡）。
+    expect(text).not.toContain("# 0 BOOTSTRAP");
+    expect(text).not.toContain("# 横切 ——");
+  });
+});
+
 describe("重入口 hooks settings.json 合并（claude 层）", () => {
   it("生成 shell form 注册项：SessionStart→pomaster session、UserPromptSubmit→pomaster alerts；无 args 无 if 字段", async () => {
     await runInit(dir);

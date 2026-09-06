@@ -44,6 +44,7 @@ import type {
   PortabilityRuntimeRebuildProbe,
 } from "@pomaster/kernel";
 import type { DetectionResult, DetectorFacts } from "@pomaster/gauntlet-lite";
+import { findExecutableOnPath, platformDetectorFacts } from "@pomaster/gauntlet-lite";
 import {
   AGENTS_MD_RELATIVE,
   GENERATED_MARKER,
@@ -172,6 +173,8 @@ export interface DoctorToolProbeDeps {
   readonly gauntletProbes?: readonly GauntletToolProbe[];
   /** P1-5：catalog 根注入（测试/嵌入方；缺省 kernel resolveCatalogRoot 缺省定位）。 */
   readonly catalogRoot?: string;
+  /** R4：hook 命令可执行体解析注入（缺省 = PATH 解析，defaultResolveHookExecutable）。 */
+  readonly resolveHookExecutable?: HookExecutableResolver;
 }
 
 /** D22 一键引导文本：粘贴即完成 chrome-devtools MCP 配置（生成 .mcp.json 或并入现有 mcpServers）。 */
@@ -321,6 +324,45 @@ export async function probePlaywrightMcp(
 export const HEAVY_ENTRY_HOOKS_PROBE = "heavy_entry_hooks";
 export const HEAVY_ENTRY_SKILLS_PROBE = "heavy_entry_skills";
 
+/**
+ * hook 命令可执行体解析器（R4 注入面：测试注入 fake 保证确定性；缺省 = gauntlet-lite
+ * findExecutableOnPath 单一探测面——命令串首 token 在 PATH 逐目录 × 平台后缀解析）。
+ */
+export type HookExecutableResolver = (command: string) => string | null;
+
+/** heavy_entry_hooks 探针注入面（R4；缺省转调 PATH 可执行体解析）。 */
+export interface HeavyEntryProbeDeps {
+  readonly resolveHookExecutable?: HookExecutableResolver;
+}
+
+/** DoctorToolProbeDeps 的 R4 扩展键（runDoctor → probeHeavyEntryInstall 透传）。 */
+export interface DoctorHookProbeDeps {
+  readonly resolveHookExecutable?: HookExecutableResolver;
+}
+
+/**
+ * R4 修复指引（hooks 注册在座但注入内容不可达时的三段路标）：重跑 init 重建安装物 /
+ * 检查 PATH（npm 全局 bin）/ harness 侧项目 hooks 信任审批前置说明——审批发生在
+ * harness 会话层，doctor 无法替代该审批，只能显式提醒。
+ */
+export const HEAVY_ENTRY_HOOKS_REPAIR_HINT =
+  "重跑 pomaster init 重建 hooks 注册与安装物（幂等）；检查 PATH 是否含 npm 全局 bin 目录" +
+  "（npm install -g pomaster，或改用 npx pomaster 词形重装）；harness 前置说明：Claude Code " +
+  "需在会话中信任/批准项目 hooks（首次提示）后 hook 才会执行——该审批在 harness 侧，doctor 无法替代。";
+
+/**
+ * 缺省 hook 命令解析（R4）：shell form hook 命令串（`pomaster session` / `pomaster
+ * alerts`）的首 token → gauntlet-lite findExecutableOnPath（探测面与机判腿 run 前置闸
+ * 同源，禁两套探测口径）。形态取舍（PRD R4 提供 spawn/--help 级或 PATH 解析两形）：
+ * 取 PATH 可执行体解析——零进程派生、亚秒、无 shell/cmd 差异；spawn 级验证经
+ * deps.resolveHookExecutable 注入位承载。解析不到 = hooks 会静默不生效（shell 找不到
+ * 命令时 SessionStart/UserPromptSubmit 注入整段失效）。
+ */
+export const defaultResolveHookExecutable: HookExecutableResolver = (command) => {
+  const executable = command.trim().split(/\s+/)[0] ?? command.trim();
+  return findExecutableOnPath(executable, platformDetectorFacts(process.cwd()));
+};
+
 /** 入口形态二态（AGENTS.md 生成标记 + 重入口安装标记机读判定；标记缺席 = 未安装/最小形态，不猜测）。 */
 export type EntryModeState = "not-installed" | "heavy";
 
@@ -345,19 +387,22 @@ async function readTextOrNull(absolute: string): Promise<string | null> {
 }
 
 /**
- * 重入口安装物探测（hooks 注册态 + skills 双镜像在位/逐字节一致；幂等可验——
- * init 重跑零写入即本探针持续 READY）。探针按入口形态判「应装未装」而不一刀切：
+ * 重入口安装物探测（hooks 注册态 + 注入内容可达性 + skills 双镜像在位/逐字节一致；幂等
+ * 可验——init 重跑零写入即本探针持续 READY）。探针按入口形态判「应装未装」而不一刀切：
  * - not-installed（无 AGENTS.md / 无重入口安装标记——含历史已删除形态的存量标记）→
  *   MISSING_CONFIGURATION（带 init 路标：重入口为默认，hooks/skills 未装直接指路
  *   重跑 init——B7 裁定 2026-09-04）；
- * - heavy → hooks：settings.json 在座 + 两条注册项在场 = READY，文件缺失/注册项缺失
- *   = MISSING_CONFIGURATION，坏 JSON/结构不合 = DEFECT（坏配置会被 harness 整体跳过、
- *   hooks 静默失效）；skills：15 份 × 双镜像全在且逐字节一致 = READY，任一缺失 =
- *   MISSING_CONFIGURATION，字节漂移 = DEFECT（双镜像漂移会使「哪份被加载」成为
- *   行为分叉点——单一事实源纪律破坏）。
+ * - heavy → hooks：settings.json 在座 + 两条注册项在场 + 两条 hook 命令（pomaster
+ *   session / pomaster alerts）可执行体 PATH 可达（R4 2026-09-06 生效自检——注册在座
+ *   而命令不可达时 hooks 静默失效）= READY；文件缺失/注册项缺失/命令不可达 =
+ *   MISSING_CONFIGURATION（不可达带 HEAVY_ENTRY_HOOKS_REPAIR_HINT 三段路标），坏
+ *   JSON/结构不合 = DEFECT（坏配置会被 harness 整体跳过、hooks 静默失效）；
+ *   skills：15 份 × 双镜像全在且逐字节一致 = READY，任一缺失 = MISSING_CONFIGURATION，
+ *   字节漂移 = DEFECT（双镜像漂移会使「哪份被加载」成为行为分叉点——单一事实源纪律破坏）。
  */
 export async function probeHeavyEntryInstall(
   rootDir: string,
+  deps?: HeavyEntryProbeDeps,
 ): Promise<readonly [DoctorProbe, DoctorProbe]> {
   const mode = await readEntryMode(rootDir);
   if (mode === "not-installed") {
@@ -444,10 +489,31 @@ export async function probeHeavyEntryInstall(
         hint: "重跑 pomaster init 合并注册项（按 command 词形幂等查重，既有内容保留）。",
       };
     }
+    // —— R4（09-06）生效自检：注册在座之外，两条 hook 命令的可执行体必须 PATH 可达
+    //（shell form hook 的执行前提）——不可达 = SessionStart/UserPromptSubmit 注入整段
+    // 静默失效，MISSING_CONFIGURATION 带三段修复路标（init / PATH / harness 审批前置）。 ——
+    const unreachable: string[] = [];
+    const resolved: string[] = [];
+    for (const { command } of POMASTER_HOOK_EVENT_COMMANDS) {
+      const executablePath =
+        deps?.resolveHookExecutable !== undefined
+          ? deps.resolveHookExecutable(command)
+          : defaultResolveHookExecutable(command);
+      if (executablePath === null) unreachable.push(command);
+      else resolved.push(`${command} → ${executablePath}`);
+    }
+    if (unreachable.length > 0) {
+      return {
+        probe: HEAVY_ENTRY_HOOKS_PROBE,
+        status: "MISSING_CONFIGURATION",
+        detail: `hook 注册在座但命令不可达：${unreachable.join("、")}（可执行体未在 PATH 解析到——hooks 静默失效）`,
+        hint: HEAVY_ENTRY_HOOKS_REPAIR_HINT,
+      };
+    }
     return {
       probe: HEAVY_ENTRY_HOOKS_PROBE,
       status: "READY",
-      detail: `${POMASTER_HOOK_EVENT_COMMANDS.map((e) => e.event).join(" + ")} hooks registered（合并式，既有条目保留）`,
+      detail: `${POMASTER_HOOK_EVENT_COMMANDS.map((e) => e.event).join(" + ")} hooks registered（合并式，既有条目保留）+ 命令 PATH 可达（${resolved.join("; ")}）`,
       hint: null,
     };
   })();
@@ -701,7 +767,8 @@ async function runGauntletProbes(
  *    探针同款四态 fail-closed——双 MCP 在呈现面各自缺席显式，禁静默）。
  * 3.5) heavy_entry_hooks / heavy_entry_skills —— 重入口安装物探针（D13 2026-09-03
  *    修订：重入口默认；B7 裁定 2026-09-04 init 单一重入口——hooks 注册态按 command
- *    词形核对、skills 15×2 双镜像逐字节一致核对；重入口安装标记缺席 = 未安装 →
+ *    词形核对、hook 命令可执行体 PATH 可达核对（R4 生效自检，不可达带三段修复路标）、
+ *    skills 15×2 双镜像逐字节一致核对；重入口安装标记缺席 = 未安装 →
  *    MISSING_CONFIGURATION 指路重跑 init；共享 readEntryMode 单次读取——
  *    probeMcpServerConfigured 先例）。
  * 4) sensor_capability_catalog —— P1-5 catalog/sensors/ 载入（裁决 8 D7=A loader+doctor
@@ -821,9 +888,9 @@ export async function runDoctor(
   probes.push(await probePlaywrightMcp(rootDir));
 
   // 3.5) 重入口安装物探针（D13 2026-09-03 修订：重入口默认；B7 裁定 2026-09-04
-  //      init 单一重入口）：hooks 注册态 + skills 双镜像一致态；重入口安装标记缺席
-  //      = 未安装 → MISSING_CONFIGURATION 指路重跑 init。
-  probes.push(...(await probeHeavyEntryInstall(rootDir)));
+  //      init 单一重入口）：hooks 注册态 + 命令可达性（R4）+ skills 双镜像一致态；
+  //      重入口安装标记缺席 = 未安装 → MISSING_CONFIGURATION 指路重跑 init。
+  probes.push(...(await probeHeavyEntryInstall(rootDir, { resolveHookExecutable: deps?.resolveHookExecutable })));
 
   // 4) P1-5 Sensor Capability Catalog（裁决 8 D7=A：loader + doctor 联结）。
   //    只做声明式引用的行名解析（SENSOR_DETECTOR_TO_DOCTOR_PROBE），绝不二次探测；

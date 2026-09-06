@@ -37,9 +37,18 @@ import {
   probeHeavyEntryInstall,
   HEAVY_ENTRY_HOOKS_PROBE,
   HEAVY_ENTRY_SKILLS_PROBE,
+  HEAVY_ENTRY_HOOKS_REPAIR_HINT,
   SKILL_MANIFEST,
   CLAUDE_SETTINGS_RELATIVE,
 } from "@pomaster/cli";
+
+/**
+ * hook 命令可达 fake（R4 注入面：探测确定性不依赖宿主环境——CI/开发机上 `pomaster`
+ * 是否全局安装不可假设；缺省 PATH 解析的真实形态另由注入 unreachable 的负向拍覆盖）。
+ */
+function reachableHookExecutable(): string {
+  return "C:/fake/npm-global/pomaster.cmd";
+}
 
 /** 全 READY 工具探针 fake（宿主工具安装状态无关化；探测面语义另由缺席用例覆盖）。 */
 function readyGauntletProbes(): GauntletToolProbe[] {
@@ -160,7 +169,10 @@ describe("doctor 四态矩阵", () => {
   it(".mcp.json 含 chrome-devtools → mcp=READY；真实 kernel 亦 READY → 全探针 READY ok=true", async () => {
     await runInit(dir);
     writeBothMcpsConfig(dir);
-    const outcome = await runDoctor(dir, { gauntletProbes: readyGauntletProbes() });
+    const outcome = await runDoctor(dir, {
+      gauntletProbes: readyGauntletProbes(),
+      resolveHookExecutable: reachableHookExecutable,
+    });
     const mcp = outcome.result.probes.find(
       (p) => p.probe === "chrome_devtools_mcp",
     );
@@ -205,6 +217,7 @@ describe("doctor 四态矩阵", () => {
     const outcome = await runDoctor(dir, {
       ...kernel,
       gauntletProbes: readyGauntletProbes(),
+      resolveHookExecutable: reachableHookExecutable,
     });
     expect(outcome.ok).toBe(true);
     expect(outcome.result.probes.every((p) => p.status === "READY")).toBe(true);
@@ -487,23 +500,56 @@ describe("detectionToDoctorProbe 四态映射（gauntlet-lite → doctor 语义�
 // 重入口安装物探针（D13 2026-09-03 修订：重入口默认；B7 裁定 2026-09-04 init 单一重入口）
 // ============================================================
 
-describe("heavy_entry 探针（hooks 注册态 / skills 双镜像一致态；重入口标记缺席即未安装）", () => {
+describe("heavy_entry 探针（hooks 注册态 / 命令可达性 R4 / skills 双镜像一致态；重入口标记缺席即未安装）", () => {
   it("未安装（无 AGENTS.md）→ 双探针 MISSING_CONFIGURATION + init 路标", async () => {
-    const [hooks, skills] = await probeHeavyEntryInstall(dir);
+    const [hooks, skills] = await probeHeavyEntryInstall(dir, {
+      resolveHookExecutable: reachableHookExecutable,
+    });
     expect(hooks.probe).toBe(HEAVY_ENTRY_HOOKS_PROBE);
     expect(hooks.status).toBe("MISSING_CONFIGURATION");
     expect(hooks.hint).toContain("pomaster init");
     expect(skills.status).toBe("MISSING_CONFIGURATION");
   });
 
-  it("init 后 → 双探针 READY（hooks 注册 + 15×2 镜像逐字节一致）", async () => {
+  it("init 后 → 双探针 READY（hooks 注册 + 命令 PATH 可达 + 15×2 镜像逐字节一致）", async () => {
     await runInit(dir);
-    const [hooks, skills] = await probeHeavyEntryInstall(dir);
+    const [hooks, skills] = await probeHeavyEntryInstall(dir, {
+      resolveHookExecutable: reachableHookExecutable,
+    });
     expect(hooks.status).toBe("READY");
     expect(hooks.detail).toContain("SessionStart");
     expect(hooks.detail).toContain("UserPromptSubmit");
+    expect(hooks.detail).toContain("PATH 可达");
     expect(skills.status).toBe("READY");
     expect(skills.detail).toContain("15 skills × 2");
+  });
+
+  it("R4 生效自检：hooks 注册在座但 pomaster 不在 PATH → MISSING_CONFIGURATION + 三段修复路标（init / PATH / harness 审批前置）", async () => {
+    await runInit(dir);
+    const [hooks] = await probeHeavyEntryInstall(dir, {
+      resolveHookExecutable: () => null,
+    });
+    expect(hooks.status).toBe("MISSING_CONFIGURATION");
+    expect(hooks.detail).toContain("命令不可达");
+    expect(hooks.detail).toContain("pomaster session");
+    expect(hooks.detail).toContain("pomaster alerts");
+    expect(hooks.hint).toContain("pomaster init");
+    expect(hooks.hint).toContain("PATH");
+    expect(hooks.hint).toContain("npm install -g pomaster");
+    expect(hooks.hint).toContain("信任");
+    // 词形钉版：共享常量与探针 hint 同源（README/文档引用同一词面）。
+    expect(HEAVY_ENTRY_HOOKS_REPAIR_HINT).toContain("harness");
+    expect(HEAVY_ENTRY_HOOKS_REPAIR_HINT).toContain("doctor 无法替代");
+  });
+
+  it("R4 非恒真对照：单条命令不可达同样红（SessionStart 可达 / UserPromptSubmit 不可达 → MISSING_CONFIGURATION 点名缺席者）", async () => {
+    await runInit(dir);
+    const [hooks] = await probeHeavyEntryInstall(dir, {
+      resolveHookExecutable: (command) => (command === "pomaster session" ? "C:/fake/pomaster.cmd" : null),
+    });
+    expect(hooks.status).toBe("MISSING_CONFIGURATION");
+    expect(hooks.detail).toContain("pomaster alerts");
+    expect(hooks.detail).not.toContain("pomaster session（");
   });
 
   it("历史形态标记（B7 前旧版产物）→ 未安装：双探针 MISSING_CONFIGURATION 指路重跑 init（hooks/skills 未装即修，B7 裁定）", async () => {
@@ -514,7 +560,9 @@ describe("heavy_entry 探针（hooks 注册态 / skills 双镜像一致态；重
       `<!-- pomaster:generated -->\n<!-- pomaster:entry-mode:light -->\n# 旧版入口\n`,
       "utf8",
     );
-    const [hooks, skills] = await probeHeavyEntryInstall(dir);
+    const [hooks, skills] = await probeHeavyEntryInstall(dir, {
+      resolveHookExecutable: reachableHookExecutable,
+    });
     expect(hooks.status).toBe("MISSING_CONFIGURATION");
     expect(hooks.hint).toContain("pomaster init");
     expect(hooks.hint).not.toContain("mode");
@@ -525,7 +573,9 @@ describe("heavy_entry 探针（hooks 注册态 / skills 双镜像一致态；重
     // 与历史形态场景的区别：none 形态是现行 init 产物（--platforms none），
     // 入口带生成标记但无任何模式标记行——探针按「未安装」呈现。
     await runInit(dir, { platforms: "none" });
-    const [hooks, skills] = await probeHeavyEntryInstall(dir);
+    const [hooks, skills] = await probeHeavyEntryInstall(dir, {
+      resolveHookExecutable: reachableHookExecutable,
+    });
     expect(hooks.status).toBe("MISSING_CONFIGURATION");
     expect(hooks.detail).toContain("no pomaster heavy entry");
     expect(hooks.hint).toContain("pomaster init");
@@ -539,7 +589,9 @@ describe("heavy_entry 探针（hooks 注册态 / skills 双镜像一致态；重
     await runInit(dir);
     // 缺失：删掉 claude 侧 router skill。
     rmSync(join(dir, ".claude", "skills", "pomaster", "SKILL.md"));
-    const missing = await probeHeavyEntryInstall(dir);
+    const missing = await probeHeavyEntryInstall(dir, {
+      resolveHookExecutable: reachableHookExecutable,
+    });
     expect(missing[1].status).toBe("MISSING_CONFIGURATION");
     expect(missing[1].detail).toContain(".claude/skills/pomaster");
     // 漂移：改写 .agents 侧内容（仍带生成标记）。
@@ -547,7 +599,9 @@ describe("heavy_entry 探针（hooks 注册态 / skills 双镜像一致态；重
     const skillPath = join(dir, ".agents", "skills", "pomaster", "SKILL.md");
     const original = readFileSync(skillPath, "utf8");
     writeFileSync(skillPath, `${original}\n<!-- 人类或事故追加行 -->\n`, "utf8");
-    const drifted = await probeHeavyEntryInstall(dir);
+    const drifted = await probeHeavyEntryInstall(dir, {
+      resolveHookExecutable: reachableHookExecutable,
+    });
     expect(drifted[1].status).toBe("DEFECT");
     expect(drifted[1].detail).toContain("字节漂移");
     expect(drifted[1].hint).toContain("pomaster --help");
@@ -562,12 +616,16 @@ describe("heavy_entry 探针（hooks 注册态 / skills 双镜像一致态；重
     };
     delete settings.hooks.SessionStart;
     writeFileSync(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
-    const absent = await probeHeavyEntryInstall(dir);
+    const absent = await probeHeavyEntryInstall(dir, {
+      resolveHookExecutable: reachableHookExecutable,
+    });
     expect(absent[0].status).toBe("MISSING_CONFIGURATION");
     expect(absent[0].detail).toContain("SessionStart");
     // 坏 JSON：
     writeFileSync(settingsPath, "{oops", "utf8");
-    const corrupt = await probeHeavyEntryInstall(dir);
+    const corrupt = await probeHeavyEntryInstall(dir, {
+      resolveHookExecutable: reachableHookExecutable,
+    });
     expect(corrupt[0].status).toBe("DEFECT");
     expect(corrupt[0].detail).toContain("不是合法 JSON");
   });
@@ -576,7 +634,9 @@ describe("heavy_entry 探针（hooks 注册态 / skills 双镜像一致态；重
     await runInit(dir);
     const victim = join(dir, ".agents", "skills", SKILL_MANIFEST[SKILL_MANIFEST.length - 1]!.name, "SKILL.md");
     rmSync(victim);
-    const probes = await probeHeavyEntryInstall(dir);
+    const probes = await probeHeavyEntryInstall(dir, {
+      resolveHookExecutable: reachableHookExecutable,
+    });
     expect(probes[1].status).toBe("MISSING_CONFIGURATION");
     expect(probes[1].detail).toContain(SKILL_MANIFEST[SKILL_MANIFEST.length - 1]!.name);
     expect(existsSync(victim)).toBe(false);
@@ -585,7 +645,9 @@ describe("heavy_entry 探针（hooks 注册态 / skills 双镜像一致态；重
   it("runDoctor 矩阵接线：heavy init 后双探针入矩阵（mkdir 前置保障）", async () => {
     mkdirSync(dir, { recursive: true });
     await runInit(dir);
-    const outcome = await runDoctor(dir);
+    const outcome = await runDoctor(dir, {
+      resolveHookExecutable: reachableHookExecutable,
+    });
     const byProbe = new Map(outcome.result.probes.map((p) => [p.probe, p]));
     expect(byProbe.get(HEAVY_ENTRY_HOOKS_PROBE)?.status).toBe("READY");
     expect(byProbe.get(HEAVY_ENTRY_SKILLS_PROBE)?.status).toBe("READY");

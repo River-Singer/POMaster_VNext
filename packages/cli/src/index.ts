@@ -235,8 +235,10 @@ import {
   runProductionSelfImprovementRegister,
 } from "./production.js";
 import {
+  runResearchHandoff,
   runResearchInspect,
   runResearchList,
+  runResearchRequest,
   runResearchStart,
 } from "./research.js";
 import {
@@ -353,8 +355,10 @@ export {
   ALERT_KINDS,
   ALERT_UNSOURCED_CATEGORIES,
   ALERTS_OUTPUT_HARD_CAP,
+  BEAT_CARD_NAMES,
   capPlainOutput,
   deriveAlerts,
+  renderWorkflowRouting,
 } from "./alerts.js";
 export type {
   AlertsResult,
@@ -362,7 +366,14 @@ export type {
   AlertKind,
   AlertsDerivation,
 } from "./alerts.js";
-export { runSessionOverview, SESSION_OUTPUT_HARD_CAP, SESSION_TOTAL_BUDGET, SESSION_SEGMENT_BUDGET, SESSION_SEGMENT_TITLES } from "./session.js";
+export {
+  runSessionOverview,
+  SESSION_OUTPUT_HARD_CAP,
+  SESSION_TOTAL_BUDGET,
+  SESSION_SEGMENT_BUDGET,
+  SESSION_SEGMENT_TITLES,
+  SESSION_FIRST_REPLY_LINES,
+} from "./session.js";
 export type { SessionOverviewResult } from "./session.js";
 export {
   collectNextActionSnapshot,
@@ -482,15 +493,17 @@ export {
   probeChromeDevtoolsMcp,
   probePlaywrightMcp,
   probeHeavyEntryInstall,
+  defaultResolveHookExecutable,
   HEAVY_ENTRY_HOOKS_PROBE,
   HEAVY_ENTRY_SKILLS_PROBE,
+  HEAVY_ENTRY_HOOKS_REPAIR_HINT,
   detectionToDoctorProbe,
   portabilityProbeToDoctorProbe,
   CHROME_DEVTOOLS_MCP_HINT,
   PLAYWRIGHT_MCP_HINT,
   DOCTOR_PROBE_STATUSES,
 } from "./doctor.js";
-export type { EntryModeState } from "./doctor.js";
+export type { EntryModeState, HookExecutableResolver, HeavyEntryProbeDeps } from "./doctor.js";
 export type {
   GauntletToolProbe,
   DoctorToolProbeDeps,
@@ -662,6 +675,8 @@ export {
   runResearchStart,
   runResearchList,
   runResearchInspect,
+  runResearchRequest,
+  runResearchHandoff,
   RESEARCH_MODE_ARGV_ALIASES,
 } from "./research.js";
 export type {
@@ -670,6 +685,11 @@ export type {
   ResearchListEntry,
   ResearchListResult,
   ResearchInspectResult,
+  ResearchRequestInput,
+  ResearchRequestResult,
+  ResearchRequestRecord,
+  ResearchHandoffApplyInput,
+  ResearchHandoffResult,
 } from "./research.js";
 export {
   runViewAttention,
@@ -2001,7 +2021,7 @@ export function createProgram(
   brainstorm
     .command("decide")
     .description(
-      "DISCOVERY→READY_TO_PROMOTE 公开推进链（§5/§6/§13/§15；kernel decision-graph 单一判卷源）：--set <file> 载入候选图（build+grounding 判定呈现+frontier，图落 scratchpad/decision-graph.json）→ --answer <DECISION.*> 决议（--accept|--value|--unknown --triage 六问|--defer；grounding READY_FOR_DECISION 前置闸）→ --ready 收敛判定（--msd-goal/--msd-scope/--msd-acceptance 三轴必答 + --residual 合法残留；全绿→READY_TO_PROMOTE，不足 fail-closed 列缺口状态不动）。暂不接线：research request/handoff 消费面（PR-4）——缺失事实消解出路随 hint 指路；其余晋升依据词形不经本命令判卷（不私造无判卷放行通道）",
+      "DISCOVERY→READY_TO_PROMOTE 公开推进链（§5/§6/§13/§15；kernel decision-graph 单一判卷源）：--set <file> 载入候选图（build+grounding 判定呈现+frontier，图落 scratchpad/decision-graph.json）→ --answer <DECISION.*> 决议（--accept|--value|--unknown --triage 六问|--defer；grounding READY_FOR_DECISION 前置闸）→ --ready 收敛判定（--msd-goal/--msd-scope/--msd-acceptance 三轴必答 + --residual 合法残留；全绿→READY_TO_PROMOTE，不足 fail-closed 列缺口状态不动）。NEEDS_RESEARCH 缺口消解链（PR-4）：pomaster research request 发起 → research handoff 回填 → 重跑 --ready 重判；其余晋升依据词形不经本命令判卷（不私造无判卷放行通道）",
     )
     .argument("<discovery-id>", "scratchpad id（brainstorm start 产出的 id；state 必须 DISCOVERY）")
     .option("--set <file>", "子动作①：候选图 JSON 文件（§5.2 十键候选节点数组；按进程 CWD 解析）")
@@ -2573,6 +2593,73 @@ export function createProgram(
         command: "research inspect",
         outcome,
         // 同 list：--json 被父命令先行消费时经 optsWithGlobals 兜住（§45 契约）。
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  // —— PR-4 命令链（09-06 R5）：Discovery 缺口公开消解 ——
+  // request 发起（kernel createResearchRequest 单一判卷源；index.yaml 落档 + 图侧
+  // request_refs 机械同步）→ handoff 回填（kernel applyResearchHandoff 单一判卷源；
+  // evidence 挂回节点 + index 入账）→ decide --ready 可重判。两命令都只写 Discovery
+  // 授权维护面，state gate = DISCOVERY（与 decide 同款）；零新治理语义，消解方由
+  // Owner 指定（托管编排/自动派发不做）。
+  research
+    .command("request")
+    .description(
+      "发起研究请求（PR-4 命令链；§9.1 九键 + §9.3 mode 路由 + §9.4 Request Gate——kernel createResearchRequest 单一判卷源）：request 落档 <host>/research/index.yaml + request_refs 同步进 decision-graph（幂等重放 NO_CHANGE）；只作用 DISCOVERY 态且必须锚定图内 Decision",
+    )
+    .argument("<discovery-id>", "scratchpad id（brainstorm decide --set 建图后）；state 必须 DISCOVERY")
+    .requiredOption("--decision <DECISION.*>", "来源 Decision（可重复；≥1——请求必须锚定到 Decision，§9.1 不接受无主研究）", collectValues, [])
+    .requiredOption("--proposition <text>", "精确可判定的事实主张（§9.1：不再接受宽泛问题）")
+    .requiredOption("--why <text>", "哪个 Decision 的 Recommendation 依赖本事实（why_needed）")
+    .requiredOption("--evidence <level>", "期望证据级（五级 Evidence 词形：AUTHORITATIVE|PRIMARY|IMPLEMENTATION|SECONDARY|INFERENCE）")
+    .option("--mode <mode>", "六模式（internal|external|mixed|comparative|impact|forensic 或 §81.2 大写词形）；缺省时必须 --gap")
+    .option("--gap <kind>", "§9.3 自动路由键（CURRENT_REALITY|EXTERNAL_CAPABILITY|REALITY_VS_PRACTICE|OPTION_COMPARISON|BLAST_RADIUS|ROOT_CAUSE）；mode 缺省时必给——零缺省政策")
+    .requiredOption("--stop-when <text>", "停机判据（可重复；≥1——防 Research 成为无限 Ceremony，§9.4）", collectValues, [])
+    .requiredOption("--forbid <text>", "越权禁令（§81.1 Research 有发现权无裁决权——逐字申报）")
+    .option("--disconfirming", "§9.2 证伪纪律申报：必须同时寻找 Contradicting Evidence（缺省 false——kernel notes 显式提示）")
+    .option("--context <ref>", "已知上下文引用（可重复）", collectValues, [])
+    .option("--req-id <RESEARCH.REQ.<n>>", "显式请求 id；缺省按 index.yaml 既有请求取最小未占用序号（零墙钟 A4）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (discoveryId: string, _opts, command) => {
+      // 混合模式（research 直跑形态 + 子命令并存；list/inspect 先例）：--mode/--json 与
+      // 父命令 research 同名声明，被父命令先行消费——须经 optsWithGlobals 读到全局值。
+      const opts = command.optsWithGlobals();
+      const outcome = await runResearchRequest(resolveDir(command), {
+        discoveryId,
+        decisions: opts.decision as string[],
+        proposition: opts.proposition as string,
+        why: opts.why as string,
+        evidence: opts.evidence as string,
+        ...(opts.mode !== undefined ? { mode: opts.mode as string } : {}),
+        ...(opts.gap !== undefined ? { gap: opts.gap as string } : {}),
+        stopWhen: opts.stopWhen as string[],
+        forbid: opts.forbid as string,
+        disconfirming: opts.disconfirming === true,
+        ...(opts.context !== undefined ? { context: opts.context as string[] } : {}),
+        ...(opts.reqId !== undefined ? { reqId: opts.reqId as string } : {}),
+      });
+      record({
+        command: "research request",
+        outcome,
+        asJson: opts.json === true,
+      });
+    });
+  research
+    .command("handoff")
+    .description(
+      "回填入账（PR-4 命令链；§10.1/§10.2 decision-aware handoff——kernel applyResearchHandoff 单一判卷源）：finding 挂回节点（research_finding_refs 增量/RESOLVES_FACT 消解 missing_facts/CONTRADICTS_PREMISE 入披露面/§12.4 INFERENCE 不升 Fact）+ index.yaml 入账（requests 状态 + handoff 三件）；回填后 decide --ready 可重判；幂等重放 NO_CHANGE",
+    )
+    .argument("<discovery-id>", "scratchpad id；state 必须 DISCOVERY")
+    .requiredOption("--file <path>", "§10.2 handoff JSON 文件（路径按进程 CWD 解析，同 decide --set 语义）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (discoveryId: string, opts, command) => {
+      const outcome = await runResearchHandoff(resolveDir(command), {
+        discoveryId,
+        file: opts.file as string,
+      });
+      record({
+        command: "research handoff",
+        outcome,
         asJson: command.optsWithGlobals().json === true,
       });
     });

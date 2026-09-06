@@ -61,7 +61,7 @@ pomaster new-entity check <governed-id> [--need ...]
 pomaster inspect <governed-id>
 pomaster graph <governed-id> [--view impact]
 pomaster brainstorm start/question-gate/status/decide/promote
-pomaster research list/inspect
+pomaster research list/inspect/request/handoff
 pomaster eval --suite behavioral
 pomaster catalog status/explain/relock
 pomaster migrate trellis-spec --analyze --spec-root <dir>
@@ -73,8 +73,8 @@ pomaster session attach/refresh/list
 pomaster lock acquire/heartbeat/release/steal/list
 pomaster execution begin/end/list
 pomaster trace show/list
-# pomaster session（不带子命令）= 治理速览投影（SessionStart 注入源；≤10k 字符，恒 exit 0）
-# pomaster alerts（重入口轻提醒源）= 可行动项过滤器（干净=空输出，恒 exit 0）
+# pomaster session（不带子命令）= 治理速览投影（SessionStart 注入源；≤10k 字符，恒 exit 0；尾部带首答确认协议指令段）
+# pomaster alerts（重入口 UserPromptSubmit 源）= 可行动项过滤器 + workflow 路由段（干净=非空但极简，恒 exit 0）
 ```
 
 ### 1. 安装
@@ -110,8 +110,8 @@ pomaster init
 
 **重入口默认**（D13 修订，2026-09-03）：init 缺省生成重入口全套，让 Agent 一开会话就自动看到治理状态、按需自动触发命令卡——
 
-- **skills 命令卡库**：`/pomaster` 路由全景 + `pomaster-bootstrap` … `pomaster-runtime` 等 15 份命令卡，双镜像安装到 `.agents/skills/`（通用层——Codex / Cursor / Gemini CLI / GitHub Copilot / VS Code / Amp / Warp / OpenCode / Droid 等原生读取）与 `.claude/skills/`（Claude Code 必需位），两份逐字节一致、同指 `pomaster --help` 单一事实源；
-- **hooks 注入（claude）**：`.claude/settings.json` 合并式注册 SessionStart → `pomaster session`（治理速览投影，≤10,000 字符硬上限）与 UserPromptSubmit → `pomaster alerts`（可行动项过滤器，干净=空输出恒 exit 0）；既有 hooks（人类/Trellis 条目）一律保留，坏 JSON fail-closed 不覆盖；
+- **skills 命令卡库**：`/pomaster` 路由全景 + `pomaster-bootstrap` … `pomaster-runtime` 等 15 份命令卡，双镜像安装到 `.agents/skills/`（通用层——Codex / Cursor / Gemini CLI / GitHub Copilot / VS Code / Amp / Warp / OpenCode / Droid 等原生读取）与 `.claude/skills/`（Claude Code 必需位），两份逐字节一致、同指 `pomaster --help` 单一事实源；其中 `pomaster-discovery` 是方法论长卡（Grounded Brainstorm：Grill Strategy 主轴 + 对话形式纪律 + 机器闸命令链 + 任务生命周期全图——「走 pomaster brainstorm」/需求讨论/拷问需求等自然语言命中）；
+- **hooks 注入（claude）**：`.claude/settings.json` 合并式注册 SessionStart → `pomaster session`（治理速览投影，≤10,000 字符硬上限，尾部带**首答确认协议**——模型首轮回复必须可见确认注入并报告 Next-Action 路由）与 UserPromptSubmit → `pomaster alerts`（可行动项过滤器 + workflow 路由段：无活跃 TASK 给判档/讨论双入口，有活跃 TASK 给八拍位置与下一拍命令，恒 exit 0）；既有 hooks（人类/Trellis 条目）一律保留，坏 JSON fail-closed 不覆盖；
 - **cursor/qoder**：加厚版 rules（命令卡 + Browser Eyes 展开进 `.cursor/rules/pomaster.mdc` / `.qoder/rules/pomaster.md`）。
 
 **多平台适配器**：`AGENTS.md` 恒为唯一事实源；`--platforms claude,codex,cursor,qoder` 追加各平台的适配器（`CLAUDE.md` / 根 `AGENTS.md` 即 codex 原生入口 / `.cursor/rules/pomaster.mdc` / `.qoder/rules/pomaster.md`，本包产物形态升级自动重写，人类异形内容一律不覆盖）；`--platforms none` 只建 AGENTS.md + 状态骨架。TTY 交互终端直接 `pomaster init` 会出复选清单（◉/◯ 空格勾选 / ↑↓ 移动 / 回车确认；raw 模式不可用时降级为编号输入）；`--json` 恒走确定性缺省（claude，重入口）。
@@ -122,7 +122,7 @@ pomaster init
 
 **baseline 栈预置草案**（G-B/G-C/G-D 裁定，2026-09-06）：问卷选型落定后，init 自动为 22 份 baseline md 生成「预置草案」节（节头 `PRESET-DRAFT — Owner 确认后成为基线`，NON-AUTHORITATIVE）——草案内容逐条溯源到已锚定的主题文档与 overlay（`- 源:` 行标注 `.pomaster` 路径 + 节锚），纯加法追加、`起步值:UNKNOWN` 骨架字节零改动；栈维度未销账的 lane 保持纯 UNKNOWN（缺席诚实）；draft-once（在座零触碰），Owner 可改；`baseline confirm` 时草案随整文件 digest 烙印，确认后改动即 `BASELINE_DRIFT` 走治理通路。业务实体/接口/数据模型零预置（New Entity Gate 词形在册）。
 
-装好后 `pomaster session`（无子命令）就是 hook 看到的治理速览——**八段分段投影**（分母/任务执行锁状态/**Next-Action 确定性路由**/许可例外/可行动项/attention/完整性微探针/八拍路标，带逐段预算与缺席诚实）；`pomaster status` 尾行 `next:` 给同一张路由表的当前建议；`pomaster alerts` 在有活跃任务时追加单行 breadcrumb。`pomaster doctor` 会用 `heavy_entry_hooks` / `heavy_entry_skills` 探针核对重入口安装物（hooks 注册态 + 双镜像逐字节一致；未安装 → MISSING_CONFIGURATION 并指路重跑 `pomaster init`）。
+装好后 `pomaster session`（无子命令）就是 hook 看到的治理速览——**八段分段投影**（分母/任务执行锁状态/**Next-Action 确定性路由**/许可例外/可行动项/attention/完整性微探针/八拍路标，带逐段预算与缺席诚实）+ 尾部首答确认协议（模型首轮必须确认注入并转述 Next-Action 路由）；`pomaster status` 尾行 `next:` 给同一张路由表的当前建议；`pomaster alerts` 恒带 workflow 路由段（无活跃 TASK → 八拍① triage 或 brainstorm start 双入口；有活跃 TASK → 八拍位置 + 下一拍命令 + 分段卡名）。`pomaster doctor` 会用 `heavy_entry_hooks` / `heavy_entry_skills` 探针核对重入口安装物（hooks 注册态 + hook 命令 PATH 可达的生效自检 + 双镜像逐字节一致；未安装/不可达 → MISSING_CONFIGURATION 并给修复指引——重跑 init / 检查 PATH / 项目 hooks 信任审批前置说明）。
 
 ### 3. init 之后该配置什么（config.yaml）
 

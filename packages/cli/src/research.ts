@@ -13,6 +13,20 @@
  *   发现4 复用 list 同款，../../ 穿透封死 + 四文件完整性 + index.yaml
  *   机读形态 + 五级 Evidence 判卷语义 adjudicateResearchFindings（含 §81.4 六字段
  *   sources/caveats 存在性——发现1 幻觉洗白 fail-closed）+ handoff 三件）。
+ * - `research request <discovery-id> …`（PR-4 命令链 09-06 R5：Discovery 的
+ *   missing_facts / Research Gap 公开消解入口）——kernel createResearchRequest 单一
+ *   判卷源（§9.1 九键 + §9.3 mode 路由 + §9.4 Request Gate 前两条件）；request 落档
+ *   `<host>/research/index.yaml`（§16：正式 requests 住 research/index.yaml，图侧只留
+ *   同步标记）+ kernel syncDecisionRequestRefs 把 id 同步进 graph.request_refs
+ *   （机械同步零新治理语义，fingerprint 由 kernel 重算——D24 人类禁算哈希）。
+ * - `research handoff <discovery-id> --file <handoff.json>`（同批 R5：回填入账）——
+ *   kernel applyResearchHandoff 单一判卷源（§10.1/§10.2：research_finding_refs 增量、
+ *   RESOLVES_FACT 消解 missing_facts、CONTRADICTS_PREMISE 入披露面、§12.4 INFERENCE
+ *   不升 Fact）+ index.yaml 同拍入账（requests 状态 answered/unresolved + handoff
+ *   三件 + key_findings 原样存档）。消解方是谁由 Owner 指定（托管编排/自动派发
+ *   research sub-agent 明确不做——卡片只写通路，不写派发）。
+ *   两命令都只写 Discovery 授权维护面（scratchpad 内 research/ 与 decision-graph.json
+ *   sidecar——§80.2 权限清单；state gate = DISCOVERY，与 decide 同款），治理 store 零直写。
  *
  * 纪律：
  * - 判卷权威在 kernel（checkResearchWriteContract/adjudicateResearchFindings），
@@ -26,19 +40,29 @@
 import { existsSync } from "node:fs";
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { ResearchModeValue } from "@pomaster/schemas";
+import type { ResearchEvidenceLevelValue, ResearchModeValue } from "@pomaster/schemas";
+import { RESEARCH_MODE_VALUES } from "@pomaster/schemas";
 import {
   RESEARCH_ARTIFACT_FILES,
+  RESEARCH_MODE_ROUTE_HINTS,
   adjudicateResearchFindings,
+  applyResearchHandoff,
   checkResearchWriteContract,
+  createResearchRequest,
+  syncDecisionRequestRefs,
   type ResearchFindingAdjudication,
   type ResearchFindingInput,
+  type ResearchHandoffInput,
+  type ResearchModeRouteHint,
 } from "@pomaster/kernel";
 import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
+import { decisionGraphPath, decisionInputsPath, loadDecisionGraph } from "./brainstorm.js";
 import {
   DISCOVERY_ID_PATTERN,
+  discoveryScratchpadDirPath,
   discoveryScratchpadsDirPath,
+  toPosix,
 } from "./store-layout.js";
 
 // ============================================================
@@ -820,5 +844,688 @@ export async function runResearchInspect(
     },
     human,
     warnings,
+  );
+}
+
+// ============================================================
+// research request / research handoff（PR-4 命令链 09-06 R5：缺口公开消解）
+// ============================================================
+
+/** scratchpad 状态闸（与 brainstorm decide 同款：两命令都只作用于 DISCOVERY 态）。 */
+async function scratchpadDiscoveryState(
+  rootDir: string,
+  id: string,
+): Promise<{ readonly state: string } | { readonly error: CliError }> {
+  const statePath = join(discoveryScratchpadDirPath(rootDir, id), "state.json");
+  if (!existsSync(statePath)) {
+    return {
+      error: {
+        code: "SCRATCHPAD_NOT_FOUND",
+        message: `discovery "${id}" 不存在（state.json 缺席）`,
+        hint: "pomaster brainstorm start 先创建；pomaster brainstorm status 查看现有 discovery。",
+      },
+    };
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(await readFile(statePath, "utf8")) as unknown;
+  } catch {
+    return {
+      error: {
+        code: "SCRATCHPAD_STATE_INVALID",
+        message: `discovery "${id}" 的 state.json 不可解析（08 信封形态要求）`,
+        hint: "修复或删除残缺 scratchpad 后重试；state.json 词形以 @pomaster/schemas 08 schema 为准。",
+      },
+    };
+  }
+  const state =
+    parsed !== null && typeof parsed === "object" && typeof (parsed as { state?: unknown }).state === "string"
+      ? (parsed as { state: string }).state
+      : null;
+  if (state === null) {
+    return {
+      error: {
+        code: "SCRATCHPAD_STATE_INVALID",
+        message: `discovery "${id}" 的 state.json 缺 state 字段（08 信封形态要求）`,
+        hint: "修复 state.json 后重试。",
+      },
+    };
+  }
+  if (state !== "DISCOVERY") {
+    return {
+      error: {
+        code: "RESEARCH_REQUIRES_DISCOVERY",
+        message: `research request/handoff 只作用于 DISCOVERY 态：当前 state=${state}`,
+        hint:
+          state === "READY_TO_PROMOTE"
+            ? "讨论已收敛（--ready 通过）——回填会改 grounding 判定面，须先回到公开讨论态（显式重开）或开新 discovery。"
+            : `${state} 是链终态——后续归 CHANGE/TASK 自身治理面管（08 x-pomaster-transition-matrix）。`,
+      },
+    };
+  }
+  return { state };
+}
+
+/** index.yaml 请求条目（kernel ResearchRequest 九键 + 入账状态注记）。 */
+export interface ResearchRequestRecord {
+  readonly id: string;
+  readonly origin_decision_refs: readonly string[];
+  readonly proposition: string;
+  readonly why_needed: string;
+  readonly known_context_refs: readonly string[];
+  readonly mode: ResearchModeValue;
+  readonly required_evidence: string;
+  readonly disconfirming_evidence_required: boolean;
+  readonly stop_when: readonly string[];
+  readonly forbidden_conclusion: string;
+  /** 入账状态注记（CLI 局部词：open=已登记待回填 / answered / unresolved）。 */
+  readonly status: "open" | "answered" | "unresolved";
+}
+
+/** index.yaml 最小读取（容错缺席；坏 JSON 由调用方显式拒——与 readIndexYaml 同口径）。 */
+function requestsOfIndex(index: IndexYamlShape): ResearchRequestRecord[] {
+  return Array.isArray((index as { requests?: unknown }).requests)
+    ? ((index as { requests: unknown[] }).requests as ResearchRequestRecord[])
+    : [];
+}
+
+/** 读写 index.yaml 的请求段（presence = 是否新建文件；返回是否发生写入变化）。 */
+async function mutateIndexRequests(
+  indexPath: string,
+  artifactRoot: string,
+  hostRef: string,
+  mutate: (index: Record<string, unknown>) => boolean,
+): Promise<{ readonly created: boolean; readonly changed: boolean }> {
+  let index: Record<string, unknown>;
+  let created = false;
+  if (existsSync(indexPath)) {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(await readFile(indexPath, "utf8")) as unknown;
+    } catch {
+      throw Object.assign(new Error("index.yaml 不是 JSON 兼容形态"), { code: "INDEX_NOT_MACHINE_PARSEABLE" });
+    }
+    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw Object.assign(new Error("index.yaml 顶层不是 JSON 对象"), { code: "INDEX_NOT_MACHINE_PARSEABLE" });
+    }
+    index = { ...(parsed as Record<string, unknown>) };
+  } else {
+    created = true;
+    index = {
+      host_ref: hostRef,
+      artifact_root: artifactRoot,
+      findings: [],
+      handoff: {
+        artifact_path: artifactRoot,
+        one_line_summary: "SKELETON —— Research 未完成：仅有 request 登记，四文件骨架可由 research <topic> 幂等产出",
+        critical_caveat: "SKELETON —— 骨架占位：无关键告警判断待 Research 填写（§81.6 handoff 三件契约）",
+      },
+    };
+  }
+  const changed = mutate(index);
+  if (!changed && !created) return { created, changed: false };
+  await mkdir(join(indexPath, ".."), { recursive: true });
+  await writeFile(indexPath, `${JSON.stringify(index, null, 2)}\n`, "utf8");
+  return { created, changed: true };
+}
+
+export interface ResearchRequestInput {
+  readonly discoveryId: string;
+  /** --decision <DECISION.*>：来源 Decision（可重复；≥1——请求必须锚定到 Decision，§9.1）。 */
+  readonly decisions: readonly string[];
+  readonly proposition: string;
+  /** --why <text>：哪个 Decision 的 Recommendation 依赖本事实（why_needed）。 */
+  readonly why: string;
+  /** --evidence <level>：期望证据级（五级 Evidence 词形，复用既有轴）。 */
+  readonly evidence: string;
+  /** --mode <mode>：六模式（argv 小写词形或 §81.2 大写词形均可）。 */
+  readonly mode?: string;
+  /** --gap <kind>：§9.3 自动路由键（mode 缺省时必给——零缺省政策）。 */
+  readonly gap?: string;
+  /** --stop-when <text>：停机判据（可重复；≥1）。 */
+  readonly stopWhen: readonly string[];
+  /** --forbid <text>：越权禁令（§81.1 Research 有发现权无裁决权）。 */
+  readonly forbid: string;
+  /** --disconfirming：§9.2 证伪纪律申报（缺省 false；kernel notes 显式提示）。 */
+  readonly disconfirming?: boolean;
+  /** --context <ref>：已知上下文引用（可重复）。 */
+  readonly context?: readonly string[];
+  /** --req-id <RESEARCH.REQ.<n>>：显式 id；缺省按 index.yaml 既有请求取最小未占用序号。 */
+  readonly reqId?: string;
+}
+
+export interface ResearchRequestResult {
+  readonly discovery_id: string;
+  readonly request_id: string;
+  readonly request_ref: string;
+  readonly mode: ResearchModeValue;
+  readonly required_evidence: string;
+  readonly requests_total: number;
+  /** 图侧 request_refs 同步结果（kernel syncDecisionRequestRefs）。 */
+  readonly graph_sync: "SYNCED" | "NO_CHANGE";
+  readonly index_created: boolean;
+}
+
+/**
+ * `research request <discovery-id>`：发起一次研究请求（PR-4 命令链第一拍）。
+ * 判卷链：id 词形 → scratchpad DISCOVERY 态闸 → 图装载（request 必须锚在已建图上）→
+ * 来源 Decision 图内存在性（kernel 只判词形，图内存在性是 CLI 闸——decide --answer
+ * 同款）→ kernel createResearchRequest（§9.1 九键 + §9.4 前两条件 + §9.3 mode 路由）。
+ * 落盘：index.yaml requests 段（缺席则建最小机读 index——四文件骨架归 research <topic>，
+ * 不越俎）+ kernel syncDecisionRequestRefs 同步图侧标记（幂等重放 NO_CHANGE 零写入）。
+ */
+export async function runResearchRequest(
+  rootDir: string,
+  input: ResearchRequestInput,
+): Promise<CommandOutcome<ResearchRequestResult>> {
+  const padRef = `.pomaster/discovery/scratchpads/${input.discoveryId}/`;
+  const emptyResult: ResearchRequestResult = {
+    discovery_id: input.discoveryId,
+    request_id: "",
+    request_ref: "",
+    mode: "INTERNAL",
+    required_evidence: "",
+    requests_total: 0,
+    graph_sync: "NO_CHANGE",
+    index_created: false,
+  };
+  const fail = (error: CliError, human: string[]): CommandOutcome<ResearchRequestResult> =>
+    failOutcome<ResearchRequestResult>("research request", emptyResult, [error], human);
+
+  // —— 闸 1：discovery id 词形 ——
+  if (!DISCOVERY_ID_PATTERN.test(input.discoveryId)) {
+    return fail(
+      {
+        code: "SCHEMA_INVALID",
+        message: `discovery id "${input.discoveryId}" 不匹配词形（08 scratchpad_ref 目录段：[A-Za-z0-9][A-Za-z0-9_-]{0,63}）`,
+        hint: "pomaster brainstorm status 查看现有 discovery。",
+      },
+      [`research request: FAILED — SCHEMA_INVALID (discovery id 词形非法: ${input.discoveryId})`],
+    );
+  }
+  // —— 闸 2：DISCOVERY 态闸 ——
+  const stateGate = await scratchpadDiscoveryState(rootDir, input.discoveryId);
+  if ("error" in stateGate) {
+    return fail(stateGate.error, [
+      `research request: FAILED — ${stateGate.error.code} (${input.discoveryId})`,
+    ]);
+  }
+  // —— 闸 3：图装载（request 锚在已建图上——--set 先行） ——
+  const loaded = await loadDecisionGraph(rootDir, input.discoveryId);
+  if (!loaded.ok) {
+    return fail(loaded.error, [
+      `research request: FAILED — ${loaded.error.code} (${input.discoveryId})`,
+    ]);
+  }
+  const { graph } = loaded;
+  // —— 闸 4：来源 Decision 图内存在性（decide --answer 的 DECISION_NOT_FOUND 同款） ——
+  const graphIds = new Set(graph.decisions.map((n) => n.decision_id));
+  const unknownDecisions = input.decisions.filter((id) => !graphIds.has(id));
+  if (unknownDecisions.length > 0) {
+    return fail(
+      {
+        code: "DECISION_NOT_FOUND",
+        message: `--decision 引用不在图内：${unknownDecisions.join("、")}（图共 ${String(graph.decisions.length)} 节点）`,
+        hint: "research request 只能锚定图内 Decision（§9.1：不接受无主研究）；pomaster brainstorm decide <id> --set 后呈现的 DECISION.* 清单内选取。",
+      },
+      [`research request: FAILED — DECISION_NOT_FOUND (${unknownDecisions.join(", ")})`],
+    );
+  }
+  // —— mode 词形（argv 小写别名 ↔ §81.2 大写；直给大写亦收——kernel 判卷为准） ——
+  let mode: ResearchModeValue | undefined;
+  if (input.mode !== undefined) {
+    const mapped = RESEARCH_MODE_ARGV_ALIASES[input.mode];
+    if (mapped !== undefined) {
+      mode = mapped;
+    } else if ((RESEARCH_MODE_VALUES as readonly string[]).includes(input.mode)) {
+      mode = input.mode as ResearchModeValue;
+    } else {
+      return fail(
+        {
+          code: "SCHEMA_INVALID",
+          message: `--mode "${input.mode}" 不在六模式词表`,
+          hint: `--mode internal|external|mixed|comparative|impact|forensic（§81.2 六模式）；或省略 mode 用 --gap <kind> 走 §9.3 路由。`,
+        },
+        [`research request: FAILED — SCHEMA_INVALID (--mode)`],
+      );
+    }
+  }
+  // —— gap 词形预检（kernel RESEARCH_MODE_ROUTE_HINTS 路由表键；缺 mode 缺 gap 由 kernel 显式拒） ——
+  if (input.gap !== undefined && !(Object.keys(RESEARCH_MODE_ROUTE_HINTS) as string[]).includes(input.gap)) {
+    return fail(
+      {
+        code: "SCHEMA_INVALID",
+        message: `--gap "${input.gap}" 不在 §9.3 路由表`,
+        hint: `路由键词形：${Object.keys(RESEARCH_MODE_ROUTE_HINTS).join(" | ")}。`,
+      },
+      [`research request: FAILED — SCHEMA_INVALID (--gap)`],
+    );
+  }
+  // —— 序号派生（零墙钟 A4：index.yaml 既有 RESEARCH.REQ.<n> 的最小未占用——brainstorm start 先例） ——
+  const indexPath = join(discoveryScratchpadDirPath(rootDir, input.discoveryId), "research", "index.yaml");
+  let existingIndex: IndexYamlShape | null = null;
+  if (existsSync(indexPath)) {
+    try {
+      existingIndex = JSON.parse(await readFile(indexPath, "utf8")) as IndexYamlShape;
+    } catch {
+      return fail(
+        {
+          code: "INDEX_NOT_MACHINE_PARSEABLE",
+          message: `${toPosix(`${padRef}research/index.yaml`)} 不是 JSON 兼容形态（request 登记要求机读 index）`,
+          hint: "自由手写 yaml 请改写为 JSON 兼容形态（JSON 是 YAML 1.2 子集）后重试。",
+        },
+        [`research request: FAILED — INDEX_NOT_MACHINE_PARSEABLE`],
+      );
+    }
+    if (existingIndex === null || typeof existingIndex !== "object" || Array.isArray(existingIndex)) {
+      return fail(
+        {
+          code: "INDEX_NOT_MACHINE_PARSEABLE",
+          message: `${toPosix(`${padRef}research/index.yaml`)} 顶层不是 JSON 对象`,
+          hint: "修正为 JSON 对象形态后重试。",
+        },
+        [`research request: FAILED — INDEX_NOT_MACHINE_PARSEABLE`],
+      );
+    }
+  }
+  const usedSeqs = new Set<number>();
+  for (const record of requestsOfIndex(existingIndex ?? {})) {
+    const match = /^RESEARCH\.REQ\.([0-9]+)$/.exec(String(record?.id ?? ""));
+    if (match !== null) usedSeqs.add(Number(match[1]));
+  }
+  let nextSeq = 1;
+  while (usedSeqs.has(nextSeq)) nextSeq += 1;
+
+  // —— kernel 判卷（§9.1/§9.3/§9.4 单一判卷源；本面零判卷逻辑） ——
+  const outcome = createResearchRequest({
+    request: {
+      ...(input.reqId !== undefined ? { id: input.reqId } : {}),
+      origin_decision_refs: input.decisions,
+      proposition: input.proposition,
+      why_needed: input.why,
+      ...(input.context !== undefined && input.context.length > 0
+        ? { known_context_refs: input.context }
+        : {}),
+      ...(mode !== undefined ? { mode } : {}),
+      required_evidence: input.evidence as ResearchEvidenceLevelValue,
+      disconfirming_evidence_required: input.disconfirming === true,
+      stop_when: input.stopWhen,
+      forbidden_conclusion: input.forbid,
+    },
+    nextSeq,
+    ...(input.gap !== undefined ? { gapKind: input.gap as ResearchModeRouteHint } : {}),
+  });
+  if (!outcome.ok) {
+    return fail(
+      {
+        code: `RESEARCH_REQUEST_${outcome.reason.toUpperCase()}`,
+        message: `请求被 kernel createResearchRequest 拒绝（${outcome.reason}）：${outcome.details.join("；")}`,
+        hint: outcome.hint,
+      },
+      [
+        `research request: FAILED — RESEARCH_REQUEST_${outcome.reason.toUpperCase()}`,
+        ...outcome.details.map((d) => `  ${d}`),
+        `  hint: ${outcome.hint}`,
+      ],
+    );
+  }
+  const request = outcome.request;
+
+  // —— index.yaml 落档（§16：正式 requests 住 research/index.yaml） ——
+  let indexCreated = false;
+  try {
+    const mutation = await mutateIndexRequests(indexPath, `${padRef}research/`, padRef, (index) => {
+      const requests = Array.isArray(index.requests) ? [...(index.requests as unknown[])] : [];
+      requests.push({ ...request, status: "open" });
+      index.requests = requests;
+      return true;
+    });
+    indexCreated = mutation.created;
+  } catch (err) {
+    const code = (err as { code?: string }).code;
+    return fail(
+      {
+        code: typeof code === "string" ? code : "IO_ERROR",
+        message: err instanceof Error ? err.message : String(err),
+        hint:
+          code === "INDEX_NOT_MACHINE_PARSEABLE"
+            ? "request 登记要求机读 index.yaml；修正为 JSON 兼容形态后重试。"
+            : "research/index.yaml 写入失败——检查目录权限后重试；判卷已通过，修复后重跑即可。",
+      },
+      [`research request: FAILED — ${typeof code === "string" ? code : "IO_ERROR"}`],
+    );
+  }
+
+  // —— 图侧同步标记（kernel syncDecisionRequestRefs：机械同步 + fingerprint 重算） ——
+  const sync = syncDecisionRequestRefs(graph, [request.id]);
+  if (!sync.ok) {
+    return fail(
+      {
+        code: "RESEARCH_REQUEST_REF_INVALID",
+        message: `图侧 request_refs 同步被 kernel 拒绝：${sync.details.join("；")}`,
+        hint: sync.hint,
+      },
+      [`research request: FAILED — RESEARCH_REQUEST_REF_INVALID`],
+    );
+  }
+  let graphSync: "SYNCED" | "NO_CHANGE" = "NO_CHANGE";
+  if (sync.changed) {
+    try {
+      await writeFile(decisionGraphPath(rootDir, input.discoveryId), `${JSON.stringify(sync.graph, null, 2)}\n`, "utf8");
+      graphSync = "SYNCED";
+    } catch (err) {
+      return fail(
+        {
+          code: "IO_ERROR",
+          message: `decision-graph.json 回写失败：${err instanceof Error ? err.message : String(err)}`,
+          hint: "index.yaml 已落档（权威登记面）；重跑本命令按新序号登记或人工核对后重试。",
+        },
+        [`research request: FAILED — IO_ERROR (graph 回写)`],
+      );
+    }
+  }
+
+  const requestsTotal = requestsOfIndex(existingIndex ?? {}).length + 1;
+  const human = [
+    `research request → REGISTERED (${request.id}, discovery=${input.discoveryId})`,
+    `  proposition: ${request.proposition}`,
+    `  origin: ${request.origin_decision_refs.join("、")}；mode=${request.mode}；required_evidence=${request.required_evidence}`,
+    `  index: ${toPosix(`${padRef}research/index.yaml`)}${indexCreated ? "（新建最小机读 index——四文件骨架归 research <topic>）" : ""}，requests 共 ${String(requestsTotal)} 条`,
+    `  graph: request_refs ${graphSync === "SYNCED" ? "已同步（fingerprint 重算，决议不动）" : "NO_CHANGE（幂等重放）"}`,
+    ...outcome.notes.map((note) => `  note: ${note}`),
+    "  消解方由 Owner 指定（人工或 research sub-agent；托管派发不做）——回填入账：",
+    `    pomaster research handoff ${input.discoveryId} --file <handoff.json>`,
+    "  回填后重判：pomaster brainstorm decide <id> --ready --msd-goal <bool> --msd-scope <bool> --msd-acceptance <bool>",
+  ];
+  return okOutcome<ResearchRequestResult>(
+    "research request",
+    {
+      discovery_id: input.discoveryId,
+      request_id: request.id,
+      request_ref: `${padRef}research/`,
+      mode: request.mode,
+      required_evidence: request.required_evidence,
+      requests_total: requestsTotal,
+      graph_sync: graphSync,
+      index_created: indexCreated,
+    },
+    human,
+  );
+}
+
+export interface ResearchHandoffApplyInput {
+  readonly discoveryId: string;
+  /** --file <path>：§10.2 decision-aware handoff JSON（路径按进程 CWD 解析，同 decide --set）。 */
+  readonly file: string;
+}
+
+export interface ResearchHandoffResult {
+  readonly discovery_id: string;
+  readonly artifact_ref: string;
+  readonly answered_requests: readonly string[];
+  readonly unresolved_requests: readonly string[];
+  readonly findings_total: number;
+  readonly graph_changed: boolean;
+  readonly graph_fingerprint: string | null;
+  readonly request_statuses: readonly { readonly id: string; readonly status: string }[];
+}
+
+/**
+ * `research handoff <discovery-id> --file <handoff.json>`：回填入账（PR-4 命令链第二拍）。
+ * 判卷链：id 词形 → DISCOVERY 态闸 → 图装载 → handoff 文件形态闸（kernel 深判卷前的
+ * 数组/字符串形状预检——零 throw 纪律）→ kernel applyResearchHandoff（§10.1/§10.2：
+ * finding 挂回节点 / RESOLVES_FACT 消解 missing_facts / CONTRADICTS_PREMISE 入披露面 /
+ * §12.4 INFERENCE 不升 Fact——单一判卷源零旁移）。落盘：decision-graph.json（changed
+ * 才写——幂等重放零写入）+ index.yaml（requests 状态 answered/unresolved + handoff
+ * 三件与 key_findings 原样入账——§81.4 六字段 findings 仍归 research artifact 面）。
+ */
+export async function runResearchHandoff(
+  rootDir: string,
+  input: ResearchHandoffApplyInput,
+): Promise<CommandOutcome<ResearchHandoffResult>> {
+  const padRef = `.pomaster/discovery/scratchpads/${input.discoveryId}/`;
+  const emptyResult: ResearchHandoffResult = {
+    discovery_id: input.discoveryId,
+    artifact_ref: "",
+    answered_requests: [],
+    unresolved_requests: [],
+    findings_total: 0,
+    graph_changed: false,
+    graph_fingerprint: null,
+    request_statuses: [],
+  };
+  const fail = (error: CliError, human: string[]): CommandOutcome<ResearchHandoffResult> =>
+    failOutcome<ResearchHandoffResult>("research handoff", emptyResult, [error], human);
+
+  // —— 闸 1：discovery id 词形 ——
+  if (!DISCOVERY_ID_PATTERN.test(input.discoveryId)) {
+    return fail(
+      {
+        code: "SCHEMA_INVALID",
+        message: `discovery id "${input.discoveryId}" 不匹配词形（08 scratchpad_ref 目录段：[A-Za-z0-9][A-Za-z0-9_-]{0,63}）`,
+        hint: "pomaster brainstorm status 查看现有 discovery。",
+      },
+      [`research handoff: FAILED — SCHEMA_INVALID (discovery id 词形非法: ${input.discoveryId})`],
+    );
+  }
+  // —— 闸 2：DISCOVERY 态闸 ——
+  const stateGate = await scratchpadDiscoveryState(rootDir, input.discoveryId);
+  if ("error" in stateGate) {
+    return fail(stateGate.error, [
+      `research handoff: FAILED — ${stateGate.error.code} (${input.discoveryId})`,
+    ]);
+  }
+  // —— 闸 3：handoff 文件装载 + 形状预检（kernel applyResearchHandoff 的深判卷之前——
+  //    数组位/字符串位缺席会让 kernel 的 for..of 解引用 throw；形状闸在此显式拒；
+  //    先于图装载——输入件形态是独立闸，顺序先廉价后语义） ——
+  let raw: string;
+  try {
+    raw = await readFile(input.file, "utf8");
+  } catch (err) {
+    return fail(
+      {
+        code: "IO_ERROR",
+        message: `handoff 文件不可读：${err instanceof Error ? err.message : String(err)}`,
+        hint: "--file <handoff.json>；形态 = §10.2 ResearchHandoffInput（artifact_ref/answered_requests/affected_decisions/key_findings/unresolved_requests/one_line_summary/critical_caveat）。",
+      },
+      [`research handoff: FAILED — handoff 文件不可读（${input.file}）`],
+    );
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw) as unknown;
+  } catch {
+    return fail(
+      {
+        code: "SCHEMA_INVALID",
+        message: `handoff 文件 ${input.file} 不是合法 JSON`,
+        hint: "形态 = §10.2 ResearchHandoffInput；键位见 --file 帮助。",
+      },
+      [`research handoff: FAILED — SCHEMA_INVALID (handoff 非法 JSON)`],
+    );
+  }
+  const shape = (parsed !== null && typeof parsed === "object" && !Array.isArray(parsed)
+    ? (parsed as Partial<Record<keyof ResearchHandoffInput, unknown>>)
+    : null);
+  const arrayKeys = ["answered_requests", "unresolved_requests", "affected_decisions", "key_findings"] as const;
+  const stringKeys = ["artifact_ref", "one_line_summary", "critical_caveat"] as const;
+  const shapeGaps: string[] = [];
+  if (shape === null) shapeGaps.push("顶层须为 JSON 对象（§10.2 ResearchHandoffInput）");
+  for (const key of arrayKeys) {
+    if (!Array.isArray(shape?.[key])) shapeGaps.push(`${key} 须为数组`);
+  }
+  for (const key of stringKeys) {
+    const value = shape?.[key];
+    if (typeof value !== "string" || value.trim().length === 0) shapeGaps.push(`${key} 须为非空字符串`);
+  }
+  if (shapeGaps.length > 0) {
+    return fail(
+      {
+        code: "SCHEMA_INVALID",
+        message: `handoff 形态预检失败：${shapeGaps.join("；")}`,
+        hint: "§10.2 ResearchHandoffInput 形态；finding 条目 = finding_id/statement/evidence_type/sources/caveats/request_refs/decision_refs/relation（+RESOLVES_FACT 的 resolves_missing_facts）。",
+      },
+      [`research handoff: FAILED — SCHEMA_INVALID (handoff 形态)`],
+    );
+  }
+  const handoff = parsed as ResearchHandoffInput;
+
+  // —— 闸 4：图装载 ——
+  const loaded = await loadDecisionGraph(rootDir, input.discoveryId);
+  if (!loaded.ok) {
+    return fail(loaded.error, [
+      `research handoff: FAILED — ${loaded.error.code} (${input.discoveryId})`,
+    ]);
+  }
+  const { graph } = loaded;
+
+  // —— kernel 判卷（§10.1/§10.2 单一判卷源；零旁移） ——
+  const outcome = applyResearchHandoff(graph, handoff);
+  if (!outcome.ok) {
+    return fail(
+      {
+        code: `RESEARCH_HANDOFF_${outcome.reason.toUpperCase()}`,
+        message: `回填被 kernel applyResearchHandoff 拒绝（${outcome.reason}）：${outcome.details.join("；")}`,
+        hint: outcome.hint,
+      },
+      [
+        `research handoff: FAILED — RESEARCH_HANDOFF_${outcome.reason.toUpperCase()}`,
+        ...outcome.details.map((d) => `  ${d}`),
+        `  hint: ${outcome.hint}`,
+      ],
+    );
+  }
+
+  // —— 图回写（changed 才写——幂等重放零写入） ——
+  if (outcome.changed) {
+    try {
+      await writeFile(
+        decisionGraphPath(rootDir, input.discoveryId),
+        `${JSON.stringify(outcome.graph, null, 2)}\n`,
+        "utf8",
+      );
+    } catch (err) {
+      return fail(
+        {
+          code: "IO_ERROR",
+          message: `decision-graph.json 回写失败：${err instanceof Error ? err.message : String(err)}`,
+          hint: "判卷已通过；修复目录权限后重跑本命令（幂等重放 NO_CHANGE）。",
+        },
+        [`research handoff: FAILED — IO_ERROR (graph 回写)`],
+      );
+    }
+    // —— 判卷输入申报同拍同步（R6 重算制）：G6 路由申报以 missing_facts 现状为准——
+    // RESOLVES_FACT 消解后事实不再是缺失事实，仍留在 missing_fact_routing 会被重算判
+    // 「路由越界」（申报与重算脱节）。机械同步零新治理语义：只删「新图全图都不再缺失」
+    // 的事实键；仍缺失（部分消解/CONFLICTS 场景）的路由原样保留。 ——
+    const stillMissing = new Set<string>();
+    for (const node of outcome.graph.decisions) {
+      for (const fact of node.grounding.missing_facts) stillMissing.add(fact);
+    }
+    const inputsPath = decisionInputsPath(rootDir, input.discoveryId);
+    const routing = { ...loaded.inputs.missing_fact_routing };
+    let routingChanged = false;
+    for (const fact of Object.keys(routing)) {
+      if (!stillMissing.has(fact)) {
+        delete routing[fact];
+        routingChanged = true;
+      }
+    }
+    if (routingChanged) {
+      try {
+        await writeFile(
+          inputsPath,
+          `${JSON.stringify({ ...loaded.inputs, missing_fact_routing: routing }, null, 2)}\n`,
+          "utf8",
+        );
+      } catch (err) {
+        return fail(
+          {
+            code: "IO_ERROR",
+            message: `decision-inputs.json 路由申报同步失败：${err instanceof Error ? err.message : String(err)}`,
+            hint: "图已回填；重跑本命令（幂等重放）即可补齐申报同步。",
+          },
+          [`research handoff: FAILED — IO_ERROR (inputs 同步)`],
+        );
+      }
+    }
+  }
+
+  // —— index.yaml 入账：requests 状态 + handoff 三件 + key_findings 原样存档 ——
+  const indexPath = join(discoveryScratchpadDirPath(rootDir, input.discoveryId), "research", "index.yaml");
+  const statusMap = new Map<string, string>();
+  for (const id of handoff.answered_requests) statusMap.set(id, "answered");
+  for (const id of handoff.unresolved_requests) statusMap.set(id, "unresolved");
+  let indexChanged = false;
+  try {
+    const mutation = await mutateIndexRequests(indexPath, `${padRef}research/`, padRef, (index) => {
+      let touched = false;
+      if (Array.isArray(index.requests)) {
+        const requests = (index.requests as Record<string, unknown>[]).map((record) => {
+          const next = typeof record?.id === "string" ? statusMap.get(record.id) : undefined;
+          if (next !== undefined && record.status !== next) {
+            touched = true;
+            return { ...record, status: next };
+          }
+          return record;
+        });
+        if (touched) index.requests = requests;
+      }
+      const nextHandoff = {
+        artifact_path: handoff.artifact_ref,
+        one_line_summary: handoff.one_line_summary,
+        critical_caveat: handoff.critical_caveat,
+        key_findings: handoff.key_findings,
+      };
+      if (JSON.stringify(index.handoff) !== JSON.stringify(nextHandoff)) {
+        index.handoff = nextHandoff;
+        touched = true;
+      }
+      return touched;
+    });
+    indexChanged = mutation.changed || mutation.created;
+  } catch (err) {
+    const code = (err as { code?: string }).code;
+    return fail(
+      {
+        code: typeof code === "string" ? code : "IO_ERROR",
+        message: `research/index.yaml 入账失败：${err instanceof Error ? err.message : String(err)}`,
+        hint:
+          code === "INDEX_NOT_MACHINE_PARSEABLE"
+            ? "入账要求机读 index.yaml；先运行 research <topic> 产出骨架（幂等）后重试。"
+            : "图已回填（节点侧事实已挂回）；index 入账修复后重跑本命令幂等补账。",
+      },
+      [`research handoff: FAILED — ${typeof code === "string" ? code : "IO_ERROR"} (index 入账)`],
+    );
+  }
+
+  const requestStatuses = [...statusMap.entries()]
+    .sort((a, b) => (a[0] < b[0] ? -1 : 1))
+    .map(([id, status]) => ({ id, status }));
+  const human = [
+    `research handoff → ${outcome.changed ? "APPLIED" : "NO_CHANGE"} (discovery=${input.discoveryId})`,
+    `  artifact: ${handoff.artifact_ref}`,
+    `  answered: ${handoff.answered_requests.length > 0 ? handoff.answered_requests.join("、") : "（无）"}；unresolved: ${handoff.unresolved_requests.length > 0 ? handoff.unresolved_requests.join("、") : "（无）"}`,
+    ...outcome.notes.map((note) => `  note: ${note}`),
+    `  graph: ${outcome.changed ? `已回填（fingerprint=${outcome.graph.graph_fingerprint.slice(0, 18)}…）` : "NO_CHANGE（幂等重放）"}；index: ${indexChanged ? "已入账（requests 状态 + handoff 三件）" : "NO_CHANGE"}`,
+    ...(outcome.changed
+      ? [
+          "  下一步重判：pomaster brainstorm decide <id> --ready --msd-goal <bool> --msd-scope <bool> --msd-acceptance <bool>",
+        ]
+      : []),
+  ];
+  return okOutcome<ResearchHandoffResult>(
+    "research handoff",
+    {
+      discovery_id: input.discoveryId,
+      artifact_ref: handoff.artifact_ref,
+      answered_requests: [...handoff.answered_requests],
+      unresolved_requests: [...handoff.unresolved_requests],
+      findings_total: handoff.key_findings.length,
+      graph_changed: outcome.changed,
+      graph_fingerprint: outcome.changed ? outcome.graph.graph_fingerprint : graph.graph_fingerprint,
+      request_statuses: requestStatuses,
+    },
+    human,
   );
 }

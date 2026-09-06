@@ -18,6 +18,12 @@
  * - 段② liveness 判定沿 agents status 既有 now 语义（D 线 heartbeat TTL——呈现位
  *   非账面写入；A4 禁的是把墙钟写进账面）。
  *
+ * 首答确认协议（R2 2026-09-06，沿 Trellis first-reply-notice 模式）：注入文本尾部带
+ * 「模型指令段」——首轮回复必须 ①可见确认「POMaster 治理速览已注入」②报告
+ * Next-Action 路由建议。指令段在总预算截断之后追加（不会被 8k 软预算截掉），整体仍
+ * 受 10k 硬上限兜底；指令段不进 segments meta（它是给模型的指令，不是状态投影段），
+ * 未初始化分支同样携带（注入即协议，与状态无关）。
+ *
  * hook 输出契约（与 alerts.ts 同源，research/claude-hooks-reference.md）：
  * - 恒 exit 0：SessionStart exit 2 也只对用户可见、不阻断——但非零 + stdout 仍是错误
  *   通知；本命令恒 ok=true，降级走 warnings 留痕于 --json 信封；
@@ -90,6 +96,17 @@ export const SESSION_SEGMENT_TITLES = [
 
 /** 段②观测降级告警码（呈现位缺席显式——禁静默吞观测面故障）。 */
 export const SESSION_RUNTIME_SEGMENT_UNAVAILABLE = "SESSION_RUNTIME_SEGMENT_UNAVAILABLE";
+
+/**
+ * 首答确认协议指令段（R2 2026-09-06；注入文本尾部恒在——总预算截断后追加，禁被
+ * 截掉；词形零 ANSI 纯文本，§45）。消费方 = 模型行为纪律：首轮回复可见确认注入 +
+ * 转述 Next-Action 路由，把「SessionStart 注入静默无效」的词形断裂面封死。
+ */
+export const SESSION_FIRST_REPLY_LINES: readonly string[] = [
+  "【首答确认协议】以下为对模型的指令（Human 无需操作）：注入后模型的首轮回复必须——",
+  "- ① 给出一行可见确认：「POMaster 治理速览已注入」；",
+  "- ② 报告 Next-Action 路由建议（把上方【Next-Action】段的建议命令与理由转述给用户）。",
+];
 
 export interface SessionOverviewResult {
   readonly state_path: string;
@@ -398,6 +415,8 @@ export async function runSessionOverview(rootDir: string): Promise<CommandOutcom
     lines = [
       "POMaster 治理速览：未初始化（.pomaster/state/truth-index.json 缺席）。",
       "- 运行 pomaster init 建立治理基线；pomaster --help 查看命令全景。",
+      "",
+      ...SESSION_FIRST_REPLY_LINES,
     ];
   } else {
     // —— Next-Action（P2 同一路由表；快照装配降级走 warnings）。 ——
@@ -449,10 +468,11 @@ export async function runSessionOverview(rootDir: string): Promise<CommandOutcom
       ...rendered.lines,
       "- Browser Eyes: 诊断「慢/报错/卡住」用 chrome-devtools MCP 实测（禁只看代码推断）；E2E/交互验证用 playwright MCP（pomaster doctor --json 自检）",
     ];
-    // —— 总预算先行（8k 软预算，超限显式标记）；hook 10k 硬上限在函数尾兜底。 ——
+    // —— 总预算先行（8k 软预算，超限显式标记）；首答确认协议指令段在预算截断之后
+    // 追加（禁被截掉），hook 10k 硬上限在函数尾兜底（8k + 指令段 < 10k 恒成立）。 ——
     const totalCapped = capPlainOutput(lines, SESSION_TOTAL_BUDGET);
     truncatedByBudget = totalCapped.truncated;
-    lines = totalCapped.text.split("\n");
+    lines = [...totalCapped.text.split("\n"), "", ...SESSION_FIRST_REPLY_LINES];
   }
 
   const capped = capPlainOutput(lines, SESSION_OUTPUT_HARD_CAP);

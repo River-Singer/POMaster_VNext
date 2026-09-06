@@ -574,6 +574,7 @@ export {
   resolveDecision,
   classifyUnknownTriage,
   evaluateDiscoverySufficiency,
+  syncDecisionRequestRefs,
 } from "./decision-graph.js";
 export type {
   DecisionClassValue,
@@ -619,6 +620,7 @@ export type {
   SufficiencyBlockingItem,
   DiscoverySufficiencyReport,
   EvaluateDiscoverySufficiencyOutcome,
+  SyncDecisionRequestRefsOutcome,
 } from "./decision-graph.js";
 
 // ============================================================

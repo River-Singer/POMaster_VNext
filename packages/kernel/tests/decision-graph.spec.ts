@@ -48,6 +48,7 @@ import {
   evaluateDecisionGrounding,
   evaluateDiscoverySufficiency,
   resolveDecision,
+  syncDecisionRequestRefs,
   type DecisionGraph,
   type DecisionGrounding,
   type DecisionNodeCandidate,
@@ -2062,5 +2063,44 @@ describe("evaluateDiscoverySufficiency（§15 停止条件）", () => {
       expect(report.report.notes.join()).toContain("Critical Failure Behavior");
       expect(report.report.notes.join()).toContain("maintain");
     }
+  });
+});
+
+// ============================================================
+// J. syncDecisionRequestRefs（PR-4 接线批 09-06：request_refs 机械同步）
+// ============================================================
+
+describe("syncDecisionRequestRefs（§16 图侧同步标记：机械同步零新治理语义）", () => {
+  it("正向：append-only 去重同步 + graph_fingerprint 由 kernel 重算（decisions/resolution 不动）", () => {
+    const graph = buildOk([chainCand("DECISION.D1", [])]);
+    const before = graph.graph_fingerprint;
+    const outcome = syncDecisionRequestRefs(graph, ["RESEARCH.REQ.1"]);
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+    expect(outcome.changed).toBe(true);
+    expect(outcome.graph.request_refs).toEqual(["RESEARCH.REQ.1"]);
+    expect(outcome.graph.graph_fingerprint).toMatch(/^sha256:[0-9a-f]{64}$/);
+    expect(outcome.graph.graph_fingerprint).not.toBe(before);
+    expect(outcome.graph.decisions).toEqual(graph.decisions);
+    expect(outcome.notes.join()).toContain("RESEARCH.REQ.1");
+  });
+
+  it("幂等：同批 refs 重放 = changed:false NO_CHANGE（同图对象原样返回，指纹不变）", () => {
+    const graph = buildOk([chainCand("DECISION.D1", [])], ["RESEARCH.REQ.1"]);
+    const outcome = syncDecisionRequestRefs(graph, ["RESEARCH.REQ.1"]);
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+    expect(outcome.changed).toBe(false);
+    expect(outcome.graph).toBe(graph);
+    expect(outcome.notes.join()).toContain("NO_CHANGE");
+  });
+
+  it("fail-closed：词表外 ref 显式拒绝（与 build 的 request_ref_invalid 同式——单一词形闸）", () => {
+    const graph = buildOk([chainCand("DECISION.D1", [])]);
+    const outcome = syncDecisionRequestRefs(graph, ["REQ-1", "DECISION.D1"]);
+    expect(outcome.ok).toBe(false);
+    if (outcome.ok) return;
+    expect(outcome.reason).toBe("request_ref_invalid");
+    expect(outcome.details.join()).toContain("REQ-1");
   });
 });
