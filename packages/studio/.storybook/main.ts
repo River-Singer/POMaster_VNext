@@ -7,6 +7,9 @@
 // STORYBOOK_DISABLE_TELEMETRY 环境变量拦截（官方原文，研究 §4）。
 // docgen: false（research §3：antdv 是编译后 JS + .d.ts，自动 docgen 收益有限；
 // vue-docgen-api 自 10.6 起弃用——画廊不依赖 Controls 推断，换构建性能）。
+// base：GitHub Pages 项目页部署在仓库子路径（/POMaster_VNext/）——studio-pages
+// 工作流经 STORYBOOK_BASE 环境变量注入 vite base；本地 dev/build 不设该变量，
+// 行为与根路径缺省逐字节不变（绝对 base 必须首尾带斜杠——vite 官方约束）。
 import type { StorybookConfig } from "@storybook/vue3-vite";
 
 const config: StorybookConfig = {
@@ -22,6 +25,13 @@ const config: StorybookConfig = {
   addons: ["@storybook/addon-docs"],
   core: {
     disableTelemetry: true,
+  },
+  async viteFinal(config) {
+    const base = process.env.STORYBOOK_BASE;
+    if (base) {
+      config.base = base;
+    }
+    return config;
   },
 };
 

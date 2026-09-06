@@ -868,6 +868,7 @@ ${DIRECTORY_CONSTITUTION_LINES.join("\n")}
 
 - skills 命令卡库：\`.agents/skills/pomaster/\` 等 ${SKILL_MANIFEST.length} 份（通用层——Codex/Cursor/Gemini CLI/GitHub Copilot/VS Code/Amp/Warp/OpenCode/Droid 等原生读取），${mirrorNote}。
 - 路由入口：\`/pomaster\`（命令全景 + 何时用哪个）；分段卡：pomaster-bootstrap / triage / permit / context / execute / verify / reconcile / compact / closeout / inspect / discovery / catalog / production / runtime。
+- 组件画廊: https://river-singer.github.io/POMaster_VNext/（在线版）或 POMaster 仓库内 \`corepack pnpm studio:dev\`——治理 baseline/outputs 内容前先逛：有哪些组件、长什么样、该写什么。
 ${claudeBlock}- 修复/重建：重跑 \`pomaster init\`（幂等；缺失镜像重建、hooks 注册项按 command 词形合并，不动人类文件）。
 
 ${BROWSER_EYES_LINES.join("\n")}
@@ -904,10 +905,12 @@ const INIT_LOGO_LINES: readonly string[] = [
 ];
 
 /**
- * init 完成输出的收尾段（四产物清单 + profile 之后）：英文哲学横幅 + 联系方式。
- * §45 单信封纪律：本段只进人读通道（okOutcome 的 human 行）——--json 机读信封由
- * toEnvelope 从 result/warnings/errors 组装，恒不含 human 行，文案零污染机读面。
- * 前导空行分隔；各行保持 ~72 列内不溢出（逐字钉位，改动须同步 init.spec.ts）。
+ * init 完成输出的收尾段（四产物清单 + profile 之后）：英文哲学横幅 + 组件画廊指引
+ * + 联系方式。§45 单信封纪律：本段只进人读通道（okOutcome 的 human 行）——--json
+ * 机读信封由 toEnvelope 从 result/warnings/errors 组装，恒不含 human 行，文案零
+ * 污染机读面。前导空行分隔；各行保持 ~72 列内不溢出（逐字钉位，改动须同步
+ * init.spec.ts）。画廊行在线链接在前（npm 消费者没有仓库）、仓库命令为辅；与
+ * AGENTS.md 重入口模板（renderHeavyEntryMarkdown）共用同一画廊词形。
  */
 const INIT_BANNER_LINES: readonly string[] = [
   "",
@@ -917,6 +920,9 @@ const INIT_BANNER_LINES: readonly string[] = [
   "  A tool that reports green without evidence is more dangerous",
   "  than no tool at all. Every change is permitted, every claim",
   "  is accounted for, and every fact carries its authority.",
+  "",
+  "组件画廊: https://river-singer.github.io/POMaster_VNext/（在线版）",
+  "  或 POMaster 仓库内: corepack pnpm studio:dev",
   "",
   "Contact / commercial licensing: allenxujianyang@outlook.com",
 ];

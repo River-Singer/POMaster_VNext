@@ -1,0 +1,68 @@
+name: Studio Pages
+
+# 组件画廊（packages/studio Storybook 实例）→ GitHub Pages 发布流。
+#
+# 触发面：push main 且仅当画廊源/本工作流文件变更（paths 过滤），或手动 dispatch。
+# 流程：frozen-lockfile 安装 → 生成器重建 generated/（幂等可重放）→ storybook 静态
+# 构建（STORYBOOK_BASE 注入项目页子路径 base——vite 资源 URL 必须对齐
+# https://river-singer.github.io/POMaster_VNext/ 才不白屏）→ upload-pages-artifact
+# → deploy-pages。
+#
+# Owner 一次性启用步骤（仓库 Settings，机器无法代办）：
+#   Settings → Pages → Build and deployment → Source 选「GitHub Actions」。
+# 启用一次后，本工作流每次绿跑即自动发布在线画廊。
+#
+# 权限：pages:write + id-token:write（Pages OIDC 部署最小集）+ contents:read（checkout）。
+# 并发：同组「pages」串行——连推时旧跑取消，只发布最新。
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/studio/**"
+      - ".github/workflows/studio-pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    env:
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
+      STORYBOOK_BASE: "/POMaster_VNext/"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install (frozen lockfile)
+        run: corepack pnpm install --frozen-lockfile
+
+      # 生成器先行显式跑一遍（run.mjs build 内部会再生成——幂等可重放，双跑 diff 空
+      # 由 packages/studio/tests/generators.spec.ts 钉住；此处显式步让失败定位更准）。
+      - name: Generate gallery pages
+        run: node packages/studio/run.mjs generate
+
+      - name: Build Storybook (static export)
+        run: corepack pnpm studio:build
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: packages/studio/dist-storybook
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

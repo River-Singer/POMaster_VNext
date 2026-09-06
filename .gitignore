@@ -4,7 +4,13 @@ coverage/
 stage/
 *.tsbuildinfo
 __pycache__/
-docs/
+# docs/ 默认整目录留本机（历史治理/审计档案不入 git）；白名单三例外随仓库发布——
+# README 嵌入的画廊截图与两份被 README 链接的参考文档（gitignore 语义：父目录
+# 不能用 `docs/` 目录规则整体忽略后再反选，故改 `docs/*` 逐项忽略 + `!` 反选）。
+docs/*
+!docs/assets/
+!docs/init-reference.md
+!docs/kernel-api.md
 # 仓库根本机治理账本（Owner 决议 2026-09-01：基准轮 gate record 入账；保守裁定账本留本机
 # 不入 git）。前导 / 锚定仓库根——examples/tiny-tool/.pomaster/ 演示 fixture 已入库，不受影响。
 /.pomaster/

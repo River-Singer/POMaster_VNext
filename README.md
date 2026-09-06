@@ -1,7 +1,7 @@
 # POMaster
 
-> **AI 软件工程的 Governed Software State Control Plane。**
-> 管理系统当前可信状态、为每个 Agent 投影最小充分上下文、控制允许发生的变化、并要求一切变化被证据证明。
+> **AI 软件工程的 Governed State Control Plane。**
+> **Agent 写下的每一行变化，都被证据证明。**
 
 [![CI](https://github.com/River-Singer/POMaster_VNext/actions/workflows/ci.yml/badge.svg)](https://github.com/River-Singer/POMaster_VNext/actions/workflows/ci.yml)
 [![License: PolyForm NC 1.0.0](https://img.shields.io/badge/License-PolyForm--NC--1.0.0-blue)](./LICENSE)
@@ -10,19 +10,59 @@
 POMaster = State + Context + Transition + Evidence，在 Authority 与 Adaptive Governance 下运行
 ```
 
-## v0.5.0 亮点（2026-09-06）
+POMaster 把「软件项目当前可信的状态」当作一等公民来管理：为每个 Agent 投影最小充分上下文、控制允许发生的变化、并要求一切变化被证据证明。它不是又一层 prompt 工程或 skill 包，而是一个**状态控制平面**。
 
-- **技术栈问卷 + 基线确认 gate**：init 平台选择后 14 键逐项必答（候选含实战栈与占位，可自由输入），答完回填 `baseline/<lane>/stack.yaml` 并销账 unknowns 台账；`pomaster baseline confirm` 以 sha256 快照烙印基线——closeout 对未确认（`BASELINE_NOT_CONFIRMED`）与漂移（`BASELINE_DRIFT`）双重阻断，确认后修改走 `--change CHANGE.*` 治理通路。
-- **baseline 栈预置草案**：选型落定后 init 自动为 22 份基线面生成 `PRESET-DRAFT` 草案节——内容逐条溯源到主题文档与 overlay，Owner 可改，confirm 烙印；业务实体/接口零预置。
-- **spec 主题式重组**：77 份 FE/BE 协议重组为 **20 份主题文档 + 1 导航**（13 跨端合并 + 7 端独占），语言差异为主题文档内小节（内容自 18 族 overlay 逐字同步）；旧平铺文件退役，已安装工作区由 doctor/status `legacy_specs_present` 检出。
-- **overlay 前端族**：vue3 / ant-design-vue / geist / css 体系四族入库（原 14 族全后端 java），全部带官方文档实抓锚（x-research-anchors）。
-- **Discovery 方法论长卡 + Grill 策略**：`pomaster-discovery` 卡内置 Grounded Brainstorm 全剧本——先 Ground 后 Grill、九类拷问动作、Frontier 节奏、上游决策失效重算；`brainstorm decide --set/--answer/--ready` 机器闸放行，`promote` 即建任务。
-- **组件画廊（Storybook）**：仓内 `packages/studio`——41 张 archetype 语义卡 + 71 个 antdv 组件真渲染 + 18 overlay 能力页，`pnpm studio:build` 出静态站。
-- **收口链补全**：`record verification`（claim 到 VERIFIED 的公开生产入口）、context 指纹绑定范围内正文（漂移必 stale）、closeout 候选证据置换不变、research request/handoff 公开链。
+## 为什么存在（三行读完的来历）
+
+1. **旧模式治理的是文档**：把几百份 Markdown 规范播进项目、靠 Agent 自觉遵守——结果错误事实被继承放大（上个会话说"27 页开发完了"，实际半数是脚手架）、技术基线静默漂移、规范越堆越多直到没人看。
+2. **血泪换来的第一定律**：*报绿的治理工具比没有工具更危险——它把「未知」转换成「已验证干净」。* 所以本项目的核心不是"更多门禁"，而是**可信的证据**。
+3. **POMaster 换掉治理对象**：不再治理文档，改为治理**状态本身**。文档只是状态的投影；事实必须带 Authority、Evidence 与完整生命周期。
+
+## 核心亮点
+
+### ① 组件画廊（Storybook）：134 页可视化资产目录
+
+「有哪些组件、长什么样、该写什么」一页可览——**41 张 archetype 语义卡**（页面/组件/后端/数据/运行时的标准件：职责、何时用、组合方式、研究锚）+ **71 个 ant-design-vue 组件真渲染** + **18 页 overlay 能力清单** + foundations 边界页。画廊全部由生成器从既有锚定物料**只读渲染**：不新增规范物料、不预置业务实体，页头自带 NON-AUTHORITATIVE 声明。
+
+![POMaster 组件画廊总览：四类页面构成与生成器纪律](docs/assets/studio/overview.png)
+
+![Archetype 语义卡：标准企业 CRUD 资源——身份/语义/组合](docs/assets/studio/archetype-card.png)
+
+![Ant Design Vue 组件真渲染：Button story 与侧栏组件树](docs/assets/studio/antdv-button.png)
+
+怎么看：
+
+```bash
+corepack pnpm studio:dev      # 在 POMaster 仓库内起 dev server（生成产物自动重建）
+```
+
+- **在线版**：[river-singer.github.io/POMaster_VNext](https://river-singer.github.io/POMaster_VNext/)（GitHub Pages，push 到 main 自动发布）
+- 写治理产出（baseline / outputs 内容）之前，先逛画廊：有哪些组件、长什么样、该写什么——`pomaster init` 完成横幅里也有画廊入口。
+
+<!-- Owner 注意（一次性）：Pages 首次启用需在仓库 Settings → Pages 把 Source 设为「GitHub Actions」，之后 studio-pages 工作流自动发布。 -->
+
+### ② 任务驱动工作流：brainstorm → promote → 八拍
+
+从一句话需求到证据化完成，只有一条公开通路：
+
+- **brainstorm（Grill 拷问）**：Grounded Brainstorm 方法论——先 Ground 后 Grill、九类拷问动作、每轮只打当前 frontier；拷问产出 **Decision Graph**（不是聊天记录里的一串问题），收敛由机器判卷，火候不够就 fail-closed 列出全部缺口。
+- **promote 即建任务**：讨论收敛 → `promote --apply`，TASK.*/CHANGE.* 治理对象落库——想法进状态平面的唯一入口。
+- **八拍 Change Loop 机器判卷收口**：triage 判档 → permit 签发 → context 投影 → maintain 受控写 → check 判卷 → reconcile 对账 → compact 折叠 → closeout 收口。每一拍都有对应 CLI 命令、机器判卷、落账留痕。
+
+### ③ 基线：14 键问卷 → 预置草案 → confirm 烙印 → 漂移检出
+
+- init 的**技术栈问卷** 14 键逐项必答（前端 9 + 后端 5），答完写回 `baseline/<lane>/stack.yaml`；
+- 选型落定后自动生成 **PRESET-DRAFT 预置草案**——逐条溯源到主题文档与 overlay，Owner 可改；业务实体/接口/数据模型零预置；
+- `pomaster baseline confirm` 以 **sha256 快照烙印**基线；
+- closeout 双重阻断：未确认 → `BASELINE_NOT_CONFIRMED`；确认后改动 → `BASELINE_DRIFT`（检出谁改了架构）；确认后的修改走 `--change` 治理通路。
+
+### ④ 证据链：一切结论带收据
+
+gate 运行结果走 `record gate-run` 产 **GRN 回执**入 evidence 平面；claim 必须显式绑定 GRN 分母；`record verification` 把 claim 推到 VERIFIED；closeout 判卷「claims × GRN 硬绑」——证据缺失伪装完成会被**阻断码**硬拦。读侧字节级核验：判卷字节 == 落盘字节 == GRN 引用字节，失配即判红。
 
 ## 快速上手
 
-POMaster 的全部能力收敛在一条 CLI（`pomaster`）——八拍 Change Loop 的每一拍都有对应命令面。先给一张**命令全景**（机器钉版，与 `pomaster --help` 零漂移；`#` 分节注释仅人读）。第一次使用？直接看下面 [install → init → 第一个 Change](#1-安装) 的全流程。
+POMaster 的全部能力收敛在一条 CLI（`pomaster`）——八拍 Change Loop 的每一拍都有对应命令面。先上**命令全景**（与 `pomaster --help` 对账零漂移；`#` 分节注释仅人读）。第一次使用？直接看 [安装 → init → 第一个 Change](#1-安装) 的全流程。
 
 ```text
 # 0 BOOTSTRAP —— 建基线 / 速览 / 可行动项 / 装眼睛 / 可移植性 / 自更新
@@ -97,53 +137,27 @@ npm install --save-dev pomaster
 npx pomaster --help
 ```
 
-### 2. 初始化治理基线：`pomaster init`
-
-在项目根执行（幂等——重复执行第二次起 NO_CHANGE，零字节写入；已存在的人类文件一律不覆盖）：
+### 2. 初始化：`pomaster init`
 
 ```bash
 cd your-project
 pomaster init
 ```
 
-它做四件事：
+一条命令，幂等（重复执行 NO_CHANGE，人类文件一律不覆盖）：铺出 `.pomaster/` 治理目录树、登记 19 份 SPEC 预植对象、生成 `AGENTS.md` 重入口（15 份 skills 命令卡 + hooks 注入——Agent 开会话即自动看到治理状态）。TTY 下还有一轮 14 键技术栈问卷（中断 = 零写入；后补用 `pomaster baseline set`）。
 
-| 产物 | 作用 | 会被覆盖吗 |
-|---|---|---|
-| `.pomaster/state/truth-index.json` | Canonical State 的唯一 root index（空账本起点；受其引用的 `truth/objects/**` 是 Canonical Truth 正文） | 否（存在即跳过；损坏显式报错，绝不静默重建） |
-| `.pomaster/state/authority.json` | Authority Map 骨架（默认登记 `BOOTSTRAP_OWNER`） | 否（人类加注的 owner 一律不动） |
-| `.pomaster/config.yaml` | 治理配置（人类可编辑） | 否（只在缺失时创建） |
-| `AGENTS.md` / `CLAUDE.md` | Agent 重入口（profile + 状态速览 + 常用命令 + 重入口安装物锚点） | 仅带生成标记的（`CLAUDE.md` 通过 `@AGENTS.md` 导入共享） |
-| `SPEC.*` 预植对象 ×19 | Evidence Spec Kit 的 store 对象面（PROPOSED 起步；项目经 maintain→CURRENT 采纳后进 closeout 判卷） | 否（在座零触碰，幂等；`--json` 信封可查） |
+**组件画廊**：[river-singer.github.io/POMaster_VNext](https://river-singer.github.io/POMaster_VNext/)（在线版）· POMaster 仓库内 `corepack pnpm studio:dev`——治理产出前先看有哪些组件、长什么样、该写什么。
 
-**目录宪法全树预铺**（Owner 裁定 2026-09-04，不分档级）：init 一次性建出 `.pomaster/` 目录宪法 §2 全树（state / truth/objects / evidence 三区 / executions / traces / runtime 四区 / discovery/scratchpads / memory/inbox / production 六区，40 目录 × 各带 README——含 09-04 Batch 1 增量 sources/ 来源权威边界平面 + Batch 2 增量 state/contexts/（Task Context Manifest 落盘位）与 evidence/observations/（感知回执 sidecar 分区）+ Batch 6 增量 baseline/（Project Engineering Baseline 四 lane 分区）与 specs/（Spec Workspace：hard/themes、hard/stacks、acceptance、evidence；B7-THEME 起主题文档单目录承载，旧 FE/BE 平铺位退役）两棵播种子树）+ `.pomaster/layout.json` 机器清单（全目录 status=wired + activation_hint——什么样的项目/需求激活该平面由 AI 按项目复杂度自行判断，目录存在 ≠ 已激活）。目录树与入口形态/平台选择**完全无关**（B7 裁定：init 单一重入口，无模式旗标）；canonical 正文层为 `.pomaster/truth/objects/`，legacy `.pomaster/objects/` 在场会被显式告警（禁静默 merge/覆盖/迁移）。播种面语义（Batch 6）：`baseline/**` 与 `specs/**` 下的内容文件由 init 按种子清单 **seed-once-missing-only** 落盘——缺失才写、在座零触碰、播种件不带生成标记（项目自有可编辑，重跑 init 永不覆盖你的修改；AI 禁静默覆盖）。播种分母 = **102 份内容文件**（specs/hard 57：themes 21（20 主题 + 1 导航——B7-THEME 主题式重组）/ stacks 18×2——后端 14 族 + 前端 4 族；specs/evidence 20；baseline 25）+ manifest 单源；已安装工作区的旧 FE/BE 平铺 spec 由 doctor/status `legacy_specs_present` 检出呈现（纯读不拦不删）。完整规范见 `.pomaster/layout.json` 与目录宪法文档。
-
-**重入口默认**（D13 修订，2026-09-03）：init 缺省生成重入口全套，让 Agent 一开会话就自动看到治理状态、按需自动触发命令卡——
-
-- **skills 命令卡库**：`/pomaster` 路由全景 + `pomaster-bootstrap` … `pomaster-runtime` 等 15 份命令卡，双镜像安装到 `.agents/skills/`（通用层——Codex / Cursor / Gemini CLI / GitHub Copilot / VS Code / Amp / Warp / OpenCode / Droid 等原生读取）与 `.claude/skills/`（Claude Code 必需位），两份逐字节一致、同指 `pomaster --help` 单一事实源；其中 `pomaster-discovery` 是方法论长卡（Grounded Brainstorm：Grill Strategy 主轴 + 对话形式纪律 + 机器闸命令链 + 任务生命周期全图——「走 pomaster brainstorm」/需求讨论/拷问需求等自然语言命中）；
-- **hooks 注入（claude）**：`.claude/settings.json` 合并式注册 SessionStart → `pomaster session`（治理速览投影，≤10,000 字符硬上限，尾部带**首答确认协议**——模型首轮回复必须可见确认注入并报告 Next-Action 路由）与 UserPromptSubmit → `pomaster alerts`（可行动项过滤器 + workflow 路由段：无活跃 TASK 给判档/讨论双入口，有活跃 TASK 给八拍位置与下一拍命令，恒 exit 0）；既有 hooks（人类/Trellis 条目）一律保留，坏 JSON fail-closed 不覆盖；
-- **cursor/qoder**：加厚版 rules（命令卡 + Browser Eyes 展开进 `.cursor/rules/pomaster.mdc` / `.qoder/rules/pomaster.md`）。
-
-**多平台适配器**：`AGENTS.md` 恒为唯一事实源；`--platforms claude,codex,cursor,qoder` 追加各平台的适配器（`CLAUDE.md` / 根 `AGENTS.md` 即 codex 原生入口 / `.cursor/rules/pomaster.mdc` / `.qoder/rules/pomaster.md`，本包产物形态升级自动重写，人类异形内容一律不覆盖）；`--platforms none` 只建 AGENTS.md + 状态骨架。TTY 交互终端直接 `pomaster init` 会出复选清单（◉/◯ 空格勾选 / ↑↓ 移动 / 回车确认；raw 模式不可用时降级为编号输入）；`--json` 恒走确定性缺省（claude，重入口）。
-
-**技术栈问卷与后补销账**（R-M 裁定，2026-09-05）：TTY 交互 init 在平台选择后接技术栈逐键问卷——前端 9 键 + 后端 5 键逐项必答（无缺省不预填，候选含实战栈与常见占位，末行可自由输入；中断 = 零写入），答完即把选型写回 `.pomaster/baseline/<lane>/stack.yaml` 并在 `baseline/manifest.yaml` 的 unknowns 台账对已答键销账；重跑 init 幂等——已答键不重复问，全销账则问卷整体跳过。非交互通道（`--json` / CI）问卷整体跳过、UNKNOWN 显式缺席，后补用 `pomaster baseline set --lane <frontend|backend> --key <key> --value <value>`（键词形 fail-closed；同值重放幂等；已答键改型与已确认基线的修改显式拒绝——修改走治理通路）。分层/职责等架构叙述住播种骨架 `baseline/<lane>/architecture.md`（Owner 就地填写；问卷不程序化改写 md 骨架）。
-
-**基线确认 gate**（R-L 裁定，2026-09-05）：`pomaster baseline confirm` 在 14 个 unknowns 全部销账后对基线做 Owner 确认施断——`baseline/manifest.yaml` 写入 `confirmed` 确认记录（`at_seq` 时点锚 + 两个 `stack.yaml` 与两个 `architecture.md` 的 sha256 digest 快照），已确认且 digest 无漂移时重复 confirm 幂等零写入（NO_CHANGE）。closeout 聚合单点消费确认态：baseline 未确认 → `BASELINE_NOT_CONFIRMED` 阻断；确认后任一快照目标与现盘 digest 不符（检出谁改了架构）→ `BASELINE_DRIFT` 阻断。确认后的修改走治理通路：`pomaster baseline set --change <CHANGE-id>`（CHANGE.* 对象须在册且 lifecycle 合法，kernel 校验）允许写入并使确认记录失效，重确认前 closeout 恢复阻断；漂移后 `pomaster baseline confirm` 重新快照即治理通路终点。`pomaster doctor` / `pomaster status` 呈现确认态（未确认/已确认/已漂移）+ 未销账 unknowns 计数 + 漂移文件清单（`--json` 字段 `baseline_confirmation`；纯读呈现不改 ok 语义）。
-
-**baseline 栈预置草案**（G-B/G-C/G-D 裁定，2026-09-06）：问卷选型落定后，init 自动为 22 份 baseline md 生成「预置草案」节（节头 `PRESET-DRAFT — Owner 确认后成为基线`，NON-AUTHORITATIVE）——草案内容逐条溯源到已锚定的主题文档与 overlay（`- 源:` 行标注 `.pomaster` 路径 + 节锚），纯加法追加、`起步值:UNKNOWN` 骨架字节零改动；栈维度未销账的 lane 保持纯 UNKNOWN（缺席诚实）；draft-once（在座零触碰），Owner 可改；`baseline confirm` 时草案随整文件 digest 烙印，确认后改动即 `BASELINE_DRIFT` 走治理通路。业务实体/接口/数据模型零预置（New Entity Gate 词形在册）。
-
-装好后 `pomaster session`（无子命令）就是 hook 看到的治理速览——**八段分段投影**（分母/任务执行锁状态/**Next-Action 确定性路由**/许可例外/可行动项/attention/完整性微探针/八拍路标，带逐段预算与缺席诚实）+ 尾部首答确认协议（模型首轮必须确认注入并转述 Next-Action 路由）；`pomaster status` 尾行 `next:` 给同一张路由表的当前建议；`pomaster alerts` 恒带 workflow 路由段（无活跃 TASK → 八拍① triage 或 brainstorm start 双入口；有活跃 TASK → 八拍位置 + 下一拍命令 + 分段卡名）。`pomaster doctor` 会用 `heavy_entry_hooks` / `heavy_entry_skills` 探针核对重入口安装物（hooks 注册态 + hook 命令 PATH 可达的生效自检 + 双镜像逐字节一致；未安装/不可达 → MISSING_CONFIGURATION 并给修复指引——重跑 init / 检查 PATH / 项目 hooks 信任审批前置说明）。
+> 产物全表 / 目录宪法 / 播种语义 / 重入口细节 / 问卷与 confirm 机制 / doctor 探针矩阵：详见 [docs/init-reference.md](docs/init-reference.md)。
 
 ### 3. init 之后该配置什么（config.yaml）
 
 ```yaml
 version: 1
-profile: LIGHT            # 治理档位（信息性人类偏好，A1 裁定：不进判卷）：MINIMAL | LIGHT | STANDARD
+profile: LIGHT            # 治理档位（信息性人类偏好）：MINIMAL | LIGHT | STANDARD
 triage:
   ttl_hours: 168          # triage 结果有效期，过期必须 re-triage
 ```
-
-**profile 三档怎么选**（信息性人类偏好——A1 裁定 2026-09-04：档位只影响呈现与偏好记录，不进任何 gate/permit 判卷、不决定激活；激活由 context compile 的 lane/role/capability 机制承担）：
 
 | 档位 | 适合 | 体感 |
 |---|---|---|
@@ -151,7 +165,7 @@ triage:
 | `LIGHT`（默认） | 正常业务迭代 | 秒级判档 + FAST gate 内循环 + delta 审查 |
 | `STANDARD` | 核心链路/多角色协作 | 全 gate 矩阵 + 浏览器双通道证据 + 抽样复核 |
 
-**Authority（谁说了算）**：`.pomaster/state/authority.json` 默认单人形态（一切 authority 位置由项目 Owner 应答）；多人协作出现信号后再演化细粒度 owner——`owner_registry` 数组逐个登记即可，kernel 零配置变更。
+Authority（谁说了算）：`.pomaster/state/authority.json` 默认单人形态（一切 authority 位置由项目 Owner 应答）；多人协作出现信号后再演化细粒度 owner——`owner_registry` 数组逐个登记即可。
 
 ### 4. 第一个 Change：走一遍八拍
 
@@ -169,21 +183,9 @@ pomaster closeout <task-id>                      # ⑧ DoD 判卷收口
 pomaster doctor        # 工具/MCP 探测：缺什么提示装什么
 ```
 
-doctor 探针覆盖：内核 / BUILD（tsc·eslint）/ CONTRACT（oasdiff·schemathesis）/ ARCHITECTURE（depcruise·import-linter）/ COVERAGE（c8·pytest-cov）/ MUTATION（mutmut·StrykerJS）/ SECURITY（gitleaks·pip-audit·semgrep）/ BROWSER（playwright·chrome-devtools MCP）/ PERFORMANCE（lighthouse·web-vitals）/ portability。**工具缺席=显式 NOT_RUN（非绿非红），绝不假绿**。
-
-**浏览器双眼（Browser Eyes）**：`chrome-devtools` MCP 是观测诊断面——页面慢/报错/卡住时直接读真实浏览器（性能 trace / 网络瀑布 / console），禁只看代码推断；`playwright` MCP 是确定性 E2E smoke 与交互验证面。两边产物都是证据链输入（perception receipt / BROWSER gate GRN）。`pomaster doctor` 对两个 MCP 各自出四态探针（未配置 → MISSING_CONFIGURATION + 一键安装路标）；`init` 生成的 AGENTS.md 已内置该分工引导。
-
----
-
-## 为什么存在（三行读完的来历）
-
-1. **旧模式治理的是文档**：把几百份 Markdown 规范播进项目、靠 Agent 自觉遵守——结果错误事实被继承放大（上个会话说"27 页开发完了"，实际半数是脚手架）、技术基线静默漂移、规范越堆越多直到没人看。
-2. **血泪换来的第一定律**：*报绿的治理工具比没有工具更危险——它把「未知」转换成「已验证干净」。* 所以本项目的核心不是"更多门禁"，而是**可信的证据**。
-3. **vNext 换掉治理对象**：不再治理文档，改为治理**状态本身**。文档只是状态的投影；事实必须带 Authority、Evidence 与完整生命周期。
+工具缺席 = 显式 NOT_RUN（非绿非红），绝不假绿。浏览器双眼分工：`chrome-devtools` MCP 是观测诊断面（页面慢/报错/卡住必须实测真实浏览器），`playwright` MCP 是确定性 E2E 验证面——两边产物都进证据链。
 
 ## 运行机制：State Control Plane
-
-POMaster 不是又一层 prompt 工程或 skill 包，而是一个**状态控制平面**——它把「软件项目当前可信的状态」作为一等公民管理起来：
 
 ```mermaid
 flowchart TB
@@ -191,20 +193,15 @@ flowchart TB
     STATE["Canonical State<br/>truth-index + objects<br/>四轴状态"]:::core
     PERMIT["Permit / Transition<br/>谁有权改什么"]:::core
     EVI["Evidence 平面<br/>GRN / blobs / claims"]:::core
-    PROJ["Context Projection<br/>AUTHORITATIVE PROJECT STATE / REQUIRED POLICY /<br/>ADVISORY KNOWLEDGE / REUSE / CATALOG / VERIFICATION"]:::core
+    PROJ["Context Projection<br/>最小充分上下文投影"]:::core
   end
-  subgraph CAT["Engineering Catalog（随包分发，catalog-lock 逐字节对账）"]
-    POL["policies 206"]:::cat
-    KN["knowledge 11"]:::cat
-    GT["gates 6"]:::cat
-    SEN["sensors 6"]:::cat
-    ARC["archetypes 41"]:::cat
-    TOO["tools 13"]:::cat
+  subgraph CAT["Engineering Catalog（随包分发，catalog-lock 对账）"]
+    MAT["policies · knowledge · gates · sensors<br/>archetypes · tools"]:::cat
   end
   AGENT["Agent Harness<br/>(Claude Code / Codex / …)"]:::ext
   HUMAN["Human Authority<br/>(Owner)"]:::ext
 
-  HUMAN -- Authority 决议 --> PLANE
+  HUMAN -- Authority 决策 --> PLANE
   PLANE -- compile --> AGENT
   AGENT -- maintain/record --> PLANE
   CAT -- applicability 筛选 --> PROJ
@@ -214,24 +211,13 @@ flowchart TB
   classDef ext fill:#e6f4ea,stroke:#188038
 ```
 
-三个关键设计：
+关键设计：
 
 - **Canonical State 是唯一事实源**：一切对象（PAGE/CAPABILITY/CHANGE/TASK…）带四轴状态（lifecycle/confidence/evidence/change）+ Authority + 完整生命周期。Markdown 文档只是它的投影。
-- **Agent 不直接写状态**：一切写经 `maintain <id> --ops <tx>` 显式事务 → kernel `applyTransaction` 判卷（写路径机器执行点 `exec-guard` 判卷器非写入器）。
+- **Agent 不直接写状态**：一切写经 `maintain <id> --ops <tx>` 显式事务 → kernel 判卷（写路径机器执行点 `exec-guard` 是判卷器非写入器）。
 - **证据先于结论**：gate 运行结果走 `record gate-run` 产 GRN 收据入 evidence 平面；claim 必须显式绑定 GRN 分母——「证据缺失伪装完成」会被 closeout 硬阻断。
-- **先画靶子，再射箭（v0.6）**：随包分发 41 份 archetype 标准件（页面/组件/后端/数据/运行时，语义全部锚定官方文档实抓）——`pomaster resolve` 先在标准件与已有对象里选/配/组（EXACT/CONFIGURABLE/COMPOSABLE/EXTENSIBLE 确定性分类），真没有才设计新的，且新建必过 New Entity Gate 五否机判；`pomaster graph` 把对象图（采纳边/依赖/影响闭包）变成人看得见的投影。
-
-## SOP 编排：项目生命周期五段式
-
-```text
-0 BOOTSTRAP ──── init 扫描 / Authority Map / catalog-lock / 重入口生成（skills/hooks）
-                  （有原型→活体走查提五件套；存量项目→纳管已有 registry/spec/记忆）
-1 主循环 ─────── N 次 Change，每次跑下面的八拍 Loop（项目的日常形态）
-2 周期事件 ────── 全量对账 / 紧缩 / 经验入库 / catalog 升级 diff / 自托管基准
-3 架构演化 ────── Challenge → ACR → 受控迁移 → Deviation 到期清算
-4 生产反馈 ────── SLO 击穿 → State Challenge → 新 Change（闭环）
-5 退役归档 ────── deprecation → retirement → history
-```
+- **先画靶子，再射箭**：随包分发 41 份 archetype 标准件（语义全部锚定官方文档实抓）——`pomaster resolve` 先在标准件与已有对象里选/配/组，真没有才设计新的，且新建必过 New Entity Gate；`pomaster graph` 把对象图（采纳边/依赖/影响闭包）变成人看得见的投影。
+- **Gatekeeper 防分身**：同一执行既提 proposal 又放行 → 漂移观测器亮灯——「系统永不自我批准」的机器面。
 
 ### THE LOOP：每一次 Change 的八拍
 
@@ -251,126 +237,6 @@ flowchart TB
 ⑧ → 下一轮    携带更准的 Truth 重进①——开局一次比一次便宜
 ```
 
-### 八拍时序图（Agent 交互序列）
-
-```mermaid
-sequenceDiagram
-  autonumber
-  actor Owner
-  participant Agent as Agent (harness)
-  participant CLI as pomaster CLI
-  participant Kernel as kernel (store)
-  participant Gate as gauntlet legs
-  participant Ev as evidence 平面
-
-  Owner->>Agent: 描述意图 / task delta
-  Agent->>CLI: triage "<request>"
-  CLI->>Kernel: Router 判档（词表闭包）
-  Kernel-->>Agent: triage envelope（profile + TTL）
-  Agent->>CLI: maintain --phase pre-dev
-  CLI->>Kernel: permit issue + context compile
-  Kernel-->>Agent: PERMIT.* + 五分区 markdown（MUST/ADVISORY/…）
-  Note over Agent: Permit 范围内实现（免检）+ FAST gate 内循环
-  Agent->>CLI: check --fast / check --gates
-  CLI->>Gate: 派发 gate recipes
-  Gate->>Ev: GRN 收据逐条入账（四态判定）
-  Gate-->>Agent: verdict（passed/failed/not_run + 盲区计数）
-  Agent->>CLI: maintain --ops <tx> / compact
-  CLI->>Kernel: applyTransaction（判卷权威）
-  Agent->>CLI: closeout <task-id>
-  CLI->>Ev: DoD 判卷（claims×GRN 硬绑）
-  CLI-->>Owner: delta 审查面（人只看差异）
-```
-
-### 证据入账时序（防假绿的核心通路）
-
-```mermaid
-sequenceDiagram
-  autonumber
-  participant Runner as gate runner
-  participant Adapter as 腿 adapter
-  participant Store as kernel store
-  participant Blob as evidence blobs
-  Runner->>Adapter: gate recipe 派发
-  Adapter-->>Runner: 原始报告（官方词形）
-  Adapter->>Blob: persistEvidenceArtifact（内容寻址 sha256）
-  Blob-->>Adapter: artifact_ref
-  Adapter->>Store: record gate-run（GRN + artifact_refs）
-  Store->>Store: journal TX_APPLIED（ran_at_seq 锚）
-  Note over Store,Blob: 读侧 verifyEvidenceBinding：<br/>判卷字节 == 落盘字节 == GRN 引用字节<br/>失配 = EVIDENCE_BINDING_INCOMPLETE 判红
-```
-
-### 生产反馈时序（SLO 击穿闭环）
-
-```mermaid
-sequenceDiagram
-  autonumber
-  participant Prod as 生产监控
-  participant P as pomaster production
-  participant K as kernel store
-  Prod->>P: ControlBand 定义（谓词机校验，自由文本不存在）
-  P->>P: evaluate（三态：OK/BREACHED/NOT_EVALUABLE）
-  alt BREACHED
-    P->>K: evidence（detected_by=tool_signal）
-    P->>K: challenge → change 轴 CHALLENGED
-    P->>P: diagnose（三分类，必须引用 breach evidence）
-    P-->>Prod: 新 Change 进入主循环（闭环）
-  end
-```
-
-### Memory Harvest 时序（COMPATIBILITY 路线）
-
-```mermaid
-sequenceDiagram
-  autonumber
-  participant H as harness 自动记忆
-  participant M as pomaster memory
-  participant Inbox as inbox（PENDING）
-  participant Owner2 as Owner（batch review）
-  H->>M: harvest claude --harness-dir <dir>
-  M->>Inbox: 四桶初筛（TRUTH/KNOWLEDGE/EPISODE/PREFERENCE）
-  Owner2->>M: review --decide <id> --promote|--reject --note <必填>
-  M->>M: 分桶路由（KNOWLEDGE→恒 CANDIDATE+ADVISORY；TRUTH/DECISION/EVIDENCE→OWNER_ESCALATION）
-  M->>M: audit（MEMORY_DRIFT 探测 fail-closed）
-```
-
-## 类 Agent 架构
-
-POMaster 不内置 daemon，也不托管 Agent——它给「在 harness 里跑的主 Agent」提供状态平面 + 执行身份 + 观测器：
-
-```mermaid
-flowchart LR
-  subgraph HARNESS["Agent Harness（Claude Code / Codex / …）"]
-    MAIN["Main Agent<br/>（solo 直连形态）"]:::agent
-    SUB["Sub-agent / Role"]:::agent
-  end
-  subgraph POM["POMaster kernel"]
-    SESS["sessions（liveness 侧车）"]:::k
-    LOCK["locks（change/task/unit 三粒度互斥）"]:::k
-    AGX["Execution Identity（AGX-n）"]:::k
-    RT["AgentRuntime 契约<br/>（§58 四方法三探针）"]:::k
-  end
-  subgraph OBS["观测器（fail-closed 信号）"]
-    GK["DEF-GATEKEEPER<br/>分身漂移检测"]:::obs
-    SUP["DEF-SUP<br/>SOP 链触发观测"]:::obs
-  end
-  MAIN -- "begin/end execution" --> AGX
-  MAIN -- "attach/refresh" --> SESS
-  MAIN -- "acquire/heartbeat/steal" --> LOCK
-  SUB -- run/handoff（DEF-SUP 触发制，deferred） --> RT
-  AGX --> GK
-  SESS --> SUP
-  classDef agent fill:#e8f0fe,stroke:#1a73e8
-  classDef k fill:#fce8e6,stroke:#d93025
-  classDef obs fill:#fef7e0,stroke:#f9ab00
-```
-
-要点：
-
-- **Execution Identity ≠ Execution Trace ≠ Evidence**：AGX-n 是短小稳定的执行身份（runtime/model/permit 快照）；Trace 是行为侧车（writes/tool_receipts/evidence_refs，retention 四档）；Evidence 是可验证证明。三者分离（A19 美学）。
-- **Gatekeeper 防分身**：同一 execution 既提 proposal 又 ALLOW → drift 观测器亮灯——「系统永不自我批准」的机器面。
-- **托管编排受 DEF-SUP 触发制门槛**：solo 直连是默认形态；run/handoff 等 SOP 编排在触发条件（重复链/第二贡献者/headless-CI）出现前显式 deferred——治理开销与风险成比例（Minimum Sufficient Governance）。
-
 ## 五原语：一切能力的唯一来源
 
 | 原语 | 回答的问题 |
@@ -387,11 +253,19 @@ Spec、Task、Gate、Knowledge、Brainstorm……全部是这五个原语的派�
 ## 哲学宪法（违者即是 bug）
 
 - Small Constitution：硬约束极少而精——不伪造事实、不越权、不静默冲突、不无证据宣称完成
-- Heavy Entry by Default（D13 修订 2026-09-03 + B7 裁定 2026-09-04）：入口即治理——init 默认安装 skills 库 + hooks 注入，Agent 开会话即见状态；单一重入口、无模式旗标；hook 注入内容永远是 Canonical State 的投影，不是第二事实源
+- Heavy Entry by Default：入口即治理——init 默认安装 skills 命令卡库 + hooks 注入，Agent 开会话即见状态；hook 注入内容永远是 Canonical State 的投影，不是第二事实源
 - No-op is elegant：没有必要的治理动作，零变化就是成功
-- Framework as Review Surface：框架约束好了的人，不需要读 AI 写的每一行代码——但前提是判卷器诚实，所以我们用对抗性用例持续攻击自己的 gate（8 个宪法回归 Case **CRC-A..H** 永久套件守护核心不变式：一句话需求必须过 grounding、原型实现无权威、agent 不得自批、观察失败≠不存在、截图≠payload……）
+- Framework as Review Surface：框架约束好了的人，不需要读 AI 写的每一行代码——但前提是判卷器诚实，所以我们用对抗性用例持续攻击自己的 gate（8 个宪法回归 Case 组成永久套件，守护「一句话需求必须过 grounding、原型实现无权威、agent 不得自批、观察失败≠不存在、截图≠payload」等核心不变式）
 - Minimum Sufficient Governance：治理开销必须与变更风险成比例；小改动的体验是"几乎感觉不到 POMaster"
 - Memory Sovereignty：删掉本机缓存 + fresh clone + bootstrap ≈ 项目认知完全恢复
+
+## 深入阅读
+
+- [`docs/init-reference.md`](docs/init-reference.md) — `pomaster init` 全机制：产物表 / 目录宪法全树 / 播种语义 / 重入口三件套 / 技术栈问卷 / 基线确认 gate / 预置草案 / doctor 探针矩阵
+- [`docs/kernel-api.md`](docs/kernel-api.md) — kernel API 参考
+- [组件画廊（在线版）](https://river-singer.github.io/POMaster_VNext/) — GitHub Pages；仓库源在 [`packages/studio`](packages/studio/)
+- [`catalog/`](catalog/) — 随包分发的工程策展物料（policies / knowledge / gates / sensors / archetypes / tools）
+- [`references/`](references/) — concept-ledger（治理概念账本）· external-sites-index（外部参照站点索引）
 
 ## 项目结构
 
@@ -406,27 +280,9 @@ legal/       THIRD_PARTY_NOTICES · PROVENANCE
 
 技术栈：TypeScript · Node ≥ 22 · pnpm monorepo · Canonical State 为 JSON · Git 为版本与回滚底座 · 外部测试工具一律走 Adapter（绝不进核心）。
 
-## 组件画廊（Storybook studio，仓内开发面）
-
-开发仓内置 canonical Storybook 实例（裁定 G-A；`packages/studio`，private——`build-npm-package` 的 stage 白名单不含它，npm 发布面零泄漏）。组件资产的「有哪些 + 长什么样」一页可览：
-
-| 页面类 | 数量 | 形态 |
-| --- | --- | --- |
-| Archetype 语义卡 | 41 | MDX 纯文档页（responsibility / when_to_use / composition / 研究锚透传） |
-| AntDV 组件 | 71 | CSF3 story 真渲染（`ant-design-vue@4.2.6`，同族子导出一并挂载） |
-| Overlay 能力清单 | 18 | MDX 页（capability / requires / Rules / 源指向，自 `seeds/specs/hard/stacks/`） |
-| Foundations 与边界 | 4 | geist 官方站参照（无 Vue 本体声明）· CSS 体系 D8 组合 · baseline 四 lane 导航 · 画廊总览 |
-
-```bash
-corepack pnpm studio:dev      # 起 dev server（生成产物先自动重建；遥测经 STORYBOOK_DISABLE_TELEMETRY 关闭）
-corepack pnpm studio:build    # 静态导出到 packages/studio/dist-storybook/（gitignore，可任意静态伺服）
-```
-
-生成器纪律：全部 MDX/stories 由 `packages/studio/scripts/lib/` 从 `catalog/archetypes` 与 `seeds/` 程序化生成（幂等可重放）；`generated/` 不入 git，入库的是生成器 + 配置 + 少量手写边界页。覆盖与幂等由 `packages/studio/tests/generators.spec.ts` 钉住（41/71/18/4 分母 + 双跑 diff 空）。画廊全程只读渲染既有锚定物料：NON-AUTHORITATIVE 声明在页头、零新增 catalog 物料（D6）、业务实体/业务组件零出现（G-D）。
-
 ## License
 
-POMaster 采用**双许可**发布（Owner 决议 2026-09-01）：
+POMaster 采用**双许可**发布：
 
 - **PolyForm Noncommercial 1.0.0**（默认公共许可，仅授权非商业使用）：全文见 [`LICENSE`](./LICENSE)，官方标准文本逐字落盘；
 - **Commercial**（独立商业授权）：任何商业使用（含企业内部商用、小企业商用）均不在公共许可范围内、不豁免，需另行签署书面商业授权——说明见 [`COMMERCIAL_LICENSE.md`](./COMMERCIAL_LICENSE.md)。

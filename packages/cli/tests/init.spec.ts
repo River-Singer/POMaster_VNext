@@ -184,6 +184,10 @@ describe("init 首次创建（CREATED）", () => {
     expect(agents).toContain(".claude/skills/pomaster*");
     expect(agents).toContain("pomaster session");
     expect(agents).toContain("pomaster alerts");
+    // 组件画廊指引行（与 init 人读横幅同一画廊词形；在线链接在前）。
+    expect(agents).toContain("组件画廊");
+    expect(agents).toContain("https://river-singer.github.io/POMaster_VNext/");
+    expect(agents).toContain("corepack pnpm studio:dev");
     expect(read(CLAUDE_MD_RELATIVE)).toContain("@AGENTS.md");
   });
 
@@ -367,6 +371,11 @@ describe("init 人读输出与信封", () => {
     expect(text).toContain(
       "A tool that reports green without evidence is more dangerous",
     );
+    // 组件画廊指引行（在线链接在前——npm 消费者没有仓库；仓库命令为辅）。
+    expect(text).toContain(
+      "组件画廊: https://river-singer.github.io/POMaster_VNext/（在线版）",
+    );
+    expect(text).toContain("或 POMaster 仓库内: corepack pnpm studio:dev");
     expect(outcome.human[outcome.human.length - 1]).toBe(
       "Contact / commercial licensing: allenxujianyang@outlook.com",
     );
