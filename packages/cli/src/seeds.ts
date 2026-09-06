@@ -35,8 +35,8 @@
  *
  * ADR-lite（B6a 数据结构，按 porting-design-proposal §4 批次表定案）：本子批落
  * 引擎 + **空清单跑通**（init 步骤 4.6 已接线，空表零 seeded/preserved 报告项），
- * B6b 起逐子批灌内容（FE 46 → BE 33+stacks 28 → baseline 25 → evidence 20，每子批
- * 一次清单增量）。条目形态取引擎最小面 {path, content}；清单 pin（逐文件 sha256/
+ * B6b 起逐子批灌内容（FE 46 → BE 33+stacks 28 → baseline 25 → evidence 20 → stacks
+ * 前端族 6，每子批一次清单增量）。条目形态取引擎最小面 {path, content}；清单 pin（逐文件 sha256/
  * 来源词形）与 npm 包内资产（<pkg>/seeds/）装载是 B6b 移植工具的清单构建面
  * （seed-manifest.ts）——装载后仍归约为本形态，引擎零改动。
  */

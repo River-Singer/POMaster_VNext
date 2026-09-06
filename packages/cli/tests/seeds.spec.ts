@@ -187,7 +187,7 @@ describe("seedProjectAssets 目录守卫（R4 红线 + B6b-I 播种 allowlist �
       );
     }
     // 收窄口径：12 播种目录（baseline 根+四分区、specs 根+hard 根+三分区+acceptance+
-    // evidence）+ B6c stacks 14 slug 播种叶目录。
+    // evidence）+ stacks 播种叶目录（B6c 后端 14 slug + B6f 前端 3 slug）。
     expect(SEEDABLE_STORE_DIRS).toHaveLength(12 + STACK_SEED_SLUGS.length);
     for (const slug of STACK_SEED_SLUGS) {
       expect(SEEDABLE_STORE_DIRS).toContain(`specs/hard/stacks/${slug}`);

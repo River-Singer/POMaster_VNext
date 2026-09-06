@@ -480,7 +480,7 @@ export const LAYOUT_DIRECTORIES: readonly LayoutDirSpec[] = [
     path: "specs/hard/stacks",
     status: "wired",
     purpose:
-      "stack overlay 播种位（14 组 × index+overlay = 28 文件；installed=true 全量播种不用也在座，bound 语义以 stack.yaml 显式选型为约定载体（显式选型 = 绑定，未选型 = installed 未 bound）——B6c 灌内容，本批只登记目录）。",
+      "stack overlay 播种位（17 组 × index+overlay = 34 文件——后端 14 族 B6c + 前端 3 族 B6f；installed=true 全量播种不用也在座，bound 语义以 stack.yaml 显式选型为约定载体（显式选型 = 绑定，未选型 = installed 未 bound）——B6a 只登记目录，逐批灌内容）。",
     activation_hint:
       "项目技术栈命中对应 overlay 时注入；bound 与否看 stack.yaml 是否已显式选型（定义性约定，当前无运行时派生消费），目录存在 ≠ 已绑定。",
     constitution_source:

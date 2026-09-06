@@ -485,7 +485,7 @@ describe("B6 播种清单：分母与形态（seed-once 清单单源；B6f 全�
   });
 });
 
-describe("播种件字节形态：统一 frontmatter + 正文逐字节忠实（FE 全文 / BE+overlay 去原 frontmatter / stack index 全文；specs 面 107 件移植形态）", () => {
+describe("播种件字节形态：统一 frontmatter + 正文逐字节忠实（FE 全文 / BE+overlay 去原 frontmatter / stack index 全文；specs 面 113 件移植形态）", () => {
   it("frontmatter 统一 9 字段在场（no-governed-id：播种件无 id 字段；lane 按分面 frontend/backend）——specs 面 113 件", () => {
     for (const doc of PORTED_ENTRIES) {
       const { fields } = seedSplit(doc.asset);
@@ -533,7 +533,7 @@ describe("播种件字节形态：统一 frontmatter + 正文逐字节忠实（F
     expect(B6F_ENTRIES.every((e) => e.asset.startsWith("specs/hard/stacks/"))).toBe(true);
   });
 
-  it("frontmatter pin 与清单 pin 双锚一致（seed_source + seed_source_sha256；specs 面 107 条全量）", () => {
+  it("frontmatter pin 与清单 pin 双锚一致（seed_source + seed_source_sha256；specs 面 113 条全量）", () => {
     for (const doc of PORTED_ENTRIES) {
       const { fields } = seedSplit(doc.asset);
       expect(fields.get("seed_source")).toBe(doc.source_path);
@@ -785,12 +785,12 @@ describe("播种件字节形态：统一 frontmatter + 正文逐字节忠实（F
       expect(entry.porting_notes).toHaveLength(1);
       expect(entry.porting_notes[0]).toContain("installed=true");
     }
-    // A1：107 件播种件正文零档位判档词形（MINIMAL/LIGHT/STANDARD 判档叙述零移植）。
+    // A1：113 件播种件正文零档位判档词形（MINIMAL/LIGHT/STANDARD 判档叙述零移植）。
     for (const entry of loaded) {
       expect(/\b(MINIMAL|LIGHT|STANDARD)\b/.test(entry.content), entry.path).toBe(false);
     }
     // R8 清洗词形播种面零残留（资产 content 面——manifest notes 的清洗前对照记录
-    // 不在此面）：finish / task.py / Trellis 全分母（152 件）零命中。
+    // 不在此面）：finish / task.py / Trellis 全分母（158 件）零命中。
     for (const entry of loaded) {
       expect(entry.content.includes("finish"), entry.path).toBe(false);
       expect(entry.content.includes("task.py"), entry.path).toBe(false);
