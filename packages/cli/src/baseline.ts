@@ -9,7 +9,8 @@
  *   「问题再长也得一一确认」），沿 init 既有两形态（raw ◉/◯ 单选帧 / 编号输入
  *   降级，interactive-keys.ts 共用键表与重绘出口）；
  * - 每键候选：R-E 实战栈优先（vue3/antdesign/geist/java/spring/mysql/redis 首位）
- *   + 常见占位全量列出 + 末行「自定义」自由输入（保守词形校验）；
+ *   + 常见占位全量列出 + 末行「自定义」自由输入（保守词形校验）；css 键首位 =
+ *   D8 裁定组合词形（09-05-spec-thematic-reorg，B6G overlay 批回填），其余候选保留；
  * - A1/E2/C1 纪律：无缺省不预填（UNKNOWN 起步语义），逐键必答不许跳（raw 空缓冲
  *   回车不结算；numbered 空行重问不跳键）；未答完不落盘——问卷本体在 runInit 之前
  *   运行，中断/EOF 时 runInit 根本不被调用（结构性零写入，fail-closed）；
@@ -163,8 +164,10 @@ export interface StackQuestionSpec {
 /**
  * 问卷目录（14 键；FE 9 + BE 5，lane 分组内按 seed 键序）。R-E 实战栈逐键首位：
  * vue3/antdesign/geist/java/spring/mysql/redis；react/python/php/oracle/sqlserver
- * 等为常见占位；末位自定义行由交互器提供（不入 options——自定义值走自由输入）。
- * 「none」词形 = 显式不引入（grid/cache 允许显式缺席选型）。
+ * 等为常见占位；css 键首位 = D8 裁定组合词形 scoped-sfc+antdv-cssinjs-tokens+
+ * antdv-reset-css（B6G css overlay 批回填）；末位自定义行由交互器提供（不入
+ * options——自定义值走自由输入）。「none」词形 = 显式不引入（grid/cache 允许显式
+ * 缺席选型）。
  */
 export const STACK_QUESTIONS: readonly StackQuestionSpec[] = [
   // —— 前端 9 键（seed 键序）——
@@ -175,7 +178,7 @@ export const STACK_QUESTIONS: readonly StackQuestionSpec[] = [
   { lane: "frontend", key: "state", label: "前端状态管理", options: ["pinia", "redux", "zustand"] },
   { lane: "frontend", key: "grid", label: "数据表格/Grid", options: ["tanstack-table", "ag-grid", "handsontable", "none"] },
   { lane: "frontend", key: "ui", label: "UI 组件库", options: ["antdesign", "geist", "element-plus", "mui", "shadcn/ui"] },
-  { lane: "frontend", key: "css", label: "CSS 方案", options: ["tailwind", "sass", "less", "css-modules", "vanilla-css"] },
+  { lane: "frontend", key: "css", label: "CSS 方案", options: ["scoped-sfc+antdv-cssinjs-tokens+antdv-reset-css", "tailwind", "sass", "less", "css-modules", "vanilla-css"] },
   { lane: "frontend", key: "testing", label: "前端测试", options: ["vitest", "jest", "playwright", "cypress"] },
   // —— 后端 5 键（seed 键序）——
   { lane: "backend", key: "language", label: "后端语言", options: ["java", "python", "go", "nodejs", "php", "csharp"] },

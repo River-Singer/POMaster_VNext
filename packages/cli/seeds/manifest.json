@@ -1,6 +1,6 @@
 {
   "schema": "pomaster.seed-manifest/1",
-  "batch": "B6F",
+  "batch": "B6G",
   "batches": {
     "B6B-1": [
       ".pomaster/specs/hard/frontend/01-development-checklist-protocol.md",
@@ -171,16 +171,20 @@
       ".pomaster/specs/hard/stacks/geist/index.md",
       ".pomaster/specs/hard/stacks/vue3/index.md",
       ".pomaster/specs/hard/stacks/vue3/vue3-framework-overlay.md"
+    ],
+    "B6G": [
+      ".pomaster/specs/hard/stacks/css/css-system-overlay.md",
+      ".pomaster/specs/hard/stacks/css/index.md"
     ]
   },
-  "generated_by": "catalog/tools/seed_b6e_evidence.py; B6F 增量=09-05-overlay-asset-batch(manifest 手工增量登记,sha256 pin 由 seed-manifest.spec 双锚对账)",
+  "generated_by": "catalog/tools/seed_b6e_evidence.py; B6F 增量=09-05-overlay-asset-batch(manifest 手工增量登记,sha256 pin 由 seed-manifest.spec 双锚对账); B6G 增量=css 体系 overlay(09-05-spec-thematic-reorg 裁决 D8,manifest 手工增量登记,sha256 pin 由 seed-manifest.spec 双锚对账)",
   "denominator": {
-    "batch_scope": "B6e:Evidence Spec Kit 20 文件新著播种(index 1 + 19 份证据要求面;PRD §13 清单+§13.1 十七段结构;要求面非证据面——持要求不持判定,判卷四值词形闭包;gates 绑定=登记级注记;B6b/B6c/B6d 132 条在册——清单合并承载全量分母 152);B6f:stacks 前端族 6 文件(3 组×2:vue3/antdesign/geist——09-05-overlay-asset-batch 实战栈首批;源=旧线 pomaster/components/frontend-hard-spec/assets/stacks/ 新著 vendor 件移植通路;frontmatter x-research-anchors=官方 URL+实抓日期+版本位研究锚,与 archetype 卡同构;css 体系 overlay 未建——css 键候选清单在册待 Owner 选型,缺席诚实 pending;B6b/B6c/B6d/B6e 152 条在册——清单合并承载全量分母 158)",
-    "planted": 158,
-    "planted_total": 158,
-    "batch_new": 6
+    "batch_scope": "B6e:Evidence Spec Kit 20 文件新著播种(index 1 + 19 份证据要求面;PRD §13 清单+§13.1 十七段结构;要求面非证据面——持要求不持判定,判卷四值词形闭包;gates 绑定=登记级注记;B6b/B6c/B6d 132 条在册——清单合并承载全量分母 152);B6f:stacks 前端族 6 文件(3 组×2:vue3/antdesign/geist——09-05-overlay-asset-batch 实战栈首批;源=旧线 pomaster/components/frontend-hard-spec/assets/stacks/ 新著 vendor 件移植通路;frontmatter x-research-anchors=官方 URL+实抓日期+版本位研究锚,与 archetype 卡同构;css 体系 overlay 本批未建——已由 B6G 批补建(D8 裁定选型,见 B6G 段);B6b/B6c/B6d/B6e 152 条在册——清单合并承载全量分母 158);B6G:css 体系 overlay 2 文件(css 组×2——09-05-spec-thematic-reorg 裁决 D8 css 键选型=组合词形 scoped-sfc+antdv-cssinjs-tokens+antdv-reset-css;源=旧线 pomaster/components/frontend-hard-spec/assets/stacks/css 新著 vendor 件,移植通路同 B6f;frontmatter x-research-anchors 研究锚自 09-05-overlay-asset-batch research/css-system-anchors.md 实抓行:vuejs.org sfc-css-features/antdv.com customize-theme+introduce,版本位 vue 3.5.42/ant-design-vue 4.2.6;B6b/B6c/B6d/B6e/B6f 158 条在册——清单合并承载全量分母 160)",
+    "planted": 160,
+    "planted_total": 160,
+    "batch_new": 2
   },
-  "seed_semantics": "seed-once-missing-only(缺席才写 / 在座零触碰 / marker-free;seeds.ts 单一实现;frontmatter 为 PRD §8.2 字段位减 id——no-governed-id 默认,播种 spec 是项目可编辑自由文件;B6c 起 BE 件含 vendor frontmatter 保留字段、stacks 件落 <slug> 子目录——SEEDABLE_STORE_DIRS 显式 slug 登记;B6d 起 baseline 件为新著纯正文(无 frontmatter——yaml 直接可解析/Owner 填写面零噪音;entry authoring=new,pin=资产自身字节指纹,装载器自指校验;UNKNOWN 起步,「待填写」词形零移植);B6e 起 specs/evidence 件同 authoring=new 纯正文通路——十七段结构照 PRD §13.1,要求面非证据面(持要求不持判定,判卷四值词形闭包),gates 绑定=登记级注记);B6f 起 stacks 前端族(vue3/antdesign/geist)走移植件通路落地(源=旧线 frontend-hard-spec/assets/stacks/ 新著 vendor 件——统一 9 字段+vendor 保留字段 id→legacy_id/applies_to 并入+x-research-anchors 研究锚透传;installed=播种态全量在册,bound=选中态由 baseline/frontend/stack.yaml 显式选型派生,不作隐式基线——B6c 注记语义同源)",
+  "seed_semantics": "seed-once-missing-only(缺席才写 / 在座零触碰 / marker-free;seeds.ts 单一实现;frontmatter 为 PRD §8.2 字段位减 id——no-governed-id 默认,播种 spec 是项目可编辑自由文件;B6c 起 BE 件含 vendor frontmatter 保留字段、stacks 件落 <slug> 子目录——SEEDABLE_STORE_DIRS 显式 slug 登记;B6d 起 baseline 件为新著纯正文(无 frontmatter——yaml 直接可解析/Owner 填写面零噪音;entry authoring=new,pin=资产自身字节指纹,装载器自指校验;UNKNOWN 起步,「待填写」词形零移植);B6e 起 specs/evidence 件同 authoring=new 纯正文通路——十七段结构照 PRD §13.1,要求面非证据面(持要求不持判定,判卷四值词形闭包),gates 绑定=登记级注记);B6f/B6G 起 stacks 前端族(vue3/antdesign/geist/css)走移植件通路落地(源=旧线 frontend-hard-spec/assets/stacks/ 新著 vendor 件——统一 9 字段+vendor 保留字段 id→legacy_id/applies_to 并入+x-research-anchors 研究锚透传;installed=播种态全量在册,bound=选中态由 baseline/frontend/stack.yaml 显式选型派生,不作隐式基线——B6c 注记语义同源)",
   "authority_scope": "specs 面 mixed_required_and_advisory;baseline 面 project_baseline_template(UNKNOWN 起步模板,非规则面);specs/evidence 面 evidence_spec_requirements(要求面规范——持要求不持判定,判定值只在 Verification Result/Gate Result)",
   "entries": [
     {
@@ -2075,6 +2079,28 @@
       "porting_notes": [
         "B6f 移植注记：本 overlay 为前端族首批新著 vendor 件（09-05-overlay-asset-batch——源 pomaster/components/frontend-hard-spec/assets/stacks/，非既有旧包资产）；frontmatter x-research-anchors 承载研究锚（官方 URL+实抓日期+版本位）；随前端族 3 组全量播种（installed=true）；bound（选中态）由 baseline/frontend/stack.yaml 显式选型派生，不作隐式基线（B6c 注记语义同源）"
       ]
+    },
+    {
+      "target": ".pomaster/specs/hard/stacks/css/css-system-overlay.md",
+      "asset": "specs/hard/stacks/css/css-system-overlay.md",
+      "seed_version": "B6G",
+      "lane": "frontend",
+      "source_path": "pomaster/components/frontend-hard-spec/assets/stacks/css/css-system-overlay.md",
+      "source_sha256": "4167e2a2d4c457f594db95336470dca4f0778e76df006e815207c0761667692a",
+      "source_bytes": 2767,
+      "porting_notes": [
+        "B6G 移植注记：本 overlay 为 css 体系 overlay（09-05-spec-thematic-reorg 裁决 D8——css 键选型=组合词形 scoped-sfc+antdv-cssinjs-tokens+antdv-reset-css；研究锚=09-05-overlay-asset-batch research/css-system-anchors.md 实抓在册）；frontmatter x-research-anchors 承载研究锚（官方 URL+实抓日期+版本位）；随 stacks 全量播种（installed=true）；bound（选中态）由 baseline/frontend/stack.yaml 显式选型派生，不作隐式基线（B6c 注记语义同源）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/stacks/css/index.md",
+      "asset": "specs/hard/stacks/css/index.md",
+      "seed_version": "B6G",
+      "lane": "frontend",
+      "source_path": "pomaster/components/frontend-hard-spec/assets/stacks/css/index.md",
+      "source_sha256": "eb09e17e34b577df39889213194207a3335f151d7c0f6655fa2f6aca63f0dc63",
+      "source_bytes": 372,
+      "porting_notes": []
     }
   ]
 }

@@ -62,7 +62,7 @@
  * - ADR-8 失败语义：createStore/loadTruthIndex/applyTransaction 抛 GovernanceError
  *   （索引损坏 / owner 幽灵 / SCHEMA_INVALID 等）→ SPEC_PREPLANT_SKIPPED warning
  *   （附 kernel code 原文）+ skipped=true + 零触碰。理由：applyTransaction staged
- *   原子性保障零部分落盘；init 的自有文件面（62 机制文件 + 158 seeds）不因 store
+ *   原子性保障零部分落盘；init 的自有文件面（62 机制文件 + 160 seeds）不因 store
  *   预植失败而失败；缺席经 warning 显式呈现不静默。
  *
  * - ADR-9 呈现：init 结果面 InitResult.specPreplant {planted, preserved, skipped}
@@ -336,7 +336,7 @@ export async function runSpecPreplant(
 
 /**
  * 包内清单 evidence spec 分母（轻量）：只读 manifest.json 计数，不装载资产字节
- * （loadSeedManifestEntries 全量校验太重，status/doctor 读路径禁背 158 份资产 IO）。
+ * （loadSeedManifestEntries 全量校验太重，status/doctor 读路径禁背 160 份资产 IO）。
  * 清单缺席/不可解析 → null（呈现字段缺席——显式缺席纪律）。
  */
 export function specPreplantKitSize(): number | null {

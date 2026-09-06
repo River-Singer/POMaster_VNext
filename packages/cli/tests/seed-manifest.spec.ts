@@ -2,12 +2,13 @@
  * seed-manifest.spec.ts —— B6 播种清单装载面 + provenance pin 对账
  * （vNext Batch 6 R2/R3/R4/R5：B6b-I 前 23 份 + B6b-II 后半 = FE 46 文件全量；B6c 增量
  * BE 33 文件 + stacks 28 文件；B6d 增量 baseline 25 文件；B6e 增量 evidence 20 文件；
- * B6f 增量 stacks 前端族 6 文件（vue3/antdesign/geist）= 清单 158 条全量分母；
+ * B6f 增量 stacks 前端族 6 文件（vue3/antdesign/geist）；B6G 增量 css 体系 overlay 2 文件
+ * （09-05-spec-thematic-reorg 裁决 D8）= 清单 160 条全量分母；
  * seed-manifest.ts 单一装载实现）。
  *
- * 钉面（prd.md R2/R3/R4/R5 / porting-design-proposal R1/R5 + §4 B6b-B6f 行）：
- * - 分母钉：158/158（46 FE + 33 BE universal + 34 stacks + 25 baseline + 20 evidence；
- *   六批合并清单 B6B-1/B6B-2/B6C/B6D/B6E/B6F，逐批名单 manifest.batches）；
+ * 钉面（prd.md R2/R3/R4/R5 / porting-design-proposal R1/R5 + §4 B6b-B6G 行）：
+ * - 分母钉：160/160（46 FE + 33 BE universal + 36 stacks + 25 baseline + 20 evidence；
+ *   七批合并清单 B6B-1/B6B-2/B6C/B6D/B6E/B6F/B6G，逐批名单 manifest.batches）；
  * - provenance pin（R1 漂移缓解）：移植件清单逐条 source_sha256（hex64）+ source_bytes，
  *   资产 frontmatter seed_source/seed_source_sha256 与清单双锚一致（loadSeedManifest-
  *   Entries fail-closed 路径）；B6d baseline 新著件 = authoring:"new" 纯正文（无
@@ -26,6 +27,9 @@
  *   旧线 frontend-hard-spec/assets/stacks/）；overlay frontmatter = 统一 9 + legacy 6
  *   （legacy_id 词形 frontend-stack:<slug>）+ x-research-anchors 研究锚透传（官方
  *   URL+实抓日期，与 archetype 卡同构）；antdesign requires frontend-stack:vue3；
+ * - B6G css 体系 overlay（css-system）：同移植件通路（vendor 为本批新著）；css 键 =
+ *   裁决 D8 组合词形 scoped-sfc+antdv-cssinjs-tokens+antdv-reset-css；requires
+ *   frontend-stack:vue3（scoped-sfc 机制为 Vue SFC 编译器专属）；
  * - R8 清洗执行（裁决 12/D5 授权内容演进批次，2026-09-05；批 F 同类授权延伸同日）：
  *   FE 01/03/index + BE index
  *   按 R8 清洗表整行替换（本 spec 内镜像表 + 恰一次出现断言钉清洗后基线——vendor 漂移
@@ -354,41 +358,43 @@ const B6C_ENTRIES = manifest.entries.filter((e) => e.seed_version === "B6C");
 const B6D_ENTRIES = manifest.entries.filter((e) => e.seed_version === "B6D");
 const B6E_ENTRIES = manifest.entries.filter((e) => e.seed_version === "B6E");
 const B6F_ENTRIES = manifest.entries.filter((e) => e.seed_version === "B6F");
-/** 移植件（specs 面 113——有统一 frontmatter 的条目）。 */
+/** 移植件（specs 面 115——有统一 frontmatter 的条目）。 */
 const PORTED_ENTRIES = manifest.entries.filter((e) => !e.authoring);
 
-describe("B6 播种清单：分母与形态（seed-once 清单单源；B6f 全量 158）", () => {
-  it("schema 词形 + 分母钉 158/158（FE 46 + BE 33 + stacks 34 + baseline 25 + evidence 20；六批合并清单 batch=B6F）", () => {
+describe("B6 播种清单：分母与形态（seed-once 清单单源；B6G 全量 160）", () => {
+  it("schema 词形 + 分母钉 160/160（FE 46 + BE 33 + stacks 36 + baseline 25 + evidence 20；七批合并清单 batch=B6G）", () => {
     expect(manifest.schema).toBe(SEED_MANIFEST_SCHEMA);
-    expect(manifest.batch).toBe("B6F");
-    expect(manifest.denominator.planted).toBe(158);
-    expect(manifest.denominator.planted_total).toBe(158);
-    expect(manifest.denominator.batch_new).toBe(6);
-    expect(manifest.entries).toHaveLength(158);
+    expect(manifest.batch).toBe("B6G");
+    expect(manifest.denominator.planted).toBe(160);
+    expect(manifest.denominator.planted_total).toBe(160);
+    expect(manifest.denominator.batch_new).toBe(2);
+    expect(manifest.entries).toHaveLength(160);
     // 逐批名单（provenance 文档位）：B6B-1 = 23、B6B-2 = 23、B6C = 61、B6D = 25、
-    // B6E = 20、B6F = 6，恰好划分 158。
+    // B6E = 20、B6F = 6、B6G = 2，恰好划分 160。
     const b1 = manifest.batches?.["B6B-1"] ?? [];
     const b2 = manifest.batches?.["B6B-2"] ?? [];
     const b3 = manifest.batches?.["B6C"] ?? [];
     const b4 = manifest.batches?.["B6D"] ?? [];
     const b5 = manifest.batches?.["B6E"] ?? [];
     const b6 = manifest.batches?.["B6F"] ?? [];
+    const b7 = manifest.batches?.["B6G"] ?? [];
     expect(b1).toHaveLength(23);
     expect(b2).toHaveLength(23);
     expect(b3).toHaveLength(61);
     expect(b4).toHaveLength(25);
     expect(b5).toHaveLength(20);
     expect(b6).toHaveLength(6);
-    expect(new Set([...b1, ...b2, ...b3, ...b4, ...b5, ...b6]).size).toBe(158);
+    expect(b7).toHaveLength(2);
+    expect(new Set([...b1, ...b2, ...b3, ...b4, ...b5, ...b6, ...b7]).size).toBe(160);
   });
 
-  it("lane/分面划分：frontend 46 + backend 61（BE 33 树内 + stacks 34 slug 子目录）+ baseline 25（1+7+8+5+4）+ evidence 20", () => {
+  it("lane/分面划分：FE 46 + BE 33 + stacks 36（B6c 后端 28 + B6f/B6G 前端 8；lane 值 frontend/backend 闭包内）+ baseline 25（1+7+8+5+4）+ evidence 20", () => {
     expect(FE_ENTRIES).toHaveLength(46);
     expect(BE_ENTRIES).toHaveLength(33);
-    expect(STACK_ENTRIES).toHaveLength(34);
+    expect(STACK_ENTRIES).toHaveLength(36);
     expect(BASELINE_ENTRIES).toHaveLength(25);
     expect(EVIDENCE_ENTRIES).toHaveLength(20);
-    expect(PORTED_ENTRIES).toHaveLength(113);
+    expect(PORTED_ENTRIES).toHaveLength(115);
     for (const entry of [...FE_ENTRIES, ...BE_ENTRIES, ...STACK_ENTRIES]) {
       expect(["frontend", "backend"]).toContain(entry.lane);
       expect(entry.source_sha256).toMatch(/^[0-9a-f]{64}$/);
@@ -399,10 +405,10 @@ describe("B6 播种清单：分母与形态（seed-once 清单单源；B6f 全�
       expect(entry.target.startsWith(".pomaster/specs/hard/")).toBe(true);
       expect(entry.authoring).toBeUndefined();
     }
-    // stacks：17 slug × (index + overlay) 恰好划分 34（B6c 后端 14 + B6f 前端 3）；
+    // stacks：18 slug × (index + overlay) 恰好划分 36（B6c 后端 14 + B6f 前端 3 + B6G css）；
     // slug 子目录词形（B6c 守卫 ADR）。
-    expect(STACK_ENTRIES.filter((e) => e.asset.endsWith("/index.md"))).toHaveLength(17);
-    expect(STACK_ENTRIES.filter((e) => e.asset.endsWith("-overlay.md"))).toHaveLength(17);
+    expect(STACK_ENTRIES.filter((e) => e.asset.endsWith("/index.md"))).toHaveLength(18);
+    expect(STACK_ENTRIES.filter((e) => e.asset.endsWith("-overlay.md"))).toHaveLength(18);
     for (const entry of STACK_ENTRIES) {
       expect(/^specs\/hard\/stacks\/[^/]+\/[^/]+\.md$/.test(entry.asset), entry.asset).toBe(
         true,
@@ -485,8 +491,8 @@ describe("B6 播种清单：分母与形态（seed-once 清单单源；B6f 全�
   });
 });
 
-describe("播种件字节形态：统一 frontmatter + 正文逐字节忠实（FE 全文 / BE+overlay 去原 frontmatter / stack index 全文；specs 面 113 件移植形态）", () => {
-  it("frontmatter 统一 9 字段在场（no-governed-id：播种件无 id 字段；lane 按分面 frontend/backend）——specs 面 113 件", () => {
+describe("播种件字节形态：统一 frontmatter + 正文逐字节忠实（FE 全文 / BE+overlay 去原 frontmatter / stack index 全文；specs 面 115 件移植形态）", () => {
+  it("frontmatter 统一 9 字段在场（no-governed-id：播种件无 id 字段；lane 按分面 frontend/backend）——specs 面 115 件", () => {
     for (const doc of PORTED_ENTRIES) {
       const { fields } = seedSplit(doc.asset);
       for (const field of UNIFIED_FIELDS) {
@@ -517,10 +523,10 @@ describe("播种件字节形态：统一 frontmatter + 正文逐字节忠实（F
     }
   });
 
-  it("seed_version 按所属批记：FE 01-23 = B6B-1、FE 24-45+index = B6B-2、BE/stacks 后端族全量 = B6C、前端族 stacks = B6F（零墙钟批次代号；specs 面 frontmatter 与清单同源）", () => {
+  it("seed_version 按所属批记：FE 01-23 = B6B-1、FE 24-45+index = B6B-2、BE/stacks 后端族全量 = B6C、前端族 stacks = B6F、css 体系 = B6G（零墙钟批次代号；specs 面 frontmatter 与清单同源）", () => {
     for (const doc of PORTED_ENTRIES) {
       const { fields } = seedSplit(doc.asset);
-      const expected = doc.seed_version === "B6C" || doc.seed_version === "B6F"
+      const expected = doc.seed_version === "B6C" || doc.seed_version === "B6F" || doc.seed_version === "B6G"
         ? doc.seed_version!
         : doc.target.endsWith("/index.md") || /specs\/hard\/frontend\/(2[4-9]|3\d|4[0-5])-/.test(doc.target)
           ? "B6B-2"
@@ -531,9 +537,12 @@ describe("播种件字节形态：统一 frontmatter + 正文逐字节忠实（F
     expect(B6C_ENTRIES).toHaveLength(61);
     expect(B6F_ENTRIES).toHaveLength(6);
     expect(B6F_ENTRIES.every((e) => e.asset.startsWith("specs/hard/stacks/"))).toBe(true);
+    const B6G_ENTRIES = manifest.entries.filter((e) => e.seed_version === "B6G");
+    expect(B6G_ENTRIES).toHaveLength(2);
+    expect(B6G_ENTRIES.every((e) => e.asset.startsWith("specs/hard/stacks/css/"))).toBe(true);
   });
 
-  it("frontmatter pin 与清单 pin 双锚一致（seed_source + seed_source_sha256；specs 面 113 条全量）", () => {
+  it("frontmatter pin 与清单 pin 双锚一致（seed_source + seed_source_sha256；specs 面 115 条全量）", () => {
     for (const doc of PORTED_ENTRIES) {
       const { fields } = seedSplit(doc.asset);
       expect(fields.get("seed_source")).toBe(doc.source_path);
@@ -719,6 +728,65 @@ describe("播种件字节形态：统一 frontmatter + 正文逐字节忠实（F
     }
   });
 
+  it("B6G css 体系 overlay 形态：统一 9 字段 + legacy 6 字段（legacy_id=frontend-stack:css）+ x-research-anchors（D8 选型锚：vuejs.org sfc-css-features + antdv.com customize-theme/introduce）；正文三节结构与 vendor 逐字节等", () => {
+    for (const doc of STACK_ENTRIES.filter((e) => e.seed_version === "B6G")) {
+      if (!doc.asset.endsWith("-overlay.md")) continue;
+      const fm = frontmatterYaml(doc.asset);
+      // 统一 9 + legacy 6 + x-research-anchors（与 B6f 前端族同构键集）。
+      expect(Object.keys(fm).sort()).toEqual(
+        [...UNIFIED_FIELDS, ...OVERLAY_LEGACY_FIELDS, "x-research-anchors"].sort(),
+      );
+      expect(fm.lane).toBe("frontend");
+      expect(fm.status).toBe("CURRENT");
+      expect(fm.authority_scope).toBe("mixed_required_and_advisory");
+      expect(fm["legacy_id"]).toBe("frontend-stack:css");
+      expect(fm.capability).toBe("css-system");
+      expect(fm.requires).toEqual(["frontend-stack:vue3"]);
+      expect(fm.conflicts).toEqual([]);
+      expect(fm.coexistence).toBe("independent");
+      expect(fm.stages).toEqual(["prepare", "implement", "check", "release"]);
+      // x-research-anchors：note 承载 D8 组合词形；sources 逐条 url(https)/fetched(实抓日闭包)。
+      const anchors = fm["x-research-anchors"] as {
+        note: string;
+        sources: Array<{ url: string; fetched: string | Date }>;
+      };
+      expect(anchors.note).toContain("D8");
+      expect(anchors.note).toContain("scoped-sfc+antdv-cssinjs-tokens+antdv-reset-css");
+      const urls = anchors.sources.map((s) => s.url);
+      expect(urls).toContain("https://vuejs.org/api/sfc-css-features.html");
+      expect(urls).toContain("https://antdv.com/docs/vue/customize-theme");
+      expect(urls).toContain("https://antdv.com/docs/vue/introduce");
+      for (const source of anchors.sources) {
+        expect(source.url.startsWith("https://"), source.url).toBe(true);
+        const fetched = source.fetched instanceof Date
+          ? source.fetched.toISOString().slice(0, 10)
+          : source.fetched;
+        expect(["2026-09-02", "2026-09-05"], "css fetched 闭包").toContain(fetched);
+      }
+      // 三节结构（前端族同构骨架）+ 正文与 vendor 去原 frontmatter 逐字节等（vendor 在位时）。
+      const { body } = seedSplit(doc.asset);
+      for (const section of ["## Scope", "## Rules", "## Checklist"]) {
+        expect(body.includes(`\n${section}\n`), `${doc.asset} 缺段 ${section}`).toBe(true);
+      }
+      if (VENDOR_FSTACKS_PRESENT) {
+        const vendor = readFileSync(join(VENDOR_FSTACKS, "css", doc.asset.split("/").pop()!), "utf8");
+        expect(body, `${doc.asset} 正文逐字节`).toBe(vendorBodyAfterFrontmatter(vendor));
+      }
+    }
+  });
+
+  it.skipIf(!VENDOR_FSTACKS_PRESENT)("B6G css stack index 形态：纯统一 9 字段；正文与 vendor 全文逐字节等（能力表词形 frontend-stack:css）", () => {
+    for (const doc of STACK_ENTRIES.filter((e) => e.seed_version === "B6G")) {
+      if (!doc.asset.endsWith("/index.md")) continue;
+      const fm = frontmatterYaml(doc.asset);
+      expect(Object.keys(fm).sort()).toEqual([...UNIFIED_FIELDS].sort());
+      const { body } = seedSplit(doc.asset);
+      expect(body).toContain("`frontend-stack:css`");
+      const vendor = readFileSync(join(VENDOR_FSTACKS, "css", "index.md"), "utf8");
+      expect(body, `${doc.asset} 正文逐字节`).toBe(vendor);
+    }
+  });
+
   it("BE index.md 词形自洽：正文零 .trellis 词形；stacks 相对词形在 vNext 播种面（specs/hard/ 视角）自洽保留", () => {
     const doc = BE_ENTRIES.find((e) => e.asset.endsWith("/index.md"))!;
     const { body } = seedSplit(doc.asset);
@@ -751,17 +819,18 @@ describe("播种件字节形态：统一 frontmatter + 正文逐字节忠实（F
     ).toThrow();
   });
 
-  it("R8 清洗执行登记（裁决 12/D5，2026-09-05 + 批 F 同类授权延伸）：porting_notes 清洗记录在册（FE 3 文件 + BE 32 协议 frontmatter 注记 + BE index 5 注记 + stacks 17 overlay 注记——B6c 14 + B6f 3）；清洗词形播种面零残留；A1 档位词形全播种件零命中", () => {
-    // 移植件面（specs 113）——baseline 新著件的 notes 由 B6d describe 断言。
+  it("R8 清洗执行登记（裁决 12/D5，2026-09-05 + 批 F 同类授权延伸）：porting_notes 清洗记录在册（FE 3 文件 + BE 32 协议 frontmatter 注记 + BE index 5 注记 + stacks 18 overlay 注记——B6c 14 + B6f 3 + B6G 1）；清洗词形播种面零残留；A1 档位词形全播种件零命中", () => {
+    // 移植件面（specs 115）——baseline 新著件的 notes 由 B6d describe 断言。
     const noted = PORTED_ENTRIES.filter((e) => e.porting_notes.length > 0);
-    // FE 3（01/03/index）+ BE 33（32 协议 frontmatter 注记 + index 5 条）+ stacks 17 overlay
-    // （B6c 14 installed/bound 注记 + B6f 前端族 3 新著 vendor 注记——index 件零注记）。
+    // FE 3（01/03/index）+ BE 33（32 协议 frontmatter 注记 + index 5 条）+ stacks 18 overlay
+    // （B6c 14 installed/bound 注记 + B6f 前端族 3 + B6G css 1 新著 vendor 注记——
+    // index 件零注记）。
     const feNoted = noted.filter((e) => e.asset.startsWith("specs/hard/frontend/"));
     const beNoted = noted.filter((e) => e.asset.startsWith("specs/hard/backend/"));
     const stackNoted = noted.filter((e) => e.asset.startsWith("specs/hard/stacks/"));
     expect(feNoted).toHaveLength(3);
     expect(beNoted).toHaveLength(33);
-    expect(stackNoted).toHaveLength(17);
+    expect(stackNoted).toHaveLength(18);
     // R8 清洗件（01/03/index×2 面）：porting_notes 含「已执行」清洗记录（前后对照留痕）。
     for (const entry of feNoted) {
       expect(
@@ -785,12 +854,12 @@ describe("播种件字节形态：统一 frontmatter + 正文逐字节忠实（F
       expect(entry.porting_notes).toHaveLength(1);
       expect(entry.porting_notes[0]).toContain("installed=true");
     }
-    // A1：113 件播种件正文零档位判档词形（MINIMAL/LIGHT/STANDARD 判档叙述零移植）。
+    // A1：115 件播种件正文零档位判档词形（MINIMAL/LIGHT/STANDARD 判档叙述零移植）。
     for (const entry of loaded) {
       expect(/\b(MINIMAL|LIGHT|STANDARD)\b/.test(entry.content), entry.path).toBe(false);
     }
     // R8 清洗词形播种面零残留（资产 content 面——manifest notes 的清洗前对照记录
-    // 不在此面）：finish / task.py / Trellis 全分母（158 件）零命中。
+    // 不在此面）：finish / task.py / Trellis 全分母（160 件）零命中。
     for (const entry of loaded) {
       expect(entry.content.includes("finish"), entry.path).toBe(false);
       expect(entry.content.includes("task.py"), entry.path).toBe(false);

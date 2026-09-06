@@ -455,7 +455,7 @@ sites:
       - https://tailwindcss.com/docs/installation/using-vite
     domains: [design, frontend]
     themes: [utility-first, vite-integration]
-    used_for: css 键候选锚（tailwindcss 4.3.3 npm 实抓；官方文档页未展示小版本号，版本位以 npm registry 为准）——4.x 线官方 Vite 集成为 @tailwindcss/vite 插件；css 体系 overlay 本批未建（选型权在 Owner，候选清单在册待选型）
+    used_for: css 键候选锚（tailwindcss 4.3.3 npm 实抓；官方文档页未展示小版本号，版本位以 npm registry 为准）——4.x 线官方 Vite 集成为 @tailwindcss/vite 插件；css 体系 overlay 已建（B6G 批，D8 选型=组合词形 scoped-sfc+antdv-cssinjs-tokens+antdv-reset-css），本站锚供 tailwind 等扩展候选引用
     verified: 2026-09-05
     source_research: css-system-anchors.md
   - name: W3C CSS

@@ -5,7 +5,8 @@
  *
  * 钉面（对齐任务验收条逐条）：
  * - 键集单源（ADR-1）：问卷 14 键 = B6d seed stack.yaml 键序逐字（FE 9 + BE 5）；
- *   R-E 实战栈逐键首位（vue3/antdesign/geist/java/spring/mysql/redis）+ 占位全量
+ *   R-E 实战栈逐键首位（vue3/antdesign/geist/java/spring/mysql/redis）+ css 键首位 =
+ *   D8 组合词形（09-05-spec-thematic-reorg 裁决，B6G 批回填）+ 占位全量
  *   列出 + 值词形闭包；
  * - raw ◉/◯ 单选帧（scripted 按键，沿 init.spec 先例）：逐键必答 / 自定义输入 /
  *   退格 / 非法值拒绝 / Ctrl+C 中止 / EOF 中止 / 帧形态与零 ANSI 快照；
@@ -160,7 +161,7 @@ describe("问卷目录与键集（R-M 键集 = FE 9 + BE 5；R-E 实战栈首位
     expect(BASELINE_LANES).toEqual(["frontend", "backend"]);
   });
 
-  it("R-E 实战栈逐键首位（vue3/antdesign/geist/java/spring/mysql/redis）；占位全量列出", () => {
+  it("R-E 实战栈逐键首位（vue3/antdesign/geist/java/spring/mysql/redis）+ css 键首位 = D8 组合词形；占位全量列出", () => {
     const firstOf = (lane: string, key: string): string => {
       const question = STACK_QUESTIONS.find((q) => q.lane === lane && q.key === key);
       expect(question, `${lane}.${key} 问卷条目在座`).toBeDefined();
@@ -168,6 +169,8 @@ describe("问卷目录与键集（R-M 键集 = FE 9 + BE 5；R-E 实战栈首位
     };
     expect(firstOf("frontend", "framework")).toBe("vue3");
     expect(firstOf("frontend", "ui")).toBe("antdesign");
+    // css 键首位 = 裁决 D8 组合词形（09-05-spec-thematic-reorg；B6G css overlay 批回填）。
+    expect(firstOf("frontend", "css")).toBe("scoped-sfc+antdv-cssinjs-tokens+antdv-reset-css");
     expect(firstOf("backend", "language")).toBe("java");
     expect(firstOf("backend", "framework")).toBe("spring");
     expect(firstOf("backend", "database")).toBe("mysql");

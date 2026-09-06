@@ -181,7 +181,7 @@ describe("context manifest 落盘（R2/D7）", () => {
     expect(outcomeStaleState(await runContextCompile(root, "frontend", undefined, { change: "TASK.T0087" }))).toBe("fresh");
   });
 
-  // CI windows 慢 runner 实证：本例跑完整 init（158 seeds + SPEC 预植）+ 二次编译，5s 默认超时不够（裁决批 H 终验）。
+  // CI windows 慢 runner 实证：本例跑完整 init（160 seeds + SPEC 预植）+ 二次编译，5s 默认超时不够（裁决批 H 终验）。
   it("指纹漂移 → STALE_GROUNDING 显式 warning + 覆盖写（不静默覆盖）", { timeout: 60_000 }, async () => {
     await initStore();
     await runContextCompile(root, "frontend", undefined, { change: "TASK.T0087" });
