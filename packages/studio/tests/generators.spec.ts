@@ -84,6 +84,30 @@ describe("studio generators · antdv 组件目录（71 组件族 story）", () =
       expect(buttonStory).toContain("template:");
       const messageStory = readFileSync(join(out, "message.stories.ts"), "utf8");
       expect(messageStory).toContain("message.info");
+      // 审计 N4 修复钉：上下文/数据饥饿族按 family-examples.mjs 配置表产出最小合法组合。
+      //（template 经 JSON.stringify 入文件——引号以 \" 字面形态在座。）
+      const menuStory = readFileSync(join(out, "Menu.stories.ts"), "utf8");
+      expect(menuStory).toContain(':items=\\"menuItems\\"'); // 4.2.6 items 数组形态
+      expect(menuStory).toContain("<MenuItemGroup"); // 子导出父内渲染（绝不兄弟裸挂载）
+      const tabsStory = readFileSync(join(out, "Tabs.stories.ts"), "utf8");
+      expect(tabsStory).toContain("<TabPane"); // 4.2.6 无 items prop——children 官方形态
+      const tableStory = readFileSync(join(out, "Table.stories.ts"), "utf8");
+      expect(tableStory).toContain(':columns=\\"tableColumns\\"');
+      expect(tableStory).toContain(':data-source=\\"tableData\\"');
+      // 子导出裸挂载禁令：任何 story 的 studio-demo 根下不得直接并排 MenuItem/TabPane
+      //（4.2.6 唯一无兜底 inject 面 = Menu 族，源码实抓）。
+      const breadcrumbStory = readFileSync(join(out, "Breadcrumb.stories.ts"), "utf8");
+      expect(breadcrumbStory).toContain("<BreadcrumbItem");
+      for (const bannedSibling of [
+        /<div class="studio-demo"><MenuItem\s/,
+        /<\/Menu><MenuItem\s/,
+        /<\/Tabs><TabPane\s/,
+        /<\/Breadcrumb><BreadcrumbItem\s/,
+      ]) {
+        for (const file of files) {
+          expect(readFileSync(join(out, file), "utf8")).not.toMatch(bannedSibling);
+        }
+      }
       // 非组件导出过滤面：es/components.js 内不含 version/theme/cssinjs/install（研究 §6）。
       for (const banned of ["version", "theme", "cssinjs", "install"]) {
         expect(primaries).not.toContain(banned);
@@ -176,7 +200,9 @@ describe("studio 发布面纪律（G-A 落位裁定）", () => {
       "@storybook/addon-docs",
       "@storybook/vue3",
       "@storybook/vue3-vite",
+      "@vue/test-utils",
       "ant-design-vue",
+      "happy-dom",
       "js-yaml",
       "storybook",
       "vite",

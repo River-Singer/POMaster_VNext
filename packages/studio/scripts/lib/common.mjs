@@ -8,8 +8,13 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
+// 本模块目录 URL（变量承接 base——绕开 vite 对 `new URL("字面量", import.meta.url)`
+// 的 asset-import-meta-url 转换：该转换在 vitest happy-dom 环境下会把 URL 基准换成
+// location 源，fileURLToPath 随即抛 "The URL must be of scheme file"。变量形态不触发
+// 转换，node/浏览器/任意测试环境下行为一致）。
+const LIB_DIR_URL = import.meta.url;
 /** 仓库根（packages/studio/scripts/lib/ → 上溯三级）。 */
-export const REPO_ROOT = fileURLToPath(new URL("../../../../", import.meta.url));
+export const REPO_ROOT = fileURLToPath(new URL("../../../../", LIB_DIR_URL));
 /** archetype catalog 目录（只读——D6：画廊零新增 catalog 物料）。 */
 export const CATALOG_ARCHETYPES_DIR = join(REPO_ROOT, "catalog", "archetypes");
 /** seeds stacks 目录（只读）。 */
