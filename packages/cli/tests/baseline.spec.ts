@@ -430,20 +430,27 @@ describe("runInit 落盘与销账", () => {
     expect(existsSync(join(dir, ".pomaster"))).toBe(false);
   });
 
-  it("重跑不动点：init(带答案) → 二次 init（无问卷）NO_CHANGE；问卷 skipped=all_resolved", async () => {
-    const { io } = scriptedRawIo(confirmKeys(14));
-    const quiz = await collectStackAnswers(dir, io);
-    await runInit(dir, { platforms: "claude", stackQuestionnaire: quiz ?? undefined });
-    const before = read(baselineStackRelative("frontend"));
-    const second = await runInit(dir, { platforms: "claude" });
-    expect(second.ok).toBe(true);
-    expect(second.result.change).toBe("NO_CHANGE");
-    expect(second.result.baseline).toEqual({ asked: 0, answered: 0, skipped: "non_interactive" });
-    expect(read(baselineStackRelative("frontend"))).toBe(before);
-    const scripted = scriptedNumberedIo([]);
-    const again = await collectStackAnswers(dir, scripted.io);
-    expect(again).toEqual({ asked: 0, answers: [], skipped: "all_resolved" });
-  });
+  // 显式超时（09-06 Step 1 批随批折入）：本测试 = 问卷收集 + 带答案完整 init（播种+
+  // 预植+预置草案生成）+ 二次 init——全量并发跑时邻位负载可把 5s 默认预算顶穿
+  // （实测超时假红，断言语义零涉）；断言不变，只放宽时间预算。
+  it(
+    "重跑不动点：init(带答案) → 二次 init（无问卷）NO_CHANGE；问卷 skipped=all_resolved",
+    async () => {
+      const { io } = scriptedRawIo(confirmKeys(14));
+      const quiz = await collectStackAnswers(dir, io);
+      await runInit(dir, { platforms: "claude", stackQuestionnaire: quiz ?? undefined });
+      const before = read(baselineStackRelative("frontend"));
+      const second = await runInit(dir, { platforms: "claude" });
+      expect(second.ok).toBe(true);
+      expect(second.result.change).toBe("NO_CHANGE");
+      expect(second.result.baseline).toEqual({ asked: 0, answered: 0, skipped: "non_interactive" });
+      expect(read(baselineStackRelative("frontend"))).toBe(before);
+      const scripted = scriptedNumberedIo([]);
+      const again = await collectStackAnswers(dir, scripted.io);
+      expect(again).toEqual({ asked: 0, answers: [], skipped: "all_resolved" });
+    },
+    { timeout: 30_000 },
+  );
 
   it("部分回填（存量项目）：2 键答案 → 其余保持 UNKNOWN + 台账余 12 条 + change=UPDATED", async () => {
     await runInit(dir);

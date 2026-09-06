@@ -120,6 +120,8 @@ pomaster init
 
 **基线确认 gate**（R-L 裁定，2026-09-05）：`pomaster baseline confirm` 在 14 个 unknowns 全部销账后对基线做 Owner 确认施断——`baseline/manifest.yaml` 写入 `confirmed` 确认记录（`at_seq` 时点锚 + 两个 `stack.yaml` 与两个 `architecture.md` 的 sha256 digest 快照），已确认且 digest 无漂移时重复 confirm 幂等零写入（NO_CHANGE）。closeout 聚合单点消费确认态：baseline 未确认 → `BASELINE_NOT_CONFIRMED` 阻断；确认后任一快照目标与现盘 digest 不符（检出谁改了架构）→ `BASELINE_DRIFT` 阻断。确认后的修改走治理通路：`pomaster baseline set --change <CHANGE-id>`（CHANGE.* 对象须在册且 lifecycle 合法，kernel 校验）允许写入并使确认记录失效，重确认前 closeout 恢复阻断；漂移后 `pomaster baseline confirm` 重新快照即治理通路终点。`pomaster doctor` / `pomaster status` 呈现确认态（未确认/已确认/已漂移）+ 未销账 unknowns 计数 + 漂移文件清单（`--json` 字段 `baseline_confirmation`；纯读呈现不改 ok 语义）。
 
+**baseline 栈预置草案**（G-B/G-C/G-D 裁定，2026-09-06）：问卷选型落定后，init 自动为 22 份 baseline md 生成「预置草案」节（节头 `PRESET-DRAFT — Owner 确认后成为基线`，NON-AUTHORITATIVE）——草案内容逐条溯源到已锚定的主题文档与 overlay（`- 源:` 行标注 `.pomaster` 路径 + 节锚），纯加法追加、`起步值:UNKNOWN` 骨架字节零改动；栈维度未销账的 lane 保持纯 UNKNOWN（缺席诚实）；draft-once（在座零触碰），Owner 可改；`baseline confirm` 时草案随整文件 digest 烙印，确认后改动即 `BASELINE_DRIFT` 走治理通路。业务实体/接口/数据模型零预置（New Entity Gate 词形在册）。
+
 装好后 `pomaster session`（无子命令）就是 hook 看到的治理速览——**八段分段投影**（分母/任务执行锁状态/**Next-Action 确定性路由**/许可例外/可行动项/attention/完整性微探针/八拍路标，带逐段预算与缺席诚实）；`pomaster status` 尾行 `next:` 给同一张路由表的当前建议；`pomaster alerts` 在有活跃任务时追加单行 breadcrumb。`pomaster doctor` 会用 `heavy_entry_hooks` / `heavy_entry_skills` 探针核对重入口安装物（hooks 注册态 + 双镜像逐字节一致；未安装 → MISSING_CONFIGURATION 并指路重跑 `pomaster init`）。
 
 ### 3. init 之后该配置什么（config.yaml）

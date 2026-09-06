@@ -47,6 +47,12 @@
  *   PROPOSED 起步（不绑定 closeout 判卷——B2 SPEC_NOT_BINDING 既有裁定）；
  *   authority.owner = BOOTSTRAP_OWNER；seed-once——对象在座零触碰、缺席才预植；
  *   off-switch = InitOptions.specPreplant。引擎与 ADR 详见 spec-preplant.ts。
+ * - baseline 栈预置草案（步骤 4.9，09-06 Step 1 / Owner 裁定 G-B/G-C/G-D）：按
+ *   问卷/后补销账后的栈选型为 22 份 baseline 播种 md 追加「预置草案（PRESET-DRAFT）」
+ *   节（内容 = 锚定主题/overlay 规则行的栈化编排，逐条来源，非权威——Owner 确认前
+ *   可自由修改，confirm 时整文件 digest 烙印）。运行时生成物，不进 seeds/manifest
+ *   分母；lane 栈键未全销账的覆盖面保持纯 UNKNOWN（缺席诚实）；确认态在座整体跳过
+ *   （禁 init 自造 BASELINE_DRIFT）。引擎与内容源映射 ADR 详见 baseline-preset.ts。
  *
  * F1 平台选择：Trellis 惯例——一次 init 覆盖多平台 AI 入口目录。AGENTS.md 恒为唯一
  * 事实源；平台适配器（--platforms 逗号列表）：
@@ -115,6 +121,15 @@ import { loadSeedManifestEntries } from "./seed-manifest.js";
 import { runSpecPreplant } from "./spec-preplant.js";
 import type { BaselineQuizResult, StackQuestionnaireOutcome } from "./baseline.js";
 import { applyStackAnswers, collectStackAnswers, renderBaselineQuizHumanLine } from "./baseline.js";
+import type { BaselinePresetDraftReport } from "./baseline-preset.js";
+import { appendPresetDrafts, renderBaselinePresetHumanLine } from "./baseline-preset.js";
+
+/** 失败信封的 presetDraft 占位（零生成——失败路径零草案写入）。 */
+const ZERO_PRESET_DRAFT: BaselinePresetDraftReport = {
+  generated: 0,
+  skipped_existing: 0,
+  skipped_confirmed: false,
+};
 
 // 按键词表与原地重绘渲染器（init 平台复选清单与 baseline 问卷共用——单一实现；
 // 本文件 re-export 保持既有公共 API 词形不变）。
@@ -188,6 +203,14 @@ export interface InitResult {
    * 参与且答完。向后兼容：既有字段零改动，本字段恒在座。
    */
   readonly baseline: BaselineQuizResult;
+  /**
+   * baseline 栈预置草案结果（09-06 Step 1；G-B/G-C/G-D 裁定，baseline-preset.ts
+   * ADR）：generated = 本次追加 PRESET-DRAFT 节的文件数；skipped_existing = 门开
+   * 但草案已在座而跳过数（draft-once——Owner 改动零触碰）；skipped_confirmed =
+   * baseline 确认态在座整体跳过（禁 init 自造 BASELINE_DRIFT）。草案是 init
+   * 运行时生成物——不进 seeds/manifest 分母，幂等铁律不破（草案在座重跑零写入）。
+   */
+  readonly presetDraft: BaselinePresetDraftReport;
 }
 
 export interface InitOptions {
@@ -458,6 +481,7 @@ export async function runInitInteractive(
         platforms: [],
         specPreplant: null,
         baseline: { asked: 0, answered: 0, skipped: "non_interactive" },
+        presetDraft: ZERO_PRESET_DRAFT,
       },
       [parse.error],
       ["init: FAILED — SCHEMA_INVALID", `  ${parse.error.message}`, `  hint: ${parse.error.hint}`],
@@ -479,6 +503,7 @@ export async function runInitInteractive(
         platforms: [],
         specPreplant: null,
         baseline: { asked: 0, answered: 0, skipped: "non_interactive" },
+        presetDraft: ZERO_PRESET_DRAFT,
       },
       [
         {
@@ -985,6 +1010,7 @@ export async function runInit(
         platforms: [],
         specPreplant: null,
         baseline: { asked: 0, answered: 0, skipped: "non_interactive" },
+        presetDraft: ZERO_PRESET_DRAFT,
       },
       [selection.error],
       [
@@ -1214,6 +1240,16 @@ export async function runInit(
     baseline = { asked: quiz.asked, answered, skipped: quiz.skipped };
   }
 
+  // 4.9) baseline 栈预置草案生成（09-06 Step 1；G-B/G-C/G-D 裁定；baseline-preset.ts
+  //      ADR）：问卷/后补销账落盘之后，按现盘栈选型为 22 份 baseline 播种 md 追加
+  //      「预置草案（PRESET-DRAFT）」节——门粒度 = lane 栈键全销账（FE 6 面 ← FE 键；
+  //      BE/data/platform 16 面 ← BE 键）；未销账 lane 保持纯 UNKNOWN 骨架（缺席
+  //      诚实）。草案 = 锚定主题/overlay 规则行的栈化编排（逐条来源，非发明）+
+  //      非权威声明；draft-once 在座零触碰；确认态在座整体跳过（禁 init 自造
+  //      BASELINE_DRIFT）。运行时生成物——seeds/manifest 分母零变化；草案在座
+  //      重跑全跳过 = 幂等铁律不破。位置：问卷落盘之后、入口渲染之前。
+  const presetDraft = await appendPresetDrafts(rootDir, files);
+
   // 5) 入口文件：AGENTS.md 恒生成（唯一事实源；平台选择非空 = 重入口正文 + heavy
   //    安装标记；`--platforms none` = 最小指针正文，无重入口安装物可描述）。
   //    claude 平台适配器（CLAUDE.md，@AGENTS.md 导入）仅在选中 claude 时参与。
@@ -1352,6 +1388,7 @@ export async function runInit(
     platforms,
     specPreplant,
     baseline,
+    presetDraft,
   };
 
   if (errors.length > 0) {
@@ -1388,6 +1425,7 @@ export async function runInit(
   // baseline 问卷行（恒一行，profile 之前——横幅前导空行锚在 profile 行后，版式契约
   // 由 init.spec 钉住：logo→init:→files→platforms→entry→baseline→profile→横幅）。
   const baselineLine = renderBaselineQuizHumanLine(baseline);
+  const presetLine = renderBaselinePresetHumanLine(presetDraft);
   const human = [
     ...INIT_LOGO_LINES,
     "",
@@ -1396,6 +1434,7 @@ export async function runInit(
     ...platformLines,
     entryLine,
     baselineLine,
+    presetLine,
     `  profile: ${profile}`,
     ...INIT_BANNER_LINES,
   ];

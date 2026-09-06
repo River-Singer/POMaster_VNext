@@ -294,6 +294,23 @@ export {
   renderBaselineQuizHumanLine,
 } from "./baseline.js";
 // baselineStackRelative / BASELINE_MANIFEST_RELATIVE 经 export * from store-layout.js 已公开。
+export {
+  appendPresetDrafts,
+  matchStackValue,
+  renderBaselinePresetHumanLine,
+  renderPresetDraftSection,
+  PRESET_DRAFT_BUSINESS_NOTE_HEADING,
+  PRESET_DRAFT_HEADING,
+  PRESET_DRAFT_MARKER,
+  PRESET_DRAFT_PREAMBLE,
+  PRESET_FACE_SPECS,
+} from "./baseline-preset.js";
+export type {
+  BaselinePresetDraftReport,
+  PresetDraftEntry,
+  PresetFaceSpec,
+  PresetSourceRef,
+} from "./baseline-preset.js";
 export type {
   StackAnswer,
   StackQuestionSpec,

@@ -204,13 +204,20 @@ describe("init 首次创建（CREATED）", () => {
     expect(agents).toContain("playwright_mcp");
   });
 
-  it("同一内容 digest 幂等：空账本 content_digest 等于重建值（字节稳定）", async () => {
-    await runInit(dir);
-    const first = read(TRUTH_INDEX_RELATIVE);
-    rmSync(join(dir, ".pomaster"), { recursive: true, force: true });
-    await runInit(dir);
-    expect(read(TRUTH_INDEX_RELATIVE)).toBe(first);
-  });
+  // 显式超时（09-06 Step 1 批随批折入）：本测试两次完整 init（播种+预植+入口全量）
+  // 串行执行——全量并发跑时邻位负载可把 5s 默认预算顶穿（实测 5.27s 超时假红，
+  // 断言语义零涉）；断言不变，只放宽时间预算。
+  it(
+    "同一内容 digest 幂等：空账本 content_digest 等于重建值（字节稳定）",
+    async () => {
+      await runInit(dir);
+      const first = read(TRUTH_INDEX_RELATIVE);
+      rmSync(join(dir, ".pomaster"), { recursive: true, force: true });
+      await runInit(dir);
+      expect(read(TRUTH_INDEX_RELATIVE)).toBe(first);
+    },
+    { timeout: 30_000 },
+  );
 });
 
 describe("init 幂等（任务契约：连续两次 init 第二次 NO_CHANGE）", () => {

@@ -306,6 +306,30 @@ function isResolved(value: string): boolean {
   return value !== "" && value !== "UNKNOWN";
 }
 
+/**
+ * resolved 判定的公共词形（baseline-preset.ts 门判据消费——同一判据单一实现，
+ * 禁两处口径漂移）。
+ */
+export function isStackValueResolved(value: string): boolean {
+  return isResolved(value);
+}
+
+/**
+ * lane stack.yaml 现盘值读取（baseline-preset.ts 门判据消费）：缺席/不可读/
+ * 结构不可解析 → ok:false（调用方按「门未开」处理——绝不猜测重写项目基线文件，
+ * ADR-3 fail-closed 同纪律）。
+ */
+export async function loadLaneStackValues(
+  rootDir: string,
+  lane: BaselineLane,
+): Promise<{ readonly ok: true; readonly values: ReadonlyMap<string, string> } | { readonly ok: false }> {
+  const stackRelative = baselineStackRelative(lane);
+  const stackFile = await readTextFile(`${rootDir}/${stackRelative}`);
+  if (stackFile.kind !== "ok") return { ok: false };
+  const parse = parseStackYaml(stackFile.text, STACK_KEYS[lane]);
+  return parse.ok ? { ok: true, values: parse.parsed.values } : { ok: false };
+}
+
 /** unknowns 台账词形（seed 头注/baseline-seeds.spec 逐字契约）。 */
 export function unknownsWordForm(lane: BaselineLane, key: string): string {
   return `baseline/${lane}/stack.yaml:${key}`;
