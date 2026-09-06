@@ -126,10 +126,8 @@ export interface StorePaths {
   readonly specsDir: string;
   /** specs/hard/（Hard Spec 全文面根）。 */
   readonly specsHardDir: string;
-  /** specs/hard/frontend/（前端协议 46 文件播种位）。 */
-  readonly specsHardFrontendDir: string;
-  /** specs/hard/backend/（后端协议 33 文件播种位）。 */
-  readonly specsHardBackendDir: string;
+  /** specs/hard/themes/（主题文档 20 + 导航 1 播种位——B7-THEME 起 FE/BE 平铺位退役）。 */
+  readonly specsHardThemesDir: string;
   /** specs/hard/stacks/（14 stack overlay 播种位）。 */
   readonly specsHardStacksDir: string;
   /** specs/acceptance/（业务期望自由文件面）。 */
@@ -179,8 +177,7 @@ export function buildStorePaths(rootDir: string): StorePaths {
     baselinePlatformDir: `${pomasterDir}/baseline/platform`,
     specsDir: `${pomasterDir}/specs`,
     specsHardDir: `${pomasterDir}/specs/hard`,
-    specsHardFrontendDir: `${pomasterDir}/specs/hard/frontend`,
-    specsHardBackendDir: `${pomasterDir}/specs/hard/backend`,
+    specsHardThemesDir: `${pomasterDir}/specs/hard/themes`,
     specsHardStacksDir: `${pomasterDir}/specs/hard/stacks`,
     specsAcceptanceDir: `${pomasterDir}/specs/acceptance`,
     specsEvidenceDir: `${pomasterDir}/specs/evidence`,

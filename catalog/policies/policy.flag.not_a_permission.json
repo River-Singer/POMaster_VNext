@@ -39,7 +39,7 @@
       "sha256": "ba6cf2d5607ba54d9864cd6c07899d2e13a8d33ea248fbd7469b92c23474f474",
       "bytes": 1699
     },
-    "seeded_spec": ".pomaster/specs/hard/frontend/36-feature-flag-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/release-and-feature-flags.md",
     "seed_manifest": "packages/cli/seeds/manifest.json"
   },
   "id": "POLICY.FLAG.NOT_A_PERMISSION",

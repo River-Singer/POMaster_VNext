@@ -36,7 +36,7 @@
       "sha256": "c97d003622b9075f0c094ec5c5bfa950a977e18b2f4ce8ffc9bc014858e27670",
       "bytes": 1310
     },
-    "seeded_spec": ".pomaster/specs/hard/backend/22-idempotency-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/data-and-transactions.md",
     "seed_manifest": "packages/cli/seeds/manifest.json",
     "d3_review": {
       "excluded_from_batch": "B6C",

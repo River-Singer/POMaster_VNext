@@ -1,7 +1,7 @@
 /**
  * status.spec.ts —— 对象计数/分母状态/permit 活性；缺席显式与词表纪律。
  */
-import { mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { mkdirSync, writeFileSync, rmSync, readFileSync } from "node:fs";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -221,20 +221,19 @@ describe("status 跨轴与词表纪律（显式呈现，不静默）", () => {
 // B6e：播种分面计数呈现（加法呈现字段——B6a 未尽事项 1 接线）
 // ============================================================
 
-describe("status 播种分面计数呈现（B6e）", () => {
-  it("init 后 seeded_assets = 五分面清单分母（46/33/36/20/25）+ human 行呈现", async () => {
+describe("status 播种分面计数呈现（B6e；B7-THEME 四分面）", () => {
+  it("init 后 seeded_assets = 四分面清单分母（21/36/20/25）+ human 行呈现", async () => {
     await runInit(dir);
     const outcome = await runStatus(dir);
     expect(outcome.ok).toBe(true);
     expect(outcome.result.seeded_assets).toEqual({
-      specs_hard_frontend: 46,
-      specs_hard_backend: 33,
+      specs_hard_themes: 21,
       specs_hard_stacks: 36,
       specs_evidence: 20,
       baseline: 25,
     });
     expect(outcome.human.join("\n")).toContain(
-      "seeded assets: frontend 46 / backend 33 / stacks 36 / evidence 20 / baseline 25",
+      "seeded assets: themes 21 / stacks 36 / evidence 20 / baseline 25",
     );
   });
 
@@ -248,6 +247,22 @@ describe("status 播种分面计数呈现（B6e）", () => {
     );
     const outcome = await runStatus(dir);
     expect(outcome.result.seeded_assets?.specs_evidence).toBe(21);
+  });
+
+  it("legacy spec 并存检出（B7-THEME / OQ-9 + D3）：退役目录在座 → 计数呈现（纯读不拦不删）", async () => {
+    await runInit(dir);
+    const legacyDir = join(dir, ".pomaster", "specs", "hard", "backend");
+    mkdirSync(legacyDir, { recursive: true });
+    writeFileSync(
+      join(legacyDir, "28-testing-protocol.md"),
+      "# 测试协议（旧安装件）\n",
+      "utf8",
+    );
+    const outcome = await runStatus(dir);
+    expect(outcome.ok).toBe(true);
+    expect(outcome.result.legacy_specs_present).toBe(1);
+    expect(outcome.human.join("\n")).toContain("legacy specs present: 1");
+    expect(readFileSync(join(legacyDir, "28-testing-protocol.md"), "utf8")).toContain("旧安装件");
   });
 });
 

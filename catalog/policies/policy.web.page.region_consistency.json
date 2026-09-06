@@ -39,7 +39,7 @@
       "sha256": "5fb926a798842262d7f87555e3e63e104c868a401eb27f3c1f899e677fdf5f4f",
       "bytes": 1846
     },
-    "seeded_spec": ".pomaster/specs/hard/frontend/25-page-structure-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/page-composition-and-browser-environment.md",
     "seed_manifest": "packages/cli/seeds/manifest.json"
   },
   "id": "POLICY.WEB.PAGE.REGION_CONSISTENCY",

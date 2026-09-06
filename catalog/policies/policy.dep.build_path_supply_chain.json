@@ -39,7 +39,7 @@
       "sha256": "a0cc135edaf0dfd1f5122d2ff7298866143ef3a273ad4d45f5e1eff763691867",
       "bytes": 2906
     },
-    "seeded_spec": ".pomaster/specs/hard/frontend/11-dependency-package-management-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/engineering-toolchain-and-dependencies.md",
     "seed_manifest": "packages/cli/seeds/manifest.json"
   },
   "id": "POLICY.DEP.BUILD_PATH_SUPPLY_CHAIN",

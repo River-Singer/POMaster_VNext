@@ -38,7 +38,7 @@
       "sha256": "4d9bb6bd34a64fcc3e362c969492bc326533e16ef4c6d2284dc01442733504e6",
       "bytes": 21948
     },
-    "seeded_spec": ".pomaster/specs/hard/frontend/04-security-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/security.md",
     "seed_manifest": "packages/cli/seeds/manifest.json"
   },
   "id": "POLICY.SEC.NO_LONGTERM_SECURITY_DISABLE",

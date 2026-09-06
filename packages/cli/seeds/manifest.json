@@ -1,91 +1,8 @@
 {
   "schema": "pomaster.seed-manifest/1",
-  "batch": "B6G",
+  "batch": "B7-THEME",
   "batches": {
-    "B6B-1": [
-      ".pomaster/specs/hard/frontend/01-development-checklist-protocol.md",
-      ".pomaster/specs/hard/frontend/02-ai-generated-code-protocol.md",
-      ".pomaster/specs/hard/frontend/03-acceptance-gate-protocol.md",
-      ".pomaster/specs/hard/frontend/04-security-protocol.md",
-      ".pomaster/specs/hard/frontend/05-environment-configuration-protocol.md",
-      ".pomaster/specs/hard/frontend/06-change-governance-protocol.md",
-      ".pomaster/specs/hard/frontend/07-frontend-backend-communication-protocol.md",
-      ".pomaster/specs/hard/frontend/08-role-responsibility-protocol.md",
-      ".pomaster/specs/hard/frontend/09-module-boundary-protocol.md",
-      ".pomaster/specs/hard/frontend/10-engineering-tooling-protocol.md",
-      ".pomaster/specs/hard/frontend/11-dependency-package-management-protocol.md",
-      ".pomaster/specs/hard/frontend/12-business-rules-protocol.md",
-      ".pomaster/specs/hard/frontend/13-monetary-precision-protocol.md",
-      ".pomaster/specs/hard/frontend/14-data-model-protocol.md",
-      ".pomaster/specs/hard/frontend/15-request-api-protocol.md",
-      ".pomaster/specs/hard/frontend/16-error-handling-protocol.md",
-      ".pomaster/specs/hard/frontend/17-permission-protocol.md",
-      ".pomaster/specs/hard/frontend/18-state-management-protocol.md",
-      ".pomaster/specs/hard/frontend/19-cache-protocol.md",
-      ".pomaster/specs/hard/frontend/20-testing-protocol.md",
-      ".pomaster/specs/hard/frontend/21-design-system-protocol.md",
-      ".pomaster/specs/hard/frontend/22-theme-protocol.md",
-      ".pomaster/specs/hard/frontend/23-accessibility-protocol.md"
-    ],
-    "B6B-2": [
-      ".pomaster/specs/hard/frontend/24-component-protocol.md",
-      ".pomaster/specs/hard/frontend/25-page-structure-protocol.md",
-      ".pomaster/specs/hard/frontend/26-style-layout-protocol.md",
-      ".pomaster/specs/hard/frontend/27-rendering-state-protocol.md",
-      ".pomaster/specs/hard/frontend/28-form-protocol.md",
-      ".pomaster/specs/hard/frontend/29-routing-url-protocol.md",
-      ".pomaster/specs/hard/frontend/30-data-grid-protocol.md",
-      ".pomaster/specs/hard/frontend/31-performance-protocol.md",
-      ".pomaster/specs/hard/frontend/32-file-import-export-protocol.md",
-      ".pomaster/specs/hard/frontend/33-release-versioning-protocol.md",
-      ".pomaster/specs/hard/frontend/34-monitoring-logging-protocol.md",
-      ".pomaster/specs/hard/frontend/35-mock-protocol.md",
-      ".pomaster/specs/hard/frontend/36-feature-flag-protocol.md",
-      ".pomaster/specs/hard/frontend/37-browser-device-compatibility-protocol.md",
-      ".pomaster/specs/hard/frontend/38-internationalization-protocol.md",
-      ".pomaster/specs/hard/frontend/39-copywriting-protocol.md",
-      ".pomaster/specs/hard/frontend/40-analytics-protocol.md",
-      ".pomaster/specs/hard/frontend/41-design-handoff-protocol.md",
-      ".pomaster/specs/hard/frontend/42-browser-runtime-lifecycle-protocol.md",
-      ".pomaster/specs/hard/frontend/43-time-temporal-protocol.md",
-      ".pomaster/specs/hard/frontend/44-privacy-data-lifecycle-protocol.md",
-      ".pomaster/specs/hard/frontend/45-browser-storage-protocol.md",
-      ".pomaster/specs/hard/frontend/index.md"
-    ],
     "B6C": [
-      ".pomaster/specs/hard/backend/01-architecture-governance-protocol.md",
-      ".pomaster/specs/hard/backend/02-project-structure-governance-protocol.md",
-      ".pomaster/specs/hard/backend/03-directory-boundary-protocol.md",
-      ".pomaster/specs/hard/backend/04-layering-architecture-protocol.md",
-      ".pomaster/specs/hard/backend/05-task-workflow-protocol.md",
-      ".pomaster/specs/hard/backend/06-ai-generated-code-protocol.md",
-      ".pomaster/specs/hard/backend/07-evidence-acceptance-protocol.md",
-      ".pomaster/specs/hard/backend/08-contract-change-protocol.md",
-      ".pomaster/specs/hard/backend/09-role-responsibility-protocol.md",
-      ".pomaster/specs/hard/backend/10-security-protocol.md",
-      ".pomaster/specs/hard/backend/11-environment-configuration-protocol.md",
-      ".pomaster/specs/hard/backend/12-api-contract-protocol.md",
-      ".pomaster/specs/hard/backend/13-privacy-data-lifecycle-protocol.md",
-      ".pomaster/specs/hard/backend/14-business-rules-state-protocol.md",
-      ".pomaster/specs/hard/backend/15-data-model-protocol.md",
-      ".pomaster/specs/hard/backend/16-error-code-protocol.md",
-      ".pomaster/specs/hard/backend/17-permission-authorization-protocol.md",
-      ".pomaster/specs/hard/backend/18-database-schema-migration-protocol.md",
-      ".pomaster/specs/hard/backend/19-query-index-sql-protocol.md",
-      ".pomaster/specs/hard/backend/20-transaction-boundary-protocol.md",
-      ".pomaster/specs/hard/backend/21-concurrency-locking-protocol.md",
-      ".pomaster/specs/hard/backend/22-idempotency-protocol.md",
-      ".pomaster/specs/hard/backend/23-cache-redis-consistency-protocol.md",
-      ".pomaster/specs/hard/backend/24-external-integration-resilience-protocol.md",
-      ".pomaster/specs/hard/backend/25-async-job-scheduler-protocol.md",
-      ".pomaster/specs/hard/backend/26-engineering-tooling-protocol.md",
-      ".pomaster/specs/hard/backend/27-dependency-supply-chain-protocol.md",
-      ".pomaster/specs/hard/backend/28-testing-protocol.md",
-      ".pomaster/specs/hard/backend/29-observability-logging-tracing-protocol.md",
-      ".pomaster/specs/hard/backend/30-performance-capacity-protocol.md",
-      ".pomaster/specs/hard/backend/31-runtime-deployment-protocol.md",
-      ".pomaster/specs/hard/backend/32-release-versioning-rollback-protocol.md",
-      ".pomaster/specs/hard/backend/index.md",
       ".pomaster/specs/hard/stacks/java/index.md",
       ".pomaster/specs/hard/stacks/java/java-language-overlay.md",
       ".pomaster/specs/hard/stacks/jpa/index.md",
@@ -175,887 +92,41 @@
     "B6G": [
       ".pomaster/specs/hard/stacks/css/css-system-overlay.md",
       ".pomaster/specs/hard/stacks/css/index.md"
+    ],
+    "B7-THEME": [
+      ".pomaster/specs/hard/themes/ai-generated-code.md",
+      ".pomaster/specs/hard/themes/api-contract-and-error-semantics.md",
+      ".pomaster/specs/hard/themes/architecture-and-module-boundaries.md",
+      ".pomaster/specs/hard/themes/data-and-transactions.md",
+      ".pomaster/specs/hard/themes/engineering-toolchain-and-dependencies.md",
+      ".pomaster/specs/hard/themes/environment-and-configuration.md",
+      ".pomaster/specs/hard/themes/frontend-state-and-client-data.md",
+      ".pomaster/specs/hard/themes/index.md",
+      ".pomaster/specs/hard/themes/integration-and-async-runtime.md",
+      ".pomaster/specs/hard/themes/internationalization-and-copywriting.md",
+      ".pomaster/specs/hard/themes/observability-and-analytics.md",
+      ".pomaster/specs/hard/themes/page-composition-and-browser-environment.md",
+      ".pomaster/specs/hard/themes/performance-and-capacity.md",
+      ".pomaster/specs/hard/themes/permission-and-authorization.md",
+      ".pomaster/specs/hard/themes/privacy-and-data-lifecycle.md",
+      ".pomaster/specs/hard/themes/release-and-feature-flags.md",
+      ".pomaster/specs/hard/themes/security.md",
+      ".pomaster/specs/hard/themes/task-governance-and-acceptance.md",
+      ".pomaster/specs/hard/themes/testing-and-verification.md",
+      ".pomaster/specs/hard/themes/ui-presentation-and-design.md",
+      ".pomaster/specs/hard/themes/value-semantics-and-domain-data.md"
     ]
   },
-  "generated_by": "catalog/tools/seed_b6e_evidence.py; B6F 增量=09-05-overlay-asset-batch(manifest 手工增量登记,sha256 pin 由 seed-manifest.spec 双锚对账); B6G 增量=css 体系 overlay(09-05-spec-thematic-reorg 裁决 D8,manifest 手工增量登记,sha256 pin 由 seed-manifest.spec 双锚对账)",
+  "generated_by": "catalog/tools/seed_b6e_evidence.py; B6F 增量=09-05-overlay-asset-batch(manifest 手工增量登记,sha256 pin 由 seed-manifest.spec 双锚对账); B6G 增量=css 体系 overlay(09-05-spec-thematic-reorg 裁决 D8,manifest 手工增量登记); B7-THEME 增量=scripts/seed_b7_theme.py(09-05-spec-thematic-reorg 第二阶段物化批:FE/BE 79 entry 退役删除(D3)+21 条主题/导航 entry 聚合 pin 形态(D6:source pin 指 seeds/aggregation-manifest.json,逐源 vendor sha256 在清单与主题 frontmatter x-aggregation 双面在册))",
   "denominator": {
-    "batch_scope": "B6e:Evidence Spec Kit 20 文件新著播种(index 1 + 19 份证据要求面;PRD §13 清单+§13.1 十七段结构;要求面非证据面——持要求不持判定,判卷四值词形闭包;gates 绑定=登记级注记;B6b/B6c/B6d 132 条在册——清单合并承载全量分母 152);B6f:stacks 前端族 6 文件(3 组×2:vue3/antdesign/geist——09-05-overlay-asset-batch 实战栈首批;源=旧线 pomaster/components/frontend-hard-spec/assets/stacks/ 新著 vendor 件移植通路;frontmatter x-research-anchors=官方 URL+实抓日期+版本位研究锚,与 archetype 卡同构;css 体系 overlay 本批未建——已由 B6G 批补建(D8 裁定选型,见 B6G 段);B6b/B6c/B6d/B6e 152 条在册——清单合并承载全量分母 158);B6G:css 体系 overlay 2 文件(css 组×2——09-05-spec-thematic-reorg 裁决 D8 css 键选型=组合词形 scoped-sfc+antdv-cssinjs-tokens+antdv-reset-css;源=旧线 pomaster/components/frontend-hard-spec/assets/stacks/css 新著 vendor 件,移植通路同 B6f;frontmatter x-research-anchors 研究锚自 09-05-overlay-asset-batch research/css-system-anchors.md 实抓行:vuejs.org sfc-css-features/antdv.com customize-theme+introduce,版本位 vue 3.5.42/ant-design-vue 4.2.6;B6b/B6c/B6d/B6e/B6f 158 条在册——清单合并承载全量分母 160)",
-    "planted": 160,
-    "planted_total": 160,
-    "batch_new": 2
+    "batch_scope": "B7-THEME（09-05-spec-thematic-reorg 第二阶段，Owner 裁定 D1-D8）：FE 45+index / BE 32+index 79 文件退役删除（D3 直接删除；已安装工作区并存窗口由 doctor/status legacy_specs_present 检出呈现），重组为 20 份主题文档 + 1 份导航文档（themes/ 单目录 21 文件——12 跨端 + 5 前端独占 + 2 后端独占；映射表 §2 逐文件唯一去向；内容行双向零差异机器自证）；主题 frontmatter = 9 基键 + BE 6 扩展键聚合注记（D7）+ x-aggregation 逐源 sha256（D6，与卡 vendor_pin 同值）+ x-language-sections 语言节同步源（R-J 资产层唯一权威，注入面为逐字节副本；18 overlay 全挂点——B01 含 postgresql（OQ-8）、F01 含 css（D8））；导航文档承接两 index 路由表/激活基线/冲突优先级（D2）；B6c(stacks 28)/B6d/B6e/B6f/B6G 81 条在册——清单合并承载全量分母 102",
+    "planted": 102,
+    "planted_total": 102,
+    "batch_new": 21
   },
-  "seed_semantics": "seed-once-missing-only(缺席才写 / 在座零触碰 / marker-free;seeds.ts 单一实现;frontmatter 为 PRD §8.2 字段位减 id——no-governed-id 默认,播种 spec 是项目可编辑自由文件;B6c 起 BE 件含 vendor frontmatter 保留字段、stacks 件落 <slug> 子目录——SEEDABLE_STORE_DIRS 显式 slug 登记;B6d 起 baseline 件为新著纯正文(无 frontmatter——yaml 直接可解析/Owner 填写面零噪音;entry authoring=new,pin=资产自身字节指纹,装载器自指校验;UNKNOWN 起步,「待填写」词形零移植);B6e 起 specs/evidence 件同 authoring=new 纯正文通路——十七段结构照 PRD §13.1,要求面非证据面(持要求不持判定,判卷四值词形闭包),gates 绑定=登记级注记);B6f/B6G 起 stacks 前端族(vue3/antdesign/geist/css)走移植件通路落地(源=旧线 frontend-hard-spec/assets/stacks/ 新著 vendor 件——统一 9 字段+vendor 保留字段 id→legacy_id/applies_to 并入+x-research-anchors 研究锚透传;installed=播种态全量在册,bound=选中态由 baseline/frontend/stack.yaml 显式选型派生,不作隐式基线——B6c 注记语义同源)",
+  "seed_semantics": "seed-once-missing-only(缺席才写 / 在座零触碰 / marker-free;seeds.ts 单一实现;frontmatter 为 PRD §8.2 字段位减 id——no-governed-id 默认,播种 spec 是项目可编辑自由文件;B6c 起 BE 件含 vendor frontmatter 保留字段、stacks 件落 <slug> 子目录——SEEDABLE_STORE_DIRS 显式 slug 登记;B6d 起 baseline 件为新著纯正文(无 frontmatter——yaml 直接可解析/Owner 填写面零噪音;entry authoring=new,pin=资产自身字节指纹,装载器自指校验;UNKNOWN 起步,「待填写」词形零移植);B6e 起 specs/evidence 件同 authoring=new 纯正文通路——十七段结构照 PRD §13.1,要求面非证据面(持要求不持判定,判卷四值词形闭包),gates 绑定=登记级注记);B6f/B6G 起 stacks 前端族(vue3/antdesign/geist/css)走移植件通路落地(源=旧线 frontend-hard-spec/assets/stacks/ 新著 vendor 件——统一 9 字段+vendor 保留字段 id→legacy_id/applies_to 并入+x-research-anchors 研究锚透传;installed=播种态全量在册,bound=选中态由 baseline/frontend/stack.yaml 显式选型派生,不作隐式基线——B6c 注记语义同源);B7-THEME 起 themes 面（specs/hard/themes 单目录）为聚合文档通路——seed-once 语义不变,frontmatter = 9 基键 + BE 6 扩展键聚合注记（D7 统一形态,info 性注记非执行语义）+ x-aggregation/x-language-sections 扩展键（D6 聚合 pin;R-J 语言节资产唯一权威、注入面副本）",
   "authority_scope": "specs 面 mixed_required_and_advisory;baseline 面 project_baseline_template(UNKNOWN 起步模板,非规则面);specs/evidence 面 evidence_spec_requirements(要求面规范——持要求不持判定,判定值只在 Verification Result/Gate Result)",
   "entries": [
-    {
-      "target": ".pomaster/specs/hard/frontend/01-development-checklist-protocol.md",
-      "asset": "specs/hard/frontend/01-development-checklist-protocol.md",
-      "seed_version": "B6B-1",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/01-development-checklist-protocol.md",
-      "source_sha256": "fa8914b29dbf7af25c8128aa1b8936fd658e37854e0a4f457175e2e3c82c3a03",
-      "source_bytes": 2691,
-      "porting_notes": [
-        "R8 词形清洗（已执行，裁决 12/D5 授权内容演进批次，2026-09-05）：vendor L25 'finish 流程' → '收口（closeout）流程'、L33 'finish' → '收口'（旧包任务完结流程词形；vNext 对应物 = pomaster closeout 任务收口）。原登记（B6b-I）：旧包流程词形，vNext 无对应命令——内容忠实红线保留待授权清洗（已由本批清洗收口）"
-      ]
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/02-ai-generated-code-protocol.md",
-      "asset": "specs/hard/frontend/02-ai-generated-code-protocol.md",
-      "seed_version": "B6B-1",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/02-ai-generated-code-protocol.md",
-      "source_sha256": "a80ea1c51c9afc0b96001cfffa0675edafb1572563652840bcf88770d81203c8",
-      "source_bytes": 2130,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/03-acceptance-gate-protocol.md",
-      "asset": "specs/hard/frontend/03-acceptance-gate-protocol.md",
-      "seed_version": "B6B-1",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/03-acceptance-gate-protocol.md",
-      "source_sha256": "646dcbd7035d43d84ca592218a356c08a4baca36619109797322d90ba3d99b73",
-      "source_bytes": 2550,
-      "porting_notes": [
-        "R8 词形清洗（已执行，裁决 12/D5，2026-09-05）：vendor L35 'finish' → '收口（closeout）'（同 01 文件口径——pomaster closeout 对应物）。原登记（B6b-I）：旧包流程词形保留待授权清洗（已由本批清洗收口）"
-      ]
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/04-security-protocol.md",
-      "asset": "specs/hard/frontend/04-security-protocol.md",
-      "seed_version": "B6B-1",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/04-security-protocol.md",
-      "source_sha256": "4d9bb6bd34a64fcc3e362c969492bc326533e16ef4c6d2284dc01442733504e6",
-      "source_bytes": 21948,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/05-environment-configuration-protocol.md",
-      "asset": "specs/hard/frontend/05-environment-configuration-protocol.md",
-      "seed_version": "B6B-1",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/05-environment-configuration-protocol.md",
-      "source_sha256": "3affc23c84d64d10c8911b84bd9db82a34fcb9b675f7365672d554ecf34c8fb6",
-      "source_bytes": 1887,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/06-change-governance-protocol.md",
-      "asset": "specs/hard/frontend/06-change-governance-protocol.md",
-      "seed_version": "B6B-1",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/06-change-governance-protocol.md",
-      "source_sha256": "2f19b46e451153cab35e9fb511d9da0f072f86424e7d3f7a6b307cd17a9d1b32",
-      "source_bytes": 2972,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/07-frontend-backend-communication-protocol.md",
-      "asset": "specs/hard/frontend/07-frontend-backend-communication-protocol.md",
-      "seed_version": "B6B-1",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/07-frontend-backend-communication-protocol.md",
-      "source_sha256": "b14d2f8281198ff663e6e21e58df2e429c4683907cb77b6ebcdb6609d37f72d2",
-      "source_bytes": 9260,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/08-role-responsibility-protocol.md",
-      "asset": "specs/hard/frontend/08-role-responsibility-protocol.md",
-      "seed_version": "B6B-1",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/08-role-responsibility-protocol.md",
-      "source_sha256": "732ac305cd16207e4a7bd4c95a6774d1aca33fb4e45cf29991ac0f6475605d6f",
-      "source_bytes": 1894,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/09-module-boundary-protocol.md",
-      "asset": "specs/hard/frontend/09-module-boundary-protocol.md",
-      "seed_version": "B6B-1",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/09-module-boundary-protocol.md",
-      "source_sha256": "f9a3c194910bbb31cd322849cb277db5d2ae0fd74773eef7df34197b8ad89c4f",
-      "source_bytes": 1974,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/10-engineering-tooling-protocol.md",
-      "asset": "specs/hard/frontend/10-engineering-tooling-protocol.md",
-      "seed_version": "B6B-1",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/10-engineering-tooling-protocol.md",
-      "source_sha256": "c628d47dcae1ddd58ea3651eeae9dd84ff5157365a3892a367bd7b5bf0af2b9d",
-      "source_bytes": 2782,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/11-dependency-package-management-protocol.md",
-      "asset": "specs/hard/frontend/11-dependency-package-management-protocol.md",
-      "seed_version": "B6B-1",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/11-dependency-package-management-protocol.md",
-      "source_sha256": "a0cc135edaf0dfd1f5122d2ff7298866143ef3a273ad4d45f5e1eff763691867",
-      "source_bytes": 2906,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/12-business-rules-protocol.md",
-      "asset": "specs/hard/frontend/12-business-rules-protocol.md",
-      "seed_version": "B6B-1",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/12-business-rules-protocol.md",
-      "source_sha256": "dda683a7c907989032c82a2c1c3e552b51226e0e0cd5bdf3b6068cc7f649c525",
-      "source_bytes": 1828,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/13-monetary-precision-protocol.md",
-      "asset": "specs/hard/frontend/13-monetary-precision-protocol.md",
-      "seed_version": "B6B-1",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/13-monetary-precision-protocol.md",
-      "source_sha256": "4930246c7dfed2751d3a71d617a21e24b46b376131723451b39152582c7a3d4f",
-      "source_bytes": 1918,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/14-data-model-protocol.md",
-      "asset": "specs/hard/frontend/14-data-model-protocol.md",
-      "seed_version": "B6B-1",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/14-data-model-protocol.md",
-      "source_sha256": "7d4e31ef04a1f57d88e982c01dabc22c421bafc850b7295a73d084ec3c6fc838",
-      "source_bytes": 2444,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/15-request-api-protocol.md",
-      "asset": "specs/hard/frontend/15-request-api-protocol.md",
-      "seed_version": "B6B-1",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/15-request-api-protocol.md",
-      "source_sha256": "b9489d69e35a19b8d5ba2442108190e7b99989ef471c8cf413d9e4e408ca2969",
-      "source_bytes": 2666,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/16-error-handling-protocol.md",
-      "asset": "specs/hard/frontend/16-error-handling-protocol.md",
-      "seed_version": "B6B-1",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/16-error-handling-protocol.md",
-      "source_sha256": "0c6adc425e01a003e1f3c83fcf51f1d287767c95a4da50c15f5f639d9104f07f",
-      "source_bytes": 1896,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/17-permission-protocol.md",
-      "asset": "specs/hard/frontend/17-permission-protocol.md",
-      "seed_version": "B6B-1",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/17-permission-protocol.md",
-      "source_sha256": "3f51aeb30497c07a3b552c8f21ecff22730d276c85fd504fde16e9e17b622ec0",
-      "source_bytes": 1746,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/18-state-management-protocol.md",
-      "asset": "specs/hard/frontend/18-state-management-protocol.md",
-      "seed_version": "B6B-1",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/18-state-management-protocol.md",
-      "source_sha256": "72445fcd0ac7e21ebea38a5f72849543f936c7a96eee54eb99330226acaaf400",
-      "source_bytes": 2720,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/19-cache-protocol.md",
-      "asset": "specs/hard/frontend/19-cache-protocol.md",
-      "seed_version": "B6B-1",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/19-cache-protocol.md",
-      "source_sha256": "893d5651016233eec36333775441a935746fe1202c8924dc2edf753d61523daf",
-      "source_bytes": 1817,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/20-testing-protocol.md",
-      "asset": "specs/hard/frontend/20-testing-protocol.md",
-      "seed_version": "B6B-1",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/20-testing-protocol.md",
-      "source_sha256": "477dc049d1e1ec72898a07615655ee374924c7796a0210741e8c97474644a4d6",
-      "source_bytes": 2831,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/21-design-system-protocol.md",
-      "asset": "specs/hard/frontend/21-design-system-protocol.md",
-      "seed_version": "B6B-1",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/21-design-system-protocol.md",
-      "source_sha256": "317d4086949eb7d26ea2465adc6521ba6ebb611dca0d2f32aec2c57a985be4f3",
-      "source_bytes": 1827,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/22-theme-protocol.md",
-      "asset": "specs/hard/frontend/22-theme-protocol.md",
-      "seed_version": "B6B-1",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/22-theme-protocol.md",
-      "source_sha256": "b93ed272a0def5abc689fe66d939b87cacf6f38cce5d6278cfd5c94d1754b3ec",
-      "source_bytes": 1739,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/23-accessibility-protocol.md",
-      "asset": "specs/hard/frontend/23-accessibility-protocol.md",
-      "seed_version": "B6B-1",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/23-accessibility-protocol.md",
-      "source_sha256": "10557bf1221d1cf2748e29149820890e4523789701a35f7336e3f661fed82bfb",
-      "source_bytes": 15870,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/24-component-protocol.md",
-      "asset": "specs/hard/frontend/24-component-protocol.md",
-      "seed_version": "B6B-2",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/24-component-protocol.md",
-      "source_sha256": "5ed49550278ae263d7b4f3914c20c31a3005dc101d45bbd48c025a444f7441c4",
-      "source_bytes": 1964,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/25-page-structure-protocol.md",
-      "asset": "specs/hard/frontend/25-page-structure-protocol.md",
-      "seed_version": "B6B-2",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/25-page-structure-protocol.md",
-      "source_sha256": "5fb926a798842262d7f87555e3e63e104c868a401eb27f3c1f899e677fdf5f4f",
-      "source_bytes": 1846,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/26-style-layout-protocol.md",
-      "asset": "specs/hard/frontend/26-style-layout-protocol.md",
-      "seed_version": "B6B-2",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/26-style-layout-protocol.md",
-      "source_sha256": "a66b216ca119c7296431233fb2bb6db9affd1f71ba011e5394aaaafdab9e8240",
-      "source_bytes": 1863,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/27-rendering-state-protocol.md",
-      "asset": "specs/hard/frontend/27-rendering-state-protocol.md",
-      "seed_version": "B6B-2",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/27-rendering-state-protocol.md",
-      "source_sha256": "a640bacd811e05a35075d96ffb99ba51b8b6e11cc2a5443e3bbca0eb124738e4",
-      "source_bytes": 1823,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/28-form-protocol.md",
-      "asset": "specs/hard/frontend/28-form-protocol.md",
-      "seed_version": "B6B-2",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/28-form-protocol.md",
-      "source_sha256": "1359f0b753ece0f633b1aadea11e4ffd03dfc38f5b1f59e8cd869eba502e4807",
-      "source_bytes": 2649,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/29-routing-url-protocol.md",
-      "asset": "specs/hard/frontend/29-routing-url-protocol.md",
-      "seed_version": "B6B-2",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/29-routing-url-protocol.md",
-      "source_sha256": "3066c383489e1cb72271fe48d4a716860c58381d90e46ee1b2f114c61010949e",
-      "source_bytes": 1888,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/30-data-grid-protocol.md",
-      "asset": "specs/hard/frontend/30-data-grid-protocol.md",
-      "seed_version": "B6B-2",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/30-data-grid-protocol.md",
-      "source_sha256": "c702a9956fd5e7aac40e1eefebcdd7a3518b95bd1a750bfcb31cbaddb80f41ff",
-      "source_bytes": 2701,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/31-performance-protocol.md",
-      "asset": "specs/hard/frontend/31-performance-protocol.md",
-      "seed_version": "B6B-2",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/31-performance-protocol.md",
-      "source_sha256": "416ff411c75e538feec3aad8be5e733b95913580fd937c0abebd16aa0d21608c",
-      "source_bytes": 7488,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/32-file-import-export-protocol.md",
-      "asset": "specs/hard/frontend/32-file-import-export-protocol.md",
-      "seed_version": "B6B-2",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/32-file-import-export-protocol.md",
-      "source_sha256": "2262d7ce2e910e4d64b0c6f3ef1af0b72c3cafc31d6cb1a796a8fb8b1801cbbc",
-      "source_bytes": 1959,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/33-release-versioning-protocol.md",
-      "asset": "specs/hard/frontend/33-release-versioning-protocol.md",
-      "seed_version": "B6B-2",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/33-release-versioning-protocol.md",
-      "source_sha256": "aae0557f4935bac24d04e37ebde5638471b709ff568fea0d13de35bd5dd404af",
-      "source_bytes": 1764,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/34-monitoring-logging-protocol.md",
-      "asset": "specs/hard/frontend/34-monitoring-logging-protocol.md",
-      "seed_version": "B6B-2",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/34-monitoring-logging-protocol.md",
-      "source_sha256": "3c37c1c3aa3ade8d43532a1fcc7561e95aef42a19e46b6eb53d864054a2da013",
-      "source_bytes": 8248,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/35-mock-protocol.md",
-      "asset": "specs/hard/frontend/35-mock-protocol.md",
-      "seed_version": "B6B-2",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/35-mock-protocol.md",
-      "source_sha256": "c9288fe227cb26633d23c5d0e2e710b9cde716371f66cf3157c63b3ec8a58342",
-      "source_bytes": 2609,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/36-feature-flag-protocol.md",
-      "asset": "specs/hard/frontend/36-feature-flag-protocol.md",
-      "seed_version": "B6B-2",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/36-feature-flag-protocol.md",
-      "source_sha256": "ba6cf2d5607ba54d9864cd6c07899d2e13a8d33ea248fbd7469b92c23474f474",
-      "source_bytes": 1699,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/37-browser-device-compatibility-protocol.md",
-      "asset": "specs/hard/frontend/37-browser-device-compatibility-protocol.md",
-      "seed_version": "B6B-2",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/37-browser-device-compatibility-protocol.md",
-      "source_sha256": "81c0d4bf8996f6cf6b38d1c8514385065785728011222b524d73d8135703a3b3",
-      "source_bytes": 2337,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/38-internationalization-protocol.md",
-      "asset": "specs/hard/frontend/38-internationalization-protocol.md",
-      "seed_version": "B6B-2",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/38-internationalization-protocol.md",
-      "source_sha256": "68ed4e126042eee191f071786d58983b3b2df94a826a13b50fc52aaa6536c7fa",
-      "source_bytes": 14541,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/39-copywriting-protocol.md",
-      "asset": "specs/hard/frontend/39-copywriting-protocol.md",
-      "seed_version": "B6B-2",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/39-copywriting-protocol.md",
-      "source_sha256": "5df3a2ddcd1140b2e62dd80f547cf6c0197c44a91ebbdda02ded44bcaefed351",
-      "source_bytes": 1756,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/40-analytics-protocol.md",
-      "asset": "specs/hard/frontend/40-analytics-protocol.md",
-      "seed_version": "B6B-2",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/40-analytics-protocol.md",
-      "source_sha256": "f638c8054ba32d44a15f1dd4fa42b637e1f6ad39cd73c6e1d45cd5bfd71b2c56",
-      "source_bytes": 4190,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/41-design-handoff-protocol.md",
-      "asset": "specs/hard/frontend/41-design-handoff-protocol.md",
-      "seed_version": "B6B-2",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/41-design-handoff-protocol.md",
-      "source_sha256": "335df4991a29eb77222b0596de5db7fcc0bd5d9019ecf9bf882a08cea74c1937",
-      "source_bytes": 2048,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/42-browser-runtime-lifecycle-protocol.md",
-      "asset": "specs/hard/frontend/42-browser-runtime-lifecycle-protocol.md",
-      "seed_version": "B6B-2",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/42-browser-runtime-lifecycle-protocol.md",
-      "source_sha256": "b328c8b3bab2006254587143c634e17ff554d2f0103056d07edba5ffaba29fe1",
-      "source_bytes": 3824,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/43-time-temporal-protocol.md",
-      "asset": "specs/hard/frontend/43-time-temporal-protocol.md",
-      "seed_version": "B6B-2",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/43-time-temporal-protocol.md",
-      "source_sha256": "4669cc3d927289f99bbd66c3e906f97d548f0cf8ea9e94b66e8b21cb24d00afb",
-      "source_bytes": 3600,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/44-privacy-data-lifecycle-protocol.md",
-      "asset": "specs/hard/frontend/44-privacy-data-lifecycle-protocol.md",
-      "seed_version": "B6B-2",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/44-privacy-data-lifecycle-protocol.md",
-      "source_sha256": "5b3472bba296c1bb437c3ce41e1c937b636605e39b78cf06747d1010e46ba08e",
-      "source_bytes": 3989,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/45-browser-storage-protocol.md",
-      "asset": "specs/hard/frontend/45-browser-storage-protocol.md",
-      "seed_version": "B6B-2",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/45-browser-storage-protocol.md",
-      "source_sha256": "01d0d3cb618519c94c939658526a97ad1df851a8f820a22a9b4595bef03cc2cb",
-      "source_bytes": 3816,
-      "porting_notes": []
-    },
-    {
-      "target": ".pomaster/specs/hard/frontend/index.md",
-      "asset": "specs/hard/frontend/index.md",
-      "seed_version": "B6B-2",
-      "lane": "frontend",
-      "source_path": "pomaster/components/frontend-hard-spec/assets/universal/index.md",
-      "source_sha256": "37fc443ce1f90eaa2584a82e12300d8281760332ec69d55a52b26cb22a2b2375",
-      "source_bytes": 22578,
-      "porting_notes": [
-        "R8 词形适配（唯一授权适配点，注入矩阵段使用说明）：L44 自指路径 '.trellis/spec/frontend/' 按提案适配 vNext 播种面词形 '.pomaster/specs/hard/frontend/'（whitelist 单点替换、计数断言；其余正文逐字节保留）",
-        "R8 词形清洗（已执行，裁决 12/D5，2026-09-05）：vendor L47 Trellis 任务机制叙述整行改写——'在 Trellis Phase 1.3 使用原生 task.py add-context，把所选文件分别加入当前 task 的 implement.jsonl 和 check.jsonl；不得修改 Trellis 脚本、hook 或配置来实现自动加载。' → '所选协议（semantic ID 形态）以 vNext 上下文投影承载：pomaster context compile --role <role> 按 role/capability applicability 检索激活；不得修改 pomaster 工具、hook 或配置来实现自动加载。'（旧机制叙述删除，pomaster 命令面真实存在）。原登记（B6b-II）：旧包任务机制词形保留待授权清洗（已由本批清洗收口）",
-        "R8 词形清洗（已执行，裁决 12/D5，2026-09-05）：vendor L72 'finish 流程' → '收口（closeout）流程'、L75 '归档、finish、发布记录' → '归档、收口、发布记录'（pomaster closeout 对应物，同 01 文件口径）。原登记（B6b-II）：旧包流程词形保留待授权清洗（已由本批清洗收口）",
-        "R8 词形清洗（已执行，裁决 12/D5 同类授权延伸，裁定批 F，2026-09-05）：index 注入机制叙述残留 13 行 vNext 化——'注入矩阵/任务注入矩阵'→'命中矩阵/任务命中矩阵'（沿批 C BE index 段名词形惯例）、段名 '默认注入基线'→'默认激活基线'、'按任务追加注入'→'按任务追加激活'（两段名的 Checklist 引用随改）、'默认注入/强制注入/可不注入/注入优先级/实际注入'→'激活'词形、'重跑注入'→'重跑播种（init）'（seed-once 语义句保留）。协议地图/追加矩阵行数据零触碰。原登记（B6b-II）：未登记注入叙述段留待授权清洗（本批收口）"
-      ]
-    },
-    {
-      "target": ".pomaster/specs/hard/backend/01-architecture-governance-protocol.md",
-      "asset": "specs/hard/backend/01-architecture-governance-protocol.md",
-      "seed_version": "B6C",
-      "lane": "backend",
-      "source_path": "pomaster/components/backend-hard-spec/assets/universal/01-architecture-governance-protocol.md",
-      "source_sha256": "726502f4e5a5dcf2e8076fafa943b33de4b7ab9bd0fc2d8551479b43385e7636",
-      "source_bytes": 1394,
-      "porting_notes": [
-        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
-      ]
-    },
-    {
-      "target": ".pomaster/specs/hard/backend/02-project-structure-governance-protocol.md",
-      "asset": "specs/hard/backend/02-project-structure-governance-protocol.md",
-      "seed_version": "B6C",
-      "lane": "backend",
-      "source_path": "pomaster/components/backend-hard-spec/assets/universal/02-project-structure-governance-protocol.md",
-      "source_sha256": "add6e21ffa5dd45940dda725e8d4e234c9d2a49775139c895cc7ad5f7caf7bf0",
-      "source_bytes": 1343,
-      "porting_notes": [
-        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
-      ]
-    },
-    {
-      "target": ".pomaster/specs/hard/backend/03-directory-boundary-protocol.md",
-      "asset": "specs/hard/backend/03-directory-boundary-protocol.md",
-      "seed_version": "B6C",
-      "lane": "backend",
-      "source_path": "pomaster/components/backend-hard-spec/assets/universal/03-directory-boundary-protocol.md",
-      "source_sha256": "95a917cfe3c929b5a0a40de5f6215b25ef4a358a4e7f1c7cb2daa08defcf6bcc",
-      "source_bytes": 1224,
-      "porting_notes": [
-        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
-      ]
-    },
-    {
-      "target": ".pomaster/specs/hard/backend/04-layering-architecture-protocol.md",
-      "asset": "specs/hard/backend/04-layering-architecture-protocol.md",
-      "seed_version": "B6C",
-      "lane": "backend",
-      "source_path": "pomaster/components/backend-hard-spec/assets/universal/04-layering-architecture-protocol.md",
-      "source_sha256": "4a2ab2aa695a7b78136a2fd96076a869c367bb008a417be508756c632ad4ed6e",
-      "source_bytes": 1350,
-      "porting_notes": [
-        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
-      ]
-    },
-    {
-      "target": ".pomaster/specs/hard/backend/05-task-workflow-protocol.md",
-      "asset": "specs/hard/backend/05-task-workflow-protocol.md",
-      "seed_version": "B6C",
-      "lane": "backend",
-      "source_path": "pomaster/components/backend-hard-spec/assets/universal/05-task-workflow-protocol.md",
-      "source_sha256": "b0d176f1f2d19cd14739ff4de39d77659036516ab1377b83c261ecc53a2de2dd",
-      "source_bytes": 1177,
-      "porting_notes": [
-        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
-      ]
-    },
-    {
-      "target": ".pomaster/specs/hard/backend/06-ai-generated-code-protocol.md",
-      "asset": "specs/hard/backend/06-ai-generated-code-protocol.md",
-      "seed_version": "B6C",
-      "lane": "backend",
-      "source_path": "pomaster/components/backend-hard-spec/assets/universal/06-ai-generated-code-protocol.md",
-      "source_sha256": "a88614806137f33161b741d2a9fbc6ee310fa4f0cbf6acd222de07c14aee3d75",
-      "source_bytes": 1288,
-      "porting_notes": [
-        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
-      ]
-    },
-    {
-      "target": ".pomaster/specs/hard/backend/07-evidence-acceptance-protocol.md",
-      "asset": "specs/hard/backend/07-evidence-acceptance-protocol.md",
-      "seed_version": "B6C",
-      "lane": "backend",
-      "source_path": "pomaster/components/backend-hard-spec/assets/universal/07-evidence-acceptance-protocol.md",
-      "source_sha256": "fb86312eaadaec81d21e20abfb979e0127138002731ddc4fb1ead9ec90cd10bb",
-      "source_bytes": 1280,
-      "porting_notes": [
-        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
-      ]
-    },
-    {
-      "target": ".pomaster/specs/hard/backend/08-contract-change-protocol.md",
-      "asset": "specs/hard/backend/08-contract-change-protocol.md",
-      "seed_version": "B6C",
-      "lane": "backend",
-      "source_path": "pomaster/components/backend-hard-spec/assets/universal/08-contract-change-protocol.md",
-      "source_sha256": "805c146b31c70d08f876631bc19273076eb242d78fcb3b3a3bd33437e28a6953",
-      "source_bytes": 1279,
-      "porting_notes": [
-        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
-      ]
-    },
-    {
-      "target": ".pomaster/specs/hard/backend/09-role-responsibility-protocol.md",
-      "asset": "specs/hard/backend/09-role-responsibility-protocol.md",
-      "seed_version": "B6C",
-      "lane": "backend",
-      "source_path": "pomaster/components/backend-hard-spec/assets/universal/09-role-responsibility-protocol.md",
-      "source_sha256": "603b285faa271b77140f28e1038f850cd01b17ed1813b965898c4746233b342f",
-      "source_bytes": 1246,
-      "porting_notes": [
-        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
-      ]
-    },
-    {
-      "target": ".pomaster/specs/hard/backend/10-security-protocol.md",
-      "asset": "specs/hard/backend/10-security-protocol.md",
-      "seed_version": "B6C",
-      "lane": "backend",
-      "source_path": "pomaster/components/backend-hard-spec/assets/universal/10-security-protocol.md",
-      "source_sha256": "56387f03edd35df50a5a701f4daab174b744d490663393f43331cf5401149f67",
-      "source_bytes": 1385,
-      "porting_notes": [
-        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
-      ]
-    },
-    {
-      "target": ".pomaster/specs/hard/backend/11-environment-configuration-protocol.md",
-      "asset": "specs/hard/backend/11-environment-configuration-protocol.md",
-      "seed_version": "B6C",
-      "lane": "backend",
-      "source_path": "pomaster/components/backend-hard-spec/assets/universal/11-environment-configuration-protocol.md",
-      "source_sha256": "eb9e82e9df64ce238501bc51cd359f36150f911c149904e2ed5a43d9b652b1bd",
-      "source_bytes": 1362,
-      "porting_notes": [
-        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
-      ]
-    },
-    {
-      "target": ".pomaster/specs/hard/backend/12-api-contract-protocol.md",
-      "asset": "specs/hard/backend/12-api-contract-protocol.md",
-      "seed_version": "B6C",
-      "lane": "backend",
-      "source_path": "pomaster/components/backend-hard-spec/assets/universal/12-api-contract-protocol.md",
-      "source_sha256": "35519d81548cabff729de888e0bf9e0d5b40a0274c9fa3684641b50e75938ca0",
-      "source_bytes": 1305,
-      "porting_notes": [
-        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
-      ]
-    },
-    {
-      "target": ".pomaster/specs/hard/backend/13-privacy-data-lifecycle-protocol.md",
-      "asset": "specs/hard/backend/13-privacy-data-lifecycle-protocol.md",
-      "seed_version": "B6C",
-      "lane": "backend",
-      "source_path": "pomaster/components/backend-hard-spec/assets/universal/13-privacy-data-lifecycle-protocol.md",
-      "source_sha256": "df20ccb85008f8744ea16db3ea64e54bdf9fd19d7aa3098c45dc44fff94c3d8d",
-      "source_bytes": 1381,
-      "porting_notes": [
-        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
-      ]
-    },
-    {
-      "target": ".pomaster/specs/hard/backend/14-business-rules-state-protocol.md",
-      "asset": "specs/hard/backend/14-business-rules-state-protocol.md",
-      "seed_version": "B6C",
-      "lane": "backend",
-      "source_path": "pomaster/components/backend-hard-spec/assets/universal/14-business-rules-state-protocol.md",
-      "source_sha256": "fb255dd2331ac35e73a1ad222e4de4ec2f5fb3a09e675de0e1919d80022ac291",
-      "source_bytes": 1287,
-      "porting_notes": [
-        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
-      ]
-    },
-    {
-      "target": ".pomaster/specs/hard/backend/15-data-model-protocol.md",
-      "asset": "specs/hard/backend/15-data-model-protocol.md",
-      "seed_version": "B6C",
-      "lane": "backend",
-      "source_path": "pomaster/components/backend-hard-spec/assets/universal/15-data-model-protocol.md",
-      "source_sha256": "21cdd88fac93c9dc834a51d62978b51453ca02eca68f223859aeca0ada99c3f2",
-      "source_bytes": 1288,
-      "porting_notes": [
-        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
-      ]
-    },
-    {
-      "target": ".pomaster/specs/hard/backend/16-error-code-protocol.md",
-      "asset": "specs/hard/backend/16-error-code-protocol.md",
-      "seed_version": "B6C",
-      "lane": "backend",
-      "source_path": "pomaster/components/backend-hard-spec/assets/universal/16-error-code-protocol.md",
-      "source_sha256": "aa80ee60f7431e14859f61e563784e71b2002f35e220964170a779800fdde090",
-      "source_bytes": 1298,
-      "porting_notes": [
-        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
-      ]
-    },
-    {
-      "target": ".pomaster/specs/hard/backend/17-permission-authorization-protocol.md",
-      "asset": "specs/hard/backend/17-permission-authorization-protocol.md",
-      "seed_version": "B6C",
-      "lane": "backend",
-      "source_path": "pomaster/components/backend-hard-spec/assets/universal/17-permission-authorization-protocol.md",
-      "source_sha256": "d85a431b682a3a7c3dd4a6ee1f67fc375b54edb4a8e7fe98d283103b64a6b41e",
-      "source_bytes": 1378,
-      "porting_notes": [
-        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
-      ]
-    },
-    {
-      "target": ".pomaster/specs/hard/backend/18-database-schema-migration-protocol.md",
-      "asset": "specs/hard/backend/18-database-schema-migration-protocol.md",
-      "seed_version": "B6C",
-      "lane": "backend",
-      "source_path": "pomaster/components/backend-hard-spec/assets/universal/18-database-schema-migration-protocol.md",
-      "source_sha256": "e7d0b660673dc1978653c39c9efcc7ad7d9b2809c4a88040a6fcf74839bc82c0",
-      "source_bytes": 1409,
-      "porting_notes": [
-        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
-      ]
-    },
-    {
-      "target": ".pomaster/specs/hard/backend/19-query-index-sql-protocol.md",
-      "asset": "specs/hard/backend/19-query-index-sql-protocol.md",
-      "seed_version": "B6C",
-      "lane": "backend",
-      "source_path": "pomaster/components/backend-hard-spec/assets/universal/19-query-index-sql-protocol.md",
-      "source_sha256": "60a660730a82a4f911bc6c18d5f6808a320f722df27d397a4e4b13835111610d",
-      "source_bytes": 1332,
-      "porting_notes": [
-        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
-      ]
-    },
-    {
-      "target": ".pomaster/specs/hard/backend/20-transaction-boundary-protocol.md",
-      "asset": "specs/hard/backend/20-transaction-boundary-protocol.md",
-      "seed_version": "B6C",
-      "lane": "backend",
-      "source_path": "pomaster/components/backend-hard-spec/assets/universal/20-transaction-boundary-protocol.md",
-      "source_sha256": "4c4634b71f1e07e9cae074f9790fa50b3425f0af71300ab2ac12e644b521eff4",
-      "source_bytes": 1323,
-      "porting_notes": [
-        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
-      ]
-    },
-    {
-      "target": ".pomaster/specs/hard/backend/21-concurrency-locking-protocol.md",
-      "asset": "specs/hard/backend/21-concurrency-locking-protocol.md",
-      "seed_version": "B6C",
-      "lane": "backend",
-      "source_path": "pomaster/components/backend-hard-spec/assets/universal/21-concurrency-locking-protocol.md",
-      "source_sha256": "6141612e1135cc67ccd9d47553ea5fa7b9c00e05b6e50706f8e117c80d3b8d95",
-      "source_bytes": 1308,
-      "porting_notes": [
-        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
-      ]
-    },
-    {
-      "target": ".pomaster/specs/hard/backend/22-idempotency-protocol.md",
-      "asset": "specs/hard/backend/22-idempotency-protocol.md",
-      "seed_version": "B6C",
-      "lane": "backend",
-      "source_path": "pomaster/components/backend-hard-spec/assets/universal/22-idempotency-protocol.md",
-      "source_sha256": "c97d003622b9075f0c094ec5c5bfa950a977e18b2f4ce8ffc9bc014858e27670",
-      "source_bytes": 1310,
-      "porting_notes": [
-        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
-      ]
-    },
-    {
-      "target": ".pomaster/specs/hard/backend/23-cache-redis-consistency-protocol.md",
-      "asset": "specs/hard/backend/23-cache-redis-consistency-protocol.md",
-      "seed_version": "B6C",
-      "lane": "backend",
-      "source_path": "pomaster/components/backend-hard-spec/assets/universal/23-cache-redis-consistency-protocol.md",
-      "source_sha256": "073da5821658adfc0580798873fde95c49dc9d993a63949b3b1543a9c0e18a11",
-      "source_bytes": 1316,
-      "porting_notes": [
-        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
-      ]
-    },
-    {
-      "target": ".pomaster/specs/hard/backend/24-external-integration-resilience-protocol.md",
-      "asset": "specs/hard/backend/24-external-integration-resilience-protocol.md",
-      "seed_version": "B6C",
-      "lane": "backend",
-      "source_path": "pomaster/components/backend-hard-spec/assets/universal/24-external-integration-resilience-protocol.md",
-      "source_sha256": "e6b0626c9169e9126319bd08ee5d5bdbe38421cfa175509524145aee30ff539a",
-      "source_bytes": 1346,
-      "porting_notes": [
-        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
-      ]
-    },
-    {
-      "target": ".pomaster/specs/hard/backend/25-async-job-scheduler-protocol.md",
-      "asset": "specs/hard/backend/25-async-job-scheduler-protocol.md",
-      "seed_version": "B6C",
-      "lane": "backend",
-      "source_path": "pomaster/components/backend-hard-spec/assets/universal/25-async-job-scheduler-protocol.md",
-      "source_sha256": "36af3b4466b4e617a9c552a404d98ab74604752b7410e15756d7f132394fb980",
-      "source_bytes": 1351,
-      "porting_notes": [
-        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
-      ]
-    },
-    {
-      "target": ".pomaster/specs/hard/backend/26-engineering-tooling-protocol.md",
-      "asset": "specs/hard/backend/26-engineering-tooling-protocol.md",
-      "seed_version": "B6C",
-      "lane": "backend",
-      "source_path": "pomaster/components/backend-hard-spec/assets/universal/26-engineering-tooling-protocol.md",
-      "source_sha256": "b0fcecee17a3acdb11f59f065ae7cac269cc292e999dd39444e5293565d38fe1",
-      "source_bytes": 1263,
-      "porting_notes": [
-        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
-      ]
-    },
-    {
-      "target": ".pomaster/specs/hard/backend/27-dependency-supply-chain-protocol.md",
-      "asset": "specs/hard/backend/27-dependency-supply-chain-protocol.md",
-      "seed_version": "B6C",
-      "lane": "backend",
-      "source_path": "pomaster/components/backend-hard-spec/assets/universal/27-dependency-supply-chain-protocol.md",
-      "source_sha256": "7e0817507039ab5f633ff4cb7eb3590d8755a547b8db91867f92bc702a64ddfe",
-      "source_bytes": 1317,
-      "porting_notes": [
-        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
-      ]
-    },
-    {
-      "target": ".pomaster/specs/hard/backend/28-testing-protocol.md",
-      "asset": "specs/hard/backend/28-testing-protocol.md",
-      "seed_version": "B6C",
-      "lane": "backend",
-      "source_path": "pomaster/components/backend-hard-spec/assets/universal/28-testing-protocol.md",
-      "source_sha256": "f5df73dd7bec4ccf4132c3d7a9918a6f1cb0dd9682aa17956cb24446aa406ad7",
-      "source_bytes": 1267,
-      "porting_notes": [
-        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
-      ]
-    },
-    {
-      "target": ".pomaster/specs/hard/backend/29-observability-logging-tracing-protocol.md",
-      "asset": "specs/hard/backend/29-observability-logging-tracing-protocol.md",
-      "seed_version": "B6C",
-      "lane": "backend",
-      "source_path": "pomaster/components/backend-hard-spec/assets/universal/29-observability-logging-tracing-protocol.md",
-      "source_sha256": "e871f5d7d1e9fe68956881877baba94f376a5539753441853f8cfa12939f5ebd",
-      "source_bytes": 1387,
-      "porting_notes": [
-        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
-      ]
-    },
-    {
-      "target": ".pomaster/specs/hard/backend/30-performance-capacity-protocol.md",
-      "asset": "specs/hard/backend/30-performance-capacity-protocol.md",
-      "seed_version": "B6C",
-      "lane": "backend",
-      "source_path": "pomaster/components/backend-hard-spec/assets/universal/30-performance-capacity-protocol.md",
-      "source_sha256": "b575dd07e4bb6def646acb55c3d62d086a9fd12035b2ab359ec353bf443773e5",
-      "source_bytes": 1326,
-      "porting_notes": [
-        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
-      ]
-    },
-    {
-      "target": ".pomaster/specs/hard/backend/31-runtime-deployment-protocol.md",
-      "asset": "specs/hard/backend/31-runtime-deployment-protocol.md",
-      "seed_version": "B6C",
-      "lane": "backend",
-      "source_path": "pomaster/components/backend-hard-spec/assets/universal/31-runtime-deployment-protocol.md",
-      "source_sha256": "c791451de0be3aa0629fd562e2b43cc54066e4b10d786264fa7a333c561ef23a",
-      "source_bytes": 1410,
-      "porting_notes": [
-        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
-      ]
-    },
-    {
-      "target": ".pomaster/specs/hard/backend/32-release-versioning-rollback-protocol.md",
-      "asset": "specs/hard/backend/32-release-versioning-rollback-protocol.md",
-      "seed_version": "B6C",
-      "lane": "backend",
-      "source_path": "pomaster/components/backend-hard-spec/assets/universal/32-release-versioning-rollback-protocol.md",
-      "source_sha256": "26a6a23928fc24338f69fb34199ecdea5f654e21534a76ac53a7c0b78030b3c8",
-      "source_bytes": 1359,
-      "porting_notes": [
-        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）"
-      ]
-    },
-    {
-      "target": ".pomaster/specs/hard/backend/index.md",
-      "asset": "specs/hard/backend/index.md",
-      "seed_version": "B6C",
-      "lane": "backend",
-      "source_path": "pomaster/components/backend-hard-spec/assets/universal/index.md",
-      "source_sha256": "b50c1fdcab5d1a3217a6e28059580195f681b6e68f465eb8e055bd8e5310c479",
-      "source_bytes": 14733,
-      "porting_notes": [
-        "R8 词形登记：vendor frontmatter criticality/injection_mode/stages/triggers 为旧包注入机制词形，vNext 无注入器机制——以 info 性 frontmatter 注记字段保留（A1 档位信息性裁定对齐），不引入执行语义；id 字段改形 legacy_id（backend: 前缀为旧包内部语义 ID，非 governed 词形，no-governed-id 默认）",
-        "R8 词形清洗（已执行，裁决 12/D5，2026-09-05）：'任务 Trigger 矩阵'段尾句整行改写——'矩阵只产生候选 trigger；注入器必须对结果继续执行 stage、injection mode、显式 reference、Overlay 依赖与冲突校验，并在 Trellis context reason 中记录 semantic ID、stage、命中原因和 provider hash。' → '矩阵只产生候选特征；实际纳入由 pomaster context compile --role <role> 投影承载（Overlay 依赖与冲突按「冲突与责任边界」收窄），纳入/排除决策可经 pomaster context explain 逐条审计。'（旧包注入器/Trellis context reason/provider hash 机制叙述删除；pomaster 命令面真实存在——context compile/explain）。原登记（B6c）：旧包任务机制词形保留待授权清洗（已由本批清洗收口）",
-        "R8 词形清洗（已执行，裁决 12/D5，2026-09-05）：'使用规则/默认注入基线/任务 Trigger 矩阵'三段 vNext 化改写——注入顺序叙述 → init 播种（seed-once）+ pomaster context compile 投影激活语义；段名 '默认注入基线'→'默认激活基线'、'任务 Trigger 矩阵'→'任务命中矩阵'（维护段交叉引用随改）；表列 '实际默认加载'→'建议纳入上下文'、'always 协议'→'基线协议'、'建议 Trigger'→'建议命中的协议特征'；'重跑注入'→'重跑播种（init）'（seed-once 语义句保留——原登记注记的一致面）。协议清单/矩阵行数据零触碰。原登记（B6c）：旧包注入机制叙述保留待授权清洗（已由本批清洗收口）",
-        "R8 词形注记：正文 'stacks/<slug>/<slug>-overlay.md' 相对词形（L18/L54）在 vNext 播种面（.pomaster/specs/hard/）下自洽指向 specs/hard/stacks/<slug>/<slug>-overlay.md——零改写保留原文",
-        "R8 词形清洗（已执行，裁决 12/D5 同类授权延伸，裁定批 F，2026-09-05）：BE index 注入机制叙述残留 2 行 vNext 化——引言行 '不表示 criticality 或注入优先级'→'激活优先级'；维护规则段 '同步索引、模板、注入器测试和 provider bytes/hash'→'同步索引、模板、播种清单与 catalog 锁校验'（vNext 对应物 = seeds manifest source sha256/bytes pin + catalog relock）。'注入防护'（协议目录 10 号安全协议行）为安全领域词（SQL/脚本注入防护语义）非旧包注入机制词形——零改写保留原文；frontmatter injection_mode 保留字段与协议目录表 always/triggered 行数据为既登记 info 性注记/零触碰面，维持不动。原登记（B6c）：残留注入词形留待授权清洗（本批收口）"
-      ]
-    },
     {
       "target": ".pomaster/specs/hard/stacks/java/index.md",
       "asset": "specs/hard/stacks/java/index.md",
@@ -2101,6 +1172,258 @@
       "source_sha256": "eb09e17e34b577df39889213194207a3335f151d7c0f6655fa2f6aca63f0dc63",
       "source_bytes": 372,
       "porting_notes": []
+    },
+    {
+      "target": ".pomaster/specs/hard/themes/architecture-and-module-boundaries.md",
+      "asset": "specs/hard/themes/architecture-and-module-boundaries.md",
+      "seed_version": "B7-THEME",
+      "lane": "frontend,backend",
+      "source_path": "packages/cli/seeds/aggregation-manifest.json",
+      "source_sha256": "039b637ccffacdfe3ce30d85e193f4b38928fcdfb16efdc4eb255e35e05af91f",
+      "source_bytes": 31154,
+      "porting_notes": [
+        "B7-THEME 主题聚合（09-05-spec-thematic-reorg Owner 裁定 D1-D8）：5 源聚合为单文档（12 节骨架 + 逐节来源行，内容行双向零差异）；seed_source 指仓内聚合清单 seeds/aggregation-manifest.json（D6），逐源 vendor pin 见清单 architecture-and-module-boundaries 条目（sha256 与卡 vendor_pin 同值）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/themes/task-governance-and-acceptance.md",
+      "asset": "specs/hard/themes/task-governance-and-acceptance.md",
+      "seed_version": "B7-THEME",
+      "lane": "frontend,backend",
+      "source_path": "packages/cli/seeds/aggregation-manifest.json",
+      "source_sha256": "039b637ccffacdfe3ce30d85e193f4b38928fcdfb16efdc4eb255e35e05af91f",
+      "source_bytes": 31154,
+      "porting_notes": [
+        "B7-THEME 主题聚合（09-05-spec-thematic-reorg Owner 裁定 D1-D8）：8 源聚合为单文档（12 节骨架 + 逐节来源行，内容行双向零差异）；seed_source 指仓内聚合清单 seeds/aggregation-manifest.json（D6），逐源 vendor pin 见清单 task-governance-and-acceptance 条目（sha256 与卡 vendor_pin 同值）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/themes/ai-generated-code.md",
+      "asset": "specs/hard/themes/ai-generated-code.md",
+      "seed_version": "B7-THEME",
+      "lane": "frontend,backend",
+      "source_path": "packages/cli/seeds/aggregation-manifest.json",
+      "source_sha256": "039b637ccffacdfe3ce30d85e193f4b38928fcdfb16efdc4eb255e35e05af91f",
+      "source_bytes": 31154,
+      "porting_notes": [
+        "B7-THEME 主题聚合（09-05-spec-thematic-reorg Owner 裁定 D1-D8）：2 源聚合为单文档（12 节骨架 + 逐节来源行，内容行双向零差异）；seed_source 指仓内聚合清单 seeds/aggregation-manifest.json（D6），逐源 vendor pin 见清单 ai-generated-code 条目（sha256 与卡 vendor_pin 同值）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/themes/security.md",
+      "asset": "specs/hard/themes/security.md",
+      "seed_version": "B7-THEME",
+      "lane": "frontend,backend",
+      "source_path": "packages/cli/seeds/aggregation-manifest.json",
+      "source_sha256": "039b637ccffacdfe3ce30d85e193f4b38928fcdfb16efdc4eb255e35e05af91f",
+      "source_bytes": 31154,
+      "porting_notes": [
+        "B7-THEME 主题聚合（09-05-spec-thematic-reorg Owner 裁定 D1-D8）：2 源聚合为单文档（12 节骨架 + 逐节来源行，内容行双向零差异）；seed_source 指仓内聚合清单 seeds/aggregation-manifest.json（D6），逐源 vendor pin 见清单 security 条目（sha256 与卡 vendor_pin 同值）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/themes/environment-and-configuration.md",
+      "asset": "specs/hard/themes/environment-and-configuration.md",
+      "seed_version": "B7-THEME",
+      "lane": "frontend,backend",
+      "source_path": "packages/cli/seeds/aggregation-manifest.json",
+      "source_sha256": "039b637ccffacdfe3ce30d85e193f4b38928fcdfb16efdc4eb255e35e05af91f",
+      "source_bytes": 31154,
+      "porting_notes": [
+        "B7-THEME 主题聚合（09-05-spec-thematic-reorg Owner 裁定 D1-D8）：2 源聚合为单文档（12 节骨架 + 逐节来源行，内容行双向零差异）；seed_source 指仓内聚合清单 seeds/aggregation-manifest.json（D6），逐源 vendor pin 见清单 environment-and-configuration 条目（sha256 与卡 vendor_pin 同值）；语言节 1 overlay 逐字节同步（R-J）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/themes/engineering-toolchain-and-dependencies.md",
+      "asset": "specs/hard/themes/engineering-toolchain-and-dependencies.md",
+      "seed_version": "B7-THEME",
+      "lane": "frontend,backend",
+      "source_path": "packages/cli/seeds/aggregation-manifest.json",
+      "source_sha256": "039b637ccffacdfe3ce30d85e193f4b38928fcdfb16efdc4eb255e35e05af91f",
+      "source_bytes": 31154,
+      "porting_notes": [
+        "B7-THEME 主题聚合（09-05-spec-thematic-reorg Owner 裁定 D1-D8）：4 源聚合为单文档（12 节骨架 + 逐节来源行，内容行双向零差异）；seed_source 指仓内聚合清单 seeds/aggregation-manifest.json（D6），逐源 vendor pin 见清单 engineering-toolchain-and-dependencies 条目（sha256 与卡 vendor_pin 同值）；语言节 1 overlay 逐字节同步（R-J）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/themes/testing-and-verification.md",
+      "asset": "specs/hard/themes/testing-and-verification.md",
+      "seed_version": "B7-THEME",
+      "lane": "frontend,backend",
+      "source_path": "packages/cli/seeds/aggregation-manifest.json",
+      "source_sha256": "039b637ccffacdfe3ce30d85e193f4b38928fcdfb16efdc4eb255e35e05af91f",
+      "source_bytes": 31154,
+      "porting_notes": [
+        "B7-THEME 主题聚合（09-05-spec-thematic-reorg Owner 裁定 D1-D8）：3 源聚合为单文档（12 节骨架 + 逐节来源行，内容行双向零差异）；seed_source 指仓内聚合清单 seeds/aggregation-manifest.json（D6），逐源 vendor pin 见清单 testing-and-verification 条目（sha256 与卡 vendor_pin 同值）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/themes/observability-and-analytics.md",
+      "asset": "specs/hard/themes/observability-and-analytics.md",
+      "seed_version": "B7-THEME",
+      "lane": "frontend,backend",
+      "source_path": "packages/cli/seeds/aggregation-manifest.json",
+      "source_sha256": "039b637ccffacdfe3ce30d85e193f4b38928fcdfb16efdc4eb255e35e05af91f",
+      "source_bytes": 31154,
+      "porting_notes": [
+        "B7-THEME 主题聚合（09-05-spec-thematic-reorg Owner 裁定 D1-D8）：3 源聚合为单文档（12 节骨架 + 逐节来源行，内容行双向零差异）；seed_source 指仓内聚合清单 seeds/aggregation-manifest.json（D6），逐源 vendor pin 见清单 observability-and-analytics 条目（sha256 与卡 vendor_pin 同值）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/themes/release-and-feature-flags.md",
+      "asset": "specs/hard/themes/release-and-feature-flags.md",
+      "seed_version": "B7-THEME",
+      "lane": "frontend,backend",
+      "source_path": "packages/cli/seeds/aggregation-manifest.json",
+      "source_sha256": "039b637ccffacdfe3ce30d85e193f4b38928fcdfb16efdc4eb255e35e05af91f",
+      "source_bytes": 31154,
+      "porting_notes": [
+        "B7-THEME 主题聚合（09-05-spec-thematic-reorg Owner 裁定 D1-D8）：3 源聚合为单文档（12 节骨架 + 逐节来源行，内容行双向零差异）；seed_source 指仓内聚合清单 seeds/aggregation-manifest.json（D6），逐源 vendor pin 见清单 release-and-feature-flags 条目（sha256 与卡 vendor_pin 同值）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/themes/privacy-and-data-lifecycle.md",
+      "asset": "specs/hard/themes/privacy-and-data-lifecycle.md",
+      "seed_version": "B7-THEME",
+      "lane": "frontend,backend",
+      "source_path": "packages/cli/seeds/aggregation-manifest.json",
+      "source_sha256": "039b637ccffacdfe3ce30d85e193f4b38928fcdfb16efdc4eb255e35e05af91f",
+      "source_bytes": 31154,
+      "porting_notes": [
+        "B7-THEME 主题聚合（09-05-spec-thematic-reorg Owner 裁定 D1-D8）：2 源聚合为单文档（12 节骨架 + 逐节来源行，内容行双向零差异）；seed_source 指仓内聚合清单 seeds/aggregation-manifest.json（D6），逐源 vendor pin 见清单 privacy-and-data-lifecycle 条目（sha256 与卡 vendor_pin 同值）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/themes/api-contract-and-error-semantics.md",
+      "asset": "specs/hard/themes/api-contract-and-error-semantics.md",
+      "seed_version": "B7-THEME",
+      "lane": "frontend,backend",
+      "source_path": "packages/cli/seeds/aggregation-manifest.json",
+      "source_sha256": "039b637ccffacdfe3ce30d85e193f4b38928fcdfb16efdc4eb255e35e05af91f",
+      "source_bytes": 31154,
+      "porting_notes": [
+        "B7-THEME 主题聚合（09-05-spec-thematic-reorg Owner 裁定 D1-D8）：5 源聚合为单文档（12 节骨架 + 逐节来源行，内容行双向零差异）；seed_source 指仓内聚合清单 seeds/aggregation-manifest.json（D6），逐源 vendor pin 见清单 api-contract-and-error-semantics 条目（sha256 与卡 vendor_pin 同值）；语言节 1 overlay 逐字节同步（R-J）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/themes/permission-and-authorization.md",
+      "asset": "specs/hard/themes/permission-and-authorization.md",
+      "seed_version": "B7-THEME",
+      "lane": "frontend,backend",
+      "source_path": "packages/cli/seeds/aggregation-manifest.json",
+      "source_sha256": "039b637ccffacdfe3ce30d85e193f4b38928fcdfb16efdc4eb255e35e05af91f",
+      "source_bytes": 31154,
+      "porting_notes": [
+        "B7-THEME 主题聚合（09-05-spec-thematic-reorg Owner 裁定 D1-D8）：2 源聚合为单文档（12 节骨架 + 逐节来源行，内容行双向零差异）；seed_source 指仓内聚合清单 seeds/aggregation-manifest.json（D6），逐源 vendor pin 见清单 permission-and-authorization 条目（sha256 与卡 vendor_pin 同值）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/themes/performance-and-capacity.md",
+      "asset": "specs/hard/themes/performance-and-capacity.md",
+      "seed_version": "B7-THEME",
+      "lane": "frontend,backend",
+      "source_path": "packages/cli/seeds/aggregation-manifest.json",
+      "source_sha256": "039b637ccffacdfe3ce30d85e193f4b38928fcdfb16efdc4eb255e35e05af91f",
+      "source_bytes": 31154,
+      "porting_notes": [
+        "B7-THEME 主题聚合（09-05-spec-thematic-reorg Owner 裁定 D1-D8）：2 源聚合为单文档（12 节骨架 + 逐节来源行，内容行双向零差异）；seed_source 指仓内聚合清单 seeds/aggregation-manifest.json（D6），逐源 vendor pin 见清单 performance-and-capacity 条目（sha256 与卡 vendor_pin 同值）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/themes/ui-presentation-and-design.md",
+      "asset": "specs/hard/themes/ui-presentation-and-design.md",
+      "seed_version": "B7-THEME",
+      "lane": "frontend",
+      "source_path": "packages/cli/seeds/aggregation-manifest.json",
+      "source_sha256": "039b637ccffacdfe3ce30d85e193f4b38928fcdfb16efdc4eb255e35e05af91f",
+      "source_bytes": 31154,
+      "porting_notes": [
+        "B7-THEME 主题聚合（09-05-spec-thematic-reorg Owner 裁定 D1-D8）：6 源聚合为单文档（12 节骨架 + 逐节来源行，内容行双向零差异）；seed_source 指仓内聚合清单 seeds/aggregation-manifest.json（D6），逐源 vendor pin 见清单 ui-presentation-and-design 条目（sha256 与卡 vendor_pin 同值）；语言节 4 overlay 逐字节同步（R-J）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/themes/page-composition-and-browser-environment.md",
+      "asset": "specs/hard/themes/page-composition-and-browser-environment.md",
+      "seed_version": "B7-THEME",
+      "lane": "frontend",
+      "source_path": "packages/cli/seeds/aggregation-manifest.json",
+      "source_sha256": "039b637ccffacdfe3ce30d85e193f4b38928fcdfb16efdc4eb255e35e05af91f",
+      "source_bytes": 31154,
+      "porting_notes": [
+        "B7-THEME 主题聚合（09-05-spec-thematic-reorg Owner 裁定 D1-D8）：7 源聚合为单文档（12 节骨架 + 逐节来源行，内容行双向零差异）；seed_source 指仓内聚合清单 seeds/aggregation-manifest.json（D6），逐源 vendor pin 见清单 page-composition-and-browser-environment 条目（sha256 与卡 vendor_pin 同值）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/themes/frontend-state-and-client-data.md",
+      "asset": "specs/hard/themes/frontend-state-and-client-data.md",
+      "seed_version": "B7-THEME",
+      "lane": "frontend",
+      "source_path": "packages/cli/seeds/aggregation-manifest.json",
+      "source_sha256": "039b637ccffacdfe3ce30d85e193f4b38928fcdfb16efdc4eb255e35e05af91f",
+      "source_bytes": 31154,
+      "porting_notes": [
+        "B7-THEME 主题聚合（09-05-spec-thematic-reorg Owner 裁定 D1-D8）：4 源聚合为单文档（12 节骨架 + 逐节来源行，内容行双向零差异）；seed_source 指仓内聚合清单 seeds/aggregation-manifest.json（D6），逐源 vendor pin 见清单 frontend-state-and-client-data 条目（sha256 与卡 vendor_pin 同值）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/themes/value-semantics-and-domain-data.md",
+      "asset": "specs/hard/themes/value-semantics-and-domain-data.md",
+      "seed_version": "B7-THEME",
+      "lane": "frontend",
+      "source_path": "packages/cli/seeds/aggregation-manifest.json",
+      "source_sha256": "039b637ccffacdfe3ce30d85e193f4b38928fcdfb16efdc4eb255e35e05af91f",
+      "source_bytes": 31154,
+      "porting_notes": [
+        "B7-THEME 主题聚合（09-05-spec-thematic-reorg Owner 裁定 D1-D8）：4 源聚合为单文档（12 节骨架 + 逐节来源行，内容行双向零差异）；seed_source 指仓内聚合清单 seeds/aggregation-manifest.json（D6），逐源 vendor pin 见清单 value-semantics-and-domain-data 条目（sha256 与卡 vendor_pin 同值）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/themes/internationalization-and-copywriting.md",
+      "asset": "specs/hard/themes/internationalization-and-copywriting.md",
+      "seed_version": "B7-THEME",
+      "lane": "frontend",
+      "source_path": "packages/cli/seeds/aggregation-manifest.json",
+      "source_sha256": "039b637ccffacdfe3ce30d85e193f4b38928fcdfb16efdc4eb255e35e05af91f",
+      "source_bytes": 31154,
+      "porting_notes": [
+        "B7-THEME 主题聚合（09-05-spec-thematic-reorg Owner 裁定 D1-D8）：2 源聚合为单文档（12 节骨架 + 逐节来源行，内容行双向零差异）；seed_source 指仓内聚合清单 seeds/aggregation-manifest.json（D6），逐源 vendor pin 见清单 internationalization-and-copywriting 条目（sha256 与卡 vendor_pin 同值）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/themes/data-and-transactions.md",
+      "asset": "specs/hard/themes/data-and-transactions.md",
+      "seed_version": "B7-THEME",
+      "lane": "backend",
+      "source_path": "packages/cli/seeds/aggregation-manifest.json",
+      "source_sha256": "039b637ccffacdfe3ce30d85e193f4b38928fcdfb16efdc4eb255e35e05af91f",
+      "source_bytes": 31154,
+      "porting_notes": [
+        "B7-THEME 主题聚合（09-05-spec-thematic-reorg Owner 裁定 D1-D8）：8 源聚合为单文档（12 节骨架 + 逐节来源行，内容行双向零差异）；seed_source 指仓内聚合清单 seeds/aggregation-manifest.json（D6），逐源 vendor pin 见清单 data-and-transactions 条目（sha256 与卡 vendor_pin 同值）；语言节 6 overlay 逐字节同步（R-J）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/themes/integration-and-async-runtime.md",
+      "asset": "specs/hard/themes/integration-and-async-runtime.md",
+      "seed_version": "B7-THEME",
+      "lane": "backend",
+      "source_path": "packages/cli/seeds/aggregation-manifest.json",
+      "source_sha256": "039b637ccffacdfe3ce30d85e193f4b38928fcdfb16efdc4eb255e35e05af91f",
+      "source_bytes": 31154,
+      "porting_notes": [
+        "B7-THEME 主题聚合（09-05-spec-thematic-reorg Owner 裁定 D1-D8）：3 源聚合为单文档（12 节骨架 + 逐节来源行，内容行双向零差异）；seed_source 指仓内聚合清单 seeds/aggregation-manifest.json（D6），逐源 vendor pin 见清单 integration-and-async-runtime 条目（sha256 与卡 vendor_pin 同值）；语言节 6 overlay 逐字节同步（R-J）"
+      ]
+    },
+    {
+      "target": ".pomaster/specs/hard/themes/index.md",
+      "asset": "specs/hard/themes/index.md",
+      "seed_version": "B7-THEME",
+      "lane": "frontend,backend",
+      "source_path": "packages/cli/seeds/aggregation-manifest.json",
+      "source_sha256": "039b637ccffacdfe3ce30d85e193f4b38928fcdfb16efdc4eb255e35e05af91f",
+      "source_bytes": 31154,
+      "porting_notes": [
+        "B7-THEME 导航文档（09-05-spec-thematic-reorg 裁定 D2/OQ-1）：原 FE/BE 两份 index 合并为单一主题导航文档；路由表/激活基线/冲突优先级/协议固定结构按主题文档改写承接（OQ-13 导航层承接；3 张 index 卡锚随迁本文件）；来源 pin 见聚合清单 navigation 条目"
+      ]
     }
   ]
 }

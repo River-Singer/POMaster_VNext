@@ -40,7 +40,7 @@
       "sha256": "732ac305cd16207e4a7bd4c95a6774d1aca33fb4e45cf29991ac0f6475605d6f",
       "bytes": 1894
     },
-    "seeded_spec": ".pomaster/specs/hard/frontend/08-role-responsibility-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/task-governance-and-acceptance.md",
     "seed_manifest": "packages/cli/seeds/manifest.json"
   },
   "id": "POLICY.ROLE.HUMAN_SIGNS_FOR_AI",

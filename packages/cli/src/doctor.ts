@@ -62,7 +62,9 @@ import {
   SKILL_MANIFEST,
 } from "./heavy-entry.js";
 import {
+  countLegacySpecFiles,
   countSeededAssets,
+  legacySpecsHumanLine,
   seededAssetsHumanLine,
   type SeededAssetCounts,
 } from "./seeds.js";
@@ -112,11 +114,17 @@ export interface DoctorResult {
    */
   readonly observation_receipts?: { readonly count: number };
   /**
-   * 播种分面计数（vNext Batch 6 B6e 收口——B6a 未尽事项 1；加法字段不改 ok 语义）：
-   * .pomaster 播种面五分面磁盘实况计数（README 不计）——呈现位非判定（播种件是
-   * 项目可编辑物，计数 ≠ 清单分母对账）；目录缺席 = 0（显式缺席）。
+   * 播种分面计数（vNext Batch 6 B6e 收口——B6a 未尽事项 1；B7-THEME 四分面；
+   * 加法字段不改 ok 语义）：.pomaster 播种面磁盘实况计数（README 不计）——呈现位
+   * 非判定（播种件是项目可编辑物，计数 ≠ 清单分母对账）；目录缺席 = 0（显式缺席）。
    */
   readonly seeded_assets?: SeededAssetCounts;
+  /**
+   * legacy spec 并存检出（B7-THEME / OQ-9 + D3 2026-09-06；加法字段不改 ok 语义）：
+   * 已安装工作区退役目录（specs/hard/frontend|backend）在座播种文件计数——检出式
+   * 收尾呈现（不拦截、不删除用户文件）；目录缺席 = 0（显式缺席）。
+   */
+  readonly legacy_specs_present?: number;
   /**
    * SPEC.* 预植呈现（裁定批 D D2 2026-09-05；加法字段不改 ok 语义）：in_place =
    * truth-index 中 SPEC.* 对象行数 / kit = 包内清单 evidence spec 分母——纯读呈现位
@@ -893,6 +901,14 @@ export async function runDoctor(
   } catch {
     seededAssets = null;
   }
+  // legacy spec 并存检出（B7-THEME / OQ-9 + D3）：纯读加法字段（seeded_assets 同款
+  // 纪律——异常归零不炸 doctor；退役目录缺席 = 0 显式缺席；不拦截不删除）。
+  let legacySpecsPresent = 0;
+  try {
+    legacySpecsPresent = await countLegacySpecFiles(rootDir);
+  } catch {
+    legacySpecsPresent = 0;
+  }
   // SPEC.* 预植呈现（裁定批 D D2）：纯读加法字段（seeded_assets 同款纪律——异常归
   // 缺席不炸 doctor；truth-index 不可读/清单缺席 → 字段缺席显式）。
   let specPreplant: SpecPreplantPresentation | null = null;
@@ -915,6 +931,7 @@ export async function runDoctor(
     ...(sensors !== undefined ? { sensors } : {}),
     observation_receipts: { count: observationCount },
     ...(seededAssets !== null ? { seeded_assets: seededAssets } : {}),
+    legacy_specs_present: legacySpecsPresent,
     ...(specPreplant !== null ? { spec_preplant: specPreplant } : {}),
     ...(baselineConfirmation !== null ? { baseline_confirmation: baselineConfirmation } : {}),
   };
@@ -926,6 +943,7 @@ export async function runDoctor(
     ),
     `  observation receipts: ${observationCount} 条（evidence/observations/ sidecar 分区；0 = 显式缺席）`,
     ...(seededAssets !== null ? [seededAssetsHumanLine(seededAssets)] : []),
+    legacySpecsHumanLine(legacySpecsPresent),
     ...(specPreplant !== null ? [specPreplantHumanLine(specPreplant)] : []),
     ...(baselineConfirmation !== null ? [baselineConfirmationHumanLine(baselineConfirmation)] : []),
   ];

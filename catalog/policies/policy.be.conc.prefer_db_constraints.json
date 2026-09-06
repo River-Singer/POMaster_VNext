@@ -36,7 +36,7 @@
       "sha256": "6141612e1135cc67ccd9d47553ea5fa7b9c00e05b6e50706f8e117c80d3b8d95",
       "bytes": 1308
     },
-    "seeded_spec": ".pomaster/specs/hard/backend/21-concurrency-locking-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/data-and-transactions.md",
     "seed_manifest": "packages/cli/seeds/manifest.json",
     "d3_review": {
       "excluded_from_batch": "B6C",

@@ -47,13 +47,13 @@ import type { InitFileReport } from "./init.js";
 import { ensureParentDir, toPosix } from "./store-layout.js";
 
 /**
- * 播种目录 allowlist（B6b-I 守卫收窄；B6c stacks 子目录扩展；B6f 前端族扩展）：kernel
- * paths.ts 12 播种登记目录的 POSIX 树内词形（相对 `.pomaster/`）+ stacks 播种叶目录
- * （18 slug——B6c stacks 子目录守卫 ADR，候选 ①显式叶登记：精确匹配机制零改动，
- * allowlist 保持封闭集合；未登记 slug 一律拒绝，新 slug 属内容演进批次。B6f 起新增
- * 前端族 slug（vue3/antdesign/geist——09-05-overlay-asset-batch 实战栈首批；B6G 增补
- * css——css 键已按裁决 D8 选型并建 overlay，pending 解除）。控制平面目录
- * （state/truth/evidence/runtime/sources/…）不可播种。
+ * 播种目录 allowlist（B6b-I 守卫收窄；B6c stacks 子目录扩展；B6f 前端族扩展；
+ * B7-THEME themes 位 + FE/BE 平铺位退役）：kernel paths.ts 播种登记目录的 POSIX
+ * 树内词形（相对 `.pomaster/`）+ stacks/themes 播种叶目录（候选 ①显式叶登记：精确
+ * 匹配机制零改动，allowlist 保持封闭集合；未登记 slug 一律拒绝，新 slug 属内容演进
+ * 批次。B7-THEME 起 specs/hard/themes 为主题文档位；specs/hard/frontend|backend 退役
+ * 出 allowlist——09-05-spec-thematic-reorg D3，旧安装并存由 legacy_specs_present
+ * 检出呈现）。控制平面目录（state/truth/evidence/runtime/sources/…）不可播种。
  */
 export const STACK_SEED_SLUGS: readonly string[] = [
   "antdesign",
@@ -84,8 +84,7 @@ export const SEEDABLE_STORE_DIRS: readonly string[] = [
   "baseline/platform",
   "specs",
   "specs/hard",
-  "specs/hard/frontend",
-  "specs/hard/backend",
+  "specs/hard/themes",
   "specs/hard/stacks",
   // B6c stacks 播种叶目录（STACK_SEED_SLUGS 显式登记——slug 集 == 种子清单 stacks
   // 分母派生集合，对账由 seeds.spec 测试钉）。
@@ -205,11 +204,11 @@ async function writeFileExact(path: string, content: string): Promise<void> {
 
 /**
  * 播种分面词形（doctor/status 呈现键；词形 = 播种分面点名，与 SEEDABLE_STORE_DIRS
- * 的 specs/baseline 两子树一一对应——evidence 落位由 B6e 补齐五分面全景）。
+ * 的 specs/baseline 两子树对应——B7-THEME 起 themes/stacks/evidence/baseline 四分面；
+ * FE/BE 平铺分面随 D3 退役）。
  */
 export const SEEDED_ASSET_FACETS = [
-  "specs_hard_frontend",
-  "specs_hard_backend",
+  "specs_hard_themes",
   "specs_hard_stacks",
   "specs_evidence",
   "baseline",
@@ -219,8 +218,7 @@ export type SeededAssetFacet = (typeof SEEDED_ASSET_FACETS)[number];
 
 /** 播种分面计数（磁盘实况呈现位——非治理判定；目录缺席 = 0 显式缺席）。 */
 export interface SeededAssetCounts {
-  readonly specs_hard_frontend: number;
-  readonly specs_hard_backend: number;
+  readonly specs_hard_themes: number;
   readonly specs_hard_stacks: number;
   readonly specs_evidence: number;
   readonly baseline: number;
@@ -228,8 +226,7 @@ export interface SeededAssetCounts {
 
 /** 分面 → .pomaster/ 树内目录（相对词形）。 */
 const FACET_DIR: Record<SeededAssetFacet, string> = {
-  specs_hard_frontend: "specs/hard/frontend",
-  specs_hard_backend: "specs/hard/backend",
+  specs_hard_themes: "specs/hard/themes",
   specs_hard_stacks: "specs/hard/stacks",
   specs_evidence: "specs/evidence",
   baseline: "baseline",
@@ -276,9 +273,51 @@ export async function countSeededAssets(rootDir: string): Promise<SeededAssetCou
 /** 播种分面计数的 human 行词形（doctor/status 共用——单一实现禁两套口径漂移）。 */
 export function seededAssetsHumanLine(counts: SeededAssetCounts): string {
   return (
-    `  seeded assets: frontend ${counts.specs_hard_frontend} / backend ${counts.specs_hard_backend}` +
-    ` / stacks ${counts.specs_hard_stacks} / evidence ${counts.specs_evidence}` +
+    `  seeded assets: themes ${counts.specs_hard_themes} / stacks ${counts.specs_hard_stacks}` +
+    ` / evidence ${counts.specs_evidence}` +
     ` / baseline ${counts.baseline}` +
-    "（.pomaster 播种面五分面计数；README 不计；0=显式缺席）"
+    "（.pomaster 播种面四分面计数；README 不计；0=显式缺席）"
+  );
+}
+
+/**
+ * legacy spec 并存检出（B7-THEME / OQ-9 + D3——检出式收尾，R-L 判卷精神）：统计
+ * 已安装工作区 specs/hard/frontend|backend 两退役目录在座的播种文件数（manifest 无
+ * 对应但在座的 legacy spec 文件；README.md 预铺物不计）。纯读呈现位——不拦截、不
+ * 删除用户文件（播种件项目可编辑、AI 禁静默覆盖纪律不破）；目录缺席 = 0 显式缺席。
+ */
+export async function countLegacySpecFiles(rootDir: string): Promise<number> {
+  const { readdir } = await import("node:fs/promises");
+  const { join } = await import("node:path");
+  const pomasterDir = toPosix(buildStorePaths(rootDir).pomasterDir);
+  const legacyDirs = ["specs/hard/frontend", "specs/hard/backend"];
+  async function countFiles(relative: string): Promise<number> {
+    const absolute = join(pomasterDir, ...relative.split("/"));
+    let entries;
+    try {
+      entries = await readdir(absolute, { withFileTypes: true });
+    } catch {
+      return 0; // 目录缺席 = 0（显式缺席）。
+    }
+    let count = 0;
+    for (const entry of entries) {
+      if (entry.isFile()) {
+        if (entry.name !== "README.md") count += 1;
+      } else if (entry.isDirectory()) {
+        count += await countFiles(`${relative}/${entry.name}`);
+      }
+    }
+    return count;
+  }
+  const values = await Promise.all(legacyDirs.map((dir) => countFiles(dir)));
+  return values.reduce((sum, n) => sum + n, 0);
+}
+
+/** legacy spec 检出的 human 行词形（doctor/status 共用——单一实现）。 */
+export function legacySpecsHumanLine(count: number): string {
+  return (
+    `  legacy specs present: ${count}` +
+    "（B7-THEME 退役目录 specs/hard/frontend|backend 在座播种文件；检出呈现——纯读不拦不删，" +
+    "建议按 themes/ 主题文档重读）"
   );
 }

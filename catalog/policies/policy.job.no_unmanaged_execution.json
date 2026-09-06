@@ -39,7 +39,7 @@
       "sha256": "36af3b4466b4e617a9c552a404d98ab74604752b7410e15756d7f132394fb980",
       "bytes": 1351
     },
-    "seeded_spec": ".pomaster/specs/hard/backend/25-async-job-scheduler-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/integration-and-async-runtime.md",
     "seed_manifest": "packages/cli/seeds/manifest.json"
   },
   "id": "POLICY.JOB.NO_UNMANAGED_EXECUTION",

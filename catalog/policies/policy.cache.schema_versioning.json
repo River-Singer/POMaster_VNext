@@ -30,7 +30,7 @@
       "sha256": "073da5821658adfc0580798873fde95c49dc9d993a63949b3b1543a9c0e18a11",
       "bytes": 1316
     },
-    "seeded_spec": ".pomaster/specs/hard/backend/23-cache-redis-consistency-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/data-and-transactions.md",
     "seed_manifest": "packages/cli/seeds/manifest.json",
     "d3_review": {
       "excluded_from_batch": "B6C",

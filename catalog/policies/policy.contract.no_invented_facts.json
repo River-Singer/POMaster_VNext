@@ -38,7 +38,7 @@
       "sha256": "fa8914b29dbf7af25c8128aa1b8936fd658e37854e0a4f457175e2e3c82c3a03",
       "bytes": 2691
     },
-    "seeded_spec": ".pomaster/specs/hard/frontend/01-development-checklist-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/task-governance-and-acceptance.md",
     "seed_manifest": "packages/cli/seeds/manifest.json"
   },
   "id": "POLICY.CONTRACT.NO_INVENTED_FACTS",

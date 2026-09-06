@@ -39,7 +39,7 @@
       "sha256": "b0fcecee17a3acdb11f59f065ae7cac269cc292e999dd39444e5293565d38fe1",
       "bytes": 1263
     },
-    "seeded_spec": ".pomaster/specs/hard/backend/26-engineering-tooling-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/engineering-toolchain-and-dependencies.md",
     "seed_manifest": "packages/cli/seeds/manifest.json"
   },
   "id": "POLICY.TOOL.NO_HAND_EDIT_GENERATED_NO_CI_DRIFT",

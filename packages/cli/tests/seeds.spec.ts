@@ -11,8 +11,8 @@
  * SEEDABLE_STORE_DIRS 12 播种目录 allowlist 禁落盘——控制平面 kernel 登记目录同样
  * 拒绝 + 路径词形卫生 fail-closed throw + allowlist ⊆ kernel 登记派生集合对账）、
  * fresh 临时工程端到端（runInit 注入清单：init 后种子在位 → 重跑零变化 → 手改种子
- * 文件后重跑仍零变化）、B6G 清单现状 pin（缺省装载 160 份播种件 = FE 46 + BE 33 +
- * stacks 36 + baseline 25 + evidence 20，B6b 两批 + B6C + B6D + B6E + B6F + B6G 七批合并清单；
+ * 文件后重跑仍零变化）、B7-THEME 清单现状 pin（缺省装载 102 份播种件 = themes 21 +
+ * stacks 36 + baseline 25 + evidence 20，B6C + B6D + B6E + B6F + B6G + B7-THEME 六批合并清单；
  * stacks slug 三面单源
  * 对账 + 未登记 slug 守卫——B6c stacks 子目录 ADR 候选①显式叶登记；baseline UNKNOWN
  * 起步端到端——init 后在位可编辑）。
@@ -36,6 +36,13 @@ import { derivePathsTsStoreDirs } from "../src/layout.js";
 
 let dir: string;
 
+const REPO_SEEDS = join(
+  fileURLToPath(new URL("../../../", import.meta.url)),
+  "packages",
+  "cli",
+  "seeds",
+);
+
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), "pomaster-cli-seeds-"));
 });
@@ -58,7 +65,7 @@ const DEMO_ENTRIES: readonly SeedEntry[] = [
     content: "# Specs\n\nExpected ≠ Actual；Authority precedence 见宪法。\n",
   },
   {
-    path: ".pomaster/specs/hard/frontend/01-demo-protocol.md",
+    path: ".pomaster/specs/hard/themes/01-demo-protocol.md",
     content: "# 01 演示协议\n\n## MUST\n\n- 演示用种子条目。\n",
   },
 ];
@@ -99,7 +106,7 @@ describe("seedProjectAssets 引擎三语义（B6a 红线三钉）", () => {
     expect(files.map((f) => f.action)).toEqual(["seeded", "seeded", "seeded"]);
     expect(read(".pomaster/baseline/manifest.yaml")).toBe(DEMO_ENTRIES[0]!.content);
     expect(read(".pomaster/specs/index.md")).toBe(DEMO_ENTRIES[1]!.content);
-    expect(read(".pomaster/specs/hard/frontend/01-demo-protocol.md")).toBe(
+    expect(read(".pomaster/specs/hard/themes/01-demo-protocol.md")).toBe(
       DEMO_ENTRIES[2]!.content,
     );
   });
@@ -186,9 +193,10 @@ describe("seedProjectAssets 目录守卫（R4 红线 + B6b-I 播种 allowlist �
         true,
       );
     }
-    // 收窄口径：12 播种目录（baseline 根+四分区、specs 根+hard 根+三分区+acceptance+
-    // evidence）+ stacks 播种叶目录（B6c 后端 14 slug + B6f 前端 3 slug + B6G css）。
-    expect(SEEDABLE_STORE_DIRS).toHaveLength(12 + STACK_SEED_SLUGS.length);
+    // 收窄口径：11 播种目录（baseline 根+四分区、specs 根+hard 根+themes+acceptance+
+    // evidence——B7-THEME 起 themes 替位 frontend/backend）+ stacks 播种叶目录
+    // （B6c 后端 14 slug + B6f 前端 3 slug + B6G css）。
+    expect(SEEDABLE_STORE_DIRS).toHaveLength(11 + STACK_SEED_SLUGS.length);
     for (const slug of STACK_SEED_SLUGS) {
       expect(SEEDABLE_STORE_DIRS).toContain(`specs/hard/stacks/${slug}`);
     }
@@ -313,7 +321,7 @@ describe("runInit 步骤 4.6 播种端到端（fresh 临时工程 + 注入清单
     // 3) 手改一个种子文件（项目就地个性化）→ 重跑仍零变化、改写保留、零告警。
     const edited = "# 项目 Owner 改写过的协议\n\nMUST: 只保留我的版本。\n";
     writeFileSync(
-      join(dir, ".pomaster", "specs", "hard", "frontend", "01-demo-protocol.md"),
+      join(dir, ".pomaster", "specs", "hard", "themes", "01-demo-protocol.md"),
       edited,
       "utf8",
     );
@@ -322,29 +330,27 @@ describe("runInit 步骤 4.6 播种端到端（fresh 临时工程 + 注入清单
     expect(third.result.change).toBe("NO_CHANGE");
     expect(third.warnings).toEqual([]);
     expect(
-      readFileSync(join(dir, ".pomaster", "specs", "hard", "frontend", "01-demo-protocol.md"), "utf8"),
+      readFileSync(join(dir, ".pomaster", "specs", "hard", "themes", "01-demo-protocol.md"), "utf8"),
     ).toBe(edited);
     expect(
-      third.result.files.find((f) => f.file === ".pomaster/specs/hard/frontend/01-demo-protocol.md")
+      third.result.files.find((f) => f.file === ".pomaster/specs/hard/themes/01-demo-protocol.md")
         ?.action,
     ).toBe("preserved");
   });
 
-  it("B6G 清单现状 pin：缺省装载 160 份播种件（FE 46 + BE 33 + stacks 36 + baseline 25 + evidence 20；七批合并全量分母）——目标全落播种 allowlist 面且分面形态正确", () => {
+  it("B7-THEME 清单现状 pin：缺省装载 102 份播种件（themes 21 + stacks 36 + baseline 25 + evidence 20；六批合并全量分母）——目标全落播种 allowlist 面且分面形态正确", () => {
     const entries = loadSeedManifestEntries();
-    expect(entries).toHaveLength(160);
-    const fe = entries.filter((e) => e.path.startsWith(".pomaster/specs/hard/frontend/"));
-    const be = entries.filter((e) => e.path.startsWith(".pomaster/specs/hard/backend/"));
+    expect(entries).toHaveLength(102);
+    const themes = entries.filter((e) => e.path.startsWith(".pomaster/specs/hard/themes/"));
     const stacks = entries.filter((e) => e.path.startsWith(".pomaster/specs/hard/stacks/"));
     const baseline = entries.filter((e) => e.path.startsWith(".pomaster/baseline/"));
     const evidence = entries.filter((e) => e.path.startsWith(".pomaster/specs/evidence/"));
-    expect(fe).toHaveLength(46);
-    expect(be).toHaveLength(33);
+    expect(themes).toHaveLength(21);
     expect(stacks).toHaveLength(36);
     expect(baseline).toHaveLength(25);
     expect(evidence).toHaveLength(20);
     for (const entry of entries) {
-      const inSpecs = /^\.pomaster\/specs\/hard\/(frontend|backend|stacks\/[^/]+)\//.test(
+      const inSpecs = /^\.pomaster\/specs\/hard\/(themes|stacks\/[^/]+)\//.test(
         entry.path,
       );
       const inBaseline =
@@ -378,17 +384,17 @@ describe("runInit 步骤 4.6 播种端到端（fresh 临时工程 + 注入清单
       // marker-free：播种件字节不带生成标记（引擎写入面 zero-marker 的内容侧前提）。
       expect(entry.content.includes(GENERATED_MARKER)).toBe(false);
     }
-    // FE 编号连续性：01..45 逐一在册 + index.md 在册（B6b 全量分母钉）。
-    for (let n = 1; n <= 45; n += 1) {
-      const prefix = `.pomaster/specs/hard/frontend/${String(n).padStart(2, "0")}-`;
-      expect(fe.some((e) => e.path.startsWith(prefix)), prefix).toBe(true);
-    }
-    // BE 编号连续性：01..32 逐一在册 + index.md 在册（B6c 分母钉）。
-    for (let n = 1; n <= 32; n += 1) {
-      const prefix = `.pomaster/specs/hard/backend/${String(n).padStart(2, "0")}-`;
-      expect(be.some((e) => e.path.startsWith(prefix)), prefix).toBe(true);
-    }
-    expect(be.some((e) => e.path.endsWith("/index.md")), "BE index.md 在册").toBe(true);
+    // themes：21 targets == 聚合清单（20 主题 slug + index.md；B7-THEME 分母钉，映射单源）。
+    const agg = JSON.parse(
+      readFileSync(join(REPO_SEEDS, "aggregation-manifest.json"), "utf8"),
+    ) as { themes: Array<{ target: string }>; navigation: { target: string } };
+    const expectedTargets = [
+      ...agg.themes.map((t) => t.target),
+      agg.navigation.target,
+    ].sort();
+    expect(
+      entries.filter((e) => e.path.startsWith(".pomaster/specs/hard/themes/")).map((e) => e.path).sort(),
+    ).toEqual(expectedTargets);
     // stacks：18 slug × (index + overlay) 恰好划分 36（B6c 后端 14 + B6f 前端 3 + B6G css）。
     expect(stacks.filter((e) => e.path.endsWith("/index.md"))).toHaveLength(18);
     expect(stacks.filter((e) => e.path.endsWith("-overlay.md"))).toHaveLength(18);
@@ -407,15 +413,15 @@ describe("runInit 步骤 4.6 播种端到端（fresh 临时工程 + 注入清单
     }
   });
 
-  it("缺省（不注入）init：160 份播种件在位（seeded 报告 + 幂等重跑全 preserved）", async () => {
+  it("缺省（不注入）init：102 份播种件在位（seeded 报告 + 幂等重跑全 preserved）", async () => {
     const outcome = await runInit(dir);
     expect(outcome.ok).toBe(true);
     const seeded = outcome.result.files.filter((f) => f.action === "seeded");
-    expect(seeded).toHaveLength(160);
-    expect(existsSync(join(dir, ".pomaster", "specs", "hard", "frontend", "01-development-checklist-protocol.md"))).toBe(true);
-    expect(existsSync(join(dir, ".pomaster", "specs", "hard", "frontend", "index.md"))).toBe(true);
-    expect(existsSync(join(dir, ".pomaster", "specs", "hard", "backend", "22-idempotency-protocol.md"))).toBe(true);
-    expect(existsSync(join(dir, ".pomaster", "specs", "hard", "backend", "index.md"))).toBe(true);
+    expect(seeded).toHaveLength(102);
+    expect(existsSync(join(dir, ".pomaster", "specs", "hard", "themes", "task-governance-and-acceptance.md"))).toBe(true);
+    expect(existsSync(join(dir, ".pomaster", "specs", "hard", "themes", "index.md"))).toBe(true);
+    expect(existsSync(join(dir, ".pomaster", "specs", "hard", "themes", "data-and-transactions.md"))).toBe(true);
+    expect(existsSync(join(dir, ".pomaster", "specs", "hard", "themes", "testing-and-verification.md"))).toBe(true);
     expect(existsSync(join(dir, ".pomaster", "specs", "hard", "stacks", "redis", "redis-cache-overlay.md"))).toBe(true);
     expect(existsSync(join(dir, ".pomaster", "specs", "hard", "stacks", "java", "index.md"))).toBe(true);
     // B6f 前端族抽查：vue3 index/overlay 落位。
@@ -445,7 +451,7 @@ describe("runInit 步骤 4.6 播种端到端（fresh 临时工程 + 注入清单
     const second = await runInit(dir);
     expect(second.ok).toBe(true);
     expect(second.result.change).toBe("NO_CHANGE");
-    expect(second.result.files.filter((f) => f.action === "preserved")).toHaveLength(160);
+    expect(second.result.files.filter((f) => f.action === "preserved")).toHaveLength(102);
   });
 
   it("B6d baseline UNKNOWN 起步端到端：init 后在位可编辑——Owner 回填选型后重跑 init 不覆盖、零告警（可编辑性铁律在 baseline 面成立）", async () => {

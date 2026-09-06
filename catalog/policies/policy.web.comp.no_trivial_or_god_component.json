@@ -38,7 +38,7 @@
       "sha256": "5ed49550278ae263d7b4f3914c20c31a3005dc101d45bbd48c025a444f7441c4",
       "bytes": 1964
     },
-    "seeded_spec": ".pomaster/specs/hard/frontend/24-component-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/ui-presentation-and-design.md",
     "seed_manifest": "packages/cli/seeds/manifest.json"
   },
   "id": "POLICY.WEB.COMP.NO_TRIVIAL_OR_GOD_COMPONENT",

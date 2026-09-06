@@ -39,7 +39,7 @@
       "sha256": "add6e21ffa5dd45940dda725e8d4e234c9d2a49775139c895cc7ad5f7caf7bf0",
       "bytes": 1343
     },
-    "seeded_spec": ".pomaster/specs/hard/backend/02-project-structure-governance-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/architecture-and-module-boundaries.md",
     "seed_manifest": "packages/cli/seeds/manifest.json"
   },
   "id": "POLICY.STRUCT.REUSE_PROVEN_STRUCTURE",

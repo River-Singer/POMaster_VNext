@@ -39,7 +39,7 @@
       "sha256": "b0d176f1f2d19cd14739ff4de39d77659036516ab1377b83c261ecc53a2de2dd",
       "bytes": 1177
     },
-    "seeded_spec": ".pomaster/specs/hard/backend/05-task-workflow-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/task-governance-and-acceptance.md",
     "seed_manifest": "packages/cli/seeds/manifest.json"
   },
   "id": "POLICY.WF.TASK_FACTS_PRECONFIRM",

@@ -39,7 +39,7 @@
       "sha256": "5df3a2ddcd1140b2e62dd80f547cf6c0197c44a91ebbdda02ded44bcaefed351",
       "bytes": 1756
     },
-    "seeded_spec": ".pomaster/specs/hard/frontend/39-copywriting-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/internationalization-and-copywriting.md",
     "seed_manifest": "packages/cli/seeds/manifest.json"
   },
   "id": "POLICY.WEB.COPY.ACTION_OBJECT_CLARITY",

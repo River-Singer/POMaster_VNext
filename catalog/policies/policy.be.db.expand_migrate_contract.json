@@ -36,7 +36,7 @@
       "sha256": "e7d0b660673dc1978653c39c9efcc7ad7d9b2809c4a88040a6fcf74839bc82c0",
       "bytes": 1409
     },
-    "seeded_spec": ".pomaster/specs/hard/backend/18-database-schema-migration-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/data-and-transactions.md",
     "seed_manifest": "packages/cli/seeds/manifest.json",
     "d3_review": {
       "excluded_from_batch": "B6C",

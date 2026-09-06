@@ -403,7 +403,9 @@ export {
   SEEDED_ASSET_FACETS,
   SEEDABLE_STORE_DIRS,
   STACK_SEED_SLUGS,
+  countLegacySpecFiles,
   countSeededAssets,
+  legacySpecsHumanLine,
   seededAssetsHumanLine,
   seedProjectAssets,
 } from "./seeds.js";

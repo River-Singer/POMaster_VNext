@@ -39,7 +39,7 @@
       "sha256": "646dcbd7035d43d84ca592218a356c08a4baca36619109797322d90ba3d99b73",
       "bytes": 2550
     },
-    "seeded_spec": ".pomaster/specs/hard/frontend/03-acceptance-gate-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/task-governance-and-acceptance.md",
     "seed_manifest": "packages/cli/seeds/manifest.json"
   },
   "id": "POLICY.GATE.P0_NON_BYPASSABLE",

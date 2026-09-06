@@ -114,10 +114,12 @@ export const SOURCES_INDEX_RELATIVE = relOf(KERNEL_EMPTY_ROOT.sourcesIndexPath);
 
 /**
  * .pomaster/baseline/{,frontend,backend,data,platform}/ 与
- * .pomaster/specs/{,hard,hard/frontend,hard/backend,hard/stacks,acceptance,evidence}/
+ * .pomaster/specs/{,hard,hard/themes,hard/stacks,acceptance,evidence}/
  * （09-04 vNext Batch 6 B6a：播种面目录登记——PRD §3 目录树；kernel paths.ts 已登记，
  * 本常量从 kernel 派生（单一来源纪律）。播种件落盘语义 = seed-once-missing-only
  * （seeds.ts），目录守卫拒绝未登记父目录（R4 红线：未登记禁落盘）。
+ * B7-THEME 起 specs/hard 下主题位 = themes（FE/BE 平铺位退役——09-05-spec-thematic-reorg
+ * D3，旧安装并存由 doctor/status legacy_specs_present 检出呈现）。
  */
 export const BASELINE_DIR_RELATIVE = relOf(KERNEL_EMPTY_ROOT.baselineDir);
 export const BASELINE_FRONTEND_DIR_RELATIVE = relOf(KERNEL_EMPTY_ROOT.baselineFrontendDir);
@@ -126,8 +128,12 @@ export const BASELINE_DATA_DIR_RELATIVE = relOf(KERNEL_EMPTY_ROOT.baselineDataDi
 export const BASELINE_PLATFORM_DIR_RELATIVE = relOf(KERNEL_EMPTY_ROOT.baselinePlatformDir);
 export const SPECS_DIR_RELATIVE = relOf(KERNEL_EMPTY_ROOT.specsDir);
 export const SPECS_HARD_DIR_RELATIVE = relOf(KERNEL_EMPTY_ROOT.specsHardDir);
-export const SPECS_HARD_FRONTEND_DIR_RELATIVE = relOf(KERNEL_EMPTY_ROOT.specsHardFrontendDir);
-export const SPECS_HARD_BACKEND_DIR_RELATIVE = relOf(KERNEL_EMPTY_ROOT.specsHardBackendDir);
+export const SPECS_HARD_THEMES_DIR_RELATIVE = relOf(KERNEL_EMPTY_ROOT.specsHardThemesDir);
+/** B7-THEME 退役位（不再播种/预铺；legacy 检出呈现的扫描目录）。 */
+export const SPECS_HARD_LEGACY_DIRS_RELATIVE = [
+  ".pomaster/specs/hard/frontend",
+  ".pomaster/specs/hard/backend",
+] as const;
 export const SPECS_HARD_STACKS_DIR_RELATIVE = relOf(KERNEL_EMPTY_ROOT.specsHardStacksDir);
 export const SPECS_ACCEPTANCE_DIR_RELATIVE = relOf(KERNEL_EMPTY_ROOT.specsAcceptanceDir);
 export const SPECS_EVIDENCE_DIR_RELATIVE = relOf(KERNEL_EMPTY_ROOT.specsEvidenceDir);

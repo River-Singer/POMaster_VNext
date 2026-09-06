@@ -36,7 +36,7 @@
       "sha256": "60a660730a82a4f911bc6c18d5f6808a320f722df27d397a4e4b13835111610d",
       "bytes": 1332
     },
-    "seeded_spec": ".pomaster/specs/hard/backend/19-query-index-sql-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/data-and-transactions.md",
     "seed_manifest": "packages/cli/seeds/manifest.json",
     "d3_review": {
       "excluded_from_batch": "B6C",

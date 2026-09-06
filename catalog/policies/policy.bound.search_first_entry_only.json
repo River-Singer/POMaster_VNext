@@ -39,7 +39,7 @@
       "sha256": "95a917cfe3c929b5a0a40de5f6215b25ef4a358a4e7f1c7cb2daa08defcf6bcc",
       "bytes": 1224
     },
-    "seeded_spec": ".pomaster/specs/hard/backend/03-directory-boundary-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/architecture-and-module-boundaries.md",
     "seed_manifest": "packages/cli/seeds/manifest.json"
   },
   "id": "POLICY.BOUND.SEARCH_FIRST_ENTRY_ONLY",

@@ -39,7 +39,7 @@
       "sha256": "fb86312eaadaec81d21e20abfb979e0127138002731ddc4fb1ead9ec90cd10bb",
       "bytes": 1280
     },
-    "seeded_spec": ".pomaster/specs/hard/backend/07-evidence-acceptance-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/task-governance-and-acceptance.md",
     "seed_manifest": "packages/cli/seeds/manifest.json"
   },
   "id": "POLICY.EVID.ACCEPTANCE_BINDS_VERIFIABLE_EVIDENCE",

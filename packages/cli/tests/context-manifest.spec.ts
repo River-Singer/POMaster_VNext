@@ -6,7 +6,7 @@
  * - 落盘位 `.pomaster/state/contexts/<task-id>.context.json`（无 taskRef → role 键名
  *   ——§58 context_recompile_per_role 词形；ADR 留痕）；layout 目录口径不在此锚死
  *   数字——全量登记见 kernel paths.ts 增量注记与 cli layout.ts LAYOUT_DIRECTORIES
- *   （现口径 41，B6a 播种目录登记后；D8-2，封堵 28→41 式口径漂移再现）；
+ *   （现口径 40，B7-THEME themes 替位 FE/BE 平铺位后；D8-2，封堵口径漂移再现）；
  * - manifest 字段：task_ref / generated_at_seq（store seq，A4 零墙钟）/ compiler
  *   （tool id + kernel 版本锚）/ inputs_fingerprint / 五分区 entries（每条 ref+reason）
  *   / catalog_source；编译产物非第二配置源（宪法 §19）——禁手改只读服务面；
@@ -181,7 +181,7 @@ describe("context manifest 落盘（R2/D7）", () => {
     expect(outcomeStaleState(await runContextCompile(root, "frontend", undefined, { change: "TASK.T0087" }))).toBe("fresh");
   });
 
-  // CI windows 慢 runner 实证：本例跑完整 init（160 seeds + SPEC 预植）+ 二次编译，5s 默认超时不够（裁决批 H 终验）。
+  // CI windows 慢 runner 实证：本例跑完整 init（102 seeds + SPEC 预植）+ 二次编译，5s 默认超时不够（裁决批 H 终验）。
   it("指纹漂移 → STALE_GROUNDING 显式 warning + 覆盖写（不静默覆盖）", { timeout: 60_000 }, async () => {
     await initStore();
     await runContextCompile(root, "frontend", undefined, { change: "TASK.T0087" });

@@ -30,7 +30,7 @@
       "sha256": "c791451de0be3aa0629fd562e2b43cc54066e4b10d786264fa7a333c561ef23a",
       "bytes": 1410
     },
-    "seeded_spec": ".pomaster/specs/hard/backend/31-runtime-deployment-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/integration-and-async-runtime.md",
     "seed_manifest": "packages/cli/seeds/manifest.json",
     "d3_review": {
       "excluded_from_batch": "B6C",

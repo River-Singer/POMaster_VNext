@@ -38,7 +38,7 @@
       "sha256": "477dc049d1e1ec72898a07615655ee374924c7796a0210741e8c97474644a4d6",
       "bytes": 2831
     },
-    "seeded_spec": ".pomaster/specs/hard/frontend/20-testing-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/testing-and-verification.md",
     "seed_manifest": "packages/cli/seeds/manifest.json"
   },
   "id": "POLICY.TEST.PYRAMID_AND_CI_MATRIX",

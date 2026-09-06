@@ -38,7 +38,7 @@
       "sha256": "68ed4e126042eee191f071786d58983b3b2df94a826a13b50fc52aaa6536c7fa",
       "bytes": 14541
     },
-    "seeded_spec": ".pomaster/specs/hard/frontend/38-internationalization-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/internationalization-and-copywriting.md",
     "seed_manifest": "packages/cli/seeds/manifest.json"
   },
   "id": "POLICY.WEB.I18N.RAW_VALUE_FOR_COMPUTE",

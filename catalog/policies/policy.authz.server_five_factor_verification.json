@@ -37,7 +37,7 @@
       "sha256": "d85a431b682a3a7c3dd4a6ee1f67fc375b54edb4a8e7fe98d283103b64a6b41e",
       "bytes": 1378
     },
-    "seeded_spec": ".pomaster/specs/hard/backend/17-permission-authorization-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/permission-and-authorization.md",
     "seed_manifest": "packages/cli/seeds/manifest.json",
     "d3_review": {
       "excluded_from_batch": "B6C",

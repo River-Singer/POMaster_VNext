@@ -30,7 +30,7 @@
       "sha256": "726502f4e5a5dcf2e8076fafa943b33de4b7ab9bd0fc2d8551479b43385e7636",
       "bytes": 1394
     },
-    "seeded_spec": ".pomaster/specs/hard/backend/01-architecture-governance-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/architecture-and-module-boundaries.md",
     "seed_manifest": "packages/cli/seeds/manifest.json",
     "d3_review": {
       "excluded_from_batch": "B6C",

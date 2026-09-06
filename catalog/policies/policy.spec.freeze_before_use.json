@@ -32,7 +32,7 @@
       "sha256": "37fc443ce1f90eaa2584a82e12300d8281760332ec69d55a52b26cb22a2b2375",
       "bytes": 22578
     },
-    "seeded_spec": ".pomaster/specs/hard/frontend/index.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/index.md",
     "seed_manifest": "packages/cli/seeds/manifest.json",
     "d3_review": {
       "excluded_from_batch": "B6B-2",

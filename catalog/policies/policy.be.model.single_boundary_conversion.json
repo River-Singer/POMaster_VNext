@@ -36,7 +36,7 @@
       "sha256": "21cdd88fac93c9dc834a51d62978b51453ca02eca68f223859aeca0ada99c3f2",
       "bytes": 1288
     },
-    "seeded_spec": ".pomaster/specs/hard/backend/15-data-model-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/data-and-transactions.md",
     "seed_manifest": "packages/cli/seeds/manifest.json",
     "d3_review": {
       "excluded_from_batch": "B6C",

@@ -43,7 +43,7 @@ describe("layout 预铺清单守卫（宪法 §2/§24/§34）", () => {
     }
   });
 
-  it("全 wired 单状态 + activation_hint/constitution_source 必填在场（Owner 修订形态；B6a 播种面两子树登记后 41 目录）", () => {
+  it("全 wired 单状态 + activation_hint/constitution_source 必填在场（Owner 修订形态；B7-THEME themes 替位 FE/BE 平铺位后 40 目录）", () => {
     expect(LAYOUT_STATUSES).toEqual(["wired"]);
     for (const spec of LAYOUT_DIRECTORIES) {
       expect(spec.status, spec.path).toBe(LAYOUT_STATUS_WIRED);
@@ -56,7 +56,7 @@ describe("layout 预铺清单守卫（宪法 §2/§24/§34）", () => {
         `${spec.path} 的 constitution_source 必须指向宪法文档`,
       ).toBe(true);
     }
-    expect(LAYOUT_DIRECTORIES.length).toBe(41);
+    expect(LAYOUT_DIRECTORIES.length).toBe(40);
   });
 
   it("宪法 §2 全树逐平面在册（config/state 九文件位/truth/evidence 三区/executions/traces/runtime 四区/discovery/memory/production 六区）+ §3A sources 平面增量（Batch 1 R3/D2）+ Batch 2 D7/C9 增量平面 + Batch 6 B6a 播种面两子树（baseline 四分区 + specs 五分区，12 目录）", () => {
@@ -86,6 +86,7 @@ describe("layout 预铺清单守卫（宪法 §2/§24/§34）", () => {
       "production/diagnoses",
       "production/self-improvement",
       // Batch 6 B6a 播种面两子树（PRD §3 目录树逐字；kernel paths.ts 已登记）。
+      // B7-THEME：specs/hard 下 themes 替位 frontend/backend（09-05-spec-thematic-reorg D3）。
       "baseline",
       "baseline/frontend",
       "baseline/backend",
@@ -93,8 +94,7 @@ describe("layout 预铺清单守卫（宪法 §2/§24/§34）", () => {
       "baseline/platform",
       "specs",
       "specs/hard",
-      "specs/hard/frontend",
-      "specs/hard/backend",
+      "specs/hard/themes",
       "specs/hard/stacks",
       "specs/acceptance",
       "specs/evidence",

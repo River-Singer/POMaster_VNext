@@ -30,7 +30,7 @@
       "sha256": "26a6a23928fc24338f69fb34199ecdea5f654e21534a76ac53a7c0b78030b3c8",
       "bytes": 1359
     },
-    "seeded_spec": ".pomaster/specs/hard/backend/32-release-versioning-rollback-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/release-and-feature-flags.md",
     "seed_manifest": "packages/cli/seeds/manifest.json",
     "d3_review": {
       "excluded_from_batch": "B6C",

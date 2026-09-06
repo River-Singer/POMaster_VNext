@@ -39,7 +39,7 @@
       "sha256": "a88614806137f33161b741d2a9fbc6ee310fa4f0cbf6acd222de07c14aee3d75",
       "bytes": 1288
     },
-    "seeded_spec": ".pomaster/specs/hard/backend/06-ai-generated-code-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/ai-generated-code.md",
     "seed_manifest": "packages/cli/seeds/manifest.json"
   },
   "id": "POLICY.AI.READ_SEARCH_VERIFY_BEFORE_WRITE",

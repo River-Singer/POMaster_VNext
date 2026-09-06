@@ -39,7 +39,7 @@
       "sha256": "3c37c1c3aa3ade8d43532a1fcc7561e95aef42a19e46b6eb53d864054a2da013",
       "bytes": 8248
     },
-    "seeded_spec": ".pomaster/specs/hard/frontend/34-monitoring-logging-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/observability-and-analytics.md",
     "seed_manifest": "packages/cli/seeds/manifest.json"
   },
   "id": "POLICY.OBS.NO_SENSITIVE_RAW_VALUES",

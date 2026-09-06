@@ -40,7 +40,7 @@
       "sha256": "335df4991a29eb77222b0596de5db7fcc0bd5d9019ecf9bf882a08cea74c1937",
       "bytes": 2048
     },
-    "seeded_spec": ".pomaster/specs/hard/frontend/41-design-handoff-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/page-composition-and-browser-environment.md",
     "seed_manifest": "packages/cli/seeds/manifest.json"
   },
   "id": "POLICY.WEB.HANDOFF.STATE_MATRIX_FULL",

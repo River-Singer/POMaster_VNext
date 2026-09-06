@@ -38,7 +38,7 @@
       "sha256": "a80ea1c51c9afc0b96001cfffa0675edafb1572563652840bcf88770d81203c8",
       "bytes": 2130
     },
-    "seeded_spec": ".pomaster/specs/hard/frontend/02-ai-generated-code-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/ai-generated-code.md",
     "seed_manifest": "packages/cli/seeds/manifest.json"
   },
   "id": "POLICY.AI.FACT_INFERENCE_SEPARATION",

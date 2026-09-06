@@ -36,7 +36,7 @@
       "sha256": "fb255dd2331ac35e73a1ad222e4de4ec2f5fb3a09e675de0e1919d80022ac291",
       "bytes": 1287
     },
-    "seeded_spec": ".pomaster/specs/hard/backend/14-business-rules-state-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/data-and-transactions.md",
     "seed_manifest": "packages/cli/seeds/manifest.json",
     "d3_review": {
       "excluded_from_batch": "B6C",

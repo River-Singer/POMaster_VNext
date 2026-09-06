@@ -646,33 +646,71 @@ describe("doctor 感知回执计数呈现（R6/C9）", () => {
 // B6e：播种分面计数呈现（B6a 未尽事项 1 接线；加法字段，不改 ok 语义）
 // ============================================================
 
-describe("doctor 播种分面计数呈现（B6e）", () => {
-  it("init 后五分面计数 = 播种清单分母（46/33/36/20/25）+ human 行呈现；README 预铺物不计", async () => {
+describe("doctor 播种分面计数呈现（B6e；B7-THEME 四分面）", () => {
+  it("init 后四分面计数 = 播种清单分母（21/36/20/25）+ human 行呈现；README 预铺物不计", async () => {
     mkdirSync(dir, { recursive: true });
     await runInit(dir);
     const outcome = await runDoctor(dir, { gauntletProbes: readyGauntletProbes() });
     expect(outcome.result.seeded_assets).toEqual({
-      specs_hard_frontend: 46,
-      specs_hard_backend: 33,
+      specs_hard_themes: 21,
       specs_hard_stacks: 36,
       specs_evidence: 20,
       baseline: 25,
     });
     expect(outcome.human.join("\n")).toContain(
-      "seeded assets: frontend 46 / backend 33 / stacks 36 / evidence 20 / baseline 25",
+      "seeded assets: themes 21 / stacks 36 / evidence 20 / baseline 25",
     );
   });
 
-  it("空目录（未 init）→ 五分面全 0（显式缺席呈现位，目录缺席 = 0）", async () => {
+  it("空目录（未 init）→ 四分面全 0（显式缺席呈现位，目录缺席 = 0）", async () => {
     mkdirSync(dir, { recursive: true });
     const outcome = await runDoctor(dir, { gauntletProbes: readyGauntletProbes() });
     expect(outcome.result.seeded_assets).toEqual({
-      specs_hard_frontend: 0,
-      specs_hard_backend: 0,
+      specs_hard_themes: 0,
       specs_hard_stacks: 0,
       specs_evidence: 0,
       baseline: 0,
     });
+  });
+});
+
+// ============================================================
+// B7-THEME：legacy spec 并存检出呈现（OQ-9 + D3——加法呈现字段，纯读不拦不删）
+// ============================================================
+
+describe("doctor legacy spec 检出呈现（B7-THEME）", () => {
+  it("fresh init → legacy_specs_present = 0（退役目录缺席 = 显式缺席）+ human 行", async () => {
+    mkdirSync(dir, { recursive: true });
+    await runInit(dir);
+    const outcome = await runDoctor(dir, { gauntletProbes: readyGauntletProbes() });
+    expect(outcome.result.legacy_specs_present).toBe(0);
+    expect(outcome.human.join("\n")).toContain("legacy specs present: 0");
+  });
+
+  it("已安装工作区并存窗口：退役目录在座播种文件 → 计数呈现（纯读——文件不被删改、ok 语义不变）", async () => {
+    mkdirSync(dir, { recursive: true });
+    await runInit(dir);
+    const legacyDir = join(dir, ".pomaster", "specs", "hard", "frontend");
+    const legacyBackendDir = join(dir, ".pomaster", "specs", "hard", "backend");
+    mkdirSync(legacyDir, { recursive: true });
+    mkdirSync(legacyBackendDir, { recursive: true });
+    writeFileSync(
+      join(legacyDir, "01-development-checklist-protocol.md"),
+      "# 01 开发检查项协议（旧安装件，项目自有可编辑）\n",
+      "utf8",
+    );
+    writeFileSync(
+      join(legacyBackendDir, "index.md"),
+      "# 后端索引（旧安装件）\n",
+      "utf8",
+    );
+    const outcome = await runDoctor(dir, { gauntletProbes: readyGauntletProbes() });
+    expect(outcome.result.legacy_specs_present).toBe(2);
+    expect(outcome.human.join("\n")).toContain("legacy specs present: 2");
+    // 纯读纪律：检出呈现零触碰——旧文件字节原样在座。
+    expect(readFileSync(join(legacyDir, "01-development-checklist-protocol.md"), "utf8")).toContain(
+      "旧安装件",
+    );
   });
 });
 

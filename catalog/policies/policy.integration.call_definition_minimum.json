@@ -39,7 +39,7 @@
       "sha256": "e6b0626c9169e9126319bd08ee5d5bdbe38421cfa175509524145aee30ff539a",
       "bytes": 1346
     },
-    "seeded_spec": ".pomaster/specs/hard/backend/24-external-integration-resilience-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/integration-and-async-runtime.md",
     "seed_manifest": "packages/cli/seeds/manifest.json"
   },
   "id": "POLICY.INTEGRATION.CALL_DEFINITION_MINIMUM",

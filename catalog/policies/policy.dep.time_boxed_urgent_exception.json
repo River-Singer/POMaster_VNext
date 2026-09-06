@@ -30,7 +30,7 @@
       "sha256": "7e0817507039ab5f633ff4cb7eb3590d8755a547b8db91867f92bc702a64ddfe",
       "bytes": 1317
     },
-    "seeded_spec": ".pomaster/specs/hard/backend/27-dependency-supply-chain-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/engineering-toolchain-and-dependencies.md",
     "seed_manifest": "packages/cli/seeds/manifest.json",
     "d3_review": {
       "excluded_from_batch": "B6C",

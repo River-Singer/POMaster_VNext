@@ -37,7 +37,7 @@
       "sha256": "aa80ee60f7431e14859f61e563784e71b2002f35e220964170a779800fdde090",
       "bytes": 1298
     },
-    "seeded_spec": ".pomaster/specs/hard/backend/16-error-code-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/api-contract-and-error-semantics.md",
     "seed_manifest": "packages/cli/seeds/manifest.json",
     "d3_review": {
       "excluded_from_batch": "B6C",

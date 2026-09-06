@@ -36,7 +36,7 @@
       "sha256": "4c4634b71f1e07e9cae074f9790fa50b3425f0af71300ab2ac12e644b521eff4",
       "bytes": 1323
     },
-    "seeded_spec": ".pomaster/specs/hard/backend/20-transaction-boundary-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/data-and-transactions.md",
     "seed_manifest": "packages/cli/seeds/manifest.json",
     "d3_review": {
       "excluded_from_batch": "B6C",

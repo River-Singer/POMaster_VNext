@@ -37,7 +37,7 @@
       "sha256": "df20ccb85008f8744ea16db3ea64e54bdf9fd19d7aa3098c45dc44fff94c3d8d",
       "bytes": 1381
     },
-    "seeded_spec": ".pomaster/specs/hard/backend/13-privacy-data-lifecycle-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/privacy-and-data-lifecycle.md",
     "seed_manifest": "packages/cli/seeds/manifest.json",
     "d3_review": {
       "excluded_from_batch": "B6C",

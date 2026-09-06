@@ -3,7 +3,7 @@
 // 两道验证，全部可复跑：
 // 1) `npm pack --dry-run` 断言：bin 在座 / catalog 完整（与仓库 catalog 文件集全等[
 //    __pycache__ 排除] + lock 270 entries）/ seeds 完整（与仓库 packages/cli/seeds 文件集
-//    全等 + 清单 152 entries）/ 无 node_modules / 无 files 白名单外杂物 / 零 dependencies；
+//    全等 + 清单 102 entries）/ 无 node_modules / 无 files 白名单外杂物 / 零 dependencies；
 // 2) fresh-install 冒烟：真实 `npm pack` 出 tgz → 系统 temp `pvnext-npm-smoke-<pid>`
 //    目录 `npm init -y` + `npm install <tgz>`（零 dependencies，不联网装依赖）→
 //    依次实跑 `npx pomaster --help|init|status|catalog status|doctor`，断言退出码与
@@ -103,7 +103,7 @@ const stageLock = JSON.parse(
 );
 assert(stageLock.entries.length === 270, "catalog-lock 270 entries", `实为 ${stageLock.entries.length}`);
 
-// 1.2.1 seeds 完整（B6b 两批 + B6c + B6d + B6e）：打包文件集与仓库 packages/cli/seeds/ 全等 +
+// 1.2.1 seeds 完整（B6c + B6d + B6e + B6f + B6G + B7-THEME）：打包文件集与仓库 packages/cli/seeds/ 全等 +
 //      清单 schema/条目数（播种资产随包分发——装载器 fail-closed，缺 seeds = init 必炸）。
 const repoSeedsFiles = walkFiles(p("packages", "cli", "seeds")).map((file) => `seeds/${file}`);
 const packedSeedsFiles = packedPaths.filter((file) => file.startsWith("seeds/"));
@@ -125,8 +125,8 @@ assert(
   `实为 ${stageSeedManifest.schema}`,
 );
 assert(
-  stageSeedManifest.entries?.length === 152,
-  "stage seeds manifest 152 entries",
+  stageSeedManifest.entries?.length === 102,
+  "stage seeds manifest 102 entries",
   `实为 ${stageSeedManifest.entries?.length}`,
 );
 
@@ -244,9 +244,10 @@ smoke("npx pomaster --help", "pomaster --help", {
 });
 
 // 2.2 `npx pomaster init`：四产物落盘（truth-index / authority / config.yaml / AGENTS.md）
-//     + B6b-B6e 播种件落盘（46 份 FE + 33 份 BE + 28 份 stacks 进 .pomaster/specs/hard/
-//     + 25 份 baseline 进 .pomaster/baseline/ + 20 份 evidence 进 .pomaster/specs/evidence/
-//     ——包内 seeds 资产位 + 装载器 fail-closed 的端到端实证：缺 seeds 的包 init 即炸）。
+//     + B7-THEME 播种件落盘（themes 21（20 主题 + 1 导航）+ 36 份 stacks 进
+//     .pomaster/specs/hard/ + 25 份 baseline 进 .pomaster/baseline/ + 20 份 evidence
+//     进 .pomaster/specs/evidence/——包内 seeds 资产位 + 装载器 fail-closed 的端到端
+//     实证：缺 seeds 的包 init 即炸）。
 smoke("npx pomaster init", "pomaster init", { expectExit: [0] });
 for (const artifact of [
   join(".pomaster", "state", "truth-index.json"),
@@ -257,50 +258,31 @@ for (const artifact of [
 ]) {
   assert(existsSync(join(SMOKE_DIR, artifact)), `init 产物落盘: ${artifact}`);
 }
-// FE 面：只数编号协议件（目录另含 init 布局步骤落的 README.md，非播种件）。
-const seededFrontendDir = join(SMOKE_DIR, ".pomaster", "specs", "hard", "frontend");
-const seededSpecs = existsSync(seededFrontendDir)
-  ? readdirSync(seededFrontendDir)
-      .filter((name) => /^\d{2}-.*-protocol\.md$/.test(name))
-      .sort()
+// themes 面（B7-THEME）：20 主题 + 1 导航（聚合 pin 形态——seed_source 指聚合清单）。
+const seededThemesDir = join(SMOKE_DIR, ".pomaster", "specs", "hard", "themes");
+const themeFiles = existsSync(seededThemesDir)
+  ? readdirSync(seededThemesDir).filter((name) => name !== "README.md").sort()
   : [];
 assert(
-  seededSpecs.length === 45,
-  "init 播种件落盘：specs/hard/frontend 45 份编号协议",
-  `实为 ${seededSpecs.length}${seededSpecs.length ? `: ${seededSpecs.join(", ")}` : ""}`,
+  themeFiles.length === 21,
+  "init 播种件落盘：specs/hard/themes 21 份（20 主题 + index 导航）",
+  `实为 ${themeFiles.length}${themeFiles.length ? `: ${themeFiles.join(", ")}` : ""}`,
 );
 assert(
-  seededSpecs[0] === "01-development-checklist-protocol.md" &&
-    seededSpecs[44] === "45-browser-storage-protocol.md",
-  "init 播种件编号连续（01..45）",
-  `首末: ${seededSpecs[0]} .. ${seededSpecs[44]}`,
+  themeFiles[0] === "ai-generated-code.md" &&
+    themeFiles.includes("testing-and-verification.md") &&
+    themeFiles.includes("data-and-transactions.md") &&
+    themeFiles[20] === "value-semantics-and-domain-data.md",
+  "init 播种件主题集边界（跨端/前端/后端独占样点）",
+  `首末: ${themeFiles[0]} .. ${themeFiles[20]}`,
 );
+const navSample = readFileSync(join(seededThemesDir, "index.md"), "utf8");
 assert(
-  existsSync(join(seededFrontendDir, "index.md")),
-  "init 播种件落盘：specs/hard/frontend/index.md（FE 索引）",
+  navSample.startsWith("---\n") &&
+    navSample.includes("seed_source: packages/cli/seeds/aggregation-manifest.json"),
+  "init 播种件落盘：themes/index.md（导航；D6 聚合 pin 形态）",
 );
-// BE 面（B6c）：32 编号协议 + index。
-const seededBackendDir = join(SMOKE_DIR, ".pomaster", "specs", "hard", "backend");
-const seededBackendProtocols = existsSync(seededBackendDir)
-  ? readdirSync(seededBackendDir)
-      .filter((name) => /^\d{2}-.*-protocol\.md$/.test(name))
-      .sort()
-  : [];
-assert(
-  seededBackendProtocols.length === 32,
-  "init 播种件落盘：specs/hard/backend 32 份编号协议（B6c）",
-  `实为 ${seededBackendProtocols.length}`,
-);
-assert(
-  seededBackendProtocols[0] === "01-architecture-governance-protocol.md" &&
-    seededBackendProtocols[31] === "32-release-versioning-rollback-protocol.md",
-  "init 播种件 BE 编号连续（01..32）",
-  `首末: ${seededBackendProtocols[0]} .. ${seededBackendProtocols[31]}`,
-);
-assert(
-  existsSync(join(seededBackendDir, "index.md")),
-  "init 播种件落盘：specs/hard/backend/index.md（BE 索引）",
-);
+assert(!navSample.includes("GENERATED"), "播种件 marker-free 抽查（导航件）");
 // stacks 面（B6c）：14 slug 子目录 × (index + overlay)。
 const STACK_SLUGS = [
   "java", "jpa", "kubernetes-ingress", "messaging", "mybatis", "mysql",
@@ -317,18 +299,20 @@ for (const slug of STACK_SLUGS) {
     `实为 ${files.join(", ")}`,
   );
 }
-// marker-free 抽查 + BE frontmatter legacy 字段抽查（B6c BE frontmatter 兼容 ADR）。
-const beSample = readFileSync(
-  join(seededBackendDir, "22-idempotency-protocol.md"),
+// marker-free 抽查 + 主题 frontmatter 聚合注记抽查（B7-THEME D6/D7 统一形态）。
+const themeSample = readFileSync(
+  join(seededThemesDir, "data-and-transactions.md"),
   "utf8",
 );
 assert(
-  beSample.startsWith("---\n") &&
-    beSample.includes("legacy_id: backend:idempotency-protocol") &&
-    !beSample.includes("\nid: backend:"),
-  "BE 播种件 frontmatter 形态（legacy_id 改形 + 统一字段在座）",
+  themeSample.startsWith("---\n") &&
+    themeSample.includes("legacy_id: theme:data-and-transactions") &&
+    themeSample.includes("x-aggregation:") &&
+    themeSample.includes("x-language-sections:") &&
+    themeSample.includes("## 语言与栈节（overlay 资产同步区）"),
+  "主题播种件 frontmatter 形态（theme legacy_id + D6/D7 聚合键 + 语言节区在座）",
 );
-assert(!beSample.includes("GENERATED"), "播种件 marker-free 抽查（BE 协议件）");
+assert(!themeSample.includes("GENERATED"), "播种件 marker-free 抽查（主题文档）");
 
 // baseline 面（B6d）：manifest 1 + frontend 7 + backend 8 + data 5 + platform 4 =
 // 25 件（UNKNOWN 起步；「待填写」旧词形零残留——R4 红线抽查）。

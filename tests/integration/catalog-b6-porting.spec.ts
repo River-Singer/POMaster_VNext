@@ -21,10 +21,12 @@
  *   applicable（§92.5 激活输入非被激活规则本体）；source_sections 闭包 = overlay
  *   三段（Scope/Rules/Checklist）或 PROFILE yaml 行段词形；profile 卡 seeded_spec
  *   缺席（不播种——A1 档位机制零移植 + profile 分类落位 ADR）+ A1 双注记在册；
- * - 双面同源 pin（R1）：x-b6-porting.vendor_pin.sha256 == packages/cli/seeds/
- *   manifest.json 同文件 pin（catalog 条目面 ↔ 播种全文面同一 vendor 字节锚）；
- *   seeded_spec 锚与播种清单 target 一一对应（policy 面 .pomaster/specs/hard/backend/
- *   词形；TP STACK 面 .pomaster/specs/hard/stacks/<slug>/ 词形）；
+ * - 双面同源 pin（R1）：x-b6-porting.vendor_pin.sha256 == 播种清单 pin（B7-THEME 起
+ *   分流——stacks 直锚 = manifest.json entry pin；themes/nav 聚合锚 = aggregation-
+ *   manifest.json 逐源 pin，与卡 vendor_pin 同值；catalog 条目面 ↔ 播种全文面同一
+ *   vendor 字节锚）；seeded_spec 锚与播种清单 target 一一对应（policy 面
+ *   .pomaster/specs/hard/themes/ 词形——B7-THEME 随迁；TP STACK 面
+ *   .pomaster/specs/hard/stacks/<slug>/ 词形）；
  * - 物料形态：kind=policy + axes 词形 + applies_when.condition 在场（kernel
  *   loadCatalogPolicies fail-closed 词表闸实读全量生效；classification 双词形
  *   UNIVERSAL_POLICY / TECHNOLOGY_PROFILE 均在 CATALOG_CLASSIFICATION_VALUES 闭包）；
@@ -371,7 +373,26 @@ describe("B6c TECHNOLOGY_PROFILE 面（提案 §1 矩阵 TECHNOLOGY_OVERLAY 落�
 });
 
 describe("双面同源 pin（R1）：catalog 条目面 ↔ 播种全文面同一 vendor 字节锚", () => {
-  it("x-b6-porting.vendor_pin == packages/cli/seeds/manifest.json 同文件 pin（127 条全量——B6b FE 面 + B6c BE/stacks 面 + D3 两轮复核批 FE/BE 面）", () => {
+  // B7-THEME 起（09-05-spec-thematic-reorg D3/D6）：FE/BE 平铺 entry 退役，卡锚随迁
+  // themes/；主题 entry 的清单 pin = 聚合清单（aggregation-manifest.json）字节指纹
+  // （D6 聚合 pin 形态），vendor 字节锚改由聚合清单逐源 sha256 承载（与卡 vendor_pin
+  // 同值）；stacks entry 的清单 pin 语义不变（仍指 overlay vendor 字节）。
+  const aggManifest = JSON.parse(
+    readFileSync(join(repoRoot, "packages", "cli", "seeds", "aggregation-manifest.json"), "utf8"),
+  ) as {
+    themes: Array<{ target: string; sources: Array<{ seed_source: string; sha256: string }> }>;
+    navigation: { target: string; sources: Array<{ seed_source: string; sha256: string }> };
+  };
+  const aggSourceShaByTarget = new Map<string, Map<string, string>>();
+  for (const theme of aggManifest.themes) {
+    aggSourceShaByTarget.set(theme.target, new Map(theme.sources.map((s) => [s.seed_source, s.sha256])));
+  }
+  aggSourceShaByTarget.set(
+    aggManifest.navigation.target,
+    new Map(aggManifest.navigation.sources.map((s) => [s.seed_source, s.sha256])),
+  );
+
+  it("x-b6-porting.vendor_pin == 播种清单 pin（stacks 直锚）/ aggregation-manifest 逐源 pin（themes/nav 聚合锚）——127 条全量", () => {
     const manifest = JSON.parse(
       readFileSync(join(repoRoot, "packages", "cli", "seeds", "manifest.json"), "utf8"),
     ) as {
@@ -381,25 +402,31 @@ describe("双面同源 pin（R1）：catalog 条目面 ↔ 播种全文面同一
       if (note.seeded_spec === null) continue; // profile 卡不播种（vendor_pin 仍可溯 vendor）。
       const entry = manifest.entries.find((e) => e.target === note.seeded_spec);
       expect(entry, `${body.id} seeded_spec 对应播种清单条目在册`).toBeDefined();
-      expect(note.vendor_pin.sha256).toBe(entry!.source_sha256);
-      expect(note.vendor_pin.bytes).toBe(entry!.source_bytes);
-      expect(note.vendor_pin.path).toBe(entry!.source_path);
+      if (note.seeded_spec.startsWith(".pomaster/specs/hard/stacks/")) {
+        // stacks 直锚：清单 pin == vendor pin（B6c/B6f/B6G 语义不变）。
+        expect(note.vendor_pin.sha256).toBe(entry!.source_sha256);
+        expect(note.vendor_pin.bytes).toBe(entry!.source_bytes);
+        expect(note.vendor_pin.path).toBe(entry!.source_path);
+      } else {
+        // themes 聚合锚：清单 pin = 聚合清单字节指纹；vendor sha 在聚合清单逐源面同值。
+        expect(entry!.source_path).toBe("packages/cli/seeds/aggregation-manifest.json");
+        const sources = aggSourceShaByTarget.get(note.seeded_spec);
+        expect(sources, `${body.id} 聚合清单主题条目在册`).toBeDefined();
+        expect(sources!.get(note.vendor_pin.path), `${body.id} vendor sha 同值锚`).toBe(
+          note.vendor_pin.sha256,
+        );
+      }
     }
   });
 
-  it("seeded_spec 锚词形按面落位：B6b/B6c policy 面 specs/hard/backend 或 frontend；B6c TP STACK 面 specs/hard/stacks", () => {
+  it("seeded_spec 锚词形按面落位：B6b/B6c policy 面随迁 themes（B7-THEME D3）；B6c TP STACK 面 specs/hard/stacks", () => {
     for (const { note } of b6Entries) {
       if (note.seeded_spec === null) continue;
       expect(
-        note.seeded_spec.startsWith(".pomaster/specs/hard/backend/") ||
-          note.seeded_spec.startsWith(".pomaster/specs/hard/frontend/") ||
+        note.seeded_spec.startsWith(".pomaster/specs/hard/themes/") ||
           note.seeded_spec.startsWith(".pomaster/specs/hard/stacks/"),
         note.seeded_spec,
       ).toBe(true);
-    }
-    for (const { note } of policyFace) {
-      if (note.batch !== "B6C") continue;
-      expect(note.seeded_spec!.startsWith(".pomaster/specs/hard/backend/")).toBe(true);
     }
   });
 

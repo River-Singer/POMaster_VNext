@@ -39,7 +39,7 @@
       "sha256": "e871f5d7d1e9fe68956881877baba94f376a5539753441853f8cfa12939f5ebd",
       "bytes": 1387
     },
-    "seeded_spec": ".pomaster/specs/hard/backend/29-observability-logging-tracing-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/observability-and-analytics.md",
     "seed_manifest": "packages/cli/seeds/manifest.json"
   },
   "id": "POLICY.OBS.NO_SENSITIVE_OR_UNBOUNDED_LOGGING",

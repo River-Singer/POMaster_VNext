@@ -39,7 +39,7 @@
       "sha256": "f5df73dd7bec4ccf4132c3d7a9918a6f1cb0dd9682aa17956cb24446aa406ad7",
       "bytes": 1267
     },
-    "seeded_spec": ".pomaster/specs/hard/backend/28-testing-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/testing-and-verification.md",
     "seed_manifest": "packages/cli/seeds/manifest.json"
   },
   "id": "POLICY.TEST.RISK_DRIVEN_PLAN",

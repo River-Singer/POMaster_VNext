@@ -38,7 +38,7 @@
       "sha256": "aae0557f4935bac24d04e37ebde5638471b709ff568fea0d13de35bd5dd404af",
       "bytes": 1764
     },
-    "seeded_spec": ".pomaster/specs/hard/frontend/33-release-versioning-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/release-and-feature-flags.md",
     "seed_manifest": "packages/cli/seeds/manifest.json"
   },
   "id": "POLICY.REL.OBSERVABILITY_BEFORE_SHIP",

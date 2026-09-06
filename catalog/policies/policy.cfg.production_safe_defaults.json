@@ -39,7 +39,7 @@
       "sha256": "3affc23c84d64d10c8911b84bd9db82a34fcb9b675f7365672d554ecf34c8fb6",
       "bytes": 1887
     },
-    "seeded_spec": ".pomaster/specs/hard/frontend/05-environment-configuration-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/environment-and-configuration.md",
     "seed_manifest": "packages/cli/seeds/manifest.json"
   },
   "id": "POLICY.CFG.PRODUCTION_SAFE_DEFAULTS",

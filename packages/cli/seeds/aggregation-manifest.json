@@ -1,0 +1,691 @@
+{
+  "schema": "pomaster.seed-aggregation/1",
+  "batch": "B7-THEME",
+  "generated_by": "scripts/seed_b7_theme.py（09-05-spec-thematic-reorg B7-THEME 物化批；映射表 .trellis/tasks/09-05-spec-thematic-reorg/research/theme-mapping.md 的仓内物化落位——D6：本文件为归并关系单一仓内清单，任务侧映射表保持档案不依赖）",
+  "themes": [
+    {
+      "slug": "architecture-and-module-boundaries",
+      "h1": "架构与模块边界",
+      "lane": "[frontend, backend]",
+      "target": ".pomaster/specs/hard/themes/architecture-and-module-boundaries.md",
+      "sources": [
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/09-module-boundary-protocol.md",
+          "sha256": "f9a3c194910bbb31cd322849cb277db5d2ae0fd74773eef7df34197b8ad89c4f",
+          "seed_version": "B6B-1"
+        },
+        {
+          "seed_source": "pomaster/components/backend-hard-spec/assets/universal/01-architecture-governance-protocol.md",
+          "sha256": "726502f4e5a5dcf2e8076fafa943b33de4b7ab9bd0fc2d8551479b43385e7636",
+          "seed_version": "B6C"
+        },
+        {
+          "seed_source": "pomaster/components/backend-hard-spec/assets/universal/02-project-structure-governance-protocol.md",
+          "sha256": "add6e21ffa5dd45940dda725e8d4e234c9d2a49775139c895cc7ad5f7caf7bf0",
+          "seed_version": "B6C"
+        },
+        {
+          "seed_source": "pomaster/components/backend-hard-spec/assets/universal/03-directory-boundary-protocol.md",
+          "sha256": "95a917cfe3c929b5a0a40de5f6215b25ef4a358a4e7f1c7cb2daa08defcf6bcc",
+          "seed_version": "B6C"
+        },
+        {
+          "seed_source": "pomaster/components/backend-hard-spec/assets/universal/04-layering-architecture-protocol.md",
+          "sha256": "4a2ab2aa695a7b78136a2fd96076a869c367bb008a417be508756c632ad4ed6e",
+          "seed_version": "B6C"
+        }
+      ],
+      "language_sections": []
+    },
+    {
+      "slug": "task-governance-and-acceptance",
+      "h1": "任务治理与验收",
+      "lane": "[frontend, backend]",
+      "target": ".pomaster/specs/hard/themes/task-governance-and-acceptance.md",
+      "sources": [
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/01-development-checklist-protocol.md",
+          "sha256": "fa8914b29dbf7af25c8128aa1b8936fd658e37854e0a4f457175e2e3c82c3a03",
+          "seed_version": "B6B-1"
+        },
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/03-acceptance-gate-protocol.md",
+          "sha256": "646dcbd7035d43d84ca592218a356c08a4baca36619109797322d90ba3d99b73",
+          "seed_version": "B6B-1"
+        },
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/06-change-governance-protocol.md",
+          "sha256": "2f19b46e451153cab35e9fb511d9da0f072f86424e7d3f7a6b307cd17a9d1b32",
+          "seed_version": "B6B-1"
+        },
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/08-role-responsibility-protocol.md",
+          "sha256": "732ac305cd16207e4a7bd4c95a6774d1aca33fb4e45cf29991ac0f6475605d6f",
+          "seed_version": "B6B-1"
+        },
+        {
+          "seed_source": "pomaster/components/backend-hard-spec/assets/universal/05-task-workflow-protocol.md",
+          "sha256": "b0d176f1f2d19cd14739ff4de39d77659036516ab1377b83c261ecc53a2de2dd",
+          "seed_version": "B6C"
+        },
+        {
+          "seed_source": "pomaster/components/backend-hard-spec/assets/universal/07-evidence-acceptance-protocol.md",
+          "sha256": "fb86312eaadaec81d21e20abfb979e0127138002731ddc4fb1ead9ec90cd10bb",
+          "seed_version": "B6C"
+        },
+        {
+          "seed_source": "pomaster/components/backend-hard-spec/assets/universal/08-contract-change-protocol.md",
+          "sha256": "805c146b31c70d08f876631bc19273076eb242d78fcb3b3a3bd33437e28a6953",
+          "seed_version": "B6C"
+        },
+        {
+          "seed_source": "pomaster/components/backend-hard-spec/assets/universal/09-role-responsibility-protocol.md",
+          "sha256": "603b285faa271b77140f28e1038f850cd01b17ed1813b965898c4746233b342f",
+          "seed_version": "B6C"
+        }
+      ],
+      "language_sections": []
+    },
+    {
+      "slug": "ai-generated-code",
+      "h1": "AI 生成代码",
+      "lane": "[frontend, backend]",
+      "target": ".pomaster/specs/hard/themes/ai-generated-code.md",
+      "sources": [
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/02-ai-generated-code-protocol.md",
+          "sha256": "a80ea1c51c9afc0b96001cfffa0675edafb1572563652840bcf88770d81203c8",
+          "seed_version": "B6B-1"
+        },
+        {
+          "seed_source": "pomaster/components/backend-hard-spec/assets/universal/06-ai-generated-code-protocol.md",
+          "sha256": "a88614806137f33161b741d2a9fbc6ee310fa4f0cbf6acd222de07c14aee3d75",
+          "seed_version": "B6C"
+        }
+      ],
+      "language_sections": []
+    },
+    {
+      "slug": "security",
+      "h1": "安全",
+      "lane": "[frontend, backend]",
+      "target": ".pomaster/specs/hard/themes/security.md",
+      "sources": [
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/04-security-protocol.md",
+          "sha256": "4d9bb6bd34a64fcc3e362c969492bc326533e16ef4c6d2284dc01442733504e6",
+          "seed_version": "B6B-1"
+        },
+        {
+          "seed_source": "pomaster/components/backend-hard-spec/assets/universal/10-security-protocol.md",
+          "sha256": "56387f03edd35df50a5a701f4daab174b744d490663393f43331cf5401149f67",
+          "seed_version": "B6C"
+        }
+      ],
+      "language_sections": []
+    },
+    {
+      "slug": "environment-and-configuration",
+      "h1": "环境与配置",
+      "lane": "[frontend, backend]",
+      "target": ".pomaster/specs/hard/themes/environment-and-configuration.md",
+      "sources": [
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/05-environment-configuration-protocol.md",
+          "sha256": "3affc23c84d64d10c8911b84bd9db82a34fcb9b675f7365672d554ecf34c8fb6",
+          "seed_version": "B6B-1"
+        },
+        {
+          "seed_source": "pomaster/components/backend-hard-spec/assets/universal/11-environment-configuration-protocol.md",
+          "sha256": "eb9e82e9df64ce238501bc51cd359f36150f911c149904e2ed5a43d9b652b1bd",
+          "seed_version": "B6C"
+        }
+      ],
+      "language_sections": [
+        {
+          "overlay": "pomaster/components/backend-hard-spec/assets/stacks/spring-boot/spring-boot-application-overlay.md",
+          "sha256": "c8b2afe8de6c5af245035381a272644acee75d4e7d0efea901cac1f45d18d2a4",
+          "attach": "primary"
+        }
+      ]
+    },
+    {
+      "slug": "engineering-toolchain-and-dependencies",
+      "h1": "工程工具链与依赖",
+      "lane": "[frontend, backend]",
+      "target": ".pomaster/specs/hard/themes/engineering-toolchain-and-dependencies.md",
+      "sources": [
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/10-engineering-tooling-protocol.md",
+          "sha256": "c628d47dcae1ddd58ea3651eeae9dd84ff5157365a3892a367bd7b5bf0af2b9d",
+          "seed_version": "B6B-1"
+        },
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/11-dependency-package-management-protocol.md",
+          "sha256": "a0cc135edaf0dfd1f5122d2ff7298866143ef3a273ad4d45f5e1eff763691867",
+          "seed_version": "B6B-1"
+        },
+        {
+          "seed_source": "pomaster/components/backend-hard-spec/assets/universal/26-engineering-tooling-protocol.md",
+          "sha256": "b0fcecee17a3acdb11f59f065ae7cac269cc292e999dd39444e5293565d38fe1",
+          "seed_version": "B6C"
+        },
+        {
+          "seed_source": "pomaster/components/backend-hard-spec/assets/universal/27-dependency-supply-chain-protocol.md",
+          "sha256": "7e0817507039ab5f633ff4cb7eb3590d8755a547b8db91867f92bc702a64ddfe",
+          "seed_version": "B6C"
+        }
+      ],
+      "language_sections": [
+        {
+          "overlay": "pomaster/components/backend-hard-spec/assets/stacks/java/java-language-overlay.md",
+          "sha256": "38b592a5beaa899abb45e871e5097cafedeea80502baee00bcfbfcfa313dab85",
+          "attach": "primary"
+        }
+      ]
+    },
+    {
+      "slug": "testing-and-verification",
+      "h1": "测试与验证",
+      "lane": "[frontend, backend]",
+      "target": ".pomaster/specs/hard/themes/testing-and-verification.md",
+      "sources": [
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/20-testing-protocol.md",
+          "sha256": "477dc049d1e1ec72898a07615655ee374924c7796a0210741e8c97474644a4d6",
+          "seed_version": "B6B-1"
+        },
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/35-mock-protocol.md",
+          "sha256": "c9288fe227cb26633d23c5d0e2e710b9cde716371f66cf3157c63b3ec8a58342",
+          "seed_version": "B6B-2"
+        },
+        {
+          "seed_source": "pomaster/components/backend-hard-spec/assets/universal/28-testing-protocol.md",
+          "sha256": "f5df73dd7bec4ccf4132c3d7a9918a6f1cb0dd9682aa17956cb24446aa406ad7",
+          "seed_version": "B6C"
+        }
+      ],
+      "language_sections": []
+    },
+    {
+      "slug": "observability-and-analytics",
+      "h1": "可观测性与埋点",
+      "lane": "[frontend, backend]",
+      "target": ".pomaster/specs/hard/themes/observability-and-analytics.md",
+      "sources": [
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/34-monitoring-logging-protocol.md",
+          "sha256": "3c37c1c3aa3ade8d43532a1fcc7561e95aef42a19e46b6eb53d864054a2da013",
+          "seed_version": "B6B-2"
+        },
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/40-analytics-protocol.md",
+          "sha256": "f638c8054ba32d44a15f1dd4fa42b637e1f6ad39cd73c6e1d45cd5bfd71b2c56",
+          "seed_version": "B6B-2"
+        },
+        {
+          "seed_source": "pomaster/components/backend-hard-spec/assets/universal/29-observability-logging-tracing-protocol.md",
+          "sha256": "e871f5d7d1e9fe68956881877baba94f376a5539753441853f8cfa12939f5ebd",
+          "seed_version": "B6C"
+        }
+      ],
+      "language_sections": []
+    },
+    {
+      "slug": "release-and-feature-flags",
+      "h1": "发布与开关",
+      "lane": "[frontend, backend]",
+      "target": ".pomaster/specs/hard/themes/release-and-feature-flags.md",
+      "sources": [
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/33-release-versioning-protocol.md",
+          "sha256": "aae0557f4935bac24d04e37ebde5638471b709ff568fea0d13de35bd5dd404af",
+          "seed_version": "B6B-2"
+        },
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/36-feature-flag-protocol.md",
+          "sha256": "ba6cf2d5607ba54d9864cd6c07899d2e13a8d33ea248fbd7469b92c23474f474",
+          "seed_version": "B6B-2"
+        },
+        {
+          "seed_source": "pomaster/components/backend-hard-spec/assets/universal/32-release-versioning-rollback-protocol.md",
+          "sha256": "26a6a23928fc24338f69fb34199ecdea5f654e21534a76ac53a7c0b78030b3c8",
+          "seed_version": "B6C"
+        }
+      ],
+      "language_sections": []
+    },
+    {
+      "slug": "privacy-and-data-lifecycle",
+      "h1": "隐私与数据生命周期",
+      "lane": "[frontend, backend]",
+      "target": ".pomaster/specs/hard/themes/privacy-and-data-lifecycle.md",
+      "sources": [
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/44-privacy-data-lifecycle-protocol.md",
+          "sha256": "5b3472bba296c1bb437c3ce41e1c937b636605e39b78cf06747d1010e46ba08e",
+          "seed_version": "B6B-2"
+        },
+        {
+          "seed_source": "pomaster/components/backend-hard-spec/assets/universal/13-privacy-data-lifecycle-protocol.md",
+          "sha256": "df20ccb85008f8744ea16db3ea64e54bdf9fd19d7aa3098c45dc44fff94c3d8d",
+          "seed_version": "B6C"
+        }
+      ],
+      "language_sections": []
+    },
+    {
+      "slug": "api-contract-and-error-semantics",
+      "h1": "API 契约与错误语义",
+      "lane": "[frontend, backend]",
+      "target": ".pomaster/specs/hard/themes/api-contract-and-error-semantics.md",
+      "sources": [
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/07-frontend-backend-communication-protocol.md",
+          "sha256": "b14d2f8281198ff663e6e21e58df2e429c4683907cb77b6ebcdb6609d37f72d2",
+          "seed_version": "B6B-1"
+        },
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/15-request-api-protocol.md",
+          "sha256": "b9489d69e35a19b8d5ba2442108190e7b99989ef471c8cf413d9e4e408ca2969",
+          "seed_version": "B6B-1"
+        },
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/16-error-handling-protocol.md",
+          "sha256": "0c6adc425e01a003e1f3c83fcf51f1d287767c95a4da50c15f5f639d9104f07f",
+          "seed_version": "B6B-1"
+        },
+        {
+          "seed_source": "pomaster/components/backend-hard-spec/assets/universal/12-api-contract-protocol.md",
+          "sha256": "35519d81548cabff729de888e0bf9e0d5b40a0274c9fa3684641b50e75938ca0",
+          "seed_version": "B6C"
+        },
+        {
+          "seed_source": "pomaster/components/backend-hard-spec/assets/universal/16-error-code-protocol.md",
+          "sha256": "aa80ee60f7431e14859f61e563784e71b2002f35e220964170a779800fdde090",
+          "seed_version": "B6C"
+        }
+      ],
+      "language_sections": [
+        {
+          "overlay": "pomaster/components/backend-hard-spec/assets/stacks/spring-mvc/spring-mvc-web-overlay.md",
+          "sha256": "19a75e281d7406d4ce38accd4aa528496e9cb666a8d123bc489c7404cb67fcb6",
+          "attach": "primary"
+        }
+      ]
+    },
+    {
+      "slug": "permission-and-authorization",
+      "h1": "权限与鉴权",
+      "lane": "[frontend, backend]",
+      "target": ".pomaster/specs/hard/themes/permission-and-authorization.md",
+      "sources": [
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/17-permission-protocol.md",
+          "sha256": "3f51aeb30497c07a3b552c8f21ecff22730d276c85fd504fde16e9e17b622ec0",
+          "seed_version": "B6B-1"
+        },
+        {
+          "seed_source": "pomaster/components/backend-hard-spec/assets/universal/17-permission-authorization-protocol.md",
+          "sha256": "d85a431b682a3a7c3dd4a6ee1f67fc375b54edb4a8e7fe98d283103b64a6b41e",
+          "seed_version": "B6C"
+        }
+      ],
+      "language_sections": []
+    },
+    {
+      "slug": "performance-and-capacity",
+      "h1": "性能与容量",
+      "lane": "[frontend, backend]",
+      "target": ".pomaster/specs/hard/themes/performance-and-capacity.md",
+      "sources": [
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/31-performance-protocol.md",
+          "sha256": "416ff411c75e538feec3aad8be5e733b95913580fd937c0abebd16aa0d21608c",
+          "seed_version": "B6B-2"
+        },
+        {
+          "seed_source": "pomaster/components/backend-hard-spec/assets/universal/30-performance-capacity-protocol.md",
+          "sha256": "b575dd07e4bb6def646acb55c3d62d086a9fd12035b2ab359ec353bf443773e5",
+          "seed_version": "B6C"
+        }
+      ],
+      "language_sections": []
+    },
+    {
+      "slug": "ui-presentation-and-design",
+      "h1": "UI 呈现与设计",
+      "lane": "[frontend]",
+      "target": ".pomaster/specs/hard/themes/ui-presentation-and-design.md",
+      "sources": [
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/21-design-system-protocol.md",
+          "sha256": "317d4086949eb7d26ea2465adc6521ba6ebb611dca0d2f32aec2c57a985be4f3",
+          "seed_version": "B6B-1"
+        },
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/22-theme-protocol.md",
+          "sha256": "b93ed272a0def5abc689fe66d939b87cacf6f38cce5d6278cfd5c94d1754b3ec",
+          "seed_version": "B6B-1"
+        },
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/23-accessibility-protocol.md",
+          "sha256": "10557bf1221d1cf2748e29149820890e4523789701a35f7336e3f661fed82bfb",
+          "seed_version": "B6B-1"
+        },
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/24-component-protocol.md",
+          "sha256": "5ed49550278ae263d7b4f3914c20c31a3005dc101d45bbd48c025a444f7441c4",
+          "seed_version": "B6B-2"
+        },
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/26-style-layout-protocol.md",
+          "sha256": "a66b216ca119c7296431233fb2bb6db9affd1f71ba011e5394aaaafdab9e8240",
+          "seed_version": "B6B-2"
+        },
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/30-data-grid-protocol.md",
+          "sha256": "c702a9956fd5e7aac40e1eefebcdd7a3518b95bd1a750bfcb31cbaddb80f41ff",
+          "seed_version": "B6B-2"
+        }
+      ],
+      "language_sections": [
+        {
+          "overlay": "pomaster/components/frontend-hard-spec/assets/stacks/vue3/vue3-framework-overlay.md",
+          "sha256": "15e7fd3808760bb330933f4a0479e4e95e3e07d0e24485d1b9b860019a708935",
+          "attach": "primary"
+        },
+        {
+          "overlay": "pomaster/components/frontend-hard-spec/assets/stacks/antdesign/antdesign-ui-overlay.md",
+          "sha256": "e70a6dad3fedbf8c4a182d92af9c9229e13cc368f880b3ccd96fe11ccdbdd7be",
+          "attach": "primary"
+        },
+        {
+          "overlay": "pomaster/components/frontend-hard-spec/assets/stacks/geist/geist-design-system-overlay.md",
+          "sha256": "a9edc3d23708ccef6aeade6669dd638117f341052c47e0145347a5b51e085680",
+          "attach": "primary"
+        },
+        {
+          "overlay": "pomaster/components/frontend-hard-spec/assets/stacks/css/css-system-overlay.md",
+          "sha256": "4167e2a2d4c457f594db95336470dca4f0778e76df006e815207c0761667692a",
+          "attach": "primary"
+        }
+      ]
+    },
+    {
+      "slug": "page-composition-and-browser-environment",
+      "h1": "页面构成与浏览器环境",
+      "lane": "[frontend]",
+      "target": ".pomaster/specs/hard/themes/page-composition-and-browser-environment.md",
+      "sources": [
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/25-page-structure-protocol.md",
+          "sha256": "5fb926a798842262d7f87555e3e63e104c868a401eb27f3c1f899e677fdf5f4f",
+          "seed_version": "B6B-2"
+        },
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/27-rendering-state-protocol.md",
+          "sha256": "a640bacd811e05a35075d96ffb99ba51b8b6e11cc2a5443e3bbca0eb124738e4",
+          "seed_version": "B6B-2"
+        },
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/28-form-protocol.md",
+          "sha256": "1359f0b753ece0f633b1aadea11e4ffd03dfc38f5b1f59e8cd869eba502e4807",
+          "seed_version": "B6B-2"
+        },
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/29-routing-url-protocol.md",
+          "sha256": "3066c383489e1cb72271fe48d4a716860c58381d90e46ee1b2f114c61010949e",
+          "seed_version": "B6B-2"
+        },
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/37-browser-device-compatibility-protocol.md",
+          "sha256": "81c0d4bf8996f6cf6b38d1c8514385065785728011222b524d73d8135703a3b3",
+          "seed_version": "B6B-2"
+        },
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/41-design-handoff-protocol.md",
+          "sha256": "335df4991a29eb77222b0596de5db7fcc0bd5d9019ecf9bf882a08cea74c1937",
+          "seed_version": "B6B-2"
+        },
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/42-browser-runtime-lifecycle-protocol.md",
+          "sha256": "b328c8b3bab2006254587143c634e17ff554d2f0103056d07edba5ffaba29fe1",
+          "seed_version": "B6B-2"
+        }
+      ],
+      "language_sections": []
+    },
+    {
+      "slug": "frontend-state-and-client-data",
+      "h1": "前端状态与客户端数据",
+      "lane": "[frontend]",
+      "target": ".pomaster/specs/hard/themes/frontend-state-and-client-data.md",
+      "sources": [
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/18-state-management-protocol.md",
+          "sha256": "72445fcd0ac7e21ebea38a5f72849543f936c7a96eee54eb99330226acaaf400",
+          "seed_version": "B6B-1"
+        },
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/19-cache-protocol.md",
+          "sha256": "893d5651016233eec36333775441a935746fe1202c8924dc2edf753d61523daf",
+          "seed_version": "B6B-1"
+        },
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/32-file-import-export-protocol.md",
+          "sha256": "2262d7ce2e910e4d64b0c6f3ef1af0b72c3cafc31d6cb1a796a8fb8b1801cbbc",
+          "seed_version": "B6B-2"
+        },
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/45-browser-storage-protocol.md",
+          "sha256": "01d0d3cb618519c94c939658526a97ad1df851a8f820a22a9b4595bef03cc2cb",
+          "seed_version": "B6B-2"
+        }
+      ],
+      "language_sections": []
+    },
+    {
+      "slug": "value-semantics-and-domain-data",
+      "h1": "值语义与领域数据",
+      "lane": "[frontend]",
+      "target": ".pomaster/specs/hard/themes/value-semantics-and-domain-data.md",
+      "sources": [
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/12-business-rules-protocol.md",
+          "sha256": "dda683a7c907989032c82a2c1c3e552b51226e0e0cd5bdf3b6068cc7f649c525",
+          "seed_version": "B6B-1"
+        },
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/13-monetary-precision-protocol.md",
+          "sha256": "4930246c7dfed2751d3a71d617a21e24b46b376131723451b39152582c7a3d4f",
+          "seed_version": "B6B-1"
+        },
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/14-data-model-protocol.md",
+          "sha256": "7d4e31ef04a1f57d88e982c01dabc22c421bafc850b7295a73d084ec3c6fc838",
+          "seed_version": "B6B-1"
+        },
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/43-time-temporal-protocol.md",
+          "sha256": "4669cc3d927289f99bbd66c3e906f97d548f0cf8ea9e94b66e8b21cb24d00afb",
+          "seed_version": "B6B-2"
+        }
+      ],
+      "language_sections": []
+    },
+    {
+      "slug": "internationalization-and-copywriting",
+      "h1": "国际化与文案",
+      "lane": "[frontend]",
+      "target": ".pomaster/specs/hard/themes/internationalization-and-copywriting.md",
+      "sources": [
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/38-internationalization-protocol.md",
+          "sha256": "68ed4e126042eee191f071786d58983b3b2df94a826a13b50fc52aaa6536c7fa",
+          "seed_version": "B6B-2"
+        },
+        {
+          "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/39-copywriting-protocol.md",
+          "sha256": "5df3a2ddcd1140b2e62dd80f547cf6c0197c44a91ebbdda02ded44bcaefed351",
+          "seed_version": "B6B-2"
+        }
+      ],
+      "language_sections": []
+    },
+    {
+      "slug": "data-and-transactions",
+      "h1": "数据与事务",
+      "lane": "[backend]",
+      "target": ".pomaster/specs/hard/themes/data-and-transactions.md",
+      "sources": [
+        {
+          "seed_source": "pomaster/components/backend-hard-spec/assets/universal/14-business-rules-state-protocol.md",
+          "sha256": "fb255dd2331ac35e73a1ad222e4de4ec2f5fb3a09e675de0e1919d80022ac291",
+          "seed_version": "B6C"
+        },
+        {
+          "seed_source": "pomaster/components/backend-hard-spec/assets/universal/15-data-model-protocol.md",
+          "sha256": "21cdd88fac93c9dc834a51d62978b51453ca02eca68f223859aeca0ada99c3f2",
+          "seed_version": "B6C"
+        },
+        {
+          "seed_source": "pomaster/components/backend-hard-spec/assets/universal/18-database-schema-migration-protocol.md",
+          "sha256": "e7d0b660673dc1978653c39c9efcc7ad7d9b2809c4a88040a6fcf74839bc82c0",
+          "seed_version": "B6C"
+        },
+        {
+          "seed_source": "pomaster/components/backend-hard-spec/assets/universal/19-query-index-sql-protocol.md",
+          "sha256": "60a660730a82a4f911bc6c18d5f6808a320f722df27d397a4e4b13835111610d",
+          "seed_version": "B6C"
+        },
+        {
+          "seed_source": "pomaster/components/backend-hard-spec/assets/universal/20-transaction-boundary-protocol.md",
+          "sha256": "4c4634b71f1e07e9cae074f9790fa50b3425f0af71300ab2ac12e644b521eff4",
+          "seed_version": "B6C"
+        },
+        {
+          "seed_source": "pomaster/components/backend-hard-spec/assets/universal/21-concurrency-locking-protocol.md",
+          "sha256": "6141612e1135cc67ccd9d47553ea5fa7b9c00e05b6e50706f8e117c80d3b8d95",
+          "seed_version": "B6C"
+        },
+        {
+          "seed_source": "pomaster/components/backend-hard-spec/assets/universal/22-idempotency-protocol.md",
+          "sha256": "c97d003622b9075f0c094ec5c5bfa950a977e18b2f4ce8ffc9bc014858e27670",
+          "seed_version": "B6C"
+        },
+        {
+          "seed_source": "pomaster/components/backend-hard-spec/assets/universal/23-cache-redis-consistency-protocol.md",
+          "sha256": "073da5821658adfc0580798873fde95c49dc9d993a63949b3b1543a9c0e18a11",
+          "seed_version": "B6C"
+        }
+      ],
+      "language_sections": [
+        {
+          "overlay": "pomaster/components/backend-hard-spec/assets/stacks/java/java-language-overlay.md",
+          "sha256": "38b592a5beaa899abb45e871e5097cafedeea80502baee00bcfbfcfa313dab85",
+          "attach": "secondary"
+        },
+        {
+          "overlay": "pomaster/components/backend-hard-spec/assets/stacks/jpa/jpa-persistence-overlay.md",
+          "sha256": "e43479fd8659b89863cf47dee9fee3c52727cc2978ffd1b854ea17c777b1e9e6",
+          "attach": "primary"
+        },
+        {
+          "overlay": "pomaster/components/backend-hard-spec/assets/stacks/mybatis/mybatis-persistence-overlay.md",
+          "sha256": "968bfa7df9b4c675161427809fd3d4e9e5b62b2b53a880420f36af00d2c60e57",
+          "attach": "primary"
+        },
+        {
+          "overlay": "pomaster/components/backend-hard-spec/assets/stacks/mysql/mysql-database-overlay.md",
+          "sha256": "a47d8c61959c120707bb907275e74ce13b4b36b03fa493bc09cc7d47fcc949d7",
+          "attach": "primary"
+        },
+        {
+          "overlay": "pomaster/components/backend-hard-spec/assets/stacks/postgresql/postgresql-database-overlay.md",
+          "sha256": "dbe9f21a72c1124519375176efb2b2b4138b21c45becebfc66eaa2ab41def16e",
+          "attach": "primary"
+        },
+        {
+          "overlay": "pomaster/components/backend-hard-spec/assets/stacks/redis/redis-cache-overlay.md",
+          "sha256": "6ae4d18ce2658a77d34bb3cf2a2c38745b646a730eb3c270c2a4c2a0a24497c7",
+          "attach": "primary"
+        }
+      ]
+    },
+    {
+      "slug": "integration-and-async-runtime",
+      "h1": "集成与异步运行时",
+      "lane": "[backend]",
+      "target": ".pomaster/specs/hard/themes/integration-and-async-runtime.md",
+      "sources": [
+        {
+          "seed_source": "pomaster/components/backend-hard-spec/assets/universal/24-external-integration-resilience-protocol.md",
+          "sha256": "e6b0626c9169e9126319bd08ee5d5bdbe38421cfa175509524145aee30ff539a",
+          "seed_version": "B6C"
+        },
+        {
+          "seed_source": "pomaster/components/backend-hard-spec/assets/universal/25-async-job-scheduler-protocol.md",
+          "sha256": "36af3b4466b4e617a9c552a404d98ab74604752b7410e15756d7f132394fb980",
+          "seed_version": "B6C"
+        },
+        {
+          "seed_source": "pomaster/components/backend-hard-spec/assets/universal/31-runtime-deployment-protocol.md",
+          "sha256": "c791451de0be3aa0629fd562e2b43cc54066e4b10d786264fa7a333c561ef23a",
+          "seed_version": "B6C"
+        }
+      ],
+      "language_sections": [
+        {
+          "overlay": "pomaster/components/backend-hard-spec/assets/stacks/spring-webflux/spring-webflux-reactive-overlay.md",
+          "sha256": "4d2045c5bfa66004516dffa55e965e90958270adba9599f116990ac27cc489f8",
+          "attach": "primary"
+        },
+        {
+          "overlay": "pomaster/components/backend-hard-spec/assets/stacks/spring-batch/spring-batch-job-overlay.md",
+          "sha256": "58f710fcfeeaeafcaa19fd4ef27bce22c3c34d8d1ef7992f95f65a3e1bd9cd78",
+          "attach": "primary"
+        },
+        {
+          "overlay": "pomaster/components/backend-hard-spec/assets/stacks/tomcat/tomcat-runtime-overlay.md",
+          "sha256": "133f15dbb7866e9e06cecf4e2cfcc2b2f14eeb06d9ea3d29be68c9e11cdd1e11",
+          "attach": "primary"
+        },
+        {
+          "overlay": "pomaster/components/backend-hard-spec/assets/stacks/nginx/nginx-proxy-overlay.md",
+          "sha256": "442da24b2bb5274003978636cf793bae02b25f24aa080fcc926c5347da39ce19",
+          "attach": "primary"
+        },
+        {
+          "overlay": "pomaster/components/backend-hard-spec/assets/stacks/kubernetes-ingress/kubernetes-ingress-overlay.md",
+          "sha256": "4369b51a677453c24b5ec4d4b97001c91932918fc779c55562012ebc6b312bf5",
+          "attach": "primary"
+        },
+        {
+          "overlay": "pomaster/components/backend-hard-spec/assets/stacks/messaging/messaging-reliability-overlay.md",
+          "sha256": "ed7f82208521675510ab4a42b229f9be269a52514cf5188c9bf83323d7590572",
+          "attach": "primary"
+        }
+      ]
+    }
+  ],
+  "navigation": {
+    "slug": "index",
+    "h1": "硬规范主题导航",
+    "target": ".pomaster/specs/hard/themes/index.md",
+    "sources": [
+      {
+        "seed_source": "pomaster/components/frontend-hard-spec/assets/universal/index.md",
+        "sha256": "37fc443ce1f90eaa2584a82e12300d8281760332ec69d55a52b26cb22a2b2375",
+        "seed_version": "B6B-2"
+      },
+      {
+        "seed_source": "pomaster/components/backend-hard-spec/assets/universal/index.md",
+        "sha256": "b50c1fdcab5d1a3217a6e28059580195f681b6e68f465eb8e055bd8e5310c479",
+        "seed_version": "B6C"
+      }
+    ],
+    "note": "D2 合并导航文档——路由表/激活基线/冲突优先级按主题文档改写承接（非逐字节聚合；改写授权 = Owner 裁定 D2/OQ-13 导航层承接）"
+  }
+}

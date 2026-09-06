@@ -15,7 +15,7 @@
     "group": "FE-G1",
     "candidate_id": "POLICY.PROC.CHECKLIST_CHANGE_POLICY",
     "density_rank": null,
-    "density_score": 33.0,
+    "density_score": 33,
     "pool_statement_sha16": "81dc9f22d1c9d513",
     "curated_rule": "B6b-I 分母（FE 01-23）required 池（ELIGIBLE 未物化）按池密度序取前 22 + advisory 池（SHOULD 源 backlog policy 卡）按同公式密度序取前 3 = 25（D5 上限）；UNIVERSAL + UNIVERSAL_POLICY + 无 uncertainty + 非 project_scope + 非重复",
     "denominator": "MASTer（池卡 source_protocol 锚）"
@@ -38,7 +38,7 @@
       "sha256": "fa8914b29dbf7af25c8128aa1b8936fd658e37854e0a4f457175e2e3c82c3a03",
       "bytes": 2691
     },
-    "seeded_spec": ".pomaster/specs/hard/frontend/01-development-checklist-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/task-governance-and-acceptance.md",
     "seed_manifest": "packages/cli/seeds/manifest.json"
   },
   "id": "POLICY.PROC.CHECKLIST_CHANGE_POLICY",

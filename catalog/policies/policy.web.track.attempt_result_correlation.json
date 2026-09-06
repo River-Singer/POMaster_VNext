@@ -38,7 +38,7 @@
       "sha256": "f638c8054ba32d44a15f1dd4fa42b637e1f6ad39cd73c6e1d45cd5bfd71b2c56",
       "bytes": 4190
     },
-    "seeded_spec": ".pomaster/specs/hard/frontend/40-analytics-protocol.md",
+    "seeded_spec": ".pomaster/specs/hard/themes/observability-and-analytics.md",
     "seed_manifest": "packages/cli/seeds/manifest.json"
   },
   "id": "POLICY.WEB.TRACK.ATTEMPT_RESULT_CORRELATION",

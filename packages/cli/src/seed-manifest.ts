@@ -6,12 +6,12 @@
  * 引擎零改动（B6a ADR：装载后归约为引擎最小面）。
  *
  * 清单单源（R5 提案形态）：`packages/cli/seeds/manifest.json`（移植工具
- * catalog/tools/seed_b6b_frontend.py 生成，禁手写大文本）承载逐文件 provenance pin
- * （source_path/source_sha256/source_bytes——R1 漂移缓解：pin 记录 vendor 源字节
- * 指纹；FE 06/15 漂移文件的 pin 由 spec-inventory pilot_verification 钉死值在工具
- * 与测试两面对账）。字节本体住包内资产 `packages/cli/seeds/specs/hard/frontend/*.md`
- * （播种件 = 统一 frontmatter + vendor 正文逐字节——移植 = 分解 + 形态改造，技术
- * 内容零语义重写）。
+ * catalog/tools/seed_b6b_frontend.py 起、scripts/seed_b7_theme.py 续，禁手写大文本）
+ * 承载逐文件 provenance pin（source_path/source_sha256/source_bytes——R1 漂移缓解：
+ * pin 记录源字节指纹；FE 06/15 漂移文件的 pin 由 spec-inventory pilot_verification
+ * 钉死值在工具与测试两面对账）。字节本体住包内资产 `packages/cli/seeds/`（B7-THEME
+ * 起 themes/ 聚合 pin 形态——seed_source 指聚合清单，逐源 vendor sha256 在
+ * x-aggregation 双面在册；stacks/ 移植件 = 统一 frontmatter + vendor 正文逐字节）。
  *
  * 装载 fail-closed（结构性包缺陷 → throw，禁静默跳过）：清单不可解析/schema 词形
  * 不符/条目字段缺失/资产文件缺席/frontmatter pin 与清单 pin 不一致，任何一条违例

@@ -459,22 +459,13 @@ export const LAYOUT_DIRECTORIES: readonly LayoutDirSpec[] = [
       "dot-pomaster-directory-constitution.md §2 全树 + PRD vNext §3 树/§8.2（Batch 6 B6a 增量平面）；kernel paths.ts（specsHardDir）",
   },
   {
-    path: "specs/hard/frontend",
+    path: "specs/hard/themes",
     status: "wired",
     purpose:
-      "前端协议播种位（45 编号协议 + index = 46 文件；vendor 字节移植 + 统一 frontmatter——B6b 灌内容，本批只登记目录）。",
-    activation_hint: "前端任务命中协议主题（P0/P1/P2 协议地图）时注入对应全文；项目可就地编辑。",
+      "主题文档播种位（20 主题 + 1 导航 = 21 文件——B7-THEME 起 FE/BE 平铺协议位退役合并为主题单文档；x-aggregation 承载逐源 vendor pin，语言节自 stacks overlay 逐字节同步）。",
+    activation_hint: "任务命中对应主题（主题地图/路由表）时注入对应主题文档全文；项目可就地编辑。",
     constitution_source:
-      "dot-pomaster-directory-constitution.md §2 全树 + PRD vNext §3 树/§8.2（Batch 6 B6a 增量平面）；kernel paths.ts（specsHardFrontendDir）",
-  },
-  {
-    path: "specs/hard/backend",
-    status: "wired",
-    purpose:
-      "后端协议播种位（32 编号协议 + index = 33 文件——B6c 灌内容，本批只登记目录）。",
-    activation_hint: "后端任务命中协议主题（index 路由表）时注入对应全文；项目可就地编辑。",
-    constitution_source:
-      "dot-pomaster-directory-constitution.md §2 全树 + PRD vNext §3 树/§8.2（Batch 6 B6a 增量平面）；kernel paths.ts（specsHardBackendDir）",
+      "dot-pomaster-directory-constitution.md §2 全树 + PRD vNext §3 树/§8.2（B7-THEME 物化批改位——09-05-spec-thematic-reorg D2/D3 裁定）；kernel paths.ts（specsHardThemesDir）",
   },
   {
     path: "specs/hard/stacks",
@@ -578,8 +569,7 @@ export function derivePathsTsStoreDirs(rootDir: string): ReadonlySet<string> {
     paths.baselinePlatformDir,
     paths.specsDir,
     paths.specsHardDir,
-    paths.specsHardFrontendDir,
-    paths.specsHardBackendDir,
+    paths.specsHardThemesDir,
     paths.specsHardStacksDir,
     paths.specsAcceptanceDir,
     paths.specsEvidenceDir,
