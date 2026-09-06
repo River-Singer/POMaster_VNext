@@ -10,6 +10,16 @@
 POMaster = State + Context + Transition + Evidence，在 Authority 与 Adaptive Governance 下运行
 ```
 
+## v0.5.0 亮点（2026-09-06）
+
+- **技术栈问卷 + 基线确认 gate**：init 平台选择后 14 键逐项必答（候选含实战栈与占位，可自由输入），答完回填 `baseline/<lane>/stack.yaml` 并销账 unknowns 台账；`pomaster baseline confirm` 以 sha256 快照烙印基线——closeout 对未确认（`BASELINE_NOT_CONFIRMED`）与漂移（`BASELINE_DRIFT`）双重阻断，确认后修改走 `--change CHANGE.*` 治理通路。
+- **baseline 栈预置草案**：选型落定后 init 自动为 22 份基线面生成 `PRESET-DRAFT` 草案节——内容逐条溯源到主题文档与 overlay，Owner 可改，confirm 烙印；业务实体/接口零预置。
+- **spec 主题式重组**：77 份 FE/BE 协议重组为 **20 份主题文档 + 1 导航**（13 跨端合并 + 7 端独占），语言差异为主题文档内小节（内容自 18 族 overlay 逐字同步）；旧平铺文件退役，已安装工作区由 doctor/status `legacy_specs_present` 检出。
+- **overlay 前端族**：vue3 / ant-design-vue / geist / css 体系四族入库（原 14 族全后端 java），全部带官方文档实抓锚（x-research-anchors）。
+- **Discovery 方法论长卡 + Grill 策略**：`pomaster-discovery` 卡内置 Grounded Brainstorm 全剧本——先 Ground 后 Grill、九类拷问动作、Frontier 节奏、上游决策失效重算；`brainstorm decide --set/--answer/--ready` 机器闸放行，`promote` 即建任务。
+- **组件画廊（Storybook）**：仓内 `packages/studio`——41 张 archetype 语义卡 + 71 个 antdv 组件真渲染 + 18 overlay 能力页，`pnpm studio:build` 出静态站。
+- **收口链补全**：`record verification`（claim 到 VERIFIED 的公开生产入口）、context 指纹绑定范围内正文（漂移必 stale）、closeout 候选证据置换不变、research request/handoff 公开链。
+
 ## 快速上手
 
 POMaster 的全部能力收敛在一条 CLI（`pomaster`）——八拍 Change Loop 的每一拍都有对应命令面。先给一张**命令全景**（机器钉版，与 `pomaster --help` 零漂移；`#` 分节注释仅人读）。第一次使用？直接看下面 [install → init → 第一个 Change](#1-安装) 的全流程。
