@@ -138,7 +138,7 @@
 | @typescript-eslint/utils | 8.68.0 | MIT | node_modules/.pnpm/@typescript-eslint+utils@8.68.0_eslint@9.39.5_typescript@5.9.3/node_modules/@typescript-eslint/utils/LICENSE | B1 |
 | @typescript-eslint/visitor-keys | 8.68.0 | MIT | node_modules/.pnpm/@typescript-eslint+visitor-keys@8.68.0/node_modules/@typescript-eslint/visitor-keys/LICENSE | B1 |
 | @vitest/expect | 2.1.9 | MIT | node_modules/.pnpm/@vitest+expect@2.1.9/node_modules/@vitest/expect/LICENSE | B1 |
-| @vitest/mocker | 2.1.9 | MIT | node_modules/.pnpm/@vitest+mocker@2.1.9_vite@5.4.21_@types+node@22.20.1_/node_modules/@vitest/mocker/LICENSE | B1 |
+| @vitest/mocker | 2.1.9 | MIT | node_modules/.pnpm/@vitest+mocker@2.1.9_vite@5.4.21_@types+node@22.20.1_lightningcss@1.33.0_/node_modules/@vitest/mocker/LICENSE | B1 |
 | @vitest/pretty-format | 2.1.9 | MIT | node_modules/.pnpm/@vitest+pretty-format@2.1.9/node_modules/@vitest/pretty-format/LICENSE | B1 |
 | @vitest/runner | 2.1.9 | MIT | node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/LICENSE | B1 |
 | @vitest/snapshot | 2.1.9 | MIT | node_modules/.pnpm/@vitest+snapshot@2.1.9/node_modules/@vitest/snapshot/LICENSE | B1 |
@@ -251,9 +251,9 @@
 | typescript-eslint | 8.68.0 | MIT | node_modules/.pnpm/typescript-eslint@8.68.0_eslint@9.39.5_typescript@5.9.3/node_modules/typescript-eslint/LICENSE | B1 |
 | undici-types | 6.21.0 | MIT | node_modules/.pnpm/undici-types@6.21.0/node_modules/undici-types/LICENSE | B1 |
 | uri-js | 4.4.1 | BSD-2-Clause | node_modules/.pnpm/uri-js@4.4.1/node_modules/uri-js/LICENSE | B1 |
-| vite | 5.4.21 | MIT | node_modules/.pnpm/vite@5.4.21_@types+node@22.20.1/node_modules/vite/LICENSE.md | B1 |
-| vite-node | 2.1.9 | MIT | node_modules/.pnpm/vite-node@2.1.9_@types+node@22.20.1/node_modules/vite-node/LICENSE | B1 |
-| vitest | 2.1.9 | MIT | node_modules/.pnpm/vitest@2.1.9_@types+node@22.20.1/node_modules/vitest/LICENSE.md | B1 |
+| vite | 5.4.21 | MIT | node_modules/.pnpm/vite@5.4.21_@types+node@22.20.1_lightningcss@1.33.0/node_modules/vite/LICENSE.md | B1 |
+| vite-node | 2.1.9 | MIT | node_modules/.pnpm/vite-node@2.1.9_@types+node@22.20.1_lightningcss@1.33.0/node_modules/vite-node/LICENSE | B1 |
+| vitest | 2.1.9 | MIT | node_modules/.pnpm/vitest@2.1.9_@types+node@22.20.1_lightningcss@1.33.0/node_modules/vitest/LICENSE.md | B1 |
 | which | 2.0.2 | ISC | node_modules/.pnpm/which@2.0.2/node_modules/which/LICENSE | B1 |
 | why-is-node-running | 2.3.0 | MIT | node_modules/.pnpm/why-is-node-running@2.3.0/node_modules/why-is-node-running/LICENSE | B1 |
 | word-wrap | 1.2.5 | MIT | node_modules/.pnpm/word-wrap@1.2.5/node_modules/word-wrap/LICENSE | B1 |
