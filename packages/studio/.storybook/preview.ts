@@ -6,6 +6,7 @@
 // - 画廊 story 另做局部组件注册（components: {...}）——与全局注册双保险。
 import { setup } from "@storybook/vue3-vite";
 import Antd from "ant-design-vue";
+import "ant-design-vue/dist/reset.css";
 import "./preview.css";
 
 setup((app) => {
