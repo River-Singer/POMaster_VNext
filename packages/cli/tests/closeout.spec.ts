@@ -820,19 +820,46 @@ describe("closeout 编排边界：身份/kind/kernel 施断判卷", () => {
 // baseline 确认 gate（R-L 2026-09-05）：closeout 聚合单点两阻塞码
 // ============================================================
 
-/** baseline 快照目标内容（确定性文本；四件 = confirm 的 digest 分母）。 */
+/**
+ * baseline 快照目标内容（确定性文本；24 件 = confirm 的 digest 分母——N1 单一资产
+ * 清单：2 stack.yaml + 22 md，与 BASELINE_CONFIRM_TARGETS 同分母）。
+ */
 function baselineFileContents(): Map<string, string> {
+  const md = (name: string): [string, string] => [`.pomaster/baseline/${name}`, `# ${name}\n`];
   return new Map([
     [".pomaster/baseline/frontend/stack.yaml", "framework: vue3\nlanguage: typescript\n"],
     [".pomaster/baseline/backend/stack.yaml", "language: java\nframework: spring\n"],
-    [".pomaster/baseline/frontend/architecture.md", "# 前端架构\n"],
-    [".pomaster/baseline/backend/architecture.md", "# 后端架构\n"],
+    ...[
+      "frontend/architecture.md",
+      "frontend/directory-structure.md",
+      "frontend/design-system.md",
+      "frontend/state-and-data.md",
+      "frontend/api-and-error.md",
+      "frontend/quality.md",
+      "backend/architecture.md",
+      "backend/directory-structure.md",
+      "backend/api-contract.md",
+      "backend/data-access.md",
+      "backend/transaction-concurrency.md",
+      "backend/integration-runtime.md",
+      "backend/quality.md",
+      "data/model.md",
+      "data/precision-units.md",
+      "data/migration.md",
+      "data/lineage.md",
+      "data/quality.md",
+      "platform/security.md",
+      "platform/environment.md",
+      "platform/observability.md",
+      "platform/delivery.md",
+    ].map(md),
   ]);
 }
 
 /**
  * 播种 baseline 子树（fixture 最小 store 默认无 baseline——适用域边界的正面构造）；
- * confirmed = true 时按四件真实 digest 写 manifest 确认记录（R-L confirmed 块契约）。
+ * confirmed = true 时按 24 件真实 digest 写 manifest 确认记录（R-L confirmed 块契约，
+ * N1 单一资产清单分母）。
  */
 function seedBaseline(confirmed: boolean): void {
   const contents = baselineFileContents();

@@ -37,6 +37,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
+  BASELINE_CONFIRM_TARGETS,
   BASELINE_LANES,
   CHECKLIST_KEYS,
   STACK_KEYS,
@@ -377,7 +378,14 @@ describe("栈条件条目（overlay 引用随选型纳排）", () => {
 // ============================================================
 
 describe("confirm 烙印与漂移检出（R-L 语义零改动）", () => {
-  it("确认前草案可自由改（gate 仅 NOT_CONFIRMED）；confirm 后改草案 → BASELINE_DRIFT 指名 architecture.md；重确认恢复", async () => {
+  it("face 集 == 确认资产清单 md 子集（N1 同源：confirm 整文件快照的 G-B 声明结构兑现）", async () => {
+    // 模块载入对账（ADR-2a）已在 import 期执行（漂移即抛错）；此处钉逐字清单。
+    const targets = BASELINE_CONFIRM_TARGETS.filter((target) => target.endsWith(".md")).sort();
+    expect(targets).toEqual(FACE_FILES.map((file) => file.replace(/^\.pomaster\//, "")));
+    expect(BASELINE_CONFIRM_TARGETS).toHaveLength(24); // 2 stack.yaml + 22 md
+  });
+
+  it("确认前草案可自由改（gate 仅 NOT_CONFIRMED）；confirm 后改草案 → BASELINE_DRIFT 指名 architecture.md；ack 通道重确认恢复", async () => {
     await initWithFullQuiz();
     // 确认前：草案自由修改不产生漂移语义（未确认态唯一阻塞码）。
     appendLineTo(".pomaster/baseline/backend/architecture.md", "- Owner 手改行（确认前自由修改）");
@@ -393,8 +401,11 @@ describe("confirm 烙印与漂移检出（R-L 语义零改动）", () => {
     const presentation = await readBaselineConfirmationPresentation(dir);
     expect(presentation?.state).toBe("drifted");
     expect(presentation?.drifted_files).toContain("baseline/backend/architecture.md");
-    // 治理通路终点：重确认重新快照 → gate 转绿。
-    const reconfirmed = await runBaselineConfirm(dir);
+    // 手改声明通道重确认（N2 三通道——草案手改是 Owner 合法通路）→ gate 转绿。
+    const reconfirmed = await runBaselineConfirm(dir, {
+      ackDrifted: true,
+      note: "Owner 修订后端架构草案（手改声明）",
+    });
     expect(reconfirmed.result.change).toBe("CONFIRMED");
     expect(await baselineGateErrors(dir)).toEqual([]);
   });

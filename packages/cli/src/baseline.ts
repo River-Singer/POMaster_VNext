@@ -63,37 +63,67 @@
  *   两阻塞码——词形 R-L 已定），doctor/status 纯读呈现确认态。D9「无消费者不加
  *   机制」由 R-L 显式增补（父 PRD Technical Notes 有声明）。
  * - ADR-11 确认记录结构（manifest 顶层 `confirmed:` 键——Step A 占位词形逐字兼容，
- *   BASELINE_CONFIRMED_PLACEHOLDER 升正式）：`at_seq` = 确认时点锚（truth-index
- *   generation.seq；A4 零墙钟纪律——机器消费字段禁时间戳，时位即 seq；store 缺席
- *   = 0 诚实缺席，信息性锚非判卷输入）+ `digests` = 四确认目标 sha256 快照
- *   （baseline/frontend/stack.yaml、baseline/backend/stack.yaml、baseline/frontend/
- *   architecture.md、baseline/backend/architecture.md——词形 sha256:<hex>，与
- *   catalog-lock sha256OfUtf8 同口径）。契约写入 --help 与本头注；manifest 是项目
- *   可编辑种子文件，本记录是**项目文件字段非治理对象**（零新状态轴：记录在座性 +
- *   四文件内容即全部状态）。行级块写（ADR-2 同款零 YAML 依赖）：块 = confirmed:
- *   行至下一顶层键行或 EOF；重确认 = 整块替换（EOF 追加位）。
+ *   BASELINE_CONFIRMED_PLACEHOLDER 升正式；N1 批修订分母）：`at_seq` = 确认时点锚
+ *   （truth-index generation.seq；A4 零墙钟纪律——机器消费字段禁时间戳，时位即 seq；
+ *   store 缺席 = 0 诚实缺席，信息性锚非判卷输入）+ `digests` = **确认资产清单全量**
+ *   sha256 快照（2 stack.yaml + 22 md = 24 文件——ADR-15；manifest 不自引用；
+ *   词形 sha256:<hex>，与 catalog-lock sha256OfUtf8 同口径）。契约写入 --help 与本
+ *   头注；manifest 是项目可编辑种子文件，本记录是**项目文件字段非治理对象**（零新
+ *   状态轴：记录在座性 + 资产清单内容即全部状态）。行级块写（ADR-2 同款零 YAML
+ *   依赖）：块 = confirmed: 行至下一顶层键行或 EOF；重确认 = 整块替换（EOF 追加位）。
  * - ADR-12 confirm 判卷与幂等：前提 = 14 unknowns 全销账（台账条目在座或 stack 值
- *   仍未销账的键逐条列出 → BASELINE_UNKNOWNS_REMAINING fail-closed）；四确认目标
+ *   仍未销账的键逐条列出 → BASELINE_UNKNOWNS_REMAINING fail-closed）；确认资产清单
  *   缺席 → NOT_CONFIGURED（seed-once 播种件恒在，缺席 = 结构漂移显式）；已确认且
  *   digest 与现盘全等 → NO_CHANGE 零写入（幂等比较只看 digest——at_seq 不比，
- *   重跑不因 journal 前进而重写）；漂移后重确认 = 重新快照（治理通路终点）。
- * - ADR-13 失效语义（二选一裁定：**移除记录**，不标 stale）：baseline set 持有效
- *   --change 写入确认快照内文件时整块移除 confirmed 记录 → 项目回到「未确认」态，
- *   closeout 恢复 BASELINE_NOT_CONFIRMED 阻断直至重确认。理由：(1) doctor/status/
- *   closeout 恰好保持 R-L 三态闭包（stale 需要第四态或并入歧义态）；(2) 确认记录
- *   是对特定内容集的 digest 快照——内容经治理改变后该快照不再描述任何在座物，其
- *   语义工作已终结，重确认是 Owner 的显式再判卷；(3) 治理变更痕迹住 CHANGE.* 对象
- *   + journal（既有审计面），不重复落 manifest（零新状态轴）。同值重放/台账自愈
- *   不触发失效（快照内文件字节未变）。
- * - ADR-14 set 治理通路（Step A 占位转正式）：确认态在座且无 --change →
- *   BASELINE_ALREADY_CONFIRMED 拒绝（接口词形不变，语义从占位转可达）；--change
- *   须指向在册 change_object 且 lifecycle ∈ {PROPOSED, CURRENT}（kernel
- *   loadTruthIndex 校验——对象在册性 + 活性判卷零旁移；ACTIVE 词集沿 next-action
- *   先例；死生命周期 SUPERSEDED/DEPRECATED/RETIRED/REJECTED 不授权新变更）；
+ *   重跑不因 journal 前进而重写）。
+ * - ADR-13（**已被 ADR-16 取代**，留痕）：v0.5.0 的「set --change 整块移除 confirmed
+ *   记录」失效语义在审计 N2/N3 中证伪——移除记录使「重确认无通道可消费变更批」
+ *   （N2 裸重确认洗白）且「同一 CHANGE 连改多键被迫中间确认」（N3 两难）。ADR-16
+ *   以记录内 pending-change 字段替代移除。
+ * - ADR-14 set 治理通路（Step A 占位转正式；N3 批修订）：确认态在座（词形或有效
+ *   记录）且无 --change → BASELINE_ALREADY_CONFIRMED 拒绝；--change 须指向在册
+ *   change_object 且 lifecycle ∈ {PROPOSED, CURRENT}（kernel loadTruthIndex 校验）；
  *   词形非 CHANGE.* / kind 失配 / 无确认记录时携带 --change → SCHEMA_INVALID；
  *   对象缺席 → OBJECT_NOT_FOUND；非活性 → BASELINE_CHANGE_NOT_ACTIVE。已答键改型
  *   闸（BASELINE_KEY_ALREADY_SET）在确认态 + 有效 --change 下让位（--change 即
- *   改型授权）；未确认态行为逐字节不变。
+ *   改型授权）；未确认态行为逐字节不变。N3 起写入不再移除记录 → 记 pending-change
+ *   （ADR-16）。
+ *
+ * 0.5.0 审计修复批 1（N1+N2+N3，2026-09-06；PRD 09-06-audit-n1-n5-fixes 批 1 +
+ * Owner 09-06 N2 三通道补裁定；执行不得翻案，自由度内 ADR-15~17）：
+ *
+ * - ADR-15（N1）确认分母 = 单一资产清单：`BASELINE_CONFIRM_TARGETS` 从 4 文件扩为
+ *   **24 文件 = 2 stack.yaml + 22 md**（22 md = G-C 播种 md 全集 = baseline-preset
+ *   预置面；manifest.yaml 不自引用）。单一清单同时驱动三消费面：confirm digest
+ *   快照、closeout baselineGateErrors 校验、preset「整体 digest 快照」声明（模块
+ *   载入即对账——face 集 ⊆ 确认清单是结构保证非测试期望）。旧 4 目标记录在新分母
+ *   下 = 结构损坏（digest 缺目标）→ 判卷面「无有效确认记录」fail-closed（升级路径
+ *   = 重新 confirm 全量快照，不需要 CHANGE）。
+ * - ADR-16（N3）确认态三态机：manifest 确认记录内部字段演进（零新状态轴）——
+ *   `confirmed`（digest 与现盘全等）/ `pending-change`（记录含 pending 段：change_ref
+ *   + 变更批键集）/ `drifted`（无 pending 授权覆盖的 digest 漂移）。`set --change`
+ *   写入不再移除记录：异值写入 → 记 pending-change（**同一 CHANGE 连改多键全程
+ *   允许**——批内键集追加去重；不同 ref 在途 → SCHEMA_INVALID 须先终结；同值重放
+ *   不触发）；pending 期间无 --change → BASELINE_ALREADY_CONFIRMED（消息指明变更
+ *   批在途）。pending 授权只覆盖批内键所在文件——在途期间批外文件漂移 = drifted
+ *   （未授权改动优先呈现，禁 pending 洗白批外漂移）。confirm 消费 pending（同 ref
+ *   + kernel 活性复核）→ 全量重快照回 confirmed；closeout 对 pending-change 一律
+ *   BASELINE_NOT_CONFIRMED 阻断（pending 也是未确认）。
+ * - ADR-17（N2）重确认三通道——漂移的消解必须显式：区分「初次确认」（无有效确认
+ *   记录——不需要任何通道，现状保留；损坏块修复同路）与「重确认」（drifted/
+ *   pending-change）。通道 1 治理通路：`--change <CHANGE-id>`（kernel 校验在册 +
+ *   活性）；通道 2 Owner 手改声明：`--ack-drifted --note "<理由>"`（note 必填，
+ *   单行 ≤200 字符）——显式声明当前漂移为授权手改（22 份 md 无治理写命令，手改/
+ *   AI 硬补是合法通路但要留痕）：journal 追加 `BASELINE_ACK` 事件（seq 时位 +
+ *   漂移文件清单 + note，kernel journal 行格式同构——append-only 单行 JSON），
+ *   确认记录带 ack 标记（note + 确认时点漂移文件），doctor/status 呈现「上次确认
+ *   为手改声明」。通道互斥（同携 → SCHEMA_INVALID）。**裸重确认（两通道皆无）=
+ *   BASELINE_RECONFIRM_REQUIRES_CHANGE 显式拒绝**——审计 N2 本意：封「静默洗白
+ *   零留痕」，显式声明与静默覆盖有本质区别；v0.5.0 把裸重确认钉为允许是实现偏差
+ *   （R-L 原文「修改走治理通路 + 重确认」从未豁免）。宪法边界：ack 通道不是拦写
+ *   豁免、不是身份鉴权——是显式授权声明 + 审计留痕；AI 代跑 ack 须持 Owner 指示
+ *   （hint 写明）。confirmed 且无漂移时携任何通道旗标 → SCHEMA_INVALID（诚实拒绝
+ *   静默 no-op 旗标，ADR-14 同纪律）。
  */
 
 import { writeFile } from "node:fs/promises";
@@ -111,10 +141,13 @@ import { governanceErrorToCliError } from "./permit.js";
 import {
   BASELINE_FRONTEND_DIR_RELATIVE,
   BASELINE_BACKEND_DIR_RELATIVE,
+  BASELINE_DATA_DIR_RELATIVE,
+  BASELINE_PLATFORM_DIR_RELATIVE,
   BASELINE_MANIFEST_RELATIVE,
   POMASTER_DIR,
   TRUTH_INDEX_RELATIVE,
   baselineStackRelative,
+  journalFilePath,
 } from "./store-layout.js";
 
 // ============================================================
@@ -339,13 +372,43 @@ const UNKNOWN_ENTRY_LINE = /^\s*-\s*(.+?)\s*$/;
 const UNKNOWN_ENTRY_COUNT =
   /^\s*-\s*baseline\/(?:frontend|backend)\/stack\.yaml:[A-Za-z0-9_-]+\s*$/;
 
-/** manifest unknowns 台账行删除（精确词形匹配；返回删除条数与全文）。 */
+/**
+ * confirmed 块行区间定位（start = confirmed: 行；end = 下一顶层键行或 EOF；缺席 =
+ * null）。台账三函数（计数/清单/删除）与块解析/移除共用的单一区间换算——confirmed
+ * 块内的批条目行与 unknowns 台账词形同域（baseline/<lane>/stack.yaml:<key>），台账
+ * 扫描必须排除块区间（N3：pending batch 条目不得计入未销账分母，也不得被台账删除
+ * 误伤）。
+ */
+function confirmedBlockRange(lines: readonly string[]): { start: number; end: number } | null {
+  const start = lines.findIndex((line) => CONFIRMED_KEY_LINE.test(line));
+  if (start < 0) return null;
+  let end = lines.length;
+  for (let i = start + 1; i < lines.length; i += 1) {
+    const line = lines[i] ?? "";
+    if (line.trim() === "" || line.startsWith("#")) continue;
+    if (TOP_LEVEL_KEY_LINE.test(line)) {
+      end = i;
+      break;
+    }
+  }
+  return { start, end };
+}
+
+/** 行号是否落在 confirmed 块区间内（块缺席 = false）。 */
+function insideConfirmedBlock(index: number, block: { start: number; end: number } | null): boolean {
+  return block !== null && index >= block.start && index < block.end;
+}
+
+/** manifest unknowns 台账行删除（精确词形匹配；confirmed 块区间内零触碰）；返回删除条数与全文。 */
 function removeUnknownEntries(
   text: string,
   wordForms: ReadonlySet<string>,
 ): { next: string; removed: number } {
+  const lines = text.split("\n");
+  const block = confirmedBlockRange(lines);
   let removed = 0;
-  const kept = text.split("\n").filter((line) => {
+  const kept = lines.filter((line, index) => {
+    if (insideConfirmedBlock(index, block)) return true;
     const match = UNKNOWN_ENTRY_LINE.exec(line);
     if (match !== null && wordForms.has(match[1] ?? "")) {
       removed += 1;
@@ -356,9 +419,11 @@ function removeUnknownEntries(
   return { next: kept.join("\n"), removed };
 }
 
-/** 现盘 unknowns 台账剩余条数（stack 键词形行计数——未销账分母的呈现口径）。 */
+/** 现盘 unknowns 台账剩余条数（stack 键词形行计数，confirmed 块区间排除——未销账分母的呈现口径）。 */
 function countUnknownEntries(text: string): number {
-  return text.split("\n").filter((line) => UNKNOWN_ENTRY_COUNT.test(line)).length;
+  const lines = text.split("\n");
+  const block = confirmedBlockRange(lines);
+  return lines.filter((line, index) => !insideConfirmedBlock(index, block) && UNKNOWN_ENTRY_COUNT.test(line)).length;
 }
 
 // Step B 确认 gate 的词形闸（ADR-11）：manifest 顶层 `confirmed:` 键在座 = 确认态
@@ -686,9 +751,10 @@ export interface BaselineSetInput {
   readonly key: string;
   readonly value: string;
   /**
-   * 治理通路授权（ADR-14；Step B）：CHANGE.* 对象 id——仅在确认态在座时被消费
-   * （kernel 校验在册 + lifecycle 活性）；无确认记录时携带 → SCHEMA_INVALID
-   * （诚实拒绝静默 no-op 旗标）。
+   * 治理通路授权（ADR-14/16）：CHANGE.* 对象 id——仅在有效确认记录在座时被消费
+   * （kernel 校验在册 + lifecycle 活性；pending-change 在途须同 ref）；无确认记录时
+   * 携带 → SCHEMA_INVALID（诚实拒绝静默 no-op 旗标）。异值写入 → 记录转
+   * pending-change（批内键集追加，同 ref 连改多键全程允许——记录不再移除）。
    */
   readonly change?: string;
 }
@@ -703,8 +769,9 @@ export interface BaselineSetResult {
   /** 销账后 unknowns 台账剩余条数（stack 键词形口径）；失败占位 = -1。 */
   readonly unknowns_remaining: number;
   /**
-   * 确认记录失效位（ADR-13）：true = 本次写入改动了确认快照内文件，manifest 的
-   * confirmed 记录已整块移除（项目回「未确认」态——closeout 阻断直至重确认）。
+   * 确认态演进位（ADR-16，N3 起）：true = 本次写入异值改动了确认快照内文件，
+   * manifest 确认记录转 pending-change（记录保留——ADR-13 的整块移除已废；closeout
+   * 阻断直至携通道重确认）。同值重放恒 false（快照字节未变不触发）。
    */
   readonly confirmation_invalidated: boolean;
 }
@@ -732,12 +799,16 @@ function failBaselineSet(
 }
 
 /**
- * 单键后补销账（无确认记录时）与治理通路修改（确认态 + 有效 --change，ADR-14）：
+ * 单键后补销账（无确认记录时）与治理通路修改（确认态 + 有效 --change，ADR-14/16）：
  * 校验（lane/key/value 词形闸，fail-closed 零写入）→ 读盘（缺席 NOT_CONFIGURED /
- * 损坏 INVALID_STATE）→ 确认闸（确认态在座：无 --change BASELINE_ALREADY_CONFIRMED
- * 拒绝；--change 经 kernel 校验在册 + 活性）→ 已答键改型闸（确认态 + 有效 --change
- * 让位——授权即改型通路）→ 写 stack.yaml + 同步销账（+ 快照内文件变更时确认记录
- * 整块移除）。同值重放 = 幂等 NO_CHANGE（台账漏销则顺带自愈；快照字节未变不失效）。
+ * 损坏 INVALID_STATE）→ 确认闸（有效记录：无 --change BASELINE_ALREADY_CONFIRMED；
+ * --change 经 kernel 校验在册 + 活性；pending-change 在途须同 ref——异 ref
+ * SCHEMA_INVALID 先终结；记录词形在座但结构损坏：无 --change 受闸拒绝、携
+ * --change INVALID_STATE——修复归 confirm 不归 set）→ 已答键改型闸
+ * （BASELINE_KEY_ALREADY_SET）仅在无有效确认记录时生效 → 写 stack.yaml + 同步销账
+ * （+ 有效记录在座时异值写入转 pending-change：批内键集追加去重，同 ref 连改多键
+ * 全程允许——ADR-16；记录不再移除）。同值重放 = 幂等 NO_CHANGE（台账漏销则顺带
+ * 自愈；pending 不新增、确认记录零触碰）。
  */
 export async function runBaselineSet(
   rootDir: string,
@@ -797,15 +868,37 @@ export async function runBaselineSet(
       input,
     );
   }
-  // —— 确认闸（ADR-14 占位转正式）：词形在座即确认态（结构损坏同样受闸——
-  // fail-closed 禁绕过；修复损坏块是 confirm/手工的职责，不是 set 的）——
-  const confirmedPresent = BASELINE_CONFIRMED_PLACEHOLDER.test(manifestFile.text);
-  if (confirmedPresent) {
+  // —— 确认闸（ADR-14/16）：有效记录 → 治理通路判卷；词形在座而记录结构损坏 →
+  // fail-closed 受闸（禁绕过；修复损坏块是 confirm 的职责，不是 set 的）——
+  const confirmedWordFormPresent = BASELINE_CONFIRMED_PLACEHOLDER.test(manifestFile.text);
+  const recordParse = parseConfirmedBlock(manifestFile.text);
+  const recordValid = recordParse.kind === "ok";
+  if (recordValid || confirmedWordFormPresent) {
     if (input.change === undefined) {
       return failBaselineSet(
         "BASELINE_ALREADY_CONFIRMED",
-        "baseline 已确认（manifest 在座确认记录）；确认后项目架构不允许直接修改",
-        "修改走治理通路：先立 CHANGE.* 对象，再 pomaster baseline set --change <CHANGE-id>（写入并使确认记录失效），完成后 pomaster baseline confirm 重确认。",
+        recordValid
+          ? recordParse.record.pending !== undefined
+            ? `baseline 确认记录在座且变更批在途（pending-change；change_ref=${recordParse.record.pending.change_ref}）——继续修改须携同 ref，或携同 ref confirm 终结`
+            : "baseline 已确认（manifest 在座确认记录）；确认后项目架构不允许直接修改"
+          : "baseline 确认记录在座（结构损坏）——项目架构不允许直接修改（损坏块修复走 confirm 重建）",
+        "修改走治理通路：先立 CHANGE.* 对象，再 pomaster baseline set --change <CHANGE-id>（写入转 pending-change），完成后携同 ref pomaster baseline confirm 重确认。",
+        input,
+      );
+    }
+    if (!recordValid) {
+      return failBaselineSet(
+        "INVALID_STATE",
+        "manifest 确认记录结构损坏——set 不在损坏记录上授权写盘",
+        "先 pomaster baseline confirm 重建确认记录（损坏块修复不需要通道），再走治理通路 set --change。",
+        input,
+      );
+    }
+    if (recordParse.record.pending !== undefined && input.change !== recordParse.record.pending.change_ref) {
+      return failBaselineSet(
+        "SCHEMA_INVALID",
+        `pending-change 变更批由 ${recordParse.record.pending.change_ref} 持有——同批连改须携同 ref（批内 ${recordParse.record.pending.batch.length} 键）`,
+        `继续修改: pomaster baseline set --change ${recordParse.record.pending.change_ref}；终结: pomaster baseline confirm --change ${recordParse.record.pending.change_ref}。`,
         input,
       );
     }
@@ -826,12 +919,13 @@ export async function runBaselineSet(
   let change: "UPDATED" | "NO_CHANGE" = "NO_CHANGE";
   let confirmationInvalidated = false;
   let nextManifest = manifestFile.text;
+  let pendingRecord: BaselineConfirmedRecord | undefined;
   if (current !== input.value) {
-    if (isResolved(current) && !confirmedPresent) {
+    if (isResolved(current) && !recordValid) {
       return failBaselineSet(
         "BASELINE_KEY_ALREADY_SET",
         `${stackRelative}:${input.key} 已销账为 ${current}；set 不做改型`,
-        "answered 稳定语义：已答键的改型走治理通路——确认后持有效 --change 重放本命令（写入并失效确认记录），或经项目自有评审手工修改。",
+        "answered 稳定语义：已答键的改型走治理通路——确认后持有效 --change 重放本命令（写入转 pending-change），或经项目自有评审手工修改。",
         input,
       );
     }
@@ -852,9 +946,16 @@ export async function runBaselineSet(
       change = "UPDATED";
     }
     fileReports.push({ file: stackRelative, action: "updated" });
-    // —— 确认记录失效（ADR-13）：快照内文件字节变更 → 整块移除 confirmed 记录 ——
-    if (confirmedPresent && nextStack !== stackFile.text) {
-      nextManifest = removeConfirmedBlock(nextManifest);
+    // —— 确认记录演进（ADR-16）：有效记录 + 异值授权写入 → 记 pending-change
+    // （批内键集追加去重——同 ref 连改多键全程允许；记录保留不再移除）。upsert
+    // 延后到台账删除之后：批条目词形与 unknowns 台账词形同域（baseline/<lane>/
+    // stack.yaml:<key>），先删台账会误删旧块/新块内的批条目行——次序契约 =
+    // 台账删除作用于旧文本，块 upsert 最后整体替换（旧块内被删行随块淘汰）。——
+    if (recordValid && input.change !== undefined && nextStack !== stackFile.text) {
+      const prior = recordParse.record.pending;
+      const entry = unknownsWordForm(lane, input.key);
+      const batch = prior === undefined ? [entry] : prior.batch.includes(entry) ? prior.batch : [...prior.batch, entry];
+      pendingRecord = { ...recordParse.record, pending: { change_ref: input.change, batch } };
       confirmationInvalidated = true;
     }
   } else {
@@ -865,6 +966,9 @@ export async function runBaselineSet(
     new Set([unknownsWordForm(lane, input.key)]),
   );
   nextManifest = afterLedger;
+  if (pendingRecord !== undefined) {
+    nextManifest = upsertConfirmedBlock(nextManifest, pendingRecord);
+  }
   if (nextManifest !== manifestFile.text) {
     await writeFile(`${rootDir}/${BASELINE_MANIFEST_RELATIVE}`, nextManifest, "utf8");
     fileReports.push({ file: BASELINE_MANIFEST_RELATIVE, action: "updated" });
@@ -880,7 +984,7 @@ export async function runBaselineSet(
     confirmation_invalidated: confirmationInvalidated,
   };
   const human = [
-    `baseline set: ${change} ${lane}.${input.key} = ${input.value}${confirmationInvalidated ? "（确认记录已失效——重确认前 closeout 阻断）" : ""}`,
+    `baseline set: ${change} ${lane}.${input.key} = ${input.value}${confirmationInvalidated ? `（确认记录转 pending-change；change_ref=${input.change}——携同 ref confirm 终结前 closeout 阻断）` : ""}`,
     ...fileReports.map(
       (report) => `  ${report.action.padEnd(10)} ${report.file}${removed > 0 && report.file === BASELINE_MANIFEST_RELATIVE ? `（销账 ${removed} 条）` : ""}`,
     ),
@@ -911,20 +1015,57 @@ export function renderBaselineQuizHumanLine(baseline: BaselineQuizResult): strin
 // Step B（R-L）：确认记录（manifest confirmed 块的行级解析/渲染/移除）
 // ============================================================
 
+/** 存储前缀剥离（".pomaster/x" → "x"；确认目标词形域 = baseline/ 起不带前缀）。 */
+function stripStorePrefix(relative: string): string {
+  return relative.startsWith(`${POMASTER_DIR}/`) ? relative.slice(POMASTER_DIR.length + 1) : relative;
+}
+
 /**
- * 确认快照目标（ADR-11）：两个 stack.yaml + 两个 architecture.md——架构选型与架构
- * 叙述的完整内容集。词形 = manifest 内部约定（baseline/ 前缀起，不带 .pomaster/
- * 存储前缀——与 unknowns 台账词形同域，任务裁定原文词形）；盘面路径经
- * baselineConfirmTargetPath 机械换算（零第二套路径声明）。
+ * 确认资产清单 · 22 份 md 面（ADR-15，N1）：G-C 播种 md 全集（frontend 6 + backend 7
+ * + data 5 + platform 4）——与 baseline-preset.ts PRESET_FACE_SPECS 预置面同源
+ * （preset 模块载入即对账，禁两处口径漂移）。词形 = manifest 内部约定（baseline/
+ * 前缀起，不带 .pomaster/ 存储前缀——与 unknowns 台账词形同域）。
+ */
+export const BASELINE_MD_FACES: readonly string[] = [
+  // —— frontend 6 ——
+  `${stripStorePrefix(BASELINE_FRONTEND_DIR_RELATIVE)}/architecture.md`,
+  `${stripStorePrefix(BASELINE_FRONTEND_DIR_RELATIVE)}/directory-structure.md`,
+  `${stripStorePrefix(BASELINE_FRONTEND_DIR_RELATIVE)}/design-system.md`,
+  `${stripStorePrefix(BASELINE_FRONTEND_DIR_RELATIVE)}/state-and-data.md`,
+  `${stripStorePrefix(BASELINE_FRONTEND_DIR_RELATIVE)}/api-and-error.md`,
+  `${stripStorePrefix(BASELINE_FRONTEND_DIR_RELATIVE)}/quality.md`,
+  // —— backend 7 ——
+  `${stripStorePrefix(BASELINE_BACKEND_DIR_RELATIVE)}/architecture.md`,
+  `${stripStorePrefix(BASELINE_BACKEND_DIR_RELATIVE)}/directory-structure.md`,
+  `${stripStorePrefix(BASELINE_BACKEND_DIR_RELATIVE)}/api-contract.md`,
+  `${stripStorePrefix(BASELINE_BACKEND_DIR_RELATIVE)}/data-access.md`,
+  `${stripStorePrefix(BASELINE_BACKEND_DIR_RELATIVE)}/transaction-concurrency.md`,
+  `${stripStorePrefix(BASELINE_BACKEND_DIR_RELATIVE)}/integration-runtime.md`,
+  `${stripStorePrefix(BASELINE_BACKEND_DIR_RELATIVE)}/quality.md`,
+  // —— data 5 ——
+  `${stripStorePrefix(BASELINE_DATA_DIR_RELATIVE)}/model.md`,
+  `${stripStorePrefix(BASELINE_DATA_DIR_RELATIVE)}/precision-units.md`,
+  `${stripStorePrefix(BASELINE_DATA_DIR_RELATIVE)}/migration.md`,
+  `${stripStorePrefix(BASELINE_DATA_DIR_RELATIVE)}/lineage.md`,
+  `${stripStorePrefix(BASELINE_DATA_DIR_RELATIVE)}/quality.md`,
+  // —— platform 4 ——
+  `${stripStorePrefix(BASELINE_PLATFORM_DIR_RELATIVE)}/security.md`,
+  `${stripStorePrefix(BASELINE_PLATFORM_DIR_RELATIVE)}/environment.md`,
+  `${stripStorePrefix(BASELINE_PLATFORM_DIR_RELATIVE)}/observability.md`,
+  `${stripStorePrefix(BASELINE_PLATFORM_DIR_RELATIVE)}/delivery.md`,
+];
+
+/**
+ * 确认快照目标（ADR-11/15，N1）：两个 stack.yaml + 22 md = **24 文件单一资产清单**
+ * ——confirm digest 快照、closeout baseline 校验、preset 整体快照声明三消费面同源；
+ * manifest.yaml 不自引用。盘面路径经 baselineConfirmTargetPath 机械换算（零第二套
+ * 路径声明）。
  */
 export const BASELINE_CONFIRM_TARGETS: readonly string[] = [
-  baselineStackRelative("frontend"),
-  baselineStackRelative("backend"),
-  `${BASELINE_FRONTEND_DIR_RELATIVE}/architecture.md`,
-  `${BASELINE_BACKEND_DIR_RELATIVE}/architecture.md`,
-].map((relative) =>
-  relative.startsWith(`${POMASTER_DIR}/`) ? relative.slice(POMASTER_DIR.length + 1) : relative,
-);
+  stripStorePrefix(baselineStackRelative("frontend")),
+  stripStorePrefix(baselineStackRelative("backend")),
+  ...BASELINE_MD_FACES,
+];
 
 /** 确认目标词形 → 盘面绝对路径（store-layout 常量派生；单一换算点）。 */
 export function baselineConfirmTargetPath(rootDir: string, target: string): string {
@@ -935,8 +1076,24 @@ export function baselineConfirmTargetPath(rootDir: string, target: string): stri
 export interface BaselineConfirmedRecord {
   /** 确认时点锚（truth-index generation.seq；A4 零墙钟——时位即 seq；store 缺席 = 0）。 */
   readonly at_seq: number;
-  /** 四确认目标的 sha256 快照（sha256OfUtf8 同口径，词形 sha256:<hex>）。 */
+  /** 确认资产清单的 sha256 快照（sha256OfUtf8 同口径，词形 sha256:<hex>）。 */
   readonly digests: Readonly<Record<string, string>>;
+  /** 手改声明标记（ADR-17 通道 2）：在座 = 上次确认为 Owner 手改声明（ack 通道）。 */
+  readonly ack?: BaselineAckRecord;
+  /** 在途变更批（ADR-16）：在座 = 确认记录持 pending-change（同 ref 连改批）。 */
+  readonly pending?: BaselinePendingChange;
+}
+
+/** 手改声明记录（ADR-17）：note 必填单行；files = ack 确认时点的漂移文件清单。 */
+export interface BaselineAckRecord {
+  readonly note: string;
+  readonly files: readonly string[];
+}
+
+/** 在途变更批（ADR-16）：change_ref = 授权 CHANGE.*；batch = unknowns 台账词形键集。 */
+export interface BaselinePendingChange {
+  readonly change_ref: string;
+  readonly batch: readonly string[];
 }
 
 /** confirmed 块行级解析结果（三态：在座且可解析 / 在座但结构损坏 / 缺席）。 */
@@ -950,27 +1107,47 @@ const TOP_LEVEL_KEY_LINE = /^[A-Za-z][A-Za-z0-9_-]*\s*:/;
 const AT_SEQ_LINE = /^\s+at_seq\s*:\s*([0-9]+)\s*$/;
 const DIGESTS_HEADER_LINE = /^\s+digests\s*:$/;
 const DIGEST_LINE = /^\s+(\S+)\s*:\s*(sha256:[0-9a-f]{64})\s*$/;
+// —— ADR-16/17 扩展段（pending-change / ack 手改声明）——
+const PENDING_HEADER_LINE = /^\s+pending\s*:\s*$/;
+const CHANGE_REF_LINE = /^\s+change_ref\s*:\s*(\S+)\s*$/;
+const BATCH_HEADER_LINE = /^\s+batch\s*:\s*$/;
+const ACK_HEADER_LINE = /^\s+ack\s*:\s*$/;
+const ACK_NOTE_LINE = /^\s+note\s*:\s*(\S.*?)\s*$/;
+const ACK_FILES_HEADER_LINE = /^\s+files\s*:\s*$/;
+const LIST_ENTRY_LINE = /^\s+-\s*(.+?)\s*$/;
+const BATCH_ENTRY_PATTERN = /^baseline\/(frontend|backend)\/stack\.yaml:([A-Za-z0-9_-]+)$/;
 
 /**
- * manifest confirmed 块行级解析（ADR-11 契约的读取侧；零 YAML 依赖）。块 = confirmed:
- * 行至下一顶层键行（非空、顶层词形）或 EOF；块内只容忍空行/注释/at_seq/digests 段头/
- * digest 行，其余一律 damaged（fail-closed——禁猜测手改块语义）。
+ * 批条目词形校验（ADR-16）：`baseline/<lane>/stack.yaml:<key>` 且键在该 lane 键集
+ * 闭包内——键集外条目 = 结构损坏（fail-closed 禁猜测手改批语义）。
+ */
+function isKnownBatchEntry(wordForm: string): boolean {
+  const match = BATCH_ENTRY_PATTERN.exec(wordForm);
+  if (match === null) return false;
+  const lane = match[1] as BaselineLane;
+  return (STACK_KEYS[lane] as readonly string[]).includes(match[2] ?? "");
+}
+
+/**
+ * manifest confirmed 块行级解析（ADR-11/16/17 契约的读取侧；零 YAML 依赖）。块 =
+ * confirmed: 行至下一顶层键行（非空、顶层词形）或 EOF；块内只容忍空行/注释、
+ * at_seq、digests 段、pending 段（change_ref + batch 键集）、ack 段（note + files
+ * 清单），其余一律 damaged（fail-closed——禁猜测手改块语义）。digest 缺目标（含
+ * 旧 4 目标记录遇 24 目标新分母）= damaged → 判卷面「无有效确认记录」。
  */
 function parseConfirmedBlock(text: string): ConfirmedBlockParse {
   const lines = text.split("\n");
-  const start = lines.findIndex((line) => CONFIRMED_KEY_LINE.test(line));
-  if (start < 0) return { kind: "absent" };
-  let end = lines.length;
-  for (let i = start + 1; i < lines.length; i += 1) {
-    const line = lines[i] ?? "";
-    if (line.trim() === "" || line.startsWith("#")) continue;
-    if (TOP_LEVEL_KEY_LINE.test(line)) {
-      end = i;
-      break;
-    }
-  }
+  const range = confirmedBlockRange(lines);
+  if (range === null) return { kind: "absent" };
+  const { start, end } = range;
   let atSeq: number | null = null;
   const digests = new Map<string, string>();
+  let changeRef: string | null = null;
+  let batch: string[] | null = null;
+  let ackNote: string | null = null;
+  let ackFiles: string[] | null = null;
+  // 段位跟踪：root = 段头之间；pending/ack 子段与其列表位由 header 行切入。
+  let section: "root" | "ack" | "ack-files" | "pending" | "pending-batch" | "digests" = "root";
   for (let i = start + 1; i < end; i += 1) {
     const line = lines[i] ?? "";
     if (line.trim() === "" || line.startsWith("#")) continue;
@@ -978,9 +1155,86 @@ function parseConfirmedBlock(text: string): ConfirmedBlockParse {
     if (seqMatch !== null) {
       if (atSeq !== null) return { kind: "damaged", detail: "at_seq 重复" };
       atSeq = Number.parseInt(seqMatch[1] ?? "", 10);
+      section = "root";
       continue;
     }
-    if (DIGESTS_HEADER_LINE.test(line)) continue;
+    if (ACK_HEADER_LINE.test(line)) {
+      if (ackNote !== null || ackFiles !== null) return { kind: "damaged", detail: "ack 段重复" };
+      ackNote = null;
+      ackFiles = null;
+      section = "ack";
+      continue;
+    }
+    if (PENDING_HEADER_LINE.test(line)) {
+      if (changeRef !== null || batch !== null) return { kind: "damaged", detail: "pending 段重复" };
+      changeRef = null;
+      batch = null;
+      section = "pending";
+      continue;
+    }
+    if (DIGESTS_HEADER_LINE.test(line)) {
+      section = "digests";
+      continue;
+    }
+    if (section === "ack" || section === "ack-files") {
+      const noteMatch = section === "ack" ? ACK_NOTE_LINE.exec(line) : null;
+      if (noteMatch !== null) {
+        if (ackNote !== null) return { kind: "damaged", detail: "ack note 重复" };
+        ackNote = noteMatch[1] ?? "";
+        continue;
+      }
+      if (section === "ack" && ACK_FILES_HEADER_LINE.test(line)) {
+        if (ackFiles !== null) return { kind: "damaged", detail: "ack files 段重复" };
+        ackFiles = [];
+        section = "ack-files";
+        continue;
+      }
+      if (section === "ack-files") {
+        const entry = LIST_ENTRY_LINE.exec(line)?.[1];
+        if (entry !== undefined) {
+          if (!BASELINE_CONFIRM_TARGETS.includes(entry)) {
+            return { kind: "damaged", detail: `ack files 条目非确认资产词形：${entry}` };
+          }
+          if ((ackFiles as string[]).includes(entry)) {
+            return { kind: "damaged", detail: `ack files 条目重复：${entry}` };
+          }
+          (ackFiles as string[]).push(entry);
+          continue;
+        }
+      }
+      return { kind: "damaged", detail: `ack 段内不可识别行：${line.trim()}` };
+    }
+    if (section === "pending" || section === "pending-batch") {
+      const refMatch = section === "pending" ? CHANGE_REF_LINE.exec(line) : null;
+      if (refMatch !== null) {
+        if (changeRef !== null) return { kind: "damaged", detail: "change_ref 重复" };
+        if (!BASELINE_CHANGE_ID_PATTERN.test(refMatch[1] ?? "")) {
+          return { kind: "damaged", detail: `change_ref 词形非法：${refMatch[1] ?? ""}` };
+        }
+        changeRef = refMatch[1] ?? "";
+        continue;
+      }
+      if (section === "pending" && BATCH_HEADER_LINE.test(line)) {
+        if (batch !== null) return { kind: "damaged", detail: "batch 段重复" };
+        batch = [];
+        section = "pending-batch";
+        continue;
+      }
+      if (section === "pending-batch") {
+        const entry = LIST_ENTRY_LINE.exec(line)?.[1];
+        if (entry !== undefined) {
+          if (!isKnownBatchEntry(entry)) {
+            return { kind: "damaged", detail: `batch 条目词形非法：${entry}` };
+          }
+          if ((batch as string[]).includes(entry)) {
+            return { kind: "damaged", detail: `batch 条目重复：${entry}` };
+          }
+          (batch as string[]).push(entry);
+          continue;
+        }
+      }
+      return { kind: "damaged", detail: `pending 段内不可识别行：${line.trim()}` };
+    }
     const digestMatch = DIGEST_LINE.exec(line);
     if (digestMatch !== null) {
       const path = digestMatch[1] ?? "";
@@ -995,39 +1249,47 @@ function parseConfirmedBlock(text: string): ConfirmedBlockParse {
   if (missing.length > 0) {
     return { kind: "damaged", detail: `digest 快照缺目标：${missing.join(", ")}` };
   }
+  // —— 子段完整性：出现即须完整（fail-closed 禁半截 pending/ack）——
+  if (changeRef !== null || batch !== null) {
+    if (changeRef === null) return { kind: "damaged", detail: "pending 段缺 change_ref" };
+    if (batch === null || batch.length === 0) return { kind: "damaged", detail: "pending 段缺 batch 键集" };
+  }
+  if (ackNote !== null || ackFiles !== null) {
+    if (ackNote === null || ackNote.length === 0) return { kind: "damaged", detail: "ack 段缺 note" };
+    if (ackFiles === null || ackFiles.length === 0) return { kind: "damaged", detail: "ack 段缺 files 清单" };
+  }
   const record: BaselineConfirmedRecord = {
     at_seq: atSeq,
     digests: Object.fromEntries(BASELINE_CONFIRM_TARGETS.map((target) => [target, digests.get(target) as string])),
+    ...(changeRef !== null && batch !== null ? { pending: { change_ref: changeRef, batch } } : {}),
+    ...(ackNote !== null && ackFiles !== null ? { ack: { note: ackNote, files: ackFiles } } : {}),
   };
   return { kind: "ok", record };
 }
 
-/** confirmed 块渲染（ADR-11 契约的写入侧；目标序 = BASELINE_CONFIRM_TARGETS 固定序）。 */
+/** confirmed 块渲染（ADR-11/16/17 契约的写入侧；目标序 = BASELINE_CONFIRM_TARGETS 固定序）。 */
 function renderConfirmedBlock(record: BaselineConfirmedRecord): string {
-  return [
-    "confirmed:",
-    `  at_seq: ${record.at_seq}`,
-    "  digests:",
-    ...BASELINE_CONFIRM_TARGETS.map((target) => `    ${target}: ${record.digests[target]}`),
-    "",
-  ].join("\n");
+  const lines: string[] = ["confirmed:", `  at_seq: ${record.at_seq}`];
+  if (record.ack !== undefined) {
+    lines.push("  ack:", `    note: ${record.ack.note}`, "    files:");
+    lines.push(...record.ack.files.map((file) => `      - ${file}`));
+  }
+  if (record.pending !== undefined) {
+    lines.push("  pending:", `    change_ref: ${record.pending.change_ref}`, "    batch:");
+    lines.push(...record.pending.batch.map((entry) => `      - ${entry}`));
+  }
+  lines.push("  digests:");
+  lines.push(...BASELINE_CONFIRM_TARGETS.map((target) => `    ${target}: ${record.digests[target]}`));
+  lines.push("");
+  return lines.join("\n");
 }
 
 /** confirmed 块移除（行级 splice：块区间整段删除，其余字节不动）；块缺席原文返回。 */
 function removeConfirmedBlock(text: string): string {
   const lines = text.split("\n");
-  const start = lines.findIndex((line) => CONFIRMED_KEY_LINE.test(line));
-  if (start < 0) return text;
-  let end = lines.length;
-  for (let i = start + 1; i < lines.length; i += 1) {
-    const line = lines[i] ?? "";
-    if (line.trim() === "" || line.startsWith("#")) continue;
-    if (TOP_LEVEL_KEY_LINE.test(line)) {
-      end = i;
-      break;
-    }
-  }
-  return [...lines.slice(0, start), ...lines.slice(end)].join("\n");
+  const range = confirmedBlockRange(lines);
+  if (range === null) return text;
+  return [...lines.slice(0, range.start), ...lines.slice(range.end)].join("\n");
 }
 
 /** confirmed 块 upsert（移除旧块后 EOF 追加新块；换行补齐——字节级最小改写）。 */
@@ -1037,11 +1299,14 @@ function upsertConfirmedBlock(text: string, record: BaselineConfirmedRecord): st
   return stripped.endsWith("\n") ? stripped + block : `${stripped}\n${block}`;
 }
 
-/** 现盘 unknowns 台账词形清单（销账判卷的逐条呈现分母；文档序）。 */
+/** 现盘 unknowns 台账词形清单（销账判卷的逐条呈现分母；文档序；confirmed 块区间排除）。 */
 function listUnknownEntries(text: string): string[] {
-  return text
-    .split("\n")
-    .map((line) => UNKNOWN_ENTRY_LINE.exec(line)?.[1]?.trim() ?? "")
+  const lines = text.split("\n");
+  const block = confirmedBlockRange(lines);
+  return lines
+    .map((line, index) =>
+      insideConfirmedBlock(index, block) ? "" : UNKNOWN_ENTRY_LINE.exec(line)?.[1]?.trim() ?? "",
+    )
     .filter((wordForm) => UNKNOWN_ENTRY_COUNT.test(`- ${wordForm}`));
 }
 
@@ -1057,7 +1322,7 @@ async function readGenerationSeq(rootDir: string): Promise<number> {
   }
 }
 
-/** 四确认目标的现盘 digest 快照；任一目标缺席/不可读 → NOT_CONFIGURED/INVALID_STATE 错误。 */
+/** 确认资产清单（24 文件）的现盘 digest 快照；任一目标缺席/不可读 → NOT_CONFIGURED/INVALID_STATE 错误。 */
 async function computeConfirmDigests(
   rootDir: string,
 ): Promise<{ readonly ok: true; readonly digests: Readonly<Record<string, string>> } | { readonly ok: false; readonly error: CliError }> {
@@ -1073,20 +1338,31 @@ async function computeConfirmDigests(
 }
 
 // ============================================================
-// `pomaster baseline confirm` —— 基线确认施断（R-L Step B；New Entity Gate 先例）
+// `pomaster baseline confirm` —— 基线确认施断（R-L Step B；N1/N2/N3 三通道）
 // ============================================================
 
+export interface BaselineConfirmInput {
+  /** 通道 1（治理通路，ADR-17）：CHANGE.* 在册且活性——drifted 覆盖 / pending 同 ref 终结。 */
+  readonly change?: string;
+  /** 通道 2（Owner 手改声明，ADR-17）：显式声明当前漂移为授权手改；与 note 必配。 */
+  readonly ackDrifted?: boolean;
+  /** 手改声明理由（--ack-drifted 必填；单行 ≤200 字符；入 manifest ack 段 + journal）。 */
+  readonly note?: string;
+}
+
 export interface BaselineConfirmResult {
-  /** CONFIRMED = 确认记录写入（首确认或漂移后重快照）；NO_CHANGE = 幂等零写入。 */
+  /** CONFIRMED = 确认记录写入（首确认/通道终结重快照）；NO_CHANGE = 幂等零写入。 */
   readonly change: "CONFIRMED" | "NO_CHANGE";
   /** 确认时点锚（NO_CHANGE = 既有记录的 at_seq；失败占位 null）。 */
   readonly at_seq: number | null;
-  /** 四确认目标 digest 快照（失败占位空）。 */
+  /** 确认资产清单（24 文件）digest 快照（失败占位空）。 */
   readonly digests: readonly { readonly file: string; readonly sha256: string }[];
   /** 确认时点的 unknowns 台账剩余条数（fail-closed 前提判卷的呈现位）。 */
   readonly unknowns_remaining: number;
   /** 写入/检视的文件（POSIX 相对路径；与 init/set 的 files 词形同族）。 */
   readonly files: readonly { readonly file: string; readonly action: "updated" | "unchanged" }[];
+  /** 手改声明（ADR-17 通道 2 成功时在座）：note + 确认时点漂移文件清单。 */
+  readonly ack?: { readonly note: string; readonly files: readonly string[] };
 }
 
 function failBaselineConfirm(
@@ -1110,22 +1386,84 @@ function failBaselineConfirm(
 }
 
 /**
- * 基线确认施断（ADR-10/12）：前提 = 14 unknowns 全销账（台账条目 ∪ stack 未销账值，
- * 逐条列出）→ 快照 = 四确认目标 digest → 幂等 = digest 全等零写入 → 落盘 = manifest
- * confirmed 块 upsert（行级最小改写）。漂移后重确认 = 重新快照（治理通路终点）。
+ * note 归一（ADR-17）：trim → 换行/制表折叠单空格（manifest 行级写法禁多行）→
+ * 空串 = null（note 必填）；上限 200 字符（防 manifest 单行失控）。
+ */
+function normalizeAckNote(raw: string): string | null {
+  const collapsed = raw.trim().replace(/[\r\n\t]+/g, " ").replace(/ {2,}/g, " ").trim();
+  if (collapsed.length === 0) return null;
+  return collapsed.length > 200 ? collapsed.slice(0, 200) : collapsed;
+}
+
+/** journal BASELINE_ACK 事件追加（ADR-17 通道 2 审计留痕；kernel journal 行格式同构）。 */
+async function appendBaselineAckJournalEvent(
+  rootDir: string,
+  event: { readonly seq: number; readonly drifted_files: readonly string[]; readonly note: string },
+): Promise<CliError | null> {
+  try {
+    const { appendFile } = await import("node:fs/promises");
+    await appendFile(
+      journalFilePath(rootDir),
+      `${JSON.stringify({ type: "BASELINE_ACK", ...event })}\n`,
+      "utf8",
+    );
+    return null;
+  } catch (error) {
+    return {
+      code: "INVALID_STATE",
+      message: `journal 追加失败（BASELINE_ACK 留痕必须落盘，禁无日志的手改声明）: ${(error as Error).message}`,
+      hint: "检查 .pomaster/state/ 权限后重试；手改声明不放行无 journal 留痕的确认。",
+    };
+  }
+}
+
+/**
+ * 基线确认施断（ADR-10/12/15/16/17）：
+ * 1. 通道旗标词形判卷（纯静态，fail-closed 最先）；
+ * 2. 前提 = 14 unknowns 全销账（台账条目 ∪ stack 未销账值，逐条列出）；
+ * 3. 快照 = 24 文件确认资产清单 digest（缺席 = 结构漂移显式，禁部分快照）；
+ * 4. 分叉（N2/N3）：无有效记录（缺席/损坏）→ 初次确认，**不需要任何通道**（损坏块
+ *    修复同路）；有效记录 → 状态派生（confirmed / pending-change / drifted）：
+ *    - confirmed → 任何通道旗标 SCHEMA_INVALID（诚实拒绝 no-op 旗标）；裸 →
+ *      NO_CHANGE 幂等；
+ *    - pending-change → 须 `--change <同 ref>`（kernel 活性复核）终结；裸 →
+ *      BASELINE_RECONFIRM_REQUIRES_CHANGE；--ack-drifted SCHEMA_INVALID；
+ *    - drifted → 通道 1 `--change`（任意活性 CHANGE 覆盖）或通道 2
+ *      `--ack-drifted --note`（journal BASELINE_ACK 留痕 + 记录 ack 标记）；裸 →
+ *      BASELINE_RECONFIRM_REQUIRES_CHANGE。
+ * 落盘 = confirmed 块整块 upsert（记录演进：pending/ack 段按通道写入或清除）。
  */
 export async function runBaselineConfirm(
   rootDir: string,
+  input: BaselineConfirmInput = {},
 ): Promise<CommandOutcome<BaselineConfirmResult>> {
+  // —— 1. 通道旗标静态判卷（互斥 + 必配 + 词形；零 io 即决）——
+  if (input.change !== undefined && (input.ackDrifted === true || input.note !== undefined)) {
+    return failBaselineConfirm(
+      "SCHEMA_INVALID",
+      "重确认通道互斥：--change（治理通路）与 --ack-drifted --note（手改声明）不可同携",
+      "择一：治理通路走 --change <CHANGE-id>；手改声明走 --ack-drifted --note \"<理由>\"。",
+      -1,
+    );
+  }
+  if (input.ackDrifted === true || input.note !== undefined) {
+    if (input.ackDrifted !== true || input.note === undefined) {
+      return failBaselineConfirm(
+        "SCHEMA_INVALID",
+        "--ack-drifted 与 --note 必配（手改声明无理由 = 不留痕，拒绝）",
+        "示例：pomaster baseline confirm --ack-drifted --note \"AI 按 Owner 指示补全安全文档\"",
+        -1,
+      );
+    }
+  }
   const manifestFile = await readTextFile(`${rootDir}/${BASELINE_MANIFEST_RELATIVE}`);
   if (manifestFile.kind !== "ok") {
     const error = baselineFileError(BASELINE_MANIFEST_RELATIVE, manifestFile);
     return failBaselineConfirm(error.code, error.message, error.hint, -1);
   }
   const unknownsRemaining = countUnknownEntries(manifestFile.text);
-  // —— 前提判卷：台账条目 ∪ stack 未销账值（双重销账契约的一致性核验，fail-closed）——
+  // —— 2. 前提判卷：台账条目 ∪ stack 未销账值（双重销账契约的一致性核验，fail-closed）——
   const unsettled = new Set(listUnknownEntries(manifestFile.text));
-  const stackValuesByLane = new Map<BaselineLane, ReadonlyMap<string, string>>();
   for (const lane of BASELINE_LANES) {
     const stackRelative = baselineStackRelative(lane);
     const stackFile = await readTextFile(`${rootDir}/${stackRelative}`);
@@ -1142,7 +1480,6 @@ export async function runBaselineConfirm(
         unknownsRemaining,
       );
     }
-    stackValuesByLane.set(lane, parse.parsed.values);
     for (const key of STACK_KEYS[lane]) {
       if (!isResolved(parse.parsed.values.get(key) ?? "")) {
         unsettled.add(unknownsWordForm(lane, key));
@@ -1159,40 +1496,179 @@ export async function runBaselineConfirm(
       unknownsRemaining,
     );
   }
-  // —— 快照：四确认目标 digest（缺席 = 结构漂移显式，禁部分快照）——
+  // —— 3. 快照：24 文件确认资产清单 digest（缺席 = 结构漂移显式，禁部分快照）——
   const snapshot = await computeConfirmDigests(rootDir);
   if (!snapshot.ok) {
     return failBaselineConfirm(snapshot.error.code, snapshot.error.message, snapshot.error.hint, unknownsRemaining);
   }
-  // —— 幂等：已确认且 digest 全等 → NO_CHANGE 零写入（at_seq 不比——重跑不重写）——
+  // —— 4. 分叉：初次确认 vs 三态重确认（ADR-16/17）——
   const existing = parseConfirmedBlock(manifestFile.text);
-  if (existing.kind === "ok") {
-    const unchanged = BASELINE_CONFIRM_TARGETS.every(
-      (target) => existing.record.digests[target] === snapshot.digests[target],
-    );
-    if (unchanged) {
-      const result: BaselineConfirmResult = {
-        change: "NO_CHANGE",
-        at_seq: existing.record.at_seq,
-        digests: BASELINE_CONFIRM_TARGETS.map((target) => ({
-          file: target,
-          sha256: snapshot.digests[target] as string,
-        })),
-        unknowns_remaining: unknownsRemaining,
-        files: [{ file: BASELINE_MANIFEST_RELATIVE, action: "unchanged" }],
-      };
-      return okOutcome("baseline confirm", result, [
-        `baseline confirm: NO_CHANGE（已确认且 digest 无漂移——幂等零写入；at_seq=${existing.record.at_seq}）`,
-        `  unchanged ${BASELINE_MANIFEST_RELATIVE}（confirmed 记录在座）`,
-        `  unknowns remaining: ${unknownsRemaining}`,
-      ]);
+  if (existing.kind !== "ok") {
+    // 初次确认（含损坏块修复）：任何通道旗标都未被消费 → 诚实拒绝静默旗标。
+    if (input.change !== undefined) {
+      return failBaselineConfirm(
+        "SCHEMA_INVALID",
+        `--change 仅在重确认（漂移/变更批终结）时被消费；当前无有效确认记录${existing.kind === "damaged" ? "（在座确认记录结构损坏——按初次确认重建）" : ""}`,
+        "初次确认不需要 CHANGE：直接 pomaster baseline confirm。",
+        unknownsRemaining,
+      );
     }
+    if (input.ackDrifted === true || input.note !== undefined) {
+      return failBaselineConfirm(
+        "SCHEMA_INVALID",
+        "--ack-drifted 仅在重确认漂移时被消费；当前无有效确认记录（无漂移可声明）",
+        "初次确认不需要手改声明：直接 pomaster baseline confirm。",
+        unknownsRemaining,
+      );
+    }
+    return writeConfirmedRecord(rootDir, manifestFile.text, {
+      at_seq: await readGenerationSeq(rootDir),
+      digests: snapshot.digests,
+    }, snapshot.digests, unknownsRemaining, undefined);
   }
-  // —— 落盘：confirmed 块 upsert（首确认/漂移重快照/损坏块修复共用同一写通路）——
-  const record: BaselineConfirmedRecord = { at_seq: await readGenerationSeq(rootDir), digests: snapshot.digests };
-  const nextManifest = upsertConfirmedBlock(manifestFile.text, record);
+  const record = existing.record;
+  const mismatched = BASELINE_CONFIRM_TARGETS.filter(
+    (target) => record.digests[target] !== snapshot.digests[target],
+  );
+  const pending = record.pending;
+  const pendingBatchFiles = new Set(
+    (pending?.batch ?? []).map((entry) => entry.split(":")[0] ?? entry),
+  );
+  const pendingCoversAllDrift =
+    pending !== undefined && mismatched.every((target) => pendingBatchFiles.has(target));
+  const state: "confirmed" | "pending-change" | "drifted" =
+    pending === undefined
+      ? mismatched.length > 0
+        ? "drifted"
+        : "confirmed"
+      : pendingCoversAllDrift
+        ? "pending-change"
+        : "drifted";
+  if (state === "confirmed") {
+    if (input.change !== undefined) {
+      return failBaselineConfirm(
+        "SCHEMA_INVALID",
+        `--change 仅在重确认时被消费；当前已确认且 digest 无漂移（幂等 NO_CHANGE）`,
+        "直接 pomaster baseline confirm（幂等零写入）；确认后修改先走 pomaster baseline set --change。",
+        unknownsRemaining,
+      );
+    }
+    if (input.ackDrifted === true || input.note !== undefined) {
+      return failBaselineConfirm(
+        "SCHEMA_INVALID",
+        "--ack-drifted 仅在漂移重确认时被消费；当前无漂移可声明",
+        "直接 pomaster baseline confirm（幂等零写入）。",
+        unknownsRemaining,
+      );
+    }
+    const result: BaselineConfirmResult = {
+      change: "NO_CHANGE",
+      at_seq: record.at_seq,
+      digests: BASELINE_CONFIRM_TARGETS.map((target) => ({
+        file: target,
+        sha256: snapshot.digests[target] as string,
+      })),
+      unknowns_remaining: unknownsRemaining,
+      files: [{ file: BASELINE_MANIFEST_RELATIVE, action: "unchanged" }],
+    };
+    return okOutcome("baseline confirm", result, [
+      `baseline confirm: NO_CHANGE（已确认且 digest 无漂移——幂等零写入；at_seq=${record.at_seq}）`,
+      `  unchanged ${BASELINE_MANIFEST_RELATIVE}（confirmed 记录在座）`,
+      `  unknowns remaining: ${unknownsRemaining}`,
+    ]);
+  }
+  if (state === "pending-change") {
+    if (input.ackDrifted === true || input.note !== undefined) {
+      return failBaselineConfirm(
+        "SCHEMA_INVALID",
+        `--ack-drifted 不适用于在途变更批（pending-change；change_ref=${pending?.change_ref}）`,
+        `变更批须以治理通路终结: pomaster baseline confirm --change ${pending?.change_ref}`,
+        unknownsRemaining,
+      );
+    }
+    if (input.change === undefined) {
+      return failBaselineConfirm(
+        "BASELINE_RECONFIRM_REQUIRES_CHANGE",
+        `变更批在途（pending-change；change_ref=${pending?.change_ref}；批内 ${pending?.batch.length ?? 0} 键）——裸重确认拒绝（重确认须显式通道）`,
+        `终结变更批: pomaster baseline confirm --change ${pending?.change_ref}（kernel 活性复核后全量重快照）`,
+        unknownsRemaining,
+      );
+    }
+    if (input.change !== pending?.change_ref) {
+      return failBaselineConfirm(
+        "SCHEMA_INVALID",
+        `pending 变更批由 ${pending?.change_ref} 持有——重确认须消费同 ref（在途 ${pending?.batch.length ?? 0} 键）`,
+        `携同 ref 终结: pomaster baseline confirm --change ${pending?.change_ref}；另立变更先终结本批。`,
+        unknownsRemaining,
+      );
+    }
+    const changeError = await validateBaselineChangeRef(rootDir, input.change);
+    if (changeError !== null) {
+      return failBaselineConfirm(changeError.code, changeError.message, changeError.hint, unknownsRemaining);
+    }
+    // 消费变更批 → 全量重快照（pending/ack 清除——本次确认通道 = 治理通路）。
+    return writeConfirmedRecord(rootDir, manifestFile.text, {
+      at_seq: await readGenerationSeq(rootDir),
+      digests: snapshot.digests,
+    }, snapshot.digests, unknownsRemaining, undefined);
+  }
+  // —— state === "drifted"：三通道判卷（裸拒绝 / --change 覆盖 / --ack-drifted 声明）——
+  if (input.change === undefined && input.ackDrifted !== true) {
+    return failBaselineConfirm(
+      "BASELINE_RECONFIRM_REQUIRES_CHANGE",
+      `已漂移（${mismatched.length} 文件与确认快照不符：${mismatched.join("、")}）——裸重确认拒绝（静默洗白零留痕禁断，审计 N2）`,
+      '重确认三通道取一：--change <CHANGE-id>（治理通路）或 --ack-drifted --note "<理由>"（Owner 手改声明；AI 代跑须持 Owner 指示）',
+      unknownsRemaining,
+    );
+  }
+  if (input.change !== undefined) {
+    const changeError = await validateBaselineChangeRef(rootDir, input.change);
+    if (changeError !== null) {
+      return failBaselineConfirm(changeError.code, changeError.message, changeError.hint, unknownsRemaining);
+    }
+    return writeConfirmedRecord(rootDir, manifestFile.text, {
+      at_seq: await readGenerationSeq(rootDir),
+      digests: snapshot.digests,
+    }, snapshot.digests, unknownsRemaining, undefined);
+  }
+  // —— 通道 2：Owner 手改声明（note 已过必配闸；journal 留痕先于 manifest 落盘）——
+  const note = normalizeAckNote(input.note ?? "");
+  if (note === null) {
+    return failBaselineConfirm(
+      "SCHEMA_INVALID",
+      "--note 为空（手改声明理由必填）",
+      '示例：--note "AI 按 Owner 指示补全安全文档"',
+      unknownsRemaining,
+    );
+  }
+  const atSeq = await readGenerationSeq(rootDir);
+  const journalError = await appendBaselineAckJournalEvent(rootDir, {
+    seq: atSeq,
+    drifted_files: [...mismatched],
+    note,
+  });
+  if (journalError !== null) {
+    return failBaselineConfirm(journalError.code, journalError.message, journalError.hint, unknownsRemaining);
+  }
+  return writeConfirmedRecord(rootDir, manifestFile.text, {
+    at_seq: atSeq,
+    digests: snapshot.digests,
+    ack: { note, files: [...mismatched] },
+  }, snapshot.digests, unknownsRemaining, { note, files: [...mismatched] });
+}
+
+/** confirmed 块落盘 + CONFIRMED 信封（初次确认/三通道重确认共用同一写通路）。 */
+async function writeConfirmedRecord(
+  rootDir: string,
+  manifestText: string,
+  record: BaselineConfirmedRecord,
+  snapshotDigests: Readonly<Record<string, string>>,
+  unknownsRemaining: number,
+  ack: BaselineConfirmResult["ack"],
+): Promise<CommandOutcome<BaselineConfirmResult>> {
+  const nextManifest = upsertConfirmedBlock(manifestText, record);
   const fileReports: BaselineConfirmResult["files"][number][] = [];
-  if (nextManifest !== manifestFile.text) {
+  if (nextManifest !== manifestText) {
     await writeFile(`${rootDir}/${BASELINE_MANIFEST_RELATIVE}`, nextManifest, "utf8");
     fileReports.push({ file: BASELINE_MANIFEST_RELATIVE, action: "updated" });
   } else {
@@ -1203,13 +1679,14 @@ export async function runBaselineConfirm(
     at_seq: record.at_seq,
     digests: BASELINE_CONFIRM_TARGETS.map((target) => ({
       file: target,
-      sha256: snapshot.digests[target] as string,
+      sha256: snapshotDigests[target] as string,
     })),
     unknowns_remaining: unknownsRemaining,
     files: fileReports,
+    ...(ack !== undefined ? { ack } : {}),
   };
   return okOutcome("baseline confirm", result, [
-    `baseline confirm: CONFIRMED（4 文件 digest 快照在座；at_seq=${record.at_seq}）——closeout 判卷与 doctor/status 呈现接线生效`,
+    `baseline confirm: CONFIRMED（${BASELINE_CONFIRM_TARGETS.length} 文件 digest 快照在座；at_seq=${record.at_seq}）${ack !== undefined ? `——手改声明 ack 留痕（journal BASELINE_ACK；note: ${ack.note}）` : ""}——closeout 判卷与 doctor/status 呈现接线生效`,
     ...fileReports.map((report) => `  ${report.action.padEnd(10)} ${report.file}`),
     ...result.digests.map((digest) => `  ${digest.file} ${digest.sha256}`),
     `  unknowns remaining: ${unknownsRemaining}`,
@@ -1220,30 +1697,99 @@ export async function runBaselineConfirm(
 // closeout 聚合单点的确认 gate（R-L 两阻塞码；适用域 = manifest 在场项目）
 // ============================================================
 
+/** 确认态读取中间面（gate 与 presentation 共用同一派生——判卷/呈现禁两套口径）。 */
+type BaselineConfirmationRead =
+  | { readonly kind: "manifest-absent" }
+  | { readonly kind: "manifest-unreadable"; readonly detail: string }
+  | {
+      readonly kind: "record-invalid";
+      readonly damaged: boolean;
+      readonly damage_detail: string | null;
+      readonly unknowns_remaining: number;
+    }
+  | {
+      readonly kind: "record-valid";
+      readonly record: BaselineConfirmedRecord;
+      readonly unknowns_remaining: number;
+      /** 漂移目标（结构化：缺席/不可读带注记词——呈现层渲染）。 */
+      readonly mismatches: readonly { readonly target: string; readonly note: "缺席" | "不可读" | null }[];
+      readonly state: "confirmed" | "pending-change" | "drifted";
+    };
+
+/**
+ * 确认态单一读取面（ADR-16 状态派生单源）：manifest 级三态（缺席/不可读/可读）×
+ * 记录级判卷（损坏 = 无有效确认记录）× 状态派生——pending 段在座且漂移全部落在批内
+ * 文件 → pending-change；pending 在座而批外漂移 → drifted（未授权改动优先，禁
+ * pending 洗白批外漂移）；无 pending → 漂移即 drifted，无漂移即 confirmed。
+ */
+async function readBaselineConfirmation(rootDir: string): Promise<BaselineConfirmationRead> {
+  const manifestFile = await readTextFile(`${rootDir}/${BASELINE_MANIFEST_RELATIVE}`);
+  if (manifestFile.kind === "absent") return { kind: "manifest-absent" };
+  if (manifestFile.kind === "unreadable") {
+    return { kind: "manifest-unreadable", detail: manifestFile.detail };
+  }
+  const unknownsRemaining = countUnknownEntries(manifestFile.text);
+  const parsed = parseConfirmedBlock(manifestFile.text);
+  if (parsed.kind !== "ok") {
+    return {
+      kind: "record-invalid",
+      damaged: parsed.kind === "damaged",
+      damage_detail: parsed.kind === "damaged" ? parsed.detail : null,
+      unknowns_remaining: unknownsRemaining,
+    };
+  }
+  const mismatches: { target: string; note: "缺席" | "不可读" | null }[] = [];
+  for (const target of BASELINE_CONFIRM_TARGETS) {
+    const file = await readTextFile(baselineConfirmTargetPath(rootDir, target));
+    if (file.kind !== "ok") {
+      mismatches.push({ target, note: file.kind === "absent" ? "缺席" : "不可读" });
+      continue;
+    }
+    if (sha256OfUtf8(file.text) !== parsed.record.digests[target]) {
+      mismatches.push({ target, note: null });
+    }
+  }
+  const pending = parsed.record.pending;
+  const pendingBatchFiles = new Set(
+    (pending?.batch ?? []).map((entry) => entry.split(":")[0] ?? entry),
+  );
+  const state: "confirmed" | "pending-change" | "drifted" =
+    pending === undefined
+      ? mismatches.length > 0
+        ? "drifted"
+        : "confirmed"
+      : mismatches.every((mismatch) => pendingBatchFiles.has(mismatch.target))
+        ? "pending-change"
+        : "drifted";
+  return { kind: "record-valid", record: parsed.record, unknowns_remaining: unknownsRemaining, mismatches, state };
+}
+
 /**
  * closeout 阻塞码判卷（R-L 词形已定：BASELINE_NOT_CONFIRMED / BASELINE_DRIFT）：
  * - manifest 缺席 → 空数组（门不适用——fixture 最小 store 无 baseline；init 工作区
  *   恒在场。这是适用域边界不是弱化，doctor 对缺 init 资产另有呈现）；
  * - manifest 不可读 → INVALID_STATE（结构损坏 fail-closed 禁放行）；
- * - 无确认记录 / 记录结构损坏 → BASELINE_NOT_CONFIRMED（损坏当无效确认——禁猜测）；
+ * - 无确认记录 / 记录结构损坏 → BASELINE_NOT_CONFIRMED（损坏当无效确认——禁猜测；
+ *   含旧 4 目标记录遇 24 目标分母的升级路径）；
+ * - pending-change → BASELINE_NOT_CONFIRMED（ADR-16：pending 也是未确认——变更批
+ *   终结前 closeout 一律阻断）；
  * - 任一确认目标缺席/不可读/digest 失配 → BASELINE_DRIFT（检出谁改了架构——写入
  *   时不拦截，收口判卷阻断，R-L 确认+检出判卷式）。
  */
 export async function baselineGateErrors(rootDir: string): Promise<readonly CliError[]> {
-  const manifestFile = await readTextFile(`${rootDir}/${BASELINE_MANIFEST_RELATIVE}`);
-  if (manifestFile.kind === "absent") return [];
-  if (manifestFile.kind === "unreadable") {
+  const read = await readBaselineConfirmation(rootDir);
+  if (read.kind === "manifest-absent") return [];
+  if (read.kind === "manifest-unreadable") {
     return [
       {
         code: "INVALID_STATE",
-        message: `${BASELINE_MANIFEST_RELATIVE} 不可读: ${manifestFile.detail}`,
+        message: `${BASELINE_MANIFEST_RELATIVE} 不可读: ${read.detail}`,
         hint: "检查文件权限后重试；baseline manifest 损坏时从 git 恢复——closeout 判卷分母禁猜测。",
       },
     ];
   }
-  const parsed = parseConfirmedBlock(manifestFile.text);
-  if (parsed.kind !== "ok") {
-    const detail = parsed.kind === "damaged" ? `（在座确认记录结构不可解析: ${parsed.detail}）` : "";
+  if (read.kind === "record-invalid") {
+    const detail = read.damaged ? `（在座确认记录结构不可解析: ${read.damage_detail ?? ""}）` : "";
     return [
       {
         code: "BASELINE_NOT_CONFIRMED",
@@ -1252,23 +1798,24 @@ export async function baselineGateErrors(rootDir: string): Promise<readonly CliE
       },
     ];
   }
-  const drifted: string[] = [];
-  for (const target of BASELINE_CONFIRM_TARGETS) {
-    const file = await readTextFile(baselineConfirmTargetPath(rootDir, target));
-    if (file.kind !== "ok") {
-      drifted.push(`${target}（${file.kind === "absent" ? "缺席" : "不可读"}）`);
-      continue;
-    }
-    if (sha256OfUtf8(file.text) !== parsed.record.digests[target]) {
-      drifted.push(target);
-    }
+  if (read.state === "pending-change") {
+    return [
+      {
+        code: "BASELINE_NOT_CONFIRMED",
+        message: `baseline 变更批在途（pending-change；change_ref=${read.record.pending?.change_ref}；批内 ${read.record.pending?.batch.length ?? 0} 键）——确认记录在座但未终结，closeout 期间视为未确认`,
+        hint: `终结变更批: pomaster baseline confirm --change ${read.record.pending?.change_ref}（携同 ref 全量重快照）后重跑 closeout。`,
+      },
+    ];
   }
-  if (drifted.length > 0) {
+  if (read.state === "drifted") {
+    const drifted = read.mismatches.map(
+      (mismatch) => `${mismatch.target}${mismatch.note !== null ? `（${mismatch.note}）` : ""}`,
+    );
     return [
       {
         code: "BASELINE_DRIFT",
-        message: `baseline 确认后漂移（at_seq=${parsed.record.at_seq}）：${drifted.join("、")} 与 confirmed.digests 不符——检出确认后架构修改`,
-        hint: "修改走治理通路（CHANGE.* 对象 + baseline set --change <CHANGE-id>）；完成变更配方后重确认：pomaster baseline confirm（重新快照 = 治理通路终点）。",
+        message: `baseline 确认后漂移（at_seq=${read.record.at_seq}）：${drifted.join("、")} 与 confirmed.digests 不符——检出确认后架构修改`,
+        hint: '重确认三通道取一：pomaster baseline confirm --change <CHANGE-id>（治理通路）或 --ack-drifted --note "<理由>"（Owner 手改声明；AI 代跑须持 Owner 指示）——裸重确认拒绝。',
       },
     ];
   }
@@ -1276,21 +1823,29 @@ export async function baselineGateErrors(rootDir: string): Promise<readonly CliE
 }
 
 // ============================================================
-// doctor/status 确认态呈现（R-L；seeded_assets 纯读呈现位纪律）
+// doctor/status 确认态呈现（R-L；N1/N2/N3 四值呈现 + ack/pending 字段）
 // ============================================================
 
-/** 确认态三值（R-L：未确认/已确认/已漂移——零第四态，ADR-13 失效语义的闭包保障）。 */
-export type BaselineConfirmationState = "unconfirmed" | "confirmed" | "drifted";
+/**
+ * 确认态呈现四值（ADR-16/17）：unconfirmed（无有效确认记录）/ confirmed /
+ * pending-change（变更批在途）/ drifted——三态机是记录内部字段演进（零新状态轴），
+ * 呈现层四值可辨。
+ */
+export type BaselineConfirmationState = "unconfirmed" | "confirmed" | "pending-change" | "drifted";
 
 /** doctor/status 呈现值（纯读；manifest 缺席/不可读 → null → 字段缺席显式）。 */
 export interface BaselineConfirmationPresentation {
   readonly state: BaselineConfirmationState;
   /** unknowns 台账剩余条数（stack 键词形口径——未销账分母的呈现口径）。 */
   readonly unknowns_remaining: number;
-  /** 确认时点锚（unconfirmed = null；confirmed/drifted = 记录 at_seq）。 */
+  /** 确认时点锚（unconfirmed = null；其余三值 = 记录 at_seq）。 */
   readonly at_seq: number | null;
-  /** 漂移文件清单（state=drifted 时非空；缺席/不可读目标以（缺席）/（不可读）注记）。 */
+  /** 漂移文件清单（drifted 非空；pending-change 期 = 批内已写文件；缺席/不可读以注记）。 */
   readonly drifted_files: readonly string[];
+  /** 在途变更批（ADR-16）：记录持 pending 段时呈现（change_ref + 批内键集）。 */
+  readonly pending_change?: { readonly change_ref: string; readonly batch: readonly string[] };
+  /** 手改声明（ADR-17）：记录持 ack 段时呈现——上次确认为 Owner 手改声明。 */
+  readonly ack?: { readonly note: string; readonly files: readonly string[] };
 }
 
 /**
@@ -1300,37 +1855,23 @@ export interface BaselineConfirmationPresentation {
 export async function readBaselineConfirmationPresentation(
   rootDir: string,
 ): Promise<BaselineConfirmationPresentation | null> {
-  const manifestFile = await readTextFile(`${rootDir}/${BASELINE_MANIFEST_RELATIVE}`);
-  if (manifestFile.kind !== "ok") return null;
-  const unknownsRemaining = countUnknownEntries(manifestFile.text);
-  const parsed = parseConfirmedBlock(manifestFile.text);
-  if (parsed.kind !== "ok") {
-    return { state: "unconfirmed", unknowns_remaining: unknownsRemaining, at_seq: null, drifted_files: [] };
+  const read = await readBaselineConfirmation(rootDir);
+  if (read.kind === "manifest-absent" || read.kind === "manifest-unreadable") return null;
+  if (read.kind === "record-invalid") {
+    return { state: "unconfirmed", unknowns_remaining: read.unknowns_remaining, at_seq: null, drifted_files: [] };
   }
-  const drifted: string[] = [];
-  for (const target of BASELINE_CONFIRM_TARGETS) {
-    const file = await readTextFile(baselineConfirmTargetPath(rootDir, target));
-    if (file.kind !== "ok") {
-      drifted.push(`${target}（${file.kind === "absent" ? "缺席" : "不可读"}）`);
-      continue;
-    }
-    if (sha256OfUtf8(file.text) !== parsed.record.digests[target]) {
-      drifted.push(target);
-    }
-  }
-  if (drifted.length > 0) {
-    return {
-      state: "drifted",
-      unknowns_remaining: unknownsRemaining,
-      at_seq: parsed.record.at_seq,
-      drifted_files: drifted,
-    };
-  }
+  const driftedFiles = read.mismatches.map(
+    (mismatch) => `${mismatch.target}${mismatch.note !== null ? `（${mismatch.note}）` : ""}`,
+  );
   return {
-    state: "confirmed",
-    unknowns_remaining: unknownsRemaining,
-    at_seq: parsed.record.at_seq,
-    drifted_files: [],
+    state: read.state,
+    unknowns_remaining: read.unknowns_remaining,
+    at_seq: read.record.at_seq,
+    drifted_files: driftedFiles,
+    ...(read.record.pending !== undefined
+      ? { pending_change: { change_ref: read.record.pending.change_ref, batch: read.record.pending.batch } }
+      : {}),
+    ...(read.record.ack !== undefined ? { ack: read.record.ack } : {}),
   };
 }
 
@@ -1338,12 +1879,22 @@ export async function readBaselineConfirmationPresentation(
 export function baselineConfirmationHumanLine(presentation: BaselineConfirmationPresentation): string {
   const unknowns = `unknowns remaining: ${presentation.unknowns_remaining}`;
   if (presentation.state === "confirmed") {
-    return `  baseline gate: 已确认（at_seq=${presentation.at_seq}；${unknowns}）——closeout 收口判卷在座`;
+    const ackNote =
+      presentation.ack !== undefined
+        ? `；上次确认为手改声明（ack note: ${presentation.ack.note}）`
+        : "";
+    return `  baseline gate: 已确认（at_seq=${presentation.at_seq}${ackNote}；${unknowns}）——closeout 收口判卷在座`;
+  }
+  if (presentation.state === "pending-change") {
+    return (
+      `  baseline gate: 变更批在途（pending-change；change=${presentation.pending_change?.change_ref}；批内 ${presentation.pending_change?.batch.length ?? 0} 键）` +
+      `——终结: pomaster baseline confirm --change ${presentation.pending_change?.change_ref}`
+    );
   }
   if (presentation.state === "drifted") {
     return (
       `  baseline gate: 已漂移（at_seq=${presentation.at_seq}；${presentation.drifted_files.length} 文件与确认快照不符：${presentation.drifted_files.join("、")}）` +
-      "——重确认: pomaster baseline confirm"
+      '——重确认: pomaster baseline confirm --change <CHANGE-id> 或 --ack-drifted --note "<理由>"（裸重确认拒绝；AI 代跑 ack 须持 Owner 指示）'
     );
   }
   return `  baseline gate: 未确认（${unknowns}）——确认: pomaster baseline confirm（14 unknowns 全销账后）`;

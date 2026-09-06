@@ -292,6 +292,7 @@ export {
   STACK_QUESTIONS,
   STACK_VALUE_PATTERN,
   BASELINE_CONFIRM_TARGETS,
+  BASELINE_MD_FACES,
   BASELINE_CHANGE_ACTIVE_LIFECYCLES,
   unknownsWordForm,
   renderBaselineQuizHumanLine,
@@ -324,7 +325,10 @@ export type {
   BaselineSetInput,
   BaselineSetResult,
   BaselineConfirmedRecord,
+  BaselineConfirmInput,
   BaselineConfirmResult,
+  BaselineAckRecord,
+  BaselinePendingChange,
   BaselineConfirmationState,
   BaselineConfirmationPresentation,
 } from "./baseline.js";
@@ -974,23 +978,27 @@ export function createProgram(
       record({ command: "init", outcome, asJson });
     });
 
-  // —— baseline 后补销账 + 确认 gate 通路（R-M Step A / R-L Step B） ——
+  // —— baseline 后补销账 + 确认 gate 通路（R-M Step A / R-L Step B；0.5.0 审计修复批 1） ——
   // CI/脚本场景的单键显式写入：stack.yaml 逐键回填 + manifest unknowns 台账同步销
   // 账（seed 头注现成销账契约）；键词形 fail-closed（lane/key 闭包 + 值词形）；
   // 已答键改型显式拒绝；确认态在座 = gate 本体（无 --change 拒绝 / 持有效 --change
-  // 走治理通路——kernel 校验 CHANGE.* 在册 + 活性）。confirm = 确认施断命令（沿
-  // New Entity Gate 先例：verdict + exit code）：14 unknowns 全销账为前提，manifest
-  // 写 confirmed 记录（at_seq + 四确认目标 sha256 快照）；closeout 聚合单点消费
-  // BASELINE_NOT_CONFIRMED / BASELINE_DRIFT，doctor/status 呈现确认态。
+  // 走治理通路——kernel 校验 CHANGE.* 在册 + 活性；写入转 pending-change——同 ref
+  // 连改多键全程允许）。confirm = 确认施断命令（沿 New Entity Gate 先例：verdict +
+  // exit code）：14 unknowns 全销账为前提，manifest 写 confirmed 记录（at_seq +
+  // 24 文件确认资产清单 sha256 快照 = 2 stack.yaml + 22 md——N1 单一分母）；重确认
+  // 三通道（N2/Owner 09-06 补裁定）：--change 治理通路 / --ack-drifted --note 手改
+  // 声明（journal BASELINE_ACK 留痕）/ 裸重确认显式拒绝；closeout 聚合单点消费
+  // BASELINE_NOT_CONFIRMED（含 pending-change 未终结）/ BASELINE_DRIFT，doctor/status
+  // 呈现确认态。
   const baseline = program
     .command("baseline")
     .description(
-      "Project Engineering Baseline 销账与确认 gate 通路（R-M/R-L）：set = 单键显式写入 .pomaster/baseline/<lane>/stack.yaml 并同步销账 manifest unknowns 台账（TTY init 技术栈问卷的非交互孪生——CI/脚本场景；键词形 fail-closed；已答键改型拒绝）；confirm = 基线确认施断（14 unknowns 全销账后 manifest 记 confirmed digest 快照；确认后修改走 CHANGE.* 治理通路；closeout/doctor/status 消费确认态）",
+      "Project Engineering Baseline 销账与确认 gate 通路（R-M/R-L）：set = 单键显式写入 .pomaster/baseline/<lane>/stack.yaml 并同步销账 manifest unknowns 台账（TTY init 技术栈问卷的非交互孪生——CI/脚本场景；键词形 fail-closed；已答键改型拒绝）；confirm = 基线确认施断（14 unknowns 全销账后 manifest 记 confirmed digest 快照——24 文件单一资产清单；重确认三通道 --change / --ack-drifted --note / 裸重确认拒绝；closeout/doctor/status 消费确认态）",
     );
   baseline
     .command("set")
     .description(
-      "单键后补销账/治理通路修改：--lane <frontend|backend> --key <lane 键集闭包> --value <选型值>（UNKNOWN 起步词形不可作值；同值重放幂等 NO_CHANGE 并自愈台账漏销；异值改型 BASELINE_KEY_ALREADY_SET 显式拒绝；确认态在座无 --change → BASELINE_ALREADY_CONFIRMED，持 --change <CHANGE-id> 且对象在册、lifecycle 合法 → 写入并使确认记录失效）",
+      "单键后补销账/治理通路修改：--lane <frontend|backend> --key <lane 键集闭包> --value <选型值>（UNKNOWN 起步词形不可作值；同值重放幂等 NO_CHANGE 并自愈台账漏销；异值改型 BASELINE_KEY_ALREADY_SET 显式拒绝；确认态在座无 --change → BASELINE_ALREADY_CONFIRMED，持 --change <CHANGE-id> 且对象在册、lifecycle 合法 → 写入并转 pending-change——同一 CHANGE 连改多键全程允许，携同 ref confirm 终结）",
     )
     .requiredOption("--lane <lane>", "技术栈 lane（frontend | backend）")
     .requiredOption(
@@ -1003,7 +1011,7 @@ export function createProgram(
     )
     .option(
       "--change <change-id>",
-      "治理通路授权（仅确认态在座时被消费）：CHANGE.* 对象在册且 lifecycle ∈ PROPOSED|CURRENT（kernel 校验）；写入同时使确认记录失效，重确认前 closeout 阻断",
+      "治理通路授权（仅确认态在座时被消费）：CHANGE.* 对象在册且 lifecycle ∈ PROPOSED|CURRENT（kernel 校验）；异值写入转 pending-change（记录保留），携同 ref confirm 终结",
     )
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (opts, command) => {
@@ -1022,15 +1030,32 @@ export function createProgram(
   baseline
     .command("confirm")
     .description(
-      "基线确认施断（R-L gate；verdict + exit code）：前提 = 14 unknowns 全销账（BASELINE_UNKNOWNS_REMAINING fail-closed 逐条列出缺键）；动作 = manifest.yaml 写 confirmed 确认记录（at_seq 时点锚 + baseline/<lane>/stack.yaml 与 baseline/<lane>/architecture.md 四文件 sha256 digest 快照）；幂等 = 已确认且 digest 无漂移 → NO_CHANGE 零写入，漂移后重确认 = 重新快照（治理通路终点）；closeout 消费：BASELINE_NOT_CONFIRMED / BASELINE_DRIFT 两阻塞码",
+      "基线确认施断（R-L gate；verdict + exit code）：前提 = 14 unknowns 全销账（BASELINE_UNKNOWNS_REMAINING fail-closed 逐条列出缺键）；动作 = manifest.yaml 写 confirmed 确认记录（at_seq 时点锚 + 24 文件确认资产清单 sha256 快照 = 2 stack.yaml + 22 md——N1 单一分母，manifest 不自引用）；初次确认不需要任何通道；已确认且 digest 无漂移 → NO_CHANGE 零写入；重确认三通道（N2/Owner 09-06 补裁定）：--change <CHANGE-id>（治理通路：drifted 覆盖 / pending 同 ref 终结）或 --ack-drifted --note \"<理由>\"（Owner 手改声明：journal BASELINE_ACK 留痕 + 记录 ack 标记；AI 代跑须持 Owner 指示）；裸重确认 = BASELINE_RECONFIRM_REQUIRES_CHANGE 显式拒绝；closeout 消费：BASELINE_NOT_CONFIRMED / BASELINE_DRIFT 两阻塞码",
+    )
+    .option(
+      "--change <change-id>",
+      "重确认通道 1（治理通路）：CHANGE.* 对象在册且 lifecycle ∈ PROPOSED|CURRENT；drifted 重确认的授权覆盖 / pending-change 变更批的同 ref 终结",
+    )
+    .option(
+      "--ack-drifted",
+      "重确认通道 2（Owner 手改声明）：显式声明当前漂移为授权手改（22 份 md 无治理写命令的手改/补文档通路）；须与 --note 同用；journal 落 BASELINE_ACK 留痕；AI 代跑须持 Owner 指示",
+    )
+    .option(
+      "--note <note>",
+      "手改声明理由（--ack-drifted 必填；单行 ≤200 字符；入 manifest ack 段与 journal）",
     )
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (_opts, command) => {
-      const outcome = await runBaselineConfirm(resolveDir(command));
+      const opts = command.opts();
+      const outcome = await runBaselineConfirm(resolveDir(command), {
+        ...(opts.change !== undefined ? { change: opts.change as string } : {}),
+        ...(opts.ackDrifted === true ? { ackDrifted: true } : {}),
+        ...(opts.note !== undefined ? { note: opts.note as string } : {}),
+      });
       record({
         command: "baseline confirm",
         outcome,
-        asJson: command.opts().json === true,
+        asJson: opts.json === true,
       });
     });
 

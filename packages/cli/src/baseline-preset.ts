@@ -25,9 +25,13 @@
  *   半截草案）。全 14 键销账 ⇔ 22 面全覆盖（G-C）。
  * - ADR-2 draft-once + 在座零触碰（沿 seed-once 纪律）：文件含 PRESET-DRAFT 词形
  *   即跳过（Owner 可能已改草案——项目可编辑物，禁覆盖重写）；确认态在座
- *   （manifest confirmed 记录可解析，confirmed/drifted 任一态）整体跳过——确认后
- *   再生成草案 = init 自造 BASELINE_DRIFT，结构性禁断。ADR-13 失效（set --change
- *   移除确认记录）后，缺席草案的 face 可随下次 init 重生成。
+ *   （manifest 确认记录有效——confirmed/pending-change/drifted 任一态）整体跳过
+ *   ——确认后再生成草案 = init 自造 BASELINE_DRIFT，结构性禁断。pending-change
+ *   （0.5.0 审计修复批 1 ADR-16：set --change 不再移除记录而是记在途变更批）期间
+ *   同样跳过——缺席草案的重生成先终结变更批或经确认记录重建（confirm 换代）。
+ * - ADR-2a（N1 同源对账）：预置 face 集 == BASELINE_CONFIRM_TARGETS 的 md 子集
+ *   （22 面）——「confirm 时本文件整体 digest 快照」的 G-B 声明以结构保证兑现
+ *   （模块载入即对账，face 漂移即抛错；测试另钉逐字清单）。
  * - ADR-3 内容 = 锚定编排非发明：每条草案逐条标注来源（已播种主题文档/overlay
  *   资产的节词形，.pomaster 盘面路径词形）；来源真实性由测试全量核验
  *   （路径→包内种子文件、节标题逐条在座——强于验收条的「抽 ≥6 份」）。草案文本
@@ -51,6 +55,7 @@
 import { readFile, stat, writeFile } from "node:fs/promises";
 import type { BaselineLane } from "./baseline.js";
 import {
+  BASELINE_CONFIRM_TARGETS,
   BASELINE_LANES,
   STACK_KEYS,
   isStackValueResolved,
@@ -795,6 +800,23 @@ export const PRESET_FACE_SPECS: readonly PresetFaceSpec[] = [
 ];
 
 // ============================================================
+// N1 同源对账（ADR-2a）：face 集 == 确认清单 md 子集——载入即对账，漂移即抛错
+// ============================================================
+
+// G-B「confirm 时本文件整体 digest 快照烙印」声明的结构保证：任何 face 不在
+// BASELINE_CONFIRM_TARGETS（24 文件单一资产清单，N1）内 = 快照保护空洞，模块
+// 载入即失败（fail-fast 先于一切运行时消费；baseline-preset.spec 另钉逐字清单）。
+{
+  const faceTargets = PRESET_FACE_SPECS.map((face) => face.file.replace(/^\.pomaster\//, "")).sort();
+  const mdTargets = BASELINE_CONFIRM_TARGETS.filter((target) => target.endsWith(".md")).sort();
+  if (faceTargets.length !== mdTargets.length || faceTargets.some((face, i) => face !== mdTargets[i])) {
+    throw new Error(
+      `baseline-preset face 集与确认资产清单分母漂移（N1 同源对账失败）：face=${faceTargets.join(", ")} vs md targets=${mdTargets.join(", ")}`,
+    );
+  }
+}
+
+// ============================================================
 // 栈值读取与条件匹配（ADR-1/ADR-4）
 // ============================================================
 
@@ -864,14 +886,14 @@ export interface BaselinePresetDraftReport {
   readonly generated: number;
   /** 门开但 PRESET-DRAFT 已在座而跳过的文件数（draft-once；Owner 改动零触碰）。 */
   readonly skipped_existing: number;
-  /** baseline 确认态在座（confirmed/drifted）→ 整体跳过（ADR-2：禁 init 自造漂移）。 */
+  /** baseline 确认态在座（confirmed/pending-change/drifted 任一态）→ 整体跳过（ADR-2：禁 init 自造漂移）。 */
   readonly skipped_confirmed: boolean;
 }
 
 /** 草案人读行（恒一行；init 版式锚 = baseline 行之后）。 */
 export function renderBaselinePresetHumanLine(report: BaselinePresetDraftReport): string {
   if (report.skipped_confirmed) {
-    return "  baseline preset: 预置草案跳过（baseline 已确认——烙印态不再生成草案；缺席草案重生成先走治理通路使确认失效）";
+    return "  baseline preset: 预置草案跳过（baseline 确认态在座——烙印态/变更批在途不再生成草案；缺席草案重生成先终结变更批（携同 ref confirm）或按治理通路重建确认）";
   }
   if (report.generated === 0 && report.skipped_existing === 0) {
     return "  baseline preset: 预置草案未生成（栈选型键未全销账——UNKNOWN 保持；TTY 问卷或 baseline set 补齐后重跑 init 生成）";

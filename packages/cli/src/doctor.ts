@@ -133,10 +133,11 @@ export interface DoctorResult {
    */
   readonly spec_preplant?: SpecPreplantPresentation;
   /**
-   * baseline 确认态呈现（R-L Step B 2026-09-05；加法呈现字段不改 ok 语义）：
-   * 未确认/已确认/已漂移三态 + unknowns 剩余计数 + 漂移文件——纯读呈现位
-   * （seeded_assets/spec_preplant 先例）；baseline/manifest.yaml 缺席/不可读 →
-   * 字段缺席（显式缺席）。
+   * baseline 确认态呈现（R-L Step B 2026-09-05；0.5.0 审计修复批 1 四值可辨）：
+   * unconfirmed/confirmed/pending-change/drifted + unknowns 剩余计数 + 漂移文件
+   * （pending-change 态另携 pending_change 变更批字段；记录持 ack 段时携 ack 手改
+   * 声明字段）——纯读呈现位（seeded_assets/spec_preplant 先例）；
+   * baseline/manifest.yaml 缺席/不可读 → 字段缺席（显式缺席）。
    */
   readonly baseline_confirmation?: BaselineConfirmationPresentation;
 }
