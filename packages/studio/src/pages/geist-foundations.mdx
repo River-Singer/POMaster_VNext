@@ -1,0 +1,43 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Foundations/Geist（官方站参照）" />
+
+# Foundations：Geist 设计体系（官方站参照）
+
+> **NON-AUTHORITATIVE** — 本页为 foundations/token 参照呈现，非规范文本。
+> 权威源：`packages/cli/seeds/specs/hard/stacks/geist/`（geist-design-system-overlay.md，
+> seed_version B6F，x-research-anchors 2026-09-02 实抓）。
+
+## 边界声明（为什么本页没有可渲染组件）
+
+**Geist 是 React 设计系统，无 Vue 组件库本体**——本画廊（Vue 3 + ant-design-vue 真渲染）
+不能、也不应把 Geist 伪装成可渲染 Vue 组件。本页只做：
+
+1. **foundations/token 词形参照**（下表）；真实的 token 消费走项目 design token
+   分层协议，与组件库主题 token（antdv CSS-in-JS）各守各轴；
+2. **官方站参照**：浏览真实视觉请直达官方站（锚定源表），不在画廊内仿制。
+
+## Foundations 词形（实抓 2026-09-02）
+
+| Foundation | 现状 |
+| --- | --- |
+| colors | 在册 |
+| typography | 在册 |
+| materials | 在册 |
+| spacing | **缺席**（缺席诚实——禁杜撰 foundation 词形） |
+
+组件清单 70 组件；Button variant 词表（Default/Secondary/Tertiary/Error/Warning）与
+Best Practices（icon-only validator 抛错 = fail-closed 先例）已锚定进
+`catalog/archetypes/archetype.component.button.json`（见「Archetype 语义卡/component/按钮」页）。
+
+## 引用纪律（overlay Rules 透传）
+
+- Foundations 词形以实抓现状为准；引用 Best Practices 要点必须带实抓时点，过期须重新核实。
+- Geist 为设计体系参照而非实现依赖——不得由 geist 参照推断框架、UI 组件库或 CSS 方案选型。
+
+## 源指向
+
+| 来源 | 实抓日期 |
+| --- | --- |
+| https://vercel.com/geist | 2026-09-02 |
+| https://vercel.com/font | 2026-09-02 |

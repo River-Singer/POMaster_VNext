@@ -649,6 +649,10 @@
       },
       "tests/integration/research-request-backfill-chain.spec.ts": {
         "layer": "L2"
+      },
+      "packages/studio/tests/generators.spec.ts": {
+        "layer": "L1",
+        "note": "09-06-gallery-and-baseline-presets Step 2（G-A）：画廊生成器钉测——41/71/18/4 计数分母 + 双跑 diff 空幂等 + 发布面纪律（private/零运行时 deps）。无域（生成器契约面，非 ir/state/permit/router 四域）。"
       }
     },
     "notes": {

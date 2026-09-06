@@ -4,7 +4,14 @@ import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   {
-    ignores: ["**/dist/**", "**/coverage/**", "**/node_modules/**"],
+    ignores: [
+      "**/dist/**",
+      "**/coverage/**",
+      "**/node_modules/**",
+      // 画廊 studio 生成器产物与静态导出（裁定 G-A：生成器入库，产物不入库不 lint）。
+      "packages/studio/generated/**",
+      "packages/studio/dist-storybook/**",
+    ],
   },
   ...tseslint.configs.recommended,
   {

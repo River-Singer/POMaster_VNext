@@ -386,7 +386,7 @@ Spec、Task、Gate、Knowledge、Brainstorm……全部是这五个原语的派�
 ## 项目结构
 
 ```text
-packages/    kernel（状态与判卷权威）· cli（命令面）· gauntlet-lite（确定性 gate 腿）· schemas（FROZEN 词表 schema）
+packages/    kernel（状态与判卷权威）· cli（命令面）· gauntlet-lite（确定性 gate 腿）· schemas（FROZEN 词表 schema）· studio（组件画廊 Storybook 实例——private，不入 npm 发布面）
 catalog/     policies · knowledge · gates · sensors · archetypes · tools——随包分发的工程策展物料（catalog-lock 逐字节对账；手补物料后 `pomaster catalog relock` 一键重锁）
 references/  concept-ledger（治理概念账本）· external-sites-index（外部参照站点索引）
 tests/       单元 / 集成 / Golden / 对抗 / 行为 / 自托管基准（数量下限进 CI 棘轮，只升不降）
@@ -395,6 +395,24 @@ legal/       THIRD_PARTY_NOTICES · PROVENANCE
 ```
 
 技术栈：TypeScript · Node ≥ 22 · pnpm monorepo · Canonical State 为 JSON · Git 为版本与回滚底座 · 外部测试工具一律走 Adapter（绝不进核心）。
+
+## 组件画廊（Storybook studio，仓内开发面）
+
+开发仓内置 canonical Storybook 实例（裁定 G-A；`packages/studio`，private——`build-npm-package` 的 stage 白名单不含它，npm 发布面零泄漏）。组件资产的「有哪些 + 长什么样」一页可览：
+
+| 页面类 | 数量 | 形态 |
+| --- | --- | --- |
+| Archetype 语义卡 | 41 | MDX 纯文档页（responsibility / when_to_use / composition / 研究锚透传） |
+| AntDV 组件 | 71 | CSF3 story 真渲染（`ant-design-vue@4.2.6`，同族子导出一并挂载） |
+| Overlay 能力清单 | 18 | MDX 页（capability / requires / Rules / 源指向，自 `seeds/specs/hard/stacks/`） |
+| Foundations 与边界 | 4 | geist 官方站参照（无 Vue 本体声明）· CSS 体系 D8 组合 · baseline 四 lane 导航 · 画廊总览 |
+
+```bash
+corepack pnpm studio:dev      # 起 dev server（生成产物先自动重建；遥测经 STORYBOOK_DISABLE_TELEMETRY 关闭）
+corepack pnpm studio:build    # 静态导出到 packages/studio/dist-storybook/（gitignore，可任意静态伺服）
+```
+
+生成器纪律：全部 MDX/stories 由 `packages/studio/scripts/lib/` 从 `catalog/archetypes` 与 `seeds/` 程序化生成（幂等可重放）；`generated/` 不入 git，入库的是生成器 + 配置 + 少量手写边界页。覆盖与幂等由 `packages/studio/tests/generators.spec.ts` 钉住（41/71/18/4 分母 + 双跑 diff 空）。画廊全程只读渲染既有锚定物料：NON-AUTHORITATIVE 声明在页头、零新增 catalog 物料（D6）、业务实体/业务组件零出现（G-D）。
 
 ## License
 

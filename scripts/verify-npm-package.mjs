@@ -406,7 +406,7 @@ smoke("npx pomaster status", "pomaster status", {
   expectExit: [0],
   expectWords: [
     "status: .pomaster/state/truth-index.json (seq=1)",
-    "seeded assets: frontend 46 / backend 33 / stacks 28 / evidence 20 / baseline 25",
+    "seeded assets: themes 21 / stacks 36 / evidence 20 / baseline 25",
     "spec preplant: 19/19 in place",
   ],
 });

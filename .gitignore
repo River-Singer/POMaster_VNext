@@ -14,3 +14,7 @@ docs/
 .jobs_url.txt
 .job_id.txt
 .win-ci.log
+# Storybook 画廊 studio（裁定 G-A）：generated/ 是生成器产物（入库的是生成器，
+# 幂等可重放）；dist-storybook/ 是静态导出产物——两者都不入 git。
+packages/studio/generated/
+packages/studio/dist-storybook/

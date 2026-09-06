@@ -1,0 +1,29 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Foundations/CSS 体系（D8 组合）" />
+
+# Foundations：CSS 体系（D8 组合词形）
+
+> **NON-AUTHORITATIVE** — 本页为 CSS 体系组合的参照呈现，非规范文本。
+> 权威源：`packages/cli/seeds/specs/hard/stacks/css/`（css-system-overlay.md，
+> seed_version B6G，Owner 裁定 D8）。
+
+## 组合词形
+
+**scoped-sfc + antdv-cssinjs-tokens + antdv-reset-css**（版本位：vue 3.5.42 /
+ant-design-vue 4.2.6，npm registry 实抓双源一致，2026-09-05）
+
+| 层 | 机制 | 要点 |
+| --- | --- | --- |
+| 作用域 | SFC `<style scoped>`（`data-v-hash` 属性选择器） | 穿透/例外用官方逃逸词形 `:deep()` / `:slotted()` / `:global()`；子组件根元素同时受父 scoped 影响为官方口径 |
+| 主题 token | antdv v4 CSS-in-JS | ConfigProvider `theme` prop（Seed → Map → Alias 三层派生、default/dark/compact 三算法、组件级 Component Token）；运行时消费 `useToken` |
+| 全局重置 | `import 'ant-design-vue/dist/reset.css'` | 官方单一来源；不得引入与之竞争的第二套全局重置 |
+
+组合之外的作用域/utility 方案属 css 键改型，不得未声明引入；组件库主题 token 不替代
+项目 design token 分层协议。
+
+## 本画廊自身的消费示例
+
+本 Storybook 实例即按该组合接线：`packages/studio/.storybook/preview.ts` 引入官方
+reset.css 并全局注册 antdv（cssinjs 运行时生效），画廊 story 不携带任何自定义全局样式。
+详见「Overlay 能力清单/css」页（Rules/Checklist 全文透传）。

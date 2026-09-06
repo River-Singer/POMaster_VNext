@@ -1,0 +1,35 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="画廊总览" />
+
+# POMaster 组件可视化画廊（总览）
+
+> **NON-AUTHORITATIVE** — 本画廊（`packages/studio`，canonical Storybook 实例，裁定 G-A）
+> 是组件资产的**可视化呈现面**，非规范文本；权威语义以 catalog/seeds 锚定源为准。
+> 全部生成页由生成器从既有物料只读渲染——画廊不新增 catalog 物料（D6）、
+> 不预置任何业务实体/业务组件（G-D 业务不预设）。
+
+## 页面构成（四类）
+
+| 分组 | 页数 | 形态 | 内容源（只读） |
+| --- | --- | --- | --- |
+| Archetype 语义卡 | 41 | MDX 纯文档页（unattached） | `catalog/archetypes/*.json` |
+| AntDV 组件 | 71 | CSF3 story（真渲染） | `ant-design-vue@4.2.6` es/components.js 枚举 |
+| Overlay 能力清单 | 18 | MDX 纯文档页 | `packages/cli/seeds/specs/hard/stacks/*` |
+| Foundations 与边界 | 3 + 1 | 手写 MDX + 生成导航页 | geist/css overlay、`seeds/baseline/` |
+
+## 生成器纪律
+
+- MDX/stories 全部由 `packages/studio/scripts/lib/*.mjs` 程序化生成（幂等、可重放）；
+  `generated/` 不入 git——入库的是生成器 + 配置 + 本类少量手写页。
+- 重新生成：`corepack pnpm studio:dev` / `studio:build` 前自动重建；也可单独
+  `node packages/studio/run.mjs generate`。
+- 覆盖/幂等由 `packages/studio/tests/generators.spec.ts` 钉住（41/71/18/4 计数 + 双跑 diff 空）。
+
+## 技术形态边界
+
+- archetype 是语义构件非可渲染组件——画廊以 MDX 语义卡呈现（Storybook MDX 实现
+  是 React-only，Vue 实体只出现在 story 侧）。
+- geist 是 React 设计系统、无 Vue 组件库本体——只能做 foundations/token 呈现与
+  官方站参照，见「Foundations/Geist」页。
+- 业务组件/业务实体零出现；发现疑似业务面内容请按宪法 §32 冲突报告通路上报，不静默。
