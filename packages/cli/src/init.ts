@@ -756,7 +756,7 @@ function renderStateSummary(index: Record<string, unknown> | null): string {
 const COMMON_COMMANDS_LINES = [
   "- `pomaster init` — 补齐/重建治理骨架（幂等；重复执行 NO_CHANGE）",
   "- `pomaster session` — 治理速览投影（SessionStart 注入源；≤10,000 字符硬上限）",
-  "- `pomaster alerts` — 可行动项过滤器（permit 到期/CHALLENGED 对象；干净=空输出）",
+  "- `pomaster alerts` — 可行动项过滤器 + workflow 路由段（permit 到期/CHALLENGED 对象；干净=非空但极简）",
   "- `pomaster triage \"<request>\"` — 八拍①：秒级判档（MINIMAL/LIGHT/STANDARD）",
   "- `pomaster status --json` — 对象计数 / 分母状态 / permit 活性",
   "- `pomaster context compile --role <role> --json` — 八拍③：最小充分上下文投影",
@@ -839,7 +839,7 @@ function renderHeavyEntryMarkdown(
   const claudeBlock = opts.claudeSelected
     ? [
         "- SessionStart 注入：`pomaster session`（治理速览投影，输出 ≤10,000 字符硬上限）——注册于 `.claude/settings.json`（合并式：既有 hooks（含人类/Trellis 条目）一律保留）。",
-        "- 每轮轻提醒：`pomaster alerts`（可行动项过滤器；干净=空输出恒 exit 0）——同一文件注册。",
+        "- 每轮路由：`pomaster alerts`（可行动项过滤器 + workflow 路由段；干净=非空但极简，恒 exit 0）——同一文件注册。",
         "",
       ].join("\n")
     : "";

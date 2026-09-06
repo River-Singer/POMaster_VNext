@@ -61,9 +61,10 @@
  *                   generation.seq 计数 + alerts 摘要 + Browser Eyes 一行 + 命令卡指针；
  *                   输出 ≤10,000 字符硬上限（超限截断显式标记）；纯文本不以 { 开头；
  *                   恒 exit 0（hook 契约）；带子命令词形时分发 attach/refresh/list
- * - alerts          可行动项过滤器（重入口 UserPromptSubmit 轻提醒源）：permit 到期/
- *                   CHALLENGED 对象（truth-index/permits 只读面派生）；干净=空输出；
- *                   恒 exit 0（hook 契约）；triage TTL 显式登记为无派生源类目
+ * - alerts          可行动项过滤器 + workflow 路由段（重入口 UserPromptSubmit 源）：
+ *                   permit 到期/CHALLENGED 对象（truth-index/permits 只读面派生）；
+ *                   初始化后恒带 ≤3 行 workflow 路由段（干净=非空但极简）；未初始化
+ *                   零输出；恒 exit 0（hook 契约）；triage TTL 显式登记为无派生源类目
  * - inspect         单对象检视：正文+证据+谱系纯读呈现（零写入；PRD §44.1 基础命令）
  * - maintain        受控变更（--ops 显式事务，判卷权威在 kernel applyTransaction）/
  *                   pre-dev 链（--phase pre-dev：triage→permit issue→context compile；PRD §44.4）
@@ -1086,14 +1087,14 @@ export function createProgram(
       });
     });
 
-  // —— 可行动项过滤器（重入口 UserPromptSubmit 轻提醒源；hook 输出契约） ——
+  // —— 可行动项过滤器 + workflow 路由段（重入口 UserPromptSubmit 源；hook 输出契约） ——
   // 恒 ok=true → 恒 exit 0（非零 + stdout 会被 harness 呈现为 hook 错误通知）；
-  // 干净=空输出（零 token 噪声）；纯文本不以 { 开头（防被误判 JSON）；
-  // 降级走 warnings 留痕于 --json 信封，人读通道静默。
+  // 初始化后恒带 ≤3 行 workflow 路由段（干净=非空但极简）；纯文本不以 { 开头
+  // （防被误判 JSON）；降级走 warnings 留痕于 --json 信封。
   program
     .command("alerts")
     .description(
-      "可行动项过滤器（重入口 UserPromptSubmit 轻提醒源）：permit 到期/CHALLENGED 对象（truth-index/permits 只读面派生；triage TTL 显式登记为无派生源类目）；干净=空输出恒 exit 0（hook 契约）；降级走 warnings 不走 errors",
+      "可行动项过滤器 + workflow 路由段（重入口 UserPromptSubmit 源）：permit 到期/CHALLENGED 对象（truth-index/permits 只读面派生；triage TTL 显式登记为无派生源类目）；初始化后恒带 ≤3 行 workflow 路由段（无活跃 TASK → triage/brainstorm start 双入口；有 → 八拍位置+下一拍命令+分段卡），干净=非空但极简；未初始化零输出；恒 exit 0（hook 契约）；降级走 warnings 不走 errors",
     )
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (_opts, command) => {
