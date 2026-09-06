@@ -67,6 +67,15 @@
  *
  * kernel scaffold 阶段（not-implemented）→ 结构化 KERNEL_NOT_INSTALLED（缺席显式，
  * 禁静默、禁伪绿）。
+ *
+ * **任务级 manifest 新鲜度判卷入口（审计 N5 修复，2026-09-06 批 2）**：
+ * judgeTaskContextFreshness 是 next-action 导航消费新鲜度的唯一入口——判卷本体复用
+ * runContextCompile(check=true)（同源调用：零 spawn、指纹由 kernel compileProjection
+ * 单点计算零二算），编译输入不靠调用方猜测而由**现盘 manifest 自记录字段恢复**
+ * （role/task_ref/applicability——R2/D7 字段集即判卷可重放输入回显）。判卷绝不写
+ * store（loadStoreReadOnly 零写装载，createStore 的 ensureSidecars 写副作用显式排除
+ * ——next-action 快照是纯读面）。审计复现链（maintain 改 task intent → 指纹漂移）
+ * 在导航层的修复点：next-action.ts 消费本入口，stale → R_MANIFEST_STALE 重编译路由。
  */
 
 import { readFileSync } from "node:fs";
@@ -88,6 +97,7 @@ import {
 } from "./store-layout.js";
 import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
+import { isRecord } from "./projection-common.js";
 
 // ============================================================
 // 分区词形闭包（vNext Batch 2 R3 / D8；x-vocab-source: vocab-lock presentation_axes.context_partition_titles——PR-0009 收编）
@@ -347,6 +357,11 @@ function readExistingManifest(
   readonly state: "absent" | "stale_grounding" | "present";
   readonly detail: string;
   readonly existing_inputs_fingerprint: string | null;
+  /**
+   * present 时的解析文档（审计 N5：judgeTaskContextFreshness 的输入恢复面——
+   * role/task_ref/applicability 由此恢复原编译输入；其余两态恒 null）。
+   */
+  readonly parsed: Record<string, unknown> | null;
 } {
   let text: string;
   try {
@@ -356,14 +371,15 @@ function readExistingManifest(
       state: "absent",
       detail: "现盘无 context manifest（首编译）",
       existing_inputs_fingerprint: null,
+      parsed: null,
     };
   }
   try {
     const parsed: unknown = JSON.parse(text);
-    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+    if (!isRecord(parsed)) {
       throw new TypeError("manifest is not an object");
     }
-    const fingerprint = (parsed as Record<string, unknown>).inputs_fingerprint;
+    const fingerprint = parsed.inputs_fingerprint;
     if (typeof fingerprint !== "string" || fingerprint.length === 0) {
       throw new TypeError("inputs_fingerprint missing or malformed");
     }
@@ -371,12 +387,14 @@ function readExistingManifest(
       state: "present",
       detail: "现盘 manifest 在册（指纹比对见 state 判定）",
       existing_inputs_fingerprint: fingerprint,
+      parsed,
     };
   } catch (error) {
     return {
       state: "stale_grounding",
       detail: `现盘 manifest 无法解析（手改/损坏——禁手改纪律，宪法 §19）：${error instanceof Error ? error.message : String(error)}`,
       existing_inputs_fingerprint: null,
+      parsed: null,
     };
   }
 }
@@ -723,6 +741,123 @@ export async function runContextCompile(
       [error],
       [`context compile: FAILED — ${error.code}\n  hint: ${error.hint}`],
     );
+  }
+}
+
+// ============================================================
+// 任务级 manifest 新鲜度判卷（审计 N5 修复；0.5.0 审计批 2——next-action 导航
+// 与 context --check 消费同一新鲜度结果的共享入口）
+// ============================================================
+
+/**
+ * 新鲜度判卷结果（消费方：next-action 快照装配——路由层对 stale 给重编译入口）。
+ * 词形纪律：absent/fresh/stale_grounding 与 stale_check.state 同字（单一词源）；
+ * unjudgeable 是判卷入口的诚实降级扩展（输入不可恢复/kernel 装载失败——既不冒充
+ * fresh 也不乱指 stale，路由层跳过 stale 行 + 告警留痕）。
+ */
+export interface ContextFreshnessJudgment {
+  readonly state: "absent" | "fresh" | "stale_grounding" | "unjudgeable";
+  /** 判卷依据（unjudgeable 时含原因——呈现/告警留痕用）。 */
+  readonly detail: string;
+  /** 现盘 manifest 记录的 role（重编译命令渲染用；缺席/不可恢复时 null）。 */
+  readonly role: string | null;
+}
+
+/**
+ * 任务级 context manifest 新鲜度判卷——只读快速判卷入口（审计 N5；位置锚：审计
+ * 指认 next-action 只查 manifest 文件存在造成导航缺口）。
+ *
+ * 同源契约（判卷语义单点，禁二算）：判卷本体 = runContextCompile(check=true)——
+ * F4 单一编排权威；指纹由 kernel compileProjection 单点计算（零 spawn、零第二指纹
+ * 算法）；stale 三态判定与 `context compile --check` 逐字同源。与 runContextCompile
+ * 的分离点只在两处（判卷成本控制，行为零变更）：
+ * ① absent 早退——读一次现盘文件缺席即返回，不建 store 不编译（R_MANIFEST_MISSING
+ *    既有语义路径零成本不变）；
+ * ② 输入自恢复——编译输入不来自调用方（next-action 只知道任务 id），而由现盘
+ *    manifest 自记录字段恢复（role/task_ref/applicability——R2/D7 字段集本身即
+ *    「判卷可重放输入回显」），按原输入重编译比对指纹；task_ref 与文件名不一致 /
+ *    role 缺失 = 手改痕迹 → unjudgeable 拒绝判卷（输入不可信，禁猜测重放）。
+ *
+ * 零写纪律：装载走 loadStoreReadOnly（二轮审查 H3 零写入口）——createStore 的
+ * ensureSidecars 有补齐写副作用，判卷入口显式排除；next-action 快照是纯读面，
+ * 本函数绝不写 store。永不 throw：一切失败路径收敛为显式 state 返回。
+ */
+export async function judgeTaskContextFreshness(
+  rootDir: string,
+  taskRef: string,
+): Promise<ContextFreshnessJudgment> {
+  const existing = readExistingManifest(rootDir, `${taskRef}.context.json`);
+  if (existing.state === "absent") {
+    return { state: "absent", detail: existing.detail, role: null };
+  }
+  if (existing.state === "stale_grounding" || existing.parsed === null) {
+    // 现盘不可解析/形态残缺（inputs_fingerprint 缺失等）——必然不 fresh（与
+    // runContextCompile 同语义）；重编译入口即修复通路。
+    return { state: "stale_grounding", detail: existing.detail, role: null };
+  }
+  const roleRaw = existing.parsed.role;
+  const role = typeof roleRaw === "string" && roleRaw.trim().length > 0 ? roleRaw : null;
+  const taskRefRecorded =
+    typeof existing.parsed.task_ref === "string" ? existing.parsed.task_ref : null;
+  if (role === null) {
+    return {
+      state: "unjudgeable",
+      detail: `现盘 manifest 缺 role 字段（task=${taskRef}）——原编译输入不可恢复，无法按同输入重编译判卷`,
+      role: null,
+    };
+  }
+  if (taskRefRecorded !== taskRef) {
+    return {
+      state: "unjudgeable",
+      detail: `现盘 manifest task_ref=${String(taskRefRecorded)} 与文件名任务 ${taskRef} 不一致（手改痕迹，宪法 §19）——输入不可信，拒绝判卷`,
+      role,
+    };
+  }
+  // applicability 输入恢复（缺席字段零键，与 applicabilityRequestFields 同形——
+  // 空数组/null 与「未提供」在投影请求侧同义，重放输入逐字段相等）。
+  const applicability = isRecord(existing.parsed.applicability)
+    ? existing.parsed.applicability
+    : {};
+  const capabilities = Array.isArray(applicability.capabilities)
+    ? applicability.capabilities.filter((value): value is string => typeof value === "string")
+    : [];
+  const changeClass =
+    typeof applicability.change_class === "string" ? applicability.change_class : null;
+  try {
+    const outcome = await runContextCompile(
+      rootDir,
+      role,
+      {
+        createStore: async (root: string) => {
+          const { loadStoreReadOnly } = await import("@pomaster/kernel");
+          return loadStoreReadOnly(root);
+        },
+      },
+      {
+        change: taskRef,
+        ...(capabilities.length > 0 ? { capabilities } : {}),
+        ...(changeClass !== null ? { changeClass } : {}),
+      },
+      { check: true },
+    );
+    if (!outcome.ok) {
+      return {
+        state: "unjudgeable",
+        detail: `新鲜度判卷未执行（store 装载/编译失败）：${outcome.errors[0]?.message ?? "unknown error"}`,
+        role,
+      };
+    }
+    return {
+      state: outcome.result.stale_check.state,
+      detail: outcome.result.stale_check.detail,
+      role,
+    };
+  } catch (error) {
+    return {
+      state: "unjudgeable",
+      detail: `新鲜度判卷未执行（异常）：${error instanceof Error ? error.message : String(error)}`,
+      role,
+    };
   }
 }
 

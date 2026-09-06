@@ -12,6 +12,13 @@
  *   current_seq >= expires_at_seq = 过期——A4 零墙钟，seq 判定；
  * - context manifest：`contexts/<task-id>.context.json` 精确词形（context.ts
  *   contextManifestFileName 的 taskRef 规则镜像——role 级 manifest 不算任务投影在场）；
+ *   新鲜度消费（审计 N5 修复，2026-09-06 批 2）：manifest 在座时经
+ *   judgeTaskContextFreshness（context.ts 单点——runContextCompile --check 同源判卷，
+ *   零 spawn 零第二指纹算法，loadStoreReadOnly 零写装载）判 fresh/stale_grounding/
+ *   unjudgeable；stale → R_MANIFEST_STALE 重编译路由行（审计复现链：maintain 改
+ *   task intent → 指纹漂移 → 导航不再引导 R_VERIFY_ENTRY 而是先重编译）；缺席 →
+ *   R_MANIFEST_MISSING 既有语义零变化；unjudgeable → stale 行跳过 + 告警留痕
+ *   （不冒充 fresh 也不乱指 stale）；
  * - 证据平面：runs+claims 计数与 claim verdict（readEvidencePlane 同源装配，零第二解析）；
  * - task payload.acceptance → claims VERIFIED 映射（closeout DoD 的 claims 侧只读
  *   预览——零判卷复刻：closeout 仍是唯一判卷权威，本路由只是「值得去收口」的路标；
@@ -46,6 +53,7 @@ import {
 // 证据平面文件名词形单一真相源（evidence.ts GRN_FILE_PATTERN/CLM_FILE_PATTERN——
 // 禁两套分母口径：计数分母与收编分母同正则，词表演化零漂移）。
 import { CLM_FILE_PATTERN, GRN_FILE_PATTERN } from "./evidence.js";
+import { judgeTaskContextFreshness } from "./context.js";
 import type { CliWarning } from "./envelope.js";
 
 type UnknownRecord = Record<string, unknown>;
@@ -62,6 +70,7 @@ export const NEXT_ACTION_ROUTE_IDS = [
   "R_PERMIT_EXPIRED",
   "R_PERMIT_MISSING",
   "R_MANIFEST_MISSING",
+  "R_MANIFEST_STALE",
   "R_VERIFY_ENTRY",
   "R_RECONCILE",
   "R_UNDETERMINED",
@@ -125,6 +134,15 @@ export interface NextActionSnapshot {
   readonly bound_refs: readonly string[];
   /** 任务级投影 manifest 在场（contexts/<task-id>.context.json 精确词形）。 */
   readonly task_manifest_present: boolean;
+  /**
+   * 任务级投影 manifest 新鲜度（审计 N5；judgeTaskContextFreshness 同源判卷——
+   * absent/fresh/stale_grounding 与 context compile --check 的 stale_check.state
+   * 同字，unjudgeable = 不可判诚实降级）。manifest 缺席恒 "absent"；unjudgeable
+   * 时 stale 路由行跳过（不冒充 fresh 也不乱指 stale）。
+   */
+  readonly task_manifest_freshness: "absent" | "fresh" | "stale_grounding" | "unjudgeable";
+  /** 现盘 manifest 记录的 role（R_MANIFEST_STALE 重编译命令渲染用；缺席/不可恢复 null）。 */
+  readonly task_manifest_role: string | null;
   /** 证据分母非空（runs+claims 任一在座）。 */
   readonly evidence_present: boolean;
   /** DoD claims 侧就绪的任务 id（acceptance 全映射 VERIFIED claim；null = 未就绪）。 */
@@ -143,6 +161,8 @@ function emptySnapshot(initialized: boolean): NextActionSnapshot {
     active_bound_refs: [],
     bound_refs: [],
     task_manifest_present: false,
+    task_manifest_freshness: "absent",
+    task_manifest_role: null,
     evidence_present: false,
     dod_ready_task_id: null,
     dod_judgeable: false,
@@ -269,6 +289,25 @@ export async function collectNextActionSnapshot(
   const taskManifestPresent =
     firstTask !== undefined ? existsSync(contextsManifestPath(rootDir, firstTask.id)) : false;
 
+  // —— manifest 新鲜度（审计 N5：导航与 context --check 消费同一新鲜度结果）。 ——
+  // manifest 缺席不判（R_MANIFEST_MISSING 既有语义零变化，判卷零成本）；在座才走
+  // judgeTaskContextFreshness 同源判卷（runContextCompile --check 编排复用 + 零写
+  // 装载）；unjudgeable = stale 行跳过 + 告警留痕（诚实降级，不乱指）。
+  let taskManifestFreshness: NextActionSnapshot["task_manifest_freshness"] = "absent";
+  let taskManifestRole: string | null = null;
+  if (firstTask !== undefined && taskManifestPresent) {
+    const judgment = await judgeTaskContextFreshness(rootDir, firstTask.id);
+    taskManifestFreshness = judgment.state;
+    taskManifestRole = judgment.role;
+    if (judgment.state === "unjudgeable") {
+      warnings.push({
+        code: NEXT_ACTION_SNAPSHOT_INCOMPLETE,
+        message: `任务级 context manifest 新鲜度不可判，stale 路由行跳过：${judgment.detail}`,
+        hint: "manifest 由 pomaster context compile 维护（编译产物，宪法 §19 禁手改）；可先 pomaster context compile --check 复核。",
+      });
+    }
+  }
+
   // —— 证据平面（runs/claims 计数 + claim verdict 映射；readEvidencePlane 同源）。 ——
   const evidenceWarnings: CliWarning[] = [];
   const runsCount = evidenceDirCounts(runsDirPath(rootDir), GRN_FILE_PATTERN);
@@ -331,6 +370,8 @@ export async function collectNextActionSnapshot(
     active_bound_refs: activeBoundRefs,
     bound_refs: boundRefs,
     task_manifest_present: taskManifestPresent,
+    task_manifest_freshness: taskManifestFreshness,
+    task_manifest_role: taskManifestRole,
     evidence_present: evidencePresent,
     dod_ready_task_id: dodReadyTaskId,
     dod_judgeable: dodJudgeable,
@@ -372,7 +413,7 @@ interface NextActionRouteRow {
 const firstTaskOr = (snapshot: NextActionSnapshot, fallback: string): string =>
   snapshot.active_tasks[0]?.id ?? fallback;
 
-/** 路由表（NEXT_ACTION_ROUTE_IDS 前 8 行一一对应；末行 R_UNDETERMINED = 兜底缺省）。 */
+/** 路由表（NEXT_ACTION_ROUTE_IDS 前 9 行一一对应；末行 R_UNDETERMINED = 兜底缺省）。 */
 export const NEXT_ACTION_ROUTE_TABLE: readonly NextActionRouteRow[] = [
   {
     id: "R_NOT_INITIALIZED",
@@ -436,6 +477,20 @@ export const NEXT_ACTION_ROUTE_TABLE: readonly NextActionRouteRow[] = [
       beat: "③",
       command: `pomaster context compile --role <role> --change ${firstTaskOr(s, "<TASK.*>")}`,
       reason: "任务级投影 manifest 缺席（contexts/<task-id>.context.json）——先取最小充分上下文",
+    }),
+  },
+  {
+    // 审计 N5（2026-09-06 批 2）：manifest 在座但指纹漂移（Truth/Policy/catalog 或
+    // 范围内正文更新——F2 scopeContent 绑定）时不再放行 R_VERIFY_ENTRY，先重编译。
+    // 判卷与 context compile --check 同源（judgeTaskContextFreshness 单点）；role 用
+    // 现盘 manifest 记录值渲染具体命令（缺席回退占位词形）。
+    id: "R_MANIFEST_STALE",
+    when: (s) => (s.task_manifest_freshness === "stale_grounding" ? true : false),
+    render: (s) => ({
+      beat: "③",
+      command: `pomaster context compile --role ${s.task_manifest_role ?? "<role>"} --change ${firstTaskOr(s, "<TASK.*>")}`,
+      reason:
+        "任务级投影 manifest 指纹漂移（Truth/Policy/catalog 或范围内正文已更新——与 context compile --check 同源判卷）——先重编译最小充分上下文再继续",
     }),
   },
   {

@@ -8,6 +8,9 @@
  * R-H 单一解析（09-05 审计 F1 修复）：任务绑定唯一源 = permits 台账 change_ref——
  * 对象索引 permits_active 手填不再满足路由退出条件；建议命令补 --change-ref 后
  * 公开命令正向链（status → permit issue → status → context compile → status）推进闭合。
+ * 审计 N5（0.5.0 审计批 2）：manifest 在座时消费同源新鲜度（judgeTaskContextFreshness
+ * ——context compile --check 同判卷），stale → R_MANIFEST_STALE 重编译路由行而非
+ * R_VERIFY_ENTRY（审计复现链反转测试）；unjudgeable 诚实降级 stale 行跳过不乱指。
  */
 import { mkdirSync, writeFileSync, rmSync, readFileSync } from "node:fs";
 import { mkdtempSync } from "node:fs";
@@ -128,11 +131,39 @@ function permitRow(overrides: Record<string, unknown>): Record<string, unknown> 
   };
 }
 
+/**
+ * 任务级 context manifest fixture（N5 起须为工具真实词形全字段：判卷入口按
+ * role/task_ref 恢复原编译输入——缺 role/inputs_fingerprint 的残形会被判
+ * stale_grounding，fixture 语义 =「manifest 在座且形态完整」）。
+ * 注：指纹为占位异值——本 spec 的 fixture ledger 非 kernel 事务产物（object 行缺
+ * rev/body_sha256 等 schema 必填），kernel 装载 SCHEMA_INVALID → 判卷诚实
+ * unjudgeable（见 DoD 用例断言）；fixture 语义仍是「在座、形态完整、未判 fresh」。
+ */
 function writeContextManifest(taskId: string): void {
   mkdirSync(join(dir, ".pomaster", "state", "contexts"), { recursive: true });
   writeFileSync(
     join(dir, ".pomaster", "state", "contexts", `${taskId}.context.json`),
-    `${JSON.stringify({ schema: "pomaster.context-manifest/1", generated_at_seq: 3 }, null, 2)}\n`,
+    `${JSON.stringify(
+      {
+        schema: "pomaster.context-manifest/1",
+        task_ref: taskId,
+        role: "frontend",
+        generated_at_seq: 3,
+        compiler: { tool: "pomaster-cli@test", kernel: "pomaster-kernel@0.0.0" },
+        inputs_fingerprint: "sha256:" + "a".repeat(64),
+        applicability: { change: taskId, capabilities: [], change_class: null },
+        partitions: {
+          authoritative_project_state: [],
+          required_policy: [],
+          advisory_knowledge: [],
+          reuse_catalog: [],
+          verification: [],
+        },
+        catalog_source: { status: "absent", root: null, note: "fixture" },
+      },
+      null,
+      2,
+    )}\n`,
     "utf8",
   );
 }
@@ -164,6 +195,8 @@ function snap(overrides: Partial<NextActionSnapshot>): NextActionSnapshot {
     active_bound_refs: [],
     bound_refs: [],
     task_manifest_present: false,
+    task_manifest_freshness: "absent",
+    task_manifest_role: null,
     evidence_present: false,
     dod_ready_task_id: null,
     dod_judgeable: true,
@@ -205,12 +238,24 @@ const ROUTE_FIXTURES: readonly { readonly route: NextActionRouteId; readonly sna
     }),
   },
   {
+    route: "R_MANIFEST_STALE",
+    snapshot: snap({
+      active_tasks: [TASK],
+      bound_refs: ["PERMIT.T1.1"],
+      active_bound_refs: ["PERMIT.T1.1"],
+      task_manifest_present: true,
+      task_manifest_freshness: "stale_grounding",
+      task_manifest_role: "frontend",
+    }),
+  },
+  {
     route: "R_VERIFY_ENTRY",
     snapshot: snap({
       active_tasks: [TASK],
       bound_refs: ["PERMIT.T1.1"],
       active_bound_refs: ["PERMIT.T1.1"],
       task_manifest_present: true,
+      task_manifest_freshness: "fresh",
     }),
   },
   {
@@ -220,13 +265,14 @@ const ROUTE_FIXTURES: readonly { readonly route: NextActionRouteId; readonly sna
       bound_refs: ["PERMIT.T1.1"],
       active_bound_refs: ["PERMIT.T1.1"],
       task_manifest_present: true,
+      task_manifest_freshness: "fresh",
       evidence_present: true,
     }),
   },
 ];
 
 describe("next-action 路由表（P2 表驱动：每行 = 条件 + 建议）", () => {
-  it("路由表行 id 词表闭合：NEXT_ACTION_ROUTE_TABLE 前 8 行 == NEXT_ACTION_ROUTE_IDS 前 8 行（末位 R_UNDETERMINED 为兜底缺省）", () => {
+  it("路由表行 id 词表闭合：NEXT_ACTION_ROUTE_TABLE 前 9 行 == NEXT_ACTION_ROUTE_IDS 前 9 行（末位 R_UNDETERMINED 为兜底缺省）", () => {
     expect(NEXT_ACTION_ROUTE_TABLE.map((row) => row.id)).toEqual(
       NEXT_ACTION_ROUTE_IDS.filter((id) => id !== "R_UNDETERMINED"),
     );
@@ -261,6 +307,9 @@ describe("next-action 路由表（P2 表驱动：每行 = 条件 + 建议）", (
       "pomaster permit issue --subject TASK.T1 --actor <type>:<name> --change-ref TASK.T1",
     );
     expect(byRoute.get("R_MANIFEST_MISSING")).toContain("pomaster context compile --role <role> --change TASK.T1");
+    expect(byRoute.get("R_MANIFEST_STALE")).toBe(
+      "pomaster context compile --role frontend --change TASK.T1",
+    );
     expect(byRoute.get("R_VERIFY_ENTRY")).toContain("pomaster check --fast");
     expect(byRoute.get("R_RECONCILE")).toContain("pomaster reconcile --permit PERMIT.T1.1");
   });
@@ -390,7 +439,15 @@ describe("next-action 快照装配（既有只读面）", () => {
     expect(ready.dod_ready_task_id).toBe("TASK.T1");
     expect(evaluateNextAction(ready).route_id).toBe("R_CLOSEOUT_READY");
 
-    // claims 未达 VERIFIED → 未就绪（路由落回证据在座 → reconcile 行）。
+    // N5 新鲜度诚实降级钉：fixture ledger 非 kernel 事务产物（object 行缺 schema
+    // 必填字段）→ 判卷入口装载 SCHEMA_INVALID → unjudgeable（不冒充 fresh 也不乱指
+    // stale；stale 路由行跳过 + NEXT_ACTION_SNAPSHOT_INCOMPLETE 留痕）。
+    expect(ready.task_manifest_freshness).toBe("unjudgeable");
+    expect(ready.task_manifest_role).toBe("frontend");
+    expect(warnings.map((w) => w.code)).toContain(NEXT_ACTION_SNAPSHOT_INCOMPLETE);
+
+    // claims 未达 VERIFIED → 未就绪（路由落回证据在座 → reconcile 行；unjudgeable
+    // 不改变该降级路径——manifest 两行均不命中）。
     writeClaim("CLM-1", "UNVERIFIED");
     const notReady = await collectNextActionSnapshot(dir, warnings);
     expect(notReady.dod_ready_task_id).toBeNull();
@@ -524,4 +581,111 @@ describe("R-H 正向链（公开命令：status 提示 → 照做 → 合理推�
     const afterCompile = await runStatus(dir);
     expect(afterCompile.result.next_action.route_id).toBe("R_VERIFY_ENTRY");
   });
+});
+
+// ============================================================
+// 审计 N5 复现链反转（0.5.0 审计批 2）：manifest 在座但指纹漂移 → 导航给重编译
+// 入口（R_MANIFEST_STALE）而非 R_VERIFY_ENTRY；重编译后回到 R_VERIFY_ENTRY。
+// 判据锚（audit-report.md N5 + cli/src/context.ts judgeTaskContextFreshness 契约注记）。
+// ============================================================
+
+describe("审计 N5 复现链反转：stale → R_MANIFEST_STALE 重编译入口", () => {
+  const N5_PAYLOAD_BASE = {
+    class_scan_result: {
+      scope: "src/shared/**",
+      hits: 0,
+      fixed_count: 0,
+      regression_case_ref: "GRN-N5",
+    },
+  };
+
+  /** 合法 TASK 入库（kernel 事务；等价 pre-dev ①②后的任务在册形态）。 */
+  async function seedTaskIntent(intent: string): Promise<void> {
+    await createStore(dir);
+    const authPath = join(dir, ".pomaster", "state", "authority.json");
+    const auth = JSON.parse(readFileSync(authPath, "utf8")) as {
+      authorities: Record<string, unknown>;
+    };
+    auth.authorities["BUSINESS_OWNER"] = {};
+    writeFileSync(authPath, `${JSON.stringify(auth, null, 2)}\n`, "utf8");
+    const store = await createStore(dir);
+    await applyTransaction(store, {
+      ops: [
+        {
+          op: "upsert_object",
+          envelope: {
+            id: "TASK.T1",
+            kind: "task_object",
+            axisProfile: "task_default",
+            axes: {
+              lifecycle: "CURRENT",
+              confidence: "PROVISIONAL",
+              evidence: "IMPLEMENTED",
+              change: "STABLE",
+            },
+            titleZh: "审计 N5 复现任务",
+            authority: { owner: "BUSINESS_OWNER", delegates: [] },
+            origin: "natural",
+            payload: { intent, ...N5_PAYLOAD_BASE },
+          } as never,
+        },
+      ],
+    });
+  }
+
+  it(
+    "pre-dev 落 manifest → maintain 改 task intent → status 给 stale 路由行（含重编译命令）而非 R_VERIFY_ENTRY → 重编译后回到 R_VERIFY_ENTRY",
+    { timeout: 60_000 },
+    async () => {
+      await seedTaskIntent("审计 N5 复现初始意图");
+      // pre-dev ②：签发带任务归属的许可（change_ref=TASK.T1——许可通道激活前提）。
+      const issued = await runPermitIssue(dir, {
+        subjects: ["TASK.T1"],
+        actor: "human:owner",
+        changeRef: "TASK.T1",
+      });
+      expect(issued.ok).toBe(true);
+      // pre-dev ③：runContextCompile 完整编排——manifest 真实落盘。
+      const compiled = await runContextCompile(dir, "frontend", undefined, { change: "TASK.T1" });
+      expect(compiled.ok).toBe(true);
+      expect(compiled.result.persisted).toBe(true);
+
+      // fresh 基线：路由 = R_VERIFY_ENTRY（fresh 路径零变化——与 N5 修复前逐字一致）。
+      const freshStatus = await runStatus(dir);
+      expect(freshStatus.result.next_action.route_id).toBe("R_VERIFY_ENTRY");
+      expect(freshStatus.result.next_action.command).toContain("pomaster check --fast");
+
+      // maintain 修改同一任务 intent（审计复现步骤：正文 rev 递增 + body_sha256 变
+      // ——F2 scopeContent 绑定命中，重编译指纹必变）。
+      await seedTaskIntent("审计 N5 复现：maintain 改 intent 后的意图");
+
+      // 审计缺陷反转：stale 不再放行 R_VERIFY_ENTRY，而是 ③ PROJECTION 重编译入口
+      // （role 取现盘 manifest 记录值渲染具体命令——可直接照做）。
+      const staleStatus = await runStatus(dir);
+      expect(staleStatus.result.next_action.route_id).toBe("R_MANIFEST_STALE");
+      expect(staleStatus.result.next_action.beat).toBe("③");
+      expect(staleStatus.result.next_action.command).toBe(
+        "pomaster context compile --role frontend --change TASK.T1",
+      );
+      expect(staleStatus.human.join("\n")).toContain(
+        "pomaster context compile --role frontend --change TASK.T1",
+      );
+
+      // 快照机读面同判（status/session/alerts 三通道共享同一 collectNextActionSnapshot
+      // 装配——单一分母，禁两套路由口径）。
+      const snapshotWarnings: { code: string; message: string; hint?: string }[] = [];
+      const staleSnapshot = await collectNextActionSnapshot(dir, snapshotWarnings);
+      expect(staleSnapshot.task_manifest_freshness).toBe("stale_grounding");
+      expect(staleSnapshot.task_manifest_role).toBe("frontend");
+      expect(evaluateNextAction(staleSnapshot).route_id).toBe("R_MANIFEST_STALE");
+      expect(snapshotWarnings.map((w) => w.code)).not.toContain(NEXT_ACTION_SNAPSHOT_INCOMPLETE);
+
+      // 照做重编译（覆盖写同 id 文件）→ fresh → 回到 R_VERIFY_ENTRY（stale 闭环）。
+      const recompiled = await runContextCompile(dir, "frontend", undefined, { change: "TASK.T1" });
+      expect(recompiled.ok).toBe(true);
+      expect(recompiled.result.stale_check.state).toBe("stale_grounding");
+      const recoveredStatus = await runStatus(dir);
+      expect(recoveredStatus.result.next_action.route_id).toBe("R_VERIFY_ENTRY");
+    },
+  );
 });

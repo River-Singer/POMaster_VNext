@@ -19,13 +19,15 @@
  * - VERIFICATION 分区（R1 联动）：binding CURRENT 的 SPEC.* 对象引用呈现
  *   （direct/change 两通路）；非 CURRENT / 无绑定 → 显式空区（缺席诚实）；
  *   VERIFICATION 不进 must_entries、不进 inputsFingerprint——gate 判卷输入语义零变更。
+ * - judgeTaskContextFreshness（审计 N5，0.5.0 审计批 2）：next-action 导航同源新鲜度
+ *   判卷入口（absent/fresh/stale_grounding/unjudgeable 四态 + 零写装载锚）。
  */
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { applyTransaction, createStore, issuePermit, sha256OfCanonical } from "@pomaster/kernel";
-import { runInit, runContextCompile } from "@pomaster/cli";
+import { judgeTaskContextFreshness, runInit, runContextCompile } from "@pomaster/cli";
 
 let root: string;
 
@@ -404,4 +406,109 @@ describe("审计 F2 回归：任务正文漂移检出（R-G 修复批）", () =>
     const check = await runContextCompile(root, "frontend", undefined, { change: "TASK.T0087" }, { check: true });
     expect(check.result.stale_check.state).toBe("stale_grounding");
   });
+});
+
+// ============================================================
+// judgeTaskContextFreshness（审计 N5 修复；0.5.0 审计批 2）：next-action 导航消费
+// 新鲜度的同源判卷入口——判卷本体 = runContextCompile(check=true)（F4 单一编排权威），
+// 输入由现盘 manifest 自记录字段恢复，零写装载（loadStoreReadOnly）。
+// 判据锚（cli/src/context.ts judgeTaskContextFreshness 契约注记）。
+// ============================================================
+
+/** .pomaster 全树字节快照（纯读零写锚——dispatch-pack/pure-read 先例同法）。 */
+function pomasterTreeSnapshot(current: string): Map<string, number> {
+  const files = new Map<string, number>();
+  const walk = (dir: string): void => {
+    for (const name of readdirSync(dir)) {
+      const full = join(dir, name);
+      if (statSync(full).isDirectory()) walk(full);
+      else files.set(full, readFileSync(full).length);
+    }
+  };
+  walk(join(current, ".pomaster"));
+  return files;
+}
+
+describe("judgeTaskContextFreshness（N5 同源判卷入口）", () => {
+  it(
+    "absent：现盘无 manifest → absent（不建 store 不编译——纯读零写入字节锚）",
+    { timeout: 60_000 },
+    async () => {
+      await initStore();
+      const before = pomasterTreeSnapshot(root);
+      const judgment = await judgeTaskContextFreshness(root, "TASK.T0087");
+      expect(judgment.state).toBe("absent");
+      expect(judgment.role).toBeNull();
+      expect(pomasterTreeSnapshot(root)).toEqual(before);
+    },
+  );
+
+  it(
+    "fresh：compile 落盘后判 fresh（与 context compile --check 同字同态）+ role 回显",
+    { timeout: 60_000 },
+    async () => {
+      await initStore();
+      await runContextCompile(root, "frontend", undefined, { change: "TASK.T0087" });
+      const judgment = await judgeTaskContextFreshness(root, "TASK.T0087");
+      expect(judgment.state).toBe("fresh");
+      expect(judgment.role).toBe("frontend");
+      // 与显式 --check 判卷逐字同源。
+      const check = await runContextCompile(root, "frontend", undefined, { change: "TASK.T0087" }, { check: true });
+      expect(check.result.stale_check.state).toBe(judgment.state);
+    },
+  );
+
+  it(
+    "stale_grounding：任务正文演进（intent rev+1）必判 stale（F2 同链同判）；现盘不可解析同判",
+    { timeout: 60_000 },
+    async () => {
+      await initStore();
+      await seedTaskIntent("判卷入口初始意图");
+      await issueTaskPermit();
+      await runContextCompile(root, "frontend", undefined, { change: "TASK.T0087" });
+      await seedTaskIntent("判卷入口：正文演进后意图");
+      expect((await judgeTaskContextFreshness(root, "TASK.T0087")).state).toBe("stale_grounding");
+      // 现盘不可解析（手改/损坏）——必然不 fresh，同 runContextCompile 语义。
+      writeFileSync(manifestPath("TASK.T0087.context.json"), "{ 损坏 JSON", "utf8");
+      const broken = await judgeTaskContextFreshness(root, "TASK.T0087");
+      expect(broken.state).toBe("stale_grounding");
+      expect(broken.detail).toContain("无法解析");
+    },
+  );
+
+  it(
+    "unjudgeable：task_ref 与文件名不一致（手改痕迹）→ 拒绝判卷（不冒充 fresh 也不乱指 stale）",
+    { timeout: 60_000 },
+    async () => {
+      await initStore();
+      await runContextCompile(root, "frontend", undefined, { change: "TASK.T0087" });
+      const path = manifestPath("TASK.T0087.context.json");
+      const doc = JSON.parse(readFileSync(path, "utf8")) as ContextManifestDoc;
+      writeFileSync(
+        path,
+        `${JSON.stringify({ ...doc, task_ref: "TASK.OTHER" }, null, 2)}\n`,
+        "utf8",
+      );
+      const judgment = await judgeTaskContextFreshness(root, "TASK.T0087");
+      expect(judgment.state).toBe("unjudgeable");
+      expect(judgment.detail).toContain("手改");
+      expect(judgment.role).toBe("frontend");
+    },
+  );
+
+  it(
+    "零写装载钉：存量 store 侧车缺失时判卷不补齐写（loadStoreReadOnly——createStore 的 ensureSidecars 写副作用被显式排除）",
+    { timeout: 60_000 },
+    async () => {
+      await initStore();
+      await runContextCompile(root, "frontend", undefined, { change: "TASK.T0087" });
+      // 删 journal 侧车：createStore（ensureSidecars）会补齐重建；判卷入口必须保持缺席。
+      rmSync(join(root, ".pomaster", "state", "journal.jsonl"));
+      const before = pomasterTreeSnapshot(root);
+      const judgment = await judgeTaskContextFreshness(root, "TASK.T0087");
+      expect(judgment.state).toBe("fresh");
+      expect(pomasterTreeSnapshot(root)).toEqual(before);
+      expect(existsSync(join(root, ".pomaster", "state", "journal.jsonl"))).toBe(false);
+    },
+  );
 });

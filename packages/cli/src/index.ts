@@ -486,12 +486,13 @@ export type {
   MaintainPermitView,
   MaintainProjectionView,
 } from "./maintain.js";
-export { runContextCompile, runContextExplain, classifyKernelError } from "./context.js";
+export { runContextCompile, runContextExplain, classifyKernelError, judgeTaskContextFreshness } from "./context.js";
 export type {
   ContextApplicabilityInputs,
   ContextCompileResult,
   ContextExplainResult,
   ApplicabilityInputsView,
+  ContextFreshnessJudgment,
 } from "./context.js";
 export {
   runDoctor,
