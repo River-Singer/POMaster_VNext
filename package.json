@@ -18,7 +18,9 @@
     "mutation:verify": "node benchmarks/mutation-kill.mjs --verify",
     "notices:verify": "node legal/verify_notices.mjs",
     "studio:dev": "node packages/studio/run.mjs dev",
-    "studio:build": "node packages/studio/run.mjs build"
+    "studio:build": "node packages/studio/run.mjs build",
+    "studio:react:dev": "node packages/studio-react/run.mjs dev",
+    "studio:react:build": "node packages/studio-react/run.mjs build"
   },
   "devDependencies": {
     "@types/node": "^22.13.1",

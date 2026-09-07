@@ -23,6 +23,12 @@ import {
   toPlainText,
   writeFileEnsuringDir,
 } from "./common.mjs";
+import { indexArchetypeMapByFile, readArchetypeComponentMap } from "./archetype-map.mjs";
+
+/** 缺省映射表视图（每次读盘——生成器确定性输出，测试可注入覆盖）。 */
+function defaultComponentMapByFile() {
+  return indexArchetypeMapByFile(readArchetypeComponentMap());
+}
 
 /** 已单独成节的字段（进"其余字段"围栏前剥除，避免重复呈现）。 */
 const RENDERED_STANDALONE_FIELDS = new Set([
@@ -45,8 +51,36 @@ export function collectArchetypes(dir = CATALOG_ARCHETYPES_DIR) {
   }));
 }
 
-/** 单张 archetype → MDX 文档页文本。 */
-export function renderArchetypePage(fileName, archetype) {
+/** 「建议组件组合」节（S4 映射层正向呈现；mappings = [{ component, basis }]）。 */
+function renderComponentMappingSection(mappings) {
+  if (!mappings || mappings.length === 0) {
+    throw new Error("archetype 映射表缺条目——41 卡必须逐卡在座（archetype-component-map.json）");
+  }
+  const lines = [];
+  lines.push("## 建议组件组合（studio 映射层）");
+  lines.push("");
+  lines.push(
+    "> NON-AUTHORITATIVE 策展辅助：由画廊配置 `packages/studio/scripts/lib/" +
+      "archetype-component-map.json` 只读渲染（非 catalog 物料，D6 分母零新增；" +
+      "S4 Owner 裁定 09-06）。逐条依据引用本卡语义字段或 seeds 主题文档。",
+  );
+  lines.push("");
+  lines.push(tableRow(["组件族（antdv）", "映射依据（逐条溯源）"]));
+  lines.push(tableRow(["---", "---"]));
+  for (const mapping of mappings) {
+    lines.push(
+      tableRow([
+        `\`${escapeMDXText(mapping.component)}\``,
+        escapeMDXText(mapping.basis),
+      ]),
+    );
+  }
+  lines.push("");
+  return lines;
+}
+
+/** 单张 archetype → MDX 文档页文本（componentMappings = S4 映射表对应条目）。 */
+export function renderArchetypePage(fileName, archetype, componentMappings) {
   // 侧边栏分组：文件名 archetype.<group>.<name>.json 的第二段（component/backend/
   // data/state/frontend/page/runtime/api）。
   const parts = fileName.replace(/\.json$/, "").split(".");
@@ -117,6 +151,9 @@ export function renderArchetypePage(fileName, archetype) {
     lines.push("");
   }
 
+  // S4 映射层：「建议组件组合」节（映射表缺卡即生成失败——41/41 全量钉死）。
+  lines.push(...renderComponentMappingSection(componentMappings));
+
   lines.push("## 研究锚（x-research-anchors）");
   lines.push("");
   const anchors = archetype["x-research-anchors"] ?? {};
@@ -142,15 +179,20 @@ export function renderArchetypePage(fileName, archetype) {
   return lines.join("\n");
 }
 
-/** 生成全部 archetype 页（返回 { count, files }；outDir 由调用方显式注入，幂等清场重建）。 */
-export function generateArchetypePages(outDir) {
+/** 生成全部 archetype 页（返回 { count, files }；outDir 由调用方显式注入，幂等清场重建）。
+ *  componentMapByFile 可注入（测试）——缺省从 archetype-component-map.json 读盘。 */
+export function generateArchetypePages(outDir, componentMapByFile = defaultComponentMapByFile()) {
   if (!outDir) throw new Error("generateArchetypePages 需要显式 outDir（generate-all 注入）");
   const entries = collectArchetypes();
   resetDir(outDir);
   const files = [];
   for (const { fileName, archetype } of entries) {
     const target = join(outDir, `${fileName.replace(/\.json$/, "")}.mdx`);
-    writeFileEnsuringDir(target, renderArchetypePage(fileName, archetype));
+    const mappings = componentMapByFile.get(fileName);
+    if (!mappings) {
+      throw new Error(`archetype-component-map.json 缺 ${fileName} 条目（41 卡全量在座）`);
+    }
+    writeFileEnsuringDir(target, renderArchetypePage(fileName, archetype, mappings));
     files.push(target);
   }
   return { count: files.length, files };

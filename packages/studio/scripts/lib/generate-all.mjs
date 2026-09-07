@@ -6,6 +6,7 @@ import { generateArchetypePages } from "./archetypes.mjs";
 import { generateComponentStories } from "./components.mjs";
 import { generateOverlayPages } from "./overlays.mjs";
 import { generateBaselinePage } from "./baseline.mjs";
+import { generateDataStructPage } from "./data-struct.mjs";
 
 /** 跑全部生成器（outRoot 缺省 = packages/studio/generated）。 */
 export function generateAll(outRoot = GENERATED_DIR) {
@@ -13,13 +14,17 @@ export function generateAll(outRoot = GENERATED_DIR) {
   const components = generateComponentStories(join(outRoot, "components"));
   const overlays = generateOverlayPages(join(outRoot, "overlays"));
   const baseline = generateBaselinePage(join(outRoot, "baseline"));
+  const dataStruct = generateDataStructPage(join(outRoot, "data-struct"));
   return {
     archetypes: archetype.count,
     components: components.count,
     overlays: overlays.count,
     baseline: baseline.count,
+    dataStruct: dataStruct.count,
     componentFamilies: components.families,
+    storyCount: components.storyCount,
     overlaySlugs: overlays.slugs,
     baselineLanes: baseline.lanes,
+    dataStructFiles: dataStruct.dataFiles,
   };
 }

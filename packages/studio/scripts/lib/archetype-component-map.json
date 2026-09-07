@@ -1,0 +1,370 @@
+{
+  "map_version": 1,
+  "note": "archetype↔组件映射层（任务 09-06-studio-depth-react-geist-mapping · Owner 裁定 S4 候选 B）。本表是画廊侧策展配置（packages/studio/scripts/lib/ 生成器数据，非 catalog 物料——D6 分母零新增）。逐条可溯源：每条 mapping.basis 引用对应 catalog/archetypes/<file> 的语义字段（semantic.responsibility / semantic.when_to_use / summary_zh / defaults / composition）或 seeds 主题文档节名，只做「语义→呈现组件」的推演，不新增规范语义（NON-AUTHORITATIVE）。components 词形必须落在 antdv es/components.js 的 71 组件族主组件清单内（tests/generators.spec.ts 钉测）。",
+  "entries": [
+    {
+      "archetype": "archetype.api.error.json",
+      "mappings": [
+        { "component": "Alert", "basis": "semantic.responsibility「机器可判卷与人可读分层」——人读层错误提示以 Alert 承载（可恢复型错误呈现）" },
+        { "component": "Result", "basis": "semantic.responsibility「五个标准成员承载问题类型/概要/状态/详情/实例定位」——终态错误页以 Result（status/title/sub-title）呈现" },
+        { "component": "Descriptions", "basis": "summary_zh「业务码/链路追踪/字段级错误为扩展成员」——字段级错误与实例定位以 Descriptions 键值对展开" },
+        { "component": "Typography", "basis": "semantic.responsibility「机器可判卷」——机器码/type 词形以 Typography code 文本原样呈现" }
+      ]
+    },
+    {
+      "archetype": "archetype.api.pagination.json",
+      "mappings": [
+        { "component": "Table", "basis": "semantic.responsibility「集合读取的分页契约单点」——分页集合读面以 Table 承载" },
+        { "component": "Pagination", "basis": "semantic.responsibility「页大小有界、排序稳定、续页位形固定」——页码/页大小以 Pagination 呈现（showSizeChanger 对应页大小有界）" },
+        { "component": "Segmented", "basis": "summary_zh「OFFSET/CURSOR/KEYSET 三选一批准闭包」——分页模式切换的演示位以 Segmented 承载" }
+      ]
+    },
+    {
+      "archetype": "archetype.api.resource.json",
+      "mappings": [
+        { "component": "Table", "basis": "summary_zh「集合读取」操作——集合读面以 Table 承载" },
+        { "component": "Form", "basis": "summary_zh「新建/单体修改」操作 + constraints（validation 绑定）——写面以 Form 承载（校验为强制绑定）" },
+        { "component": "Modal", "basis": "summary_zh「新建/单体修改/移除」操作——写操作容器以 Modal 承载" },
+        { "component": "Popconfirm", "basis": "summary_zh「移除」操作——移除前轻量确认以 Popconfirm 承载" },
+        { "component": "Descriptions", "basis": "summary_zh「单体读取」操作——单体详情读面以 Descriptions 承载" }
+      ]
+    },
+    {
+      "archetype": "archetype.backend.approval_workflow.json",
+      "mappings": [
+        { "component": "Steps", "basis": "summary_zh「草稿经递交事件进入已递交态，审批通过转通过、驳回转驳回」——状态链进度以 Steps 承载" },
+        { "component": "Timeline", "basis": "semantic.responsibility「合法转移之外无隐式状态」——转移历史留痕以 Timeline 承载" },
+        { "component": "Tag", "basis": "semantic.responsibility「四态两事件为标准链」——当前状态位以 Tag 承载" },
+        { "component": "Modal", "basis": "semantic.when_to_use「审批操作需显式确认语义」——通过/驳回操作面以 Modal 承载" }
+      ]
+    },
+    {
+      "archetype": "archetype.backend.audit.json",
+      "mappings": [
+        { "component": "Table", "basis": "summary_zh「基础档四字段（创建/更新的时间与操作人）」——审计流水列表以 Table 承载" },
+        { "component": "Descriptions", "basis": "summary_zh「严格档六要素（变更前后值/操作类型/理由/操作者/链路追踪）」——单条前后值展开以 Descriptions 承载" },
+        { "component": "Tooltip", "basis": "summary_zh「理由」字段——截断理由的悬停全文以 Tooltip 承载" }
+      ]
+    },
+    {
+      "archetype": "archetype.backend.crud_resource.json",
+      "mappings": [
+        { "component": "Table", "basis": "semantic.responsibility「单实体的标准写面与单点读面（get）」——list 读面以 Table 承载" },
+        { "component": "Pagination", "basis": "defaults.pagination=true——分页读面以 Pagination 承载" },
+        { "component": "Form", "basis": "defaults.validation=true + semantic.responsibility「标准写面」——create/update 写面以 Form 承载" },
+        { "component": "Modal", "basis": "semantic.responsibility「标准写面」——写操作容器以 Modal 承载（软删/批量等 optional_capabilities 同容器）" },
+        { "component": "Descriptions", "basis": "semantic.responsibility「单点读面（get）」——单实体详情以 Descriptions 承载" }
+      ]
+    },
+    {
+      "archetype": "archetype.backend.export.json",
+      "mappings": [
+        { "component": "Button", "basis": "summary_zh「小量同步直出（SYNC_SMALL）」——导出触发动作以 Button 承载" },
+        { "component": "Progress", "basis": "summary_zh「大量异步三段（ASYNC_LARGE）：请求立任务、产物落对象存储、下载凭据交付」——产物生成进度以 Progress 承载" },
+        { "component": "Table", "basis": "semantic.responsibility「异步档把长耗时产物移出请求生命周期」——产物任务清单以 Table 承载" },
+        { "component": "message", "basis": "summary_zh「下载凭据交付」——凭据就绪/完成通知以 message 服务式 API 承载" }
+      ]
+    },
+    {
+      "archetype": "archetype.backend.external_integration.json",
+      "mappings": [
+        { "component": "Table", "basis": "semantic.responsibility「把对外部系统每次调用的失效模式显式化」——调用与失效模式记录以 Table 承载" },
+        { "component": "Tag", "basis": "summary_zh「超时/重试/断路器/限流感知/鉴权/错误映射/可观测/回退八要素」——断路器/限流等运行状态位以 Tag 承载" },
+        { "component": "Alert", "basis": "semantic.responsibility「失败有映射与回退」——回退/错误映射提示以 Alert 承载" },
+        { "component": "Tooltip", "basis": "semantic.responsibility「每一项都是显式配置而非默认假设」——韧性参数说明以 Tooltip 承载" }
+      ]
+    },
+    {
+      "archetype": "archetype.backend.idempotent_command.json",
+      "mappings": [
+        { "component": "Form", "basis": "semantic.responsibility「以客户端生成键识别并丢弃重放请求」——幂等键随命令提交面以 Form 承载" },
+        { "component": "Result", "basis": "semantic.responsibility「首个请求的结果（含失败形态）被保存，同键重放返回同一结果」——重放结果同一呈现以 Result 承载" },
+        { "component": "Tag", "basis": "summary_zh「键/作用域/过期四件套」——键作用域与过期态以 Tag 承载" }
+      ]
+    },
+    {
+      "archetype": "archetype.backend.import.json",
+      "mappings": [
+        { "component": "Upload", "basis": "summary_zh「上传→解析」两步——文件上传以 Upload 承载" },
+        { "component": "Steps", "basis": "summary_zh「上传→解析→校验→预览→确认→执行→结果七步链」——链路进度以 Steps 承载" },
+        { "component": "Table", "basis": "summary_zh「行级错误/部分失败」——行级校验结果与预览清单以 Table 承载" },
+        { "component": "Modal", "basis": "semantic.responsibility「校验先行、人确认后才执行」——预览→确认两段式以 Modal 承载" },
+        { "component": "Alert", "basis": "summary_zh「部分失败」——部分失败汇总告警以 Alert 承载" }
+      ]
+    },
+    {
+      "archetype": "archetype.backend.master_data.json",
+      "mappings": [
+        { "component": "Table", "basis": "semantic.responsibility「列表检索读面」——主数据列表以 Table 承载" },
+        { "component": "Form", "basis": "semantic.responsibility「写面（新增/修改/删除）与读面分离」——写面以 Form 承载" },
+        { "component": "Pagination", "basis": "semantic.responsibility「列表检索读面」——检索分页以 Pagination 承载" },
+        { "component": "Tag", "basis": "summary_zh「审计、状态位、业务唯一键与可选版本位的六件套组合语义」——状态位以 Tag 承载" }
+      ]
+    },
+    {
+      "archetype": "archetype.backend.outbox_event.json",
+      "mappings": [
+        { "component": "Timeline", "basis": "summary_zh「生命周期五态锚 Spring Modulith 事件发布注册表」——中继生命周期以 Timeline 承载" },
+        { "component": "Tag", "basis": "semantic.responsibility「同事务写入业务数据与发件箱行，提交后异步中继」——事件发布状态位以 Tag 承载" },
+        { "component": "Table", "basis": "semantic.responsibility「发件箱行」——发件箱行清单以 Table 承载" }
+      ]
+    },
+    {
+      "archetype": "archetype.backend.query_resource.json",
+      "mappings": [
+        { "component": "Table", "basis": "semantic.responsibility「LIST/FILTER/SORT/PAGE/SEARCH 五能力」——列表与排序以 Table 承载" },
+        { "component": "Input", "basis": "semantic.responsibility「SEARCH 能力」——关键词检索以 InputSearch 词形承载（Input 族子导出）" },
+        { "component": "Select", "basis": "semantic.responsibility「FILTER 能力」——过滤字段以 Select 承载" },
+        { "component": "Pagination", "basis": "semantic.responsibility「PAGE 能力 + summary_zh『服务端分页、有界页大小』」——分页以 Pagination 承载" },
+        { "component": "Form", "basis": "semantic.responsibility「FILTER 能力」——复合过滤条件以 Form 承载" }
+      ]
+    },
+    {
+      "archetype": "archetype.backend.scheduled_job.json",
+      "mappings": [
+        { "component": "Table", "basis": "summary_zh「计划/分布式锁/超时/重试/幂等/结果/告警七要素」——任务运行记录以 Table 承载" },
+        { "component": "Badge", "basis": "semantic.responsibility「结果告警全部显式定义」——运行状态点以 Badge 承载" },
+        { "component": "Switch", "basis": "summary_zh「计划」要素——任务启停演示位以 Switch 承载" },
+        { "component": "Tooltip", "basis": "semantic.responsibility「并发防重、执行时限、失败重试全部显式定义」——锁/超时参数说明以 Tooltip 承载" }
+      ]
+    },
+    {
+      "archetype": "archetype.backend.transactional_write.json",
+      "mappings": [
+        { "component": "Modal", "basis": "semantic.responsibility「把一次用例写的原子性边界标准化为五步链序」——写入口确认以 Modal 承载" },
+        { "component": "message", "basis": "summary_zh「提交；回滚默认档锚 Spring 现行口径」——提交成功/失败反馈以 message 服务式 API 承载" },
+        { "component": "Result", "basis": "summary_zh「运行时异常与错误默认回滚」——回滚终态呈现以 Result 承载" }
+      ]
+    },
+    {
+      "archetype": "archetype.component.button.json",
+      "mappings": [
+        { "component": "Button", "basis": "semantic.responsibility「触发一个明确的动作或事件」——主原语本身；variant 词表（Default/Secondary/Tertiary/Error/Warning）已锚定进本卡（Geist Best Practices）" },
+        { "component": "Dropdown", "basis": "summary_zh「一行多个相关动作用 Menu/Split Button」——相关动作收纳以 Dropdown/DropdownButton 承载" },
+        { "component": "FloatButton", "basis": "semantic.responsibility「动作触发原语」的悬浮位形态——固定悬浮动作以 FloatButton 承载" }
+      ]
+    },
+    {
+      "archetype": "archetype.component.data_grid.json",
+      "mappings": [
+        { "component": "Table", "basis": "summary_zh「默认能力集（分页/排序/筛选/行选/固定/空态等）以 AntD Table demo 锚点为词表」——网格本体以 Table 承载" },
+        { "component": "Pagination", "basis": "summary_zh「默认能力集」之「分页」——分页控件以 Pagination 承载" },
+        { "component": "Checkbox", "basis": "summary_zh「默认能力集」之「行选」——行选交互以 Checkbox 承载" },
+        { "component": "Empty", "basis": "summary_zh「默认能力集」之「空态」——零数据空态以 Empty 承载" }
+      ]
+    },
+    {
+      "archetype": "archetype.component.dialog.json",
+      "mappings": [
+        { "component": "Modal", "basis": "summary_zh「对话框族按模态/方向/风险分型」——模态型以 Modal 承载（anatomy Title/Description 必配）" },
+        { "component": "Drawer", "basis": "summary_zh「按模态/方向/风险分型」——侧向型以 Drawer 承载" },
+        { "component": "Popconfirm", "basis": "summary_zh「按风险分型」——轻量风险确认以 Popconfirm 承载" },
+        { "component": "Result", "basis": "semantic.responsibility「中断式任务流（呈现结果）的容器」——结果呈现型以 Result 承载" }
+      ]
+    },
+    {
+      "archetype": "archetype.component.search_input.json",
+      "mappings": [
+        { "component": "Input", "basis": "summary_zh「文本输入触发的过滤/检索原语：企业站把它列为独立组件而非 Input 变体」——输入词形以 InputSearch（Input 族子导出）承载" },
+        { "component": "List", "basis": "semantic.responsibility「按关键词过滤当前数据面（本地或远程）」——本地结果面以 List 承载" },
+        { "component": "Empty", "basis": "semantic.responsibility「按关键词过滤当前数据面」——零结果空态以 Empty 承载" }
+      ]
+    },
+    {
+      "archetype": "archetype.component.search_select.json",
+      "mappings": [
+        { "component": "Select", "basis": "semantic.responsibility「从大选项集中按关键词检索并选择」＋summary_zh「aria 模式=combobox（popup=listbox 变体）」——主词形以 Select showSearch 承载" },
+        { "component": "AutoComplete", "basis": "semantic.responsibility「按关键词检索并选择（车型/供应商选择器类）」——自由输入联想以 AutoComplete 承载" },
+        { "component": "TreeSelect", "basis": "semantic.responsibility「大选项集」的层级形态——层级选项集以 TreeSelect 承载" },
+        { "component": "Spin", "basis": "summary_zh「selection_follows_focus 等行为契约」的远程加载位——异步选项加载以 Spin 承载" }
+      ]
+    },
+    {
+      "archetype": "archetype.data.hierarchy.json",
+      "mappings": [
+        { "component": "Tree", "basis": "semantic.responsibility「父子层级关系的实现路线选型与形状基线」——层级浏览呈现以 Tree 承载" },
+        { "component": "TreeSelect", "basis": "semantic.responsibility「子树查询」访问画像——层级选择以 TreeSelect 承载" },
+        { "component": "Cascader", "basis": "semantic.responsibility「深度」访问画像——逐级选择以 Cascader 承载" },
+        { "component": "Table", "basis": "summary_zh「邻接表路线」——扁平邻接视图以 Table 承载" }
+      ]
+    },
+    {
+      "archetype": "archetype.data.ledger.json",
+      "mappings": [
+        { "component": "Table", "basis": "semantic.responsibility「行只追加，修正以反向/补充记录表达」——append-only 流水以 Table 承载" },
+        { "component": "Timeline", "basis": "semantic.responsibility「历史可完整重放」——时间序事实以 Timeline 承载" },
+        { "component": "Statistic", "basis": "summary_zh「对账可重放」——对账汇总数值以 Statistic 承载" }
+      ]
+    },
+    {
+      "archetype": "archetype.data.master_data.json",
+      "mappings": [
+        { "component": "Descriptions", "basis": "summary_zh「业务码/名称/状态/审计四段公共字段 + 版本位」——四段字段详情以 Descriptions 承载" },
+        { "component": "Form", "basis": "semantic.responsibility「主数据实体的持久化形状基线（减少从零设计表结构）」——维护表单以 Form 承载" },
+        { "component": "Table", "basis": "semantic.responsibility「形状基线」的列表呈现——主数据列表以 Table 承载" },
+        { "component": "Tag", "basis": "summary_zh「状态」段——状态位以 Tag 承载" }
+      ]
+    },
+    {
+      "archetype": "archetype.data.transaction.json",
+      "mappings": [
+        { "component": "Statistic", "basis": "summary_zh「金额与数量的精度」——精度数值呈现以 Statistic（precision）承载" },
+        { "component": "Table", "basis": "semantic.responsibility「已发生的业务事实的持久化形状」——流水列表以 Table 承载" },
+        { "component": "Tag", "basis": "summary_zh「业务状态」——交易状态位以 Tag 承载" },
+        { "component": "Tooltip", "basis": "summary_zh「数量金额精度显式」——精度口径说明以 Tooltip 承载" }
+      ]
+    },
+    {
+      "archetype": "archetype.data.versioned.json",
+      "mappings": [
+        { "component": "Timeline", "basis": "semantic.responsibility「同一实体的多版本共存与生效区间单点化」——版本链以 Timeline 承载" },
+        { "component": "Table", "basis": "summary_zh「entity_id/revision/effective_from/effective_to/status 五字段」——版本行以 Table 承载" },
+        { "component": "Tag", "basis": "semantic.responsibility「当前生效版本由区间+状态派生」——当前生效位以 Tag 承载" },
+        { "component": "Descriptions", "basis": "summary_zh「五字段逐字」——单版本详情以 Descriptions 承载" }
+      ]
+    },
+    {
+      "archetype": "archetype.frontend.error_taxonomy.json",
+      "mappings": [
+        { "component": "Alert", "basis": "semantic.responsibility「驱动呈现/重试/遥测/话术四列的确定性处置」——可恢复错误呈现以 Alert 承载" },
+        { "component": "Result", "basis": "semantic.responsibility「十分型闭包」的终态呈现——不可恢复错误页以 Result 承载" },
+        { "component": "Tag", "basis": "semantic.responsibility「归类为十分型闭包」——分型标记以 Tag 承载" },
+        { "component": "Table", "basis": "semantic.responsibility「呈现/重试/遥测/话术四列」——分型×处置对照表以 Table 承载" }
+      ]
+    },
+    {
+      "archetype": "archetype.frontend.feature_oriented.json",
+      "mappings": [
+        { "component": "Layout", "basis": "semantic.responsibility「以业务特性（feature slice）为第一切分轴」——页面骨架以 Layout 承载" },
+        { "component": "Menu", "basis": "semantic.responsibility「业务特性为第一切分轴」——特性分区导航以 Menu 承载" },
+        { "component": "Breadcrumb", "basis": "summary_zh「App/Pages/Widgets/Features/Entities/Shared 六有效层」——特性内层级导航以 Breadcrumb 承载" }
+      ]
+    },
+    {
+      "archetype": "archetype.frontend.modular.json",
+      "mappings": [
+        { "component": "Layout", "basis": "semantic.responsibility「以自足模块为切分单元承载小型/中型应用」——模块宿主骨架以 Layout 承载" },
+        { "component": "Menu", "basis": "semantic.responsibility「自足模块」——模块入口导航以 Menu 承载" },
+        { "component": "Card", "basis": "summary_zh「以页面/模块为自足单元」——模块卡呈现以 Card 承载" }
+      ]
+    },
+    {
+      "archetype": "archetype.frontend.spa_layered.json",
+      "mappings": [
+        { "component": "Layout", "basis": "semantic.responsibility「以五层共同稳定语义承载 SPA 横向切分」——页面骨架以 Layout 承载" },
+        { "component": "Menu", "basis": "summary_zh「Page/Feature/Domain/API/Shared 五层」——页面/导航分区以 Menu 承载" },
+        { "component": "Breadcrumb", "basis": "semantic.responsibility「依赖严格向下」的路由层级呈现——层级导航以 Breadcrumb 承载" },
+        { "component": "Tabs", "basis": "semantic.responsibility「层可选不强制」——层内分区以 Tabs 承载" }
+      ]
+    },
+    {
+      "archetype": "archetype.page.analysis.json",
+      "mappings": [
+        { "component": "Card", "basis": "summary_zh「上下文→过滤→汇总→主分析面→下钻→导出的标准动线」——分析区块容器以 Card 承载" },
+        { "component": "Statistic", "basis": "summary_zh「汇总」段——汇总指标以 Statistic 承载" },
+        { "component": "Table", "basis": "summary_zh「主分析面→下钻」段——明细与下钻以 Table 承载" },
+        { "component": "Tabs", "basis": "semantic.responsibility「围绕一个分析主题的多维探索」——分析维度切换以 Tabs 承载" },
+        { "component": "Select", "basis": "summary_zh「过滤」段——过滤控件以 Select 承载" }
+      ]
+    },
+    {
+      "archetype": "archetype.page.master_data.json",
+      "mappings": [
+        { "component": "Table", "basis": "summary_zh「过滤→操作→网格→分页的标准组合」——网格以 Table 承载" },
+        { "component": "Form", "basis": "summary_zh「过滤」段＋「编辑」段——过滤与编辑表单以 Form 承载" },
+        { "component": "Drawer", "basis": "summary_zh「编辑走抽屉或对话框」——抽屉形态以 Drawer 承载" },
+        { "component": "Modal", "basis": "summary_zh「编辑走抽屉或对话框」——对话框形态以 Modal 承载" },
+        { "component": "Pagination", "basis": "summary_zh「默认假设远程数据+服务端分页」——分页以 Pagination 承载" }
+      ]
+    },
+    {
+      "archetype": "archetype.runtime.environment_parity.json",
+      "mappings": [
+        { "component": "Table", "basis": "summary_zh「六维环境比对原型（Runtime Version/Config/Feature Flag/DB Schema/Dependency/E…）」——逐维比对矩阵以 Table 承载" },
+        { "component": "Badge", "basis": "semantic.responsibility「差异以结构化漂移产物承载（差异项、严重度、忽略规则三件齐备）」——严重度点标以 Badge 承载" },
+        { "component": "Alert", "basis": "semantic.responsibility「把『环境之间是否一致』从印象问题标准化为逐维比对」——漂移告警以 Alert 承载" },
+        { "component": "Descriptions", "basis": "semantic.responsibility「差异项…三件齐备」——单条差异详情以 Descriptions 承载" }
+      ]
+    },
+    {
+      "archetype": "archetype.runtime.observability_binding.json",
+      "mappings": [
+        { "component": "Table", "basis": "semantic.responsibility「把 POMaster 对象系与 OTel 语义约定的对应关系单点化」——绑定清单以 Table 承载" },
+        { "component": "Tag", "basis": "semantic.responsibility「每条绑定声明词形锚与成熟度档位（Stable/Release Candidate/Development）」——成熟度档位以 Tag 承载" },
+        { "component": "Tooltip", "basis": "semantic.responsibility「词形锚」——词形锚与语义约定说明以 Tooltip 承载" }
+      ]
+    },
+    {
+      "archetype": "archetype.state.async_command.json",
+      "mappings": [
+        { "component": "Button", "basis": "semantic.responsibility「把一次异步命令（提交/保存/执行）建模为显式状态机：idle/running/done|error」——命令提交触发（loading 态=running）以 Button 承载" },
+        { "component": "Progress", "basis": "summary_zh「命令参数经 input 进入 actor」执行中反馈——running 态呈现以 Progress 承载" },
+        { "component": "Result", "basis": "semantic.responsibility「idle/running/done|error 转移全部声明在案」——done|error 终态以 Result 承载" },
+        { "component": "Alert", "basis": "semantic.responsibility「error 转移」——错误呈现以 Alert 承载" }
+      ]
+    },
+    {
+      "archetype": "archetype.state.background_refresh.json",
+      "mappings": [
+        { "component": "Table", "basis": "semantic.responsibility「远端缓存的过期判定与自动补捞触发面」——数据面以 Table 承载" },
+        { "component": "Badge", "basis": "summary_zh「挂载/窗口聚焦/断线重连三触发自动补捞」——后台补捞进行中标记以 Badge 承载" },
+        { "component": "Switch", "basis": "summary_zh「staleTime 0 缓存即换」——自动刷新开关演示位以 Switch 承载" }
+      ]
+    },
+    {
+      "archetype": "archetype.state.form_edit.json",
+      "mappings": [
+        { "component": "Form", "basis": "semantic.responsibility「持有未提交草稿的字段值/校验结果/脏标记，提交成功后交出所有权」——表单容器持有者以 Form 承载" },
+        { "component": "Input", "basis": "summary_zh「校验状态词形按 AntD Form validateStatus」——受控字段词形以 Input 承载" },
+        { "component": "Button", "basis": "semantic.responsibility「提交成功后交出所有权」——提交/重置动作以 Button 承载" }
+      ]
+    },
+    {
+      "archetype": "archetype.state.optimistic_mutation.json",
+      "mappings": [
+        { "component": "Table", "basis": "summary_zh「onMutate 取消在飞 refetch→快照→乐观写入→返回快照」——乐观更新行呈现以 Table 承载" },
+        { "component": "Switch", "basis": "semantic.responsibility「把『先显示后确认』的写路径标准化为五步链序」——乐观切换演示位以 Switch 承载" },
+        { "component": "message", "basis": "summary_zh「onError rollback」——回滚反馈以 message 服务式 API 承载" },
+        { "component": "Alert", "basis": "semantic.responsibility「rollback 与补捞（invalidate）不靠手写自觉」——补偿说明以 Alert 承载" }
+      ]
+    },
+    {
+      "archetype": "archetype.state.selection.json",
+      "mappings": [
+        { "component": "Checkbox", "basis": "semantic.responsibility「持有视图实例私有的瞬时交互态（行选中…）」——行选以 Checkbox 承载" },
+        { "component": "Radio", "basis": "semantic.responsibility「瞬时交互态」单选形态——单选以 Radio 承载" },
+        { "component": "Tree", "basis": "semantic.responsibility「行选中/展开/焦点」——展开态以 Tree 承载" },
+        { "component": "Tabs", "basis": "semantic.responsibility「tab 内高亮」——tab 高亮以 Tabs 承载" }
+      ]
+    },
+    {
+      "archetype": "archetype.state.server_query.json",
+      "mappings": [
+        { "component": "Spin", "basis": "semantic.responsibility「把『有没有数据』与『请求是否进行中』表达为两个正交词轴」——网络轴 fetchStatus 呈现以 Spin 承载" },
+        { "component": "Skeleton", "basis": "semantic.responsibility「isPending」数据轴初始态——加载骨架以 Skeleton 承载" },
+        { "component": "Table", "basis": "semantic.responsibility「持有远端取数的缓存、去重与刷新生命周期」——数据面以 Table 承载" },
+        { "component": "Empty", "basis": "semantic.responsibility「有没有数据」——零数据空态以 Empty 承载" },
+        { "component": "Alert", "basis": "semantic.responsibility「status 词轴」的 error 面——错误呈现以 Alert 承载" }
+      ]
+    },
+    {
+      "archetype": "archetype.state.url_filter.json",
+      "mappings": [
+        { "component": "Input", "basis": "semantic.responsibility「把…筛选状态所有权交给 URL，序列化规则单点」——筛选输入词形以 Input 承载" },
+        { "component": "Select", "basis": "semantic.responsibility「筛选」所有权交给 URL——筛选控件以 Select 承载" },
+        { "component": "Segmented", "basis": "summary_zh「筛选/分页/排序/tab 状态」——排序/模式切换以 Segmented 承载" },
+        { "component": "Pagination", "basis": "summary_zh「分页」所有权交给 URL——分页以 Pagination 承载" },
+        { "component": "Tabs", "basis": "summary_zh「tab 状态」所有权交给 URL——tab 态以 Tabs 承载" }
+      ]
+    },
+    {
+      "archetype": "archetype.state.wizard.json",
+      "mappings": [
+        { "component": "Steps", "basis": "semantic.responsibility「多步流程的步骤位置、每步合法性与推进事件的单点声明」——步骤导航以 Steps 承载" },
+        { "component": "Form", "basis": "summary_zh「next/prev 事件经 guard 把关（如 stepValid）」——每步表单即 guard 承载面" },
+        { "component": "Button", "basis": "semantic.responsibility「推进事件」——next/prev 动作以 Button 承载" },
+        { "component": "Result", "basis": "semantic.responsibility「步骤位置」终态——完成态以 Result 承载" }
+      ]
+    }
+  ]
+}

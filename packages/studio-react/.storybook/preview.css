@@ -1,0 +1,21 @@
+/* React sidecar 演示容器样式（与 Vue 主实例 preview.css 同词形——仅 story 展示面，
+   不触碰 antd reset 与组件样式体系）。 */
+.studio-demo {
+  padding: 16px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.studio-demo-trigger {
+  padding: 4px 12px;
+  cursor: pointer;
+}
+
+.studio-demo-chip {
+  display: inline-block;
+  padding: 4px 12px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+}

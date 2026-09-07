@@ -1,11 +1,11 @@
 // @vitest-environment happy-dom
-// 71 组件族真实挂载测试（审计 N4 核心交付）。
+// 71 组件族真实挂载测试（审计 N4 核心交付 + S1 交互态矩阵逐态断言）。
 //
-// 裁定：逐族挂载「生成的 story 的真实渲染体」（render() 产物 + antdv 全局插件，
+// 裁定：逐族逐态挂载「生成的 story 的真实渲染体」（render() 产物 + antdv 全局插件，
 // 与 .storybook/preview.ts 的 setup(app => app.use(Antd)) 同构），断言挂载不抛错 +
-// 关键 DOM 存在（选择器与最小计数由 family-examples.mjs 配置表声明，单一事实源）。
-// 「导出清单遍历」不再冒充可挂载——审计实测 Menu 裸挂 MenuItem 崩溃
-//（Cannot destructure property 'prefixCls'）、Tabs 空 tablist，本测试逐族钉死。
+// 关键 DOM 存在（选择器与最小计数由 family-examples.mjs 配置表声明，单一事实源；
+// state 级声明缺省回落族级值）。「导出清单遍历」不再冒充可挂载——审计实测 Menu 裸挂
+// MenuItem 崩溃（Cannot destructure property 'prefixCls'）、Tabs 空 tablist，本测试逐族钉死。
 //
 // 落位取舍：挂载测试放在 studio 包内（packages/studio/tests/），由 root vitest
 // 收口（根配置 include packages/**/*.spec.ts 已覆盖，per-file docblock 切换
@@ -18,7 +18,11 @@ import { flushPromises, mount } from "@vue/test-utils";
 import type { VueWrapper } from "@vue/test-utils";
 import { join } from "node:path";
 import Antd from "ant-design-vue";
-import { generateComponentStories } from "../scripts/lib/components.mjs";
+import {
+  countAllStories,
+  familyStates,
+  generateComponentStories,
+} from "../scripts/lib/components.mjs";
 import { STUDIO_ROOT } from "../scripts/lib/common.mjs";
 import { FAMILY_EXAMPLES } from "../scripts/lib/family-examples.mjs";
 import type { FamilyExampleEntry } from "../scripts/lib/family-examples";
@@ -30,23 +34,35 @@ const GENERATED_COMPONENTS_DIR = join(STUDIO_ROOT, "generated", "components");
 
 interface StoryModule {
   Default: { render: () => Record<string, unknown> };
+  [storyExport: string]: { render?: () => Record<string, unknown> } | unknown;
 }
 
-/** 生成（幂等，canonical 目录即 dev/build 同源）→ 逐 story 文件动态导入 → 真实挂载。 */
-async function mountFamilyStory(primary: string): Promise<VueWrapper> {
+/** 生成（幂等，canonical 目录即 dev/build 同源）→ 逐 story 文件动态导入 → 真实挂载。
+ *  storyExport 缺省 "Default"；states 逐态传具名导出（S1 交互态矩阵）。 */
+async function mountFamilyStory(primary: string, storyExport = "Default"): Promise<VueWrapper> {
   const storyModule = (await import(
     `../generated/components/${primary}.stories.ts`
-  )) as StoryModule;
-  const options = storyModule.Default.render();
+  )) as unknown as StoryModule;
+  const story = storyModule[storyExport] as { render: () => Record<string, unknown> };
+  if (typeof story?.render !== "function") {
+    throw new Error(`story 导出缺席: ${primary}/${storyExport}`);
+  }
+  const options = story.render();
   return mount(options, {
     global: { plugins: [Antd] },
     attachTo: document.body,
   });
 }
 
-function keyDomHits(wrapper: VueWrapper, entry: FamilyExampleEntry): number {
-  const scope: ParentNode = entry.portal ? document.body : wrapper.element;
-  return scope.querySelectorAll(entry.keyDom).length;
+interface KeyDomSpec {
+  keyDom: string;
+  minCount?: number;
+  portal?: boolean;
+}
+
+function keyDomHits(wrapper: VueWrapper, spec: KeyDomSpec): number {
+  const scope: ParentNode = spec.portal ? document.body : wrapper.element;
+  return scope.querySelectorAll(spec.keyDom).length;
 }
 
 // 生成一次（模块收集期；canonical 产物目录即 dev/build 同源，幂等可重放）。
@@ -57,7 +73,7 @@ beforeEach(() => {
   document.body.innerHTML = "";
 });
 
-describe("studio 71 组件族真实挂载（audit N4）", () => {
+describe("studio 71 组件族真实挂载（audit N4 + S1 态矩阵）", () => {
   it("配置表与 components.js 解析面一一对应（无缺条/多条）", () => {
     expect(families.length).toBe(71);
     const primaries = families.map((family) => family.primary);
@@ -68,6 +84,12 @@ describe("studio 71 组件族真实挂载（audit N4）", () => {
     const kinds = { curated: 0, default: 0, service: 0, utility: 0 };
     for (const entry of FAMILY_EXAMPLES.values()) kinds[entry.kind] += 1;
     expect(kinds).toEqual({ curated: 56, default: 12, service: 2, utility: 1 });
+    // S1 分母钉：story 总导出数（Default + 全部交互态）。
+    expect(countAllStories(families)).toBe(178);
+    // service 族不产 states（服务式 API 无组件交互态——缺席诚实）。
+    for (const primary of ["message", "notification"]) {
+      expect(FAMILY_EXAMPLES.get(primary)?.states ?? []).toEqual([]);
+    }
   });
 
   for (const expected of [
@@ -90,15 +112,37 @@ describe("studio 71 组件族真实挂载（audit N4）", () => {
       const wrapper = await mountFamilyStory(expected);
       try {
         await flushPromises();
-        const hits = keyDomHits(wrapper, entry);
+        const hits = keyDomHits(wrapper, entry as FamilyExampleEntry);
         expect(
           hits,
-          `${expected} 关键 DOM（${entry.keyDom}）实际命中 ${hits}；HTML 片段：${wrapper.html().slice(0, 240)}`,
-        ).toBeGreaterThanOrEqual(entry.minCount ?? 1);
+          `${expected} 关键 DOM（${entry?.keyDom}）实际命中 ${hits}；HTML 片段：${wrapper.html().slice(0, 240)}`,
+        ).toBeGreaterThanOrEqual(entry?.minCount ?? 1);
       } finally {
         wrapper.unmount();
       }
     });
+
+    // S1 交互态矩阵：每态一个具名 story 导出，逐态挂载不抛错 + 关键 DOM 在座。
+    for (const state of familyStates({ primary: expected, secondary: [] })) {
+      it(`${expected}/${state.name}：态挂载不抛错且关键 DOM 在座`, async () => {
+        const wrapper = await mountFamilyStory(expected, state.name);
+        try {
+          await flushPromises();
+          const spec: KeyDomSpec = {
+            keyDom: state.keyDom ?? (FAMILY_EXAMPLES.get(expected) as FamilyExampleEntry).keyDom,
+            minCount: state.minCount ?? 1,
+            portal: state.portal ?? (FAMILY_EXAMPLES.get(expected) as FamilyExampleEntry).portal,
+          };
+          const hits = keyDomHits(wrapper, spec);
+          expect(
+            hits,
+            `${expected}/${state.name} 关键 DOM（${spec.keyDom}）实际命中 ${hits}；HTML 片段：${wrapper.html().slice(0, 240)}`,
+          ).toBeGreaterThanOrEqual(spec.minCount ?? 1);
+        } finally {
+          wrapper.unmount();
+        }
+      });
+    }
   }
 
   it("service 族触发按钮真实调用（message 渲染进 portal）", async () => {

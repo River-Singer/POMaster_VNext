@@ -20,20 +20,23 @@ POMaster 把「软件项目当前可信的状态」当作一等公民来管理�
 
 ## 核心亮点
 
-### ① 组件画廊（Storybook）：134 页可视化资产目录
+### ① 组件画廊（Storybook）：Vue 主实例 + React sidecar 可视化资产目录
 
-「有哪些组件、长什么样、该写什么」一页可览——**41 张 archetype 语义卡**（页面/组件/后端/数据/运行时的标准件：职责、何时用、组合方式、研究锚）+ **71 个 ant-design-vue 组件真渲染** + **18 页 overlay 能力清单** + foundations 边界页。画廊全部由生成器从既有锚定物料**只读渲染**：不新增规范物料、不预置业务实体，页头自带 NON-AUTHORITATIVE 声明。
+「有哪些组件、长什么样、该写什么」一页可览——**41 张 archetype 语义卡**（页面/组件/后端/数据/运行时的标准件：职责、何时用、组合方式、研究锚，附「建议组件组合」逐条溯源映射）+ **71 个 ant-design-vue 组件真渲染（178 个 stories：默认形态 + disabled/loading/size/变体交互态矩阵）** + **18 页 overlay 能力清单** + foundations 边界页 + **Database Struct 占位分区**（该写什么：数据与事务主题 MUST/Checklist + baseline data 面导航——业务实体走 New Entity Gate，画廊不预置）。画廊全部由生成器从既有锚定物料**只读渲染**：不新增规范物料、不预置业务实体，页头自带 NON-AUTHORITATIVE 声明。
 
-![POMaster 组件画廊总览：四类页面构成与生成器纪律](docs/assets/studio/overview.png)
+另有 **React sidecar**（`packages/studio-react`，`corepack pnpm studio:react:dev`，端口 6007）：`antd@5.x` 真渲染，与 antdv 同设计系统两端逐族对齐、标注「Vue 对应件」对照浏览；geist 官方包零可渲染组件（诚实说明页在座）——「React 大件」由同设计系统活跃端承担。
 
-![Archetype 语义卡：标准企业 CRUD 资源——身份/语义/组合](docs/assets/studio/archetype-card.png)
+![POMaster 组件画廊总览：五类页面构成与生成器纪律](docs/assets/studio/overview.png)
+
+![Archetype 语义卡：标准企业 CRUD 资源——身份/语义/组合/建议组件组合](docs/assets/studio/archetype-card.png)
 
 ![Ant Design Vue 组件真渲染：Button story 与侧栏组件树](docs/assets/studio/antdv-button.png)
 
 怎么看：
 
 ```bash
-corepack pnpm studio:dev      # 在 POMaster 仓库内起 dev server（生成产物自动重建）
+corepack pnpm studio:dev        # Vue 主实例（生成产物自动重建）
+corepack pnpm studio:react:dev  # React sidecar（antd 对照浏览，端口 6007）
 ```
 
 - **在线版**：[river-singer.github.io/POMaster_VNext](https://river-singer.github.io/POMaster_VNext/)（GitHub Pages，push 到 main 自动发布）
@@ -146,7 +149,7 @@ pomaster init
 
 一条命令，幂等（重复执行 NO_CHANGE，人类文件一律不覆盖）：铺出 `.pomaster/` 治理目录树、登记 19 份 SPEC 预植对象、生成 `AGENTS.md` 重入口（15 份 skills 命令卡 + hooks 注入——Agent 开会话即自动看到治理状态）。TTY 下还有一轮 14 键技术栈问卷（中断 = 零写入；后补用 `pomaster baseline set`）。
 
-**组件画廊**：[river-singer.github.io/POMaster_VNext](https://river-singer.github.io/POMaster_VNext/)（在线版）· POMaster 仓库内 `corepack pnpm studio:dev`——治理产出前先看有哪些组件、长什么样、该写什么。
+**组件画廊**：[river-singer.github.io/POMaster_VNext](https://river-singer.github.io/POMaster_VNext/)（在线版）· POMaster 仓库内 `corepack pnpm studio:dev`（Vue 主实例）/ `corepack pnpm studio:react:dev`（React sidecar 对照）——治理产出前先看有哪些组件、长什么样、该写什么。
 
 > 产物全表 / 目录宪法 / 播种语义 / 重入口细节 / 问卷与 confirm 机制 / doctor 探针矩阵：详见 [docs/init-reference.md](docs/init-reference.md)。
 
@@ -263,7 +266,7 @@ Spec、Task、Gate、Knowledge、Brainstorm……全部是这五个原语的派�
 
 - [`docs/init-reference.md`](docs/init-reference.md) — `pomaster init` 全机制：产物表 / 目录宪法全树 / 播种语义 / 重入口三件套 / 技术栈问卷 / 基线确认 gate / 预置草案 / doctor 探针矩阵
 - [`docs/kernel-api.md`](docs/kernel-api.md) — kernel API 参考
-- [组件画廊（在线版）](https://river-singer.github.io/POMaster_VNext/) — GitHub Pages；仓库源在 [`packages/studio`](packages/studio/)
+- [组件画廊（在线版）](https://river-singer.github.io/POMaster_VNext/) — GitHub Pages；仓库源在 [`packages/studio`](packages/studio/)（Vue 主实例）与 [`packages/studio-react`](packages/studio-react/)（React sidecar，private 对照实例）
 - [`catalog/`](catalog/) — 随包分发的工程策展物料（policies / knowledge / gates / sensors / archetypes / tools）
 - [`references/`](references/) — concept-ledger（治理概念账本）· external-sites-index（外部参照站点索引）
 

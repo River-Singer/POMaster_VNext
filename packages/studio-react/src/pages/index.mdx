@@ -1,0 +1,43 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="React Sidecar 总览" />
+
+# POMaster React Sidecar 画廊（antd 对照浏览）
+
+> **NON-AUTHORITATIVE** — 本实例（`packages/studio-react`，React sidecar，裁定 S2）
+> 是组件资产的**可视化呈现面**，非规范文本；权威语义以 catalog/seeds 锚定源为准。
+> 全部 story 由生成器从安装的 antd 包只读枚举渲染——本包 private、不入 npm 发布面、
+> 不预置任何业务实体/业务组件（G-D 业务不预设）。
+
+## 定位：同设计系统两端的对照浏览
+
+- Vue 主实例（`packages/studio`，`corepack pnpm studio:dev`，端口 6006）：
+  `ant-design-vue@4.2.6` 71 组件族真渲染 + 交互态矩阵。
+- **React sidecar（本实例，`corepack pnpm studio:react:dev`，端口 6007）**：
+  `antd@5.29.3` 真渲染——antdv 与 antd 同属一个设计系统的两端（antdv 4.x 与 antd 5.x
+  同代），组件族清单对齐，每页标注「Vue 对应件」供对照浏览。
+- React 侧只做「默认形态」呈现；交互态矩阵以 Vue 主实例为准（单一演示权威）。
+
+## 对齐差异（实抓 antd@5.29.3 es/index.js）
+
+| 差异 | 清单 |
+| --- | --- |
+| antdv 有而 antd v5 已移除（不产对齐 story） | Comment、PageHeader、LocaleProvider |
+| antd v5 独有（antdv 族清单外，仅记录不产对齐 story） | BackTop（antdv 侧为 FloatButton.BackTop 子导出）、ColorPicker、Splitter |
+| 对齐族 stories | 68（含 message/notification 服务式 API 触发演示） |
+
+## 与治理面的关系
+
+- archetype↔组件映射层与本实例共用同一份映射配置（Vue 主实例
+  `packages/studio/scripts/lib/archetype-component-map.json`）——组件页的
+  「服务场景」注记即反向映射呈现。
+- geist 无 React 渲染实例——诚实说明见「Foundations/Geist」页。
+
+## 生成器纪律
+
+- stories 全部由 `packages/studio-react/scripts/lib/generate-react-stories.mjs`
+  程序化生成（幂等、可重放）；`generated/` 不入 git。
+- 重新生成：`corepack pnpm studio:react:dev` / `studio:react:build` 前自动重建；
+  也可单独 `node packages/studio-react/run.mjs generate`。
+- 遥测双关闭（`core.disableTelemetry` + `STORYBOOK_DISABLE_TELEMETRY` 环境变量）、
+  dev 端口 6007 错开主实例——全部照抄 Vue 主实例纪律。

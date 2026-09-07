@@ -9,14 +9,42 @@ import { Meta } from '@storybook/addon-docs/blocks';
 > 全部生成页由生成器从既有物料只读渲染——画廊不新增 catalog 物料（D6）、
 > 不预置任何业务实体/业务组件（G-D 业务不预设）。
 
-## 页面构成（四类）
+## 页面构成（五类）
 
-| 分组 | 页数 | 形态 | 内容源（只读） |
+| 分组 | 页数 / story 数 | 形态 | 内容源（只读） |
 | --- | --- | --- | --- |
-| Archetype 语义卡 | 41 | MDX 纯文档页（unattached） | `catalog/archetypes/*.json` |
-| AntDV 组件 | 71 | CSF3 story（真渲染） | `ant-design-vue@4.2.6` es/components.js 枚举 |
+| Archetype 语义卡 | 41 | MDX 纯文档页（unattached，含「建议组件组合」映射节） | `catalog/archetypes/*.json` + studio 映射层配置 |
+| AntDV 组件 | 71 族 / 178 stories | CSF3 story（真渲染：Default + 交互态矩阵） | `ant-design-vue@4.2.6` es/components.js 枚举 + 官方 API 词形 |
 | Overlay 能力清单 | 18 | MDX 纯文档页 | `packages/cli/seeds/specs/hard/stacks/*` |
 | Foundations 与边界 | 3 + 1 | 手写 MDX + 生成导航页 | geist/css overlay、`seeds/baseline/` |
+| Database Struct | 1 | 生成 MDX 占位分区页 | `themes/data-and-transactions.md` + `seeds/baseline/data/` |
+
+## 交互态矩阵（S1）与语义映射层（S4）
+
+- **交互态矩阵**：高频组件族在默认形态之外提供 disabled / loading / size / 变体组合
+  （type/shape/danger 等）交互态 stories——prop 词形全部为 antdv 4.2.6 官方 API，
+  逐态真实挂载断言；无交互态的族与服务式 API 显式缺席（不凑数）。
+- **archetype↔组件映射层**：每张语义卡有「建议组件组合」节（逐条溯源到语义字段与
+  主题文档），组件 story 反向注记「服务场景」——配置在
+  `packages/studio/scripts/lib/archetype-component-map.json`（画廊策展配置，非 catalog 物料）。
+
+## Database Struct（S5 占位分区）
+
+画廊起步没有业务数据结构——「Database Struct」分区是刻意的占位：随项目数据结构
+定义后填充，业务实体走 New Entity Gate（G-D 边界不预置）；分区页呈现「该写什么」
+规范指引（data-and-transactions 主题 MUST/Checklist 透传）与 baseline data 面导航。
+
+## React sidecar（S2 · 同设计系统对照浏览）
+
+`packages/studio-react` 是独立 Storybook 实例（`@storybook/react-vite` + antd 5.x）：
+与 antdv 4.2.6 同设计系统的 React 活跃端，组件族清单与 Vue 侧对齐、逐页标注
+「Vue 对应件」做对照浏览。geist 官方 npm 包零 React 组件、社区库已归档——
+React 侧不建 geist 渲染实例，仅设诚实说明页（见该实例「Foundations/Geist」）。
+
+```bash
+corepack pnpm studio:dev        # Vue 主实例（本画廊，端口 6006）
+corepack pnpm studio:react:dev  # React sidecar（antd 对照，端口 6007）
+```
 
 ## 生成器纪律
 
@@ -24,7 +52,8 @@ import { Meta } from '@storybook/addon-docs/blocks';
   `generated/` 不入 git——入库的是生成器 + 配置 + 本类少量手写页。
 - 重新生成：`corepack pnpm studio:dev` / `studio:build` 前自动重建；也可单独
   `node packages/studio/run.mjs generate`。
-- 覆盖/幂等由 `packages/studio/tests/generators.spec.ts` 钉住（41/71/18/4 计数 + 双跑 diff 空）。
+- 覆盖/幂等由 `packages/studio/tests/generators.spec.ts` 钉住（41/71/18/4/1 计数 +
+  178 stories 分母 + 双跑 diff 空）。
 
 ## 技术形态边界
 

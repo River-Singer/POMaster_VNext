@@ -1,13 +1,13 @@
-// studio 入口：generate / dev / build 三动作（跨平台，零 shell 依赖）。
+// React sidecar 入口：generate / dev / build 三动作（与 Vue 主实例 run.mjs 同构；
+// 跨平台，零 shell 依赖）。
 //
-// 遥测裁定（研究 §4）：遥测默认开启，boot 事件先于 main.ts 求值——官方明示
-// `disableTelemetry` 管不住它，「要确保不发就用 STORYBOOK_DISABLE_TELEMETRY
-// 环境变量」。本 runner 在 spawn storybook 前置该环境变量（dev/build 两通道全覆盖），
-// main.ts 的 core.disableTelemetry 另作声明层双保险。
+// 遥测裁定（与主实例同款双保险）：runner 前置 STORYBOOK_DISABLE_TELEMETRY 环境变量
+// （boot 事件先于 main.ts 求值，环境变量是唯一可靠拦截位），main.ts 的
+// core.disableTelemetry 另作声明层双保险。
 //
 // 用法（root scripts）：
-//   pnpm studio:dev   → node packages/studio/run.mjs dev
-//   pnpm studio:build → node packages/studio/run.mjs build
+//   pnpm studio:react:dev   → node packages/studio-react/run.mjs dev
+//   pnpm studio:react:build → node packages/studio-react/run.mjs build
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -19,7 +19,7 @@ const require = createRequire(import.meta.url);
 
 const action = process.argv[2] ?? "";
 if (!["generate", "dev", "build"].includes(action)) {
-  console.error("用法: node packages/studio/run.mjs <generate|dev|build>");
+  console.error("用法: node packages/studio-react/run.mjs <generate|dev|build>");
   process.exit(1);
 }
 
@@ -27,9 +27,9 @@ if (!["generate", "dev", "build"].includes(action)) {
 const { generateAll } = await import("./scripts/lib/generate-all.mjs");
 const counts = generateAll();
 console.log(
-  `[studio] 生成完成: archetypes=${counts.archetypes} components=${counts.components} ` +
-    `(stories=${counts.storyCount}) overlays=${counts.overlays} baseline=${counts.baseline} ` +
-    `dataStruct=${counts.dataStruct}`,
+  `[studio-react] 生成完成: antd 对齐族 stories=${counts.components} ` +
+    `（antd 导出 ${counts.antdExportCount}；v5 已移除族 ${counts.missing.length}：` +
+    `${counts.missing.map((entry) => entry.antdv).join("、")}）`,
 );
 if (action === "generate") process.exit(0);
 
@@ -37,7 +37,7 @@ if (action === "generate") process.exit(0);
 const storybookPackageJsonPath = join(studioRoot, "node_modules", "storybook", "package.json");
 if (!existsSync(storybookPackageJsonPath)) {
   console.error(
-    "[studio] storybook 未安装（packages/studio/node_modules/storybook 缺席）——" +
+    "[studio-react] storybook 未安装（packages/studio-react/node_modules/storybook 缺席）——" +
       "先 `corepack pnpm install`。",
   );
   process.exit(1);
@@ -45,15 +45,16 @@ if (!existsSync(storybookPackageJsonPath)) {
 const storybookManifest = require(storybookPackageJsonPath);
 const storybookBinRel = storybookManifest.bin?.storybook ?? storybookManifest.bin;
 if (typeof storybookBinRel !== "string") {
-  console.error("[studio] storybook bin 解析失败（package.json bin 缺失）");
+  console.error("[studio-react] storybook bin 解析失败（package.json bin 缺失）");
   process.exit(1);
 }
 const storybookBin = join(studioRoot, "node_modules", "storybook", storybookBinRel);
 
-// 3) spawn（STORYBOOK_DISABLE_TELEMETRY=真源通道；stdio 直通）。
+// 3) spawn（STORYBOOK_DISABLE_TELEMETRY=真源通道；stdio 直通；dev 端口 6007 错开
+// 主实例默认 6006；防漂移 --no-version-updates 与主实例同款）。
 const args =
   action === "dev"
-    ? ["dev", "--no-open", "--no-version-updates"]
+    ? ["dev", "--port", "6007", "--no-open", "--no-version-updates"]
     : ["build", "--output-dir", "dist-storybook"];
 const result = spawnSync(process.execPath, [storybookBin, ...args], {
   cwd: studioRoot,

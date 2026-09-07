@@ -24,3 +24,6 @@ docs/*
 # 幂等可重放）；dist-storybook/ 是静态导出产物——两者都不入 git。
 packages/studio/generated/
 packages/studio/dist-storybook/
+# React sidecar（S2 · 同设计系统对照浏览）：同款纪律。
+packages/studio-react/generated/
+packages/studio-react/dist-storybook/

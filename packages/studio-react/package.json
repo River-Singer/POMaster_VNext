@@ -1,0 +1,18 @@
+{
+  "name": "@pomaster/studio-react",
+  "version": "0.0.0",
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "POMaster vNext React sidecar 画廊（S2 · antd React 真渲染，与 Vue 主实例 packages/studio 同设计系统对照浏览）——不入 npm 发布面（private:true；build-npm-package 的 stage 白名单不含本包）",
+  "devDependencies": {
+    "@storybook/addon-docs": "^10.6.0",
+    "@storybook/react": "^10.6.0",
+    "@storybook/react-vite": "^10.6.0",
+    "antd": "5.29.3",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "storybook": "^10.6.0",
+    "vite": "^8.0.0"
+  }
+}

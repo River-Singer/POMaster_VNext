@@ -1,0 +1,36 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Foundations/Geist（诚实说明）" />
+
+# Foundations：Geist——为什么 React sidecar 也没有渲染实例
+
+> **NON-AUTHORITATIVE** — 本页为边界诚实说明，非规范文本。
+> 权威源：`.trellis/tasks/09-06-studio-depth-react-geist-mapping/research/geist-react-surface.md`
+> （2026-09-06/07 npm registry + GitHub API + unpkg + vercel.com/geist 实抓）。
+
+## 结论（S2 二次裁定的事实基础）
+
+**官方 Geist 没有可引用的 React 组件**——本 React sidecar 因此不建 geist 渲染实例：
+
+1. **官方 `geist` npm 包是纯字体分发**（v1.7.2，SIL OFL）：完整 exports 面仅 6 条
+   字体导出（font/sans/mono/pixel 系），React 组件数 = **0**；且字体加载器
+   peer 锁 `next >= 13.2.0`——纯 Vite React 环境连字体组件都不可经官方包使用。
+2. **vercel.com/geist 文档站 72 个组件全部无公开分发渠道**：文档站无任何 npm install
+   指令；`@vercel/geist-icons` npm 404；Vercel org 下 geist 相关 repo 仅字体项目——
+   判定为 Vercel 内部实现，外界不可引用。
+3. **社区 `@geist-ui/core` 不做底座**：GitHub 已正式归档（archived: true）、npm 停更
+   2022-03、文档站 404 下线、与现行官方 Geist token 体系不同代——不建死库仿制。
+
+## 本画廊对 Geist 的既有呈现（不动）
+
+- **Vue 主实例 foundations 增强页**：词表（70 组件清单）/Button variant 词表/
+  Best Practices 锚点——见主实例「Foundations/Geist（官方站参照）」页；
+- **字体**：真实消费走社区 fontsource 自托管方案（`@fontsource-variable/geist`，
+  MIT、框架无关）——属项目 design token 分层的 Owner 决策面，画廊不代选。
+
+## 边界纪律
+
+- 本 sidecar 的 React 渲染面 = **antd（React 原版）**——与 antdv 同设计系统两端，
+  承担「React 大件」的真实渲染；不得由此声称「渲染了 Geist 组件」。
+- Geist 为设计体系参照而非实现依赖——不得由 geist 参照推断框架、UI 组件库或
+  CSS 方案选型（overlay 引用纪律同 Vue 主实例）。
