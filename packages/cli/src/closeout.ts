@@ -477,7 +477,7 @@ export async function runCloseout(
     dodErrors.push({
       code: "DOD_ACCEPTANCE_EMPTY",
       message: `acceptance ${acceptanceRaw === undefined ? "缺席" : "为空"}——零验收判卷不允许 COMPLETED（§47 DoD 硬绑：每条 acceptance 必须映射 VERIFIED claim）`,
-      hint: "在 task payload.acceptance 登记验收条目 {criterion, claim}（claim 词形 CLM-[0-9]+）；空验收 = 证据缺失伪装完成的直通门，禁开。",
+      hint: "在 task payload.acceptance 登记验收条目 {criterion, claim}（claim 词形 CLM-[0-9]+；payload 变更走 pomaster maintain --ops upsert_object）；空验收 = 证据缺失伪装完成的直通门，禁开。",
     });
   } else {
     const claimsDir = claimsDirPath(rootDir);
@@ -506,7 +506,7 @@ export async function runCloseout(
         push(false, null, null, {
           code: "DOD_CLAIM_NOT_FOUND",
           message: `acceptance[${index}] 映射的 ${claimRef} 不在 claims 平面（悬空引用）`,
-          hint: "先经 record claim / compact 入账该 claim，再修正映射；引用不存在的证据 = 未验证却要完成。",
+          hint: "先经 pomaster record claim / pomaster compact 入账该 claim，再修正映射；引用不存在的证据 = 未验证却要完成。",
         });
         continue;
       }
@@ -930,7 +930,7 @@ export async function runCloseout(
     gateErrors.push({
       code: "GATE_EVIDENCE_MISSING",
       message: `对象 ${target} 名下零 gate 运行记录（subject 绑定分母为空）——gate 证据缺失不允许 COMPLETED`,
-      hint: "跑 check --gates / record gate-run（GateResult subject_id 绑定本对象）后重试；「没有 gate 记录」不是「gate 通过」。",
+      hint: "跑 pomaster check --gates / pomaster record gate-run（GateResult subject_id 绑定本对象）后重试；「没有 gate 记录」不是「gate 通过」。",
     });
   } else if (boundViews.length > 0) {
     // 同 gate 取 (ran_at_seq, GRN 序) 最大者为最新判卷（A4 单调锚；重跑合法取代旧判）。

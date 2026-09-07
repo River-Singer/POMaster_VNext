@@ -147,7 +147,7 @@ export async function runTraceShow(
       const error: CliError = {
         code: "SCHEMA_INVALID",
         message: "--seal 须配 --retention <档>（留存档必填显式——封存是治理承诺，不留缺省）",
-        hint: "四档词形（PRD §8.3 逐字）：EPHEMERAL（runtime/traces 可丢弃）| TASK_RETENTION | INCIDENT_RETENTION | AUDIT_RETENTION（traces/ durable 进 Git）。",
+        hint: "四档词形（PRD §8.3 逐字）：EPHEMERAL（runtime/traces 可丢弃）| TASK_RETENTION | INCIDENT_RETENTION | AUDIT_RETENTION（traces/ durable 进 Git）。示例：pomaster trace show <AGX> --seal --retention EPHEMERAL。",
       };
       return failOutcome<TraceShowResult>(
         "trace show",

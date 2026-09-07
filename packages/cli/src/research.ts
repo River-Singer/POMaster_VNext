@@ -244,7 +244,7 @@ async function resolveResearchHost(
       error: {
         code: "AMBIGUOUS_HOST",
         message: `多个活跃 discovery（${active.join(", ")}）——不发明静默选择政策`,
-        hint: "显式 --host <task-or-discovery> 指定宿主。",
+        hint: "显式 --host <task-or-discovery> 指定宿主（pomaster brainstorm start 所建 scratchpad id 或 TASK.* id）。",
       },
     };
   }

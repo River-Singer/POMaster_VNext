@@ -307,7 +307,7 @@ export async function runGraph(input: GraphInput): Promise<CommandOutcome<GraphR
       {
         code: "SCHEMA_INVALID",
         message: `--view 词表外：${view}（合法词形：all | impact）`,
-        hint: "all=对象行+采纳边+正/反向依赖+impact 邻域（缺省）；impact=只出闭包段。",
+        hint: "all=对象行+采纳边+正/反向依赖+impact 邻域（缺省）；impact=只出闭包段。示例：pomaster graph <governed-id> --view impact。",
       },
       emptyResult(input.id, "all", DEFAULT_IMPACT_DEPTH),
     );

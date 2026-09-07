@@ -355,6 +355,19 @@ export type {
   NpmRunResult,
 } from "./update.js";
 export { runStatus } from "./status.js";
+export { CAPABILITY_TIP_POOL, capabilityTipForSeq } from "./status.js";
+export {
+  parseCapabilityTipsEnabled,
+  readCapabilityTipsEnabled,
+  CAPABILITY_TIPS_KEY,
+} from "./config.js";
+export {
+  CAPABILITY_OVERVIEW,
+  CAPABILITY_MAP_HEADING,
+  renderCapabilityHumanLines,
+  renderCapabilityMapMarkdownLines,
+} from "./heavy-entry.js";
+export type { CapabilityEntry } from "./heavy-entry.js";
 export {
   runAlerts,
   ALERT_KINDS,
@@ -1352,7 +1365,7 @@ export function createProgram(
                 : "check 须显式选腿：--fast（BUILD 腿）或 --gates（catalog gate recipes 腿）",
             hint: fast
               ? "分两次执行：pomaster check --fast 与 pomaster check --gates。"
-              : "FAST gate 循环用 --fast；catalog/gates recipe 判卷+入账用 --gates。",
+              : "FAST gate 循环用 pomaster check --fast；catalog gate recipes 判卷+入账用 pomaster check --gates。",
             },
           ],
           ["check: FAILED — SCHEMA_INVALID\n  hint: --fast 与 --gates 二选一（互斥）。"],
@@ -3471,7 +3484,7 @@ export async function runCli(
         {
           code: "UNEXPECTED_ERROR",
           message,
-          hint: "若为 commander 用法错误请查看 --help；否则携带本信封报告缺陷。",
+          hint: "若为 commander 用法错误请运行 pomaster --help 对账命令词形；否则携带本信封报告缺陷。",
         },
       ],
     };

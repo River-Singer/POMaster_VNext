@@ -185,7 +185,7 @@ async function readPermitRecords(
     warnings.push({
       code: "ALERTS_PERMIT_LEDGER_MISSING",
       message: `permit ledger not found at ${toPosix(PERMITS_RELATIVE)}; permit alerts skipped`,
-      hint: "该侧车由 kernel 维护；缺席按显式空呈现（alerts 是纯读面，绝不重建）。",
+      hint: "该侧车由 kernel 维护（pomaster permit issue 签发即建台账）；缺席按显式空呈现（alerts 是纯读面，绝不重建）。",
     });
     return [];
   }
@@ -204,7 +204,7 @@ async function readPermitRecords(
     warnings.push({
       code: "ALERTS_PERMIT_LEDGER_UNREADABLE",
       message: `permit ledger is not readable: ${(err as Error).message}`,
-      hint: `修复 ${toPosix(PERMITS_RELATIVE)}（kernel 写通道维护）；alerts 不静默跳过也不猜测。`,
+      hint: `从 git 恢复 ${toPosix(PERMITS_RELATIVE)}（kernel 写通道维护）后重跑 pomaster alerts；alerts 不静默跳过也不猜测。`,
     });
     return [];
   }
@@ -242,7 +242,7 @@ export async function deriveAlerts(rootDir: string): Promise<AlertsDerivation> {
     warnings.push({
       code: "INVALID_STATE",
       message: `truth-index is not valid JSON object: ${(err as Error).message}`,
-      hint: `修复 ${toPosix(TRUTH_INDEX_RELATIVE)}（机器事务维护）；alerts 降级为空输出不失败。`,
+      hint: `从 git 恢复 ${toPosix(TRUTH_INDEX_RELATIVE)}（机器事务维护）后重跑 pomaster alerts；alerts 降级为空输出不失败。`,
     });
     return { initialized: false, current_seq: null, permits_active: 0, alerts: [], warnings };
   }

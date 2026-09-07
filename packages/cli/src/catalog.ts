@@ -183,7 +183,7 @@ export async function runCatalogStatus(
         {
           code: "CATALOG_NOT_AVAILABLE",
           message,
-          hint: "catalog/ 是 POMaster_VNext 仓库资产；在仓库内运行或用测试/嵌入方注入 catalogRoot。",
+          hint: "catalog/ 是 POMaster_VNext 仓库资产；在仓库内运行，或显式注入（pomaster catalog status --catalog-root <path>）。",
         },
       ],
       [`catalog status: FAILED — ${message}`],
@@ -245,7 +245,7 @@ export async function runCatalogExplain(
         {
           code: "CATALOG_NOT_AVAILABLE",
           message,
-          hint: "catalog/ 是 POMaster_VNext 仓库资产；在仓库内运行或注入 catalogRoot。",
+          hint: "catalog/ 是 POMaster_VNext 仓库资产；在仓库内运行，或显式注入（pomaster catalog explain <entry-id> --catalog-root <path>）。",
         },
       ],
       [`catalog explain: FAILED — ${message}`],

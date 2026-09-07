@@ -1006,7 +1006,7 @@ export async function runMemoryAudit(
         {
           code: MEMORY_HARVEST_NOT_RUN,
           message: `MEMORY_DRIFT 探测未执行（${report.drift.probeStatusDetail ?? "hidden_memory_dependency 行缺席"}）——drift 状态未知`,
-          hint: "探测未执行不等于无 drift；检查 portability 探测前置（store/truth-index 在场）后重跑 memory audit。",
+          hint: "探测未执行不等于无 drift；store/truth-index 缺席先 pomaster init，再重跑 pomaster memory audit。",
         },
       ],
       human,

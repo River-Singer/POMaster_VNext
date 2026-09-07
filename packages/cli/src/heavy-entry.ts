@@ -237,6 +237,112 @@ export const COMMAND_PANORAMA_LINES: readonly string[] = [
   "pomaster trace show/list",
 ];
 
+// ============================================================
+// 能力速览内容源（09-06 能力显性化 C1/C2 共享——能力不能静默）
+// ============================================================
+
+/**
+ * 单条能力速览：scene = 场景一句话；command = 确切命令词形（空串 = 非命令出口，
+ * 如组件画廊 URL——注册表钉测按在座词形解析，空串条目跳过）；detail = 补充说明。
+ * 单一内容源：C1（init 人读横幅 + --json capability_overview）与 C2（AGENTS.md
+ * 能力地图节）共用本表，禁第二套能力清单（提示内容与命令注册表钉版防漂移）。
+ */
+export interface CapabilityEntry {
+  readonly scene: string;
+  readonly command: string;
+  readonly detail: string;
+}
+
+/**
+ * 能力速览八条（PRD 09-06 Owner 裁定面位 C1：判档/Grill 讨论/基线确认/任务收口/
+ * 组件画廊/doctor 自检/resolve 标准件选型/graph 对象图——每次 init 全量展示，不做
+ * NO_CHANGE 精简）。command 词形全部在 CLI 注册表在座（tests/capability-surfacing
+ * 钉测）；浏览器/人读纪律零 ANSI 纯文本（§45）。
+ */
+export const CAPABILITY_OVERVIEW: readonly CapabilityEntry[] = [
+  {
+    scene: "一次变更开工前先判治理档位",
+    command: 'pomaster triage "<request>"',
+    detail: "秒级判 MINIMAL/LIGHT/STANDARD",
+  },
+  {
+    scene: "需求要先想清楚再动手（Grill 式讨论）",
+    command: "pomaster brainstorm start",
+    detail: "讨论驻留 scratchpad，收敛后晋升为任务",
+  },
+  {
+    scene: "技术栈选型敲定后锁定基线",
+    command: "pomaster baseline confirm",
+    detail: "基线确认 gate；closeout 收口的消费源",
+  },
+  {
+    scene: "任务做完要合规收口",
+    command: "pomaster closeout <task-id>",
+    detail: "DoD 判卷——acceptance 须映射 VERIFIED claim",
+  },
+  {
+    scene: "动手前逛组件画廊（有哪些组件/长什么样）",
+    command: "",
+    detail: "https://river-singer.github.io/POMaster_VNext/（或仓库内 corepack pnpm studio:dev）",
+  },
+  {
+    scene: "环境是否就绪（工具链/MCP 双眼）",
+    command: "pomaster doctor --json",
+    detail: "缺什么提示装什么",
+  },
+  {
+    scene: "需求词形先查既有对象与标准件",
+    command: 'pomaster resolve "<need>"',
+    detail: "NO_MATCH 显式不臆造；解析≠采用",
+  },
+  {
+    scene: "看一个对象的依赖与影响面",
+    command: "pomaster graph <governed-id>",
+    detail: "--view impact 出影响闭包",
+  },
+];
+
+/** C2 能力地图节标题（AGENTS.md 模板与测试共用的单一词形锚）。 */
+export const CAPABILITY_MAP_HEADING =
+  "## 能力地图（用户能做什么——场景命中时主动转述给用户）";
+
+/**
+ * C1 人读行集（init 完成横幅「你现在可以做什么」段；§45 人读通道专属、零 ANSI，
+ * 不进 --json 信封 human 之外的任何机读面）。每次 init 全量展示（Owner 09-06 明选，
+ * 不做 NO_CHANGE 精简）。
+ */
+export function renderCapabilityHumanLines(): string[] {
+  return [
+    "",
+    "  你现在可以做什么（能力速览——完整命令面见 pomaster --help）:",
+    ...CAPABILITY_OVERVIEW.map((entry) =>
+      entry.command === ""
+        ? `    - ${entry.scene} → ${entry.detail}`
+        : `    - ${entry.scene} → ${entry.command}（${entry.detail}）`,
+    ),
+  ];
+}
+
+/**
+ * C2 AGENTS.md 能力地图节（Agent 视角版）：模型读到后在对话中主动转述给用户——
+ * 时机点告知面（用户场景命中时），非闲聊推销（PRD Out of Scope 纪律写进节尾注记）。
+ * 与「重入口安装物」节不重复：能力地图 = 用户能做什么，安装物 = 装了什么。
+ */
+export function renderCapabilityMapMarkdownLines(): string[] {
+  return [
+    CAPABILITY_MAP_HEADING,
+    "",
+    "以下是本项目已安装的 POMaster 能力（场景 → 命令）。用户表达对应场景时，主动把对应命令转述给用户并引导/代跑；",
+    "本节是时机点告知面，禁在无关对话里插广告；完整命令面 = `pomaster --help`。",
+    "",
+    ...CAPABILITY_OVERVIEW.map((entry) =>
+      entry.command === ""
+        ? `- ${entry.scene} → ${entry.detail}。`
+        : `- ${entry.scene} → \`${entry.command}\`（${entry.detail}）。`,
+    ),
+  ];
+}
+
 /** Browser Eyes 统一引用段（每份命令卡尾部；与 AGENTS.md 同源口径）。 */
 const SKILL_BROWSER_EYES_LINES: readonly string[] = [
   "## Browser Eyes（浏览器双眼）",

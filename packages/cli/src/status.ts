@@ -7,7 +7,11 @@
  *   UNKNOWN_VOCAB_VALUE 告警（显式呈现，不静默丢弃也不 FATAL——读路径不做写阻断）；
  * - 跨轴断言观察：change=MIGRATING 而 permits_active 为空 → CROSS_AXIS_PERMIT_MISSING
  *   告警（断言执行权归 kernel REF_INTEGRITY，CLI 只做诚实呈现）；
- * - D24：status 是纯读命令，从不校验/重算任何摘要值（tamper-audit 归 store 事务侧）。
+ * - D24：status 是纯读命令，从不校验/重算任何摘要值（tamper-audit 归 store 事务侧）；
+ * - C4 capability tip（09-06 能力显性化）：人读尾部（next 行后）带一行 did-you-know
+ *   冷门能力提示（CAPABILITY_TIP_POOL 10 条；按 generation.seq 确定性轮换——零墙钟，
+ *   同 seq 同 tip）；config.yaml `capability_tips` 开关（config.ts 读取判卷，默认开
+ *   向后兼容——键/文件缺席 = 开）；关闭 = 人读零输出 + --json 字段缺席。
  */
 
 import { readFile } from "node:fs/promises";
@@ -17,6 +21,7 @@ import {
   LIFECYCLE_VALUES,
   TRUTH_BODY_KINDS,
 } from "@pomaster/schemas";
+import { readCapabilityTipsEnabled } from "./config.js";
 import {
   collectNextActionSnapshot,
   evaluateNextAction,
@@ -45,6 +50,39 @@ import { failOutcome, okOutcome } from "./envelope.js";
 
 function zeroCounts(keys: readonly string[]): Record<string, number> {
   return Object.fromEntries(keys.map((k) => [k, 0]));
+}
+
+// ============================================================
+// C4 · capability tips（09-06 能力显性化：status 尾部轮换能力提示位）
+// ============================================================
+
+/**
+ * capability tip 池（09-06 C4；did-you-know 形态——一行 = 冷门能力场景 + 命令）。
+ * 覆盖冷门能力：resolve 标准件解析 / graph 影响闭包 / knowledge 沉淀晋升 /
+ * research 取证 / memory 捕获收割 / production SLO 控制带 / portability 可移植 /
+ * eval 行为回归 / inspect 证据谱系 / catalog 漂移恢复。命令词形全部在 CLI 注册表
+ * 在座（tests/capability-surfacing.spec.ts 钉测防漂移）；与 C1 速览段零重复
+ * （速览 = 安装时主路径八能力，tip 池 = 日常浏览冷门能力）。
+ */
+export const CAPABILITY_TIP_POOL: readonly string[] = [
+  "需求词形先解析再决定是否新建：pomaster resolve \"<need>\" 把需求解析到既有对象/标准件（NO_MATCH 显式不臆造）",
+  "改动前看影响面：pomaster graph <governed-id> --view impact 列出该对象的影响闭包（超深显式 max_depth_reached）",
+  "经验要沉淀：pomaster knowledge record 登记候选，pomaster knowledge promote 提升为 ADVISORY 知识（恒不进 gate 判卷）",
+  "技术选型要取证：pomaster research request 发起研究缺口，research handoff 回填后重判收敛",
+  "「记住这个」有落点：pomaster memory capture --text \"<内容>\" 入 inbox，pomaster memory harvest 收割 harness 记忆",
+  "上线后要盯 SLO：pomaster production band define 定义控制带，pomaster production evaluate 三态判定击穿",
+  "换机器要带走治理态：pomaster portability bootstrap 重建 runtime 面，pomaster portability check 八项检查",
+  "Agent 行为要回归：pomaster eval --suite behavioral 跑行为评测种子（fail-closed，失败 exit 1）",
+  "单对象想看证据谱系：pomaster inspect <governed-id> 纯读呈现正文+证据+谱系",
+  "catalog 漂移有恢复键：pomaster catalog status 查构成，pomaster catalog relock 幂等重算重锁",
+];
+
+/**
+ * seq 确定性轮换（零墙钟——A4 纪律：同 seq 同 tip，禁时间/随机源）。
+ * capability_tips 关闭时调用方零输出（config.ts 读取判卷，默认开向后兼容）。
+ */
+export function capabilityTipForSeq(seq: number): string {
+  return CAPABILITY_TIP_POOL[seq % CAPABILITY_TIP_POOL.length]!;
 }
 
 /** 失败路径的诚实缺席路由（store 不可读 → 无法判定非乱指；P2 显式缺席纪律）。 */
@@ -149,6 +187,12 @@ export interface StatusResult {
    * 单一实现）。command=null = 诚实「无法判定」非乱指。
    */
   readonly next_action: NextAction;
+  /**
+   * capability tip（09-06 C4；加法呈现字段——seeded_assets 先例）：capability_tips
+   * 开（默认，config.ts 读取判卷）时按 generation.seq 确定性轮换的冷门能力提示
+   * （零墙钟，同 seq 同 tip）；关闭时字段缺席 + 人读零输出。
+   */
+  readonly capability_tip?: string;
 }
 
 /**
@@ -200,7 +244,7 @@ export async function runStatus(
       {
         code: "INVALID_STATE",
         message: `truth-index is not valid JSON object: ${(err as Error).message}`,
-        hint: `修复 ${statePath}（机器事务维护的文件；手改内容请走 kernel store 事务恢复）。`,
+        hint: `从 git 恢复 ${statePath}（机器事务维护的文件，禁手改）后重跑 pomaster status。`,
       },
     ];
     return failOutcome("status", {
@@ -268,7 +312,7 @@ export async function runStatus(
     warnings.push({
       code: "CROSS_AXIS_PERMIT_MISSING",
       message: `change=MIGRATING without permits_active: [${migratingWithoutPermit.join(", ")}]`,
-      hint: "跨轴断言（MIGRATING 必持 ACTIVE PERMIT）执行归 kernel REF_INTEGRITY；请先对账。",
+      hint: "跨轴断言（MIGRATING 必持 ACTIVE PERMIT）执行归 kernel REF_INTEGRITY；先用 pomaster reconcile --permit <PERMIT.*> 对账。",
     });
   }
 
@@ -341,6 +385,12 @@ export async function runStatus(
   const nextActionSnapshot = await collectNextActionSnapshot(rootDir, warnings);
   const nextAction = evaluateNextAction(nextActionSnapshot);
 
+  // capability tip（09-06 C4）：capability_tips 开（默认，config.ts 读取判卷——
+  // 键缺席/文件缺席 fail-open 向后兼容）才出；按 generation.seq 确定性轮换（零墙钟，
+  // 同 seq 同 tip）；关闭 = 字段缺席 + 人读零输出。
+  const tipsEnabled = await readCapabilityTipsEnabled(rootDir);
+  const capabilityTip = tipsEnabled ? capabilityTipForSeq(seq) : null;
+
   const result: StatusResult = {
     state_path: statePath,
     dialect_match: dialectMatch,
@@ -363,6 +413,7 @@ export async function runStatus(
     producers: { total: producerRows.length, dead },
     worst_blindspot: worstBlindspot,
     next_action: nextAction,
+    ...(capabilityTip !== null ? { capability_tip: capabilityTip } : {}),
     ...(seededAssets !== null ? { seeded_assets: seededAssets } : {}),
     legacy_specs_present: legacySpecsPresent,
     ...(specPreplant !== null ? { spec_preplant: specPreplant } : {}),
@@ -385,6 +436,8 @@ export async function runStatus(
     nextAction.command === null
       ? `  next: ${nextAction.reason}`
       : `  next: ${nextAction.command}（八拍${nextAction.beat}——${nextAction.reason}）`,
+    // C4 tip 行恒在 next 行之后（capability_tips 关闭 = 零输出）。
+    ...(capabilityTip !== null ? [`  tip: ${capabilityTip}`] : []),
   ];
   return okOutcome("status", result, human, warnings);
 }

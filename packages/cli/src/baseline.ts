@@ -702,7 +702,7 @@ export async function applyStackAnswers(
       errors.push({
         code: "INVALID_STATE",
         message: `${stackRelative} 结构不可解析: ${parse.detail}`,
-        hint: "修复或从 git 恢复该文件后重跑 init；init 不猜测重写项目基线文件。",
+        hint: "修复或从 git 恢复该文件后重跑 pomaster init；init 不猜测重写项目基线文件。",
       });
       continue;
     }

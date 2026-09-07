@@ -102,7 +102,9 @@ describe("runCli --json 机读契约（§45）", () => {
     expect(raw).not.toContain("State is the only truth");
     expect(raw).not.toContain("allenxujianyang");
     expect(raw).not.toContain("██████╗");
-    expect(raw).not.toContain("VNext");
+    // 横幅专属词形代理断言（「VNext」自 09-06 C1 起合法出现在 result.capability_overview
+    // 画廊 URL 结构化数据中，不再作横幅泄漏代理——哲学横幅首行只在人读通道在座）。
+    expect(raw).not.toContain("Governed Software State Control Plane");
   });
 
   it("context compile --role --json（真实 kernel）→ exit 0，信封 ok=true（kernel 落地后自动升级）", async () => {

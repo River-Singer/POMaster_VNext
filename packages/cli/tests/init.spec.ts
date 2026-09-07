@@ -379,8 +379,9 @@ describe("init 人读输出与信封", () => {
     expect(outcome.human[outcome.human.length - 1]).toBe(
       "Contact / commercial licensing: allenxujianyang@outlook.com",
     );
-    // 前导空行分隔：横幅不与产物清单粘连。
-    expect(text).toContain("  profile: LIGHT\n\nPOMaster · Governed");
+    // 前导空行分隔：横幅不与能力速览段粘连（09-06 C1 版式：profile → 能力速览 → 横幅）。
+    expect(text).toContain("  profile: LIGHT\n\n  你现在可以做什么");
+    expect(text).toContain("（--view impact 出影响闭包）\n\nPOMaster · Governed");
   });
 
   it("品牌横幅零进入机读信封原料（§45 单信封：result/warnings/errors 均无文案与 logo）", async () => {
@@ -393,7 +394,9 @@ describe("init 人读输出与信封", () => {
     expect(envelopeRaw).not.toContain("State is the only truth");
     expect(envelopeRaw).not.toContain("allenxujianyang");
     expect(envelopeRaw).not.toContain("██████╗");
-    expect(envelopeRaw).not.toContain("VNext");
+    // 横幅专属词形代理断言（「VNext」自 09-06 C1 起合法出现在 result.capability_overview
+    // 画廊 URL 结构化数据中，不再作横幅泄漏代理——哲学横幅首行只在人读通道在座）。
+    expect(envelopeRaw).not.toContain("Governed Software State Control Plane");
   });
 });
 

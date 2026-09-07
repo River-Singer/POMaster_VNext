@@ -215,7 +215,7 @@ export async function runProductionBandDefine(
     return fail(empty, command, {
       code: BAND_SCHEMA_INVALID,
       message: `band define 缺必填项：${missing.join(", ")}`,
-      hint: "band 定义六要素：--title --capability-ref --source --metric-name --operator --threshold（between 另须 --threshold-max）。",
+      hint: "band 定义六要素：pomaster production band define <band-id> --title --capability-ref --source --metric-name --operator --threshold（between 另须 --threshold-max）。",
     });
   }
   if (!(PRODUCTION_SIGNAL_SOURCE_VALUES as readonly string[]).includes(input.source as string)) {

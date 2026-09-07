@@ -72,6 +72,13 @@
  * 通道问卷整体跳过，后补走 `pomaster baseline set`，见 baseline.ts）。ANSI 序列只
  * 允许出现在 interactive-keys.ts 的重绘渲染器出口、且只经交互 io 进入真实终端的
  * TTY 路径（§45 纪律：--json 信封与人读完成输出恒零 ANSI）。
+ *
+ * 能力显性化（09-06 C1/C2，Owner 裁定：能力不能静默）：完成横幅新增「你现在可以
+ * 做什么」能力速览段——场景一句话 + 确切命令，与 AGENTS.md「能力地图」节共用
+ * heavy-entry.ts CAPABILITY_OVERVIEW 单一内容源（命令词形与 CLI 注册表钉版防漂移）；
+ * 每次 init 全量展示（Owner 明选，不做 NO_CHANGE 精简）；--json 信封同步
+ * result.capability_overview 结构化字段（§45 双形态）。config.yaml 模板加
+ * `capability_tips` 键（C4 status 轮换 tip 开关，默认开，读取判卷在 config.ts）。
  */
 
 import { readFile, stat, writeFile } from "node:fs/promises";
@@ -101,13 +108,17 @@ import {
   renderLayoutReadme,
 } from "./layout.js";
 import {
+  CAPABILITY_OVERVIEW,
   CLAUDE_SETTINGS_RELATIVE,
   COMMAND_PANORAMA_LINES,
   ENTRY_MODE_HEAVY_MARKER,
   SKILL_MANIFEST,
   SKILL_MIRROR_DIRS,
   mergePomasterHooks,
+  renderCapabilityHumanLines,
+  renderCapabilityMapMarkdownLines,
   renderSkillMd,
+  type CapabilityEntry,
 } from "./heavy-entry.js";
 import {
   TRIAGE_PROFILES,
@@ -211,6 +222,14 @@ export interface InitResult {
    * 运行时生成物——不进 seeds/manifest 分母，幂等铁律不破（草案在座重跑零写入）。
    */
   readonly presetDraft: BaselinePresetDraftReport;
+  /**
+   * 能力速览（09-06 能力显性化 C1；Owner 裁定面位之一）：--json result.
+   * capability_overview 结构化数组——与完成横幅人读段同一内容源（heavy-entry.ts
+   * CAPABILITY_OVERVIEW 单表，禁第二套能力清单）；命令词形与 CLI 注册表钉版
+   * （tests/capability-surfacing.spec.ts）。静态常量恒在座（含失败路径信封——
+   * 呈现面与成败无关）。
+   */
+  readonly capability_overview: readonly CapabilityEntry[];
 }
 
 export interface InitOptions {
@@ -378,7 +397,7 @@ export function parsePlatformSelection(raw: string): PlatformSelectionParse {
       error: {
         code: "SCHEMA_INVALID",
         message: `平台选择为空；${PLATFORM_WORDS_HINT}`,
-        hint: "示例：--platforms claude,cursor 或 --platforms none。",
+        hint: "示例：pomaster init --platforms claude,cursor 或 pomaster init --platforms none。",
       },
     };
   }
@@ -428,7 +447,7 @@ export function parsePlatformSelection(raw: string): PlatformSelectionParse {
       error: {
         code: "SCHEMA_INVALID",
         message: `非法平台词形：${token}；${PLATFORM_WORDS_HINT}`,
-        hint: "示例：--platforms claude,cursor 或 --platforms none。",
+        hint: "示例：pomaster init --platforms claude,cursor 或 pomaster init --platforms none。",
       },
     };
   }
@@ -482,6 +501,7 @@ export async function runInitInteractive(
         specPreplant: null,
         baseline: { asked: 0, answered: 0, skipped: "non_interactive" },
         presetDraft: ZERO_PRESET_DRAFT,
+        capability_overview: CAPABILITY_OVERVIEW,
       },
       [parse.error],
       ["init: FAILED — SCHEMA_INVALID", `  ${parse.error.message}`, `  hint: ${parse.error.hint}`],
@@ -504,6 +524,7 @@ export async function runInitInteractive(
         specPreplant: null,
         baseline: { asked: 0, answered: 0, skipped: "non_interactive" },
         presetDraft: ZERO_PRESET_DRAFT,
+        capability_overview: CAPABILITY_OVERVIEW,
       },
       [
         {
@@ -646,6 +667,7 @@ export function parseConfigProfile(configText: string): TriageProfile {
 const CONFIG_TEMPLATE = `# POMaster vNext 治理配置（pomaster init 生成；人类可编辑，init 不覆盖已存在文件）
 version: 1
 profile: LIGHT            # 治理档位（信息性人类偏好，A1 裁定 2026-09-04：不进判卷）：MINIMAL | LIGHT | STANDARD
+capability_tips: true     # status 尾部轮换能力 tip（did-you-know 形态；按 generation.seq 确定性轮换；false 关闭 = 零输出；键缺席 = 默认开——09-06 C4，呈现位偏好不进判卷）
 triage:
   ttl_hours: ${TRIAGE_TTL_HOURS}          # triage 结果有效期（C9）
 store:
@@ -864,6 +886,8 @@ ${COMMON_COMMANDS_LINES.join("\n")}
 
 ${DIRECTORY_CONSTITUTION_LINES.join("\n")}
 
+${renderCapabilityMapMarkdownLines().join("\n")}
+
 ## 重入口安装物（init 维护）
 
 - skills 命令卡库：\`.agents/skills/pomaster/\` 等 ${SKILL_MANIFEST.length} 份（通用层——Codex/Cursor/Gemini CLI/GitHub Copilot/VS Code/Amp/Warp/OpenCode/Droid 等原生读取），${mirrorNote}。
@@ -952,7 +976,7 @@ async function writeGeneratedFile(
     warnings.push({
       code: foreignWarningCode,
       message: `${relative} exists without pomaster generated marker; left untouched`,
-      hint: `人工合并后加入标记 ${GENERATED_MARKER} 即可交由 init 维护。`,
+      hint: `人工合并后加入标记 ${GENERATED_MARKER} 并重跑 pomaster init 校验（幂等，已在座按 unchanged 呈现）。`,
     });
     files.push({ file: relative, action: "skipped_foreign" });
     return;
@@ -1017,6 +1041,7 @@ export async function runInit(
         specPreplant: null,
         baseline: { asked: 0, answered: 0, skipped: "non_interactive" },
         presetDraft: ZERO_PRESET_DRAFT,
+        capability_overview: CAPABILITY_OVERVIEW,
       },
       [selection.error],
       [
@@ -1069,7 +1094,7 @@ export async function runInit(
       errors.push({
         code: "INVALID_STATE",
         message: `existing truth-index is not readable: ${toPosix(TRUTH_INDEX_RELATIVE)}`,
-        hint: "检查文件权限；init 不覆盖已存在账本（clobber 防线）。",
+        hint: "检查文件权限或从 git 恢复后重跑 pomaster init；init 不覆盖已存在账本（clobber 防线）。",
       });
     } else {
       try {
@@ -1078,7 +1103,7 @@ export async function runInit(
         errors.push({
           code: "INVALID_STATE",
           message: `existing truth-index is not valid JSON: ${(err as Error).message}`,
-          hint: `修复或移除 ${toPosix(TRUTH_INDEX_RELATIVE)} 后重试；init 不覆盖已存在账本。`,
+          hint: `修复或移除 ${toPosix(TRUTH_INDEX_RELATIVE)} 后重跑 pomaster init；init 不覆盖已存在账本。`,
         });
       }
     }
@@ -1130,7 +1155,7 @@ export async function runInit(
       errors.push({
         code: "INVALID_STATE",
         message: `existing authority.json is corrupt: ${detail}`,
-        hint: `修复或从 git 恢复 ${toPosix(AUTHORITY_RELATIVE)} 后重试；init 不覆盖已存在 Authority Map（clobber 防线；幽灵 owner=FATAL 的解析源不可静默重建）。`,
+        hint: `修复或从 git 恢复 ${toPosix(AUTHORITY_RELATIVE)} 后重跑 pomaster init；init 不覆盖已存在 Authority Map（clobber 防线；幽灵 owner=FATAL 的解析源不可静默重建）。`,
       });
     }
     files.push({ file: toPosix(AUTHORITY_RELATIVE), action: "unchanged" });
@@ -1159,7 +1184,7 @@ export async function runInit(
       warnings.push({
         code: "CONFIG_PROFILE_MISSING",
         message: "config.yaml has no profile key; falling back to LIGHT",
-        hint: `在 ${toPosix(CONFIG_RELATIVE)} 增加 profile: MINIMAL|LIGHT|STANDARD。`,
+        hint: `在 ${toPosix(CONFIG_RELATIVE)} 增加 profile: MINIMAL|LIGHT|STANDARD；改后重跑 pomaster init 回读生效。`,
       });
     }
     files.push({ file: toPosix(CONFIG_RELATIVE), action: "unchanged" });
@@ -1395,6 +1420,7 @@ export async function runInit(
     specPreplant,
     baseline,
     presetDraft,
+    capability_overview: CAPABILITY_OVERVIEW,
   };
 
   if (errors.length > 0) {
@@ -1410,9 +1436,11 @@ export async function runInit(
     );
   }
 
-  // 人读结构：logo 横幅 → 空行 → 四产物输出 → 平台段 → 入口形态 → profile → 哲学横幅
-  // （INIT_BANNER_LINES 自带前导空行）。logo/横幅仅此人读通道；--json 信封恒不受影响
-  // （平台段作为结构化 platforms 数组进 result，非横幅文案）。
+  // 人读结构：logo 横幅 → 空行 → 四产物输出 → 平台段 → 入口形态 → profile → 能力速览段
+  // → 哲学横幅（INIT_BANNER_LINES 自带前导空行）。logo/横幅/能力速览仅此人读通道；
+  // --json 信封恒不受影响（平台段作为结构化 platforms 数组、能力速览作为结构化
+  // capability_overview 数组进 result，非横幅文案）。能力速览每次 init 全量展示
+  // （09-06 C1 Owner 明选：不做 NO_CHANGE 精简——安装时是能力告知的唯一时机点）。
   const platformLines: string[] = ["  platforms:"];
   if (platforms.length === 0) {
     platformLines.push("    none（--platforms none：未启用任何平台适配器）");
@@ -1442,6 +1470,7 @@ export async function runInit(
     baselineLine,
     presetLine,
     `  profile: ${profile}`,
+    ...renderCapabilityHumanLines(),
     ...INIT_BANNER_LINES,
   ];
   return okOutcome("init", result, human, warnings);

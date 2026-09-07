@@ -145,7 +145,7 @@ export async function runKnowledgeSearch(
     return fail(empty, command, {
       code: "SCHEMA_INVALID",
       message: "<query> 为空（§44.10 knowledge search <query>；空查询 = 全量注入倾向，禁）",
-      hint: "给出检索词（§83.8「检索而不是全量注入」——检索域非空才有命中语义）。",
+      hint: "给出检索词（§83.8「检索而不是全量注入」——检索域非空才有命中语义）。示例：pomaster knowledge search \"<检索词>\"。",
     });
   }
   try {

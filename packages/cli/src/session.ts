@@ -164,7 +164,7 @@ async function readCounts(
         warnings.push({
           code: "INVALID_STATE",
           message: `truth-index.${key} is not an array; counted as 0`,
-          hint: `修复 ${toPosix(TRUTH_INDEX_RELATIVE)}（机器事务维护）；速览投影按缺席计 0 不失败。`,
+          hint: `从 git 恢复 ${toPosix(TRUTH_INDEX_RELATIVE)}（机器事务维护）后重跑 pomaster session；速览投影按缺席计 0 不失败。`,
         });
         return 0;
       }
@@ -181,7 +181,7 @@ async function readCounts(
     warnings.push({
       code: "INVALID_STATE",
       message: `truth-index is not valid JSON object: ${(err as Error).message}`,
-      hint: `修复 ${toPosix(TRUTH_INDEX_RELATIVE)}；速览投影降级为未初始化形态不失败。`,
+      hint: `从 git 恢复 ${toPosix(TRUTH_INDEX_RELATIVE)} 后重跑 pomaster session；速览投影降级为未初始化形态不失败。`,
     });
     return { initialized: false, seq: 0, objects: 0, denominators: 0, producers: 0 };
   }

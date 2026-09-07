@@ -117,12 +117,12 @@ export async function runReconcile(
         {
           code: "RECONCILE_BASELINE_MISSING",
           message: `${input.permit} 无基线快照（本特性之前签发的旧形态许可）——不能拿「没有基线」冒充「无变化」`,
-          hint: "重新签发带基线许可（permit issue），或人工对账后 supersede 旧许可（not_configured ≠ passed 的 ⑥ 拍镜像）。",
+          hint: "重新签发带基线许可（pomaster permit issue），或人工对账后 supersede 旧许可（not_configured ≠ passed 的 ⑥ 拍镜像）。",
         },
       ],
       [
         `reconcile: FAILED — RECONCILE_BASELINE_MISSING`,
-        `  hint: 重新签发带基线许可（permit issue），或人工对账后 supersede 旧许可。`,
+        `  hint: 重新签发带基线许可（pomaster permit issue），或人工对账后 supersede 旧许可。`,
       ],
     );
   }

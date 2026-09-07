@@ -558,7 +558,7 @@ export async function runCheckGates(
     return gatesFail({
       code: "SCHEMA_INVALID",
       message: "recipe 分母为空（零 recipe = 零判卷，不允许静默空跑）",
-      hint: "catalog/gates/ 投影（CATALOG_GATE_RECIPES）不得为空；确认 catalog 物料后在重试。",
+      hint: "catalog/gates/ 投影（CATALOG_GATE_RECIPES）不得为空；确认 catalog 物料（pomaster catalog status）后再重试。",
     });
   }
 
