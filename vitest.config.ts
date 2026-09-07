@@ -36,6 +36,11 @@ export default defineConfig({
     environment: "node",
     globals: false,
     include: ["tests/**/*.spec.ts", "packages/**/*.spec.ts"],
+    // studio 生成物自愈（09-07 bootstrap-clean 根因修复）：generated/ 不入库，
+    // components-mount.spec 的变量动态导入在 transform 期枚举候选文件——fresh clone
+    // 上目录为空即全红。生成必须早于任何模块 transform → globalSetup。
+    // 详见 tests/vitest-global-setup.mjs 头注（含跳过条件与陈旧自愈兜底）。
+    globalSetup: "./tests/vitest-global-setup.mjs",
     // ── 默认并发稳定化（09-07 审计批 4）────────────────────────────────────
     // 审计事实：默认并发（vitest 2.x run 模式 workers = cores-1，本机 16 逻辑核
     // → 15 个 fork）叠加用例内大量 spawn/fs 密集型子进程，峰值 30+ 进程超订，

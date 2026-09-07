@@ -4,8 +4,11 @@
  * 「事实件给机器锚点配机器复核」）。
  *
  * 校验面（零网络、秒级，可挂 CI）：
- *   1. 表格完整性：§A/§B 两节行数与节标题声称的包数一致（6 / 198，合计 204）；
- *   2. 包名唯一：§A+§B 内同名包重复出现即红；
+ *   1. 表格完整性 + lockfile 交叉对账：§A/§B 两节行数与节标题声称的包数一致；
+ *      §A+§B 合计行数与集合 = pnpm-lock.yaml `packages:` 全包集（行数相等 +
+ *      name@version 双向集合相等——多出/缺席包逐名报红；枚举单一事实源 =
+ *      legal/notices-sync.mjs 的 enumerateLockfilePackages 导出）；
+ *   2. 包名唯一：§A+§B 内同节 name@version 重复出现即红；
  *   3. 证据等级词形一致：B2 行 id 必带 † 且路径位为无 LICENSE 占位；B3 行 id 必带
  *      * 且路径位 (未安装)；B4 行 id 必带 ** 且路径位 (未安装)；B1 行 id 必无标注
  *      符号且路径位是仓内真实相对路径；
@@ -15,26 +18,18 @@
  *      被篡改（如 MIT→Apache-2.0）即与锚文件矛盾被检出。
  *
  * 退出码：0 = 全部校验通过；1 = 存在校验失配（逐条列名）；2 = 文件/解析形态错误。
- * 锚定：以 THIRD_PARTY_NOTICES.md 自身声明的 pnpm-lock commit 为准，本脚本不写
- * 墙钟、无网络依赖。
+ * 锚定：以 THIRD_PARTY_NOTICES.md 自身声明的 pnpm-lock commit + 内容指纹为准，
+ * 本脚本不写墙钟、无网络依赖。
+ * 词形表单源：LICENSE_WORD_FORMS 与包集枚举 enumerateLockfilePackages 均从
+ * legal/notices-sync.mjs（再生器）import——双向同步责任 = 只改再生器一侧。
  */
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { enumerateLockfilePackages, LICENSE_WORD_FORMS } from "./notices-sync.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const NOTICES_PATH = join(HERE, "THIRD_PARTY_NOTICES.md");
-
-/** license id → 文件正文必须命中的词形（命中任一即可；词形表外 id 退化核对 id 本身）。 */
-const LICENSE_WORD_FORMS = {
-  MIT: ["MIT License", "Permission is hereby granted"],
-  "Apache-2.0": ["Apache License"],
-  ISC: ["ISC License", "The ISC License", "Permission to use, copy, modify"],
-  "BSD-2-Clause": ["Redistribution and use"],
-  "BSD-3-Clause": ["Redistribution and use"],
-  "Python-2.0": ["PYTHON SOFTWARE FOUNDATION LICENSE"],
-  "BlueOak-1.0.0": ["Blue Oak"],
-};
 
 function fail(msg, code) {
   process.stderr.write(`[verify-notices] ${msg}\n`);
@@ -77,7 +72,20 @@ const countA = rows.filter((r) => r.section === "A").length;
 const countB = rows.filter((r) => r.section === "B").length;
 if (countA !== claimedA) problems.push(`§A 行数 ${countA} ≠ 声称 ${claimedA}`);
 if (countB !== claimedB) problems.push(`§B 行数 ${countB} ≠ 声称 ${claimedB}`);
-if (countA + countB !== 204) problems.push(`总行数 ${countA + countB} ≠ 204（lockfile 锚口径）`);
+
+// —— lockfile 交叉对账（行数 + name@version 双向集合相等）。
+const lockPkgs = enumerateLockfilePackages();
+const lockSet = new Set(lockPkgs.map((p) => `${p.name}@${p.version}`));
+if (countA + countB !== lockPkgs.length) {
+  problems.push(`总行数 ${countA + countB} ≠ lockfile 包数 ${lockPkgs.length}（lockfile 锚口径——跑 node legal/notices-sync.mjs 再生）`);
+}
+const noticeSet = new Set(rows.map((r) => `${r.name}@${r.version}`));
+for (const key of lockSet) {
+  if (!noticeSet.has(key)) problems.push(`lockfile 包缺席于清单：${key}`);
+}
+for (const key of noticeSet) {
+  if (!lockSet.has(key)) problems.push(`清单含 lockfile 之外包：${key}`);
+}
 
 // —— 节内 name@version 唯一。同名跨节（ajv 同时在运行时与开发闭包）与同名多版本
 // （minimatch@9 + @10 并存）都是 lockfile 的合法形态，不是重复。

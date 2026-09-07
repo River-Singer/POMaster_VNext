@@ -16,6 +16,7 @@
     "ratchet": "node tests/ratchet/ratchet.mjs",
     "eval:trigger": "node scripts/eval-trigger.mjs",
     "mutation:verify": "node benchmarks/mutation-kill.mjs --verify",
+    "notices:sync": "node legal/notices-sync.mjs",
     "notices:verify": "node legal/verify_notices.mjs",
     "studio:dev": "node packages/studio/run.mjs dev",
     "studio:build": "node packages/studio/run.mjs build",
