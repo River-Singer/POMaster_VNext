@@ -75,7 +75,10 @@ async function startPad(id: string): Promise<StepRecord> {
   return runJsonStep(root, ["brainstorm", "start", "--id", id]);
 }
 
-/** 把 scratchpad 推到 READY_TO_PROMOTE（§80.2 授权的 scratchpad 维护面直写）。 */
+/** 把 scratchpad 推到 READY_TO_PROMOTE（§80.2 授权的 scratchpad 维护面直写）。
+ * T2 R1 起 promote 闸 2.5 要求 Task Contract（meta.json）+ 图/判卷输入三件套齐座
+ * （锚 DECISION.SEEDED_SCOPE 已决议——validateAcceptanceAnchors 判卷输入）；夹具
+ * 同步预植，C2/C4 的「缺省 promote/终态再提升」威胁场景语义不变。 */
 function seedReadyToPromote(id: string): void {
   writeFileSync(
     join(padDiskPath(id), "state.json"),
@@ -88,6 +91,74 @@ function seedReadyToPromote(id: string): void {
       null,
       2,
     )}\n`,
+    "utf8",
+  );
+  writeFileSync(
+    join(padDiskPath(id), "meta.json"),
+    `${JSON.stringify(
+      {
+        discovery_id: id,
+        title: `夹具 ${id}`,
+        ephemeral: false,
+        chain: ["IDEA", "DISCOVERY", "READY_TO_PROMOTE"],
+        contract: {
+          goal: "对抗夹具 goal——promote 投影 intent 源",
+          scope: "对抗夹具 scope——promote 投影 notesMd 源",
+          acceptance: [{ criterion: "对抗夹具验收判据", anchor: "DECISION.SEEDED_SCOPE" }],
+          residuals: [],
+        },
+      },
+      null,
+      2,
+    )}\n`,
+    "utf8",
+  );
+  writeFileSync(
+    join(padDiskPath(id), "decision-graph.json"),
+    `${JSON.stringify(
+      {
+        decisions: [
+          {
+            decision_id: "DECISION.SEEDED_SCOPE",
+            class: "SCOPE",
+            prompt: "对抗夹具决策",
+            depends_on: [],
+            affects: [],
+            grounding: {
+              intent_refs: [],
+              truth_refs: [],
+              contract_refs: [],
+              architecture_refs: [],
+              implementation_refs: [],
+              evidence_refs: [],
+              knowledge_refs: [],
+              research_finding_refs: [],
+              conflicts: [],
+              missing_facts: [],
+            },
+            options: ["A", "B"],
+            recommendation: {
+              option: "A",
+              basis_refs: [],
+              rationale: "夹具",
+              tradeoff: "夹具",
+              uncertainty: "夹具",
+              source: "PROJECT_GROUNDED",
+            },
+            authority: { owner: "BOOTSTRAP_OWNER" },
+            resolution: { answer: "ACCEPT", seq: 1 },
+          },
+        ],
+        graph_fingerprint: `sha256:${"f".repeat(64)}`,
+      },
+      null,
+      2,
+    )}\n`,
+    "utf8",
+  );
+  writeFileSync(
+    join(padDiskPath(id), "decision-inputs.json"),
+    `${JSON.stringify({ retrieved_surfaces: ["REPO"], missing_fact_routing: {} }, null, 2)}\n`,
     "utf8",
   );
 }

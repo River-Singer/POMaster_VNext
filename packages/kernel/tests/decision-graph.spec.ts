@@ -49,6 +49,7 @@ import {
   evaluateDiscoverySufficiency,
   resolveDecision,
   syncDecisionRequestRefs,
+  validateAcceptanceAnchors,
   type DecisionGraph,
   type DecisionGrounding,
   type DecisionNodeCandidate,
@@ -2102,5 +2103,91 @@ describe("syncDecisionRequestRefs（§16 图侧同步标记：机械同步零新
     if (outcome.ok) return;
     expect(outcome.reason).toBe("request_ref_invalid");
     expect(outcome.details.join()).toContain("REQ-1");
+  });
+});
+
+describe("validateAcceptanceAnchors（T2 D-7 Task Contract：acceptance 锚存在性判卷）", () => {
+  /** 已决议图夹具（DECISION.D1 ACCEPT；DECISION.D2 保持 OPEN）。 */
+  function resolvedGraphFixture() {
+    const built = buildOk([chainCand("DECISION.D1", []), chainCand("DECISION.D2", ["DECISION.D1"])]);
+    const resolved = resolveDecision(built, { decisionId: "DECISION.D1", answer: "ACCEPT" });
+    if (!resolved.ok) throw new Error(`fixture resolve 失败：${resolved.reason}`);
+    return resolved.graph;
+  }
+
+  it("正向：DECISION 锚在图且已决议 → ok + notes 携带 answer；ASSUMPTION 锚在册 → ok", () => {
+    const graph = resolvedGraphFixture();
+    const outcome = validateAcceptanceAnchors({
+      graph,
+      acceptance: [
+        { criterion: "清单页在 1280 宽下无横向滚动", anchor: "DECISION.D1" },
+        { criterion: "跨车型匹配键假设成立时导入可用", anchor: "ASSUMPTION:EXC-3" },
+      ],
+      assumptionLedgerRefs: ["EXC-1", "EXC-3"],
+    });
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+    expect(outcome.notes.join("\n")).toContain("answer=ACCEPT");
+    expect(outcome.notes.join("\n")).toContain("ASSUMPTION:EXC-3");
+  });
+
+  it("悬空锚 fail-closed：DECISION 不在图内 / 在图但未决议 / ASSUMPTION:EXC 不在册 → anchor_dangling", () => {
+    const graph = resolvedGraphFixture();
+    const danglingGraph = validateAcceptanceAnchors({
+      graph,
+      acceptance: [{ criterion: "判据", anchor: "DECISION.GHOST" }],
+      assumptionLedgerRefs: [],
+    });
+    expect(danglingGraph.ok).toBe(false);
+    if (danglingGraph.ok) return;
+    expect(danglingGraph.reason).toBe("anchor_dangling");
+    expect(danglingGraph.details.join("\n")).toContain("不在图内");
+
+    const danglingOpen = validateAcceptanceAnchors({
+      graph,
+      acceptance: [{ criterion: "判据", anchor: "DECISION.D2" }],
+      assumptionLedgerRefs: [],
+    });
+    expect(danglingOpen.ok).toBe(false);
+    if (danglingOpen.ok) return;
+    expect(danglingOpen.reason).toBe("anchor_dangling");
+    expect(danglingOpen.details.join("\n")).toContain("尚未决议");
+
+    const danglingLedger = validateAcceptanceAnchors({
+      graph,
+      acceptance: [{ criterion: "判据", anchor: "ASSUMPTION:EXC-9" }],
+      assumptionLedgerRefs: ["EXC-1"],
+    });
+    expect(danglingLedger.ok).toBe(false);
+    if (danglingLedger.ok) return;
+    expect(danglingLedger.reason).toBe("anchor_dangling");
+    expect(danglingLedger.details.join("\n")).toContain("EXC-9");
+  });
+
+  it("输入级拒绝：零条目 / criterion 空 / 锚词形外（不猜测不降级）", () => {
+    const graph = resolvedGraphFixture();
+    const empty = validateAcceptanceAnchors({ graph, acceptance: [], assumptionLedgerRefs: [] });
+    expect(empty.ok).toBe(false);
+    if (empty.ok) return;
+    expect(empty.reason).toBe("acceptance_empty");
+
+    const emptyCriterion = validateAcceptanceAnchors({
+      graph,
+      acceptance: [{ criterion: "  ", anchor: "DECISION.D1" }],
+      assumptionLedgerRefs: [],
+    });
+    expect(emptyCriterion.ok).toBe(false);
+    if (emptyCriterion.ok) return;
+    expect(emptyCriterion.reason).toBe("criterion_empty");
+
+    const malformed = validateAcceptanceAnchors({
+      graph,
+      acceptance: [{ criterion: "判据", anchor: "EXC-3" }],
+      assumptionLedgerRefs: ["EXC-3"],
+    });
+    expect(malformed.ok).toBe(false);
+    if (malformed.ok) return;
+    expect(malformed.reason).toBe("anchor_malformed");
+    expect(malformed.details.join("\n")).toContain("锚词形外");
   });
 });

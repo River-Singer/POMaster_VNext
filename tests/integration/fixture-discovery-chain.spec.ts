@@ -9,10 +9,13 @@
  *   逐节点决议 → --ready §15 全绿写 READY_TO_PROMOTE（promotion_basis=msd_reached，
  *   schema 18 机器判据面）——全程零手写 state.json，不再走「§80.2 授权面直写」旧路）
  *   → brainstorm promote --apply（三闸 kernel 判卷 +
- *   经 runMaintain 同一通路落库，提升走 P11 面零旁移）→ inspect TASK.*（PROPOSED/
+ *   经 runMaintain 同一通路落库，提升走 P11 面零旁移；T2 R1：promote 编译 Task
+ *   Contract 投影——intent←goal/acceptance 挂锚+自动 record claim（CLM 绑入）/
+ *   notesMd←scope+四桶残留/titleZh←discovery title）→ inspect TASK.*（PROPOSED/
  *   PLANNED 提升诚实初值）→ closeout 续接四拍（与 P13 消费闭环）：
- *     ① 提升时刻诚实初值 → DOD_ACCEPTANCE_EMPTY + GATE_EVIDENCE_MISSING 双阻断零写入；
- *     ② P11 面补 acceptance（maintain --ops upsert）→ gate 绑定分母仍空 → 仍阻断；
+ *     ① 提升时刻诚实初值（acceptance 挂 CLM 未验证）→ DOD_CLAIM_NOT_VERIFIED +
+ *        GATE_EVIDENCE_MISSING 双阻断零写入；
+ *     ② baseline confirm 后 baseline 阻断减员（DoD claim 仍未验证 → 双码共存）；
  *     ③ 验证侧证据齐（claims VERIFIED + passed run 绑定 subject）→ 施断被 kernel
  *        CROSS_AXIS_ASSERTION 拒（PROPOSED ⇒ evidence 必为 PLANNED——proposal 态
  *        不许伪装 COMPLETED，跨轴断言在提升链上同样生效）；
@@ -60,7 +63,6 @@ interface Steps {
   afterCloseout1: string[];
   baselineSet: StepRecord[];
   baselineConfirm: StepRecord;
-  maintainAcceptance: StepRecord;
   closeout2: StepRecord;
   closeout3: StepRecord;
   axesAfterCloseout3: Record<string, unknown>;
@@ -129,12 +131,12 @@ beforeAll(async () => {
     "decide",
     ID,
     "--ready",
-    "--msd-goal",
-    "true",
-    "--msd-scope",
-    "true",
-    "--msd-acceptance",
-    "true",
+    "--goal",
+    "车系导入收敛目标——投影进 TASK intent",
+    "--scope",
+    "车系导入清单页范围——投影进 notesMd",
+    "--acceptance",
+    "车系清单网格策略经独立重算确认@DECISION.CARLINE_GRID",
   ]);
   steps.statusAfterBlocked = await runJsonStep(root, ["brainstorm", "status"]);
   steps.answerGrid = await runJsonStep(root, [
@@ -159,12 +161,12 @@ beforeAll(async () => {
     "decide",
     ID,
     "--ready",
-    "--msd-goal",
-    "true",
-    "--msd-scope",
-    "true",
-    "--msd-acceptance",
-    "true",
+    "--goal",
+    "车系导入收敛目标——投影进 TASK intent",
+    "--scope",
+    "车系导入清单页范围——投影进 notesMd",
+    "--acceptance",
+    "车系清单网格策略经独立重算确认@DECISION.CARLINE_GRID",
   ]);
   steps.statusReady = await runJsonStep(root, ["brainstorm", "status"]);
 
@@ -216,59 +218,9 @@ beforeAll(async () => {
   }
   steps.baselineConfirm = await runJsonStep(root, ["baseline", "confirm"]);
 
-  // —— closeout 续接②前置：P11 面补 acceptance（maintain --ops upsert） ——
-  // tx 路径用绝对路径（--ops 相对路径按 cwd 解析，与 --dir 无关——真实用户在仓内
-  // 相对书写时 cwd=仓根，等价；测试进程 cwd 在别处，故显式绝对）。
-  const txAcceptancePath = join(root, "tx.acceptance.json");
-  const body = taskBody();
-  writeFileSync(
-    txAcceptancePath,
-    `${JSON.stringify(
-      {
-        ops: [
-          {
-            op: "upsert_object",
-            envelope: {
-              id: TASK_REF,
-              kind: "task_object",
-              axisProfile: body.axis_profile,
-              axes: body.axes,
-              titleZh: body.title_zh,
-              authority: { owner: (body.authority as { owner: string }).owner, delegates: [] },
-              origin: body.origin,
-              payload: {
-                ...(body.payload as Record<string, unknown>),
-                acceptance: [
-                  {
-                    criterion: "车系导入清单页在 1280 宽下无横向滚动（独立重算通过）",
-                    claim: "CLM-0001",
-                  },
-                ],
-              },
-              sources: (body.sources as Record<string, unknown>[]).map((s) => ({
-                type: s.type,
-                ref: s.ref,
-                capturedBy: s.captured_by,
-                ...(s.pin !== undefined ? { pin: s.pin } : {}),
-              })),
-              notesMd: (body.notes_md as string | null) ?? null,
-            },
-          },
-        ],
-        authorityRef: "CHANGE.CARLINE_IMPORT",
-        note: "fixture：为提升任务登记验收条目（P11 面，acceptance→claim 硬绑前置）",
-      },
-      null,
-      2,
-    )}\n`,
-    "utf8",
-  );
-  steps.maintainAcceptance = await runJsonStep(root, [
-    "maintain",
-    TASK_REF,
-    "--ops",
-    txAcceptancePath,
-  ]);
+  // —— closeout 续接②：baseline confirm 已过（T2 R1 起 promote 自动 record claim——
+  // acceptance 初值非空，旧「P11 面补 acceptance」步骤随 R1 语义删除；DoD 的
+  // CLM-0001 仍 UNVERIFIED → 阻断集减员为 DOD_CLAIM_NOT_VERIFIED + GATE_EVIDENCE_MISSING） ——
   steps.closeout2 = await runJsonStep(root, ["closeout", TASK_REF]);
 
   // —— closeout 续接③前置：验证侧证据（D20 判定通路——独立验证流写 VERIFIED claim） ——
@@ -607,6 +559,9 @@ describe("Discovery 状态链 × closeout 全链（P18×P13 闭环）", () => {
     expect(promoteResult.from_state).toBe("READY_TO_PROMOTE");
     expect(promoteResult.promoted_ref).toBe(TASK_REF);
     expect(promoteResult.scratchpad_state).toBe("TASK");
+    // T2 R1：promote 自动 record claim（claims_generated=1 与 CLM-0001 证据文件双验）。
+    expect(promoteResult.claims_generated).toBe(1);
+    expect(existsSync(join(root, ".pomaster", "evidence", "claims", "CLM-0001.json"))).toBe(true);
     // scratchpad 08 终态信封（ajv 独立复核）+ meta 链闭合。
     const stateFile = stateFileOnDisk();
     expect(validateChain(stateFile)).toBe(true);
@@ -623,12 +578,16 @@ describe("Discovery 状态链 × closeout 全链（P18×P13 闭环）", () => {
     expect(axes?.evidence).toBe("PLANNED");
   });
 
-  it("段5 closeout①：诚实初值双阻断（DOD_ACCEPTANCE_EMPTY + GATE_EVIDENCE_MISSING）且零写入", () => {
+  it("段5 closeout①：提升诚实初值双阻断（DOD_CLAIM_NOT_VERIFIED + GATE_EVIDENCE_MISSING）且零写入", () => {
     expect(steps.closeout1.code).toBe(1);
     const env = envelopeOf(steps.closeout1);
     expect(env.ok).toBe(false);
     const codes = env.errors.map((e) => e.code);
-    expect(codes).toContain("DOD_ACCEPTANCE_EMPTY");
+    // T2 R1：promote 的 acceptance 初值非空（挂锚 + 自动 claim）——空验收阻断位
+    // 换型为「claim 未验证」诚实阻断（「空 acceptance 任务永不命中 R_CLOSEOUT_READY」
+    // 缺陷在本链源头消灭）。
+    expect(codes).toContain("DOD_CLAIM_NOT_VERIFIED");
+    expect(codes).not.toContain("DOD_ACCEPTANCE_EMPTY");
     expect(codes).toContain("GATE_EVIDENCE_MISSING");
     // R-L baseline gate（init 工作区适用域）：未确认基线与 DoD/gate 阻断共存呈现。
     expect(codes).toContain("BASELINE_NOT_CONFIRMED");
@@ -637,7 +596,7 @@ describe("Discovery 状态链 × closeout 全链（P18×P13 闭环）", () => {
     expect((envelopeOf(steps.closeout1).result as { blocked: boolean }).blocked).toBe(true);
   });
 
-  it("段6 closeout②③：补 acceptance 后 gate 分母空仍阻断；证据齐后施断被 CROSS_AXIS_ASSERTION 拒（proposal 态不许伪装 COMPLETED）", () => {
+  it("段6 closeout②③：baseline confirm 后阻断减员；证据齐后施断被 CROSS_AXIS_ASSERTION 拒（proposal 态不许伪装 COMPLETED）", () => {
     // 基线确认前提（R-L 接线）：14 unknowns 非交互销账全过 + confirm digest 快照落盘。
     expect(steps.baselineSet).toHaveLength(14);
     expect(steps.baselineSet.every((step) => step.code === 0)).toBe(true);
@@ -648,11 +607,13 @@ describe("Discovery 状态链 × closeout 全链（P18×P13 闭环）", () => {
     expect(
       (envelopeOf(steps.baselineConfirm).result as { digests: unknown[] }).digests,
     ).toHaveLength(24); // N1：确认分母 = 24 文件单一资产清单（2 stack.yaml + 22 md）
-    expect(steps.maintainAcceptance.code).toBe(0);
     expect(steps.closeout2.code).toBe(1);
     const codes2 = envelopeOf(steps.closeout2).errors.map((e) => e.code);
     expect(codes2).toContain("GATE_EVIDENCE_MISSING");
     expect(codes2).not.toContain("DOD_ACCEPTANCE_EMPTY");
+    // baseline 阻断减员（confirm 后消失），DoD claim 仍未验证（诚实双码共存）。
+    expect(codes2).not.toContain("BASELINE_NOT_CONFIRMED");
+    expect(codes2).toContain("DOD_CLAIM_NOT_VERIFIED");
     // 验证侧证据齐 → DoD + gate 判卷全过，但施断被 kernel 跨轴断言拒：
     // PROPOSED ⇒ evidence 必为 PLANNED——「先转 CURRENT 再抬 evidence」在提升链上同样生效。
     expect(steps.closeout3.code).toBe(1);

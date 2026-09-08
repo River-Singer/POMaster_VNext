@@ -339,6 +339,187 @@ function isResolved(value: string): boolean {
   return value !== "" && value !== "UNKNOWN";
 }
 
+// ============================================================
+// 宿主 package.json 依赖观察（T2 R4 · init Bootstrap+Observation）
+// ============================================================
+
+/**
+ * 观察映射表（精确包名 → stack 值）：只覆盖可观察的 FE 8 键（css 不可由依赖
+ * 推断——样式方案是规范决策非事实，归问卷；BE 5 键不经前端 package.json 观察）。
+ * 同键多候选（如 react 与 vue 并存）→ 该键放弃观察（fail-closed 保持 UNKNOWN，
+ * 禁臆测排序）。观察值全部落在 STACK_VALUE_PATTERN 词形内（映射表自证）。
+ */
+const PACKAGE_OBSERVATION_TABLE: readonly {
+  readonly stackKey: string;
+  readonly packages: readonly { readonly name: string; readonly value: string }[];
+}[] = [
+  {
+    stackKey: "framework",
+    packages: [
+      { name: "vue", value: "vue3" },
+      { name: "react", value: "react" },
+      { name: "@angular/core", value: "angular" },
+      { name: "svelte", value: "svelte" },
+    ],
+  },
+  { stackKey: "language", packages: [{ name: "typescript", value: "typescript" }] },
+  {
+    stackKey: "build",
+    packages: [
+      { name: "vite", value: "vite" },
+      { name: "webpack", value: "webpack" },
+      { name: "@rsbuild/core", value: "rsbuild" },
+    ],
+  },
+  {
+    stackKey: "router",
+    packages: [
+      { name: "vue-router", value: "vue-router" },
+      { name: "react-router", value: "react-router" },
+      { name: "react-router-dom", value: "react-router" },
+      { name: "@tanstack/react-router", value: "tanstack-router" },
+    ],
+  },
+  {
+    stackKey: "state",
+    packages: [
+      { name: "pinia", value: "pinia" },
+      { name: "@reduxjs/toolkit", value: "redux" },
+      { name: "redux", value: "redux" },
+      { name: "zustand", value: "zustand" },
+    ],
+  },
+  {
+    stackKey: "grid",
+    packages: [
+      { name: "ag-grid-community", value: "ag-grid" },
+      { name: "ag-grid-enterprise", value: "ag-grid" },
+      { name: "@tanstack/react-table", value: "tanstack-table" },
+      { name: "handsontable", value: "handsontable" },
+    ],
+  },
+  {
+    stackKey: "ui",
+    packages: [
+      { name: "element-plus", value: "element-plus" },
+      { name: "antd", value: "antdesign" },
+      { name: "@mui/material", value: "mui" },
+      { name: "@geist-ui/core", value: "geist" },
+    ],
+  },
+  {
+    stackKey: "testing",
+    packages: [
+      { name: "vitest", value: "vitest" },
+      { name: "jest", value: "jest" },
+      { name: "@playwright/test", value: "playwright" },
+      { name: "cypress", value: "cypress" },
+    ],
+  },
+];
+
+/** 观察行注记（ADR-2 行级最小改写的注记词形；stripTrailingComment 的「 #」分隔保证幂等解析）。 */
+export const OBSERVED_ANNOTATION = "[Observed: package.json]" as const;
+
+/**
+ * 宿主 package.json 依赖观察（read-only）：dependencies + devDependencies 精确名
+ * 命中映射表 → 候选 stack 值。fail-closed 三语义：package.json 缺席/不可读/
+ * 不可解析 → null（观察不可用，UNKNOWN 保持——缺席诚实，不臆测）；同键多个
+ * 互斥候选（react 与 vue 并存）→ 该键放弃（不选边）；版本不参与判定（框架
+ * 主版本语义由映射表锚定，禁从 semver 猜）。
+ */
+export async function observePackageStack(
+  rootDir: string,
+): Promise<{ readonly source: "package.json"; readonly values: ReadonlyMap<string, string> } | null> {
+  const file = await readTextFile(`${rootDir}/package.json`);
+  if (file.kind !== "ok") return null;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(file.text);
+  } catch {
+    return null; // 不可解析 = 观察不可用（fail-closed 保持 UNKNOWN）
+  }
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return null;
+  const depNames = new Set<string>();
+  for (const section of ["dependencies", "devDependencies"] as const) {
+    const deps = (parsed as Record<string, unknown>)[section];
+    if (typeof deps !== "object" || deps === null || Array.isArray(deps)) continue;
+    for (const name of Object.keys(deps)) depNames.add(name);
+  }
+  const values = new Map<string, string>();
+  for (const row of PACKAGE_OBSERVATION_TABLE) {
+    const hits = [
+      ...new Set(
+        row.packages.filter((p) => depNames.has(p.name)).map((p) => p.value),
+      ),
+    ];
+    if (hits.length === 1) values.set(row.stackKey, hits[0] as string);
+    // hits > 1：同键互斥候选并存（如 react+vue）——放弃该键（fail-closed 保持 UNKNOWN）。
+  }
+  return { source: "package.json", values };
+}
+
+/**
+ * 观察落盘（ADR-2 行级最小改写 + 头注销账契约，与 applyStackAnswers 同式）：
+ * 只对当前 UNKNOWN 键回填 `<key>: <value> # [Observed: package.json]`——已销账键
+ * 零触碰（skipped_resolved 计数，重跑幂等 NO_CHANGE）。观察值是事实不是人答——
+ * 问卷分母据此收缩（resolveRemainingQuestions 观察感知）；人对同一键的后答经
+ * applyStackAnswers 行重写覆盖观察值（注记随之消失——人答优先级恒高于观察）。
+ * stack.yaml/manifest.yaml 不可读 → 该 lane 零写入静默跳过（观察是尽力面，
+ * 破损态由问卷/baseline set 通路的显式错误呈现）。返回 {observed, skipped_resolved}。
+ */
+export async function applyStackObservations(
+  rootDir: string,
+  observation: { readonly source: "package.json"; readonly values: ReadonlyMap<string, string> },
+  files: InitFileReport[],
+): Promise<{ readonly observed: number; readonly skipped_resolved: number }> {
+  let observed = 0;
+  let skippedResolved = 0;
+  const lane: BaselineLane = "frontend";
+  const laneKeys = STACK_KEYS[lane];
+  const stackRelative = baselineStackRelative(lane);
+  const stackFile = await readTextFile(`${rootDir}/${stackRelative}`);
+  if (stackFile.kind !== "ok") return { observed, skipped_resolved: skippedResolved };
+  const parse = parseStackYaml(stackFile.text, laneKeys);
+  if (!parse.ok) return { observed, skipped_resolved: skippedResolved };
+  const lines = stackFile.text.split("\n");
+  const wordForms = new Set<string>();
+  let stackChanged = false;
+  for (const key of laneKeys) {
+    const value = observation.values.get(key);
+    if (value === undefined) continue;
+    const current = parse.parsed.values.get(key) ?? "";
+    if (isResolved(current)) {
+      skippedResolved += 1;
+      continue; // 已销账键零触碰（含人工后答的覆盖值——观察不反写人答）
+    }
+    const lineIndex = parse.parsed.lineOf.get(key);
+    if (lineIndex === undefined) continue;
+    lines[lineIndex] = `${key}: ${value} # ${OBSERVED_ANNOTATION}`;
+    wordForms.add(unknownsWordForm(lane, key));
+    observed += 1;
+    stackChanged = true;
+  }
+  if (stackChanged) {
+    const nextStack = lines.join("\n");
+    if (nextStack !== stackFile.text) {
+      await writeFile(`${rootDir}/${stackRelative}`, nextStack, "utf8");
+      files.push({ file: stackRelative, action: "updated" });
+    }
+    const manifestFile = await readTextFile(`${rootDir}/${BASELINE_MANIFEST_RELATIVE}`);
+    if (manifestFile.kind === "ok") {
+      const { next } = removeUnknownEntries(manifestFile.text, wordForms);
+      if (next !== manifestFile.text) {
+        await writeFile(`${rootDir}/${BASELINE_MANIFEST_RELATIVE}`, next, "utf8");
+        files.push({ file: BASELINE_MANIFEST_RELATIVE, action: "updated" });
+      }
+    }
+    // manifest 不可读：stack 已写而台账销账失败——半落盘态由 unknowns 计数呈现面
+    // 诚实暴露（不静默；下轮 init 幂等重放补齐销账）。
+  }
+  return { observed, skipped_resolved: skippedResolved };
+}
+
 /**
  * resolved 判定的公共词形（baseline-preset.ts 门判据消费——同一判据单一实现，
  * 禁两处口径漂移）。
@@ -480,15 +661,27 @@ export type RemainingQuestions =
 /**
  * 现盘分母解析：逐 lane 读 stack.yaml——缺席（fresh init 播种前）= 该 lane 全键
  * 待问；可解析 = 只问 UNKNOWN 键；不可解析 = 整体不可读（问卷跳过，fail-closed）。
+ * T2 R4 观察感知：可由宿主 package.json 观察定值的键（观察映射表单候选命中）
+ * 不问人——问卷只问规范性决策（可观察事实不是决策）；观察不可用（package.json
+ * 缺席/不可解析/同键互斥候选并存）= 键照常入分母（fail-closed 保持 UNKNOWN 归问）。
  */
 export async function resolveRemainingQuestions(
   rootDir: string,
 ): Promise<RemainingQuestions> {
+  const observation = await observePackageStack(rootDir);
   const questions: StackQuestionSpec[] = [];
   for (const lane of BASELINE_LANES) {
     const relative = baselineStackRelative(lane);
     const file = await readTextFile(`${rootDir}/${relative}`);
-    const laneQuestions = STACK_QUESTIONS.filter((q) => q.lane === lane);
+    // 观察面只覆盖 FE 键（PACKAGE_OBSERVATION_TABLE 分母）；BE 键恒入问卷分母。
+    // 圈定必须按 lane：观察 stackKey 与 BE 键同名（language/framework）——不按 lane
+    // 圈定会把 FE 观察命中的 language/framework 误吞 BE 同名问题（BE 键永不问人、
+    // 恒 UNKNOWN，confirm 卡 BASELINE_UNKNOWNS_REMAINING）。
+    const laneQuestions = STACK_QUESTIONS.filter(
+      (q) =>
+        q.lane === lane &&
+        !(lane === "frontend" && observation !== null && observation.values.has(q.key)),
+    );
     if (file.kind === "absent") {
       questions.push(...laneQuestions);
       continue;

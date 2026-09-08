@@ -551,6 +551,7 @@ export {
   FINDING_ID_PATTERN,
   DISCOVERY_INTENT_REF_PATTERN,
   MISSING_FACT_REF_PATTERN,
+  ASSUMPTION_ANCHOR_PATTERN,
   DECISION_CLASS_VALUES,
   DECISION_CLASS_TO_DIMENSIONS,
   GROUNDING_VERDICT_VALUES,
@@ -575,6 +576,7 @@ export {
   classifyUnknownTriage,
   evaluateDiscoverySufficiency,
   syncDecisionRequestRefs,
+  validateAcceptanceAnchors,
 } from "./decision-graph.js";
 export type {
   DecisionClassValue,
@@ -621,6 +623,9 @@ export type {
   DiscoverySufficiencyReport,
   EvaluateDiscoverySufficiencyOutcome,
   SyncDecisionRequestRefsOutcome,
+  AcceptanceAnchorDeclaration,
+  ValidateAcceptanceAnchorsRejectReason,
+  ValidateAcceptanceAnchorsOutcome,
 } from "./decision-graph.js";
 
 // ============================================================

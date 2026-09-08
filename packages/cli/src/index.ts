@@ -2061,7 +2061,7 @@ export function createProgram(
   brainstorm
     .command("decide")
     .description(
-      "DISCOVERY→READY_TO_PROMOTE 公开推进链（§5/§6/§13/§15；kernel decision-graph 单一判卷源）：--set <file> 载入候选图（build+grounding 判定呈现+frontier，图落 scratchpad/decision-graph.json）→ --answer <DECISION.*> 决议（--accept|--value|--unknown --triage 六问|--defer；grounding READY_FOR_DECISION 前置闸）→ --ready 收敛判定（--msd-goal/--msd-scope/--msd-acceptance 三轴必答 + --residual 合法残留；全绿→READY_TO_PROMOTE，不足 fail-closed 列缺口状态不动）。NEEDS_RESEARCH 缺口消解链（PR-4）：pomaster research request 发起 → research handoff 回填 → 重跑 --ready 重判；其余晋升依据词形不经本命令判卷（不私造无判卷放行通道）",
+      "DISCOVERY→READY_TO_PROMOTE 公开推进链（§5/§6/§13/§15；kernel decision-graph 单一判卷源）：--set <file> 载入候选图（build+grounding 判定呈现+frontier，图落 scratchpad/decision-graph.json）→ --answer <DECISION.*> 决议（--accept|--value|--unknown --triage 六问|--defer；grounding READY_FOR_DECISION 前置闸）→ --ready 收敛判定（Task Contract 文本申报 --goal/--scope/--acceptance（挂 DECISION.*/ASSUMPTION 锚，锚存在性 kernel 判卷）+ --residual 合法残留；MSD 三轴由文本非空派生；全绿→READY_TO_PROMOTE + contract 落 meta.json，不足 fail-closed 列缺口状态不动）。NEEDS_RESEARCH 缺口消解链（PR-4）：pomaster research request 发起 → research handoff 回填 → 重跑 --ready 重判；其余晋升依据词形不经本命令判卷（不私造无判卷放行通道）",
     )
     .argument("<discovery-id>", "scratchpad id（brainstorm start 产出的 id；state 必须 DISCOVERY）")
     .option("--set <file>", "子动作①：候选图 JSON 文件（§5.2 十键候选节点数组；按进程 CWD 解析）")
@@ -2074,10 +2074,10 @@ export function createProgram(
     .option("--defer", "答面 DEFER：显式延后（§15 合法残留）")
     .option("--triage <key=bool>", "UNKNOWN 六问申报（可重复：can_derive|can_research|can_safely_assume|can_defer|can_prototype_observe|blocks_current_increment = true|false；六键全必给）", collectValues, [])
     .option("--seq <n>", "事件拍（≥1 整数；零墙钟 A4，可选）")
-    .option("--ready", "子动作③：§15 收敛判定（全绿→READY_TO_PROMOTE）")
-    .option("--msd-goal <bool>", "MSD 三轴申报：goal_defined（true|false；--ready 必答）")
-    .option("--msd-scope <bool>", "MSD 三轴申报：scope_defined（true|false；--ready 必答）")
-    .option("--msd-acceptance <bool>", "MSD 三轴申报：acceptance_verifiable（true|false；--ready 必答）")
+    .option("--ready", "子动作③：§15 收敛判定（全绿→READY_TO_PROMOTE）+ Task Contract 文本申报")
+    .option("--goal <text>", "Task Contract：goal 文本（--ready 必答；空文本按 MSD goal_defined=false 判卷）")
+    .option("--scope <text>", "Task Contract：scope 文本（--ready 必答；空文本按 MSD scope_defined=false 判卷）")
+    .option("--acceptance <criterion@anchor>", "Task Contract：验收条目（--ready 必答可重复；<criterion>@<DECISION.*|ASSUMPTION:EXC-<n>> 挂锚，锚存在性 kernel 判卷 fail-closed；至少一条）", collectValues)
     .option("--residual <class:statement>", "§15 合法残留登记（可重复：<ASSUMPTION|DEFERRED_DECISION|FUTURE_CONSIDERATION|SOFT_UNCERTAINTY>:<statement>）", collectValues, [])
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (discoveryId: string, opts, command) => {
@@ -2094,9 +2094,9 @@ export function createProgram(
         triage: opts.triage as string[],
         ...(opts.seq !== undefined ? { seq: opts.seq as string } : {}),
         ready: opts.ready === true,
-        ...(opts.msdGoal !== undefined ? { msdGoal: opts.msdGoal as string } : {}),
-        ...(opts.msdScope !== undefined ? { msdScope: opts.msdScope as string } : {}),
-        ...(opts.msdAcceptance !== undefined ? { msdAcceptance: opts.msdAcceptance as string } : {}),
+        ...(opts.goal !== undefined ? { goal: opts.goal as string } : {}),
+        ...(opts.scope !== undefined ? { scope: opts.scope as string } : {}),
+        ...(opts.acceptance !== undefined ? { acceptance: opts.acceptance as string[] } : {}),
         residual: opts.residual as string[],
       });
       record({

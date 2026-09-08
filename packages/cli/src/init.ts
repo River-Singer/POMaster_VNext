@@ -131,7 +131,13 @@ import { seedProjectAssets, type SeedEntry } from "./seeds.js";
 import { loadSeedManifestEntries } from "./seed-manifest.js";
 import { runSpecPreplant } from "./spec-preplant.js";
 import type { BaselineQuizResult, StackQuestionnaireOutcome } from "./baseline.js";
-import { applyStackAnswers, collectStackAnswers, renderBaselineQuizHumanLine } from "./baseline.js";
+import {
+  applyStackAnswers,
+  applyStackObservations,
+  collectStackAnswers,
+  observePackageStack,
+  renderBaselineQuizHumanLine,
+} from "./baseline.js";
 import type { BaselinePresetDraftReport } from "./baseline-preset.js";
 import { appendPresetDrafts, renderBaselinePresetHumanLine } from "./baseline-preset.js";
 
@@ -140,6 +146,13 @@ const ZERO_PRESET_DRAFT: BaselinePresetDraftReport = {
   generated: 0,
   skipped_existing: 0,
   skipped_confirmed: false,
+};
+
+/** 失败信封的 observation 占位（T2 R4——失败路径零观察落盘）。 */
+const ZERO_OBSERVATION: StackObservationReport = {
+  source: null,
+  observed: 0,
+  skipped_resolved: 0,
 };
 
 // 按键词表与原地重绘渲染器（init 平台复选清单与 baseline 问卷共用——单一实现；
@@ -186,6 +199,16 @@ export interface InitPlatformReport {
   readonly action: InitPlatformAction;
 }
 
+/** 宿主技术栈观察报告（T2 R4；见 InitResult.observation 字段注记）。 */
+export interface StackObservationReport {
+  /** 观察事实源（"package.json"；null = 观察不可用——缺席/不可解析/非对象）。 */
+  readonly source: "package.json" | null;
+  /** 本次观察回填的 stack 键数。 */
+  readonly observed: number;
+  /** 观察候选在座但键已销账而零触碰数（幂等重跑位）。 */
+  readonly skipped_resolved: number;
+}
+
 export interface InitResult {
   readonly change: InitChange;
   readonly tool: typeof INIT_TOOL_ID;
@@ -222,6 +245,15 @@ export interface InitResult {
    * 运行时生成物——不进 seeds/manifest 分母，幂等铁律不破（草案在座重跑零写入）。
    */
   readonly presetDraft: BaselinePresetDraftReport;
+  /**
+   * 宿主 package.json 技术栈观察结果（T2 R4 · Bootstrap+Observation）：source =
+   * 观察事实源（null = package.json 缺席/不可解析——观察不可用，UNKNOWN 保持，
+   * 缺席诚实不臆测）；observed = 本次观察回填的 stack 键数（行级最小改写 +
+   * [Observed: package.json] 注记 + manifest 销账）；skipped_resolved = 观察候选
+   * 在座但键已销账而零触碰数（重跑幂等位）。观察只覆盖 FE 可观察 8 键（css 是
+   * 规范决策非事实，归问卷；BE 键不经前端 package.json 观察）。
+   */
+  readonly observation: StackObservationReport;
   /**
    * 能力速览（09-06 能力显性化 C1；Owner 裁定面位之一）：--json result.
    * capability_overview 结构化数组——与完成横幅人读段同一内容源（heavy-entry.ts
@@ -501,6 +533,7 @@ export async function runInitInteractive(
         specPreplant: null,
         baseline: { asked: 0, answered: 0, skipped: "non_interactive" },
         presetDraft: ZERO_PRESET_DRAFT,
+        observation: ZERO_OBSERVATION,
         capability_overview: CAPABILITY_OVERVIEW,
       },
       [parse.error],
@@ -524,6 +557,7 @@ export async function runInitInteractive(
         specPreplant: null,
         baseline: { asked: 0, answered: 0, skipped: "non_interactive" },
         presetDraft: ZERO_PRESET_DRAFT,
+        observation: ZERO_OBSERVATION,
         capability_overview: CAPABILITY_OVERVIEW,
       },
       [
@@ -1041,6 +1075,7 @@ export async function runInit(
         specPreplant: null,
         baseline: { asked: 0, answered: 0, skipped: "non_interactive" },
         presetDraft: ZERO_PRESET_DRAFT,
+        observation: ZERO_OBSERVATION,
         capability_overview: CAPABILITY_OVERVIEW,
       },
       [selection.error],
@@ -1252,6 +1287,27 @@ export async function runInit(
     }
   }
 
+  // 4.7b) 宿主 package.json 技术栈观察（T2 R4 · init 升级 Bootstrap+Observation）：
+  //       read-only 读宿主依赖清单推断 FE 可观察 8 键（framework/language/build/
+  //       router/state/grid/ui/testing；css 是规范决策非事实归问卷，BE 键不经前端
+  //       package.json 观察），只对 UNKNOWN 键行级回填 + [Observed: package.json]
+  //       注记 + manifest 销账——可观察事实不问人（问卷分母在 collectStackAnswers
+  //       经同一观察面同步收缩）。fail-closed：package.json 缺席/不可解析 → 观察
+  //       不参与（UNKNOWN 保持，缺席诚实不臆测）；同键互斥候选并存 → 该键放弃。
+  //       已销账键零触碰（skipped_resolved 计数）——重跑幂等 NO_CHANGE 不破。
+  //       位置：播种之后（目标文件已在座）、问卷落盘之前（人答覆盖观察值——
+  //       applyStackAnswers 行重写消注记）。
+  const packageObservation = await observePackageStack(rootDir);
+  let observation: StackObservationReport = ZERO_OBSERVATION;
+  if (packageObservation !== null) {
+    const applied = await applyStackObservations(rootDir, packageObservation, files);
+    observation = {
+      source: packageObservation.source,
+      observed: applied.observed,
+      skipped_resolved: applied.skipped_resolved,
+    };
+  }
+
   // 4.8) baseline 技术栈问卷回填（R-M 2026-09-05；baseline.ts ADR）：TTY 交互收集的
   //      答案经 InitOptions.stackQuestionnaire 注入；问卷本体在 runInit 之前运行——
   //      「未答完不落盘」的零写入纪律由此结构性成立（中断/abort 时 runInit 不被调
@@ -1420,6 +1476,7 @@ export async function runInit(
     specPreplant,
     baseline,
     presetDraft,
+    observation,
     capability_overview: CAPABILITY_OVERVIEW,
   };
 
@@ -1459,6 +1516,11 @@ export async function runInit(
   // baseline 问卷行（恒一行，profile 之前——横幅前导空行锚在 profile 行后，版式契约
   // 由 init.spec 钉住：logo→init:→files→platforms→entry→baseline→profile→横幅）。
   const baselineLine = renderBaselineQuizHumanLine(baseline);
+  // 观察行（T2 R4；恒一行——观察缺席也显式呈现，诚实缺席非静默）。
+  const observationLine =
+    observation.source === null
+      ? "  observation: package.json 观察面缺席（缺席/不可解析）——技术栈 UNKNOWN 保持，问卷分母不受减"
+      : `  observation: package.json → stack 观察回填 ${String(observation.observed)} 键（[Observed: package.json] 注记；${String(observation.skipped_resolved)} 键已销账跳过）`;
   const presetLine = renderBaselinePresetHumanLine(presetDraft);
   const human = [
     ...INIT_LOGO_LINES,
@@ -1468,6 +1530,7 @@ export async function runInit(
     ...platformLines,
     entryLine,
     baselineLine,
+    observationLine,
     presetLine,
     `  profile: ${profile}`,
     ...renderCapabilityHumanLines(),

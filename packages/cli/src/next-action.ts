@@ -22,7 +22,18 @@
  * - 证据平面：runs+claims 计数与 claim verdict（readEvidencePlane 同源装配，零第二解析）；
  * - task payload.acceptance → claims VERIFIED 映射（closeout DoD 的 claims 侧只读
  *   预览——零判卷复刻：closeout 仍是唯一判卷权威，本路由只是「值得去收口」的路标；
- *   gate 维度不在本路由判卷，closeout 判卷失败会诚实阻断）。
+ *   gate 维度不在本路由判卷，closeout 判卷失败会诚实阻断）；
+ * - task payload.affected_objects → scope 派生建议（T2 R2：PAGE./CAPABILITY./
+ *   COMPONENT./API_REQ. 前缀成员渲染为 permit --subject 派生建议，取代
+ *   subject=TASK 自身泛化形态；与 DoD 预览共享同一次正文读取，零二次 IO）；
+ * - executions 平面（T2 R3 · ④ EXECUTE 感知）：executions/AGX-*.json 中
+ *   task_id=首活跃任务 且 ended_at=null 的行在场 = 在途（复用 kernel
+ *   ExecutionRecord 档案平面，不加新状态轴；档案坏形/不可读 = 诚实不可判——
+ *   ④⑤两行跳过不乱指；A4 零墙钟：读档案文件非墙钟判定）；
+ * - baseline 确认态（T2 R5 · R_BASELINE_NOT_READY）：gate code 复用
+ *   baselineGateErrors 单点判卷 + readBaselineConfirmationPresentation 呈现面
+ *   （unknowns 剩余/在途变更批引用）——零第二套漂移检测算法；unknowns 全销账且
+ *   gate 报 BASELINE_NOT_CONFIRMED|BASELINE_DRIFT 时路由确认仪式（收口前账）。
  *
  * 表驱动纪律：每行 = (条件判定, 建议渲染) 数据行，首中即停；条件返回 null = 该行
  * 不可判（跳过并记录原因，不乱指）；全表未中 → R_UNDETERMINED 诚实「无法判定」。
@@ -33,11 +44,13 @@
  * 待词汇表批扫收编）：NEXT_ACTION_ROUTE_IDS / EIGHT_BEAT_ENFORCEMENT_LINES。
  */
 
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import {
   contextsDirPath,
   runsDirPath,
   claimsDirPath,
+  executionsDirPath,
   TRUTH_INDEX_RELATIVE,
   toPosix,
 } from "./store-layout.js";
@@ -54,6 +67,13 @@ import {
 // 禁两套分母口径：计数分母与收编分母同正则，词表演化零漂移）。
 import { CLM_FILE_PATTERN, GRN_FILE_PATTERN } from "./evidence.js";
 import { judgeTaskContextFreshness } from "./context.js";
+// baseline 确认态判定单一解析源（R5：本路由只消费 baselineGateErrors 的 code 面 +
+// readBaselineConfirmationPresentation 的呈现面——两函数同根 readBaselineConfirmation，
+// 零第二套漂移检测算法）。
+import {
+  baselineGateErrors,
+  readBaselineConfirmationPresentation,
+} from "./baseline.js";
 import type { CliWarning } from "./envelope.js";
 
 type UnknownRecord = Record<string, unknown>;
@@ -66,11 +86,13 @@ type UnknownRecord = Record<string, unknown>;
 export const NEXT_ACTION_ROUTE_IDS = [
   "R_NOT_INITIALIZED",
   "R_NO_ACTIVE_TASK",
+  "R_BASELINE_NOT_READY",
   "R_CLOSEOUT_READY",
   "R_PERMIT_EXPIRED",
   "R_PERMIT_MISSING",
   "R_MANIFEST_MISSING",
   "R_MANIFEST_STALE",
+  "R_EXECUTE_ENTRY",
   "R_VERIFY_ENTRY",
   "R_RECONCILE",
   "R_UNDETERMINED",
@@ -145,10 +167,40 @@ export interface NextActionSnapshot {
   readonly task_manifest_role: string | null;
   /** 证据分母非空（runs+claims 任一在座）。 */
   readonly evidence_present: boolean;
+  /**
+   * check 运行留痕分母非空（runs/GRN 在座——⑤ 自检已发生过的机器事实）。
+   * T2 R3：④⑤ 执行感知行的分母锚 runs 而非全证据面——R1 起 promote 自动生成
+   * Expected State claim（UNVERIFIED），claims 在座不再等价于「执行/验证已发生」；
+   * runs 留痕（GRN）才是验证活动的诚实标记（A4 零墙钟——文件在场性判定）。
+   */
+  readonly runs_present: boolean;
   /** DoD claims 侧就绪的任务 id（acceptance 全映射 VERIFIED claim；null = 未就绪）。 */
   readonly dod_ready_task_id: string | null;
   /** DoD 预览可判（false = 正文/claims 读取失败——closeout 行跳过不乱指）。 */
   readonly dod_judgeable: boolean;
+  /**
+   * 任务 scope 派生建议（T2 R2）：首活跃任务 payload.affected_objects 中
+   * PAGE./CAPABILITY./COMPONENT./API_REQ. 前缀成员（字典序去重）——permit
+   * --subject 的派生建议面，取代 subject=TASK 自身的泛化形态。正文不可读/无活跃
+   * 任务 = 空（回退占位词形，字节级兼容既有呈现）。
+   */
+  readonly task_scope_subjects: readonly string[];
+  /**
+   * 任务在途执行档案（T2 R3 · ④ EXECUTE 感知）：executions/AGX-*.json 中存在
+   * task_id=首活跃任务 且 ended_at=null 的行 = true；无在途 = false；档案平面
+   * 不可读/坏形 = null（诚实不可判——④⑤两行跳过不乱指）。seq 判定缺席面
+   * 零墙钟 A4（档案平面读文件非墙钟）。
+   */
+  readonly task_execution_active: boolean | null;
+  /**
+   * baseline 确认态（T2 R5 · R_BASELINE_NOT_READY）：gate code 面复用
+   * baselineGateErrors 单点（零第二套漂移检测算法）；unknowns 剩余 + 在途变更批
+   * 引用复用 readBaselineConfirmationPresentation 呈现面。manifest 缺席/不可读
+   * = codes [] / unknowns null / pending ref null（缺席显式不臆造）。
+   */
+  readonly baseline_gate_codes: readonly string[];
+  readonly baseline_unknowns_remaining: number | null;
+  readonly baseline_pending_change_ref: string | null;
 }
 
 /** 空快照（未初始化/读取失败共用缺席形态）。 */
@@ -164,8 +216,14 @@ function emptySnapshot(initialized: boolean): NextActionSnapshot {
     task_manifest_freshness: "absent",
     task_manifest_role: null,
     evidence_present: false,
+    runs_present: false,
     dod_ready_task_id: null,
     dod_judgeable: false,
+    task_scope_subjects: [],
+    task_execution_active: false,
+    baseline_gate_codes: [],
+    baseline_unknowns_remaining: null,
+    baseline_pending_change_ref: null,
   };
 }
 
@@ -324,6 +382,9 @@ export async function collectNextActionSnapshot(
   // —— DoD claims 侧预览（首活跃任务；零判卷复刻——closeout 仍是唯一判卷权威）。 ——
   let dodReadyTaskId: string | null = null;
   let dodJudgeable = false;
+  // T2 R2：scope 派生建议面（首活跃任务 affected_objects 的 PAGE/CAPABILITY/COMPONENT/
+  // API_REQ 前缀成员；与 DoD 预览共享同一次正文读取——零二次 IO）。
+  let taskScopeSubjects: readonly string[] = [];
   if (firstTask !== undefined) {
     const taskRow = findRowById(objects, firstTask.id);
     if (taskRow === null) {
@@ -343,6 +404,13 @@ export async function collectNextActionSnapshot(
         });
       } else {
         const payload = isRecord(bodyResult.body.payload) ? bodyResult.body.payload : {};
+        const affectedObjects = Array.isArray(payload.affected_objects)
+          ? payload.affected_objects.filter(
+              (ref): ref is string =>
+                typeof ref === "string" && SCOPE_SUBJECT_PREFIX_PATTERN.test(ref),
+            )
+          : [];
+        taskScopeSubjects = [...new Set(affectedObjects)].sort();
         const acceptance = Array.isArray(payload.acceptance) ? payload.acceptance : [];
         const verdictByClm = new Map(claims.map((claim) => [claim.clm, claim.verdict]));
         const asStringOrNull = (value: unknown): string | null =>
@@ -362,6 +430,17 @@ export async function collectNextActionSnapshot(
     }
   }
 
+  // —— ④ EXECUTE 在途档案（T2 R3；kernel ExecutionRecord 平面只读扫描：task_id 命中
+  //    首活跃任务 且 ended_at=null = 在途。坏形/不可读 = null 诚实不可判（④⑤两行
+  //    跳过不乱指）；平面缺席 = false。零墙钟 A4——读档案文件非墙钟判定）。 ——
+  const taskExecutionActive = scanTaskExecutionActive(rootDir, firstTask?.id, warnings);
+
+  // —— baseline 确认态（T2 R5；gate code 复用 baselineGateErrors 单点判卷，呈现面
+  //    复用 readBaselineConfirmationPresentation——两函数同根 readBaselineConfirmation，
+  //    零第二套漂移检测算法；manifest 缺席/不可读 = 空 codes + null 呈现）。 ——
+  const baselineGateCodeList = (await baselineGateErrors(rootDir)).map((error) => error.code);
+  const baselinePresentation = await readBaselineConfirmationPresentation(rootDir);
+
   return {
     initialized: true,
     active_tasks: activeTasks,
@@ -373,13 +452,88 @@ export async function collectNextActionSnapshot(
     task_manifest_freshness: taskManifestFreshness,
     task_manifest_role: taskManifestRole,
     evidence_present: evidencePresent,
+    runs_present: runsCount > 0,
     dod_ready_task_id: dodReadyTaskId,
     dod_judgeable: dodJudgeable,
+    task_scope_subjects: taskScopeSubjects,
+    task_execution_active: taskExecutionActive,
+    baseline_gate_codes: baselineGateCodeList,
+    baseline_unknowns_remaining: baselinePresentation?.unknowns_remaining ?? null,
+    baseline_pending_change_ref: baselinePresentation?.pending_change?.change_ref ?? null,
   };
 }
 
 function contextsManifestPath(rootDir: string, taskId: string): string {
   return `${contextsDirPath(rootDir)}/${taskId}.context.json`;
+}
+
+/**
+ * scope 派生前缀词形（T2 R2）：affected_objects 中可作 permit --subject 派生建议
+ * 的治理对象前缀（08 governed id 前缀词表子集；词表演化时随 08 镜像更新）。
+ */
+export const SCOPE_SUBJECT_PREFIX_PATTERN = /^(PAGE|CAPABILITY|COMPONENT|API_REQ)\./;
+
+/**
+ * 执行档案文件名词形（kernel EXECUTION_ID_PATTERN 的文件面镜像 + .json——本模块
+ * 局部词，与 evidence.ts GRN_FILE_PATTERN 同先例）。
+ */
+const EXECUTION_FILE_PATTERN = /^AGX-[0-9]{4}-[0-9]+\.json$/;
+
+/**
+ * ④ EXECUTE 在途扫描（T2 R3）：executions/AGX-*.json 中 task_id=taskId 且
+ * ended_at=null 的行存在 = true；平面缺席/无命中 = false；任一行坏形（非对象/
+ * task_id 非 string|null/ended_at 非 string|null）= null 诚实不可判（告警留痕，
+ * 消费方 hook 契约恒 exit 0——降级只留痕不失败）。
+ */
+function scanTaskExecutionActive(
+  rootDir: string,
+  taskId: string | undefined,
+  warnings: CliWarning[],
+): boolean | null {
+  if (taskId === undefined) return false;
+  const dir = executionsDirPath(rootDir);
+  if (!existsSync(dir)) return false;
+  let names: readonly string[];
+  try {
+    names = readdirSync(dir);
+  } catch {
+    warnings.push({
+      code: NEXT_ACTION_SNAPSHOT_INCOMPLETE,
+      message: "executions 平面目录不可读，④ EXECUTE 感知行跳过",
+      hint: "检查目录权限后重试；档案平面由 kernel execution begin/end 维护。",
+    });
+    return null;
+  }
+  for (const name of names) {
+    if (!EXECUTION_FILE_PATTERN.test(name)) continue;
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(readFileSync(join(dir, name), "utf8"));
+    } catch {
+      warnings.push({
+        code: NEXT_ACTION_SNAPSHOT_INCOMPLETE,
+        message: `执行档案 ${name} 不可解析，④ EXECUTE 感知行跳过（诚实不可判）`,
+        hint: "档案由 pomaster execution begin/end 维护；损坏文件从 git 恢复。",
+      });
+      return null;
+    }
+    if (!isRecord(parsed)) continue;
+    const recordTaskId = parsed.task_id;
+    const recordEndedAt = parsed.ended_at;
+    if (
+      (recordTaskId !== null && typeof recordTaskId !== "string") ||
+      (recordEndedAt !== null && typeof recordEndedAt !== "string")
+    ) {
+      warnings.push({
+        code: NEXT_ACTION_SNAPSHOT_INCOMPLETE,
+        message: `执行档案 ${name} 形态坏（task_id/ended_at 须 string|null），④ EXECUTE 感知行跳过（诚实不可判）`,
+        hint: "档案形态权威见 kernel ExecutionRecord（闭形态）；损坏文件从 git 恢复。",
+      });
+      return null;
+    }
+    if (recordTaskId === taskId && recordEndedAt === null) return true;
+  }
+  return false;
 }
 
 function findRowById(objects: readonly unknown[], id: string): UnknownRecord | null {
@@ -413,7 +567,7 @@ interface NextActionRouteRow {
 const firstTaskOr = (snapshot: NextActionSnapshot, fallback: string): string =>
   snapshot.active_tasks[0]?.id ?? fallback;
 
-/** 路由表（NEXT_ACTION_ROUTE_IDS 前 9 行一一对应；末行 R_UNDETERMINED = 兜底缺省）。 */
+/** 路由表（NEXT_ACTION_ROUTE_IDS 前 11 行一一对应；末行 R_UNDETERMINED = 兜底缺省）。 */
 export const NEXT_ACTION_ROUTE_TABLE: readonly NextActionRouteRow[] = [
   {
     id: "R_NOT_INITIALIZED",
@@ -432,6 +586,40 @@ export const NEXT_ACTION_ROUTE_TABLE: readonly NextActionRouteRow[] = [
       command: 'pomaster triage "<request>"',
       reason: "无活跃 TASK.*（新变更从八拍①判档入口；讨论驻留走 pomaster brainstorm start）",
     }),
+  },
+  {
+    // T2 R5：baseline 未确认（或已漂移）且 unknowns 全销账时，收口前的唯一缺口就是
+    // 确认仪式——此刻任何任务内推进（closeout 判卷会被 BASELINE_NOT_CONFIRMED/
+    // BASELINE_DRIFT 阻断）都先还这笔账。unknowns_remaining>0 时问卷分母未销账，
+    // 指 confirm 只会被 confirm 自身闸拒——不路由（诚实缺席）。
+    id: "R_BASELINE_NOT_READY",
+    when: (s) =>
+      s.baseline_unknowns_remaining === 0 &&
+      (s.baseline_gate_codes.includes("BASELINE_NOT_CONFIRMED") ||
+        s.baseline_gate_codes.includes("BASELINE_DRIFT"))
+        ? true
+        : false,
+    render: (s) => {
+      if (s.baseline_gate_codes.includes("BASELINE_DRIFT")) {
+        return {
+          beat: "0",
+          command: 'pomaster baseline confirm --change <CHANGE-id>（或 --ack-drifted --note "<理由>"）',
+          reason: "baseline 确认后漂移（与确认快照不符——检出确认后架构修改）——裸重确认拒绝，走重确认三通道",
+        };
+      }
+      if (s.baseline_pending_change_ref !== null) {
+        return {
+          beat: "0",
+          command: `pomaster baseline confirm --change ${s.baseline_pending_change_ref}`,
+          reason: `baseline 变更批在途（pending-change；change=${s.baseline_pending_change_ref}）——终结变更批后 closeout 才过闸`,
+        };
+      }
+      return {
+        beat: "0",
+        command: "pomaster baseline confirm",
+        reason: "baseline 未确认（unknowns 已全销账——确认是唯一剩余缺口；closeout 判卷会被 BASELINE_NOT_CONFIRMED 阻断）",
+      };
+    },
   },
   {
     id: "R_CLOSEOUT_READY",
@@ -463,12 +651,24 @@ export const NEXT_ACTION_ROUTE_TABLE: readonly NextActionRouteRow[] = [
       if (!s.permit_ledger_ok) return null; // 台账不可读 → 绑定不可判（诚实跳过，不乱指）
       return s.bound_refs.length === 0;
     },
-    render: (s) => ({
-      beat: "②",
-      command: `pomaster permit issue --subject ${firstTaskOr(s, "<TASK.*>")} --actor <type>:<name> --change-ref ${firstTaskOr(s, "<TASK.*>")}`,
-      reason:
-        "活跃任务在 permits 台账无绑定许可（change_ref=任务 id 单一解析）——签发须带 --change-ref（投影许可通道按它把任务带入上下文）",
-    }),
+    render: (s) => {
+      // T2 R2：scope 派生建议——permit --subject 用任务 affected_objects 的
+      // PAGE/CAPABILITY/COMPONENT/API_REQ 成员（Bounded Execution 的范围面值），
+      // 取代 subject=TASK 自身的泛化形态；无派生成员时回退占位词形（字节级兼容）。
+      if (s.task_scope_subjects.length > 0) {
+        return {
+          beat: "②",
+          command: `pomaster permit issue --subject ${s.task_scope_subjects.join(" --subject ")} --actor <type>:<name> --change-ref ${firstTaskOr(s, "<TASK.*>")}`,
+          reason: `活跃任务在 permits 台账无绑定许可（change_ref=任务 id 单一解析）——签发须带 --change-ref（投影许可通道按它把任务带入上下文）；--subject 为任务 affected_objects 派生建议（scope 面：${s.task_scope_subjects.join("、")}）`,
+        };
+      }
+      return {
+        beat: "②",
+        command: `pomaster permit issue --subject ${firstTaskOr(s, "<TASK.*>")} --actor <type>:<name> --change-ref ${firstTaskOr(s, "<TASK.*>")}`,
+        reason:
+          "活跃任务在 permits 台账无绑定许可（change_ref=任务 id 单一解析）——签发须带 --change-ref（投影许可通道按它把任务带入上下文）",
+      };
+    },
   },
   {
     id: "R_MANIFEST_MISSING",
@@ -494,12 +694,36 @@ export const NEXT_ACTION_ROUTE_TABLE: readonly NextActionRouteRow[] = [
     }),
   },
   {
+    // T2 R3（④ EXECUTE 感知）：manifest fresh（上行已闸）+ check 运行留痕分母空 +
+    // 无在途执行档案 = 该先登记执行身份（④ EXECUTE 的唯一机器执行点投影——复用既有
+    // execution begin/end/trace，不加新状态轴）。分母锚 runs 留痕（GRN）而非全证据面：
+    // R1 起 promote 自动生成 Expected State claim（UNVERIFIED），claims 在座不等价于
+    // 「执行/验证已发生」；GRN 在座（runs_present=true）= 验证活动已开始 → 落 ⑥ 对账。
+    // 不可判（档案平面坏形）= null 跳过——诚实缺席非乱指。
+    id: "R_EXECUTE_ENTRY",
+    when: (s) => {
+      if (s.runs_present) return false;
+      if (s.task_execution_active === null) return null;
+      return s.task_execution_active === false;
+    },
+    render: (s) => ({
+      beat: "④",
+      command: `pomaster execution begin --role <role> --runtime <runtime> --identity-kind <kind> --task-id ${firstTaskOr(s, "<TASK.*>")}`,
+      reason: "任务无在途执行档案（ended_at=null 缺席）且 check 运行留痕分母空——④ EXECUTE 先登记执行身份（execution begin；档案平面在场性判定，A4 零墙钟）",
+    }),
+  },
+  {
+    // T2 R3（⑤ VERIFY 入口）：在途执行档案在座 = ④ 已登记——VERIFY 内循环自检入口
+    //（拍序 ⑤ 先于 ⑥：执行期间自检优先于对账）。
     id: "R_VERIFY_ENTRY",
-    when: (s) => (s.evidence_present ? false : true),
+    when: (s) => {
+      if (s.task_execution_active === null) return null;
+      return s.task_execution_active === true;
+    },
     render: () => ({
       beat: "⑤",
       command: "pomaster check --fast",
-      reason: "证据分母空——VERIFY 内循环自检入口（④ EXECUTE 写路径无持久化拍位不路由）",
+      reason: "执行档案在途（④ EXECUTE 已登记）——VERIFY 内循环自检入口",
     }),
   },
   {

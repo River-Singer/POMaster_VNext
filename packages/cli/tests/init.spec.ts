@@ -243,6 +243,42 @@ describe("init 幂等（任务契约：连续两次 init 第二次 NO_CHANGE）"
     const third = await runInit(dir);
     expect(third.result.change).toBe("NO_CHANGE");
   });
+
+  it("T2 R4 观察面幂等：宿主 package.json 在座重跑——首跑 observed=8，二跑 NO_CHANGE + observed=0 + skipped_resolved=8（观察不反写不重复落盘）", async () => {
+    // 宿主依赖与 golden fixture 同构（vue 栈 + typescript）——FE 可观察 8 键全命中。
+    writeFileSync(
+      join(dir, "package.json"),
+      `${JSON.stringify({
+        dependencies: {
+          vue: "^3.4.0",
+          "vue-router": "^4.2.0",
+          pinia: "^2.1.0",
+          "element-plus": "^2.4.0",
+          "ag-grid-community": "^31.0.0",
+        },
+        devDependencies: { typescript: "^5.0.0", vite: "^5.0.0", vitest: "^1.0.0" },
+      })}\n`,
+      "utf8",
+    );
+    const first = await runInit(dir);
+    expect(first.ok).toBe(true);
+    expect(first.result.observation).toEqual({
+      source: "package.json",
+      observed: 8,
+      skipped_resolved: 0,
+    });
+    // 首跑已把 8 键写入 FE stack.yaml——重跑必须零触碰（已销账键 skipped，不重复改写）。
+    const stackAfterFirst = read(".pomaster/baseline/frontend/stack.yaml");
+    const second = await runInit(dir);
+    expect(second.ok).toBe(true);
+    expect(second.result.change).toBe("NO_CHANGE");
+    expect(second.result.observation).toEqual({
+      source: "package.json",
+      observed: 0,
+      skipped_resolved: 8,
+    });
+    expect(read(".pomaster/baseline/frontend/stack.yaml")).toBe(stackAfterFirst);
+  });
 });
 
 describe("init 不覆盖人类文件", () => {

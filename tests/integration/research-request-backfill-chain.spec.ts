@@ -99,12 +99,12 @@ beforeAll(async () => {
     "decide",
     ID,
     "--ready",
-    "--msd-goal",
-    "true",
-    "--msd-scope",
-    "true",
-    "--msd-acceptance",
-    "true",
+    "--goal",
+    "研究回填链收敛目标——投影 intent",
+    "--scope",
+    "研究回填链范围——投影 notesMd",
+    "--acceptance",
+    "匹配键事实经 research 消解后确认@DECISION.RESEARCH_SCOPE",
   ]);
 
   // —— research request：发起（index.yaml 落档 + 图侧 request_refs 同步） ——
@@ -157,12 +157,12 @@ beforeAll(async () => {
     "decide",
     ID,
     "--ready",
-    "--msd-goal",
-    "true",
-    "--msd-scope",
-    "true",
-    "--msd-acceptance",
-    "true",
+    "--goal",
+    "研究回填链收敛目标——投影 intent",
+    "--scope",
+    "研究回填链范围——投影 notesMd",
+    "--acceptance",
+    "匹配键事实经 research 消解后确认@DECISION.RESEARCH_SCOPE",
   ]);
   steps.promote = await runJsonStep(root, [
     "brainstorm",

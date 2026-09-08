@@ -312,7 +312,7 @@ payload:
 |---|---|---|---|
 | intent | string | 必填 | thread-A §4.4 |
 | implements_change | string（`CHANGE.*`） | 选填 | 变更链 |
-| acceptance | array `{criterion, claim}` | 必填 | §47 DoD：每条 criterion 须映射 `latest_verdict=VERIFIED` 的 claim——「prd 全勾但 status=planning」双向失真的封堵 |
+| acceptance | array `{criterion, anchor?, claim}` | 必填 | §47 DoD：每条 criterion 须映射 `latest_verdict=VERIFIED` 的 claim——「prd 全勾但 status=planning」双向失真的封堵；`anchor`（T2 D-7 增量 · 语义收口战役 09-08）= 验收判据的挂锚词形 `DECISION.*`（已决议）/ `ASSUMPTION:EXC-<n>`（ledger 在册），由 promote Task Contract 编译投影写入（brainstorm `--ready` 申报面，锚存在性 kernel `validateAcceptanceAnchors` 判卷 fail-closed）——手工 maintain 直跑可缺省（向后兼容零 schema 变更） |
 | oscillation_guard | object `{same_target_previous_tasks[], flag, requires}` | 选填 | checkbox saga 结构化：同目标第 N 个任务须先立 DECISION 才能存在（C2：先观测 flag，advisory） |
 | **class_scan_result** | object | **必填（信封条件式 3 强制）** | R4，见 §12 |
 

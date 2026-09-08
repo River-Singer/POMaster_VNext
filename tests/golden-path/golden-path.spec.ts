@@ -15,6 +15,9 @@
  * - 当前绿的机制项用普通 `it`，用例名携带 `[GREEN-机制]`；
  * - 棘轮语义：对应子任务（T2）修复后，`it.fails` 用例会转为「预期外通过」而红——
  *   这是有意设计：提醒摘掉 fails 帽子（同时按各条转绿条件补链上新旗标参数）。
+ * - **T2（09-08-sc-t2）摘帽轮**：GP-1/GP-4/GP-5/GP-7/GP-9 五条已按 red-ratchet
+ *   三步纪律摘帽（断言正向站立 + 补新信号断言 + check.jsonl 留痕），用例名携带
+ *   `[T2已摘帽]`；另增 `[T2新增信号]` 用例钉 R5 baseline 收口路由。
  *
  * 测试床（D-6）：scripts/generate-golden-fixture.mjs 确定性生成的最小真实形态
  * Vue3 工程（产物生成到 tmpdir，不入 git；零墙钟，两次生成字节一致）。
@@ -68,6 +71,9 @@ const OBSERVABLE_STACK_KEYS: readonly string[] = [
   "testing",
 ];
 
+/** 观察行注记词形（cli baseline.ts OBSERVED_ANNOTATION 同源——断言分母单一）。 */
+const OBSERVED_ANNOTATION = "[Observed: package.json]";
+
 /** GP-5 派生 scope 建议词形（T2 Scope 派生的目标主体前缀）。 */
 const DERIVED_SCOPE_PATTERN = /PAGE\.|CAPABILITY\.|COMPONENT\.|API_REQ\./;
 
@@ -78,6 +84,8 @@ const DERIVED_SCOPE_PATTERN = /PAGE\.|CAPABILITY\.|COMPONENT\.|API_REQ\./;
 interface ChainRecords {
   readonly root: string;
   readonly init: StepRecord;
+  /** init 时点的 frontend stack.yaml 原文快照（GP-1 判定分母——链后段 baselineSet 会改写现盘）。 */
+  readonly initStackText: string;
   readonly start: StepRecord;
   readonly questionGateAsk: StepRecord;
   readonly questionGateDefer: StepRecord;
@@ -92,15 +100,27 @@ interface ChainRecords {
   readonly alertsAfterPromote: StepRecord;
   /** promote 时刻 claims 平面清单（GP-9 回溯分母；排除 README）。 */
   readonly claimsAtPromote: readonly string[];
+  /** permit issue（按 R2 派生建议形态签发：--subject PAGE.DASHBOARD——派生建议可执行证明）。 */
   readonly permitIssue: StepRecord;
   /** permit issue 后 status（R_MANIFEST_MISSING 时点；GP-6②）。 */
   readonly routeAfterPermit: StepRecord;
+  /** baseline 后补销账（css + BE 5 键——init 观察后剩余的规范性决策/BE 分母；GP-1 配套）。 */
+  readonly baselineSet: StepRecord[];
+  /** 销账后 status（R_BASELINE_NOT_READY 时点——T2 R5 新信号）。 */
+  readonly routeBaselineReady: StepRecord;
+  readonly baselineConfirm: StepRecord;
+  /** confirm 后 status（R_MANIFEST_MISSING——确认还账后任务链继续）。 */
+  readonly routeAfterBaselineConfirm: StepRecord;
   readonly manifestCompile: StepRecord;
-  /** context compile 后 status（GP-6③ / GP-7）。 */
+  /** context compile 后 status（T2 R3：R_EXECUTE_ENTRY 时点 / GP-6③ / GP-7）。 */
   readonly routeAfterCompile: StepRecord;
+  /** execution begin（R_EXECUTE_ENTRY 建议照做——④ EXECUTE 感知闭环）。 */
+  readonly executionBegin: StepRecord;
+  /** begin 后 status（R_VERIFY_ENTRY 时点——⑤ 执行中自检入口）。 */
+  readonly routeAfterExecution: StepRecord;
   readonly gates: StepRecord;
   readonly claimRecord: StepRecord;
-  /** record claim 分配的 CLM（GP-8 断言用；转绿后 promote 自动生成 CLM 时编号自适应）。 */
+  /** record claim 分配的 CLM（GP-8 断言用；promote 自动生成 CLM-0001 后自适应编号）。 */
   readonly claimRef: string | null;
   /** record verification 挂的 GRN（evidence/runs 首个；GP-8 断言用）。 */
   readonly evidenceGrn: string | null;
@@ -116,8 +136,8 @@ function nextActionOf(rec: StepRecord): Record<string, unknown> {
   return (result["next_action"] ?? {}) as Record<string, unknown>;
 }
 
-/** TASK 正文 payload（truth/objects 逐文件扫描；缺席 throw = 链路坏损，RED 也该听见）。 */
-function taskPayload(root: string): Record<string, unknown> {
+/** TASK 正文信封（truth/objects 逐文件扫描；缺席 throw = 链路坏损，RED 也该听见）。 */
+function taskBody(root: string): Record<string, unknown> {
   const objectsDir = join(root, ".pomaster", "truth", "objects");
   const found: string[] = [];
   const walk = (current: string): void => {
@@ -130,7 +150,12 @@ function taskPayload(root: string): Record<string, unknown> {
   walk(objectsDir);
   const hit = found.find((file) => readFileSync(file, "utf8").includes(TASK_ID));
   if (hit === undefined) throw new Error(`task body not found for ${TASK_ID}`);
-  const body = JSON.parse(readFileSync(hit, "utf8")) as Record<string, unknown>;
+  return JSON.parse(readFileSync(hit, "utf8")) as Record<string, unknown>;
+}
+
+/** TASK 正文 payload（02b body 信封的 payload 段）。 */
+function taskPayload(root: string): Record<string, unknown> {
+  const body = taskBody(root);
   return (body["payload"] ?? {}) as Record<string, unknown>;
 }
 
@@ -191,6 +216,11 @@ beforeAll(async () => {
   }
 
   const init = await runJsonStep(root, ["init"]);
+  // init 时点 stack.yaml 原文（GP-1 判定分母——观察注记必须在此刻在座）。
+  const initStackText = readFileSync(
+    join(root, ".pomaster", "baseline", "frontend", "stack.yaml"),
+    "utf8",
+  );
   const start = await runJsonStep(root, [
     "brainstorm",
     "start",
@@ -293,9 +323,9 @@ beforeAll(async () => {
   const ready = await runJsonStep(root, [
     "brainstorm", "decide", DISCOVERY_ID,
     "--ready",
-    "--msd-goal", "true",
-    "--msd-scope", "true",
-    "--msd-acceptance", "true",
+    "--goal", "仪表盘数据表格封装策略收敛——先观察 fixture 技术栈再收敛表格方案",
+    "--scope", "仪表盘页数据表格封装（PAGE.DASHBOARD）及列定义收敛",
+    "--acceptance", "仪表盘数据表格封装经 ag-grid 封装后构建计数可独立重算@DECISION.GRID_STRATEGY",
   ]);
   const promote = await runJsonStep(root, [
     "brainstorm", "promote", DISCOVERY_ID,
@@ -309,14 +339,39 @@ beforeAll(async () => {
   const alertsAfterPromote = await runJsonStep(root, ["alerts"]);
   const claimsAtPromote = evidencePlaneFiles(root, "claims");
 
-  // —— permit issue（按现行路由建议的形态签发：subject=TASK 自身）。 ——
+  // —— permit issue（按 T2 R2 派生建议的形态签发：--subject PAGE.DASHBOARD——
+  //    affected_objects 派生建议直接可执行的证明）。 ——
   const permitIssue = await runJsonStep(root, [
     "permit", "issue",
-    "--subject", TASK_ID,
+    "--subject", "PAGE.DASHBOARD",
     "--actor", "agent:golden-path",
     "--change-ref", TASK_ID,
   ]);
   const routeAfterPermit = await runJsonStep(root, ["status"]);
+
+  // —— baseline 收口（T2 R5）：init 观察掉 FE 8 键后剩余 6 unknowns（css 规范决策
+  //    + BE 5 键）非交互销账 → status 呈 R_BASELINE_NOT_READY（新信号）→ confirm 还账。 ——
+  const baselineSet: StepRecord[] = [];
+  for (const [lane, key] of [
+    ["frontend", "css"],
+    ["backend", "language"],
+    ["backend", "framework"],
+    ["backend", "persistence"],
+    ["backend", "database"],
+    ["backend", "cache"],
+  ] as const) {
+    baselineSet.push(
+      await runJsonStep(root, [
+        "baseline", "set",
+        "--lane", lane,
+        "--key", key,
+        "--value", key === "cache" ? "none" : `${lane}-${key}-value`,
+      ]),
+    );
+  }
+  const routeBaselineReady = await runJsonStep(root, ["status"]);
+  const baselineConfirm = await runJsonStep(root, ["baseline", "confirm"]);
+  const routeAfterBaselineConfirm = await runJsonStep(root, ["status"]);
 
   // —— context compile（任务级 manifest；GP-6③/GP-7）。 ——
   const manifestCompile = await runJsonStep(root, [
@@ -325,6 +380,16 @@ beforeAll(async () => {
     "--change", TASK_ID,
   ]);
   const routeAfterCompile = await runJsonStep(root, ["status"]);
+
+  // —— execution begin（T2 R3：④ EXECUTE 感知建议照做→⑤ VERIFY 入口）。 ——
+  const executionBegin = await runJsonStep(root, [
+    "execution", "begin",
+    "--role", "implementer",
+    "--runtime", "script",
+    "--identity-kind", "script",
+    "--task-id", TASK_ID,
+  ]);
+  const routeAfterExecution = await runJsonStep(root, ["status"]);
 
   // —— 证据链（GP-8）：check --gates GRN 入账 → record claim → record verification。 ——
   const gates = await runJsonStep(root, ["check", "--gates"]);
@@ -363,6 +428,7 @@ beforeAll(async () => {
   chain = {
     root,
     init,
+    initStackText,
     start,
     questionGateAsk,
     questionGateDefer,
@@ -376,8 +442,14 @@ beforeAll(async () => {
     claimsAtPromote,
     permitIssue,
     routeAfterPermit,
+    baselineSet,
+    routeBaselineReady,
+    baselineConfirm,
+    routeAfterBaselineConfirm,
     manifestCompile,
     routeAfterCompile,
+    executionBegin,
+    routeAfterExecution,
     gates,
     claimRecord,
     claimRef,
@@ -430,17 +502,20 @@ describe("fixture 生成器（D-6 确定性测试床）", () => {
 // ============================================================
 
 describe("Golden Path 十条验收（GP-1~GP-3：init 观察与 question-gate）", () => {
-  it.fails(
-    "GP-1 [RED→T2] init 观察项目技术事实：stack.yaml 可观察键为值 + [Observed: package.json] 标注而非 UNKNOWN",
+  it(
+    "GP-1 [T2已摘帽] init 观察项目技术事实：stack.yaml 可观察键为值 + [Observed: package.json] 标注而非 UNKNOWN；问卷分母同步收缩",
     () => {
       const records_ = records();
       // 链健康前置（当前绿）：init 成功、stack.yaml 播种在座。
       expect(records_.init.code, "init 应 exit 0").toBe(0);
-      expect(envelopeOf(records_.init).ok, "init 信封应 ok").toBe(true);
+      const initEnvelope = envelopeOf(records_.init);
+      expect(initEnvelope.ok, "init 信封应 ok").toBe(true);
       const stackPath = join(records_.root, ".pomaster", "baseline", "frontend", "stack.yaml");
       expect(existsSync(stackPath), "baseline/frontend/stack.yaml 应在座").toBe(true);
-      const text = readFileSync(stackPath, "utf8");
-      // 目标断言（T2 init Bootstrap+Observation 转绿）：fixture package.json 已声明
+      // 判定分母 = init 时点存档（链后段 baselineSet 会改写现盘——init 观察产物
+      // 的判定必须锚在其发生时刻）。
+      const text = records_.initStackText;
+      // 核心断言（T2 init Bootstrap+Observation 转绿）：fixture package.json 已声明
       // vue/vue-router/pinia/element-plus/ag-grid-community/vitest/vite/typescript，
       // init 应机器自读这些可观察事实（值 + [Observed: package.json] 来源标注），
       // 只把规范性决策（如 css 方案）留给问人。
@@ -454,10 +529,24 @@ describe("Golden Path 十条验收（GP-1~GP-3：init 观察与 question-gate）
           lineText,
           `${key} 应为观察值而非 UNKNOWN 起步词形（行：${lineText}）`,
         ).not.toMatch(new RegExp(`^${key}:\\s*UNKNOWN\\b`));
+        expect(lineText, `${key} 观察行应携带来源标注（行：${lineText}）`).toContain(
+          OBSERVED_ANNOTATION,
+        );
       }
       expect(text, "观察事实应携带 [Observed: package.json] 来源标注").toContain(
-        "[Observed: package.json]",
+        OBSERVED_ANNOTATION,
       );
+      // 摘帽新信号（防退化为空转绿）：init 信封 observation 结构化面 + 问卷分母收缩。
+      const initResult = (initEnvelope.result ?? {}) as Record<string, unknown>;
+      const observation = initResult["observation"] as Record<string, unknown> | null;
+      expect(observation, "init 结果应携带 observation 字段（T2 R4）").not.toBeNull();
+      expect(observation?.["source"]).toBe("package.json");
+      expect(observation?.["observed"]).toBe(OBSERVABLE_STACK_KEYS.length);
+      expect(observation?.["skipped_resolved"]).toBe(0);
+      // css（规范性决策）不被观察代答——保持 UNKNOWN 起步词形。
+      const cssLine = text.split("\n").find((row) => row.startsWith("css:"));
+      expect(cssLine, "stack.yaml 应有 css 键行").toBeDefined();
+      expect(cssLine).toMatch(/^css:\s*UNKNOWN\b/);
     },
   );
 
@@ -497,8 +586,8 @@ describe("Golden Path 十条验收（GP-1~GP-3：init 观察与 question-gate）
 // ============================================================
 
 describe("Golden Path 十条验收（GP-4~GP-10：Intent Chain 全链）", () => {
-  it.fails(
-    "GP-4 [RED→T2] promote 保留真实 Intent/Expected：intent 含 goal 文本（非泛化文案）、acceptance 非空且每条 {criterion, claim} 挂锚",
+  it(
+    "GP-4 [T2已摘帽] promote 保留真实 Intent/Expected：intent 含 goal 文本（非泛化文案）、acceptance 非空且每条 {criterion, claim} 挂锚；titleZh/notesMd/affected_objects 全投影",
     () => {
       const records_ = records();
       // 链健康前置（当前绿）：promote --apply 落库成功、TASK 对象在册。
@@ -506,8 +595,9 @@ describe("Golden Path 十条验收（GP-4~GP-10：Intent Chain 全链）", () =>
       const promoteResult = (envelopeOf(records_.promote).result ?? {}) as Record<string, unknown>;
       expect(promoteResult["applied"], "promote 应已落库").toBe(true);
       expect(promoteResult["promoted_ref"]).toBe(TASK_ID);
+      const body = taskBody(records_.root);
       const payload = taskPayload(records_.root);
-      // 目标断言一（T2 Task Contract Compiler 转绿）：intent ← goal（含 raw prompt 追溯锚），
+      // 核心断言一（T2 Task Contract Compiler 转绿）：intent ← goal（含 raw prompt 追溯锚），
       // 不是「Discovery 提升：<id>」泛化投影文案。
       const intent = payload["intent"];
       expect(typeof intent).toBe("string");
@@ -519,7 +609,7 @@ describe("Golden Path 十条验收（GP-4~GP-10：Intent Chain 全链）", () =>
       expect(intentText, "intent 应可回溯 goal 文本（raw prompt 已在 brainstorm start 登记）").toContain(
         GOAL_PHRASE,
       );
-      // 目标断言二（D-7 投影表）：acceptance 非空且每条 {criterion, claim} 挂 DECISION.*/ASSUMPTION 锚。
+      // 核心断言二（D-7 投影表）：acceptance 非空且每条 {criterion, claim} 挂 DECISION.*/ASSUMPTION 锚。
       const acceptance = payload["acceptance"];
       expect(Array.isArray(acceptance), "acceptance 应为数组且非空").toBe(true);
       const entries = (acceptance as readonly unknown[]) ?? [];
@@ -535,11 +625,29 @@ describe("Golden Path 十条验收（GP-4~GP-10：Intent Chain 全链）", () =>
           "每条 acceptance 应挂 DECISION.*/ASSUMPTION 锚（D-7 机器校验锚）",
         ).toMatch(/DECISION\.|ASSUMPTION/);
       }
+      // 摘帽新信号（防退化为空转绿）：D-7 投影表其余三投影逐项在座。
+      expect(
+        intentText,
+        "intent 应携带 raw prompt 溯源锚（scratchpad meta.json → prompt）",
+      ).toContain(".pomaster/discovery/scratchpads/golden-path-demo/");
+      expect(
+        body["title_zh"],
+        "titleZh 应 ← discovery title（start 未给 --title = id 词形），不再是泛化前缀文案",
+      ).toBe(DISCOVERY_ID);
+      expect(
+        body["notes_md"],
+        "notesMd 应 ← scope 文本 + 四桶残留摘要（Task Contract scope 投影）",
+      ).toContain("仪表盘页数据表格封装（PAGE.DASHBOARD）及列定义收敛");
+      const affectedObjects = payload["affected_objects"];
+      expect(
+        Array.isArray(affectedObjects) && (affectedObjects as readonly unknown[]).includes("PAGE.DASHBOARD"),
+        "affected_objects 应 ← 已决议 Decision affects 并集（含 PAGE.DASHBOARD）",
+      ).toBe(true);
     },
   );
 
-  it.fails(
-    "GP-5 [RED→T2] R_PERMIT_MISSING 建议派生 scope：command 含 PAGE./CAPABILITY. 等派生主体而非仅 TASK 自身",
+  it(
+    "GP-5 [T2已摘帽] R_PERMIT_MISSING 建议派生 scope：command 含 PAGE. 派生主体 + 派生建议直接可执行（链内照做签发成功）",
     () => {
       const records_ = records();
       expect(records_.routeAfterPromote.code).toBe(0);
@@ -548,12 +656,20 @@ describe("Golden Path 十条验收（GP-4~GP-10：Intent Chain 全链）", () =>
       expect(nextAction["route_id"]).toBe("R_PERMIT_MISSING");
       const command = nextAction["command"];
       expect(typeof command).toBe("string");
-      // 目标断言（T2 Scope 派生转绿）：建议命令携带从 Task/affected_objects 派生的
-      // scope 主体（PAGE.*/CAPABILITY.*/COMPONENT.*/API_REQ.*），而非仅 TASK 自身。
+      // 核心断言（T2 Scope 派生转绿）：建议命令携带从 Task/affected_objects 派生的
+      // scope 主体（DECISION.GRID_STRATEGY affects → PAGE.DASHBOARD），而非仅 TASK 自身。
       expect(
         command,
         `permit issue 建议应含派生 scope 主体（实得：${String(command)}）`,
       ).toMatch(DERIVED_SCOPE_PATTERN);
+      // 摘帽新信号（防退化为空转绿）：建议命令精确词形（派生 subject 逐字 + --change-ref
+      // 绑定任务），且链内照做（--subject PAGE.DASHBOARD）签发成功——派生建议可执行。
+      expect(command).toBe(
+        "pomaster permit issue --subject PAGE.DASHBOARD --actor <type>:<name> --change-ref TASK.GOLDEN_PATH_DEMO",
+      );
+      expect(records_.permitIssue.code, "按派生建议签发应 exit 0").toBe(0);
+      const permitResult = (envelopeOf(records_.permitIssue).result ?? {}) as Record<string, unknown>;
+      expect(permitResult["change_ref"]).toBe(TASK_ID);
     },
   );
 
@@ -561,7 +677,7 @@ describe("Golden Path 十条验收（GP-4~GP-10：Intent Chain 全链）", () =>
     const records_ = records();
     // 拍①：活跃任务无许可 → R_PERMIT_MISSING。
     expect(nextActionOf(records_.routeAfterPromote)["route_id"]).toBe("R_PERMIT_MISSING");
-    // 拍②：按链签发（subject=TASK 自身 + change-ref=TASK）→ 路由前进。
+    // 拍②：按链签发（R2 派生建议 --subject PAGE.DASHBOARD + change-ref=TASK）→ 路由前进。
     expect(records_.permitIssue.code).toBe(0);
     expect(envelopeOf(records_.permitIssue).ok).toBe(true);
     expect(nextActionOf(records_.routeAfterPermit)["route_id"]).toBe("R_MANIFEST_MISSING");
@@ -580,24 +696,59 @@ describe("Golden Path 十条验收（GP-4~GP-10：Intent Chain 全链）", () =>
     expect(nextActionOf(records_.routeAfterCompile)["route_id"]).not.toBe("R_MANIFEST_MISSING");
   });
 
-  it.fails(
-    "GP-7 [RED→T2] manifest fresh 且证据分母空时导航不直跳 Verify：route_id ≠ R_VERIFY_ENTRY",
+  it("R5 [T2新增信号] baseline 收口路由：unknowns 全销账未确认 → R_BASELINE_NOT_READY（baseline confirm）→ 确认后还账回落任务链", () => {
+    const records_ = records();
+    // 前置：init 观察后剩余 6 unknowns 非交互销账全过（GP-1 的观察面把问人分母压到 6）。
+    expect(records_.baselineSet).toHaveLength(6);
+    expect(records_.baselineSet.every((step) => step.code === 0)).toBe(true);
+    // 核心断言（T2 R5 转绿）：unknowns 0 + 未确认 → R_BASELINE_NOT_READY（beat 0，
+    // 命令 = 裸 confirm）——收口前账的确定性路标。
+    expect(records_.routeBaselineReady.code).toBe(0);
+    expect(nextActionOf(records_.routeBaselineReady)["route_id"]).toBe("R_BASELINE_NOT_READY");
+    expect(nextActionOf(records_.routeBaselineReady)["beat"]).toBe("0");
+    expect(nextActionOf(records_.routeBaselineReady)["command"]).toBe("pomaster baseline confirm");
+    // 照做 confirm（digest 快照落盘）→ gate 转绿 → 回落任务链（R_MANIFEST_MISSING——
+    // confirm 还账不扰动 permit/manifest 既有进度）。
+    expect(records_.baselineConfirm.code).toBe(0);
+    expect(nextActionOf(records_.routeAfterBaselineConfirm)["route_id"]).toBe("R_MANIFEST_MISSING");
+  });
+
+  it(
+    "GP-7 [T2已摘帽] manifest fresh 与 Verify 之间存在执行感知过渡：compile 后 R_EXECUTE_ENTRY → execution begin → R_VERIFY_ENTRY",
     () => {
       const records_ = records();
       expect(records_.routeAfterCompile.code).toBe(0);
       const nextAction = nextActionOf(records_.routeAfterCompile);
-      // 前置（当前绿）：manifest 在座且新鲜（compile 后无漂移）、证据分母空。
+      // 前置（当前绿）：manifest 在座且新鲜（compile 后无漂移）。
       expect(
         existsSync(join(records_.root, ".pomaster", "state", "contexts", `${TASK_ID}.context.json`)),
         "任务级 manifest 应在座",
       ).toBe(true);
       expect(typeof nextAction["route_id"]).toBe("string");
-      // 目标断言（T2 ④ Execute 感知转绿）：Context Ready 与 Evidence 之间应存在
-      // 确定性的执行感知过渡路由，而不是直跳 R_VERIFY_ENTRY（check --fast）。
+      // 核心断言（T2 ④ Execute 感知转绿）：Context Ready 与 Verify 之间存在确定性
+      // 执行感知过渡路由 R_EXECUTE_ENTRY（runs 留痕分母空 + 无在途执行档案），而不是
+      // 直跳 R_VERIFY_ENTRY（check --fast）。
       expect(
         nextAction["route_id"],
-        `执行感知路由缺席——manifest fresh + 无证据不应直跳 Verify（实得：${String(nextAction["route_id"])}）`,
-      ).not.toBe("R_VERIFY_ENTRY");
+        `执行感知路由缺席——manifest fresh 且无执行留痕不应直跳 Verify（实得：${String(nextAction["route_id"])}）`,
+      ).toBe("R_EXECUTE_ENTRY");
+      expect(
+        nextAction["beat"],
+        "④ EXECUTE 拍位词形应在座",
+      ).toBe("④");
+      expect(
+        String(nextAction["command"]),
+        "R_EXECUTE_ENTRY 建议应是 execution begin（携 --task-id）",
+      ).toBe(
+        `pomaster execution begin --role <role> --runtime <runtime> --identity-kind <kind> --task-id ${TASK_ID}`,
+      );
+      // 摘帽新信号（防退化为空转绿）：照做 execution begin → 在途档案在座 → 路由
+      // 前进到 R_VERIFY_ENTRY（执行感知 ④→⑤ 分叉在真实链上闭合）。
+      expect(records_.executionBegin.code, "execution begin 应 exit 0").toBe(0);
+      const beginResult = (envelopeOf(records_.executionBegin).result ?? {}) as Record<string, unknown>;
+      expect(String(beginResult["execution_id"])).toMatch(/^AGX-[0-9]{4}-[0-9]+$/);
+      expect(nextActionOf(records_.routeAfterExecution)["route_id"]).toBe("R_VERIFY_ENTRY");
+      expect(nextActionOf(records_.routeAfterExecution)["command"]).toContain("pomaster check --fast");
     },
   );
 
@@ -633,17 +784,24 @@ describe("Golden Path 十条验收（GP-4~GP-10：Intent Chain 全链）", () =>
     expect(evidenceRefs).toContain(String(records_.evidenceGrn));
   });
 
-  it.fails(
-    "GP-9 [RED→T2] closeout 判卷可回溯 promote 时刻 Expected：acceptance 的 claim 与 promote 自动生成的 CLM 对得上",
+  it(
+    "GP-9 [T2已摘帽] closeout 判卷可回溯 promote 时刻 Expected：acceptance 的 claim 与 promote 自动生成的 CLM 对得上",
     () => {
       const records_ = records();
       expect(records_.promote.code).toBe(0);
+      // 摘帽新信号（防退化为空转绿）：promote 结果声明自动 claim 条数（D-7 收尾闭环）。
+      const promoteResult = (envelopeOf(records_.promote).result ?? {}) as Record<string, unknown>;
+      const claimsGenerated = promoteResult["claims_generated"];
+      expect(
+        typeof claimsGenerated === "number" && claimsGenerated > 0,
+        `promote 结果应携带 claims_generated > 0（实得：${String(claimsGenerated)}）`,
+      ).toBe(true);
       const payload = taskPayload(records_.root);
       const acceptance = payload["acceptance"];
       expect(Array.isArray(acceptance), "acceptance 应为数组且非空（D-7 收尾闭环）").toBe(true);
       const entries = (acceptance as readonly unknown[]) ?? [];
-      expect(entries.length).toBeGreaterThan(0);
-      // 目标断言（T2 转绿：promote 自动 record claim 生成 CLM 绑定 acceptance）：
+      expect(entries.length).toBe(claimsGenerated);
+      // 核心断言（T2 转绿：promote 自动 record claim 生成 CLM 绑定 acceptance）：
       // 每条 acceptance.claim 在 promote 时刻已自动生成（claimsAtPromote 快照分母），
       // closeout 判卷对的是最初 Expected State 而非 Task id。
       for (const entry of entries) {

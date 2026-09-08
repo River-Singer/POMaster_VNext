@@ -71,6 +71,8 @@ function stateFileOf(id: string): Record<string, unknown> {
  * brainstorm decide 接线（正向链见本文件 decide describe 与 tests/integration/
  * fixture-discovery-chain.spec.ts——全程零手写 state.json）；本 helper 仅服务于与链无关
  * 的 promote 自身语义钉死（词表闸/tx 落点闸/等价性），不得用于任何「正向可达性」断言。
+ * T2 R1 起 promote 闸 2.5 要求 Task Contract（meta.json）+ 图/判卷输入（锚判卷输入）
+ * 三件套齐座——夹具同步预植（锚 DECISION.SEEDED_SCOPE 已决议 ACCEPT + affects 在位）。
  */
 async function seedReadyToPromote(id: string): Promise<void> {
   mkdirSync(scratchpadDir(id), { recursive: true });
@@ -85,6 +87,78 @@ async function seedReadyToPromote(id: string): Promise<void> {
       null,
       2,
     )}\n`,
+    "utf8",
+  );
+  // meta.json（CLI 局部注记：title/chain + Task Contract——promote 编译投影的唯一事实源）。
+  writeFileSync(
+    join(scratchpadDir(id), "meta.json"),
+    `${JSON.stringify(
+      {
+        discovery_id: id,
+        title: `夹具 ${id}`,
+        ephemeral: false,
+        chain: ["IDEA", "DISCOVERY", "READY_TO_PROMOTE"],
+        contract: {
+          goal: "夹具 goal——promote 投影 intent 源",
+          scope: "夹具 scope——promote 投影 notesMd 源",
+          acceptance: [{ criterion: "夹具验收判据", anchor: "DECISION.SEEDED_SCOPE" }],
+          residuals: [{ statement: "夹具延后项", classification: "DEFERRED_DECISION" }],
+        },
+      },
+      null,
+      2,
+    )}\n`,
+    "utf8",
+  );
+  // decision-graph.json（schema 18 sidecar；锚 DECISION.SEEDED_SCOPE 已决议 ACCEPT——
+  // validateAcceptanceAnchors 判卷输入；affects 在位供 affected_objects 投影）。
+  writeFileSync(
+    join(scratchpadDir(id), "decision-graph.json"),
+    `${JSON.stringify(
+      {
+        decisions: [
+          {
+            decision_id: "DECISION.SEEDED_SCOPE",
+            class: "SCOPE",
+            prompt: "夹具决策",
+            depends_on: [],
+            affects: ["PAGE.SEEDED"],
+            grounding: {
+              intent_refs: [],
+              truth_refs: [],
+              contract_refs: [],
+              architecture_refs: [],
+              implementation_refs: [],
+              evidence_refs: [],
+              knowledge_refs: [],
+              research_finding_refs: [],
+              conflicts: [],
+              missing_facts: [],
+            },
+            options: ["A", "B"],
+            recommendation: {
+              option: "A",
+              basis_refs: [],
+              rationale: "夹具",
+              tradeoff: "夹具",
+              uncertainty: "夹具",
+              source: "PROJECT_GROUNDED",
+            },
+            authority: { owner: "BOOTSTRAP_OWNER" },
+            resolution: { answer: "ACCEPT", seq: 1 },
+          },
+        ],
+        graph_fingerprint: `sha256:${"f".repeat(64)}`,
+      },
+      null,
+      2,
+    )}\n`,
+    "utf8",
+  );
+  // decision-inputs.json（G2/G6 判卷输入申报——loadDecisionGraph 同拍装载面）。
+  writeFileSync(
+    join(scratchpadDir(id), "decision-inputs.json"),
+    `${JSON.stringify({ retrieved_surfaces: ["REPO"], missing_fact_routing: {} }, null, 2)}\n`,
     "utf8",
   );
 }
@@ -236,14 +310,49 @@ describe("brainstorm promote（提升面：READY_TO_PROMOTE→CHANGE/TASK 走 P1
     expect(result.suggested_command).toContain("pomaster maintain idea-txonly --ops");
     expect(result.suggested_command).toContain("promote-tx.json");
     expect(result.promoted_ref).toBe("TASK.IDEA_TXONLY");
+    // T2 R1：TASK 提升 tx 内自动 record claim（D-7 收尾闭环——acceptance 绑 CLM）。
+    expect(result.claims_generated).toBe(1);
     // scratchpad 状态不动（提升未完成）。
     expect(stateFileOf("idea-txonly").state).toBe("READY_TO_PROMOTE");
-    // tx 文件是 maintain --ops 输入形态（ops[] + authorityRef + note）。
+    // tx 文件是 maintain --ops 输入形态（ops[] + authorityRef + note）；ops[0]=upsert
+    // + ops[1]=record_claim（claim 未落库——tx-only 态在 tx 文件内待 maintain 消费）。
     const tx = JSON.parse(
       readFileSync(join(scratchpadDir("idea-txonly"), "promote-tx.json"), "utf8"),
-    ) as { ops: { op: string }[]; authorityRef: string };
+    ) as {
+      ops: { op: string; claim?: { clm: string; subjectId: string } }[];
+      authorityRef: string;
+    };
     expect(tx.ops[0]?.op).toBe("upsert_object");
+    expect(tx.ops[1]?.op).toBe("record_claim");
+    expect(tx.ops[1]?.claim?.clm).toMatch(/^CLM-[0-9]{4}$/);
+    expect(tx.ops[1]?.claim?.subjectId).toBe("TASK.IDEA_TXONLY");
     expect(tx.authorityRef).toBe("TASK.IDEA_TXONLY");
+  });
+
+  it("promote 时刻锚重校验 fail-closed（T2 R1 对抗·验收标准）：--ready 后图漂移（锚决议被撤）→ CONTRACT_ANCHOR_DANGLING，状态零变更零 tx", async () => {
+    // 验收标准「悬空锚 promote 被 fail-closed 拒绝」的 promote 侧对抗钉：闸 2.5
+    // 重校验的存在意义 = 图/ledger 在 --ready 之后可能漂移，禁信任 --ready 时刻的
+    // 陈旧判卷。夹具 contract 挂 DECISION.SEEDED_SCOPE（seed 已决议 ACCEPT）——
+    // 漂移注入：撤掉决议（resolution→null，合法 OPEN 节点形态）。
+    await seedReadyToPromote("idea-promote-drift");
+    const graphPath = join(scratchpadDir("idea-promote-drift"), "decision-graph.json");
+    const graph = JSON.parse(readFileSync(graphPath, "utf8")) as {
+      decisions: { decision_id: string; resolution: unknown }[];
+    };
+    graph.decisions[0]!.resolution = null;
+    writeFileSync(graphPath, `${JSON.stringify(graph, null, 2)}\n`, "utf8");
+    const outcome = await runBrainstormPromote(root, {
+      discoveryId: "idea-promote-drift",
+      to: "TASK",
+      basis: "msd_reached",
+      apply: true,
+    });
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors[0]?.code).toBe("CONTRACT_ANCHOR_DANGLING");
+    expect(outcome.errors[0]?.message).toContain("尚未决议");
+    // fail-closed 双验：scratchpad 状态零推进 + tx 文件零落盘（晋升产物不得存在）。
+    expect(stateFileOf("idea-promote-drift").state).toBe("READY_TO_PROMOTE");
+    expect(existsSync(join(scratchpadDir("idea-promote-drift"), "promote-tx.json"))).toBe(false);
   });
 
   it("SEGMENT 派生失败（数字开头 id）→ 显式拒绝并指路 --as 具名", async () => {
@@ -293,12 +402,18 @@ describe("brainstorm promote（提升面：READY_TO_PROMOTE→CHANGE/TASK 走 P1
     const ready = await runBrainstormDecide(root, {
       discoveryId: "idea-apply",
       ready: true,
-      msdGoal: "true",
-      msdScope: "true",
-      msdAcceptance: "true",
+      goal: "apply 链 goal——投影进 TASK intent",
+      scope: "apply 链 scope——投影进 notesMd",
+      acceptance: ["apply 链验收判据@DECISION.APPLY_SCOPE"],
     });
     expect(ready.ok).toBe(true);
     expect(stateFileOf("idea-apply").state).toBe("READY_TO_PROMOTE");
+    // meta.json 已落 Task Contract（--ready 的持久化产物——promote 编译投影事实源）。
+    const readyMeta = JSON.parse(
+      readFileSync(join(scratchpadDir("idea-apply"), "meta.json"), "utf8"),
+    ) as { contract?: { goal: string; acceptance: { anchor: string }[] } };
+    expect(readyMeta.contract?.goal).toBe("apply 链 goal——投影进 TASK intent");
+    expect(readyMeta.contract?.acceptance[0]?.anchor).toBe("DECISION.APPLY_SCOPE");
     const outcome = await runBrainstormPromote(root, {
       discoveryId: "idea-apply",
       to: "TASK",
@@ -311,16 +426,36 @@ describe("brainstorm promote（提升面：READY_TO_PROMOTE→CHANGE/TASK 走 P1
     expect(result.maintain_change).toBe("APPLIED");
     expect(result.applied_seq).not.toBeNull();
     expect(result.promoted_ref).toBe("TASK.IDEA_APPLY");
+    // T2 R1：promote 自动 record claim（claims_generated 与 CLM 证据文件双验）。
+    expect(result.claims_generated).toBe(1);
+    expect(existsSync(join(root, ".pomaster", "evidence", "claims", "CLM-0001.json"))).toBe(true);
+    // D-7 投影：inspect 通路读提升对象（02 正文信封在 result.body）——titleZh ←
+    // discovery title；intent 带 raw prompt 溯源锚；acceptance 挂锚 + 绑 CLM。
+    const { runInspect } = await import("@pomaster/cli");
+    const inspected = await runInspect(root, { id: "TASK.IDEA_APPLY" });
+    expect(inspected.ok).toBe(true);
+    const promoted = (inspected.result as { body?: Record<string, unknown> }).body as {
+      title_zh?: string;
+      payload?: { intent?: string; acceptance?: { criterion: string; anchor: string; claim: string }[] };
+      notes_md?: string | null;
+    };
+    expect(promoted.title_zh).toBe("idea-apply");
+    expect(promoted.payload?.intent).toContain("apply 链 goal");
+    expect(promoted.payload?.intent).toContain("raw prompt 溯源");
+    expect(promoted.payload?.acceptance?.[0]).toMatchObject({
+      criterion: "apply 链验收判据",
+      anchor: "DECISION.APPLY_SCOPE",
+      claim: "CLM-0001",
+    });
+    expect(promoted.notes_md).toContain("apply 链 scope");
     // scratchpad 终态（08 信封：终态带 basis + promoted_ref）。
     const stateFile = stateFileOf("idea-apply");
     expect(stateFile.state).toBe("TASK");
     expect(stateFile.promotion_basis).toBe("needs_cross_session_tracking");
     expect(stateFile.promoted_ref).toBe("TASK.IDEA_APPLY");
     expect(validateChain(stateFile)).toBe(true);
-    // 治理 store 里出现提升对象（inspect 通路可读 = 走的是 store 事务）。
-    const { runInspect } = await import("@pomaster/cli");
-    const inspected = await runInspect(root, { id: "TASK.IDEA_APPLY" });
-    expect(inspected.ok).toBe(true);
+    // 治理 store 里出现提升对象（inspect 通路可读 = 走的是 store 事务）——
+    // 上方 D-7 投影断言已复用同一 inspected 结果。
   });
 
   it("等价性钉死：promote --apply 与显式 maintain --ops 直跑产生同型 store 结果（同通道零旁移）", async () => {
@@ -740,12 +875,24 @@ function writeCandidatesFile(path: string, candidates: readonly DecisionNodeCand
 }
 
 describe("brainstorm decide（F3 公开推进链：start → decide 三子动作 → READY_TO_PROMOTE，零预写 state.json）", () => {
-  const READY_ARGS = {
-    ready: true,
-    msdGoal: "true",
-    msdScope: "true",
-    msdAcceptance: "true",
-  } as const;
+  /**
+   * --ready Task Contract 文本申报（T2 R1 · D-7）：acceptance 挂锚词形
+   * <criterion>@<anchor>——锚必须随用例图内已决议 DECISION.* 变化（悬空锚被
+   * kernel 判卷 fail-closed 拒绝）。
+   */
+  function readyArgs(anchor: string): {
+    readonly ready: true;
+    readonly goal: string;
+    readonly scope: string;
+    readonly acceptance: readonly string[];
+  } {
+    return {
+      ready: true,
+      goal: "测试 goal——收敛后投影进 TASK intent（raw prompt 溯源锚随 promote 附加）",
+      scope: "测试 scope——收敛后投影进 notesMd",
+      acceptance: [`测试验收判据@${anchor}`],
+    };
+  }
 
   it("公开正向链：--set 建图（verdict/frontier 呈现）→ --answer --accept → --ready 全绿 → READY_TO_PROMOTE（08 信封 + meta 链）→ promote --apply 落库", async () => {
     await runBrainstormStart(root, { id: "idea-chain" });
@@ -789,7 +936,7 @@ describe("brainstorm decide（F3 公开推进链：start → decide 三子动作
     expect(answered.ok).toBe(true);
     expect((answered.result as BrainstormDecideResult).answer_changed).toBe(true);
 
-    const ready = await runBrainstormDecide(root, { discoveryId: "idea-chain", ...READY_ARGS });
+    const ready = await runBrainstormDecide(root, { discoveryId: "idea-chain", ...readyArgs("DECISION.CHAIN_SCOPE") });
     expect(ready.ok).toBe(true);
     const readyResult = ready.result as BrainstormDecideResult;
     expect(readyResult.change).toBe("PROMOTABLE");
@@ -831,7 +978,7 @@ describe("brainstorm decide（F3 公开推进链：start → decide 三子动作
       set: candidatesPath,
       retrieved: ["REPO"],
     });
-    const ready = await runBrainstormDecide(root, { discoveryId: "idea-insuff", ...READY_ARGS });
+    const ready = await runBrainstormDecide(root, { discoveryId: "idea-insuff", ...readyArgs("DECISION.INSUFF_SCOPE") });
     expect(ready.ok).toBe(false);
     expect(ready.errors[0]?.code).toBe("DECISION_SUFFICIENCY_BLOCKED");
     const result = ready.result as BrainstormDecideResult;
@@ -844,7 +991,7 @@ describe("brainstorm decide（F3 公开推进链：start → decide 三子动作
     expect(stateFileOf("idea-insuff").state).toBe("DISCOVERY");
   });
 
-  it("MSD 未达成入缺口：决议齐但三轴任一 false → blocking 携带缺失轴名（09 msd_assessment 判据面）", async () => {
+  it("MSD 未达成入缺口：决议齐但申报文本空（goal 空白 → goal_defined=false 派生）→ blocking 携带缺失轴名（09 msd_assessment 判据面）", async () => {
     await runBrainstormStart(root, { id: "idea-msd" });
     const candidatesPath = join(root, "c-msd.json");
     writeCandidatesFile(candidatesPath, [decideCandidate("DECISION.MSD_SCOPE")]);
@@ -854,24 +1001,26 @@ describe("brainstorm decide（F3 公开推进链：start → decide 三子动作
       answer: "DECISION.MSD_SCOPE",
       accept: true,
     });
+    // T2 R1：MSD 三轴由文本非空派生——空白 goal 文本 = goal_defined=false（呈现但
+    // 空 = 语义删除布尔旗标的派生判据；与「缺位」的 SCHEMA_INVALID 分流）。
     const ready = await runBrainstormDecide(root, {
       discoveryId: "idea-msd",
       ready: true,
-      msdGoal: "true",
-      msdScope: "true",
-      msdAcceptance: "false",
+      goal: "   ",
+      scope: "范围非空",
+      acceptance: ["验收判据@DECISION.MSD_SCOPE"],
     });
     expect(ready.ok).toBe(false);
     expect(ready.errors[0]?.code).toBe("DECISION_SUFFICIENCY_BLOCKED");
     const result = ready.result as BrainstormDecideResult;
     expect(result.sufficient).toBe(false);
     expect(
-      result.blocking.some((b) => b.detail.includes("acceptance_verifiable")),
+      result.blocking.some((b) => b.detail.includes("goal_defined")),
     ).toBe(true);
     expect(stateFileOf("idea-msd").state).toBe("DISCOVERY");
   });
 
-  it("MSD 三轴缺位/词形外 → SCHEMA_INVALID（缺判卷输入绝不静默当 false）", async () => {
+  it("Task Contract 申报缺位/词形外 → SCHEMA_INVALID（缺判卷输入绝不静默当 false）", async () => {
     await runBrainstormStart(root, { id: "idea-msd-missing" });
     const candidatesPath = join(root, "c-msd-missing.json");
     writeCandidatesFile(candidatesPath, [decideCandidate("DECISION.MSD_MISSING")]);
@@ -880,25 +1029,96 @@ describe("brainstorm decide（F3 公开推进链：start → decide 三子动作
       set: candidatesPath,
       retrieved: ["REPO"],
     });
+    // --acceptance 缺位（--goal/--scope 在座）。
     const missing = await runBrainstormDecide(root, {
       discoveryId: "idea-msd-missing",
       ready: true,
-      msdGoal: "true",
-      msdScope: "true",
-    } as unknown as Parameters<typeof runBrainstormDecide>[1]);
+      goal: "goal 文本",
+      scope: "scope 文本",
+    });
     expect(missing.ok).toBe(false);
     expect(missing.errors[0]?.code).toBe("SCHEMA_INVALID");
-    expect(missing.errors[0]?.message).toContain("--msd-acceptance");
+    expect(missing.errors[0]?.message).toContain("--acceptance");
 
+    // --goal/--scope 缺位。
+    const missingTexts = await runBrainstormDecide(root, {
+      discoveryId: "idea-msd-missing",
+      ready: true,
+      acceptance: ["判据@DECISION.MSD_MISSING"],
+    });
+    expect(missingTexts.ok).toBe(false);
+    expect(missingTexts.errors[0]?.code).toBe("SCHEMA_INVALID");
+    expect(missingTexts.errors[0]?.message).toContain("--goal");
+
+    // --acceptance 零条目（空数组 = 显式零申报）。
+    const emptyAcceptance = await runBrainstormDecide(root, {
+      discoveryId: "idea-msd-missing",
+      ready: true,
+      goal: "goal 文本",
+      scope: "scope 文本",
+      acceptance: [],
+    });
+    expect(emptyAcceptance.ok).toBe(false);
+    expect(emptyAcceptance.errors[0]?.code).toBe("SCHEMA_INVALID");
+    expect(emptyAcceptance.errors[0]?.message).toContain("至少申报一条");
+
+    // --acceptance 词形非法（无 @anchor / 空 criterion）。
     const badForm = await runBrainstormDecide(root, {
       discoveryId: "idea-msd-missing",
       ready: true,
-      msdGoal: "yes",
-      msdScope: "true",
-      msdAcceptance: "true",
+      goal: "goal 文本",
+      scope: "scope 文本",
+      acceptance: ["没有锚的判据"],
     });
     expect(badForm.ok).toBe(false);
     expect(badForm.errors[0]?.code).toBe("SCHEMA_INVALID");
+    expect(badForm.errors[0]?.message).toContain("--acceptance 词形非法");
+  });
+
+  it("acceptance 锚存在性 fail-closed（T2 R1 · D-7）：悬空 DECISION/ASSUMPTION 锚 → CONTRACT_ANCHOR_DANGLING；锚词形外 → CONTRACT_ANCHOR_MALFORMED；状态零变更", async () => {
+    await runBrainstormStart(root, { id: "idea-anchor" });
+    const candidatesPath = join(root, "c-anchor.json");
+    writeCandidatesFile(candidatesPath, [decideCandidate("DECISION.ANCHOR_SCOPE")]);
+    await runBrainstormDecide(root, { discoveryId: "idea-anchor", set: candidatesPath, retrieved: ["REPO"] });
+    await runBrainstormDecide(root, { discoveryId: "idea-anchor", answer: "DECISION.ANCHOR_SCOPE", accept: true });
+
+    // 悬空 DECISION 锚（不在图内）。
+    const dangling = await runBrainstormDecide(root, {
+      discoveryId: "idea-anchor",
+      ready: true,
+      goal: "goal",
+      scope: "scope",
+      acceptance: ["判据@DECISION.GHOST"],
+    });
+    expect(dangling.ok).toBe(false);
+    expect(dangling.errors[0]?.code).toBe("CONTRACT_ANCHOR_DANGLING");
+    expect(dangling.errors[0]?.message).toContain("不在图内");
+    expect(stateFileOf("idea-anchor").state).toBe("DISCOVERY");
+
+    // 悬空 ASSUMPTION 锚（exception ledger 无 EXC-9 在册）。
+    const danglingAssumption = await runBrainstormDecide(root, {
+      discoveryId: "idea-anchor",
+      ready: true,
+      goal: "goal",
+      scope: "scope",
+      acceptance: ["判据@ASSUMPTION:EXC-9"],
+    });
+    expect(danglingAssumption.ok).toBe(false);
+    expect(danglingAssumption.errors[0]?.code).toBe("CONTRACT_ANCHOR_DANGLING");
+    expect(danglingAssumption.errors[0]?.message).toContain("不在 ledger ASSUMPTION 在册清单");
+
+    // 锚词形外（裸 EXC-3——须 ASSUMPTION:EXC-<n> 形态）。
+    const malformed = await runBrainstormDecide(root, {
+      discoveryId: "idea-anchor",
+      ready: true,
+      goal: "goal",
+      scope: "scope",
+      acceptance: ["判据@EXC-3"],
+    });
+    expect(malformed.ok).toBe(false);
+    expect(malformed.errors[0]?.code).toBe("CONTRACT_ANCHOR_MALFORMED");
+    expect(malformed.errors[0]?.message).toContain("锚词形外");
+    expect(stateFileOf("idea-anchor").state).toBe("DISCOVERY");
   });
 
   it("answer 前置闸（§6.2）：零检索面申报 → GROUNDING_NOT_READY（INSUFFICIENT_GROUNDING failed=G2），state 不变", async () => {
@@ -923,7 +1143,7 @@ describe("brainstorm decide（F3 公开推进链：start → decide 三子动作
     expect(answered.human.join("\n")).toContain("G2");
     expect(stateFileOf("idea-g2").state).toBe("DISCOVERY");
     // OPEN 节点 grounding 未过 → --ready 同样被复核闸拦（先于 sufficiency）。
-    const ready = await runBrainstormDecide(root, { discoveryId: "idea-g2", ...READY_ARGS });
+    const ready = await runBrainstormDecide(root, { discoveryId: "idea-g2", ...readyArgs("DECISION.G2_SCOPE") });
     expect(ready.ok).toBe(false);
     expect(ready.errors[0]?.code).toBe("GROUNDING_NOT_READY");
     expect(stateFileOf("idea-g2").state).toBe("DISCOVERY");
@@ -971,7 +1191,7 @@ describe("brainstorm decide（F3 公开推进链：start → decide 三子动作
     expect((replay.result as BrainstormDecideResult).answer_changed).toBe(false);
     expect((replay.result as BrainstormDecideResult).change).toBe("NO_CHANGE");
     // UNKNOWN→ASSUMPTION 是 §15 合法停靠桶：决议后 --ready 可全绿。
-    const ready = await runBrainstormDecide(root, { discoveryId: "idea-unknown", ...READY_ARGS });
+    const ready = await runBrainstormDecide(root, { discoveryId: "idea-unknown", ...readyArgs("DECISION.UNKNOWN_SCOPE") });
     expect(ready.ok).toBe(true);
     expect(stateFileOf("idea-unknown").state).toBe("READY_TO_PROMOTE");
   });
@@ -1078,7 +1298,7 @@ describe("brainstorm decide（F3 公开推进链：start → decide 三子动作
     writeCandidatesFile(candidatesPath, [decideCandidate("DECISION.GATE_SCOPE")]);
     await runBrainstormDecide(root, { discoveryId: "idea-gate", set: candidatesPath, retrieved: ["REPO"] });
     await runBrainstormDecide(root, { discoveryId: "idea-gate", answer: "DECISION.GATE_SCOPE", accept: true });
-    await runBrainstormDecide(root, { discoveryId: "idea-gate", ...READY_ARGS });
+    await runBrainstormDecide(root, { discoveryId: "idea-gate", ...readyArgs("DECISION.GATE_SCOPE") });
     const after = await runBrainstormDecide(root, {
       discoveryId: "idea-gate",
       answer: "DECISION.GATE_SCOPE",
@@ -1125,7 +1345,13 @@ describe("brainstorm decide（F3 公开推进链：start → decide 三子动作
     expect(twoActions.ok).toBe(false);
     expect(twoActions.errors[0]?.code).toBe("SCHEMA_INVALID");
 
-    const ghost = await runBrainstormDecide(root, { discoveryId: "idea-ghost", ready: true, msdGoal: "true", msdScope: "true", msdAcceptance: "true" });
+    const ghost = await runBrainstormDecide(root, {
+      discoveryId: "idea-ghost",
+      ready: true,
+      goal: "goal",
+      scope: "scope",
+      acceptance: ["判据@DECISION.X"],
+    });
     expect(ghost.ok).toBe(false);
     expect(ghost.errors[0]?.code).toBe("SCRATCHPAD_NOT_FOUND");
 

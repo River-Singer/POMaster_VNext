@@ -353,6 +353,40 @@ describe("幂等分母", () => {
     expect(seeded.kind === "ready" ? seeded.questions.length : 0).toBe(14);
   });
 
+  it("T2 R4 观察感知分母：FE 观察命中键不问人；BE 同名键（language/framework）不吞——恒入问卷分母", async () => {
+    // 宿主 package.json 与 golden fixture 同构（vue 栈 + typescript）——观察映射表
+    // 八键单候选全命中。观察 stackKey（language/framework）与 BE 键同名：分母收缩
+    // 必须按 lane 圈定（观察值是 FE 事实，不是 BE 同名键的判据）。
+    writeFileSync(
+      join(dir, "package.json"),
+      `${JSON.stringify({
+        dependencies: {
+          vue: "^3.4.0",
+          "vue-router": "^4.2.0",
+          pinia: "^2.1.0",
+          "element-plus": "^2.4.0",
+          "ag-grid-community": "^31.0.0",
+        },
+        devDependencies: { typescript: "^5.0.0", vite: "^5.0.0", vitest: "^1.0.0" },
+      })}\n`,
+      "utf8",
+    );
+    const remaining = await resolveRemainingQuestions(dir);
+    expect(remaining.kind).toBe("ready");
+    const questions = remaining.kind === "ready" ? remaining.questions : [];
+    // FE：可观察 8 键不问人，只剩规范性决策 css。
+    expect(questions.filter((q) => q.lane === "frontend").map((q) => q.key)).toEqual(["css"]);
+    // BE：五键恒入分母（回归钉——不按 lane 圈定时 language/framework 会被 FE 观察
+    // 误吞，BE 键永不问人、恒 UNKNOWN，confirm 卡 BASELINE_UNKNOWNS_REMAINING）。
+    expect(questions.filter((q) => q.lane === "backend").map((q) => q.key)).toEqual([
+      "language",
+      "framework",
+      "persistence",
+      "database",
+      "cache",
+    ]);
+  });
+
   it("部分已答：只问剩余 UNKNOWN 键（已答键不重复问）", async () => {
     await runInit(dir);
     const set1 = await runBaselineSet(dir, { lane: "frontend", key: "framework", value: "vue3" });

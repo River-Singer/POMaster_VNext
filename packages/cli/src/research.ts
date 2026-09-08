@@ -1235,7 +1235,7 @@ export async function runResearchRequest(
     ...outcome.notes.map((note) => `  note: ${note}`),
     "  消解方由 Owner 指定（人工或 research sub-agent；托管派发不做）——回填入账：",
     `    pomaster research handoff ${input.discoveryId} --file <handoff.json>`,
-    "  回填后重判：pomaster brainstorm decide <id> --ready --msd-goal <bool> --msd-scope <bool> --msd-acceptance <bool>",
+    "  回填后重判：pomaster brainstorm decide <id> --ready --goal <text> --scope <text> --acceptance <criterion>@<DECISION.*|ASSUMPTION:EXC-*>",
   ];
   return okOutcome<ResearchRequestResult>(
     "research request",
@@ -1510,7 +1510,7 @@ export async function runResearchHandoff(
     `  graph: ${outcome.changed ? `已回填（fingerprint=${outcome.graph.graph_fingerprint.slice(0, 18)}…）` : "NO_CHANGE（幂等重放）"}；index: ${indexChanged ? "已入账（requests 状态 + handoff 三件）" : "NO_CHANGE"}`,
     ...(outcome.changed
       ? [
-          "  下一步重判：pomaster brainstorm decide <id> --ready --msd-goal <bool> --msd-scope <bool> --msd-acceptance <bool>",
+          "  下一步重判：pomaster brainstorm decide <id> --ready --goal <text> --scope <text> --acceptance <criterion>@<DECISION.*|ASSUMPTION:EXC-*>",
         ]
       : []),
   ];

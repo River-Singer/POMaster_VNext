@@ -147,7 +147,7 @@ cd your-project
 pomaster init
 ```
 
-一条命令，幂等（重复执行 NO_CHANGE，人类文件一律不覆盖）：铺出 `.pomaster/` 治理目录树、登记 19 份 SPEC 预植对象、生成 `AGENTS.md` 重入口（15 份 skills 命令卡 + hooks 注入——Agent 开会话即自动看到治理状态）。TTY 下还有一轮 14 键技术栈问卷（中断 = 零写入；后补用 `pomaster baseline set`）。
+一条命令，幂等（重复执行 NO_CHANGE，人类文件一律不覆盖）：铺出 `.pomaster/` 治理目录树、登记 19 份 SPEC 预植对象、生成 `AGENTS.md` 重入口（15 份 skills 命令卡 + hooks 注入——Agent 开会话即自动看到治理状态）。init 还会**自动观察宿主 `package.json`**：框架/router/状态/Grid/UI 库/测试栈等可观察事实直接回填 stack.yaml（标注 `[Observed: package.json]`），问卷只问规范性决策（如 CSS 方案）——TTY 下技术栈问卷只问机器观察不出的键（中断 = 零写入；后补用 `pomaster baseline set`）。
 
 **组件画廊**：[river-singer.github.io/POMaster_VNext](https://river-singer.github.io/POMaster_VNext/)（在线版）· POMaster 仓库内 `corepack pnpm studio:dev`（Vue 主实例）/ `corepack pnpm studio:react:dev`（React sidecar 对照）——治理产出前先看有哪些组件、长什么样、该写什么。
 
@@ -170,15 +170,36 @@ triage:
 
 Authority（谁说了算）：`.pomaster/state/authority.json` 默认单人形态（一切 authority 位置由项目 Owner 应答）；多人协作出现信号后再演化细粒度 owner——`owner_registry` 数组逐个登记即可。
 
-### 4. 第一个 Change：走一遍八拍
+### 4. 第一个 Change：走一遍最小真实路径
 
 ```bash
-pomaster triage "给用户列表页加一个导出按钮"     # ① 秒级判档
-pomaster maintain <task> --phase pre-dev …       # ②③ permit 签发 + 上下文投影
+# —— Discovery：把「想法」收敛成有判卷的合同（无需先建任务） ——
+pomaster brainstorm start --id idea-export-btn --prompt "给用户列表页加一个导出按钮"
+pomaster brainstorm decide idea-export-btn --set candidates.json --retrieved CURRENT_TRUTH --retrieved REPO
+pomaster brainstorm decide idea-export-btn --answer DECISION.EXPORT_SCOPE --accept
+pomaster brainstorm decide idea-export-btn --ready \
+  --goal "用户列表页导出按钮——投影进 TASK intent" \
+  --scope "用户列表页导出（PAGE.USER_LIST）" \
+  --acceptance "导出按钮点击后触发 CSV 下载且构建计数可独立重算@DECISION.EXPORT_SCOPE"
+
+# —— 提升：promote 即建任务（自动 record claim 生成 CLM 绑入 acceptance） ——
+pomaster brainstorm promote idea-export-btn --to TASK --basis msd_reached --apply
+
+# —— 八拍推进：next-action 会逐拍给唯一建议命令 ——
+pomaster status                                   # R_PERMIT_MISSING（--subject 为 affected_objects 派生建议）
+pomaster permit issue --subject PAGE.USER_LIST --actor human:owner --change-ref TASK.IDEA_EXPORT_BTN
+pomaster baseline confirm                         # R_BASELINE_NOT_READY（unknowns 全销账后的一次性收口账）
+pomaster context compile --role frontend --change TASK.IDEA_EXPORT_BTN   # ③ 投影
+pomaster execution begin --role implementer --runtime script --identity-kind script --task-id TASK.IDEA_EXPORT_BTN  # ④ 执行身份
 # ……在你的 Agent harness（Claude Code 等）里实现代码……
-pomaster check --fast                            # ⑤ FAST gate（BUILD 腿）
-pomaster closeout <task-id>                      # ⑧ DoD 判卷收口
+pomaster check --fast                             # ⑤ FAST gate（BUILD 腿）
+pomaster closeout TASK.IDEA_EXPORT_BTN            # ⑧ DoD 判卷收口（对的是 promote 时刻的 acceptance）
 ```
+
+关键语义：`--ready` 的 goal/scope/acceptance 文本申报是 Task Contract——promote 编译投影进
+TASK 对象（intent/acceptance 挂锚/affected_objects/notesMd），验收条目自动挂 CLM，closeout
+判卷对得上最初 Expected State；中途任何一步不知道下一步做什么，问 `pomaster status`（或看
+alerts breadcrumb），路由表会给出唯一建议命令。
 
 ### 5. 装齐眼睛（可选，按需）
 

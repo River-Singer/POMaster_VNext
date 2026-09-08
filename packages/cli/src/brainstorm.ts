@@ -39,10 +39,12 @@
  *      --value / --unknown（§14 六问 --triage）/ --defer）；前置闸 = 目标节点 grounding
  *      重算 READY_FOR_DECISION（§6.2：仅此 verdict 允许进入人机交互路径——判卷以重算
  *      为准 R6）；kernel 幂等（同决议重放 NO_CHANGE）。
- *   ③ `--ready`：收敛判定（§15 evaluateDiscoverySufficiency + MSD 三轴 --msd-goal/
- *      --msd-scope/--msd-acceptance 申报 + §15 合法残留 --residual）——全绿才写
+ *   ③ `--ready`：收敛判定（§15 evaluateDiscoverySufficiency + Task Contract 文本申报
+ *      --goal/--scope/--acceptance（T2 R1 · D-7——MSD 三轴由文本非空派生）+ §15 合法
+ *      残留 --residual + acceptance 锚存在性 kernel 判卷）——全绿才写
  *      READY_TO_PROMOTE（promotion_basis=msd_reached，schema 18 promotion_still_via_maintain
- *      逐字），不足 fail-closed 输出全部缺口且状态零变更；OPEN 节点 grounding 复核前置。
+ *      逐字）+ contract 落 meta.json，不足 fail-closed 输出全部缺口且状态零变更；
+ *      OPEN 节点 grounding 复核前置。
  *   research 消解出路（PR-4 命令链，09-06 R5 接线）：NEEDS_RESEARCH 节点的 missing_facts
  *   走 `pomaster research request`（发起，request 落档 <host>/research/index.yaml +
  *   request_refs 同步进图）→ `pomaster research handoff`（回填，evidence 挂回节点）→
@@ -79,13 +81,17 @@ import {
   QUESTION_GATE_CATEGORIES,
   RESEARCH_FORBIDDEN_SURFACE_PREFIXES,
   SUFFICIENCY_RESIDUAL_CLASSIFICATIONS,
+  GovernanceError,
   buildDecisionGraph,
+  buildStorePaths,
   computeDecisionFrontier,
   evaluateDecisionGrounding,
   evaluateDiscoverySufficiency,
   evaluateQuestionGate,
   parseGovernedId,
+  readExceptionLedgerFile,
   resolveDecision,
+  validateAcceptanceAnchors,
   validateDiscoveryTransition,
   type DecisionGraph,
   type DecisionNode,
@@ -100,11 +106,13 @@ import {
 import type { CliError, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
 import { runMaintain } from "./maintain.js";
+import { allocateEvidenceRef } from "./evidence.js";
 import {
   BOOTSTRAP_OWNER,
 } from "./init.js";
 import {
   DISCOVERY_ID_PATTERN,
+  claimsDirPath,
   discoveryScratchpadDirPath,
   discoveryScratchpadsDirPath,
   toPosix,
@@ -145,6 +153,11 @@ export interface DiscoveryMetaFile {
    * 零新对象承载——meta.json 自由注记位，登记理由见模块头 ADR-lite）。
    */
   readonly framing?: DiscoveryFraming;
+  /**
+   * Task Contract 申报（T2 R1 · D-7）：--ready 文本申报（goal/scope/acceptance+残留）
+   * 的落点——promote 编译投影的唯一事实源。缺席 = 未申报（promote fail-closed 拒绝）。
+   */
+  readonly contract?: DiscoveryContract;
 }
 
 /** Intent Framing 四分拣（§4A 逐键；字符串清单，空数组 = 该桶显式空）。 */
@@ -153,6 +166,20 @@ export interface DiscoveryFraming {
   readonly unknown: readonly string[];
   readonly conflict: readonly string[];
   readonly assumption: readonly string[];
+}
+
+/**
+ * Task Contract 申报（T2 R1 · D-7 投影的编译输入）：`--ready` 的文本申报进 meta.json
+ * 局部注记位（零 schema 变更——meta.json 是 CLI 局部词文件非治理对象）；promote 编译
+ * 投影的唯一事实源（intent/acceptance/affected_objects/notesMd/titleZh）。
+ */
+export interface DiscoveryContract {
+  readonly goal: string;
+  readonly scope: string;
+  /** acceptance 条目：criterion + 锚（DECISION.*（已决议）/ ASSUMPTION:EXC-<n>（ledger 在册））。 */
+  readonly acceptance: readonly { readonly criterion: string; readonly anchor: string }[];
+  /** §15 合法残留申报快照（四桶投影进 notesMd 的分母）。 */
+  readonly residuals: readonly { readonly statement: string; readonly classification: string }[];
 }
 
 export interface BrainstormStartResult {
@@ -191,6 +218,8 @@ export interface BrainstormPromoteResult {
   /** 缺省（未 --apply）时的人读指路命令——提升写入必须由用户显式走 maintain 面。 */
   readonly suggested_command: string | null;
   readonly scratchpad_state: string;
+  /** D-7：promote 自动 record claim 生成的 CLM 条数（CHANGE 提升 = 0）。 */
+  readonly claims_generated: number;
 }
 
 // ============================================================
@@ -231,6 +260,42 @@ async function readJsonFile(path: string): Promise<unknown | null> {
   } catch {
     return null;
   }
+}
+
+/**
+ * D-7 投影：notesMd ← scope 文本 + §15 四桶残留摘要（deferred/assumptions/
+ * unknowns/future_considerations）。residual.classification 是 kernel 判卷词形
+ *（DEFERRED_DECISION / ASSUMPTION / SOFT_UNCERTAINTY / FUTURE_CONSIDERATION）；
+ * 词形外分类归 future_considerations 桶（诚实呈现，不丢弃）。
+ */
+function renderContractNotesMd(contract: DiscoveryContract): string {
+  const buckets: Record<"deferred" | "assumptions" | "unknowns" | "future_considerations", string[]> = {
+    deferred: [],
+    assumptions: [],
+    unknowns: [],
+    future_considerations: [],
+  };
+  for (const residual of contract.residuals) {
+    if (residual.classification === "DEFERRED_DECISION") buckets.deferred.push(residual.statement);
+    else if (residual.classification === "ASSUMPTION") buckets.assumptions.push(residual.statement);
+    else if (residual.classification === "SOFT_UNCERTAINTY") buckets.unknowns.push(residual.statement);
+    else buckets.future_considerations.push(residual.statement);
+  }
+  const render = (statements: readonly string[]): string =>
+    statements.length > 0 ? statements.join("；") : "（空）";
+  return [
+    "## Scope（Task Contract 申报）",
+    "",
+    contract.scope,
+    "",
+    "## §15 残留四桶（promote 投影）",
+    "",
+    `- deferred: ${render(buckets.deferred)}`,
+    `- assumptions: ${render(buckets.assumptions)}`,
+    `- unknowns: ${render(buckets.unknowns)}`,
+    `- future_considerations: ${render(buckets.future_considerations)}`,
+    "",
+  ].join("\n");
 }
 
 /** 08 信封条件式检查（写入侧保证；词表/条件与 08-discovery-state-chain 逐字同源）。 */
@@ -779,6 +844,7 @@ export async function runBrainstormPromote(
     applied_seq: null,
     suggested_command: null,
     scratchpad_state: "",
+    claims_generated: 0,
   };
   const fail = (error: CliError, human: string[]): CommandOutcome<BrainstormPromoteResult> =>
     failOutcome<BrainstormPromoteResult>("brainstorm promote", emptyResult, [error], human);
@@ -917,8 +983,151 @@ export async function runBrainstormPromote(
     promotedRef = `${target}.${segment}`;
   }
 
-  // —— 组装 kernel Transaction（upsert 提升对象；maintain --ops 输入形态逐字） ——
+  // —— 闸 2.5：Task Contract 装载 + 锚重校验 + 投影编译（T2 R1 · D-7 投影表） ——
+  // contract 由 --ready 文本申报落 meta.json（CLI 局部注记位，零 schema 变更）；
+  // 提升时刻重校验锚存在性（判卷权威 kernel validateAcceptanceAnchors——图/ledger
+  // 在 --ready 之后可能漂移，禁信任陈旧判卷），悬空锚 fail-closed 拒绝晋升。
   const scratchpadRef = scratchpadRefOf(input.discoveryId);
+  const rawMeta = await readJsonFile(metaFilePath(rootDir, input.discoveryId));
+  if (rawMeta === null || typeof rawMeta !== "object") {
+    return fail(
+      {
+        code: "TASK_CONTRACT_MISSING",
+        message: `discovery "${input.discoveryId}" 缺 meta.json——Task Contract 无编译输入`,
+        hint: "pomaster brainstorm decide <id> --ready --goal <text> --scope <text> --acceptance <criterion>@<anchor>（可重复）申报 Task Contract；无合同不晋升。",
+      },
+      ["brainstorm promote: FAILED — TASK_CONTRACT_MISSING (meta.json 缺席)"],
+    );
+  }
+  const meta = rawMeta as DiscoveryMetaFile;
+  const contract = meta.contract;
+  if (
+    contract === undefined ||
+    typeof contract !== "object" ||
+    typeof contract.goal !== "string" ||
+    contract.goal.trim() === "" ||
+    typeof contract.scope !== "string" ||
+    contract.scope.trim() === "" ||
+    !Array.isArray(contract.acceptance) ||
+    contract.acceptance.length === 0 ||
+    !contract.acceptance.every(
+      (entry) =>
+        typeof entry === "object" &&
+        entry !== null &&
+        typeof entry.criterion === "string" &&
+        entry.criterion !== "" &&
+        typeof entry.anchor === "string" &&
+        entry.anchor !== "",
+    ) ||
+    !Array.isArray(contract.residuals)
+  ) {
+    return fail(
+      {
+        code: "TASK_CONTRACT_MISSING",
+        message: `discovery "${input.discoveryId}" 的 meta.json 缺 Task Contract（goal/scope/acceptance 申报形态不完整）`,
+        hint: "重跑 pomaster brainstorm decide <id> --ready --goal <text> --scope <text> --acceptance <criterion>@<anchor>（可重复）——D-7 投影以 contract 为唯一事实源，无合同不晋升。",
+      },
+      ["brainstorm promote: FAILED — TASK_CONTRACT_MISSING (contract 申报缺位)"],
+    );
+  }
+  const graphLoad = await loadDecisionGraph(rootDir, input.discoveryId);
+  if (!graphLoad.ok) {
+    return fail(graphLoad.error, [
+      `brainstorm promote: FAILED — ${graphLoad.error.code}（Task Contract 锚判卷输入装载失败）`,
+    ]);
+  }
+  let assumptionLedgerRefs: readonly string[] = [];
+  try {
+    const exceptionLedger = readExceptionLedgerFile(buildStorePaths(rootDir));
+    assumptionLedgerRefs = exceptionLedger.entries
+      .filter((entry) => entry.classification === "ASSUMPTION")
+      .map((entry) => entry.ledger_ref);
+  } catch (err) {
+    return fail(
+      {
+        code: "SCHEMA_INVALID",
+        message: `exception ledger 不可读（ASSUMPTION 锚对账分母缺失）：${err instanceof Error ? err.message : String(err)}`,
+        hint:
+          err instanceof GovernanceError
+            ? err.hint
+            : "恢复 .pomaster/state/exception-ledger.json 后重试；台账由 kernel recordException 维护，禁止手改。",
+      },
+      ["brainstorm promote: FAILED — SCHEMA_INVALID (exception ledger 不可读)"],
+    );
+  }
+  const anchors = validateAcceptanceAnchors({
+    graph: graphLoad.graph,
+    acceptance: contract.acceptance,
+    assumptionLedgerRefs,
+  });
+  if (!anchors.ok) {
+    return fail(
+      {
+        // 词形 CONTRACT_<REASON>（reason 词形单源 = kernel ValidateAcceptanceAnchorsRejectReason——
+        // anchor_* 自带 anchor 段，零双前缀）。
+        code: `CONTRACT_${anchors.reason.toUpperCase()}`,
+        message: `Task Contract acceptance 锚判卷被 kernel 拒绝（${anchors.reason}）：${anchors.details.join("；")}`,
+        hint: anchors.hint,
+      },
+      [
+        `brainstorm promote: FAILED — CONTRACT_${anchors.reason.toUpperCase()}（悬空锚 fail-closed）`,
+        ...anchors.details.map((detail) => `  ${detail}`),
+      ],
+    );
+  }
+  // 投影 affected_objects：已决议（ACCEPT/CHANGE）Decision 节点 affects 并集
+  //（申报有据——锚判卷已保证 acceptance 引用的决议在图且已决议；affects 是
+  // D-7 affected_objects 的来源面，排序去重稳定投影）。
+  const affectedObjects = [
+    ...new Set(
+      graphLoad.graph.decisions
+        .filter(
+          (node) =>
+            node.resolution !== null &&
+            (node.resolution.answer === "ACCEPT" || node.resolution.answer === "CHANGE"),
+        )
+        .flatMap((node) => node.affects)
+        .filter((ref) => ref !== ""),
+    ),
+  ].sort();
+  // intent ← goal 文本（含 raw prompt 追溯锚——意图可回溯到入口原文）。
+  const intentText = `${contract.goal}（raw prompt 溯源：${scratchpadRef}meta.json → prompt）`;
+  // notesMd ← scope + 四桶残留摘要（body 层自由文本）。
+  const notesMd = renderContractNotesMd(contract);
+  // acceptance ← 申报条目 + 自动 record claim 生成 CLM 绑入（D-7 收尾闭环：
+  // closeout 判卷自然对上最初 Expected State）。CLM 序号从现有 claims 目录
+  // 分配一次后顺序递增；claim 落库进同一 kernel 事务（record_claim ops——
+  // 「显式 maintain --ops 直跑 tx」等价性由 tx 文件内 ops 逐字保证）。
+  const claimsDir = claimsDirPath(rootDir);
+  const firstClm = allocateEvidenceRef(claimsDir, "CLM");
+  const firstClmSeq = Number(firstClm.slice("CLM-".length));
+  const taskAcceptance =
+    target === "TASK"
+      ? contract.acceptance.map((entry, index) => ({
+          criterion: entry.criterion,
+          anchor: entry.anchor,
+          claim: `CLM-${String(firstClmSeq + index).padStart(4, "0")}`,
+        }))
+      : [];
+  const claimOps =
+    target === "TASK"
+      ? taskAcceptance.map((entry) => ({
+          op: "record_claim" as const,
+          claim: {
+            clm: entry.claim,
+            subjectId: promotedRef,
+            assertion: entry.criterion,
+            assertedBy: {
+              actorType: "tool" as const,
+              actor: "pomaster-brainstorm-promote",
+              selfAttested: false,
+            },
+            evidenceRefs: [] as readonly string[],
+          },
+        }))
+      : [];
+
+  // —— 组装 kernel Transaction（upsert 提升对象 + record_claim；maintain --ops 输入形态逐字） ——
   const tx = {
     ops: [
       {
@@ -933,22 +1142,26 @@ export async function runBrainstormPromote(
             evidence: "PLANNED" as const,
             change: "STABLE" as const,
           },
-          titleZh: `Discovery 提升：${input.discoveryId}`,
+          // titleZh ← discovery title（D-7：替换「Discovery 提升：<id>」泛化文案）。
+          titleZh: meta.title,
           authority: { owner: input.owner ?? BOOTSTRAP_OWNER },
           origin: "natural" as const,
           payload: {
             discovery_ref: scratchpadRef,
             promotion_basis: basisValue,
             // 02b kind 蓝本必填核心（change: motivation/affected_objects/reopen_count；
-            // task: intent/acceptance）——提升时刻的诚实初值。
+            // task: intent/acceptance）——D-7 投影表：intent←goal（含 raw prompt 溯源锚）、
+            // acceptance←申报条目（挂锚 + 绑 CLM）、affected_objects←已决议 affects 并集、
+            // notesMd←scope+四桶残留摘要（body 层）、titleZh←discovery title（上方）。
             ...(target === "TASK"
               ? {
-                  intent: `Discovery 提升：${input.discoveryId}（promotion_basis=${basisValue}）`,
-                  acceptance: [] as string[],
+                  intent: intentText,
+                  acceptance: taskAcceptance,
+                  affected_objects: affectedObjects,
                 }
               : {
-                  motivation: `Discovery 提升：${input.discoveryId}（promotion_basis=${basisValue}）`,
-                  affected_objects: [] as string[],
+                  motivation: intentText,
+                  affected_objects: affectedObjects,
                   reopen_count: 0,
                 }),
             // R4（信封条件式 3 强制）：定义创建非代码修改——同类扫描不适用，
@@ -968,9 +1181,10 @@ export async function runBrainstormPromote(
               pin: { baseline: fromState },
             },
           ],
-          notesMd: null,
+          notesMd,
         },
       },
+      ...claimOps,
     ],
     authorityRef: input.authorityRef ?? promotedRef,
     note:
@@ -1049,11 +1263,19 @@ export async function runBrainstormPromote(
         tx_file: toPosix(txPath),
         suggested_command: maintainArgv,
         scratchpad_state: fromState,
+        claims_generated: claimOps.length,
       },
       [
         `brainstorm promote → TX_READY (${fromState}→${target}, basis=${basisValue})`,
         `  promoted_ref: ${promotedRef}`,
+        `  title: ${meta.title}（titleZh ← discovery title）`,
         `  tx 文件: ${toPosix(txPath)}（maintain --ops 输入形态）`,
+        ...(target === "TASK"
+          ? [
+              `  acceptance: ${String(taskAcceptance.length)} 条挂锚申报 + 自动 claim ${String(taskAcceptance.length)} 条（${taskAcceptance.map((entry) => entry.claim).join(", ")}）`,
+              `  affected_objects: ${affectedObjects.length > 0 ? affectedObjects.join(", ") : "（空——已决议 Decision 节点 affects 并集）"}`,
+            ]
+          : []),
         "  提升写入走 P11 maintain 面（Discovery 层不私造第二写入通道）——执行：",
         `    ${maintainArgv}`,
         "  或直接 --apply 由本命令转调同一 maintain 通路落库。",
@@ -1100,15 +1322,15 @@ export async function runBrainstormPromote(
   };
   try {
     await writeFile(statePath, `${JSON.stringify(nextStateFile, null, 2)}\n`, "utf8");
-    const meta = (await readJsonFile(metaFilePath(rootDir, input.discoveryId))) as
+    const metaAfter = (await readJsonFile(metaFilePath(rootDir, input.discoveryId))) as
       | DiscoveryMetaFile
       | null;
-    if (meta !== null) {
-      const chain = [...meta.chain];
+    if (metaAfter !== null) {
+      const chain = [...metaAfter.chain];
       if (chain[chain.length - 1] !== target) chain.push(target);
       await writeFile(
         metaFilePath(rootDir, input.discoveryId),
-        `${JSON.stringify({ ...meta, chain }, null, 2)}\n`,
+        `${JSON.stringify({ ...metaAfter, chain }, null, 2)}\n`,
         "utf8",
       );
     }
@@ -1151,11 +1373,19 @@ export async function runBrainstormPromote(
       applied_seq: applied.applied_seq,
       suggested_command: null,
       scratchpad_state: target,
+      claims_generated: claimOps.length,
     },
     [
       `brainstorm promote --apply → ${applied.change} (applied_seq=${String(applied.applied_seq)})`,
       `  链：${fromState} → ${target}（basis=${basisValue}，经 P11 maintain 面落库）`,
-      `  promoted_ref: ${promotedRef}`,
+      `  promoted_ref: ${promotedRef}（title: ${meta.title}）`,
+      ...(target === "TASK"
+        ? [
+            `  acceptance: ${String(taskAcceptance.length)} 条挂锚申报 + 自动 claim 落库（${taskAcceptance.map((entry) => `${entry.claim} ← ${entry.anchor}`).join("；")}）`,
+            `  affected_objects: ${affectedObjects.length > 0 ? affectedObjects.join(", ") : "（空——已决议 Decision 节点 affects 并集）"}`,
+            "  closeout 判卷自此对得上最初 Expected State（验收即 claim）。",
+          ]
+        : []),
       `  scratchpad: ${scratchpadRef} → state=${target}`,
     ],
   );
@@ -1264,12 +1494,12 @@ export interface BrainstormDecideInput {
   readonly seq?: string;
   /** --ready：收敛判定（§15 sufficiency）。 */
   readonly ready?: boolean;
-  /** --msd-goal <bool>：09 msd_assessment 三轴申报（--ready 必答）。 */
-  readonly msdGoal?: string;
-  /** --msd-scope <bool>：同上。 */
-  readonly msdScope?: string;
-  /** --msd-acceptance <bool>：同上。 */
-  readonly msdAcceptance?: string;
+  /** --goal <text>：Task Contract goal 文本申报（--ready 必答非空——intent 投影源）。 */
+  readonly goal?: string;
+  /** --scope <text>：Task Contract scope 文本申报（--ready 必答非空——notesMd 投影源）。 */
+  readonly scope?: string;
+  /** --acceptance <criterion>@<anchor>：acceptance 条目申报（可重复；--ready 必答≥1）。 */
+  readonly acceptance?: readonly string[];
   /** --residual <classification>:<statement>：§15 合法残留登记（可重复）。 */
   readonly residual?: readonly string[];
 }
@@ -1726,7 +1956,7 @@ export async function runBrainstormDecide(
           ]
         : [],
       "  决议：pomaster brainstorm decide <id> --answer <DECISION.*> --accept|--value <option>|--unknown --triage ...|--defer",
-      "  收敛：pomaster brainstorm decide <id> --ready --msd-goal <bool> --msd-scope <bool> --msd-acceptance <bool>",
+      "  收敛：pomaster brainstorm decide <id> --ready --goal <text> --scope <text> --acceptance <criterion>@<DECISION.*|ASSUMPTION:EXC-*>（可重复）",
     ];
     return okOutcome<BrainstormDecideResult>(
       "brainstorm decide",
@@ -1935,7 +2165,7 @@ export async function runBrainstormDecide(
             `  决议未齐：OPEN ${String(openCount)} 个——继续 --answer；或全部决议后 --ready 收敛（§15）`,
           ]
         : [
-            "  全部决议完毕——收敛判定：pomaster brainstorm decide <id> --ready --msd-goal <bool> --msd-scope <bool> --msd-acceptance <bool>",
+            "  全部决议完毕——收敛判定：pomaster brainstorm decide <id> --ready --goal <text> --scope <text> --acceptance <criterion>@<DECISION.*|ASSUMPTION:EXC-*>（可重复）",
           ]),
     ];
     return okOutcome<BrainstormDecideResult>(
@@ -1977,42 +2207,59 @@ export async function runBrainstormDecide(
       ],
     );
   }
-  // MSD 三轴申报（09 msd_assessment；--ready 必答——缺任一 = 缺判卷输入，绝不静默当 false）。
-  const msdFlags: readonly (readonly [key: "goal_defined" | "scope_defined" | "acceptance_verifiable", raw: string | undefined, label: string])[] = [
-    ["goal_defined", input.msdGoal, "--msd-goal"],
-    ["scope_defined", input.msdScope, "--msd-scope"],
-    ["acceptance_verifiable", input.msdAcceptance, "--msd-acceptance"],
+  // —— Task Contract 文本申报（T2 R1 · D-7）：--goal/--scope 必答非空文本、
+  //    --acceptance <criterion>@<anchor> 至少一条。缺位 = 缺判卷输入（SCHEMA_INVALID，
+  //    绝不静默当 false）；MSD 三轴由文本非空/条目数派生（T2 定案：文本申报即三轴
+  //    判据面，语义删除布尔旗标——无并存双口径）。 ——
+  const goalText = input.goal;
+  const scopeText = input.scope;
+  const missingDeclarations = [
+    ...(goalText === undefined ? ["--goal"] : []),
+    ...(scopeText === undefined ? ["--scope"] : []),
+    ...(input.acceptance === undefined ? ["--acceptance"] : []),
   ];
-  const missingMsd = msdFlags.filter(([, rawFlag]) => rawFlag === undefined).map(([, , label]) => label);
-  if (missingMsd.length > 0) {
+  if (missingDeclarations.length > 0) {
     return fail(
       {
         code: "SCHEMA_INVALID",
-        message: `MSD 三轴申报缺位：${missingMsd.join("、")}`,
-        hint: "§15 满足后 READY_TO_PROMOTE 以 09 msd_assessment 三轴为判据面——各给 true/false（缺位不静默当 false）。",
+        message: `Task Contract 文本申报缺位：${missingDeclarations.join("、")}`,
+        hint: "§15 收敛 + D-7 投影以文本申报为判据面——--goal <goal 文本> / --scope <scope 文本> / --acceptance <criterion>@<anchor>（可重复，至少一条）。缺位不静默当 false。",
       },
-      [`brainstorm decide --ready: FAILED — SCHEMA_INVALID (MSD 三轴缺位)`],
+      ["brainstorm decide --ready: FAILED — SCHEMA_INVALID (Task Contract 申报缺位)"],
     );
   }
-  const msd: { goal_defined: boolean; scope_defined: boolean; acceptance_verifiable: boolean } = {
-    goal_defined: false,
-    scope_defined: false,
-    acceptance_verifiable: false,
-  };
-  for (const [key, rawFlag] of msdFlags) {
-    const value = rawFlag as string;
-    if (value !== "true" && value !== "false") {
+  const acceptanceEntries: { criterion: string; anchor: string }[] = [];
+  for (const rawAcceptance of input.acceptance as readonly string[]) {
+    const at = rawAcceptance.lastIndexOf("@");
+    const criterion = at > 0 ? rawAcceptance.slice(0, at).trim() : "";
+    const anchor = at > 0 ? rawAcceptance.slice(at + 1).trim() : "";
+    if (criterion === "" || anchor === "") {
       return fail(
         {
           code: "SCHEMA_INVALID",
-          message: `${msdFlags.find(([k]) => k === key)?.[2]} 词形外："${value}"（须 true|false）`,
-          hint: "MSD 三轴申报只收 true/false。",
+          message: `--acceptance 词形非法："${rawAcceptance}"（须 <criterion>@<anchor>）`,
+          hint: "criterion 非空（「待定」不是验收判据）；anchor = 已决议 DECISION.* 或 ASSUMPTION:EXC-<n>（ledger 在册）——锚存在性经 kernel 机器判卷，悬空 fail-closed。",
         },
-        [`brainstorm decide --ready: FAILED — SCHEMA_INVALID (MSD 词形)`],
+        ["brainstorm decide --ready: FAILED — SCHEMA_INVALID (--acceptance 词形)"],
       );
     }
-    msd[key] = value === "true";
+    acceptanceEntries.push({ criterion, anchor });
   }
+  if (acceptanceEntries.length === 0) {
+    return fail(
+      {
+        code: "SCHEMA_INVALID",
+        message: "--acceptance 至少申报一条（空 acceptance 不是合同——D-7 投影分母为空）",
+        hint: '例：--acceptance "清单页在 1280 宽下无横向滚动@DECISION.D017"。',
+      },
+      ["brainstorm decide --ready: FAILED — SCHEMA_INVALID (--acceptance 零条目)"],
+    );
+  }
+  const msd: { goal_defined: boolean; scope_defined: boolean; acceptance_verifiable: boolean } = {
+    goal_defined: (goalText as string).trim() !== "",
+    scope_defined: (scopeText as string).trim() !== "",
+    acceptance_verifiable: acceptanceEntries.length > 0,
+  };
   // §15 合法残留登记（词形闸：<classification>:<statement>，分类词表 = kernel 单源）。
   const residuals: { statement: string; classification: (typeof SUFFICIENCY_RESIDUAL_CLASSIFICATIONS)[number] }[] = [];
   for (const rawResidual of input.residual ?? []) {
@@ -2106,28 +2353,90 @@ export async function runBrainstormDecide(
       },
     );
   }
+  // —— acceptance 锚存在性判卷（kernel validateAcceptanceAnchors 单一判源；T2 D-7）：
+  //    DECISION 锚须在图且已决议；ASSUMPTION:EXC-<n> 锚须在 exception ledger 在册
+  //    （classification=ASSUMPTION 条目）——悬空锚 fail-closed，状态零变更。 ——
+  let assumptionLedgerRefs: readonly string[] = [];
+  try {
+    const exceptionLedger = readExceptionLedgerFile(buildStorePaths(rootDir));
+    assumptionLedgerRefs = exceptionLedger.entries
+      .filter((entry) => entry.classification === "ASSUMPTION")
+      .map((entry) => entry.ledger_ref);
+  } catch (err) {
+    return fail(
+      {
+        code: "SCHEMA_INVALID",
+        message: `exception ledger 不可读（ASSUMPTION 锚对账分母缺失）：${err instanceof Error ? err.message : String(err)}`,
+        hint: err instanceof GovernanceError
+          ? err.hint
+          : "恢复 .pomaster/state/exception-ledger.json 后重试；台账由 kernel recordException 维护，禁止手改。",
+      },
+      ["brainstorm decide --ready: FAILED — SCHEMA_INVALID (exception ledger 不可读)"],
+      { state: currentState, decisions_total: graph.decisions.length },
+    );
+  }
+  const anchors = validateAcceptanceAnchors({
+    graph,
+    acceptance: acceptanceEntries,
+    assumptionLedgerRefs,
+  });
+  if (!anchors.ok) {
+    return fail(
+      {
+        code: `CONTRACT_${anchors.reason.toUpperCase()}`,
+        message: `acceptance 锚判卷被 kernel 拒绝（${anchors.reason}）：${anchors.details.join("；")}`,
+        hint: anchors.hint,
+      },
+      [
+        `brainstorm decide --ready: FAILED — CONTRACT_${anchors.reason.toUpperCase()}`,
+        ...anchors.details.map((d) => `  ${d}`),
+        "  状态未变更：state=DISCOVERY（fail-closed——悬空锚不推进）",
+      ],
+      { state: currentState, decisions_total: graph.decisions.length },
+    );
+  }
   // 写 READY_TO_PROMOTE（08 信封：READY 态带 promotion_basis；词形=schema 18
-  // promotion_still_via_maintain 逐字——evaluateDiscoverySufficiency 的机器判据面）。
+  // promotion_still_via_maintain 逐字——evaluateDiscoverySufficiency 的机器判据面）
+  // + Task Contract 落 meta.json（T2 R1：promote 编译投影的唯一事实源）。
   const scratchpadRef = scratchpadRefOf(input.discoveryId);
   const readyStateFile: DiscoveryStateFile = {
     state: "READY_TO_PROMOTE",
     scratchpad_ref: scratchpadRef,
     promotion_basis: "msd_reached",
   };
+  const contract: DiscoveryContract = {
+    goal: (goalText as string).trim(),
+    scope: (scopeText as string).trim(),
+    acceptance: acceptanceEntries,
+    residuals: residuals.map((residual) => ({
+      statement: residual.statement,
+      classification: residual.classification,
+    })),
+  };
   try {
-    await writeFile(statePath, `${JSON.stringify(readyStateFile, null, 2)}\n`, "utf8");
     const meta = (await readJsonFile(metaFilePath(rootDir, input.discoveryId))) as
       | DiscoveryMetaFile
       | null;
-    if (meta !== null) {
-      const chain = [...meta.chain];
-      if (chain[chain.length - 1] !== "READY_TO_PROMOTE") chain.push("READY_TO_PROMOTE");
-      await writeFile(
-        metaFilePath(rootDir, input.discoveryId),
-        `${JSON.stringify({ ...meta, chain }, null, 2)}\n`,
-        "utf8",
+    if (meta === null) {
+      // fail-closed：contract 无落点即不推进（零 dual-path——不写「无合同 READY」）。
+      return fail(
+        {
+          code: "SCRATCHPAD_INCOMPLETE",
+          message: `scratchpad ${input.discoveryId} 缺 meta.json——Task Contract 无落点（--ready 申报不持久化）`,
+          hint: "meta.json 由 brainstorm start 创建（CLI 局部注记位）；残缺 scratchpad 修复或重建后再收敛。",
+        },
+        ["brainstorm decide --ready: FAILED — SCRATCHPAD_INCOMPLETE (meta.json 缺席)"],
+        { state: currentState, decisions_total: graph.decisions.length },
       );
     }
+    await writeFile(statePath, `${JSON.stringify(readyStateFile, null, 2)}\n`, "utf8");
+    const chain = [...meta.chain];
+    if (chain[chain.length - 1] !== "READY_TO_PROMOTE") chain.push("READY_TO_PROMOTE");
+    await writeFile(
+      metaFilePath(rootDir, input.discoveryId),
+      `${JSON.stringify({ ...meta, chain, contract }, null, 2)}\n`,
+      "utf8",
+    );
   } catch (err) {
     return failOutcome<BrainstormDecideResult>(
       "brainstorm decide",
@@ -2156,6 +2465,7 @@ export async function runBrainstormDecide(
     `brainstorm decide --ready → PROMOTABLE (discovery=${input.discoveryId}, state=DISCOVERY→READY_TO_PROMOTE)`,
     `  §15 收敛全绿：msd_reached（goal_defined+scope_defined+acceptance_verifiable）；残留 deferred=${String(sufficiency.report.deferred.length)} assumptions=${String(sufficiency.report.assumptions.length)} unknowns=${String(sufficiency.report.unknowns.length)} future=${String(sufficiency.report.future_considerations.length)}`,
     `  promotion_basis=msd_reached（08 信封；§15 机器判据面）`,
+    `  Task Contract 已登记（goal/scope + acceptance ${String(acceptanceEntries.length)} 条挂锚）→ meta.json（promote 编译投影的事实源）`,
     "  下一步提升（走 P11 maintain 面）：",
     `    pomaster brainstorm promote ${input.discoveryId} --to TASK|CHANGE --basis msd_reached --apply`,
   ];

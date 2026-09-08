@@ -2169,6 +2169,117 @@ export function syncDecisionRequestRefs(
 }
 
 // ============================================================
+// validateAcceptanceAnchors（T2 D-7 Task Contract Compiler：acceptance 锚存在性判卷）
+// ============================================================
+
+/**
+ * ASSUMPTION 锚词形（T2 D-7）：`ASSUMPTION:EXC-<n>` —— 指向 exception ledger 中
+ * classification=ASSUMPTION 的登记条目（宽恕线：非治理前缀，存在性对账归调用方
+ * 传入的 assumptionLedgerRefs）。
+ */
+export const ASSUMPTION_ANCHOR_PATTERN = /^ASSUMPTION:EXC-[0-9]+$/;
+
+/** Task Contract acceptance 申报条目（D-7 投影输入；criterion = 验收判据文本）。 */
+export interface AcceptanceAnchorDeclaration {
+  readonly criterion: string;
+  readonly anchor: string;
+}
+
+export type ValidateAcceptanceAnchorsRejectReason =
+  /** 零条目——acceptance 不得为空（空验收 = 证据缺失伪装完成的直通门）。 */
+  | "acceptance_empty"
+  | "criterion_empty"
+  /** 锚词形外（既非 DECISION.<SEGMENT> 也非 ASSUMPTION:EXC-<n>）。 */
+  | "anchor_malformed"
+  /** 悬空锚：DECISION 锚不在图内或未决议；ASSUMPTION 锚不在 ledger 在册清单。 */
+  | "anchor_dangling";
+
+export type ValidateAcceptanceAnchorsOutcome =
+  | {
+      readonly ok: true;
+      /** 逐条锚的解析留痕（判卷理由可读——呈现面直接消费）。 */
+      readonly notes: readonly string[];
+    }
+  | {
+      readonly ok: false;
+      readonly reason: ValidateAcceptanceAnchorsRejectReason;
+      readonly details: readonly string[];
+      readonly hint: string;
+    };
+
+/**
+ * validateAcceptanceAnchors（纯函数，T2 D-7）：Task Contract 的 acceptance 条目
+ * 挂锚存在性机器判卷——「acceptance 有据」是 promote 投影 fail-closed 的判卷核心：
+ * - DECISION.* 锚：必须在图内**且已决议**（resolution ≠ null——验收判据挂在未决议
+ *   决策上 = 预支结论，悬空拒绝）；
+ * - ASSUMPTION:EXC-<n> 锚：必须在调用方传入的 assumption ledger 在册清单内
+ *   （classification=ASSUMPTION 的 EXC-n；CLI 接线层负责过滤后传入——本函数零 IO）；
+ * - 零条目 / criterion 空 / 锚词形外 → 输入级拒绝（fail-closed，不猜测不降级）。
+ * 判卷权威在 kernel（kernel-api.md §24 分工），CLI 只做接线。
+ */
+export function validateAcceptanceAnchors(input: {
+  readonly graph: DecisionGraph;
+  readonly acceptance: readonly AcceptanceAnchorDeclaration[];
+  /** exception ledger 在册的 ASSUMPTION 分类条目 ref（EXC-n 词形）。 */
+  readonly assumptionLedgerRefs: readonly string[];
+}): ValidateAcceptanceAnchorsOutcome {
+  const details: string[] = [];
+  const notes: string[] = [];
+  if (input.acceptance.length === 0) {
+    return {
+      ok: false,
+      reason: "acceptance_empty",
+      details: ["acceptance 申报为零条目——空验收不是合同（D-7 投影分母为空）"],
+      hint: "至少申报一条 --acceptance <criterion>@<anchor>（锚 = 已决议 DECISION.* 或 ASSUMPTION:EXC-<n>）。",
+    };
+  }
+  const assumptionRefs = new Set(input.assumptionLedgerRefs);
+  for (const entry of input.acceptance) {
+    if (!isPlainNonEmptyString(entry.criterion)) {
+      details.push(`acceptance 条目 criterion 为空（anchor=${String(entry.anchor)}）——「待定」不是验收判据`);
+    }
+    const anchor = entry.anchor;
+    if (DECISION_ID_PATTERN.test(anchor)) {
+      const node = input.graph.decisions.find((n) => n.decision_id === anchor);
+      if (node === undefined) {
+        details.push(`DECISION 锚 "${anchor}" 不在图内（悬空引用）`);
+      } else if (node.resolution === null) {
+        details.push(`DECISION 锚 "${anchor}" 尚未决议（resolution=null）——验收判据不得预支未决议结论`);
+      } else {
+        notes.push(`DECISION 锚 "${anchor}" 已决议（answer=${node.resolution.answer}）`);
+      }
+    } else if (ASSUMPTION_ANCHOR_PATTERN.test(anchor)) {
+      const excRef = anchor.slice("ASSUMPTION:".length);
+      if (assumptionRefs.has(excRef)) {
+        notes.push(`ASSUMPTION 锚 "${anchor}" 在 exception ledger 在册（classification=ASSUMPTION）`);
+      } else {
+        details.push(
+          `ASSUMPTION 锚 "${anchor}" 的 ${excRef} 不在 ledger ASSUMPTION 在册清单（未登记或非 ASSUMPTION 分类）`,
+        );
+      }
+    } else {
+      details.push(
+        `锚词形外："${String(anchor)}"（须 DECISION.<SEGMENT>（已决议）或 ASSUMPTION:EXC-<n>（ledger 在册））`,
+      );
+    }
+  }
+  if (details.length > 0) {
+    const reason: ValidateAcceptanceAnchorsRejectReason = details.some((d) => d.includes("悬空") || d.includes("未决议") || d.includes("不在"))
+      ? "anchor_dangling"
+      : details.some((d) => d.includes("锚词形外"))
+        ? "anchor_malformed"
+        : "criterion_empty";
+    return {
+      ok: false,
+      reason,
+      details,
+      hint: "验收条目挂锚必须机器可对账：DECISION.* 锚走 decision-graph（在图且已决议）；ASSUMPTION:EXC-<n> 锚走 ledger record --classification ASSUMPTION 登记在册——悬空锚 fail-closed 拒绝晋升。",
+    };
+  }
+  return { ok: true, notes };
+}
+
+// ============================================================
 // TODO(v053-p1)：invalidateDependentDecisions（§7.4 Upstream Change Invalidation）
 // ============================================================
 // P1 项（PRD §20 P1「Upstream Decision Invalidation」逐字）：graph + changed decision ids

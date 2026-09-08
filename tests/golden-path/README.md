@@ -18,6 +18,11 @@
 **棘轮语义**：对应子任务修复后，`it.fails` 用例会转为「预期外通过」而红——这是有意设计，
 提醒摘掉 fails 帽子（并按各条「转绿条件」给链补上新旗标/新产物断言）。
 
+**T2 摘帽轮（09-08-sc-t2，2026-09-08）**：GP-1/GP-4/GP-5/GP-7/GP-9 五条已按三步纪律摘帽
+（① 断言正向站立 ② 补新信号断言防退化空转绿 ③ check.jsonl 留痕），用例名 `[RED→T2]` →
+`[T2已摘帽]`；链 argv 同步换新旗标；另增 `[T2新增信号]` 用例钉 R5 baseline 收口路由。
+本文件各条「当前状态」随之更新（历史 RED 实证保留作审计锚）。
+
 ## 运行方式与测试床
 
 ```bash
@@ -33,23 +38,27 @@ corepack pnpm ratchet                                          # 棘轮（本 sp
   `tests/integration/fixture-chain-lib.ts`（`runJsonStep` / `envelopeOf`）。
 - 链 argv：`brainstorm start --id <id> --prompt <raw>` → `brainstorm decide --set <candidates>`
   `--retrieved CURRENT_TRUTH --retrieved REPO` → `--answer DECISION.* --accept` → `--ready
-  --msd-goal true --msd-scope true --msd-acceptance true` → `promote --to TASK --basis
-  msd_reached --apply`。
+  --goal <text> --scope <text> --acceptance <criterion>@DECISION.*`（T2 R1 Task Contract
+  文本申报）→ `promote --to TASK --basis msd_reached --apply`（自动 record claim 生成
+  CLM-0001）→ `permit issue --subject PAGE.DASHBOARD`（R2 派生建议）→ baseline 六键销账
+  + `baseline confirm`（R5 收口路由）→ `context compile` → `execution begin --task-id`（R3
+  ④ EXECUTE 感知）→ `check --gates` → `record claim` → `record verification`。
 
 ## 十条验收协议
 
-### GP-1 观察项目已有技术事实，而不是全部问用户 `[RED→T2]`
+### GP-1 观察项目已有技术事实，而不是全部问用户 `[T2已摘帽]`
 
 - **语义**：init 应机器自读宿主工程的可观察事实（package.json 依赖 → 框架/router/状态/Grid/
   UI 库/测试栈），只把规范性决策（如 CSS 方案）留给问人；事实标注 `[Observed: package.json]`。
-- **机器断言**：fixture 上 init 后读 `.pomaster/baseline/frontend/stack.yaml`——
-  framework/language/build/router/state/grid/ui/testing 八键 ≠ `UNKNOWN` 且文件带
-  `[Observed: package.json]` 来源标注。
+- **机器断言**：fixture 上 init 后读 init 时点的 `.pomaster/baseline/frontend/stack.yaml`
+  存档——framework/language/build/router/state/grid/ui/testing 八键 ≠ `UNKNOWN` 且每条
+  观察行带 `[Observed: package.json]` 来源标注；css（规范决策）保持 UNKNOWN 起步词形；
+  init 结果 observation 面为 {source: "package.json", observed: 8}（摘帽新信号）。
 - **人工留痕判据**：MASTer 演练轮记录 init 问了人几问、哪些问在逐问对照 package.json 后本可
   机器观察（「问人分母」留痕）。
-- **当前状态**：RED。实证：init 是 14 键问卷必答（`packages/cli/src/init.ts` 头注），无宿主
-  package.json 探测；fixture 依赖已声明但 `stack.yaml` 九键全 UNKNOWN（问卷非交互跳过后）。
-- **转绿归属**：T2「init 升级 Bootstrap+Observation」——可观察事实机器自读，仅规范性决策问人。
+- **当前状态**：GREEN（T2 R4 Bootstrap+Observation 落地；init 幂等重跑 NO_CHANGE 不破）。
+- **历史 RED 实证（摘帽前）**：init 是 14 键问卷必答，无宿主 package.json 探测；fixture
+  依赖已声明但 `stack.yaml` 九键全 UNKNOWN（问卷非交互跳过后）。
 
 ### GP-2 能判断需求哪些是 Known / Unknown `[GREEN-机制]`
 
@@ -73,31 +82,33 @@ corepack pnpm ratchet                                          # 棘轮（本 sp
 - **当前状态**：GREEN（Owner 裁定 C1 落地）。
 - **转绿归属**：不适用。
 
-### GP-4 最终 TASK 保留真实 Intent / Expected Outcome / Acceptance `[RED→T2]`
+### GP-4 最终 TASK 保留真实 Intent / Expected Outcome / Acceptance `[T2已摘帽]`
 
 - **语义**：promote 是语义收口不是语义丢失——TASK.intent 携带真实 goal 文本（raw prompt
   追溯锚），acceptance 非空且每条挂锚（D-7 投影表）。
 - **机器断言**：跑完 brainstorm→promote 链后读 TASK 正文 payload——intent 非
   「Discovery 提升：<id>」泛化文案且含 goal 文本（fixture 用例锚 raw prompt 子串
-  「数据表格封装策略」）；acceptance 非空、每条 {criterion, claim: CLM-n} 且挂
-  DECISION.*/ASSUMPTION 锚。
+  「数据表格封装策略」）+ 溯源锚（scratchpad meta.json → prompt）；acceptance 非空、每条
+  {criterion, claim: CLM-n} 且挂 DECISION.*/ASSUMPTION 锚；摘帽新信号：titleZh ← discovery
+  title、notesMd ← scope 文本、affected_objects ← 已决议 affects 并集（PAGE.DASHBOARD）。
 - **人工留痕判据**：演练轮对照 promote 后 TASK 正文与原始需求陈述，人判「意图失真度」。
-- **当前状态**：RED。实证：`packages/cli/src/brainstorm.ts` promote 投影
-  `intent = "Discovery 提升：<id>（promotion_basis=…）"`、`acceptance = []`。
-- **转绿条件**：T2 Task Contract Compiler（D-7）——`--ready` 扩申报旗标（goal/scope/acceptance
-  文本入 meta.json），promote 编译投影表；**转绿时本用例链 argv 需同步补新旗标参数**（摘帽义务）。
+- **当前状态**：GREEN（T2 R1 Task Contract Compiler 落地：`--ready` 文本申报入 meta.json，
+  promote 编译 D-7 投影表五投影全在座）。
+- **历史 RED 实证（摘帽前）**：promote 投影 `intent = "Discovery 提升：<id>（promotion_basis=…）"`、
+  `acceptance = []`。
 
-### GP-5 能从 Task 推导合理 Scope 而非让用户填 ID `[RED→T2]`
+### GP-5 能从 Task 推导合理 Scope 而非让用户填 ID `[T2已摘帽]`
 
 - **语义**：R_PERMIT_MISSING 的建议命令应携带从 Task/affected_objects 派生的 scope 主体建议
   （PAGE.*/CAPABILITY.*/COMPONENT.*/API_REQ.*），而非仅 TASK 自身。
 - **机器断言**：活跃任务无绑定许可时 `status --json` 的
-  `next_action.route_id = R_PERMIT_MISSING` 且 `next_action.command` 匹配
-  `/PAGE\.|CAPABILITY\.|COMPONENT\.|API_REQ\./`。
+  `next_action.route_id = R_PERMIT_MISSING` 且 `next_action.command` 精确为派生词形
+  `permit issue --subject PAGE.DASHBOARD --actor <type>:<name> --change-ref TASK.*`；
+  摘帽新信号：链内照做（--subject PAGE.DASHBOARD）签发成功——派生建议直接可执行。
 - **人工留痕判据**：演练轮记录用户在 permit 签发前被要求手工填写 governed id 的次数（目标 0）。
-- **当前状态**：RED。实证：`packages/cli/src/next-action.ts` R_PERMIT_MISSING 行渲染
-  `--subject <TASK 自身> --change-ref <TASK 自身>`，零派生。
-- **转绿归属**：T2「Scope 派生」。
+- **当前状态**：GREEN（T2 R2 Scope 派生落地：affected_objects 前缀成员 → --subject 建议）。
+- **历史 RED 实证（摘帽前）**：R_PERMIT_MISSING 行渲染 `--subject <TASK 自身>
+  --change-ref <TASK 自身>`，零派生。
 
 ### GP-6 Permit 与 Context 能自动建立 `[GREEN-机制]`
 
@@ -110,16 +121,19 @@ corepack pnpm ratchet                                          # 棘轮（本 sp
 - **当前状态**：GREEN（路由表三行 + context compile 通路既有）。
 - **转绿归属**：不适用。
 
-### GP-7 Context 后真的进入 Implementation，导航不直跳 Verify `[RED→T2]`
+### GP-7 Context 后真的进入 Implementation，导航不直跳 Verify `[T2已摘帽]`
 
-- **语义**：Context Ready 与 Evidence 之间应存在确定性的执行感知过渡路由（④ EXECUTE 拍位），
-  而非 manifest fresh + 证据分母空时直接建议 `check --fast`（R_VERIFY_ENTRY）。
-- **机器断言**：manifest fresh 且无 evidence 时 `next_action.route_id ≠ R_VERIFY_ENTRY`。
+- **语义**：Context Ready 与 Verify 之间应存在确定性的执行感知过渡路由（④ EXECUTE 拍位），
+  而非 manifest fresh 时直接建议 `check --fast`（R_VERIFY_ENTRY）。
+- **机器断言**：manifest fresh 且无 runs 留痕、无在途执行档案时 `next_action.route_id =
+  R_EXECUTE_ENTRY`（beat ④，命令 = execution begin 携 --task-id）；摘帽新信号：照做
+  execution begin → 路由前进 R_VERIFY_ENTRY（④→⑤ 分叉在真实链上闭合）。分母锚 runs 留痕
+  （GRN）——R1 起 promote 自动生成 Expected State claim，claims 在座不等价于验证已发生。
 - **人工留痕判据**：演练轮留痕「Agent 在 Context Ready 后被导航去了哪里」——应先进入受
   permit 约束的执行面，而不是未执行先 Verify。
-- **当前状态**：RED。实证：`next-action.ts` 路由表 manifest fresh 分支直落
-  R_VERIFY_ENTRY（「④ EXECUTE 无拍位不路由」），审计二④逐字复现。
-- **转绿归属**：T2「④ Execute 感知」（复用 execution begin/end/trace，不加状态轴）。
+- **当前状态**：GREEN（T2 R3 ④ Execute 感知落地：复用 execution begin/end/trace，零新状态轴）。
+- **历史 RED 实证（摘帽前）**：路由表 manifest fresh 分支直落 R_VERIFY_ENTRY（「④ EXECUTE
+  无拍位不路由」），审计二④逐字复现。
 
 ### GP-8 Verification 使用真实代码/浏览器/测试证据 `[GREEN-机制]`
 
@@ -133,18 +147,19 @@ corepack pnpm ratchet                                          # 棘轮（本 sp
 - **当前状态**：GREEN（W2 判定通路 + record 通路既有）。
 - **转绿归属**：不适用（T4 publish/CI 收口不改变本条机制）。
 
-### GP-9 Closeout 对的是最初的 Expected State 而非 Task id `[RED→T2]`
+### GP-9 Closeout 对的是最初的 Expected State 而非 Task id `[T2已摘帽]`
 
 - **语义**：closeout 判卷依据可回溯 promote 时刻的 Expected——TASK.acceptance 的 claim 与
   promote 时自动生成的 CLM 对得上（D-7 收尾闭环：promote 自动 `record claim` 绑 acceptance）。
 - **机器断言**：读 TASK payload.acceptance（非空），每条 claim 在 promote 时刻的 claims 平面
-  快照（`claimsAtPromote`）中有对应 `CLM-*.json`。
+  快照（`claimsAtPromote`）中有对应 `CLM-*.json`；摘帽新信号：promote 结果携带
+  `claims_generated > 0` 且 acceptance 条数与之相等。
 - **人工留痕判据**：演练轮把 closeout 判卷清单与最初需求陈述并排对照，人判「收口对象是
   Expected 而非任务号」。
-- **当前状态**：RED。实证：promote 产空 acceptance 且零 CLM 自动生成（与 GP-4 同根——
-  D-7 收尾闭环未落）；下游机械后果：空 acceptance 任务永不命中 R_CLOSEOUT_READY
-  （`next-action.ts` acceptance 空直置 null）。
-- **转绿归属**：T2 Task Contract Compiler（D-7 第 3 条）。
+- **当前状态**：GREEN（T2 R1 落地：promote 自动 record claim 生成 CLM 绑入 acceptance）；
+  「空 acceptance 任务永不命中 R_CLOSEOUT_READY」缺陷随 promote 不再产空 acceptance 在源头消灭。
+- **历史 RED 实证（摘帽前）**：promote 产空 acceptance 且零 CLM 自动生成（与 GP-4 同根——
+  D-7 收尾闭环未落）；下游机械后果：空 acceptance 任务永不命中 R_CLOSEOUT_READY。
 
 ### GP-10 新开 Session 后仍能正确恢复并继续 `[GREEN-机制]`
 
@@ -157,19 +172,20 @@ corepack pnpm ratchet                                          # 棘轮（本 sp
 - **当前状态**：GREEN（R3 工作流路由段既有）。
 - **转绿归属**：不适用。
 
-## 当前 RED 清单（立红基准，2026-09-08）
+## 摘帽台账（T2 轮，2026-09-08）
 
-| GP | 断言核心 | 当前实证（file:line 锚） | 归属 |
-|---|---|---|---|
-| GP-1 | init 观察技术事实 | `packages/cli/src/init.ts`（14 键问卷必答、无宿主 package.json 探测）；`packages/cli/seeds/baseline/frontend/stack.yaml`（九键 UNKNOWN 起步） | T2 |
-| GP-4 | promote 保留 Intent/Expected/Acceptance | `packages/cli/src/brainstorm.ts` promote tx（泛化 intent + 空 acceptance + 空 affected_objects） | T2 |
-| GP-5 | permit 建议派生 scope | `packages/cli/src/next-action.ts` R_PERMIT_MISSING render（subject/change-ref 均为 TASK 自身） | T2 |
-| GP-7 | Context 后进 Implementation 不直跳 Verify | `packages/cli/src/next-action.ts` R_VERIFY_ENTRY 行（manifest fresh + 证据空即命中） | T2 |
-| GP-9 | closeout 回溯 promote 时刻 Expected | 同 GP-4 根因（空 acceptance、零自动 CLM）；下游 `next-action.ts` R_CLOSEOUT_READY 空 acceptance 置 null | T2 |
+| GP | 断言核心 | 摘帽状态 | 历史实证（摘帽前锚） | 归属 |
+|---|---|---|---|---|
+| GP-1 | init 观察技术事实 | **已摘帽**（observation 面新信号） | init 14 键问卷必答、无 package.json 探测 | T2 |
+| GP-4 | promote 保留 Intent/Expected/Acceptance | **已摘帽**（titleZh/notesMd/affected_objects 新信号） | 泛化 intent + 空 acceptance + 空 affected_objects | T2 |
+| GP-5 | permit 建议派生 scope | **已摘帽**（派生建议可执行新信号） | subject/change-ref 均为 TASK 自身 | T2 |
+| GP-7 | Context 后进 Implementation 不直跳 Verify | **已摘帽**（④→⑤ 分叉闭合新信号） | manifest fresh 直落 R_VERIFY_ENTRY | T2 |
+| GP-9 | closeout 回溯 promote 时刻 Expected | **已摘帽**（claims_generated 新信号） | 空 acceptance、零自动 CLM | T2 |
 
-计数：**10 条 = 5 RED（全部归属 T2）+ 5 GREEN-机制**。T3/T4 范围的验收（authority 写路径
-阻断对抗用例、publish 等 CI 时戳断言等）按战役 PRD 归各子任务 PRD，不在本十条分母内——
-本文件的 `[RED→T3]`/`[RED→T4]` 槽位留待其验收协议并入时使用。
+计数：**10 条 = 5 GREEN-机制 + 5 [T2已摘帽]→GREEN**（另增 1 条 `[T2新增信号]` 用例钉
+R5 baseline 收口路由，不在十条分母内）。T3/T4 范围的验收（authority 写路径阻断对抗用例、
+publish 等 CI 时戳断言等）按战役 PRD 归各子任务 PRD，不在本十条分母内——本文件的
+`[RED→T3]`/`[RED→T4]` 槽位留待其验收协议并入时使用。
 
 ## MASTer 出口演练协议（骨架——战役出口时执行，不进 CI）
 
@@ -203,15 +219,15 @@ corepack pnpm ratchet                                          # 棘轮（本 sp
 
 | GP | 机器断言（CI） | 人工判据 | 演练者 | 日期 | 总判 |
 |---|---|---|---|---|---|
-| GP-1 | （CI 结果） | 问人分母中可观察项占比 | | | |
+| GP-1 | GREEN（T2） | 问人分母中可观察项占比 | | | |
 | GP-2 | GREEN | 判卷记录留存率 | | | |
 | GP-3 | GREEN | ASSUMPTION 全部在册 | | | |
-| GP-4 | （T2 后 GREEN） | intent/acceptance 失真度 | | | |
-| GP-5 | （T2 后 GREEN） | 人工填 id 次数 = 0 | | | |
+| GP-4 | GREEN（T2） | intent/acceptance 失真度 | | | |
+| GP-5 | GREEN（T2） | 人工填 id 次数 = 0 | | | |
 | GP-6 | GREEN | 拍间零人工补位 | | | |
-| GP-7 | （T2 后 GREEN） | 执行面导航先于 Verify | | | |
+| GP-7 | GREEN（T2） | 执行面导航先于 Verify | | | |
 | GP-8 | GREEN | 证据真实可复现 | | | |
-| GP-9 | （T2 后 GREEN） | 收口对照最初 Expected | | | |
+| GP-9 | GREEN（T2） | 收口对照最初 Expected | | | |
 | GP-10 | GREEN | 恢复导航与实际一致 | | | |
 
 总判规则：机器断言全绿是入场条件；人工判据每条 PASS/PARTIAL/FAIL——**出口线 =
