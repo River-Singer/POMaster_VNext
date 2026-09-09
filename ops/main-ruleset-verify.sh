@@ -17,7 +17,7 @@
 #   3. required_status_checks 含 REQUIRED_CHECKS 全部 context（integration_id=15368）；
 #   4. pull_request 规则在座（禁直推 main 的机器形态）；
 #   5. deletion + non_fast_forward 规则在座（防删防强推）；
-#   6. bypass：Repository admin 仅 pull_request 通道旁路。
+#   6. bypass：空（个人仓不支持 RepositoryRole actor；直推对含管理员的所有人生效拦截）。
 #
 # 直推被拒的实弹演练（人工步骤，见 ops/README.md §演练）：本脚本验证配置在座；
 # 「push 真被拒」是行为断言，按 runbook 的 drill 流程实弹验证一次。
@@ -138,13 +138,15 @@ gh api "repos/${REPO}/rulesets/${RULESET_ID}" | node --input-type=module -e '
   }
 
   const bypass = detail.bypass_actors ?? [];
-  const adminPr = bypass.find(
-    (b) =>
-      b.actor_type === "RepositoryRole" &&
-      b.actor_id === 1 &&
-      b.bypass_mode === "pull_request",
+  // 个人仓库不支持 RepositoryRole bypass actor（422 实证，2026-09-09）——
+  // 期望空 bypass：直推对所有人（含管理员）拦截，Owner 走 PR merge 通道。
+  const noBypass = bypass.length === 0;
+  push(
+    noBypass,
+    noBypass
+      ? "bypass：空（个人仓直推对含管理员的所有人生效拦截）"
+      : `bypass：非空（${bypass.map((b) => b.actor_type + ":" + b.actor_id).join("、")}）——个人仓期望为空，如系有意配置请人工复核`,
   );
-  push(adminPr !== undefined, "bypass：Repository admin 仅 pull_request 通道旁路（直推不豁免）");
 
   if (failCount > 0) {
     console.log(`== 结果：FAIL（${failCount} 项未过）==`);
