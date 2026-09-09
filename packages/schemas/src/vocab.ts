@@ -293,8 +293,10 @@ export type CatalogChangeClassValue = (typeof CATALOG_CHANGE_CLASS_VALUES)[numbe
 /**
  * applies_when.governance_profiles 词轴（x-vocab-source: vocab-lock
  * catalog_layer_vocab.governance_profiles，PR-0005 收编；Owner 裁决 8 ② 2026-09-01（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
- * 「对齐 TRIAGE_PROFILES+STRICT，消 STANDARD 两义」）。前三值与 CLI triage
- * TRIAGE_PROFILES（packages/cli/src/triage.ts）同词形同义；STRICT 对位 constitutional 档
+ * 「对齐 TRIAGE_PROFILES+STRICT，消 STANDARD 两义」）。前三值与已退役 CLI triage 词轴
+ * TRIAGE_PROFILES（vocab-lock presentation_axes.triage_profiles 登记面——引擎模块
+ * packages/cli/src/triage.ts 已随裁决 19③ 物理删除，owner-adjudications.md#裁决19；
+ * 词形登记保留）同词形同义；STRICT 对位 constitutional 档
  * （catalog-profile-anchor 词形先例）；PRD §5.2 示例值 CRITICAL 不入（另立第二套 profile
  * 词表 = 变相第二套轴，违四克制——R4 消解裁定）。
  */

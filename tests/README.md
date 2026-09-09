@@ -9,30 +9,35 @@
 - `ratchet/ratchet.mjs` —— 棘轮检查：`corepack pnpm exec vitest run --reporter=json` 统计用例数，低于 floor 退出码 1（CI 强制执行 `pnpm ratchet`）；含 `ledger` 段时按类 fail-below-floor（任何层/域实测计数低于其 floor 即退出码 1，输出分类明细），并做 mapping 封闭分母三查（未归类 spec / stale 条目 / 逐文件和与总数分叉，均红）；实测分解落 `coverage/ratchet-ledger.json`（策略在 floor.json，测量在 coverage）。测量新鲜度：报告走本次运行唯一的临时路径，读毕即清——子进程失败/报告缺席/空文件/不可解析 JSON 一律显式失败，绝不复用上一次运行的统计。
 - `ratchet/ledger.spec.ts` —— 账本契约测试：floor 钉住战略值、mapping 与磁盘 spec 分母双向闭合、词形合法、内部相容（运行时计数判定归棘轮，本文件防账本本身被改坏）。
 - 测试命名纪律：`*.spec.ts`；测试框架 vitest 2.x；根 `vitest.config.ts` 收集 `tests/**/*.spec.ts` 与 `packages/**/*.spec.ts`。
-- `golden/` —— Golden P0 用例账本（`cases.json`，25 条：首批 20 条转写自
-  `packages/schemas/assets/golden-seed-mapping.md` ＋ T-1 批准追加 ＋ P17 测试战略
-  L3 四点名补录）＋ 数据驱动执行器
-  （`golden.harness.ts`：kernel 转移校验 / id 解析 / triage 规则桶三类可执行判定，
+- `golden/` —— Golden P0 用例账本（`cases.json`，22 条：首批 20 条转写自
+  `packages/schemas/assets/golden-seed-mapping.md` ＋ P17 测试战略
+  L3 四点名补录；原 T-1 追加与 2 条 Router 判定矩阵 triage 用例已随 TRIAGE 引擎
+  物理退役移除——裁决 19③）＋ 数据驱动执行器
+  （`golden.harness.ts`：kernel 转移校验 / id 解析两类可执行判定，
   kernel 未就绪时回落 `reference/` 参考镜像；不可执行项显式 pending 并输出
   pendingList 到 `coverage/golden-report.json`——禁静默跳过当通过；P17-Seeds 起
   `golden.spec.ts` 另设「GOLDEN-L3 点名种子 · 执行面对照」describe，四点名场景中
   三个有 kernel/CLI 真实判决执行面的场景跑实转正）。
-- `behavioral/` —— L5 Behavioral Eval（契约 `docs/p9-human-view-and-l5-contract.md` §2）：
-  `seeds.json`（25 注册 / 23 executable / 0 pending / 2 retired——P17-Seeds：F-02 churn
-  信号与 X-01 capability router 翻转前置不成立显式退役，`retired.reason_md` 落档判据与
-  重登记路径，禁静默 pending 滞留；代号线 `L5-SEED`；种子素材唯一
-  合法来源 = `corpus/master/batch-1/calibration/`，replay 锚定请求逐字转录）＋ 双
+- `behavioral/` —— L5 Behavioral Eval（契约 `docs/p9-human-view-and-l5-contract.md` §2；
+  语料换源重建——裁决 19③，owner-adjudications.md#裁决19：语料源由已退役 TRIAGE
+  引擎换为活着的能力）：
+  `seeds.json`（33 注册 / 33 executable / 0 pending / 0 retired——全部测存活能力，
+  缺席以不登记表达；代号线 `L5-SEED`；事实源 = 被测引擎/路由表常量与 Owner 裁决
+  台账，见账本 fact_sources 段）＋ 双
   evaluator 数据驱动执行器（P17 起执行器本体居 `@pomaster/cli` 的 `packages/cli/src/eval.ts`
   ——`pomaster eval --suite behavioral`（PRD §44.10）需要在包内 in-process 执行，dist
-  可加载；rule_v0 参考镜像同址居 `packages/cli/src/triage-rule-v0.ts`；本目录
-  `behavioral.harness.ts` 保留账本常量与 corpus 谱系对账 loader 并 re-export 执行器面，
-  单一实现禁两套 runner 漂移：`cli_keyword` = triageRequest；`rule_v0` = triageRuleV0）
+  可加载；本目录
+  `behavioral.harness.ts` 保留账本常量并 re-export 执行器面，
+  单一实现禁两套 runner 漂移：`question_gate` = kernel evaluateQuestionGate
+  （七关 verdict 判定）；`next_action` = evaluateNextAction（八拍路由矩阵首中即停）；
+  原双 evaluator 交叉对账机制（cli_keyword vs rule_v0 同语义双实现互证）无存活
+  对应物随退役删除）
   ＋ vitest 入口（`behavioral.spec.ts`）。报告落 `coverage/behavioral-report.json`
   （镜像 golden 报告字段；零墙钟可字节级重放）。翻转纪律（契约 §2.7.2）：阈值/信号获批
   落地时对应 seed 期望翻转 + `flipped_from` 记录翻转前状态——翻转本身构成验收测试
-  （T-1 翻转对 C-01/C-04 已随 Owner 裁决2/bench-0003 落地执行）。
+  （机制保留，换源账本现无在册翻转）。
   - `eval-cases.yaml` + `eval-case.schema.json` + `eval-carrier.spec.ts`（P19-EvalCarrier，
-    PRD §94.2）：25 seeds 的 §94.2 Eval Case yaml 载物（id/input/expected 三键形态；
+    PRD §94.2）：33 seeds 的 §94.2 Eval Case yaml 载物（id/input/expected 三键形态；
     expected = 契约 §2.4 断言集，词表闭表锁 schema）与 draft-07 schema（词形/必填
     fail-closed）。兼容双读裁定：机器判卷消费面 = `seeds.json`（预注册账本字节集不动），
     yaml = §94.2 登记形态——`eval-carrier.spec.ts` 锚同构（逐 case deep-equal + 双源
@@ -48,10 +53,10 @@
     触达源，或 `--paths` 显式给定；提示模式 exit 0；`--run` 逐 suite 执行 vitest、
     失败透传退出码 fail-closed；`--dry-run`/`--json`；manifest 非法/git 不可用一律
     exit 1 绝不静默放行）。
-- `integration/smoke.spec.ts` —— 临时目录端到端冒烟：`pomaster init → triage×2 →
-  status --json → doctor --json`（断言 §45 信封、NO_CHANGE 幂等、triage 缺席信号、
-  doctor 探测四态矩阵 fail-closed）；CLI dist 未就绪时逐项显式 pending 到
-  `coverage/smoke-report.json`。
+- `integration/smoke.spec.ts` —— 临时目录端到端冒烟：`pomaster init → alerts×2 →
+  status --json → doctor --json`（断言 §45 信封、NO_CHANGE 幂等、alerts 路由段
+  workflow 词形与显式缺席披露、doctor 探测四态矩阵 fail-closed）；CLI dist 未就绪时
+  逐项显式 pending 到 `coverage/smoke-report.json`。
 - `integration/write-layer-crash-injection.spec.ts` —— P16 写入层可靠性专项
   （L2 账）：A 段注入式半写（确定性重构 kill 在 executeWrites 各时点的磁盘态：
   staged 碎片 / WAL 孤儿 / commit 后 / evidence 孤儿 / index·journal 半字节截断）

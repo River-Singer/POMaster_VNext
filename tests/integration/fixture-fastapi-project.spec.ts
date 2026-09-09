@@ -6,11 +6,10 @@
  * 形态的治理链，不是第三方栈自身构建。
  *
  * 与另两栈的判卷差异面：
- * - triage 文本命中纯文案/样式短路词 → MINIMAL（F_COPY_STYLE_ONLY，证据级
- *   MEASURED——三 fixture 恰好覆盖 triage 三档 × 三证据级全矩阵）；
  * - 无 package.json → vitest 腿走「package.json 不存在」缺席分支（又一线）；
  *   pytest.ini 命中 → pytest 腿 READY → BUILD 腿在 prepare 阶段因版本锚缺失
  *   （policy.expectedToolVersion=null）显式 runner_not_ready → NOT_INSTALLED；
+ *   （原 ① triage 判档位已随档位语义退役删除——裁决 18/19③，pre-dev 链二步化）；
  * - lane=backend；锚 TASK.F0001 → PERMIT.TASK_F0001.*。
  *
  * 工程四件套由共享构造器 fixture-fastapi-project-lib.ts 单一来源产出（P27 双核验

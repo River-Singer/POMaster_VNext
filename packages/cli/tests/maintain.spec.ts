@@ -5,8 +5,9 @@
  * - apply 模式（A2）：--ops 显式事务走 kernel applyTransaction——APPLIED/NO_CHANGE、
  *   seq 锚定、journal authority_ref 留痕（change-or-task 锚缺省兜底）；判卷权威在
  *   kernel：合法性与 ghost owner 全由 kernel 裁决（CLI 零判卷），失败零残留（staged 回滚）；
- * - pre-dev 链（A3）：triage→permit issue→context compile 三步全走（不发明
- *   MINIMAL 跳过 permit 之类的分支政策）；链的闭合性——② 签发的许可经 taskRef
+ * - pre-dev 链（A3）：permit issue→context compile 二步全走（原 ① triage 判档位
+ *   已随档位语义退役删除——裁决 18/19③；不发明 MINIMAL 跳过 permit 之类的分支
+ *   政策）；链的闭合性——② 签发的许可经 taskRef
  *   许可通道让 ③ 投影 MUST 区命中 scope 对象（kernel 契约，不是 CLI 编排出来的）；
  * - fail-closed：--ops/--phase 互斥且必给其一；--phase 词表外值显式拒绝；链步失败
  *   failed_at_step 显式 + kernel/子命令码位透传。

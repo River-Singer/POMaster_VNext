@@ -165,8 +165,9 @@
  * （例外：check/exec-guard 对过期许可追加 PERMIT_EXPIRED_OBSERVED 为 kernel 契约行为）。
  * 词表纪律：本包局部词（doctor 四态、permit list status 三值、maintain --phase 相值）
  * 已随 PR-0009 入锁（vocab-lock presentation_axes 各轴）；triage 档位/证据级词轴
- * 自 D-1/D-5（裁决 18，2026-09-08）起产品面退役——词形仅存 eval 语料参考镜像
- * （triage.ts/triage-rule-v0.ts 引擎与 behavioral/golden 语料机，产品命令面零消费）。
+ * 自 D-1/D-5（裁决 18，2026-09-08）起产品面退役，其引擎模块已随裁决 19③
+ * （2026-09-09，owner-adjudications.md#裁决19）物理删除——词形仅存 vocab-lock
+ * presentation_axes 登记与 eval 语料换源注记（behavioral 语料已换源存活能力）。
  */
 import { Command, CommanderError } from "commander";
 import { createInterface } from "node:readline";
@@ -267,10 +268,10 @@ export { toEnvelope } from "./envelope.js";
 export type { CliEnvelope, CommandOutcome } from "./envelope.js";
 export * from "./store-layout.js";
 export * from "./digest.js";
-// D-1/D-5（裁决 18）产品命令面退役注记：triage.ts 关键词引擎模块保留 = eval 语料机
-// （cli_keyword evaluator + golden/behavioral 语料）的唯一实现；`pomaster triage`
-// 命令已删，产品面零消费（triage.spec/triage-matrix.spec 的语料机测试面继续钉住）。
-export * from "./triage.js";
+// 裁决 19③（Owner 2026-09-09，owner-adjudications.md#裁决19）TRIAGE 引擎物理删除：
+// 原 `export * from "./triage.js"` 随 triage.ts/triage-rule-v0.ts 一并移除（eval 语料机
+// 在座判据经裁决 19③ 推翻——语料机测的是已退役能力，属测试面 zombie）。行为评估语料
+// 已换源为存活能力（question_gate / next_action 两 evaluator，见 eval 模块导出面）。
 export {
   runInit,
   runInitInteractive,
@@ -642,8 +643,8 @@ export {
   runSeed,
   runAllSeeds,
   reportIsConsistent,
-  checkCliKeywordResult,
-  checkRuleV0Decision,
+  checkQuestionGateResult,
+  checkNextActionResult,
 } from "./eval.js";
 export type {
   EvalInput,
@@ -652,11 +653,9 @@ export type {
   L5Family,
   L5Evaluator,
   SeedProvenance,
-  ReplayAnchoredRequest,
-  SeedRequest,
   SeedInput,
-  CliKeywordExpect,
-  RuleV0Expect,
+  QuestionGateExpect,
+  NextActionExpect,
   SeedExpect,
   DesignExpected,
   BehavioralSeed,

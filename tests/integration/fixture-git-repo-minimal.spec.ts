@@ -5,8 +5,9 @@
  * 无 vitest/pytest 任一测试框架声明——BUILD 腿双腿缺席形态）。
  *
  * 治理链（全部真实 runCli，见 fixture-chain-lib.ts）：
- *   init → triage（无信号兜底 LIGHT）→ maintain --phase pre-dev（①②③：
- *   triage→permit issue→context compile）→ reconcile（clean）→ maintain --ops
+ *   init → alerts（八拍① 导航面——D-5 裁决 18：triage 位退役，alerts 路由段承导航）
+ *   → maintain --phase pre-dev（②③二步：permit issue→context compile——原 ① triage
+ *   判档位已随档位语义退役删除，裁决 18/19③）→ reconcile（clean）→ maintain --ops
  *   upsert task_object（任务落账）→ reconcile（dirty：materialized 分母）→
  *   check --gates（5 recipe GRN 入账，NOT_RUN 非绿非红）→ check --fast（BUILD
  *   腿真实探测：双腿缺席 → NOT_INSTALLED）→ closeout（证据缺失伪装完成硬阻断）

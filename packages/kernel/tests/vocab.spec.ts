@@ -218,9 +218,10 @@ describe("vocab mirror（FROZEN 词表唯一镜像点）", () => {
       expect([...CATALOG_GOVERNANCE_PROFILE_VALUES]).toEqual([
         "MINIMAL", "LIGHT", "STANDARD", "STRICT",
       ]);
-      // 前三值与 CLI triage TRIAGE_PROFILES（packages/cli/src/triage.ts，CLI 局部词）
-      // 同词形同义——对账值此处逐字镜像（kernel 测试禁反向 import cli，分层纪律）；
-      // triage 侧词形漂移由 cli/triage.spec 对账本断言同源词形。
+      // 前三值与已退役 CLI triage 词轴（vocab-lock presentation_axes.triage_profiles
+      // 登记面——引擎模块已随裁决 19③ 物理删除，owner-adjudications.md#裁决19；
+      // 词形登记保留）同词形同义——对账值此处逐字镜像（kernel 测试禁反向 import cli，
+      // 分层纪律）。
       expect(CATALOG_GOVERNANCE_PROFILE_VALUES.slice(0, 3)).toEqual([
         "MINIMAL", "LIGHT", "STANDARD",
       ]);

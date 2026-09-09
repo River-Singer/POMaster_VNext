@@ -6,8 +6,8 @@
  * 验证的是 pomaster 对工程形态的治理链，不是第三方栈自身构建。
  *
  * 与 git-repo fixture 的判卷差异面：
- * - triage 文本命中契约升档词 → STANDARD（E_CONTRACT_KEYWORD，matched 保序）；
- * - lane=frontend；锚 TASK.V0001 → PERMIT.TASK_V0001.*；
+ * - lane=frontend；锚 TASK.V0001 → PERMIT.TASK_V0001.*（原 ① triage 判档位已随
+ *   档位语义退役删除——裁决 18/19③，pre-dev 链二步化）；
  * - BUILD 腿：vitest 依赖已声明 → detect READY → **真实执行** `corepack pnpm exec
  *   vitest run --reporter=json`（无 node_modules 必然不可判卷）→ verdict=not_run
  *   非绿非红（P12 缺席显式语义在 BUILD 腿的实跑形态，status=READY 非 NOT_INSTALLED）。

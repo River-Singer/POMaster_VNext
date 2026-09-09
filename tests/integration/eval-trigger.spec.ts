@@ -34,7 +34,6 @@ import {
   pathMatchesPattern,
   validateManifest,
 } from "../../scripts/eval-trigger.mjs";
-import { globMatch } from "../../packages/cli/src/triage-rule-v0.js";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const scriptPath = join(repoRoot, "scripts", "eval-trigger.mjs");
@@ -143,15 +142,15 @@ describe("§94.3 触发清单落档（tests/behavioral/trigger-manifest.json）"
 // ============================================================
 
 describe("触发映射正确性（matchManifest）", () => {
-  it("触达 Router 源（triage.ts 关键词引擎）→ 触发 Router 类别，suite=behavioral", () => {
-    const { triggered, suites } = matchManifest(manifest, ["packages/cli/src/triage.ts"]);
+  it("触达 Router 源（question_gate 七关判定引擎）→ 触发 Router 类别，suite=behavioral", () => {
+    const { triggered, suites } = matchManifest(manifest, ["packages/kernel/src/question-gate.ts"]);
     expect(triggered.map((t) => t.category)).toEqual(["Router"]);
-    expect(triggered[0]?.matched[0]?.pattern).toBe("packages/cli/src/triage.ts");
+    expect(triggered[0]?.matched[0]?.pattern).toBe("packages/kernel/src/question-gate.ts");
     expect(suites).toEqual(["behavioral"]);
   });
 
-  it("触达 rule_v0 镜像 → Router 触发；触达 eval 执行器本体 → Harness 触发", () => {
-    expect(matchManifest(manifest, ["packages/cli/src/triage-rule-v0.ts"]).triggered.map((t) => t.category)).toEqual(["Router"]);
+  it("触达 next_action 路由矩阵 → Router 触发；触达 eval 执行器本体 → Harness 触发", () => {
+    expect(matchManifest(manifest, ["packages/cli/src/next-action.ts"]).triggered.map((t) => t.category)).toEqual(["Router"]);
     expect(matchManifest(manifest, ["packages/cli/src/eval.ts"]).triggered.map((t) => t.category)).toEqual(["Harness"]);
   });
 
@@ -182,7 +181,7 @@ describe("触发映射正确性（matchManifest）", () => {
 
   it("多类同时触达 → 逐类触发、suite 去重不重复跑", () => {
     const { triggered, suites } = matchManifest(manifest, [
-      "packages/cli/src/triage.ts",
+      "packages/kernel/src/question-gate.ts",
       "catalog/policies/policy.chg.affect_templates.json",
       "packages/kernel/src/projection.ts",
     ]);
@@ -195,27 +194,27 @@ describe("触发映射正确性（matchManifest）", () => {
   });
 
   it("Windows 反斜杠路径归一：--paths 给定 git bash 外的 win32 形态同样命中（不因分隔符漏报）", () => {
-    const { triggered } = matchManifest(manifest, ["packages\\cli\\src\\triage.ts"]);
+    const { triggered } = matchManifest(manifest, ["packages\\kernel\\src\\question-gate.ts"]);
     expect(triggered.map((t) => t.category)).toEqual(["Router"]);
   });
 
-  it("JS matcher 与 TS 参考镜像 globMatch 语义逐例一致（防两套 glob 漂移；含 **/ 跨零段与单星边界）", () => {
-    const cases: [string, string][] = [
-      ["catalog/gates/**", "catalog/gates/gate.web.grid.checks.json"],
-      ["catalog/gates/**", "catalog/policies/x.json"],
-      ["packages/cli/src/triage.ts", "packages/cli/src/triage.ts"],
-      ["packages/cli/src/triage.ts", "packages/cli/src/triage.tsx"],
-      ["tests/behavioral/**", "tests/behavioral/seeds.json"],
-      ["**/*.md", "README.md"],
-      ["tests/**", "tests/a/b.ts"],
-      ["a/*", "a/b/c"],
-      ["a/**", "a"],
+  it("JS matcher 单一实现语义钉（**/ 跨零段与单星边界；原 TS globMatch 镜像随 TRIAGE 引擎退役删除——裁决 19③，本函数自此为单一实现）", () => {
+    const cases: [string, string, boolean][] = [
+      ["catalog/gates/**", "catalog/gates/gate.web.grid.checks.json", true],
+      ["catalog/gates/**", "catalog/policies/x.json", false],
+      ["packages/kernel/src/question-gate.ts", "packages/kernel/src/question-gate.ts", true],
+      ["packages/kernel/src/question-gate.ts", "packages/kernel/src/question-gate.tsx", false],
+      ["tests/behavioral/**", "tests/behavioral/seeds.json", true],
+      ["**/*.md", "README.md", true],
+      ["tests/**", "tests/a/b.ts", true],
+      ["a/*", "a/b/c", false],
+      ["a/**", "a", false],
     ];
-    for (const [pattern, candidate] of cases) {
+    for (const [pattern, candidate, expected] of cases) {
       expect(
         pathMatchesPattern(pattern, candidate),
         `pattern=${pattern} candidate=${candidate}`,
-      ).toBe(globMatch(pattern, candidate));
+      ).toBe(expected);
     }
   });
 });
@@ -228,7 +227,7 @@ describe("eval-trigger.mjs 消费脚本", () => {
   it("提示模式 --json：触达源命中 → exit 0 + 机读 triggered/suites（含 path×pattern 证据）", () => {
     const res = runScript([
       "--paths",
-      "packages/cli/src/triage.ts,catalog/gates/gate.web.grid.checks.json,packages/kernel/src/store.ts",
+      "packages/kernel/src/question-gate.ts,catalog/gates/gate.web.grid.checks.json,packages/kernel/src/store.ts",
       "--json",
     ]);
     expect(res.code).toBe(0);
@@ -282,7 +281,7 @@ describe("eval-trigger.mjs 消费脚本", () => {
   });
 
   it("--run --dry-run：呈现将执行的 vitest 命令（process.execPath 直连 vitest.mjs run <spec>）且不执行", () => {
-    const res = runScript(["--paths", "packages/cli/src/triage.ts", "--run", "--dry-run", "--json"]);
+    const res = runScript(["--paths", "packages/kernel/src/question-gate.ts", "--run", "--dry-run", "--json"]);
     expect(res.code).toBe(0);
     const payload = JSON.parse(res.stdout) as {
       run: { dry_run: boolean; commands: { suite: string; argv: string[] }[] };
@@ -304,14 +303,15 @@ describe("eval-trigger.mjs 消费脚本", () => {
     const repo = mkdtempSync(join(tmpdir(), "pomaster-eval-trigger-git-"));
     try {
       mkdirSync(join(repo, "packages/cli/src"), { recursive: true });
-      writeFileSync(join(repo, "packages/cli/src/triage.ts"), "export {};\n", "utf8");
+      mkdirSync(join(repo, "packages/kernel/src"), { recursive: true });
+      writeFileSync(join(repo, "packages/kernel/src/question-gate.ts"), "export {};\n", "utf8");
       git(["init", "-q"], repo);
       git(["config", "user.email", "spec@example.com"], repo);
       git(["config", "user.name", "spec"], repo);
       git(["add", "."], repo);
       git(["commit", "-qm", "init"], repo);
       // tracked 修改 → git diff --name-only HEAD 命中 Router。
-      appendFileSync(join(repo, "packages/cli/src/triage.ts"), "// touched\n", "utf8");
+      appendFileSync(join(repo, "packages/kernel/src/question-gate.ts"), "// touched\n", "utf8");
       // 未跟踪新文件 → 不进 git diff（检测语义如实钉住：新文件随 commit 进入 diff 范围）。
       writeFileSync(join(repo, "packages/cli/src/context.ts"), "export {};\n", "utf8");
 
@@ -326,7 +326,7 @@ describe("eval-trigger.mjs 消费脚本", () => {
       };
       expect(payload.detection).toBe("git");
       expect(payload.base).toBe("HEAD");
-      expect(payload.touched).toEqual(["packages/cli/src/triage.ts"]);
+      expect(payload.touched).toEqual(["packages/kernel/src/question-gate.ts"]);
       expect(payload.triggered.map((t) => t.category)).toEqual(["Router"]);
       expect(payload.suites).toEqual(["behavioral"]);
     } finally {

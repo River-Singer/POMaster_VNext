@@ -1,7 +1,7 @@
 /**
- * eval-carrier.spec.ts —— PRD §94.2 yaml 载物面（P19-EvalCarrier）。
+ * eval-carrier.spec.ts —— PRD §94.2 yaml 载物面（P19-EvalCarrier；裁决 19③ 换源重造）。
  *
- * 载物：./eval-cases.yaml（25 case，id / input / expected 三键 §94.2 形态）+
+ * 载物：./eval-cases.yaml（33 case，id / input / expected 三键 §94.2 形态）+
  * ./eval-case.schema.json（draft-07：case 级与账本级 additionalProperties 全闭表，
  * 词形/必填 fail-closed）。兼容双读裁定（P19-EvalCarrier）：
  * - 机器判卷消费面 = ./seeds.json（契约 §2.2 落点，预注册账本字节集不动）——
@@ -12,16 +12,19 @@
  *   居 tests 面（js-yaml devDependency），CLI 运行时零 yaml 依赖——loadSeeds 对 yaml
  *   扩展名显式拒绝并指路（错误信息诚实性）。
  *
+ * 语料换源（裁决 19③，Owner 2026-09-09，owner-adjudications.md#裁决19）：evaluator
+ * 词表换为 question_gate / next_action；处置态口径 = 33/33/0/0（缺席以不登记表达）。
+ *
  * 词形边界（禁发明无被测对象字段）：expected 键集 = 契约 §2.4 两断言集并集
  * （schema additionalProperties:false 闭表）；§94.2 示例中 must_not_spawn /
  * must_not_create / classification / allowed_outcomes 等 capability 路由 / 门集 /
- * Discovery 分类面期望在实现落地前不入载物词表——以 pending/retired case 登记形态
- * 表达（契约 §2.4 先例）。本文件对词形边界做 schema 闸与直接扫描双重锚。
+ * Discovery 分类面期望在实现落地前不入载物词表。本文件对词形边界做 schema 闸与
+ * 直接扫描双重锚。
  *
  * 棘轮：新增 spec 已同步 tests/ratchet/floor.json ledger.mapping（L5 层）。
  */
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { readFileSync, existsSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import Ajv from "ajv";
 import yaml from "js-yaml";
@@ -121,26 +124,26 @@ function caseFailsSchema(caseIndex: number, mutate: (c: Record<string, unknown>)
 // ============================================================
 
 describe("§94.2 yaml 载物 · 装载与键形", () => {
-  it("载物可解析：suite/batch_code 与 seeds.json 同值，cases 25 条（注册分母同构）", () => {
+  it("载物可解析：suite/batch_code 与 seeds.json 同值，cases 33 条（注册分母同构）", () => {
     expect(carrier.suite).toBe("behavioral-l5");
     expect(carrier.suite).toBe(jsonDoc.suite);
     expect(carrier.batch_code).toBe("L5-SEED");
     expect(carrier.batch_code).toBe(jsonDoc.batch_code);
-    expect(carrier.cases).toHaveLength(25);
-    expect(jsonDoc.seeds).toHaveLength(25);
+    expect(carrier.cases).toHaveLength(33);
+    expect(jsonDoc.seeds).toHaveLength(33);
   });
 
-  it("§94.2 三键逐 case 齐备：id / input / expected；id 词形 L5-<族号>-<序号>-<slug> 且 25 id 全唯一", () => {
+  it("§94.2 三键逐 case 齐备：id / input / expected；id 词形 L5-<族号>-<序号>-<slug> 且 33 id 全唯一（族号 A..G 七族闭包——裁决 19③）", () => {
     const seen = new Set<string>();
     for (const c of carrier.cases) {
       expect(c.id, "id 缺失").toBeTruthy();
       expect(c.input, `${c.id}: input 缺失`).toBeTruthy();
       expect(c.expected, `${c.id}: expected 缺失`).toBeTruthy();
-      expect(c.id).toMatch(/^L5-[A-GX]-[0-9]{2}-[A-Za-z0-9.\-]+$/);
+      expect(c.id).toMatch(/^L5-[A-G]-[0-9]{2}-[A-Za-z0-9.\-]+$/);
       expect(seen.has(c.id), `${c.id}: id 重复`).toBe(false);
       seen.add(c.id);
     }
-    expect(seen.size).toBe(25);
+    expect(seen.size).toBe(33);
   });
 
   it("零墙钟：载物无墙钟字段（conventions.zero_wall_clock 同款纪律）；§94.2 示例中未实现面词形（must_not_spawn/must_not_create/classification/allowed_outcomes/silent_baseline_drift/hard_blocker）零出现——禁发明无被测对象字段", () => {
@@ -161,13 +164,23 @@ describe("§94.2 yaml 载物 · 装载与键形", () => {
       }
     }
   });
+
+  it("退役引擎词形零残留（裁决 19③）：载物 case 级零 cli_keyword/rule_v0/TRIAGE profile 词形——语料测的是存活能力（账本 corpus_rebuild_adjudication 注记中的历史词形引用属换源记录，不在此列）", () => {
+    for (const c of carrier.cases) {
+      expect(["question_gate", "next_action"], `${c.id}: evaluator 词形`).toContain(c.evaluator);
+      const expectedKeys = Object.keys(c.expected);
+      for (const word of ["profile", "matched_rule", "evidence_grade", "effectiveProfile", "triggerHitsContains", "fastPathHit", "floorApplied", "overrideBelowFloorRejected", "overrideOverpoweredByEscalation", "notApplicableRulesContains"]) {
+        expect(expectedKeys, `${c.id}: expected 出现退役引擎断言词形 ${word}`).not.toContain(word);
+      }
+    }
+  });
 });
 
 // ============================================================
 // 兼容双读同构锚（口径保真）
 // ============================================================
 
-describe("兼容双读 · 载物与 seeds.json 同构锚（25/23/2 口径保真）", () => {
+describe("兼容双读 · 载物与 seeds.json 同构锚（33/33/0/0 口径保真）", () => {
   it("归一后逐 case 与 seeds.json 深度全等（键序无关）：期望/族/evaluator/provenance/输入/处置态全字段——口径保真的直接机器锚", () => {
     for (let i = 0; i < jsonDoc.seeds.length; i++) {
       const a = canonical(jsonDoc.seeds[i]);
@@ -176,49 +189,31 @@ describe("兼容双读 · 载物与 seeds.json 同构锚（25/23/2 口径保真�
     }
   });
 
-  it("处置态口径在载物上独立成立：retired 恰 F-02/X-01（reason_md 落档）、flipped_from 恰 T-1 翻转对 C-01/C-04、翻转注册恰 G-02、pendingReason 全 null——注册矩阵三态不回归", () => {
+  it("处置态口径在载物上独立成立：零 retired、零翻转、零翻转注册、pendingReason 全 null——缺席以不登记表达（裁决 19③ 换源口径，注册矩阵三态不回归）", () => {
     const retired = carrier.cases
       .filter((c) => c.retired !== null)
-      .map((c) => c.id)
-      .sort();
-    expect(retired).toEqual([
-      "L5-F-02-churn-cluster-escalation-pending",
-      "L5-X-01-capability-router-no-architect-pending",
-    ]);
+      .map((c) => c.id);
+    expect(retired).toEqual([]);
     const flipped = carrier.cases
       .filter((c) => c.flipped_from !== null)
-      .map((c) => c.id)
-      .sort();
-    expect(flipped).toEqual([
-      "L5-C-01-replay-R2-008-t1-boundary-anchor",
-      "L5-C-04-replay-R2-008-t1-flip-acceptance",
-    ]);
+      .map((c) => c.id);
+    expect(flipped).toEqual([]);
     const flipRegistered = carrier.cases
       .filter((c) => c.expect_flip_when !== null)
       .map((c) => c.id);
-    expect(flipRegistered).toEqual([
-      "L5-G-02-replay-R2-015-fanout-deviation-anchor",
-    ]);
+    expect(flipRegistered).toEqual([]);
     const pending = carrier.cases.filter((c) => c.pendingReason !== null);
     expect(pending).toEqual([]);
-    for (const c of carrier.cases) {
-      if (c.retired !== null) {
-        expect(
-          (c.retired as { reason_md: string }).reason_md.length,
-          `${c.id}: 退役判据必须落档`,
-        ).toBeGreaterThan(40);
-      }
-    }
   });
 
-  it("双源判卷字节级同报告：runAllSeeds(载物) ≡ runAllSeeds(json)（JSON 字节全等）且报告自洽——23 executable 全绿判定不因消费面分叉", () => {
+  it("双源判卷字节级同报告：runAllSeeds(载物) ≡ runAllSeeds(json)（JSON 字节全等）且报告自洽——33 executable 全绿判定不因消费面分叉", () => {
     const fromCarrier = runAllSeeds(carrierSeeds);
     const fromJson = runAllSeeds(jsonDoc.seeds);
     expect(JSON.stringify(fromCarrier)).toBe(JSON.stringify(fromJson));
-    expect(fromCarrier.executable).toBe(23);
-    expect(fromCarrier.passed).toBe(23);
+    expect(fromCarrier.executable).toBe(33);
+    expect(fromCarrier.passed).toBe(33);
     expect(fromCarrier.failed).toBe(0);
-    expect(fromCarrier.retired).toBe(2);
+    expect(fromCarrier.retired).toBe(0);
     expect(reportIsConsistent(fromCarrier)).toBe(true);
   });
 
@@ -226,6 +221,21 @@ describe("兼容双读 · 载物与 seeds.json 同构锚（25/23/2 口径保真�
     const loaded = loadSeeds();
     expect(loaded.seeds).toHaveLength(carrierSeeds.length);
     expect(canonical(loaded.seeds)).toBe(canonical(carrierSeeds));
+  });
+
+  it("谱系在盘：载物全部 case 的 provenance.corpus 事实源文件在仓库内实存（换源分母逐项可溯源——裁决 19③ 谱系铁律）", () => {
+    const repoRoot = resolve(THIS_DIR, "..", "..");
+    for (const c of carrier.cases) {
+      const corpus = c.provenance as { corpus?: unknown };
+      expect(
+        typeof corpus.corpus === "string" && corpus.corpus.length > 0,
+        `${c.id}: provenance.corpus 必填非空`,
+      ).toBe(true);
+      expect(
+        existsSync(join(repoRoot, corpus.corpus as string)),
+        `${c.id}: 事实源 ${String(corpus.corpus)} 不在盘`,
+      ).toBe(true);
+    }
   });
 });
 
@@ -248,18 +258,22 @@ describe("eval-case.schema.json · fail-closed 闸", () => {
     expect(errors.some((e) => e.includes("must_not_spawn"))).toBe(true);
   });
 
-  it("family 词表外（H）→ 拒绝（L5_FAMILIES 闭表）", () => {
-    const errors = caseFailsSchema(0, (c) => {
-      c.family = "H";
-    });
-    expect(errors.some((e) => e.includes("family"))).toBe(true);
+  it("family 词表外（H/X）→ 拒绝（L5_FAMILIES 七族闭表——X 随旧语料退役）", () => {
+    for (const badFamily of ["H", "X"]) {
+      const errors = caseFailsSchema(0, (c) => {
+        c.family = badFamily;
+      });
+      expect(errors.some((e) => e.includes("family"))).toBe(true);
+    }
   });
 
-  it("evaluator 词表外（llm_judge）→ 拒绝（L5_EVALUATORS 闭表）", () => {
-    const errors = caseFailsSchema(0, (c) => {
-      c.evaluator = "llm_judge";
-    });
-    expect(errors.some((e) => e.includes("evaluator"))).toBe(true);
+  it("evaluator 词表外（llm_judge / cli_keyword 退役词形）→ 拒绝（L5_EVALUATORS 闭表）", () => {
+    for (const badEvaluator of ["llm_judge", "cli_keyword", "rule_v0"]) {
+      const errors = caseFailsSchema(0, (c) => {
+        c.evaluator = badEvaluator;
+      });
+      expect(errors.some((e) => e.includes("evaluator"))).toBe(true);
+    }
   });
 
   it("必填缺席三型 → 拒绝：缺 expected / provenance.corpus 空 / 处置态键缺席（缺席显式五键全 case 必填，禁键缺席）", () => {
@@ -285,11 +299,18 @@ describe("eval-case.schema.json · fail-closed 闸", () => {
     expect(errors.length).toBeGreaterThan(0);
   });
 
-  it("expected.profile 词表外（EXTREME）→ 拒绝（TRIAGE_PROFILES 闭表）", () => {
+  it("verdict 词形外（EXTREME）→ 拒绝（QuestionVerdict 六值闭表——vocab-lock question_gate_vocab）", () => {
     const errors = caseFailsSchema(0, (c) => {
-      (c.expected as Record<string, unknown>).profile = "EXTREME";
+      (c.expected as Record<string, unknown>).verdict = "EXTREME";
     });
-    expect(errors.some((e) => e.includes("profile"))).toBe(true);
+    expect(errors.some((e) => e.includes("verdict"))).toBe(true);
+  });
+
+  it("route_id 词形外（小写 route 形态）→ 拒绝（^R_ 词形 pattern 锁；词值事实源 NEXT_ACTION_ROUTE_IDS）", () => {
+    const errors = caseFailsSchema(0, (c) => {
+      (c.expected as Record<string, unknown>).route_id = "route_missing";
+    });
+    expect(errors.some((e) => e.includes("route_id"))).toBe(true);
   });
 
   it("case 级私扩键（wall_clock 墙钟字段）→ 拒绝（additionalProperties 闭表 + 零墙钟词形防线）", () => {
@@ -333,7 +354,7 @@ describe("消费面裁定与触发链", () => {
     );
     const loaded = loadSeeds(BEHAVIORAL_SEEDS_PATH);
     expect(loaded.suite).toBe("behavioral-l5");
-    expect(loaded.seeds).toHaveLength(25);
+    expect(loaded.seeds).toHaveLength(33);
   });
 
   it("触发链覆盖：§94.3 manifest Harness 源（tests/behavioral/**）命中载物与 schema 两文件——载物变更即触发 behavioral eval（Trigger 链不因新增文件缺席）", () => {

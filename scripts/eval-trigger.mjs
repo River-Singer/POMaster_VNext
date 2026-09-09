@@ -59,9 +59,10 @@ function toPosix(p) {
 }
 
 /**
- * 极简 glob（仅 ** 与 *；语义与 packages/cli/src/triage-rule-v0.ts globMatch 同源——
- * 「** 加斜杠」跨零段及以上，其余「双星」跨任意段，「单星」单段内。JS 镜像由 spec
- * 与 TS 侧做逐例一致性钉住）。
+ * 极简 glob（仅 ** 与 *；「** 加斜杠」跨零段及以上，其余「双星」跨任意段，「单星」
+ * 单段内。位置史：原与 packages/cli/src/triage-rule-v0.ts globMatch TS 镜像逐例对账
+ * 防两套漂移——该镜像随 TRIAGE 引擎退役物理删除（裁决 19③，
+ * owner-adjudications.md#裁决19），本函数自此为单一实现。
  */
 export function pathMatchesPattern(pattern, candidate) {
   const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, "\\$&");

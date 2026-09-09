@@ -2,12 +2,13 @@
  * golden.harness.ts —— Golden P0 用例数据驱动执行器。
  *
  * 用例账本：./cases.json（首批 20 条 P0，转写自 packages/schemas/assets/golden-seed-mapping.md）。
- * 执行面（本批三类可执行判定）：
+ * 执行面（本批可执行判定）：
  * 1. kernel 转移校验 —— 委托 @pomaster/kernel validateTransition；未实现（scaffold
  *    throw "not-implemented"）时回落 tests/golden/reference/transition.ts 参考镜像；
  * 2. id 解析 —— 委托 parseGovernedId/resolveAlias；未实现时回落 reference/governed-id.ts；
- * 3. triage 规则桶 —— kernel 尚无 triage 面，直接走 reference/triage.ts（rule_v0 P0 子集，
- *    镜像 design-thread-C §3.2/§7）。
+ * 3. alias 双向链对账 —— resolveAlias 机械族/家族判别面。
+ * （位置史·裁决 19③：原第 4 类「triage 规则桶」执行面随 TRIAGE 引擎物理退役删除
+ * ——owner-adjudications.md#裁决19；cases.json 对应 3 条 triage 用例同批移除。）
  *
  * 纪律：
  * - 不可执行项必须携带非空 pendingReason（cases.json 转写时显式给出）——缺席显式表达，
@@ -43,13 +44,6 @@ import {
   validateTransitionReference,
   type TransitionOutcomeLike,
 } from "./reference/transition.js";
-import {
-  PROFILE_LADDER,
-  triageRuleV0,
-  type ProfileName,
-  type TriageDecision,
-  type TriageRequestInput,
-} from "./reference/triage.js";
 
 // ============================================================
 // 用例形态（cases.json）
@@ -103,26 +97,10 @@ export interface AliasExecutable {
   readonly mappings: readonly AliasMapping[];
 }
 
-export interface TriageExpectation {
-  readonly effectiveProfile?: ProfileName;
-  readonly effectiveProfileAtLeast?: ProfileName;
-  readonly triggerHitsContains?: string;
-  readonly floorApplied?: string | null;
-  readonly overrideBelowFloorRejected?: boolean;
-  readonly overrideOverpoweredByEscalation?: boolean;
-}
-
-export interface TriageExecutable {
-  readonly kind: "triage";
-  readonly request: TriageRequestInput;
-  readonly expect: TriageExpectation;
-}
-
 export type GoldenCaseExecutable =
   | TransitionExecutable
   | IdParseExecutable
-  | AliasExecutable
-  | TriageExecutable;
+  | AliasExecutable;
 
 export interface GoldenCase {
   readonly id: string;
@@ -248,16 +226,6 @@ export function resolveAliasChecked(spelling: string): AliasResult {
   return { ...resolveAliasReference(spelling), evaluator: "reference" };
 }
 
-export interface TriageResult {
-  readonly decision: TriageDecision;
-  readonly evaluator: Extract<Evaluator, "reference">;
-}
-
-/** triage 规则桶（kernel 尚无 triage 面 → 参考实现 rule_v0 P0 子集）。 */
-export function runTriage(request: TriageRequestInput): TriageResult {
-  return { decision: triageRuleV0(request), evaluator: "reference" };
-}
-
 // ============================================================
 // 报告
 // ============================================================
@@ -327,8 +295,6 @@ export function runGoldenCase(c: GoldenCase): GoldenCaseResult {
       return runIdParseCase(c, ex);
     case "alias":
       return runAliasCase(c, ex);
-    case "triage":
-      return runTriageCase(c, ex);
   }
 }
 
@@ -470,75 +436,6 @@ function runAliasCase(c: GoldenCase, ex: AliasExecutable): GoldenCaseResult {
     ex.kind,
     evaluator,
     `${mappings.length} 条收编映射全过：canonical 合法＋legacy 拒作 canonical＋机械族双向链闭合`,
-  );
-}
-
-function profileRank(p: ProfileName): number {
-  return PROFILE_LADDER.indexOf(p);
-}
-
-function runTriageCase(c: GoldenCase, ex: TriageExecutable): GoldenCaseResult {
-  const req = ex.request;
-  const expect = ex.expect;
-  const { decision, evaluator } = runTriage(req);
-  const problems: string[] = [];
-  if (
-    expect.effectiveProfile !== undefined &&
-    decision.effectiveProfile !== expect.effectiveProfile
-  ) {
-    problems.push(
-      `effectiveProfile 期望 ${expect.effectiveProfile}，实际 ${String(decision.effectiveProfile)}`,
-    );
-  }
-  if (
-    expect.effectiveProfileAtLeast !== undefined &&
-    (decision.effectiveProfile === null ||
-      profileRank(decision.effectiveProfile) < profileRank(expect.effectiveProfileAtLeast))
-  ) {
-    problems.push(
-      `effectiveProfile 应 ≥ ${expect.effectiveProfileAtLeast}，实际 ${String(decision.effectiveProfile)}`,
-    );
-  }
-  if (
-    expect.triggerHitsContains !== undefined &&
-    !decision.triggerHits.includes(expect.triggerHitsContains)
-  ) {
-    problems.push(
-      `triggerHits 应含 ${expect.triggerHitsContains}，实际 [${decision.triggerHits.join(",")}]`,
-    );
-  }
-  if (
-    expect.floorApplied !== undefined &&
-    decision.floorApplied !== expect.floorApplied
-  ) {
-    problems.push(
-      `floorApplied 期望 ${String(expect.floorApplied)}，实际 ${String(decision.floorApplied)}`,
-    );
-  }
-  if (
-    expect.overrideBelowFloorRejected !== undefined &&
-    decision.overrideBelowFloorRejected !== expect.overrideBelowFloorRejected
-  ) {
-    problems.push(
-      `overrideBelowFloorRejected 期望 ${String(expect.overrideBelowFloorRejected)}，实际 ${String(decision.overrideBelowFloorRejected)}`,
-    );
-  }
-  if (
-    expect.overrideOverpoweredByEscalation !== undefined &&
-    decision.overrideOverpoweredByEscalation !== expect.overrideOverpoweredByEscalation
-  ) {
-    problems.push(
-      `overrideOverpoweredByEscalation 期望 ${String(expect.overrideOverpoweredByEscalation)}，实际 ${String(decision.overrideOverpoweredByEscalation)}`,
-    );
-  }
-  if (problems.length > 0) {
-    return failResult(c.id, ex.kind, `${problems.join("；")}｜decision=${JSON.stringify(decision)}`);
-  }
-  return passResult(
-    c.id,
-    ex.kind,
-    evaluator,
-    `rule_v0 判档生效：effective=${String(decision.effectiveProfile)} hits=[${decision.triggerHits.join(",")}]`,
   );
 }
 

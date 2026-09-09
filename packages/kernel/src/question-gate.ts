@@ -37,7 +37,9 @@
  *
  * 词表管辖处置留痕（09-04 vNext Batch 1 R1 核实）：QUESTION_GATE 词族
  * （分类/处置/七关 id）不在 assets/vocab-lock.draft.yaml 管辖面内——与
- * cli/triage.ts TRIAGE_PROFILES（Router 局部词，PR-0009 已入锁 presentation_axes.triage_profiles）同一先例：
+ * 已退役引擎 cli/triage.ts TRIAGE_PROFILES（Router 局部词，PR-0009 已入锁
+ * presentation_axes.triage_profiles；引擎模块随裁决 19③ 物理删除——
+ * owner-adjudications.md#裁决19，词形登记保留）同一先例：
  * 词形以本模块常量为单一事实源，收编归独立词汇表批，不走 vocab-lock relock。
  */
 export const QUESTION_GATE_CATEGORIES = [
