@@ -41,12 +41,12 @@ REQUIRED_CHECKS=(
 # GitHub Actions App 的 integration_id（rulesets required_status_checks 的固定锚）。
 ACTIONS_INTEGRATION_ID=15368
 
-# bypass actor：Repository admin（actor_id=1）仅可在 PR merge 通道旁路
-# （bypass_mode=pull_request）——直推 main 对所有人（含管理员）一律被规则拦截，
-# Owner 走 PR 合并快速落变更。如需调整旁路名单，改此 JSON 片段并与 verify 脚本同词形。
-BYPASS_ACTORS_JSON='[
-    {"actor_id": 1, "actor_type": "RepositoryRole", "bypass_mode": "pull_request"}
-  ]'
+# bypass actor：空（个人仓库不支持 RepositoryRole bypass actor——API 422 实证
+# "Actor base role does not have write permissions"，2026-09-09 发布执行轮）。
+# 语义不变：无 bypass 时直推 main 对所有人（含管理员）被规则拦截，Owner 走
+# PR 合并快速落变更（个人仓自提自合可行）。
+# org 仓迁移时可用：[{"actor_id": 1, "actor_type": "RepositoryRole", "bypass_mode": "pull_request"}]
+BYPASS_ACTORS_JSON='[]'
 
 MODE="${1:--dry-run}"
 if [ "${MODE}" != "--dry-run" ] && [ "${MODE}" != "--apply" ]; then
