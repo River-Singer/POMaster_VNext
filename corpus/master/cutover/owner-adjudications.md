@@ -166,3 +166,12 @@
 - **D-6 Golden Path 测试床 = 新建 fixture + MASTer 出口演练**：脚本生成最小真实形态项目入 tests/golden-path/ 进 CI；MASTer 作为战役出口人工演练轮（不进 CI）。
 - **D-7 Task Contract Compiler = MSD 文本化 + 锚判卷**：promote 编译投影表（intent←goal/acceptance←申报条目挂锚/affected_objects←已决议 affects 并集）+ promote 自动 record claim 生成 CLM 绑定 acceptance——已由 T2 实施（commit a23053f）。
 - **新纪律（provenance 锚纪律，本战役起生效）**：新裁定先落本台账（轻量条目格式：`## 裁决 N：标题（日期）`）再写代码注释；代码注释引裁定必须带真实锚（裁决号锚 `owner-adjudications.md#裁决N`），无法追溯的标「历史裁定，锚缺失」而非编造锚。
+
+## 裁决 19：T2/T3 偏差裁定与 grill 机制修正（2026-09-09 发布执行轮）
+
+- **决策渠道**：Owner 会话直答（2026-09-09）。背景：战役出口追认环节，Owner 引用产品自身 grill-me 精神驳回「check 背书→打包追认」的单向呈报，要求逐项对抗分析后决策；grill 过程挖出实施与 check 均未上报的「op 无 source_refs 时来源轴静默放行」洞（store.ts:820-826 判据为遍历 refs，无 refs 则无 deny）。
+- **① 来源判据载体 = 逐 op source_refs（追认）**：判据粒度以逐 op 声明为准（信封 sources 为出处采集轴，不做判卷）——store.ts 闸设计追认，台账版 D-4「与 T2 affected_objects 编译产出交叉」为准（permit 闸与 authority 闸正交分工）。
+- **② 无声明写入 = 扫描时点补全，非写路径阻断（折中裁定）**：op 未带 source_refs/声明依据时**不是** maintain 写路径阻断项（写路径闸维持现状：有 refs 则逐条判卷）；但 AI 写代码或审计扫描发现无声明写入时，**必须补上声明与依据**（扫描/审计面强制，机器闸 future——扫描器检出词形待下一轮定义）。
+- **③ TRIAGE 引擎 = 物理删除（裁决 18 D-5 收尾）**：裁决 18 D-5 授权「并入 brainstorm 或删除」，T3 实施自造第三选项「保留为 eval 语料机」（产品面零消费，唯一消费点 eval.ts:36 behavioral 套件）——Owner 裁定不追认该第三选项：语料机测的是已退役能力，属测试面 zombie，违反语义删除宪法。**处置：新建任务物理删除 triage.ts/triage-rule-v0.ts + eval behavioral 语料换源重建（brainstorm question-gate 词表/八拍路由为基）+ floor 账本 L3/L5/router_matrix 分母重构。**
+- **④ 机制修正（常驻 guides 纪律）**：a) implement 遇 PRD 未授权选择——影响对外契约/语义删除边界的**停下问 Owner**，不得先行；纯实现取向的可先行但汇报须独立标 `[DEVIATION]`。b) main agent 不得转述 check 结论为裁定依据——裁定提案须附独立证据（file:line）与正反两面，check 意见计一票不计结论。落 `.trellis/spec/guides/deviation-discipline.md`。
+- **follow-up 登记**：扫描器检出词形定义（②语义的机器面）；v* tag ruleset 加固（runbook §6 人工位）。
