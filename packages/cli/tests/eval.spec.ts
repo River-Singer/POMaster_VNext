@@ -2,7 +2,7 @@
  * eval.spec.ts —— `pomaster eval --suite behavioral` 命令面（PRD §44.10；P17）。
  *
  * 钉住四条契约：
- * 1. happy：真实种子账（25 注册/23 executable/0 pending/2 retired——P17-Seeds 处置）
+ * 1. happy：真实种子账（33 注册/33 executable/0 pending/0 retired——裁决 19③ 换源账本）
  *    全绿 exit 0，报告结构化（每种子 pass/fail/pending/retired + 汇总 + evaluator/族小结）；
  * 2. pending/retired 呈现：显式列出不冒充绿（pendingList/retiredList 逐条 + 人读行），
  *    pending ≠ 失败（ok 不因 pending 翻红），也不把 pending 计入 passed；retired 同判
@@ -55,9 +55,22 @@ function executableSeed(overrides: Partial<BehavioralSeed> & { id: string; expec
   return {
     family: "A",
     title: "合成种子（测试注入）",
-    evaluator: "cli_keyword",
-    provenance: { corpus: "corpus/master/batch-1/calibration/samples.json", note_md: "eval.spec 合成种子" },
-    input: { request: "调整按钮颜色和文案" },
+    evaluator: "question_gate",
+    provenance: { corpus: "packages/kernel/src/question-gate.ts", note_md: "eval.spec 合成种子" },
+    input: {
+      gate: {
+        category: "DERIVABLE",
+        answerable: {
+          q1_current_truth: true,
+          q2_existing_docs: false,
+          q3_repo_code: false,
+          q4_existing_evidence: false,
+          q5_knowledge_default: false,
+          q6_research: false,
+          q7_blocking_increment: false,
+        },
+      },
+    },
     design_expected: null,
     flipped_from: null,
     expect_flip_when: null,
@@ -83,7 +96,7 @@ afterEach(() => {
 });
 
 describe("runEval · 真实种子账 happy 面", () => {
-  it("behavioral suite 全绿：25 注册/23 executable/23 passed/0 failed/0 pending/2 retired，每种子结构化结果齐备", async () => {
+  it("behavioral suite 全绿：33 注册/33 executable/33 passed/0 failed/0 pending/0 retired，每种子结构化结果齐备", async () => {
     const outcome = await runEval({ suite: "behavioral" });
     expect(outcome.ok).toBe(true);
     expect(outcome.errors).toEqual([]);
@@ -91,36 +104,24 @@ describe("runEval · 真实种子账 happy 面", () => {
     expect(result.suite).toBe("behavioral");
     expect(result.seeds_path).toBe(BEHAVIORAL_SEEDS_PATH);
     const report = result.report;
-    expect(report.total).toBe(25);
-    expect(report.executable).toBe(23);
-    expect(report.passed).toBe(23);
+    expect(report.total).toBe(33);
+    expect(report.executable).toBe(33);
+    expect(report.passed).toBe(33);
     expect(report.failed).toBe(0);
     expect(report.pending).toBe(0);
-    expect(report.retired).toBe(2);
-    expect(report.results).toHaveLength(25);
+    expect(report.retired).toBe(0);
+    expect(report.results).toHaveLength(33);
     for (const r of report.results) {
       expect(["passed", "pending", "retired"], `${r.id} 状态合法`).toContain(r.status);
     }
-    expect(report.evaluatorSummary.cli_keyword + report.evaluatorSummary.rule_v0).toBe(23);
+    expect(report.evaluatorSummary.question_gate + report.evaluatorSummary.next_action).toBe(33);
   });
 
-  it("retired 显式呈现不冒充绿：retiredList 恰两条稳定 id 且退役判据落档；人读行逐条列出；ok 不因 retired 翻红（P17-Seeds：禁静默 pending 滞留）", async () => {
+  it("两 evaluator 分派计数：question_gate=18 / next_action=15（换源两能力的分母——裁决 19③）", async () => {
     const outcome = await runEval({ suite: "behavioral" });
     expect(outcome.ok).toBe(true);
-    const ids = outcome.result.report.retiredList.map((r) => r.id).sort();
-    expect(ids).toEqual([
-      "L5-F-02-churn-cluster-escalation-pending",
-      "L5-X-01-capability-router-no-architect-pending",
-    ]);
-    for (const r of outcome.result.report.retiredList) {
-      expect(r.reason.length, `${r.id} 缺退役判据`).toBeGreaterThan(0);
-    }
-    const human = outcome.human.join("\n");
-    expect(human).toContain("0 pending");
-    expect(human).toContain("retired 2");
-    expect(human).toContain("显式退役，不冒充绿也不滞留 pending");
-    expect(human).toContain("L5-F-02-churn-cluster-escalation-pending");
-    expect(human).toContain("L5-X-01-capability-router-no-architect-pending");
+    expect(outcome.result.report.evaluatorSummary.question_gate).toBe(18);
+    expect(outcome.result.report.evaluatorSummary.next_action).toBe(15);
   });
 
   it("幂等：双跑字节级同报告（零墙钟，GOLDEN-L8-1 判据同款）", async () => {
@@ -137,10 +138,10 @@ describe("runEval · 真实种子账 happy 面", () => {
     expect(envelope.command).toBe("eval");
     expect(envelope.ok).toBe(true);
     const result = envelope.result as { report: { passed: number; failed: number; pending: number; retired: number } };
-    expect(result.report.passed).toBe(23);
+    expect(result.report.passed).toBe(33);
     expect(result.report.failed).toBe(0);
     expect(result.report.pending).toBe(0);
-    expect(result.report.retired).toBe(2);
+    expect(result.report.retired).toBe(0);
   });
 
   it("人读模式：stdout 纯文本汇总（无 ANSI 颜色码），stderr 干净", async () => {
@@ -148,7 +149,8 @@ describe("runEval · 真实种子账 happy 面", () => {
     const code = await runCli(["eval", "--suite", "behavioral"], io);
     expect(code).toBe(0);
     const text = io.out.join("\n");
-    expect(text).toContain("23 passed / 0 failed / 0 pending");
+    expect(text).toContain("33 passed / 0 failed / 0 pending");
+    expect(text).toContain("question_gate=18");
     expect(text).not.toMatch(/\x1b\[/);
     expect(io.err).toEqual([]);
   });
@@ -157,17 +159,15 @@ describe("runEval · 真实种子账 happy 面", () => {
 describe("runEval · fail-closed 面", () => {
   it("executable seed 失败 → ok=false + EVAL_EXECUTABLE_FAILED；报告诚实计数 failed=1，可诊断 diff 在 detail", async () => {
     const seedsPath = writeSeedsFile(dir, [
-      // 通过种子：真实判档 LIGHT。
+      // 通过种子：真实七关判定 DERIVABLE@Q1。
       executableSeed({
         id: "L5-SPEC-pass-probe",
-        input: { request: "Fix checkbox selection column width and centering" },
-        expect: { profile: "LIGHT", matched_rule: "DEFAULT_NO_SIGNAL", evidence_grade: "NOT_CONFIGURED" },
+        expect: { verdict: "DERIVABLE", stoppedAtGate: "Q1", mayAskHuman: false, declaredConsistent: true },
       }),
-      // 失败种子：期望蓄意与实际路由背离（MINIMAL 请求钉 STANDARD）。
+      // 失败种子：期望蓄意与实际判定背离（Q1 命中钉 ASK_HUMAN）。
       executableSeed({
         id: "L5-SPEC-fail-probe",
-        input: { request: "调整样式文案" },
-        expect: { profile: "STANDARD" },
+        expect: { verdict: "ASK_HUMAN" },
       }),
     ]);
     const outcome = await runEval({ suite: "behavioral", seedsPath });
@@ -179,8 +179,46 @@ describe("runEval · fail-closed 面", () => {
     expect(outcome.errors[0]?.message).not.toContain("L5-SPEC-pass-probe");
     expect(outcome.errors[0]?.hint).toContain("--json");
     const failedDetail = outcome.result.report.results.find((r) => r.id === "L5-SPEC-fail-probe");
-    expect(failedDetail?.detail).toContain("期望 profile=STANDARD");
+    expect(failedDetail?.detail).toContain("期望 verdict=ASK_HUMAN");
     expect(outcome.human.join("\n")).toContain("FAILED L5-SPEC-fail-probe");
+  });
+
+  it("next_action seed 失败同样 fail-closed：route 漂移 → 可诊断 diff 携带期望 vs 实际路由", async () => {
+    const seedsPath = writeSeedsFile(dir, [
+      executableSeed({
+        id: "L5-SPEC-route-probe",
+        evaluator: "next_action",
+        input: {
+          snapshot: {
+            initialized: false,
+            active_tasks: [],
+            permit_ledger_ok: false,
+            expired_bound_refs: [],
+            active_bound_refs: [],
+            bound_refs: [],
+            task_manifest_present: false,
+            task_manifest_freshness: "absent",
+            task_manifest_role: null,
+            evidence_present: false,
+            runs_present: false,
+            dod_ready_task_id: null,
+            dod_judgeable: false,
+            task_scope_subjects: [],
+            task_execution_active: false,
+            baseline_gate_codes: [],
+            baseline_unknowns_remaining: null,
+            baseline_pending_change_ref: null,
+          },
+        },
+        expect: { route_id: "R_CLOSEOUT_READY" },
+      }),
+    ]);
+    const outcome = await runEval({ suite: "behavioral", seedsPath });
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors[0]?.code).toBe("EVAL_EXECUTABLE_FAILED");
+    const failedDetail = outcome.result.report.results.find((r) => r.id === "L5-SPEC-route-probe");
+    expect(failedDetail?.detail).toContain("期望 route_id=R_CLOSEOUT_READY");
+    expect(failedDetail?.detail).toContain("R_NOT_INITIALIZED");
   });
 
   it("runCli 链路同判据：executable 失败 → exit 1（--json 信封 ok=false）", async () => {
@@ -199,7 +237,7 @@ describe("runEval · fail-closed 面", () => {
       executableSeed({
         id: "L5-SPEC-pending-probe",
         expect: {},
-        pendingReason: "churn 信号 NOT_CONFIGURED（合成缺席）",
+        pendingReason: "信号 NOT_CONFIGURED（合成缺席）",
       }),
     ]);
     const outcome = await runEval({ suite: "behavioral", seedsPath });
@@ -282,13 +320,34 @@ describe("runEval · fail-closed 面", () => {
     expect(outcome.errors[0]?.message).toContain("id 重复");
   });
 
+  it("evaluator 专属输入坏形 → SEEDS_INVALID：question_gate 缺 answerable 七键 / next_action 缺 snapshot（分派前置闸）", async () => {
+    const seedsPath = writeSeedsFile(dir, [
+      executableSeed({
+        id: "L5-SPEC-bad-gate",
+        input: { gate: { category: "DERIVABLE" } },
+        expect: {},
+      }),
+      executableSeed({
+        id: "L5-SPEC-bad-snapshot",
+        evaluator: "next_action",
+        input: {},
+        expect: {},
+      }),
+    ]);
+    const outcome = await runEval({ suite: "behavioral", seedsPath });
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors[0]?.code).toBe("SEEDS_INVALID");
+    const message = outcome.errors[0]?.message ?? "";
+    expect(message).toContain("L5-SPEC-bad-gate");
+    expect(message).toContain("L5-SPEC-bad-snapshot");
+  });
+
   it("报告自洽守卫有牙：被篡改的执行器产出（failed 与计数失配）→ EVAL_REPORT_INCONSISTENT 拒绝判卷", () => {
     // 直接调用内部纯函数合成不自洽报告（模拟执行器被改坏），经 reportIsConsistent 断言守卫判据。
     const genuine = runAllSeeds([
       executableSeed({
         id: "L5-SPEC-guard-probe",
-        input: { request: "调整样式文案" },
-        expect: { profile: "MINIMAL" },
+        expect: { verdict: "DERIVABLE", stoppedAtGate: "Q1" },
       }),
     ]);
     expect(reportIsConsistent(genuine)).toBe(true);

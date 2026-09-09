@@ -1,11 +1,12 @@
 /**
- * smoke.spec.ts —— 临时目录端到端冒烟：pomaster init → triage×2 → status --json → doctor --json。
+ * smoke.spec.ts —— 临时目录端到端冒烟：pomaster init → alerts×2 → status --json → doctor --json。
  *
- * 命令面契约（@pomaster/cli 六命令，§45 双输出；本 spec 消费其机读信封）：
+ * 命令面契约（@pomaster/cli 命令面，§45 双输出；本 spec 消费其机读信封）：
  * - init          = BOOTSTRAP：.pomaster/ 骨架 + 入口文件（D13 2026-09-03 修订：
  *                   重入口默认）；幂等（A4/No-op is elegant：
  *                   重复 init 产物字节稳定，第二次 NO_CHANGE）
- * - triage <text> = 八拍①：关键词规则桶判档（C1）；判定必附 absent_signals（缺席显式）
+ * - alerts        = 八拍① 导航面（D-5 裁决 18：原 triage 判档位退役，alerts 路由段
+ *                   承导航——workflow 路由段 + unsourced 显式缺席披露）
  * - status --json = 状态读面（by_lifecycle/by_status 词形必须走 FROZEN 词表）
  * - doctor --json = 探测四态矩阵（READY/NOT_INSTALLED/MISSING_CONFIGURATION/DEFECT；
  *                   fail-closed：ok = 全 READY；非 READY 必带 hint）

@@ -29,7 +29,6 @@ import {
   SKILL_MANIFEST,
   TRUTH_INDEX_RELATIVE,
   CHECKLIST_KEYS,
-  TRIAGE_PROFILES,
   parsePlatformSelection,
   renderChecklistFrame,
   renderPlatformMenu,
@@ -1423,13 +1422,16 @@ describe("预铺目录骨架与 layout.json", () => {
 });
 
 // ============================================================
-// D-1/D-5 档位语义退役（Owner 裁决 18，2026-09-08）：模板零 profile/triage 词形 +
-// 引擎模块保留（eval 语料机）注记
+// D-1/D-5 档位语义退役（Owner 裁决 18，2026-09-08）+ 裁决 19③ 引擎物理删除
+// （2026-09-09）：模板零 profile/triage 词形 + 包导出面零引擎词形
 // ============================================================
 
-describe("D-1/D-5 档位语义退役（裁决 18）", () => {
-  it("TRIAGE_PROFILES 引擎词形在册（eval 语料机保留——产品面退役不改语料分母）", () => {
-    expect(TRIAGE_PROFILES).toEqual(["MINIMAL", "LIGHT", "STANDARD"]);
+describe("D-1/D-5 档位语义退役（裁决 18）与引擎物理删除（裁决 19③）", () => {
+  it("TRIAGE 引擎导出面零残留（裁决 19③）：@pomaster/cli 命名空间不再导出 triageRequest/TRIAGE_PROFILES——物理删除的机器回归锚", async () => {
+    const cli = await import("@pomaster/cli");
+    expect("triageRequest" in cli).toBe(false);
+    expect("TRIAGE_PROFILES" in cli).toBe(false);
+    expect("triageRuleV0" in cli).toBe(false);
   });
 
   it("模板零档位词形：config.yaml 模板与重入口/最小两形态入口均无 profile/triage/TTL 语义", async () => {

@@ -1,9 +1,9 @@
 {
   "suite": "golden-p0-batch1",
-  "sourceOfTruth": "packages/schemas/assets/golden-seed-mapping.md（种子账本，转写首批 20 条 P0）；第 21 条 GOLDEN-L1-ROUTER-GLOBAL-ESCALATION 为 T-1 批准追加（corpus/master/cutover/owner-adjudications.md 裁决2 ＋ benchmarks/calibration-t1-approval.json bench-0003）；第 22-25 条为 wave3-plan.md P17 测试战略 L3 四点名种子补录（Case C 技术基线漂移 EVOLUTION_REQUIRED / prototype_html_scrape→FATAL / 语料归档件 14 态派生收敛 / compact 幂等 NO_CHANGE 转正——工具链研究 §2 L3 行）",
+  "sourceOfTruth": "packages/schemas/assets/golden-seed-mapping.md（种子账本，转写首批 20 条 P0）；第 21 条 GOLDEN-L1-ROUTER-GLOBAL-ESCALATION（T-1 批准追加）与第 22 条 GOLDEN-L1-ROUTER-BOUNDARY、GOLDEN-L1-ROUTER-FLOOR 邻接 2 条 Router 判定矩阵用例已随 TRIAGE 引擎物理退役整体移除（裁决 19③，owner-adjudications.md#裁决19——八拍① 判定矩阵的存活测试位由 tests/behavioral/seeds.json 换源语料承载）；wave3-plan.md P17 测试战略 L3 四点名种子补录（Case C 技术基线漂移 EVOLUTION_REQUIRED / prototype_html_scrape→FATAL / 语料归档件 14 态派生收敛 / compact 幂等 NO_CHANGE 转正——工具链研究 §2 L3 行）继续在册",
   "conventions": {
     "verdictWords": "expected.verdict / expected.verdictAlternatives 只允许 03-gate-result definitions.verdict 七态词形逐字：passed/failed/warning/blocked/not_run/not_configured/skipped_blindspot；FATAL/NO_CHANGE/字节全等属于 §0 判决维度词（非七态），照录在 expected.note / expected.outcomeWords",
-    "executable": "目前仅三类可执行判定：kernel 转移校验（transition）+ id 解析（id-parse/alias）+ triage 规则桶（triage）；不可执行项必须携带非空 pendingReason（缺席显式表达，禁止静默跳过）",
+    "executable": "目前两类可执行判定：kernel 转移校验（transition）+ id 解析（id-parse/alias）；原第三类 triage 规则桶（triage）随 TRIAGE 引擎物理退役删除（裁决 19③，owner-adjudications.md#裁决19——3 条 triage 用例同批移除）；不可执行项必须携带非空 pendingReason（缺席显式表达，禁止静默跳过）",
     "inputDescribed": "input.described 照录种子账本『触发输入』列原文"
   },
   "cases": [
@@ -506,156 +506,6 @@
       "pendingReason": "需 applyTransaction digest 授权域校验执行面（A4 禁墙钟在写路径强制，纯函数面无法复演）"
     },
     {
-      "id": "GOLDEN-L1-ROUTER-BOUNDARY",
-      "group": "GOLDEN-L1",
-      "category": "L1·Router 判定矩阵",
-      "p0": true,
-      "title": "跨域契约变更信号以 MINIMAL 申报 → E_CONTRACT 自动升级，effective ≥ STANDARD",
-      "input": {
-        "described": "跨域契约变更信号（修改 API_REQ.BIND.CARLINE.1 的 response_need）以 MINIMAL 档申报",
-        "triageRequest": {
-          "declaredPaths": [
-            "src/entities/bind-carline/api.ts"
-          ],
-          "contractSurfaceHit": true,
-          "requestedProfileOverride": "MINIMAL",
-          "projectLegacyMaster": true
-        }
-      },
-      "expected": {
-        "verdict": null,
-        "verdictAlternatives": [],
-        "outcome": {
-          "triggerHitsContains": "E_CONTRACT",
-          "effectiveProfileAtLeast": "STANDARD",
-          "overrideOverpoweredByEscalation": true
-        },
-        "note": "自动升级（升级路由触发、profile≥STANDARD）；边界值矩阵全部可单测（triage 非 gate 平面，verdict 位留空——FATAL/七态词均不适用，判据在 outcome 结构）"
-      },
-      "trace": {
-        "source": "golden-seed-mapping.md §2.F GOLDEN-L1-ROUTER-BOUNDARY",
-        "decisions": [
-          "test-strategy L1 Router 60＋L5",
-          "C1"
-        ],
-        "evidence": "ev04 · 风险备忘「全员 MINIMAL 起步架空治理」风险面",
-        "breaks": "ev04·风险备忘「全员 MINIMAL 起步架空治理」风险面"
-      },
-      "executable": {
-        "kind": "triage",
-        "request": {
-          "declaredPaths": [
-            "src/entities/bind-carline/api.ts"
-          ],
-          "contractSurfaceHit": true,
-          "requestedProfileOverride": "MINIMAL",
-          "projectLegacyMaster": true
-        },
-        "expect": {
-          "triggerHitsContains": "E_CONTRACT",
-          "effectiveProfileAtLeast": "STANDARD",
-          "overrideOverpoweredByEscalation": true
-        }
-      },
-      "pendingReason": null
-    },
-    {
-      "id": "GOLDEN-L1-ROUTER-FLOOR",
-      "group": "GOLDEN-L1",
-      "category": "L1·Router 判定矩阵",
-      "p0": true,
-      "title": "MASTer 型存量项目 src/** 申报 MINIMAL → floor=LIGHT 生效拒绝降档",
-      "input": {
-        "described": "MASTer 型存量项目把 src/** 档位申报为 MINIMAL",
-        "triageRequest": {
-          "declaredPaths": [
-            "src/shared/widgets/mini.vue"
-          ],
-          "requestedProfileOverride": "MINIMAL",
-          "projectLegacyMaster": true,
-          "floorOverrides": [
-            {
-              "whenPath": [
-                "src/**"
-              ],
-              "floor": "LIGHT"
-            }
-          ]
-        }
-      },
-      "expected": {
-        "verdict": null,
-        "verdictAlternatives": [],
-        "outcome": {
-          "effectiveProfile": "LIGHT",
-          "floorApplied": "src/**",
-          "overrideBelowFloorRejected": true
-        },
-        "note": "floor=LIGHT 生效拒绝降档（C4；triage 非 gate 平面，判据在 outcome 结构）"
-      },
-      "trace": {
-        "source": "golden-seed-mapping.md §2.F GOLDEN-L1-ROUTER-FLOOR",
-        "decisions": [
-          "C4"
-        ],
-        "evidence": "ev04 · 同 ROUTER-BOUNDARY 风险面",
-        "breaks": "ev04·同上（Profile floor 的直接验收行）"
-      },
-      "executable": {
-        "kind": "triage",
-        "request": {
-          "declaredPaths": [
-            "src/shared/widgets/mini.vue"
-          ],
-          "requestedProfileOverride": "MINIMAL",
-          "projectLegacyMaster": true,
-          "floorOverrides": [
-            {
-              "whenPath": [
-                "src/**"
-              ],
-              "floor": "LIGHT"
-            }
-          ]
-        },
-        "expect": {
-          "effectiveProfile": "LIGHT",
-          "floorApplied": "src/**",
-          "overrideBelowFloorRejected": true
-        }
-      },
-      "pendingReason": null
-    },
-    {
-      "id": "GOLDEN-L1-ROUTER-GLOBAL-ESCALATION",
-      "group": "GOLDEN-L1",
-      "category": "L1·Router 判定矩阵",
-      "p0": true,
-      "title": "词形 global 请求 → T-1 升档 STANDARD（packages 关键词引擎；golden 执行面缺席显式登记）",
-      "input": {
-        "described": "任务请求文本含词形 global（replay-R2-008 原型：Disable AG Grid automatic boolean rendering globally，全局影响面批次）→ triage 判 STANDARD 而非 LIGHT",
-        "requestText": "Disable AG Grid automatic boolean rendering globally",
-        "expectedProfile": "STANDARD"
-      },
-      "expected": {
-        "verdict": null,
-        "verdictAlternatives": [],
-        "outcome": null,
-        "note": "T-1（Owner 2026-08-29 批准，bench-0003）：TRIAGE_ESCALATION_KEYWORDS += global → E_CONTRACT_KEYWORD 升档 STANDARD（升档触发优先于 MINIMAL 短路）；triage 非 gate 平面，verdict 位留空"
-      },
-      "trace": {
-        "source": "corpus/master/batch-1/calibration/proposed-thresholds.json §proposals[T-1] ＋ corpus/master/cutover/owner-adjudications.md 裁决2 ＋ benchmarks/calibration-t1-approval.json（bench-0003）",
-        "decisions": [
-          "T-1",
-          "bench-0002 provision 二轮校准（replay-R2-008 系统性低判修复）"
-        ],
-        "evidence": "replay-R2-008（replay-round2-input.md §2 行 131 ＋ replay-results.json records）＋语料全量扫描 2/53 命中 0 反例（分母 53）",
-        "breaks": "replay-R2-008 期望 STANDARD（E2 fan_out 全局影响面语义）实得 LIGHT 的系统性低判"
-      },
-      "executable": null,
-      "pendingReason": "golden 本批三类可执行判定面的 triage 走 reference/triage.ts rule_v0（只消费结构化信号 contractSurfaceHit/blastRadius/…，无请求词形信号落点；其纪律禁止发明规则 id，故不镜像关键词表）；词形 global → STANDARD 判定归 packages/cli/src/triage.ts 关键词引擎（唯一实现），钉住手段＝packages/cli/tests/triage.spec.ts T-1 单测 ＋ benchmarks/run-all.mjs 矩阵；kernel triage 面落地后本用例升级为可执行"
-    },
-    {
       "id": "ADV-PFX-01",
       "group": "ADV-PFX",
       "category": "L1·前缀探针／TEST. 合法",
@@ -866,7 +716,7 @@
         "breaks": "技术基线漂移无审批引用自由发生——治理面必须在缺 authorityRef 时以 EVOLUTION_REQUIRED 拒绝"
       },
       "executable": null,
-      "pendingReason": "数据驱动四类纯函数判定面（transition/id-parse/alias/triage）不判 store 事务执行面；kernel 真实判决载体（applyTransitionObject 转移缺 authorityRef → GovernanceError EVOLUTION_REQUIRED，store.ts hint 直注 GOLDEN-L3-CASE-C）已在本 spec「GOLDEN-L3 点名种子 · 执行面对照」describe 跑实（wave3-plan P17 补录）；L1 覆盖=packages/kernel/tests/store.spec.ts/transitions-store.spec.ts。形态映射 concern：种子的 write_policy=EVOLUTION_CHANNEL（对象变更申请维度）在 kernel 尚无独立 write-policy 执行面，判决以转移 authorityRef 强制承载（语义家族相同、载体不同——如实呈报不冒充同形）"
+      "pendingReason": "数据驱动纯函数判定面（transition/id-parse/alias——原第四类 triage 随 TRIAGE 引擎退役删除，裁决 19③）不判 store 事务执行面；kernel 真实判决载体（applyTransitionObject 转移缺 authorityRef → GovernanceError EVOLUTION_REQUIRED，store.ts hint 直注 GOLDEN-L3-CASE-C）已在本 spec「GOLDEN-L3 点名种子 · 执行面对照」describe 跑实（wave3-plan P17 补录）；L1 覆盖=packages/kernel/tests/store.spec.ts/transitions-store.spec.ts。形态映射 concern：种子的 write_policy=EVOLUTION_CHANNEL（对象变更申请维度）在 kernel 尚无独立 write-policy 执行面，判决以转移 authorityRef 强制承载（语义家族相同、载体不同——如实呈报不冒充同形）"
     },
     {
       "id": "GOLDEN-L3-SCRAPE-FATAL",

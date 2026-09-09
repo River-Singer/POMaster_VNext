@@ -1,14 +1,15 @@
 /**
- * golden.spec.ts —— Golden P0 批次1（20 条种子转写＋T-1 追加＋P17 四点名补录共 25 条数据驱动）
+ * golden.spec.ts —— Golden P0 批次1（20 条种子转写＋T-1 追加＋P17 四点名补录；
+ * 原 25 条中 3 条 triage 用例随 TRIAGE 引擎退役移除——裁决 19③，现 22 条数据驱动）
  * ＋ 执行器参考镜像单元测试 ＋ GOLDEN-L3 点名种子执行面对照（真实判决跑实）。
  *
  * 运行入口（数据驱动）：cases.json 逐条 → runGoldenCase；可执行判定通过（passed），
  * 不可执行判定显式 pending（附原因，进报告 pendingList——禁静默跳过）。
  * 报告落盘：coverage/golden-report.json（幂等可重放，零墙钟字段）。
- * P17-Seeds：测试战略 L3 四点名种子补录进 cases.json（21→25），其中 Case C（EVOLUTION_
+ * P17-Seeds：测试战略 L3 四点名种子补录进 cases.json，其中 Case C（EVOLUTION_
  * REQUIRED）/prototype_html_scrape（FATAL）/compact 幂等（NO_CHANGE）三场景的 kernel/CLI
  * 真实判决执行面在「GOLDEN-L3 点名种子 · 执行面对照」describe 跑实——数据驱动账本登记
- * 与真实执行对照分离表达（四类纯函数判定面不判 store 事务/CLI 编排）。
+ * 与真实执行对照分离表达（纯函数判定面不判 store 事务/CLI 编排）。
  */
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -33,12 +34,10 @@ import {
   checkTransition,
   parseId,
   resolveAliasChecked,
-  runTriage,
   type GoldenReport,
 } from "./golden.harness.js";
 import { validateTransitionReference } from "./reference/transition.js";
 import { parseGovernedIdReference, resolveAliasReference } from "./reference/governed-id.js";
-import { triageRuleV0 } from "./reference/triage.js";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const { suite, cases } = loadGoldenCases();
@@ -235,8 +234,8 @@ describe("GOLDEN-L3 点名种子 · 执行面对照（wave3-plan P17 测试战�
 // ============================================================
 
 describe("Golden 元纪律", () => {
-  it("cases.json：恰 25 条（20 条种子转写＋T-1 批准追加＋P17 测试战略 L3 四点名补录）、id 唯一、全部 P0", () => {
-    expect(cases.length).toBe(25);
+  it("cases.json：恰 22 条（20 条种子转写＋P17 测试战略 L3 四点名补录——原 T-1 追加与 2 条 Router 判定矩阵 triage 用例随 TRIAGE 引擎退役移除，裁决 19③）、id 唯一、全部 P0", () => {
+    expect(cases.length).toBe(22);
     const ids = cases.map((c) => c.id);
     expect(new Set(ids).size).toBe(ids.length);
     expect(cases.every((c) => c.p0 === true)).toBe(true);
@@ -415,80 +414,6 @@ describe("执行器参考镜像 · alias 机械族与数据面分界", () => {
     const r = resolveAliasChecked("KB.FAILURE_PATTERN.CSV_NAIVE_SPLIT");
     expect(r.matchedRuleLegacy).toBe("KB-*");
     expect(r.canonical).toBeNull();
-  });
-});
-
-// ============================================================
-// 执行器参考镜像 · triage rule_v0（thread-C §3.2/§7）
-// ============================================================
-
-describe("执行器参考镜像 · triage 规则桶（rule_v0 P0 子集）", () => {
-  it("幂等：同输入两次判定字节全等（A4 零墙钟）", () => {
-    const req = {
-      declaredPaths: ["src/entities/bind-carline/api.ts"],
-      contractSurfaceHit: true,
-      requestedProfileOverride: "MINIMAL",
-      projectLegacyMaster: true,
-    } as const;
-    expect(JSON.stringify(triageRuleV0(req))).toBe(
-      JSON.stringify(triageRuleV0(req)),
-    );
-  });
-
-  it("零信号输入 → NO_CHANGE（八拍①：无操作是合法成功）", () => {
-    const d = triageRuleV0({});
-    expect(d.outcome).toBe("NO_CHANGE");
-    expect(d.effectiveProfile).toBeNull();
-  });
-
-  it("DOC_ONLY 快道：纯 docs/**/*.md → MINIMAL", () => {
-    const d = triageRuleV0({ declaredPaths: ["README.md", "docs/guide.md"] });
-    expect(d.fastPathHit).toBe("DOC_ONLY");
-    expect(d.effectiveProfile).toBe("MINIMAL");
-  });
-
-  it("TEST_ONLY 快道：tests/** → MINIMAL", () => {
-    const d = triageRuleV0({ declaredPaths: ["tests/a.spec.ts"] });
-    expect(d.fastPathHit).toBe("TEST_ONLY");
-    expect(d.effectiveProfile).toBe("MINIMAL");
-  });
-
-  it("E_CONTRACT 压过 MINIMAL 申报 → effective=STANDARD（§3.5 override≠bypass）", () => {
-    const d = triageRuleV0({
-      declaredPaths: ["src/entities/bind-carline/api.ts"],
-      contractSurfaceHit: true,
-      requestedProfileOverride: "MINIMAL",
-    });
-    expect(d.triggerHits).toContain("E_CONTRACT");
-    expect(d.effectiveProfile).toBe("STANDARD");
-    expect(d.overrideOverpoweredByEscalation).toBe(true);
-  });
-
-  it("floor 拒降档：override MINIMAL 撞 src/**→LIGHT floor → effective=LIGHT（C4）", () => {
-    const d = triageRuleV0({
-      declaredPaths: ["src/shared/widgets/mini.vue"],
-      requestedProfileOverride: "MINIMAL",
-      floorOverrides: [{ whenPath: ["src/**"], floor: "LIGHT" }],
-    });
-    expect(d.effectiveProfile).toBe("LIGHT");
-    expect(d.floorApplied).toBe("src/**");
-    expect(d.overrideBelowFloorRejected).toBe(true);
-  });
-
-  it("R-B：blastRadius=NOT_CONFIGURED → E_BLAST 未评估入账（禁按 false/true 处理）", () => {
-    const d = triageRuleV0({
-      declaredPaths: ["src/a.ts"],
-      blastRadius: null,
-      contractSurfaceHit: true,
-    });
-    expect(d.blindspots.notApplicableRules).toContain("E_BLAST");
-    expect(d.triggerHits).toContain("E_CONTRACT");
-  });
-
-  it("hotfix 托底：profile_base LIGHT＋fast_lane（§7 when_task_type 逐条）", () => {
-    const d = runTriage({ declaredPaths: ["src/hot.vue"], declaredType: "hotfix" }).decision;
-    expect(d.fastLane).toBe(true);
-    expect(d.effectiveProfile).toBe("LIGHT");
   });
 });
 

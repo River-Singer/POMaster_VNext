@@ -2,45 +2,52 @@
  * eval.ts —— `pomaster eval --suite behavioral`：Agent Behavioral Eval 命令面
  * （PRD §44.10）+ 数据驱动执行器本体。
  *
- * 位置史（P17）：执行器纯函数（seeds 装载与结构校验 / 双 evaluator 分派 /
+ * 位置史（P17）：执行器纯函数（seeds 装载与结构校验 / evaluator 分派 /
  * 可诊断 diff / 报告汇总）原居 tests/behavioral/behavioral.harness.ts；eval 命令需要
  * 在包内 in-process 执行（dist 可加载，包禁反向依赖 tests/），故上移至本模块。
- * tests/behavioral/behavioral.harness.ts 保留 corpus 谱系对账 loader 与账本常量，
- * 并 re-export 本模块执行器面——单一实现，禁两套 runner 漂移。
+ * tests/behavioral/behavioral.harness.ts 保留账本常量，并 re-export 本模块执行器
+ * 面——单一实现，禁两套 runner 漂移。
  *
- * 双 evaluator 分派（契约 docs/p9-human-view-and-l5-contract.md §2.4）：
- * 1. cli_keyword —— packages/cli/src/triage.ts 的 triageRequest（关键词引擎）；
- * 2. rule_v0 —— ./triage-rule-v0.js 的 triageRuleV0（thread-C §3.2/§7 参考镜像）。
+ * 语料换源重建（裁决 19③，Owner 2026-09-09，owner-adjudications.md#裁决19）：
+ * 原 cli_keyword / rule_v0 双 evaluator 测的是已退役 TRIAGE 引擎（测试面 zombie，
+ * 违反语义删除宪法）——引擎已物理删除（triage.ts/triage-rule-v0.ts 不复存在），
+ * 语料换源为**活着的能力**两个评估器形态：
+ * 1. question_gate —— @pomaster/kernel evaluateQuestionGate（八拍① Brainstorm/
+ *    Question Gate 七关 verdict 判定，PRD §80.4 逐字语义 + 裁决 11⑨ ASSUMPTION
+ *    第六处置词形；产品消费面 = `pomaster brainstorm question-gate`）；
+ * 2. next_action —— 本包 evaluateNextAction（八拍路由矩阵，NEXT_ACTION_ROUTE_TABLE
+ *    表驱动首中即停；产品消费面 = status/session/alerts 三通道共享）。
+ * 双 evaluator 交叉对账机制（cli_keyword vs rule_v0 同语义双实现互证）无存活对应物，
+ * 随退役一并删除——两新 evaluator 是**不同能力**的各自判定面，非同一语义双源。
  *
- * fail-closed 纪律：
+ * fail-closed 纪律（换源重建后全部保持）：
  * - --suite 词表闭包（EVAL_SUITES）外显式拒绝（EVAL_SUITE_UNKNOWN，词表呈现于 hint）；
  * - executable seed 任何失败 → ok=false exit 1（EVAL_EXECUTABLE_FAILED）；
  * - pending seed 显式缺席呈现（报告 pendingList 逐条 + 人读行）——不冒充绿、也不计失败；
- * - retired seed 显式退役呈现（报告 retiredList 逐条 + 人读行；P17-Seeds 处置形态）——
- *   不计 executable、不计 pending、不执行判定；retired 与 pendingReason/expect_flip_when
- *   互斥由结构校验 fail-closed（缺席显式第三态，禁静默 pending 滞留）；
+ * - retired seed 显式退役呈现（报告 retiredList 逐条 + 人读行）——不计 executable、
+ *   不计 pending、不执行判定；retired 与 pendingReason/expect_flip_when 互斥由结构
+ *   校验 fail-closed（缺席显式第三态，禁静默 pending 滞留）；
  * - seeds 缺失/坏形显式报错（SEEDS_NOT_AVAILABLE / SEEDS_INVALID），禁静默空跑；
- * - yaml 载物显式拒绝并指路（P19-EvalCarrier 消费面裁定）：PRD §94.2 载物
- *   eval-cases.yaml 是登记形态（tests 面 schema 校验 + json 同构锚），判卷消费面
- *   恒为 seeds.json——仓库纪律不引 YAML 运行时依赖；
+ * - yaml 载物显式拒绝并指路（P19-EvalCarrier 消费面裁定）：判卷消费面恒为
+ *   seeds.json——仓库纪律不引 YAML 运行时依赖；
  * - 报告自洽守卫（EVAL_REPORT_INCONSISTENT）——执行器自身被改坏时拒绝判卷。
  * 幂等：纯函数 + 零墙钟——同 seeds 字节级同报告（GOLDEN-L8-1 判据同款）。
  *
  * x-vocab-source: vocab-lock presentation_axes.eval_suites（PR-0009 收编；suite 词形
- * behavioral 词源 PRD §44.10/§94）；词表扩容须同步 tests/behavioral/trigger-manifest.json suites。
+ * behavioral 词源 PRD §44.10/§94）；question_gate 词形 = vocab-lock question_gate_vocab
+ * 段（verdict 六值/七关 id 为 kernel 局部词锁登记）；next_action 路由 id = 本包
+ * NEXT_ACTION_ROUTE_IDS 局部词。词表扩容须同步 tests/behavioral/trigger-manifest.json suites。
  */
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import type { CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
-import { TRIAGE_ABSENT_SIGNALS, triageRequest, type TriageResult as CliTriageResult } from "./triage.js";
 import {
-  PROFILE_LADDER,
-  triageRuleV0,
-  type ProfileName,
-  type TriageDecision,
-  type TriageRequestInput,
-} from "./triage-rule-v0.js";
+  evaluateQuestionGate,
+  type QuestionGateInput,
+  type QuestionGateOutcome,
+} from "@pomaster/kernel";
+import { evaluateNextAction, type NextAction, type NextActionSnapshot } from "./next-action.js";
 
 // ============================================================
 // suite 词表（闭包；词表外显式拒绝）
@@ -56,66 +63,54 @@ export const BEHAVIORAL_SEEDS_PATH = fileURLToPath(
 );
 
 // ============================================================
-// 种子形态（seeds.json，契约 §2.3）
+// 种子形态（seeds.json，契约 §2.3；语料换源重建——裁决 19③）
 // ============================================================
 
-export const L5_FAMILIES = ["A", "B", "C", "D", "E", "F", "G", "X"] as const;
+/** 覆盖矩阵族号（契约 §2.5 七族；裁决 19③ 换源后 X 追加族随之退役——七族闭包）。 */
+export const L5_FAMILIES = ["A", "B", "C", "D", "E", "F", "G"] as const;
 export type L5Family = (typeof L5_FAMILIES)[number];
-export const L5_EVALUATORS = ["cli_keyword", "rule_v0"] as const;
+/** 判定执行器词表（裁决 19③ 换源：question_gate / next_action 两形态）。 */
+export const L5_EVALUATORS = ["question_gate", "next_action"] as const;
 export type L5Evaluator = (typeof L5_EVALUATORS)[number];
 
 export interface SeedProvenance {
-  /** corpus 事实源路径（仓库内相对路径；全部 seed 必填非空——契约 §2.8.3）。 */
+  /** 事实源路径（仓库内相对路径；全部 seed 必填非空——契约 §2.8.3）。 */
   readonly corpus: string;
   /** 登记文件键路径 / 章节锚（可选，谱系辅锚）。 */
   readonly anchor?: string;
-  /** 校准回放 id（可选主锚，replay-round2 纪律：主锚 replay_id、行号路径辅锚）。 */
-  readonly replay_id?: string;
   /** MASTer 源任务目录（源标识符，非墙钟字段；可选）。 */
   readonly source_task_dir?: string;
   readonly note_md: string;
 }
 
-/** 簇请求集成员（F 族多请求形态；request 逐字转录纪律同单请求 seed）。 */
-export interface ReplayAnchoredRequest {
-  readonly replay_id: string;
-  readonly request: string;
+/** question_gate 断言集（契约 §2.4：verdict 六值/stoppedAtGate/mayAskHuman/declaredConsistent）。 */
+export interface QuestionGateExpect {
+  readonly verdict?: string;
+  readonly mayAskHuman?: boolean;
+  readonly stoppedAtGate?: string | null;
+  readonly declaredConsistent?: boolean;
 }
 
-/** input.request 三形态：cli_keyword 单请求文本 / rule_v0 信号集对象；簇形态走 input.requests。 */
-export type SeedRequest = string | TriageRequestInput;
+/** next_action 断言集（契约 §2.4：route_id/beat/command 逐字与包含）。 */
+export interface NextActionExpect {
+  readonly route_id?: string;
+  readonly beat?: string | null;
+  readonly commandContains?: readonly string[];
+  readonly commandEquals?: string | null;
+}
 
+export type SeedExpect = QuestionGateExpect | NextActionExpect;
+
+/** evaluator 专属输入（裁决 19③ 换源两形态分派——按 evaluator 二选一，缺席显式）。 */
 export interface SeedInput {
-  readonly request?: SeedRequest;
-  readonly requests?: readonly ReplayAnchoredRequest[];
+  /** question_gate 型：kernel QuestionGateInput（category 申报分类 + answerable 七键 + 可选 assumption）。 */
+  readonly gate?: QuestionGateInput;
+  /** next_action 型：NextActionSnapshot 全字段显式快照（禁部分快照冒充全量）。 */
+  readonly snapshot?: NextActionSnapshot;
 }
 
-/** cli_keyword 断言集（契约 §2.4：profile/matched_rule/evidence_grade 逐字 + keywords contains + absent 全等）。 */
-export interface CliKeywordExpect {
-  readonly profile?: string;
-  readonly matched_rule?: string;
-  readonly evidence_grade?: string;
-  readonly matched_keywords_contains?: readonly string[];
-  readonly matched_keywords_equals?: readonly string[];
-}
-
-/** rule_v0 断言集（契约 §2.4：门集裁定保守口径——以 triggerHits 为门集前驱代理）。 */
-export interface RuleV0Expect {
-  readonly outcome?: "TRIAGED" | "NO_CHANGE";
-  readonly effectiveProfile?: ProfileName | null;
-  readonly effectiveProfileAtLeast?: ProfileName;
-  readonly triggerHitsContains?: readonly string[];
-  readonly fastPathHit?: string | null;
-  readonly fastLane?: boolean;
-  readonly floorApplied?: string | null;
-  readonly overrideBelowFloorRejected?: boolean;
-  readonly overrideOverpoweredByEscalation?: boolean;
-  readonly notApplicableRulesContains?: readonly string[];
-}
-
-export type SeedExpect = CliKeywordExpect | RuleV0Expect;
-
-/** 设计期望档元数据（契约 §2.7.1：已知偏离样本钉实际值，设计期望转录 samples.json 预注册字段）。 */
+/** 设计期望档元数据（契约 §2.7.1：已知偏离样本钉实际值，设计期望记入元数据——
+ * 翻转即验收测试的对照位；裁决 19③ 换源后现账本无偏离样本，恒 null）。 */
 export interface DesignExpected {
   readonly expected_profile: string;
   readonly expected_class: string;
@@ -130,8 +125,7 @@ export interface BehavioralSeed {
   readonly input: SeedInput;
   readonly expect: SeedExpect;
   readonly design_expected: DesignExpected | null;
-  /** 翻转前状态（契约 §2.7.2 翻转即验收）：TRIAGE profile 词形 = 翻转前回归锚值（须与
-   * replay 实测一致，谱系连续性机器校验）；"PENDING" = 翻转前为 pending 登记；null = 未翻转。 */
+  /** 翻转前状态（契约 §2.7.2 翻转即验收）：词形 = 翻转前回归锚值；null = 未翻转。 */
   readonly flipped_from?: string | null;
   /** 翻转注册（契约 §2.7.2）：非空 = 本 seed 期望在所述信号/阈值落地时翻转（翻转即验收测试）。 */
   readonly expect_flip_when: string | null;
@@ -147,6 +141,17 @@ interface SeedsFile {
   readonly batch_code?: string;
   readonly seeds?: readonly BehavioralSeed[];
 }
+
+/** 七关 answerable 键（结构校验分母——镜像 kernel QuestionGateAnswerable 键集）。 */
+const GATE_ANSWERABLE_KEYS = [
+  "q1_current_truth",
+  "q2_existing_docs",
+  "q3_repo_code",
+  "q4_existing_evidence",
+  "q5_knowledge_default",
+  "q6_research",
+  "q7_blocking_increment",
+] as const;
 
 export function loadSeeds(seedsPath: string = BEHAVIORAL_SEEDS_PATH): {
   suite: string;
@@ -224,6 +229,33 @@ export function loadSeeds(seedsPath: string = BEHAVIORAL_SEEDS_PATH): {
     if (s.expect === undefined || typeof s.expect !== "object" || s.expect === null) {
       problems.push(`${s.id}: expect 缺失或非对象`);
     }
+    // evaluator 专属输入结构（裁决 19③ 换源后两形态分派前置闸——坏形入账在装载期
+    // 显式拒绝，不等到执行期才炸）。
+    if (s.evaluator === "question_gate") {
+      const gate = (s.input as { gate?: unknown } | undefined)?.gate;
+      if (typeof gate !== "object" || gate === null) {
+        problems.push(`${s.id}: question_gate seed 缺 input.gate 对象`);
+      } else {
+        const answerable = (gate as { answerable?: unknown }).answerable;
+        if (typeof answerable !== "object" || answerable === null) {
+          problems.push(`${s.id}: input.gate.answerable 缺失（七关判定输入）`);
+        } else {
+          for (const key of GATE_ANSWERABLE_KEYS) {
+            if (typeof (answerable as Record<string, unknown>)[key] !== "boolean") {
+              problems.push(`${s.id}: input.gate.answerable.${key} 须为 boolean（七关键逐字）`);
+            }
+          }
+        }
+        if (typeof (gate as { category?: unknown }).category !== "string") {
+          problems.push(`${s.id}: input.gate.category 缺失（申报分类词形）`);
+        }
+      }
+    } else if (s.evaluator === "next_action") {
+      const snapshot = (s.input as { snapshot?: unknown } | undefined)?.snapshot;
+      if (typeof snapshot !== "object" || snapshot === null || Array.isArray(snapshot)) {
+        problems.push(`${s.id}: next_action seed 缺 input.snapshot 快照对象（NextActionSnapshot 形态）`);
+      }
+    }
   }
   if (problems.length > 0) {
     throw new Error(`seeds.json 结构纪律违反（fail-closed）：\n- ${problems.join("\n- ")}`);
@@ -239,130 +271,64 @@ export function loadSeeds(seedsPath: string = BEHAVIORAL_SEEDS_PATH): {
 // 纯检查器（导出供 vitest 侧对机器断言本身做单元验证）
 // ============================================================
 
-/**
- * cli_keyword 结果检查（含 absent_signals 闭表全等机器断言——对每个 cli_keyword
- * executable seed 强制，不受 expect 是否声明影响）。
- */
-export function checkCliKeywordResult(
+/** question_gate 结果检查（verdict/stoppedAtGate/mayAskHuman/declaredConsistent 逐字）。 */
+export function checkQuestionGateResult(
   label: string,
-  result: CliTriageResult,
-  expect: CliKeywordExpect,
+  outcome: QuestionGateOutcome,
+  expect: QuestionGateExpect,
 ): string[] {
   const problems: string[] = [];
-  if (JSON.stringify(result.absent_signals) !== JSON.stringify(TRIAGE_ABSENT_SIGNALS)) {
+  if (expect.verdict !== undefined && outcome.verdict !== expect.verdict) {
+    problems.push(`${label}: 期望 verdict=${expect.verdict}，实际 ${outcome.verdict}`);
+  }
+  if (expect.mayAskHuman !== undefined && outcome.mayAskHuman !== expect.mayAskHuman) {
     problems.push(
-      `${label}: absent_signals 应全等 TRIAGE_ABSENT_SIGNALS 八项闭表（缺席显式化机器断言），实际 ${JSON.stringify(result.absent_signals)}`,
+      `${label}: 期望 mayAskHuman=${String(expect.mayAskHuman)}，实际 ${String(outcome.mayAskHuman)}`,
     );
   }
-  if (expect.profile !== undefined && result.profile !== expect.profile) {
-    problems.push(`${label}: 期望 profile=${expect.profile}，实际 ${result.profile}`);
-  }
-  if (expect.matched_rule !== undefined && result.matched_rule !== expect.matched_rule) {
+  if (expect.stoppedAtGate !== undefined && outcome.stoppedAtGate !== expect.stoppedAtGate) {
     problems.push(
-      `${label}: 期望 matched_rule=${expect.matched_rule}，实际 ${result.matched_rule}`,
+      `${label}: 期望 stoppedAtGate=${String(expect.stoppedAtGate)}，实际 ${String(outcome.stoppedAtGate)}`,
     );
   }
   if (
-    expect.evidence_grade !== undefined &&
-    result.evidence_grade !== expect.evidence_grade
+    expect.declaredConsistent !== undefined &&
+    outcome.declaredConsistent !== expect.declaredConsistent
   ) {
     problems.push(
-      `${label}: 期望 evidence_grade=${expect.evidence_grade}，实际 ${result.evidence_grade}`,
-    );
-  }
-  for (const kw of expect.matched_keywords_contains ?? []) {
-    if (!result.matched_keywords.includes(kw)) {
-      problems.push(
-        `${label}: matched_keywords 应含 "${kw}"，实际 ${JSON.stringify(result.matched_keywords)}`,
-      );
-    }
-  }
-  if (
-    expect.matched_keywords_equals !== undefined &&
-    JSON.stringify(result.matched_keywords) !==
-      JSON.stringify(expect.matched_keywords_equals)
-  ) {
-    problems.push(
-      `${label}: matched_keywords 应全等 ${JSON.stringify(expect.matched_keywords_equals)}，实际 ${JSON.stringify(result.matched_keywords)}`,
+      `${label}: 期望 declaredConsistent=${String(expect.declaredConsistent)}，实际 ${String(outcome.declaredConsistent)}`,
     );
   }
   return problems;
 }
 
-function profileRank(p: ProfileName): number {
-  return PROFILE_LADDER.indexOf(p);
-}
-
-/** rule_v0 决策检查（triggerHits = 门集前驱代理断言，契约 §2.4 保守口径）。 */
-export function checkRuleV0Decision(
+/** next_action 结果检查（route_id/beat/command 逐字与包含——表驱动首中即停语义）。 */
+export function checkNextActionResult(
   label: string,
-  decision: TriageDecision,
-  expect: RuleV0Expect,
+  nextAction: NextAction,
+  expect: NextActionExpect,
 ): string[] {
   const problems: string[] = [];
-  if (expect.outcome !== undefined && decision.outcome !== expect.outcome) {
-    problems.push(`${label}: 期望 outcome=${expect.outcome}，实际 ${decision.outcome}`);
+  if (expect.route_id !== undefined && nextAction.route_id !== expect.route_id) {
+    problems.push(`${label}: 期望 route_id=${expect.route_id}，实际 ${nextAction.route_id}`);
   }
-  if (
-    expect.effectiveProfile !== undefined &&
-    decision.effectiveProfile !== expect.effectiveProfile
-  ) {
-    problems.push(
-      `${label}: 期望 effectiveProfile=${String(expect.effectiveProfile)}，实际 ${String(decision.effectiveProfile)}`,
-    );
+  if (expect.beat !== undefined && nextAction.beat !== expect.beat) {
+    problems.push(`${label}: 期望 beat=${String(expect.beat)}，实际 ${String(nextAction.beat)}`);
   }
-  if (expect.effectiveProfileAtLeast !== undefined) {
-    const actual = decision.effectiveProfile;
-    if (actual === null || profileRank(actual) < profileRank(expect.effectiveProfileAtLeast)) {
+  for (const fragment of expect.commandContains ?? []) {
+    if (nextAction.command === null || !nextAction.command.includes(fragment)) {
       problems.push(
-        `${label}: effectiveProfile 应 ≥ ${expect.effectiveProfileAtLeast}，实际 ${String(actual)}`,
+        `${label}: command 应含 "${fragment}"，实际 ${JSON.stringify(nextAction.command)}`,
       );
     }
   }
-  for (const t of expect.triggerHitsContains ?? []) {
-    if (!decision.triggerHits.includes(t)) {
-      problems.push(
-        `${label}: triggerHits 应含 ${t}，实际 [${decision.triggerHits.join(",")}]`,
-      );
-    }
-  }
-  if (expect.fastPathHit !== undefined && decision.fastPathHit !== expect.fastPathHit) {
-    problems.push(
-      `${label}: 期望 fastPathHit=${String(expect.fastPathHit)}，实际 ${String(decision.fastPathHit)}`,
-    );
-  }
-  if (expect.fastLane !== undefined && decision.fastLane !== expect.fastLane) {
-    problems.push(
-      `${label}: 期望 fastLane=${String(expect.fastLane)}，实际 ${String(decision.fastLane)}`,
-    );
-  }
-  if (expect.floorApplied !== undefined && decision.floorApplied !== expect.floorApplied) {
-    problems.push(
-      `${label}: 期望 floorApplied=${String(expect.floorApplied)}，实际 ${String(decision.floorApplied)}`,
-    );
-  }
   if (
-    expect.overrideBelowFloorRejected !== undefined &&
-    decision.overrideBelowFloorRejected !== expect.overrideBelowFloorRejected
+    expect.commandEquals !== undefined &&
+    nextAction.command !== expect.commandEquals
   ) {
     problems.push(
-      `${label}: 期望 overrideBelowFloorRejected=${String(expect.overrideBelowFloorRejected)}，实际 ${String(decision.overrideBelowFloorRejected)}`,
+      `${label}: 期望 command=${JSON.stringify(expect.commandEquals)}，实际 ${JSON.stringify(nextAction.command)}`,
     );
-  }
-  if (
-    expect.overrideOverpoweredByEscalation !== undefined &&
-    decision.overrideOverpoweredByEscalation !== expect.overrideOverpoweredByEscalation
-  ) {
-    problems.push(
-      `${label}: 期望 overrideOverpoweredByEscalation=${String(expect.overrideOverpoweredByEscalation)}，实际 ${String(decision.overrideOverpoweredByEscalation)}`,
-    );
-  }
-  for (const r of expect.notApplicableRulesContains ?? []) {
-    if (!decision.blindspots.notApplicableRules.includes(r)) {
-      problems.push(
-        `${label}: blindspots.notApplicableRules 应含 ${r}，实际 [${decision.blindspots.notApplicableRules.join(",")}]`,
-      );
-    }
   }
   return problems;
 }
@@ -392,7 +358,7 @@ function seedFailed(
     family: seed.family,
     evaluator: seed.evaluator,
     status: "failed",
-    // 可诊断 diff：期望 vs 实际路由 + 完整实际结果（契约任务书要求，非裸 assert）。
+    // 可诊断 diff：期望 vs 实际判定 + 完整实际结果（契约任务书要求，非裸 assert）。
     detail: `${problems.join("；")}｜实际 ${actualDump}`,
   };
 }
@@ -405,10 +371,6 @@ function seedPassed(seed: BehavioralSeed, summary: string): BehavioralSeedResult
     status: "passed",
     detail: summary,
   };
-}
-
-function isTriageRequestInput(v: SeedRequest | undefined): v is TriageRequestInput {
-  return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 
 /** 单 seed 执行：retired 非空 → retired；pendingReason 非空 → pending；否则按 evaluator 分派。 */
@@ -447,81 +409,57 @@ export function runSeed(seed: BehavioralSeed): BehavioralSeedResult {
       detail: pendingReason,
     };
   }
-  if (seed.evaluator === "cli_keyword") return runCliKeywordSeed(seed);
-  return runRuleV0Seed(seed);
+  if (seed.evaluator === "question_gate") return runQuestionGateSeed(seed);
+  return runNextActionSeed(seed);
 }
 
-function runCliKeywordSeed(seed: BehavioralSeed): BehavioralSeedResult {
-  const expect = seed.expect as CliKeywordExpect;
-  const requests: readonly ReplayAnchoredRequest[] =
-    seed.input.requests ??
-    (typeof seed.input.request === "string"
-      ? [
-          {
-            replay_id: seed.provenance.replay_id ?? "",
-            request: seed.input.request,
-          },
-        ]
-      : []);
-  if (requests.length === 0) {
+function runQuestionGateSeed(seed: BehavioralSeed): BehavioralSeedResult {
+  const expect = seed.expect as QuestionGateExpect;
+  const gate = (seed.input as { gate?: QuestionGateInput }).gate;
+  if (typeof gate !== "object" || gate === null) {
     return seedFailed(
       seed,
-      ["cli_keyword seed 缺可执行请求（input.request 文本或 input.requests 簇）"],
-      "",
+      ["question_gate seed 的 input.gate 必须是 QuestionGateInput 对象（category + answerable 七键）"],
+      `input=${JSON.stringify(seed.input ?? null)}`,
     );
   }
-  const runs = requests.map((r) => {
-    const label = `${seed.id}[${r.replay_id === "" ? "probe" : r.replay_id}]`;
-    return { label, request: r.request, result: triageRequest(r.request) };
-  });
-  const problems: string[] = [];
-  for (const run of runs) {
-    problems.push(...checkCliKeywordResult(run.label, run.result, expect));
-  }
+  const outcome = evaluateQuestionGate(gate);
+  const problems = checkQuestionGateResult(seed.id, outcome, expect);
   if (problems.length > 0) {
     return seedFailed(
       seed,
       problems,
-      runs
-        .map(
-          (r) =>
-            `${r.label}: input=${JSON.stringify(r.request)} → ${JSON.stringify(r.result)}`,
-        )
-        .join("；"),
+      `input=${JSON.stringify(gate)} → outcome=${JSON.stringify(outcome)}`,
     );
   }
   return seedPassed(
     seed,
-    runs
-      .map(
-        (r) =>
-          `${r.label}: profile=${r.result.profile} rule=${r.result.matched_rule} grade=${r.result.evidence_grade} keywords=${JSON.stringify(r.result.matched_keywords)}`,
-      )
-      .join("；"),
+    `verdict=${outcome.verdict} mayAskHuman=${String(outcome.mayAskHuman)} stoppedAtGate=${String(outcome.stoppedAtGate)} consistent=${String(outcome.declaredConsistent)}`,
   );
 }
 
-function runRuleV0Seed(seed: BehavioralSeed): BehavioralSeedResult {
-  const expect = seed.expect as RuleV0Expect;
-  if (!isTriageRequestInput(seed.input.request)) {
+function runNextActionSeed(seed: BehavioralSeed): BehavioralSeedResult {
+  const expect = seed.expect as NextActionExpect;
+  const snapshot = (seed.input as { snapshot?: NextActionSnapshot }).snapshot;
+  if (typeof snapshot !== "object" || snapshot === null) {
     return seedFailed(
       seed,
-      ["rule_v0 seed 的 input.request 必须是 TriageRequestInput 信号集对象"],
-      `input=${JSON.stringify(seed.input.request ?? null)}`,
+      ["next_action seed 的 input.snapshot 必须是 NextActionSnapshot 快照对象"],
+      `input=${JSON.stringify(seed.input ?? null)}`,
     );
   }
-  const decision = triageRuleV0(seed.input.request);
-  const problems = checkRuleV0Decision(`${seed.id}`, decision, expect);
+  const nextAction = evaluateNextAction(snapshot);
+  const problems = checkNextActionResult(seed.id, nextAction, expect);
   if (problems.length > 0) {
     return seedFailed(
       seed,
       problems,
-      `input=${JSON.stringify(seed.input.request)} → decision=${JSON.stringify(decision)}`,
+      `snapshot=${JSON.stringify(snapshot)} → nextAction=${JSON.stringify(nextAction)}`,
     );
   }
   return seedPassed(
     seed,
-    `outcome=${decision.outcome} effective=${String(decision.effectiveProfile)} hits=[${decision.triggerHits.join(",")}] fastPath=${String(decision.fastPathHit)} fastLane=${String(decision.fastLane)}`,
+    `route=${nextAction.route_id} beat=${String(nextAction.beat)} command=${JSON.stringify(nextAction.command)}`,
   );
 }
 
@@ -550,8 +488,8 @@ export interface BehavioralReport {
   readonly pending: number;
   readonly retired: number;
   readonly evaluatorSummary: {
-    readonly cli_keyword: number;
-    readonly rule_v0: number;
+    readonly question_gate: number;
+    readonly next_action: number;
   };
   readonly familySummary: readonly FamilySummaryEntry[];
   readonly results: readonly BehavioralSeedResult[];
@@ -594,11 +532,11 @@ export function runAllSeeds(seeds: readonly BehavioralSeed[]): BehavioralReport 
     pending: byStatus("pending"),
     retired: byStatus("retired"),
     evaluatorSummary: {
-      cli_keyword: results.filter(
-        (r) => r.status !== "pending" && r.status !== "retired" && r.evaluator === "cli_keyword",
+      question_gate: results.filter(
+        (r) => r.status !== "pending" && r.status !== "retired" && r.evaluator === "question_gate",
       ).length,
-      rule_v0: results.filter(
-        (r) => r.status !== "pending" && r.status !== "retired" && r.evaluator === "rule_v0",
+      next_action: results.filter(
+        (r) => r.status !== "pending" && r.status !== "retired" && r.evaluator === "next_action",
       ).length,
     },
     familySummary,
@@ -654,7 +592,7 @@ function zeroReport(): BehavioralReport {
     failed: 0,
     pending: 0,
     retired: 0,
-    evaluatorSummary: { cli_keyword: 0, rule_v0: 0 },
+    evaluatorSummary: { question_gate: 0, next_action: 0 },
     familySummary: [],
     results: [],
     pendingList: [],
@@ -733,7 +671,7 @@ export async function runEval(input: EvalInput): Promise<CommandOutcome<EvalResu
 
   const human = [
     `eval: ${report.passed} passed / ${report.failed} failed / ${report.pending} pending（suite ${input.suite}；seeds 注册 ${report.total}，executable ${report.executable}，retired ${report.retired}）`,
-    `  evaluators: cli_keyword=${report.evaluatorSummary.cli_keyword} rule_v0=${report.evaluatorSummary.rule_v0}`,
+    `  evaluators: question_gate=${report.evaluatorSummary.question_gate} next_action=${report.evaluatorSummary.next_action}`,
     ...report.pendingList.map((p) => `  pending（显式缺席，不冒充绿）: ${p.id} — ${p.reason}`),
     ...report.retiredList.map((r) => `  retired（显式退役，不冒充绿也不滞留 pending）: ${r.id} — ${r.reason}`),
   ];
@@ -748,7 +686,7 @@ export async function runEval(input: EvalInput): Promise<CommandOutcome<EvalResu
         {
           code: "EVAL_EXECUTABLE_FAILED",
           message: `executable seed 失败 ${report.failed} 条：${failedIds.join(", ")}`,
-          hint: "可诊断 diff 见 --json result.report.results[].detail（期望 vs 实际路由 + 完整输入/结果 JSON）；pending 与失败是两种状态，禁把 pending 当失败修，更禁把失败标 pending。",
+          hint: "可诊断 diff 见 --json result.report.results[].detail（期望 vs 实际判定 + 完整输入/结果 JSON）；pending 与失败是两种状态，禁把 pending 当失败修，更禁把失败标 pending。",
         },
       ],
       [

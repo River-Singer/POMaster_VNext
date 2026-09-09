@@ -21,11 +21,11 @@
     {
       "category": "Router",
       "patterns": [
-        "packages/cli/src/triage.ts",
-        "packages/cli/src/triage-rule-v0.ts"
+        "packages/kernel/src/question-gate.ts",
+        "packages/cli/src/next-action.ts"
       ],
       "suites": ["behavioral"],
-      "rationale": "路由双引擎升级（cli_keyword 关键词引擎 / rule_v0 参考镜像）→ 全部 behavioral seed 经此二 evaluator 执行，必回归"
+      "rationale": "路由双引擎升级（question_gate 七关判定引擎 / next_action 八拍路由矩阵——裁决 19③ 语料换源后的存活能力双面）→ 全部 behavioral seed 经此二 evaluator 执行，必回归"
     },
     {
       "category": "Gate Policy",
