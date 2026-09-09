@@ -885,7 +885,7 @@ ${renderCapabilityMapMarkdownLines().join("\n")}
 
 - skills 命令卡库：\`.agents/skills/pomaster/\` 等 ${SKILL_MANIFEST.length} 份（通用层——Codex/Cursor/Gemini CLI/GitHub Copilot/VS Code/Amp/Warp/OpenCode/Droid 等原生读取），${mirrorNote}。
 - 路由入口：\`/pomaster\`（命令全景 + 何时用哪个）；分段卡：pomaster-bootstrap / discovery / permit / context / execute / verify / reconcile / compact / closeout / inspect / catalog / production / runtime。
-- 组件画廊: https://river-singer.github.io/POMaster_VNext/（在线版）或 POMaster 仓库内 \`corepack pnpm studio:dev\`——治理 baseline/outputs 内容前先逛：有哪些组件、长什么样、该写什么。
+- 组件画廊: https://river-singer.github.io/POMaster_VNext/（在线版）或 POMaster 仓库内 \`corepack pnpm studio:dev\`——按已确认 baseline 的技术栈选择性参考（有哪些组件、长什么样、该写什么）；baseline 未确认时不主动引导。
 ${claudeBlock}- 修复/重建：重跑 \`pomaster init\`（幂等；缺失镜像重建、hooks 注册项按 command 词形合并，不动人类文件）。
 
 ${BROWSER_EYES_LINES.join("\n")}

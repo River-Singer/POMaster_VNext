@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
   pull_request:
+  # T4 R1（09-08-sc-t4）可复用入口：publish.yml 以 `uses: ./.github/workflows/ci.yml`
+  # 在同一 run 内复用本 workflow 作发布前置闸（publish job needs: ci——tag push →
+  # CI 全绿 → publish 串行）。workflow_call 不改变 push/PR 触发面；被调用时
+  # github.sha = 调用方触发 sha（tag push 即 tag 指向的 commit）。
+  workflow_call:
 
 # 三 OS 腿（P32b · gaps B3 闭合；macOS 腿 Owner 2026-09-01 批准启用——呈报件
 # docs/l6-release-gate-p35-report.md §3 即插即用件）：matrix 而非独立 job 的裁定——

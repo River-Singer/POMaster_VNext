@@ -1,24 +1,37 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# Publish（npm Trusted Publishing · 零凭据）
+# Publish（npm Trusted Publishing · 零凭据 · CI 全绿门控）
 #
 # 触发方式：
 # - push tag `v*`（正式发布路径，例：`git tag v0.2.0 && git push origin v0.2.0`）；
 # - workflow_dispatch（手动兜底；非 tag ref 触发时版本闸的 tag 比对段自动跳过
 #   并打日志明示，仍按 staging 里的 version 发布）。
 #
+# 发布门控（T4 R1 · 2026-09-09；选型 = 任务 research/github-release-gating.md
+# 方案 A「workflow_call 复用 + needs: 依赖」）：本 workflow 以 `uses:` 复用
+# ci.yml（workflow_call 触发，push/PR 触发面不受影响），publish job `needs: ci`
+# ——tag push → CI 三 OS 腿 + bootstrap-clean 全绿 → publish 串行执行。同 run
+# DAG 强排序，无跨 run 时序竞态；被测内容 = tag 指向的 commit（workflow_call
+# 的 github.sha 即调用方触发 sha，checkout 无需显式 ref）。结构保证：needs 失败
+# /取消时 publish job 不启动；另设防御性断言步（fail-closed 纪律——结构闸之外
+# 显式自证 CI 门控成立）。发布动作发生在 CI 全绿之后由此机器可断言。
+#
 # Trusted Publisher 配置位（npmjs.com → pomaster 包页 → Settings → Trusted
 # Publisher），各字段与本文件逐字对应：
 # - Repository：River-Singer/POMaster_VNext（owner / name 两栏）；
 # - Workflow filename：publish.yml（必须与本文件名逐字一致——npm 以此核验发起
-#   发布的 workflow 身份，不一致即拒绝 OIDC 换取，防其他 workflow 冒名发布）；
+#   发布的 workflow 身份，不一致即拒绝 OIDC 换取，防其他 workflow 冒名发布）。
+#   workflow_call 链下 npm 校验的是「调用方 workflow 名」：本 workflow 的发布步
+#   即调用方本体（调用方向 = publish.yml → ci.yml，publish 步住在 publish.yml），
+#   故 npmjs 侧配置不需因 CI 门控改造而变更（npm 官方 troubleshooting 口径）。
 # - Action：npm publish（发布动作即本 workflow 末步的命令本身）；
 # - Environment：留空（本 workflow 不使用 GitHub environments）。
 #
 # 为什么 Node 24：Trusted Publishing（OIDC 免 NODE_AUTH_TOKEN）要求 npm CLI
-# ≥ 11.5，Node 22 自带的 npm 10.x 不具备该流程；Node 24 自带 npm ≥ 11.5。
+# ≥ 11.5.1（npm 官方文档 2026-09-04 口径：npm ≥ 11.5.1 且 Node ≥ 22.14.0），
+# Node 22 自带的 npm 10.x 不具备该流程；Node 24 自带 npm ≥ 11.5.1。
 # 该约束只作用于发布机：bundle 以 target node22 构建、staging engines 为
 # `>=22`，消费者侧不受发布机 Node 版本影响。发布前另有机器闸显式断言
-# npm ≥ 11.5（见下方 step）——runner 镜像漂移时给显式错误而非 registry 侧怪错。
+# npm ≥ 11.5.1（见下方 step）——runner 镜像漂移时给显式错误而非 registry 侧怪错。
 #
 # provenance 语义：`npm publish --provenance` 用 GitHub runner 的 OIDC token
 # （permissions.id-token: write）向 registry 提交可验证出处证明（SLSA
@@ -29,6 +42,12 @@
 # 版本一致性闸（本仓 fail-closed 纪律）：tag 触发时强制 `v<version>` 与
 # stage/pomaster/package.json 的 version 逐字相等，失配显式 fail，防 tag 与
 # 包版本漂移（staging version 单点真源在 scripts/build-npm-package.mjs）。
+#
+# 权限最小化（job 级声明，无 workflow 级放权）：复用的 ci job 只拿
+# contents: read（测试面零写权限需求）；publish job 的 id-token: write 是
+# OIDC 出口的唯一额外授权（Trusted Publishing 认证与 provenance 签名共用同一
+# 通道）+ checkout 所需 contents: read。被复用 workflow 的 GITHUB_TOKEN 权限
+# 只能低于（不可高于）调用 job 声明值——CI 侧被钉在 contents: read。
 # ─────────────────────────────────────────────────────────────────────────────
 name: Publish (npm Trusted Publishing)
 
@@ -37,23 +56,41 @@ on:
     tags: ["v*"]
   workflow_dispatch:
 
-# 权限最小化：id-token: write 是 OIDC 出口的唯一额外授权（Trusted Publishing
-# 认证与 provenance 签名共用同一通道）；checkout 仅需 contents: read。
-permissions:
-  id-token: write
-  contents: read
-
 jobs:
+  # 发布前置闸（R1 方案 A）：复用 ci.yml 全量腿（三 OS matrix + bootstrap-clean）
+  # 在同一 run 内先行执行；全部绿 = 本 job 结论 success，publish job 才启动。
+  ci:
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+
   publish:
+    needs: ci
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      id-token: write
+      contents: read
     env:
       # 免 corepack 首次下载 pnpm 的交互确认（与 ci.yml 同词形）。
       COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
     steps:
       - uses: actions/checkout@v4
 
-      # Node 24 = 自带 npm ≥ 11.5（Trusted Publishing 硬下限，理由见头注）。
+      # 防御性 CI 门控断言（fail-closed）：needs 语义上已保证只有 ci 全绿才会
+      # 执行本 job，此处显式自证不变量（结构闸 + 语义闸双层；断言失败即红，
+      # 不可能出现「CI 未绿仍发布」的无声路径）。
+      - name: Assert CI gate (needs.ci must be success)
+        env:
+          CI_RESULT: ${{ needs.ci.result }}
+        run: |
+          echo "needs.ci.result=${CI_RESULT}"
+          if [ "${CI_RESULT}" != "success" ]; then
+            echo "::error::CI 未全绿（needs.ci.result=${CI_RESULT}）——fail-closed 拒绝发布。"
+            exit 1
+          fi
+
+      # Node 24 = 自带 npm ≥ 11.5.1（Trusted Publishing 硬下限，理由见头注）。
       # registry-url 落 workspace 根 .npmrc；publish 步在 stage/pomaster 下运行，
       # npm 自 cwd 向上查找 per-project .npmrc 命中同一 registry + OIDC 通道。
       - uses: actions/setup-node@v4
@@ -75,10 +112,10 @@ jobs:
         run: node scripts/build-npm-package.mjs
 
       # 发布前机器闸（fail-closed，防 runner 环境与版本口径漂移）：
-      # ① npm ≥ 11.5（Trusted Publishing CLI 硬下限）；
+      # ① npm ≥ 11.5.1（Trusted Publishing CLI 硬下限，npm 官方文档 2026-09-04 口径）；
       # ② tag ↔ staging version 逐字一致（workflow_dispatch 非 tag 触发时跳过
       #    ② 并打日志明示）。
-      - name: Pre-publish gate (npm >= 11.5; tag/version consistency)
+      - name: Pre-publish gate (npm >= 11.5.1; tag/version consistency)
         env:
           REF_TYPE: ${{ github.ref_type }}
           REF_NAME: ${{ github.ref_name }}
@@ -87,11 +124,14 @@ jobs:
             import { execSync } from "node:child_process";
             import { readFileSync } from "node:fs";
 
-            // 闸 1：npm ≥ 11.5。
+            // 闸 1：npm ≥ 11.5.1（官方口径；11.5.0 不放行——semver 逐段比较）。
             const npmVersion = execSync("npm --version", { encoding: "utf8" }).trim();
-            const [npmMajor, npmMinor] = npmVersion.split(".").map(Number);
-            if (!(npmMajor > 11 || (npmMajor === 11 && npmMinor >= 5))) {
-              console.error(`::error::npm ${npmVersion} 低于 Trusted Publishing 硬下限 11.5——OIDC 免凭据发布不可用（Node 24 镜像应自带 npm ≥ 11.5；若 runner 镜像漂移请显式升级 npm）。`);
+            const [npmMajor, npmMinor, npmPatch] = npmVersion.split(".").map(Number);
+            const gateOk =
+              npmMajor > 11 ||
+              (npmMajor === 11 && (npmMinor > 5 || (npmMinor === 5 && npmPatch >= 1)));
+            if (!gateOk) {
+              console.error(`::error::npm ${npmVersion} 低于 Trusted Publishing 硬下限 11.5.1（npm 官方文档 2026-09-04 口径：npm ≥ 11.5.1 且 Node ≥ 22.14.0）——OIDC 免凭据发布不可用（Node 24 镜像应自带 npm ≥ 11.5.1；若 runner 镜像漂移请显式升级 npm）。`);
               process.exit(1);
             }
 
@@ -110,7 +150,7 @@ jobs:
                 console.error(`::error::tag 与包版本漂移：tag ${process.env.REF_NAME}（= ${tagVersion}）≠ stage/pomaster/package.json version ${stageVersion}；对齐后再发布。`);
                 process.exit(1);
               }
-              console.log(`[publish] 版本闸通过：npm ${npmVersion} ≥ 11.5；tag ${process.env.REF_NAME} ↔ staging version ${stageVersion}。`);
+              console.log(`[publish] 版本闸通过：npm ${npmVersion} ≥ 11.5.1；tag ${process.env.REF_NAME} ↔ staging version ${stageVersion}；CI 门控 needs.ci.result=success。`);
             }
           '
 

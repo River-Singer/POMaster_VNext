@@ -277,7 +277,8 @@ export const CAPABILITY_OVERVIEW: readonly CapabilityEntry[] = [
     detail: "DoD 判卷——acceptance 须映射 VERIFIED claim",
   },
   {
-    scene: "动手前逛组件画廊（有哪些组件/长什么样）",
+    scene:
+      "需要组件形态参考时查画廊（有哪些组件/长什么样；按已确认 baseline 的技术栈选择性查阅）",
     command: "",
     detail: "https://river-singer.github.io/POMaster_VNext/（或仓库内 corepack pnpm studio:dev）",
   },

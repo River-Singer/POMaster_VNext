@@ -94,6 +94,24 @@ describe("context compile 缺席显式", () => {
     expect(outcome.result.stale_check.state).toBe("absent");
     expect(outcome.errors).toEqual([]);
   });
+
+  it("R4 门控：画廊零进入 context compile 输出与 MUST 判卷分母（private 参考面非治理事实——T4 回归钉）", async () => {
+    // T4 R4（09-08-sc-t4）：画廊保持不进 context compile MUST 区（REQUIRED POLICY /
+    // AUTHORITATIVE 判卷输入）——画廊是 GitHub Pages 静态参考站，不产治理事实；
+    // 五分区 markdown 与 manifest.must_entries 零画廊词形，回潮（把画廊写进投影/
+    // catalog MUST 面）即红。
+    await runInit(dir);
+    const outcome = await runContextCompile(dir, "frontend");
+    expect(outcome.ok).toBe(true);
+    expect(outcome.result.markdown).not.toContain("river-singer.github.io");
+    expect(outcome.result.markdown).not.toContain("画廊");
+    expect(outcome.result.markdown).not.toContain("studio:dev");
+    const mustRefs = outcome.result.manifest.must_entries.map((entry) => entry.ref);
+    expect(
+      mustRefs.filter((ref) => /GALLERY|STUDIO/.test(ref)),
+      "must_entries 零画廊/工作室词形（判卷分母纯治理对象）",
+    ).toEqual([]);
+  });
 });
 
 describe("context compile 转调 kernel（注入 fake）", () => {

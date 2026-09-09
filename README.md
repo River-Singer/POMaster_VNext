@@ -40,7 +40,7 @@ corepack pnpm studio:react:dev  # React sidecar（antd 对照浏览，端口 600
 ```
 
 - **在线版**：[river-singer.github.io/POMaster_VNext](https://river-singer.github.io/POMaster_VNext/)（GitHub Pages，push 到 main 自动发布）
-- 写治理产出（baseline / outputs 内容）之前，先逛画廊：有哪些组件、长什么样、该写什么——`pomaster init` 完成横幅里也有画廊入口。
+- baseline 确认后按栈参考画廊：baseline.ui 选了什么栈就对照看对应组件真渲染（如 ant-design-vue → 71 个组件 stories），41 张 archetype 语义卡与栈无关随时可查；baseline 未确认前不强制预览——画廊入口见 `pomaster init` 完成横幅。
 
 <!-- Owner 注意（一次性）：Pages 首次启用需在仓库 Settings → Pages 把 Source 设为「GitHub Actions」，之后 studio-pages 工作流自动发布。 -->
 
@@ -148,7 +148,7 @@ pomaster init
 
 一条命令，幂等（重复执行 NO_CHANGE，人类文件一律不覆盖）：铺出 `.pomaster/` 治理目录树、登记 19 份 SPEC 预植对象、生成 `AGENTS.md` 重入口（15 份 skills 命令卡 + hooks 注入——Agent 开会话即自动看到治理状态）。init 还会**自动观察宿主 `package.json`**：框架/router/状态/Grid/UI 库/测试栈等可观察事实直接回填 stack.yaml（标注 `[Observed: package.json]`），问卷只问规范性决策（如 CSS 方案）——TTY 下技术栈问卷只问机器观察不出的键（中断 = 零写入；后补用 `pomaster baseline set`）。
 
-**组件画廊**：[river-singer.github.io/POMaster_VNext](https://river-singer.github.io/POMaster_VNext/)（在线版）· POMaster 仓库内 `corepack pnpm studio:dev`（Vue 主实例）/ `corepack pnpm studio:react:dev`（React sidecar 对照）——治理产出前先看有哪些组件、长什么样、该写什么。
+**组件画廊**：[river-singer.github.io/POMaster_VNext](https://river-singer.github.io/POMaster_VNext/)（在线版）· POMaster 仓库内 `corepack pnpm studio:dev`（Vue 主实例）/ `corepack pnpm studio:react:dev`（React sidecar 对照）——baseline 确认后按栈选择性参考（如 baseline.ui=ant-design-vue → antdv 组件真渲染对照）；未确认前仅作了解，不作为动手前置。
 
 > 产物全表 / 目录宪法 / 播种语义 / 重入口细节 / 问卷与 confirm 机制 / doctor 探针矩阵：详见 [docs/init-reference.md](docs/init-reference.md)。
 

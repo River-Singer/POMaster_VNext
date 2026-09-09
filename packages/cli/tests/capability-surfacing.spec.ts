@@ -150,6 +150,24 @@ describe("C1 · init 能力速览段", () => {
       }
     }
   });
+
+  it("R4 门控：画廊条目为条件性参考词形（无条件预工作指引词形已退役——baseline/task-aware，T4 回归钉）", () => {
+    // T4 R4（09-08-sc-t4）：画廊从 Agent 的 universal pre-context 降为
+    // baseline/task-aware 参考——速览全表禁无条件预工作指引词形，画廊条目若在座
+    // 必须是条件性查阅措辞 + 仅列入口（非命令出口）。
+    for (const entry of CAPABILITY_OVERVIEW) {
+      expect(entry.scene).not.toContain("动手前逛");
+      expect(entry.scene).not.toContain("先逛画廊");
+      expect(entry.scene).not.toContain("动手前");
+    }
+    const gallery = CAPABILITY_OVERVIEW.find((entry) =>
+      entry.detail.includes("river-singer.github.io"),
+    );
+    expect(gallery, "画廊条目（非命令出口）应在座").toBeDefined();
+    expect(gallery?.command).toBe("");
+    expect(gallery?.scene).toContain("按已确认 baseline 的技术栈选择性查阅");
+    expect(gallery?.detail).toContain("corepack pnpm studio:dev");
+  });
 });
 
 // ============================================================

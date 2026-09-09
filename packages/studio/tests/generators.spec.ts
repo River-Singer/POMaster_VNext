@@ -1,4 +1,4 @@
-// 画廊生成器钉测（G-A Step 2）：覆盖计数（41/71/18/4/1）+ 幂等（双跑 diff 空）+
+// 画廊生成器钉测（G-A Step 2）：覆盖计数（41/71/18/1/1）+ 幂等（双跑 diff 空）+
 // 发布面纪律（private、零运行时 deps）+ S4 映射层（41 卡全量/逐条溯源/组件词形
 // 收敛在 71 族内/双向呈现）+ S1 态矩阵（story 总数分母）。
 //
@@ -345,5 +345,17 @@ describe("studio 发布面纪律（G-A 落位裁定）", () => {
       "vite",
       "vue",
     ]);
+  });
+
+  it("studio-react sidecar 同为 private:true 非发布面（R4 门控回归——画廊双实例均不入 npm 发布物）", () => {
+    // T4 R4（09-08-sc-t4）：画廊保持 private 的回归钉——Vue 主实例之外的 React
+    // sidecar 同样 private、零运行时依赖（防未来误改 package.json 进入发布面）。
+    const manifest = JSON.parse(
+      readFileSync(join(STUDIO_ROOT, "..", "studio-react", "package.json"), "utf8"),
+    );
+    expect(manifest.private).toBe(true);
+    expect(manifest.dependencies).toBeUndefined();
+    expect(manifest.peerDependencies).toBeUndefined();
+    expect(manifest.optionalDependencies).toBeUndefined();
   });
 });
