@@ -76,6 +76,8 @@ import { validateTransition } from "./transitions.js";
 import { loadAuthorityMap } from "./permits.js";
 import { assertExecutionAttachable } from "./execution.js";
 import { gateResultToSnake } from "./gate-result.js";
+import { readAuthorityFaces } from "./authority.js";
+import { loadSourcesRegistry } from "./sources.js";
 import type {
   AxesBlock,
   CreateStoreOptions,
@@ -670,6 +672,180 @@ function journalOpWordForm(op: TransactionOp): string {
 }
 
 /**
+ * D-4 权威维度闸（2026-09-08；本闸显式推翻 authority.ts 原 B3 红线「warning-only、
+ * 零写路径消费」——推翻记录 owner-adjudications.md#裁决18，原裁定 #裁决11⑤）：
+ * maintain applyTransaction 落库前校验 tx sources 对 ops 涉及对象/维度是否
+ * authoritative，非权威即 AUTHORITY_BOUNDARY_DENY 写路径确定性 BLOCK（fail-closed）。
+ *
+ * 判据与交叉面（确定性，零启发式）：
+ * - 触及对象集：upsert_object 的 envelope.id（primary）+ payload.affected_objects
+ *   （T2 Task Contract 编译产出——promote 已决议 Decision affects 并集投影于此，
+ *   校验判据由 T2 编译兑现）；transition_object 的 op.id（existing 行）及其既有
+ *   payload.affected_objects（变更对象驱动其 affected 面同判）。
+ * - 对象维度 = 其 authority owner 在 authority.json map 的 scope 申报（开放词表，
+ *   §3A 项目自报维度；owner 未入 map = 维度未申报，显式中立不构成 deny——缺席诚实，
+ *   禁臆测维度归属）。
+ * - 来源轴（sources/index.yaml 正交权威轴，D2）：触及对象 payload.source_refs
+ *   引用的在册来源，其 non_authoritative_for 与对象维度相交 → deny（MasterGrid
+ *   语义的写路径兑现：BP 原型对 grid_library 无发言权，则其驱动的触及 grid_library
+ *   维度对象的 maintain tx 被拒）。registry 缺席 = opt-in 平面显式跳过（D2 既有语义，
+ *   非放行判据缺失）；registry 损坏 = loadSourcesRegistry SCHEMA_INVALID fail-closed。
+ * - boundary_rules 轴（authority.json）：effect=deny 规则 scope 命中触及对象维度 →
+ *   deny（原「投影只读呈现」升级为写路径 BLOCK——投影面呈现保留，双面如实）。
+ * - 与 permit scope 闸正交并置：permit=谁可写哪些对象（checkPermit 判卷函数 kernel
+ *   承载、exec-guard 命令面在 harness 落笔前调用），authority=哪些来源可驱动哪些
+ *   维度（本闸，住 applyTransaction——P11 受控写入唯一面）；两闸正交互补，互不替代。
+ * - 零落盘不变量：本闸先于 ops 执行与 staged 计划——deny 时事务零写入零 journal
+ *   （重放安全；指纹短路在前，合法重放不受影响）。
+ */
+interface AuthorityTouchedObject {
+  readonly id: string;
+  readonly owner: string | null;
+  readonly dims: readonly string[];
+  readonly opIndex: number;
+}
+
+function payloadStringArray(payload: unknown, key: string): readonly string[] {
+  if (typeof payload !== "object" || payload === null || Array.isArray(payload)) return [];
+  const raw = (payload as UnknownRecord)[key];
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((entry): entry is string => typeof entry === "string" && entry.length > 0);
+}
+
+function ownerDimsOf(
+  owner: string | null,
+  dimsByOwner: ReadonlyMap<string, readonly string[]>,
+): readonly string[] {
+  if (owner === null) return [];
+  return dimsByOwner.get(owner) ?? [];
+}
+
+function assertAuthorityBoundaries(paths: StorePaths, raw: UnknownRecord, tx: Transaction): void {
+  // —— 维度声明面（authority.json map：owner→scope；boundary_rules deny 规则集） ——
+  const faces = readAuthorityFaces(paths);
+  const dimsByOwner = new Map<string, readonly string[]>();
+  for (const entry of faces.map) {
+    if (entry.scope.length > 0) dimsByOwner.set(entry.owner, entry.scope);
+  }
+
+  // —— 来源轴（sources/index.yaml；registry 缺席 = opt-in 显式跳过，D2 语义） ——
+  const registry = loadSourcesRegistry(paths);
+
+  const touched: AuthorityTouchedObject[] = [];
+  const sourceRefsByOp = new Map<number, readonly string[]>();
+  const rawRows = (raw.objects as readonly RawRow[]) ?? [];
+  const rowIndex = new Map<string, RawRow>();
+  for (const row of rawRows) rowIndex.set(String(row.id), row);
+
+  tx.ops.forEach((op, opIndex) => {
+    if (op.op === "upsert_object") {
+      const env = op.envelope as unknown as UnknownRecord;
+      const id = typeof env.id === "string" ? env.id : null;
+      if (id === null) return; // 形态缺陷由 op 层 SCHEMA_INVALID 判（本闸不重复判型）。
+      const authority = env.authority as UnknownRecord | undefined;
+      const owner =
+        typeof authority === "object" && authority !== null && typeof authority.owner === "string"
+          ? authority.owner
+          : null;
+      const affected = payloadStringArray(env.payload, "affected_objects");
+      sourceRefsByOp.set(opIndex, payloadStringArray(env.payload, "source_refs"));
+      touched.push({ id, owner, dims: ownerDimsOf(owner, dimsByOwner), opIndex });
+      for (const ref of affected) {
+        touched.push({ id: ref, owner: null, dims: [], opIndex });
+      }
+    } else if (op.op === "transition_object") {
+      const row = rowIndex.get(op.id);
+      const owner = row !== undefined && typeof row.authority_owner === "string" ? row.authority_owner : null;
+      const dims = ownerDimsOf(owner, dimsByOwner);
+      touched.push({ id: op.id, owner, dims, opIndex });
+      let affectedRefs: readonly string[] = [];
+      let sourceRefs: readonly string[] = [];
+      if (row !== undefined && typeof row.body_ref === "string") {
+        const text = readText(rowBodyPath(paths, row.body_ref));
+        if (text !== null) {
+          try {
+            const body = JSON.parse(text) as UnknownRecord;
+            affectedRefs = payloadStringArray(body.payload, "affected_objects");
+            sourceRefs = payloadStringArray(body.payload, "source_refs");
+          } catch {
+            // 正文损坏由 op 层 REF_INTEGRITY/读路径判；本闸不吞也不越权判型。
+            affectedRefs = [];
+            sourceRefs = [];
+          }
+        }
+      }
+      sourceRefsByOp.set(opIndex, sourceRefs);
+      for (const ref of affectedRefs) {
+        touched.push({ id: ref, owner: null, dims: [], opIndex });
+      }
+    }
+  });
+
+  // affected_objects 触及对象的维度补全（按 raw index 现行行 authority owner 解析；
+  // 未登记对象 = 维度未申报，显式中立——与 map 未申报 owner 同语义）。
+  for (const item of touched) {
+    if (item.owner === null && item.dims.length === 0) {
+      const row = rowIndex.get(item.id);
+      if (row !== undefined && typeof row.authority_owner === "string") {
+        (item as { owner: string | null; dims: readonly string[] }).owner = row.authority_owner;
+        (item as { owner: string | null; dims: readonly string[] }).dims = ownerDimsOf(
+          row.authority_owner,
+          dimsByOwner,
+        );
+      }
+    }
+  }
+
+  const denies: string[] = [];
+
+  // —— boundary_rules deny 轴（authority.json；写路径 BLOCK——D-4 升级自只读呈现） ——
+  for (const rule of faces.boundary_rules) {
+    if (rule.effect !== "deny") continue;
+    for (const item of touched) {
+      if (item.dims.includes(rule.scope)) {
+        denies.push(
+          `boundary_rules ${rule.rule_id}（scope=${rule.scope}${rule.owner === null ? "" : `；owner=${rule.owner}`}${rule.reason === null ? "" : `；reason=${rule.reason}`}）命中对象 ${item.id} 的权威维度（owner=${item.owner ?? "未申报"}；dims=[${item.dims.join(", ")}]）`,
+        );
+      }
+    }
+  }
+
+  // —— sources 正交权威轴（payload.source_refs 引用在册来源 × 对象维度交叉） ——
+  if (registry !== null) {
+    const byId = new Map(registry.sources.map((entry) => [entry.id, entry]));
+    for (const [opIndex, refs] of sourceRefsByOp) {
+      for (const ref of refs) {
+        const source = byId.get(ref);
+        if (source === undefined) continue; // 引用不在册 = 权威边界未申报（投影面显式注记；本闸不臆测边界）。
+        if (source.non_authoritative_for.length === 0) continue;
+        for (const item of touched) {
+          if (item.opIndex !== opIndex) continue;
+          const overlap = source.non_authoritative_for.filter((dim) => item.dims.includes(dim));
+          if (overlap.length > 0) {
+            denies.push(
+              `source ${source.id}（type=${source.type}；location=${source.location}）申报 non_authoritative_for=[${source.non_authoritative_for.join(", ")}]，与对象 ${item.id} 的权威维度（owner=${item.owner ?? "未申报"}；dims=[${item.dims.join(", ")}]）相交于 [${overlap.join(", ")}]`,
+            );
+          }
+        }
+      }
+    }
+  }
+
+  if (denies.length > 0) {
+    throw new GovernanceError(
+      "AUTHORITY_BOUNDARY_DENY",
+      `权威维度闸阻断（D-4）：本事务存在非权威来源驱动的触及维度——${denies.length} 项越界：${denies.join("；")}`,
+      "改由对该维度 authoritative 的来源驱动本变更（sources/index.yaml 双轴申报）；或由 Owner 修订 authority.json map/boundary_rules 的维度归属（推翻边界=Owner 裁定，留痕 owner-adjudications 台账）。本事务零落盘。",
+      {
+        denies,
+        boundary_rules_deny: faces.boundary_rules.filter((rule) => rule.effect === "deny").length,
+        sources_registry_present: registry !== null,
+      },
+    );
+  }
+}
+
+/**
  * 唯一写入路径。语义见 docs/kernel-api.md §1（seq/rev 单调、digest 自动维护、
  * 幂等短路、DENOMINATOR 只许 supersede 不许删除、staged+回滚）。
  */
@@ -706,6 +882,10 @@ export async function applyTransaction(
       digestWarnings: [],
     };
   }
+
+  // —— D-4 权威维度闸（先于一切 op 执行与 staged 计划：deny 时事务零落盘零 journal；
+  //    推翻 authority.ts 原 B3 warning-only 红线，记录 owner-adjudications.md#裁决18） ——
+  assertAuthorityBoundaries(paths, raw, tx);
 
   const working = structuredClone(raw) as UnknownRecord;
   const workspace: TxWorkspace = {
@@ -1642,6 +1822,7 @@ const ADJUDICATED_CLAIM_VERDICTS: ReadonlySet<string> = new Set([
  * A3 证据记录存在性防线（D20 纪律：record 通道无权覆写既有证据——对照
  * cli/evidence.ts 的 skipped_adjudicated 守卫，CLI 层有守卫而 kernel 写权威此前裸奔：
  * 实测重录把独立验证流判的 VERIFIED 打回 UNVERIFIED、同号 GRN 静默翻转 verdict）。
+ * （历史裁定，锚缺失——D20（PRD 纪律裁定）；未入 corpus 台账，T3-R3 如实标注）
  * 写前查既有文件（staged 计划优先，其次磁盘）：
  * - 不存在 → 正常写入；
  * - 存在且 canonical 内容等价（rev 剥离比对——rev 是事务自动维护字段非语义内容）→
@@ -1965,7 +2146,7 @@ function applyRecordGateRun(
   if (run.executionId !== undefined) {
     assertExecutionIdClaimed(paths, run.executionId, "record_gate_run.run.executionId");
   }
-  // artifact_refs 透传（P0.5-2 / PRD §7；裁决8③ D2/D3=A）：携带即 kernel 侧强制校验
+  // artifact_refs 透传（P0.5-2 / PRD §7；裁决8③ D2/D3=A）：携带即 kernel 侧强制校验（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
   // （词形 + 路径⇔身份派生一致 + blob 文件在场——先 persist 再 record，悬空引用
   // REF_INTEGRITY 拒收）；缺席 = 键缺席，存量 GRN 字节兼容。落盘键 artifact_refs 在
   // execution_id 之后、gate_result 之前——与 cli canonicalRunBytes 逐键同构（R1 双写点）。

@@ -1,7 +1,7 @@
 {
   "schema": "pomaster.vnext.selfhosting-benchmark-results/4",
-  "run_id": "bench-0014",
-  "seq": 14,
+  "run_id": "bench-0016",
+  "seq": 16,
   "ok": true,
   "summary": {
     "total": 4,
@@ -12,14 +12,13 @@
     {
       "tier": "tiny",
       "scenario": "README badge 文案调整",
-      "expected": "MINIMAL",
-      "profile": "MINIMAL",
-      "matched_rule": "F_COPY_STYLE_ONLY",
-      "evidence_grade": "MEASURED",
-      "matched_keywords": [
-        "文案"
-      ],
-      "durationMs": 358,
+      "expected": null,
+      "surface": "cli:alerts",
+      "profile": null,
+      "matched_rule": null,
+      "evidence_grade": null,
+      "matched_keywords": [],
+      "durationMs": 413,
       "ok": true,
       "assertions": [
         {
@@ -28,9 +27,9 @@
           "detail": "ok=true"
         },
         {
-          "name": "profile-minimal",
+          "name": "uninitialized-zero-routing",
           "ok": true,
-          "detail": "profile=MINIMAL (rule F_COPY_STYLE_ONLY)"
+          "detail": "initialized=false，workflow_routing=[]（零输出极简——几乎感觉不到治理的度量点）"
         },
         {
           "name": "no-architect-research-spawn-words",
@@ -42,26 +41,24 @@
     {
       "tier": "normal",
       "scenario": "新增一个 CLI capability（如 pomaster explain）",
-      "expected": [
-        "LIGHT",
-        "STANDARD"
-      ],
-      "profile": "LIGHT",
-      "matched_rule": "DEFAULT_NO_SIGNAL",
-      "evidence_grade": "NOT_CONFIGURED",
+      "expected": [],
+      "surface": "cli:status",
+      "profile": null,
+      "matched_rule": null,
+      "evidence_grade": null,
       "matched_keywords": [],
-      "durationMs": 353,
+      "durationMs": 376,
       "ok": true,
       "assertions": [
         {
-          "name": "envelope-ok",
+          "name": "fail-closed-envelope",
           "ok": true,
-          "detail": "ok=true"
+          "detail": "ok=false（未初始化 fail-closed——绝不静默假绿）"
         },
         {
-          "name": "profile-in-light-standard",
+          "name": "not-initialized-with-hint",
           "ok": true,
-          "detail": "profile=LIGHT (rule DEFAULT_NO_SIGNAL)，期望 ∈ [LIGHT, STANDARD]"
+          "detail": "code=NOT_INITIALIZED，hint 非空=true（报错必带路标——escalation 纪律）"
         }
       ]
     },
@@ -127,21 +124,21 @@
           ]
         },
         "normal": {
-          "surface": "cli:triage",
-          "profile": "LIGHT",
-          "matched_rule": "DEFAULT_NO_SIGNAL",
+          "surface": "cli:status",
+          "profile": null,
+          "matched_rule": null,
           "gate_ids": [],
           "artifacts": [
-            "triage-envelope"
+            "status-envelope"
           ]
         },
         "tiny": {
-          "surface": "cli:triage",
-          "profile": "MINIMAL",
-          "matched_rule": "F_COPY_STYLE_ONLY",
+          "surface": "cli:alerts",
+          "profile": null,
+          "matched_rule": null,
           "gate_ids": [],
           "artifacts": [
-            "triage-envelope"
+            "alerts-envelope"
           ]
         }
       },
@@ -295,7 +292,7 @@
           "not_run_reason": "分母缺席：vNext 仓库自身无业务 subject 数据面，gate 真实判卷需在消费项目数据面执行（A3 裁定执行面=就绪校验；not_run 显式披露，禁假 passed）"
         }
       ],
-      "durationMs": 288,
+      "durationMs": 335,
       "ok": true,
       "assertions": [
         {
@@ -361,22 +358,22 @@
         {
           "name": "three-tier-path-signatures-distinct",
           "ok": true,
-          "detail": "三档在全部真实轴上两两可区分（§90.3 同路=失败未触发；头版=三轴聚合，非整签名两两不等的同义反复——surface/matched_rule/artifacts 为常量词形不计入）：surface constitutional=\"kernel:catalog+gatekeeper\" vs tiny/normal=\"cli:triage\"；gate_ids constitutional=6 条 vs 两档 0 条；profile constitutional=\"web-standard@0\" vs triage 档位词"
+          "detail": "三档在全部真实轴上两两可区分（§90.3 同路=失败未触发；头版=三轴聚合，非整签名两两不等的同义反复——surface/matched_rule/artifacts 为常量词形不计入）：surface constitutional=\"kernel:catalog+gatekeeper\" vs tiny/normal=\"cli:alerts/cli:status\"；gate_ids constitutional=6 条 vs 两档 0 条；profile constitutional=\"web-standard@0\" vs 轻探针 null（D-5 裁决 18 档位词退役）"
         },
         {
           "name": "distinct-axis-execution-surface",
           "ok": true,
-          "detail": "执行面轴：constitutional=\"kernel:catalog+gatekeeper\"，tiny=\"cli:triage\"，normal=\"cli:triage\""
+          "detail": "执行面轴：constitutional=\"kernel:catalog+gatekeeper\"，tiny=\"cli:alerts\"（D-5 裁决 18 重锚），normal=\"cli:status\""
         },
         {
           "name": "distinct-axis-gate-set",
           "ok": true,
-          "detail": "gate 集合轴：constitutional 6 条 GATE.* vs tiny=0 / normal=0（triage 信封无 gate 执行载体）"
+          "detail": "gate 集合轴：constitutional 6 条 GATE.* vs tiny=0 / normal=0（轻探针信封无 gate 执行载体）"
         },
         {
           "name": "distinct-axis-profile-value",
           "ok": true,
-          "detail": "profile 值轴：constitutional 锚 catalog profile=\"web-standard@0\"，tiny=\"MINIMAL\"，normal=\"LIGHT\"（catalog 锚即档——A3 裁定 3，Owner 2026-09-01；triage 不物化 STRICT 档，无双轨）"
+          "detail": "profile 值轴：constitutional 锚 catalog profile=\"web-standard@0\"，tiny=\"null\"，normal=\"null\"（catalog 锚即档——A3 裁定 3，Owner 2026-09-01；D-5 裁决 18 后 triage 档位词退役，轻探针 profile 位恒 null）"
         }
       ]
     },
@@ -384,13 +381,11 @@
       "tier": "applicability",
       "scenario": "README badge 文案调整",
       "expected": "MINIMAL + catalog applicability exclusion（PRD v0.5.2 §15 Benchmark A）",
-      "profile": "MINIMAL",
+      "profile": null,
       "surface": "cli:context-applicability",
-      "matched_rule": "F_COPY_STYLE_ONLY",
+      "matched_rule": null,
       "evidence_grade": "MEASURED",
-      "matched_keywords": [
-        "文案"
-      ],
+      "matched_keywords": [],
       "applicability": {
         "compile_role": "frontend",
         "compile_capabilities": [
@@ -442,31 +437,30 @@
       "path_signature": {
         "applicability": {
           "surface": "cli:context-applicability",
-          "profile": "MINIMAL",
-          "matched_rule": "F_COPY_STYLE_ONLY",
+          "profile": null,
+          "matched_rule": null,
           "gate_ids": [],
           "artifacts": [
-            "triage-envelope",
             "projection-manifest",
             "explain-decision-record"
           ]
         },
         "tiny": {
-          "surface": "cli:triage",
-          "profile": "MINIMAL",
-          "matched_rule": "F_COPY_STYLE_ONLY",
+          "surface": "cli:alerts",
+          "profile": null,
+          "matched_rule": null,
           "gate_ids": [],
           "artifacts": [
-            "triage-envelope"
+            "alerts-envelope"
           ]
         },
         "normal": {
-          "surface": "cli:triage",
-          "profile": "LIGHT",
-          "matched_rule": "DEFAULT_NO_SIGNAL",
+          "surface": "cli:status",
+          "profile": null,
+          "matched_rule": null,
           "gate_ids": [],
           "artifacts": [
-            "triage-envelope"
+            "status-envelope"
           ]
         },
         "constitutional": {
@@ -491,13 +485,13 @@
           ]
         }
       },
-      "durationMs": 1830,
+      "durationMs": 1826,
       "ok": true,
       "assertions": [
         {
-          "name": "triage-profile-minimal",
+          "name": "tiny-entry-ok",
           "ok": true,
-          "detail": "triage profile=MINIMAL（rule=F_COPY_STYLE_ONLY；README 文案调整期望 MINIMAL——tiny 档同引擎）"
+          "detail": "tiny 探针条 ok=true（alerts 恒 exit 0 契约——D-5 裁决 18 重锚）"
         },
         {
           "name": "catalog-no-api-sec-entries",

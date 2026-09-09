@@ -30,12 +30,14 @@ afterEach(() => {
 });
 
 describe("八拍 enforcement 行不变量（P5：session 输出缺行即红）", () => {
-  it("不变量锚自检：八拍恰 8 行、拍位 ①-⑧ 逐一零重复、命令词形均为 pomaster 词形", () => {
-    expect(EIGHT_BEAT_ENFORCEMENT_LINES).toHaveLength(8);
+  it("不变量锚自检：0 BOOTSTRAP + 八拍 ①-⑧ 恰 9 行、拍位逐一零重复、命令词形均为 pomaster 词形（D-5 裁决 18：①=BRAINSTORM；beat 0=T2 check 裁定项④收编）", () => {
+    expect(EIGHT_BEAT_ENFORCEMENT_LINES).toHaveLength(9);
     expect(EIGHT_BEAT_ENFORCEMENT_LINES.map((row) => row.beat)).toEqual([
-      "①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧",
+      "0", "①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧",
     ]);
-    expect(new Set(EIGHT_BEAT_ENFORCEMENT_LINES.map((row) => row.beat)).size).toBe(8);
+    expect(new Set(EIGHT_BEAT_ENFORCEMENT_LINES.map((row) => row.beat)).size).toBe(9);
+    expect(EIGHT_BEAT_ENFORCEMENT_LINES[1]?.name).toBe("BRAINSTORM");
+    expect(EIGHT_BEAT_ENFORCEMENT_LINES[1]?.enforcement).toBe("pomaster brainstorm start");
     for (const row of EIGHT_BEAT_ENFORCEMENT_LINES) {
       expect(row.name.length).toBeGreaterThan(0);
       expect(row.enforcement.startsWith("pomaster ")).toBe(true);
@@ -52,6 +54,8 @@ describe("八拍 enforcement 行不变量（P5：session 输出缺行即红）",
     }
     // 路标段整段在场（分段注入载体；uninitialized 缺席形态由 session.spec 另钉）。
     expect(text).toContain("【八拍路标】");
+    // D-5 退役注记：八拍① 判档命令词形不得再现（triage 命令已删）。
+    expect(text).not.toContain("pomaster triage");
   });
 
   it("渲染器与不变量锚单一词形源：session 路标行 = EIGHT_BEAT_ENFORCEMENT_LINES 逐行机械渲染（零漂移）", async () => {
@@ -63,9 +67,9 @@ describe("八拍 enforcement 行不变量（P5：session 输出缺行即红）",
     }
   });
 
-  it("八拍拍位 ↔ P2 路由 beat 词形同源（②③⑤⑥⑧ 路由行的拍位词形取自同一词表）", () => {
+  it("八拍拍位 ↔ P2 路由 beat 词形同源（0①②③⑤⑥⑧ 路由行的拍位词形取自同一词表）", () => {
     const beatWordforms = new Set(EIGHT_BEAT_ENFORCEMENT_LINES.map((row) => row.beat));
-    for (const beat of ["①", "②", "③", "⑤", "⑥", "⑧"]) {
+    for (const beat of ["0", "①", "②", "③", "⑤", "⑥", "⑧"]) {
       expect(beatWordforms.has(beat)).toBe(true);
     }
   });

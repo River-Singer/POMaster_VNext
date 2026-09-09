@@ -865,7 +865,8 @@ export async function runRecordVerification(
   }
   const curSeq = store.currentSeq ?? initialized.seq;
 
-  // —— 目标 claim 预读（判定态裁决先行，与 record claim 的 SKIPPED_ADJUDICATED 同线） ——
+  // —— 目标 claim 预读（判定态裁决先行，与 record claim 的 SKIPPED_ADJUDICATED 同线；
+  // T3-R3 边界例豁免：判定态机制描述——机制/领域语义词形，非 Owner 裁定引注） ——
   const claimPath = `${claimsDirPath(rootDir)}/${input.clm}.json`;
   let bytes: string | null = null;
   try {

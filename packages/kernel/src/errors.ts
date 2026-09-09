@@ -118,7 +118,7 @@ export type GovernanceErrorCode =
    *  rename 提交的窗口内 truth-index seq 已被并发方推进——后 rename 者会静默抹掉先提交
    *  者的整个事务，故显式拒绝提交（本事务零落盘，重开 store 重放即收敛）。 */
   | "CONCURRENT_WRITE_DETECTED"
-  /** 证据记录 id 冲突禁覆写（A3，D20 纪律）：record_claim / record_gate_run 写前查既有，
+  /** 证据记录 id 冲突禁覆写（A3，D20 纪律）：record_claim / record_gate_run 写前查既有，（历史裁定，锚缺失——D20（PRD 纪律裁定）；未入 corpus 台账，T3-R3 如实标注）
    *  同 id 且内容等价 → 幂等短路零写入；同 id 内容不同 → 显式拒绝（禁静默翻转 verdict、
    *  禁把独立验证流的判定打回 UNVERIFIED）。 */
   | "EVIDENCE_ALREADY_EXISTS"
@@ -131,7 +131,15 @@ export type GovernanceErrorCode =
   | "CLAIM_ALREADY_ADJUDICATED"
   /** verify_claim 合并证据引用后仍为空集（07 执行层规则「空 evidence_refs 的
    *  verification 不得为 VERIFIED」的 kernel 写入侧执法位）。 */
-  | "VERIFICATION_EVIDENCE_EMPTY";
+  | "VERIFICATION_EVIDENCE_EMPTY"
+  /** 非权威来源驱动的 maintain 写路径阻断（D-4，2026-09-08——显式推翻裁决 11⑤/B3
+   *  warning-only 红线，owner-adjudications.md#裁决18）：tx sources 对 ops 涉及对象/
+   *  维度的 authoritative 判定失格——sources/index.yaml 申报 non_authoritative_for
+   *  维度与触及对象（authority owner 的 map scope 维度）相交，或 authority.json
+   *  boundary_rules deny 规则 scope 命中触及对象维度。与 permit scope 闸正交并置
+   *  （permit=谁可写哪些对象；authority=哪些来源可驱动哪些维度），均为写路径确定性
+   *  BLOCK；fail-closed——判据缺失不构成放行，registry 损坏走 SCHEMA_INVALID。 */
+  | "AUTHORITY_BOUNDARY_DENY";
 
 /** GovernanceError 判读上下文（错误详情结构化，机器可判读）。 */
 export interface GovernanceErrorDetails {

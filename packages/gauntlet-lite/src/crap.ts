@@ -54,7 +54,7 @@ export const CRAP_TOOL_ID = "gauntlet:crap";
 export const CRAP_METRIC_DIALECT = "crap:pomaster_native_v1";
 /**
  * 缺席记录的机器可辨口径轴（P12c policySkip 映射裁定同款：MINIMAL/LIGHT/FAST 档
- * 合法缺席落 not_run + counts.notApplicable=1，与执行腿口径在记录级区分）。
+ * 合法缺席落 not_run + counts.notApplicable=1，与执行腿口径在记录级区分；裁定全文 docs/vocab-pr-0002.md）。
  */
 export const CRAP_POLICY_SKIP_METRIC_DIALECT = "crap:policy_skip";
 /** CRAP 阈值出厂兜底（provisional 待 A4 打包批准；配置 coverage-gate.json crap.maxCrap 覆盖）。 */

@@ -6,7 +6,7 @@
  *                   平台适配器（F1：--platforms claude,codex,cursor,qoder / none；
  *                   TTY 人读模式无旗标时出复选清单交互——◉/◯ 空格勾选 / ↑↓ 移动 /
  *                   回车确认，raw 启用失败降级编号输入；幂等 NO_CHANGE）。
- *                   入口形态（D13 2026-09-03 修订 + B7 裁定 2026-09-04：单一重入口
+ *                   入口形态（D13 2026-09-03 修订 + B7 裁定 2026-09-04：单一重入口（锚：corpus/master/cutover/owner-adjudications.md#裁决11⑧）
  *                   无模式旗标）：skills 命令卡库双镜像（.agents/skills/ 通用层 +
  *                   .claude/skills/）+ claude hooks 注册（settings.json 读-合并-写回：
  *                   SessionStart → session 速览、UserPromptSubmit → alerts 轻提醒）+
@@ -14,7 +14,6 @@
  * - update          CLI 自更新（F2）：缺省 --check（npm view semver 比对，registry
  *                   不可达 fail-closed 显式呈现禁假绿）；--yes = npm install -g
  *                   pomaster@latest（stdio inherit；失败透传 exit 1）
- * - triage <request> 八拍①：规则桶判档（C1；TTL 168h，C9）
  * - permit issue/check/steal/list
  *                   八拍②：FRAMEWORK LOCK 命令面（签发/判卷/显式接管/台账呈现；G1）
  * - exec-guard      八拍④：写路径机器执行点（判卷器非写入器；G2）
@@ -63,11 +62,13 @@
  *                   恒 exit 0（hook 契约）；带子命令词形时分发 attach/refresh/list
  * - alerts          可行动项过滤器 + workflow 路由段（重入口 UserPromptSubmit 源）：
  *                   permit 到期/CHALLENGED 对象（truth-index/permits 只读面派生）；
- *                   初始化后恒带 ≤3 行 workflow 路由段（干净=非空但极简）；未初始化
- *                   零输出；恒 exit 0（hook 契约）；triage TTL 显式登记为无派生源类目
+ *                   初始化后恒带 ≤3 行 workflow 路由段（干净=非空但极简；无活跃 TASK →
+ *                   八拍① brainstorm start 单入口——D-5 2026-09-08，owner-adjudications.md#裁决18）；
+ *                   未初始化零输出；恒 exit 0（hook 契约）
  * - inspect         单对象检视：正文+证据+谱系纯读呈现（零写入；PRD §44.1 基础命令）
  * - maintain        受控变更（--ops 显式事务，判卷权威在 kernel applyTransaction）/
- *                   pre-dev 链（--phase pre-dev：triage→permit issue→context compile；PRD §44.4）
+ *                   pre-dev 链（--phase pre-dev：permit issue→context compile 二步——
+ *                   八拍① triage 已按 D-1/D-5 退役（裁决 18），链编排随之二步化）
  * - context compile 八拍③：转调 kernel compileProjection，输出三分区 markdown
  * - doctor          内核探针 + chrome-devtools MCP 探测（D7/D22，四态矩阵 fail-closed）
  * - check --fast    八拍⑤：转调 gauntlet-lite build adapter（NOT_INSTALLED 绝不静默通过）
@@ -146,7 +147,7 @@
  *                   D 线地基③执行身份命令面（P20；PRD §25.4：AGX-n 登记/封口/清单
  *                   ——record gate-run/claim --execution-id 的身份供给面）
  * - trace show/list Execution Trace 命令面（W1-C2 · PRD v0.5.2 §8 + §14 P0.5-3；
- *                   OD-5 已批词形，裁决 8 ②）：show <AGX> = 纯投影纯读（封存在座=
+ *                   OD-5 已批词形，裁决 8 ②）：show <AGX> = 纯投影纯读（封存在座=（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
  *                   封存快照 + stale 对账显式呈现；--seal --retention <四档> = 显式
  *                   物化审计快照——EPHEMERAL 落 runtime/traces 可丢弃、其余 traces/
  *                   durable 进 Git）/ list = 封存清单（双平面 durable 优先）；Trace
@@ -162,8 +163,10 @@
  *
  * 分层纪律：判卷权威在 @pomaster/kernel，本包只做编排与呈现，禁止旁路写状态
  * （例外：check/exec-guard 对过期许可追加 PERMIT_EXPIRED_OBSERVED 为 kernel 契约行为）。
- * 词表纪律：本包局部词（triage 档位/证据级、doctor 四态、permit list status 三值、
- * maintain --phase 相值）已随 PR-0009 入锁（vocab-lock presentation_axes 各轴）。
+ * 词表纪律：本包局部词（doctor 四态、permit list status 三值、maintain --phase 相值）
+ * 已随 PR-0009 入锁（vocab-lock presentation_axes 各轴）；triage 档位/证据级词轴
+ * 自 D-1/D-5（裁决 18，2026-09-08）起产品面退役——词形仅存 eval 语料参考镜像
+ * （triage.ts/triage-rule-v0.ts 引擎与 behavioral/golden 语料机，产品命令面零消费）。
  */
 import { Command, CommanderError } from "commander";
 import { createInterface } from "node:readline";
@@ -175,7 +178,6 @@ import { collectStackAnswers, runBaselineConfirm, runBaselineSet } from "./basel
 import type { StackQuestionnaireOutcome } from "./baseline.js";
 import { runUpdate } from "./update.js";
 import { resolveCliVersion } from "./version.js";
-import { triageRequest } from "./triage.js";
 import { runStatus } from "./status.js";
 import { runAlerts } from "./alerts.js";
 import { runSessionOverview } from "./session.js";
@@ -265,6 +267,9 @@ export { toEnvelope } from "./envelope.js";
 export type { CliEnvelope, CommandOutcome } from "./envelope.js";
 export * from "./store-layout.js";
 export * from "./digest.js";
+// D-1/D-5（裁决 18）产品命令面退役注记：triage.ts 关键词引擎模块保留 = eval 语料机
+// （cli_keyword evaluator + golden/behavioral 语料）的唯一实现；`pomaster triage`
+// 命令已删，产品面零消费（triage.spec/triage-matrix.spec 的语料机测试面继续钉住）。
 export * from "./triage.js";
 export {
   runInit,
@@ -495,7 +500,6 @@ export type {
   MaintainApplyResult,
   MaintainPreDevResult,
   MaintainPhase,
-  MaintainTriageView,
   MaintainPermitView,
   MaintainProjectionView,
 } from "./maintain.js";
@@ -992,7 +996,7 @@ export function createProgram(
       record({ command: "init", outcome, asJson });
     });
 
-  // —— baseline 后补销账 + 确认 gate 通路（R-M Step A / R-L Step B；0.5.0 审计修复批 1） ——
+  // —— baseline 后补销账 + 确认 gate 通路（R-M Step A / R-L Step B；0.5.0 审计修复批 1（历史裁定，锚缺失——R-M/R-L，2026-09-05 执行轮；未入 corpus 台账，T3-R3 如实标注）） ——
   // CI/脚本场景的单键显式写入：stack.yaml 逐键回填 + manifest unknowns 台账同步销
   // 账（seed 头注现成销账契约）；键词形 fail-closed（lane/key 闭包 + 值词形）；
   // 已答键改型显式拒绝；确认态在座 = gate 本体（无 --change 拒绝 / 持有效 --change
@@ -1094,26 +1098,6 @@ export function createProgram(
     });
 
   program
-    .command("triage")
-    .description(
-      "八拍①：规则桶判档（跨域 contract→STANDARD；纯文案/样式→MINIMAL；默认 LIGHT）",
-    )
-    .argument("<request>", "change request text")
-    .option("--json", "machine-readable JSON output (§45)")
-    .action(async (request: string, _opts, command) => {
-      const result = triageRequest(request);
-      const human = [
-        `triage → ${result.profile} (rule ${result.matched_rule}, grade=${result.evidence_grade}, ttl=${result.ttl_hours}h)`,
-        `  absent signals: ${result.absent_signals.join(", ")}`,
-      ];
-      record({
-        command: "triage",
-        outcome: { ok: true, result, warnings: [], errors: [], human },
-        asJson: command.opts().json === true,
-      });
-    });
-
-  program
     .command("status")
     .description("输出对象计数/分母状态/permit 活性（读 .pomaster/state）")
     .option("--json", "machine-readable JSON output (§45)")
@@ -1133,7 +1117,7 @@ export function createProgram(
   program
     .command("alerts")
     .description(
-      "可行动项过滤器 + workflow 路由段（重入口 UserPromptSubmit 源）：permit 到期/CHALLENGED 对象（truth-index/permits 只读面派生；triage TTL 显式登记为无派生源类目）；初始化后恒带 ≤3 行 workflow 路由段（无活跃 TASK → triage/brainstorm start 双入口；有 → 八拍位置+下一拍命令+分段卡），干净=非空但极简；未初始化零输出；恒 exit 0（hook 契约）；降级走 warnings 不走 errors",
+      "可行动项过滤器 + workflow 路由段（重入口 UserPromptSubmit 源）：permit 到期/CHALLENGED 对象（truth-index/permits 只读面派生）；初始化后恒带 ≤3 行 workflow 路由段（无活跃 TASK → 八拍① brainstorm start 单入口——D-5，裁决 18；有 → 八拍位置+下一拍命令+分段卡），干净=非空但极简；未初始化零输出；恒 exit 0（hook 契约）；降级走 warnings 不走 errors",
     )
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (_opts, command) => {
@@ -1573,7 +1557,7 @@ export function createProgram(
   program
     .command("maintain")
     .description(
-      "受控变更/pre-dev 链（PRD §44.4）：--ops <tx-file> 显式事务走 kernel applyTransaction（唯一写入路径，零旁移判卷）；--phase pre-dev 薄编排 triage→permit issue→context compile（串既有能力零新原语）",
+      "受控变更/pre-dev 链（PRD §44.4）：--ops <tx-file> 显式事务走 kernel applyTransaction（唯一写入路径，零旁移判卷）；--phase pre-dev 薄编排 permit issue→context compile（串既有能力零新原语；原 ① triage 判档位已随 D-1/D-5 退役——裁决 18，需求收敛走 pomaster brainstorm）",
     )
     .argument("<change-or-task>", "变更/任务锚（general_id 宽松词形；apply 模式缺省作为 authorityRef 兜底）")
     .option("--ops <tx-file>", "apply 模式：kernel Transaction JSON 文件（{ops:[…], authorityRef?, note?}）")
@@ -1583,8 +1567,7 @@ export function createProgram(
       "--execution-id <AGX-n>",
       "事务级执行身份盖章（§25.4）：携带即校验词形+档案存在性（S1 禁自造身份）并盖进 TX_APPLIED 事件（P21-Enforcement）",
     )
-    .option("--phase <phase>", "编排链模式：pre-dev（triage→permit issue→context compile；in-dev/post-dev 未落地显式拒绝）")
-    .option("--request <text>", "pre-dev 链：triage 请求文本")
+    .option("--phase <phase>", "编排链模式：pre-dev（permit issue→context compile 二步；in-dev/post-dev 未落地显式拒绝）")
     .option("--subject <governed-id>", "pre-dev 链：permit 范围对象（可重复，≥1）", collectValues)
     .option("--actor <type>:<name>", "pre-dev 链：permit 主体（type ∈ agent/human/tool/kernel）")
     .option("--capability <governed-id>", "pre-dev 链：Capability 清单（可重复）", collectValues)
@@ -1600,7 +1583,6 @@ export function createProgram(
         note: opts.note as string | undefined,
         executionId: opts.executionId as string | undefined,
         phase: opts.phase as string | undefined,
-        request: opts.request as string | undefined,
         subjects: opts.subject as string[] | undefined,
         actor: opts.actor as string | undefined,
         capabilities: opts.capability as string[] | undefined,
@@ -3155,7 +3137,7 @@ export function createProgram(
   // —— Execution Trace 命令面（W1-C2 · PRD v0.5.2 §8 + §14 P0.5-3 + §16 Case A） ——
   // 判卷权威在 kernel trace.ts 三函数（compile/seal/readSealed/listSealed——批 1 W1-C
   // 已落读取面）；本面只做 argv 收敛与呈现（§45 双输出），CLI 零判卷零 GC（OD-4 仅
-  // 记录不执法）。OD-5 词形 `trace show/list` 经 Owner 裁决 8 ②（2026-09-01）批准；
+  // 记录不执法）。OD-5 词形 `trace show/list` 经 Owner 裁决 8 ②（2026-09-01）批准；（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
   // 命令段契约 docs/kernel-api.md §23.3。
   const trace = program
     .command("trace")
@@ -3232,7 +3214,7 @@ export function createProgram(
       });
     });
 
-  // —— 子代理派发包（裁定批 E P4；09-05 提案 §2 P4——Trellis PreToolUse 物化的
+  // —— 子代理派发包（裁定批 E P4；09-05 提案 §2 P4——Trellis PreToolUse 物化的（历史裁定，锚缺失——裁定批 E，2026-09-05 执行轮；未入 corpus 台账，T3-R3 如实标注）
   // vNext 形态）：纯组装既有读取面零新治理语义；缺省 stdout 零写入，--out 落盘。 ——
   agents
     .command("dispatch-pack")

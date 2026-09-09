@@ -6,7 +6,9 @@
  *   prompt 处理——本命令永不失败（降级走 warnings 留痕于 --json 信封，人读通道静默）；
  * - 干净=非空但极简（R3 2026-09-06 工作流路由注入；此前「干净=空输出」的提醒器形态
  *   已升级为工作流路由器）：初始化后输出恒带 ≤3 行 workflow 路由段——无活跃 TASK →
- *   「八拍① triage 或 brainstorm start（需求讨论走 pomaster-discovery 卡）」双入口；
+ *   「八拍① brainstorm start」单入口（D-5 2026-09-08，owner-adjudications.md#裁决18：
+ *   双入口收敛为 brainstorm 单入口，「只有一条公开通路」成真；讨论驻留与新变更同走
+ *   brainstorm）；
  *   有活跃 TASK → 八拍当前位置 + 下一拍命令 + 对应分段卡名；有告警时告警块在前、
  *   路由段收尾。未初始化仍零输出（init 引导归 SessionStart 速览专属，告警通道自我
  *   克制）；
@@ -20,9 +22,9 @@
  * 语义与 `permit list` 逐字同源：stolen 优先，其次 current_seq >= expires_at_seq）：
  * - PERMIT_EXPIRED：台账内未被盗取且已过期的许可；
  * - OBJECT_CHALLENGED：change 轴处于 CHALLENGED 的治理对象。
- * triage TTL 过期暂无派生源：triage 是纯函数（规则桶判定，结果不落账）——
- * 无持久化分母即无从判定过期，登记于 unsourced_categories 显式缺席（不臆造
- * 数据源），待 triage 结果获得持久化记录后接入。
+ * 原 triage TTL 显式缺席类目随 D-1/D-5（裁决 18，2026-09-08）一并退役：triage 判档
+ * 结果不落账的 TTL 过期语义随之消亡，unsourced_categories 收敛为空（显式空数组——
+ * 零类目在场，非缺席隐藏）。
  */
 
 import { readFile } from "node:fs/promises";
@@ -51,10 +53,11 @@ export const ALERT_KINDS = ["PERMIT_EXPIRED", "OBJECT_CHALLENGED"] as const;
 export type AlertKind = (typeof ALERT_KINDS)[number];
 
 /**
- * 显式缺席的告警类目（有语义、无派生源）：triage 结果不落账 → TTL 过期无从判定。
- * 分母披露纪律：缺什么数据源在此逐字登记，不冒充「检查过且干净」。
+ * 显式缺席的告警类目（有语义、无派生源）：分母披露纪律——缺什么数据源在此逐字
+ * 登记，不冒充「检查过且干净」。零类目 = 空数组（显式空，非缺席隐藏）。
+ * 历史：triage_ttl 类目随 D-1/D-5 triage 退役一并消亡（裁决 18，2026-09-08）。
  */
-export const ALERT_UNSOURCED_CATEGORIES = ["triage_ttl"] as const;
+export const ALERT_UNSOURCED_CATEGORIES = [] as const;
 
 /** alerts 人读输出硬上限（UserPromptSubmit 注入同受 10,000 字符 hook 上限约束）。 */
 export const ALERTS_OUTPUT_HARD_CAP = 10_000;
@@ -81,7 +84,7 @@ export interface AlertsResult {
   /** 有语义但暂无持久化派生源的类目（显式缺席，禁冒充已检查）。 */
   readonly unsourced_categories: readonly string[];
   /**
-   * 面包屑行（裁定批 E P3——有活跃 TASK 时单行「拍位 + 下一命令」；无任务/未初始
+   * 面包屑行（裁定批 E P3——有活跃 TASK 时单行「拍位 + 下一命令」；无任务/未初始（历史裁定，锚缺失——裁定批 E，2026-09-05 执行轮；未入 corpus 台账，T3-R3 如实标注）
    * 化 = null 调用方静默；路由与 status/session 同表共享，P2 next-action.ts）。
    * R3 起人读通道由 workflow_routing 承载（信息超集），本字段保留为机读面。
    */
@@ -120,10 +123,13 @@ export function capPlainOutput(
 /**
  * 八拍拍位 → 分段命令卡名（R3 工作流路由段的「对应分段卡」；卡名词形与
  * SKILL_MANIFEST 注册表同源——heavy-entry 命令卡库，tests 钉住双向闭合，禁第二套
- * 卡名声明）。
+ * 卡名声明）。D-5（裁决 18，2026-09-08）：① 卡名 = pomaster-discovery（triage 卡
+ * 随命令退役删除）；beat "0"（R_NOT_INITIALIZED/R_BASELINE_NOT_READY 路由拍位，
+ * T2 check 裁定项④收编）→ pomaster-bootstrap（0 BOOTSTRAP 拍）。
  */
 export const BEAT_CARD_NAMES: Readonly<Record<string, string>> = {
-  "①": "pomaster-triage",
+  "0": "pomaster-bootstrap",
+  "①": "pomaster-discovery",
   "②": "pomaster-permit",
   "③": "pomaster-context",
   "④": "pomaster-execute",
@@ -135,7 +141,7 @@ export const BEAT_CARD_NAMES: Readonly<Record<string, string>> = {
 
 /**
  * 工作流路由段渲染（R3；与 breadcrumb 同一 evaluateNextAction 路由表——禁两套路由
- * 口径漂移）。≤3 行：无活跃 TASK → 双入口行 + 两命令词形行；有 → 拍位/拍名行 +
+ * 口径漂移）。≤3 行：无活跃 TASK → 八拍① Brainstorm 单入口；有 → 拍位/拍名行 +
  * 下一拍命令行 + 分段卡行；UNDETERMINED → 诚实原因单行。
  */
 export function renderWorkflowRouting(
@@ -146,8 +152,8 @@ export function renderWorkflowRouting(
   if (task === undefined) {
     if (nextAction.route_id === "R_NO_ACTIVE_TASK") {
       return [
-        "POMaster workflow: 无活跃 TASK——建议: 八拍① triage 或 brainstorm start（需求讨论走 pomaster-discovery 卡）",
-        '  新变更判档: pomaster triage "<request>"；讨论驻留: pomaster brainstorm start',
+        "POMaster workflow: 无活跃 TASK——建议: 八拍① Brainstorm（需求收敛走 pomaster-discovery 卡，promote 即建任务）",
+        "  入口: pomaster brainstorm start（--prompt 登记 raw prompt 原文）",
       ];
     }
     return [`POMaster workflow: ${nextAction.reason}`];

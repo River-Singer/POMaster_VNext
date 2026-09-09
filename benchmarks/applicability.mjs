@@ -4,8 +4,9 @@
  *
  * 场景：「README badge 文案调整」（与 tiny 档同场景——纯文案变更）。
  * 组合断言（研究 applicability.md §4.4 落法）：
- *   1. triage 信封 profile=MINIMAL（tiny 档同引擎：自同场景 triage 信封取 profile；
- *      run-all 传入本轮 tiny 条目则复用，不重复执行子进程）；
+ *   1. tiny 档探针条 ok（alerts 信封——D-1/D-5 裁决 18：原 triage profile=MINIMAL
+ *      断言随档位语义退役改锚 tiny 探针条 ok；run-all 传入本轮 tiny 条目则复用，
+ *      不重复执行子进程）；
  *   2. `context compile --role frontend --capability CAPABILITY.PRESENTATION` 的
  *      catalogEntries 不含「非回退泄漏」的 policy.api.* / policy.sec.* 族（真实 catalog
  *      T3 标注承载的更严真断言；I7 修正：lane=any 保守回退纳入且 explain 决策面
@@ -156,15 +157,13 @@ export async function runApplicabilityBenchmark(options = {}) {
   }
 
   // ============================================================
-  // ① triage profile=MINIMAL（tiny 档同引擎真实判定）
+  // ① tiny 档探针条 ok（alerts 信封——D-1/D-5 裁决 18 重锚，原 triage profile 断言退役）
   // ============================================================
-  const triageProfile = tinyEntry.profile ?? null;
-  const triageMatchedRule = tinyEntry.matched_rule ?? null;
-  const triageMatchedKeywords = tinyEntry.matched_keywords ?? [];
+  const tinyProbeOk = tinyEntry.ok === true;
   assertions.push({
-    name: "triage-profile-minimal",
-    ok: triageProfile === "MINIMAL",
-    detail: `triage profile=${triageProfile}（rule=${triageMatchedRule}；README 文案调整期望 MINIMAL——tiny 档同引擎）`,
+    name: "tiny-entry-ok",
+    ok: tinyProbeOk,
+    detail: `tiny 探针条 ok=${tinyProbeOk}（alerts 恒 exit 0 契约——D-5 裁决 18 重锚）`,
   });
 
   // ============================================================
@@ -336,24 +335,24 @@ export async function runApplicabilityBenchmark(options = {}) {
   // ============================================================
   const signatureApplicability = {
     surface: "cli:context-applicability",
-    profile: triageProfile,
-    matched_rule: triageMatchedRule,
+    profile: null,
+    matched_rule: null,
     gate_ids: [],
-    artifacts: ["triage-envelope", "projection-manifest", "explain-decision-record"],
+    artifacts: ["projection-manifest", "explain-decision-record"],
   };
   const signatureTiny = {
-    surface: "cli:triage",
+    surface: tinyEntry?.surface ?? "cli:alerts",
     profile: tinyEntry?.profile ?? null,
     matched_rule: tinyEntry?.matched_rule ?? null,
     gate_ids: [],
-    artifacts: ["triage-envelope"],
+    artifacts: ["alerts-envelope"],
   };
   const signatureNormal = {
-    surface: "cli:triage",
+    surface: normalEntry?.surface ?? "cli:status",
     profile: normalEntry?.profile ?? null,
     matched_rule: normalEntry?.matched_rule ?? null,
     gate_ids: [],
-    artifacts: ["triage-envelope"],
+    artifacts: ["status-envelope"],
   };
   // constitutional 签名仅在 run-all 传入时参与四档两两判卷；单跑态三档两两 + surface 轴判卷
   // （constitutional 为 kernel 面 surface，与本档 cli:context-applicability 结构性互异，缺席不塌缩）。
@@ -402,11 +401,11 @@ export async function runApplicabilityBenchmark(options = {}) {
     tier: APPLICABILITY_TIER,
     scenario: APPLICABILITY_SCENARIO,
     expected: APPLICABILITY_EXPECTED,
-    profile: triageProfile,
+    profile: null,
     surface: signatureApplicability.surface,
-    matched_rule: triageMatchedRule,
+    matched_rule: null,
     evidence_grade: "MEASURED",
-    matched_keywords: triageMatchedKeywords,
+    matched_keywords: [],
     applicability: {
       compile_role: "frontend",
       compile_capabilities: COMPILE_CAPABILITIES,

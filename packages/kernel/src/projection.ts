@@ -137,7 +137,7 @@ function driftSummary(drifts: readonly CatalogLockDrift[]): string {
  * catalog 结构化 applicability 输入（P0.5-1；PRD §5.3 确定性包含管线的中三层输入）。
  * 由 ProjectionRequest 派生（role/capabilities/changeClass）+
  * store 范围派生（inScopeObjectKinds——分母/许可通道命中的对象 kind 集）。
- * A1 裁定（2026-09-04）：治理档位（governance_profile）不作为 applicability 输入
+ * A1 裁定（2026-09-04）：治理档位（governance_profile）不作为 applicability 输入（锚：corpus/master/cutover/owner-adjudications.md#裁决11①）
  * ——档位信息性，不参与 catalog 判卷（TRIAGE_PROFILES 轴保留为物料元数据）。
  */
 interface CatalogApplicabilityInput {
@@ -151,7 +151,7 @@ interface CatalogApplicabilityInput {
  * 单条 policy 的 applicability 判定结果（确定性、纯派生、同输入重放字节稳定）。
  * hitSegments/failedSegments 是 reason / why_excluded 的轴级片段（轴序固定：
  * lanes → capabilities → change_class → object_kinds；governance_profiles 轴
- * 已按 A1 裁定 2026-09-04 解除判卷力——档位信息性，不参与过滤）。
+ * 已按 A1 裁定 2026-09-04 解除判卷力——档位信息性，不参与过滤）。（锚：corpus/master/cutover/owner-adjudications.md#裁决11①）
  */
 interface PolicyApplicabilityOutcome {
   readonly included: boolean;
@@ -175,9 +175,9 @@ function unregisteredAxisNote(policy: CatalogPolicyMaterial): string {
 }
 
 /**
- * informational 词轴的消费面呈现（A1 裁定 2026-09-04）：物料声明了
+ * informational 词轴的消费面呈现（A1 裁定 2026-09-04）：物料声明了（锚：corpus/master/cutover/owner-adjudications.md#裁决11①）
  * applies_when.governance_profiles 时如实披露「该轴在场但已解除判卷力」——
- * 轴保留为物料元数据（PR-0005/裁决 8 ② 不 supersede），仅过滤维度移除。
+ * 轴保留为物料元数据（PR-0005/裁决 8 ② 不 supersede），仅过滤维度移除。（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
  */
 function informationalAxisNote(policy: CatalogPolicyMaterial): string {
   if (policy.governanceProfiles.length === 0) return "";
@@ -271,7 +271,7 @@ function evaluatePolicyApplicability(
       );
     }
   }
-  // governance_profiles 轴：A1 裁定（2026-09-04）解除判卷力——档位降信息性，
+  // governance_profiles 轴：A1 裁定（2026-09-04）解除判卷力——档位降信息性，（锚：corpus/master/cutover/owner-adjudications.md#裁决11①）
   // 不参与 applicability 过滤；物料元数据保留（见 informationalAxisNote 呈现）。
   // ④ object_kinds 轴（与投影范围内对象 kind 集交集——PRD §5.3 管线「Governed Object Scope」层）。
   if (policy.objectKinds.length > 0) {
@@ -356,7 +356,7 @@ function validateApplicabilityInputs(request: ProjectionRequest): void {
  *   （投影核心是 store 派生，策展源缺席不阻断投影，但绝不伪装成有内容）；
  * - lock 漂移 → WARN 进 note（D24 哈希伦理：呈现不阻断；修复 = producer 重锁）；
  * - applicability 判定核见 evaluatePolicyApplicability（P0.5-1：lane 回退 + 机器
- *   全字段确定性判定——PRD §5.2/§5.3，裁决 8 ② O7 行为零变化）。
+ *   全字段确定性判定——PRD §5.2/§5.3，裁决 8 ② O7 行为零变化）。（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
  */
 function consumeCatalog(
   request: ProjectionRequest,
@@ -396,7 +396,7 @@ function consumeCatalog(
   };
   // 结构化确定性过滤（P0.5-1）：lane 回退 + 机器全字段判定；include reason 保留
   // 现行词形（回退条目逐字节不变——O7），机器条目扩展命中轴详情；governance_profiles
-  // 轴声明以 informational 注记披露（A1 裁定 2026-09-04：判卷力解除）。
+  // 轴声明以 informational 注记披露（A1 裁定 2026-09-04：判卷力解除）。（锚：corpus/master/cutover/owner-adjudications.md#裁决11①）
   const catalogEntries: ProjectionEntry[] = [];
   const decisions: CatalogEntryDecision[] = [];
   for (const policy of policies as readonly CatalogPolicyMaterial[]) {
@@ -782,7 +782,8 @@ function scopeContentRowsOf(
  * - knowledge 通道（P28-Commands）：knowledge 侧车按 Change Localization 检索
  *   命中注入独立分区（§83.8 检索而非全量；[ADVISORY] 分区，永不进判卷输入）；
  * - authority 边界呈现（09-04 Batch 1 R4/D3）：authority.json boundary_rules 的
- *   deny 规则只读呈现进 MUST 区（B3 warning-only 红线：呈现不阻断写路径）；
+ *   deny 规则只读呈现进 MUST 区（D-4 起写路径另由 store 权威维度闸 BLOCK——
+ *   owner-adjudications.md#裁决18 推翻原 B3 warning-only；本面呈现保留，双面如实）；
  * - sources 权威轴呈现（09-04 Batch 1 R3/D2）：被 Change payload source_refs 引用的
  *   来源按 §3A 双轴注记呈现进 MUST 区（sources/index.yaml 损坏 fail-closed；
  *   resolve 侧 advisory 不改变 match_class 纪律不受影响）。
@@ -864,15 +865,16 @@ export async function compileProjection(
       reason: `policy 治理域命中：authority owner=${row.authorityOwner} 的范围内对象受其约束（kind=${row.kind}）`,
     });
   }
-  // —— authority boundary_rules 只读呈现（09-04 Batch 1 R4 / Owner 裁定 D3；B3 红线：
-  // 呈现不阻断——本面是读侧消费，store/permits 写路径不 import authority 消费面） ——
+  // —— authority boundary_rules 只读呈现（09-04 Batch 1 R4 / Owner 裁定 D3；原 B3
+  // 「呈现不阻断」红线已由 D-4 推翻（裁决 18，2026-09-08）：deny 规则升为 store 写路径
+  // BLOCK（AUTHORITY_BOUNDARY_DENY）；本呈现面保留——呈现与写路径闸双面如实） ——
   const authorityFaces = readAuthorityFaces(pathsOf(store));
   for (const rule of authorityFaces.boundary_rules) {
     if (rule.effect !== "deny") continue;
     mustEntries.push({
       ref: rule.rule_id,
       reason:
-        `authority boundary deny（authority.json boundary_rules 只读呈现——D3/B3：呈现不阻断写路径）：` +
+        `authority boundary deny（authority.json boundary_rules 呈现——D-4 起写路径同闸 BLOCK，裁决 18）：` +
         `scope=${rule.scope}` +
         (rule.owner === null ? "" : `；owner=${rule.owner}`) +
         (rule.reason === null ? "" : `；reason=${rule.reason}`),

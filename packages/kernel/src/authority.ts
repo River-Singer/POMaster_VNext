@@ -1,26 +1,30 @@
 /**
  * authority.ts —— Authority Precedence 机器面 + authority.json map/boundary_rules
- * 读侧最小消费（09-04 vNext Batch 1 R4；Owner 裁定 D3——PRD §3B 修订落码）。
+ * 读侧消费（09-04 vNext Batch 1 R4；Owner 裁定 D3——PRD §3B 修订落码）。
  *
  * ADR-lite（最小形态选择）：
  * - PRD §3B precedence 链是**文档规范**；机器面按 D3 取 authority 域最小实现：
  *   ①precedence 链落为纯数据常量（AUTHORITY_PRECEDENCE_ORDER，供 decision-graph G8
  *   等判卷面引用，禁另造评分/排序系统——宪法 §9 六问过堂：这是事实词形位不是新轴）；
  *   ②authority.json 的 map/boundary_rules 骨架字段（init.ts buildSkeletonAuthority
- *   自 MIG-B1 起在场、kernel 读侧此前不消费）做最小只读消费：map 条目 owner 词形
- *   校验 + boundary_rules deny 规则只读呈现进投影 AUTHORITATIVE 区（PRD §4 表：
+ *   自 MIG-B1 起在场、kernel 读侧此前不消费）做读侧消费：map 条目 owner 词形
+ *   校验 + boundary_rules deny 规则呈现进投影 AUTHORITATIVE 区（PRD §4 表：
  *   authority.json → AUTHORITATIVE 始终）。
- * - **B3 红线（Owner 2026-09-04 裁定 warning-only）**：本模块零写路径消费——
- *   store.ts/applyTransaction/permits 判卷通路不 import 本模块；boundary deny 规则
- *   在投影面只读呈现，绝不构成新增写路径阻断。权威裁决仍是 D3 明文的「字段级
- *   precedence 由正式 Authority Contract 定义」的后续 Proposal，本面不预支。
- * - 词形纪律：precedence 九级词形已随 PR-0009 入锁（vocab-lock presentation_axes.authority_precedence，triage 先例），
+ * - **B3 红线已由 D-4 显式推翻（Owner 2026-09-08 裁定，owner-adjudications.md#裁决18
+ *   ——原 warning-only 裁定为裁决 11⑤/2026-09-04）**：boundary deny 规则与 map
+ *   scope 维度申报自本裁定起进入 maintain 写路径——store.ts assertAuthorityBoundaries
+ *   消费本模块读侧面（map 维度申报 + boundary_rules deny 规则集）做确定性 BLOCK
+ *   （AUTHORITY_BOUNDARY_DENY）。投影面只读呈现保留（双面如实：呈现 + 写路径闸并存）；
+ *   字段级 precedence 判卷仍归正式 Authority Contract 的后续 Proposal，本面不预支
+ *   （D-4 推翻的是「boundary deny 不构成写路径阻断」，非「precedence 判卷落地」）。
+ * - 词形纪律：precedence 九级词形已随 PR-0009 入锁（vocab-lock presentation_axes.authority_precedence），
  *   PRD §3B 原文层级逐级对位（"Ratified Project Contract / Approved Policy" 合并
  *   一级、"Measured Evidence / Derived Observation" 合并一级——原文斜杠并列同位）。
  *   维度词形（map.scope / boundary_rules.scope）开放词表（项目特定，§3A 同款），
  *   轴结构闭包（本模块类型面），禁自造枚举。
  *
- * 纯读零写入（io.readText；加载面零副作用），A4 零墙钟。
+ * 纯读零写入（io.readText；加载面零副作用），A4 零墙钟。写路径消费 = store.ts
+ * D-4 闸唯一入口（读本模块函数产出，本模块自身零写）。
  */
 import { GovernanceError } from "./errors.js";
 import { readText } from "./io.js";
@@ -75,7 +79,7 @@ export function authorityPrecedenceRank(level: string): number | null {
 }
 
 // ============================================================
-// authority.json map / boundary_rules 读侧最小消费（warning-only 纪律）
+// authority.json map / boundary_rules 读侧消费（D-4：读侧面喂 store 写路径闸 + 投影呈现）
 // ============================================================
 
 /** authority.owner 词形（decision-graph 同源；SCREAMING_SNAKE，对齐 owner_registry）。 */
@@ -89,7 +93,7 @@ export interface AuthorityMapEntry {
   readonly note: string | null;
 }
 
-/** boundary_rules 条目（effect 词形闭包 allow|deny；deny 规则投影只读呈现）。 */
+/** boundary_rules 条目（effect 词形闭包 allow|deny；deny 规则投影呈现 + D-4 写路径 BLOCK 双面）。 */
 export interface AuthorityBoundaryRule {
   /** 确定性呈现锚：条目 rule_id，缺席时机械派生 boundary_rule_<index>。 */
   readonly rule_id: string;
@@ -137,8 +141,8 @@ function asStringArray(value: unknown, path: string): readonly string[] {
 }
 
 /**
- * 读 authority.json 的 map/boundary_rules 消费面（纯读零写入；B3 红线：零写路径
- * 消费——store/permits 不 import 本函数）。
+ * 读 authority.json 的 map/boundary_rules 消费面（纯读零写入；读侧面 = 投影呈现 +
+ * store D-4 写路径闸唯一数据源——裁决 18 推翻裁决 11⑤/B3 warning-only）。
  * - 文件缺席 → 空面（诚实缺席呈现零规则；与 knowledge 侧车缺席同语义——
  *   kernel createStore 会补齐骨架，read-only 装载不建）；
  * - JSON 损坏 → SCHEMA_INVALID（fail-closed，禁静默当空表）；

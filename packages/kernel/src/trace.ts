@@ -1,6 +1,6 @@
 /**
  * trace.ts —— Execution Trace Manifest Lite（W1-C · PRD v0.5.2 §8 Execution Trace
- * 行为侧车 + §14 P0.5-3 + §15 Benchmark C + §16 Case A；Owner 裁决 8 ②（2026-09-01，
+ * 行为侧车 + §14 P0.5-3 + §15 Benchmark C + §16 Case A；Owner 裁决 8 ②（2026-09-01，（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
  * corpus/master/cutover/owner-adjudications.md）：「trace 独立 traces/ 分区 + 投影 +
  * 可选 --seal / retention 四档逐字仅记录不 GC」——OD-1=B / OD-2=I+显式 --seal /
  * OD-3=PRD 逐字 / OD-4=仅记录，按已批推荐实施）。
@@ -16,7 +16,7 @@
  *   档案同款先例）、retention（§8.3）、derived_from_seq（封存对账锚）；
  * - §8.3 retention 四档词形逐字 EPHEMERAL / TASK_RETENTION / INCIDENT_RETENTION /
  *   AUDIT_RETENTION；「Raw Tool Trace 默认不要求全部进 Git；长期只需要保存最小可审计
- *   Manifest 与 Evidence References」——**仅记录不执法**（无 GC 是诚实现状，裁决 8 ②）；
+ *   Manifest 与 Evidence References」——**仅记录不执法**（无 GC 是诚实现状，裁决 8 ②）；（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
  * - §8.4 隐私封条：禁私有思维链/隐藏推理/凭据——manifest 闭形态（TS 闭类型 + 16
  *   schema additionalProperties:false）无任何自由文本载荷位可塞思维链；只存
  *   observable actions / resource refs / tool receipts / state transitions /
@@ -40,7 +40,7 @@
  *   tool_version/metric_dialect 三件套随 GateResult inline）+ evidence_refs、
  *   CLM → evidence_refs。
  *
- * 形态裁定（裁决 8 ② 已批）：主形态 = 纯投影 on-demand（journal+evidence 是唯一
+ * 形态裁定（裁决 8 ② 已批）：主形态 = 纯投影 on-demand（journal+evidence 是唯一（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
  * 事实源，零漂移风险）；显式 --seal 物化（sealExecutionTrace）为可选审计快照——
  * 物化文件带 derived_from_seq 锚，读侧 canonical 重放对账（重算投影逐字节比对，
  * evidence compact 快路径「磁盘字节 ≠ canonical 重放字节」同构）：漂移 = stale
@@ -70,7 +70,7 @@ import { assertExecutionAttachable, EXECUTION_ID_PATTERN } from "./execution.js"
 // 笔记定案在本模块承载（x-vocab-source 指向 vocab-lock）——扩值走词汇表 PR）
 // ============================================================
 
-/** trace 分区相对路径（durable manifest；裁决 8 ②「trace 独立 traces/ 分区」）。 */
+/** trace 分区相对路径（durable manifest；裁决 8 ②「trace 独立 traces/ 分区」）。（锚：corpus/master/cutover/owner-adjudications.md#裁决8） */
 export const TRACES_RELATIVE = ".pomaster/traces";
 
 /** EPHEMERAL trace 相对路径（runtime 易变平面；§85.4 可删除测试判据豁免位）。 */
@@ -83,7 +83,7 @@ export const EXECUTION_TRACE_SCHEMA = "pomaster.execution_trace/v1" as const;
 export const EXECUTION_TRACE_VERSION = 1 as const;
 
 /**
- * retention 四档（PRD §8.3 逐字词形；裁决 8 ②「retention 四档逐字仅记录不 GC」——
+ * retention 四档（PRD §8.3 逐字词形；裁决 8 ②「retention 四档逐字仅记录不 GC」——（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
  * OD-3：词形有源不发明；OD-4：仅记录，无 GC 无 prune 命令）。
  * 已随 PR-0009 收编（vocab-lock trace_perception_vocab.trace_retention；原 O-Q4 trace
  * 族词汇批次预留注记就此闭合）。
@@ -316,7 +316,7 @@ export function executionTraceDerivedView(
 }
 
 // ============================================================
-// 显式 --seal 物化（裁决 8 ②；零 journal 事件——P34 新分区先例）
+// 显式 --seal 物化（裁决 8 ②；零 journal 事件——P34 新分区先例）（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
 // ============================================================
 
 /**

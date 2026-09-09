@@ -168,7 +168,7 @@ export interface StatusResult {
    */
   readonly legacy_specs_present?: number;
   /**
-   * SPEC.* 预植呈现（裁定批 D D2 2026-09-05；加法呈现字段）：in_place = truth-index
+   * SPEC.* 预植呈现（裁定批 D D2 2026-09-05；加法呈现字段）：in_place = truth-index（历史裁定，锚缺失——裁定批 D，2026-09-05；未入 corpus 台账，T3-R3 如实标注）
    * 中 SPEC.* 对象行数 / kit = 包内清单 evidence spec 分母——纯读呈现位非判定；
    * truth-index/清单缺席 → 字段缺席（显式缺席纪律）。
    */
@@ -182,7 +182,7 @@ export interface StatusResult {
    */
   readonly baseline_confirmation?: BaselineConfirmationPresentation;
   /**
-   * Next-Action 确定性路由建议（裁定批 E P2；加法呈现字段——TASK 状态 × 产物/账面
+   * Next-Action 确定性路由建议（裁定批 E P2；加法呈现字段——TASK 状态 × 产物/账面（历史裁定，锚缺失——裁定批 E，2026-09-05 执行轮；未入 corpus 台账，T3-R3 如实标注）
    * 在场性 → 唯一建议命令，八拍命令化；与 session/alerts 同表共享，next-action.ts
    * 单一实现）。command=null = 诚实「无法判定」非乱指。
    */
@@ -362,7 +362,7 @@ export async function runStatus(
     legacySpecsPresent = 0;
   }
 
-  // SPEC.* 预植呈现（裁定批 D D2）：纯读加法字段（seeded_assets 同款——异常归缺席
+  // SPEC.* 预植呈现（裁定批 D D2）：纯读加法字段（seeded_assets 同款——异常归缺席（历史裁定，锚缺失——裁定批 D，2026-09-05；未入 corpus 台账，T3-R3 如实标注）
   // 不炸 status 读路径；truth-index 不可读/清单缺席 → 字段缺席显式）。
   let specPreplant: SpecPreplantPresentation | null = null;
   try {
@@ -380,7 +380,7 @@ export async function runStatus(
     baselineConfirmation = null;
   }
 
-  // Next-Action 确定性路由（裁定批 E P2）：与 session/alerts 同表共享（单一实现）；
+  // Next-Action 确定性路由（裁定批 E P2）：与 session/alerts 同表共享（单一实现）；（历史裁定，锚缺失——裁定批 E，2026-09-05 执行轮；未入 corpus 台账，T3-R3 如实标注）
   // 快照装配降级走 warnings（hook/读路径不失败），command=null = 诚实无法判定。
   const nextActionSnapshot = await collectNextActionSnapshot(rootDir, warnings);
   const nextAction = evaluateNextAction(nextActionSnapshot);

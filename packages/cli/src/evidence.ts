@@ -21,7 +21,8 @@
  *   畸形载荷 FATAL SCHEMA_INVALID（禁静默丢留痕位）；
  * - claims 平面三分支（设计坑 4）：已带独立判定（VERIFIED/PARTIALLY_VERIFIED/REJECTED）的
  *   文件 → skipped_adjudicated，record_claim 通道无权覆写判定（D20：声称方不可自填
- *   VERIFIED），绝不把判定打回 UNVERIFIED 造成数据倒退；
+ *   VERIFIED），绝不把判定打回 UNVERIFIED 造成数据倒退；（历史裁定，锚缺失——
+ *   D20（PRD 纪律裁定）；未入 corpus 台账，T3-R3 如实标注）
  * - 畸形证据 fail-closed 显式呈现：落 malformed 并镜像信封 warnings，不静默跳过（compact
  *   不阻断本轮合法 truth 更新）；record 单条路径同一判据 → exit 1。
  * - subject 绑定机复核（N5）：入账层显式归属声明逐条过闭世界文法 + store 存在性，

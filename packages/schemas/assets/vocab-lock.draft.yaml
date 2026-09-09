@@ -329,7 +329,7 @@ presentation_axes:      # 呈现层词轴（PR-0001 收编；kernel/CLI 报告�
   alert_kinds:                # alerts 可行动项两值 + 显式缺席类目（/alerts 命令面）
     values: [PERMIT_EXPIRED, OBJECT_CHALLENGED]
     unsourced_categories: [triage_ttl]
-    note: unsourced=有语义、无派生源的缺席披露（分母披露纪律——不冒充「检查过且干净」）；cli ALERT_KINDS/ALERT_UNSOURCED_CATEGORIES 承载
+    note: unsourced=有语义、无派生源的缺席披露（分母披露纪律——不冒充「检查过且干净」）；cli ALERT_KINDS/ALERT_UNSOURCED_CATEGORIES 承载。D-1/D-5 退役注记（Owner 2026-09-08，owner-adjudications.md#裁决18）：triage_ttl 类目随 triage 退役消亡，ALERT_UNSOURCED_CATEGORIES 现为空数组（显式空）——历史类目词形 triage_ttl 本注记归档，值集零删改
   permit_presentation_states: # permit list 呈现态三值（stolen 标记 + seq 机械派生）
     values: [active, expired, stolen]
     note: P34 permit 台账呈现面；cli PERMIT_LIST_STATES 承载（--state 过滤词形同源）
@@ -360,7 +360,7 @@ presentation_axes:      # 呈现层词轴（PR-0001 收编；kernel/CLI 报告�
              PROJECT_BASELINE, MEASURED_EVIDENCE, PROJECT_KNOWLEDGE, INFERENCE,
              INFERRED_INTENT, AI_INVENTION]
     note: PRD §3B 逐级对位（「Ratified Project Contract / Approved Policy」合并一级、「Measured Evidence / Derived Observation」合并一级——原文斜杠并列同位）；kernel AUTHORITY_PRECEDENCE_ORDER 承载（纯数据零判卷——字段级 precedence 归正式 Authority Contract，B3 warning-only 红线）
-  triage_profiles:            # 治理档位三值（**informational**——裁定 A1 判卷力解除）
+  triage_profiles:            # 治理档位三值（**informational**——裁定 A1 判卷力解除；D-1 产品面退役）
     values: [MINIMAL, LIGHT, STANDARD]
     note: >-
       A1 裁定（2026-09-04，裁决 11 ①）：本轴降为信息性输出——不进任何 gate/permit 判卷、
@@ -368,12 +368,16 @@ presentation_axes:      # 呈现层词轴（PR-0001 收编；kernel/CLI 报告�
       与 catalog_layer_vocab.governance_profiles 前三值同词形同义（STRICT 对位 constitutional 档
       见彼处注记；prompt_only 预留 STRICT/CRITICAL 词形不消费——CRITICAL 不入维持 PR-0005 裁定）；
       cli TRIAGE_PROFILES / triage-rule-v0 PROFILE_LADDER 承载。
-  triage_evidence_grades:     # triage 判定证据级三值（thread-C §0.2 五值的 P0-CLI 子集）
+      D-1/D-5 退役注记（Owner 2026-09-08，裁决 18）：产品面彻底退役——`pomaster triage`
+      命令删除、八拍①=Brainstorm、config/模板/命令卡全表面清除；本轴词值零删改（append-only），
+      词形仅存 eval 语料机（triage.ts/triage-rule-v0.ts 参考镜像与 golden/behavioral 语料），
+      产品语义零消费。
+  triage_evidence_grades:     # triage 判定证据级三值（thread-C §0.2 五值的 P0-CLI 子集；D-1 产品面退役）
     values: [MEASURED, INFERRED, NOT_CONFIGURED]
-    note: SELF_REPORTED/NOT_YET_AVAILABLE 未暴露（词源五值闭包的显式子集，扩值走词汇表 PR）；cli TRIAGE_EVIDENCE_GRADES 承载
-  triage_escalation_keywords: # triage 升级关键词七词（裁决 2 T-1 批准词表）
+    note: SELF_REPORTED/NOT_YET_AVAILABLE 未暴露（词源五值闭包的显式子集，扩值走词汇表 PR）；cli TRIAGE_EVIDENCE_GRADES 承载。D-1/D-5 退役注记（Owner 2026-09-08，裁决 18）：产品面退役（同 triage_profiles 注记）——词形仅存 eval 语料机，值集零删改
+  triage_escalation_keywords: # triage 升级关键词七词（裁决 2 T-1 批准词表；D-1 产品面退役）
     values: ["contract", "契约", "openapi", "api_req", "跨域", "cross-domain", "global"]
-    note: 裁决 2（2026-08-29）T-1 提案批准（global 追加——修复 replay-R2-008 系统性低判；语料 2/53 命中 0 反例；中文「全局」0 命中未提案不投机扩词）；cli TRIAGE_ESCALATION_KEYWORDS 承载（字面锁死测试=扩词纪律机器化）
+    note: 裁决 2（2026-08-29）T-1 提案批准（global 追加——修复 replay-R2-008 系统性低判；语料 2/53 命中 0 反例；中文「全局」0 命中未提案不投机扩词）；cli TRIAGE_ESCALATION_KEYWORDS 承载（字面锁死测试=扩词纪律机器化）。D-1/D-5 退役注记（Owner 2026-09-08，裁决 18）：产品面退役（同 triage_profiles 注记）——词形仅存 eval 语料机，值集零删改
   eval_suites:                # eval 命令 suite 词形（词源 PRD §44.10/§94）
     values: [behavioral]
     note: 单值起步（扩值走词汇表 PR + 同步 tests/behavioral/trigger-manifest.json suites）；cli eval.ts 承载

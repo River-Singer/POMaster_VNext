@@ -15,6 +15,12 @@
  * 维持 PR-0005 裁定不入）已随 PR-0009 入锁（vocab-lock presentation_axes.triage_profiles，
  * informational——A1 裁定）；本文件只消费上述四词形，扩值走词汇表 PR。
  *
+ * **D-1/D-5 退役注记（Owner 2026-09-08，owner-adjudications.md#裁决18）**：triage/
+ * profile 档位语义产品面已彻底退役（`pomaster triage` 命令删除、八拍①=Brainstorm、
+ * config/模板/命令卡全表面清除）；本参考镜像保留 = golden/behavioral eval 语料机的
+ * rule_v0 evaluator（tests/golden/reference/triage.ts 门面 + packages/cli/src/eval.ts
+ * 语料分派在座判据）——语料机在座不变，产品语义零消费（零 compat 双写）。
+ *
  * 纪律镜像：
  * - C1 条件触发规则桶：不打分、不 LLM 裁决，每条规则可单测；
  * - R-B：谓词引用 NOT_CONFIGURED 信号 → 整条规则未评估（vacuous），计入 blindspots

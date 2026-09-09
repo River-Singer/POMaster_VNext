@@ -40,7 +40,6 @@ import {
 
 const TASK_ID = "TASK.T0001";
 const CHANGE_OR_TASK = TASK_ID; // 锚=任务 id：pre-dev 的 taskRef 命中许可通道
-const REQUEST = "解析器模块新增 quoted-cell 序列化选项"; // 无升档/无文案词 → LIGHT 兜底
 const ACTOR = "agent:fixture-git";
 const ROLE = "backend";
 const OPS_FILE = "tx.task.json"; // 工程仓库内的事务文件（真实用户形态）
@@ -97,7 +96,7 @@ beforeAll(async () => {
 
   chain = await runFixtureChain(root, {
     changeOrTask: CHANGE_OR_TASK,
-    request: REQUEST,
+
     subject: TASK_ID,
     actor: ACTOR,
     role: ROLE,
@@ -173,41 +172,37 @@ describe("fixture 形态与 init（git repo 最小工程）", () => {
 });
 
 // ============================================================
-// 八拍① triage
+// 八拍① 导航面（D-5 裁决 18：triage 退役，alerts 路由段承导航）
 // ============================================================
 
-describe("八拍① triage（git repo 最小工程）", () => {
-  it("triage exit 0：无信号兜底 LIGHT（DEFAULT_NO_SIGNAL，matched_keywords 空）", () => {
-    const rec = chain.triage;
+describe("八拍① 导航面 alerts（git repo 最小工程）", () => {
+  it("alerts exit 0：hook 契约恒 ok + 无活跃 TASK → 八拍① Brainstorm 单入口（无信号工程同形态）", () => {
+    const rec = chain.alerts;
     expect(rec.code).toBe(0);
     const envelope = env(rec);
     expect(envelope.ok).toBe(true);
-    expect(envelope.command).toBe("triage");
-    const result = resultOf(rec);
-    expect(result["profile"]).toBe("LIGHT");
-    expect(result["matched_rule"]).toBe("DEFAULT_NO_SIGNAL");
-    expect(result["matched_keywords"]).toEqual([]);
+    expect(envelope.command).toBe("alerts");
+    const routing = resultOf(rec)["workflow_routing"] as readonly string[];
+    expect(routing.length).toBeGreaterThan(0);
+    expect(routing.join("\n")).toContain("pomaster brainstorm start");
   });
 
-  it("缺席显式：absent_signals 全量 8 项 + evidence_grade=NOT_CONFIGURED + ttl=168", () => {
-    const result = resultOf(chain.triage);
-    expect(result["evidence_grade"]).toBe("NOT_CONFIGURED");
-    expect(result["ttl_hours"]).toBe(168);
-    const absent = result["absent_signals"] as readonly string[];
-    expect(absent).toHaveLength(8);
-    for (const signal of [
-      "declared_paths",
-      "contract_surface_registry",
-      "governed_object_hits",
-    ]) {
-      expect(absent).toContain(signal);
-    }
+  it("缺席显式：next_action.route_id=R_NO_ACTIVE_TASK（诚实缺席非乱指）+ unsourced 空数组", () => {
+    const result = resultOf(chain.alerts);
+    expect((result["next_action"] as Record<string, unknown>)["route_id"]).toBe(
+      "R_NO_ACTIVE_TASK",
+    );
+    expect(result["unsourced_categories"]).toEqual([]);
   });
 
-  it("triage 重放字节稳定（同请求 stdout 全等，GOLDEN-L8-1 判据）", async () => {
-    const replay = await runJsonStep(root, ["triage", REQUEST]);
-    expect(replay.code).toBe(0);
-    expect(replay.stdout).toBe(chain.triage.stdout);
+  it("alerts 重放字节稳定（链终态同 state 连续两次运行 stdout 全等，GOLDEN-L8-1 判据）", async () => {
+    // alerts 是投影读面：链推进后对「同一 state 连续两次运行」做字节稳定判定
+    // （对 chain.alerts 原始存档比较无意义——链在其间已推进，时态比较才是诚实判据）。
+    const first = await runJsonStep(root, ["alerts"]);
+    const second = await runJsonStep(root, ["alerts"]);
+    expect(first.code).toBe(0);
+    expect(second.code).toBe(0);
+    expect(second.stdout).toBe(first.stdout);
   });
 });
 
@@ -215,8 +210,8 @@ describe("八拍① triage（git repo 最小工程）", () => {
 // 八拍①②③ maintain --phase pre-dev
 // ============================================================
 
-describe("八拍①②③ maintain --phase pre-dev（git repo 最小工程）", () => {
-  it("pre-dev 链 exit 0：mode=pre_dev_chain、failed_at_step=null、三步视图齐备", () => {
+describe("八拍②③ maintain --phase pre-dev（git repo 最小工程；D-5 裁决 18 二步化）", () => {
+  it("pre-dev 链 exit 0：mode=pre_dev_chain、failed_at_step=null、二步视图齐备", () => {
     const rec = chain.predev;
     expect(rec.code).toBe(0);
     const envelope = env(rec);
@@ -226,19 +221,15 @@ describe("八拍①②③ maintain --phase pre-dev（git repo 最小工程）", 
     expect(result["mode"]).toBe("pre_dev_chain");
     expect(result["phase"]).toBe("pre-dev");
     expect(result["failed_at_step"]).toBeNull();
-    expect(result["triage"]).not.toBeNull();
+    expect(result["triage"]).toBeUndefined(); // D-1/D-5：零 compat 字段
     expect(result["permit"]).not.toBeNull();
     expect(result["projection"]).not.toBeNull();
   });
 
-  it("① triage 视图与独立 triage 同判（LIGHT + matched_keywords=[]）", () => {
-    const triage = resultOf(chain.predev)["triage"] as Record<string, unknown>;
-    expect(triage["profile"]).toBe("LIGHT");
-    expect(triage["matched_rule"]).toBe("DEFAULT_NO_SIGNAL");
-    expect(triage["matched_keywords"]).toEqual([]);
-    expect(triage["absent_signals"]).toEqual(
-      (resultOf(chain.triage)["absent_signals"] as readonly string[]),
-    );
+  it("pre-dev 信封零 triage 词形 + permit 台账引用在座（退役词形零残留）", () => {
+    const text = chain.predev.stdout;
+    expect(text).not.toContain("triage");
+    expect(text).toContain("PERMIT.");
   });
 
   it("② permit 五件套：PERMIT.TASK_T0001.1 + scope 圈定单对象 + ttl 168 拍", () => {
@@ -292,8 +283,6 @@ describe("八拍①②③ maintain --phase pre-dev（git repo 最小工程）", 
       CHANGE_OR_TASK,
       "--phase",
       "pre-dev",
-      "--request",
-      REQUEST,
       "--subject",
       TASK_ID,
       "--actor",

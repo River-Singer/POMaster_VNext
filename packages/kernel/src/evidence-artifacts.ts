@@ -1,6 +1,6 @@
 /**
  * evidence-artifacts.ts —— Evidence Artifact 内容寻址通路 + 存在性绑定校验
- * （P0.5-2 Screenshot Evidence Binding；PRD §7/§14 + 裁决8③④，2026-09-01）。
+ * （P0.5-2 Screenshot Evidence Binding；PRD §7/§14 + 裁决8③④，2026-09-01）。（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
  *
  * 通路（PRD §7.2 四环节）：Raw Artifact → Infrastructure-issued Receipt →
  * Normalized Gate Result → Evidence Pack。本模块承载前半边的基础设施语义：
@@ -8,7 +8,7 @@
  *   definitions.blob_ref.storage_path 词形，纯派生——sha256 即身份）；幂等（同字节
  *   重写零变化）；写后读回重算自证（消费方必须重算而非信任——blob_ref 描述原文，D24）。
  * - **verifyEvidenceBinding**：四态存在性绑定校验——bound / 文件缺失 / 字节篡改 /
- *   refs 缺失而 verdict=passed → EVIDENCE_BINDING_INCOMPLETE（裁决8③ D5：门内
+ *   refs 缺失而 verdict=passed → EVIDENCE_BINDING_INCOMPLETE（裁决8③ D5：门内（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
  *   rule + 稳定码并用——本模块产出稳定码 outcome，门内 rule 词形由 gate 侧判卷
  *   消费本 outcome 落 items[].rule）。
  *
@@ -39,7 +39,7 @@ import { isNotFoundError } from "./io.js";
 type UnknownRecord = Record<string, unknown>;
 
 // ============================================================
-// 词形与稳定码（07-evidence-records definitions 同源；裁决8③ D5）
+// 词形与稳定码（07-evidence-records definitions 同源；裁决8③ D5）（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
 // ============================================================
 
 /** sha256:<64 位小写十六进制>（01/07 definitions.sha256_digest 词形）。 */
@@ -49,7 +49,7 @@ const STORAGE_PATH_PATTERN = /^blobs\/sha256\/([0-9a-f]{2})\/([0-9a-f]{62})$/;
 /** media 逻辑类型 1..64 字符（07 blob_ref.media；开放词：screenshot 已是文档示例值）。 */
 const MEDIA_MAX_CHARS = 64;
 
-/** 绑定校验稳定码（裁决8③ D5；与门内 items[].rule 同词形）。 */
+/** 绑定校验稳定码（裁决8③ D5；与门内 items[].rule 同词形）。（锚：corpus/master/cutover/owner-adjudications.md#裁决8） */
 export const EVIDENCE_BINDING_INCOMPLETE = "EVIDENCE_BINDING_INCOMPLETE" as const;
 
 /** 绑定不完整三态（verifyEvidenceBinding 失败时的 reason 细分）。 */

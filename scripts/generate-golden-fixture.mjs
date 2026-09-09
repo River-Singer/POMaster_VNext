@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * generate-golden-fixture.mjs —— Golden Path 行为验收 fixture 生成器（战役 D-6 裁决）。
+ * generate-golden-fixture.mjs —— Golden Path 行为验收 fixture 生成器（战役 D-6 裁决）。（锚：corpus/master/cutover/owner-adjudications.md#裁决18（D-6））
  *
  * 职责：确定性生成「最小真实形态 Vue3 工程」到指定目录，作 tests/golden-path/
  * golden-path.spec.ts 十条 GP 验收的测试床（真实项目形态、Agent 不懂 POMaster、

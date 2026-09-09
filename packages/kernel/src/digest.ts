@@ -60,7 +60,7 @@ export function sha256OfCanonical(value: unknown): string {
  * **两种不同哈希对象**（R3）：本函数对 artifact 原始字节（如 PNG 解码后字节）做
  * raw sha256，绝不对 canonical-JSON 做——消费方不得拿 claim blob 降级引用的
  * canonical 摘要（store.record_claim 对引用字符串的哈希）到 blobs/ 目录找文件。
- * P0.5-2 Screenshot Evidence Binding（裁决8③：receipt 身份=blob sha256 即身份）。
+ * P0.5-2 Screenshot Evidence Binding（裁决8③：receipt 身份=blob sha256 即身份）。（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
  */
 export function sha256OfBytes(bytes: Uint8Array): string {
   const hash = createHash("sha256");

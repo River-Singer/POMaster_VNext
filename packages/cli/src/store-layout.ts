@@ -170,7 +170,7 @@ export const CONFIG_RELATIVE = ".pomaster/config.yaml";
 export const LEGACY_OBJECTS_DIR_RELATIVE = ".pomaster/objects";
 
 /**
- * 入口文件（D13 2026-09-03 修订：重入口默认；B7 裁定 2026-09-04 init 单一重入口；
+ * 入口文件（D13 2026-09-03 修订：重入口默认；B7 裁定 2026-09-04 init 单一重入口；（锚：corpus/master/cutover/owner-adjudications.md#裁决11⑧）
  * init 同步生成，零运行时依赖）。AGENTS.md 恒为入口唯一事实源；重入口形态另述
  * 重入口安装物（skills 库 + hooks）。
  */

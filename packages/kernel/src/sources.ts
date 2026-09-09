@@ -18,7 +18,9 @@
  *  （对象注册面）+ 正轴维度判卷（本 registry authority 两轴）。
  * - **sources 不入 store 事务**（非 governed object 起步——D2 边界登记）：无
  *   lifecycle、无 authority.owner 信封、不进 truth-index/content_digest；本模块
- *   纯读零写入（B3 红线同源：零写路径消费）。
+ *   纯读零写入（原「B3 红线同源：零写路径消费」已由 D-4 部分收窄——store.ts
+ *   assertAuthorityBoundaries 消费本模块装载产物做写路径权威维度判卷，裁决 18
+ *   推翻裁决 11⑤/B3 warning-only；本模块自身仍零写）。
  * - 词形轴已随 PR-0009 登记（vocab-lock sources_authority_vocab.fields_note 字段面注记——question-gate/
  *   triage 局部词先例同批转正）。
  */

@@ -708,7 +708,8 @@ export async function runResearchInspect(
   }));
   const missing = files.filter((f) => !f.present).map((f) => f.file);
 
-  // —— findings 五级 Evidence 判卷（kernel adjudicateResearchFindings） ——
+  // —— findings 五级 Evidence 判卷（kernel adjudicateResearchFindings；
+  // T3-R3 边界例豁免：判卷器领域语义——机制/领域语义词形，非 Owner 裁定引注） ——
   // 形态不完整条目（缺 statement/evidence_type 字符串字段）不静默跳过——跳过即
   // fail-open（垃圾条目借「不进判卷分母」放行），显式 FINDING_MALFORMED 计入 errors。
   // 字段级整体损坏（键存在但非数组）已在上方 B3 闸显式拒绝——此处只剩键真缺席

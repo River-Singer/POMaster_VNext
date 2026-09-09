@@ -307,7 +307,7 @@ export function resolveGateTier(policy: GatePolicy): GateTier {
   return tier;
 }
 
-/** SKIPPED_BY_POLICY 映射记录（P12c 裁定映射：verdict=not_run + notApplicable=1 + policy_skip 口径）。 */
+/** SKIPPED_BY_POLICY 映射记录（P12c 裁定映射：verdict=not_run + notApplicable=1 + policy_skip 口径；裁定全文 docs/vocab-pr-0002.md）。 */
 function policySkipRecord(
   plan: Parameters<typeof absenceRecord>[0],
   dialect: string,

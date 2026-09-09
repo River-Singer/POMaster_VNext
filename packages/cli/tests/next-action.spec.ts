@@ -326,12 +326,12 @@ describe("next-action 路由表（P2 表驱动：每行 = 条件 + 建议）", (
     }
   });
 
-  it("建议命令锚词形：init/triage/baseline/closeout/steal/issue/compile/execution begin/check/reconcile 各路由逐字", () => {
+  it("建议命令锚词形：init/brainstorm/baseline/closeout/steal/issue/compile/execution begin/check/reconcile 各路由逐字（D-5 裁决 18：八拍①=brainstorm start）", () => {
     const byRoute = new Map(
       ROUTE_FIXTURES.map((fixture) => [fixture.route, evaluateNextAction(fixture.snapshot).command ?? ""]),
     );
     expect(byRoute.get("R_NOT_INITIALIZED")).toContain("pomaster init");
-    expect(byRoute.get("R_NO_ACTIVE_TASK")).toContain('pomaster triage "<request>"');
+    expect(byRoute.get("R_NO_ACTIVE_TASK")).toContain("pomaster brainstorm start");
     expect(byRoute.get("R_BASELINE_NOT_READY")).toBe("pomaster baseline confirm");
     expect(byRoute.get("R_CLOSEOUT_READY")).toContain("pomaster closeout TASK.T1");
     expect(byRoute.get("R_PERMIT_EXPIRED")).toContain("pomaster permit steal --permit PERMIT.T1.1");
@@ -573,8 +573,8 @@ describe("status next_action 字段（P2 集成）", () => {
     const outcome = await runStatus(dir);
     expect(outcome.ok).toBe(true);
     expect(outcome.result.next_action.route_id).toBe("R_NO_ACTIVE_TASK");
-    expect(outcome.result.next_action.command).toContain('pomaster triage "<request>"');
-    expect(outcome.human.join("\n")).toContain("next: pomaster triage");
+    expect(outcome.result.next_action.command).toContain("pomaster brainstorm start");
+    expect(outcome.human.join("\n")).toContain("next: pomaster brainstorm start");
   });
 
   it("活跃任务无许可 → R_PERMIT_MISSING + 命令携带 --subject 与 --change-ref（R-H：不带 change_ref 的签发无法通过台账解析满足本行退出条件）", async () => {

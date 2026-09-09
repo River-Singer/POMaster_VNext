@@ -137,3 +137,32 @@
 - **① explain-api-sec-excluded-with-capability-why（21/24 缺 3）**：缺 capabilities 轴 why 的 3 条 = D3 入册的 backend lane SEC 卡（POLICY.SEC.TRUST_BOUNDARY_ENFORCEMENT / NO_CLIENT_SIDE_TRUST / SECURITY_RELAXATION_GATE——按 lane=backend 被前端编译排除，why 只携带 lane 详情）。修复：三卡 applies_when 补 `capabilities: ["CAPABILITY.API_CONTRACT"]` 轴（T3 标注战役收尾——三卡语义均为契约面安全治理：信任边界/客户端不可信/安全放宽闸，契约变更时生效）。修复后 24/24 全带 capabilities 详情。
 - **② db-domain-absence-disclosed 绊线（前提被推翻，改判卷式）**：O9 裁决前提「真实 catalog 无 DB 域条目（fixture-only）」经 B6 播种移植（D3 逐卡入册 POLICY.BE.DB.EXPAND_MIGRATE_CONTRACT + B6c TP 面 POLICY.STACK.PERSISTENCE_COEXISTENCE_SCOPE）不再成立——DB 域条目现为主张面合法成员。按断言自带指引「重审本断言面与 O9 裁决前提」改写：出现不再是绊线，**无排除详情才是**（判卷式与 API/Sec 族泄漏语义同构——DB 条目须全部 excluded 且 why_excluded 携带排除详情；编译面非 fallback 泄漏仍即红）。真判卷仍由 catalog-applicability-case-b.spec fixture 承载（O9 的 fixture-only 精神不变，变的是「真实 catalog 零 DB 条目」这一已被移植推翻的事实前提）。
 - **③ 落地核对**：applicability 单跑全断言 PASS（24/24 capabilities why + DB 2 条 excluded 判卷式）；relock（三卡字节变更 refreshed）；全测/ratchet/npm 随本批终验（见批 G 后续 commit）。
+
+## 裁决 16：gallery 两步走 + discovery 触发链 R1-R5 + 能力显性化 C1-C4（2026-09-06 执行轮裁定）
+
+- **决策渠道**：Owner 会话直答（2026-09-06 执行轮；父任务 gallery-presets-trigger-chain-state）。
+- **① Storybook 组件画廊 = 仓内 canonical 两步走**：先建仓内 canonical Storybook 实例（commit 7c8344e，组件画廊四类页面 134 页——`corepack pnpm studio:dev/build`），再接 GitHub Pages 在线版（studio-pages.yml；commit 306e98c）。画廊定位 = 治理产出前的组件参考（README/画廊入口横幅）。
+- **② discovery 方法论长卡 + 触发链三修 + research 缺口公开消解链（R1-R5）**：commit 39cab50——pomaster-discovery 长卡（Grill Strategy/九类 Expose/机器闸命令链）+ 触发链路修复 + research request/handoff 消解链；baseline 栈预置引擎（b1f2383，22 份 PRESET-DRAFT）与技术栈问卷（2d647fe）、baseline confirm gate（52b1dcb）同轮裁定落地。
+- **③ 能力显性化 C1-C4**：commit e631f60——init 能力速览（C1）/AGENTS.md 能力地图（C2）/错误 hint 命令化（C3）/status 轮换 tip（C4）。每次 init 全量展示能力速览（Owner 明选，不做 NO_CHANGE 精简）。
+- **④ alerts 干净态契约**：「干净=空输出」旧述升级为「干净=非空但极简」工作流路由器形态（1b191b5；UserPromptSubmit 源恒带 ≤3 行 workflow 路由段）。
+
+## 裁决 17：0.5.1 发布批 —— 审计 N1-N5 / 画廊 S1-S5 / notices 同步器（2026-09-07）
+
+- **决策渠道**：Owner 会话直答（2026-09-07 发布战役；两轮审计主张逐条销账）。
+- **① 基线审计 N1-N5 修复**：N1+N2+N3 基线确认状态机重构（d350875，24 文件单一资产清单+三态机+重确认三通道）；N4 组件族最小合法示例+71 族真实挂载测试（908f888）；N5 next-action 消费上下文新鲜度——stale 给重编译入口而非引导验证（a3dd73b）。
+- **② 画廊深化 S1-S5**：commit aa81c0a——交互态矩阵/React sidecar（antd）/archetype↔组件映射/Database Struct 占位。
+- **③ notices 同步生成器**：commit 55f2eef——根治手补模式（legal/notices-sync.mjs；notices:sync/notices:verify 双脚本入 CI）+ bootstrap-clean 根因修复。
+- **④ 发布 = pomaster@0.5.1**：commit 9907d1c（CI 全绿 + OIDC Trusted Publishing）。
+- **⑤ vitest 并发稳定化**：commit d971bfe——maxWorkers 4/minWorkers 2/testTimeout 15s（审计批 4）。
+
+## 裁决 18：语义收口战役 D-1~D-7（2026-09-08；含 D-4 显式推翻裁决 11⑤/B3 红线记录）
+
+- **决策渠道**：Owner 会话直答（2026-09-08；战役 brainstorm 终稿确认，台账 .trellis/tasks/09-08-pomaster-semantic-closure-campaign/prd.md「Owner 裁决（ADR-lite）」节）。战役背景：0.5.1 两轮 Owner 审计判定三类问题——旧治理语义未真正死亡（triage/profile semantic zombie）、新治理语义只声明不执行（Source Authority warning-only）、Intent Chain 在 promote 处语义大量丢失。
+- **D-1 triage/profile = 彻底退役**：贯彻裁决 11①（A1）到底——destructive migration 全表面清除（README/AGENTS 模板/config 模板/命令卡/词汇表注记/TTL 语义）；activation_hint 措辞「复杂度」→「能力相关性」（语义红线：wired=有实现路径，非档级）。不留 compat adapter、不留 deprecated 双写期。
+- **D-2 战役范围 = 三线全收**：L1 Intent Chain 闭环（T2）+ L2 Enforcement Closure（T3）+ L3 自治理收口（T4），Golden Path 为北极星。
+- **D-3 Golden Path = 第一交付物**：10 条行为验收固化为可执行协议（红→绿驱动战役；tests/golden-path/，commit 0d4fe02）。
+- **D-4 Authority 阻断点 = maintain 写路径（本条显式推翻裁决 11⑤ 的 warning-only 裁定）**：裁决 11⑤（B3 宪法 §3 条款 6 强度=warning-only 观测层，「不建写路径硬闸」）由本裁定显式推翻——maintain applyTransaction 落库时校验 tx 的 sources 对 ops 涉及对象/维度是否 authoritative（与 T2 affected_objects 编译产出交叉），非权威即 BLOCK（新阻断码 AUTHORITY_BOUNDARY_DENY）；authority.json boundary_rules deny 从投影只读呈现升为写路径 BLOCK。判卷权威在 kernel（store/applyTransaction 是 P11 受控写入唯一面）。**这是 provenance 锚纪律的第一个完整示范：推翻记录先入台账（本条），再写代码注释锚。**
+- **D-5 triage 命令本体 = 删除；八拍①重定义为 Brainstorm/Question Gate**：删 `pomaster triage` 命令；八拍① = Brainstorm/Question Gate（后续拍零重编号）；alerts 双入口收敛为 brainstorm 单入口；R_NO_ACTIVE_TASK 建议命令改 `pomaster brainstorm start`；「只有一条公开通路」宣称成真。TRIAGE 关键词引擎处置（并入 brainstorm 或删除）授权 T3 实施时定。
+- **D-6 Golden Path 测试床 = 新建 fixture + MASTer 出口演练**：脚本生成最小真实形态项目入 tests/golden-path/ 进 CI；MASTer 作为战役出口人工演练轮（不进 CI）。
+- **D-7 Task Contract Compiler = MSD 文本化 + 锚判卷**：promote 编译投影表（intent←goal/acceptance←申报条目挂锚/affected_objects←已决议 affects 并集）+ promote 自动 record claim 生成 CLM 绑定 acceptance——已由 T2 实施（commit a23053f）。
+- **新纪律（provenance 锚纪律，本战役起生效）**：新裁定先落本台账（轻量条目格式：`## 裁决 N：标题（日期）`）再写代码注释；代码注释引裁定必须带真实锚（裁决号锚 `owner-adjudications.md#裁决N`），无法追溯的标「历史裁定，锚缺失」而非编造锚。

@@ -1,13 +1,17 @@
 /**
  * normal.mjs —— Self-hosting benchmark · Normal Change 档（PRD §90.3）。
  *
- * 场景：「新增一个 CLI capability（如 pomaster explain）」——普通能力新增，
- * 期望 Profile ∈ [LIGHT, STANDARD]（§90.3 期望档；P0 关键词引擎下落到
- * DEFAULT_NO_SIGNAL → LIGHT 属正常，STANDARD 只在命中升档关键词时出现）。
+ * 场景：「新增一个 CLI capability（如 pomaster explain）」——普通能力新增。
+ *
+ * 探针重锚（D-1/D-5，Owner 2026-09-08，owner-adjudications.md#裁决18）：原 `pomaster
+ * triage` 判档入口随档位语义退役删除；normal 档的度量意图「进入正常治理通路」改由
+ * status 未初始化 fail-closed 契约承载（`pomaster status --json`——诚实缺席 + hint
+ * 路标，报错必带 escalation 路标是既有宪法级不变量）。
  *
  * 断言：
- *   1. triage 信封 ok = true；
- *   2. result.profile ∈ [LIGHT, STANDARD]（既不许塌到 MINIMAL，也不允许越出矩阵）。
+ *   1. status 信封可解析且 ok=false（未初始化 fail-closed——绝不静默假绿）；
+ *   2. errors[0].code=NOT_INITIALIZED 且 hint 非空（报错带路标纪律）；
+ *   3. 原始输出（stdout+stderr）无 architect/research/spawn/subagent 字样。
  *
  * 退出码：0 = 全部断言通过；1 = 断言失败；2 = 基准装置错误（CLI 缺失/崩溃）。
  * 单跑：node benchmarks/normal.mjs ；亦可被 run-all.mjs import（import 时不自动执行）。
@@ -19,7 +23,9 @@ import fs from "node:fs";
 
 export const NORMAL_TIER = "normal";
 export const NORMAL_SCENARIO = "新增一个 CLI capability（如 pomaster explain）";
-export const NORMAL_EXPECTED_PROFILES = ["LIGHT", "STANDARD"];
+/** D-5 裁决 18：档位词退役——探针面词形（cli:status），profile 位恒 null。 */
+export const NORMAL_EXPECTED_PROFILES = [];
+export const NORMAL_SURFACE = "cli:status";
 
 /** 解析 @pomaster/cli 的 bin（package.json bin → ./dist/bin.js）；缺失返回 null。 */
 export function resolveCliBin() {
@@ -28,17 +34,25 @@ export function resolveCliBin() {
   return fs.existsSync(bin) ? bin : null;
 }
 
-/** 以子进程跑 `pomaster triage <request> --json`（args 数组直传，不经 shell）。 */
-export function runTriage(cliBin, request) {
-  const res = spawnSync(process.execPath, [cliBin, "triage", request, "--json"], {
+/** 以子进程跑 `pomaster status --json`（临时空目录——args 数组直传，不经 shell）。 */
+export function runStatusProbe(cliBin) {
+  const probeDir = path.join(
+    fs.realpathSync(path.dirname(fileURLToPath(import.meta.url))),
+    ".probe-tmp-normal",
+  );
+  fs.rmSync(probeDir, { recursive: true, force: true });
+  fs.mkdirSync(probeDir, { recursive: true });
+  const res = spawnSync(process.execPath, [cliBin, "--dir", probeDir, "status", "--json"], {
     encoding: "utf8",
     windowsHide: true,
   });
-  return {
+  const out = {
     status: res.status,
     stdout: typeof res.stdout === "string" ? res.stdout : "",
     stderr: typeof res.stderr === "string" ? res.stderr : "",
   };
+  fs.rmSync(probeDir, { recursive: true, force: true });
+  return out;
 }
 
 /**
@@ -67,7 +81,7 @@ export async function runNormalBenchmark() {
     };
   }
 
-  const run = runTriage(cliBin, NORMAL_SCENARIO);
+  const run = runStatusProbe(cliBin);
 
   /** @type {any} */
   let envelope = null;
@@ -81,12 +95,16 @@ export async function runNormalBenchmark() {
   if (envelope === null) {
     assertions.push({ name: "envelope-parse", ok: false, detail: `stdout 不是 JSON 信封：${parseError ?? "unknown"}` });
   } else {
-    assertions.push({ name: "envelope-ok", ok: envelope.ok === true, detail: `ok=${envelope.ok}` });
-    const profile = envelope.result?.profile ?? null;
     assertions.push({
-      name: "profile-in-light-standard",
-      ok: NORMAL_EXPECTED_PROFILES.includes(profile),
-      detail: `profile=${profile} (rule ${envelope.result?.matched_rule})，期望 ∈ [${NORMAL_EXPECTED_PROFILES.join(", ")}]`,
+      name: "fail-closed-envelope",
+      ok: envelope.ok === false,
+      detail: `ok=${envelope.ok}（未初始化 fail-closed——绝不静默假绿）`,
+    });
+    const firstError = (envelope.errors ?? [])[0] ?? {};
+    assertions.push({
+      name: "not-initialized-with-hint",
+      ok: firstError.code === "NOT_INITIALIZED" && typeof firstError.hint === "string" && firstError.hint.length > 0,
+      detail: `code=${firstError.code}，hint 非空=${typeof firstError.hint === "string" && firstError.hint.length > 0}（报错必带路标——escalation 纪律）`,
     });
   }
 
@@ -95,7 +113,8 @@ export async function runNormalBenchmark() {
     tier: NORMAL_TIER,
     scenario: NORMAL_SCENARIO,
     expected: NORMAL_EXPECTED_PROFILES,
-    profile: envelope?.result?.profile ?? null,
+    surface: NORMAL_SURFACE,
+    profile: null,
     matched_rule: envelope?.result?.matched_rule ?? null,
     evidence_grade: envelope?.result?.evidence_grade ?? null,
     matched_keywords: envelope?.result?.matched_keywords ?? [],
@@ -103,7 +122,7 @@ export async function runNormalBenchmark() {
     ok,
     assertions,
   };
-  if (!ok && envelope === null) entry.error = "triage 未产出可解析的 JSON 信封";
+  if (!ok && envelope === null) entry.error = "status 未产出可解析的 JSON 信封";
   return entry;
 }
 
@@ -121,7 +140,7 @@ if (isMain) {
     console.log(`  [${a.ok ? "PASS" : "FAIL"}] ${a.name}: ${a.detail}`);
   }
   console.log(
-    `[normal] profile=${entry.profile} expected∈[${entry.expected.join(",")}] rule=${entry.matched_rule} durationMs=${entry.durationMs} → ${entry.ok ? "PASS" : "FAIL"}`,
+    `[normal] surface=${entry.surface} durationMs=${entry.durationMs} → ${entry.ok ? "PASS" : "FAIL"}`,
   );
   process.exit(entry.ok ? 0 : entry.error ? 2 : 1);
 }

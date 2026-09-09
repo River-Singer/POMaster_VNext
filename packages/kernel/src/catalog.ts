@@ -64,7 +64,8 @@ type UnknownRecord = Record<string, unknown>;
 
 /** catalog/ 在仓库内的目录名（与 controlled_children 相对路径的基准）。 */
 // archetypes 是 P-v06 批次 1 新增管辖面（D-2 裁定：Engineering Substrate 标准件物料，
-// catalog-lock controlled_children 同款治理——sensors P1-5 扩面先例）。
+// catalog-lock controlled_children 同款治理——sensors P1-5 扩面先例）。（历史裁定，锚缺失——
+// P-v06 批次 1 D-2（v0.6 fusion 执行轮裁定）；未入 corpus 台账，T3-R3 如实标注）
 const CATALOG_SECTIONS = ["archetypes", "gates", "knowledge", "policies", "sensors"] as const;
 
 // ============================================================
@@ -530,7 +531,7 @@ export interface CatalogPolicyMaterial {
   readonly lane: CatalogLaneValue;
   /**
    * lanes 复数双读（PRD §5.2 / vocab-lock catalog_layer_vocab.applicability_fields，
-   * PR-0005；Owner 裁决 8 ② 2026-09-01「双读过渡」）：applies_when.lanes 在场取其数组；
+   * PR-0005；Owner 裁决 8 ② 2026-09-01「双读过渡」）：applies_when.lanes 在场取其数组；（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
    * 缺席回退 [lane] 单值（未标注条目 lane 回退判定，行为零变化——O7）。
    */
   readonly lanes: readonly CatalogLaneValue[];
@@ -545,20 +546,20 @@ export interface CatalogPolicyMaterial {
   readonly changeClasses: readonly CatalogChangeClassValue[];
   /**
    * 治理档位清单（applies_when.governance_profiles ∈ CATALOG_GOVERNANCE_PROFILE_VALUES，O2 对齐）。
-   * A1 裁定（2026-09-04）：informational 元数据轴——判卷力已解除，不参与 applicability
-   * 过滤（投影消费面以 informational 注记披露，PR-0005/裁决 8 ② 不 supersede）。
+   * A1 裁定（2026-09-04）：informational 元数据轴——判卷力已解除，不参与 applicability（锚：corpus/master/cutover/owner-adjudications.md#裁决11①）
+   * 过滤（投影消费面以 informational 注记披露，PR-0005/裁决 8 ② 不 supersede）。（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
    */
   readonly governanceProfiles: readonly CatalogGovernanceProfileValue[];
   /** 治理对象 kind 清单（applies_when.object_kinds ∈ TRUTH_BODY_KINDS——复用十类零新轴）。 */
   readonly objectKinds: readonly TruthBodyKind[];
   /**
    * 声明了任一参与判卷的机器 applicability 字段（true=全字段确定性判定；false=lane 回退
-   * 判定，O7）。governance_profiles 不计入（A1 裁定 2026-09-04：informational 轴不触发
+   * 判定，O7）。governance_profiles 不计入（A1 裁定 2026-09-04：informational 轴不触发（锚：corpus/master/cutover/owner-adjudications.md#裁决11①）
    * 机器判定——档位声明不改变条目的过滤路径）。
    */
   readonly hasMachineApplicability: boolean;
   /**
-   * 声明了留位不登记词轴（applies_when.risk_at_least / technologies——Owner 裁决 8 ② O4：
+   * 声明了留位不登记词轴（applies_when.risk_at_least / technologies——Owner 裁决 8 ② O4：（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
    * 只检存在不解析值、词轴不入 vocab-lock；消费面以 not_configured 显式缺席呈现，禁半成品假绿）。
    */
   readonly declaredUnregisteredAxes: readonly ("risk_at_least" | "technologies")[];
@@ -585,7 +586,7 @@ function asRecord(value: unknown): UnknownRecord {
  * P0.5-1（PRD §5.2/vocab-pr-0005）：applies_when 机器 applicability 字段同款
  * fail-closed 解析——lanes 值集对账 V7、capabilities 过 governed id 文法+CAPABILITY
  * 前缀闭包、change_classes/object_kinds 对账 PR-0005 词轴与 truth_bodies；
- * governance_profiles 解析保留（A1 裁定 2026-09-04：informational 元数据轴，
+ * governance_profiles 解析保留（A1 裁定 2026-09-04：informational 元数据轴，（锚：corpus/master/cutover/owner-adjudications.md#裁决11①）
  * 词表对账不变、判卷力解除）；risk_at_least/technologies 只检存在不解析值（O4 留位不登记）。
  */
 export function loadCatalogPolicies(catalogRoot: string): readonly CatalogPolicyMaterial[] {
@@ -804,7 +805,8 @@ export interface CatalogToolMaterial {
 
 /**
  * 读 tools/ 全部文件（readdir 确定性排序；空目录 = 显式空清单，由调用方呈现）。
- * 滤 `__pycache__`（D8-1 / 裁决 12）：Python import 缓存生成目录属非策展物料，
+ * 滤 `__pycache__`（D8-1 / 裁决 12；锚：corpus/master/cutover/owner-adjudications.md#裁决12
+ * ——D8=(a) 小修批逐字载明「kernel loadCatalogTools `__pycache__` 过滤」）：Python import 缓存生成目录属非策展物料，
  * 与点开头文件同类排除——混入会污染懒加载清单分母（B6b/B6c check 各撞一次的
  * 既有弱点）。只滤词形不收窄「全部文件」语义：未来非 Python 工具落地时不得
  * 被静默丢弃（缺席诚实）。
@@ -880,7 +882,7 @@ export function loadCatalogProjectionPresets(
 // ============================================================
 
 /**
- * SENSOR.<DOMAIN>.<KIND> 点族词形（裁决 8 D6=A，照研究侧推荐实施）。
+ * SENSOR.<DOMAIN>.<KIND> 点族词形（裁决 8 D6=A，照研究侧推荐实施）。（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
  * 非 governed 前缀（catalog 物料身份非 governed id；词形已随 PR-0009 登记 vocab-lock
  * catalog_layer_vocab.material_id_prefixes）——x-vocab-pr 注记沿
  * catalog/gates/gate.web.api.request_checks.json 的 GATE. 先例，登记歧义不消歧。
@@ -1099,7 +1101,7 @@ export function loadCatalogSensors(catalogRoot: string): readonly CatalogSensorM
 }
 
 // ============================================================
-// 物料读取：archetypes（Engineering Substrate 标准件；P-v06 批次 0/D-2 裁定）
+// 物料读取：archetypes（Engineering Substrate 标准件；P-v06 批次 0/D-2 裁定）（历史裁定，锚缺失——v0.6 批次0 Owner 决议 D-2，2026-09-02；未入 corpus 台账，T3-R3 如实标注）
 // ============================================================
 
 /** archetype 物料的运行时消费形态（v0.6.1 §4 Catalog Object 通用结构的最小判卷面）。 */

@@ -511,7 +511,7 @@ describe("heavy_entry 探针（hooks 注册态 / 命令可达性 R4 / skills 双
     expect(skills.status).toBe("MISSING_CONFIGURATION");
   });
 
-  it("init 后 → 双探针 READY（hooks 注册 + 命令 PATH 可达 + 15×2 镜像逐字节一致）", async () => {
+  it("init 后 → 双探针 READY（hooks 注册 + 命令 PATH 可达 + 14×2 镜像逐字节一致；D-5 裁决 18 卡 15→14）", async () => {
     await runInit(dir);
     const [hooks, skills] = await probeHeavyEntryInstall(dir, {
       resolveHookExecutable: reachableHookExecutable,
@@ -521,7 +521,7 @@ describe("heavy_entry 探针（hooks 注册态 / 命令可达性 R4 / skills 双
     expect(hooks.detail).toContain("UserPromptSubmit");
     expect(hooks.detail).toContain("PATH 可达");
     expect(skills.status).toBe("READY");
-    expect(skills.detail).toContain("15 skills × 2");
+    expect(skills.detail).toContain("14 skills × 2");
   });
 
   it("R4 生效自检：hooks 注册在座但 pomaster 不在 PATH → MISSING_CONFIGURATION + 三段修复路标（init / PATH / harness 审批前置）", async () => {
@@ -630,7 +630,7 @@ describe("heavy_entry 探针（hooks 注册态 / 命令可达性 R4 / skills 双
     expect(corrupt[0].detail).toContain("不是合法 JSON");
   });
 
-  it("skills 探针全清单核对：缺失任一非 router skill 亦显式（分母 = 15×2，非只看 router）", async () => {
+  it("skills 探针全清单核对：缺失任一非 router skill 亦显式（分母 = 14×2，非只看 router）", async () => {
     await runInit(dir);
     const victim = join(dir, ".agents", "skills", SKILL_MANIFEST[SKILL_MANIFEST.length - 1]!.name, "SKILL.md");
     rmSync(victim);

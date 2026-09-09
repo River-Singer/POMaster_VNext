@@ -24,7 +24,6 @@ import { afterAll, describe, expect, it } from "vitest";
 import { DENOMINATOR_STATUS_VALUES, LIFECYCLE_VALUES } from "@pomaster/schemas";
 import {
   DOCTOR_PROBE_STATUSES,
-  TRIAGE_PROFILES,
 } from "@pomaster/cli";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -193,7 +192,7 @@ describe("smoke 探测（缺席显式表达）", () => {
   });
 });
 
-describe("smoke e2e：init → triage×2 → status --json → doctor --json", () => {
+describe("smoke e2e：init → alerts×2 → status --json → doctor --json（D-5 裁决 18：triage 位改 alerts 路由段）", () => {
   it("init：JSON 命令信封 ok 语义（BOOTSTRAP）", () => {
     if (!cliMode.implemented) {
       recordPending("init.envelope", "init --json 信封断言");
@@ -255,103 +254,95 @@ describe("smoke e2e：init → triage×2 → status --json → doctor --json", (
     }
   });
 
-  it("triage 请求 A（文案微调）：判档 MINIMAL 且缺席信号显式（八拍①）", () => {
+  it("alerts hook 面：初始化后恒带 workflow 路由段且零 triage 词形（八拍① Brainstorm 单入口，D-5 裁决 18）", () => {
     if (!cliMode.implemented) {
-      recordPending("triage.a", "copy 类请求判档断言");
-      expectPendingRecorded("triage.a");
+      recordPending("alerts.routing", "alerts workflow 路由段断言");
+      expectPendingRecorded("alerts.routing");
       return;
     }
     const dir = makeTempProject();
     try {
       runCli(["--dir", dir, "init", "--json"]);
-      const r = runCli([
-        "--dir",
-        dir,
-        "triage",
-        "页面标题文案微调：间距与图标对齐",
-        "--json",
-      ]);
+      const r = runCli(["--dir", dir, "alerts", "--json"]);
       const env = tryParseEnvelope(r.stdout);
-      expect(env, `triage --json 应产出信封：${r.stdout.slice(0, 200)}`).not.toBeNull();
-      expect(env?.command).toBe("triage");
+      expect(env, `alerts --json 应产出信封：${r.stdout.slice(0, 200)}`).not.toBeNull();
+      expect(env?.command).toBe("alerts");
       expect(env?.ok).toBe(true);
       const result = (env?.result ?? {}) as {
-        profile?: unknown;
-        absent_signals?: unknown;
+        workflow_routing?: readonly string[];
+        unsourced_categories?: readonly unknown[];
       };
       expect(
-        (TRIAGE_PROFILES as readonly string[]).includes(String(result.profile)),
-        `triage profile "${String(result.profile)}" 越档位词表`,
-      ).toBe(true);
-      expect(Array.isArray(result.absent_signals)).toBe(true);
-      expect(
-        (result.absent_signals as readonly unknown[]).length,
-        "判定必附「缺席了哪些信号」——缺席不得渲染成干净（跨线共识 2）",
+        (result.workflow_routing ?? []).length,
+        "初始化后恒带 workflow 路由段（干净=非空但极简）",
       ).toBeGreaterThan(0);
-      recordPassed("triage.a", "copy 类请求判档产出信封，profile 在词表内且 absent_signals 显式");
+      expect(
+        result.unsourced_categories,
+        "D-1/D-5 退役回归：unsourced_categories 收敛为空数组",
+      ).toEqual([]);
+      expect(
+        (result.workflow_routing ?? []).join("\n"),
+        "档位语义零残留：路由段零 triage 词形",
+      ).not.toContain("triage");
+      recordPassed("alerts.routing", "alerts 路由段在座、unsourced 空数组、零 triage 词形");
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
   });
 
-  it("triage 幂等：同一请求重放字节全等（GOLDEN-L8-1 判据）", () => {
+  it("alerts 幂等：同一 state 重放字节全等（GOLDEN-L8-1 判据）", () => {
     if (!cliMode.implemented) {
-      recordPending("triage.replay", "同请求重放字节全等断言");
-      expectPendingRecorded("triage.replay");
+      recordPending("alerts.replay", "同 state 重放字节全等断言");
+      expectPendingRecorded("alerts.replay");
       return;
     }
     const dir = makeTempProject();
     try {
       runCli(["--dir", dir, "init", "--json"]);
-      const args = ["--dir", dir, "triage", "页面标题文案微调", "--json"];
+      const args = ["--dir", dir, "alerts", "--json"];
       const first = runCli(args);
       const second = runCli(args);
       expect(first.exitCode).toBe(0);
       expect(second.exitCode).toBe(0);
       expect(second.stdout).toBe(first.stdout);
-      recordPassed("triage.replay", "triage 同请求重放 stdout 字节全等");
+      recordPassed("alerts.replay", "alerts 同 state 重放 stdout 字节全等");
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
   });
 
-  it("triage 请求 B（契约/跨域）：升档可区分且自身确定性", () => {
+  it("alerts 未初始化形态：零输出恒 exit 0（与初始化态可区分——hook 契约缺席诚实）", () => {
     if (!cliMode.implemented) {
-      recordPending("triage.b", "契约面请求升档断言");
-      expectPendingRecorded("triage.b");
+      recordPending("alerts.uninit", "未初始化零输出断言");
+      expectPendingRecorded("alerts.uninit");
       return;
     }
     const dir = makeTempProject();
     try {
-      runCli(["--dir", dir, "init", "--json"]);
-      const argsB = [
-        "--dir",
-        dir,
-        "triage",
-        "修改 API_REQ 跨域契约的 response_need 字段",
-        "--json",
-      ];
-      const first = runCli(argsB);
-      const second = runCli(argsB);
-      const envB = tryParseEnvelope(first.stdout);
-      const envA = tryParseEnvelope(
-        runCli(["--dir", dir, "triage", "页面标题文案微调", "--json"]).stdout,
-      );
-      expect(envB).not.toBeNull();
-      expect(first.exitCode).toBe(0);
-      expect(second.stdout).toBe(first.stdout);
-      const profileB = String(
-        ((envB?.result ?? {}) as { profile?: unknown }).profile,
-      );
-      const profileA = String(
-        ((envA?.result ?? {}) as { profile?: unknown }).profile,
-      );
-      expect((TRIAGE_PROFILES as readonly string[]).includes(profileB)).toBe(true);
-      expect(profileB).not.toBe(profileA);
-      recordPassed(
-        "triage.b",
-        `契约面请求判档 ${profileB}（与请求 A ${profileA} 可区分），自身重放确定性`,
-      );
+      const uninit = runCli(["--dir", dir, "alerts", "--json"]);
+      const envUninit = tryParseEnvelope(uninit.stdout);
+      expect(envUninit, `alerts --json 应产出信封：${uninit.stdout.slice(0, 200)}`).not.toBeNull();
+      expect(envUninit?.command).toBe("alerts");
+      expect(envUninit?.ok).toBe(true);
+      expect(
+        ((envUninit?.result ?? {}) as { initialized?: unknown }).initialized,
+      ).toBe(false);
+      const inited = makeTempProject();
+      try {
+        runCli(["--dir", inited, "init", "--json"]);
+        const routed = runCli(["--dir", inited, "alerts", "--json"]);
+        const envRouted = tryParseEnvelope(routed.stdout) as {
+          result?: { initialized?: unknown; workflow_routing?: readonly string[] };
+        } | null;
+        expect(envRouted?.result?.initialized).toBe(true);
+        expect(
+          (envRouted?.result?.workflow_routing ?? []).length,
+          "初始化态与未初始化态行为可区分（缺席显式非静默）",
+        ).toBeGreaterThan(0);
+      } finally {
+        rmSync(inited, { recursive: true, force: true });
+      }
+      recordPassed("alerts.uninit", "未初始化零输出 + 初始化态路由段在座——两态可区分");
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

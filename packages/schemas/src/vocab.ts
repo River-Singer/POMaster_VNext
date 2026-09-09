@@ -7,7 +7,7 @@
  *   append-only 纯增量增补（v0.1 词值零删改），2026-09-01 PR-0004 增补
  *   production_band_vocab 段 + id_namespace.state_plane_refs 五通路编号词形注记，
  *   2026-09-01 PR-0005 增补 catalog_layer_vocab 段 change_classes/governance_profiles
- *   两词轴 + applicability_fields 字段面注记——Owner 裁决 8 ② 2026-09-01，
+ *   两词轴 + applicability_fields 字段面注记——Owner 裁决 8 ② 2026-09-01，（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
  *   2026-09-02 PR-0006 增补 software_graph_vocab 段六词轴 + catalog_layer_vocab
  *   catalog_kind 词轴 + id_namespace.state_plane_refs EDGE-<12hex> 通路词形注记
  *   ——Owner 四决议 D-1~D-4 2026-09-02（PRD v0.6/v0.6.1 融合批次 0 Model Constitution），
@@ -278,7 +278,7 @@ export type CatalogLaneValue = (typeof CATALOG_LANE_VALUES)[number];
 
 /**
  * applies_when.change_classes 词轴（x-vocab-source: vocab-lock catalog_layer_vocab.change_classes，
- * PR-0005 收编；Owner 裁决 8 ② 2026-09-01「首批 3-5 值最小闭包，逐例对 corpus 实测词面」；
+ * PR-0005 收编；Owner 裁决 8 ② 2026-09-01「首批 3-5 值最小闭包，逐例对 corpus 实测词面」；（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
  * PRD v0.5.2 §5.2 Structured Applicability 示例词形 API_EVOLUTION 逐字）。与 CATALOG_LANE_VALUES
  * 正交：lane 管角色域，change_classes 管变更类目（PRD §5.3 确定性包含管线的第三层输入）。
  */
@@ -292,7 +292,7 @@ export type CatalogChangeClassValue = (typeof CATALOG_CHANGE_CLASS_VALUES)[numbe
 
 /**
  * applies_when.governance_profiles 词轴（x-vocab-source: vocab-lock
- * catalog_layer_vocab.governance_profiles，PR-0005 收编；Owner 裁决 8 ② 2026-09-01
+ * catalog_layer_vocab.governance_profiles，PR-0005 收编；Owner 裁决 8 ② 2026-09-01（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
  * 「对齐 TRIAGE_PROFILES+STRICT，消 STANDARD 两义」）。前三值与 CLI triage
  * TRIAGE_PROFILES（packages/cli/src/triage.ts）同词形同义；STRICT 对位 constitutional 档
  * （catalog-profile-anchor 词形先例）；PRD §5.2 示例值 CRITICAL 不入（另立第二套 profile
@@ -1343,7 +1343,8 @@ export type RelationOriginValue = (typeof RELATION_ORIGIN_VALUES)[number];
 
 /**
  * 边端点域两值（D-2 裁定：边端点可指 governed id（truth 面）或 catalog 条目 id
- * （catalog 面）；INSTANCE_OF 典型=truth→catalog）。
+ * （catalog 面）；INSTANCE_OF 典型=truth→catalog）。（历史裁定，锚缺失——
+ * P-v06 批次 D-2（v0.6 fusion 执行轮裁定）；未入 corpus 台账，T3-R3 如实标注）
  * x-vocab-source: vocab-lock software_graph_vocab.relation_endpoint_domain（PR-0006）。
  */
 export const RELATION_ENDPOINT_DOMAIN_VALUES = ["truth", "catalog"] as const;

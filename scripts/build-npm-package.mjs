@@ -1,4 +1,4 @@
-// npm 单包发布 staging 构建（Owner 裁决 10：单包 `pomaster`，双许可）。
+// npm 单包发布 staging 构建（Owner 裁决 10：单包 `pomaster`，双许可）。（锚：corpus/master/cutover/owner-adjudications.md#裁决10）
 // 发布版本唯一真源 = 顶部 POMASTER_VERSION 常量（字面量不得散落别处）。
 //
 // 职责：把 kernel/gauntlet-lite/schemas + CLI esbuild 打成单文件 ESM bundle，
@@ -239,7 +239,7 @@ copyFileSync(
 const cliPackageJson = JSON.parse(readFileSync(p("packages", "cli", "package.json"), "utf8"));
 
 /**
- * staging manifest（Owner 裁决 10）：name/version/license/bin/files/engines/repository
+ * staging manifest（Owner 裁决 10）：name/version/license/bin/files/engines/repository（锚：corpus/master/cutover/owner-adjudications.md#裁决10）
  * 逐项钉死；version 取自顶部 POMASTER_VERSION 单点常量；`private` 不设（缺省可发布）；
  * 零 dependencies/peerDependencies
  * （kernel/gauntlet-lite/schemas/commander 全部 bundle，ajv 仅测试面不进 bundle）。
@@ -302,7 +302,7 @@ const stagedFiles = walkFiles(STAGE_PKG);
 const totalBytes = stagedFiles.reduce((sum, file) => sum + statSync(file).size, 0);
 const bundleBytes = statSync(STAGE_BIN).size;
 
-// B4 裁定（Owner 2026-09-04）stage 守卫：宪法文档本体不随 npm 包分发——目录宪法
+// B4 裁定（Owner 2026-09-04）stage 守卫：宪法文档本体不随 npm 包分发——目录宪法（锚：corpus/master/cutover/owner-adjudications.md#裁决11⑥）
 // 文档（dot-pomaster-directory-constitution.md）只住开发仓治理档案，npm 包只带
 // 运行时产物（dist bundle + catalog 资产 + 法务文档）。stage 是显式白名单制
 // （LEGAL_COPIES + catalog/），宪法文档本就不在清单内；本守卫是防未来扩清单时

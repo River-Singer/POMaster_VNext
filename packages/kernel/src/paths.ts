@@ -29,7 +29,7 @@
  * - runtime/locks/<lock_id>.lock         三粒度互斥锁（change/task/unit；易变态）
  * - executions/AGX-*.json                Execution Identity 正式档案（PRD §25.4；进 Git）
  *
- * W1-C Execution Trace 侧车平面（PRD v0.5.2 §8；裁决 8 ②「trace 独立 traces/ 分区」
+ * W1-C Execution Trace 侧车平面（PRD v0.5.2 §8；裁决 8 ②「trace 独立 traces/ 分区」（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
  * ——P34 production 新分区先例：不进 content_digest、零 journal 事件）：
  * - traces/AGX-*.json           durable manifest（TASK/INCIDENT/AUDIT 留存档，进 Git）
  * - runtime/traces/AGX-*.json   EPHEMERAL manifest（易变平面；§85.4 可删除测试 runtime/

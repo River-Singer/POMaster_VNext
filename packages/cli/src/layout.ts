@@ -3,15 +3,17 @@
  *
  * Owner 裁定（2026-09-04 修订，任务 09-03-vnext-heavy-entry）：init 不分入口形态
  * 一次性建出目录宪法 §2 Target Directory Tree 全量（Owner 原话裁定：全部目录建好、
- * 不分档级，AI 自行判断需求/项目复杂度并激活相应目录；原引语含已废除的档级词形，
- * 现状陈述见 LAYOUT_NOTES）——`.pomaster/` 目录树与平台选择/入口形态**完全无关**
+ * 不分档级，AI 自行判断需求并激活相应目录；原引语含已废除的档级词形——历史引语
+ * 归档见 LAYOUT_NOTES）——`.pomaster/` 目录树与平台选择/入口形态**完全无关**
  * （此裁定有意覆盖宪法 §17 Lazy Materialization 与早期 wired/planned 双状态设计，
- * 全 wired 单状态）。
+ * 全 wired 单状态）。D-1 措辞修正（Owner 2026-09-08，owner-adjudications.md#裁决18）：
+ * activation_hint 判据词「复杂度」统一改为「治理能力相关性」——语义红线：wired=
+ * 有实现路径，非档级（triage/profile 档位语义彻底退役的同一裁决）。
  *
  * 预铺纪律三条款（本模块即其唯一落点）：
  * - 全目录 status=wired（全部有代码承载——kernel paths.ts/production.ts/memory-harvest.ts
  *   登记 + CLI 骨架登记）；**每目录条目带 activation_hint**（什么样的项目/需求激活该
- *   平面——AI 按项目复杂度自行判断，Owner 原话）+ constitution_source（指向
+ *   平面——AI 按治理能力相关性自行判断，D-1 裁决 18 措辞）+ constitution_source（指向
  *   dot-pomaster-directory-constitution.md §引用与代码登记处）；
  * - 每目录 README（用途 + 宪法 §编号引用 + activation_hint + 写路径纪律）；
  * - `.pomaster/layout.json` 机器可读布局清单（schema pomaster.layout-manifest/1），
@@ -68,14 +70,15 @@ export interface LayoutDirSpec {
   /** 用途一句话（README 正文行与 layout.json purpose 逐字共用）。 */
   readonly purpose: string;
   /**
-   * 激活提示（什么样的项目/需求激活该平面——AI 按项目复杂度自行判断；Owner 原话
-   * 「AI 自己判断是否是复杂还是简单需求或者项目，对应激活相关目录」的机器承载位）。
+   * 激活提示（什么样的项目/需求激活该平面——AI 按治理能力相关性自行判断；D-1
+   * 裁决 18 2026-09-08 措辞：「复杂度」→「治理能力相关性」，wired=有实现路径非档级；
+   * Owner 原话历史引语归档 LAYOUT_NOTES）。
    */
   readonly activation_hint: string;
   /**
    * 宪法来源（dot-pomaster-directory-constitution.md §引用 + 代码登记处锚；
    * README 与 layout.json 逐字共用）。
-   * ADR-lite（B4 裁定 Owner 2026-09-04）：宪法文档本体不随 npm 包分发，只住开发仓
+   * ADR-lite（B4 裁定 Owner 2026-09-04）：宪法文档本体不随 npm 包分发，只住开发仓（锚：corpus/master/cutover/owner-adjudications.md#裁决11⑥）
    * 治理档案（本仓不含该文档文件——content 为文档名锚非包内相对路径；消费侧按
    * 文档名在开发仓治理档案检索，代码登记处锚 kernel paths.ts 在包内可直接定位）。
    */
@@ -123,7 +126,7 @@ export const LAYOUT_DIRECTORIES: readonly LayoutDirSpec[] = [
     purpose:
       "控制平面 Root Metadata + Governance Sidecars（宪法 §5）——9 个已登记文件位（truth-index/authority/permits/journal/exception-ledger/knowledge-library/equivalence-registry/linkage-coverage/relations）由 kernel 按需创建，init 只建目录+README 不落状态文件。",
     activation_hint:
-      "一切项目恒激活（init 地基）；复杂度越高 sidecars 越多（journal/relations/equivalence…由对应命令按需写入）。",
+      "一切项目恒激活（init 地基）；治理能力相关性越高 sidecars 越多（journal/relations/equivalence…由对应命令按需写入）。",
     constitution_source:
       "dot-pomaster-directory-constitution.md §5；kernel paths.ts（StorePaths.stateDir）",
     command: "pomaster status --json",
@@ -504,7 +507,7 @@ export const LAYOUT_NOTES: readonly string[] = [
   "objects 路径收敛（宪法 §34-P0，Owner 裁定落地）：canonical 正文层为 .pomaster/truth/objects/（kernel paths.ts 单一来源）；.pomaster/objects/ 为 legacy deny-list（store-layout.ts LEGACY_OBJECTS_DIR_RELATIVE）——init 仅显式检测报告，禁静默 merge/覆盖/猜测迁移，迁移必须可审计可回滚。",
   "六禁铺裁定（P53 §16 逐字反面清单）：questions.json / answers.json / decisions.json / frontier.json / recommendations.json / grill-state.json 六文件名绝不物化于预铺面——Frontier 应由 Decision Graph 动态计算、Human Narrative 应由 Graph 编译生成（P53 §16/§21「不新增」封条）。",
   "evidence 产物命名裁定：PRD v0.5.2 §7.3 词形 evidence/artifacts/ 与 kernel paths.ts 现行词形 evidence/blobs/（内容寻址）冲突——以现行 evidence/blobs 为准预铺，artifacts 词形不落盘。",
-  "目录树与入口形态无关（Owner 2026-09-04 裁定，现状陈述：init 单一重入口——历史上与重入口并存的 --mode light 旗标已按 B7 裁定 2026-09-04 删除，当时两形态的目录树本就完全相同）：.pomaster/ 目录树恒为宪法 §2 全量预铺，与平台选择无关；激活由 AI 按 activation_hint 与项目复杂度自行判断——目录存在 ≠ 已激活 ≠ 已检查。",
+  "目录树与入口形态无关（Owner 2026-09-04 裁定，现状陈述：init 单一重入口——历史上与重入口并存的 --mode light 旗标已按 B7 裁定 2026-09-04 删除，当时两形态的目录树本就完全相同）：.pomaster/ 目录树恒为宪法 §2 全量预铺，与平台选择无关；激活由 AI 按 activation_hint 与治理能力相关性自行判断——目录存在 ≠ 已激活 ≠ 已检查。措辞沿革（D-1，Owner 2026-09-08，owner-adjudications.md#裁决18）：本注记历史版本判据词为「项目复杂度」，随 triage/profile 档位语义退役统一改为「治理能力相关性」（wired=有实现路径，非档级）；Owner 原话历史引语「AI 自己判断是否是复杂还是简单需求或者项目，对应激活相关目录」归档于此——引语词形属历史记录不再复用。",
   "播种面语义（vNext Batch 6 B6a）：baseline/** 与 specs/** 是播种目录——init 按种子清单 seed-once-missing-only（缺失才写；在座文件项目自有可编辑，init 恒零触碰且播种件不带生成标记，禁被判 foreign/重写）；重播种/刷新只走显式 opt-in（旧 --refresh-protocols 先例），AI 禁静默覆盖项目对播种件的就地修改。",
 ];
 

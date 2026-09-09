@@ -100,7 +100,7 @@ export const C8_METRIC_DIALECT = "coverage:c8_lines_branches";
 export const PYTEST_COV_METRIC_DIALECT = "coverage:pytest_cov_lines_branches";
 /**
  * 缺席记录的机器可辨口径轴（P12c policySkip 映射裁定同款：与执行腿口径在记录级区分，
- * 不靠人读 scopeNote；verdict=not_run + counts.notApplicable=1）。
+ * 不靠人读 scopeNote；verdict=not_run + counts.notApplicable=1；裁定全文 docs/vocab-pr-0002.md）。
  */
 export const COVERAGE_POLICY_SKIP_METRIC_DIALECT = "coverage:policy_skip";
 /** 配置缺席态（not_configured）的口径轴词形（缺席原因可机器归类的显式留痕位）。 */
@@ -184,6 +184,7 @@ export const COVERAGE_BRANCHES_THRESHOLD_NOTE =
  * 维持 provisional 待批。常量名保留 PROVISIONAL 词形作为历史呈报位锚（最小改造，
  * 禁大改登记结构 API），行内 status/approved_by/note 是权威词形；
  * 任何再改 status 的动作都必须来自 Owner 批准，系统与测试面禁止自批）。
+ * （锚：corpus/master/cutover/owner-adjudications.md#裁决6——A4 阈值三项全批逐字）
  */
 export const PROVISIONAL_THRESHOLD_REGISTRATIONS = [
   {

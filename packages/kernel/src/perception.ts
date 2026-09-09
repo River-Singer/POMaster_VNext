@@ -539,7 +539,7 @@ export function buildEnvironmentReceipt(
 // ============================================================
 
 /**
- * blob 引用行（07-evidence-records definitions.blob_ref 词形同源；裁决 8 ③ D1=A：
+ * blob 引用行（07-evidence-records definitions.blob_ref 词形同源；裁决 8 ③ D1=A：（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
  * receipt 身份 = blob sha256 即身份，不新增 EVR- id——EVR-* 仅 PRD 概念词）。
  * 四字段与 persistEvidenceArtifact 输出（PersistedEvidenceArtifact）逐一同构：
  * 消费方把 persist 产物原样携带入 receipt（sha 由基础设施产生——D24 人禁手算；
@@ -565,7 +565,7 @@ export interface ObservationReceiptInput {
   readonly observationId: string;
   /** AGX 通路锚（词形与档案存在性校验归 execution.ts 通路，此处只校验在场）。 */
   readonly executionId: string;
-  /** SENSOR.* 能力词形（裁决 8 D6=A；closed-world 校验归词汇表 PR 收编后）。 */
+  /** SENSOR.* 能力词形（裁决 8 D6=A；closed-world 校验归词汇表 PR 收编后）。（锚：corpus/master/cutover/owner-adjudications.md#裁决8） */
   readonly sensorCapability: string;
   /** 工具标识（§6.13 例文 chrome-devtools-mcp；开放词）。 */
   readonly adapter: string;

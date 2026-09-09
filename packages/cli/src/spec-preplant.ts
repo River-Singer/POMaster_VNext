@@ -1,5 +1,5 @@
 /**
- * spec-preplant.ts —— SPEC.* Evidence Spec 对象 init 预植（裁定批 D D2；Owner
+ * spec-preplant.ts —— SPEC.* Evidence Spec 对象 init 预植（裁定批 D D2；Owner（历史裁定，锚缺失——裁定批 D，2026-09-05；未入 corpus 台账，T3-R3 如实标注）
  * 2026-09-05 裁定 (a)：init 预植——**新治理语义**，init 从此写 store）。
  *
  * 裁定台账：.trellis/tasks/09-04-pomaster-vnext-consolidated-prd/research/

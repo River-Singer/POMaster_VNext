@@ -24,7 +24,7 @@ import type { CliError, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
 import { resolveCliVersion } from "./version.js";
 
-/** 更新目标包名（发布单包，Owner 裁决 10）。 */
+/** 更新目标包名（发布单包，Owner 裁决 10）。（锚：corpus/master/cutover/owner-adjudications.md#裁决10） */
 export const UPDATE_PACKAGE_NAME = "pomaster" as const;
 
 /** npm view 超时（任务规格：15s）。 */

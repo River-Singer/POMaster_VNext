@@ -162,10 +162,10 @@ describe("readAuthorityFaces（读侧 fail-closed；B3 warning-only 纪律）", 
 });
 
 // ============================================================
-// 投影消费（boundary deny → MUST 只读呈现）
+// 投影消费（boundary deny → MUST 呈现；D-4 裁决 18 起写路径另有 BLOCK 闸——双面并存）
 // ============================================================
 
-describe("投影 AUTHORITATIVE 区消费（boundary deny 只读呈现）", () => {
+describe("投影 AUTHORITATIVE 区消费（boundary deny 呈现；写路径 BLOCK 归 store D-4 闸）", () => {
   it("boundary_rules deny 条目 → MUST 区显式条目（ref=rule_id；allow 条目不呈现）；absent → 零条目", async () => {
     const { root, store } = await makeStore();
     const raw = readAuthorityRaw(root);
@@ -179,7 +179,8 @@ describe("投影 AUTHORITATIVE 区消费（boundary deny 只读呈现）", () =>
     expect(denyEntries).toHaveLength(1);
     expect(denyEntries[0]?.reason).toContain("authority boundary deny");
     expect(denyEntries[0]?.reason).toContain("grid_library");
-    expect(denyEntries[0]?.reason).toContain("呈现不阻断");
+    // D-4（裁决 18）：呈现面保留、写路径升为 BLOCK——呈现 reason 词形随之更新。
+    expect(denyEntries[0]?.reason).toContain("写路径同闸 BLOCK");
     expect(projection.manifest.mustEntries.some((entry) => entry.ref === "br-css")).toBe(false);
   });
 

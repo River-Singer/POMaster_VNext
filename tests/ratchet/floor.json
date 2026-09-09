@@ -668,6 +668,10 @@
       "packages/studio-react/tests/react-stories.spec.ts": {
         "layer": "L1",
         "note": "09-06-studio-depth-react-geist-mapping（S2 React sidecar）：antd 对齐族生成器钉测——对齐分母（71 族对齐表/68 对齐 stories/antd 5.29.3 实抓 73 导出/v5 已移除 Comment+PageHeader+LocaleProvider 差异面/antd 独有 BackTop+ColorPicker+Splitter）+ 「Vue 对应件」对照注记全量在座 + 幂等双跑 diff 空 + 发布面纪律（private/零运行时 deps/遥测双关闭声明/端口 6007 错开）。无域（生成器契约面，非四域）。"
+      },
+      "packages/kernel/tests/authority-block.spec.ts": {
+        "layer": "L1",
+        "note": "T3-R1 权威维度写路径闸（AUTHORITY_BOUNDARY_DENY）对抗与零误伤回归（09-08 语义收口战役，owner-adjudications.md#裁决18）"
       }
     },
     "notes": {

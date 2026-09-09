@@ -8,7 +8,7 @@
  * - TTY init 在 platform 选择后接逐键问卷：FE 9 键 + BE 5 键逐项确认（Owner 原话
  *   「问题再长也得一一确认」），沿 init 既有两形态（raw ◉/◯ 单选帧 / 编号输入
  *   降级，interactive-keys.ts 共用键表与重绘出口）；
- * - 每键候选：R-E 实战栈优先（vue3/antdesign/geist/java/spring/mysql/redis 首位）
+ * - 每键候选：R-E 实战栈优先（vue3/antdesign/geist/java/spring/mysql/redis 首位）（历史裁定，锚缺失——R-E，2026-09-05 执行轮；未入 corpus 台账，T3-R3 如实标注）
  *   + 常见占位全量列出 + 末行「自定义」自由输入（保守词形校验）；css 键首位 =
  *   D8 裁定组合词形（09-05-spec-thematic-reorg，B6G overlay 批回填），其余候选保留；
  * - A1/E2/C1 纪律：无缺省不预填（UNKNOWN 起步语义），逐键必答不许跳（raw 空缓冲
@@ -186,7 +186,7 @@ export const STACK_KEYS: Readonly<Record<BaselineLane, readonly string[]>> = {
   backend: BACKEND_STACK_KEYS,
 };
 
-/** 单键问卷条目：label = 人读问面；options = 候选（R-E 实战栈首位 + 常见占位）。 */
+/** 单键问卷条目：label = 人读问面；options = 候选（R-E 实战栈首位 + 常见占位）。（历史裁定，锚缺失——R-E，2026-09-05 执行轮；未入 corpus 台账，T3-R3 如实标注） */
 export interface StackQuestionSpec {
   readonly lane: BaselineLane;
   readonly key: string;
@@ -195,7 +195,7 @@ export interface StackQuestionSpec {
 }
 
 /**
- * 问卷目录（14 键；FE 9 + BE 5，lane 分组内按 seed 键序）。R-E 实战栈逐键首位：
+ * 问卷目录（14 键；FE 9 + BE 5，lane 分组内按 seed 键序）。R-E 实战栈逐键首位：（历史裁定，锚缺失——R-E，2026-09-05 执行轮；未入 corpus 台账，T3-R3 如实标注）
  * vue3/antdesign/geist/java/spring/mysql/redis；react/python/php/oracle/sqlserver
  * 等为常见占位；css 键首位 = D8 裁定组合词形 scoped-sfc+antdv-cssinjs-tokens+
  * antdv-reset-css（B6G css overlay 批回填）；末位自定义行由交互器提供（不入

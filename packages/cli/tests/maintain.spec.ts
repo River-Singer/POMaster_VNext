@@ -251,20 +251,20 @@ describe("maintain apply 模式（--ops 受控变更）", () => {
 });
 
 // ============================================================
-// pre-dev 链模式（A3：triage → permit issue → context compile）
+// pre-dev 链模式（A3：permit issue → context compile 二步薄编排——triage 位已随
+// D-1/D-5 退役删除，owner-adjudications.md#裁决18）
 // ============================================================
 
-describe("maintain --phase pre-dev（八拍①②③薄编排）", () => {
+describe("maintain --phase pre-dev（八拍②③薄编排；D-5 裁决 18 二步化）", () => {
   const chainInput = {
     changeOrTask: ANCHOR,
     phase: "pre-dev" as const,
-    request: "跨域 contract 字段调整",
     subjects: [CAP_ID],
     actor: "agent:claude",
     role: "frontend",
   };
 
-  it("happy path：triage STANDARD → permit 签发 → 投影 MUST 命中 scope 对象（链闭合）", async () => {
+  it("happy path：permit 签发 → 投影 MUST 命中 scope 对象（二步链闭合）", async () => {
     await seedStore();
     await seedCapability();
     const outcome = await runMaintain(root, chainInput);
@@ -275,10 +275,8 @@ describe("maintain --phase pre-dev（八拍①②③薄编排）", () => {
     expect(result.phase).toBe("pre-dev");
     expect(result.failed_at_step).toBeNull();
 
-    // ① triage（contract 关键词 → STANDARD 升档；缺席信号照列）。
-    expect(result.triage?.profile).toBe("STANDARD");
-    expect(result.triage?.matched_rule).toBe("E_CONTRACT_KEYWORD");
-    expect(result.triage?.absent_signals.length).toBeGreaterThan(0);
+    // D-1/D-5 退役回归：链结果零 triage 视图（判档位已删——零 compat 字段）。
+    expect((result as Record<string, unknown>).triage).toBeUndefined();
 
     // ② permit（kernel 五件套台账签发）。
     expect(result.permit?.permit_ref).toMatch(/^PERMIT\./);
@@ -297,22 +295,23 @@ describe("maintain --phase pre-dev（八拍①②③薄编排）", () => {
     );
     expect(result.context_manifest?.stale_state).toBe("absent");
 
-    // 人读输出三步全呈现（含 F4 落盘行）。
+    // 人读输出二步全呈现（含 F4 落盘行；人读行零 triage 词形）。
     const human = outcome.human.join("\n");
-    expect(human).toContain("triage STANDARD");
+    expect(human).not.toContain("triage ");
+    expect(human).toContain("permit issue");
     expect(human).toContain("PERMIT.");
     expect(human).toContain(`MUST ${CAP_ID}`);
     expect(human).toContain("context manifest: 已落盘");
   });
 
-  it("零分支政策：triage MINIMAL 也不跳过 permit（编排永远三步全走，档位只呈现）", async () => {
+  it("零分支政策：编排永远二步全走（permit 签发后必接投影；D-5 裁决 18 后档位分支位不复存在）", async () => {
     await seedStore();
     await seedCapability();
-    const outcome = await runMaintain(root, { ...chainInput, request: "纯文案微调" });
+    const outcome = await runMaintain(root, chainInput);
     expect(outcome.ok).toBe(true);
     const result = outcome.result as MaintainPreDevResult;
-    expect(result.triage?.profile).toBe("MINIMAL");
-    expect(result.permit?.permit_ref).toMatch(/^PERMIT\./); // 没有 MINIMAL 短路
+    expect(result.permit?.permit_ref).toMatch(/^PERMIT\./);
+    expect(result.projection?.must_entries.length).toBeGreaterThan(0); // permit 后投影步不跳
   });
 
   it("链写通道：permit 台账/journal + context manifest 落盘（F4 后 ③ 写 manifest；store 事务零推进）", async () => {
@@ -332,7 +331,7 @@ describe("maintain --phase pre-dev（八拍①②③薄编排）", () => {
       join(root, ".pomaster", "state", "contexts", `${ANCHOR}.context.json`),
       "utf8",
     )).toContain('"inputs_fingerprint"');
-    // 链不推进 store 事务：TX_APPLIED 计数与链前持平（triage 纯读，permit 走台账非事务，
+    // 链不推进 store 事务：TX_APPLIED 计数与链前持平（permit 走台账非事务，
     // manifest 落盘写 contexts/ 编译产物——均非 store 事务写通道）。
     expect(journalEvents().filter((event) => event.type === "TX_APPLIED")).toHaveLength(txAppliedBefore);
   });
@@ -351,7 +350,6 @@ describe("maintain --phase pre-dev（八拍①②③薄编排）", () => {
     const outcome = await runMaintain(root, {
       changeOrTask: ANCHOR,
       phase: "pre-dev",
-      request: "跨域 contract 调整",
       actor: "agent:claude",
       role: "frontend",
     });
@@ -394,7 +392,6 @@ describe("maintain pre-dev context compile 共享编排契约（审计 F4 回归
   const f4ChainInput = {
     changeOrTask: TASK_ID,
     phase: "pre-dev" as const,
-    request: "任务实现前的上下文编译",
     subjects: [TASK_ID],
     actor: "agent:claude",
     role: "frontend",
@@ -466,7 +463,7 @@ describe("maintain pre-dev context compile 共享编排契约（审计 F4 回归
   it("等价性：同一 store 状态下，pre-dev 落盘 manifest 与显式 context compile 逐字节相等", async () => {
     await seedStore();
     await seedTaskIntent("等价性基线意图");
-    // pre-dev 编排（triage + permit issue + 共享入口 compile+落盘）。permit issue 只写
+    // pre-dev 编排（permit issue + 共享入口 compile+落盘）。permit issue 只写
     // 台账/journal、不推进 store seq → 显式编译的 generated_at_seq 与指纹输入完全同态。
     const predev = await runMaintain(root, f4ChainInput);
     expect(predev.ok).toBe(true);
@@ -517,18 +514,30 @@ describe("maintain CLI 命令面", () => {
     expect(envelope.result.change).toBe("APPLIED");
   });
 
-  it("pre-dev 链缺 --request（runCli 全链）→ exit 1 显式 SCHEMA_INVALID（不静默跳步）", async () => {
+  it("--request 旗标已随 triage 位退役（runCli 全链）→ commander unknown option exit 1（退役位 fail-closed，不静默吞参）", async () => {
     await seedStore();
+    const lines: string[] = [];
+    const code = await runCli(
+      ["--dir", root, "maintain", ANCHOR, "--phase", "pre-dev", "--subject", CAP_ID, "--actor", "agent:claude", "--role", "frontend", "--request", "跨域 contract 调整", "--json"],
+      { stdout: (line) => lines.push(line), stderr: () => undefined },
+    );
+    expect(code).toBe(1);
+  });
+
+  it("pre-dev 链二步全走（runCli 全链）：--subject/--actor/--role 齐备 → exit 0（D-5 裁决 18：--request 不再是入参）", async () => {
+    await seedStore();
+    await seedCapability();
     const lines: string[] = [];
     const code = await runCli(
       ["--dir", root, "maintain", ANCHOR, "--phase", "pre-dev", "--subject", CAP_ID, "--actor", "agent:claude", "--role", "frontend", "--json"],
       { stdout: (line) => lines.push(line), stderr: () => undefined },
     );
-    expect(code).toBe(1);
+    expect(code).toBe(0);
     const envelope = JSON.parse(lines.join("\n")) as CliEnvelope<MaintainPreDevResult>;
-    expect(envelope.ok).toBe(false);
-    expect(envelope.errors[0]?.code).toBe("SCHEMA_INVALID");
-    expect(envelope.errors[0]?.message).toContain("--request");
+    expect(envelope.ok).toBe(true);
+    expect(envelope.result.mode).toBe("pre_dev_chain");
+    expect(envelope.result.permit).not.toBeNull();
+    expect(envelope.result.projection).not.toBeNull();
   });
 });
 

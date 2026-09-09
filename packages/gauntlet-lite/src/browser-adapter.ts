@@ -54,7 +54,7 @@
  * ============================================================
  * 已知边界（P26 红队 MINOR 登记 → P0.5-2 gate_def 版本化闭合）
  * ============================================================
- * - **MCP 证据存在性绑定**（版本化记录，裁决8④ D4=A，2026-09-01）：
+ * - **MCP 证据存在性绑定**（版本化记录，裁决8④ D4=A，2026-09-01）：（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
  *   @0.1.0 时代边界（原文如实留档）：adapter 对编排方注入的 MCP 证据只做词形/结构
  *   校验（content types + 最低门槛 + PNG 签名），不持有也不校验「经校验的证据字节 =
  *   编排方实际入 evidence pack 的字节」；不发明 hash 绑定（D24 禁 sha 属声明内边界）；
@@ -101,7 +101,7 @@ import {
 
 export const BROWSER_GATE_NAME = "BROWSER";
 /**
- * gate_def 版本化记录（裁决8④ D4=A，2026-09-01；W1-D2 批 2 增 @0.3.0）：
+ * gate_def 版本化记录（裁决8④ D4=A，2026-09-01；W1-D2 批 2 增 @0.3.0）：（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
  * - @0.1.0 = 三件套清单判卷（连接失败→failed；三件齐备→passed；缺件→not_run）；
  * - @0.2.0 = +screenshot 存在性绑定条款（PRD §7/§14 P0.5-2）：passed 即存在性主张，
  *   screenshot 件的持久化字节必须与 Gate Result 引用同一（artifact_refs 绑定）；

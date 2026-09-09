@@ -26,7 +26,7 @@
  *   Increment 不存在尚未处理且会显著改变的维度 + 残留均有合法分类；判据面复用 09
  *   msd_assessment 三轴 + msd_reached（promotion_basis=msd_reached 的机器判据面）。
  *
- * 词形纪律（Owner 裁决9②③，词表三镜像不动——VB-A 独立批）：
+ * 词形纪律（Owner 裁决9②③，词表三镜像不动——VB-A 独立批）：（锚：corpus/master/cutover/owner-adjudications.md#裁决9）
  * - DECISION./RESEARCH.REQ./FINDING./DISCOVERY.INTENT./FACT. 是 **Discovery 平面局部词形**
  *   （state_plane_refs 先例：PERMIT/POB/AGX 同族），不入 GOVERNED_ID_PREFIXES、不过
  *   parseGovernedId，校验=本模块词形正则 + 图内存在性；词形已随 PR-0009 入锁（state_plane_refs 注记 + decision_graph_vocab 段）；
@@ -87,7 +87,7 @@ export const MISSING_FACT_REF_PATTERN =
   /^FACT\.[A-Z][A-Z0-9_]{0,31}(\.[A-Z][A-Z0-9_]{0,31}){0,3}$/;
 
 /**
- * decision class 闭包（Owner 裁决9②：SCOPE 单值起步——vocab-lock decision_graph_vocab.decision_class，PR-0009 收编；
+ * decision class 闭包（Owner 裁决9②：SCOPE 单值起步——vocab-lock decision_graph_vocab.decision_class，PR-0009 收编；（锚：corpus/master/cutover/owner-adjudications.md#裁决9）
  * 扩值走词汇表 PR，禁止实现侧私扩）。x-vocab-source: PRD v0.5.3 §5.2 示例词形。
  */
 export const DECISION_CLASS_VALUES = ["SCOPE"] as const;
@@ -189,7 +189,7 @@ export type SufficiencyDimension = (typeof SUFFICIENCY_DIMENSIONS)[number];
 
 /**
  * class → 显著改变维度映射（研究口径：九维「显著改变」由 decision class 词形承载，
- * Owner 裁决9②）。当前闭包只有 SCOPE；未映射 class 一律保守按显著处理（fail-closed）。
+ * Owner 裁决9②）。当前闭包只有 SCOPE；未映射 class 一律保守按显著处理（fail-closed）。（锚：corpus/master/cutover/owner-adjudications.md#裁决9）
  */
 export const DECISION_CLASS_TO_DIMENSIONS: Readonly<
   Record<DecisionClassValue, readonly SufficiencyDimension[]>
@@ -500,7 +500,7 @@ function validateCandidate(candidate: DecisionNodeCandidate): CandidateValidatio
       seenOptions.add(option);
     }
   }
-  // —— grounding 十键全显式校验（空数组合法，缺席非法——C1 显式缺席纪律） ——
+  // —— grounding 十键全显式校验（空数组合法，缺席非法——C1 显式缺席纪律） ——（历史裁定，锚缺失——C1（显式缺席裁定）；未入 corpus 台账，T3-R3 如实标注）
   const grounding = candidate.grounding;
   const tenKeySlots: readonly (keyof DecisionGrounding)[] = [
     "intent_refs",

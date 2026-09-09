@@ -36,6 +36,7 @@
 - 同 inputs 重放 → `shortCircuited=true` 零写入短路（字节稳定，rev 不空转）；
 - DENOMINATOR 删除请求 → FATAL 并引导 supersede（只许 supersede 不许删除，C2）；
 - digest 失配/手改 → WARN + auto-regen hint（进 `digestWarnings`，永不 BLOCK）。
+- **D-4 权威维度闸（2026-09-08，裁决 18——显式推翻裁决 11⑤/B3 warning-only）**：指纹短路后、ops 执行前校验 tx sources 对 ops 涉及对象/维度是否 authoritative，非权威 → `AUTHORITY_BOUNDARY_DENY`（确定性 BLOCK，事务零落盘零 journal）。判据三面：触及对象集（upsert primary + payload.affected_objects——T2 Task Contract 编译产出；transition id + 既有 payload.affected_objects）× 对象维度（authority owner 在 authority.json map 的 scope 申报）× 来源轴（payload.source_refs 引用在册 sources/index.yaml 来源的 non_authoritative_for 与对象维度相交）+ boundary_rules deny 规则 scope 命中对象维度。与 permit scope 闸正交互补（permit=谁可写哪些对象，kernel checkPermit 判卷函数承载、exec-guard 命令面在 harness 落笔前调用；authority=哪些来源可驱动哪些维度，本闸住 applyTransaction）。registry 损坏 → `SCHEMA_INVALID` fail-closed；registry 缺席 = opt-in 平面显式跳过（D2 语义）；owner/维度未申报 = 显式中立不构成 deny。
 - 实现要求：staged 写入 + 失败回滚；清理路径不得凭存在性推断删除原件（staged-replace 事故教训）；提交前对事务产出复验 01 schema（op 层漏检在此拦截，失败 `SCHEMA_INVALID` 且零落盘，防 store 变砖）+ 重读 truth-index `generation.seq` 复核开卷世代（并发方已推进 → `CONCURRENT_WRITE_DETECTED` 拒绝提交）。journal 事件（TX_APPLIED 等）在正文/台账 staged 批提交成功后以 `appendLine` 原子追加——「index 先行、journal 缺行」为可检出残态（禁 RMW 覆写：会把并发 appendLine 家族刚写的整行抹掉）。
 
 `TransactionOp` 判别联合：`upsert_object` / `transition_object` / `register_producer` / `heartbeat`（追加 runtime 侧车，不进 hash）/ `append_denominator` / `record_claim` / `record_gate_run` / `verify_claim`。
@@ -86,7 +87,7 @@ A6 rename-on-ingest 双向链：legacy→canonical（收编）与 canonical→le
 - `ProjectionRequest` 增可选输入 `capabilities`（CAPABILITY.* governed id）/ `changeClass`（∈ `CATALOG_CHANGE_CLASS_VALUES`）；词形 fail-closed 校验（词表外/文法违规 → `SCHEMA_INVALID` / `FATAL_UNKNOWN_PREFIX`）。全部 optional——既有调用零破坏。A1 裁定（2026-09-04）：不设 `governanceProfile` 输入——治理档位降信息性，不参与 catalog applicability 判卷。
 - catalog 条目 `applies_when` 机器字段（`lanes`/`capabilities`/`change_classes`/`governance_profiles`/`object_kinds`/`applicability_note`；`risk_at_least`/`technologies` 留位不登记，消费面 not_configured 显式缺席）：未声明机器字段的条目 = lane 回退判定（现行行为逐字节不变，O7）；已声明 = 全字段确定性判定（声明轴全命中才注入；请求侧输入缺席 = 不可判定即不注入，缺席显式）。A1 裁定（2026-09-04）：`governance_profiles` 轴**判卷力解除**——不计入机器判定声明（仅声明该轴的条目按 lane 回退），轴保留为物料元数据，explain 决策面以 informational 注记披露（PR-0005/裁决 8② 不 supersede）。
 - 新导出 `explainCatalogProjection(store, request, options?) => Promise<CatalogProjectionExplanation>`：catalog include/exclude 决策记录面（`why_included`/`why_excluded` 逐条 + `matched` 命中轴 + `fallback_lane`）。与 `compileProjection` 共享判定核（included 集与 `manifest.catalogEntries` 逐 ref 一致），但**不进 manifest、不进 `inputsFingerprint`**——excluded 不进 Agent Context（PRD §5.4：只用于 `pomaster context explain` / Audit / Eval / Debug）。
-- CLI 面：`pomaster context compile --change/--capability/--change-class` 与新子命令 `pomaster context explain`（同旗标；`--profile` 旗标已按 A1 裁定删除——`pomaster triage` 保留信息性判档呈现）。
+- CLI 面：`pomaster context compile --change/--capability/--change-class` 与新子命令 `pomaster context explain`（同旗标；`--profile` 旗标已按 A1 裁定删除；`pomaster triage` 命令已按 D-1/D-5 退役——裁决 18 2026-09-08，信息性判档呈现随档位语义一并退场）。
 
 ## 6. Gate 归一（八拍⑤）
 

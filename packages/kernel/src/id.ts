@@ -226,7 +226,9 @@ export function resolveAlias(spelling: string): AliasResolution {
   }
   match = /^PAGE-TASK-STEP-(.+)$/.exec(spelling);
   if (match?.[1] !== undefined) {
-    // token 重排收编（裁决#2）判 mechanical=false：canonical 属数据面登记，kernel 不臆造。
+    // token 重排收编判 mechanical=false：canonical 属数据面登记，kernel 不臆造。
+    // （历史裁定（P0 skeleton 期，2026-08-28，先于台账首条），锚缺失——原「裁决#2」引用
+    // 无可追溯指涉物，未入 corpus 台账，T3-R3 如实标注；复核轮 2026-09-09 经 Owner 确认撤销 #裁决2 嫁接引用）
     return result(spelling, null, "PAGE-TASK-STEP-*", NOTE_PAGE_TASK_STEP, [spelling]);
   }
   match = /^TASK-(.+)$/.exec(spelling);

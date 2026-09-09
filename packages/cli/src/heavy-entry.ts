@@ -1,9 +1,9 @@
 /**
- * heavy-entry.ts —— 重入口交付面（D13 2026-09-03 修订：重入口默认；B7 裁定 2026-09-04：
+ * heavy-entry.ts —— 重入口交付面（D13 2026-09-03 修订：重入口默认；B7 裁定 2026-09-04：（锚：corpus/master/cutover/owner-adjudications.md#裁决11⑧）
  * init 单一重入口，早期 `--mode` 双模式旗标已删除）。
  *
  * D13 原裁定 =「重入口默认」：init 无旗标/交互确认/--json 均生成 skills 库 + hook 注入
- * + 加厚平台 rules。B7 裁定（Owner 2026-09-04，vNext Batch 4 R2）删除轻入口退回形态
+ * + 加厚平台 rules。B7 裁定（Owner 2026-09-04，vNext Batch 4 R2）删除轻入口退回形态（锚：corpus/master/cutover/owner-adjudications.md#裁决11⑧）
  * ——`--mode` flag、轻入口模板、重→轻移除逻辑（stripPomasterHooks）全部移除，init
  * 单一重入口；`--platforms none` 仍可选（零平台产物形态，入口文件落最小指针正文）。
  * 零运行时第三方依赖的 D13 原 facets 不变——hook 只是 shell form 调 `pomaster` 自身。
@@ -160,7 +160,8 @@ export function mergePomasterHooks(existingText: string | null): HooksMergeOutco
 }
 
 // ============================================================
-// Skill 库（15 份 × 2 镜像；frontmatter 标准公共分母 name+description）
+// Skill 库（14 份 × 2 镜像；frontmatter 标准公共分母 name+description；
+// 原 pomaster-triage 卡随 D-1/D-5 命令退役删除——裁决 18，① 拍卡=pomaster-discovery）
 // ============================================================
 
 /** 单份 skill 清单条目：name=目录名（agentskills.io spec 强制一致）；description 承载触发语义。 */
@@ -186,8 +187,8 @@ export const COMMAND_PANORAMA_LINES: readonly string[] = [
   "pomaster update --check/--yes",
   "pomaster baseline set/confirm        # set = 单键后补销账；confirm = 基线确认 gate（14 unknowns 销账后 digest 快照——closeout 阻断码与 doctor/status 确认态的消费源）",
   "",
-  "# ① TRIAGE —— 秒级判档（MINIMAL/LIGHT/STANDARD；NO-OP 合法）",
-  'pomaster triage "<request>"',
+  "# ① DISCOVERY —— 需求拷问/问题闸/决议图（Brainstorm/Question Gate；D-5，裁决 18）",
+  "pomaster brainstorm start/question-gate/status/decide/promote",
   "",
   "# ② FRAMEWORK —— 许可签发/判卷/显式接管/台账",
   "pomaster permit issue/check/steal/list",
@@ -222,7 +223,6 @@ export const COMMAND_PANORAMA_LINES: readonly string[] = [
   "pomaster inspect <governed-id>",
   "pomaster graph <governed-id> [--view impact]",
   "pomaster new-entity check <governed-id> [--need ...]",
-  "pomaster brainstorm start/question-gate/status/decide/promote",
   "pomaster research list/inspect/request/handoff",
   "pomaster eval --suite behavioral",
   "pomaster catalog status/explain/relock",
@@ -238,7 +238,7 @@ export const COMMAND_PANORAMA_LINES: readonly string[] = [
 ];
 
 // ============================================================
-// 能力速览内容源（09-06 能力显性化 C1/C2 共享——能力不能静默）
+// 能力速览内容源（09-06 能力显性化 C1/C2 共享——能力不能静默）（锚：corpus/master/cutover/owner-adjudications.md#裁决16）
 // ============================================================
 
 /**
@@ -254,17 +254,13 @@ export interface CapabilityEntry {
 }
 
 /**
- * 能力速览八条（PRD 09-06 Owner 裁定面位 C1：判档/Grill 讨论/基线确认/任务收口/
- * 组件画廊/doctor 自检/resolve 标准件选型/graph 对象图——每次 init 全量展示，不做
- * NO_CHANGE 精简）。command 词形全部在 CLI 注册表在座（tests/capability-surfacing
+ * 能力速览七条（PRD 09-06 Owner 裁定面位 C1：Grill 讨论/基线确认/任务收口/组件画廊/
+ * doctor 自检/resolve 标准件选型/graph 对象图——每次 init 全量展示，不做 NO_CHANGE
+ * 精简；D-1/D-5 裁决 18 2026-09-08：原「判档」条随 triage 退役删除，Brainstorm 条
+ * 即八拍① 单入口）。command 词形全部在 CLI 注册表在座（tests/capability-surfacing
  * 钉测）；浏览器/人读纪律零 ANSI 纯文本（§45）。
  */
 export const CAPABILITY_OVERVIEW: readonly CapabilityEntry[] = [
-  {
-    scene: "一次变更开工前先判治理档位",
-    command: 'pomaster triage "<request>"',
-    detail: "秒级判 MINIMAL/LIGHT/STANDARD",
-  },
   {
     scene: "需求要先想清楚再动手（Grill 式讨论）",
     command: "pomaster brainstorm start",
@@ -385,19 +381,20 @@ function commandBlock(lines: readonly string[]): string[] {
 }
 
 /**
- * Skill 库清单（15 条目；prd.md「Skill 库」表逐行对应：router + 八拍九段 +
- * 横切五面）。description 写用户会自然说出的触发词（harness 自动选路由面），
+ * Skill 库清单（14 条目；prd.md「Skill 库」表逐行对应：router + 八拍九段 +
+ * 横切四面；D-1/D-5 裁决 18：pomaster-triage 卡删除，八拍① 卡=pomaster-discovery）。
+ * description 写用户会自然说出的触发词（harness 自动选路由面），
  * 首句自含完整触发语义（防 listing 截断后失效）。
  */
 export const SKILL_MANIFEST: readonly SkillSpec[] = [
   {
     name: "pomaster",
     description:
-      "POMaster vNext 命令全景与八拍 Change Loop 路由。一切 pomaster CLI 使用入口——定位八拍阶段（判档/许可/投影/执行/验证/对账/折叠/收口）后进入对应 pomaster-* 分段 skill；含治理状态速览与 Browser Eyes 双眼引导。",
+      "POMaster vNext 命令全景与八拍 Change Loop 路由。一切 pomaster CLI 使用入口——定位八拍阶段（需求拷问/许可/投影/执行/验证/对账/折叠/收口）后进入对应 pomaster-* 分段 skill；含治理状态速览与 Browser Eyes 双眼引导。",
     bodyLines: [
       "# pomaster —— 命令全景路由",
       "",
-      "一切 pomaster 使用的入口：先在本卡片定位八拍阶段，再进入对应分段 skill（pomaster-bootstrap / pomaster-triage / pomaster-permit / pomaster-context / pomaster-execute / pomaster-verify / pomaster-reconcile / pomaster-compact / pomaster-closeout / pomaster-inspect / pomaster-discovery / pomaster-catalog / pomaster-production / pomaster-runtime）。",
+      "一切 pomaster 使用的入口：先在本卡片定位八拍阶段，再进入对应分段 skill（pomaster-bootstrap / pomaster-discovery / pomaster-permit / pomaster-context / pomaster-execute / pomaster-verify / pomaster-reconcile / pomaster-compact / pomaster-closeout / pomaster-inspect / pomaster-catalog / pomaster-production / pomaster-runtime）。",
       "",
       "## 命令全景",
       "",
@@ -407,7 +404,7 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "",
       "## 何时用哪个",
       "",
-      "- 0 BOOTSTRAP → pomaster-bootstrap；① 判档 → pomaster-triage；② 许可 → pomaster-permit；③ 投影 → pomaster-context；④ 执行 → pomaster-execute；⑤ 验证 → pomaster-verify；⑥ 对账 → pomaster-reconcile；⑦ 折叠 → pomaster-compact；⑧ 收口 → pomaster-closeout。",
+      "- 0 BOOTSTRAP → pomaster-bootstrap；① 需求拷问 → pomaster-discovery；② 许可 → pomaster-permit；③ 投影 → pomaster-context；④ 执行 → pomaster-execute；⑤ 验证 → pomaster-verify；⑥ 对账 → pomaster-reconcile；⑦ 折叠 → pomaster-compact；⑧ 收口 → pomaster-closeout。",
       "- 横切：检视/图/语义解析 → pomaster-inspect；发现面 → pomaster-discovery；策展物料 → pomaster-catalog；生产反馈 → pomaster-production；多 Agent/执行身份 → pomaster-runtime。",
       "- 会话开场速览：`pomaster session`（无子命令形态，SessionStart 注入源，尾部带首答确认协议）；每轮可行动项：`pomaster alerts`（UserPromptSubmit 源，可行动项过滤器 + workflow 路由段，恒 exit 0）。",
       "",
@@ -426,21 +423,6 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "- 会话开场要看治理状态、要确认工具链/MCP 是否就绪、要自更新 CLI 时。",
       "",
       ...commandBlock(COMMAND_PANORAMA_LINES.slice(1, 8)),
-    ],
-  },
-  {
-    name: "pomaster-triage",
-    description:
-      "POMaster 八拍① TRIAGE——秒级判档。当需要为新变更判定治理档位（MINIMAL/LIGHT/STANDARD）、解释判档依据（matched_rule + absent_signals）或确定后续 gate 强度时使用。",
-    bodyLines: [
-      "# pomaster-triage —— 八拍① TRIAGE",
-      "",
-      "## 何时用",
-      "",
-      "- 开始一次变更前判定治理档位；NO-OP 是合法成功。",
-      "- 需要解释「为什么判成这一档」（判定必附缺席信号清单，不冒充实测）。",
-      "",
-      ...commandBlock(['pomaster triage "<request>"']),
     ],
   },
   {
@@ -581,7 +563,7 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
   {
     name: "pomaster-discovery",
     description:
-      "POMaster 发现面与 Grounded Brainstorm 方法论。当用户说需求讨论、想法澄清、brainstorm、怎么规划、新功能探索、拷问需求等自然语言时命中本卡：Grill Strategy 主轴（先 Ground 后 Grill／九类 Expose 拷问动作／Frontier 节奏／核心产物是 Decision Graph）+ 对话形式纪律 + 机器闸命令链（brainstorm start → question-gate → decide set/answer/ready → research request/handoff → promote --apply）+ 任务生命周期全图（discovery→research→八拍②-⑧→closeout）；兼 research artifact 判读（五级 Evidence）与行为评测入口。",
+      "POMaster 八拍① DISCOVERY 与 Grounded Brainstorm 方法论（D-5，裁决 18：八拍①=Brainstorm/Question Gate 单入口）。当用户说需求讨论、想法澄清、brainstorm、怎么规划、新功能探索、拷问需求等自然语言时命中本卡：Grill Strategy 主轴（先 Ground 后 Grill／九类 Expose 拷问动作／Frontier 节奏／核心产物是 Decision Graph）+ 对话形式纪律 + 机器闸命令链（brainstorm start → question-gate → decide set/answer/ready → research request/handoff → promote --apply）+ 任务生命周期全图（discovery→research→八拍②-⑧→closeout）；兼 research artifact 判读（五级 Evidence）与行为评测入口。",
     bodyLines: [
       "# pomaster-discovery —— 发现面（Grounded Brainstorm 方法论）",
       "",

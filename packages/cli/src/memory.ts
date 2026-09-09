@@ -713,7 +713,7 @@ export interface MemoryPromoteCliResult {
   readonly knowledge_status: string | null;
   readonly knowledge_authority: string | null;
   readonly ledger_path: string | null;
-  /** TRUTH/DECISION/EVIDENCE（及 AUTHORITY_POLICY 升格申报）呈报位——非空即须 Owner 裁决。 */
+  /** TRUTH/DECISION/EVIDENCE（及 AUTHORITY_POLICY 升格申报）呈报位——非空即须 Owner 裁决（T3-R3 边界例豁免：呈报机制描述，非具体裁定引注——机制/领域语义词形，非 Owner 裁定引注）。 */
   readonly owner_escalation: readonly {
     readonly id: string;
     readonly bucket: string;

@@ -40,7 +40,6 @@ import { writeFastapiProjectFiles } from "./fixture-fastapi-project-lib.js";
 
 const TASK_ID = "TASK.F0001";
 const CHANGE_OR_TASK = TASK_ID;
-const REQUEST = "接口文档注释样式微调：分页参数说明措辞";
 const ACTOR = "agent:fixture-fastapi";
 const ROLE = "backend";
 const OPS_FILE = "tx.task.json";
@@ -62,7 +61,7 @@ beforeAll(async () => {
 
   chain = await runFixtureChain(root, {
     changeOrTask: CHANGE_OR_TASK,
-    request: REQUEST,
+
     subject: TASK_ID,
     actor: ACTOR,
     role: ROLE,
@@ -142,39 +141,41 @@ describe("fixture 形态与 init（FastAPI 工程）", () => {
 });
 
 // ============================================================
-// 八拍① triage
+// 八拍① 导航面（D-5 裁决 18：triage 退役，alerts 路由段承导航）
 // ============================================================
 
-describe("八拍① triage（FastAPI 工程）", () => {
-  it("triage exit 0：纯文案/样式短路 → MINIMAL（F_COPY_STYLE_ONLY）", () => {
-    const rec = chain.triage;
+describe("八拍① 导航面 alerts（FastAPI 工程）", () => {
+  it("alerts exit 0：hook 契约恒 ok + 无活跃 TASK → 八拍① Brainstorm 单入口", () => {
+    const rec = chain.alerts;
     expect(rec.code).toBe(0);
     const envelope = env(rec);
     expect(envelope.ok).toBe(true);
-    expect(envelope.command).toBe("triage");
-    const result = resultOf(rec);
-    expect(result["profile"]).toBe("MINIMAL");
-    expect(result["matched_rule"]).toBe("F_COPY_STYLE_ONLY");
+    expect(envelope.command).toBe("alerts");
+    const routing = resultOf(rec)["workflow_routing"] as readonly string[];
+    expect(routing.length).toBeGreaterThan(0);
+    expect(routing.join("\n")).toContain("八拍① Brainstorm");
   });
 
-  it("matched_keywords 保序命中：[样式, 注释]（词表序遍历）+ 证据级 MEASURED", () => {
-    const result = resultOf(chain.triage);
-    expect(result["matched_keywords"]).toEqual(["样式", "注释"]);
-    expect(result["evidence_grade"]).toBe("MEASURED");
-    expect(result["ttl_hours"]).toBe(168);
+  it("D-5 退役回归：路由段零 triage 词形（纯文案工程同零残留）", () => {
+    const routing = resultOf(chain.alerts)["workflow_routing"] as readonly string[];
+    expect(routing.join("\n")).not.toContain("triage");
+    const unsourced = resultOf(chain.alerts)["unsourced_categories"] as readonly unknown[];
+    expect(unsourced).toEqual([]);
   });
 
-  it("缺席显式：absent_signals 全量 8 项（MINIMAL 档也不把缺席渲染成干净）", () => {
-    const absent = resultOf(chain.triage)["absent_signals"] as readonly string[];
-    expect(absent).toHaveLength(8);
-    expect(absent).toContain("contract_surface_registry");
-    expect(absent).toContain("governed_object_hits");
+  it("缺席显式：workflow_routing ≤3 行（hook 注入预算纪律）", () => {
+    const routing = resultOf(chain.alerts)["workflow_routing"] as readonly string[];
+    expect(routing.length).toBeLessThanOrEqual(3);
   });
 
-  it("triage 重放字节稳定（同请求 stdout 全等，GOLDEN-L8-1 判据）", async () => {
-    const replay = await runJsonStep(root, ["triage", REQUEST]);
-    expect(replay.code).toBe(0);
-    expect(replay.stdout).toBe(chain.triage.stdout);
+  it("alerts 重放字节稳定（链终态同 state 连续两次运行 stdout 全等，GOLDEN-L8-1 判据）", async () => {
+    // alerts 是投影读面：链推进后对「同一 state 连续两次运行」做字节稳定判定
+    // （对 chain.alerts 原始存档比较无意义——链在其间已推进，时态比较才是诚实判据）。
+    const first = await runJsonStep(root, ["alerts"]);
+    const second = await runJsonStep(root, ["alerts"]);
+    expect(first.code).toBe(0);
+    expect(second.code).toBe(0);
+    expect(second.stdout).toBe(first.stdout);
   });
 });
 
@@ -182,8 +183,8 @@ describe("八拍① triage（FastAPI 工程）", () => {
 // 八拍①②③ maintain --phase pre-dev
 // ============================================================
 
-describe("八拍①②③ maintain --phase pre-dev（FastAPI 工程）", () => {
-  it("pre-dev 链 exit 0：MINIMAL 档位零分支政策——三步全走不跳 permit", () => {
+describe("八拍②③ maintain --phase pre-dev（FastAPI 工程；D-5 裁决 18 二步化）", () => {
+  it("pre-dev 链 exit 0：二步全走不跳 permit（零分支政策——档位分支位随 D-1/D-5 消亡）", () => {
     const rec = chain.predev;
     expect(rec.code).toBe(0);
     const envelope = env(rec);
@@ -191,17 +192,15 @@ describe("八拍①②③ maintain --phase pre-dev（FastAPI 工程）", () => {
     const result = resultOf(rec);
     expect(result["mode"]).toBe("pre_dev_chain");
     expect(result["failed_at_step"]).toBeNull();
-    const triage = result["triage"] as Record<string, unknown>;
-    expect(triage["profile"]).toBe("MINIMAL");
+    expect(result["triage"]).toBeUndefined(); // D-1/D-5：零 compat 字段
     expect(result["permit"]).not.toBeNull();
     expect(result["projection"]).not.toBeNull();
   });
 
-  it("① triage 视图与独立 triage 同判（MINIMAL + matched 保序一致）", () => {
-    const triage = resultOf(chain.predev)["triage"] as Record<string, unknown>;
-    expect(triage["matched_keywords"]).toEqual(
-      resultOf(chain.triage)["matched_keywords"],
-    );
+  it("二步链编排纪律：permit 签发后投影步在场（零分支政策）", () => {
+    const result = resultOf(chain.predev);
+    expect((result["permit"] as Record<string, unknown>)["permit_ref"]).toMatch(/^PERMIT\./);
+    expect((result["projection"] as Record<string, unknown>)["must_entries"]).toBeTruthy();
   });
 
   it("② permit 五件套：PERMIT.TASK_F0001.1 + scope 圈定单对象 + ttl 168 拍", () => {
@@ -253,8 +252,6 @@ describe("八拍①②③ maintain --phase pre-dev（FastAPI 工程）", () => {
       CHANGE_OR_TASK,
       "--phase",
       "pre-dev",
-      "--request",
-      REQUEST,
       "--subject",
       TASK_ID,
       "--actor",

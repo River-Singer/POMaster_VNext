@@ -25,7 +25,7 @@
  * 性能预算字段」——双探针独立呈现不聚合，lighthouse=实验室判卷面 / web_vitals=字段
  * 数据判卷面）+ schemathesis（CONTRACT 加强腿工具，B3-4「从 OpenAPI 生成
  * property-based 用例；FastAPI profile 招牌件」）。
- * P1-5 起新增 sensor_capability_catalog 探针（PRD v0.5.2 §6.5/§14 P1-5，裁决 8 D7=A
+ * P1-5 起新增 sensor_capability_catalog 探针（PRD v0.5.2 §6.5/§14 P1-5，裁决 8 D7=A（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
  * 「loader + doctor 联结」）：catalog/sensors/ 六条 sensor_capability 经 kernel
  * loadCatalogSensors 载入；availability_probe 是声明式引用（四克制：防第二套探测机制，
  * catalog 是数据不执行），doctor 侧只做引用→既有探针行的名字解析（见
@@ -127,7 +127,7 @@ export interface DoctorResult {
    */
   readonly legacy_specs_present?: number;
   /**
-   * SPEC.* 预植呈现（裁定批 D D2 2026-09-05；加法字段不改 ok 语义）：in_place =
+   * SPEC.* 预植呈现（裁定批 D D2 2026-09-05；加法字段不改 ok 语义）：in_place =（历史裁定，锚缺失——裁定批 D，2026-09-05；未入 corpus 台账，T3-R3 如实标注）
    * truth-index 中 SPEC.* 对象行数 / kit = 包内清单 evidence spec 分母——纯读呈现位
    * （seeded_assets 先例）；truth-index 不可读或清单缺席 → 字段缺席（显式缺席）。
    */
@@ -318,7 +318,7 @@ export async function probePlaywrightMcp(
 }
 
 // ============================================================
-// 重入口安装物探针（D13 2026-09-03 修订：重入口默认；B7 裁定 2026-09-04：init 单一
+// 重入口安装物探针（D13 2026-09-03 修订：重入口默认；B7 裁定 2026-09-04：init 单一（锚：corpus/master/cutover/owner-adjudications.md#裁决11⑧）
 // 重入口——hooks/skills 未装即指路重跑 init）
 // ============================================================
 
@@ -392,13 +392,14 @@ async function readTextOrNull(absolute: string): Promise<string | null> {
  * 可验——init 重跑零写入即本探针持续 READY）。探针按入口形态判「应装未装」而不一刀切：
  * - not-installed（无 AGENTS.md / 无重入口安装标记——含历史已删除形态的存量标记）→
  *   MISSING_CONFIGURATION（带 init 路标：重入口为默认，hooks/skills 未装直接指路
- *   重跑 init——B7 裁定 2026-09-04）；
+ *   重跑 init——B7 裁定 2026-09-04）；（锚：corpus/master/cutover/owner-adjudications.md#裁决11⑧）
  * - heavy → hooks：settings.json 在座 + 两条注册项在场 + 两条 hook 命令（pomaster
  *   session / pomaster alerts）可执行体 PATH 可达（R4 2026-09-06 生效自检——注册在座
  *   而命令不可达时 hooks 静默失效）= READY；文件缺失/注册项缺失/命令不可达 =
  *   MISSING_CONFIGURATION（不可达带 HEAVY_ENTRY_HOOKS_REPAIR_HINT 三段路标），坏
  *   JSON/结构不合 = DEFECT（坏配置会被 harness 整体跳过、hooks 静默失效）；
- *   skills：15 份 × 双镜像全在且逐字节一致 = READY，任一缺失 = MISSING_CONFIGURATION，
+ *   skills：14 份 × 双镜像全在且逐字节一致 = READY（原 15 份——pomaster-triage 卡随
+ *   D-1/D-5 命令退役删除，owner-adjudications.md#裁决18），任一缺失 = MISSING_CONFIGURATION，
  *   字节漂移 = DEFECT（双镜像漂移会使「哪份被加载」成为行为分叉点——单一事实源纪律破坏）。
  */
 export async function probeHeavyEntryInstall(
@@ -767,12 +768,12 @@ async function runGauntletProbes(
  *    确定性腿探针并存——BROWSER 双通道各自显式呈现；P-v06 批次 2.6 起 playwright MCP
  *    探针同款四态 fail-closed——双 MCP 在呈现面各自缺席显式，禁静默）。
  * 3.5) heavy_entry_hooks / heavy_entry_skills —— 重入口安装物探针（D13 2026-09-03
- *    修订：重入口默认；B7 裁定 2026-09-04 init 单一重入口——hooks 注册态按 command
+ *    修订：重入口默认；B7 裁定 2026-09-04 init 单一重入口——hooks 注册态按 command（锚：corpus/master/cutover/owner-adjudications.md#裁决11⑧）
  *    词形核对、hook 命令可执行体 PATH 可达核对（R4 生效自检，不可达带三段修复路标）、
  *    skills 15×2 双镜像逐字节一致核对；重入口安装标记缺席 = 未安装 →
  *    MISSING_CONFIGURATION 指路重跑 init；共享 readEntryMode 单次读取——
  *    probeMcpServerConfigured 先例）。
- * 4) sensor_capability_catalog —— P1-5 catalog/sensors/ 载入（裁决 8 D7=A loader+doctor
+ * 4) sensor_capability_catalog —— P1-5 catalog/sensors/ 载入（裁决 8 D7=A loader+doctor（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
  *    联结；availability_probe 声明式引用→既有行名解析，禁二次探测；catalog 缺席
  *    MISSING_CONFIGURATION / 物料坏形 DEFECT——坏物料 ≠ catalog 缺席，fail-closed 显式）。
  */
@@ -888,12 +889,12 @@ export async function runDoctor(
   probes.push(await probeChromeDevtoolsMcp(rootDir));
   probes.push(await probePlaywrightMcp(rootDir));
 
-  // 3.5) 重入口安装物探针（D13 2026-09-03 修订：重入口默认；B7 裁定 2026-09-04
+  // 3.5) 重入口安装物探针（D13 2026-09-03 修订：重入口默认；B7 裁定 2026-09-04（锚：corpus/master/cutover/owner-adjudications.md#裁决11⑧）
   //      init 单一重入口）：hooks 注册态 + 命令可达性（R4）+ skills 双镜像一致态；
   //      重入口安装标记缺席 = 未安装 → MISSING_CONFIGURATION 指路重跑 init。
   probes.push(...(await probeHeavyEntryInstall(rootDir, { resolveHookExecutable: deps?.resolveHookExecutable })));
 
-  // 4) P1-5 Sensor Capability Catalog（裁决 8 D7=A：loader + doctor 联结）。
+  // 4) P1-5 Sensor Capability Catalog（裁决 8 D7=A：loader + doctor 联结）。（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
   //    只做声明式引用的行名解析（SENSOR_DETECTOR_TO_DOCTOR_PROBE），绝不二次探测；
   //    坏物料/缺席显式入探针行（fail-closed），ok 语义与既有行一致（非 READY → ok=false）。
   let sensors: readonly SensorCapabilityAvailability[] | undefined;
@@ -977,7 +978,7 @@ export async function runDoctor(
   } catch {
     legacySpecsPresent = 0;
   }
-  // SPEC.* 预植呈现（裁定批 D D2）：纯读加法字段（seeded_assets 同款纪律——异常归
+  // SPEC.* 预植呈现（裁定批 D D2）：纯读加法字段（seeded_assets 同款纪律——异常归（历史裁定，锚缺失——裁定批 D，2026-09-05；未入 corpus 台账，T3-R3 如实标注）
   // 缺席不炸 doctor；truth-index 不可读/清单缺席 → 字段缺席显式）。
   let specPreplant: SpecPreplantPresentation | null = null;
   try {

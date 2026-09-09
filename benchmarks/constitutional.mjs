@@ -7,8 +7,9 @@
  * Owner 决议 2026-09-01，见本文件 a3_ruling）。
  *
  * 结构可区分性（§90.3「三类任务走同一套流程 = Adaptive Governance 失败」的判卷化）：
- *   - tiny / normal 走 CLI triage 关键词引擎（surface = "cli:triage"，信封只产
- *     profile/证据级/关键词，无 gate 执行载体）；
+ *   - tiny / normal 走 CLI 轻探针面（D-1/D-5 裁决 18，owner-adjudications.md#裁决18：
+ *     原 cli:triage 判档入口随档位语义退役——tiny 重锚 cli:alerts（hook 恒 exit 0 面）、
+ *     normal 重锚 cli:status（未初始化 fail-closed 面），信封无 gate 执行载体）；
  *   - constitutional 走 kernel catalog v1 完整治理面（surface = "kernel:catalog+gatekeeper"），
  *     全部取 packages/kernel 既有 API 真实执行（禁止 mock 假跑）：
  *       1. catalog-lock 校验：readCatalogLock + verifyCatalogLock（全量条目 sha256 对账，
@@ -129,14 +130,17 @@ function stableStringify(value) {
  * artifact=triage-envelope（该档真实产物即信封本体）。
  * 纪律：签名体不含 tier 名——tier 是签名映射的键（path_signature.tiny/normal/…），
  * 若混入签名体，「两两不同」断言将因身份标签恒异而永真（判卷真空）；同路判定只看路径字段。
+ * D-1/D-5 注记（裁决 18）：surface 词形改读条目申报（tiny=cli:alerts / normal=cli:status）。
  */
 function triageTierSignature(entry) {
+  // D-1/D-5 裁决 18：surface 改读条目申报词形（tiny=cli:alerts / normal=cli:status），
+  // 档位 profile 位随退役恒 null（结构差异实体——与 constitutional 的 catalog 锚互异）。
   return {
-    surface: "cli:triage",
+    surface: entry.surface ?? "cli:probe",
     profile: entry.profile ?? null,
     matched_rule: entry.matched_rule ?? null,
     gate_ids: Array.isArray(entry.gate_ids) ? entry.gate_ids : [],
-    artifacts: ["triage-envelope"],
+    artifacts: entry.surface === "cli:status" ? ["status-envelope"] : ["alerts-envelope"],
   };
 }
 
@@ -443,7 +447,7 @@ export async function runConstitutionalBenchmark(options = {}) {
     ok: axisSurfaceDistinct && axisGateSetDistinct && axisProfileDistinct,
     detail:
       collapsedAxes.length === 0
-        ? `三档在全部真实轴上两两可区分（§90.3 同路=失败未触发；头版=三轴聚合，非整签名两两不等的同义反复——surface/matched_rule/artifacts 为常量词形不计入）：surface constitutional="${signatureConstitutional.surface}" vs tiny/normal="cli:triage"；gate_ids constitutional=${signatureConstitutional.gate_ids.length} 条 vs 两档 0 条；profile constitutional="${signatureConstitutional.profile}" vs triage 档位词`
+        ? `三档在全部真实轴上两两可区分（§90.3 同路=失败未触发；头版=三轴聚合，非整签名两两不等的同义反复——surface/matched_rule/artifacts 为常量词形不计入）：surface constitutional="${signatureConstitutional.surface}" vs tiny/normal="${signatureTiny.surface}/${signatureNormal.surface}"；gate_ids constitutional=${signatureConstitutional.gate_ids.length} 条 vs 两档 0 条；profile constitutional="${signatureConstitutional.profile}" vs 轻探针 null（D-5 裁决 18 档位词退役）`
         : `三档同路（§90.3 Adaptive Governance 失败）：塌缩轴=${collapsedAxes.join("；")}（另整签名两两不等检测：${pairwise.filter((p) => !p.distinct).map((p) => p.pair).join("；") || "无"}）`,
   });
 
@@ -451,17 +455,17 @@ export async function runConstitutionalBenchmark(options = {}) {
   assertions.push({
     name: "distinct-axis-execution-surface",
     ok: axisSurfaceDistinct,
-    detail: `执行面轴：constitutional="${signatureConstitutional.surface}"，tiny="${signatureTiny.surface}"，normal="${signatureNormal.surface}"`,
+    detail: `执行面轴：constitutional="${signatureConstitutional.surface}"，tiny="${signatureTiny.surface}"（D-5 裁决 18 重锚），normal="${signatureNormal.surface}"`,
   });
   assertions.push({
     name: "distinct-axis-gate-set",
     ok: axisGateSetDistinct,
-    detail: `gate 集合轴：constitutional ${signatureConstitutional.gate_ids.length} 条 GATE.* vs tiny=${signatureTiny.gate_ids.length} / normal=${signatureNormal.gate_ids.length}（triage 信封无 gate 执行载体）`,
+    detail: `gate 集合轴：constitutional ${signatureConstitutional.gate_ids.length} 条 GATE.* vs tiny=${signatureTiny.gate_ids.length} / normal=${signatureNormal.gate_ids.length}（轻探针信封无 gate 执行载体）`,
   });
   assertions.push({
     name: "distinct-axis-profile-value",
     ok: axisProfileDistinct,
-    detail: `profile 值轴：constitutional 锚 catalog profile="${signatureConstitutional.profile}"，tiny="${signatureTiny.profile}"，normal="${signatureNormal.profile}"（catalog 锚即档——A3 裁定 3，Owner 2026-09-01；triage 不物化 STRICT 档，无双轨）`,
+    detail: `profile 值轴：constitutional 锚 catalog profile="${signatureConstitutional.profile}"，tiny="${signatureTiny.profile}"，normal="${signatureNormal.profile}"（catalog 锚即档——A3 裁定 3，Owner 2026-09-01；D-5 裁决 18 后 triage 档位词退役，轻探针 profile 位恒 null）`,
   });
 
   const ok = assertions.length > 0 && assertions.every((a) => a.ok);

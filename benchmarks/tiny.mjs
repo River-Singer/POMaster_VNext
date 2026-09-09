@@ -1,14 +1,18 @@
 /**
  * tiny.mjs —— Self-hosting benchmark · Tiny Change 档（PRD §90.3）。
  *
- * 场景：「README badge 文案调整」——纯文案变更，期望 Profile = MINIMAL
- * （F_COPY_STYLE_ONLY 短路快道：命中文案/样式关键词且无升档触发）。
+ * 场景：「README badge 文案调整」——纯文案变更。
+ *
+ * 探针重锚（D-1/D-5，Owner 2026-09-08，owner-adjudications.md#裁决18）：原 `pomaster
+ * triage` 判档入口随档位语义退役删除；tiny 档的度量意图「最小治理成本」改由 alerts
+ * 未初始化/极简输出契约承载（`pomaster alerts --json`——hook 每轮面，恒 exit 0，
+ * 未初始化=零输出静默）。
  *
  * 断言：
- *   1. triage 信封 ok = true；
- *   2. result.profile === "MINIMAL"；
+ *   1. alerts 信封 ok = true（恒 exit 0 hook 契约）；
+ *   2. initialized=false（临时空目录）且 workflow_routing 缺席——零输出极简语义；
  *   3. 原始输出（stdout+stderr）无 architect/research/spawn/subagent 字样
- *      （MINIMAL 档语义 = 几乎感觉不到治理，不得出现任何重角色 spawn 迹象）。
+ *      （几乎感觉不到治理，不得出现任何重角色 spawn 迹象）。
  *
  * 退出码：0 = 全部断言通过；1 = 断言失败；2 = 基准装置错误（CLI 缺失/崩溃）。
  * 单跑：node benchmarks/tiny.mjs ；亦可被 run-all.mjs import（import 时不自动执行）。
@@ -20,7 +24,9 @@ import fs from "node:fs";
 
 export const TINY_TIER = "tiny";
 export const TINY_SCENARIO = "README badge 文案调整";
-export const TINY_EXPECTED_PROFILE = "MINIMAL";
+/** D-5 裁决 18：档位词退役——探针面词形（cli:alerts），profile 位恒 null。 */
+export const TINY_EXPECTED_PROFILE = null;
+export const TINY_SURFACE = "cli:alerts";
 
 /** MINIMAL 档输出中禁入的字样（命中即断言失败）。 */
 const FORBIDDEN_SPAWN_PATTERN = /(architect|research|spawn|subagent)/i;
@@ -32,17 +38,25 @@ export function resolveCliBin() {
   return fs.existsSync(bin) ? bin : null;
 }
 
-/** 以子进程跑 `pomaster triage <request> --json`（args 数组直传，不经 shell）。 */
-export function runTriage(cliBin, request) {
-  const res = spawnSync(process.execPath, [cliBin, "triage", request, "--json"], {
+/** 以子进程跑 `pomaster alerts --json`（临时空目录——args 数组直传，不经 shell）。 */
+export function runAlertsProbe(cliBin) {
+  const probeDir = path.join(
+    fs.realpathSync(path.dirname(fileURLToPath(import.meta.url))),
+    ".probe-tmp-tiny",
+  );
+  fs.rmSync(probeDir, { recursive: true, force: true });
+  fs.mkdirSync(probeDir, { recursive: true });
+  const res = spawnSync(process.execPath, [cliBin, "--dir", probeDir, "alerts", "--json"], {
     encoding: "utf8",
     windowsHide: true,
   });
-  return {
+  const out = {
     status: res.status,
     stdout: typeof res.stdout === "string" ? res.stdout : "",
     stderr: typeof res.stderr === "string" ? res.stderr : "",
   };
+  fs.rmSync(probeDir, { recursive: true, force: true });
+  return out;
 }
 
 /**
@@ -72,7 +86,7 @@ export async function runTinyBenchmark() {
     };
   }
 
-  const run = runTriage(cliBin, TINY_SCENARIO);
+  const run = runAlertsProbe(cliBin);
 
   /** @type {any} */
   let envelope = null;
@@ -88,9 +102,12 @@ export async function runTinyBenchmark() {
   } else {
     assertions.push({ name: "envelope-ok", ok: envelope.ok === true, detail: `ok=${envelope.ok}` });
     assertions.push({
-      name: "profile-minimal",
-      ok: envelope.result?.profile === TINY_EXPECTED_PROFILE,
-      detail: `profile=${envelope.result?.profile} (rule ${envelope.result?.matched_rule})`,
+      name: "uninitialized-zero-routing",
+      ok:
+        envelope.result?.initialized === false &&
+        Array.isArray(envelope.result?.workflow_routing) &&
+        envelope.result.workflow_routing.length === 0,
+      detail: `initialized=${envelope.result?.initialized}，workflow_routing=[]（零输出极简——几乎感觉不到治理的度量点）`,
     });
     const raw = `${run.stdout}\n${run.stderr}`;
     const hit = raw.match(FORBIDDEN_SPAWN_PATTERN);
@@ -106,7 +123,8 @@ export async function runTinyBenchmark() {
     tier: TINY_TIER,
     scenario: TINY_SCENARIO,
     expected: TINY_EXPECTED_PROFILE,
-    profile: envelope?.result?.profile ?? null,
+    surface: TINY_SURFACE,
+    profile: null,
     matched_rule: envelope?.result?.matched_rule ?? null,
     evidence_grade: envelope?.result?.evidence_grade ?? null,
     matched_keywords: envelope?.result?.matched_keywords ?? [],
@@ -114,7 +132,7 @@ export async function runTinyBenchmark() {
     ok,
     assertions,
   };
-  if (!ok && envelope === null) entry.error = "triage 未产出可解析的 JSON 信封";
+  if (!ok && envelope === null) entry.error = "alerts 未产出可解析的 JSON 信封";
   return entry;
 }
 
@@ -132,7 +150,7 @@ if (isMain) {
     console.log(`  [${a.ok ? "PASS" : "FAIL"}] ${a.name}: ${a.detail}`);
   }
   console.log(
-    `[tiny] profile=${entry.profile} expected=${entry.expected} rule=${entry.matched_rule} durationMs=${entry.durationMs} → ${entry.ok ? "PASS" : "FAIL"}`,
+    `[tiny] surface=${entry.surface} durationMs=${entry.durationMs} → ${entry.ok ? "PASS" : "FAIL"}`,
   );
   process.exit(entry.ok ? 0 : entry.error ? 2 : 1);
 }

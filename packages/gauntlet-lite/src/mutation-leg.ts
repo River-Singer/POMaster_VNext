@@ -127,7 +127,7 @@ export const MUTATION_ADAPTER_TOOL_ID = "gauntlet:mutation";
 export const STRYKER_METRIC_DIALECT = "mutation:stryker_changed_code";
 /** mutmut 腿口径（与 stryker 口径在记录级区分——能力落差不可混算为同一 dialect）。 */
 export const MUTMUT_METRIC_DIALECT = "mutation:mutmut_changed_code";
-/** 缺席记录的机器可辨口径轴（P12c policySkip 映射裁定同款）。 */
+/** 缺席记录的机器可辨口径轴（P12c policySkip 映射裁定同款；裁定全文 docs/vocab-pr-0002.md）。 */
 export const MUTATION_POLICY_SKIP_METRIC_DIALECT = "mutation:policy_skip";
 /** 配置缺席态（not_configured）的口径轴词形。 */
 export const MUTATION_METRIC_DIALECT_UNDECLARED = "mutation:undeclared";

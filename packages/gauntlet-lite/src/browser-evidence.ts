@@ -1,12 +1,12 @@
 /**
  * browser-evidence.ts —— P0.5-2 Screenshot Evidence Binding 最小编排入口
- * （PRD §7 Evidence Artifact Binding + §14 P0.5-2 tracer；裁决8③④，2026-09-01）
+ * （PRD §7 Evidence Artifact Binding + §14 P0.5-2 tracer；裁决8③④，2026-09-01）（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
  * ＋ P0.5-4b Observation Receipt 最小通路（W1-D2 批 2 · PRD §6.13 + §14 P0.5-4；
- * Owner 裁决 8 ③ D1=A「blob sha256 即身份」的 EVR 衔接裁定——回执引用 blob 身份，
+ * Owner 裁决 8 ③ D1=A「blob sha256 即身份」的 EVR 衔接裁定——回执引用 blob 身份，（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
  * 不新增 EVR- id）。
  *
  * 通路（PRD §7.2 四环节）：Raw Artifact → Infrastructure-issued Receipt（kernel
- * persistEvidenceArtifact 内容寻址落盘 = receipt，sha256 即身份，裁决8③ D1=A）→
+ * persistEvidenceArtifact 内容寻址落盘 = receipt，sha256 即身份，裁决8③ D1=A）→（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
  * Normalized Gate Result → Evidence Pack（GRN 携 artifact_refs 入账）。
  *
  * ============================================================
@@ -21,7 +21,7 @@
  *   的 Evidence（更不产生 OBSERVED 回执）。
  *
  * ============================================================
- * POLICY.GATE.BROWSER@0.2.0 绑定条款（裁决8④ D4=A：存在性绑定进门禁判卷本体）
+ * POLICY.GATE.BROWSER@0.2.0 绑定条款（裁决8④ D4=A：存在性绑定进门禁判卷本体）（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
  * ============================================================
  * - 0.1.0 判卷（adapter 三件套清单，本 PR 未动）：三件齐备 → passed；缺件 → not_run；
  *   连接失败 → failed。
@@ -105,7 +105,7 @@ function bindingItemLocation(grn: string): string {
 }
 
 /**
- * POLICY.GATE.BROWSER@0.2.0 绑定条款判卷（纯函数；裁决8④ D4=A「判卷本体」落点）。
+ * POLICY.GATE.BROWSER@0.2.0 绑定条款判卷（纯函数；裁决8④ D4=A「判卷本体」落点）。（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
  * - outcome.bound === true → 记录原样（绑定完好，passed 成立）；
  * - 记录 verdict 非 passed → 条款不适用（无存在性主张；not_run/failed 不受约束）；
  * - passed + 绑定不完整 → **判卷红**：verdict failed + counts.violations +1 +
@@ -165,7 +165,7 @@ export interface BrowserScreenshotBindingOutcome {
   /**
    * §6.13 Observation Receipt（P0.5-4b 最小通路 · W1-D2 批 2）：passed/warning 腿
    * 且 blob persist 成功时签发——result=OBSERVED + artifact_refs=[screenshot blob 身份]
-   * （blob 落盘走 persistEvidenceArtifact 通路，EVR 衔接=裁决 8 ③ D1=A）。null =
+   * （blob 落盘走 persistEvidenceArtifact 通路，EVR 衔接=裁决 8 ③ D1=A）。null =（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
    * 无回执（环境 blocked / 证据缺件 / 绑定载荷缺席——Benchmark E：环境错的观察
    * 不产生可冒充 Evidence 的 OBSERVED 回执）。回执落盘分区 Owner 未裁——返回面携带。
    */
@@ -179,7 +179,7 @@ export interface BrowserScreenshotBindingOutcome {
 /**
  * Observation Receipt 组装的编排侧覆盖位（全部可选；缺省值确定性派生——同输入重放
  * 同回执，A4）。缺省锚：observation_id=OBS-<browser 腿 ranAtSeq>；
- * sensor_capability=SENSOR.BROWSER.INTERACTIVE（catalog/sensors 物料词形，裁决 8 D6=A）；
+ * sensor_capability=SENSOR.BROWSER.INTERACTIVE（catalog/sensors 物料词形，裁决 8 D6=A）；（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
  * adapter=chrome-devtools-mcp（§6.13 例文词形——本腿 MCP 实现即 chrome-devtools）；
  * operation=screenshot（catalog operations 词族——回执 artifact 收窄 screenshot，D3=A
  * 同口径）；surface=USER_SURFACE（§6.8 Outside-In 第一层——三件套即用户可见现实）；
@@ -271,7 +271,7 @@ export async function runBrowserGateLegsWithScreenshotBinding(
   let artifactRefs: readonly EvidenceArtifactRefInput[] | undefined;
   let replayedReport: McpEvidenceReport | null = null;
 
-  // passed = 唯一 PASS 主张（判红只咬 passed，见 adjudicateEvidenceBindingClause）；
+  // passed = 唯一 PASS 主张（判红只咬 passed，见 adjudicateEvidenceBindingClause（T3-R3 边界例豁免：判卷器领域语义——机制/领域语义词形，非 Owner 裁定引注））；
   // warning 是被 cap 的 passed（tool_version 漂移等，证据三件套同样齐备）——persist/
   // attach 照常（篡改审计链不断），但条款判红不咬 warning（非绿向词形，无 PASS 可维持）。
   if (browserLeg.verdict === "passed" || browserLeg.verdict === "warning") {

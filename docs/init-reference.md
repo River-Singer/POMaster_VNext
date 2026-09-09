@@ -168,30 +168,30 @@ TTY 交互 init 在平台选择后接技术栈逐键问卷——**前端 9 键 +
   微探针/八拍路标，带逐段预算与缺席诚实）+ 尾部首答确认协议（模型首轮必须确认注入并
   转述 Next-Action 路由）；
 - `pomaster status` 尾行 `next:` 给同一张路由表的当前建议；
-- `pomaster alerts` 恒带 workflow 路由段（无活跃 TASK → 八拍① triage 或 brainstorm
-  start 双入口；有活跃 TASK → 八拍位置 + 下一拍命令 + 分段卡名）；
+- `pomaster alerts` 恒带 workflow 路由段（无活跃 TASK → 八拍① brainstorm start
+  单入口——D-5 2026-09-08，owner-adjudications.md#裁决18；有活跃 TASK → 八拍位置 +
+  下一拍命令 + 分段卡名）；
 - `pomaster doctor` 会用 `heavy_entry_hooks` / `heavy_entry_skills` 探针核对重入口安装物
   （hooks 注册态 + hook 命令 PATH 可达的生效自检 + 双镜像逐字节一致；未安装/不可达 →
   MISSING_CONFIGURATION 并给修复指引——重跑 init / 检查 PATH / 项目 hooks 信任审批
   前置说明）。
 
-## config.yaml 与 profile 三档
+## config.yaml
 
 ```yaml
 version: 1
-profile: LIGHT            # 治理档位（信息性人类偏好，不进判卷）：MINIMAL | LIGHT | STANDARD
-triage:
-  ttl_hours: 168          # triage 结果有效期，过期必须 re-triage
+capability_tips: true     # status 尾部轮换能力 tip（呈现位偏好；false 关闭 = 零输出）
+store:
+  state: .pomaster/state/truth-index.json
+  objects: .pomaster/truth/objects/
 ```
 
-**profile 三档怎么选**（信息性人类偏好——档位只影响呈现与偏好记录，不进任何 gate/permit
-判卷、不决定激活；激活由 context compile 的 lane/role/capability 机制承担）：
-
-| 档位 | 适合 | 体感 |
-|---|---|---|
-| `MINIMAL` | 脚手架/原型/个人实验 | 几乎感觉不到 POMaster（文案改动→一行 gate） |
-| `LIGHT`（默认） | 正常业务迭代 | 秒级判档 + FAST gate 内循环 + delta 审查 |
-| `STANDARD` | 核心链路/多角色协作 | 全 gate 矩阵 + 浏览器双通道证据 + 抽样复核 |
+**档位语义已退役**（D-1/D-5，Owner 2026-09-08，owner-adjudications.md#裁决18）：历史版本的
+config.yaml 模板含 `profile`（MINIMAL/LIGHT/STANDARD 信息性档位）与 `triage.ttl_hours`
+键，且曾有 `pomaster triage` 判档命令——档位语义已彻底退役（不留 compat 双写）；
+存量项目 config.yaml 中的残留键 init 不读不删（人类可编辑物，init 永不覆盖）。
+治理强度由 gate/permit/closeout 等机器判卷面确定性承担，不靠档位开关；目录/能力激活
+判据是「治理能力相关性」（`.pomaster/layout.json` 各目录 activation_hint）。
 
 **Authority（谁说了算）**：`.pomaster/state/authority.json` 默认单人形态（一切 authority
 位置由项目 Owner 应答）；多人协作出现信号后再演化细粒度 owner——`owner_registry` 数组

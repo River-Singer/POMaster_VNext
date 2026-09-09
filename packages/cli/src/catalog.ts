@@ -363,6 +363,7 @@ export async function runCatalogExplain(
 
 // ============================================================
 // catalog relock：漂移恢复键（P-v06 批次 2.5；Owner 裁决 2026-09-03）
+// （历史裁定，锚缺失——P-v06 批次 2.5 执行轮；未入 corpus 台账，T3-R3 如实标注）
 // ============================================================
 
 export interface CatalogRelockResult {

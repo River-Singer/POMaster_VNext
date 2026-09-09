@@ -6,7 +6,7 @@
  * 的裸形态——commander 混合模式（research list/inspect 先例）：带子命令词形时分发到
  * 子命令，裸形态/仅旗标时运行本投影。本文件只做投影，会话注册语义零涉及。
  *
- * 分段注入（裁定批 E P1；09-05 提案 §2 P1——Trellis 9 分段 + 预算纪律的 vNext 形态，
+ * 分段注入（裁定批 E P1；09-05 提案 §2 P1——Trellis 9 分段 + 预算纪律的 vNext 形态，（历史裁定，锚缺失——裁定批 E，2026-09-05 执行轮；未入 corpus 台账，T3-R3 如实标注）
  * 全部为既有读取面的编排投影，零新治理语义）：
  * - ①分母+seq ②任务/执行/锁 ③Next-Action（P2 路由）④许可/例外 ⑤可行动项
  *   ⑥attention 摘要 ⑦完整性微探针 ⑧八拍路标（P5 不变量锚）；
@@ -73,7 +73,7 @@ import { okOutcome } from "./envelope.js";
 /** SessionStart 注入输出硬上限（官方 hook 上限逐字对齐；共享 capPlainOutput 截断）。 */
 export const SESSION_OUTPUT_HARD_CAP = ALERTS_OUTPUT_HARD_CAP;
 
-/** 总输出预算（裁定批 E P1 ADR：hook 10k 硬上限内留 2k 余量的软预算）。 */
+/** 总输出预算（裁定批 E P1 ADR：hook 10k 硬上限内留 2k 余量的软预算）。（历史裁定，锚缺失——裁定批 E，2026-09-05 执行轮；未入 corpus 台账，T3-R3 如实标注） */
 export const SESSION_TOTAL_BUDGET = 8_000;
 
 /** 单段预算（超限降级指针行——段内密度纪律，ADR 沿提案「每段独立截断策略」）。 */

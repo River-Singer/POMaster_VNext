@@ -35,7 +35,8 @@ export function parseCapabilityTipsEnabled(configText: string): boolean {
 
 /**
  * 读盘版：config.yaml 缺席/不可读 → 默认开（true）。纯读零写入；读路径降级
- * fail-open（呈现位偏好，不值得为此告警——与 parseConfigProfile 缺省 LIGHT 同线）。
+ * fail-open（呈现位偏好，不值得为此告警——缺席缺省同线；原 parseConfigProfile
+ * 回读面已随 D-1/D-5 档位语义退役删除，owner-adjudications.md#裁决18）。
  */
 export async function readCapabilityTipsEnabled(rootDir: string): Promise<boolean> {
   let raw: string;

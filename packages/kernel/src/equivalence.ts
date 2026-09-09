@@ -82,7 +82,7 @@ export interface EquivalenceWordForm {
   readonly source_ref: string;
 }
 
-/** 等价声明者（C5 自报——kernel 不判其真，只登记声明事实；登记≠裁决）。 */
+/** 等价声明者（C5 自报——kernel 不判其真，只登记声明事实；登记≠裁决（T3-R3 边界例豁免：C5 机制语义——机制/领域语义词形，非 Owner 裁定引注））。 */
 export interface EquivalenceDeclarationAudit {
   readonly actor_type: Actor["actorType"];
   readonly actor: string;

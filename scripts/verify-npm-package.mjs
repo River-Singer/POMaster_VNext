@@ -1,4 +1,4 @@
-// npm 单包发布 staging 验证（Owner 裁决 10 配套；`scripts/build-npm-package.mjs` 之后跑）。
+// npm 单包发布 staging 验证（Owner 裁决 10 配套；`scripts/build-npm-package.mjs` 之后跑）。（锚：corpus/master/cutover/owner-adjudications.md#裁决10）
 //
 // 两道验证，全部可复跑：
 // 1) `npm pack --dry-run` 断言：bin 在座 / catalog 完整（与仓库 catalog 文件集全等[
@@ -50,7 +50,7 @@ function walkFiles(dir, relativeTo = dir) {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const full = join(dir, entry.name);
     if (entry.isDirectory()) {
-      // __pycache__ 排除（裁定批 G / D8-1 同款纪律——裁决 12 loadCatalogTools 先例）：
+      // __pycache__ 排除（裁定批 G / D8-1 同款纪律——裁决 12 loadCatalogTools 先例；锚：corpus/master/cutover/owner-adjudications.md#裁决14④）
       // Python import 缓存目录属本机运行残留（catalog/tools 下跑种子工具即生成），
       // 非策展物料；不排除会让「仓库 catalog 文件集」混入缓存文件、与打包文件集
       // （npm files 白名单天然不含）假性失配——根除「计数差需人工清理」依赖。
@@ -153,14 +153,14 @@ const strays = packedPaths.filter(
 );
 assert(strays.length === 0, "无白名单外杂物", strays.join(", "));
 
-// 1.4.1 B4 裁定（Owner 2026-09-04）：宪法文档本体不得出现在 tarball——只住开发仓
+// 1.4.1 B4 裁定（Owner 2026-09-04）：宪法文档本体不得出现在 tarball——只住开发仓（锚：corpus/master/cutover/owner-adjudications.md#裁决11⑥）
 //      治理档案（stage 白名单本不含；本断言防未来扩清单时回归）。
 const constitutionLeak = packedPaths.filter((file) =>
   file.includes("dot-pomaster-directory-constitution"),
 );
 assert(constitutionLeak.length === 0, "tarball 无宪法文档本体（B4）", constitutionLeak.join(", "));
 
-// 1.5 零 dependencies + 可发布形态（Owner 裁决 10）。
+// 1.5 零 dependencies + 可发布形态（Owner 裁决 10）。（锚：corpus/master/cutover/owner-adjudications.md#裁决10）
 const stageManifest = JSON.parse(readFileSync(join(STAGE_PKG, "package.json"), "utf8"));
 const forbiddenFields = ["dependencies", "peerDependencies", "optionalDependencies", "devDependencies"];
 const presentForbidden = forbiddenFields.filter((field) => stageManifest[field] !== undefined);
@@ -375,7 +375,7 @@ assert(
 );
 assert(!evidenceSample.includes("GENERATED"), "播种件 marker-free 抽查（evidence 件）");
 
-// SPEC.* 预植（裁定批 D D2 / Owner 2026-09-05 裁定 (a)：init 预植——init 从此写
+// SPEC.* 预植（裁定批 D D2 / Owner 2026-09-05 裁定 (a)：init 预植——init 从此写（历史裁定，锚缺失——裁定批 D，2026-09-05；未入 corpus 台账，T3-R3 如实标注）
 // store）：fresh init 后 truth-index 19 个 SPEC.* 对象在册（PROPOSED 起步），
 // seq=1（骨架 + 预植单事务）。
 const smokeTruthIndex = JSON.parse(
@@ -401,7 +401,7 @@ assert(
 );
 
 // 2.3 `npx pomaster status`：播种分面计数呈现（B6e——B6a 未尽事项 1 接线冒烟）+
-//     SPEC 预植计数呈现（裁定批 D D2）。
+//     SPEC 预植计数呈现（裁定批 D D2）。（历史裁定，锚缺失——裁定批 D，2026-09-05；未入 corpus 台账，T3-R3 如实标注）
 smoke("npx pomaster status", "pomaster status", {
   expectExit: [0],
   expectWords: [

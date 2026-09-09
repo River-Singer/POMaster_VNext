@@ -1,10 +1,10 @@
 /**
  * trace.ts —— Execution Trace 命令面（W1-C2 · PRD v0.5.2 §8 + §14 P0.5-3；
- * OD-5 已批词形 `trace show <AGX>` / `trace list`——Owner 裁决 8 ②（2026-09-01，
+ * OD-5 已批词形 `trace show <AGX>` / `trace list`——Owner 裁决 8 ②（2026-09-01，（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
  * corpus/master/cutover/owner-adjudications.md）：「trace 独立 traces/ 分区 + 投影 +
  * 可选 --seal / retention 四档逐字仅记录不 GC」；契约段 docs/kernel-api.md §23.3）。
  *
- * 词形（裁决 8 ② OD-5；与 §6.19 五命令无碰撞）：
+ * 词形（裁决 8 ② OD-5；与 §6.19 五命令无碰撞）：（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
  * - `trace show <AGX>`：缺省 = 纯投影纯读（compileExecutionTrace on-demand——
  *   OD-2 主形态，journal+evidence 是唯一事实源零漂移）；封存在座时呈现封存快照 +
  *   canonical 重放对账（readSealedExecutionTrace——stale 显式呈现非错误，快照不冒充
@@ -69,7 +69,7 @@ function kernelFail<TResult>(command: string, err: unknown, empty: TResult): Com
 // ============================================================
 
 export interface TraceShowInput {
-  /** 物化选项（裁决 8 ② OD-2「I + 可选显式 --seal」）：封存当前投影为审计快照。 */
+  /** 物化选项（裁决 8 ② OD-2「I + 可选显式 --seal」）：封存当前投影为审计快照。（锚：corpus/master/cutover/owner-adjudications.md#裁决8） */
   readonly seal?: boolean;
   /** 留存档四档词形（§8.3 逐字；--seal 必填成对；kernel VOCAB_INVALID_VALUE 唯一裁决位）。 */
   readonly retention?: string;

@@ -1,6 +1,11 @@
 /**
  * triage-matrix.spec.ts —— P15-FillB：Router 判定矩阵域补量（逐词形/逐边界一测）。
  *
+ * D-1/D-5 退役注记（Owner 2026-09-08，owner-adjudications.md#裁决18）：`pomaster triage`
+ * 命令已删除（八拍①=Brainstorm）——原「CLI triage 命令面」describe 块（4 例命令编排
+ * 断言）随命令退役删除；本文件其余为关键词引擎（eval 语料机 cli_keyword evaluator
+ * 唯一实现）的语料机测试面，继续钉住 rule_v0/cli_keyword 语料分母的判定矩阵。
+ *
  * 矩阵行来源（triage.ts 判定顺序：升档触发 → 短路快道 → 兜底缺省，拒绝加权求和）：
  * - E_CONTRACT_KEYWORD（STANDARD/INFERRED）：TRIAGE_ESCALATION_KEYWORDS 7 词形逐词；
  * - F_COPY_STYLE_ONLY（MINIMAL/MEASURED）：TRIAGE_COPY_STYLE_KEYWORDS 13 词形逐词；
@@ -9,10 +14,7 @@
  * 「每条规则可单测可入 Eval」——triage.ts TriageResult.matched_rule 注）；
  * 词表字面锁定测试是词汇表 PR 扩词纪律的机器化（PR-0009 收编后纪律不变）：扩词必须显式改测试。
  */
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   TRIAGE_ABSENT_SIGNALS,
   TRIAGE_COPY_STYLE_KEYWORDS,
@@ -20,20 +22,8 @@ import {
   TRIAGE_ESCALATION_KEYWORDS,
   TRIAGE_PROFILES,
   TriageResult,
-  runCli,
   triageRequest,
-  type CliEnvelope,
 } from "@pomaster/cli";
-
-let dir: string;
-
-beforeEach(() => {
-  dir = mkdtempSync(join(tmpdir(), "pomaster-cli-triage-matrix-"));
-});
-
-afterEach(() => {
-  rmSync(dir, { recursive: true, force: true });
-});
 
 /** 断言一次判定恰好落在指定矩阵行（profile/evidence_grade/matched_rule 三元组）。 */
 function expectRow(result: TriageResult, profile: string, grade: string, rule: string): void {
@@ -283,6 +273,51 @@ describe("Router 判定矩阵——规则·档位·证据级绑定映射", () =>
     }
   });
 
+  it("matched_rule 三值闭包：任意混合文本判定落三桶之一（rule 词形语料机闭包，eval 分派分支完备）", () => {
+    const RULES = ["E_CONTRACT_KEYWORD", "F_COPY_STYLE_ONLY", "DEFAULT_NO_SIGNAL"];
+    const samples = [
+      "contract 修改样式配色",
+      "样式 配色 字体 contract 契约",
+      "新增导出功能",
+      "",
+      "copy css comment typo",
+    ];
+    for (const sample of samples) {
+      const result = triageRequest(sample);
+      expect(RULES, `样本「${sample}」的 matched_rule 必须落三值闭包`).toContain(
+        result.matched_rule,
+      );
+    }
+  });
+
+  it("absent_signals 恒为 TRIAGE_ABSENT_SIGNALS 同一值集（三分支共享常量，缺席显式清单零分叉）", () => {
+    for (const result of [
+      triageRequest("contract 契约同步"),
+      triageRequest("纯文案微调"),
+      triageRequest("新增批量导入"),
+    ]) {
+      expect(result.absent_signals).toEqual([...TRIAGE_ABSENT_SIGNALS]);
+    }
+  });
+
+  it("词表词条 trim 卫生：零前后空白（includes 子串语义下带空白词条会系统性失配）", () => {
+    for (const table of [TRIAGE_ESCALATION_KEYWORDS, TRIAGE_COPY_STYLE_KEYWORDS]) {
+      for (const word of table) {
+        expect(word, `词条「${word}」不得含前后空白`).toBe(word.trim());
+        expect(word.length).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("中文升档词条为（跨域/契约）真实命中升档分支（中文词条行为面；与「全局」负例形成词形对照）", () => {
+    expectRow(triageRequest("跨域接口联调"), "STANDARD", "INFERRED", "E_CONTRACT_KEYWORD");
+    expectRow(triageRequest("契约字段补充说明"), "STANDARD", "INFERRED", "E_CONTRACT_KEYWORD");
+    expect(
+      triageRequest("跨域接口联调").matched_keywords,
+      "中文词条命中保序进 matched_keywords",
+    ).toContain("跨域");
+  });
+
   it("三词表元素唯一且非空（collectKeywords 去重逻辑的前提不变量）", () => {
     for (const table of [TRIAGE_ESCALATION_KEYWORDS, TRIAGE_COPY_STYLE_KEYWORDS, TRIAGE_ABSENT_SIGNALS]) {
       expect(new Set(table).size).toBe(table.length);
@@ -290,60 +325,5 @@ describe("Router 判定矩阵——规则·档位·证据级绑定映射", () =>
         expect(item.length).toBeGreaterThan(0);
       }
     }
-  });
-});
-
-// ============================================================
-// CLI triage 命令面（规则桶判定的编排层接线）
-// ============================================================
-
-describe("Router 判定矩阵——CLI triage 命令面", () => {
-  it("--json 信封 result 与纯函数同构（profile/rule/grade/ttl/absent_signals 逐字段相等）", async () => {
-    const request = "contract 流程改造";
-    const lines: string[] = [];
-    const code = await runCli(["--dir", dir, "triage", request, "--json"], {
-      stdout: (line) => lines.push(line),
-      stderr: () => undefined,
-    });
-    expect(code).toBe(0);
-    const envelope = JSON.parse(lines.join("\n")) as CliEnvelope<TriageResult>;
-    expect(envelope.command).toBe("triage");
-    expect(envelope.ok).toBe(true);
-    expect(envelope.result).toEqual(triageRequest(request));
-  });
-
-  it("human 文案逐段渲染模板（triage → 档位 (rule 规则, grade=证据级, ttl=168h)；人读模式 stdout 两行）", async () => {
-    const lines: string[] = [];
-    const code = await runCli(["--dir", dir, "triage", "openapi 契约同步"], {
-      stdout: (line) => lines.push(line),
-      stderr: () => undefined,
-    });
-    expect(code).toBe(0);
-    expect(lines[0]).toBe(
-      "triage → STANDARD (rule E_CONTRACT_KEYWORD, grade=INFERRED, ttl=168h)",
-    );
-    expect(lines[1]).toBe(`  absent signals: ${TRIAGE_ABSENT_SIGNALS.join(", ")}`);
-  });
-
-  it("兜底档 human 呈现：LIGHT 请求走同一命令面（triage → LIGHT (rule DEFAULT_NO_SIGNAL…）", async () => {
-    const lines: string[] = [];
-    const code = await runCli(["--dir", dir, "triage", "新增批量导入功能"], {
-      stdout: (line) => lines.push(line),
-      stderr: () => undefined,
-    });
-    expect(code).toBe(0);
-    expect(lines[0]).toBe(
-      "triage → LIGHT (rule DEFAULT_NO_SIGNAL, grade=NOT_CONFIGURED, ttl=168h)",
-    );
-  });
-
-  it("缺 <request> 位置参数 → commander 用法错误 exit 1（fail-closed 不裸栈）", async () => {
-    const errLines: string[] = [];
-    const code = await runCli(["--dir", dir, "triage"], {
-      stdout: () => undefined,
-      stderr: (line) => errLines.push(line),
-    });
-    expect(code).toBe(1);
-    expect(errLines.join("\n")).toContain("request");
   });
 });

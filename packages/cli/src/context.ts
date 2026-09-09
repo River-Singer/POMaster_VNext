@@ -61,7 +61,7 @@
  *   回显），零写入；stale 不阻断（ok=true，呈现不阻断是 D24 read_only_service 姿态；
  *   ADR 留痕）。
  *
- * P0.5-1（PRD §5.4；裁决 8 ②）`context explain`：catalog include/exclude 决策
+ * P0.5-1（PRD §5.4；裁决 8 ②）`context explain`：catalog include/exclude 决策（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
  * 记录面（why_included/why_excluded 逐条）——决策记录与 Agent Context 严格隔离
  * （excluded 不进五分区 manifest，只用于 explain/Audit/Eval/Debug）。
  *
@@ -138,7 +138,7 @@ export function classifyKernelError(err: unknown): CliError {
 }
 
 /** context compile/explain 共享的结构化 applicability 输入（P0.5-1；全 optional 零破坏）。
- * A1 裁定（2026-09-04，vNext Batch 4 R1）：治理档位不设输入位——档位信息性，
+ * A1 裁定（2026-09-04，vNext Batch 4 R1）：治理档位不设输入位——档位信息性，（锚：corpus/master/cutover/owner-adjudications.md#裁决11①）
  * 不参与 catalog applicability 判卷。 */
 export interface ContextApplicabilityInputs {
   /** CHANGE.* / TASK.* 引用（透传 taskRef——激活许可通道）。 */

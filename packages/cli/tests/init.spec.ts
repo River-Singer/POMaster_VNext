@@ -114,7 +114,7 @@ describe("init 首次创建（CREATED）", () => {
       expect(existsSync(join(dir, ".agents", "skills", spec.name, "SKILL.md"))).toBe(true);
       expect(existsSync(join(dir, ".claude", "skills", spec.name, "SKILL.md"))).toBe(true);
     }
-    expect(SKILL_MANIFEST).toHaveLength(15);
+    expect(SKILL_MANIFEST).toHaveLength(14); // D-1/D-5 裁决 18：pomaster-triage 卡退役 15→14
   });
 
   it("init 后账本含 01 schema 全部顶层键 + D2 预植 19 SPEC 对象（seq=1、denominators/producers 空）", async () => {
@@ -169,13 +169,13 @@ describe("init 首次创建（CREATED）", () => {
     expect(!/\d{4}-\d{2}-\d{2}T/.test(read(TRUTH_INDEX_RELATIVE))).toBe(true);
   });
 
-  it("入口文件含生成标记、重入口安装标记、当前 profile 与常用命令（重入口默认）", async () => {
+  it("入口文件含生成标记、重入口安装标记与常用命令（重入口默认；D-1/D-5 裁决 18：零 profile/档位词形）", async () => {
     await runInit(dir);
     const agents = read(AGENTS_MD_RELATIVE);
     expect(agents).toContain(GENERATED_MARKER);
     expect(agents).toContain("<!-- pomaster:entry-mode:heavy -->");
-    expect(agents).toContain("profile: LIGHT");
-    expect(agents).toContain("pomaster triage");
+    expect(agents).not.toContain("profile:");
+    expect(agents).not.toContain("triage");
     expect(agents).toContain("pomaster doctor");
     expect(agents).toContain(".pomaster/state/truth-index.json");
     // 重入口安装物段：skills 库 + session/alerts hooks + 修复路标。
@@ -311,34 +311,25 @@ describe("init 不覆盖人类文件", () => {
     expect(
       outcome.result.files.find((f) => f.file === AGENTS_MD_RELATIVE)?.action,
     ).toBe("updated");
-    expect(read(AGENTS_MD_RELATIVE)).toContain("profile: LIGHT");
+    expect(read(AGENTS_MD_RELATIVE)).toContain("## 常用命令");
   });
 
-  it("已存在的 config.yaml 不被覆盖；profile 从中解析", async () => {
+  it("已存在的 config.yaml 不被覆盖（人类可编辑物；存量 profile/triage 残留键 init 不读不删——D-1/D-5 裁决 18 退役）", async () => {
     const { writeFileSync, mkdirSync } = await import("node:fs");
     mkdirSync(join(dir, ".pomaster"), { recursive: true });
     writeFileSync(
       join(dir, CONFIG_RELATIVE),
-      "version: 1\nprofile: STANDARD\n",
+      "version: 1\nprofile: STANDARD\ntriage:\n  ttl_hours: 168\n",
       "utf8",
     );
     const outcome = await runInit(dir);
-    expect(outcome.result.profile).toBe("STANDARD");
-    expect(read(CONFIG_RELATIVE)).toBe("version: 1\nprofile: STANDARD\n");
+    expect((outcome.result as Record<string, unknown>).profile).toBeUndefined();
+    expect(read(CONFIG_RELATIVE)).toBe(
+      "version: 1\nprofile: STANDARD\ntriage:\n  ttl_hours: 168\n",
+    );
     expect(
       outcome.result.files.find((f) => f.file === CONFIG_RELATIVE)?.action,
     ).toBe("unchanged");
-  });
-
-  it("config.yaml 无 profile 键 → 回退 LIGHT + CONFIG_PROFILE_MISSING 告警", async () => {
-    const { writeFileSync, mkdirSync } = await import("node:fs");
-    mkdirSync(join(dir, ".pomaster"), { recursive: true });
-    writeFileSync(join(dir, CONFIG_RELATIVE), "version: 1\n", "utf8");
-    const outcome = await runInit(dir);
-    expect(outcome.result.profile).toBe("LIGHT");
-    expect(outcome.warnings.map((w) => w.code)).toContain(
-      "CONFIG_PROFILE_MISSING",
-    );
   });
 
   it("已存在但不可解析的 truth-index → INVALID_STATE ok=false 且原文件保留", async () => {
@@ -378,13 +369,13 @@ describe("init 不覆盖人类文件", () => {
 });
 
 describe("init 人读输出与信封", () => {
-  it("人读行包含 change 汇总与 profile", async () => {
+  it("人读行包含 change 汇总（D-1/D-5 裁决 18：profile 行退役）", async () => {
     const outcome = await runInit(dir);
     // 顶部新增 logo 横幅后，change 汇总不再是首行——按结构定位（logo 之后正文段）。
     const summary = outcome.human.find((line) => line.startsWith("init: "));
     expect(summary).toBeDefined();
     expect(summary).toContain("CREATED");
-    expect(outcome.human.join("\n")).toContain("profile: LIGHT");
+    expect(outcome.human.join("\n")).not.toContain("profile: ");
   });
 
   it("人读输出顶部带 ASCII logo：首行前缀 ██████╗、含 VNext，结构 logo→空行→产物输出", async () => {
@@ -415,8 +406,8 @@ describe("init 人读输出与信封", () => {
     expect(outcome.human[outcome.human.length - 1]).toBe(
       "Contact / commercial licensing: allenxujianyang@outlook.com",
     );
-    // 前导空行分隔：横幅不与能力速览段粘连（09-06 C1 版式：profile → 能力速览 → 横幅）。
-    expect(text).toContain("  profile: LIGHT\n\n  你现在可以做什么");
+    // 前导空行分隔：横幅不与能力速览段粘连（D-1/D-5 裁决 18 后版式：…baseline→observation→preset→能力速览 → 横幅）。
+    expect(text).toContain("\n\n  你现在可以做什么");
     expect(text).toContain("（--view impact 出影响闭包）\n\nPOMaster · Governed");
   });
 
@@ -660,7 +651,7 @@ describe("init --platforms 合法组合（F1）", () => {
     const cursor = read(CURSOR_RULES_RELATIVE);
     expect(cursor).toContain("alwaysApply: true");
     expect(cursor).toContain("AGENTS.md");
-    expect(cursor).toContain("pomaster triage");
+    expect(cursor).not.toContain("triage");
     expect(cursor).toContain("Browser Eyes");
     expect(cursor).toContain("chrome-devtools MCP");
     // heavy cursor 规则不自带 skills 镜像描述缺失——指向 .agents 通用层（Cursor 原生读取）。
@@ -743,11 +734,11 @@ describe("init --platforms 合法组合（F1）", () => {
     expect(text).toContain("platforms:");
     expect(text).toContain("[claude] created");
     expect(text).toContain("[codex] covered");
-    // 平台段在 profile 行之前、横幅之前（§45 人读版式；--json 不受影响）。
+    // 平台段在能力速览段与横幅之前（§45 人读版式；--json 不受影响）。
     const platformIdx = text.indexOf("platforms:");
-    const profileIdx = text.indexOf("profile: LIGHT");
+    const capIdx = text.indexOf("你现在可以做什么");
     expect(platformIdx).toBeGreaterThan(-1);
-    expect(platformIdx).toBeLessThan(profileIdx);
+    expect(platformIdx).toBeLessThan(capIdx);
   });
 });
 
@@ -1411,7 +1402,7 @@ describe("预铺目录骨架与 layout.json", () => {
       "---",
       "",
       "# POMaster vNext — Agent 入口指针",
-      "唯一事实源是仓库根的 `AGENTS.md`（由 `pomaster init` 生成，幂等）；先读根目录 `AGENTS.md`，遵循其「当前治理档位」与「常用命令」。",
+      "唯一事实源是仓库根的 `AGENTS.md`（由 `pomaster init` 生成，幂等）；先读根目录 `AGENTS.md`，遵循其「常用命令」。",
     ].join("\n");
     mkdirSync(join(dir, ".cursor", "rules"), { recursive: true });
     writeFileSync(join(dir, CURSOR_RULES_RELATIVE), legacyThin, "utf8");
@@ -1432,24 +1423,27 @@ describe("预铺目录骨架与 layout.json", () => {
 });
 
 // ============================================================
-// A1 档位信息性（vNext Batch 4 R1）：轴词形保留 + 呈现注记落盘
+// D-1/D-5 档位语义退役（Owner 裁决 18，2026-09-08）：模板零 profile/triage 词形 +
+// 引擎模块保留（eval 语料机）注记
 // ============================================================
 
-describe("A1 档位信息性（vNext Batch 4 R1）", () => {
-  it("TRIAGE_PROFILES 轴词形在册（判卷力解除但轴保留——PR-0005/裁决 8② 不 supersede）", () => {
+describe("D-1/D-5 档位语义退役（裁决 18）", () => {
+  it("TRIAGE_PROFILES 引擎词形在册（eval 语料机保留——产品面退役不改语料分母）", () => {
     expect(TRIAGE_PROFILES).toEqual(["MINIMAL", "LIGHT", "STANDARD"]);
   });
 
-  it("A1 词形注记落盘：config.yaml 模板与重入口/最小两形态入口均含「信息性人类偏好」注记", async () => {
+  it("模板零档位词形：config.yaml 模板与重入口/最小两形态入口均无 profile/triage/TTL 语义", async () => {
     await runInit(dir);
-    expect(read(CONFIG_RELATIVE)).toContain("信息性人类偏好");
-    expect(read(AGENTS_MD_RELATIVE)).toContain("信息性人类偏好");
-    // 最小形态（--platforms none）入口同注记——A1 呈现词形与平台选择无关。
+    expect(read(CONFIG_RELATIVE)).not.toContain("profile");
+    expect(read(CONFIG_RELATIVE)).not.toContain("triage");
+    expect(read(AGENTS_MD_RELATIVE)).not.toContain("信息性人类偏好");
+    expect(read(AGENTS_MD_RELATIVE)).not.toContain("triage");
+    // 最小形态（--platforms none）入口同退役——词形清除与平台选择无关。
     const minimal = mkdtempSync(join(tmpdir(), "pomaster-cli-init-minimal-"));
     try {
       await runInit(minimal, { platforms: "none" });
-      expect(readFileSync(join(minimal, AGENTS_MD_RELATIVE), "utf8")).toContain(
-        "信息性人类偏好",
+      expect(readFileSync(join(minimal, AGENTS_MD_RELATIVE), "utf8")).not.toContain(
+        "triage",
       );
     } finally {
       rmSync(minimal, { recursive: true, force: true });

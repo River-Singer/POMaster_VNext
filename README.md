@@ -50,7 +50,7 @@ corepack pnpm studio:react:dev  # React sidecar（antd 对照浏览，端口 600
 
 - **brainstorm（Grill 拷问）**：Grounded Brainstorm 方法论——先 Ground 后 Grill、九类拷问动作、每轮只打当前 frontier；拷问产出 **Decision Graph**（不是聊天记录里的一串问题），收敛由机器判卷，火候不够就 fail-closed 列出全部缺口。
 - **promote 即建任务**：讨论收敛 → `promote --apply`，TASK.*/CHANGE.* 治理对象落库——想法进状态平面的唯一入口。
-- **八拍 Change Loop 机器判卷收口**：triage 判档 → permit 签发 → context 投影 → maintain 受控写 → check 判卷 → reconcile 对账 → compact 折叠 → closeout 收口。每一拍都有对应 CLI 命令、机器判卷、落账留痕。
+- **八拍 Change Loop 机器判卷收口**：brainstorm 需求收敛（八拍①）→ permit 签发 → context 投影 → maintain 受控写 → check 判卷 → reconcile 对账 → compact 折叠 → closeout 收口。每一拍都有对应 CLI 命令、机器判卷、落账留痕。
 
 ### ③ 基线：14 键问卷 → 预置草案 → confirm 烙印 → 漂移检出
 
@@ -77,8 +77,8 @@ pomaster portability bootstrap/check
 pomaster update --check/--yes
 pomaster baseline set/confirm   # set = 单键后补销账；confirm = 基线确认 gate（14 unknowns 销账后 digest 快照——closeout 阻断码与 doctor/status 确认态的消费源）
 
-# ① TRIAGE —— 秒级判档（MINIMAL/LIGHT/STANDARD；NO-OP 合法）
-pomaster triage "<request>"
+# ① DISCOVERY —— 需求拷问/问题闸/决议图（Brainstorm/Question Gate）
+pomaster brainstorm start/question-gate/status/decide/promote
 
 # ② FRAMEWORK —— 许可签发/判卷/显式接管/台账
 pomaster permit issue/check/steal/list
@@ -113,7 +113,6 @@ pomaster resolve "<need>" [--hints ...]
 pomaster new-entity check <governed-id> [--need ...]
 pomaster inspect <governed-id>
 pomaster graph <governed-id> [--view impact]
-pomaster brainstorm start/question-gate/status/decide/promote
 pomaster research list/inspect/request/handoff
 pomaster eval --suite behavioral
 pomaster catalog status/explain/relock
@@ -157,16 +156,16 @@ pomaster init
 
 ```yaml
 version: 1
-profile: LIGHT            # 治理档位（信息性人类偏好）：MINIMAL | LIGHT | STANDARD
-triage:
-  ttl_hours: 168          # triage 结果有效期，过期必须 re-triage
+capability_tips: true     # status 尾部轮换能力 tip（呈现位偏好；false 关闭 = 零输出）
+store:
+  state: .pomaster/state/truth-index.json
+  objects: .pomaster/truth/objects/
 ```
 
-| 档位 | 适合 | 体感 |
-|---|---|---|
-| `MINIMAL` | 脚手架/原型/个人实验 | 几乎感觉不到 POMaster（文案改动→一行 gate） |
-| `LIGHT`（默认） | 正常业务迭代 | 秒级判档 + FAST gate 内循环 + delta 审查 |
-| `STANDARD` | 核心链路/多角色协作 | 全 gate 矩阵 + 浏览器双通道证据 + 抽样复核 |
+> 治理强度不靠档位开关：每一拍的判卷由 gate/permit/closeout 等机器判卷面确定性承担，
+> 不存在 MINIMAL/LIGHT/STANDARD 档位分级（历史档位语义已按 Owner 裁定 D-1 彻底退役，
+> 2026-09-08——目录/能力的激活判据是「治理能力相关性」，见 `.pomaster/layout.json`
+> 各目录 activation_hint）。
 
 Authority（谁说了算）：`.pomaster/state/authority.json` 默认单人形态（一切 authority 位置由项目 Owner 应答）；多人协作出现信号后再演化细粒度 owner——`owner_registry` 数组逐个登记即可。
 
@@ -249,7 +248,7 @@ flowchart TB
 > 前者每圈归零，后者每圈复利。
 
 ```text
-① TRIAGE      Router 判档（MINIMAL/LIGHT/STANDARD…）秒级分流；NO-OP 是合法成功
+① DISCOVERY   Brainstorm/Question Gate 需求收敛：Decision Graph 判卷推进；promote 即建任务
 ② FRAMEWORK   ← 人唯一主场：只锁五件套（身份/Capability/契约引用/Permit范围/验收形状）
                  条件接受即可开工，逐行签核制度已废除
 ③ PROJECTION  最小充分上下文投影；经验按触发条件注入 ADVISORY 区
@@ -267,9 +266,7 @@ flowchart TB
 
 **需求**：「把原型里的条目清单计算页照搬落地——33 列可编辑大表 + 2 个公式列 + 保存/快照/回滚等 9 类操作」。同一模块后来长出第二章：把 58 条业务公式（需求简报误记 42 条，拷问阶段实测纠正）从「散写各实体、部分零实现」改为「数据驱动注册进独立公式引擎，业务页只调引擎 API」。
 
-**判档（triage）**【示意拍，以任务元数据代证】：一句话需求进来，`pomaster triage` 秒级定档，任务带一句话标题与优先级落库——治理成本从第一拍起就与变更风险成比例。
-
-**拷问（brainstorm → promote）**：不接受需求转述——先提取原型线框，再拷问出 5 个决策点（组件逐个配对、API 缺口清单抛给 Owner 二选一……），收敛为 Decision Graph 后 `promote --apply` 建任务。最有立场的一条：「列配置要不要持久化」被协议的六项强制要求拦成「先不做，仅会话内记忆，并给出未来纯增量路径」——治理机制替需求做减法。
+**拷问（brainstorm → promote，八拍①）**：不接受需求转述——先提取原型线框，再拷问出 5 个决策点（组件逐个配对、API 缺口清单抛给 Owner 二选一……），收敛为 Decision Graph 后 `promote --apply` 建任务。最有立场的一条：「列配置要不要持久化」被协议的六项强制要求拦成「先不做，仅会话内记忆，并给出未来纯增量路径」——治理机制替需求做减法。（沿革注：案例摄于前代工作流，当年的「判档（triage）示意拍」已随 D-1/D-5 档位语义退役删除——2026-09-08，owner-adjudications.md#裁决18；需求收敛一律走八拍① Brainstorm 单入口。）
 
 **许可与投影（permit → context）**【近似拍：前代以 planner gate + 协议绑定代行 permit】：开工前，「这个任务允许碰哪些协议面」已被机器记录为 12 项 gate 全通过 + 11 条协议绑定；`pomaster context compile` 向 implement 与 check 两侧注入同一组规格（各 20 条），每条带字节级哈希锚定——写的人与验的人拿同一份事实。第二章拆出的 4 个子任务，投影条目连上游 research 文件都带理由逐条注入：调研不靠会话记忆传导，靠文件传导。
 

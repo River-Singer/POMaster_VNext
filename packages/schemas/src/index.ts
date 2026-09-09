@@ -27,7 +27,7 @@
  * 『是否异常』完全交给 LLM 主观判断」的类型面落点；CHALLENGED 复用 CHANGE_VALUES
  * 不重复登记）。
  * W1-C 增量（16）：Execution Trace Manifest Lite（PRD v0.5.2 §8 行为侧车 +
- * §14 P0.5-3 + §15 Benchmark C + §16 Case A；Owner 裁决 8 ② 2026-09-01）。Trace 是
+ * §14 P0.5-3 + §15 Benchmark C + §16 Case A；Owner 裁决 8 ② 2026-09-01）。Trace 是（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
  * Identity 的派生投影/侧车（A19，不新增第二套身份）；reads/agent_spawns 恒空数组
  * 显式（Lite 边界 =「不先采集完整 read trace」）；§8.4 隐私封条 = 闭形态
  * additionalProperties:false 无自由文本载荷位。trace_retention 轴（§8.3 逐字四档）
@@ -40,7 +40,7 @@
  * blocked 证据链消费位）+ observation_receipt（§6.13 yaml 十三键——「Agent 必须证明
  * 我看过」，result=OBSERVED 必须 ≥1 条 artifact_refs 的 allOf 封条 = Benchmark E
  * 「Observation Receipt 不得冒充有效业务 Evidence」的 schema 级落点）。artifact_refs
- * 复用 07 definitions.blob_ref / object_id 绝对 $id 引用（裁决 8 ③ D1=A blob sha256
+ * 复用 07 definitions.blob_ref / object_id 绝对 $id 引用（裁决 8 ③ D1=A blob sha256（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
  * 即身份不新增 EVR- id；D3=A blob 分支收窄——组合加载须注册 07）。词形轴
  * environment_doctor_verdict / observation_surface / observation_result /
  * SENSOR./JOURNEY./ENV. 与通路编号 OBS-/ENVREC- 已随 PR-0009 收编（vocab-lock
@@ -50,7 +50,7 @@
  * 的前置冻结面。
  * VB-PR1 增量（18）：Grounded Decision Graph（PRD v0.5.3 §5/§16 Decision Graph +
  * §9/§10 research_request/research_handoff/finding_link 三平面 definitions 同住一份
- * schema——10 号零改动，Owner 裁决 9③）。词形纪律（Owner 裁决 9②）：DECISION./
+ * schema——10 号零改动，Owner 裁决 9③）。词形纪律（Owner 裁决 9②）：DECISION./（锚：corpus/master/cutover/owner-adjudications.md#裁决9）
  * RESEARCH.REQ./FINDING./DISCOVERY.INTENT./FACT. 是 Discovery 平面局部词形（不入
  * governed prefixes、不过 parseGovernedId），GRILLING/GRILLED/GRILL_CONFIRMED
  * 禁词负例登记（§1.1 不新增 State Axis）；Grounding Verdict 五值是**派生判定不落盘**

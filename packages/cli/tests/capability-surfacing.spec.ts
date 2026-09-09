@@ -109,12 +109,12 @@ function extractPomasterCommands(text: string): string[] {
 // ============================================================
 
 describe("C1 · init 能力速览段", () => {
-  it("人读横幅含「你现在可以做什么」段：8 条场景 → 命令/出口逐条在座（§45 零 ANSI 纯文本）", async () => {
+  it("人读横幅含「你现在可以做什么」段：7 条场景 → 命令/出口逐条在座（§45 零 ANSI 纯文本；D-1/D-5 裁决 18 判档条退役 8→7）", async () => {
     const outcome = await runInit(dir);
     expect(outcome.ok).toBe(true);
     const text = outcome.human.join("\n");
     expect(text).toContain("你现在可以做什么（能力速览——完整命令面见 pomaster --help）:");
-    expect(CAPABILITY_OVERVIEW).toHaveLength(8);
+    expect(CAPABILITY_OVERVIEW).toHaveLength(7); // D-1/D-5 裁决 18：判档条退役，8→7
     for (const entry of CAPABILITY_OVERVIEW) {
       expect(text).toContain(entry.scene);
       expect(text).toContain(entry.command === "" ? entry.detail : entry.command);
@@ -183,7 +183,10 @@ describe("C2 · AGENTS.md 能力地图节", () => {
     // 能力地图节不含安装物专属路径表述，反之亦然（抽查双向）。
     const mapSection = agents.slice(mapIdx, installIdx);
     expect(mapSection).not.toContain(".agents/skills/");
-    expect(mapSection).toContain('pomaster triage "<request>"');
+    // D-1/D-5（裁决 18）：triage 判档条已随档位语义退役删除——能力地图零 triage 词形，
+    // Brainstorm 条（八拍① 单入口）在座。
+    expect(mapSection).not.toContain("triage");
+    expect(mapSection).toContain("pomaster brainstorm start");
   });
 
   it("最小形态（--platforms none）无能力地图节（重入口模板专属；常用命令段照常在座）", async () => {
@@ -201,7 +204,7 @@ describe("C2 · AGENTS.md 能力地图节", () => {
     const mapSection = agents.slice(mapIdx, installIdx);
     const registry = buildRegistryTree();
     const commands = extractPomasterCommands(mapSection);
-    expect(commands.length).toBeGreaterThanOrEqual(7); // 8 条中 7 条命令出口（画廊条目非命令）
+    expect(commands.length).toBeGreaterThanOrEqual(6); // 7 条中 6 条命令出口（画廊条目非命令；D-1/D-5 裁决 18 判档条退役）
     for (const command of commands) {
       expectCommandInRegistry(command, registry);
     }

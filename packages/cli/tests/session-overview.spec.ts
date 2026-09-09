@@ -196,12 +196,12 @@ describe("session 分段注入（P1：分段标题 + 预算纪律 + 空段省略
     }
   });
 
-  it("Next-Action 段（P2 同源）：fresh init → 八拍① triage 路标；next_action 结构化字段同源", async () => {
+  it("Next-Action 段（P2 同源）：fresh init → 八拍① brainstorm start 路标（D-5 裁决 18）；next_action 结构化字段同源", async () => {
     await runInit(dir);
     const outcome = await runSessionOverview(dir);
     expect(outcome.result.next_action?.route_id).toBe("R_NO_ACTIVE_TASK");
     expect(outcome.human.join("\n")).toContain(
-      "- 建议: pomaster triage \"<request>\"（八拍①——",
+      "- 建议: pomaster brainstorm start（八拍①——",
     );
   });
 
@@ -232,7 +232,9 @@ describe("session 分段注入（P1：分段标题 + 预算纪律 + 空段省略
     const outcome = await runSessionOverview(dir);
     const text = outcome.human.join("\n");
     expect(text).toContain("【八拍路标】");
-    expect(text).toContain("- ① TRIAGE: pomaster triage");
+    expect(text).toContain("- 0 BOOTSTRAP: pomaster init");
+    expect(text).toContain("- ① BRAINSTORM: pomaster brainstorm start");
+    expect(text).not.toContain("pomaster triage");
     expect(text).toContain("- ⑧ CARRY: pomaster closeout <task-id>");
   });
 

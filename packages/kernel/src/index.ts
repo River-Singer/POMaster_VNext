@@ -356,7 +356,7 @@ export interface GateRunRecordInput {
   /** 执行身份透传（P20 §25.4；可选——校验语义同 ClaimRecordInput.executionId）。 */
   readonly executionId?: string;
   /**
-   * 证据存在性绑定引用（P0.5-2 / PRD §7；裁决8③ D2/D3=A：07 run_record 信封 optional
+   * 证据存在性绑定引用（P0.5-2 / PRD §7；裁决8③ D2/D3=A：07 run_record 信封 optional（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
    * artifact_refs，blob 分支收窄）。可选——缺席 = 键缺席，存量 GRN 字节兼容；携带即
    * kernel 侧强制校验（词形 + 路径⇔身份派生一致 + blob 文件在场——先 persist 再 record）。
    * 绑定的门内判卷（POLICY.GATE.BROWSER@0.2.0 条款）归 gate 侧，kernel 保持 gate 无关。
@@ -536,7 +536,7 @@ export type {
 // （§21 禁绕过）。graph_fingerprint 由本模块自动维护（sha256OfCanonical，D24：
 // human_touch forbidden / write_blocking:false）；Grounding Verdict 五值与 §7.3 frontier
 // 均为**派生判定不落盘**（§6.2 不进 Canonical Object State Axis / §16 禁 frontier.json）。
-// 词形纪律（Owner 裁决 9②③，2026-09-01）：DECISION./RESEARCH.REQ./FINDING./
+// 词形纪律（Owner 裁决 9②③，2026-09-01）：DECISION./RESEARCH.REQ./FINDING./（锚：corpus/master/cutover/owner-adjudications.md#裁决9）
 // DISCOVERY.INTENT./FACT. 是 Discovery 平面局部词形（state_plane_refs 先例）——不入
 // GOVERNED_ID_PREFIXES、不过 parseGovernedId，校验=本模块词形正则 + 图内存在性；
 // GRILLING/GRILLED/GRILL_CONFIRMED 禁词负例（§1.1 不新增 State Axis，09 号
@@ -858,14 +858,14 @@ export interface PermitRequest {
    */
   readonly capabilityIds?: readonly GovernedId[];
   /**
-   * 变更类目（P0.5-1；∈ CATALOG_CHANGE_CLASS_VALUES，vocab-pr-0005 词轴；裁决 8 ②）。
+   * 变更类目（P0.5-1；∈ CATALOG_CHANGE_CLASS_VALUES，vocab-pr-0005 词轴；裁决 8 ②）。（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
    * 落 PermitRecord.change_class（capability_refs 内部状态文件扩展先例）——
    * Project Change / Permit 侧 applicability 输入承载位（PRD §14 P0.5-1 最小实现二）。
    */
   readonly changeClass?: string;
   /**
    * 治理档位（P0.5-1；∈ CATALOG_GOVERNANCE_PROFILE_VALUES，O2 对齐 TRIAGE_PROFILES+STRICT）。
-   * A1 裁定（2026-09-04）：信息性申报位——不参与 checkPermit 判卷（permit 判卷只按
+   * A1 裁定（2026-09-04）：信息性申报位——不参与 checkPermit 判卷（permit 判卷只按（锚：corpus/master/cutover/owner-adjudications.md#裁决11①）
    * scope 三元组 + 过期拍），签发台账/journal 记录保留。
    */
   readonly governanceProfile?: string;
@@ -931,10 +931,11 @@ export { stealPermit } from "./permits.js";
 // ============================================================
 
 /**
- * PRD §3B 权威优先级链（纯数据九级常量，首位最高）+ map/boundary_rules 读侧最小
- * 消费面（warning-only：B3 红线——零写路径消费，store/permits 判卷通路不 import）。
- * map 条目 owner 词形校验、boundary_rules deny 规则投影只读呈现；损坏 fail-closed
- * 读侧 SCHEMA_INVALID（文件缺席 = 空面，诚实缺席）。ADR-lite 见 authority.ts 头注。
+ * PRD §3B 权威优先级链（纯数据九级常量，首位最高）+ map/boundary_rules 读侧消费面
+ * （D-4 起写路径在座——owner-adjudications.md#裁决18 推翻原 B3 warning-only 红线：
+ * store.ts assertAuthorityBoundaries 消费本模块读侧面做写路径 BLOCK；本模块自身仍纯读）。
+ * map 条目 owner 词形校验、boundary_rules deny 规则投影只读呈现 + 写路径闸双面；损坏
+ * fail-closed 读侧 SCHEMA_INVALID（文件缺席 = 空面，诚实缺席）。ADR-lite 见 authority.ts 头注。
  */
 export {
   AUTHORITY_PRECEDENCE_ORDER,
@@ -975,12 +976,12 @@ export interface ProjectionRequest {
   readonly taskRef?: string;
   readonly denominatorRefs?: readonly DenominatorRefRow[];
   /**
-   * P0.5-1 结构化 applicability 输入（PRD §5.2/§5.3；vocab-pr-0005；裁决 8 ② 2026-09-01）。
+   * P0.5-1 结构化 applicability 输入（PRD §5.2/§5.3；vocab-pr-0005；裁决 8 ② 2026-09-01）。（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
    * 全部 optional → 既有调用零破坏；词形 fail-closed 校验（capabilities=CAPABILITY.*
    * governed id / changeClass ∈ CATALOG_CHANGE_CLASS_VALUES）。未提供时，声明了对应
    * 机器字段的 catalog 条目按「不可判定即不注入」确定性排除（缺席显式，禁假绿——
    * PRD §5.3 确定性排除优先）。
-   * A1 裁定（2026-09-04）：不设 governanceProfile 输入——治理档位降信息性，
+   * A1 裁定（2026-09-04）：不设 governanceProfile 输入——治理档位降信息性，（锚：corpus/master/cutover/owner-adjudications.md#裁决11①）
    * 不参与 catalog applicability 判卷（物料 governance_profiles 轴保留为元数据）。
    */
   readonly capabilities?: readonly string[];
@@ -1500,7 +1501,7 @@ export { gateResultToSnake } from "./gate-result.js";
 export { sha256OfCanonical } from "./digest.js";
 
 // ============================================================
-// Evidence Artifact Binding（P0.5-2；PRD §7/§14 + 裁决8③④）
+// Evidence Artifact Binding（P0.5-2；PRD §7/§14 + 裁决8③④）（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
 // ============================================================
 
 /**
@@ -1857,11 +1858,11 @@ export type {
 // evidence_refs；reads/agent_spawns 恒空数组显式（§14 P0.5-3「不先采集完整 read
 // trace」的 Lite 边界）。execution_id 复用 assertExecutionAttachable 严格通道（§16
 // Case A 禁自造第二种 EXEC-* 身份，SCHEMA_INVALID/EXECUTION_NOT_FOUND 直接继承）。
-// 落盘双平面（裁决 8 ②「trace 独立 traces/ 分区」；P34 新分区先例——不进 content_digest、
+// 落盘双平面（裁决 8 ②「trace 独立 traces/ 分区」；P34 新分区先例——不进 content_digest、（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
 // 零 journal 事件）：traces/（durable 进 Git）+ runtime/traces/（EPHEMERAL 可丢弃，
 // §85.4 runtime/ 判据豁免）。显式 --seal 物化带 derived_from_seq 锚，读侧 canonical
 // 重放对账 stale 显式（evidence compact 快路径同构）；retention 四档逐字仅记录不 GC
-// （§8.3 + 裁决 8 ②）。词形轴 pending vocab-pr-0005（TRACE_RETENTION_VALUES /
+// （§8.3 + 裁决 8 ②）。词形轴 pending vocab-pr-0005（TRACE_RETENTION_VALUES /（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
 // pomaster.execution_trace/v1——批 1 文件面互斥，词表三镜像登记归主控批次）。
 export {
   TRACES_RELATIVE,

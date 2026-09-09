@@ -6,10 +6,11 @@
  * Vue3 工程 / FastAPI 工程）各自构造栈形态工程文件后，用本运行器驱动同一条
  * 八拍治理链并逐拍捕获 {exit 码, --json 信封, stdout 原文}：
  *
- *   init → triage → maintain --phase pre-dev（八拍①②③：triage→permit issue→
- *   context compile）→ reconcile（clean）→ maintain --ops upsert task（任务落账）
- *   → reconcile（dirty）→ check --gates（5 recipe GRN 入账）→ check --fast
- *   （BUILD 腿真实探测/执行）→ closeout（证据缺失阻断）→ status（终态）
+ *   init → alerts（八拍① 导航面——D-5 裁决 18：triage 位退役，alerts 路由段承导航）→
+ *   maintain --phase pre-dev（八拍②③二步：permit issue→context compile）→
+ *   reconcile（clean）→ maintain --ops upsert task（任务落账）→ reconcile（dirty）→
+ *   check --gates（5 recipe GRN 入账）→ check --fast（BUILD 腿真实探测/执行）→
+ *   closeout（证据缺失阻断）→ status（终态）
  *
  * 纪律：全链命令真实 runCli（L2 的意义是集成命令面，不绕过 CLI 直调内核）；
  * 逐拍结果存档后由各 spec 的 it() 消费真实断言（本文件零断言）。
@@ -29,7 +30,8 @@ export interface StepRecord<R = Record<string, unknown>> {
 /** 全链十拍的命名存档（spec 的 it() 按拍消费）。 */
 export interface FixtureChain {
   readonly init: StepRecord;
-  readonly triage: StepRecord;
+  /** 八拍① 导航面存档（D-5 裁决 18：triage 退役后 alerts 路由段承导航）。 */
+  readonly alerts: StepRecord;
   readonly predev: StepRecord;
   readonly reconcileClean: StepRecord;
   readonly opsApply: StepRecord;
@@ -43,7 +45,6 @@ export interface FixtureChain {
 /** 三栈差异面（各 spec 注入）：锚/请求文本/subject/actor/lane 与 ops 事务文件路径。 */
 export interface FixtureChainInput {
   readonly changeOrTask: string;
-  readonly request: string;
   readonly subject: string;
   readonly actor: string;
   readonly role: string;
@@ -171,14 +172,12 @@ export async function runFixtureChain(
   });
 
   const init = await runJsonStep(root, ["init"]);
-  const triage = await runJsonStep(root, ["triage", input.request]);
+  const alerts = await runJsonStep(root, ["alerts"]);
   const predev = await runJsonStep(root, [
     "maintain",
     input.changeOrTask,
     "--phase",
     "pre-dev",
-    "--request",
-    input.request,
     "--subject",
     input.subject,
     "--actor",
@@ -209,7 +208,7 @@ export async function runFixtureChain(
   const status = await runJsonStep(root, ["status"]);
   return {
     init,
-    triage,
+    alerts,
     predev,
     reconcileClean,
     opsApply,

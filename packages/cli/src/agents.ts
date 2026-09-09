@@ -315,7 +315,7 @@ function emptyAgentsStatus(): AgentsStatusResult {
 }
 
 // ============================================================
-// agents dispatch-pack（裁定批 E P4：子代理派发包——09-05 提案 §2 P4）
+// agents dispatch-pack（裁定批 E P4：子代理派发包——09-05 提案 §2 P4）（历史裁定，锚缺失——裁定批 E，2026-09-05 执行轮；未入 corpus 台账，T3-R3 如实标注）
 // ============================================================
 
 /**
@@ -500,7 +500,7 @@ function renderPackSections(
 }
 
 /**
- * `agents dispatch-pack <task>`（裁定批 E P4）：子代理派发包——任务 prd 摘要 +
+ * `agents dispatch-pack <task>`（裁定批 E P4）：子代理派发包——任务 prd 摘要 +（历史裁定，锚缺失——裁定批 E，2026-09-05 执行轮；未入 corpus 台账，T3-R3 如实标注）
  * 关联 mapping/manifest 引用 + 红线摘要，预算截断（单段 8KB/总 32KB，沿 Trellis
  * PreToolUse 物化 32KB/文件先例折算）；缺省 stdout 零写入，--out <path> 落盘。
  * 纯组装既有读取面零新治理语义（View not new database 同线：本包是投影非事实源，

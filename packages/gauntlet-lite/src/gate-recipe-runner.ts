@@ -265,7 +265,7 @@ export interface GateRecipeRunInput {
   readonly trigger?: RunTriggerValue;
   readonly expectedToolVersion?: string | null;
   /**
-   * 策略排除（SKIPPED_BY_POLICY 映射载体，P12c 裁定落档 docs/vocab-pr-0002.md）：
+   * 策略排除（SKIPPED_BY_POLICY 映射载体，P12c 裁定落档 docs/vocab-pr-0002.md——docs 路径弱锚在座）：
    * present → 本 recipe 被 governance profile/策略显式排除，产出「映射现轴 not_run」
    * 记录（非绿非红）：counts.notApplicable=1 计入 not-applicable、
    * metricDialect=gate_recipe:policy_skip 机器可辨、scopeNote 带裁定前缀与 vocab-pr-0002
@@ -290,7 +290,7 @@ export interface GateRecipeRunnerDeps {
 
 /**
  * 派发执行单份 recipe，产出可入账的 GateResultRecord（gate/gateDef 已重绑 recipe 身份）。
- * 失败语义全部显式：policySkip → 映射现轴 not_run（SKIPPED_BY_POLICY，P12c 裁定）；
+ * 失败语义全部显式：policySkip → 映射现轴 not_run（SKIPPED_BY_POLICY，P12c 裁定）；（历史裁定，锚缺失——P12c 裁定；未入 corpus 台账，T3-R3 如实标注）
  * unbound → not_run；runner 缺位 → not_run；执行环境异常 → blocked；
  * 归一畸形 → blocked；manifest 身份坏形 / policySkip 空理由 → throw（FATAL，调用方 fail-closed）。
  */

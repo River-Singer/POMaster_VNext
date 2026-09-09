@@ -1,7 +1,7 @@
 /**
  * init.ts —— `pomaster init`：BOOTSTRAP 段的骨架创建与 Agent 入口生成。
  *
- * 入口形态（D13 2026-09-03 修订：重入口默认；B7 裁定 Owner 2026-09-04：init 单一
+ * 入口形态（D13 2026-09-03 修订：重入口默认；B7 裁定 Owner 2026-09-04：init 单一（历史裁定，锚缺失——D13，2026-09-03 重入口修订；未入 corpus 台账，T3-R3 如实标注）
  * 重入口——早期 `--mode` 双模式旗标与轻入口退回/移除逻辑已删除）：
  * - 平台选择非空（缺省 claude）：重入口全套——skills 命令卡库双镜像（`.agents/skills/`
  *   通用层 + `.claude/skills/` Claude Code 必需位，逐字节一致）+ claude hooks 注册
@@ -40,7 +40,7 @@
  *   fail-closed（父目录不在 12 播种目录 allowlist 禁落盘，R4 红线 + B6b-I 收窄；
  *   seeds.ts 单一实现）。
  *   幂等铁律天然满足：重跑全 preserved = NO_CHANGE。
- * - SPEC.* Evidence Spec 对象预植（步骤 4.7，裁定批 D D2 / Owner 2026-09-05 裁定
+ * - SPEC.* Evidence Spec 对象预植（步骤 4.7，裁定批 D D2 / Owner 2026-09-05 裁定（历史裁定，锚缺失——裁定批 D，2026-09-05；未入 corpus 台账，T3-R3 如实标注）
  *   (a)：**init 预植——新治理语义，init 从此写 store**）：逐 evidence spec 预植
  *   SPEC.* 对象（kernel applyTransaction 单事务 upsert——seq/journal 正常前进，
  *   零墙钟）；requirements 从播种件判定条款段机械派生（零凭空发明）；生命周期
@@ -73,7 +73,7 @@
  * 允许出现在 interactive-keys.ts 的重绘渲染器出口、且只经交互 io 进入真实终端的
  * TTY 路径（§45 纪律：--json 信封与人读完成输出恒零 ANSI）。
  *
- * 能力显性化（09-06 C1/C2，Owner 裁定：能力不能静默）：完成横幅新增「你现在可以
+ * 能力显性化（09-06 C1/C2，Owner 裁定：能力不能静默；锚：corpus/master/cutover/owner-adjudications.md#裁决16③）：完成横幅新增「你现在可以
  * 做什么」能力速览段——场景一句话 + 确切命令，与 AGENTS.md「能力地图」节共用
  * heavy-entry.ts CAPABILITY_OVERVIEW 单一内容源（命令词形与 CLI 注册表钉版防漂移）；
  * 每次 init 全量展示（Owner 明选，不做 NO_CHANGE 精简）；--json 信封同步
@@ -120,11 +120,6 @@ import {
   renderSkillMd,
   type CapabilityEntry,
 } from "./heavy-entry.js";
-import {
-  TRIAGE_PROFILES,
-  TRIAGE_TTL_HOURS,
-  type TriageProfile,
-} from "./triage.js";
 import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
 import { seedProjectAssets, type SeedEntry } from "./seeds.js";
@@ -212,13 +207,11 @@ export interface StackObservationReport {
 export interface InitResult {
   readonly change: InitChange;
   readonly tool: typeof INIT_TOOL_ID;
-  /** config.yaml 信息性治理档位回读（A1 裁定 2026-09-04：人类偏好呈现，非治理输入）。 */
-  readonly profile: TriageProfile;
   readonly files: readonly InitFileReport[];
   /** F1 平台段：registry 顺序、仅含选中平台（--json result.platforms，§45 信封内结构化数据）。 */
   readonly platforms: readonly InitPlatformReport[];
   /**
-   * SPEC.* Evidence Spec 对象预植结果（裁定批 D D2 / Owner 2026-09-05 裁定 (a)——
+   * SPEC.* Evidence Spec 对象预植结果（裁定批 D D2 / Owner 2026-09-05 裁定 (a)——（历史裁定，锚缺失——裁定批 D，2026-09-05；未入 corpus 台账，T3-R3 如实标注）
    * init 预植，新治理语义：init 从此写 store）。planted = 本次缺席写入数；
    * preserved = 已在座零触碰数（seed-once）；skipped = store 不可用/owner 幽灵
    * 跳过（warning SPEC_PREPLANT_SKIPPED 已呈现）。null = off-switch 关闭
@@ -238,7 +231,7 @@ export interface InitResult {
    */
   readonly baseline: BaselineQuizResult;
   /**
-   * baseline 栈预置草案结果（09-06 Step 1；G-B/G-C/G-D 裁定，baseline-preset.ts
+   * baseline 栈预置草案结果（09-06 Step 1；G-B/G-C/G-D 裁定，baseline-preset.ts（历史裁定，锚缺失——G-B/G-C/G-D；未入 corpus 台账，T3-R3 如实标注）
    * ADR）：generated = 本次追加 PRESET-DRAFT 节的文件数；skipped_existing = 门开
    * 但草案已在座而跳过数（draft-once——Owner 改动零触碰）；skipped_confirmed =
    * baseline 确认态在座整体跳过（禁 init 自造 BASELINE_DRIFT）。草案是 init
@@ -255,7 +248,7 @@ export interface InitResult {
    */
   readonly observation: StackObservationReport;
   /**
-   * 能力速览（09-06 能力显性化 C1；Owner 裁定面位之一）：--json result.
+   * 能力速览（09-06 能力显性化 C1；Owner 裁定面位之一）：--json result.（锚：corpus/master/cutover/owner-adjudications.md#裁决16）
    * capability_overview 结构化数组——与完成横幅人读段同一内容源（heavy-entry.ts
    * CAPABILITY_OVERVIEW 单表，禁第二套能力清单）；命令词形与 CLI 注册表钉版
    * （tests/capability-surfacing.spec.ts）。静态常量恒在座（含失败路径信封——
@@ -278,7 +271,7 @@ export interface InitOptions {
    */
   readonly seedManifest?: readonly SeedEntry[] | undefined;
   /**
-   * SPEC.* Evidence Spec 对象预植 off-switch（裁定批 D D2 2026-09-05；ADR-7）：
+   * SPEC.* Evidence Spec 对象预植 off-switch（裁定批 D D2 2026-09-05；ADR-7）：（历史裁定，锚缺失——裁定批 D，2026-09-05；未入 corpus 台账，T3-R3 如实标注）
    * undefined/false 语义分离——undefined = 缺省开（init 预植 19 个 SPEC.* 对象，
    * 经 kernel applyTransaction 单事务）；false = 显式关闭（零 store 写入，零预植
    * 呈现——测试与特殊项目需要）。仅注入面，不加 CLI 旗标（命令面零扩张）。
@@ -300,7 +293,7 @@ export interface InitOptions {
  */
 const THIN_POINTER_BODY = [
   "# POMaster vNext — Agent 入口指针",
-  "唯一事实源是仓库根的 `AGENTS.md`（由 `pomaster init` 生成，幂等）；先读根目录 `AGENTS.md`，遵循其「当前治理档位」与「常用命令」。",
+  "唯一事实源是仓库根的 `AGENTS.md`（由 `pomaster init` 生成，幂等）；先读根目录 `AGENTS.md`，遵循其「常用命令」。",
 ].join("\n");
 
 interface PlatformAdapterSpec {
@@ -313,7 +306,7 @@ interface PlatformAdapterSpec {
   render: () => string;
   /**
    * 存量识别：历史细指针形态渲染值（B7 裁定后不再产出；旧版项目升级 init 时
-   * 在座文件按此字节识别归本包维护并重写为加厚版）。
+   * 在座文件按此字节识别归本包维护并重写为加厚版）。（锚：corpus/master/cutover/owner-adjudications.md#裁决11⑧）
    */
   legacyThinRender?: () => string;
 }
@@ -391,7 +384,7 @@ function renderThickRulesBody(platformNote: string): string {
   return [
     "# POMaster vNext — Agent 入口（重入口 rules）",
     "",
-    `唯一事实源是仓库根的 \`AGENTS.md\`（由 \`pomaster init\` 生成，幂等）；先读根目录 \`AGENTS.md\`，遵循其「当前治理档位」。${platformNote}`,
+    `唯一事实源是仓库根的 \`AGENTS.md\`（由 \`pomaster init\` 生成，幂等）；先读根目录 \`AGENTS.md\`，遵循其「常用命令」。${platformNote}`,
     "",
     "## 常用命令（与 `pomaster --help` 对账）",
     "",
@@ -527,7 +520,6 @@ export async function runInitInteractive(
       {
         change: "NO_CHANGE",
         tool: INIT_TOOL_ID,
-        profile: "LIGHT",
         files: [],
         platforms: [],
         specPreplant: null,
@@ -551,7 +543,6 @@ export async function runInitInteractive(
       {
         change: "NO_CHANGE",
         tool: INIT_TOOL_ID,
-        profile: "LIGHT",
         files: [],
         platforms: [],
         specPreplant: null,
@@ -681,33 +672,16 @@ export async function runChecklistPrompt(io: ChecklistIo): Promise<ChecklistProm
   return done ?? { kind: "aborted" };
 }
 
-/**
- * 从 config.yaml 文本提取当前 profile（无 YAML 依赖的行级解析，容错：缺省 LIGHT）。
- * A1 裁定（2026-09-04）：profile 是信息性人类偏好配置——呈现进入口文件/结果回读，
- * 不作为治理输入（不进 gate/permit 判卷、不决定激活）。
- */
-export function parseConfigProfile(configText: string): TriageProfile {
-  const match = /^\s*profile:\s*([A-Za-z_-]+)/m.exec(configText);
-  const value = match?.[1]?.toUpperCase();
-  if (
-    value !== undefined &&
-    (TRIAGE_PROFILES as readonly string[]).includes(value)
-  ) {
-    return value as TriageProfile;
-  }
-  return "LIGHT";
-}
-
 const CONFIG_TEMPLATE = `# POMaster vNext 治理配置（pomaster init 生成；人类可编辑，init 不覆盖已存在文件）
 version: 1
-profile: LIGHT            # 治理档位（信息性人类偏好，A1 裁定 2026-09-04：不进判卷）：MINIMAL | LIGHT | STANDARD
 capability_tips: true     # status 尾部轮换能力 tip（did-you-know 形态；按 generation.seq 确定性轮换；false 关闭 = 零输出；键缺席 = 默认开——09-06 C4，呈现位偏好不进判卷）
-triage:
-  ttl_hours: ${TRIAGE_TTL_HOURS}          # triage 结果有效期（C9）
 store:
   state: .pomaster/state/truth-index.json
   objects: .pomaster/truth/objects/   # canonical 正文层（宪法 §34-P0；legacy .pomaster/objects/ 禁新写）
 `;
+// 注记（D-1/D-5，裁决 18 2026-09-08）：原 profile 键与 triage.ttl_hours 键随 triage/
+// profile 档位语义彻底退役而删除；存量项目 config.yaml 中的残留键 init 不读不删
+// （config.yaml 人类可编辑物，init 永不覆盖）——键在座无消费者（诚实退役无 compat 双写）。
 
 // ============================================================
 // N7：authority 骨架（BOOTSTRAP 手工步骤自动化）
@@ -806,14 +780,13 @@ function renderStateSummary(index: Record<string, unknown> | null): string {
 }
 
 // ============================================================
-// 入口文件模板（重入口 / 最小指针两形态——平台选择非空 vs none；D13+B7 裁定）
+// 入口文件模板（重入口 / 最小指针两形态——平台选择非空 vs none；D13+B7 裁定（锚：corpus/master/cutover/owner-adjudications.md#裁决11⑧））
 // ============================================================
 
 const COMMON_COMMANDS_LINES = [
   "- `pomaster init` — 补齐/重建治理骨架（幂等；重复执行 NO_CHANGE）",
   "- `pomaster session` — 治理速览投影（SessionStart 注入源；≤10,000 字符硬上限）",
   "- `pomaster alerts` — 可行动项过滤器 + workflow 路由段（permit 到期/CHALLENGED 对象；干净=非空但极简）",
-  "- `pomaster triage \"<request>\"` — 八拍①：秒级判档（MINIMAL/LIGHT/STANDARD）",
   "- `pomaster status --json` — 对象计数 / 分母状态 / permit 活性",
   "- `pomaster context compile --role <role> --json` — 八拍③：最小充分上下文投影",
   "- `pomaster doctor --json` — 内核 / harness MCP 探测（缺什么提示装什么）",
@@ -858,19 +831,11 @@ const DIRECTORY_CONSTITUTION_LINES = [
  * 最小入口（`--platforms none` 零平台产物形态；静态指针正文，无重入口安装物可述）。
  * 不带重入口安装标记——doctor heavy_entry 探针按「未安装」呈现并指路重跑 init。
  */
-function renderMinimalEntryMarkdown(
-  profile: TriageProfile,
-  stateSummary: string,
-): string {
+function renderMinimalEntryMarkdown(stateSummary: string): string {
   return `# POMaster vNext — Agent 入口（最小形态）
 
 > 本文件由 \`${INIT_TOOL_ID}\` 的 \`pomaster init\` 生成（\`--platforms none\` 零平台产物形态——静态指针正文，无重入口安装物；重跑 \`pomaster init\`（缺省平台）安装重入口全套）。
 > 带生成标记的文件可由 init 重新生成；\`.pomaster/state/truth-index.json\` 是 Canonical State 的唯一 root index，受其引用的 \`truth/objects/**\` 是 Canonical Truth 正文（宪法 §34-P2）。
-
-## 当前治理档位（profile）
-
-- profile: ${profile}（信息性人类偏好，A1：不进判卷）
-- triage 结果 TTL: ${TRIAGE_TTL_HOURS}h（过期必须 re-triage，C9）
 
 ${stateSummary}
 
@@ -888,7 +853,6 @@ ${MACHINE_OUTPUT_LINES.join("\n")}
 
 /** 重入口（重入口默认；skills/hooks 安装物的锚点说明 + 修复路标）。 */
 function renderHeavyEntryMarkdown(
-  profile: TriageProfile,
   stateSummary: string,
   opts: { readonly claudeSelected: boolean },
 ): string {
@@ -907,11 +871,6 @@ function renderHeavyEntryMarkdown(
 > 本文件由 \`${INIT_TOOL_ID}\` 的 \`pomaster init\` 生成（重入口为默认——skills 库 + hook 注入 + 每轮轻提醒）。
 > 带生成标记的文件可由 init 重新生成；\`.pomaster/state/truth-index.json\` 是 Canonical State 的唯一 root index，受其引用的 \`truth/objects/**\` 是 Canonical Truth 正文（宪法 §34-P2）；skill 命令卡单一事实源 = \`pomaster --help\`。
 
-## 当前治理档位（profile）
-
-- profile: ${profile}（信息性人类偏好，A1：不进判卷）
-- triage 结果 TTL: ${TRIAGE_TTL_HOURS}h（过期必须 re-triage，C9）
-
 ${stateSummary}
 
 ## 常用命令
@@ -925,7 +884,7 @@ ${renderCapabilityMapMarkdownLines().join("\n")}
 ## 重入口安装物（init 维护）
 
 - skills 命令卡库：\`.agents/skills/pomaster/\` 等 ${SKILL_MANIFEST.length} 份（通用层——Codex/Cursor/Gemini CLI/GitHub Copilot/VS Code/Amp/Warp/OpenCode/Droid 等原生读取），${mirrorNote}。
-- 路由入口：\`/pomaster\`（命令全景 + 何时用哪个）；分段卡：pomaster-bootstrap / triage / permit / context / execute / verify / reconcile / compact / closeout / inspect / discovery / catalog / production / runtime。
+- 路由入口：\`/pomaster\`（命令全景 + 何时用哪个）；分段卡：pomaster-bootstrap / discovery / permit / context / execute / verify / reconcile / compact / closeout / inspect / catalog / production / runtime。
 - 组件画廊: https://river-singer.github.io/POMaster_VNext/（在线版）或 POMaster 仓库内 \`corepack pnpm studio:dev\`——治理 baseline/outputs 内容前先逛：有哪些组件、长什么样、该写什么。
 ${claudeBlock}- 修复/重建：重跑 \`pomaster init\`（幂等；缺失镜像重建、hooks 注册项按 command 词形合并，不动人类文件）。
 
@@ -963,7 +922,7 @@ const INIT_LOGO_LINES: readonly string[] = [
 ];
 
 /**
- * init 完成输出的收尾段（四产物清单 + profile 之后）：英文哲学横幅 + 组件画廊指引
+ * init 完成输出的收尾段（四产物清单之后）：英文哲学横幅 + 组件画廊指引
  * + 联系方式。§45 单信封纪律：本段只进人读通道（okOutcome 的 human 行）——--json
  * 机读信封由 toEnvelope 从 result/warnings/errors 组装，恒不含 human 行，文案零
  * 污染机读面。前导空行分隔；各行保持 ~72 列内不溢出（逐字钉位，改动须同步
@@ -1069,7 +1028,6 @@ export async function runInit(
       {
         change: "NO_CHANGE",
         tool: INIT_TOOL_ID,
-        profile: "LIGHT",
         files: [],
         platforms: [],
         specPreplant: null,
@@ -1087,7 +1045,7 @@ export async function runInit(
     );
   }
   const selectedPlatforms = selection.platforms;
-  // 重入口产物面 = 平台选择非空（none = 显式最小形态，零平台产物；B7 裁定 2026-09-04：
+  // 重入口产物面 = 平台选择非空（none = 显式最小形态，零平台产物；B7 裁定 2026-09-04：（锚：corpus/master/cutover/owner-adjudications.md#裁决11⑧）
   // init 单一重入口，无模式旗标）。
   const heavy = selectedPlatforms.length > 0;
   const claudeSelected = selectedPlatforms.includes("claude");
@@ -1206,22 +1164,15 @@ export async function runInit(
   }
 
   // 4) config.yaml：只在缺失时创建（人类可编辑，永不覆盖）。
+  //    D-1/D-5（裁决 18 2026-09-08）：profile 回读与 CONFIG_PROFILE_MISSING warning
+  //    已随 triage/profile 档位语义退役删除（parseConfigProfile 同批移除）。
   const cfgPath = configPath(rootDir);
-  let profile: TriageProfile = "LIGHT";
   const existingConfig = await readIfExists(cfgPath);
   if (existingConfig === null) {
     await ensureParentDir(cfgPath);
     await writeFile(cfgPath, CONFIG_TEMPLATE, "utf8");
     files.push({ file: toPosix(CONFIG_RELATIVE), action: "created" });
   } else {
-    profile = parseConfigProfile(existingConfig);
-    if (!/^\s*profile:/m.test(existingConfig)) {
-      warnings.push({
-        code: "CONFIG_PROFILE_MISSING",
-        message: "config.yaml has no profile key; falling back to LIGHT",
-        hint: `在 ${toPosix(CONFIG_RELATIVE)} 增加 profile: MINIMAL|LIGHT|STANDARD；改后重跑 pomaster init 回读生效。`,
-      });
-    }
     files.push({ file: toPosix(CONFIG_RELATIVE), action: "unchanged" });
   }
 
@@ -1251,7 +1202,7 @@ export async function runInit(
   const seedEntries = options.seedManifest ?? loadSeedManifestEntries();
   await seedProjectAssets(rootDir, seedEntries, files);
 
-  // 4.7) SPEC.* Evidence Spec 对象预植（裁定批 D D2 / Owner 2026-09-05 裁定 (a)：
+  // 4.7) SPEC.* Evidence Spec 对象预植（裁定批 D D2 / Owner 2026-09-05 裁定 (a)：（历史裁定，锚缺失——裁定批 D，2026-09-05；未入 corpus 台账，T3-R3 如实标注）
   //      init 预植——新治理语义，init 从此写 store；详见 spec-preplant.ts ADR）。
   //      派生单源 = 步骤 4.6 同一清单（头行 对象面词形 即对象 id；requirements 从
   //      判定条款段机械派生——零凭空发明）；写通路 = kernel applyTransaction 单事务
@@ -1327,7 +1278,7 @@ export async function runInit(
     baseline = { asked: quiz.asked, answered, skipped: quiz.skipped };
   }
 
-  // 4.9) baseline 栈预置草案生成（09-06 Step 1；G-B/G-C/G-D 裁定；baseline-preset.ts
+  // 4.9) baseline 栈预置草案生成（09-06 Step 1；G-B/G-C/G-D 裁定；baseline-preset.ts（历史裁定，锚缺失——G-B/G-C/G-D；未入 corpus 台账，T3-R3 如实标注）
   //      ADR）：问卷/后补销账落盘之后，按现盘栈选型为 22 份 baseline 播种 md 追加
   //      「预置草案（PRESET-DRAFT）」节——门粒度 = lane 栈键全销账（FE 6 面 ← FE 键；
   //      BE/data/platform 16 面 ← BE 键）；未销账 lane 保持纯 UNKNOWN 骨架（缺席
@@ -1341,10 +1292,10 @@ export async function runInit(
   //    安装标记；`--platforms none` = 最小指针正文，无重入口安装物可描述）。
   //    claude 平台适配器（CLAUDE.md，@AGENTS.md 导入）仅在选中 claude 时参与。
   const entryMarkdown = heavy
-    ? renderHeavyEntryMarkdown(profile, renderStateSummary(ledgerForRender), {
+    ? renderHeavyEntryMarkdown(renderStateSummary(ledgerForRender), {
         claudeSelected,
       })
-    : renderMinimalEntryMarkdown(profile, renderStateSummary(ledgerForRender));
+    : renderMinimalEntryMarkdown(renderStateSummary(ledgerForRender));
   await writeGeneratedFile(
     rootDir,
     AGENTS_MD_RELATIVE,
@@ -1470,7 +1421,6 @@ export async function runInit(
   const result: InitResult = {
     change,
     tool: INIT_TOOL_ID,
-    profile,
     files,
     platforms,
     specPreplant,
@@ -1493,7 +1443,7 @@ export async function runInit(
     );
   }
 
-  // 人读结构：logo 横幅 → 空行 → 四产物输出 → 平台段 → 入口形态 → profile → 能力速览段
+  // 人读结构：logo 横幅 → 空行 → 四产物输出 → 平台段 → 入口形态 → 能力速览段
   // → 哲学横幅（INIT_BANNER_LINES 自带前导空行）。logo/横幅/能力速览仅此人读通道；
   // --json 信封恒不受影响（平台段作为结构化 platforms 数组、能力速览作为结构化
   // capability_overview 数组进 result，非横幅文案）。能力速览每次 init 全量展示
@@ -1513,8 +1463,9 @@ export async function runInit(
   const entryLine = heavy
     ? "  entry: 重入口默认（skills 库 + hooks 注入；修复/重建 = 重跑 pomaster init）"
     : "  entry: 最小形态（--platforms none：零平台产物，无重入口安装物）";
-  // baseline 问卷行（恒一行，profile 之前——横幅前导空行锚在 profile 行后，版式契约
-  // 由 init.spec 钉住：logo→init:→files→platforms→entry→baseline→profile→横幅）。
+  // baseline 问卷行（恒一行——横幅前导空行锚在其后，版式契约由 init.spec 钉住：
+  // logo→init:→files→platforms→entry→baseline→observation→preset→能力速览→横幅；
+  // D-1/D-5 裁决 18：profile 行已随档位语义退役移除）。
   const baselineLine = renderBaselineQuizHumanLine(baseline);
   // 观察行（T2 R4；恒一行——观察缺席也显式呈现，诚实缺席非静默）。
   const observationLine =
@@ -1532,7 +1483,6 @@ export async function runInit(
     baselineLine,
     observationLine,
     presetLine,
-    `  profile: ${profile}`,
     ...renderCapabilityHumanLines(),
     ...INIT_BANNER_LINES,
   ];

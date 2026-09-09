@@ -8,7 +8,8 @@
  * =零输出静默、纯文本不以 { 开头（防被误判 JSON）、≤10,000 字符硬上限；降级走 warnings
  * 不走 errors（hook 通道永不失败）。可行动项派生自 truth-index/permits 只读面：过期
  * 判定与 permit list 同式（未盗取 且 current_seq >= expires_at_seq）；CHALLENGED
- * 对象按 change 轴判定；triage TTL 显式登记为无派生源类目（分母披露，不冒充已检查）。
+ * 对象按 change 轴判定；unsourced_categories 为空数组（D-1/D-5 裁决 18：triage_ttl
+ * 类目随 triage 退役消亡——分母披露纪律下的显式空，非缺席隐藏）。
  */
 import { existsSync, mkdirSync, writeFileSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs";
 import { mkdtempSync } from "node:fs";
@@ -109,14 +110,18 @@ describe("alerts hook 输出契约（恒 exit 0 / 干净=非空但极简 / 非�
     expect(outcome.errors).toEqual([]);
     expect(outcome.result.initialized).toBe(true);
     expect(outcome.result.alerts).toEqual([]);
-    // R3 路由段：无活跃 TASK → 双入口行 + 命令词形行（≤3 行）。
+    // R3 路由段：无活跃 TASK → 八拍① Brainstorm 单入口行 + 命令词形行（≤3 行；
+    // D-5 裁决 18：双入口收敛为 brainstorm 单入口）。
     expect(outcome.result.workflow_routing.length).toBeGreaterThan(0);
     expect(outcome.result.workflow_routing.length).toBeLessThanOrEqual(3);
     expect(outcome.result.workflow_routing[0]).toContain("无活跃 TASK");
-    expect(outcome.result.workflow_routing[0]).toContain("八拍① triage 或 brainstorm start");
+    expect(outcome.result.workflow_routing[0]).toContain("八拍① Brainstorm");
     expect(outcome.result.workflow_routing[0]).toContain("pomaster-discovery");
     expect(outcome.human).toEqual([...outcome.result.workflow_routing]);
-    expect(outcome.result.unsourced_categories).toEqual(["triage_ttl"]);
+    // D-1/D-5 退役回归：unsourced_categories 收敛为空数组（triage_ttl 类目消亡），
+    // 且路由段零 triage 词形（档位语义零残留）。
+    expect(outcome.result.unsourced_categories).toEqual([]);
+    expect(outcome.human.join("\n")).not.toContain("triage");
   });
 
   it("runCli alerts → exit 0 且 stdout=路由段非空（R3 干净态不再空注入；恒 exit 0 不变）", async () => {
@@ -256,7 +261,7 @@ describe("alerts 可行动项派生（truth-index/permits 只读面）", () => {
     expect(envelope.command).toBe("alerts");
     expect(envelope.ok).toBe(true);
     expect(envelope.result.alerts).toHaveLength(1);
-    expect(envelope.result.unsourced_categories).toEqual(["triage_ttl"]);
+    expect(envelope.result.unsourced_categories).toEqual([]);
   });
 });
 
@@ -292,7 +297,7 @@ function writeTaskRowLedger(): void {
 }
 
 describe("alerts workflow 路由段（R3）与 breadcrumb（P3 机读字段：路由与 status/session 同表共享）", () => {
-  it("无活跃任务 → breadcrumb=null；human=路由段两行（双入口 + pomaster-discovery 卡名）", async () => {
+  it("无活跃任务 → breadcrumb=null；human=路由段两行（八拍① Brainstorm 单入口 + pomaster-discovery 卡名；D-5 裁决 18）", async () => {
     writeLedger(baseLedger(3));
     const outcome = await runAlerts(dir);
     expect(outcome.result.breadcrumb).toBeNull();
@@ -301,8 +306,8 @@ describe("alerts workflow 路由段（R3）与 breadcrumb（P3 机读字段：�
     expect(outcome.human.length).toBe(2);
     expect(outcome.human[0]).toContain("无活跃 TASK");
     expect(outcome.human[0]).toContain("pomaster-discovery 卡");
-    expect(outcome.human[1]).toContain('pomaster triage "<request>"');
     expect(outcome.human[1]).toContain("pomaster brainstorm start");
+    expect(outcome.human.join("\n")).not.toContain("triage");
   });
 
   it("有活跃任务且零告警 → human=路由段（八拍②位置 + 下一拍命令 + 分段卡名）；breadcrumb 机读字段同源", async () => {
@@ -364,7 +369,7 @@ describe("alerts workflow 路由段（R3）与 breadcrumb（P3 机读字段：�
     for (const card of Object.values(BEAT_CARD_NAMES)) {
       expect(cardNames.has(card), `分段卡 ${card} 必须在 SKILL_MANIFEST 注册表`).toBe(true);
     }
-    expect(Object.keys(BEAT_CARD_NAMES)).toHaveLength(8);
+    expect(Object.keys(BEAT_CARD_NAMES)).toHaveLength(9); // D-5 裁决 18：beat 0 收编（0 BOOTSTRAP）+ ①→pomaster-discovery
   });
 });
 

@@ -6,9 +6,17 @@
  * - design-synthesis-decisions.md C1/C9：规则桶 + triage 结果 TTL 168h；
  * - 跨线共识 2：四态/缺席显式哲学贯穿 gate 与 triage 两侧——Triage 自己也不许报绿，
  *   判定必附「缺席了哪些信号」（absent_signals）。
- * - A1 裁定（Owner 2026-09-04，vNext Batch 4 R1）：判档结果为**信息性呈现**——
- *   不进任何 gate/permit 判卷、不决定激活；激活语义由 context compile 既有机制
- *   （lane/role/capability applicability）承担。triage 命令保留（信息性判档呈现）。
+ * - A1 裁定（Owner 2026-09-04，vNext Batch 4 R1）：判档结果为**信息性呈现**——（锚：corpus/master/cutover/owner-adjudications.md#裁决11①）
+ *   不进任何 gate/permit 判卷、不决定激活。
+ * - **D-1/D-5 裁定（Owner 2026-09-08，owner-adjudications.md#裁决18）：产品面彻底
+ *   退役**——`pomaster triage` 命令已删除（八拍① 重定义为 Brainstorm/Question Gate），
+ *   README/AGENTS 模板/config 模板/命令卡/TTL 语义全表面清除；A1 的信息性降格贯彻
+ *   到底=产品面零消费。**本模块保留 = eval 语料机唯一实现**（`pomaster eval --suite
+ *   behavioral` 的 cli_keyword evaluator 与 golden/behavioral 语料分母在座判据，
+ *   packages/cli/src/index.ts re-export 面为语料机保留）——产品语义退役，语料机
+ *   在座不变（零 compat 双写：产品面无任何消费点）。TRIAGE 关键词引擎处置裁定：
+ *   删除「并入 brainstorm 作拷问提示信号」选项（拷问提示由 pomaster-discovery 卡
+ *   方法论承载，不消费档位词形）。
  *
  * 词表纪律：profile 档位与证据级不在 vocab-lock 管辖内（它们是 Router 层局部词），
  * 词形镜像 thread-C 五值证据级（本 P0 CLI 只暴露其中三值）与 PRD §7.1/thread-C 档位；
@@ -20,7 +28,7 @@
 /**
  * 治理档位（x-vocab-source: PRD §7.1 + thread-C §3.2 + vocab-lock presentation_axes.triage_profiles——PR-0009 收编）。
  * MINIMAL=几乎感觉不到治理；LIGHT=默认兜底；STANDARD=跨域/契约面升级档。
- * A1 裁定（2026-09-04）：本轴降为信息性呈现词形——不进任何 gate/permit 判卷、
+ * A1 裁定（2026-09-04）：本轴降为信息性呈现词形——不进任何 gate/permit 判卷、（锚：corpus/master/cutover/owner-adjudications.md#裁决11①）
  * 不决定激活；TRIAGE_PROFILES 词形保留。
  */
 export const TRIAGE_PROFILES = ["MINIMAL", "LIGHT", "STANDARD"] as const;
@@ -41,7 +49,7 @@ export const TRIAGE_EVIDENCE_GRADES = [
 ] as const;
 export type TriageEvidenceGrade = (typeof TRIAGE_EVIDENCE_GRADES)[number];
 
-/** triage 结果有效期（C9 裁定：168h + closeout 必附 freshness check 钩子）。 */
+/** triage 结果有效期（C9 裁定：168h + closeout 必附 freshness check 钩子）。（历史裁定，锚缺失——C9（design-synthesis TTL 裁定）；未入 corpus 台账，T3-R3 如实标注） */
 export const TRIAGE_TTL_HOURS = 168;
 
 /**

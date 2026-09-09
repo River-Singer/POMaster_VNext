@@ -7,8 +7,10 @@
  * 接线）/ c（独立 intent 命令）中选 **b**：§80.4 原文「Brainstorm 提问前必须依次检查
  * 七关」——Question Gate 的产品宿主就是 brainstorm 面（kernel question-gate 的
  * Diverge→Converge 分区判卷同面；§31 CRC-A 的 raw prompt 入口唯一零载体层也在
- * discovery scratchpad）；maintain pre-dev 链保持 triage→permit→compile 三步原样
- * （⓪ 步会在编排链签名里塞入七关申报位，违反最小约束——宪法 §31）。零新对象：
+ * discovery scratchpad）；maintain pre-dev 链不接入七关申报位（⓪ 步会在编排链签名
+ * 里塞入七关申报位，违反最小约束——宪法 §31；沿革注：该链原 triage→permit→compile
+ * 三步中的 triage 位已随 D-1/D-5 档位语义退役删除——裁决 18 2026-09-08，链二步化，
+ * 与本裁定「链不接七关」的结论殊途同归）。零新对象：
  * raw prompt 与 Intent Framing 四分拣承载 = scratchpad meta.json（CLI 局部注记位，
  * 非治理对象）最小扩展——Discovery 平面自留（§80.2 权限清单明文授权维护面）。
  *
@@ -28,7 +30,7 @@
  *   持题随队传递 kernel selectNextQuestion 的 gateVerdict 凭证）。
  * - `brainstorm status`：呈现全部 scratchpad 的状态链位置（§44.3）。
  * - `brainstorm decide <discovery-id>`：DISCOVERY→READY_TO_PROMOTE 公开推进链（审计 F3
- *   修复批，R-G 裁定「补产品接线，不另建平行工作流」）——单命令三互斥子动作，判卷全部
+ *   修复批，R-G 裁定「补产品接线，不另建平行工作流」）——单命令三互斥子动作，判卷全部（历史裁定，锚缺失——R-G，2026-09-05 执行轮；未入 corpus 台账，T3-R3 如实标注）
  *   复用 kernel decision-graph 纯函数（零新治理语义）：
  *   ① `--set <file>`：候选图载入（§5.1 Grill 产物 → §5.2 buildDecisionGraph 入图）+
  *      全节点 Grounding 判定呈现（§6.1/§6.2 G1-G8）+ §7.3 frontier 呈现；图落盘
@@ -1660,7 +1662,7 @@ function groundingGapLines(
 
 /**
  * decide 三子动作的公共入场（id 词形 → 动作互斥 → scratchpad 装载 → 态闸）；各子动作
- * 的判卷全部来自 kernel decision-graph 纯函数（零新治理语义——R-G 裁定）。
+ * 的判卷全部来自 kernel decision-graph 纯函数（零新治理语义——R-G 裁定）。（历史裁定，锚缺失——R-G，2026-09-05 执行轮；未入 corpus 台账，T3-R3 如实标注）
  */
 export async function runBrainstormDecide(
   rootDir: string,
@@ -1717,7 +1719,7 @@ export async function runBrainstormDecide(
     );
   }
 
-  // —— 闸 2：子动作互斥且必给其一（单命令多子动作——R-G 裁定的最小命令面形态） ——
+  // —— 闸 2：子动作互斥且必给其一（单命令多子动作——R-G 裁定的最小命令面形态） ——（历史裁定，锚缺失——R-G，2026-09-05 执行轮；未入 corpus 台账，T3-R3 如实标注）
   if ([setAction, answerAction, readyAction].filter(Boolean).length !== 1) {
     return fail(
       {

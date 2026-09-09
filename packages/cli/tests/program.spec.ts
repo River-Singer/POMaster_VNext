@@ -42,10 +42,10 @@ function parseEnvelope(lines: string[]): CliEnvelope<unknown> {
 }
 
 describe("runCli --json 机读契约（§45）", () => {
-  it("triage --json：exit 0，信封 command/ok/result/warnings/errors 五键齐备", async () => {
+  it("alerts --json：exit 0，信封 command/ok/result/warnings/errors 五键齐备（D-5 裁决 18：triage 命令退役后 §45 信封契约由恒 exit 0 面承载）", async () => {
     const io = capture();
     const code = await runCli(
-      ["--dir", dir, "triage", "调整文案", "--json"],
+      ["--dir", dir, "alerts", "--json"],
       io,
     );
     expect(code).toBe(0);
@@ -57,9 +57,8 @@ describe("runCli --json 机读契约（§45）", () => {
       "result",
       "warnings",
     ]);
-    expect(envelope.command).toBe("triage");
+    expect(envelope.command).toBe("alerts");
     expect(envelope.ok).toBe(true);
-    expect((envelope.result as { profile: string }).profile).toBe("MINIMAL");
   });
 
   it("status --json（未初始化）：exit 1，NOT_INITIALIZED 带 hint 路标", async () => {
@@ -214,12 +213,13 @@ describe("runCli --json 机读契约（§45）", () => {
 });
 
 describe("runCli 人读双输出", () => {
-  it("triage 人读：stdout 纯文本，无 ANSI 颜色码（§45 禁彩色当机读）", async () => {
+  it("alerts 人读：stdout 纯文本，无 ANSI 颜色码（§45 禁彩色当机读）", async () => {
+    await runCli(["--dir", dir, "init"], capture()); // 初始化后 alerts 恒带 workflow 路由段（未初始化=零输出无断言面）
     const io = capture();
-    const code = await runCli(["--dir", dir, "triage", "改样式"], io);
+    const code = await runCli(["--dir", dir, "alerts"], io);
     expect(code).toBe(0);
     const text = io.out.join("\n");
-    expect(text).toContain("MINIMAL");
+    expect(text).toContain("POMaster workflow");
     expect(text).not.toMatch(/\[/);
   });
 
@@ -253,7 +253,7 @@ describe("runCli help/version 信息性退出（fresh-clone 实录：--help 曾�
     expect(text).toContain("Usage:");
     for (const cmd of [
       "init",
-      "triage",
+      "baseline",
       "status",
       "alerts",
       "inspect",

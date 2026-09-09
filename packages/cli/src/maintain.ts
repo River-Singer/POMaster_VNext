@@ -10,17 +10,21 @@
  *   CLI 只做编排与呈现，绝不旁移判卷权威）。与 compact 的分界：compact 是 ⑦ 拍
  *   episode 折叠（证据平面批量收编 + ops 合并单事务）；maintain 是纯显式受控变更
  *   （零证据平面扫描）， Discovery 提升等任意时点可用。
- * - pre-dev 链（--phase pre-dev）：八拍①②③薄编排——triage（规则桶，纯函数）→
- *   permit issue（kernel issuePermit 五件套台账，唯一写通道）→ context compile
- *   （**共享完整编排契约 runContextCompile**（cli/src/context.ts）——审计 F4 修复
- *   （2026-09-06 R-G 批）后 ③ 不再裸调 kernel compileProjection：旧实现绕过 manifest
- *   落盘/stale 处理/VERIFICATION 分区派生，maintain 与显式 `pomaster context compile`
- *   两个入口的「context compile」不等价（pre-dev 成功却查无 manifest）。修复后 ③ 走
- *   与显式命令同一编排入口，manifest 真实落盘 .pomaster/state/contexts/<锚>.context.json、
- *   STALE_GROUNDING 处理、VERIFICATION 分区、F2 正文绑定指纹语义全部单点承载——
- *   两入口不再分叉，maintain 链上零裸 kernel 投影调用）。
- *   串既有能力、零新原语、零分支政策（triage 档位只呈现不裁决——A1 裁定 2026-09-04
- *   已实现为代码事实：档位不传投影、不进 permit 判卷，编排永远三步全走）。
+ * - pre-dev 链（--phase pre-dev）：八拍②③薄编排——permit issue（kernel issuePermit
+ *   五件套台账，唯一写通道）→ context compile（**共享完整编排契约 runContextCompile**
+ *   （cli/src/context.ts）——审计 F4 修复（2026-09-06 R-G 批）后 ③ 不再裸调 kernel
+ *   compileProjection：旧实现绕过 manifest 落盘/stale 处理/VERIFICATION 分区派生，
+ *   maintain 与显式 `pomaster context compile` 两个入口的「context compile」不等价
+ *   （pre-dev 成功却查无 manifest）。修复后 ③ 走与显式命令同一编排入口，manifest
+ *   真实落盘 .pomaster/state/contexts/<锚>.context.json、STALE_GROUNDING 处理、
+ *   VERIFICATION 分区、F2 正文绑定指纹语义全部单点承载——两入口不再分叉，maintain
+ *   链上零裸 kernel 投影调用）。
+ *   串既有能力、零新原语、零分支政策（编排永远二步全走）。
+ *   **链编排二步化（D-1/D-5，Owner 2026-09-08，owner-adjudications.md#裁决18）**：
+ *   原 ① triage（规则桶判档）已随 triage/profile 档位语义彻底退役而从链中删除——
+ *   八拍① 重定义为 Brainstorm/Question Gate（需求收敛走 `pomaster brainstorm`，
+ *   promote 即建任务），permit 之前的判档呈现位不再存在；链从 triage→permit→compile
+ *   三步改为 permit→compile 二步（零 compat 双写）。
  *
  * fail-closed：--ops 与 --phase 互斥且必给其一（静默无操作不是合法出口）；
  * --phase 词表外值（in-dev/post-dev）显式拒绝（P11 载体只有 pre-dev 链，其余拍由
@@ -48,7 +52,6 @@ import {
   requireInitialized,
   runPermitIssue,
 } from "./permit.js";
-import { triageRequest } from "./triage.js";
 
 // ============================================================
 // 词形与结果形态（snake_case 对齐既有 CLI result）
@@ -96,16 +99,6 @@ export interface MaintainApplyResult {
   readonly policy_registration_suggestions: readonly PolicyRegistrationSuggestion[];
 }
 
-/** triage 档位呈现（triageRequest 结果的 snake 投影——① 拍词形，vocab-lock presentation_axes.triage_profiles 同源 informational——PR-0009）。 */
-export interface MaintainTriageView {
-  readonly profile: string;
-  readonly evidence_grade: string;
-  readonly matched_rule: string;
-  readonly matched_keywords: readonly string[];
-  readonly absent_signals: readonly string[];
-  readonly ttl_hours: number;
-}
-
 /** permit issue 台账回读呈现（runPermitIssue 结果子集）。 */
 export interface MaintainPermitView {
   readonly permit_ref: string;
@@ -129,13 +122,12 @@ export interface MaintainProjectionView {
   readonly lazy_tools: readonly string[];
 }
 
-/** pre-dev 链结果（failed_at_step 显式定位失败步；triage 成功后始终在场）。 */
+/** pre-dev 链结果（failed_at_step 显式定位失败步；permit issue 成功后始终在场）。 */
 export interface MaintainPreDevResult {
   readonly mode: "pre_dev_chain";
   readonly phase: MaintainPhase;
   readonly change_or_task: string;
   readonly failed_at_step: "permit issue" | "context compile" | null;
-  readonly triage: MaintainTriageView | null;
   readonly permit: MaintainPermitView | null;
   readonly projection: MaintainProjectionView | null;
   /**
@@ -170,8 +162,6 @@ export interface MaintainInput {
   readonly executionId?: string;
   /** pre-dev 链模式。 */
   readonly phase?: string;
-  /** pre-dev 链：triage 请求文本。 */
-  readonly request?: string;
   /** pre-dev 链：permit 范围对象（≥1；closed-world 校验）。 */
   readonly subjects?: readonly string[];
   /** pre-dev 链：permit 主体（<type>:<name>）。 */
@@ -245,14 +235,12 @@ function emptyPreDevResult(
   changeOrTask: string,
   phase: MaintainPhase,
   failedAtStep: MaintainPreDevResult["failed_at_step"],
-  triage: MaintainTriageView | null,
 ): MaintainPreDevResult {
   return {
     mode: "pre_dev_chain",
     phase,
     change_or_task: changeOrTask,
     failed_at_step: failedAtStep,
-    triage,
     permit: null,
     projection: null,
     context_manifest: null,
@@ -279,18 +267,6 @@ function kernelErrorOf(err: unknown): CliError {
     code: "KERNEL_ERROR",
     message: err instanceof Error ? err.message : String(err),
     hint: "查看 docs/kernel-api.md 对应契约；若为环境异常请勿静默降级。",
-  };
-}
-
-function triageViewOf(request: string): MaintainTriageView {
-  const triage = triageRequest(request);
-  return {
-    profile: triage.profile,
-    evidence_grade: triage.evidence_grade,
-    matched_rule: triage.matched_rule,
-    matched_keywords: [...triage.matched_keywords],
-    absent_signals: [...triage.absent_signals],
-    ttl_hours: triage.ttl_hours,
   };
 }
 
@@ -400,7 +376,7 @@ async function runMaintainApply(
 }
 
 // ============================================================
-// pre-dev 链模式（A3：triage → permit issue → context compile 薄编排）
+// pre-dev 链模式（A3：permit issue → context compile 二步薄编排——triage 位已退役，裁决 18）
 // ============================================================
 
 async function runMaintainPreDev(
@@ -410,7 +386,6 @@ async function runMaintainPreDev(
 ): Promise<CommandOutcome<MaintainResult>> {
   // —— 编排入参显式校验（缺一即显式报错，绝不静默跳过该步） ——
   const missing: string[] = [];
-  if (input.request === undefined || input.request.length === 0) missing.push("--request");
   if (input.subjects === undefined || input.subjects.length === 0) missing.push("--subject");
   if (input.actor === undefined || input.actor.length === 0) missing.push("--actor");
   if (input.role === undefined || input.role.length === 0) missing.push("--role");
@@ -419,20 +394,16 @@ async function runMaintainPreDev(
       {
         code: "SCHEMA_INVALID",
         message: `pre-dev 链缺编排入参：${missing.join(", ")}`,
-        hint: "链 = triage(--request) → permit issue(--subject/--actor) → context compile(--role)；三步全走，不发明跳步政策。",
+        hint: "链 = permit issue(--subject/--actor) → context compile(--role)；二步全走，不发明跳步政策（原 ① triage 判档位已随 D-1/D-5 退役——裁决 18；需求收敛走 pomaster brainstorm）。",
       },
-      emptyPreDevResult(input.changeOrTask, phase, null, null),
+      emptyPreDevResult(input.changeOrTask, phase, null),
       "pre-dev 链入参检查",
     );
   }
 
   const changeOrTask = input.changeOrTask;
-  const request = input.request as string;
   const actor = input.actor as string;
   const role = input.role as string;
-
-  // —— ① triage（规则桶纯函数；零写零裁决——档位只呈现） ——
-  const triage = triageViewOf(request);
 
   // —— ② permit issue（kernel issuePermit：唯一写通道；runPermitIssue 透传码位） ——
   const permitOutcome = await runPermitIssue(rootDir, {
@@ -446,7 +417,7 @@ async function runMaintainPreDev(
   if (!permitOutcome.ok) {
     return failOutcome<MaintainResult>(
       "maintain",
-      emptyPreDevResult(changeOrTask, phase, "permit issue", triage),
+      emptyPreDevResult(changeOrTask, phase, "permit issue"),
       permitOutcome.errors,
       [
         `maintain ${changeOrTask} --phase pre-dev → FAILED at permit issue`,
@@ -470,12 +441,10 @@ async function runMaintainPreDev(
   // warning 透传进本链 warnings——可见不静默）、VERIFICATION 分区派生、F2 正文绑定指纹
   // 语义（审计 F2 修复在共享入口单点生效）全部由共享入口承载，maintain 链上零裸 kernel
   // compileProjection 调用、零另抄的持久化/分区规则。
-  // P0.5-1（PRD §5.3；裁决 8 ②）：链已持有的 applicability 输入传给共享入口——
+  // P0.5-1（PRD §5.3；裁决 8 ②）：链已持有的 applicability 输入传给共享入口——（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
   // change=<change-or-task>（透传 taskRef，命中 ② 签发许可的许可通道）、--capability
   // 清单（与 ② permit 同源）。未提供 --capability 时该输入缺席（声明 capabilities 轴的
   // 条目按缺席显式排除）。
-  // A1 裁定（2026-09-04，vNext Batch 4 R1）：triage 档位不再传入投影 governanceProfile
-  // ——档位信息性呈现（①产出只进呈现视图），不参与 catalog applicability 判卷。
   // 失败码位 = 共享入口原码透传（NOT_INITIALIZED / KERNEL_ERROR / KERNEL_NOT_INSTALLED /
   // ENVIRONMENT_ERROR——与显式 context compile 同形；CLI 不改判 kernel/编排码位）。
   const compileOutcome = await runContextCompile(rootDir, role, undefined, {
@@ -487,7 +456,7 @@ async function runMaintainPreDev(
   if (!compileOutcome.ok) {
     return failOutcome<MaintainResult>(
       "maintain",
-      emptyPreDevResult(changeOrTask, phase, "context compile", triage),
+      emptyPreDevResult(changeOrTask, phase, "context compile"),
       compileOutcome.errors,
       [
         `maintain ${changeOrTask} --phase pre-dev → FAILED at context compile`,
@@ -512,7 +481,6 @@ async function runMaintainPreDev(
     phase,
     change_or_task: changeOrTask,
     failed_at_step: null,
-    triage,
     permit,
     projection: projectionView,
     context_manifest: {
@@ -522,7 +490,7 @@ async function runMaintainPreDev(
     },
   };
   const human = [
-    `maintain ${changeOrTask} --phase pre-dev → triage ${triage.profile} (rule ${triage.matched_rule}, grade=${triage.evidence_grade})`,
+    `maintain ${changeOrTask} --phase pre-dev → permit issue（链二步：permit → compile；需求收敛走 pomaster brainstorm——八拍①）`,
     `  permit: ${permit.permit_ref} (issued_at_seq=${permit.issued_at_seq}, expires_at_seq=${permit.expires_at_seq})`,
     `  scope: ${permit.scope?.subject_ids.join(", ") ?? "(none)"}`,
     `  projection: role=${projectionView.role} must=${projectionView.must_entries.length} advisory=${projectionView.advisory_entries.length} knowledge=${projectionView.knowledge_entries.length} lazy_tools=${projectionView.lazy_tools.length}`,
@@ -540,7 +508,7 @@ async function runMaintainPreDev(
 
 /**
  * 执行 maintain。apply 模式 ok = applyTransaction 接受（NO_CHANGE 也是合法出口）；
- * pre-dev 链 ok = 三步全过。一切失败显式码位 + hint 路标（fail-closed）。
+ * pre-dev 链 ok = 二步全过。一切失败显式码位 + hint 路标（fail-closed）。
  */
 export async function runMaintain(
   rootDir: string,
@@ -558,7 +526,7 @@ export async function runMaintain(
         },
         input.opsFile !== undefined
           ? emptyApplyResult(input.changeOrTask)
-          : emptyPreDevResult(input.changeOrTask, "pre-dev", null, null),
+          : emptyPreDevResult(input.changeOrTask, "pre-dev", null),
         "--phase 词表检查",
       );
     }

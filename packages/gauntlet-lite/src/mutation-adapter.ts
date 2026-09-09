@@ -238,7 +238,7 @@ export function readMutationGateConfig(facts: DetectorFacts): MutationConfigRead
 }
 
 // ============================================================
-// SKIPPED_BY_POLICY 映射记录（P12c 裁定映射；D1 决策的档位注记分流）
+// SKIPPED_BY_POLICY 映射记录（P12c 裁定映射；D1 决策的档位注记分流；裁定全文 docs/vocab-pr-0002.md）
 // ============================================================
 
 /**

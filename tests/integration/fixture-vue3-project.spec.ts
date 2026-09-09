@@ -36,7 +36,6 @@ import {
 
 const TASK_ID = "TASK.V0001";
 const CHANGE_OR_TASK = TASK_ID;
-const REQUEST = "Vue3 表单组件契约字段调整：props 校验与跨域 emit 声明";
 const ACTOR = "agent:fixture-vue3";
 const ROLE = "frontend";
 const OPS_FILE = "tx.task.json";
@@ -104,7 +103,7 @@ beforeAll(async () => {
 
   chain = await runFixtureChain(root, {
     changeOrTask: CHANGE_OR_TASK,
-    request: REQUEST,
+
     subject: TASK_ID,
     actor: ACTOR,
     role: ROLE,
@@ -186,39 +185,42 @@ describe("fixture 形态与 init（Vue3 工程）", () => {
 });
 
 // ============================================================
-// 八拍① triage
+// 八拍① 导航面（D-5 裁决 18：triage 退役，alerts 路由段承导航）
 // ============================================================
 
-describe("八拍① triage（Vue3 工程）", () => {
-  it("triage exit 0：契约升档词命中 → STANDARD（E_CONTRACT_KEYWORD）", () => {
-    const rec = chain.triage;
+describe("八拍① 导航面 alerts（Vue3 工程）", () => {
+  it("alerts exit 0：恒 exit 0 hook 契约 + 无活跃 TASK → 八拍① Brainstorm 单入口", () => {
+    const rec = chain.alerts;
     expect(rec.code).toBe(0);
     const envelope = env(rec);
     expect(envelope.ok).toBe(true);
-    expect(envelope.command).toBe("triage");
-    const result = resultOf(rec);
-    expect(result["profile"]).toBe("STANDARD");
-    expect(result["matched_rule"]).toBe("E_CONTRACT_KEYWORD");
+    expect(envelope.command).toBe("alerts");
+    const routing = resultOf(rec)["workflow_routing"] as readonly string[];
+    expect(routing.length).toBeGreaterThan(0);
+    expect(routing.join("\n")).toContain("八拍① Brainstorm");
+    expect(routing.join("\n")).toContain("pomaster brainstorm start");
   });
 
-  it("matched_keywords 保序命中：[契约, 跨域]（词表序遍历，去重保序）", () => {
-    const result = resultOf(chain.triage);
-    expect(result["matched_keywords"]).toEqual(["契约", "跨域"]);
-    expect(result["evidence_grade"]).toBe("INFERRED");
-    expect(result["ttl_hours"]).toBe(168);
+  it("D-5 退役回归：路由段零 triage 词形（档位语义零残留）", () => {
+    const routing = resultOf(chain.alerts)["workflow_routing"] as readonly string[];
+    expect(routing.join("\n")).not.toContain("triage");
+    const unsourced = resultOf(chain.alerts)["unsourced_categories"] as readonly unknown[];
+    expect(unsourced).toEqual([]);
   });
 
-  it("缺席显式：absent_signals 全量 8 项（升档档位也不把缺席渲染成干净）", () => {
-    const absent = resultOf(chain.triage)["absent_signals"] as readonly string[];
-    expect(absent).toHaveLength(8);
-    expect(absent).toContain("contract_surface_registry");
-    expect(absent).toContain("governed_object_hits");
+  it("分段卡名指向 pomaster-discovery（BEAT_CARD_NAMES ① 位——triage 卡已退役）", () => {
+    const routing = resultOf(chain.alerts)["workflow_routing"] as readonly string[];
+    expect(routing.join("\n")).toContain("pomaster-discovery");
   });
 
-  it("triage 重放字节稳定（同请求 stdout 全等，GOLDEN-L8-1 判据）", async () => {
-    const replay = await runJsonStep(root, ["triage", REQUEST]);
-    expect(replay.code).toBe(0);
-    expect(replay.stdout).toBe(chain.triage.stdout);
+  it("alerts 重放字节稳定（链终态同 state 连续两次运行 stdout 全等，GOLDEN-L8-1 判据）", async () => {
+    // alerts 是投影读面：链推进后对「同一 state 连续两次运行」做字节稳定判定
+    // （对 chain.alerts 原始存档比较无意义——链在其间已推进，时态比较才是诚实判据）。
+    const first = await runJsonStep(root, ["alerts"]);
+    const second = await runJsonStep(root, ["alerts"]);
+    expect(first.code).toBe(0);
+    expect(second.code).toBe(0);
+    expect(second.stdout).toBe(first.stdout);
   });
 });
 
@@ -226,8 +228,8 @@ describe("八拍① triage（Vue3 工程）", () => {
 // 八拍①②③ maintain --phase pre-dev
 // ============================================================
 
-describe("八拍①②③ maintain --phase pre-dev（Vue3 工程）", () => {
-  it("pre-dev 链 exit 0：mode=pre_dev_chain、failed_at_step=null、三步视图齐备", () => {
+describe("八拍②③ maintain --phase pre-dev（Vue3 工程；D-5 裁决 18 二步化）", () => {
+  it("pre-dev 链 exit 0：mode=pre_dev_chain、failed_at_step=null、二步视图齐备", () => {
     const rec = chain.predev;
     expect(rec.code).toBe(0);
     const envelope = env(rec);
@@ -237,17 +239,15 @@ describe("八拍①②③ maintain --phase pre-dev（Vue3 工程）", () => {
     expect(result["mode"]).toBe("pre_dev_chain");
     expect(result["phase"]).toBe("pre-dev");
     expect(result["failed_at_step"]).toBeNull();
-    expect(result["triage"]).not.toBeNull();
+    expect(result["triage"]).toBeUndefined(); // D-1/D-5：零 compat 字段
     expect(result["permit"]).not.toBeNull();
     expect(result["projection"]).not.toBeNull();
   });
 
-  it("① triage 视图与独立 triage 同判（STANDARD + matched 保序一致）", () => {
-    const triage = resultOf(chain.predev)["triage"] as Record<string, unknown>;
-    expect(triage["profile"]).toBe("STANDARD");
-    expect(triage["matched_keywords"]).toEqual(
-      resultOf(chain.triage)["matched_keywords"],
-    );
+  it("二步链编排纪律：permit 与 projection 相继在场（零分支政策——permit 后投影步不跳）", () => {
+    const result = resultOf(chain.predev);
+    expect((result["permit"] as Record<string, unknown>)["permit_ref"]).toMatch(/^PERMIT\./);
+    expect((result["projection"] as Record<string, unknown>)["must_entries"]).toBeTruthy();
   });
 
   it("② permit 五件套：PERMIT.TASK_V0001.1 + scope 圈定单对象 + ttl 168 拍", () => {
@@ -299,8 +299,6 @@ describe("八拍①②③ maintain --phase pre-dev（Vue3 工程）", () => {
       CHANGE_OR_TASK,
       "--phase",
       "pre-dev",
-      "--request",
-      REQUEST,
       "--subject",
       TASK_ID,
       "--actor",

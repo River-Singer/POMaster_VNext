@@ -1,5 +1,5 @@
 /**
- * next-action.ts —— Next-Action 确定性路由（裁定批 E P2；09-05 提案 §2 P2）。
+ * next-action.ts —— Next-Action 确定性路由（裁定批 E P2；09-05 提案 §2 P2）。（历史裁定，锚缺失——裁定批 E，2026-09-05 执行轮；未入 corpus 台账，T3-R3 如实标注）
  *
  * 职责：TASK 状态 × 产物/账面在场性 → 唯一建议命令（八拍命令化）。零新治理语义、
  * 零写路径、零状态轴新增——路由复用八拍 §9.2 状态机的既有语义，不加状态；数据面
@@ -111,13 +111,19 @@ const ACTIVE_LIFECYCLE_VALUES: readonly string[] = ["PROPOSED", "CURRENT"];
  * 09-05 提案 §2 P5：两个历史 skip bug 的修复产物形态——「每轮/开场通道若不提及
  * 必做步骤，AI 会静默跳过」的不变量机器化）。命令词形与 COMMAND_PANORAMA_LINES
  * 八拍段同源（每拍取主命令；④ EXECUTE 取机器执行点 exec-guard）。
+ * T2 check 裁定项④收编（裁决 18，2026-09-08）：beat "0"（R_NOT_INITIALIZED /
+ * R_BASELINE_NOT_READY 路由行的拍位词形）随八拍重排一并定拍位入表——baseline
+ * confirm 属 0 BOOTSTRAP 拍（COMMAND_PANORAMA_LINES 同位：baseline set/confirm 在
+ * # 0 BOOTSTRAP 段）；八拍①重定义为 Brainstorm/Question Gate（D-5，triage 判档位
+ * 退役，owner-adjudications.md#裁决18），后续拍零重编号。
  */
 export const EIGHT_BEAT_ENFORCEMENT_LINES: readonly {
   readonly beat: string;
   readonly name: string;
   readonly enforcement: string;
 }[] = [
-  { beat: "①", name: "TRIAGE", enforcement: 'pomaster triage "<request>"' },
+  { beat: "0", name: "BOOTSTRAP", enforcement: "pomaster init" },
+  { beat: "①", name: "BRAINSTORM", enforcement: "pomaster brainstorm start" },
   { beat: "②", name: "FRAMEWORK LOCK", enforcement: "pomaster permit issue" },
   { beat: "③", name: "PROJECTION", enforcement: "pomaster context compile" },
   { beat: "④", name: "EXECUTE", enforcement: "pomaster exec-guard --attempt <file|->" },
@@ -579,12 +585,15 @@ export const NEXT_ACTION_ROUTE_TABLE: readonly NextActionRouteRow[] = [
     }),
   },
   {
+    // D-5（裁决 18，2026-09-08）：八拍① = Brainstorm/Question Gate——「只有一条公开
+    // 通路」的单入口（triage 判档位已退役；讨论驻留与新变更同走 brainstorm start，
+    // promote 即建任务）。
     id: "R_NO_ACTIVE_TASK",
     when: (s) => (s.active_tasks.length === 0 ? true : false),
     render: () => ({
       beat: "①",
-      command: 'pomaster triage "<request>"',
-      reason: "无活跃 TASK.*（新变更从八拍①判档入口；讨论驻留走 pomaster brainstorm start）",
+      command: "pomaster brainstorm start",
+      reason: "无活跃 TASK.*（新变更从八拍① Brainstorm 入口——需求收敛后 promote 即建任务）",
     }),
   },
   {
