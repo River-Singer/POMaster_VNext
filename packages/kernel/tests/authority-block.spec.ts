@@ -143,6 +143,22 @@ describe("D-4 权威维度闸：对抗用例（non-authoritative source 驱动�
     expect(index.objects.some((row) => row.id === "CHANGE.CARLINE_GRID")).toBe(false);
   });
 
+  it("R5 留痕 hint 诚实性：AUTHORITY_BOUNDARY_DENY 指路的裁定留痕位置由 Owner 声明（零程序读写的台账不冒充产品内注册面）", async () => {
+    writeSourcesYaml(BP_SOURCES_YAML);
+    await applyTransaction(store, {
+      ops: [{ op: "upsert_object", envelope: gridPageEnvelope() }],
+    });
+    const denied = await applyTransaction(store, {
+      ops: [{ op: "upsert_object", envelope: bpDrivenChangeEnvelope() }],
+    }).catch((error: unknown) => error);
+    expect(denied).toBeInstanceOf(GovernanceError);
+    const hint = (denied as GovernanceError).hint ?? "";
+    // 诚实表述：留痕位置 = Owner 声明（产品仓 corpus 台账或消费项目内 Owner 自选留痕处）。
+    expect(hint).toContain("留痕位置由 Owner 声明");
+    // 旧失实文案退役：不再暗示存在一个被产品登记/播种的「owner-adjudications 台账」。
+    expect(hint).not.toContain("留痕 owner-adjudications 台账");
+  });
+
   it("同一 CHANGE 撤去 BP source_refs → 合法事务零误伤（affected 面在、来源轴不在即放行）", async () => {
     writeSourcesYaml(BP_SOURCES_YAML);
     await applyTransaction(store, {

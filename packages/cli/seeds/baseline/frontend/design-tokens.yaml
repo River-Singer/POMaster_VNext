@@ -1,0 +1,102 @@
+# baseline/frontend/design-tokens.yaml —— 语义 Design Token 合同（F-M1 最小骨架；R3 批）
+# 职责(PRD §16 树):语义 token 单一合同面——颜色/字体/间距/圆角/阴影/层级/密度/
+# 布局/动效/断点九组语义 token;UI 只能从本合同的语义 token 与批准组件取得视觉
+# 规则;Agent Context 消费语义 token 而非裸数值（原文 §17 设计原则）。
+# 本文件由 pomaster init 播种（B6D 批增量——09-10 R3/F-M1）;seed-once（缺席才写/
+# 在座零触碰）;确认链第 25 文件（BASELINE_CONFIRM_TARGETS 单一清单——confirm digest
+# 快照/closeout 校验/preset 快照声明三消费面同源;manifest 不自引用）。
+#
+# origin 机器位（词形闭包 preset|customized|owner——22-design-tokens.schema.json
+# 本地闭包,零中央词表 PR）:
+#   preset     = 播种骨架/预设默认来源（advisory 性质——Owner 确认前不构成项目事实）
+#   customized = Owner 在 preset 基础上定制
+#   owner      = Owner 全权自著（无预设来源）
+# meta.customized = Owner 定制机器位（P-D1 customize/diff/confirm 全流程消费）。
+#
+# 起步值纪律（零发明内容红线）:本仓未登记 POMaster Default Design 预设默认值——
+# 全部 token 起步值:UNKNOWN（留待 Owner 决策）;原文示例数值（如 §16 示例色值）
+# 禁伪造成项目事实（NON-AUTHORITATIVE——示例只住 PRD 注记,不入播种面）。
+#
+# token 命名收敛定稿（原文 §16 layout.section_gap vs §17 spacing.section_gap 二选一）:
+# 定稿 = spacing.section_gap——间距语义归 spacing 组（§17 语义 token 先例逐字）;
+# layout 组不再承载 section_gap（layout 留给 page_padding 等页面结构键;断点语义
+# 归 breakpoints 组）。原文 §16 的 layout.section_gap 词形废弃。
+meta:
+  origin: preset
+  customized: false
+color:
+  brand:
+    primary: UNKNOWN
+    secondary: UNKNOWN
+  surface:
+    page: UNKNOWN
+    container: UNKNOWN
+    elevated: UNKNOWN
+  text:
+    primary: UNKNOWN
+    secondary: UNKNOWN
+    tertiary: UNKNOWN
+    disabled: UNKNOWN
+  border:
+    default: UNKNOWN
+    subtle: UNKNOWN
+    strong: UNKNOWN
+  semantic:
+    success: UNKNOWN
+    warning: UNKNOWN
+    error: UNKNOWN
+    info: UNKNOWN
+typography:
+  family:
+    sans: UNKNOWN
+    mono: UNKNOWN
+  size:
+    caption: UNKNOWN
+    body: UNKNOWN
+    body_large: UNKNOWN
+    title_small: UNKNOWN
+    title_medium: UNKNOWN
+    title_large: UNKNOWN
+  weight:
+    regular: UNKNOWN
+    medium: UNKNOWN
+    semibold: UNKNOWN
+  line_height:
+    compact: UNKNOWN
+    normal: UNKNOWN
+    relaxed: UNKNOWN
+spacing:
+  xs: UNKNOWN
+  sm: UNKNOWN
+  md: UNKNOWN
+  lg: UNKNOWN
+  xl: UNKNOWN
+  xxl: UNKNOWN
+  section_gap: UNKNOWN
+radius:
+  sm: UNKNOWN
+  md: UNKNOWN
+  lg: UNKNOWN
+elevation:
+  card: UNKNOWN
+  popover: UNKNOWN
+  modal: UNKNOWN
+density:
+  control_height: UNKNOWN
+  compact_control_height: UNKNOWN
+  table_row_height: UNKNOWN
+  compact_table_row_height: UNKNOWN
+layout:
+  page_padding: UNKNOWN
+  content_max_width: UNKNOWN
+  sidebar_width: UNKNOWN
+  header_height: UNKNOWN
+motion:
+  fast: UNKNOWN
+  normal: UNKNOWN
+  slow: UNKNOWN
+breakpoints:
+  sm: UNKNOWN
+  md: UNKNOWN
+  lg: UNKNOWN
+  xl: UNKNOWN

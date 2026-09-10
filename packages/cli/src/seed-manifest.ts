@@ -47,8 +47,9 @@
  *    移植，走 catalog TECHNOLOGY_PROFILE 分类面（seed_b6c_backend.py 物化），清单
  *    无对应条目。
  *
- * ADR-lite（B6d，新著件分形——无 frontmatter + 自指指纹）：baseline 25 件为**新著**
- * （旧包无 25 文件成套资产；PRD §3 树职责注释承载骨架，起步值一律 UNKNOWN——
+ * ADR-lite（B6d，新著件分形——无 frontmatter + 自指指纹）：baseline 件为**新著**
+ * （旧包无 baseline 成套资产，B6D 批 25 件 + 09-10 R3 批增量 design-tokens.yaml =
+ * 26 件；PRD §3 树职责注释承载骨架，起步值一律 UNKNOWN——
  * 「待填写」旧词形零移植），播种件为**纯正文**：yaml 直接可解析（frontmatter 块会
  * 使 yaml.safe_load 取到错误文档——机器锚面零污染）、md 零噪音（Owner 填写面）。
  * 清单 provenance 走 entry 级 `authoring: "new"`：装载对新著件不要求 frontmatter pin

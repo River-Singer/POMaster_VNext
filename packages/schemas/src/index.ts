@@ -76,6 +76,14 @@
  * （claim_refs/gate_refs 资格清单 + subject_ref 归属绑定——挪证缝收口）；Spec 持要求
  * 不持判定（无 verdict 词位）；SPEC. 前缀随 PR-0008 入 prefixes_v0 闭包（三镜像同批）。
  * 词形轴 proof_type/spec_kind 已随 PR-0009 登记（vocab-lock evidence_spec_vocab）。
+ * vNext baseline R3 增量（22）：Design Tokens 最小合同（Baseline PRD 原文 §13-21；
+ * 09-10-baseline-confirm-chain-governance R3/F-M1 批）。项目平面 token 合同
+ * （.pomaster/baseline/frontend/design-tokens.yaml——九组 §16 骨架 + meta.origin
+ * 三值本地闭包 preset|customized|owner，零中央词表 PR）；非 governed object
+ * （20-sources-authority 同域）；命名收敛定稿 spacing.section_gap（§16
+ * layout.section_gap 废弃，理由住 seed 头注与本 schema description）。
+ * 数值两来源纪律：POMaster Default Design 预设默认（advisory）或留空 UNKNOWN/null
+ * ——原文示例数值禁伪造成项目事实（§7.1 NON-AUTHORITATIVE）。
  *
  * 词表纪律：一切枚举唯一来源是 assets/vocab-lock.draft.yaml（FROZEN）；
  * 代码侧唯一镜像点在 ./vocab.js（本文件 re-export）。YAML 资产仅作人读/工具对账，
@@ -110,6 +118,7 @@ import decisionGraphSchemaRaw from "../assets/18-decision-graph.schema.json" wit
 import softwareGraphRelationsSchemaRaw from "../assets/19-software-graph-relations.schema.json" with { type: "json" };
 import sourcesAuthoritySchemaRaw from "../assets/20-sources-authority.schema.json" with { type: "json" };
 import evidenceSpecSchemaRaw from "../assets/21-evidence-spec.schema.json" with { type: "json" };
+import designTokensSchemaRaw from "../assets/22-design-tokens.schema.json" with { type: "json" };
 
 export * from "./vocab.js";
 
@@ -163,6 +172,8 @@ const SOURCES_AUTHORITY_ID =
   "https://pomaster.dev/schemas/sources-authority/v1-draft.json";
 const EVIDENCE_SPEC_ID =
   "https://pomaster.dev/schemas/evidence-spec/v1-draft.json";
+const DESIGN_TOKENS_ID =
+  "https://pomaster.dev/schemas/design-tokens/v1-draft.json";
 
 function asSchema(raw: unknown, expectedId: string): JsonSchemaObject {
   const schema = raw as JsonSchemaObject;
@@ -245,6 +256,10 @@ export const evidenceSpecSchema = asSchema(
   evidenceSpecSchemaRaw,
   EVIDENCE_SPEC_ID,
 );
+export const designTokensSchema = asSchema(
+  designTokensSchemaRaw,
+  DESIGN_TOKENS_ID,
+);
 
 /** 全部 schema 的聚合（组合装载：ajv.addSchema 逐个注册即可遍历本对象）。 */
 export const allSchemas = {
@@ -269,6 +284,7 @@ export const allSchemas = {
   softwareGraphRelations: softwareGraphRelationsSchema,
   sourcesAuthority: sourcesAuthoritySchema,
   evidenceSpec: evidenceSpecSchema,
+  designTokens: designTokensSchema,
 } as const;
 
 // ============================================================

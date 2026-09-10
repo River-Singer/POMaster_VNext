@@ -49,6 +49,7 @@
       ".pomaster/baseline/frontend/api-and-error.md",
       ".pomaster/baseline/frontend/architecture.md",
       ".pomaster/baseline/frontend/design-system.md",
+      ".pomaster/baseline/frontend/design-tokens.yaml",
       ".pomaster/baseline/frontend/directory-structure.md",
       ".pomaster/baseline/frontend/quality.md",
       ".pomaster/baseline/frontend/stack.yaml",
@@ -119,9 +120,9 @@
   },
   "generated_by": "catalog/tools/seed_b6e_evidence.py; B6F 增量=09-05-overlay-asset-batch(manifest 手工增量登记,sha256 pin 由 seed-manifest.spec 双锚对账); B6G 增量=css 体系 overlay(09-05-spec-thematic-reorg 裁决 D8,manifest 手工增量登记); B7-THEME 增量=scripts/seed_b7_theme.py(09-05-spec-thematic-reorg 第二阶段物化批:FE/BE 79 entry 退役删除(D3)+21 条主题/导航 entry 聚合 pin 形态(D6:source pin 指 seeds/aggregation-manifest.json,逐源 vendor sha256 在清单与主题 frontmatter x-aggregation 双面在册))",
   "denominator": {
-    "batch_scope": "B7-THEME（09-05-spec-thematic-reorg 第二阶段，Owner 裁定 D1-D8）：FE 45+index / BE 32+index 79 文件退役删除（D3 直接删除；已安装工作区并存窗口由 doctor/status legacy_specs_present 检出呈现），重组为 20 份主题文档 + 1 份导航文档（themes/ 单目录 21 文件——12 跨端 + 5 前端独占 + 2 后端独占；映射表 §2 逐文件唯一去向；内容行双向零差异机器自证）；主题 frontmatter = 9 基键 + BE 6 扩展键聚合注记（D7）+ x-aggregation 逐源 sha256（D6，与卡 vendor_pin 同值）+ x-language-sections 语言节同步源（R-J 资产层唯一权威，注入面为逐字节副本；18 overlay 全挂点——B01 含 postgresql（OQ-8）、F01 含 css（D8））；导航文档承接两 index 路由表/激活基线/冲突优先级（D2）；B6c(stacks 28)/B6d/B6e/B6f/B6G 81 条在册——清单合并承载全量分母 102",
-    "planted": 102,
-    "planted_total": 102,
+    "batch_scope": "B7-THEME（09-05-spec-thematic-reorg 第二阶段，Owner 裁定 D1-D8）：FE 45+index / BE 32+index 79 文件退役删除（D3 直接删除；已安装工作区并存窗口由 doctor/status legacy_specs_present 检出呈现），重组为 20 份主题文档 + 1 份导航文档（themes/ 单目录 21 文件——12 跨端 + 5 前端独占 + 2 后端独占；映射表 §2 逐文件唯一去向；内容行双向零差异机器自证）；主题 frontmatter = 9 基键 + BE 6 扩展键聚合注记（D7）+ x-aggregation 逐源 sha256（D6，与卡 vendor_pin 同值）+ x-language-sections 语言节同步源（R-J 资产层唯一权威，注入面为逐字节副本；18 overlay 全挂点——B01 含 postgresql（OQ-8）、F01 含 css（D8））；导航文档承接两 index 路由表/激活基线/冲突优先级（D2）；B6c(stacks 28)/B6d/B6e/B6f/B6G 81 条在册——清单合并承载全量分母 102；R3/F-M1 增量=09-10-baseline-confirm-chain-governance R3（baseline/frontend/design-tokens.yaml 补位 B6D 批 25→26，手工增量登记，自指 pin；确认分母 24→25 同源——ADR-20），分母 102→103",
+    "planted": 103,
+    "planted_total": 103,
     "batch_new": 21
   },
   "seed_semantics": "seed-once-missing-only(缺席才写 / 在座零触碰 / marker-free;seeds.ts 单一实现;frontmatter 为 PRD §8.2 字段位减 id——no-governed-id 默认,播种 spec 是项目可编辑自由文件;B6c 起 BE 件含 vendor frontmatter 保留字段、stacks 件落 <slug> 子目录——SEEDABLE_STORE_DIRS 显式 slug 登记;B6d 起 baseline 件为新著纯正文(无 frontmatter——yaml 直接可解析/Owner 填写面零噪音;entry authoring=new,pin=资产自身字节指纹,装载器自指校验;UNKNOWN 起步,「待填写」词形零移植);B6e 起 specs/evidence 件同 authoring=new 纯正文通路——十七段结构照 PRD §13.1,要求面非证据面(持要求不持判定,判卷四值词形闭包),gates 绑定=登记级注记);B6f/B6G 起 stacks 前端族(vue3/antdesign/geist/css)走移植件通路落地(源=旧线 frontend-hard-spec/assets/stacks/ 新著 vendor 件——统一 9 字段+vendor 保留字段 id→legacy_id/applies_to 并入+x-research-anchors 研究锚透传;installed=播种态全量在册,bound=选中态由 baseline/frontend/stack.yaml 显式选型派生,不作隐式基线——B6c 注记语义同源);B7-THEME 起 themes 面（specs/hard/themes 单目录）为聚合文档通路——seed-once 语义不变,frontmatter = 9 基键 + BE 6 扩展键聚合注记（D7 统一形态,info 性注记非执行语义）+ x-aggregation/x-language-sections 扩展键（D6 聚合 pin;R-J 语言节资产唯一权威、注入面副本）",
@@ -657,6 +658,20 @@
       "porting_notes": [
         "B6d 新著件(非移植):旧包无 25 文件成套资产——语义祖先为运行时 factsource stack-baseline.schema 与 02-technology-baseline planned 模板(仅字段/词形参照,capability/status/supersedes/ACR 演化语义不并入一期,提案 §3);骨架章节照 PRD §3 baseline 树职责注释逐字;内容零发明:起步值一律 UNKNOWN,示例与默认值不住播种面(PRD §7.1 NON-AUTHORITATIVE——示例只住 PRD/catalog 注记)",
         "B6d 形态注记:本件无 frontmatter(纯正文——yaml 直接可解析/md 零噪音,Owner 填写面);清单 pin=资产自身字节 sha256(authoring=new 自指指纹——新著无 vendor 源字节,防包内清单↔资产失同步,装载器按 authoring 分流校验)"
+      ]
+    },
+    {
+      "target": ".pomaster/baseline/frontend/design-tokens.yaml",
+      "asset": "baseline/frontend/design-tokens.yaml",
+      "seed_version": "B6D",
+      "lane": "frontend",
+      "authoring": "new",
+      "source_path": "doc/POMaster-Project-Baseline-Framework-v2-PRD.md#s16-design-tokens-yaml-contract(Baseline PRD §16 token 合同骨架逐字承载+§17 命名收敛定稿;新著无 vendor 字节源——语义祖先=§16 九组骨架,数值零移植)",
+      "source_sha256": "3bb13cd3daff7bdb537340c6705802437d2e3718d05b863d784a68cfa48b3c4e",
+      "source_bytes": 3232,
+      "porting_notes": [
+        "R3/F-M1 增量新著件(B6D 批补位,09-10-baseline-confirm-chain-governance):语义 token 骨架九组(Baseline PRD §16 分组逐字;spacing.section_gap 命名收敛定稿——§16 layout.section_gap 废弃,理由住 seed 头注与 22 号 schema);内容零发明:起步值一律 UNKNOWN,本仓无 POMaster Default Design 预设默认值登记——原文示例数值禁伪造成项目事实(PRD §7.1 NON-AUTHORITATIVE)",
+        "R3 形态注记:本件无 frontmatter(纯 yaml——直接可解析,Owner 填写面);清单 pin=资产自身字节 sha256(authoring=new 自指指纹);确认链第 25 文件(BASELINE_CONFIRM_TARGETS ADR-20 扩位——digest 快照/closeout/preset 声明三消费面同源;形状契约=packages/schemas/assets/22-design-tokens.schema.json,baseline-tokens.ts 装载校验)"
       ]
     },
     {

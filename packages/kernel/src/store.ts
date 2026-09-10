@@ -835,7 +835,7 @@ function assertAuthorityBoundaries(paths: StorePaths, raw: UnknownRecord, tx: Tr
     throw new GovernanceError(
       "AUTHORITY_BOUNDARY_DENY",
       `权威维度闸阻断（D-4）：本事务存在非权威来源驱动的触及维度——${denies.length} 项越界：${denies.join("；")}`,
-      "改由对该维度 authoritative 的来源驱动本变更（sources/index.yaml 双轴申报）；或由 Owner 修订 authority.json map/boundary_rules 的维度归属（推翻边界=Owner 裁定，留痕 owner-adjudications 台账）。本事务零落盘。",
+      "改由对该维度 authoritative 的来源驱动本变更（sources/index.yaml 双轴申报）；或由 Owner 修订 authority.json map/boundary_rules 的维度归属（推翻边界=Owner 裁定；留痕位置由 Owner 声明——产品仓 corpus/master/cutover/owner-adjudications.md 台账（零程序读写）或消费项目内 Owner 自选留痕处）。本事务零落盘。",
       {
         denies,
         boundary_rules_deny: faces.boundary_rules.filter((rule) => rule.effect === "deny").length,

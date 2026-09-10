@@ -382,7 +382,9 @@ describe("confirm 烙印与漂移检出（R-L 语义零改动）", () => {
     // 模块载入对账（ADR-2a）已在 import 期执行（漂移即抛错）；此处钉逐字清单。
     const targets = BASELINE_CONFIRM_TARGETS.filter((target) => target.endsWith(".md")).sort();
     expect(targets).toEqual(FACE_FILES.map((file) => file.replace(/^\.pomaster\//, "")));
-    expect(BASELINE_CONFIRM_TARGETS).toHaveLength(24); // 2 stack.yaml + 22 md
+    expect(BASELINE_CONFIRM_TARGETS).toHaveLength(25); // 2 stack.yaml + 22 md + 1 design-tokens.yaml（F-M1 R3）
+    // N1 对账只对 md 面（实测勘误——yaml 目标不强制 preset face 补位，P-C1 提案 §10.3）。
+    expect(BASELINE_CONFIRM_TARGETS).toContain("baseline/frontend/design-tokens.yaml");
   });
 
   it("确认前草案可自由改（gate 仅 NOT_CONFIRMED）；confirm 后改草案 → BASELINE_DRIFT 指名 architecture.md；ack 通道重确认恢复", async () => {

@@ -222,7 +222,7 @@ describe("status 跨轴与词表纪律（显式呈现，不静默）", () => {
 // ============================================================
 
 describe("status 播种分面计数呈现（B6e；B7-THEME 四分面）", () => {
-  it("init 后 seeded_assets = 四分面清单分母（21/36/20/25）+ human 行呈现", async () => {
+  it("init 后 seeded_assets = 四分面清单分母（21/36/20/26）+ human 行呈现（baseline 25→26：R3/ADR-20 增 design-tokens.yaml）", async () => {
     await runInit(dir);
     const outcome = await runStatus(dir);
     expect(outcome.ok).toBe(true);
@@ -230,10 +230,10 @@ describe("status 播种分面计数呈现（B6e；B7-THEME 四分面）", () => 
       specs_hard_themes: 21,
       specs_hard_stacks: 36,
       specs_evidence: 20,
-      baseline: 25,
+      baseline: 26,
     });
     expect(outcome.human.join("\n")).toContain(
-      "seeded assets: themes 21 / stacks 36 / evidence 20 / baseline 25",
+      "seeded assets: themes 21 / stacks 36 / evidence 20 / baseline 26",
     );
   });
 
@@ -282,6 +282,8 @@ describe("status baseline 确认态呈现（R-L）", () => {
     expect(outcome.result.baseline_confirmation).toEqual({
       state: "unconfirmed",
       unknowns_remaining: 14,
+      blocking_remaining: 14,
+      applicability_summary: { BLOCKING: 14, NOT_APPLICABLE: 0, DEFERRED: 0 },
       at_seq: null,
       drifted_files: [],
     });

@@ -78,10 +78,10 @@ canonical 正文层为 `.pomaster/truth/objects/`；legacy `.pomaster/objects/` 
 
 - **缺失才写、在座零触碰**；
 - 播种件**不带生成标记**——项目自有可编辑，重跑 init 永不覆盖你的修改；AI 禁静默覆盖；
-- 播种分母 = **102 份内容文件** + manifest 单源：
+- 播种分母 = **103 份内容文件** + manifest 单源：
   - `specs/hard` 57：themes 21（20 主题 + 1 导航）/ stacks 18×2（后端 14 族 + 前端 4 族）；
   - `specs/evidence` 20；
-  - `baseline` 25；
+  - `baseline` 26（含 R3 增量 `frontend/design-tokens.yaml` 语义 token 合同）；
 - 已安装工作区的旧 FE/BE 平铺 spec 由 doctor / status 的 `legacy_specs_present` 检出呈现
   （纯读不拦不删）。
 
