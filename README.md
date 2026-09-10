@@ -75,7 +75,7 @@ pomaster alerts
 pomaster doctor
 pomaster portability bootstrap/check
 pomaster update --check/--yes
-pomaster baseline set/confirm   # set = 单键后补销账；confirm = 基线确认 gate（14 unknowns 销账后 digest 快照——closeout 阻断码与 doctor/status 确认态的消费源）
+pomaster baseline set/confirm   # set = 单键后补销账；confirm = 基线确认 gate（阻塞集清零后 digest 快照——closeout 阻断码与 doctor/status 确认态的消费源）
 
 # ① DISCOVERY —— 需求拷问/问题闸/决议图（Brainstorm/Question Gate）
 pomaster brainstorm start/question-gate/status/decide/promote
@@ -187,7 +187,7 @@ pomaster brainstorm promote idea-export-btn --to TASK --basis msd_reached --appl
 # —— 八拍推进：next-action 会逐拍给唯一建议命令 ——
 pomaster status                                   # R_PERMIT_MISSING（--subject 为 affected_objects 派生建议）
 pomaster permit issue --subject PAGE.USER_LIST --actor human:owner --change-ref TASK.IDEA_EXPORT_BTN
-pomaster baseline confirm                         # R_BASELINE_NOT_READY（unknowns 全销账后的一次性收口账）
+pomaster baseline confirm                         # R_BASELINE_NOT_READY（阻塞集清零后的一次性收口账）
 pomaster context compile --role frontend --change TASK.IDEA_EXPORT_BTN   # ③ 投影
 pomaster execution begin --role implementer --runtime script --identity-kind script --task-id TASK.IDEA_EXPORT_BTN  # ④ 执行身份
 # ……在你的 Agent harness（Claude Code 等）里实现代码……

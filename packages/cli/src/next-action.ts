@@ -32,8 +32,9 @@
  *   ④⑤两行跳过不乱指；A4 零墙钟：读档案文件非墙钟判定）；
  * - baseline 确认态（T2 R5 · R_BASELINE_NOT_READY）：gate code 复用
  *   baselineGateErrors 单点判卷 + readBaselineConfirmationPresentation 呈现面
- *   （unknowns 剩余/在途变更批引用）——零第二套漂移检测算法；unknowns 全销账且
- *   gate 报 BASELINE_NOT_CONFIRMED|BASELINE_DRIFT 时路由确认仪式（收口前账）。
+ *   （unknowns 剩余/在途变更批引用）——零第二套漂移检测算法；阻塞集清零且
+ *   gate 报 BASELINE_NOT_CONFIRMED|BASELINE_DRIFT 时路由确认仪式（收口前账；
+ *   P-C1 T13 起判据 = blocking_remaining——豁免工作区照常路由）。
  *
  * 表驱动纪律：每行 = (条件判定, 建议渲染) 数据行，首中即停；条件返回 null = 该行
  * 不可判（跳过并记录原因，不乱指）；全表未中 → R_UNDETERMINED 诚实「无法判定」。
@@ -206,6 +207,14 @@ export interface NextActionSnapshot {
    */
   readonly baseline_gate_codes: readonly string[];
   readonly baseline_unknowns_remaining: number | null;
+  /**
+   * baseline 阻塞集分母（P-C1 T13/§6.9）：R_BASELINE_NOT_READY 的 confirm 路由判据
+   * 由总口径 unknowns_remaining 收窄为本字段——豁免登记行（NOT_APPLICABLE/DEFERRED
+   * 结构化行）在册的工作区 unknowns 恒 > 0 但 confirm 可过，总口径判据会永久
+   * withhold confirm 指引（路由死锁）；总口径呈现保留不删。null = 不可判
+   * （stack 平面缺席/台账形状损坏的诚实降级）→ fail-closed 不路由。
+   */
+  readonly baseline_blocking_remaining: number | null;
   readonly baseline_pending_change_ref: string | null;
 }
 
@@ -229,6 +238,7 @@ function emptySnapshot(initialized: boolean): NextActionSnapshot {
     task_execution_active: false,
     baseline_gate_codes: [],
     baseline_unknowns_remaining: null,
+    baseline_blocking_remaining: null,
     baseline_pending_change_ref: null,
   };
 }
@@ -465,6 +475,7 @@ export async function collectNextActionSnapshot(
     task_execution_active: taskExecutionActive,
     baseline_gate_codes: baselineGateCodeList,
     baseline_unknowns_remaining: baselinePresentation?.unknowns_remaining ?? null,
+    baseline_blocking_remaining: baselinePresentation?.blocking_remaining ?? null,
     baseline_pending_change_ref: baselinePresentation?.pending_change?.change_ref ?? null,
   };
 }
@@ -597,13 +608,14 @@ export const NEXT_ACTION_ROUTE_TABLE: readonly NextActionRouteRow[] = [
     }),
   },
   {
-    // T2 R5：baseline 未确认（或已漂移）且 unknowns 全销账时，收口前的唯一缺口就是
-    // 确认仪式——此刻任何任务内推进（closeout 判卷会被 BASELINE_NOT_CONFIRMED/
-    // BASELINE_DRIFT 阻断）都先还这笔账。unknowns_remaining>0 时问卷分母未销账，
-    // 指 confirm 只会被 confirm 自身闸拒——不路由（诚实缺席）。
+    // T2 R5 + P-C1 T13：baseline 未确认（或已漂移）且阻塞集清零时，收口前的唯一缺口
+    // 就是确认仪式——此刻任何任务内推进（closeout 判卷会被 BASELINE_NOT_CONFIRMED/
+    // BASELINE_DRIFT 阻断）都先还这笔账。判据 = blocking_remaining（§6.9）：豁免登记行
+    // 在册（unknowns 总口径 > 0 而阻塞 0）照常路由；阻塞键在册时指 confirm 只会被
+    // confirm 自身闸拒——不路由（诚实缺席）；null 不可判 fail-closed 不路由。
     id: "R_BASELINE_NOT_READY",
     when: (s) =>
-      s.baseline_unknowns_remaining === 0 &&
+      s.baseline_blocking_remaining === 0 &&
       (s.baseline_gate_codes.includes("BASELINE_NOT_CONFIRMED") ||
         s.baseline_gate_codes.includes("BASELINE_DRIFT"))
         ? true
@@ -626,7 +638,7 @@ export const NEXT_ACTION_ROUTE_TABLE: readonly NextActionRouteRow[] = [
       return {
         beat: "0",
         command: "pomaster baseline confirm",
-        reason: "baseline 未确认（unknowns 已全销账——确认是唯一剩余缺口；closeout 判卷会被 BASELINE_NOT_CONFIRMED 阻断）",
+        reason: "baseline 未确认（阻塞集已清零——确认是唯一剩余缺口；closeout 判卷会被 BASELINE_NOT_CONFIRMED 阻断）",
       };
     },
   },

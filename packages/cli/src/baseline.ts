@@ -66,13 +66,15 @@
  *   BASELINE_CONFIRMED_PLACEHOLDER 升正式；N1 批修订分母）：`at_seq` = 确认时点锚
  *   （truth-index generation.seq；A4 零墙钟纪律——机器消费字段禁时间戳，时位即 seq；
  *   store 缺席 = 0 诚实缺席，信息性锚非判卷输入）+ `digests` = **确认资产清单全量**
- *   sha256 快照（2 stack.yaml + 22 md = 24 文件——ADR-15；manifest 不自引用；
+ *   sha256 快照（分母 = BASELINE_CONFIRM_TARGETS 单一清单——ADR-15 定 N1 24 文件，
+ *   ADR-20 扩 25；manifest 不自引用；
  *   词形 sha256:<hex>，与 catalog-lock sha256OfUtf8 同口径）。契约写入 --help 与本
  *   头注；manifest 是项目可编辑种子文件，本记录是**项目文件字段非治理对象**（零新
  *   状态轴：记录在座性 + 资产清单内容即全部状态）。行级块写（ADR-2 同款零 YAML
  *   依赖）：块 = confirmed: 行至下一顶层键行或 EOF；重确认 = 整块替换（EOF 追加位）。
- * - ADR-12 confirm 判卷与幂等：前提 = 14 unknowns 全销账（台账条目在座或 stack 值
- *   仍未销账的键逐条列出 → BASELINE_UNKNOWNS_REMAINING fail-closed）；确认资产清单
+ * - ADR-12 confirm 判卷与幂等：前提 = 14 unknowns 全销账（**P-C1 起演进为阻塞集
+ *   清零——ADR-18**；台账条目在座或 stack 值仍未销账的键逐条列出 →
+ *   BASELINE_UNKNOWNS_REMAINING fail-closed）；确认资产清单
  *   缺席 → NOT_CONFIGURED（seed-once 播种件恒在，缺席 = 结构漂移显式）；已确认且
  *   digest 与现盘全等 → NO_CHANGE 零写入（幂等比较只看 digest——at_seq 不比，
  *   重跑不因 journal 前进而重写）。
@@ -124,6 +126,57 @@
  *   豁免、不是身份鉴权——是显式授权声明 + 审计留痕；AI 代跑 ack 须持 Owner 指示
  *   （hint 写明）。confirmed 且无漂移时携任何通道旗标 → SCHEMA_INVALID（诚实拒绝
  *   静默 no-op 旗标，ADR-14 同纪律）。
+ *
+ * P-C1 阻塞集确认契约（ADR-18，2026-09-10 提案评审通过后实施；R6 批）：
+ *
+ * - ADR-18（P-C1）confirm 前提从「14 unknowns 全销账」演进为「阻塞集清零」——unknowns
+ *   台账双词形永久双读：flat 行永久合法（语义 = 缺省 BLOCKING，存量台账逐字节不变）；
+ *   结构化行强制 MSD unknown_item 同构 statement + classification（逐字复用十分类闭包
+ *   零新值）+ applicability 三值本地闭包 BLOCKING/NOT_APPLICABLE/DEFERRED（词形闭包住
+ *   本文件——零新 canonical axis，跨包消费时按提案 §5.6 走词汇表 PR 平移）。判卷 =
+ *   settled/exempt/blocking 公式（computeBlockingSet 单一实现）：豁免语义仅结构化行携带
+ *   （行删即回落阻塞——fail-closed 兜底）；stale 豁免（值已回填）不豁免（双重销账一致
+ *   性）；BASELINE_UNKNOWNS_REMAINING 词形保留、语义收窄为阻塞集。闭包不对称（评审
+ *   MF1 裁定）：FE/BE 两 lane 键∈14 键闭包强制，data/platform/tokens 等无机器键集域
+ *   键名开放（行形状校验 + Owner 手编权威——§75 按需增长通道）；结构化行形状损坏 =
+ *   显式 INVALID_STATE 禁静默忽略（§3.3 fail-open 盲区双向封堵；flat 开放域行恒入
+ *   阻塞集不再不可见）。schema_version 不递增【裁定】（行词形自描述无需版本仲裁）；
+ *   seed 内容零变更；旧确认记录零迁移（§7.1 升级路径 = 0.5.0 三态机既有通道）。
+ *   呈现加法字段 blocking_remaining/applicability_summary（unknowns_remaining 总口径
+ *   保留——老读者忽略未知字段兼容）；next-action confirm 路由判据同步改用
+ *   blocking_remaining（§6.9——豁免工作区 unknowns 恒 > 0，总口径判据路由死锁）。
+ *
+ * F14 观察候选化（ADR-19，2026-09-10 审计 F14 违背重构；R2 批）：
+ *
+ * - ADR-19（F14）观察不再直写权威基线：observePackageStack 保持 read-only；
+ *   原 applyStackObservations 的「行级回填 stack.yaml + manifest 销账」直写语义
+ *   废除，替换为 registerStackObservationCandidates 候选登记（纯读盘分账零写入：
+ *   UNKNOWN 键 → 观察候选 StackObservationCandidate，已采纳键 → skipped_resolved）。
+ *   观察事实不是人答也不是权威值——候选仅存呈现面（问卷题面观察候选注记 +
+ *   InitResult.observation 计数），权威 stack.yaml 值保持 UNKNOWN/原值，直到 Owner
+ *   经既有问卷/set 通路 adoption（人答优先级恒高于观察，采纳值 = 全权权威值）。
+ *   问卷分母不再因观察收缩（T2 R4 观察感知分母废除）：观察候选键照常入分母、题面
+ *   携带观察候选注记（Review 面，StackQuestionSpec.observed 加法字段）；未采纳候选
+ *   键在台账保持 flat 行 = 缺省 BLOCKING（P-C1 语义不受影响——行为与原未知键一致）。
+ *   [Observed: package.json] 注记词形保留，从 stack.yaml 行注记迁居问卷候选呈现
+ *   （存量已直写注记行 parseStackYaml 仍容忍解析——stripTrailingComment 兼容不变）。
+ *   preset 门 laneFullyResolved 与观察候选的联动（§12.4 open question）本批不扩，
+ *   保持现有 preset 判卷行为。
+ *
+ * F-M1 design-tokens 最小合同（ADR-20，2026-09-10 R3 批；P-C1 提案 §10 协调接口）：
+ *
+ * - ADR-20（R3）确认分母 24→25：`BASELINE_CONFIRM_TARGETS` 追加
+ *   `baseline/frontend/design-tokens.yaml`（B6D 批播种增量——F-M1 最小 token 合同，
+ *   Baseline PRD 原文 §16 骨架 + §17 命名收敛定稿 spacing.section_gap）。单一清单
+ *   三消费面（confirm digest 快照 / closeout baselineGateErrors 校验 / preset 快照
+ *   声明）同源自动跟随，零第二套路径声明；22 号 schema 管形状（baseline-tokens.ts
+ *   装载校验）与 digest 面正交（digest 只看字节）。preset N1 对账只对 md 面（实测
+ *   勘误——yaml 目标不强制 preset face 补位，P-C1 提案 §10.3）。旧 24 目标记录在
+ *   新分母下 = 结构损坏（digest 缺目标）→ 判卷面「无有效确认记录」fail-closed，
+ *   升级路径 = 重新 confirm 全量快照（N1 批 4→24 同语义，不需要 CHANGE）。
+ *   origin 机器位（meta.origin ∈ preset|customized|owner 本地闭包）+ meta.customized
+ *   是 schema 22 承载的文件级机器位；P-D1 customize/diff/confirm 全流程（含
+ *   per-token origin）不在本批。
  */
 
 import { writeFile } from "node:fs/promises";
@@ -192,6 +245,13 @@ export interface StackQuestionSpec {
   readonly key: string;
   readonly label: string;
   readonly options: readonly string[];
+  /**
+   * 观察候选呈现位（F14 ADR-19 加法字段；缺席 = 无观察候选）：题面携带观察值 +
+   * 证据注记（[Observed: package.json]）——Review 面呈现，Owner 选型该值即
+   * adoption；未采纳候选键保持 UNKNOWN（分母不再因观察收缩——T2 R4 观察感知
+   * 分母废除）。仅 FE 可观察 8 键携带（BE 同名键 language/framework 恒缺席）。
+   */
+  readonly observed?: StackObservationCandidate;
 }
 
 /**
@@ -418,8 +478,22 @@ const PACKAGE_OBSERVATION_TABLE: readonly {
   },
 ];
 
-/** 观察行注记（ADR-2 行级最小改写的注记词形；stripTrailingComment 的「 #」分隔保证幂等解析）。 */
+/** 观察行注记（ADR-2 时代 stack.yaml 行注记词形；F14 起迁居问卷候选呈现面——
+ * 证据注记语义不变；存量已直写注记行 parseStackYaml 仍容忍解析）。 */
 export const OBSERVED_ANNOTATION = "[Observed: package.json]" as const;
+
+/**
+ * 观察候选（F14 ADR-19 Candidate 载体）：观察事实 + 证据注记的呈现形态——非人答、
+ * 非权威值；adoption（Owner 经问卷/set 通路作答）前不入基线。
+ */
+export interface StackObservationCandidate {
+  /** 观察覆盖面（PACKAGE_OBSERVATION_TABLE 分母 = FE 可观察 8 键）。 */
+  readonly lane: BaselineLane;
+  readonly key: string;
+  /** 观察值（候选形态——入权威 stack.yaml 须经问卷/set 通路的 Owner adoption）。 */
+  readonly value: string;
+  readonly source: "package.json";
+}
 
 /**
  * 宿主 package.json 依赖观察（read-only）：dependencies + devDependencies 精确名
@@ -460,64 +534,42 @@ export async function observePackageStack(
 }
 
 /**
- * 观察落盘（ADR-2 行级最小改写 + 头注销账契约，与 applyStackAnswers 同式）：
- * 只对当前 UNKNOWN 键回填 `<key>: <value> # [Observed: package.json]`——已销账键
- * 零触碰（skipped_resolved 计数，重跑幂等 NO_CHANGE）。观察值是事实不是人答——
- * 问卷分母据此收缩（resolveRemainingQuestions 观察感知）；人对同一键的后答经
- * applyStackAnswers 行重写覆盖观察值（注记随之消失——人答优先级恒高于观察）。
- * stack.yaml/manifest.yaml 不可读 → 该 lane 零写入静默跳过（观察是尽力面，
- * 破损态由问卷/baseline set 通路的显式错误呈现）。返回 {observed, skipped_resolved}。
+ * 观察候选登记（F14 ADR-19——原 applyStackObservations「行级回填 stack.yaml +
+ * manifest 销账」直写语义废除）：纯读盘分账，零写入。观察值按现盘权威值分账：
+ * UNKNOWN 键 → 候选登记（candidates——呈现面 = 问卷题面观察候选注记 +
+ * InitResult.observation 计数）；已采纳（已销账）键 → skipped_resolved（adoption
+ * 已收敛，观察分账出局）。权威 stack.yaml 值保持 UNKNOWN/原值，直到 Owner 经既有
+ * 问卷/set 通路 adoption（人答优先级恒高于观察）；未采纳候选键在台账保持 flat 行
+ * = 缺省 BLOCKING（P-C1 语义不受影响——行为与原未知键一致）。stack.yaml 缺席/
+ * 不可解析 → 零候选静默分账（观察是尽力面，破损态由问卷/baseline set 通路的
+ * 显式错误呈现）。返回 {observed = 候选数, skipped_resolved, candidates}。
  */
-export async function applyStackObservations(
+export async function registerStackObservationCandidates(
   rootDir: string,
   observation: { readonly source: "package.json"; readonly values: ReadonlyMap<string, string> },
-  files: InitFileReport[],
-): Promise<{ readonly observed: number; readonly skipped_resolved: number }> {
-  let observed = 0;
-  let skippedResolved = 0;
+): Promise<{
+  readonly observed: number;
+  readonly skipped_resolved: number;
+  readonly candidates: readonly StackObservationCandidate[];
+}> {
   const lane: BaselineLane = "frontend";
   const laneKeys = STACK_KEYS[lane];
-  const stackRelative = baselineStackRelative(lane);
-  const stackFile = await readTextFile(`${rootDir}/${stackRelative}`);
-  if (stackFile.kind !== "ok") return { observed, skipped_resolved: skippedResolved };
+  const stackFile = await readTextFile(`${rootDir}/${baselineStackRelative(lane)}`);
+  if (stackFile.kind !== "ok") return { observed: 0, skipped_resolved: 0, candidates: [] };
   const parse = parseStackYaml(stackFile.text, laneKeys);
-  if (!parse.ok) return { observed, skipped_resolved: skippedResolved };
-  const lines = stackFile.text.split("\n");
-  const wordForms = new Set<string>();
-  let stackChanged = false;
+  if (!parse.ok) return { observed: 0, skipped_resolved: 0, candidates: [] };
+  const candidates: StackObservationCandidate[] = [];
+  let skippedResolved = 0;
   for (const key of laneKeys) {
     const value = observation.values.get(key);
     if (value === undefined) continue;
-    const current = parse.parsed.values.get(key) ?? "";
-    if (isResolved(current)) {
-      skippedResolved += 1;
-      continue; // 已销账键零触碰（含人工后答的覆盖值——观察不反写人答）
+    if (isResolved(parse.parsed.values.get(key) ?? "")) {
+      skippedResolved += 1; // 已采纳键：adoption 收敛，观察分账出局（重跑幂等不重复呈现）
+      continue;
     }
-    const lineIndex = parse.parsed.lineOf.get(key);
-    if (lineIndex === undefined) continue;
-    lines[lineIndex] = `${key}: ${value} # ${OBSERVED_ANNOTATION}`;
-    wordForms.add(unknownsWordForm(lane, key));
-    observed += 1;
-    stackChanged = true;
+    candidates.push({ lane, key, value, source: "package.json" });
   }
-  if (stackChanged) {
-    const nextStack = lines.join("\n");
-    if (nextStack !== stackFile.text) {
-      await writeFile(`${rootDir}/${stackRelative}`, nextStack, "utf8");
-      files.push({ file: stackRelative, action: "updated" });
-    }
-    const manifestFile = await readTextFile(`${rootDir}/${BASELINE_MANIFEST_RELATIVE}`);
-    if (manifestFile.kind === "ok") {
-      const { next } = removeUnknownEntries(manifestFile.text, wordForms);
-      if (next !== manifestFile.text) {
-        await writeFile(`${rootDir}/${BASELINE_MANIFEST_RELATIVE}`, next, "utf8");
-        files.push({ file: BASELINE_MANIFEST_RELATIVE, action: "updated" });
-      }
-    }
-    // manifest 不可读：stack 已写而台账销账失败——半落盘态由 unknowns 计数呈现面
-    // 诚实暴露（不静默；下轮 init 幂等重放补齐销账）。
-  }
-  return { observed, skipped_resolved: skippedResolved };
+  return { observed: candidates.length, skipped_resolved: skippedResolved, candidates };
 }
 
 /**
@@ -549,9 +601,347 @@ export function unknownsWordForm(lane: BaselineLane, key: string): string {
   return `baseline/${lane}/stack.yaml:${key}`;
 }
 
-const UNKNOWN_ENTRY_LINE = /^\s*-\s*(.+?)\s*$/;
-const UNKNOWN_ENTRY_COUNT =
-  /^\s*-\s*baseline\/(?:frontend|backend)\/stack\.yaml:[A-Za-z0-9_-]+\s*$/;
+const FLAT_ENTRY_LINE = /^\s*-\s*(\S.*?)\s*$/;
+const STRUCTURED_ENTRY_KEY_LINE = /^(\s*)-\s*key\s*:\s*(.*?)\s*$/;
+const STRUCTURED_FIELD_LINE = /^(\s*)([A-Za-z][A-Za-z0-9_-]*)\s*:\s*(.*)$/;
+/** FE/BE stack 词形（有机器键集的两 lane——键闭包校验与 stack 值位回查共用单一词形源）。 */
+const STACK_WORD_FORM_PATTERN = /^baseline\/(frontend|backend)\/stack\.yaml:([A-Za-z0-9_-]+)$/;
+
+// ============================================================
+// unknowns 台账双词形（P-C1/ADR-18：flat 永久合法 + 结构化登记行——共用 MSD
+// unknown_item 结构、各自存储；行词形自描述机械可区分，schema_version 不递增【裁定】）
+// ============================================================
+
+/**
+ * per-key 适用性三值闭包（P-C1 §5.2；本地词形闭包住本文件——单一词形源，同
+ * BASELINE_LANES 先例；缺省 BLOCKING = 未显式降级即阻塞，fail-closed；UNKNOWN 已是
+ * stack 起步值词形不再复用——同词异义禁断）。跨包消费（Blueprint Q7 联动切片）时按
+ * 提案 §5.6 以 append-only 词汇表 PR 登记后逐字平移，禁二次造词。
+ */
+export const BASELINE_UNKNOWN_APPLICABILITY_VALUES = ["BLOCKING", "NOT_APPLICABLE", "DEFERRED"] as const;
+export type BaselineUnknownApplicability = (typeof BASELINE_UNKNOWN_APPLICABILITY_VALUES)[number];
+
+/**
+ * MSD unknown_classification 十分类闭包（P-C1 §5.1 逐字复用——
+ * packages/schemas/assets/09-msd-uncertainty.schema.json unknown_classification.enum，
+ * vocab_pr_0009 已登记，零新值；UNRESOLVED/BLOCKER 裸词形禁断随源）。
+ */
+export const MSD_UNKNOWN_CLASSIFICATION_VALUES = [
+  "BLOCKER_CANDIDATE",
+  "HARD_BLOCKER",
+  "SOFT_UNCERTAINTY",
+  "ASSUMPTION",
+  "DEFERRED_DECISION",
+  "DISCOVERY_REQUIRED",
+  "SUSPECTED_ISSUE",
+  "NON_BLOCKING_GAP",
+  "FUTURE_CONSIDERATION",
+  "OUT_OF_SCOPE",
+] as const;
+export type MsdUnknownClassification = (typeof MSD_UNKNOWN_CLASSIFICATION_VALUES)[number];
+
+/**
+ * 结构化行字段键集闭包（T12 跨域合同钉子；key = 条目键非字段）：blocker 族三键为
+ * 可选位，词形与语义引用 09 schema 同名字段（解析器不复刻 09 allOf 必答链——提案
+ * §5.1 避免双维护，以 09 schema 为规范引用）。闭包外字段 = 形状损坏——Blueprint Q7
+ * 联动切片与 B13 扩展不得另造第二套同名异义词形（单点纪律）。
+ */
+const STRUCTURED_ROW_FIELD_KEYS: readonly string[] = [
+  "applicability",
+  "statement",
+  "classification",
+  "resolution",
+  "blocker_triage",
+  "assumption_risk",
+  "requires_authority",
+];
+
+/** 台账条目（双词形内存形态；flat 行 applicability 恒缺省 BLOCKING、豁免语义仅结构化行携带）。 */
+export interface BaselineUnknownLedgerEntry {
+  /** 台账词形（flat 行 = 行词形；结构化行 = key 字段值）。 */
+  readonly wordForm: string;
+  readonly structured: boolean;
+  readonly applicability: BaselineUnknownApplicability;
+  /** 结构化行必备位（MSD unknown_item.statement/classification 同构；flat 行 = null）。 */
+  readonly statement: string | null;
+  readonly classification: string | null;
+  /** 行区间（lineEnd 独占——整块行级删除用；flat 行 lineEnd = lineStart + 1）。 */
+  readonly lineStart: number;
+  readonly lineEnd: number;
+}
+
+/**
+ * 台账行级解析结果：entries 恒尽力产出（计数/删除消费面按在册行判定）；damage 非空 =
+ * 结构化行形状损坏（词形出闭包/缺 statement/key 出 FE/BE 闭包/键重复登记）——判卷面
+ * INVALID_STATE 显式拒绝，禁静默忽略（§3.3 fail-open 盲区反向封堵）。
+ */
+export interface UnknownLedgerParse {
+  readonly entries: readonly BaselineUnknownLedgerEntry[];
+  readonly damage: string | null;
+}
+
+function leadingSpaces(line: string): number {
+  const match = /^[ \t]*/.exec(line);
+  return match === null ? 0 : match[0].length;
+}
+
+/**
+ * unknowns 台账行级解析（P-C1 双词形永久双读；行形态机械可区分无需版本仲裁）：
+ * - 词形一 flat：`- <词形>` 单行——永久合法，语义 = 该键在册未销账、适用性缺省 BLOCKING
+ *   （存量台账逐字节不变，§7.2）；
+ * - 词形二 structured：`- key: <词形>` + 更深缩进字段行——强制 MSD unknown_item 同构
+ *   statement + classification（minLength 1 禁空泛占位），applicability 三值闭包，
+ *   字段键集闭包（T12）；resolution 为人类散文位机器禁解析（P9 纪律）；
+ * - 闭包不对称（评审 MF1）：frontend/backend 两 lane 键∈14 键闭包强制（isKnownBatchEntry
+ *   同款）；data/platform/tokens 等无机器键集域键名开放，合法性 = 行形状校验 + Owner
+ *   手编权威（manifest 头注的按需增长通道）；
+ * - confirmed 块区间零触碰（pending 批条目/ack 清单与台账同域——N3 区间排除沿用）。
+ */
+function parseUnknownLedger(text: string): UnknownLedgerParse {
+  const lines = text.split("\n");
+  const block = confirmedBlockRange(lines);
+  const entries: BaselineUnknownLedgerEntry[] = [];
+  let damage: string | null = null;
+  const setDamage = (detail: string): void => {
+    if (damage === null) damage = detail;
+  };
+  const registered = new Map<string, { flat: number; structured: number }>();
+  for (let i = 0; i < lines.length; i += 1) {
+    if (insideConfirmedBlock(i, block)) continue;
+    const line = lines[i] ?? "";
+    if (line.trim() === "" || line.startsWith("#")) continue;
+    const structured = STRUCTURED_ENTRY_KEY_LINE.exec(line);
+    if (structured !== null) {
+      const dashIndent = leadingSpaces(structured[1] ?? "");
+      const wordForm = (structured[2] ?? "").trim();
+      // —— 行区间吸收：更深缩进行 = 字段/载荷；同级或更浅缩进 = 下一条目/顶层键（行止）。 ——
+      let end = i + 1;
+      let fieldIndent: number | null = null;
+      const fields = new Map<string, string>();
+      while (end < lines.length) {
+        const candidate = lines[end] ?? "";
+        if (candidate.trim() === "" || candidate.startsWith("#")) {
+          // 空行/注释不打断行——仅当其后仍有更深缩进行才归属本行（前瞻定位）。
+          let peek = end + 1;
+          while (
+            peek < lines.length &&
+            ((lines[peek] ?? "").trim() === "" || (lines[peek] ?? "").startsWith("#"))
+          ) {
+            peek += 1;
+          }
+          if (peek >= lines.length || leadingSpaces(lines[peek] ?? "") <= dashIndent) break;
+          end = peek;
+          continue;
+        }
+        const indent = leadingSpaces(candidate);
+        if (indent <= dashIndent) break;
+        if (fieldIndent === null) fieldIndent = indent;
+        if (indent === fieldIndent) {
+          const field = STRUCTURED_FIELD_LINE.exec(candidate);
+          if (field === null) {
+            setDamage(`结构化行（${wordForm === "" ? "<key 缺席>" : wordForm}）字段行不可识别: ${candidate.trim()}`);
+          } else if (!STRUCTURED_ROW_FIELD_KEYS.includes(field[2] ?? "")) {
+            setDamage(
+              `结构化行字段出键集闭包: ${field[2]}（合法字段: ${STRUCTURED_ROW_FIELD_KEYS.join(" / ")}——闭包演进走提案修订禁另造词形）`,
+            );
+          } else if (fields.has(field[2] ?? "")) {
+            setDamage(`结构化行字段重复: ${field[2]}`);
+          } else {
+            fields.set(field[2] ?? "", stripTrailingComment(field[3] ?? "").trim());
+          }
+        } else if (indent < fieldIndent) {
+          setDamage(`结构化行（${wordForm === "" ? "<key 缺席>" : wordForm}）字段缩进不一致: ${candidate.trim()}`);
+        }
+        // indent > fieldIndent：块字段（blocker_triage 等）嵌套载荷行按位吸收——不复刻 09 allOf 链。
+        end += 1;
+      }
+      // —— key/applicability/statement/classification 形状闸（首个损坏点留痕，entries 仍尽力产出）——
+      let shapeDetail: string | null = null;
+      const fail = (detail: string): void => {
+        if (shapeDetail === null) shapeDetail = detail;
+      };
+      if (wordForm === "") {
+        fail("结构化行 key 词形缺席（必填）");
+      } else {
+        const stackMatch = STACK_WORD_FORM_PATTERN.exec(wordForm);
+        if (
+          stackMatch !== null &&
+          !(STACK_KEYS[stackMatch[1] as BaselineLane] as readonly string[]).includes(stackMatch[2] ?? "")
+        ) {
+          fail(
+            `结构化行键出 14 键闭包: ${wordForm}（frontend/backend 两 lane 键集闭包强制——开放域键名才不设闭包）`,
+          );
+        }
+      }
+      let applicability: BaselineUnknownApplicability = "BLOCKING";
+      const rawApplicability = fields.get("applicability");
+      if (rawApplicability !== undefined) {
+        if (!(BASELINE_UNKNOWN_APPLICABILITY_VALUES as readonly string[]).includes(rawApplicability)) {
+          fail(
+            `结构化行 applicability 出三值闭包: ${rawApplicability}（合法词形: ${BASELINE_UNKNOWN_APPLICABILITY_VALUES.join(" | ")}）`,
+          );
+        } else {
+          applicability = rawApplicability as BaselineUnknownApplicability;
+        }
+      }
+      const statement = fields.get("statement") ?? null;
+      if (statement === null || statement.length === 0) {
+        fail("结构化行缺 statement（MSD unknown_item 同构必填；minLength 1 禁空泛占位）");
+      }
+      const classification = fields.get("classification") ?? null;
+      if (classification === null) {
+        fail("结构化行缺 classification（MSD unknown_item 同构必填）");
+      } else if (!(MSD_UNKNOWN_CLASSIFICATION_VALUES as readonly string[]).includes(classification)) {
+        fail(
+          `结构化行 classification 出十分类闭包: ${classification}（09-msd-uncertainty unknown_classification 逐字复用，零新值）`,
+        );
+      }
+      if (shapeDetail !== null) setDamage(shapeDetail);
+      entries.push({
+        wordForm,
+        structured: true,
+        applicability,
+        statement,
+        classification,
+        lineStart: i,
+        lineEnd: end,
+      });
+      const seenStructured = registered.get(wordForm) ?? { flat: 0, structured: 0 };
+      seenStructured.structured += 1;
+      registered.set(wordForm, seenStructured);
+      i = end - 1; // continue 触发 i += 1 → 下一轮从行止处续扫
+      continue;
+    }
+    const flat = FLAT_ENTRY_LINE.exec(line);
+    if (flat === null) continue; // 非台账行（顶层键/异形）不消费
+    const flatWordForm = stripTrailingComment(flat[1] ?? "").trim();
+    entries.push({
+      wordForm: flatWordForm,
+      structured: false,
+      applicability: "BLOCKING",
+      statement: null,
+      classification: null,
+      lineStart: i,
+      lineEnd: i + 1,
+    });
+    const seenFlat = registered.get(flatWordForm) ?? { flat: 0, structured: 0 };
+    seenFlat.flat += 1;
+    registered.set(flatWordForm, seenFlat);
+  }
+  // —— 键重复登记冲突（fail-closed：同一词形双结构化或 flat+结构化 = 豁免语义不可判）——
+  for (const [wordForm, kinds] of registered) {
+    if (kinds.structured > 1) {
+      setDamage(`键重复结构化登记: ${wordForm}（豁免语义不可判——保留一行结构化登记）`);
+    } else if (kinds.structured === 1 && kinds.flat > 0) {
+      setDamage(
+        `键 flat+结构化重复登记: ${wordForm}（flat 行缺省 BLOCKING 与豁免登记冲突——删 flat 行或降级结构化行）`,
+      );
+    }
+  }
+  return { entries, damage };
+}
+
+/** 行号是否落在 confirmed 块区间内（块缺席 = false）。 */
+function insideConfirmedBlock(index: number, block: { start: number; end: number } | null): boolean {
+  return block !== null && index >= block.start && index < block.end;
+}
+
+/**
+ * manifest unknowns 台账行删除（P-C1 双词形：flat 行精确词形 + 结构化行按 key 词形整块
+ * 删除——对豁免键 set 回填 = 自然去豁免 §6.7；confirmed 块区间由解析器排除零触碰）；
+ * 返回删除条数与全文。
+ */
+function removeUnknownEntries(
+  text: string,
+  wordForms: ReadonlySet<string>,
+): { next: string; removed: number } {
+  const ledger = parseUnknownLedger(text);
+  if (ledger.entries.length === 0) return { next: text, removed: 0 };
+  const removeLines = new Set<number>();
+  let removed = 0;
+  for (const entry of ledger.entries) {
+    if (!wordForms.has(entry.wordForm)) continue;
+    removed += 1;
+    for (let i = entry.lineStart; i < entry.lineEnd; i += 1) removeLines.add(i);
+  }
+  if (removed === 0) return { next: text, removed: 0 };
+  const lines = text.split("\n");
+  return { next: lines.filter((_, index) => !removeLines.has(index)).join("\n"), removed };
+}
+
+/** 现盘 unknowns 台账剩余行数（P-C1 双词形总在册行数口径——unknowns_remaining 呈现位单一来源；confirmed 块区间排除）。 */
+function countUnknownEntries(text: string): number {
+  return parseUnknownLedger(text).entries.length;
+}
+
+/** 阻塞集判卷结果（单一实现；ok=false = 台账形状损坏——detail 为首个损坏点，判卷面显式拒绝）。 */
+export type BaselineBlockingJudgement =
+  | {
+      readonly ok: true;
+      /** 阻塞键词形清单（BASELINE_UNKNOWNS_REMAINING 逐键呈现分母；豁免键不在座）。 */
+      readonly blocking: readonly string[];
+      /** applicability 摘要（按台账行计数；flat 行计入 BLOCKING）。 */
+      readonly applicability_counts: Readonly<Record<BaselineUnknownApplicability, number>>;
+    }
+  | { readonly ok: false; readonly detail: string };
+
+/**
+ * 台账词形 → stack 值位回查：FE/BE 14 键闭包内键才有值位；其余词形（闭包外/开放域）
+ * = 无值位（resolved 恒 false——值侧无从回填，双重销账的销账通路 = 删行）。
+ */
+function stackValueResolvedAt(
+  wordForm: string,
+  stackValues: ReadonlyMap<BaselineLane, ReadonlyMap<string, string>>,
+): boolean {
+  const match = STACK_WORD_FORM_PATTERN.exec(wordForm);
+  if (match === null) return false;
+  const lane = match[1] as BaselineLane;
+  const key = match[2] ?? "";
+  if (!(STACK_KEYS[lane] as readonly string[]).includes(key)) return false;
+  return isResolved(stackValues.get(lane)?.get(key) ?? "");
+}
+
+/**
+ * 阻塞集判卷（P-C1 §5.3 公式的单一实现——confirm 闸与 doctor/status 呈现共用，禁两套口径）：
+ *   settled(k)  ⟺ stack 值 resolved ∧ 台账无 k 行          （双重销账，双侧一致）
+ *   exempt(k)   ⟺ 台账在册 k 结构化行 ∧ applicability ∈ {NOT_APPLICABLE, DEFERRED}
+ *                 ∧ stack 值未 resolved
+ *   blocking(k) ⟺ ¬settled(k) ∧ ¬exempt(k)
+ * 豁免语义仅结构化行携带（flat 行 = 缺省 BLOCKING）——豁免行手删即回落阻塞（fail-closed
+ * 兜底）；stale 豁免行（值已回填）不豁免（双重销账一致性对豁免键不放松）；台账在册行
+ * 恒入判卷（§3.3 静默盲区双向封堵——flat 开放域行不再不可见）。全销账域 ⊇ 阻塞集域。
+ */
+function computeBlockingSet(
+  ledger: UnknownLedgerParse,
+  stackValues: ReadonlyMap<BaselineLane, ReadonlyMap<string, string>>,
+): BaselineBlockingJudgement {
+  if (ledger.damage !== null) return { ok: false, detail: ledger.damage };
+  const blocking = new Set<string>();
+  const rowWordForms = new Set<string>();
+  const counts: Record<BaselineUnknownApplicability, number> = { BLOCKING: 0, NOT_APPLICABLE: 0, DEFERRED: 0 };
+  for (const entry of ledger.entries) {
+    counts[entry.applicability] += 1;
+    rowWordForms.add(entry.wordForm);
+    if (
+      entry.structured &&
+      entry.applicability !== "BLOCKING" &&
+      !stackValueResolvedAt(entry.wordForm, stackValues)
+    ) {
+      continue; // 豁免成立：不进阻塞集（豁免键的行必须保留在册——豁免语义由行携带）
+    }
+    blocking.add(entry.wordForm);
+  }
+  for (const lane of BASELINE_LANES) {
+    for (const key of STACK_KEYS[lane]) {
+      const wordForm = unknownsWordForm(lane, key);
+      if (rowWordForms.has(wordForm)) continue; // 在册键由台账行分支判卷（settled = 行删除 ∧ 值回填）
+      if (!isResolved(stackValues.get(lane)?.get(key) ?? "")) {
+        blocking.add(wordForm);
+      }
+    }
+  }
+  return { ok: true, blocking: [...blocking], applicability_counts: counts };
+}
 
 /**
  * confirmed 块行区间定位（start = confirmed: 行；end = 下一顶层键行或 EOF；缺席 =
@@ -573,38 +963,6 @@ function confirmedBlockRange(lines: readonly string[]): { start: number; end: nu
     }
   }
   return { start, end };
-}
-
-/** 行号是否落在 confirmed 块区间内（块缺席 = false）。 */
-function insideConfirmedBlock(index: number, block: { start: number; end: number } | null): boolean {
-  return block !== null && index >= block.start && index < block.end;
-}
-
-/** manifest unknowns 台账行删除（精确词形匹配；confirmed 块区间内零触碰）；返回删除条数与全文。 */
-function removeUnknownEntries(
-  text: string,
-  wordForms: ReadonlySet<string>,
-): { next: string; removed: number } {
-  const lines = text.split("\n");
-  const block = confirmedBlockRange(lines);
-  let removed = 0;
-  const kept = lines.filter((line, index) => {
-    if (insideConfirmedBlock(index, block)) return true;
-    const match = UNKNOWN_ENTRY_LINE.exec(line);
-    if (match !== null && wordForms.has(match[1] ?? "")) {
-      removed += 1;
-      return false;
-    }
-    return true;
-  });
-  return { next: kept.join("\n"), removed };
-}
-
-/** 现盘 unknowns 台账剩余条数（stack 键词形行计数，confirmed 块区间排除——未销账分母的呈现口径）。 */
-function countUnknownEntries(text: string): number {
-  const lines = text.split("\n");
-  const block = confirmedBlockRange(lines);
-  return lines.filter((line, index) => !insideConfirmedBlock(index, block) && UNKNOWN_ENTRY_COUNT.test(line)).length;
 }
 
 // Step B 确认 gate 的词形闸（ADR-11）：manifest 顶层 `confirmed:` 键在座 = 确认态
@@ -661,9 +1019,12 @@ export type RemainingQuestions =
 /**
  * 现盘分母解析：逐 lane 读 stack.yaml——缺席（fresh init 播种前）= 该 lane 全键
  * 待问；可解析 = 只问 UNKNOWN 键；不可解析 = 整体不可读（问卷跳过，fail-closed）。
- * T2 R4 观察感知：可由宿主 package.json 观察定值的键（观察映射表单候选命中）
- * 不问人——问卷只问规范性决策（可观察事实不是决策）；观察不可用（package.json
- * 缺席/不可解析/同键互斥候选并存）= 键照常入分母（fail-closed 保持 UNKNOWN 归问）。
+ * F14 ADR-19 观察候选呈现制（T2 R4 观察感知分母废除）：可由宿主 package.json 观察
+ * 的 FE 键照常入分母，题面携带观察候选（observed 加法字段——观察值 + 证据注记，
+ * Review 面），Owner 选型该值即 adoption；未采纳候选键保持 UNKNOWN（= 缺省
+ * BLOCKING，台账行在座）。候选圈定必须按 lane：观察 stackKey 与 BE 键同名
+ * （language/framework）——BE 同名键不携带 FE 观察候选（BE 键不经前端 package.json
+ * 观察，恒入分母恒无候选）。
  */
 export async function resolveRemainingQuestions(
   rootDir: string,
@@ -673,15 +1034,20 @@ export async function resolveRemainingQuestions(
   for (const lane of BASELINE_LANES) {
     const relative = baselineStackRelative(lane);
     const file = await readTextFile(`${rootDir}/${relative}`);
-    // 观察面只覆盖 FE 键（PACKAGE_OBSERVATION_TABLE 分母）；BE 键恒入问卷分母。
-    // 圈定必须按 lane：观察 stackKey 与 BE 键同名（language/framework）——不按 lane
-    // 圈定会把 FE 观察命中的 language/framework 误吞 BE 同名问题（BE 键永不问人、
-    // 恒 UNKNOWN，confirm 卡 BASELINE_UNKNOWNS_REMAINING）。
-    const laneQuestions = STACK_QUESTIONS.filter(
-      (q) =>
-        q.lane === lane &&
-        !(lane === "frontend" && observation !== null && observation.values.has(q.key)),
-    );
+    // 观察候选圈定按 lane：仅 FE 可观察 8 键题面携带候选（lane 误圈会把 FE 观察值
+    // 错挂到 BE 同名键 language/framework 上——BE 恒无候选）。
+    const laneQuestions = STACK_QUESTIONS.filter((q) => q.lane === lane).map((question) => {
+      const observedValue =
+        lane === "frontend" && observation !== null
+          ? observation.values.get(question.key)
+          : undefined;
+      return observedValue === undefined
+        ? question
+        : {
+            ...question,
+            observed: { lane, key: question.key, value: observedValue, source: "package.json" } as const,
+          };
+    });
     if (file.kind === "absent") {
       questions.push(...laneQuestions);
       continue;
@@ -706,6 +1072,16 @@ export async function resolveRemainingQuestions(
 // 问卷交互（raw 单选帧 / numbered 编号降级；ADR-8）
 // ============================================================
 
+/**
+ * 观察候选题面注记行（F14 ADR-19 呈现加法；无候选 = null——raw/numbered 双形态
+ * 共用单一词形，禁两处漂移）。选型该值即 adoption；也可另答覆盖（人答优先）。
+ */
+function observationCandidateLine(question: StackQuestionSpec): string | null {
+  return question.observed === undefined
+    ? null
+    : `  观察候选: ${question.observed.value} ${OBSERVED_ANNOTATION}（选型该值即采纳；未采纳保持 UNKNOWN）`;
+}
+
 /** raw 单选帧（行集快照零 ANSI；光标行顶格 ◉、其余前导一空格——沿 init checklistRow 版式）。 */
 function renderQuestionFrame(
   question: StackQuestionSpec,
@@ -714,8 +1090,10 @@ function renderQuestionFrame(
   progress: string,
   error: string | null,
 ): string {
+  const candidateLine = observationCandidateLine(question);
   const lines = [
     `? ${question.label}（${question.lane}.${question.key}；↑↓选择 / 直接键入自定义值 / 回车确认 / Ctrl+C 中止）[${progress}]`,
+    ...(candidateLine === null ? [] : [candidateLine]),
     ...question.options.map((option, i) =>
       i === cursor ? `◉ ${option}` : ` ◯ ${option}`,
     ),
@@ -791,6 +1169,8 @@ async function promptQuestionNumbered(
   const customIndex = question.options.length + 1;
   const renderBlock = (): void => {
     io.write(`[${position}/${total}] ${question.label}（${question.lane}.${question.key}）：`);
+    const candidateLine = observationCandidateLine(question);
+    if (candidateLine !== null) io.write(candidateLine);
     question.options.forEach((option, i) => io.write(`  ${i + 1}. ${option}`));
     io.write(`  ${customIndex}. <直接键入自定义值>`);
     io.write("编号或自定义值（必答——空输入不作选择）：");
@@ -959,7 +1339,7 @@ export interface BaselineSetResult {
   readonly value: string;
   /** 写入/检视的文件（POSIX 相对路径；与 init 的 files 词形同族）。 */
   readonly files: readonly { readonly file: string; readonly action: "updated" | "unchanged" }[];
-  /** 销账后 unknowns 台账剩余条数（stack 键词形口径）；失败占位 = -1。 */
+  /** 销账后 unknowns 台账剩余行数（P-C1 双词形总在册行数口径）；失败占位 = -1。 */
   readonly unknowns_remaining: number;
   /**
    * 确认态演进位（ADR-16，N3 起）：true = 本次写入异值改动了确认快照内文件，
@@ -1249,15 +1629,25 @@ export const BASELINE_MD_FACES: readonly string[] = [
 ];
 
 /**
- * 确认快照目标（ADR-11/15，N1）：两个 stack.yaml + 22 md = **24 文件单一资产清单**
- * ——confirm digest 快照、closeout baseline 校验、preset 整体快照声明三消费面同源；
- * manifest.yaml 不自引用。盘面路径经 baselineConfirmTargetPath 机械换算（零第二套
- * 路径声明）。
+ * token 合同目标词形（ADR-20，R3/F-M1）：B6D 批播种增量的语义 token 骨架——
+ * 确认分母第 25 文件。形状契约住 22 号 schema（baseline-tokens.ts 装载校验）；
+ * 本清单面只看字节（digest 三消费面同源）。
+ */
+export const BASELINE_DESIGN_TOKENS_TARGET = `${stripStorePrefix(
+  BASELINE_FRONTEND_DIR_RELATIVE,
+)}/design-tokens.yaml`;
+
+/**
+ * 确认快照目标（ADR-11/15，N1；ADR-20 扩 25）：两个 stack.yaml + 22 md +
+ * **1 design-tokens.yaml = 25 文件单一资产清单**——confirm digest 快照、closeout
+ * baseline 校验、preset 整体快照声明三消费面同源；manifest.yaml 不自引用。盘面路径
+ * 经 baselineConfirmTargetPath 机械换算（零第二套路径声明）。
  */
 export const BASELINE_CONFIRM_TARGETS: readonly string[] = [
   stripStorePrefix(baselineStackRelative("frontend")),
   stripStorePrefix(baselineStackRelative("backend")),
   ...BASELINE_MD_FACES,
+  BASELINE_DESIGN_TOKENS_TARGET,
 ];
 
 /** 确认目标词形 → 盘面绝对路径（store-layout 常量派生；单一换算点）。 */
@@ -1326,7 +1716,8 @@ function isKnownBatchEntry(wordForm: string): boolean {
  * confirmed: 行至下一顶层键行（非空、顶层词形）或 EOF；块内只容忍空行/注释、
  * at_seq、digests 段、pending 段（change_ref + batch 键集）、ack 段（note + files
  * 清单），其余一律 damaged（fail-closed——禁猜测手改块语义）。digest 缺目标（含
- * 旧 4 目标记录遇 24 目标新分母）= damaged → 判卷面「无有效确认记录」。
+ * 旧 4 目标/旧 24 目标记录遇新分母——N1 与 ADR-20 两次扩位同语义）= damaged →
+ * 判卷面「无有效确认记录」。
  */
 function parseConfirmedBlock(text: string): ConfirmedBlockParse {
   const lines = text.split("\n");
@@ -1492,17 +1883,6 @@ function upsertConfirmedBlock(text: string, record: BaselineConfirmedRecord): st
   return stripped.endsWith("\n") ? stripped + block : `${stripped}\n${block}`;
 }
 
-/** 现盘 unknowns 台账词形清单（销账判卷的逐条呈现分母；文档序；confirmed 块区间排除）。 */
-function listUnknownEntries(text: string): string[] {
-  const lines = text.split("\n");
-  const block = confirmedBlockRange(lines);
-  return lines
-    .map((line, index) =>
-      insideConfirmedBlock(index, block) ? "" : UNKNOWN_ENTRY_LINE.exec(line)?.[1]?.trim() ?? "",
-    )
-    .filter((wordForm) => UNKNOWN_ENTRY_COUNT.test(`- ${wordForm}`));
-}
-
 /** 确认时点锚（truth-index generation.seq 轻量读；缺席/不可解析 → 0 诚实缺席）。 */
 async function readGenerationSeq(rootDir: string): Promise<number> {
   try {
@@ -1515,7 +1895,7 @@ async function readGenerationSeq(rootDir: string): Promise<number> {
   }
 }
 
-/** 确认资产清单（24 文件）的现盘 digest 快照；任一目标缺席/不可读 → NOT_CONFIGURED/INVALID_STATE 错误。 */
+/** 确认资产清单（25 文件，ADR-20）的现盘 digest 快照；任一目标缺席/不可读 → NOT_CONFIGURED/INVALID_STATE 错误。 */
 async function computeConfirmDigests(
   rootDir: string,
 ): Promise<{ readonly ok: true; readonly digests: Readonly<Record<string, string>> } | { readonly ok: false; readonly error: CliError }> {
@@ -1548,9 +1928,9 @@ export interface BaselineConfirmResult {
   readonly change: "CONFIRMED" | "NO_CHANGE";
   /** 确认时点锚（NO_CHANGE = 既有记录的 at_seq；失败占位 null）。 */
   readonly at_seq: number | null;
-  /** 确认资产清单（24 文件）digest 快照（失败占位空）。 */
+  /** 确认资产清单（25 文件）digest 快照（失败占位空）。 */
   readonly digests: readonly { readonly file: string; readonly sha256: string }[];
-  /** 确认时点的 unknowns 台账剩余条数（fail-closed 前提判卷的呈现位）。 */
+  /** 确认时点的 unknowns 台账剩余行数（双词形总在册行数口径；fail-closed 前提判卷的呈现位）。 */
   readonly unknowns_remaining: number;
   /** 写入/检视的文件（POSIX 相对路径；与 init/set 的 files 词形同族）。 */
   readonly files: readonly { readonly file: string; readonly action: "updated" | "unchanged" }[];
@@ -1613,8 +1993,10 @@ async function appendBaselineAckJournalEvent(
 /**
  * 基线确认施断（ADR-10/12/15/16/17）：
  * 1. 通道旗标词形判卷（纯静态，fail-closed 最先）；
- * 2. 前提 = 14 unknowns 全销账（台账条目 ∪ stack 未销账值，逐条列出）；
- * 3. 快照 = 24 文件确认资产清单 digest（缺席 = 结构漂移显式，禁部分快照）；
+ * 2. 前提 = 阻塞集清零（P-C1/ADR-18：台账双词形解析 + settled/exempt/blocking 判卷；
+ *    阻塞键逐条列出 → BASELINE_UNKNOWNS_REMAINING fail-closed；结构化行形状损坏 →
+ *    INVALID_STATE 显式拒绝禁静默）；
+ * 3. 快照 = 25 文件确认资产清单 digest（缺席 = 结构漂移显式，禁部分快照）；
  * 4. 分叉（N2/N3）：无有效记录（缺席/损坏）→ 初次确认，**不需要任何通道**（损坏块
  *    修复同路）；有效记录 → 状态派生（confirmed / pending-change / drifted）：
  *    - confirmed → 任何通道旗标 SCHEMA_INVALID（诚实拒绝 no-op 旗标）；裸 →
@@ -1655,8 +2037,10 @@ export async function runBaselineConfirm(
     return failBaselineConfirm(error.code, error.message, error.hint, -1);
   }
   const unknownsRemaining = countUnknownEntries(manifestFile.text);
-  // —— 2. 前提判卷：台账条目 ∪ stack 未销账值（双重销账契约的一致性核验，fail-closed）——
-  const unsettled = new Set(listUnknownEntries(manifestFile.text));
+  // —— 2. 前提判卷：阻塞集（P-C1/ADR-18——settled/exempt/blocking 公式单一实现，
+  //      双重销账契约不变；台账双词形解析，形状损坏显式 INVALID_STATE 禁静默）——
+  const ledger = parseUnknownLedger(manifestFile.text);
+  const stackValuesByLane = new Map<BaselineLane, ReadonlyMap<string, string>>();
   for (const lane of BASELINE_LANES) {
     const stackRelative = baselineStackRelative(lane);
     const stackFile = await readTextFile(`${rootDir}/${stackRelative}`);
@@ -1673,23 +2057,36 @@ export async function runBaselineConfirm(
         unknownsRemaining,
       );
     }
-    for (const key of STACK_KEYS[lane]) {
-      if (!isResolved(parse.parsed.values.get(key) ?? "")) {
-        unsettled.add(unknownsWordForm(lane, key));
-      }
-    }
+    stackValuesByLane.set(lane, parse.parsed.values);
   }
-  if (unsettled.size > 0) {
-    const ordered = STACK_QUESTIONS.filter((question) => unsettled.has(unknownsWordForm(question.lane, question.key)))
-      .map((question) => unknownsWordForm(question.lane, question.key));
+  const blockingJudgement = computeBlockingSet(ledger, stackValuesByLane);
+  if (!blockingJudgement.ok) {
+    return failBaselineConfirm(
+      "INVALID_STATE",
+      `${BASELINE_MANIFEST_RELATIVE} unknowns 台账结构化行形状损坏: ${blockingJudgement.detail}`,
+      "修复或从 git 恢复该文件后重试；confirm 不猜测损坏台账的语义（形状闸禁静默忽略——P-C1）。",
+      -1,
+    );
+  }
+  if (blockingJudgement.blocking.length > 0) {
+    // 逐键清单：问卷序优先（既有消息形态保持），其余（结构化/开放域/闭包外键）按台账序。
+    const blocking = new Set(blockingJudgement.blocking);
+    const ordered: string[] = [];
+    for (const question of STACK_QUESTIONS) {
+      const wordForm = unknownsWordForm(question.lane, question.key);
+      if (blocking.delete(wordForm)) ordered.push(wordForm);
+    }
+    for (const entry of ledger.entries) {
+      if (blocking.delete(entry.wordForm)) ordered.push(entry.wordForm);
+    }
     return failBaselineConfirm(
       "BASELINE_UNKNOWNS_REMAINING",
-      `unknowns 未全销账（${unsettled.size} 键）：${ordered.join("、")}${ordered.length < unsettled.size ? "、<台账外词形>" : ""}`,
-      "逐键回填：TTY 重跑 pomaster init 问卷（已答键幂等不重复问）或 pomaster baseline set --lane <lane> --key <key> --value <value>；全部销账后再 confirm。",
+      `阻塞集未销账（${blockingJudgement.blocking.length} 键）：${ordered.join("、")}`,
+      "阻塞键逐键回填：TTY 重跑 pomaster init 问卷（已答键幂等不重复问）或 pomaster baseline set --lane <lane> --key <key> --value <value>；不阻塞当前增量的键由 Owner 手编 manifest 登记豁免（结构化行 applicability: NOT_APPLICABLE/DEFERRED + statement/classification）——阻塞集清零后再 confirm。",
       unknownsRemaining,
     );
   }
-  // —— 3. 快照：24 文件确认资产清单 digest（缺席 = 结构漂移显式，禁部分快照）——
+  // —— 3. 快照：25 文件确认资产清单 digest（缺席 = 结构漂移显式，禁部分快照）——
   const snapshot = await computeConfirmDigests(rootDir);
   if (!snapshot.ok) {
     return failBaselineConfirm(snapshot.error.code, snapshot.error.message, snapshot.error.hint, unknownsRemaining);
@@ -1963,7 +2360,7 @@ async function readBaselineConfirmation(rootDir: string): Promise<BaselineConfir
  *   恒在场。这是适用域边界不是弱化，doctor 对缺 init 资产另有呈现）；
  * - manifest 不可读 → INVALID_STATE（结构损坏 fail-closed 禁放行）；
  * - 无确认记录 / 记录结构损坏 → BASELINE_NOT_CONFIRMED（损坏当无效确认——禁猜测；
- *   含旧 4 目标记录遇 24 目标分母的升级路径）；
+ *   含旧 4 目标/旧 24 目标记录遇新分母的升级路径——N1 与 ADR-20 扩位同语义）；
  * - pending-change → BASELINE_NOT_CONFIRMED（ADR-16：pending 也是未确认——变更批
  *   终结前 closeout 一律阻断）；
  * - 任一确认目标缺席/不可读/digest 失配 → BASELINE_DRIFT（检出谁改了架构——写入
@@ -1987,7 +2384,7 @@ export async function baselineGateErrors(rootDir: string): Promise<readonly CliE
       {
         code: "BASELINE_NOT_CONFIRMED",
         message: `baseline 未确认${detail}——项目架构未经 Owner 确认（confirm gate：R-L）`,
-        hint: "pomaster baseline confirm（前提：14 unknowns 全销账）——确认记录与 digest 快照写入 baseline/manifest.yaml 后重跑 closeout。",
+        hint: "pomaster baseline confirm（前提：阻塞集清零——豁免登记行不阻塞）——确认记录与 digest 快照写入 baseline/manifest.yaml 后重跑 closeout。",
       },
     ];
   }
@@ -2029,8 +2426,16 @@ export type BaselineConfirmationState = "unconfirmed" | "confirmed" | "pending-c
 /** doctor/status 呈现值（纯读；manifest 缺席/不可读 → null → 字段缺席显式）。 */
 export interface BaselineConfirmationPresentation {
   readonly state: BaselineConfirmationState;
-  /** unknowns 台账剩余条数（stack 键词形口径——未销账分母的呈现口径）。 */
+  /** unknowns 台账剩余行数（P-C1 双词形总在册行数口径——总在册呈现位，含豁免登记行）。 */
   readonly unknowns_remaining: number;
+  /**
+   * 阻塞集分母（P-C1 §6.5 加法字段）：confirm 判卷的阻塞键数——豁免登记行计入
+   * unknowns_remaining 总口径而不计入本字段。null = 不可判（stack 平面缺席/台账形状
+   * 损坏的诚实降级——路由消费面 fail-closed 不放行 confirm 指引）。
+   */
+  readonly blocking_remaining: number | null;
+  /** applicability 摘要（按台账行计数；flat 行计入 BLOCKING）——判卷不可判时字段缺席。 */
+  readonly applicability_summary?: Readonly<Record<BaselineUnknownApplicability, number>>;
   /** 确认时点锚（unconfirmed = null；其余三值 = 记录 at_seq）。 */
   readonly at_seq: number | null;
   /** 漂移文件清单（drifted 非空；pending-change 期 = 批内已写文件；缺席/不可读以注记）。 */
@@ -2042,6 +2447,30 @@ export interface BaselineConfirmationPresentation {
 }
 
 /**
+ * 阻塞集呈现读取（P-C1 §6.5 加法位；纯读零写入）：computeBlockingSet 单一实现与
+ * confirm 闸同判卷（禁两套口径）；stack 平面缺席/不可解析/台账形状损坏 → remaining
+ * null 诚实降级（呈现位纪律异常归缺席不炸读路径——observation_receipts 同款）。
+ */
+async function readBaselineBlockingPresentation(
+  rootDir: string,
+): Promise<{
+  readonly remaining: number | null;
+  readonly applicability_summary?: Readonly<Record<BaselineUnknownApplicability, number>>;
+}> {
+  const manifestFile = await readTextFile(`${rootDir}/${BASELINE_MANIFEST_RELATIVE}`);
+  if (manifestFile.kind !== "ok") return { remaining: null };
+  const stackValues = new Map<BaselineLane, ReadonlyMap<string, string>>();
+  for (const lane of BASELINE_LANES) {
+    const loaded = await loadLaneStackValues(rootDir, lane);
+    if (!loaded.ok) return { remaining: null };
+    stackValues.set(lane, loaded.values);
+  }
+  const judgement = computeBlockingSet(parseUnknownLedger(manifestFile.text), stackValues);
+  if (!judgement.ok) return { remaining: null };
+  return { remaining: judgement.blocking.length, applicability_summary: judgement.applicability_counts };
+}
+
+/**
  * doctor/status 确认态呈现读取（纯读零写入；异常归缺席不炸读路径——
  * observation_receipts/spec_preplant 同款呈现位纪律）。
  */
@@ -2050,8 +2479,21 @@ export async function readBaselineConfirmationPresentation(
 ): Promise<BaselineConfirmationPresentation | null> {
   const read = await readBaselineConfirmation(rootDir);
   if (read.kind === "manifest-absent" || read.kind === "manifest-unreadable") return null;
+  const blocking = await readBaselineBlockingPresentation(rootDir);
+  const blockingFields = {
+    blocking_remaining: blocking.remaining,
+    ...(blocking.applicability_summary !== undefined
+      ? { applicability_summary: blocking.applicability_summary }
+      : {}),
+  };
   if (read.kind === "record-invalid") {
-    return { state: "unconfirmed", unknowns_remaining: read.unknowns_remaining, at_seq: null, drifted_files: [] };
+    return {
+      state: "unconfirmed",
+      unknowns_remaining: read.unknowns_remaining,
+      ...blockingFields,
+      at_seq: null,
+      drifted_files: [],
+    };
   }
   const driftedFiles = read.mismatches.map(
     (mismatch) => `${mismatch.target}${mismatch.note !== null ? `（${mismatch.note}）` : ""}`,
@@ -2059,6 +2501,7 @@ export async function readBaselineConfirmationPresentation(
   return {
     state: read.state,
     unknowns_remaining: read.unknowns_remaining,
+    ...blockingFields,
     at_seq: read.record.at_seq,
     drifted_files: driftedFiles,
     ...(read.record.pending !== undefined
@@ -2070,7 +2513,9 @@ export async function readBaselineConfirmationPresentation(
 
 /** 确认态呈现 human 行词形（doctor/status 共用——单一实现禁两套口径漂移）。 */
 export function baselineConfirmationHumanLine(presentation: BaselineConfirmationPresentation): string {
-  const unknowns = `unknowns remaining: ${presentation.unknowns_remaining}`;
+  const unknowns =
+    `unknowns remaining: ${presentation.unknowns_remaining}` +
+    (presentation.blocking_remaining === null ? "（阻塞 不可判）" : `（阻塞 ${presentation.blocking_remaining}）`);
   if (presentation.state === "confirmed") {
     const ackNote =
       presentation.ack !== undefined
@@ -2090,7 +2535,7 @@ export function baselineConfirmationHumanLine(presentation: BaselineConfirmation
       '——重确认: pomaster baseline confirm --change <CHANGE-id> 或 --ack-drifted --note "<理由>"（裸重确认拒绝；AI 代跑 ack 须持 Owner 指示）'
     );
   }
-  return `  baseline gate: 未确认（${unknowns}）——确认: pomaster baseline confirm（14 unknowns 全销账后）`;
+  return `  baseline gate: 未确认（${unknowns}）——确认: pomaster baseline confirm（阻塞集清零后）`;
 }
 
 /**

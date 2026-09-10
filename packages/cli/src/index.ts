@@ -299,10 +299,14 @@ export {
   STACK_VALUE_PATTERN,
   BASELINE_CONFIRM_TARGETS,
   BASELINE_MD_FACES,
+  BASELINE_DESIGN_TOKENS_TARGET,
   BASELINE_CHANGE_ACTIVE_LIFECYCLES,
+  BASELINE_UNKNOWN_APPLICABILITY_VALUES,
+  MSD_UNKNOWN_CLASSIFICATION_VALUES,
   unknownsWordForm,
   renderBaselineQuizHumanLine,
 } from "./baseline.js";
+export { readDesignTokens } from "./baseline-tokens.js";
 // baselineStackRelative / BASELINE_MANIFEST_RELATIVE 经 export * from store-layout.js 已公开。
 export {
   appendPresetDrafts,
@@ -337,6 +341,11 @@ export type {
   BaselinePendingChange,
   BaselineConfirmationState,
   BaselineConfirmationPresentation,
+  BaselineUnknownApplicability,
+  MsdUnknownClassification,
+  BaselineUnknownLedgerEntry,
+  UnknownLedgerParse,
+  BaselineBlockingJudgement,
 } from "./baseline.js";
 export type {
   InitResult,
@@ -1001,8 +1010,8 @@ export function createProgram(
   // 已答键改型显式拒绝；确认态在座 = gate 本体（无 --change 拒绝 / 持有效 --change
   // 走治理通路——kernel 校验 CHANGE.* 在册 + 活性；写入转 pending-change——同 ref
   // 连改多键全程允许）。confirm = 确认施断命令（沿 New Entity Gate 先例：verdict +
-  // exit code）：14 unknowns 全销账为前提，manifest 写 confirmed 记录（at_seq +
-  // 24 文件确认资产清单 sha256 快照 = 2 stack.yaml + 22 md——N1 单一分母）；重确认
+  // exit code）：阻塞集清零为前提（P-C1），manifest 写 confirmed 记录（at_seq +
+  // 25 文件确认资产清单 sha256 快照 = 2 stack.yaml + 22 md + 1 design-tokens.yaml——N1 单一分母，ADR-20 扩 25）；重确认
   // 三通道（N2/Owner 09-06 补裁定）：--change 治理通路 / --ack-drifted --note 手改
   // 声明（journal BASELINE_ACK 留痕）/ 裸重确认显式拒绝；closeout 聚合单点消费
   // BASELINE_NOT_CONFIRMED（含 pending-change 未终结）/ BASELINE_DRIFT，doctor/status
@@ -1010,7 +1019,7 @@ export function createProgram(
   const baseline = program
     .command("baseline")
     .description(
-      "Project Engineering Baseline 销账与确认 gate 通路（R-M/R-L）：set = 单键显式写入 .pomaster/baseline/<lane>/stack.yaml 并同步销账 manifest unknowns 台账（TTY init 技术栈问卷的非交互孪生——CI/脚本场景；键词形 fail-closed；已答键改型拒绝）；confirm = 基线确认施断（14 unknowns 全销账后 manifest 记 confirmed digest 快照——24 文件单一资产清单；重确认三通道 --change / --ack-drifted --note / 裸重确认拒绝；closeout/doctor/status 消费确认态）",
+      "Project Engineering Baseline 销账与确认 gate 通路（R-M/R-L）：set = 单键显式写入 .pomaster/baseline/<lane>/stack.yaml 并同步销账 manifest unknowns 台账（TTY init 技术栈问卷的非交互孪生——CI/脚本场景；键词形 fail-closed；已答键改型拒绝）；confirm = 基线确认施断（阻塞集清零后 manifest 记 confirmed digest 快照——25 文件单一资产清单；重确认三通道 --change / --ack-drifted --note / 裸重确认拒绝；closeout/doctor/status 消费确认态）",
     );
   baseline
     .command("set")
@@ -1047,7 +1056,7 @@ export function createProgram(
   baseline
     .command("confirm")
     .description(
-      "基线确认施断（R-L gate；verdict + exit code）：前提 = 14 unknowns 全销账（BASELINE_UNKNOWNS_REMAINING fail-closed 逐条列出缺键）；动作 = manifest.yaml 写 confirmed 确认记录（at_seq 时点锚 + 24 文件确认资产清单 sha256 快照 = 2 stack.yaml + 22 md——N1 单一分母，manifest 不自引用）；初次确认不需要任何通道；已确认且 digest 无漂移 → NO_CHANGE 零写入；重确认三通道（N2/Owner 09-06 补裁定）：--change <CHANGE-id>（治理通路：drifted 覆盖 / pending 同 ref 终结）或 --ack-drifted --note \"<理由>\"（Owner 手改声明：journal BASELINE_ACK 留痕 + 记录 ack 标记；AI 代跑须持 Owner 指示）；裸重确认 = BASELINE_RECONFIRM_REQUIRES_CHANGE 显式拒绝；closeout 消费：BASELINE_NOT_CONFIRMED / BASELINE_DRIFT 两阻塞码",
+      "基线确认施断（R-L gate；verdict + exit code）：前提 = 阻塞集清零（P-C1：unknowns 台账双词形——豁免登记行不阻塞，阻塞键 BASELINE_UNKNOWNS_REMAINING fail-closed 逐条列出，结构化行形状损坏 INVALID_STATE）；动作 = manifest.yaml 写 confirmed 确认记录（at_seq 时点锚 + 25 文件确认资产清单 sha256 快照 = 2 stack.yaml + 22 md + 1 design-tokens.yaml——N1 单一分母，ADR-20 扩 25，manifest 不自引用）；初次确认不需要任何通道；已确认且 digest 无漂移 → NO_CHANGE 零写入；重确认三通道（N2/Owner 09-06 补裁定）：--change <CHANGE-id>（治理通路：drifted 覆盖 / pending 同 ref 终结）或 --ack-drifted --note \"<理由>\"（Owner 手改声明：journal BASELINE_ACK 留痕 + 记录 ack 标记；AI 代跑须持 Owner 指示）；裸重确认 = BASELINE_RECONFIRM_REQUIRES_CHANGE 显式拒绝；closeout 消费：BASELINE_NOT_CONFIRMED / BASELINE_DRIFT 两阻塞码",
     )
     .option(
       "--change <change-id>",

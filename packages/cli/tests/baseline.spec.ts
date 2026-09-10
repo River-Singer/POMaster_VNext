@@ -21,9 +21,10 @@
  *   未播种 NOT_CONFIGURED / 损坏 INVALID_STATE / 已答键改型 BASELINE_KEY_ALREADY_SET
  *   / 确认态在座 BASELINE_ALREADY_CONFIRMED（R-L gate 本体）；
  * - baseline confirm（R-L Step B，ADR-10~12）：未销账完 BASELINE_UNKNOWNS_REMAINING
- *   fail-closed 逐条列出 / 全销账 CONFIRMED 写记录（at_seq + 24 digest）/ 重复
+ *   fail-closed 逐条列出 / 全销账 CONFIRMED 写记录（at_seq + 25 digest）/ 重复
  *   confirm 幂等 NO_CHANGE 零写入 / 损坏块修复（初次确认不需要通道）；
- * - N1 确认分母单一资产清单（ADR-15）：24 = 2 stack.yaml + 22 md；24 face 逐一
+ * - N1 确认分母单一资产清单（ADR-15；R3/ADR-20 扩 25）：25 = 2 stack.yaml + 22 md
+ *   + 1 design-tokens.yaml；25 face 逐一
  *   修改/删除负面矩阵 → drifted + drifted_files 指名 + gate BASELINE_DRIFT（审计
  *   N1 evidence/main/n1-status.json 复现链反转——不能只测 architecture）；
  * - N2 重确认三通道（ADR-17，Owner 09-06 补裁定）：审计复现链双反转——drifted →
@@ -42,6 +43,13 @@
  * - closeout gate 判卷（baselineGateErrors）：缺席不适用 / 在场未确认 /
  *   BASELINE_DRIFT（stack 与 architecture.md 双形态）/ pending-change = 未确认阻断
  *   / 确认 fresh 空；
+ * - F14 观察候选链（ADR-19）：观察不直写权威 stack.yaml（候选登记零写入）/
+ *   问卷分母不再因观察收缩（候选题面注记呈现）/ 未采纳候选键 = 缺省 BLOCKING /
+ *   Owner adoption（问卷/set 既有通路）→ 台账销账 → confirm 全绿；
+ * - R3 design-tokens 最小合同（F-M1，ADR-20）：seed 播种在盘 + meta 机器位可读 +
+ *   confirm 25 目标 digest 快照含 token 文件 + 旧 24 目标记录 = damaged（无有效
+ *   确认记录——升级路径复用初次确认通道重建 25 目标快照）+ 装载面三态
+ *   （缺席显式 / 形状违规 fail-closed / ok）；
  * - 程序面：非 TTY init --json 问卷跳过（skipped=non_interactive）；baseline
  *   set/confirm 命令注册与词形闸（runCli 实跑；confirm 三旗标注册）。
  */
@@ -75,10 +83,13 @@ import {
   runCli,
   runInit,
   runInitInteractive,
+  unknownsWordForm,
   type ChecklistIo,
   type StackAnswer,
 } from "@pomaster/cli";
 import { seedsRootCandidates } from "../src/seed-manifest.js";
+import { observePackageStack, registerStackObservationCandidates, BASELINE_DESIGN_TOKENS_TARGET } from "../src/baseline.js";
+import { readDesignTokens } from "../src/baseline-tokens.js";
 import { INTERACTIVE_BACKSPACE_KEY } from "../src/interactive-keys.js";
 import type { CliError } from "../src/envelope.js";
 import type { InitFileReport } from "../src/init.js";
@@ -353,10 +364,11 @@ describe("幂等分母", () => {
     expect(seeded.kind === "ready" ? seeded.questions.length : 0).toBe(14);
   });
 
-  it("T2 R4 观察感知分母：FE 观察命中键不问人；BE 同名键（language/framework）不吞——恒入问卷分母", async () => {
+  it("F14 观察候选呈现分母：FE 观察命中键照常入分母且题面携带观察候选注记；BE 同名键（language/framework）不带 FE 候选", async () => {
     // 宿主 package.json 与 golden fixture 同构（vue 栈 + typescript）——观察映射表
-    // 八键单候选全命中。观察 stackKey（language/framework）与 BE 键同名：分母收缩
-    // 必须按 lane 圈定（观察值是 FE 事实，不是 BE 同名键的判据）。
+    // 八键单候选全命中。F14 候选呈现制（ADR-19）：观察值不是人答也不是权威值——
+    // 观察键不再被静默排除出分母（T2 R4 观察感知分母废除），改以 observed 加法
+    // 字段在题面呈现（观察值 + 证据注记），Owner 选型即 adoption。
     writeFileSync(
       join(dir, "package.json"),
       `${JSON.stringify({
@@ -371,20 +383,39 @@ describe("幂等分母", () => {
       })}\n`,
       "utf8",
     );
+    const observedValues: Record<string, string> = {
+      framework: "vue3",
+      language: "typescript",
+      build: "vite",
+      router: "vue-router",
+      state: "pinia",
+      grid: "ag-grid",
+      ui: "element-plus",
+      testing: "vitest",
+    };
     const remaining = await resolveRemainingQuestions(dir);
     expect(remaining.kind).toBe("ready");
     const questions = remaining.kind === "ready" ? remaining.questions : [];
-    // FE：可观察 8 键不问人，只剩规范性决策 css。
-    expect(questions.filter((q) => q.lane === "frontend").map((q) => q.key)).toEqual(["css"]);
-    // BE：五键恒入分母（回归钉——不按 lane 圈定时 language/framework 会被 FE 观察
-    // 误吞，BE 键永不问人、恒 UNKNOWN，confirm 卡 BASELINE_UNKNOWNS_REMAINING）。
+    // FE：9 键全入分母（分母零收缩）；8 个可观察键题面携带观察候选，css 无候选。
+    expect(questions.filter((q) => q.lane === "frontend").map((q) => q.key)).toEqual([...FRONTEND_STACK_KEYS]);
+    for (const question of questions.filter((q) => q.lane === "frontend")) {
+      if (question.key === "css") {
+        expect(question.observed, "css 是规范决策非事实——无观察候选").toBeUndefined();
+      } else {
+        expect(question.observed).toEqual({
+          lane: "frontend",
+          key: question.key,
+          value: observedValues[question.key],
+          source: "package.json",
+        });
+      }
+    }
+    // BE：五键恒入分母且零候选（回归钉——lane 圈定必须成立，FE 观察值不是 BE
+    // 同名键 language/framework 的判据；BE 键不经前端 package.json 观察）。
     expect(questions.filter((q) => q.lane === "backend").map((q) => q.key)).toEqual([
-      "language",
-      "framework",
-      "persistence",
-      "database",
-      "cache",
+      ...BACKEND_STACK_KEYS,
     ]);
+    expect(questions.filter((q) => q.lane === "backend").every((q) => q.observed === undefined)).toBe(true);
   });
 
   it("部分已答：只问剩余 UNKNOWN 键（已答键不重复问）", async () => {
@@ -433,6 +464,122 @@ describe("幂等分母", () => {
     const scripted = scriptedNumberedIo(numberAnswers(14));
     const quiz = await collectStackAnswers(dir, scripted.io);
     expect(quiz).toEqual({ asked: 0, answers: [], skipped: "baseline_unreadable" });
+  });
+});
+
+// ============================================================
+// F14 观察候选链（ADR-19：观察不直写 → 问卷候选呈现 → Owner adoption → confirm）
+// ============================================================
+
+/** vue 栈宿主依赖夹具（与既有观察测试同构——FE 可观察 8 键全命中单候选）。 */
+function writeVueStackPackageJson(): void {
+  writeFileSync(
+    join(dir, "package.json"),
+    `${JSON.stringify({
+      dependencies: {
+        vue: "^3.4.0",
+        "vue-router": "^4.2.0",
+        pinia: "^2.1.0",
+        "element-plus": "^2.4.0",
+        "ag-grid-community": "^31.0.0",
+      },
+      devDependencies: { typescript: "^5.0.0", vite: "^5.0.0", vitest: "^1.0.0" },
+    })}\n`,
+    "utf8",
+  );
+}
+
+describe("F14 观察候选链（Candidate→Review→adoption）", () => {
+  it("观察不直写权威基线：init 后 FE stack.yaml 全键 UNKNOWN + 零 [Observed 注记 + 台账零销账（未采纳候选键 = 缺省 BLOCKING）", async () => {
+    writeVueStackPackageJson();
+    const outcome = await runInit(dir);
+    expect(outcome.ok).toBe(true);
+    const feText = read(baselineStackRelative("frontend"));
+    for (const key of FRONTEND_STACK_KEYS) {
+      expect(feText).toContain(`${key}: UNKNOWN`);
+    }
+    // 观察注记不再写进权威 stack.yaml（证据注记迁居问卷候选呈现面）。
+    expect(feText).not.toContain("[Observed");
+    // 观察即销账废除：14 条台账行在座（未采纳候选键 = flat 行，缺省 BLOCKING——
+    // P-C1 语义不受影响，行为与原未知键一致）。
+    expect(unknownEntryCount()).toBe(14);
+    // 候选登记计数照常进信封呈现面（observed = 候选数非写入数）。
+    expect(outcome.result.observation).toEqual({
+      source: "package.json",
+      observed: 8,
+      skipped_resolved: 0,
+    });
+  });
+
+  it("候选在问卷呈现：raw 帧题面携带观察候选注记，分母含观察键（观察不再收缩分母）", async () => {
+    writeVueStackPackageJson();
+    await runInit(dir);
+    const { chunks, io } = scriptedRawIo(confirmKeys(14));
+    const quiz = await collectStackAnswers(dir, io);
+    expect(quiz?.asked).toBe(14);
+    expect(chunks.join("\n")).toContain("观察候选: vue3 [Observed: package.json]");
+    // 采纳 = 普通人答（人答优先级恒高于观察）：候选键照常可答可覆盖。
+    expect(
+      quiz?.answers.some((a) => a.lane === "frontend" && a.key === "framework" && a.value === "vue3"),
+    ).toBe(true);
+  });
+
+  it("numbered 降级同样呈现观察候选行（呈现面双形态同词形）", async () => {
+    writeVueStackPackageJson();
+    await runInit(dir);
+    const scripted = scriptedNumberedIo(numberAnswers(14));
+    const quiz = await collectStackAnswers(dir, scripted.io);
+    expect(quiz?.asked).toBe(14);
+    expect(scripted.written.join("\n")).toContain("观察候选: vue3 [Observed: package.json]");
+  });
+
+  it("候选分账：UNKNOWN 键 → 候选登记；已采纳键 → skipped_resolved（幂等重放同分账）", async () => {
+    writeVueStackPackageJson();
+    await runInit(dir);
+    const observation = await observePackageStack(dir);
+    expect(observation).not.toBeNull();
+    if (observation === null) return;
+    const first = await registerStackObservationCandidates(dir, observation);
+    expect(first.observed).toBe(8);
+    expect(first.skipped_resolved).toBe(0);
+    expect(first.candidates.map((c) => `${c.lane}.${c.key}=${c.value}`)).toContain("frontend.framework=vue3");
+    expect(first.candidates.every((c) => c.lane === "frontend")).toBe(true);
+    // adoption（set 通路——既有 adoption 通路之一）后重放：分账随权威值收敛。
+    await runBaselineSet(dir, { lane: "frontend", key: "framework", value: "vue3" });
+    const second = await registerStackObservationCandidates(dir, observation);
+    expect(second.observed).toBe(7);
+    expect(second.skipped_resolved).toBe(1);
+    expect(second.candidates.some((c) => c.key === "framework")).toBe(false);
+  });
+
+  it("Owner adoption 后 confirm 全绿：问卷分母呈现候选 → 按候选作答落权威值 + 台账销账 → CONFIRMED", async () => {
+    writeVueStackPackageJson();
+    await runInit(dir);
+    // 未采纳：候选键缺省 BLOCKING——confirm 卡 BASELINE_UNKNOWNS_REMAINING（P-C1
+    // 语义不受观察影响）。
+    const blocked = await runBaselineConfirm(dir);
+    expect(blocked.ok).toBe(false);
+    expect(blocked.errors[0]?.code).toBe("BASELINE_UNKNOWNS_REMAINING");
+    expect(blocked.errors[0]?.message).toContain("baseline/frontend/stack.yaml:framework");
+    // Review 面：候选键在分母且携带观察候选（adoption 输入）。
+    const remaining = await resolveRemainingQuestions(dir);
+    expect(remaining.kind).toBe("ready");
+    const answers: StackAnswer[] = (remaining.kind === "ready" ? remaining.questions : []).map(
+      (question) => ({
+        lane: question.lane,
+        key: question.key,
+        value: question.observed?.value ?? question.options[0] ?? "",
+      }),
+    );
+    expect(answers).toHaveLength(14);
+    // adoption：经既有问卷落盘通路（无新写通路）——权威值落地 + 台账销账。
+    expect(await applyStackAnswers(dir, answers, [], [])).toBe(14);
+    expect(stackValues("frontend").framework).toBe("vue3");
+    expect(stackValues("frontend").ui).toBe("element-plus");
+    expect(unknownEntryCount()).toBe(0);
+    const confirm = await runBaselineConfirm(dir);
+    expect(confirm.ok).toBe(true);
+    expect(confirm.result.change).toBe("CONFIRMED");
   });
 });
 
@@ -782,18 +929,17 @@ describe("程序面（非 TTY 问卷跳过 + baseline set 命令面 + numbered �
 // Step B（R-L）：`pomaster baseline confirm` 确认 gate
 // ============================================================
 
-/** 全量销账：14 键逐键 set（走后补通路把 unknowns 清零——confirm 的前提）。 */
-async function fillAllKeys(target: string = dir): Promise<void> {
-  for (const lane of BASELINE_LANES) {
-    for (const key of STACK_KEYS[lane]) {
-      const outcome = await runBaselineSet(target, {
-        lane,
-        key,
-        value: key === "cache" || key === "grid" ? "none" : `${key}-value`,
-      });
-      expect(outcome.ok, `${lane}.${key}`).toBe(true);
-    }
-  }
+/**
+ * 全链已确认项目夹具（N1/N2/N3 负面矩阵与审计复现链的共同底座）：
+ * init 播种 → 14 键 set 销账 → confirm（25 文件 digest 快照——R3 起含 design-tokens.yaml）。
+ */
+async function buildConfirmedProject(target: string = dir): Promise<void> {
+  const outcome = await runInit(target, { platforms: "claude" });
+  expect(outcome.ok).toBe(true);
+  await fillAllKeys(target);
+  const confirm = await runBaselineConfirm(target);
+  expect(confirm.ok).toBe(true);
+  expect(confirm.result.change).toBe("CONFIRMED");
 }
 
 /**
@@ -855,15 +1001,32 @@ async function seedGovernedFixture(
 
 /**
  * 全链已确认项目夹具（N1/N2/N3 负面矩阵与审计复现链的共同底座）：
- * init 播种 → 14 键 set 销账 → confirm（24 文件 digest 快照）。
+ * init 播种 → 14 键 set 销账 → confirm（25 文件 digest 快照——R3 起含 design-tokens.yaml）。
+ * skip（P-C1 T1-T12）：词形集合内的键跳过回填（台账行保留——豁免登记的底座）。
  */
-async function buildConfirmedProject(target: string = dir): Promise<void> {
-  const outcome = await runInit(target, { platforms: "claude" });
-  expect(outcome.ok).toBe(true);
-  await fillAllKeys(target);
-  const confirm = await runBaselineConfirm(target);
-  expect(confirm.ok).toBe(true);
-  expect(confirm.result.change).toBe("CONFIRMED");
+async function fillAllKeys(target: string = dir, skip?: ReadonlySet<string>): Promise<void> {
+  for (const lane of BASELINE_LANES) {
+    for (const key of STACK_KEYS[lane]) {
+      if (skip?.has(unknownsWordForm(lane, key))) continue;
+      const outcome = await runBaselineSet(target, {
+        lane,
+        key,
+        value: key === "cache" || key === "grid" ? "none" : `${key}-value`,
+      });
+      expect(outcome.ok, `${lane}.${key}`).toBe(true);
+    }
+  }
+}
+
+/**
+ * P-C1 Owner 手编登记形态（§5.1 词形二）：把台账中某键的 flat 行原位替换为
+ * 结构化行块（行级最小改写——测试即 Owner 手编 manifest 的机器替身）。
+ */
+function replaceFlatRowWithStructured(manifestText: string, wordForm: string, blockLines: readonly string[]): string {
+  const lines = manifestText.split("\n");
+  const index = lines.findIndex((line) => line.trim() === `- ${wordForm}`);
+  if (index < 0) throw new Error(`fixture 前置失败：台账无 flat 行 ${wordForm}`);
+  return [...lines.slice(0, index), ...blockLines, ...lines.slice(index + 1)].join("\n");
 }
 
 describe("baseline confirm（R-L Step B：三态 + 幂等 + 漂移重快照）", () => {
@@ -1116,11 +1279,15 @@ describe("baseline set --change（确认后修改走治理通路；N3 pending-ch
 // ============================================================
 
 describe("baselineGateErrors 与确认态呈现（R-L）", () => {
-  it("N1 同源分母：24 = 2 stack.yaml + 22 md；manifest.yaml 不自引用；face 集与 md 面一一对应", () => {
-    expect(BASELINE_CONFIRM_TARGETS).toHaveLength(24);
+  it("N1 同源分母：25 = 2 stack.yaml + 22 md + 1 design-tokens.yaml；manifest.yaml 不自引用；face 集与 md 面一一对应", () => {
+    expect(BASELINE_CONFIRM_TARGETS).toHaveLength(25);
     const stacks = BASELINE_CONFIRM_TARGETS.filter((target) => target.endsWith(".yaml"));
     const mds = BASELINE_CONFIRM_TARGETS.filter((target) => target.endsWith(".md"));
-    expect(stacks).toEqual(["baseline/frontend/stack.yaml", "baseline/backend/stack.yaml"]);
+    expect(stacks).toEqual([
+      "baseline/frontend/stack.yaml",
+      "baseline/backend/stack.yaml",
+      "baseline/frontend/design-tokens.yaml",
+    ]);
     expect(mds).toHaveLength(22);
     expect(BASELINE_MD_FACES).toEqual(mds);
     // manifest 不自引用（confirm digest 分母不含记录载体本身）。
@@ -1161,6 +1328,8 @@ describe("baselineGateErrors 与确认态呈现（R-L）", () => {
     expect(unconfirmed).toEqual({
       state: "unconfirmed",
       unknowns_remaining: 14,
+      blocking_remaining: 14,
+      applicability_summary: { BLOCKING: 14, NOT_APPLICABLE: 0, DEFERRED: 0 },
       at_seq: null,
       drifted_files: [],
     });
@@ -1266,10 +1435,78 @@ describe("baselineGateErrors 与确认态呈现（R-L）", () => {
 });
 
 // ============================================================
-// N1 确认分母负面矩阵（审计 N1 复现链反转：24 face 逐一修改/删除 → 检出 + 指名）
+// R3 design-tokens 最小合同（F-M1，ADR-20：确认分母 24→25）
 // ============================================================
 
-describe("N1 负面矩阵（24 资产逐一故障注入；pristine 全量播种 + 逐 case 拷贝）", () => {
+describe("R3 design-tokens 最小合同（F-M1：第 25 确认目标 + meta 机器位 + 装载面）", () => {
+  it("init 播种 design-tokens.yaml 在盘且 meta 机器位可读；confirm 25 目标 digest 快照含 token 文件", async () => {
+    await runInit(dir);
+    const seeded = await readDesignTokens(dir);
+    expect(seeded.kind).toBe("ok");
+    if (seeded.kind !== "ok") return;
+    expect(seeded.doc.meta).toEqual({ origin: "preset", customized: false });
+    // 骨架九组在座（原文 §16 分组逐字——值起步 UNKNOWN，零示例数值伪项目事实）。
+    for (const group of [
+      "color",
+      "typography",
+      "spacing",
+      "radius",
+      "elevation",
+      "density",
+      "layout",
+      "motion",
+      "breakpoints",
+    ]) {
+      expect(seeded.doc.groups[group], group).toBeDefined();
+    }
+    await fillAllKeys();
+    const outcome = await runBaselineConfirm(dir);
+    expect(outcome.ok).toBe(true);
+    expect(outcome.result.digests.map((d) => d.file)).toContain(BASELINE_DESIGN_TOKENS_TARGET);
+    expect(outcome.result.digests).toHaveLength(25);
+    expect(await baselineGateErrors(dir)).toEqual([]);
+  });
+
+  it("旧工作区兼容：24 目标旧 confirmed 记录 = damaged（无有效确认记录）→ gate BASELINE_NOT_CONFIRMED；重跑 confirm 重建 25 目标快照（升级路径复用初次确认通道）", async () => {
+    await buildConfirmedProject(dir);
+    // 机器替身「旧分母记录」：从 confirmed 块 digests 中删除 token 行（旧记录无第 25 目标）。
+    const manifestPath = join(dir, BASELINE_MANIFEST_RELATIVE);
+    const legacy = read(BASELINE_MANIFEST_RELATIVE)
+      .split("\n")
+      .filter((line) => !line.includes(`${BASELINE_DESIGN_TOKENS_TARGET}: sha256:`))
+      .join("\n");
+    writeFileSync(manifestPath, legacy, "utf8");
+    expect((await baselineGateErrors(dir))[0]?.code).toBe("BASELINE_NOT_CONFIRMED");
+    // 升级路径：初次确认通道（损坏块修复不需要通道旗标）→ 全量重快照 25 目标。
+    const outcome = await runBaselineConfirm(dir);
+    expect(outcome.ok).toBe(true);
+    expect(outcome.result.change).toBe("CONFIRMED");
+    expect(outcome.result.digests).toHaveLength(25);
+    expect(await baselineGateErrors(dir)).toEqual([]);
+  });
+
+  it("装载面三态：token 文件缺席 → absent（旧工作区不冒充已装载）；origin 词形越界 → invalid fail-closed（禁猜测）", async () => {
+    await runInit(dir);
+    rmSync(join(dir, ".pomaster", ...BASELINE_DESIGN_TOKENS_TARGET.split("/")));
+    expect((await readDesignTokens(dir)).kind).toBe("absent");
+    // 坏词形：origin 越出 preset|customized|owner 闭包 → fail-closed（坏合同 ≠ 无合同）。
+    const tokensPath = join(dir, ".pomaster", ...BASELINE_DESIGN_TOKENS_TARGET.split("/"));
+    const seedText = readFileSync(
+      join(seedsRootCandidates(import.meta.url)[0]!, "baseline/frontend/design-tokens.yaml"),
+      "utf8",
+    );
+    writeFileSync(tokensPath, seedText.replace("origin: preset", "origin: default"), "utf8");
+    const bad = await readDesignTokens(dir);
+    expect(bad.kind).toBe("invalid");
+    if (bad.kind === "invalid") expect(bad.detail).toContain("origin");
+  });
+});
+
+// ============================================================
+// N1 确认分母负面矩阵（审计 N1 复现链反转：25 face 逐一修改/删除 → 检出 + 指名）
+// ============================================================
+
+describe("N1 负面矩阵（25 资产逐一故障注入；pristine 全量播种 + 逐 case 拷贝）", () => {
   let pristine: string;
 
   beforeAll(async () => {
@@ -1601,6 +1838,362 @@ describe("N3 三态机（同一 CHANGE 连改多键全程允许；pending 闸与
     const covered = await runBaselineConfirm(dir, { change: "CHANGE.M0005" });
     expect(covered.ok).toBe(true);
     expect((await readBaselineConfirmationPresentation(dir))?.state).toBe("confirmed");
+    expect(await baselineGateErrors(dir)).toEqual([]);
+  });
+});
+
+// ============================================================
+// P-C1 阻塞集确认契约（T1-T12；提案 §5/§9——confirm 全销账 → 阻塞集销账）
+// ============================================================
+
+describe("P-C1 阻塞集确认契约（unknowns 台账双词形 + confirm 阻塞集判卷）", () => {
+  const GRID = unknownsWordForm("frontend", "grid");
+
+  /** 结构化豁免行（§5.1 词形二；applicability/statement/classification 必备形态）。 */
+  function exemptRow(
+    wordForm: string,
+    applicability: "NOT_APPLICABLE" | "DEFERRED",
+    classification: string,
+    statement: string,
+  ): string[] {
+    return [
+      `  - key: ${wordForm}`,
+      `    applicability: ${applicability}`,
+      `    statement: ${statement}`,
+      `    classification: ${classification}`,
+    ];
+  }
+
+  it("T1 全阻塞回归守卫：14 键全 flat + 值全 UNKNOWN → BASELINE_UNKNOWNS_REMAINING 且阻塞集 = 14（错误码词形保留、语义收窄）", async () => {
+    await runInit(dir);
+    const manifestBefore = read(BASELINE_MANIFEST_RELATIVE);
+    const outcome = await runBaselineConfirm(dir);
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors[0]?.code).toBe("BASELINE_UNKNOWNS_REMAINING");
+    expect(outcome.errors[0]?.message).toContain("阻塞集未销账（14 键）");
+    expect(outcome.result.unknowns_remaining).toBe(14);
+    const presentation = await readBaselineConfirmationPresentation(dir);
+    expect(presentation?.unknowns_remaining).toBe(14);
+    expect(presentation?.blocking_remaining).toBe(14);
+    expect(read(BASELINE_MANIFEST_RELATIVE)).toBe(manifestBefore);
+  });
+
+  it("T2 NOT_APPLICABLE 豁免不阻塞：grid 结构化行（OUT_OF_SCOPE）+ 值 UNKNOWN → confirm 通过且豁免行保留在台账", async () => {
+    await runInit(dir);
+    await fillAllKeys(dir, new Set([GRID]));
+    writeFileSync(
+      join(dir, BASELINE_MANIFEST_RELATIVE),
+      replaceFlatRowWithStructured(
+        read(BASELINE_MANIFEST_RELATIVE),
+        GRID,
+        exemptRow(GRID, "NOT_APPLICABLE", "OUT_OF_SCOPE", "数据表格/Grid 选型域对本项目不存在"),
+      ),
+      "utf8",
+    );
+    const outcome = await runBaselineConfirm(dir);
+    expect(outcome.ok).toBe(true);
+    expect(outcome.result.change).toBe("CONFIRMED");
+    const manifestText = read(BASELINE_MANIFEST_RELATIVE);
+    expect(manifestText).toContain("applicability: NOT_APPLICABLE");
+    expect(manifestText).toContain("classification: OUT_OF_SCOPE");
+    expect(manifestText).toContain("confirmed:");
+    expect(await baselineGateErrors(dir)).toEqual([]);
+  });
+
+  it("T3 DEFERRED 豁免不阻塞：cache 结构化行（DEFERRED_DECISION）→ confirm 通过（未决事实在台账留痕）", async () => {
+    await runInit(dir);
+    await fillAllKeys(dir, new Set([unknownsWordForm("backend", "cache")]));
+    writeFileSync(
+      join(dir, BASELINE_MANIFEST_RELATIVE),
+      replaceFlatRowWithStructured(
+        read(BASELINE_MANIFEST_RELATIVE),
+        unknownsWordForm("backend", "cache"),
+        exemptRow(
+          unknownsWordForm("backend", "cache"),
+          "DEFERRED",
+          "DEFERRED_DECISION",
+          "缓存选型显式延后至下一增量裁定",
+        ),
+      ),
+      "utf8",
+    );
+    const outcome = await runBaselineConfirm(dir);
+    expect(outcome.ok).toBe(true);
+    expect(outcome.result.change).toBe("CONFIRMED");
+    expect(read(BASELINE_MANIFEST_RELATIVE)).toContain("applicability: DEFERRED");
+    expect(await baselineGateErrors(dir)).toEqual([]);
+  });
+
+  it("T4 旧记录升级兼容（零迁移）：schema_version 1 + flat 台账的旧 confirmed 记录在新判卷下仍 confirmed；漂移后裸 confirm 仍 ADR-17 拒绝", async () => {
+    await runInit(dir);
+    await fillAllKeys(dir);
+    const confirm = await runBaselineConfirm(dir);
+    expect(confirm.ok).toBe(true);
+    expect(read(BASELINE_MANIFEST_RELATIVE)).toContain("schema_version: 1");
+    // 零迁移：旧记录在新判卷下继续有效——重复 confirm 幂等 NO_CHANGE，不需要任何重确认通道。
+    const replay = await runBaselineConfirm(dir);
+    expect(replay.ok).toBe(true);
+    expect(replay.result.change).toBe("NO_CHANGE");
+    // P-C1 新信号：同一旧记录工作区在新判卷呈现面下阻塞集口径在座且为 0（加法字段——旧读者兼容）。
+    const presentation = await readBaselineConfirmationPresentation(dir);
+    expect(presentation?.state).toBe("confirmed");
+    expect(presentation?.blocking_remaining).toBe(0);
+    expect(presentation?.unknowns_remaining).toBe(0);
+    // ADR-17 不回归：漂移后裸重确认 = BASELINE_RECONFIRM_REQUIRES_CHANGE 显式拒绝。
+    writeFileSync(join(dir, ".pomaster", "baseline", "frontend", "architecture.md"), "# drift\n", "utf8");
+    const bare = await runBaselineConfirm(dir);
+    expect(bare.ok).toBe(false);
+    expect(bare.errors[0]?.code).toBe("BASELINE_RECONFIRM_REQUIRES_CHANGE");
+  });
+
+  it("T5 tokens 域开放键（P-D1 预演）：Owner 增补结构化键判卷在册——NOT_APPLICABLE 豁免不误伤、缺省 BLOCKING 不静默；25 文件分母（R3 起含 design-tokens.yaml）", async () => {
+    await runInit(dir);
+    await fillAllKeys(dir);
+    const manifestPath = join(dir, BASELINE_MANIFEST_RELATIVE);
+    const tokenSpacingRows = [
+      "  - key: baseline/tokens/design-tokens.yaml:spacing",
+      "    applicability: NOT_APPLICABLE",
+      "    statement: 令牌间距轴对本项目不存在",
+      "    classification: OUT_OF_SCOPE",
+    ];
+    const tokenColorRows = [
+      "  - key: baseline/tokens/design-tokens.yaml:color",
+      "    statement: 令牌色彩轴未决",
+      "    classification: SOFT_UNCERTAINTY",
+    ];
+    // Owner 手编增补两枚 tokens 域键（键名开放——无机器键集、行形状校验口径）。
+    writeFileSync(
+      manifestPath,
+      `${read(BASELINE_MANIFEST_RELATIVE)}${[...tokenSpacingRows, ...tokenColorRows].join("\n")}\n`,
+      "utf8",
+    );
+    // 分母：P-C1 零涉 BASELINE_CONFIRM_TARGETS；R3（P-D1 最小合同）扩至 25 文件。
+    expect(BASELINE_CONFIRM_TARGETS).toHaveLength(25);
+    // 缺省 BLOCKING 的开放域键在册 → 阻塞（台账外词形不再静默忽略）；豁免键不误伤。
+    const blocked = await runBaselineConfirm(dir);
+    expect(blocked.ok).toBe(false);
+    expect(blocked.errors[0]?.code).toBe("BASELINE_UNKNOWNS_REMAINING");
+    expect(blocked.errors[0]?.message).toContain("baseline/tokens/design-tokens.yaml:color");
+    expect(blocked.errors[0]?.message).not.toContain("baseline/tokens/design-tokens.yaml:spacing");
+    // Owner 手编删阻塞行 → confirm 通过；豁免行保留在台账。
+    writeFileSync(manifestPath, read(BASELINE_MANIFEST_RELATIVE).replace(`${tokenColorRows.join("\n")}\n`, ""), "utf8");
+    const outcome = await runBaselineConfirm(dir);
+    expect(outcome.ok).toBe(true);
+    expect(read(BASELINE_MANIFEST_RELATIVE)).toContain("baseline/tokens/design-tokens.yaml:spacing");
+    expect(await baselineGateErrors(dir)).toEqual([]);
+  });
+
+  it("T6 非阻塞键残留时 confirm 通过：混合态（一键 DEFERRED + 其余全销账）→ at_seq/digests 正常，unknowns_remaining=1 且 blocking_remaining=0", async () => {
+    await runInit(dir);
+    await fillAllKeys(dir, new Set([unknownsWordForm("backend", "cache")]));
+    writeFileSync(
+      join(dir, BASELINE_MANIFEST_RELATIVE),
+      replaceFlatRowWithStructured(
+        read(BASELINE_MANIFEST_RELATIVE),
+        unknownsWordForm("backend", "cache"),
+        exemptRow(unknownsWordForm("backend", "cache"), "DEFERRED", "DEFERRED_DECISION", "缓存选型显式延后"),
+      ),
+      "utf8",
+    );
+    const outcome = await runBaselineConfirm(dir);
+    expect(outcome.ok).toBe(true);
+    expect(outcome.result.change).toBe("CONFIRMED");
+    expect(outcome.result.at_seq ?? 0).toBeGreaterThan(0);
+    expect(outcome.result.digests).toHaveLength(BASELINE_CONFIRM_TARGETS.length);
+    const presentation = await readBaselineConfirmationPresentation(dir);
+    expect(presentation?.state).toBe("confirmed");
+    expect(presentation?.unknowns_remaining).toBe(1);
+    expect(presentation?.blocking_remaining).toBe(0);
+    expect(presentation?.applicability_summary).toEqual({ BLOCKING: 0, NOT_APPLICABLE: 0, DEFERRED: 1 });
+  });
+
+  it("T7 stale 豁免行不豁免：NOT_APPLICABLE 在册而值已回填 → confirm 拒绝（双重销账一致性对豁免键不放松）", async () => {
+    await runInit(dir);
+    await fillAllKeys(dir);
+    // 全键已回填（grid=none resolved）后手编把豁免行加回 → stale 豁免形态。
+    writeFileSync(
+      join(dir, BASELINE_MANIFEST_RELATIVE),
+      `${read(BASELINE_MANIFEST_RELATIVE)}${exemptRow(GRID, "NOT_APPLICABLE", "OUT_OF_SCOPE", "数据表格/Grid 选型域对本项目不存在").join("\n")}\n`,
+      "utf8",
+    );
+    const outcome = await runBaselineConfirm(dir);
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors[0]?.code).toBe("BASELINE_UNKNOWNS_REMAINING");
+    expect(outcome.errors[0]?.message).toContain(GRID);
+  });
+
+  it("T8 结构化行形状闸四连：缺 statement / classification 出十分类闭包 / applicability 出三值闭包 / FE/BE 键出 14 键闭包或 key 词形不合法 → 显式 INVALID_STATE 拒绝且零写入", async () => {
+    await runInit(dir);
+    await fillAllKeys(dir, new Set([GRID]));
+    const manifestPath = join(dir, BASELINE_MANIFEST_RELATIVE);
+    const baseText = read(BASELINE_MANIFEST_RELATIVE);
+    const cases: readonly { readonly name: string; readonly block: readonly string[]; readonly damagePart: string }[] = [
+      {
+        name: "缺 statement",
+        block: ["  - key: baseline/frontend/stack.yaml:grid", "    applicability: NOT_APPLICABLE", "    classification: OUT_OF_SCOPE"],
+        damagePart: "statement",
+      },
+      {
+        name: "classification 出十分类闭包（裸词形 UNRESOLVED 禁断）",
+        block: ["  - key: baseline/frontend/stack.yaml:grid", "    applicability: NOT_APPLICABLE", "    statement: 陈述", "    classification: UNRESOLVED"],
+        damagePart: "classification",
+      },
+      {
+        name: "applicability 出三值闭包",
+        block: ["  - key: baseline/frontend/stack.yaml:grid", "    applicability: MAYBE", "    statement: 陈述", "    classification: OUT_OF_SCOPE"],
+        damagePart: "applicability",
+      },
+      {
+        name: "FE/BE 键出 14 键闭包",
+        block: ["  - key: baseline/frontend/stack.yaml:customkey", "    applicability: NOT_APPLICABLE", "    statement: 陈述", "    classification: OUT_OF_SCOPE"],
+        damagePart: "闭包",
+      },
+      {
+        name: "key 词形不合法（缺席）",
+        block: ["  - key:", "    applicability: NOT_APPLICABLE", "    statement: 陈述", "    classification: OUT_OF_SCOPE"],
+        damagePart: "key",
+      },
+    ];
+    for (const testCase of cases) {
+      writeFileSync(manifestPath, replaceFlatRowWithStructured(baseText, GRID, testCase.block), "utf8");
+      const before = read(BASELINE_MANIFEST_RELATIVE);
+      const outcome = await runBaselineConfirm(dir);
+      expect(outcome.ok, testCase.name).toBe(false);
+      expect(outcome.errors[0]?.code, testCase.name).toBe("INVALID_STATE");
+      expect(outcome.errors[0]?.message, testCase.name).toContain(testCase.damagePart);
+      expect(read(BASELINE_MANIFEST_RELATIVE), `${testCase.name}（零写入）`).toBe(before);
+    }
+  });
+
+  it("T9 豁免行手删回阻：删除豁免结构化行且值 UNKNOWN → confirm 再度拒绝（缺省 BLOCKING 兜底）", async () => {
+    await runInit(dir);
+    await fillAllKeys(dir, new Set([GRID]));
+    const manifestPath = join(dir, BASELINE_MANIFEST_RELATIVE);
+    const block = exemptRow(GRID, "NOT_APPLICABLE", "OUT_OF_SCOPE", "数据表格/Grid 选型域对本项目不存在");
+    writeFileSync(manifestPath, replaceFlatRowWithStructured(read(BASELINE_MANIFEST_RELATIVE), GRID, block), "utf8");
+    expect((await runBaselineConfirm(dir)).ok).toBe(true);
+    // 手删豁免行（值保持 UNKNOWN）→ 该键回落缺省 BLOCKING → confirm 再度拒绝。
+    writeFileSync(manifestPath, read(BASELINE_MANIFEST_RELATIVE).replace(`${block.join("\n")}\n`, ""), "utf8");
+    const blocked = await runBaselineConfirm(dir);
+    expect(blocked.ok).toBe(false);
+    expect(blocked.errors[0]?.code).toBe("BASELINE_UNKNOWNS_REMAINING");
+    expect(blocked.errors[0]?.message).toContain(GRID);
+  });
+
+  it("T10 set 改豁免键 = 自然去豁免：结构化行删除 + 值回填；--change 两态与 ADR-16 pending 批词形不变", async () => {
+    await runInit(dir);
+    await fillAllKeys(dir, new Set([GRID]));
+    writeFileSync(
+      join(dir, BASELINE_MANIFEST_RELATIVE),
+      replaceFlatRowWithStructured(
+        read(BASELINE_MANIFEST_RELATIVE),
+        GRID,
+        exemptRow(GRID, "NOT_APPLICABLE", "OUT_OF_SCOPE", "数据表格/Grid 选型域对本项目不存在"),
+      ),
+      "utf8",
+    );
+    // 态一（无确认记录）：set 回填豁免键 → 行删除 + 值写 + confirm 全绿。
+    const setOutcome = await runBaselineSet(dir, { lane: "frontend", key: "grid", value: "tanstack-table" });
+    expect(setOutcome.ok).toBe(true);
+    expect(setOutcome.result.change).toBe("UPDATED");
+    expect(setOutcome.result.unknowns_remaining).toBe(0);
+    const afterSet = read(BASELINE_MANIFEST_RELATIVE);
+    expect(afterSet).not.toContain("applicability: NOT_APPLICABLE");
+    expect(afterSet).not.toContain("baseline/frontend/stack.yaml:grid");
+    expect(stackValues("frontend").grid).toBe("tanstack-table");
+    expect((await runBaselineConfirm(dir)).ok).toBe(true);
+    // 态二（确认记录在座 + --change）：豁免键改型 → pending 批词形与 ADR-16 行为不变。
+    await seedGovernedFixture("CHANGE.PC01");
+    const governed = await runBaselineSet(dir, {
+      lane: "frontend", key: "grid", value: "ag-grid", change: "CHANGE.PC01",
+    });
+    expect(governed.ok).toBe(true);
+    expect(governed.result.confirmation_invalidated).toBe(true);
+    expect(read(BASELINE_MANIFEST_RELATIVE)).toContain("change_ref: CHANGE.PC01");
+    expect(read(BASELINE_MANIFEST_RELATIVE)).toContain("baseline/frontend/stack.yaml:grid");
+    expect((await baselineGateErrors(dir))[0]?.code).toBe("BASELINE_NOT_CONFIRMED");
+    const finish = await runBaselineConfirm(dir, { change: "CHANGE.PC01" });
+    expect(finish.ok).toBe(true);
+    expect(await baselineGateErrors(dir)).toEqual([]);
+  });
+
+  it("T11 呈现加法字段：unknowns_remaining 总口径保留 + blocking_remaining + applicability 摘要；human 行单一实现且 doctor/status 双消费点同口径", async () => {
+    await runInit(dir);
+    await fillAllKeys(dir, new Set([GRID, unknownsWordForm("frontend", "css")]));
+    writeFileSync(
+      join(dir, BASELINE_MANIFEST_RELATIVE),
+      replaceFlatRowWithStructured(
+        read(BASELINE_MANIFEST_RELATIVE),
+        GRID,
+        exemptRow(GRID, "NOT_APPLICABLE", "OUT_OF_SCOPE", "数据表格/Grid 选型域对本项目不存在"),
+      ),
+      "utf8",
+    );
+    const presentation = await readBaselineConfirmationPresentation(dir);
+    expect(presentation?.state).toBe("unconfirmed");
+    expect(presentation?.unknowns_remaining).toBe(2);
+    expect(presentation?.blocking_remaining).toBe(1);
+    expect(presentation?.applicability_summary).toEqual({ BLOCKING: 1, NOT_APPLICABLE: 1, DEFERRED: 0 });
+    // 既有字段零改动（ADR-6 加法纪律）。
+    expect(presentation).toMatchObject({ at_seq: null, drifted_files: [] });
+    // human 行单一实现（doctor/status 共用 baselineConfirmationHumanLine，禁两套口径）。
+    const humanLine = baselineConfirmationHumanLine(presentation!);
+    expect(humanLine).toContain("unknowns remaining: 2");
+    expect(humanLine).toContain("（阻塞 1）");
+    const jsonOf = async (argv: readonly string[]): Promise<{ state: string; blocking_remaining: number; unknowns_remaining: number; applicability_summary: unknown }> => {
+      const lines: string[] = [];
+      await runCli(["--dir", dir, ...argv, "--json"], {
+        stdout: (line) => lines.push(line),
+        stderr: (line) => lines.push(line),
+      });
+      return (JSON.parse(lines.join("\n")) as { result: { baseline_confirmation: { state: string; blocking_remaining: number; unknowns_remaining: number; applicability_summary: unknown } } }).result.baseline_confirmation;
+    };
+    for (const argv of [["status"], ["doctor"]]) {
+      const confirmation = await jsonOf(argv);
+      expect(confirmation.state).toBe("unconfirmed");
+      expect(confirmation.unknowns_remaining).toBe(2);
+      expect(confirmation.blocking_remaining).toBe(1);
+      expect(confirmation.applicability_summary).toEqual({ BLOCKING: 1, NOT_APPLICABLE: 1, DEFERRED: 0 });
+    }
+  });
+
+  it("T12 跨域合同钉子：结构化行字段键集闭包冻结（key/applicability/statement/classification/resolution + blocker 族可选位）——闭包内全字段合法、字段出闭包 INVALID_STATE（禁第二套同名异义词形）", async () => {
+    await runInit(dir);
+    await fillAllKeys(dir, new Set([GRID]));
+    const manifestPath = join(dir, BASELINE_MANIFEST_RELATIVE);
+    const baseText = read(BASELINE_MANIFEST_RELATIVE);
+    // 负面：字段出键集闭包（B13 Affected Scope 等未来字段未入闭包前 = 形状损坏）。
+    writeFileSync(
+      manifestPath,
+      replaceFlatRowWithStructured(baseText, GRID, [
+        ...exemptRow(GRID, "NOT_APPLICABLE", "OUT_OF_SCOPE", "数据表格/Grid 选型域对本项目不存在"),
+        "    affected_scope: PAGE.DASHBOARD",
+      ]),
+      "utf8",
+    );
+    const bad = await runBaselineConfirm(dir);
+    expect(bad.ok).toBe(false);
+    expect(bad.errors[0]?.code).toBe("INVALID_STATE");
+    expect(bad.errors[0]?.message).toContain("affected_scope");
+    // 正面：闭包内全字段（blocker 族可选位 + 嵌套 blocker_triage 载荷按位吸收）登记合法 → 豁免通过。
+    writeFileSync(
+      manifestPath,
+      replaceFlatRowWithStructured(baseText, GRID, [
+        "  - key: baseline/frontend/stack.yaml:grid",
+        "    applicability: DEFERRED",
+        "    statement: Grid 选型显式延后至下一增量",
+        "    classification: DEFERRED_DECISION",
+        "    resolution: Owner 裁定：当前增量不引入",
+        "    requires_authority: false",
+        "    assumption_risk: LOW",
+        "    blocker_triage:",
+        "      missing_fact: 无",
+        "      authority_owner: Owner",
+      ]),
+      "utf8",
+    );
+    const outcome = await runBaselineConfirm(dir);
+    expect(outcome.ok).toBe(true);
     expect(await baselineGateErrors(dir)).toEqual([]);
   });
 });

@@ -207,6 +207,7 @@ describe("runEval · fail-closed 面", () => {
             task_execution_active: false,
             baseline_gate_codes: [],
             baseline_unknowns_remaining: null,
+            baseline_blocking_remaining: null,
             baseline_pending_change_ref: null,
           },
         },

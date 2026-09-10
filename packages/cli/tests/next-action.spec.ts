@@ -19,6 +19,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { applyTransaction, createStore } from "@pomaster/kernel";
 import {
+  BASELINE_MANIFEST_RELATIVE,
   collectNextActionSnapshot,
   evaluateNextAction,
   NEXT_ACTION_ROUTE_IDS,
@@ -209,6 +210,7 @@ function snap(overrides: Partial<NextActionSnapshot>): NextActionSnapshot {
     task_execution_active: false,
     baseline_gate_codes: [],
     baseline_unknowns_remaining: null,
+    baseline_blocking_remaining: null,
     baseline_pending_change_ref: null,
     ...overrides,
   };
@@ -226,6 +228,7 @@ const ROUTE_FIXTURES: readonly { readonly route: NextActionRouteId; readonly sna
       active_tasks: [TASK],
       baseline_gate_codes: ["BASELINE_NOT_CONFIRMED"],
       baseline_unknowns_remaining: 0,
+      baseline_blocking_remaining: 0,
     }),
   },
   {
@@ -349,13 +352,14 @@ describe("next-action 路由表（P2 表驱动：每行 = 条件 + 建议）", (
     expect(byRoute.get("R_RECONCILE")).toContain("pomaster reconcile --permit PERMIT.T1.1");
   });
 
-  it("R_BASELINE_NOT_READY 子态渲染：pending-change 携 ref / drifted 三通道 / unknowns 未销账不路由（T2 R5）", () => {
+  it("R_BASELINE_NOT_READY 子态渲染：pending-change 携 ref / drifted 三通道 / 阻塞在册不路由 / 豁免工作区照常路由（T2 R5 + P-C1 T13）", () => {
     // pending-change：终结变更批命令携同 ref。
     const pending = evaluateNextAction(
       snap({
         active_tasks: [TASK],
         baseline_gate_codes: ["BASELINE_NOT_CONFIRMED"],
         baseline_unknowns_remaining: 0,
+        baseline_blocking_remaining: 0,
         baseline_pending_change_ref: "CHANGE.C1",
       }),
     );
@@ -367,21 +371,44 @@ describe("next-action 路由表（P2 表驱动：每行 = 条件 + 建议）", (
         active_tasks: [TASK],
         baseline_gate_codes: ["BASELINE_DRIFT"],
         baseline_unknowns_remaining: 0,
+        baseline_blocking_remaining: 0,
       }),
     );
     expect(drifted.route_id).toBe("R_BASELINE_NOT_READY");
     expect(drifted.command).toContain("baseline confirm");
     expect(drifted.command).toContain("--ack-drifted");
-    // unknowns 未销账 → 不路由（诚实缺席——指 confirm 只会被 confirm 自身闸拒）。
-    const unknownsRemain = evaluateNextAction(
+    // 阻塞键在册 → 不路由（诚实缺席——指 confirm 只会被 confirm 自身闸拒）。
+    const blockingRemain = evaluateNextAction(
       snap({
         active_tasks: [TASK],
         baseline_gate_codes: ["BASELINE_NOT_CONFIRMED"],
         baseline_unknowns_remaining: 6,
+        baseline_blocking_remaining: 6,
       }),
     );
-    expect(unknownsRemain.route_id).toBe("R_PERMIT_MISSING");
-    // manifest 缺席（unknowns null + codes 空）→ 不路由。
+    expect(blockingRemain.route_id).toBe("R_PERMIT_MISSING");
+    // P-C1 豁免工作区：blocking_remaining=0 而 unknowns 总口径>0（豁免行在册）→ 照常路由。
+    const exempted = evaluateNextAction(
+      snap({
+        active_tasks: [TASK],
+        baseline_gate_codes: ["BASELINE_NOT_CONFIRMED"],
+        baseline_unknowns_remaining: 1,
+        baseline_blocking_remaining: 0,
+      }),
+    );
+    expect(exempted.route_id).toBe("R_BASELINE_NOT_READY");
+    expect(exempted.command).toBe("pomaster baseline confirm");
+    // 阻塞集不可判（null——stack/台账平面损坏降级）→ fail-closed 不路由。
+    const unjudgeable = evaluateNextAction(
+      snap({
+        active_tasks: [TASK],
+        baseline_gate_codes: ["BASELINE_NOT_CONFIRMED"],
+        baseline_unknowns_remaining: 0,
+        baseline_blocking_remaining: null,
+      }),
+    );
+    expect(unjudgeable.route_id).toBe("R_PERMIT_MISSING");
+    // manifest 缺席（两口径 null + codes 空）→ 不路由。
     const manifestAbsent = evaluateNextAction(snap({ active_tasks: [TASK] }));
     expect(manifestAbsent.route_id).toBe("R_PERMIT_MISSING");
   });
@@ -901,49 +928,52 @@ describe("④ EXECUTE 感知（T2 R3：executions 档案平面扫描）", () => 
 // T2 R5：R_BASELINE_NOT_READY 集成（真实 baseline 面）
 // ============================================================
 
-describe("R_BASELINE_NOT_READY 集成（T2 R5：真实 init/baseline 面）", () => {
-  /** 合法 TASK 入库（init 已建 store；kernel 事务登记，authority owner 补登记）。 */
-  async function seedTaskInInitedStore(): Promise<void> {
-    const authPath = join(dir, ".pomaster", "state", "authority.json");
-    const auth = JSON.parse(readFileSync(authPath, "utf8")) as {
-      authorities: Record<string, unknown>;
-    };
-    auth.authorities["BUSINESS_OWNER"] = {};
-    writeFileSync(authPath, `${JSON.stringify(auth, null, 2)}\n`, "utf8");
-    const store = await createStore(dir);
-    await applyTransaction(store, {
-      ops: [
-        {
-          op: "upsert_object",
-          envelope: {
-            id: "TASK.T1",
-            kind: "task_object",
-            axisProfile: "task_default",
-            axes: {
-              lifecycle: "CURRENT",
-              confidence: "PROVISIONAL",
-              evidence: "IMPLEMENTED",
-              change: "STABLE",
+/**
+ * 合法 TASK 入库（init 已建 store；kernel 事务登记，authority owner 补登记）。
+ * （P-C1 T13 与 T2 R5 集成两 describe 共用——提升到模块级。）
+ */
+async function seedTaskInInitedStore(): Promise<void> {
+  const authPath = join(dir, ".pomaster", "state", "authority.json");
+  const auth = JSON.parse(readFileSync(authPath, "utf8")) as {
+    authorities: Record<string, unknown>;
+  };
+  auth.authorities["BUSINESS_OWNER"] = {};
+  writeFileSync(authPath, `${JSON.stringify(auth, null, 2)}\n`, "utf8");
+  const store = await createStore(dir);
+  await applyTransaction(store, {
+    ops: [
+      {
+        op: "upsert_object",
+        envelope: {
+          id: "TASK.T1",
+          kind: "task_object",
+          axisProfile: "task_default",
+          axes: {
+            lifecycle: "CURRENT",
+            confidence: "PROVISIONAL",
+            evidence: "IMPLEMENTED",
+            change: "STABLE",
+          },
+          titleZh: "baseline 路由集成任务",
+          authority: { owner: "BUSINESS_OWNER", delegates: [] },
+          origin: "natural",
+          payload: {
+            intent: "R5 集成",
+            acceptance: [],
+            class_scan_result: {
+              scope: "src/**",
+              hits: 0,
+              fixed_count: 0,
+              regression_case_ref: "GRN-R5",
             },
-            titleZh: "baseline 路由集成任务",
-            authority: { owner: "BUSINESS_OWNER", delegates: [] },
-            origin: "natural",
-            payload: {
-              intent: "R5 集成",
-              acceptance: [],
-              class_scan_result: {
-                scope: "src/**",
-                hits: 0,
-                fixed_count: 0,
-                regression_case_ref: "GRN-R5",
-              },
-            },
-          } as never,
-        },
-      ],
-    });
-  }
+          },
+        } as never,
+      },
+    ],
+  });
+}
 
+describe("R_BASELINE_NOT_READY 集成（T2 R5：真实 init/baseline 面）", () => {
   it(
     "unknowns 未销账 + 活跃任务 → 不路由 baseline（落 R_PERMIT_MISSING）；14 键销账后未确认 → R_BASELINE_NOT_READY（baseline confirm）；确认后回落 R_PERMIT_MISSING",
     { timeout: 60_000 },
@@ -978,6 +1008,63 @@ describe("R_BASELINE_NOT_READY 集成（T2 R5：真实 init/baseline 面）", ()
       expect(confirmed.ok).toBe(true);
       const afterConfirm = await runStatus(dir);
       expect(afterConfirm.result.next_action.route_id).toBe("R_PERMIT_MISSING");
+    },
+  );
+});
+
+// ============================================================
+// P-C1 T13：R_BASELINE_NOT_READY 路由判据改用 blocking_remaining（豁免工作区适配）
+// ============================================================
+
+describe("P-C1 阻塞集路由适配（T13：豁免工作区照常给 confirm 指引）", () => {
+  it(
+    "对照：grid flat 行在册（缺省 BLOCKING）→ blocking_remaining=1 不路由；豁免登记（DEFERRED 结构化行）→ blocking=0 照常路由 confirm，unknowns 总口径呈现不删",
+    { timeout: 60_000 },
+    async () => {
+      await runInit(dir);
+      await seedTaskInInitedStore();
+      // 13 键销账，grid 留台账（先 flat 后豁免——Owner 手编登记的两态对照）。
+      const lanes = [
+        { lane: "frontend", keys: ["framework", "language", "build", "router", "state", "ui", "css", "testing"] },
+        { lane: "backend", keys: ["language", "framework", "persistence", "database", "cache"] },
+      ] as const;
+      for (const { lane, keys } of lanes) {
+        for (const key of keys) {
+          const setOutcome = await runBaselineSet(dir, {
+            lane,
+            key,
+            value: key === "cache" ? "none" : `${lane}-${key}-value`,
+          });
+          expect(setOutcome.ok, `${lane}.${key}`).toBe(true);
+        }
+      }
+      // 对照组：grid flat 行在册（缺省 BLOCKING）→ 阻塞在册不路由（诚实缺席）。
+      const control = await runStatus(dir);
+      expect(control.result.next_action.route_id).toBe("R_PERMIT_MISSING");
+      expect(control.result.baseline_confirmation?.blocking_remaining).toBe(1);
+      expect(control.result.baseline_confirmation?.unknowns_remaining).toBe(1);
+      // 实验组：Owner 手编把 grid 行改写为 DEFERRED 结构化豁免行 → 阻塞集清零。
+      const manifestPath = join(dir, BASELINE_MANIFEST_RELATIVE);
+      const manifestText = readFileSync(manifestPath, "utf8");
+      const lines = manifestText.split("\n");
+      const gridRowIndex = lines.findIndex((line) => line.trim() === "- baseline/frontend/stack.yaml:grid");
+      expect(gridRowIndex).toBeGreaterThanOrEqual(0);
+      const exempted = [
+        ...lines.slice(0, gridRowIndex),
+        "  - key: baseline/frontend/stack.yaml:grid",
+        "    applicability: DEFERRED",
+        "    statement: Grid 选型显式延后（Q7 判定不阻塞当前增量）",
+        "    classification: DEFERRED_DECISION",
+        ...lines.slice(gridRowIndex + 1),
+      ].join("\n");
+      writeFileSync(manifestPath, exempted, "utf8");
+      const routed = await runStatus(dir);
+      expect(routed.result.next_action.route_id).toBe("R_BASELINE_NOT_READY");
+      expect(routed.result.next_action.beat).toBe("0");
+      expect(routed.result.next_action.command).toBe("pomaster baseline confirm");
+      // 总口径呈现不删：unknowns_remaining = 1（豁免行在册）而阻塞集 = 0。
+      expect(routed.result.baseline_confirmation?.blocking_remaining).toBe(0);
+      expect(routed.result.baseline_confirmation?.unknowns_remaining).toBe(1);
     },
   );
 });

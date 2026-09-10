@@ -128,9 +128,9 @@ import { runSpecPreplant } from "./spec-preplant.js";
 import type { BaselineQuizResult, StackQuestionnaireOutcome } from "./baseline.js";
 import {
   applyStackAnswers,
-  applyStackObservations,
   collectStackAnswers,
   observePackageStack,
+  registerStackObservationCandidates,
   renderBaselineQuizHumanLine,
 } from "./baseline.js";
 import type { BaselinePresetDraftReport } from "./baseline-preset.js";
@@ -143,7 +143,7 @@ const ZERO_PRESET_DRAFT: BaselinePresetDraftReport = {
   skipped_confirmed: false,
 };
 
-/** 失败信封的 observation 占位（T2 R4——失败路径零观察落盘）。 */
+/** 失败信封的 observation 占位（T2 R4 → F14 候选化——失败路径零观察候选登记）。 */
 const ZERO_OBSERVATION: StackObservationReport = {
   source: null,
   observed: 0,
@@ -194,13 +194,13 @@ export interface InitPlatformReport {
   readonly action: InitPlatformAction;
 }
 
-/** 宿主技术栈观察报告（T2 R4；见 InitResult.observation 字段注记）。 */
+/** 宿主技术栈观察候选报告（T2 R4 · F14 ADR-19 候选化；见 InitResult.observation 字段注记）。 */
 export interface StackObservationReport {
   /** 观察事实源（"package.json"；null = 观察不可用——缺席/不可解析/非对象）。 */
   readonly source: "package.json" | null;
-  /** 本次观察回填的 stack 键数。 */
+  /** 本次登记的观察候选键数（待 Owner adoption——不再直写权威 stack.yaml）。 */
   readonly observed: number;
-  /** 观察候选在座但键已销账而零触碰数（幂等重跑位）。 */
+  /** 观察值在座但键已采纳（已销账）而分账出局数（幂等重跑位）。 */
   readonly skipped_resolved: number;
 }
 
@@ -239,12 +239,14 @@ export interface InitResult {
    */
   readonly presetDraft: BaselinePresetDraftReport;
   /**
-   * 宿主 package.json 技术栈观察结果（T2 R4 · Bootstrap+Observation）：source =
+   * 宿主 package.json 技术栈观察候选结果（T2 R4 · F14 ADR-19 候选化）：source =
    * 观察事实源（null = package.json 缺席/不可解析——观察不可用，UNKNOWN 保持，
-   * 缺席诚实不臆测）；observed = 本次观察回填的 stack 键数（行级最小改写 +
-   * [Observed: package.json] 注记 + manifest 销账）；skipped_resolved = 观察候选
-   * 在座但键已销账而零触碰数（重跑幂等位）。观察只覆盖 FE 可观察 8 键（css 是
-   * 规范决策非事实，归问卷；BE 键不经前端 package.json 观察）。
+   * 缺席诚实不臆测）；observed = 本次登记的观察候选键数（候选仅存呈现面——问卷
+   * 题面观察候选注记 [Observed: package.json]；权威 stack.yaml 保持 UNKNOWN/原值，
+   * Owner 经问卷/set 通路 adoption 后才入基线，不再直写/不再销账台账）；
+   * skipped_resolved = 观察值在座但键已采纳而分账出局数（重跑幂等位）。观察只
+   * 覆盖 FE 可观察 8 键（css 是规范决策非事实，归问卷；BE 键不经前端 package.json
+   * 观察）。
    */
   readonly observation: StackObservationReport;
   /**
@@ -1238,24 +1240,27 @@ export async function runInit(
     }
   }
 
-  // 4.7b) 宿主 package.json 技术栈观察（T2 R4 · init 升级 Bootstrap+Observation）：
+  // 4.7b) 宿主 package.json 技术栈观察候选登记（T2 R4 → F14 ADR-19 候选化）：
   //       read-only 读宿主依赖清单推断 FE 可观察 8 键（framework/language/build/
   //       router/state/grid/ui/testing；css 是规范决策非事实归问卷，BE 键不经前端
-  //       package.json 观察），只对 UNKNOWN 键行级回填 + [Observed: package.json]
-  //       注记 + manifest 销账——可观察事实不问人（问卷分母在 collectStackAnswers
-  //       经同一观察面同步收缩）。fail-closed：package.json 缺席/不可解析 → 观察
-  //       不参与（UNKNOWN 保持，缺席诚实不臆测）；同键互斥候选并存 → 该键放弃。
-  //       已销账键零触碰（skipped_resolved 计数）——重跑幂等 NO_CHANGE 不破。
-  //       位置：播种之后（目标文件已在座）、问卷落盘之前（人答覆盖观察值——
-  //       applyStackAnswers 行重写消注记）。
+  //       package.json 观察），按现盘权威值分账：UNKNOWN 键 → 观察候选登记
+  //       （呈现面 = 问卷题面观察候选注记 + 本报告计数；[Observed: package.json]
+  //       证据注记语义保留），已采纳键 → skipped_resolved。观察不再直写权威
+  //       stack.yaml、不再销账 manifest 台账（F14：观察事实不是人答也不是权威值
+  //       ——Owner 经既有问卷/set 通路 adoption 后才入基线；未采纳候选键 = 缺省
+  //       BLOCKING，行为与原未知键一致）。fail-closed：package.json 缺席/不可解析
+  //       → 观察不参与（UNKNOWN 保持，缺席诚实不臆测）；同键互斥候选并存 → 该键
+  //       放弃。位置：播种之后（目标文件已在座）、入口渲染之前（问卷本体在
+  //       runInit 之前运行——分母经 resolveRemainingQuestions 同一观察面携带候选
+  //       注记，adoption 经既有 applyStackAnswers 落盘）。
   const packageObservation = await observePackageStack(rootDir);
   let observation: StackObservationReport = ZERO_OBSERVATION;
   if (packageObservation !== null) {
-    const applied = await applyStackObservations(rootDir, packageObservation, files);
+    const registered = await registerStackObservationCandidates(rootDir, packageObservation);
     observation = {
       source: packageObservation.source,
-      observed: applied.observed,
-      skipped_resolved: applied.skipped_resolved,
+      observed: registered.observed,
+      skipped_resolved: registered.skipped_resolved,
     };
   }
 
@@ -1467,11 +1472,11 @@ export async function runInit(
   // logo→init:→files→platforms→entry→baseline→observation→preset→能力速览→横幅；
   // D-1/D-5 裁决 18：profile 行已随档位语义退役移除）。
   const baselineLine = renderBaselineQuizHumanLine(baseline);
-  // 观察行（T2 R4；恒一行——观察缺席也显式呈现，诚实缺席非静默）。
+  // 观察行（T2 R4 · F14 候选化；恒一行——观察缺席也显式呈现，诚实缺席非静默）。
   const observationLine =
     observation.source === null
       ? "  observation: package.json 观察面缺席（缺席/不可解析）——技术栈 UNKNOWN 保持，问卷分母不受减"
-      : `  observation: package.json → stack 观察回填 ${String(observation.observed)} 键（[Observed: package.json] 注记；${String(observation.skipped_resolved)} 键已销账跳过）`;
+      : `  observation: package.json → 观察候选登记 ${String(observation.observed)} 键（[Observed: package.json] 注记随问卷呈现，adoption 前不入基线；${String(observation.skipped_resolved)} 键已采纳分账出局）`;
   const presetLine = renderBaselinePresetHumanLine(presetDraft);
   const human = [
     ...INIT_LOGO_LINES,
