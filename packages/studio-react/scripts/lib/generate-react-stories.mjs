@@ -13,7 +13,7 @@
 // Vue 主实例；「Vue 对应件」注记与「服务场景」反向映射共用 Vue 主实例的
 // archetype-component-map.json（单一事实源，跨包只读 import）。
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { resetDir, writeFileEnsuringDir } from "../../../studio/scripts/lib/common.mjs";
 import {
   deriveReverseMap,
@@ -111,6 +111,9 @@ const ALIGNMENT = [
   { antdv: "Flex", antd: "Flex" },
 ];
 
+/** 对齐族分母（对齐表内 antd 非 null 的族数 = 生成 story 数）——tests/vitest-global-setup.mjs 据此判定 studio-react generated/ 新鲜度（自愈重建阈值）。 */
+export const ALIGNED_FAMILY_COUNT = ALIGNMENT.filter((entry) => entry.antd !== null).length;
+
 /** antd 独有导出（antdv 族清单外）——差异表呈现，不产对齐 story。 */
 export const ANTD_ONLY_EXPORTS = ["BackTop", "ColorPicker", "Splitter"];
 
@@ -144,7 +147,7 @@ function serviceSceneNote(primary, reverseMap) {
 const DEMO_BODY = {
   Affix: { extraImports: [], body: '<Affix offsetTop={48}><span className="studio-demo-chip">滚动固定的内容块</span></Affix>' },
   Alert: { extraImports: [], body: '<Alert message="提示文案" type="success" showIcon />' },
-  Anchor: { extraImports: [], body: '<Anchor><AnchorLink href="#studio-react-anchor" title="演示锚点" /></Anchor><p id="studio-react-anchor">锚点目标段落</p>' },
+  Anchor: { extraImports: [], body: '<Anchor><Anchor.Link href="#studio-react-anchor" title="演示锚点" /></Anchor><p id="studio-react-anchor">锚点目标段落</p>' },
   App: { extraImports: [], body: "<App><span>应用容器内的内容</span></App>" },
   AutoComplete: { extraImports: [], body: '<AutoComplete options={[{ value: "选项甲" }, { value: "选项乙" }]} placeholder="请输入" style={{ width: 160 }} />' },
   Avatar: { extraImports: [], body: "<Avatar.Group><Avatar>甲</Avatar><Avatar>乙</Avatar></Avatar.Group>" },
@@ -205,7 +208,7 @@ const DEMO_BODY = {
   Transfer: { extraImports: [], body: '<Transfer dataSource={[{ key: "1", title: "条目一" }, { key: "2", title: "条目二" }]} render={(item) => item.title} />' },
   Tree: { extraImports: [], body: '<Tree treeData={[{ title: "节点一", key: "node-1", children: [{ title: "子节点", key: "node-1-1" }] }]} defaultExpandAll />' },
   TreeSelect: { extraImports: [], body: '<TreeSelect treeData={[{ title: "树选项一", value: "tree-1" }]} placeholder="请选择" style={{ width: 200 }} />' },
-  Typography: { extraImports: [], body: '<Space direction="vertical"><Typography.Title level={4}>标题</Typography.Title><Typography.Text type="secondary">文本</Typography.Text><Typography.Paragraph>文本段落</Typography.Paragraph></Space>' },
+  Typography: { extraImports: ["Space"], body: '<Space direction="vertical"><Typography.Title level={4}>标题</Typography.Title><Typography.Text type="secondary">文本</Typography.Text><Typography.Paragraph>文本段落</Typography.Paragraph></Space>' },
   Upload: { extraImports: ["Button"], body: '<Upload beforeUpload={() => false}><Button>上传文件</Button></Upload>' },
   Watermark: { extraImports: [], body: '<Watermark content="演示水印"><div style={{ height: 96 }}>水印内容区域</div></Watermark>' },
   Segmented: { extraImports: [], body: '<Segmented options={[{ label: "日", value: "day" }, { label: "周", value: "week" }]} defaultValue="day" />' },
@@ -214,7 +217,58 @@ const DEMO_BODY = {
 
 /** 服务式 API（message/notification）触发演示体。 */
 function serviceDemoBody(primary) {
-  return `<button className="studio-demo-trigger" onClick={() => ${primary}.info('POMaster 画廊演示：${primary} 服务式 API')}>触发 ${primary}（服务式 API）</button>`;
+  const contract = SERVICE_API_CONTRACTS[primary];
+  if (!contract) {
+    throw new Error(`service API ${primary} missing arg contract (SERVICE_API_CONTRACTS)`);
+  }
+  return `<button className="studio-demo-trigger" onClick={() => ${primary}.info(${contract.infoArg(primary)})}>触发 ${primary}（服务式 API）</button>`;
+}
+
+/** 服务式 API（message/notification）参数契约分型（audit R3 修复）。
+ *  message.info(content) 签名 = TypeOpen(content: JointContent)——content 接受
+ *  ReactNode，字符串形态合法；notification.info(args) 签名 = StaticFn(args: ArgsProps)
+ *  ——对象形态且 message 字段必填（antd 5.29.3 notification/interface.d.ts），字符串
+ *  直传会渲染空白通知。两族调用形态显式建模禁止混用；词表外服务族 fail-closed。 */
+export const SERVICE_API_CONTRACTS = {
+  message: {
+    contractNote: "message.info(content) 的 content 为 JointContent——字符串形态合法（antd message/interface.d.ts 的 TypeOpen）。",
+    infoArg: (primary) => `'POMaster 画廊演示：${primary} 服务式 API'`,
+  },
+  notification: {
+    contractNote: "notification.info(args) 的 args 为 ArgsProps 对象形态，message 字段必填（antd notification/interface.d.ts）——字符串直传渲染空白通知。",
+    infoArg: (primary) => `{ message: 'POMaster 画廊演示：${primary} 服务式 API' }`,
+  },
+};
+
+/** JSX 根标识符绑定扫描（audit R2c 根因修复：审计期 68 文件只读扫描产品化为生成期
+ *  fail-closed 闸）。提取每个 JSX 开标签的根标识符（成员表达式归并到根：<Anchor.Link>
+ *  经 Anchor 绑定；小写开头的内在元素不是组件引用），返回 boundNames 之外的根
+ *  （去重、首次出现序）。 */
+export function findUnboundJsxRoots(source, boundNames) {
+  const unbound = [];
+  const tagPattern = /<([A-Za-z][A-Za-z0-9]*(?:\.[A-Za-z][A-Za-z0-9]*)*)/g;
+  for (const match of source.matchAll(tagPattern)) {
+    const root = match[1].split(".")[0];
+    if (root[0] >= "a" && root[0] <= "z") continue;
+    if (!boundNames.has(root) && !unbound.includes(root)) unbound.push(root);
+  }
+  return unbound;
+}
+
+/** 单 story 绑定闸：绑定集由 antd 具名导入行派生；存在未绑定 JSX 根即抛错
+ *  （生成期 fail-closed，不带病产出——R2a/R2b 症状在生成期失败而非页面崩溃）。 */
+export function assertJsxRootsBound(storyText, family) {
+  const importLine = storyText.match(/^import \{ ([^}]+) \} from 'antd';$/m);
+  if (!importLine) {
+    throw new Error(`story ${family} 缺 antd 具名导入行（生成器不变量）`);
+  }
+  const boundNames = new Set(importLine[1].split(",").map((name) => name.trim()));
+  const unbound = findUnboundJsxRoots(storyText, boundNames);
+  if (unbound.length > 0) {
+    throw new Error(
+      `story ${family} 存在未绑定 JSX 根标识符: ${unbound.join(", ")}（R2c 绑定闸——修 DEMO_BODY 演示体或补 extraImports）`,
+    );
+  }
 }
 
 /** 对齐族 → CSF3 story（tsx）文本。 */
@@ -227,7 +281,7 @@ export function renderReactStory(entry, reverseMap) {
   const extraImports = isService ? [] : demoConfig.extraImports;
   const sceneNote = serviceSceneNote(antdv, reverseMap);
   const serviceNote = isService
-    ? `${antd} 是服务式 API（非组件）——画廊以触发按钮做真实调用演示。`
+    ? `${antd} 是服务式 API（非组件）——画廊以触发按钮做真实调用演示。${SERVICE_API_CONTRACTS[antd]?.contractNote ?? ""}`
     : "";
   const metaLines = [
     `const meta = {`,
@@ -238,7 +292,7 @@ export function renderReactStory(entry, reverseMap) {
     `  },`,
     ...(isService ? [`};`] : [`} satisfies Meta<typeof ${antd}>;`]),
   ];
-  return [
+  const storyText = [
     `// GENERATED by packages/studio-react/scripts/lib/generate-react-stories.mjs —— 禁手改（重跑生成器覆盖）。`,
     `// 源：node_modules/antd/es/index.js export 行（版本钉 ${ANTD_VERSION}，对齐族 ${antd}）。`,
     `// NON-AUTHORITATIVE：画廊对照呈现，权威语义以 catalog/seeds 锚定源为准（G-D：业务零出现）。`,
@@ -255,6 +309,8 @@ export function renderReactStory(entry, reverseMap) {
     `};`,
     ``,
   ].join("\n");
+  assertJsxRootsBound(storyText, antd);
+  return storyText;
 }
 
 /** 生成全部对齐族 story（返回 { count, files, aligned, missing, antdOnly }；outDir 幂等清场重建）。 */
@@ -296,6 +352,13 @@ export function generateReactStories(outDir, antdIndexPath = ANTD_INDEX_JS) {
   for (const name of ANTD_ONLY_EXPORTS) {
     if (!exportSet.has(name)) throw new Error(`ANTD_ONLY_EXPORTS 词形失效: ${name}`);
   }
+  // R2c 生成期全树绑定闸（audit 68 文件扫描产品化）：写盘后逐文件复扫 JSX 根绑定，
+  // 任一未绑定引用即生成失败（fail-closed）。renderReactStory 已逐 story 过闸，此处
+  // 以磁盘终态为准再验一遍——两道闸同一实现，分母 68 全量覆盖。
+  for (const file of files) {
+    assertJsxRootsBound(readFileSync(file, "utf8"), basename(file));
+  }
+
   return {
     count: files.length,
     files,

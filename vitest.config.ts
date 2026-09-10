@@ -4,6 +4,12 @@ import { defineConfig } from "vitest/config";
 // 根 vitest 配置：workspace 包以源码直连（alias 指向 src/index.ts），
 // 使各模块建造者的测试无需先 build 即可运行 @pomaster/* 互相导入。
 export default defineConfig({
+  esbuild: {
+    // JSX 自动运行时（R2 批：studio-react 生成 story 的 .tsx 挂载冒烟需要——默认
+    // classic 转换在无 React import 的生成产物上 render 即 React is not defined；
+    // 仅影响含 JSX 的 .tsx/.jsx，其余 .ts 测试面零变化）。
+    jsx: "automatic",
+  },
   resolve: {
     alias: [
       {
@@ -40,7 +46,13 @@ export default defineConfig({
     // components-mount.spec 的变量动态导入在 transform 期枚举候选文件——fresh clone
     // 上目录为空即全红。生成必须早于任何模块 transform → globalSetup。
     // 详见 tests/vitest-global-setup.mjs 头注（含跳过条件与陈旧自愈兜底）。
-    globalSetup: "./tests/vitest-global-setup.mjs",
+    // globalSetup 数组：Vue 主实例（既有）+ studio-react 生成自愈（R2/R3 批——
+    // 挂载冒烟的 import.meta.glob 在 transform 期枚举候选，fresh clone 空目录需
+    // 在任何模块 transform 之前完成生成，与 Vue 侧 bootstrap-clean 修复同构）。
+    globalSetup: [
+      "./tests/vitest-global-setup.mjs",
+      "./tests/vitest-react-generated-setup.mjs",
+    ],
     // ── 默认并发稳定化（09-07 审计批 4）────────────────────────────────────
     // 审计事实：默认并发（vitest 2.x run 模式 workers = cores-1，本机 16 逻辑核
     // → 15 个 fork）叠加用例内大量 spawn/fs 密集型子进程，峰值 30+ 进程超订，
