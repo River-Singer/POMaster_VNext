@@ -113,6 +113,7 @@ pomaster resolve "<need>" [--hints ...]
 pomaster new-entity check <governed-id> [--need ...]
 pomaster inspect <governed-id>
 pomaster graph <governed-id> [--view impact]
+pomaster recon import-graph|migrations|sbom    # 宿主代码 recon：import 图静态扫描 → 17 观察回执 sidecar（unmapped 清单/externalImports/confidence）/ migration 目录五栈词形盘点（prisma/flyway/liquibase/alembic/django_style 纯读盘零工具执行 → ENVREC 回执）/ SBOM 依赖清单采集（cdxgen 腿——工具缺席 NOT_INSTALLED 显式缺席、解析失败 INCONCLUSIVE 兜底，components/dependencies 计数）——产物只落 evidence sidecar 平面零权威写口
 pomaster research list/inspect/request/handoff
 pomaster eval --suite behavioral
 pomaster catalog status/explain/relock
