@@ -177,6 +177,25 @@
  *   origin 机器位（meta.origin ∈ preset|customized|owner 本地闭包）+ meta.customized
  *   是 schema 22 承载的文件级机器位；P-D1 customize/diff/confirm 全流程（含
  *   per-token origin）不在本批。
+ *
+ * 审计 R1 并发安全（ADR-21，2026-09-11；audit-report §2 R1 / §6 修复序第一位）：
+ *
+ * - ADR-21（R1）baseline set 双文件读-改-写链文件级 CAS 事务化：读 stack+manifest →
+ *   授权判卷 → 纯内存计算 → 提交，曾是无共享临界区的两段整文件 writeFile——两进程
+ *   各从旧盘面计算、后写覆盖先写，双方都报 UPDATED 而盘面只留一击（并发五轮 5/5
+ *   静默丢写；撕裂读还会让判卷吃到半截 manifest——unknowns_remaining 假 0）。
+ *   修复 = 事务化重试链：全部判卷每轮在新鲜盘面上重做；提交走 fs-cas.ts casSwapFile
+ *   （认领式 CAS——locks.ts swapLockCas 认领仪式 + io.ts withBoundedRetry 确定性
+ *   退避的同族落法，kernel 公共契约面零扩位、零第二套锁体系：无持有人/无 ttl/无
+ *   journal，只是「比对-安装」原子化）；提交序 manifest 先行、stack 后行——两文件
+ *   变换各自幂等（台账行删除 / 批内键集去重 / 同值行重写字节恒等），任一认领冲突
+ *   即整链重读重算（确定性退避 20/50/100ms 无随机），耗尽 → BASELINE_WRITE_CONFLICT
+ *   显式冲突（hint 指路重跑，禁静默丢写）。串行语义逐字节不变：判卷闸次序、错误
+ *   码、信封字段、人读行词形、同值幂等 / 异值 BASELINE_KEY_ALREADY_SET / pending
+ *   batch 词形 / confirm 判卷零改动；无冲突路径每文件恰一次 CAS 提交，落盘字节与
+ *   既有 writeFile 相同。跨进程真并发回归 =
+ *   tests/integration/baseline-set-contention.spec.ts（双 UPDATED 双落盘；child
+ *   脚本不入 mapping——steal-contention 纪律）。
  */
 
 import { writeFile } from "node:fs/promises";
@@ -184,6 +203,7 @@ import type { TruthIndex } from "@pomaster/kernel";
 import { GovernanceError, createStore, loadTruthIndex, sha256OfUtf8 } from "@pomaster/kernel";
 import type { CliError } from "./envelope.js";
 import { failOutcome, okOutcome, type CommandOutcome } from "./envelope.js";
+import { casSwapFile, sleepSync } from "./fs-cas.js";
 import {
   CHECKLIST_KEYS,
   INTERACTIVE_BACKSPACE_KEY,
@@ -1371,6 +1391,220 @@ function failBaselineSet(
   );
 }
 
+/** R1 事务重试上界与确定性退避档（io.ts withBoundedRetry 先例 20/50/100ms；无随机——并发可复现）。 */
+const BASELINE_SET_TX_ATTEMPTS = 4;
+const BASELINE_SET_TX_BACKOFF_MS: readonly number[] = [20, 50, 100];
+
+/**
+ * 单轮事务结局：settled = 判卷失败或成功提交（信封即终局）；contended = 提交认领
+ * 到并发新世代（或重试轮吃到认领窗口缺席读）——退避后整链重读重算（ADR-21）。
+ */
+type BaselineSetAttemptOutcome =
+  | { readonly kind: "settled"; readonly outcome: CommandOutcome<BaselineSetResult> }
+  | { readonly kind: "contended" };
+
+function settled(outcome: CommandOutcome<BaselineSetResult>): BaselineSetAttemptOutcome {
+  return { kind: "settled", outcome };
+}
+
+/**
+ * baseline set 单轮事务（ADR-21）：读 stack+manifest → 判卷闸全链 → 纯内存计算 →
+ * CAS 提交（manifest 先行、stack 后行）。判卷闸每轮在新鲜盘面上重做——并发写入
+ * 造成的授权翻转（如 confirm 落地）在下一轮自动生效；提交认领冲突不吞不盖，以
+ * contended 上抛给重试环。
+ */
+async function baselineSetAttempt(
+  rootDir: string,
+  input: BaselineSetInput,
+  lane: BaselineLane,
+  attempt: number,
+): Promise<BaselineSetAttemptOutcome> {
+  const stackRelative = baselineStackRelative(lane);
+  const stackFile = await readTextFile(`${rootDir}/${stackRelative}`);
+  if (stackFile.kind !== "ok") {
+    // 重试轮的缺席读 = 并发 CAS 写方的认领-回装窗口（fs-cas.ts 头注诚实披露）——
+    // 按争用重读，不冒充 NOT_CONFIGURED；首读缺席语义不变（串行路径恒 attempt=0）。
+    if (attempt > 0 && stackFile.kind === "absent") {
+      return { kind: "contended" };
+    }
+    const error = baselineFileError(stackRelative, stackFile);
+    return settled(failBaselineSet(error.code, error.message, error.hint, input));
+  }
+  const manifestFile = await readTextFile(`${rootDir}/${BASELINE_MANIFEST_RELATIVE}`);
+  if (manifestFile.kind !== "ok") {
+    if (attempt > 0 && manifestFile.kind === "absent") {
+      return { kind: "contended" };
+    }
+    const error = baselineFileError(BASELINE_MANIFEST_RELATIVE, manifestFile);
+    return settled(failBaselineSet(error.code, error.message, error.hint, input));
+  }
+  const parse = parseStackYaml(stackFile.text, STACK_KEYS[lane]);
+  if (!parse.ok) {
+    return settled(
+      failBaselineSet(
+        "INVALID_STATE",
+        `${stackRelative} 结构不可解析: ${parse.detail}`,
+        "修复或从 git 恢复该文件后重试；本命令不猜测重写项目基线文件。",
+        input,
+      ),
+    );
+  }
+  // —— 确认闸（ADR-14/16）：有效记录 → 治理通路判卷；词形在座而记录结构损坏 →
+  // fail-closed 受闸（禁绕过；修复损坏块是 confirm 的职责，不是 set 的）——
+  const confirmedWordFormPresent = BASELINE_CONFIRMED_PLACEHOLDER.test(manifestFile.text);
+  const recordParse = parseConfirmedBlock(manifestFile.text);
+  const recordValid = recordParse.kind === "ok";
+  if (recordValid || confirmedWordFormPresent) {
+    if (input.change === undefined) {
+      return settled(
+        failBaselineSet(
+          "BASELINE_ALREADY_CONFIRMED",
+          recordValid
+            ? recordParse.record.pending !== undefined
+              ? `baseline 确认记录在座且变更批在途（pending-change；change_ref=${recordParse.record.pending.change_ref}）——继续修改须携同 ref，或携同 ref confirm 终结`
+              : "baseline 已确认（manifest 在座确认记录）；确认后项目架构不允许直接修改"
+            : "baseline 确认记录在座（结构损坏）——项目架构不允许直接修改（损坏块修复走 confirm 重建）",
+          "修改走治理通路：先立 CHANGE.* 对象，再 pomaster baseline set --change <CHANGE-id>（写入转 pending-change），完成后携同 ref pomaster baseline confirm 重确认。",
+          input,
+        ),
+      );
+    }
+    if (!recordValid) {
+      return settled(
+        failBaselineSet(
+          "INVALID_STATE",
+          "manifest 确认记录结构损坏——set 不在损坏记录上授权写盘",
+          "先 pomaster baseline confirm 重建确认记录（损坏块修复不需要通道），再走治理通路 set --change。",
+          input,
+        ),
+      );
+    }
+    if (recordParse.record.pending !== undefined && input.change !== recordParse.record.pending.change_ref) {
+      return settled(
+        failBaselineSet(
+          "SCHEMA_INVALID",
+          `pending-change 变更批由 ${recordParse.record.pending.change_ref} 持有——同批连改须携同 ref（批内 ${recordParse.record.pending.batch.length} 键）`,
+          `继续修改: pomaster baseline set --change ${recordParse.record.pending.change_ref}；终结: pomaster baseline confirm --change ${recordParse.record.pending.change_ref}。`,
+          input,
+        ),
+      );
+    }
+    const changeError = await validateBaselineChangeRef(rootDir, input.change);
+    if (changeError !== null) {
+      return settled(failBaselineSet(changeError.code, changeError.message, changeError.hint, input));
+    }
+  } else if (input.change !== undefined) {
+    return settled(
+      failBaselineSet(
+        "SCHEMA_INVALID",
+        `--change 仅在已确认基线上被消费（治理通路授权确认快照内文件的修改）；当前 baseline 无确认记录`,
+        "直接 set 即可（后补销账通路不要求授权）；确认走 pomaster baseline confirm。",
+        input,
+      ),
+    );
+  }
+  const current = parse.parsed.values.get(input.key) ?? "";
+  const fileReports: BaselineSetResult["files"][number][] = [];
+  let change: "UPDATED" | "NO_CHANGE" = "NO_CHANGE";
+  let confirmationInvalidated = false;
+  let nextManifest = manifestFile.text;
+  let nextStack = stackFile.text;
+  let stackTouched = false;
+  let pendingRecord: BaselineConfirmedRecord | undefined;
+  if (current !== input.value) {
+    stackTouched = true;
+    if (isResolved(current) && !recordValid) {
+      return settled(
+        failBaselineSet(
+          "BASELINE_KEY_ALREADY_SET",
+          `${stackRelative}:${input.key} 已销账为 ${current}；set 不做改型`,
+          "answered 稳定语义：已答键的改型走治理通路——确认后持有效 --change 重放本命令（写入转 pending-change），或经项目自有评审手工修改。",
+          input,
+        ),
+      );
+    }
+    const lines = stackFile.text.split("\n");
+    const lineIndex = parse.parsed.lineOf.get(input.key);
+    if (lineIndex === undefined) {
+      return settled(
+        failBaselineSet(
+          "INVALID_STATE",
+          `${stackRelative} 缺少键行：${input.key}`,
+          "基线文件结构漂移——恢复播种形态或手工对齐键集后重试。",
+          input,
+        ),
+      );
+    }
+    lines[lineIndex] = `${input.key}: ${input.value}`;
+    nextStack = lines.join("\n");
+    // —— 确认记录演进（ADR-16）：有效记录 + 异值授权写入 → 记 pending-change
+    // （批内键集追加去重——同 ref 连改多键全程允许；记录保留不再移除）。upsert
+    // 延后到台账删除之后：批条目词形与 unknowns 台账词形同域（baseline/<lane>/
+    // stack.yaml:<key>），先删台账会误删旧块/新块内的批条目行——次序契约 =
+    // 台账删除作用于旧文本，块 upsert 最后整体替换（旧块内被删行随块淘汰）。——
+    if (recordValid && input.change !== undefined && nextStack !== stackFile.text) {
+      const prior = recordParse.record.pending;
+      const entry = unknownsWordForm(lane, input.key);
+      const batch = prior === undefined ? [entry] : prior.batch.includes(entry) ? prior.batch : [...prior.batch, entry];
+      pendingRecord = { ...recordParse.record, pending: { change_ref: input.change, batch } };
+      confirmationInvalidated = true;
+    }
+  }
+  const { next: afterLedger, removed } = removeUnknownEntries(
+    nextManifest,
+    new Set([unknownsWordForm(lane, input.key)]),
+  );
+  nextManifest = afterLedger;
+  if (pendingRecord !== undefined) {
+    nextManifest = upsertConfirmedBlock(nextManifest, pendingRecord);
+  }
+  // —— R1 提交序（ADR-21）：manifest 先行、stack 后行。两文件变换各自幂等（台账
+  // 行删除 / 批内键集去重 / 同值行重写字节恒等），任一认领冲突 → 整链重读重算后
+  // 收敛：已提交侧在新鲜盘面上重算恒等（零写），未提交侧重放同一判卷链。认领式
+  // CAS 的安装字节与既有 writeFile 落盘逐字节相同——无冲突串行路径行为不变。
+  let manifestCommitted = false;
+  if (nextManifest !== manifestFile.text) {
+    const cas = casSwapFile(`${rootDir}/${BASELINE_MANIFEST_RELATIVE}`, manifestFile.text, nextManifest);
+    if (cas.kind !== "swapped") {
+      return { kind: "contended" };
+    }
+    manifestCommitted = true;
+    change = "UPDATED";
+  }
+  if (nextStack !== stackFile.text) {
+    const cas = casSwapFile(`${rootDir}/${stackRelative}`, stackFile.text, nextStack);
+    if (cas.kind !== "swapped") {
+      return { kind: "contended" };
+    }
+    change = "UPDATED";
+  }
+  if (stackTouched) {
+    fileReports.push({ file: stackRelative, action: "updated" });
+  } else {
+    fileReports.push({ file: stackRelative, action: "unchanged" });
+  }
+  if (manifestCommitted) {
+    fileReports.push({ file: BASELINE_MANIFEST_RELATIVE, action: "updated" });
+  }
+  const result: BaselineSetResult = {
+    change,
+    lane,
+    key: input.key,
+    value: input.value,
+    files: fileReports,
+    unknowns_remaining: countUnknownEntries(nextManifest),
+    confirmation_invalidated: confirmationInvalidated,
+  };
+  const human = [
+    `baseline set: ${change} ${lane}.${input.key} = ${input.value}${confirmationInvalidated ? `（确认记录转 pending-change；change_ref=${input.change}——携同 ref confirm 终结前 closeout 阻断）` : ""}`,
+    ...fileReports.map(
+      (report) => `  ${report.action.padEnd(10)} ${report.file}${removed > 0 && report.file === BASELINE_MANIFEST_RELATIVE ? `（销账 ${removed} 条）` : ""}`,
+    ),
+    `  unknowns remaining: ${result.unknowns_remaining}`,
+  ];
+  return settled(okOutcome("baseline set", result, human));
+}
+
 /**
  * 单键后补销账（无确认记录时）与治理通路修改（确认态 + 有效 --change，ADR-14/16）：
  * 校验（lane/key/value 词形闸，fail-closed 零写入）→ 读盘（缺席 NOT_CONFIGURED /
@@ -1381,7 +1615,8 @@ function failBaselineSet(
  * （BASELINE_KEY_ALREADY_SET）仅在无有效确认记录时生效 → 写 stack.yaml + 同步销账
  * （+ 有效记录在座时异值写入转 pending-change：批内键集追加去重，同 ref 连改多键
  * 全程允许——ADR-16；记录不再移除）。同值重放 = 幂等 NO_CHANGE（台账漏销则顺带
- * 自愈；pending 不新增、确认记录零触碰）。
+ * 自愈；pending 不新增、确认记录零触碰）。并发安全（ADR-21）：读-判卷-计算-提交
+ * 整链文件级 CAS 事务化——认领冲突确定性退避整链重读重算，耗尽 BASELINE_WRITE_CONFLICT。
  */
 export async function runBaselineSet(
   rootDir: string,
@@ -1421,149 +1656,28 @@ export async function runBaselineSet(
       input,
     );
   }
-  const stackRelative = baselineStackRelative(lane);
-  const stackFile = await readTextFile(`${rootDir}/${stackRelative}`);
-  if (stackFile.kind !== "ok") {
-    const error = baselineFileError(stackRelative, stackFile);
-    return failBaselineSet(error.code, error.message, error.hint, input);
-  }
-  const manifestFile = await readTextFile(`${rootDir}/${BASELINE_MANIFEST_RELATIVE}`);
-  if (manifestFile.kind !== "ok") {
-    const error = baselineFileError(BASELINE_MANIFEST_RELATIVE, manifestFile);
-    return failBaselineSet(error.code, error.message, error.hint, input);
-  }
-  const parse = parseStackYaml(stackFile.text, STACK_KEYS[lane]);
-  if (!parse.ok) {
-    return failBaselineSet(
-      "INVALID_STATE",
-      `${stackRelative} 结构不可解析: ${parse.detail}`,
-      "修复或从 git 恢复该文件后重试；本命令不猜测重写项目基线文件。",
-      input,
-    );
-  }
-  // —— 确认闸（ADR-14/16）：有效记录 → 治理通路判卷；词形在座而记录结构损坏 →
-  // fail-closed 受闸（禁绕过；修复损坏块是 confirm 的职责，不是 set 的）——
-  const confirmedWordFormPresent = BASELINE_CONFIRMED_PLACEHOLDER.test(manifestFile.text);
-  const recordParse = parseConfirmedBlock(manifestFile.text);
-  const recordValid = recordParse.kind === "ok";
-  if (recordValid || confirmedWordFormPresent) {
-    if (input.change === undefined) {
+  // —— R1 并发安全（ADR-21）：读-判卷-计算-提交整链文件级 CAS 事务重试环——
+  // 认领到并发新世代（contended）→ 确定性退避后整链重读重算（新鲜盘面上重放
+  // 全部判卷闸）；耗尽 → BASELINE_WRITE_CONFLICT 显式冲突（禁静默丢写）。串行
+  // 无冲突路径 = 恒首轮 = 每文件恰一次 CAS 提交，落盘字节与既有 writeFile 相同。
+  for (let attempt = 0; ; attempt += 1) {
+    if (attempt >= BASELINE_SET_TX_ATTEMPTS) {
       return failBaselineSet(
-        "BASELINE_ALREADY_CONFIRMED",
-        recordValid
-          ? recordParse.record.pending !== undefined
-            ? `baseline 确认记录在座且变更批在途（pending-change；change_ref=${recordParse.record.pending.change_ref}）——继续修改须携同 ref，或携同 ref confirm 终结`
-            : "baseline 已确认（manifest 在座确认记录）；确认后项目架构不允许直接修改"
-          : "baseline 确认记录在座（结构损坏）——项目架构不允许直接修改（损坏块修复走 confirm 重建）",
-        "修改走治理通路：先立 CHANGE.* 对象，再 pomaster baseline set --change <CHANGE-id>（写入转 pending-change），完成后携同 ref pomaster baseline confirm 重确认。",
+        "BASELINE_WRITE_CONFLICT",
+        `baseline 并发写入冲突（${BASELINE_SET_TX_ATTEMPTS} 轮重读重算后仍与他人写入交错；${baselineStackRelative(lane)} 与 ${BASELINE_MANIFEST_RELATIVE} 的读-改-写链）`,
+        "稍后重跑本命令即可：重跑在新鲜盘面上重放同一判卷链（并发修改按串行重试收敛——审计 R1 修复语义）。",
         input,
       );
     }
-    if (!recordValid) {
-      return failBaselineSet(
-        "INVALID_STATE",
-        "manifest 确认记录结构损坏——set 不在损坏记录上授权写盘",
-        "先 pomaster baseline confirm 重建确认记录（损坏块修复不需要通道），再走治理通路 set --change。",
-        input,
-      );
+    if (attempt > 0) {
+      sleepSync(BASELINE_SET_TX_BACKOFF_MS[Math.min(attempt - 1, BASELINE_SET_TX_BACKOFF_MS.length - 1)] as number);
     }
-    if (recordParse.record.pending !== undefined && input.change !== recordParse.record.pending.change_ref) {
-      return failBaselineSet(
-        "SCHEMA_INVALID",
-        `pending-change 变更批由 ${recordParse.record.pending.change_ref} 持有——同批连改须携同 ref（批内 ${recordParse.record.pending.batch.length} 键）`,
-        `继续修改: pomaster baseline set --change ${recordParse.record.pending.change_ref}；终结: pomaster baseline confirm --change ${recordParse.record.pending.change_ref}。`,
-        input,
-      );
+    const attemptOutcome = await baselineSetAttempt(rootDir, input, lane, attempt);
+    if (attemptOutcome.kind === "settled") {
+      return attemptOutcome.outcome;
     }
-    const changeError = await validateBaselineChangeRef(rootDir, input.change);
-    if (changeError !== null) {
-      return failBaselineSet(changeError.code, changeError.message, changeError.hint, input);
-    }
-  } else if (input.change !== undefined) {
-    return failBaselineSet(
-      "SCHEMA_INVALID",
-      `--change 仅在已确认基线上被消费（治理通路授权确认快照内文件的修改）；当前 baseline 无确认记录`,
-      "直接 set 即可（后补销账通路不要求授权）；确认走 pomaster baseline confirm。",
-      input,
-    );
+    // kind === "contended"：确定性退避后整链重读重算（ADR-21）。
   }
-  const current = parse.parsed.values.get(input.key) ?? "";
-  const fileReports: BaselineSetResult["files"][number][] = [];
-  let change: "UPDATED" | "NO_CHANGE" = "NO_CHANGE";
-  let confirmationInvalidated = false;
-  let nextManifest = manifestFile.text;
-  let pendingRecord: BaselineConfirmedRecord | undefined;
-  if (current !== input.value) {
-    if (isResolved(current) && !recordValid) {
-      return failBaselineSet(
-        "BASELINE_KEY_ALREADY_SET",
-        `${stackRelative}:${input.key} 已销账为 ${current}；set 不做改型`,
-        "answered 稳定语义：已答键的改型走治理通路——确认后持有效 --change 重放本命令（写入转 pending-change），或经项目自有评审手工修改。",
-        input,
-      );
-    }
-    const lines = stackFile.text.split("\n");
-    const lineIndex = parse.parsed.lineOf.get(input.key);
-    if (lineIndex === undefined) {
-      return failBaselineSet(
-        "INVALID_STATE",
-        `${stackRelative} 缺少键行：${input.key}`,
-        "基线文件结构漂移——恢复播种形态或手工对齐键集后重试。",
-        input,
-      );
-    }
-    lines[lineIndex] = `${input.key}: ${input.value}`;
-    const nextStack = lines.join("\n");
-    if (nextStack !== stackFile.text) {
-      await writeFile(`${rootDir}/${stackRelative}`, nextStack, "utf8");
-      change = "UPDATED";
-    }
-    fileReports.push({ file: stackRelative, action: "updated" });
-    // —— 确认记录演进（ADR-16）：有效记录 + 异值授权写入 → 记 pending-change
-    // （批内键集追加去重——同 ref 连改多键全程允许；记录保留不再移除）。upsert
-    // 延后到台账删除之后：批条目词形与 unknowns 台账词形同域（baseline/<lane>/
-    // stack.yaml:<key>），先删台账会误删旧块/新块内的批条目行——次序契约 =
-    // 台账删除作用于旧文本，块 upsert 最后整体替换（旧块内被删行随块淘汰）。——
-    if (recordValid && input.change !== undefined && nextStack !== stackFile.text) {
-      const prior = recordParse.record.pending;
-      const entry = unknownsWordForm(lane, input.key);
-      const batch = prior === undefined ? [entry] : prior.batch.includes(entry) ? prior.batch : [...prior.batch, entry];
-      pendingRecord = { ...recordParse.record, pending: { change_ref: input.change, batch } };
-      confirmationInvalidated = true;
-    }
-  } else {
-    fileReports.push({ file: stackRelative, action: "unchanged" });
-  }
-  const { next: afterLedger, removed } = removeUnknownEntries(
-    nextManifest,
-    new Set([unknownsWordForm(lane, input.key)]),
-  );
-  nextManifest = afterLedger;
-  if (pendingRecord !== undefined) {
-    nextManifest = upsertConfirmedBlock(nextManifest, pendingRecord);
-  }
-  if (nextManifest !== manifestFile.text) {
-    await writeFile(`${rootDir}/${BASELINE_MANIFEST_RELATIVE}`, nextManifest, "utf8");
-    fileReports.push({ file: BASELINE_MANIFEST_RELATIVE, action: "updated" });
-    change = "UPDATED";
-  }
-  const result: BaselineSetResult = {
-    change,
-    lane,
-    key: input.key,
-    value: input.value,
-    files: fileReports,
-    unknowns_remaining: countUnknownEntries(nextManifest),
-    confirmation_invalidated: confirmationInvalidated,
-  };
-  const human = [
-    `baseline set: ${change} ${lane}.${input.key} = ${input.value}${confirmationInvalidated ? `（确认记录转 pending-change；change_ref=${input.change}——携同 ref confirm 终结前 closeout 阻断）` : ""}`,
-    ...fileReports.map(
-      (report) => `  ${report.action.padEnd(10)} ${report.file}${removed > 0 && report.file === BASELINE_MANIFEST_RELATIVE ? `（销账 ${removed} 条）` : ""}`,
-    ),
-    `  unknowns remaining: ${result.unknowns_remaining}`,
-  ];
-  return okOutcome("baseline set", result, human);
 }
 
 // ============================================================
