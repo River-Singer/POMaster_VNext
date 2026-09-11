@@ -209,6 +209,19 @@
  *   报错诚实呈现两种可能（认领窗口未收敛 / 文件被真实删除）并指路两条修复路径
  *   （重跑收敛 / git 恢复或 init 重播种），禁静默吞掉。确定性测试钉 =
  *   baseline.spec.ts「缺席读分类」describe（禁靠真并发碰运气）。
+ *
+ *   全步错误归类（09-11 fs-cas-install-enoent，CI run 34610508238 实证缺口）：回装步
+ *   （claim → target）rename 的 ENOENT（认领文件被对手交错取走——liar 防御首次尝试
+ *   物理归位被伪报 EPERM，退避窗口内对手认领走归位世代）曾裸逃成子进程 CRASH。
+ *   修正 = casSwapFile 五步仪式每一步 fs 错误按归类矩阵收束（fs-cas.ts 头注矩阵表）：
+ *   {ENOENT, EPERM, EACCES} = 瞬时/交错 → contended（附步位成因词形，重试环耗尽后
+ *   随 BASELINE_WRITE_CONFLICT 呈现点名）；其余（ENOSPC/EIO/EISDIR…）= persistent →
+ *   受控 fault 结局即时落 BASELINE_WRITE_CONFLICT 族信封（errno + 成因点名，重试
+ *   无益不进重试环）。casSwapFile 自此零 throw（结局空间封闭）——裸 fs 错误在
+ *   结构上不可逃逸成 CRASH；本链 readTextFile 本就不抛（absent/unreadable 二态），
+ *   baselineSetAttempt 的 fs 触点全部受控。注入面 = runBaselineSet 第三参 casFs
+ *   （SpawnFn/ExecutableProbeFn 同族；缺省真机 fs），确定性回归钉见
+ *   baseline-set-contention.spec「全步错误归类」describe。
  */
 
 import { writeFile } from "node:fs/promises";
@@ -216,7 +229,7 @@ import type { TruthIndex } from "@pomaster/kernel";
 import { GovernanceError, createStore, loadTruthIndex, sha256OfUtf8 } from "@pomaster/kernel";
 import type { CliError } from "./envelope.js";
 import { failOutcome, okOutcome, type CommandOutcome } from "./envelope.js";
-import { casSwapFile, sleepSync } from "./fs-cas.js";
+import { casSwapFile, nodeCasSwapFs, sleepSync, type CasSwapFs } from "./fs-cas.js";
 import {
   CHECKLIST_KEYS,
   INTERACTIVE_BACKSPACE_KEY,
@@ -1413,10 +1426,13 @@ const BASELINE_SET_TX_BACKOFF_MS: readonly number[] = [20, 50, 100];
  * 到并发新世代（或吃到认领窗口缺席读）——退避后整链重读重算（ADR-21）。
  * viaStackAbsent = 本次 contended 源于 stack.yaml 缺席读（认领-回装窗口或真实删除
  * ——重试耗尽须显式呈现两种可能，与认领冲突路径的报错词形区分，禁静默吞掉）。
+ * viaCasCause = 本次 contended 源于 casSwapFile 瞬时/交错类 fs 故障（09-11
+ * fs-cas-install-enoent 全步错误归类：附步位成因词形——耗尽呈现里点名，禁裸 fs
+ * 错误逃逸成 CRASH）。
  */
 type BaselineSetAttemptOutcome =
   | { readonly kind: "settled"; readonly outcome: CommandOutcome<BaselineSetResult> }
-  | { readonly kind: "contended"; readonly viaStackAbsent?: true };
+  | { readonly kind: "contended"; readonly viaStackAbsent?: true; readonly viaCasCause?: string };
 
 function settled(outcome: CommandOutcome<BaselineSetResult>): BaselineSetAttemptOutcome {
   return { kind: "settled", outcome };
@@ -1433,6 +1449,7 @@ async function baselineSetAttempt(
   input: BaselineSetInput,
   lane: BaselineLane,
   attempt: number,
+  casFs: CasSwapFs = nodeCasSwapFs,
 ): Promise<BaselineSetAttemptOutcome> {
   const stackRelative = baselineStackRelative(lane);
   const stackFile = await readTextFile(`${rootDir}/${stackRelative}`);
@@ -1589,17 +1606,39 @@ async function baselineSetAttempt(
   // CAS 的安装字节与既有 writeFile 落盘逐字节相同——无冲突串行路径行为不变。
   let manifestCommitted = false;
   if (nextManifest !== manifestFile.text) {
-    const cas = casSwapFile(`${rootDir}/${BASELINE_MANIFEST_RELATIVE}`, manifestFile.text, nextManifest);
+    const cas = casSwapFile(`${rootDir}/${BASELINE_MANIFEST_RELATIVE}`, manifestFile.text, nextManifest, casFs);
+    if (cas.kind === "fault") {
+      // persistent（09-11 fs-cas-install-enoent）：受控结局收束为 BASELINE_WRITE_CONFLICT
+      // 族信封（errno 词形 + 步位成因在 message 点名）——重试无益，不进重试环。
+      return settled(
+        failBaselineSet(
+          "BASELINE_WRITE_CONFLICT",
+          `baseline 提交遇持续文件系统故障（${BASELINE_MANIFEST_RELATIVE}：${cas.cause}；errno=${cas.code}）——非并发交错，重试无益`,
+          "先处置文件系统故障（磁盘空间/权限/杀软锁），再重跑本命令：重跑在新鲜盘面上重放同一判卷链（并发修改按串行重试收敛）。",
+          input,
+        ),
+      );
+    }
     if (cas.kind !== "swapped") {
-      return { kind: "contended" };
+      return cas.kind === "contended" ? { kind: "contended", viaCasCause: `manifest：${cas.cause}` } : { kind: "contended" };
     }
     manifestCommitted = true;
     change = "UPDATED";
   }
   if (nextStack !== stackFile.text) {
-    const cas = casSwapFile(`${rootDir}/${stackRelative}`, stackFile.text, nextStack);
+    const cas = casSwapFile(`${rootDir}/${stackRelative}`, stackFile.text, nextStack, casFs);
+    if (cas.kind === "fault") {
+      return settled(
+        failBaselineSet(
+          "BASELINE_WRITE_CONFLICT",
+          `baseline 提交遇持续文件系统故障（${stackRelative}：${cas.cause}；errno=${cas.code}）——非并发交错，重试无益`,
+          "先处置文件系统故障（磁盘空间/权限/杀软锁），再重跑本命令：重跑在新鲜盘面上重放同一判卷链（并发修改按串行重试收敛）。",
+          input,
+        ),
+      );
+    }
     if (cas.kind !== "swapped") {
-      return { kind: "contended" };
+      return cas.kind === "contended" ? { kind: "contended", viaCasCause: `stack：${cas.cause}` } : { kind: "contended" };
     }
     change = "UPDATED";
   }
@@ -1642,11 +1681,15 @@ async function baselineSetAttempt(
  * （+ 有效记录在座时异值写入转 pending-change：批内键集追加去重，同 ref 连改多键
  * 全程允许——ADR-16；记录不再移除）。同值重放 = 幂等 NO_CHANGE（台账漏销则顺带
  * 自愈；pending 不新增、确认记录零触碰）。并发安全（ADR-21）：读-判卷-计算-提交
- * 整链文件级 CAS 事务化——认领冲突确定性退避整链重读重算，耗尽 BASELINE_WRITE_CONFLICT。
+ * 整链文件级 CAS 事务化——认领冲突确定性退避整链重读重算，耗尽 BASELINE_WRITE_CONFLICT；
+ * casSwapFile 瞬时/交错类 fs 故障同走 contended 重试（成因词形随耗尽呈现），
+ * persistent 走受控 fault 即时 BASELINE_WRITE_CONFLICT 信封（fs-cas.ts 全步错误
+ * 归类，09-11 fs-cas-install-enoent——零裸 fs 错误逃逸成 CRASH）。
  */
 export async function runBaselineSet(
   rootDir: string,
   input: BaselineSetInput,
+  casFs: CasSwapFs = nodeCasSwapFs,
 ): Promise<CommandOutcome<BaselineSetResult>> {
   if (!(BASELINE_LANES as readonly string[]).includes(input.lane)) {
     return failBaselineSet(
@@ -1692,6 +1735,7 @@ export async function runBaselineSet(
   // NOT_CONFIGURED 会谎报工作区状态；且 hint 指路「重跑 / git 恢复或 init 重播种」
   // 两条修复路径，与认领冲突路径的纯重跑路标区分）。
   let lastContendedViaStackAbsent = false;
+  let lastContendedCasCause: string | null = null;
   for (let attempt = 0; ; attempt += 1) {
     if (attempt >= BASELINE_SET_TX_ATTEMPTS) {
       if (lastContendedViaStackAbsent) {
@@ -1702,9 +1746,13 @@ export async function runBaselineSet(
           input,
         );
       }
+      // 09-11 fs-cas-install-enoent：最近一轮 contended 源于 casSwapFile 瞬时/交错类
+      // fs 故障时，成因词形随耗尽呈现点名（步位可辨——tmp 落盘/认领/回装/link）。
+      const causeNote =
+        lastContendedCasCause === null ? "" : `（最近认领交错成因：${lastContendedCasCause}）`;
       return failBaselineSet(
         "BASELINE_WRITE_CONFLICT",
-        `baseline 并发写入冲突（${BASELINE_SET_TX_ATTEMPTS} 轮重读重算后仍与他人写入交错；${baselineStackRelative(lane)} 与 ${BASELINE_MANIFEST_RELATIVE} 的读-改-写链）`,
+        `baseline 并发写入冲突（${BASELINE_SET_TX_ATTEMPTS} 轮重读重算后仍与他人写入交错；${baselineStackRelative(lane)} 与 ${BASELINE_MANIFEST_RELATIVE} 的读-改-写链）${causeNote}`,
         "稍后重跑本命令即可：重跑在新鲜盘面上重放同一判卷链（并发修改按串行重试收敛——审计 R1 修复语义）。",
         input,
       );
@@ -1712,13 +1760,14 @@ export async function runBaselineSet(
     if (attempt > 0) {
       sleepSync(BASELINE_SET_TX_BACKOFF_MS[Math.min(attempt - 1, BASELINE_SET_TX_BACKOFF_MS.length - 1)] as number);
     }
-    const attemptOutcome = await baselineSetAttempt(rootDir, input, lane, attempt);
+    const attemptOutcome = await baselineSetAttempt(rootDir, input, lane, attempt, casFs);
     if (attemptOutcome.kind === "settled") {
       return attemptOutcome.outcome;
     }
-    // kind === "contended"：确定性退避后整链重读重算（ADR-21）；缺席读成因记账
-    // 供耗尽分流呈现。
+    // kind === "contended"：确定性退避后整链重读重算（ADR-21）；缺席读/认领交错
+    // 成因记账供耗尽分流呈现。
     lastContendedViaStackAbsent = attemptOutcome.viaStackAbsent === true;
+    lastContendedCasCause = attemptOutcome.viaCasCause ?? null;
   }
 }
 
