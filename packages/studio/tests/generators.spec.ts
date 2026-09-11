@@ -311,8 +311,9 @@ describe("studio generators · 幂等（双跑 diff 空）", () => {
       const a = snapshotTree(first);
       const b = snapshotTree(second);
       expect([...a.keys()].sort()).toEqual([...b.keys()].sort());
-      // 总文件数 = 41 + 71 + 18 + 1 + 1（五类页面分母：S5 增 Database Struct 占位分区）。
-      expect(a.size).toBe(132);
+      // 总文件数 = 41 + 71 + 18 + 1 + 1 + 1（六类页面分母：S5 增 Database Struct 占位分区；
+      // F-M2 增 Foundations/Design Tokens seed 只读渲染 story）。
+      expect(a.size).toBe(133);
       let diffs = 0;
       for (const [key, value] of a) {
         if (b.get(key) !== value) diffs += 1;
