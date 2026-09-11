@@ -196,8 +196,10 @@ const RECON_SOURCE_EXTENSIONS = new Set([
 /**
  * 枚举跳过的目录（依赖/产物/版本库/治理台账——形态照抄 ARCH_SKIP_DIRS :122-124；
  * 跳过清单照抄不扩：.pomaster 是治理台账不是宿主源码）。
+ * export：execution-audit 路径清洗同款复用（R1「沿 recon 枚举闭包」单一来源——
+ * 禁第二份 5 目录清单漂移；本导出零行为变化）。
  */
-const RECON_SKIP_DIRS = new Set([
+export const RECON_SKIP_DIRS = new Set([
   "node_modules", "dist", ".git", "coverage", ".pomaster",
 ]);
 
@@ -236,8 +238,10 @@ function collectReconSourceFiles(rootDir: string, dir: string, out: string[]): v
  * OBS 通路编号缺省分配：现有最大序号 +1，4 位零填充（OBS-0002；>9999 自然位数——
  * padStart 不截断）。形态照抄 evidence.ts allocateEvidenceRef（GRN/CLM 专用，prefix
  * 词形闭包不扩——本地镜像 + 注明锚）；分区缺席 = 零回执的合法空平面（listPlaneFiles 同款）。
+ * export：execution-audit OBS 回执同分区同序号序列共用（单一序号分配面——禁第二份
+ * 「最大序号 +1」镜像分叉；本导出零行为变化）。
  */
-function allocateObservationId(observationsDir: string): string {
+export function allocateObservationId(observationsDir: string): string {
   let max = 0;
   let names: readonly string[];
   try {
@@ -333,8 +337,10 @@ type UnknownRecord = Record<string, unknown>;
  * （§6.13 十三键 snake 词形）；artifact_refs 经 kernel artifactRefsToSnake 映射为 07
  * blob 分支落盘形态（17 schema blob_artifact_ref 词形 = run_record.artifact_refs 条目
  * 词形复用——「落盘形态由 kernel 映射决定，CLI 不二次发明」单一映射源纪律）。
+ * export：execution-audit OBS 回执同形态组装共用（单一映射面——禁第二份组装器漂移；
+ * 本导出零行为变化）。
  */
-function observationRecordOf(receipt: ObservationReceipt): UnknownRecord {
+export function observationRecordOf(receipt: ObservationReceipt): UnknownRecord {
   return {
     record_type: "observation_receipt",
     ...receipt,

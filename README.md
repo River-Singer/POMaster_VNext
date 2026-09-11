@@ -124,7 +124,7 @@ pomaster run <task>
 pomaster handoff <task> --to <role>
 pomaster session attach/refresh/list
 pomaster lock acquire/heartbeat/release/steal/list
-pomaster execution begin/end/list
+pomaster execution begin/end/list/audit   # audit = 变更越界审计（--execution-id + --diff-base：git diff 起始锚变更集 → KEYBINDING 解析 → permit scope 判 in/out → OBS 回执 sidecar + 越界明细；越界 exit 1——Detection 半边，纯读零权威写口）
 pomaster trace show/list
 # pomaster session（不带子命令）= 治理速览投影（SessionStart 注入源；≤10k 字符，恒 exit 0；尾部带首答确认协议指令段）
 # pomaster alerts（重入口 UserPromptSubmit 源）= 可行动项过滤器 + workflow 路由段（干净=非空但极简，恒 exit 0）

@@ -143,9 +143,13 @@
  *                   D 线地基②互斥锁命令面（P20；D 线 §3.3：三粒度获取/心跳/释放/
  *                   显式接管（--reason 仪式）/清单；blocked → exit 1 LOCK_BLOCKED
  *                   非静默成功，acquire 永不自动抢占 D2）
- * - execution begin/end/list
+ * - execution begin/end/list/audit
  *                   D 线地基③执行身份命令面（P20；PRD §25.4：AGX-n 登记/封口/清单
- *                   ——record gate-run/claim --execution-id 的身份供给面）
+ *                   ——record gate-run/claim --execution-id 的身份供给面）；
+ *                   audit = 变更越界审计（09-11；GPT 审计 §5/§6 Detection 半边）：
+ *                   git diff 起始锚变更集 → KEYBINDING 解析 → permit scope 判
+ *                   in/out → OBS 回执 sidecar + 越界明细（越界 exit 1；纯读 +
+ *                   sidecar 零权威写口——字节快照测试钉）
  * - trace show/list Execution Trace 命令面（W1-C2 · PRD v0.5.2 §8 + §14 P0.5-3；
  *                   OD-5 已批词形，裁决 8 ②）：show <AGX> = 纯投影纯读（封存在座=（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
  *                   封存快照 + stale 对账显式呈现；--seal --retention <四档> = 显式
@@ -192,6 +196,7 @@ import { runPermitCheck, runPermitIssue, runPermitList, runPermitSteal } from ".
 import { runExecGuard } from "./exec-guard.js";
 import { runReconcile } from "./reconcile.js";
 import { runReconImportGraph, runReconMigrations, runReconSbom } from "./recon.js";
+import { runExecutionAudit } from "./execution-audit.js";
 import { runCompact } from "./compact.js";
 import { runRecordClaim, runRecordGateRun, runRecordVerification } from "./record.js";
 import { runCloseout } from "./closeout.js";
@@ -916,6 +921,21 @@ export type {
   ReconSbomResult,
   ReconSbomWordForm,
 } from "./recon.js";
+export {
+  EXECUTION_AUDIT_ADAPTER,
+  EXECUTION_AUDIT_GIT_TIMEOUT_MS,
+  EXECUTION_AUDIT_OPERATION,
+  EXECUTION_AUDIT_PRESENTATION_CAP,
+  EXECUTION_AUDIT_SENSOR_CAPABILITY,
+  KEYBINDINGS_DIR_RELATIVE,
+  runExecutionAudit,
+} from "./execution-audit.js";
+export type {
+  ExecutionAuditInput,
+  ExecutionAuditMappingView,
+  ExecutionAuditPathView,
+  ExecutionAuditResult,
+} from "./execution-audit.js";
 
 /** 一次命令执行的人读/机读产出记录（runCli 据此决定退出码与输出）。 */
 export interface CommandRun<TResult = unknown> {
@@ -3161,6 +3181,36 @@ export function createProgram(
       const outcome = await runExecutionList(resolveDir(command));
       record({
         command: "execution list",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+  // —— execution audit（09-11 变更越界审计；GPT 审计 §5/§6 Detection 半边） ——
+  // 纯读 + sidecar 零权威写口（产物只落 evidence/{blobs,observations}/，字节快照
+  // 测试钉）；fail-closed：未初始化 / 身份缺席 / 非 git 工作区 / 锚缺席或无效 /
+  // 锚身份≠worktree 根 全部零落盘显式报错；越界存在 exit 1（观察呈报不阻断——
+  // 处置归 Owner）。实现与判卷锚：./execution-audit.ts 头注。
+  execution
+    .command("audit")
+    .description(
+      "变更越界审计（Detection 半边）：git diff 起始锚收集执行期实际变更文件集（--diff-base 调用方申报——execution record 无 ref/seq 锚字段；untracked 同收；路径清洗沿 recon 枚举排除闭包 node_modules/dist/.git/coverage/.pomaster）→ KEYBINDING 在册绑定解析 governed id（未命中 unmapped 诚实清单禁静默丢弃；无绑定表工作区全 unmapped 诚实呈现非错误）→ 对照 execution.permit_ids 的 permit scope.subject_ids 判 in/out-of-scope（判卷锚 kernel checkPermit 成员判定单一实现）→ 审计报告 blob + OBS 回执落 17 sidecar（result=OBSERVED 带 blob ref）+ stdout 越界逐条明细（path + 判定依据）；越界存在 exit 1 不伪造绿；非 git 工作区/锚缺席/锚无效 fail-closed 零落盘（不做 fs 快照兜底）",
+    )
+    .requiredOption(
+      "--execution-id <AGX-n>",
+      "执行身份锚（AGX-<年份>-<序号>；OBS 回执 execution_id 必填——S1 禁自造身份，须为 executions/ 已登记档案，已封口执行允许事后审计）",
+    )
+    .requiredOption(
+      "--diff-base <git-ref>",
+      "diff 起始锚（commit/branch/tag——execution begin 时刻的工作区基线 ref；execution record 实读无 ref/seq 锚字段，锚由调用方申报：缺席/无效 = 显式报错零落盘）",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runExecutionAudit(resolveDir(command), {
+        executionId: opts.executionId as string,
+        diffBase: opts.diffBase as string,
+      });
+      record({
+        command: "execution audit",
         outcome,
         asJson: command.opts().json === true,
       });
