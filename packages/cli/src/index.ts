@@ -191,6 +191,7 @@ import { runCheckFast, runCheckGates } from "./check.js";
 import { runPermitCheck, runPermitIssue, runPermitList, runPermitSteal } from "./permit.js";
 import { runExecGuard } from "./exec-guard.js";
 import { runReconcile } from "./reconcile.js";
+import { runReconImportGraph, runReconMigrations, runReconSbom } from "./recon.js";
 import { runCompact } from "./compact.js";
 import { runRecordClaim, runRecordGateRun, runRecordVerification } from "./record.js";
 import { runCloseout } from "./closeout.js";
@@ -299,10 +300,14 @@ export {
   STACK_VALUE_PATTERN,
   BASELINE_CONFIRM_TARGETS,
   BASELINE_MD_FACES,
+  BASELINE_DESIGN_TOKENS_TARGET,
   BASELINE_CHANGE_ACTIVE_LIFECYCLES,
+  BASELINE_UNKNOWN_APPLICABILITY_VALUES,
+  MSD_UNKNOWN_CLASSIFICATION_VALUES,
   unknownsWordForm,
   renderBaselineQuizHumanLine,
 } from "./baseline.js";
+export { readDesignTokens } from "./baseline-tokens.js";
 // baselineStackRelative / BASELINE_MANIFEST_RELATIVE 经 export * from store-layout.js 已公开。
 export {
   appendPresetDrafts,
@@ -337,6 +342,11 @@ export type {
   BaselinePendingChange,
   BaselineConfirmationState,
   BaselineConfirmationPresentation,
+  BaselineUnknownApplicability,
+  MsdUnknownClassification,
+  BaselineUnknownLedgerEntry,
+  UnknownLedgerParse,
+  BaselineBlockingJudgement,
 } from "./baseline.js";
 export type {
   InitResult,
@@ -883,6 +893,29 @@ export type {
 } from "./production.js";
 export { runTraceShow, runTraceList } from "./trace.js";
 export type { TraceShowInput, TraceShowResult, TraceListResult } from "./trace.js";
+export {
+  RECON_MIGRATION_STACKS,
+  RECON_MIGRATION_STACK_WORD_FORMS,
+  RECON_SBOM_INSTALL_HINT,
+  RECON_SBOM_TOOL,
+  reconSbomSpawn,
+  runReconImportGraph,
+  runReconMigrations,
+  runReconSbom,
+} from "./recon.js";
+export type {
+  ReconImportGraphInput,
+  ReconImportGraphResult,
+  ReconMigrationStack,
+  ReconMigrationStackReport,
+  ReconMigrationsInput,
+  ReconMigrationsResult,
+  ReconReportBlobRef,
+  ReconSbomInject,
+  ReconSbomInput,
+  ReconSbomResult,
+  ReconSbomWordForm,
+} from "./recon.js";
 
 /** 一次命令执行的人读/机读产出记录（runCli 据此决定退出码与输出）。 */
 export interface CommandRun<TResult = unknown> {
@@ -1001,8 +1034,8 @@ export function createProgram(
   // 已答键改型显式拒绝；确认态在座 = gate 本体（无 --change 拒绝 / 持有效 --change
   // 走治理通路——kernel 校验 CHANGE.* 在册 + 活性；写入转 pending-change——同 ref
   // 连改多键全程允许）。confirm = 确认施断命令（沿 New Entity Gate 先例：verdict +
-  // exit code）：14 unknowns 全销账为前提，manifest 写 confirmed 记录（at_seq +
-  // 24 文件确认资产清单 sha256 快照 = 2 stack.yaml + 22 md——N1 单一分母）；重确认
+  // exit code）：阻塞集清零为前提（P-C1），manifest 写 confirmed 记录（at_seq +
+  // 25 文件确认资产清单 sha256 快照 = 2 stack.yaml + 22 md + 1 design-tokens.yaml——N1 单一分母，ADR-20 扩 25）；重确认
   // 三通道（N2/Owner 09-06 补裁定）：--change 治理通路 / --ack-drifted --note 手改
   // 声明（journal BASELINE_ACK 留痕）/ 裸重确认显式拒绝；closeout 聚合单点消费
   // BASELINE_NOT_CONFIRMED（含 pending-change 未终结）/ BASELINE_DRIFT，doctor/status
@@ -1010,7 +1043,7 @@ export function createProgram(
   const baseline = program
     .command("baseline")
     .description(
-      "Project Engineering Baseline 销账与确认 gate 通路（R-M/R-L）：set = 单键显式写入 .pomaster/baseline/<lane>/stack.yaml 并同步销账 manifest unknowns 台账（TTY init 技术栈问卷的非交互孪生——CI/脚本场景；键词形 fail-closed；已答键改型拒绝）；confirm = 基线确认施断（14 unknowns 全销账后 manifest 记 confirmed digest 快照——24 文件单一资产清单；重确认三通道 --change / --ack-drifted --note / 裸重确认拒绝；closeout/doctor/status 消费确认态）",
+      "Project Engineering Baseline 销账与确认 gate 通路（R-M/R-L）：set = 单键显式写入 .pomaster/baseline/<lane>/stack.yaml 并同步销账 manifest unknowns 台账（TTY init 技术栈问卷的非交互孪生——CI/脚本场景；键词形 fail-closed；已答键改型拒绝）；confirm = 基线确认施断（阻塞集清零后 manifest 记 confirmed digest 快照——25 文件单一资产清单；重确认三通道 --change / --ack-drifted --note / 裸重确认拒绝；closeout/doctor/status 消费确认态）",
     );
   baseline
     .command("set")
@@ -1047,7 +1080,7 @@ export function createProgram(
   baseline
     .command("confirm")
     .description(
-      "基线确认施断（R-L gate；verdict + exit code）：前提 = 14 unknowns 全销账（BASELINE_UNKNOWNS_REMAINING fail-closed 逐条列出缺键）；动作 = manifest.yaml 写 confirmed 确认记录（at_seq 时点锚 + 24 文件确认资产清单 sha256 快照 = 2 stack.yaml + 22 md——N1 单一分母，manifest 不自引用）；初次确认不需要任何通道；已确认且 digest 无漂移 → NO_CHANGE 零写入；重确认三通道（N2/Owner 09-06 补裁定）：--change <CHANGE-id>（治理通路：drifted 覆盖 / pending 同 ref 终结）或 --ack-drifted --note \"<理由>\"（Owner 手改声明：journal BASELINE_ACK 留痕 + 记录 ack 标记；AI 代跑须持 Owner 指示）；裸重确认 = BASELINE_RECONFIRM_REQUIRES_CHANGE 显式拒绝；closeout 消费：BASELINE_NOT_CONFIRMED / BASELINE_DRIFT 两阻塞码",
+      "基线确认施断（R-L gate；verdict + exit code）：前提 = 阻塞集清零（P-C1：unknowns 台账双词形——豁免登记行不阻塞，阻塞键 BASELINE_UNKNOWNS_REMAINING fail-closed 逐条列出，结构化行形状损坏 INVALID_STATE）；动作 = manifest.yaml 写 confirmed 确认记录（at_seq 时点锚 + 25 文件确认资产清单 sha256 快照 = 2 stack.yaml + 22 md + 1 design-tokens.yaml——N1 单一分母，ADR-20 扩 25，manifest 不自引用）；初次确认不需要任何通道；已确认且 digest 无漂移 → NO_CHANGE 零写入；重确认三通道（N2/Owner 09-06 补裁定）：--change <CHANGE-id>（治理通路：drifted 覆盖 / pending 同 ref 终结）或 --ack-drifted --note \"<理由>\"（Owner 手改声明：journal BASELINE_ACK 留痕 + 记录 ack 标记；AI 代跑须持 Owner 指示）；裸重确认 = BASELINE_RECONFIRM_REQUIRES_CHANGE 显式拒绝；closeout 消费：BASELINE_NOT_CONFIRMED / BASELINE_DRIFT 两阻塞码",
     )
     .option(
       "--change <change-id>",
@@ -3264,6 +3297,80 @@ export function createProgram(
       const outcome = runHandoff(resolveDir(command), task, opts.to as string);
       record({
         command: "handoff",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  // —— recon 命令组（F-M5 首批三乙 B8+B4+B1 + 编排公共壳 B10 乙；.trellis/tasks/09-10-brownfield-recon-wiring） ——
+  // 宿主代码事实 → 17 sidecar 观察回执的机器自动收集通路（persistObservationRecord
+  // 首个生产消费方）。红线：产物只落 evidence/{blobs,observations}/ sidecar 平面
+  // （零直写权威——stack.yaml/manifest/design-tokens/sources index 零写口，字节快照
+  // 测试钉）；零 TransactionOp 新增（零 store 事务）；零新确认链（sidecar 是观察平面
+  // 非权威）；CALLS 边提案零落盘保持（登记归消费方 relations.registerRelation——本批
+  // 不调用）；fail-closed（未初始化 NOT_INITIALIZED / 身份缺席 EXECUTION_NOT_FOUND /
+  // 零源文件 INCONCLUSIVE 负值兜底落账不伪造绿）。
+  const recon = program
+    .command("recon")
+    .description(
+      "宿主代码事实 recon 编排壳（F-M5 首批三乙 B8/B4/B1；B10 乙）：枚举 → 分析/采集 → blob+17 观察回执 sidecar → 呈现——产物只落 evidence/{blobs,observations}/ sidecar 平面，零权威文件写口零 store 事务（persistObservationRecord 首个生产消费方）",
+    );
+  recon
+    .command("import-graph")
+    .description(
+      "宿主源文件 import 图静态扫描（B8 乙）：collectSourceFiles 形态枚举（跳过 node_modules/dist/.git/coverage/.pomaster；.ts/.tsx/.js/.jsx/.mjs/.cjs/.vue）→ kernel analyzeImportGraph 纯函数直调（零第二实现；mapping 恒空——老项目无 governed id，unmapped 清单即产出禁静默丢弃）→ §148 报告落 blob（persistEvidenceArtifact 内容寻址）→ OBS 回执落 17 sidecar（persistObservationRecord；result=OBSERVED 带 blob ref、surface=STRUCTURAL_REALITY、sensor=SENSOR.BUILD.STATIC）→ 呈现（mapping 命中/externalImports/unmapped 清单/confidence）；零源文件 → INCONCLUSIVE 负值兜底落账不伪造绿",
+    )
+    .requiredOption(
+      "--execution-id <AGX-n>",
+      "执行身份锚（AGX-<年份>-<序号>；OBS 回执 execution_id 必填——S1 禁自造身份，须为 executions/ 已登记档案，已封口执行允许事后补录）",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runReconImportGraph(resolveDir(command), {
+        executionId: opts.executionId as string,
+      });
+      record({
+        command: "recon import-graph",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+  recon
+    .command("migrations")
+    .description(
+      "migration 目录盘点（B4 乙）：五栈词形面纯读盘枚举（prisma/flyway/liquibase/alembic/django_style——零外部依赖零工具执行，liquibase/flyway 工具本体 license 红灯不执行；跳过 node_modules/dist/.git/coverage/.pomaster/.venv/venv/vendor/target/build）→ ENVREC 回执落 17 sidecar（persistObservationRecord 显式 recordId；doctor_verdict=WRONG_OR_UNVERIFIED_INSTANCE——纯读盘盘点不确认实例身份）→ 呈现（各栈命中计数 + 文件清单全量零截断）；五栈词形面全缺席 → NOT_RUN 不伪造空跑绿；盘点不碰 stack 分母（零 stack.yaml 写口，词形盘点非 stack 断言）",
+    )
+    .requiredOption(
+      "--execution-id <AGX-n>",
+      "执行身份锚（AGX-<年份>-<序号>；ENVREC 回执 execution_id 必填——S1 禁自造身份，须为 executions/ 已登记档案，已封口执行允许事后补录）",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runReconMigrations(resolveDir(command), {
+        executionId: opts.executionId as string,
+      });
+      record({
+        command: "recon migrations",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+  recon
+    .command("sbom")
+    .description(
+      "SBOM 依赖清单采集腿（B1 乙(a)，cdxgen Apache-2.0）：detect 探 cdxgen 在 PATH（findExecutableOnPath 单一探测面——缺席 → NOT_INSTALLED 显式缺席带 reason+installHint 不伪造）→ spawn `cdxgen -r -o <tmp>/bom.json <root>`（真实 spawnSync；64MB maxBuffer；PATH 引号消毒；tmp 用 os.tmpdir 派生运行后清理）→ CycloneDX 词形校验回读（bomFormat=CycloneDX + specVersion + components[]/dependencies[]——解析失败/词形漂移 → INCONCLUSIVE 负值兜底落账禁默认值）→ BOM 原样字节落 blob（persistEvidenceArtifact）→ OBS 回执落 17 sidecar（result=OBSERVED 带 blob ref；surface=STRUCTURAL_REALITY——PRD §6.4 dependency graph ∈ 结构事实面）→ 呈现（components/dependencies 计数）；stack 候选化不在本批（Proposal 前置）——零 StackObservationCandidate 触碰零 stack.yaml 写口",
+    )
+    .requiredOption(
+      "--execution-id <AGX-n>",
+      "执行身份锚（AGX-<年份>-<序号>；OBS 回执 execution_id 必填——S1 禁自造身份，须为 executions/ 已登记档案，已封口执行允许事后补录）",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runReconSbom(resolveDir(command), {
+        executionId: opts.executionId as string,
+      });
+      record({
+        command: "recon sbom",
         outcome,
         asJson: command.opts().json === true,
       });

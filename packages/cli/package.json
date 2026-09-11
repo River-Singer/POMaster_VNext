@@ -23,6 +23,8 @@
     "@pomaster/gauntlet-lite": "workspace:*",
     "@pomaster/kernel": "workspace:*",
     "@pomaster/schemas": "workspace:*",
-    "commander": "^14.0.1"
+    "ajv": "^8.17.1",
+    "commander": "^14.0.1",
+    "js-yaml": "4.3.2"
   }
 }

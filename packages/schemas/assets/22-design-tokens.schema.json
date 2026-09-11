@@ -1,0 +1,271 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://pomaster.dev/schemas/design-tokens/v1-draft.json",
+  "title": "Design Tokens Contract（.pomaster/baseline/frontend/design-tokens.yaml · F-M1 最小合同，09-10 R3 批）",
+  "description": "Project Baseline 原文 §16 design-tokens.yaml Contract 的机器形态：语义 token 单一合同面（颜色/字体/间距/圆角/阴影/层级/密度/布局/动效/断点九组）——UI 只能从本合同的语义 token 与批准组件取得视觉规则，Agent Context 消费语义 token 而非裸数值（§17 设计原则）。\n起步值纪律：数值来源仅两类——POMaster Default Design 预设默认值（origin=preset，advisory 性质，Owner 确认前不构成项目事实）或留空（起步值 UNKNOWN / null）待 Owner 决策；原文示例数值禁伪造成项目事实（PRD §7.1 NON-AUTHORITATIVE）。\n命名收敛定稿：原文 §16 layout.section_gap vs §17 spacing.section_gap 二选一，定稿 = spacing.section_gap（间距语义归 spacing 组；layout 组留给页面结构键，断点语义归 breakpoints 组）——本 schema 的 layout 组键集不含 section_gap。",
+  "x-pomaster-file-role": "22-design-tokens.schema.json —— Design Token 合同（F-M1 最小合同，09-10 R3 批）。落盘载体 .pomaster/baseline/frontend/design-tokens.yaml（schema 描述其 YAML 同构形态——yaml 装载经 CLI baseline-tokens.ts 读取后校验）；同时是 B6D 批播种分母增量（seeds/manifest.json 26 件）与确认资产清单第 25 文件（BASELINE_CONFIRM_TARGETS——confirm digest 快照/closeout 校验/preset 快照声明三消费面同源，schema 校验与 digest 确认正交：digest 面只看字节，本 schema 管形状）。",
+  "x-pomaster-vocab-source": "Baseline PRD 原文 §13-21（§16 分组骨架逐字 + §17 命名收敛定稿 + §19 preset→customize→baseline 通路 + §75 UNKNOWN/按需增长合法）。origin 词形闭包 preset|customized|owner 为本文件本地闭包（20-sources-authority 开放维度词先例同法——零中央词表 PR；跨包消费时再走词汇表 PR 平移）。UNKNOWN 起步词形与 baseline/stack.yaml 台账同源（B6d 播种纪律）。",
+  "x-pomaster-contract": {
+    "local_origin_closure": "origin 三值本地闭包：preset（播种骨架/预设默认，advisory）| customized（Owner 在 preset 基础上定制）| owner（Owner 全权自著）。meta.customized 是独立机器位（布尔）——origin 表来源，customized 表定制事实；P-D1 customize/diff/confirm 全流程（含 per-token origin 元数据）在后续提案扩位，本合同只冻结 meta 级机器位。",
+    "advisory_preset_values": "origin=preset 的数值是 advisory（非项目事实）：确认（baseline confirm）前不构成权威；P-D1 完整提案前本合同不内置任何预设默认值——本仓未登记 POMaster Default Design 数值，播种面全叶 UNKNOWN。",
+    "confirm_target": "本文件是确认资产清单第 25 文件：修改/删除 = BASELINE_DRIFT（digest 面检出，与 schema 形状判卷正交——形状违规由装载面 fail-closed 拒绝，不混入 digest 比对）。",
+    "not_governed_object": "本合同不是 governed object：不进 truth-index、不走 store 事务、无 lifecycle/authority.owner 信封——设计 token 是项目平面填写面（与 20-sources-authority registry 同域：项目可编辑、seed-once 播种、Owner 全权）。",
+    "groups_closed_keys_open": "九组词形与组内键集按 §16 骨架封闭（键集漂移即 schema 失败——单一词形源纪律，与 stack.yaml 键集同法）；token 增长通道 = 显式 schema 修订（§75「grows only when the project earns the need」——禁 Owner 在组内自造键绕过词形源）。"
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["meta"],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["origin", "customized"],
+      "properties": {
+        "origin": {
+          "enum": ["preset", "customized", "owner"],
+          "title": "来源机器位（本地三值闭包）",
+          "description": "preset = 播种骨架/预设默认（advisory——Owner 确认前不构成项目事实）；customized = Owner 在 preset 基础上定制；owner = Owner 全权自著。"
+        },
+        "customized": {
+          "type": "boolean",
+          "title": "Owner 定制机器位",
+          "description": "true = 文件经 Owner 定制（P-D1 customize/diff/confirm 面消费；与 origin 正交——origin 表来源，customized 表定制事实）。"
+        }
+      }
+    },
+    "color": {
+      "$ref": "#/definitions/color_group",
+      "title": "颜色语义 token（brand/surface/text/border/semantic）"
+    },
+    "typography": {
+      "$ref": "#/definitions/typography_group",
+      "title": "字体语义 token（family/size/weight/line_height）"
+    },
+    "spacing": {
+      "$ref": "#/definitions/spacing_group",
+      "title": "间距 token（xs..xxl + section_gap——命名收敛定稿落位）"
+    },
+    "radius": {
+      "$ref": "#/definitions/radius_group",
+      "title": "圆角 token（sm/md/lg）"
+    },
+    "elevation": {
+      "$ref": "#/definitions/elevation_group",
+      "title": "阴影/层级 token（card/popover/modal）"
+    },
+    "density": {
+      "$ref": "#/definitions/density_group",
+      "title": "密度 token（控件/表格行高）"
+    },
+    "layout": {
+      "$ref": "#/definitions/layout_group",
+      "title": "布局结构 token（页面级；不含 section_gap——间距语义归 spacing 组）"
+    },
+    "motion": {
+      "$ref": "#/definitions/motion_group",
+      "title": "动效时长 token（fast/normal/slow）"
+    },
+    "breakpoints": {
+      "$ref": "#/definitions/breakpoints_group",
+      "title": "响应式断点 token（sm/md/lg/xl）"
+    }
+  },
+  "definitions": {
+    "token_value": {
+      "description": "单 token 值：起步值 UNKNOWN（字符串占位——与 baseline/stack.yaml 同源词形）或 null（留空）= 待 Owner 决策；Owner 回填后为非空字符串（如色值/尺寸词形）或数值。示例数值禁入播种面（NON-AUTHORITATIVE）。",
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "color_group": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "brand": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "primary": { "$ref": "#/definitions/token_value" },
+            "secondary": { "$ref": "#/definitions/token_value" }
+          },
+          "title": "品牌色（primary/secondary）"
+        },
+        "surface": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "page": { "$ref": "#/definitions/token_value" },
+            "container": { "$ref": "#/definitions/token_value" },
+            "elevated": { "$ref": "#/definitions/token_value" }
+          },
+          "title": "表面色（page/container/elevated）"
+        },
+        "text": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "primary": { "$ref": "#/definitions/token_value" },
+            "secondary": { "$ref": "#/definitions/token_value" },
+            "tertiary": { "$ref": "#/definitions/token_value" },
+            "disabled": { "$ref": "#/definitions/token_value" }
+          },
+          "title": "文本色（primary/secondary/tertiary/disabled）"
+        },
+        "border": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "default": { "$ref": "#/definitions/token_value" },
+            "subtle": { "$ref": "#/definitions/token_value" },
+            "strong": { "$ref": "#/definitions/token_value" }
+          },
+          "title": "边框色（default/subtle/strong）"
+        },
+        "semantic": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "success": { "$ref": "#/definitions/token_value" },
+            "warning": { "$ref": "#/definitions/token_value" },
+            "error": { "$ref": "#/definitions/token_value" },
+            "info": { "$ref": "#/definitions/token_value" }
+          },
+          "title": "语义状态色（success/warning/error/info）"
+        }
+      }
+    },
+    "typography_group": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "family": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "sans": { "$ref": "#/definitions/token_value" },
+            "mono": { "$ref": "#/definitions/token_value" }
+          },
+          "title": "字体族（sans/mono）"
+        },
+        "size": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "caption": { "$ref": "#/definitions/token_value" },
+            "body": { "$ref": "#/definitions/token_value" },
+            "body_large": { "$ref": "#/definitions/token_value" },
+            "title_small": { "$ref": "#/definitions/token_value" },
+            "title_medium": { "$ref": "#/definitions/token_value" },
+            "title_large": { "$ref": "#/definitions/token_value" }
+          },
+          "title": "字号（caption/body/body_large/title_small/title_medium/title_large）"
+        },
+        "weight": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "regular": { "$ref": "#/definitions/token_value" },
+            "medium": { "$ref": "#/definitions/token_value" },
+            "semibold": { "$ref": "#/definitions/token_value" }
+          },
+          "title": "字重（regular/medium/semibold）"
+        },
+        "line_height": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "compact": { "$ref": "#/definitions/token_value" },
+            "normal": { "$ref": "#/definitions/token_value" },
+            "relaxed": { "$ref": "#/definitions/token_value" }
+          },
+          "title": "行高（compact/normal/relaxed）"
+        }
+      }
+    },
+    "spacing_group": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "xs": { "$ref": "#/definitions/token_value" },
+        "sm": { "$ref": "#/definitions/token_value" },
+        "md": { "$ref": "#/definitions/token_value" },
+        "lg": { "$ref": "#/definitions/token_value" },
+        "xl": { "$ref": "#/definitions/token_value" },
+        "xxl": { "$ref": "#/definitions/token_value" },
+        "section_gap": {
+          "$ref": "#/definitions/token_value",
+          "title": "节间距（命名收敛定稿：原文 §17 spacing.section_gap 逐字；§16 layout.section_gap 废弃）",
+          "description": "间距语义归 spacing 组（§17 语义 token 先例）；layout 组不承载本键。"
+        }
+      }
+    },
+    "radius_group": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sm": { "$ref": "#/definitions/token_value" },
+        "md": { "$ref": "#/definitions/token_value" },
+        "lg": { "$ref": "#/definitions/token_value" }
+      }
+    },
+    "elevation_group": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "card": { "$ref": "#/definitions/token_value" },
+        "popover": { "$ref": "#/definitions/token_value" },
+        "modal": { "$ref": "#/definitions/token_value" }
+      }
+    },
+    "density_group": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "control_height": { "$ref": "#/definitions/token_value" },
+        "compact_control_height": { "$ref": "#/definitions/token_value" },
+        "table_row_height": { "$ref": "#/definitions/token_value" },
+        "compact_table_row_height": { "$ref": "#/definitions/token_value" }
+      }
+    },
+    "layout_group": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "page_padding": { "$ref": "#/definitions/token_value" },
+        "content_max_width": { "$ref": "#/definitions/token_value" },
+        "sidebar_width": { "$ref": "#/definitions/token_value" },
+        "header_height": { "$ref": "#/definitions/token_value" }
+      },
+      "title": "布局结构键（page_padding/content_max_width/sidebar_width/header_height——§16 键集减 section_gap）"
+    },
+    "motion_group": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "fast": { "$ref": "#/definitions/token_value" },
+        "normal": { "$ref": "#/definitions/token_value" },
+        "slow": { "$ref": "#/definitions/token_value" }
+      }
+    },
+    "breakpoints_group": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sm": { "$ref": "#/definitions/token_value" },
+        "md": { "$ref": "#/definitions/token_value" },
+        "lg": { "$ref": "#/definitions/token_value" },
+        "xl": { "$ref": "#/definitions/token_value" }
+      }
+    }
+  }
+}

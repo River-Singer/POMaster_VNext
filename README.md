@@ -56,8 +56,8 @@ corepack pnpm studio:react:dev  # React sidecar（antd 对照浏览，端口 600
 
 - init 的**技术栈问卷** 14 键逐项必答（前端 9 + 后端 5），答完写回 `baseline/<lane>/stack.yaml`；
 - 选型落定后自动生成 **PRESET-DRAFT 预置草案**——逐条溯源到主题文档与 overlay，Owner 可改；业务实体/接口/数据模型零预置；
-- `pomaster baseline confirm` 以 **sha256 快照烙印**基线；
-- closeout 双重阻断：未确认 → `BASELINE_NOT_CONFIRMED`；确认后改动 → `BASELINE_DRIFT`（检出谁改了架构）；确认后的修改走 `--change` 治理通路。
+- `pomaster baseline confirm` 以 **sha256 快照烙印**基线——快照分母 = 25 文件确认资产清单（2 stack.yaml + 22 份基线 md + design-tokens.yaml）；确认前提是**阻塞集清零**（未销账且未豁免的键才阻塞——Owner 可在 manifest unknowns 台账登记豁免行，登记行不阻塞；doctor/status 呈现阻塞余量）；
+- closeout 双重阻断：未确认 → `BASELINE_NOT_CONFIRMED`；确认后改动 → `BASELINE_DRIFT`（检出谁改了架构）。漂移的消解必须显式留痕——重确认三通道：`--change <CHANGE-id>` 治理通路 / `--ack-drifted --note "<理由>"` Owner 手改声明（AI 代跑须持 Owner 指示）/ 裸重确认显式拒绝。
 
 ### ④ 证据链：一切结论带收据
 
@@ -75,7 +75,7 @@ pomaster alerts
 pomaster doctor
 pomaster portability bootstrap/check
 pomaster update --check/--yes
-pomaster baseline set/confirm   # set = 单键后补销账；confirm = 基线确认 gate（14 unknowns 销账后 digest 快照——closeout 阻断码与 doctor/status 确认态的消费源）
+pomaster baseline set/confirm   # set = 单键销账（确认态在座改型须持 --change——写入转 pending-change 批，同 ref confirm 终结）；confirm = 基线确认 gate（前提 = 阻塞集清零：未销账且未豁免的键，manifest 豁免登记行不阻塞；快照 = 25 文件确认资产清单 sha256；重确认三通道 --change / --ack-drifted --note / 裸重确认拒绝；doctor/status 呈现确认态与阻塞余量——closeout 阻断码的消费源）
 
 # ① DISCOVERY —— 需求拷问/问题闸/决议图（Brainstorm/Question Gate）
 pomaster brainstorm start/question-gate/status/decide/promote
@@ -113,6 +113,7 @@ pomaster resolve "<need>" [--hints ...]
 pomaster new-entity check <governed-id> [--need ...]
 pomaster inspect <governed-id>
 pomaster graph <governed-id> [--view impact]
+pomaster recon import-graph|migrations|sbom    # 宿主代码 recon（三子命令均必持 --execution-id <AGX-n>——execution begin 登记的执行身份锚，观察回执的身份证明）：import 图静态扫描 → 17 观察回执 sidecar（unmapped 清单/externalImports/confidence）/ migration 目录五栈词形盘点（prisma/flyway/liquibase/alembic/django_style 纯读盘零工具执行 → ENVREC 回执）/ SBOM 依赖清单采集（cdxgen 腿——工具缺席 NOT_INSTALLED 显式缺席、解析失败 INCONCLUSIVE 兜底，components/dependencies 计数）——产物只落 evidence sidecar 平面零权威写口
 pomaster research list/inspect/request/handoff
 pomaster eval --suite behavioral
 pomaster catalog status/explain/relock
@@ -146,7 +147,7 @@ cd your-project
 pomaster init
 ```
 
-一条命令，幂等（重复执行 NO_CHANGE，人类文件一律不覆盖）：铺出 `.pomaster/` 治理目录树、登记 19 份 SPEC 预植对象、生成 `AGENTS.md` 重入口（15 份 skills 命令卡 + hooks 注入——Agent 开会话即自动看到治理状态）。init 还会**自动观察宿主 `package.json`**：框架/router/状态/Grid/UI 库/测试栈等可观察事实直接回填 stack.yaml（标注 `[Observed: package.json]`），问卷只问规范性决策（如 CSS 方案）——TTY 下技术栈问卷只问机器观察不出的键（中断 = 零写入；后补用 `pomaster baseline set`）。
+一条命令，幂等（重复执行 NO_CHANGE，人类文件一律不覆盖）：铺出 `.pomaster/` 治理目录树、登记 19 份 SPEC 预植对象、生成 `AGENTS.md` 重入口（14 份 skills 命令卡 + hooks 注入——Agent 开会话即自动看到治理状态）。init 还会**自动观察宿主 `package.json`**：框架/router/状态/Grid/UI 库/测试栈等可观察事实登记为**观察候选**（问卷题面标注 `[Observed: package.json]`）——候选只是题面参考注记，权威 stack.yaml 保持 UNKNOWN，直到 Owner 经问卷或 `pomaster baseline set` 逐键采纳；TTY 下技术栈问卷 14 键逐项必答（中断 = 零写入）。
 
 **组件画廊**：[river-singer.github.io/POMaster_VNext](https://river-singer.github.io/POMaster_VNext/)（在线版）· POMaster 仓库内 `corepack pnpm studio:dev`（Vue 主实例）/ `corepack pnpm studio:react:dev`（React sidecar 对照）——baseline 确认后按栈选择性参考（如 baseline.ui=ant-design-vue → antdv 组件真渲染对照）；未确认前仅作了解，不作为动手前置。
 
@@ -187,7 +188,7 @@ pomaster brainstorm promote idea-export-btn --to TASK --basis msd_reached --appl
 # —— 八拍推进：next-action 会逐拍给唯一建议命令 ——
 pomaster status                                   # R_PERMIT_MISSING（--subject 为 affected_objects 派生建议）
 pomaster permit issue --subject PAGE.USER_LIST --actor human:owner --change-ref TASK.IDEA_EXPORT_BTN
-pomaster baseline confirm                         # R_BASELINE_NOT_READY（unknowns 全销账后的一次性收口账）
+pomaster baseline confirm                         # R_BASELINE_NOT_READY（阻塞集清零后的一次性收口账）
 pomaster context compile --role frontend --change TASK.IDEA_EXPORT_BTN   # ③ 投影
 pomaster execution begin --role implementer --runtime script --identity-kind script --task-id TASK.IDEA_EXPORT_BTN  # ④ 执行身份
 # ……在你的 Agent harness（Claude Code 等）里实现代码……

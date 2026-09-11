@@ -1,15 +1,16 @@
 /**
- * baseline-seeds.spec.ts —— B6d baseline 体系 25 文件新著的专属断言面
- * （vNext Batch 6 R4；prd.md R4 红线：UNKNOWN 起步词形贯穿、「待填写」零残留；
+ * baseline-seeds.spec.ts —— B6d baseline 体系 26 文件新著的专属断言面
+ * （vNext Batch 6 R4 + 09-10 R3/F-M1 增量 design-tokens.yaml；prd.md R4 红线：
+ * UNKNOWN 起步词形贯穿、「待填写」零残留；
  * porting-design-proposal §3 baseline 提案 + PRD §3 树职责注释逐字）。
  *
  * 与 seed-manifest.spec.ts 的分工：本文件只钉 baseline 面（词形纪律/台账对账/骨架
  * 结构），分母与装载兼容面在 seed-manifest.spec.ts（避免双重维护）。
  *
  * 钉面：
- * - 25 分母逐文件钉（manifest 1 + frontend 7 + backend 8 + data 5 + platform 4；
- *   文件名集合 = PRD §3 树逐字——漂移即爆）；
- * - UNKNOWN 词形纪律（零发明内容红线）：25 件零「待填写」类占位词形、零具体技术
+ * - 26 分母逐文件钉（manifest 1 + frontend 8 + backend 8 + data 5 + platform 4；
+ *   文件名集合 = PRD §3 树逐字 + design-tokens.yaml（R3）——漂移即爆）；
+ * - UNKNOWN 词形纪律（零发明内容红线）：26 件零「待填写」类占位词形、零具体技术
  *   默认词（词表 = PRD §7.1 警示句列举词 + B6c PROFILE 卡 includes 组合词——NON-
  *   AUTHORITATIVE 纪律：示例只住 PRD/catalog 注记）、零阈值数字、零墙钟（A4）；
  * - manifest.yaml 形态（提案 §3 schema）：yaml 直接可解析 + id/schema_version/seed/
@@ -18,13 +19,19 @@
  *   预填（衔接面：catalog PROFILE 卡 includes 组合不住播种面，选中态由本文件显式
  *   选型承载——B6c STACK_OVERLAY_NOTE 注记的 B6d 落位）；
  * - md 骨架结构：统一正文头（路径/职责行）+ 逐节「起步值:UNKNOWN」（节/起步值
- *   一一对账）；节名 = PRD §3 职责注释词形。
+ *   一一对账）；节名 = PRD §3 职责注释词形；
+ * - design-tokens.yaml 形态（R3/F-M1 最小合同，原文 Baseline PRD §13-21）：meta
+ *   机器位（origin=preset / customized=false）+ 九组键形逐字 + 全叶值 UNKNOWN +
+ *   spacing.section_gap 命名收敛定稿（§16 layout.section_gap 废弃）+ 过
+ *   22-design-tokens.schema.json。
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
+import Ajv from "ajv";
 import yaml from "js-yaml";
+import { designTokensSchema } from "@pomaster/schemas";
 import { loadSeedManifestEntries, seedsRootCandidates } from "../src/seed-manifest.js";
 
 const seedsRoot = seedsRootCandidates(import.meta.url)[0]!;
@@ -91,6 +98,7 @@ const EXPECTED_FILES: Record<string, readonly string[]> = {
     "architecture.md",
     "directory-structure.md",
     "design-system.md",
+    "design-tokens.yaml",
     "state-and-data.md",
     "api-and-error.md",
     "quality.md",
@@ -194,16 +202,16 @@ function unknownsLedger(): string[] {
     ...BE_STACK_KEYS.map((k) => `baseline/backend/stack.yaml:${k}`)];
 }
 
-describe("B6d baseline 分母：25 文件逐文件钉（PRD §3 树逐字）", () => {
-  it("清单 B6D 批名单恰 25 且文件集合逐字对账（1 + 7 + 8 + 5 + 4）", () => {
+describe("B6d baseline 分母：26 文件逐文件钉（PRD §3 树逐字 + R3 tokens 补位）", () => {
+  it("清单 B6D 批名单恰 26 且文件集合逐字对账（1 + 8 + 8 + 5 + 4）", () => {
     const b6d = manifest.batches?.["B6D"] ?? [];
-    expect(b6d).toHaveLength(25);
+    expect(b6d).toHaveLength(26);
     const expected = new Set<string>(["baseline/manifest.yaml"]);
     for (const [dir, files] of Object.entries(EXPECTED_FILES)) {
       if (dir === "baseline/manifest.yaml") continue;
       for (const f of files) expected.add(`${dir}/${f}`);
     }
-    expect(new Set(b6d).size).toBe(25);
+    expect(new Set(b6d).size).toBe(26);
     expect(new Set(BASELINE_ENTRIES.map((e) => e.asset))).toEqual(expected);
     // 播种目标词形（.pomaster/ 树内 + 播种分区 allowlist 面——seeds.ts 守卫的清单侧前提）。
     for (const entry of BASELINE_ENTRIES) {
@@ -211,8 +219,8 @@ describe("B6d baseline 分母：25 文件逐文件钉（PRD §3 树逐字）", (
     }
   });
 
-  it("装载面：25 条归约形态在座且 authoring=new（纯正文 + 自指指纹由装载器校验）", () => {
-    expect(baselineSeeds).toHaveLength(25);
+  it("装载面：26 条归约形态在座且 authoring=new（纯正文 + 自指指纹由装载器校验）", () => {
+    expect(baselineSeeds).toHaveLength(26);
     for (const entry of baselineSeeds) {
       expect(entry.path.startsWith(".pomaster/baseline/")).toBe(true);
       expect(entry.content.startsWith("---\n")).toBe(false);
@@ -231,20 +239,20 @@ describe("B6d baseline 分母：25 文件逐文件钉（PRD §3 树逐字）", (
 });
 
 describe("B6d UNKNOWN 词形纪律（零发明内容红线）", () => {
-  it("25 件零「待填写」类占位词形（R4 红线——起步值一律 UNKNOWN）", () => {
+  it("26 件零「待填写」类占位词形（R4 红线——起步值一律 UNKNOWN）", () => {
     for (const entry of baselineSeeds) {
       expect(FORBIDDEN_PLACEHOLDER.test(entry.content), entry.path).toBe(false);
     }
   });
 
-  it("25 件零具体技术默认词（NON-AUTHORITATIVE：示例只住 PRD/catalog 注记；词表含 PROFILE 卡 includes 组合词）", () => {
+  it("26 件零具体技术默认词（NON-AUTHORITATIVE：示例只住 PRD/catalog 注记；词表含 PROFILE 卡 includes 组合词）", () => {
     for (const entry of baselineSeeds) {
       const hit = entry.content.match(FORBIDDEN_TECH);
       expect(hit, `${entry.path} 命中技术默认词: ${hit?.[0]}`).toBeNull();
     }
   });
 
-  it("25 件零阈值数字与零墙钟（A4；阈值数字由 Owner 决策后写入）", () => {
+  it("26 件零阈值数字与零墙钟（A4；阈值数字由 Owner 决策后写入）", () => {
     for (const entry of baselineSeeds) {
       expect(FORBIDDEN_THRESHOLD.test(entry.content), entry.path).toBe(false);
       expect(WALLCLOCK.test(entry.content), entry.path).toBe(false);
@@ -272,7 +280,7 @@ describe("B6d UNKNOWN 词形纪律（零发明内容红线）", () => {
       const actual = (body.match(/^## (.+)$/gm) ?? []).map((s) => s.slice(3));
       expect(actual, asset).toEqual([...sections]);
     }
-    // 分母完整性：EXPECTED_SECTIONS 覆盖恰 22 件 md（25 - manifest - 2 stack）。
+    // 分母完整性：EXPECTED_SECTIONS 覆盖恰 22 件 md（26 - manifest - 2 stack - 1 tokens yaml）。
     expect(Object.keys(EXPECTED_SECTIONS)).toHaveLength(22);
   });
 });
@@ -321,5 +329,111 @@ describe("B6d stack.yaml 形态（PRD §3 键集逐字；值全 UNKNOWN）", () 
     // 衔接注记在座（B6c STACK_OVERLAY_NOTE 的 B6d 落位——stack.yaml 显式选型承载 bound）。
     expect(fe.includes("bound")).toBe(true);
     expect(be.includes("bound")).toBe(true);
+  });
+});
+
+// ============================================================
+// R3 design-tokens seed 合同（F-M1 最小骨架；Baseline PRD §13-21 + schema 22）
+// ============================================================
+
+/** 原文 §16 分组键形（+§17 命名收敛定稿 spacing.section_gap）——键集漂移即爆。 */
+const EXPECTED_TOKEN_SHAPE: Record<string, readonly string[]> = {
+  color: ["brand", "surface", "text", "border", "semantic"],
+  typography: ["family", "size", "weight", "line_height"],
+  spacing: ["xs", "sm", "md", "lg", "xl", "xxl", "section_gap"],
+  radius: ["sm", "md", "lg"],
+  elevation: ["card", "popover", "modal"],
+  density: ["control_height", "compact_control_height", "table_row_height", "compact_table_row_height"],
+  layout: ["page_padding", "content_max_width", "sidebar_width", "header_height"],
+  motion: ["fast", "normal", "slow"],
+  breakpoints: ["sm", "md", "lg", "xl"],
+};
+
+const COLOR_SUB: Record<string, readonly string[]> = {
+  brand: ["primary", "secondary"],
+  surface: ["page", "container", "elevated"],
+  text: ["primary", "secondary", "tertiary", "disabled"],
+  border: ["default", "subtle", "strong"],
+  semantic: ["success", "warning", "error", "info"],
+};
+
+const TYPO_SUB: Record<string, readonly string[]> = {
+  family: ["sans", "mono"],
+  size: ["caption", "body", "body_large", "title_small", "title_medium", "title_large"],
+  weight: ["regular", "medium", "semibold"],
+  line_height: ["compact", "normal", "relaxed"],
+};
+
+describe("R3 design-tokens seed 合同（meta 机器位 + 九组键形 + 命名收敛定稿）", () => {
+  const doc = yaml.load(assetText("baseline/frontend/design-tokens.yaml")) as Record<string, unknown>;
+
+  /** 展平嵌套 token 文档 → 「group.key[.sub] = value」词形集（叶值全 UNKNOWN 断言的机械面）。 */
+  function flatten(node: unknown, path: readonly string[]): Map<string, unknown> {
+    const leaves = new Map<string, unknown>();
+    if (typeof node === "object" && node !== null && !Array.isArray(node)) {
+      for (const [key, value] of Object.entries(node as Record<string, unknown>)) {
+        if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+          for (const [leaf, v] of flatten(value, [...path, key])) leaves.set(leaf, v);
+        } else {
+          leaves.set([...path, key].join("."), value);
+        }
+      }
+    }
+    return leaves;
+  }
+
+  it("meta 机器位逐字（origin=preset / customized=false——R3/F-M1 批定义词形）", () => {
+    expect(doc["meta"]).toEqual({ origin: "preset", customized: false });
+  });
+
+  it("九组键形 == 原文 §16 分组逐字（+§17 收敛 spacing.section_gap；layout 组无 section_gap）", () => {
+    for (const [group, keys] of Object.entries(EXPECTED_TOKEN_SHAPE)) {
+      const node = doc[group];
+      expect(node, group).toBeDefined();
+      expect(Object.keys(node as Record<string, unknown>), group).toEqual([...keys]);
+    }
+    // 命名收敛定稿钉：间距语义归 spacing 组（§17 语义 token 先例），layout 组不承载。
+    expect(Object.keys(doc.spacing as Record<string, unknown>)).toContain("section_gap");
+    expect(Object.keys(doc.layout as Record<string, unknown>)).not.toContain("section_gap");
+    // color/typography 二级子键逐字（嵌套组的叶位）。
+    const color = doc.color as Record<string, Record<string, unknown>>;
+    for (const [sub, keys] of Object.entries(COLOR_SUB)) {
+      expect(Object.keys(color[sub]!), `color.${sub}`).toEqual([...keys]);
+    }
+    const typography = doc.typography as Record<string, Record<string, unknown>>;
+    for (const [sub, keys] of Object.entries(TYPO_SUB)) {
+      expect(Object.keys(typography[sub]!), `typography.${sub}`).toEqual([...keys]);
+    }
+  });
+
+  it("全叶值 UNKNOWN（零发明内容：本仓无 POMaster Default Design 预设默认值登记——原文示例数值禁伪造成项目事实）", () => {
+    const leaves = flatten(doc, []);
+    expect(leaves.get("meta.origin")).toBe("preset");
+    expect(leaves.size).toBeGreaterThan(40);
+    for (const [path, value] of leaves) {
+      if (path.startsWith("meta.")) continue;
+      expect(value, path).toBe("UNKNOWN");
+    }
+    // 头注收敛定稿理由在座（§16 vs §17 二选一的记录义务——任务 R3 实施要求第 2 条）。
+    expect(assetText("baseline/frontend/design-tokens.yaml")).toContain("spacing.section_gap");
+    expect(assetText("baseline/frontend/design-tokens.yaml")).toContain("layout.section_gap");
+  });
+
+  it("seed 实物过 22-design-tokens.schema.json（ajv 正例）；origin 词形越界 = 负例 fail-closed", () => {
+    const ajv = new Ajv({ strict: false, allErrors: true });
+    const validate = ajv.compile(designTokensSchema as object);
+    expect(validate(JSON.parse(JSON.stringify(doc)))).toBe(true);
+
+    const bad = JSON.parse(JSON.stringify(doc)) as Record<string, unknown>;
+    (bad["meta"] as Record<string, unknown>)["origin"] = "default";
+    expect(validate(bad)).toBe(false);
+
+    const extraGroup = JSON.parse(JSON.stringify(doc)) as Record<string, unknown>;
+    extraGroup["shadows"] = { card: "UNKNOWN" };
+    expect(validate(extraGroup)).toBe(false);
+
+    const extraKey = JSON.parse(JSON.stringify(doc)) as Record<string, unknown>;
+    (extraKey["layout"] as Record<string, unknown>)["section_gap"] = "UNKNOWN";
+    expect(validate(extraKey)).toBe(false);
   });
 });

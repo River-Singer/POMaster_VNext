@@ -314,14 +314,14 @@ assert(
 );
 assert(!themeSample.includes("GENERATED"), "播种件 marker-free 抽查（主题文档）");
 
-// baseline 面（B6d）：manifest 1 + frontend 7 + backend 8 + data 5 + platform 4 =
-// 25 件（UNKNOWN 起步；「待填写」旧词形零残留——R4 红线抽查）。
+// baseline 面（B6d）：manifest 1 + frontend 8 + backend 8 + data 5 + platform 4 =
+// 26 件（UNKNOWN 起步；「待填写」旧词形零残留——R4 红线抽查；frontend 7→8：R3/ADR-20 增 design-tokens.yaml）。
 const seededBaselineDir = join(SMOKE_DIR, ".pomaster", "baseline");
 assert(
   existsSync(join(seededBaselineDir, "manifest.yaml")),
   "init 播种件落盘：baseline/manifest.yaml（身份/unknowns 台账）",
 );
-const BASELINE_LANE_COUNTS = { frontend: 7, backend: 8, data: 5, platform: 4 };
+const BASELINE_LANE_COUNTS = { frontend: 8, backend: 8, data: 5, platform: 4 };
 for (const [lane, count] of Object.entries(BASELINE_LANE_COUNTS)) {
   const laneDir = join(seededBaselineDir, lane);
   // 只数播种件（目录另含 init 布局步骤落的 README.md，非播种件——FE 面同款口径）。

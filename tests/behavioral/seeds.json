@@ -685,6 +685,7 @@
           "task_execution_active": false,
           "baseline_gate_codes": [],
           "baseline_unknowns_remaining": null,
+          "baseline_blocking_remaining": null,
           "baseline_pending_change_ref": null
         }
       },
@@ -728,6 +729,7 @@
           "task_execution_active": false,
           "baseline_gate_codes": [],
           "baseline_unknowns_remaining": null,
+          "baseline_blocking_remaining": null,
           "baseline_pending_change_ref": null
         }
       },
@@ -745,12 +747,12 @@
     {
       "id": "L5-E-03-route-baseline-not-confirmed",
       "family": "E",
-      "title": "baseline 未确认（unknowns 全销账）→ R_BASELINE_NOT_READY（beat 0；closeout 判卷会被闸拒）",
+      "title": "baseline 未确认（阻塞集清零）→ R_BASELINE_NOT_READY（beat 0；closeout 判卷会被闸拒）",
       "evaluator": "next_action",
       "provenance": {
         "corpus": "packages/cli/src/next-action.ts",
         "anchor": "#NEXT_ACTION_ROUTE_TABLE[R_BASELINE_NOT_READY]",
-        "note_md": "baseline 确认态路由行（T2 R5）：baseline_gate_codes 含 BASELINE_NOT_CONFIRMED 且 unknowns_remaining=0 → 裸 confirm 命令。unknowns 未销账时不路由（诚实缺席——指 confirm 只会被 confirm 自身闸拒，见 E 族 fixtures 分界）。"
+        "note_md": "baseline 确认态路由行（T2 R5；P-C1 判据收窄）：baseline_gate_codes 含 BASELINE_NOT_CONFIRMED 且 blocking_remaining=0 → 裸 confirm 命令。阻塞键在册时不路由（诚实缺席——指 confirm 只会被 confirm 自身闸拒，见 E 族 fixtures 分界）；豁免登记行在册（总口径 unknowns>0 而阻塞 0）照常路由。"
       },
       "input": {
         "snapshot": {
@@ -779,6 +781,7 @@
             "BASELINE_NOT_CONFIRMED"
           ],
           "baseline_unknowns_remaining": 0,
+          "baseline_blocking_remaining": 0,
           "baseline_pending_change_ref": null
         }
       },
@@ -830,6 +833,7 @@
             "BASELINE_DRIFT"
           ],
           "baseline_unknowns_remaining": 0,
+          "baseline_blocking_remaining": 0,
           "baseline_pending_change_ref": null
         }
       },
@@ -884,6 +888,7 @@
           "task_execution_active": false,
           "baseline_gate_codes": [],
           "baseline_unknowns_remaining": null,
+          "baseline_blocking_remaining": null,
           "baseline_pending_change_ref": null
         }
       },
@@ -937,6 +942,7 @@
           "task_execution_active": false,
           "baseline_gate_codes": [],
           "baseline_unknowns_remaining": null,
+          "baseline_blocking_remaining": null,
           "baseline_pending_change_ref": null
         }
       },
@@ -993,6 +999,7 @@
           "task_execution_active": false,
           "baseline_gate_codes": [],
           "baseline_unknowns_remaining": null,
+          "baseline_blocking_remaining": null,
           "baseline_pending_change_ref": null
         }
       },
@@ -1047,6 +1054,7 @@
           "task_execution_active": false,
           "baseline_gate_codes": [],
           "baseline_unknowns_remaining": null,
+          "baseline_blocking_remaining": null,
           "baseline_pending_change_ref": null
         }
       },
@@ -1098,6 +1106,7 @@
           "task_execution_active": false,
           "baseline_gate_codes": [],
           "baseline_unknowns_remaining": null,
+          "baseline_blocking_remaining": null,
           "baseline_pending_change_ref": null
         }
       },
@@ -1152,6 +1161,7 @@
           "task_execution_active": true,
           "baseline_gate_codes": [],
           "baseline_unknowns_remaining": null,
+          "baseline_blocking_remaining": null,
           "baseline_pending_change_ref": null
         }
       },
@@ -1205,6 +1215,7 @@
           "task_execution_active": false,
           "baseline_gate_codes": [],
           "baseline_unknowns_remaining": null,
+          "baseline_blocking_remaining": null,
           "baseline_pending_change_ref": null
         }
       },
@@ -1254,6 +1265,7 @@
           "task_execution_active": false,
           "baseline_gate_codes": [],
           "baseline_unknowns_remaining": null,
+          "baseline_blocking_remaining": null,
           "baseline_pending_change_ref": null
         }
       },
@@ -1307,6 +1319,7 @@
           "task_execution_active": null,
           "baseline_gate_codes": [],
           "baseline_unknowns_remaining": null,
+          "baseline_blocking_remaining": null,
           "baseline_pending_change_ref": null
         }
       },
@@ -1358,6 +1371,7 @@
           "task_execution_active": false,
           "baseline_gate_codes": [],
           "baseline_unknowns_remaining": null,
+          "baseline_blocking_remaining": null,
           "baseline_pending_change_ref": null
         }
       },
@@ -1409,6 +1423,7 @@
             "BASELINE_NOT_CONFIRMED"
           ],
           "baseline_unknowns_remaining": 0,
+          "baseline_blocking_remaining": 0,
           "baseline_pending_change_ref": null
         }
       },

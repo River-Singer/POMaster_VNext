@@ -14,7 +14,7 @@ import { mkdtempSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, 
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { runCompact, runPermitIssue, createProgram, type CompactResult } from "@pomaster/cli";
+import { runCompact, runPermitIssue, createProgram, applyStackAnswers, type StackAnswer, type CompactResult } from "@pomaster/cli";
 import {
   AGENTS_MD_RELATIVE,
   AUTHORITY_RELATIVE,
@@ -56,7 +56,7 @@ function read(relative: string): string {
 
 /**
  * 重入口默认（claude 缺省）应产出的全部文件清单（骨架 4 + AGENTS/CLAUDE + settings +
- * 15×2 skills + 预铺 40 目录 README + layout.json + B6c-B6G+B7 播种 102 份——预铺面
+ * 15×2 skills + 预铺 40 目录 README + layout.json + B6c-B6G+B7 播种 102 份 + R3 tokens 补位 103 份——预铺面
  * 清单单源 layout.ts 常量（Batch 2 D7/C9 增量 state/contexts + evidence/observations；
  * Batch 6 B6a 增量 baseline/specs 播种面两子树——目录登记含其中，播种文件面 B6c-B6G+B7
  * 各批在册）。
@@ -87,7 +87,7 @@ describe("init 首次创建（CREATED）", () => {
     expect(outcome.result.files.map((f) => f.file).sort()).toEqual(
       heavyDefaultExpectedFiles(),
     );
-    // seeded = 播种件（B6c-B6G+B7-THEME 各批 102 份）缺席写入——非 init 再生成物，与 created 分账。
+    // seeded = 播种件（B6c-B6G+B7-THEME 各批 102 份 + R3 tokens 补位 103 份）缺席写入——非 init 再生成物，与 created 分账。
     expect(
       outcome.result.files.every(
         (f) => f.action === "created" || f.action === "seeded",
@@ -243,7 +243,7 @@ describe("init 幂等（任务契约：连续两次 init 第二次 NO_CHANGE）"
     expect(third.result.change).toBe("NO_CHANGE");
   });
 
-  it("T2 R4 观察面幂等：宿主 package.json 在座重跑——首跑 observed=8，二跑 NO_CHANGE + observed=0 + skipped_resolved=8（观察不反写不重复落盘）", async () => {
+  it("F14 观察候选幂等：宿主 package.json 在座——观察不直写权威基线，两跑 observed=8（候选未采纳不衰减）+ stack.yaml 字节不变 + 台账零销账", async () => {
     // 宿主依赖与 golden fixture 同构（vue 栈 + typescript）——FE 可观察 8 键全命中。
     writeFileSync(
       join(dir, "package.json"),
@@ -266,17 +266,65 @@ describe("init 幂等（任务契约：连续两次 init 第二次 NO_CHANGE）"
       observed: 8,
       skipped_resolved: 0,
     });
-    // 首跑已把 8 键写入 FE stack.yaml——重跑必须零触碰（已销账键 skipped，不重复改写）。
+    // F14 候选化（ADR-19）：观察候选不直写权威 stack.yaml（可观察 8 键保持
+    // UNKNOWN）、不再销账 manifest 台账（未采纳候选键 = flat 行在座，缺省
+    // BLOCKING——与原未知键同行为）。
     const stackAfterFirst = read(".pomaster/baseline/frontend/stack.yaml");
+    expect(stackAfterFirst).toContain("framework: UNKNOWN");
+    expect(stackAfterFirst).not.toContain("[Observed");
+    const feLedgerRows = read(".pomaster/baseline/manifest.yaml")
+      .split("\n")
+      .filter((line) => /^\s*-\s*baseline\/frontend\/stack\.yaml:/.test(line)).length;
+    expect(feLedgerRows).toBe(9);
+    // 二跑：候选未采纳不衰减（observed 恒 8 直至 Owner adoption），字节零变化
+    // NO_CHANGE——候选登记零写入（幂等铁律不破）。
     const second = await runInit(dir);
     expect(second.ok).toBe(true);
     expect(second.result.change).toBe("NO_CHANGE");
     expect(second.result.observation).toEqual({
       source: "package.json",
+      observed: 8,
+      skipped_resolved: 0,
+    });
+    expect(read(".pomaster/baseline/frontend/stack.yaml")).toBe(stackAfterFirst);
+  });
+
+  it("F14 adoption 后重跑：已采纳 8 键分账出局 skipped_resolved=8、observed=0（候选随权威值收敛）", async () => {
+    writeFileSync(
+      join(dir, "package.json"),
+      `${JSON.stringify({
+        dependencies: {
+          vue: "^3.4.0",
+          "vue-router": "^4.2.0",
+          pinia: "^2.1.0",
+          "element-plus": "^2.4.0",
+          "ag-grid-community": "^31.0.0",
+        },
+        devDependencies: { typescript: "^5.0.0", vite: "^5.0.0", vitest: "^1.0.0" },
+      })}\n`,
+      "utf8",
+    );
+    await runInit(dir);
+    // adoption：Owner 按观察候选值经既有落盘通路（applyStackAnswers——问卷生产者）
+    // 逐键回填 FE 可观察 8 键；此后候选分账出局（观察不再参与已采纳键）。
+    const observedAnswers: StackAnswer[] = [
+      { lane: "frontend", key: "framework", value: "vue3" },
+      { lane: "frontend", key: "language", value: "typescript" },
+      { lane: "frontend", key: "build", value: "vite" },
+      { lane: "frontend", key: "router", value: "vue-router" },
+      { lane: "frontend", key: "state", value: "pinia" },
+      { lane: "frontend", key: "grid", value: "ag-grid" },
+      { lane: "frontend", key: "ui", value: "element-plus" },
+      { lane: "frontend", key: "testing", value: "vitest" },
+    ];
+    expect(await applyStackAnswers(dir, observedAnswers, [], [])).toBe(8);
+    const rerun = await runInit(dir);
+    expect(rerun.ok).toBe(true);
+    expect(rerun.result.observation).toEqual({
+      source: "package.json",
       observed: 0,
       skipped_resolved: 8,
     });
-    expect(read(".pomaster/baseline/frontend/stack.yaml")).toBe(stackAfterFirst);
   });
 });
 

@@ -606,7 +606,7 @@ describe("Discovery 状态链 × closeout 全链（P18×P13 闭环）", () => {
     ).toMatchObject({ change: "CONFIRMED" });
     expect(
       (envelopeOf(steps.baselineConfirm).result as { digests: unknown[] }).digests,
-    ).toHaveLength(24); // N1：确认分母 = 24 文件单一资产清单（2 stack.yaml + 22 md）
+    ).toHaveLength(25); // N1：确认分母 = 25 文件单一资产清单（2 stack.yaml + 22 md + 1 design-tokens.yaml，ADR-20）
     expect(steps.closeout2.code).toBe(1);
     const codes2 = envelopeOf(steps.closeout2).errors.map((e) => e.code);
     expect(codes2).toContain("GATE_EVIDENCE_MISSING");

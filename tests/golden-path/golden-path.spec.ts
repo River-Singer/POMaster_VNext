@@ -104,7 +104,8 @@ interface ChainRecords {
   readonly permitIssue: StepRecord;
   /** permit issue 后 status（R_MANIFEST_MISSING 时点；GP-6②）。 */
   readonly routeAfterPermit: StepRecord;
-  /** baseline 后补销账（css + BE 5 键——init 观察后剩余的规范性决策/BE 分母；GP-1 配套）。 */
+  /** baseline 收口 14 键（F14 ADR-19 候选化：FE 8 观察候选经 set 通路 adoption + css
+   *  规范决策 + BE 5 键——观察不再直写代答， adoption 走既有 set 通路）。 */
   readonly baselineSet: StepRecord[];
   /** 销账后 status（R_BASELINE_NOT_READY 时点——T2 R5 新信号）。 */
   readonly routeBaselineReady: StepRecord;
@@ -349,23 +350,33 @@ beforeAll(async () => {
   ]);
   const routeAfterPermit = await runJsonStep(root, ["status"]);
 
-  // —— baseline 收口（T2 R5）：init 观察掉 FE 8 键后剩余 6 unknowns（css 规范决策
-  //    + BE 5 键）非交互销账 → status 呈 R_BASELINE_NOT_READY（新信号）→ confirm 还账。 ——
+  // —— baseline 收口（T2 R5 · F14 ADR-19 候选化）：观察不再直写权威 stack.yaml——
+  //    FE 8 候选键经 set 通路 adoption（Owner 采纳观察候选值）+ css 规范决策 +
+  //    BE 5 键非交互销账全过（14 unknowns 全销账）→ status 呈 R_BASELINE_NOT_READY
+  //    （新信号）→ confirm 还账。 ——
   const baselineSet: StepRecord[] = [];
-  for (const [lane, key] of [
-    ["frontend", "css"],
-    ["backend", "language"],
-    ["backend", "framework"],
-    ["backend", "persistence"],
-    ["backend", "database"],
-    ["backend", "cache"],
+  for (const [lane, key, value] of [
+    ["frontend", "framework", "vue3"],
+    ["frontend", "language", "typescript"],
+    ["frontend", "build", "vite"],
+    ["frontend", "router", "vue-router"],
+    ["frontend", "state", "pinia"],
+    ["frontend", "grid", "ag-grid"],
+    ["frontend", "ui", "element-plus"],
+    ["frontend", "testing", "vitest"],
+    ["frontend", "css", "frontend-css-value"],
+    ["backend", "language", "backend-language-value"],
+    ["backend", "framework", "backend-framework-value"],
+    ["backend", "persistence", "backend-persistence-value"],
+    ["backend", "database", "backend-database-value"],
+    ["backend", "cache", "none"],
   ] as const) {
     baselineSet.push(
       await runJsonStep(root, [
         "baseline", "set",
         "--lane", lane,
         "--key", key,
-        "--value", key === "cache" ? "none" : `${lane}-${key}-value`,
+        "--value", value,
       ]),
     );
   }
@@ -503,7 +514,7 @@ describe("fixture 生成器（D-6 确定性测试床）", () => {
 
 describe("Golden Path 十条验收（GP-1~GP-3：init 观察与 question-gate）", () => {
   it(
-    "GP-1 [T2已摘帽] init 观察项目技术事实：stack.yaml 可观察键为值 + [Observed: package.json] 标注而非 UNKNOWN；问卷分母同步收缩",
+    "GP-1 [F14候选化] init 观察项目技术事实成候选登记：权威 stack.yaml 保持 UNKNOWN 起步词形（观察不直写）、observation 呈现候选计数",
     () => {
       const records_ = records();
       // 链健康前置（当前绿）：init 成功、stack.yaml 播种在座。
@@ -512,38 +523,36 @@ describe("Golden Path 十条验收（GP-1~GP-3：init 观察与 question-gate）
       expect(initEnvelope.ok, "init 信封应 ok").toBe(true);
       const stackPath = join(records_.root, ".pomaster", "baseline", "frontend", "stack.yaml");
       expect(existsSync(stackPath), "baseline/frontend/stack.yaml 应在座").toBe(true);
-      // 判定分母 = init 时点存档（链后段 baselineSet 会改写现盘——init 观察产物
-      // 的判定必须锚在其发生时刻）。
+      // 判定分母 = init 时点存档（链后段 baselineSet adoption 会改写现盘——init 观察
+      // 产物的判定必须锚在其发生时刻）。
       const text = records_.initStackText;
-      // 核心断言（T2 init Bootstrap+Observation 转绿）：fixture package.json 已声明
-      // vue/vue-router/pinia/element-plus/ag-grid-community/vitest/vite/typescript，
-      // init 应机器自读这些可观察事实（值 + [Observed: package.json] 来源标注），
-      // 只把规范性决策（如 css 方案）留给问人。
+      // 核心断言（F14 ADR-19 候选化重构）：fixture package.json 已声明 vue/vue-router/
+      // pinia/element-plus/ag-grid-community/vitest/vite/typescript——观察事实照常
+      // 机器识别，但不再直写权威 stack.yaml（F14：观察不是人答也不是权威值）：
+      // 八键保持 UNKNOWN 起步词形、零观察注记（[Observed: package.json] 迁居问卷
+      // 候选呈现面），Owner adoption（set/问卷通路）前不入基线。
       for (const key of OBSERVABLE_STACK_KEYS) {
         const line = text
           .split("\n")
           .find((row) => row.startsWith(`${key}:`));
         expect(line, `stack.yaml 应有 ${key} 键行`).toBeDefined();
-        const lineText = line as string;
         expect(
-          lineText,
-          `${key} 应为观察值而非 UNKNOWN 起步词形（行：${lineText}）`,
-        ).not.toMatch(new RegExp(`^${key}:\\s*UNKNOWN\\b`));
-        expect(lineText, `${key} 观察行应携带来源标注（行：${lineText}）`).toContain(
-          OBSERVED_ANNOTATION,
-        );
+          line as string,
+          `${key} 观察候选不直写——应保持 UNKNOWN 起步词形（行：${line}）`,
+        ).toMatch(new RegExp(`^${key}:\\s*UNKNOWN\\b`));
       }
-      expect(text, "观察事实应携带 [Observed: package.json] 来源标注").toContain(
+      expect(text, "观察注记不再写入权威 stack.yaml（候选呈现面承载）").not.toContain(
         OBSERVED_ANNOTATION,
       );
-      // 摘帽新信号（防退化为空转绿）：init 信封 observation 结构化面 + 问卷分母收缩。
+      // 候选登记新信号：init 信封 observation 结构化面——observed = 候选登记数
+      // （8 键全命中单候选），skipped_resolved = 已采纳分账出局数（init 时点 = 0）。
       const initResult = (initEnvelope.result ?? {}) as Record<string, unknown>;
       const observation = initResult["observation"] as Record<string, unknown> | null;
-      expect(observation, "init 结果应携带 observation 字段（T2 R4）").not.toBeNull();
+      expect(observation, "init 结果应携带 observation 字段（T2 R4 · F14 候选化）").not.toBeNull();
       expect(observation?.["source"]).toBe("package.json");
       expect(observation?.["observed"]).toBe(OBSERVABLE_STACK_KEYS.length);
       expect(observation?.["skipped_resolved"]).toBe(0);
-      // css（规范性决策）不被观察代答——保持 UNKNOWN 起步词形。
+      // css（规范性决策）无观察候选——保持 UNKNOWN 起步词形。
       const cssLine = text.split("\n").find((row) => row.startsWith("css:"));
       expect(cssLine, "stack.yaml 应有 css 键行").toBeDefined();
       expect(cssLine).toMatch(/^css:\s*UNKNOWN\b/);
@@ -696,10 +705,11 @@ describe("Golden Path 十条验收（GP-4~GP-10：Intent Chain 全链）", () =>
     expect(nextActionOf(records_.routeAfterCompile)["route_id"]).not.toBe("R_MANIFEST_MISSING");
   });
 
-  it("R5 [T2新增信号] baseline 收口路由：unknowns 全销账未确认 → R_BASELINE_NOT_READY（baseline confirm）→ 确认后还账回落任务链", () => {
+  it("R5 [T2新增信号·F14候选化] baseline 收口路由：unknowns 全销账未确认 → R_BASELINE_NOT_READY（baseline confirm）→ 确认后还账回落任务链", () => {
     const records_ = records();
-    // 前置：init 观察后剩余 6 unknowns 非交互销账全过（GP-1 的观察面把问人分母压到 6）。
-    expect(records_.baselineSet).toHaveLength(6);
+    // 前置（F14 ADR-19 候选化）：观察不销账——FE 8 候选键经 set 通路 adoption
+    // （Owner 采纳观察候选值）+ css + BE 5 键非交互销账全过（14 unknowns 全销账）。
+    expect(records_.baselineSet).toHaveLength(14);
     expect(records_.baselineSet.every((step) => step.code === 0)).toBe(true);
     // 核心断言（T2 R5 转绿）：unknowns 0 + 未确认 → R_BASELINE_NOT_READY（beat 0，
     // 命令 = 裸 confirm）——收口前账的确定性路标。

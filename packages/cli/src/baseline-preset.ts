@@ -804,8 +804,10 @@ export const PRESET_FACE_SPECS: readonly PresetFaceSpec[] = [
 // ============================================================
 
 // G-B「confirm 时本文件整体 digest 快照烙印」声明的结构保证：任何 face 不在
-// BASELINE_CONFIRM_TARGETS（24 文件单一资产清单，N1）内 = 快照保护空洞，模块
-// 载入即失败（fail-fast 先于一切运行时消费；baseline-preset.spec 另钉逐字清单）。
+// BASELINE_CONFIRM_TARGETS（25 文件单一资产清单——N1 定 24，ADR-20/R3 扩 25 增
+// design-tokens.yaml）内 = 快照保护空洞，模块载入即失败（fail-fast 先于一切运行时
+// 消费；baseline-preset.spec 另钉逐字清单）。对账只对 md 面（实测勘误——yaml 目标
+// 不强制 preset face 补位，P-C1 提案 §10.3；若未来另设 token md 面才触发 N1 补位）。
 {
   const faceTargets = PRESET_FACE_SPECS.map((face) => face.file.replace(/^\.pomaster\//, "")).sort();
   const mdTargets = BASELINE_CONFIRM_TARGETS.filter((target) => target.endsWith(".md")).sort();

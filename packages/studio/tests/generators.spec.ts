@@ -247,7 +247,7 @@ describe("studio generators · overlay 能力清单（18 族）", () => {
 });
 
 describe("studio generators · baseline 四 lane 导航", () => {
-  it("四 lane（frontend 7 / backend 8 / data 5 / platform 4）导航在座", () => {
+  it("四 lane（frontend 8 / backend 8 / data 5 / platform 4）导航在座（frontend 7→8：R3/ADR-20 增 design-tokens.yaml）", () => {
     const out = tempRoot("bl");
     try {
       const { count, lanes } = generateBaselinePage(out);
@@ -255,7 +255,7 @@ describe("studio generators · baseline 四 lane 导航", () => {
       expect(lanes).toEqual(["backend", "data", "frontend", "platform"]);
       const mdx = readFileSync(join(out, "lanes.mdx"), "utf8");
       expect(mdx).toContain("BASELINE.PROJECT");
-      expect(mdx).toContain("## lane：frontend（7 件）");
+      expect(mdx).toContain("## lane：frontend（8 件）");
       expect(mdx).toContain("## lane：backend（8 件）");
       expect(mdx).toContain("## lane：data（5 件）");
       expect(mdx).toContain("## lane：platform（4 件）");

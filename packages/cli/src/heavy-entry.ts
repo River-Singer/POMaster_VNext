@@ -185,7 +185,7 @@ export const COMMAND_PANORAMA_LINES: readonly string[] = [
   "pomaster doctor",
   "pomaster portability bootstrap/check",
   "pomaster update --check/--yes",
-  "pomaster baseline set/confirm        # set = 单键后补销账；confirm = 基线确认 gate（14 unknowns 销账后 digest 快照——closeout 阻断码与 doctor/status 确认态的消费源）",
+  "pomaster baseline set/confirm        # set = 单键后补销账；confirm = 基线确认 gate（阻塞集清零后 digest 快照——closeout 阻断码与 doctor/status 确认态的消费源）",
   "",
   "# ① DISCOVERY —— 需求拷问/问题闸/决议图（Brainstorm/Question Gate；D-5，裁决 18）",
   "pomaster brainstorm start/question-gate/status/decide/promote",

@@ -40,25 +40,31 @@ corepack pnpm ratchet                                          # 棘轮（本 sp
   `--retrieved CURRENT_TRUTH --retrieved REPO` → `--answer DECISION.* --accept` → `--ready
   --goal <text> --scope <text> --acceptance <criterion>@DECISION.*`（T2 R1 Task Contract
   文本申报）→ `promote --to TASK --basis msd_reached --apply`（自动 record claim 生成
-  CLM-0001）→ `permit issue --subject PAGE.DASHBOARD`（R2 派生建议）→ baseline 六键销账
-  + `baseline confirm`（R5 收口路由）→ `context compile` → `execution begin --task-id`（R3
+  CLM-0001）→ `permit issue --subject PAGE.DASHBOARD`（R2 派生建议）→ baseline 14 键收口
+  （F14 候选化：FE 8 观察候选经 set 通路 adoption + css + BE 5）+ `baseline confirm`（R5
+  收口路由）→ `context compile` → `execution begin --task-id`（R3
   ④ EXECUTE 感知）→ `check --gates` → `record claim` → `record verification`。
 
 ## 十条验收协议
 
-### GP-1 观察项目已有技术事实，而不是全部问用户 `[T2已摘帽]`
+### GP-1 观察项目已有技术事实，而不是全部问用户 `[T2已摘帽]`（F14 候选化演进 2026-09-10）
 
-- **语义**：init 应机器自读宿主工程的可观察事实（package.json 依赖 → 框架/router/状态/Grid/
-  UI 库/测试栈），只把规范性决策（如 CSS 方案）留给问人；事实标注 `[Observed: package.json]`。
+- **语义**：init 机器自读宿主工程的可观察事实（package.json 依赖 → 框架/router/状态/Grid/
+  UI 库/测试栈）作**候选登记**——观察事实不是人答也不是权威值，未采纳不入基线（F14
+  ADR-19）；事实标注 `[Observed: package.json]`（迁居问卷候选呈现面）。
 - **机器断言**：fixture 上 init 后读 init 时点的 `.pomaster/baseline/frontend/stack.yaml`
-  存档——framework/language/build/router/state/grid/ui/testing 八键 ≠ `UNKNOWN` 且每条
-  观察行带 `[Observed: package.json]` 来源标注；css（规范决策）保持 UNKNOWN 起步词形；
-  init 结果 observation 面为 {source: "package.json", observed: 8}（摘帽新信号）。
+  存档——framework/language/build/router/state/grid/ui/testing 八键保持 `UNKNOWN` 起步
+  词形（观察不直写）、全文零 `[Observed: package.json]` 行注记；css（规范决策）同样保持
+  UNKNOWN 起步词形；init 结果 observation 面为 {source: "package.json", observed: 8}
+  （observed = 候选登记数；候选经问卷/set 通路 adoption 后才落权威值）。
 - **人工留痕判据**：MASTer 演练轮记录 init 问了人几问、哪些问在逐问对照 package.json 后本可
-  机器观察（「问人分母」留痕）。
-- **当前状态**：GREEN（T2 R4 Bootstrap+Observation 落地；init 幂等重跑 NO_CHANGE 不破）。
+  机器观察（「问人分母」留痕——F14 候选化后观察键照常入问卷分母、题面携带观察候选注记）。
+- **当前状态**：GREEN（F14 ADR-19 观察候选化重构落地；init 幂等重跑 NO_CHANGE 不破）。
 - **历史 RED 实证（摘帽前）**：init 是 14 键问卷必答，无宿主 package.json 探测；fixture
   依赖已声明但 `stack.yaml` 九键全 UNKNOWN（问卷非交互跳过后）。
+- **F14 演进锚（原 T2 直写语义退役）**：T2 R4 曾将观察值直写 stack.yaml（`<key>: <value>
+  # [Observed: package.json]`）并同步销账台账——与 F14「观察不能直接写入 Baseline」冲突，
+  2026-09-10 双 M0 审计定级契约违反后重构为候选登记（本节机器断言随之反转）。
 
 ### GP-2 能判断需求哪些是 Known / Unknown `[GREEN-机制]`
 

@@ -2,7 +2,8 @@
 // baseline 面）。
 //
 // 内容源（只读）：packages/cli/seeds/baseline/{frontend,backend,data,platform}/
-// （frontend 7 / backend 8 / data 5 / platform 4）+ manifest.yaml（B6D 播种身份）。
+// （frontend 8 / backend 8 / data 5 / platform 4——frontend 7→8：R3/ADR-20 增
+// design-tokens.yaml）+ manifest.yaml（B6D 播种身份）。
 // 生成形态：单页 lane 导航（文件清单 + 首行标题），不含正文透传（baseline 播种件
 // 是「Owner 就地填写」面——画廊只做导航呈现，替 Owner 填表属 G-D 业务预置违例）。
 import { readdirSync, statSync } from "node:fs";

@@ -821,14 +821,16 @@ describe("closeout 编排边界：身份/kind/kernel 施断判卷", () => {
 // ============================================================
 
 /**
- * baseline 快照目标内容（确定性文本；24 件 = confirm 的 digest 分母——N1 单一资产
- * 清单：2 stack.yaml + 22 md，与 BASELINE_CONFIRM_TARGETS 同分母）。
+ * baseline 快照目标内容（确定性文本；25 件 = confirm 的 digest 分母——N1 单一资产
+ * 清单：2 stack.yaml + 22 md + 1 design-tokens.yaml（ADR-20），与
+ * BASELINE_CONFIRM_TARGETS 同分母）。
  */
 function baselineFileContents(): Map<string, string> {
   const md = (name: string): [string, string] => [`.pomaster/baseline/${name}`, `# ${name}\n`];
   return new Map([
     [".pomaster/baseline/frontend/stack.yaml", "framework: vue3\nlanguage: typescript\n"],
     [".pomaster/baseline/backend/stack.yaml", "language: java\nframework: spring\n"],
+    [".pomaster/baseline/frontend/design-tokens.yaml", "meta:\n  origin: preset\n  customized: false\n"],
     ...[
       "frontend/architecture.md",
       "frontend/directory-structure.md",
@@ -858,8 +860,8 @@ function baselineFileContents(): Map<string, string> {
 
 /**
  * 播种 baseline 子树（fixture 最小 store 默认无 baseline——适用域边界的正面构造）；
- * confirmed = true 时按 24 件真实 digest 写 manifest 确认记录（R-L confirmed 块契约，
- * N1 单一资产清单分母）。
+ * confirmed = true 时按 25 件真实 digest 写 manifest 确认记录（R-L confirmed 块契约，
+ * N1 单一资产清单分母——ADR-20 扩 25）。
  */
 function seedBaseline(confirmed: boolean): void {
   const contents = baselineFileContents();
