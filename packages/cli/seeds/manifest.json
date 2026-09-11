@@ -666,12 +666,12 @@
       "seed_version": "B6D",
       "lane": "frontend",
       "authoring": "new",
-      "source_path": "doc/POMaster-Project-Baseline-Framework-v2-PRD.md#s16-design-tokens-yaml-contract(Baseline PRD §16 token 合同骨架逐字承载+§17 命名收敛定稿;新著无 vendor 字节源——语义祖先=§16 九组骨架,数值零移植)",
-      "source_sha256": "3bb13cd3daff7bdb537340c6705802437d2e3718d05b863d784a68cfa48b3c4e",
-      "source_bytes": 3232,
+      "source_path": "doc/POMaster-Project-Baseline-Framework-v2-PRD.md#s16-design-tokens-yaml-contract(Baseline PRD §16 token 合同骨架逐字承载+§17 命名收敛定稿;新著无 vendor 字节源——语义祖先=§16 九组骨架;09-11 preset 值批=官方默认主题具名词形回填)",
+      "source_sha256": "d2bc2733829e1d75ab9dd49f686a1192ac870cf357f80fd50db91a32ed7541b1",
+      "source_bytes": 8356,
       "porting_notes": [
-        "R3/F-M1 增量新著件(B6D 批补位,09-10-baseline-confirm-chain-governance):语义 token 骨架九组(Baseline PRD §16 分组逐字;spacing.section_gap 命名收敛定稿——§16 layout.section_gap 废弃,理由住 seed 头注与 22 号 schema);内容零发明:起步值一律 UNKNOWN,本仓无 POMaster Default Design 预设默认值登记——原文示例数值禁伪造成项目事实(PRD §7.1 NON-AUTHORITATIVE)",
-        "R3 形态注记:本件无 frontmatter(纯 yaml——直接可解析,Owner 填写面);清单 pin=资产自身字节 sha256(authoring=new 自指指纹);确认链第 25 文件(BASELINE_CONFIRM_TARGETS ADR-20 扩位——digest 快照/closeout/preset 声明三消费面同源;形状契约=packages/schemas/assets/22-design-tokens.schema.json,baseline-tokens.ts 装载校验)"
+        "R3/F-M1 增量新著件(B6D 批补位,09-10-baseline-confirm-chain-governance):语义 token 骨架九组(Baseline PRD §16 分组逐字;spacing.section_gap 命名收敛定稿——§16 layout.section_gap 废弃,理由住 seed 头注与 22 号 schema)。09-11 preset 值批(design-token-preset-values)值回填:44 键取 Default Design preset 值——值值有出处红线,逐值行尾注记官方具名词形(主源=Ant Design v5 cssinjs 默认主题,官方仓库 5.x-stable 源文件:seed.ts/colors.ts/alias.ts/genRadius.ts/genControlHeight.ts/genFontSizes.ts/genCommonMapToken.ts/layout style;全部数值当日联网实抓核实);无权威出处/映射非唯一 14 键保持 UNKNOWN(宁缺毋假,Owner 决策)——原文示例数值仍禁伪造成项目事实(PRD §7.1 NON-AUTHORITATIVE;origin=preset advisory 语义不变)",
+        "R3 形态注记:本件无 frontmatter(纯 yaml——直接可解析,Owner 填写面);清单 pin=资产自身字节 sha256(authoring=new 自指指纹;09-11 preset 值批内容变更,自指指纹同步重 pin——B6D 批分母 26 件不变仅本件内容变);确认链第 25 文件(BASELINE_CONFIRM_TARGETS ADR-20 扩位——digest 快照/closeout/preset 声明三消费面同源;形状契约=packages/schemas/assets/22-design-tokens.schema.json,baseline-tokens.ts 装载校验;已确认工作区遇本批变更走既有漂移→显式重确认通道)"
       ]
     },
     {

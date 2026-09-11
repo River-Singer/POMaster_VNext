@@ -1,10 +1,11 @@
-# baseline/frontend/design-tokens.yaml —— 语义 Design Token 合同（F-M1 最小骨架；R3 批）
+# baseline/frontend/design-tokens.yaml —— 语义 Design Token 合同（F-M1 最小合同 + Default Design preset 值）
 # 职责(PRD §16 树):语义 token 单一合同面——颜色/字体/间距/圆角/阴影/层级/密度/
 # 布局/动效/断点九组语义 token;UI 只能从本合同的语义 token 与批准组件取得视觉
 # 规则;Agent Context 消费语义 token 而非裸数值（原文 §17 设计原则）。
-# 本文件由 pomaster init 播种（B6D 批增量——09-10 R3/F-M1）;seed-once（缺席才写/
-# 在座零触碰）;确认链第 25 文件（BASELINE_CONFIRM_TARGETS 单一清单——confirm digest
-# 快照/closeout 校验/preset 快照声明三消费面同源;manifest 不自引用）。
+# 本文件由 pomaster init 播种（B6D 批增量——09-10 R3/F-M1;09-11 Default Design
+# preset 值批回填）;seed-once（缺席才写/在座零触碰）;确认链第 25 文件
+# （BASELINE_CONFIRM_TARGETS 单一清单——confirm digest 快照/closeout 校验/preset
+# 快照声明三消费面同源;manifest 不自引用）。
 #
 # origin 机器位（词形闭包 preset|customized|owner——22-design-tokens.schema.json
 # 本地闭包,零中央词表 PR）:
@@ -13,9 +14,35 @@
 #   owner      = Owner 全权自著（无预设来源）
 # meta.customized = Owner 定制机器位（P-D1 customize/diff/confirm 全流程消费）。
 #
-# 起步值纪律（零发明内容红线）:本仓未登记 POMaster Default Design 预设默认值——
-# 全部 token 起步值:UNKNOWN（留待 Owner 决策）;原文示例数值（如 §16 示例色值）
-# 禁伪造成项目事实（NON-AUTHORITATIVE——示例只住 PRD 注记,不入播种面）。
+# 值值有出处红线（09-11 preset 值批——自原「零发明内容」全 UNKNOWN 形态升级;纪律
+# 精神不变:无出处的数值禁入播种面,执行形态升级为「具名出处」）:
+#   1. 非 UNKNOWN 值逐值可溯源到官方默认主题具名 token 词形——值行尾「<- 词形」
+#      注记 + 下方逐组出处注记;全部数值当日经官方仓库源文件联网实抓核实,禁凭
+#      记忆填数;
+#   2. 无权威出处或映射非唯一的键保持 UNKNOWN（宁缺毋假——行尾注记登记原因,
+#      回填决策留 Owner）;
+#   3. origin=preset 的数值是 advisory（Owner 经 baseline confirm 确认前不构成
+#      项目事实——确认链通道不变）。
+#
+# 逐组出处注记（主源 = Ant Design v5 cssinjs 默认主题——本仓 css 选型的 cssinjs
+# 主题栈对应官方默认主题;官方仓库 5.x-stable 分支源文件）:
+#   color:        components/theme/themes/seed.ts（colorPrimary/colorSuccess/colorWarning/colorError/colorInfo）
+#                 + components/theme/themes/default/colors.ts（colorBgLayout/colorBgContainer/
+#                 colorBgElevated/colorText 4 档/colorBorder/colorBorderSecondary）
+#   typography:   seed.ts（fontFamily/fontFamilyCode/fontSize/fontSizeLG）
+#                 + themes/shared/genFontSizes.ts（fontSizeHeading3/4、lineHeight 派生式）
+#                 + components/theme/util/alias.ts（fontWeightStrong）
+#   spacing:      components/theme/util/alias.ts（marginXXS/XS/SM、margin、marginLG/XL——与 padding 族同值）
+#   radius:       seed.ts（borderRadius）+ themes/shared/genRadius.ts（borderRadiusXS/SM/LG）
+#   elevation:    components/theme/util/alias.ts（boxShadow、boxShadowCard）
+#   density:      seed.ts（controlHeight）+ themes/shared/genControlHeight.ts（controlHeightSM）
+#   layout:       components/layout/style/index.ts（headerHeight = controlHeight*2）
+#   motion:       seed.ts（motionUnit/motionEaseInOut）+ themes/shared/genCommonMapToken.ts（motionDurationFast/Mid/Slow）
+#   breakpoints:  components/theme/util/alias.ts（screenSM/screenMD/screenLG/screenXL）
+# 注:brand.primary/semantic.info/surface.page/text.primary/secondary/tertiary/radius
+# 全组/spacing.xxl/typography.line_height.normal 为 Ant Design v4 与 v5 两代默认
+# 分歧位——本 seed 取 v5 cssinjs 同源值（与本仓 css 选型一致）;v4 旧默认值不同,
+# Owner 追认后即为项目事实（advisory 纪律不变）。
 #
 # token 命名收敛定稿（原文 §16 layout.section_gap vs §17 spacing.section_gap 二选一）:
 # 定稿 = spacing.section_gap——间距语义归 spacing 组（§17 语义 token 先例逐字）;
@@ -26,77 +53,77 @@ meta:
   customized: false
 color:
   brand:
-    primary: UNKNOWN
-    secondary: UNKNOWN
+    primary: "#1677ff" # <- Seed.colorPrimary
+    secondary: UNKNOWN # 无权威词形——默认主题无 secondary 档（宁缺毋假,Owner 决策）
   surface:
-    page: UNKNOWN
-    container: UNKNOWN
-    elevated: UNKNOWN
+    page: "#f5f5f5" # <- colors.colorBgLayout（Layout bodyBg 默认取同值）
+    container: "#ffffff" # <- colors.colorBgContainer
+    elevated: "#ffffff" # <- colors.colorBgElevated
   text:
-    primary: UNKNOWN
-    secondary: UNKNOWN
-    tertiary: UNKNOWN
-    disabled: UNKNOWN
+    primary: "rgba(0, 0, 0, 0.88)" # <- colors.colorText
+    secondary: "rgba(0, 0, 0, 0.65)" # <- colors.colorTextSecondary
+    tertiary: "rgba(0, 0, 0, 0.45)" # <- colors.colorTextTertiary
+    disabled: "rgba(0, 0, 0, 0.25)" # <- alias.colorTextDisabled（= colorTextQuaternary）
   border:
-    default: UNKNOWN
-    subtle: UNKNOWN
-    strong: UNKNOWN
+    default: "#d9d9d9" # <- colors.colorBorder
+    subtle: "#f0f0f0" # <- colors.colorBorderSecondary
+    strong: UNKNOWN # 无更强边框档词形（宁缺毋假）
   semantic:
-    success: UNKNOWN
-    warning: UNKNOWN
-    error: UNKNOWN
-    info: UNKNOWN
+    success: "#52c41a" # <- Seed.colorSuccess
+    warning: "#faad14" # <- Seed.colorWarning
+    error: "#ff4d4f" # <- Seed.colorError
+    info: "#1677ff" # <- Seed.colorInfo
 typography:
   family:
-    sans: UNKNOWN
-    mono: UNKNOWN
+    sans: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'" # <- Seed.fontFamily
+    mono: "'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace" # <- Seed.fontFamilyCode
   size:
-    caption: UNKNOWN
-    body: UNKNOWN
-    body_large: UNKNOWN
-    title_small: UNKNOWN
-    title_medium: UNKNOWN
-    title_large: UNKNOWN
+    caption: UNKNOWN # 无 caption 词形;候选 fontSizeSM=12 映射非唯一（Owner 拍板）
+    body: 14 # <- Seed.fontSize
+    body_large: 16 # <- Seed.fontSizeLG
+    title_small: UNKNOWN # 候选 fontSizeHeading5=16 与 body_large 同值,映射非唯一（Owner 拍板）
+    title_medium: 20 # <- genFontSizes.fontSizeHeading4
+    title_large: 24 # <- genFontSizes.fontSizeHeading3
   weight:
-    regular: UNKNOWN
-    medium: UNKNOWN
-    semibold: UNKNOWN
+    regular: UNKNOWN # 无全局 regular 词形（候选 400 是 CSS 平台默认,非库 token——宁缺毋假）
+    medium: UNKNOWN # 无全局 medium 词形（候选 500 仅散点出现,非 token 契约——宁缺毋假）
+    semibold: 600 # <- alias.fontWeightStrong
   line_height:
-    compact: UNKNOWN
-    normal: UNKNOWN
-    relaxed: UNKNOWN
+    compact: UNKNOWN # 候选 lineHeightLG=1.5;compact/relaxed 与 SM/LG 映射歧义（Owner 拍板）
+    normal: 1.5714285714285714 # <- genFontSizes.lineHeight（官方派生式 (fontSize+8)/fontSize）
+    relaxed: UNKNOWN # 候选 lineHeightSM=1.6667;映射歧义同 compact（Owner 拍板）
 spacing:
-  xs: UNKNOWN
-  sm: UNKNOWN
-  md: UNKNOWN
-  lg: UNKNOWN
-  xl: UNKNOWN
-  xxl: UNKNOWN
-  section_gap: UNKNOWN
+  xs: 4 # <- alias.marginXXS/paddingXXS
+  sm: 8 # <- alias.marginXS/paddingXS
+  md: 12 # <- alias.marginSM/paddingSM
+  lg: 16 # <- alias.margin/padding
+  xl: 24 # <- alias.marginLG/paddingLG
+  xxl: 32 # <- alias.marginXL/paddingXL
+  section_gap: UNKNOWN # 无 section 词形;候选 marginLG=24 / marginXL=32 映射非唯一（Owner 拍板）
 radius:
-  sm: UNKNOWN
-  md: UNKNOWN
-  lg: UNKNOWN
+  sm: 4 # <- genRadius.borderRadiusSM
+  md: 6 # <- Seed.borderRadius
+  lg: 8 # <- genRadius.borderRadiusLG
 elevation:
-  card: UNKNOWN
-  popover: UNKNOWN
-  modal: UNKNOWN
+  card: "0 1px 2px -2px rgba(0,0,0,0.16), 0 3px 6px 0 rgba(0,0,0,0.12), 0 5px 12px 4px rgba(0,0,0,0.09)" # <- alias.boxShadowCard
+  popover: "0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05)" # <- alias.boxShadow
+  modal: "0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05)" # <- alias.boxShadow（默认主题 popover/modal 共用同档,如实注记）
 density:
-  control_height: UNKNOWN
-  compact_control_height: UNKNOWN
-  table_row_height: UNKNOWN
-  compact_table_row_height: UNKNOWN
+  control_height: 32 # <- Seed.controlHeight
+  compact_control_height: 24 # <- genControlHeight.controlHeightSM
+  table_row_height: UNKNOWN # 行高非 token（派生自单元格 padding,无高度词形——Owner 决策）
+  compact_table_row_height: UNKNOWN # 同上（宁缺毋假）
 layout:
-  page_padding: UNKNOWN
-  content_max_width: UNKNOWN
-  sidebar_width: UNKNOWN
-  header_height: UNKNOWN
+  page_padding: UNKNOWN # 无页面结构 padding token（Owner 决策）
+  content_max_width: UNKNOWN # 官方无 foundation 词形（Owner 决策）
+  sidebar_width: UNKNOWN # 组件 prop 非 design token（Owner 决策）
+  header_height: 64 # <- Layout.headerHeight（= controlHeight*2）
 motion:
-  fast: UNKNOWN
-  normal: UNKNOWN
-  slow: UNKNOWN
+  fast: "0.1s" # <- genCommonMapToken.motionDurationFast
+  normal: "0.2s" # <- genCommonMapToken.motionDurationMid
+  slow: "0.3s" # <- genCommonMapToken.motionDurationSlow
 breakpoints:
-  sm: UNKNOWN
-  md: UNKNOWN
-  lg: UNKNOWN
-  xl: UNKNOWN
+  sm: 576 # <- alias.screenSM
+  md: 768 # <- alias.screenMD
+  lg: 992 # <- alias.screenLG
+  xl: 1200 # <- alias.screenXL
