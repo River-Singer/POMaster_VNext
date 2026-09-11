@@ -233,7 +233,7 @@ export const COMMAND_PANORAMA_LINES: readonly string[] = [
   "pomaster handoff <task> --to <role>",
   "pomaster session attach/refresh/list",
   "pomaster lock acquire/heartbeat/release/steal/list",
-  "pomaster execution begin/end/list",
+  "pomaster execution begin/end/list/audit",
   "pomaster trace show/list",
 ];
 
@@ -770,7 +770,7 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
         "pomaster agents status",
         "pomaster session attach/refresh/list",
         "pomaster lock acquire/heartbeat/release/steal/list",
-        "pomaster execution begin/end/list",
+        "pomaster execution begin/end/list/audit",
         "pomaster trace show/list",
         "pomaster run <task>",
         "pomaster handoff <task> --to <role>",

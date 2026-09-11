@@ -124,7 +124,7 @@ pomaster run <task>
 pomaster handoff <task> --to <role>
 pomaster session attach/refresh/list
 pomaster lock acquire/heartbeat/release/steal/list
-pomaster execution begin/end/list
+pomaster execution begin/end/list/audit   # audit = 变更越界审计（--execution-id + --diff-base：git diff 起始锚变更集 → KEYBINDING 解析 → permit scope 判 in/out → OBS 回执 sidecar + 越界明细；越界 exit 1——Detection 半边，纯读零权威写口）
 pomaster trace show/list
 # pomaster session（不带子命令）= 治理速览投影（SessionStart 注入源；≤10k 字符，恒 exit 0；尾部带首答确认协议指令段）
 # pomaster alerts（重入口 UserPromptSubmit 源）= 可行动项过滤器 + workflow 路由段（干净=非空但极简，恒 exit 0）
@@ -304,6 +304,19 @@ Spec、Task、Gate、Knowledge、Brainstorm……全部是这五个原语的派�
 - Framework as Review Surface：框架约束好了的人，不需要读 AI 写的每一行代码——但前提是判卷器诚实，所以我们用对抗性用例持续攻击自己的 gate（8 个宪法回归 Case 组成永久套件，守护「一句话需求必须过 grounding、原型实现无权威、agent 不得自批、观察失败≠不存在、截图≠payload」等核心不变式）
 - Minimum Sufficient Governance：治理开销必须与变更风险成比例；小改动的体验是"几乎感觉不到 POMaster"
 - Memory Sovereignty：删掉本机缓存 + fresh clone + bootstrap ≈ 项目认知完全恢复
+
+## 自举（Self-Hosting）：本仓被自家治理
+
+POMaster 的开发仓自己吃自己的治理：仓库根本机台账 `.pomaster/`（入 `.gitignore`，治理态不入库）由 `createStore` 骨架语义重建——`loadStoreReadOnly` 与 doctor 五探针全绿（2026-09-11 自举审计 F1「vocab 指纹过期空骨架」由此根治：重建后 `vocab_lock.prefixes` 恒等于当前词表镜像）。本工作区（仓库上层宿主目录）的 Claude Code 已注册 **PreToolUse 写前拦截 hook**：`Edit|Write|NotebookEdit|Bash` 工具调用先经 `hooks/exec-guard-hook.py`（判卷逻辑单一源，git 跟踪；运行时面 `.claude/hooks/` 内为同名词形转发 shim）解析目标路径 → KEYBINDING 映射 governed id → 调 `pomaster exec-guard` 对照活跃 execution 的 permit scope 判卷：
+
+| 判定 | 行为 | 条件 |
+|---|---|---|
+| (a) 透传放行 | exit 0 + stderr 一行注记 | store 未初始化 / 无活跃 execution / 目标无 KEYBINDING 绑定（unmapped）/ Bash 命令无路径词形——条件激活语义，非治理态日常操作不堵 |
+| ALLOW | exit 0 + stderr 注记 | 活跃 execution 的任一 permit scope.subject_ids 覆盖映射 id（多 permit 并集，`kernel checkPermit` 唯一判卷权威） |
+| (b) DENY | exit 2 阻断 + stderr 指路正确 permit 面 | 映射 id ∉ scope（PERMIT_SCOPE_DENIED）/ execution 显式无 permit / permit 引用不存在（PERMIT_UNKNOWN） |
+| (c) fail-open | exit 0 + stderr 显式声明 | 判卷器自身故障（CLI 入口缺席 / 进程故障 / 台账损坏）——防 hook 卡死开发流，审计线索由 Detection 半边 `pomaster execution audit`（①号切片）兜底复查 |
+
+如实边界：Bash matcher 只做路径词形粗筛不做 shell 语义分析（op 恒按写语义 `upsert_object` 判卷，读命令提及 mapped 路径会误报 DENY）；「不 begin execution 就没有判卷」是条件激活语义的既定开口（未审计会话由 execution audit 呈报）；permit 仍走 Owner 既有通路，hook 不签发。三态各有确定性测试（`packages/cli/tests/exec-guard-hook.spec.ts`，端到端真跑 `exec-guard`）。
 
 ## 深入阅读
 

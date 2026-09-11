@@ -432,7 +432,11 @@ A6 rename-on-ingest 双向链：legacy→canonical（收编）与 canonical→le
 - `execution begin/end/list`（§25.4）——AGX-n 缺省分配；词表三轴闭包
   （`VOCAB_INVALID_VALUE`）；`--session-key` 须已 attach 且与 `--harness` 成对；
   end 重复封口 `EXECUTION_ALREADY_ENDED`；list 呈现两态 `active | ended`
-  （interrupted 状态归 journal 面查询）。
+  （interrupted 状态归 journal 面查询）。`execution audit`（09-11 变更越界审计，
+  Detection 半边）——`--execution-id + --diff-base`：git diff 起始锚变更集 →
+  KEYBINDING 解析 → permit scope 判 in/out → OBS 回执 sidecar + 越界明细
+  （越界 exit 1；纯读 + sidecar 零权威写口；非 git 工作区/锚缺席或无效
+  fail-closed 零落盘）。
 - **墙钟注入点不进 CLI 面**：`now`/`startedAt` 是基础设施盖章语义（argv 申报即
   会话自报，D 线 S1）；测试确定性走 kernel API 直调。`pathsOf`/`StorePaths` 随本批
   公共化（清单函数消费面）。

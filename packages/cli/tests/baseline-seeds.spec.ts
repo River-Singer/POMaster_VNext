@@ -1,7 +1,8 @@
 /**
  * baseline-seeds.spec.ts —— B6d baseline 体系 26 文件新著的专属断言面
- * （vNext Batch 6 R4 + 09-10 R3/F-M1 增量 design-tokens.yaml；prd.md R4 红线：
- * UNKNOWN 起步词形贯穿、「待填写」零残留；
+ * （vNext Batch 6 R4 + 09-10 R3/F-M1 增量 design-tokens.yaml + 09-11 preset 值批；
+ * prd.md R4 红线：UNKNOWN 起步词形贯穿（design-tokens.yaml 44 键随 09-11 preset
+ * 值批升级为具名出处回填——无权威出处的 14 键仍保持 UNKNOWN）、「待填写」零残留；
  * porting-design-proposal §3 baseline 提案 + PRD §3 树职责注释逐字）。
  *
  * 与 seed-manifest.spec.ts 的分工：本文件只钉 baseline 面（词形纪律/台账对账/骨架
@@ -20,9 +21,11 @@
  *   选型承载——B6c STACK_OVERLAY_NOTE 注记的 B6d 落位）；
  * - md 骨架结构：统一正文头（路径/职责行）+ 逐节「起步值:UNKNOWN」（节/起步值
  *   一一对账）；节名 = PRD §3 职责注释词形；
- * - design-tokens.yaml 形态（R3/F-M1 最小合同，原文 Baseline PRD §13-21）：meta
- *   机器位（origin=preset / customized=false）+ 九组键形逐字 + 全叶值 UNKNOWN +
- *   spacing.section_gap 命名收敛定稿（§16 layout.section_gap 废弃）+ 过
+ * - design-tokens.yaml 形态（R3/F-M1 最小合同 + 09-11 Default Design preset 值批，
+ *   原文 Baseline PRD §13-21）：meta 机器位（origin=preset / customized=false）+
+ *   九组键形逐字 + 44 键 preset 值钉（值值有出处——逐值行尾官方词形注记 + 逐组
+ *   出处头注）+ 14 键 UNKNOWN 保持位钉（宁缺毋假——未回填键零删减）+ 叶值三分
+ *   穷尽 + spacing.section_gap 命名收敛定稿（§16 layout.section_gap 废弃）+ 过
  *   22-design-tokens.schema.json。
  */
 import { readFileSync } from "node:fs";
@@ -333,7 +336,8 @@ describe("B6d stack.yaml 形态（PRD §3 键集逐字；值全 UNKNOWN）", () 
 });
 
 // ============================================================
-// R3 design-tokens seed 合同（F-M1 最小骨架；Baseline PRD §13-21 + schema 22）
+// R3 design-tokens seed 合同（F-M1 最小合同 + 09-11 Default Design preset 值批；
+// Baseline PRD §13-21 + schema 22 + 任务 09-11-design-token-preset-values R1 值表）
 // ============================================================
 
 /** 原文 §16 分组键形（+§17 命名收敛定稿 spacing.section_gap）——键集漂移即爆。 */
@@ -364,10 +368,109 @@ const TYPO_SUB: Record<string, readonly string[]> = {
   line_height: ["compact", "normal", "relaxed"],
 };
 
-describe("R3 design-tokens seed 合同（meta 机器位 + 九组键形 + 命名收敛定稿）", () => {
-  const doc = yaml.load(assetText("baseline/frontend/design-tokens.yaml")) as Record<string, unknown>;
+/**
+ * Default Design preset 值钉（09-11 preset 值批——「值值有出处」红线）：
+ * 每值可溯源到 Ant Design v5 cssinjs 默认主题具名 token 词形（seed 头注逐组出处
+ * 注记 + seed 值行尾「<- 词形」注记；全部数值经官方仓库 5.x-stable 源文件联网实抓）。
+ * origin=preset = advisory 语义（Owner 确认前不构成项目事实）——本钉是「seed 值 ==
+ * 值表」的漂移闸，非项目事实判定。
+ */
+const PRESET_TOKEN_VALUES: Record<string, string | number> = {
+  // —— color（14）——
+  "color.brand.primary": "#1677ff", // <- Seed.colorPrimary
+  "color.surface.page": "#f5f5f5", // <- colors.colorBgLayout
+  "color.surface.container": "#ffffff", // <- colors.colorBgContainer
+  "color.surface.elevated": "#ffffff", // <- colors.colorBgElevated
+  "color.text.primary": "rgba(0, 0, 0, 0.88)", // <- colors.colorText
+  "color.text.secondary": "rgba(0, 0, 0, 0.65)", // <- colors.colorTextSecondary
+  "color.text.tertiary": "rgba(0, 0, 0, 0.45)", // <- colors.colorTextTertiary
+  "color.text.disabled": "rgba(0, 0, 0, 0.25)", // <- alias.colorTextDisabled
+  "color.border.default": "#d9d9d9", // <- colors.colorBorder
+  "color.border.subtle": "#f0f0f0", // <- colors.colorBorderSecondary
+  "color.semantic.success": "#52c41a", // <- Seed.colorSuccess
+  "color.semantic.warning": "#faad14", // <- Seed.colorWarning
+  "color.semantic.error": "#ff4d4f", // <- Seed.colorError
+  "color.semantic.info": "#1677ff", // <- Seed.colorInfo
+  // —— typography（8）——
+  "typography.family.sans":
+    "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'",
+  "typography.family.mono": "'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace",
+  "typography.size.body": 14,
+  "typography.size.body_large": 16,
+  "typography.size.title_medium": 20,
+  "typography.size.title_large": 24,
+  "typography.weight.semibold": 600,
+  "typography.line_height.normal": 1.5714285714285714,
+  // —— spacing（6）——
+  "spacing.xs": 4,
+  "spacing.sm": 8,
+  "spacing.md": 12,
+  "spacing.lg": 16,
+  "spacing.xl": 24,
+  "spacing.xxl": 32,
+  // —— radius（3）——
+  "radius.sm": 4,
+  "radius.md": 6,
+  "radius.lg": 8,
+  // —— elevation（3）——
+  "elevation.card":
+    "0 1px 2px -2px rgba(0,0,0,0.16), 0 3px 6px 0 rgba(0,0,0,0.12), 0 5px 12px 4px rgba(0,0,0,0.09)",
+  "elevation.popover":
+    "0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05)",
+  "elevation.modal":
+    "0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05)",
+  // —— density（2）——
+  "density.control_height": 32,
+  "density.compact_control_height": 24,
+  // —— layout（1）——
+  "layout.header_height": 64,
+  // —— motion（3）——
+  "motion.fast": "0.1s",
+  "motion.normal": "0.2s",
+  "motion.slow": "0.3s",
+  // —— breakpoints（4）——
+  "breakpoints.sm": 576,
+  "breakpoints.md": 768,
+  "breakpoints.lg": 992,
+  "breakpoints.xl": 1200,
+};
 
-  /** 展平嵌套 token 文档 → 「group.key[.sub] = value」词形集（叶值全 UNKNOWN 断言的机械面）。 */
+/** UNKNOWN 保持位（宁缺毋假——无权威出处/映射非唯一，回填决策留 Owner；零删减钉）。 */
+const UNKNOWN_TOKEN_KEYS: readonly string[] = [
+  "color.brand.secondary",
+  "color.border.strong",
+  "typography.size.caption",
+  "typography.size.title_small",
+  "typography.weight.regular",
+  "typography.weight.medium",
+  "typography.line_height.compact",
+  "typography.line_height.relaxed",
+  "spacing.section_gap",
+  "density.table_row_height",
+  "density.compact_table_row_height",
+  "layout.page_padding",
+  "layout.content_max_width",
+  "layout.sidebar_width",
+];
+
+/** 逐组出处注记锚（seed 头注「逐组出处注记」块——组 → 该组来源词形锚；漂移即爆）。 */
+const GROUP_SOURCE_ANCHORS: Record<string, string> = {
+  color: "components/theme/themes/seed.ts",
+  typography: "seed.ts",
+  spacing: "util/alias.ts",
+  radius: "genRadius.ts",
+  elevation: "boxShadow",
+  density: "controlHeight",
+  layout: "components/layout/style/index.ts",
+  motion: "motionDuration",
+  breakpoints: "screenSM",
+};
+
+describe("R3 design-tokens seed 合同（meta 机器位 + 九组键形 + 命名收敛定稿 + preset 值/出处/UNKNOWN 保持位）", () => {
+  const doc = yaml.load(assetText("baseline/frontend/design-tokens.yaml")) as Record<string, unknown>;
+  const tokensText = assetText("baseline/frontend/design-tokens.yaml");
+
+  /** 展平嵌套 token 文档 → 「group.key[.sub] = value」词形集（叶值断言的机械面）。 */
   function flatten(node: unknown, path: readonly string[]): Map<string, unknown> {
     const leaves = new Map<string, unknown>();
     if (typeof node === "object" && node !== null && !Array.isArray(node)) {
@@ -406,17 +509,51 @@ describe("R3 design-tokens seed 合同（meta 机器位 + 九组键形 + 命名�
     }
   });
 
-  it("全叶值 UNKNOWN（零发明内容：本仓无 POMaster Default Design 预设默认值登记——原文示例数值禁伪造成项目事实）", () => {
+  it("preset 值钉：44 键逐值 == Default Design preset 值表（值值有出处——seed 值行尾逐值「<- 官方词形」注记）", () => {
     const leaves = flatten(doc, []);
     expect(leaves.get("meta.origin")).toBe("preset");
-    expect(leaves.size).toBeGreaterThan(40);
-    for (const [path, value] of leaves) {
-      if (path.startsWith("meta.")) continue;
-      expect(value, path).toBe("UNKNOWN");
+    expect(Object.keys(PRESET_TOKEN_VALUES)).toHaveLength(44);
+    for (const [path, value] of Object.entries(PRESET_TOKEN_VALUES)) {
+      expect(leaves.get(path), path).toBe(value);
+    }
+    // 44 个回填值行全部携带行尾词形注记（值值有出处的机械面——注记缺位即爆）。
+    expect(tokensText.split("\n").filter((line) => line.includes(" # <- "))).toHaveLength(44);
+    // 红线头注与主源声明在座（出处体系的声明面）。
+    expect(tokensText).toContain("值值有出处");
+    expect(tokensText).toContain("Ant Design v5 cssinjs");
+  });
+
+  it("UNKNOWN 保持位钉：14 键保持起步词形（无权威出处/映射非唯一——宁缺毋假,逐键行尾登记原因）", () => {
+    const leaves = flatten(doc, []);
+    expect(UNKNOWN_TOKEN_KEYS).toHaveLength(14);
+    for (const path of UNKNOWN_TOKEN_KEYS) {
+      expect(leaves.get(path), path).toBe("UNKNOWN");
+    }
+    // 保持位行尾全部携带登记原因（宁缺毋假非静默缺席——原因注记缺位即爆）。
+    expect(tokensText.split("\n").filter((line) => line.includes(": UNKNOWN # "))).toHaveLength(14);
+  });
+
+  it("叶值三分穷尽（preset ∪ UNKNOWN = 全部 58 非 meta 叶,零第三态——回填面漂移即爆）", () => {
+    const leaves = flatten(doc, []);
+    const nonMeta = [...leaves.keys()].filter((path) => !path.startsWith("meta."));
+    expect(nonMeta).toHaveLength(58);
+    const covered = new Set([...Object.keys(PRESET_TOKEN_VALUES), ...UNKNOWN_TOKEN_KEYS]);
+    for (const path of nonMeta) {
+      expect(covered.has(path), path).toBe(true);
+    }
+    expect(covered.size).toBe(58);
+  });
+
+  it("出处头注钉：逐组来源注记在册（九组 × 来源词形锚——来源词形漂移即爆）", () => {
+    const lines = tokensText.split("\n");
+    for (const [group, anchor] of Object.entries(GROUP_SOURCE_ANCHORS)) {
+      const line = lines.find((candidate) => candidate.startsWith(`#   ${group}:`));
+      expect(line, `逐组出处注记 ${group}`).toBeDefined();
+      expect(line, `逐组出处注记 ${group}`).toContain(anchor);
     }
     // 头注收敛定稿理由在座（§16 vs §17 二选一的记录义务——任务 R3 实施要求第 2 条）。
-    expect(assetText("baseline/frontend/design-tokens.yaml")).toContain("spacing.section_gap");
-    expect(assetText("baseline/frontend/design-tokens.yaml")).toContain("layout.section_gap");
+    expect(tokensText).toContain("spacing.section_gap");
+    expect(tokensText).toContain("layout.section_gap");
   });
 
   it("seed 实物过 22-design-tokens.schema.json（ajv 正例）；origin 词形越界 = 负例 fail-closed", () => {
