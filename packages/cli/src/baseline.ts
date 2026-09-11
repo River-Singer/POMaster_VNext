@@ -196,6 +196,19 @@
  *   既有 writeFile 相同。跨进程真并发回归 =
  *   tests/integration/baseline-set-contention.spec.ts（双 UPDATED 双落盘；child
  *   脚本不入 mapping——steal-contention 纪律）。
+ *
+ *   缺席读分类细化（09-11 ci-cas-window，PR #4 windows CI 实证）：casSwapFile 认领-
+ *   回装窗口对并发读者瞬态缺席（fs-cas.ts 头注诚实披露——仅成功安装路径有 syscall
+ *   级窗口），同拍起跑的 set 子进程 attempt=0 首读也会撞进对手窗口，曾把「manifest
+ *   在座（已播种）而 stack.yaml 瞬态缺席」误判 NOT_CONFIGURED（「baseline 尚未播种」
+ *   ——谎报工作区状态）。修正 = 缺席读以 manifest 在座性为锚分类：manifest 在座 →
+ *   stack.yaml 缺席物理上只可能是认领窗口或真实删除 → 按 contended 有界重试（既有
+ *   确定性退避）；manifest 也缺席 → NOT_CONFIGURED 语义不变（工作区未初始化/未播种
+ *   的合法触发面）；attempt>0 缺席读 = contended（ADR-21 既定，不变）。重试耗尽 →
+ *   复用 BASELINE_WRITE_CONFLICT（不发明新码；NOT_CONFIGURED 在已播种盘面上是谎报），
+ *   报错诚实呈现两种可能（认领窗口未收敛 / 文件被真实删除）并指路两条修复路径
+ *   （重跑收敛 / git 恢复或 init 重播种），禁静默吞掉。确定性测试钉 =
+ *   baseline.spec.ts「缺席读分类」describe（禁靠真并发碰运气）。
  */
 
 import { writeFile } from "node:fs/promises";
@@ -1397,11 +1410,13 @@ const BASELINE_SET_TX_BACKOFF_MS: readonly number[] = [20, 50, 100];
 
 /**
  * 单轮事务结局：settled = 判卷失败或成功提交（信封即终局）；contended = 提交认领
- * 到并发新世代（或重试轮吃到认领窗口缺席读）——退避后整链重读重算（ADR-21）。
+ * 到并发新世代（或吃到认领窗口缺席读）——退避后整链重读重算（ADR-21）。
+ * viaStackAbsent = 本次 contended 源于 stack.yaml 缺席读（认领-回装窗口或真实删除
+ * ——重试耗尽须显式呈现两种可能，与认领冲突路径的报错词形区分，禁静默吞掉）。
  */
 type BaselineSetAttemptOutcome =
   | { readonly kind: "settled"; readonly outcome: CommandOutcome<BaselineSetResult> }
-  | { readonly kind: "contended" };
+  | { readonly kind: "contended"; readonly viaStackAbsent?: true };
 
 function settled(outcome: CommandOutcome<BaselineSetResult>): BaselineSetAttemptOutcome {
   return { kind: "settled", outcome };
@@ -1422,10 +1437,20 @@ async function baselineSetAttempt(
   const stackRelative = baselineStackRelative(lane);
   const stackFile = await readTextFile(`${rootDir}/${stackRelative}`);
   if (stackFile.kind !== "ok") {
-    // 重试轮的缺席读 = 并发 CAS 写方的认领-回装窗口（fs-cas.ts 头注诚实披露）——
-    // 按争用重读，不冒充 NOT_CONFIGURED；首读缺席语义不变（串行路径恒 attempt=0）。
-    if (attempt > 0 && stackFile.kind === "absent") {
-      return { kind: "contended" };
+    // 缺席读分类（ADR-21 补，09-11 ci-cas-window）：casSwapFile 认领-回装窗口对并发
+    // 读者瞬态缺席（fs-cas.ts 头注诚实披露）——首读（attempt=0）也可能撞进对手窗口，
+    // 不得一律判 NOT_CONFIGURED。以 manifest 在座性为锚：manifest 在座（工作区已播种）
+    // → stack.yaml 缺席物理上只可能是认领窗口或真实删除 → 按 contended 有界重试；
+    // manifest 也缺席 → 工作区未播种（NOT_CONFIGURED 合法触发面，语义不变）。
+    // attempt>0 缺席读 = contended（ADR-21 既定；不冒充 NOT_CONFIGURED）。
+    if (stackFile.kind === "absent") {
+      if (attempt > 0) {
+        return { kind: "contended", viaStackAbsent: true };
+      }
+      const manifestProbe = await readTextFile(`${rootDir}/${BASELINE_MANIFEST_RELATIVE}`);
+      if (manifestProbe.kind === "ok") {
+        return { kind: "contended", viaStackAbsent: true };
+      }
     }
     const error = baselineFileError(stackRelative, stackFile);
     return settled(failBaselineSet(error.code, error.message, error.hint, input));
@@ -1607,8 +1632,9 @@ async function baselineSetAttempt(
 
 /**
  * 单键后补销账（无确认记录时）与治理通路修改（确认态 + 有效 --change，ADR-14/16）：
- * 校验（lane/key/value 词形闸，fail-closed 零写入）→ 读盘（缺席 NOT_CONFIGURED /
- * 损坏 INVALID_STATE）→ 确认闸（有效记录：无 --change BASELINE_ALREADY_CONFIRMED；
+ * 校验（lane/key/value 词形闸，fail-closed 零写入）→ 读盘（stack 缺席按 manifest
+ * 在座性分类：已播种 → contended 有界重试，未播种 NOT_CONFIGURED；manifest 缺席
+ * NOT_CONFIGURED / 损坏 INVALID_STATE）→ 确认闸（有效记录：无 --change BASELINE_ALREADY_CONFIRMED；
  * --change 经 kernel 校验在册 + 活性；pending-change 在途须同 ref——异 ref
  * SCHEMA_INVALID 先终结；记录词形在座但结构损坏：无 --change 受闸拒绝、携
  * --change INVALID_STATE——修复归 confirm 不归 set）→ 已答键改型闸
@@ -1660,8 +1686,22 @@ export async function runBaselineSet(
   // 认领到并发新世代（contended）→ 确定性退避后整链重读重算（新鲜盘面上重放
   // 全部判卷闸）；耗尽 → BASELINE_WRITE_CONFLICT 显式冲突（禁静默丢写）。串行
   // 无冲突路径 = 恒首轮 = 每文件恰一次 CAS 提交，落盘字节与既有 writeFile 相同。
+  // 缺席读 contended（ADR-21 补，09-11 ci-cas-window）记账：耗尽后按最后一次
+  // contended 的成因分流呈现——缺席读耗尽 = 「认领窗口未收敛 / 文件真实删除」
+  // 两可能诚实呈现（错误码仍复用 BASELINE_WRITE_CONFLICT：manifest 在座即已播种，
+  // NOT_CONFIGURED 会谎报工作区状态；且 hint 指路「重跑 / git 恢复或 init 重播种」
+  // 两条修复路径，与认领冲突路径的纯重跑路标区分）。
+  let lastContendedViaStackAbsent = false;
   for (let attempt = 0; ; attempt += 1) {
     if (attempt >= BASELINE_SET_TX_ATTEMPTS) {
+      if (lastContendedViaStackAbsent) {
+        return failBaselineSet(
+          "BASELINE_WRITE_CONFLICT",
+          `baseline 写入链未收敛（${BASELINE_SET_TX_ATTEMPTS} 轮有界重试内 ${baselineStackRelative(lane)} 持续缺席）：可能为并发 CAS 认领窗口未收敛，也可能为该文件被真实删除——缺席不猜测重写`,
+          "稍后重跑本命令即可：认领窗口收敛后重跑在新鲜盘面上按串行语义落盘；若重跑仍报本错误，该文件很可能已被真实删除——从 git 恢复或重跑 pomaster init 播种（seed-once-missing-only）。",
+          input,
+        );
+      }
       return failBaselineSet(
         "BASELINE_WRITE_CONFLICT",
         `baseline 并发写入冲突（${BASELINE_SET_TX_ATTEMPTS} 轮重读重算后仍与他人写入交错；${baselineStackRelative(lane)} 与 ${BASELINE_MANIFEST_RELATIVE} 的读-改-写链）`,
@@ -1676,7 +1716,9 @@ export async function runBaselineSet(
     if (attemptOutcome.kind === "settled") {
       return attemptOutcome.outcome;
     }
-    // kind === "contended"：确定性退避后整链重读重算（ADR-21）。
+    // kind === "contended"：确定性退避后整链重读重算（ADR-21）；缺席读成因记账
+    // 供耗尽分流呈现。
+    lastContendedViaStackAbsent = attemptOutcome.viaStackAbsent === true;
   }
 }
 

@@ -810,6 +810,46 @@ describe("baseline set", () => {
 });
 
 // ============================================================
+// ADR-21 缺席读分类（09-11 ci-cas-window：CAS 认领窗口首读缺席不冒充 NOT_CONFIGURED）
+// ============================================================
+
+describe("baseline set 缺席读分类（ADR-21 补：manifest 在座性为锚，确定性钉——禁真并发碰运气）", () => {
+  it("manifest 在座而 stack.yaml 缺席 → contended 有界重试（4 轮耗尽 BASELINE_WRITE_CONFLICT 两可能性呈现；不冒充 NOT_CONFIGURED；manifest 零写入）", async () => {
+    await runInit(dir);
+    const manifestBefore = read(BASELINE_MANIFEST_RELATIVE);
+    // 手工摆盘 = 「工作区已播种 + stack.yaml 缺席」——对手进程 casSwapFile rename
+    // 认领-回装窗口内读者可见盘面的确定性等价形态（CI windows 实证病灶：同拍起跑
+    // 子进程 attempt=0 首读撞窗口被误判「尚未播种」）。
+    rmSync(join(dir, baselineStackRelative("frontend")), { force: true });
+    const outcome = await runBaselineSet(dir, { lane: "frontend", key: "framework", value: "vue3" });
+    expect(outcome.ok).toBe(false);
+    // 已播种盘面上的缺席读按认领窗口重读（ADR-21 分类），耗尽后不冒充
+    // NOT_CONFIGURED（manifest 在座 = 已播种——谎报「尚未播种」即本批修复病灶）。
+    expect(outcome.errors[0]?.code).toBe("BASELINE_WRITE_CONFLICT");
+    expect(outcome.errors[0]?.code).not.toBe("NOT_CONFIGURED");
+    // 「4 轮」词形仅在事务重试环耗尽分支可达——钉住确实走了有界重试而非快败。
+    expect(outcome.errors[0]?.message).toContain("4 轮");
+    // 两可能性诚实呈现（认领窗口未收敛 / 真实删除）+ 双修复路标（git 恢复或 init 重播种）。
+    expect(outcome.errors[0]?.message).toContain("认领窗口未收敛");
+    expect(outcome.errors[0]?.message).toContain("真实删除");
+    expect(outcome.errors[0]?.hint).toContain("从 git 恢复");
+    expect(outcome.errors[0]?.hint).toContain("pomaster init");
+    // fail-closed 零写入：重试链从未到达提交，manifest 逐字节不动。
+    expect(read(BASELINE_MANIFEST_RELATIVE)).toBe(manifestBefore);
+  });
+
+  it("manifest 也缺席（stack.yaml 在座）→ NOT_CONFIGURED 不回退（未播种合法触发面，不误判并发窗口）", async () => {
+    await runInit(dir);
+    rmSync(join(dir, BASELINE_MANIFEST_RELATIVE), { force: true });
+    const outcome = await runBaselineSet(dir, { lane: "frontend", key: "framework", value: "vue3" });
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors[0]?.code).toBe("NOT_CONFIGURED");
+    expect(outcome.errors[0]?.message).toContain(`${BASELINE_MANIFEST_RELATIVE} 缺席`);
+    expect(outcome.errors[0]?.hint).toContain("pomaster init");
+  });
+});
+
+// ============================================================
 // 程序面（runCli 实跑 / 注册表 / runInitInteractive 全流程）
 // ============================================================
 

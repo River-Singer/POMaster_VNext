@@ -22,7 +22,9 @@
  *
  * 诚实披露（认领窗口）：认领-回装窗口内 target 对并发读者瞬态缺席（conflict 归还
  * 路径走 rename 原样还原、零窗口；仅成功安装路径有 syscall 级窗口）——读面缺席
- * 语义 fail-closed（NOT_CONFIGURED 显式拒绝，绝不猜测）。崩溃至多留下 inert 残片
+ * 语义 fail-closed（绝不猜测重写；消费侧按 manifest 在座性分类——已播种走有界
+ * 重读后显式冲突、未播种 NOT_CONFIGURED，见 baseline.ts ADR-21 缺席读分类，
+ * 09-11 ci-cas-window）。崩溃至多留下 inert 残片
  * （claim/tmp 同目录邻接名，不参与读面；locks.ts「claim 原样留盘」同纪律）。
  */
 import { existsSync, linkSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
