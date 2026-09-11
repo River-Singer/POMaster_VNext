@@ -8,7 +8,7 @@
 ## 0. 锚点与口径
 
 <!-- notices-sync:begin:anchor -->
-- **版本锚**：本清单以仓库内 `pnpm-lock.yaml`（lockfileVersion 9.0）为唯一锚点；该 lockfile 最后变更于 commit `aa81c0af7897b0373a987ad6a244aa13b1a21456`；lockfile 内容指纹 sha256 = `a25e8edacccd5fc60624d7598139836cda816378ae8647285b460ef120781f6d`。本清单不写墙钟生成日期、不写仓库 HEAD（HEAD 随无关提交漂移，不可作锚）——刷新口径 = 「以 pnpm-lock.yaml 对应 commit + 内容指纹为锚」。
+- **版本锚**：本清单以仓库内 `pnpm-lock.yaml`（lockfileVersion 9.0）为唯一锚点；该 lockfile 最后变更于 commit `65905df9637e8105fa8096d1f5464a78b869fab2`；lockfile 内容指纹 sha256 = `891105fb89ee91af21dfd9cbe42863e3b5b8de3acb415bac0daa67249be80967`。本清单不写墙钟生成日期、不写仓库 HEAD（HEAD 随无关提交漂移，不可作锚）——刷新口径 = 「以 pnpm-lock.yaml 对应 commit + 内容指纹为锚」。
 <!-- notices-sync:end:anchor -->
 <!-- notices-sync:begin:dep-face -->
 - **依赖面**：lockfile `packages:` 节共 **617 个第三方包**（name@version 去重；peer 多变体同包只记一行），按用途拆两节：
@@ -54,7 +54,7 @@
 <!-- notices-sync:begin:section-a -->
 ## §A 运行时依赖（8 包）
 
-构成：workspace 各包 `dependencies`（非 dev）的非 workspace 传递闭包——packages/cli → commander；packages/gauntlet-lite →（无第三方运行时依赖）；packages/kernel → ajv / js-yaml；packages/schemas →（无第三方运行时依赖）；packages/studio →（无第三方运行时依赖）；packages/studio-react →（无第三方运行时依赖）。
+构成：workspace 各包 `dependencies`（非 dev）的非 workspace 传递闭包——packages/cli → ajv / commander / js-yaml；packages/gauntlet-lite →（无第三方运行时依赖）；packages/kernel → ajv / js-yaml；packages/schemas →（无第三方运行时依赖）；packages/studio →（无第三方运行时依赖）；packages/studio-react →（无第三方运行时依赖）。
 
 | 包名 | 版本 | license id | license 源文件路径（本仓库 node_modules 内） | 证据 |
 |---|---|---|---|---|

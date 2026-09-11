@@ -3,7 +3,7 @@
 // 两道验证，全部可复跑：
 // 1) `npm pack --dry-run` 断言：bin 在座 / catalog 完整（与仓库 catalog 文件集全等[
 //    __pycache__ 排除] + lock 270 entries）/ seeds 完整（与仓库 packages/cli/seeds 文件集
-//    全等 + 清单 102 entries）/ 无 node_modules / 无 files 白名单外杂物 / 零 dependencies；
+//    全等 + 清单 103 entries）/ 无 node_modules / 无 files 白名单外杂物 / 零 dependencies；
 // 2) fresh-install 冒烟：真实 `npm pack` 出 tgz → 系统 temp `pvnext-npm-smoke-<pid>`
 //    目录 `npm init -y` + `npm install <tgz>`（零 dependencies，不联网装依赖）→
 //    依次实跑 `npx pomaster --help|init|status|catalog status|doctor`，断言退出码与
@@ -125,8 +125,8 @@ assert(
   `实为 ${stageSeedManifest.schema}`,
 );
 assert(
-  stageSeedManifest.entries?.length === 102,
-  "stage seeds manifest 102 entries",
+  stageSeedManifest.entries?.length === 103,
+  "stage seeds manifest 103 entries",
   `实为 ${stageSeedManifest.entries?.length}`,
 );
 
@@ -168,7 +168,7 @@ assert(presentForbidden.length === 0, "零 dependencies（四字段全缺席）"
 assert(stageManifest.private === undefined, "private 不设（缺省可发布）");
 // 版本断言与 build-npm-package.mjs 的 POMASTER_VERSION 单点真源同步维护
 // （发布 tag v<version> 以该常量为锚，publish.yml 版本闸强制）。
-assert(stageManifest.name === "pomaster" && stageManifest.version === "0.5.3", "name/version = pomaster@0.5.3");
+assert(stageManifest.name === "pomaster" && stageManifest.version === "0.6.0", "name/version = pomaster@0.6.0");
 assert(stageManifest.license === "PolyForm-Noncommercial-1.0.0", "license = PolyForm-Noncommercial-1.0.0");
 assert(stageManifest.bin?.pomaster === "dist/bin.js", "bin.pomaster = dist/bin.js");
 assert(stageManifest.engines?.node === ">=22", "engines.node = >=22");
@@ -406,7 +406,7 @@ smoke("npx pomaster status", "pomaster status", {
   expectExit: [0],
   expectWords: [
     "status: .pomaster/state/truth-index.json (seq=1)",
-    "seeded assets: themes 21 / stacks 36 / evidence 20 / baseline 25",
+    "seeded assets: themes 21 / stacks 36 / evidence 20 / baseline 26",
     "spec preplant: 19/19 in place",
   ],
 });
