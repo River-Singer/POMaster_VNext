@@ -87,6 +87,13 @@ export const MISSING_FACT_REF_PATTERN =
   /^FACT\.[A-Z][A-Z0-9_]{0,31}(\.[A-Z][A-Z0-9_]{0,31}){0,3}$/;
 
 /**
+ * SP-W1-a outcome_binding.revision_fingerprint 词形（schema 18
+ * definitions.resolution_outcome_binding.pattern 同线；D24 sha256 canonical 摘要——
+ * 消费端（closeout 回执闸）与对象行 body_sha256 全等对账，kernel 只做词形校验）。
+ */
+export const DECISION_OUTCOME_FINGERPRINT_PATTERN = /^sha256:[0-9a-f]{64}$/;
+
+/**
  * decision class 闭包（Owner 裁决9②：SCOPE 单值起步——vocab-lock decision_graph_vocab.decision_class，PR-0009 收编；（锚：corpus/master/cutover/owner-adjudications.md#裁决9）
  * 扩值走词汇表 PR，禁止实现侧私扩）。x-vocab-source: PRD v0.5.3 §5.2 示例词形。
  */
@@ -277,12 +284,28 @@ export interface DecisionAuthority {
   readonly owner: string;
 }
 
+/**
+ * SP-W1-a（W1 R1-1 / W0 B-3+C-4 方案 a）resolution 成果绑定键（schema 18
+ * definitions.resolution_outcome_binding 同构，additionalProperties:false / 至少一键）：
+ * 把 resolution 锚到它裁决的成果对象——task_ref 直绑 task id；change_ref 经 task
+ * payload.implements_change 间绑；revision_fingerprint 是消费端对账位（与对象行
+ * body_sha256 全等校验——内容漂移后旧 ACCEPT 失效）。kernel 只做词形校验与透传，
+ * 消费语义（ACCEPT 回执覆盖判定）归 closeout 消费闸（O-W1-1）。
+ */
+export interface DecisionOutcomeBinding {
+  readonly task_ref?: string;
+  readonly change_ref?: string;
+  readonly revision_fingerprint?: string;
+}
+
 /** §5.2 resolution（null = OPEN；UNKNOWN 携带 §14 重分类处置；seq = 调用方事件拍，零墙钟）。 */
 export interface DecisionResolution {
   readonly answer: DecisionAnswer;
   readonly value?: string;
   readonly classified?: UnknownDisposition;
   readonly seq?: number;
+  /** SP-W1-a 成果绑定键（可选；词形层对四 answer 词形开放，消费端只有 ACCEPT 构成回执）。 */
+  readonly outcome_binding?: DecisionOutcomeBinding;
 }
 
 /** §5.2 十键节点（十键全必填——一次锁全，schema 18 同构）。 */
@@ -1721,6 +1744,8 @@ export interface ResolveDecisionInput {
   readonly unknownTriage?: UnknownTriage;
   /** 事件拍（调用方供给；零墙钟 A4：过期判定靠 seq/fingerprint，禁时间戳）。 */
   readonly seq?: number;
+  /** SP-W1-a 成果绑定键（可选；词形 fail-closed——不合法显式 outcome_binding_invalid）。 */
+  readonly outcomeBinding?: DecisionOutcomeBinding;
 }
 
 export type ResolveDecisionOutcome =
@@ -1742,7 +1767,8 @@ export type ResolveDecisionOutcome =
         | "unknown_requires_triage"
         | "unknown_triage_contradictory"
         | "answer_unknown"
-        | "seq_invalid";
+        | "seq_invalid"
+        | "outcome_binding_invalid";
       readonly details: readonly string[];
       readonly hint: string;
     };
@@ -1758,6 +1784,50 @@ export function classifyUnknownTriage(triage: UnknownTriage): UnknownDisposition
 }
 
 /**
+ * SP-W1-a 绑定词形校验（fail-closed）：至少一键、值非空串、revision_fingerprint 须
+ * sha256:<64hex> 词形、拒绝未知键（schema 18 additionalProperties:false 的 kernel 镜像）。
+ * 返回 null = 合法；否则返回拒绝细节（outcome_binding_invalid 的 details 面）。
+ */
+function validateOutcomeBinding(binding: DecisionOutcomeBinding): readonly string[] | null {
+  const details: string[] = [];
+  const entries = [
+    ["task_ref", binding.task_ref],
+    ["change_ref", binding.change_ref],
+    ["revision_fingerprint", binding.revision_fingerprint],
+  ] as const;
+  for (const [key, value] of entries) {
+    if (value === undefined) continue;
+    if (typeof value !== "string" || value.trim() === "") {
+      details.push(`outcome_binding.${key} 必须是非空字符串`);
+      continue;
+    }
+    if (key === "revision_fingerprint" && !DECISION_OUTCOME_FINGERPRINT_PATTERN.test(value)) {
+      details.push(
+        `outcome_binding.revision_fingerprint 必须是 sha256:<64hex> 词形（D24 canonical 摘要；消费端与对象行 body_sha256 全等对账）`,
+      );
+    }
+  }
+  if (entries.every(([, value]) => value === undefined)) {
+    details.push("outcome_binding 至少携带一个绑定键（task_ref / change_ref / revision_fingerprint）");
+  }
+  if (Object.keys(binding).length !== entries.filter(([, value]) => value !== undefined).length) {
+    details.push("outcome_binding 含未知键（additionalProperties: false）");
+  }
+  return details.length > 0 ? details : null;
+}
+
+/** SP-W1-a 绑定规范化：只保留已定义键（resolution 序列化面确定性——canonicalJson 同线）。 */
+function normalizeOutcomeBinding(binding: DecisionOutcomeBinding): DecisionOutcomeBinding {
+  const normalized: { task_ref?: string; change_ref?: string; revision_fingerprint?: string } = {};
+  if (binding.task_ref !== undefined) normalized.task_ref = binding.task_ref;
+  if (binding.change_ref !== undefined) normalized.change_ref = binding.change_ref;
+  if (binding.revision_fingerprint !== undefined) {
+    normalized.revision_fingerprint = binding.revision_fingerprint;
+  }
+  return normalized;
+}
+
+/**
  * resolveDecision（纯函数，§13.2/§14）：
  * - ACCEPT = 采纳 recommendation.option（无推荐不可 ACCEPT；ACCEPT 带 value = 矛盾拒绝）；
  * - CHANGE 必带 value（人给的新 option），notes 携带受影响 grounding 重算申报路标；
@@ -1766,6 +1836,10 @@ export function classifyUnknownTriage(triage: UnknownTriage): UnknownDisposition
  *   BLOCKER_CANDIDATE（09 纪律：blocker 只能从 candidate 起步，升级 HARD_BLOCKER 必须走
  *   09 blocker_triage 八问升级通路——本函数永不直接产 HARD_BLOCKER）；
  * - DEFER = 显式延后（§15 合法残留 Deferred Decision，不阻塞 sufficiency）；
+ * - SP-W1-a（W1 R1-1）：outcomeBinding 可选携带——词形校验 fail-closed（至少一键/非空/
+ *   指纹 sha256 词形），规范化后透传进 resolution.outcome_binding 并参与图指纹；幂等按
+ *   绑定深度判（同 answer+同绑定 = NO_CHANGE，异绑定 = changed 重开留痕）。kernel 只
+ *   透传不判消费语义——ACCEPT 回执的覆盖判定归 closeout 消费闸（O-W1-1）；
  * - 幂等：同决议重放 = changed:false NO_CHANGE；重开（不同答案）允许，notes 显式记录覆盖。
  */
 export function resolveDecision(
@@ -1789,6 +1863,20 @@ export function resolveDecision(
       hint: "调用方供给 store seq / 本地事件序",
     };
   }
+  // SP-W1-a：绑定键词形校验（answer 无关——词形层对四词形开放，消费判定归 closeout 闸）。
+  let outcomeBinding: DecisionOutcomeBinding | undefined;
+  if (input.outcomeBinding !== undefined) {
+    const bindingDetails = validateOutcomeBinding(input.outcomeBinding);
+    if (bindingDetails !== null) {
+      return {
+        ok: false,
+        reason: "outcome_binding_invalid",
+        details: bindingDetails,
+        hint: "outcome_binding 至少一键且非空；revision_fingerprint 须 sha256:<64hex>（D24）",
+      };
+    }
+    outcomeBinding = normalizeOutcomeBinding(input.outcomeBinding);
+  }
   const notes: string[] = [];
   let resolution: DecisionResolution;
   switch (input.answer) {
@@ -1809,7 +1897,11 @@ export function resolveDecision(
           hint: "先补齐推荐（G7 通过）再 ACCEPT",
         };
       }
-      resolution = { answer: "ACCEPT", ...(input.seq !== undefined ? { seq: input.seq } : {}) };
+      resolution = {
+        answer: "ACCEPT",
+        ...(outcomeBinding !== undefined ? { outcome_binding: outcomeBinding } : {}),
+        ...(input.seq !== undefined ? { seq: input.seq } : {}),
+      };
       notes.push(`ACCEPT：采纳推荐 option ${target.recommendation.option}（§13.2）`);
       break;
     }
@@ -1822,7 +1914,12 @@ export function resolveDecision(
           hint: "例：--value INCLUDE_CURRENT_INCREMENT",
         };
       }
-      resolution = { answer: "CHANGE", value: input.value, ...(input.seq !== undefined ? { seq: input.seq } : {}) };
+      resolution = {
+        answer: "CHANGE",
+        value: input.value,
+        ...(outcomeBinding !== undefined ? { outcome_binding: outcomeBinding } : {}),
+        ...(input.seq !== undefined ? { seq: input.seq } : {}),
+      };
       notes.push(`CHANGE：采纳人工新 option ${input.value}（原推荐 ${target.recommendation?.option ?? "无"}被否）`);
       notes.push("受影响 grounding 需重算（re-ground）：新 option 可能改写事实前提与依赖——下一轮 ground 重跑 G-Gate（fingerprint STALE 消费为 P1）");
       break;
@@ -1852,7 +1949,12 @@ export function resolveDecision(
         };
       }
       const classified = classifyUnknownTriage(triage);
-      resolution = { answer: "UNKNOWN", classified, ...(input.seq !== undefined ? { seq: input.seq } : {}) };
+      resolution = {
+        answer: "UNKNOWN",
+        classified,
+        ...(outcomeBinding !== undefined ? { outcome_binding: outcomeBinding } : {}),
+        ...(input.seq !== undefined ? { seq: input.seq } : {}),
+      };
       notes.push(`UNKNOWN → 重分类 ${classified}（§14 六问，行序取第一个 yes）`);
       if (classified === "BLOCKER_CANDIDATE") {
         notes.push(
@@ -1873,7 +1975,11 @@ export function resolveDecision(
           hint: "去掉 value；延后到哪一轮的说明放 why 类字段（P1)",
         };
       }
-      resolution = { answer: "DEFER", ...(input.seq !== undefined ? { seq: input.seq } : {}) };
+      resolution = {
+        answer: "DEFER",
+        ...(outcomeBinding !== undefined ? { outcome_binding: outcomeBinding } : {}),
+        ...(input.seq !== undefined ? { seq: input.seq } : {}),
+      };
       notes.push("DEFER：显式延后（§15 合法残留 Deferred Decision——不阻塞 sufficiency，登记防丢失）");
       break;
     }
@@ -1885,11 +1991,21 @@ export function resolveDecision(
         hint: "CLI 面 --accept/--value/--unknown/--defer 四变体（PR-3 接线）",
       };
   }
+  // SP-W1-a：绑定在场即 notes 留痕（closeout 有效 ACCEPT 回执的覆盖判定载体——B-3）。
+  if (outcomeBinding !== undefined) {
+    notes.push(
+      `outcome_binding 成果绑定：${Object.entries(outcomeBinding)
+        .map(([key, value]) => `${key}=${String(value)}`)
+        .join(" ")}（消费端只有 ACCEPT 构成回执——closeout 回执闸按覆盖判定，kernel 只透传）`,
+    );
+  }
   if (
     target.resolution !== null &&
     target.resolution.answer === resolution.answer &&
     target.resolution.value === resolution.value &&
-    target.resolution.classified === resolution.classified
+    target.resolution.classified === resolution.classified &&
+    canonicalJson(target.resolution.outcome_binding ?? null) ===
+      canonicalJson(resolution.outcome_binding ?? null)
   ) {
     return {
       ok: true,

@@ -98,6 +98,7 @@ import {
   type DecisionGraph,
   type DecisionNode,
   type DecisionNodeCandidate,
+  type DecisionOutcomeBinding,
   type GroundingSurfaceValue,
   type MissingFactRouteValue,
   type QuestionAssumptionCondition,
@@ -1494,6 +1495,15 @@ export interface BrainstormDecideInput {
   readonly triage?: readonly string[];
   /** --seq <n>：事件拍（零墙钟 A4；可选）。 */
   readonly seq?: string;
+  /**
+   * SP-W1-a --outcome-task <id>：成果绑定 task_ref（closeout 有效 ACCEPT 回执闸 C-4 的
+   * 覆盖判定载体；answer=ACCEPT 时绑定可选——强制在消费端 closeout 闸）。
+   */
+  readonly outcomeTask?: string;
+  /** SP-W1-a --outcome-change <id>：成果绑定 change_ref（间绑 task payload.implements_change）。 */
+  readonly outcomeChange?: string;
+  /** SP-W1-a --outcome-revision <sha256:…>：消费端对账指纹（与对象行 body_sha256 全等）。 */
+  readonly outcomeRevision?: string;
   /** --ready：收敛判定（§15 sufficiency）。 */
   readonly ready?: boolean;
   /** --goal <text>：Task Contract goal 文本申报（--ready 必答非空——intent 投影源）。 */
@@ -1728,6 +1738,23 @@ export async function runBrainstormDecide(
         hint: "建图：--set <candidates.json>；决议：--answer <DECISION.*>（--accept|--value|--unknown|--defer）；收敛：--ready。",
       },
       ["brainstorm decide: FAILED — SCHEMA_INVALID (子动作缺位或冲突)"],
+    );
+  }
+
+  // —— 闸 2.5（SP-W1-a）：--outcome-* 是 --answer 的答面附属旗标——错位显式拒 ——
+  if (
+    !answerAction &&
+    (input.outcomeTask !== undefined ||
+      input.outcomeChange !== undefined ||
+      input.outcomeRevision !== undefined)
+  ) {
+    return fail(
+      {
+        code: "SCHEMA_INVALID",
+        message: "--outcome-task/--outcome-change/--outcome-revision 只随 --answer 申报（决议成果绑定，SP-W1-a）",
+        hint: "pomaster brainstorm decide <id> --answer <DECISION.*> --accept --outcome-task <TASK.*>。",
+      },
+      ["brainstorm decide: FAILED — SCHEMA_INVALID (--outcome-* 错位)"],
     );
   }
 
@@ -2119,11 +2146,26 @@ export async function runBrainstormDecide(
         : input.unknown === true
           ? "UNKNOWN"
           : "DEFER";
+    // SP-W1-a：成果绑定构造（词形判卷在 kernel resolveDecision——fail-closed 透传为
+    // DECISION_RESOLVE_OUTCOME_BINDING_INVALID；answer=ACCEPT 时绑定可选，强制在消费端）。
+    const outcomeBinding: DecisionOutcomeBinding | undefined =
+      input.outcomeTask !== undefined ||
+      input.outcomeChange !== undefined ||
+      input.outcomeRevision !== undefined
+        ? {
+            ...(input.outcomeTask !== undefined ? { task_ref: input.outcomeTask } : {}),
+            ...(input.outcomeChange !== undefined ? { change_ref: input.outcomeChange } : {}),
+            ...(input.outcomeRevision !== undefined
+              ? { revision_fingerprint: input.outcomeRevision }
+              : {}),
+          }
+        : undefined;
     const resolveOutcome = resolveDecision(graph, {
       decisionId,
       answer,
       ...(input.value !== undefined ? { value: input.value } : {}),
       ...(triage !== undefined ? { unknownTriage: triage } : {}),
+      ...(outcomeBinding !== undefined ? { outcomeBinding } : {}),
       ...(seq !== undefined ? { seq } : {}),
     });
     if (!resolveOutcome.ok) {

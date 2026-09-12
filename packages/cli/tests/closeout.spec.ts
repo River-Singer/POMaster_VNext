@@ -225,6 +225,29 @@ async function seedHappyEvidence(): Promise<void> {
   seedRun({});
 }
 
+/**
+ * 有效 Human ACCEPT 回执（O-W1-1 / W0 C-4 前置）：决策图 sidecar 写入 answer=ACCEPT +
+ * outcome_binding 覆盖（task_ref 直绑）。W1 R1-1 起 closeout 施断前必须有此回执——
+ * 机器验证通过 ≠ 成果已接受（本体语义测试见 closeout-accept-receipt.spec.ts）。
+ */
+function seedAcceptReceipt(overrides: { readonly taskRef?: string } = {}): void {
+  const dir = join(root, ".pomaster", "discovery", "scratchpads", "idea-accept");
+  mkdirSync(dir, { recursive: true });
+  const graph = {
+    graph_fingerprint: `sha256:${"0".repeat(64)}`,
+    decisions: [
+      {
+        decision_id: "DECISION.ACCEPT_SCOPE",
+        resolution: {
+          answer: "ACCEPT",
+          outcome_binding: { task_ref: overrides.taskRef ?? "TASK.T0001" },
+        },
+      },
+    ],
+  };
+  writeFileSync(join(dir, "decision-graph.json"), `${JSON.stringify(graph, null, 2)}\n`);
+}
+
 /** .pomaster 文件树快照（相对路径:内容 字节级）。 */
 function snapshot(): string[] {
   const base = join(root, ".pomaster");
@@ -272,6 +295,7 @@ describe("closeout happy path：DoD 全过 → 施断 COMPLETED", () => {
     await initStore();
     await seedTask();
     await seedHappyEvidence();
+    seedAcceptReceipt();
 
     const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
     expect(outcome.ok).toBe(true);
@@ -299,6 +323,7 @@ describe("closeout happy path：DoD 全过 → 施断 COMPLETED", () => {
     await initStore();
     await seedTask();
     await seedHappyEvidence();
+    seedAcceptReceipt();
 
     const outcome = await runCloseout(root, { taskId: "TASK-0001" });
     expect(outcome.ok).toBe(true);
@@ -312,6 +337,9 @@ describe("closeout happy path：DoD 全过 → 施断 COMPLETED", () => {
     await initStore();
     await seedTask();
     await seedHappyEvidence();
+    // 回执不带 revision_fingerprint：施断后 body 变更（rev 递增）不使回执失效——
+    // 本用例只验 kernel 指纹短路，不测对账位。
+    seedAcceptReceipt();
     const first = await runCloseout(root, { taskId: "TASK.T0001" });
     expect(first.ok).toBe(true);
 
@@ -526,6 +554,7 @@ describe("closeout DoD 判卷：acceptance 无 VERIFIED claim 硬阻断 COMPLETE
     // 主体分离 claim（缺省夹具）在 closeout 照常满足——显式锚定两通道分界。
     seedClaim({});
     seedRun({});
+    seedAcceptReceipt();
 
     const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
     expect(outcome.ok).toBe(true);
@@ -585,6 +614,7 @@ describe("closeout gate 阻断：subject 绑定 run 最新判卷必须全 passed
     seedClaim({});
     seedRun({ grn: "GRN-0001", verdict: "failed", ranAtSeq: 3 });
     seedRun({ grn: "GRN-0002", verdict: "passed", ranAtSeq: 9 });
+    seedAcceptReceipt();
 
     const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
     expect(outcome.ok).toBe(true);
@@ -601,6 +631,7 @@ describe("closeout gate 阻断：subject 绑定 run 最新判卷必须全 passed
     seedClaim({});
     seedRun({ grn: "GRN-0001", verdict: "failed", ranAtSeq: 3 });
     seedRun({ grn: "GRN-0002", verdict: "passed", ranAtSeq: 3 });
+    seedAcceptReceipt();
 
     const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
     expect(outcome.ok).toBe(true);
@@ -643,6 +674,7 @@ describe("closeout gate 阻断：subject 绑定 run 最新判卷必须全 passed
     await seedTask();
     seedClaim({});
     seedRun({}); // GRN-0001.json passed：正常入分母
+    seedAcceptReceipt();
     const runsDir = join(root, ".pomaster", "evidence", "runs");
     mkdirSync(runsDir, { recursive: true });
     writeFileSync(join(runsDir, "GRN-0002.json.bak"), "{}\n"); // 改名旁路（.json 后缀丢失）
@@ -826,6 +858,8 @@ describe("closeout 编排边界：身份/kind/kernel 施断判卷", () => {
       axes: { lifecycle: "PROPOSED", confidence: "UNRESOLVED", evidence: "PLANNED", change: "STABLE" },
     });
     await seedHappyEvidence();
+    // 回执在场：本用例只测 kernel 施断判卷（四判卷绿 + 回执绿后抵达施断，被跨轴断言拒）。
+    seedAcceptReceipt();
 
     const before = snapshot();
     const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
@@ -943,6 +977,7 @@ describe("closeout baseline 确认 gate（R-L：BASELINE_NOT_CONFIRMED / BASELIN
     await initStore();
     await seedTask();
     await seedHappyEvidence();
+    seedAcceptReceipt();
     const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
     expect(outcome.ok).toBe(true);
     expect((outcome.result as CloseoutResult).change).toBe("COMPLETED");
@@ -970,6 +1005,7 @@ describe("closeout baseline 确认 gate（R-L：BASELINE_NOT_CONFIRMED / BASELIN
     await initStore();
     await seedTask();
     await seedHappyEvidence();
+    seedAcceptReceipt();
     seedBaseline(true);
     // 漂移：确认快照之外的手工改写（模拟绕过治理通路的直接修改）。
     const feStack = join(root, ".pomaster", "baseline", "frontend", "stack.yaml");

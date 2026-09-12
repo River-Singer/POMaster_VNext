@@ -105,6 +105,7 @@ pomaster ledger record/list
 pomaster compact
 pomaster knowledge search/inspect/record/review-candidates/promote/demote
 pomaster memory capture/inspect/harvest/review/promote/audit
+pomaster negative-history record/search   # 任务内已否定方案（W1-R1-7；REQ-03/AC-02）：record 绑定 TASK.*（--approach/--reason 必填 + --evidence-ref 可选，数据住 task payload.negative_history——不建第二库）；search 词级精确检索、未命中显式「无记录」；context compile 经 [ADVISORY KNOWLEDGE] 分区可见（重编译/rollover 仍可检索，不进 gate 判卷输入）
 
 # ⑧ CARRY —— DoD 判卷收口
 pomaster closeout <task-id>

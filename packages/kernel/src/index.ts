@@ -552,6 +552,7 @@ export {
   DISCOVERY_INTENT_REF_PATTERN,
   MISSING_FACT_REF_PATTERN,
   ASSUMPTION_ANCHOR_PATTERN,
+  DECISION_OUTCOME_FINGERPRINT_PATTERN,
   DECISION_CLASS_VALUES,
   DECISION_CLASS_TO_DIMENSIONS,
   GROUNDING_VERDICT_VALUES,
@@ -594,6 +595,7 @@ export type {
   DecisionGrounding,
   DecisionRecommendation,
   DecisionAuthority,
+  DecisionOutcomeBinding,
   DecisionResolution,
   DecisionNode,
   DecisionGraph,
@@ -1124,6 +1126,30 @@ export type {
   KnowledgePromotionAuthorityValue,
   KnowledgeConfidenceValue,
 } from "@pomaster/schemas";
+
+// ============================================================
+// 任务内 Context negative history（W1-R1-7 · 09-10 PRD REQ-03/AC-02）
+// ============================================================
+// 语义边界（docs/kernel-api.md §32；negative-history.ts 头注）：数据住 task_object
+// payload.negative_history 自由区字段面（source_refs 同例——不新增 canonical kind、
+// 不建第二真值库）；写通路唯一 = appendTaskNegativeEntry（applyTransaction upsert
+// 既有 op——TransactionOp 无 negative op 同款通路层封条）；投影消费恒 [ADVISORY]
+// 分区（§83.2 铁律/GOLDEN-L8-3——「曾否定+原因」是可见性事实不是判卷约束，AC-02
+// 只做可见性不新增阻断）；检索 knowledgeQueryTokens 同一实现（词级精确，禁子串/
+// 等价猜测）；未命中显式空不虚构（REQ-03「未命中保持未知」）。
+export {
+  TASK_NEGATIVE_HISTORY_FIELD,
+  readTaskNegativeHistory,
+  appendTaskNegativeEntry,
+  searchTaskNegativeHistory,
+} from "./negative-history.js";
+export type {
+  TaskNegativeEntry,
+  TaskNegativeEntryAudit,
+  NegativeHistoryAppendInput,
+  NegativeHistoryAppendResult,
+  TaskNegativeHistoryHit,
+} from "./negative-history.js";
 
 // ============================================================
 // D 线地基：Sessions / Locks / Execution Identity（P20 · PRD §25.3/§25.4 + D 线 §1/§2/§3.3）

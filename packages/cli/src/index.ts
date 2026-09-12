@@ -118,6 +118,14 @@
  *                   P28 生命周期恒 CANDIDATE+ADVISORY；TRUTH/DECISION/EVIDENCE→
  *                   OWNER_ESCALATION_REQUIRED 呈报 exit 0 不写 Canonical State）/ audit =
  *                   分母封闭 + MEMORY_DRIFT 探测（drift 段非空 exit 1 fail-closed，§84.6）
+ * - negative-history record/search
+ *                   任务内 negative history 命令面（W1-R1-7 · 09-10 PRD REQ-03/AC-02）：
+ *                   record = 已否定方案登记（绑定 TASK.*，--approach/--reason 必填 +
+ *                   --evidence-ref 可选；kernel appendTaskNegativeEntry 唯一写通路，
+ *                   数据住 task payload.negative_history 自由区字段面——不建第二库）/
+ *                   search = 词级精确检索（未命中显式「无记录」；纯读零建账）；
+ *                   context compile 经 [ADVISORY KNOWLEDGE] 分区可见——AC-02 只做
+ *                   可见性（重试不被机器禁止，但须新依据），不进 gate 判卷输入
  * - production band define/list / evaluate / challenge / diagnose / metrics /
  *                   self-improvement register/list
  *                   Production Feedback 命令面（§95 全节 + §30 第四态 + §55.1/§90.4；
@@ -223,6 +231,10 @@ import {
   runKnowledgeReviewCandidates,
   runKnowledgeSearch,
 } from "./knowledge.js";
+import {
+  runNegativeHistoryRecord,
+  runNegativeHistorySearch,
+} from "./negative-history.js";
 import {
   runBrainstormDecide,
   runBrainstormPromote,
@@ -813,6 +825,17 @@ export type {
   KnowledgeDemotionResult,
   KnowledgeKernelDeps,
 } from "./knowledge.js";
+export {
+  runNegativeHistoryRecord,
+  runNegativeHistorySearch,
+} from "./negative-history.js";
+export type {
+  NegativeHistoryRecordInput,
+  NegativeHistoryRecordResult,
+  NegativeHistorySearchResult,
+  NegativeHistoryEntryView,
+  NegativeHistoryKernelDeps,
+} from "./negative-history.js";
 export {
   EVIDENCE_MALFORMED_CODE,
   RUN_INGEST_ACTIONS,
@@ -2188,6 +2211,9 @@ export function createProgram(
     .option("--defer", "答面 DEFER：显式延后（§15 合法残留）")
     .option("--triage <key=bool>", "UNKNOWN 六问申报（可重复：can_derive|can_research|can_safely_assume|can_defer|can_prototype_observe|blocks_current_increment = true|false；六键全必给）", collectValues, [])
     .option("--seq <n>", "事件拍（≥1 整数；零墙钟 A4，可选）")
+    .option("--outcome-task <id>", "SP-W1-a 成果绑定 task_ref（closeout 有效 ACCEPT 回执闸 C-4 的覆盖判定载体；只随 --answer）")
+    .option("--outcome-change <id>", "SP-W1-a 成果绑定 change_ref（间绑 task payload.implements_change；只随 --answer）")
+    .option("--outcome-revision <sha256:…>", "SP-W1-a 消费端对账指纹（sha256:<64hex>；与对象行 body_sha256 全等——内容漂移旧 ACCEPT 失效）")
     .option("--ready", "子动作③：§15 收敛判定（全绿→READY_TO_PROMOTE）+ Task Contract 文本申报")
     .option("--goal <text>", "Task Contract：goal 文本（--ready 必答；空文本按 MSD goal_defined=false 判卷）")
     .option("--scope <text>", "Task Contract：scope 文本（--ready 必答；空文本按 MSD scope_defined=false 判卷）")
@@ -2207,6 +2233,11 @@ export function createProgram(
         defer: opts.defer === true,
         triage: opts.triage as string[],
         ...(opts.seq !== undefined ? { seq: opts.seq as string } : {}),
+        ...(opts.outcomeTask !== undefined ? { outcomeTask: opts.outcomeTask as string } : {}),
+        ...(opts.outcomeChange !== undefined ? { outcomeChange: opts.outcomeChange as string } : {}),
+        ...(opts.outcomeRevision !== undefined
+          ? { outcomeRevision: opts.outcomeRevision as string }
+          : {}),
         ready: opts.ready === true,
         ...(opts.goal !== undefined ? { goal: opts.goal as string } : {}),
         ...(opts.scope !== undefined ? { scope: opts.scope as string } : {}),
@@ -2369,6 +2400,62 @@ export function createProgram(
       });
       record({
         command: "knowledge demote",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+
+  // —— Negative History 命令面（W1-R1-7 · 09-10 PRD REQ-03/AC-02） ——
+  // 判卷/落盘权威在 kernel negative-history.ts 语义入口（唯一写通路 = applyTransaction
+  // upsert 既有 op——数据住 task payload.negative_history 自由区字段面，不建第二库）；
+  // search 纯读零建账；未命中显式「无记录」不虚构（REQ-03「未命中保持未知」）。
+  // AC-02 语义边界：登记/检索只做「曾否定+原因」可见性（context compile 经
+  // [ADVISORY KNOWLEDGE] 分区呈现，永不进 gate 判卷输入）——不新增任何阻断闸。
+  const negativeHistory = program
+    .command("negative-history")
+    .description(
+      "任务内 negative history 命令面（W1-R1-7；09-10 PRD REQ-03/AC-02）：record = 已否定方案登记（绑定 TASK.*，--approach/--reason 必填 + --evidence-ref 可选，数据住 task payload.negative_history——不建第二库）；search = 词级精确检索（未命中显式「无记录」）；context compile 经 [ADVISORY KNOWLEDGE] 分区可见（AC-02 rollover 可重新获得）",
+    );
+  negativeHistory
+    .command("record")
+    .description(
+      "登记一条已否定方案（每次调用 = 一次否定事件；kernel appendTaskNegativeEntry 唯一写通路 → applyTransaction upsert 既有 op；status 恒 REJECTED；落 task payload.negative_history 自由区字段面——truth 正文层，进 content_digest 与投影指纹绑定）",
+    )
+    .argument("<task-id>", "目标任务（TASK.* canonical governed id，须在册 kind=task_object）")
+    .requiredOption("--approach <text>", "曾尝试的方案（检索键承载，REQ-03）")
+    .requiredOption("--reason <text>", "失败/否定原因（必填——不留原因的否定 = 静默，禁）")
+    .option("--evidence-ref <ref>", "证据引用（TEST.*/GRN-* 或 evidence 相对路径；可选）")
+    .requiredOption("--actor <actor>", "登记主体 <type>:<name>（C5 自报）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (taskId: string, opts, command) => {
+      const outcome = await runNegativeHistoryRecord(resolveDir(command), {
+        taskRef: taskId,
+        approach: opts.approach as string | undefined,
+        reason: opts.reason as string | undefined,
+        evidenceRef: opts.evidenceRef as string | undefined,
+        actor: opts.actor as string,
+      });
+      record({
+        command: "negative-history record",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  negativeHistory
+    .command("search")
+    .description(
+      "检索任务内已否定方案（词级精确 token 交集——knowledgeQueryTokens 同源，禁子串/等价猜测；query 缺席 = 列全部登记；未命中显式「无记录」不虚构；纯读零建账）",
+    )
+    .argument("<task-id>", "目标任务（TASK.* canonical governed id）")
+    .argument("[query]", "检索词（缺席 = 列全部登记）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (taskId: string, query: string | undefined, opts, command) => {
+      const outcome = await runNegativeHistorySearch(resolveDir(command), {
+        taskRef: taskId,
+        query,
+      });
+      record({
+        command: "negative-history search",
         outcome,
         asJson: command.optsWithGlobals().json === true,
       });

@@ -4,8 +4,10 @@
  *   init → maintain --ops（task 落账，acceptance 映射 CLM-0001）→ record claim
  *   （UNVERIFIED 先立后证，空 evidence_refs）→ closeout（阻断：DOD_CLAIM_NOT_VERIFIED）
  *   → record gate-run（独立验证探针产 GRN，subject 绑定任务）→ record verification
- *   （公开判定回写 VERIFIED + 挂证据）→ closeout（绿：acceptance 1/1 VERIFIED + gate
- *   1/1 passed → 施断 COMPLETED）→ 重复 record verification（NO_CHANGE 零写入）
+ *   （公开判定回写 VERIFIED + 挂证据）→ brainstorm start + decide --set/--answer
+ *   --accept --outcome-task（O-W1-1/C-4 有效 ACCEPT 回执链——机器验证通过 ≠ 成果已接受）
+ *   → closeout（绿：acceptance 1/1 VERIFIED + gate 1/1 passed + 回执覆盖 → 施断
+ *   COMPLETED）→ 重复 record verification（NO_CHANGE 零写入）
  *
  * 纪律：全链公开 CLI（runCli 是 L2 集成面唯一入口）；**零 writeFileSync 造数**——claims/
  * runs/truth 全部经公开命令落账，写盘仅限命令输入文件（ops/claim/gate JSON，位于项目
@@ -36,6 +38,44 @@ function writeInput(name: string, value: unknown): string {
   const path = join(inputsDir, name);
   writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`, "utf8");
   return path;
+}
+
+/**
+ * decide 候选图（schema 18 正例词形；fixture-discovery-chain.decideCandidates 同形态）：
+ * 单节点，grounding 十键全显式、missing_facts 显式空——配合 --retrieved 申报过 G-Gate。
+ */
+function verifDecideCandidates(): readonly Record<string, unknown>[] {
+  return [
+    {
+      decision_id: "DECISION.VERIF_SCOPE",
+      class: "SCOPE",
+      prompt: "W2 正向链任务的完成是否被接受（成果 ACCEPT）？",
+      depends_on: [],
+      affects: [],
+      grounding: {
+        intent_refs: ["DISCOVERY.INTENT.001"],
+        truth_refs: ["baseline/frontend/stack.yaml"],
+        contract_refs: [],
+        architecture_refs: [],
+        implementation_refs: [],
+        evidence_refs: [],
+        knowledge_refs: [],
+        research_finding_refs: [],
+        conflicts: [],
+        missing_facts: [],
+      },
+      options: ["ACCEPT_COMPLETION", "DEFER"],
+      recommendation: {
+        option: "ACCEPT_COMPLETION",
+        basis_refs: ["baseline/frontend/stack.yaml"],
+        rationale: "往返验证经独立重算确认，建议接受完成。",
+        tradeoff: "接受后任务进入 COMPLETED 终态。",
+        uncertainty: "后续漂移须重新决议（revision_fingerprint 对账位）。",
+        source: "PROJECT_GROUNDED",
+      },
+      authority: { owner: "BOOTSTRAP_OWNER" },
+    },
+  ];
 }
 
 describe("W2 正向链：record claim → record verification → closeout 全程公开命令", () => {
@@ -124,6 +164,28 @@ describe("W2 正向链：record claim → record verification → closeout 全�
     }
     const baselineConfirm = await runJsonStep(root, ["baseline", "confirm"]);
     expect(baselineConfirm.code).toBe(0);
+
+    // —— ④c 有效 ACCEPT 回执链（O-W1-1 / W0 C-4 前置；全程公开 CLI——零造数纪律）：
+    // brainstorm start → decide --set 建图 → decide --answer --accept --outcome-task。
+    // 机器验证通过 ≠ 成果已接受：closeout⑦ 施断绿靠本回执放行。 ——
+    const decideStart = await runJsonStep(root, [
+      "brainstorm", "start", "--id", "idea-verif-chain", "--title", "W2 正向链成果接受", "--ephemeral",
+    ]);
+    expect(decideStart.code).toBe(0);
+    const decideSet = await runJsonStep(root, [
+      "brainstorm", "decide", "idea-verif-chain",
+      "--set", writeInput("verif-decide-candidates.json", verifDecideCandidates()),
+      "--retrieved", "CURRENT_TRUTH",
+      "--retrieved", "REPO",
+    ]);
+    expect(decideSet.code).toBe(0);
+    const decideAnswer = await runJsonStep(root, [
+      "brainstorm", "decide", "idea-verif-chain",
+      "--answer", "DECISION.VERIF_SCOPE",
+      "--accept",
+      "--outcome-task", "TASK.VERIF_CHAIN",
+    ]);
+    expect(decideAnswer.code).toBe(0);
 
     // —— ⑤ 独立验证探针产 GRN（record gate-run；subject 绑定本任务） ——
     gateRun = await runJsonStep(root, [
@@ -223,6 +285,11 @@ describe("W2 正向链：record claim → record verification → closeout 全�
     const gates = result.gates as Record<string, unknown>;
     expect(gates.bound_runs).toBe(1);
     expect(gates.gates_passed).toBe(1);
+    // 有效 ACCEPT 回执（O-W1-1/C-4）：施断放行的回执来源可对账。
+    expect(result.accept_receipt).toEqual({
+      decision_id: "DECISION.VERIF_SCOPE",
+      graph: "discovery/scratchpads/idea-verif-chain/decision-graph.json",
+    });
     // 施断经 kernel：journal TX_APPLIED 记 transition_object（evidence→VERIFIED）
     const transition = journalEvents(root).find(
       (event) => event.type === "TX_APPLIED"

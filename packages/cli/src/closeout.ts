@@ -78,6 +78,17 @@
  *   digest 漂移 → BASELINE_DRIFT（确认 + 检出判卷式，写时不拦截——R-L 对 D9 的
  *   显式增补见父 PRD Technical Notes）。manifest 缺席（fixture 最小 store）→ 门
  *   不适用；判卷实现单源 baseline.ts（closeout 只聚合不旁移）。
+ * - 有效 ACCEPT 回执闸（O-W1-1 / W0 C-4，W1 R1-1；第五消费闸——四判卷全绿后、施断前）：
+ *   机器验证通过 ≠ 成果已接受——施断（evidence 轴 → VERIFIED）前必须存在覆盖本对象的
+ *   有效 Human ACCEPT 回执：决策图（schema 18 sidecar）resolution.answer=ACCEPT 且
+ *   outcome_binding 覆盖（task_ref 直绑 / change_ref 经 implements_change 间绑）；
+ *   无绑定键的 ACCEPT 是 Oracle 轮决议（B-3 两次 ACCEPT 语义靠绑定区分）不构成回执；
+ *   绑定携带 revision_fingerprint 须与对象行 body_sha256（store 事务自动维护位，D24）
+ *   全等——内容漂移后旧 ACCEPT 失效。码位：CLOSEOUT_ACCEPT_MISSING（零有效回执，hint
+ *   带确切命令词形）/ CLOSEOUT_ACCEPT_STALE（覆盖回执指纹失配）/ CLOSEOUT_ACCEPT_DAMAGED
+ *   （决策图不可解析或结构畸形——损坏禁静默跳过，可能正是被藏起来的 ACCEPT）。闸位在
+ *   四判卷全绿之后（Option A）：回执错误不与机器判卷错误混算——先修机器可判项，回执
+ *   缺口在其全绿后精确呈现。
  * - 阻断路径零写入（staged 写从未发起）；成功路径同 inputs 重放由 kernel 指纹短路
  *   （short_circuited=true 零写入）。
  */
@@ -112,7 +123,7 @@ import {
   parseErrorToCliError,
   requireInitialized,
 } from "./permit.js";
-import { POMASTER_DIR, claimsDirPath, runsDirPath, toPosix } from "./store-layout.js";
+import { POMASTER_DIR, claimsDirPath, discoveryScratchpadsDirPath, runsDirPath, toPosix } from "./store-layout.js";
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -154,6 +165,15 @@ export interface CloseoutSpecClauseEntry {
   readonly detail: string | null;
 }
 
+/**
+ * 有效 ACCEPT 回执呈现（O-W1-1 / W0 C-4）：回执来源决策（图内 DECISION.*）+ sidecar
+ * 相对词形（discovery/scratchpads/<padId>/decision-graph.json）。
+ */
+export interface CloseoutAcceptReceipt {
+  readonly decision_id: string;
+  readonly graph: string;
+}
+
 export interface CloseoutResult {
   /** argv 原词形。 */
   readonly task: string;
@@ -187,6 +207,11 @@ export interface CloseoutResult {
   } | null;
   /** 施断成功时的 CLI 呈现层局部词（vocab-lock presentation_axes.closeout_change_presentation——PR-0009；非词表新增——轴面承载是 evidence=VERIFIED）。 */
   readonly change: "COMPLETED" | null;
+  /**
+   * 有效 ACCEPT 回执（O-W1-1 / W0 C-4）：施断成功时呈现回执来源；阻断路径显式 null。
+   * null ≠ 无闸——阻断路径回执闸未通过（或缺席），呈现层不为失败捏造回执。
+   */
+  readonly accept_receipt: CloseoutAcceptReceipt | null;
   readonly applied_seq: number | null;
   readonly short_circuited: boolean | null;
 }
@@ -208,6 +233,7 @@ function emptyResult(task: string): CloseoutResult {
     dod: null,
     gates: null,
     change: null,
+    accept_receipt: null,
     applied_seq: null,
     short_circuited: null,
   };
@@ -385,6 +411,118 @@ async function readClaimRecord(
     assertedBy: actorLabelOf(parsed.asserted_by),
     recomputedBy: actorLabelOf(verification === undefined ? undefined : verification.recomputed_by),
   };
+}
+
+// ============================================================
+// 有效 ACCEPT 回执闸（O-W1-1 / W0 C-4：机器验证通过 ≠ 成果已接受）
+// ============================================================
+
+/**
+ * 回执闸（第五消费闸，方案 a——复用决策图 resolution，零新 canonical kind）：
+ * 扫描 discovery/scratchpads/<padId>/decision-graph.json（确定性字典序），存在
+ * resolution.answer=ACCEPT 且 outcome_binding 覆盖本对象的 Decision 即有效回执：
+ * - task_ref 直绑 task id；change_ref 经 payload.implements_change 间绑；
+ * - 无 outcome_binding 的 ACCEPT 是 Oracle 轮决议（B-3：两次 ACCEPT 语义靠绑定区分），
+ *   不构成成果回执；
+ * - 绑定携带 revision_fingerprint 时须与对象行 body_sha256（store 事务自动维护位，D24）
+ *   全等——内容漂移后旧 ACCEPT 失效（防「内容变了旧 ACCEPT 仍生效」）；
+ * - 判卷分母诚实纪律同线：决策图 JSON 不可解析 / 结构畸形 → CLOSEOUT_ACCEPT_DAMAGED
+ *   硬阻断（损坏文件可能正是被藏起来的 ACCEPT，禁静默跳过）；
+ * - 存在指纹失配的覆盖回执（无其他有效回执）→ CLOSEOUT_ACCEPT_STALE（指向失效决议）；
+ *   零有效回执 → CLOSEOUT_ACCEPT_MISSING（hint 带确切命令词形，C3 纪律）。
+ */
+async function acceptReceiptGate(
+  rootDir: string,
+  target: GovernedId,
+  implementsChange: string | null,
+  bodySha256: string | null,
+): Promise<{ readonly receipt: CloseoutAcceptReceipt } | { readonly error: CliError }> {
+  const padsDir = discoveryScratchpadsDirPath(rootDir);
+  const missingError: CliError = {
+    code: "CLOSEOUT_ACCEPT_MISSING",
+    message: `无有效 Human ACCEPT 回执覆盖对象 ${target}——机器验证已全绿，但机器验证通过 ≠ 成果已接受（W1 R1-1 / C-4）`,
+    hint: `决议并绑定成果：pomaster brainstorm decide <discovery-id> --answer <DECISION.*> --accept --outcome-task ${target}（或 --outcome-change <CHANGE.*> 间绑 implements_change；--outcome-revision sha256:… 可选对账指纹）。无绑定键的 ACCEPT 是 Oracle 轮决议（B-3），不构成成果回执。`,
+  };
+  let padIds: string[];
+  try {
+    padIds = readdirSync(padsDir, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name)
+      .sort();
+  } catch {
+    return { error: missingError }; // 目录缺席 = 零回执（fail-closed，非放行）
+  }
+  const staleDecisions: string[] = [];
+  for (const padId of padIds) {
+    const graphPath = join(padsDir, padId, "decision-graph.json");
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(await readFile(graphPath, "utf8"));
+    } catch (err) {
+      return {
+        error: {
+          code: "CLOSEOUT_ACCEPT_DAMAGED",
+          message: `${toPosix(`.pomaster/discovery/scratchpads/${padId}/decision-graph.json`)}: JSON 无法解析 — ${err instanceof Error ? err.message : String(err)}`,
+          hint: "判卷分母内的决策图损坏禁静默跳过（损坏文件可能正是被藏起来的 ACCEPT）；修复该 sidecar 后重跑 closeout。",
+        },
+      };
+    }
+    if (!isRecord(parsed) || !Array.isArray(parsed.decisions)) {
+      return {
+        error: {
+          code: "CLOSEOUT_ACCEPT_DAMAGED",
+          message: `${toPosix(`.pomaster/discovery/scratchpads/${padId}/decision-graph.json`)}: 图形态畸形（须 {graph_fingerprint, decisions: []}——schema 18 sidecar）`,
+          hint: "判卷分母内的决策图损坏禁静默跳过；修复该 sidecar 后重跑 closeout。",
+        },
+      };
+    }
+    const graphRel = `discovery/scratchpads/${padId}/decision-graph.json`;
+    for (const node of parsed.decisions) {
+      if (!isRecord(node) || typeof node.decision_id !== "string") {
+        return {
+          error: {
+            code: "CLOSEOUT_ACCEPT_DAMAGED",
+            message: `${toPosix(`.pomaster/discovery/scratchpads/${padId}/decision-graph.json`)}: decisions 含畸形节点（缺 decision_id）`,
+            hint: "判卷分母内的决策图损坏禁静默跳过；修复该 sidecar 后重跑 closeout。",
+          },
+        };
+      }
+      const resolution = node.resolution;
+      if (resolution === null || resolution === undefined) continue; // OPEN 决议非回执
+      if (!isRecord(resolution)) {
+        return {
+          error: {
+            code: "CLOSEOUT_ACCEPT_DAMAGED",
+            message: `${toPosix(`.pomaster/discovery/scratchpads/${padId}/decision-graph.json`)}: decision ${node.decision_id} 的 resolution 形态畸形`,
+            hint: "判卷分母内的决策图损坏禁静默跳过；修复该 sidecar 后重跑 closeout。",
+          },
+        };
+      }
+      if (resolution.answer !== "ACCEPT") continue; // 非 ACCEPT 决议不构成回执（REQ-10）
+      const binding = isRecord(resolution.outcome_binding) ? resolution.outcome_binding : null;
+      if (binding === null) continue; // 无绑定 = Oracle 轮 ACCEPT（B-3），不冒充成果回执
+      const taskRef = asString(binding.task_ref);
+      const changeRef = asString(binding.change_ref);
+      const covered = (taskRef !== null && taskRef === target) || (changeRef !== null && changeRef === implementsChange);
+      if (!covered) continue;
+      const fingerprint = asString(binding.revision_fingerprint);
+      if (fingerprint !== null && fingerprint !== (bodySha256 ?? "")) {
+        staleDecisions.push(node.decision_id); // 内容漂移——该回执失效，继续找其他回执
+        continue;
+      }
+      return { receipt: { decision_id: node.decision_id, graph: graphRel } };
+    }
+  }
+  if (staleDecisions.length > 0) {
+    return {
+      error: {
+        code: "CLOSEOUT_ACCEPT_STALE",
+        message: `覆盖对象 ${target} 的 ACCEPT 回执已失效（决议 ${staleDecisions.join("、")} 的 revision_fingerprint 与当前对象内容摘要不符——内容漂移后旧 ACCEPT 失效）`,
+        hint: "内容变更后须重新决议：pomaster brainstorm decide <discovery-id> --answer <DECISION.*> --accept --outcome-task <TASK.*> --outcome-revision sha256:…（对账指纹 = 对象行 body_sha256）。",
+      },
+    };
+  }
+  return { error: missingError };
 }
 
 // ============================================================
@@ -1056,6 +1194,24 @@ export async function runCloseout(
   }
 
   // ============================================================
+  // ③.5 有效 ACCEPT 回执闸（O-W1-1 / W0 C-4；第五消费闸——四判卷全绿后、施断前）：
+  // 机器验证通过 ≠ 成果已接受——施断（evidence → VERIFIED）前必须存在覆盖本对象的
+  // 有效 Human ACCEPT 回执（answer=ACCEPT + outcome_binding 覆盖；无绑定 = Oracle 轮
+  // 决议不构成回执）。闸位在四判卷全绿之后（Option A）：回执错误不与机器判卷错误
+  // 混算——先修机器可判项，回执缺口在其全绿后精确呈现。
+  // ============================================================
+
+  const receiptOutcome = await acceptReceiptGate(rootDir, target, taskImplementsChange, row.bodySha256 ?? null);
+  if ("error" in receiptOutcome) {
+    const human = [
+      `closeout ${target} → BLOCKED at ACCEPT 回执闸（dod ${dod.verified}/${dod.acceptance_total} acceptance VERIFIED, gates ${gates.gates_passed}/${gates.gates_judged} passed；${specSummary}）`,
+      `  ${receiptOutcome.error.code}: ${receiptOutcome.error.message}`,
+      `  hint: ${receiptOutcome.error.hint}`,
+    ];
+    return failOutcome<CloseoutResult>("closeout", judged, [receiptOutcome.error], human, [...gateWarnings, ...specWarnings]);
+  }
+
+  // ============================================================
   // ④ 施断：kernel 唯一写通道 applyTransaction（判卷权威零旁移）
   // ============================================================
 
@@ -1076,6 +1232,7 @@ export async function runCloseout(
       ...judged,
       blocked: false,
       change: "COMPLETED",
+      accept_receipt: receiptOutcome.receipt,
       applied_seq: applied.appliedSeq,
       short_circuited: applied.shortCircuited,
     };
@@ -1087,6 +1244,7 @@ export async function runCloseout(
         `  dod: ${dod.verified}/${dod.acceptance_total} acceptance VERIFIED`,
         `  ${specSummary}`,
         `  gates: ${gates.gates_passed}/${gates.gates_judged} passed`,
+        `  accept_receipt: ${receiptOutcome.receipt.decision_id} @ ${receiptOutcome.receipt.graph}（有效 ACCEPT 回执——W1 R1-1 / C-4）`,
         `  transition: evidence → VERIFIED（kernel applyTransaction 唯一写通道；COMPLETED 是呈现词——vocab-lock presentation_axes.closeout_change_presentation）`,
       ],
       [...gateWarnings, ...specWarnings],
