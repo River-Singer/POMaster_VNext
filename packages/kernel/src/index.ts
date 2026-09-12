@@ -1186,6 +1186,37 @@ export type {
 } from "./plan-compiler.js";
 
 // ============================================================
+// 证据绑定资格链判定核（W1-R1-5 · 09-10 PRD REQ-06 / AC-04）
+// ============================================================
+// 语义边界（evidence-qualification.ts 头注）：纯函数判定核——对既有证据（GRN run /
+// 感知回执 / CLM 判定面）对照当前要求面（baseline 确认 at_seq / journal 失效事件 /
+// 当前 gate_def 注册面 / subject）逐轴判定，错 seq / 失效 Permit / 旧 gate_def 的证据
+// 不满足当前要求（evidence-invalidation-map §5-1/§5-4/§5-5 最小增量，零新 canonical
+// kind）。verdict 词形闭包=kernel 局部词 TODO(vocab-pr)（STALE_SEQ 沿 STALE_GROUNDING、
+// ORACLE_SUPERSEDED 沿 lifecycle SUPERSEDED、SUBJECT_MISMATCH 沿 DOD 词族；QUALIFIED
+// 唯一合格词形），SP 提案待追认；失效事件词形是 producer 既有词（permits/locks/
+// execution journal）——只消费零新增。消费者接线：closeout（DOD_CLAIM_EVIDENCE_
+// UNQUALIFIED，读侧判卷）+ record verification（VERIFICATION_EVIDENCE_UNQUALIFIED，
+// 写侧前置）——判定核叠加非替换，既有资格防线零改动。
+export {
+  EVIDENCE_QUALIFICATION_VERDICTS,
+  EVIDENCE_QUALIFICATION_SURFACES,
+  EVIDENCE_INVALIDATION_EVENT_TYPES,
+  qualifyEvidence,
+  qualifyEvidenceBatch,
+} from "./evidence-qualification.js";
+export type {
+  EvidenceQualificationVerdict,
+  EvidenceQualificationSurface,
+  EvidenceInvalidationEventType,
+  EvidenceQualificationEvidence,
+  EvidenceInvalidationEvent,
+  EvidenceQualificationRequirement,
+  EvidenceQualificationFinding,
+  EvidenceQualificationOutcome,
+} from "./evidence-qualification.js";
+
+// ============================================================
 // D 线地基：Sessions / Locks / Execution Identity（P20 · PRD §25.3/§25.4 + D 线 §1/§2/§3.3）
 // ============================================================
 // 语义边界（docs/kernel-api.md §13）：三原语是 D 线自身 P0 清单①②的 Task 层并发

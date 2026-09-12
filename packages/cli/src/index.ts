@@ -682,6 +682,14 @@ export type {
   CloseoutGateRow,
   CloseoutSpecClauseEntry,
 } from "./closeout.js";
+// 证据资格链（W1 R1-5）：要求面/证据面装配单源（closeout 主消费者 + record verification
+// 次消费者共享；判定核在 @pomaster/kernel evidence-qualification）。
+export {
+  readEvidenceQualificationRequirement,
+  readRunQualificationView,
+  normalizeGrnEvidenceRefs,
+} from "./evidence-qualification.js";
+export type { RunQualificationView } from "./evidence-qualification.js";
 export { runCatalogStatus, runCatalogExplain, runCatalogRelock } from "./catalog.js";
 export { runResolve, renderResolve } from "./resolve.js";
 export type { ResolveInput, ResolveResult } from "./resolve.js";

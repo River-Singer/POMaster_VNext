@@ -69,13 +69,30 @@
  * 七态 verdict + counts.notApplicable 必填 + asserted/recomputed 孪生（永不信任自报值）；
  * 会话/工具陈述一律 CLAIMED，落库必经 @pomaster/kernel 的 applyTransaction store 事务。
  */
-import { createBuildAdapter } from "./build-adapter.js";
-import { createBrowserAdapter } from "./browser-adapter.js";
+import { createBuildAdapter, BUILD_GATE_NAME, BUILD_GATE_DEF } from "./build-adapter.js";
+import { createBrowserAdapter, BROWSER_GATE_NAME, BROWSER_GATE_DEF } from "./browser-adapter.js";
 import { runBrowserGateLegs } from "./browser-legs.js";
-import { createContractAdapter } from "./contract-adapter.js";
-import { createArchitectureAdapter } from "./architecture-adapter.js";
-import { createCoverageAdapter, createCrapGateAdapter } from "./coverage-adapter.js";
+import {
+  createContractAdapter,
+  CONTRACT_GATE_NAME,
+  CONTRACT_GATE_DEF,
+} from "./contract-adapter.js";
+import {
+  createArchitectureAdapter,
+  ARCHITECTURE_GATE_NAME,
+  ARCHITECTURE_GATE_DEF,
+} from "./architecture-adapter.js";
+import {
+  createCoverageAdapter,
+  createCrapGateAdapter,
+} from "./coverage-adapter.js";
+import { COVERAGE_GATE_NAME, COVERAGE_GATE_DEF } from "./coverage-leg.js";
+import { CRAP_GATE_NAME, CRAP_GATE_DEF } from "./crap.js";
 import { createMutationAdapter } from "./mutation-adapter.js";
+import { MUTATION_GATE_NAME, MUTATION_GATE_DEF } from "./mutation-leg.js";
+import { SECURITY_GATE_NAME, SECURITY_GATE_DEF } from "./security-leg.js";
+import { PERFORMANCE_GATE_NAME, PERFORMANCE_GATE_DEF } from "./performance-leg.js";
+import { CATALOG_GATE_RECIPES } from "./gate-recipe-runner.js";
 import {
   createLighthouseAdapter,
   createWebVitalsAdapter,
@@ -278,3 +295,27 @@ export const toolDetectors = {
   schemathesis: detectSchemathesis,
   chromeDevtoolsMcp: detectChromeDevtoolsMcp,
 } as const;
+
+/**
+ * 当前 gate_def 注册面（W1 R1-5 证据资格链的 §5-5 oracle/gate_def 版本比对要求面）：
+ * gate 名 → 当前 gate_def——9 组 adapter 常量对（各 *_GATE_NAME/*_GATE_DEF 单一声明位
+ * 直引，禁第二套抄写）+ catalog/gates recipe（gateDef 锚 = gate_def_draft.anchor）。
+ * 消费：kernel evidence-qualification 判定核（gate 在册且证据 gate_def ≠ 当前值 →
+ * ORACLE_SUPERSEDED；gate 不在册 = 轴诚实不适用——自定义 gate 不冒充被取代）。
+ * 词形沿 browser-evidence.ts:13-14「判卷语义变更走 gate_def 版本化」先例；加法导出
+ * 单一权威面，新增 gate/recipe 须同步本面（漂移由本包 gate-recipe-runner.spec
+ * 分母自检「CURRENT_GATE_DEFS 注册面对账」钉住：*_GATE_NAME 反射扫描 + recipe
+ * 全覆盖 + 零孤儿键，新增 gate 不接线即红）。
+ */
+export const CURRENT_GATE_DEFS: Readonly<Record<string, string>> = Object.freeze({
+  [BUILD_GATE_NAME]: BUILD_GATE_DEF,
+  [CONTRACT_GATE_NAME]: CONTRACT_GATE_DEF,
+  [ARCHITECTURE_GATE_NAME]: ARCHITECTURE_GATE_DEF,
+  [BROWSER_GATE_NAME]: BROWSER_GATE_DEF,
+  [COVERAGE_GATE_NAME]: COVERAGE_GATE_DEF,
+  [CRAP_GATE_NAME]: CRAP_GATE_DEF,
+  [MUTATION_GATE_NAME]: MUTATION_GATE_DEF,
+  [SECURITY_GATE_NAME]: SECURITY_GATE_DEF,
+  [PERFORMANCE_GATE_NAME]: PERFORMANCE_GATE_DEF,
+  ...Object.fromEntries(CATALOG_GATE_RECIPES.map((recipe) => [recipe.id, recipe.gateDef])),
+});

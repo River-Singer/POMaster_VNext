@@ -78,6 +78,24 @@
  *   digest 漂移 → BASELINE_DRIFT（确认 + 检出判卷式，写时不拦截——R-L 对 D9 的
  *   显式增补见父 PRD Technical Notes）。manifest 缺席（fixture 最小 store）→ 门
  *   不适用；判卷实现单源 baseline.ts（closeout 只聚合不旁移）。
+ * - 证据资格链（W1 R1-5 主消费者；evidence-invalidation-map §5-1/§5-4/§5-5 最小增量，
+ *   REQ-06「错 revision/实例证据不能满足当前要求」+ AC-04 三反例）：VERIFIED + 非空
+ *   证据 ≠ 证据仍满足当前要求——逐 Acceptance VERIFIED claim 的 claim 判定面
+ *   （verification.at_seq）与全部 GRN 引用面（ran_at_seq / gate / gate_def /
+ *   execution_id）对照当前要求面（baseline 确认 at_seq / journal 三词形失效事件
+ *   PERMIT_EXPIRED_OBSERVED·PERMIT_STOLEN·EXECUTION_INTERRUPTED / gauntlet-lite
+ *   CURRENT_GATE_DEFS 注册面）逐轴资格判定（kernel evidence-qualification 纯函数核，
+ *   零新 canonical kind；要求面装配单源 evidence-qualification.ts）。否决词形
+ *   STALE_SEQ（证据早于确认基线）/ PERMIT_INVALIDATED（挂载执行许可失效——事件 ↔
+ *   执行关联经 executions/ permit_ids）/ ORACLE_SUPERSEDED（gate_def 被当前版本取代；
+ *   gate 不在册 = 轴诚实不适用）→ DOD_CLAIM_EVIDENCE_UNQUALIFIED 逐证据显式（id+
+ *   词形+reason，DOD_CLAIM_SELF_APPROVED 同构形态）。判定核叠加非替换：subject 锚
+ *   防线仍归 DOD_CLAIM_SUBJECT_MISMATCH、分母空置仍归 DOD_CLAIM_EVIDENCE_EMPTY；
+ *   oracle/subject 轴本切片消费面显式关闭（null）；判定词形闭包=kernel 局部词
+ *   TODO(vocab-pr) SP 提案待追认。阻断边界留痕：Spec 维度条款循环（gate_refs 的
+ *   ran_at_seq 最新判卷语义）未接资格核——acceptance 轨否决已使 closeout 整体阻断，
+ *   Spec 轨资格接线留后续切片（旁路不构成放行通道，dodErrors ∪ specErrors 任一非空
+ *   即 blocked）。
  * - 有效 ACCEPT 回执闸（O-W1-1 / W0 C-4，W1 R1-1；第五消费闸——四判卷全绿后、施断前）：
  *   机器验证通过 ≠ 成果已接受——施断（evidence 轴 → VERIFIED）前必须存在覆盖本对象的
  *   有效 Human ACCEPT 回执：决策图（schema 18 sidecar）resolution.answer=ACCEPT 且
@@ -97,6 +115,11 @@ import { readdirSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { GovernedId, Store, TruthIndex } from "@pomaster/kernel";
+import type {
+  EvidenceQualificationEvidence,
+  EvidenceQualificationFinding,
+  EvidenceQualificationRequirement,
+} from "@pomaster/kernel";
 import {
   GovernanceError,
   GovernedIdParseError,
@@ -104,6 +127,7 @@ import {
   createStore,
   loadTruthIndex,
   parseGovernedId,
+  qualifyEvidenceBatch,
   resolveAlias,
 } from "@pomaster/kernel";
 import {
@@ -116,6 +140,11 @@ import {
   listPlaneFiles,
 } from "./evidence.js";
 import { baselineGateErrors } from "./baseline.js";
+import {
+  normalizeGrnEvidenceRefs,
+  readEvidenceQualificationRequirement,
+  readRunQualificationView,
+} from "./evidence-qualification.js";
 import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
 import {
@@ -372,6 +401,10 @@ interface ClaimRecordView {
   readonly assertedBy: string | null;
   /** 重算主体词形（07 verification.recomputed_by → "actor_type:actor"；同上缺席规则）。 */
   readonly recomputedBy: string | null;
+  /** 判定锚 seq（07 verification.at_seq；缺席/畸形 = null——资格链 seq 轴诚实不适用）。 */
+  readonly atSeq: number | null;
+  /** 挂载执行身份（07 信封 execution_id，AGX 词形；缺席 = null——permit 轴不适用）。 */
+  readonly executionId: string | null;
 }
 
 /** actor 盒（07 actor 形态）→ "actor_type:actor" 词形；盒/字段缺席或非字符串 = null。 */
@@ -403,6 +436,7 @@ async function readClaimRecord(
     return { damage: `evidence/claims/${fileName}: claim 记录不是 JSON 对象` };
   }
   const verification = isRecord(parsed.verification) ? parsed.verification : undefined;
+  const atSeq = verification === undefined ? undefined : verification.at_seq;
   return {
     subject: claimSubjectOf(parsed),
     acceptanceIndex: isRecord(parsed.subject) ? (parsed.subject as UnknownRecord).acceptance_index : undefined,
@@ -410,7 +444,74 @@ async function readClaimRecord(
     evidenceRefs: parsed.evidence_refs,
     assertedBy: actorLabelOf(parsed.asserted_by),
     recomputedBy: actorLabelOf(verification === undefined ? undefined : verification.recomputed_by),
+    atSeq: typeof atSeq === "number" && Number.isInteger(atSeq) && atSeq >= 0 ? atSeq : null,
+    executionId: asString(parsed.execution_id),
   };
+}
+
+// ============================================================
+// 证据资格链（W1 R1-5 主消费者：claim 判定面 + GRN 引用面逐面判定）
+// ============================================================
+
+/**
+ * 逐 Acceptance VERIFIED claim 的证据资格判定（evidence-invalidation-map §5-1/§5-4/§5-5
+ * 最小增量；kernel evidence-qualification 判定核纯消费）。判卷分母两半：
+ * - claim 判定面（CLM）：verification.at_seq 为 seq 锚——VERIFIED 判定早于 baseline
+ *   确认 = 判定依据过期（STALE_SEQ 同词形）；
+ * - 全部 GRN 引用面（07 typed gate_result 分型 + 字符串词形归一）：ran_at_seq / gate /
+ *   gate_def / execution_id 四锚逐轴判定。blob / truth_object 引用不携带锚，不进资格
+ *   分母（缺席诚实——资格链是叠加轴，引用位完整性归既有防线）。
+ * 判定核词形/合同异常（SCHEMA_INVALID）→ 显式错误（fail-closed，禁静默放行）。
+ */
+async function qualifyClaimEvidence(
+  rootDir: string,
+  claimRef: string,
+  view: ClaimRecordView,
+  requirement: EvidenceQualificationRequirement,
+): Promise<
+  { readonly findings: readonly EvidenceQualificationFinding[] } | { readonly error: CliError }
+> {
+  const faces: EvidenceQualificationEvidence[] = [
+    {
+      ref: claimRef,
+      surface: "claim",
+      captured_at_seq: view.atSeq,
+      gate: null,
+      gate_def: null,
+      oracle_ref: null,
+      execution_id: view.executionId,
+      subject: typeof view.subject === "string" ? view.subject : null,
+    },
+  ];
+  for (const grn of normalizeGrnEvidenceRefs(view.evidenceRefs)) {
+    const run = await readRunQualificationView(runsDirPath(rootDir), grn);
+    if (run === null) continue; // 悬空 GRN 引用——引用位存在性归既有防线，资格轴缺席诚实
+    if ("damage" in run) {
+      return {
+        error: {
+          code: "EVIDENCE_MALFORMED",
+          message: `${run.damage}（被 ${claimRef} evidence_refs 引用）`,
+          hint: "判卷分母内证据损坏禁静默跳过（可能正是被藏起来的失败记录）；修复后走 record/compact canonical 化，或从 git 恢复。",
+        },
+      };
+    }
+    faces.push({
+      ref: run.grn,
+      surface: "run",
+      captured_at_seq: run.ranAtSeq,
+      gate: run.gate,
+      gate_def: run.gateDef,
+      oracle_ref: null,
+      execution_id: run.executionId,
+      subject: run.subject,
+    });
+  }
+  try {
+    return { findings: qualifyEvidenceBatch(faces, requirement).findings };
+  } catch (err) {
+    if (!(err instanceof GovernanceError)) throw err;
+    return { error: governanceErrorToCliError(err) };
+  }
 }
 
 // ============================================================
@@ -639,6 +740,16 @@ export async function runCloseout(
     });
   } else {
     const claimsDir = claimsDirPath(rootDir);
+    // 证据资格链要求面装配（W1 R1-5；每次判卷新鲜装配——baseline 确认锚 / journal 失效
+    // 事件 / executions/ 许可绑定都是随时间推进的事实源，禁缓存跨判卷复用）。装配失败
+    // （journal 损坏 SCHEMA_INVALID）→ fail-closed：损坏可能正是被藏起来的失效事件。
+    let qualificationRequirement: EvidenceQualificationRequirement;
+    try {
+      qualificationRequirement = await readEvidenceQualificationRequirement(rootDir);
+    } catch (err) {
+      if (!(err instanceof GovernanceError)) throw err;
+      return failCloseout(governanceErrorToCliError(err), withKind);
+    }
     // 挪证封堵登记：无注记 claim 的已合法消费位（claimRef → 消费它的 acceptance index）。
     // 只在条目真正判过（VERIFIED + 非空证据）时登记——未判过的 claim 两条引用都会在
     // 判定位失败，重复报挪证只会稀释显式码位。
@@ -742,6 +853,27 @@ export async function runCloseout(
             continue;
           }
           unannotatedConsumed.set(claimRef, index);
+        }
+        // 证据资格链（W1 R1-5 主消费者；叠加非替换——subject/index/自批/挪证/空证据等
+        // 既有防线先行不改动）：VERIFIED + 非空证据 ≠ 证据仍满足当前要求。claim 判定面
+        // 与全部 GRN 引用逐面判定，否决词形（STALE_SEQ / PERMIT_INVALIDATED /
+        // ORACLE_SUPERSEDED / SUBJECT_MISMATCH）逐证据显式——DOD_CLAIM_SELF_APPROVED
+        // 同构错误形态（逐条列出证据 id + 否决词形 + reason，指路重产出再挂证）。
+        const qualification = await qualifyClaimEvidence(rootDir, claimRef, view, qualificationRequirement);
+        if ("error" in qualification) {
+          push(false, verdict, null, qualification.error);
+          continue;
+        }
+        const vetoedFindings = qualification.findings.filter((finding) => !finding.qualified);
+        if (vetoedFindings.length > 0) {
+          for (const finding of vetoedFindings) {
+            push(false, verdict, `${finding.ref} → ${finding.verdict}`, {
+              code: "DOD_CLAIM_EVIDENCE_UNQUALIFIED",
+              message: `acceptance[${index}] 映射的 ${claimRef} 证据未通过资格判定：${finding.ref}（${finding.surface} 面）→ ${finding.verdict}——${finding.reason}`,
+              hint: "错 seq / 失效 Permit / 旧 gate_def 的证据不满足当前要求（W1 R1-5 证据资格链；词形闭包=SP 提案待追认）——由证据产出方在当前确认基线/有效许可/当前 gate_def 下重新产出证据，经独立验证流重新挂证（record verification）后重跑 closeout。",
+            });
+          }
+          continue;
         }
         push(true, verdict, null, null);
         continue;

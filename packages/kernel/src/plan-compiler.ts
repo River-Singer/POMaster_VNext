@@ -33,6 +33,14 @@
  * gauntlet-lite gateAdapters(5)/toolDetectors(15) 只读探测 + browser-gate.json/
  * .mcp.json 在位性）；R1-4 落地后本输入段换统一绑定面，判定核不动。
  *
+ * ═══ R1-5 接缝（证据复用重判——test-planning §2 算法第 8 步）═══
+ * 「用当前 revision/env/config 对已有证据重判适用性」的机器可比对子集已由
+ * evidence-qualification.ts 判定核落地（seq/gate_def/oracle/permit/subject 五轴纯函
+ * 数，要求面=baseline 确认 at_seq + journal 失效事件 + CURRENT_GATE_DEFS 注册面）；
+ * 本切片消费接线归 closeout / record verification 两命令面，plan 重编译时的逐 item
+ * 证据复用重判（预期证据 ↔ 既有 GRN 对账后调 qualifyEvidence）留接口给后续切片，
+ * 本编译器行为零改动。
+ *
  * ═══ 旧档位迁移清单指针（兼容期 legacy 登记——W1 Out of Scope）═══
  * 旧 GateTier/triage 档位消费者迁移接缝表住
  * .trellis/tasks/09-10-brainstorm-long-horizon-control-loop/research/

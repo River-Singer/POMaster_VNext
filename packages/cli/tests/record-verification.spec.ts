@@ -16,11 +16,18 @@
  *   = doctor 探针）；
  * - 命令面：runCli `record verification --json` 信封 command 全名 + exit 码。
  */
-import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { applyTransaction, createStore } from "@pomaster/kernel";
+import {
+  applyTransaction,
+  beginExecution,
+  checkPermit,
+  createStore,
+  issuePermit,
+} from "@pomaster/kernel";
 import {
   runRecordClaim,
   runRecordGateRun,
@@ -401,6 +408,142 @@ describe("record verification D20 自批披露", () => {
     expect(outcome.warnings).toHaveLength(1);
     expect(outcome.warnings[0]?.code).toBe("CLAIM_SELF_APPROVAL");
     expect(outcome.warnings[0]?.hint).toContain("claim_self_approval_clean");
+  });
+});
+
+// ============================================================
+// 证据资格链前置核对（W1 R1-5 次消费者：VERIFIED 唯一生产通路的写侧闸）
+// ============================================================
+
+describe("record verification 证据资格链（W1 R1-5）", () => {
+  /** 播种 baseline 子树 + confirmed 块（沿 closeout.spec.ts 同款 25 件 digest；at_seq 注入）。 */
+  function seedBaseline(confirmed: boolean, atSeq: number): void {
+    const md = (name: string): [string, string] => [`.pomaster/baseline/${name}`, `# ${name}\n`];
+    const contents = new Map<string, string>([
+      [".pomaster/baseline/frontend/stack.yaml", "framework: vue3\nlanguage: typescript\n"],
+      [".pomaster/baseline/backend/stack.yaml", "language: java\nframework: spring\n"],
+      [".pomaster/baseline/frontend/design-tokens.yaml", "meta:\n  origin: preset\n  customized: false\n"],
+      ...[
+        "frontend/architecture.md",
+        "frontend/directory-structure.md",
+        "frontend/design-system.md",
+        "frontend/state-and-data.md",
+        "frontend/api-and-error.md",
+        "frontend/quality.md",
+        "backend/architecture.md",
+        "backend/directory-structure.md",
+        "backend/api-contract.md",
+        "backend/data-access.md",
+        "backend/transaction-concurrency.md",
+        "backend/integration-runtime.md",
+        "backend/quality.md",
+        "data/model.md",
+        "data/precision-units.md",
+        "data/migration.md",
+        "data/lineage.md",
+        "data/quality.md",
+        "platform/security.md",
+        "platform/environment.md",
+        "platform/observability.md",
+        "platform/delivery.md",
+      ].map(md),
+    ]);
+    for (const [relative, content] of contents) {
+      const target = join(root, ...relative.split("/"));
+      mkdirSync(dirname(target), { recursive: true });
+      writeFileSync(target, content);
+    }
+    if (!confirmed) return;
+    const digestLines = [...contents.entries()]
+      .map(([relative, content]) => {
+        const digest = `sha256:${createHash("sha256").update(content, "utf8").digest("hex")}`;
+        return `    ${relative.replace(".pomaster/", "")}: ${digest}`;
+      })
+      .join("\n");
+    writeFileSync(
+      join(root, ".pomaster", "baseline", "manifest.yaml"),
+      `id: BASELINE.PROJECT\nschema_version: 1\nstatus: CURRENT\nunknowns: []\nconfirmed:\n  at_seq: ${atSeq}\n  digests:\n${digestLines}\n`,
+    );
+  }
+
+  it("AC-04-a 反例：引用 GRN ran_at_seq 早于 baseline 确认 at_seq → VERIFICATION_EVIDENCE_UNQUALIFIED / STALE_SEQ，零写入", async () => {
+    await seedStore();
+    await seedCapability();
+    const grn = await seedGateRun(); // ran_at_seq = 当前低序号
+    seedBaseline(true, 999); // 确认基线远晚于证据
+    const clm = await seedClaimViaRecord({ evidenceRefs: [`GRN-0001`] });
+    expect(grn).toBe("GRN-0001");
+    const before = snapshot();
+
+    const outcome = await runRecordVerification(root, {
+      clm,
+      verifier: "tool:verifier@0.1.0",
+    });
+    // RED 留证（实现前现状）：过期证据照样 APPLIED；GREEN：写侧前置核对阻断。
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors[0]?.code).toBe("VERIFICATION_EVIDENCE_UNQUALIFIED");
+    expect(outcome.errors[0]?.message).toContain("GRN-0001");
+    expect(outcome.errors[0]?.message).toContain("STALE_SEQ");
+    expect((readClaim(clm).verification as Record<string, unknown>).verdict).toBe("UNVERIFIED");
+    expect(snapshot()).toEqual(before); // 零写入（阻断先于事务）
+  });
+
+  it("AC-04-b 反例：引用 GRN 挂载执行的许可已失效 → VERIFICATION_EVIDENCE_UNQUALIFIED / PERMIT_INVALIDATED", async () => {
+    await seedStore();
+    const store = await createStore(root);
+    await seedCapability(); // tx → seq 1
+    const permit = await issuePermit(store, {
+      subjectIds: ["CAPABILITY.CSV_TOOL.SERIALIZE_ROWS"],
+      requestedBy: { actorType: "agent", actor: "demo-planner" },
+      ttlBeats: 1, // record claim 事务后即过期
+    });
+    const clm = await seedClaimViaRecord(); // tx → seq 2 = expires_at_seq
+    const check = await checkPermit(store, permit.permitRef, {
+      op: "upsert_object",
+      id: "CAPABILITY.CSV_TOOL.SERIALIZE_ROWS",
+    });
+    expect(check.outcome).toBe("expired"); // PERMIT_EXPIRED_OBSERVED 已入 journal
+    const execution = await beginExecution(store, {
+      role: "implementer",
+      runtime: "claude-code",
+      identityKind: "interactive",
+      permitIds: [permit.permitRef],
+    });
+    await runRecordGateRun(root, {
+      from: writeInput(gatePayload()),
+      executionId: execution.execution_id, // GRN-0001 挂载失效执行
+    });
+    const before = snapshot();
+
+    const outcome = await runRecordVerification(root, {
+      clm,
+      verifier: "tool:verifier@0.1.0",
+      evidence: ["GRN-0001"],
+    });
+    // RED 留证（实现前现状）：失效执行产出的证据照样 APPLIED；GREEN：阻断。
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors[0]?.code).toBe("VERIFICATION_EVIDENCE_UNQUALIFIED");
+    expect(outcome.errors[0]?.message).toContain("GRN-0001");
+    expect(outcome.errors[0]?.message).toContain("PERMIT_INVALIDATED");
+    expect((readClaim(clm).verification as Record<string, unknown>).verdict).toBe("UNVERIFIED");
+    expect(snapshot()).toEqual(before);
+  });
+
+  it("正例锚：引用 GRN 新鲜（确认 at_seq ≤ 证据锚）且无失效事件 → APPLIED（资格链不误伤）", async () => {
+    await seedStore();
+    await seedCapability();
+    seedBaseline(true, 1); // 确认早于证据产出
+    const grn = await seedGateRun();
+    const clm = await seedClaimViaRecord({ evidenceRefs: ["GRN-0001"] });
+    expect(grn).toBe("GRN-0001");
+
+    const outcome = await runRecordVerification(root, {
+      clm,
+      verifier: "tool:verifier@0.1.0",
+    });
+    expect(outcome.ok).toBe(true);
+    expect(outcome.result.change).toBe("APPLIED");
+    expect(outcome.result.verification).toBe("VERIFIED");
   });
 });
 
