@@ -17,6 +17,10 @@ import { Meta } from '@storybook/addon-docs/blocks';
   `antd@5.29.3` 真渲染——antdv 与 antd 同属一个设计系统的两端（antdv 4.x 与 antd 5.x
   同代），组件族清单对齐，每页标注「Vue 对应件」供对照浏览。
 - React 侧只做「默认形态」呈现；交互态矩阵以 Vue 主实例为准（单一演示权威）。
+- Design tokens 对照页：「Foundations/Design Tokens（seed 只读渲染）」与 Vue 主实例
+  同数据源同语义（共用装载器，数值全部构建期装载自
+  `packages/cli/seeds/baseline/frontend/design-tokens.yaml`——44 真值 + 14 UNKNOWN
+  诚实占位）。
 
 ## 对齐差异（实抓 antd@5.29.3 es/index.js）
 
@@ -35,8 +39,10 @@ import { Meta } from '@storybook/addon-docs/blocks';
 
 ## 生成器纪律
 
-- stories 全部由 `packages/studio-react/scripts/lib/generate-react-stories.mjs`
-  程序化生成（幂等、可重放）；`generated/` 不入 git。
+- stories 全部由 `packages/studio-react/scripts/lib/`（generate-react-stories.mjs +
+  generate-design-tokens-story.mjs）程序化生成（幂等、可重放）；`generated/` 不入 git。
+  design tokens 对照页装载器跨包复用 Vue 主实例的
+  `packages/studio/scripts/lib/design-tokens.mjs`（单一事实源）。
 - 重新生成：`corepack pnpm studio:react:dev` / `studio:react:build` 前自动重建；
   也可单独 `node packages/studio-react/run.mjs generate`。
 - 遥测双关闭（`core.disableTelemetry` + `STORYBOOK_DISABLE_TELEMETRY` 环境变量）、

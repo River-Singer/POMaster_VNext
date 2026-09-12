@@ -29,7 +29,9 @@ const counts = generateAll();
 console.log(
   `[studio-react] 生成完成: antd 对齐族 stories=${counts.components} ` +
     `（antd 导出 ${counts.antdExportCount}；v5 已移除族 ${counts.missing.length}：` +
-    `${counts.missing.map((entry) => entry.antdv).join("、")}）`,
+    `${counts.missing.map((entry) => entry.antdv).join("、")}）` +
+    ` + design tokens 对照 story=${counts.foundations} ` +
+    `（tokens ${counts.tokenValues} 真值 + ${counts.tokenUnknowns} UNKNOWN）`,
 );
 if (action === "generate") process.exit(0);
 

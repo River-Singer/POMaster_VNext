@@ -94,7 +94,8 @@ describe("studio-react generators · antd 对齐族（S2）", () => {
       const a = walk(first);
       const b = walk(second);
       expect([...a.keys()].sort()).toEqual([...b.keys()].sort());
-      expect(a.size).toBe(68);
+      // 总文件数 = 68 对齐族 + 1 Foundations/Design Tokens 对照 story（F-M2 R2 增量）。
+      expect(a.size).toBe(69);
       let diffs = 0;
       for (const [key, value] of a) if (b.get(key) !== value) diffs += 1;
       expect(diffs).toBe(0);

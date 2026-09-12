@@ -29,7 +29,8 @@ const counts = generateAll();
 console.log(
   `[studio] 生成完成: archetypes=${counts.archetypes} components=${counts.components} ` +
     `(stories=${counts.storyCount}) overlays=${counts.overlays} baseline=${counts.baseline} ` +
-    `dataStruct=${counts.dataStruct}`,
+    `dataStruct=${counts.dataStruct} foundations=${counts.foundations} ` +
+    `(tokens ${counts.tokenValues} 真值 + ${counts.tokenUnknowns} UNKNOWN)`,
 );
 if (action === "generate") process.exit(0);
 
