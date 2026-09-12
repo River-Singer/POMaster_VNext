@@ -168,3 +168,91 @@ describe("studio-react design-tokens 对照页 · 真渲染挂载（44 值 + 14 
     }
   });
 });
+
+describe("studio-react design-tokens 对照页 · 组筛选呈现（C1 · W2 切片钉测，与 Vue 主实例同语义）", () => {
+  /** 组筛选 select 设值 + React 重渲染等待（宏任务 tick，react-mount 先例同款）。 */
+  async function setFilterGroup(container: HTMLElement, value: string): Promise<void> {
+    const select = container.querySelector("select[data-filter-group]") as HTMLSelectElement | null;
+    expect(select, "组筛选 select 缺席").toBeTruthy();
+    select!.value = value;
+    select!.dispatchEvent(new Event("change", { bubbles: true }));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+
+  /** 只看 UNKNOWN 开关设值 + React 重渲染等待。
+   *  注：React ChangeEventPlugin 对 checkbox 的 onChange 依赖「checked 值真实变化」
+   *  检测——happy-dom 下唯一可靠触发是原生 click()（toggle checked 并派发冒泡
+   *  click，react-mount.spec MouseEvent 先例同事件族）；手动 dispatch 不改变
+   *  checked，tracker 判无变化则不派发 onChange。已等于目标值时零操作（幂等）。 */
+  async function setUnknownOnly(container: HTMLElement, checked: boolean): Promise<void> {
+    const checkbox = container.querySelector("input[data-unknown-view]") as HTMLInputElement | null;
+    expect(checkbox, "只看 UNKNOWN 开关缺席").toBeTruthy();
+    if (checkbox!.checked !== checked) {
+      checkbox!.click();
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+  }
+
+  it("组筛选：筛选后可见节点数 = seed 派生组真值叶数（UNKNOWN 占位不混入真值可见分母）", async () => {
+    const container = await mountTokensPage();
+    for (const group of model.groups) {
+      await setFilterGroup(container, group.key);
+      const truthPaths = model.leaves
+        .filter((leaf) => leaf.group === group.key && !leaf.unknown)
+        .map((leaf) => leaf.path);
+      const nodes = container.querySelectorAll("[data-token]");
+      expect(
+        nodes.length,
+        `组 ${group.key} 筛选后可见节点数应 = 组真值叶数（seed 派生 ${truthPaths.length}）`,
+      ).toBe(truthPaths.length);
+      for (const node of nodes) {
+        expect(
+          node.getAttribute("data-unknown"),
+          `组 ${group.key} 真值视图混入 UNKNOWN 占位: ${node.getAttribute("data-token")}`,
+        ).toBe("false");
+        expect(
+          truthPaths,
+          `组 ${group.key} 可见节点越出组真值清单: ${node.getAttribute("data-token")}`,
+        ).toContain(node.getAttribute("data-token"));
+      }
+    }
+    // 复位「全部组」：默认视图 58 叶齐（筛选不破坏默认渲染分母）。
+    await setFilterGroup(container, "");
+    expect(container.querySelectorAll("[data-token]").length).toBe(model.leaves.length);
+  });
+
+  it("只看 UNKNOWN 开关：勾选后可见分母 = 14 占位（真值零可见）；组筛选×开关交集 = 组占位数（真值视图零占位）", async () => {
+    const container = await mountTokensPage();
+    // 开关勾选：全组范围只看 UNKNOWN——14 占位在座、真值零可见。
+    await setUnknownOnly(container, true);
+    expect(container.querySelectorAll('[data-unknown="true"]').length).toBe(model.unknownCount);
+    expect(container.querySelectorAll('[data-unknown="false"]').length).toBe(0);
+    // 组筛选 × 开关交集：逐组只看 UNKNOWN——可见数 = seed 派生组占位数。
+    for (const group of model.groups) {
+      await setFilterGroup(container, group.key);
+      const groupUnknown = model.leaves.filter(
+        (leaf) => leaf.group === group.key && leaf.unknown,
+      ).length;
+      expect(
+        container.querySelectorAll("[data-token]").length,
+        `组 ${group.key} × 只看 UNKNOWN 可见数应 = 组占位数（seed 派生 ${groupUnknown}）`,
+      ).toBe(groupUnknown);
+    }
+    // 开关关 + 组筛选：真值视图零占位——UNKNOWN 占位叶只进开关视图。
+    await setUnknownOnly(container, false);
+    for (const group of model.groups) {
+      await setFilterGroup(container, group.key);
+      const truthPaths = model.leaves
+        .filter((leaf) => leaf.group === group.key && !leaf.unknown)
+        .map((leaf) => leaf.path);
+      expect(
+        container.querySelectorAll('[data-unknown="false"]').length,
+        `组 ${group.key} 真值视图可见数应 = 组真值叶数（seed 派生 ${truthPaths.length}）`,
+      ).toBe(truthPaths.length);
+      expect(
+        container.querySelectorAll('[data-unknown="true"]').length,
+        `组 ${group.key} 真值视图混入 UNKNOWN 占位（占位只进开关视图）`,
+      ).toBe(0);
+    }
+  });
+});

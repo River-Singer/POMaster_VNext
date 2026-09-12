@@ -175,3 +175,14 @@
 - **③ TRIAGE 引擎 = 物理删除（裁决 18 D-5 收尾）**：裁决 18 D-5 授权「并入 brainstorm 或删除」，T3 实施自造第三选项「保留为 eval 语料机」（产品面零消费，唯一消费点 eval.ts:36 behavioral 套件）——Owner 裁定不追认该第三选项：语料机测的是已退役能力，属测试面 zombie，违反语义删除宪法。**处置：新建任务物理删除 triage.ts/triage-rule-v0.ts + eval behavioral 语料换源重建（brainstorm question-gate 词表/八拍路由为基）+ floor 账本 L3/L5/router_matrix 分母重构。**
 - **④ 机制修正（常驻 guides 纪律）**：a) implement 遇 PRD 未授权选择——影响对外契约/语义删除边界的**停下问 Owner**，不得先行；纯实现取向的可先行但汇报须独立标 `[DEVIATION]`。b) main agent 不得转述 check 结论为裁定依据——裁定提案须附独立证据（file:line）与正反两面，check 意见计一票不计结论。落 `.trellis/spec/guides/deviation-discipline.md`。
 - **follow-up 登记**：扫描器检出词形定义（②语义的机器面）；v* tag ruleset 加固（runbook §6 人工位）。
+
+## 裁决 20：Long-Horizon 战役七项批量追认（2026-09-13 Owner 会话直答）
+
+- **决策渠道**：Owner 会话逐项选择（2026-09-13）。背景：09-12 战役（09-12-long-horizon-impl-campaign）在静默开发授权下先实施后呈报；本裁决为批量追认记录，各裁定细节见战役任务树研究产物。
+- **① exec-guard 混合允许/越界目标＝选项 a 精确形态（追认）**：目标内 permit 并集不变＋跨目标全称（任一未覆盖 denied 即 DENY，stderr 枚举全部越界目标）；透传面（unmapped/无 store/无活跃 execution）不参与全称。定性＝遗留缺口非有意裁定（W0 exec-guard-mixed-target.md §2 四点证据链）。实施：commit 7e61cbf。
+- **② 终审前写回边界三档＋closeout ACCEPT 硬闸（追认）**：机器验证/记录/候选面终审前自由写入；判定回写有条件允许（条件全部机器可判）；成果 closeout 施断必须以有效 Human ACCEPT 决议（绑定 task/change＋revision_fingerprint 对账）为前置——硬阻断非 warning（Owner 明确选择硬闸）。实施：commit 9b83b83（acceptReceiptGate MISSING/STALE/DAMAGED）。
+- **③④ W2 切片口径（追认）**：首切片 fixture=C1（design-tokens 页组筛选呈现功能，seed 语义值/133 分母纪律零触碰）；受控 API 以 Storybook dev server＋seed 文件降级满足；playwright 确定性腿本切片显式 NOT_RUN 留痕（MCP 交互腿真实验证）。
+- **⑤ SP-W1-a~i 词形/schema 提案（全部追认）**：SP-W1-a 决议绑定键（schema 18 resolution.outcome_binding）；negative_history payload 自由区字段；`pomaster plan compile`/`pomaster tools` 命令词形与能力/face 闭包；schema 23 ToolBinding 注册面＋六分态（detect/registered/validated/available/selected/executed）；资格链五词形（QUALIFIED/STALE_SEQ/PERMIT_INVALIDATED/ORACLE_SUPERSEDED/SUBJECT_MISMATCH）＋ DOD_CLAIM_EVIDENCE_UNQUALIFIED/VERIFICATION_EVIDENCE_UNQUALIFIED 错误码。实施：commits 29c7beb/18f0371/eede346。
+- **⑥ 预设 tools 化边界（追认，未实施部分立项待排）**：预设值（框架选型/token 值/archetype 卡等 7 族）保持 governed 原地——效力来自 confirm 烙印而非执行，binding 化致 executed 态语义错配（否决）；ToolBinding 面只收录「预设只读探测器三件套」（预览 diff/漂移检测/适配分析）；「应用预设」留 baseline set --change＋confirm 治理通路。研究：09-12-long-horizon-impl-campaign/research/presets-as-tools.md。立项归属：W2+/按需。
+- **⑦ .pomaster 自托管 bootstrap（追认）**：authority.json authorities 登记 Serperior（BOOTSTRAP_OWNER）；TASK.SLICE_C1／PERMIT.CHANGE_SLICE_C1.1 治理对象入仓根 store（W2 切片 G2/G3 拍自托管产物）。
+- **静默开发授权收束**：本战役中途 Owner 增补「中途不要让我决策」授权（2026-09-12）与「7 项裁定现在提出让我决策」（2026-09-13）已闭环；后续裁定恢复「裁定先落台账再进代码」常规节奏，重大语义变更仍停下问 Owner。

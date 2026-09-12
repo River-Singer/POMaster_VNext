@@ -24,20 +24,6 @@ import { generateDesignTokensPage } from "../scripts/lib/design-tokens-page.mjs"
 import { generateAll } from "../scripts/lib/generate-all.mjs";
 import { STUDIO_ROOT } from "../scripts/lib/common.mjs";
 
-interface TokenEntry {
-  path: string;
-  key: string;
-  displayValue: string;
-  unknown: boolean;
-  hint: string;
-}
-interface TokenGroup {
-  key: string;
-  title: string;
-  kind: string;
-  note: string;
-  entries: TokenEntry[];
-}
 interface TokenMeta {
   origin: string;
   customized: boolean;
@@ -46,7 +32,15 @@ interface TokenMeta {
   unknownCount: number;
 }
 interface StoryModule {
-  Default: { render: () => { setup: () => { tokenGroups: TokenGroup[]; tokenMeta: TokenMeta } } };
+  Default: {
+    render: () => {
+      setup: () => {
+        tokenMeta: TokenMeta;
+        // 其余 setup 返回位（visibleGroups/activeGroup/unknownOnly/groupOptions）
+        // 为筛选态 ref/computed——测试经真实挂载 + DOM 交互消费，不直读。
+      };
+    };
+  };
 }
 
 /** canonical 生成产物目录（dev/build 同源；generated/ 不入库，测试先幂等生成）。 */
@@ -219,6 +213,85 @@ describe("studio design-tokens 页 · 真渲染挂载（44 值 + 14 UNKNOWN 逐�
         expect(el, `UNKNOWN token 节点缺席: ${leaf.path}`).toBeTruthy();
         expect(el?.getAttribute("data-unknown")).toBe("true");
         expect(el?.textContent).toContain("UNKNOWN");
+      }
+    } finally {
+      wrapper.unmount();
+    }
+  });
+});
+
+describe("studio design-tokens 页 · 组筛选呈现（C1 · W2 切片钉测）", () => {
+  it("组筛选：筛选后可见节点数 = seed 派生组真值叶数（UNKNOWN 占位不混入真值可见分母）", async () => {
+    const { wrapper } = await mountTokensPage();
+    try {
+      const select = wrapper.find("select[data-filter-group]");
+      expect(select.exists()).toBe(true);
+      for (const group of model.groups) {
+        await select.setValue(group.key);
+        const truthPaths = model.leaves
+          .filter((leaf) => leaf.group === group.key && !leaf.unknown)
+          .map((leaf) => leaf.path);
+        const nodes = wrapper.element.querySelectorAll("[data-token]");
+        expect(
+          nodes.length,
+          `组 ${group.key} 筛选后可见节点数应 = 组真值叶数（seed 派生 ${truthPaths.length}）`,
+        ).toBe(truthPaths.length);
+        for (const node of nodes) {
+          expect(
+            node.getAttribute("data-unknown"),
+            `组 ${group.key} 真值视图混入 UNKNOWN 占位: ${node.getAttribute("data-token")}`,
+          ).toBe("false");
+          expect(
+            truthPaths,
+            `组 ${group.key} 可见节点越出组真值清单: ${node.getAttribute("data-token")}`,
+          ).toContain(node.getAttribute("data-token"));
+        }
+      }
+      // 复位「全部组」：默认视图 58 叶齐（筛选不破坏默认渲染分母）。
+      await select.setValue("");
+      expect(wrapper.element.querySelectorAll("[data-token]").length).toBe(model.leaves.length);
+    } finally {
+      wrapper.unmount();
+    }
+  });
+
+  it("只看 UNKNOWN 开关：勾选后可见分母 = 14 占位（真值零可见）；组筛选×开关交集 = 组占位数（真值视图零占位）", async () => {
+    const { wrapper } = await mountTokensPage();
+    try {
+      const toggle = wrapper.find("input[data-unknown-view]");
+      expect(toggle.exists()).toBe(true);
+      // 开关勾选：全组范围只看 UNKNOWN——14 占位在座、真值零可见。
+      await toggle.setValue(true);
+      expect(wrapper.element.querySelectorAll('[data-unknown="true"]').length).toBe(
+        model.unknownCount,
+      );
+      expect(wrapper.element.querySelectorAll('[data-unknown="false"]').length).toBe(0);
+      // 组筛选 × 开关交集：逐组只看 UNKNOWN——可见数 = seed 派生组占位数。
+      for (const group of model.groups) {
+        await wrapper.find("select[data-filter-group]").setValue(group.key);
+        const groupUnknown = model.leaves.filter(
+          (leaf) => leaf.group === group.key && leaf.unknown,
+        ).length;
+        expect(
+          wrapper.element.querySelectorAll("[data-token]").length,
+          `组 ${group.key} × 只看 UNKNOWN 可见数应 = 组占位数（seed 派生 ${groupUnknown}）`,
+        ).toBe(groupUnknown);
+      }
+      // 开关关 + 组筛选：真值视图零占位——UNKNOWN 占位叶只进开关视图。
+      await toggle.setValue(false);
+      for (const group of model.groups) {
+        await wrapper.find("select[data-filter-group]").setValue(group.key);
+        const truthPaths = model.leaves
+          .filter((leaf) => leaf.group === group.key && !leaf.unknown)
+          .map((leaf) => leaf.path);
+        expect(
+          wrapper.element.querySelectorAll('[data-unknown="false"]').length,
+          `组 ${group.key} 真值视图可见数应 = 组真值叶数（seed 派生 ${truthPaths.length}）`,
+        ).toBe(truthPaths.length);
+        expect(
+          wrapper.element.querySelectorAll('[data-unknown="true"]').length,
+          `组 ${group.key} 真值视图混入 UNKNOWN 占位（占位只进开关视图）`,
+        ).toBe(0);
       }
     } finally {
       wrapper.unmount();
