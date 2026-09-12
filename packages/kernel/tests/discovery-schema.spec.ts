@@ -63,13 +63,13 @@ function ledgerWith(
 }
 
 describe("08-discovery-state-chain（$id 与注册）", () => {
-  it("$id 形态对齐 v1-draft 契约且已注册进 allSchemas（22 份聚合——baseline R3 增量 21→22）", () => {
+  it("$id 形态对齐 v1-draft 契约且已注册进 allSchemas（22 份聚合——baseline R3 增量 21→22；R1-4 增量 22→23）", () => {
     expect(discoveryStateChainSchema.$id).toBe(
       "https://pomaster.dev/schemas/discovery-state-chain/v1-draft.json",
     );
     expect(SCHEMA_VERSION).toBe("v1-draft");
     expect(allSchemas.discoveryStateChain).toBe(discoveryStateChainSchema);
-    expect(Object.keys(allSchemas).length).toBe(22);
+    expect(Object.keys(allSchemas).length).toBe(23);
   });
 
   it("正例：IDEA 态带 scratchpad_ref；READY_TO_PROMOTE 带 promotion_basis；TASK 带 promotion_basis+promoted_ref", () => {

@@ -64,6 +64,7 @@ import {
   readKnowledgeLibrary,
   searchKnowledge,
 } from "./knowledge.js";
+import { readTaskNegativeHistory } from "./negative-history.js";
 import type { ObjectRow } from "./index.js";
 
 type UnknownRecord = Record<string, unknown>;
@@ -587,6 +588,38 @@ function entryId(row: ObjectRow): string {
   return row.id;
 }
 
+/**
+ * 任务内 negative history 消费（W1-R1-7；09-10 PRD REQ-03/AC-02）：
+ * - 数据源 = taskRef 对象 payload.negative_history（02 信封 payload 自由区字段面——
+ *   readTaskNegativeHistory 单一读取面；键缺席/对象不在册/正文缺失 → 空条目不虚构，
+ *   未命中保持未知；字段在场畸形 → readTaskNegativeHistory SCHEMA_INVALID fail-closed）；
+ * - 落位 = advisoryEntries（[ADVISORY] 分区）——「曾否定+原因」是可见性事实不是判卷
+ *   约束，永不进 mustEntries（§83.2 铁律 / GOLDEN-L8-3 消费层防线，对抗测试钉住）；
+ * - AC-02 词形（reason 尾注）：重试不被机器禁止，但须新依据（流程纪律）——只做
+ *   可见性，不新增阻断；ref 词形 `${taskRef}#negative_history[${i}]`（i = 登记位次）。
+ * 数据在 truth 正文层 → 正文演进（append 即 rev/body_sha256 变化）必然改变指纹
+ * （scopeContentRowsOf 边界③ taskRef 正文绑定）——rollover/重编译后仍可检索（AC-02）。
+ */
+function consumeNegativeHistory(
+  request: import("./index.js").ProjectionRequest,
+  paths: StorePaths,
+  index: TruthIndex,
+): readonly ProjectionEntry[] {
+  if (request.taskRef === undefined) return [];
+  // 对象不在册：readTaskNegativeHistory 返回空（诚实缺席）——不猜测不虚构。
+  if (!index.objects.some((row) => row.id === request.taskRef)) return [];
+  const entries = readTaskNegativeHistory(paths, request.taskRef);
+  return entries.map((entry, i) => ({
+    ref: `${request.taskRef}#negative_history[${i}]`,
+    reason:
+      `ADVISORY: negative history（本任务已否定方案 #${i}）：` +
+      `approach=${entry.approach}；reason=${entry.reason}` +
+      `；evidence_ref=${entry.evidence_ref ?? "（无）"}` +
+      `；status=${entry.status}（recorded_at_seq=${entry.recorded_at_seq}）——` +
+      `AC-02：重试不被机器禁止，但须新依据（流程纪律，非阻断闸）；不进 gate 判卷输入（GOLDEN-L8-3）`,
+  }));
+}
+
 /** 许可台账（state/permits.json；permits.ts 维护，这里只读）。 */
 interface PermitLedgerEntry {
   readonly permit_ref: string;
@@ -1103,6 +1136,10 @@ export async function compileProjection(
 
   // —— knowledge 检索消费（P28-Commands；§83.8；见 consumeKnowledge 契约注记） ——
   const knowledgeEntries = consumeKnowledge(request, pathsOf(store));
+
+  // —— 任务内 negative history 消费（W1-R1-7；09-10 PRD REQ-03/AC-02；见
+  //    consumeNegativeHistory 契约注记——[ADVISORY] 分区，永不进 gate 判卷输入） ——
+  advisoryEntries.push(...consumeNegativeHistory(request, pathsOf(store), index));
 
   // —— baseline grounding 消费（R4/design-context）：facts 由 CLI 编排层注入
   //    （packages/cli/src/baseline-grounding.ts 生产者——baseline 词形解析独占在

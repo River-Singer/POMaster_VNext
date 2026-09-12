@@ -19,6 +19,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   CATALOG_GATE_RECIPES,
+  CURRENT_GATE_DEFS,
   GAUNTLET_LITE_VERSION,
   GateAdapterError,
   GateNormalizeError,
@@ -38,6 +39,7 @@ import {
   type GateResultRecord,
   type RecipeExecutor,
 } from "@pomaster/gauntlet-lite";
+import * as gauntletLiteExports from "@pomaster/gauntlet-lite";
 import { gateResultSchema } from "@pomaster/schemas";
 
 // ============================================================
@@ -89,6 +91,34 @@ describe("分母自检：catalog/gates 实存文件 == CATALOG_GATE_RECIPES 投�
       expect(() => assertRecipeIdentity(recipe)).not.toThrow();
       expect(recipe.gateDef.startsWith(`${recipe.id}@`)).toBe(true);
     }
+  });
+
+  it("CURRENT_GATE_DEFS 注册面对账：全量 *_GATE_NAME/DEF 常量对 + recipe 全覆盖 + 零孤儿键（W1 R1-5 资格链要求面禁漂移）", () => {
+    // 结构性反射扫描：包根全部 *_GATE_NAME 导出自动进分母（新增 gate 常量对忘接
+    // CURRENT_GATE_DEFS 即红，无需改本测试）；计数钉使分母变化必须显式过此处。
+    const nameKeys = Object.keys(gauntletLiteExports)
+      .filter((key) => key.endsWith("_GATE_NAME"))
+      .sort();
+    expect(nameKeys.length, "*_GATE_NAME 常量对分母钉（新增 gate 须同步 CURRENT_GATE_DEFS）").toBe(9);
+    for (const nameKey of nameKeys) {
+      const defKey = nameKey.replace(/_GATE_NAME$/, "_GATE_DEF");
+      const gate = gauntletLiteExports[nameKey as keyof typeof gauntletLiteExports] as string;
+      const gateDef = gauntletLiteExports[defKey as keyof typeof gauntletLiteExports] as string;
+      expect(typeof gateDef, `${defKey} 缺姊妹常量`).toBe("string");
+      expect(CURRENT_GATE_DEFS[gate], `gate ${gate} 不在注册面或值漂移`).toBe(gateDef);
+    }
+    // recipe 全覆盖（id → gateDef 逐条等值）。
+    for (const recipe of CATALOG_GATE_RECIPES) {
+      expect(CURRENT_GATE_DEFS[recipe.id], `recipe ${recipe.id} 不在注册面或值漂移`).toBe(recipe.gateDef);
+    }
+    // 零孤儿键：注册面 = 常量对 ∪ recipes（陈旧键/自造 gate 不进静默区）。
+    const expectedKeys = [
+      ...nameKeys.map((nameKey) => gauntletLiteExports[nameKey as keyof typeof gauntletLiteExports] as string),
+      ...CATALOG_GATE_RECIPES.map((recipe) => recipe.id),
+    ].sort();
+    expect(Object.keys(CURRENT_GATE_DEFS).sort()).toEqual(expectedKeys);
+    // 冻结面：消费方（kernel evidence-qualification 资格链）不得就地改写要求面。
+    expect(Object.isFrozen(CURRENT_GATE_DEFS)).toBe(true);
   });
 });
 

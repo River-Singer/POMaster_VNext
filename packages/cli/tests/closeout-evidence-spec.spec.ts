@@ -150,10 +150,15 @@ function claimFixture(overrides: {
   readonly subject?: string;
   readonly verdict?: string;
   readonly acceptanceIndex?: number;
+  /** true = 重算主体与断言主体同元组（自批 VERIFIED 形态——O-W1-3 条款资格拒绝目标）。 */
+  readonly selfApproved?: boolean;
 }): Record<string, unknown> {
   const clm = overrides.clm ?? "CLM-0001";
   const subject = overrides.subject ?? "TASK.T0001";
   const verdict = overrides.verdict ?? "VERIFIED";
+  const recomputed = overrides.selfApproved === true
+    ? { actor_type: "agent", actor: "demo-builder" }
+    : { actor_type: "tool", actor: "verifier@0.1.0" };
   return {
     record_type: "claim",
     clm,
@@ -172,7 +177,7 @@ function claimFixture(overrides: {
       ...(verdict === "VERIFIED"
         ? {
             method: "recompute",
-            recomputed_by: { actor_type: "tool", actor: "verifier@0.1.0", self_attested: false },
+            recomputed_by: { ...recomputed, self_attested: false },
             recomputed_value: { ok: true },
             delta_vs_asserted: null,
             at_seq: 3,
@@ -237,12 +242,37 @@ function seedRun(overrides: Parameters<typeof runFixture>[0]): void {
   writeFileSync(join(dir, `${grn}.json`), `${JSON.stringify(runFixture(overrides), null, 2)}\n`);
 }
 
-/** 基线：acceptance/claim/run 三件套全绿（acceptance 轨可独立成立）。 */
+/**
+ * 有效 Human ACCEPT 回执（O-W1-1 / W0 C-4 前置）：决策图 sidecar 写入 answer=ACCEPT +
+ * outcome_binding task_ref 直绑。W1 R1-1 起 closeout 施断前必须有此回执——机器验证
+ * 通过 ≠ 成果已接受（本体语义测试见 closeout-accept-receipt.spec.ts；回执闸只在
+ * 四判卷全绿后运行，本文件的阻断用例不受其影响）。
+ */
+function seedAcceptReceipt(): void {
+  const dir = join(root, ".pomaster", "discovery", "scratchpads", "idea-accept");
+  mkdirSync(dir, { recursive: true });
+  const graph = {
+    graph_fingerprint: `sha256:${"0".repeat(64)}`,
+    decisions: [
+      {
+        decision_id: "DECISION.ACCEPT_SCOPE",
+        resolution: {
+          answer: "ACCEPT",
+          outcome_binding: { task_ref: "TASK.T0001" },
+        },
+      },
+    ],
+  };
+  writeFileSync(join(dir, "decision-graph.json"), `${JSON.stringify(graph, null, 2)}\n`);
+}
+
+/** 基线：acceptance/claim/run 三件套全绿 + ACCEPT 回执（acceptance 轨可独立成立）。 */
 async function seedHappyBaseline(): Promise<void> {
   await initStore();
   await seedTask();
   seedClaim({});
   seedRun({});
+  seedAcceptReceipt();
 }
 
 // ============================================================
@@ -292,6 +322,23 @@ describe("closeout DoD Spec 维度（R1/D6：资格判定非引用映射）", ()
     const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
     expect(outcome.ok).toBe(false);
     expect(outcome.errors.map((e) => e.code)).toContain("DOD_SPEC_CLAUSE_UNSATISFIABLE");
+  });
+
+  it("自批 VERIFIED claim 不满足条款（O-W1-3 同线：资格清单不是自批洗白通道）→ DOD_SPEC_CLAUSE_UNSATISFIED 点名自批", async () => {
+    await seedHappyBaseline(); // acceptance 轨的 CLM-0001 主体分离照常成立
+    seedClaim({ clm: "CLM-0002", selfApproved: true }); // 条款资格清单引用自批 claim
+    await seedSpec({
+      clauses: [clauseFixture({ claimRefs: ["CLM-0002"] })],
+    });
+    const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors.map((e) => e.code)).toContain("DOD_SPEC_CLAUSE_UNSATISFIED");
+    const unsatisfied = outcome.errors.find((e) => e.code === "DOD_SPEC_CLAUSE_UNSATISFIED");
+    expect(unsatisfied?.message).toContain("CLM-0002");
+    expect(unsatisfied?.message).toContain("自批");
+    const result = outcome.result as CloseoutResult;
+    expect(result.dod?.spec?.clauses_satisfied).toBe(0);
+    expect(result.change).toBeNull(); // 零写入
   });
 
   it("gate 资格引用成立可满足条款（subject 全等 + passed）；gate 资格 subject 失配 → DOD_SPEC_GATE_SUBJECT_MISMATCH", async () => {
@@ -371,6 +418,7 @@ describe("closeout DoD Spec 维度（R1/D6：资格判定非引用映射）", ()
     });
     seedClaim({});
     seedRun({});
+    seedAcceptReceipt();
     await seedSpec({
       boundTaskRef: null,
       boundChangeRef: "CHANGE.C0001",
@@ -396,11 +444,12 @@ describe("closeout DoD Spec 维度（R1/D6：资格判定非引用映射）", ()
 // 审计 F5 回归：gate 资格候选聚合（置换不变 + 重跑覆盖 + 损坏分离）
 // ============================================================
 
-/** F5 场景夹具：acceptance 轨绿（VERIFIED claim）；Spec 条款只持 gate 资格清单。 */
+/** F5 场景夹具：acceptance 轨绿（VERIFIED claim）+ ACCEPT 回执；Spec 条款只持 gate 资格清单。 */
 async function seedF5Scenario(gateRefs: readonly string[]): Promise<void> {
   await initStore();
   await seedTask();
   seedClaim({});
+  seedAcceptReceipt();
   await seedSpec({
     clauses: [clauseFixture({ claimRefs: [], gateRefs: [...gateRefs] })],
   });

@@ -22,6 +22,11 @@
  *   ——判卷器自身故障永不阻塞开发流，审计线索归 Detection 半边；
  * - **Bash 粗筛边界（PRD Out of Scope）**：路径词形切词逐个判卷（op 恒
  *   upsert_object），不做 shell 语义分析——rm 形态命令同样按写语义判卷。
+ * - **混合允许/越界目标（W1 R1-0 跨目标全称聚合）**：同一 Bash 调用多个 mapped
+ *   目标取全称——任一 mapped 目标越界即整体 DENY，且 DENY stderr 枚举全部越界
+ *   结论（denied 列表本就持有全量）；目标内 permit 并集语义不变（全称只作用于
+ *   目标层，不作用于 raw verdict 层——单目标双 permit 其一覆盖仍 ALLOW）；
+ *   unmapped / 无 store / 无活跃 execution 透传面不参与全称。
  *
  * 环境缺席显式（human-views.spec 同款纪律，禁静默跳过当通过）：python 垫片缺席 /
  * cli dist 缺席 / shim（工作区运行时面，CI fresh clone 不在座）缺席 → 逐用例
@@ -455,6 +460,116 @@ describe("exec-guard hook Bash 粗筛（op 恒 upsert_object）", () => {
     const run = runHook(bashPayload(`rm ${join(root, "src", "out-scope.ts")}`));
     expect(run.exitCode).toBe(2);
     expect(run.stderr).toContain("PERMIT_SCOPE_DENIED");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 混合允许/越界目标（W1 R1-0：跨目标全称聚合；W0 裁定
+// .trellis/tasks/archive/2026-09/09-12-w0-shared-baseline/research/
+// exec-guard-mixed-target.md §3a 精确形态 + §5 用例表）
+// ---------------------------------------------------------------------------
+
+describe("exec-guard hook 混合允许/越界目标（跨目标全称聚合）", () => {
+  it("核心反例：Bash 同提 in-scope + out-scope 两 mapped 目标 → exit 2 + DENY（任一越界即整体拒绝，不得 ALLOW 吞越界）", async () => {
+    if (!py.available) {
+      expectPendingRecorded("mixed.universal_deny", "混合目标全称 DENY 断言");
+      return;
+    }
+    if (!existsSync(cliEntry)) {
+      expectPendingRecorded("mixed.universal_deny", "cli dist 缺席（先 corepack pnpm build）");
+      return;
+    }
+    seedStandardBindingTable();
+    await beginExecutionId([await issuePermit(["CAPABILITY.AUDIT.IN_SCOPE"])]);
+    const run = runHook(
+      bashPayload(`cat ${join(root, "src", "in-scope.ts")} ${join(root, "src", "out-scope.ts")}`),
+    );
+    expect(run.exitCode).toBe(2);
+    expect(run.stderr).toContain("DENY");
+    expect(run.stderr).toContain("PERMIT_SCOPE_DENIED");
+    expect(run.stderr).toContain("CAPABILITY.AUDIT.OUT");
+  });
+
+  it("同批只含 in-scope 单目标 → exit 0 + ALLOW（全称聚合不伤合规单发）", async () => {
+    if (!py.available) {
+      expectPendingRecorded("mixed.single_in_scope_allow", "混合修正后单目标 ALLOW 回归断言");
+      return;
+    }
+    if (!existsSync(cliEntry)) {
+      expectPendingRecorded("mixed.single_in_scope_allow", "cli dist 缺席（先 corepack pnpm build）");
+      return;
+    }
+    seedStandardBindingTable();
+    await beginExecutionId([await issuePermit(["CAPABILITY.AUDIT.IN_SCOPE"])]);
+    const run = runHook(bashPayload(`cat ${join(root, "src", "in-scope.ts")}`));
+    expect(run.exitCode).toBe(0);
+    expect(run.stderr).toContain("ALLOW");
+    expect(run.stderr).not.toContain("DENY");
+  });
+
+  it("判定性锚：Write 单目标越界、execution 挂两 permit 其一覆盖 → 仍 ALLOW（全称作用于目标层，不作用于 raw verdict 层）", async () => {
+    if (!py.available) {
+      expectPendingRecorded("mixed.permit_union_is_per_target", "目标内 permit 并集防过度实施断言");
+      return;
+    }
+    if (!existsSync(cliEntry)) {
+      expectPendingRecorded("mixed.permit_union_is_per_target", "cli dist 缺席（先 corepack pnpm build）");
+      return;
+    }
+    seedStandardBindingTable();
+    const first = await issuePermit(["CAPABILITY.AUDIT.IN_SCOPE"]);
+    const second = await issuePermit(["CAPABILITY.AUDIT.OUT"]);
+    await beginExecutionId([first, second]);
+    // 与 allow.multi_permit_union 同构造（有意镜像）：该目标 raw verdict 含
+    // denied（permit1）+ allowed（permit2）——跨目标全称若误施于 raw verdict 层
+    // 会把此用例翻红，即防过度实施的回归锚。
+    const run = runHook(writePayload("src/out-scope.ts"));
+    expect(run.exitCode).toBe(0);
+    expect(run.stderr).toContain("ALLOW");
+    expect(run.stderr).toContain("CAPABILITY.AUDIT.OUT");
+  });
+
+  it("Bash 同提 in-scope（mapped∈scope）+ rogue（unmapped）→ exit 0 + ALLOW 且 unmapped 透传注记在座（透传面不参与全称）", async () => {
+    if (!py.available) {
+      expectPendingRecorded("mixed.unmapped_not_in_universal", "透传面不参与全称断言");
+      return;
+    }
+    if (!existsSync(cliEntry)) {
+      expectPendingRecorded("mixed.unmapped_not_in_universal", "cli dist 缺席（先 corepack pnpm build）");
+      return;
+    }
+    seedStandardBindingTable();
+    await beginExecutionId([await issuePermit(["CAPABILITY.AUDIT.IN_SCOPE"])]);
+    const run = runHook(
+      bashPayload(`cat ${join(root, "src", "in-scope.ts")} ${join(root, "src", "rogue.ts")}`),
+    );
+    expect(run.exitCode).toBe(0);
+    expect(run.stderr).toContain("ALLOW");
+    expect(run.stderr).toContain("unmapped");
+    expect(run.stderr).not.toContain("DENY");
+  });
+
+  it("两个不同越界 mapped 目标同提 → exit 2 且 stderr 枚举全部越界 canonical_id（不止 denied[0]）", async () => {
+    if (!py.available) {
+      expectPendingRecorded("mixed.deny_enumerates_all", "DENY 枚举全部越界目标断言");
+      return;
+    }
+    if (!existsSync(cliEntry)) {
+      expectPendingRecorded("mixed.deny_enumerates_all", "cli dist 缺席（先 corepack pnpm build）");
+      return;
+    }
+    seedStandardBindingTable();
+    // 第二越界锚有意避开 OUT 词形子串关系（REPORT 与 OUT 互不为前缀），断言无歧义。
+    seedBindingRow("KEYBINDING.CODE.REPORT", "CAPABILITY.AUDIT.REPORT", "src/report.ts");
+    writeHostFile("src/report.ts", "export const reportV1 = 1;\n");
+    await beginExecutionId([await issuePermit(["CAPABILITY.AUDIT.IN_SCOPE"])]);
+    const run = runHook(
+      bashPayload(`cat ${join(root, "src", "out-scope.ts")} ${join(root, "src", "report.ts")}`),
+    );
+    expect(run.exitCode).toBe(2);
+    expect(run.stderr).toContain("DENY");
+    expect(run.stderr).toContain("CAPABILITY.AUDIT.OUT");
+    expect(run.stderr).toContain("CAPABILITY.AUDIT.REPORT");
   });
 });
 

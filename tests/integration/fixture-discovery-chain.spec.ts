@@ -146,6 +146,10 @@ beforeAll(async () => {
     "--answer",
     "DECISION.CARLINE_GRID",
     "--accept",
+    // SP-W1-a：ACCEPT 携成果绑定——closeout 有效 ACCEPT 回执闸（O-W1-1/C-4）的
+    // 覆盖判定载体（机器验证通过 ≠ 成果已接受；closeout③④ 靠本回执放行施断）。
+    "--outcome-task",
+    TASK_REF,
   ]);
   steps.answerScope = await runJsonStep(root, [
     "brainstorm",
@@ -631,6 +635,7 @@ describe("Discovery 状态链 × closeout 全链（P18×P13 闭环）", () => {
       change: string;
       blocked: boolean;
       applied_seq: number | null;
+      accept_receipt: { decision_id: string; graph: string } | null;
       dod: { acceptance_total: number; verified: number };
       gates: { bound_runs: number; gates_passed: number };
     };
@@ -639,6 +644,12 @@ describe("Discovery 状态链 × closeout 全链（P18×P13 闭环）", () => {
     expect(closeout.applied_seq).not.toBeNull();
     expect(closeout.dod).toMatchObject({ acceptance_total: 1, verified: 1 });
     expect(closeout.gates).toMatchObject({ bound_runs: 1, gates_passed: 1 });
+    // 有效 ACCEPT 回执（O-W1-1/C-4）：施断放行的回执来源可对账（决策图 sidecar 内
+    // answer=ACCEPT + outcome_binding 覆盖本对象的 DECISION.CARLINE_GRID）。
+    expect(closeout.accept_receipt).toEqual({
+      decision_id: "DECISION.CARLINE_GRID",
+      graph: `discovery/scratchpads/${ID}/decision-graph.json`,
+    });
     // store 权威面：轴面推进到 CURRENT/VERIFIED（COMPLETED 的词表合法承载）。
     const axes = (
       envelopeOf(steps.inspectFinal).result as { body: { axes: Record<string, string> } | null }

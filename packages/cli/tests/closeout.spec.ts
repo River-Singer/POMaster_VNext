@@ -118,10 +118,16 @@ function claimFixture(overrides: {
   readonly verdict?: string;
   readonly evidenceRefs?: readonly unknown[];
   readonly acceptanceIndex?: number;
+  /** 断言主体覆盖（缺省 agent:demo-builder——与缺省重算主体 tool:verifier@0.1.0 主体分离）。 */
+  readonly assertedBy?: { readonly actorType: string; readonly actor: string };
+  /** 重算主体覆盖（与 assertedBy 同元组 = 自批 VERIFIED 形态——O-W1-3 分母拒绝目标）。 */
+  readonly recomputedBy?: { readonly actorType: string; readonly actor: string };
 }): Record<string, unknown> {
   const clm = overrides.clm ?? "CLM-0001";
   const subject = overrides.subject ?? "TASK.T0001";
   const verdict = overrides.verdict ?? "VERIFIED";
+  const asserted = overrides.assertedBy ?? { actorType: "agent", actor: "demo-builder" };
+  const recomputed = overrides.recomputedBy ?? { actorType: "tool", actor: "verifier@0.1.0" };
   return {
     record_type: "claim",
     clm,
@@ -133,14 +139,18 @@ function claimFixture(overrides: {
     },
     is_fixture: subject.startsWith("TEST."),
     assertion: "TASK_ACCEPTANCE_VERIFIED：行为 X 经独立重算确认",
-    asserted_by: { actor_type: "agent", actor: "demo-builder", self_attested: true },
+    asserted_by: { actor_type: asserted.actorType, actor: asserted.actor, self_attested: true },
     evidence_refs: overrides.evidenceRefs ?? [{ ref_type: "gate_result", grn: "GRN-0001" }],
     verification: {
       verdict,
       ...(verdict === "VERIFIED"
         ? {
             method: "recompute",
-            recomputed_by: { actor_type: "tool", actor: "verifier@0.1.0", self_attested: false },
+            recomputed_by: {
+              actor_type: recomputed.actorType,
+              actor: recomputed.actor,
+              self_attested: false,
+            },
             recomputed_value: { ok: true },
             delta_vs_asserted: null,
             at_seq: 3,
@@ -215,6 +225,29 @@ async function seedHappyEvidence(): Promise<void> {
   seedRun({});
 }
 
+/**
+ * 有效 Human ACCEPT 回执（O-W1-1 / W0 C-4 前置）：决策图 sidecar 写入 answer=ACCEPT +
+ * outcome_binding 覆盖（task_ref 直绑）。W1 R1-1 起 closeout 施断前必须有此回执——
+ * 机器验证通过 ≠ 成果已接受（本体语义测试见 closeout-accept-receipt.spec.ts）。
+ */
+function seedAcceptReceipt(overrides: { readonly taskRef?: string } = {}): void {
+  const dir = join(root, ".pomaster", "discovery", "scratchpads", "idea-accept");
+  mkdirSync(dir, { recursive: true });
+  const graph = {
+    graph_fingerprint: `sha256:${"0".repeat(64)}`,
+    decisions: [
+      {
+        decision_id: "DECISION.ACCEPT_SCOPE",
+        resolution: {
+          answer: "ACCEPT",
+          outcome_binding: { task_ref: overrides.taskRef ?? "TASK.T0001" },
+        },
+      },
+    ],
+  };
+  writeFileSync(join(dir, "decision-graph.json"), `${JSON.stringify(graph, null, 2)}\n`);
+}
+
 /** .pomaster 文件树快照（相对路径:内容 字节级）。 */
 function snapshot(): string[] {
   const base = join(root, ".pomaster");
@@ -262,6 +295,7 @@ describe("closeout happy path：DoD 全过 → 施断 COMPLETED", () => {
     await initStore();
     await seedTask();
     await seedHappyEvidence();
+    seedAcceptReceipt();
 
     const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
     expect(outcome.ok).toBe(true);
@@ -289,6 +323,7 @@ describe("closeout happy path：DoD 全过 → 施断 COMPLETED", () => {
     await initStore();
     await seedTask();
     await seedHappyEvidence();
+    seedAcceptReceipt();
 
     const outcome = await runCloseout(root, { taskId: "TASK-0001" });
     expect(outcome.ok).toBe(true);
@@ -302,6 +337,9 @@ describe("closeout happy path：DoD 全过 → 施断 COMPLETED", () => {
     await initStore();
     await seedTask();
     await seedHappyEvidence();
+    // 回执不带 revision_fingerprint：施断后 body 变更（rev 递增）不使回执失效——
+    // 本用例只验 kernel 指纹短路，不测对账位。
+    seedAcceptReceipt();
     const first = await runCloseout(root, { taskId: "TASK.T0001" });
     expect(first.ok).toBe(true);
 
@@ -483,6 +521,46 @@ describe("closeout DoD 判卷：acceptance 无 VERIFIED claim 硬阻断 COMPLETE
     expect(outcome.errors[0]?.code).toBe("DOD_CLAIM_EVIDENCE_EMPTY");
     expect(outcome.errors[0]?.hint).toContain("证据缺失伪装完成");
   });
+
+  it("自批 VERIFIED（recomputed_by==asserted_by）→ DOD_CLAIM_SELF_APPROVED 阻断且零写入（O-W1-3/B-2：closeout DoD 分母拒绝自批）", async () => {
+    await initStore();
+    await seedTask();
+    seedClaim({
+      // 自批形态：重算主体与断言主体同为 agent:demo-builder（record 通道仅 warning——分母在 closeout 拒）。
+      assertedBy: { actorType: "agent", actor: "demo-builder" },
+      recomputedBy: { actorType: "agent", actor: "demo-builder" },
+    });
+    seedRun({});
+
+    const before = snapshot();
+    const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors.map((error) => error.code)).toEqual(["DOD_CLAIM_SELF_APPROVED"]);
+    // 报错列出 id + subject，指路独立 verifier 重判。
+    expect(outcome.errors[0]?.message).toContain("CLM-0001");
+    expect(outcome.errors[0]?.message).toContain("TASK.T0001");
+    expect(outcome.errors[0]?.hint).toContain("独立");
+    const result = outcome.result as CloseoutResult;
+    expect(result.blocked).toBe(true);
+    expect(result.change).toBeNull();
+    expect(result.dod?.verified).toBe(0); // 自批 claim 不满足分母
+    expect(snapshot()).toEqual(before);
+  });
+
+  it("主体分离的 VERIFIED 照常满足分母（record warning-only 语义零改动——拒绝位只在 closeout 消费单点）", async () => {
+    await initStore();
+    await seedTask();
+    // record 通道对自批仅 CLAIM_SELF_APPROVAL warning、VERIFIED 照常落账（写路径零改动）；
+    // 主体分离 claim（缺省夹具）在 closeout 照常满足——显式锚定两通道分界。
+    seedClaim({});
+    seedRun({});
+    seedAcceptReceipt();
+
+    const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
+    expect(outcome.ok).toBe(true);
+    expect((outcome.result as CloseoutResult).dod?.verified).toBe(1);
+    expect(outcome.errors).toEqual([]);
+  });
 });
 
 // ============================================================
@@ -536,6 +614,7 @@ describe("closeout gate 阻断：subject 绑定 run 最新判卷必须全 passed
     seedClaim({});
     seedRun({ grn: "GRN-0001", verdict: "failed", ranAtSeq: 3 });
     seedRun({ grn: "GRN-0002", verdict: "passed", ranAtSeq: 9 });
+    seedAcceptReceipt();
 
     const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
     expect(outcome.ok).toBe(true);
@@ -552,6 +631,7 @@ describe("closeout gate 阻断：subject 绑定 run 最新判卷必须全 passed
     seedClaim({});
     seedRun({ grn: "GRN-0001", verdict: "failed", ranAtSeq: 3 });
     seedRun({ grn: "GRN-0002", verdict: "passed", ranAtSeq: 3 });
+    seedAcceptReceipt();
 
     const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
     expect(outcome.ok).toBe(true);
@@ -594,6 +674,7 @@ describe("closeout gate 阻断：subject 绑定 run 最新判卷必须全 passed
     await seedTask();
     seedClaim({});
     seedRun({}); // GRN-0001.json passed：正常入分母
+    seedAcceptReceipt();
     const runsDir = join(root, ".pomaster", "evidence", "runs");
     mkdirSync(runsDir, { recursive: true });
     writeFileSync(join(runsDir, "GRN-0002.json.bak"), "{}\n"); // 改名旁路（.json 后缀丢失）
@@ -777,6 +858,8 @@ describe("closeout 编排边界：身份/kind/kernel 施断判卷", () => {
       axes: { lifecycle: "PROPOSED", confidence: "UNRESOLVED", evidence: "PLANNED", change: "STABLE" },
     });
     await seedHappyEvidence();
+    // 回执在场：本用例只测 kernel 施断判卷（四判卷绿 + 回执绿后抵达施断，被跨轴断言拒）。
+    seedAcceptReceipt();
 
     const before = snapshot();
     const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
@@ -894,6 +977,7 @@ describe("closeout baseline 确认 gate（R-L：BASELINE_NOT_CONFIRMED / BASELIN
     await initStore();
     await seedTask();
     await seedHappyEvidence();
+    seedAcceptReceipt();
     const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
     expect(outcome.ok).toBe(true);
     expect((outcome.result as CloseoutResult).change).toBe("COMPLETED");
@@ -921,6 +1005,7 @@ describe("closeout baseline 确认 gate（R-L：BASELINE_NOT_CONFIRMED / BASELIN
     await initStore();
     await seedTask();
     await seedHappyEvidence();
+    seedAcceptReceipt();
     seedBaseline(true);
     // 漂移：确认快照之外的手工改写（模拟绕过治理通路的直接修改）。
     const feStack = join(root, ".pomaster", "baseline", "frontend", "stack.yaml");

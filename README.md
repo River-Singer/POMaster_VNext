@@ -91,7 +91,9 @@ pomaster context compile/explain
 pomaster exec-guard --attempt <file|->
 pomaster maintain <change-or-task> --ops <tx>
 
-# ⑤ VERIFY —— FAST gate / gate recipes 派发 / 证据入账
+# ⑤ VERIFY —— Verification Plan 编译 / FAST gate / gate recipes 派发 / 证据入账
+pomaster plan compile        # 证据计划编译（W1-R1-3）：--task（payload.acceptance 纯读）或 --input 契约直传（互斥）→ 逐验收义务计划（applicability 三值各带依据；缺工具≠N/A 保持 REQUIRED+tool_gap；无法判断保留 unknown 禁默认 N/A；informational 档位零参与——A1 裁定；变更面 --face "kind=present|absent:<依据>" 显式申报禁猜测；词形=SP 提案待追认）
+pomaster tools list/validate # ToolBinding 统一注册面六分态（W1-R1-4；SP 提案待追认）：.pomaster/tools/bindings.json 在座即唯一工具事实源（detect/registered/validated/available/selected/executed 分态不可跃迁、缺口逐条显式；--plan 回喂计划工件对账 selected；executed 唯一事实源=GRN 真实回执——工具发现≠调用授权；registry 缺席时 plan compile 回退 legacy 探测）
 pomaster check --fast/--gates
 pomaster record gate-run/claim/verification
 
@@ -105,6 +107,7 @@ pomaster ledger record/list
 pomaster compact
 pomaster knowledge search/inspect/record/review-candidates/promote/demote
 pomaster memory capture/inspect/harvest/review/promote/audit
+pomaster negative-history record/search   # 任务内已否定方案（W1-R1-7；REQ-03/AC-02）：record 绑定 TASK.*（--approach/--reason 必填 + --evidence-ref 可选，数据住 task payload.negative_history——不建第二库）；search 词级精确检索、未命中显式「无记录」；context compile 经 [ADVISORY KNOWLEDGE] 分区可见（重编译/rollover 仍可检索，不进 gate 判卷输入）
 
 # ⑧ CARRY —— DoD 判卷收口
 pomaster closeout <task-id>

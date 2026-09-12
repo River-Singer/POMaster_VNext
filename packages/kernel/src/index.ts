@@ -552,6 +552,7 @@ export {
   DISCOVERY_INTENT_REF_PATTERN,
   MISSING_FACT_REF_PATTERN,
   ASSUMPTION_ANCHOR_PATTERN,
+  DECISION_OUTCOME_FINGERPRINT_PATTERN,
   DECISION_CLASS_VALUES,
   DECISION_CLASS_TO_DIMENSIONS,
   GROUNDING_VERDICT_VALUES,
@@ -594,6 +595,7 @@ export type {
   DecisionGrounding,
   DecisionRecommendation,
   DecisionAuthority,
+  DecisionOutcomeBinding,
   DecisionResolution,
   DecisionNode,
   DecisionGraph,
@@ -1124,6 +1126,95 @@ export type {
   KnowledgePromotionAuthorityValue,
   KnowledgeConfidenceValue,
 } from "@pomaster/schemas";
+
+// ============================================================
+// 任务内 Context negative history（W1-R1-7 · 09-10 PRD REQ-03/AC-02）
+// ============================================================
+// 语义边界（docs/kernel-api.md §32；negative-history.ts 头注）：数据住 task_object
+// payload.negative_history 自由区字段面（source_refs 同例——不新增 canonical kind、
+// 不建第二真值库）；写通路唯一 = appendTaskNegativeEntry（applyTransaction upsert
+// 既有 op——TransactionOp 无 negative op 同款通路层封条）；投影消费恒 [ADVISORY]
+// 分区（§83.2 铁律/GOLDEN-L8-3——「曾否定+原因」是可见性事实不是判卷约束，AC-02
+// 只做可见性不新增阻断）；检索 knowledgeQueryTokens 同一实现（词级精确，禁子串/
+// 等价猜测）；未命中显式空不虚构（REQ-03「未命中保持未知」）。
+export {
+  TASK_NEGATIVE_HISTORY_FIELD,
+  readTaskNegativeHistory,
+  appendTaskNegativeEntry,
+  searchTaskNegativeHistory,
+} from "./negative-history.js";
+export type {
+  TaskNegativeEntry,
+  TaskNegativeEntryAudit,
+  NegativeHistoryAppendInput,
+  NegativeHistoryAppendResult,
+  TaskNegativeHistoryHit,
+} from "./negative-history.js";
+
+// ============================================================
+// Verification Plan Compiler（W1-R1-3 · 09-10 PRD REQ-04/AC-03/AC-13）
+// ============================================================
+// 语义边界（plan-compiler.ts 头注）：纯函数编译核——逐 Acceptance × 能力闭包产出
+// plan item（applicability 三值 REQUIRED/NOT_REQUIRED/NOT_APPLICABLE 各带依据；
+// 排除优先于申报；矛盾输入 SCHEMA_INVALID fail-closed）；无法判断的影响面保留
+// unknown 禁默认 N/A；缺工具 ≠ N/A（REQUIRED 保持 + tool_gap）；informational
+// 档位零参与 applicability（A1 裁定 projection.ts:220 先例）。旧 GateTier/triage
+// 档位消费者迁移接缝表指针见 plan-compiler.ts 头注（兼容期 legacy——W1 不改行为）。
+export {
+  PLAN_APPLICABILITY_VALUES,
+  PLAN_CHANGE_FACE_KINDS,
+  PLAN_CAPABILITY_WORDS,
+  compileVerificationPlan,
+} from "./plan-compiler.js";
+export type {
+  PlanApplicability,
+  PlanChangeFaceKind,
+  PlanCapabilityWord,
+  PlanInputSegment,
+  PlanAcceptanceItem,
+  PlanChangeFace,
+  PlanChangeSurface,
+  PlanEnvironmentFacts,
+  PlanToolBinding,
+  PlanPermitFacts,
+  PlanInformationalFacts,
+  VerificationPlanInput,
+  VerificationPlanItem,
+  PlanUnknownKind,
+  PlanUnknownItem,
+  VerificationPlan,
+} from "./plan-compiler.js";
+
+// ============================================================
+// 证据绑定资格链判定核（W1-R1-5 · 09-10 PRD REQ-06 / AC-04）
+// ============================================================
+// 语义边界（evidence-qualification.ts 头注）：纯函数判定核——对既有证据（GRN run /
+// 感知回执 / CLM 判定面）对照当前要求面（baseline 确认 at_seq / journal 失效事件 /
+// 当前 gate_def 注册面 / subject）逐轴判定，错 seq / 失效 Permit / 旧 gate_def 的证据
+// 不满足当前要求（evidence-invalidation-map §5-1/§5-4/§5-5 最小增量，零新 canonical
+// kind）。verdict 词形闭包=kernel 局部词 TODO(vocab-pr)（STALE_SEQ 沿 STALE_GROUNDING、
+// ORACLE_SUPERSEDED 沿 lifecycle SUPERSEDED、SUBJECT_MISMATCH 沿 DOD 词族；QUALIFIED
+// 唯一合格词形），SP 提案待追认；失效事件词形是 producer 既有词（permits/locks/
+// execution journal）——只消费零新增。消费者接线：closeout（DOD_CLAIM_EVIDENCE_
+// UNQUALIFIED，读侧判卷）+ record verification（VERIFICATION_EVIDENCE_UNQUALIFIED，
+// 写侧前置）——判定核叠加非替换，既有资格防线零改动。
+export {
+  EVIDENCE_QUALIFICATION_VERDICTS,
+  EVIDENCE_QUALIFICATION_SURFACES,
+  EVIDENCE_INVALIDATION_EVENT_TYPES,
+  qualifyEvidence,
+  qualifyEvidenceBatch,
+} from "./evidence-qualification.js";
+export type {
+  EvidenceQualificationVerdict,
+  EvidenceQualificationSurface,
+  EvidenceInvalidationEventType,
+  EvidenceQualificationEvidence,
+  EvidenceInvalidationEvent,
+  EvidenceQualificationRequirement,
+  EvidenceQualificationFinding,
+  EvidenceQualificationOutcome,
+} from "./evidence-qualification.js";
 
 // ============================================================
 // D 线地基：Sessions / Locks / Execution Identity（P20 · PRD §25.3/§25.4 + D 线 §1/§2/§3.3）

@@ -43,6 +43,12 @@
  * - VERIFIED claim 附带 07 执行层规则核验：evidence_refs 为空 ⇒ 判定无效
  *   （07 schema「空数组合法，但此时 verification 不得为 VERIFIED」）——零证据的 VERIFIED
  *   正是「证据缺失伪装完成」，closeout 拒绝消费。
+ * - 自批 VERIFIED 不进 DoD 分母（O-W1-3 / W0 B-2 消费端分母纪律；D-2 同轮修正）：
+ *   verification.recomputed_by 与 asserted_by 同主体（actor_type:actor 全等）的 VERIFIED
+ *   claim 不满足 acceptance（DOD_CLAIM_SELF_APPROVED 逐条显式，列出 claim id+subject，
+ *   指路独立 verifier 重判）也不满足 Spec 条款资格（同线 claimFinding——资格清单不是
+ *   自批洗白通道）。record 通道维持 warning-only 零改动（record.ts CLAIM_SELF_APPROVAL
+ *   同线，B3 边界）；主体盒缺席/畸形不在此判（doctor claim_self_approval_clean 权威检出）。
  * - DoD Spec 维度（vNext Batch 2 R1 / Owner 裁定 D6 2026-09-04；PRD §9.2 四概念分离）：
  *   truth-index 中 SPEC.*（PR-0008 前缀闭包）对象按 21-evidence-spec.schema.json
  *   payload（kind=business_rule 承载，spec_kind=evidence_spec 判别）读绑定与要求条款：
@@ -72,6 +78,35 @@
  *   digest 漂移 → BASELINE_DRIFT（确认 + 检出判卷式，写时不拦截——R-L 对 D9 的
  *   显式增补见父 PRD Technical Notes）。manifest 缺席（fixture 最小 store）→ 门
  *   不适用；判卷实现单源 baseline.ts（closeout 只聚合不旁移）。
+ * - 证据资格链（W1 R1-5 主消费者；evidence-invalidation-map §5-1/§5-4/§5-5 最小增量，
+ *   REQ-06「错 revision/实例证据不能满足当前要求」+ AC-04 三反例）：VERIFIED + 非空
+ *   证据 ≠ 证据仍满足当前要求——逐 Acceptance VERIFIED claim 的 claim 判定面
+ *   （verification.at_seq）与全部 GRN 引用面（ran_at_seq / gate / gate_def /
+ *   execution_id）对照当前要求面（baseline 确认 at_seq / journal 三词形失效事件
+ *   PERMIT_EXPIRED_OBSERVED·PERMIT_STOLEN·EXECUTION_INTERRUPTED / gauntlet-lite
+ *   CURRENT_GATE_DEFS 注册面）逐轴资格判定（kernel evidence-qualification 纯函数核，
+ *   零新 canonical kind；要求面装配单源 evidence-qualification.ts）。否决词形
+ *   STALE_SEQ（证据早于确认基线）/ PERMIT_INVALIDATED（挂载执行许可失效——事件 ↔
+ *   执行关联经 executions/ permit_ids）/ ORACLE_SUPERSEDED（gate_def 被当前版本取代；
+ *   gate 不在册 = 轴诚实不适用）→ DOD_CLAIM_EVIDENCE_UNQUALIFIED 逐证据显式（id+
+ *   词形+reason，DOD_CLAIM_SELF_APPROVED 同构形态）。判定核叠加非替换：subject 锚
+ *   防线仍归 DOD_CLAIM_SUBJECT_MISMATCH、分母空置仍归 DOD_CLAIM_EVIDENCE_EMPTY；
+ *   oracle/subject 轴本切片消费面显式关闭（null）；判定词形闭包=kernel 局部词
+ *   TODO(vocab-pr) SP 提案待追认。阻断边界留痕：Spec 维度条款循环（gate_refs 的
+ *   ran_at_seq 最新判卷语义）未接资格核——acceptance 轨否决已使 closeout 整体阻断，
+ *   Spec 轨资格接线留后续切片（旁路不构成放行通道，dodErrors ∪ specErrors 任一非空
+ *   即 blocked）。
+ * - 有效 ACCEPT 回执闸（O-W1-1 / W0 C-4，W1 R1-1；第五消费闸——四判卷全绿后、施断前）：
+ *   机器验证通过 ≠ 成果已接受——施断（evidence 轴 → VERIFIED）前必须存在覆盖本对象的
+ *   有效 Human ACCEPT 回执：决策图（schema 18 sidecar）resolution.answer=ACCEPT 且
+ *   outcome_binding 覆盖（task_ref 直绑 / change_ref 经 implements_change 间绑）；
+ *   无绑定键的 ACCEPT 是 Oracle 轮决议（B-3 两次 ACCEPT 语义靠绑定区分）不构成回执；
+ *   绑定携带 revision_fingerprint 须与对象行 body_sha256（store 事务自动维护位，D24）
+ *   全等——内容漂移后旧 ACCEPT 失效。码位：CLOSEOUT_ACCEPT_MISSING（零有效回执，hint
+ *   带确切命令词形）/ CLOSEOUT_ACCEPT_STALE（覆盖回执指纹失配）/ CLOSEOUT_ACCEPT_DAMAGED
+ *   （决策图不可解析或结构畸形——损坏禁静默跳过，可能正是被藏起来的 ACCEPT）。闸位在
+ *   四判卷全绿之后（Option A）：回执错误不与机器判卷错误混算——先修机器可判项，回执
+ *   缺口在其全绿后精确呈现。
  * - 阻断路径零写入（staged 写从未发起）；成功路径同 inputs 重放由 kernel 指纹短路
  *   （short_circuited=true 零写入）。
  */
@@ -80,6 +115,11 @@ import { readdirSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { GovernedId, Store, TruthIndex } from "@pomaster/kernel";
+import type {
+  EvidenceQualificationEvidence,
+  EvidenceQualificationFinding,
+  EvidenceQualificationRequirement,
+} from "@pomaster/kernel";
 import {
   GovernanceError,
   GovernedIdParseError,
@@ -87,6 +127,7 @@ import {
   createStore,
   loadTruthIndex,
   parseGovernedId,
+  qualifyEvidenceBatch,
   resolveAlias,
 } from "@pomaster/kernel";
 import {
@@ -99,6 +140,11 @@ import {
   listPlaneFiles,
 } from "./evidence.js";
 import { baselineGateErrors } from "./baseline.js";
+import {
+  normalizeGrnEvidenceRefs,
+  readEvidenceQualificationRequirement,
+  readRunQualificationView,
+} from "./evidence-qualification.js";
 import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
 import {
@@ -106,7 +152,7 @@ import {
   parseErrorToCliError,
   requireInitialized,
 } from "./permit.js";
-import { POMASTER_DIR, claimsDirPath, runsDirPath, toPosix } from "./store-layout.js";
+import { POMASTER_DIR, claimsDirPath, discoveryScratchpadsDirPath, runsDirPath, toPosix } from "./store-layout.js";
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -148,6 +194,15 @@ export interface CloseoutSpecClauseEntry {
   readonly detail: string | null;
 }
 
+/**
+ * 有效 ACCEPT 回执呈现（O-W1-1 / W0 C-4）：回执来源决策（图内 DECISION.*）+ sidecar
+ * 相对词形（discovery/scratchpads/<padId>/decision-graph.json）。
+ */
+export interface CloseoutAcceptReceipt {
+  readonly decision_id: string;
+  readonly graph: string;
+}
+
 export interface CloseoutResult {
   /** argv 原词形。 */
   readonly task: string;
@@ -181,6 +236,11 @@ export interface CloseoutResult {
   } | null;
   /** 施断成功时的 CLI 呈现层局部词（vocab-lock presentation_axes.closeout_change_presentation——PR-0009；非词表新增——轴面承载是 evidence=VERIFIED）。 */
   readonly change: "COMPLETED" | null;
+  /**
+   * 有效 ACCEPT 回执（O-W1-1 / W0 C-4）：施断成功时呈现回执来源；阻断路径显式 null。
+   * null ≠ 无闸——阻断路径回执闸未通过（或缺席），呈现层不为失败捏造回执。
+   */
+  readonly accept_receipt: CloseoutAcceptReceipt | null;
   readonly applied_seq: number | null;
   readonly short_circuited: boolean | null;
 }
@@ -202,6 +262,7 @@ function emptyResult(task: string): CloseoutResult {
     dod: null,
     gates: null,
     change: null,
+    accept_receipt: null,
     applied_seq: null,
     short_circuited: null,
   };
@@ -336,6 +397,22 @@ interface ClaimRecordView {
   readonly acceptanceIndex: unknown;
   readonly verdict: string | null;
   readonly evidenceRefs: unknown;
+  /** 断言主体词形（07 asserted_by → "actor_type:actor"；盒缺席/字段畸形 = null 诚实缺席）。 */
+  readonly assertedBy: string | null;
+  /** 重算主体词形（07 verification.recomputed_by → "actor_type:actor"；同上缺席规则）。 */
+  readonly recomputedBy: string | null;
+  /** 判定锚 seq（07 verification.at_seq；缺席/畸形 = null——资格链 seq 轴诚实不适用）。 */
+  readonly atSeq: number | null;
+  /** 挂载执行身份（07 信封 execution_id，AGX 词形；缺席 = null——permit 轴不适用）。 */
+  readonly executionId: string | null;
+}
+
+/** actor 盒（07 actor 形态）→ "actor_type:actor" 词形；盒/字段缺席或非字符串 = null。 */
+function actorLabelOf(box: unknown): string | null {
+  if (!isRecord(box)) return null;
+  const actorType = asString(box.actor_type);
+  const actor = asString(box.actor);
+  return actorType === null || actor === null ? null : `${actorType}:${actor}`;
 }
 
 async function readClaimRecord(
@@ -359,12 +436,194 @@ async function readClaimRecord(
     return { damage: `evidence/claims/${fileName}: claim 记录不是 JSON 对象` };
   }
   const verification = isRecord(parsed.verification) ? parsed.verification : undefined;
+  const atSeq = verification === undefined ? undefined : verification.at_seq;
   return {
     subject: claimSubjectOf(parsed),
     acceptanceIndex: isRecord(parsed.subject) ? (parsed.subject as UnknownRecord).acceptance_index : undefined,
     verdict: verification === undefined ? null : asString(verification.verdict),
     evidenceRefs: parsed.evidence_refs,
+    assertedBy: actorLabelOf(parsed.asserted_by),
+    recomputedBy: actorLabelOf(verification === undefined ? undefined : verification.recomputed_by),
+    atSeq: typeof atSeq === "number" && Number.isInteger(atSeq) && atSeq >= 0 ? atSeq : null,
+    executionId: asString(parsed.execution_id),
   };
+}
+
+// ============================================================
+// 证据资格链（W1 R1-5 主消费者：claim 判定面 + GRN 引用面逐面判定）
+// ============================================================
+
+/**
+ * 逐 Acceptance VERIFIED claim 的证据资格判定（evidence-invalidation-map §5-1/§5-4/§5-5
+ * 最小增量；kernel evidence-qualification 判定核纯消费）。判卷分母两半：
+ * - claim 判定面（CLM）：verification.at_seq 为 seq 锚——VERIFIED 判定早于 baseline
+ *   确认 = 判定依据过期（STALE_SEQ 同词形）；
+ * - 全部 GRN 引用面（07 typed gate_result 分型 + 字符串词形归一）：ran_at_seq / gate /
+ *   gate_def / execution_id 四锚逐轴判定。blob / truth_object 引用不携带锚，不进资格
+ *   分母（缺席诚实——资格链是叠加轴，引用位完整性归既有防线）。
+ * 判定核词形/合同异常（SCHEMA_INVALID）→ 显式错误（fail-closed，禁静默放行）。
+ */
+async function qualifyClaimEvidence(
+  rootDir: string,
+  claimRef: string,
+  view: ClaimRecordView,
+  requirement: EvidenceQualificationRequirement,
+): Promise<
+  { readonly findings: readonly EvidenceQualificationFinding[] } | { readonly error: CliError }
+> {
+  const faces: EvidenceQualificationEvidence[] = [
+    {
+      ref: claimRef,
+      surface: "claim",
+      captured_at_seq: view.atSeq,
+      gate: null,
+      gate_def: null,
+      oracle_ref: null,
+      execution_id: view.executionId,
+      subject: typeof view.subject === "string" ? view.subject : null,
+    },
+  ];
+  for (const grn of normalizeGrnEvidenceRefs(view.evidenceRefs)) {
+    const run = await readRunQualificationView(runsDirPath(rootDir), grn);
+    if (run === null) continue; // 悬空 GRN 引用——引用位存在性归既有防线，资格轴缺席诚实
+    if ("damage" in run) {
+      return {
+        error: {
+          code: "EVIDENCE_MALFORMED",
+          message: `${run.damage}（被 ${claimRef} evidence_refs 引用）`,
+          hint: "判卷分母内证据损坏禁静默跳过（可能正是被藏起来的失败记录）；修复后走 record/compact canonical 化，或从 git 恢复。",
+        },
+      };
+    }
+    faces.push({
+      ref: run.grn,
+      surface: "run",
+      captured_at_seq: run.ranAtSeq,
+      gate: run.gate,
+      gate_def: run.gateDef,
+      oracle_ref: null,
+      execution_id: run.executionId,
+      subject: run.subject,
+    });
+  }
+  try {
+    return { findings: qualifyEvidenceBatch(faces, requirement).findings };
+  } catch (err) {
+    if (!(err instanceof GovernanceError)) throw err;
+    return { error: governanceErrorToCliError(err) };
+  }
+}
+
+// ============================================================
+// 有效 ACCEPT 回执闸（O-W1-1 / W0 C-4：机器验证通过 ≠ 成果已接受）
+// ============================================================
+
+/**
+ * 回执闸（第五消费闸，方案 a——复用决策图 resolution，零新 canonical kind）：
+ * 扫描 discovery/scratchpads/<padId>/decision-graph.json（确定性字典序），存在
+ * resolution.answer=ACCEPT 且 outcome_binding 覆盖本对象的 Decision 即有效回执：
+ * - task_ref 直绑 task id；change_ref 经 payload.implements_change 间绑；
+ * - 无 outcome_binding 的 ACCEPT 是 Oracle 轮决议（B-3：两次 ACCEPT 语义靠绑定区分），
+ *   不构成成果回执；
+ * - 绑定携带 revision_fingerprint 时须与对象行 body_sha256（store 事务自动维护位，D24）
+ *   全等——内容漂移后旧 ACCEPT 失效（防「内容变了旧 ACCEPT 仍生效」）；
+ * - 判卷分母诚实纪律同线：决策图 JSON 不可解析 / 结构畸形 → CLOSEOUT_ACCEPT_DAMAGED
+ *   硬阻断（损坏文件可能正是被藏起来的 ACCEPT，禁静默跳过）；
+ * - 存在指纹失配的覆盖回执（无其他有效回执）→ CLOSEOUT_ACCEPT_STALE（指向失效决议）；
+ *   零有效回执 → CLOSEOUT_ACCEPT_MISSING（hint 带确切命令词形，C3 纪律）。
+ */
+async function acceptReceiptGate(
+  rootDir: string,
+  target: GovernedId,
+  implementsChange: string | null,
+  bodySha256: string | null,
+): Promise<{ readonly receipt: CloseoutAcceptReceipt } | { readonly error: CliError }> {
+  const padsDir = discoveryScratchpadsDirPath(rootDir);
+  const missingError: CliError = {
+    code: "CLOSEOUT_ACCEPT_MISSING",
+    message: `无有效 Human ACCEPT 回执覆盖对象 ${target}——机器验证已全绿，但机器验证通过 ≠ 成果已接受（W1 R1-1 / C-4）`,
+    hint: `决议并绑定成果：pomaster brainstorm decide <discovery-id> --answer <DECISION.*> --accept --outcome-task ${target}（或 --outcome-change <CHANGE.*> 间绑 implements_change；--outcome-revision sha256:… 可选对账指纹）。无绑定键的 ACCEPT 是 Oracle 轮决议（B-3），不构成成果回执。`,
+  };
+  let padIds: string[];
+  try {
+    padIds = readdirSync(padsDir, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name)
+      .sort();
+  } catch {
+    return { error: missingError }; // 目录缺席 = 零回执（fail-closed，非放行）
+  }
+  const staleDecisions: string[] = [];
+  for (const padId of padIds) {
+    const graphPath = join(padsDir, padId, "decision-graph.json");
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(await readFile(graphPath, "utf8"));
+    } catch (err) {
+      return {
+        error: {
+          code: "CLOSEOUT_ACCEPT_DAMAGED",
+          message: `${toPosix(`.pomaster/discovery/scratchpads/${padId}/decision-graph.json`)}: JSON 无法解析 — ${err instanceof Error ? err.message : String(err)}`,
+          hint: "判卷分母内的决策图损坏禁静默跳过（损坏文件可能正是被藏起来的 ACCEPT）；修复该 sidecar 后重跑 closeout。",
+        },
+      };
+    }
+    if (!isRecord(parsed) || !Array.isArray(parsed.decisions)) {
+      return {
+        error: {
+          code: "CLOSEOUT_ACCEPT_DAMAGED",
+          message: `${toPosix(`.pomaster/discovery/scratchpads/${padId}/decision-graph.json`)}: 图形态畸形（须 {graph_fingerprint, decisions: []}——schema 18 sidecar）`,
+          hint: "判卷分母内的决策图损坏禁静默跳过；修复该 sidecar 后重跑 closeout。",
+        },
+      };
+    }
+    const graphRel = `discovery/scratchpads/${padId}/decision-graph.json`;
+    for (const node of parsed.decisions) {
+      if (!isRecord(node) || typeof node.decision_id !== "string") {
+        return {
+          error: {
+            code: "CLOSEOUT_ACCEPT_DAMAGED",
+            message: `${toPosix(`.pomaster/discovery/scratchpads/${padId}/decision-graph.json`)}: decisions 含畸形节点（缺 decision_id）`,
+            hint: "判卷分母内的决策图损坏禁静默跳过；修复该 sidecar 后重跑 closeout。",
+          },
+        };
+      }
+      const resolution = node.resolution;
+      if (resolution === null || resolution === undefined) continue; // OPEN 决议非回执
+      if (!isRecord(resolution)) {
+        return {
+          error: {
+            code: "CLOSEOUT_ACCEPT_DAMAGED",
+            message: `${toPosix(`.pomaster/discovery/scratchpads/${padId}/decision-graph.json`)}: decision ${node.decision_id} 的 resolution 形态畸形`,
+            hint: "判卷分母内的决策图损坏禁静默跳过；修复该 sidecar 后重跑 closeout。",
+          },
+        };
+      }
+      if (resolution.answer !== "ACCEPT") continue; // 非 ACCEPT 决议不构成回执（REQ-10）
+      const binding = isRecord(resolution.outcome_binding) ? resolution.outcome_binding : null;
+      if (binding === null) continue; // 无绑定 = Oracle 轮 ACCEPT（B-3），不冒充成果回执
+      const taskRef = asString(binding.task_ref);
+      const changeRef = asString(binding.change_ref);
+      const covered = (taskRef !== null && taskRef === target) || (changeRef !== null && changeRef === implementsChange);
+      if (!covered) continue;
+      const fingerprint = asString(binding.revision_fingerprint);
+      if (fingerprint !== null && fingerprint !== (bodySha256 ?? "")) {
+        staleDecisions.push(node.decision_id); // 内容漂移——该回执失效，继续找其他回执
+        continue;
+      }
+      return { receipt: { decision_id: node.decision_id, graph: graphRel } };
+    }
+  }
+  if (staleDecisions.length > 0) {
+    return {
+      error: {
+        code: "CLOSEOUT_ACCEPT_STALE",
+        message: `覆盖对象 ${target} 的 ACCEPT 回执已失效（决议 ${staleDecisions.join("、")} 的 revision_fingerprint 与当前对象内容摘要不符——内容漂移后旧 ACCEPT 失效）`,
+        hint: "内容变更后须重新决议：pomaster brainstorm decide <discovery-id> --answer <DECISION.*> --accept --outcome-task <TASK.*> --outcome-revision sha256:…（对账指纹 = 对象行 body_sha256）。",
+      },
+    };
+  }
+  return { error: missingError };
 }
 
 // ============================================================
@@ -481,6 +740,16 @@ export async function runCloseout(
     });
   } else {
     const claimsDir = claimsDirPath(rootDir);
+    // 证据资格链要求面装配（W1 R1-5；每次判卷新鲜装配——baseline 确认锚 / journal 失效
+    // 事件 / executions/ 许可绑定都是随时间推进的事实源，禁缓存跨判卷复用）。装配失败
+    // （journal 损坏 SCHEMA_INVALID）→ fail-closed：损坏可能正是被藏起来的失效事件。
+    let qualificationRequirement: EvidenceQualificationRequirement;
+    try {
+      qualificationRequirement = await readEvidenceQualificationRequirement(rootDir);
+    } catch (err) {
+      if (!(err instanceof GovernanceError)) throw err;
+      return failCloseout(governanceErrorToCliError(err), withKind);
+    }
     // 挪证封堵登记：无注记 claim 的已合法消费位（claimRef → 消费它的 acceptance index）。
     // 只在条目真正判过（VERIFIED + 非空证据）时登记——未判过的 claim 两条引用都会在
     // 判定位失败，重复报挪证只会稀释显式码位。
@@ -548,6 +817,19 @@ export async function runCloseout(
         continue;
       }
       if (verdict === "VERIFIED") {
+        // 自批拒绝（O-W1-3 / W0 B-2 消费端分母纪律）：recomputed_by 与 asserted_by
+        // 同主体的 VERIFIED claim 不满足 acceptance——「独立验证」词形与事实脱钩的
+        // 封堵。record 通道维持 warning-only（写路径零改动，record.ts CLAIM_SELF_APPROVAL
+        // 同线）；资格判卷在 closeout 消费单点施加。主体盒缺席/畸形（任一 null）不判
+        // 自批（doctor claim_self_approval_clean 是缺损形态的权威检出位，不在此混算）。
+        if (view.assertedBy !== null && view.assertedBy === view.recomputedBy) {
+          push(false, verdict, null, {
+            code: "DOD_CLAIM_SELF_APPROVED",
+            message: `${claimRef} 的重算主体与断言主体相同（${view.assertedBy}）——自批 VERIFIED 不满足 acceptance[${index}]（claim id=${claimRef}，subject=${String(view.subject)}；D20/07 x-actor-discipline）`,
+            hint: "由独立 verifier 重新 record verification（--verifier <type>:<name> 须与 asserted_by 主体分离）后重跑 closeout；doctor 探针 claim_self_approval_clean 同线可全量自查。",
+          });
+          continue;
+        }
         const evidenceRefs = Array.isArray(view.evidenceRefs) ? view.evidenceRefs : null;
         if (evidenceRefs === null || evidenceRefs.length === 0) {
           push(false, verdict, null, {
@@ -571,6 +853,27 @@ export async function runCloseout(
             continue;
           }
           unannotatedConsumed.set(claimRef, index);
+        }
+        // 证据资格链（W1 R1-5 主消费者；叠加非替换——subject/index/自批/挪证/空证据等
+        // 既有防线先行不改动）：VERIFIED + 非空证据 ≠ 证据仍满足当前要求。claim 判定面
+        // 与全部 GRN 引用逐面判定，否决词形（STALE_SEQ / PERMIT_INVALIDATED /
+        // ORACLE_SUPERSEDED / SUBJECT_MISMATCH）逐证据显式——DOD_CLAIM_SELF_APPROVED
+        // 同构错误形态（逐条列出证据 id + 否决词形 + reason，指路重产出再挂证）。
+        const qualification = await qualifyClaimEvidence(rootDir, claimRef, view, qualificationRequirement);
+        if ("error" in qualification) {
+          push(false, verdict, null, qualification.error);
+          continue;
+        }
+        const vetoedFindings = qualification.findings.filter((finding) => !finding.qualified);
+        if (vetoedFindings.length > 0) {
+          for (const finding of vetoedFindings) {
+            push(false, verdict, `${finding.ref} → ${finding.verdict}`, {
+              code: "DOD_CLAIM_EVIDENCE_UNQUALIFIED",
+              message: `acceptance[${index}] 映射的 ${claimRef} 证据未通过资格判定：${finding.ref}（${finding.surface} 面）→ ${finding.verdict}——${finding.reason}`,
+              hint: "错 seq / 失效 Permit / 旧 gate_def 的证据不满足当前要求（W1 R1-5 证据资格链；词形闭包=SP 提案待追认）——由证据产出方在当前确认基线/有效许可/当前 gate_def 下重新产出证据，经独立验证流重新挂证（record verification）后重跑 closeout。",
+            });
+          }
+          continue;
         }
         push(true, verdict, null, null);
         continue;
@@ -733,6 +1036,14 @@ export async function runCloseout(
         const verdict = view.verdict;
         if (verdict !== "VERIFIED") {
           claimFindings.push(`${claimRef}: verdict=${verdict ?? "缺失"}，不是 VERIFIED（判定来自 claims 平面，D20）`);
+          continue;
+        }
+        // 自批拒绝（O-W1-3，acceptance 侧 DOD_CLAIM_SELF_APPROVED 同线）：自批 VERIFIED
+        // 不满足条款资格——资格清单不是自批洗白通道（挪证缝收口）。
+        if (view.assertedBy !== null && view.assertedBy === view.recomputedBy) {
+          claimFindings.push(
+            `${claimRef}: 自批 VERIFIED（重算主体与断言主体相同 ${view.assertedBy}）不满足条款——由独立 verifier 重新 record verification`,
+          );
           continue;
         }
         const evidenceRefs = Array.isArray(view.evidenceRefs) ? view.evidenceRefs : null;
@@ -1015,6 +1326,24 @@ export async function runCloseout(
   }
 
   // ============================================================
+  // ③.5 有效 ACCEPT 回执闸（O-W1-1 / W0 C-4；第五消费闸——四判卷全绿后、施断前）：
+  // 机器验证通过 ≠ 成果已接受——施断（evidence → VERIFIED）前必须存在覆盖本对象的
+  // 有效 Human ACCEPT 回执（answer=ACCEPT + outcome_binding 覆盖；无绑定 = Oracle 轮
+  // 决议不构成回执）。闸位在四判卷全绿之后（Option A）：回执错误不与机器判卷错误
+  // 混算——先修机器可判项，回执缺口在其全绿后精确呈现。
+  // ============================================================
+
+  const receiptOutcome = await acceptReceiptGate(rootDir, target, taskImplementsChange, row.bodySha256 ?? null);
+  if ("error" in receiptOutcome) {
+    const human = [
+      `closeout ${target} → BLOCKED at ACCEPT 回执闸（dod ${dod.verified}/${dod.acceptance_total} acceptance VERIFIED, gates ${gates.gates_passed}/${gates.gates_judged} passed；${specSummary}）`,
+      `  ${receiptOutcome.error.code}: ${receiptOutcome.error.message}`,
+      `  hint: ${receiptOutcome.error.hint}`,
+    ];
+    return failOutcome<CloseoutResult>("closeout", judged, [receiptOutcome.error], human, [...gateWarnings, ...specWarnings]);
+  }
+
+  // ============================================================
   // ④ 施断：kernel 唯一写通道 applyTransaction（判卷权威零旁移）
   // ============================================================
 
@@ -1035,6 +1364,7 @@ export async function runCloseout(
       ...judged,
       blocked: false,
       change: "COMPLETED",
+      accept_receipt: receiptOutcome.receipt,
       applied_seq: applied.appliedSeq,
       short_circuited: applied.shortCircuited,
     };
@@ -1046,6 +1376,7 @@ export async function runCloseout(
         `  dod: ${dod.verified}/${dod.acceptance_total} acceptance VERIFIED`,
         `  ${specSummary}`,
         `  gates: ${gates.gates_passed}/${gates.gates_judged} passed`,
+        `  accept_receipt: ${receiptOutcome.receipt.decision_id} @ ${receiptOutcome.receipt.graph}（有效 ACCEPT 回执——W1 R1-1 / C-4）`,
         `  transition: evidence → VERIFIED（kernel applyTransaction 唯一写通道；COMPLETED 是呈现词——vocab-lock presentation_axes.closeout_change_presentation）`,
       ],
       [...gateWarnings, ...specWarnings],

@@ -114,10 +114,29 @@
  *                   PENDING 清单，纯读）/ harvest = COMPATIBILITY 批量收割（--harness-dir
  *                   显式优先，缺省探测仅注册 claude；目录缺席 NOT_RUN exit 1 非 fake 绿）/
  *                   review = batch review 唯一人工闸（--decide --promote|--reject --note
- *                   必填留痕；只改分类标签不改写内容原文）/ promote = 分桶路由（KNOWLEDGE→
+ *                   必填留痕；--actor 必填显式申报评审主体；只改分类标签不改写内容原文）/ promote = 分桶路由（KNOWLEDGE→
  *                   P28 生命周期恒 CANDIDATE+ADVISORY；TRUTH/DECISION/EVIDENCE→
  *                   OWNER_ESCALATION_REQUIRED 呈报 exit 0 不写 Canonical State）/ audit =
  *                   分母封闭 + MEMORY_DRIFT 探测（drift 段非空 exit 1 fail-closed，§84.6）
+ * - negative-history record/search
+ *                   任务内 negative history 命令面（W1-R1-7 · 09-10 PRD REQ-03/AC-02）：
+ *                   record = 已否定方案登记（绑定 TASK.*，--approach/--reason 必填 +
+ *                   --evidence-ref 可选；kernel appendTaskNegativeEntry 唯一写通路，
+ *                   数据住 task payload.negative_history 自由区字段面——不建第二库）/
+ *                   search = 词级精确检索（未命中显式「无记录」；纯读零建账）；
+ *                   context compile 经 [ADVISORY KNOWLEDGE] 分区可见——AC-02 只做
+ *                   可见性（重试不被机器禁止，但须新依据），不进 gate 判卷输入
+ * - plan compile
+ *                   Verification Plan Compiler（W1-R1-3 · 09-10 PRD REQ-04/AC-03/
+ *                   AC-13）：逐 Acceptance 编译证据计划（义务/工具/靶/环境/
+ *                   applicability 三值 REQUIRED·NOT_REQUIRED·NOT_APPLICABLE 各带
+ *                   依据——N/A 有据非工具缺席降级；缺工具≠N/A 保持 REQUIRED+tool_gap；
+ *                   无法判断的影响面保留 unknown 禁默认不适用）。输入 --task
+ *                   （payload.acceptance 纯读零写入）或 --input 契约直传（互斥）；
+ *                   变更面 --changed/--consumer/--face 显式申报禁猜测；工具探测自动
+ *                   面 vitest/playwright/chrome-devtools-mcp（ToolBinding 统一面=
+ *                   R1-4 接缝）；informational（--complexity/--profile/--note）零
+ *                   参与 applicability（A1 裁定）——复杂度/档位不能决定测试集合
  * - production band define/list / evaluate / challenge / diagnose / metrics /
  *                   self-improvement register/list
  *                   Production Feedback 命令面（§95 全节 + §30 第四态 + §55.1/§90.4；
@@ -223,6 +242,12 @@ import {
   runKnowledgeReviewCandidates,
   runKnowledgeSearch,
 } from "./knowledge.js";
+import {
+  runNegativeHistoryRecord,
+  runNegativeHistorySearch,
+} from "./negative-history.js";
+import { runPlanCompile } from "./plan.js";
+import { runToolsList, runToolsValidate } from "./tools.js";
 import {
   runBrainstormDecide,
   runBrainstormPromote,
@@ -657,6 +682,14 @@ export type {
   CloseoutGateRow,
   CloseoutSpecClauseEntry,
 } from "./closeout.js";
+// 证据资格链（W1 R1-5）：要求面/证据面装配单源（closeout 主消费者 + record verification
+// 次消费者共享；判定核在 @pomaster/kernel evidence-qualification）。
+export {
+  readEvidenceQualificationRequirement,
+  readRunQualificationView,
+  normalizeGrnEvidenceRefs,
+} from "./evidence-qualification.js";
+export type { RunQualificationView } from "./evidence-qualification.js";
 export { runCatalogStatus, runCatalogExplain, runCatalogRelock } from "./catalog.js";
 export { runResolve, renderResolve } from "./resolve.js";
 export type { ResolveInput, ResolveResult } from "./resolve.js";
@@ -813,6 +846,42 @@ export type {
   KnowledgeDemotionResult,
   KnowledgeKernelDeps,
 } from "./knowledge.js";
+export {
+  runNegativeHistoryRecord,
+  runNegativeHistorySearch,
+} from "./negative-history.js";
+export type {
+  NegativeHistoryRecordInput,
+  NegativeHistoryRecordResult,
+  NegativeHistorySearchResult,
+  NegativeHistoryEntryView,
+  NegativeHistoryKernelDeps,
+} from "./negative-history.js";
+export { runPlanCompile } from "./plan.js";
+export type {
+  PlanCompileInput,
+  PlanCompileResult,
+  PlanToolProbeView,
+  PlanKernelDeps,
+} from "./plan.js";
+// W1-R1-4：ToolBinding 统一注册面命令与状态机导出（tools list/validate——SP 提案待追认）。
+export {
+  computeBindingStates,
+  loadToolBindingRegistry,
+  runToolsList,
+  runToolsValidate,
+} from "./tools.js";
+export type {
+  BindingStateRow,
+  BindingStatesDeps,
+  LoadedToolBindingRegistry,
+  PlanItemRef,
+  RegistryLoad,
+  ToolsListResult,
+  ToolsValidateInput,
+  ToolsListInput,
+  ToolsValidateResult,
+} from "./tools.js";
 export {
   EVIDENCE_MALFORMED_CODE,
   RUN_INGEST_ACTIONS,
@@ -2188,6 +2257,9 @@ export function createProgram(
     .option("--defer", "答面 DEFER：显式延后（§15 合法残留）")
     .option("--triage <key=bool>", "UNKNOWN 六问申报（可重复：can_derive|can_research|can_safely_assume|can_defer|can_prototype_observe|blocks_current_increment = true|false；六键全必给）", collectValues, [])
     .option("--seq <n>", "事件拍（≥1 整数；零墙钟 A4，可选）")
+    .option("--outcome-task <id>", "SP-W1-a 成果绑定 task_ref（closeout 有效 ACCEPT 回执闸 C-4 的覆盖判定载体；只随 --answer）")
+    .option("--outcome-change <id>", "SP-W1-a 成果绑定 change_ref（间绑 task payload.implements_change；只随 --answer）")
+    .option("--outcome-revision <sha256:…>", "SP-W1-a 消费端对账指纹（sha256:<64hex>；与对象行 body_sha256 全等——内容漂移旧 ACCEPT 失效）")
     .option("--ready", "子动作③：§15 收敛判定（全绿→READY_TO_PROMOTE）+ Task Contract 文本申报")
     .option("--goal <text>", "Task Contract：goal 文本（--ready 必答；空文本按 MSD goal_defined=false 判卷）")
     .option("--scope <text>", "Task Contract：scope 文本（--ready 必答；空文本按 MSD scope_defined=false 判卷）")
@@ -2207,6 +2279,11 @@ export function createProgram(
         defer: opts.defer === true,
         triage: opts.triage as string[],
         ...(opts.seq !== undefined ? { seq: opts.seq as string } : {}),
+        ...(opts.outcomeTask !== undefined ? { outcomeTask: opts.outcomeTask as string } : {}),
+        ...(opts.outcomeChange !== undefined ? { outcomeChange: opts.outcomeChange as string } : {}),
+        ...(opts.outcomeRevision !== undefined
+          ? { outcomeRevision: opts.outcomeRevision as string }
+          : {}),
         ready: opts.ready === true,
         ...(opts.goal !== undefined ? { goal: opts.goal as string } : {}),
         ...(opts.scope !== undefined ? { scope: opts.scope as string } : {}),
@@ -2374,6 +2451,151 @@ export function createProgram(
       });
     });
 
+  // —— Negative History 命令面（W1-R1-7 · 09-10 PRD REQ-03/AC-02） ——
+  // 判卷/落盘权威在 kernel negative-history.ts 语义入口（唯一写通路 = applyTransaction
+  // upsert 既有 op——数据住 task payload.negative_history 自由区字段面，不建第二库）；
+  // search 纯读零建账；未命中显式「无记录」不虚构（REQ-03「未命中保持未知」）。
+  // AC-02 语义边界：登记/检索只做「曾否定+原因」可见性（context compile 经
+  // [ADVISORY KNOWLEDGE] 分区呈现，永不进 gate 判卷输入）——不新增任何阻断闸。
+  const negativeHistory = program
+    .command("negative-history")
+    .description(
+      "任务内 negative history 命令面（W1-R1-7；09-10 PRD REQ-03/AC-02）：record = 已否定方案登记（绑定 TASK.*，--approach/--reason 必填 + --evidence-ref 可选，数据住 task payload.negative_history——不建第二库）；search = 词级精确检索（未命中显式「无记录」）；context compile 经 [ADVISORY KNOWLEDGE] 分区可见（AC-02 rollover 可重新获得）",
+    );
+  negativeHistory
+    .command("record")
+    .description(
+      "登记一条已否定方案（每次调用 = 一次否定事件；kernel appendTaskNegativeEntry 唯一写通路 → applyTransaction upsert 既有 op；status 恒 REJECTED；落 task payload.negative_history 自由区字段面——truth 正文层，进 content_digest 与投影指纹绑定）",
+    )
+    .argument("<task-id>", "目标任务（TASK.* canonical governed id，须在册 kind=task_object）")
+    .requiredOption("--approach <text>", "曾尝试的方案（检索键承载，REQ-03）")
+    .requiredOption("--reason <text>", "失败/否定原因（必填——不留原因的否定 = 静默，禁）")
+    .option("--evidence-ref <ref>", "证据引用（TEST.*/GRN-* 或 evidence 相对路径；可选）")
+    .requiredOption("--actor <actor>", "登记主体 <type>:<name>（C5 自报）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (taskId: string, opts, command) => {
+      const outcome = await runNegativeHistoryRecord(resolveDir(command), {
+        taskRef: taskId,
+        approach: opts.approach as string | undefined,
+        reason: opts.reason as string | undefined,
+        evidenceRef: opts.evidenceRef as string | undefined,
+        actor: opts.actor as string,
+      });
+      record({
+        command: "negative-history record",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  negativeHistory
+    .command("search")
+    .description(
+      "检索任务内已否定方案（词级精确 token 交集——knowledgeQueryTokens 同源，禁子串/等价猜测；query 缺席 = 列全部登记；未命中显式「无记录」不虚构；纯读零建账）",
+    )
+    .argument("<task-id>", "目标任务（TASK.* canonical governed id）")
+    .argument("[query]", "检索词（缺席 = 列全部登记）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (taskId: string, query: string | undefined, opts, command) => {
+      const outcome = await runNegativeHistorySearch(resolveDir(command), {
+        taskRef: taskId,
+        query,
+      });
+      record({
+        command: "negative-history search",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+
+  // —— Verification Plan 命令面（W1-R1-3 · 09-10 PRD REQ-04/AC-03/AC-13） ——
+  // 判卷权威在 kernel plan-compiler.ts（纯函数编译核——applicability 三值/unknown
+  // 保留/缺工具≠N/A/A1 informational 零参与）；本模块只做事实生产（store 纯读、
+  // 工具只读探测、argv 收敛）与呈现。compile 纯读零写入（无 --input 时零建账纪律
+  // 同 negative-history search：buildStorePaths + readRawIndex 同一装载面）。
+  const plan = program
+    .command("plan")
+    .description(
+      "Verification Plan 命令面（W1-R1-3；09-10 PRD REQ-04/AC-03/AC-13）：compile = 逐 Acceptance 编译证据计划（applicability 三值各带依据；缺工具≠N/A；无法判断保留 unknown 禁默认 N/A；informational 档位零参与——A1 裁定）",
+    );
+  plan
+    .command("compile")
+    .description(
+      "编译 Verification Plan（输入 --task 或 --input 互斥；变更面 --changed/--consumer/--face 显式申报禁猜测；--face 词形 \"kind=present|absent:<依据>\" 可重复；工具探测自动面 vitest/playwright/chrome-devtools-mcp——ToolBinding 统一面=R1-4 接缝；纯读零写入）",
+    )
+    .option("--task <task-id>", "验收义务来源：TASK.*（payload.acceptance 纯读；可与事实旗标同用）")
+    .option("--input <file>", "kernel VerificationPlanInput 契约 JSON 直传（整契约由文件承载；与事实/信息旗标互斥——未初始化目录也可用）")
+    .option("--changed <path>", "变更面直接对象（可重复）", collectValues)
+    .option("--consumer <ref>", "受影响消费者（可重复）", collectValues)
+    .option("--face <spec>", "变更面声明 \"kind=present|absent:<依据>\"（可重复；依据必填——N/A 有据的前提）", collectValues)
+    .option("--complexity <word>", "信息性：复杂度自报（零参与 applicability——A1 裁定）")
+    .option("--profile <word>", "信息性：governance_profile 自报（零参与 applicability——A1 裁定）")
+    .option("--note <text>", "信息性注记")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runPlanCompile(resolveDir(command), {
+        taskRef: opts.task as string | undefined,
+        inputFile: opts.input as string | undefined,
+        changed: opts.changed as string[] | undefined,
+        consumers: opts.consumer as string[] | undefined,
+        faces: opts.face as string[] | undefined,
+        complexity: opts.complexity as string | undefined,
+        profile: opts.profile as string | undefined,
+        note: opts.note as string | undefined,
+      });
+      record({
+        command: "plan compile",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+
+  // —— ToolBinding 统一注册面命令（W1-R1-4 · 09-10 PRD §17 + integration-designs.md
+  // 设计一六分态）。纯读零写入：list/validate 只做六分态派生（探测/探针/ENVREC/
+  // GRN 平面只读）与呈现；执行入账唯一通路仍是 record gate-run——工具发现≠调用
+  // 授权（红线）。registry 落点 .pomaster/tools/bindings.json（SP-W1-e 提案待追认；
+  // 命令名/错误码 = SP 提案待 Owner 追认）。
+  const tools = program
+    .command("tools")
+    .description(
+      "ToolBinding 统一注册面命令（W1-R1-4）：list = 全量绑定六分态派生（detect/registered/validated/available/selected/executed，分态不可跃迁、缺口逐条显式）；validate = 单绑定全判据呈现（纯读零写入；探测不扩大 permit——executed 唯一事实源 = GRN 真实回执）",
+    );
+  tools
+    .command("list")
+    .description(
+      "列出 .pomaster/tools/bindings.json 全部绑定并派生六分态（registry 缺席 = TOOLBINDING_REGISTRY_ABSENT 显式拒绝禁静默空表；--plan 可回喂 plan compile --json 输出以对账 selected）",
+    )
+    .option("--plan <file>", "Verification Plan 工件（plan compile --json 输出可回喂——selected 判定式消费 items[].resolved_tool/applicability）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runToolsList(resolveDir(command), {
+        plan: opts.plan as string | undefined,
+      });
+      record({
+        command: "tools list",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  tools
+    .command("validate")
+    .description(
+      "单绑定六分态全判据呈现（id 不在册 = BINDING_NOT_FOUND 显式拒绝非空结果）",
+    )
+    .argument("<id>", "绑定 id（bindings.json bindings[].id 点分小写词形）")
+    .option("--plan <file>", "Verification Plan 工件（selected 判定式对账，同 list）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (id: string, opts, command) => {
+      const outcome = await runToolsValidate(resolveDir(command), {
+        id,
+        plan: opts.plan as string | undefined,
+      });
+      record({
+        command: "tools validate",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+
   // —— Memory 命令面（PRD §44.10 六命令逐字 + §48.4/§48.5 + Case N；P33-Commands） ——
   // 判卷/落盘权威在 kernel memory-harvest.ts 语义入口（P33a）；本面只做 argv 收敛、
   // 错误词形映射与呈现。§84.6 铁律（G6 记忆主权）：本命令组没有任何写 Canonical
@@ -2439,7 +2661,7 @@ export function createProgram(
   memory
     .command("review")
     .description(
-      "batch review 唯一人工闸（thread-B §4.2）：缺省 PENDING 队列；--list 全量+过滤（--state/--bucket/--batch）；--decide <id> --promote|--reject --note <text> 裁决（只改分类标签不改写内容原文——--reclassify-bucket/--reclassify-class 可选修正）",
+      "batch review 唯一人工闸（thread-B §4.2）：缺省 PENDING 队列；--list 全量+过滤（--state/--bucket/--batch）；--decide <id> --promote|--reject --note <text> --actor <type>:<name> 裁决（只改分类标签不改写内容原文——--reclassify-bucket/--reclassify-class 可选修正）",
     )
     .option("--list", "全量列表模式（缺省呈现 PENDING 队列）")
     .option("--state <state>", "过滤 review 三态（PENDING | PROMOTED | REJECTED）")
@@ -2451,7 +2673,7 @@ export function createProgram(
     .option("--note <text>", "裁决注记（--decide 必填——已决必有评审留痕）")
     .option("--reclassify-bucket <bucket>", "分类标签修正（桶；词表闭集）")
     .option("--reclassify-class <class>", "分类标签修正（PRD §48.2 七类；null = 显式无分类）")
-    .option("--actor <actor>", "评审主体 <type>:<name>（C5 自报；缺省 human:owner）")
+    .option("--actor <actor>", "评审主体 <type>:<name>（C5 自报；--decide 必填——禁默认 human:owner，AI 运行须显式申报主体）")
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (opts, command) => {
       const outcome = await runMemoryReview(resolveDir(command), {

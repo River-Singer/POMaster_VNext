@@ -336,8 +336,8 @@
       "additionalProperties": false,
       "required": ["answer"],
       "title": "裁决（resolution，§13.2 四词形；node 上 null = OPEN）",
-      "description": "§13.2：Human 可回答 ACCEPT / CHANGE / UNKNOWN / DEFER。ACCEPT = 采纳 recommendation.option（kernel 拒绝无推荐的 ACCEPT 与 ACCEPT 带 value 的矛盾）；CHANGE 必带 value（人给的新 option，触发受影响 grounding 重算申报）；UNKNOWN 必带 classified（§14 六问重分类——不许登记死端）；DEFER = 显式延后（§15 合法残留）。seq = 调用方供给的事件拍（零墙钟 A4：禁时间戳，过期判定靠 seq/fingerprint）。",
-      "$comment": "source: PRD v0.5.3 §5.2 resolution + §13.2 四词形 + §14 重分类。",
+      "description": "§13.2：Human 可回答 ACCEPT / CHANGE / UNKNOWN / DEFER。ACCEPT = 采纳 recommendation.option（kernel 拒绝无推荐的 ACCEPT 与 ACCEPT 带 value 的矛盾）；CHANGE 必带 value（人给的新 option，触发受影响 grounding 重算申报）；UNKNOWN 必带 classified（§14 六问重分类——不许登记死端）；DEFER = 显式延后（§15 合法残留）。seq = 调用方供给的事件拍（零墙钟 A4：禁时间戳，过期判定靠 seq/fingerprint）。\nSP-W1-a（W1 R1-1 · 2026-09-12 执行代理裁定稿——待 Owner 追认；锚 writeback-boundary-proposal §3 B-3/C-4 方案 a、§5.1）：resolution 增可选 outcome_binding 成果绑定键（definitions.resolution_outcome_binding）——使 answer=ACCEPT 可机器判「覆盖本成果」，构成 closeout 有效 ACCEPT 回执的判定载体（复用 Decision resolution，零新增 canonical kind）。绑定键对四词形均开放（词形层不设限），但消费端只有 ACCEPT + 绑定覆盖构成回执；无绑定的 ACCEPT 保持 Oracle 审核轮语义（两次不同语义靠绑定区分）。",
+      "$comment": "source: PRD v0.5.3 §5.2 resolution + §13.2 四词形 + §14 重分类；outcome_binding 增补 source: W0 R0-3 writeback-boundary-proposal §3 B-3/C-4 + §5.1 SP-W1-a（Semantic Change Proposal——待 Owner 追认）。",
       "properties": {
         "answer": {
           "type": "string",
@@ -364,6 +364,9 @@
           "minimum": 1,
           "title": "事件拍（seq，零墙钟 A4）",
           "description": "调用方供给的整数事件拍（store seq / 本地事件序）——本对象禁时间戳，过期判定靠 seq/fingerprint 比对（P1 STALE_GROUNDING）。"
+        },
+        "outcome_binding": {
+          "$ref": "#/definitions/resolution_outcome_binding"
         }
       },
       "allOf": [
@@ -425,6 +428,40 @@
           "description": "classified 仅在 answer=UNKNOWN 时合法（反向锁定）"
         }
       ]
+    },
+    "resolution_outcome_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "title": "成果绑定键（outcome_binding，SP-W1-a：closeout 有效 ACCEPT 回执的覆盖判定载体）",
+      "description": "SP-W1-a（W1 R1-1 · 2026-09-12 执行代理裁定稿——待 Owner 追认）：resolution 的可选成果绑定键，使 ACCEPT 可机器判「覆盖本 closeout 对象」。\n覆盖判定（消费端 closeout 施断闸 O-W1-1）：binding.task_ref 与本 task id 全等（直绑），或 binding.change_ref 与本 task payload.implements_change 全等（间绑）；绑定缺席的 ACCEPT 不构成有效回执——Oracle 审核轮 ACCEPT 与成果接受 ACCEPT 是两次不同语义（control-loop-baseline §5 第 4 行），靠绑定区分（B-3）。\nrevision_fingerprint 为可选内容锚：在场时须与目标对象行 body_sha256（01 definitions.sha256_digest 词形，store 事务自动维护——D24：human_touch forbidden，本键是消费端对账位，不是给人算哈希的新入口）全等，失配 = 内容漂移后旧 ACCEPT 失效（防「内容变了旧 ACCEPT 仍生效」）。\n词形纪律：task_ref/change_ref 非空即可（引用存在性对账归消费端 closeout——与 affects 的 loose_ref 存在性对账同一条线，本 schema 只锁词形）；三键至少给一键（minProperties 1——空绑定对象 = 未申报，非法）。四词形均可携带（词形层不设限），消费端只有 answer=ACCEPT + 覆盖构成有效回执。",
+      "$comment": "source: W0 R0-3 writeback-boundary-proposal §3 B-3/C-4 方案 a + §5.1 SP-W1-a（Semantic Change Proposal——待 Owner 追认）；fingerprint 词形沿用本 schema graph_fingerprint/projection_fingerprint 同款 sha256:<64hex>（01 definitions.sha256_digest）。",
+      "properties": {
+        "task_ref": {
+          "type": "string",
+          "minLength": 1,
+          "title": "绑定的 task id（task_ref，直绑——closeout 对象 id 全等）",
+          "examples": ["TASK.T0001"]
+        },
+        "change_ref": {
+          "type": "string",
+          "minLength": 1,
+          "title": "绑定的 change id（change_ref，间绑——经 task payload.implements_change 覆盖）",
+          "examples": ["CHANGE.CARLINE_IMPORT"]
+        },
+        "revision_fingerprint": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "内容修订指纹（revision_fingerprint，可选——在场时与对象行 body_sha256 对账）",
+          "description": "sha256:<64hex>（01 definitions.sha256_digest 同词形；store 事务自动维护的 canonical 内容摘要位，D24）。绑定携带时消费端须与对象当前 body_sha256 全等——失配即内容漂移，旧 ACCEPT 失效。",
+          "x-digest-ethics": {
+            "write_blocking": false,
+            "side": "consumer_reconciliation",
+            "human_touch": "forbidden",
+            "violation": "消费端失配 → CLOSEOUT_ACCEPT_STALE（回执失效，非 auto-regen——本键是引用声明不是指纹生产位）"
+          }
+        }
+      }
     },
     "decision_node": {
       "type": "object",

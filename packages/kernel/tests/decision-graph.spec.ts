@@ -1836,6 +1836,104 @@ describe("resolveDecision（四变体矩阵 + UNKNOWN 六问重分类）", () =>
       expect(reopen.notes.join()).toContain("重开");
     }
   });
+
+  // ------------------------------------------------------------
+  // SP-W1-a（W1 R1-1 / W0 B-3+C-4 方案 a）：resolution 成果绑定键
+  // ------------------------------------------------------------
+
+  it("SP-W1-a：ACCEPT 携带 outcome_binding → 透传进 resolution + 图指纹重算 + notes 留痕（closeout 有效 ACCEPT 回执的覆盖判定载体）", () => {
+    const graph = buildOk([chainCand("DECISION.D1", [])]);
+    const outcome = resolveDecision(graph, {
+      decisionId: "DECISION.D1",
+      answer: "ACCEPT",
+      outcomeBinding: { task_ref: "TASK.T0001", revision_fingerprint: `sha256:${"a".repeat(64)}` },
+    });
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+    const d1 = outcome.graph.decisions.find((n) => n.decision_id === "DECISION.D1");
+    expect(d1?.resolution).toEqual({
+      answer: "ACCEPT",
+      outcome_binding: { task_ref: "TASK.T0001", revision_fingerprint: `sha256:${"a".repeat(64)}` },
+    });
+    // 绑定键参与图指纹（resolution 是 fingerprintOf 的输入面——绑定变更必然改图）。
+    const plain = resolveDecision(graph, { decisionId: "DECISION.D1", answer: "ACCEPT" });
+    expect(plain.ok).toBe(true);
+    if (plain.ok) {
+      expect(outcome.graph.graph_fingerprint).not.toBe(plain.graph.graph_fingerprint);
+    }
+    expect(outcome.notes.join()).toContain("outcome_binding");
+  });
+
+  it("SP-W1-a：CHANGE/UNKNOWN/DEFER 也可携带绑定（词形层不设限）；消费端只有 ACCEPT 构成回执（kernel 只透传不判消费语义）", () => {
+    const graph = buildOk([chainCand("DECISION.D1", [])]);
+    const changed = resolveDecision(graph, {
+      decisionId: "DECISION.D1",
+      answer: "CHANGE",
+      value: "NEW_OPTION",
+      outcomeBinding: { task_ref: "TASK.T0001" },
+    });
+    expect(changed.ok).toBe(true);
+    if (changed.ok) {
+      const d1 = changed.graph.decisions.find((n) => n.decision_id === "DECISION.D1");
+      expect(d1?.resolution?.outcome_binding).toEqual({ task_ref: "TASK.T0001" });
+    }
+  });
+
+  it("SP-W1-a：绑定词形 fail-closed——空对象/空串 task_ref/坏 revision_fingerprint → outcome_binding_invalid", () => {
+    const graph = buildOk([chainCand("DECISION.D1", [])]);
+    const empty = resolveDecision(graph, {
+      decisionId: "DECISION.D1",
+      answer: "ACCEPT",
+      outcomeBinding: {},
+    });
+    expect(empty.ok).toBe(false);
+    if (!empty.ok) expect(empty.reason).toBe("outcome_binding_invalid");
+
+    const blankRef = resolveDecision(graph, {
+      decisionId: "DECISION.D1",
+      answer: "ACCEPT",
+      outcomeBinding: { task_ref: "  " },
+    });
+    expect(blankRef.ok).toBe(false);
+    if (!blankRef.ok) expect(blankRef.reason).toBe("outcome_binding_invalid");
+
+    const badFp = resolveDecision(graph, {
+      decisionId: "DECISION.D1",
+      answer: "ACCEPT",
+      outcomeBinding: { task_ref: "TASK.T0001", revision_fingerprint: "deadbeef" },
+    });
+    expect(badFp.ok).toBe(false);
+    if (!badFp.ok) expect(badFp.reason).toBe("outcome_binding_invalid");
+  });
+
+  it("SP-W1-a：幂等按绑定键深度判——同 answer+同绑定 → NO_CHANGE；同 answer 异绑定 → changed（绑定覆盖显式留痕）", () => {
+    const graph = buildOk([chainCand("DECISION.D1", [])]);
+    const first = resolveDecision(graph, {
+      decisionId: "DECISION.D1",
+      answer: "ACCEPT",
+      outcomeBinding: { task_ref: "TASK.T0001" },
+    });
+    expect(first.ok && first.changed).toBe(true);
+    if (!first.ok) return;
+    const replay = resolveDecision(first.graph, {
+      decisionId: "DECISION.D1",
+      answer: "ACCEPT",
+      outcomeBinding: { task_ref: "TASK.T0001" },
+    });
+    expect(replay.ok).toBe(true);
+    if (replay.ok) expect(replay.changed).toBe(false);
+    const rebind = resolveDecision(first.graph, {
+      decisionId: "DECISION.D1",
+      answer: "ACCEPT",
+      outcomeBinding: { task_ref: "TASK.T0002" },
+    });
+    expect(rebind.ok).toBe(true);
+    if (rebind.ok) {
+      expect(rebind.changed).toBe(true);
+      const d1 = rebind.graph.decisions.find((n) => n.decision_id === "DECISION.D1");
+      expect(d1?.resolution?.outcome_binding).toEqual({ task_ref: "TASK.T0002" });
+    }
+  });
 });
 
 // ============================================================

@@ -22,6 +22,11 @@
  *   只替换判定块不重建记录）；
  * - fail-closed：--from 文件畸形 / normalize FATAL（kernel 原码透传）/ subject 不存在
  *   （OBJECT_NOT_FOUND）/ store 未初始化 → exit 1；单条路径的畸形即是失败，无 warnings 通道。
+ * - 证据资格链前置核对（W1 R1-5 次消费者）：record verification 在 APPLIED 事务前对
+ *   claim 判定面 + 既有/追加 GRN 引用逐面资格判定（kernel evidence-qualification 核；
+ *   要求面装配单源 evidence-qualification.ts）——错 seq / 失效 Permit / 旧 gate_def 的
+ *   证据 → VERIFICATION_EVIDENCE_UNQUALIFIED 阻断零写入（不合格 VERIFIED 不入 claims
+ *   平面；读侧 closeout 判卷 DOD_CLAIM_EVIDENCE_UNQUALIFIED 的互补位，叠加非替换）。
  * - subject 绑定机复核（N5）：--subject 显式声明的「本 run 证据属于这些对象」在入账时
  *   机器验证（闭世界文法 + store 存在性）——拒者不入账只留 warnings（本体照常入账），
  *   通过者随入账事务落 journal 注记（canonical 07 形态 FROZEN，绑定不住 run 记录本体）；
@@ -30,6 +35,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import {
   type ClaimRecordInput,
+  type EvidenceQualificationEvidence,
   type GateResult,
   type GateRunContext,
   type Store,
@@ -40,6 +46,7 @@ import {
   applyTransaction,
   createStore,
   loadTruthIndex,
+  qualifyEvidenceBatch,
 } from "@pomaster/kernel";
 import { CLM_FILE_PATTERN, GRN_FILE_PATTERN } from "./evidence.js";
 import { ADJUDICATED_VERIFICATION_VERDICTS, EVIDENCE_MALFORMED_CODE } from "./evidence.js";
@@ -62,6 +69,11 @@ import {
   type SubjectBindingRejection,
   type SubjectBindingResolution,
 } from "./evidence.js";
+import {
+  normalizeGrnEvidenceRefs,
+  readEvidenceQualificationRequirement,
+  readRunQualificationView,
+} from "./evidence-qualification.js";
 import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
 import { governanceErrorToCliError, parseActorArgv, requireInitialized } from "./permit.js";
@@ -917,6 +929,83 @@ export async function runRecordVerification(
     });
   }
 
+  // —— 证据资格链前置核对（W1 R1-5 次消费者：VERIFIED 唯一生产通路的写侧闸） ——
+  // 读侧 closeout 判卷（DOD_CLAIM_EVIDENCE_UNQUALIFIED）的互补位：错 seq / 失效 Permit /
+  // 旧 gate_def 的证据在 APPLIED 事务前拒绝——不合格 VERIFIED 不入 claims 平面（零写入）。
+  // 分母 = claim 判定面 + 既有 evidence_refs 与本次 --evidence 追加的全部 GRN 引用
+  // （UNVERIFIED claim 的判定锚通常缺席 → seq 轴在 claim 面诚实不适用；引用面照判）。
+  // 要求面装配失败（journal 损坏 SCHEMA_INVALID）→ fail-closed，禁静默放行。
+  const addedRefs = input.evidence ?? [];
+  const verificationQualificationFaces: EvidenceQualificationEvidence[] = [];
+  try {
+    const qualificationRequirement = await readEvidenceQualificationRequirement(rootDir);
+    const claimVerificationBox =
+      typeof parsed.record["verification"] === "object" && parsed.record["verification"] !== null
+        ? (parsed.record["verification"] as Record<string, unknown>)
+        : undefined;
+    const claimAtSeq = claimVerificationBox?.["at_seq"];
+    const claimSubjectBox = parsed.record["subject"];
+    const claimSubject =
+      typeof claimSubjectBox === "object" && claimSubjectBox !== null && typeof (claimSubjectBox as Record<string, unknown>).object_id === "string"
+        ? ((claimSubjectBox as Record<string, unknown>).object_id as string)
+        : typeof parsed.record["subject_id"] === "string"
+          ? (parsed.record["subject_id"] as string)
+          : null;
+    const claimExecutionId = parsed.record["execution_id"];
+    verificationQualificationFaces.push({
+      ref: input.clm,
+      surface: "claim",
+      captured_at_seq:
+        typeof claimAtSeq === "number" && Number.isInteger(claimAtSeq) && claimAtSeq >= 0
+          ? claimAtSeq
+          : null,
+      gate: null,
+      gate_def: null,
+      oracle_ref: null,
+      execution_id: typeof claimExecutionId === "string" && claimExecutionId.length > 0 ? claimExecutionId : null,
+      subject: claimSubject,
+    });
+    const grnRefs = [
+      ...normalizeGrnEvidenceRefs(parsed.record["evidence_refs"]),
+      ...normalizeGrnEvidenceRefs(addedRefs),
+    ].filter((grn, index, all) => all.indexOf(grn) === index); // 跨既有/追加去重（kernel 批内 ref 唯一合同）
+    for (const grn of grnRefs) {
+      const run = await readRunQualificationView(runsDirPath(rootDir), grn);
+      if (run === null) continue; // 悬空 GRN 引用——kernel verify_claim 引用分型守卫自有语义
+      if ("damage" in run) {
+        return verificationFail({
+          code: EVIDENCE_MALFORMED_CODE,
+          message: `${run.damage}（被 ${input.clm} evidence_refs 引用）`,
+          hint: "判卷分母内证据损坏禁静默跳过（可能正是被藏起来的失败记录）；从 git 恢复或走 record/compact canonical 化修复。",
+        });
+      }
+      verificationQualificationFaces.push({
+        ref: run.grn,
+        surface: "run",
+        captured_at_seq: run.ranAtSeq,
+        gate: run.gate,
+        gate_def: run.gateDef,
+        oracle_ref: null,
+        execution_id: run.executionId,
+        subject: run.subject,
+      });
+    }
+    const qualificationOutcome = qualifyEvidenceBatch(verificationQualificationFaces, qualificationRequirement);
+    const vetoedFindings = qualificationOutcome.findings.filter((finding) => !finding.qualified);
+    if (vetoedFindings.length > 0) {
+      return verificationFail({
+        code: "VERIFICATION_EVIDENCE_UNQUALIFIED",
+        message: `${input.clm} 证据未通过资格判定（W1 R1-5 证据资格链）：${vetoedFindings
+          .map((finding) => `${finding.ref}（${finding.surface} 面）→ ${finding.verdict}——${finding.reason}`)
+          .join("；")}`,
+        hint: "错 seq / 失效 Permit / 旧 gate_def 的证据不满足当前要求——由证据产出方在当前确认基线/有效许可/当前 gate_def 下重新产出证据后再验证回写；判定词形闭包=SP 提案待追认（kernel evidence-qualification）。",
+      });
+    }
+  } catch (err) {
+    if (!(err instanceof GovernanceError)) throw err;
+    return verificationFail(governanceErrorToCliError(err));
+  }
+
   // —— 执行身份盖章校验（P21-Enforcement；与 maintain 事务级同法） ——
   const executionResolution = resolveExecutionId(input.executionId, undefined);
   if ("fail" in executionResolution) {
@@ -953,7 +1042,6 @@ export async function runRecordVerification(
       : [];
 
   // —— APPLIED：经 store 事务落账（kernel 唯一写通道；verify_claim op 守卫见 store.applyVerifyClaim） ——
-  const addedRefs = input.evidence ?? [];
   const tx: Transaction = {
     ops: [
       {

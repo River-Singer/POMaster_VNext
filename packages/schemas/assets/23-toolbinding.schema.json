@@ -1,0 +1,268 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://pomaster.dev/schemas/toolbinding/v1-draft.json",
+  "title": "ToolBinding Registry（.pomaster/tools/bindings.json · W1-R1-4 统一注册面，SP-W1-e 提案）",
+  "description": "ToolBinding 统一注册面：项目级工具绑定登记（09-10 PRD §17 ToolBinding 目标产品合同 + integration-designs.md §1 source×transport 双轴字段表）。一条 binding = 发现规则之外的四件事登记：工具身份（tool+tool_version_anchor）/ 执行合同（execution）/ 报告合同（report_contract）/ 能力声明（capabilities）——「注册究竟是四件事」的机器形态（test-tool-integration.md §注册）。\n落点：.pomaster/tools/bindings.json 单一文件 = 单一 schema 校验 + 单一 id 唯一性检查的「一个注册面」（kernel paths.ts toolsBindingsPath 单一来源）。\n本 schema 是 SP-W1-e 提案面：字段名/词形闭包/命令面均为提案，待 Owner 追认（W1-R1-4 头注锚）。",
+  "x-pomaster-file-role": "23-toolbinding.schema.json —— ToolBinding 统一注册面 registry schema（W1-R1-4；SP-W1-e 提案待追认）。TS 侧运行时镜像 @pomaster/gauntlet-lite tool-binding.ts ToolBindingRecord（schema 管形状、TS 管执行——两面对同一语义，禁漂移：改字段须两侧同批）。",
+  "x-pomaster-vocab-source": "source/transport 两轴 = SP-W1-g 提案词位（built_in|project|org × cli|mcp|ci|cloud——设计一 §公共节 source×transport 正交双轴；W1 只 wired cli 消费通路，mcp/ci/cloud 为词位登记非可执行承诺）。capabilities 十二词形 = kernel plan-compiler PLAN_CAPABILITY_WORDS 镜像（kernel 局部词 TODO(vocab-pr)，SP 提案待追认——本 enum 与 kernel 词表同源，扩词须两处同批）。adapter_ref 闭包 = SP-W1-e 提案（W1 wired 集 = builtin.gauntlet-lite.build 单值；增长通道 = 显式 schema 修订，禁绑定自造 ref 绕过受信注册表）。",
+  "x-pomaster-contract": {
+    "sp_proposal": "本文件整体 + 六分态命令面（pomaster tools list/validate）+ binding_id= scope.note 留痕词形（SP-W1-f）+ execution 结构化执行合同（SP-W1-h argv[]/env_allowlist[]/output_roots[]，单串 shell 词形为 legacy 迁移形态）均为 SP 提案，待 Owner 追认后方可视为 FROZEN。",
+    "not_governed_object": "本 registry 不是 governed object：不进 truth-index、不走 store 事务、无 lifecycle/authority 信封（20-sources-authority / 22-design-tokens 项目平面 registry 同域——项目可编辑、Owner 全权；禁热加载：binding 只能引用受信 adapter_ref 闭包内发行包 adapter，任意脚本不得经本面进入判卷核心）。",
+    "detection_not_permit": "探测不能自行扩大 permit：本面登记 ≠ 调用授权。executed 态判定唯一事实源 = evidence/runs/GRN-*.json 真实执行回执（tool+gate+binding_id 三键对账；binding_ref 专位 = SP-W1-f 待追认，W2 随 03 schema 修订落位）；工具发现 ≠ 调用授权（09-10 PRD 红线）。",
+    "org_adoption_gate": "source=org 的绑定必须携带 adoption（approved_by 非空）——org 覆盖不静默压过项目批准（设计一 §公共节红线的 schema 级机器化；无 adoption 的 org 绑定 fail-closed 拒绝）。",
+    "compat_legacy": "不删旧 gate 配置路径：*-gate.json / browser-gate.json 等既有腿配置面与统一绑定面兼容期并存（registry 缺席时 plan compile 回退 legacy 只读探测——本 schema 在座才启用统一面）；legacy 面标注照旧，迁移不做批处理（W1 PRD Out of Scope）。"
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "bindings"],
+  "properties": {
+    "version": {
+      "const": 1,
+      "title": "registry 形态版本",
+      "description": "本 schema 对应 version=1；形态修订走 schema PR 升 version（禁就地改语义）。"
+    },
+    "bindings": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/binding" },
+      "title": "绑定清单",
+      "description": "id 唯一性由装载侧 fail-closed 复核（draft-07 不可表达跨条目约束——20-sources-authority 同法）。空数组合法（统一面在座但零绑定=显式空，非静默缺席）。"
+    }
+  },
+  "definitions": {
+    "semver": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$",
+      "title": "纯 semver（03 tool_version 同词形——版本锚不可为 range）"
+    },
+    "capability_word": {
+      "enum": [
+        "unit_behavior",
+        "ui_render",
+        "ui_interaction",
+        "api_contract",
+        "data_integration",
+        "migration_drill",
+        "permission_observation",
+        "dependency_check",
+        "concurrency_reproduction",
+        "load_test",
+        "deployment_config_check",
+        "visual_diff"
+      ],
+      "title": "能力词形（kernel PLAN_CAPABILITY_WORDS 十二词镜像——SP 提案待追认）"
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "anyOf": [
+        { "required": ["command"] },
+        { "required": ["argv"] }
+      ],
+      "title": "执行合同（SP-W1-h 提案——binding 只供执行面参数，判卷语义归 adapter）",
+      "properties": {
+        "command": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048,
+          "title": "单串命令词形（legacy 迁移形态；shell 解析首 token = 可执行体探针目标）"
+        },
+        "argv": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1,
+          "maxItems": 64,
+          "title": "结构化 argv 词形（SP-W1-h 提案；执行期空格连接归一——禁内嵌空格引号猜测）"
+        },
+        "cwd": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "title": "工作目录（相对项目根；缺省 \".\"）"
+        },
+        "timeout_ms": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 86400000,
+          "title": "超时毫秒（缺省回落受信 adapter 缺省——BUILD 腿 600000）"
+        },
+        "env_allowlist": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "maxItems": 256,
+          "title": "子进程环境白名单（SP-W1-h 提案；声明即收敛——白名单外变量滤除，大小写不敏感匹配）"
+        },
+        "output_roots": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "maxItems": 64,
+          "title": "报告产物根（W1 登记位；run 期消费 = W2）"
+        },
+        "executable": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512,
+          "title": "显式可执行体（available 态探针目标；缺省 = 命令首 token——detectors.firstCommandToken 同源）"
+        }
+      }
+    },
+    "report_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["format", "parser_ref", "parser_version"],
+      "title": "报告合同（validated 判定式对照面——须落在受信 adapter 能力声明闭包内）",
+      "properties": {
+        "format": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 64,
+          "title": "报告格式词形（如 vitest-json-stdout——闭包归受信 adapter accepted_formats）"
+        },
+        "parser_ref": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 128,
+          "title": "parser 引用（受信闭包内 ref；自定义 parser 必须登记版本与能力测试——矩阵纪律）"
+        },
+        "parser_version": { "$ref": "#/definitions/semver" },
+        "attachment_dimensions": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 64 },
+          "maxItems": 32,
+          "title": "附带证据维度（设计一 §1.2 字段表登记位；W1 零消费）"
+        }
+      }
+    },
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "source",
+        "transport",
+        "adapter_ref",
+        "tool",
+        "tool_version_anchor",
+        "gate",
+        "gate_def",
+        "metric_dialect",
+        "capabilities",
+        "execution",
+        "report_contract"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]*(\\.[a-z][a-z0-9_-]*)+$",
+          "minLength": 5,
+          "maxLength": 128,
+          "title": "绑定 id（点分小写词形——计划选用/执行留痕/GRN 对账的统一指针）"
+        },
+        "source": {
+          "enum": ["built_in", "project", "org"],
+          "title": "来源轴（SP-W1-g 提案）"
+        },
+        "transport": {
+          "enum": ["cli", "mcp", "ci", "cloud"],
+          "title": "传输轴（SP-W1-g 提案；W1 只 wired cli——其余词位登记，available 恒假）"
+        },
+        "adapter_ref": {
+          "enum": ["builtin.gauntlet-lite.build"],
+          "title": "受信 adapter 引用（SP-W1-e 闭包——W1 wired 集；增长 = 显式 schema 修订）"
+        },
+        "tool": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9@][A-Za-z0-9._:@/-]*$",
+          "minLength": 3,
+          "maxLength": 64,
+          "title": "工具身份（须落在受信 adapter accepted_tool_ids 闭包——运行时对账，schema 管词形）"
+        },
+        "tool_version_anchor": {
+          "$ref": "#/definitions/semver",
+          "title": "版本锚（纯 semver 非 range——GRN tool_version 对账与 DRIFTED 判定的锚；禁空）"
+        },
+        "gate": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 32,
+          "title": "gate 名（非 vocab-lock 管辖；新增 gate 须经 gate_def 版本化登记——build-adapter 口径）"
+        },
+        "gate_def": {
+          "type": "string",
+          "pattern": "^POLICY\\.GATE\\.[A-Z][A-Z0-9_]*@[0-9]+\\.[0-9]+\\.[0-9]+$",
+          "title": "gate 定义版本词形（POLICY.GATE.<NAME>@semver）"
+        },
+        "metric_dialect": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*:[a-z][a-z0-9_]*$",
+          "maxLength": 64,
+          "title": "口径词形（如 test:assertion_count——须落在受信 adapter accepted_metric_dialects 闭包）"
+        },
+        "capabilities": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/capability_word" },
+          "minItems": 1,
+          "maxItems": 12,
+          "title": "能力声明（validated 判定式 = 声明 ⊆ 受信 adapter 声明；越闭包即能力冒领防线拦截）"
+        },
+        "execution": { "$ref": "#/definitions/execution" },
+        "report_contract": { "$ref": "#/definitions/report_contract" },
+        "evidence_targets": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^SPEC\\.[A-Z][A-Z0-9_]*(\\.[A-Z][A-Z0-9_]*)*$"
+          },
+          "maxItems": 64,
+          "title": "证据规范目标（21-evidence-spec SPEC.* 词形；W1 登记位）"
+        },
+        "environment": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["requires"],
+          "title": "执行环境前置（available 判定式分项——requires=true 必须附 ENVREC 回执词形）",
+          "properties": {
+            "requires": {
+              "type": "boolean",
+              "title": "是否需要环境前置回执"
+            },
+            "env_receipt_ref": {
+              "type": "string",
+              "pattern": "^ENVREC-[0-9]+$",
+              "title": "环境回执引用（evidence/observations/ENVREC-n.json——17-perception-receipts 通路词形）"
+            }
+          },
+          "if": { "properties": { "requires": { "const": true } }, "required": ["requires"] },
+          "then": { "required": ["env_receipt_ref"] }
+        },
+        "adoption": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["approved_by"],
+          "title": "采用批准（source=org 必填——org 覆盖不静默压过项目批准）",
+          "properties": {
+            "approved_by": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "title": "批准者（人类/Owner 词形；禁工具自批）"
+            },
+            "note": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512,
+              "title": "批准注记"
+            }
+          }
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "title": "自由注记（非判卷输入）"
+        }
+      },
+      "if": { "properties": { "source": { "const": "org" } }, "required": ["source"] },
+      "then": { "required": ["adoption"] }
+    }
+  }
+}

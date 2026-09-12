@@ -187,6 +187,8 @@ describe("pomaster memory inspect（§44.10 词形之二；inbox 总览纯读）
       "--promote",
       "--note",
       "裁决样本",
+      "--actor",
+      "human:owner",
     ]);
     const { code, env } = await runJson(["memory", "inspect"]);
     expect(code).toBe(0);
@@ -309,7 +311,7 @@ describe("pomaster memory review（§44.10 词形之四；batch review 唯一人
   it("缺省 = PENDING 队列；--list 全量；--state/--bucket 词表外 → SCHEMA_INVALID", async () => {
     const idA = await captureOne("review 样本一");
     await captureOne("review 样本二");
-    await runJson(["memory", "review", "--decide", idA, "--promote", "--note", "ok"]);
+    await runJson(["memory", "review", "--decide", idA, "--promote", "--note", "ok", "--actor", "human:owner"]);
     const queue = await runJson(["memory", "review"]);
     expect(queue.code).toBe(0);
     const queueEntries = (queue.env.result as { entries: { review_state: string }[] }).entries;
@@ -343,6 +345,8 @@ describe("pomaster memory review（§44.10 词形之四；batch review 唯一人
       "--promote",
       "--note",
       "x",
+      "--actor",
+      "human:owner",
     ]);
     expect(missing.code).toBe(1);
     expect(errorCodeOf(missing.env)).toBe("MEMORY_ENTRY_NOT_FOUND");
@@ -360,6 +364,8 @@ describe("pomaster memory review（§44.10 词形之四；batch review 唯一人
       "--promote",
       "--note",
       "batch review 2026-08-31",
+      "--actor",
+      "human:owner",
     ]);
     expect(code).toBe(0);
     const decided = (env.result as { decided: { review_state: string; note: string } }).decided;
@@ -371,8 +377,8 @@ describe("pomaster memory review（§44.10 词形之四；batch review 唯一人
 
   it("已决条目再决 → exit 1 MEMORY_ALREADY_REVIEWED（review 三态封闭）", async () => {
     const id = await captureOne("再决拒绝 CLI 样本");
-    await runJson(["memory", "review", "--decide", id, "--reject", "--note", "一次否决"]);
-    const again = await runJson(["memory", "review", "--decide", id, "--promote", "--note", "翻案"]);
+    await runJson(["memory", "review", "--decide", id, "--reject", "--note", "一次否决", "--actor", "human:owner"]);
+    const again = await runJson(["memory", "review", "--decide", id, "--promote", "--note", "翻案", "--actor", "human:owner"]);
     expect(again.code).toBe(1);
     expect(errorCodeOf(again.env)).toBe("MEMORY_ALREADY_REVIEWED");
   });
@@ -387,6 +393,8 @@ describe("pomaster memory review（§44.10 词形之四；batch review 唯一人
       "--promote",
       "--note",
       "reclassify to TRUTH",
+      "--actor",
+      "human:owner",
       "--reclassify-bucket",
       "TRUTH",
       "--reclassify-class",
@@ -401,6 +409,54 @@ describe("pomaster memory review（§44.10 词形之四；batch review 唯一人
     const path = join(dir, ".pomaster/memory/inbox/capture", `${id}.json`);
     const onDisk = JSON.parse(readFileSync(path, "utf8")) as { needs_conflict_check: boolean };
     expect(onDisk.needs_conflict_check).toBe(true);
+  });
+
+  it("--decide 缺 --actor → exit 1 SCHEMA_INVALID 显式拒绝（O-W1-2/D-2：禁默认 human:owner——AI 运行不得被记为人工评审）", async () => {
+    const id = await captureOne("缺 actor 显式拒绝样本");
+    const noActor = await runJson(["memory", "review", "--decide", id, "--promote", "--note", "x"]);
+    expect(noActor.code).toBe(1);
+    expect(noActor.env.ok).toBe(false);
+    expect(errorCodeOf(noActor.env)).toBe("SCHEMA_INVALID");
+    expect((noActor.env.errors as { message: string }[])[0]?.message).toContain("--actor");
+    expect((noActor.env.errors as { hint: string }[])[0]?.hint).toContain("--actor <type>:<name>");
+    // 零写入：拒绝路径条目仍是 PENDING（禁默认主体隐式落账）。
+    const path = join(dir, ".pomaster/memory/inbox/capture", `${id}.json`);
+    const onDisk = JSON.parse(readFileSync(path, "utf8")) as { review_state: string };
+    expect(onDisk.review_state).toBe("PENDING");
+  });
+
+  it("--decide 显式 --actor → reviewed_by 照实登记（传什么记什么；self_attested 照实——词形与事实挂钩）", async () => {
+    const id = await captureOne("显式 actor 登记样本");
+    const { code, env } = await runJson([
+      "memory",
+      "review",
+      "--decide",
+      id,
+      "--promote",
+      "--note",
+      "agent 代跑，主体显式申报",
+      "--actor",
+      "agent:claude/session-93",
+    ]);
+    expect(code).toBe(0);
+    const decided = (
+      env.result as { decided: { review_state: string; reviewed_by: { actor_type: string; actor: string; self_attested: boolean } } }
+    ).decided;
+    expect(decided.review_state).toBe("PROMOTED");
+    expect(decided.reviewed_by).toEqual({
+      actor_type: "agent",
+      actor: "claude/session-93",
+      self_attested: true,
+    });
+    const path = join(dir, ".pomaster/memory/inbox/capture", `${id}.json`);
+    const onDisk = JSON.parse(readFileSync(path, "utf8")) as {
+      reviewed_by: { actor_type: string; actor: string; self_attested: boolean };
+    };
+    expect(onDisk.reviewed_by).toEqual({
+      actor_type: "agent",
+      actor: "claude/session-93",
+      self_attested: true,
+    });
   });
 });
 
@@ -420,6 +476,8 @@ describe("pomaster memory promote（§44.10 词形之五；分桶路由）", () 
       "--promote",
       "--note",
       "k",
+      "--actor",
+      "human:owner",
       "--reclassify-bucket",
       "KNOWLEDGE",
       "--reclassify-class",
@@ -521,6 +579,8 @@ describe("pomaster memory promote（§44.10 词形之五；分桶路由）", () 
       "--promote",
       "--note",
       "现状基线陈述",
+      "--actor",
+      "human:owner",
       "--reclassify-bucket",
       "TRUTH",
       "--reclassify-class",
@@ -560,6 +620,8 @@ describe("pomaster memory promote（§44.10 词形之五；分桶路由）", () 
       "--promote",
       "--note",
       "用户明令确认",
+      "--actor",
+      "human:owner",
       "--reclassify-bucket",
       "AUTHORITY_POLICY",
       "--reclassify-class",
@@ -598,6 +660,8 @@ describe("pomaster memory promote（§44.10 词形之五；分桶路由）", () 
       "--promote",
       "--note",
       "真实偏好确认",
+      "--actor",
+      "human:owner",
       "--reclassify-bucket",
       "PREFERENCE",
       "--reclassify-class",
@@ -625,7 +689,7 @@ describe("pomaster memory promote（§44.10 词形之五；分桶路由）", () 
     const id = await (async () => {
       const { env } = await runJson(["memory", "capture", "--text", "REJECTED 晋升拒绝样本"]);
       const id = (env.result as { id: string }).id;
-      await runJson(["memory", "review", "--decide", id, "--reject", "--note", "淘汰"]);
+      await runJson(["memory", "review", "--decide", id, "--reject", "--note", "淘汰", "--actor", "human:owner"]);
       return id;
     })();
     const { code, env } = await runJson(["memory", "promote", id, "--actor", "human:owner"]);
