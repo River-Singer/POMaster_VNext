@@ -91,7 +91,8 @@ pomaster context compile/explain
 pomaster exec-guard --attempt <file|->
 pomaster maintain <change-or-task> --ops <tx>
 
-# ⑤ VERIFY —— FAST gate / gate recipes 派发 / 证据入账
+# ⑤ VERIFY —— Verification Plan 编译 / FAST gate / gate recipes 派发 / 证据入账
+pomaster plan compile        # 证据计划编译（W1-R1-3）：--task（payload.acceptance 纯读）或 --input 契约直传（互斥）→ 逐验收义务计划（applicability 三值各带依据；缺工具≠N/A 保持 REQUIRED+tool_gap；无法判断保留 unknown 禁默认 N/A；informational 档位零参与——A1 裁定；变更面 --face "kind=present|absent:<依据>" 显式申报禁猜测；词形=SP 提案待追认）
 pomaster check --fast/--gates
 pomaster record gate-run/claim/verification
 

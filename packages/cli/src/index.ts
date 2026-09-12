@@ -126,6 +126,17 @@
  *                   search = 词级精确检索（未命中显式「无记录」；纯读零建账）；
  *                   context compile 经 [ADVISORY KNOWLEDGE] 分区可见——AC-02 只做
  *                   可见性（重试不被机器禁止，但须新依据），不进 gate 判卷输入
+ * - plan compile
+ *                   Verification Plan Compiler（W1-R1-3 · 09-10 PRD REQ-04/AC-03/
+ *                   AC-13）：逐 Acceptance 编译证据计划（义务/工具/靶/环境/
+ *                   applicability 三值 REQUIRED·NOT_REQUIRED·NOT_APPLICABLE 各带
+ *                   依据——N/A 有据非工具缺席降级；缺工具≠N/A 保持 REQUIRED+tool_gap；
+ *                   无法判断的影响面保留 unknown 禁默认不适用）。输入 --task
+ *                   （payload.acceptance 纯读零写入）或 --input 契约直传（互斥）；
+ *                   变更面 --changed/--consumer/--face 显式申报禁猜测；工具探测自动
+ *                   面 vitest/playwright/chrome-devtools-mcp（ToolBinding 统一面=
+ *                   R1-4 接缝）；informational（--complexity/--profile/--note）零
+ *                   参与 applicability（A1 裁定）——复杂度/档位不能决定测试集合
  * - production band define/list / evaluate / challenge / diagnose / metrics /
  *                   self-improvement register/list
  *                   Production Feedback 命令面（§95 全节 + §30 第四态 + §55.1/§90.4；
@@ -235,6 +246,7 @@ import {
   runNegativeHistoryRecord,
   runNegativeHistorySearch,
 } from "./negative-history.js";
+import { runPlanCompile } from "./plan.js";
 import {
   runBrainstormDecide,
   runBrainstormPromote,
@@ -836,6 +848,13 @@ export type {
   NegativeHistoryEntryView,
   NegativeHistoryKernelDeps,
 } from "./negative-history.js";
+export { runPlanCompile } from "./plan.js";
+export type {
+  PlanCompileInput,
+  PlanCompileResult,
+  PlanToolProbeView,
+  PlanKernelDeps,
+} from "./plan.js";
 export {
   EVIDENCE_MALFORMED_CODE,
   RUN_INGEST_ACTIONS,
@@ -2456,6 +2475,48 @@ export function createProgram(
       });
       record({
         command: "negative-history search",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+
+  // —— Verification Plan 命令面（W1-R1-3 · 09-10 PRD REQ-04/AC-03/AC-13） ——
+  // 判卷权威在 kernel plan-compiler.ts（纯函数编译核——applicability 三值/unknown
+  // 保留/缺工具≠N/A/A1 informational 零参与）；本模块只做事实生产（store 纯读、
+  // 工具只读探测、argv 收敛）与呈现。compile 纯读零写入（无 --input 时零建账纪律
+  // 同 negative-history search：buildStorePaths + readRawIndex 同一装载面）。
+  const plan = program
+    .command("plan")
+    .description(
+      "Verification Plan 命令面（W1-R1-3；09-10 PRD REQ-04/AC-03/AC-13）：compile = 逐 Acceptance 编译证据计划（applicability 三值各带依据；缺工具≠N/A；无法判断保留 unknown 禁默认 N/A；informational 档位零参与——A1 裁定）",
+    );
+  plan
+    .command("compile")
+    .description(
+      "编译 Verification Plan（输入 --task 或 --input 互斥；变更面 --changed/--consumer/--face 显式申报禁猜测；--face 词形 \"kind=present|absent:<依据>\" 可重复；工具探测自动面 vitest/playwright/chrome-devtools-mcp——ToolBinding 统一面=R1-4 接缝；纯读零写入）",
+    )
+    .option("--task <task-id>", "验收义务来源：TASK.*（payload.acceptance 纯读；可与事实旗标同用）")
+    .option("--input <file>", "kernel VerificationPlanInput 契约 JSON 直传（整契约由文件承载；与事实/信息旗标互斥——未初始化目录也可用）")
+    .option("--changed <path>", "变更面直接对象（可重复）", collectValues)
+    .option("--consumer <ref>", "受影响消费者（可重复）", collectValues)
+    .option("--face <spec>", "变更面声明 \"kind=present|absent:<依据>\"（可重复；依据必填——N/A 有据的前提）", collectValues)
+    .option("--complexity <word>", "信息性：复杂度自报（零参与 applicability——A1 裁定）")
+    .option("--profile <word>", "信息性：governance_profile 自报（零参与 applicability——A1 裁定）")
+    .option("--note <text>", "信息性注记")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runPlanCompile(resolveDir(command), {
+        taskRef: opts.task as string | undefined,
+        inputFile: opts.input as string | undefined,
+        changed: opts.changed as string[] | undefined,
+        consumers: opts.consumer as string[] | undefined,
+        faces: opts.face as string[] | undefined,
+        complexity: opts.complexity as string | undefined,
+        profile: opts.profile as string | undefined,
+        note: opts.note as string | undefined,
+      });
+      record({
+        command: "plan compile",
         outcome,
         asJson: command.optsWithGlobals().json === true,
       });

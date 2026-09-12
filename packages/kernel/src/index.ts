@@ -1152,6 +1152,40 @@ export type {
 } from "./negative-history.js";
 
 // ============================================================
+// Verification Plan Compiler（W1-R1-3 · 09-10 PRD REQ-04/AC-03/AC-13）
+// ============================================================
+// 语义边界（plan-compiler.ts 头注）：纯函数编译核——逐 Acceptance × 能力闭包产出
+// plan item（applicability 三值 REQUIRED/NOT_REQUIRED/NOT_APPLICABLE 各带依据；
+// 排除优先于申报；矛盾输入 SCHEMA_INVALID fail-closed）；无法判断的影响面保留
+// unknown 禁默认 N/A；缺工具 ≠ N/A（REQUIRED 保持 + tool_gap）；informational
+// 档位零参与 applicability（A1 裁定 projection.ts:220 先例）。旧 GateTier/triage
+// 档位消费者迁移接缝表指针见 plan-compiler.ts 头注（兼容期 legacy——W1 不改行为）。
+export {
+  PLAN_APPLICABILITY_VALUES,
+  PLAN_CHANGE_FACE_KINDS,
+  PLAN_CAPABILITY_WORDS,
+  compileVerificationPlan,
+} from "./plan-compiler.js";
+export type {
+  PlanApplicability,
+  PlanChangeFaceKind,
+  PlanCapabilityWord,
+  PlanInputSegment,
+  PlanAcceptanceItem,
+  PlanChangeFace,
+  PlanChangeSurface,
+  PlanEnvironmentFacts,
+  PlanToolBinding,
+  PlanPermitFacts,
+  PlanInformationalFacts,
+  VerificationPlanInput,
+  VerificationPlanItem,
+  PlanUnknownKind,
+  PlanUnknownItem,
+  VerificationPlan,
+} from "./plan-compiler.js";
+
+// ============================================================
 // D 线地基：Sessions / Locks / Execution Identity（P20 · PRD §25.3/§25.4 + D 线 §1/§2/§3.3）
 // ============================================================
 // 语义边界（docs/kernel-api.md §13）：三原语是 D 线自身 P0 清单①②的 Task 层并发
