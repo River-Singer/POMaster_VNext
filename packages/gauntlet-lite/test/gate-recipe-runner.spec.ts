@@ -99,7 +99,7 @@ describe("分母自检：catalog/gates 实存文件 == CATALOG_GATE_RECIPES 投�
     const nameKeys = Object.keys(gauntletLiteExports)
       .filter((key) => key.endsWith("_GATE_NAME"))
       .sort();
-    expect(nameKeys.length, "*_GATE_NAME 常量对分母钉（新增 gate 须同步 CURRENT_GATE_DEFS）").toBe(9);
+    expect(nameKeys.length, "*_GATE_NAME 常量对分母钉（新增 gate 须同步 CURRENT_GATE_DEFS）").toBe(11);
     for (const nameKey of nameKeys) {
       const defKey = nameKey.replace(/_GATE_NAME$/, "_GATE_DEF");
       const gate = gauntletLiteExports[nameKey as keyof typeof gauntletLiteExports] as string;

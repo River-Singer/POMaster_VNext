@@ -51,6 +51,21 @@ import {
   VITEST_TOOL_ID,
 } from "./build-adapter.js";
 import { PYTEST_TOOL_ID } from "./pytest-leg.js";
+import {
+  createLintAdapter,
+  createTypecheckAdapter,
+  ESLINT_TOOL_ID,
+  ESLINT_JSON_FORMAT,
+  LINT_ADAPTER_REF,
+  LINT_METRIC_DIALECT,
+  LINT_PARSER_REF,
+  TSC_TEXT_FORMAT,
+  TSC_TOOL_ID,
+  TYPECHECK_ADAPTER_REF,
+  TYPECHECK_METRIC_DIALECT,
+  TYPECHECK_PARSER_REF,
+  VUE_TSC_TOOL_ID,
+} from "./typecheck-lint-adapter.js";
 import { firstCommandToken, platformExecutableProbe, stripQuotesFromPathEnv } from "./detectors.js";
 
 // ============================================================
@@ -165,12 +180,56 @@ const BUILD_DECL: TrustedBindingAdapterDecl = {
   },
 };
 
+/** W3-S2 wired 集：builtin.gauntlet-lite.typecheck（tsc/vue-tsc 文本诊断腿）。 */
+const TYPECHECK_DECL: TrustedBindingAdapterDecl = {
+  ref: TYPECHECK_ADAPTER_REF,
+  adapterKey: "typecheck",
+  createAdapter: () => createTypecheckAdapter(),
+  // 能力声明 = 静态分析最小诚实集（capability 词 static_analysis 为 SP 提案，
+  // kernel + schema 23 同批扩词；冒领即防线失效，扩声明走受信注册表修订）。
+  capabilities: ["static_analysis"],
+  accepted_formats: [TSC_TEXT_FORMAT],
+  accepted_parser_refs: [TYPECHECK_PARSER_REF],
+  accepted_metric_dialects: [TYPECHECK_METRIC_DIALECT],
+  accepted_tool_ids: [TSC_TOOL_ID, VUE_TSC_TOOL_ID],
+  detectorFor: (toolId) => {
+    if (toolId !== TSC_TOOL_ID && toolId !== VUE_TSC_TOOL_ID) {
+      return null;
+    }
+    return (facts) => {
+      const detection = createTypecheckAdapter().detect(facts);
+      return toolId === TSC_TOOL_ID ? detection.tsc : detection.vueTsc;
+    };
+  },
+};
+
+/** W3-S2 wired 集：builtin.gauntlet-lite.lint（ESLint JSON formatter 腿——禁 --fix）。 */
+const LINT_DECL: TrustedBindingAdapterDecl = {
+  ref: LINT_ADAPTER_REF,
+  adapterKey: "lint",
+  createAdapter: () => createLintAdapter(),
+  capabilities: ["static_analysis"],
+  accepted_formats: [ESLINT_JSON_FORMAT],
+  accepted_parser_refs: [LINT_PARSER_REF],
+  accepted_metric_dialects: [LINT_METRIC_DIALECT],
+  accepted_tool_ids: [ESLINT_TOOL_ID],
+  detectorFor: (toolId) => {
+    if (toolId !== ESLINT_TOOL_ID) {
+      return null;
+    }
+    return (facts) => createLintAdapter().detect(facts);
+  },
+};
+
 /**
  * 受信 adapter 注册表（adapter_ref → 声明）。增长通道 = 发行包代码 + schema 23
- * adapter_ref 枚举同批修订（SP-W1-e；禁绑定侧自造 ref）。
+ * adapter_ref 枚举同批修订（SP-W1-e；禁绑定侧自造 ref）。W3-S2 起含 TS 族双
+ * adapter（typecheck / lint）——旧 BUILD 选择器原样保留（兼容并存红线）。
  */
 export const TRUSTED_BINDING_ADAPTERS: Readonly<Record<string, TrustedBindingAdapterDecl>> = {
   [BUILD_DECL.ref]: BUILD_DECL,
+  [TYPECHECK_DECL.ref]: TYPECHECK_DECL,
+  [LINT_DECL.ref]: LINT_DECL,
 };
 
 /** adapter_ref 解析（未知 ref → null——调用方 fail-closed，禁静默当可执行）。 */
@@ -346,7 +405,7 @@ export function runBindingGate(
     throw new GateAdapterError(
       "runner_not_ready",
       `binding ${binding.id} 的 adapter_ref=${binding.adapter_ref} 不在受信 adapter 注册表（禁止任意脚本热加载进判卷核心）`,
-      "改用受信 adapter_ref（W1 wired 集 = builtin.gauntlet-lite.build）；新 adapter 走发行包 + schema 23 枚举同批修订",
+      `改用受信 adapter_ref（wired 集 = ${Object.keys(TRUSTED_BINDING_ADAPTERS).join(" / ")}）；新 adapter 走发行包 + schema 23 枚举同批修订`,
     );
   }
   const contract = bindingAdapterContractMatches(binding);

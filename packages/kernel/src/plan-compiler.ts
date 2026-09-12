@@ -76,7 +76,11 @@ export const PLAN_CHANGE_FACE_KINDS = [
 ] as const;
 export type PlanChangeFaceKind = (typeof PLAN_CHANGE_FACE_KINDS)[number];
 
-/** 能力词形（十二词；visual_diff 不从任何 face 派生——只经 acceptance requires/exclusions 进闭包）。 */
+/**
+ * 能力词形（十三词；W3-S2 起 + static_analysis——TS 族静态分析 tsc/ESLint 绑定面，
+ * 同批修订 = schema 23 capability_word enum。visual_diff 与 static_analysis 均不从
+ * 任何 face 派生——只经 acceptance requires/exclusions 进闭包）。
+ */
 export const PLAN_CAPABILITY_WORDS = [
   "unit_behavior",
   "ui_render",
@@ -90,6 +94,7 @@ export const PLAN_CAPABILITY_WORDS = [
   "load_test",
   "deployment_config_check",
   "visual_diff",
+  "static_analysis",
 ] as const;
 export type PlanCapabilityWord = (typeof PLAN_CAPABILITY_WORDS)[number];
 
@@ -129,6 +134,7 @@ const CAPABILITY_METHOD: Readonly<Record<PlanCapabilityWord, string>> = {
   load_test: "test",
   deployment_config_check: "inspection",
   visual_diff: "observation",
+  static_analysis: "analysis",
 };
 
 const CAPABILITY_EVIDENCE_REQUIREMENT: Readonly<Record<PlanCapabilityWord, string>> = {
@@ -144,6 +150,8 @@ const CAPABILITY_EVIDENCE_REQUIREMENT: Readonly<Record<PlanCapabilityWord, strin
   load_test: "负载实测回执（预算阈值在座）",
   deployment_config_check: "部署配置检视回执（环境差异逐键对账）",
   visual_diff: "视觉差异回执（基线快照比对）",
+  static_analysis:
+    "类型/静态分析工具真实执行回执（tsc --noEmit 文本诊断逐条重算 ∥ ESLint JSON finding 逐条重算；编译转译成功不当 typecheck，空根 tsconfig 零分母禁默认 PASS）",
 };
 
 // ============================================================
