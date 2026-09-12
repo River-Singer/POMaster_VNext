@@ -25,6 +25,9 @@ packages/cli/src/exec-guard.ts——判卷权威单一实现，本脚本零第�
 - 合规写入 ALLOW（exit 0 + stderr 注记）：活跃 execution 的任一 permit
   scope.subject_ids 覆盖映射 id（多 execution / 多 permit 取并集——与
   execution audit judgeMutationScope 的「多路径 × 多 permit 并集面」同判据方向）。
+  跨目标聚合语义（W1 R1-0）：多目标取全称——任一 mapped 目标越界即 DENY；
+  DENY stderr 枚举全部越界目标（denied 列表持有全量）；unmapped / 无 store /
+  无活跃 execution 透传面不参与全称（条件激活语义原样）。
 
 边界（PRD Out of Scope，如实标注）：
 - Bash matcher 只做路径词形粗筛，不做 shell 语义分析：按空白/引号切词取疑似路径
@@ -511,20 +514,41 @@ def main() -> int:
     denied = [verdict for verdict in verdicts if verdict["kind"] == "denied"]
     faults = [verdict for verdict in verdicts if verdict["kind"] == "fault"]
 
-    if allowed:
-        hit = allowed[0]
-        note(
-            f"ALLOW: {hit['id']} op={WRITE_OP} ∈ {hit['permit_ref']}"
-            f"（exec-guard allowed；judged={judged_targets} 目标 / {len(verdicts)} 发判卷）"
-        )
-        return 0
-    if denied:
-        first = denied[0]
+    # 目标内 permit 并集归并（W0 裁定 exec-guard-mixed-target.md §3a 精确形态的
+    # 前置半）：按 governed id 归并判卷结论——∃ permit 覆盖即该目标 allowed，
+    # raw verdict 层的个别 denied 不定罪（钉 allow.multi_permit_union 语义：
+    # 全称只作用于目标层，不作用于 raw verdict 层）。
+    covered_ids = {verdict["id"] for verdict in allowed}
+    # 跨目标聚合 = 全称（后置半）：任一未被任何 permit 覆盖的越界目标 → 整体
+    # DENY——同批混合允许/越界命令不得因任一 allowed verdict 提前放行（与
+    # execution audit judgeMutationScope 逐路径严格判据对称，消除「judge_once
+    # 已返回 denied 又被汇总层丢弃」的语义倒挂）。unmapped / 无 store / 无活跃
+    # execution 透传面不产 verdict，天然不参与全称；DENY 优先于 ALLOW 也使混合
+    # 批中预算耗尽的部分判卷落 fail-closed 方向。
+    out_of_scope = [verdict for verdict in denied if verdict["id"] not in covered_ids]
+
+    if out_of_scope:
+        first = out_of_scope[0]
         print(f"{STDERR_PREFIX} DENY: {first['message']}", file=sys.stderr)
         if first.get("code"):
             print(f"  code: {first['code']}", file=sys.stderr)
         if first.get("hint"):
             print(f"  kernel hint: {first['hint']}", file=sys.stderr)
+        # 枚举全部越界结论（denied 列表本就持有全量，非仅 denied[0]；同 id 多
+        # permit 各自失败的 verdict 逐条呈现——∃permit 覆盖即 allowed 的并集语义
+        # 下，在册即该目标对全部 permit 失败的实证）。单 verdict 时 message 已含
+        # 目标 id，枚举块免重复。
+        if len(out_of_scope) > 1:
+            print(
+                f"  越界目标枚举（{len(out_of_scope)} 发判卷结论全部越界，跨目标全称聚合）：",
+                file=sys.stderr,
+            )
+            for verdict in out_of_scope:
+                print(
+                    f"    - id={verdict['id']} code={verdict.get('code') or '-'} "
+                    f"permit_ref={verdict.get('permit_ref') or '-'}",
+                    file=sys.stderr,
+                )
         print(
             "  正确 permit 面：把目标对象纳入范围须回 FRAMEWORK LOCK 重审（D20，不得旁路扩权）——"
             "`pomaster permit issue --subject <governed-id> --actor human:owner` 圈定范围后 "
@@ -537,6 +561,13 @@ def main() -> int:
             file=sys.stderr,
         )
         return 2
+    if allowed:
+        hit = allowed[0]
+        note(
+            f"ALLOW: {hit['id']} op={WRITE_OP} ∈ {hit['permit_ref']}"
+            f"（exec-guard allowed；judged={judged_targets} 目标 / {len(verdicts)} 发判卷）"
+        )
+        return 0
     if faults:
         return fail_open(faults[0]["reason"])
     if budget_exceeded:
