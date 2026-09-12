@@ -89,6 +89,12 @@ A6 rename-on-ingest 双向链：legacy→canonical（收编）与 canonical→le
 - 新导出 `explainCatalogProjection(store, request, options?) => Promise<CatalogProjectionExplanation>`：catalog include/exclude 决策记录面（`why_included`/`why_excluded` 逐条 + `matched` 命中轴 + `fallback_lane`）。与 `compileProjection` 共享判定核（included 集与 `manifest.catalogEntries` 逐 ref 一致），但**不进 manifest、不进 `inputsFingerprint`**——excluded 不进 Agent Context（PRD §5.4：只用于 `pomaster context explain` / Audit / Eval / Debug）。
 - CLI 面：`pomaster context compile --change/--capability/--change-class` 与新子命令 `pomaster context explain`（同旗标；`--profile` 旗标已按 A1 裁定删除；`pomaster triage` 命令已按 D-1/D-5 退役——裁决 18 2026-09-08，信息性判档呈现随档位语义一并退场）。
 
+**R4/design-context baseline grounding（2026-09-12）**：`compileProjection` 可选 options 增 `baselineGrounding?: BaselineGroundingFacts`（类型化事实契约；生产端 = CLI `baseline-grounding.ts`，baseline confirmed 块/三态机/design-tokens 装载的词形解析独占在生产端，kernel 只做分区派生与指纹折算）。语义：
+
+- **分区映射 ADR**：有效确认记录在座（confirmed/pending-change/drifted，ADR-16 三态机）→ 确认记录条目（ref `baseline/manifest.yaml#confirmed`）进 MUST（AUTHORITATIVE PROJECT STATE——已确认基线是权威项目状态锚；状态词如实携带，drifted 不冒充 confirmed）；state ∈ {absent, unconfirmed} → ADVISORY 注记（absent 时确认条目整体缺席——baselineGateErrors「manifest 缺席 → 门不适用」同边界）。design-tokens（R3）：origin=preset（未定制）→ ADVISORY 蓝图（Owner 确认前不构成项目事实）；origin ∈ {customized, owner} 且 facts.state=confirmed → MUST（确认后的项目设计事实）；absent/invalid → ADVISORY 诚实呈现（fail-closed 非静默当空表）。呈现粒度：确认元数据 + digest 摘要（一致/漂移清单），非 25 文件全文；tokens 九组清单 + UNKNOWN 键点径三态标注，值不搬运（`零值伪造` 结构性成立）。
+- **指纹绑定（R2）**：facts 整体折进 `inputsFingerprint` 的 canonical 输入（确认态 + at_seq + 批/ack + 确认快照 + 现盘 25 确认资产 digest 快照——design-tokens.yaml 字节面随第 25 目标同源覆盖 + tokens 装载三态）。任一确认资产漂移/改型/确认动作 → 指纹必变 → `context compile --check` 按既有 STALE_GROUNDING 词形呈现（stale 不阻断——R4 呈现即可，阻断归 closeout `baselineGateErrors` 既有码位）。指纹机制沿既有 sha256OfCanonical 单点复用，零第二套哈希；options 缺席 = 指纹输入零键，既有调用方值域逐字节不变（回归钉：kernel projection.spec grounding describe + cli context-manifest.spec baseline grounding describe）。
+- CLI 编排：`runContextCompile`（F4 单一编排权威）默认 compileProjection 依赖单点注入 grounding——显式命令 / maintain pre-dev 链 / judgeTaskContextFreshness 三通路同源继承；纯读零写入（零权威写口）。
+
 ## 6. Gate 归一（八拍⑤）
 
 ### `normalizeGateResult(raw: Claimed<unknown>, context) => GateResult`

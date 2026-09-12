@@ -27,7 +27,16 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { applyTransaction, createStore, issuePermit, sha256OfCanonical } from "@pomaster/kernel";
-import { judgeTaskContextFreshness, runInit, runContextCompile } from "@pomaster/cli";
+import {
+  BASELINE_DESIGN_TOKENS_TARGET,
+  BASELINE_LANES,
+  STACK_KEYS,
+  judgeTaskContextFreshness,
+  runBaselineConfirm,
+  runBaselineSet,
+  runInit,
+  runContextCompile,
+} from "@pomaster/cli";
 
 let root: string;
 
@@ -509,6 +518,262 @@ describe("judgeTaskContextFreshness（N5 同源判卷入口）", () => {
       expect(judgment.state).toBe("fresh");
       expect(pomasterTreeSnapshot(root)).toEqual(before);
       expect(existsSync(join(root, ".pomaster", "state", "journal.jsonl"))).toBe(false);
+    },
+  );
+});
+
+// ============================================================
+// baseline grounding 进投影（R4/design-context 批）：confirmed baseline/tokens 消费。
+// 判据锚（cli/src/context.ts 头注「baseline grounding 消费」段 + kernel
+// baselineGroundingEntries 分区映射 ADR + cli/src/baseline-grounding.ts 生产者）：
+// 有效确认记录 → AUTHORITATIVE（状态词如实）；无记录 → ADVISORY；tokens
+// origin=preset → ADVISORY 蓝图 / customized+confirmed → AUTHORITATIVE；指纹绑定
+// baseline grounding——任一确认资产漂移/改型/确认动作 → STALE_GROUNDING（呈现不
+// 阻断，R4——阻断归 closeout baselineGateErrors 既有码位）。
+// ============================================================
+
+function baselineTokenPath(): string {
+  return join(root, ".pomaster", ...BASELINE_DESIGN_TOKENS_TARGET.split("/"));
+}
+
+/** .pomaster/baseline 全树字节快照（零权威写口钉——context compile 前后逐字节不变）。 */
+function baselineTreeSnapshot(): Map<string, string> {
+  const files = new Map<string, string>();
+  const walk = (dir: string): void => {
+    for (const name of readdirSync(dir)) {
+      const full = join(dir, name);
+      if (statSync(full).isDirectory()) walk(full);
+      else files.set(full, readFileSync(full, "utf8"));
+    }
+  };
+  walk(join(root, ".pomaster", "baseline"));
+  return files;
+}
+
+/** 14 键全销账（baseline.spec fillAllKeys 同款词形——cache/grid 显式 none）。 */
+async function fillAllStackKeys(): Promise<void> {
+  for (const lane of BASELINE_LANES) {
+    for (const key of STACK_KEYS[lane]) {
+      const outcome = await runBaselineSet(root, {
+        lane,
+        key,
+        value: key === "cache" || key === "grid" ? "none" : `${key}-value`,
+      });
+      expect(outcome.ok, `${lane}.${key}`).toBe(true);
+    }
+  }
+}
+
+/** 已确认项目夹具：init → 14 键销账 → confirm（25 文件 digest 快照在座）。 */
+async function buildConfirmedProject(): Promise<void> {
+  await initStore();
+  await fillAllStackKeys();
+  const confirm = await runBaselineConfirm(root);
+  expect(confirm.ok).toBe(true);
+  expect(confirm.result.change).toBe("CONFIRMED");
+}
+
+/** Owner 手改定制 tokens（meta.origin→customized；customized→true——手编是合法通路）。 */
+function customizeTokens(): void {
+  const path = baselineTokenPath();
+  const text = readFileSync(path, "utf8");
+  writeFileSync(
+    path,
+    text
+      .replace("origin: preset", "origin: customized")
+      .replace("customized: false", "customized: true"),
+    "utf8",
+  );
+}
+
+describe("baseline grounding 进投影（R4/design-context）", () => {
+  it(
+    "未确认工作区 → ADVISORY 注记（不冒充权威锚）+ tokens preset 蓝图 advisory + UNKNOWN 三态标注；AUTHORITATIVE 零 baseline 词形",
+    { timeout: 60_000 },
+    async () => {
+      await initStore();
+      const outcome = await runContextCompile(root, "frontend");
+      expect(outcome.ok).toBe(true);
+      // 确认态 advisory 注记在座。
+      const confirmationEntry = outcome.result.manifest.advisory_entries.find(
+        (entry) => entry.ref === "baseline/manifest.yaml#confirmed",
+      );
+      expect(confirmationEntry?.reason).toContain("baseline 未确认");
+      // tokens preset → ADVISORY 蓝图 + UNKNOWN 键三态标注（种子词形 spacing.section_gap 在座）。
+      const tokensEntry = outcome.result.manifest.advisory_entries.find(
+        (entry) => entry.ref === BASELINE_DESIGN_TOKENS_TARGET,
+      );
+      expect(tokensEntry?.reason).toContain("origin=preset 蓝图 advisory");
+      expect(tokensEntry?.reason).toContain("UNKNOWN 键三态标注");
+      expect(tokensEntry?.reason).toContain("spacing.section_gap");
+      // AUTHORITATIVE 零 baseline 词形（确认前不构成权威状态锚）。
+      expect(
+        outcome.result.manifest.must_entries.filter((entry) => entry.ref.startsWith("baseline/")),
+      ).toEqual([]);
+      // markdown 人读面同构（ADVISORY 分区呈现）。
+      expect(outcome.result.markdown).toContain("baseline 未确认");
+      // 落盘 manifest 机器面同构（authoritative 分区零 baseline / advisory 分区在座）。
+      const path = manifestPath("frontend.context.json");
+      const doc = JSON.parse(readFileSync(path, "utf8")) as ContextManifestDoc;
+      expect(
+        doc.partitions.authoritative_project_state.filter((entry) =>
+          entry.ref.startsWith("baseline/"),
+        ),
+      ).toEqual([]);
+      expect(
+        doc.partitions.advisory_knowledge.some(
+          (entry) => entry.ref === "baseline/manifest.yaml#confirmed",
+        ),
+      ).toBe(true);
+    },
+  );
+
+  it(
+    "确认后 → 确认记录条目进 AUTHORITATIVE（确认态=confirmed + at_seq + digest 摘要词形）；markdown 与落盘 manifest 机器面同构",
+    { timeout: 120_000 },
+    async () => {
+      await buildConfirmedProject();
+      const outcome = await runContextCompile(root, "frontend");
+      expect(outcome.ok).toBe(true);
+      const entry = outcome.result.manifest.must_entries.find(
+        (candidate) => candidate.ref === "baseline/manifest.yaml#confirmed",
+      );
+      expect(entry).toBeDefined();
+      expect(entry?.reason).toContain("baseline 确认态=confirmed");
+      expect(entry?.reason).toContain("at_seq=");
+      expect(entry?.reason).toContain("25 文件 digest 快照一致");
+      expect(entry?.reason).toContain("STALE_GROUNDING");
+      // markdown AUTHORITATIVE 分区呈现（机读/人读双输出同源）。
+      const authoritativeSection = outcome.result.markdown.split("## REQUIRED POLICY")[0] ?? "";
+      expect(authoritativeSection).toContain("`baseline/manifest.yaml#confirmed`");
+      // tokens 仍 preset → 留在 ADVISORY（蓝图 advisory，不随确认自动升级——origin 语义映射）。
+      expect(
+        outcome.result.manifest.must_entries.some(
+          (candidate) => candidate.ref === BASELINE_DESIGN_TOKENS_TARGET,
+        ),
+      ).toBe(false);
+      // 落盘 manifest 机器面同构。
+      const doc = JSON.parse(
+        readFileSync(manifestPath("frontend.context.json"), "utf8"),
+      ) as ContextManifestDoc;
+      expect(
+        doc.partitions.authoritative_project_state.some(
+          (candidate) => candidate.ref === "baseline/manifest.yaml#confirmed",
+        ),
+      ).toBe(true);
+    },
+  );
+
+  it(
+    "tokens 定制 + 确认 → AUTHORITATIVE 升级（origin 语义映射：customized+confirmed=项目设计事实）",
+    { timeout: 120_000 },
+    async () => {
+      await buildConfirmedProject();
+      customizeTokens(); // Owner 手改（合法通路）→ 漂移检出
+      const ack = await runBaselineConfirm(root, {
+        ackDrifted: true,
+        note: "Owner 定制 design tokens（测试钉）",
+      });
+      expect(ack.ok).toBe(true);
+      const outcome = await runContextCompile(root, "frontend");
+      expect(outcome.ok).toBe(true);
+      const tokensEntry = outcome.result.manifest.must_entries.find(
+        (candidate) => candidate.ref === BASELINE_DESIGN_TOKENS_TARGET,
+      );
+      expect(tokensEntry?.reason).toContain("origin=customized");
+      expect(tokensEntry?.reason).toContain("AUTHORITATIVE 项目设计事实");
+      // advisory 面零 tokens 词形（升级后离开 ADVISORY）。
+      expect(
+        outcome.result.manifest.advisory_entries.some(
+          (candidate) => candidate.ref === BASELINE_DESIGN_TOKENS_TARGET,
+        ),
+      ).toBe(false);
+    },
+  );
+
+  it(
+    "R2/R4 指纹绑定钉：改 baseline md → fingerprint 变 + --check stale（ok 恒 true 不阻断）+ drifted 状态词与漂移文件呈现 + ack 重确认恢复 fresh",
+    { timeout: 120_000 },
+    async () => {
+      await buildConfirmedProject();
+      const first = await runContextCompile(root, "frontend");
+      expect(first.result.stale_check.state).toBe("absent"); // 首编译落盘（盘面原无 manifest）
+      // 任一确认资产字节漂移（Owner 手改 architecture.md）。
+      const mdPath = join(root, ".pomaster", "baseline", "frontend", "architecture.md");
+      writeFileSync(mdPath, readFileSync(mdPath, "utf8") + "<!-- 测试漂移 -->", "utf8");
+      // 漂移后编译：现盘指纹（fp1）与新指纹（fp2）比对 → stale_grounding 呈现（不阻断）
+      // + 覆盖写 warning（不静默）；投影呈现 drifted 状态词与漂移文件词形。
+      const driftedCompile = await runContextCompile(root, "frontend");
+      expect(driftedCompile.ok).toBe(true);
+      expect(driftedCompile.result.inputs_fingerprint).not.toBe(first.result.inputs_fingerprint);
+      expect(driftedCompile.result.stale_check.state).toBe("stale_grounding");
+      expect(driftedCompile.result.stale_check.detail).toContain("STALE_GROUNDING");
+      expect(driftedCompile.warnings.map((w) => w.code)).toContain("STALE_GROUNDING");
+      const entry = driftedCompile.result.manifest.must_entries.find(
+        (candidate) => candidate.ref === "baseline/manifest.yaml#confirmed",
+      );
+      expect(entry?.reason).toContain("baseline 确认态=drifted");
+      expect(entry?.reason).toContain("baseline/frontend/architecture.md");
+      // 重编译闭环：覆盖写后 --check 恢复 fresh（fp2 自比）。
+      const settled = await runContextCompile(root, "frontend", undefined, undefined, { check: true });
+      expect(settled.result.stale_check.state).toBe("fresh");
+      // 通道 2 显式重确认 → at_seq/digest 演进 → 指纹再变 → 现盘 fp2 必判 stale（确认动作也是 grounding 输入）。
+      const ack = await runBaselineConfirm(root, {
+        ackDrifted: true,
+        note: "测试漂移显式声明（测试钉）",
+      });
+      expect(ack.ok).toBe(true);
+      const postAck = await runContextCompile(root, "frontend");
+      expect(postAck.result.stale_check.state).toBe("stale_grounding");
+      expect(postAck.result.inputs_fingerprint).not.toBe(driftedCompile.result.inputs_fingerprint);
+      const ackEntry = postAck.result.manifest.must_entries.find(
+        (candidate) => candidate.ref === "baseline/manifest.yaml#confirmed",
+      );
+      expect(ackEntry?.reason).toContain("baseline 确认态=confirmed");
+      expect(ackEntry?.reason).toContain("手改声明");
+      // 再编译落盘后恢复 fresh。
+      await runContextCompile(root, "frontend");
+      const refreshed = await runContextCompile(root, "frontend", undefined, undefined, {
+        check: true,
+      });
+      expect(refreshed.result.stale_check.state).toBe("fresh");
+    },
+  );
+
+  it(
+    "R4 tokens 联动钉：design-tokens.yaml 字节改动（第 25 确认资产）→ --check stale_grounding（呈现信号不阻断）",
+    { timeout: 120_000 },
+    async () => {
+      await buildConfirmedProject();
+      await runContextCompile(root, "frontend");
+      const tokenPath = baselineTokenPath();
+      writeFileSync(tokenPath, `${readFileSync(tokenPath, "utf8")}` + "# 测试漂移注释", "utf8");
+      const check = await runContextCompile(root, "frontend", undefined, undefined, { check: true });
+      expect(check.ok).toBe(true);
+      expect(check.result.stale_check.state).toBe("stale_grounding");
+    },
+  );
+
+  it("tokens 损坏（fail-closed）→ ADVISORY 损坏呈现 + 编译不炸（禁静默当空表）", async () => {
+    await initStore();
+    writeFileSync(baselineTokenPath(), "::: 损坏 YAML [", "utf8");
+    const outcome = await runContextCompile(root, "frontend");
+    expect(outcome.ok).toBe(true);
+    const tokensEntry = outcome.result.manifest.advisory_entries.find(
+      (candidate) => candidate.ref === BASELINE_DESIGN_TOKENS_TARGET,
+    );
+    expect(tokensEntry?.reason).toContain("design-tokens 合同损坏");
+  });
+
+  it(
+    "零权威写口钉：context compile（含 grounding 采集）前后 .pomaster/baseline 全树逐字节不变",
+    { timeout: 60_000 },
+    async () => {
+      await initStore();
+      const before = baselineTreeSnapshot();
+      const outcome = await runContextCompile(root, "frontend");
+      expect(outcome.ok).toBe(true);
+      expect(baselineTreeSnapshot()).toEqual(before);
     },
   );
 });

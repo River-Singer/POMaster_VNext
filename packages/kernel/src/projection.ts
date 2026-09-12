@@ -25,6 +25,11 @@
  *   同输入重放字节稳定（D24：只读服务）；范围内对象正文演进（rev/body_sha256 变化）
  *   必然改变指纹——context manifest 的 fresh/stale 判定据此检出正文漂移（审计 F2
  *   修复，2026-09-06 R-G 批；「范围内」精确边界与排除面见 scopeContentRowsOf 契约注记）。
+ *   R4/design-context 批增补：options.baselineGrounding 在座时，baseline 确认态
+ *   （三态机 + at_seq）+ 25 确认资产现盘 digest 快照 + tokens 装载三态折算进同一
+ *   指纹输入（facts 契约见 BaselineGroundingFacts；生产端 = CLI baseline-grounding.ts
+ *   ——baseline 词形解析独占在生产端，kernel 只做分区派生与指纹折算，禁第二套哈希）；
+ *   options 缺席 = 指纹输入零键，既有调用方值域逐字节不变。
  * 纯派生视图：只读 store 与 catalog/，不产生治理事实，不写任何文件。
  */
 import type {
@@ -80,6 +85,81 @@ export interface CatalogProjectionSource {
 export interface ProjectionCatalogOptions {
   /** 注入 catalog 根目录；缺省 resolveCatalogRoot()（仓库 catalog/）。 */
   readonly catalogRoot?: string;
+  /**
+   * baseline grounding facts（R4/design-context 批；可选——缺席零键，既有调用方
+   * 指纹逐字节不变）。facts 由 CLI 编排层（baseline-grounding.ts 生产者）注入：
+   * 生产端独占 baseline 词形解析（confirmed 块/tokens 装载），kernel 只消费类型化
+   * 事实做分区派生与指纹折算——指纹机制沿既有 sha256OfCanonical 单点复用，零第二套哈希。
+   */
+  readonly baselineGrounding?: BaselineGroundingFacts;
+}
+
+// ============================================================
+// Baseline grounding facts（R4/design-context：confirmed baseline/tokens 进投影）
+// ============================================================
+
+/**
+ * baseline 确认态五值词形：三态机（ADR-16：confirmed / pending-change / drifted）
+ * + 两诚实降级位（absent = baseline 平面未播种，门不适用；unconfirmed = manifest
+ * 在座但无有效确认记录——含确认块结构损坏）。词形与 CLI baseline.ts 呈现面同源，
+ * 禁第二套状态词。
+ */
+export type BaselineGroundingState =
+  | "absent"
+  | "unconfirmed"
+  | "confirmed"
+  | "pending-change"
+  | "drifted";
+
+/** token 组呈现行（九组逐组：叶键总数 + UNKNOWN 叶键点径清单——三态标注）。 */
+export interface BaselineTokenGroupFacts {
+  readonly name: string;
+  readonly keys: number;
+  readonly unknown_keys: readonly string[];
+}
+
+/** design-tokens 装载三态（与 CLI baseline-tokens.ts readDesignTokens 同构：absent/invalid/ok）。 */
+export type BaselineTokensFacts =
+  | { readonly kind: "absent" }
+  | { readonly kind: "invalid"; readonly detail: string }
+  | {
+      readonly kind: "ok";
+      /** origin 机器位（schema 22 本地闭包 preset|customized|owner——零扩值）。 */
+      readonly origin: "preset" | "customized" | "owner";
+      readonly customized: boolean;
+      readonly groups: readonly BaselineTokenGroupFacts[];
+    };
+
+/**
+ * baseline 投影接地事实（CLI 生产 → kernel 消费的类型化契约；纯数据零行为）。
+ * 结构纪律：数组全确定性排序、Record 交 canonicalJson 键序排序——同盘面重放字节
+ * 稳定（A4）， facts 直接作为 inputsFingerprint 的折算输入。
+ */
+export interface BaselineGroundingFacts {
+  /** 确认记录条目 ref（CLI 词形，如 `baseline/manifest.yaml#confirmed`）。 */
+  readonly confirmation_ref: string;
+  /** design-tokens 条目 ref（CLI 词形 = 确认资产词形，如 `baseline/frontend/design-tokens.yaml`）。 */
+  readonly tokens_ref: string;
+  readonly state: BaselineGroundingState;
+  /** 确认时点锚（A4 零墙钟——时位即 seq）；无有效记录 = null。 */
+  readonly at_seq: number | null;
+  /** 阻塞集余量（null = 不可判——stack 平面缺席/台账形状损坏的诚实降级）。 */
+  readonly blocking_remaining: number | null;
+  /** 确认资产清单词形序（25 文件分母；顺序 = 单一清单固定序）。 */
+  readonly targets: readonly string[];
+  /** 漂移文件词形（确定性排序；digest 失配 + 缺席/不可读注记目标）。 */
+  readonly drifted_files: readonly string[];
+  readonly pending_change: { readonly change_ref: string; readonly batch: readonly string[] } | null;
+  readonly ack: { readonly note: string; readonly files: readonly string[] } | null;
+  /** 确认记录 digest 快照（无有效记录 = null）。 */
+  readonly confirmed_digests: Readonly<Record<string, string>> | null;
+  /**
+   * 现盘确认资产 digest 快照（值词形 sha256:<hex>；缺席 = "absent"、不可读 =
+   * "unreadable"）——指纹绑定面：任一确认资产字节变化（含 design-tokens.yaml）
+   * 必然改变本表 → inputs_fingerprint 变化 → compile --check STALE_GROUNDING（R2/R4）。
+   */
+  readonly current_digests: Readonly<Record<string, string>>;
+  readonly tokens: BaselineTokensFacts;
 }
 
 // ============================================================
@@ -773,6 +853,111 @@ function scopeContentRowsOf(
 }
 
 /**
+ * baseline grounding facts → 投影条目（R4/design-context 批分区映射 ADR；呈现词形
+ * 单一实现在此，禁 CLI 侧另抄）。
+ *
+ * 分区映射论证（PRD R1/R3 授权「实读五分区定义后裁定并申报」）：
+ * - 确认记录（state ∈ {confirmed, pending-change, drifted}，即有效记录在座）→
+ *   **AUTHORITATIVE PROJECT STATE**（mustEntries）：已确认基线是权威项目状态锚
+ *   （「Context Ready 建立在基线是什么之上」）；记录在座时其状态（含漂移检出与
+ *   在途变更批）本身就是权威事实面。presented 状态词如实携带（drifted 不冒充
+ *   confirmed）。本条目是呈现 + 指纹绑定面，normalizeGateResult 判卷分母零改动
+ *   （gate 载荷不经本 manifest），不新增阻断语义（R4：drift 呈现即可，阻断归
+ *   closeout baselineGateErrors 既有码位）。
+ * - state ∈ {absent, unconfirmed} → **ADVISORY KNOWLEDGE**（advisoryEntries）：
+ *   无有效确认记录 = 没有「已确认基线」可作权威状态锚（absent 时平面未播种——
+ *   baselineGateErrors「manifest 缺席 → 门不适用」同边界，记录条目整体缺席）；
+ *   unconfirmed 以 advisory 注记诚实呈现（确认后升级 AUTHORITATIVE）。
+ * - design-tokens（R3）：origin 语义映射——origin=preset（未定制）= 播种蓝图/
+ *   预设默认值，Owner 确认前不构成项目事实（seed 头注词形逐字）→ ADVISORY；
+ *   customized/owner 且确认链确认在座（facts.state=confirmed）→ AUTHORITATIVE
+ *   （确认后的项目设计事实）。absent/invalid/未确认定制 → ADVISORY（缺席与损坏
+ *   显式，fail-closed 非静默当空表）。
+ *
+ * 呈现粒度（防 context 膨胀，PRD R1 约束）：确认记录 = 元数据（状态/at_seq/阻塞
+ * 余量/批/ack）+ digest 摘要（一致/漂移清单），非 25 文件全文亦非 digest 全文粘
+ * 注（digest 真值住 manifest confirmed 块与指纹绑定面）；tokens = 九组清单 +
+ * UNKNOWN 键三态标注，值不搬运（值住文件，字节由指纹绑定——「零值伪造」结构性
+ * 成立：投影不复制值）。
+ */
+function baselineGroundingEntries(facts: BaselineGroundingFacts): {
+  readonly must: readonly ProjectionEntry[];
+  readonly advisory: readonly ProjectionEntry[];
+} {
+  const must: ProjectionEntry[] = [];
+  const advisory: ProjectionEntry[] = [];
+  const blocking =
+    facts.blocking_remaining === null ? "不可判" : String(facts.blocking_remaining);
+  // —— 确认记录条目（有效记录在座三态 → AUTHORITATIVE）——
+  if (
+    facts.state === "confirmed" ||
+    facts.state === "pending-change" ||
+    facts.state === "drifted"
+  ) {
+    const digestSummary =
+      facts.drifted_files.length === 0
+        ? `${facts.targets.length} 文件 digest 快照一致`
+        : `${facts.targets.length} 文件中 ${facts.drifted_files.length} 漂移：${facts.drifted_files.join("、")}`;
+    const pendingNote =
+      facts.pending_change === null
+        ? ""
+        : `；变更批在途 change_ref=${facts.pending_change.change_ref}（批内 ${facts.pending_change.batch.length} 键）`;
+    const ackNote =
+      facts.ack === null ? "" : `；上次确认为 Owner 手改声明（ack note: ${facts.ack.note}）`;
+    must.push({
+      ref: facts.confirmation_ref,
+      reason:
+        `baseline 确认态=${facts.state}（at_seq=${facts.at_seq ?? 0}；阻塞 remaining=${blocking}；${digestSummary}${pendingNote}${ackNote}）——` +
+        `已确认基线是权威项目状态锚（呈现元数据+digest 摘要，非全文注入防 context 膨胀）；` +
+        `指纹绑定 baseline grounding：漂移/改型 → inputs_fingerprint 变化 → compile --check STALE_GROUNDING`,
+    });
+  } else if (facts.state === "unconfirmed") {
+    advisory.push({
+      ref: facts.confirmation_ref,
+      reason:
+        `baseline 未确认（无有效确认记录；阻塞 remaining=${blocking}）——` +
+        `确认前不构成 AUTHORITATIVE 项目状态锚（advisory 呈现）；确认: pomaster baseline confirm（阻塞集清零后）`,
+    });
+  }
+  // state === "absent"：baseline 平面未播种，确认记录条目整体缺席（门不适用同边界）。
+  // —— design-tokens 条目（R3；origin 语义分区映射见头注）——
+  const tokens = facts.tokens;
+  if (tokens.kind === "ok") {
+    const customized = tokens.origin !== "preset" || tokens.customized;
+    const authoritative = customized && facts.state === "confirmed";
+    const unknownPaths = tokens.groups
+      .flatMap((group) => group.unknown_keys)
+      .sort();
+    const body =
+      `design-tokens 合同（origin=${tokens.origin}，customized=${tokens.customized}；` +
+      `九组 ${tokens.groups.length} 组：${tokens.groups.map((g) => `${g.name} ${g.keys} 键`).join("、")}；` +
+      `UNKNOWN 键三态标注：${unknownPaths.length === 0 ? "无" : unknownPaths.join("、")}）`;
+    if (authoritative) {
+      must.push({
+        ref: facts.tokens_ref,
+        reason: `${body}——customized/owner tokens 经确认链确认在座（AUTHORITATIVE 项目设计事实）`,
+      });
+    } else {
+      advisory.push({
+        ref: facts.tokens_ref,
+        reason: `${body}——origin=preset 蓝图 advisory（Owner 确认前不构成项目事实；经 baseline confirm 确认后升级 AUTHORITATIVE）`,
+      });
+    }
+  } else if (tokens.kind === "absent") {
+    advisory.push({
+      ref: facts.tokens_ref,
+      reason: `design-tokens 合同缺席（缺席显式；seed-once 播种件，重跑 pomaster init 补齐）——advisory 呈现不冒充空合同`,
+    });
+  } else {
+    advisory.push({
+      ref: facts.tokens_ref,
+      reason: `design-tokens 合同损坏（fail-closed 非静默当空表）：${tokens.detail.replace(/\s+/g, " ")}`,
+    });
+  }
+  return { must, advisory };
+}
+
+/**
  * 编译最小充分上下文投影。范围派生（确定性、可判卷）：
  * - 分母通道：request.denominatorRefs 命中的对象（信封行 denominator_refs 交集）；
  * - 许可通道：request.taskRef 命中 changeRef 的 Permit 的 scope.subjectIds；
@@ -919,6 +1104,18 @@ export async function compileProjection(
   // —— knowledge 检索消费（P28-Commands；§83.8；见 consumeKnowledge 契约注记） ——
   const knowledgeEntries = consumeKnowledge(request, pathsOf(store));
 
+  // —— baseline grounding 消费（R4/design-context）：facts 由 CLI 编排层注入
+  //    （packages/cli/src/baseline-grounding.ts 生产者——baseline 词形解析独占在
+  //    生产端，kernel 只消费类型化事实）。条目派生（分区映射 ADR 见
+  //    baselineGroundingEntries 头注）+ 指纹折算（沿既有 sha256OfCanonical 单点
+  //    机制——禁第二套哈希）；options 缺席 = 零键，既有调用方指纹逐字节不变。 ——
+  const grounding = options?.baselineGrounding;
+  if (grounding !== undefined) {
+    const derived = baselineGroundingEntries(grounding);
+    mustEntries.push(...derived.must);
+    advisoryEntries.push(...derived.advisory);
+  }
+
   const sortEntries = (entries: readonly ProjectionEntry[]): ProjectionEntry[] =>
     [...entries].sort((a, b) => (a.ref === b.ref ? (a.reason < b.reason ? -1 : 1) : a.ref < b.ref ? -1 : 1));
 
@@ -939,6 +1136,12 @@ export async function compileProjection(
     denominatorRefs: requestedDenoms,
     manifest,
     scopeContent,
+    // baseline grounding 指纹绑定（R2/R4）：确认态（三态机 + at_seq/批/ack）+
+    // 确认快照 + 现盘 25 资产 digest 快照（含 design-tokens.yaml 字节面）+ tokens
+    // 装载三态——任一确认资产漂移/改型/确认动作必然改变折算输入 → 指纹变化 →
+    // context compile --check STALE_GROUNDING（词形复用，不 fail 主链）。
+    // grounding 缺席 = 零键（既有调用方指纹值域不变）。
+    ...(grounding !== undefined ? { baselineGrounding: grounding } : {}),
   });
   return { manifest, catalogSource, inputsFingerprint };
 }

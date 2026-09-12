@@ -65,15 +65,28 @@ import { allSchemas, perceptionReceiptsSchema } from "@pomaster/schemas";
 import { beginExecution, createStore, sha256OfBytes, type Store } from "@pomaster/kernel";
 import { stripQuotesFromPathEnv, type SpawnFn } from "@pomaster/gauntlet-lite";
 import {
+  RECON_ARCH_BASELINE_FILE,
+  RECON_ARCH_TOOL,
+  RECON_OPENAPI_TIMEOUT_MS,
   RECON_SBOM_INSTALL_HINT,
   RECON_SBOM_TOOL,
   createProgram,
+  detectOpenApiFrameworkWordForms,
+  parseDepcruiseCruiseReport,
+  parseOpenApiDocument,
+  parsePackageScripts,
   runCli,
-  reconSbomSpawn,
+  runReconArchitectureSnapshot,
   runReconImportGraph,
   runReconMigrations,
+  runReconOpenApi,
   runReconSbom,
+  runReconScripts,
+  runReconTokenSources,
+  reconSbomSpawn,
+  scanCssTokenVariables,
   type CliEnvelope,
+  type ReconOpenApiFetchFn,
 } from "@pomaster/cli";
 
 let root: string;
@@ -436,11 +449,19 @@ describe("recon import-graph 字节快照钉（R4 零直写权威）", () => {
 // ============================================================
 
 describe("recon runCli 程序面", () => {
-  it("命令注册表：recon → [import-graph, migrations, sbom]（B10 乙编排壳；README 命令面 B1 golden 分母同源）", () => {
+  it("命令注册表：recon → [import-graph, migrations, sbom, architecture-snapshot, token-sources, scripts, openapi]（B10 乙编排壳——首批三乙 + 第二批四乙；README 命令面 B1 golden 分母同源）", () => {
     const program = createProgram();
     const recon = program.commands.find((command) => command.name() === "recon");
     expect(recon).toBeDefined();
-    expect(recon?.commands.map((sub) => sub.name())).toEqual(["import-graph", "migrations", "sbom"]);
+    expect(recon?.commands.map((sub) => sub.name())).toEqual([
+      "import-graph",
+      "migrations",
+      "sbom",
+      "architecture-snapshot",
+      "token-sources",
+      "scripts",
+      "openapi",
+    ]);
   });
 
   it("--json 信封：command=recon import-graph + result 回读（OBSERVED → exit 0）", async () => {
@@ -1271,5 +1292,1241 @@ describe("recon sbom 默认 spawn（生产 reconSbomSpawn）", () => {
     expect(res.error).toBeNull();
     expect(res.status).toBe(0);
     expect(Buffer.byteLength(res.stdout, "utf8")).toBe(BIG_STDOUT_EXPECTED_BYTES);
+  });
+});
+
+// ============================================================
+// recon architecture-snapshot（B2 乙）—— dependency-cruiser 快照腿
+// ============================================================
+
+describe("recon architecture-snapshot fail-closed 全链（B2 乙）", () => {
+  it("未初始化 → NOT_INITIALIZED 显式错误（零建账零落盘，禁静默 init）", async () => {
+    const bare = mkdtempSync(join(tmpdir(), "pomaster-cli-recon-arch-bare-"));
+    try {
+      const outcome = await runReconArchitectureSnapshot(bare, { executionId: "AGX-2026-00001" });
+      expect(outcome.ok).toBe(false);
+      expect(outcome.errors[0]?.code).toBe("NOT_INITIALIZED");
+      expect(existsSync(join(bare, ".pomaster"))).toBe(false);
+    } finally {
+      rmSync(bare, { recursive: true, force: true });
+    }
+  });
+
+  it("执行身份 fail-closed：词形非法 SCHEMA_INVALID / 未登记 EXECUTION_NOT_FOUND（S1 禁自造身份；零落盘）", async () => {
+    const malformed = await runReconArchitectureSnapshot(root, { executionId: "claude_9f3ab2c1" });
+    expect(malformed.ok).toBe(false);
+    expect(malformed.errors[0]?.code).toBe("SCHEMA_INVALID");
+    const unregistered = await runReconArchitectureSnapshot(root, { executionId: "AGX-2026-09999" });
+    expect(unregistered.ok).toBe(false);
+    expect(unregistered.errors[0]?.code).toBe("EXECUTION_NOT_FOUND");
+    expect(existsSync(observationsDir())).toBe(false);
+  });
+
+  it("配置候选缺席 → RECON_ARCH_NOT_INSTALLED（gauntlet-lite 探测单一面复用；命令链探测未被触达；零落盘）", async () => {
+    const { executionId } = await seedExecution();
+    const probed: string[] = [];
+    const outcome = await runReconArchitectureSnapshot(root, {
+      executionId,
+      inject: {
+        executableProbe: (executable) => {
+          probed.push(executable);
+          return "<on-path>";
+        },
+      },
+    });
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors[0]?.code).toBe("RECON_ARCH_NOT_INSTALLED");
+    expect(outcome.errors[0]?.message).toContain("探测未就绪");
+    expect(probed).toEqual([]); // detect ① 未过 → 命令链探测不触达（复合闸短路口径）
+    expect(existsSync(observationsDir())).toBe(false);
+  });
+
+  it("命令链首 token 探测缺席 / 版本探测失败 → RECON_ARCH_NOT_INSTALLED（P22 前置闸 ①a/①b 同款；零落盘）", async () => {
+    writeHostFile(".dependency-cruiser.cjs", "module.exports = {};\n");
+    const { executionId } = await seedExecution();
+    const probeFail = await runReconArchitectureSnapshot(root, {
+      executionId,
+      inject: { executableProbe: () => null },
+    });
+    expect(probeFail.ok).toBe(false);
+    expect(probeFail.errors[0]?.code).toBe("RECON_ARCH_NOT_INSTALLED");
+    expect(probeFail.errors[0]?.message).toContain("corepack 不在 PATH");
+    const versionFail = await runReconArchitectureSnapshot(root, {
+      executionId,
+      inject: {
+        executableProbe: () => "<on-path>",
+        spawnFn: (command) =>
+          command.includes("--version")
+            ? { status: 1, stdout: "", stderr: "command failed", error: null, externalMs: 1 }
+            : { status: 0, stdout: "", stderr: "", error: null, externalMs: 1 },
+      },
+    });
+    expect(versionFail.ok).toBe(false);
+    expect(versionFail.errors[0]?.code).toBe("RECON_ARCH_NOT_INSTALLED");
+    expect(versionFail.errors[0]?.message).toContain("版本探测失败");
+    expect(existsSync(observationsDir())).toBe(false);
+  });
+
+  it("spawn 层失败 / exit 0 但巡报告文件缺席 → RECON_ARCH_NOT_RUN 零落盘（不伪造空跑绿）", async () => {
+    writeHostFile(".dependency-cruiser.cjs", "module.exports = {};\n");
+    const { executionId } = await seedExecution();
+    const archProbe = (executable: string): string | null =>
+      executable === "corepack" ? "<fake-corepack-on-path>" : null;
+    const spawnError = await runReconArchitectureSnapshot(root, {
+      executionId,
+      inject: {
+        executableProbe: archProbe,
+        spawnFn: (command) =>
+          command.includes("--version")
+            ? { status: 0, stdout: "18.3.0\n", stderr: "", error: null, externalMs: 1 }
+            : { status: null, stdout: "", stderr: "", error: "spawn ENOENT", externalMs: 1 },
+      },
+    });
+    expect(spawnError.ok).toBe(false);
+    expect(spawnError.errors[0]?.code).toBe("RECON_ARCH_NOT_RUN");
+    expect(spawnError.errors[0]?.message).toContain("spawn ENOENT");
+    expect(existsSync(observationsDir())).toBe(false);
+    const noReport = await runReconArchitectureSnapshot(root, {
+      executionId,
+      inject: {
+        executableProbe: archProbe,
+        spawnFn: (command) =>
+          command.includes("--version")
+            ? { status: 0, stdout: "18.3.0\n", stderr: "", error: null, externalMs: 1 }
+            : { status: 0, stdout: "", stderr: "", error: null, externalMs: 1 }, // 不写报告文件
+      },
+    });
+    expect(noReport.ok).toBe(false);
+    expect(noReport.errors[0]?.code).toBe("RECON_ARCH_NOT_RUN");
+    expect(noReport.errors[0]?.message).toContain("巡报告产出文件缺席");
+    expect(existsSync(observationsDir())).toBe(false);
+  });
+
+  it("报告垃圾 / 存量底账号形漂移 → RECON_ARCH_INCONCLUSIVE 负值兜底落账（禁默认值禁降级为「当作无底账」）", async () => {
+    writeHostFile(".dependency-cruiser.cjs", "module.exports = {};\n");
+    const { executionId } = await seedExecution();
+    const archProbe = (executable: string): string | null =>
+      executable === "corepack" ? "<fake-corepack-on-path>" : null;
+    const blobsBefore = listBlobFiles();
+    // ① 报告垃圾 → INCONCLUSIVE
+    const garbage = await runReconArchitectureSnapshot(root, {
+      executionId,
+      inject: {
+        executableProbe: archProbe,
+        spawnFn: fakeArchSpawn("garbage"),
+      },
+    });
+    expect(garbage.ok).toBe(false);
+    expect(garbage.errors[0]?.code).toBe("RECON_ARCH_INCONCLUSIVE");
+    expect(garbage.result.observation).toBe("INCONCLUSIVE");
+    expect(garbage.result.observation_id).toBe("OBS-0001");
+    expect(garbage.result.modules).toBeNull();
+    expect(garbage.result.report_blob).toBeNull();
+    const receipt = readReceipt("OBS-0001");
+    expect(validateReceipt(receipt)).toBe(true);
+    expect(receipt.result).toBe("INCONCLUSIVE");
+    expect(receipt.artifact_refs).toEqual([]);
+    expect(receipt.normalized_facts).toContain("report_parse_failed: true");
+    // ② 底账在座但词形漂移（valid 报告 + 垃圾底账）→ INCONCLUSIVE（禁降级臆测）
+    writeHostFile(RECON_ARCH_BASELINE_FILE, "not a baseline json");
+    const baselineDrift = await runReconArchitectureSnapshot(root, {
+      executionId,
+      inject: {
+        executableProbe: archProbe,
+        spawnFn: fakeArchSpawn("valid"),
+      },
+    });
+    expect(baselineDrift.ok).toBe(false);
+    expect(baselineDrift.errors[0]?.code).toBe("RECON_ARCH_INCONCLUSIVE");
+    expect(baselineDrift.errors[0]?.message).toContain(RECON_ARCH_BASELINE_FILE);
+    expect(baselineDrift.result.observation_id).toBe("OBS-0002");
+    expect(readReceipt("OBS-0002").normalized_facts).toContain("baseline_parse_failed: true");
+    // 残缺产出不是证据：两跑 blob 平面零新增（INCONCLUSIVE 无 blob）。
+    expect(listBlobFiles()).toEqual(blobsBefore);
+  });
+});
+
+// ============================================================
+// recon architecture-snapshot 真实子进程（fake depcruise × 真实 spawnSync 两段式）
+// ============================================================
+
+const ARCH_FAKE_DIR = mkdtempSync(join(tmpdir(), "pomaster-cli-recon-arch-fake-"));
+
+const FAKE_DEPCUISE_CJS = `const fs = require("node:fs");
+const mode = process.env.FAKE_DEPCUISE_MODE ?? "valid";
+if (process.env.FAKE_DEPCUISE_MARK) {
+  fs.writeFileSync(
+    process.env.FAKE_DEPCUISE_MARK,
+    JSON.stringify({
+      argv: process.argv.slice(2),
+      path_env_has_quote: (process.env.PATH ?? "").includes('"'),
+    }),
+  );
+}
+if (process.argv.includes("--version")) {
+  process.stdout.write("18.3.0\\n");
+  process.exit(0);
+}
+const outIndex = process.argv.indexOf("--output-to");
+const outPath = outIndex >= 0 ? process.argv[outIndex + 1] : null;
+const report = JSON.stringify({
+  modules: [
+    {
+      source: "src/a.ts",
+      dependencies: [
+        { circular: false, resolved: "src/b.ts", dynamic: false },
+        { circular: false, resolved: "src/c.ts", dynamic: false },
+        { circular: false, resolved: "external:lodash", dynamic: false },
+      ],
+    },
+    { source: "src/b.ts", dependencies: [{ circular: false, resolved: "src/c.ts", dynamic: false }] },
+  ],
+  summary: {
+    violations: [
+      { from: "src/a.ts", to: "src/c.ts", rule: { name: "no-legacy-import", severity: "error" } },
+      { from: "src/b.ts", to: "src/d.ts", rule: { name: "forbidden-import", severity: "error" } },
+    ],
+  },
+});
+if (mode === "garbage") {
+  fs.writeFileSync(outPath, "depcruise panic: not a report");
+  process.exit(1);
+}
+if (mode === "nofile") process.exit(0);
+fs.writeFileSync(outPath, report);
+if (mode === "exitfail") {
+  process.stderr.write("depcruise: 2 errors, 0 warnings");
+  process.exit(7);
+}
+process.exit(0);
+`;
+
+const FAKE_DEPCUISE_PATH = join(ARCH_FAKE_DIR, "fake-depcruise.cjs");
+writeFileSync(FAKE_DEPCUISE_PATH, FAKE_DEPCUISE_CJS, "utf8");
+
+/**
+ * 真实 spawnSync wrapper（sbom fakeSbomSpawn 同款形态）：真命令词形
+ * `corepack pnpm exec depcruise ...` 到达注入层后命令基底置换为 fake 脚本真跑
+ * （版本探测与真跑两段都过此层——参数流原样透传、子进程真实写盘回读）。
+ */
+function fakeArchSpawn(mode: string, markPath?: string): SpawnFn {
+  return (command, options) => {
+    const rewritten = command.replace(/^corepack pnpm exec depcruise\b/, `node "${FAKE_DEPCUISE_PATH}"`);
+    if (rewritten === command) throw new Error(`fake spawn 收到非 depcruise 词形命令：${command}`);
+    const env: Record<string, string | undefined> = {
+      ...process.env,
+      // 毒化 PATH：整段游离双引号——消毒缺失时子进程 node 解析失败（吞段教训重现）。
+      PATH: `"${process.env.PATH ?? ""}"`,
+      FAKE_DEPCUISE_MODE: mode,
+    };
+    if (markPath !== undefined) env.FAKE_DEPCUISE_MARK = markPath;
+    const res = spawnSync(rewritten, {
+      shell: true,
+      cwd: options.cwd,
+      timeout: options.timeoutMs,
+      encoding: "utf8",
+      windowsHide: true,
+      env: stripQuotesFromPathEnv(env),
+    });
+    return {
+      status: res.status,
+      stdout: res.stdout ?? "",
+      stderr: res.stderr ?? "",
+      error: res.error?.message ?? null,
+      externalMs: 5,
+    };
+  };
+}
+
+function archProbe(executable: string): string | null {
+  return executable === "corepack" ? "<fake-corepack-on-path>" : null;
+}
+
+/** 存量底账 fixture（2 条：no-legacy-import 与当前命中 → same；old-rule 未命中 → resolved）。 */
+function seedArchBaseline(): void {
+  writeHostFile(
+    RECON_ARCH_BASELINE_FILE,
+    `${JSON.stringify({
+      modules: [],
+      summary: {
+        violations: [
+          { from: "src/a.ts", to: "src/c.ts", rule: { name: "no-legacy-import", severity: "error" } },
+          { from: "src/x.ts", to: "src/y.ts", rule: { name: "old-rule", severity: "error" } },
+        ],
+      },
+    })}\n`,
+  );
+}
+
+describe("recon architecture-snapshot OBSERVED 主通路（B2 乙）", () => {
+  it("valid 报告 + 底账在座 → OBSERVED：spawn 命令词形 + tmp 清理 + PATH 消毒 + 计数/diff 三态对账 + 双 blob + 17 回执逐键", async () => {
+    writeHostFile(".dependency-cruiser.cjs", "module.exports = {};\n");
+    seedArchBaseline();
+    const { executionId } = await seedExecution();
+    const markPath = join(mkdtempSync(join(tmpdir(), "pomaster-cli-recon-arch-mark-")), "mark.json");
+    const outcome = await runReconArchitectureSnapshot(root, {
+      executionId,
+      inject: { executableProbe: archProbe, spawnFn: fakeArchSpawn("valid", markPath) },
+    });
+    expect(outcome.ok).toBe(true);
+    // —— mark 回读：spawn 命令词形（<toolRoot> --config --output-type json --output-to）+ PATH 消毒 + tmp 清理 ——
+    const mark = JSON.parse(readFileSync(markPath, "utf8")) as {
+      argv: string[];
+      path_env_has_quote: boolean;
+    };
+    expect(mark.argv[0]).toBe("src");
+    expect(mark.argv[1]).toBe("--config");
+    expect(mark.argv[2]).toBe(".dependency-cruiser.cjs");
+    expect(mark.argv[3]).toBe("--output-type");
+    expect(mark.argv[4]).toBe("json");
+    expect(mark.argv[5]).toBe("--output-to");
+    expect(mark.path_env_has_quote).toBe(false);
+    const tmpDirUsed = dirname(mark.argv[6] ?? "x");
+    expect(basename(tmpDirUsed)).toMatch(/^pomaster-recon-arch-/);
+    expect(existsSync(tmpDirUsed)).toBe(false); // 运行后 tmp 清理
+    // —— result 计数 + diff 三态对账 ——
+    expect(outcome.result.observation).toBe("OBSERVED");
+    expect(outcome.result.observation_id).toBe("OBS-0001");
+    expect(outcome.result.tool_version).toBe("18.3.0");
+    expect(outcome.result.tool_exit).toBe(0);
+    expect(outcome.result.modules).toBe(2);
+    expect(outcome.result.dependency_edges).toBe(4);
+    expect(outcome.result.violations).toBe(2);
+    expect(outcome.result.baseline_present).toBe(true);
+    expect(outcome.result.baseline_violations).toBe(2);
+    // new = forbidden-import（当前未命中底账）；same = no-legacy-import；resolved = old-rule（底账未被命中）。
+    expect(outcome.result.diff_new).toBe(1);
+    expect(outcome.result.diff_same).toBe(1);
+    expect(outcome.result.diff_resolved).toBe(1);
+    expect(outcome.result.captured_at_seq).toBe(truthIndexSeq());
+    // —— 双 blob：工具产出原样字节 + 快照清单（消费方重算 sha256 对账） ——
+    const reportRef = outcome.result.report_blob;
+    const snapshotRef = outcome.result.snapshot_blob;
+    expect(reportRef).not.toBeNull();
+    expect(snapshotRef).not.toBeNull();
+    expect(reportRef?.storage_path).toMatch(/^blobs\/sha256\/[0-9a-f]{2}\/[0-9a-f]{62}$/);
+    const reportBytes = readFileSync(join(root, ".pomaster", "evidence", ...(reportRef?.storage_path ?? "").split("/")));
+    expect(sha256OfBytes(reportBytes)).toBe(reportRef?.sha256);
+    const reportOnBlob = JSON.parse(reportBytes.toString("utf8")) as {
+      modules: unknown[];
+      summary: { violations: unknown[] };
+    };
+    expect(reportOnBlob.modules).toHaveLength(2); // depcruise 产出原样（零改写）
+    expect(reportOnBlob.summary.violations).toHaveLength(2);
+    const snapshotBytes = readFileSync(join(root, ".pomaster", "evidence", ...(snapshotRef?.storage_path ?? "").split("/")));
+    expect(sha256OfBytes(snapshotBytes)).toBe(snapshotRef?.sha256);
+    const snapshot = JSON.parse(snapshotBytes.toString("utf8")) as {
+      recon_surface: string;
+      dependency_edges: number;
+      edge_proposals_not_registered: number;
+      diff: {
+        new_count: number;
+        same_count: number;
+        resolved_count: number;
+        new_items: Array<{ rule: string; from: string; to: string }>;
+        resolved_items: Array<{ rule: string; from: string; to: string }>;
+      };
+    };
+    expect(snapshot.recon_surface).toBe("architecture-snapshot");
+    expect(snapshot.dependency_edges).toBe(4);
+    expect(snapshot.edge_proposals_not_registered).toBe(4);
+    expect(snapshot.diff.new_count).toBe(1);
+    expect(snapshot.diff.new_items).toEqual([
+      { rule: "forbidden-import", from: "src/b.ts", to: "src/d.ts" },
+    ]);
+    expect(snapshot.diff.resolved_items).toEqual([
+      { rule: "old-rule", from: "src/x.ts", to: "src/y.ts" },
+    ]);
+    // —— OBS 回执 17 schema 形态合法 + 逐键（双 blob ref——Benchmark E） ——
+    const receipt = readReceipt("OBS-0001");
+    expect(validateReceipt(receipt)).toBe(true);
+    expect(receipt.record_type).toBe("observation_receipt");
+    expect(receipt.result).toBe("OBSERVED");
+    expect(receipt.surface).toBe("STRUCTURAL_REALITY");
+    expect(receipt.sensor_capability).toBe("SENSOR.BUILD.STATIC");
+    expect(receipt.operation).toBe("scan_architecture");
+    expect(receipt.adapter).toBe(RECON_ARCH_TOOL);
+    expect(receipt.execution_id).toBe(executionId);
+    const refs = receipt.artifact_refs as Array<{ ref_type: string; blob: Record<string, unknown> }>;
+    expect(refs).toHaveLength(2);
+    expect(refs.every((ref) => ref.ref_type === "blob")).toBe(true);
+    expect(refs[0]?.blob.sha256).toBe(reportRef?.sha256);
+    expect(refs[1]?.blob.sha256).toBe(snapshotRef?.sha256);
+    const facts = receipt.normalized_facts as string[];
+    expect(facts).toContain("recon_surface: architecture-snapshot");
+    expect(facts).toContain("modules: 2");
+    expect(facts).toContain("dependency_edges: 4");
+    expect(facts).toContain("violations: 2");
+    expect(facts).toContain("diff_new: 1");
+    expect(facts).toContain("diff_same: 1");
+    expect(facts).toContain("diff_resolved: 1");
+    expect(facts).toContain("edge_proposals_not_registered: 4");
+    // —— 呈现面：diff 语义标注 + 边界注记 ——
+    const human = outcome.human.join("\n");
+    expect(human).toContain("2 模块 / 4 依赖边 / 2 违规");
+    expect(human).toContain("增量 diff: new 1 / same 1 / resolved 1");
+    expect(human).toContain("[new] forbidden-import: src/b.ts -> src/d.ts");
+    expect(human).toContain("[resolved] old-rule: src/x.ts -> src/y.ts");
+    expect(human).toContain("只计数零落盘提案");
+    expect(human).toContain("不碰 stack/permit");
+  });
+
+  it("存量底账缺席 → OBSERVED 首扫形态注记（diff 三态不判禁把「无底账」当「零存量」）+ --tool-root 透传", async () => {
+    writeHostFile(".dependency-cruiser.cjs", "module.exports = {};\n");
+    const { executionId } = await seedExecution();
+    const commands: string[] = [];
+    const outcome = await runReconArchitectureSnapshot(root, {
+      executionId,
+      toolRoot: "lib",
+      inject: {
+        executableProbe: archProbe,
+        spawnFn: (command, options) => {
+          commands.push(command);
+          return fakeArchSpawn("valid")(command, options);
+        },
+      },
+    });
+    expect(outcome.ok).toBe(true);
+    expect(outcome.result.baseline_present).toBe(false);
+    expect(outcome.result.baseline_violations).toBeNull();
+    expect(outcome.result.diff_new).toBeNull();
+    expect(outcome.result.diff_same).toBeNull();
+    expect(outcome.result.diff_resolved).toBeNull();
+    expect(outcome.human.join("\n")).toContain("首扫形态");
+    expect(outcome.human.join("\n")).toContain("禁把「无底账」当「零存量」");
+    // --tool-root 透传：真跑命令词形含 "lib"（探测命令不受 toolRoot 影响）。
+    const runCommand = commands.find((command) => !command.includes("--version"));
+    expect(runCommand).toContain('depcruise "lib"');
+  });
+
+  it("官方退出码语义分叉：exit 7（=error 级违规数）+ 报告在座 → OBSERVED 非零退出不误判 NOT_RUN（与 sbom 腿判卷分叉点）", async () => {
+    writeHostFile(".dependency-cruiser.cjs", "module.exports = {};\n");
+    seedArchBaseline();
+    const { executionId } = await seedExecution();
+    const outcome = await runReconArchitectureSnapshot(root, {
+      executionId,
+      inject: { executableProbe: archProbe, spawnFn: fakeArchSpawn("exitfail") },
+    });
+    expect(outcome.ok).toBe(true);
+    expect(outcome.result.observation).toBe("OBSERVED");
+    expect(outcome.result.tool_exit).toBe(7);
+    expect(outcome.result.violations).toBe(2);
+    expect(outcome.human.join("\n")).toContain("exit 7=官方 error 级违规数语义");
+  });
+
+  it("parseDepcruiseCruiseReport 词形判卷矩阵（非 object/modules 缺席/条目坏形/dependencies 缺席整体拒绝；边表计数）", () => {
+    expect(parseDepcruiseCruiseReport(Buffer.from("not json"))).toBeNull();
+    expect(parseDepcruiseCruiseReport(Buffer.from("[]"))).toBeNull();
+    expect(parseDepcruiseCruiseReport(Buffer.from(`{"summary":{"violations":[]}}`))).toBeNull(); // modules 缺席
+    expect(parseDepcruiseCruiseReport(Buffer.from(`{"modules":[5],"summary":{"violations":[]}}`))).toBeNull();
+    expect(
+      parseDepcruiseCruiseReport(Buffer.from(`{"modules":[{"source":"a.ts"}],"summary":{"violations":[]}}`)),
+    ).toBeNull(); // dependencies 缺席
+    expect(
+      parseDepcruiseCruiseReport(
+        Buffer.from(`{"modules":[{"dependencies":[{},{},{}]}],"summary":{"violations":[5]}}`),
+      ),
+    ).toBeNull(); // 违规条目坏形整体拒绝（禁静默丢明细）
+    expect(
+      parseDepcruiseCruiseReport(
+        Buffer.from(
+          `{"modules":[{"dependencies":[{},{},{}]},{"dependencies":[{}]}],"summary":{"violations":[{"from":"a","to":"b","rule":{"name":"r"}}]}}`,
+        ),
+      ),
+    ).toEqual({
+      modules: 2,
+      dependency_edges: 4,
+      violations: [{ rule: "r", from: "a", to: "b" }],
+    });
+  });
+});
+
+describe("recon architecture-snapshot 字节快照钉（零直写权威复用）", () => {
+  it("快照腿运行前后权威四文件逐字节不变；新增 ⊆ evidence/{blobs,observations}/ 两平面（blob 树内恰两文件 + 回执恰一张）", async () => {
+    seedAuthorityFiles();
+    writeHostFile(".dependency-cruiser.cjs", "module.exports = {};\n");
+    seedArchBaseline();
+    const { executionId } = await seedExecution();
+    const before = snapshotPomaster();
+    for (const authority of [
+      ".pomaster/baseline/frontend/stack.yaml",
+      ".pomaster/baseline/backend/stack.yaml",
+      ".pomaster/baseline/manifest.yaml",
+      ".pomaster/baseline/frontend/design-tokens.yaml",
+      ".pomaster/sources/index.yaml",
+    ]) {
+      expect(before.has(authority), `分母自检：${authority} 必须在字节快照内`).toBe(true);
+    }
+    const outcome = await runReconArchitectureSnapshot(root, {
+      executionId,
+      inject: { executableProbe: archProbe, spawnFn: fakeArchSpawn("valid") },
+    });
+    expect(outcome.ok).toBe(true);
+    const after = snapshotPomaster();
+    for (const [relative, bytes] of before) {
+      const afterBytes = after.get(relative);
+      expect(afterBytes, `${relative} 不得被删除`).toBeDefined();
+      expect(afterBytes?.equals(bytes), `${relative} 逐字节不变`).toBe(true);
+    }
+    const additions = [...after.keys()].filter((relative) => !before.has(relative));
+    expect(additions.filter((p) => p.startsWith(".pomaster/evidence/observations/"))).toEqual([
+      ".pomaster/evidence/observations/OBS-0001.json",
+    ]);
+    expect(additions.filter((p) => p.startsWith(".pomaster/evidence/blobs/"))).toHaveLength(2);
+    for (const relative of additions) {
+      expect(
+        relative.startsWith(".pomaster/evidence/blobs/") ||
+          relative.startsWith(".pomaster/evidence/observations/"),
+        `新增文件越出 sidecar 平面：${relative}`,
+      ).toBe(true);
+    }
+  });
+});
+
+// ============================================================
+// recon token-sources（B6 乙）—— token 源观察腿
+// ============================================================
+
+describe("recon token-sources fail-closed 全链（B6 乙）", () => {
+  it("未初始化 → NOT_INITIALIZED；执行身份词形非法/未登记（零落盘）", async () => {
+    const bare = mkdtempSync(join(tmpdir(), "pomaster-cli-recon-tokens-bare-"));
+    try {
+      const outcome = await runReconTokenSources(bare, { executionId: "AGX-2026-00001" });
+      expect(outcome.ok).toBe(false);
+      expect(outcome.errors[0]?.code).toBe("NOT_INITIALIZED");
+      expect(existsSync(join(bare, ".pomaster"))).toBe(false);
+    } finally {
+      rmSync(bare, { recursive: true, force: true });
+    }
+    const malformed = await runReconTokenSources(root, { executionId: "claude_9f3ab2c1" });
+    expect(malformed.errors[0]?.code).toBe("SCHEMA_INVALID");
+    const unregistered = await runReconTokenSources(root, { executionId: "AGX-2026-09999" });
+    expect(unregistered.errors[0]?.code).toBe("EXECUTION_NOT_FOUND");
+    expect(existsSync(observationsDir())).toBe(false);
+  });
+
+  it("零 token 源词形命中 → NOT_RUN 零落盘不伪造空跑绿（词形面外源注记；权威面状态随 result 携带）", async () => {
+    const { executionId } = await seedExecution();
+    const outcome = await runReconTokenSources(root, { executionId });
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors[0]?.code).toBe("RECON_TOKENS_NOT_RUN");
+    expect(outcome.result.observation).toBe("NOT_RUN");
+    expect(outcome.result.observation_id).toBeNull();
+    expect(outcome.result.inventory_blob).toBeNull();
+    expect(existsSync(observationsDir())).toBe(false);
+    const human = outcome.human.join("\n");
+    expect(human).toContain("NOT_RUN — token 源词形面全缺席");
+    expect(outcome.errors[0]?.hint).toContain("词形面外源");
+    expect(human).toContain("dtcg_json");
+    expect(human).toContain("零落盘：无 OBS 回执产出");
+  });
+
+  it("CSS 词形在座但括号扫描失败 → INCONCLUSIVE 负值兜底落账（分母完整性；禁按部分观察冒充全量）", async () => {
+    writeHostFile("styles/broken.css", "@theme {\n  --color-primary: #fff;\n"); // 括号不闭合
+    const { executionId } = await seedExecution();
+    const outcome = await runReconTokenSources(root, { executionId });
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors[0]?.code).toBe("RECON_TOKENS_INCONCLUSIVE");
+    expect(outcome.errors[0]?.message).toContain("styles/broken.css");
+    expect(outcome.result.observation).toBe("INCONCLUSIVE");
+    expect(outcome.result.observation_id).toBe("OBS-0001");
+    const receipt = readReceipt("OBS-0001");
+    expect(validateReceipt(receipt)).toBe(true);
+    expect(receipt.result).toBe("INCONCLUSIVE");
+    expect(receipt.normalized_facts).toContain("css_scan_failed: true");
+    expect(listBlobFiles()).toEqual([]); // 残缺产出不是证据：blob 平面零新增
+  });
+});
+
+describe("recon token-sources OBSERVED 主通路（B6 乙）", () => {
+  /** 词形 fixture 手工算例：2 JSON 源（3 token 叶子）/ 1 CSS 源（@theme 3 / :root 2）/ 1 词形外 JSON / 1 不可解析 JSON。 */
+  function seedTokenSources(): void {
+    writeHostFile(
+      "tokens/colors.json",
+      `${JSON.stringify({
+        color: {
+          primary: { $value: "#1677ff", $type: "color" },
+          secondary: { $value: "#000000", $type: "color" },
+        },
+      })}\n`,
+    );
+    // 复合 token：一个 $value 载荷对象计一（载荷内不递归）。
+    writeHostFile(
+      "tokens/typography.json",
+      `${JSON.stringify({ typography: { body: { $value: { fontSize: 14, lineHeight: 1.5 }, $type: "typography" } } })}\n`,
+    );
+    writeHostFile("package.json", `${JSON.stringify({ name: "host", scripts: { build: "vite build" } })}\n`);
+    writeHostFile("broken.json", "{not json");
+    writeHostFile(
+      "styles/theme.css",
+      [
+        "/* --commented-out: 1px; 应被剥注释 */",
+        "@theme {",
+        "  --color-primary: #fff;",
+        "  --color-secondary: #000;",
+        "  --font-main: sans;",
+        "  @media (min-width: 10px) { --nested-must-not-count: 1px; }",
+        "}",
+        ":root {",
+        "  --root-a: 1;",
+        "  --root-b: 2;",
+        "}",
+        "",
+      ].join("\n"),
+    );
+  }
+
+  it("词形闭包 fixture：JSON token 叶子计数 + CSS @theme/:root 分列（嵌套块与注释剔除）+ 词形外/不可解析披露", async () => {
+    seedTokenSources();
+    // 权威面合法最小形态（meta 必填两位）——readDesignTokens 复用呈现 ok 态。
+    writeHostFile(".pomaster/baseline/frontend/design-tokens.yaml", "meta:\n  origin: preset\n  customized: false\n");
+    const { executionId } = await seedExecution();
+    const outcome = await runReconTokenSources(root, { executionId });
+    expect(outcome.ok).toBe(true);
+    expect(outcome.result.observation).toBe("OBSERVED");
+    expect(outcome.result.observation_id).toBe("OBS-0001");
+    // JSON 词形源逐文件对账（词形外 package.json 不入分母；典序）。
+    expect(outcome.result.json_sources).toEqual([
+      { path: "tokens/colors.json", tokens: 2 },
+      { path: "tokens/typography.json", tokens: 1 },
+    ]);
+    expect(outcome.result.json_files).toBe(2);
+    expect(outcome.result.tokens).toBe(3);
+    // CSS 词形源：@theme 顶层 3 条（嵌套 @media 内不计）；:root 2 条。
+    expect(outcome.result.css_sources).toEqual([{ path: "styles/theme.css", theme_vars: 3, root_vars: 2 }]);
+    expect(outcome.result.css_files).toBe(1);
+    expect(outcome.result.authority_status).toBe("ok");
+    expect(outcome.result.authority_origin).toBe("preset");
+    expect(outcome.result.captured_at_seq).toBe(truthIndexSeq());
+    // —— inventory blob：清单全量 + 分母披露 + 权威面注记 ——
+    const blobRef = outcome.result.inventory_blob;
+    expect(blobRef).not.toBeNull();
+    const bytes = readFileSync(join(root, ".pomaster", "evidence", ...(blobRef?.storage_path ?? "").split("/")));
+    expect(sha256OfBytes(bytes)).toBe(blobRef?.sha256);
+    const inventory = JSON.parse(bytes.toString("utf8")) as {
+      recon_surface: string;
+      totals: { json_files: number; tokens: number; theme_vars: number; root_vars: number };
+      word_form_denominator_notes: { unparsable_json: number; unreadable_files: number };
+      authority: { status: string; origin: string | null };
+    };
+    expect(inventory.recon_surface).toBe("token-sources");
+    expect(inventory.totals).toEqual({ json_files: 2, tokens: 3, css_files: 1, theme_vars: 3, root_vars: 2 });
+    expect(inventory.word_form_denominator_notes.unparsable_json).toBe(1);
+    expect(inventory.word_form_denominator_notes.unreadable_files).toBe(0);
+    expect(inventory.authority.status).toBe("ok");
+    expect(inventory.authority.origin).toBe("preset");
+    // —— OBS 回执 17 schema 形态合法 + 逐键 ——
+    const receipt = readReceipt("OBS-0001");
+    expect(validateReceipt(receipt)).toBe(true);
+    expect(receipt.result).toBe("OBSERVED");
+    expect(receipt.sensor_capability).toBe("SENSOR.BUILD.STATIC");
+    expect(receipt.operation).toBe("scan_token_sources");
+    expect(receipt.adapter).toBe("pomaster-cli");
+    const facts = receipt.normalized_facts as string[];
+    expect(facts).toContain("recon_surface: token-sources");
+    expect(facts).toContain("json_sources: 2");
+    expect(facts).toContain("tokens: 3");
+    expect(facts).toContain("theme_vars: 3");
+    expect(facts).toContain("root_vars: 2");
+    expect(facts).toContain("authority_status: ok");
+    expect(facts).toContain("authority_origin: preset");
+    // —— 呈现面：逐源计数 + 权威面注记 + 边界注记（零值摘录） ——
+    const human = outcome.human.join("\n");
+    expect(human).toContain("- tokens/colors.json: 2 tokens");
+    expect(human).toContain("- styles/theme.css: @theme 3 / :root 2");
+    expect(human).toContain("origin=preset");
+    expect(human).toContain("零值摘录");
+    expect(human).toContain("Owner 手编");
+    expect(human).toContain("Tailwind v3 config JS 执行面 C 级不做");
+  });
+
+  it("scanCssTokenVariables 词法矩阵（@theme inline 变体 / 注释剔除 / 无块词形跳过 / 括号不平衡 → null）", () => {
+    expect(
+      scanCssTokenVariables("@theme inline {\n  --a: 1;\n  --b: 2;\n}\n:root {\n  --c: 3;\n}\n"),
+    ).toEqual({ theme_vars: 2, root_vars: 1 });
+    expect(scanCssTokenVariables("/* :root { --no: 1; } */\n@theme { --yes: 1; }")).toEqual({
+      theme_vars: 1,
+      root_vars: 0,
+    }); // 注释内词形剔除
+    expect(scanCssTokenVariables("@theme; body { color: red; }")).toEqual({
+      theme_vars: 0,
+      root_vars: 0,
+    }); // 无块词形跳过（块归属判定）
+    expect(scanCssTokenVariables("@theme { --broken: 1;")).toBeNull(); // 括号不平衡 → 扫描失败
+    expect(scanCssTokenVariables(":root, html { --sel: 1; }")).toEqual({
+      theme_vars: 0,
+      root_vars: 1,
+    }); // 选择器列表形态
+  });
+
+  it("权威面缺席/损坏 → authority_status 诚实呈现（absent/invalid 不阻塞观察面 OBSERVED；origin null）", async () => {
+    writeHostFile("tokens/a.json", `${JSON.stringify({ x: { $value: 1 } })}\n`);
+    const { executionId } = await seedExecution();
+    const absent = await runReconTokenSources(root, { executionId });
+    expect(absent.ok).toBe(true);
+    expect(absent.result.authority_status).toBe("absent");
+    expect(absent.result.authority_origin).toBeNull();
+    writeHostFile(".pomaster/baseline/frontend/design-tokens.yaml", "meta:\n  origin: bogus\n");
+    const invalid = await runReconTokenSources(root, { executionId });
+    expect(invalid.result.authority_status).toBe("invalid");
+    expect(invalid.result.authority_origin).toBeNull();
+    // 两次跑 = append-only 两张回执（OBS-0001/OBS-0002）。
+    expect(invalid.result.observation_id).toBe("OBS-0002");
+  });
+});
+
+describe("recon token-sources 字节快照钉（零直写权威复用）", () => {
+  it("token 源观察运行前后权威四文件逐字节不变（origin 闭包零触碰）；新增 ⊆ evidence/{blobs,observations}/", async () => {
+    seedAuthorityFiles();
+    // 覆写为合法最小权威面（meta 必填两位）——分母其余四文件仍由 seedAuthorityFiles 铺底。
+    const authorityBytes = "meta:\n  origin: preset\n  customized: false\n";
+    writeHostFile(".pomaster/baseline/frontend/design-tokens.yaml", authorityBytes);
+    writeHostFile("tokens/a.json", `${JSON.stringify({ x: { $value: 1 } })}\n`);
+    writeHostFile("styles/t.css", ":root { --a: 1; }\n");
+    const { executionId } = await seedExecution();
+    const before = snapshotPomaster();
+    for (const authority of [
+      ".pomaster/baseline/frontend/stack.yaml",
+      ".pomaster/baseline/backend/stack.yaml",
+      ".pomaster/baseline/manifest.yaml",
+      ".pomaster/baseline/frontend/design-tokens.yaml",
+      ".pomaster/sources/index.yaml",
+    ]) {
+      expect(before.has(authority), `分母自检：${authority} 必须在字节快照内`).toBe(true);
+    }
+    const outcome = await runReconTokenSources(root, { executionId });
+    expect(outcome.ok).toBe(true);
+    const after = snapshotPomaster();
+    for (const [relative, bytes] of before) {
+      const afterBytes = after.get(relative);
+      expect(afterBytes, `${relative} 不得被删除`).toBeDefined();
+      expect(afterBytes?.equals(bytes), `${relative} 逐字节不变`).toBe(true);
+    }
+    const additions = [...after.keys()].filter((relative) => !before.has(relative));
+    expect(additions.filter((p) => p.startsWith(".pomaster/evidence/observations/"))).toEqual([
+      ".pomaster/evidence/observations/OBS-0001.json",
+    ]);
+    expect(additions.filter((p) => p.startsWith(".pomaster/evidence/blobs/"))).toHaveLength(1);
+    for (const relative of additions) {
+      expect(
+        relative.startsWith(".pomaster/evidence/blobs/") ||
+          relative.startsWith(".pomaster/evidence/observations/"),
+        `新增文件越出 sidecar 平面：${relative}`,
+      ).toBe(true);
+    }
+  });
+});
+
+// ============================================================
+// recon scripts（B9 乙）—— scripts 词面枚举腿
+// ============================================================
+
+describe("recon scripts fail-closed 全链（B9 乙）", () => {
+  it("未初始化 → NOT_INITIALIZED；执行身份词形非法/未登记（ENVREC 锚词形；零落盘）", async () => {
+    const bare = mkdtempSync(join(tmpdir(), "pomaster-cli-recon-scripts-bare-"));
+    try {
+      const outcome = await runReconScripts(bare, { executionId: "AGX-2026-00001" });
+      expect(outcome.ok).toBe(false);
+      expect(outcome.errors[0]?.code).toBe("NOT_INITIALIZED");
+      expect(existsSync(join(bare, ".pomaster"))).toBe(false);
+    } finally {
+      rmSync(bare, { recursive: true, force: true });
+    }
+    const malformed = await runReconScripts(root, { executionId: "claude_9f3ab2c1" });
+    expect(malformed.errors[0]?.code).toBe("SCHEMA_INVALID");
+    const unregistered = await runReconScripts(root, { executionId: "AGX-2026-09999" });
+    expect(unregistered.errors[0]?.code).toBe("EXECUTION_NOT_FOUND");
+    expect(existsSync(observationsDir())).toBe(false);
+  });
+
+  it("package.json 缺席 / scripts 节缺席 / scripts 空映射 → NOT_RUN 零落盘（observePackageStack 三语义同款）", async () => {
+    const { executionId } = await seedExecution();
+    const absent = await runReconScripts(root, { executionId });
+    expect(absent.ok).toBe(false);
+    expect(absent.errors[0]?.code).toBe("RECON_SCRIPTS_NOT_RUN");
+    expect(absent.errors[0]?.message).toContain("缺席");
+    expect(absent.result.observation).toBe("NOT_RUN");
+    writeHostFile("package.json", `${JSON.stringify({ name: "host" })}\n`);
+    const noScripts = await runReconScripts(root, { executionId });
+    expect(noScripts.errors[0]?.code).toBe("RECON_SCRIPTS_NOT_RUN");
+    writeHostFile("package.json", `${JSON.stringify({ name: "host", scripts: {} })}\n`);
+    const emptyScripts = await runReconScripts(root, { executionId });
+    expect(emptyScripts.errors[0]?.code).toBe("RECON_SCRIPTS_NOT_RUN");
+    // NOT_RUN 无跑语义：零回执产出。
+    expect(existsSync(observationsDir())).toBe(false);
+  });
+
+  it("scripts 节词形漂移（条目值非字符串）→ INCONCLUSIVE 负值兜底落账（OBS 回执承载——九键无事实位）", async () => {
+    writeHostFile("package.json", `${JSON.stringify({ name: "host", scripts: { build: "vite build", bad: 123 } })}\n`);
+    const { executionId } = await seedExecution();
+    const outcome = await runReconScripts(root, { executionId });
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors[0]?.code).toBe("RECON_SCRIPTS_INCONCLUSIVE");
+    expect(outcome.result.observation).toBe("INCONCLUSIVE");
+    expect(outcome.result.receipt_id).toBe("OBS-0001");
+    const receipt = readReceipt("OBS-0001");
+    expect(validateReceipt(receipt)).toBe(true);
+    expect(receipt.record_type).toBe("observation_receipt");
+    expect(receipt.result).toBe("INCONCLUSIVE");
+    expect(receipt.normalized_facts).toContain("scripts_wordform_invalid: true");
+  });
+});
+
+describe("recon scripts OBSERVED 主通路（B9 乙）", () => {
+  function seedScriptsHost(): void {
+    writeHostFile(
+      "package.json",
+      `${JSON.stringify({
+        name: "host",
+        version: "1.0.0",
+        scripts: { build: "vite build", test: "vitest run", dev: "vite" },
+        dependencies: { vue: "^3.4.0" },
+      })}\n`,
+    );
+  }
+
+  it("词面枚举 fixture：name 典序 + 命令词面原样 + ENVREC 回执九键冻结面逐键", async () => {
+    seedScriptsHost();
+    const { executionId } = await seedExecution();
+    const outcome = await runReconScripts(root, { executionId });
+    expect(outcome.ok).toBe(true);
+    expect(outcome.result.observation).toBe("OBSERVED");
+    expect(outcome.result.receipt_id).toBe("ENVREC-0001");
+    expect(outcome.result.receipt_path).toBe(".pomaster/evidence/observations/ENVREC-0001.json");
+    // 确定性归一：name 典序（fixture 故意乱序注入）。
+    expect(outcome.result.scripts).toEqual([
+      { name: "build", command: "vite build" },
+      { name: "dev", command: "vite" },
+      { name: "test", command: "vitest run" },
+    ]);
+    expect(outcome.result.script_count).toBe(3);
+    expect(outcome.result.captured_at_seq).toBe(truthIndexSeq());
+    // ENVREC 九键冻结面（ajv 组合装载）逐键。
+    const receipt = readEnvReceipt("ENVREC-0001");
+    expect(validateReceipt(receipt)).toBe(true);
+    expect(receipt.record_type).toBe("environment_receipt");
+    expect(receipt.doctor_verdict).toBe("WRONG_OR_UNVERIFIED_INSTANCE");
+    expect(receipt.execution_id).toBe(executionId);
+    expect(receipt.repository_ref).toBe(root.split("\\").join("/"));
+    expect(receipt.environment_ref).toBeNull();
+    expect(receipt.runtime_instance).toBeNull();
+    // 呈现面即清单面：词面全量零截断 + 零执行注记。
+    const human = outcome.human.join("\n");
+    expect(human).toContain("3 条 scripts");
+    expect(human).toContain("- build: vite build");
+    expect(human).toContain("- test: vitest run");
+    expect(human).toContain("只枚举不执行零猜测");
+    expect(human).toContain("盘点不碰 stack 分母");
+    expect(JSON.stringify(outcome.result)).not.toMatch(/persistence|database/i);
+  });
+
+  it("parsePackageScripts 词形判卷矩阵（缺席 []/漂移 null/正常典序）", () => {
+    expect(parsePackageScripts({ name: "x" })).toEqual([]);
+    expect(parsePackageScripts({ scripts: {} })).toEqual([]);
+    expect(parsePackageScripts({ scripts: null })).toBeNull();
+    expect(parsePackageScripts({ scripts: 5 })).toBeNull();
+    expect(parsePackageScripts({ scripts: ["a"] })).toBeNull();
+    expect(parsePackageScripts({ scripts: { b: "cmd-b", a: 1 } })).toBeNull();
+    expect(parsePackageScripts({ scripts: { b: "cmd-b", a: "cmd-a" } })).toEqual([
+      { name: "a", command: "cmd-a" },
+      { name: "b", command: "cmd-b" },
+    ]);
+    expect(parsePackageScripts(null)).toBeNull();
+    expect(parsePackageScripts("nope")).toBeNull();
+  });
+
+  it("append-only：同快照重跑产 ENVREC-0002；ENVREC 与 OBS 序列独立（scripts ENVREC 在场不挤占 OBS 序号）", async () => {
+    seedScriptsHost();
+    const { executionId } = await seedExecution();
+    const first = await runReconScripts(root, { executionId });
+    expect(first.result.receipt_id).toBe("ENVREC-0001");
+    const firstBytes = readFileSync(join(observationsDir(), "ENVREC-0001.json"));
+    const second = await runReconScripts(root, { executionId });
+    expect(second.result.receipt_id).toBe("ENVREC-0002");
+    expect(readFileSync(join(observationsDir(), "ENVREC-0001.json")).equals(firstBytes)).toBe(true);
+    // OBS 序列独立：token-sources 腿首跑仍 OBS-0001（各扫各的前缀）。
+    writeHostFile("tokens/a.json", `${JSON.stringify({ x: { $value: 1 } })}\n`);
+    const tokens = await runReconTokenSources(root, { executionId });
+    expect(tokens.ok).toBe(true);
+    expect(tokens.result.observation_id).toBe("OBS-0001");
+  });
+});
+
+describe("recon scripts 字节快照钉（零直写权威复用）", () => {
+  it("scripts 枚举运行前后权威四文件逐字节不变；新增 ⊆ evidence/observations/ 单分区（零 blob——清单住呈现面）", async () => {
+    seedAuthorityFiles();
+    writeHostFile("package.json", `${JSON.stringify({ scripts: { build: "vite build" } })}\n`);
+    const { executionId } = await seedExecution();
+    const before = snapshotPomaster();
+    const outcome = await runReconScripts(root, { executionId });
+    expect(outcome.ok).toBe(true);
+    const after = snapshotPomaster();
+    for (const [relative, bytes] of before) {
+      const afterBytes = after.get(relative);
+      expect(afterBytes, `${relative} 不得被删除`).toBeDefined();
+      expect(afterBytes?.equals(bytes), `${relative} 逐字节不变`).toBe(true);
+    }
+    const additions = [...after.keys()].filter((relative) => !before.has(relative));
+    expect(additions).toEqual([".pomaster/evidence/observations/ENVREC-0001.json"]);
+  });
+});
+
+// ============================================================
+// recon openapi（B3 乙）—— OpenAPI 运行时抓取腿（注入 fetchFn 零网络）
+// ============================================================
+
+/** OpenAPI 文档 fixture（2 paths / 3 operations——方法闭包词形计数）。 */
+const OPENAPI_DOC_BYTES = Buffer.from(
+  `${JSON.stringify({
+    openapi: "3.1.0",
+    info: { title: "Host API", version: "1.0.0" },
+    paths: {
+      "/items": { get: { responses: {} }, post: { responses: {} } },
+      "/health": { get: { responses: {} } },
+    },
+  })}\n`,
+  "utf8",
+);
+
+/** fetch 注入构造（responded/status/body/error 显式摆盘——确定性零网络）。 */
+function fakeFetch(outcome: {
+  responded?: boolean;
+  status?: number | null;
+  body?: Buffer | null;
+  error?: string | null;
+}): ReconOpenApiFetchFn {
+  const calls: Array<{ url: string; timeoutMs: number }> = [];
+  const fn = async (url: string, timeoutMs: number) => {
+    calls.push({ url, timeoutMs });
+    return {
+      responded: outcome.responded ?? true,
+      status: outcome.status ?? 200,
+      body: outcome.body ?? OPENAPI_DOC_BYTES,
+      error: outcome.error ?? null,
+    };
+  };
+  return Object.assign(fn, { calls }) as ReconOpenApiFetchFn;
+}
+
+function fetchCalls(fn: ReconOpenApiFetchFn): Array<{ url: string; timeoutMs: number }> {
+  return (fn as ReconOpenApiFetchFn & { calls: Array<{ url: string; timeoutMs: number }> }).calls;
+}
+
+describe("recon openapi fail-closed 全链（B3 乙）", () => {
+  it("未初始化 → NOT_INITIALIZED；执行身份词形非法/未登记；url 词形三连（缺席/非 URL/协议非法）→ SCHEMA_INVALID（先于守卫零落盘）", async () => {
+    const bare = mkdtempSync(join(tmpdir(), "pomaster-cli-recon-openapi-bare-"));
+    try {
+      const outcome = await runReconOpenApi(bare, {
+        executionId: "AGX-2026-00001",
+        url: "http://localhost:8000/openapi.json",
+      });
+      expect(outcome.ok).toBe(false);
+      expect(outcome.errors[0]?.code).toBe("NOT_INITIALIZED");
+      expect(existsSync(join(bare, ".pomaster"))).toBe(false);
+    } finally {
+      rmSync(bare, { recursive: true, force: true });
+    }
+    const malformed = await runReconOpenApi(root, {
+      executionId: "claude_9f3ab2c1",
+      url: "http://localhost:8000/openapi.json",
+    });
+    expect(malformed.errors[0]?.code).toBe("SCHEMA_INVALID");
+    const unregistered = await runReconOpenApi(root, {
+      executionId: "AGX-2026-09999",
+      url: "http://localhost:8000/openapi.json",
+    });
+    expect(unregistered.errors[0]?.code).toBe("EXECUTION_NOT_FOUND");
+    const urlAbsent = await runReconOpenApi(root, {
+      executionId: "AGX-2026-09999",
+      url: undefined as unknown as string,
+    });
+    expect(urlAbsent.errors[0]?.code).toBe("SCHEMA_INVALID");
+    const urlNotUrl = await runReconOpenApi(root, {
+      executionId: "AGX-2026-09999",
+      url: "not a url at all",
+    });
+    expect(urlNotUrl.errors[0]?.code).toBe("SCHEMA_INVALID");
+    const urlBadScheme = await runReconOpenApi(root, {
+      executionId: "AGX-2026-09999",
+      url: "ftp://localhost/openapi.json",
+    });
+    expect(urlBadScheme.errors[0]?.code).toBe("SCHEMA_INVALID");
+    expect(existsSync(observationsDir())).toBe(false);
+  });
+
+  it("框架依赖词形全缺席 → RECON_OPENAPI_NOT_INSTALLED（探活未触达——复合闸短路口径；零网络零落盘）", async () => {
+    const { executionId } = await seedExecution();
+    const fetch = fakeFetch({ status: 200 });
+    const outcome = await runReconOpenApi(root, {
+      executionId,
+      url: "http://localhost:8000/openapi.json",
+      inject: { fetchFn: fetch },
+    });
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors[0]?.code).toBe("RECON_OPENAPI_NOT_INSTALLED");
+    expect(outcome.errors[0]?.message).toContain("框架依赖词形全缺席");
+    expect(fetchCalls(fetch)).toEqual([]); // detect ① 未过 → 探活不触达
+    expect(existsSync(observationsDir())).toBe(false);
+  });
+
+  it("探活失败三形态（网络层失败 / HTTP 404）→ RECON_OPENAPI_NOT_INSTALLED 不降级臆测；HTTP 500 → RECON_OPENAPI_NOT_RUN 零落盘", async () => {
+    writeHostFile("requirements.txt", "fastapi==0.115.0\nuvicorn==0.30.0\n");
+    const { executionId } = await seedExecution();
+    const offline = await runReconOpenApi(root, {
+      executionId,
+      url: "http://localhost:8000/openapi.json",
+      inject: { fetchFn: fakeFetch({ responded: false, status: null, body: null, error: "fetch failed" }) },
+    });
+    expect(offline.ok).toBe(false);
+    expect(offline.errors[0]?.code).toBe("RECON_OPENAPI_NOT_INSTALLED");
+    expect(offline.errors[0]?.message).toContain("探活失败");
+    expect(offline.result.framework).toBe("fastapi");
+    const notFound = await runReconOpenApi(root, {
+      executionId,
+      url: "http://localhost:8000/wrong",
+      inject: { fetchFn: fakeFetch({ status: 404, body: null }) },
+    });
+    expect(notFound.ok).toBe(false);
+    expect(notFound.errors[0]?.code).toBe("RECON_OPENAPI_NOT_INSTALLED");
+    expect(notFound.errors[0]?.message).toContain("HTTP 404");
+    const serverError = await runReconOpenApi(root, {
+      executionId,
+      url: "http://localhost:8000/openapi.json",
+      inject: { fetchFn: fakeFetch({ status: 500, body: null }) },
+    });
+    expect(serverError.ok).toBe(false);
+    expect(serverError.errors[0]?.code).toBe("RECON_OPENAPI_NOT_RUN");
+    expect(existsSync(observationsDir())).toBe(false);
+  });
+
+  it("200 但响应垃圾 / swagger 2.0 词形漂移 → INCONCLUSIVE 负值兜底落账（禁默认值；无 blob 新增）", async () => {
+    writeHostFile("requirements.txt", "fastapi==0.115.0\n");
+    const { executionId } = await seedExecution();
+    const blobsBefore = listBlobFiles();
+    const garbage = await runReconOpenApi(root, {
+      executionId,
+      url: "http://localhost:8000/openapi.json",
+      inject: { fetchFn: fakeFetch({ body: Buffer.from("<html>not json</html>") }) },
+    });
+    expect(garbage.ok).toBe(false);
+    expect(garbage.errors[0]?.code).toBe("RECON_OPENAPI_INCONCLUSIVE");
+    expect(garbage.result.observation).toBe("INCONCLUSIVE");
+    expect(garbage.result.observation_id).toBe("OBS-0001");
+    expect(garbage.result.openapi_version).toBeNull();
+    expect(garbage.result.doc_blob).toBeNull();
+    expect(readReceipt("OBS-0001").normalized_facts).toContain("body_parse_failed: true");
+    const swagger2 = await runReconOpenApi(root, {
+      executionId,
+      url: "http://localhost:8000/openapi.json",
+      inject: {
+        fetchFn: fakeFetch({
+          body: Buffer.from(`${JSON.stringify({ swagger: "2.0", info: {}, paths: {} })}`),
+        }),
+      },
+    });
+    expect(swagger2.ok).toBe(false);
+    expect(swagger2.errors[0]?.code).toBe("RECON_OPENAPI_INCONCLUSIVE");
+    expect(swagger2.result.observation_id).toBe("OBS-0002");
+    // 残缺产出不是证据：blob 平面零新增。
+    expect(listBlobFiles()).toEqual(blobsBefore);
+  });
+});
+
+describe("recon openapi OBSERVED 主通路（B3 乙）", () => {
+  it("fastapi 词形 + 200 OAS3 → OBSERVED：计数对账 + blob 原样字节 + 17 回执逐键（sensor=CONTRACT.CONFORMANCE / adapter=fastapi）+ 超时上界透传", async () => {
+    writeHostFile("requirements.txt", "fastapi==0.115.0\n");
+    const { executionId } = await seedExecution();
+    const fetch = fakeFetch({ status: 200, body: OPENAPI_DOC_BYTES });
+    const outcome = await runReconOpenApi(root, {
+      executionId,
+      url: "http://localhost:8000/openapi.json",
+      inject: { fetchFn: fetch },
+    });
+    expect(outcome.ok).toBe(true);
+    expect(outcome.result.observation).toBe("OBSERVED");
+    expect(outcome.result.observation_id).toBe("OBS-0001");
+    expect(outcome.result.framework).toBe("fastapi");
+    expect(outcome.result.url).toBe("http://localhost:8000/openapi.json");
+    expect(outcome.result.http_status).toBe(200);
+    expect(outcome.result.openapi_version).toBe("3.1.0");
+    expect(outcome.result.paths).toBe(2);
+    expect(outcome.result.operations).toBe(3);
+    expect(outcome.result.captured_at_seq).toBe(truthIndexSeq());
+    // fetch 注入面入参：显式 url + 超时上界常量。
+    expect(fetchCalls(fetch)).toEqual([
+      { url: "http://localhost:8000/openapi.json", timeoutMs: RECON_OPENAPI_TIMEOUT_MS },
+    ]);
+    // blob：响应原样字节（消费方重算 sha256 对账）。
+    const blobRef = outcome.result.doc_blob;
+    expect(blobRef).not.toBeNull();
+    const bytes = readFileSync(join(root, ".pomaster", "evidence", ...(blobRef?.storage_path ?? "").split("/")));
+    expect(sha256OfBytes(bytes)).toBe(blobRef?.sha256);
+    expect(bytes.equals(OPENAPI_DOC_BYTES)).toBe(true);
+    // OBS 回执 17 schema 形态合法 + 逐键。
+    const receipt = readReceipt("OBS-0001");
+    expect(validateReceipt(receipt)).toBe(true);
+    expect(receipt.result).toBe("OBSERVED");
+    expect(receipt.surface).toBe("STRUCTURAL_REALITY");
+    expect(receipt.sensor_capability).toBe("SENSOR.CONTRACT.CONFORMANCE");
+    expect(receipt.operation).toBe("fetch_openapi");
+    expect(receipt.adapter).toBe("fastapi");
+    const facts = receipt.normalized_facts as string[];
+    expect(facts).toContain("recon_surface: openapi");
+    expect(facts).toContain("http_status: 200");
+    expect(facts).toContain("openapi_version: 3.1.0");
+    expect(facts).toContain("paths: 2");
+    expect(facts).toContain("operations: 3");
+    expect(facts).toContain("static_extraction_not_attempted: true");
+    // 呈现面：计数 + 静态 UNKNOWN 边界注记。
+    const human = outcome.human.join("\n");
+    expect(human).toContain("OpenAPI 3.1.0（paths 2 / operations 3");
+    expect(human).toContain("静态抽取保持 UNKNOWN");
+  });
+
+  it("框架词形矩阵：springdoc（pom.xml 词面）/ nestjs（package.json devDependencies @nestjs/swagger）→ adapter 词形分列", async () => {
+    const { executionId } = await seedExecution();
+    writeHostFile(
+      "pom.xml",
+      `<?xml version="1.0"?>\n<project><dependency><groupId>org.springdoc</groupId><artifactId>springdoc-openapi-starter-webmvc-ui</artifactId></dependency></project>\n`,
+    );
+    const springdoc = await runReconOpenApi(root, {
+      executionId,
+      url: "http://localhost:8080/v3/api-docs",
+      inject: { fetchFn: fakeFetch({ status: 200 }) },
+    });
+    expect(springdoc.ok).toBe(true);
+    expect(springdoc.result.framework).toBe("springdoc");
+    expect(springdoc.human.join("\n")).toContain("pom.xml 词面 springdoc-openapi");
+    // 移除 springdoc 词形（检出序 fastapi → springdoc → nestjs——pom 在场会先命中）。
+    writeHostFile("pom.xml", "<project>unrelated</project>");
+    writeHostFile(
+      "package.json",
+      `${JSON.stringify({ devDependencies: { "@nestjs/swagger": "^7.0.0", "@nestjs/common": "^10.0.0" } })}\n`,
+    );
+    const nestjs = await runReconOpenApi(root, {
+      executionId,
+      url: "http://localhost:3000/api-json",
+      inject: { fetchFn: fakeFetch({ status: 200 }) },
+    });
+    expect(nestjs.ok).toBe(true);
+    expect(nestjs.result.framework).toBe("nestjs");
+    expect(nestjs.human.join("\n")).toContain("package.json devDependencies @nestjs/swagger");
+    // 词形面外框架（仅 @nestjs/common 无 swagger）→ NOT_INSTALLED。
+    writeHostFile("package.json", `${JSON.stringify({ dependencies: { "@nestjs/common": "^10.0.0" } })}\n`);
+    const noSwagger = await runReconOpenApi(root, {
+      executionId,
+      url: "http://localhost:3000/api-json",
+      inject: { fetchFn: fakeFetch({ status: 200 }) },
+    });
+    expect(noSwagger.ok).toBe(false);
+    expect(noSwagger.errors[0]?.code).toBe("RECON_OPENAPI_NOT_INSTALLED");
+  });
+
+  it("parseOpenApiDocument 词形判卷矩阵 + detectOpenApiFrameworkWordForms 边界（fastapi 经 pyproject.toml）", () => {
+    expect(parseOpenApiDocument(Buffer.from("not json"))).toBeNull();
+    expect(parseOpenApiDocument(Buffer.from("[]"))).toBeNull();
+    expect(parseOpenApiDocument(Buffer.from(`{"openapi":"2.0"}`))).toBeNull(); // swagger 2.0 词形漂移
+    expect(parseOpenApiDocument(Buffer.from(`{"openapi":"3.0.3"}`))).toBeNull(); // info/paths 缺席
+    expect(
+      parseOpenApiDocument(Buffer.from(`{"openapi":"3.1.0","info":{},"paths":{"/a":{"get":{},"post":{}}}}`)),
+    ).toEqual({ openapi_version: "3.1.0", paths: 1, operations: 2 });
+    expect(
+      parseOpenApiDocument(Buffer.from(`{"openapi":"3.1.0","info":{},"paths":{"/a":{"parameters":[]}}}`)),
+    ).toEqual({ openapi_version: "3.1.0", paths: 1, operations: 0 }); // 非方法键不计
+    expect(
+      parseOpenApiDocument(Buffer.from(`{"openapi":"3.1.0","info":{},"paths":{"/a":5}}`)),
+    ).toBeNull(); // 路径条目坏形整体拒绝
+    writeHostFile("pyproject.toml", `[project]\ndependencies = ["fastapi>=0.110", "uvicorn"]\n`);
+    writeHostFile("pom.xml", "<project>unrelated</project>");
+    const hit = detectOpenApiFrameworkWordForms(root);
+    expect(hit?.framework).toBe("fastapi");
+    expect(hit?.evidence).toContain("pyproject.toml");
+  });
+});
+
+describe("recon openapi 字节快照钉（零直写权威复用）", () => {
+  it("OpenAPI 抓取运行前后权威四文件逐字节不变；新增 ⊆ evidence/{blobs,observations}/ 两平面", async () => {
+    seedAuthorityFiles();
+    writeHostFile("requirements.txt", "fastapi==0.115.0\n");
+    const { executionId } = await seedExecution();
+    const before = snapshotPomaster();
+    const outcome = await runReconOpenApi(root, {
+      executionId,
+      url: "http://localhost:8000/openapi.json",
+      inject: { fetchFn: fakeFetch({ status: 200 }) },
+    });
+    expect(outcome.ok).toBe(true);
+    const after = snapshotPomaster();
+    for (const [relative, bytes] of before) {
+      const afterBytes = after.get(relative);
+      expect(afterBytes, `${relative} 不得被删除`).toBeDefined();
+      expect(afterBytes?.equals(bytes), `${relative} 逐字节不变`).toBe(true);
+    }
+    const additions = [...after.keys()].filter((relative) => !before.has(relative));
+    expect(additions.filter((p) => p.startsWith(".pomaster/evidence/observations/"))).toEqual([
+      ".pomaster/evidence/observations/OBS-0001.json",
+    ]);
+    expect(additions.filter((p) => p.startsWith(".pomaster/evidence/blobs/"))).toHaveLength(1);
+    for (const relative of additions) {
+      expect(
+        relative.startsWith(".pomaster/evidence/blobs/") ||
+          relative.startsWith(".pomaster/evidence/observations/"),
+        `新增文件越出 sidecar 平面：${relative}`,
+      ).toBe(true);
+    }
+  });
+});
+
+// ============================================================
+// recon 第二批 runCli 程序面（§45 双输出 + 退出码 fail-closed 语义）
+// ============================================================
+
+describe("recon 第二批 runCli 程序面", () => {
+  it("--json 信封：recon scripts NOT_RUN → exit 1（fail-closed 退出码语义——零枚举不伪造绿）", async () => {
+    const { executionId } = await seedExecution();
+    const lines: string[] = [];
+    const code = await runCli(
+      ["--dir", root, "recon", "scripts", "--execution-id", executionId, "--json"],
+      {
+        stdout: (line) => lines.push(line),
+        stderr: (line) => lines.push(line),
+      },
+    );
+    expect(code).toBe(1);
+    const envelope = JSON.parse(lines.join("\n")) as CliEnvelope<Record<string, unknown>>;
+    expect(envelope.command).toBe("recon scripts");
+    expect(envelope.ok).toBe(false);
+    expect(envelope.errors[0]?.code).toBe("RECON_SCRIPTS_NOT_RUN");
+  });
+
+  it("--json 信封：recon token-sources NOT_RUN → exit 1；recon openapi 词形缺席 → exit 1（零网络——detect ① 先拦）", async () => {
+    const { executionId } = await seedExecution();
+    const tokenLines: string[] = [];
+    const tokenCode = await runCli(
+      ["--dir", root, "recon", "token-sources", "--execution-id", executionId, "--json"],
+      { stdout: (line) => tokenLines.push(line), stderr: (line) => tokenLines.push(line) },
+    );
+    expect(tokenCode).toBe(1);
+    const tokenEnvelope = JSON.parse(tokenLines.join("\n")) as CliEnvelope<Record<string, unknown>>;
+    expect(tokenEnvelope.errors[0]?.code).toBe("RECON_TOKENS_NOT_RUN");
+    const openapiLines: string[] = [];
+    const openapiCode = await runCli(
+      [
+        "--dir",
+        root,
+        "recon",
+        "openapi",
+        "--execution-id",
+        executionId,
+        "--url",
+        "http://localhost:1/openapi.json",
+        "--json",
+      ],
+      { stdout: (line) => openapiLines.push(line), stderr: (line) => openapiLines.push(line) },
+    );
+    expect(openapiCode).toBe(1);
+    const openapiEnvelope = JSON.parse(openapiLines.join("\n")) as CliEnvelope<Record<string, unknown>>;
+    expect(openapiEnvelope.command).toBe("recon openapi");
+    expect(openapiEnvelope.errors[0]?.code).toBe("RECON_OPENAPI_NOT_INSTALLED");
   });
 });

@@ -79,6 +79,16 @@
  * 每次 init 全量展示（Owner 明选，不做 NO_CHANGE 精简）；--json 信封同步
  * result.capability_overview 结构化字段（§45 双形态）。config.yaml 模板加
  * `capability_tips` 键（C4 status 轮换 tip 开关，默认开，读取判卷在 config.ts）。
+ *
+ * 模式分叉（F-M3 init v2，2026-09-12；init-mode.ts 单一实现——本文件只做编排接线）：
+ * init 启动步骤 0.5 零写入检测三态（greenfield / brownfield_candidate / initialized）
+ * ——干净目录 Greenfield 静默直入现状、.pomaster 在座重入口行为不变；worktree 非空
+ * 且无 .pomaster = Brownfield 候选，呈现检测摘要（源文件/migration 词形面/SBOM 工具
+ * 在位性）并经 TTY 问卷首题（平台选择后、技术栈问卷前）显式确认——禁静默分叉。
+ * 确认后步骤 4.95 自动串联 recon 三腿（kernel begin/endExecution 登记并封口执行身份
+ * role=script；腿产物只落 evidence sidecar 平面零直写权威；腿失败折算 warning 不
+ * 阻塞 init 主链），产物摘要与问卷观察候选 [Observed] 注记合并呈现（差距报告），
+ * Owner 就地裁剪后走既有 baseline confirm 确认链——零新治理语义。
  */
 
 import { readFile, stat, writeFile } from "node:fs/promises";
@@ -135,6 +145,13 @@ import {
 } from "./baseline.js";
 import type { BaselinePresetDraftReport } from "./baseline-preset.js";
 import { appendPresetDrafts, renderBaselinePresetHumanLine } from "./baseline-preset.js";
+import type { InitBrownfieldChoice, InitModeResult } from "./init-mode.js";
+import {
+  confirmBrownfieldPath,
+  detectInitMode,
+  renderModeHumanLines,
+  runBrownfieldRecon,
+} from "./init-mode.js";
 
 /** 失败信封的 presetDraft 占位（零生成——失败路径零草案写入）。 */
 const ZERO_PRESET_DRAFT: BaselinePresetDraftReport = {
@@ -250,6 +267,15 @@ export interface InitResult {
    */
   readonly observation: StackObservationReport;
   /**
+   * 模式分叉结果面（F-M3 init v2 R1/R2/R3；init-mode.ts ADR）：detection 三态
+   * （greenfield / brownfield_candidate / initialized）+ 检测摘要 + Brownfield 通路
+   * 结局（ran/declined/skipped_non_interactive）+ recon 三腿编排报告。null = 模式
+   * 检测未参与结果面（平台词形 SCHEMA_INVALID 等 fail-closed 先于检测的零 IO 路径 /
+   * 交互中断）——诚实缺席非静默。零新治理语义：分叉只是编排差异，确认链/候选/
+   * sidecar 全部复用既有机制。
+   */
+  readonly mode: InitModeResult | null;
+  /**
    * 能力速览（09-06 能力显性化 C1；Owner 裁定面位之一）：--json result.（锚：corpus/master/cutover/owner-adjudications.md#裁决16）
    * capability_overview 结构化数组——与完成横幅人读段同一内容源（heavy-entry.ts
    * CAPABILITY_OVERVIEW 单表，禁第二套能力清单）；命令词形与 CLI 注册表钉版
@@ -286,6 +312,15 @@ export interface InitOptions {
    * 仅注入面，不加 CLI 旗标（命令面零扩张——后补走 `pomaster baseline set`）。
    */
   readonly stackQuestionnaire?: StackQuestionnaireOutcome | undefined;
+  /**
+   * Brownfield 通路注入（F-M3 init v2 R1/R2；init-mode.ts ADR-2 显式确认制）：
+   * undefined = 未参与模式分叉（非交互通道/程序化直调——候选态显式
+   * skipped_non_interactive，零 recon 零编排）；confirmed=true = Owner 显式确认
+   * （TTY 交互问卷首题产出——自动 recon 三腿编排）；confirmed=false = Owner 显式
+   * 拒绝（Greenfield 现状路径，零 recon）。禁静默分叉：候选态的编排只有本注入
+   * 一条触发通路（不加 CLI 旗标——命令面零扩张）。
+   */
+  readonly brownfield?: InitBrownfieldChoice | undefined;
 }
 
 /**
@@ -504,14 +539,28 @@ export interface InitInteractiveIo {
 
 /**
  * TTY 交互 init（降级路径）：复选清单 raw 模式启用失败（非终端句柄等）时的
- * 编号输入形态——打印平台清单 → 读一行 stdin → 解析选择 → R-M 技术栈问卷（同
- * 编号形态）→ 交由 runInit 执行。空行 = 缺省 claude；词形非法 = SCHEMA_INVALID
- * fail-closed（零写入）；问卷中止（EOF）= INIT_INTERRUPTED 零写入。
+ * 编号输入形态——打印平台清单 → 读一行 stdin → 解析选择 → F-M3 模式问句
+ * （Brownfield 候选态显式确认；greenfield/initialized 静默跳过）→ R-M 技术栈
+ * 问卷（同编号形态）→ 交由 runInit 执行。空行 = 缺省 claude；词形非法 = SCHEMA_INVALID
+ * fail-closed（零写入）；模式问句/问卷中止（EOF）= INIT_INTERRUPTED 零写入。
  */
 export async function runInitInteractive(
   rootDir: string,
   interactive: InitInteractiveIo,
 ): Promise<CommandOutcome<InitResult>> {
+  // 失败信封占位（零写入路径——mode=null = 检测未参与结果面，诚实缺席）。
+  const failResult = (): InitResult => ({
+    change: "NO_CHANGE",
+    tool: INIT_TOOL_ID,
+    files: [],
+    platforms: [],
+    specPreplant: null,
+    baseline: { asked: 0, answered: 0, skipped: "non_interactive" },
+    presetDraft: ZERO_PRESET_DRAFT,
+    observation: ZERO_OBSERVATION,
+    mode: null,
+    capability_overview: CAPABILITY_OVERVIEW,
+  });
   for (const line of renderPlatformMenu()) interactive.write(line);
   const line = await interactive.readLine();
   const raw = (line ?? "").trim();
@@ -519,19 +568,29 @@ export async function runInitInteractive(
   if (!parse.ok) {
     return failOutcome(
       "init",
-      {
-        change: "NO_CHANGE",
-        tool: INIT_TOOL_ID,
-        files: [],
-        platforms: [],
-        specPreplant: null,
-        baseline: { asked: 0, answered: 0, skipped: "non_interactive" },
-        presetDraft: ZERO_PRESET_DRAFT,
-        observation: ZERO_OBSERVATION,
-        capability_overview: CAPABILITY_OVERVIEW,
-      },
+      failResult(),
       [parse.error],
       ["init: FAILED — SCHEMA_INVALID", `  ${parse.error.message}`, `  hint: ${parse.error.hint}`],
+    );
+  }
+  // F-M3 R1 模式问句（问卷首题）：Brownfield 候选态呈现检测结果并显式确认；
+  // 中止（EOF）= INIT_INTERRUPTED 零写入（fail-closed 不猜缺省）。
+  const brownfieldChoice = await confirmBrownfieldPath(rootDir, {
+    write: interactive.write,
+    readLine: interactive.readLine,
+  });
+  if (brownfieldChoice === null) {
+    return failOutcome(
+      "init",
+      failResult(),
+      [
+        {
+          code: "INIT_INTERRUPTED",
+          message: "init 模式问句中断（EOF）；零写入",
+          hint: "重新运行 pomaster init 继续模式问句与技术栈问卷（已答键幂等不重复问）。",
+        },
+      ],
+      ["init: FAILED — INIT_INTERRUPTED", "  init 模式问句中断（EOF）；零写入。"],
     );
   }
   // R-M：编号降级路径同样接技术栈问卷（与 raw 复选路径同构；EOF = 中止零写入）。
@@ -542,17 +601,7 @@ export async function runInitInteractive(
   if (quiz === null) {
     return failOutcome(
       "init",
-      {
-        change: "NO_CHANGE",
-        tool: INIT_TOOL_ID,
-        files: [],
-        platforms: [],
-        specPreplant: null,
-        baseline: { asked: 0, answered: 0, skipped: "non_interactive" },
-        presetDraft: ZERO_PRESET_DRAFT,
-        observation: ZERO_OBSERVATION,
-        capability_overview: CAPABILITY_OVERVIEW,
-      },
+      failResult(),
       [
         {
           code: "INIT_INTERRUPTED",
@@ -566,6 +615,7 @@ export async function runInitInteractive(
   return runInit(rootDir, {
     platforms: parse.platforms.join(","),
     stackQuestionnaire: quiz,
+    brownfield: { confirmed: brownfieldChoice.confirmed },
   });
 }
 
@@ -1036,6 +1086,7 @@ export async function runInit(
         baseline: { asked: 0, answered: 0, skipped: "non_interactive" },
         presetDraft: ZERO_PRESET_DRAFT,
         observation: ZERO_OBSERVATION,
+        mode: null,
         capability_overview: CAPABILITY_OVERVIEW,
       },
       [selection.error],
@@ -1051,6 +1102,13 @@ export async function runInit(
   // init 单一重入口，无模式旗标）。
   const heavy = selectedPlatforms.length > 0;
   const claudeSelected = selectedPlatforms.includes("claude");
+
+  // 0.5) 模式检测（F-M3 init v2 R1；init-mode.ts ADR-1）：零写入纯读——三态闭包
+  //      greenfield / brownfield_candidate / initialized。检测是呈现不是裁决：
+  //      候选态只进结果面与呈现行；编排（recon 三腿）只经 InitOptions.brownfield
+  //      显式注入触发（TTY 交互问卷首题确认——禁静默分叉）。.pomaster 在座 =
+  //      重入口行为不变；干净目录 = Greenfield 静默直入现状。
+  const modeDetection = detectInitMode(rootDir);
 
   // 1) 目录骨架：宪法 §2 Target Directory Tree 全量预铺（Owner 2026-09-04 裁定
   //    「把所有的目录全部建好，不分级别」——与入口形态/平台选择无关，恒同一棵树；
@@ -1293,6 +1351,37 @@ export async function runInit(
   //      重跑全跳过 = 幂等铁律不破。位置：问卷落盘之后、入口渲染之前。
   const presetDraft = await appendPresetDrafts(rootDir, files);
 
+  // 4.95) Brownfield recon 编排（F-M3 init v2 R2/R3；init-mode.ts ADR-3/4/5）：
+  //       仅候选态且 Owner 显式确认（InitOptions.brownfield.confirmed=true——TTY
+  //       交互问卷首题产出）时触发：kernel beginExecution 登记执行身份（role/
+  //       runtime/identity_kind=script——CLI 进程诚实申报）→ recon 三腿串联
+  //       （recon.ts 既有命令函数直调零第二实现）→ endExecution 封口。产物只落
+  //       evidence/{blobs,observations}/ sidecar + executions/ 档案 + journal 事件
+  //       （零直写权威——recon 批红线继承）；编排层/腿级失败折算 warning 显式呈现，
+  //       init 主链不受影响（fail-closed 不阻塞）。declined / skipped_non_interactive
+  //       / greenfield / initialized = 零编排零落盘。
+  let mode: InitModeResult;
+  if (modeDetection.kind === "brownfield_candidate") {
+    const brownfield = options.brownfield;
+    if (brownfield?.confirmed === true) {
+      const recon = await runBrownfieldRecon(
+        rootDir,
+        brownfield.sbomInject !== undefined ? { sbomInject: brownfield.sbomInject } : {},
+        warnings,
+      );
+      mode = { detection: "brownfield_candidate", summary: modeDetection.summary, brownfield: "ran", recon };
+    } else {
+      mode = {
+        detection: "brownfield_candidate",
+        summary: modeDetection.summary,
+        brownfield: brownfield === undefined ? "skipped_non_interactive" : "declined",
+        recon: null,
+      };
+    }
+  } else {
+    mode = { detection: modeDetection.kind, summary: null, brownfield: null, recon: null };
+  }
+
   // 5) 入口文件：AGENTS.md 恒生成（唯一事实源；平台选择非空 = 重入口正文 + heavy
   //    安装标记；`--platforms none` = 最小指针正文，无重入口安装物可描述）。
   //    claude 平台适配器（CLAUDE.md，@AGENTS.md 导入）仅在选中 claude 时参与。
@@ -1432,6 +1521,7 @@ export async function runInit(
     baseline,
     presetDraft,
     observation,
+    mode,
     capability_overview: CAPABILITY_OVERVIEW,
   };
 
@@ -1478,6 +1568,10 @@ export async function runInit(
       ? "  observation: package.json 观察面缺席（缺席/不可解析）——技术栈 UNKNOWN 保持，问卷分母不受减"
       : `  observation: package.json → 观察候选登记 ${String(observation.observed)} 键（[Observed: package.json] 注记随问卷呈现，adoption 前不入基线；${String(observation.skipped_resolved)} 键已采纳分账出局）`;
   const presetLine = renderBaselinePresetHumanLine(presetDraft);
+  // 模式分叉段（F-M3 init v2 R2/R3）：greenfield/initialized 零行（静默直入/重入口
+  // 不变——R1）；候选态单行显式呈现（禁静默分叉双向）；ran = 检测 + 编排 + 三腿 +
+  // 差距报告合并呈现行（recon sidecar 摘要 + 问卷 [Observed] 候选注记）。
+  const modeLines = renderModeHumanLines(mode);
   const human = [
     ...INIT_LOGO_LINES,
     "",
@@ -1488,6 +1582,7 @@ export async function runInit(
     baselineLine,
     observationLine,
     presetLine,
+    ...modeLines,
     ...renderCapabilityHumanLines(),
     ...INIT_BANNER_LINES,
   ];

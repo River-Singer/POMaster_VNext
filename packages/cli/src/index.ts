@@ -179,6 +179,8 @@ import { CLI_NAME } from "./cli-info.js";
 import { toEnvelope, failOutcome, type CliEnvelope, type CommandOutcome } from "./envelope.js";
 import { runInit, runChecklistPrompt, runInitInteractive } from "./init.js";
 import type { ChecklistPromptResult, InitResult } from "./init.js";
+import { confirmBrownfieldPath } from "./init-mode.js";
+import type { InitBrownfieldChoice } from "./init-mode.js";
 import { collectStackAnswers, runBaselineConfirm, runBaselineSet } from "./baseline.js";
 import type { StackQuestionnaireOutcome } from "./baseline.js";
 import { runUpdate } from "./update.js";
@@ -196,6 +198,12 @@ import { runPermitCheck, runPermitIssue, runPermitList, runPermitSteal } from ".
 import { runExecGuard } from "./exec-guard.js";
 import { runReconcile } from "./reconcile.js";
 import { runReconImportGraph, runReconMigrations, runReconSbom } from "./recon.js";
+import {
+  runReconArchitectureSnapshot,
+  runReconOpenApi,
+  runReconScripts,
+  runReconTokenSources,
+} from "./recon.js";
 import { runExecutionAudit } from "./execution-audit.js";
 import { runCompact } from "./compact.js";
 import { runRecordClaim, runRecordGateRun, runRecordVerification } from "./record.js";
@@ -289,6 +297,22 @@ export {
   renderChecklistFrame,
 } from "./init.js";
 export {
+  confirmBrownfieldPath,
+  detectInitMode,
+  renderBrownfieldFrame,
+  renderModeHumanLines,
+  brownfieldDetectionLine,
+  INIT_BROWNFIELD_RECON_FAILED,
+} from "./init-mode.js";
+export type {
+  InitBrownfieldChoice,
+  InitModeDetection,
+  InitModeResult,
+  InitModeSummary,
+  InitReconLegReport,
+  InitReconReport,
+} from "./init-mode.js";
+export {
   collectStackAnswers,
   resolveRemainingQuestions,
   applyStackAnswers,
@@ -313,6 +337,10 @@ export {
   renderBaselineQuizHumanLine,
 } from "./baseline.js";
 export { readDesignTokens } from "./baseline-tokens.js";
+export {
+  readBaselineGroundingFacts,
+  BASELINE_CONFIRMATION_REF,
+} from "./baseline-grounding.js";
 // baselineStackRelative / BASELINE_MANIFEST_RELATIVE 经 export * from store-layout.js 已公开。
 export {
   appendPresetDrafts,
@@ -899,27 +927,79 @@ export type {
 export { runTraceShow, runTraceList } from "./trace.js";
 export type { TraceShowInput, TraceShowResult, TraceListResult } from "./trace.js";
 export {
+  RECON_ARCH_ADAPTER,
+  RECON_ARCH_BASELINE_FILE,
+  RECON_ARCH_OPERATION,
+  RECON_ARCH_SENSOR_CAPABILITY,
+  RECON_ARCH_TIMEOUT_MS,
+  RECON_ARCH_TOOL,
   RECON_MIGRATION_STACKS,
   RECON_MIGRATION_STACK_WORD_FORMS,
+  RECON_OPENAPI_OPERATION,
+  RECON_OPENAPI_SENSOR_CAPABILITY,
+  RECON_OPENAPI_TIMEOUT_MS,
   RECON_SBOM_INSTALL_HINT,
   RECON_SBOM_TOOL,
+  RECON_SCRIPTS_ADAPTER,
+  RECON_SCRIPTS_OPERATION,
+  RECON_SCRIPTS_SENSOR_CAPABILITY,
+  RECON_TOKENS_ADAPTER,
+  RECON_TOKENS_OPERATION,
+  RECON_TOKENS_SENSOR_CAPABILITY,
+  countDesignTokenLeaves,
+  detectOpenApiFrameworkWordForms,
+  diffAgainstBaseline,
+  hasDesignTokenWordForm,
+  parseDepcruiseCruiseReport,
+  parseKnownViolationsBaseline,
+  parseOpenApiDocument,
+  parsePackageScripts,
+  reconMigrationStackReports,
+  reconOpenApiFetch,
+  reconSourceFiles,
   reconSbomSpawn,
+  runReconArchitectureSnapshot,
   runReconImportGraph,
   runReconMigrations,
+  runReconOpenApi,
   runReconSbom,
+  runReconScripts,
+  runReconTokenSources,
+  scanCssTokenVariables,
 } from "./recon.js";
 export type {
+  ReconArchDiff,
+  ReconArchitectureSnapshotInput,
+  ReconArchitectureSnapshotInject,
+  ReconArchitectureSnapshotResult,
+  ReconArchReportWordForm,
+  ReconArchViolationIdentity,
+  ReconCssTokenSource,
+  ReconCssVariableScan,
   ReconImportGraphInput,
   ReconImportGraphResult,
   ReconMigrationStack,
   ReconMigrationStackReport,
   ReconMigrationsInput,
   ReconMigrationsResult,
+  ReconOpenApiFetchFn,
+  ReconOpenApiFetchOutcome,
+  ReconOpenApiFrameworkHit,
+  ReconOpenApiInject,
+  ReconOpenApiInput,
+  ReconOpenApiResult,
+  ReconOpenApiWordForm,
   ReconReportBlobRef,
   ReconSbomInject,
   ReconSbomInput,
   ReconSbomResult,
   ReconSbomWordForm,
+  ReconScriptEntry,
+  ReconScriptsInput,
+  ReconScriptsResult,
+  ReconTokenSourceFile,
+  ReconTokenSourcesInput,
+  ReconTokenSourcesResult,
 } from "./recon.js";
 export {
   EXECUTION_AUDIT_ADAPTER,
@@ -1026,7 +1106,7 @@ export function createProgram(
   program
     .command("init")
     .description(
-      "创建 .pomaster/ 最小骨架 + AGENTS.md 唯一事实源 + 平台适配器（F1：--platforms 逗号列表 claude,codex,cursor,qoder / none；幂等；重复执行 NO_CHANGE）；重入口默认（skills 库双镜像 + claude hooks 注册 + 加厚 rules）；TTY 交互在平台选择后接技术栈逐键问卷（R-M：FE 9 + BE 5 必答，答答回填 baseline stack.yaml + unknowns 销账；非交互跳过后补 baseline set）",
+      "创建 .pomaster/ 最小骨架 + AGENTS.md 唯一事实源 + 平台适配器（F1：--platforms 逗号列表 claude,codex,cursor,qoder / none；幂等；重复执行 NO_CHANGE）；重入口默认（skills 库双镜像 + claude hooks 注册 + 加厚 rules）；TTY 交互在平台选择后接模式问句与技术栈逐键问卷（F-M3 模式分叉：干净目录 Greenfield 直入；检测到已有项目（worktree 非空且无 .pomaster）呈现检测摘要并经问卷首题显式确认 Brownfield——确认后自动 recon 三腿（import-graph/migrations/sbom）采集宿主事实，腿产物只落 evidence sidecar 平面、腿失败不阻塞 init；非交互通道不分支）；R-M 技术栈问卷 FE 9 + BE 5 必答，答答回填 baseline stack.yaml + unknowns 销账，观察候选 [Observed] 注记与 recon 摘要合并呈现——Owner 裁剪后走 baseline confirm 既有确认链",
     )
     .option(
       "--platforms <platforms>",
@@ -1258,7 +1338,7 @@ export function createProgram(
   context
     .command("compile")
     .description(
-      "转调 kernel compileProjection，输出五分区 markdown（AUTHORITATIVE PROJECT STATE / REQUIRED POLICY / ADVISORY KNOWLEDGE / REUSE / CATALOG / VERIFICATION——Batch 2 D8 词形闭包）；context manifest 默认落盘 .pomaster/state/contexts/（Batch 2 D7：generated_at_seq/compiler/inputs_fingerprint/五分区 entries；stale 比对 STALE_GROUNDING 呈现不静默覆盖；--check 纯读零写入）",
+      "转调 kernel compileProjection，输出五分区 markdown（AUTHORITATIVE PROJECT STATE / REQUIRED POLICY / ADVISORY KNOWLEDGE / REUSE / CATALOG / VERIFICATION——Batch 2 D8 词形闭包）；context manifest 默认落盘 .pomaster/state/contexts/（Batch 2 D7：generated_at_seq/compiler/inputs_fingerprint/五分区 entries；stale 比对 STALE_GROUNDING 呈现不静默覆盖；--check 纯读零写入）；baseline grounding 消费（R4/design-context：confirmed baseline 确认态三态 + 25 确认资产 digest 摘要进 AUTHORITATIVE/ADVISORY 分区 + design-tokens 九组三态呈现；指纹绑定 baseline——漂移/改型 → STALE_GROUNDING 呈现不阻断）",
     )
     .requiredOption(
       "--role <role>",
@@ -3352,18 +3432,19 @@ export function createProgram(
       });
     });
 
-  // —— recon 命令组（F-M5 首批三乙 B8+B4+B1 + 编排公共壳 B10 乙；.trellis/tasks/09-10-brownfield-recon-wiring） ——
+  // —— recon 命令组（F-M5 首批三乙 B8+B4+B1 + 第二批四乙 B2+B6+B9+B3 + 编排公共壳 B10 乙；
+  // .trellis/tasks/09-10-brownfield-recon-wiring + .trellis/tasks/09-11-recon-batch2-sensors） ——
   // 宿主代码事实 → 17 sidecar 观察回执的机器自动收集通路（persistObservationRecord
   // 首个生产消费方）。红线：产物只落 evidence/{blobs,observations}/ sidecar 平面
   // （零直写权威——stack.yaml/manifest/design-tokens/sources index 零写口，字节快照
   // 测试钉）；零 TransactionOp 新增（零 store 事务）；零新确认链（sidecar 是观察平面
   // 非权威）；CALLS 边提案零落盘保持（登记归消费方 relations.registerRelation——本批
   // 不调用）；fail-closed（未初始化 NOT_INITIALIZED / 身份缺席 EXECUTION_NOT_FOUND /
-  // 零源文件 INCONCLUSIVE 负值兜底落账不伪造绿）。
+  // 零分母 INCONCLUSIVE/NOT_RUN 负值兜底落账不伪造绿）。
   const recon = program
     .command("recon")
     .description(
-      "宿主代码事实 recon 编排壳（F-M5 首批三乙 B8/B4/B1；B10 乙）：枚举 → 分析/采集 → blob+17 观察回执 sidecar → 呈现——产物只落 evidence/{blobs,observations}/ sidecar 平面，零权威文件写口零 store 事务（persistObservationRecord 首个生产消费方）",
+      "宿主代码事实 recon 编排壳（F-M5 首批三乙 B8/B4/B1 + 第二批四乙 B2/B6/B9/B3；B10 乙）：枚举 → 分析/采集 → blob+17 观察回执 sidecar → 呈现——产物只落 evidence/{blobs,observations}/ sidecar 平面，零权威文件写口零 store 事务（persistObservationRecord 首个生产消费方）",
     );
   recon
     .command("import-graph")
@@ -3421,6 +3502,97 @@ export function createProgram(
       });
       record({
         command: "recon sbom",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+  // —— recon 第二批四腿（F-M5 第二批 sensor；.trellis/tasks/09-11-recon-batch2-sensors）——
+  // 全链沿首批 fail-closed 三段纪律；产物只落 evidence/{blobs,observations}/ sidecar
+  // 平面（零权威写口字节快照延续）；Proposal 前置点位全避开（stack 候选化/词表扩值/
+  // doctor 注册不做）。各腿红线见 recon.ts 各腿头注。
+  recon
+    .command("architecture-snapshot")
+    .description(
+      "架构快照腿（B2 乙，dependency-cruiser MIT）：detect 复用现腿闭环（detectDependencyCruiser 配置候选 + corepack 命令链探测 + --version 版本探测——缺席 → NOT_INSTALLED）→ spawn `corepack pnpm exec depcruise <toolRoot> --config <cfg> --output-type json --output-to <tmp>`（64MB maxBuffer；tmp 运行后清理；退出码=error 级违规数语义——非零退出+报告在座 ≠ 执行失败）→ 巡报告词形校验（modules[]/summary.violations[]）+ 官方 --baseline 存量底账 .dependency-cruiser-known-violations.json 直读（增量 diff 三态：new/same/resolved 三元组恒等对账；底账缺席=首扫形态注记；残缺底账 → INCONCLUSIVE）→ 双 blob（工具产出原样 + 快照清单含 diff 明细全量）→ OBS 回执落 17 sidecar → 呈现（模块/依赖边/违规计数 + diff 语义标注）；依赖边只计数零落盘提案（登记归消费方——本批不调用）；不碰 stack/permit",
+    )
+    .requiredOption(
+      "--execution-id <AGX-n>",
+      "执行身份锚（AGX-<年份>-<序号>；OBS 回执 execution_id 必填——S1 禁自造身份，须为 executions/ 已登记档案，已封口执行允许事后补录）",
+    )
+    .option("--tool-root <dir>", "机判扫描根（仓内相对路径；缺省 src）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runReconArchitectureSnapshot(resolveDir(command), {
+        executionId: opts.executionId as string,
+        toolRoot: opts.toolRoot as string | undefined,
+      });
+      record({
+        command: "recon architecture-snapshot",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+  recon
+    .command("token-sources")
+    .description(
+      "token 源观察腿（B6 乙）：词形闭包纯读盘枚举（DTCG/style-dictionary v3 = .json + 树内 $value/$type 键；Tailwind v4 = .css + @theme/:root 词法扫描——词形面外源缺席 ≠ token 缺席恒注记；v3 config JS 执行面 C 级不做）→ readDesignTokens 形状校验复用呈现权威面状态（absent/invalid/ok + origin 三值闭包只读——零扩值）→ inventory blob（逐文件计数清单）→ OBS 回执落 17 sidecar → 呈现（逐源计数；零值摘录——观察值采纳归 Owner 手编 + baseline confirm 零新写口）；零 token 源词形命中 → NOT_RUN 不伪造空跑绿；CSS 词形在座但括号扫描失败 → INCONCLUSIVE 兜底",
+    )
+    .requiredOption(
+      "--execution-id <AGX-n>",
+      "执行身份锚（AGX-<年份>-<序号>；OBS 回执 execution_id 必填——S1 禁自造身份，须为 executions/ 已登记档案，已封口执行允许事后补录）",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runReconTokenSources(resolveDir(command), {
+        executionId: opts.executionId as string,
+      });
+      record({
+        command: "recon token-sources",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+  recon
+    .command("scripts")
+    .description(
+      "scripts 词面枚举腿（B9 乙）：根 package.json scripts 节逐条 {name, command} 词面枚举（observePackageStack 同 scope 同 fail-closed 三语义——只枚举不执行零猜测，零 spawn 零 eval）→ ENVREC 回执落 17 sidecar（migrations 盘点同款——呈现面即清单面：scripts 清单住 stdout/--json result 全量零截断）；package.json 缺席/不可读/不可解析/scripts 节缺席或空 → NOT_RUN 不伪造空跑绿；scripts 节词形漂移（非映射/条目值非字符串）→ INCONCLUSIVE 负值兜底落账；盘点不碰 stack 分母（零 stack.yaml 写口）",
+    )
+    .requiredOption(
+      "--execution-id <AGX-n>",
+      "执行身份锚（AGX-<年份>-<序号>；ENVREC 回执 execution_id 必填——S1 禁自造身份，须为 executions/ 已登记档案，已封口执行允许事后补录）",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runReconScripts(resolveDir(command), {
+        executionId: opts.executionId as string,
+      });
+      record({
+        command: "recon scripts",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+  recon
+    .command("openapi")
+    .description(
+      "OpenAPI 运行时抓取腿（B3 乙）：detect 复合闸（框架依赖词形：fastapi=requirements.txt/pyproject.toml 词边界、springdoc=pom.xml 词面、nestjs=package.json @nestjs/swagger + 探活）→ HTTP GET --url 端点（探活失败/非 200 非 5xx → NOT_INSTALLED 显式缺席不降级臆测；HTTP 5xx → NOT_RUN；连接失败同 NOT_INSTALLED）→ OAS 3 词形校验（openapi ^3. + info + paths——解析失败/swagger 2.0 词形漂移 → INCONCLUSIVE 兜底）→ 响应原样字节落 blob → OBS 回执落 17 sidecar（sensor=SENSOR.CONTRACT.CONFORMANCE 既有词形；adapter=检出框架词形）→ 呈现（版本/paths/operations 计数）；静态抽取保持 UNKNOWN（丙级不做——三主流框架官方产出全是运行时内省）",
+    )
+    .requiredOption(
+      "--execution-id <AGX-n>",
+      "执行身份锚（AGX-<年份>-<序号>；OBS 回执 execution_id 必填——S1 禁自造身份，须为 executions/ 已登记档案，已封口执行允许事后补录）",
+    )
+    .requiredOption(
+      "--url <http(s)://...>",
+      "OpenAPI 端点（操作者显式目标——探活禁臆测缺省端点；仅 http/https 词形）",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runReconOpenApi(resolveDir(command), {
+        executionId: opts.executionId as string,
+        url: opts.url as string,
+      });
+      record({
+        command: "recon openapi",
         outcome,
         asJson: command.opts().json === true,
       });
@@ -3543,12 +3715,24 @@ async function initInteractiveOutcome(
     if (rawEnabled) {
       let result: ChecklistPromptResult;
       let quiz: StackQuestionnaireOutcome | null = null;
+      let brownfield: InitBrownfieldChoice | undefined;
       try {
         result = await runChecklistPrompt({
           write: (chunk) => process.stdout.write(chunk),
           pumpKeys: (handler) => pumpStdinKeys(handler),
         });
         if (result.kind === "confirmed") {
+          // F-M3 R1 模式问句（问卷首题）：Brownfield 候选态在技术栈问卷之前显式
+          // 确认（greenfield/initialized 静默跳过——零提问零分叉）。
+          const mode = await confirmBrownfieldPath(rootDir, {
+            write: (chunk) => process.stdout.write(chunk),
+            pumpKeys: (handler) => pumpStdinKeys(handler),
+          });
+          if (mode === null) {
+            restoreRaw();
+            process.exit(130);
+          }
+          brownfield = { confirmed: mode.confirmed };
           // R-M：平台确认后接技术栈问卷（raw 单选帧；仍处 raw 模式，restoreRaw
           // 统一在问卷之后执行）。
           quiz = await collectStackAnswers(rootDir, {
@@ -3568,6 +3752,7 @@ async function initInteractiveOutcome(
       return runInit(rootDir, {
         platforms: result.platforms.join(","),
         stackQuestionnaire: quiz,
+        brownfield,
       });
     }
   }

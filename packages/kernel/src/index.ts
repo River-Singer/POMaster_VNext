@@ -1055,6 +1055,10 @@ export type {
   CatalogProjectionExplanation,
   EvidenceSpecRefView,
   ProjectionCatalogOptions,
+  BaselineGroundingFacts,
+  BaselineGroundingState,
+  BaselineTokenGroupFacts,
+  BaselineTokensFacts,
 } from "./projection.js";
 
 // ============================================================

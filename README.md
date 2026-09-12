@@ -83,7 +83,8 @@ pomaster brainstorm start/question-gate/status/decide/promote
 # ② FRAMEWORK —— 许可签发/判卷/显式接管/台账
 pomaster permit issue/check/steal/list
 
-# ③ PROJECTION —— 最小充分上下文投影
+# ③ PROJECTION —— 最小充分上下文投影（消费 confirmed baseline/tokens：确认态三态 + 25 资产 digest 摘要 +
+# design-tokens 九组三态进 AUTHORITATIVE/ADVISORY 分区；baseline 漂移/改型 → --check STALE_GROUNDING 呈现）
 pomaster context compile/explain
 
 # ④ EXECUTE —— 写路径机器执行点 / 受控变更
@@ -113,7 +114,7 @@ pomaster resolve "<need>" [--hints ...]
 pomaster new-entity check <governed-id> [--need ...]
 pomaster inspect <governed-id>
 pomaster graph <governed-id> [--view impact]
-pomaster recon import-graph|migrations|sbom    # 宿主代码 recon（三子命令均必持 --execution-id <AGX-n>——execution begin 登记的执行身份锚，观察回执的身份证明）：import 图静态扫描 → 17 观察回执 sidecar（unmapped 清单/externalImports/confidence）/ migration 目录五栈词形盘点（prisma/flyway/liquibase/alembic/django_style 纯读盘零工具执行 → ENVREC 回执）/ SBOM 依赖清单采集（cdxgen 腿——工具缺席 NOT_INSTALLED 显式缺席、解析失败 INCONCLUSIVE 兜底，components/dependencies 计数）——产物只落 evidence sidecar 平面零权威写口
+pomaster recon import-graph|migrations|sbom|architecture-snapshot|token-sources|scripts|openapi    # 宿主代码 recon（七子命令均必持 --execution-id <AGX-n>——execution begin 登记的执行身份锚，观察回执的身份证明）：import 图静态扫描（unmapped 清单/externalImports/confidence → OBS 回执）/ migration 目录五栈词形盘点（prisma/flyway/liquibase/alembic/django_style 纯读盘零工具执行 → ENVREC 回执）/ SBOM 依赖清单采集（cdxgen 腿——工具缺席 NOT_INSTALLED、解析失败 INCONCLUSIVE 兜底）/ 架构快照（dependency-cruiser 巡报告落盘 + 官方 --baseline 存量底账增量 diff 三态 new/same/resolved；依赖边只计数零落盘提案）/ token 源词形枚举（DTCG/style-dictionary $value JSON + Tailwind v4 @theme/:root CSS 词法扫描 → readDesignTokens 权威面状态复用呈现；零值摘录零写口）/ package.json scripts 词面枚举（只枚举不执行 → ENVREC 回执）/ OpenAPI 运行时抓取（--url 探活 GET 落 blob——探活失败 NOT_INSTALLED 不降级；静态抽取保持 UNKNOWN）——全链 fail-closed（缺席 NOT_INSTALLED/NOT_RUN、解析失败 INCONCLUSIVE 负值兜底不伪造绿），产物只落 evidence sidecar 平面零权威写口
 pomaster research list/inspect/request/handoff
 pomaster eval --suite behavioral
 pomaster catalog status/explain/relock
@@ -148,6 +149,8 @@ pomaster init
 ```
 
 一条命令，幂等（重复执行 NO_CHANGE，人类文件一律不覆盖）：铺出 `.pomaster/` 治理目录树、登记 19 份 SPEC 预植对象、生成 `AGENTS.md` 重入口（14 份 skills 命令卡 + hooks 注入——Agent 开会话即自动看到治理状态）。init 还会**自动观察宿主 `package.json`**：框架/router/状态/Grid/UI 库/测试栈等可观察事实登记为**观察候选**（问卷题面标注 `[Observed: package.json]`）——候选只是题面参考注记，权威 stack.yaml 保持 UNKNOWN，直到 Owner 经问卷或 `pomaster baseline set` 逐键采纳；TTY 下技术栈问卷 14 键逐项必答（中断 = 零写入）。
+
+**接手已有项目？init 自带 Brownfield 路径**：init 启动时检测宿主形态——干净目录（Greenfield）静默直入、已初始化重入口行为不变；检测到**已有项目**（worktree 非空且无 `.pomaster`）时呈现检测摘要（源文件数 / migration 词形面 / SBOM 工具在位性），并在 TTY 问卷首题**显式确认**是否走 Brownfield 路径（禁静默分叉；非交互通道不分支）。确认后 init 自动运行 **recon 三腿**采集宿主事实——`import-graph`（import 图静态扫描）/ `migrations`（五栈词形盘点）/ `sbom`（依赖清单，cdxgen 缺席时显式跳过）——产物落 `.pomaster/evidence/` 观察回执 sidecar（零权威写口；腿失败不阻塞 init），并在完成输出与问卷候选**合并呈现差距报告**：Owner 就地裁剪后照常走 `pomaster baseline confirm` 确认链。
 
 **组件画廊**：[river-singer.github.io/POMaster_VNext](https://river-singer.github.io/POMaster_VNext/)（在线版）· POMaster 仓库内 `corepack pnpm studio:dev`（Vue 主实例）/ `corepack pnpm studio:react:dev`（React sidecar 对照）——baseline 确认后按栈选择性参考（如 baseline.ui=ant-design-vue → antdv 组件真渲染对照）；未确认前仅作了解，不作为动手前置。
 
@@ -188,8 +191,8 @@ pomaster brainstorm promote idea-export-btn --to TASK --basis msd_reached --appl
 # —— 八拍推进：next-action 会逐拍给唯一建议命令 ——
 pomaster status                                   # R_PERMIT_MISSING（--subject 为 affected_objects 派生建议）
 pomaster permit issue --subject PAGE.USER_LIST --actor human:owner --change-ref TASK.IDEA_EXPORT_BTN
-pomaster baseline confirm                         # R_BASELINE_NOT_READY（阻塞集清零后的一次性收口账）
-pomaster context compile --role frontend --change TASK.IDEA_EXPORT_BTN   # ③ 投影
+pomaster baseline confirm                         # R_BASELINE_NOT_READY（阻塞集清零后的一次性收口账；确认态随后进 ③ 投影）
+pomaster context compile --role frontend --change TASK.IDEA_EXPORT_BTN   # ③ 投影（含 baseline grounding：指纹绑定确认态，漂移即 STALE_GROUNDING）
 pomaster execution begin --role implementer --runtime script --identity-kind script --task-id TASK.IDEA_EXPORT_BTN  # ④ 执行身份
 # ……在你的 Agent harness（Claude Code 等）里实现代码……
 pomaster check --fast                             # ⑤ FAST gate（BUILD 腿）
@@ -320,7 +323,7 @@ POMaster 的开发仓自己吃自己的治理：仓库根本机台账 `.pomaster
 
 ## 深入阅读
 
-- [`docs/init-reference.md`](docs/init-reference.md) — `pomaster init` 全机制：产物表 / 目录宪法全树 / 播种语义 / 重入口三件套 / 技术栈问卷 / 基线确认 gate / 预置草案 / doctor 探针矩阵
+- [`docs/init-reference.md`](docs/init-reference.md) — `pomaster init` 全机制：产物表 / 目录宪法全树 / 播种语义 / 重入口三件套 / 模式分叉（Greenfield / Brownfield recon 编排）/ 技术栈问卷 / 基线确认 gate / 预置草案 / doctor 探针矩阵
 - [`docs/kernel-api.md`](docs/kernel-api.md) — kernel API 参考
 - [组件画廊（在线版）](https://river-singer.github.io/POMaster_VNext/) — GitHub Pages；仓库源在 [`packages/studio`](packages/studio/)（Vue 主实例）与 [`packages/studio-react`](packages/studio-react/)（React sidecar，private 对照实例）
 - [`catalog/`](catalog/) — 随包分发的工程策展物料（policies / knowledge / gates / sensors / archetypes / tools）
