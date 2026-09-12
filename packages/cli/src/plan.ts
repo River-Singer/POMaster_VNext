@@ -16,9 +16,10 @@
  *
  * 变更面事实：--changed/--consumer/--face（"kind=present|absent:<依据>"）显式
  * 申报——禁猜测（face 词形闭包=SP 提案待追认，TODO(vocab-pr)）。
- * 工具探测自动面：vitest / playwright（@playwright/test + browser-gate.json 在位性）
- * / chrome-devtools-mcp（.mcp.json 注册）——gauntlet-lite toolDetectors 形态的只读
- * 等价，缺席如实 NOT 在位（禁猜测）；ToolBinding 统一面 = R1-4 接缝。
+ * 工具绑定事实生产（R1-4 接缝已落）：.pomaster/tools/bindings.json 在座即唯一事实源
+ * （六分态派生行投影为 kernel PlanToolBinding——resolved_tool 对账 binding.tool）；
+ * registry 缺席回退 legacy 只读探测（vitest / playwright / chrome-devtools-mcp——
+ * 兼容期并存，红线「不删旧 gate 配置路径」）；registry 损坏 fail-closed 禁静默回退。
  * informational（--complexity/--profile/--note）：只呈现零参与 applicability
  * （A1 裁定 projection.ts:220 先例——复杂度/档位不能决定测试集合，AC-13）。
  * 旧 GateTier/triage 档位消费者迁移接缝表指针：plan-compiler.ts 头注（兼容期
@@ -43,6 +44,7 @@ import { failOutcome, okOutcome } from "./envelope.js";
 import { POMASTER_DIR } from "./store-layout.js";
 import { readRawIndexOrFail } from "./projection-common.js";
 import { governanceErrorToCliError, requireInitialized } from "./permit.js";
+import { computeBindingStates, loadToolBindingRegistry } from "./tools.js";
 
 /** kernel 所需最小面（结构化类型；缺省 = @pomaster/kernel 真实导出）。 */
 export interface PlanKernelDeps {
@@ -138,8 +140,48 @@ function probeToolBindings(rootDir: string): PlanToolBinding[] {
 }
 
 // ============================================================
-// face 词形解析（"kind=present|absent:<依据>"；依据必填——N/A 有据的前提）
+// ToolBinding 统一面接缝（R1-4：registry 在座即唯一事实源；缺席才回退 legacy）
 // ============================================================
+
+type ToolBindingsForPlan =
+  | { readonly mode: "unified"; readonly bindings: PlanToolBinding[] }
+  | { readonly mode: "legacy"; readonly bindings: PlanToolBinding[] }
+  | { readonly mode: "error"; readonly error: CliError };
+
+/**
+ * plan compile 的工具绑定事实生产（R1-4 接缝定案）：
+ * - registry 在座（哪怕空表）→ 只走统一绑定面（六分态派生行投影为 kernel
+ *   PlanToolBinding；resolved_tool 对账 binding.tool——计划选用与注册面同源）；
+ * - registry 缺席 → legacy probeToolBindings 原样保持（R1-3 行为不删——兼容期
+ *   并存，红线「不删旧 gate 配置路径」的 plan 侧镜像）；
+ * - registry 在座但损坏/词形违例 → fail-closed（SCHEMA_INVALID 显式拒绝——禁
+ *   静默回退 legacy：损坏的统一面回退即分母漂移）。
+ */
+function toolBindingsForPlan(rootDir: string): ToolBindingsForPlan {
+  const loaded = loadToolBindingRegistry(rootDir);
+  if (loaded.ok) {
+    const rows = computeBindingStates(rootDir, loaded.registry.bindings);
+    const byId = new Map(loaded.registry.bindings.map((binding) => [binding.id, binding]));
+    return {
+      mode: "unified",
+      bindings: rows.map((row) => ({
+        tool_id: row.tool,
+        capabilities: (byId.get(row.binding_id)?.capabilities ??
+          []) as PlanCapabilityWord[],
+        source_ref: `binding:${row.binding_id}（.pomaster/tools/bindings.json 统一注册面——SP-W1-e 提案待追认；binding_ref schema 专位 W2 落位）`,
+        version: byId.get(row.binding_id)?.tool_version_anchor ?? null,
+        available: row.available,
+        availability_reason: row.available
+          ? `binding ${row.binding_id} available（六分态：detect=${row.detect_status ?? "-"} validated=${row.validated}；adapter=${row.adapter_ref}）`
+          : `binding ${row.binding_id} 未达 available（${row.gaps.join("；")}）`,
+      })),
+    };
+  }
+  if (loaded.error.code === "TOOLBINDING_REGISTRY_ABSENT") {
+    return { mode: "legacy", bindings: probeToolBindings(rootDir) };
+  }
+  return { mode: "error", error: loaded.error };
+}
 
 interface FaceSpecParseOk {
   readonly face: PlanChangeFace;
@@ -410,6 +452,8 @@ export async function runPlanCompile(
       if ("error" in initialized) return fail(empty, command, initialized.error);
       const loaded = await loadTaskAcceptance(rootDir, taskRef);
       if ("error" in loaded) return fail(empty, command, loaded.error);
+      const toolBindings = toolBindingsForPlan(rootDir);
+      if (toolBindings.mode === "error") return fail(empty, command, toolBindings.error);
 
       const faces: PlanChangeFace[] = [];
       for (const spec of input.faces ?? []) {
@@ -450,8 +494,11 @@ export async function runPlanCompile(
           ],
         },
         toolBindings: {
-          value: probeToolBindings(rootDir),
-          source_ref: "detector:vitest/playwright-leg/chrome-devtools-mcp（只读探测——ToolBinding 统一面=R1-4 接缝）",
+          value: toolBindings.bindings,
+          source_ref:
+            toolBindings.mode === "unified"
+              ? "binding:.pomaster/tools/bindings.json（ToolBinding 统一注册面——registry 在座即唯一事实源，SP-W1-e 提案待追认）"
+              : "detector:vitest/playwright-leg/chrome-devtools-mcp（只读探测——registry 缺席兼容回退；ToolBinding 统一面=R1-4 接缝）",
           version: null,
           unknowns: [],
         },

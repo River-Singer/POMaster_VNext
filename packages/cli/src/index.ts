@@ -247,6 +247,7 @@ import {
   runNegativeHistorySearch,
 } from "./negative-history.js";
 import { runPlanCompile } from "./plan.js";
+import { runToolsList, runToolsValidate } from "./tools.js";
 import {
   runBrainstormDecide,
   runBrainstormPromote,
@@ -855,6 +856,24 @@ export type {
   PlanToolProbeView,
   PlanKernelDeps,
 } from "./plan.js";
+// W1-R1-4：ToolBinding 统一注册面命令与状态机导出（tools list/validate——SP 提案待追认）。
+export {
+  computeBindingStates,
+  loadToolBindingRegistry,
+  runToolsList,
+  runToolsValidate,
+} from "./tools.js";
+export type {
+  BindingStateRow,
+  BindingStatesDeps,
+  LoadedToolBindingRegistry,
+  PlanItemRef,
+  RegistryLoad,
+  ToolsListResult,
+  ToolsValidateInput,
+  ToolsListInput,
+  ToolsValidateResult,
+} from "./tools.js";
 export {
   EVIDENCE_MALFORMED_CODE,
   RUN_INGEST_ACTIONS,
@@ -2517,6 +2536,53 @@ export function createProgram(
       });
       record({
         command: "plan compile",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+
+  // —— ToolBinding 统一注册面命令（W1-R1-4 · 09-10 PRD §17 + integration-designs.md
+  // 设计一六分态）。纯读零写入：list/validate 只做六分态派生（探测/探针/ENVREC/
+  // GRN 平面只读）与呈现；执行入账唯一通路仍是 record gate-run——工具发现≠调用
+  // 授权（红线）。registry 落点 .pomaster/tools/bindings.json（SP-W1-e 提案待追认；
+  // 命令名/错误码 = SP 提案待 Owner 追认）。
+  const tools = program
+    .command("tools")
+    .description(
+      "ToolBinding 统一注册面命令（W1-R1-4）：list = 全量绑定六分态派生（detect/registered/validated/available/selected/executed，分态不可跃迁、缺口逐条显式）；validate = 单绑定全判据呈现（纯读零写入；探测不扩大 permit——executed 唯一事实源 = GRN 真实回执）",
+    );
+  tools
+    .command("list")
+    .description(
+      "列出 .pomaster/tools/bindings.json 全部绑定并派生六分态（registry 缺席 = TOOLBINDING_REGISTRY_ABSENT 显式拒绝禁静默空表；--plan 可回喂 plan compile --json 输出以对账 selected）",
+    )
+    .option("--plan <file>", "Verification Plan 工件（plan compile --json 输出可回喂——selected 判定式消费 items[].resolved_tool/applicability）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runToolsList(resolveDir(command), {
+        plan: opts.plan as string | undefined,
+      });
+      record({
+        command: "tools list",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  tools
+    .command("validate")
+    .description(
+      "单绑定六分态全判据呈现（id 不在册 = BINDING_NOT_FOUND 显式拒绝非空结果）",
+    )
+    .argument("<id>", "绑定 id（bindings.json bindings[].id 点分小写词形）")
+    .option("--plan <file>", "Verification Plan 工件（selected 判定式对账，同 list）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (id: string, opts, command) => {
+      const outcome = await runToolsValidate(resolveDir(command), {
+        id,
+        plan: opts.plan as string | undefined,
+      });
+      record({
+        command: "tools validate",
         outcome,
         asJson: command.optsWithGlobals().json === true,
       });

@@ -59,6 +59,12 @@
  *                               POMaster-native Spec Workspace（REQUIRED POLICY 的
  *                               项目内全文面——catalog policies 是机器条目面，两面对
  *                               同一语义各持一份，禁双向自动同步；同 seed-once 语义）
+ *
+ * W1-R1-4 增量平面（ToolBinding 统一注册面；SP-W1-e 提案待 Owner 追认）：
+ * - tools/bindings.json         项目级工具绑定统一 registry（23-toolbinding schema；
+ *                               非 governed object——20-sources-authority 同域不入
+ *                               store 事务、不进 content_digest；CLI tools.ts 装载，
+ *                               kernel 本体零消费——路径登记先行的单一来源纪律）
  */
 import { GovernanceError } from "./errors.js";
 import { isNotFoundError, readJsonText } from "./io.js";
@@ -134,6 +140,10 @@ export interface StorePaths {
   readonly specsAcceptanceDir: string;
   /** specs/evidence/（Evidence Spec Kit 播种位）。 */
   readonly specsEvidenceDir: string;
+  /** tools/（W1-R1-4：ToolBinding 统一注册面分区；SP-W1-e 提案待追认）。 */
+  readonly toolsDir: string;
+  /** tools/bindings.json（ToolBinding 统一 registry 载体；23-toolbinding schema）。 */
+  readonly toolsBindingsPath: string;
 }
 
 export function buildStorePaths(rootDir: string): StorePaths {
@@ -181,6 +191,8 @@ export function buildStorePaths(rootDir: string): StorePaths {
     specsHardStacksDir: `${pomasterDir}/specs/hard/stacks`,
     specsAcceptanceDir: `${pomasterDir}/specs/acceptance`,
     specsEvidenceDir: `${pomasterDir}/specs/evidence`,
+    toolsDir: `${pomasterDir}/tools`,
+    toolsBindingsPath: `${pomasterDir}/tools/bindings.json`,
   };
 }
 

@@ -148,6 +148,9 @@ export * from "./schemathesis-leg.js";
 export * from "./detectors.js";
 export * from "./normalize-common.js";
 export * from "./gate-recipe-runner.js";
+// W1-R1-4：ToolBinding 统一注册面执行半边（受信 adapter 注册表 / validated 判定式 /
+// 绑定式执行 / env 白名单 spawn——SP-W1-e/f/g/h 提案待追认）。
+export * from "./tool-binding.js";
 
 /** BUILD 门禁 adapter 单例（vitest/pytest 双腿；也可经 createBuildAdapter() 自建）。 */
 export const buildAdapter: GateAdapter<

@@ -139,6 +139,17 @@ export const SPECS_ACCEPTANCE_DIR_RELATIVE = relOf(KERNEL_EMPTY_ROOT.specsAccept
 export const SPECS_EVIDENCE_DIR_RELATIVE = relOf(KERNEL_EMPTY_ROOT.specsEvidenceDir);
 
 /**
+ * .pomaster/tools/bindings.json（W1-R1-4：ToolBinding 统一注册面载体——23-toolbinding
+ * schema；SP-W1-e 提案待追认。kernel paths.ts toolsBindingsPath 已登记，本常量从
+ * kernel 派生（单一来源纪律）；CLI tools.ts 装载判卷，kernel 本体零消费）。
+ * 目录纪律：tools/ 是项目文件平面（binding registry 在座才落盘——写侧 = 项目登记动作，
+ * CLI 本批零写通路），不进 layout.ts LAYOUT_DIRECTORIES 预铺树（预铺口径不变——
+ * layout-manifest.spec 钉清单长度与 kernel/CLI 登记常量双向对账；derivePathsTsStoreDirs
+ * 枚举位不含 toolsDir——tools/ 按需创建，state 文件位先例）。
+ */
+export const TOOLS_BINDINGS_RELATIVE = relOf(KERNEL_EMPTY_ROOT.toolsBindingsPath);
+
+/**
  * .pomaster/baseline/<lane>/stack.yaml 与 .pomaster/baseline/manifest.yaml（B6d 播种
  * 件；R-M 2026-09-05：init 技术栈问卷逐键回填 + `pomaster baseline set` 后补销账的
  * 唯一写入位——两路径从既有 baseline 目录常量机械派生，零第二套路径声明）。unknowns
@@ -224,6 +235,11 @@ export function claimsDirPath(rootDir: string): string {
 /** <rootDir>/.pomaster/evidence/observations（vNext Batch 2 R6/C9 感知回执记录 sidecar 分区）。 */
 export function observationsDirPath(rootDir: string): string {
   return buildStorePaths(rootDir).observationsDir;
+}
+
+/** <rootDir>/.pomaster/tools/bindings.json（W1-R1-4 ToolBinding 统一注册面载体）。 */
+export function toolsBindingsPath(rootDir: string): string {
+  return buildStorePaths(rootDir).toolsBindingsPath;
 }
 
 /** <rootDir>/.pomaster/state/contexts（vNext Batch 2 R2/D7 Task Context Manifest 落盘位）。 */

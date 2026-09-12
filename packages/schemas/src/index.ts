@@ -84,6 +84,12 @@
  * layout.section_gap 废弃，理由住 seed 头注与本 schema description）。
  * 数值两来源纪律：POMaster Default Design 预设默认（advisory）或留空 UNKNOWN/null
  * ——原文示例数值禁伪造成项目事实（§7.1 NON-AUTHORITATIVE）。
+ * W1-R1-4 增量（23）：ToolBinding Registry（09-10 PRD §17 + integration-designs.md §1
+ * 双轴字段表；SP-W1-e/f/g/h 提案集——整体待 Owner 追认）。项目级工具绑定统一注册面
+ * （.pomaster/tools/bindings.json）：source/transport 正交双轴 + 执行合同/报告合同/
+ * 能力声明三段 + org adoption 强制门（org 覆盖不静默压过项目批准的 schema 级机器化）。
+ * 非 governed object（20/22 同域）；检测不扩大 permit——executed 态唯一事实源 =
+ * evidence/runs GRN 真实回执（binding_ref 专位 SP-W1-f 待 03 修订）。
  *
  * 词表纪律：一切枚举唯一来源是 assets/vocab-lock.draft.yaml（FROZEN）；
  * 代码侧唯一镜像点在 ./vocab.js（本文件 re-export）。YAML 资产仅作人读/工具对账，
@@ -119,6 +125,7 @@ import softwareGraphRelationsSchemaRaw from "../assets/19-software-graph-relatio
 import sourcesAuthoritySchemaRaw from "../assets/20-sources-authority.schema.json" with { type: "json" };
 import evidenceSpecSchemaRaw from "../assets/21-evidence-spec.schema.json" with { type: "json" };
 import designTokensSchemaRaw from "../assets/22-design-tokens.schema.json" with { type: "json" };
+import toolBindingSchemaRaw from "../assets/23-toolbinding.schema.json" with { type: "json" };
 
 export * from "./vocab.js";
 
@@ -174,6 +181,8 @@ const EVIDENCE_SPEC_ID =
   "https://pomaster.dev/schemas/evidence-spec/v1-draft.json";
 const DESIGN_TOKENS_ID =
   "https://pomaster.dev/schemas/design-tokens/v1-draft.json";
+const TOOL_BINDING_ID =
+  "https://pomaster.dev/schemas/toolbinding/v1-draft.json";
 
 function asSchema(raw: unknown, expectedId: string): JsonSchemaObject {
   const schema = raw as JsonSchemaObject;
@@ -260,6 +269,7 @@ export const designTokensSchema = asSchema(
   designTokensSchemaRaw,
   DESIGN_TOKENS_ID,
 );
+export const toolBindingSchema = asSchema(toolBindingSchemaRaw, TOOL_BINDING_ID);
 
 /** 全部 schema 的聚合（组合装载：ajv.addSchema 逐个注册即可遍历本对象）。 */
 export const allSchemas = {
@@ -285,6 +295,7 @@ export const allSchemas = {
   sourcesAuthority: sourcesAuthoritySchema,
   evidenceSpec: evidenceSpecSchema,
   designTokens: designTokensSchema,
+  toolBinding: toolBindingSchema,
 } as const;
 
 // ============================================================
