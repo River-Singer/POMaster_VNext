@@ -235,6 +235,7 @@ export const COMMAND_PANORAMA_LINES: readonly string[] = [
   "pomaster lock acquire/heartbeat/release/steal/list",
   "pomaster execution begin/end/list/audit",
   "pomaster trace show/list",
+  'pomaster diagnose "<症状>"   # 通用诊断入口（W3-S3；SP 提案待追认）：症状申报（位置 <report> ∥ --symptom 二选一）+ --evidence GRN/OBS/AGX 证据关联（引用不存在 fail-closed 零写）→ 失败域六词闭包 + 置信基（evidence_chain|declaration_only——零百分比置信；冲突呈报非改判；证据缺席不虚构关联）+ 诊断计划建议（复用 plan-compiler 能力词位）；纯读零写不裁决不自动修复；与 production diagnose 共用同一判定核',
 ];
 
 // ============================================================

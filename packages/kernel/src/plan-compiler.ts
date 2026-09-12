@@ -137,7 +137,12 @@ const CAPABILITY_METHOD: Readonly<Record<PlanCapabilityWord, string>> = {
   static_analysis: "analysis",
 };
 
-const CAPABILITY_EVIDENCE_REQUIREMENT: Readonly<Record<PlanCapabilityWord, string>> = {
+/**
+ * capability → 证据义务原文（计划 item evidence_requirement 单一映射源）。
+ * W3-S3 起导出（加性——零行为变化）：diagnose.ts 失败域判定核的 next_actions 消费
+ * 同一张表（诊断计划建议复用 plan-compiler 能力词位——禁第二套工具池词/义务文本）。
+ */
+export const CAPABILITY_EVIDENCE_REQUIREMENT: Readonly<Record<PlanCapabilityWord, string>> = {
   unit_behavior: "vitest 单测钉测（行为断言在座，禁空转断言）",
   ui_render: "组件渲染钉测（挂载断言关键节点/计数分母）",
   ui_interaction: "浏览器交互观察回执（Playwright 断言 ∥ chrome-devtools 实时对账双通道至少其一）",

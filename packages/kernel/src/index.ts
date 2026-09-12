@@ -1164,6 +1164,7 @@ export {
   PLAN_APPLICABILITY_VALUES,
   PLAN_CHANGE_FACE_KINDS,
   PLAN_CAPABILITY_WORDS,
+  CAPABILITY_EVIDENCE_REQUIREMENT,
   compileVerificationPlan,
 } from "./plan-compiler.js";
 export type {
@@ -1184,6 +1185,35 @@ export type {
   PlanUnknownItem,
   VerificationPlan,
 } from "./plan-compiler.js";
+
+// ============================================================
+// 通用 Diagnose 失败域判定核（W3-S3 · 09-12 W3 R3-4；源 PRD C §53-56 + §91 Case H）
+// ============================================================
+// 语义边界（diagnose.ts 头注）：纯函数判定核——症状申报（分类面）+ 证据关联面
+// （GRN run / OBS 感知回执 / AGX 执行档案）→ 失败域归因 + 置信基（evidence_chain |
+// declaration_only——零百分比置信，§21 守护栏）+ 诊断计划建议（next_actions 复用
+// plan-compiler 能力词位与证据义务原文——禁第二套工具池词）。只有 verdict=failed 的
+// run 面且 gate 命中 RUN_GATE_DOMAIN_SIGNALS 才产归因信号（BUILD/TYPECHECK→
+// product_assertion 最小映射；扩映射走 SP 追认）；冲突呈报非改判；零申报零信号 →
+// unknown_insufficient_evidence 诚实词位。词形闭包=kernel 局部词 TODO(vocab-pr)，
+// SP 提案待追认；与 §95.3 production 三分诊断轴（DIAGNOSIS_KIND_VALUES）正交零串扰
+// ——production 分支复用同一判定核（BREACHED band 前置只是产线准入条件）。
+export {
+  FAILURE_DOMAIN_VALUES,
+  FAILURE_DOMAIN_CONFIDENCE_BASES,
+  DIAGNOSE_EVIDENCE_KINDS,
+  RUN_GATE_DOMAIN_SIGNALS,
+  FAILURE_DOMAIN_CAPABILITY_PRIORITY,
+  judgeFailureDomain,
+} from "./diagnose.js";
+export type {
+  FailureDomain,
+  FailureDomainConfidenceBasis,
+  DiagnoseEvidenceKind,
+  DiagnoseEvidenceFace,
+  FailureDomainJudgmentInput,
+  FailureDomainJudgment,
+} from "./diagnose.js";
 
 // ============================================================
 // 证据绑定资格链判定核（W1-R1-5 · 09-10 PRD REQ-06 / AC-04）

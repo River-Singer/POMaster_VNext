@@ -251,6 +251,7 @@ import {
   runNegativeHistorySearch,
 } from "./negative-history.js";
 import { runPlanCompile } from "./plan.js";
+import { runDiagnose } from "./diagnose.js";
 import { runToolsList, runToolsValidate } from "./tools.js";
 import {
   runBrainstormDecide,
@@ -868,6 +869,14 @@ export type {
   PlanToolProbeView,
   PlanKernelDeps,
 } from "./plan.js";
+// W3-S3：通用 Diagnose 入口命令导出（`pomaster diagnose`——C §26 独立诊断入口；
+// 判定权威在 kernel diagnose.ts 判定核，production 分支共用同一事实源）。
+export { runDiagnose } from "./diagnose.js";
+export type {
+  DiagnoseInput,
+  DiagnoseResult,
+  DiagnoseEvidenceRow,
+} from "./diagnose.js";
 // W1-R1-4：ToolBinding 统一注册面命令与状态机导出（tools list/validate——SP 提案待追认）。
 export {
   computeBindingStates,
@@ -3210,6 +3219,49 @@ export function createProgram(
       });
       record({
         command: "audit test-weakening",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  // —— diagnose（W3-S3；09-12 W3 R3-4 / 源 PRD C §26 独立诊断入口 + §53-56 Diagnose
+  // 管线 + §91 Case H）。通用「Bug Report→证据关联→失败域→诊断计划建议」入口：
+  // 与 production diagnose（§95.2 产线分支）共用 kernel judgeFailureDomain 同一判
+  // 定核——BREACHED band evidence 前置只是产线分叉准入条件，不是判定核语义（单一
+  // 判定事实源）。纯读零写：诊断是判断不是变更——零 store 事务、零落盘面（字节快
+  // 照测试钉），不改对象状态、不自动修复（§53 行动经治理面显式通路）。fail-closed：
+  // 未初始化 NOT_INITIALIZED / 证据引用不存在 EVIDENCE_NOT_FOUND（GRN/OBS）或
+  // EXECUTION_NOT_FOUND（AGX 同款）/ 回执损坏 EVIDENCE_MALFORMED 全部零写显式报错。
+  // 词形纪律：六失败域/两置信基/信号映射全部来自 kernel diagnose.ts 词位（SP 提案
+  // 待追认），next_actions 复用 plan-compiler 能力词位——本命令零新增词形。实现与
+  // 判定权威锚：./diagnose.ts 头注 + kernel diagnose.ts 判定核。
+  program
+    .command("diagnose")
+    .description(
+      "通用 Diagnose 入口（§53-56 Diagnose 管线；Case H）：症状申报（位置 <report> 或 --symptom 二选一）+ 可选证据关联（--evidence GRN-*/OBS-*/AGX-* 逐条实读证据平面——引用不存在 fail-closed 零写）→ kernel 失败域判定核（failure_domain 六词闭包 + confidence_basis=evidence_chain|declaration_only——零百分比置信 §21 守护栏；申报与信号冲突呈报非改判；证据缺席 declaration_only 不虚构关联）→ 诊断计划建议（next_actions 复用 plan-compiler 能力词位，§54 安全/只读先行）；纯读零写不裁决不自动修复；与 production diagnose 共用同一判定核（BREACHED 前置只是产线准入）",
+    )
+    .argument("[report]", "症状申报文本（bug report 申报面；与 --symptom 二选一——双给/双缺 SCHEMA_INVALID）")
+    .option("--symptom <text>", "症状申报文本（与位置 <report> 同通道二选一）")
+    .option(
+      "--domain <word>",
+      "申报初始失败域（六词闭包：tool_environment | product_assertion | fixture_data | environment_instance | dependency_external | unknown_insufficient_evidence；缺省 = 零申报，域由在座信号确定性派生）",
+    )
+    .option(
+      "--evidence <ref>",
+      "证据引用（可重复；GRN-<n> | OBS-<n> | AGX-<年份>-<序号>——证据平面在库回执逐字对齐，引用不存在 EVIDENCE_NOT_FOUND/EXECUTION_NOT_FOUND fail-closed）",
+      collectValues,
+      [],
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (report: string | undefined, opts, command) => {
+      const outcome = await runDiagnose(resolveDir(command), {
+        report: report ?? null,
+        symptom: (opts.symptom as string | undefined) ?? null,
+        domain: (opts.domain as string | undefined) ?? null,
+        evidence: (opts.evidence as string[]) ?? [],
+      });
+      record({
+        command: "diagnose",
         outcome,
         asJson: command.opts().json === true,
       });

@@ -130,6 +130,7 @@ pomaster session attach/refresh/list
 pomaster lock acquire/heartbeat/release/steal/list
 pomaster execution begin/end/list/audit   # audit = 变更越界审计（--execution-id + --diff-base：git diff 起始锚变更集 → KEYBINDING 解析 → permit scope 判 in/out → OBS 回执 sidecar + 越界明细；越界 exit 1——Detection 半边，纯读零权威写口）
 pomaster trace show/list
+pomaster diagnose "<症状>"   # 通用 Diagnose 入口（W3-S3；C §26/§53-56 + Case H；SP 提案待追认）：症状申报（位置 <report> ∥ --symptom 二选一）+ 可选 --evidence GRN-*/OBS-*/AGX-* 逐条实读证据平面（引用不存在 fail-closed 零写）→ 失败域六词闭包（tool_environment/product_assertion/fixture_data/environment_instance/dependency_external/unknown_insufficient_evidence）+ confidence_basis=evidence_chain|declaration_only（零百分比置信——§21 守护栏；申报与信号冲突呈报非改判；证据缺席 declaration_only 不虚构关联）→ 诊断计划建议（复用 plan-compiler 能力词位，§54 安全/只读先行）；纯读零写不裁决不自动修复；与 production diagnose 共用同一判定核（BREACHED band 前置只是产线准入——单一判定事实源）
 # pomaster session（不带子命令）= 治理速览投影（SessionStart 注入源；≤10k 字符，恒 exit 0；尾部带首答确认协议指令段）
 # pomaster alerts（重入口 UserPromptSubmit 源）= 可行动项过滤器 + workflow 路由段（干净=非空但极简，恒 exit 0）
 ```
