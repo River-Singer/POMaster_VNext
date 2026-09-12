@@ -114,7 +114,7 @@
  *                   PENDING 清单，纯读）/ harvest = COMPATIBILITY 批量收割（--harness-dir
  *                   显式优先，缺省探测仅注册 claude；目录缺席 NOT_RUN exit 1 非 fake 绿）/
  *                   review = batch review 唯一人工闸（--decide --promote|--reject --note
- *                   必填留痕；只改分类标签不改写内容原文）/ promote = 分桶路由（KNOWLEDGE→
+ *                   必填留痕；--actor 必填显式申报评审主体；只改分类标签不改写内容原文）/ promote = 分桶路由（KNOWLEDGE→
  *                   P28 生命周期恒 CANDIDATE+ADVISORY；TRUTH/DECISION/EVIDENCE→
  *                   OWNER_ESCALATION_REQUIRED 呈报 exit 0 不写 Canonical State）/ audit =
  *                   分母封闭 + MEMORY_DRIFT 探测（drift 段非空 exit 1 fail-closed，§84.6）
@@ -2439,7 +2439,7 @@ export function createProgram(
   memory
     .command("review")
     .description(
-      "batch review 唯一人工闸（thread-B §4.2）：缺省 PENDING 队列；--list 全量+过滤（--state/--bucket/--batch）；--decide <id> --promote|--reject --note <text> 裁决（只改分类标签不改写内容原文——--reclassify-bucket/--reclassify-class 可选修正）",
+      "batch review 唯一人工闸（thread-B §4.2）：缺省 PENDING 队列；--list 全量+过滤（--state/--bucket/--batch）；--decide <id> --promote|--reject --note <text> --actor <type>:<name> 裁决（只改分类标签不改写内容原文——--reclassify-bucket/--reclassify-class 可选修正）",
     )
     .option("--list", "全量列表模式（缺省呈现 PENDING 队列）")
     .option("--state <state>", "过滤 review 三态（PENDING | PROMOTED | REJECTED）")
@@ -2451,7 +2451,7 @@ export function createProgram(
     .option("--note <text>", "裁决注记（--decide 必填——已决必有评审留痕）")
     .option("--reclassify-bucket <bucket>", "分类标签修正（桶；词表闭集）")
     .option("--reclassify-class <class>", "分类标签修正（PRD §48.2 七类；null = 显式无分类）")
-    .option("--actor <actor>", "评审主体 <type>:<name>（C5 自报；缺省 human:owner）")
+    .option("--actor <actor>", "评审主体 <type>:<name>（C5 自报；--decide 必填——禁默认 human:owner，AI 运行须显式申报主体）")
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (opts, command) => {
       const outcome = await runMemoryReview(resolveDir(command), {

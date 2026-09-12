@@ -224,6 +224,8 @@ describe("Case N：Harness 记忆漂移端到端（harvest → review → promot
       "--promote",
       "--note",
       "batch review：失败模式确认（thread-B §4.1 KNOWLEDGE 桶）",
+      "--actor",
+      "human:owner",
     ]);
     expect(promoteDecision.code).toBe(0);
     const rejectDecision = await runJson(root, [
@@ -234,6 +236,8 @@ describe("Case N：Harness 记忆漂移端到端（harvest → review → promot
       "--reject",
       "--note",
       "truth 胜出——本条标 EXPIRED 留痕（公式数 42 vs Current Truth 58）；提取 FAILURE_PATTERN「未经实测的计数入册」留待 Knowledge 面",
+      "--actor",
+      "human:owner",
     ]);
     expect(rejectDecision.code).toBe(0);
     // 判不了条目留 PENDING 队列（拒绝位=不猜测，等人裁决）。

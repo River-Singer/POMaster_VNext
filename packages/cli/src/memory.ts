@@ -17,8 +17,9 @@
  * - review [--list] / --decide      batch review 唯一人工闸（thread-B §4.2）：
  *                                   缺省 PENDING 队列；--list 全量+四面过滤；
  *                                   --decide <id> --promote|--reject（--note 必填
- *                                   留痕；--reclassify-* 只改分类标签——内容原文
- *                                   零改写铁律在 kernel 签名封条）；
+ *                                   留痕；--actor 必填显式申报评审主体——禁默认
+ *                                   human:owner，O-W1-2/D-2；--reclassify-* 只改分类
+ *                                   标签——内容原文零改写铁律在 kernel 签名封条）；
  * - promote <memory-id>             分桶路由（kernel promoteMemory 唯一通路）：
  *                                   KNOWLEDGE→P28 knowledge 生命周期恒 CANDIDATE
  *                                   +ADVISORY 台账落盘确认行；USER→user-scope 台账；
@@ -56,7 +57,6 @@ import {
   readInboxEntries,
   readInboxEntry,
   reviewInbox,
-  type Actor,
   type HarvestBucketValue,
   type HarvestHarnessReport,
   type InboxEntry,
@@ -558,7 +558,7 @@ export async function runMemoryReview(
           `    ${entry.id} [${entry.review_state}/${entry.proposal.bucket}/${entry.proposal.confidence}]${entry.needs_conflict_check ? " needs_conflict_check" : ""} ${entry.proposal.title ?? `(${entry.batch})`}`,
       ),
       ...(report.entries.length === 0 ? ["    （无匹配条目——显式空）"] : []),
-      "  裁决: pomaster memory review --decide <id> --promote|--reject --note <text>（只改分类标签，不改写内容原文）",
+      "  裁决: pomaster memory review --decide <id> --promote|--reject --note <text> --actor <type>:<name>（只改分类标签，不改写内容原文）",
     ];
     return okOutcome(command, result, human);
   } catch (err) {
@@ -601,13 +601,19 @@ async function decideMode(
       hint: "给出裁决注记（batch review 批次/依据；已决留痕可审计）。",
     });
   }
-  let actor: { readonly actor: Actor } | { readonly error: CliError } = {
-    actor: { actorType: "human", actor: "owner", selfAttested: true },
-  };
-  if (input.actor !== undefined) {
-    actor = parseActorArgv(input.actor);
-    if ("error" in actor) return fail(empty, command, actor.error);
+  // 评审主体必填（O-W1-2 / W0 D-2 修正）：禁默认 human:owner——缺省主体会让 AI 运行
+  // 本命令被记为 human:owner（词形与事实脱钩，review 的「人工」属性不可信）。
+  // 传入什么记录什么：parseActorArgv 恒 selfAttested=true（C5 自报），self_attested
+  // 照实登记不改语义；存量记录（默认主体时代的 reviewed_by）零迁移不动。
+  if (input.actor === undefined) {
+    return fail(empty, command, {
+      code: "SCHEMA_INVALID",
+      message: "--actor 必填（评审主体显式申报——禁默认 human:owner 冒充人工评审，D-2）",
+      hint: "补 --actor <type>:<name>（如 --actor human:owner 或 --actor agent:claude/session-1）后重跑；传入什么记录什么（self_attested 照实登记）。",
+    });
   }
+  const actor = parseActorArgv(input.actor);
+  if ("error" in actor) return fail(empty, command, actor.error);
   // 确定性前置检查（呈现词形映射；kernel 权威再判）。
   let current: InboxEntry;
   try {

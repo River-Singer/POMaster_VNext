@@ -43,6 +43,12 @@
  * - VERIFIED claim 附带 07 执行层规则核验：evidence_refs 为空 ⇒ 判定无效
  *   （07 schema「空数组合法，但此时 verification 不得为 VERIFIED」）——零证据的 VERIFIED
  *   正是「证据缺失伪装完成」，closeout 拒绝消费。
+ * - 自批 VERIFIED 不进 DoD 分母（O-W1-3 / W0 B-2 消费端分母纪律；D-2 同轮修正）：
+ *   verification.recomputed_by 与 asserted_by 同主体（actor_type:actor 全等）的 VERIFIED
+ *   claim 不满足 acceptance（DOD_CLAIM_SELF_APPROVED 逐条显式，列出 claim id+subject，
+ *   指路独立 verifier 重判）也不满足 Spec 条款资格（同线 claimFinding——资格清单不是
+ *   自批洗白通道）。record 通道维持 warning-only 零改动（record.ts CLAIM_SELF_APPROVAL
+ *   同线，B3 边界）；主体盒缺席/畸形不在此判（doctor claim_self_approval_clean 权威检出）。
  * - DoD Spec 维度（vNext Batch 2 R1 / Owner 裁定 D6 2026-09-04；PRD §9.2 四概念分离）：
  *   truth-index 中 SPEC.*（PR-0008 前缀闭包）对象按 21-evidence-spec.schema.json
  *   payload（kind=business_rule 承载，spec_kind=evidence_spec 判别）读绑定与要求条款：
@@ -336,6 +342,18 @@ interface ClaimRecordView {
   readonly acceptanceIndex: unknown;
   readonly verdict: string | null;
   readonly evidenceRefs: unknown;
+  /** 断言主体词形（07 asserted_by → "actor_type:actor"；盒缺席/字段畸形 = null 诚实缺席）。 */
+  readonly assertedBy: string | null;
+  /** 重算主体词形（07 verification.recomputed_by → "actor_type:actor"；同上缺席规则）。 */
+  readonly recomputedBy: string | null;
+}
+
+/** actor 盒（07 actor 形态）→ "actor_type:actor" 词形；盒/字段缺席或非字符串 = null。 */
+function actorLabelOf(box: unknown): string | null {
+  if (!isRecord(box)) return null;
+  const actorType = asString(box.actor_type);
+  const actor = asString(box.actor);
+  return actorType === null || actor === null ? null : `${actorType}:${actor}`;
 }
 
 async function readClaimRecord(
@@ -364,6 +382,8 @@ async function readClaimRecord(
     acceptanceIndex: isRecord(parsed.subject) ? (parsed.subject as UnknownRecord).acceptance_index : undefined,
     verdict: verification === undefined ? null : asString(verification.verdict),
     evidenceRefs: parsed.evidence_refs,
+    assertedBy: actorLabelOf(parsed.asserted_by),
+    recomputedBy: actorLabelOf(verification === undefined ? undefined : verification.recomputed_by),
   };
 }
 
@@ -548,6 +568,19 @@ export async function runCloseout(
         continue;
       }
       if (verdict === "VERIFIED") {
+        // 自批拒绝（O-W1-3 / W0 B-2 消费端分母纪律）：recomputed_by 与 asserted_by
+        // 同主体的 VERIFIED claim 不满足 acceptance——「独立验证」词形与事实脱钩的
+        // 封堵。record 通道维持 warning-only（写路径零改动，record.ts CLAIM_SELF_APPROVAL
+        // 同线）；资格判卷在 closeout 消费单点施加。主体盒缺席/畸形（任一 null）不判
+        // 自批（doctor claim_self_approval_clean 是缺损形态的权威检出位，不在此混算）。
+        if (view.assertedBy !== null && view.assertedBy === view.recomputedBy) {
+          push(false, verdict, null, {
+            code: "DOD_CLAIM_SELF_APPROVED",
+            message: `${claimRef} 的重算主体与断言主体相同（${view.assertedBy}）——自批 VERIFIED 不满足 acceptance[${index}]（claim id=${claimRef}，subject=${String(view.subject)}；D20/07 x-actor-discipline）`,
+            hint: "由独立 verifier 重新 record verification（--verifier <type>:<name> 须与 asserted_by 主体分离）后重跑 closeout；doctor 探针 claim_self_approval_clean 同线可全量自查。",
+          });
+          continue;
+        }
         const evidenceRefs = Array.isArray(view.evidenceRefs) ? view.evidenceRefs : null;
         if (evidenceRefs === null || evidenceRefs.length === 0) {
           push(false, verdict, null, {
@@ -733,6 +766,14 @@ export async function runCloseout(
         const verdict = view.verdict;
         if (verdict !== "VERIFIED") {
           claimFindings.push(`${claimRef}: verdict=${verdict ?? "缺失"}，不是 VERIFIED（判定来自 claims 平面，D20）`);
+          continue;
+        }
+        // 自批拒绝（O-W1-3，acceptance 侧 DOD_CLAIM_SELF_APPROVED 同线）：自批 VERIFIED
+        // 不满足条款资格——资格清单不是自批洗白通道（挪证缝收口）。
+        if (view.assertedBy !== null && view.assertedBy === view.recomputedBy) {
+          claimFindings.push(
+            `${claimRef}: 自批 VERIFIED（重算主体与断言主体相同 ${view.assertedBy}）不满足条款——由独立 verifier 重新 record verification`,
+          );
           continue;
         }
         const evidenceRefs = Array.isArray(view.evidenceRefs) ? view.evidenceRefs : null;

@@ -150,10 +150,15 @@ function claimFixture(overrides: {
   readonly subject?: string;
   readonly verdict?: string;
   readonly acceptanceIndex?: number;
+  /** true = 重算主体与断言主体同元组（自批 VERIFIED 形态——O-W1-3 条款资格拒绝目标）。 */
+  readonly selfApproved?: boolean;
 }): Record<string, unknown> {
   const clm = overrides.clm ?? "CLM-0001";
   const subject = overrides.subject ?? "TASK.T0001";
   const verdict = overrides.verdict ?? "VERIFIED";
+  const recomputed = overrides.selfApproved === true
+    ? { actor_type: "agent", actor: "demo-builder" }
+    : { actor_type: "tool", actor: "verifier@0.1.0" };
   return {
     record_type: "claim",
     clm,
@@ -172,7 +177,7 @@ function claimFixture(overrides: {
       ...(verdict === "VERIFIED"
         ? {
             method: "recompute",
-            recomputed_by: { actor_type: "tool", actor: "verifier@0.1.0", self_attested: false },
+            recomputed_by: { ...recomputed, self_attested: false },
             recomputed_value: { ok: true },
             delta_vs_asserted: null,
             at_seq: 3,
@@ -292,6 +297,23 @@ describe("closeout DoD Spec 维度（R1/D6：资格判定非引用映射）", ()
     const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
     expect(outcome.ok).toBe(false);
     expect(outcome.errors.map((e) => e.code)).toContain("DOD_SPEC_CLAUSE_UNSATISFIABLE");
+  });
+
+  it("自批 VERIFIED claim 不满足条款（O-W1-3 同线：资格清单不是自批洗白通道）→ DOD_SPEC_CLAUSE_UNSATISFIED 点名自批", async () => {
+    await seedHappyBaseline(); // acceptance 轨的 CLM-0001 主体分离照常成立
+    seedClaim({ clm: "CLM-0002", selfApproved: true }); // 条款资格清单引用自批 claim
+    await seedSpec({
+      clauses: [clauseFixture({ claimRefs: ["CLM-0002"] })],
+    });
+    const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors.map((e) => e.code)).toContain("DOD_SPEC_CLAUSE_UNSATISFIED");
+    const unsatisfied = outcome.errors.find((e) => e.code === "DOD_SPEC_CLAUSE_UNSATISFIED");
+    expect(unsatisfied?.message).toContain("CLM-0002");
+    expect(unsatisfied?.message).toContain("自批");
+    const result = outcome.result as CloseoutResult;
+    expect(result.dod?.spec?.clauses_satisfied).toBe(0);
+    expect(result.change).toBeNull(); // 零写入
   });
 
   it("gate 资格引用成立可满足条款（subject 全等 + passed）；gate 资格 subject 失配 → DOD_SPEC_GATE_SUBJECT_MISMATCH", async () => {
