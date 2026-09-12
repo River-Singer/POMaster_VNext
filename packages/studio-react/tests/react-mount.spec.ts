@@ -63,7 +63,8 @@ async function mountStory(family: string): Promise<HTMLElement> {
   const root = createRoot(container);
   // 不用 act 包裹挂载：Statistic 的 Countdown 演示体带 rAF 连续 tick 循环，act 的
   // 排空循环会被持续到达的更新饿死（实测 40s 不结算）。改为裸 render + 宏任务
-  // 等待（React 默认优先级的提交在数 ms 内完成，断言前 DOM 已就绪）。
+  // fast-path；就绪判定交给 waitForRendered 有界轮询（CI 负载下单次 flush 可能
+  // 赌输渲染窗口，见 waitForRendered 注）。
   root.render(element);
   await new Promise((resolve) => setTimeout(resolve, 50));
   return container;
@@ -77,8 +78,29 @@ async function clickTrigger(scope: ParentNode): Promise<void> {
   trigger.dispatchEvent(new MouseEvent("click", { bubbles: true }));
   // 服务式 API 的 portal 渲染与触发的 React 根不同源（antd message/notification
   // 自建 portal 根），裸宏任务等待其提交（不依赖 act 排空语义——act 会被
-  // Countdown rAF 连续 tick 饿死，见 mountStory 注；此处统一走裸事件 + 等待）。
+  // Countdown rAF 连续 tick 饿死，见 mountStory 注；portal 就绪同样由
+  // waitForRendered 轮询确认，此处 flush 仅为 fast-path）。
   await new Promise((resolve) => setTimeout(resolve, 100));
+}
+
+// PR #11 Windows CI 实证：act-free 单次宏任务 flush 在 CI 负载下赌输渲染窗口
+// （react-mount.spec 挂载断言 expected 0 to be greater than 0；ubuntu/macos 同轮
+// 全绿为时序余量差异）。等待改为有界轮询：等的是"渲染完成"这个事实，不放宽
+// 断言语义；到确定性上界仍未就绪则显式失败并附当前 DOM 快照（禁无上界裸 sleep）。
+const RENDER_READY_TIMEOUT_MS = 2000;
+const RENDER_POLL_INTERVAL_MS = 10;
+
+async function waitForRendered(ready: () => boolean, target: string): Promise<void> {
+  const deadline = Date.now() + RENDER_READY_TIMEOUT_MS;
+  while (!ready()) {
+    if (Date.now() >= deadline) {
+      throw new Error(
+        `${target} not rendered within ${RENDER_READY_TIMEOUT_MS}ms; ` +
+          `body snapshot: ${document.body.innerHTML.slice(0, 2000)}`,
+      );
+    }
+    await new Promise((resolve) => setTimeout(resolve, RENDER_POLL_INTERVAL_MS));
+  }
 }
 
 afterEach(() => {
@@ -94,6 +116,10 @@ describe("studio-react generated stories react-dom mount smoke (audit R2/R3)", (
     it(`${family}: mounts without throw and renders non-empty`, async () => {
       const container = await mountStory(family);
       try {
+        await waitForRendered(
+          () => container.innerHTML.length > 0,
+          `${family} story content`,
+        );
         expect(container.innerHTML.length).toBeGreaterThan(0);
       } finally {
         container.remove();
@@ -104,6 +130,12 @@ describe("studio-react generated stories react-dom mount smoke (audit R2/R3)", (
   it("Anchor: anchor link and target paragraph both present (R2a)", async () => {
     const container = await mountStory("Anchor");
     try {
+      await waitForRendered(
+        () =>
+          (container.textContent ?? "").includes(ANCHOR_TITLE) &&
+          (container.textContent ?? "").includes(ANCHOR_TARGET),
+        "Anchor story content",
+      );
       expect(container.textContent).toContain(ANCHOR_TITLE);
       expect(container.textContent).toContain(ANCHOR_TARGET);
     } finally {
@@ -114,6 +146,12 @@ describe("studio-react generated stories react-dom mount smoke (audit R2/R3)", (
   it("Typography: heading and paragraph text visible (R2b)", async () => {
     const container = await mountStory("Typography");
     try {
+      await waitForRendered(
+        () =>
+          (container.textContent ?? "").includes(TYPO_HEADING) &&
+          (container.textContent ?? "").includes(TYPO_PARAGRAPH),
+        "Typography story content",
+      );
       expect(container.textContent).toContain(TYPO_HEADING);
       expect(container.textContent).toContain(TYPO_PARAGRAPH);
     } finally {
@@ -125,6 +163,13 @@ describe("studio-react generated stories react-dom mount smoke (audit R2/R3)", (
     const container = await mountStory("message");
     try {
       await clickTrigger(container);
+      await waitForRendered(() => {
+        const rendered = document.body.querySelector(".ant-message");
+        return (
+          rendered !== null &&
+          (rendered.textContent ?? "").includes(serviceText("message"))
+        );
+      }, "message portal body");
       const rendered = document.body.querySelector(".ant-message");
       expect(rendered).toBeTruthy();
       expect(rendered?.textContent).toContain(serviceText("message"));
@@ -137,6 +182,12 @@ describe("studio-react generated stories react-dom mount smoke (audit R2/R3)", (
     const container = await mountStory("notification");
     try {
       await clickTrigger(container);
+      await waitForRendered(() => {
+        const notice = document.body.querySelector(
+          ".ant-notification-notice-message",
+        );
+        return (notice?.textContent ?? "").includes(serviceText("notification"));
+      }, "notification portal body");
       const notice = document.body.querySelector(".ant-notification-notice-message");
       expect(notice?.textContent).toContain(serviceText("notification"));
     } finally {
