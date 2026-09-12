@@ -24,7 +24,8 @@
  *   覆写（无 CAS），双 child 同抢一把锁 read-read-write-write 交错双双成功且 fence
  *   相同、journal 只剩一条 LOCK_STOLEN。修复后（独占认领 CAS + journal 原子追加）
  *   跨进程双子进程同拍争用：串行化成功、fence 严格单调（2→3）、LOCK_STOLEN 双条
- *   留痕、磁盘终态无双重凭据（唯最高 fence valid）。
+ *   留痕、磁盘终态无双重凭据（唯最高 fence valid）。双子进程经文件栅栏同拍起跑
+ *   （ready 信号互见 + 有界等待——2026-09-12 macOS CI 编排竞态修复，见 E 段内注）。
  */
 import { spawn } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
@@ -446,12 +447,18 @@ interface StealChildResult {
   readonly err: string;
 }
 
-/** 起一个争用子进程（attach → steal 目标锁 → STOLEN <fence> / exit 4 显式错误）。 */
-function spawnStealChild(sessionKey: string, lockId: string): Promise<StealChildResult> {
+/**
+ * 起一个争用子进程（attach → [栅栏位] → steal 目标锁 → STOLEN <fence> / exit 4 显式错误）。
+ * `barrierDir` 在座时子进程于 steal 前落 ready 信号并等双子进程齐座（文件在座信号 +
+ * 有界等待 + 超时 exit 3 显式失败——消除双子进程 spawn/start lottery）。
+ */
+function spawnStealChild(sessionKey: string, lockId: string, barrierDir?: string): Promise<StealChildResult> {
   return new Promise((resolve) => {
     const child = spawn(
       process.execPath,
-      [stealChildScript, root, lockId, sessionKey],
+      barrierDir === undefined
+        ? [stealChildScript, root, lockId, sessionKey]
+        : [stealChildScript, root, lockId, sessionKey, barrierDir],
       { stdio: ["ignore", "pipe", "pipe"] },
     );
     let out = "";
@@ -468,6 +475,15 @@ function spawnStealChild(sessionKey: string, lockId: string): Promise<StealChild
 
 describe("E 段：跨进程并发 steal 争用（P20 红队发现 1 修复回归）", () => {
   it("双子进程同拍 steal 同一把锁：串行化成功、fence 严格单调（2→3）、LOCK_STOLEN 双条留痕、磁盘终态无双重凭据", async () => {
+    // 本测试曾于 macOS CI 发作（commit e7d2b2f 轮，2026-09-12；AssertionError:
+    // expected 1 to be +0）：双子进程同拍 spawn 后各自对 authority.json 做
+    // readFileSync+writeFileSync 直写 bootstrap，一方的截断窗（open 'w' → write 间）
+    // 撕裂另一方的 readFileSync → JSON.parse 未捕获崩逸 exit 1——测试编排竞态，
+    // 非 steal 语义缺陷（R1 定性 (b)）。修复 = 移除 child 冗余 bootstrap 写（父测试
+    // makeStore 已登记 owner）+ 文件栅栏同拍起跑；断言面零删减。
+    // per-test timeout 显式 60s（vitest.config 15s 全局基线对「双 node spawn + 栅栏」
+    // 的 CI 慢盘预算不足）：child 栅栏死限 15s < 60s，栅栏超时以 exit 3 + stderr
+    // BARRIER_TIMEOUT 显式收场，不会伪装成 15s 整测超时。
     // 父进程置锁：会话 A 持 change 锁（fence=1）。
     await attachOn(store, A, "claude-code");
     const acquired = await acquireLock(store, {
@@ -476,9 +492,11 @@ describe("E 段：跨进程并发 steal 争用（P20 红队发现 1 修复回归
     expect(acquired.outcome).toBe("acquired");
 
     // 真并发：两独立子进程同拍起跑（同进程 Promise.all 会串行化同步 IO——假通过）。
+    // 文件栅栏（临时 store 根下，产物不入库）：两子进程互见 ready 后同拍进 steal。
+    const barrierDir = join(root, "steal-contention-barrier");
     const [r1, r2] = await Promise.all([
-      spawnStealChild("codex_c1", "change-CHG-CONTEND"),
-      spawnStealChild("codex_c2", "change-CHG-CONTEND"),
+      spawnStealChild("codex_c1", "change-CHG-CONTEND", barrierDir),
+      spawnStealChild("codex_c2", "change-CHG-CONTEND", barrierDir),
     ]);
     // 修复后语义 = 串行化成功：双双 exit 0；若 CAS 退化回覆写竞态，会出现双 fence=2。
     expect(r1.code).toBe(0);
@@ -489,7 +507,10 @@ describe("E 段：跨进程并发 steal 争用（P20 红队发现 1 修复回归
       { sessionKey: "codex_c2", fence: Number(/STOLEN (\d+)/.exec(r2.out)?.[1]) },
     ].sort((a, b) => a.fence - b.fence);
     expect(steals.map((steal) => steal.fence)).toEqual([2, 3]);
-    const last = steals[1] as { readonly sessionKey: string; readonly fence: number };
+    const [first, last] = steals as [
+      { readonly sessionKey: string; readonly fence: number },
+      { readonly sessionKey: string; readonly fence: number },
+    ];
 
     // journal 留痕完整（append 原子性——旧覆写落法会把并发一条抹掉只剩一条）：
     // 含双子进程并发 attach 的 SESSION_ATTACHED 与两条 LOCK_STOLEN，逐行可解析。
@@ -507,15 +528,17 @@ describe("E 段：跨进程并发 steal 争用（P20 红队发现 1 修复回归
 
     // held_locks 稳定不变量：原持有人清空（首接管方 remove 后无人再写其会话文件）、
     // 末接管方在册（add 后无人再写其会话文件）。
-    // 已知残留（advisory 指针面，非本批发现 1 的锁面/journal 面）：首轮接管方的
-    // held_locks 清除（由末接管方的 remove 执行）与其自身 add 交叉时可能留下陈旧
-    // 指针——held_locks 是可观测性登记，排他判卷权威在锁文件+fence（上文已钉）；
-    // 会话指针面的字节级 CAS 化为独立后续，不在本批四发现范围。
+    // 良性交错白名单（显式形态化而非忽略）：首轮接管方的 held_locks 是二值合法形态——
+    // [] = 本方 add 先落定、末接管方随后的 remove 清除之；
+    // ["change-CHG-CONTEND"] = 本方 add 与末接管方的 remove 交叉留下的陈旧指针
+    // （advisory 可观测性登记，排他判卷权威在锁文件+fence，上文已钉；会话指针面的
+    // 字节级 CAS 化为独立后续，不在本批四发现范围）。
     const sessions = listSessionRecords(pathsOf(store));
     const heldBy = new Map(sessions.map((row) => [row.record.session_key, row.record.held_locks]));
     expect(heldBy.get(A)).toEqual([]);
+    expect([[], ["change-CHG-CONTEND"]]).toContainEqual(heldBy.get(first.sessionKey));
     expect(heldBy.get(last.sessionKey)).toEqual(["change-CHG-CONTEND"]);
-  });
+  }, 60_000);
 
   it("失败方显式错误（争用耗尽非静默）：人为占满重试窗口的锁争用以 ENVIRONMENT_ERROR 收场", async () => {
     // 父进程置锁 + 子进程以争用锁收场：本例验证错误通道形态——子进程报

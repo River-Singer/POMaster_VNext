@@ -238,6 +238,13 @@ describe("status 播种分面计数呈现（B6e；B7-THEME 四分面）", () => 
   });
 
   it("项目增删播种件 → 计数照实呈现（磁盘实况呈现位，非清单分母对账）", async () => {
+    // 本测试曾于 Windows CI 发作（run 34610508238 / job 103299521571，2026-09-11：
+    // Test timed out in 15000ms）。诊断：用例 fs 量被 runInit 主导（播种 ~150+ 文件
+    // 落盘 + baseline 快照），vitest maxWorkers 4 并行下叠加 CI 慢盘单文件写延迟，
+    // 15s 全局基线预算不足；本机实测 ~320ms 全绿——负载预算问题，非产品挂起。
+    // 处置 = per-test timeout 显式上调（init 重 fs 用例惯例，与 view.spec 30s /
+    // baseline-set-contention 120s 同法）；断言零删减，runInit 为被测分面的生产
+    // 通路无可精简。
     await runInit(dir);
     mkdirSync(join(dir, ".pomaster", "specs", "evidence"), { recursive: true });
     writeFileSync(
@@ -247,7 +254,7 @@ describe("status 播种分面计数呈现（B6e；B7-THEME 四分面）", () => 
     );
     const outcome = await runStatus(dir);
     expect(outcome.result.seeded_assets?.specs_evidence).toBe(21);
-  });
+  }, 60_000);
 
   it("legacy spec 并存检出（B7-THEME / OQ-9 + D3）：退役目录在座 → 计数呈现（纯读不拦不删）", async () => {
     await runInit(dir);
