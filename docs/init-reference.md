@@ -7,6 +7,7 @@
 ## 目录
 
 - [总览：幂等语义](#总览幂等语义)
+- [模式分叉：Greenfield / Brownfield](#模式分叉greenfield--brownfield)
 - [init 产物表](#init-产物表)
 - [目录宪法全树预铺](#目录宪法全树预铺)
 - [播种语义：seed-once-missing-only](#播种语义seed-once-missing-only)
@@ -33,6 +34,42 @@ pomaster init
 - 播种面（`baseline/**`、`specs/**` 内容文件）与预植对象在座零触碰（动作记
   `preserved`，不计入任何 change 桶）——重跑全 preserved 即 NO_CHANGE。
 - `--json` 信封与人读输出单信封分离（人读横幅/logo 恒不进机读面）。
+
+## 模式分叉：Greenfield / Brownfield
+
+init 启动时对宿主形态做**零写入检测**，三态闭环——模式分叉只是编排差异，确认链/候选/
+sidecar 全部复用既有机制（零新治理语义）：
+
+| 检测态 | 判据 | 行为 |
+|---|---|---|
+| Greenfield | 干净目录（worktree 全空） | 静默直入现状（零新增人读行） |
+| Brownfield 候选 | worktree 非空（git 在座 / 源码文件在座）且无 `.pomaster/` | 呈现检测摘要，TTY 问卷首题显式确认 |
+| 已初始化 | `.pomaster/` 在座 | 重入口行为不变（零分叉零提问） |
+
+- **检测是呈现不是裁决**：摘要 = 源文件计数（`.ts/.tsx/.js/.jsx/.mjs/.cjs/.vue` 枚举闭包，
+  跳过 node_modules/dist/.git/coverage/.pomaster）/ migration 五栈词形面命中
+  （prisma/flyway/liquibase/alembic/django_style——词形盘点不是 stack 断言）/ SBOM
+  工具（cdxgen）PATH 在位性。检测结果进 `--json` 信封 `result.mode` 与人读 `mode:` 行。
+- **显式确认制（禁静默分叉双向）**：Brownfield 编排只在 TTY 交互问句（平台选择后、
+  技术栈问卷前）得到 Owner 确认后触发；非交互通道（`--json`/CI）候选态显式
+  `skipped_non_interactive`（零 recon），Owner 拒绝 = `declined`（Greenfield 现状）。
+- **确认后自动 recon 三腿**（`recon` 命令组既有通路直调——产物语义与其 `--help` 一致）：
+  - `import-graph`：宿主源文件 import 图静态扫描 → 报告 blob + OBS 观察回执；
+  - `migrations`：migration 目录五栈词形盘点（纯读盘零工具执行）→ ENVREC 回执；
+  - `sbom`：依赖清单采集（cdxgen 腿）——工具缺席 `NOT_INSTALLED` 显式跳过不阻塞
+    init（warning 带补采路标：`pomaster recon sbom --execution-id <id>`，执行档案
+    已封口、事后补录兼容 recon 契约）。
+- **执行身份**：编排经 kernel `execution begin/end` 登记并封口一份执行档案
+  （`.pomaster/executions/AGX-*.json`，role/runtime/identity_kind = `script`——
+  recon 由 CLI 进程执行的诚实申报；journal 落 `EXECUTION_BEGUN`/`EXECUTION_ENDED`），
+  三腿观察回执锚定该身份（S1：回执不挂未登记身份）。
+- **fail-closed**：腿失败/工具缺席折算为腿状态（OBSERVED / NOT_RUN / INCONCLUSIVE /
+  NOT_INSTALLED）+ warning 显式呈现，**recon 失败不阻塞 init 主链**；产物只落
+  `.pomaster/evidence/{blobs,observations}/` sidecar 平面——baseline 权威面零写口
+  （字节快照测试钉）。
+- **差距报告合并呈现**：完成输出同时呈现 recon sidecar 摘要（三腿逐腿一行）与问卷
+  观察候选 `[Observed: package.json]` 注记——Owner 就地裁剪（答问卷 / `baseline set`
+  / 手编 manifest 豁免行）后走既有 `pomaster baseline confirm` 确认链（零新确认链）。
 
 ## init 产物表
 

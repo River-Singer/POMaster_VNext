@@ -165,8 +165,31 @@ import { POMASTER_DIR, executionsDirPath, toPosix } from "./store-layout.js";
 // 词形常量（禁私扩词表——见头注「词形纪律」）
 // ============================================================
 
-/** recon import-graph 的 sensor 能力词形（既有在册物料 SENSOR.BUILD.STATIC——头注词形纪律）。 */
+/**
+ * recon import-graph 的 sensor 能力词形（既有在册物料 SENSOR.BUILD.STATIC——头注词形纪律）。
+ */
 export const RECON_IMPORT_GRAPH_SENSOR_CAPABILITY = "SENSOR.BUILD.STATIC" as const;
+
+/**
+ * 宿主源文件枚举 export（init 模式检测消费——init-mode.ts detectInitMode 的源文件
+ * 计数与本通路枚举闭包单一来源：禁第二份「扩展名闭包 + 跳过清单」镜像漂移。
+ * export 零行为变化；词形闭包见 collectReconSourceFiles 头注）。
+ */
+export function reconSourceFiles(rootDir: string): readonly string[] {
+  const out: string[] = [];
+  collectReconSourceFiles(rootDir, rootDir, out);
+  out.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  return out;
+}
+
+/**
+ * migration 五栈词形面检测 export（init 模式检测消费——init-mode.ts detectInitMode
+ * 的词形盘点与本通路 detectMigrationStacks 单一来源：禁第二份五栈词形清单漂移。
+ * export 零行为变化；词形清单见 RECON_MIGRATION_STACKS 头注）。
+ */
+export function reconMigrationStackReports(rootDir: string): readonly ReconMigrationStackReport[] {
+  return detectMigrationStacks(scanHostTree(rootDir));
+}
 
 /** 观察动作（17 schema operation 开放位；仿 §6.13 例文 inspect_network 动作词形）。 */
 export const RECON_IMPORT_GRAPH_OPERATION = "scan_import_graph" as const;

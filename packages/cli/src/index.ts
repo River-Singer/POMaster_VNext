@@ -179,6 +179,8 @@ import { CLI_NAME } from "./cli-info.js";
 import { toEnvelope, failOutcome, type CliEnvelope, type CommandOutcome } from "./envelope.js";
 import { runInit, runChecklistPrompt, runInitInteractive } from "./init.js";
 import type { ChecklistPromptResult, InitResult } from "./init.js";
+import { confirmBrownfieldPath } from "./init-mode.js";
+import type { InitBrownfieldChoice } from "./init-mode.js";
 import { collectStackAnswers, runBaselineConfirm, runBaselineSet } from "./baseline.js";
 import type { StackQuestionnaireOutcome } from "./baseline.js";
 import { runUpdate } from "./update.js";
@@ -288,6 +290,22 @@ export {
   renderPlatformMenu,
   renderChecklistFrame,
 } from "./init.js";
+export {
+  confirmBrownfieldPath,
+  detectInitMode,
+  renderBrownfieldFrame,
+  renderModeHumanLines,
+  brownfieldDetectionLine,
+  INIT_BROWNFIELD_RECON_FAILED,
+} from "./init-mode.js";
+export type {
+  InitBrownfieldChoice,
+  InitModeDetection,
+  InitModeResult,
+  InitModeSummary,
+  InitReconLegReport,
+  InitReconReport,
+} from "./init-mode.js";
 export {
   collectStackAnswers,
   resolveRemainingQuestions,
@@ -903,6 +921,8 @@ export {
   RECON_MIGRATION_STACK_WORD_FORMS,
   RECON_SBOM_INSTALL_HINT,
   RECON_SBOM_TOOL,
+  reconMigrationStackReports,
+  reconSourceFiles,
   reconSbomSpawn,
   runReconImportGraph,
   runReconMigrations,
@@ -1026,7 +1046,7 @@ export function createProgram(
   program
     .command("init")
     .description(
-      "创建 .pomaster/ 最小骨架 + AGENTS.md 唯一事实源 + 平台适配器（F1：--platforms 逗号列表 claude,codex,cursor,qoder / none；幂等；重复执行 NO_CHANGE）；重入口默认（skills 库双镜像 + claude hooks 注册 + 加厚 rules）；TTY 交互在平台选择后接技术栈逐键问卷（R-M：FE 9 + BE 5 必答，答答回填 baseline stack.yaml + unknowns 销账；非交互跳过后补 baseline set）",
+      "创建 .pomaster/ 最小骨架 + AGENTS.md 唯一事实源 + 平台适配器（F1：--platforms 逗号列表 claude,codex,cursor,qoder / none；幂等；重复执行 NO_CHANGE）；重入口默认（skills 库双镜像 + claude hooks 注册 + 加厚 rules）；TTY 交互在平台选择后接模式问句与技术栈逐键问卷（F-M3 模式分叉：干净目录 Greenfield 直入；检测到已有项目（worktree 非空且无 .pomaster）呈现检测摘要并经问卷首题显式确认 Brownfield——确认后自动 recon 三腿（import-graph/migrations/sbom）采集宿主事实，腿产物只落 evidence sidecar 平面、腿失败不阻塞 init；非交互通道不分支）；R-M 技术栈问卷 FE 9 + BE 5 必答，答答回填 baseline stack.yaml + unknowns 销账，观察候选 [Observed] 注记与 recon 摘要合并呈现——Owner 裁剪后走 baseline confirm 既有确认链",
     )
     .option(
       "--platforms <platforms>",
@@ -3543,12 +3563,24 @@ async function initInteractiveOutcome(
     if (rawEnabled) {
       let result: ChecklistPromptResult;
       let quiz: StackQuestionnaireOutcome | null = null;
+      let brownfield: InitBrownfieldChoice | undefined;
       try {
         result = await runChecklistPrompt({
           write: (chunk) => process.stdout.write(chunk),
           pumpKeys: (handler) => pumpStdinKeys(handler),
         });
         if (result.kind === "confirmed") {
+          // F-M3 R1 模式问句（问卷首题）：Brownfield 候选态在技术栈问卷之前显式
+          // 确认（greenfield/initialized 静默跳过——零提问零分叉）。
+          const mode = await confirmBrownfieldPath(rootDir, {
+            write: (chunk) => process.stdout.write(chunk),
+            pumpKeys: (handler) => pumpStdinKeys(handler),
+          });
+          if (mode === null) {
+            restoreRaw();
+            process.exit(130);
+          }
+          brownfield = { confirmed: mode.confirmed };
           // R-M：平台确认后接技术栈问卷（raw 单选帧；仍处 raw 模式，restoreRaw
           // 统一在问卷之后执行）。
           quiz = await collectStackAnswers(rootDir, {
@@ -3568,6 +3600,7 @@ async function initInteractiveOutcome(
       return runInit(rootDir, {
         platforms: result.platforms.join(","),
         stackQuestionnaire: quiz,
+        brownfield,
       });
     }
   }
