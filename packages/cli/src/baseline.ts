@@ -2492,8 +2492,8 @@ async function writeConfirmedRecord(
 // closeout 聚合单点的确认 gate（R-L 两阻塞码；适用域 = manifest 在场项目）
 // ============================================================
 
-/** 确认态读取中间面（gate 与 presentation 共用同一派生——判卷/呈现禁两套口径）。 */
-type BaselineConfirmationRead =
+/** 确认态读取中间面（gate 与 presentation 共用同一派生——判卷/呈现禁两套口径）。导出面（R4/design-context 批）：baseline-grounding.ts 生产者复用。 */
+export type BaselineConfirmationRead =
   | { readonly kind: "manifest-absent" }
   | { readonly kind: "manifest-unreadable"; readonly detail: string }
   | {
@@ -2516,8 +2516,11 @@ type BaselineConfirmationRead =
  * 记录级判卷（损坏 = 无有效确认记录）× 状态派生——pending 段在座且漂移全部落在批内
  * 文件 → pending-change；pending 在座而批外漂移 → drifted（未授权改动优先，禁
  * pending 洗白批外漂移）；无 pending → 漂移即 drifted，无漂移即 confirmed。
+ * 导出面（R4/design-context 批）：baseline-grounding.ts 投影接地生产者复用本函数
+ * 作确认态单一派生（禁第二套三态机实现）——gate/closeout/presentation/grounding
+ * 四消费面同源。
  */
-async function readBaselineConfirmation(rootDir: string): Promise<BaselineConfirmationRead> {
+export async function readBaselineConfirmation(rootDir: string): Promise<BaselineConfirmationRead> {
   const manifestFile = await readTextFile(`${rootDir}/${BASELINE_MANIFEST_RELATIVE}`);
   if (manifestFile.kind === "absent") return { kind: "manifest-absent" };
   if (manifestFile.kind === "unreadable") {
@@ -2655,8 +2658,10 @@ export interface BaselineConfirmationPresentation {
  * 阻塞集呈现读取（P-C1 §6.5 加法位；纯读零写入）：computeBlockingSet 单一实现与
  * confirm 闸同判卷（禁两套口径）；stack 平面缺席/不可解析/台账形状损坏 → remaining
  * null 诚实降级（呈现位纪律异常归缺席不炸读路径——observation_receipts 同款）。
+ * 导出面（R4/design-context 批）：baseline-grounding.ts 投影接地生产者复用本函数
+ * 作 blocking_remaining 单一判卷（禁第二套口径）。
  */
-async function readBaselineBlockingPresentation(
+export async function readBaselineBlockingPresentation(
   rootDir: string,
 ): Promise<{
   readonly remaining: number | null;

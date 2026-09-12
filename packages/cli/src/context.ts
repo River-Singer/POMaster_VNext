@@ -76,6 +76,19 @@
  * store（loadStoreReadOnly 零写装载，createStore 的 ensureSidecars 写副作用显式排除
  * ——next-action 快照是纯读面）。审计复现链（maintain 改 task intent → 指纹漂移）
  * 在导航层的修复点：next-action.ts 消费本入口，stale → R_MANIFEST_STALE 重编译路由。
+ *
+ * **baseline grounding 消费（R4/design-context 批）**：默认 compileProjection 依赖
+ * 在共享入口单点注入 `options.baselineGrounding`（facts 由 baseline-grounding.ts
+ * 生产者纯读采集——confirmed baseline 确认态三态机 + 25 确认资产 digest 快照 +
+ * design-tokens 装载三态），kernel 折进 AUTHORITATIVE/ADVISORY 分区条目与
+ * inputsFingerprint。语义（映射 ADR 逐条在 kernel baselineGroundingEntries 头注）：
+ * 有效确认记录在座（confirmed/pending-change/drifted）→ AUTHORITATIVE 呈现（状态词
+ * 如实）；无有效记录 → ADVISORY 注记；tokens origin=preset → ADVISORY 蓝图 /
+ * customized+confirmed → AUTHORITATIVE。指纹绑定（R2）：任一确认资产漂移/改型/
+ * 确认动作 → fingerprint 变化 → --check 按既有 STALE_GROUNDING 词形呈现（不 fail
+ * 主链，R4——阻断归 closeout baselineGateErrors 既有码位）。零权威写口：facts 采集
+ * 纯读；本入口对 baseline 平面零写入。既有调用方（注入 fake kernel 的测试面、kernel
+ * 直调 compileProjection 的消费方）零破坏——options 缺席 = 指纹输入零键。
  */
 
 import { readFileSync } from "node:fs";
@@ -97,6 +110,7 @@ import {
 } from "./store-layout.js";
 import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
+import { readBaselineGroundingFacts } from "./baseline-grounding.js";
 import { isRecord } from "./projection-common.js";
 
 // ============================================================
@@ -543,7 +557,13 @@ export async function runContextCompile(
       deps?.compileProjection ??
       ((async (store: Store, request: ProjectionRequest) => {
         const { compileProjection } = await import("@pomaster/kernel");
-        return compileProjection(store, request);
+        // —— baseline grounding 单点注入（R4/design-context 批）：facts 由
+        // baseline-grounding.ts 生产者纯读采集（confirmed baseline/tokens 消费），
+        // kernel 折进分区条目与 inputsFingerprint——显式命令 / maintain 链 /
+        // judgeTaskContextFreshness 三通路经本共享入口天然继承（零第二注入点）。
+        // 纯读零写入；注入 fake kernel 的测试面自动绕过（第三参被忽略）。
+        const baselineGrounding = await readBaselineGroundingFacts(rootDir);
+        return compileProjection(store, request, { baselineGrounding });
       }) as ContextKernelDeps["compileProjection"]),
     boundEvidenceSpecRefs:
       deps?.boundEvidenceSpecRefs ??
@@ -616,7 +636,7 @@ export async function runContextCompile(
     } else {
       staleState = "stale_grounding";
       staleDetail =
-        `STALE_GROUNDING：现盘 manifest inputs_fingerprint=${existing.existing_inputs_fingerprint} 与本次编译 ${fingerprint} 漂移（Truth/Policy/catalog 已更新）——本次编译即为重编译，覆盖写同 id 文件；可用 context compile --check 随时复核`;
+        `STALE_GROUNDING：现盘 manifest inputs_fingerprint=${existing.existing_inputs_fingerprint} 与本次编译 ${fingerprint} 漂移（Truth/Policy/catalog/baseline grounding 已更新）——本次编译即为重编译，覆盖写同 id 文件；可用 context compile --check 随时复核`;
     }
     const stale_check: ContextCompileResult["stale_check"] = {
       state: staleState,

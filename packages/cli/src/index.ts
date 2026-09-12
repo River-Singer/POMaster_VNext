@@ -337,6 +337,10 @@ export {
   renderBaselineQuizHumanLine,
 } from "./baseline.js";
 export { readDesignTokens } from "./baseline-tokens.js";
+export {
+  readBaselineGroundingFacts,
+  BASELINE_CONFIRMATION_REF,
+} from "./baseline-grounding.js";
 // baselineStackRelative / BASELINE_MANIFEST_RELATIVE 经 export * from store-layout.js 已公开。
 export {
   appendPresetDrafts,
@@ -1334,7 +1338,7 @@ export function createProgram(
   context
     .command("compile")
     .description(
-      "转调 kernel compileProjection，输出五分区 markdown（AUTHORITATIVE PROJECT STATE / REQUIRED POLICY / ADVISORY KNOWLEDGE / REUSE / CATALOG / VERIFICATION——Batch 2 D8 词形闭包）；context manifest 默认落盘 .pomaster/state/contexts/（Batch 2 D7：generated_at_seq/compiler/inputs_fingerprint/五分区 entries；stale 比对 STALE_GROUNDING 呈现不静默覆盖；--check 纯读零写入）",
+      "转调 kernel compileProjection，输出五分区 markdown（AUTHORITATIVE PROJECT STATE / REQUIRED POLICY / ADVISORY KNOWLEDGE / REUSE / CATALOG / VERIFICATION——Batch 2 D8 词形闭包）；context manifest 默认落盘 .pomaster/state/contexts/（Batch 2 D7：generated_at_seq/compiler/inputs_fingerprint/五分区 entries；stale 比对 STALE_GROUNDING 呈现不静默覆盖；--check 纯读零写入）；baseline grounding 消费（R4/design-context：confirmed baseline 确认态三态 + 25 确认资产 digest 摘要进 AUTHORITATIVE/ADVISORY 分区 + design-tokens 九组三态呈现；指纹绑定 baseline——漂移/改型 → STALE_GROUNDING 呈现不阻断）",
     )
     .requiredOption(
       "--role <role>",

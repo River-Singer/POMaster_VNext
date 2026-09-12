@@ -15,6 +15,7 @@ import {
   issuePermit,
   loadCatalogPolicies,
   resolveCatalogRoot,
+  type BaselineGroundingFacts,
   type CatalogEntryDecision,
   type Store,
 } from "@pomaster/kernel";
@@ -893,5 +894,204 @@ describe("指纹正文绑定（审计 F2：范围内正文漂移必须 stale、�
 
     const after = await compileProjection(store, request);
     expect(after.inputsFingerprint).not.toBe(before.inputsFingerprint);
+  });
+});
+
+// ============================================================
+// baseline grounding facts 消费（R4/design-context 批；契约锚：
+// kernel projection.ts baselineGroundingEntries 头注 ADR + cli baseline-grounding.ts
+// 生产者）。facts 由测试直注（kernel 不读 baseline 文件——词形解析独占在生产端）。
+// ============================================================
+
+function groundingFacts(overrides?: Partial<BaselineGroundingFacts>): BaselineGroundingFacts {
+  return {
+    confirmation_ref: "baseline/manifest.yaml#confirmed",
+    tokens_ref: "baseline/frontend/design-tokens.yaml",
+    state: "confirmed",
+    at_seq: 7,
+    blocking_remaining: 0,
+    targets: ["baseline/frontend/stack.yaml", "baseline/backend/stack.yaml"],
+    drifted_files: [],
+    pending_change: null,
+    ack: null,
+    confirmed_digests: { "baseline/frontend/stack.yaml": `sha256:${"1".repeat(64)}` },
+    current_digests: { "baseline/frontend/stack.yaml": `sha256:${"1".repeat(64)}` },
+    tokens: { kind: "absent" },
+    ...overrides,
+  };
+}
+
+function mustRefsOf(projection: { manifest: { mustEntries: readonly { ref: string }[] } }): string[] {
+  return projection.manifest.mustEntries.map((entry) => entry.ref);
+}
+
+describe("compileProjection baseline grounding facts 消费（R4/design-context）", () => {
+  it("state=confirmed → 确认记录条目进 MUST（AUTHORITATIVE）；advisory 零 baseline；reason 携确认态/at_seq/digest 摘要", async () => {
+    const projection = await compileProjection(store, { role: "frontend" }, {
+      baselineGrounding: groundingFacts(),
+    });
+    const entry = projection.manifest.mustEntries.find(
+      (candidate) => candidate.ref === "baseline/manifest.yaml#confirmed",
+    );
+    expect(entry).toBeDefined();
+    expect(entry?.reason).toContain("baseline 确认态=confirmed");
+    expect(entry?.reason).toContain("at_seq=7");
+    expect(entry?.reason).toContain("2 文件 digest 快照一致");
+    expect(entry?.reason).toContain("STALE_GROUNDING");
+    expect(
+      projection.manifest.advisoryEntries.some((candidate) =>
+        candidate.ref.startsWith("baseline/manifest.yaml"),
+      ),
+    ).toBe(false);
+  });
+
+  it("三态机逐态呈现：drifted 带漂移清单、pending-change 带变更批、状态词如实（drifted 不冒充 confirmed）", async () => {
+    const drifted = await compileProjection(store, { role: "frontend" }, {
+      baselineGrounding: groundingFacts({
+        state: "drifted",
+        drifted_files: ["baseline/frontend/architecture.md"],
+      }),
+    });
+    const driftedEntry = drifted.manifest.mustEntries.find(
+      (candidate) => candidate.ref === "baseline/manifest.yaml#confirmed",
+    );
+    expect(driftedEntry?.reason).toContain("确认态=drifted");
+    expect(driftedEntry?.reason).toContain("1 漂移：baseline/frontend/architecture.md");
+
+    const pending = await compileProjection(store, { role: "frontend" }, {
+      baselineGrounding: groundingFacts({
+        state: "pending-change",
+        pending_change: { change_ref: "CHANGE.C0001", batch: ["baseline/frontend/stack.yaml:css"] },
+      }),
+    });
+    const pendingEntry = pending.manifest.mustEntries.find(
+      (candidate) => candidate.ref === "baseline/manifest.yaml#confirmed",
+    );
+    expect(pendingEntry?.reason).toContain("确认态=pending-change");
+    expect(pendingEntry?.reason).toContain("变更批在途 change_ref=CHANGE.C0001");
+    expect(pendingEntry?.reason).toContain("批内 1 键");
+  });
+
+  it("state=unconfirmed → ADVISORY 注记（不冒充权威锚）；state=absent → 确认条目整体缺席（门不适用同边界）", async () => {
+    const unconfirmed = await compileProjection(store, { role: "frontend" }, {
+      baselineGrounding: groundingFacts({
+        state: "unconfirmed",
+        at_seq: null,
+        confirmed_digests: null,
+        blocking_remaining: 14,
+      }),
+    });
+    expect(mustRefsOf(unconfirmed)).not.toContain("baseline/manifest.yaml#confirmed");
+    const advisoryEntry = unconfirmed.manifest.advisoryEntries.find(
+      (candidate) => candidate.ref === "baseline/manifest.yaml#confirmed",
+    );
+    expect(advisoryEntry?.reason).toContain("baseline 未确认");
+    expect(advisoryEntry?.reason).toContain("阻塞 remaining=14");
+
+    const absent = await compileProjection(store, { role: "frontend" }, {
+      baselineGrounding: groundingFacts({
+        state: "absent",
+        at_seq: null,
+        confirmed_digests: null,
+        current_digests: {},
+      }),
+    });
+    expect(
+      [...absent.manifest.mustEntries, ...absent.manifest.advisoryEntries].filter(
+        (candidate) => candidate.ref === "baseline/manifest.yaml#confirmed",
+      ),
+    ).toEqual([]);
+  });
+
+  it("tokens 三态分区映射（R3）：preset → ADVISORY 蓝图；customized+confirmed → MUST（AUTHORITATIVE）；customized 未确认 → ADVISORY", async () => {
+    const presetTokens = {
+      kind: "ok" as const,
+      origin: "preset" as const,
+      customized: false,
+      groups: [
+        { name: "color", keys: 13, unknown_keys: ["color.brand.secondary", "color.border.strong"] },
+        { name: "spacing", keys: 7, unknown_keys: ["spacing.section_gap"] },
+      ],
+    };
+    const preset = await compileProjection(store, { role: "frontend" }, {
+      baselineGrounding: groundingFacts({ tokens: presetTokens }),
+    });
+    const presetEntry = preset.manifest.advisoryEntries.find(
+      (candidate) => candidate.ref === "baseline/frontend/design-tokens.yaml",
+    );
+    expect(presetEntry?.reason).toContain("origin=preset");
+    expect(presetEntry?.reason).toContain("origin=preset 蓝图 advisory");
+    // UNKNOWN 键三态标注（R3）：键点径逐条呈现。
+    expect(presetEntry?.reason).toContain("spacing.section_gap");
+    expect(mustRefsOf(preset)).not.toContain("baseline/frontend/design-tokens.yaml");
+
+    const customizedConfirmed = await compileProjection(store, { role: "frontend" }, {
+      baselineGrounding: groundingFacts({
+        tokens: { ...presetTokens, origin: "customized", customized: true },
+      }),
+    });
+    const mustEntry = customizedConfirmed.manifest.mustEntries.find(
+      (candidate) => candidate.ref === "baseline/frontend/design-tokens.yaml",
+    );
+    expect(mustEntry?.reason).toContain("AUTHORITATIVE 项目设计事实");
+
+    const customizedUnconfirmed = await compileProjection(store, { role: "frontend" }, {
+      baselineGrounding: groundingFacts({
+        state: "unconfirmed",
+        at_seq: null,
+        confirmed_digests: null,
+        tokens: { ...presetTokens, origin: "customized", customized: true },
+      }),
+    });
+    expect(mustRefsOf(customizedUnconfirmed)).not.toContain(
+      "baseline/frontend/design-tokens.yaml",
+    );
+  });
+
+  it("tokens absent/invalid → ADVISORY 诚实呈现（缺席显式 / fail-closed 非静默当空表）；编译不炸", async () => {
+    const absent = await compileProjection(store, { role: "frontend" }, {
+      baselineGrounding: groundingFacts(),
+    });
+    const absentEntry = absent.manifest.advisoryEntries.find(
+      (candidate) => candidate.ref === "baseline/frontend/design-tokens.yaml",
+    );
+    expect(absentEntry?.reason).toContain("design-tokens 合同缺席");
+
+    const invalid = await compileProjection(store, { role: "frontend" }, {
+      baselineGrounding: groundingFacts({
+        tokens: { kind: "invalid", detail: "无法解析为 YAML（损坏或手改）" },
+      }),
+    });
+    const invalidEntry = invalid.manifest.advisoryEntries.find(
+      (candidate) => candidate.ref === "baseline/frontend/design-tokens.yaml",
+    );
+    expect(invalidEntry?.reason).toContain("design-tokens 合同损坏");
+    expect(invalidEntry?.reason).toContain("fail-closed");
+  });
+
+  it("指纹绑定（R2）：facts 折进 inputsFingerprint——digest/状态变化必变、同 facts 重放字节稳定、options 缺席零键（既有值域不变）", async () => {
+    const facts = groundingFacts();
+    const first = await compileProjection(store, { role: "frontend" }, { baselineGrounding: facts });
+    const second = await compileProjection(store, { role: "frontend" }, { baselineGrounding: facts });
+    expect(second.inputsFingerprint).toBe(first.inputsFingerprint);
+
+    // 任一确认资产字节漂移（current_digests 变化）→ 指纹必变。
+    const drifted = await compileProjection(store, { role: "frontend" }, {
+      baselineGrounding: groundingFacts({
+        current_digests: { "baseline/frontend/stack.yaml": `sha256:${"2".repeat(64)}` },
+      }),
+    });
+    expect(drifted.inputsFingerprint).not.toBe(first.inputsFingerprint);
+
+    // 确认动作（at_seq 演进）→ 指纹必变。
+    const reconfirmed = await compileProjection(store, { role: "frontend" }, {
+      baselineGrounding: groundingFacts({ at_seq: 9 }),
+    });
+    expect(reconfirmed.inputsFingerprint).not.toBe(first.inputsFingerprint);
+
+    // options 缺席 = 指纹输入零键——与带 grounding 的值域可区分（既有调用方值域不受影响）。
+    const withoutGrounding = await compileProjection(store, { role: "frontend" });
+    expect(withoutGrounding.inputsFingerprint).not.toBe(first.inputsFingerprint);
+    expect(withoutGrounding.manifest.mustEntries).toEqual([]);
   });
 });

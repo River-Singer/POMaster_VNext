@@ -83,7 +83,8 @@ pomaster brainstorm start/question-gate/status/decide/promote
 # ② FRAMEWORK —— 许可签发/判卷/显式接管/台账
 pomaster permit issue/check/steal/list
 
-# ③ PROJECTION —— 最小充分上下文投影
+# ③ PROJECTION —— 最小充分上下文投影（消费 confirmed baseline/tokens：确认态三态 + 25 资产 digest 摘要 +
+# design-tokens 九组三态进 AUTHORITATIVE/ADVISORY 分区；baseline 漂移/改型 → --check STALE_GROUNDING 呈现）
 pomaster context compile/explain
 
 # ④ EXECUTE —— 写路径机器执行点 / 受控变更
@@ -190,8 +191,8 @@ pomaster brainstorm promote idea-export-btn --to TASK --basis msd_reached --appl
 # —— 八拍推进：next-action 会逐拍给唯一建议命令 ——
 pomaster status                                   # R_PERMIT_MISSING（--subject 为 affected_objects 派生建议）
 pomaster permit issue --subject PAGE.USER_LIST --actor human:owner --change-ref TASK.IDEA_EXPORT_BTN
-pomaster baseline confirm                         # R_BASELINE_NOT_READY（阻塞集清零后的一次性收口账）
-pomaster context compile --role frontend --change TASK.IDEA_EXPORT_BTN   # ③ 投影
+pomaster baseline confirm                         # R_BASELINE_NOT_READY（阻塞集清零后的一次性收口账；确认态随后进 ③ 投影）
+pomaster context compile --role frontend --change TASK.IDEA_EXPORT_BTN   # ③ 投影（含 baseline grounding：指纹绑定确认态，漂移即 STALE_GROUNDING）
 pomaster execution begin --role implementer --runtime script --identity-kind script --task-id TASK.IDEA_EXPORT_BTN  # ④ 执行身份
 # ……在你的 Agent harness（Claude Code 等）里实现代码……
 pomaster check --fast                             # ⑤ FAST gate（BUILD 腿）
