@@ -1217,6 +1217,56 @@ export type {
 } from "./evidence-qualification.js";
 
 // ============================================================
+// Test Weakening 检测核（W3-S1 · 09-12 W3 R3-3 / 09-10 PRD AC-08 + REQ-09）
+// ============================================================
+// 语义边界（test-weakening.ts 头注）：纯函数判定核——基线 vs 当前测试快照逐词族
+// 判定弱化（断言删除 / 断言放宽 / 状态码方向放宽（方向轴声明制）/ skip 新增 /
+// 断言计数下降），NOT_MACHINE_CHECKABLE 是诚实披露词形非弱化判定（weakened 聚合
+// 不数它）。verdict/形态/skip 态/解析态词形闭包=kernel 局部词 TODO(vocab-pr)
+// （SP 提案待追认；五弱化词形为本切片新造词类，NOT_MACHINE_CHECKABLE 沿
+// readiness 三态「如实不可机判」先例），零新 canonical kind——发现走 blob+OBS
+// 既有承载。参考提取器（vitest/jest 形 *.spec.ts 纯静态解析）是快照来源接缝
+// （TestSnapshotExtractor），解析不了形态如实 unknown/partial/unparseable 降级。
+// 消费者接线：pomaster audit test-weakening（CLI 审计腿，git HEAD vs 工作树，
+// fail-closed exit 1）。
+export {
+  TEST_WEAKENING_VERDICTS,
+  TEST_WEAKENING_FINDING_VERDICTS,
+  TEST_ASSERTION_KINDS,
+  TEST_SKIP_STATES,
+  TEST_PARSE_STATUSES,
+  TEST_FILE_PARSE_STATUSES,
+  TEST_BOUND_OPERATORS,
+  REFERENCE_DIRECTION_AXES,
+  detectTestWeakening,
+} from "./test-weakening.js";
+export type {
+  TestWeakeningVerdict,
+  TestWeakeningFindingVerdict,
+  TestAssertionKind,
+  TestSkipState,
+  TestParseStatus,
+  TestFileParseStatus,
+  TestBoundOperator,
+  TestExpectedValue,
+  DirectionAxisClass,
+  DirectionAxis,
+  TestAssertionSnapshot,
+  TestEntrySnapshot,
+  TestFileSnapshot,
+  TestWeakeningContext,
+  TestWeakeningTransition,
+  TestWeakeningFinding,
+  TestWeakeningOutcome,
+} from "./test-weakening.js";
+export {
+  TEST_WEAKENING_EXTRACTOR_ID,
+  vitestSpecExtractor,
+  extractVitestSpecSnapshot,
+} from "./test-weakening-extractor.js";
+export type { TestSnapshotExtractor } from "./test-weakening-extractor.js";
+
+// ============================================================
 // D 线地基：Sessions / Locks / Execution Identity（P20 · PRD §25.3/§25.4 + D 线 §1/§2/§3.3）
 // ============================================================
 // 语义边界（docs/kernel-api.md §13）：三原语是 D 线自身 P0 清单①②的 Task 层并发

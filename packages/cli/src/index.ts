@@ -95,9 +95,12 @@
  *                   数据源分组投影 + 处置路标，View not new database）/ decision =
  *                   Decision Graph 呈现（§6A 词形纪律——推荐非已决、Decision Owner:
  *                   HUMAN、五件套、INFERENCE 披露）；纯读零写入
- * - audit blueprint/task
+ * - audit blueprint/task/test-weakening
  *                   三投影 Audit View（§44.7/§49.1）：七字段完整呈现（§91.3：Audit View
- *                   才逐项显示完整 State Axes）；纯读零写入
+ *                   才逐项显示完整 State Axes）；test-weakening = 测试弱化审计腿
+ *                   （W3-S1 Final Audit 首腿：五弱化词族 + AC-08 fail-closed exit 1，
+ *                   kernel 判定核权威）；前两者纯读零写入，test-weakening 产物只落
+ *                   evidence/{blobs,observations}/ sidecar（零权威写口）
  * - ledger record/list
  *                   Exception Ledger 命令面（§49.2）：异常项入账（EXC-n；kernel
  *                   recordException 唯一写通路）+ 台账纯读呈现
@@ -224,6 +227,7 @@ import {
   runReconTokenSources,
 } from "./recon.js";
 import { runExecutionAudit } from "./execution-audit.js";
+import { runTestWeakeningAudit } from "./test-weakening.js";
 import { runCompact } from "./compact.js";
 import { runRecordClaim, runRecordGateRun, runRecordVerification } from "./record.js";
 import { runCloseout } from "./closeout.js";
@@ -1085,6 +1089,16 @@ export type {
   ExecutionAuditPathView,
   ExecutionAuditResult,
 } from "./execution-audit.js";
+export {
+  TEST_WEAKENING_AUDIT_ADAPTER,
+  TEST_WEAKENING_AUDIT_GIT_TIMEOUT_MS,
+  TEST_WEAKENING_AUDIT_OPERATION,
+  TEST_WEAKENING_AUDIT_SENSOR_CAPABILITY,
+  TEST_WEAKENING_FILE_PATTERN,
+  TEST_WEAKENING_PRESENTATION_CAP,
+  runTestWeakeningAudit,
+} from "./test-weakening.js";
+export type { TestWeakeningAuditInput, TestWeakeningAuditResult } from "./test-weakening.js";
 
 /** 一次命令执行的人读/机读产出记录（runCli 据此决定退出码与输出）。 */
 export interface CommandRun<TResult = unknown> {
@@ -3164,6 +3178,38 @@ export function createProgram(
       const outcome = await runAuditTask(resolveDir(command), { task });
       record({
         command: "audit task",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+  // —— audit test-weakening（W3-S1 Final Audit 首腿；09-12 W3 R3-3 / 09-10 PRD
+  // AC-08 + REQ-09 / 源 PRD C §13-14 + §57-61 + Case D）。纯读 + sidecar 零权威写口
+  // （产物只落 evidence/{blobs,observations}/，字节快照测试钉）；fail-closed：未初始
+  // 化 / 身份词形非法或未登记 / 非 git 工作区 / store 根非 worktree 根 / 锚不可解析
+  // 全部零落盘显式报错；测试弱化在座 exit 1 不伪造绿（AC-08——技术全绿不能覆盖审计
+  // 失败）；不可机判（方向轴未声明/形态词表外/结构降级）诚实披露非违规。实现与判定
+  // 权威锚：./test-weakening.ts 头注 + kernel test-weakening.ts 判定核。
+  audit
+    .command("test-weakening")
+    .description(
+      "测试弱化审计（Final Audit 首腿）：git diff 起始锚（--diff-base 调用方申报，缺省 HEAD）收集基线 vs 工作树 *.spec/*.test 变更面（untracked 只披露不入分母）→ kernel 判定核五弱化词族逐条判定（断言删除/断言放宽/状态码方向放宽——http_status 方向轴声明制/skip 新增/断言计数下降；NOT_MACHINE_CHECKABLE 诚实披露词形）→ 审计报告 blob + OBS 回执落 17 sidecar（result=OBSERVED 带 blob ref）+ stdout 逐条明细（verdict + 双侧引用 + reason）；弱化在座 exit 1 不伪造绿（AC-08：403→200 型期望放宽 = TEST CONTRACT VIOLATION）；非 git 工作区/锚不可解析 fail-closed 零落盘",
+    )
+    .requiredOption(
+      "--execution-id <AGX-n>",
+      "执行身份锚（AGX-<年份>-<序号>；OBS 回执 execution_id 必填——S1 禁自造身份，须为 executions/ 已登记档案，已封口执行允许事后审计）",
+    )
+    .option(
+      "--diff-base <git-ref>",
+      "diff 起始锚（commit/branch/tag；缺省 HEAD——Approved Oracle 的 git 历史载体）",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runTestWeakeningAudit(resolveDir(command), {
+        executionId: opts.executionId as string,
+        ...(opts.diffBase !== undefined ? { diffBase: opts.diffBase as string } : {}),
+      });
+      record({
+        command: "audit test-weakening",
         outcome,
         asJson: command.opts().json === true,
       });
