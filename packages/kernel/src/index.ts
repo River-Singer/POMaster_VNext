@@ -2104,6 +2104,38 @@ export type {
 } from "./checkpoint.js";
 
 // ============================================================
+// Steering 事件建模（W4-S3 · 09-10 PRD REQ-08/AC-07 + §6-5）
+// ============================================================
+// 语义边界（steering.ts 头注为准）：Steering = 现有任务的**有来源事件**（REQ-08）——
+// 数据落 state/steering-log.json append-only 台账（exception-ledger 同款 sidecar；
+// STE-<n> = EXC-n 同法分配）；journal 事件词形 STEERING_RECORDED（SP 提案待追认——
+// journal 事件词形常量集追加，非 canonical kind，不动 vocab-lock 主表）。零
+// TransactionOp（negative-history「联合零新 op」通路层封条同款）、不进 truth-index、
+// 不进 content_digest。诚实红线：constraint/affected_scope 是**申报面**（declared）——
+// 机器不判定约束被遵守（exec-guard/audit 职责），只提供可检索、可投影的载体；投影
+// 恒 [ADVISORY] 分区 + [STEERING] 词形区分（§83.2 铁律/GOLDEN-L8-3 消费层防线）。
+// 幂等/冲突纪律（store 既有）：事件流面每次调用 = 一次事件（非幂等覆盖，
+// ledger.recordException 先例）。
+export {
+  STEERING_LOG_RELATIVE,
+  STEERING_RECORDED_EVENT,
+  STEERING_LOG_SCHEMA,
+  STEERING_REF_PATTERN,
+  readSteeringLog,
+  readTaskSteeringConstraints,
+  recordSteering,
+  searchTaskSteeringConstraints,
+} from "./steering.js";
+export type {
+  SteeringRecord,
+  SteeringDeclaredBy,
+  SteeringLogFile,
+  SteeringRecordInput,
+  SteeringRecordResult,
+  SteeringSearchHit,
+} from "./steering.js";
+
+// ============================================================
 // Perception 契约 + Environment Doctor + Observation Receipt（W1-D1 P0.5-4a 纯函数面 + W1-D2 P0.5-4b 接线）
 // ============================================================
 // 语义边界（perception.ts 头注为准；PRD v0.5.2 §6 全章 + §14 P0.5-4 + Benchmark E +

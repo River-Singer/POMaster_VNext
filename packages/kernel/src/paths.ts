@@ -22,7 +22,12 @@
  *   不进 content_digest；A8 同族不入 truth-index——01 additionalProperties:false 封条不动）
  * - state/journal.jsonl   事件 journal（TX_APPLIED / PERMIT_* / EXCEPTION_* / SESSION_* /
  *   LOCK_* / EXECUTION_* / KNOWLEDGE_* / EQUIVALENCE_* / LINKAGE_COVERAGE_* /
- *   RELATION_* 追加流；不进 hash）
+ *   RELATION_* / STEERING_*（W4-S3：STEERING_RECORDED——SP 提案待追认，journal 事件
+ *   词形常量集追加，非 canonical kind）追加流；不进 hash）
+ * - state/steering-log.json Steering 事件台账（W4-S3；steering.ts 维护——REQ-08
+ *   「有来源事件」载体：STE-<n> append-only 流水 + affected_scope 申报面；exception
+ *   ledger 同款 sidecar，不进 content_digest；constraint/affected_scope 是申报面，
+ *   机器不判定遵守）
  *
  * D 线地基平面（P20；research/design-thread-D-solo-form.md §1.3 路径形态 逐字）：
  * - runtime/sessions/<session_key>.json  活跃会话注册（liveness + 当前任务指针；易变态）
@@ -102,6 +107,9 @@ export interface StorePaths {
   /** state/checkpoints/（W4-S2：Checkpoint 恢复引用快照落盘位；checkpoint.ts 维护——
    *  分区档案面：零 journal 事件、不进 content_digest、非 governed object）。 */
   readonly checkpointsDir: string;
+  /** state/steering-log.json（W4-S3：Steering 事件台账；steering.ts 维护——append-only
+   *  流水 sidecar：journal STEERING_RECORDED 词形配对，不进 content_digest）。 */
+  readonly steeringLogPath: string;
   readonly journalPath: string;
   readonly truthObjectsDir: string;
   readonly evidenceDir: string;
@@ -174,6 +182,7 @@ export function buildStorePaths(rootDir: string): StorePaths {
     relationsPath: `${stateDir}/relations.jsonl`,
     contextsDir: `${stateDir}/contexts`,
     checkpointsDir: `${stateDir}/checkpoints`,
+    steeringLogPath: `${stateDir}/steering-log.json`,
     journalPath: `${stateDir}/journal.jsonl`,
     truthObjectsDir: `${pomasterDir}/truth/objects`,
     evidenceDir,

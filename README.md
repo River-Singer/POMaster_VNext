@@ -108,6 +108,7 @@ pomaster compact
 pomaster knowledge search/inspect/record/review-candidates/promote/demote
 pomaster memory capture/inspect/harvest/review/promote/audit
 pomaster negative-history record/search   # 任务内已否定方案（W1-R1-7；REQ-03/AC-02）：record 绑定 TASK.*（--approach/--reason 必填 + --evidence-ref 可选，数据住 task payload.negative_history——不建第二库）；search 词级精确检索、未命中显式「无记录」；context compile 经 [ADVISORY KNOWLEDGE] 分区可见（重编译/rollover 仍可检索，不进 gate 判卷输入）
+pomaster steering record/search   # Steering 事件（W4-S3；REQ-08/AC-07；词形 SP 提案待追认）：record = 有来源约束登记（--constraint/--source-ref 必填——无来源的纠偏不构成事件；--scope 可重复申报受影响对象/能力词形，缺席=全 task 显式申报；数据住 state/steering-log.json append-only 台账 + journal STEERING_RECORDED 词形——零 TransactionOp 零 canonical kind）；search 词级精确检索、未命中显式「无记录」；constraint/affected_scope 是申报面（declared——机器不验证遵守，遵守判定归 exec-guard/audit）；context compile 经 [ADVISORY] 分区 [STEERING] 词形可见、plan compile 经 changeSurface unknown 呈现——受影响工作下次编译带上约束（REQ-08 最小形态，不进 gate 判卷输入）
 
 # ⑧ CARRY —— DoD 判卷收口
 pomaster closeout <task-id>

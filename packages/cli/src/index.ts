@@ -132,6 +132,16 @@
  *                   search = 词级精确检索（未命中显式「无记录」；纯读零建账）；
  *                   context compile 经 [ADVISORY KNOWLEDGE] 分区可见——AC-02 只做
  *                   可见性（重试不被机器禁止，但须新依据），不进 gate 判卷输入
+ * - steering record/search
+ *                   Steering 事件命令面（W4-S3 · 09-10 PRD REQ-08/AC-07）：record =
+ *                   有来源约束登记（绑定 TASK.*，--constraint/--source-ref 必填 +
+ *                   --scope 可重复 + --note 可选；kernel recordSteering 唯一写通路，
+ *                   数据住 state/steering-log.json append-only 台账 + journal
+ *                   STEERING_RECORDED 词形 SP 留痕——零 TransactionOp/零 canonical
+ *                   kind）/ search = 词级精确检索（未命中显式「无记录」；纯读零建账）；
+ *                   constraint/affected_scope 是申报面（declared——机器不验证遵守）；
+ *                   context compile 经 [ADVISORY] 分区 [STEERING] 词形可见、plan
+ *                   compile 经 changeSurface unknown 呈现——不进 gate 判卷输入
  * - plan compile
  *                   Verification Plan Compiler（W1-R1-3 · 09-10 PRD REQ-04/AC-03/
  *                   AC-13）：逐 Acceptance 编译证据计划（义务/工具/靶/环境/
@@ -263,6 +273,7 @@ import {
   runNegativeHistoryRecord,
   runNegativeHistorySearch,
 } from "./negative-history.js";
+import { runSteeringRecord, runSteeringSearch } from "./steering.js";
 import { runCheckpointSave, runCheckpointShow } from "./checkpoint.js";
 import { runPlanCompile } from "./plan.js";
 import { runDiagnose } from "./diagnose.js";
@@ -908,6 +919,16 @@ export type {
   NegativeHistoryEntryView,
   NegativeHistoryKernelDeps,
 } from "./negative-history.js";
+// W4-S3：Steering 事件命令导出（REQ-08/AC-07——有来源约束登记/检索；判卷权威在
+// kernel steering.ts 语义入口，本面只做 argv 收敛与呈现）。
+export { runSteeringRecord, runSteeringSearch } from "./steering.js";
+export type {
+  SteeringRecordCliInput,
+  SteeringRecordResult,
+  SteeringSearchResult,
+  SteeringRecordView,
+  SteeringKernelDeps,
+} from "./steering.js";
 export { runPlanCompile } from "./plan.js";
 export type {
   PlanCompileInput,
@@ -2579,6 +2600,67 @@ export function createProgram(
       });
       record({
         command: "negative-history search",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+
+  // —— Steering 事件命令面（W4-S3 · 09-10 PRD REQ-08/AC-07 + §6-5） ——
+  // 判卷/落盘权威在 kernel steering.ts 语义入口（唯一写通路 = recordSteering：
+  // state/steering-log.json append-only 台账 + journal STEERING_RECORDED 词形 SP 留痕
+  // ——零 TransactionOp/零 canonical kind，A6 缺口沿 journal 事件词形常量集扩展闭合）；
+  // search 纯读零建账；未命中显式「无记录」不虚构。
+  // 诚实红线（REQ-08 申报面/判定面分离）：constraint/affected_scope 是申报面
+  // （declared）——本命令组不判定约束被遵守（exec-guard/audit 职责）；受影响工作
+  // 重编译消费 = context compile [ADVISORY] 分区 [STEERING] 词形 + plan compile
+  // changeSurface unknown 呈现（均不进 gate 判卷输入）。
+  const steering = program
+    .command("steering")
+    .description(
+      "Steering 事件命令面（W4-S3；09-10 PRD REQ-08/AC-07）：record = 有来源约束登记（绑定 TASK.*，--constraint/--source-ref 必填 + --scope 可重复，数据住 state/steering-log.json append-only 台账 + journal STEERING_RECORDED 词形 SP 留痕——零 TransactionOp/零 canonical kind）；search = 词级精确检索（未命中显式「无记录」）；constraint/affected_scope 是申报面（declared——机器不验证遵守）；context compile 经 [ADVISORY] 分区 [STEERING] 词形可见、plan compile 经 changeSurface unknown 呈现——受影响工作下次编译带上约束（REQ-08 最小形态）",
+    );
+  steering
+    .command("record")
+    .description(
+      "登记一条 Steering 约束（每次调用 = 一次事件，非幂等覆盖——recordException 先例；kernel recordSteering 唯一写通路；--constraint/--source-ref 必填——REQ-08「有来源事件」：无来源的纠偏不构成事件；--scope 可重复申报受影响对象/能力词形，缺席 = 全 task 显式申报；affected_scope 不机器验证——declared 申报面）",
+    )
+    .argument("<task-id>", "目标任务（TASK.* canonical governed id，须在册 kind=task_object）")
+    .requiredOption("--constraint <text>", "约束文本（申报面载体必填——空约束 = 静默纠偏，禁）")
+    .requiredOption("--source-ref <ref>", "Owner 指示出处（会话/ledger/decide 引用——REQ-08「有来源」词形）")
+    .option("--scope <word>", "受影响对象/能力词形（可重复；缺席 = 全 task 显式申报；申报面不机器验证）", collectValues)
+    .option("--note <text>", "人类散文注记（机器不得解析其内容做判卷，P9）")
+    .requiredOption("--actor <actor>", "登记主体 <type>:<name>（C5 自报；通常为传达约束的 human 位）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (taskId: string, opts, command) => {
+      const outcome = await runSteeringRecord(resolveDir(command), {
+        taskRef: taskId,
+        constraint: opts.constraint as string | undefined,
+        sourceRef: opts.sourceRef as string | undefined,
+        scope: opts.scope as string[] | undefined,
+        note: opts.note as string | undefined,
+        actor: opts.actor as string,
+      });
+      record({
+        command: "steering record",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  steering
+    .command("search")
+    .description(
+      "检索任务内 Steering 约束（词级精确 token 交集——knowledgeQueryTokens 同源，禁子串/等价猜测；query 缺席 = 列全部登记；未命中显式「无记录」不虚构；纯读零建账）",
+    )
+    .argument("<task-id>", "目标任务（TASK.* canonical governed id）")
+    .argument("[query]", "检索词（缺席 = 列全部登记）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (taskId: string, query: string | undefined, opts, command) => {
+      const outcome = await runSteeringSearch(resolveDir(command), {
+        taskRef: taskId,
+        query,
+      });
+      record({
+        command: "steering search",
         outcome,
         asJson: command.optsWithGlobals().json === true,
       });

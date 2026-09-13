@@ -126,7 +126,7 @@ export const LAYOUT_DIRECTORIES: readonly LayoutDirSpec[] = [
     path: "state",
     status: "wired",
     purpose:
-      "控制平面 Root Metadata + Governance Sidecars（宪法 §5）——9 个已登记文件位（truth-index/authority/permits/journal/exception-ledger/knowledge-library/equivalence-registry/linkage-coverage/relations）由 kernel 按需创建，init 只建目录+README 不落状态文件。",
+      "控制平面 Root Metadata + Governance Sidecars（宪法 §5）——10 个已登记文件位（truth-index/authority/permits/journal/exception-ledger/knowledge-library/equivalence-registry/linkage-coverage/relations/steering-log）由 kernel 按需创建，init 只建目录+README 不落状态文件。",
     activation_hint:
       "一切项目恒激活（init 地基）；治理能力相关性越高 sidecars 越多（journal/relations/equivalence…由对应命令按需写入）。",
     constitution_source:
