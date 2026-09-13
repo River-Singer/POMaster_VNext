@@ -63,6 +63,210 @@ corepack pnpm studio:react:dev  # React sidecar（antd 对照浏览，端口 600
 
 gate 运行结果走 `record gate-run` 产 **GRN 回执**入 evidence 平面；claim 必须显式绑定 GRN 分母；`record verification` 把 claim 推到 VERIFIED；closeout 判卷「claims × GRN 硬绑」——证据缺失伪装完成会被**阻断码**硬拦。读侧字节级核验：判卷字节 == 落盘字节 == GRN 引用字节，失配即判红。
 
+## 架构总览：点线面
+
+> 面＝组成块；线＝块之间的数据/控制流；块内是工作流（SOP）；工作流由节点组成；节点上挂着工具与功能。本节是全景地图——每个节点都能在下方《命令全景》里找到对应命令。
+
+### 一、面：九大组成块
+
+```mermaid
+graph TB
+    subgraph CORPUS["📜 Corpus 文档真理面"]
+        C1["PRD 语料 + Owner 裁决台账<br/>owner-adjudications.md"]
+        C2["派生 views（构建期生成，--check 防漂移）"]
+    end
+
+    subgraph KERNEL["🏛️ Kernel 治理内核"]
+        K1["store：applyTransaction 唯一写入权威"]
+        K2["五原语：Object · State · Authority<br/>· Transition · Projection"]
+        K3["决策图 / 许可 / 锁 / 执行台账"]
+        K4["投影编译 / 计划编译器 / 证据资格链"]
+        K5["Steering · Checkpoint · Telemetry"]
+    end
+
+    subgraph SCHEMAS["📐 Schemas 契约面"]
+        S1["23 份 JSON Schema 资产 + 词表"]
+    end
+
+    subgraph CLI["🎛️ CLI 命令面"]
+        L1["八拍命令链"]
+        L2["横切命令：audit · doctor · view<br/>· diagnose · telemetry · tools · provider"]
+    end
+
+    subgraph GAUNTLET["⚔️ Gauntlet-lite 验证工具面"]
+        G1["四段 Adapter：detect→prepare→run→normalize"]
+        G2["ToolBinding 注册面：六分态"]
+        G3["TYPECHECK / LINT / CONTRACT / BUILD 腿"]
+    end
+
+    subgraph HOOKS["🪝 Hooks 宿主拦截面"]
+        H1["exec-guard（PreToolUse 写前拦截）"]
+    end
+
+    subgraph STUDIO["🖼️ Studio 双画廊"]
+        D1["packages/studio（Vue3 主实例）"]
+        D2["packages/studio-react（React18 sidecar）"]
+    end
+
+    subgraph STATE["💾 .pomaster 状态面（自托管）"]
+        T1["truth-index + objects（治理事实）"]
+        T2["evidence：CLM / GRN / blob / OBS"]
+        T3["state：permits / sessions / contexts<br/>/ steering-log / authority"]
+        T4["discovery / traces / checkpoints"]
+    end
+
+    CORPUS -->|"裁定与语料（构建期灌装）"| KERNEL
+    SCHEMAS -->|"契约校验（ajv）"| KERNEL
+    KERNEL -->|"类型与判卷函数"| CLI
+    GAUNTLET -->|"GateResult 归一形态"| CLI
+    CLI -->|"唯一写入：applyTransaction"| STATE
+    HOOKS -->|"PreToolUse 判卷 checkPermit"| STATE
+    CLI -->|"命令编排"| GAUNTLET
+    STATE -->|"seed 只读装载 origin=preset"| STUDIO
+```
+
+九块一句话：**Corpus** 说"为什么这样设计、Owner 裁了什么"；**Kernel** 是唯一能改治理事实的地方；**Schemas** 是一切落盘物的契约；**CLI** 是人机接口；**Gauntlet-lite** 是"跑工具、算证据"的手；**Hooks** 是宿主（Claude Code 等）每次写文件前的机器关卡；**Studio** 是可视化画廊（只读呈现，非规范）；**.pomaster** 是项目自己的治理状态库。
+
+### 二、线：治理主循环（Expected → Observed → Reconcile → Accepted）
+
+一切工作都在这条主循环上，八拍是它的命令化表达：
+
+```mermaid
+flowchart LR
+    A["Ground<br/>需求拷问<br/>brainstorm"] --> B["Expect<br/>合同与验收<br/>promote"]
+    B --> C["Act<br/>受控写入<br/>maintain / exec-guard"]
+    C --> D["Verify<br/>计划+执行<br/>plan compile / check"]
+    D --> E["Reconcile<br/>delta 对账<br/>reconcile"]
+    E --> F["Audit<br/>越界/弱化审计<br/>audit test-weakening"]
+    F --> G["Carry<br/>DoD 五闸收口<br/>closeout"]
+    G --> H["Learn<br/>知识/记忆候选<br/>memory / knowledge"]
+    H -.->|"经验反哺下一轮"| A
+```
+
+三条铁律贯穿全循环（fail-closed）：
+
+1. **一切落库必经 `applyTransaction`**——CLI 没有任何旁路写。
+2. **声称方不可自填 VERIFIED**——claim 恒 UNVERIFIED 起步，独立验证流回写。
+3. **机器验证 ≠ 成果接受**——closeout 前必须有绑定 task 的 Human ACCEPT 决议（裁决 20②）。
+
+### 三、线：一次写入的完整旅程（写路径时序）
+
+```mermaid
+sequenceDiagram
+    participant Agent as AI/人
+    participant Hook as exec-guard hook
+    participant CLI as CLI 命令
+    participant Kernel as Kernel 判卷
+    participant Disk as .pomaster
+
+    Agent->>Hook: Edit/Write/Bash 写前
+    Hook->>Kernel: checkPermit（KEYBINDING→映射→scope）
+    alt 无绑定/无活跃 execution
+        Hook-->>Agent: 透传（条件激活，非授权）
+    else 越界（跨目标全称判卷）
+        Hook-->>Agent: DENY exit 2 + 枚举越界目标
+    else 许可覆盖
+        Hook-->>Agent: ALLOW（留痕）
+    end
+    Agent->>CLI: pomaster maintain --ops（显式事务）
+    CLI->>Kernel: applyTransaction（D-4 权威闸 + source_refs 判卷）
+    Kernel->>Disk: 原子落库 + journal TX_APPLIED
+    Note over Disk: 事后 execution-audit 逐路径 scope 审计<br/>（越界 exit 1 + OBS 回执 → view review 呈现）
+```
+
+### 四、线：证据链（从工具跑到成果接受）
+
+```mermaid
+flowchart TB
+    T["真实工具执行<br/>ToolBinding：registered→validated<br/>→available→selected"] -->|"run→normalize"| GRN["GRN GateRun 台账<br/>verdict 七态，假绿封死"]
+    GRN --> V["record verification<br/>独立 verifier，自批拒绝"]
+    A["Acceptance 验收行"] -->|"record claim"| CLM["CLM Claim<br/>UNVERIFIED 起步"]
+    V --> CLM
+    CLM -->|"verification=VERIFIED"| CO["closeout 五闸"]
+    subgraph 五闸["closeout 判卷五闸（全绿才施断）"]
+        G1["① DoD 分母<br/>悬空/自批/资格链拒绝"]
+        G2["② Evidence Spec 资格"]
+        G3["③ Gate 记录 passed"]
+        G4["④ Baseline 确认态"]
+        G5["⑤ ACCEPT 回执闸<br/>绑定 task 的 Human 决议"]
+    end
+    CO -->|"全绿"| DONE["evidence=VERIFIED（成果施断）"]
+    CO -->|"任一不过"| BLOCK["显式失败码 + 零写入<br/>REWORK/REJECT 天然阻断"]
+```
+
+### 五、面内工作流 × 节点 × 点
+
+每行＝一个 SOP；节点是工作流步骤；点是步骤上的命令/闸/功能。
+
+| 面 | 工作流（SOP） | 节点 → 点 |
+|---|---|---|
+| **Kernel 治理内核** | 受控写入 SOP | `applyTransaction`（唯一写权威）→ D-4 权威维度闸 → source_refs 判卷 → 幂等短路/冲突拒绝 → journal |
+| | 生命周期 SOP | `transition_object`：PROPOSED→CURRENT（authority_approval）→ SUPERSEDED（successor_ref 必填） |
+| | 投影编译 SOP | projection 确定性 applicability（lanes→capabilities→change_class→object_kinds；governance_profile 解除判卷力）→ must/advisory 分区 |
+| | 决策 SOP | decision-graph：候选图 build→grounding→READY_FOR_DECISION→resolveDecision（ACCEPT/CHANGE/UNKNOWN/DEFER + outcome_binding 成果绑定键） |
+| **CLI 八拍** | Discovery | `brainstorm start / question-gate / decide --set --answer --ready / promote` |
+| | Framework | `permit issue/check/steal`、`baseline set/confirm/--ack-drifted` |
+| | Projection | `context compile`（must/advisory 分区 + Steering/negative-history 投影 + 指纹） |
+| | Execute | `maintain --ops`、`new-entity`、exec-guard 拦截 |
+| | Verify | `plan compile`（Evidence Plan）、`check --fast/--gates`、`record gate-run` |
+| | Reconcile | `reconcile --permit`（八拍 delta）、`session attach --reconcile`（恢复对账闸） |
+| | Compact | `compact`、`knowledge record/validate/promote`、`memory capture/harvest/review --actor/promote` |
+| | Carry | `record claim/verification`、`closeout`（五闸）、`view review`（八分区终审包） |
+| **横切命令** | 诊断 | `diagnose`（六失败域判定核）、`production diagnose`（同核，breach 前置） |
+| | 审计 | `audit blueprint/task/test-weakening`、`execution audit`（事后 scope）、`ledger record` |
+| | 观测 | `telemetry task`（六指标，零分母显式 NOT_COMPUTABLE）、`view`（status/attention/decision/review）、`alerts` |
+| | 运行时 | `session attach（--reconcile）`、`checkpoint save/show`、execution 查询（在途 recorded/none 分态） |
+| | Provider | `provider capabilities`（四维度×三值探针报告 + 降级语义） |
+| **Gauntlet-lite 验证** | 工具接入 SOP | ToolBinding 六分态：detect→registered→validated→available→selected→executed（`tools list/validate`） |
+| | 验证执行 SOP | 四段 adapter：detect→prepare→run→normalize（BUILD/TYPECHECK/LINT/CONTRACT 受信闭包） |
+| | 浏览器双腿 | playwright 确定性腿 + chrome-devtools MCP 交互腿（环境回执九项门） |
+| | 报告判卷 SOP | 逐断言重算（自报 vs recomputed 孪生）、零分母 cap、截断披露、not_run 诚实缺席 |
+| **Hooks 拦截** | 写前判定 SOP | 词形粗筛→KEYBINDING 映射→permit 判卷→跨目标全称汇总（DENY 枚举全部越界）→ALLOW/透传/fail-open 三态如实 |
+| **Studio 双画廊** | 生成 SOP | seed 单一源（origin=preset）→ 生成器（KNOWN_HINTS fail-closed）→ generated stories → 钉测（58 叶/133 分母对账） |
+| | 呈现 | archetype 41 卡 / 71 组件 story / design-tokens 组筛选页（组筛选=seed 派生真值分母） |
+| **Corpus 真理** | 裁定 SOP | Owner 裁决 → owner-adjudications.md 台账 → 派生 views（--check 防漂移） |
+| **.pomaster 自托管** | 恢复 SOP | `checkpoint save`（引用快照）→ 中断 → `session attach --reconcile`（新鲜度判定）→ `checkpoint show`（引用面可见） |
+| | 学习 SOP | negative-history record/search（已否定方案）、steering record/search（约束事件） |
+
+### 六、点：fail-closed 错误码家族（闸的语言）
+
+每个闸失败都给**稳定错误码**（机器可断言）+ 人读 hint（含确切可用命令词形）。代表性家族：
+
+| 家族 | 码 | 语义 |
+|---|---|---|
+| 权威 | `AUTHORITY_BOUNDARY_DENY` / `GHOST_AUTHORITY_OWNER` | 非权威来源驱动写入 / owner 未登记（FATAL） |
+| 许可 | `PERMIT_SCOPE_DENIED` / `PERMIT_EXPIRED_OBSERVED` / `PERMIT_UNKNOWN` | 越界 / 到期 / 引用不存在 |
+| 证据 | `EVIDENCE_ALREADY_EXISTS` / `EVIDENCE_MALFORMED` / `EVIDENCE_BINDING_INCOMPLETE` | 同号异内容 / 损坏 / 绑定不全 |
+| 判卷 | `CLAIM_ALREADY_ADJUDICATED` / `CLAIM_SELF_APPROVAL` / `DOD_CLAIM_SELF_APPROVED` / `DOD_CLAIM_EVIDENCE_UNQUALIFIED` | 已判定禁改判 / 自批警告 / closeout 拒自批 / 证据资格否决 |
+| 收口 | `CLOSEOUT_ACCEPT_MISSING` / `CLOSEOUT_ACCEPT_STALE` / `CLOSEOUT_ACCEPT_DAMAGED` / `GATE_EVIDENCE_MISSING` / `BASELINE_NOT_CONFIRMED` | 无回执 / 内容漂移 / 图损坏 / 缺 gate / 基线未确认 |
+| 投影 | `STALE_GROUNDING` / `RECONCILE_DIRTY` / `BASELINE_MISSING` / `SCHEMA_INVALID` | 指纹漂移 / 对象漂移 / 基线缺席 / 结构非法 |
+| 执行 | `EXECUTION_ALREADY_EXISTS` / `EXECUTION_INTERRUPTED` / `CHECKPOINT_ALREADY_EXISTS` / `TOOLBINDING_REGISTRY_ABSENT` | 重试须新 id / 被接管封口 / checkpoint 冲突 / 注册面缺席 |
+
+### 七、长时程运行面（Durable Runtime）
+
+```mermaid
+graph LR
+    subgraph SAVE["保存时点"]
+        CP["checkpoint save<br/>11 键引用快照"]
+    end
+    subgraph INTERRUPT["中断"]
+        INT["在途 execution<br/>recorded / none 分态"]
+    end
+    subgraph RESUME["恢复时点"]
+        R["session attach --reconcile<br/>新鲜度判定"]
+        R1["clean → 放行"]
+        R2["dirty → 阻断<br/>force 显式越权留痕"]
+    end
+    CP --> INTERRUPT --> RESUME
+    STE["steering record<br/>约束事件 declared 申报面"] -.->|"下一编译边界生效"| R
+    TEL["telemetry task<br/>六指标派生评估"] -.->|"只读聚合"| STATE2[(".pomaster")]
+```
+
+Provider 无原生 async/steering/取消时的降级语义是**声明面**（`provider capabilities`）：同步步骤+持久记录 / 下一派发边界应用约束 / 在途状态明确+冲突隔离 / 预编译较小工具集——全部映射到仓内已就位载体，不是假想 API。
+
+---
+
+
 ## 快速上手
 
 POMaster 的全部能力收敛在一条 CLI（`pomaster`）——八拍 Change Loop 的每一拍都有对应命令面。先上**命令全景**（与 `pomaster --help` 对账零漂移；`#` 分节注释仅人读）。第一次使用？直接看 [安装 → init → 第一个 Change](#1-安装) 的全流程。
@@ -119,6 +323,7 @@ pomaster closeout <task-id>
 pomaster resolve "<need>" [--hints ...]
 pomaster new-entity check <governed-id> [--need ...]
 pomaster inspect <governed-id>
+pomaster preset preview/drift/applicability   # 预设只读探测器三件套（W5；裁决 20⑥；词形 SP 提案待追认）：--family <id>（wired 闭包 design-tokens | baseline-framework + 5 扩展位登记）——preview = 预设→项目状态差异预览（create/fill/overwrite/none 动作预告 + 确认链效果预告，不应用）；drift = 当前值 vs 预设基准逐项对账（VALUE_DRIFT + verdict aligned|drifted|no_comparison——空分母显式，blindspot 纪律禁「没查就报干净」；漂移≠违规——Owner 定制合法）；applicability = 适用 lane/栈/对象面声明（native|mismatch|unresolved 只读匹配，不改 ADR-4 判卷）；预设值 governed 原地、ToolBinding 受信 adapter 执行表零注册；纯读零写入（探测≠写授权——写入唯一通路 = baseline set --change + confirm 确认链）
 pomaster graph <governed-id> [--view impact]
 pomaster recon import-graph|migrations|sbom|architecture-snapshot|token-sources|scripts|openapi    # 宿主代码 recon（七子命令均必持 --execution-id <AGX-n>——execution begin 登记的执行身份锚，观察回执的身份证明）：import 图静态扫描（unmapped 清单/externalImports/confidence → OBS 回执）/ migration 目录五栈词形盘点（prisma/flyway/liquibase/alembic/django_style 纯读盘零工具执行 → ENVREC 回执）/ SBOM 依赖清单采集（cdxgen 腿——工具缺席 NOT_INSTALLED、解析失败 INCONCLUSIVE 兜底）/ 架构快照（dependency-cruiser 巡报告落盘 + 官方 --baseline 存量底账增量 diff 三态 new/same/resolved；依赖边只计数零落盘提案）/ token 源词形枚举（DTCG/style-dictionary $value JSON + Tailwind v4 @theme/:root CSS 词法扫描 → readDesignTokens 权威面状态复用呈现；零值摘录零写口）/ package.json scripts 词面枚举（只枚举不执行 → ENVREC 回执）/ OpenAPI 运行时抓取（--url 探活 GET 落 blob——探活失败 NOT_INSTALLED 不降级；静态抽取保持 UNKNOWN）——全链 fail-closed（缺席 NOT_INSTALLED/NOT_RUN、解析失败 INCONCLUSIVE 负值兜底不伪造绿），产物只落 evidence sidecar 平面零权威写口
 pomaster research list/inspect/request/handoff
