@@ -27,6 +27,7 @@ import {
   LINT_GATE_DEF,
   LINT_GATE_NAME,
   LINT_METRIC_DIALECT,
+  relativizeLocation,
   resolveTrustedBindingAdapter,
   TSC_TOOL_ID,
   TYPECHECK_GATE_DEF,
@@ -556,6 +557,91 @@ describe("normalize：lint（ESLint JSON 逐 message 重算——C5，errorCount
     expect(record.verdict).toBe("failed");
     expect(record.items?.[0]?.rule).not.toBe("");
     expect(record.items?.[0]?.rule.length).toBeGreaterThan(0);
+  });
+});
+
+// ============================================================
+// location 相对化：平台中立纯文本契约（PR #13 CI 三平台红回归钉）
+// ============================================================
+
+describe("relativizeLocation：分隔符归一 + 声明根前缀剥离（平台中立——禁宿主 path 根语义）", () => {
+  it("盘符根形态：声明根前缀命中即剥离（Windows fixture 原文形——本机直验）", () => {
+    expect(relativizeLocation("d:\\proj", "d:\\proj\\src\\b.ts")).toEqual({
+      location: "src/b.ts",
+      relativized: true,
+    });
+    expect(relativizeLocation("d:/proj", "d:/proj/src/b.ts")).toEqual({
+      location: "src/b.ts",
+      relativized: true,
+    });
+  });
+
+  it("POSIX 根形态：同一纯函数同法归一（宿主无关的文本契约——Linux/macOS CI 形）", () => {
+    expect(relativizeLocation("/repo", "/repo/src/b.ts")).toEqual({
+      location: "src/b.ts",
+      relativized: true,
+    });
+    // 分隔符混排（\→/）与 `./` 前缀（tsc 对 `./src` 输入的诊断词形）同法消化。
+    expect(relativizeLocation("d:\\proj", "d:\\proj\\./src\\b.ts")).toEqual({
+      location: "src/b.ts",
+      relativized: true,
+    });
+  });
+
+  it("不可归一形态（越根/根失配）如实保留归一原文 + relativized=false 标记（禁静默）", () => {
+    expect(relativizeLocation("d:/proj", "e:/elsewhere/x.ts")).toEqual({
+      location: "e:/elsewhere/x.ts",
+      relativized: false,
+    });
+    expect(relativizeLocation("/repo", "/opt/other/x.ts")).toEqual({
+      location: "/opt/other/x.ts",
+      relativized: false,
+    });
+  });
+
+  it("typecheck 腿端到端（POSIX 根 fixture）：items location 相对（Linux CI 假红向量封钉）", () => {
+    const stdout = [
+      "/repo/src/a.ts",
+      "/repo/src/b.ts",
+      "/repo/src/b.ts(10,5): error TS2322: Type 'number' is not assignable to type 'string'.",
+      "",
+    ].join("\n");
+    const record = run("tsc", makePlan("tsc", { cwd: "/repo" }), stdout, 2);
+    expect(record.verdict).toBe("failed");
+    expect(record.items?.[0]).toMatchObject({ rule: "TS2322", location: "src/b.ts:10:5" });
+    // 前缀全部命中 = 全量归一，披露面必须缺席（披露只留给不可归一形态）。
+    expect(record.scopeNote ?? "").not.toContain("不可归一");
+  });
+
+  it("lint 腿端到端：越根 filePath 原文保留 + scopeNote 显式披露（禁静默假相对）", () => {
+    const cross = JSON.stringify([
+      {
+        filePath: "e:\\elsewhere\\x.ts",
+        messages: [
+          { ruleId: "no-explicit-any", severity: 2, line: 1, column: 1, message: "Unexpected any." },
+        ],
+        errorCount: 1,
+        warningCount: 0,
+        fatalErrorCount: 0,
+      },
+    ]);
+    const record = run("eslint", makePlan("eslint"), cross, 1);
+    expect(record.verdict).toBe("failed");
+    expect(record.items?.[0]?.location).toBe("e:/elsewhere/x.ts:1:1");
+    expect(record.scopeNote ?? "").toContain("不可归一");
+    expect(record.scopeNote ?? "").toContain("1 条");
+  });
+
+  it("typecheck 腿端到端：越根诊断原文保留 + scopeNote 显式披露（双腿同源披露面）", () => {
+    const stdout = [
+      "d:\\proj\\src\\a.ts",
+      "e:\\elsewhere\\x.ts(2,1): error TS9999: cross-root.",
+      "",
+    ].join("\n");
+    const record = run("tsc", makePlan("tsc"), stdout, 2);
+    expect(record.verdict).toBe("failed");
+    expect(record.items?.[0]?.location).toBe("e:/elsewhere/x.ts:2:1");
+    expect(record.scopeNote ?? "").toContain("不可归一");
   });
 });
 

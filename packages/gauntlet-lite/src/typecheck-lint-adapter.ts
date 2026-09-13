@@ -20,6 +20,10 @@
  *     exit code 不能替代行为证据；tsc 合同非零退出必有 error 在座，--listFiles 分母
  *     在座不洗绿——TS2688 型无位置词形配置错误的假绿向量同批封堵）；
  *     warning 诊断不计罚但 scopeNote 显式披露。
+ *   · items location 相对化 = 平台中立纯文本操作（分隔符归一 \→/ + 声明根前缀
+ *     剥离，relativizeLocation 纯函数可单测）——禁 path.resolve/relative 的宿主
+ *     根语义（POSIX 上盘符根不可归一：Windows 绿/Linux 红平台分裂，PR #13 CI
+ *     三平台红实证在案）；不可归一形态原文保留 + scopeNote 显式披露，禁静默。
  *   · ESLint JSON 官方 formatter 全量解析：逐 message 重算（severity 2=error 违规 /
  *     1=warning 披露）；词形外 severity → FATAL 拒绝静默归桶；errorCount = asserted
  *     （CLAIMED）孪生，失配 → declare_recompute_mismatch + recomputed wins（failed
@@ -36,7 +40,6 @@
  * DetectionStatus 四态词表已锁，本模块零扩值。
  */
 import { performance } from "node:perf_hooks";
-import { relative, resolve } from "node:path";
 import type { RunTriggerValue, VerdictValue } from "@pomaster/schemas";
 import type {
   DetectionResult,
@@ -111,14 +114,50 @@ interface TscDiagnostic {
   readonly message: string;
 }
 
-/** 位置留痕：仓内相对路径:line:col（provenance 可移植——禁绝对盘符；越根退回原文）。 */
-function relativizeLocation(base: string, rawPath: string): string {
-  const abs = resolve(base, rawPath);
-  let rel = relative(base, abs);
-  if (rel.length === 0 || rel.startsWith("..")) {
-    rel = rawPath;
+/** 带根词形（分隔符归一后）：POSIX 绝对 `/…`、盘符根 `x:/…`、UNC `//…`。 */
+const ROOTED_LOCATION_RE = /^(?:[a-zA-Z]:\/|\/)/;
+
+/** 相对化产物（relativized=false = 声明根前缀未命中——原文保留，调用方必须披露）。 */
+export interface RelativizedLocation {
+  readonly location: string;
+  readonly relativized: boolean;
+}
+
+/** 分隔符归一（\→/）。 */
+function toSlashSeparators(p: string): string {
+  return p.replaceAll("\\", "/");
+}
+
+/** 顶部 `./` 段消化（path.resolve 段语义的纯文本等价——tsc 对 `./src` 输入的诊断词形）。 */
+function collapseLeadingDotSlash(p: string): string {
+  return p.replace(/^(?:\.\/)+(?=.)/, "");
+}
+
+/**
+ * 位置留痕：仓内相对路径（provenance 可移植契约——禁绝对盘符）。
+ * 平台中立实现 = 分隔符归一（\→/）+ 声明根（plan.cwd）前缀文本剥离——声明根是
+ * normalize 的合同输入，剥离是纯文本操作，与宿主平台的 path 根语义无关。禁用
+ * path.resolve/relative：POSIX 上盘符根（`d:\proj`）不是绝对路径——resolve 把
+ * base/raw 双双按 cwd 相对化叠加、relative 退回带根原文，Windows 绿/Linux 红
+ * 的平台分裂实证在案（PR #13 CI 三平台红：items location 断言 `src/b.ts` 收
+ * `d:/proj/src/b.ts`）。不可归一形态（越根盘符/POSIX 绝对根失配）如实保留
+ * 归一分隔符后的原文并标记 relativized=false——调用方经 scopeNote 显式披露，
+ * 禁静默；已是相对形态的原文（无声明根前缀可剥）本就是契约目标形，原样合法
+ * 通过（无根可披露，不制造披露噪音）。
+ */
+export function relativizeLocation(base: string, rawPath: string): RelativizedLocation {
+  const declaredRoot = toSlashSeparators(base).replace(/\/+$/, "");
+  const rooted = toSlashSeparators(rawPath);
+  const prefix = `${declaredRoot}/`;
+  if (declaredRoot.length > 0 && rooted.startsWith(prefix)) {
+    return { location: collapseLeadingDotSlash(rooted.slice(prefix.length)), relativized: true };
   }
-  return rel.replaceAll("\\", "/");
+  return { location: collapseLeadingDotSlash(rooted), relativized: false };
+}
+
+/** 不可归一判定：前缀未命中且归一后仍带根词形（契约违规——绝对 location 留存）。 */
+function isUnrelativized(rel: RelativizedLocation): boolean {
+  return !rel.relativized && ROOTED_LOCATION_RE.test(rel.location);
 }
 
 /** tsc 输出逐行扫描：诊断行 vs --listFiles 文件行（stdout 文件分母 + stdout/stderr 诊断）。 */
@@ -273,6 +312,8 @@ interface StaticJudgmentInput {
   readonly assertedActorNote: string;
   readonly caliberNote: string;
   readonly zeroDenominatorCap: string;
+  /** items location 不可归一计数（声明根前缀未命中且仍带根——scopeNote 显式披露，禁静默）。 */
+  readonly unrelativizedLocations: number;
 }
 
 function judgeStaticRun(input: StaticJudgmentInput): GateResultRecord {
@@ -305,6 +346,9 @@ function judgeStaticRun(input: StaticJudgmentInput): GateResultRecord {
   const notes = [
     input.caliberNote,
     input.assertedActorNote,
+    ...(input.unrelativizedLocations > 0
+      ? [`items location ${input.unrelativizedLocations} 条不可归一（声明根前缀未命中——原文保留并披露，禁静默；provenance 可移植契约在此降级）`]
+      : []),
     ...(input.warnings > 0 ? [`warning finding/诊断 ${input.warnings} 条不计罚（显式披露，禁沉默归零）`] : []),
   ];
 
@@ -466,12 +510,19 @@ export function createTypecheckAdapter(): GateAdapter<
           raw.externalMs,
         );
       }
+      let unrelativizedLocations = 0;
       const items = capItems<GateResultItemInput>(
-        errors.map((d) => ({
-          rule: d.code,
-          location: `${relativizeLocation(plan.cwd, d.file)}:${d.line}:${d.column}`,
-          message: d.message,
-        })),
+        errors.map((d) => {
+          const rel = relativizeLocation(plan.cwd, d.file);
+          if (isUnrelativized(rel)) {
+            unrelativizedLocations += 1;
+          }
+          return {
+            rule: d.code,
+            location: `${rel.location}:${d.line}:${d.column}`,
+            message: d.message,
+          };
+        }),
       );
       const record = judgeStaticRun({
         plan,
@@ -485,6 +536,7 @@ export function createTypecheckAdapter(): GateAdapter<
         caliberNote:
           "typecheck 口径：counts.scanned/applicableScanned=程序文件数（--listFiles），violations=error 诊断条数（混合口径刻意声明——零诊断≠零分母）",
         zeroDenominatorCap: "zero_scanned_files_nothing_typechecked",
+        unrelativizedLocations,
       });
       const withDuration: GateResultRecord = {
         ...record,
@@ -627,6 +679,7 @@ export function createLintAdapter(): GateAdapter<DetectionResult, GatePlan, Tool
       let violations = 0;
       let warnings = 0;
       let assertedTotal: number | null = 0;
+      let unrelativizedLocations = 0;
       const errorFiles = new Set<string>();
       const items: GateResultItemInput[] = [];
       for (const entry of parsed as unknown[]) {
@@ -670,12 +723,16 @@ export function createLintAdapter(): GateAdapter<DetectionResult, GatePlan, Tool
           if (msg.severity === 2) {
             violations++;
             errorFiles.add(file.replaceAll("\\", "/"));
+            const rel = relativizeLocation(plan.cwd, file);
+            if (isUnrelativized(rel)) {
+              unrelativizedLocations += 1;
+            }
             items.push({
               rule:
                 typeof msg.ruleId === "string" && msg.ruleId.length > 0
                   ? msg.ruleId
                   : "eslint.parsing_error",
-              location: `${relativizeLocation(plan.cwd, file)}:${String(msg.line ?? 0)}:${String(msg.column ?? 0)}`,
+              location: `${rel.location}:${String(msg.line ?? 0)}:${String(msg.column ?? 0)}`,
               message: typeof msg.message === "string" ? msg.message : undefined,
             });
           } else {
@@ -697,6 +754,7 @@ export function createLintAdapter(): GateAdapter<DetectionResult, GatePlan, Tool
         caliberNote:
           "lint 口径：counts.scanned/applicableScanned=被 lint 文件数（报告条目数），violations=severity=2 finding 条数（逐条重算）",
         zeroDenominatorCap: "zero_scanned_files_nothing_linted",
+        unrelativizedLocations,
       });
       const withDuration: GateResultRecord = {
         ...record,
