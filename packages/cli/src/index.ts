@@ -95,8 +95,9 @@
  *                   数据源分组投影 + 处置路标，View not new database）/ decision =
  *                   Decision Graph 呈现（§6A 词形纪律——推荐非已决、Decision Owner:
  *                   HUMAN、五件套、INFERENCE 披露）/ review = Human Review Packet
- *                   终审包（§9 七分区；W3-S6 AC-16——Expected/Actual/Oracle/Gate/
- *                   ACCEPT 回执状态/Known Unknown/三分支路标）；纯读零写入
+ *                   终审包（§9 八分区；W3-S6 AC-16 + 裁决 21——Expected/Actual/
+ *                   Oracle/Gate/ACCEPT 回执状态/Known Unknown/三分支路标/
+ *                   audit_rejections 未处置越界拒绝扫描呈现——不阻断施断）；纯读零写入
  * - audit blueprint/task/test-weakening
  *                   三投影 Audit View（§44.7/§49.1）：七字段完整呈现（§91.3：Audit View
  *                   才逐项显示完整 State Axes）；test-weakening = 测试弱化审计腿
@@ -809,6 +810,8 @@ export {
   runViewReview,
   runViewTask,
   ATTENTION_KINDS,
+  AUDIT_REJECTION_DISPOSITIONS,
+  AUDIT_REJECTION_SCAN_STATUSES,
   OUTCOME_REVIEW_OPERATIONS,
   REVIEW_BRANCH_NAMES,
   REVIEW_STEPS,
@@ -827,6 +830,9 @@ export type {
   ViewReviewOracleEntry,
   ViewReviewGateRunRow,
   ViewReviewNegativeHistoryRow,
+  AuditRejectionScanStatus,
+  ViewReviewAuditRejectionRow,
+  ViewReviewAuditRejections,
   AttentionItem,
   AttentionGroup,
   AttentionKind,
@@ -1106,9 +1112,12 @@ export {
   EXECUTION_AUDIT_ADAPTER,
   EXECUTION_AUDIT_GIT_TIMEOUT_MS,
   EXECUTION_AUDIT_OPERATION,
+  EXECUTION_AUDIT_OUT_OF_SCOPE_FACT_PREFIX,
   EXECUTION_AUDIT_PRESENTATION_CAP,
   EXECUTION_AUDIT_SENSOR_CAPABILITY,
   KEYBINDINGS_DIR_RELATIVE,
+  formatOutOfScopeFact,
+  parseOutOfScopeFact,
   runExecutionAudit,
 } from "./execution-audit.js";
 export type {
@@ -3113,7 +3122,7 @@ export function createProgram(
   const view = program
     .command("view")
     .description(
-      "三投影 Human 侧（§44.7/§49.1）+ Batch 3 扩展：view blueprint = Narrative View（Stable Core 正文 + Uncertainty Envelope，正常状态标签默认隐藏 §91.3）；view task = Review View（§53 十二步审查顺序 + 纠错 §20 Outcome Review 附区，File Diff 降级证据层）；view attention = Human Attention Queue（§6.3/纠错 §19——五类既有对象数据源分组 + 处置路标，View not new database）；view decision = Decision Graph 呈现（§6A 推荐词形纪律——推荐非已决/Decision Owner: HUMAN/五件套/INFERENCE 披露）；view review = Human Review Packet 终审包（§9 七分区——Expected/Actual/Oracle/Gate/ACCEPT 回执状态/Known Unknown/三分支路标；W3-S6 AC-16）",
+      "三投影 Human 侧（§44.7/§49.1）+ Batch 3 扩展：view blueprint = Narrative View（Stable Core 正文 + Uncertainty Envelope，正常状态标签默认隐藏 §91.3）；view task = Review View（§53 十二步审查顺序 + 纠错 §20 Outcome Review 附区，File Diff 降级证据层）；view attention = Human Attention Queue（§6.3/纠错 §19——五类既有对象数据源分组 + 处置路标，View not new database）；view decision = Decision Graph 呈现（§6A 推荐词形纪律——推荐非已决/Decision Owner: HUMAN/五件套/INFERENCE 披露）；view review = Human Review Packet 终审包（§9 八分区——Expected/Actual/Oracle/Gate/ACCEPT 回执状态/Known Unknown/三分支路标/audit_rejections 越界拒绝扫描呈现（裁决 21，不阻断施断）；W3-S6 AC-16）",
     );
   view
     .command("blueprint")
@@ -3179,7 +3188,7 @@ export function createProgram(
   view
     .command("review")
     .description(
-      "Human Review Packet 终审包（§9；W3-S6 AC-16）：从既有 store 平面组装任务终审七分区——Expected（acceptance 判定）/ Actual（claims+verification）/ Oracle 摘要（requires/exclusions 资格面）/ Gate 记录（subject 绑定 GRN）/ ACCEPT 回执状态（复用 closeout 第五消费闸同一扫描实现）/ Known Unknown（negative-history+unknowns）/ 三分支路标（ACCEPT/REWORK/REJECT——机器面复用既有通路零新语义）；显式缺席不冒充（无 ACCEPT=missing——机器绿 ≠ 已接受）；零综合分数（§21）；纯读零写入；W2 evidence/review-packet.md（人工组织版）的机器化投影",
+      "Human Review Packet 终审包（§9；W3-S6 AC-16 + 裁决 21）：从既有 store 平面组装任务终审八分区——Expected（acceptance 判定）/ Actual（claims+verification）/ Oracle 摘要（requires/exclusions 资格面）/ Gate 记录（subject 绑定 GRN）/ ACCEPT 回执状态（复用 closeout 第五消费闸同一扫描实现）/ Known Unknown（negative-history+unknowns）/ 三分支路标（ACCEPT/REWORK/REJECT——机器面复用既有通路零新语义）/ audit_rejections（未处置越界拒绝扫描——全局扫描 execution-audit OBS 回执 out_of_scope 发现，逐条 pointer，零发现显式 clean；不因未跑 audit 或存在拒绝阻断施断，closeout 完成链零改动——裁决 21 方案 C）；显式缺席不冒充（无 ACCEPT=missing——机器绿 ≠ 已接受）；零综合分数（§21）；纯读零写入；W2 evidence/review-packet.md（人工组织版）的机器化投影",
     )
     .argument("<task>", "任务对象 governed id（legacy 词形走 alias 收编）")
     .option("--json", "machine-readable JSON output (§45)")

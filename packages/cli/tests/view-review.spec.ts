@@ -3,9 +3,10 @@
  *
  * 需求锚：.trellis/tasks/09-12-w3-core-loop（S6）——AC-16（Human 摘要/终审包同源、
  * 可下钻、无综合分数）+ 表 A 项 18（统一命令面）；源 PRD §9 Human Review Packet 语义。
- * 与 W2 evidence/review-packet.md 的关系：人工组织版 → 本命令是其机器化（七分区同构：
+ * 与 W2 evidence/review-packet.md 的关系：人工组织版 → 本命令是其机器化（八分区同构：
  * Expected / Actual / Oracle 摘要 / Gate 记录 / ACCEPT 回执状态 / Known Unknown /
- * 三分支路标），数据源全为既有 store 平面，不自造第二事实面。
+ * 三分支路标 / audit_rejections 越界拒绝扫描——裁决 21 第 8 分区），数据源全为既有
+ * store 平面，不自造第二事实面。
  *
  * fixture（W2 C8 同构：TASK + CLM + GRN + ACCEPT 决策图）：
  * - TASK.PACKET（task_object；payload: intent / expected_outcome / acceptance×2——
@@ -22,16 +23,25 @@
  * - 零综合分数：packet 全部为词形判定与计数，无 overall_score / confidence 百分比
  *   （§21 守护栏）；
  * - 词形（view review / review packet 分区名 / 分支词形）= SP 提案待追认。
+ *
+ * 裁决 21 增量（2026-09-13 Owner 会话直答——corpus/master/cutover/owner-adjudications.md
+ * 裁决 21）：view review 增第 8 分区 `audit_rejections`——全局扫描 .pomaster/evidence/
+ * observations/ 下 execution-audit（operation=audit_mutation_scope）OBS 回执的
+ * out_of_scope 发现，逐条列 pointer，零发现显式 clean；**不因未跑 audit 或存在拒绝
+ * 阻断施断**（closeout 完成链零改动——方案 C）。词形 SP 提案待追认。
  */
+import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { applyTransaction, createStore, type Store } from "@pomaster/kernel";
+import { applyTransaction, beginExecution, createStore, type Store } from "@pomaster/kernel";
 import {
   runCli,
+  runExecutionAudit,
   runNegativeHistoryRecord,
+  runPermitIssue,
   runViewReview,
   type CliEnvelope,
   type ViewReviewResult,
@@ -418,5 +428,256 @@ describe("view review（AC-16 终审包命令面）", () => {
     expect(envelope.result.view).toBe("review-packet");
     expect((envelope.result as { task: string }).task).toBe(TASK_ID);
     expect((envelope.result as { accept_receipt: { status: string } }).accept_receipt.status).toBe("present");
+    // 裁决 21 分区追加（机读信封同构透出——零发现显式 clean 非静默缺席）。
+    expect((envelope.result as { audit_rejections: { status: string } }).audit_rejections.status).toBe("clean");
+  });
+});
+
+// ============================================================
+// 裁决 21：audit_rejections 分区（execution-audit OBS 回执扫描呈现）
+// ============================================================
+
+/** 裁决 21 fixture（真实 execution-audit 调用——ac08-intent-drift-live-fire.spec 同链形态）。 */
+
+function git(args: readonly string[]): string {
+  const res = spawnSync("git", args, { cwd: root, encoding: "utf8", windowsHide: true });
+  if (res.status !== 0) {
+    throw new Error(`git ${args.join(" ")} 失败（exit ${String(res.status)}）: ${res.stderr ?? ""}`);
+  }
+  return res.stdout ?? "";
+}
+
+function writeHostFile(relative: string, content: string): void {
+  const absolute = join(root, ...relative.split("/"));
+  mkdirSync(dirname(absolute), { recursive: true });
+  writeFileSync(absolute, content, "utf8");
+}
+
+/** git 仓基线（--diff-base 锚）：宿主 src 双对象入基线；.pomaster 入 gitignore 排除。 */
+function initAuditGitRepo(): string {
+  git(["init"]);
+  git(["config", "user.email", "view-review-audit@example.com"]);
+  git(["config", "user.name", "view-review-audit"]);
+  git(["config", "commit.gpgsign", "false"]);
+  writeHostFile(".gitignore", ".pomaster/\nnode_modules/\n");
+  writeHostFile("src/in-scope.ts", "export const inScopeV1 = 1;\n");
+  writeHostFile("src/out-scope.ts", "export const outScopeV1 = 1;\n");
+  git(["add", "-A"]);
+  git(["commit", "-m", "base"]);
+  return git(["rev-parse", "HEAD"]).trim();
+}
+
+/** KEYBINDING 表（ac08 同款 04 行对象词形：IN 授权内 / OUT 未授权）。 */
+function seedAuditBindingTable(): void {
+  const row = (id: string, canonicalId: string, physicalPath: string, probeSeq: number): Record<string, unknown> => ({
+    id,
+    binding_class: "capability_to_file",
+    legacy_id: null,
+    canonical_id: canonicalId,
+    physical_path: physicalPath,
+    binding_status: "confirmed",
+    match_rule: "manual_confirmed",
+    probe: { method: "code_header_id_scan", last_run_seq: probeSeq, result: "not_probed" },
+  });
+  writeHostFile(
+    ".pomaster/truth/keybindings/keybinding.review.in.json",
+    `${JSON.stringify(row("KEYBINDING.REVIEW.IN", "CAPABILITY.REVIEW.IN", "src/in-scope.ts", 1), null, 2)}\n`,
+  );
+  writeHostFile(
+    ".pomaster/truth/keybindings/keybinding.review.out.json",
+    `${JSON.stringify(row("KEYBINDING.REVIEW.OUT", "CAPABILITY.REVIEW.OUT", "src/out-scope.ts", 2), null, 2)}\n`,
+  );
+}
+
+/** 授权面（permit scope 只覆盖 IN）+ execution begin → execution_id。 */
+async function seedAuditExecution(): Promise<string> {
+  const issued = await runPermitIssue(root, {
+    subjects: ["CAPABILITY.REVIEW.IN"],
+    actor: "human:owner",
+    changeRef: "CHANGE.REVIEW.PACKET",
+  });
+  expect(issued.ok, `permit issue 须成功：${JSON.stringify(issued.errors)}`).toBe(true);
+  const execution = await beginExecution(store, {
+    role: "implementer",
+    runtime: "claude-code",
+    identityKind: "subagent",
+    permitIds: [issued.result.permit_ref as string],
+    startedAt: "2026-09-13T00:00:00.000Z",
+  });
+  return execution.execution_id;
+}
+
+/** 意图漂移应用（越界触及未授权对象 OUT——对照腿不做）。 */
+function applyIntentDrift(): void {
+  writeHostFile("src/in-scope.ts", "export const inScopeV2 = 2;\n");
+  writeHostFile("src/out-scope.ts", "export const outScopeV2 = 2;\n");
+}
+
+/**
+ * 真实 execution-audit 调用（ac08 拒绝腿/对照腿同链）→ OBS 回执落账
+ * .pomaster/evidence/observations/。drift=true → 越界拒绝（audit exit 1，回执仍在）。
+ */
+async function seedAuditReceipt(
+  drift: boolean,
+): Promise<{ readonly observationId: string; readonly executionId: string; readonly ok: boolean }> {
+  initAuditGitRepo();
+  seedAuditBindingTable();
+  const executionId = await seedAuditExecution();
+  if (drift) applyIntentDrift();
+  const base = git(["rev-parse", "HEAD"]).trim();
+  const outcome = await runExecutionAudit(root, { executionId, diffBase: base });
+  expect(
+    outcome.result.observation,
+    "audit 回执须已落账（OBSERVED——拒绝也不伪造绿，回执先落）",
+  ).toBe("OBSERVED");
+  return {
+    observationId: outcome.result.observation_id as string,
+    executionId,
+    ok: outcome.ok,
+  };
+}
+
+describe("view review audit_rejections（裁决 21：未处置越界拒绝扫描呈现——closeout 零改动）", () => {
+  it("真实 audit 越界回执在库 → 第 8 分区逐条 pointer（findings + 处置通路呈现；view review 本身零施断）", async () => {
+    await seedTask();
+    const audit = await seedAuditReceipt(true);
+    expect(audit.ok, "越界漂移下 audit lane 须拒绝（ac08 语义——回执已落账）").toBe(false);
+
+    const outcome = await runViewReview(root, { task: TASK_ID });
+    expect(outcome.ok, "view review 呈现不施断（裁决 21：存在拒绝也不阻断）").toBe(true);
+    const packet = outcome.result as ViewReviewResult;
+
+    expect(packet.audit_rejections.status).toBe("findings");
+    expect(packet.audit_rejections.audit_receipts_scanned).toBe(1);
+    expect(packet.audit_rejections.receipts_with_rejections).toBe(1);
+    expect(packet.audit_rejections.rejections).toHaveLength(1);
+    const row = packet.audit_rejections.rejections[0];
+    expect(row).toMatchObject({
+      observation_id: audit.observationId,
+      execution_id: audit.executionId,
+      out_of_scope_count: 1,
+    });
+    expect(row?.receipt_path).toBe(`.pomaster/evidence/observations/${audit.observationId}.json`);
+
+    // 处置通路（裁决 21：修复后重审 / pomaster ledger record——显式通路词形）。
+    const disposition = packet.audit_rejections.disposition.join("\n");
+    expect(disposition).toContain("pomaster execution audit");
+    expect(disposition).toContain("pomaster ledger record");
+
+    // markdown 第 8 分区（人读面同构）：逐条 pointer + findings 词形在座。
+    const md = packet.markdown;
+    expect(md).toContain("## 8.");
+    expect(md).toContain("findings");
+    expect(md).toContain(`\`${audit.observationId}\``);
+    expect(md).toContain(audit.executionId);
+    expect(md).toContain(audit.observationId);
+  });
+
+  it("无 execution-audit 回执 → audit_rejections 显式 clean（未审不冒充已审；非静默缺席）", async () => {
+    await seedFullPacketWorld();
+    const outcome = await runViewReview(root, { task: TASK_ID });
+    expect(outcome.ok).toBe(true);
+    const packet = outcome.result as ViewReviewResult;
+    expect(packet.audit_rejections.status).toBe("clean");
+    expect(packet.audit_rejections.audit_receipts_scanned).toBe(0);
+    expect(packet.audit_rejections.receipts_with_rejections).toBe(0);
+    expect(packet.audit_rejections.rejections).toEqual([]);
+    const md = packet.markdown;
+    expect(md).toContain("## 8.");
+    expect(md).toContain("clean");
+    expect(md).toContain("未跑 audit");
+  });
+
+  it("audit 回执零拒绝（对照腿）→ clean 且分母 audit_receipts_scanned=1（审过且干净 ≠ 未审）", async () => {
+    await seedTask();
+    const audit = await seedAuditReceipt(false);
+    expect(audit.ok, "无漂移对照腿 audit 须绿（ac08 判别力语义）").toBe(true);
+
+    const outcome = await runViewReview(root, { task: TASK_ID });
+    expect(outcome.ok).toBe(true);
+    const packet = outcome.result as ViewReviewResult;
+    expect(packet.audit_rejections.status).toBe("clean");
+    expect(packet.audit_rejections.audit_receipts_scanned).toBe(1);
+    expect(packet.audit_rejections.receipts_with_rejections).toBe(0);
+    expect(packet.audit_rejections.rejections).toEqual([]);
+    expect(packet.markdown).toContain("clean");
+  });
+
+  it("纯读零写入：audit OBS 回执在座时 view review 前后 .pomaster 逐文件 sha256 不变（§91.1 测试锚）", async () => {
+    await seedTask();
+    await seedAuditReceipt(true);
+    const before = storeSnapshot();
+    expect(before.size).toBeGreaterThan(0);
+    const first = await runViewReview(root, { task: TASK_ID });
+    expect(first.ok).toBe(true);
+    const second = await runViewReview(root, { task: TASK_ID });
+    expect(second.ok).toBe(true);
+    expect(storeSnapshot()).toEqual(before);
+  });
+
+  it("fail-closed 与分母过滤：audit 词形回执损坏 → EVIDENCE_MALFORMED（禁把损坏呈现成 clean）；非 audit OBS 回执不入分母（构造形态）", async () => {
+    await seedTask();
+    const obsDir = join(root, ".pomaster", "evidence", "observations");
+    mkdirSync(obsDir, { recursive: true });
+
+    // —— 损坏段：JSON 截断的 audit 词形回执 → fail-closed（损坏面可能藏着越界拒绝） ——
+    writeFileSync(
+      join(obsDir, "OBS-0001.json"),
+      '{"record_type": "observation_receipt", "operation": "audit_mutation_scope", "normalized_facts',
+      "utf8",
+    );
+    const broken = await runViewReview(root, { task: TASK_ID });
+    expect(broken.ok).toBe(false);
+    expect(broken.errors[0]?.code).toBe("EVIDENCE_MALFORMED");
+
+    // —— 过滤段：非 audit OBS 回执（recon import-graph 词形构造）不入分母 ——
+    rmSync(join(obsDir, "OBS-0001.json"), { force: true });
+    const reconObs = {
+      record_type: "observation_receipt",
+      observation_id: "OBS-0002",
+      execution_id: "AGX-2026-0001",
+      journey_ref: null,
+      environment_receipt_ref: null,
+      sensor_capability: "SENSOR.BUILD.STATIC",
+      adapter: "pomaster-cli",
+      operation: "scan_import_graph",
+      target_ref: null,
+      surface: "STRUCTURAL_REALITY",
+      artifact_refs: [],
+      normalized_facts: ["external_imports: 4"],
+      result: "OBSERVED",
+      captured_at_seq: 3,
+    };
+    writeFileSync(join(obsDir, "OBS-0002.json"), `${JSON.stringify(reconObs, null, 2)}\n`, "utf8");
+    const filtered = await runViewReview(root, { task: TASK_ID });
+    expect(filtered.ok).toBe(true);
+    const cleanPacket = filtered.result as ViewReviewResult;
+    expect(cleanPacket.audit_rejections.status).toBe("clean");
+    expect(cleanPacket.audit_rejections.audit_receipts_scanned).toBe(0);
+
+    // —— 构造段：audit 词形回执（observationRecordOf 落盘形态构造）→ findings 逐字解析 ——
+    const auditObs = {
+      ...reconObs,
+      observation_id: "OBS-0003",
+      execution_id: "AGX-2026-0002",
+      operation: "audit_mutation_scope",
+      normalized_facts: [
+        "audit_surface: mutation-scope",
+        "out_of_scope: 2",
+        "unmapped: 0",
+      ],
+      captured_at_seq: 5,
+    };
+    writeFileSync(join(obsDir, "OBS-0003.json"), `${JSON.stringify(auditObs, null, 2)}\n`, "utf8");
+    const findings = await runViewReview(root, { task: TASK_ID });
+    expect(findings.ok).toBe(true);
+    const packet = findings.result as ViewReviewResult;
+    expect(packet.audit_rejections.status).toBe("findings");
+    expect(packet.audit_rejections.audit_receipts_scanned).toBe(1);
+    expect(packet.audit_rejections.rejections[0]).toMatchObject({
+      observation_id: "OBS-0003",
+      execution_id: "AGX-2026-0002",
+      out_of_scope_count: 2,
+    });
   });
 });

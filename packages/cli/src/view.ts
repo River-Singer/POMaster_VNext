@@ -21,6 +21,12 @@
  *   exception ledger CONFLICT/HARD_BLOCKER），按 Attention 类型分组 + 每条目给
  *   下一步处置命令路标；空队列显式「无可注意力项」非空白假绿。零新 store 对象、
  *   零写路径（纯读投影）。
+ * - view review <task>：Human Review Packet 终审包（§9；W3-S6 AC-16 + 裁决 21
+ *   八分区化）。八分区结构化终审包（Expected/Actual/Oracle/Gate/ACCEPT 回执/
+ *   Known Unknown/三分支/audit_rejections）；第 8 分区 = 未处置越界拒绝扫描
+ *   （裁决 21 方案 C：全局扫描 execution-audit OBS 回执 out_of_scope 发现，逐条
+ *   pointer，零发现显式 clean；不因未跑 audit 或存在拒绝阻断施断——closeout
+ *   完成链零改动）。
  * - view decision <discovery-id>：Decision Graph 呈现（§6A Recommendation UX 词形
  *   纪律；Batch 3 R3）。读 scratchpad decision-graph sidecar（schema 18）逐 Decision
  *   呈现——推荐以推荐身份标注不渲染成已决、Decision Owner: HUMAN 显式标注、
@@ -64,10 +70,17 @@ import {
   type DecisionPresentationCard,
 } from "./decision-presentation.js";
 import {
+  EXECUTION_AUDIT_OPERATION,
+  EXECUTION_AUDIT_OUT_OF_SCOPE_FACT_PREFIX,
+  parseOutOfScopeFact,
+} from "./execution-audit.js";
+import {
   DISCOVERY_ID_PATTERN,
   DISCOVERY_SCRATCHPADS_RELATIVE,
+  POMASTER_DIR,
   discoveryScratchpadDirPath,
   discoveryScratchpadsDirPath,
+  observationsDirPath,
   toPosix,
 } from "./store-layout.js";
 import {
@@ -1407,7 +1420,12 @@ export interface ViewReviewResult {
   };
   /** 7. 三分支路标（Human 判读后走向；词形 SP 提案待追认）。 */
   readonly branches: readonly ReviewBranchRow[];
-  /** 人读 markdown（§45 双输出；七分区与机读同构）。 */
+  /**
+   * 8. 未处置越界拒绝——execution-audit OBS 回执全局扫描（裁决 21：呈现强化非
+   * 阻断；closeout 完成链不消费本扫描——方案 C；词形 SP 提案待追认）。
+   */
+  readonly audit_rejections: ViewReviewAuditRejections;
+  /** 人读 markdown（§45 双输出；八分区与机读同构）。 */
   readonly markdown: string;
 }
 
@@ -1442,21 +1460,223 @@ function reviewBranches(): ReviewBranchRow[] {
   ];
 }
 
+// ============================================================
+// view review 第 8 分区素材：未处置越界拒绝扫描（裁决 21——呈现强化非阻断）
+// ============================================================
+
+/**
+ * 扫描呈现两态词闭包（词形 SP 提案待追认）：clean = 零发现（显式词形非静默缺席，
+ * 且注记区分「未跑 audit」与「审过且干净」）；findings = 存在越界拒绝。
+ */
+export const AUDIT_REJECTION_SCAN_STATUSES = ["clean", "findings"] as const;
+
+export type AuditRejectionScanStatus = (typeof AUDIT_REJECTION_SCAN_STATUSES)[number];
+
+/** 单条未处置越界拒绝 pointer（存在越界的 execution-audit OBS 回执 → 一条）。 */
+export interface ViewReviewAuditRejectionRow {
+  readonly observation_id: string;
+  readonly execution_id: string;
+  /**
+   * finding 摘要 = 回执 normalized_facts 的 out_of_scope 计数（EXECUTION_AUDIT_
+   * OUT_OF_SCOPE_FACT_PREFIX 单一词形源解析；路径级明细在各回执的 report blob——
+   * 回执不携 blob 自由区，本分区如实呈现计数粒度并指路 receipt）。
+   */
+  readonly out_of_scope_count: number;
+  readonly captured_at_seq: number;
+  /** 回执落盘位（项目根相对 posix——复检指路）。 */
+  readonly receipt_path: string;
+}
+
+export interface ViewReviewAuditRejections {
+  readonly status: AuditRejectionScanStatus;
+  /**
+   * 扫描分母：operation=audit_mutation_scope 的 OBS 回执总数（含零拒绝回执——
+   * 「审过且干净」≠「未审」，分母诚实呈现两者）。
+   */
+  readonly audit_receipts_scanned: number;
+  readonly receipts_with_rejections: number;
+  readonly rejections: readonly ViewReviewAuditRejectionRow[];
+  /**
+   * 处置通路（裁决 21：修复后重审 / pomaster ledger record——呈现层指路，机器面
+   * 全为既有通路零新语义；不阻断非新行为——closeout 完成链本就不消费 audit 回执）。
+   */
+  readonly disposition: readonly string[];
+}
+
+export const AUDIT_REJECTION_DISPOSITIONS: readonly string[] = [
+  "修复后重审：消除越界变更（或将目标对象回 FRAMEWORK LOCK 重审纳入 permit scope——D20，禁旁路扩权）后重跑 pomaster execution audit --execution-id <AGX-id> --diff-base <执行起始锚>（Detection 复核归零）",
+  "差异显式登记：pomaster ledger record --classification CONFLICT --statement <越界陈述> --actor <type>:<name>（处置归 Owner——本分区呈现不阻断：裁决 21 方案 C）",
+];
+
+function emptyAuditRejections(): ViewReviewAuditRejections {
+  return {
+    status: "clean",
+    audit_receipts_scanned: 0,
+    receipts_with_rejections: 0,
+    rejections: [],
+    disposition: AUDIT_REJECTION_DISPOSITIONS,
+  };
+}
+
+function auditReceiptMalformed(receiptPath: string, detail: string): CliError {
+  return {
+    code: "EVIDENCE_MALFORMED",
+    message: `execution-audit OBS 回执损坏/形态非法：${toPosix(receiptPath)}——${detail}`,
+    hint: "回执由 execution audit 通路落账（17-perception-receipts 词形，persistObservationRecord 唯一写手）；修复或重放后重跑 view review——扫描不静默跳过损坏回执（禁把损坏呈现成 clean）。",
+  };
+}
+
+/**
+ * scanAuditRejectionReceipts（纯读零写——diagnose.ts 纪律）：全局扫描
+ * .pomaster/evidence/observations/ 下 execution-audit 产生的 OBS 回执
+ * （record_type=observation_receipt 且 operation=EXECUTION_AUDIT_OPERATION——
+ * 词形单一镜像非手抄），逐回执从 normalized_facts 解析 out_of_scope 计数行
+ * （formatOutOfScopeFact/parseOutOfScopeFact 单一词形源——产出与解析共用）。
+ *
+ * 词形识别（本扫描的 OBS 回执承载字段，全部既有形态非自造）：
+ * - 分母词形 = 文件名 OBS-<n>.json（allocateObservationId 编号闭包镜像）+
+ *   record_type=observation_receipt（observationRecordOf 顶层判别键）+
+ *   operation=audit_mutation_scope（execution-audit 头注词形纪律常量）；
+ * - finding 摘要 = normalized_facts 中 `out_of_scope: <n>` 计数行（execution-audit
+ *   回执组装无条件携带；路径级明细在 report blob，回执只有计数粒度）；
+ * - 非 OBS 词形文件（ENVREC-*.json 等）与其他 operation 的 OBS 回执（recon family）
+ *   不属本分母，跳过不施断。
+ *
+ * fail-closed（禁把素材面损坏静默呈现成 clean——scanConflictReviewItems 同伦理；
+ * diagnose 对 OBS 回执的 EVIDENCE_MALFORMED 同码位先例）：JSON 解析失败 / 非对象 /
+ * record_type 缺失 / observation_id 与文件名不一致 / execution_id 或 captured_at_seq
+ * 缺席 / normalized_facts 非数组或含非字符串项 / audit 词形回执缺 out_of_scope 计数行
+ * → EVIDENCE_MALFORMED（损坏面可能藏着未处置越界拒绝）。目录缺席 = 零回执合法空
+ * 平面（allocateObservationId catch 同语义），clean 非错误。
+ *
+ * 裁决 21 边界：本扫描只呈现（view review 不施断——存在拒绝或未跑 audit 均不阻断）；
+ * closeout 完成链不消费本扫描结果（方案 C——执行前现状维持，closeout.ts 零改动）。
+ */
+function scanAuditRejectionReceipts(
+  rootDir: string,
+): { readonly scan: ViewReviewAuditRejections } | { readonly error: CliError } {
+  let names: string[];
+  try {
+    names = readdirSync(observationsDirPath(rootDir)).sort();
+  } catch {
+    return { scan: emptyAuditRejections() };
+  }
+  const rejections: ViewReviewAuditRejectionRow[] = [];
+  let scanned = 0;
+  for (const name of names) {
+    if (!/^OBS-[0-9]+\.json$/.test(name)) continue;
+    const receiptPath = `${POMASTER_DIR}/evidence/observations/${name}`;
+    let doc: unknown;
+    try {
+      doc = JSON.parse(readFileSync(join(observationsDirPath(rootDir), name), "utf8"));
+    } catch (err) {
+      return {
+        error: auditReceiptMalformed(
+          receiptPath,
+          `JSON 无法解析：${err instanceof Error ? err.message : String(err)}`,
+        ),
+      };
+    }
+    if (doc === null || typeof doc !== "object" || Array.isArray(doc)) {
+      return { error: auditReceiptMalformed(receiptPath, "感知回执不是 JSON 对象") };
+    }
+    const record = doc as Record<string, unknown>;
+    if (record["record_type"] !== "observation_receipt") {
+      return {
+        error: auditReceiptMalformed(
+          receiptPath,
+          "OBS 词形文件的 record_type 非 observation_receipt（17 schema root oneOf 判别键）",
+        ),
+      };
+    }
+    const observationId = name.slice(0, -".json".length);
+    if (record["observation_id"] !== observationId) {
+      return {
+        error: auditReceiptMalformed(
+          receiptPath,
+          "observation_id 与文件名不一致（回执身份逐字对账——diagnose 实读同款）",
+        ),
+      };
+    }
+    if (record["operation"] !== EXECUTION_AUDIT_OPERATION) continue;
+    scanned += 1;
+    const executionId = record["execution_id"];
+    const capturedAtSeq = record["captured_at_seq"];
+    const facts = record["normalized_facts"];
+    if (typeof executionId !== "string" || executionId.length === 0) {
+      return {
+        error: auditReceiptMalformed(receiptPath, "execution_id 缺席（OBS 回执 §6.13 证明义务）"),
+      };
+    }
+    if (typeof capturedAtSeq !== "number" || !Number.isInteger(capturedAtSeq) || capturedAtSeq < 0) {
+      return {
+        error: auditReceiptMalformed(receiptPath, "captured_at_seq 缺席或非负整数（A4 单调 seq 时间锚）"),
+      };
+    }
+    if (!Array.isArray(facts)) {
+      return { error: auditReceiptMalformed(receiptPath, "normalized_facts 非数组（17 schema 词形）") };
+    }
+    let outOfScopeCount: number | null = null;
+    for (const fact of facts) {
+      if (typeof fact !== "string") {
+        return { error: auditReceiptMalformed(receiptPath, "normalized_facts 含非字符串项") };
+      }
+      const parsed = parseOutOfScopeFact(fact);
+      if (parsed !== null) {
+        outOfScopeCount = parsed;
+        break;
+      }
+    }
+    if (outOfScopeCount === null) {
+      return {
+        error: auditReceiptMalformed(
+          receiptPath,
+          `audit 词形回执缺 ${EXECUTION_AUDIT_OUT_OF_SCOPE_FACT_PREFIX} <n> 计数行（execution-audit 回执组装无条件携带——缺失即手改/异源产物）`,
+        ),
+      };
+    }
+    if (outOfScopeCount > 0) {
+      rejections.push({
+        observation_id: observationId,
+        execution_id: executionId,
+        out_of_scope_count: outOfScopeCount,
+        captured_at_seq: capturedAtSeq,
+        receipt_path: receiptPath,
+      });
+    }
+  }
+  return {
+    scan: {
+      status: rejections.length > 0 ? "findings" : "clean",
+      audit_receipts_scanned: scanned,
+      receipts_with_rejections: rejections.length,
+      rejections,
+      disposition: AUDIT_REJECTION_DISPOSITIONS,
+    },
+  };
+}
+
 /**
  * view review <task>（§9 Human Review Packet 终审包；W3-S6 AC-16）：从既有 store
  * 平面组装结构化终审包——Expected（task acceptance）/ Actual（claims+verification）/
  * Oracle 摘要（requires/exclusions 资格面）/ Gate 记录（subject 绑定 GRN）/
- * accept_receipt 状态 / known unknown（negative-history + unknowns）/ 三分支路标。
+ * accept_receipt 状态 / known unknown（negative-history + unknowns）/ 三分支路标 /
+ * audit_rejections（未处置越界拒绝扫描——裁决 21 八分区化）。
  *
  * - 与 W2 evidence/review-packet.md 的关系：人工组织版 → 本命令是其机器化投影
- *   （七分区同构——头注在 markdown 声明，不自造第二事实面）；
+ *   （八分区同构——头注在 markdown 声明，不自造第二事实面）；
  * - 纯读零写入（§91.1）：accept_receipt 复用 closeout scanAcceptReceiptStatus 薄包装
  *   （acceptReceiptGate 单一扫描实现零行为变更）；negative-history 走 kernel
  *   readTaskNegativeHistory 同一装载面；字节快照测试钉；
  * - 显式缺席不冒充：无 ACCEPT → status=missing（机器绿 ≠ 已接受，W1 R1-1/C-4）；
  *   未映射 acceptance → satisfied=null；判据全为词形判定与计数，零综合分数（§21）；
+ * - 裁决 21（closeout 不消费 audit 越界拒绝——呈现强化路线，Owner 三选一直答方案 C）：
+ *   第 8 分区全局扫描 execution-audit OBS 回执的 out_of_scope 发现（scanAuditRejection
+ *   Receipts 纯读，diagnose.ts 纪律），逐条列 pointer，零发现显式 clean；**不因未跑
+ *   audit 或存在拒绝阻断施断**——closeout 完成链零改动（AC-08 防越界主防线 =
+ *   exec-guard 写前 Prevention + execution-audit 事后 Detection exit 1，均在座）；
  * - fail-closed：NOT_INITIALIZED / OBJECT_NOT_FOUND / 非 task_object → SCHEMA_INVALID，
- *   全程零写。
+ *   audit 回执损坏 → EVIDENCE_MALFORMED，全程零写。
  */
 export async function runViewReview(
   rootDir: string,
@@ -1474,6 +1694,7 @@ export async function runViewReview(
     accept_receipt: { status: "missing" },
     known_unknown: { negative_history: [], unverified_claims: [], open_questions: [] },
     branches: [],
+    audit_rejections: emptyAuditRejections(),
     markdown: "",
   };
 
@@ -1603,14 +1824,20 @@ export async function runViewReview(
     .filter((entry) => asString(entry.classification) === "OPEN_QUESTION" && asString(entry.object_ref) === resolved.target)
     .map((entry) => asString(entry.statement) ?? "(missing statement)");
 
-  // —— 渲染（七分区；# 标题 + > 出处锚引言块 + ## 分区风格同族） ——
+  // —— 8. 未处置越界拒绝（裁决 21：execution-audit OBS 回执全局扫描——呈现强化，
+  // 不阻断施断；closeout 完成链不消费本扫描结果） ——
+  const auditScan = scanAuditRejectionReceipts(rootDir);
+  if ("error" in auditScan) return failView(command, auditScan.error, emptyResult);
+  const auditRejections = auditScan.scan;
+
+  // —— 渲染（八分区；# 标题 + > 出处锚引言块 + ## 分区风格同族） ——
   const lines: string[] = [];
   lines.push(`# Human Review Packet — ${resolved.target}（§9 终审包 / AC-16）`);
   lines.push(
     `> 一个 State 多种 View（§91.1）；纯读零写入（write_surface=none，测试锚字节不变）；数据源全为既有 store 平面，不自造第二事实面。`,
   );
   lines.push(
-    `> 与 W2 evidence/review-packet.md 的关系：该文档是人工组织版，本命令是其机器化投影（七分区同构）——两者同源，禁止各自维护事实。`,
+    `> 与 W2 evidence/review-packet.md 的关系：该文档是人工组织版，本命令是其机器化投影（八分区同构）——两者同源，禁止各自维护事实。`,
   );
   lines.push(
     `> 判据纪律：全部为词形判定与计数，零综合分数零百分比置信（§21 守护栏）；机器绿 ≠ 已接受（W1 R1-1 / C-4）。`,
@@ -1694,6 +1921,35 @@ export async function runViewReview(
     lines.push(`    机器面: ${branch.machine_face}`);
   }
   lines.push("");
+  // —— 8. 未处置越界拒绝（裁决 21：全局扫描呈现——不因未跑 audit 或存在拒绝阻断施断） ——
+  lines.push(`## 8. 未处置越界拒绝（execution-audit OBS 回执扫描——裁决 21 呈现强化，不阻断施断）`);
+  lines.push("");
+  lines.push(
+    `  - 扫描分母: ${auditRejections.audit_receipts_scanned} 条 execution-audit 回执（.pomaster/evidence/observations/ 内 operation=${EXECUTION_AUDIT_OPERATION} 的 OBS 回执——含零拒绝回执）`,
+  );
+  if (auditRejections.status === "clean") {
+    lines.push(
+      `  - status=clean——${
+        auditRejections.audit_receipts_scanned === 0
+          ? "本仓无 execution-audit OBS 回执（未跑 audit：不构成阻断，亦不冒充已审）"
+          : "audit 回执全部零越界拒绝（审过且干净——非未审的缺席）"
+      }`,
+    );
+  } else {
+    lines.push(
+      `  - status=findings——存在越界拒绝的回执 ${auditRejections.receipts_with_rejections} 条（路径级明细在各回执 report blob——回执承载计数粒度）`,
+    );
+    for (const row of auditRejections.rejections) {
+      lines.push(
+        `  - \`${row.observation_id}\` — execution ${row.execution_id} out_of_scope=${row.out_of_scope_count}（captured_at_seq=${row.captured_at_seq}；receipt: ${toPosix(row.receipt_path)}）`,
+      );
+    }
+  }
+  lines.push(`  - 处置通路（裁决 21：显式处置——本分区呈现不阻断，closeout 完成链不消费本扫描）:`);
+  for (const route of auditRejections.disposition) {
+    lines.push(`    - ${route}`);
+  }
+  lines.push("");
 
   const result: ViewReviewResult = {
     view: "review-packet",
@@ -1723,6 +1979,7 @@ export async function runViewReview(
       open_questions: openQuestions,
     },
     branches: reviewBranches(),
+    audit_rejections: auditRejections,
     markdown: lines.join("\n"),
   };
   return okOutcome(command, result, result.markdown.split("\n"), warnings);
