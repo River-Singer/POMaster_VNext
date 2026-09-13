@@ -99,7 +99,7 @@ pomaster record gate-run/claim/verification
 
 # ⑥ RECONCILE —— delta 三方对账 / 投影视图 / 审计 / 例外台账
 pomaster reconcile --permit <PERMIT.*>
-pomaster view blueprint/task/attention/decision
+pomaster view blueprint/task/attention/decision/review
 pomaster audit blueprint/task/test-weakening
 pomaster ledger record/list
 

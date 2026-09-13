@@ -87,14 +87,16 @@
  * - eval            Agent Behavioral Eval（§44.10）：跑 --suite behavioral（seeds 25 注册/
  *                   23 executable/2 retired；retired 显式呈现不计失败；executable 失败
  *                   fail-closed exit 1；§94.3 触发面配套——trigger-manifest + eval-trigger.mjs）
- * - view blueprint/task/attention/decision
+ * - view blueprint/task/attention/decision/review
  *                   三投影 Human 侧 + Batch 3 扩展（§44.7/§49.1/§6.3/§6A）：Narrative
  *                   View（Stable Core 正文 + Uncertainty Envelope）/ Review View（§53
  *                   十二步 + 纠错 §20 Outcome Review 收口首层附区与三操作路标）/
  *                   attention = Human Attention Queue（§6.3/纠错 §19——五类既有对象
  *                   数据源分组投影 + 处置路标，View not new database）/ decision =
  *                   Decision Graph 呈现（§6A 词形纪律——推荐非已决、Decision Owner:
- *                   HUMAN、五件套、INFERENCE 披露）；纯读零写入
+ *                   HUMAN、五件套、INFERENCE 披露）/ review = Human Review Packet
+ *                   终审包（§9 七分区；W3-S6 AC-16——Expected/Actual/Oracle/Gate/
+ *                   ACCEPT 回执状态/Known Unknown/三分支路标）；纯读零写入
  * - audit blueprint/task/test-weakening
  *                   三投影 Audit View（§44.7/§49.1）：七字段完整呈现（§91.3：Audit View
  *                   才逐项显示完整 State Axes）；test-weakening = 测试弱化审计腿
@@ -235,7 +237,7 @@ import { runCatalogStatus, runCatalogExplain, runCatalogRelock } from "./catalog
 import { runResolve } from "./resolve.js";
 import { runGraph } from "./graph.js";
 import { runEval } from "./eval.js";
-import { runViewAttention, runViewBlueprint, runViewDecision, runViewTask } from "./view.js";
+import { runViewAttention, runViewBlueprint, runViewDecision, runViewReview, runViewTask } from "./view.js";
 import { runAuditBlueprint, runAuditTask } from "./audit.js";
 import { runLedgerList, runLedgerRecord } from "./ledger.js";
 import {
@@ -679,13 +681,19 @@ export type {
   RecordVerificationInput,
   RecordVerificationResult,
 } from "./record.js";
-export { runCloseout } from "./closeout.js";
+export {
+  runCloseout,
+  scanAcceptReceiptStatus,
+  ACCEPT_RECEIPT_SCAN_STATUSES,
+} from "./closeout.js";
 export type {
   CloseoutInput,
   CloseoutResult,
   CloseoutDodEntry,
   CloseoutGateRow,
   CloseoutSpecClauseEntry,
+  AcceptReceiptScan,
+  AcceptReceiptScanStatus,
 } from "./closeout.js";
 // 证据资格链（W1 R1-5）：要求面/证据面装配单源（closeout 主消费者 + record verification
 // 次消费者共享；判定核在 @pomaster/kernel evidence-qualification）。
@@ -798,9 +806,11 @@ export {
   runViewAttention,
   runViewBlueprint,
   runViewDecision,
+  runViewReview,
   runViewTask,
   ATTENTION_KINDS,
   OUTCOME_REVIEW_OPERATIONS,
+  REVIEW_BRANCH_NAMES,
   REVIEW_STEPS,
 } from "./view.js";
 export type {
@@ -808,6 +818,15 @@ export type {
   ViewTaskResult,
   ViewAttentionResult,
   ViewDecisionResult,
+  ViewReviewResult,
+  ReviewBranchName,
+  ReviewBranchRow,
+  ViewReviewAcceptReceipt,
+  ViewReviewExpectedRow,
+  ViewReviewActualRow,
+  ViewReviewOracleEntry,
+  ViewReviewGateRunRow,
+  ViewReviewNegativeHistoryRow,
   AttentionItem,
   AttentionGroup,
   AttentionKind,
@@ -3094,7 +3113,7 @@ export function createProgram(
   const view = program
     .command("view")
     .description(
-      "三投影 Human 侧（§44.7/§49.1）+ Batch 3 扩展：view blueprint = Narrative View（Stable Core 正文 + Uncertainty Envelope，正常状态标签默认隐藏 §91.3）；view task = Review View（§53 十二步审查顺序 + 纠错 §20 Outcome Review 附区，File Diff 降级证据层）；view attention = Human Attention Queue（§6.3/纠错 §19——五类既有对象数据源分组 + 处置路标，View not new database）；view decision = Decision Graph 呈现（§6A 推荐词形纪律——推荐非已决/Decision Owner: HUMAN/五件套/INFERENCE 披露）",
+      "三投影 Human 侧（§44.7/§49.1）+ Batch 3 扩展：view blueprint = Narrative View（Stable Core 正文 + Uncertainty Envelope，正常状态标签默认隐藏 §91.3）；view task = Review View（§53 十二步审查顺序 + 纠错 §20 Outcome Review 附区，File Diff 降级证据层）；view attention = Human Attention Queue（§6.3/纠错 §19——五类既有对象数据源分组 + 处置路标，View not new database）；view decision = Decision Graph 呈现（§6A 推荐词形纪律——推荐非已决/Decision Owner: HUMAN/五件套/INFERENCE 披露）；view review = Human Review Packet 终审包（§9 七分区——Expected/Actual/Oracle/Gate/ACCEPT 回执状态/Known Unknown/三分支路标；W3-S6 AC-16）",
     );
   view
     .command("blueprint")
@@ -3153,6 +3172,21 @@ export function createProgram(
       const outcome = await runViewDecision(resolveDir(command), { discoveryId });
       record({
         command: "view decision",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+  view
+    .command("review")
+    .description(
+      "Human Review Packet 终审包（§9；W3-S6 AC-16）：从既有 store 平面组装任务终审七分区——Expected（acceptance 判定）/ Actual（claims+verification）/ Oracle 摘要（requires/exclusions 资格面）/ Gate 记录（subject 绑定 GRN）/ ACCEPT 回执状态（复用 closeout 第五消费闸同一扫描实现）/ Known Unknown（negative-history+unknowns）/ 三分支路标（ACCEPT/REWORK/REJECT——机器面复用既有通路零新语义）；显式缺席不冒充（无 ACCEPT=missing——机器绿 ≠ 已接受）；零综合分数（§21）；纯读零写入；W2 evidence/review-packet.md（人工组织版）的机器化投影",
+    )
+    .argument("<task>", "任务对象 governed id（legacy 词形走 alias 收编）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (task: string, _opts, command) => {
+      const outcome = await runViewReview(resolveDir(command), { task });
+      record({
+        command: "view review",
         outcome,
         asJson: command.opts().json === true,
       });
