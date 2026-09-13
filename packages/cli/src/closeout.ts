@@ -627,6 +627,52 @@ async function acceptReceiptGate(
 }
 
 // ============================================================
+// ACCEPT 回执状态扫描（view review 消费面——第五消费闸的纯读薄包装）
+// ============================================================
+
+/**
+ * ACCEPT 回执扫描状态词闭包（SP 提案待追认）：present/stale/damaged 逐一映射
+ * closeout 闸码位（有效回执 / CLOSEOUT_ACCEPT_MISSING / STALE / DAMAGED）。
+ */
+export const ACCEPT_RECEIPT_SCAN_STATUSES = ["present", "missing", "stale", "damaged"] as const;
+
+export type AcceptReceiptScanStatus = (typeof ACCEPT_RECEIPT_SCAN_STATUSES)[number];
+
+export interface AcceptReceiptScan {
+  /** present = 有效回执在座；missing/stale/damaged = 显式缺席（不冒充已接受）。 */
+  readonly status: AcceptReceiptScanStatus;
+  /** 仅 present 在座（decision_id + graph 相对路径——CloseoutAcceptReceipt 同形）。 */
+  readonly receipt: CloseoutAcceptReceipt | null;
+  /** 非 present 时携带 closeout 闸同码位错误（呈现用；不改判卷语义）。 */
+  readonly error: CliError | null;
+}
+
+/**
+ * scanAcceptReceiptStatus（纯读薄包装；W3-S6 view review 消费位）：复用
+ * acceptReceiptGate 单一扫描实现（零行为变更——closeout 判卷语义原样），只把
+ * 「回执/错误」二态映射成四态状态词 + 在座 receipt。投影面（view/audit）消费；
+ * closeout 主流程不经此包装（判卷路径保持二态原样）。
+ */
+export async function scanAcceptReceiptStatus(
+  rootDir: string,
+  target: GovernedId,
+  implementsChange: string | null,
+  bodySha256: string | null,
+): Promise<AcceptReceiptScan> {
+  const outcome = await acceptReceiptGate(rootDir, target, implementsChange, bodySha256);
+  if ("receipt" in outcome) {
+    return { status: "present", receipt: outcome.receipt, error: null };
+  }
+  const status: AcceptReceiptScanStatus =
+    outcome.error.code === "CLOSEOUT_ACCEPT_STALE"
+      ? "stale"
+      : outcome.error.code === "CLOSEOUT_ACCEPT_DAMAGED"
+        ? "damaged"
+        : "missing";
+  return { status, receipt: null, error: outcome.error };
+}
+
+// ============================================================
 // 主流程
 // ============================================================
 

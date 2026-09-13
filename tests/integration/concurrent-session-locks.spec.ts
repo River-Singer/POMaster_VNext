@@ -25,7 +25,9 @@
  *   相同、journal 只剩一条 LOCK_STOLEN。修复后（独占认领 CAS + journal 原子追加）
  *   跨进程双子进程同拍争用：串行化成功、fence 严格单调（2→3）、LOCK_STOLEN 双条
  *   留痕、磁盘终态无双重凭据（唯最高 fence valid）。双子进程经文件栅栏同拍起跑
- *   （ready 信号互见 + 有界等待——2026-09-12 macOS CI 编排竞态修复，见 E 段内注）。
+ *   （ready 信号互见 + 有界等待——2026-09-12 macOS CI 编排竞态修复，见 E 段内注）；
+ *   争用失败另有有界确定性重试封套（仅 pre-swap 可重试 + 在盘 holder 核对禁 fence
+ *   双消耗——2026-09-13 windows CI 再发抖动修复，交错注入复现两型，见 E 段内注）。
  */
 import { spawn } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
@@ -451,16 +453,21 @@ interface StealChildResult {
  * 起一个争用子进程（attach → [栅栏位] → steal 目标锁 → STOLEN <fence> / exit 4 显式错误）。
  * `barrierDir` 在座时子进程于 steal 前落 ready 信号并等双子进程齐座（文件在座信号 +
  * 有界等待 + 超时 exit 3 显式失败——消除双子进程 spawn/start lottery）。
+ * `opts.stealRetry` 在座时子进程以 --steal-retry 启用争用失败的有界确定性重试封套
+ * （仅 pre-swap 失败可重试，见 steal-contention-child.mjs 头注——2026-09-13 windows
+ * CI 再发抖动修复）；「失败方显式错误」用例保持单发不进封套。
  */
-function spawnStealChild(sessionKey: string, lockId: string, barrierDir?: string): Promise<StealChildResult> {
+function spawnStealChild(
+  sessionKey: string,
+  lockId: string,
+  barrierDir?: string,
+  opts?: { readonly stealRetry?: boolean },
+): Promise<StealChildResult> {
   return new Promise((resolve) => {
-    const child = spawn(
-      process.execPath,
-      barrierDir === undefined
-        ? [stealChildScript, root, lockId, sessionKey]
-        : [stealChildScript, root, lockId, sessionKey, barrierDir],
-      { stdio: ["ignore", "pipe", "pipe"] },
-    );
+    const args = [stealChildScript, root, lockId, sessionKey];
+    if (barrierDir !== undefined) args.push(barrierDir);
+    if (opts?.stealRetry === true) args.push("--steal-retry");
+    const child = spawn(process.execPath, args, { stdio: ["ignore", "pipe", "pipe"] });
     let out = "";
     let err = "";
     child.stdout.on("data", (chunk: Buffer) => {
@@ -473,6 +480,11 @@ function spawnStealChild(sessionKey: string, lockId: string, barrierDir?: string
   });
 }
 
+/** 失败诊断行（exit/stdout/stderr 全量上水面——本轮 CI 分诊曾被吞 stderr 阻塞）。 */
+function childTrace(label: string, r: StealChildResult): string {
+  return `${label} exit=${r.code} stdout=${JSON.stringify(r.out)} stderr=${JSON.stringify(r.err)}`;
+}
+
 describe("E 段：跨进程并发 steal 争用（P20 红队发现 1 修复回归）", () => {
   it("双子进程同拍 steal 同一把锁：串行化成功、fence 严格单调（2→3）、LOCK_STOLEN 双条留痕、磁盘终态无双重凭据", async () => {
     // 本测试曾于 macOS CI 发作（commit e7d2b2f 轮，2026-09-12；AssertionError:
@@ -481,9 +493,23 @@ describe("E 段：跨进程并发 steal 争用（P20 红队发现 1 修复回归
     // 撕裂另一方的 readFileSync → JSON.parse 未捕获崩逸 exit 1——测试编排竞态，
     // 非 steal 语义缺陷（R1 定性 (b)）。修复 = 移除 child 冗余 bootstrap 写（父测试
     // makeStore 已登记 owner）+ 文件栅栏同拍起跑；断言面零删减。
+    // 再发抖动（windows CI run 34698021594，2026-09-13；AssertionError:
+    // expected 4 to be +0，515ms 即失败——非栅栏超时，双子进程均已退出）：交错注入
+    // 复现两型失败交错（R1 定性 (b)/(c) 编排-预算边界洞，steal 语义零缺陷）——
+    // (i) 首接管方 claim→install 缺席窗被 CI 负载拉宽（≥~70ms 即两拍缺席读）→
+    //     败方 LOCK_NOT_FOUND exit 4；
+    // (ii) claim rename 遭遇 >170ms（withBoundedRetry 预算 [20,50,100]）的 Windows
+    //     瞬时句柄 EPERM → 裸错误上抛 exit 4（code UNKNOWN）。
+    // 两型注入复现的磁盘终态 fence/journal/凭据全部自洽 = CAS 语义未破，败方属
+    // 产品契约内合法 fail-closed（「重试耗尽显式上抛——稍后重试该命令」）。修复 =
+    // 子进程争用失败的有界确定性重试封套（--steal-retry；仅 pre-swap 失败可重试 +
+    // 在盘 holder 事后核对禁 fence 双消耗，见 child 头注）+ 断言诊断信息补全；
+    // 四不变量（串行化成功/fence 单调/双条留痕/终态无双重凭据）零删减——CAS 真退化
+    // 时双 fence=2 或三条 LOCK_STOLEN 形态照样红灯，重试封套不掩盖。
     // per-test timeout 显式 60s（vitest.config 15s 全局基线对「双 node spawn + 栅栏」
     // 的 CI 慢盘预算不足）：child 栅栏死限 15s < 60s，栅栏超时以 exit 3 + stderr
-    // BARRIER_TIMEOUT 显式收场，不会伪装成 15s 整测超时。
+    // BARRIER_TIMEOUT 显式收场，不会伪装成 15s 整测超时；重试封套最坏 ~3.15s
+    // （6 轮确定性退避）≪ 60s，真失败仍以 exit 4 + stderr 显式收场。
     // 父进程置锁：会话 A 持 change 锁（fence=1）。
     await attachOn(store, A, "claude-code");
     const acquired = await acquireLock(store, {
@@ -495,12 +521,12 @@ describe("E 段：跨进程并发 steal 争用（P20 红队发现 1 修复回归
     // 文件栅栏（临时 store 根下，产物不入库）：两子进程互见 ready 后同拍进 steal。
     const barrierDir = join(root, "steal-contention-barrier");
     const [r1, r2] = await Promise.all([
-      spawnStealChild("codex_c1", "change-CHG-CONTEND", barrierDir),
-      spawnStealChild("codex_c2", "change-CHG-CONTEND", barrierDir),
+      spawnStealChild("codex_c1", "change-CHG-CONTEND", barrierDir, { stealRetry: true }),
+      spawnStealChild("codex_c2", "change-CHG-CONTEND", barrierDir, { stealRetry: true }),
     ]);
     // 修复后语义 = 串行化成功：双双 exit 0；若 CAS 退化回覆写竞态，会出现双 fence=2。
-    expect(r1.code).toBe(0);
-    expect(r2.code).toBe(0);
+    expect(r1.code, childTrace("c1", r1)).toBe(0);
+    expect(r2.code, childTrace("c2", r2)).toBe(0);
     // 接管顺序由争用决胜（非确定——正是被测语义）：按各自回带的 fence 排出先后。
     const steals = [
       { sessionKey: "codex_c1", fence: Number(/STOLEN (\d+)/.exec(r1.out)?.[1]) },

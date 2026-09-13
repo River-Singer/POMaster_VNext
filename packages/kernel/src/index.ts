@@ -1164,6 +1164,7 @@ export {
   PLAN_APPLICABILITY_VALUES,
   PLAN_CHANGE_FACE_KINDS,
   PLAN_CAPABILITY_WORDS,
+  CAPABILITY_EVIDENCE_REQUIREMENT,
   compileVerificationPlan,
 } from "./plan-compiler.js";
 export type {
@@ -1184,6 +1185,35 @@ export type {
   PlanUnknownItem,
   VerificationPlan,
 } from "./plan-compiler.js";
+
+// ============================================================
+// 通用 Diagnose 失败域判定核（W3-S3 · 09-12 W3 R3-4；源 PRD C §53-56 + §91 Case H）
+// ============================================================
+// 语义边界（diagnose.ts 头注）：纯函数判定核——症状申报（分类面）+ 证据关联面
+// （GRN run / OBS 感知回执 / AGX 执行档案）→ 失败域归因 + 置信基（evidence_chain |
+// declaration_only——零百分比置信，§21 守护栏）+ 诊断计划建议（next_actions 复用
+// plan-compiler 能力词位与证据义务原文——禁第二套工具池词）。只有 verdict=failed 的
+// run 面且 gate 命中 RUN_GATE_DOMAIN_SIGNALS 才产归因信号（BUILD/TYPECHECK→
+// product_assertion 最小映射；扩映射走 SP 追认）；冲突呈报非改判；零申报零信号 →
+// unknown_insufficient_evidence 诚实词位。词形闭包=kernel 局部词 TODO(vocab-pr)，
+// SP 提案待追认；与 §95.3 production 三分诊断轴（DIAGNOSIS_KIND_VALUES）正交零串扰
+// ——production 分支复用同一判定核（BREACHED band 前置只是产线准入条件）。
+export {
+  FAILURE_DOMAIN_VALUES,
+  FAILURE_DOMAIN_CONFIDENCE_BASES,
+  DIAGNOSE_EVIDENCE_KINDS,
+  RUN_GATE_DOMAIN_SIGNALS,
+  FAILURE_DOMAIN_CAPABILITY_PRIORITY,
+  judgeFailureDomain,
+} from "./diagnose.js";
+export type {
+  FailureDomain,
+  FailureDomainConfidenceBasis,
+  DiagnoseEvidenceKind,
+  DiagnoseEvidenceFace,
+  FailureDomainJudgmentInput,
+  FailureDomainJudgment,
+} from "./diagnose.js";
 
 // ============================================================
 // 证据绑定资格链判定核（W1-R1-5 · 09-10 PRD REQ-06 / AC-04）
@@ -1215,6 +1245,56 @@ export type {
   EvidenceQualificationFinding,
   EvidenceQualificationOutcome,
 } from "./evidence-qualification.js";
+
+// ============================================================
+// Test Weakening 检测核（W3-S1 · 09-12 W3 R3-3 / 09-10 PRD AC-08 + REQ-09）
+// ============================================================
+// 语义边界（test-weakening.ts 头注）：纯函数判定核——基线 vs 当前测试快照逐词族
+// 判定弱化（断言删除 / 断言放宽 / 状态码方向放宽（方向轴声明制）/ skip 新增 /
+// 断言计数下降），NOT_MACHINE_CHECKABLE 是诚实披露词形非弱化判定（weakened 聚合
+// 不数它）。verdict/形态/skip 态/解析态词形闭包=kernel 局部词 TODO(vocab-pr)
+// （SP 提案待追认；五弱化词形为本切片新造词类，NOT_MACHINE_CHECKABLE 沿
+// readiness 三态「如实不可机判」先例），零新 canonical kind——发现走 blob+OBS
+// 既有承载。参考提取器（vitest/jest 形 *.spec.ts 纯静态解析）是快照来源接缝
+// （TestSnapshotExtractor），解析不了形态如实 unknown/partial/unparseable 降级。
+// 消费者接线：pomaster audit test-weakening（CLI 审计腿，git HEAD vs 工作树，
+// fail-closed exit 1）。
+export {
+  TEST_WEAKENING_VERDICTS,
+  TEST_WEAKENING_FINDING_VERDICTS,
+  TEST_ASSERTION_KINDS,
+  TEST_SKIP_STATES,
+  TEST_PARSE_STATUSES,
+  TEST_FILE_PARSE_STATUSES,
+  TEST_BOUND_OPERATORS,
+  REFERENCE_DIRECTION_AXES,
+  detectTestWeakening,
+} from "./test-weakening.js";
+export type {
+  TestWeakeningVerdict,
+  TestWeakeningFindingVerdict,
+  TestAssertionKind,
+  TestSkipState,
+  TestParseStatus,
+  TestFileParseStatus,
+  TestBoundOperator,
+  TestExpectedValue,
+  DirectionAxisClass,
+  DirectionAxis,
+  TestAssertionSnapshot,
+  TestEntrySnapshot,
+  TestFileSnapshot,
+  TestWeakeningContext,
+  TestWeakeningTransition,
+  TestWeakeningFinding,
+  TestWeakeningOutcome,
+} from "./test-weakening.js";
+export {
+  TEST_WEAKENING_EXTRACTOR_ID,
+  vitestSpecExtractor,
+  extractVitestSpecSnapshot,
+} from "./test-weakening-extractor.js";
+export type { TestSnapshotExtractor } from "./test-weakening-extractor.js";
 
 // ============================================================
 // D 线地基：Sessions / Locks / Execution Identity（P20 · PRD §25.3/§25.4 + D 线 §1/§2/§3.3）
@@ -1275,6 +1355,7 @@ export {
   listExecutionRecords,
   allocateExecutionId,
   assertExecutionAttachable,
+  countExecutionInflightReceipts,
   isExecutionRef,
   executionRecordPath,
 } from "./execution.js";
@@ -1355,6 +1436,67 @@ export type {
   HandoffPacketEvidence,
   HandoffPacket,
 } from "./handoff.js";
+
+// Provider 能力映射（W4-S4 · 战役 W4 R4-3 + 09-10 PRD REQ-11/R §5.2 Provider-neutral）：
+// 长时运行四维能力（原生 async/steering/取消/工具发现）的**如实报告面**——三值词形
+// （native=探针确证支持 / absent=探针确证不支持 / unknown=探针缺席或报错，禁猜）+
+// absent/unknown 逐维声明式降级语义（reference-patterns 降级词形，锚定仓内已就位
+// 载体）。与 §58 三探针平行扩展零破坏（runtime-adapter 契约面零改动）；零硬编码
+// Provider 型号断言——报告由探针结果唯一决定。纯函数零 IO 零墙钟。
+export {
+  PROVIDER_CAPABILITY_ALL_UNKNOWN_NOTE,
+  PROVIDER_CAPABILITY_BASIS_VALUES,
+  PROVIDER_CAPABILITY_DEGRADATIONS,
+  PROVIDER_CAPABILITY_DIMENSIONS,
+  PROVIDER_CAPABILITY_NO_CROSS_PROVIDER_GUARANTEE_NOTE,
+  PROVIDER_CAPABILITY_PROBE_METHODS,
+  PROVIDER_CAPABILITY_SUPPORT_VALUES,
+  probeProviderCapabilities,
+} from "./provider-capabilities.js";
+export type {
+  ProviderCapabilityBasis,
+  ProviderCapabilityDimension,
+  ProviderCapabilityProbe,
+  ProviderCapabilityProbeMethod,
+  ProviderCapabilityRow,
+  ProviderCapabilitySupport,
+  ProviderCapabilitiesReport,
+  ProviderDegradationId,
+  ProviderDegradationSemantics,
+} from "./provider-capabilities.js";
+
+// Task telemetry 派生评估核（W4-S5 · 战役 W4 R4-4 + 09-10 PRD REQ-11 + §9 指标清单）：
+// reasoning/cost/Horizon 的**只读派生聚合**——六指标（verified_transition_rate/
+// rework_signal/steering_count/resume_reconcile_signals/horizon/cost_face）每指标带
+// 分母与可计算性（MEASURED/NOT_COMPUTABLE/NOT_MEASURABLE_YET——前两词形复用 §55.1）。
+// 诚实红线：无综合评分、不持久化私有思维链（输入面无思维链通道）、零阈值零阻断、
+// cost 面如实未计量。分层：deriveTaskTelemetry 纯函数零 IO 零墙钟 +
+// gatherTaskTelemetryInput IO 装载单一面（只读零写）。
+export {
+  TASK_TELEMETRY_ADVISORY_NOTE,
+  TASK_TELEMETRY_HORIZON_STATES,
+  TASK_TELEMETRY_METRIC_KEYS,
+  TASK_TELEMETRY_METRIC_STATUS,
+  TASK_TELEMETRY_NO_BASELINE_PERCENTAGE_NOTE,
+  TASK_TELEMETRY_NO_CHAIN_PERSISTENCE_NOTE,
+  TASK_TELEMETRY_NO_COMPOSITE_SCORE_NOTE,
+  deriveTaskTelemetry,
+  gatherTaskTelemetryInput,
+} from "./task-telemetry.js";
+export type {
+  TaskTelemetryClaimRow,
+  TaskTelemetryEvidenceCensus,
+  TaskTelemetryExecutionRef,
+  TaskTelemetryHorizonRow,
+  TaskTelemetryHorizonState,
+  TaskTelemetryInput,
+  TaskTelemetryMetric,
+  TaskTelemetryMetricKey,
+  TaskTelemetryMetricStatus,
+  TaskTelemetryNegativeEntryRef,
+  TaskTelemetryReport,
+  TaskTelemetryRunRow,
+} from "./task-telemetry.js";
 
 // DEF-SUP 触发制观测器（P21-Contract；D 线 §5 DEF-SUP 行三触发条件——
 // (a) 同 SOP 链重复 ≥3 次（journal 事件型链实测）/ (b) 第二贡献者（申报）/
@@ -1983,6 +2125,76 @@ export type {
   SealedExecutionTrace,
   SealedTraceListRow,
 } from "./trace.js";
+
+// ============================================================
+// Checkpoint 恢复引用快照（W4-S2 · 09-10 PRD §6-1 + 战役 W4 R4-1）
+// ============================================================
+// 语义边界（checkpoint.ts 头注为准）：checkpoint = 对「恢复所需世界状态引用集」
+// 的显式快照——每项都是引用（既有实体），本体只是可重建的引用清单文件；零新
+// canonical kind、零 TransactionOp、零 journal 事件（P34 新分区 + trace seal
+// 分区档案先例）。引用逐项存在性校验（OBJECT_NOT_FOUND / PERMIT_NOT_FOUND /
+// EXECUTION_NOT_FOUND 同款透传——S1 禁自造身份）；workspace 锚 = 调用方采集
+// 显式申报（execution-audit 锚定诚实同族；无锚 absent 显式申报非伪造）；
+// captured_at_seq = A4 时点锚（无墙钟）。分层纪律（与 W4-S1 组合）：checkpoint =
+// 引用快照（保存时点存在性），reconcile = 新鲜度判定（恢复时点）——恢复通路 =
+// session attach --task <ref> --reconcile <permit>。幂等纪律（store 同款）：显式
+// 同号重放同内容零写入短路，异内容 CHECKPOINT_ALREADY_EXISTS 显式冲突。落盘
+// state/checkpoints/（durable 进 Git；layout 双向对账已登记）。词形 SP 提案待
+// 追认：pomaster.checkpoint/v1 / CKPT-<n> / CHECKPOINT_NOT_FOUND /
+// CHECKPOINT_ALREADY_EXISTS / anchor_status 两值轴。
+export {
+  CHECKPOINTS_RELATIVE,
+  CHECKPOINT_SCHEMA,
+  CHECKPOINT_ID_PATTERN,
+  CHECKPOINT_WORKSPACE_ANCHOR_NOTE,
+  saveCheckpoint,
+  readCheckpoint,
+  checkpointRecordPath,
+  allocateCheckpointId,
+} from "./checkpoint.js";
+export type {
+  CheckpointRecord,
+  CheckpointSaveInput,
+  CheckpointSaveResult,
+  CheckpointInflightReceipts,
+  CheckpointExecutionRef,
+  CheckpointTaskSurface,
+  CheckpointTraceRef,
+  CheckpointWorkspaceAnchor,
+  CheckpointWorkspaceAnchorInput,
+} from "./checkpoint.js";
+
+// ============================================================
+// Steering 事件建模（W4-S3 · 09-10 PRD REQ-08/AC-07 + §6-5）
+// ============================================================
+// 语义边界（steering.ts 头注为准）：Steering = 现有任务的**有来源事件**（REQ-08）——
+// 数据落 state/steering-log.json append-only 台账（exception-ledger 同款 sidecar；
+// STE-<n> = EXC-n 同法分配）；journal 事件词形 STEERING_RECORDED（SP 提案待追认——
+// journal 事件词形常量集追加，非 canonical kind，不动 vocab-lock 主表）。零
+// TransactionOp（negative-history「联合零新 op」通路层封条同款）、不进 truth-index、
+// 不进 content_digest。诚实红线：constraint/affected_scope 是**申报面**（declared）——
+// 机器不判定约束被遵守（exec-guard/audit 职责），只提供可检索、可投影的载体；投影
+// 恒 [ADVISORY] 分区 + [STEERING] 词形区分（§83.2 铁律/GOLDEN-L8-3 消费层防线）。
+// 幂等/冲突纪律（store 既有）：事件流面每次调用 = 一次事件（非幂等覆盖，
+// ledger.recordException 先例）。
+export {
+  STEERING_LOG_RELATIVE,
+  STEERING_RECORDED_EVENT,
+  STEERING_LOG_SCHEMA,
+  STEERING_REF_PATTERN,
+  readSteeringLog,
+  readTaskSteeringConstraints,
+  recordSteering,
+  searchTaskSteeringConstraints,
+} from "./steering.js";
+export type {
+  SteeringRecord,
+  SteeringDeclaredBy,
+  SteeringLogFile,
+  SteeringRecordInput,
+  SteeringRecordResult,
+  SteeringSearchHit,
+} from "./steering.js";
 
 // ============================================================
 // Perception 契约 + Environment Doctor + Observation Receipt（W1-D1 P0.5-4a 纯函数面 + W1-D2 P0.5-4b 接线）

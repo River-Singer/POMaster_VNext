@@ -14,6 +14,13 @@
 //   origin=preset advisory 语义透传（R3）。
 // - 生成器 fail-closed：hint 词形闭包校验（渲染分支与 hint 词表同步，缺分支即
 //   生成失败，不带病产出）。
+//
+// C1 组筛选呈现（W2 首批端到端切片）：页内客户端筛选——按九组筛选分区 +
+// 「只看 UNKNOWN」开关。纯渲染层功能：seed 与装载器零触碰，筛选只在 story
+// setup 的可见集上做文章。可见性语义（TASK.SLICE_C1 验收②）：
+// - 真值视图（选组 + 开关关）：可见 = 该组真值叶（UNKNOWN 占位移出真值可见分母）；
+// - 开关视图（只看 UNKNOWN 勾选）：可见 = UNKNOWN 占位（可再叠加组筛选交集）；
+// - 默认视图（全部组 + 开关关）：58 叶齐（与无筛选渲染逐字节同语义）。
 import { join } from "node:path";
 import { DESIGN_TOKENS_PATH, loadDesignTokens } from "./design-tokens.mjs";
 import { resetDir, writeFileEnsuringDir } from "./common.mjs";
@@ -49,6 +56,7 @@ function docsDescription(model) {
     `数值全部构建期装载自 ${model.sourcePath}`,
     `（origin=${model.origin}，advisory——Owner 经 baseline confirm 确认前不构成项目事实；`,
     `逐值出处注记与 origin 词形语义见该文件头注；值变更走确认链，画廊零改值）。`,
+    `页内组筛选与只看 UNKNOWN 开关为纯客户端呈现（UNKNOWN 占位只进开关视图，不混入真值可见分母）。`,
     `与 React sidecar「Foundations/Design Tokens」同数据源同语义（对照浏览）。`,
   ].join(" ");
 }
@@ -67,7 +75,20 @@ function pageTemplate() {
     （宁缺毋假：无权威出处/映射非唯一的键渲染 UNKNOWN 占位样式，禁伪造演示值，回填决策留 Owner）。
     单一事实源：全部数值来自 seed 装载——改 seed 即改页。
   </p>
-  <section v-for="group in tokenGroups" :key="group.key" style="margin: 0 0 32px;">
+  <div class="dt-filter-bar" data-filter-bar style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; border: 1px solid #eeeeee; border-radius: 6px; padding: 8px 12px; margin: 0 0 24px;">
+    <label style="display: flex; align-items: center; gap: 6px; font-size: 13px;">
+      组筛选
+      <select v-model="activeGroup" data-filter-group style="font-size: 13px; padding: 2px 6px;">
+        <option value="">全部组</option>
+        <option v-for="option in groupOptions" :key="option.key" :value="option.key">{{ option.title }}</option>
+      </select>
+    </label>
+    <label style="display: flex; align-items: center; gap: 6px; font-size: 13px;">
+      <input type="checkbox" v-model="unknownOnly" data-unknown-view />
+      只看 UNKNOWN
+    </label>
+  </div>
+  <section v-for="group in visibleGroups" :key="group.key" style="margin: 0 0 32px;">
     <h3 style="margin: 0 0 4px; font-size: 16px;">{{ group.title }}（{{ group.entries.length }} 键 · {{ group.kind === 'table' ? '表格化' : '样张' }}）</h3>
     <p v-if="group.note" style="margin: 0 0 8px; font-size: 12px; color: #8c8c8c;">{{ group.note }}</p>
     <table v-if="group.kind === 'table'" style="width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px;">
@@ -125,6 +146,9 @@ export function renderDesignTokensStory(model) {
     `//（Owner baseline confirm 确认前不构成项目事实——确认链通道不变）。`,
     `// 页框 chrome 用色（#eeeeee/#bfbfbf/#8c8c8c/#fdfdfd/#fffbe6/#d48806/#555555）不取 seed token`,
     `// 值——token 值只经 displayValue 装载呈现（单一事实源红线）。`,
+    `// C1 组筛选：页内客户端筛选（纯渲染层）——组筛选 + 只看 UNKNOWN 开关；`,
+    `// UNKNOWN 占位叶只进开关视图，不混入真值可见分母（TASK.SLICE_C1 验收②）。`,
+    `import { computed, ref } from 'vue';`,
     `import type { Meta, StoryObj } from '@storybook/vue3';`,
     ``,
     embedConst("TOKEN_META", {
@@ -135,6 +159,10 @@ export function renderDesignTokensStory(model) {
       unknownCount: model.unknownCount,
     }),
     embedConst("TOKEN_GROUPS", model.groups),
+    embedConst(
+      "TOKEN_GROUP_OPTIONS",
+      model.groups.map((group) => ({ key: group.key, title: group.title })),
+    ),
     ``,
     `const meta = {`,
     `  title: 'Foundations/Design Tokens（seed 只读渲染）',`,
@@ -147,7 +175,19 @@ export function renderDesignTokensStory(model) {
     `export const Default: StoryObj = {`,
     `  render: () => ({`,
     `    setup() {`,
-    `      return { tokenGroups: TOKEN_GROUPS, tokenMeta: TOKEN_META };`,
+    `      const activeGroup = ref('');`,
+    `      const unknownOnly = ref(false);`,
+    `      const visibleGroups = computed(() =>`,
+    `        TOKEN_GROUPS.filter((group) => activeGroup.value === '' || group.key === activeGroup.value).map((group) => ({`,
+    `          ...group,`,
+    `          entries: group.entries.filter((entry) => {`,
+    `            if (unknownOnly.value) return entry.unknown;`,
+    `            if (activeGroup.value !== '') return !entry.unknown;`,
+    `            return true;`,
+    `          }),`,
+    `        })),`,
+    `      );`,
+    `      return { visibleGroups, tokenMeta: TOKEN_META, groupOptions: TOKEN_GROUP_OPTIONS, activeGroup, unknownOnly };`,
     `    },`,
     `    template: ${JSON.stringify(pageTemplate())},`,
     `  }),`,

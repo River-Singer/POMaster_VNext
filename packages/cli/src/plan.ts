@@ -29,7 +29,9 @@ import { existsSync, readFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import {
+  buildStorePaths,
   GovernanceError,
+  readTaskSteeringConstraints,
   type PlanApplicability,
   type PlanChangeFace,
   type PlanCapabilityWord,
@@ -188,6 +190,28 @@ interface FaceSpecParseOk {
 }
 interface FaceSpecParseError {
   readonly error: CliError;
+}
+
+/**
+ * W4-S3 steering 接缝（REQ-08「按影响范围重编译计划」最小形态）：任务申报的
+ * Steering 约束进计划编译输入面（changeSurface.unknowns 呈现——不阻断 applicability
+ * 判定，申报面不是判卷输入；affected_scope 对齐判定缺席 = 显式保留 unknown）。
+ * - 纯读零写入（buildStorePaths + readTaskSteeringConstraints 同一装载面——本命令
+ *   compile 纯读纪律不变）；
+ * - 台账缺席 = 零约束 → unknowns 零增量（既有行为字节不变）；
+ * - 台账损坏（SCHEMA_INVALID）→ fail-closed 显式拒绝（静默当零约束 = 分母漂移）。
+ */
+function steeringUnknownsFor(rootDir: string, taskRef: string): readonly string[] {
+  const entries = readTaskSteeringConstraints(buildStorePaths(rootDir), taskRef);
+  return entries.map(
+    (entry) =>
+      `[STEERING] ${entry.steering_ref} constraint「${entry.constraint}」` +
+      `（source_ref=${entry.source_ref}；` +
+      `affected_scope=${entry.affected_scope.length > 0 ? entry.affected_scope.join("/") : "（全 task——未申报对象/能力词形）"}` +
+      `；declared 申报面——机器不验证遵守，遵守判定归 exec-guard/audit）——` +
+      `REQ-08 最小形态：约束随下次编译在输入面可见，applicability 判定不受影响；` +
+      `affected_scope 与本次变更面的对齐判定缺席，显式保留 unknown`,
+  );
 }
 
 function parseFaceSpec(spec: string): FaceSpecParseOk | FaceSpecParseError {
@@ -454,6 +478,13 @@ export async function runPlanCompile(
       if ("error" in loaded) return fail(empty, command, loaded.error);
       const toolBindings = toolBindingsForPlan(rootDir);
       if (toolBindings.mode === "error") return fail(empty, command, toolBindings.error);
+      // W4-S3 steering 接缝（REQ-08 重编译最小形态；fail-closed 见本函数头注）。
+      let steeringUnknowns: readonly string[] = [];
+      try {
+        steeringUnknowns = steeringUnknownsFor(rootDir, taskRef);
+      } catch (error) {
+        return fail(empty, command, toCliError(error));
+      }
 
       const faces: PlanChangeFace[] = [];
       for (const spec of input.faces ?? []) {
@@ -483,6 +514,8 @@ export async function runPlanCompile(
           version: null,
           unknowns: [
             "受影响消费者为 argv 显式清单（import-graph 消费者图未接线——R1-3 边界）；变更面 absent 申报=Owner/编译方判断（依据已逐字入 reason）",
+            // W4-S3 steering 接缝：约束申报随下次编译进输入面（不阻断 applicability）。
+            ...steeringUnknowns,
           ],
         },
         environment: {

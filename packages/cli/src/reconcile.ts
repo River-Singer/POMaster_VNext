@@ -16,6 +16,9 @@
  * - 词表纪律：RECONCILE_DIRTY / RECONCILE_BASELINE_MISSING 为 CLI 本地错误码
  *   （复用 kernel GovernanceError 同义码位约定）；报告 kind 词形是呈现层局部词
  *   → 已入锁（vocab-lock presentation_axes.reconcile_delta_kinds——PR-0001 收编段）。
+ * - 判卷单一实现（W4-S1）：judgeReconcile 是 ⑥ 拍判卷的共用消费函数——reconcile 命令
+ *   与 session attach --reconcile（恢复对账前置闸，evidence-invalidation-map B11/
+ *   §5-8「接线而非新建」）同吃一份分派，禁两套判卷/两套摘要文案。
  */
 import type { ReconcileReport } from "@pomaster/kernel";
 import {
@@ -40,6 +43,19 @@ export interface ReconcileInput {
 /** CLI 结果视图 = kernel 报告逐字（snake_case 已对齐 §45 机读信封，不二次映射）。 */
 export type ReconcileResultView = ReconcileReport;
 
+/**
+ * ⑥ 拍判卷分派（judgeReconcile 产出；消费方各自翻译成自己的出口形态）：
+ * - clean → 零审阅合法出口；
+ * - dirty → 有 delta/例外（人审队列）；
+ * - baseline_missing → 旧形态许可无基线快照（not_configured ≠ passed 镜像）；
+ * - failed → 硬失败（argv 形状/未初始化/许可缺失/证据平面损坏），报告为空骨架。
+ */
+export type ReconcileJudgment =
+  | { readonly kind: "clean"; readonly report: ReconcileResultView }
+  | { readonly kind: "dirty"; readonly report: ReconcileResultView }
+  | { readonly kind: "baseline_missing"; readonly report: ReconcileResultView }
+  | { readonly kind: "failed"; readonly report: ReconcileResultView; readonly error: CliError };
+
 /** 硬失败路径的空报告骨架（逐字段 null/空集——缺席显式，不伪造事实）。 */
 function emptyReport(permitRef: string): ReconcileResultView {
   return {
@@ -56,21 +72,34 @@ function emptyReport(permitRef: string): ReconcileResultView {
   };
 }
 
+/** clean 摘要行（reconcile 命令与 resume 前置闸共用词形——单一实现禁两套文案）。 */
+export function reconcileCleanSummaryLine(report: ReconcileResultView): string {
+  return `reconcile ${report.permit_ref} → clean（无 delta、无例外；基线 at_seq=${report.baseline_at_seq}，当前 seq=${report.current_seq}）`;
+}
+
+/** dirty 摘要行（同上共用）。 */
+export function reconcileDirtySummaryLine(report: ReconcileResultView): string {
+  return (
+    `reconcile ${report.permit_ref} → dirty：changed_objects=${report.changed_objects.length}` +
+    `（materialized=${report.scope_summary.materialized}, vanished=${report.scope_summary.vanished}）` +
+    `, exceptions=${report.exceptions.length}, samples_to_review=${report.samples_to_review.length}`
+  );
+}
+
 /**
- * 执行 reconcile。返回 CommandOutcome；runCli 把 ok=false 收敛为 exit 1。
- * ok 语义（设计 §5）：exit 0 当且仅当 clean=true 且基线在场。
+ * ⑥ 拍判卷共用消费函数：装载 → kernel reconcilePermit → 三态分派。
+ * 纯读零写；runReconcile（reconcile 命令）与 session attach --reconcile（恢复对账
+ * 前置闸）共用——提取共用而非复制（单一实现禁两套判卷）。
  */
-export async function runReconcile(
+export async function judgeReconcile(
   rootDir: string,
   input: ReconcileInput,
-): Promise<CommandOutcome<ReconcileResultView>> {
-  const fail = (error: CliError): CommandOutcome<ReconcileResultView> =>
-    failOutcome<ReconcileResultView>(
-      "reconcile",
-      emptyReport(input.permit),
-      [error],
-      [`reconcile: FAILED — ${error.code}\n  hint: ${error.hint}`],
-    );
+): Promise<ReconcileJudgment> {
+  const fail = (error: CliError): ReconcileJudgment => ({
+    kind: "failed",
+    report: emptyReport(input.permit),
+    error,
+  });
 
   // —— argv 形状解析：--samples ≥0 整数（0 = 显式放弃抽样，不静默） ——
   let samples: number | undefined;
@@ -91,7 +120,7 @@ export async function runReconcile(
   if ("error" in initialized) return fail(initialized.error);
 
   // —— kernel 判卷（唯一权威；CLI 不重造 delta/例外/抽样逻辑） ——
-  let report: ReconcileReport;
+  let report: ReconcileResultView;
   try {
     // 纯读零写装载（审查 H3 同型点扫尾）：报告生成不落任何文件，装载亦不得经
     // createStore（ensureSidecars 会在侧车缺失的存量 store 上静默重建空账）。
@@ -109,10 +138,36 @@ export async function runReconcile(
     return fail(error);
   }
 
-  if (report.baseline_missing) {
+  if (report.baseline_missing) return { kind: "baseline_missing", report };
+  if (report.clean) return { kind: "clean", report };
+  return { kind: "dirty", report };
+}
+
+/**
+ * 执行 reconcile。返回 CommandOutcome；runCli 把 ok=false 收敛为 exit 1。
+ * ok 语义（设计 §5）：exit 0 当且仅当 clean=true 且基线在场。
+ * 本函数只做「判卷 → 信封」翻译（判卷在 judgeReconcile）；出口码位与文案与
+ * 提取前逐字一致（reconcile 命令行为零改动——W4-S1 零破坏红线）。
+ */
+export async function runReconcile(
+  rootDir: string,
+  input: ReconcileInput,
+): Promise<CommandOutcome<ReconcileResultView>> {
+  const judgment = await judgeReconcile(rootDir, input);
+
+  if (judgment.kind === "failed") {
     return failOutcome<ReconcileResultView>(
       "reconcile",
-      report,
+      judgment.report,
+      [judgment.error],
+      [`reconcile: FAILED — ${judgment.error.code}\n  hint: ${judgment.error.hint}`],
+    );
+  }
+
+  if (judgment.kind === "baseline_missing") {
+    return failOutcome<ReconcileResultView>(
+      "reconcile",
+      judgment.report,
       [
         {
           code: "RECONCILE_BASELINE_MISSING",
@@ -127,24 +182,17 @@ export async function runReconcile(
     );
   }
 
-  if (report.clean) {
-    return okOutcome(
-      "reconcile",
-      report,
-      [
-        `reconcile ${input.permit} → clean（无 delta、无例外；基线 at_seq=${report.baseline_at_seq}，当前 seq=${report.current_seq}）`,
-        `  零审阅出口：clean=true 是合法出口，不是跳过（⑥ 拍人审负担为零）`,
-      ],
-    );
+  if (judgment.kind === "clean") {
+    return okOutcome("reconcile", judgment.report, [
+      reconcileCleanSummaryLine(judgment.report),
+      `  零审阅出口：clean=true 是合法出口，不是跳过（⑥ 拍人审负担为零）`,
+    ]);
   }
 
-  const summary =
-    `reconcile ${input.permit} → dirty：changed_objects=${report.changed_objects.length}` +
-    `（materialized=${report.scope_summary.materialized}, vanished=${report.scope_summary.vanished}）` +
-    `, exceptions=${report.exceptions.length}, samples_to_review=${report.samples_to_review.length}`;
+  const summary = reconcileDirtySummaryLine(judgment.report);
   return failOutcome<ReconcileResultView>(
     "reconcile",
-    report,
+    judgment.report,
     [
       {
         code: "RECONCILE_DIRTY",

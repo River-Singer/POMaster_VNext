@@ -86,7 +86,8 @@ sidecar 全部复用既有机制（零新治理语义）：
 init 一次性建出 `.pomaster/` 目录宪法 §2 全树（不分档级、与入口形态/平台选择**完全无关**；
 单一重入口，无模式旗标）：
 
-- **state**：控制平面元数据 + sidecars——含 `state/contexts/`（Task Context Manifest 落盘位）；
+- **state**：控制平面元数据 + sidecars——含 `state/contexts/`（Task Context Manifest 落盘位）
+  与 `state/checkpoints/`（Checkpoint 恢复引用快照落盘位）；
 - **truth/objects**：Canonical Truth 正文层（一对象一文件）；
 - **evidence 三区**：runs / claims / blobs——含 `evidence/observations/`（感知回执 sidecar 分区）；
 - **executions + traces**：执行身份与行为档案；
@@ -100,7 +101,7 @@ init 一次性建出 `.pomaster/` 目录宪法 §2 全树（不分档级、与�
 - **specs/**：Spec Workspace——`hard/themes`、`hard/stacks`、`acceptance`、`evidence`
   （主题文档单目录承载，旧 FE/BE 平铺位退役）。
 
-共 40 目录，每目录各带 README；同时落 `.pomaster/layout.json` 机器清单（全目录
+共 41 目录，每目录各带 README；同时落 `.pomaster/layout.json` 机器清单（全目录
 `status=wired` + `activation_hint`）——**什么样的项目/需求激活该平面由 AI 按项目复杂度
 自行判断，目录存在 ≠ 已激活**。
 

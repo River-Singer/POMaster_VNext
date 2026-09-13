@@ -99,8 +99,8 @@ pomaster record gate-run/claim/verification
 
 # ⑥ RECONCILE —— delta 三方对账 / 投影视图 / 审计 / 例外台账
 pomaster reconcile --permit <PERMIT.*>
-pomaster view blueprint/task/attention/decision
-pomaster audit blueprint/task
+pomaster view blueprint/task/attention/decision/review
+pomaster audit blueprint/task/test-weakening
 pomaster ledger record/list
 
 # ⑦ COMPACT —— 折叠入账 / 知识生命周期 / 记忆收割
@@ -108,6 +108,9 @@ pomaster compact
 pomaster knowledge search/inspect/record/review-candidates/promote/demote
 pomaster memory capture/inspect/harvest/review/promote/audit
 pomaster negative-history record/search   # 任务内已否定方案（W1-R1-7；REQ-03/AC-02）：record 绑定 TASK.*（--approach/--reason 必填 + --evidence-ref 可选，数据住 task payload.negative_history——不建第二库）；search 词级精确检索、未命中显式「无记录」；context compile 经 [ADVISORY KNOWLEDGE] 分区可见（重编译/rollover 仍可检索，不进 gate 判卷输入）
+pomaster steering record/search   # Steering 事件（W4-S3；REQ-08/AC-07；词形 SP 提案待追认）：record = 有来源约束登记（--constraint/--source-ref 必填——无来源的纠偏不构成事件；--scope 可重复申报受影响对象/能力词形，缺席=全 task 显式申报；数据住 state/steering-log.json append-only 台账 + journal STEERING_RECORDED 词形——零 TransactionOp 零 canonical kind）；search 词级精确检索、未命中显式「无记录」；constraint/affected_scope 是申报面（declared——机器不验证遵守，遵守判定归 exec-guard/audit）；context compile 经 [ADVISORY] 分区 [STEERING] 词形可见、plan compile 经 changeSurface unknown 呈现——受影响工作下次编译带上约束（REQ-08 最小形态，不进 gate 判卷输入）
+pomaster provider capabilities   # Provider 能力映射（W4-S4；REQ-11/R §5.2；词形 SP 提案待追认）：--runtime <名>（claude-code|codex|script——EXECUTION_RUNTIME_VALUES 闭包）出声明式能力报告——原生 async/steering/取消/工具发现四维支持度如实报告（三值词形 native|absent|unknown——探针结果驱动禁猜，零 Provider 型号断言）+ absent/unknown 逐维声明式降级语义（同步步骤+持久记录 / 下一派发边界应用约束 / 明确状态+隔离冲突结果 / 预编译较小工具集——锚定仓内已就位载体）；未接入真实 Provider 时全部 unknown 是诚实缺省（report_source 显式区分 injected_probe/declarative_default）；不把某 Provider API 叙述当跨 Provider 保证；纯报告零 store 依赖零写入
+pomaster telemetry task   # 任务级 reasoning/cost/Horizon 派生评估（W4-S5；REQ-11/§9；词形 SP 提案待追认）：<task-id>（TASK.* 在册 task_object）出六指标只读聚合——verified_transition_rate（锚定本任务 claims 判定面 VERIFIED 施断/判定流转总数，转移时点 evidence 轴不可机算如实披露）/ rework_signal（negative_history+REJECTED claims 信号计数非评分）/ steering_count（declared 申报面计数）/ resume_reconcile_signals（checkpoint+执行中断载体强度计数——RECONCILE_DIRTY 阻断判卷零 journal 事件不可从 journal 计数）/ horizon（journal seq 跨度，open 执行 horizon_open 显式）/ cost_face（恒 NOT_MEASURABLE_YET——本仓无 token/费用计量源不虚构，Provider 接入后填充）；每指标带分母与可计算性（MEASURED|NOT_COMPUTABLE|NOT_MEASURABLE_YET——零分母显式不冒充数值）；诚实红线：无综合评分 / 不持久化私有思维链（输入面无思维链通道）/ 零阈值零阻断（预算不削弱证据/权限）/ 无跨 session 基线平面不输出提升百分比；纯读零写零落盘（inputs_fingerprint=快照等价物）
 
 # ⑧ CARRY —— DoD 判卷收口
 pomaster closeout <task-id>
@@ -130,6 +133,8 @@ pomaster session attach/refresh/list
 pomaster lock acquire/heartbeat/release/steal/list
 pomaster execution begin/end/list/audit   # audit = 变更越界审计（--execution-id + --diff-base：git diff 起始锚变更集 → KEYBINDING 解析 → permit scope 判 in/out → OBS 回执 sidecar + 越界明细；越界 exit 1——Detection 半边，纯读零权威写口）
 pomaster trace show/list
+pomaster checkpoint save/show   # Checkpoint 恢复引用快照（W4-S2；词形 SP 提案待追认）：save = 组装恢复所需引用集落盘（task 锚/--permit 对账判卷引用/--execution 在途清单/negative_history·unknowns 引用/封存 trace 引用/workspace git 锚——每项都是引用，引用逐项存在性校验 fail-closed；state/checkpoints/ 分区档案面，零新 canonical kind 零 journal 事件，不自动创建；--ckpt 同号重放同内容幂等零写入/异内容显式冲突；非 git 工区 anchor absent 显式申报）+ show = 引用面纯读呈现；与 session attach --reconcile 分层组合——checkpoint=引用快照（保存时点），reconcile=新鲜度判定（恢复时点）
+pomaster diagnose "<症状>"   # 通用 Diagnose 入口（W3-S3；C §26/§53-56 + Case H；SP 提案待追认）：症状申报（位置 <report> ∥ --symptom 二选一）+ 可选 --evidence GRN-*/OBS-*/AGX-* 逐条实读证据平面（引用不存在 fail-closed 零写）→ 失败域六词闭包（tool_environment/product_assertion/fixture_data/environment_instance/dependency_external/unknown_insufficient_evidence）+ confidence_basis=evidence_chain|declaration_only（零百分比置信——§21 守护栏；申报与信号冲突呈报非改判；证据缺席 declaration_only 不虚构关联）→ 诊断计划建议（复用 plan-compiler 能力词位，§54 安全/只读先行）；纯读零写不裁决不自动修复；与 production diagnose 共用同一判定核（BREACHED band 前置只是产线准入——单一判定事实源）
 # pomaster session（不带子命令）= 治理速览投影（SessionStart 注入源；≤10k 字符，恒 exit 0；尾部带首答确认协议指令段）
 # pomaster alerts（重入口 UserPromptSubmit 源）= 可行动项过滤器 + workflow 路由段（干净=非空但极简，恒 exit 0）
 ```

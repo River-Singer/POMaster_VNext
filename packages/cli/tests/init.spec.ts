@@ -6,7 +6,7 @@
  * 历史模式旗标与轻入口形态已删除，存量旧版产物经标记/字节识别升级）、
  * skill 命令卡与 pomaster --help 单一事实源对账钉版（含 pomaster-context 五分区词形
  * 与 CONTEXT_PARTITION_TITLES 同源钉——D8 旧词形零残留）、init 预铺 .pomaster/ 目录骨架
- * （宪法 §2 全树不分形态：40 目录 README + layout.json——B7-THEME themes 替位 FE/BE 平铺位后
+ * （宪法 §2 全树不分形态：41 目录 README + layout.json——B7-THEME themes 替位 FE/BE 平铺位 + W4-S2 state/checkpoints 后
  * 口径；守卫细则见
  * layout-manifest.spec.ts）、legacy .pomaster/objects 检测（宪法 §34-P0 收敛）。
  */
@@ -56,7 +56,7 @@ function read(relative: string): string {
 
 /**
  * 重入口默认（claude 缺省）应产出的全部文件清单（骨架 4 + AGENTS/CLAUDE + settings +
- * 15×2 skills + 预铺 40 目录 README + layout.json + B6c-B6G+B7 播种 102 份 + R3 tokens 补位 103 份——预铺面
+ * 15×2 skills + 预铺 41 目录 README + layout.json + B6c-B6G+B7 播种 102 份 + R3 tokens 补位 103 份——预铺面
  * 清单单源 layout.ts 常量（Batch 2 D7/C9 增量 state/contexts + evidence/observations；
  * Batch 6 B6a 增量 baseline/specs 播种面两子树——目录登记含其中，播种文件面 B6c-B6G+B7
  * 各批在册）。
@@ -80,7 +80,7 @@ function heavyDefaultExpectedFiles(): string[] {
 }
 
 describe("init 首次创建（CREATED）", () => {
-  it("空目录 init（重入口默认）→ change=CREATED，骨架 + AGENTS/CLAUDE + settings + 15×2 skills + 预铺 40 README/layout.json 全部 created", async () => {
+  it("空目录 init（重入口默认）→ change=CREATED，骨架 + AGENTS/CLAUDE + settings + 15×2 skills + 预铺 41 README/layout.json 全部 created", async () => {
     const outcome = await runInit(dir);
     expect(outcome.ok).toBe(true);
     expect(outcome.result.change).toBe("CREATED");
@@ -1340,6 +1340,7 @@ describe("预铺目录骨架与 layout.json", () => {
     for (const plane of [
       "state",
       "state/contexts",
+      "state/checkpoints",
       "truth/objects",
       "evidence/blobs",
       "evidence/observations",
@@ -1352,7 +1353,7 @@ describe("预铺目录骨架与 layout.json", () => {
     ]) {
       expect(existsSync(join(dir, ".pomaster", ...plane.split("/"))), plane).toBe(true);
     }
-    expect(LAYOUT_DIRECTORIES.length).toBe(40);
+    expect(LAYOUT_DIRECTORIES.length).toBe(41);
   });
 
   it("layout.json：全目录 status=wired 单状态 + activation_hint/constitution_source 在场（Owner 修订形态）", async () => {

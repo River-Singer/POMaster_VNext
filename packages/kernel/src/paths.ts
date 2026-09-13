@@ -22,7 +22,12 @@
  *   不进 content_digest；A8 同族不入 truth-index——01 additionalProperties:false 封条不动）
  * - state/journal.jsonl   事件 journal（TX_APPLIED / PERMIT_* / EXCEPTION_* / SESSION_* /
  *   LOCK_* / EXECUTION_* / KNOWLEDGE_* / EQUIVALENCE_* / LINKAGE_COVERAGE_* /
- *   RELATION_* 追加流；不进 hash）
+ *   RELATION_* / STEERING_*（W4-S3：STEERING_RECORDED——SP 提案待追认，journal 事件
+ *   词形常量集追加，非 canonical kind）追加流；不进 hash）
+ * - state/steering-log.json Steering 事件台账（W4-S3；steering.ts 维护——REQ-08
+ *   「有来源事件」载体：STE-<n> append-only 流水 + affected_scope 申报面；exception
+ *   ledger 同款 sidecar，不进 content_digest；constraint/affected_scope 是申报面，
+ *   机器不判定遵守）
  *
  * D 线地基平面（P20；research/design-thread-D-solo-form.md §1.3 路径形态 逐字）：
  * - runtime/sessions/<session_key>.json  活跃会话注册（liveness + 当前任务指针；易变态）
@@ -65,6 +70,13 @@
  *                               非 governed object——20-sources-authority 同域不入
  *                               store 事务、不进 content_digest；CLI tools.ts 装载，
  *                               kernel 本体零消费——路径登记先行的单一来源纪律）
+ *
+ * W4-S2 增量平面（Checkpoint 恢复引用快照；09-10 PRD §6-1「优先复用现有记录，
+ * 不按清单创建新库」——引用清单文件面，零新 canonical kind）：
+ * - state/checkpoints/          CKPT-*.json 恢复引用集快照（durable 进 Git——恢复
+ *                               引用须跨重启/clone 存活；task 锚定故不入 AGX 锚定的
+ *                               traces/ 分区；零 journal 事件、不进 content_digest、
+ *                               非 governed object——分区档案定位沿 trace seal）
  */
 import { GovernanceError } from "./errors.js";
 import { isNotFoundError, readJsonText } from "./io.js";
@@ -92,6 +104,12 @@ export interface StorePaths {
   readonly relationsPath: string;
   /** state/contexts/（vNext Batch 2 D7：Task Context Manifest 落盘位；编译产物只读服务面）。 */
   readonly contextsDir: string;
+  /** state/checkpoints/（W4-S2：Checkpoint 恢复引用快照落盘位；checkpoint.ts 维护——
+   *  分区档案面：零 journal 事件、不进 content_digest、非 governed object）。 */
+  readonly checkpointsDir: string;
+  /** state/steering-log.json（W4-S3：Steering 事件台账；steering.ts 维护——append-only
+   *  流水 sidecar：journal STEERING_RECORDED 词形配对，不进 content_digest）。 */
+  readonly steeringLogPath: string;
   readonly journalPath: string;
   readonly truthObjectsDir: string;
   readonly evidenceDir: string;
@@ -163,6 +181,8 @@ export function buildStorePaths(rootDir: string): StorePaths {
     linkageCoveragePath: `${stateDir}/linkage-coverage.json`,
     relationsPath: `${stateDir}/relations.jsonl`,
     contextsDir: `${stateDir}/contexts`,
+    checkpointsDir: `${stateDir}/checkpoints`,
+    steeringLogPath: `${stateDir}/steering-log.json`,
     journalPath: `${stateDir}/journal.jsonl`,
     truthObjectsDir: `${pomasterDir}/truth/objects`,
     evidenceDir,

@@ -4,7 +4,7 @@
   "title": "ToolBinding Registry（.pomaster/tools/bindings.json · W1-R1-4 统一注册面，SP-W1-e 提案）",
   "description": "ToolBinding 统一注册面：项目级工具绑定登记（09-10 PRD §17 ToolBinding 目标产品合同 + integration-designs.md §1 source×transport 双轴字段表）。一条 binding = 发现规则之外的四件事登记：工具身份（tool+tool_version_anchor）/ 执行合同（execution）/ 报告合同（report_contract）/ 能力声明（capabilities）——「注册究竟是四件事」的机器形态（test-tool-integration.md §注册）。\n落点：.pomaster/tools/bindings.json 单一文件 = 单一 schema 校验 + 单一 id 唯一性检查的「一个注册面」（kernel paths.ts toolsBindingsPath 单一来源）。\n本 schema 是 SP-W1-e 提案面：字段名/词形闭包/命令面均为提案，待 Owner 追认（W1-R1-4 头注锚）。",
   "x-pomaster-file-role": "23-toolbinding.schema.json —— ToolBinding 统一注册面 registry schema（W1-R1-4；SP-W1-e 提案待追认）。TS 侧运行时镜像 @pomaster/gauntlet-lite tool-binding.ts ToolBindingRecord（schema 管形状、TS 管执行——两面对同一语义，禁漂移：改字段须两侧同批）。",
-  "x-pomaster-vocab-source": "source/transport 两轴 = SP-W1-g 提案词位（built_in|project|org × cli|mcp|ci|cloud——设计一 §公共节 source×transport 正交双轴；W1 只 wired cli 消费通路，mcp/ci/cloud 为词位登记非可执行承诺）。capabilities 十二词形 = kernel plan-compiler PLAN_CAPABILITY_WORDS 镜像（kernel 局部词 TODO(vocab-pr)，SP 提案待追认——本 enum 与 kernel 词表同源，扩词须两处同批）。adapter_ref 闭包 = SP-W1-e 提案（W1 wired 集 = builtin.gauntlet-lite.build 单值；增长通道 = 显式 schema 修订，禁绑定自造 ref 绕过受信注册表）。",
+  "x-pomaster-vocab-source": "source/transport 两轴 = SP-W1-g 提案词位（built_in|project|org × cli|mcp|ci|cloud——设计一 §公共节 source×transport 正交双轴；W1 只 wired cli 消费通路，mcp/ci/cloud 为词位登记非可执行承诺）。capabilities 十三词形 = kernel plan-compiler PLAN_CAPABILITY_WORDS 镜像（kernel 局部词 TODO(vocab-pr)，SP 提案待追认——本 enum 与 kernel 词表同源，扩词须两处同批；W3-S2 起 + static_analysis）。adapter_ref 闭包 = SP-W1-e 提案（wired 集 = builtin.gauntlet-lite.build ∥ builtin.gauntlet-lite.typecheck ∥ builtin.gauntlet-lite.lint——W3-S2 起 TS 族双 adapter 同批入册；增长通道 = 显式 schema 修订，禁绑定自造 ref 绕过受信注册表）。",
   "x-pomaster-contract": {
     "sp_proposal": "本文件整体 + 六分态命令面（pomaster tools list/validate）+ binding_id= scope.note 留痕词形（SP-W1-f）+ execution 结构化执行合同（SP-W1-h argv[]/env_allowlist[]/output_roots[]，单串 shell 词形为 legacy 迁移形态）均为 SP 提案，待 Owner 追认后方可视为 FROZEN。",
     "not_governed_object": "本 registry 不是 governed object：不进 truth-index、不走 store 事务、无 lifecycle/authority 信封（20-sources-authority / 22-design-tokens 项目平面 registry 同域——项目可编辑、Owner 全权；禁热加载：binding 只能引用受信 adapter_ref 闭包内发行包 adapter，任意脚本不得经本面进入判卷核心）。",
@@ -47,9 +47,10 @@
         "concurrency_reproduction",
         "load_test",
         "deployment_config_check",
-        "visual_diff"
+        "visual_diff",
+        "static_analysis"
       ],
-      "title": "能力词形（kernel PLAN_CAPABILITY_WORDS 十二词镜像——SP 提案待追认）"
+      "title": "能力词形（kernel PLAN_CAPABILITY_WORDS 十三词镜像——SP 提案待追认）"
     },
     "execution": {
       "type": "object",
@@ -166,8 +167,12 @@
           "title": "传输轴（SP-W1-g 提案；W1 只 wired cli——其余词位登记，available 恒假）"
         },
         "adapter_ref": {
-          "enum": ["builtin.gauntlet-lite.build"],
-          "title": "受信 adapter 引用（SP-W1-e 闭包——W1 wired 集；增长 = 显式 schema 修订）"
+          "enum": [
+            "builtin.gauntlet-lite.build",
+            "builtin.gauntlet-lite.typecheck",
+            "builtin.gauntlet-lite.lint"
+          ],
+          "title": "受信 adapter 引用（SP-W1-e 闭包——wired 集；增长 = 显式 schema 修订）"
         },
         "tool": {
           "type": "string",

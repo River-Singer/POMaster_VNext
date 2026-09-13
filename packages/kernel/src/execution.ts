@@ -35,6 +35,7 @@ import type { Store } from "./index.js";
 import { GovernanceError } from "./errors.js";
 import { appendLine, captureOriginal, ensureDir, executeWrites, readText } from "./io.js";
 import { pathsOf, readCurrentSeq, type StorePaths } from "./paths.js";
+import { OBSERVATION_RECORD_TYPES } from "./evidence-artifacts.js";
 import {
   EXECUTION_IDENTITY_KIND_VALUES,
   EXECUTION_ROLE_VALUES,
@@ -477,4 +478,121 @@ export function closeExecutionInternal(
     ended_at: endedAt,
   });
   return updated;
+}
+
+// ============================================================
+// 在途诚实降级位（evidence-invalidation-map B11/§6-3：回执未存 ≠ 未发生——
+// evidence 平面回执计数判读面；恢复对账接线的呈现半边）
+// ============================================================
+
+/** runs 平面 GRN 证据文件名词形（gatekeeper RUN_FILE_PATTERN 同源——分母纪律一致）。 */
+const EVIDENCE_RUN_FILE_PATTERN = /^GRN-[0-9]+\.json$/;
+
+/** observations 平面 OBS/ENVREC 感知回执文件名词形（persistObservationRecord 落盘词形）。 */
+const EVIDENCE_OBSERVATION_FILE_PATTERN = /^(OBS|ENVREC)-[0-9]+\.json$/;
+
+/**
+ * 在途执行的已入账回执计数（纯读零写；W4-S1 §6-3 半边）。
+ *
+ * 语义：execution end 缺失（在途）≠ 零发生——evidence 平面可能已有该执行的 GRN
+ * （gate 运行回执）与 OBS/ENVREC（感知回执）入账；呈现面据此区分「在途（有已入账
+ * 产物 N 件）/在途（零产物）」，不把「回执未存」冒充「未发生」。计数 = runs/
+ * observations 两平面中 execution_id 锚定本执行的记录总数。
+ *
+ * 纪律（gatekeeper 同型点逐一对齐）：
+ * - 只收词形匹配文件（GRN-<n>.json / OBS-<n>.json / ENVREC-<n>.json）；目录缺席 =
+ *   零记录显式空（侧车缺失不重建不报错——审查 H3 同取向）；
+ * - record_type 与文件族不符或 JSON 损坏 → SCHEMA_INVALID fail-closed（判读面静默
+ *   损坏 = 假绿的计数比没有计数更危险）；
+ * - execution_id 键缺席 → 不计数（存量记录无身份键——缺席不伪造，P20 裁定零迁移）；
+ *   键值非 AGX 词形 → SCHEMA_INVALID（canonical 文件由 kernel 落盘保证词形，漂移即
+ *   手改痕迹显性暴露）；
+ * - 入参词形预检 IO 前 fail-closed（--execution-id 同款两检分离纪律）。
+ */
+export function countExecutionInflightReceipts(paths: StorePaths, executionId: string): number {
+  if (!EXECUTION_ID_PATTERN.test(executionId)) {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      `execution_id 词形非法（须 AGX-<4位年份>-<序号>，PRD §25.4 例文 AGX-2026-00182）：${executionId}`,
+      "本判读面只服务已登记执行身份（beginExecution 产出）；核对 executions/ 档案的 AGX 引用",
+      { execution_id: executionId },
+    );
+  }
+  return (
+    countAnchoredReceipts(paths.runsDir, EVIDENCE_RUN_FILE_PATTERN, ["run"], executionId) +
+    countAnchoredReceipts(
+      paths.observationsDir,
+      EVIDENCE_OBSERVATION_FILE_PATTERN,
+      OBSERVATION_RECORD_TYPES,
+      executionId,
+    )
+  );
+}
+
+/** 单平面回执计数（损坏/词形漂移 fail-closed；无身份键的记录跳过不计数）。 */
+function countAnchoredReceipts(
+  dir: string,
+  filePattern: RegExp,
+  recordTypes: readonly string[],
+  executionId: string,
+): number {
+  let names: string[];
+  try {
+    names = readdirSync(dir);
+  } catch {
+    return 0; // 平面缺席 = 零记录（显式空；判读面无权建目录——纯读零写）
+  }
+  let count = 0;
+  for (const name of names.filter((candidate) => filePattern.test(candidate)).sort()) {
+    const evidencePath = `${dir}/${name}`;
+    const text = readText(evidencePath);
+    if (text === null) {
+      throw new GovernanceError(
+        "SCHEMA_INVALID",
+        `证据文件不可读（清单在册而读取失败）：${evidencePath}`,
+        "证据平面损坏即信号失真；从 git 恢复或重跑对应 record 通路（禁静默跳过损坏证据）",
+        { evidence_path: evidencePath },
+      );
+    }
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(text);
+    } catch (error) {
+      throw new GovernanceError(
+        "SCHEMA_INVALID",
+        `证据文件无法解析（损坏或手改）：${evidencePath}`,
+        "判读面对损坏 fail-closed（静默 = 假绿计数）；从 git 恢复该文件",
+        { cause: String(error), evidence_path: evidencePath },
+      );
+    }
+    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new GovernanceError(
+        "SCHEMA_INVALID",
+        `证据文件须为 JSON 对象：${evidencePath}`,
+        "canonical 证据记录由 record 通路落盘；形态漂移 = 手改痕迹，从 git 恢复",
+        { evidence_path: evidencePath },
+      );
+    }
+    const record = parsed as Record<string, unknown>;
+    if (typeof record.record_type !== "string" || !recordTypes.includes(record.record_type)) {
+      throw new GovernanceError(
+        "SCHEMA_INVALID",
+        `证据文件 record_type 与文件族不符（期望 ${recordTypes.join(" | ")}）：${evidencePath}`,
+        "canonical 文件由 record 通路落盘；不符 = 手改痕迹，从 git 恢复",
+        { record_type: String(record.record_type), evidence_path: evidencePath },
+      );
+    }
+    const anchored = record.execution_id;
+    if (typeof anchored !== "string") continue; // 无身份键：不计数（缺席不伪造——存量零迁移）
+    if (!EXECUTION_ID_PATTERN.test(anchored)) {
+      throw new GovernanceError(
+        "SCHEMA_INVALID",
+        `证据记录 execution_id 词形非法（须 AGX-<4位年份>-<序号>）：${anchored}（${name}）`,
+        "canonical 文件由 kernel record 通路落盘保证词形；词形漂移即手改痕迹，从 git 恢复",
+        { execution_id: anchored, evidence_path: evidencePath },
+      );
+    }
+    if (anchored === executionId) count += 1;
+  }
+  return count;
 }

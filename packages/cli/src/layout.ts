@@ -89,7 +89,9 @@ export interface LayoutDirSpec {
 
 // ============================================================
 // 预铺清单（宪法 §2 Target Directory Tree 全量 + PRD §3/§3A sources 平面增量 +
-// vNext Batch 2 D7/C9 两增量平面 + vNext Batch 6 B6a 播种面两子树：41 目录；
+// vNext Batch 2 D7/C9 两增量平面 + vNext Batch 6 B6a 播种面两子树 + W4-S2
+// state/checkpoints 增量平面；目录数分母 = 本数组长度——口径锚指向本清单与
+// kernel paths.ts 登记，禁数字化注释漂移（D8-2）；
 // 数组顺序 = layout.json directories 顺序 = 磁盘创建顺序）
 // ============================================================
 
@@ -124,7 +126,7 @@ export const LAYOUT_DIRECTORIES: readonly LayoutDirSpec[] = [
     path: "state",
     status: "wired",
     purpose:
-      "控制平面 Root Metadata + Governance Sidecars（宪法 §5）——9 个已登记文件位（truth-index/authority/permits/journal/exception-ledger/knowledge-library/equivalence-registry/linkage-coverage/relations）由 kernel 按需创建，init 只建目录+README 不落状态文件。",
+      "控制平面 Root Metadata + Governance Sidecars（宪法 §5）——10 个已登记文件位（truth-index/authority/permits/journal/exception-ledger/knowledge-library/equivalence-registry/linkage-coverage/relations/steering-log）由 kernel 按需创建，init 只建目录+README 不落状态文件。",
     activation_hint:
       "一切项目恒激活（init 地基）；治理能力相关性越高 sidecars 越多（journal/relations/equivalence…由对应命令按需写入）。",
     constitution_source:
@@ -142,6 +144,18 @@ export const LAYOUT_DIRECTORIES: readonly LayoutDirSpec[] = [
     constitution_source:
       "dot-pomaster-directory-constitution.md §2 全树 + PRD vNext §8.1⑤/§3 树（Owner 裁定 D7 增量平面）；kernel paths.ts（contextsDir）",
     command: "pomaster context compile --check",
+  },
+  // ---- state/checkpoints：Checkpoint 恢复引用快照落盘位（W4-S2 增量平面） ----
+  {
+    path: "state/checkpoints",
+    status: "wired",
+    purpose:
+      "Checkpoint 恢复引用快照落盘位（CKPT-*.json；W4-S2 引用清单文件面——对「恢复所需世界状态引用集」的显式快照，每项都是引用（task/permit/execution 在途清单/negative_history·unknowns/trace/workspace git 锚），非第二真值库：零新 canonical kind、零 journal 事件、不进 content_digest；durable 进 Git——恢复引用须跨重启/clone 存活；保存时点快照非实时，新鲜度判定归 session attach --reconcile（W4-S1 分层）。",
+    activation_hint:
+      "长周期任务需要中断/恢复引用面（checkpoint save）的项目激活；不保存即不落盘（显式命令触发，不自动创建）。",
+    constitution_source:
+      "dot-pomaster-directory-constitution.md §5（state 平面增量——分区档案定位沿 trace seal，W4-S2 呈报项）；kernel paths.ts（checkpointsDir）",
+    command: "pomaster checkpoint save/show",
   },
   // ---- truth：Canonical Truth 正文层（宪法 §4；§34-P0 canonical） ----
   {
@@ -551,6 +565,7 @@ export function derivePathsTsStoreDirs(rootDir: string): ReadonlySet<string> {
   for (const absolute of [
     paths.stateDir,
     paths.contextsDir,
+    paths.checkpointsDir,
     paths.truthObjectsDir,
     paths.evidenceDir,
     paths.runsDir,

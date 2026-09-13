@@ -102,6 +102,33 @@ export const EXECUTION_AUDIT_SENSOR_CAPABILITY = "SENSOR.BUILD.STATIC" as const;
 /** 观察动作（17 schema operation 开放位；scan_import_graph/scan_sbom 同族动作词形）。 */
 export const EXECUTION_AUDIT_OPERATION = "audit_mutation_scope" as const;
 
+/**
+ * normalized_facts 越界计数行词形（单一词形源）：audit 回执 out_of_scope 发现的
+ * 回执内唯一承载 = normalized_facts 中的 `out_of_scope: <n>` 行（明细在 report
+ * blob——回执不携 blob 自由区）。产出（buildObservationReceipt 输入）与解析
+ * （view review 裁决 21 扫描呈现——closeout 不消费）共用本词形，禁第二份字面量
+ * 漂移（present 呈现词形与 closeout 词位同款单一镜像纪律）。
+ */
+export const EXECUTION_AUDIT_OUT_OF_SCOPE_FACT_PREFIX = "out_of_scope:" as const;
+
+/** 产出 normalized_facts 越界计数行（execution-audit 回执组装唯一入口）。 */
+export function formatOutOfScopeFact(count: number): string {
+  return `${EXECUTION_AUDIT_OUT_OF_SCOPE_FACT_PREFIX} ${String(count)}`;
+}
+
+/**
+ * 解析 normalized_facts 行中的越界计数（view review 裁决 21 扫描唯一消费口）：
+ * 非本词形 → null（调用方决定跳过/fail-closed）；词形在座但计数非十进制数字 →
+ * null（畸形行不猜测）。注意词形后必须有空白 + 数字（`out_of_scope:` 裸前缀
+ * 不算计数行——禁把缺计数的畸形行解析成 0 冒充零拒绝）。
+ */
+export function parseOutOfScopeFact(fact: string): number | null {
+  if (!fact.startsWith(EXECUTION_AUDIT_OUT_OF_SCOPE_FACT_PREFIX)) return null;
+  const rest = fact.slice(EXECUTION_AUDIT_OUT_OF_SCOPE_FACT_PREFIX.length);
+  if (!/^[ ]+[0-9]+$/.test(rest)) return null;
+  return Number(rest.trim());
+}
+
 /** 执行工具标识（开放词；git 是数据源，判卷 in-process——recon import-graph 同款）。 */
 export const EXECUTION_AUDIT_ADAPTER = "pomaster-cli" as const;
 
@@ -812,7 +839,7 @@ export async function runExecutionAudit(
         `untracked: ${String(untrackedPaths.length)}`,
         `changed_files: ${String(changedPaths.length)}`,
         `in_scope: ${String(inScopeItems.length)}`,
-        `out_of_scope: ${String(outScopeItems.length)}`,
+        formatOutOfScopeFact(outScopeItems.length),
         `unmapped: ${String(unmappedItems.length)}`,
         `excluded_skip_dirs: ${String(excludedPaths.length)}`,
         `binding_rows: ${String(table.rows.length)}`,
