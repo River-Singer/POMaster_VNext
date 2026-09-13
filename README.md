@@ -109,6 +109,7 @@ pomaster knowledge search/inspect/record/review-candidates/promote/demote
 pomaster memory capture/inspect/harvest/review/promote/audit
 pomaster negative-history record/search   # 任务内已否定方案（W1-R1-7；REQ-03/AC-02）：record 绑定 TASK.*（--approach/--reason 必填 + --evidence-ref 可选，数据住 task payload.negative_history——不建第二库）；search 词级精确检索、未命中显式「无记录」；context compile 经 [ADVISORY KNOWLEDGE] 分区可见（重编译/rollover 仍可检索，不进 gate 判卷输入）
 pomaster steering record/search   # Steering 事件（W4-S3；REQ-08/AC-07；词形 SP 提案待追认）：record = 有来源约束登记（--constraint/--source-ref 必填——无来源的纠偏不构成事件；--scope 可重复申报受影响对象/能力词形，缺席=全 task 显式申报；数据住 state/steering-log.json append-only 台账 + journal STEERING_RECORDED 词形——零 TransactionOp 零 canonical kind）；search 词级精确检索、未命中显式「无记录」；constraint/affected_scope 是申报面（declared——机器不验证遵守，遵守判定归 exec-guard/audit）；context compile 经 [ADVISORY] 分区 [STEERING] 词形可见、plan compile 经 changeSurface unknown 呈现——受影响工作下次编译带上约束（REQ-08 最小形态，不进 gate 判卷输入）
+pomaster provider capabilities   # Provider 能力映射（W4-S4；REQ-11/R §5.2；词形 SP 提案待追认）：--runtime <名>（claude-code|codex|script——EXECUTION_RUNTIME_VALUES 闭包）出声明式能力报告——原生 async/steering/取消/工具发现四维支持度如实报告（三值词形 native|absent|unknown——探针结果驱动禁猜，零 Provider 型号断言）+ absent/unknown 逐维声明式降级语义（同步步骤+持久记录 / 下一派发边界应用约束 / 明确状态+隔离冲突结果 / 预编译较小工具集——锚定仓内已就位载体）；未接入真实 Provider 时全部 unknown 是诚实缺省（report_source 显式区分 injected_probe/declarative_default）；不把某 Provider API 叙述当跨 Provider 保证；纯报告零 store 依赖零写入
 
 # ⑧ CARRY —— DoD 判卷收口
 pomaster closeout <task-id>

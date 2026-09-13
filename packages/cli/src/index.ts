@@ -201,6 +201,16 @@
  *                   引用面纯读呈现；零新 canonical kind（分区档案面沿 trace seal）、
  *                   零 journal 事件、不自动创建；与 W4-S1 分层组合：checkpoint=
  *                   引用快照（保存时点），reconcile=新鲜度判定（恢复时点）
+ * - provider capabilities
+ *                   Provider 能力映射命令面（W4-S4 · 战役 W4 R4-3 + 09-10 PRD
+ *                   REQ-11/R §5.2）：--runtime <名>（EXECUTION_RUNTIME_VALUES 闭包）
+ *                   出声明式能力报告——原生 async/steering/取消/工具发现四维支持度
+ *                   如实报告（三值词形 native|absent|unknown——探针结果驱动禁猜，
+ *                   零 Provider 型号断言）+ absent/unknown 逐维声明式降级语义
+ *                   （同步步骤+持久记录 / 下一派发边界应用约束 / 明确状态+隔离冲突
+ *                   结果 / 预编译较小工具集——锚定仓内已就位载体）；未接入真实
+ *                   Provider 时全部 unknown 是诚实缺省（report_source 显式区分
+ *                   injected_probe/declarative_default）；纯报告零 store 依赖零写入
  * - agents status   §44.8 兑现（P20 建面 + P21-Contract 接入 DEF-SUP 观测位）：solo
  *                   运行时观测面（sessions/locks/executions 聚合 + DEF-GATEKEEPER
  *                   分身漂移信号 + DEF-SUP 触发制三条件观测；触发=warning 非阻断；
@@ -275,6 +285,7 @@ import {
 } from "./negative-history.js";
 import { runSteeringRecord, runSteeringSearch } from "./steering.js";
 import { runCheckpointSave, runCheckpointShow } from "./checkpoint.js";
+import { runProviderCapabilities } from "./provider.js";
 import { runPlanCompile } from "./plan.js";
 import { runDiagnose } from "./diagnose.js";
 import { runToolsList, runToolsValidate } from "./tools.js";
@@ -1080,6 +1091,15 @@ export type { TraceShowInput, TraceShowResult, TraceListResult } from "./trace.j
 // W4-S2：Checkpoint 恢复引用快照命令面导出（词形 SP 提案待追认）。
 export { runCheckpointSave, runCheckpointShow, checkpointResumeRouteLine } from "./checkpoint.js";
 export type { CheckpointSaveInput, CheckpointSaveResult, CheckpointShowResult } from "./checkpoint.js";
+// W4-S4：Provider 能力映射命令导出（REQ-11/R §5.2——四维支持度如实报告 + 声明式
+// 降级语义；判卷/探测权威在 kernel provider-capabilities.ts，本面只做 argv 收敛
+// 与呈现；词形 SP 提案待追认）。
+export { runProviderCapabilities } from "./provider.js";
+export type {
+  ProviderCapabilitiesDeps,
+  ProviderCapabilitiesResult,
+  ProviderCapabilityRowView,
+} from "./provider.js";
 export {
   RECON_ARCH_ADAPTER,
   RECON_ARCH_BASELINE_FILE,
@@ -3874,6 +3894,36 @@ export function createProgram(
       const outcome = await runCheckpointShow(resolveDir(command), checkpointId);
       record({
         command: "checkpoint show",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+
+  // —— Provider 能力映射命令面（W4-S4 · 战役 W4 R4-3 + 09-10 PRD REQ-11/R §5.2） ——
+  // 判卷/探测权威在 kernel provider-capabilities.ts（probeProviderCapabilities——
+  // 三值词形 native|absent|unknown 禁猜 + absent/unknown 逐维声明式降级语义）；
+  // 本面只做 --runtime 词形闸（EXECUTION_RUNTIME_VALUES 闭包）、探针注入缺省
+  // （无真实 Provider SDK——R P5 红线）与呈现。纯报告零 store 依赖（不建账不
+  // requireInitialized 零读写 .pomaster）；命令组词形 provider = SP 提案待追认。
+  const provider = program
+    .command("provider")
+    .description(
+      "Provider 能力映射命令面（W4-S4；REQ-11/R §5.2）：capabilities = 原生 async/steering/取消/工具发现四维支持度如实报告（三值词形 native|absent|unknown——探针结果驱动禁猜，零 Provider 型号断言）+ absent/unknown 逐维声明式降级语义（同步步骤+持久记录 / 下一派发边界应用约束 / 明确状态+隔离冲突结果 / 预编译较小工具集）；未接入真实 Provider 时全部 unknown 是诚实缺省",
+    );
+  provider
+    .command("capabilities")
+    .description(
+      "声明式能力报告（--runtime <名> 必填，EXECUTION_RUNTIME_VALUES 闭包：claude-code|codex|script）：维度×词形×降级语义矩阵（native=探针确证支持 / absent=探针确证不支持 / unknown=探针缺席或报错——禁猜）+ 注记（全部 unknown 诚实缺省 + 不把某 Provider API 叙述当跨 Provider 保证）；report_source 区分注入探针实测与声明式缺省——不冒充实测；纯报告零 store 依赖零写入；ok=报告成功产出（degraded 不是失败——如实报告正是交付物）",
+    )
+    .requiredOption(
+      "--runtime <name>",
+      "执行载体词形（EXECUTION_RUNTIME_VALUES 闭包：claude-code | codex | script；扩值走词汇表 PR）",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      const outcome = runProviderCapabilities({ runtime: opts.runtime as string });
+      record({
+        command: "provider capabilities",
         outcome,
         asJson: command.optsWithGlobals().json === true,
       });

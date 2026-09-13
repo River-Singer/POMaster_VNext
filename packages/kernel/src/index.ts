@@ -1437,6 +1437,34 @@ export type {
   HandoffPacket,
 } from "./handoff.js";
 
+// Provider 能力映射（W4-S4 · 战役 W4 R4-3 + 09-10 PRD REQ-11/R §5.2 Provider-neutral）：
+// 长时运行四维能力（原生 async/steering/取消/工具发现）的**如实报告面**——三值词形
+// （native=探针确证支持 / absent=探针确证不支持 / unknown=探针缺席或报错，禁猜）+
+// absent/unknown 逐维声明式降级语义（reference-patterns 降级词形，锚定仓内已就位
+// 载体）。与 §58 三探针平行扩展零破坏（runtime-adapter 契约面零改动）；零硬编码
+// Provider 型号断言——报告由探针结果唯一决定。纯函数零 IO 零墙钟。
+export {
+  PROVIDER_CAPABILITY_ALL_UNKNOWN_NOTE,
+  PROVIDER_CAPABILITY_BASIS_VALUES,
+  PROVIDER_CAPABILITY_DEGRADATIONS,
+  PROVIDER_CAPABILITY_DIMENSIONS,
+  PROVIDER_CAPABILITY_NO_CROSS_PROVIDER_GUARANTEE_NOTE,
+  PROVIDER_CAPABILITY_PROBE_METHODS,
+  PROVIDER_CAPABILITY_SUPPORT_VALUES,
+  probeProviderCapabilities,
+} from "./provider-capabilities.js";
+export type {
+  ProviderCapabilityBasis,
+  ProviderCapabilityDimension,
+  ProviderCapabilityProbe,
+  ProviderCapabilityProbeMethod,
+  ProviderCapabilityRow,
+  ProviderCapabilitySupport,
+  ProviderCapabilitiesReport,
+  ProviderDegradationId,
+  ProviderDegradationSemantics,
+} from "./provider-capabilities.js";
+
 // DEF-SUP 触发制观测器（P21-Contract；D 线 §5 DEF-SUP 行三触发条件——
 // (a) 同 SOP 链重复 ≥3 次（journal 事件型链实测）/ (b) 第二贡献者（申报）/
 // (c) headless-CI（申报）；观测不施断，处置呈报 Owner。见 supervisor-trigger.ts 头注）。
