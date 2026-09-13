@@ -2066,6 +2066,44 @@ export type {
 } from "./trace.js";
 
 // ============================================================
+// Checkpoint 恢复引用快照（W4-S2 · 09-10 PRD §6-1 + 战役 W4 R4-1）
+// ============================================================
+// 语义边界（checkpoint.ts 头注为准）：checkpoint = 对「恢复所需世界状态引用集」
+// 的显式快照——每项都是引用（既有实体），本体只是可重建的引用清单文件；零新
+// canonical kind、零 TransactionOp、零 journal 事件（P34 新分区 + trace seal
+// 分区档案先例）。引用逐项存在性校验（OBJECT_NOT_FOUND / PERMIT_NOT_FOUND /
+// EXECUTION_NOT_FOUND 同款透传——S1 禁自造身份）；workspace 锚 = 调用方采集
+// 显式申报（execution-audit 锚定诚实同族；无锚 absent 显式申报非伪造）；
+// captured_at_seq = A4 时点锚（无墙钟）。分层纪律（与 W4-S1 组合）：checkpoint =
+// 引用快照（保存时点存在性），reconcile = 新鲜度判定（恢复时点）——恢复通路 =
+// session attach --task <ref> --reconcile <permit>。幂等纪律（store 同款）：显式
+// 同号重放同内容零写入短路，异内容 CHECKPOINT_ALREADY_EXISTS 显式冲突。落盘
+// state/checkpoints/（durable 进 Git；layout 双向对账已登记）。词形 SP 提案待
+// 追认：pomaster.checkpoint/v1 / CKPT-<n> / CHECKPOINT_NOT_FOUND /
+// CHECKPOINT_ALREADY_EXISTS / anchor_status 两值轴。
+export {
+  CHECKPOINTS_RELATIVE,
+  CHECKPOINT_SCHEMA,
+  CHECKPOINT_ID_PATTERN,
+  CHECKPOINT_WORKSPACE_ANCHOR_NOTE,
+  saveCheckpoint,
+  readCheckpoint,
+  checkpointRecordPath,
+  allocateCheckpointId,
+} from "./checkpoint.js";
+export type {
+  CheckpointRecord,
+  CheckpointSaveInput,
+  CheckpointSaveResult,
+  CheckpointInflightReceipts,
+  CheckpointExecutionRef,
+  CheckpointTaskSurface,
+  CheckpointTraceRef,
+  CheckpointWorkspaceAnchor,
+  CheckpointWorkspaceAnchorInput,
+} from "./checkpoint.js";
+
+// ============================================================
 // Perception 契约 + Environment Doctor + Observation Receipt（W1-D1 P0.5-4a 纯函数面 + W1-D2 P0.5-4b 接线）
 // ============================================================
 // 语义边界（perception.ts 头注为准；PRD v0.5.2 §6 全章 + §14 P0.5-4 + Benchmark E +

@@ -65,6 +65,13 @@
  *                               非 governed object——20-sources-authority 同域不入
  *                               store 事务、不进 content_digest；CLI tools.ts 装载，
  *                               kernel 本体零消费——路径登记先行的单一来源纪律）
+ *
+ * W4-S2 增量平面（Checkpoint 恢复引用快照；09-10 PRD §6-1「优先复用现有记录，
+ * 不按清单创建新库」——引用清单文件面，零新 canonical kind）：
+ * - state/checkpoints/          CKPT-*.json 恢复引用集快照（durable 进 Git——恢复
+ *                               引用须跨重启/clone 存活；task 锚定故不入 AGX 锚定的
+ *                               traces/ 分区；零 journal 事件、不进 content_digest、
+ *                               非 governed object——分区档案定位沿 trace seal）
  */
 import { GovernanceError } from "./errors.js";
 import { isNotFoundError, readJsonText } from "./io.js";
@@ -92,6 +99,9 @@ export interface StorePaths {
   readonly relationsPath: string;
   /** state/contexts/（vNext Batch 2 D7：Task Context Manifest 落盘位；编译产物只读服务面）。 */
   readonly contextsDir: string;
+  /** state/checkpoints/（W4-S2：Checkpoint 恢复引用快照落盘位；checkpoint.ts 维护——
+   *  分区档案面：零 journal 事件、不进 content_digest、非 governed object）。 */
+  readonly checkpointsDir: string;
   readonly journalPath: string;
   readonly truthObjectsDir: string;
   readonly evidenceDir: string;
@@ -163,6 +173,7 @@ export function buildStorePaths(rootDir: string): StorePaths {
     linkageCoveragePath: `${stateDir}/linkage-coverage.json`,
     relationsPath: `${stateDir}/relations.jsonl`,
     contextsDir: `${stateDir}/contexts`,
+    checkpointsDir: `${stateDir}/checkpoints`,
     journalPath: `${stateDir}/journal.jsonl`,
     truthObjectsDir: `${pomasterDir}/truth/objects`,
     evidenceDir,

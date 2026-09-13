@@ -139,7 +139,13 @@ export type GovernanceErrorCode =
    *  boundary_rules deny 规则 scope 命中触及对象维度。与 permit scope 闸正交并置
    *  （permit=谁可写哪些对象；authority=哪些来源可驱动哪些维度），均为写路径确定性
    *  BLOCK；fail-closed——判据缺失不构成放行，registry 损坏走 SCHEMA_INVALID。 */
-  | "AUTHORITY_BOUNDARY_DENY";
+  | "AUTHORITY_BOUNDARY_DENY"
+  /** checkpoint show 目标不在 checkpoints 平面（state/checkpoints/CKPT-*.json 缺失）
+   *  ——显式缺席非空结果（W4-S2；词形 SP 提案待追认，沿 TRACE_ALREADY_SEALED 同族命名）。 */
+  | "CHECKPOINT_NOT_FOUND"
+  /** saveCheckpoint 显式同号重放且重算引用集与既有档案不同——世界已演进，同号异内容
+   *  禁静默覆写恢复快照（EVIDENCE_ALREADY_EXISTS 同族幂等纪律；缺省分配保存新号）。 */
+  | "CHECKPOINT_ALREADY_EXISTS";
 
 /** GovernanceError 判读上下文（错误详情结构化，机器可判读）。 */
 export interface GovernanceErrorDetails {

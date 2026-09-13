@@ -43,7 +43,7 @@ describe("layout 预铺清单守卫（宪法 §2/§24/§34）", () => {
     }
   });
 
-  it("全 wired 单状态 + activation_hint/constitution_source 必填在场（Owner 修订形态；B7-THEME themes 替位 FE/BE 平铺位后 40 目录）", () => {
+  it("全 wired 单状态 + activation_hint/constitution_source 必填在场（Owner 修订形态；B7-THEME themes 替位 FE/BE 平铺位 + W4-S2 state/checkpoints 增量后 41 目录）", () => {
     expect(LAYOUT_STATUSES).toEqual(["wired"]);
     for (const spec of LAYOUT_DIRECTORIES) {
       expect(spec.status, spec.path).toBe(LAYOUT_STATUS_WIRED);
@@ -56,7 +56,7 @@ describe("layout 预铺清单守卫（宪法 §2/§24/§34）", () => {
         `${spec.path} 的 constitution_source 必须指向宪法文档`,
       ).toBe(true);
     }
-    expect(LAYOUT_DIRECTORIES.length).toBe(40);
+    expect(LAYOUT_DIRECTORIES.length).toBe(41);
   });
 
   it("宪法 §2 全树逐平面在册（config/state 九文件位/truth/evidence 三区/executions/traces/runtime 四区/discovery/memory/production 六区）+ §3A sources 平面增量（Batch 1 R3/D2）+ Batch 2 D7/C9 增量平面 + Batch 6 B6a 播种面两子树（baseline 四分区 + specs 五分区，12 目录）", () => {
@@ -64,6 +64,7 @@ describe("layout 预铺清单守卫（宪法 §2/§24/§34）", () => {
     for (const required of [
       "state",
       "state/contexts",
+      "state/checkpoints",
       "truth/objects",
       "evidence/runs",
       "evidence/claims",

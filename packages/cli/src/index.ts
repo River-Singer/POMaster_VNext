@@ -181,6 +181,16 @@
  *                   物化审计快照——EPHEMERAL 落 runtime/traces 可丢弃、其余 traces/
  *                   durable 进 Git）/ list = 封存清单（双平面 durable 优先）；Trace
  *                   是 Identity 的派生投影侧车，CLI 零判卷零 GC（retention 仅记录）
+ * - checkpoint save/show
+ *                   Checkpoint 恢复引用快照命令面（W4-S2 · 09-10 PRD §6-1「优先复用
+ *                   现有记录，不按清单创建新库」+ W4 R4-1）：save = 组装恢复所需
+ *                   引用集落盘（task 锚/permit 对账判卷引用/execution 在途清单
+ *                   （countExecutionInflightReceipts，W4-S1 同轴）/negative_history·
+ *                   unknowns 引用/封存 trace 引用/workspace git 锚——每项都是引用，
+ *                   逐项存在性校验；非 git 工区 anchor absent 显式申报）；show =
+ *                   引用面纯读呈现；零新 canonical kind（分区档案面沿 trace seal）、
+ *                   零 journal 事件、不自动创建；与 W4-S1 分层组合：checkpoint=
+ *                   引用快照（保存时点），reconcile=新鲜度判定（恢复时点）
  * - agents status   §44.8 兑现（P20 建面 + P21-Contract 接入 DEF-SUP 观测位）：solo
  *                   运行时观测面（sessions/locks/executions 聚合 + DEF-GATEKEEPER
  *                   分身漂移信号 + DEF-SUP 触发制三条件观测；触发=warning 非阻断；
@@ -253,6 +263,7 @@ import {
   runNegativeHistoryRecord,
   runNegativeHistorySearch,
 } from "./negative-history.js";
+import { runCheckpointSave, runCheckpointShow } from "./checkpoint.js";
 import { runPlanCompile } from "./plan.js";
 import { runDiagnose } from "./diagnose.js";
 import { runToolsList, runToolsValidate } from "./tools.js";
@@ -1045,6 +1056,9 @@ export type {
 } from "./production.js";
 export { runTraceShow, runTraceList } from "./trace.js";
 export type { TraceShowInput, TraceShowResult, TraceListResult } from "./trace.js";
+// W4-S2：Checkpoint 恢复引用快照命令面导出（词形 SP 提案待追认）。
+export { runCheckpointSave, runCheckpointShow, checkpointResumeRouteLine } from "./checkpoint.js";
+export type { CheckpointSaveInput, CheckpointSaveResult, CheckpointShowResult } from "./checkpoint.js";
 export {
   RECON_ARCH_ADAPTER,
   RECON_ARCH_BASELINE_FILE,
@@ -3724,6 +3738,60 @@ export function createProgram(
       const outcome = await runTraceList(resolveDir(command));
       record({
         command: "trace list",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+
+  // —— Checkpoint 恢复引用快照命令面（W4-S2 · 09-10 PRD §6-1「优先复用现有记录，
+  // 不按清单创建新库」+ 战役 W4 R4-1）——
+  // 判卷/落盘权威在 kernel checkpoint.ts（引用逐项存在性校验 fail-closed + store
+  // 同款幂等纪律）；本面只做 workspace 锚 git 只读采集、argv 收敛与呈现。零新
+  // canonical kind（分区档案面沿 trace seal 定位）；落盘 ⊆ state/checkpoints/ 单
+  // 分区；不自动创建（显式命令触发）。与 W4-S1 组合分层：checkpoint=引用快照
+  // （保存时点存在性），reconcile=新鲜度判定（恢复时点）——恢复先对账归
+  // session attach --reconcile，本命令面不重跑对账。词形 SP 提案待追认。
+  const checkpoint = program
+    .command("checkpoint")
+    .description(
+      "Checkpoint 恢复引用快照命令面（W4-S2）：save = 组装恢复所需引用集落盘（task 锚/--permit 对账判卷引用/--execution 在途清单/negative_history·unknowns 引用/封存 trace 引用/workspace git 锚——每项都是引用，逐项存在性校验）；show = 引用面纯读呈现（恢复所需引用面一键可见；恢复先对账归 session attach --reconcile——checkpoint=引用快照，reconcile=新鲜度判定）",
+    );
+  checkpoint
+    .command("save")
+    .description(
+      "保存恢复引用集快照（state/checkpoints/CKPT-*.json durable 进 Git；缺省分配 CKPT-n 现有最大序号+1）：引用逐项存在性校验（task 在册 OBJECT_NOT_FOUND / permit 台账 PERMIT_NOT_FOUND / execution 登记 EXECUTION_NOT_FOUND——fail-closed 零落盘）；workspace 锚 git 只读采集，非 git 工区 anchor absent 显式申报（锚定诚实——禁伪造锚）；保存时点快照非实时（新鲜度判定归恢复通路）；--ckpt 同号重放：同内容幂等零写入 / 异内容 CHECKPOINT_ALREADY_EXISTS 显式冲突；零 journal 事件零 canonical kind",
+    )
+    .argument("<task-id>", "任务锚（TASK.* canonical governed id，须在册 kind=task_object）")
+    .option("--permit <PERMIT.*>", "对账判卷引用（须在台账——恢复时 session attach --reconcile 消费；缺省 null 显式无锚）")
+    .option("--execution <AGX-n>", "执行身份（须已登记——在途产物计数 countExecutionInflightReceipts + 封存 trace 引用）")
+    .option("--ckpt <CKPT-n>", "显式指定 id（同号重放按引用集字节判定：一致→幂等零写入，异→显式冲突）")
+    .option("--note <text>", "保存注记（人类散文；单行）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (taskId: string, opts, command) => {
+      const outcome = await runCheckpointSave(resolveDir(command), {
+        taskRef: taskId,
+        ...(opts.permit !== undefined ? { permitRef: opts.permit as string } : {}),
+        ...(opts.execution !== undefined ? { executionId: opts.execution as string } : {}),
+        ...(opts.ckpt !== undefined ? { ckptId: opts.ckpt as string } : {}),
+        ...(opts.note !== undefined ? { note: opts.note as string } : {}),
+      });
+      record({
+        command: "checkpoint save",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  checkpoint
+    .command("show")
+    .description(
+      "引用面纯读呈现（零写入字节快照钉）：checkpoint 记录逐项回显（task/permit/execution 在途分态/task_surface 计数/unknowns/trace/锚——保存时点快照）+ 恢复通路路标（session attach --task --reconcile 恢复先对账——W4-S1 闸）；缺席 CHECKPOINT_NOT_FOUND / 词形非法 SCHEMA_INVALID（SP 提案码位）",
+    )
+    .argument("<checkpoint-id>", "checkpoint id（CKPT-<序号>；checkpoint save 产出）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (checkpointId: string, _opts, command) => {
+      const outcome = await runCheckpointShow(resolveDir(command), checkpointId);
+      record({
+        command: "checkpoint show",
         outcome,
         asJson: command.optsWithGlobals().json === true,
       });
