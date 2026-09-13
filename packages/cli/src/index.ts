@@ -211,6 +211,15 @@
  *                   结果 / 预编译较小工具集——锚定仓内已就位载体）；未接入真实
  *                   Provider 时全部 unknown 是诚实缺省（report_source 显式区分
  *                   injected_probe/declarative_default）；纯报告零 store 依赖零写入
+ * - telemetry task  任务级 reasoning/cost/Horizon 派生评估命令面（W4-S5 · 战役 W4
+ *                   R4-4 + 09-10 PRD REQ-11/§9）：<task-id>（TASK.* 在册
+ *                   task_object）出六指标只读聚合（verified_transition_rate /
+ *                   rework_signal / steering_count / resume_reconcile_signals /
+ *                   horizon / cost_face——每指标带分母与可计算性
+ *                   MEASURED|NOT_COMPUTABLE|NOT_MEASURABLE_YET）+ horizon 逐执行
+ *                   明细 + evidence census + 四条红线注记（无综合评分 / 不持久化
+ *                   私有思维链 / 零阈值零阻断 / cost 面未计量不虚构）；纯读零写
+ *                   零落盘（inputs_fingerprint = 快照等价物）
  * - agents status   §44.8 兑现（P20 建面 + P21-Contract 接入 DEF-SUP 观测位）：solo
  *                   运行时观测面（sessions/locks/executions 聚合 + DEF-GATEKEEPER
  *                   分身漂移信号 + DEF-SUP 触发制三条件观测；触发=warning 非阻断；
@@ -286,6 +295,7 @@ import {
 import { runSteeringRecord, runSteeringSearch } from "./steering.js";
 import { runCheckpointSave, runCheckpointShow } from "./checkpoint.js";
 import { runProviderCapabilities } from "./provider.js";
+import { runTelemetryTask } from "./telemetry.js";
 import { runPlanCompile } from "./plan.js";
 import { runDiagnose } from "./diagnose.js";
 import { runToolsList, runToolsValidate } from "./tools.js";
@@ -1100,6 +1110,11 @@ export type {
   ProviderCapabilitiesResult,
   ProviderCapabilityRowView,
 } from "./provider.js";
+// W4-S5：task telemetry 派生评估命令导出（REQ-11/§9——六指标只读聚合 + advisory
+// 呈现；判卷权威在 kernel task-telemetry.ts，本面只做 argv 收敛与呈现；词形 SP 提案
+// 待追认）。
+export { runTelemetryTask } from "./telemetry.js";
+export type { TelemetryTaskResult } from "./telemetry.js";
 export {
   RECON_ARCH_ADAPTER,
   RECON_ARCH_BASELINE_FILE,
@@ -3924,6 +3939,34 @@ export function createProgram(
       const outcome = runProviderCapabilities({ runtime: opts.runtime as string });
       record({
         command: "provider capabilities",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+
+  // —— Task telemetry 派生评估命令面（W4-S5 · 战役 W4 R4-4 + 09-10 PRD REQ-11/§9） ——
+  // 判卷权威在 kernel task-telemetry.ts（gatherTaskTelemetryInput 装载 +
+  // deriveTaskTelemetry 判定——六指标只读聚合，每指标带分母与可计算性）；本面只做
+  // argv 收敛、在册/kind 校验（view review 同判词）与呈现。诚实红线：无综合评分 /
+  // 不持久化私有思维链 / 零阈值零阻断 / cost 面如实 NOT_MEASURABLE_YET；评估快照
+  // 零落盘（inputs_fingerprint 承载快照等价物）——write_surface:"none" 结构级钉；
+  // 命令组词形 telemetry = SP 提案待追认。
+  const telemetry = program
+    .command("telemetry")
+    .description(
+      "Task telemetry 派生评估命令面（W4-S5；REQ-11/§9）：task = 任务级 reasoning/cost/Horizon 六指标只读聚合（verified_transition_rate / rework_signal / steering_count / resume_reconcile_signals / horizon / cost_face——每指标带分母与可计算性 MEASURED|NOT_COMPUTABLE|NOT_MEASURABLE_YET）+ horizon 逐执行明细 + evidence census + 红线注记（无综合评分 / 不持久化思维链 / 零阈值零阻断 / cost 面未计量不虚构）；纯读零写零落盘",
+    );
+  telemetry
+    .command("task")
+    .description(
+      "任务级 telemetry 派生评估（<task-id> 必填，TASK.* 在册 task_object）：六指标（每指标带口径 basis 与可计算性——零分母 NOT_COMPUTABLE 显式、缺信号源 NOT_MEASURABLE_YET 不冒充数值）+ horizon 逐执行行（journal seq 跨度，open 执行 horizon_open 显式）+ transition_events + evidence_census + 四条红线注记；advisory 呈现面——不设强制阈值不阻断任何流程（预算不削弱证据/权限）；纯读零写零落盘（inputs_fingerprint = 快照等价物，同指纹同报告字节）",
+    )
+    .argument("<task-id>", "目标任务（TASK.* canonical governed id，须在册 kind=task_object）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (taskId: string, opts, command) => {
+      const outcome = await runTelemetryTask(resolveDir(command), { task: taskId });
+      record({
+        command: "telemetry task",
         outcome,
         asJson: command.optsWithGlobals().json === true,
       });

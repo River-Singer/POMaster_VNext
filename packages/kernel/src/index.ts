@@ -1465,6 +1465,39 @@ export type {
   ProviderDegradationSemantics,
 } from "./provider-capabilities.js";
 
+// Task telemetry 派生评估核（W4-S5 · 战役 W4 R4-4 + 09-10 PRD REQ-11 + §9 指标清单）：
+// reasoning/cost/Horizon 的**只读派生聚合**——六指标（verified_transition_rate/
+// rework_signal/steering_count/resume_reconcile_signals/horizon/cost_face）每指标带
+// 分母与可计算性（MEASURED/NOT_COMPUTABLE/NOT_MEASURABLE_YET——前两词形复用 §55.1）。
+// 诚实红线：无综合评分、不持久化私有思维链（输入面无思维链通道）、零阈值零阻断、
+// cost 面如实未计量。分层：deriveTaskTelemetry 纯函数零 IO 零墙钟 +
+// gatherTaskTelemetryInput IO 装载单一面（只读零写）。
+export {
+  TASK_TELEMETRY_ADVISORY_NOTE,
+  TASK_TELEMETRY_HORIZON_STATES,
+  TASK_TELEMETRY_METRIC_KEYS,
+  TASK_TELEMETRY_METRIC_STATUS,
+  TASK_TELEMETRY_NO_BASELINE_PERCENTAGE_NOTE,
+  TASK_TELEMETRY_NO_CHAIN_PERSISTENCE_NOTE,
+  TASK_TELEMETRY_NO_COMPOSITE_SCORE_NOTE,
+  deriveTaskTelemetry,
+  gatherTaskTelemetryInput,
+} from "./task-telemetry.js";
+export type {
+  TaskTelemetryClaimRow,
+  TaskTelemetryEvidenceCensus,
+  TaskTelemetryExecutionRef,
+  TaskTelemetryHorizonRow,
+  TaskTelemetryHorizonState,
+  TaskTelemetryInput,
+  TaskTelemetryMetric,
+  TaskTelemetryMetricKey,
+  TaskTelemetryMetricStatus,
+  TaskTelemetryNegativeEntryRef,
+  TaskTelemetryReport,
+  TaskTelemetryRunRow,
+} from "./task-telemetry.js";
+
 // DEF-SUP 触发制观测器（P21-Contract；D 线 §5 DEF-SUP 行三触发条件——
 // (a) 同 SOP 链重复 ≥3 次（journal 事件型链实测）/ (b) 第二贡献者（申报）/
 // (c) headless-CI（申报）；观测不施断，处置呈报 Owner。见 supervisor-trigger.ts 头注）。
