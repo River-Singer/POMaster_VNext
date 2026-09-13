@@ -220,6 +220,17 @@
  *                   明细 + evidence census + 四条红线注记（无综合评分 / 不持久化
  *                   私有思维链 / 零阈值零阻断 / cost 面未计量不虚构）；纯读零写
  *                   零落盘（inputs_fingerprint = 快照等价物）
+ * - preset preview/drift/applicability
+ *                   预设只读探测器三件套（W5 · 裁决 20⑥）：--family <id>（wired
+ *                   闭包 design-tokens | baseline-framework + 5 扩展位登记）——
+ *                   preview = 预设→项目状态差异预览（create/fill/overwrite/none
+ *                   动作预告 + 确认链效果预告，不应用）；drift = 当前值 vs 预设
+ *                   基准逐项对账（VALUE_DRIFT + verdict aligned|drifted|
+ *                   no_comparison 空分母显式——blindspot 纪律）；applicability =
+ *                   适用 lane/栈/对象面声明（native|mismatch|unresolved 只读匹配，
+ *                   不改 ADR-4 判卷）；预设值 governed 原地、ToolBinding 执行表
+ *                   零注册；纯读零写入（探测≠写授权——写入唯一通路 = baseline
+ *                   set --change + confirm 确认链）
  * - agents status   §44.8 兑现（P20 建面 + P21-Contract 接入 DEF-SUP 观测位）：solo
  *                   运行时观测面（sessions/locks/executions 聚合 + DEF-GATEKEEPER
  *                   分身漂移信号 + DEF-SUP 触发制三条件观测；触发=warning 非阻断；
@@ -296,6 +307,11 @@ import { runSteeringRecord, runSteeringSearch } from "./steering.js";
 import { runCheckpointSave, runCheckpointShow } from "./checkpoint.js";
 import { runProviderCapabilities } from "./provider.js";
 import { runTelemetryTask } from "./telemetry.js";
+import {
+  runPresetApplicability,
+  runPresetDrift,
+  runPresetPreview,
+} from "./preset-probe.js";
 import { runPlanCompile } from "./plan.js";
 import { runDiagnose } from "./diagnose.js";
 import { runToolsList, runToolsValidate } from "./tools.js";
@@ -1115,6 +1131,23 @@ export type {
 // 待追认）。
 export { runTelemetryTask } from "./telemetry.js";
 export type { TelemetryTaskResult } from "./telemetry.js";
+// W5：预设只读探测器三件套命令导出（裁决 20⑥——预设值 governed 原地，ToolBinding
+// 执行表零注册；preview/drift/applicability 纯读零写入；词形 SP 提案待追认）。
+export {
+  PRESET_FAMILY_EXTENSION_SLOTS,
+  PRESET_FAMILY_WIRED,
+  runPresetApplicability,
+  runPresetDrift,
+  runPresetPreview,
+} from "./preset-probe.js";
+export type {
+  PresetApplicabilityResult,
+  PresetDriftItem,
+  PresetDriftResult,
+  PresetPreviewEntry,
+  PresetPreviewResult,
+  PresetProbeInput,
+} from "./preset-probe.js";
 export {
   RECON_ARCH_ADAPTER,
   RECON_ARCH_BASELINE_FILE,
@@ -3939,6 +3972,80 @@ export function createProgram(
       const outcome = runProviderCapabilities({ runtime: opts.runtime as string });
       record({
         command: "provider capabilities",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+
+  // —— 预设只读探测器三件套命令面（W5 核心切片 · 裁决 20⑥ 追认方案落地） ——
+  // 边界（裁决 20⑥，不得翻案）：预设值保持 governed 原地（不 binding 化）；「应用
+  // 预设」留 baseline set --change + confirm 治理通路；本面 = preview（预览 diff）/
+  // drift（漂移检测）/ applicability（适配分析）纯读零写入——不注册进 ToolBinding
+  // 受信 adapter 执行表（三件套是观察面非执行器；完整 tools 化路径 = schema 23 +
+  // kernel 词表同批修订，立项归属 W2+/按需——research/presets-as-tools.md §2.2(b)）。
+  // 判卷单源复用：readDesignTokens（schema 22 装载单点）/ loadLaneStackValues /
+  // readBaselineConfirmation（三态机单源）/ matchStackValue + PRESET_FACE_SPECS
+  // （ADR-4 边界匹配与 face 分母单源）/ STACK_QUESTIONS（预设候选锚单源）。
+  // 分母披露（红线 10）：空对账分母显式 no_comparison——禁「没查就报干净」。
+  // 命令/家族/词形 = SP 提案待追认。
+  const preset = program
+    .command("preset")
+    .description(
+      "预设只读探测器三件套（W5 · 裁决 20⑥；研究 presets-as-tools.md §2.2(b)）：preview = 预设→当前项目状态差异预览（若应用将改变什么——create/fill/overwrite/none 动作预告 + 确认链效果预告，不应用）；drift = 当前生效值 vs 预设基准逐项对账（VALUE_DRIFT 漂移项 + 漂移≠违规注记——Owner 定制合法）；applicability = 预设适用 lane/栈/对象面声明（只读匹配，不改 ADR-4 判卷）；首版 wired 2 族（design-tokens / baseline-framework）+ 5 扩展位登记；纯读零写入零 store 事务（write_surface:none 结构级钉）——探测≠写授权，写入唯一通路 = baseline set --change + confirm 确认链",
+    );
+  preset
+    .command("preview")
+    .description(
+      "预览 diff（--family <id> 必填，wired 闭包：design-tokens | baseline-framework；--lane 可选）：预设锚 vs 目标盘面逐键差异清单（action_if_applied=create|fill|overwrite|none + governed_path 治理通路预告）+ 对账分母（total/compared/skipped_preset_unknown——宁缺毋假 UNKNOWN 键不入分母）+ 确认链效果预告（确认态在座 → BASELINE_DRIFT 预告；不在座 → confirm 烙印预告）；零应用零写入",
+    )
+    .requiredOption("--family <id>", "预设族词形（wired 闭包：design-tokens | baseline-framework；扩员走显式修订 + Owner 追认）")
+    .option("--lane <lane>", "lane 过滤（design-tokens 恒 frontend；baseline-framework 省略 = 双 lane）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runPresetPreview(resolveDir(command), {
+        family: opts.family as string,
+        ...(opts.lane !== undefined ? { lane: opts.lane as string } : {}),
+      });
+      record({
+        command: "preset preview",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  preset
+    .command("drift")
+    .description(
+      "漂移检测（--family <id> 必填；--lane 可选）：当前生效值 vs 预设基准逐项对账——verdict 三值（aligned=可比且零漂移 / drifted=VALUE_DRIFT 项在座 / no_comparison=空对账分母显式——blindspot 纪律禁「没查就报干净」）+ 逐项漂移清单 + unanchored 披露（预设 UNKNOWN 键宁缺毋假，无锚可比不入判卷）+ confirm_state 字节平面上下文（readBaselineConfirmation 单源）；漂移≠违规——Owner 定制/选型合法，本面只呈现差异零写入",
+    )
+    .requiredOption("--family <id>", "预设族词形（wired 闭包：design-tokens | baseline-framework）")
+    .option("--lane <lane>", "lane 过滤（同 preview）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runPresetDrift(resolveDir(command), {
+        family: opts.family as string,
+        ...(opts.lane !== undefined ? { lane: opts.lane as string } : {}),
+      });
+      record({
+        command: "preset drift",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  preset
+    .command("applicability")
+    .description(
+      "适配分析（--family <id> 必填；--lane 可选）：预设 → 适用 lane/栈/对象面声明——lanes 覆盖（faces 数按 PRESET_FACE_SPECS 门分组单源）+ stack_match 三值词形（native=选型命中预设主源词形 / mismatch=异源参照 / unresolved=未选型悬置——禁猜）+ overlay_assets 包内资产在座性（缺席诚实——红线 11 对照基准可溯）；只读匹配，不改变 baseline-preset ADR-4 判卷与 overlay 播种行为",
+    )
+    .requiredOption("--family <id>", "预设族词形（wired 闭包：design-tokens | baseline-framework）")
+    .option("--lane <lane>", "lane 过滤（同 preview）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runPresetApplicability(resolveDir(command), {
+        family: opts.family as string,
+        ...(opts.lane !== undefined ? { lane: opts.lane as string } : {}),
+      });
+      record({
+        command: "preset applicability",
         outcome,
         asJson: command.optsWithGlobals().json === true,
       });
