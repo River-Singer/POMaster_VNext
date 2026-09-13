@@ -186,3 +186,11 @@
 - **⑥ 预设 tools 化边界（追认，未实施部分立项待排）**：预设值（框架选型/token 值/archetype 卡等 7 族）保持 governed 原地——效力来自 confirm 烙印而非执行，binding 化致 executed 态语义错配（否决）；ToolBinding 面只收录「预设只读探测器三件套」（预览 diff/漂移检测/适配分析）；「应用预设」留 baseline set --change＋confirm 治理通路。研究：09-12-long-horizon-impl-campaign/research/presets-as-tools.md。立项归属：W2+/按需。
 - **⑦ .pomaster 自托管 bootstrap（追认）**：authority.json authorities 登记 Serperior（BOOTSTRAP_OWNER）；TASK.SLICE_C1／PERMIT.CHANGE_SLICE_C1.1 治理对象入仓根 store（W2 切片 G2/G3 拍自托管产物）。
 - **静默开发授权收束**：本战役中途 Owner 增补「中途不要让我决策」授权（2026-09-12）与「7 项裁定现在提出让我决策」（2026-09-13）已闭环；后续裁定恢复「裁定先落台账再进代码」常规节奏，重大语义变更仍停下问 Owner。
+
+## 裁决 21：closeout 不消费 audit 越界拒绝——呈现强化路线（2026-09-13 Owner 会话直答）
+
+- **决策渠道**：Owner 会话三选一直答（2026-09-13）。背景：W3-S6 实弹测试发现「全绿 + ACCEPT 回执 + execution-audit 越界拒绝（MUTATION_SCOPE_OUT_OF_SCOPE exit 1 + OBS 落账）」组合下 closeout 仍 COMPLETED——开发期按"重大语义变更停下问"纪律未擅自接线。
+- **三方案**：A 强制 clean audit 才放行（最 fail-closed，但改"audit 是显式调用"的锚定诚实边界，全部 closeout 新增必跑仪式）；**B 存在越界拒绝即阻断（有条件硬闸）**；C 维持现状+呈现强化。
+- **裁定：C**。closeout 完成链维持不消费 audit 越界拒绝作阻断（AC-08 的防越界主防线＝exec-guard 写前 Prevention + execution-audit 事后 Detection exit 1，两者均已实弹在座）；呈现强化＝view review 增"未处置越界拒绝"扫描呈现（全局扫描 audit OBS 回执中的 out_of_scope 发现，逐条列 pointer，零发现显式 clean），不因未跑 audit 或存在拒绝阻断施断。
+- **实施**：view review 增 audit-rejection 扫描分区（纯读沿 diagnose.ts 纪律）；词形 SP 提案待追认。
+- **边界注记**：本裁决不推翻裁决 20② 的 ACCEPT 硬闸（那是"成果接受"语义）；audit 越界的处置通路仍是显式（修复后重审/ledger record），Owner 保留后续升级为 B 方案的权利。

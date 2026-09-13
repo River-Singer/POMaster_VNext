@@ -1,4 +1,4 @@
-<!-- view: known-debt | generator: corpus/master/tools/build_human_views.py | batch_code: VIEW-M5 | inputs_fingerprint: 4299339fcc1a3a00edbf9ccbabc8fcab102e30906f3f3b775e6c1004e2dc1298 -->
+<!-- view: known-debt | generator: corpus/master/tools/build_human_views.py | batch_code: VIEW-M5 | inputs_fingerprint: 4c03b6d98dce29cdd7d6715d06876380617bf31c4ea60a65badff64762bda15f -->
 
 # known-debt
 
@@ -6,7 +6,7 @@
 >
 > 本文件是 corpus truth 语料的**纯派生投影**（M5 Human View），不是事实源：禁止手工编辑（编辑无效，重建即覆盖）；不写 store、不产生治理事实、不进 truth-index。谱系约定：行内 citation 记号（`[SRC:` + 引用 + `]`），文法四形态见 `docs/p9-human-view-and-l5-contract.md` §1.5；「语料未覆盖」为显式留白（缺席 ≠ 通过）。
 >
-> 重建：`python corpus/master/tools/build_human_views.py --check`（同输入双跑 byte-stable；inputs_fingerprint=4299339fcc1a3a00edbf9ccbabc8fcab102e30906f3f3b775e6c1004e2dc1298）。
+> 重建：`python corpus/master/tools/build_human_views.py --check`（同输入双跑 byte-stable；inputs_fingerprint=4c03b6d98dce29cdd7d6715d06876380617bf31c4ea60a65badff64762bda15f）。
 
 ## 1. 阅读须知
 
