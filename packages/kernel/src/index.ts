@@ -1355,6 +1355,7 @@ export {
   listExecutionRecords,
   allocateExecutionId,
   assertExecutionAttachable,
+  countExecutionInflightReceipts,
   isExecutionRef,
   executionRecordPath,
 } from "./execution.js";

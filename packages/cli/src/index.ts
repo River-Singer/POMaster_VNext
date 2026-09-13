@@ -663,8 +663,18 @@ export type {
 } from "./permit.js";
 export { runExecGuard, KNOWN_ATTEMPT_KEYS } from "./exec-guard.js";
 export type { ExecGuardInput, ExecGuardResult } from "./exec-guard.js";
-export { runReconcile, RECONCILE_DIRTY_HINT } from "./reconcile.js";
-export type { ReconcileInput, ReconcileResultView } from "./reconcile.js";
+export {
+  runReconcile,
+  judgeReconcile,
+  reconcileCleanSummaryLine,
+  reconcileDirtySummaryLine,
+  RECONCILE_DIRTY_HINT,
+} from "./reconcile.js";
+export type {
+  ReconcileInput,
+  ReconcileResultView,
+  ReconcileJudgment,
+} from "./reconcile.js";
 export { runCompact } from "./compact.js";
 export type {
   CompactInput,
@@ -944,6 +954,7 @@ export {
 export type {
   SessionAttachInput,
   SessionAttachResult,
+  SessionReconcileGate,
   SessionRefreshResult,
   SessionListResult,
   LockAcquireInput,
@@ -956,6 +967,7 @@ export type {
   ExecutionBeginResult,
   ExecutionEndResult,
   ExecutionListResult,
+  ExecutionInflightEvidenceView,
 } from "./runtime.js";
 export { runAgentsStatus, runRun, runHandoff, runAgentsDispatchPack, COMMAND_DEFERRED, GATEKEEPER_DRIFT_OBSERVED, SUPERVISOR_TRIGGER_OBSERVED, DISPATCH_PACK_SECTION_TITLES, DISPATCH_PACK_SECTION_BUDGET, DISPATCH_PACK_TOTAL_BUDGET, DISPATCH_PACK_WRITE_FAILED } from "./agents.js";
 export type { AgentsStatusResult, AgentsStatusInput, DeferredCommandResult, DispatchPackResult, DispatchPackSectionView } from "./agents.js";
@@ -3386,7 +3398,7 @@ export function createProgram(
   session
     .command("attach")
     .description(
-      "注册/刷新会话（首注册 CREATED / 既有 REFRESHED / 顶替 REPLACED；resumed_task 回带既有任务指针——resume 白名单询问输入；首注册 journal SESSION_ATTACHED，刷新=心跳零事件）",
+      "注册/刷新会话（首注册 CREATED / 既有 REFRESHED / 顶替 REPLACED；resumed_task 回带既有任务指针——resume 白名单询问输入；首注册 journal SESSION_ATTACHED，刷新=心跳零事件）；--reconcile <permit> 恢复前对账（W4-S1 §6-2：⑥拍前置消费——clean 放行回显摘要，dirty/baseline 缺失阻断于一切副作用之前 exit 1，--reconcile-force 显式越权放行信封留痕）",
     )
     .requiredOption("--session-key <key>", "会话键（harness 前缀点分段词形，如 claude_9f3ab2c1 / 子代理 .sa1 后缀；hook 解析源 D 线 §1.2）")
     .requiredOption("--harness <id>", "harness 标识（claude-code / codex…；禁静默匿名）")
@@ -3394,6 +3406,14 @@ export function createProgram(
     .option("--ttl <seconds>", "会话 TTL（正整数秒；缺省 900——D 线例文逐字）")
     .option("--meta <key=value>", "平台元数据（可重复；hook session_id / cwd 等）", collectValues)
     .option("--force", "顶替授权（既有活会话且 harness 不同时必填——缺省拒绝无声顶替；stale 前任自动放行；顶替落 journal SESSION_REPLACED）")
+    .option(
+      "--reconcile <permit>",
+      "恢复前对账（W4-S1 §6-2 恢复先对账）：attach 落盘前按该 permit 基线跑 ⑥拍判卷（与 reconcile 命令同一份 judgeReconcile 分派）——clean 放行并回显摘要；dirty→RECONCILE_DIRTY / baseline 缺失→RECONCILE_BASELINE_MISSING 阻断（会话档案零落盘、journal 零事件）",
+    )
+    .option(
+      "--reconcile-force",
+      "对账越权授权（仅与 --reconcile 同用生效，孤旗 SCHEMA_INVALID）：阻断态显式越权放行，信封 result.reconcile.overridden=true 留痕；与顶替 --force 分轴不共用（两个授权各自显式）",
+    )
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (opts, command) => {
       const outcome = await runSessionAttach(resolveDir(command), {
@@ -3403,6 +3423,8 @@ export function createProgram(
         ttl: opts.ttl as string | undefined,
         meta: opts.meta as string[] | undefined,
         force: opts.force === true,
+        reconcile: opts.reconcile as string | undefined,
+        reconcileForce: opts.reconcileForce === true,
       });
       record({
         command: "session attach",
