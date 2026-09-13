@@ -10,6 +10,12 @@
 // 纪律与 Vue 侧逐条同源：NON-AUTHORITATIVE 标注 + 权威源指向 + origin=preset
 // advisory 透传（R3）；页框 chrome 用色（#eeeeee/#bfbfbf/#8c8c8c/#fdfdfd/#fffbe6/
 // #d48806/#555555）不取 seed token 值；hint 词形闭包 fail-closed。
+//
+// C1 组筛选呈现（W2 首批端到端切片，与 Vue 主实例同批同语义——C2 干净面不注入
+// 缺陷）：页内客户端筛选——组筛选 + 「只看 UNKNOWN」开关。可见性语义
+// （TASK.SLICE_C1 验收②）：真值视图（选组 + 开关关）可见 = 该组真值叶（UNKNOWN
+// 占位不混入真值可见分母）；开关视图可见 = UNKNOWN 占位（可叠加组交集）；
+// 默认视图 58 叶齐。纯渲染层：seed 与共用装载器零触碰。
 import { join } from "node:path";
 import { DESIGN_TOKENS_PATH, loadDesignTokens } from "../../../studio/scripts/lib/design-tokens.mjs";
 import { resetDir, writeFileEnsuringDir } from "../../../studio/scripts/lib/common.mjs";
@@ -36,6 +42,7 @@ function docsDescription(model) {
     `数值全部构建期装载自 ${model.sourcePath}`,
     `（origin=${model.origin}，advisory——Owner 经 baseline confirm 确认前不构成项目事实；`,
     `逐值出处注记与 origin 词形语义见该文件头注；值变更走确认链，画廊零改值）。`,
+    `页内组筛选与只看 UNKNOWN 开关为纯客户端呈现（UNKNOWN 占位只进开关视图，不混入真值可见分母）。`,
     `与 Vue 主实例「Foundations/Design Tokens」同数据源同语义（对照浏览）。`,
   ].join(" ");
 }
@@ -127,9 +134,19 @@ function entryCardJsx() {
 }`;
 }
 
-/** 页面 JSX（九组分区 + NON-AUTHORITATIVE 头注 + 出处提示）。 */
+/** 页面 JSX（九组分区 + NON-AUTHORITATIVE 头注 + 出处提示 + C1 组筛选）。 */
 function pageJsx() {
   return `function DesignTokensPage() {
+  const [activeGroup, setActiveGroup] = useState('');
+  const [unknownOnly, setUnknownOnly] = useState(false);
+  const visibleGroups = TOKEN_GROUPS.filter((group) => activeGroup === '' || group.key === activeGroup).map((group) => ({
+    ...group,
+    entries: group.entries.filter((entry) => {
+      if (unknownOnly) return entry.unknown;
+      if (activeGroup !== '') return !entry.unknown;
+      return true;
+    }),
+  }));
   return (
     <div className="studio-demo dt-page" style={{ display: 'block', maxWidth: 1100 }}>
       <p style={{ border: '1px solid #fffbe6', borderLeft: '4px solid #d48806', background: '#fffbe6', padding: '12px 16px', margin: '0 0 8px', fontSize: 13, lineHeight: 1.8 }}>
@@ -143,7 +160,22 @@ function pageJsx() {
         （宁缺毋假：无权威出处/映射非唯一的键渲染 UNKNOWN 占位样式，禁伪造演示值，回填决策留 Owner）。
         单一事实源：全部数值来自 seed 装载——改 seed 即改页。
       </p>
-      {TOKEN_GROUPS.map((group) => (
+      <div className="dt-filter-bar" data-filter-bar style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 16, border: '1px solid #eeeeee', borderRadius: 6, padding: '8px 12px', margin: '0 0 24px' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+          组筛选
+          <select data-filter-group value={activeGroup} onChange={(event) => setActiveGroup(event.target.value)} style={{ fontSize: 13, padding: '2px 6px' }}>
+            <option value="">全部组</option>
+            {TOKEN_GROUPS.map((group) => (
+              <option key={group.key} value={group.key}>{group.title}</option>
+            ))}
+          </select>
+        </label>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+          <input type="checkbox" data-unknown-view checked={unknownOnly} onChange={(event) => setUnknownOnly(event.target.checked)} />
+          只看 UNKNOWN
+        </label>
+      </div>
+      {visibleGroups.map((group) => (
         <section key={group.key} style={{ marginBottom: 32 }}>
           <h3 style={{ margin: '0 0 4px', fontSize: 16 }}>
             {group.title}（{group.entries.length} 键 · {group.kind === 'table' ? '表格化' : '样张'}）
@@ -195,6 +227,9 @@ export function renderReactDesignTokensStory(model) {
     `//（Owner baseline confirm 确认前不构成项目事实——确认链通道不变）。`,
     `// 页框 chrome 用色（#eeeeee/#bfbfbf/#8c8c8c/#fdfdfd/#fffbe6/#d48806/#555555）不取 seed token`,
     `// 值——token 值只经 displayValue 装载呈现（单一事实源红线）。`,
+    `// C1 组筛选：页内客户端筛选（纯渲染层）——组筛选 + 只看 UNKNOWN 开关；`,
+    `// UNKNOWN 占位叶只进开关视图，不混入真值可见分母（与 Vue 主实例同语义）。`,
+    `import { useState } from 'react';`,
     `import type { CSSProperties } from 'react';`,
     `import type { Meta, StoryObj } from '@storybook/react';`,
     ``,

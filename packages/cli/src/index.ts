@@ -87,17 +87,23 @@
  * - eval            Agent Behavioral Eval（§44.10）：跑 --suite behavioral（seeds 25 注册/
  *                   23 executable/2 retired；retired 显式呈现不计失败；executable 失败
  *                   fail-closed exit 1；§94.3 触发面配套——trigger-manifest + eval-trigger.mjs）
- * - view blueprint/task/attention/decision
+ * - view blueprint/task/attention/decision/review
  *                   三投影 Human 侧 + Batch 3 扩展（§44.7/§49.1/§6.3/§6A）：Narrative
  *                   View（Stable Core 正文 + Uncertainty Envelope）/ Review View（§53
  *                   十二步 + 纠错 §20 Outcome Review 收口首层附区与三操作路标）/
  *                   attention = Human Attention Queue（§6.3/纠错 §19——五类既有对象
  *                   数据源分组投影 + 处置路标，View not new database）/ decision =
  *                   Decision Graph 呈现（§6A 词形纪律——推荐非已决、Decision Owner:
- *                   HUMAN、五件套、INFERENCE 披露）；纯读零写入
- * - audit blueprint/task
+ *                   HUMAN、五件套、INFERENCE 披露）/ review = Human Review Packet
+ *                   终审包（§9 八分区；W3-S6 AC-16 + 裁决 21——Expected/Actual/
+ *                   Oracle/Gate/ACCEPT 回执状态/Known Unknown/三分支路标/
+ *                   audit_rejections 未处置越界拒绝扫描呈现——不阻断施断）；纯读零写入
+ * - audit blueprint/task/test-weakening
  *                   三投影 Audit View（§44.7/§49.1）：七字段完整呈现（§91.3：Audit View
- *                   才逐项显示完整 State Axes）；纯读零写入
+ *                   才逐项显示完整 State Axes）；test-weakening = 测试弱化审计腿
+ *                   （W3-S1 Final Audit 首腿：五弱化词族 + AC-08 fail-closed exit 1，
+ *                   kernel 判定核权威）；前两者纯读零写入，test-weakening 产物只落
+ *                   evidence/{blobs,observations}/ sidecar（零权威写口）
  * - ledger record/list
  *                   Exception Ledger 命令面（§49.2）：异常项入账（EXC-n；kernel
  *                   recordException 唯一写通路）+ 台账纯读呈现
@@ -126,6 +132,16 @@
  *                   search = 词级精确检索（未命中显式「无记录」；纯读零建账）；
  *                   context compile 经 [ADVISORY KNOWLEDGE] 分区可见——AC-02 只做
  *                   可见性（重试不被机器禁止，但须新依据），不进 gate 判卷输入
+ * - steering record/search
+ *                   Steering 事件命令面（W4-S3 · 09-10 PRD REQ-08/AC-07）：record =
+ *                   有来源约束登记（绑定 TASK.*，--constraint/--source-ref 必填 +
+ *                   --scope 可重复 + --note 可选；kernel recordSteering 唯一写通路，
+ *                   数据住 state/steering-log.json append-only 台账 + journal
+ *                   STEERING_RECORDED 词形 SP 留痕——零 TransactionOp/零 canonical
+ *                   kind）/ search = 词级精确检索（未命中显式「无记录」；纯读零建账）；
+ *                   constraint/affected_scope 是申报面（declared——机器不验证遵守）；
+ *                   context compile 经 [ADVISORY] 分区 [STEERING] 词形可见、plan
+ *                   compile 经 changeSurface unknown 呈现——不进 gate 判卷输入
  * - plan compile
  *                   Verification Plan Compiler（W1-R1-3 · 09-10 PRD REQ-04/AC-03/
  *                   AC-13）：逐 Acceptance 编译证据计划（义务/工具/靶/环境/
@@ -175,6 +191,35 @@
  *                   物化审计快照——EPHEMERAL 落 runtime/traces 可丢弃、其余 traces/
  *                   durable 进 Git）/ list = 封存清单（双平面 durable 优先）；Trace
  *                   是 Identity 的派生投影侧车，CLI 零判卷零 GC（retention 仅记录）
+ * - checkpoint save/show
+ *                   Checkpoint 恢复引用快照命令面（W4-S2 · 09-10 PRD §6-1「优先复用
+ *                   现有记录，不按清单创建新库」+ W4 R4-1）：save = 组装恢复所需
+ *                   引用集落盘（task 锚/permit 对账判卷引用/execution 在途清单
+ *                   （countExecutionInflightReceipts，W4-S1 同轴）/negative_history·
+ *                   unknowns 引用/封存 trace 引用/workspace git 锚——每项都是引用，
+ *                   逐项存在性校验；非 git 工区 anchor absent 显式申报）；show =
+ *                   引用面纯读呈现；零新 canonical kind（分区档案面沿 trace seal）、
+ *                   零 journal 事件、不自动创建；与 W4-S1 分层组合：checkpoint=
+ *                   引用快照（保存时点），reconcile=新鲜度判定（恢复时点）
+ * - provider capabilities
+ *                   Provider 能力映射命令面（W4-S4 · 战役 W4 R4-3 + 09-10 PRD
+ *                   REQ-11/R §5.2）：--runtime <名>（EXECUTION_RUNTIME_VALUES 闭包）
+ *                   出声明式能力报告——原生 async/steering/取消/工具发现四维支持度
+ *                   如实报告（三值词形 native|absent|unknown——探针结果驱动禁猜，
+ *                   零 Provider 型号断言）+ absent/unknown 逐维声明式降级语义
+ *                   （同步步骤+持久记录 / 下一派发边界应用约束 / 明确状态+隔离冲突
+ *                   结果 / 预编译较小工具集——锚定仓内已就位载体）；未接入真实
+ *                   Provider 时全部 unknown 是诚实缺省（report_source 显式区分
+ *                   injected_probe/declarative_default）；纯报告零 store 依赖零写入
+ * - telemetry task  任务级 reasoning/cost/Horizon 派生评估命令面（W4-S5 · 战役 W4
+ *                   R4-4 + 09-10 PRD REQ-11/§9）：<task-id>（TASK.* 在册
+ *                   task_object）出六指标只读聚合（verified_transition_rate /
+ *                   rework_signal / steering_count / resume_reconcile_signals /
+ *                   horizon / cost_face——每指标带分母与可计算性
+ *                   MEASURED|NOT_COMPUTABLE|NOT_MEASURABLE_YET）+ horizon 逐执行
+ *                   明细 + evidence census + 四条红线注记（无综合评分 / 不持久化
+ *                   私有思维链 / 零阈值零阻断 / cost 面未计量不虚构）；纯读零写
+ *                   零落盘（inputs_fingerprint = 快照等价物）
  * - agents status   §44.8 兑现（P20 建面 + P21-Contract 接入 DEF-SUP 观测位）：solo
  *                   运行时观测面（sessions/locks/executions 聚合 + DEF-GATEKEEPER
  *                   分身漂移信号 + DEF-SUP 触发制三条件观测；触发=warning 非阻断；
@@ -224,6 +269,7 @@ import {
   runReconTokenSources,
 } from "./recon.js";
 import { runExecutionAudit } from "./execution-audit.js";
+import { runTestWeakeningAudit } from "./test-weakening.js";
 import { runCompact } from "./compact.js";
 import { runRecordClaim, runRecordGateRun, runRecordVerification } from "./record.js";
 import { runCloseout } from "./closeout.js";
@@ -231,7 +277,7 @@ import { runCatalogStatus, runCatalogExplain, runCatalogRelock } from "./catalog
 import { runResolve } from "./resolve.js";
 import { runGraph } from "./graph.js";
 import { runEval } from "./eval.js";
-import { runViewAttention, runViewBlueprint, runViewDecision, runViewTask } from "./view.js";
+import { runViewAttention, runViewBlueprint, runViewDecision, runViewReview, runViewTask } from "./view.js";
 import { runAuditBlueprint, runAuditTask } from "./audit.js";
 import { runLedgerList, runLedgerRecord } from "./ledger.js";
 import {
@@ -246,7 +292,12 @@ import {
   runNegativeHistoryRecord,
   runNegativeHistorySearch,
 } from "./negative-history.js";
+import { runSteeringRecord, runSteeringSearch } from "./steering.js";
+import { runCheckpointSave, runCheckpointShow } from "./checkpoint.js";
+import { runProviderCapabilities } from "./provider.js";
+import { runTelemetryTask } from "./telemetry.js";
 import { runPlanCompile } from "./plan.js";
+import { runDiagnose } from "./diagnose.js";
 import { runToolsList, runToolsValidate } from "./tools.js";
 import {
   runBrainstormDecide,
@@ -655,8 +706,18 @@ export type {
 } from "./permit.js";
 export { runExecGuard, KNOWN_ATTEMPT_KEYS } from "./exec-guard.js";
 export type { ExecGuardInput, ExecGuardResult } from "./exec-guard.js";
-export { runReconcile, RECONCILE_DIRTY_HINT } from "./reconcile.js";
-export type { ReconcileInput, ReconcileResultView } from "./reconcile.js";
+export {
+  runReconcile,
+  judgeReconcile,
+  reconcileCleanSummaryLine,
+  reconcileDirtySummaryLine,
+  RECONCILE_DIRTY_HINT,
+} from "./reconcile.js";
+export type {
+  ReconcileInput,
+  ReconcileResultView,
+  ReconcileJudgment,
+} from "./reconcile.js";
 export { runCompact } from "./compact.js";
 export type {
   CompactInput,
@@ -674,13 +735,19 @@ export type {
   RecordVerificationInput,
   RecordVerificationResult,
 } from "./record.js";
-export { runCloseout } from "./closeout.js";
+export {
+  runCloseout,
+  scanAcceptReceiptStatus,
+  ACCEPT_RECEIPT_SCAN_STATUSES,
+} from "./closeout.js";
 export type {
   CloseoutInput,
   CloseoutResult,
   CloseoutDodEntry,
   CloseoutGateRow,
   CloseoutSpecClauseEntry,
+  AcceptReceiptScan,
+  AcceptReceiptScanStatus,
 } from "./closeout.js";
 // 证据资格链（W1 R1-5）：要求面/证据面装配单源（closeout 主消费者 + record verification
 // 次消费者共享；判定核在 @pomaster/kernel evidence-qualification）。
@@ -793,9 +860,13 @@ export {
   runViewAttention,
   runViewBlueprint,
   runViewDecision,
+  runViewReview,
   runViewTask,
   ATTENTION_KINDS,
+  AUDIT_REJECTION_DISPOSITIONS,
+  AUDIT_REJECTION_SCAN_STATUSES,
   OUTCOME_REVIEW_OPERATIONS,
+  REVIEW_BRANCH_NAMES,
   REVIEW_STEPS,
 } from "./view.js";
 export type {
@@ -803,6 +874,18 @@ export type {
   ViewTaskResult,
   ViewAttentionResult,
   ViewDecisionResult,
+  ViewReviewResult,
+  ReviewBranchName,
+  ReviewBranchRow,
+  ViewReviewAcceptReceipt,
+  ViewReviewExpectedRow,
+  ViewReviewActualRow,
+  ViewReviewOracleEntry,
+  ViewReviewGateRunRow,
+  ViewReviewNegativeHistoryRow,
+  AuditRejectionScanStatus,
+  ViewReviewAuditRejectionRow,
+  ViewReviewAuditRejections,
   AttentionItem,
   AttentionGroup,
   AttentionKind,
@@ -857,6 +940,16 @@ export type {
   NegativeHistoryEntryView,
   NegativeHistoryKernelDeps,
 } from "./negative-history.js";
+// W4-S3：Steering 事件命令导出（REQ-08/AC-07——有来源约束登记/检索；判卷权威在
+// kernel steering.ts 语义入口，本面只做 argv 收敛与呈现）。
+export { runSteeringRecord, runSteeringSearch } from "./steering.js";
+export type {
+  SteeringRecordCliInput,
+  SteeringRecordResult,
+  SteeringSearchResult,
+  SteeringRecordView,
+  SteeringKernelDeps,
+} from "./steering.js";
 export { runPlanCompile } from "./plan.js";
 export type {
   PlanCompileInput,
@@ -864,6 +957,14 @@ export type {
   PlanToolProbeView,
   PlanKernelDeps,
 } from "./plan.js";
+// W3-S3：通用 Diagnose 入口命令导出（`pomaster diagnose`——C §26 独立诊断入口；
+// 判定权威在 kernel diagnose.ts 判定核，production 分支共用同一事实源）。
+export { runDiagnose } from "./diagnose.js";
+export type {
+  DiagnoseInput,
+  DiagnoseResult,
+  DiagnoseEvidenceRow,
+} from "./diagnose.js";
 // W1-R1-4：ToolBinding 统一注册面命令与状态机导出（tools list/validate——SP 提案待追认）。
 export {
   computeBindingStates,
@@ -906,6 +1007,7 @@ export {
 export type {
   SessionAttachInput,
   SessionAttachResult,
+  SessionReconcileGate,
   SessionRefreshResult,
   SessionListResult,
   LockAcquireInput,
@@ -918,6 +1020,7 @@ export type {
   ExecutionBeginResult,
   ExecutionEndResult,
   ExecutionListResult,
+  ExecutionInflightEvidenceView,
 } from "./runtime.js";
 export { runAgentsStatus, runRun, runHandoff, runAgentsDispatchPack, COMMAND_DEFERRED, GATEKEEPER_DRIFT_OBSERVED, SUPERVISOR_TRIGGER_OBSERVED, DISPATCH_PACK_SECTION_TITLES, DISPATCH_PACK_SECTION_BUDGET, DISPATCH_PACK_TOTAL_BUDGET, DISPATCH_PACK_WRITE_FAILED } from "./agents.js";
 export type { AgentsStatusResult, AgentsStatusInput, DeferredCommandResult, DispatchPackResult, DispatchPackSectionView } from "./agents.js";
@@ -995,6 +1098,23 @@ export type {
 } from "./production.js";
 export { runTraceShow, runTraceList } from "./trace.js";
 export type { TraceShowInput, TraceShowResult, TraceListResult } from "./trace.js";
+// W4-S2：Checkpoint 恢复引用快照命令面导出（词形 SP 提案待追认）。
+export { runCheckpointSave, runCheckpointShow, checkpointResumeRouteLine } from "./checkpoint.js";
+export type { CheckpointSaveInput, CheckpointSaveResult, CheckpointShowResult } from "./checkpoint.js";
+// W4-S4：Provider 能力映射命令导出（REQ-11/R §5.2——四维支持度如实报告 + 声明式
+// 降级语义；判卷/探测权威在 kernel provider-capabilities.ts，本面只做 argv 收敛
+// 与呈现；词形 SP 提案待追认）。
+export { runProviderCapabilities } from "./provider.js";
+export type {
+  ProviderCapabilitiesDeps,
+  ProviderCapabilitiesResult,
+  ProviderCapabilityRowView,
+} from "./provider.js";
+// W4-S5：task telemetry 派生评估命令导出（REQ-11/§9——六指标只读聚合 + advisory
+// 呈现；判卷权威在 kernel task-telemetry.ts，本面只做 argv 收敛与呈现；词形 SP 提案
+// 待追认）。
+export { runTelemetryTask } from "./telemetry.js";
+export type { TelemetryTaskResult } from "./telemetry.js";
 export {
   RECON_ARCH_ADAPTER,
   RECON_ARCH_BASELINE_FILE,
@@ -1074,9 +1194,12 @@ export {
   EXECUTION_AUDIT_ADAPTER,
   EXECUTION_AUDIT_GIT_TIMEOUT_MS,
   EXECUTION_AUDIT_OPERATION,
+  EXECUTION_AUDIT_OUT_OF_SCOPE_FACT_PREFIX,
   EXECUTION_AUDIT_PRESENTATION_CAP,
   EXECUTION_AUDIT_SENSOR_CAPABILITY,
   KEYBINDINGS_DIR_RELATIVE,
+  formatOutOfScopeFact,
+  parseOutOfScopeFact,
   runExecutionAudit,
 } from "./execution-audit.js";
 export type {
@@ -1085,6 +1208,16 @@ export type {
   ExecutionAuditPathView,
   ExecutionAuditResult,
 } from "./execution-audit.js";
+export {
+  TEST_WEAKENING_AUDIT_ADAPTER,
+  TEST_WEAKENING_AUDIT_GIT_TIMEOUT_MS,
+  TEST_WEAKENING_AUDIT_OPERATION,
+  TEST_WEAKENING_AUDIT_SENSOR_CAPABILITY,
+  TEST_WEAKENING_FILE_PATTERN,
+  TEST_WEAKENING_PRESENTATION_CAP,
+  runTestWeakeningAudit,
+} from "./test-weakening.js";
+export type { TestWeakeningAuditInput, TestWeakeningAuditResult } from "./test-weakening.js";
 
 /** 一次命令执行的人读/机读产出记录（runCli 据此决定退出码与输出）。 */
 export interface CommandRun<TResult = unknown> {
@@ -2507,6 +2640,67 @@ export function createProgram(
       });
     });
 
+  // —— Steering 事件命令面（W4-S3 · 09-10 PRD REQ-08/AC-07 + §6-5） ——
+  // 判卷/落盘权威在 kernel steering.ts 语义入口（唯一写通路 = recordSteering：
+  // state/steering-log.json append-only 台账 + journal STEERING_RECORDED 词形 SP 留痕
+  // ——零 TransactionOp/零 canonical kind，A6 缺口沿 journal 事件词形常量集扩展闭合）；
+  // search 纯读零建账；未命中显式「无记录」不虚构。
+  // 诚实红线（REQ-08 申报面/判定面分离）：constraint/affected_scope 是申报面
+  // （declared）——本命令组不判定约束被遵守（exec-guard/audit 职责）；受影响工作
+  // 重编译消费 = context compile [ADVISORY] 分区 [STEERING] 词形 + plan compile
+  // changeSurface unknown 呈现（均不进 gate 判卷输入）。
+  const steering = program
+    .command("steering")
+    .description(
+      "Steering 事件命令面（W4-S3；09-10 PRD REQ-08/AC-07）：record = 有来源约束登记（绑定 TASK.*，--constraint/--source-ref 必填 + --scope 可重复，数据住 state/steering-log.json append-only 台账 + journal STEERING_RECORDED 词形 SP 留痕——零 TransactionOp/零 canonical kind）；search = 词级精确检索（未命中显式「无记录」）；constraint/affected_scope 是申报面（declared——机器不验证遵守）；context compile 经 [ADVISORY] 分区 [STEERING] 词形可见、plan compile 经 changeSurface unknown 呈现——受影响工作下次编译带上约束（REQ-08 最小形态）",
+    );
+  steering
+    .command("record")
+    .description(
+      "登记一条 Steering 约束（每次调用 = 一次事件，非幂等覆盖——recordException 先例；kernel recordSteering 唯一写通路；--constraint/--source-ref 必填——REQ-08「有来源事件」：无来源的纠偏不构成事件；--scope 可重复申报受影响对象/能力词形，缺席 = 全 task 显式申报；affected_scope 不机器验证——declared 申报面）",
+    )
+    .argument("<task-id>", "目标任务（TASK.* canonical governed id，须在册 kind=task_object）")
+    .requiredOption("--constraint <text>", "约束文本（申报面载体必填——空约束 = 静默纠偏，禁）")
+    .requiredOption("--source-ref <ref>", "Owner 指示出处（会话/ledger/decide 引用——REQ-08「有来源」词形）")
+    .option("--scope <word>", "受影响对象/能力词形（可重复；缺席 = 全 task 显式申报；申报面不机器验证）", collectValues)
+    .option("--note <text>", "人类散文注记（机器不得解析其内容做判卷，P9）")
+    .requiredOption("--actor <actor>", "登记主体 <type>:<name>（C5 自报；通常为传达约束的 human 位）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (taskId: string, opts, command) => {
+      const outcome = await runSteeringRecord(resolveDir(command), {
+        taskRef: taskId,
+        constraint: opts.constraint as string | undefined,
+        sourceRef: opts.sourceRef as string | undefined,
+        scope: opts.scope as string[] | undefined,
+        note: opts.note as string | undefined,
+        actor: opts.actor as string,
+      });
+      record({
+        command: "steering record",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  steering
+    .command("search")
+    .description(
+      "检索任务内 Steering 约束（词级精确 token 交集——knowledgeQueryTokens 同源，禁子串/等价猜测；query 缺席 = 列全部登记；未命中显式「无记录」不虚构；纯读零建账）",
+    )
+    .argument("<task-id>", "目标任务（TASK.* canonical governed id）")
+    .argument("[query]", "检索词（缺席 = 列全部登记）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (taskId: string, query: string | undefined, opts, command) => {
+      const outcome = await runSteeringSearch(resolveDir(command), {
+        taskRef: taskId,
+        query,
+      });
+      record({
+        command: "steering search",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+
   // —— Verification Plan 命令面（W1-R1-3 · 09-10 PRD REQ-04/AC-03/AC-13） ——
   // 判卷权威在 kernel plan-compiler.ts（纯函数编译核——applicability 三值/unknown
   // 保留/缺工具≠N/A/A1 informational 零参与）；本模块只做事实生产（store 纯读、
@@ -3071,7 +3265,7 @@ export function createProgram(
   const view = program
     .command("view")
     .description(
-      "三投影 Human 侧（§44.7/§49.1）+ Batch 3 扩展：view blueprint = Narrative View（Stable Core 正文 + Uncertainty Envelope，正常状态标签默认隐藏 §91.3）；view task = Review View（§53 十二步审查顺序 + 纠错 §20 Outcome Review 附区，File Diff 降级证据层）；view attention = Human Attention Queue（§6.3/纠错 §19——五类既有对象数据源分组 + 处置路标，View not new database）；view decision = Decision Graph 呈现（§6A 推荐词形纪律——推荐非已决/Decision Owner: HUMAN/五件套/INFERENCE 披露）",
+      "三投影 Human 侧（§44.7/§49.1）+ Batch 3 扩展：view blueprint = Narrative View（Stable Core 正文 + Uncertainty Envelope，正常状态标签默认隐藏 §91.3）；view task = Review View（§53 十二步审查顺序 + 纠错 §20 Outcome Review 附区，File Diff 降级证据层）；view attention = Human Attention Queue（§6.3/纠错 §19——五类既有对象数据源分组 + 处置路标，View not new database）；view decision = Decision Graph 呈现（§6A 推荐词形纪律——推荐非已决/Decision Owner: HUMAN/五件套/INFERENCE 披露）；view review = Human Review Packet 终审包（§9 八分区——Expected/Actual/Oracle/Gate/ACCEPT 回执状态/Known Unknown/三分支路标/audit_rejections 越界拒绝扫描呈现（裁决 21，不阻断施断）；W3-S6 AC-16）",
     );
   view
     .command("blueprint")
@@ -3134,6 +3328,21 @@ export function createProgram(
         asJson: command.opts().json === true,
       });
     });
+  view
+    .command("review")
+    .description(
+      "Human Review Packet 终审包（§9；W3-S6 AC-16 + 裁决 21）：从既有 store 平面组装任务终审八分区——Expected（acceptance 判定）/ Actual（claims+verification）/ Oracle 摘要（requires/exclusions 资格面）/ Gate 记录（subject 绑定 GRN）/ ACCEPT 回执状态（复用 closeout 第五消费闸同一扫描实现）/ Known Unknown（negative-history+unknowns）/ 三分支路标（ACCEPT/REWORK/REJECT——机器面复用既有通路零新语义）/ audit_rejections（未处置越界拒绝扫描——全局扫描 execution-audit OBS 回执 out_of_scope 发现，逐条 pointer，零发现显式 clean；不因未跑 audit 或存在拒绝阻断施断，closeout 完成链零改动——裁决 21 方案 C）；显式缺席不冒充（无 ACCEPT=missing——机器绿 ≠ 已接受）；零综合分数（§21）；纯读零写入；W2 evidence/review-packet.md（人工组织版）的机器化投影",
+    )
+    .argument("<task>", "任务对象 governed id（legacy 词形走 alias 收编）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (task: string, _opts, command) => {
+      const outcome = await runViewReview(resolveDir(command), { task });
+      record({
+        command: "view review",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
 
   const audit = program
     .command("audit")
@@ -3164,6 +3373,81 @@ export function createProgram(
       const outcome = await runAuditTask(resolveDir(command), { task });
       record({
         command: "audit task",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+  // —— audit test-weakening（W3-S1 Final Audit 首腿；09-12 W3 R3-3 / 09-10 PRD
+  // AC-08 + REQ-09 / 源 PRD C §13-14 + §57-61 + Case D）。纯读 + sidecar 零权威写口
+  // （产物只落 evidence/{blobs,observations}/，字节快照测试钉）；fail-closed：未初始
+  // 化 / 身份词形非法或未登记 / 非 git 工作区 / store 根非 worktree 根 / 锚不可解析
+  // 全部零落盘显式报错；测试弱化在座 exit 1 不伪造绿（AC-08——技术全绿不能覆盖审计
+  // 失败）；不可机判（方向轴未声明/形态词表外/结构降级）诚实披露非违规。实现与判定
+  // 权威锚：./test-weakening.ts 头注 + kernel test-weakening.ts 判定核。
+  audit
+    .command("test-weakening")
+    .description(
+      "测试弱化审计（Final Audit 首腿）：git diff 起始锚（--diff-base 调用方申报，缺省 HEAD）收集基线 vs 工作树 *.spec/*.test 变更面（untracked 只披露不入分母）→ kernel 判定核五弱化词族逐条判定（断言删除/断言放宽/状态码方向放宽——http_status 方向轴声明制/skip 新增/断言计数下降；NOT_MACHINE_CHECKABLE 诚实披露词形）→ 审计报告 blob + OBS 回执落 17 sidecar（result=OBSERVED 带 blob ref）+ stdout 逐条明细（verdict + 双侧引用 + reason）；弱化在座 exit 1 不伪造绿（AC-08：403→200 型期望放宽 = TEST CONTRACT VIOLATION）；非 git 工作区/锚不可解析 fail-closed 零落盘",
+    )
+    .requiredOption(
+      "--execution-id <AGX-n>",
+      "执行身份锚（AGX-<年份>-<序号>；OBS 回执 execution_id 必填——S1 禁自造身份，须为 executions/ 已登记档案，已封口执行允许事后审计）",
+    )
+    .option(
+      "--diff-base <git-ref>",
+      "diff 起始锚（commit/branch/tag；缺省 HEAD——Approved Oracle 的 git 历史载体）",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runTestWeakeningAudit(resolveDir(command), {
+        executionId: opts.executionId as string,
+        ...(opts.diffBase !== undefined ? { diffBase: opts.diffBase as string } : {}),
+      });
+      record({
+        command: "audit test-weakening",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  // —— diagnose（W3-S3；09-12 W3 R3-4 / 源 PRD C §26 独立诊断入口 + §53-56 Diagnose
+  // 管线 + §91 Case H）。通用「Bug Report→证据关联→失败域→诊断计划建议」入口：
+  // 与 production diagnose（§95.2 产线分支）共用 kernel judgeFailureDomain 同一判
+  // 定核——BREACHED band evidence 前置只是产线分叉准入条件，不是判定核语义（单一
+  // 判定事实源）。纯读零写：诊断是判断不是变更——零 store 事务、零落盘面（字节快
+  // 照测试钉），不改对象状态、不自动修复（§53 行动经治理面显式通路）。fail-closed：
+  // 未初始化 NOT_INITIALIZED / 证据引用不存在 EVIDENCE_NOT_FOUND（GRN/OBS）或
+  // EXECUTION_NOT_FOUND（AGX 同款）/ 回执损坏 EVIDENCE_MALFORMED 全部零写显式报错。
+  // 词形纪律：六失败域/两置信基/信号映射全部来自 kernel diagnose.ts 词位（SP 提案
+  // 待追认），next_actions 复用 plan-compiler 能力词位——本命令零新增词形。实现与
+  // 判定权威锚：./diagnose.ts 头注 + kernel diagnose.ts 判定核。
+  program
+    .command("diagnose")
+    .description(
+      "通用 Diagnose 入口（§53-56 Diagnose 管线；Case H）：症状申报（位置 <report> 或 --symptom 二选一）+ 可选证据关联（--evidence GRN-*/OBS-*/AGX-* 逐条实读证据平面——引用不存在 fail-closed 零写）→ kernel 失败域判定核（failure_domain 六词闭包 + confidence_basis=evidence_chain|declaration_only——零百分比置信 §21 守护栏；申报与信号冲突呈报非改判；证据缺席 declaration_only 不虚构关联）→ 诊断计划建议（next_actions 复用 plan-compiler 能力词位，§54 安全/只读先行）；纯读零写不裁决不自动修复；与 production diagnose 共用同一判定核（BREACHED 前置只是产线准入）",
+    )
+    .argument("[report]", "症状申报文本（bug report 申报面；与 --symptom 二选一——双给/双缺 SCHEMA_INVALID）")
+    .option("--symptom <text>", "症状申报文本（与位置 <report> 同通道二选一）")
+    .option(
+      "--domain <word>",
+      "申报初始失败域（六词闭包：tool_environment | product_assertion | fixture_data | environment_instance | dependency_external | unknown_insufficient_evidence；缺省 = 零申报，域由在座信号确定性派生）",
+    )
+    .option(
+      "--evidence <ref>",
+      "证据引用（可重复；GRN-<n> | OBS-<n> | AGX-<年份>-<序号>——证据平面在库回执逐字对齐，引用不存在 EVIDENCE_NOT_FOUND/EXECUTION_NOT_FOUND fail-closed）",
+      collectValues,
+      [],
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (report: string | undefined, opts, command) => {
+      const outcome = await runDiagnose(resolveDir(command), {
+        report: report ?? null,
+        symptom: (opts.symptom as string | undefined) ?? null,
+        domain: (opts.domain as string | undefined) ?? null,
+        evidence: (opts.evidence as string[]) ?? [],
+      });
+      record({
+        command: "diagnose",
         outcome,
         asJson: command.opts().json === true,
       });
@@ -3245,7 +3529,7 @@ export function createProgram(
   session
     .command("attach")
     .description(
-      "注册/刷新会话（首注册 CREATED / 既有 REFRESHED / 顶替 REPLACED；resumed_task 回带既有任务指针——resume 白名单询问输入；首注册 journal SESSION_ATTACHED，刷新=心跳零事件）",
+      "注册/刷新会话（首注册 CREATED / 既有 REFRESHED / 顶替 REPLACED；resumed_task 回带既有任务指针——resume 白名单询问输入；首注册 journal SESSION_ATTACHED，刷新=心跳零事件）；--reconcile <permit> 恢复前对账（W4-S1 §6-2：⑥拍前置消费——clean 放行回显摘要，dirty/baseline 缺失阻断于一切副作用之前 exit 1，--reconcile-force 显式越权放行信封留痕）",
     )
     .requiredOption("--session-key <key>", "会话键（harness 前缀点分段词形，如 claude_9f3ab2c1 / 子代理 .sa1 后缀；hook 解析源 D 线 §1.2）")
     .requiredOption("--harness <id>", "harness 标识（claude-code / codex…；禁静默匿名）")
@@ -3253,6 +3537,14 @@ export function createProgram(
     .option("--ttl <seconds>", "会话 TTL（正整数秒；缺省 900——D 线例文逐字）")
     .option("--meta <key=value>", "平台元数据（可重复；hook session_id / cwd 等）", collectValues)
     .option("--force", "顶替授权（既有活会话且 harness 不同时必填——缺省拒绝无声顶替；stale 前任自动放行；顶替落 journal SESSION_REPLACED）")
+    .option(
+      "--reconcile <permit>",
+      "恢复前对账（W4-S1 §6-2 恢复先对账）：attach 落盘前按该 permit 基线跑 ⑥拍判卷（与 reconcile 命令同一份 judgeReconcile 分派）——clean 放行并回显摘要；dirty→RECONCILE_DIRTY / baseline 缺失→RECONCILE_BASELINE_MISSING 阻断（会话档案零落盘、journal 零事件）",
+    )
+    .option(
+      "--reconcile-force",
+      "对账越权授权（仅与 --reconcile 同用生效，孤旗 SCHEMA_INVALID）：阻断态显式越权放行，信封 result.reconcile.overridden=true 留痕；与顶替 --force 分轴不共用（两个授权各自显式）",
+    )
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (opts, command) => {
       const outcome = await runSessionAttach(resolveDir(command), {
@@ -3262,6 +3554,8 @@ export function createProgram(
         ttl: opts.ttl as string | undefined,
         meta: opts.meta as string[] | undefined,
         force: opts.force === true,
+        reconcile: opts.reconcile as string | undefined,
+        reconcileForce: opts.reconcileForce === true,
       });
       record({
         command: "session attach",
@@ -3561,6 +3855,118 @@ export function createProgram(
       const outcome = await runTraceList(resolveDir(command));
       record({
         command: "trace list",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+
+  // —— Checkpoint 恢复引用快照命令面（W4-S2 · 09-10 PRD §6-1「优先复用现有记录，
+  // 不按清单创建新库」+ 战役 W4 R4-1）——
+  // 判卷/落盘权威在 kernel checkpoint.ts（引用逐项存在性校验 fail-closed + store
+  // 同款幂等纪律）；本面只做 workspace 锚 git 只读采集、argv 收敛与呈现。零新
+  // canonical kind（分区档案面沿 trace seal 定位）；落盘 ⊆ state/checkpoints/ 单
+  // 分区；不自动创建（显式命令触发）。与 W4-S1 组合分层：checkpoint=引用快照
+  // （保存时点存在性），reconcile=新鲜度判定（恢复时点）——恢复先对账归
+  // session attach --reconcile，本命令面不重跑对账。词形 SP 提案待追认。
+  const checkpoint = program
+    .command("checkpoint")
+    .description(
+      "Checkpoint 恢复引用快照命令面（W4-S2）：save = 组装恢复所需引用集落盘（task 锚/--permit 对账判卷引用/--execution 在途清单/negative_history·unknowns 引用/封存 trace 引用/workspace git 锚——每项都是引用，逐项存在性校验）；show = 引用面纯读呈现（恢复所需引用面一键可见；恢复先对账归 session attach --reconcile——checkpoint=引用快照，reconcile=新鲜度判定）",
+    );
+  checkpoint
+    .command("save")
+    .description(
+      "保存恢复引用集快照（state/checkpoints/CKPT-*.json durable 进 Git；缺省分配 CKPT-n 现有最大序号+1）：引用逐项存在性校验（task 在册 OBJECT_NOT_FOUND / permit 台账 PERMIT_NOT_FOUND / execution 登记 EXECUTION_NOT_FOUND——fail-closed 零落盘）；workspace 锚 git 只读采集，非 git 工区 anchor absent 显式申报（锚定诚实——禁伪造锚）；保存时点快照非实时（新鲜度判定归恢复通路）；--ckpt 同号重放：同内容幂等零写入 / 异内容 CHECKPOINT_ALREADY_EXISTS 显式冲突；零 journal 事件零 canonical kind",
+    )
+    .argument("<task-id>", "任务锚（TASK.* canonical governed id，须在册 kind=task_object）")
+    .option("--permit <PERMIT.*>", "对账判卷引用（须在台账——恢复时 session attach --reconcile 消费；缺省 null 显式无锚）")
+    .option("--execution <AGX-n>", "执行身份（须已登记——在途产物计数 countExecutionInflightReceipts + 封存 trace 引用）")
+    .option("--ckpt <CKPT-n>", "显式指定 id（同号重放按引用集字节判定：一致→幂等零写入，异→显式冲突）")
+    .option("--note <text>", "保存注记（人类散文；单行）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (taskId: string, opts, command) => {
+      const outcome = await runCheckpointSave(resolveDir(command), {
+        taskRef: taskId,
+        ...(opts.permit !== undefined ? { permitRef: opts.permit as string } : {}),
+        ...(opts.execution !== undefined ? { executionId: opts.execution as string } : {}),
+        ...(opts.ckpt !== undefined ? { ckptId: opts.ckpt as string } : {}),
+        ...(opts.note !== undefined ? { note: opts.note as string } : {}),
+      });
+      record({
+        command: "checkpoint save",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+  checkpoint
+    .command("show")
+    .description(
+      "引用面纯读呈现（零写入字节快照钉）：checkpoint 记录逐项回显（task/permit/execution 在途分态/task_surface 计数/unknowns/trace/锚——保存时点快照）+ 恢复通路路标（session attach --task --reconcile 恢复先对账——W4-S1 闸）；缺席 CHECKPOINT_NOT_FOUND / 词形非法 SCHEMA_INVALID（SP 提案码位）",
+    )
+    .argument("<checkpoint-id>", "checkpoint id（CKPT-<序号>；checkpoint save 产出）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (checkpointId: string, _opts, command) => {
+      const outcome = await runCheckpointShow(resolveDir(command), checkpointId);
+      record({
+        command: "checkpoint show",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+
+  // —— Provider 能力映射命令面（W4-S4 · 战役 W4 R4-3 + 09-10 PRD REQ-11/R §5.2） ——
+  // 判卷/探测权威在 kernel provider-capabilities.ts（probeProviderCapabilities——
+  // 三值词形 native|absent|unknown 禁猜 + absent/unknown 逐维声明式降级语义）；
+  // 本面只做 --runtime 词形闸（EXECUTION_RUNTIME_VALUES 闭包）、探针注入缺省
+  // （无真实 Provider SDK——R P5 红线）与呈现。纯报告零 store 依赖（不建账不
+  // requireInitialized 零读写 .pomaster）；命令组词形 provider = SP 提案待追认。
+  const provider = program
+    .command("provider")
+    .description(
+      "Provider 能力映射命令面（W4-S4；REQ-11/R §5.2）：capabilities = 原生 async/steering/取消/工具发现四维支持度如实报告（三值词形 native|absent|unknown——探针结果驱动禁猜，零 Provider 型号断言）+ absent/unknown 逐维声明式降级语义（同步步骤+持久记录 / 下一派发边界应用约束 / 明确状态+隔离冲突结果 / 预编译较小工具集）；未接入真实 Provider 时全部 unknown 是诚实缺省",
+    );
+  provider
+    .command("capabilities")
+    .description(
+      "声明式能力报告（--runtime <名> 必填，EXECUTION_RUNTIME_VALUES 闭包：claude-code|codex|script）：维度×词形×降级语义矩阵（native=探针确证支持 / absent=探针确证不支持 / unknown=探针缺席或报错——禁猜）+ 注记（全部 unknown 诚实缺省 + 不把某 Provider API 叙述当跨 Provider 保证）；report_source 区分注入探针实测与声明式缺省——不冒充实测；纯报告零 store 依赖零写入；ok=报告成功产出（degraded 不是失败——如实报告正是交付物）",
+    )
+    .requiredOption(
+      "--runtime <name>",
+      "执行载体词形（EXECUTION_RUNTIME_VALUES 闭包：claude-code | codex | script；扩值走词汇表 PR）",
+    )
+    .option("--json", "machine-readable JSON output (§45)")
+    .action((opts, command) => {
+      const outcome = runProviderCapabilities({ runtime: opts.runtime as string });
+      record({
+        command: "provider capabilities",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+
+  // —— Task telemetry 派生评估命令面（W4-S5 · 战役 W4 R4-4 + 09-10 PRD REQ-11/§9） ——
+  // 判卷权威在 kernel task-telemetry.ts（gatherTaskTelemetryInput 装载 +
+  // deriveTaskTelemetry 判定——六指标只读聚合，每指标带分母与可计算性）；本面只做
+  // argv 收敛、在册/kind 校验（view review 同判词）与呈现。诚实红线：无综合评分 /
+  // 不持久化私有思维链 / 零阈值零阻断 / cost 面如实 NOT_MEASURABLE_YET；评估快照
+  // 零落盘（inputs_fingerprint 承载快照等价物）——write_surface:"none" 结构级钉；
+  // 命令组词形 telemetry = SP 提案待追认。
+  const telemetry = program
+    .command("telemetry")
+    .description(
+      "Task telemetry 派生评估命令面（W4-S5；REQ-11/§9）：task = 任务级 reasoning/cost/Horizon 六指标只读聚合（verified_transition_rate / rework_signal / steering_count / resume_reconcile_signals / horizon / cost_face——每指标带分母与可计算性 MEASURED|NOT_COMPUTABLE|NOT_MEASURABLE_YET）+ horizon 逐执行明细 + evidence census + 红线注记（无综合评分 / 不持久化思维链 / 零阈值零阻断 / cost 面未计量不虚构）；纯读零写零落盘",
+    );
+  telemetry
+    .command("task")
+    .description(
+      "任务级 telemetry 派生评估（<task-id> 必填，TASK.* 在册 task_object）：六指标（每指标带口径 basis 与可计算性——零分母 NOT_COMPUTABLE 显式、缺信号源 NOT_MEASURABLE_YET 不冒充数值）+ horizon 逐执行行（journal seq 跨度，open 执行 horizon_open 显式）+ transition_events + evidence_census + 四条红线注记；advisory 呈现面——不设强制阈值不阻断任何流程（预算不削弱证据/权限）；纯读零写零落盘（inputs_fingerprint = 快照等价物，同指纹同报告字节）",
+    )
+    .argument("<task-id>", "目标任务（TASK.* canonical governed id，须在册 kind=task_object）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (taskId: string, opts, command) => {
+      const outcome = await runTelemetryTask(resolveDir(command), { task: taskId });
+      record({
+        command: "telemetry task",
         outcome,
         asJson: command.optsWithGlobals().json === true,
       });

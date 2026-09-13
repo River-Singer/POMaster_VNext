@@ -55,6 +55,13 @@
  *                            随版计划 B3-3：lighthouse 实验室腿 ∥ web-vitals 字段腿，
  *                            performance-gate.json 配置面 + 双腿独立探测/执行/判卷，
  *                            二元组无聚合 verdict 位，互不牵连）；
+ * - tool-binding.ts —— ToolBinding 统一注册面执行半边（受信 adapter 注册表 /
+ *   validated 判定式 / 绑定式执行 / env 白名单 spawn——W1-R1-4）；
+ * - typecheck-lint-adapter.ts —— TYPECHECK / LINT 门禁 adapter（W3-S2：TS 族静态分析——
+ *                            tsc / vue-tsc 文本诊断逐条重算 + --listFiles 真实分母；
+ *                            ESLint JSON 逐 message 重算 + errorCount asserted 孪生；
+ *                            红线旗标守卫 run 期机械强制——禁 --fix / --skipLibCheck /
+ *                            缺 --noEmit；空根 tsconfig 假绿向量零分母 cap 封堵）；
  * - schemathesis-leg.ts   —— CONTRACT 的 schemathesis property-based 执行腿（P27 /
  *                            随版计划 B3-4 招牌件：三道闸真执行 + 官方退出码契约
  *                            （0/1/2）× NDJSON 事件流重算双锚 + 零生成用例零分母闸）；
@@ -92,6 +99,12 @@ import { createMutationAdapter } from "./mutation-adapter.js";
 import { MUTATION_GATE_NAME, MUTATION_GATE_DEF } from "./mutation-leg.js";
 import { SECURITY_GATE_NAME, SECURITY_GATE_DEF } from "./security-leg.js";
 import { PERFORMANCE_GATE_NAME, PERFORMANCE_GATE_DEF } from "./performance-leg.js";
+import {
+  LINT_GATE_DEF,
+  LINT_GATE_NAME,
+  TYPECHECK_GATE_DEF,
+  TYPECHECK_GATE_NAME,
+} from "./typecheck-lint-adapter.js";
 import { CATALOG_GATE_RECIPES } from "./gate-recipe-runner.js";
 import {
   createLighthouseAdapter,
@@ -166,8 +179,11 @@ export * from "./detectors.js";
 export * from "./normalize-common.js";
 export * from "./gate-recipe-runner.js";
 // W1-R1-4：ToolBinding 统一注册面执行半边（受信 adapter 注册表 / validated 判定式 /
-// 绑定式执行 / env 白名单 spawn——SP-W1-e/f/g/h 提案待追认）。
+// 绑定驱动执行 / env 白名单 spawn——SP-W1-e/f/g/h 提案待追认）。
 export * from "./tool-binding.js";
+// W3-S2：TS 族静态分析受信 adapter（tsc/vue-tsc 文本诊断 + ESLint JSON——TYPECHECK/LINT
+// gate 常量对、TYPECHECK/LINT adapter 工厂；词形 SP 提案待追认）。
+export * from "./typecheck-lint-adapter.js";
 
 /** BUILD 门禁 adapter 单例（vitest/pytest 双腿；也可经 createBuildAdapter() 自建）。 */
 export const buildAdapter: GateAdapter<
@@ -298,8 +314,9 @@ export const toolDetectors = {
 
 /**
  * 当前 gate_def 注册面（W1 R1-5 证据资格链的 §5-5 oracle/gate_def 版本比对要求面）：
- * gate 名 → 当前 gate_def——9 组 adapter 常量对（各 *_GATE_NAME/*_GATE_DEF 单一声明位
- * 直引，禁第二套抄写）+ catalog/gates recipe（gateDef 锚 = gate_def_draft.anchor）。
+ * gate 名 → 当前 gate_def——11 组 adapter 常量对（各 *_GATE_NAME/*_GATE_DEF 单一声明位
+ * 直引，禁第二套抄写；W3-S2 起 + TYPECHECK/LINT）+ catalog/gates recipe（gateDef 锚 =
+ * gate_def_draft.anchor）。
  * 消费：kernel evidence-qualification 判定核（gate 在册且证据 gate_def ≠ 当前值 →
  * ORACLE_SUPERSEDED；gate 不在册 = 轴诚实不适用——自定义 gate 不冒充被取代）。
  * 词形沿 browser-evidence.ts:13-14「判卷语义变更走 gate_def 版本化」先例；加法导出
@@ -317,5 +334,8 @@ export const CURRENT_GATE_DEFS: Readonly<Record<string, string>> = Object.freeze
   [MUTATION_GATE_NAME]: MUTATION_GATE_DEF,
   [SECURITY_GATE_NAME]: SECURITY_GATE_DEF,
   [PERFORMANCE_GATE_NAME]: PERFORMANCE_GATE_DEF,
+  // W3-S2：TS 族双 gate 入册（typecheck-lint-adapter.ts 常量对单一声明位直引）。
+  [TYPECHECK_GATE_NAME]: TYPECHECK_GATE_DEF,
+  [LINT_GATE_NAME]: LINT_GATE_DEF,
   ...Object.fromEntries(CATALOG_GATE_RECIPES.map((recipe) => [recipe.id, recipe.gateDef])),
 });

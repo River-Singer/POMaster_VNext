@@ -21,6 +21,12 @@
  *   exception ledger CONFLICT/HARD_BLOCKER），按 Attention 类型分组 + 每条目给
  *   下一步处置命令路标；空队列显式「无可注意力项」非空白假绿。零新 store 对象、
  *   零写路径（纯读投影）。
+ * - view review <task>：Human Review Packet 终审包（§9；W3-S6 AC-16 + 裁决 21
+ *   八分区化）。八分区结构化终审包（Expected/Actual/Oracle/Gate/ACCEPT 回执/
+ *   Known Unknown/三分支/audit_rejections）；第 8 分区 = 未处置越界拒绝扫描
+ *   （裁决 21 方案 C：全局扫描 execution-audit OBS 回执 out_of_scope 发现，逐条
+ *   pointer，零发现显式 clean；不因未跑 audit 或存在拒绝阻断施断——closeout
+ *   完成链零改动）。
  * - view decision <discovery-id>：Decision Graph 呈现（§6A Recommendation UX 词形
  *   纪律；Batch 3 R3）。读 scratchpad decision-graph sidecar（schema 18）逐 Decision
  *   呈现——推荐以推荐身份标注不渲染成已决、Decision Owner: HUMAN 显式标注、
@@ -46,24 +52,35 @@ import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
 import {
   GovernanceError,
+  buildStorePaths,
   listChallenges,
   listSelfImprovementCandidates,
   readInboxEntries,
+  readTaskNegativeHistory,
   type ChallengeRecord,
+  type GovernedId,
   type InboxEntry,
   type SelfImprovementCandidateRecord,
 } from "@pomaster/kernel";
 import { governanceErrorToCliError } from "./permit.js";
+import { ACCEPT_RECEIPT_SCAN_STATUSES, scanAcceptReceiptStatus } from "./closeout.js";
 import {
   DECISION_PRESENTATION_FORBIDDEN_WORDFORMS,
   renderDecisionGraphPresentation,
   type DecisionPresentationCard,
 } from "./decision-presentation.js";
 import {
+  EXECUTION_AUDIT_OPERATION,
+  EXECUTION_AUDIT_OUT_OF_SCOPE_FACT_PREFIX,
+  parseOutOfScopeFact,
+} from "./execution-audit.js";
+import {
   DISCOVERY_ID_PATTERN,
   DISCOVERY_SCRATCHPADS_RELATIVE,
+  POMASTER_DIR,
   discoveryScratchpadDirPath,
   discoveryScratchpadsDirPath,
+  observationsDirPath,
   toPosix,
 } from "./store-layout.js";
 import {
@@ -1284,4 +1301,686 @@ export async function runViewDecision(
     markdown: lines.join("\n"),
   };
   return okOutcome(command, result, result.markdown.split("\n"), []);
+}
+
+// ============================================================
+// view review <task> —— Human Review Packet（§9 终审包；W3-S6 AC-16）
+// ============================================================
+
+/**
+ * 三分支词闭包（词形 SP 提案待追认）：Human 判读 packet 后的走向。operation/route
+ * 逐字复用 OUTCOME_REVIEW_OPERATIONS 词位（纠错 §20 三操作——零新通路零新语义）；
+ * REWORK/REJECT 共用「不符合」操作行，以 machine_face（机器面语义事实陈述）区分。
+ */
+export const REVIEW_BRANCH_NAMES = ["ACCEPT", "REWORK", "REJECT"] as const;
+
+export type ReviewBranchName = (typeof REVIEW_BRANCH_NAMES)[number];
+
+export interface ReviewBranchRow {
+  readonly branch: ReviewBranchName;
+  /** 人读操作词（纠错 §20 三操作词位逐字）。 */
+  readonly operation: string;
+  /** 命令路标（OUTCOME_REVIEW_OPERATIONS route 逐字透传）。 */
+  readonly route: string;
+  /** 机器面语义（既有通路的事实陈述——ACCEPT=closeout 回执闸；REJECT=REQ-10 非回执）。 */
+  readonly machine_face: string;
+}
+
+/** Expected 分区 acceptance 行（claim 映射 + verdict + 满足判定；缺席显式 null）。 */
+export interface ViewReviewExpectedRow {
+  readonly index: number;
+  readonly criterion: string;
+  readonly claim: string | null;
+  readonly claim_verdict: string | null;
+  /** claim VERIFIED → true；映射未达 VERIFIED → false；未映射 → null（不冒充）。 */
+  readonly satisfied: boolean | null;
+}
+
+/** Actual 分区 claim 行（证据平面投影同形）。 */
+export interface ViewReviewActualRow {
+  readonly clm: string;
+  readonly subject_id: string;
+  readonly verdict: string | null;
+  readonly assertion: string | null;
+}
+
+/** Oracle 分区条目（acceptance 资格面逐条透传——requires/exclusions 不改写）。 */
+export interface ViewReviewOracleEntry {
+  readonly index: number;
+  readonly criterion: string;
+  readonly requires: readonly string[];
+  readonly exclusions: readonly { readonly capability: string; readonly basis: string }[];
+  readonly claim: string | null;
+  readonly claim_verdict: string | null;
+}
+
+/** Gate 分区行（subject 绑定 GRN 运行）。 */
+export interface ViewReviewGateRunRow {
+  readonly grn: string;
+  readonly gate: string | null;
+  readonly verdict: string | null;
+  readonly subject_id: string;
+}
+
+/** ACCEPT 回执分区（present 之外显式缺席——不冒充已接受；词形 ACCEPT_RECEIPT_SCAN_STATUSES）。 */
+export interface ViewReviewAcceptReceipt {
+  readonly status: (typeof ACCEPT_RECEIPT_SCAN_STATUSES)[number];
+  /** 仅 present 在座。 */
+  readonly decision_id?: string;
+  readonly graph?: string;
+  /** 非 present 时的 closeout 闸同码位诊断（status 词 + 码位如实呈现）。 */
+  readonly detail?: string | null;
+}
+
+/** Known Unknown 分区 negative-history 行（kernel TaskNegativeEntry + 位次）。 */
+export interface ViewReviewNegativeHistoryRow {
+  readonly entry_index: number;
+  readonly approach: string;
+  readonly reason: string;
+  readonly evidence_ref: string | null;
+  readonly status: string;
+  readonly recorded_at_seq: number;
+}
+
+export interface ViewReviewResult {
+  readonly view: "review-packet";
+  readonly task: string;
+  /** 纯读零写声明（§91.1 投影纪律——字节快照测试钉）。 */
+  readonly write_surface: "none";
+  /** 1. Expected——任务验收面（payload intent/expected_outcome/acceptance 判定）。 */
+  readonly expected: {
+    readonly intent: string | null;
+    readonly expected_outcome: string | null;
+    readonly acceptance: readonly ViewReviewExpectedRow[];
+  };
+  /** 2. Actual——claims + verification（subject 绑定分母 + 计数）。 */
+  readonly actual: {
+    readonly claims: readonly ViewReviewActualRow[];
+    readonly claims_total: number;
+    readonly verified: number;
+    readonly unverified: number;
+  };
+  /** 3. Oracle 摘要——acceptance 资格面逐条透传。 */
+  readonly oracle: {
+    readonly entries: readonly ViewReviewOracleEntry[];
+  };
+  /** 4. Gate 记录——subject 绑定 GRN 运行 + 计数。 */
+  readonly gate_records: {
+    readonly runs: readonly ViewReviewGateRunRow[];
+    readonly bound_runs: number;
+    readonly passed: number;
+  };
+  /** 5. ACCEPT 回执状态（复用 closeout 第五消费闸单一扫描实现——零新判卷）。 */
+  readonly accept_receipt: ViewReviewAcceptReceipt;
+  /** 6. Known Unknown——negative-history + 未达 VERIFIED claims + 锚定 OPEN_QUESTION。 */
+  readonly known_unknown: {
+    readonly negative_history: readonly ViewReviewNegativeHistoryRow[];
+    readonly unverified_claims: readonly string[];
+    readonly open_questions: readonly string[];
+  };
+  /** 7. 三分支路标（Human 判读后走向；词形 SP 提案待追认）。 */
+  readonly branches: readonly ReviewBranchRow[];
+  /**
+   * 8. 未处置越界拒绝——execution-audit OBS 回执全局扫描（裁决 21：呈现强化非
+   * 阻断；closeout 完成链不消费本扫描——方案 C；词形 SP 提案待追认）。
+   */
+  readonly audit_rejections: ViewReviewAuditRejections;
+  /** 人读 markdown（§45 双输出；八分区与机读同构）。 */
+  readonly markdown: string;
+}
+
+/** 三分支组装（operation/route 逐字复用 OUTCOME_REVIEW_OPERATIONS 词位）。 */
+function reviewBranches(): ReviewBranchRow[] {
+  const [acceptOp, rejectOp] = OUTCOME_REVIEW_OPERATIONS;
+  if (acceptOp === undefined || rejectOp === undefined) {
+    throw new Error("OUTCOME_REVIEW_OPERATIONS 词位缺损（三操作常量被破坏——装载期自检）");
+  }
+  return [
+    {
+      branch: "ACCEPT",
+      operation: acceptOp.operation,
+      route: acceptOp.route,
+      machine_face:
+        "closeout 第五消费闸（ACCEPT 回执闸）在座有效回执才放行（CLOSEOUT_ACCEPT_MISSING/STALE/DAMAGED 码位）——机器验证全绿 ≠ 成果已接受（W1 R1-1 / C-4）",
+    },
+    {
+      branch: "REWORK",
+      operation: rejectOp.operation,
+      route: rejectOp.route,
+      machine_face:
+        "差异显式登记（ledger CONFLICT）+ maintain 面立 CHANGE 重走（Permit 链）；本 packet 只是呈现面——不构成回执、不改判卷",
+    },
+    {
+      branch: "REJECT",
+      operation: rejectOp.operation,
+      route: rejectOp.route,
+      machine_face:
+        "非 ACCEPT 决议不构成成果回执（REQ-10）——closeout 回执闸天然阻断（CLOSEOUT_ACCEPT_MISSING）；生产面质疑走 pomaster production challenge（§95.3）",
+    },
+  ];
+}
+
+// ============================================================
+// view review 第 8 分区素材：未处置越界拒绝扫描（裁决 21——呈现强化非阻断）
+// ============================================================
+
+/**
+ * 扫描呈现两态词闭包（词形 SP 提案待追认）：clean = 零发现（显式词形非静默缺席，
+ * 且注记区分「未跑 audit」与「审过且干净」）；findings = 存在越界拒绝。
+ */
+export const AUDIT_REJECTION_SCAN_STATUSES = ["clean", "findings"] as const;
+
+export type AuditRejectionScanStatus = (typeof AUDIT_REJECTION_SCAN_STATUSES)[number];
+
+/** 单条未处置越界拒绝 pointer（存在越界的 execution-audit OBS 回执 → 一条）。 */
+export interface ViewReviewAuditRejectionRow {
+  readonly observation_id: string;
+  readonly execution_id: string;
+  /**
+   * finding 摘要 = 回执 normalized_facts 的 out_of_scope 计数（EXECUTION_AUDIT_
+   * OUT_OF_SCOPE_FACT_PREFIX 单一词形源解析；路径级明细在各回执的 report blob——
+   * 回执不携 blob 自由区，本分区如实呈现计数粒度并指路 receipt）。
+   */
+  readonly out_of_scope_count: number;
+  readonly captured_at_seq: number;
+  /** 回执落盘位（项目根相对 posix——复检指路）。 */
+  readonly receipt_path: string;
+}
+
+export interface ViewReviewAuditRejections {
+  readonly status: AuditRejectionScanStatus;
+  /**
+   * 扫描分母：operation=audit_mutation_scope 的 OBS 回执总数（含零拒绝回执——
+   * 「审过且干净」≠「未审」，分母诚实呈现两者）。
+   */
+  readonly audit_receipts_scanned: number;
+  readonly receipts_with_rejections: number;
+  readonly rejections: readonly ViewReviewAuditRejectionRow[];
+  /**
+   * 处置通路（裁决 21：修复后重审 / pomaster ledger record——呈现层指路，机器面
+   * 全为既有通路零新语义；不阻断非新行为——closeout 完成链本就不消费 audit 回执）。
+   */
+  readonly disposition: readonly string[];
+}
+
+export const AUDIT_REJECTION_DISPOSITIONS: readonly string[] = [
+  "修复后重审：消除越界变更（或将目标对象回 FRAMEWORK LOCK 重审纳入 permit scope——D20，禁旁路扩权）后重跑 pomaster execution audit --execution-id <AGX-id> --diff-base <执行起始锚>（Detection 复核归零）",
+  "差异显式登记：pomaster ledger record --classification CONFLICT --statement <越界陈述> --actor <type>:<name>（处置归 Owner——本分区呈现不阻断：裁决 21 方案 C）",
+];
+
+function emptyAuditRejections(): ViewReviewAuditRejections {
+  return {
+    status: "clean",
+    audit_receipts_scanned: 0,
+    receipts_with_rejections: 0,
+    rejections: [],
+    disposition: AUDIT_REJECTION_DISPOSITIONS,
+  };
+}
+
+function auditReceiptMalformed(receiptPath: string, detail: string): CliError {
+  return {
+    code: "EVIDENCE_MALFORMED",
+    message: `execution-audit OBS 回执损坏/形态非法：${toPosix(receiptPath)}——${detail}`,
+    hint: "回执由 execution audit 通路落账（17-perception-receipts 词形，persistObservationRecord 唯一写手）；修复或重放后重跑 view review——扫描不静默跳过损坏回执（禁把损坏呈现成 clean）。",
+  };
+}
+
+/**
+ * scanAuditRejectionReceipts（纯读零写——diagnose.ts 纪律）：全局扫描
+ * .pomaster/evidence/observations/ 下 execution-audit 产生的 OBS 回执
+ * （record_type=observation_receipt 且 operation=EXECUTION_AUDIT_OPERATION——
+ * 词形单一镜像非手抄），逐回执从 normalized_facts 解析 out_of_scope 计数行
+ * （formatOutOfScopeFact/parseOutOfScopeFact 单一词形源——产出与解析共用）。
+ *
+ * 词形识别（本扫描的 OBS 回执承载字段，全部既有形态非自造）：
+ * - 分母词形 = 文件名 OBS-<n>.json（allocateObservationId 编号闭包镜像）+
+ *   record_type=observation_receipt（observationRecordOf 顶层判别键）+
+ *   operation=audit_mutation_scope（execution-audit 头注词形纪律常量）；
+ * - finding 摘要 = normalized_facts 中 `out_of_scope: <n>` 计数行（execution-audit
+ *   回执组装无条件携带；路径级明细在 report blob，回执只有计数粒度）；
+ * - 非 OBS 词形文件（ENVREC-*.json 等）与其他 operation 的 OBS 回执（recon family）
+ *   不属本分母，跳过不施断。
+ *
+ * fail-closed（禁把素材面损坏静默呈现成 clean——scanConflictReviewItems 同伦理；
+ * diagnose 对 OBS 回执的 EVIDENCE_MALFORMED 同码位先例）：JSON 解析失败 / 非对象 /
+ * record_type 缺失 / observation_id 与文件名不一致 / execution_id 或 captured_at_seq
+ * 缺席 / normalized_facts 非数组或含非字符串项 / audit 词形回执缺 out_of_scope 计数行
+ * → EVIDENCE_MALFORMED（损坏面可能藏着未处置越界拒绝）。目录缺席 = 零回执合法空
+ * 平面（allocateObservationId catch 同语义），clean 非错误。
+ *
+ * 裁决 21 边界：本扫描只呈现（view review 不施断——存在拒绝或未跑 audit 均不阻断）；
+ * closeout 完成链不消费本扫描结果（方案 C——执行前现状维持，closeout.ts 零改动）。
+ */
+function scanAuditRejectionReceipts(
+  rootDir: string,
+): { readonly scan: ViewReviewAuditRejections } | { readonly error: CliError } {
+  let names: string[];
+  try {
+    names = readdirSync(observationsDirPath(rootDir)).sort();
+  } catch {
+    return { scan: emptyAuditRejections() };
+  }
+  const rejections: ViewReviewAuditRejectionRow[] = [];
+  let scanned = 0;
+  for (const name of names) {
+    if (!/^OBS-[0-9]+\.json$/.test(name)) continue;
+    const receiptPath = `${POMASTER_DIR}/evidence/observations/${name}`;
+    let doc: unknown;
+    try {
+      doc = JSON.parse(readFileSync(join(observationsDirPath(rootDir), name), "utf8"));
+    } catch (err) {
+      return {
+        error: auditReceiptMalformed(
+          receiptPath,
+          `JSON 无法解析：${err instanceof Error ? err.message : String(err)}`,
+        ),
+      };
+    }
+    if (doc === null || typeof doc !== "object" || Array.isArray(doc)) {
+      return { error: auditReceiptMalformed(receiptPath, "感知回执不是 JSON 对象") };
+    }
+    const record = doc as Record<string, unknown>;
+    if (record["record_type"] !== "observation_receipt") {
+      return {
+        error: auditReceiptMalformed(
+          receiptPath,
+          "OBS 词形文件的 record_type 非 observation_receipt（17 schema root oneOf 判别键）",
+        ),
+      };
+    }
+    const observationId = name.slice(0, -".json".length);
+    if (record["observation_id"] !== observationId) {
+      return {
+        error: auditReceiptMalformed(
+          receiptPath,
+          "observation_id 与文件名不一致（回执身份逐字对账——diagnose 实读同款）",
+        ),
+      };
+    }
+    if (record["operation"] !== EXECUTION_AUDIT_OPERATION) continue;
+    scanned += 1;
+    const executionId = record["execution_id"];
+    const capturedAtSeq = record["captured_at_seq"];
+    const facts = record["normalized_facts"];
+    if (typeof executionId !== "string" || executionId.length === 0) {
+      return {
+        error: auditReceiptMalformed(receiptPath, "execution_id 缺席（OBS 回执 §6.13 证明义务）"),
+      };
+    }
+    if (typeof capturedAtSeq !== "number" || !Number.isInteger(capturedAtSeq) || capturedAtSeq < 0) {
+      return {
+        error: auditReceiptMalformed(receiptPath, "captured_at_seq 缺席或非负整数（A4 单调 seq 时间锚）"),
+      };
+    }
+    if (!Array.isArray(facts)) {
+      return { error: auditReceiptMalformed(receiptPath, "normalized_facts 非数组（17 schema 词形）") };
+    }
+    let outOfScopeCount: number | null = null;
+    for (const fact of facts) {
+      if (typeof fact !== "string") {
+        return { error: auditReceiptMalformed(receiptPath, "normalized_facts 含非字符串项") };
+      }
+      const parsed = parseOutOfScopeFact(fact);
+      if (parsed !== null) {
+        outOfScopeCount = parsed;
+        break;
+      }
+    }
+    if (outOfScopeCount === null) {
+      return {
+        error: auditReceiptMalformed(
+          receiptPath,
+          `audit 词形回执缺 ${EXECUTION_AUDIT_OUT_OF_SCOPE_FACT_PREFIX} <n> 计数行（execution-audit 回执组装无条件携带——缺失即手改/异源产物）`,
+        ),
+      };
+    }
+    if (outOfScopeCount > 0) {
+      rejections.push({
+        observation_id: observationId,
+        execution_id: executionId,
+        out_of_scope_count: outOfScopeCount,
+        captured_at_seq: capturedAtSeq,
+        receipt_path: receiptPath,
+      });
+    }
+  }
+  return {
+    scan: {
+      status: rejections.length > 0 ? "findings" : "clean",
+      audit_receipts_scanned: scanned,
+      receipts_with_rejections: rejections.length,
+      rejections,
+      disposition: AUDIT_REJECTION_DISPOSITIONS,
+    },
+  };
+}
+
+/**
+ * view review <task>（§9 Human Review Packet 终审包；W3-S6 AC-16）：从既有 store
+ * 平面组装结构化终审包——Expected（task acceptance）/ Actual（claims+verification）/
+ * Oracle 摘要（requires/exclusions 资格面）/ Gate 记录（subject 绑定 GRN）/
+ * accept_receipt 状态 / known unknown（negative-history + unknowns）/ 三分支路标 /
+ * audit_rejections（未处置越界拒绝扫描——裁决 21 八分区化）。
+ *
+ * - 与 W2 evidence/review-packet.md 的关系：人工组织版 → 本命令是其机器化投影
+ *   （八分区同构——头注在 markdown 声明，不自造第二事实面）；
+ * - 纯读零写入（§91.1）：accept_receipt 复用 closeout scanAcceptReceiptStatus 薄包装
+ *   （acceptReceiptGate 单一扫描实现零行为变更）；negative-history 走 kernel
+ *   readTaskNegativeHistory 同一装载面；字节快照测试钉；
+ * - 显式缺席不冒充：无 ACCEPT → status=missing（机器绿 ≠ 已接受，W1 R1-1/C-4）；
+ *   未映射 acceptance → satisfied=null；判据全为词形判定与计数，零综合分数（§21）；
+ * - 裁决 21（closeout 不消费 audit 越界拒绝——呈现强化路线，Owner 三选一直答方案 C）：
+ *   第 8 分区全局扫描 execution-audit OBS 回执的 out_of_scope 发现（scanAuditRejection
+ *   Receipts 纯读，diagnose.ts 纪律），逐条列 pointer，零发现显式 clean；**不因未跑
+ *   audit 或存在拒绝阻断施断**——closeout 完成链零改动（AC-08 防越界主防线 =
+ *   exec-guard 写前 Prevention + execution-audit 事后 Detection exit 1，均在座）；
+ * - fail-closed：NOT_INITIALIZED / OBJECT_NOT_FOUND / 非 task_object → SCHEMA_INVALID，
+ *   audit 回执损坏 → EVIDENCE_MALFORMED，全程零写。
+ */
+export async function runViewReview(
+  rootDir: string,
+  input: { readonly task: string },
+): Promise<CommandOutcome<ViewReviewResult>> {
+  const command = "view review";
+  const emptyResult: ViewReviewResult = {
+    view: "review-packet",
+    task: input.task,
+    write_surface: "none",
+    expected: { intent: null, expected_outcome: null, acceptance: [] },
+    actual: { claims: [], claims_total: 0, verified: 0, unverified: 0 },
+    oracle: { entries: [] },
+    gate_records: { runs: [], bound_runs: 0, passed: 0 },
+    accept_receipt: { status: "missing" },
+    known_unknown: { negative_history: [], unverified_claims: [], open_questions: [] },
+    branches: [],
+    audit_rejections: emptyAuditRejections(),
+    markdown: "",
+  };
+
+  const raw = await readRawIndexOrFail(rootDir);
+  if ("error" in raw) return failView(command, raw.error, emptyResult);
+  const index = raw.index;
+
+  const resolved = resolveRowTargetId(input.task);
+  if ("error" in resolved) return failView(command, resolved.error, emptyResult);
+  const taskRow = findIndexRow(index, resolved.target);
+  if (taskRow === null) {
+    return failView(
+      command,
+      {
+        code: "OBJECT_NOT_FOUND",
+        message: `任务不在 truth-index：${resolved.target}${resolved.viaAlias === null ? "" : `（由 ${resolved.viaAlias} 收编解析）`}`,
+        hint: "pomaster status --json 查看对象清单；review packet 只服务 task_object 分母。",
+      },
+      emptyResult,
+    );
+  }
+  if (asString(taskRow.kind) !== "task_object") {
+    return failView(
+      command,
+      {
+        code: "SCHEMA_INVALID",
+        message: `review packet 分母是 task_object：${resolved.target} 的 kind=${asString(taskRow.kind) ?? "?"}`,
+        hint: "view review 只服务 task_object；其余对象检视走 pomaster inspect <governed-id>。",
+      },
+      emptyResult,
+    );
+  }
+
+  const taskBodyResult = await readBodyEnvelope(rootDir, taskRow);
+  if ("error" in taskBodyResult) return failView(command, taskBodyResult.error, emptyResult);
+  const taskPayload = isRecord(taskBodyResult.body.payload) ? taskBodyResult.body.payload : {};
+
+  // —— 证据平面（subject 绑定分母 = 本任务；畸形证据 warning 显式透传不吞没） ——
+  const warnings: CliWarning[] = [];
+  const evidence = await readEvidencePlane(rootDir, warnings);
+  const claims = evidence.claims
+    .filter((claim) => claim.subject_id === resolved.target)
+    .sort((a, b) => (a.clm < b.clm ? -1 : 1));
+  const runs = evidence.runs
+    .filter((run) => run.subject_id === resolved.target)
+    .sort((a, b) => (a.grn < b.grn ? -1 : 1));
+  const claimVerdictById = new Map(claims.map((claim) => [claim.clm, claim.verdict]));
+
+  // —— 1. Expected + 3. Oracle 摘要（acceptance 逐条；缺席显式——不冒充满足） ——
+  const acceptanceRaw = Array.isArray(taskPayload.acceptance) ? taskPayload.acceptance : [];
+  const expectedRows: ViewReviewExpectedRow[] = [];
+  const oracleEntries: ViewReviewOracleEntry[] = [];
+  for (const entry of acceptanceRaw) {
+    if (!isRecord(entry)) continue;
+    const criterion = asString(entry.criterion);
+    if (criterion === null) continue;
+    const claim = asString(entry.claim);
+    const claimVerdict = claim === null ? null : (claimVerdictById.get(claim) ?? null);
+    expectedRows.push({
+      index: expectedRows.length,
+      criterion,
+      claim,
+      claim_verdict: claimVerdict,
+      satisfied: claimVerdict === "VERIFIED" ? true : claim === null ? null : false,
+    });
+    oracleEntries.push({
+      index: oracleEntries.length,
+      criterion,
+      requires: (Array.isArray(entry.requires) ? entry.requires : []).filter(
+        (word): word is string => typeof word === "string",
+      ),
+      exclusions: (Array.isArray(entry.exclusions) ? entry.exclusions : [])
+        .filter(isRecord)
+        .map((row) => ({ capability: asString(row.capability) ?? "?", basis: asString(row.basis) ?? "?" })),
+      claim,
+      claim_verdict: claimVerdict,
+    });
+  }
+
+  // —— 5. ACCEPT 回执状态（closeout 第五消费闸单一扫描实现；纯读薄包装） ——
+  const implementsChange = asString(taskPayload.implements_change);
+  const receiptScan = await scanAcceptReceiptStatus(
+    rootDir,
+    resolved.target as GovernedId, // resolveRowTargetId 已过 A5 文法闸（parseGovernedId）
+    implementsChange,
+    asString(taskRow.body_sha256),
+  );
+  const acceptReceipt: ViewReviewAcceptReceipt =
+    receiptScan.status === "present" && receiptScan.receipt !== null
+      ? {
+          status: "present",
+          decision_id: receiptScan.receipt.decision_id,
+          graph: receiptScan.receipt.graph,
+        }
+      : {
+          status: receiptScan.status,
+          detail: receiptScan.error === null ? null : `${receiptScan.error.code}: ${receiptScan.error.message}`,
+        };
+
+  // —— 6. Known Unknown（kernel readTaskNegativeHistory 同一装载面；纯读） ——
+  let negativeHistory: ViewReviewNegativeHistoryRow[] = [];
+  let negativeHistoryError: CliError | null = null;
+  try {
+    negativeHistory = readTaskNegativeHistory(buildStorePaths(rootDir), resolved.target).map(
+      (entry, entryIndex) => ({
+        entry_index: entryIndex,
+        approach: entry.approach,
+        reason: entry.reason,
+        evidence_ref: entry.evidence_ref,
+        status: entry.status,
+        recorded_at_seq: entry.recorded_at_seq,
+      }),
+    );
+  } catch (err) {
+    if (!(err instanceof GovernanceError)) throw err;
+    negativeHistoryError = governanceErrorToCliError(err);
+  }
+  if (negativeHistoryError !== null) return failView(command, negativeHistoryError, emptyResult);
+
+  const unverifiedClaims = claims
+    .filter((claim) => claim.verdict !== "VERIFIED")
+    .map((claim) => claim.clm);
+
+  const ledger = await readLedgerEntries(rootDir);
+  if ("error" in ledger) return failView(command, ledger.error, emptyResult);
+  const openQuestions = ledger.entries
+    .filter((entry) => asString(entry.classification) === "OPEN_QUESTION" && asString(entry.object_ref) === resolved.target)
+    .map((entry) => asString(entry.statement) ?? "(missing statement)");
+
+  // —— 8. 未处置越界拒绝（裁决 21：execution-audit OBS 回执全局扫描——呈现强化，
+  // 不阻断施断；closeout 完成链不消费本扫描结果） ——
+  const auditScan = scanAuditRejectionReceipts(rootDir);
+  if ("error" in auditScan) return failView(command, auditScan.error, emptyResult);
+  const auditRejections = auditScan.scan;
+
+  // —— 渲染（八分区；# 标题 + > 出处锚引言块 + ## 分区风格同族） ——
+  const lines: string[] = [];
+  lines.push(`# Human Review Packet — ${resolved.target}（§9 终审包 / AC-16）`);
+  lines.push(
+    `> 一个 State 多种 View（§91.1）；纯读零写入（write_surface=none，测试锚字节不变）；数据源全为既有 store 平面，不自造第二事实面。`,
+  );
+  lines.push(
+    `> 与 W2 evidence/review-packet.md 的关系：该文档是人工组织版，本命令是其机器化投影（八分区同构）——两者同源，禁止各自维护事实。`,
+  );
+  lines.push(
+    `> 判据纪律：全部为词形判定与计数，零综合分数零百分比置信（§21 守护栏）；机器绿 ≠ 已接受（W1 R1-1 / C-4）。`,
+  );
+  lines.push("");
+  lines.push(`## 1. Expected（任务验收面——payload intent/expected_outcome/acceptance）`);
+  lines.push("");
+  lines.push(`- intent: ${asString(taskPayload.intent) ?? "（无——payload 未申报 intent）"}`);
+  lines.push(`- expected_outcome: ${asString(taskPayload.expected_outcome) ?? "（无——payload 未申报）"}`);
+  lines.push("- acceptance 判定:");
+  if (expectedRows.length === 0) {
+    lines.push(`  ${NO_DATA_MARK}`);
+  } else {
+    for (const row of expectedRows) {
+      lines.push(
+        row.claim === null
+          ? `  - [${row.index}] ${row.criterion}——claim 未映射（§47 DoD 缺口，收口前须补证）`
+          : `  - [${row.index}] ${row.criterion}——claim=${row.claim} verdict=${row.claim_verdict ?? "缺席"} → ${row.satisfied === true ? "满足" : "未满足"}`,
+      );
+    }
+  }
+  lines.push("");
+  lines.push(`## 2. Actual（claims + verification——subject 绑定分母）`);
+  lines.push("");
+  if (claims.length === 0) {
+    lines.push(`  ${NO_DATA_MARK}`);
+  } else {
+    for (const claim of claims) {
+      lines.push(`  - \`${claim.clm}\` — verdict=${claim.verdict ?? "UNVERIFIED 判定缺席"} assertion=${claim.assertion ?? "(missing)"}`);
+    }
+  }
+  lines.push(`  - 分母: claims=${claims.length} verified=${claims.filter((claim) => claim.verdict === "VERIFIED").length} unverified=${unverifiedClaims.length}`);
+  lines.push("");
+  lines.push(`## 3. Oracle 摘要（acceptance 资格面逐条透传——requires/exclusions 不改写）`);
+  lines.push("");
+  if (oracleEntries.length === 0) {
+    lines.push(`  ${NO_DATA_MARK}`);
+  } else {
+    for (const entry of oracleEntries) {
+      lines.push(
+        `  - [${entry.index}] ${entry.criterion} requires=[${entry.requires.join(", ")}] exclusions=[${entry.exclusions.map((row) => `${row.capability}（${row.basis}）`).join("; ")}] claim=${entry.claim ?? "null"} verdict=${entry.claim_verdict ?? "缺席"}`,
+      );
+    }
+  }
+  lines.push("");
+  lines.push(`## 4. Gate 记录（subject 绑定 GRN 运行）`);
+  lines.push("");
+  if (runs.length === 0) {
+    lines.push(`  ${NO_DATA_MARK}`);
+  } else {
+    for (const run of runs) {
+      lines.push(`  - \`${run.grn}\` — gate=${run.gate ?? "?"} verdict=${run.verdict ?? "?"}`);
+    }
+  }
+  lines.push(`  - 分母: bound_runs=${runs.length} passed=${runs.filter((run) => run.verdict === "passed").length}`);
+  lines.push("");
+  lines.push(`## 5. ACCEPT 回执状态（closeout 第五消费闸同一扫描实现——零新判卷）`);
+  lines.push("");
+  lines.push(
+    acceptReceipt.status === "present"
+      ? `  - status=present（${acceptReceipt.decision_id} @ ${toPosix(acceptReceipt.graph ?? "")}）——有效 Human ACCEPT 在座`
+      : `  - status=${acceptReceipt.status}——${acceptReceipt.detail ?? "无有效 ACCEPT 回执（显式缺席，不冒充已接受）"}`,
+  );
+  lines.push("");
+  lines.push(`## 6. Known Unknown（negative-history + unknowns——诚实分母）`);
+  lines.push("");
+  lines.push(`  - negative_history（已否定方案）: ${negativeHistory.length} 条`);
+  for (const entry of negativeHistory) {
+    lines.push(
+      `    - #${entry.entry_index} [${entry.status}] ${entry.approach}——${entry.reason}${entry.evidence_ref === null ? "" : `（evidence_ref: ${entry.evidence_ref}）`}`,
+    );
+  }
+  lines.push(`  - unverified_claims: ${unverifiedClaims.length === 0 ? "（无——subject 分母内全部 VERIFIED）" : unverifiedClaims.join("、")}`);
+  lines.push(`  - open_questions: ${openQuestions.length === 0 ? "（无登记——台账无锚定本任务的 OPEN_QUESTION）" : openQuestions.map((statement) => `\n    - ${statement}`).join("")}`);
+  lines.push("");
+  lines.push(`## 7. 三分支路标（Human 判读后走向——机器面复用既有通路，零新语义；词形 SP 提案待追认）`);
+  lines.push("");
+  for (const branch of reviewBranches()) {
+    lines.push(`  - [${branch.branch}] ${branch.operation}`);
+    lines.push(`    路标: ${branch.route}`);
+    lines.push(`    机器面: ${branch.machine_face}`);
+  }
+  lines.push("");
+  // —— 8. 未处置越界拒绝（裁决 21：全局扫描呈现——不因未跑 audit 或存在拒绝阻断施断） ——
+  lines.push(`## 8. 未处置越界拒绝（execution-audit OBS 回执扫描——裁决 21 呈现强化，不阻断施断）`);
+  lines.push("");
+  lines.push(
+    `  - 扫描分母: ${auditRejections.audit_receipts_scanned} 条 execution-audit 回执（.pomaster/evidence/observations/ 内 operation=${EXECUTION_AUDIT_OPERATION} 的 OBS 回执——含零拒绝回执）`,
+  );
+  if (auditRejections.status === "clean") {
+    lines.push(
+      `  - status=clean——${
+        auditRejections.audit_receipts_scanned === 0
+          ? "本仓无 execution-audit OBS 回执（未跑 audit：不构成阻断，亦不冒充已审）"
+          : "audit 回执全部零越界拒绝（审过且干净——非未审的缺席）"
+      }`,
+    );
+  } else {
+    lines.push(
+      `  - status=findings——存在越界拒绝的回执 ${auditRejections.receipts_with_rejections} 条（路径级明细在各回执 report blob——回执承载计数粒度）`,
+    );
+    for (const row of auditRejections.rejections) {
+      lines.push(
+        `  - \`${row.observation_id}\` — execution ${row.execution_id} out_of_scope=${row.out_of_scope_count}（captured_at_seq=${row.captured_at_seq}；receipt: ${toPosix(row.receipt_path)}）`,
+      );
+    }
+  }
+  lines.push(`  - 处置通路（裁决 21：显式处置——本分区呈现不阻断，closeout 完成链不消费本扫描）:`);
+  for (const route of auditRejections.disposition) {
+    lines.push(`    - ${route}`);
+  }
+  lines.push("");
+
+  const result: ViewReviewResult = {
+    view: "review-packet",
+    task: resolved.target,
+    write_surface: "none",
+    expected: {
+      intent: asString(taskPayload.intent),
+      expected_outcome: asString(taskPayload.expected_outcome),
+      acceptance: expectedRows,
+    },
+    actual: {
+      claims,
+      claims_total: claims.length,
+      verified: claims.filter((claim) => claim.verdict === "VERIFIED").length,
+      unverified: unverifiedClaims.length,
+    },
+    oracle: { entries: oracleEntries },
+    gate_records: {
+      runs,
+      bound_runs: runs.length,
+      passed: runs.filter((run) => run.verdict === "passed").length,
+    },
+    accept_receipt: acceptReceipt,
+    known_unknown: {
+      negative_history: negativeHistory,
+      unverified_claims: unverifiedClaims,
+      open_questions: openQuestions,
+    },
+    branches: reviewBranches(),
+    audit_rejections: auditRejections,
+    markdown: lines.join("\n"),
+  };
+  return okOutcome(command, result, result.markdown.split("\n"), warnings);
 }

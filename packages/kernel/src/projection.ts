@@ -65,6 +65,7 @@ import {
   searchKnowledge,
 } from "./knowledge.js";
 import { readTaskNegativeHistory } from "./negative-history.js";
+import { readTaskSteeringConstraints } from "./steering.js";
 import type { ObjectRow } from "./index.js";
 
 type UnknownRecord = Record<string, unknown>;
@@ -620,6 +621,40 @@ function consumeNegativeHistory(
   }));
 }
 
+/**
+ * Steering 事件消费（W4-S3；09-10 PRD REQ-08/AC-07 + §6-5）：
+ * - 数据源 = state/steering-log.json 台账中锚定本任务的条目（readTaskSteeringConstraints
+ *   单一读取面——readTaskNegativeHistory 同款装载面纪律；文件缺席/任务不在册 → 空条目
+ *   不虚构，未命中保持未知；台账畸形 → SCHEMA_INVALID fail-closed）；
+ * - 落位 = advisoryEntries（[ADVISORY] 分区）——Steering 约束是**申报面**可见性事实
+ *   不是判卷约束，永不进 mustEntries（§83.2 铁律 / GOLDEN-L8-3 消费层防线）；
+ * - 词形区分（W4-S3 设计）：reason 携 [STEERING] 标记 vs [ADVISORY] 经验条目——
+ *   ref = STE-<n> 全局事件引用（检索/计划呈现可回指台账行）；
+ * - REQ-08 最小形态：约束随下次编译在输入面可见（指纹绑定：advisoryEntries 进
+ *   inputsFingerprint——登记后指纹必变）；不阻断、不判「约束是否被遵守」（那是
+ *   exec-guard/audit 职责）；完整「pending work 停止/旧结果失效传播」仍是远期。
+ */
+function consumeSteering(
+  request: import("./index.js").ProjectionRequest,
+  paths: StorePaths,
+  index: TruthIndex,
+): readonly ProjectionEntry[] {
+  if (request.taskRef === undefined) return [];
+  // 对象不在册：readTaskSteeringConstraints 按登记序过滤（诚实缺席）——不猜测不虚构。
+  if (!index.objects.some((row) => row.id === request.taskRef)) return [];
+  const entries = readTaskSteeringConstraints(paths, request.taskRef);
+  return entries.map((entry) => ({
+    ref: entry.steering_ref,
+    reason:
+      `ADVISORY: steering（[STEERING] ${entry.steering_ref}，REQ-08 有来源事件）：` +
+      `constraint=${entry.constraint}；source_ref=${entry.source_ref}；` +
+      `affected_scope=${entry.affected_scope.length > 0 ? entry.affected_scope.join("/") : "（全 task——未申报对象/能力词形）"}` +
+      `（declared 申报面——机器不验证遵守）；recorded_at_seq=${entry.recorded_at_seq}——` +
+      `REQ-08 最小形态：受影响工作下次编译在输入面可见（不阻断；遵守判定归 exec-guard/audit）；` +
+      `不进 gate 判卷输入（GOLDEN-L8-3）`,
+  }));
+}
+
 /** 许可台账（state/permits.json；permits.ts 维护，这里只读）。 */
 interface PermitLedgerEntry {
   readonly permit_ref: string;
@@ -1140,6 +1175,10 @@ export async function compileProjection(
   // —— 任务内 negative history 消费（W1-R1-7；09-10 PRD REQ-03/AC-02；见
   //    consumeNegativeHistory 契约注记——[ADVISORY] 分区，永不进 gate 判卷输入） ——
   advisoryEntries.push(...consumeNegativeHistory(request, pathsOf(store), index));
+
+  // —— Steering 事件消费（W4-S3；09-10 PRD REQ-08/AC-07；见 consumeSteering 契约
+  //    注记——[ADVISORY] 分区 + [STEERING] 词形区分，永不进 gate 判卷输入） ——
+  advisoryEntries.push(...consumeSteering(request, pathsOf(store), index));
 
   // —— baseline grounding 消费（R4/design-context）：facts 由 CLI 编排层注入
   //    （packages/cli/src/baseline-grounding.ts 生产者——baseline 词形解析独占在

@@ -27,6 +27,7 @@ import {
   acquireLock,
   attachSession,
   beginExecution,
+  countExecutionInflightReceipts,
   createStore,
   endExecution,
   EXECUTION_ID_PATTERN,
@@ -45,6 +46,12 @@ import {
 } from "@pomaster/kernel";
 import type { CliError, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
+import {
+  judgeReconcile,
+  reconcileCleanSummaryLine,
+  reconcileDirtySummaryLine,
+  RECONCILE_DIRTY_HINT,
+} from "./reconcile.js";
 import { governanceErrorToCliError, requireInitialized } from "./permit.js";
 
 // ============================================================
@@ -154,6 +161,33 @@ export interface SessionAttachInput {
   readonly meta?: readonly string[];
   /** 顶替授权（既有活会话 + harness 不同时必填——缺省拒绝无声顶替；journal SESSION_REPLACED）。 */
   readonly force?: boolean;
+  /**
+   * 恢复前对账（W4-S1：B11/§6-2「恢复先对账」接线；可选——缺省不跑，attach 是 hook
+   * 重入口，缺省跑会改写既有通路语义）。在场 = attach 落盘**之前**按该 permit 基线跑
+   * ⑥ 拍判卷（judgeReconcile 共用消费函数）：clean 放行并回显摘要；dirty/baseline
+   * 缺失阻断（零副作用——会话档案未落盘、journal 零事件）。
+   */
+  readonly reconcile?: string;
+  /**
+   * 对账越权授权（仅与 reconcile 在座同用生效；孤旗 SCHEMA_INVALID——无效果旗标禁
+   * 静默）。与顶替 --force 分轴不共用：两个授权各自显式，禁一旗双授权（顶替越权与
+   * 对账越权的审计语义不同形）。越权放行留痕于本信封 result.reconcile.overridden=true
+   * （journal 零事件——kernel attachSession 面零改动红线）。
+   */
+  readonly reconcileForce?: boolean;
+}
+
+/**
+ * resume 前对账闸回显（--reconcile 在场时恒非 null；缺席 = null 显式未跑）。
+ * 码位复用说明：阻断码沿用 reconcile 命令既有 RECONCILE_DIRTY /
+ * RECONCILE_BASELINE_MISSING（勿新码位——同义码位复用先例）；越权留痕住 overridden。
+ */
+export interface SessionReconcileGate {
+  readonly permit_ref: string;
+  readonly clean: boolean;
+  readonly baseline_missing: boolean;
+  /** true = 阻断态下显式 reconcileForce 越权放行（信封留痕；journal 零事件）。 */
+  readonly overridden: boolean;
 }
 
 export interface SessionAttachResult {
@@ -165,6 +199,8 @@ export interface SessionAttachResult {
   readonly held_locks: readonly string[];
   readonly last_seen_at: string;
   readonly ttl_seconds: number;
+  /** 恢复前对账闸回显（无 --reconcile = null 显式未跑）。 */
+  readonly reconcile: SessionReconcileGate | null;
 }
 
 function emptySessionAttach(): SessionAttachResult {
@@ -176,6 +212,7 @@ function emptySessionAttach(): SessionAttachResult {
     held_locks: [],
     last_seen_at: "",
     ttl_seconds: 0,
+    reconcile: null,
   };
 }
 
@@ -205,6 +242,10 @@ function parseMetaArgv(
  * 刷新 = 心跳零事件；既有活会话 harness 不同 → 缺省拒绝 SESSION_REPLACE_REQUIRED
  * （顶替不可无声——显式 force 才顶替并落 SESSION_REPLACED）；resumed_task 回带既有
  * 任务指针（resume 探测输入）。
+ *
+ * W4-S1 恢复对账前置闸（--reconcile 在座时）：⑥ 拍判卷在 attachSession **之前**执行
+ * （恢复先对账——§6-2；阻断即零副作用：会话档案未落盘、journal 零事件）。判卷走
+ * judgeReconcile 共用消费函数（与 reconcile 命令同一份分派，提取而非复制）。
  */
 export async function runSessionAttach(
   rootDir: string,
@@ -222,6 +263,76 @@ export async function runSessionAttach(
   if ("error" in ttl) {
     return notInitializedFail("session attach", ttl.error, emptySessionAttach());
   }
+  if (input.reconcileForce === true && input.reconcile === undefined) {
+    return notInitializedFail("session attach", {
+      code: "SCHEMA_INVALID",
+      message: "--reconcile-force 孤旗（无 --reconcile）——无效果旗标禁静默",
+      hint: "对账越权授权只在对账闸真实在座时有意义；补 --reconcile <permit> 或去掉 --reconcile-force。",
+    }, emptySessionAttach());
+  }
+
+  // —— resume 对账前置消费（B11/§6-2 接线；判卷失败/阻断 → attach 不发生） ——
+  let gate: SessionReconcileGate | null = null;
+  const gateLines: string[] = [];
+  if (input.reconcile !== undefined) {
+    const judgment = await judgeReconcile(rootDir, { permit: input.reconcile });
+    if (judgment.kind === "failed") {
+      return failOutcome<SessionAttachResult>(
+        "session attach",
+        emptySessionAttach(),
+        [judgment.error],
+        [`session attach: FAILED — ${judgment.error.code}\n  hint: ${judgment.error.hint}`],
+      );
+    }
+    const blocked = judgment.kind !== "clean";
+    if (blocked && input.reconcileForce !== true) {
+      const error: CliError =
+        judgment.kind === "dirty"
+          ? {
+              code: "RECONCILE_DIRTY",
+              message: `session attach --reconcile：恢复前对账发现 delta——恢复动作将作用于已漂移的世界；${reconcileDirtySummaryLine(judgment.report)}`,
+              hint: `人审三段后处置（pomaster reconcile --permit ${input.reconcile} --json 看 delta 全文；处置走 transition/supersede 通道——${RECONCILE_DIRTY_HINT}）；确需带越权恢复传 --reconcile-force（信封留痕，journal 零事件）`,
+            }
+          : {
+              code: "RECONCILE_BASELINE_MISSING",
+              message: `session attach --reconcile：${input.reconcile} 无基线快照（旧形态许可）——不能拿「没有基线」冒充「无变化」后恢复`,
+              hint: "重新签发带基线许可（pomaster permit issue），或人工对账后 supersede 旧许可；确需带越权恢复传 --reconcile-force",
+            };
+      return failOutcome<SessionAttachResult>(
+        "session attach",
+        {
+          ...emptySessionAttach(),
+          reconcile: {
+            permit_ref: judgment.report.permit_ref,
+            clean: false,
+            baseline_missing: judgment.kind === "baseline_missing",
+            overridden: false,
+          },
+        },
+        [error],
+        [`session attach: FAILED — ${error.code}\n  hint: ${error.hint}`],
+      );
+    }
+    gate = {
+      permit_ref: judgment.report.permit_ref,
+      clean: judgment.kind === "clean",
+      baseline_missing: judgment.kind === "baseline_missing",
+      overridden: blocked,
+    };
+    gateLines.push(
+      `  resume 前对账（⑥拍前置消费）：${
+        judgment.kind === "clean"
+          ? reconcileCleanSummaryLine(judgment.report)
+          : reconcileDirtySummaryLine(judgment.report)
+      }`,
+    );
+    if (gate.overridden) {
+      gateLines.push(
+        `  对账越权留痕：--reconcile-force 显式越权放行——恢复动作作用于已漂移的世界（信封 result.reconcile.overridden=true 留痕；journal 零事件——kernel attach 面零改动）`,
+      );
+    }
+  }
+
   try {
     const store = await createStore(rootDir);
     const outcome = await attachSession(store, {
@@ -240,6 +351,7 @@ export async function runSessionAttach(
       held_locks: outcome.held_locks,
       last_seen_at: outcome.last_seen_at,
       ttl_seconds: outcome.ttl_seconds,
+      reconcile: gate,
     };
     const status = outcome.created ? "CREATED" : outcome.replaced ? "REPLACED" : "REFRESHED";
     const human = [
@@ -250,6 +362,7 @@ export async function runSessionAttach(
       ...(outcome.resumed_task !== null
         ? [`  resumed_task: ${outcome.resumed_task}（本 session 上次绑定的任务指针——resume 白名单询问输入）`]
         : []),
+      ...gateLines,
       ...(outcome.held_locks.length > 0
         ? [`  held_locks: ${outcome.held_locks.join(", ")}`]
         : []),
@@ -807,6 +920,18 @@ export async function runExecutionEnd(
   }
 }
 
+/**
+ * 在途诚实分态视图（W4-S1 §6-3「回执未存 ≠ 未发生」的呈现位）。
+ * 词形 SP 提案：vocab-lock presentation_axes.execution_inflight_evidence
+ * values [recorded, none]（扩值走词汇表 PR；status 两态轴零改动——本位是平行位）。
+ */
+export interface ExecutionInflightEvidenceView {
+  /** recorded = 在途且有已入账产物；none = 在途且零产物（显式零，非缺席）。 */
+  readonly state: "recorded" | "none";
+  /** 已入账回执数 = GRN + OBS/ENVREC 锚定本执行的记录总数（state=none 恒 0）。 */
+  readonly receipt_count: number;
+}
+
 export interface ExecutionListResult {
   readonly executions: readonly {
     readonly execution_id: string;
@@ -816,6 +941,12 @@ export interface ExecutionListResult {
     readonly session_key: string | null;
     /** 呈现两态（x-vocab-source: vocab-lock presentation_axes.execution_presentation_status——PR-0009）：ended_at null=active；interrupted 状态归 journal 面。 */
     readonly status: "active" | "ended";
+    /**
+     * 在途诚实分态（SP 提案词形见 ExecutionInflightEvidenceView）：end 缺失时按
+     * evidence 平面回执计数区分「有已入账产物 N 件 / 零产物」；已封口 = null
+     * （位不适用——显式缺席，不冒充零产物）。
+     */
+    readonly inflight_evidence: ExecutionInflightEvidenceView | null;
     readonly started_at: string;
     readonly ended_at: string | null;
   }[];
@@ -832,27 +963,45 @@ export async function runExecutionList(
   }
   try {
     const store = loadStoreReadOnly(rootDir);
-    const records = listExecutionRecords(pathsOf(store));
+    const paths = pathsOf(store);
+    const records = listExecutionRecords(paths);
     const result: ExecutionListResult = {
-      executions: records.map((record) => ({
-        execution_id: record.execution_id,
-        role: record.role,
-        runtime: record.runtime,
-        identity_kind: record.identity_kind,
-        session_key: record.session_key,
-        status: record.ended_at === null ? "active" : "ended",
-        started_at: record.started_at,
-        ended_at: record.ended_at,
-      })),
+      executions: records.map((record) => {
+        const ended = record.ended_at !== null;
+        // 在途诚实分态：只对 end 缺失（在途）的执行扫证据平面（§6-3——回执未存
+        // ≠ 未发生）；已封口行位不适用（null），零扫描开销。
+        const receiptCount = ended
+          ? 0
+          : countExecutionInflightReceipts(paths, record.execution_id);
+        return {
+          execution_id: record.execution_id,
+          role: record.role,
+          runtime: record.runtime,
+          identity_kind: record.identity_kind,
+          session_key: record.session_key,
+          status: ended ? "ended" : "active",
+          inflight_evidence:
+            ended === true
+              ? null
+              : { state: receiptCount > 0 ? ("recorded" as const) : ("none" as const), receipt_count: receiptCount },
+          started_at: record.started_at,
+          ended_at: record.ended_at,
+        };
+      }),
     };
     const human = [
       result.executions.length === 0
         ? "execution list → 0 executions（尚无执行身份档案——显式空，execution begin 后在此呈现）"
         : `execution list → ${result.executions.length} executions`,
-      ...result.executions.map(
-        (row) =>
-          `  ${row.execution_id} (${row.role}/${row.runtime}/${row.identity_kind}) status=${row.status} session=${row.session_key ?? "null"}`,
-      ),
+      ...result.executions.map((row) => {
+        const inflight =
+          row.inflight_evidence === null
+            ? ""
+            : row.inflight_evidence.state === "recorded"
+              ? `（在途·有已入账产物 ${row.inflight_evidence.receipt_count} 件）`
+              : `（在途·零产物——回执未存≠未发生）`;
+        return `  ${row.execution_id} (${row.role}/${row.runtime}/${row.identity_kind}) status=${row.status}${inflight} session=${row.session_key ?? "null"}`;
+      }),
     ];
     return okOutcome("execution list", result, human);
   } catch (err) {
