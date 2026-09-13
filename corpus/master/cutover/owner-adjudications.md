@@ -194,3 +194,12 @@
 - **裁定：C**。closeout 完成链维持不消费 audit 越界拒绝作阻断（AC-08 的防越界主防线＝exec-guard 写前 Prevention + execution-audit 事后 Detection exit 1，两者均已实弹在座）；呈现强化＝view review 增"未处置越界拒绝"扫描呈现（全局扫描 audit OBS 回执中的 out_of_scope 发现，逐条列 pointer，零发现显式 clean），不因未跑 audit 或存在拒绝阻断施断。
 - **实施**：view review 增 audit-rejection 扫描分区（纯读沿 diagnose.ts 纪律）；词形 SP 提案待追认。
 - **边界注记**：本裁决不推翻裁决 20② 的 ACCEPT 硬闸（那是"成果接受"语义）；audit 越界的处置通路仍是显式（修复后重审/ledger record），Owner 保留后续升级为 B 方案的权利。
+
+## 裁决 22：Long-Horizon 战役 SP 词形/schema 四批次批量追认（2026-09-13 Owner 会话直答）
+
+- **决策渠道**：Owner 会话四问逐批选择（2026-09-13，全部"全部追认"）。背景：裁决 20 之后的 W2–W5 实施切片新增词形/schema 提案批量呈报；全部已实施且有测试，追认＝保留现状。
+- **批次 A 治理面**：closeout 三失败码（CLOSEOUT_ACCEPT_MISSING/STALE/DAMAGED）＋DOD_CLAIM_SELF_APPROVED/DOD_CLAIM_EVIDENCE_UNQUALIFIED/VERIFICATION_EVIDENCE_UNQUALIFIED＋negative_history payload 字段＋STEERING_RECORDED journal 词形＋pomaster.steering-log/v1 台账＋STE-<n> 引用＋steering 命令组。
+- **批次 B 运行时面**：pomaster.checkpoint/v1＋CKPT-<n>＋CHECKPOINT_NOT_FOUND/ALREADY_EXISTS＋anchor_status（collected|absent）＋11 键引用快照闭形态＋execution_inflight_evidence 词轴（recorded|none）＋resume 对账闸呈现词（--reconcile/--reconcile-force 分轴）。
+- **批次 C 观测面**：provider 四维度轴（native_async/native_steering/cancellable/tool_discovery）×三值（native/absent/unknown）＋basis 四值轴＋四降级 id＋provider 命令组；telemetry 六指标轴＋NOT_COMPUTABLE 词形＋telemetry 命令组；view review 八分区＋REVIEW_BRANCH_NAMES＋ACCEPT_RECEIPT_SCAN_STATUSES＋audit_rejections 扫描分区（裁决 21 呈现强化的词形面）。
+- **批次 D 预设面**：preset 命令组三子命令（preview/drift/applicability）＋家族 id 闭包（wired：design-tokens/baseline-framework；扩展位五词形：baseline-preset-draft/technology-profile/archetype-cards/family-examples/projection-presets）＋动作四值（create|fill|overwrite|none）＋漂移词形（VALUE_DRIFT、aligned|drifted|no_comparison）＋匹配三值（native|mismatch|unresolved）＋PRESET_FAMILY_UNKNOWN/PRESET_LANE_INVALID 错误码。
+- **边界注记**：本裁决为词形/schema 追认；对应行为语义的裁定分别在裁决 20（①–⑦）与裁决 21（closeout-audit 呈现强化）。vocab-lock 主表仍零触碰（各词形为通路局部词/开放位，未来入主表走 vocab-pr）。
