@@ -65,6 +65,11 @@ import {
   specPreplantHumanLine,
   type SpecPreplantPresentation,
 } from "./spec-preplant.js";
+import {
+  collectBootstrapHarnessSnapshot,
+  renderBootstrapHarnessPointerLine,
+  type BootstrapHarnessPointer,
+} from "./bootstrap-harness.js";
 import { TRUTH_INDEX_RELATIVE, toPosix, truthIndexPath } from "./store-layout.js";
 import { runViewAttention } from "./view.js";
 import type { CliWarning, CommandOutcome } from "./envelope.js";
@@ -122,6 +127,8 @@ export interface SessionOverviewResult {
   readonly truncated: boolean;
   /** Next-Action 路由（P2 同源；未初始化 = null 显式缺席）。 */
   readonly next_action: NextAction | null;
+  /** Compact Bootstrap Harness pointer; full context stays behind tools/doctor. */
+  readonly bootstrap_harness: BootstrapHarnessPointer | null;
   /** 分段呈现自检（逐段字符数/截断位——预算纪律机器可审计）。 */
   readonly segments: readonly {
     readonly title: string;
@@ -408,6 +415,7 @@ export async function runSessionOverview(rootDir: string): Promise<CommandOutcom
 
   let lines: readonly string[];
   let nextAction: NextAction | null = null;
+  let bootstrapHarness: BootstrapHarnessPointer | null = null;
   let metas: SessionOverviewResult["segments"] = [];
   let truncatedByBudget = false;
 
@@ -422,6 +430,7 @@ export async function runSessionOverview(rootDir: string): Promise<CommandOutcom
     // —— Next-Action（P2 同一路由表；快照装配降级走 warnings）。 ——
     const snapshot = await collectNextActionSnapshot(rootDir, warnings);
     nextAction = evaluateNextAction(snapshot);
+    bootstrapHarness = (await collectBootstrapHarnessSnapshot(rootDir)).pointer;
 
     // —— 分段装配（非空段才有标题；空段省略）。 ——
     const segments: SessionSegment[] = [];
@@ -453,6 +462,7 @@ export async function runSessionOverview(rootDir: string): Promise<CommandOutcom
         alertsCount > 0
           ? `- alerts: ${alertsCount} 项可行动（pomaster alerts 查看明细）`
           : "- alerts: 干净（无可行动项）",
+        `- ${renderBootstrapHarnessPointerLine(bootstrapHarness)}`,
       ],
       pointer: "详情跑 pomaster alerts",
     });
@@ -488,6 +498,7 @@ export async function runSessionOverview(rootDir: string): Promise<CommandOutcom
     output_characters: capped.text.length,
     truncated: truncatedByBudget || capped.truncated || metas.some((meta) => meta.truncated),
     next_action: nextAction,
+    bootstrap_harness: bootstrapHarness,
     segments: metas,
   };
   return okOutcome("session", result, capped.text.split("\n"), warnings);

@@ -510,6 +510,26 @@ export {
 } from "./heavy-entry.js";
 export type { CapabilityEntry } from "./heavy-entry.js";
 export {
+  collectBootstrapHarnessSnapshot,
+  renderBootstrapHarnessPointerLine,
+  renderBootstrapHarnessSummary,
+} from "./bootstrap-harness.js";
+export type {
+  BootstrapAssetStatus,
+  BootstrapCapabilityStatus,
+  BootstrapEntryFileStatus,
+  BootstrapEntryStatus,
+  BootstrapHarnessOptions,
+  BootstrapHarnessPointer,
+  BootstrapHarnessSnapshot,
+  BootstrapHookEntryStatus,
+  BootstrapHookStatus,
+  BootstrapReadiness,
+  BootstrapSkillMirrorStatus,
+  BootstrapSkillStatus,
+  BootstrapToolStatus,
+} from "./bootstrap-harness.js";
+export {
   runAlerts,
   ALERT_KINDS,
   ALERT_UNSOURCED_CATEGORIES,
@@ -551,12 +571,21 @@ export type {
 } from "./next-action.js";
 export {
   ENTRY_MODE_HEAVY_MARKER,
+  CLAUDE_EXEC_GUARD_ASSET_RELATIVE,
+  CLAUDE_EXEC_GUARD_COMMAND,
+  CLAUDE_EXEC_GUARD_HOOK_RELATIVE,
+  CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE,
+  CLAUDE_EXEC_GUARD_MATCHER,
   CLAUDE_SETTINGS_RELATIVE,
   POMASTER_HOOK_COMMANDS,
   POMASTER_HOOK_EVENT_COMMANDS,
   SKILL_MANIFEST,
   SKILL_MIRROR_DIRS,
   COMMAND_PANORAMA_LINES,
+  claudeExecGuardAssetCandidates,
+  readClaudeExecGuardHookAsset,
+  renderClaudeExecGuardLauncher,
+  resolveCurrentCliEntry,
   renderSkillMd,
   mergePomasterHooks,
 } from "./heavy-entry.js";

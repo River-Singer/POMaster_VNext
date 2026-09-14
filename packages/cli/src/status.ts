@@ -45,6 +45,11 @@ import {
   readBaselineConfirmationPresentation,
   type BaselineConfirmationPresentation,
 } from "./baseline.js";
+import {
+  collectBootstrapHarnessSnapshot,
+  renderBootstrapHarnessPointerLine,
+  type BootstrapHarnessPointer,
+} from "./bootstrap-harness.js";
 import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
 
@@ -193,6 +198,12 @@ export interface StatusResult {
    * （零墙钟，同 seq 同 tip）；关闭时字段缺席 + 人读零输出。
    */
   readonly capability_tip?: string;
+  /**
+   * Compact Bootstrap Harness pointer for agents. Full audit remains behind
+   * init/session/doctor/tools projections; status intentionally does not dump
+   * context.
+   */
+  readonly bootstrap_harness?: BootstrapHarnessPointer;
 }
 
 /**
@@ -390,6 +401,7 @@ export async function runStatus(
   // 同 seq 同 tip）；关闭 = 字段缺席 + 人读零输出。
   const tipsEnabled = await readCapabilityTipsEnabled(rootDir);
   const capabilityTip = tipsEnabled ? capabilityTipForSeq(seq) : null;
+  const bootstrapHarness = await collectBootstrapHarnessSnapshot(rootDir);
 
   const result: StatusResult = {
     state_path: statePath,
@@ -413,6 +425,7 @@ export async function runStatus(
     producers: { total: producerRows.length, dead },
     worst_blindspot: worstBlindspot,
     next_action: nextAction,
+    bootstrap_harness: bootstrapHarness.pointer,
     ...(capabilityTip !== null ? { capability_tip: capabilityTip } : {}),
     ...(seededAssets !== null ? { seeded_assets: seededAssets } : {}),
     legacy_specs_present: legacySpecsPresent,
@@ -436,6 +449,7 @@ export async function runStatus(
     nextAction.command === null
       ? `  next: ${nextAction.reason}`
       : `  next: ${nextAction.command}（八拍${nextAction.beat}——${nextAction.reason}）`,
+    `  ${renderBootstrapHarnessPointerLine(bootstrapHarness.pointer)}`,
     // C4 tip 行恒在 next 行之后（capability_tips 关闭 = 零输出）。
     ...(capabilityTip !== null ? [`  tip: ${capabilityTip}`] : []),
   ];
