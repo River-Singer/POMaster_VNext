@@ -510,6 +510,7 @@ export {
 } from "./heavy-entry.js";
 export type { CapabilityEntry } from "./heavy-entry.js";
 export {
+  BOOTSTRAP_COMPATIBILITY_INVENTORY,
   collectBootstrapHarnessSnapshot,
   renderBootstrapHarnessPointerLine,
   renderBootstrapHarnessSummary,
@@ -528,6 +529,8 @@ export type {
   BootstrapSkillMirrorStatus,
   BootstrapSkillStatus,
   BootstrapToolStatus,
+  BootstrapCompatibilityDisposition,
+  BootstrapCompatibilityInventoryEntry,
 } from "./bootstrap-harness.js";
 export {
   runAlerts,

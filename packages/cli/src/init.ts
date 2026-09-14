@@ -860,6 +860,7 @@ const COMMON_COMMANDS_LINES = [
   "- `pomaster alerts` — 可行动项过滤器 + workflow 路由段（permit 到期/CHALLENGED 对象；干净=非空但极简）",
   "- `pomaster status --json` — 对象计数 / 分母状态 / permit 活性",
   "- `pomaster context compile --role <role> --json` — 八拍③：最小充分上下文投影",
+  "- `pomaster tools list --json` — ToolBinding 清单 / tool_gap 显式呈现（缺工具不冒充可用）",
   "- `pomaster doctor --json` — 内核 / harness MCP 探测（缺什么提示装什么）",
   "- `pomaster check --fast --json` — 八拍⑤：FAST gate（BUILD）",
 ];
@@ -895,6 +896,7 @@ const DIRECTORY_CONSTITUTION_LINES = [
   "- runtime = 易变运行态（sessions/locks/heartbeat，删后可重建）",
   "- discovery = 未确认思考区；memory = 候选记忆 staging；production = 生产反馈",
   "- 禁令：Agent 禁绕过 API 直写 .pomaster；新概念默认是 governed object kind 不是新目录",
+  "- 禁令：Agent 不要默认遍历 `.pomaster/**`（do not crawl .pomaster）；先跑 `pomaster session`，按 `next_action` 走公开命令。",
   "- 完整规范：`.pomaster/layout.json`（各目录 activation_hint）与 dot-pomaster-directory-constitution.md",
 ];
 
@@ -955,7 +957,7 @@ ${renderCapabilityMapMarkdownLines().join("\n")}
 ## 重入口安装物（init 维护）
 
 - skills 命令卡库：\`.agents/skills/pomaster/\` 等 ${SKILL_MANIFEST.length} 份（通用层——Codex/Cursor/Gemini CLI/GitHub Copilot/VS Code/Amp/Warp/OpenCode/Droid 等原生读取），${mirrorNote}。
-- 路由入口：\`/pomaster\`（命令全景 + 何时用哪个）；分段卡：pomaster-bootstrap / discovery / permit / context / execute / verify / reconcile / compact / closeout / inspect / catalog / production / runtime。
+- 路由入口：\`/pomaster\`（命令全景 + 何时用哪个）；分段卡：pomaster-bootstrap / pomaster-discovery / pomaster-permit / pomaster-context / pomaster-execute / pomaster-verify / pomaster-reconcile / pomaster-compact / pomaster-closeout / pomaster-inspect / pomaster-catalog / pomaster-production / pomaster-runtime。
 - 组件画廊: https://river-singer.github.io/POMaster_VNext/（在线版）或 POMaster 仓库内 \`corepack pnpm studio:dev\`——按已确认 baseline 的技术栈选择性参考（有哪些组件、长什么样、该写什么）；baseline 未确认时不主动引导。
 ${claudeBlock}- 修复/重建：重跑 \`pomaster init\`（幂等；缺失镜像重建、hooks 注册项按 command 词形合并，不动人类文件）。
 

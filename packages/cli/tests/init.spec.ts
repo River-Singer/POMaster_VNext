@@ -33,6 +33,7 @@ import {
   SKILL_MANIFEST,
   TRUTH_INDEX_RELATIVE,
   CHECKLIST_KEYS,
+  BOOTSTRAP_COMPATIBILITY_INVENTORY,
   parsePlatformSelection,
   renderChecklistFrame,
   renderPlatformMenu,
@@ -135,10 +136,25 @@ describe("init 首次创建（CREATED）", () => {
     expect(harness?.skills.expected).toBe(SKILL_MANIFEST.length);
     expect(harness?.assets.seed_manifest.missing).toEqual([]);
     expect(harness?.tools.status).toBe("absent");
+    expect(harness?.compatibility_inventory).toEqual(BOOTSTRAP_COMPATIBILITY_INVENTORY);
+    expect(new Set(harness?.compatibility_inventory.map((entry) => entry.disposition))).toEqual(
+      new Set(["keep_temporarily", "migrate", "delete"]),
+    );
+    expect(
+      harness?.compatibility_inventory.every(
+        (entry) =>
+          entry.owner.length > 0 &&
+          entry.exit_condition.length > 0 &&
+          entry.coverage.length > 0,
+      ),
+    ).toBe(true);
     expect(harness?.pointer.tools.discovery_command).toBe("pomaster tools list --json");
     expect(harness?.next_action.route_id).toBe("R_NO_ACTIVE_TASK");
     expect(outcome.human.join("\n")).toContain("bootstrap harness:");
     expect(outcome.human.join("\n")).toContain("tools absent");
+    expect(outcome.human.join("\n")).toContain(
+      `compatibility: ${BOOTSTRAP_COMPATIBILITY_INVENTORY.length} routes inventoried`,
+    );
 
     const reread = await collectBootstrapHarnessSnapshot(dir);
     expect(reread.assets.seed_manifest.installed).toEqual(harness?.assets.seed_manifest.installed);
