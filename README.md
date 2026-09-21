@@ -203,7 +203,7 @@ flowchart TB
 | **Kernel 治理内核** | 受控写入 SOP | `applyTransaction`（唯一写权威）→ D-4 权威维度闸 → source_refs 判卷 → 幂等短路/冲突拒绝 → journal |
 | | 生命周期 SOP | `transition_object`：PROPOSED→CURRENT（authority_approval）→ SUPERSEDED（successor_ref 必填） |
 | | 投影编译 SOP | projection 确定性 applicability（lanes→capabilities→change_class→object_kinds；governance_profile 解除判卷力）→ must/advisory 分区 |
-| | 决策 SOP | decision-graph：候选图 build→grounding→READY_FOR_DECISION→resolveDecision（ACCEPT/CHANGE/UNKNOWN/DEFER + outcome_binding 成果绑定键） |
+| | 决策 SOP | decision-graph：build→grounding；ACCEPT/CHANGE 需 READY_FOR_DECISION，UNKNOWN/DEFER 可记录未决处置并保留冲突；UNKNOWN 仍需六问 triage，--ready 独立判定充分性；outcome_binding 保留成果绑定 |
 | **CLI 八拍** | Discovery | `brainstorm start / question-gate / decide --set --answer --ready / promote` |
 | | Framework | `permit issue/check/steal`、`baseline set/confirm/--ack-drifted` |
 | | Projection | `context compile`（must/advisory 分区 + Steering/negative-history 投影 + 指纹） |
@@ -255,12 +255,14 @@ graph LR
     subgraph RESUME["恢复时点"]
         R["session attach --reconcile<br/>新鲜度判定"]
         R1["clean → 放行"]
-        R2["dirty → 阻断<br/>force 显式越权留痕"]
+        R2["dirty / 缺基线 → attach + 告警<br/>clean=false 保留"]
     end
     CP --> INTERRUPT --> RESUME
     STE["steering record<br/>约束事件 declared 申报面"] -.->|"下一编译边界生效"| R
     TEL["telemetry task<br/>六指标派生评估"] -.->|"只读聚合"| STATE2[(".pomaster")]
 ```
+
+`session attach --reconcile` 恢复上下文，不建立强制只读会话。既有 Permit 范围内写入仍可能获准，权限检查通过不等于漂移已处置；attach 不扩大授权。判卷失败和活会话所有权保护仍保留，独立 `reconcile` 仍严格失败。`--reconcile-force` 仅兼容回显非 clean 时的 `overridden=true`，不是持久处置回执。
 
 Provider 无原生 async/steering/取消时的降级语义是**声明面**（`provider capabilities`）：同步步骤+持久记录 / 下一派发边界应用约束 / 在途状态明确+冲突隔离 / 预编译较小工具集——全部映射到仓内已就位载体，不是假想 API。
 
@@ -401,7 +403,7 @@ pomaster brainstorm decide idea-export-btn --ready \
 # —— 提升：promote 即建任务（自动 record claim 生成 CLM 绑入 acceptance） ——
 pomaster brainstorm promote idea-export-btn --to TASK --basis msd_reached --apply
 
-# —— 八拍推进：next-action 会逐拍给唯一建议命令 ——
+# —— 八拍推进：next-action 给主建议，并列全局关注与任务侧建议 ——
 pomaster status                                   # R_PERMIT_MISSING（--subject 为 affected_objects 派生建议）
 pomaster permit issue --subject PAGE.USER_LIST --actor human:owner --change-ref TASK.IDEA_EXPORT_BTN
 pomaster baseline confirm                         # R_BASELINE_NOT_READY（阻塞集清零后的一次性收口账；确认态随后进 ③ 投影）
@@ -415,7 +417,10 @@ pomaster closeout TASK.IDEA_EXPORT_BTN            # ⑧ DoD 判卷收口（对�
 关键语义：`--ready` 的 goal/scope/acceptance 文本申报是 Task Contract——promote 编译投影进
 TASK 对象（intent/acceptance 挂锚/affected_objects/notesMd），验收条目自动挂 CLM，closeout
 判卷对得上最初 Expected State；中途任何一步不知道下一步做什么，问 `pomaster status`（或看
-alerts breadcrumb），路由表会给出唯一建议命令。
+alerts breadcrumb），路由表会给出主建议。全局 baseline 关注不会遮住任务侧可并行准备的建议；
+具体命令仍独立检查权限、上下文和依赖，建议不等于获准写入或完成验证。
+报告与严格检查的退出码边界见 [诊断与建议契约](docs/diagnostic-reporting.md)。
+决策根、基线依赖、证据快照和可选诊断的输入及兼容规则见 [范围化人工决策](docs/scoped-human-decisions.md)。
 
 ### 5. 装齐眼睛（可选，按需）
 

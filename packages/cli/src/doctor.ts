@@ -38,6 +38,7 @@
  * 各自显式缺席，禁静默。
  */
 
+import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import type { DoctorReport, Store } from "@pomaster/kernel";
 import type {
@@ -57,10 +58,15 @@ import {
   countObservationRecords,
 } from "@pomaster/kernel";
 import {
+  CLAUDE_EXEC_GUARD_ASSET_RELATIVE,
+  CLAUDE_EXEC_GUARD_HOOK_RELATIVE,
+  CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE,
   CLAUDE_SETTINGS_RELATIVE,
   ENTRY_MODE_HEAVY_MARKER,
   POMASTER_HOOK_EVENT_COMMANDS,
   SKILL_MANIFEST,
+  looksLikePomasterExecGuardHook,
+  readClaudeExecGuardHookAsset,
 } from "./heavy-entry.js";
 import {
   countLegacySpecFiles,
@@ -387,6 +393,34 @@ async function readTextOrNull(absolute: string): Promise<string | null> {
   }
 }
 
+function hookGroupMatches(
+  group: unknown,
+  command: string,
+  matcher: string | undefined,
+): boolean {
+  if (group === null || typeof group !== "object" || Array.isArray(group)) return false;
+  const record = group as Record<string, unknown>;
+  if (matcher !== undefined && record.matcher !== matcher) return false;
+  if (matcher === undefined && record.matcher !== undefined) return false;
+  return (
+    Array.isArray(record.hooks) &&
+    record.hooks.some(
+      (handler) =>
+        handler !== null &&
+        typeof handler === "object" &&
+        (handler as Record<string, unknown>).command === command,
+    )
+  );
+}
+
+function parseLauncherCliEntry(text: string): string | null {
+  const match =
+    /^CLI_ENTRY\s*=\s*r"""([^"]+)"""/m.exec(text) ??
+    /^CLI_ENTRY\s*=\s*"([^"]+)"/m.exec(text) ??
+    /^CLI_ENTRY\s*=\s*'([^']+)'/m.exec(text);
+  return match?.[1] ?? null;
+}
+
 /**
  * 重入口安装物探测（hooks 注册态 + 注入内容可达性 + skills 双镜像在位/逐字节一致；幂等
  * 可验——init 重跑零写入即本探针持续 READY）。探针按入口形态判「应装未装」而不一刀切：
@@ -464,31 +498,69 @@ export async function probeHeavyEntryInstall(
         hint: "重跑 pomaster init 合并注册项（既有内容保留）。",
       };
     }
+    const distributedMissing: string[] = [];
+    const distributedDefects: string[] = [];
+    const guardText = await readTextOrNull(`${rootDir}/${CLAUDE_EXEC_GUARD_HOOK_RELATIVE}`);
+    const launcherText = await readTextOrNull(`${rootDir}/${CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE}`);
+    let guardAsset: string | null = null;
+    try {
+      guardAsset = readClaudeExecGuardHookAsset().content;
+    } catch (err) {
+      distributedDefects.push(
+        `package asset ${CLAUDE_EXEC_GUARD_ASSET_RELATIVE ?? "seeds/hooks/exec-guard-hook.py"} unreadable: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
+    }
+    if (guardText === null) {
+      distributedMissing.push(CLAUDE_EXEC_GUARD_HOOK_RELATIVE);
+    } else if (!looksLikePomasterExecGuardHook(guardText)) {
+      distributedDefects.push(`${CLAUDE_EXEC_GUARD_HOOK_RELATIVE} is not the POMaster exec-guard hook`);
+    } else if (guardAsset !== null && guardText !== guardAsset) {
+      distributedDefects.push(`${CLAUDE_EXEC_GUARD_HOOK_RELATIVE} differs from packaged canonical guard asset`);
+    }
+    if (launcherText === null) {
+      distributedMissing.push(CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE);
+    } else if (
+      !launcherText.includes(GENERATED_MARKER) ||
+      !launcherText.includes("runpy.run_path") ||
+      !launcherText.includes("POMASTER_CLI_ENTRY")
+    ) {
+      distributedDefects.push(`${CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE} is not the generated POMaster launcher`);
+    }
+    if (distributedDefects.length > 0) {
+      return {
+        probe: HEAVY_ENTRY_HOOKS_PROBE,
+        status: "DEFECT",
+        detail: `hook distribution defect: ${distributedDefects.join(" / ")}`,
+        hint: "恢复 POMaster 管理的 .claude/hooks/pomaster-exec-guard.py 与 exec-guard-hook.py 后重跑 pomaster init；判卷权威仍是 pomaster exec-guard。",
+      };
+    }
+    if (distributedMissing.length > 0) {
+      return {
+        probe: HEAVY_ENTRY_HOOKS_PROBE,
+        status: "MISSING_CONFIGURATION",
+        detail: `defined=${POMASTER_HOOK_EVENT_COMMANDS.length}; distributed missing: ${distributedMissing.join(", ")}`,
+        hint: "重跑 pomaster init 分发 Claude PreToolUse guard/launcher（既有用户 hooks/settings 保留）。",
+      };
+    }
+
     const missing: string[] = [];
-    for (const { event, command } of POMASTER_HOOK_EVENT_COMMANDS) {
+    for (const { event, command, matcher } of POMASTER_HOOK_EVENT_COMMANDS) {
       const groups = (hooks as Record<string, unknown>)[event];
       const present =
         Array.isArray(groups) &&
-        groups.some(
-          (group) =>
-            group !== null &&
-            typeof group === "object" &&
-            Array.isArray((group as Record<string, unknown>).hooks) &&
-            ((group as Record<string, unknown>).hooks as unknown[]).some(
-              (handler) =>
-                handler !== null &&
-                typeof handler === "object" &&
-                (handler as Record<string, unknown>).command === command,
-            ),
-        );
-      if (!present) missing.push(`${event}→${command}`);
+        groups.some((group) => hookGroupMatches(group, command, matcher));
+      if (!present) {
+        missing.push(`${event}${matcher === undefined ? "" : `[${matcher}]`}→${command}`);
+      }
     }
     if (missing.length > 0) {
       return {
         probe: HEAVY_ENTRY_HOOKS_PROBE,
         status: "MISSING_CONFIGURATION",
         detail: `hook 注册项缺席：${missing.join(" / ")}`,
-        hint: "重跑 pomaster init 合并注册项（按 command 词形幂等查重，既有内容保留）。",
+        hint: "重跑 pomaster init 合并注册项（按 event+matcher+command 词形幂等查重，既有内容保留）。",
       };
     }
     // —— R4（09-06）生效自检：注册在座之外，两条 hook 命令的可执行体必须 PATH 可达
@@ -504,6 +576,14 @@ export async function probeHeavyEntryInstall(
       if (executablePath === null) unreachable.push(command);
       else resolved.push(`${command} → ${executablePath}`);
     }
+    const launcherCliEntry = launcherText === null ? null : parseLauncherCliEntry(launcherText);
+    if (launcherCliEntry === null) {
+      unreachable.push(`${CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE}→POMASTER_CLI_ENTRY`);
+    } else if (!existsSync(launcherCliEntry)) {
+      unreachable.push(`${CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE}→${launcherCliEntry}`);
+    } else {
+      resolved.push(`POMASTER_CLI_ENTRY → ${launcherCliEntry}`);
+    }
     if (unreachable.length > 0) {
       return {
         probe: HEAVY_ENTRY_HOOKS_PROBE,
@@ -515,7 +595,10 @@ export async function probeHeavyEntryInstall(
     return {
       probe: HEAVY_ENTRY_HOOKS_PROBE,
       status: "READY",
-      detail: `${POMASTER_HOOK_EVENT_COMMANDS.map((e) => e.event).join(" + ")} hooks registered（合并式，既有条目保留）+ 命令 PATH 可达（${resolved.join("; ")}）`,
+      detail:
+        `defined=${POMASTER_HOOK_EVENT_COMMANDS.length}; distributed=${POMASTER_HOOK_EVENT_COMMANDS.length}; ` +
+        `installed=${POMASTER_HOOK_EVENT_COMMANDS.length}; runnable=ready; prevention=prevention-capable within Claude Code matcher Edit|Write|NotebookEdit|Bash; ` +
+        `${POMASTER_HOOK_EVENT_COMMANDS.map((e) => e.event).join(" + ")} hooks registered（合并式，既有条目保留）+ 命令 PATH 可达（${resolved.join("; ")}）`,
       hint: null,
     };
   })();

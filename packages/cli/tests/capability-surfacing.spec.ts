@@ -429,11 +429,16 @@ describe("C4 · status 轮换 tip", () => {
     const tipLine = outcome.human.find((line) => line.startsWith("  tip: "));
     expect(tipLine).toBeDefined();
     expect(tipLine).toBe(`  tip: ${capabilityTipForSeq(outcome.result.generation_seq)}`);
-    // tip 行在 next 行之后（版式契约：next → tip 收尾）。
+    // tip 行仍在 next 行之后；bootstrap harness pointer 是新增的 agent discovery
+    // 行，必须显式占位在 next 与 tip 之间，不能把 tip 静默挤丢。
     const nextIdx = outcome.human.findIndex((line) => line.startsWith("  next: "));
+    const bootstrapIdx = outcome.human.findIndex((line) =>
+      line.startsWith("  capability/tool discovery: "),
+    );
     const tipIdx = outcome.human.findIndex((line) => line.startsWith("  tip: "));
     expect(nextIdx).toBeGreaterThan(-1);
-    expect(tipIdx).toBe(nextIdx + 1);
+    expect(bootstrapIdx).toBe(nextIdx + 1);
+    expect(tipIdx).toBe(bootstrapIdx + 1);
     expect(outcome.result.capability_tip).toBe(capabilityTipForSeq(1));
   });
 

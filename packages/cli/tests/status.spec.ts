@@ -94,6 +94,19 @@ describe("status 计数", () => {
     expect(outcome.result.generation_seq).toBe(1);
     expect(outcome.result.dialect_match).toBe(true);
     expect(outcome.result.permits.unique_active_refs).toEqual([]);
+    expect(outcome.result.bootstrap_harness).toEqual({
+      readiness: expect.any(String),
+      capabilities: expect.any(Number),
+      tools: {
+        status: "absent",
+        available: 0,
+        gaps: 1,
+        discovery_command: "pomaster tools list --json",
+      },
+      audit_command: "pomaster doctor --json",
+    });
+    expect(outcome.human.join("\n")).toContain("capability/tool discovery:");
+    expect(outcome.human.join("\n")).toContain("pomaster tools list --json");
   });
 
   it("对象计数：total / by_kind / by_lifecycle", async () => {

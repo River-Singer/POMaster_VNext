@@ -44,7 +44,7 @@ import {
   type Store,
   type StorePaths,
 } from "@pomaster/kernel";
-import type { CliError, CommandOutcome } from "./envelope.js";
+import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
 import {
   judgeReconcile,
@@ -165,28 +165,26 @@ export interface SessionAttachInput {
    * 恢复前对账（W4-S1：B11/§6-2「恢复先对账」接线；可选——缺省不跑，attach 是 hook
    * 重入口，缺省跑会改写既有通路语义）。在场 = attach 落盘**之前**按该 permit 基线跑
    * ⑥ 拍判卷（judgeReconcile 共用消费函数）：clean 放行并回显摘要；dirty/baseline
-   * 缺失阻断（零副作用——会话档案未落盘、journal 零事件）。
+   * 缺失允许恢复观察，但必须显式提示未处置；判卷失败仍阻断。
    */
   readonly reconcile?: string;
   /**
-   * 对账越权授权（仅与 reconcile 在座同用生效；孤旗 SCHEMA_INVALID——无效果旗标禁
-   * 静默）。与顶替 --force 分轴不共用：两个授权各自显式，禁一旗双授权（顶替越权与
-   * 对账越权的审计语义不同形）。越权放行留痕于本信封 result.reconcile.overridden=true
-   * （journal 零事件——kernel attachSession 面零改动红线）。
+   * 兼容旧调用：非 clean 时回显 overridden=true，仅表示显式传入此旗标。
+   * 不代表漂移已处置、持久批准或写入授权；与会话顶替 --force 独立。
+   * 孤旗仍 SCHEMA_INVALID。
    */
   readonly reconcileForce?: boolean;
 }
 
 /**
- * resume 前对账闸回显（--reconcile 在场时恒非 null；缺席 = null 显式未跑）。
- * 码位复用说明：阻断码沿用 reconcile 命令既有 RECONCILE_DIRTY /
- * RECONCILE_BASELINE_MISSING（勿新码位——同义码位复用先例）；越权留痕住 overridden。
+ * resume 对账回显（判卷成功时非 null；缺席或判卷失败 = null）。
+ * 非 clean 关注项复用 RECONCILE_DIRTY / RECONCILE_BASELINE_MISSING 告警。
  */
 export interface SessionReconcileGate {
   readonly permit_ref: string;
   readonly clean: boolean;
   readonly baseline_missing: boolean;
-  /** true = 阻断态下显式 reconcileForce 越权放行（信封留痕；journal 零事件）。 */
+  /** true = 非 clean 时显式传入 reconcileForce；仅兼容回显，不是持久处置或授权。 */
   readonly overridden: boolean;
 }
 
@@ -244,7 +242,7 @@ function parseMetaArgv(
  * 任务指针（resume 探测输入）。
  *
  * W4-S1 恢复对账前置闸（--reconcile 在座时）：⑥ 拍判卷在 attachSession **之前**执行
- * （恢复先对账——§6-2；阻断即零副作用：会话档案未落盘、journal 零事件）。判卷走
+ * （恢复先对账——§6-2；dirty 仅告警，判卷异常仍在会话写入前拒绝）。判卷走
  * judgeReconcile 共用消费函数（与 reconcile 命令同一份分派，提取而非复制）。
  */
 export async function runSessionAttach(
@@ -267,13 +265,14 @@ export async function runSessionAttach(
     return notInitializedFail("session attach", {
       code: "SCHEMA_INVALID",
       message: "--reconcile-force 孤旗（无 --reconcile）——无效果旗标禁静默",
-      hint: "对账越权授权只在对账闸真实在座时有意义；补 --reconcile <permit> 或去掉 --reconcile-force。",
+      hint: "兼容旗标须与对账一起使用；补 --reconcile <permit> 或去掉 --reconcile-force。",
     }, emptySessionAttach());
   }
 
-  // —— resume 对账前置消费（B11/§6-2 接线；判卷失败/阻断 → attach 不发生） ——
+  // 判卷失败仍在 attach 写入前返回；非 clean 事实通过告警保留。
   let gate: SessionReconcileGate | null = null;
   const gateLines: string[] = [];
+  const gateWarnings: CliWarning[] = [];
   if (input.reconcile !== undefined) {
     const judgment = await judgeReconcile(rootDir, { permit: input.reconcile });
     if (judgment.kind === "failed") {
@@ -284,51 +283,42 @@ export async function runSessionAttach(
         [`session attach: FAILED — ${judgment.error.code}\n  hint: ${judgment.error.hint}`],
       );
     }
-    const blocked = judgment.kind !== "clean";
-    if (blocked && input.reconcileForce !== true) {
+    const needsAttention = judgment.kind !== "clean";
+    if (needsAttention) {
       const error: CliError =
         judgment.kind === "dirty"
           ? {
               code: "RECONCILE_DIRTY",
-              message: `session attach --reconcile：恢复前对账发现 delta——恢复动作将作用于已漂移的世界；${reconcileDirtySummaryLine(judgment.report)}`,
-              hint: `人审三段后处置（pomaster reconcile --permit ${input.reconcile} --json 看 delta 全文；处置走 transition/supersede 通道——${RECONCILE_DIRTY_HINT}）；确需带越权恢复传 --reconcile-force（信封留痕，journal 零事件）`,
+              message: `恢复观察需关注：${reconcileDirtySummaryLine(judgment.report)}`,
+              hint: `pomaster reconcile --permit ${input.reconcile} --json 查看 delta；${RECONCILE_DIRTY_HINT}。attach 不处置漂移、不扩大 Permit；后续写入仍独立校验权限。`,
             }
           : {
               code: "RECONCILE_BASELINE_MISSING",
-              message: `session attach --reconcile：${input.reconcile} 无基线快照（旧形态许可）——不能拿「没有基线」冒充「无变化」后恢复`,
-              hint: "重新签发带基线许可（pomaster permit issue），或人工对账后 supersede 旧许可；确需带越权恢复传 --reconcile-force",
+              message: `session attach --reconcile：${input.reconcile} 无基线快照（旧形态许可），变化未知，clean=false`,
+              hint: "恢复上下文后缺基线仍未解决；重新签发带基线许可或人工对账后 supersede 旧许可。attach 不扩大 Permit，后续写入仍独立校验权限。",
             };
-      return failOutcome<SessionAttachResult>(
-        "session attach",
-        {
-          ...emptySessionAttach(),
-          reconcile: {
-            permit_ref: judgment.report.permit_ref,
-            clean: false,
-            baseline_missing: judgment.kind === "baseline_missing",
-            overridden: false,
-          },
-        },
-        [error],
-        [`session attach: FAILED — ${error.code}\n  hint: ${error.hint}`],
-      );
+      gateWarnings.push(error);
+      gateLines.push(`  ${error.code}: ${error.message}\n  hint: ${error.hint}`);
+      gateLines.push("  attach 不建立只读会话；既有 Permit 范围内的写入仍可能获准，权限检查通过不等于漂移已处置。");
     }
     gate = {
       permit_ref: judgment.report.permit_ref,
       clean: judgment.kind === "clean",
       baseline_missing: judgment.kind === "baseline_missing",
-      overridden: blocked,
+      overridden: needsAttention && input.reconcileForce === true,
     };
     gateLines.push(
       `  resume 前对账（⑥拍前置消费）：${
         judgment.kind === "clean"
           ? reconcileCleanSummaryLine(judgment.report)
-          : reconcileDirtySummaryLine(judgment.report)
+          : judgment.kind === "baseline_missing"
+            ? `reconcile ${judgment.report.permit_ref}：基线缺失，clean=false，变化未知`
+            : reconcileDirtySummaryLine(judgment.report)
       }`,
     );
     if (gate.overridden) {
       gateLines.push(
-        `  对账越权留痕：--reconcile-force 显式越权放行——恢复动作作用于已漂移的世界（信封 result.reconcile.overridden=true 留痕；journal 零事件——kernel attach 面零改动）`,
+        `  --reconcile-force 兼容回显：result.reconcile.overridden=true 仅记录本次显式旗标；不是持久处置回执，不认可漂移，也不授予写入权限。`,
       );
     }
   }
@@ -367,7 +357,7 @@ export async function runSessionAttach(
         ? [`  held_locks: ${outcome.held_locks.join(", ")}`]
         : []),
     ];
-    return okOutcome("session attach", result, human);
+    return okOutcome("session attach", result, human, gateWarnings);
   } catch (err) {
     return kernelFail("session attach", err, emptySessionAttach());
   }

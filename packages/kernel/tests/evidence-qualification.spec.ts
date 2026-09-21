@@ -68,6 +68,53 @@ function eventFixture(overrides: Partial<EvidenceInvalidationEvent> = {}): Evide
 // 词形闭包
 // ============================================================
 
+describe("scoped baseline evidence", () => {
+  const original = { required: `sha256:${"a".repeat(64)}`, excluded: `sha256:${"b".repeat(64)}` };
+  const current = { ...original, excluded: `sha256:${"c".repeat(64)}` };
+  const evidence = evidenceFixture({ captured_at_seq: 3, baseline_inputs: { at_seq: 2, digests: original } });
+  const requirement = requirementFixture({ baseline_at_seq: 5, baseline_scope: {
+    relevant_targets: ["required"], declared_inputs: { at_seq: 2, digests: original }, current_inputs: { at_seq: 5, digests: current },
+  } });
+
+  it("reuses captured inputs after unrelated reconfirmation but keeps legacy sequence checks", () => {
+    expect(qualifyEvidence(evidence, requirement).qualified).toBe(true);
+    expect(qualifyEvidence(evidenceFixture({ captured_at_seq: 3 }), requirement).verdict).toBe("STALE_SEQ");
+    expect(qualifyEvidence(evidence, requirementFixture({ baseline_at_seq: 5 })).verdict).toBe("STALE_SEQ");
+  });
+
+  it.each(["relevant", "incomplete", "future", "missing-sequence"])("rejects %s snapshots", (kind) => {
+    const snapshot = { at_seq: kind === "future" ? 6 : 2, digests: kind === "incomplete" ? { required: original.required } :
+      kind === "relevant" ? { ...original, required: current.excluded } : original };
+    expect(qualifyEvidence({ ...evidence, captured_at_seq: kind === "missing-sequence" ? null : 3, baseline_inputs: snapshot }, requirement).verdict).toBe("STALE_SEQ");
+  });
+
+  it("does not waive other qualification axes", () => {
+    expect(qualifyEvidence({ ...evidence, gate: "BUILD", gate_def: "old" }, {
+      ...requirement, current_gate_defs: { BUILD: "new" },
+    }).verdict).toBe("ORACLE_SUPERSEDED");
+    expect(qualifyEvidence({ ...evidence, execution_id: "AGX-2026-1" }, {
+      ...requirement, invalidated_events: [eventFixture({ execution_id: "AGX-2026-1" })],
+    }).verdict).toBe("PERMIT_INVALIDATED");
+  });
+
+  it.each([null, 6])("rejects a scoped snapshot detached from baseline sequence %s", (baselineAtSeq) => {
+    expect(qualifyEvidence(evidence, { ...requirement, baseline_at_seq: baselineAtSeq }).verdict).toBe("STALE_SEQ");
+  });
+
+  it("requires the declaration, captured and current snapshots to cover the same targets", () => {
+    const scope = requirement.baseline_scope!;
+    expect(qualifyEvidence(evidence, { ...requirement, baseline_scope: {
+      ...scope, declared_inputs: { at_seq: 2, digests: { required: original.required } },
+    } }).verdict).toBe("STALE_SEQ");
+    expect(qualifyEvidence({ ...evidence, baseline_inputs: {
+      at_seq: 2, digests: { ...original, extra: original.required },
+    } }, requirement).verdict).toBe("STALE_SEQ");
+    expect(qualifyEvidence(evidence, { ...requirement, baseline_scope: {
+      ...scope, current_inputs: { at_seq: 5, digests: { required: original.required } },
+    } }).verdict).toBe("STALE_SEQ");
+  });
+});
+
 describe("evidence-qualification 词形闭包", () => {
   it("verdict 五词形闭包：QUALIFIED 唯一合格词形 + 四否决词形（词族收编先例）", () => {
     expect(EVIDENCE_QUALIFICATION_VERDICTS).toEqual([

@@ -262,12 +262,27 @@
         }
       }
     },
+    "baseline_inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["at_seq", "digests"],
+      "properties": {
+        "at_seq": { "$ref": "#/definitions/seq" },
+        "digests": {
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": { "pattern": "\\S" },
+          "additionalProperties": { "$ref": "#/definitions/sha256_digest" }
+        }
+      }
+    },
     "claim_record": {
       "title": "Claim 记录（evidence/claims/CLM-*.json）",
       "type": "object",
       "additionalProperties": false,
       "required": ["record_type", "clm", "subject", "assertion", "asserted_by", "evidence_refs", "verification", "rev"],
       "properties": {
+        "baseline_inputs": { "$ref": "#/definitions/baseline_inputs" },
         "record_type": {
           "const": "claim",
           "description": "判别字段（root oneOf 分流）"
@@ -368,6 +383,7 @@
       "additionalProperties": false,
       "required": ["record_type", "grn", "ran_at_seq", "gate_result"],
       "properties": {
+        "baseline_inputs": { "$ref": "#/definitions/baseline_inputs" },
         "record_type": {
           "const": "run",
           "description": "判别字段（root oneOf 分流）"

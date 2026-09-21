@@ -2043,6 +2043,12 @@ export interface SufficiencyResidual {
 
 export interface DiscoverySufficiencyInput {
   readonly graph: DecisionGraph;
+  /**
+   * Owner-confirmed roots for the current increment. The graph fingerprint binds
+   * the selection to the exact graph that was reviewed; callers without this
+   * contract retain the conservative whole-graph denominator.
+   */
+  readonly decision_scope?: DecisionScopeConfirmation;
   /** OPEN 之外的合法残留登记（§15：Assumption/Deferred/Future/Known Unknown）。 */
   readonly residuals: readonly SufficiencyResidual[];
   /** 09 msd_assessment 三轴（复用词形与语义——调用方按 09 判定供给）。 */
@@ -2050,6 +2056,74 @@ export interface DiscoverySufficiencyInput {
     readonly goal_defined: boolean;
     readonly scope_defined: boolean;
     readonly acceptance_verifiable: boolean;
+  };
+}
+
+export interface DecisionScopeConfirmation {
+  readonly root_decision_ids: readonly string[];
+  readonly graph_fingerprint: string;
+}
+
+export type DecisionScopeOutcome =
+  | {
+      readonly ok: true;
+      readonly selected_decision_ids: readonly string[];
+      readonly out_of_scope_decision_ids: readonly string[];
+    }
+  | {
+      readonly ok: false;
+      readonly reason: "empty_roots" | "unknown_root" | "stale_graph";
+      readonly details: readonly string[];
+    };
+
+/**
+ * Validate an Owner-confirmed increment scope and derive its transitive
+ * depends_on closure. The original graph remains intact; this is a read-only
+ * denominator projection for sufficiency, not a filtered replacement graph.
+ */
+export function resolveDecisionScope(
+  graph: DecisionGraph,
+  scope: DecisionScopeConfirmation,
+): DecisionScopeOutcome {
+  if (scope.graph_fingerprint !== graph.graph_fingerprint) {
+    return {
+      ok: false,
+      reason: "stale_graph",
+      details: [
+        `决策范围绑定 graph_fingerprint=${scope.graph_fingerprint}，当前图为 ${graph.graph_fingerprint}；图已变化，范围确认失效`,
+      ],
+    };
+  }
+  const roots = [...new Set(scope.root_decision_ids)];
+  if (roots.length === 0) {
+    return {
+      ok: false,
+      reason: "empty_roots",
+      details: ["当前增量决策范围至少需要一个 Owner 确认的 DECISION 根节点"],
+    };
+  }
+  const byId = new Map(graph.decisions.map((node) => [node.decision_id, node]));
+  const missing = roots.filter((id) => !byId.has(id));
+  if (missing.length > 0) {
+    return {
+      ok: false,
+      reason: "unknown_root",
+      details: [`决策范围根节点不在图内：${missing.join("、")}`],
+    };
+  }
+  const selected = new Set<string>();
+  const visit = (id: string): void => {
+    if (selected.has(id)) return;
+    selected.add(id);
+    const node = byId.get(id);
+    if (node === undefined) return;
+    for (const dependency of node.depends_on) visit(dependency);
+  };
+  for (const root of roots) visit(root);
+  return {
+    ok: true,
+    selected_decision_ids: graph.decisions.filter((node) => selected.has(node.decision_id)).map((node) => node.decision_id),
+    out_of_scope_decision_ids: graph.decisions.filter((node) => !selected.has(node.decision_id)).map((node) => node.decision_id),
   };
 }
 
@@ -2068,13 +2142,18 @@ export interface DiscoverySufficiencyReport {
   readonly unknowns: readonly string[];
   readonly future_considerations: readonly string[];
   readonly notes: readonly string[];
+  /** Nodes kept visible but excluded from the current increment denominator. */
+  readonly out_of_scope: readonly string[];
 }
 
 export type EvaluateDiscoverySufficiencyOutcome =
   | { readonly ok: true; readonly report: DiscoverySufficiencyReport }
   | {
       readonly ok: false;
-      readonly reason: "residual_classification_unknown" | "residual_statement_empty";
+      readonly reason:
+        | "residual_classification_unknown"
+        | "residual_statement_empty"
+        | "decision_scope_invalid";
       readonly details: readonly string[];
       readonly hint: string;
     };
@@ -2126,9 +2205,30 @@ export function evaluateDiscoverySufficiency(
   const unknowns: string[] = [];
   const future: string[] = [];
   const notes: string[] = [];
+  let scopedDecisionIds: ReadonlySet<string> | null = null;
+  let outOfScope: readonly string[] = [];
+  if (input.decision_scope !== undefined) {
+    const scope = resolveDecisionScope(input.graph, input.decision_scope);
+    if (!scope.ok) {
+      return {
+        ok: false,
+        reason: "decision_scope_invalid",
+        details: scope.details,
+        hint: "重新基于当前 decision-graph.json 明确申报 --decision-root；图指纹变化后不能复用旧范围确认。",
+      };
+    }
+    scopedDecisionIds = new Set(scope.selected_decision_ids);
+    outOfScope = scope.out_of_scope_decision_ids;
+    notes.push(
+      `当前增量范围：${scope.selected_decision_ids.join("、")}；范围外节点保留可见但不进入本次 sufficiency 分母：${outOfScope.length > 0 ? outOfScope.join("、") : "（无）"}`,
+    );
+  }
   // 零分母显式不足（G6）：停止条件「不存在尚未处理且会显著改变的维度」的前提是
   // 存在决策分母——零决策图上「无 blocking」是零分母当满分，不是已评估充分。
-  if (input.graph.decisions.length === 0) {
+  const denominator = scopedDecisionIds === null
+    ? input.graph.decisions
+    : input.graph.decisions.filter((node) => scopedDecisionIds?.has(node.decision_id));
+  if (denominator.length === 0) {
     blocking.push({
       decision_id: null,
       detail:
@@ -2141,7 +2241,7 @@ export function evaluateDiscoverySufficiency(
     else if (residual.classification === "SOFT_UNCERTAINTY") unknowns.push(residual.statement);
     else future.push(residual.statement);
   }
-  for (const node of input.graph.decisions) {
+  for (const node of denominator) {
     const resolution = node.resolution;
     if (resolution === null) {
       const dimensions = DECISION_CLASS_TO_DIMENSIONS[node.class] ?? [];
@@ -2207,6 +2307,7 @@ export function evaluateDiscoverySufficiency(
       unknowns,
       future_considerations: future,
       notes,
+      out_of_scope: outOfScope,
     },
   };
 }

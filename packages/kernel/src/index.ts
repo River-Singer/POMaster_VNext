@@ -42,6 +42,7 @@ import type {
   WritePolicyValue,
 } from "@pomaster/schemas";
 import type { EvidenceArtifactRefInput } from "./evidence-artifacts.js";
+import type { EvidenceBaselineInputs } from "./evidence-qualification.js";
 import type { VerificationMethodValue } from "./store.js";
 
 // ============================================================
@@ -334,6 +335,7 @@ export interface ObjectEnvelopeInput {
 
 /** evidence/claims/CLM-* 写入输入。assertedBy 是 CLAIMED——kernel 不判其真，只登记。 */
 export interface ClaimRecordInput {
+  readonly baselineInputs?: EvidenceBaselineInputs;
   readonly clm: string; // CLM-[0-9]+
   readonly subjectId: GovernedId;
   readonly assertion: string;
@@ -350,6 +352,7 @@ export interface ClaimRecordInput {
 
 /** evidence/runs/GRN-* 写入输入（run 信封 + 已归一 GateResult；A8：不入 truth-index）。 */
 export interface GateRunRecordInput {
+  readonly baselineInputs?: EvidenceBaselineInputs;
   readonly grn: string; // GRN-[0-9]+
   readonly result: GateResult;
   readonly trigger: RunTriggerValue;
@@ -370,6 +373,7 @@ export interface GateRunRecordInput {
  * D20 主体分离归 doctor 探针 claim_self_approval_clean 检出。
  */
 export interface VerifyClaimInput {
+  readonly baselineInputs?: EvidenceBaselineInputs;
   readonly clm: string; // CLM-[0-9]+
   /** 重算主体（07 verification.recomputed_by；应与 asserted_by 主体分离——D20）。 */
   readonly verifiedBy: Actor;
@@ -576,6 +580,7 @@ export {
   resolveDecision,
   classifyUnknownTriage,
   evaluateDiscoverySufficiency,
+  resolveDecisionScope,
   syncDecisionRequestRefs,
   validateAcceptanceAnchors,
 } from "./decision-graph.js";
@@ -621,6 +626,8 @@ export type {
   ResolveDecisionOutcome,
   SufficiencyResidual,
   DiscoverySufficiencyInput,
+  DecisionScopeConfirmation,
+  DecisionScopeOutcome,
   SufficiencyBlockingItem,
   DiscoverySufficiencyReport,
   EvaluateDiscoverySufficiencyOutcome,
@@ -1164,6 +1171,7 @@ export {
   PLAN_APPLICABILITY_VALUES,
   PLAN_CHANGE_FACE_KINDS,
   PLAN_CAPABILITY_WORDS,
+  PLAN_CAPABILITY_GATE_NAMES,
   CAPABILITY_EVIDENCE_REQUIREMENT,
   compileVerificationPlan,
 } from "./plan-compiler.js";
@@ -1230,6 +1238,7 @@ export type {
 // 写侧前置）——判定核叠加非替换，既有资格防线零改动。
 export {
   EVIDENCE_QUALIFICATION_VERDICTS,
+  assertEvidenceBaselineInputs,
   EVIDENCE_QUALIFICATION_SURFACES,
   EVIDENCE_INVALIDATION_EVENT_TYPES,
   qualifyEvidence,
@@ -1237,6 +1246,8 @@ export {
 } from "./evidence-qualification.js";
 export type {
   EvidenceQualificationVerdict,
+  EvidenceBaselineInputs,
+  EvidenceBaselineScope,
   EvidenceQualificationSurface,
   EvidenceInvalidationEventType,
   EvidenceQualificationEvidence,

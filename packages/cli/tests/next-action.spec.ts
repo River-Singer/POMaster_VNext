@@ -218,6 +218,59 @@ function snap(overrides: Partial<NextActionSnapshot>): NextActionSnapshot {
 
 const TASK = { id: "TASK.T1", lifecycle: "PROPOSED", evidence: "PLANNED" };
 
+describe("baseline attention alongside task suggestions (G08)", () => {
+  it.each([
+    [{}, "pomaster permit issue"],
+    [{ bound_refs: ["PERMIT.P1"], expired_bound_refs: ["PERMIT.P1"] }, "pomaster permit steal"],
+    [{ bound_refs: ["PERMIT.P1"] }, "pomaster context compile"],
+    [{ bound_refs: ["PERMIT.P1"], task_manifest_present: true, task_manifest_freshness: "stale_grounding", task_manifest_role: "frontend" }, "pomaster context compile --role frontend"],
+    [{ bound_refs: ["PERMIT.P1"], task_manifest_present: true, task_manifest_freshness: "fresh" }, "pomaster execution begin"],
+    [{ bound_refs: ["PERMIT.P1"], task_manifest_present: true, task_manifest_freshness: "fresh", task_execution_active: true }, "pomaster check --fast"],
+  ] satisfies readonly [Partial<NextActionSnapshot>, string][]) ("preserves attention and task prerequisite %j", (overrides, command) => {
+    const snapshot = snap({
+      active_tasks: [TASK],
+      baseline_gate_codes: ["BASELINE_DRIFT"],
+      baseline_blocking_remaining: 0,
+      dod_ready_task_id: TASK.id,
+      ...overrides,
+    });
+    const before = structuredClone(snapshot);
+    const action = evaluateNextAction(snapshot);
+    expect(action.route_id).toBe("R_BASELINE_NOT_READY");
+    expect(action.reason).toContain(command);
+    expect(action.reason).toContain("BASELINE_DRIFT");
+    expect(action.reason).toContain("提醒不授予 Permit");
+    expect(action.reason).not.toContain("pomaster closeout");
+    expect(renderBreadcrumb(action, snapshot)).toContain(command);
+    expect(snapshot).toEqual(before);
+  });
+
+  it.each([3, null])("keeps unconfirmed baseline visible when confirm is unavailable (%s)", (remaining) => {
+    const action = evaluateNextAction(snap({
+      active_tasks: [TASK],
+      baseline_gate_codes: ["BASELINE_NOT_CONFIRMED"],
+      baseline_blocking_remaining: remaining,
+    }));
+    expect(action.route_id).toBe("R_PERMIT_MISSING");
+    expect(action.reason).toContain("BASELINE_NOT_CONFIRMED");
+    expect(action.reason).not.toContain("pomaster baseline confirm");
+  });
+
+  it("does not invent a task suggestion when its routes cannot be judged", () => {
+    const action = evaluateNextAction(snap({
+      active_tasks: [TASK],
+      baseline_gate_codes: ["BASELINE_DRIFT"],
+      baseline_blocking_remaining: 0,
+      permit_ledger_ok: false,
+      task_manifest_present: true,
+      task_manifest_freshness: "unjudgeable",
+      task_execution_active: null,
+    }));
+    expect(action.reason).toContain("任务侧下一步: 无法判定");
+    expect(action.reason).not.toContain("pomaster execution begin");
+  });
+});
+
 /** 每路由行一枚 fixtures（R_UNDETERMINED 为全表未中兜底——纯函数层用畸构快照触发）。 */
 const ROUTE_FIXTURES: readonly { readonly route: NextActionRouteId; readonly snapshot: NextActionSnapshot }[] = [
   { route: "R_NOT_INITIALIZED", snapshot: snap({ initialized: false }) },

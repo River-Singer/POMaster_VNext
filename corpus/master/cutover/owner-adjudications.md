@@ -203,3 +203,19 @@
 - **批次 C 观测面**：provider 四维度轴（native_async/native_steering/cancellable/tool_discovery）×三值（native/absent/unknown）＋basis 四值轴＋四降级 id＋provider 命令组；telemetry 六指标轴＋NOT_COMPUTABLE 词形＋telemetry 命令组；view review 八分区＋REVIEW_BRANCH_NAMES＋ACCEPT_RECEIPT_SCAN_STATUSES＋audit_rejections 扫描分区（裁决 21 呈现强化的词形面）。
 - **批次 D 预设面**：preset 命令组三子命令（preview/drift/applicability）＋家族 id 闭包（wired：design-tokens/baseline-framework；扩展位五词形：baseline-preset-draft/technology-profile/archetype-cards/family-examples/projection-presets）＋动作四值（create|fill|overwrite|none）＋漂移词形（VALUE_DRIFT、aligned|drifted|no_comparison）＋匹配三值（native|mismatch|unresolved）＋PRESET_FAMILY_UNKNOWN/PRESET_LANE_INVALID 错误码。
 - **边界注记**：本裁决为词形/schema 追认；对应行为语义的裁定分别在裁决 20（①–⑦）与裁决 21（closeout-audit 呈现强化）。vocab-lock 主表仍零触碰（各词形为通路局部词/开放位，未来入主表走 vocab-pr）。
+
+## 裁决 23：不确定性暴露与动作范围化（2026-09-15 Owner 批准实施）
+
+- **决策渠道**：Owner 在审阅 `.trellis/tasks/09-14-hard-gate-human-decision-audit/plan.md` 及源码审查后回复「好的，开始实施吧」。此前明确 Unknown / Conflict / Drift 应首先暴露，最终由人按影响决策，而非见标签就全局阻断。
+- **授权范围**：按计划分批拆分人的处置入口与充分性判定、范围化 Discovery/基线/证据影响、分离会话恢复与写入授权、区分必需验证和可选诊断、同步入口提示。行动建议是现有事实的 projection，不新增 canonical 状态机。
+- **首批行为调整**：grounding 未充分不再天然禁止记录 UNKNOWN/DEFER；记录处置不等于 ACCEPT/CHANGE 有充分依据，也不自动满足 ready。会话对账中的 dirty/缺基线应暴露；只有确认后续写入仍独立校验权限，才能放宽观察性恢复。后者调整裁决 22 批次 B 所承载的恢复前阻断行为，不修改活跃会话顶替授权。
+- **保留边界**：Permit、权威写入、损坏数据/引用、真实证据与人工 ACCEPT 不因本裁定失效；接受风险不等于验证通过。无法证明无关的变化不得静默豁免，必需工具缺失不得自动改为 N/A。
+- **实施纪律**：契约载体先核实，新增公共字段/词形或超出计划的安全选择仍须另行裁定。本文记录批准方向与明确行为边界，不宣称全部计划已实现。
+
+### 裁决 23 补充：范围与验证载体（2026-09-15）
+
+- Owner 对任务 `decisions-needed.md` 三项建议明确回复「按这三条建议实施」。
+- 当前增量由 Owner 确认决策根集合，绑定 discovery/graph fingerprint，并包含 depends_on 传递依赖；图变化后重评，旧数据或缺失声明保留原检查。
+- 采用任务相关基线依赖声明及新证据的输入摘要快照；共享/未评估依赖不得静默排除。旧证据保留 seq 检查直到授权重验，相关变化使旧判断失效。
+- 验证义务取 acceptance 与 Evidence Spec 必需项并集；必需优先于排除，显式非必需且未被其他义务要求的诊断才能不阻断。复用编译器和显式 capability-to-gate 映射；缺映射/旧计划保留保守检查，缺工具不改为 N/A。
+- 此补充授权上述最小契约实现与兼容路径，不授权新 canonical 状态机、不授权假绿或 Permit 旁路。

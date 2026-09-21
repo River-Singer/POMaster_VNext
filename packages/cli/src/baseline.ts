@@ -227,7 +227,7 @@
 import { writeFile } from "node:fs/promises";
 import type { TruthIndex } from "@pomaster/kernel";
 import { GovernanceError, createStore, loadTruthIndex, sha256OfUtf8 } from "@pomaster/kernel";
-import type { CliError } from "./envelope.js";
+import type { CliError, CliWarning } from "./envelope.js";
 import { failOutcome, okOutcome, type CommandOutcome } from "./envelope.js";
 import { casSwapFile, nodeCasSwapFs, sleepSync, type CasSwapFs } from "./fs-cas.js";
 import {
@@ -1872,6 +1872,98 @@ export interface BaselineConfirmedRecord {
   readonly pending?: BaselinePendingChange;
 }
 
+/**
+ * Task-scoped baseline dependency declaration. The two target lists must
+ * partition BASELINE_CONFIRM_TARGETS; anything omitted remains unassessed and
+ * therefore uses the legacy global gate.
+ */
+export interface BaselineDependencyDeclaration {
+  readonly baseline_at_seq: number;
+  readonly relevant_targets: readonly string[];
+  readonly excluded_targets: readonly string[];
+  /** Confirmation digest snapshot captured when the task scope was declared. */
+  readonly digests: Readonly<Record<string, string>>;
+}
+
+export type BaselineDependencyValidation =
+  | { readonly ok: true; readonly declaration: BaselineDependencyDeclaration }
+  | { readonly ok: false; readonly details: readonly string[] };
+
+const SHA256_DIGEST_PATTERN = /^sha256:[0-9a-f]{64}$/;
+
+/** Validate the task-scoped baseline contract without interpreting free text. */
+export function validateBaselineDependencyDeclaration(
+  value: unknown,
+): BaselineDependencyValidation {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return { ok: false, details: ["baseline_dependencies 须为对象"] };
+  }
+  const candidate = value as Record<string, unknown>;
+  const atSeq = candidate.baseline_at_seq;
+  const relevant = candidate.relevant_targets;
+  const excluded = candidate.excluded_targets;
+  const digests = candidate.digests;
+  const details: string[] = [];
+  if (typeof atSeq !== "number" || !Number.isInteger(atSeq) || atSeq < 0) {
+    details.push("baseline_at_seq 须为非负整数");
+  }
+  if (!Array.isArray(relevant) || !relevant.every((target) => typeof target === "string")) {
+    details.push("relevant_targets 须为字符串数组");
+  }
+  if (!Array.isArray(excluded) || !excluded.every((target) => typeof target === "string")) {
+    details.push("excluded_targets 须为字符串数组");
+  }
+  if (typeof digests !== "object" || digests === null || Array.isArray(digests)) {
+    details.push("digests 须为对象");
+  }
+  if (details.length > 0) return { ok: false, details };
+
+  const relevantTargets = relevant as string[];
+  const excludedTargets = excluded as string[];
+  const allTargets = [...relevantTargets, ...excludedTargets];
+  const duplicates = allTargets.filter((target, index) => allTargets.indexOf(target) !== index);
+  const unknownTargets = allTargets.filter((target) => !BASELINE_CONFIRM_TARGETS.includes(target));
+  const missingTargets = BASELINE_CONFIRM_TARGETS.filter((target) => !allTargets.includes(target));
+  if (duplicates.length > 0) details.push(`baseline 依赖分组重复目标：${[...new Set(duplicates)].join(", ")}`);
+  if (unknownTargets.length > 0) details.push(`baseline 依赖分组含未知目标：${[...new Set(unknownTargets)].join(", ")}`);
+  if (missingTargets.length > 0) details.push(`baseline 依赖分组未覆盖目标（仍属未评估）：${missingTargets.join(", ")}`);
+
+  const digestRecord = digests as Record<string, unknown>;
+  const missingDigests = BASELINE_CONFIRM_TARGETS.filter((target) => !(target in digestRecord));
+  const extraDigests = Object.keys(digestRecord).filter((target) => !BASELINE_CONFIRM_TARGETS.includes(target));
+  if (missingDigests.length > 0) details.push(`baseline 依赖快照缺 digest：${missingDigests.join(", ")}`);
+  if (extraDigests.length > 0) details.push(`baseline 依赖快照含未知 digest：${extraDigests.join(", ")}`);
+  for (const target of BASELINE_CONFIRM_TARGETS) {
+    if (target in digestRecord && (typeof digestRecord[target] !== "string" || !SHA256_DIGEST_PATTERN.test(digestRecord[target] as string))) {
+      details.push(`baseline 依赖快照 digest 非法：${target}`);
+    }
+  }
+  if (details.length > 0) return { ok: false, details };
+  return {
+    ok: true,
+    declaration: {
+      baseline_at_seq: atSeq as number,
+      relevant_targets: relevantTargets,
+      excluded_targets: excludedTargets,
+      digests: Object.fromEntries(BASELINE_CONFIRM_TARGETS.map((target) => [target, digestRecord[target] as string])),
+    },
+  };
+}
+
+/** Build a complete task dependency declaration from the current confirmation. */
+export function buildBaselineDependencyDeclaration(
+  record: BaselineConfirmedRecord,
+  relevantTargets: readonly string[],
+  excludedTargets: readonly string[],
+): BaselineDependencyValidation {
+  return validateBaselineDependencyDeclaration({
+    baseline_at_seq: record.at_seq,
+    relevant_targets: [...relevantTargets],
+    excluded_targets: [...excludedTargets],
+    digests: record.digests,
+  });
+}
+
 /** 手改声明记录（ADR-17）：note 必填单行；files = ack 确认时点的漂移文件清单。 */
 export interface BaselineAckRecord {
   readonly note: string;
@@ -2574,50 +2666,166 @@ export async function readBaselineConfirmation(rootDir: string): Promise<Baselin
  * - 任一确认目标缺席/不可读/digest 失配 → BASELINE_DRIFT（检出谁改了架构——写入
  *   时不拦截，收口判卷阻断，R-L 确认+检出判卷式）。
  */
-export async function baselineGateErrors(rootDir: string): Promise<readonly CliError[]> {
+export interface BaselineGateAssessment {
+  readonly errors: readonly CliError[];
+  readonly warnings: readonly CliWarning[];
+}
+
+/**
+ * Baseline gate projection with an optional task dependency declaration.
+ * Global behavior is unchanged when no declaration is supplied. A valid
+ * declaration may downgrade only drift/pending changes proven outside the
+ * task's relevant target set; malformed or unassessed scope stays blocking.
+ */
+export async function baselineGateAssessment(
+  rootDir: string,
+  dependency?: BaselineDependencyDeclaration,
+): Promise<BaselineGateAssessment> {
+  if (dependency !== undefined) {
+    const validation = validateBaselineDependencyDeclaration(dependency);
+    if (!validation.ok) {
+      return {
+        errors: [
+          {
+            code: "BASELINE_SCOPE_MALFORMED",
+            message: `任务 baseline 依赖声明不可判定：${validation.details.join("；")}`,
+            hint: "baseline_dependencies 必须覆盖全部确认资产，并把每个目标明确列为 relevant_targets 或 excluded_targets；未评估项不能静默放行。",
+          },
+        ],
+        warnings: [],
+      };
+    }
+  }
   const read = await readBaselineConfirmation(rootDir);
-  if (read.kind === "manifest-absent") return [];
+  if (read.kind === "manifest-absent") {
+    return dependency === undefined
+      ? { errors: [], warnings: [] }
+      : {
+          errors: [
+            {
+              code: "BASELINE_SCOPE_UNAVAILABLE",
+              message: "任务声明了 baseline 依赖范围，但当前项目没有可读取的确认 manifest",
+              hint: "先完成 baseline confirm；范围声明不能代替 Owner 对项目基线的确认。",
+            },
+          ],
+          warnings: [],
+        };
+  }
   if (read.kind === "manifest-unreadable") {
-    return [
-      {
-        code: "INVALID_STATE",
-        message: `${BASELINE_MANIFEST_RELATIVE} 不可读: ${read.detail}`,
-        hint: "检查文件权限后重试；baseline manifest 损坏时从 git 恢复——closeout 判卷分母禁猜测。",
-      },
-    ];
+    return {
+      errors: [
+        {
+          code: "INVALID_STATE",
+          message: `${BASELINE_MANIFEST_RELATIVE} 不可读: ${read.detail}`,
+          hint: "检查文件权限后重试；baseline manifest 损坏时从 git 恢复——closeout 判卷分母禁猜测。",
+        },
+      ],
+      warnings: [],
+    };
   }
   if (read.kind === "record-invalid") {
     const detail = read.damaged ? `（在座确认记录结构不可解析: ${read.damage_detail ?? ""}）` : "";
-    return [
-      {
-        code: "BASELINE_NOT_CONFIRMED",
-        message: `baseline 未确认${detail}——项目架构未经 Owner 确认（confirm gate：R-L）`,
-        hint: "pomaster baseline confirm（前提：阻塞集清零——豁免登记行不阻塞）——确认记录与 digest 快照写入 baseline/manifest.yaml 后重跑 closeout。",
-      },
-    ];
+    return {
+      errors: [
+        {
+          code: "BASELINE_NOT_CONFIRMED",
+          message: `baseline 未确认${detail}——项目架构未经 Owner 确认（confirm gate：R-L）`,
+          hint: "pomaster baseline confirm（前提：阻塞集清零——豁免登记行不阻塞）——确认记录与 digest 快照写入 baseline/manifest.yaml 后重跑 closeout。",
+        },
+      ],
+      warnings: [],
+    };
   }
-  if (read.state === "pending-change") {
-    return [
-      {
-        code: "BASELINE_NOT_CONFIRMED",
-        message: `baseline 变更批在途（pending-change；change_ref=${read.record.pending?.change_ref}；批内 ${read.record.pending?.batch.length ?? 0} 键）——确认记录在座但未终结，closeout 期间视为未确认`,
-        hint: `终结变更批: pomaster baseline confirm --change ${read.record.pending?.change_ref}（携同 ref 全量重快照）后重跑 closeout。`,
-      },
-    ];
+
+  if (dependency === undefined) {
+    if (read.state === "pending-change") {
+      return {
+        errors: [
+          {
+            code: "BASELINE_NOT_CONFIRMED",
+            message: `baseline 变更批在途（pending-change；change_ref=${read.record.pending?.change_ref}；批内 ${read.record.pending?.batch.length ?? 0} 键）——确认记录在座但未终结，closeout 期间视为未确认`,
+            hint: `终结变更批: pomaster baseline confirm --change ${read.record.pending?.change_ref}（携同 ref 全量重快照）后重跑 closeout。`,
+          },
+        ],
+        warnings: [],
+      };
+    }
+    if (read.state === "drifted") {
+      const drifted = read.mismatches.map(
+        (mismatch) => `${mismatch.target}${mismatch.note !== null ? `（${mismatch.note}）` : ""}`,
+      );
+      return {
+        errors: [
+          {
+            code: "BASELINE_DRIFT",
+            message: `baseline 确认后漂移（at_seq=${read.record.at_seq}）：${drifted.join("、")} 与 confirmed.digests 不符——检出确认后架构修改`,
+            hint: '重确认三通道取一：pomaster baseline confirm --change <CHANGE-id>（治理通路）或 --ack-drifted --note "<理由>"（Owner 手改声明；AI 代跑须持 Owner 指示）——裸重确认拒绝。',
+          },
+        ],
+        warnings: [],
+      };
+    }
+    return { errors: [], warnings: [] };
   }
-  if (read.state === "drifted") {
-    const drifted = read.mismatches.map(
-      (mismatch) => `${mismatch.target}${mismatch.note !== null ? `（${mismatch.note}）` : ""}`,
-    );
-    return [
-      {
-        code: "BASELINE_DRIFT",
-        message: `baseline 确认后漂移（at_seq=${read.record.at_seq}）：${drifted.join("、")} 与 confirmed.digests 不符——检出确认后架构修改`,
-        hint: '重确认三通道取一：pomaster baseline confirm --change <CHANGE-id>（治理通路）或 --ack-drifted --note "<理由>"（Owner 手改声明；AI 代跑须持 Owner 指示）——裸重确认拒绝。',
-      },
-    ];
+
+  const relevant = new Set(dependency.relevant_targets);
+  const excluded = new Set(dependency.excluded_targets);
+  const warnings: CliWarning[] = [];
+  const errors: CliError[] = [];
+  const historicalRelated = BASELINE_CONFIRM_TARGETS.filter(
+    (target) => relevant.has(target) && dependency.digests[target] !== read.record.digests[target],
+  );
+  const currentRelated = read.mismatches.filter((mismatch) => relevant.has(mismatch.target));
+  const currentExcluded = read.mismatches.filter((mismatch) => excluded.has(mismatch.target));
+  const pendingTargets = new Set(
+    (read.record.pending?.batch ?? []).map((entry) => entry.split(":")[0] ?? entry),
+  );
+  const relatedPending = [...pendingTargets].filter((target) => relevant.has(target));
+  const excludedPending = [...pendingTargets].filter((target) => excluded.has(target));
+
+  if (historicalRelated.length > 0) {
+    errors.push({
+      code: "BASELINE_DRIFT",
+      message: `任务相关 baseline 资产在范围确认后重新确认或发生变化：${historicalRelated.join(", ")}——任务声明的历史 digest 已失效`,
+      hint: "重新评估任务 baseline_dependencies，或在相关基线稳定后重新验证证据；不能用无关文件的 Owner ack 覆盖相关变化。",
+    });
   }
-  return [];
+  if (currentRelated.length > 0) {
+    errors.push({
+      code: "BASELINE_DRIFT",
+      message: `任务相关 baseline 资产确认后漂移：${currentRelated.map((mismatch) => `${mismatch.target}${mismatch.note !== null ? `（${mismatch.note}）` : ""}`).join("、")}`,
+      hint: "相关基线变化会使本任务的决策/证据重新进入待评估；完成相关变更治理并重建或重验证证据。",
+    });
+  }
+  if (relatedPending.length > 0) {
+    errors.push({
+      code: "BASELINE_NOT_CONFIRMED",
+      message: `任务相关 baseline 变更批在途：${relatedPending.join(", ")}（change_ref=${read.record.pending?.change_ref}）`,
+      hint: `先终结相关变更批：pomaster baseline confirm --change ${read.record.pending?.change_ref}，再重跑 closeout。`,
+    });
+  }
+  if (currentExcluded.length > 0) {
+    warnings.push({
+      code: "BASELINE_DRIFT_OUT_OF_SCOPE",
+      message: `baseline 漂移落在任务明确排除的资产上，未阻断本任务：${currentExcluded.map((mismatch) => `${mismatch.target}${mismatch.note !== null ? `（${mismatch.note}）` : ""}`).join("、")}`,
+      hint: "该变化仍保留在全局 baseline/status 观察面；若任务影响面扩大，请更新 baseline_dependencies 并重新评估。",
+    });
+  }
+  if (excludedPending.length > 0) {
+    warnings.push({
+      code: "BASELINE_PENDING_OUT_OF_SCOPE",
+      message: `baseline 变更批中明确排除的资产不参与本任务阻断：${excludedPending.join(", ")}（change_ref=${read.record.pending?.change_ref}）；相关资产仍独立判卷`,
+      hint: "变更批仍需在全局 baseline 面终结；本任务只保留该事实为 warning，不把它解释为全局确认。",
+    });
+  }
+  return { errors, warnings };
+}
+
+export async function baselineGateErrors(
+  rootDir: string,
+  dependency?: BaselineDependencyDeclaration,
+): Promise<readonly CliError[]> {
+  return (await baselineGateAssessment(rootDir, dependency)).errors;
 }
 
 // ============================================================

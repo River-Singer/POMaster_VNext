@@ -22,7 +22,11 @@
  *   输出契约由 `pomaster session` / `pomaster alerts` 承担，见 session.ts / alerts.ts）。
  */
 
+import { existsSync, readFileSync } from "node:fs";
+import { basename } from "node:path";
+import { fileURLToPath } from "node:url";
 import { CONTEXT_PARTITION_TITLES } from "./context.js";
+import { GENERATED_MARKER } from "./store-layout.js";
 
 // ============================================================
 // 入口模式标记
@@ -36,6 +40,12 @@ export const ENTRY_MODE_HEAVY_MARKER = "<!-- pomaster:entry-mode:heavy -->";
 
 /** claude 平台 hook 注册文件（项目级，可提交仓库——团队共享重入口是合法形态）。 */
 export const CLAUDE_SETTINGS_RELATIVE = ".claude/settings.json";
+export const CLAUDE_EXEC_GUARD_MATCHER = "Edit|Write|NotebookEdit|Bash";
+export const CLAUDE_EXEC_GUARD_HOOK_RELATIVE = ".claude/hooks/exec-guard-hook.py";
+export const CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE = ".claude/hooks/pomaster-exec-guard.py";
+export const CLAUDE_EXEC_GUARD_COMMAND =
+  `python "${CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE}"`;
+export const CLAUDE_EXEC_GUARD_ASSET_RELATIVE = "seeds/hooks/exec-guard-hook.py";
 
 // ============================================================
 // hooks 注册（claude 层）：shell form 无 args + 恒 exit 0 输出契约
@@ -50,9 +60,15 @@ export const CLAUDE_SETTINGS_RELATIVE = ".claude/settings.json";
 export const POMASTER_HOOK_EVENT_COMMANDS: readonly {
   readonly event: string;
   readonly command: string;
+  readonly matcher?: string;
 }[] = [
   { event: "SessionStart", command: "pomaster session" },
   { event: "UserPromptSubmit", command: "pomaster alerts" },
+  {
+    event: "PreToolUse",
+    matcher: CLAUDE_EXEC_GUARD_MATCHER,
+    command: CLAUDE_EXEC_GUARD_COMMAND,
+  },
 ];
 
 /** 本包 hook 命令词形闭包（幂等查重与卸载剥离的唯一识别依据）。 */
@@ -65,7 +81,7 @@ export interface HookHandlerSpec {
   readonly command: string;
 }
 
-/** matcher-group 词形（本包只产出无 matcher 的 group；既有 group 原样保留）。 */
+/** matcher-group 词形（本包按 hook 定义产出 matcher；既有 group 原样保留）。 */
 export interface HookMatcherGroup {
   readonly matcher?: string;
   readonly hooks?: readonly unknown[];
@@ -118,7 +134,7 @@ export function mergePomasterHooks(existingText: string | null): HooksMergeOutco
   }
 
   let changed = existingText === null;
-  for (const { event, command } of POMASTER_HOOK_EVENT_COMMANDS) {
+  for (const { event, command, matcher } of POMASTER_HOOK_EVENT_COMMANDS) {
     const raw = hooks[event];
     if (raw !== undefined && (raw === null || !Array.isArray(raw))) {
       return { status: "skipped", reason: `hooks.${event} 不是数组` };
@@ -133,16 +149,22 @@ export function mergePomasterHooks(existingText: string | null): HooksMergeOutco
         return { status: "skipped", reason: `hooks.${event} matcher-group 的 hooks 字段不是数组` };
       }
     }
-    const alreadyRegistered = groups.some((group) =>
-      (((group as Record<string, unknown>).hooks ?? []) as unknown[]).some(
+    const alreadyRegistered = groups.some((group) => {
+      const record = group as Record<string, unknown>;
+      if (matcher !== undefined && record.matcher !== matcher) return false;
+      if (matcher === undefined && record.matcher !== undefined) return false;
+      return ((record.hooks ?? []) as unknown[]).some(
         (handler) =>
           handler !== null &&
           typeof handler === "object" &&
           (handler as Record<string, unknown>).command === command,
-      ),
-    );
+      );
+    });
     if (!alreadyRegistered) {
-      const group: HookMatcherGroup = { hooks: [{ type: "command", command }] };
+      const group: HookMatcherGroup =
+        matcher === undefined
+          ? { hooks: [{ type: "command", command }] }
+          : { matcher, hooks: [{ type: "command", command }] };
       groups.push(group);
       hooks[event] = groups;
       changed = true;
@@ -157,6 +179,80 @@ export function mergePomasterHooks(existingText: string | null): HooksMergeOutco
     status: existingText === null ? "created" : "updated",
     nextText: `${JSON.stringify(root, null, 2)}\n`,
   };
+}
+
+export function claudeExecGuardAssetCandidates(moduleUrl: string = import.meta.url): readonly string[] {
+  return [
+    fileURLToPath(new URL("../seeds/hooks/exec-guard-hook.py", moduleUrl)),
+    fileURLToPath(new URL("./seeds/hooks/exec-guard-hook.py", moduleUrl)),
+  ];
+}
+
+export function readClaudeExecGuardHookAsset(
+  moduleUrl: string = import.meta.url,
+): { readonly path: string; readonly content: string } {
+  for (const candidate of claudeExecGuardAssetCandidates(moduleUrl)) {
+    if (!existsSync(candidate)) continue;
+    return { path: candidate, content: readFileSync(candidate, "utf8") };
+  }
+  throw new Error(
+    `exec-guard hook asset not found (tried: ${claudeExecGuardAssetCandidates(moduleUrl).join(", ")})`,
+  );
+}
+
+export function resolveCurrentCliEntry(moduleUrl: string = import.meta.url): string | null {
+  const argvEntry = process.argv[1];
+  if (argvEntry !== undefined && basename(argvEntry) === "bin.js" && existsSync(argvEntry)) {
+    return argvEntry;
+  }
+  const candidates = [
+    fileURLToPath(new URL("./bin.js", moduleUrl)),
+    fileURLToPath(new URL("../dist/bin.js", moduleUrl)),
+  ];
+  return candidates.find((candidate) => existsSync(candidate)) ?? null;
+}
+
+function pythonRawString(value: string): string {
+  return `r"""${value.replace(/"""/g, '\\"\\"\\"')}"""`;
+}
+
+export function renderClaudeExecGuardLauncher(cliEntry: string | null): string {
+  const cliLine =
+    cliEntry === null
+      ? "CLI_ENTRY = None"
+      : `CLI_ENTRY = ${pythonRawString(cliEntry.replace(/\\/g, "/"))}`;
+  return `#!/usr/bin/env python3
+# ${GENERATED_MARKER}
+# POMaster generated launcher. Path resolution lives here; permission judgment
+# stays in exec-guard-hook.py and the \`pomaster exec-guard\` CLI/kernel.
+from __future__ import annotations
+
+import os
+import runpy
+import sys
+from pathlib import Path
+
+${cliLine}
+HOOK = Path(__file__).with_name("exec-guard-hook.py")
+
+if CLI_ENTRY is not None and Path(CLI_ENTRY).is_file():
+    os.environ.setdefault("POMASTER_CLI_ENTRY", CLI_ENTRY)
+os.environ.setdefault("POMASTER_DISTRIBUTED_HOOK", str(HOOK))
+
+if not HOOK.is_file():
+    print("[pomaster exec-guard launcher] FAIL-OPEN: distributed exec-guard hook missing", file=sys.stderr)
+    sys.exit(0)
+
+runpy.run_path(str(HOOK), run_name="__main__")
+`;
+}
+
+export function looksLikePomasterExecGuardHook(text: string): boolean {
+  return (
+    text.includes("exec-guard-hook.py") &&
+    text.includes("本脚本零第二判卷逻辑") &&
+    text.includes("pomaster exec-guard")
+  );
 }
 
 // ============================================================

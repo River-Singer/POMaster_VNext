@@ -39,6 +39,10 @@ import {
   HEAVY_ENTRY_SKILLS_PROBE,
   HEAVY_ENTRY_HOOKS_REPAIR_HINT,
   SKILL_MANIFEST,
+  CLAUDE_EXEC_GUARD_HOOK_RELATIVE,
+  CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE,
+  CLAUDE_EXEC_GUARD_MATCHER,
+  CLAUDE_EXEC_GUARD_COMMAND,
   CLAUDE_SETTINGS_RELATIVE,
 } from "@pomaster/cli";
 
@@ -519,6 +523,12 @@ describe("heavy_entry 探针（hooks 注册态 / 命令可达性 R4 / skills 双
     expect(hooks.status).toBe("READY");
     expect(hooks.detail).toContain("SessionStart");
     expect(hooks.detail).toContain("UserPromptSubmit");
+    expect(hooks.detail).toContain("PreToolUse");
+    expect(hooks.detail).toContain("distributed=3");
+    expect(hooks.detail).toContain("installed=3");
+    expect(hooks.detail).toContain("runnable=ready");
+    expect(hooks.detail).toContain("prevention=prevention-capable");
+    expect(hooks.detail).toContain("Edit|Write|NotebookEdit|Bash");
     expect(hooks.detail).toContain("PATH 可达");
     expect(skills.status).toBe("READY");
     expect(skills.detail).toContain("14 skills × 2");
@@ -540,6 +550,39 @@ describe("heavy_entry 探针（hooks 注册态 / 命令可达性 R4 / skills 双
     // 词形钉版：共享常量与探针 hint 同源（README/文档引用同一词面）。
     expect(HEAVY_ENTRY_HOOKS_REPAIR_HINT).toContain("harness");
     expect(HEAVY_ENTRY_HOOKS_REPAIR_HINT).toContain("doctor 无法替代");
+  });
+
+  it("Slice B：distributed guard/launcher 缺失不被 settings 注册伪装成 READY", async () => {
+    await runInit(dir);
+    rmSync(join(dir, CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE));
+    const [hooks] = await probeHeavyEntryInstall(dir, {
+      resolveHookExecutable: reachableHookExecutable,
+    });
+    expect(hooks.status).toBe("MISSING_CONFIGURATION");
+    expect(hooks.detail).toContain("distributed missing");
+    expect(hooks.detail).toContain(CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE);
+    expect(existsSync(join(dir, CLAUDE_EXEC_GUARD_HOOK_RELATIVE))).toBe(true);
+    expect(hooks.hint).toContain("PreToolUse");
+  });
+
+  it("Slice B：PreToolUse matcher 不完整 → installed 缺口，而非 full prevention", async () => {
+    await runInit(dir);
+    const settingsPath = join(dir, CLAUDE_SETTINGS_RELATIVE);
+    const settings = JSON.parse(readFileSync(settingsPath, "utf8")) as {
+      hooks: Record<string, Array<{ matcher?: string; hooks?: unknown[] }>>;
+    };
+    const preTool = settings.hooks.PreToolUse?.find(
+      (group) => group.matcher === CLAUDE_EXEC_GUARD_MATCHER,
+    );
+    expect(preTool).toBeDefined();
+    preTool!.matcher = "Edit|Write";
+    writeFileSync(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+    const [hooks] = await probeHeavyEntryInstall(dir, {
+      resolveHookExecutable: reachableHookExecutable,
+    });
+    expect(hooks.status).toBe("MISSING_CONFIGURATION");
+    expect(hooks.detail).toContain(`PreToolUse[${CLAUDE_EXEC_GUARD_MATCHER}]`);
+    expect(hooks.detail).toContain(CLAUDE_EXEC_GUARD_COMMAND);
   });
 
   it("R4 非恒真对照：单条命令不可达同样红（SessionStart 可达 / UserPromptSubmit 不可达 → MISSING_CONFIGURATION 点名缺席者）", async () => {

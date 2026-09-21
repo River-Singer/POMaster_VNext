@@ -117,13 +117,16 @@ import { join } from "node:path";
 import type { GovernedId, Store, TruthIndex } from "@pomaster/kernel";
 import type {
   EvidenceQualificationEvidence,
+  EvidenceBaselineInputs,
   EvidenceQualificationFinding,
   EvidenceQualificationRequirement,
 } from "@pomaster/kernel";
 import {
   GovernanceError,
+  assertEvidenceBaselineInputs,
   GovernedIdParseError,
   applyTransaction,
+  PLAN_CAPABILITY_GATE_NAMES,
   createStore,
   loadTruthIndex,
   parseGovernedId,
@@ -139,7 +142,10 @@ import {
   GRN_FILE_PATTERN,
   listPlaneFiles,
 } from "./evidence.js";
-import { baselineGateErrors } from "./baseline.js";
+import {
+  baselineGateAssessment,
+  validateBaselineDependencyDeclaration,
+} from "./baseline.js";
 import {
   normalizeGrnEvidenceRefs,
   readEvidenceQualificationRequirement,
@@ -288,6 +294,66 @@ function asString(value: unknown): string | null {
   return typeof value === "string" ? value : null;
 }
 
+/**
+ * Requirements are a union across acceptance entries. Only grounded, mapped
+ * exclusions can narrow the denominator; incomplete declarations retain the
+ * conservative rule without discarding known required gates.
+ */
+function requiredGateNamesFromAcceptance(value: unknown): {
+  readonly required: ReadonlySet<string>;
+  readonly optional: ReadonlySet<string>;
+  readonly complete: boolean;
+} {
+  const required = new Set<string>();
+  const excluded = new Set<string>();
+  let complete = Array.isArray(value) && value.length > 0;
+  for (const raw of Array.isArray(value) ? value : []) {
+    if (!isRecord(raw)) {
+      complete = false;
+      continue;
+    }
+    const hasRequires = Object.prototype.hasOwnProperty.call(raw, "requires");
+    if (!hasRequires || !Array.isArray(raw.requires)) complete = false;
+    for (const field of ["requires", "exclusions"] as const) {
+      const entries = raw[field];
+      if (entries === undefined) continue;
+      if (!Array.isArray(entries)) {
+        complete = false;
+        continue;
+      }
+      for (const entry of entries) {
+        const capability =
+          typeof entry === "string"
+            ? entry
+            : isRecord(entry) && typeof entry.capability === "string"
+              ? entry.capability
+              : null;
+        if (capability === null || !Object.prototype.hasOwnProperty.call(PLAN_CAPABILITY_GATE_NAMES, capability)) {
+          complete = false;
+          continue;
+        }
+        if (field === "requires") {
+          requiredGateNamesForCapability(required, capability);
+        } else if (isRecord(entry) && typeof entry.basis === "string" && entry.basis.trim().length > 0) {
+          requiredGateNamesForCapability(excluded, capability);
+        } else {
+          complete = false;
+        }
+      }
+    }
+  }
+  return {
+    required,
+    optional: new Set(complete ? [...excluded].filter((gate) => !required.has(gate)) : []),
+    complete,
+  };
+}
+
+function requiredGateNamesForCapability(target: Set<string>, capability: string): void {
+  const gates = PLAN_CAPABILITY_GATE_NAMES[capability as keyof typeof PLAN_CAPABILITY_GATE_NAMES];
+  for (const gate of gates) target.add(gate);
+}
+
 /** 身份解析：closed-world 文法优先，legacy 词形走 alias 收编（A5/A6；判定全在 kernel）。 */
 function resolveTargetId(
   raw: string,
@@ -378,6 +444,11 @@ async function readRunRecord(
   if (!isRecord(parsed)) {
     return { damage: `evidence/runs/${fileName}: run 记录不是 JSON 对象` };
   }
+  try {
+    if (parsed.baseline_inputs !== undefined) assertEvidenceBaselineInputs(parsed.baseline_inputs);
+  } catch (err) {
+    return { damage: `evidence/runs/${fileName}: ${String(err)}` };
+  }
   return {
     grn: fileName.slice(0, -".json".length),
     subject: runSubjectOf(parsed),
@@ -393,6 +464,7 @@ async function readRunRecord(
 }
 
 interface ClaimRecordView {
+  readonly baselineInputs?: EvidenceBaselineInputs;
   readonly subject: unknown;
   readonly acceptanceIndex: unknown;
   readonly verdict: string | null;
@@ -436,9 +508,15 @@ async function readClaimRecord(
     return { damage: `evidence/claims/${fileName}: claim 记录不是 JSON 对象` };
   }
   const verification = isRecord(parsed.verification) ? parsed.verification : undefined;
+  try {
+    if (parsed.baseline_inputs !== undefined) assertEvidenceBaselineInputs(parsed.baseline_inputs);
+  } catch (err) {
+    return { damage: `evidence/claims/${fileName}: ${String(err)}` };
+  }
   const atSeq = verification === undefined ? undefined : verification.at_seq;
   return {
     subject: claimSubjectOf(parsed),
+    ...(parsed.baseline_inputs !== undefined ? { baselineInputs: parsed.baseline_inputs as EvidenceBaselineInputs } : {}),
     acceptanceIndex: isRecord(parsed.subject) ? (parsed.subject as UnknownRecord).acceptance_index : undefined,
     verdict: verification === undefined ? null : asString(verification.verdict),
     evidenceRefs: parsed.evidence_refs,
@@ -475,6 +553,7 @@ async function qualifyClaimEvidence(
     {
       ref: claimRef,
       surface: "claim",
+      ...(view.baselineInputs !== undefined ? { baseline_inputs: view.baselineInputs } : {}),
       captured_at_seq: view.atSeq,
       gate: null,
       gate_def: null,
@@ -498,6 +577,7 @@ async function qualifyClaimEvidence(
     faces.push({
       ref: run.grn,
       surface: "run",
+      ...(run.baselineInputs !== undefined ? { baseline_inputs: run.baselineInputs } : {}),
       captured_at_seq: run.ranAtSeq,
       gate: run.gate,
       gate_def: run.gateDef,
@@ -770,6 +850,19 @@ export async function runCloseout(
     );
   }
   const payload = isRecord(body.payload) ? body.payload : {};
+  const baselineValidation = payload.baseline_dependencies === undefined
+    ? undefined : validateBaselineDependencyDeclaration(payload.baseline_dependencies);
+  const baselineAssessment = baselineValidation !== undefined && !baselineValidation.ok
+    ? {
+        errors: [{
+          code: "BASELINE_SCOPE_MALFORMED",
+          message: `任务 baseline 依赖声明不可判定：${baselineValidation.details.join("；")}`,
+          hint: "重新确认完整的 relevant_targets/excluded_targets 分区；未评估项不能静默放行。",
+        }],
+        warnings: [],
+      }
+    : await baselineGateAssessment(rootDir, baselineValidation?.declaration);
+  const baselineErrors = baselineAssessment.errors;
 
   // ============================================================
   // ① DoD 判卷：acceptance 逐条映射 VERIFIED claim（§47 硬绑；D20 消费纪律）
@@ -791,7 +884,10 @@ export async function runCloseout(
     // （journal 损坏 SCHEMA_INVALID）→ fail-closed：损坏可能正是被藏起来的失效事件。
     let qualificationRequirement: EvidenceQualificationRequirement;
     try {
-      qualificationRequirement = await readEvidenceQualificationRequirement(rootDir);
+      // Keep baseline errors in the aggregate report; invalid scope never relaxes qualification.
+      qualificationRequirement = await readEvidenceQualificationRequirement(
+        rootDir, baselineErrors.length === 0 ? payload.baseline_dependencies : undefined,
+      );
     } catch (err) {
       if (!(err instanceof GovernanceError)) throw err;
       return failCloseout(governanceErrorToCliError(err), withKind);
@@ -1236,6 +1332,9 @@ export async function runCloseout(
 
   const gateWarnings: CliWarning[] = [];
   const gateErrors: CliError[] = [];
+  // Spec clauses above remain independent obligations, including alternatives.
+  const gateObligations = requiredGateNamesFromAcceptance(acceptanceRaw);
+  const requiredGateNames = gateObligations.required;
   const gateRows: CloseoutGateRow[] = [];
   let boundRuns = 0;
   const runsDir = runsDirPath(rootDir);
@@ -1283,10 +1382,16 @@ export async function runCloseout(
     boundViews.push({ view, ordinal: grnOrdinal(view.grn) });
   }
 
-  if (boundRuns === 0 && gateErrors.length === 0) {
+  if (boundRuns === 0 && gateErrors.length === 0 && gateObligations.complete && requiredGateNames.size === 0) {
+    gateWarnings.push({
+      code: "GATE_DENOMINATOR_EMPTY_NON_REQUIRED",
+      message: `对象 ${target} 没有必需 machine gate（acceptance 已显式声明能力义务为空）；gate 观察面为空，不将可选诊断伪装成通过`,
+      hint: "DoD、Evidence Spec 与人工 ACCEPT 仍独立判卷；若任务实际需要 machine gate，请在 acceptance.requires 中声明对应 capability。",
+    });
+  } else if (boundRuns === 0 && gateErrors.length === 0) {
     gateErrors.push({
       code: "GATE_EVIDENCE_MISSING",
-      message: `对象 ${target} 名下零 gate 运行记录（subject 绑定分母为空）——gate 证据缺失不允许 COMPLETED`,
+      message: `对象 ${target} 名下零 gate 运行记录（subject 绑定分母为空）——gate 证据缺失不允许 COMPLETED；必需 gate=${[...requiredGateNames].join("、") || "（无，但计划声明不完整）"}`,
       hint: "跑 pomaster check --gates / pomaster record gate-run（GateResult subject_id 绑定本对象）后重试；「没有 gate 记录」不是「gate 通过」。",
     });
   } else if (boundViews.length > 0) {
@@ -1309,14 +1414,34 @@ export async function runCloseout(
       });
     }
     gateRows.sort((a, b) => grnOrdinal(a.grn) - grnOrdinal(b.grn));
+    const latestGateNames = new Set(latestByGate.keys());
+    {
+      for (const requiredGate of requiredGateNames) {
+        if (!latestGateNames.has(requiredGate)) {
+          gateErrors.push({
+            code: "GATE_EVIDENCE_MISSING",
+            message: `对象 ${target} 缺少必需 gate ${requiredGate} 的 subject 绑定运行记录——显式 verification 义务未满足`,
+            hint: `运行 ${requiredGate} gate 并把 subject 绑定到 ${target}；acceptance.requires 的必需能力不能由其它 gate 借证。`,
+          });
+        }
+      }
+    }
     for (const view of latestByGate.values()) {
       const verdict = view.verdict as VerdictValue;
       if (verdict === "passed") continue;
-      gateErrors.push({
-        code: `GATE_${verdict.toUpperCase()}`,
-        message: `gate ${view.gate} 最新判卷 verdict=${verdict}（${view.grn}, ran_at_seq=${view.ranAtSeq}）——非 passed 阻断 COMPLETED`,
-        hint: "七态一律 fail-closed（warning/not_run/not_configured/skipped_blindspot 都不是绿）；修复后重跑该 gate，最新判卷取代旧判（GRN 平面 append-only，不删旧记录）。",
-      });
+      if (gateObligations.optional.has(view.gate as string)) {
+        gateWarnings.push({
+          code: "GATE_OPTIONAL_NOT_PASSED",
+          message: `gate ${view.gate} 最新判卷 verdict=${verdict}（${view.grn}, ran_at_seq=${view.ranAtSeq}）属于非必需诊断，保留为关注项，不阻断 COMPLETED`,
+          hint: "非必需诊断未变成 passed；如它实际支撑验收，请在 acceptance.requires 中声明对应 capability 后重跑 closeout。",
+        });
+      } else {
+        gateErrors.push({
+          code: `GATE_${verdict.toUpperCase()}`,
+          message: `gate ${view.gate} 最新判卷 verdict=${verdict}（${view.grn}, ran_at_seq=${view.ranAtSeq}）——非 passed 阻断 COMPLETED`,
+          hint: "七态一律 fail-closed（warning/not_run/not_configured/skipped_blindspot 都不是绿）；修复后重跑该 gate，最新判卷取代旧判（GRN 平面 append-only，不删旧记录）。",
+        });
+      }
     }
   }
 
@@ -1328,8 +1453,6 @@ export async function runCloseout(
   // 的项目：init 工作区恒在场；fixture 最小 store 无 baseline → 门不适用。判卷
   // 实现单源在 baseline.baselineGateErrors——closeout 只聚合不旁移）。
   // ============================================================
-
-  const baselineErrors = [...(await baselineGateErrors(rootDir))];
 
   // ============================================================
   // ③ 聚合裁决：一切阻断显式（code + hint），零写入
@@ -1368,7 +1491,11 @@ export async function runCloseout(
       `closeout ${target} → BLOCKED（dod ${dod.verified}/${dod.acceptance_total} acceptance VERIFIED, gates ${gates.gates_passed}/${gates.gates_judged} passed；${specSummary}）`,
       ...errors.map((error) => `  ${error.code}: ${error.message}`),
     ];
-    return failOutcome<CloseoutResult>("closeout", judged, errors, human, [...gateWarnings, ...specWarnings]);
+    return failOutcome<CloseoutResult>("closeout", judged, errors, human, [
+      ...gateWarnings,
+      ...specWarnings,
+      ...baselineAssessment.warnings,
+    ]);
   }
 
   // ============================================================
@@ -1386,7 +1513,11 @@ export async function runCloseout(
       `  ${receiptOutcome.error.code}: ${receiptOutcome.error.message}`,
       `  hint: ${receiptOutcome.error.hint}`,
     ];
-    return failOutcome<CloseoutResult>("closeout", judged, [receiptOutcome.error], human, [...gateWarnings, ...specWarnings]);
+    return failOutcome<CloseoutResult>("closeout", judged, [receiptOutcome.error], human, [
+      ...gateWarnings,
+      ...specWarnings,
+      ...baselineAssessment.warnings,
+    ]);
   }
 
   // ============================================================
@@ -1425,7 +1556,7 @@ export async function runCloseout(
         `  accept_receipt: ${receiptOutcome.receipt.decision_id} @ ${receiptOutcome.receipt.graph}（有效 ACCEPT 回执——W1 R1-1 / C-4）`,
         `  transition: evidence → VERIFIED（kernel applyTransaction 唯一写通道；COMPLETED 是呈现词——vocab-lock presentation_axes.closeout_change_presentation）`,
       ],
-      [...gateWarnings, ...specWarnings],
+      [...gateWarnings, ...specWarnings, ...baselineAssessment.warnings],
     );
   } catch (err) {
     // kernel staged 回滚保证零残留；施断判卷（跨轴断言等）全部 kernel 侧，原码透传。
@@ -1439,7 +1570,7 @@ export async function runCloseout(
         `  ${error.code}: ${error.message}`,
         `  hint: ${error.hint}`,
       ],
-      [...gateWarnings, ...specWarnings],
+      [...gateWarnings, ...specWarnings, ...baselineAssessment.warnings],
     );
   }
 }

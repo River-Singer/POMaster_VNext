@@ -72,6 +72,8 @@ import {
 import {
   normalizeGrnEvidenceRefs,
   readEvidenceQualificationRequirement,
+  captureEvidenceBaselineInputs,
+  readTaskBaselineDependencies,
   readRunQualificationView,
 } from "./evidence-qualification.js";
 import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
@@ -368,7 +370,7 @@ export async function runRecordGateRun(
           { ...context, ranAtSeq: replayRanAtSeq },
           claimedBy.claimedBy,
         );
-        if (canonicalRunBytes(grn, context.trigger, replay, executionId, artifactRefs) === targetBytes) {
+        if (canonicalRunBytes(grn, context.trigger, replay, executionId, artifactRefs, parsed.baselineInputs) === targetBytes) {
           skippedCanonical = true;
         }
       } catch {
@@ -452,6 +454,7 @@ export async function runRecordGateRun(
         grn,
         trigger: context.trigger,
         result: finalResult,
+        ...(parsed.baselineInputs !== undefined ? { baselineInputs: parsed.baselineInputs } : {}),
         ...(executionId ? { executionId } : {}),
         ...(artifactRefs.length > 0 ? { artifactRefs } : {}),
       },
@@ -936,9 +939,9 @@ export async function runRecordVerification(
   // （UNVERIFIED claim 的判定锚通常缺席 → seq 轴在 claim 面诚实不适用；引用面照判）。
   // 要求面装配失败（journal 损坏 SCHEMA_INVALID）→ fail-closed，禁静默放行。
   const addedRefs = input.evidence ?? [];
+  const baselineInputs = await captureEvidenceBaselineInputs(rootDir);
   const verificationQualificationFaces: EvidenceQualificationEvidence[] = [];
   try {
-    const qualificationRequirement = await readEvidenceQualificationRequirement(rootDir);
     const claimVerificationBox =
       typeof parsed.record["verification"] === "object" && parsed.record["verification"] !== null
         ? (parsed.record["verification"] as Record<string, unknown>)
@@ -952,6 +955,9 @@ export async function runRecordVerification(
           ? (parsed.record["subject_id"] as string)
           : null;
     const claimExecutionId = parsed.record["execution_id"];
+    const qualificationRequirement = await readEvidenceQualificationRequirement(
+      rootDir, await readTaskBaselineDependencies(rootDir, claimSubject),
+    );
     verificationQualificationFaces.push({
       ref: input.clm,
       surface: "claim",
@@ -982,6 +988,7 @@ export async function runRecordVerification(
       verificationQualificationFaces.push({
         ref: run.grn,
         surface: "run",
+        ...(run.baselineInputs !== undefined ? { baseline_inputs: run.baselineInputs } : {}),
         captured_at_seq: run.ranAtSeq,
         gate: run.gate,
         gate_def: run.gateDef,
@@ -1049,6 +1056,7 @@ export async function runRecordVerification(
         claim: {
           clm: input.clm,
           verifiedBy: verifier.actor,
+          ...(baselineInputs !== undefined ? { baselineInputs } : {}),
           ...(addedRefs.length > 0 ? { evidenceRefs: addedRefs } : {}),
           ...(input.method !== undefined ? { method: input.method as VerificationMethodValue } : {}),
         },

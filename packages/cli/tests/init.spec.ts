@@ -19,6 +19,10 @@ import {
   AGENTS_MD_RELATIVE,
   AUTHORITY_RELATIVE,
   CLAUDE_MD_RELATIVE,
+  CLAUDE_EXEC_GUARD_COMMAND,
+  CLAUDE_EXEC_GUARD_HOOK_RELATIVE,
+  CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE,
+  CLAUDE_EXEC_GUARD_MATCHER,
   CLAUDE_SETTINGS_RELATIVE,
   CONFIG_RELATIVE,
   CURSOR_RULES_RELATIVE,
@@ -29,6 +33,7 @@ import {
   SKILL_MANIFEST,
   TRUTH_INDEX_RELATIVE,
   CHECKLIST_KEYS,
+  BOOTSTRAP_COMPATIBILITY_INVENTORY,
   parsePlatformSelection,
   renderChecklistFrame,
   renderPlatformMenu,
@@ -37,6 +42,7 @@ import {
   runChecklistPrompt,
   type ChecklistIo,
   loadSeedManifestEntries,
+  collectBootstrapHarnessSnapshot,
 } from "@pomaster/cli";
 import { CONTEXT_PARTITION_TITLES } from "../src/context.js";
 
@@ -69,6 +75,8 @@ function heavyDefaultExpectedFiles(): string[] {
     AGENTS_MD_RELATIVE,
     CLAUDE_MD_RELATIVE,
     CLAUDE_SETTINGS_RELATIVE,
+    CLAUDE_EXEC_GUARD_HOOK_RELATIVE,
+    CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE,
     ...SKILL_MANIFEST.flatMap((spec) => [
       `.agents/skills/${spec.name}/SKILL.md`,
       `.claude/skills/${spec.name}/SKILL.md`,
@@ -114,6 +122,54 @@ describe("init 首次创建（CREATED）", () => {
       expect(existsSync(join(dir, ".claude", "skills", spec.name, "SKILL.md"))).toBe(true);
     }
     expect(SKILL_MANIFEST).toHaveLength(14); // D-1/D-5 裁决 18：pomaster-triage 卡退役 15→14
+  });
+
+  it("Slice A bootstrap harness receipt projects existing sources into init JSON and human output", async () => {
+    const outcome = await runInit(dir);
+    expect(outcome.ok).toBe(true);
+    const harness = outcome.result.bootstrap_harness;
+    expect(harness).not.toBeNull();
+    expect(harness?.active).toBe(true);
+    expect(harness?.entry.mode).toBe("heavy");
+    expect(harness?.capabilities.producer).toBe("heavy-entry.CAPABILITY_OVERVIEW");
+    expect(harness?.capabilities.total).toBe(outcome.result.capability_overview.length);
+    expect(harness?.skills.expected).toBe(SKILL_MANIFEST.length);
+    expect(harness?.assets.seed_manifest.missing).toEqual([]);
+    expect(harness?.tools.status).toBe("absent");
+    expect(harness?.compatibility_inventory).toEqual(BOOTSTRAP_COMPATIBILITY_INVENTORY);
+    expect(new Set(harness?.compatibility_inventory.map((entry) => entry.disposition))).toEqual(
+      new Set(["keep_temporarily", "migrate", "delete"]),
+    );
+    expect(
+      harness?.compatibility_inventory.every(
+        (entry) =>
+          entry.owner.length > 0 &&
+          entry.exit_condition.length > 0 &&
+          entry.coverage.length > 0,
+      ),
+    ).toBe(true);
+    expect(harness?.pointer.tools.discovery_command).toBe("pomaster tools list --json");
+    expect(harness?.next_action.route_id).toBe("R_NO_ACTIVE_TASK");
+    expect(outcome.human.join("\n")).toContain("bootstrap harness:");
+    expect(outcome.human.join("\n")).toContain("tools absent");
+    expect(outcome.human.join("\n")).toContain(
+      `compatibility: ${BOOTSTRAP_COMPATIBILITY_INVENTORY.length} routes inventoried`,
+    );
+
+    const reread = await collectBootstrapHarnessSnapshot(dir);
+    expect(reread.assets.seed_manifest.installed).toEqual(harness?.assets.seed_manifest.installed);
+  });
+
+  it("Slice B bootstrap harness hook projection requires both launcher and canonical guard distribution", async () => {
+    await runInit(dir);
+    rmSync(join(dir, CLAUDE_EXEC_GUARD_HOOK_RELATIVE));
+    const harness = await collectBootstrapHarnessSnapshot(dir);
+    const preTool = harness.hooks.entries.find((entry) => entry.event === "PreToolUse");
+    expect(preTool?.installed).toBe(true);
+    expect(preTool?.distributed).toBe(false);
+    expect(preTool?.gaps.join("\n")).toContain("canonical guard is missing or foreign");
+    expect(harness.hooks.readiness).toBe("partial");
+    expect(harness.hooks.prevention).toBe("unknown");
   });
 
   it("init 后账本含 01 schema 全部顶层键 + D2 预植 19 SPEC 对象（seq=1、denominators/producers 空）", async () => {
@@ -1197,21 +1253,27 @@ describe("pomaster-discovery 方法论长卡（R1：Grill Strategy 主轴 / 对�
 });
 
 describe("重入口 hooks settings.json 合并（claude 层）", () => {
-  it("生成 shell form 注册项：SessionStart→pomaster session、UserPromptSubmit→pomaster alerts；无 args 无 if 字段", async () => {
+  it("生成 shell form 注册项：SessionStart、UserPromptSubmit、PreToolUse exec-guard；无 args 无 if 字段", async () => {
     await runInit(dir);
     const settings = JSON.parse(read(CLAUDE_SETTINGS_RELATIVE)) as {
-      hooks: Record<string, Array<{ hooks?: Array<Record<string, unknown>> }>>;
+      hooks: Record<string, Array<{ matcher?: string; hooks?: Array<Record<string, unknown>> }>>;
     };
     const flatten = (
       groups: Array<{ hooks?: Array<Record<string, unknown>> }> | undefined,
     ): Record<string, unknown>[] => (groups ?? []).flatMap((g) => g.hooks ?? []);
     const sessionHandlers = flatten(settings.hooks.SessionStart);
     const promptHandlers = flatten(settings.hooks.UserPromptSubmit);
+    const preToolGroups = settings.hooks.PreToolUse ?? [];
+    const preTool = preToolGroups.find((group) => group.matcher === CLAUDE_EXEC_GUARD_MATCHER);
+    const preToolHandlers = flatten(preTool === undefined ? [] : [preTool]);
     expect(sessionHandlers).toContainEqual({ type: "command", command: "pomaster session" });
     expect(promptHandlers).toContainEqual({ type: "command", command: "pomaster alerts" });
+    expect(preToolHandlers).toContainEqual({ type: "command", command: CLAUDE_EXEC_GUARD_COMMAND });
+    expect(existsSync(join(dir, CLAUDE_EXEC_GUARD_HOOK_RELATIVE))).toBe(true);
+    expect(existsSync(join(dir, CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE))).toBe(true);
     // shell form 无 args（Windows 走 Git Bash/PowerShell 解析 npm shim）；非 tool-event
-    // hook 禁 if 字段（设了永不运行）。
-    for (const handler of [...sessionHandlers, ...promptHandlers]) {
+    // hook 禁 if 字段（设了永不运行）；PreToolUse 只靠 matcher-group。
+    for (const handler of [...sessionHandlers, ...promptHandlers, ...preToolHandlers]) {
       expect(Object.keys(handler).sort()).toEqual(["command", "type"]);
     }
   });
@@ -1245,16 +1307,21 @@ describe("重入口 hooks settings.json 合并（claude 层）", () => {
     const outcome = await runInit(dir);
     expect(outcome.ok).toBe(true);
     const settings = JSON.parse(read(CLAUDE_SETTINGS_RELATIVE));
-    // 既有条目原样保留（含 matcher 与包外事件 PreToolUse）。
-    expect(settings.hooks.PreToolUse).toEqual(trellis.hooks.PreToolUse);
+    // 既有条目原样保留（含 matcher 与包外事件 PreToolUse），本包 PreToolUse 作为独立 matcher-group 追加。
+    expect(settings.hooks.PreToolUse[0]).toEqual(trellis.hooks.PreToolUse[0]);
     expect(settings.hooks.SessionStart[0]).toEqual(trellis.hooks.SessionStart[0]);
     expect(settings.hooks.UserPromptSubmit[0]).toEqual(trellis.hooks.UserPromptSubmit[0]);
     // 本包条目追加在既有组之后（不删不改）。
     expect(settings.hooks.SessionStart).toHaveLength(2);
+    expect(settings.hooks.PreToolUse).toHaveLength(2);
     expect(settings.hooks.UserPromptSubmit).toHaveLength(2);
     expect(settings.hooks.SessionStart[1].hooks).toContainEqual({
       type: "command",
       command: "pomaster session",
+    });
+    expect(settings.hooks.PreToolUse[1]).toMatchObject({
+      matcher: CLAUDE_EXEC_GUARD_MATCHER,
+      hooks: [{ type: "command", command: CLAUDE_EXEC_GUARD_COMMAND }],
     });
     expect(
       outcome.result.files.find((f) => f.file === CLAUDE_SETTINGS_RELATIVE)?.action,

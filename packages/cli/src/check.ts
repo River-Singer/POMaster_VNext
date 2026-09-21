@@ -57,6 +57,7 @@ import {
   runGateRecipeAsync,
 } from "@pomaster/gauntlet-lite";
 import { allocateEvidenceRef } from "./evidence.js";
+import { captureEvidenceBaselineInputs } from "./evidence-qualification.js";
 import { newEntityKernelGateExecutor } from "./new-entity.js";
 import { TRUTH_INDEX_RELATIVE } from "./store-layout.js";
 import { runsDirPath } from "./store-layout.js";
@@ -585,6 +586,8 @@ export async function runCheckGates(
   }
   const ranAtSeq = store.currentSeq ?? initialized.seq;
 
+  const baselineInputs = await captureEvidenceBaselineInputs(rootDir);
+
   // 派发执行（runner 纯计算；身份坏形 FATAL → SCHEMA_INVALID fail-closed）。
   // kernel-native gate（GATE.NEW_ENTITY.CHECKS）经 runGateRecipeAsync 直调 kernel
   // 判卷核心（deps.kernelGates 注入；缺省 newEntityKernelGateExecutor——R5 接线）。
@@ -672,7 +675,7 @@ export async function runCheckGates(
     const applied = await applyTransaction(store, {
       ops: judged.map((record) => ({
         op: "record_gate_run" as const,
-        run: { grn: record.grn, trigger, result: record },
+        run: { grn: record.grn, trigger, result: record, ...(baselineInputs !== undefined ? { baselineInputs } : {}) },
       })),
     });
     const passed = rows.filter((row) => row.verdict === "passed").length;

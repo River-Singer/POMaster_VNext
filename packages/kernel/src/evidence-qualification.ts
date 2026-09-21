@@ -75,12 +75,46 @@ export const EVIDENCE_INVALIDATION_EVENT_TYPES = [
 ] as const;
 export type EvidenceInvalidationEventType = (typeof EVIDENCE_INVALIDATION_EVENT_TYPES)[number];
 
+/** Captured by a producer before executing new evidence, never inferred on import. */
+export interface EvidenceBaselineInputs {
+  readonly at_seq: number;
+  readonly digests: Readonly<Record<string, string>>;
+}
+
+export interface EvidenceBaselineScope {
+  readonly relevant_targets: readonly string[];
+  readonly declared_inputs: EvidenceBaselineInputs;
+  readonly current_inputs: EvidenceBaselineInputs;
+}
+
+export function assertEvidenceBaselineInputs(value: unknown): asserts value is EvidenceBaselineInputs {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    throw schemaInvalid("baseline_inputs must be an object", "Restore the original captured snapshot.");
+  }
+  const input = value as Record<string, unknown>;
+  if (input.at_seq === null) throw schemaInvalid("baseline_inputs.at_seq must be a sequence", "Restore the captured sequence.");
+  requireSeqOrNull(input.at_seq, "baseline_inputs.at_seq");
+  if (Object.keys(input).some((key) => key !== "at_seq" && key !== "digests") ||
+      input.digests === null || typeof input.digests !== "object" || Array.isArray(input.digests)) {
+    throw schemaInvalid("baseline_inputs has invalid fields", "Expected at_seq and digests.");
+  }
+  if (Object.keys(input.digests).length === 0) {
+    throw schemaInvalid("baseline_inputs.digests must not be empty", "Restore the complete captured snapshot.");
+  }
+  for (const [target, digest] of Object.entries(input.digests)) {
+    if (!target.trim() || typeof digest !== "string" || !/^sha256:[0-9a-f]{64}$/.test(digest)) {
+      throw schemaInvalid("baseline_inputs contains an invalid digest", "Restore the original captured snapshot.");
+    }
+  }
+}
+
 // ============================================================
 // 输入合同（snake_case——文件/事实世界词形；校验 fail-closed）
 // ============================================================
 
 /** 证据面（一条既有证据的资格判定输入；锚缺失显式 null——对应轴诚实不适用）。 */
 export interface EvidenceQualificationEvidence {
+  readonly baseline_inputs?: EvidenceBaselineInputs;
   /** 证据 id（GRN-0001 / CLM-0001 / OBS-*；批内唯一）。 */
   readonly ref: string;
   readonly surface: EvidenceQualificationSurface;
@@ -111,6 +145,7 @@ export interface EvidenceInvalidationEvent {
 
 /** 当前要求面（消费方装配：baseline 确认态 + journal 失效事件 + 执行许可绑定 + 当前注册面）。 */
 export interface EvidenceQualificationRequirement {
+  readonly baseline_scope?: EvidenceBaselineScope;
   /** baseline 确认态 at_seq（readBaselineConfirmation 单源）；null = 无确认基线（seq 轴不适用）。 */
   readonly baseline_at_seq: number | null;
   /** journal 失效事件集（三词形 producer；空集 = permit 轴无否决输入）。 */
@@ -185,6 +220,7 @@ function validateEvidence(evidence: EvidenceQualificationEvidence): void {
     throw schemaInvalid("evidence 须为对象", "evidence-qualification 输入合同校验失败");
   }
   requireNonEmptyString(evidence.ref, "evidence.ref");
+  if (evidence.baseline_inputs !== undefined) assertEvidenceBaselineInputs(evidence.baseline_inputs);
   if (!(EVIDENCE_QUALIFICATION_SURFACES as readonly string[]).includes(evidence.surface)) {
     throw schemaInvalid(
       `evidence.surface = ${String(evidence.surface)} 不在承载面词形闭包（${EVIDENCE_QUALIFICATION_SURFACES.join("/")}）`,
@@ -210,6 +246,15 @@ function validateRequirement(requirement: EvidenceQualificationRequirement): voi
     throw schemaInvalid("requirement 须为对象", "evidence-qualification 输入合同校验失败");
   }
   requireSeqOrNull(requirement.baseline_at_seq, "requirement.baseline_at_seq");
+  if (requirement.baseline_scope !== undefined) {
+    const scope = requirement.baseline_scope;
+    if (scope === null || typeof scope !== "object" || !Array.isArray(scope.relevant_targets)) {
+      throw schemaInvalid("baseline_scope must contain relevant_targets", "Use a validated task dependency declaration.");
+    }
+    assertEvidenceBaselineInputs(scope.declared_inputs);
+    assertEvidenceBaselineInputs(scope.current_inputs);
+    scope.relevant_targets.forEach((target) => requireNonEmptyString(target, "baseline_scope.relevant_targets"));
+  }
   if (!Array.isArray(requirement.invalidated_events)) {
     throw schemaInvalid(
       "requirement.invalidated_events 须为数组（空集合法——permit 轴无否决输入）",
@@ -308,7 +353,28 @@ function judge(
   }
 
   // —— seq 轴（§5-1：双侧锚在场才可比；boundary 相等合格） ——
+  const scope = requirement.baseline_scope;
+  const captured = evidence.baseline_inputs;
+  const scoped = scope !== undefined && captured !== undefined;
+  if (scoped) {
+    const targets = Object.keys(scope.declared_inputs.digests);
+    const incomplete = targets.some((target) => !Object.hasOwn(captured.digests, target) || !Object.hasOwn(scope.current_inputs.digests, target)) ||
+      Object.keys(captured.digests).length !== targets.length ||
+      Object.keys(scope.current_inputs.digests).length !== targets.length;
+    const changed = scope.relevant_targets.filter((target) =>
+      scope.declared_inputs.digests[target] === undefined ||
+      captured.digests[target] !== scope.current_inputs.digests[target] ||
+      scope.declared_inputs.digests[target] !== scope.current_inputs.digests[target]);
+    if (incomplete || changed.length > 0 || targets.length === 0 || evidence.captured_at_seq === null ||
+        requirement.baseline_at_seq !== scope.current_inputs.at_seq ||
+        captured.at_seq > scope.current_inputs.at_seq ||
+        (evidence.captured_at_seq !== null && captured.at_seq > evidence.captured_at_seq) ||
+        scope.declared_inputs.at_seq > scope.current_inputs.at_seq) {
+      firstHit("STALE_SEQ", `baseline inputs are stale or unassessed: ${changed.join(", ") || "snapshot coverage/sequence"}`);
+    }
+  }
   if (
+    !scoped &&
     requirement.baseline_at_seq !== null &&
     evidence.captured_at_seq !== null &&
     evidence.captured_at_seq < requirement.baseline_at_seq
@@ -366,7 +432,7 @@ function judge(
     return { ref: evidence.ref, surface: evidence.surface, qualified: false, verdict, reason: vetoes.join("；") };
   }
   const seqAxis =
-    requirement.baseline_at_seq === null || evidence.captured_at_seq === null
+    scoped ? "scoped baseline inputs unchanged" : requirement.baseline_at_seq === null || evidence.captured_at_seq === null
       ? "不适用"
       : `锚=${evidence.captured_at_seq} ≥ 确认=${requirement.baseline_at_seq}`;
   const permitAxis =

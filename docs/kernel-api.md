@@ -6,6 +6,15 @@
 
 ## 0. 全局纪律（每个签名的设计前提）
 
+### 范围化决策与证据（Owner 裁决 23）
+
+- `DecisionScopeConfirmation = {root_decision_ids: readonly string[], graph_fingerprint: string}`；`resolveDecisionScope(graph, scope)` 校验根和图指纹后返回 `depends_on` 传递闭包。`DiscoverySufficiencyInput.decision_scope` 可选，报告 `out_of_scope` 保留范围外节点；缺省仍检查全图。
+- `EvidenceBaselineInputs = {at_seq: number, digests: Readonly<Record<string, string>>}`；`ClaimRecordInput`、`GateRunRecordInput`、`VerifyClaimInput` 的可选 `baselineInputs` 映射为 schema 07 根字段 `baseline_inputs`。携带即校验，缺席保留旧字节形态；导入不补造历史快照。
+- `EvidenceBaselineScope = {relevant_targets, declared_inputs, current_inputs}` 是 `EvidenceQualificationRequirement.baseline_scope` 的可选值。`EvidenceQualificationEvidence.baseline_inputs` 在场才允许比较相关摘要；覆盖不全或相关值变化仍为 `STALE_SEQ`，缺快照保留原序号规则。其余资格轴不变。
+- `assertEvidenceBaselineInputs(value)` 校验快照形态；`PLAN_CAPABILITY_GATE_NAMES` 是验收能力到 gate 名的共享映射。CLI 将验收必需能力取并集，Evidence Spec 独立义务不被排除项覆盖。
+
+生产、回放、旧证据重验证和会话恢复的完整边界见 [范围化人工决策](scoped-human-decisions.md)。
+
 | 纪律 | 含义 | 落点 |
 |---|---|---|
 | D24 哈希伦理 | digest/sha 仅读侧服务（identity / 短路重跑 / 防篡改抽验）；`write_blocking=false`；`human_touch=forbidden`（人永不计算/核对/传递哈希，store 事务自动维护）；违规处置 = WARN + auto-regen hint | `applyTransaction` / `loadTruthIndex` / 一切 `*Sha256`/`*Digest` 字段 |

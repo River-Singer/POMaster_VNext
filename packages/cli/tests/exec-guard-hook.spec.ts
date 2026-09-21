@@ -37,6 +37,7 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readFileSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
@@ -45,7 +46,12 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { beginExecution, createStore, endExecution, type Store } from "@pomaster/kernel";
-import { runPermitIssue } from "@pomaster/cli";
+import {
+  CLAUDE_EXEC_GUARD_HOOK_RELATIVE,
+  CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE,
+  runInit,
+  runPermitIssue,
+} from "@pomaster/cli";
 
 // ---------------------------------------------------------------------------
 // 被测脚本与 CLI 入口定位（repo 内相对锚——CI fresh clone 同构可达）
@@ -218,6 +224,89 @@ function writePayload(relative: string): HookPayload {
 function bashPayload(command: string): HookPayload {
   return { tool_name: "Bash", tool_input: { command }, cwd: root };
 }
+
+function runPythonScriptWithoutInjectedCli(script: string, payload: HookPayload): HookRun {
+  if (!py.available) {
+    return { spawned: false, exitCode: null, stdout: "", stderr: py.reason };
+  }
+  const [file, ...rest] = py.cmd;
+  if (file === undefined) {
+    return { spawned: false, exitCode: null, stdout: "", stderr: "python cmd empty" };
+  }
+  const env: NodeJS.ProcessEnv = { ...process.env, PYTHONIOENCODING: "utf-8" };
+  delete env.POMASTER_CLI_ENTRY;
+  const res = spawnSync(file, [...rest, script], {
+    input: JSON.stringify(payload),
+    encoding: "utf8",
+    env,
+  });
+  if (res.error) {
+    return { spawned: false, exitCode: null, stdout: "", stderr: String(res.error) };
+  }
+  return { spawned: true, exitCode: res.status, stdout: res.stdout ?? "", stderr: res.stderr ?? "" };
+}
+
+describe("exec-guard hook distribution installed by init", () => {
+  it("clean external project path with spaces: launcher resolves CLI entry and delegates to canonical guard", async () => {
+    if (!py.available) {
+      expectPendingRecorded("distributed.launcher.python_missing", py.reason);
+      return;
+    }
+    const externalRoot = mkdtempSync(join(tmpdir(), "pomaster exec guard installed "));
+    try {
+      const init = await runInit(externalRoot);
+      expect(init.ok).toBe(true);
+      const distributedHook = join(externalRoot, CLAUDE_EXEC_GUARD_HOOK_RELATIVE);
+      const launcher = join(externalRoot, CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE);
+      expect(existsSync(distributedHook)).toBe(true);
+      expect(existsSync(launcher)).toBe(true);
+      expect(readFileSync(distributedHook, "utf8")).toBe(readFileSync(canonicalHook, "utf8"));
+      expect(readFileSync(launcher, "utf8")).toContain("POMASTER_CLI_ENTRY");
+      expect(readFileSync(launcher, "utf8")).toContain("runpy.run_path");
+
+      const externalStore = await createStore(externalRoot);
+      writeFileSync(join(externalRoot, "src-target.ts"), "export const target = 1;\n", "utf8");
+      mkdirSync(join(externalRoot, ".pomaster", "truth", "keybindings"), { recursive: true });
+      writeFileSync(
+        join(externalRoot, ".pomaster", "truth", "keybindings", "target.json"),
+        `${JSON.stringify(
+          {
+            id: "KEYBINDING.CODE.TARGET",
+            binding_class: "capability_to_file",
+            legacy_id: null,
+            canonical_id: "CAPABILITY.DISTRIBUTED.TARGET",
+            physical_path: "src-target.ts",
+            binding_status: "confirmed",
+            match_rule: "manual_confirmed",
+            probe: { method: "code_header_id_scan", last_run_seq: 1, result: "not_probed" },
+          },
+          null,
+          2,
+        )}\n`,
+        "utf8",
+      );
+      await beginExecution(externalStore, {
+        role: "implementer",
+        runtime: "claude-code",
+        identityKind: "interactive",
+        permitIds: ["PERMIT.NO_SUCH.1"],
+        startedAt: "2026-09-13T00:00:00.000Z",
+      });
+
+      const run = runPythonScriptWithoutInjectedCli(launcher, {
+        tool_name: "Write",
+        tool_input: { file_path: join(externalRoot, "src-target.ts") },
+        cwd: externalRoot,
+      });
+      expect(run.spawned, run.stderr.slice(0, 240)).toBe(true);
+      expect(run.exitCode).toBe(2);
+      expect(run.stderr).toContain("PERMIT_UNKNOWN");
+      expect(run.stderr).toContain("pomaster exec-guard hook");
+    } finally {
+      rmSync(externalRoot, { recursive: true, force: true });
+    }
+  });
+});
 
 // ---------------------------------------------------------------------------
 // (a) 透传放行——条件激活语义四支

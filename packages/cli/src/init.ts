@@ -119,19 +119,30 @@ import {
 } from "./layout.js";
 import {
   CAPABILITY_OVERVIEW,
+  CLAUDE_EXEC_GUARD_HOOK_RELATIVE,
+  CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE,
   CLAUDE_SETTINGS_RELATIVE,
   COMMAND_PANORAMA_LINES,
   ENTRY_MODE_HEAVY_MARKER,
   SKILL_MANIFEST,
   SKILL_MIRROR_DIRS,
+  looksLikePomasterExecGuardHook,
   mergePomasterHooks,
+  readClaudeExecGuardHookAsset,
   renderCapabilityHumanLines,
   renderCapabilityMapMarkdownLines,
+  renderClaudeExecGuardLauncher,
   renderSkillMd,
+  resolveCurrentCliEntry,
   type CapabilityEntry,
 } from "./heavy-entry.js";
 import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
+import {
+  collectBootstrapHarnessSnapshot,
+  renderBootstrapHarnessSummary,
+  type BootstrapHarnessSnapshot,
+} from "./bootstrap-harness.js";
 import { seedProjectAssets, type SeedEntry } from "./seeds.js";
 import { loadSeedManifestEntries } from "./seed-manifest.js";
 import { runSpecPreplant } from "./spec-preplant.js";
@@ -283,6 +294,13 @@ export interface InitResult {
    * 呈现面与成败无关）。
    */
   readonly capability_overview: readonly CapabilityEntry[];
+  /**
+   * Slice A Bootstrap Harness receipt projection. This is a read-only snapshot
+   * over existing sources, collected after init's existing writes. It owns no
+   * canonical state and is null only on preflight failures before a project root
+   * can be honestly projected.
+   */
+  readonly bootstrap_harness: BootstrapHarnessSnapshot | null;
 }
 
 export interface InitOptions {
@@ -560,6 +578,7 @@ export async function runInitInteractive(
     observation: ZERO_OBSERVATION,
     mode: null,
     capability_overview: CAPABILITY_OVERVIEW,
+    bootstrap_harness: null,
   });
   for (const line of renderPlatformMenu()) interactive.write(line);
   const line = await interactive.readLine();
@@ -841,6 +860,7 @@ const COMMON_COMMANDS_LINES = [
   "- `pomaster alerts` — 可行动项过滤器 + workflow 路由段（permit 到期/CHALLENGED 对象；干净=非空但极简）",
   "- `pomaster status --json` — 对象计数 / 分母状态 / permit 活性",
   "- `pomaster context compile --role <role> --json` — 八拍③：最小充分上下文投影",
+  "- `pomaster tools list --json` — ToolBinding 清单 / tool_gap 显式呈现（缺工具不冒充可用）",
   "- `pomaster doctor --json` — 内核 / harness MCP 探测（缺什么提示装什么）",
   "- `pomaster check --fast --json` — 八拍⑤：FAST gate（BUILD）",
 ];
@@ -876,6 +896,7 @@ const DIRECTORY_CONSTITUTION_LINES = [
   "- runtime = 易变运行态（sessions/locks/heartbeat，删后可重建）",
   "- discovery = 未确认思考区；memory = 候选记忆 staging；production = 生产反馈",
   "- 禁令：Agent 禁绕过 API 直写 .pomaster；新概念默认是 governed object kind 不是新目录",
+  "- 禁令：Agent 不要默认遍历 `.pomaster/**`（do not crawl .pomaster）；先跑 `pomaster session`，按 `next_action` 走公开命令。",
   "- 完整规范：`.pomaster/layout.json`（各目录 activation_hint）与 dot-pomaster-directory-constitution.md",
 ];
 
@@ -936,7 +957,7 @@ ${renderCapabilityMapMarkdownLines().join("\n")}
 ## 重入口安装物（init 维护）
 
 - skills 命令卡库：\`.agents/skills/pomaster/\` 等 ${SKILL_MANIFEST.length} 份（通用层——Codex/Cursor/Gemini CLI/GitHub Copilot/VS Code/Amp/Warp/OpenCode/Droid 等原生读取），${mirrorNote}。
-- 路由入口：\`/pomaster\`（命令全景 + 何时用哪个）；分段卡：pomaster-bootstrap / discovery / permit / context / execute / verify / reconcile / compact / closeout / inspect / catalog / production / runtime。
+- 路由入口：\`/pomaster\`（命令全景 + 何时用哪个）；分段卡：pomaster-bootstrap / pomaster-discovery / pomaster-permit / pomaster-context / pomaster-execute / pomaster-verify / pomaster-reconcile / pomaster-compact / pomaster-closeout / pomaster-inspect / pomaster-catalog / pomaster-production / pomaster-runtime。
 - 组件画廊: https://river-singer.github.io/POMaster_VNext/（在线版）或 POMaster 仓库内 \`corepack pnpm studio:dev\`——按已确认 baseline 的技术栈选择性参考（有哪些组件、长什么样、该写什么）；baseline 未确认时不主动引导。
 ${claudeBlock}- 修复/重建：重跑 \`pomaster init\`（幂等；缺失镜像重建、hooks 注册项按 command 词形合并，不动人类文件）。
 
@@ -1034,6 +1055,76 @@ async function writeGeneratedFile(
   files.push({ file: relative, action: "updated" });
 }
 
+async function writeClaudeHookAssetFile(
+  rootDir: string,
+  relative: string,
+  content: string,
+  files: InitFileReport[],
+  warnings: CliWarning[],
+  ownsExisting: (text: string) => boolean,
+): Promise<void> {
+  const absolute = `${rootDir}/${relative}`;
+  const existing = await readIfExists(absolute);
+  if (existing === null) {
+    await ensureParentDir(absolute);
+    await writeFile(absolute, content, "utf8");
+    files.push({ file: relative, action: "created" });
+    return;
+  }
+  if (existing === content) {
+    files.push({ file: relative, action: "unchanged" });
+    return;
+  }
+  if (!ownsExisting(existing)) {
+    warnings.push({
+      code: "HOOK_FILE_FOREIGN",
+      message: `${relative} exists but is not a POMaster-managed hook file; left untouched`,
+      hint: `人工核对后移除/合并该文件并重跑 pomaster init；PreToolUse 防线需 ${CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE} 与 ${CLAUDE_EXEC_GUARD_HOOK_RELATIVE} 同时在座。`,
+    });
+    files.push({ file: relative, action: "skipped_foreign" });
+    return;
+  }
+  await writeFile(absolute, content, "utf8");
+  files.push({ file: relative, action: "updated" });
+}
+
+async function installClaudeExecGuardFiles(
+  rootDir: string,
+  files: InitFileReport[],
+  warnings: CliWarning[],
+): Promise<void> {
+  let guardAsset: string | null = null;
+  try {
+    guardAsset = readClaudeExecGuardHookAsset().content;
+  } catch (err) {
+    warnings.push({
+      code: "HOOK_ASSET_MISSING",
+      message: `POMaster exec-guard hook package asset is missing: ${
+        err instanceof Error ? err.message : String(err)
+      }`,
+      hint: "包结构缺陷：重新安装/重建 pomaster 后重跑 init；doctor 会把 PreToolUse 分发态报为缺口。",
+    });
+  }
+  if (guardAsset !== null) {
+    await writeClaudeHookAssetFile(
+      rootDir,
+      CLAUDE_EXEC_GUARD_HOOK_RELATIVE,
+      guardAsset,
+      files,
+      warnings,
+      looksLikePomasterExecGuardHook,
+    );
+  }
+  await writeClaudeHookAssetFile(
+    rootDir,
+    CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE,
+    renderClaudeExecGuardLauncher(resolveCurrentCliEntry()),
+    files,
+    warnings,
+    (text) => text.includes(GENERATED_MARKER) && text.includes("runpy.run_path"),
+  );
+}
+
 /**
  * layout.json 写盘（预铺布局清单的机器可读面；created/updated/unchanged 三态按字节
  * 比较）。不带 GENERATED_MARKER——HTML 注释破坏 JSON 可解析性；本文件是机器派生
@@ -1088,6 +1179,7 @@ export async function runInit(
         observation: ZERO_OBSERVATION,
         mode: null,
         capability_overview: CAPABILITY_OVERVIEW,
+        bootstrap_harness: null,
       },
       [selection.error],
       [
@@ -1478,6 +1570,7 @@ export async function runInit(
       }
     }
     if (claudeSelected) {
+      await installClaudeExecGuardFiles(rootDir, files, warnings);
       const settingsAbsolute = `${rootDir}/${CLAUDE_SETTINGS_RELATIVE}`;
       const existingText = await readIfExists(settingsAbsolute);
       const merged = mergePomasterHooks(existingText);
@@ -1512,6 +1605,9 @@ export async function runInit(
   // preserved（播种件在座零触碰 / 预植对象在座零触碰）不计入任何 change 桶——
   // 重跑全 preserved = NO_CHANGE。
   const change: InitChange = created ? "CREATED" : updated ? "UPDATED" : "NO_CHANGE";
+  const bootstrapHarness = await collectBootstrapHarnessSnapshot(rootDir, {
+    claudeSelected,
+  });
   const result: InitResult = {
     change,
     tool: INIT_TOOL_ID,
@@ -1523,6 +1619,7 @@ export async function runInit(
     observation,
     mode,
     capability_overview: CAPABILITY_OVERVIEW,
+    bootstrap_harness: bootstrapHarness,
   };
 
   if (errors.length > 0) {
@@ -1583,6 +1680,7 @@ export async function runInit(
     observationLine,
     presetLine,
     ...modeLines,
+    ...renderBootstrapHarnessSummary(bootstrapHarness),
     ...renderCapabilityHumanLines(),
     ...INIT_BANNER_LINES,
   ];

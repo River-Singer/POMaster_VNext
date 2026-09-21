@@ -1,7 +1,7 @@
 /**
  * next-action.ts —— Next-Action 确定性路由（裁定批 E P2；09-05 提案 §2 P2）。（历史裁定，锚缺失——裁定批 E，2026-09-05 执行轮；未入 corpus 台账，T3-R3 如实标注）
  *
- * 职责：TASK 状态 × 产物/账面在场性 → 唯一建议命令（八拍命令化）。零新治理语义、
+ * 职责：TASK 状态 × 产物/账面在场性 → 主建议及并列关注项（八拍命令化）。零新治理语义、
  * 零写路径、零状态轴新增——路由复用八拍 §9.2 状态机的既有语义，不加状态；数据面
  * 全部为既有只读面：
  * - truth-index：活跃任务行（id 前缀 `TASK.` + lifecycle∈{PROPOSED,CURRENT} +
@@ -608,9 +608,9 @@ export const NEXT_ACTION_ROUTE_TABLE: readonly NextActionRouteRow[] = [
     }),
   },
   {
-    // T2 R5 + P-C1 T13：baseline 未确认（或已漂移）且阻塞集清零时，收口前的唯一缺口
-    // 就是确认仪式——此刻任何任务内推进（closeout 判卷会被 BASELINE_NOT_CONFIRMED/
-    // BASELINE_DRIFT 阻断）都先还这笔账。判据 = blocking_remaining（§6.9）：豁免登记行
+    // T2 R5 + P-C1 T13：baseline 未确认（或已漂移）且阻塞集清零时提示确认。
+    // 这是全局关注项，不证明任务内所有动作受阻；evaluateNextAction 并列任务建议。
+    // 判据 = blocking_remaining（§6.9）：豁免登记行
     // 在册（unknowns 总口径 > 0 而阻塞 0）照常路由；阻塞键在册时指 confirm 只会被
     // confirm 自身闸拒——不路由（诚实缺席）；null 不可判 fail-closed 不路由。
     id: "R_BASELINE_NOT_READY",
@@ -632,13 +632,13 @@ export const NEXT_ACTION_ROUTE_TABLE: readonly NextActionRouteRow[] = [
         return {
           beat: "0",
           command: `pomaster baseline confirm --change ${s.baseline_pending_change_ref}`,
-          reason: `baseline 变更批在途（pending-change；change=${s.baseline_pending_change_ref}）——终结变更批后 closeout 才过闸`,
+          reason: `baseline 变更批在途（pending-change；change=${s.baseline_pending_change_ref}）——影响范围由具体动作判定`,
         };
       }
       return {
         beat: "0",
         command: "pomaster baseline confirm",
-        reason: "baseline 未确认（阻塞集已清零——确认是唯一剩余缺口；closeout 判卷会被 BASELINE_NOT_CONFIRMED 阻断）",
+        reason: "baseline 未确认（阻塞集已清零，可提交确认；不代表任务其他条件已满足）",
       };
     },
   },
@@ -763,8 +763,26 @@ export const NEXT_ACTION_ROUTE_TABLE: readonly NextActionRouteRow[] = [
  * R_UNDETERMINED（诚实「无法判定」非乱指——附首个不可判原因或显式无匹配说明）。
  */
 export function evaluateNextAction(snapshot: NextActionSnapshot): NextAction {
+  const primary = evaluateRoute(snapshot);
+  if (!snapshot.initialized || snapshot.baseline_gate_codes.length === 0) return primary;
+
+  const attention = `全局 baseline 关注: ${snapshot.baseline_gate_codes.join("、")}；当前任务影响待具体动作校验，提醒不授予 Permit、不确认漂移、不证明验证通过`;
+  if (primary.route_id !== "R_BASELINE_NOT_READY") {
+    return { ...primary, reason: `${primary.reason}；${attention}` };
+  }
+
+  // Reuse route prerequisites; closeout is not independent of baseline assessment.
+  const taskAction = evaluateRoute(snapshot, true);
+  const suggestion = taskAction.command === null
+    ? `任务侧下一步: ${taskAction.reason}`
+    : `任务侧可并行准备的建议: ${taskAction.command}（${taskAction.reason}；执行前仍须命令自身校验权限、上下文及相关依赖）`;
+  return { ...primary, reason: `${primary.reason}；${attention}；${suggestion}` };
+}
+
+function evaluateRoute(snapshot: NextActionSnapshot, independent = false): NextAction {
   const undeterminedReasons: string[] = [];
   for (const row of NEXT_ACTION_ROUTE_TABLE) {
+    if (independent && (row.id === "R_BASELINE_NOT_READY" || row.id === "R_CLOSEOUT_READY")) continue;
     const judged = row.when(snapshot);
     if (judged === null) {
       undeterminedReasons.push(`${row.id} 条件不可判`);
@@ -792,5 +810,6 @@ export function renderBreadcrumb(nextAction: NextAction, snapshot: NextActionSna
   if (nextAction.command === null) {
     return `POMaster breadcrumb: ${task.id}（${nextAction.reason}）`;
   }
-  return `POMaster breadcrumb: ${task.id}（八拍${nextAction.beat}）→ ${nextAction.command}`;
+  const attention = snapshot.baseline_gate_codes.length > 0 ? `（${nextAction.reason}）` : "";
+  return `POMaster breadcrumb: ${task.id}（八拍${nextAction.beat}）→ ${nextAction.command}${attention}`;
 }

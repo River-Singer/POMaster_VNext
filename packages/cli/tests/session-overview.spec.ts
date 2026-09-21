@@ -58,6 +58,10 @@ describe("session 速览投影（SessionStart 注入源）", () => {
     expect(text).toContain("alerts: 干净");
     expect(text).toContain("Browser Eyes");
     expect(text).toContain("pomaster --help");
+    expect(text).toContain("capability/tool discovery:");
+    expect(text).toContain("pomaster tools list --json");
+    expect(outcome.result.bootstrap_harness?.tools.status).toBe("absent");
+    expect(outcome.result.bootstrap_harness?.audit_command).toBe("pomaster doctor --json");
     expect(outcome.result.truncated).toBe(false);
     expect(outcome.result.output_characters).toBe(text.length);
   });
@@ -66,6 +70,7 @@ describe("session 速览投影（SessionStart 注入源）", () => {
     const outcome = await runSessionOverview(dir);
     expect(outcome.ok).toBe(true);
     expect(outcome.result.initialized).toBe(false);
+    expect(outcome.result.bootstrap_harness).toBeNull();
     const text = outcome.human.join("\n");
     expect(text).toContain("未初始化");
     expect(text).toContain("pomaster init");

@@ -34,6 +34,9 @@ import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import Ajv from "ajv";
 import { allSchemas, discoveryStateChainSchema } from "@pomaster/schemas";
+import { runPlanCompile, runRecordGateRun, runToolsList } from "@pomaster/cli";
+import { runBindingGate, toGateResultJson, type ToolBindingRecord } from "@pomaster/gauntlet-lite";
+import { createStore } from "@pomaster/kernel";
 import { envelopeOf, journalEvents, runJsonStep, type StepRecord } from "./fixture-chain-lib.js";
 
 const ID = "idea-carline";
@@ -85,9 +88,13 @@ beforeAll(async () => {
 
   // —— 链首：init + brainstorm start（IDEA→DISCOVERY） ——
   steps.init = await runJsonStep(root, ["init"]);
+  const entry = readFileSync(join(root, "AGENTS.md"), "utf8");
+  expect(entry).toContain("pomaster session");
+  const handshake = await runJsonStep(root, ["session"]);
+  const route = (envelopeOf(handshake).result as { next_action: { command: string } }).next_action.command;
+  expect(route).toBe("pomaster brainstorm start");
   steps.start = await runJsonStep(root, [
-    "brainstorm",
-    "start",
+    ...route.split(" ").slice(1),
     "--id",
     ID,
     "--title",
@@ -186,6 +193,12 @@ beforeAll(async () => {
     "--apply",
   ]);
   steps.inspectPromoted = await runJsonStep(root, ["inspect", TASK_REF]);
+  const permit = await runJsonStep(root, ["permit", "issue", "--subject", TASK_REF,
+    "--actor", "tool:harness-contract-verifier", "--change-ref", TASK_REF]);
+  expect(permit.code, permit.stdout).toBe(0);
+  const context = await runJsonStep(root, ["context", "compile", "--role", "verifier", "--change", TASK_REF]);
+  expect(context.code, context.stdout).toBe(0);
+  expect(context.stdout).toContain(TASK_REF);
 
   // —— closeout 续接①：诚实初值双阻断（零写入基线：前后两次全树快照） ——
   steps.beforeCloseout1 = snapshotPomaster();
@@ -228,7 +241,7 @@ beforeAll(async () => {
   steps.closeout2 = await runJsonStep(root, ["closeout", TASK_REF]);
 
   // —— closeout 续接③前置：验证侧证据（D20 判定通路——独立验证流写 VERIFIED claim） ——
-  seedVerificationEvidence();
+  await seedVerificationEvidence();
 
   steps.closeout3 = await runJsonStep(root, ["closeout", TASK_REF]);
   steps.axesAfterCloseout3 = taskBody().axes as Record<string, unknown>;
@@ -370,73 +383,65 @@ function taskBody(): Record<string, unknown> {
   return JSON.parse(readFileSync(hit, "utf8")) as Record<string, unknown>;
 }
 
-/** 验证侧证据（模拟独立验证流主体：VERIFIED claim + 绑定 subject 的 passed run）。 */
-function seedVerificationEvidence(): void {
-  const claimsDir = join(root, ".pomaster", "evidence", "claims");
-  mkdirSync(claimsDir, { recursive: true });
-  writeFileSync(
-    join(claimsDir, "CLM-0001.json"),
-    `${JSON.stringify(
-      {
-        record_type: "claim",
-        clm: "CLM-0001",
-        subject: { object_id: TASK_REF },
-        is_fixture: false,
-        assertion: "TASK_ACCEPTANCE_VERIFIED：车系导入清单页布局经独立重算确认",
-        asserted_by: { actor_type: "agent", actor: "demo-builder", self_attested: true },
-        evidence_refs: [{ ref_type: "gate_result", grn: "GRN-0001" }],
-        verification: {
-          verdict: "VERIFIED",
-          method: "recompute",
-          recomputed_by: { actor_type: "tool", actor: "verifier@0.1.0", self_attested: false },
-          recomputed_value: { ok: true },
-          delta_vs_asserted: null,
-          at_seq: 4,
-        },
-        rev: 1,
-        notes_md: null,
-      },
-      null,
-      2,
-    )}\n`,
-    "utf8",
-  );
-  const runsDir = join(root, ".pomaster", "evidence", "runs");
-  mkdirSync(runsDir, { recursive: true });
-  writeFileSync(
-    join(runsDir, "GRN-0001.json"),
-    `${JSON.stringify(
-      {
-        record_type: "run",
-        grn: "GRN-0001",
-        ran_at_seq: 4,
-        trigger: { type: "pre_closeout" },
-        gate_result: {
-          mode: "inline",
-          result: {
-            grn: "GRN-0001",
-            gate: "BUILD",
-            gate_def: "POLICY.GATE.BUILD@0.1.0",
-            tool: "demo:build",
-            tool_version: "0.1.0",
-            metric_dialect: "demo:case_count",
-            ran_at_seq: 4,
-            verdict: "passed",
-            subject_id: TASK_REF,
-            is_fixture: false,
-            denominator_refs: [],
-            counts: { scanned: 2, applicable_scanned: 2, violations: 0, not_applicable: 0 },
-            blindspot: { scanned: 2, produced: 2, escape_ratio: 0 },
-            trust: { asserted: null, recomputed: { violations: 0, matches_asserted: true } },
-            duration_ms: { self: 1, external: 0 },
-          },
-        },
-      },
-      null,
-      2,
-    )}\n`,
-    "utf8",
-  );
+/** Execute a deterministic verifier and record its evidence through public commands. */
+async function seedVerificationEvidence(): Promise<void> {
+  // R8: the same fresh project carries acceptance -> plan -> tool -> recorded GRN -> closeout.
+  const task = taskBody();
+  const payload = task.payload as { acceptance: Record<string, unknown>[] };
+  const obligationPath = join(root, "verification-obligation.json");
+  writeFileSync(obligationPath, JSON.stringify({ ops: [{
+    op: "upsert_object",
+    envelope: { ...task, axisProfile: task.axis_profile, titleZh: task.title_zh, notesMd: task.notes_md,
+      sources: (task.sources as Record<string, unknown>[]).map(source => ({ ...source, capturedBy: source.captured_by })),
+      payload: { ...payload, acceptance: payload.acceptance.map(item => ({ ...item, requires: ["unit_behavior"] })) } },
+  }] }));
+  const obligation = await runJsonStep(root, ["maintain", TASK_REF, "--ops", obligationPath]);
+  expect(obligation.code, obligation.stdout).toBe(0);
+  const binding: ToolBindingRecord = {
+    id: "project.discovery.verify", source: "built_in", transport: "cli",
+    adapter_ref: "builtin.gauntlet-lite.build", tool: "gauntlet:vitest",
+    tool_version_anchor: "2.1.8", gate: "BUILD", gate_def: "POLICY.GATE.BUILD@0.1.0",
+    metric_dialect: "test:assertion_count", capabilities: ["unit_behavior"],
+    execution: { command: "node verify-entry.mjs", cwd: "." },
+    report_contract: { format: "vitest-json-stdout", parser_ref: "builtin.gauntlet-lite.build/vitest-json", parser_version: "0.1.0" },
+    evidence_targets: [], environment: { requires: false },
+  };
+  writeFileSync(join(root, "package.json"), JSON.stringify({ devDependencies: { vitest: "^2.1.8" } }));
+  mkdirSync(join(root, ".pomaster/tools"), { recursive: true });
+  writeFileSync(join(root, ".pomaster/tools/bindings.json"), JSON.stringify({ version: 1, bindings: [binding] }));
+  writeFileSync(join(root, "verify-entry.mjs"), [
+    'import { readFileSync } from "node:fs";',
+    'const entry = readFileSync("AGENTS.md", "utf8");',
+    'const assertions = ["pomaster session", "do not crawl .pomaster"].map(title => ({ title, status: entry.includes(title) ? "passed" : "failed" }));',
+    'process.stdout.write(JSON.stringify({ numTotalTests: 2, numFailedTests: assertions.filter(a => a.status === "failed").length, testResults: [{ name: "entry-contract", assertionResults: assertions }] }));',
+  ].join("\n"));
+  const plan = await runPlanCompile(root, {
+    taskRef: TASK_REF,
+    faces: ["behavior=present:bootstrap entry protocol", ...[
+      "ui", "api", "data_read_write", "migration", "permission", "dependency", "concurrency", "performance", "deployment_config",
+    ].map(face => `${face}=absent:entry contract test only`)],
+  });
+  expect(plan.ok).toBe(true);
+  expect(plan.result?.items).toEqual(expect.arrayContaining([expect.objectContaining({
+    acceptance_ref: `${TASK_REF}#acceptance[0]`, capability: "unit_behavior",
+    applicability: "REQUIRED", resolved_tool: binding.tool,
+  })]));
+  const planPath = join(root, "verification-plan.json");
+  writeFileSync(planPath, JSON.stringify(plan.result));
+  const store = await createStore(root);
+  if (store.currentSeq === null) throw new Error("initialized store has no sequence");
+  const gate = runBindingGate(binding, { projectRoot: root, grn: "GRN-0001", ranAtSeq: store.currentSeq, subjectId: TASK_REF }, {});
+  expect(gate.record.verdict).toBe("passed");
+  const runPath = join(root, "binding-run.json");
+  writeFileSync(runPath, JSON.stringify({ gate_result: { mode: "inline", result: toGateResultJson(gate.record) } }));
+  expect((await runRecordGateRun(root, { from: runPath })).ok).toBe(true);
+  const tools = await runToolsList(root, { plan: planPath });
+  expect(tools.result?.bindings).toEqual(expect.arrayContaining([expect.objectContaining({
+    binding_id: binding.id, selected: true, executed: true, executed_grn: "GRN-0001",
+  })]));
+  const verified = await runJsonStep(root, ["record", "verification", "--clm", "CLM-0001",
+    "--verifier", "tool:harness-contract-verifier", "--method", "recompute", "--evidence", "GRN-0001"]);
+  expect(verified.code, verified.stdout).toBe(0);
 }
 
 function stateFileOnDisk(): Record<string, unknown> {

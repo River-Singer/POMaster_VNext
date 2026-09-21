@@ -72,10 +72,13 @@ import {
   STACK_VALUE_PATTERN,
   applyStackAnswers,
   baselineConfirmationHumanLine,
+  baselineGateAssessment,
   baselineGateErrors,
   baselineStackRelative,
+  buildBaselineDependencyDeclaration,
   collectStackAnswers,
   createProgram,
+  readBaselineConfirmation,
   readBaselineConfirmationPresentation,
   resolveRemainingQuestions,
   runBaselineConfirm,
@@ -1357,6 +1360,97 @@ describe("baselineGateErrors 与确认态呈现（R-L）", () => {
     const absent = await baselineGateErrors(dir);
     expect(absent[0]?.code).toBe("BASELINE_DRIFT");
     expect(absent[0]?.message).toContain("缺席");
+  });
+
+  it("G03 任务基线范围：明确排除的漂移只 warning，相关漂移仍 BASELINE_DRIFT，历史 digest 变化也失效", async () => {
+    await runInit(dir);
+    await fillAllKeys();
+    await runBaselineConfirm(dir);
+    const confirmation = await readBaselineConfirmation(dir);
+    expect(confirmation.kind).toBe("record-valid");
+    if (confirmation.kind !== "record-valid") return;
+    const relevant = ["baseline/frontend/stack.yaml"];
+    const excluded = BASELINE_CONFIRM_TARGETS.filter((target) => !relevant.includes(target));
+    const originalFrontendStack = read(".pomaster/baseline/frontend/stack.yaml");
+    const originalSecurity = read(".pomaster/baseline/platform/security.md");
+    const declaration = buildBaselineDependencyDeclaration(confirmation.record, relevant, excluded);
+    expect(declaration.ok).toBe(true);
+    if (!declaration.ok) return;
+
+    const unrelatedPath = join(dir, ".pomaster", "baseline", "platform", "security.md");
+    writeFileSync(unrelatedPath, "# unrelated drift\n", "utf8");
+    const unrelated = await baselineGateAssessment(dir, declaration.declaration);
+    expect(unrelated.errors).toEqual([]);
+    expect(unrelated.warnings.map((warning) => warning.code)).toEqual(["BASELINE_DRIFT_OUT_OF_SCOPE"]);
+    expect(unrelated.warnings[0]?.message).toContain("baseline/platform/security.md");
+
+    writeFileSync(join(dir, ".pomaster", "baseline", "frontend", "stack.yaml"), "framework: changed\n", "utf8");
+    const related = await baselineGateAssessment(dir, declaration.declaration);
+    expect(related.errors.map((error) => error.code)).toEqual(["BASELINE_DRIFT"]);
+    expect(related.warnings.map((warning) => warning.code)).toEqual(["BASELINE_DRIFT_OUT_OF_SCOPE"]);
+
+    // 重确认会更新全局 manifest digest；相关任务仍拿旧快照对账，不能被新确认静默洗白。
+    writeFileSync(join(dir, ".pomaster", "baseline", "frontend", "stack.yaml"), originalFrontendStack, "utf8");
+    writeFileSync(join(dir, ".pomaster", "baseline", "platform", "security.md"), originalSecurity, "utf8");
+    await seedGovernedFixture("CHANGE.G0301");
+    const set = await runBaselineSet(dir, {
+      lane: "frontend",
+      key: "framework",
+      value: "changed",
+      change: "CHANGE.G0301",
+    });
+    expect(set.ok).toBe(true);
+    const reconfirm = await runBaselineConfirm(dir, { change: "CHANGE.G0301" });
+    expect(reconfirm.ok).toBe(true);
+    const historical = await baselineGateAssessment(dir, declaration.declaration);
+    expect(historical.errors.map((error) => error.code)).toEqual(["BASELINE_DRIFT"]);
+  });
+
+  it("G03 范围契约缺少分组覆盖或确认基线 → 显式拒绝，不把未评估资产当无关", async () => {
+    const invalid = buildBaselineDependencyDeclaration(
+      { at_seq: 1, digests: {} },
+      ["baseline/frontend/stack.yaml"],
+      [],
+    );
+    expect(invalid.ok).toBe(false);
+    if (!invalid.ok) expect(invalid.details.join(";")).toContain("未覆盖");
+
+    const assessment = await baselineGateAssessment(dir, {
+      baseline_at_seq: 1,
+      relevant_targets: ["baseline/frontend/stack.yaml"],
+      excluded_targets: [],
+      digests: {},
+    });
+    expect(assessment.errors.map((error) => error.code)).toEqual(["BASELINE_SCOPE_MALFORMED"]);
+  });
+
+  it("G03 同一变更批按任务分别判定，混合相关和排除项仍阻断相关任务", async () => {
+    await buildConfirmedProject();
+    const confirmation = await readBaselineConfirmation(dir);
+    if (confirmation.kind !== "record-valid") throw new Error("confirmed fixture missing");
+    const scopeFor = (target: string) => {
+      const result = buildBaselineDependencyDeclaration(confirmation.record, [target],
+        BASELINE_CONFIRM_TARGETS.filter((item) => item !== target));
+      if (!result.ok) throw new Error(result.details.join(";"));
+      return result.declaration;
+    };
+    const frontend = scopeFor("baseline/frontend/stack.yaml");
+    const backend = scopeFor("baseline/backend/stack.yaml");
+    await seedGovernedFixture("CHANGE.G0302");
+    expect((await runBaselineSet(dir, {
+      lane: "backend", key: "framework", value: "changed", change: "CHANGE.G0302",
+    })).ok).toBe(true);
+    const independent = await baselineGateAssessment(dir, frontend);
+    expect(independent.errors).toEqual([]);
+    expect(independent.warnings.map((warning) => warning.code)).toContain("BASELINE_PENDING_OUT_OF_SCOPE");
+    expect((await baselineGateAssessment(dir, backend)).errors.map((error) => error.code))
+      .toContain("BASELINE_NOT_CONFIRMED");
+    expect((await runBaselineSet(dir, {
+      lane: "frontend", key: "framework", value: "changed", change: "CHANGE.G0302",
+    })).ok).toBe(true);
+    const mixed = await baselineGateAssessment(dir, frontend);
+    expect(mixed.errors.map((error) => error.code)).toContain("BASELINE_NOT_CONFIRMED");
+    expect(mixed.warnings.map((warning) => warning.code)).toContain("BASELINE_PENDING_OUT_OF_SCOPE");
   });
 
   it("呈现位四态 + unknowns 计数 + human 行；manifest 缺席 → null（字段缺席）", async () => {
