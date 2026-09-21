@@ -48,6 +48,7 @@ import {
   evaluateDecisionGrounding,
   evaluateDiscoverySufficiency,
   resolveDecision,
+  resolveDecisionScope,
   syncDecisionRequestRefs,
   validateAcceptanceAnchors,
   type DecisionGraph,
@@ -1965,6 +1966,43 @@ describe("evaluateDiscoverySufficiency（§15 停止条件）", () => {
       expect(outcome.report.blocking).toEqual([]);
       expect(outcome.report.deferred.join()).toContain("批量导入");
     }
+  });
+
+  it("Owner 当前增量范围按根节点 + depends_on 闭包判卷，范围外 OPEN 节点仍可见但不阻断", () => {
+    const built = buildOk([
+      chainCand("DECISION.INCREMENT", []),
+      chainCand("DECISION.UNRELATED", []),
+      chainCand("DECISION.CHILD", ["DECISION.INCREMENT"]),
+    ]);
+    const resolved = resolveDecision(built, { decisionId: "DECISION.INCREMENT", answer: "ACCEPT" });
+    if (!resolved.ok) throw new Error("fixture resolve 失败");
+    const scope = {
+      root_decision_ids: ["DECISION.INCREMENT"],
+      graph_fingerprint: resolved.graph.graph_fingerprint,
+    };
+    const selected = resolveDecisionScope(resolved.graph, scope);
+    expect(selected).toMatchObject({
+      ok: true,
+      selected_decision_ids: ["DECISION.INCREMENT"],
+      out_of_scope_decision_ids: ["DECISION.UNRELATED", "DECISION.CHILD"],
+    });
+    const outcome = evaluateDiscoverySufficiency({ graph: resolved.graph, residuals: [], msd: msdAllGreen, decision_scope: scope });
+    expect(outcome.ok).toBe(true);
+    if (outcome.ok) {
+      expect(outcome.report.sufficient).toBe(true);
+      expect(outcome.report.blocking).toEqual([]);
+      expect(outcome.report.out_of_scope).toEqual(["DECISION.UNRELATED", "DECISION.CHILD"]);
+    }
+  });
+
+  it("范围确认绑定旧图指纹时拒绝，不能把旧确认复用于新图", () => {
+    const built = buildOk([chainCand("DECISION.SCOPE", [])]);
+    const stale = { root_decision_ids: ["DECISION.SCOPE"], graph_fingerprint: built.graph_fingerprint };
+    const resolved = resolveDecision(built, { decisionId: "DECISION.SCOPE", answer: "ACCEPT" });
+    if (!resolved.ok) throw new Error("fixture resolve 失败");
+    const outcome = evaluateDiscoverySufficiency({ graph: resolved.graph, residuals: [], msd: msdAllGreen, decision_scope: stale });
+    expect(outcome).toMatchObject({ ok: false, reason: "decision_scope_invalid" });
+    expect(resolveDecisionScope(resolved.graph, { root_decision_ids: [], graph_fingerprint: resolved.graph.graph_fingerprint })).toMatchObject({ ok: false, reason: "empty_roots" });
   });
 
   it("零决策图（G6）：零残留 + MSD 三轴全绿 → sufficient=false 且 blocking 显式携带零分母原因（禁零分母当满分）", () => {

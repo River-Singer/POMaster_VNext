@@ -70,6 +70,7 @@ interface TaskOverrides {
     readonly change: string;
   };
   readonly acceptance?: readonly unknown[];
+  readonly payload?: Readonly<Record<string, unknown>>;
 }
 
 async function seedTask(overrides: TaskOverrides = {}): Promise<void> {
@@ -93,6 +94,7 @@ async function seedTask(overrides: TaskOverrides = {}): Promise<void> {
           origin: "natural",
           payload: {
             intent: "验证 closeout 编排层",
+            ...overrides.payload,
             ...("acceptance" in overrides
               ? { acceptance: overrides.acceptance }
               : {
@@ -667,6 +669,149 @@ describe("closeout gate 阻断：subject 绑定 run 最新判卷必须全 passed
     const result = outcome.result as CloseoutResult;
     expect(result.gates?.gates_judged).toBe(2);
     expect(result.gates?.gates_passed).toBe(1);
+  });
+
+  it("acceptance 显式排除 CONTRACT：必需 BUILD 通过、可选 CONTRACT 失败仍如实呈现 warning", async () => {
+    await initStore();
+    await seedTask({
+      acceptance: [
+        {
+          criterion: "行为 X 已被独立验证",
+          claim: "CLM-0001",
+          requires: ["unit_behavior"],
+          exclusions: [{ capability: "api_contract", basis: "本次增量不改 API" }],
+        },
+      ],
+    });
+    seedClaim({});
+    seedRun({ grn: "GRN-0001", gate: "BUILD", verdict: "passed", ranAtSeq: 3 });
+    seedRun({ grn: "GRN-0002", gate: "CONTRACT", verdict: "failed", ranAtSeq: 4 });
+    seedAcceptReceipt();
+
+    const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
+    expect(outcome.ok).toBe(true);
+    expect((outcome.result as CloseoutResult).change).toBe("COMPLETED");
+    expect(outcome.errors).toEqual([]);
+    expect(outcome.warnings.map((warning) => warning.code)).toEqual(["GATE_OPTIONAL_NOT_PASSED"]);
+    expect((outcome.result as CloseoutResult).gates).toMatchObject({
+      bound_runs: 2,
+      gates_judged: 2,
+      gates_passed: 1,
+    });
+  });
+
+  it.each([
+    { name: "undeclared gate", declaration: { requires: ["unit_behavior"] } },
+    { name: "string exclusion", declaration: { requires: ["unit_behavior"], exclusions: ["api_contract"] } },
+    { name: "missing exclusion basis", declaration: { exclusions: [{ capability: "api_contract" }] } },
+    { name: "blank exclusion basis", declaration: { exclusions: [{ capability: "api_contract", basis: "  " }] } },
+    { name: "unknown mapping", declaration: { requires: ["unknown_capability"], exclusions: [{ capability: "api_contract", basis: "out of scope" }] } },
+    { name: "inherited object key", declaration: { requires: ["toString"] } },
+    { name: "missing declaration", declaration: {} },
+    { name: "exclusions without required declaration", declaration: { exclusions: [{ capability: "api_contract", basis: "out of scope" }] } },
+  ])("keeps $name conservative", async ({ declaration }) => {
+    await initStore();
+    await seedTask({ acceptance: [{ criterion: "verified behavior", claim: "CLM-0001", ...declaration }] });
+    seedClaim({});
+    seedRun({});
+    seedRun({ grn: "GRN-0002", gate: "CONTRACT", verdict: "warning" });
+    seedAcceptReceipt();
+    const before = snapshot();
+    const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors.map((error) => error.code)).toContain("GATE_WARNING");
+    expect(outcome.warnings.map((warning) => warning.code)).not.toContain("GATE_OPTIONAL_NOT_PASSED");
+    expect(snapshot()).toEqual(before);
+  });
+
+  it.each(["failed", "not_run", "not_configured", "skipped_blindspot"])(
+    "required union beats exclusions across capabilities sharing BUILD: %s",
+    async (verdict) => {
+      await initStore();
+      await seedTask({ acceptance: [
+        { criterion: "first obligation", claim: "CLM-0001", requires: ["unit_behavior"], exclusions: [{ capability: "api_contract", basis: "first excludes API" }] },
+        { criterion: "second obligation", claim: "CLM-0002", requires: ["api_contract"], exclusions: [{ capability: "data_integration", basis: "second excludes data" }] },
+      ] });
+      seedClaim({});
+      seedClaim({ clm: "CLM-0002" });
+      seedRun({ verdict });
+      seedRun({ grn: "GRN-0002", gate: "CONTRACT", verdict });
+      seedAcceptReceipt();
+      const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
+      expect(outcome.ok).toBe(false);
+      expect(outcome.errors.filter((error) => error.code === `GATE_${verdict.toUpperCase()}`)).toHaveLength(2);
+      expect(outcome.warnings.map((warning) => warning.code)).not.toContain("GATE_OPTIONAL_NOT_PASSED");
+    },
+  );
+
+  it.each([false, true])("missing required gate remains required with incomplete mapping=%s", async (incomplete) => {
+    await initStore();
+    await seedTask({ acceptance: [{
+      criterion: "API required", claim: "CLM-0001",
+      requires: ["api_contract", ...(incomplete ? ["unknown_capability"] : [])],
+      exclusions: [{ capability: "api_contract", basis: "cannot cancel requirement" }],
+    }] });
+    seedClaim({});
+    seedRun({});
+    const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors).toEqual(expect.arrayContaining([expect.objectContaining({ code: "GATE_EVIDENCE_MISSING", message: expect.stringContaining("CONTRACT") })]));
+  });
+
+  it.each([
+    { name: "unrelated satisfied clause", gateRefs: ["GRN-0001"], ok: true },
+    { name: "required excluded gate clause", gateRefs: ["GRN-0002"], ok: false },
+    { name: "alternative candidates", gateRefs: ["GRN-0002", "GRN-0001"], ok: true },
+  ])("Evidence Spec keeps $name independent of acceptance exclusions", async ({ gateRefs, ok }) => {
+    await initStore();
+    await seedTask({ acceptance: [{
+      criterion: "verified behavior", claim: "CLM-0001", requires: ["unit_behavior"],
+      exclusions: [{ capability: "api_contract", basis: "optional diagnostic" }],
+    }] });
+    const store = await createStore(root);
+    await applyTransaction(store, { ops: [{ op: "upsert_object", envelope: {
+      id: "SPEC.CLOSEOUT_EVIDENCE", kind: "business_rule", axisProfile: "rule_default",
+      axes: { lifecycle: "CURRENT", confidence: "PROVISIONAL", evidence: "IMPLEMENTED", change: "STABLE" },
+      titleZh: "Closeout evidence", authority: { owner: "BUSINESS_OWNER", delegates: [] }, origin: "natural",
+      payload: { spec_kind: "evidence_spec", title: "Required evidence", bound_task_ref: "TASK.T0001", bound_change_ref: null,
+        requirements: [{ clause_id: "R1", proof_type: "build_gate", description: "Independent obligation", subject_ref: null, claim_refs: [], gate_refs: gateRefs }],
+      },
+    } as never }] });
+    seedClaim({});
+    seedRun({});
+    seedRun({ grn: "GRN-0002", gate: "CONTRACT", verdict: "not_configured" });
+    seedAcceptReceipt();
+    const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
+    expect(outcome.ok).toBe(ok);
+    expect(outcome.warnings.map((warning) => warning.code)).toContain("GATE_OPTIONAL_NOT_PASSED");
+    expect(outcome.errors.map((error) => error.code)).toEqual(ok ? [] : ["DOD_SPEC_GATE_NOT_PASSED"]);
+    expect((outcome.result as CloseoutResult).dod?.spec).toMatchObject({ clauses_total: 1, clauses_satisfied: ok ? 1 : 0 });
+  });
+
+  it("acceptance 显式声明无 machine gate 义务：零 gate 不伪装通过，只以 warning 暴露", async () => {
+    await initStore();
+    await seedTask({
+      acceptance: [
+        {
+          criterion: "仅需人工 ACCEPT 回执",
+          claim: "CLM-0001",
+          requires: [],
+          exclusions: [{ capability: "ui_render", basis: "本次增量无 UI 变化" }],
+        },
+      ],
+    });
+    seedClaim({});
+    seedAcceptReceipt();
+
+    const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
+    expect(outcome.ok).toBe(true);
+    expect((outcome.result as CloseoutResult).change).toBe("COMPLETED");
+    expect(outcome.warnings.map((warning) => warning.code)).toEqual(["GATE_DENOMINATOR_EMPTY_NON_REQUIRED"]);
+    expect((outcome.result as CloseoutResult).gates).toMatchObject({
+      bound_runs: 0,
+      gates_judged: 0,
+      gates_passed: 0,
+    });
   });
 
   it("预期 GRN 词形的 .bak 旁路文件 → EVIDENCE_OUT_OF_DENOMINATOR warning 可见且不阻断判卷（分母仍只认 .json）", async () => {

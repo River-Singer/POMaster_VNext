@@ -7,10 +7,8 @@
  * - B11 缺口：attach 回显 resumed_task 仅指针回显，恢复动作链未接 reconcile；
  *   §5-8：reconcile 八拍已存在，接线而非新建（提取共用消费函数 judgeReconcile，
  *   非复制——reconcile 命令出口语义零改动）；
- * - resume 对账闸形态裁定：缺省不跑（attach 是 hook 重入口，缺省跑会改写既有通路
- *   语义）；`--reconcile <permit>` 显式在座时 fail-closed——dirty/baseline 缺失阻断
- *   于一切副作用之前（会话档案未落盘、journal 零事件），`--reconcile-force` 显式
- *   越权放行（信封留痕；与顶替 --force 分轴不共用——两个授权各自显式）；
+ * - 裁决 23：dirty/缺基线允许观察性 attach，告警与非 clean 事实保留；
+ *   judge 失败和活会话所有权冲突仍阻断。force 仅兼容回显，不是写入授权。
  * - 在途诚实分态（§6-3 回执未存 ≠ 未发生）：execution list 对 end 缺失的执行按
  *   evidence 平面 GRN/OBS 回执计数区分「有已入账产物 N 件 / 零产物」；
  * - 零破坏红线：不带 --reconcile 的 attach 行为零变化（result.reconcile=null 显式
@@ -30,7 +28,9 @@ import {
 } from "@pomaster/kernel";
 import {
   runExecutionList,
+  runExecGuard,
   runPermitIssue,
+  runReconcile,
   runSessionAttach,
 } from "@pomaster/cli";
 import { makeStore, pageEnvelope } from "../../../packages/kernel/tests/helpers.js";
@@ -184,7 +184,7 @@ describe("session attach --reconcile（resume 对账前置消费）", () => {
     expect(journalText()).toContain("SESSION_ATTACHED");
   });
 
-  it("dirty → 阻断（fail-closed 于一切副作用之前）：RECONCILE_DIRTY + 会话档案未落盘 + journal 零 SESSION_ATTACHED", async () => {
+  it("dirty → 观察性 attach，告警可见且无隐式 override", async () => {
     await upsertDashboard();
     const ref = await issueDashboard();
     await upsertDashboard({ payload: { surface: "V2" } }); // 篡改 → delta
@@ -194,18 +194,21 @@ describe("session attach --reconcile（resume 对账前置消费）", () => {
       harness: "claude-code",
       reconcile: ref,
     });
-    expect(outcome.ok).toBe(false);
-    expect(outcome.errors[0]?.code).toBe("RECONCILE_DIRTY");
-    expect(outcome.errors[0]?.message).toContain(ref);
-    expect(outcome.errors[0]?.hint).toContain("--reconcile-force");
+    expect(outcome.ok).toBe(true);
+    expect(outcome.errors).toEqual([]);
+    expect(outcome.warnings[0]?.code).toBe("RECONCILE_DIRTY");
+    expect(outcome.warnings[0]?.message).toContain(ref);
+    expect(outcome.human.join("\n")).toContain("不扩大 Permit");
     expect(outcome.result.reconcile).toMatchObject({
       permit_ref: ref,
       clean: false,
       overridden: false,
     });
-    // 恢复先对账（§6-2）：阻断落在 attach 写路径之前——零副作用。
-    expect(existsSync(sessionFilePath("claude_9f3ab2c1"))).toBe(false);
-    expect(journalText()).not.toContain("SESSION_ATTACHED");
+    expect(existsSync(sessionFilePath("claude_9f3ab2c1"))).toBe(true);
+    expect(journalText()).toContain("SESSION_ATTACHED");
+    const strict = await runReconcile(root, { permit: ref });
+    expect(strict.ok).toBe(false);
+    expect(strict.result.clean).toBe(false);
   });
 
   it("dirty + --reconcile-force → 显式越权放行：overridden=true 信封留痕 + attach 正常进行", async () => {
@@ -229,7 +232,8 @@ describe("session attach --reconcile（resume 对账前置消费）", () => {
       overridden: true,
     });
     // 越权留痕于人读面（journal 零事件——kernel attach 面零改动，留痕住信封）。
-    expect(outcome.human.join("\n")).toContain("越权留痕");
+    expect(outcome.human.join("\n")).toContain("不是持久处置回执");
+    expect(outcome.warnings[0]?.code).toBe("RECONCILE_DIRTY");
     expect(journalText()).toContain("SESSION_ATTACHED");
   });
 
@@ -242,9 +246,12 @@ describe("session attach --reconcile（resume 对账前置消费）", () => {
       harness: "claude-code",
       reconcile: "PERMIT.LEGACY.1",
     });
-    expect(blocked.ok).toBe(false);
-    expect(blocked.errors[0]?.code).toBe("RECONCILE_BASELINE_MISSING");
-    expect(existsSync(sessionFilePath("claude_9f3ab2c1"))).toBe(false);
+    expect(blocked.ok).toBe(true);
+    expect(blocked.warnings[0]?.code).toBe("RECONCILE_BASELINE_MISSING");
+    expect(blocked.result.reconcile).toMatchObject({ clean: false, baseline_missing: true, overridden: false });
+    expect(blocked.human.join("\n")).toContain("变化未知");
+    expect(blocked.human.join("\n")).not.toContain("→ clean");
+    expect(existsSync(sessionFilePath("claude_9f3ab2c1"))).toBe(true);
 
     const forced = await runSessionAttach(root, {
       sessionKey: "claude_9f3ab2c1",
@@ -259,6 +266,73 @@ describe("session attach --reconcile（resume 对账前置消费）", () => {
       baseline_missing: true,
       overridden: true,
     });
+    expect(forced.warnings[0]?.code).toBe("RECONCILE_BASELINE_MISSING");
+    const strict = await runReconcile(root, { permit: "PERMIT.LEGACY.1" });
+    expect(strict.ok).toBe(false);
+    expect(strict.result.baseline_missing).toBe(true);
+  });
+
+  it.each([false, true])("attach 不扩大 Permit 或 execution，force=%s", async (reconcileForce) => {
+    await upsertDashboard();
+    const ref = await issueDashboard();
+    await upsertDashboard({ payload: { surface: "V2" } });
+    const execution = await beginExecution(store, {
+      role: "implementer", runtime: "codex", identityKind: "interactive", permitIds: [ref],
+    });
+    const permitPath = join(root, ".pomaster", "state", "permits.json");
+    const executionPath = join(root, ".pomaster", "executions", `${execution.execution_id}.json`);
+    const permitsBefore = readFileSync(permitPath, "utf8");
+    const executionBefore = readFileSync(executionPath, "utf8");
+    const outcome = await runSessionAttach(root, {
+      sessionKey: "codex_resume", harness: "codex", reconcile: ref, reconcileForce,
+    });
+    expect(outcome.ok).toBe(true);
+    expect(readFileSync(permitPath, "utf8")).toBe(permitsBefore);
+    expect(readFileSync(executionPath, "utf8")).toBe(executionBefore);
+    expect(JSON.parse(readFileSync(sessionFilePath("codex_resume"), "utf8")).platform_meta).toBeNull();
+    const attempt = join(root, "attempt.json");
+    expect(outcome.human.join("\n")).toContain("不建立只读会话");
+    writeFileSync(attempt, JSON.stringify({ permit_ref: ref, id: "PAGE.DASHBOARD", op: "upsert_object" }));
+    expect((await runExecGuard(root, { attempt })).ok).toBe(true);
+    expect((await runReconcile(root, { permit: ref })).result.clean).toBe(false);
+    for (const [permit_ref, id, op, code] of [
+      [ref, "PAGE.SETTINGS", "upsert_object", "PERMIT_SCOPE_DENIED"],
+      ["PERMIT.NOPE.9", "PAGE.DASHBOARD", "upsert_object", "PERMIT_UNKNOWN"],
+      [ref, "PAGE.DASHBOARD", "invalid", "ATTEMPT_MALFORMED"],
+    ]) {
+      writeFileSync(attempt, JSON.stringify({ permit_ref, id, op }));
+      const denied = await runExecGuard(root, { attempt });
+      expect(denied.ok).toBe(false);
+      expect(denied.errors[0]?.code).toBe(code);
+    }
+  });
+
+  it.each([false, true])("judge 数据损坏仍拒绝，force=%s", async (reconcileForce) => {
+    writeFileSync(join(root, ".pomaster", "state", "permits.json"), "{");
+    const before = journalText();
+    const outcome = await runSessionAttach(root, {
+      sessionKey: "codex_resume", harness: "codex", reconcile: "PERMIT.NOPE.9", reconcileForce,
+    });
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors.length).toBeGreaterThan(0);
+    expect(outcome.result.reconcile).toBeNull();
+    expect(existsSync(sessionFilePath("codex_resume"))).toBe(false);
+    expect(journalText()).toBe(before);
+  });
+
+  it.each([false, true])("非 clean 恢复不绕过活会话所有权，force=%s", async (reconcileForce) => {
+    await upsertDashboard();
+    writeLegacyPermit();
+    await runSessionAttach(root, { sessionKey: "live_owner", harness: "claude-code" });
+    const before = readFileSync(sessionFilePath("live_owner"), "utf8");
+    const journalBefore = journalText();
+    const outcome = await runSessionAttach(root, {
+      sessionKey: "live_owner", harness: "codex", reconcile: "PERMIT.LEGACY.1", reconcileForce,
+    });
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors[0]?.code).toBe("SESSION_REPLACE_REQUIRED");
+    expect(readFileSync(sessionFilePath("live_owner"), "utf8")).toBe(before);
+    expect(journalText()).toBe(journalBefore);
   });
 
   it("未知许可 → PERMIT_NOT_FOUND 透传且不 attach（kernel 原码透传先例）", async () => {

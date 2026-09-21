@@ -43,8 +43,8 @@
  * - G Resume（§46）：checkpoint save（W4-S2 引用集快照：task/permit/execution 在途
  *   分态）→ 中断模拟（execution 无 end + 真实 GRN 回执在平面 → inflight=recorded）→
  *   session attach --reconcile（W4-S1 恢复先对账闸）clean 放行 → 对账漂移后
- *   RECONCILE_DIRTY 阻断且零副作用（会话档案未落盘、journal 零事件）→ 显式
- *   --reconcile-force 越权留痕 → checkpoint show 引用面一键可见（快照语义与对账
+ *   RECONCILE_DIRTY 告警且允许恢复（clean=false，授权不变）→ 显式
+ *   --reconcile-force 兼容回显 → checkpoint show 引用面一键可见（快照语义与对账
  *   新鲜度判定分层——漂移后 show 仍呈现保存时点快照）。
  * - H Human Attention（§47）：多事件 fixture（claims+GRN+negative-history+OPEN_
  *   QUESTION+steering+真实越界 OBS 回执）→ view review 八分区聚合呈现（机读分区 +
@@ -1054,7 +1054,7 @@ describe("R Case F：Technical Pass / Intent Fail——新增重复组件：真�
 // ============================================================
 
 describe("R Case G：Resume——checkpoint 引用集 + 恢复先对账闸 + 引用面一键可见", () => {
-  it("checkpoint save（execution 在途 recorded）→ 中断模拟 → attach --reconcile clean 放行 → 对账漂移 RECONCILE_DIRTY 零副作用 → reconcile-force 越权留痕 → checkpoint show 快照分层", async () => {
+  it("checkpoint save → 中断模拟 → attach clean 放行 → dirty 告警恢复 → force 兼容回显 → checkpoint show 快照分层", async () => {
     const root = await newRoot("g-resume");
     const store = await createStore(root);
     writeVitestProject(root, 0);
@@ -1132,7 +1132,7 @@ describe("R Case G：Resume——checkpoint 引用集 + 恢复先对账闸 + 引
       overridden: false,
     });
 
-    // —— 恢复 leg ②：对账漂移（中断后任务 payload 演进）→ RECONCILE_DIRTY 阻断且零副作用 ——
+    // Dirty recovery retains the finding and does not grant new authority.
     await runNegativeHistoryRecord(root, {
       taskRef: "TASK.RESUME",
       approach: "方案B：改用 sticky 定位",
@@ -1146,16 +1146,19 @@ describe("R Case G：Resume——checkpoint 引用集 + 恢复先对账闸 + 引
       task: "TASK.RESUME",
       reconcile: permitRef,
     });
-    expect(drifted.ok).toBe(false);
-    expect(drifted.errors[0]?.code).toBe("RECONCILE_DIRTY");
+    expect(drifted.ok).toBe(true);
+    expect(drifted.errors).toEqual([]);
+    expect(drifted.warnings[0]?.code).toBe("RECONCILE_DIRTY");
     expect(drifted.result.reconcile?.clean).toBe(false);
     expect(drifted.result.reconcile?.overridden).toBe(false);
-    // 零副作用：被阻断的 attach 不落会话档案、journal 零事件。
-    expect(existsSync(join(root, ".pomaster", "runtime", "sessions", "resume-drift.json"))).toBe(false);
+    // Only the session attachment event is added, not a drift approval.
+    expect(existsSync(join(root, ".pomaster", "runtime", "sessions", "resume-drift.json"))).toBe(true);
     const journal = readFileSync(join(root, ".pomaster", "state", "journal.jsonl"), "utf8");
-    expect(journal.includes("resume-drift")).toBe(false);
+    const resumeEvents = journal.trim().split("\n").map((line) => JSON.parse(line) as { type: string; session_key?: string })
+      .filter((event) => event.session_key === "resume-drift");
+    expect(resumeEvents.map((event) => event.type)).toEqual(["SESSION_ATTACHED"]);
 
-    // —— 恢复 leg ③：显式越权放行留痕（overridden=true；journal 零事件——信封留痕） ——
+    // Compatibility flag only: overridden is not a durable drift disposition.
     const forced = mustOk(
       await runSessionAttach(root, {
         sessionKey: "resume-force",

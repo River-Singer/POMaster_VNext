@@ -544,6 +544,12 @@ describe("record verification 证据资格链（W1 R1-5）", () => {
     expect(outcome.ok).toBe(true);
     expect(outcome.result.change).toBe("APPLIED");
     expect(outcome.result.verification).toBe("VERIFIED");
+    const captured = readClaim(clm).baseline_inputs as { at_seq: number; digests: Record<string, string> };
+    expect(captured.at_seq).toBe(1);
+    expect(Object.keys(captured.digests)).toHaveLength(25);
+    const before = snapshot();
+    expect((await runRecordVerification(root, { clm, verifier: "tool:verifier@0.1.0" })).result.change).toBe("NO_CHANGE");
+    expect(snapshot()).toEqual(before);
   });
 });
 

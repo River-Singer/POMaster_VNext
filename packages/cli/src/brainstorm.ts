@@ -93,9 +93,11 @@ import {
   parseGovernedId,
   readExceptionLedgerFile,
   resolveDecision,
+  resolveDecisionScope,
   validateAcceptanceAnchors,
   validateDiscoveryTransition,
   type DecisionGraph,
+  type DecisionScopeConfirmation,
   type DecisionNode,
   type DecisionNodeCandidate,
   type DecisionOutcomeBinding,
@@ -113,6 +115,13 @@ import { allocateEvidenceRef } from "./evidence.js";
 import {
   BOOTSTRAP_OWNER,
 } from "./init.js";
+import {
+  BASELINE_CONFIRM_TARGETS,
+  buildBaselineDependencyDeclaration,
+  readBaselineConfirmation,
+  validateBaselineDependencyDeclaration,
+  type BaselineDependencyDeclaration,
+} from "./baseline.js";
 import {
   DISCOVERY_ID_PATTERN,
   claimsDirPath,
@@ -183,6 +192,10 @@ export interface DiscoveryContract {
   readonly acceptance: readonly { readonly criterion: string; readonly anchor: string }[];
   /** §15 合法残留申报快照（四桶投影进 notesMd 的分母）。 */
   readonly residuals: readonly { readonly statement: string; readonly classification: string }[];
+  /** Owner-confirmed current increment roots; absent = legacy whole-graph denominator. */
+  readonly decision_scope?: DecisionScopeConfirmation;
+  /** Complete task-to-baseline partition plus the confirmation digest snapshot. */
+  readonly baseline_dependencies?: BaselineDependencyDeclaration;
 }
 
 export interface BrainstormStartResult {
@@ -263,6 +276,17 @@ async function readJsonFile(path: string): Promise<unknown | null> {
   } catch {
     return null;
   }
+}
+
+function isDecisionScopeConfirmation(value: unknown): value is DecisionScopeConfirmation {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value) &&
+    Array.isArray((value as { root_decision_ids?: unknown }).root_decision_ids) &&
+    (value as { root_decision_ids: unknown[] }).root_decision_ids.every((id) => typeof id === "string") &&
+    typeof (value as { graph_fingerprint?: unknown }).graph_fingerprint === "string"
+  );
 }
 
 /**
@@ -1039,6 +1063,45 @@ export async function runBrainstormPromote(
       `brainstorm promote: FAILED — ${graphLoad.error.code}（Task Contract 锚判卷输入装载失败）`,
     ]);
   }
+  if (contract.decision_scope !== undefined) {
+    if (!isDecisionScopeConfirmation(contract.decision_scope)) {
+      return fail(
+        {
+          code: "DECISION_SCOPE_MALFORMED",
+          message: "Task Contract 的 decision_scope 形态非法（须 root_decision_ids[] + graph_fingerprint）",
+          hint: "重跑 brainstorm decide --ready 重新登记 Owner 确认的 --decision-root；不要手改 meta.json。",
+        },
+        ["brainstorm promote: FAILED — DECISION_SCOPE_MALFORMED（范围合同不可验证）"],
+      );
+    }
+    const scope = resolveDecisionScope(graphLoad.graph, contract.decision_scope);
+    if (!scope.ok) {
+      return fail(
+        {
+          code: `DECISION_SCOPE_${scope.reason.toUpperCase()}`,
+          message: `Task Contract 的当前增量范围已失效：${scope.details.join("；")}`,
+          hint: "图已变化或范围根已失效；回到 DISCOVERY 重新确认 --decision-root 后再晋升。",
+        },
+        [
+          `brainstorm promote: FAILED — DECISION_SCOPE_${scope.reason.toUpperCase()}（图变化后必须重评范围）`,
+          ...scope.details.map((detail) => `  ${detail}`),
+        ],
+      );
+    }
+  }
+  if (contract.baseline_dependencies !== undefined) {
+    const baseline = validateBaselineDependencyDeclaration(contract.baseline_dependencies);
+    if (!baseline.ok) {
+      return fail(
+        {
+          code: "BASELINE_SCOPE_MALFORMED",
+          message: `Task Contract 的 baseline_dependencies 形态非法：${baseline.details.join("；")}`,
+          hint: "不要手改 meta.json；重新执行 brainstorm decide --ready 生成完整的 baseline target/exclude 分组。",
+        },
+        ["brainstorm promote: FAILED — BASELINE_SCOPE_MALFORMED（基线范围合同不可验证）"],
+      );
+    }
+  }
   let assumptionLedgerRefs: readonly string[] = [];
   try {
     const exceptionLedger = readExceptionLedgerFile(buildStorePaths(rootDir));
@@ -1152,6 +1215,9 @@ export async function runBrainstormPromote(
           payload: {
             discovery_ref: scratchpadRef,
             promotion_basis: basisValue,
+            ...(contract.decision_scope !== undefined
+              ? { decision_scope: contract.decision_scope }
+              : {}),
             // 02b kind 蓝本必填核心（change: motivation/affected_objects/reopen_count；
             // task: intent/acceptance）——D-7 投影表：intent←goal（含 raw prompt 溯源锚）、
             // acceptance←申报条目（挂锚 + 绑 CLM）、affected_objects←已决议 affects 并集、
@@ -1161,6 +1227,9 @@ export async function runBrainstormPromote(
                   intent: intentText,
                   acceptance: taskAcceptance,
                   affected_objects: affectedObjects,
+                  ...(contract.baseline_dependencies !== undefined
+                    ? { baseline_dependencies: contract.baseline_dependencies }
+                    : {}),
                 }
               : {
                   motivation: intentText,
@@ -1514,6 +1583,11 @@ export interface BrainstormDecideInput {
   readonly acceptance?: readonly string[];
   /** --residual <classification>:<statement>：§15 合法残留登记（可重复）。 */
   readonly residual?: readonly string[];
+  /** --decision-root <DECISION.*>：Owner-confirmed current increment root (可重复). */
+  readonly decisionRoots?: readonly string[];
+  /** --baseline-target / --baseline-exclude：complete Owner-confirmed baseline partition. */
+  readonly baselineTargets?: readonly string[];
+  readonly baselineExclusions?: readonly string[];
 }
 
 /** decision-graph.json + decision-inputs.json 装载结果（形态闸在装载层，畸形显式拒）。 */
@@ -2021,7 +2095,7 @@ export async function runBrainstormDecide(
   }
 
   // ============================================================
-  // 子动作 ②：--answer（§13.2 决议录入；grounding READY_FOR_DECISION 前置闸）
+  // 子动作 ②：--answer（ACCEPT/CHANGE 需 grounding；UNKNOWN/DEFER 仅记录处置）
   // ============================================================
   if (answerAction) {
     const decisionId = input.answer as string;
@@ -2124,13 +2198,15 @@ export async function runBrainstormDecide(
         [`brainstorm decide --answer: FAILED — DECISION_NOT_FOUND (${decisionId})`],
       );
     }
-    // §6.2 前置闸：仅 READY_FOR_DECISION 允许进入人机交互路径（重算制——R6）。
-    const targetGaps = groundingGapLines(target, graph, inputs);
+    // G01：记录未知/延期不等于有依据的结论；收敛仍由 --ready 独立判定。
+    const targetGaps = input.accept === true || input.value !== undefined
+      ? groundingGapLines(target, graph, inputs)
+      : [];
     if (targetGaps.length > 0) {
       return fail(
         {
           code: "GROUNDING_NOT_READY",
-          message: `decision ${decisionId} 未达 READY_FOR_DECISION——§6.2：仅此 verdict 允许进入人机交互路径（问人/决议）`,
+          message: `decision ${decisionId} 未达 READY_FOR_DECISION：ACCEPT/CHANGE 需要充分 grounding；UNKNOWN/DEFER 可记录未知或延期处置`,
           hint: "补 --retrieved 检索面申报或修正候选 grounding 后重 --set；NEEDS_RESEARCH 缺失事实的消解出路：pomaster research request 发起 → research handoff 回填 → 重试。",
         },
         [
@@ -2200,6 +2276,9 @@ export async function runBrainstormDecide(
     const human = [
       `brainstorm decide --answer → ${answer} (discovery=${input.discoveryId}, decision=${decisionId}, ${resolveOutcome.changed ? "changed" : "NO_CHANGE"})`,
       ...resolveOutcome.notes.map((note) => `  note: ${note}`),
+      ...(answer === "UNKNOWN" || answer === "DEFER"
+        ? ["  已记录未知/延期处置，未认定结论成立；grounding 与 --ready 收敛判定仍独立保留。"]
+        : []),
       ...(targetEntry !== undefined
         ? [`  ${targetEntry.decision_id}  verdict=${targetEntry.verdict}${targetEntry.in_frontier ? "  [frontier]" : ""}`]
         : []),
@@ -2209,7 +2288,7 @@ export async function runBrainstormDecide(
             `  决议未齐：OPEN ${String(openCount)} 个——继续 --answer；或全部决议后 --ready 收敛（§15）`,
           ]
         : [
-            "  全部决议完毕——收敛判定：pomaster brainstorm decide <id> --ready --goal <text> --scope <text> --acceptance <criterion>@<DECISION.*|ASSUMPTION:EXC-*>（可重复）",
+            "  全部节点已有答复或处置——仍需收敛判定：pomaster brainstorm decide <id> --ready --goal <text> --scope <text> --acceptance <criterion>@<DECISION.*|ASSUMPTION:EXC-*>（可重复）",
           ]),
     ];
     return okOutcome<BrainstormDecideResult>(
@@ -2336,15 +2415,84 @@ export async function runBrainstormDecide(
     });
   }
 
-  // OPEN 节点 grounding 复核（§6.2 判卷域 = 人机交互路径上的 OPEN 节点；已决议节点
-  // 退出判卷域——CHANGE 决议后的 re-ground 属后续讨论轮，不由收敛判定拦）。
-  const openNodes = graph.decisions.filter((n) => n.resolution === null);
+  let baselineDependencies: BaselineDependencyDeclaration | undefined;
+  const baselineTargets = input.baselineTargets ?? [];
+  const baselineExclusions = input.baselineExclusions ?? [];
+  if (baselineTargets.length > 0 || baselineExclusions.length > 0) {
+    const confirmation = await readBaselineConfirmation(rootDir);
+    if (confirmation.kind !== "record-valid" || confirmation.state !== "confirmed") {
+      return fail(
+        {
+          code: "BASELINE_SCOPE_UNAVAILABLE",
+          message: "当前增量声明 baseline 依赖范围时，项目没有稳定的 Owner confirmed 基线",
+          hint: "先完成 baseline confirm；pending-change、drifted、损坏或缺席的基线不能生成任务范围快照。",
+        },
+        ["brainstorm decide --ready: FAILED — BASELINE_SCOPE_UNAVAILABLE（范围声明未落盘）"],
+        { state: currentState, decisions_total: graph.decisions.length },
+      );
+    }
+    const baseline = buildBaselineDependencyDeclaration(
+      confirmation.record,
+      baselineTargets,
+      baselineExclusions,
+    );
+    if (!baseline.ok) {
+      return fail(
+        {
+          code: "BASELINE_SCOPE_INCOMPLETE",
+          message: `baseline 依赖范围未完整覆盖确认资产：${baseline.details.join("；")}`,
+          hint: `--baseline-target/--baseline-exclude 必须共同覆盖全部 ${String(BASELINE_CONFIRM_TARGETS.length)} 个确认资产；未评估项不能按无关处理。`,
+        },
+        [
+          "brainstorm decide --ready: FAILED — BASELINE_SCOPE_INCOMPLETE（范围声明未落盘）",
+          ...baseline.details.map((detail) => `  ${detail}`),
+        ],
+        { state: currentState, decisions_total: graph.decisions.length },
+      );
+    }
+    baselineDependencies = baseline.declaration;
+  }
+
+  // G02：可选的 Owner-confirmed 当前增量范围只收窄 sufficiency 分母；原图、
+  // fingerprint、引用完整性和范围外节点均保留。缺省仍走旧的全图保守判卷。
+  const decisionScope: DecisionScopeConfirmation | undefined = input.decisionRoots !== undefined
+    ? {
+        root_decision_ids: input.decisionRoots,
+        graph_fingerprint: graph.graph_fingerprint,
+      }
+    : undefined;
+  let scopedDecisionIds: ReadonlySet<string> | null = null;
+  let outOfScopeDecisionIds: readonly string[] = [];
+  if (decisionScope !== undefined) {
+    const scope = resolveDecisionScope(graph, decisionScope);
+    if (!scope.ok) {
+      return fail(
+        {
+          code: `DECISION_SCOPE_${scope.reason.toUpperCase()}`,
+          message: `当前增量决策范围无效：${scope.details.join("；")}`,
+          hint: "--decision-root 必须来自当前图；图变化后重新确认范围。范围外节点仍保留可见，不代表已解决。",
+        },
+        [
+          `brainstorm decide --ready: FAILED — DECISION_SCOPE_${scope.reason.toUpperCase()}`,
+          ...scope.details.map((detail) => `  ${detail}`),
+        ],
+        { state: currentState, decisions_total: graph.decisions.length },
+      );
+    }
+    scopedDecisionIds = new Set(scope.selected_decision_ids);
+    outOfScopeDecisionIds = scope.out_of_scope_decision_ids;
+  }
+  // OPEN 节点 grounding 复核：范围化时只检查当前增量及其 depends_on 闭包；
+  // 范围外节点继续作为可见未决项，不因本次增量被静默解决。
+  const openNodes = graph.decisions.filter(
+    (n) => n.resolution === null && (scopedDecisionIds === null || scopedDecisionIds.has(n.decision_id)),
+  );
   const openGaps = openNodes.flatMap((n) => groundingGapLines(n, graph, inputs));
   if (openGaps.length > 0) {
     return fail(
       {
         code: "GROUNDING_NOT_READY",
-        message: `${String(openNodes.length)} 个 OPEN decision 未达 READY_FOR_DECISION——§6.2：未过 grounding 的节点不得问人，更不得随收敛晋升`,
+        message: `${String(openNodes.length)} 个当前增量 OPEN decision 未达 READY_FOR_DECISION——相关节点不得随收敛晋升`,
         hint: "按缺口逐项补 --retrieved 检索面申报或修正候选 grounding 后重 --set；NEEDS_RESEARCH 缺失事实消解：pomaster research request 发起 → research handoff 回填 → 重跑 --ready 重判。",
       },
       [
@@ -2356,7 +2504,12 @@ export async function runBrainstormDecide(
     );
   }
   // §15 收敛判定（kernel 单一判源；产出即 promotion_basis=msd_reached 的机器判据面）。
-  const sufficiency = evaluateDiscoverySufficiency({ graph, residuals, msd });
+  const sufficiency = evaluateDiscoverySufficiency({
+    graph,
+    residuals,
+    msd,
+    ...(decisionScope !== undefined ? { decision_scope: decisionScope } : {}),
+  });
   if (!sufficiency.ok) {
     return fail(
       {
@@ -2456,6 +2609,8 @@ export async function runBrainstormDecide(
       statement: residual.statement,
       classification: residual.classification,
     })),
+    ...(decisionScope !== undefined ? { decision_scope: decisionScope } : {}),
+    ...(baselineDependencies !== undefined ? { baseline_dependencies: baselineDependencies } : {}),
   };
   try {
     const meta = (await readJsonFile(metaFilePath(rootDir, input.discoveryId))) as
@@ -2510,6 +2665,16 @@ export async function runBrainstormDecide(
     `  §15 收敛全绿：msd_reached（goal_defined+scope_defined+acceptance_verifiable）；残留 deferred=${String(sufficiency.report.deferred.length)} assumptions=${String(sufficiency.report.assumptions.length)} unknowns=${String(sufficiency.report.unknowns.length)} future=${String(sufficiency.report.future_considerations.length)}`,
     `  promotion_basis=msd_reached（08 信封；§15 机器判据面）`,
     `  Task Contract 已登记（goal/scope + acceptance ${String(acceptanceEntries.length)} 条挂锚）→ meta.json（promote 编译投影的事实源）`,
+    ...(decisionScope !== undefined
+      ? [
+          `  当前增量范围已确认：${decisionScope.root_decision_ids.join("、")}（依赖闭包 ${String(scopedDecisionIds?.size ?? 0)} 个；范围外 ${String(outOfScopeDecisionIds.length)} 个节点仍保留可见）`,
+        ]
+      : []),
+    ...(baselineDependencies !== undefined
+      ? [
+          `  baseline 依赖范围已确认：相关 ${String(baselineDependencies.relevant_targets.length)} 个 / 明确排除 ${String(baselineDependencies.excluded_targets.length)} 个（快照 at_seq=${String(baselineDependencies.baseline_at_seq)}；未评估项不放行）`,
+        ]
+      : []),
     "  下一步提升（走 P11 maintain 面）：",
     `    pomaster brainstorm promote ${input.discoveryId} --to TASK|CHANGE --basis msd_reached --apply`,
   ];

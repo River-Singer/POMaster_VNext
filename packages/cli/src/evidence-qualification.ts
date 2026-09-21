@@ -22,17 +22,21 @@
  * 的失效事件，禁静默跳过）。
  */
 import { readFile } from "node:fs/promises";
-import type { EvidenceInvalidationEvent, EvidenceQualificationRequirement } from "@pomaster/kernel";
+import { join } from "node:path";
+import type { EvidenceBaselineInputs, EvidenceInvalidationEvent, EvidenceQualificationRequirement } from "@pomaster/kernel";
 import {
   EVIDENCE_INVALIDATION_EVENT_TYPES,
   GovernanceError,
+  assertEvidenceBaselineInputs,
+  createStore,
+  loadTruthIndex,
   buildStorePaths,
   listExecutionRecords,
 } from "@pomaster/kernel";
 import { CURRENT_GATE_DEFS } from "@pomaster/gauntlet-lite";
 import { GRN_FILE_PATTERN } from "./evidence.js";
-import { readBaselineConfirmation } from "./baseline.js";
-import { journalFilePath, toPosix } from "./store-layout.js";
+import { baselineGateAssessment, readBaselineConfirmation, validateBaselineDependencyDeclaration } from "./baseline.js";
+import { journalFilePath, POMASTER_DIR, toPosix } from "./store-layout.js";
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -53,8 +57,9 @@ async function readInvalidationEvents(rootDir: string): Promise<EvidenceInvalida
   let text: string;
   try {
     text = await readFile(journalFilePath(rootDir), "utf8");
-  } catch {
-    return []; // journal 缺席 = 零失效事件（fixture 最小 store 正面构造）
+  } catch (err) {
+    if (isRecord(err) && err.code === "ENOENT") return [];
+    throw new GovernanceError("SCHEMA_INVALID", `Cannot read evidence invalidation journal: ${String(err)}`, "Restore access to the journal before qualifying evidence.");
   }
   const events: EvidenceInvalidationEvent[] = [];
   const lines = text.split("\n").filter((line) => line.trim().length > 0);
@@ -108,9 +113,25 @@ async function readInvalidationEvents(rootDir: string): Promise<EvidenceInvalida
  */
 export async function readEvidenceQualificationRequirement(
   rootDir: string,
+  dependency?: unknown,
 ): Promise<EvidenceQualificationRequirement> {
   const paths = buildStorePaths(rootDir);
   const confirmation = await readBaselineConfirmation(rootDir);
+  const declared = dependency === undefined ? undefined : validateBaselineDependencyDeclaration(dependency);
+  if (declared !== undefined && !declared.ok) {
+    throw new GovernanceError("SCHEMA_INVALID", declared.details.join("; "), "Repair the task baseline dependency declaration.");
+  }
+  const assessment = declared?.ok ? await baselineGateAssessment(rootDir, declared.declaration) : undefined;
+  if (assessment !== undefined && assessment.errors.length > 0) {
+    throw new GovernanceError("SCHEMA_INVALID", assessment.errors.map((error) => error.message).join("; "), "Reassess the task baseline dependencies before verifying evidence.");
+  }
+  const scope = declared?.ok && confirmation.kind === "record-valid" && assessment?.errors.length === 0
+    ? {
+        relevant_targets: declared.declaration.relevant_targets,
+        declared_inputs: { at_seq: declared.declaration.baseline_at_seq, digests: declared.declaration.digests },
+        current_inputs: { at_seq: confirmation.record.at_seq, digests: confirmation.record.digests },
+      }
+    : undefined;
   const baselineAtSeq =
     confirmation.kind === "record-valid" && typeof confirmation.record.at_seq === "number"
       ? confirmation.record.at_seq
@@ -122,6 +143,7 @@ export async function readEvidenceQualificationRequirement(
   }
   return {
     baseline_at_seq: baselineAtSeq,
+    ...(scope !== undefined ? { baseline_scope: scope } : {}),
     invalidated_events: invalidatedEvents,
     execution_permits: executionPermits,
     current_gate_defs: CURRENT_GATE_DEFS,
@@ -136,7 +158,29 @@ export async function readEvidenceQualificationRequirement(
 // ============================================================
 
 /** GRN run 记录的资格字段视图（readRunQualificationView 成功形态）。 */
+export async function captureEvidenceBaselineInputs(rootDir: string): Promise<EvidenceBaselineInputs | undefined> {
+  const confirmation = await readBaselineConfirmation(rootDir);
+  return confirmation.kind === "record-valid" && confirmation.state === "confirmed"
+    ? { at_seq: confirmation.record.at_seq, digests: confirmation.record.digests }
+    : undefined;
+}
+
+export async function readTaskBaselineDependencies(rootDir: string, subject: string | null): Promise<unknown> {
+  if (subject === null || !subject.startsWith("TASK.")) return undefined;
+  const index = await loadTruthIndex(await createStore(rootDir));
+  const row = index.objects.find((candidate) => candidate.id === subject);
+  if (row === undefined) return undefined;
+  try {
+    const body: unknown = JSON.parse(await readFile(join(rootDir, POMASTER_DIR, ...row.bodyRef.split("/")), "utf8"));
+    if (!isRecord(body) || !isRecord(body.payload)) throw new Error("Invalid task body");
+    return body.payload.baseline_dependencies;
+  } catch (err) {
+    throw new GovernanceError("SCHEMA_INVALID", `Cannot read task baseline dependencies: ${String(err)}`, "Restore the indexed task body.");
+  }
+}
+
 export interface RunQualificationView {
+  readonly baselineInputs?: EvidenceBaselineInputs;
   readonly grn: string;
   readonly subject: string | null;
   readonly gate: string | null;
@@ -168,8 +212,9 @@ export async function readRunQualificationView(
   let text: string;
   try {
     text = await readFile(`${runsDir}/${grn}.json`, "utf8");
-  } catch {
-    return null; // 文件缺席——悬空引用语义，归调用方既有引用位防线
+  } catch (err) {
+    if (isRecord(err) && err.code === "ENOENT") return null;
+    return { damage: `evidence/runs/${grn}.json: cannot read run record: ${String(err)}` };
   }
   let parsed: unknown;
   try {
@@ -182,10 +227,16 @@ export async function readRunQualificationView(
   if (!isRecord(parsed)) {
     return { damage: `evidence/runs/${grn}.json: run 记录不是 JSON 对象` };
   }
+  try {
+    if (parsed.baseline_inputs !== undefined) assertEvidenceBaselineInputs(parsed.baseline_inputs);
+  } catch (err) {
+    return { damage: `evidence/runs/${grn}.json: ${String(err)}` };
+  }
   const ranAtSeq = qualificationFieldOf(parsed, "ran_at_seq");
   const subject = qualificationFieldOf(parsed, "subject_id") ?? qualificationFieldOf(parsed, "subjectId");
   return {
     grn,
+    ...(parsed.baseline_inputs !== undefined ? { baselineInputs: parsed.baseline_inputs as EvidenceBaselineInputs } : {}),
     subject: asStringOrNull(subject),
     gate: asStringOrNull(qualificationFieldOf(parsed, "gate")),
     gateDef: asStringOrNull(qualificationFieldOf(parsed, "gate_def")),

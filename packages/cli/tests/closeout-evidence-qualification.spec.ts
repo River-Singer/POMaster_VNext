@@ -33,7 +33,9 @@ import {
   createStore,
   issuePermit,
 } from "@pomaster/kernel";
-import { runCloseout, type CloseoutResult } from "@pomaster/cli";
+import { runCloseout, runCheckGates, readBaselineConfirmation, buildBaselineDependencyDeclaration, BASELINE_CONFIRM_TARGETS, type CloseoutResult } from "@pomaster/cli";
+import { CATALOG_GATE_RECIPES } from "@pomaster/gauntlet-lite";
+import { captureEvidenceBaselineInputs, readEvidenceQualificationRequirement, readRunQualificationView, readTaskBaselineDependencies } from "../src/evidence-qualification.js";
 
 let root: string;
 
@@ -59,7 +61,7 @@ async function initStore(): Promise<void> {
   writeFileSync(authPath, `${JSON.stringify(auth, null, 2)}\n`);
 }
 
-async function seedTask(): Promise<void> {
+async function seedTask(baselineDependencies?: unknown): Promise<void> {
   const store = await createStore(root);
   await applyTransaction(store, {
     ops: [
@@ -75,6 +77,7 @@ async function seedTask(): Promise<void> {
           origin: "natural",
           payload: {
             intent: "验证证据资格链",
+            ...(baselineDependencies !== undefined ? { baseline_dependencies: baselineDependencies } : {}),
             acceptance: [{ criterion: "行为 X 已被独立验证", claim: "CLM-0001" }],
             class_scan_result: { scope: "src/shared/**", hits: 0, fixed_count: 0, regression_case_ref: "GRN-0001" },
           },
@@ -231,8 +234,9 @@ function baselineFileContents(): Map<string, string> {
 }
 
 /** 播种 baseline 子树 + confirmed 块（25 件真实 digest；at_seq 可注入——资格轴 seq 锚）。 */
-function seedBaseline(confirmed: boolean, atSeq = 2): void {
+function seedBaseline(confirmed: boolean, atSeq = 2, changes: Record<string, string> = {}): void {
   const contents = baselineFileContents();
+  for (const [target, content] of Object.entries(changes)) contents.set(`.pomaster/${target}`, content);
   for (const [relative, content] of contents) {
     const target = join(root, ...relative.split("/"));
     mkdirSync(dirname(target), { recursive: true });
@@ -262,6 +266,73 @@ function seedBaseline(confirmed: boolean, atSeq = 2): void {
 // ============================================================
 
 describe("closeout 证据绑定资格链（W1 R1-5）", () => {
+  it("distinguishes missing journal/run files from unreadable records", async () => {
+    expect((await readEvidenceQualificationRequirement(root)).invalidated_events).toEqual([]);
+    const journal = join(root, ".pomaster/state/journal.jsonl");
+    mkdirSync(journal, { recursive: true });
+    await expect(readEvidenceQualificationRequirement(root)).rejects.toMatchObject({ code: "SCHEMA_INVALID" });
+    const runs = join(root, ".pomaster/evidence/runs");
+    expect(await readRunQualificationView(runs, "GRN-0001")).toBeNull();
+    mkdirSync(join(runs, "GRN-0001.json"), { recursive: true });
+    expect(await readRunQualificationView(runs, "GRN-0001")).toHaveProperty("damage");
+  });
+
+  it("round-trips task dependencies and refuses a scoped requirement without its baseline", async () => {
+    await initStore();
+    seedBaseline(true, 2);
+    const confirmation = await readBaselineConfirmation(root);
+    if (confirmation.kind !== "record-valid") throw new Error("Expected confirmed baseline");
+    const declaration = buildBaselineDependencyDeclaration(confirmation.record, [...BASELINE_CONFIRM_TARGETS], []);
+    if (!declaration.ok) throw new Error(declaration.details.join("; "));
+    await seedTask(declaration.declaration);
+    expect(await readTaskBaselineDependencies(root, "TASK.T0001")).toEqual(declaration.declaration);
+    expect((await readEvidenceQualificationRequirement(root, declaration.declaration)).baseline_scope?.current_inputs)
+      .toEqual(await captureEvidenceBaselineInputs(root));
+    rmSync(join(root, ".pomaster/baseline/manifest.yaml"));
+    expect(await captureEvidenceBaselineInputs(root)).toBeUndefined();
+    await expect(readEvidenceQualificationRequirement(root, declaration.declaration)).rejects.toMatchObject({ code: "SCHEMA_INVALID" });
+  });
+
+  it("captures confirmed inputs when executing a gate, without changing not_run to passed", async () => {
+    await initStore();
+    seedBaseline(true, 0);
+    const outcome = await runCheckGates(root, { recipes: [CATALOG_GATE_RECIPES[1]!] });
+    expect(outcome.ok).toBe(false);
+    const run = JSON.parse(readFileSync(join(root, ".pomaster/evidence/runs/GRN-0001.json"), "utf8"));
+    expect(run.baseline_inputs.at_seq).toBe(0);
+    expect(Object.keys(run.baseline_inputs.digests)).toHaveLength(BASELINE_CONFIRM_TARGETS.length);
+    expect(run.gate_result.result.verdict).toBe("not_run");
+  });
+  it.each(["scoped", "legacy", "relevant-change", "incomplete"])("G06 baseline snapshot: %s", async (kind) => {
+    await initStore();
+    seedBaseline(true, 2);
+    const confirmation = await readBaselineConfirmation(root);
+    if (confirmation.kind !== "record-valid") throw new Error("Expected confirmed baseline");
+    const excluded = "baseline/frontend/stack.yaml";
+    const relevant = BASELINE_CONFIRM_TARGETS.filter((target) => target !== excluded);
+    const declaration = buildBaselineDependencyDeclaration(confirmation.record, relevant, [excluded]);
+    if (!declaration.ok) throw new Error(declaration.details.join("; "));
+    await seedTask(declaration.declaration);
+    const baselineSnapshot = { at_seq: 2, digests: { ...confirmation.record.digests } };
+    if (kind === "incomplete") delete baselineSnapshot.digests[excluded];
+    const claim = claimFixture({ atSeq: 3 });
+    const run = runFixture({ ranAtSeq: 3 });
+    if (kind !== "legacy") {
+      claim.baseline_inputs = baselineSnapshot;
+      run.baseline_inputs = baselineSnapshot;
+    }
+    seedClaim();
+    seedRun();
+    writeFileSync(join(root, ".pomaster/evidence/claims/CLM-0001.json"), JSON.stringify(claim));
+    writeFileSync(join(root, ".pomaster/evidence/runs/GRN-0001.json"), JSON.stringify(run));
+    seedBaseline(true, 5, { [kind === "relevant-change" ? "baseline/backend/stack.yaml" : excluded]: "framework: changed\nlanguage: typescript\n" });
+    seedAcceptReceipt();
+    const before = snapshot();
+    const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
+    expect(outcome.ok).toBe(kind === "scoped");
+    if (kind === "relevant-change") expect(outcome.errors.map((error) => error.code)).toContain("BASELINE_DRIFT");
+    if (kind !== "scoped") expect(snapshot()).toEqual(before);
+  });
   it("AC-04-a 反例：GRN ran_at_seq 早于 baseline 确认 at_seq → DOD_CLAIM_EVIDENCE_UNQUALIFIED / STALE_SEQ 阻断且零写入", async () => {
     await initStore();
     await seedTask();

@@ -71,6 +71,7 @@ import {
 } from "./io.js";
 import { KERNEL_TOOL, buildStorePaths, pathsOf, readCurrentSeq, readRawIndex, registerStore, type StorePaths } from "./paths.js";
 import { assertArtifactBlobsExist, assertArtifactRefs, artifactRefsToSnake } from "./evidence-artifacts.js";
+import { assertEvidenceBaselineInputs } from "./evidence-qualification.js";
 import { asGovernedId, normalizedKey } from "./id.js";
 import { validateTransition } from "./transitions.js";
 import { loadAuthorityMap } from "./permits.js";
@@ -1891,6 +1892,7 @@ function applyRecordClaim(
   op: Extract<TransactionOp, { op: "record_claim" }>,
 ): void {
   const claim = op.claim;
+  if (claim.baselineInputs !== undefined) assertEvidenceBaselineInputs(claim.baselineInputs);
   const { paths } = workspace;
   if (typeof claim.clm !== "string" || !/^CLM-[0-9]+$/.test(claim.clm)) {
     throw new GovernanceError("SCHEMA_INVALID", `clm 词形非法（须 CLM-[0-9]+）：${String(claim.clm)}`, "claim 记录 id 词形（evidence/claims/CLM-*.json）", { clm: claim.clm });
@@ -1921,6 +1923,7 @@ function applyRecordClaim(
   );
   const record: UnknownRecord = {
     record_type: "claim",
+    ...(claim.baselineInputs !== undefined ? { baseline_inputs: claim.baselineInputs } : {}),
     clm: claim.clm,
     ...(claim.executionId !== undefined ? { execution_id: claim.executionId } : {}),
     subject: { object_id: subjectId },
@@ -1998,6 +2001,7 @@ function applyVerifyClaim(
   op: Extract<TransactionOp, { op: "verify_claim" }>,
 ): void {
   const adjudication = op.claim;
+  if (adjudication.baselineInputs !== undefined) assertEvidenceBaselineInputs(adjudication.baselineInputs);
   const { paths } = workspace;
   if (typeof adjudication.clm !== "string" || !/^CLM-[0-9]+$/.test(adjudication.clm)) {
     throw new GovernanceError("SCHEMA_INVALID", `clm 词形非法（须 CLM-[0-9]+）：${String(adjudication.clm)}`, "claim 记录 id 词形（evidence/claims/CLM-*.json）", { clm: adjudication.clm });
@@ -2106,6 +2110,7 @@ function applyVerifyClaim(
   // —— 判定块替换 + rev 推进；其余字段逐字节保留（spread 保位，不重建记录） ——
   const record: UnknownRecord = {
     ...existing,
+    ...(adjudication.baselineInputs !== undefined ? { baseline_inputs: adjudication.baselineInputs } : {}),
     verification: {
       verdict: "VERIFIED",
       ...(adjudication.method !== undefined ? { method: adjudication.method } : {}),
@@ -2134,6 +2139,7 @@ function applyRecordGateRun(
 ): void {
   const { paths } = workspace;
   const run = op.run;
+  if (run.baselineInputs !== undefined) assertEvidenceBaselineInputs(run.baselineInputs);
   const result = run.result;
   if (typeof run.grn !== "string" || !/^GRN-[0-9]+$/.test(run.grn)) {
     throw new GovernanceError("GRN_INVALID", `grn 词形非法（须 GRN-[0-9]+）：${String(run.grn)}`, "GRN id 由 GateRunner 分配（evidence/runs/GRN-*.json）", { grn: run.grn });
@@ -2168,6 +2174,7 @@ function applyRecordGateRun(
   }
   const record: UnknownRecord = {
     record_type: "run",
+    ...(run.baselineInputs !== undefined ? { baseline_inputs: run.baselineInputs } : {}),
     grn: run.grn,
     ran_at_seq: result.ranAtSeq,
     trigger: { type: run.trigger },

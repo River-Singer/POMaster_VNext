@@ -33,6 +33,8 @@ import {
   type Actor,
   type ClaimRecordInput,
   type EvidenceArtifactRefInput,
+  type EvidenceBaselineInputs,
+  assertEvidenceBaselineInputs,
   type GateResult,
   type GateRunContext,
   type TransactionOp,
@@ -157,6 +159,7 @@ export function allocateEvidenceRef(dir: string, prefix: "GRN" | "CLM"): string 
 // ============================================================
 
 export interface ParsedRunFile {
+  readonly baselineInputs?: EvidenceBaselineInputs;
   /**
    * normalizeGateResult 消费的 CLAIMED 值：gate_result.result 内嵌（kernel canonical 07
    * 形态）或整个文件（pre-canonical 夹具 GateResult 直落顶层）——与 reconcile 的读取
@@ -212,6 +215,11 @@ export function parseRunFile(bytes: string): ParsedRunFile | ParseFailure {
     return { error: `JSON 无法解析：${err instanceof Error ? err.message : String(err)}` };
   }
   if (!isRecord(parsed)) return { error: "run 记录不是 JSON 对象" };
+  try {
+    if (parsed.baseline_inputs !== undefined) assertEvidenceBaselineInputs(parsed.baseline_inputs);
+  } catch (err) {
+    return { error: kernelDetail(err) };
+  }
   const inline = parsed.gate_result;
   const hasInline = isRecord(inline) && isRecord((inline as UnknownRecord).result);
   const rawValue = hasInline ? ((inline as UnknownRecord).result as UnknownRecord) : parsed;
@@ -223,6 +231,7 @@ export function parseRunFile(bytes: string): ParsedRunFile | ParseFailure {
 
   return {
     rawValue,
+    ...(parsed.baseline_inputs !== undefined ? { baselineInputs: parsed.baseline_inputs as EvidenceBaselineInputs } : {}),
     envelopeTriggerPresent: triggerRaw !== undefined && triggerRaw !== null,
     envelopeTriggerType: isRecord(triggerRaw) ? (triggerRaw as UnknownRecord).type : undefined,
     ranAtSeqRaw: pick(rawValue, "ran_at_seq", "ranAtSeq") ?? pick(parsed, "ran_at_seq"),
@@ -423,9 +432,11 @@ export function canonicalRunBytes(
   result: GateResult,
   executionId?: string | null,
   artifactRefs?: readonly EvidenceArtifactRefInput[],
+  baselineInputs?: EvidenceBaselineInputs,
 ): string {
   const record: UnknownRecord = {
     record_type: "run",
+    ...(baselineInputs !== undefined ? { baseline_inputs: baselineInputs } : {}),
     grn,
     ran_at_seq: result.ranAtSeq,
     trigger: { type: trigger },
@@ -595,7 +606,7 @@ export function planRunFile(input: {
     return { malformed: malformedOf(relPath, artifactRefsResolution.fail) };
   }
   const artifactRefs = artifactRefsResolution.refs;
-  const canonical = canonicalRunBytes(grn, resolved.context.trigger, result, executionId, artifactRefs);
+  const canonical = canonicalRunBytes(grn, resolved.context.trigger, result, executionId, artifactRefs, parsed.baselineInputs);
   if (canonical === bytes) {
     // 快路径判卷补位（P20 红队发现 2）：携带身份键即校验档案在场（与 record 同判卷），
     // 手写 canonical 形态 + 未登记 AGX 不再借零 op 通路绕过 S1。
@@ -623,6 +634,7 @@ export function planRunFile(input: {
           grn,
           trigger: resolved.context.trigger,
           result,
+          ...(parsed.baselineInputs !== undefined ? { baselineInputs: parsed.baselineInputs } : {}),
           ...(executionId ? { executionId } : {}),
           ...(artifactRefs.length > 0 ? { artifactRefs } : {}),
         },
@@ -687,7 +699,7 @@ export function findCanonicalRunMatch(input: {
     } catch {
       continue;
     }
-    if (canonicalRunBytes(grn, resolved.context.trigger, result, executionId, artifactRefs) === bytes) return grn;
+    if (canonicalRunBytes(grn, resolved.context.trigger, result, executionId, artifactRefs, input.parsed.baselineInputs) === bytes) return grn;
   }
   return null;
 }
@@ -782,6 +794,11 @@ export function parseClaimFile(bytes: string): ParsedClaimFile | ParseFailure {
     return { error: `JSON 无法解析：${err instanceof Error ? err.message : String(err)}` };
   }
   if (!isRecord(parsed)) return { error: "claim 记录不是 JSON 对象" };
+  try {
+    if (parsed.baseline_inputs !== undefined) assertEvidenceBaselineInputs(parsed.baseline_inputs);
+  } catch (err) {
+    return { error: kernelDetail(err) };
+  }
   const verification = isRecord(parsed.verification) ? (parsed.verification as UnknownRecord) : undefined;
   return {
     record: parsed,
@@ -801,6 +818,12 @@ export function extractClaimInput(
   record: UnknownRecord,
   clm: string,
 ): ClaimRecordInput | ClaimExtractFailure {
+  const baselineInputs = record.baseline_inputs;
+  try {
+    if (baselineInputs !== undefined) assertEvidenceBaselineInputs(baselineInputs);
+  } catch (err) {
+    return { detail: kernelDetail(err) };
+  }
   const subjectRaw = pick(record, "subject_id", "subjectId");
   const subjectBoxed = isRecord(record.subject) ? (record.subject as UnknownRecord) : undefined;
   const subjectId =
@@ -876,6 +899,7 @@ export function extractClaimInput(
   return {
     clm,
     subjectId: subjectId as ClaimRecordInput["subjectId"],
+    ...(baselineInputs !== undefined ? { baselineInputs: baselineInputs as EvidenceBaselineInputs } : {}),
     assertion,
     assertedBy: {
       actorType: actorType as Actor["actorType"],
@@ -915,6 +939,7 @@ export function canonicalClaimBytes(claim: ClaimRecordInput, rev: number): strin
   });
   const record: UnknownRecord = {
     record_type: "claim",
+    ...(claim.baselineInputs !== undefined ? { baseline_inputs: claim.baselineInputs } : {}),
     clm: claim.clm,
     ...(claim.executionId ? { execution_id: claim.executionId } : {}),
     subject: { object_id: subjectId },

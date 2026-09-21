@@ -427,6 +427,10 @@ export {
   MSD_UNKNOWN_CLASSIFICATION_VALUES,
   unknownsWordForm,
   renderBaselineQuizHumanLine,
+  baselineGateAssessment,
+  buildBaselineDependencyDeclaration,
+  readBaselineConfirmation,
+  validateBaselineDependencyDeclaration,
 } from "./baseline.js";
 export { readDesignTokens } from "./baseline-tokens.js";
 export {
@@ -465,6 +469,9 @@ export type {
   BaselineConfirmResult,
   BaselineAckRecord,
   BaselinePendingChange,
+  BaselineDependencyDeclaration,
+  BaselineDependencyValidation,
+  BaselineGateAssessment,
   BaselineConfirmationState,
   BaselineConfirmationPresentation,
   BaselineUnknownApplicability,
@@ -2147,7 +2154,7 @@ export function createProgram(
   program
     .command("closeout")
     .description(
-      "八拍⑧ CARRY：DoD 判卷 + 阻断施断——acceptance 逐条映射 VERIFIED claim（§47 硬绑；D20 判定来自 claims 平面）+ subject 绑定 gate 记录最新判卷全 passed（七态非 passed 一律阻断）才施断 COMPLETED（transition evidence→VERIFIED 经 kernel applyTransaction）；证据缺失伪装完成硬阻断 fail-closed 零写入",
+      "八拍⑧ CARRY：验收条目须映射 VERIFIED claim，并满足绑定 Evidence Spec、必需 gate 与人工 ACCEPT 后施断 COMPLETED。acceptance.requires/exclusions 可声明验证义务；只有明确排除且未被要求的 gate 作为诊断提醒，旧任务和未评估 gate 保守判卷。任务 baseline_dependencies 可将明确无关的漂移呈现为 warning；相关变化仍须重新评估。",
     )
     .argument("<task-id>", "任务对象 governed id（DoD 判卷面 = task_object payload.acceptance；legacy 词形自动收编）")
     .option("--authority-ref <ref>", "审批/决策引用（随施断事务落 journal）")
@@ -2442,7 +2449,7 @@ export function createProgram(
   brainstorm
     .command("decide")
     .description(
-      "DISCOVERY→READY_TO_PROMOTE 公开推进链（§5/§6/§13/§15；kernel decision-graph 单一判卷源）：--set <file> 载入候选图（build+grounding 判定呈现+frontier，图落 scratchpad/decision-graph.json）→ --answer <DECISION.*> 决议（--accept|--value|--unknown --triage 六问|--defer；grounding READY_FOR_DECISION 前置闸）→ --ready 收敛判定（Task Contract 文本申报 --goal/--scope/--acceptance（挂 DECISION.*/ASSUMPTION 锚，锚存在性 kernel 判卷）+ --residual 合法残留；MSD 三轴由文本非空派生；全绿→READY_TO_PROMOTE + contract 落 meta.json，不足 fail-closed 列缺口状态不动）。NEEDS_RESEARCH 缺口消解链（PR-4）：pomaster research request 发起 → research handoff 回填 → 重跑 --ready 重判；其余晋升依据词形不经本命令判卷（不私造无判卷放行通道）",
+      "DISCOVERY→READY_TO_PROMOTE 公开推进链：--set 建图 → --answer 决议（ACCEPT/CHANGE 需 grounding；UNKNOWN/DEFER 可记录未决处置并保留冲突）→ --ready 收敛。--ready 默认按全图保守判卷；可用 --decision-root 重复申报 Owner 确认的当前增量根节点，按 depends_on 闭包判定，范围外节点保留可见且图指纹变化后确认失效。Task Contract 文本申报 --goal/--scope/--acceptance + --residual 仍必需；全绿才 READY_TO_PROMOTE。",
     )
     .argument("<discovery-id>", "scratchpad id（brainstorm start 产出的 id；state 必须 DISCOVERY）")
     .option("--set <file>", "子动作①：候选图 JSON 文件（§5.2 十键候选节点数组；按进程 CWD 解析）")
@@ -2463,6 +2470,9 @@ export function createProgram(
     .option("--scope <text>", "Task Contract：scope 文本（--ready 必答；空文本按 MSD scope_defined=false 判卷）")
     .option("--acceptance <criterion@anchor>", "Task Contract：验收条目（--ready 必答可重复；<criterion>@<DECISION.*|ASSUMPTION:EXC-<n>> 挂锚，锚存在性 kernel 判卷 fail-closed；至少一条）", collectValues)
     .option("--residual <class:statement>", "§15 合法残留登记（可重复：<ASSUMPTION|DEFERRED_DECISION|FUTURE_CONSIDERATION|SOFT_UNCERTAINTY>:<statement>）", collectValues, [])
+    .option("--decision-root <DECISION.*>", "当前增量的 Owner-confirmed Decision 根（可重复；按 depends_on 传递闭包判卷，图指纹变化后须重新确认）", collectValues)
+    .option("--baseline-target <baseline/path>", "任务相关的 Owner-confirmed baseline 资产（可重复；须与 --baseline-exclude 共同覆盖全部确认资产）", collectValues)
+    .option("--baseline-exclude <baseline/path>", "任务明确不相关的 baseline 资产（可重复；未列出的资产不会被静默视为无关）", collectValues)
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (discoveryId: string, opts, command) => {
       const outcome = await runBrainstormDecide(resolveDir(command), {
@@ -2487,6 +2497,9 @@ export function createProgram(
         ...(opts.scope !== undefined ? { scope: opts.scope as string } : {}),
         ...(opts.acceptance !== undefined ? { acceptance: opts.acceptance as string[] } : {}),
         residual: opts.residual as string[],
+        ...(opts.decisionRoot !== undefined ? { decisionRoots: opts.decisionRoot as string[] } : {}),
+        ...(opts.baselineTarget !== undefined ? { baselineTargets: opts.baselineTarget as string[] } : {}),
+        ...(opts.baselineExclude !== undefined ? { baselineExclusions: opts.baselineExclude as string[] } : {}),
       });
       record({
         command: "brainstorm decide",
@@ -3594,7 +3607,7 @@ export function createProgram(
   session
     .command("attach")
     .description(
-      "注册/刷新会话（首注册 CREATED / 既有 REFRESHED / 顶替 REPLACED；resumed_task 回带既有任务指针——resume 白名单询问输入；首注册 journal SESSION_ATTACHED，刷新=心跳零事件）；--reconcile <permit> 恢复前对账（W4-S1 §6-2：⑥拍前置消费——clean 放行回显摘要，dirty/baseline 缺失阻断于一切副作用之前 exit 1，--reconcile-force 显式越权放行信封留痕）",
+      "注册/刷新会话（CREATED / REFRESHED / REPLACED；resumed_task 回带既有任务指针）；--reconcile <permit> 恢复前对账：dirty/缺基线允许 attach 并告警，clean=false 保留；判卷失败和活会话所有权冲突仍拒绝。attach 不建立只读会话，不扩大 Permit；既有范围内写入仍可能获准，权限通过不等于漂移处置",
     )
     .requiredOption("--session-key <key>", "会话键（harness 前缀点分段词形，如 claude_9f3ab2c1 / 子代理 .sa1 后缀；hook 解析源 D 线 §1.2）")
     .requiredOption("--harness <id>", "harness 标识（claude-code / codex…；禁静默匿名）")
@@ -3604,11 +3617,11 @@ export function createProgram(
     .option("--force", "顶替授权（既有活会话且 harness 不同时必填——缺省拒绝无声顶替；stale 前任自动放行；顶替落 journal SESSION_REPLACED）")
     .option(
       "--reconcile <permit>",
-      "恢复前对账（W4-S1 §6-2 恢复先对账）：attach 落盘前按该 permit 基线跑 ⑥拍判卷（与 reconcile 命令同一份 judgeReconcile 分派）——clean 放行并回显摘要；dirty→RECONCILE_DIRTY / baseline 缺失→RECONCILE_BASELINE_MISSING 阻断（会话档案零落盘、journal 零事件）",
+      "attach 落盘前按 Permit 基线调用 judgeReconcile；dirty/缺基线以 RECONCILE_DIRTY / RECONCILE_BASELINE_MISSING 告警保留，允许恢复上下文；判卷失败仍拒绝。独立 reconcile 命令保留严格失败语义",
     )
     .option(
       "--reconcile-force",
-      "对账越权授权（仅与 --reconcile 同用生效，孤旗 SCHEMA_INVALID）：阻断态显式越权放行，信封 result.reconcile.overridden=true 留痕；与顶替 --force 分轴不共用（两个授权各自显式）",
+      "兼容旗标（须与 --reconcile 同用，孤旗 SCHEMA_INVALID）：非 clean 时回显 result.reconcile.overridden=true；不是持久处置、漂移认可或写入授权；与会话顶替 --force 独立",
     )
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (opts, command) => {

@@ -98,6 +98,27 @@ export const PLAN_CAPABILITY_WORDS = [
 ] as const;
 export type PlanCapabilityWord = (typeof PLAN_CAPABILITY_WORDS)[number];
 
+/**
+ * Explicit capability-to-gate projection consumed by closeout. A missing key
+ * is intentionally treated conservatively by consumers; this table is not a
+ * claim that every capability has a machine gate in the current registry.
+ */
+export const PLAN_CAPABILITY_GATE_NAMES: Readonly<Record<PlanCapabilityWord, readonly string[]>> = {
+  unit_behavior: ["BUILD"],
+  ui_render: ["BROWSER"],
+  ui_interaction: ["BROWSER"],
+  api_contract: ["CONTRACT"],
+  data_integration: ["BUILD"],
+  migration_drill: ["BUILD"],
+  permission_observation: ["SECURITY"],
+  dependency_check: ["ARCHITECTURE"],
+  concurrency_reproduction: ["BUILD"],
+  load_test: ["PERFORMANCE"],
+  deployment_config_check: ["ARCHITECTURE"],
+  visual_diff: ["BROWSER"],
+  static_analysis: ["TYPECHECK", "LINT"],
+};
+
 /** face kind → 派生能力（轴序固定词形；face 闭包是能力的唯一 face 来源）。 */
 const FACE_CAPABILITIES: Readonly<Record<PlanChangeFaceKind, readonly PlanCapabilityWord[]>> = {
   behavior: ["unit_behavior"],

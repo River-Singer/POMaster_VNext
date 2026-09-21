@@ -161,6 +161,28 @@ function journalOps(): string[] {
 // ============================================================
 
 describe("record gate-run 入账通路正例", () => {
+  it("preserves captured baseline inputs on canonical import and idempotent replay", async () => {
+    await seedStore();
+    const baselineInputs = { at_seq: 0, digests: { "baseline/frontend/stack.yaml": `sha256:${"a".repeat(64)}` } };
+    const from = writeInput({ ...runEnvelopePayload(gatePayload()), baseline_inputs: baselineInputs });
+    const first = await runRecordGateRun(root, { from });
+    expect(first.ok).toBe(true);
+    expect(readRun(first.result.grn).baseline_inputs).toEqual(baselineInputs);
+    const before = snapshot();
+    expect((await runRecordGateRun(root, { from })).result.change).toBe("SKIPPED_CANONICAL");
+    expect((await runRecordGateRun(root, { from, grn: first.result.grn })).result.change).toBe("SKIPPED_CANONICAL");
+    expect(snapshot()).toEqual(before);
+    const legacy = await runRecordGateRun(root, { from: writeInput(gatePayload({ ran_at_seq: 4 })) });
+    expect(readRun(legacy.result.grn)).not.toHaveProperty("baseline_inputs");
+  });
+
+  it("rejects malformed baseline snapshots instead of silently dropping them", async () => {
+    await seedStore();
+    const before = snapshot();
+    const outcome = await runRecordGateRun(root, { from: writeInput({ ...gatePayload(), baseline_inputs: { at_seq: 0, digests: {} } }) });
+    expect(outcome.ok).toBe(false);
+    expect(snapshot()).toEqual(before);
+  });
   it("APPLIED：evidence/runs 出现 canonical GRN 记录且 status generation_seq 推进", async () => {
     await seedStore();
     const outcome = await runRecordGateRun(root, { from: writeInput(gatePayload()) });
