@@ -18,13 +18,14 @@ import {
 import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   AGENTS_MD_RELATIVE,
   CLAUDE_EXEC_GUARD_COMMAND,
   CLAUDE_EXEC_GUARD_MATCHER,
   CLAUDE_SETTINGS_RELATIVE,
   runInit,
+  probeHeavyEntryInstall,
 } from "@pomaster/cli";
 import type { CliEnvelope } from "@pomaster/cli";
 import { envelopeOf, runJsonStep, type StepRecord } from "./fixture-chain-lib.js";
@@ -36,6 +37,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.unstubAllEnvs();
   rmSync(root, { recursive: true, force: true });
 });
 
@@ -280,13 +282,23 @@ describe("fresh external project harness bootstrap contract", () => {
     await executeDiscoveredRoute(decision);
     expect(sha256File(sourcePath)).toBe(beforeSource);
 
+    // A fresh project does not imply a globally installed CLI on the host.
+    vi.stubEnv("PATH", root);
     const doctor = await runJsonStep(root, ["doctor"]);
+    vi.unstubAllEnvs();
     const doctorEnvelope = envelopeOf(doctor);
     expect(doctorEnvelope.command).toBe("doctor");
-    const probes = ((doctorEnvelope.result ?? {}) as { probes?: Array<{ probe?: string; detail?: string }> }).probes ?? [];
+    const probes = ((doctorEnvelope.result ?? {}) as { probes?: Array<{ probe?: string; status?: string; detail?: string }> }).probes ?? [];
     const hooksProbe = probes.find((probe) => probe.probe === "heavy_entry_hooks");
-    expect(hooksProbe?.detail).toContain("PreToolUse");
-    expect(hooksProbe?.detail).toContain("prevention=prevention-capable");
+    expect(hooksProbe?.status).toBe("MISSING_CONFIGURATION");
+    expect(hooksProbe?.detail).toContain("PATH");
+    // Assess distributed hook assets separately with an explicit resolver fixture.
+    const [installedHooks] = await probeHeavyEntryInstall(root, {
+      resolveHookExecutable: () => process.execPath,
+    });
+    expect(installedHooks.status).toBe("READY");
+    expect(installedHooks.detail).toContain("PreToolUse");
+    expect(installedHooks.detail).toContain("prevention=prevention-capable");
   });
 
   it.each(["empty", "unavailable", "available"] as const)(
