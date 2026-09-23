@@ -1185,6 +1185,7 @@ export type {
   PlanChangeSurface,
   PlanEnvironmentFacts,
   PlanToolBinding,
+  VerificationPlanResolvedBinding,
   PlanPermitFacts,
   PlanInformationalFacts,
   VerificationPlanInput,

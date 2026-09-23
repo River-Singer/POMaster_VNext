@@ -11,7 +11,7 @@
  *   validated = adapter 能力声明 ↔ binding report_contract 匹配（纯函数）
  *   available = validated ∧ detect READY ∧ 可执行体探针命中 ∧ transport=cli（W1）
  *               ∧ 环境前置满足（requires=false 显式或 ENVREC 回执在座）
- *   selected  = 计划工件 REQUIRED 项 resolved_tool 对账到本绑定 tool（--plan 供给）
+ *   selected  = 新计划工件 REQUIRED 项 resolved_bindings[].binding_id 精确对账；旧工件兼容 resolved_tool
  *   executed  = evidence/runs/GRN-*.json 真实执行回执（tool+gate+binding_id 留痕）
  *   ——分态不可跃迁：validated 假 ⇒ available 必假；探测不能自行扩大 permit。
  * - 工具发现≠调用授权：同 tool+gate 的 GRN 缺 binding_id 留痕不算 executed；
@@ -215,6 +215,44 @@ describe("pomaster tools list（六分态派生）", () => {
     // 无对账项 → 显式 false（非缺席键）。
     const empty = await runToolsList(root, {});
     expect(rowOf(empty.result as ToolsListResult, "project.test.vitest-build").selected).toBe(false);
+  });
+
+  it("新计划按 binding_id 精确 selected，畸形 resolved_bindings fail-closed", async () => {
+    writePackageJson(true);
+    writeRegistry([
+      vitestBinding({ id: "project.test.vitest-a" }),
+      vitestBinding({ id: "project.test.vitest-b" }),
+    ]);
+    const planPath = join(root, "plan.json");
+    writeFileSync(
+      planPath,
+      JSON.stringify({
+        items: [{
+          resolved_tool: "gauntlet:vitest",
+          resolved_bindings: [{ binding_id: "project.test.vitest-b" }],
+          applicability: "REQUIRED",
+        }],
+      }),
+      "utf8",
+    );
+    const exact = await runToolsList(root, { plan: planPath });
+    expect(rowOf(exact.result as ToolsListResult, "project.test.vitest-a").selected).toBe(false);
+    expect(rowOf(exact.result as ToolsListResult, "project.test.vitest-b").selected).toBe(true);
+
+    writeFileSync(
+      planPath,
+      JSON.stringify({
+        items: [{
+          resolved_tool: "gauntlet:vitest",
+          resolved_bindings: { binding_id: "project.test.vitest-b" },
+          applicability: "REQUIRED",
+        }],
+      }),
+      "utf8",
+    );
+    const malformed = await runToolsList(root, { plan: planPath });
+    expect(malformed.ok).toBe(false);
+    expect(malformed.errors[0]?.code).toBe("SCHEMA_INVALID");
   });
 
   it("executed 判定式：GRN 真实回执（tool+gate+binding_id 留痕）→ true；同 tool+gate 缺留痕不算（工具发现≠调用授权）", async () => {

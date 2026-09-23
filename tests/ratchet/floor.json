@@ -755,6 +755,10 @@
       "packages/cli/tests/plan-commands.spec.ts": {
         "layer": "L1"
       },
+      "packages/cli/tests/plan-runner.spec.ts": {
+        "layer": "L1",
+        "domain": "permit_evidence"
+      },
       "packages/cli/tests/tools-commands.spec.ts": {
         "layer": "L1"
       },

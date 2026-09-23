@@ -313,6 +313,7 @@ import {
   runPresetPreview,
 } from "./preset-probe.js";
 import { runPlanCompile } from "./plan.js";
+import { runPlanRun } from "./plan-runner.js";
 import { runDiagnose } from "./diagnose.js";
 import { runToolsList, runToolsValidate } from "./tools.js";
 import {
@@ -781,9 +782,10 @@ export type {
   CompactClaimEntry,
   CompactMalformedEntry,
 } from "./compact.js";
-export { runRecordGateRun, runRecordClaim, runRecordVerification } from "./record.js";
+export { runRecordGateRun, runRecordGateRunValue, runRecordClaim, runRecordVerification } from "./record.js";
 export type {
   RecordGateRunInput,
+  RecordGateRunValueInput,
   RecordGateRunResult,
   RecordClaimInput,
   RecordClaimResult,
@@ -1006,6 +1008,8 @@ export type {
   SteeringKernelDeps,
 } from "./steering.js";
 export { runPlanCompile } from "./plan.js";
+export { runPlanRun } from "./plan-runner.js";
+export type { PlanRunInput, PlanRunResult, PlanRunRow } from "./plan-runner.js";
 export type {
   PlanCompileInput,
   PlanCompileResult,
@@ -2821,6 +2825,40 @@ export function createProgram(
       });
     });
 
+  plan
+    .command("run")
+    .description(
+      "按 task Verification Plan 的 resolved_bindings 串行执行全部 REQUIRED obligations，并逐项 append-only 入账 GRN；仅全 passed 返回成功，不自动 claim/verify/closeout",
+    )
+    .requiredOption("--task <task-id>", "验收义务来源 TASK.*")
+    .requiredOption("--execution-id <agx-id>", "已登记执行身份 AGX-<年份>-<序号>")
+    .option("--changed <path>", "变更面直接对象（可重复）", collectValues)
+    .option("--consumer <ref>", "受影响消费者（可重复）", collectValues)
+    .option("--face <spec>", "变更面声明 kind=present|absent:<依据>（可重复）", collectValues)
+    .option("--complexity <word>", "信息性：复杂度自报")
+    .option("--profile <word>", "信息性：governance_profile 自报")
+    .option("--note <text>", "信息性注记")
+    .option("--diagnose-on-failure", "对已入账且 verdict=failed 的 GRN 运行只读 diagnose")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runPlanRun(resolveDir(command), {
+        taskRef: opts.task as string,
+        executionId: opts.executionId as string,
+        changed: opts.changed as string[] | undefined,
+        consumers: opts.consumer as string[] | undefined,
+        faces: opts.face as string[] | undefined,
+        complexity: opts.complexity as string | undefined,
+        profile: opts.profile as string | undefined,
+        note: opts.note as string | undefined,
+        diagnoseOnFailure: opts.diagnoseOnFailure === true,
+      });
+      record({
+        command: "plan run",
+        outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+
   // —— ToolBinding 统一注册面命令（W1-R1-4 · 09-10 PRD §17 + integration-designs.md
   // 设计一六分态）。纯读零写入：list/validate 只做六分态派生（探测/探针/ENVREC/
   // GRN 平面只读）与呈现；执行入账唯一通路仍是 record gate-run——工具发现≠调用
@@ -2836,7 +2874,7 @@ export function createProgram(
     .description(
       "列出 .pomaster/tools/bindings.json 全部绑定并派生六分态（registry 缺席 = TOOLBINDING_REGISTRY_ABSENT 显式拒绝禁静默空表；--plan 可回喂 plan compile --json 输出以对账 selected）",
     )
-    .option("--plan <file>", "Verification Plan 工件（plan compile --json 输出可回喂——selected 判定式消费 items[].resolved_tool/applicability）")
+    .option("--plan <file>", "Verification Plan 工件（新工件按 items[].resolved_bindings[].binding_id 对账 selected；旧工件兼容 resolved_tool）")
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (opts, command) => {
       const outcome = await runToolsList(resolveDir(command), {

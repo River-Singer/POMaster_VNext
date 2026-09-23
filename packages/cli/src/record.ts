@@ -45,6 +45,7 @@ import {
   GovernanceError,
   applyTransaction,
   createStore,
+  gateResultToSnake,
   loadTruthIndex,
   qualifyEvidenceBatch,
 } from "@pomaster/kernel";
@@ -107,6 +108,10 @@ export interface RecordGateRunInput {
    * （存量字节兼容，不伪造）。已封口执行允许挂载（事后补录合法——ended_at 如实在场）。
    */
   readonly executionId?: string;
+}
+
+export interface RecordGateRunValueInput extends Omit<RecordGateRunInput, "from"> {
+  readonly record: GateResult;
 }
 
 export interface RecordGateRunResult {
@@ -214,9 +219,10 @@ async function resolveBindingsOrFail(
  * 显式单条入账一次 gate 运行。ok 语义（设计 §5）：APPLIED / SKIPPED_CANONICAL → exit 0；
  * 畸形 / normalize FATAL / tx 失败 → exit 1。
  */
-export async function runRecordGateRun(
+async function recordGateRunFromSource(
   rootDir: string,
   input: RecordGateRunInput,
+  source: () => { bytes: string } | CliError,
 ): Promise<CommandOutcome<RecordGateRunResult>> {
   // —— argv 形状前置校验（在任何 IO 之前 fail-closed） ——
   if (input.grn !== undefined && !GRN_FILE_PATTERN.test(`${input.grn}.json`)) {
@@ -230,7 +236,7 @@ export async function runRecordGateRun(
   const initialized = await requireInitialized(rootDir);
   if ("error" in initialized) return gateRunFail(initialized.error);
 
-  const fromBytes = readFromBytes(input.from);
+  const fromBytes = source();
   if ("code" in fromBytes) return gateRunFail(fromBytes);
   const parsed = parseRunFile(fromBytes.bytes);
   if ("error" in parsed) {
@@ -506,6 +512,27 @@ export async function runRecordGateRun(
           },
     );
   }
+}
+
+/** File-backed compatibility entry; parsing and persistence share the in-memory core below. */
+export async function runRecordGateRun(
+  rootDir: string,
+  input: RecordGateRunInput,
+): Promise<CommandOutcome<RecordGateRunResult>> {
+  return recordGateRunFromSource(rootDir, input, () => readFromBytes(input.from));
+}
+
+/** Record an already-normalized GateResult without a temporary file. */
+export async function runRecordGateRunValue(
+  rootDir: string,
+  input: RecordGateRunValueInput,
+): Promise<CommandOutcome<RecordGateRunResult>> {
+  const { record, ...options } = input;
+  return recordGateRunFromSource(
+    rootDir,
+    { ...options, from: "<memory:gate-result>" },
+    () => ({ bytes: JSON.stringify(gateResultToSnake(record)) }),
+  );
 }
 
 /** 从既有目标文件读取兜底 ran_at_seq（--from 未携带时的重放锚；不可解析 → 采样值）。 */

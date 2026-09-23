@@ -1322,6 +1322,13 @@ PREFIX_FAMILY_MAP：16 前缀→12 family 全总映射（PAGE/COMPONENT→UI；C
 - `searchTaskSteeringConstraints(entries, query)`：词级精确 token 交集（knowledgeQueryTokens 同一实现——禁子串/等价猜测，P31 纪律）；检索键 = constraint + affected_scope（source_ref 是出处指针非散文，不入检索键）；空 query = 列全部（清单语义）；命中按登记序（全局流水序 = 时间谱序，D24 确定性）、matchedTokens 字典序；未命中显式空不虚构。
 - 投影消费（projection.consumeSteering）：本任务的 Steering 条目 → `advisoryEntries`（[ADVISORY] 分区，永不进 gate 判卷输入——§83.2 铁律 / GOLDEN-L8-3 消费层防线）。**词形区分（W4-S3 设计定案）**：reason 携 `[STEERING]` 标记 vs [ADVISORY] 经验条目；ref = STE-<n> 全局事件引用（检索/计划呈现可回指台账行）；affected_scope 空时呈现「（全 task——未申报对象/能力词形）」不猜测。指纹绑定：advisoryEntries 进 inputsFingerprint——登记后 context compile 指纹必变（受影响工作下次编译带上约束的机器判据）；重编译字节稳定（rollover 后仍可检索）。
 - plan compile 接缝（cli plan.ts steeringUnknownsFor）：`--task` 通路把本任务 Steering 约束申报呈现为 changeSurface.unknowns（kernel input_unknown 词形——[STEERING] detail 携 constraint/source_ref/affected_scope declared 注记）。**不阻断**：applicability 计数与无约束时一致（申报面不是判卷输入）；指纹必变（REQ-08「重编译」最小形态 = 约束在编译输入面可见）；affected_scope 与本次变更面的对齐判定缺席 = 显式保留 unknown；台账损坏 fail-closed 拒绝编译（静默当零约束 = 分母漂移）。
+
+### Verification Plan binding and execution contract
+
+- `VerificationPlanItem.resolved_bindings[]` 是 `resolved_tool` 的加性执行投影；每行固定携带 `binding_id/tool/gate/gate_def`。`resolved_tool` 保留给已有消费者，生产 runner 只消费完整 binding 投影。
+- capability 的 gate 分母来自 `PLAN_CAPABILITY_GATE_NAMES`；多 gate capability 必须完整展开，例如 `static_analysis` 同时产生 `TYPECHECK` 与 `LINT` obligation。缺任一 binding 身份时，执行前 fail-closed。
+- CLI `plan run --task <TASK.*> --execution-id <AGX-*>` 在首个工具启动前校验 AGX 档案形态及非空 `task_id` 归属，再逐 obligation 串行执行“分配 GRN → `runBindingGate` → gate/gate_def 对账 → kernel `record_gate_run` 事务”。已入账前项不因后项失败回滚，结果以 `partial=true` 披露。
+- 缺席或不可用 binding 以七态非绿 GRN 记录；仅全部 REQUIRED obligations 为 `passed` 时命令成功。`--diagnose-on-failure` 只读取已入账 `failed` GRN。命令不创建 claim、不做 independent verification、不修改 Permit/Task 关系，也不自动 closeout。
 - `pomaster steering record/search`（CLI 命令面；判卷权威在 kernel，本面只做 argv 收敛与呈现）：record `<task-id> --constraint <text> --source-ref <ref> [--scope <word>]… [--note <text>] --actor <type>:<name>`（requiredOption 闸 + kernel 词形闸双层；--scope 可重复）；search `<task-id> [query]`（query 缺席 = 列全部；未命中显式「无记录/无命中」；纯读零建账——requireInitialized + buildStorePaths + kernel 读取面，零 createStore）；均走 §45 --json 五键信封。
 - 词形 SP 提案待 Owner 追认：journal 事件词形 `STEERING_RECORDED`（journal 事件词形常量集追加——「词形扩展是否等同新增 kind」是 W1 裁定边界，本切片只扩词形常量集并留痕提案，不动 vocab-lock 主表）、`pomaster.steering-log/v1` schema、`STE-<n>` 引用词形（EXC-n/CKPT-n 同款通路编号，非 governed 前缀）、命令组名 `steering`（命令面非词表管辖面——P33b/P34b 先例）；复用闭集：NOT_CONFIGURED / OBJECT_NOT_FOUND / SCHEMA_INVALID / FATAL_UNKNOWN_PREFIX / FATAL_ID_GRAMMAR。
 

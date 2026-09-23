@@ -298,7 +298,7 @@ pomaster exec-guard --attempt <file|->
 pomaster maintain <change-or-task> --ops <tx>
 
 # ⑤ VERIFY —— Verification Plan 编译 / FAST gate / gate recipes 派发 / 证据入账
-pomaster plan compile        # 证据计划编译（W1-R1-3）：--task（payload.acceptance 纯读）或 --input 契约直传（互斥）→ 逐验收义务计划（applicability 三值各带依据；缺工具≠N/A 保持 REQUIRED+tool_gap；无法判断保留 unknown 禁默认 N/A；informational 档位零参与——A1 裁定；变更面 --face "kind=present|absent:<依据>" 显式申报禁猜测；词形=SP 提案待追认）
+pomaster plan compile/run    # compile 纯读编译证据计划；run 用 --task TASK.* --execution-id AGX-* 同源重编译并按 resolved_bindings 串行执行全部 REQUIRED obligations，每项独立 GRN、task/execution 归因、append-only；仅全 passed 成功，可选 --diagnose-on-failure；不自动 claim/independent verification/closeout
 pomaster tools list/validate # ToolBinding 统一注册面六分态（W1-R1-4；SP 提案待追认）：.pomaster/tools/bindings.json 在座即唯一工具事实源（detect/registered/validated/available/selected/executed 分态不可跃迁、缺口逐条显式；--plan 回喂计划工件对账 selected；executed 唯一事实源=GRN 真实回执——工具发现≠调用授权；registry 缺席时 plan compile 回退 legacy 探测）
 pomaster check --fast/--gates
 pomaster record gate-run/claim/verification

@@ -213,13 +213,27 @@ describe("TS 族绑定六分态 + 闭环（W3-S2）", () => {
     // kernel resolveTool 码点序取首个可用绑定（gauntlet:eslint < gauntlet:tsc）——
     // 确定性选择语义，禁 locale 排序（plan-compiler.ts resolveTool 注记先例）。
     expect(staticItem?.resolved_tool).toBe("gauntlet:eslint");
+    expect(staticItem?.resolved_bindings).toEqual([
+      {
+        binding_id: "project.type.tsc-typecheck",
+        tool: "gauntlet:tsc",
+        gate: "TYPECHECK",
+        gate_def: "POLICY.GATE.TYPECHECK@0.1.0",
+      },
+      {
+        binding_id: "project.static.eslint-lint",
+        tool: "gauntlet:eslint",
+        gate: "LINT",
+        gate_def: "POLICY.GATE.LINT@0.1.0",
+      },
+    ]);
 
-    // 拍 3：selected（计划工件 REQUIRED 项对账 → eslint 绑定 selected；tsc 未选用仍 available）。
+    // 拍 3：selected（计划工件 REQUIRED resolved_bindings 对账 → 双 obligation 均 selected）。
     const planPath = join(root, "verification-plan.json");
     writeFileSync(planPath, JSON.stringify({ items: plan.items }), "utf8");
     const selectedList = await runToolsList(root, { plan: planPath });
     expect(rowOf(selectedList.result as ToolsListResult, "project.static.eslint-lint").selected).toBe(true);
-    expect(rowOf(selectedList.result as ToolsListResult, "project.type.tsc-typecheck").selected).toBe(false);
+    expect(rowOf(selectedList.result as ToolsListResult, "project.type.tsc-typecheck").selected).toBe(true);
 
     // 拍 4+5：真实执行 + 归一（双绑定各自跑 node 子进程；fixture subject 走 Q3 正向）。
     const { createStore } = await import("@pomaster/kernel");
