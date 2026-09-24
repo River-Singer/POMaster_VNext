@@ -18,6 +18,8 @@
   },
   "dependencies": {
     "@pomaster/kernel": "workspace:*",
-    "@pomaster/schemas": "workspace:*"
+    "@pomaster/schemas": "workspace:*",
+    "@vue/compiler-dom": "3.5.42",
+    "typescript": "5.9.3"
   }
 }

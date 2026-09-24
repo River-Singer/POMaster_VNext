@@ -29,7 +29,7 @@ import {
   statSync,
   writeFileSync,
 } from "node:fs";
-import { createRequire } from "node:module";
+import { builtinModules, createRequire } from "node:module";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -44,7 +44,7 @@ const p = (...parts) => join(repoRoot, ...parts);
  * （publish.yml 版本闸强制逐字相等）；verify-npm-package.mjs 的版本断言随本常量
  * 同步维护。改版本只改这一行。
  */
-const POMASTER_VERSION = "0.8.0";
+const POMASTER_VERSION = "0.9.0";
 
 const STAGE_PKG = p("stage", "pomaster");
 const STAGE_BIN = join(STAGE_PKG, "dist", "bin.js");
@@ -53,7 +53,11 @@ const STAGE_BIN = join(STAGE_PKG, "dist", "bin.js");
 const BANNER = [
   "#!/usr/bin/env node",
   'import { createRequire as __pomasterCreateRequire } from "node:module";',
+  'import { dirname as __pomasterDirname } from "node:path";',
+  'import { fileURLToPath as __pomasterFileURLToPath } from "node:url";',
   "const require = __pomasterCreateRequire(import.meta.url);",
+  "const __filename = __pomasterFileURLToPath(import.meta.url);",
+  "const __dirname = __pomasterDirname(__filename);",
 ].join("\n");
 
 function fail(message) {
@@ -140,7 +144,13 @@ if (importAttrResidue !== null) {
 //     零 dependencies 包内必然找不到——schemas 的 ajv codegen 字符串模板是死数据，
 //     不匹配 `__require("...")` 调用形态，不在本判据面）。
 const dynamicRequires = [...bundle.matchAll(/\b__require\("([^"]+)"\)/g)].map((m) => m[1]);
-const nonNodeDynamicRequires = dynamicRequires.filter((spec) => !spec.startsWith("node:"));
+// TypeScript's bundled parser uses legacy bare builtin names and optionally probes
+// source-map-support inside a guarded require. Both remain dependency-free at runtime;
+// every other bare package continues to fail the staging build.
+const allowedBareDynamicRequires = new Set([...builtinModules, "source-map-support"]);
+const nonNodeDynamicRequires = dynamicRequires.filter(
+  (spec) => !spec.startsWith("node:") && !allowedBareDynamicRequires.has(spec),
+);
 if (nonNodeDynamicRequires.length > 0) {
   fail(
     `bundle 内 __require 出现非 node: 裸包名（零 dependencies 包内无法解析）: ` +

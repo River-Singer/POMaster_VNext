@@ -77,9 +77,10 @@ export const PLAN_CHANGE_FACE_KINDS = [
 export type PlanChangeFaceKind = (typeof PLAN_CHANGE_FACE_KINDS)[number];
 
 /**
- * 能力词形（十三词；W3-S2 起 + static_analysis——TS 族静态分析 tsc/ESLint 绑定面，
- * 同批修订 = schema 23 capability_word enum。visual_diff 与 static_analysis 均不从
- * 任何 face 派生——只经 acceptance requires/exclusions 进闭包）。
+ * 能力词形（十四词；static_analysis 为 TS 族 tsc/ESLint 绑定面，control_data_flow
+ * 为 Vue/React 控件结构链独立绑定面，
+ * 同批修订 = schema 23 capability_word enum。visual_diff、static_analysis 与
+ * control_data_flow 均不从任何 face 派生——只经 acceptance requires/exclusions 进闭包）。
  */
 export const PLAN_CAPABILITY_WORDS = [
   "unit_behavior",
@@ -95,6 +96,7 @@ export const PLAN_CAPABILITY_WORDS = [
   "deployment_config_check",
   "visual_diff",
   "static_analysis",
+  "control_data_flow",
 ] as const;
 export type PlanCapabilityWord = (typeof PLAN_CAPABILITY_WORDS)[number];
 
@@ -117,6 +119,7 @@ export const PLAN_CAPABILITY_GATE_NAMES: Readonly<Record<PlanCapabilityWord, rea
   deployment_config_check: ["ARCHITECTURE"],
   visual_diff: ["BROWSER"],
   static_analysis: ["TYPECHECK", "LINT"],
+  control_data_flow: ["CONTROL_DATA_FLOW"],
 };
 
 /** face kind → 派生能力（轴序固定词形；face 闭包是能力的唯一 face 来源）。 */
@@ -156,6 +159,7 @@ const CAPABILITY_METHOD: Readonly<Record<PlanCapabilityWord, string>> = {
   deployment_config_check: "inspection",
   visual_diff: "observation",
   static_analysis: "analysis",
+  control_data_flow: "analysis",
 };
 
 /**
@@ -178,6 +182,8 @@ export const CAPABILITY_EVIDENCE_REQUIREMENT: Readonly<Record<PlanCapabilityWord
   visual_diff: "视觉差异回执（基线快照比对）",
   static_analysis:
     "类型/静态分析工具真实执行回执（tsc --noEmit 文本诊断逐条重算 ∥ ESLint JSON finding 逐条重算；编译转译成功不当 typecheck，空根 tsconfig 零分母禁默认 PASS）",
+  control_data_flow:
+    "控件数据流结构链审计回执（control→event→handler/action→state/transform→effect→readback→rendered feedback；动态/不可解析边保持 unknown，静态 passed 不代表运行时用户旅程成功）",
 };
 
 // ============================================================

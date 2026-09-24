@@ -321,8 +321,9 @@ describe("词形闭包（SP 提案词形；TODO(vocab-pr)）", () => {
   it("applicability 三值 / face 十类 / capability 十三词（W3-S2 起 + static_analysis）", () => {
     expect(PLAN_APPLICABILITY_VALUES).toEqual(["REQUIRED", "NOT_REQUIRED", "NOT_APPLICABLE"]);
     expect(PLAN_CHANGE_FACE_KINDS).toHaveLength(10);
-    expect(PLAN_CAPABILITY_WORDS).toHaveLength(13);
+    expect(PLAN_CAPABILITY_WORDS).toHaveLength(14);
     expect(PLAN_CAPABILITY_WORDS).toContain("static_analysis");
+    expect(PLAN_CAPABILITY_WORDS).toContain("control_data_flow");
   });
 
   it("NOT_APPLICABLE 复用 baseline 既有词形（baselineGrounding 同源）", () => {

@@ -65,6 +65,12 @@ importers:
       '@pomaster/schemas':
         specifier: workspace:*
         version: link:../schemas
+      '@vue/compiler-dom':
+        specifier: 3.5.42
+        version: 3.5.42
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
 
   packages/kernel:
     dependencies:

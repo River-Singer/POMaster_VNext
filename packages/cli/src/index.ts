@@ -249,9 +249,10 @@
  * presentation_axes 登记与 eval 语料换源注记（behavioral 语料已换源存活能力）。
  */
 import { Command, CommanderError } from "commander";
+import { analyzeControlDataFlow } from "@pomaster/gauntlet-lite";
 import { createInterface } from "node:readline";
 import { CLI_NAME } from "./cli-info.js";
-import { toEnvelope, failOutcome, type CliEnvelope, type CommandOutcome } from "./envelope.js";
+import { toEnvelope, failOutcome, okOutcome, type CliEnvelope, type CommandOutcome } from "./envelope.js";
 import { runInit, runChecklistPrompt, runInitInteractive } from "./init.js";
 import type { ChecklistPromptResult, InitResult } from "./init.js";
 import { confirmBrownfieldPath } from "./init-mode.js";
@@ -1009,6 +1010,7 @@ export type {
 } from "./steering.js";
 export { runPlanCompile } from "./plan.js";
 export { runPlanRun } from "./plan-runner.js";
+export { analyzeControlDataFlow } from "@pomaster/gauntlet-lite";
 export type { PlanRunInput, PlanRunResult, PlanRunRow } from "./plan-runner.js";
 export type {
   PlanCompileInput,
@@ -2855,6 +2857,30 @@ export function createProgram(
       record({
         command: "plan run",
         outcome,
+        asJson: command.optsWithGlobals().json === true,
+      });
+    });
+
+  const controlDataFlow = program
+    .command("control-data-flow")
+    .description("控件数据流静态审计（Vue SFC / React TSX 受限 AST 切片；动态边保持 unknown）");
+  controlDataFlow
+    .command("analyze")
+    .description("扫描 control→event→handler→state/effect→readback→feedback 结构链；纯读")
+    .option("--report-only", "只输出 pomaster.control-data-flow/v1 原始报告，供受信 ToolBinding parser 消费")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const report = analyzeControlDataFlow(resolveDir(command));
+      if (opts.reportOnly === true) {
+        io.stdout(JSON.stringify(report));
+        return;
+      }
+      record({
+        command: "control-data-flow analyze",
+        outcome: okOutcome("control-data-flow analyze", report, [
+          `控件数据流审计：files=${report.files_scanned} controls=${report.controls_scanned} parse_failures=${report.parse_failures.length}`,
+          "静态 proven 仅表示结构链闭合；真实 API、持久化和浏览器回显仍需 runtime confirmation。",
+        ]),
         asJson: command.optsWithGlobals().json === true,
       });
     });

@@ -49,6 +49,28 @@ function binding(
   };
 }
 
+function controlDataFlowBinding(): ToolBindingRecord {
+  return {
+    id: "project.ui.control-data-flow",
+    source: "built_in",
+    transport: "cli",
+    adapter_ref: "builtin.gauntlet-lite.control-data-flow",
+    tool: "gauntlet:control-data-flow",
+    tool_version_anchor: "0.1.0",
+    gate: "CONTROL_DATA_FLOW",
+    gate_def: "POLICY.GATE.CONTROL_DATA_FLOW@0.1.0",
+    metric_dialect: "ui:control_flow_chain",
+    capabilities: ["control_data_flow"],
+    execution: { command: "node cdf-fake.mjs", cwd: "." },
+    report_contract: {
+      format: "pomaster-control-data-flow-json",
+      parser_ref: "builtin.gauntlet-lite.control-data-flow/json-v1",
+      parser_version: "0.1.0",
+    },
+    environment: { requires: false },
+  };
+}
+
 async function fixture(): Promise<string> {
   writeFileSync(join(root, "package.json"), JSON.stringify({
     name: "plan-runner-fixture",
@@ -62,6 +84,7 @@ async function fixture(): Promise<string> {
     join(root, "eslint-fake.mjs"),
     "process.stdout.write(JSON.stringify([{filePath:'src/a.ts',messages:[],errorCount:0,warningCount:0,fatalErrorCount:0}]));",
   );
+  writeFileSync(join(root, "cdf-fake.mjs"), `process.stdout.write(JSON.stringify({schema:'pomaster.control-data-flow/v1',source_root:'.',files_scanned:1,controls_scanned:1,controls:[{control_ref:'react:src/App.tsx:1:1:onClick',framework:'react',element:'button',event:'onClick',conclusion:'proven',stages:[],issues:[],runtime_confirmation_required:true}],parse_failures:[]}));`);
   await runInit(root);
   mkdirSync(join(root, ".pomaster", "tools"), { recursive: true });
   writeFileSync(join(root, ".pomaster", "tools", "bindings.json"), JSON.stringify({
@@ -81,6 +104,7 @@ async function fixture(): Promise<string> {
         "LINT",
         "node eslint-fake.mjs src --format json",
       ),
+      controlDataFlowBinding(),
     ],
   }));
   const store = await createStore(root);
@@ -126,6 +150,23 @@ const faces = [
 ];
 
 describe("plan run", () => {
+  it("control_data_flow 经受信 binding 执行并以 CONTROL_DATA_FLOW GRN 入账", async () => {
+    const executionId = await fixture();
+    const store = await createStore(root);
+    await applyTransaction(store, { ops: [{ op: "upsert_object", envelope: {
+      id: "TASK.CDF.RUNNER", kind: "task_object", axisProfile: "task_default",
+      axes: { lifecycle: "CURRENT", confidence: "PROVISIONAL", evidence: "IMPLEMENTED", change: "STABLE" },
+      titleZh: "控件数据流计划执行", authority: { owner: "BOOTSTRAP_OWNER", delegates: [] }, origin: "natural",
+      payload: { intent: "审计控件数据链", class_scan_result: { scope: "src/**", hits: 1, fixed_count: 1, regression_case_ref: "GRN-CDF" }, acceptance: [{ criterion: "控件结构链闭合", claim: null, requires: ["control_data_flow"] }] },
+    } as never }] });
+    const outcome = await runPlanRun(root, { taskRef: "TASK.CDF.RUNNER", executionId, changed: ["src/App.tsx"], faces });
+    expect(outcome.ok).toBe(true);
+    expect(outcome.result).toMatchObject({ obligations_total: 1, recorded: 1, passed: 1 });
+    expect(outcome.result.rows[0]).toMatchObject({ capability: "control_data_flow", gate: "CONTROL_DATA_FLOW", verdict: "passed" });
+    const grn = JSON.parse(readFileSync(join(root, ".pomaster", "evidence", "runs", "GRN-0001.json"), "utf8"));
+    expect(grn.gate_result.result.scope.note).toContain("静态 passed 仅表示");
+  });
+
   it("static_analysis 展开 TYPECHECK/LINT，串行执行并留下两个 task+execution 归因 GRN", async () => {
     const executionId = await fixture();
     const outcome = await runPlanRun(root, {
