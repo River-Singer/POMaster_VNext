@@ -105,6 +105,11 @@ import {
   TYPECHECK_GATE_DEF,
   TYPECHECK_GATE_NAME,
 } from "./typecheck-lint-adapter.js";
+import {
+  CONTROL_DATA_FLOW_GATE_DEF,
+  CONTROL_DATA_FLOW_GATE_NAME,
+  createControlDataFlowAdapter,
+} from "./control-data-flow-adapter.js";
 import { CATALOG_GATE_RECIPES } from "./gate-recipe-runner.js";
 import {
   createLighthouseAdapter,
@@ -184,6 +189,8 @@ export * from "./tool-binding.js";
 // W3-S2：TS 族静态分析受信 adapter（tsc/vue-tsc 文本诊断 + ESLint JSON——TYPECHECK/LINT
 // gate 常量对、TYPECHECK/LINT adapter 工厂；词形 SP 提案待追认）。
 export * from "./typecheck-lint-adapter.js";
+export * from "./control-data-flow-analyzer.js";
+export * from "./control-data-flow-adapter.js";
 
 /** BUILD 门禁 adapter 单例（vitest/pytest 双腿；也可经 createBuildAdapter() 自建）。 */
 export const buildAdapter: GateAdapter<
@@ -279,6 +286,9 @@ export const lighthouseAdapter = createLighthouseAdapter();
 export const webVitalsAdapter = createWebVitalsAdapter();
 export { runPerformanceGateLegs };
 
+/** CONTROL_DATA_FLOW 静态结构链 adapter 单例；动态事实仍须 BROWSER/SMOKE/BUSINESS 补证。 */
+export const controlDataFlowAdapter = createControlDataFlowAdapter();
+
 /**
  * adapter registry（G5 谱系扩展落地：BUILD 双腿 + CONTRACT / ARCHITECTURE / BROWSER /
  * BROWSER·Playwright 确定性腿）。
@@ -291,6 +301,7 @@ export const gateAdapters = {
   architecture: architectureAdapter,
   browser: browserAdapter,
   playwright: playwrightAdapter,
+  controlDataFlow: controlDataFlowAdapter,
 } as const;
 
 /** doctor 工具探测 registry（oasdiff / import-linter / dependency-cruiser / c8 / pytest-cov / mutmut / StrykerJS / gitleaks / pip-audit / semgrep / @playwright/test / lighthouse / web-vitals / schemathesis / chrome-devtools MCP）。 */
@@ -337,5 +348,6 @@ export const CURRENT_GATE_DEFS: Readonly<Record<string, string>> = Object.freeze
   // W3-S2：TS 族双 gate 入册（typecheck-lint-adapter.ts 常量对单一声明位直引）。
   [TYPECHECK_GATE_NAME]: TYPECHECK_GATE_DEF,
   [LINT_GATE_NAME]: LINT_GATE_DEF,
+  [CONTROL_DATA_FLOW_GATE_NAME]: CONTROL_DATA_FLOW_GATE_DEF,
   ...Object.fromEntries(CATALOG_GATE_RECIPES.map((recipe) => [recipe.id, recipe.gateDef])),
 });

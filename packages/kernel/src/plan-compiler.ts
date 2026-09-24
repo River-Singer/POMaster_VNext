@@ -77,9 +77,10 @@ export const PLAN_CHANGE_FACE_KINDS = [
 export type PlanChangeFaceKind = (typeof PLAN_CHANGE_FACE_KINDS)[number];
 
 /**
- * 能力词形（十三词；W3-S2 起 + static_analysis——TS 族静态分析 tsc/ESLint 绑定面，
- * 同批修订 = schema 23 capability_word enum。visual_diff 与 static_analysis 均不从
- * 任何 face 派生——只经 acceptance requires/exclusions 进闭包）。
+ * 能力词形（十四词；static_analysis 为 TS 族 tsc/ESLint 绑定面，control_data_flow
+ * 为 Vue/React 控件结构链独立绑定面，
+ * 同批修订 = schema 23 capability_word enum。visual_diff、static_analysis 与
+ * control_data_flow 均不从任何 face 派生——只经 acceptance requires/exclusions 进闭包）。
  */
 export const PLAN_CAPABILITY_WORDS = [
   "unit_behavior",
@@ -95,6 +96,7 @@ export const PLAN_CAPABILITY_WORDS = [
   "deployment_config_check",
   "visual_diff",
   "static_analysis",
+  "control_data_flow",
 ] as const;
 export type PlanCapabilityWord = (typeof PLAN_CAPABILITY_WORDS)[number];
 
@@ -117,6 +119,7 @@ export const PLAN_CAPABILITY_GATE_NAMES: Readonly<Record<PlanCapabilityWord, rea
   deployment_config_check: ["ARCHITECTURE"],
   visual_diff: ["BROWSER"],
   static_analysis: ["TYPECHECK", "LINT"],
+  control_data_flow: ["CONTROL_DATA_FLOW"],
 };
 
 /** face kind → 派生能力（轴序固定词形；face 闭包是能力的唯一 face 来源）。 */
@@ -156,6 +159,7 @@ const CAPABILITY_METHOD: Readonly<Record<PlanCapabilityWord, string>> = {
   deployment_config_check: "inspection",
   visual_diff: "observation",
   static_analysis: "analysis",
+  control_data_flow: "analysis",
 };
 
 /**
@@ -178,6 +182,8 @@ export const CAPABILITY_EVIDENCE_REQUIREMENT: Readonly<Record<PlanCapabilityWord
   visual_diff: "视觉差异回执（基线快照比对）",
   static_analysis:
     "类型/静态分析工具真实执行回执（tsc --noEmit 文本诊断逐条重算 ∥ ESLint JSON finding 逐条重算；编译转译成功不当 typecheck，空根 tsconfig 零分母禁默认 PASS）",
+  control_data_flow:
+    "控件数据流结构链审计回执（control→event→handler/action→state/transform→effect→readback→rendered feedback；动态/不可解析边保持 unknown，静态 passed 不代表运行时用户旅程成功）",
 };
 
 // ============================================================
@@ -223,12 +229,23 @@ export interface PlanEnvironmentFacts {
 
 /** R1-4 ToolBinding 统一面前的过渡形态（探测面产出；见头注接缝节）。 */
 export interface PlanToolBinding {
+  /** Unified registry identity. Legacy detector projections omit these three fields. */
+  readonly binding_id?: string;
   readonly tool_id: string;
+  readonly gate?: string;
+  readonly gate_def?: string;
   readonly capabilities: readonly PlanCapabilityWord[];
   readonly source_ref: string;
   readonly version: string | null;
   readonly available: boolean;
   readonly availability_reason: string;
+}
+
+export interface VerificationPlanResolvedBinding {
+  readonly binding_id: string;
+  readonly tool: string;
+  readonly gate: string;
+  readonly gate_def: string;
 }
 
 export interface PlanPermitFacts {
@@ -262,6 +279,8 @@ export interface VerificationPlanItem {
   readonly capability: PlanCapabilityWord;
   readonly method: string;
   readonly resolved_tool: string | null;
+  /** Deterministic, execution-ready obligations selected from the unified registry. */
+  readonly resolved_bindings: readonly VerificationPlanResolvedBinding[];
   readonly tool_gap: string | null;
   readonly target: readonly string[];
   readonly environment: string | null;
@@ -447,14 +466,27 @@ function validateToolBindings(bindings: readonly PlanToolBinding[]): void {
     throw schemaInvalid("toolBindings 须为数组（零绑定合法——REQUIRED 保持 + tool_gap）", "plan-compiler 输入合同校验失败");
   }
   const seen = new Set<string>();
+  const seenLegacyTools = new Set<string>();
   for (let index = 0; index < bindings.length; index += 1) {
     const binding = bindings[index] as PlanToolBinding;
     const path = `toolBindings[${index}]`;
-    const toolId = requireNonEmptyString(binding.tool_id, `${path}.tool_id`);
-    if (seen.has(toolId)) {
-      throw schemaInvalid(`${path}.tool_id 重复：${toolId}`, "plan-compiler 输入合同校验失败");
+    requireNonEmptyString(binding.tool_id, `${path}.tool_id`);
+    if (binding.binding_id !== undefined) {
+      const bindingId = requireNonEmptyString(binding.binding_id, `${path}.binding_id`);
+      if (seen.has(bindingId)) {
+        throw schemaInvalid(`${path}.binding_id 重复：${bindingId}`, "plan-compiler 输入合同校验失败");
+      }
+      seen.add(bindingId);
+      requireNonEmptyString(binding.gate, `${path}.gate`);
+      requireNonEmptyString(binding.gate_def, `${path}.gate_def`);
+    } else if (binding.gate !== undefined || binding.gate_def !== undefined) {
+      throw schemaInvalid(`${path} gate/gate_def 必须与 binding_id 同时在场`, "plan-compiler 输入合同校验失败");
+    } else {
+      if (seenLegacyTools.has(binding.tool_id)) {
+        throw schemaInvalid(`${path}.tool_id 重复：${binding.tool_id}`, "plan-compiler 输入合同校验失败");
+      }
+      seenLegacyTools.add(binding.tool_id);
     }
-    seen.add(toolId);
     if (!Array.isArray(binding.capabilities) || binding.capabilities.length === 0) {
       throw schemaInvalid(`${path}.capabilities 须为非空数组（绑定须声明覆盖能力）`, "plan-compiler 输入合同校验失败");
     }
@@ -468,6 +500,60 @@ function validateToolBindings(bindings: readonly PlanToolBinding[]): void {
     }
     requireNonEmptyString(binding.availability_reason, `${path}.availability_reason`);
   }
+}
+
+function resolveBindingObligations(
+  capability: PlanCapabilityWord,
+  bindings: readonly PlanToolBinding[],
+): VerificationPlanResolvedBinding[] {
+  const selected: VerificationPlanResolvedBinding[] = [];
+  for (const gate of PLAN_CAPABILITY_GATE_NAMES[capability]) {
+    const covering = bindings
+      .filter(
+        (binding) =>
+          binding.binding_id !== undefined &&
+          binding.gate === gate &&
+          binding.capabilities.includes(capability),
+      )
+      .sort((a, b) => {
+        const left = a.binding_id as string;
+        const right = b.binding_id as string;
+        return left < right ? -1 : left > right ? 1 : 0;
+      });
+    const binding = covering.find((candidate) => candidate.available) ?? covering[0];
+    if (binding === undefined) continue;
+    selected.push({
+      binding_id: binding.binding_id as string,
+      tool: binding.tool_id,
+      gate,
+      gate_def: binding.gate_def as string,
+    });
+  }
+  return selected;
+}
+
+function bindingObligationGap(
+  capability: PlanCapabilityWord,
+  bindings: readonly PlanToolBinding[],
+  resolved: readonly VerificationPlanResolvedBinding[],
+): string | null {
+  // Legacy detector projections carry no binding identity; preserve their existing gap semantics.
+  if (!bindings.some((binding) => binding.binding_id !== undefined)) return null;
+  const issues: string[] = [];
+  for (const gate of PLAN_CAPABILITY_GATE_NAMES[capability]) {
+    const selected = resolved.find((binding) => binding.gate === gate);
+    if (selected === undefined) {
+      issues.push(`${gate}=binding 缺席`);
+      continue;
+    }
+    const source = bindings.find((binding) => binding.binding_id === selected.binding_id);
+    if (source?.available !== true) {
+      issues.push(`${gate}=${selected.binding_id} 不可用（${source?.availability_reason ?? "状态缺席"}）`);
+    }
+  }
+  return issues.length === 0
+    ? null
+    : `ToolBinding obligation 未就绪：${issues.join("；")}——义务保持 REQUIRED（无工具≠N/A）`;
 }
 
 function validatePermit(value: PlanPermitFacts | null): void {
@@ -623,6 +709,7 @@ export function compileVerificationPlan(input: VerificationPlanInput): Verificat
           capability,
           method: CAPABILITY_METHOD[capability],
           resolved_tool: null,
+          resolved_bindings: [],
           tool_gap: null,
           target: [],
           environment: environment?.ref ?? null,
@@ -637,6 +724,8 @@ export function compileVerificationPlan(input: VerificationPlanInput): Verificat
       }
       if (required.has(capability)) {
         const { resolved, gap } = resolveTool(capability, bindings);
+        const resolvedBindings = resolveBindingObligations(capability, bindings);
+        const obligationGap = bindingObligationGap(capability, bindings, resolvedBindings) ?? gap;
         const faceKind = CAPABILITY_FACE[capability];
         const face = faceKind === undefined ? undefined : faceByKind.get(faceKind);
         const faceClause =
@@ -644,11 +733,11 @@ export function compileVerificationPlan(input: VerificationPlanInput): Verificat
             ? `变更面命中 face ${faceKind}（${face.basis}）`
             : "验收显式申报、变更面闭包无对应 face（义务来自验收申报，照常成立）";
         const prerequisites: string[] =
-          resolved !== null
+          resolved !== null && obligationGap === null
             ? [
                 `tool ${resolved}（${bindings.find((binding) => binding.tool_id === resolved)?.version ?? "version unknown"}）可用`,
               ]
-            : [`工具缺口未解：${gap ?? ""}`, "补齐工具绑定前该义务不可执行（执行态只能 NOT_RUN/BLOCKED）"];
+            : [`工具缺口未解：${obligationGap ?? ""}`, "补齐工具绑定前该义务不可执行（执行态只能 NOT_RUN/BLOCKED）"];
         if (environment === null) {
           prerequisites.push("environment 输入缺席（unknown 保留——不默认可执行）");
         } else if (environment.grounded) {
@@ -667,7 +756,8 @@ export function compileVerificationPlan(input: VerificationPlanInput): Verificat
           capability,
           method: CAPABILITY_METHOD[capability],
           resolved_tool: resolved,
-          tool_gap: gap,
+          resolved_bindings: resolvedBindings,
+          tool_gap: obligationGap,
           target: [...surface.changed_paths],
           environment: environment?.ref ?? null,
           applicability: "REQUIRED",
@@ -689,6 +779,7 @@ export function compileVerificationPlan(input: VerificationPlanInput): Verificat
           capability,
           method: CAPABILITY_METHOD[capability],
           resolved_tool: null,
+          resolved_bindings: [],
           tool_gap: null,
           target: [],
           environment: environment?.ref ?? null,

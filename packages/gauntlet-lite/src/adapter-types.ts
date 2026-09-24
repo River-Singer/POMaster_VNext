@@ -213,7 +213,7 @@ export interface GatePlan {
   readonly metricDialect: string;
   // W3-S2：扩 "tsc" | "eslint"（TS 族静态分析腿——受信 adapter
   // builtin.gauntlet-lite.typecheck / builtin.gauntlet-lite.lint 同批接线；词形 SP 提案待追认）。
-  readonly runner: "vitest" | "pytest" | "tsc" | "eslint";
+  readonly runner: "vitest" | "pytest" | "tsc" | "eslint" | "control_data_flow";
   /** spawn 命令串（shell:true 形态——Windows 下 corepack/pnpm 为 .cmd shim，无 shell 不可解析）。 */
   readonly command: string;
   readonly cwd: string;

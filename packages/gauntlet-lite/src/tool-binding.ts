@@ -67,6 +67,14 @@ import {
   VUE_TSC_TOOL_ID,
 } from "./typecheck-lint-adapter.js";
 import { firstCommandToken, platformExecutableProbe, stripQuotesFromPathEnv } from "./detectors.js";
+import {
+  CONTROL_DATA_FLOW_ADAPTER_REF,
+  CONTROL_DATA_FLOW_FORMAT,
+  CONTROL_DATA_FLOW_METRIC_DIALECT,
+  CONTROL_DATA_FLOW_PARSER_REF,
+  CONTROL_DATA_FLOW_TOOL_ID,
+  createControlDataFlowAdapter,
+} from "./control-data-flow-adapter.js";
 
 // ============================================================
 // 绑定记录面（schema 23 的 TS 运行时镜像；形状纪律见模块头注）
@@ -221,6 +229,20 @@ const LINT_DECL: TrustedBindingAdapterDecl = {
   },
 };
 
+const CONTROL_DATA_FLOW_DECL: TrustedBindingAdapterDecl = {
+  ref: CONTROL_DATA_FLOW_ADAPTER_REF,
+  adapterKey: "control_data_flow",
+  createAdapter: () => createControlDataFlowAdapter(),
+  capabilities: ["control_data_flow"],
+  accepted_formats: [CONTROL_DATA_FLOW_FORMAT],
+  accepted_parser_refs: [CONTROL_DATA_FLOW_PARSER_REF],
+  accepted_metric_dialects: [CONTROL_DATA_FLOW_METRIC_DIALECT],
+  accepted_tool_ids: [CONTROL_DATA_FLOW_TOOL_ID],
+  detectorFor: (toolId) => toolId === CONTROL_DATA_FLOW_TOOL_ID
+    ? (facts) => createControlDataFlowAdapter().detect(facts)
+    : null,
+};
+
 /**
  * 受信 adapter 注册表（adapter_ref → 声明）。增长通道 = 发行包代码 + schema 23
  * adapter_ref 枚举同批修订（SP-W1-e；禁绑定侧自造 ref）。W3-S2 起含 TS 族双
@@ -230,6 +252,7 @@ export const TRUSTED_BINDING_ADAPTERS: Readonly<Record<string, TrustedBindingAda
   [BUILD_DECL.ref]: BUILD_DECL,
   [TYPECHECK_DECL.ref]: TYPECHECK_DECL,
   [LINT_DECL.ref]: LINT_DECL,
+  [CONTROL_DATA_FLOW_DECL.ref]: CONTROL_DATA_FLOW_DECL,
 };
 
 /** adapter_ref 解析（未知 ref → null——调用方 fail-closed，禁静默当可执行）。 */

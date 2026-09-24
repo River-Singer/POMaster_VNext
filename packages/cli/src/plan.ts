@@ -167,7 +167,10 @@ function toolBindingsForPlan(rootDir: string): ToolBindingsForPlan {
     return {
       mode: "unified",
       bindings: rows.map((row) => ({
+        binding_id: row.binding_id,
         tool_id: row.tool,
+        gate: row.gate,
+        gate_def: byId.get(row.binding_id)!.gate_def,
         capabilities: (byId.get(row.binding_id)?.capabilities ??
           []) as PlanCapabilityWord[],
         source_ref: `binding:${row.binding_id}（.pomaster/tools/bindings.json 统一注册面——SP-W1-e 提案待追认；binding_ref schema 专位 W2 落位）`,

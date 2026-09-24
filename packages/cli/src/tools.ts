@@ -14,9 +14,8 @@
  * - validated = adapter 能力声明 ↔ binding report_contract 五键对账（纯函数）
  * - available = validated ∧ detect READY ∧ 可执行体探针命中 ∧ transport=cli（W1）
  *               ∧ 环境前置满足（requires=false 缺省，或 ENVREC 回执在座）
- * - selected  = --plan 计划工件 REQUIRED 项 resolved_tool 对账到本绑定 tool
- *               （计划工件面 = plan compile --json 输出可回喂；binding_id 专位
- *               = SP-W1-f 待建，对账键暂为 tool 词形——注记如实）
+ * - selected  = --plan 计划工件 REQUIRED 项 resolved_bindings[].binding_id 对账；
+ *               旧工件缺该字段时兼容回退 resolved_tool 对账
  * - executed  = evidence/runs/GRN-*.json 真实执行回执（tool+gate+binding_id 三键；
  *               同 tool+gate 缺 binding_id 留痕不算——工具发现≠调用授权）
  *
@@ -151,6 +150,7 @@ export function loadToolBindingRegistry(rootDir: string): RegistryLoad {
 /** 计划工件对账行（plan compile --json 输出 items 的最小消费面）。 */
 export interface PlanItemRef {
   readonly resolved_tool: unknown;
+  readonly resolved_bindings?: readonly { readonly binding_id?: unknown }[];
   readonly applicability: unknown;
 }
 
@@ -377,11 +377,14 @@ export function computeBindingStates(
       }
     }
 
-    // —— selected：计划工件 REQUIRED 项 resolved_tool 对账（binding_id 专位 = SP-W1-f 待建） ——
+    // —— selected：新工件按 resolved_bindings binding id；旧工件兼容 resolved_tool ——
     const selected =
       (deps.planItems ?? []).some(
         (item) =>
-          item.resolved_tool === binding.tool &&
+          (
+            item.resolved_bindings?.some((projection) => projection.binding_id === binding.id) === true ||
+            (item.resolved_bindings === undefined && item.resolved_tool === binding.tool)
+          ) &&
           item.applicability === "REQUIRED",
       ) && available;
 
@@ -456,7 +459,7 @@ function loadPlanItems(
       error: {
         code: "SCHEMA_INVALID",
         message: `--plan 计划工件不可读/不可解析：${planFile}（${error instanceof Error ? error.message : String(error)}）`,
-        hint: "计划工件 = pomaster plan compile --json 输出（{items:[...]}）；selected 对账消费 resolved_tool/applicability 两键。",
+        hint: "计划工件 = pomaster plan compile --json 输出（{items:[...]}）；新工件以 resolved_bindings[].binding_id 对账，旧工件兼容 resolved_tool。",
       },
     };
   }
@@ -469,6 +472,36 @@ function loadPlanItems(
         hint: "回喂 pomaster plan compile --json 的完整输出即可（顶层 items 数组）。",
       },
     };
+  }
+  for (let index = 0; index < items.length; index += 1) {
+    const item = items[index];
+    if (item === null || typeof item !== "object" || Array.isArray(item)) {
+      return {
+        error: {
+          code: "SCHEMA_INVALID",
+          message: `--plan items[${index}] 须为对象：${planFile}`,
+          hint: "回喂 pomaster plan compile --json 的完整输出，禁止手改 binding 投影。",
+        },
+      };
+    }
+    const projections = (item as { resolved_bindings?: unknown }).resolved_bindings;
+    if (projections === undefined) continue;
+    if (!Array.isArray(projections) || projections.some(
+      (projection) =>
+        projection === null ||
+        typeof projection !== "object" ||
+        Array.isArray(projection) ||
+        typeof (projection as { binding_id?: unknown }).binding_id !== "string" ||
+        (projection as { binding_id: string }).binding_id.length === 0,
+    )) {
+      return {
+        error: {
+          code: "SCHEMA_INVALID",
+          message: `--plan items[${index}].resolved_bindings 须为含非空 binding_id 的对象数组：${planFile}`,
+          hint: "新计划工件必须原样保留 plan compile 输出的 resolved_bindings；旧工件应省略该字段以走 resolved_tool 兼容路径。",
+        },
+      };
+    }
   }
   return { items: items as readonly PlanItemRef[] };
 }
