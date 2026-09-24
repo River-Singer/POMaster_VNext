@@ -1188,6 +1188,7 @@ export type {
   VerificationPlanResolvedBinding,
   PlanPermitFacts,
   PlanInformationalFacts,
+  PlanReviewedScope,
   VerificationPlanInput,
   VerificationPlanItem,
   PlanUnknownKind,
@@ -2375,11 +2376,30 @@ export {
   IMPORT_EDGE_TYPE,
   RELATIVE_IMPORT_CANDIDATE_SUFFIXES,
   analyzeImportGraph,
+  deriveImportGraphScopeReview,
 } from "./analyzer-import-graph.js";
+export {
+  TASK_REALITY_SCOPE_REVIEWS_FIELD,
+  readTaskRealityScopeReviews,
+  appendTaskRealityScopeReview,
+} from "./reality-scope-review.js";
+export type {
+  RealityScopeDecisionStatus,
+  RealityScopeDecision,
+  RealityScopeReview,
+  AppendRealityScopeReviewInput,
+} from "./reality-scope-review.js";
 export type {
   ImportGraphFileInput,
+  ImportGraphPathAlias,
   ImportGraphInput,
   ImportGraphEdgeProposal,
+  ImportGraphPathCandidate,
+  ImportGraphPathUnresolvedRow,
+  ImportGraphScopeDirection,
+  ImportGraphScopeCandidate,
+  ImportGraphScopeReviewInput,
+  ImportGraphScopeReviewResult,
   ImportGraphUnmappedRow,
   ImportGraphResult,
 } from "./analyzer-import-graph.js";

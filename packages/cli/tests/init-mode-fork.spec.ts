@@ -493,13 +493,18 @@ describe("Brownfield 编排真跑（R2 fixture 仓端到端）", () => {
       // blob 落盘：消费方重算 sha256 对账（D24 写侧镜像——recon.spec 同款纪律）。
       const receipt = JSON.parse(
         readFileSync(join(observationsDir(dir), "OBS-0002.json"), "utf8"),
-      ) as { artifact_refs: Array<{ ref_type: string; blob: { sha256: string; byte_size: number; media: string } }> };
+      ) as {
+        artifact_refs: Array<{
+          ref_type: string;
+          blob: { sha256: string; byte_size: number; media: string; storage_path: string };
+        }>;
+      };
       expect(receipt.artifact_refs).toHaveLength(1);
       const ref = receipt.artifact_refs[0]?.blob;
       expect(ref?.media).toBe("json");
-      const blobsBase = join(dir, ".pomaster", "evidence", "blobs", "sha256");
-      const shard = readdirSync(blobsBase)[0] ?? "";
-      const blobPath = join(blobsBase, shard, readdirSync(join(blobsBase, shard))[0] ?? "");
+      // 同一次 brownfield recon 会落多个内容寻址 blob；必须按回执签发的
+      // storage_path 精确回读，不能依赖目录枚举顺序猜测目标 blob。
+      const blobPath = join(dir, ".pomaster", "evidence", ref?.storage_path ?? "");
       const bytes = readFileSync(blobPath);
       expect(sha256OfBytes(bytes)).toBe(ref?.sha256);
       expect(bytes.length).toBe(ref?.byte_size);

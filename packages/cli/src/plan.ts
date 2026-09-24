@@ -36,6 +36,7 @@ import {
   type PlanChangeFace,
   type PlanCapabilityWord,
   type PlanInformationalFacts,
+  type PlanReviewedScope,
   type PlanToolBinding,
   type VerificationPlan,
   type VerificationPlanInput,
@@ -47,6 +48,7 @@ import { POMASTER_DIR } from "./store-layout.js";
 import { readRawIndexOrFail } from "./projection-common.js";
 import { governanceErrorToCliError, requireInitialized } from "./permit.js";
 import { computeBindingStates, loadToolBindingRegistry } from "./tools.js";
+import { loadLatestFreshReviewedScope } from "./recon-scope-review.js";
 
 /** kernel 所需最小面（结构化类型；缺省 = @pomaster/kernel 真实导出）。 */
 export interface PlanKernelDeps {
@@ -404,6 +406,7 @@ export interface PlanCompileResult {
   readonly items: readonly VerificationPlanItem[];
   readonly unknowns: VerificationPlan["unknowns"];
   readonly informational: PlanInformationalFacts | null;
+  readonly reviewed_scope?: PlanReviewedScope;
   readonly inputs_fingerprint: string;
   readonly tool_probe: readonly PlanToolProbeView[];
 }
@@ -479,6 +482,8 @@ export async function runPlanCompile(
       if ("error" in initialized) return fail(empty, command, initialized.error);
       const loaded = await loadTaskAcceptance(rootDir, taskRef);
       if ("error" in loaded) return fail(empty, command, loaded.error);
+      const reviewedScope = loadLatestFreshReviewedScope(rootDir, taskRef);
+      if (reviewedScope.error !== undefined) return fail(empty, command, reviewedScope.error);
       const toolBindings = toolBindingsForPlan(rootDir);
       if (toolBindings.mode === "error") return fail(empty, command, toolBindings.error);
       // W4-S3 steering 接缝（REQ-08 重编译最小形态；fail-closed 见本函数头注）。
@@ -544,6 +549,16 @@ export async function runPlanCompile(
           version: null,
           unknowns: ["Permit 判卷未接线（执行前置归 check/permit 通路）"],
         },
+        ...(reviewedScope.value === undefined
+          ? {}
+          : {
+              reviewedScope: {
+                value: reviewedScope.value as unknown as PlanReviewedScope,
+                source_ref: `store:${taskRef} payload.reality_scope_reviews(latest)`,
+                version: "pomaster.import-scope-review/v1",
+                unknowns: [],
+              },
+            }),
         informational,
       };
     }
@@ -559,6 +574,7 @@ export async function runPlanCompile(
       items: plan.items,
       unknowns: plan.unknowns,
       informational: plan.informational,
+      ...(plan.reviewed_scope === undefined ? {} : { reviewed_scope: plan.reviewed_scope }),
       inputs_fingerprint: plan.inputs_fingerprint,
       tool_probe: (planInput.toolBindings.value ?? []).map((binding) => ({
         tool_id: binding.tool_id,
@@ -574,6 +590,9 @@ export async function runPlanCompile(
     const human = [
       `plan compile → ${view.item_total} items（REQUIRED ${counts.REQUIRED} / NOT_REQUIRED ${excludedTotal} / NOT_APPLICABLE ${notApplicableTotal}）＋ unknowns ${plan.unknowns.length}（无法判定的影响面显式保留——禁默认 NOT_APPLICABLE）`,
       `  fingerprint: ${plan.inputs_fingerprint}`,
+      ...(plan.reviewed_scope === undefined
+        ? []
+        : [`  reviewed scope: ${plan.reviewed_scope.review_ref} · fresh · accepted ${plan.reviewed_scope.accepted_paths.length} / excluded ${plan.reviewed_scope.excluded_paths.length} / unknown ${plan.reviewed_scope.unknown_paths.length} · truncated=${String(plan.reviewed_scope.truncated)} · authority=reviewed_input_only`]),
       ...(info !== null && (info.complexity || info.governance_profile || info.note)
         ? [
             `  informational（零参与 applicability——A1 裁定 projection.ts:220 先例）: complexity=${info.complexity ?? "-"} profile=${info.governance_profile ?? "-"}${info.note ? ` note=${info.note}` : ""}`,

@@ -4,7 +4,13 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { applyTransaction, beginExecution, createStore } from "@pomaster/kernel";
 import type { ToolBindingRecord } from "@pomaster/gauntlet-lite";
-import { runCli, runInit, runPlanRun } from "@pomaster/cli";
+import {
+  runCli,
+  runInit,
+  runPlanRun,
+  runReconImportGraph,
+  runScopeReviewAdopt,
+} from "@pomaster/cli";
 
 let root: string;
 
@@ -149,6 +155,37 @@ const faces = [
   "deployment_config=absent:无部署配置",
 ];
 
+async function adoptCurrentRealityScope(executionId: string): Promise<{ readonly blobPath: string }> {
+  const scan = await runReconImportGraph(root, {
+    executionId,
+    roots: ["tsc-fake.mjs"],
+    task: "TASK.STATIC.RUNNER",
+    maxDepth: 4,
+  });
+  expect(scan.ok).toBe(true);
+  const blobPath = join(root, ".pomaster", "evidence", ...(scan.result.report_blob?.storage_path ?? "").split("/"));
+  const report = JSON.parse(readFileSync(blobPath, "utf8")) as {
+    scope_review: { machine_derived_candidates: Array<{ path: string }> };
+  };
+  const reviewPath = join(root, "scope-review.json");
+  writeFileSync(reviewPath, JSON.stringify({
+    decisions: report.scope_review.machine_derived_candidates.map((candidate) => ({
+      path: candidate.path,
+      status: "unknown",
+      basis: "测试用技术审阅；不代表 Owner 裁决",
+    })),
+  }));
+  const adopted = await runScopeReviewAdopt(root, {
+    observationRef: scan.result.observation_id as string,
+    taskRef: "TASK.STATIC.RUNNER",
+    reviewFile: reviewPath,
+    actor: "agent:test",
+    sourceRef: "test:plan-runner",
+  });
+  expect(adopted.ok).toBe(true);
+  return { blobPath };
+}
+
 describe("plan run", () => {
   it("control_data_flow 经受信 binding 执行并以 CONTROL_DATA_FLOW GRN 入账", async () => {
     const executionId = await fixture();
@@ -291,6 +328,48 @@ describe("plan run", () => {
     expect(outcome.errors[0]?.code).toBe("SCHEMA_INVALID");
     expect(existsSync(join(root, "tool-ran.marker"))).toBe(false);
     expect(outcome.result.rows).toEqual([]);
+  });
+
+  it("最新 reality scope 过期时在工具启动和 GRN 分配前阻断", async () => {
+    const executionId = await fixture();
+    writeFileSync(
+      join(root, "tsc-fake.mjs"),
+      "import { writeFileSync } from 'node:fs'; writeFileSync('tool-ran.marker','ran');",
+    );
+    await adoptCurrentRealityScope(executionId);
+    writeFileSync(join(root, "reality-drift.mjs"), "export const drift = true;\n");
+    const outcome = await runPlanRun(root, {
+      taskRef: "TASK.STATIC.RUNNER",
+      executionId,
+      changed: ["src/a.ts"],
+      faces,
+    });
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors[0]?.code).toBe("REALITY_SCOPE_STALE");
+    expect(existsSync(join(root, "tool-ran.marker"))).toBe(false);
+    expect(outcome.result.rows).toEqual([]);
+    expect(existsSync(join(root, ".pomaster", "evidence", "runs", "GRN-0001.json"))).toBe(false);
+  });
+
+  it("最新 reality scope 证据损坏时在工具启动和 GRN 分配前阻断", async () => {
+    const executionId = await fixture();
+    writeFileSync(
+      join(root, "tsc-fake.mjs"),
+      "import { writeFileSync } from 'node:fs'; writeFileSync('tool-ran.marker','ran');",
+    );
+    const { blobPath } = await adoptCurrentRealityScope(executionId);
+    writeFileSync(blobPath, "{damaged", "utf8");
+    const outcome = await runPlanRun(root, {
+      taskRef: "TASK.STATIC.RUNNER",
+      executionId,
+      changed: ["src/a.ts"],
+      faces,
+    });
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors[0]?.code).toBe("REALITY_SCOPE_UNJUDGEABLE");
+    expect(existsSync(join(root, "tool-ran.marker"))).toBe(false);
+    expect(outcome.result.rows).toEqual([]);
+    expect(existsSync(join(root, ".pomaster", "evidence", "runs", "GRN-0001.json"))).toBe(false);
   });
 
   it("AGX 已归属其他 task 时拒绝跨 task 借用", async () => {

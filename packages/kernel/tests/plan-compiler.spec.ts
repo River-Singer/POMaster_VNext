@@ -451,3 +451,24 @@ describe("旧档位迁移清单指针登记（头注）", () => {
     }
   });
 });
+
+describe("reviewed scope 非授权计划输入", () => {
+  it("进入输出和指纹，但不改变 item target/applicability/tool binding", () => {
+    const base = c1Input();
+    const before = compileVerificationPlan(base);
+    const after = compileVerificationPlan({
+      ...base,
+      reviewedScope: {
+        value: {
+          task_ref: "TASK.DESIGN-TOKENS-FILTER", review_ref: "TASK.DESIGN-TOKENS-FILTER#reality_scope_reviews[0]",
+          observation_ref: "OBS-0006", report_sha256: `sha256:${"1".repeat(64)}`, source_sha: `sha256:${"2".repeat(64)}`,
+          freshness: "fresh", declared_roots: ["src/root.ts"], accepted_paths: ["src/a.ts"], excluded_paths: [], unknown_paths: ["src/b.ts"],
+          unresolved_imports: [], truncated: true, authority: "reviewed_input_only",
+        }, source_ref: "store:TASK payload.reality_scope_reviews(latest)", version: "pomaster.import-scope-review/v1", unknowns: [],
+      },
+    });
+    expect(after.reviewed_scope?.authority).toBe("reviewed_input_only");
+    expect(after.inputs_fingerprint).not.toBe(before.inputs_fingerprint);
+    expect(after.items).toEqual(before.items);
+  });
+});

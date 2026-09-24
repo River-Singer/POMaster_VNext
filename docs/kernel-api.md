@@ -1331,7 +1331,15 @@ PREFIX_FAMILY_MAP：16 前缀→12 family 全总映射（PAGE/COMPONENT→UI；C
 - `pomaster control-data-flow analyze` 对 Vue SFC template AST 与 React TSX AST 做受限切片，报告 `control → event → handler → state/effect → readback → feedback` 阶段及源码锚。确定断链进入 failed；动态分派、跨边界目标或 parse failure 进入 warning/unknown；零控件分母进入 not_run。静态 passed 只表示配置分母内结构闭合，每条链仍带 `runtime_confirmation_required=true`，不证明真实 API、服务端持久化、浏览器调度或视觉反馈。
 - click/submit 名称本身不产生“必须有业务副作用”的确定义务；无状态写入和无受信 effect 的可解析 handler 保持 unknown。项目可在 React JSX 或 Vue template 控件上声明 `data-pomaster-cdf-effect="required"`，此时缺少受信 effect sink 才产生 `CDF.EFFECT_SINK_MISSING` 确定违规。
 - CLI `plan run --task <TASK.*> --execution-id <AGX-*>` 在首个工具启动前校验 AGX 档案形态及非空 `task_id` 归属，再逐 obligation 串行执行“分配 GRN → `runBindingGate` → gate/gate_def 对账 → kernel `record_gate_run` 事务”。已入账前项不因后项失败回滚，结果以 `partial=true` 披露。
+- `runBindingGate` 将 `binding.tool` 作为 adapter 的已选工具身份；tsc/vue-tsc 等多腿 adapter 必须沿该身份选腿，GRN 不得因同族工具同时在座而改名。npm 合法两段 partial semver（如 `^5.6`）规范化为下界三段身份 `5.6.0`。
 - 缺席或不可用 binding 以七态非绿 GRN 记录；仅全部 REQUIRED obligations 为 `passed` 时命令成功。`--diagnose-on-failure` 只读取已入账 `failed` GRN。命令不创建 claim、不做 independent verification、不修改 Permit/Task 关系，也不自动 closeout。
+
+### Brownfield scope review freshness and plan input
+
+- `buildReconImportSnapshot(rootDir)` 是扫描与新鲜度判定的共同快照源。v1 记录总 `source_sha`、源码分项摘要、alias/config 分项摘要、源码文件计数和合同版本；读取失败为 `unjudgeable`，只有两份可比较快照摘要不同才是 `stale`。
+- `appendTaskRealityScopeReview(store, input)` 通过完整 Task 信封的单次 `upsert_object` 事务，向 `payload.reality_scope_reviews[]` 追加审阅记录。accepted/excluded/unknown 必须互斥且并集恰好覆盖 OBS 的 machine candidate universe；遗漏、越形、重复路径或重复 OBS 均 fail-closed。
+- 审阅记录复制 OBS/blob/source 身份、declared roots、truncated、unresolved imports、自报 actor 和 review source。它不写 relation、Permit 或 changed paths，也不表示 Owner 已裁决完整业务范围。
+- `VerificationPlanInput.reviewedScope` 是可选的非授权段。存在时必须 `freshness=fresh`、`authority=reviewed_input_only`，进入 `inputs_fingerprint` 和 `reviewed_scope` 输出，但不参与 capability applicability、target、ToolBinding 选择或 Permit 判定。任务最新 review 为 stale/unjudgeable 时，CLI 在工具启动和 GRN 分配前阻断 compile/run。
 - `pomaster steering record/search`（CLI 命令面；判卷权威在 kernel，本面只做 argv 收敛与呈现）：record `<task-id> --constraint <text> --source-ref <ref> [--scope <word>]… [--note <text>] --actor <type>:<name>`（requiredOption 闸 + kernel 词形闸双层；--scope 可重复）；search `<task-id> [query]`（query 缺席 = 列全部；未命中显式「无记录/无命中」；纯读零建账——requireInitialized + buildStorePaths + kernel 读取面，零 createStore）；均走 §45 --json 五键信封。
 - 词形 SP 提案待 Owner 追认：journal 事件词形 `STEERING_RECORDED`（journal 事件词形常量集追加——「词形扩展是否等同新增 kind」是 W1 裁定边界，本切片只扩词形常量集并留痕提案，不动 vocab-lock 主表）、`pomaster.steering-log/v1` schema、`STE-<n>` 引用词形（EXC-n/CKPT-n 同款通路编号，非 governed 前缀）、命令组名 `steering`（命令面非词表管辖面——P33b/P34b 先例）；复用闭集：NOT_CONFIGURED / OBJECT_NOT_FOUND / SCHEMA_INVALID / FATAL_UNKNOWN_PREFIX / FATAL_ID_GRAMMAR。
 

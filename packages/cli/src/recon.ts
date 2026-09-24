@@ -140,7 +140,7 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, sep } from "node:path";
+import { isAbsolute, join, posix, sep } from "node:path";
 import { performance } from "node:perf_hooks";
 import {
   DEPCUISE_CONFIG_CANDIDATES,
@@ -166,7 +166,8 @@ import {
   buildStorePaths,
   persistEvidenceArtifact,
   persistObservationRecord,
-  sha256OfCanonical,
+  deriveImportGraphScopeReview,
+  parseGovernedId,
   type ObservationReceipt,
 } from "@pomaster/kernel";
 import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
@@ -174,7 +175,12 @@ import { failOutcome, okOutcome } from "./envelope.js";
 import { resolveExecutionId } from "./evidence.js";
 import { readDesignTokens } from "./baseline-tokens.js";
 import { governanceErrorToCliError, requireInitialized } from "./permit.js";
-import { POMASTER_DIR, executionsDirPath, toPosix } from "./store-layout.js";
+import { POMASTER_DIR, executionsDirPath, toPosix, truthIndexPath } from "./store-layout.js";
+import {
+  buildReconImportSnapshot,
+  RECON_IMPORT_SCOPE_CONTRACT,
+  RECON_IMPORT_SNAPSHOT_CONTRACT,
+} from "./recon-import-snapshot.js";
 
 // ============================================================
 // 词形常量（禁私扩词表——见头注「词形纪律」）
@@ -307,6 +313,12 @@ export interface ReconImportGraphInput {
    * 证明我看过」的身份前提）——recon 不自造身份（S1）：须为 executions/ 已登记档案。
    */
   readonly executionId: string;
+  /** 可重复的仓库相对源码根；缺席时保持旧 import-graph 行为。 */
+  readonly roots?: readonly string[];
+  /** 可选只读绑定的在册 TASK.* task_object。 */
+  readonly task?: string;
+  /** 双向闭包最大边深度；范围审查激活时默认 4，合法范围 1..16。 */
+  readonly maxDepth?: number;
 }
 
 /** 报告 blob 引用（persistEvidenceArtifact 产物三键投影）。 */
@@ -329,7 +341,22 @@ export interface ReconImportGraphResult {
   /** mapping 命中数（本批 mapping 恒空 → 恒 0；呈现位）。 */
   readonly objects_resolved: number | null;
   readonly external_imports: number | null;
+  readonly alias_imports: number | null;
+  readonly alias_resolved_imports: number | null;
+  readonly alias_unresolved_imports: number | null;
+  readonly alias_config_issue_count: number | null;
   readonly unmapped_count: number | null;
+  /** 扫描文件集内解析出的源码路径候选；仅供审查，未登记为 relation。 */
+  readonly path_candidate_count: number | null;
+  /** 在扫描文件集内无法找到目标的相对 import。 */
+  readonly path_unresolved_count: number | null;
+  /** 仅在 --root 激活范围审查时出现；普通 import-graph 保持既有 JSON 字节形态。 */
+  readonly scope_review_active?: true;
+  readonly scope_task_ref?: string | null;
+  readonly scope_root_count?: number;
+  readonly scope_candidate_count?: number;
+  readonly scope_exclusion_count?: number;
+  readonly scope_truncated?: boolean;
   /** §148 置信级（analyzer 归一产物原样；零分母分支 = null——无报告可背书）。 */
   readonly confidence: string | null;
   /** 捕获锚（generation.seq 采样；A4 零墙钟）。 */
@@ -348,12 +375,112 @@ function emptyReconResult(): ReconImportGraphResult {
     source_files: null,
     objects_resolved: null,
     external_imports: null,
+    alias_imports: null,
+    alias_resolved_imports: null,
+    alias_unresolved_imports: null,
+    alias_config_issue_count: null,
     unmapped_count: null,
+    path_candidate_count: null,
+    path_unresolved_count: null,
     confidence: null,
     captured_at_seq: null,
     report_blob: null,
     unmapped_stdout_capped: false,
   };
+}
+
+function normalizeScopeRoots(rawRoots: readonly string[]):
+  | { readonly roots: readonly string[] }
+  | { readonly error: CliError } {
+  const roots: string[] = [];
+  for (const raw of rawRoots) {
+    const trimmed = raw.trim();
+    const slashPath = toPosix(trimmed);
+    const normalized = posix.normalize(slashPath);
+    const portableAbsolute = slashPath.startsWith("/") || /^[A-Za-z]:($|\/)/.test(slashPath);
+    if (
+      trimmed.length === 0 ||
+      isAbsolute(trimmed) ||
+      portableAbsolute ||
+      normalized === "." ||
+      normalized === ".." ||
+      normalized.startsWith("../") ||
+      normalized.includes("\u0000")
+    ) {
+      return {
+        error: {
+          code: "SCHEMA_INVALID",
+          message: `--root 必须是仓库内相对源码路径：${raw}`,
+          hint: "传入 recon 扫描面内的仓库相对路径，例如 src/app/main.ts；可重复声明。",
+        },
+      };
+    }
+    roots.push(normalized);
+  }
+  return { roots: [...new Set(roots)].sort() };
+}
+
+function validateScopeTask(rootDir: string, rawTask: string):
+  | { readonly taskRef: string }
+  | { readonly error: CliError } {
+  const taskRef = rawTask.trim();
+  try {
+    parseGovernedId(taskRef);
+  } catch (error) {
+    return {
+      error: {
+        code: "SCHEMA_INVALID",
+        message: `--task 不满足 governed id 文法：${taskRef}（${error instanceof Error ? error.message : String(error)}）`,
+        hint: "传入在册 canonical TASK.* id。",
+      },
+    };
+  }
+  if (!taskRef.startsWith("TASK.")) {
+    return {
+      error: {
+        code: "SCHEMA_INVALID",
+        message: `--task 只接受 TASK.*：${taskRef}`,
+        hint: "范围审查可绑定既有 task_object；其它 governed kind 不可借位。",
+      },
+    };
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(readFileSync(truthIndexPath(rootDir), "utf8"));
+  } catch (error) {
+    return {
+      error: {
+        code: "SCHEMA_INVALID",
+        message: `truth-index 不可解析，无法验证 --task：${error instanceof Error ? error.message : String(error)}`,
+        hint: "从 git 恢复 .pomaster/state/truth-index.json 后重跑。",
+      },
+    };
+  }
+  const objects = typeof parsed === "object" && parsed !== null && Array.isArray((parsed as { objects?: unknown }).objects)
+    ? (parsed as { objects: unknown[] }).objects
+    : [];
+  const row = objects.find((candidate) =>
+    typeof candidate === "object" && candidate !== null && (candidate as { id?: unknown }).id === taskRef,
+  ) as { kind?: unknown } | undefined;
+  if (row === undefined) {
+    return {
+      error: {
+        code: "OBJECT_NOT_FOUND",
+        message: `范围审查绑定任务不在册：${taskRef}`,
+        hint: "使用 pomaster inspect <task-id> 核对在册 TASK.*；本命令不会创建任务。",
+      },
+    };
+  }
+  if (row.kind !== "task_object") {
+    return {
+      error: {
+        code: "SCHEMA_INVALID",
+        message: `${taskRef} kind=${String(row.kind)} 非 task_object`,
+        hint: "--task 只绑定在册 task_object，且只读引用，不修改 payload。",
+      },
+    };
+  }
+  return { taskRef };
 }
 
 function reconFail(error: CliError): CommandOutcome<ReconImportGraphResult> {
@@ -412,6 +539,35 @@ export async function runReconImportGraph(
   const initialized = await requireInitialized(rootDir);
   if ("error" in initialized) return reconFail(initialized.error);
 
+  const normalizedRoots = normalizeScopeRoots(input.roots ?? []);
+  if ("error" in normalizedRoots) return reconFail(normalizedRoots.error);
+  const scopeReviewActive = normalizedRoots.roots.length > 0;
+  if (!scopeReviewActive && input.task !== undefined) {
+    return reconFail({
+      code: "SCHEMA_INVALID",
+      message: "--task 仅用于绑定由 --root 激活的任务范围审查；当前没有声明 root",
+      hint: "至少传入一个 --root <repo-relative-source-path>，或移除 --task 保持普通 import-graph 行为。",
+    });
+  }
+  if (!scopeReviewActive && input.maxDepth !== undefined) {
+    return reconFail({
+      code: "SCHEMA_INVALID",
+      message: "--max-depth 仅用于由 --root 激活的任务范围审查；当前没有声明 root",
+      hint: "至少传入一个 --root <repo-relative-source-path>，或移除 --max-depth 保持普通 import-graph 行为。",
+    });
+  }
+  const maxDepth = input.maxDepth ?? 4;
+  if (scopeReviewActive && (!Number.isInteger(maxDepth) || maxDepth < 1 || maxDepth > 16)) {
+    return reconFail({
+      code: "SCHEMA_INVALID",
+      message: `--max-depth 必须是 1..16 的整数：${String(maxDepth)}`,
+      hint: "缺省值为 4；该上界限制双向 BFS，避免无界范围扩张。",
+    });
+  }
+  const taskResolution = input.task === undefined ? null : validateScopeTask(rootDir, input.task);
+  if (taskResolution !== null && "error" in taskResolution) return reconFail(taskResolution.error);
+  const taskRef = taskResolution?.taskRef ?? null;
+
   // —— 执行档案存在性（S1：身份由 beginExecution 落档；record 通路同判卷） ——
   if (!existsSync(`${executionsDirPath(rootDir)}/${executionId}.json`)) {
     return reconFail({
@@ -422,20 +578,20 @@ export async function runReconImportGraph(
   }
 
   const paths = buildStorePaths(rootDir);
+  const snapshot = buildReconImportSnapshot(rootDir);
+  const aliasConfig = { aliases: snapshot.aliases, configFiles: snapshot.configFiles, issues: snapshot.aliasIssues };
+  const files = snapshot.files;
+  const readFailures = snapshot.readFailures;
 
-  // —— 宿主源文件枚举 + 读盘（零 fs 归调用方；读失败显式披露禁静默跳过） ——
-  const rawFiles: string[] = [];
-  collectReconSourceFiles(rootDir, rootDir, rawFiles);
-  rawFiles.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
-  const files: { readonly path: string; readonly content: string }[] = [];
-  const readFailures: string[] = [];
-  for (const relative of rawFiles) {
-    try {
-      files.push({ path: relative, content: readFileSync(join(rootDir, relative), "utf8") });
-    } catch (error) {
-      readFailures.push(
-        `${relative}: unreadable (${error instanceof Error ? error.message : String(error)})`,
-      );
+  if (scopeReviewActive) {
+    const scanned = new Set(files.map((file) => file.path));
+    const missingRoots = normalizedRoots.roots.filter((root) => !scanned.has(root));
+    if (missingRoots.length > 0) {
+      return reconFail({
+        code: "RECON_ROOT_NOT_FOUND",
+        message: `声明的源码 root 不在本次扫描分母：${missingRoots.join(", ")}`,
+        hint: "root 必须是存在且后缀属于 .ts/.tsx/.js/.jsx/.mjs/.cjs/.vue 的仓库相对文件路径；缺失 root 不会静默丢弃。",
+      });
     }
   }
 
@@ -496,14 +652,28 @@ export async function runReconImportGraph(
   // —— 分析 + 落盘（kernel 纯函数直调零第二实现；blob → sidecar 先 persist 后引用） ——
   try {
     // 源快照锚（§148/§132）：kernel digest 原语计算——基础设施算、人类零触（D24 边界见头注）。
-    const sourceSha = sha256OfCanonical(
-      files.map((file) => ({ path: file.path, content: file.content })),
-    );
+    const sourceSha = snapshot.sourceSha;
     const analysis = analyzeImportGraph({
       files,
       mapping: RECON_EMPTY_MAPPING,
+      pathAliases: aliasConfig.aliases,
       sourceSha,
     });
+    const scopeReview = scopeReviewActive
+      ? deriveImportGraphScopeReview({
+          roots: normalizedRoots.roots,
+          pathCandidates: analysis.pathCandidates,
+          maxDepth,
+        })
+      : null;
+    const machineDerivedCandidates = scopeReview?.candidates.filter((row) => row.direction !== "root") ?? [];
+    const includedPaths = new Set(scopeReview?.candidates.map((row) => row.path) ?? []);
+    const scopeExclusions = scopeReview === null
+      ? []
+      : files.map((file) => file.path).filter((path) => !includedPaths.has(path));
+    const scopeUnknowns = scopeReview === null
+      ? []
+      : analysis.pathUnresolved.filter((row) => includedPaths.has(row.source));
 
     // §148 报告 blob（内容寻址；字节稳定——键序固定 + indent 2 + 尾换行）。
     // CALLS 边提案零落盘保持：blob 只载报告/计数/unmapped/分母，零 edges 键。
@@ -513,9 +683,41 @@ export async function runReconImportGraph(
           recon_surface: "import-graph",
           report: analysis.report,
           external_imports: analysis.externalImports,
+          alias_imports: analysis.aliasImports,
+          alias_resolved_imports: analysis.aliasResolvedImports,
+          alias_unresolved_imports: analysis.aliasUnresolvedImports,
+          path_aliases: aliasConfig.aliases,
+          alias_config_files: aliasConfig.configFiles.map((file) => file.path),
+          alias_config_issues: aliasConfig.issues,
           unmapped: analysis.unmapped,
+          path_candidates: analysis.pathCandidates,
+          path_unresolved: analysis.pathUnresolved,
           scanned_files: files.map((file) => file.path),
           source_read_failures: readFailures,
+          freshness_basis: {
+            contract: RECON_IMPORT_SNAPSHOT_CONTRACT,
+            scope_contract: RECON_IMPORT_SCOPE_CONTRACT,
+            source_sha: snapshot.sourceSha,
+            source_files_sha: snapshot.sourceFilesSha,
+            alias_config_sha: snapshot.aliasConfigSha,
+            source_file_count: files.length,
+            alias_config_files: aliasConfig.configFiles.map((file) => file.path),
+          },
+          ...(scopeReview === null
+            ? {}
+            : {
+                scope_review: {
+                  task_ref: taskRef,
+                  declared_roots: scopeReview.roots,
+                  max_depth: maxDepth,
+                  closure_rows: scopeReview.candidates,
+                  machine_derived_candidates: machineDerivedCandidates,
+                  truncated: scopeReview.truncated,
+                  exclusions: scopeExclusions,
+                  unknowns: scopeUnknowns,
+                  note: "候选须由 Owner 审阅后，才能决定 governed-id mapping、relation 登记或 Permit 扩围。",
+                },
+              }),
         },
         null,
         2,
@@ -535,6 +737,7 @@ export async function runReconImportGraph(
       surface: "STRUCTURAL_REALITY",
       result: "OBSERVED",
       capturedAtSeq: initialized.seq,
+      targetRef: taskRef,
       artifactRefs: [
         {
           sha256: blob.sha256,
@@ -548,9 +751,24 @@ export async function runReconImportGraph(
         `source_files: ${String(files.length)}`,
         `objects_resolved: ${String(analysis.report.objects_resolved)}`,
         `external_imports: ${String(analysis.externalImports)}`,
+        `alias_imports: ${String(analysis.aliasImports)}`,
+        `alias_resolved_imports: ${String(analysis.aliasResolvedImports)}`,
+        `alias_unresolved_imports: ${String(analysis.aliasUnresolvedImports)}`,
+        `alias_config_issues: ${String(aliasConfig.issues.length)}`,
         `unmapped: ${String(analysis.unmapped.length)}`,
+        `path_candidates_not_registered: ${String(analysis.pathCandidates.length)}`,
+        `path_unresolved: ${String(analysis.pathUnresolved.length)}`,
         `edge_proposals_not_registered: ${String(analysis.edges.length)}`,
         `confidence: ${analysis.report.confidence}`,
+        ...(scopeReview === null
+          ? []
+          : [
+              `scope_review_roots: ${String(scopeReview.roots.length)}`,
+              `scope_review_candidates_not_registered: ${String(machineDerivedCandidates.length)}`,
+              `scope_review_exclusions: ${String(scopeExclusions.length)}`,
+              `scope_review_truncated: ${String(scopeReview.truncated)}`,
+              `scope_review_task_ref: ${taskRef ?? "none"}`,
+            ]),
         ...(readFailures.length > 0
           ? [`source_read_failures: ${String(readFailures.length)}`]
           : []),
@@ -566,8 +784,20 @@ export async function runReconImportGraph(
     const human: string[] = [
       `recon import-graph: OBSERVED — ${String(files.length)} 个源文件（confidence ${analysis.report.confidence}）`,
       `mapping 命中（objects_resolved）: ${String(analysis.report.objects_resolved)} —— mapping 恒空（老项目无 governed id 分母；unmapped 清单即产出）`,
-      `externalImports（裸包名 import 计数）: ${String(analysis.externalImports)}`,
+      `externalImports（未命中内部 alias 的裸包名 import）: ${String(analysis.externalImports)}`,
+      `path alias: ${String(analysis.aliasResolvedImports)} 已解析 / ${String(analysis.aliasUnresolvedImports)} 未解析 / ${String(analysis.aliasImports)} 总计`,
+      `alias config: ${String(aliasConfig.aliases.length)} 条规则 / ${String(aliasConfig.issues.length)} 个未覆盖项`,
       `unmapped: ${String(analysis.unmapped.length)} 条（禁静默丢弃；完整清单见 report blob）`,
+      `源码路径候选: ${String(analysis.pathCandidates.length)} 条（仅供审查；零 relation 登记、零 governed id 创建）`,
+      `源码路径未解析: ${String(analysis.pathUnresolved.length)} 条（完整清单见 report blob）`,
+      ...(scopeReview === null
+        ? []
+        : [
+            `任务范围审查: ${String(scopeReview.roots.length)} 个 declared roots / ${String(machineDerivedCandidates.length)} 个 machine-derived candidates / max-depth ${String(maxDepth)} / truncated=${String(scopeReview.truncated)}`,
+            `范围排除/未达: ${String(scopeExclusions.length)} 个扫描文件；unknown imports: ${String(analysis.pathUnresolved.length)} 条`,
+            `task binding: ${taskRef ?? "未绑定"}（只读引用；未修改 Task/Permit/relation）`,
+            "下一步: Owner 审阅候选后，再决定 governed-id mapping、relation 登记或 Permit 扩围。",
+          ]),
     ];
     for (const row of analysis.unmapped.slice(0, RECON_UNMAPPED_PRESENTATION_CAP)) {
       human.push(`  - ${row.source} -> ${row.specifier} (${row.reason})`);
@@ -586,6 +816,13 @@ export async function runReconImportGraph(
     );
 
     const warnings: CliWarning[] = [];
+    if (aliasConfig.issues.length > 0) {
+      warnings.push({
+        code: "RECON_ALIAS_CONFIG_INCOMPLETE",
+        message: `路径别名配置存在 ${String(aliasConfig.issues.length)} 个未覆盖项：${aliasConfig.issues.join("; ")}`,
+        hint: "当前报告仍保留这些未知项；补齐根 tsconfig/jsconfig 的可解析 paths 后重跑。Vite 配置不会被执行。",
+      });
+    }
     if (readFailures.length > 0) {
       warnings.push({
         code: "RECON_SOURCE_UNREADABLE",
@@ -603,7 +840,23 @@ export async function runReconImportGraph(
         source_files: files.length,
         objects_resolved: analysis.report.objects_resolved,
         external_imports: analysis.externalImports,
+        alias_imports: analysis.aliasImports,
+        alias_resolved_imports: analysis.aliasResolvedImports,
+        alias_unresolved_imports: analysis.aliasUnresolvedImports,
+        alias_config_issue_count: aliasConfig.issues.length,
         unmapped_count: analysis.unmapped.length,
+        path_candidate_count: analysis.pathCandidates.length,
+        path_unresolved_count: analysis.pathUnresolved.length,
+        ...(scopeReview === null
+          ? {}
+          : {
+              scope_review_active: true as const,
+              scope_task_ref: taskRef,
+              scope_root_count: scopeReview.roots.length,
+              scope_candidate_count: machineDerivedCandidates.length,
+              scope_exclusion_count: scopeExclusions.length,
+              scope_truncated: scopeReview.truncated,
+            }),
         confidence: analysis.report.confidence,
         captured_at_seq: initialized.seq,
         report_blob: {
@@ -3462,4 +3715,3 @@ export async function runReconOpenApi(
     human,
   );
 }
-

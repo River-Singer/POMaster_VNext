@@ -274,6 +274,8 @@ import { runPermitCheck, runPermitIssue, runPermitList, runPermitSteal } from ".
 import { runExecGuard } from "./exec-guard.js";
 import { runReconcile } from "./reconcile.js";
 import { runReconImportGraph, runReconMigrations, runReconSbom } from "./recon.js";
+import { runScopeReviewAdopt, runScopeReviewFreshness, runScopeReviewShow } from "./recon-scope-review.js";
+export { runScopeReviewAdopt, runScopeReviewFreshness, runScopeReviewShow, judgeScopeReviewFreshness } from "./recon-scope-review.js";
 import {
   runReconArchitectureSnapshot,
   runReconOpenApi,
@@ -4299,10 +4301,16 @@ export function createProgram(
       "--execution-id <AGX-n>",
       "执行身份锚（AGX-<年份>-<序号>；OBS 回执 execution_id 必填——S1 禁自造身份，须为 executions/ 已登记档案，已封口执行允许事后补录）",
     )
+    .option("--root <repo-relative-path>", "任务范围审查源码根（可重复；必须命中本次扫描文件）", collectValues, [])
+    .option("--task <TASK.*>", "可选绑定在册 task_object（只读引用；不修改 Task/Permit/relation）")
+    .option("--max-depth <n>", "任务范围审查双向闭包最大深度（1..16；缺省 4）")
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (opts, command) => {
       const outcome = await runReconImportGraph(resolveDir(command), {
         executionId: opts.executionId as string,
+        roots: opts.root as string[],
+        task: opts.task as string | undefined,
+        maxDepth: opts.maxDepth === undefined ? undefined : Number(opts.maxDepth),
       });
       record({
         command: "recon import-graph",
@@ -4310,6 +4318,42 @@ export function createProgram(
         asJson: command.opts().json === true,
       });
     });
+  const scopeReview = recon
+    .command("scope-review")
+    .description("import-graph 范围候选的新鲜度判定、追加式审阅采纳与任务输入回读（reviewed_input_only）");
+  scopeReview
+    .command("freshness")
+    .argument("<OBS-n>", "范围审查 observation")
+    .option("--task <TASK.*>", "校验 OBS target_ref 与任务强绑定")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (observationRef: string, opts, command) => {
+      const outcome = await runScopeReviewFreshness(resolveDir(command), observationRef, opts.task as string | undefined);
+      record({ command: "recon scope-review freshness", outcome, asJson: command.opts().json === true });
+    });
+  scopeReview
+    .command("adopt")
+    .argument("<OBS-n>", "fresh 范围审查 observation")
+    .requiredOption("--task <TASK.*>", "写入 review 的在册 task_object")
+    .requiredOption("--review <file>", "逐候选 decisions JSON")
+    .requiredOption("--actor <type:name>", "自报审阅主体，例如 agent:codex")
+    .requiredOption("--source-ref <ref>", "审阅依据来源引用")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (observationRef: string, opts, command) => {
+      const outcome = await runScopeReviewAdopt(resolveDir(command), {
+        observationRef, taskRef: opts.task as string, reviewFile: opts.review as string,
+        actor: opts.actor as string, sourceRef: opts.sourceRef as string,
+      });
+      record({ command: "recon scope-review adopt", outcome, asJson: command.opts().json === true });
+    });
+  scopeReview
+    .command("show")
+    .requiredOption("--task <TASK.*>", "回读 task payload.reality_scope_reviews")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runScopeReviewShow(resolveDir(command), opts.task as string);
+      record({ command: "recon scope-review show", outcome, asJson: command.opts().json === true });
+    });
+
   recon
     .command("migrations")
     .description(

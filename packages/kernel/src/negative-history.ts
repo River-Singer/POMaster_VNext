@@ -341,7 +341,7 @@ export async function appendTaskNegativeEntry(
     recorded_at_seq: currentSeq,
   };
   const nextHistory = [...existing, entry];
-  const envelope = envelopeFromBody(
+  const envelope = envelopeFromTaskBody(
     bodyRecord,
     { ...payloadRecord, [TASK_NEGATIVE_HISTORY_FIELD]: nextHistory },
     input.taskRef,
@@ -407,7 +407,7 @@ function requireNonEmpty(value: string, field: string, taskRef: string): string 
  * 全部原样保留（rev 由事务重排），唯一变更 = payload（negative_history 合并后）。
  * 必填键缺失/畸形 = 手改痕迹 → SCHEMA_INVALID（写通路 fail-closed，不静默重建）。
  */
-function envelopeFromBody(
+export function envelopeFromTaskBody(
   body: UnknownRecord,
   nextPayload: UnknownRecord,
   taskRef: string,

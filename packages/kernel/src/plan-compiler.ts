@@ -260,12 +260,29 @@ export interface PlanInformationalFacts {
   readonly note?: string | null;
 }
 
+export interface PlanReviewedScope {
+  readonly task_ref: string;
+  readonly review_ref: string;
+  readonly observation_ref: string;
+  readonly report_sha256: string;
+  readonly source_sha: string;
+  readonly freshness: "fresh";
+  readonly declared_roots: readonly string[];
+  readonly accepted_paths: readonly string[];
+  readonly excluded_paths: readonly string[];
+  readonly unknown_paths: readonly string[];
+  readonly unresolved_imports: readonly { readonly source: string; readonly specifier: string; readonly reason: string }[];
+  readonly truncated: boolean;
+  readonly authority: "reviewed_input_only";
+}
+
 export interface VerificationPlanInput {
   readonly acceptance: PlanInputSegment<readonly PlanAcceptanceItem[]>;
   readonly changeSurface: PlanInputSegment<PlanChangeSurface>;
   readonly environment: PlanInputSegment<PlanEnvironmentFacts | null>;
   readonly toolBindings: PlanInputSegment<readonly PlanToolBinding[]>;
   readonly permit: PlanInputSegment<PlanPermitFacts | null>;
+  readonly reviewedScope?: PlanInputSegment<PlanReviewedScope>;
   readonly informational?: PlanInformationalFacts;
 }
 
@@ -310,7 +327,36 @@ export interface VerificationPlan {
   readonly items: readonly VerificationPlanItem[];
   readonly unknowns: readonly PlanUnknownItem[];
   readonly informational: PlanInformationalFacts | null;
+  readonly reviewed_scope?: PlanReviewedScope;
   readonly inputs_fingerprint: string;
+}
+
+function validateReviewedScope(scope: PlanReviewedScope): void {
+  requireNonEmptyString(scope.task_ref, "reviewedScope.task_ref");
+  requireNonEmptyString(scope.review_ref, "reviewedScope.review_ref");
+  requireNonEmptyString(scope.observation_ref, "reviewedScope.observation_ref");
+  requireNonEmptyString(scope.report_sha256, "reviewedScope.report_sha256");
+  requireNonEmptyString(scope.source_sha, "reviewedScope.source_sha");
+  if (scope.freshness !== "fresh" || scope.authority !== "reviewed_input_only") {
+    throw schemaInvalid("reviewedScope 只接受 freshness=fresh 且 authority=reviewed_input_only", "过期或不可判输入不得进入验证计划");
+  }
+  const canonical = (values: readonly string[], path: string): string[] => {
+    const checked = requireStringArray(values, path);
+    if (new Set(checked).size !== checked.length || checked.some((value, index) => index > 0 && checked[index - 1]! > value)) {
+      throw schemaInvalid(`${path} 必须去重并按码点序稳定排序`, "reviewed scope 生产方须输出 canonical arrays");
+    }
+    return checked;
+  };
+  canonical(scope.declared_roots, "reviewedScope.declared_roots");
+  const groups = [scope.accepted_paths, scope.excluded_paths, scope.unknown_paths];
+  const all = groups.flatMap((group, index) => canonical(group, `reviewedScope.decisions[${index}]`));
+  if (new Set(all).size !== all.length) throw schemaInvalid("reviewedScope decision 路径跨状态重复", "accepted/excluded/unknown 必须互斥");
+  if (!Array.isArray(scope.unresolved_imports) || typeof scope.truncated !== "boolean") throw schemaInvalid("reviewedScope unresolved/truncated 词形非法", "重新采纳 scope review");
+  scope.unresolved_imports.forEach((row, index) => {
+    requireNonEmptyString(row?.source, `reviewedScope.unresolved_imports[${index}].source`);
+    requireNonEmptyString(row?.specifier, `reviewedScope.unresolved_imports[${index}].specifier`);
+    requireNonEmptyString(row?.reason, `reviewedScope.unresolved_imports[${index}].reason`);
+  });
 }
 
 // ============================================================
@@ -609,18 +655,21 @@ export function compileVerificationPlan(input: VerificationPlanInput): Verificat
   const environmentSegment = validateSegment(input?.environment, "environment");
   const toolBindingsSegment = validateSegment(input?.toolBindings, "toolBindings");
   const permitSegment = validateSegment(input?.permit, "permit");
+  const reviewedScopeSegment = input.reviewedScope === undefined ? null : validateSegment(input.reviewedScope, "reviewedScope");
 
   validateAcceptance(acceptanceSegment.value as readonly PlanAcceptanceItem[]);
   const faceByKind = validateChangeSurface(changeSurfaceSegment.value as PlanChangeSurface);
   validateEnvironment(environmentSegment.value as PlanEnvironmentFacts | null);
   validateToolBindings(toolBindingsSegment.value as readonly PlanToolBinding[]);
   validatePermit(permitSegment.value as PlanPermitFacts | null);
+  if (reviewedScopeSegment !== null) validateReviewedScope(reviewedScopeSegment.value as PlanReviewedScope);
 
   const acceptance = acceptanceSegment.value as readonly PlanAcceptanceItem[];
   const surface = changeSurfaceSegment.value as PlanChangeSurface;
   const environment = environmentSegment.value as PlanEnvironmentFacts | null;
   const bindings = toolBindingsSegment.value as readonly PlanToolBinding[];
   const permit = permitSegment.value as PlanPermitFacts | null;
+  const reviewedScope = reviewedScopeSegment?.value as PlanReviewedScope | undefined;
 
   // —— faces 派生能力轴（轴序固定）——
   const presentFaceCaps: PlanCapabilityWord[] = [];
@@ -662,6 +711,7 @@ export function compileVerificationPlan(input: VerificationPlanInput): Verificat
     ["environment", "environment", environmentSegment],
     ["toolBindings", "toolBindings", toolBindingsSegment],
     ["permit", "permit", permitSegment],
+    ...(reviewedScopeSegment === null ? [] : [["reviewedScope", "reviewedScope", reviewedScopeSegment] as const]),
   ];
   for (const [, name, segment] of segmentUnknowns) {
     for (const detail of segment.unknowns) {
@@ -814,6 +864,7 @@ export function compileVerificationPlan(input: VerificationPlanInput): Verificat
     items,
     unknowns,
     informational: input.informational ?? null,
+    ...(reviewedScope === undefined ? {} : { reviewed_scope: reviewedScope }),
     inputs_fingerprint: sha256OfCanonical({
       acceptance: input.acceptance,
       changeSurface: input.changeSurface,
@@ -821,6 +872,7 @@ export function compileVerificationPlan(input: VerificationPlanInput): Verificat
       toolBindings: input.toolBindings,
       permit: input.permit,
       informational: input.informational ?? null,
+      ...(input.reviewedScope === undefined ? {} : { reviewedScope: input.reviewedScope }),
     }),
   };
 }
