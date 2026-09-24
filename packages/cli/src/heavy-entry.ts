@@ -296,7 +296,10 @@ export const COMMAND_PANORAMA_LINES: readonly string[] = [
   "pomaster exec-guard --attempt <file|->",
   "pomaster maintain <change-or-task> --ops <tx>",
   "",
-  "# ⑤ VERIFY —— FAST gate / gate recipes 派发 / 证据入账",
+  "# ⑤ VERIFY —— 验证计划编译与执行 / 失败诊断 / 控件数据流审计 / 证据入账",
+  "pomaster plan compile --task <TASK.*>",
+  "pomaster plan run --task <TASK.*> --execution-id <AGX-n> [--diagnose-on-failure]",
+  "pomaster control-data-flow analyze [--report-only]",
   "pomaster check --fast/--gates",
   "pomaster record gate-run/claim",
   "",
@@ -355,8 +358,8 @@ export interface CapabilityEntry {
 }
 
 /**
- * 能力速览七条（PRD 09-06 Owner 裁定面位 C1：Grill 讨论/基线确认/任务收口/组件画廊/
- * doctor 自检/resolve 标准件选型/graph 对象图——每次 init 全量展示，不做 NO_CHANGE
+ * 能力速览八条（PRD 09-06 Owner 裁定面位 C1：Grill 讨论/基线确认/任务收口/组件画廊/
+ * doctor 自检/resolve 标准件选型/graph 对象图/验证计划执行——每次 init 全量展示，不做 NO_CHANGE
  * 精简；D-1/D-5 裁决 18 2026-09-08：原「判档」条随 triage 退役删除，Brainstorm 条
  * 即八拍① 单入口）。command 词形全部在 CLI 注册表在座（tests/capability-surfacing
  * 钉测）；浏览器/人读纪律零 ANSI 纯文本（§45）。
@@ -397,6 +400,11 @@ export const CAPABILITY_OVERVIEW: readonly CapabilityEntry[] = [
     scene: "看一个对象的依赖与影响面",
     command: "pomaster graph <governed-id>",
     detail: "--view impact 出影响闭包",
+  },
+  {
+    scene: "按验证计划执行真实工具并审计前端控件数据链",
+    command: "pomaster plan run",
+    detail: "执行 gate 并写入 GRN；CONTROL_DATA_FLOW 静态结论与运行时确认分层，非绿可自动进入失败诊断",
   },
 ];
 
@@ -578,16 +586,23 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
   {
     name: "pomaster-verify",
     description:
-      "POMaster 八拍⑤ VERIFY——确定性 gate 判卷与证据入账。当需要跑 FAST gate、派发 catalog gate recipes、把 gate 运行结果或 claim 以 GRN/CLM 收据入账时使用；工具缺席=显式 NOT_RUN 非绿非红。",
+      "POMaster 八拍⑤ VERIFY——验证计划编译与真实执行、失败诊断、控件数据流审计和证据入账。当需要按任务选择 gate、执行 catalog tool binding、审计前端控件数据链，或把结果以 GRN/CLM 收据入账时使用；工具缺席=显式 NOT_RUN 非绿非红。",
     bodyLines: [
       "# pomaster-verify —— 八拍⑤ VERIFY",
       "",
       "## 何时用",
       "",
-      "- 内循环自检（FAST gate，BUILD 腿，纯读）或全 gate recipes 派发。",
-      "- 把 gate 运行结果 / claim 显式落账 evidence 平面（GRN/CLM 收据）。",
+      "- 默认 N5 闭环：plan compile → plan run --diagnose-on-failure → 处理运行时确认候选 → replay-against-spec → closeout。",
+      "- `CONTROL_DATA_FLOW` 由受信静态 analyzer 产出；静态 unknown 与运行时确认候选必须分层呈现，禁止把候选冒充已验证。",
+      "- 内循环自检（FAST gate，BUILD 腿，纯读）或全 gate recipes 派发；把 gate 运行结果 / claim 显式落账 evidence 平面（GRN/CLM 收据）。",
       "",
-      ...commandBlock(["pomaster check --fast/--gates", "pomaster record gate-run/claim"]),
+      ...commandBlock([
+        "pomaster plan compile --task <TASK.*>",
+        "pomaster plan run --task <TASK.*> --execution-id <AGX-n> --diagnose-on-failure",
+        "pomaster control-data-flow analyze [--report-only]",
+        "pomaster check --fast/--gates",
+        "pomaster record gate-run/claim",
+      ]),
     ],
   },
   {

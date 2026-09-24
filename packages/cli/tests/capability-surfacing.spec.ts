@@ -109,12 +109,12 @@ function extractPomasterCommands(text: string): string[] {
 // ============================================================
 
 describe("C1 · init 能力速览段", () => {
-  it("人读横幅含「你现在可以做什么」段：7 条场景 → 命令/出口逐条在座（§45 零 ANSI 纯文本；D-1/D-5 裁决 18 判档条退役 8→7）", async () => {
+  it("人读横幅含「你现在可以做什么」段：8 条场景 → 命令/出口逐条在座（§45 零 ANSI 纯文本）", async () => {
     const outcome = await runInit(dir);
     expect(outcome.ok).toBe(true);
     const text = outcome.human.join("\n");
     expect(text).toContain("你现在可以做什么（能力速览——完整命令面见 pomaster --help）:");
-    expect(CAPABILITY_OVERVIEW).toHaveLength(7); // D-1/D-5 裁决 18：判档条退役，8→7
+    expect(CAPABILITY_OVERVIEW).toHaveLength(8);
     for (const entry of CAPABILITY_OVERVIEW) {
       expect(text).toContain(entry.scene);
       expect(text).toContain(entry.command === "" ? entry.detail : entry.command);
@@ -186,6 +186,20 @@ describe("C2 · AGENTS.md 能力地图节", () => {
     // Agent 视角转述指令在座；推销纪律同步钉住（Out of Scope：禁闲聊插广告）。
     expect(agents).toContain("主动把对应命令转述给用户");
     expect(agents).toContain("禁在无关对话里插广告");
+    expect(agents).toContain("`pomaster plan run`");
+  });
+
+  it("开发 agent 的 VERIFY skill 显式给出验证计划与控件数据流执行链", async () => {
+    await runInit(dir);
+    const verifySkill = readFileSync(
+      join(dir, ".agents", "skills", "pomaster-verify", "SKILL.md"),
+      "utf8",
+    );
+    expect(verifySkill).toContain("pomaster plan compile");
+    expect(verifySkill).toContain("pomaster plan run");
+    expect(verifySkill).toContain("pomaster control-data-flow analyze");
+    expect(verifySkill).toContain("replay-against-spec");
+    expect(verifySkill).toContain("closeout");
   });
 
   it("与「重入口安装物」节分工不重复：两节各自在座、能力地图在前（内容不互相吞并）", async () => {
@@ -222,7 +236,7 @@ describe("C2 · AGENTS.md 能力地图节", () => {
     const mapSection = agents.slice(mapIdx, installIdx);
     const registry = buildRegistryTree();
     const commands = extractPomasterCommands(mapSection);
-    expect(commands.length).toBeGreaterThanOrEqual(6); // 7 条中 6 条命令出口（画廊条目非命令；D-1/D-5 裁决 18 判档条退役）
+    expect(commands.length).toBeGreaterThanOrEqual(7); // 8 条中 7 条命令出口（画廊条目非命令）
     for (const command of commands) {
       expectCommandInRegistry(command, registry);
     }
