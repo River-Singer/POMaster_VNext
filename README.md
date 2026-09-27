@@ -66,8 +66,11 @@ gate 运行结果走 `record gate-run` 产 **GRN 回执**入 evidence 平面；c
 
 ### ⑤ 计划驱动验证 + 控件数据流审计
 
-- `pomaster plan run` 直接执行 Verification Plan 已解析的 ToolBinding：每个 REQUIRED obligation 独立运行、独立生成 GRN，并绑定 task、execution、binding、gate 与 gate definition；部分成功保留 append-only 证据，混合结果保持非绿。
+- `pomaster plan run` 直接执行 Verification Plan 已解析的 ToolBinding：每个 REQUIRED obligation 独立运行、独立生成 GRN，并绑定 task、execution、binding、gate 与 gate definition；所有前检阻塞和非绿 GRN 都进入 `pomaster.plan-diagnosis/v1`，原始 error code / 七态 verdict 保持不变。
 - `pomaster control-data-flow analyze` 对 **Vue SFC 与 React TSX** 做受限 AST 数据链审计，追踪 `control → event → handler → state/effect → readback → feedback`，输出逐段源码锚和 `proven / broken / unknown` 结论。
+- `control_data_flow` 自动展开 `CONTROL_DATA_FLOW` 与 `CONTROL_DATA_FLOW_RUNTIME`。runtime 腿在启动工具前校验声明式 probe manifest，只允许 `READ_ONLY` 或隔离 fixture 且带 cleanup 的 `INTERACTIVE_REVERSIBLE`；规范 trace 内容寻址后绑定独立 GRN。
+- `pomaster finalize status/run` 是可重入的一键闭环入口：自动推进机器验证；`status` 从当前 GRN cohort、runtime artifact、replay、claim、ACCEPT 与 Task 派生真实阶段；在独立 verification 或 Human ACCEPT 处返回机器可读 pending，补齐后重放同一命令，由既有 closeout 五闸决定唯一完成态。
+- replay 裁决必须经 `pomaster finalize replay-adjudicate` 由独立 reviewer AGX 签发为内容寻址 artifact；`finalize run --replay-receipt` 只接受该 `sha256:` 引用，并复核 task、review range、plan fingerprint 与 reviewer 身份。任意自写 JSON 不进入受信裁决面。
 - 动态下标、跨组件封装与无法解析的目标保持 `unknown`；零控件或畸形报告保持 `not_run`。普通 click/submit 不会被猜成业务保存义务，只有显式 `data-pomaster-cdf-effect="required"` 才要求受信 effect sink。
 - 静态结构闭合始终保留 `runtime_confirmation_required=true`：它不能替代浏览器、真实 API、服务端持久化、错误恢复和最终用户可见效果的运行时证据。
 
@@ -308,6 +311,9 @@ pomaster maintain <change-or-task> --ops <tx>
 # ⑤ VERIFY —— Verification Plan 编译 / FAST gate / gate recipes 派发 / 证据入账
 pomaster plan compile/run    # compile 纯读编译证据计划；run 用 --task TASK.* --execution-id AGX-* 同源重编译并按 resolved_bindings 串行执行全部 REQUIRED obligations，每项独立 GRN、task/execution 归因、append-only；仅全 passed 成功，可选 --diagnose-on-failure；不自动 claim/independent verification/closeout
 pomaster control-data-flow analyze [--report-only] # Vue SFC / React TSX 控件数据流静态审计：control→event→handler→state/effect→readback→feedback；动态/跨边界保持 unknown，静态 proven/passed 不代表真实 API、持久化或浏览器旅程成功
+pomaster finalize status TASK.* # 纯读派生当前 VERIFY/REPLAY/CLAIM/ACCEPT/CLOSEOUT 阶段
+pomaster finalize replay-adjudicate TASK.* --execution-id AGX-* --reviewed-by agent:name --review-range <range> --plan-fingerprint sha256:* --verdict allow-closeout # 独立复盘主体签发内容寻址回执
+pomaster finalize run TASK.* --verification-execution-id AGX-* --verifier agent:name --review-range <range> [--replay-receipt sha256:*] # 可重入收口；独立/人工边界显式 pending
 pomaster tools list/validate # ToolBinding 统一注册面六分态（W1-R1-4；SP 提案待追认）：.pomaster/tools/bindings.json 在座即唯一工具事实源（detect/registered/validated/available/selected/executed 分态不可跃迁、缺口逐条显式；--plan 回喂计划工件对账 selected；executed 唯一事实源=GRN 真实回执——工具发现≠调用授权；registry 缺席时 plan compile 回退 legacy 探测）
 pomaster check --fast/--gates
 pomaster record gate-run/claim/verification
