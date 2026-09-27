@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -8,6 +8,9 @@ import {
   runCli,
   runInit,
   runPlanRun,
+  runFinalize,
+  runFinalizeReplayAdjudicate,
+  runFinalizeStatus,
   runReconImportGraph,
   runScopeReviewAdopt,
 } from "@pomaster/cli";
@@ -77,6 +80,19 @@ function controlDataFlowBinding(): ToolBindingRecord {
   };
 }
 
+function controlDataFlowRuntimeBinding(): ToolBindingRecord {
+  return {
+    id: "project.ui.control-data-flow-runtime", source: "built_in", transport: "cli",
+    adapter_ref: "builtin.gauntlet-lite.control-data-flow-runtime",
+    tool: "gauntlet:control-data-flow-runtime", tool_version_anchor: "0.1.0",
+    gate: "CONTROL_DATA_FLOW_RUNTIME", gate_def: "POLICY.GATE.CONTROL_DATA_FLOW_RUNTIME@0.1.0",
+    metric_dialect: "ui:control_flow_runtime_trace", capabilities: ["control_data_flow"],
+    execution: { command: "node cdf-runtime-fake.mjs", cwd: ".", probe_manifest: "cdf-runtime-probe.json" },
+    report_contract: { format: "pomaster-control-data-flow-runtime-json", parser_ref: "builtin.gauntlet-lite.control-data-flow-runtime/json-v1", parser_version: "0.1.0" },
+    environment: { requires: false },
+  };
+}
+
 async function fixture(): Promise<string> {
   writeFileSync(join(root, "package.json"), JSON.stringify({
     name: "plan-runner-fixture",
@@ -91,6 +107,8 @@ async function fixture(): Promise<string> {
     "process.stdout.write(JSON.stringify([{filePath:'src/a.ts',messages:[],errorCount:0,warningCount:0,fatalErrorCount:0}]));",
   );
   writeFileSync(join(root, "cdf-fake.mjs"), `process.stdout.write(JSON.stringify({schema:'pomaster.control-data-flow/v1',source_root:'.',files_scanned:1,controls_scanned:1,controls:[{control_ref:'react:src/App.tsx:1:1:onClick',framework:'react',element:'button',event:'onClick',conclusion:'proven',stages:[],issues:[],runtime_confirmation_required:true}],parse_failures:[]}));`);
+  writeFileSync(join(root, "cdf-runtime-fake.mjs"), `process.stdout.write(JSON.stringify({schema:'pomaster.control-data-flow-runtime/v1',task_ref:'TASK.CDF.RUNNER',static_control_ref:'react:src/App.tsx:1:1:onClick',side_effect:'READ_ONLY',fixture:{isolated:false,ref:null},cleanup:{required:false,attempted:false,succeeded:false},observations:{control:true,request_or_storage:true,response_or_ack:true,readback:true,feedback:true,error_recovery:true},correlation_id:'trace-1'}));`);
+  writeFileSync(join(root, "cdf-runtime-probe.json"), JSON.stringify({ schema: "pomaster.control-data-flow-runtime-probe/v1", task_ref: "TASK.CDF.RUNNER", static_control_ref: "react:src/App.tsx:1:1:onClick", side_effect: "READ_ONLY", fixture: { isolated: false, ref: null }, cleanup_ref: null }));
   await runInit(root);
   mkdirSync(join(root, ".pomaster", "tools"), { recursive: true });
   writeFileSync(join(root, ".pomaster", "tools", "bindings.json"), JSON.stringify({
@@ -111,6 +129,7 @@ async function fixture(): Promise<string> {
         "node eslint-fake.mjs src --format json",
       ),
       controlDataFlowBinding(),
+      controlDataFlowRuntimeBinding(),
     ],
   }));
   const store = await createStore(root);
@@ -187,6 +206,35 @@ async function adoptCurrentRealityScope(executionId: string): Promise<{ readonly
 }
 
 describe("plan run", () => {
+  it("finalize 在工具启动前拒绝 verification execution/主体与 claim 断言侧重合", async () => {
+    const implementationExecutionId = await fixture();
+    const store = await createStore(root);
+    await applyTransaction(store, { ops: [{ op: "upsert_object", envelope: {
+      id: "TASK.STATIC.RUNNER", kind: "task_object", axisProfile: "task_default",
+      axes: { lifecycle: "CURRENT", confidence: "PROVISIONAL", evidence: "IMPLEMENTED", change: "STABLE" },
+      titleZh: "计划执行器测试", authority: { owner: "BOOTSTRAP_OWNER", delegates: [] }, origin: "natural",
+      payload: { intent: "执行静态分析双 obligation", class_scan_result: { scope: "src/**", hits: 0, fixed_count: 0, regression_case_ref: "GRN-PLAN" }, acceptance: [{ criterion: "类型与 lint 都须通过", claim: "CLM-0001", requires: ["static_analysis"] }] },
+    } as never }, { op: "record_claim", claim: {
+      clm: "CLM-0001",
+      subjectId: "TASK.STATIC.RUNNER" as never,
+      assertion: "实现侧断言",
+      assertedBy: { actorType: "agent", actor: "implementer", selfAttested: true },
+      evidenceRefs: [],
+      executionId: implementationExecutionId,
+    } }] });
+
+    const sameExecution = await runFinalize(root, { taskRef: "TASK.STATIC.RUNNER", executionId: implementationExecutionId, verifier: "agent:independent", reviewRange: "HEAD~1..HEAD", changed: ["src/a.ts"], faces });
+    expect(sameExecution.ok).toBe(false);
+    expect(sameExecution.errors[0]?.code).toBe("VERIFICATION_SUBJECT_NOT_INDEPENDENT");
+    expect(readdirSync(join(root, ".pomaster", "evidence", "runs")).filter((name) => /^GRN-/.test(name))).toHaveLength(0);
+
+    const independentExecution = await beginExecution(store, { role: "qa", runtime: "claude-code", identityKind: "interactive", taskId: "TASK.STATIC.RUNNER", startedAt: "2026-09-23T01:00:00.000Z" });
+    const sameActor = await runFinalize(root, { taskRef: "TASK.STATIC.RUNNER", executionId: independentExecution.execution_id, verifier: "agent:implementer", reviewRange: "HEAD~1..HEAD", changed: ["src/a.ts"], faces });
+    expect(sameActor.ok).toBe(false);
+    expect(sameActor.errors[0]?.code).toBe("VERIFICATION_SUBJECT_NOT_INDEPENDENT");
+    expect(readdirSync(join(root, ".pomaster", "evidence", "runs")).filter((name) => /^GRN-/.test(name))).toHaveLength(0);
+  });
+
   it("control_data_flow 经受信 binding 执行并以 CONTROL_DATA_FLOW GRN 入账", async () => {
     const executionId = await fixture();
     const store = await createStore(root);
@@ -198,10 +246,60 @@ describe("plan run", () => {
     } as never }] });
     const outcome = await runPlanRun(root, { taskRef: "TASK.CDF.RUNNER", executionId, changed: ["src/App.tsx"], faces });
     expect(outcome.ok).toBe(true);
-    expect(outcome.result).toMatchObject({ obligations_total: 1, recorded: 1, passed: 1 });
-    expect(outcome.result.rows[0]).toMatchObject({ capability: "control_data_flow", gate: "CONTROL_DATA_FLOW", verdict: "passed" });
+    expect(outcome.result).toMatchObject({ obligations_total: 2, recorded: 2, passed: 2 });
+    expect(outcome.result.rows.map((row) => row.gate)).toEqual(["CONTROL_DATA_FLOW", "CONTROL_DATA_FLOW_RUNTIME"]);
     const grn = JSON.parse(readFileSync(join(root, ".pomaster", "evidence", "runs", "GRN-0001.json"), "utf8"));
     expect(grn.gate_result.result.scope.note).toContain("静态 passed 仅表示");
+    const runtimeGrn = JSON.parse(readFileSync(join(root, ".pomaster", "evidence", "runs", "GRN-0002.json"), "utf8"));
+    expect(runtimeGrn.artifact_refs).toHaveLength(1);
+    expect(runtimeGrn.gate_result.result.scope.note).toContain("correlation_id=trace-1");
+
+    const pending = await runFinalize(root, { taskRef: "TASK.CDF.RUNNER", executionId, reviewRange: "HEAD~1..HEAD", changed: ["src/App.tsx"], faces });
+    expect(pending.ok).toBe(false);
+    expect(pending.result).toMatchObject({ stage: "AWAITING_REPLAY_REVIEW", completed: false });
+    expect(readdirSync(join(root, ".pomaster", "evidence", "runs")).filter((name) => /^GRN-/.test(name))).toHaveLength(2);
+
+    const replayReceipt = join(root, "replay-receipt.json");
+    writeFileSync(replayReceipt, JSON.stringify({
+      schema: "pomaster.replay-adjudication/v1",
+      task_ref: "TASK.CDF.RUNNER",
+      review_range: "HEAD~1..HEAD",
+      plan_fingerprint: pending.result.plan_fingerprint,
+      reviewed_by: "agent:independent-reviewer",
+      verdict: "allow-closeout",
+    }));
+    const staleReplay = await runFinalize(root, { taskRef: "TASK.CDF.RUNNER", executionId, reviewRange: "HEAD~1..HEAD", replayReceipt, changed: ["src/App.tsx"], faces });
+    expect(staleReplay.ok).toBe(false);
+    expect(staleReplay.result.stage).toBe("AWAITING_REPLAY_REVIEW");
+    expect(staleReplay.errors[0]?.code).toBe("REPLAY_RECEIPT_UNTRUSTED");
+
+    const sameCohortReviewer = await runFinalizeReplayAdjudicate(root, { taskRef: "TASK.CDF.RUNNER", executionId, reviewRange: "HEAD~1..HEAD", planFingerprint: pending.result.plan_fingerprint as string, reviewedBy: "agent:independent-reviewer", verdict: "block-closeout" });
+    expect(sameCohortReviewer.ok).toBe(false);
+    expect(sameCohortReviewer.errors[0]?.code).toBe("REPLAY_REVIEWER_NOT_INDEPENDENT");
+    const reviewerExecution = await beginExecution(store, { role: "qa", runtime: "claude-code", identityKind: "interactive", taskId: "TASK.CDF.RUNNER", startedAt: "2026-09-23T02:00:00.000Z" });
+    const blockedReceipt = await runFinalizeReplayAdjudicate(root, { taskRef: "TASK.CDF.RUNNER", executionId: reviewerExecution.execution_id, reviewRange: "HEAD~1..HEAD", planFingerprint: pending.result.plan_fingerprint as string, reviewedBy: "agent:independent-reviewer", verdict: "block-closeout" });
+    expect(blockedReceipt.ok).toBe(true);
+    expect(blockedReceipt.result.receipt_ref).toMatch(/^sha256:/);
+    const replayBlocked = await runFinalize(root, { taskRef: "TASK.CDF.RUNNER", executionId, reviewRange: "HEAD~1..HEAD", replayReceipt: blockedReceipt.result.receipt_ref as string, changed: ["src/App.tsx"], faces });
+    expect(replayBlocked.ok).toBe(false);
+    expect(replayBlocked.result.stage).toBe("REPLAY_BLOCKED");
+
+    const allowedReceipt = await runFinalizeReplayAdjudicate(root, { taskRef: "TASK.CDF.RUNNER", executionId: reviewerExecution.execution_id, reviewRange: "HEAD~1..HEAD", planFingerprint: pending.result.plan_fingerprint as string, reviewedBy: "agent:independent-reviewer", verdict: "allow-closeout" });
+    expect(allowedReceipt.ok).toBe(true);
+    const awaitingClaim = await runFinalize(root, { taskRef: "TASK.CDF.RUNNER", executionId, reviewRange: "HEAD~1..HEAD", replayReceipt: allowedReceipt.result.receipt_ref as string, changed: ["src/App.tsx"], faces });
+    expect(awaitingClaim.ok).toBe(false);
+    expect(awaitingClaim.result.stage).toBe("NEW_CLAIM_REQUIRED");
+    expect(readdirSync(join(root, ".pomaster", "evidence", "runs")).filter((name) => /^GRN-/.test(name))).toHaveLength(2);
+
+    const status = await runFinalizeStatus(root, { taskRef: "TASK.CDF.RUNNER" });
+    expect(status.ok).toBe(true);
+    expect(status.result).toMatchObject({ stage: "NEW_CLAIM_REQUIRED", plan_fingerprint: pending.result.plan_fingerprint });
+
+    const runtimeStoragePath = runtimeGrn.artifact_refs[0].blob.storage_path as string;
+    rmSync(join(root, ".pomaster", "evidence", ...runtimeStoragePath.split("/")));
+    const repairedBinding = await runPlanRun(root, { taskRef: "TASK.CDF.RUNNER", executionId, changed: ["src/App.tsx"], faces });
+    expect(repairedBinding.ok).toBe(true);
+    expect(repairedBinding.result.rows.map((row) => row.grn)).toEqual(["GRN-0001", "GRN-0003"]);
   });
 
   it("static_analysis 展开 TYPECHECK/LINT，串行执行并留下两个 task+execution 归因 GRN", async () => {
@@ -221,6 +319,21 @@ describe("plan run", () => {
       expect(doc.execution_id).toBe(executionId);
       expect(doc.gate_result.result.subject_id).toBe("TASK.STATIC.RUNNER");
     }
+
+    writeFileSync(join(root, "tsc-fake-v2.mjs"), "process.stdout.write('src/a.ts' + String.fromCharCode(10) + 'src/b.ts');");
+    const registryPath = join(root, ".pomaster", "tools", "bindings.json");
+    const registry = JSON.parse(readFileSync(registryPath, "utf8"));
+    registry.bindings[0].execution.command = "node tsc-fake-v2.mjs --project tsconfig.json --noEmit --listFiles --pretty false";
+    writeFileSync(registryPath, JSON.stringify(registry));
+    const bindingChanged = await runPlanRun(root, {
+      taskRef: "TASK.STATIC.RUNNER",
+      executionId,
+      changed: ["src/a.ts"],
+      faces,
+    });
+    expect(bindingChanged.ok).toBe(true);
+    expect(bindingChanged.result.inputs_fingerprint).toBe(outcome.result.inputs_fingerprint);
+    expect(bindingChanged.result.rows.map((row) => row.grn)).toEqual(["GRN-0003", "GRN-0002"]);
   });
 
   it("available 与 unavailable obligation 混合时全部入账，非绿使命令失败", async () => {
@@ -236,8 +349,28 @@ describe("plan run", () => {
       faces,
     });
     expect(outcome.ok).toBe(false);
+    expect(outcome.result.diagnostics).toEqual(expect.arrayContaining([expect.objectContaining({
+      contract: "pomaster.plan-diagnosis/v1",
+      original: expect.objectContaining({ verdict: "not_run", evidence_ref: expect.stringMatching(/^GRN-/) }),
+      condition: "blocked",
+    })]));
     expect(outcome.result).toMatchObject({ obligations_total: 2, recorded: 2, passed: 1, partial: false });
     expect(outcome.result.rows.map((row) => row.verdict)).toEqual(["passed", "not_run"]);
+
+    registry.bindings[1].environment = { requires: false };
+    writeFileSync(registryPath, JSON.stringify(registry));
+    const replay = await runPlanRun(root, {
+      taskRef: "TASK.STATIC.RUNNER",
+      executionId,
+      changed: ["src/a.ts"],
+      faces,
+    });
+    expect(replay.ok).toBe(true);
+    expect(replay.result.rows.map((row) => row.grn)).toEqual(["GRN-0003", "GRN-0004"]);
+    expect(readdirSync(join(root, ".pomaster", "evidence", "runs")).filter((name) => /^GRN-/.test(name))).toHaveLength(4);
+    const status = await runFinalizeStatus(root, { taskRef: "TASK.STATIC.RUNNER" });
+    expect(status.ok).toBe(true);
+    expect(status.result.stage).toBe("AWAITING_REPLAY_REVIEW");
   });
 
   it("畸形工具输出形成七态非绿 GRN，不会只留下 CLI 文本", async () => {
@@ -256,6 +389,16 @@ describe("plan run", () => {
       readFileSync(join(root, ".pomaster", "evidence", "runs", "GRN-0002.json"), "utf8"),
     );
     expect(nonGreen.gate_result.result.verdict).toBe("not_run");
+
+    writeFileSync(join(root, "eslint-fake.mjs"), "process.stdout.write(JSON.stringify([{filePath:'src/a.ts',messages:[],errorCount:0,warningCount:0,fatalErrorCount:0}]));");
+    const replay = await runPlanRun(root, {
+      taskRef: "TASK.STATIC.RUNNER",
+      executionId,
+      changed: ["src/a.ts"],
+      faces,
+    });
+    expect(replay.ok).toBe(true);
+    expect(replay.result.rows.map((row) => row.grn)).toEqual(["GRN-0001", "GRN-0003"]);
   });
 
   it("diagnose-on-failure 只诊断已入账 failed GRN", async () => {

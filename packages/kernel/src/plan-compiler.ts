@@ -119,7 +119,7 @@ export const PLAN_CAPABILITY_GATE_NAMES: Readonly<Record<PlanCapabilityWord, rea
   deployment_config_check: ["ARCHITECTURE"],
   visual_diff: ["BROWSER"],
   static_analysis: ["TYPECHECK", "LINT"],
-  control_data_flow: ["CONTROL_DATA_FLOW"],
+  control_data_flow: ["CONTROL_DATA_FLOW", "CONTROL_DATA_FLOW_RUNTIME"],
 };
 
 /** face kind → 派生能力（轴序固定词形；face 闭包是能力的唯一 face 来源）。 */
@@ -183,7 +183,7 @@ export const CAPABILITY_EVIDENCE_REQUIREMENT: Readonly<Record<PlanCapabilityWord
   static_analysis:
     "类型/静态分析工具真实执行回执（tsc --noEmit 文本诊断逐条重算 ∥ ESLint JSON finding 逐条重算；编译转译成功不当 typecheck，空根 tsconfig 零分母禁默认 PASS）",
   control_data_flow:
-    "控件数据流结构链审计回执（control→event→handler/action→state/transform→effect→readback→rendered feedback；动态/不可解析边保持 unknown，静态 passed 不代表运行时用户旅程成功）",
+    "控件数据流双证据回执（静态 control→event→handler/action→state/transform→effect→readback→rendered feedback + 独立 runtime trace artifact；动态边保持 unknown，静态 passed 不代表运行时用户旅程成功）",
 };
 
 // ============================================================

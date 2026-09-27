@@ -110,6 +110,11 @@ import {
   CONTROL_DATA_FLOW_GATE_NAME,
   createControlDataFlowAdapter,
 } from "./control-data-flow-adapter.js";
+import {
+  CONTROL_DATA_FLOW_RUNTIME_GATE_DEF,
+  CONTROL_DATA_FLOW_RUNTIME_GATE_NAME,
+  createControlDataFlowRuntimeAdapter,
+} from "./control-data-flow-runtime-adapter.js";
 import { CATALOG_GATE_RECIPES } from "./gate-recipe-runner.js";
 import {
   createLighthouseAdapter,
@@ -288,6 +293,7 @@ export { runPerformanceGateLegs };
 
 /** CONTROL_DATA_FLOW 静态结构链 adapter 单例；动态事实仍须 BROWSER/SMOKE/BUSINESS 补证。 */
 export const controlDataFlowAdapter = createControlDataFlowAdapter();
+export const controlDataFlowRuntimeAdapter = createControlDataFlowRuntimeAdapter();
 
 /**
  * adapter registry（G5 谱系扩展落地：BUILD 双腿 + CONTRACT / ARCHITECTURE / BROWSER /
@@ -302,6 +308,7 @@ export const gateAdapters = {
   browser: browserAdapter,
   playwright: playwrightAdapter,
   controlDataFlow: controlDataFlowAdapter,
+  controlDataFlowRuntime: controlDataFlowRuntimeAdapter,
 } as const;
 
 /** doctor 工具探测 registry（oasdiff / import-linter / dependency-cruiser / c8 / pytest-cov / mutmut / StrykerJS / gitleaks / pip-audit / semgrep / @playwright/test / lighthouse / web-vitals / schemathesis / chrome-devtools MCP）。 */
@@ -349,5 +356,21 @@ export const CURRENT_GATE_DEFS: Readonly<Record<string, string>> = Object.freeze
   [TYPECHECK_GATE_NAME]: TYPECHECK_GATE_DEF,
   [LINT_GATE_NAME]: LINT_GATE_DEF,
   [CONTROL_DATA_FLOW_GATE_NAME]: CONTROL_DATA_FLOW_GATE_DEF,
+  [CONTROL_DATA_FLOW_RUNTIME_GATE_NAME]: CONTROL_DATA_FLOW_RUNTIME_GATE_DEF,
   ...Object.fromEntries(CATALOG_GATE_RECIPES.map((recipe) => [recipe.id, recipe.gateDef])),
 });
+
+export {
+  CONTROL_DATA_FLOW_RUNTIME_ADAPTER_REF,
+  CONTROL_DATA_FLOW_RUNTIME_FORMAT,
+  CONTROL_DATA_FLOW_RUNTIME_GATE_DEF,
+  CONTROL_DATA_FLOW_RUNTIME_GATE_NAME,
+  CONTROL_DATA_FLOW_RUNTIME_METRIC_DIALECT,
+  CONTROL_DATA_FLOW_RUNTIME_PARSER_REF,
+  CONTROL_DATA_FLOW_RUNTIME_TOOL_ID,
+  CONTROL_DATA_FLOW_RUNTIME_TOOL_VERSION,
+  createControlDataFlowRuntimeAdapter,
+  parseControlDataFlowRuntimeReport,
+  assertSafeRuntimeProbeManifest,
+} from "./control-data-flow-runtime-adapter.js";
+export type { ControlDataFlowRuntimeReport, ControlDataFlowRuntimeProbeManifest } from "./control-data-flow-runtime-adapter.js";

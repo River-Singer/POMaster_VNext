@@ -30,6 +30,7 @@
  * 已锁（vocab-lock presentation_axes.tool_detection_status），本模块零扩值。
  */
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { isAbsolute, join as pathJoin, resolve } from "node:path";
 import { performance } from "node:perf_hooks";
 import type {
@@ -75,6 +76,17 @@ import {
   CONTROL_DATA_FLOW_TOOL_ID,
   createControlDataFlowAdapter,
 } from "./control-data-flow-adapter.js";
+import {
+  CONTROL_DATA_FLOW_RUNTIME_ADAPTER_REF,
+  CONTROL_DATA_FLOW_RUNTIME_FORMAT,
+  CONTROL_DATA_FLOW_RUNTIME_METRIC_DIALECT,
+  CONTROL_DATA_FLOW_RUNTIME_PARSER_REF,
+  CONTROL_DATA_FLOW_RUNTIME_TOOL_ID,
+  assertSafeRuntimeProbeManifest,
+  parseControlDataFlowRuntimeReport,
+  type ControlDataFlowRuntimeProbeManifest,
+  createControlDataFlowRuntimeAdapter,
+} from "./control-data-flow-runtime-adapter.js";
 
 // ============================================================
 // 绑定记录面（schema 23 的 TS 运行时镜像；形状纪律见模块头注）
@@ -89,6 +101,7 @@ export interface ToolBindingExecution {
   readonly env_allowlist?: readonly string[];
   readonly output_roots?: readonly string[];
   readonly executable?: string;
+  readonly probe_manifest?: string;
 }
 
 /** 报告合同（validated 判定式对照面）。 */
@@ -243,6 +256,20 @@ const CONTROL_DATA_FLOW_DECL: TrustedBindingAdapterDecl = {
     : null,
 };
 
+const CONTROL_DATA_FLOW_RUNTIME_DECL: TrustedBindingAdapterDecl = {
+  ref: CONTROL_DATA_FLOW_RUNTIME_ADAPTER_REF,
+  adapterKey: "control_data_flow_runtime",
+  createAdapter: () => createControlDataFlowRuntimeAdapter(),
+  capabilities: ["control_data_flow"],
+  accepted_formats: [CONTROL_DATA_FLOW_RUNTIME_FORMAT],
+  accepted_parser_refs: [CONTROL_DATA_FLOW_RUNTIME_PARSER_REF],
+  accepted_metric_dialects: [CONTROL_DATA_FLOW_RUNTIME_METRIC_DIALECT],
+  accepted_tool_ids: [CONTROL_DATA_FLOW_RUNTIME_TOOL_ID],
+  detectorFor: (toolId) => toolId === CONTROL_DATA_FLOW_RUNTIME_TOOL_ID
+    ? (facts) => createControlDataFlowRuntimeAdapter().detect(facts)
+    : null,
+};
+
 /**
  * 受信 adapter 注册表（adapter_ref → 声明）。增长通道 = 发行包代码 + schema 23
  * adapter_ref 枚举同批修订（SP-W1-e；禁绑定侧自造 ref）。W3-S2 起含 TS 族双
@@ -253,6 +280,7 @@ export const TRUSTED_BINDING_ADAPTERS: Readonly<Record<string, TrustedBindingAda
   [TYPECHECK_DECL.ref]: TYPECHECK_DECL,
   [LINT_DECL.ref]: LINT_DECL,
   [CONTROL_DATA_FLOW_DECL.ref]: CONTROL_DATA_FLOW_DECL,
+  [CONTROL_DATA_FLOW_RUNTIME_DECL.ref]: CONTROL_DATA_FLOW_RUNTIME_DECL,
 };
 
 /** adapter_ref 解析（未知 ref → null——调用方 fail-closed，禁静默当可执行）。 */
@@ -393,6 +421,8 @@ export interface BindingGateOutcome {
   readonly plan: GatePlan;
   /** 归一记录（含 scope.note 绑定留痕；GRN 入账归编排层 record gate-run 通路）。 */
   readonly record: GateResultRecord;
+  /** 受信 adapter 已完成领域语义校验的原始报告；编排层内容寻址后绑定 GRN。 */
+  readonly artifact?: { readonly bytes: Uint8Array; readonly media: string };
 }
 
 /** 绑定执行合同解析（command ∥ argv；两缺席 = schema anyOf 违例的热路径防线）。 */
@@ -483,7 +513,23 @@ export function runBindingGate(
     binding.execution.env_allowlist.length > 0
       ? allowlistSpawn(binding.execution.env_allowlist)
       : deps.spawnFn;
+  let runtimeManifest: ControlDataFlowRuntimeProbeManifest | null = null;
+  if (decl.ref === CONTROL_DATA_FLOW_RUNTIME_ADAPTER_REF) {
+    const manifest = binding.execution.probe_manifest;
+    if (manifest === undefined || manifest.trim().length === 0) throw new GateAdapterError("runner_not_ready", "runtime CDF binding 缺 probe_manifest，工具未启动", "登记 READ_ONLY 或隔离 fixture+cleanup 的 runtime probe manifest");
+    const manifestPath = isAbsolute(manifest) ? manifest : pathJoin(resolve(context.projectRoot), manifest);
+    let rawManifest: string;
+    try { rawManifest = readFileSync(manifestPath, "utf8"); }
+    catch (error) { throw new GateAdapterError("runner_not_ready", `runtime CDF probe manifest 不可读：${String(error)}`, "修复 execution.probe_manifest 后重试；工具尚未启动"); }
+    runtimeManifest = assertSafeRuntimeProbeManifest(rawManifest, context.subjectId ?? null);
+  }
   const raw = adapter.run(plan, spawnFn);
+  if (runtimeManifest !== null && raw.kind === "executed") {
+    const report = parseControlDataFlowRuntimeReport(raw.stdout);
+    if (report !== null && (report.static_control_ref !== runtimeManifest.static_control_ref || report.side_effect !== runtimeManifest.side_effect || report.fixture.isolated !== runtimeManifest.fixture.isolated || report.fixture.ref !== runtimeManifest.fixture.ref)) {
+      throw new GateAdapterError("runner_not_ready", "runtime report 与启动前 probe manifest 身份/副作用边界漂移", "修复 adapter 输出；漂移 trace 不入账");
+    }
+  }
   // Q3 双向耦合：subjectId 前缀 TEST.* ⇔ isFixture=true（browser-legs.ts:155 同款镜像——
   // 违者 assertCommonGates FATAL，与既有腿同一判卷纪律）。
   const record = adapter.normalize(raw, {
@@ -497,5 +543,12 @@ export function runBindingGate(
     scopeNote:
       record.scopeNote === undefined ? annotation : `${record.scopeNote}；${annotation}`,
   };
-  return { binding_id: binding.id, plan, record: stamped };
+  return {
+    binding_id: binding.id,
+    plan,
+    record: stamped,
+    ...(decl.ref === CONTROL_DATA_FLOW_RUNTIME_ADAPTER_REF && stamped.verdict !== "not_run"
+      ? { artifact: { bytes: Buffer.from(raw.stdout, "utf8"), media: "control_data_flow_runtime_trace" } }
+      : {}),
+  };
 }

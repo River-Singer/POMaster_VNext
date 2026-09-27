@@ -12,7 +12,10 @@ import {
   assertExecutionAttachable,
   buildStorePaths,
   createStore,
+  persistEvidenceArtifact,
   readExecutionRecordById,
+  sha256OfCanonical,
+  verifyEvidenceBinding,
   type VerificationPlanResolvedBinding,
 } from "@pomaster/kernel";
 import {
@@ -23,6 +26,8 @@ import {
   type GateResultRecord,
   type ToolBindingRecord,
 } from "@pomaster/gauntlet-lite";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import type { CliError, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
 import { allocateEvidenceRef } from "./evidence.js";
@@ -49,6 +54,17 @@ export interface PlanRunRow {
   readonly diagnosis: DiagnoseResult | null;
 }
 
+export interface PlanDiagnosisEnvelope {
+  readonly contract: "pomaster.plan-diagnosis/v1";
+  readonly trigger: { readonly phase: "execution_preflight" | "plan_compile" | "binding_preflight" | "gate_execution" | "gate_recording"; readonly kind: "cli_error" | "gate_result" | "runner_error" };
+  readonly original: { readonly error_code: string | null; readonly verdict: string | null; readonly evidence_ref: string | null; readonly binding_id: string | null; readonly gate: string | null };
+  readonly condition: "failure" | "blocked" | "inconclusive";
+  readonly diagnosis: DiagnoseResult | null;
+  readonly diagnosis_error: CliError | null;
+  readonly retry: { readonly retryable: boolean; readonly after: string | null };
+  readonly next_actions: readonly string[];
+}
+
 export interface PlanRunResult {
   readonly task_ref: string;
   readonly execution_id: string;
@@ -58,6 +74,7 @@ export interface PlanRunResult {
   readonly passed: number;
   readonly partial: boolean;
   readonly rows: readonly PlanRunRow[];
+  readonly diagnostics: readonly PlanDiagnosisEnvelope[];
 }
 
 function empty(input: PlanRunInput): PlanRunResult {
@@ -70,6 +87,7 @@ function empty(input: PlanRunInput): PlanRunResult {
     passed: 0,
     partial: false,
     rows: [],
+    diagnostics: [],
   };
 }
 
@@ -77,10 +95,37 @@ function fail(
   input: PlanRunInput,
   result: PlanRunResult,
   error: CliError,
+  trigger?: PlanDiagnosisEnvelope["trigger"],
 ): CommandOutcome<PlanRunResult> {
-  return failOutcome("plan run", result, [error], [
+  const phase = trigger?.phase ?? (error.code.startsWith("REALITY_SCOPE_") ? "plan_compile"
+    : error.code.startsWith("EXECUTION_") || error.code === "SCHEMA_INVALID" ? "execution_preflight"
+      : error.code.startsWith("PLAN_BINDING_") ? "binding_preflight" : "plan_compile");
+  const diagnostic = diagnosisForError(error, phase, trigger?.kind ?? "cli_error");
+  return failOutcome("plan run", { ...result, diagnostics: [...result.diagnostics, diagnostic] }, [error], [
     `plan run: FAILED — ${error.code}\n  hint: ${error.hint}`,
   ]);
+}
+
+function diagnosisForError(
+  error: CliError,
+  phase: PlanDiagnosisEnvelope["trigger"]["phase"],
+  kind: PlanDiagnosisEnvelope["trigger"]["kind"] = "cli_error",
+): PlanDiagnosisEnvelope {
+  const retryable = ["REALITY_SCOPE_STALE", "REALITY_SCOPE_UNJUDGEABLE", "PLAN_RUN_RECORD_FAILED", "ENVIRONMENT_ERROR"].includes(error.code);
+  return {
+    contract: "pomaster.plan-diagnosis/v1",
+    trigger: { phase, kind },
+    original: { error_code: error.code, verdict: null, evidence_ref: null, binding_id: null, gate: null },
+    condition: "blocked", diagnosis: null, diagnosis_error: null,
+    retry: { retryable, after: retryable ? error.hint : null },
+    next_actions: [error.hint],
+  };
+}
+
+function conditionOf(verdict: string): PlanDiagnosisEnvelope["condition"] {
+  if (verdict === "failed") return "failure";
+  if (["blocked", "not_run", "not_configured"].includes(verdict)) return "blocked";
+  return "inconclusive";
 }
 
 function bindingMatchesProjection(
@@ -93,6 +138,10 @@ function bindingMatchesProjection(
     binding.gate === projection.gate &&
     binding.gate_def === projection.gate_def
   );
+}
+
+function bindingFingerprint(binding: ToolBindingRecord): string {
+  return sha256OfCanonical(binding);
 }
 
 function stampedAbsence(
@@ -120,6 +169,34 @@ function stampedAbsence(
     0,
     0,
   );
+}
+
+function findRecordedObligation(rootDir: string, executionId: string, taskRef: string, acceptanceRef: string, binding: ToolBindingRecord, fingerprint: string): { grn: string; verdict: "passed" } | null {
+  try {
+    const dir = runsDirPath(rootDir);
+    const markers = [
+      `acceptance_ref=${acceptanceRef}`,
+      `inputs_fingerprint=${fingerprint}`,
+      `${BINDING_ANNOTATION_PREFIX}${binding.id}`,
+      `binding_fingerprint=${bindingFingerprint(binding)}`,
+    ];
+    for (const file of readdirSync(dir).filter((name) => /^GRN-[0-9]+\.json$/.test(name)).sort().reverse()) {
+      const row = JSON.parse(readFileSync(join(dir, file), "utf8")) as Record<string, unknown>;
+      if (row["execution_id"] !== executionId) continue;
+      const result = ((row["gate_result"] as Record<string, unknown> | undefined)?.["result"] as Record<string, unknown> | undefined);
+      const scope = result?.["scope"] as Record<string, unknown> | undefined;
+      const note = scope?.["note"];
+      const noteFields = typeof note === "string" ? note.split("；") : [];
+      if (result?.["subject_id"] !== taskRef || !markers.every((marker) => noteFields.includes(marker)) || result["verdict"] !== "passed") continue;
+      if (binding.gate === "CONTROL_DATA_FLOW_RUNTIME") {
+        const paths = buildStorePaths(rootDir);
+        const bindingOutcome = verifyEvidenceBinding({ runRecordPath: join(dir, file), evidenceDir: paths.evidenceDir });
+        if (!bindingOutcome.bound) continue;
+      }
+      return { grn: file.slice(0, -5), verdict: "passed" };
+    }
+  } catch { /* absence means execute normally */ }
+  return null;
 }
 
 /** Serial plan execution; stops dispatch after the first fatal execution/recording error. */
@@ -229,20 +306,27 @@ export async function runPlanRun(
   for (const obligation of obligations) {
     const projection = obligation.binding;
     const binding = bindingById.get(projection.binding_id) as ToolBindingRecord;
+    const previous = findRecordedObligation(rootDir, input.executionId, input.taskRef, obligation.item.acceptance_ref, binding, compiled.result.inputs_fingerprint);
+    if (previous !== null) {
+      rows.push({ acceptance_ref: obligation.item.acceptance_ref, capability: obligation.item.capability, binding_id: binding.id, gate: binding.gate, grn: previous.grn, verdict: previous.verdict, diagnosis: null });
+      continue;
+    }
     const grn = allocateEvidenceRef(runsDirPath(rootDir), "GRN");
     const store = await createStore(rootDir);
     const ranAtSeq = store.currentSeq ?? 0;
     let record: GateResultRecord;
+    let artifactRefs: ReturnType<typeof persistEvidenceArtifact>[] | undefined;
     try {
       const state = stateById.get(binding.id);
-      record = state?.available === true && state.selected === true
+      const executed = state?.available === true && state.selected === true
         ? runBindingGate(binding, {
             projectRoot: rootDir,
             grn,
             ranAtSeq,
             subjectId: input.taskRef,
-          }).record
-        : stampedAbsence(
+          })
+        : null;
+      record = executed?.record ?? stampedAbsence(
             binding,
             grn,
             ranAtSeq,
@@ -250,6 +334,9 @@ export async function runPlanRun(
             "not_run",
             `binding unavailable：${state?.gaps.join("；") ?? "六分态缺席"}`,
           );
+      artifactRefs = executed?.artifact === undefined
+        ? undefined
+        : [persistEvidenceArtifact(buildStorePaths(rootDir).evidenceDir, executed.artifact)];
     } catch (error) {
       if (error instanceof GateAdapterError) {
         record = stampedAbsence(binding, grn, ranAtSeq, input.taskRef, "not_run", error.message);
@@ -265,16 +352,18 @@ export async function runPlanRun(
       }
     }
 
+    record = { ...record, scopeNote: `acceptance_ref=${obligation.item.acceptance_ref}；inputs_fingerprint=${compiled.result.inputs_fingerprint}；binding_fingerprint=${bindingFingerprint(binding)}；${record.scopeNote ?? ""}` };
     if (record.gate !== binding.gate || record.gateDef !== binding.gate_def) {
       return fail(input, { ...result, recorded: rows.length, partial: rows.length > 0, rows }, {
         code: "PLAN_BINDING_DRIFT",
         message: `adapter 结果身份漂移：binding=${binding.id} expected=${binding.gate}/${binding.gate_def} actual=${record.gate}/${record.gateDef}`,
         hint: "修复 trusted adapter 与 ToolBinding 的 gate/gate_def 合同；漂移结果不会入账。",
-      });
+      }, { phase: "gate_execution", kind: "runner_error" });
     }
 
     const recorded = await runRecordGateRunValue(rootDir, {
       record,
+      ...(artifactRefs !== undefined ? { artifactRefs } : {}),
       grn,
       trigger: "on_demand",
       executionId: input.executionId,
@@ -285,11 +374,12 @@ export async function runPlanRun(
         code: "PLAN_RUN_RECORD_FAILED",
         message: `binding ${binding.id} 的 GRN 入账失败`,
         hint: "已入账 GRN 保持 append-only；修复 store/执行身份后重跑。",
-      });
+      }, { phase: "gate_recording", kind: "runner_error" });
     }
 
     let diagnosis: DiagnoseResult | null = null;
-    if (input.diagnoseOnFailure === true && recorded.result.verdict === "failed") {
+    let diagnosisError: CliError | null = null;
+    if (recorded.result.verdict === "failed") {
       const diagnosed = await runDiagnose(rootDir, {
         report: `Verification Plan obligation failed: ${obligation.item.acceptance_ref}/${obligation.item.capability}/${binding.gate}`,
         symptom: null,
@@ -297,6 +387,7 @@ export async function runPlanRun(
         evidence: [recorded.result.grn],
       });
       if (diagnosed.ok) diagnosis = diagnosed.result;
+      else diagnosisError = diagnosed.errors[0] ?? null;
     }
     rows.push({
       acceptance_ref: obligation.item.acceptance_ref,
@@ -307,6 +398,16 @@ export async function runPlanRun(
       verdict: recorded.result.verdict,
       diagnosis,
     });
+    if (recorded.result.verdict !== "passed") {
+      result = { ...result, diagnostics: [...result.diagnostics, {
+        contract: "pomaster.plan-diagnosis/v1",
+        trigger: { phase: "gate_execution", kind: "gate_result" },
+        original: { error_code: null, verdict: recorded.result.verdict, evidence_ref: recorded.result.grn, binding_id: binding.id, gate: binding.gate },
+        condition: conditionOf(recorded.result.verdict), diagnosis, diagnosis_error: diagnosisError,
+        retry: { retryable: ["blocked", "not_run", "not_configured"].includes(recorded.result.verdict), after: record.scopeNote ?? null },
+        next_actions: [record.scopeNote ?? "检查 GRN 证据并修复对应前置条件"],
+      }] };
+    }
   }
 
   const passed = rows.filter((row) => row.verdict === "passed").length;

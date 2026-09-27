@@ -22,6 +22,7 @@ import {
   compileVerificationPlan,
   PLAN_APPLICABILITY_VALUES,
   PLAN_CAPABILITY_WORDS,
+  PLAN_CAPABILITY_GATE_NAMES,
   PLAN_CHANGE_FACE_KINDS,
   type PlanAcceptanceItem,
   type PlanChangeFace,
@@ -324,6 +325,7 @@ describe("词形闭包（SP 提案词形；TODO(vocab-pr)）", () => {
     expect(PLAN_CAPABILITY_WORDS).toHaveLength(14);
     expect(PLAN_CAPABILITY_WORDS).toContain("static_analysis");
     expect(PLAN_CAPABILITY_WORDS).toContain("control_data_flow");
+    expect(PLAN_CAPABILITY_GATE_NAMES.control_data_flow).toEqual(["CONTROL_DATA_FLOW", "CONTROL_DATA_FLOW_RUNTIME"]);
   });
 
   it("NOT_APPLICABLE 复用 baseline 既有词形（baselineGrounding 同源）", () => {

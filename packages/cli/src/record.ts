@@ -44,10 +44,12 @@ import {
   type VerificationMethodValue,
   GovernanceError,
   applyTransaction,
+  artifactRefsToSnake,
   createStore,
   gateResultToSnake,
   loadTruthIndex,
   qualifyEvidenceBatch,
+  type EvidenceArtifactRefInput,
 } from "@pomaster/kernel";
 import { CLM_FILE_PATTERN, GRN_FILE_PATTERN } from "./evidence.js";
 import { ADJUDICATED_VERIFICATION_VERDICTS, EVIDENCE_MALFORMED_CODE } from "./evidence.js";
@@ -112,6 +114,7 @@ export interface RecordGateRunInput {
 
 export interface RecordGateRunValueInput extends Omit<RecordGateRunInput, "from"> {
   readonly record: GateResult;
+  readonly artifactRefs?: readonly EvidenceArtifactRefInput[];
 }
 
 export interface RecordGateRunResult {
@@ -527,11 +530,18 @@ export async function runRecordGateRunValue(
   rootDir: string,
   input: RecordGateRunValueInput,
 ): Promise<CommandOutcome<RecordGateRunResult>> {
-  const { record, ...options } = input;
+  const { record, artifactRefs, ...options } = input;
   return recordGateRunFromSource(
     rootDir,
     { ...options, from: "<memory:gate-result>" },
-    () => ({ bytes: JSON.stringify(gateResultToSnake(record)) }),
+    () => ({
+      bytes: JSON.stringify({
+        gate_result: { mode: "inline", result: gateResultToSnake(record) },
+        ...(artifactRefs !== undefined && artifactRefs.length > 0
+          ? { artifact_refs: artifactRefsToSnake(artifactRefs) }
+          : {}),
+      }),
+    }),
   );
 }
 

@@ -287,6 +287,7 @@ import { runTestWeakeningAudit } from "./test-weakening.js";
 import { runCompact } from "./compact.js";
 import { runRecordClaim, runRecordGateRun, runRecordVerification } from "./record.js";
 import { runCloseout } from "./closeout.js";
+import { runFinalize, runFinalizeReplayAdjudicate, runFinalizeStatus } from "./finalize.js";
 import { runCatalogStatus, runCatalogExplain, runCatalogRelock } from "./catalog.js";
 import { runResolve } from "./resolve.js";
 import { runGraph } from "./graph.js";
@@ -1012,6 +1013,8 @@ export type {
 } from "./steering.js";
 export { runPlanCompile } from "./plan.js";
 export { runPlanRun } from "./plan-runner.js";
+export { runFinalize, runFinalizeReplayAdjudicate, runFinalizeStatus } from "./finalize.js";
+export type { FinalizeReplayAdjudicateInput, FinalizeReplayAdjudicateResult, FinalizeResult, FinalizeRunInput, FinalizeStatusInput, FinalizeStage } from "./finalize.js";
 export { analyzeControlDataFlow } from "@pomaster/gauntlet-lite";
 export type { PlanRunInput, PlanRunResult, PlanRunRow } from "./plan-runner.js";
 export type {
@@ -2179,6 +2182,64 @@ export function createProgram(
         outcome,
         asJson: command.opts().json === true,
       });
+    });
+
+  const finalize = program
+    .command("finalize")
+    .description("可重入任务收口编排：自动推进机器验证，在 replay、独立 verification 与 Human ACCEPT 信任边界返回 pending；不伪造完成");
+  finalize
+    .command("status")
+    .argument("<task-id>", "TASK.*")
+    .option("--json", "machine-readable JSON output")
+    .action(async (taskId: string, _opts, command) => {
+      record({ command: "finalize status", outcome: await runFinalizeStatus(resolveDir(command), { taskRef: taskId }), asJson: command.optsWithGlobals().json === true });
+    });
+  finalize
+    .command("replay-adjudicate")
+    .description("由独立复盘主体签发内容寻址 replay 裁决；finalize run 只接受本入口返回的 sha256 artifact ref")
+    .argument("<task-id>", "TASK.*")
+    .requiredOption("--execution-id <agx-id>", "独立 replay reviewer 的已登记 AGX")
+    .requiredOption("--reviewed-by <actor>", "独立复盘主体 <agent|human|tool|kernel:name>")
+    .requiredOption("--review-range <git-range>", "本轮复核范围锚")
+    .requiredOption("--plan-fingerprint <sha256>", "finalize run/status 返回的当前 plan fingerprint")
+    .requiredOption("--verdict <verdict>", "allow-closeout | block-closeout")
+    .option("--note <text>", "复盘裁决注记")
+    .option("--json", "machine-readable JSON output")
+    .action(async (taskId: string, opts, command) => {
+      const verdict = opts.verdict as string;
+      if (verdict !== "allow-closeout" && verdict !== "block-closeout") command.error("--verdict 须为 allow-closeout 或 block-closeout");
+      record({ command: "finalize replay-adjudicate", outcome: await runFinalizeReplayAdjudicate(resolveDir(command), {
+        taskRef: taskId,
+        executionId: opts.executionId as string,
+        reviewedBy: opts.reviewedBy as string,
+        reviewRange: opts.reviewRange as string,
+        planFingerprint: opts.planFingerprint as string,
+        verdict: verdict as "allow-closeout" | "block-closeout",
+        note: opts.note as string | undefined,
+      }), asJson: command.optsWithGlobals().json === true });
+    });
+  finalize
+    .command("run")
+    .argument("<task-id>", "TASK.*")
+    .requiredOption("--verification-execution-id <agx-id>", "独立 verifier 的已登记 AGX")
+    .requiredOption("--review-range <git-range>", "本轮复核范围锚")
+    .option("--verifier <actor>", "verification 主体 <agent|human|tool|kernel:name>；存在 claim 时必填并须与 asserted_by 分离")
+    .option("--replay-receipt <sha256>", "finalize replay-adjudicate 签发的内容寻址 receipt ref")
+    .option("--changed <path>", "变更面直接对象（可重复）", collectValues)
+    .option("--consumer <ref>", "受影响消费者（可重复）", collectValues)
+    .option("--face <spec>", "变更面声明 kind=present|absent:<依据>（可重复）", collectValues)
+    .option("--json", "machine-readable JSON output")
+    .action(async (taskId: string, opts, command) => {
+      record({ command: "finalize run", outcome: await runFinalize(resolveDir(command), {
+        taskRef: taskId,
+        executionId: opts.verificationExecutionId as string,
+        reviewRange: opts.reviewRange as string,
+        verifier: opts.verifier as string | undefined,
+        replayReceipt: opts.replayReceipt as string | undefined,
+        changed: opts.changed as string[] | undefined,
+        consumers: opts.consumer as string[] | undefined,
+        faces: opts.face as string[] | undefined,
+      }), asJson: command.optsWithGlobals().json === true });
     });
 
   // —— Engineering Catalog 命令面（§44.10；P14 Catalog→运行时联结的查看面） ——
