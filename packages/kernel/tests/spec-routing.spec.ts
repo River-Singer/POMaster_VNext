@@ -34,6 +34,7 @@ import {
   routeSpecs,
 } from "@pomaster/kernel";
 import { makeStore } from "./helpers.js";
+import { routingFixtureEntries, sha } from "./spec-routing-fixtures.js";
 
 const REPO_CATALOG = resolveCatalogRoot();
 
@@ -284,93 +285,10 @@ describe("loadSpecRoutingManifest fail-closed（坏物料显式爆，禁静默�
 // 2) 路由核（W4.2 选择与解释：确定性纯函数）
 // ============================================================
 
-/** sha256 词形 fixture 简写（tag 中非 hex 字符剥除——sha256 词形要求 64 hex）。 */
-function sha(tag: string): string {
-  return `sha256:${tag.replace(/[^0-9a-f]/g, "").padEnd(64, "0").slice(0, 64)}`;
-}
-
 /**
- * AG Grid overlay 演示分母（12 条；MASTer 特例只以 fixture 存在，不进 universal seed）。
- * 布局：2 always 基线 + verify-only 验收 + 6 frontend implement 协议（grid/form/
- * data-model/api/testing/mock）+ 1 backend stack 协议 + 1 退役条目 + 1 无关条目。
+ * 从装载面构造 manifest（复用词形校验，防 fixture 本身坏形；走磁盘装载——与
+ * pureManifest 对象直构互补，fixture 词形回归由本出口钉住）。
  */
-function routingFixtureEntries(): Record<string, unknown>[] {
-  const p = (n: string): string => `.trellis/spec/frontend/${n}`;
-  return [
-    { semantic_id: "PROTOCOL.FRONTEND.DEV_CHECKLIST", path: p("01-development-checklist-protocol.md"), always: true, source_sha256: sha("01") },
-    { semantic_id: "PROTOCOL.FRONTEND.AI_CODE", path: p("02-ai-generated-code-protocol.md"), always: true, source_sha256: sha("02") },
-    { semantic_id: "PROTOCOL.FRONTEND.ACCEPTANCE_GATE", path: p("03-acceptance-gate-protocol.md"), stage: ["verify"], source_sha256: sha("03") },
-    {
-      semantic_id: "PROTOCOL.FRONTEND.DATA_GRID",
-      path: p("30-data-grid-protocol.md"),
-      stage: ["implement"],
-      triggers: ["data-grid", "ag-grid", "editable-grid"],
-      stack: ["vue", "ag-grid"],
-      source_sha256: sha("30"),
-    },
-    {
-      semantic_id: "PROTOCOL.FRONTEND.FORM",
-      path: p("28-form-protocol.md"),
-      stage: ["implement"],
-      triggers: ["form", "editable-grid", "edit-save"],
-      stack: ["vue"],
-      source_sha256: sha("28"),
-    },
-    {
-      semantic_id: "PROTOCOL.FRONTEND.DATA_MODEL",
-      path: p("14-data-model-protocol.md"),
-      stage: ["implement"],
-      triggers: ["data-model", "field", "edit-save"],
-      source_sha256: sha("14"),
-    },
-    {
-      semantic_id: "PROTOCOL.FRONTEND.REQUEST_API",
-      path: p("15-request-api-protocol.md"),
-      stage: ["implement"],
-      triggers: ["api", "save", "put"],
-      requires: ["PROTOCOL.FRONTEND.DATA_MODEL"],
-      source_sha256: sha("15"),
-    },
-    {
-      semantic_id: "PROTOCOL.FRONTEND.TESTING",
-      path: p("20-testing-protocol.md"),
-      stage: ["implement", "verify"],
-      triggers: ["test", "vitest"],
-      source_sha256: sha("20"),
-    },
-    {
-      semantic_id: "PROTOCOL.FRONTEND.MOCK",
-      path: p("35-mock-protocol.md"),
-      stage: ["implement"],
-      triggers: ["mock", "edit-save"],
-      requires: ["PROTOCOL.FRONTEND.TESTING"],
-      source_sha256: sha("35"),
-    },
-    {
-      semantic_id: "PROTOCOL.BACKEND.REQUEST_API",
-      path: ".trellis/spec/backend/request-api-protocol.md",
-      stage: ["implement"],
-      triggers: ["api", "save"],
-      stack: ["fastapi"],
-      source_sha256: sha("be15"),
-    },
-    {
-      semantic_id: "PROTOCOL.FRONTEND.OLD_GRID",
-      path: p("30-data-grid-protocol.v1.md"),
-      superseded_by: "PROTOCOL.FRONTEND.DATA_GRID",
-      source_sha256: sha("30v1"),
-    },
-    {
-      semantic_id: "PROTOCOL.FRONTEND.THEME",
-      path: p("22-theme-protocol.md"),
-      stage: ["implement"],
-      triggers: ["theme", "dark-mode"],
-      source_sha256: sha("22"),
-    },
-  ];
-}
-
-/** 从装载面构造 manifest（复用词形校验，防 fixture 本身坏形）。 */
 function fixtureManifest(entries: Record<string, unknown>[] = routingFixtureEntries()) {
   const { manifest } = loadWithEntries(entries);
   if (manifest === null || manifest instanceof Error) throw new Error("fixture 坏形");
