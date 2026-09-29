@@ -60,7 +60,7 @@ export type SpecRoutingStageValue = (typeof SPEC_ROUTING_STAGE_VALUES)[number];
 export const PROTOCOL_ID_PATTERN = /^PROTOCOL\.[A-Z0-9_]+(\.[A-Z0-9_]+)+$/;
 
 /** trigger/stack token 词形（词级精确匹配的载体：非空、无空白、小写起始；vue3/ag-grid 合法）。 */
-const ROUTING_TOKEN_PATTERN = /^[a-z0-9][a-z0-9+.\-_]*$/;
+export const ROUTING_TOKEN_PATTERN = /^[a-z0-9][a-z0-9+.\-_]*$/;
 
 /** source_sha256 词形（sha256:<64hex>；sha256OfUtf8 同词形）。 */
 const SHA256_PATTERN = /^sha256:[0-9a-f]{64}$/;
@@ -343,4 +343,208 @@ function parseEntry(raw: unknown, index: number): SpecRoutingEntry {
     source_sha256: sourceSha256,
     note: noteRaw,
   };
+}
+
+// ============================================================
+// 确定性路由核（W4.2 选择与解释；同输入重放字节稳定——A4）
+// ============================================================
+
+/** 路由请求侧输入（全部可缺席；缺席语义逐轴显式——禁假绿）。 */
+export interface SpecRoutingInput {
+  /** 任务阶段（∈ SPEC_ROUTING_STAGE_VALUES；null=未提供——stage 过滤闸不参与）。 */
+  readonly stage: SpecRoutingStageValue | null;
+  /** 任务触发词（词级精确 token；与条目 triggers 精确交集命中，禁子串/等价猜测）。 */
+  readonly triggers: readonly string[];
+  /**
+   * 任务技术栈声明（null=未声明——**not_configured 轴**：声明了 stack 的协议一律排除，
+   * 未配置 ≠ 默认匹配，禁假绿红线；声明了则按交集判定）。
+   */
+  readonly stack: readonly string[] | null;
+  /** 显式 reference（semantic_id 精确点名——绕过 stage/stack 闸；supersession 闸仍然优先）。 */
+  readonly specRefs: readonly string[];
+}
+
+/** 命中通道词形闭包（决策 channels 面）。 */
+export const SPEC_ROUTING_CHANNEL_VALUES = [
+  "explicit",
+  "always",
+  "stage",
+  "trigger",
+] as const;
+export type SpecRoutingChannelValue = (typeof SPEC_ROUTING_CHANNEL_VALUES)[number];
+
+/** 单份协议的路由决策（included=why selected；excluded=why not——全分母逐条可解释）。 */
+export interface SpecRoutingDecision {
+  readonly semantic_id: string;
+  /** 内容导航路径（呈现位；机器关系以 semantic_id 承载——W3 stable-reference 预留）。 */
+  readonly path: string;
+  /** 来源指纹（编译时登记的声明指纹，呈现不自算）。 */
+  readonly source_sha256: string;
+  readonly included: boolean;
+  /** 命中通道（included 时非空；explicit/always/stage/trigger——多通道命中全列）。 */
+  readonly channels: readonly SpecRoutingChannelValue[];
+  /** 人读理由（included=选中理由；excluded=排除理由，缺席/未命中显式）。 */
+  readonly why: string;
+}
+
+/**
+ * 确定性路由核（纯函数；同输入重放 decisions 字节稳定）。
+ *
+ * 判定序（每份协议，优先级从高到低）：
+ * 1) **supersession 闸**：superseded_by 非 null → 排除，理由携带取代者（显式元数据
+ *    声明——禁 mtime/文件名推断；优先于显式 reference：退役即退役，点名只换来解释）；
+ * 2) **候选通道并集**：always 基线 ∪ trigger 词级精确交集 ∪ 显式 reference；三者全不中
+ *    → 排除（无命中通道，理由列出 trigger 未命中与 stage 不匹配提示）；
+ * 3) **stage 过滤闸**（explicit 通道豁免——人类点名优先）：条目声明 stage 且任务提供
+ *    stage 且不含 → 排除；任务未提供 stage → 闸不参与（stage 轴缺席=不过滤）；
+ * 4) **stack 过滤闸**（explicit 豁免同上）：条目声明 stack 时任务必须已声明 stack 且
+ *    相交——未声明 → not_configured 排除（未配置 ≠ 默认匹配）；无交集 → 排除；
+ * 5) **requires 依赖迭代剔除**：候选的依赖不在候选集 → 剔除（级联收敛——传递缺依赖
+ *    全链剔除；缺依赖不静默当匹配）；
+ * 6) **conflicts 登记序去重**：互斥对都在候选集 → 保留 manifest 登记序在先者
+ *    （确定性：登记序即文件 entries 数组序）。
+ *
+ * 输出 = 全分母决策按 semantic_id 字典序（同输入同输出的可复现性；included 子集
+ * 即注入集，消费方以 decisions.filter(included) 取用）。
+ */
+export function routeSpecs(
+  manifest: SpecRoutingManifest,
+  input: SpecRoutingInput,
+): readonly SpecRoutingDecision[] {
+  const explicitSet = new Set(input.specRefs);
+
+  // —— 1..4：supersession 闸 → 通道并集 → stage/stack 过滤闸（中间候选集） ——
+  const gateNotes = new Map<string, string>();
+  const candidates = new Set<string>();
+  const channelsById = new Map<string, SpecRoutingChannelValue[]>();
+  for (const entry of manifest.entries) {
+    const id = entry.semantic_id;
+    if (entry.superseded_by !== null) {
+      gateNotes.set(
+        id,
+        `superseded：显式元数据声明被 ${entry.superseded_by} 取代（退役即退役——禁 mtime/文件名推断；显式 reference 点名也不注入本体，请改引用取代者）`,
+      );
+      continue;
+    }
+    const channels: SpecRoutingChannelValue[] = [];
+    const whyParts: string[] = [];
+    if (explicitSet.has(id)) {
+      channels.push("explicit");
+      whyParts.push("explicit reference 点名（绕过 stage/stack 闸）");
+    }
+    if (entry.always) {
+      channels.push("always");
+      whyParts.push("always 基线（无条件注入）");
+    }
+    const triggerHits =
+      input.triggers.length === 0
+        ? []
+        : entry.triggers.filter((trigger) => input.triggers.includes(trigger));
+    if (triggerHits.length > 0) {
+      channels.push("trigger");
+      whyParts.push(`trigger 词级命中=${triggerHits.join("/")}`);
+    }
+    const stageHit = input.stage !== null && entry.stage.includes(input.stage);
+    if (stageHit && channels.length === 0) {
+      // stage 命中只在其他通道在场时作为过滤闸的通过注记——stage 不是独立命中通道
+      //（「按 stage 过滤」语义：它过滤候选，不制造候选；无 always/trigger/explicit
+      // 命中的条目不因阶段相符而注入——否则接近全量加载，违背精准选择目标）。
+      whyParts.push(`stage=${input.stage} 相符（但无 always/trigger/explicit 命中通道）`);
+    } else if (!stageHit && input.stage !== null && entry.stage.length > 0) {
+      whyParts.push(
+        `stage=[${entry.stage.join("/")}] 不含任务 stage=${input.stage}`,
+      );
+    }
+    if (channels.length === 0) {
+      gateNotes.set(
+        id,
+        `无命中通道（${whyParts.length > 0 ? whyParts.join("；") : "非 always、无显式 reference、triggers 未声明"}）`,
+      );
+      continue;
+    }
+    // —— stage 过滤闸（explicit 豁免） ——
+    if (
+      !channels.includes("explicit") &&
+      input.stage !== null &&
+      entry.stage.length > 0 &&
+      !entry.stage.includes(input.stage)
+    ) {
+      gateNotes.set(
+        id,
+        `stage 过滤：[${entry.stage.join("/")}] 不含任务 stage=${input.stage}（${whyParts.join("；")}）`,
+      );
+      continue;
+    }
+    // —— stack 过滤闸（explicit 豁免；not_configured 不假绿） ——
+    if (!channels.includes("explicit") && entry.stack.length > 0) {
+      if (input.stack === null) {
+        gateNotes.set(
+          id,
+          `stack=[${entry.stack.join("/")}] 声明而任务未声明 stack（not_configured——未配置 ≠ 默认匹配，禁假绿）`,
+        );
+        continue;
+      }
+      const stackHits = entry.stack.filter((stack) => input.stack?.includes(stack) === true);
+      if (stackHits.length === 0) {
+        gateNotes.set(
+          id,
+          `stack=[${entry.stack.join("/")}] 与任务 stack=[${input.stack.join("/")}] 无交集`,
+        );
+        continue;
+      }
+      whyParts.push(`stack 命中=${stackHits.join("/")}`);
+    }
+    candidates.add(id);
+    channelsById.set(id, channels);
+    gateNotes.set(id, `${whyParts.join("；")}`);
+  }
+
+  // —— 5：requires 依赖迭代剔除（级联收敛；缺依赖不静默当匹配） ——
+  let stable = false;
+  while (!stable) {
+    stable = true;
+    for (const entry of manifest.entries) {
+      if (!candidates.has(entry.semantic_id)) continue;
+      const missing = entry.requires.filter((dep) => !candidates.has(dep));
+      if (missing.length > 0) {
+        candidates.delete(entry.semantic_id);
+        gateNotes.set(
+          entry.semantic_id,
+          `缺依赖：requires=[${missing.join("/")}] 未随选（缺依赖不静默当匹配——依赖未入选则本条目一并剔除）`,
+        );
+        stable = false; // 剔除可能级联（依赖本条目的上游也要重查）
+      }
+    }
+  }
+
+  // —— 6：conflicts 登记序去重（登记序 = manifest entries 数组序，确定性） ——
+  for (const entry of manifest.entries) {
+    if (!candidates.has(entry.semantic_id)) continue;
+    for (const rival of entry.conflicts) {
+      if (rival === entry.semantic_id) continue;
+      if (candidates.has(rival)) {
+        candidates.delete(rival);
+        gateNotes.set(
+          rival,
+          `conflicts 去重：与 ${entry.semantic_id} 互斥（overlay conflicts——manifest 登记序在先者保留）`,
+        );
+      }
+    }
+  }
+
+  // —— 全分母决策输出（semantic_id 字典序；included 理由带来源身份/指纹呈现位） ——
+  const decisions: SpecRoutingDecision[] = manifest.entries
+    .map((entry) => {
+      const included = candidates.has(entry.semantic_id);
+      return {
+        semantic_id: entry.semantic_id,
+        path: entry.path,
+        source_sha256: entry.source_sha256,
+        included,
+        channels: included ? (channelsById.get(entry.semantic_id) ?? []) : [],
+        why: gateNotes.get(entry.semantic_id) ?? (included ? "命中" : "未入选"),
+      };
+    })
+    .sort((a, b) => (a.semantic_id < b.semantic_id ? -1 : a.semantic_id > b.semantic_id ? 1 : 0));
+  return decisions;
 }

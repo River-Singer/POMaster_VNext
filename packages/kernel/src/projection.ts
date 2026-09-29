@@ -61,6 +61,13 @@ import {
   type CatalogPolicyMaterial,
 } from "./catalog.js";
 import {
+  loadSpecRoutingManifest,
+  routeSpecs,
+  PROTOCOL_ID_PATTERN,
+  SPEC_ROUTING_STAGE_VALUES,
+  ROUTING_TOKEN_PATTERN,
+} from "./spec-routing.js";
+import {
   readKnowledgeLibrary,
   searchKnowledge,
 } from "./knowledge.js";
@@ -427,6 +434,91 @@ function validateApplicabilityInputs(request: ProjectionRequest): void {
       { changeClass: request.changeClass },
     );
   }
+  // —— W4 协议路由输入 fail-closed 校验（词形非法显式爆，禁静默当未提供——静默 =
+  //    判定输入被吞，路由面假绿；与 capabilities/changeClass 同款纪律）。 ——
+  if (
+    request.stage !== undefined &&
+    !SPEC_ROUTING_STAGE_VALUES.includes(request.stage as never)
+  ) {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      `ProjectionRequest.stage 词表外: ${request.stage}`,
+      `stage 须 ∈ SPEC_ROUTING_STAGE_VALUES（${SPEC_ROUTING_STAGE_VALUES.join("/")}）；扩值走词汇表 PR。`,
+      { stage: request.stage },
+    );
+  }
+  const routingTokensOf = (key: "triggers" | "stack"): readonly string[] =>
+    (key === "triggers" ? request.triggers : request.stack) ?? [];
+  for (const key of ["triggers", "stack"] as const) {
+    for (const token of routingTokensOf(key)) {
+      if (typeof token !== "string" || !ROUTING_TOKEN_PATTERN.test(token)) {
+        throw new GovernanceError(
+          "SCHEMA_INVALID",
+          `ProjectionRequest.${key} 词形非法: ${String(token)}（词级精确 token——非空、无空白、小写起始）`,
+          "词级精确 token 纪律：与协议条目 triggers/stack 精确交集判定，禁子串/等价猜测；词形非法显式爆禁静默。",
+          { [key]: token },
+        );
+      }
+    }
+  }
+  for (const specRef of request.specRefs ?? []) {
+    if (typeof specRef !== "string" || !PROTOCOL_ID_PATTERN.test(specRef)) {
+      throw new GovernanceError(
+        "SCHEMA_INVALID",
+        `ProjectionRequest.specRefs 词形非法: ${String(specRef)}（须 PROTOCOL.* 点族——semantic_id 词形）`,
+        "specRefs 是显式 reference 点名（机器关系以 semantic_id 承载——W3 stable-reference 预留）；词形非法显式爆。",
+        { specRef },
+      );
+    }
+  }
+}
+
+/**
+ * W4 协议路由消费（FR-02 Spec Catalog 路由；AC-09/10）：catalog 根 spec-routing.json
+ * （协议目录单一真值——spec-routing.ts 模块头注定稿）按任务输入确定性路由，included
+ * 子集以 catalogEntries 条目呈现（REUSE / CATALOG 策展分区——§92.2 同款边界：绝不进
+ * mustEntries 判卷输入，不因路由结果改变 Permit 或降低 REQUIRED 义务）。
+ *
+ * 语义边界：
+ * - manifest 缺席 → 零条目（opt-in 空路由——未登记协议目录是合法状态，禁猜测）；
+ * - 路由判定核 = routeSpecs（确定性纯函数；supersession 闸 → always/trigger/explicit
+ *   通道并集 → stage/stack 过滤闸 → requires 迭代剔除 → conflicts 登记序去重——
+ *   逐轴缺席语义与 not_configured 禁假绿见该函数头注）；
+ * - context 编译实际正文引用：按选择结果引用 path（不全量注入 77 份正文——reason 只
+ *   携导航路径与来源指纹，不复制正文）；
+ * - W3 stable-reference 预留：reason 携 semantic_id= 机器关系承载 + 「path 仅内容
+ *   导航」注记——机器消费以 ref（=semantic_id）为键，path 永不进机器关系；
+ * - 决策解释面：included 理由在本函数 reason；全分母（含 excluded）解释经 routeSpecs
+ *   返回值直接可查（不混入 CatalogEntryDecision policy/presets 分母——隔离纪律）；
+ * - 指纹绑定：included 条目 reason 进 manifest → inputsFingerprint——spec-routing.json
+ *   演进（条目增删/字段改）必然 stale（与 catalog policies 同款 freshness 通路）。
+ */
+function specRoutingEntries(
+  request: ProjectionRequest,
+  catalogRoot: string,
+): readonly ProjectionEntry[] {
+  const manifest = loadSpecRoutingManifest(catalogRoot);
+  if (manifest === null) return [];
+  const routingStage =
+    request.stage !== undefined && SPEC_ROUTING_STAGE_VALUES.includes(request.stage as never)
+      ? (request.stage as (typeof SPEC_ROUTING_STAGE_VALUES)[number])
+      : null;
+  const decisions = routeSpecs(manifest, {
+    stage: routingStage,
+    triggers: request.triggers ?? [],
+    stack: request.stack ?? null,
+    specRefs: request.specRefs ?? [],
+  });
+  return decisions
+    .filter((decision) => decision.included)
+    .map((decision) => ({
+      ref: decision.semantic_id,
+      reason:
+        `spec-routing: ${decision.path}（semantic_id=${decision.semantic_id}；` +
+        `命中通道=${decision.channels.join("/")}；source_sha256=${decision.source_sha256}）——` +
+        `${decision.why}；path 仅内容导航不复制正文，机器关系以 semantic_id 承载` +
+        `（W3 stable-reference 预留）——策展面非判卷输入（§92.2）`,
+    }));
 }
 
 /**
@@ -528,6 +620,8 @@ function consumeCatalog(
       fallback_lane: false,
     });
   }
+  // —— W4 协议路由消费（FR-02；AC-09/10；specRoutingEntries 契约注记见函数头）——
+  catalogEntries.push(...specRoutingEntries(request, catalogRoot));
   catalogEntries.sort((a, b) => (a.ref < b.ref ? -1 : a.ref > b.ref ? 1 : 0));
   decisions.sort((a, b) => (a.ref < b.ref ? -1 : a.ref > b.ref ? 1 : 0));
 

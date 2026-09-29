@@ -280,11 +280,15 @@ describe("context compile applicability 输入（P0.5-1）", () => {
       capabilities: ["CAPABILITY.PRESENTATION"],
       changeClass: "PRESENTATION_CHANGE",
     });
-    // 输入回显（机读面 snake_case；缺席显式）。
+    // 输入回显（机读面 snake_case；缺席显式。W4 协议路由四键缺省 null/空——缺席显式）。
     expect(outcome.result.applicability).toEqual({
       change: "CHANGE.C0042",
       capabilities: ["CAPABILITY.PRESENTATION"],
       change_class: "PRESENTATION_CHANGE",
+      stage: null,
+      triggers: [],
+      stack: [],
+      spec_refs: [],
     });
   });
 

@@ -27,9 +27,13 @@ import {
   SPEC_ROUTING_MANIFEST_FILE,
   SPEC_ROUTING_SCHEMA,
   SPEC_ROUTING_STAGE_VALUES,
+  compileProjection,
+  explainCatalogProjection,
   loadSpecRoutingManifest,
+  resolveCatalogRoot,
+  routeSpecs,
 } from "@pomaster/kernel";
-import { resolveCatalogRoot } from "@pomaster/kernel";
+import { makeStore } from "./helpers.js";
 
 const REPO_CATALOG = resolveCatalogRoot();
 
@@ -273,5 +277,427 @@ describe("loadSpecRoutingManifest fail-closed（坏物料显式爆，禁静默�
     expectEntryInvalid([validEntry({ requires: [self] })], "自引用");
     expectEntryInvalid([validEntry({ conflicts: [self] })], "自引用");
     expectEntryInvalid([validEntry({ superseded_by: self })], "自引用");
+  });
+});
+
+// ============================================================
+// 2) 路由核（W4.2 选择与解释：确定性纯函数）
+// ============================================================
+
+/** sha256 词形 fixture 简写（tag 中非 hex 字符剥除——sha256 词形要求 64 hex）。 */
+function sha(tag: string): string {
+  return `sha256:${tag.replace(/[^0-9a-f]/g, "").padEnd(64, "0").slice(0, 64)}`;
+}
+
+/**
+ * AG Grid overlay 演示分母（12 条；MASTer 特例只以 fixture 存在，不进 universal seed）。
+ * 布局：2 always 基线 + verify-only 验收 + 6 frontend implement 协议（grid/form/
+ * data-model/api/testing/mock）+ 1 backend stack 协议 + 1 退役条目 + 1 无关条目。
+ */
+function routingFixtureEntries(): Record<string, unknown>[] {
+  const p = (n: string): string => `.trellis/spec/frontend/${n}`;
+  return [
+    { semantic_id: "PROTOCOL.FRONTEND.DEV_CHECKLIST", path: p("01-development-checklist-protocol.md"), always: true, source_sha256: sha("01") },
+    { semantic_id: "PROTOCOL.FRONTEND.AI_CODE", path: p("02-ai-generated-code-protocol.md"), always: true, source_sha256: sha("02") },
+    { semantic_id: "PROTOCOL.FRONTEND.ACCEPTANCE_GATE", path: p("03-acceptance-gate-protocol.md"), stage: ["verify"], source_sha256: sha("03") },
+    {
+      semantic_id: "PROTOCOL.FRONTEND.DATA_GRID",
+      path: p("30-data-grid-protocol.md"),
+      stage: ["implement"],
+      triggers: ["data-grid", "ag-grid", "editable-grid"],
+      stack: ["vue", "ag-grid"],
+      source_sha256: sha("30"),
+    },
+    {
+      semantic_id: "PROTOCOL.FRONTEND.FORM",
+      path: p("28-form-protocol.md"),
+      stage: ["implement"],
+      triggers: ["form", "editable-grid", "edit-save"],
+      stack: ["vue"],
+      source_sha256: sha("28"),
+    },
+    {
+      semantic_id: "PROTOCOL.FRONTEND.DATA_MODEL",
+      path: p("14-data-model-protocol.md"),
+      stage: ["implement"],
+      triggers: ["data-model", "field", "edit-save"],
+      source_sha256: sha("14"),
+    },
+    {
+      semantic_id: "PROTOCOL.FRONTEND.REQUEST_API",
+      path: p("15-request-api-protocol.md"),
+      stage: ["implement"],
+      triggers: ["api", "save", "put"],
+      requires: ["PROTOCOL.FRONTEND.DATA_MODEL"],
+      source_sha256: sha("15"),
+    },
+    {
+      semantic_id: "PROTOCOL.FRONTEND.TESTING",
+      path: p("20-testing-protocol.md"),
+      stage: ["implement", "verify"],
+      triggers: ["test", "vitest"],
+      source_sha256: sha("20"),
+    },
+    {
+      semantic_id: "PROTOCOL.FRONTEND.MOCK",
+      path: p("35-mock-protocol.md"),
+      stage: ["implement"],
+      triggers: ["mock", "edit-save"],
+      requires: ["PROTOCOL.FRONTEND.TESTING"],
+      source_sha256: sha("35"),
+    },
+    {
+      semantic_id: "PROTOCOL.BACKEND.REQUEST_API",
+      path: ".trellis/spec/backend/request-api-protocol.md",
+      stage: ["implement"],
+      triggers: ["api", "save"],
+      stack: ["fastapi"],
+      source_sha256: sha("be15"),
+    },
+    {
+      semantic_id: "PROTOCOL.FRONTEND.OLD_GRID",
+      path: p("30-data-grid-protocol.v1.md"),
+      superseded_by: "PROTOCOL.FRONTEND.DATA_GRID",
+      source_sha256: sha("30v1"),
+    },
+    {
+      semantic_id: "PROTOCOL.FRONTEND.THEME",
+      path: p("22-theme-protocol.md"),
+      stage: ["implement"],
+      triggers: ["theme", "dark-mode"],
+      source_sha256: sha("22"),
+    },
+  ];
+}
+
+/** 从装载面构造 manifest（复用词形校验，防 fixture 本身坏形）。 */
+function fixtureManifest(entries: Record<string, unknown>[] = routingFixtureEntries()) {
+  const { manifest } = loadWithEntries(entries);
+  if (manifest === null || manifest instanceof Error) throw new Error("fixture 坏形");
+  return manifest;
+}
+
+function includedIds(decisions: readonly { semantic_id: string; included: boolean }[]): string[] {
+  return decisions.filter((d) => d.included).map((d) => d.semantic_id);
+}
+
+describe("routeSpecs（W4.2 确定性路由核：通道/闸/依赖/冲突）", () => {
+  const GRID = "PROTOCOL.FRONTEND.DATA_GRID";
+  const FORM = "PROTOCOL.FRONTEND.FORM";
+  const TESTING = "PROTOCOL.FRONTEND.TESTING";
+  const MOCK = "PROTOCOL.FRONTEND.MOCK";
+  const BE_API = "PROTOCOL.BACKEND.REQUEST_API";
+  const OLD = "PROTOCOL.FRONTEND.OLD_GRID";
+  const GATE = "PROTOCOL.FRONTEND.ACCEPTANCE_GATE";
+
+  it("always 基线：空输入恒命中（channels=[always]）；无通道条目显式排除", () => {
+    const decisions = routeSpecs(fixtureManifest(), {
+      stage: null,
+      triggers: [],
+      stack: null,
+      specRefs: [],
+    });
+    expect(includedIds(decisions)).toEqual([
+      "PROTOCOL.FRONTEND.AI_CODE",
+      "PROTOCOL.FRONTEND.DEV_CHECKLIST",
+    ]);
+    const theme = decisions.find((d) => d.semantic_id === "PROTOCOL.FRONTEND.THEME")!;
+    expect(theme.included).toBe(false);
+    expect(theme.why).toContain("无命中通道");
+  });
+
+  it("trigger 词级精确交集命中；禁子串猜测（grid ≠ data-grid）", () => {
+    const decisions = routeSpecs(fixtureManifest(), {
+      stage: null,
+      triggers: ["data-grid"],
+      stack: ["vue", "ag-grid"],
+      specRefs: [],
+    });
+    const grid = decisions.find((d) => d.semantic_id === GRID)!;
+    expect(grid.included).toBe(true);
+    expect(grid.channels).toContain("trigger");
+    expect(grid.why).toContain("data-grid");
+    const substring = routeSpecs(fixtureManifest(), {
+      stage: null,
+      triggers: ["grid"],
+      stack: ["vue", "ag-grid"],
+      specRefs: [],
+    });
+    expect(includedIds(substring)).not.toContain(GRID);
+  });
+
+  it("stage 过滤闸：任务 stage=verify 时 implement-only 协议出、跨阶段协议留", () => {
+    const decisions = routeSpecs(fixtureManifest(), {
+      stage: "verify",
+      triggers: ["test"],
+      stack: null,
+      specRefs: [],
+    });
+    expect(includedIds(decisions)).toContain(TESTING);
+    const grid = decisions.find((d) => d.semantic_id === GRID)!;
+    expect(grid.included).toBe(false);
+    expect(grid.why).toContain("stage");
+  });
+
+  it("任务未提供 stage → stage 闸不参与（trigger 命中的声明 stage 协议仍可入选）", () => {
+    const decisions = routeSpecs(fixtureManifest(), {
+      stage: null,
+      triggers: ["data-grid"],
+      stack: ["vue", "ag-grid"],
+      specRefs: [],
+    });
+    expect(includedIds(decisions)).toContain(GRID);
+  });
+
+  it("stack not_configured 不假绿：任务未声明 stack → 声明 stack 的协议显式排除", () => {
+    const decisions = routeSpecs(fixtureManifest(), {
+      stage: null,
+      triggers: ["data-grid"],
+      stack: null,
+      specRefs: [],
+    });
+    const grid = decisions.find((d) => d.semantic_id === GRID)!;
+    expect(grid.included).toBe(false);
+    expect(grid.why).toContain("not_configured");
+    expect(includedIds(decisions)).not.toContain(FORM);
+  });
+
+  it("stack 无交集：backend stack 任务不误选 frontend 协议（反向同理）", () => {
+    const backend = routeSpecs(fixtureManifest(), {
+      stage: "implement",
+      triggers: ["save", "data-grid"],
+      stack: ["fastapi"],
+      specRefs: [],
+    });
+    expect(includedIds(backend)).toContain(BE_API);
+    expect(includedIds(backend)).not.toContain(GRID);
+    const gridWhy = backend.find((d) => d.semantic_id === GRID)!.why;
+    expect(gridWhy).toContain("无交集");
+  });
+
+  it("缺依赖不静默当匹配：MOCK trigger 命中但依赖 TESTING 未随选 → MOCK 剔除且理由显式", () => {
+    const decisions = routeSpecs(fixtureManifest(), {
+      stage: null,
+      triggers: ["edit-save"],
+      stack: ["vue"],
+      specRefs: [],
+    });
+    const mock = decisions.find((d) => d.semantic_id === MOCK)!;
+    expect(mock.included).toBe(false);
+    expect(mock.why).toContain("PROTOCOL.FRONTEND.TESTING");
+    expect(mock.why).toContain("依赖");
+  });
+
+  it("传递依赖迭代剔除：A 无通道 → 依赖 A 的 B 剔除 → 依赖 B 的 C 随之剔除", () => {
+    const manifest = fixtureManifest([
+      { semantic_id: "PROTOCOL.X.A", path: "a.md", source_sha256: sha("a") },
+      { semantic_id: "PROTOCOL.X.B", path: "b.md", triggers: ["b-go"], requires: ["PROTOCOL.X.A"], source_sha256: sha("b") },
+      { semantic_id: "PROTOCOL.X.C", path: "c.md", triggers: ["c-go"], requires: ["PROTOCOL.X.B"], source_sha256: sha("c") },
+    ]);
+    const decisions = routeSpecs(manifest, {
+      stage: null,
+      triggers: ["b-go", "c-go"],
+      stack: null,
+      specRefs: [],
+    });
+    expect(includedIds(decisions)).toEqual([]);
+    expect(decisions.find((d) => d.semantic_id === "PROTOCOL.X.C")!.why).toContain("PROTOCOL.X.B");
+    expect(decisions.find((d) => d.semantic_id === "PROTOCOL.X.B")!.why).toContain("PROTOCOL.X.A");
+  });
+
+  it("conflicts 登记序去重：互斥对都命中时保留登记序在先者，后者理由显式", () => {
+    const manifest = fixtureManifest([
+      { semantic_id: "PROTOCOL.X.FIRST", path: "f.md", triggers: ["go"], conflicts: ["PROTOCOL.X.SECOND"], source_sha256: sha("f") },
+      { semantic_id: "PROTOCOL.X.SECOND", path: "s.md", triggers: ["go"], conflicts: ["PROTOCOL.X.FIRST"], source_sha256: sha("s") },
+    ]);
+    const decisions = routeSpecs(manifest, {
+      stage: null,
+      triggers: ["go"],
+      stack: null,
+      specRefs: [],
+    });
+    expect(includedIds(decisions)).toEqual(["PROTOCOL.X.FIRST"]);
+    expect(decisions.find((d) => d.semantic_id === "PROTOCOL.X.SECOND")!.why).toContain(
+      "PROTOCOL.X.FIRST",
+    );
+  });
+
+  it("显式 reference：点名绕过 stage 闸（verify-only 协议在 implement 任务下经点名入选）", () => {
+    const decisions = routeSpecs(fixtureManifest(), {
+      stage: "implement",
+      triggers: [],
+      stack: null,
+      specRefs: [GATE],
+    });
+    const gate = decisions.find((d) => d.semantic_id === GATE)!;
+    expect(gate.included).toBe(true);
+    expect(gate.channels).toContain("explicit");
+  });
+
+  it("supersession 闸优先于显式 reference：点名退役协议仍排除且理由携带取代者", () => {
+    const decisions = routeSpecs(fixtureManifest(), {
+      stage: null,
+      triggers: [],
+      stack: null,
+      specRefs: [OLD],
+    });
+    const old = decisions.find((d) => d.semantic_id === OLD)!;
+    expect(old.included).toBe(false);
+    expect(old.why).toContain(GRID);
+    expect(old.why).toContain("superseded");
+  });
+
+  it("同输入重放字节稳定：两次调用 decisions deep equal；决策按 semantic_id 字典序", () => {
+    const input = { stage: "implement" as const, triggers: ["edit-save", "data-grid"], stack: ["vue", "ag-grid"], specRefs: [] };
+    const a = routeSpecs(fixtureManifest(), input);
+    const b = routeSpecs(fixtureManifest(), input);
+    expect(a).toEqual(b);
+    const ids = a.map((d) => d.semantic_id);
+    expect(ids).toEqual([...ids].sort());
+  });
+
+  it("改变 stage/stack 只影响相关候选：always 集恒定，diff 恰为声明了该轴的条目", () => {
+    const base = { triggers: ["data-grid", "save"], stack: ["vue", "ag-grid"] as readonly string[] | null, specRefs: [] as readonly string[] };
+    const implement = routeSpecs(fixtureManifest(), { ...base, stage: "implement" });
+    const verify = routeSpecs(fixtureManifest(), { ...base, stage: "verify" });
+    const alwaysIds = [
+      "PROTOCOL.FRONTEND.AI_CODE",
+      "PROTOCOL.FRONTEND.DEV_CHECKLIST",
+    ];
+    for (const id of alwaysIds) {
+      expect(includedIds(implement)).toContain(id);
+      expect(includedIds(verify)).toContain(id);
+    }
+    const implementOnly = includedIds(implement).filter((id) => !includedIds(verify).includes(id));
+    expect(implementOnly).not.toContain(TESTING); // TESTING 声明 [implement, verify]——两侧都留
+    expect(includedIds(verify)).not.toContain(MOCK); // MOCK stage=[implement]——verify 轮出
+    const vue = routeSpecs(fixtureManifest(), { stage: null, triggers: ["data-grid"], stack: ["vue", "ag-grid"], specRefs: [] });
+    const fastapi = routeSpecs(fixtureManifest(), { stage: null, triggers: ["data-grid"], stack: ["fastapi"], specRefs: [] });
+    expect(includedIds(vue)).toContain(GRID);
+    expect(includedIds(fastapi)).not.toContain(GRID);
+  });
+
+  it("included 决策携带来源身份/指纹：semantic_id + path + source_sha256 全在决策面", () => {
+    const decisions = routeSpecs(fixtureManifest(), {
+      stage: null,
+      triggers: ["data-grid"],
+      stack: ["vue", "ag-grid"],
+      specRefs: [],
+    });
+    const grid = decisions.find((d) => d.semantic_id === GRID)!;
+    expect(grid.path).toBe(".trellis/spec/frontend/30-data-grid-protocol.md");
+    expect(grid.source_sha256).toBe(sha("30"));
+  });
+});
+
+describe("validateApplicabilityInputs 扩展（W4.2 请求侧 fail-closed）", () => {
+  it("stage 词表外 → SCHEMA_INVALID（compileProjection 与 explain 同款拒绝）", async () => {
+    const { store } = await makeStore();
+    try {
+      await compileProjection(store, { role: "frontend", stage: "coding" });
+      expect.unreachable("必须抛出");
+    } catch (error) {
+      expect((error as { code?: string }).code).toBe("SCHEMA_INVALID");
+      expect((error as Error).message).toContain("stage");
+    }
+  });
+
+  it("triggers 词形非法（大写/空白）与 specRefs 非 PROTOCOL 词形 → SCHEMA_INVALID", async () => {
+    const { store } = await makeStore();
+    for (const request of [
+      { role: "frontend", triggers: ["Data Grid"] },
+      { role: "frontend", stack: ["Vue3"] },
+      { role: "frontend", specRefs: ["SPEC.FRONTEND.DATA_GRID"] },
+    ]) {
+      try {
+        await compileProjection(store, request as never);
+        expect.unreachable("必须抛出");
+      } catch (error) {
+        expect((error as { code?: string }).code).toBe("SCHEMA_INVALID");
+      }
+    }
+  });
+});
+
+// ============================================================
+// 3) 投影接线（W4.2：路由结果进 catalogEntries，不进 mustEntries 判卷输入）
+// ============================================================
+
+/** 写入 AG Grid fixture manifest 的临时 catalog 根（每次调用独立副本；afterEach 清理）。 */
+function specRoutingCatalogRoot(entries: Record<string, unknown>[] = routingFixtureEntries()): string {
+  const tempRoot = mkdtempSync(join(tmpdir(), "pomaster-spec-routing-root-"));
+  const catalogRoot = join(tempRoot, "catalog");
+  cpSync(REPO_CATALOG, catalogRoot, { recursive: true });
+  tempRoots.push(catalogRoot);
+  writeFileSync(
+    join(catalogRoot, SPEC_ROUTING_MANIFEST_FILE),
+    `${JSON.stringify({ schema: SPEC_ROUTING_SCHEMA, profile: "project-overlay", entries }, null, 2)}\n`,
+    "utf8",
+  );
+  return catalogRoot;
+}
+
+describe("compileProjection spec-routing 接线（W4.2）", () => {
+  it("命中协议进 catalogEntries（reason 携 semantic_id/path/指纹/通道 + path 导航注记）；mustEntries 零 PROTOCOL.*", async () => {
+    const { store } = await makeStore();
+    const projection = await compileProjection(
+      store,
+      {
+        role: "frontend",
+        stage: "implement",
+        triggers: ["edit-save", "data-grid", "ag-grid"],
+        stack: ["vue", "ag-grid"],
+      },
+      { catalogRoot: specRoutingCatalogRoot() },
+    );
+    const refs = projection.manifest.catalogEntries.map((e) => e.ref);
+    expect(refs).toContain("PROTOCOL.FRONTEND.DATA_GRID");
+    expect(refs).toContain("PROTOCOL.FRONTEND.FORM");
+    const grid = projection.manifest.catalogEntries.find((e) => e.ref === "PROTOCOL.FRONTEND.DATA_GRID")!;
+    expect(grid.reason).toContain("semantic_id=PROTOCOL.FRONTEND.DATA_GRID");
+    expect(grid.reason).toContain("30-data-grid-protocol.md");
+    expect(grid.reason).toContain("source_sha256=");
+    expect(grid.reason).toContain("path 仅");
+    expect(
+      projection.manifest.mustEntries.filter((e) => e.ref.startsWith("PROTOCOL.")),
+    ).toEqual([]);
+  });
+
+  it("同输入重放：catalogEntries 与 inputsFingerprint 字节稳定（路由确定性 → 指纹确定性）", async () => {
+    const { store } = await makeStore();
+    const request = {
+      role: "frontend",
+      stage: "implement",
+      triggers: ["edit-save", "data-grid"],
+      stack: ["vue", "ag-grid"],
+    };
+    const a = await compileProjection(store, request, { catalogRoot: specRoutingCatalogRoot() });
+    const b = await compileProjection(store, request, { catalogRoot: specRoutingCatalogRoot() });
+    expect(a.inputsFingerprint).toBe(b.inputsFingerprint);
+    expect(a.manifest.catalogEntries).toEqual(b.manifest.catalogEntries);
+  });
+
+  it("manifest 缺席（repo 空 seed）→ catalogEntries 零 PROTOCOL.* 且不爆（opt-in 空路由）", async () => {
+    const { store } = await makeStore();
+    const projection = await compileProjection(store, {
+      role: "frontend",
+      triggers: ["data-grid"],
+      stack: ["vue"],
+    });
+    expect(
+      projection.manifest.catalogEntries.filter((e) => e.ref.startsWith("PROTOCOL.")),
+    ).toEqual([]);
+  });
+
+  it("explain decisions 分母保持 policy/presets 面（协议决策不混入 CatalogEntryDecision——隔离纪律）", async () => {
+    const { store } = await makeStore();
+    const explanation = await explainCatalogProjection(
+      store,
+      { role: "frontend", triggers: ["data-grid"] },
+      { catalogRoot: specRoutingCatalogRoot() },
+    );
+    expect(
+      explanation.decisions.filter((d) => d.ref.startsWith("PROTOCOL.")),
+    ).toEqual([]);
   });
 });

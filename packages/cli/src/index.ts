@@ -1637,6 +1637,10 @@ export function createProgram(
       [],
     )
     .option("--change-class <class>", "变更类目（∈ CATALOG_CHANGE_CLASS_VALUES，vocab-pr-0005 词轴）")
+    .option("--stage <stage>", "W4 协议路由：任务阶段（∈ plan/implement/verify/maintain）")
+    .option("--trigger <token>", "W4 协议路由：任务触发词（可重复；词级精确 token 命中）", collectValues, [])
+    .option("--stack <token>", "W4 协议路由：技术栈声明（可重复；未声明时协议 stack 轴 not_configured 不默认匹配）", collectValues, [])
+    .option("--spec-ref <id>", "W4 协议路由：显式 reference 点名（PROTOCOL.* semantic_id，可重复；绕过 stage/stack 闸）", collectValues, [])
     .option("--check", "纯读比对现盘 manifest 呈现 stale 状态（FRESH/STALE_GROUNDING/ABSENT），零写入")
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (opts, command) => {
@@ -1646,6 +1650,16 @@ export function createProgram(
           ? { capabilities: opts.capability as string[] }
           : {}),
         ...(opts.changeClass !== undefined ? { changeClass: opts.changeClass as string } : {}),
+        ...(opts.stage !== undefined ? { stage: opts.stage as string } : {}),
+        ...(opts.trigger !== undefined && (opts.trigger as string[]).length > 0
+          ? { triggers: opts.trigger as string[] }
+          : {}),
+        ...(opts.stack !== undefined && (opts.stack as string[]).length > 0
+          ? { stack: opts.stack as string[] }
+          : {}),
+        ...(opts.specRef !== undefined && (opts.specRef as string[]).length > 0
+          ? { specRefs: opts.specRef as string[] }
+          : {}),
       }, { check: opts.check === true });
       record({
         command: "context compile",
@@ -1670,6 +1684,10 @@ export function createProgram(
       [],
     )
     .option("--change-class <class>", "变更类目（∈ CATALOG_CHANGE_CLASS_VALUES，vocab-pr-0005 词轴）")
+    .option("--stage <stage>", "W4 协议路由：任务阶段（∈ plan/implement/verify/maintain）")
+    .option("--trigger <token>", "W4 协议路由：任务触发词（可重复）", collectValues, [])
+    .option("--stack <token>", "W4 协议路由：技术栈声明（可重复）", collectValues, [])
+    .option("--spec-ref <id>", "W4 协议路由：显式 reference 点名（PROTOCOL.*，可重复）", collectValues, [])
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (opts, command) => {
       const outcome = await runContextExplain(resolveDir(command), opts.role, undefined, {
@@ -1678,6 +1696,16 @@ export function createProgram(
           ? { capabilities: opts.capability as string[] }
           : {}),
         ...(opts.changeClass !== undefined ? { changeClass: opts.changeClass as string } : {}),
+        ...(opts.stage !== undefined ? { stage: opts.stage as string } : {}),
+        ...(opts.trigger !== undefined && (opts.trigger as string[]).length > 0
+          ? { triggers: opts.trigger as string[] }
+          : {}),
+        ...(opts.stack !== undefined && (opts.stack as string[]).length > 0
+          ? { stack: opts.stack as string[] }
+          : {}),
+        ...(opts.specRef !== undefined && (opts.specRef as string[]).length > 0
+          ? { specRefs: opts.specRef as string[] }
+          : {}),
       });
       record({
         command: "context explain",

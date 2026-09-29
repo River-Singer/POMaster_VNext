@@ -161,6 +161,16 @@ export interface ContextApplicabilityInputs {
   readonly capabilities?: readonly string[];
   /** ∈ CATALOG_CHANGE_CLASS_VALUES（kernel 侧 fail-closed 校验）。 */
   readonly changeClass?: string;
+  /**
+   * W4 协议路由输入（FR-02；全 optional——缺席字段零键禁 undefined 值键污染）。
+   * 词形 fail-closed 校验在 kernel validateApplicabilityInputs（stage 四值闭包 /
+   * triggers·stack 词级 token / specRefs=PROTOCOL.* 词形）；协议路由结果只进
+   * REUSE / CATALOG 策展分区（§92.2），不进判卷输入。
+   */
+  readonly stage?: string;
+  readonly triggers?: readonly string[];
+  readonly stack?: readonly string[];
+  readonly specRefs?: readonly string[];
 }
 
 /** applicability 输入 → ProjectionRequest 增量字段（缺席字段零键——禁 undefined 值键污染）。 */
@@ -174,6 +184,14 @@ function applicabilityRequestFields(
       ? { capabilities: inputs.capabilities }
       : {}),
     ...(inputs.changeClass !== undefined ? { changeClass: inputs.changeClass } : {}),
+    ...(inputs.stage !== undefined ? { stage: inputs.stage } : {}),
+    ...(inputs.triggers !== undefined && inputs.triggers.length > 0
+      ? { triggers: inputs.triggers }
+      : {}),
+    ...(inputs.stack !== undefined && inputs.stack.length > 0 ? { stack: inputs.stack } : {}),
+    ...(inputs.specRefs !== undefined && inputs.specRefs.length > 0
+      ? { specRefs: inputs.specRefs }
+      : {}),
   };
 }
 
@@ -182,6 +200,11 @@ export interface ApplicabilityInputsView {
   readonly change: string | null;
   readonly capabilities: readonly string[];
   readonly change_class: string | null;
+  /** W4 协议路由输入回显（缺席显式——判卷可重放：同输入同 fingerprint）。 */
+  readonly stage: string | null;
+  readonly triggers: readonly string[];
+  readonly stack: readonly string[];
+  readonly spec_refs: readonly string[];
 }
 
 function applicabilityViewOf(inputs?: ContextApplicabilityInputs): ApplicabilityInputsView {
@@ -189,6 +212,10 @@ function applicabilityViewOf(inputs?: ContextApplicabilityInputs): Applicability
     change: inputs?.change ?? null,
     capabilities: [...(inputs?.capabilities ?? [])],
     change_class: inputs?.changeClass ?? null,
+    stage: inputs?.stage ?? null,
+    triggers: [...(inputs?.triggers ?? [])],
+    stack: [...(inputs?.stack ?? [])],
+    spec_refs: [...(inputs?.specRefs ?? [])],
   };
 }
 
@@ -198,7 +225,11 @@ function hasAnyApplicabilityInput(inputs?: ContextApplicabilityInputs): boolean 
     inputs !== undefined &&
     (inputs.change !== undefined ||
       (inputs.capabilities !== undefined && inputs.capabilities.length > 0) ||
-      inputs.changeClass !== undefined)
+      inputs.changeClass !== undefined ||
+      inputs.stage !== undefined ||
+      (inputs.triggers !== undefined && inputs.triggers.length > 0) ||
+      (inputs.stack !== undefined && inputs.stack.length > 0) ||
+      (inputs.specRefs !== undefined && inputs.specRefs.length > 0))
   );
 }
 
@@ -211,6 +242,16 @@ function applicabilityInputsLine(inputs?: ContextApplicabilityInputs): string | 
     parts.push(`capabilities=${inputs.capabilities.join("/")}`);
   }
   if (inputs?.changeClass !== undefined) parts.push(`change_class=${inputs.changeClass}`);
+  if (inputs?.stage !== undefined) parts.push(`stage=${inputs.stage}`);
+  if (inputs?.triggers !== undefined && inputs.triggers.length > 0) {
+    parts.push(`triggers=${inputs.triggers.join("/")}`);
+  }
+  if (inputs?.stack !== undefined && inputs.stack.length > 0) {
+    parts.push(`stack=${inputs.stack.join("/")}`);
+  }
+  if (inputs?.specRefs !== undefined && inputs.specRefs.length > 0) {
+    parts.push(`spec_refs=${inputs.specRefs.join("/")}`);
+  }
   return `> applicability: ${parts.join("；")}`;
 }
 
@@ -835,6 +876,8 @@ export async function judgeTaskContextFreshness(
   }
   // applicability 输入恢复（缺席字段零键，与 applicabilityRequestFields 同形——
   // 空数组/null 与「未提供」在投影请求侧同义，重放输入逐字段相等）。
+  // W4 协议路由输入（stage/triggers/stack/spec_refs）同款恢复——缺恢复会让同输入
+  // 重放判卷在协议命中面漂移（fresh 误判 stale_grounding）。
   const applicability = isRecord(existing.parsed.applicability)
     ? existing.parsed.applicability
     : {};
@@ -843,6 +886,16 @@ export async function judgeTaskContextFreshness(
     : [];
   const changeClass =
     typeof applicability.change_class === "string" ? applicability.change_class : null;
+  const stage = typeof applicability.stage === "string" ? applicability.stage : null;
+  const triggers = Array.isArray(applicability.triggers)
+    ? applicability.triggers.filter((value): value is string => typeof value === "string")
+    : [];
+  const stack = Array.isArray(applicability.stack)
+    ? applicability.stack.filter((value): value is string => typeof value === "string")
+    : [];
+  const specRefs = Array.isArray(applicability.spec_refs)
+    ? applicability.spec_refs.filter((value): value is string => typeof value === "string")
+    : [];
   try {
     const outcome = await runContextCompile(
       rootDir,
@@ -857,6 +910,10 @@ export async function judgeTaskContextFreshness(
         change: taskRef,
         ...(capabilities.length > 0 ? { capabilities } : {}),
         ...(changeClass !== null ? { changeClass } : {}),
+        ...(stage !== null ? { stage } : {}),
+        ...(triggers.length > 0 ? { triggers } : {}),
+        ...(stack.length > 0 ? { stack } : {}),
+        ...(specRefs.length > 0 ? { specRefs } : {}),
       },
       { check: true },
     );

@@ -995,6 +995,18 @@ export interface ProjectionRequest {
    */
   readonly capabilities?: readonly string[];
   readonly changeClass?: string;
+  /**
+   * W4 协议路由输入（FR-02 Spec Catalog 路由；AC-09/10；全部 optional 既有调用零破坏）。
+   * 词形 fail-closed 校验（validateApplicabilityInputs 同款）：stage ∈
+   * SPEC_ROUTING_STAGE_VALUES / triggers·stack 词级 token 词形 / specRefs=PROTOCOL.*
+   * 词形。缺席语义逐轴显式：stage 缺席 → stage 过滤闸不参与；stack 缺席 → 声明了
+   * stack 的协议 not_configured 排除（未配置 ≠ 默认匹配，禁假绿）；协议路由只进
+   * catalogEntries 策展分区，绝不进 mustEntries 判卷输入（§92.2）。
+   */
+  readonly stage?: string;
+  readonly triggers?: readonly string[];
+  readonly stack?: readonly string[];
+  readonly specRefs?: readonly string[];
 }
 
 export interface ProjectionEntry {
@@ -1595,15 +1607,20 @@ export type {
 // 同款边界：策展面只读零治理事实，路由结果只进 catalogEntries 不进 mustEntries）。
 export {
   loadSpecRoutingManifest,
+  routeSpecs,
   PROTOCOL_ID_PATTERN,
   SPEC_ROUTING_MANIFEST_FILE,
   SPEC_ROUTING_SCHEMA,
   SPEC_ROUTING_STAGE_VALUES,
+  SPEC_ROUTING_CHANNEL_VALUES,
 } from "./spec-routing.js";
 export type {
+  SpecRoutingDecision,
   SpecRoutingEntry,
+  SpecRoutingInput,
   SpecRoutingManifest,
   SpecRoutingStageValue,
+  SpecRoutingChannelValue,
 } from "./spec-routing.js";
 
 // ============================================================
