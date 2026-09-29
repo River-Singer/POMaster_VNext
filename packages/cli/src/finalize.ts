@@ -102,7 +102,12 @@ export async function runFinalizeStatus(rootDir: string, input: FinalizeStatusIn
   }
   const common = { ...base(input.taskRef), plan_fingerprint: cohort.fingerprint, verification_execution_id: cohort.executionId };
   if (!cohort.allPassed) {
-    const result = { ...common, stage: "VERIFY_BLOCKED" as const, next_actions: [{ actor: "implementer" as const, command: `pomaster finalize run ${input.taskRef} --verification-execution-id ${cohort.executionId ?? "<AGX-*>"} --review-range <git-range>`, reason: "当前 plan fingerprint 的 GRN 存在非 passed。" }] };
+    // 分母缺失型失败显式点名缺失键（W1-FR04：场景义务未满足 ≠ 工具 verdict 失败
+    // ——禁把缺场景误报成「存在非 passed」；键词形 accRef / scenario / gate）。
+    const reason = cohort.missingKeys.length > 0
+      ? `当前 plan fingerprint 的 GRN 分母缺失（场景义务未满足）：${cohort.missingKeys.map((key) => key.split("\0").join(" / ")).join("；")}`
+      : "当前 plan fingerprint 的 GRN 存在非 passed。";
+    const result = { ...common, stage: "VERIFY_BLOCKED" as const, next_actions: [{ actor: "implementer" as const, command: `pomaster finalize run ${input.taskRef} --verification-execution-id ${cohort.executionId ?? "<AGX-*>"} --review-range <git-range>`, reason }] };
     return okOutcome("finalize status", result, [`finalize ${input.taskRef} → VERIFY_BLOCKED`]);
   }
   const replay = latestReplayReceipt(rootDir, input.taskRef, cohort.fingerprint);
@@ -221,7 +226,7 @@ async function requiredPlanKeys(rootDir: string, taskRef: string): Promise<Set<s
   return required;
 }
 
-async function latestPlanCohort(rootDir: string, taskRef: string): Promise<{ fingerprint: string; executionId: string | null; allPassed: boolean } | null> {
+async function latestPlanCohort(rootDir: string, taskRef: string): Promise<{ fingerprint: string; executionId: string | null; allPassed: boolean; missingKeys: readonly string[] } | null> {
   try {
     const runsDir = buildStorePaths(rootDir).runsDir;
     const rows = readdirSync(runsDir).filter((name) => /^GRN-[0-9]+\.json$/.test(name)).map((name) => {
@@ -250,7 +255,10 @@ async function latestPlanCohort(rootDir: string, taskRef: string): Promise<{ fin
     const required = await requiredPlanKeys(rootDir, taskRef);
     const currentRows = [...latestByObligation.values()];
     const passedAndBound = currentRows.every((entry) => entry.result?.["verdict"] === "passed" && (entry.result?.["gate"] !== "CONTROL_DATA_FLOW_RUNTIME" || verifyEvidenceBinding({ runRecordPath: join(runsDir, entry.name), evidenceDir: buildStorePaths(rootDir).evidenceDir }).bound));
-    return { fingerprint: latest.fingerprint, executionId: typeof latest.row["execution_id"] === "string" ? latest.row["execution_id"] : null, allPassed: currentRows.length > 0 && passedAndBound && required.size > 0 && [...required].every((key) => actual.has(key)) };
+    // W1-FR04 回放可诊断：缺失义务键显式点名（分母缺失型 VERIFY_BLOCKED 与「存在
+    // 非 passed」 verdict 型失败分流呈现——禁把缺场景误报成工具失败）。
+    const missingKeys = [...required].filter((key) => !actual.has(key)).sort();
+    return { fingerprint: latest.fingerprint, executionId: typeof latest.row["execution_id"] === "string" ? latest.row["execution_id"] : null, allPassed: currentRows.length > 0 && passedAndBound && required.size > 0 && missingKeys.length === 0, missingKeys };
   } catch { return null; }
 }
 

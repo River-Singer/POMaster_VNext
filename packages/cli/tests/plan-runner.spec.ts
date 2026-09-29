@@ -236,14 +236,14 @@ const CHECKBOX_SCENARIOS = [
   },
 ];
 
-/** 在 fixture 之上播种三态场景任务（TASK.STATIC.SCEN：static_analysis × 3 场景）。 */
-async function seedScenarioTask(): Promise<void> {
+/** 在 fixture 之上播种三态场景任务（TASK.STATIC.SCEN；默认单 acceptance，可注入变体）。 */
+async function seedScenarioTask(acceptance?: unknown[]): Promise<void> {
   const store = await createStore(root);
   await applyTransaction(store, { ops: [{ op: "upsert_object", envelope: {
     id: "TASK.STATIC.SCEN", kind: "task_object", axisProfile: "task_default",
     axes: { lifecycle: "CURRENT", confidence: "PROVISIONAL", evidence: "IMPLEMENTED", change: "STABLE" },
     titleZh: "复选框三态场景任务", authority: { owner: "BOOTSTRAP_OWNER", delegates: [] }, origin: "natural",
-    payload: { intent: "三态场景分母执行", class_scan_result: { scope: "src/**", hits: 0, fixed_count: 0, regression_case_ref: "GRN-SCEN" }, acceptance: [{ criterion: "复选框三态交互均须正确呈现提示", claim: null, requires: ["static_analysis"], scenarios: CHECKBOX_SCENARIOS }] },
+    payload: { intent: "三态场景分母执行", class_scan_result: { scope: "src/**", hits: 0, fixed_count: 0, regression_case_ref: "GRN-SCEN" }, acceptance: acceptance ?? [{ criterion: "复选框三态交互均须正确呈现提示", claim: null, requires: ["static_analysis"], scenarios: CHECKBOX_SCENARIOS }] },
   } as never }] });
 }
 
@@ -319,6 +319,136 @@ describe("plan run（W1-FR04 场景化分母）", () => {
     const statusAfter = await runFinalizeStatus(root, { taskRef: "TASK.STATIC.SCEN" });
     expect(statusAfter.ok).toBe(true);
     expect(statusAfter.result.stage).toBe("AWAITING_REPLAY_REVIEW");
+  });
+});
+
+// ============================================================
+// PR-W1.3 Case C 回放（复选框三态：selected/no-hover、selected/hover、unselected/hover）
+// ============================================================
+//
+// 事故原型（MASTer 经验汇编）：选中态 pointer-out 通过、缺 selected+hover——
+// 单态证据不满足整体，但原单态 GRN 保留 passed；漏态/重复同态/错验收/错场景的
+// Evidence 均不能满足三态要求；分状态证据映射可逐场景对账。
+
+/** 全量三态回放底座：fixture + 场景任务 + 一次全分母 plan run。 */
+async function runScenarioPlan(acceptance?: unknown[]): Promise<{ executionId: string; grnByKey: Map<string, string> }> {
+  const executionId = await fixture();
+  await seedScenarioTask(acceptance);
+  const outcome = await runPlanRun(root, { taskRef: "TASK.STATIC.SCEN", executionId, changed: ["src/a.ts"], faces });
+  expect(outcome.ok).toBe(true);
+  return { executionId, grnByKey: new Map(outcome.result.rows.map((row) => [`${row.gate}::${row.scenario_ref}`, row.grn])) };
+}
+
+function grnFiles(): string[] {
+  return readdirSync(join(root, ".pomaster", "evidence", "runs")).filter((name) => /^GRN-/.test(name));
+}
+
+/** 拷贝既有 GRN 为新序号文件（fixture 态操纵：模拟重复/错位的历史证据）。 */
+function cloneGrn(sourceGrn: string, noteOverride?: (note: string) => string): string {
+  const raw = JSON.parse(readFileSync(grnPath(sourceGrn), "utf8")) as {
+    gate_result: { result: { scope: { note: string } } };
+  };
+  if (noteOverride !== undefined) {
+    raw.gate_result.result.scope.note = noteOverride(raw.gate_result.result.scope.note);
+  }
+  const numbers = grnFiles().map((name) => Number(name.slice(4, -5)));
+  const next = `GRN-${String(Math.max(...numbers) + 1).padStart(4, "0")}.json`;
+  writeFileSync(join(root, ".pomaster", "evidence", "runs", next), JSON.stringify(raw));
+  return next.slice(0, -5);
+}
+
+describe("Case C 回放（复选框三态；PR-W1.3）", () => {
+  it("三态证据齐备：全分母绿 → AWAITING_REPLAY_REVIEW；分状态证据映射可逐场景对账（6 组合各恰好一条）", async () => {
+    const { grnByKey } = await runScenarioPlan();
+    expect(grnByKey.size).toBe(6);
+    for (const scenario of ["selected-no-hover", "selected-hover", "unselected-hover"]) {
+      for (const gate of ["TYPECHECK", "LINT"]) {
+        const grn = grnByKey.get(`${gate}::${scenario}`);
+        expect(grn).toBeDefined();
+        const note = grnNote(grn as string);
+        expect(note).toContain(`scenario_ref=${scenario}`);
+        expect(note).toContain(`acceptance_ref=TASK.STATIC.SCEN#acceptance[0]`);
+      }
+    }
+    const status = await runFinalizeStatus(root, { taskRef: "TASK.STATIC.SCEN" });
+    expect(status.ok).toBe(true);
+    expect(status.result.stage).toBe("AWAITING_REPLAY_REVIEW");
+  });
+
+  it("单态证据不满足整体：只留 selected/no-hover → VERIFY_BLOCKED，原单态 GRN 保留 passed 不降级；三态补齐后恢复", async () => {
+    const { executionId, grnByKey } = await runScenarioPlan();
+    // 删除 selected/hover 与 unselected/hover 的全部证据（模拟只验证了一态）。
+    for (const key of ["TYPECHECK::selected-hover", "LINT::selected-hover", "TYPECHECK::unselected-hover", "LINT::unselected-hover"]) {
+      rmSync(grnPath(grnByKey.get(key) as string));
+    }
+
+    const status = await runFinalizeStatus(root, { taskRef: "TASK.STATIC.SCEN" });
+    expect(status.ok).toBe(true);
+    expect(status.result.stage).toBe("VERIFY_BLOCKED");
+    // 原单态 GRN 保留 passed（不因整体覆盖不足而降级/删除）。
+    expect(grnNote(grnByKey.get("TYPECHECK::selected-no-hover") as string)).toContain("scenario_ref=selected-no-hover");
+
+    // 三态证据补齐（重跑补执行）→ 满足整体。
+    const rerun = await runPlanRun(root, { taskRef: "TASK.STATIC.SCEN", executionId, changed: ["src/a.ts"], faces });
+    expect(rerun.ok).toBe(true);
+    const statusAfter = await runFinalizeStatus(root, { taskRef: "TASK.STATIC.SCEN" });
+    expect(statusAfter.ok).toBe(true);
+    expect(statusAfter.result.stage).toBe("AWAITING_REPLAY_REVIEW");
+  });
+
+  it("漏态：三缺一（缺 selected/hover 的 TYPECHECK 态）→ VERIFY_BLOCKED 且诊断显式点名缺失场景键", async () => {
+    const { grnByKey } = await runScenarioPlan();
+    rmSync(grnPath(grnByKey.get("TYPECHECK::selected-hover") as string));
+
+    const status = await runFinalizeStatus(root, { taskRef: "TASK.STATIC.SCEN" });
+    expect(status.ok).toBe(true);
+    expect(status.result.stage).toBe("VERIFY_BLOCKED");
+    // 分母缺失型 VERIFY_BLOCKED 不得误报「存在非 passed」——诊断须定位到相应场景。
+    expect(status.result.next_actions[0]?.reason).toContain("分母缺失");
+    expect(status.result.next_actions[0]?.reason).toContain("selected-hover");
+  });
+
+  it("重复同态：同场景重复 GRN 不缩分母也不顶缺（ latest 同态仍只算一态）→ 仍 VERIFY_BLOCKED", async () => {
+    const { grnByKey } = await runScenarioPlan();
+    // 缺 selected/hover 的 TYPECHECK；再用重复的 selected-no-hover TYPECHECK GRN（大序号=最新）填盘。
+    rmSync(grnPath(grnByKey.get("TYPECHECK::selected-hover") as string));
+    cloneGrn(grnByKey.get("TYPECHECK::selected-no-hover") as string);
+
+    const status = await runFinalizeStatus(root, { taskRef: "TASK.STATIC.SCEN" });
+    expect(status.ok).toBe(true);
+    expect(status.result.stage).toBe("VERIFY_BLOCKED");
+    expect(status.result.next_actions[0]?.reason).toContain("selected-hover");
+  });
+
+  it("错场景的 Evidence：scenario_ref 不在任务场景集合的 GRN 不满足分母（多证据不顶缺）", async () => {
+    const { grnByKey } = await runScenarioPlan();
+    rmSync(grnPath(grnByKey.get("TYPECHECK::selected-hover") as string));
+    cloneGrn(grnByKey.get("TYPECHECK::selected-no-hover") as string, (note) =>
+      note.replace("scenario_ref=selected-no-hover", "scenario_ref=hover-extra"),
+    );
+
+    const status = await runFinalizeStatus(root, { taskRef: "TASK.STATIC.SCEN" });
+    expect(status.ok).toBe(true);
+    expect(status.result.stage).toBe("VERIFY_BLOCKED");
+    expect(status.result.next_actions[0]?.reason).toContain("selected-hover");
+  });
+
+  it("其他 Acceptance 的 Evidence：同 gate 同场景的另一验收 GRN 不满足本验收分母（挪证隔离）", async () => {
+    const { grnByKey } = await runScenarioPlan([
+      { criterion: "复选框三态交互均须正确呈现提示", claim: null, requires: ["static_analysis"], scenarios: CHECKBOX_SCENARIOS },
+      { criterion: "另一验收（同能力无场景）", claim: null, requires: ["static_analysis"] },
+    ]);
+    // 删本验收（acceptance[0]）的 selected/hover TYPECHECK；另一验收 acceptance[1] 的 TYPECHECK GRN 在盘但不得挪用。
+    rmSync(grnPath(grnByKey.get("TYPECHECK::selected-hover") as string));
+    expect(grnFiles().some((name) => {
+      const doc = JSON.parse(readFileSync(join(root, ".pomaster", "evidence", "runs", name), "utf8")) as { gate_result: { result: { scope: { note: string } } } };
+      return doc.gate_result.result.scope.note.includes("acceptance_ref=TASK.STATIC.SCEN#acceptance[1]");
+    })).toBe(true);
+
+    const status = await runFinalizeStatus(root, { taskRef: "TASK.STATIC.SCEN" });
+    expect(status.ok).toBe(true);
+    expect(status.result.stage).toBe("VERIFY_BLOCKED");
+    expect(status.result.next_actions[0]?.reason).toContain("selected-hover");
   });
 });
 
