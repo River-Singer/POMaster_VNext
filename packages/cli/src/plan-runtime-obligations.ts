@@ -139,7 +139,9 @@ function mergeCaps(caps: readonly ObligationCap[]): ObligationCap | null {
   return {
     verdict: worst.verdict,
     reason: worst.reason,
-    note: caps.map((cap) => cap.note).join("；"),
+    // 多 cap 合并：verdict 取最严（只降不升）；每条 cap 的 reason 词形都保留在 note
+    //（单一 reason 位只承载最严项——其余义务缺口不静默）。
+    note: caps.map((cap) => `[w5_obligation_cap=${cap.reason}] ${cap.note}`).join("；"),
   };
 }
 
