@@ -2508,3 +2508,27 @@ export type {
   SubstrateLayerValue,
   CatalogKindValue,
 } from "@pomaster/schemas";
+
+// —— W3 跨平面关系适配与派生影响闭包（FR-06；Case A 分母） ——
+// 纯函数零 IO：四类 adapted 关系由各数据源只读构建派生边（不建第二 canonical graph /
+// ImpactGraph / 第二依赖 store）；闭包语义镜像 relations.ts impactClosure。
+export {
+  IMPACT_PLANE_VALUES,
+  ADAPTED_RELATION_KINDS,
+  UNADAPTED_ASSET_INVENTORY,
+  DERIVED_EDGE_ID_PATTERN,
+  deriveImpactClosure,
+} from "./impact-derive.js";
+export type {
+  ImpactPlaneValue,
+  AdaptedRelationKind,
+  ImpactNodeId,
+  ImpactObjectInput,
+  ImpactDecisionGraphInput,
+  ImpactGeneratedInput,
+  ImpactSourceInput,
+  DeriveImpactInput,
+  DerivedImpactRow,
+  DerivedImpactUnresolvedRef,
+  DerivedImpactResult,
+} from "./impact-derive.js";
