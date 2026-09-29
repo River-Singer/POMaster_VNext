@@ -54,6 +54,19 @@
  * REQUIRED 条目按场景展开（scenario_ref 进 item/reason/expected_evidence）与
  * run/复用/终验 cohort 键接线见 VerificationPlanItem.scenario_ref（本切片同批）。
  *
+ * ═══ W5-FR09/FR10 oracle + seam 词形（MASTer 经验驱动优化战役 Wave 5）═══
+ * 场景合同加性承载两类机器可判义务（契约 w5-probe-contract §1/§4；可加细不放宽）：
+ * - expected_observation_oracle（业务 oracle 闭合词形）：「保存后何处可见」的
+ *   visible_via/filter_context/mapping_fields 三键闭包——三类观察不可折叠（HTTP
+ *   成功 ≠ 持久化成功 ≠ 用户可见），词形闭包 fail-closed（额外键 SCHEMA_INVALID）；
+ *   缺席 = legacy 无 oracle 义务（零破坏）。展开条目经 VerificationPlanItem.
+ *   scenario_oracle 下传执行面（v1 报告不得满足带 visible_via 义务的场景）。
+ * - mock_real_seam（seam 义务声明）：同一 operation/contract/scenario 身份下双腿
+ *   （seam_role=mock/real 的 CONTROL_DATA_FLOW_RUNTIME binding）各自独立展开为
+ *   resolved_bindings（每腿独立 GRN/artifact）；缺任一腿=seam 义务未满足（编译期
+ *   tool_gap 点名缺席腿，执行期 fail-closed 非绿）。非 seam 场景 binding 选择行为
+ *   字节不变（compiler remains the only binding-selection authority）。
+ *
  * ═══ 旧档位迁移清单指针（兼容期 legacy 登记——W1 Out of Scope）═══
  * 旧 GateTier/triage 档位消费者迁移接缝表住
  * .trellis/tasks/09-10-brainstorm-long-horizon-control-loop/research/
@@ -238,6 +251,8 @@ export interface PlanAcceptanceItem {
  * control_data_flow 等运行时证明类型链）——本编译器只承载声明、不裁决运行时义务。
  * scenario_ref 禁携带 GRN note marker 保留字（；/换行）——场景身份以
  * `scenario_ref=<局部键>` 形态进 GRN scope note（run/复用/终验 cohort 键的共用锚）。
+ * W5 起加性可选：expected_observation_oracle（业务 oracle 闭合词形）与
+ * mock_real_seam（seam 义务声明）——词形见下方接口注；缺席=legacy 零破坏。
  */
 export interface PlanAcceptanceScenario {
   readonly scenario_ref: string;
@@ -246,7 +261,47 @@ export interface PlanAcceptanceScenario {
   readonly state_dimensions: readonly string[];
   readonly expected_observation: string;
   readonly runtime_confirmation_required: boolean;
+  readonly expected_observation_oracle?: BusinessObservationOracle;
+  readonly mock_real_seam?: ScenarioSeamObligation;
 }
+
+/**
+ * 业务 oracle 观察通道词形（W5-FR10 契约 §1；SP 提案词形待追认 TODO(vocab-pr)：
+ * observation_channel 轴）。三类观察不可折叠：HTTP 成功（请求被接受）≠ 持久化成功
+ * （re-read 到位）≠ 用户可见（声明通道+过滤上下文下确实出现）。
+ */
+export const OBSERVATION_CHANNEL_VALUES = ["api_list", "api_detail", "ui_surface"] as const;
+export type ObservationChannelValue = (typeof OBSERVATION_CHANNEL_VALUES)[number];
+
+/**
+ * 业务 oracle 闭合词形（W5-FR10 契约 §1）：
+ * - visible_via：声明在哪条观察通道可见（词表三值闭包）；
+ * - filter_context：声明过滤上下文（如 project/actor/scope——Case F 的 project_id
+ *   过滤发生在这一层）；键值均须非空字符串；
+ * - mapping_fields：重读后必须出现的字段集（detail-only 缺值不容忍；空数组=显式
+ *   「无字段映射义务」申报）。
+ * 闭合：三键之外不承认任何键（fail-closed——词形闭包校验 SCHEMA_INVALID）。
+ */
+export interface BusinessObservationOracle {
+  readonly visible_via: ObservationChannelValue;
+  readonly filter_context?: Readonly<Record<string, string>>;
+  readonly mapping_fields: readonly string[];
+}
+
+/**
+ * mock/real seam 义务声明（W5-FR09 契约 §4）：同一 operation/contract/scenario
+ * 身份下双腿（mock 腿/real 腿）各自产生独立 GRN/artifact；缺任一腿=seam 义务未
+ * 满足（各自真实结果保留，整体非绿）。闭合：operation_id/contract_ref 之外不承认
+ * 键；contract_ref=null 显式申报无契约锚（不可缺省猜测）。
+ */
+export interface ScenarioSeamObligation {
+  readonly operation_id: string;
+  readonly contract_ref: string | null;
+}
+
+/** seam 腿角色词形（binding.seam_role；两值闭包——冒领即 seam 对账失效）。 */
+export const SEAM_ROLE_VALUES = ["mock", "real"] as const;
+export type SeamRoleValue = (typeof SEAM_ROLE_VALUES)[number];
 
 export interface PlanChangeFace {
   readonly kind: PlanChangeFaceKind;
@@ -274,6 +329,8 @@ export interface PlanToolBinding {
   readonly gate?: string;
   readonly gate_def?: string;
   readonly capabilities: readonly PlanCapabilityWord[];
+  /** seam 腿角色（W5-FR09 加性可选：mock/real 双腿 binding 的身份标记；legacy 缺席）。 */
+  readonly seam_role?: SeamRoleValue;
   readonly source_ref: string;
   readonly version: string | null;
   readonly available: boolean;
@@ -285,6 +342,8 @@ export interface VerificationPlanResolvedBinding {
   readonly tool: string;
   readonly gate: string;
   readonly gate_def: string;
+  /** seam 腿标记（W5-FR09：seam 场景双腿展开的 leg 身份；非 seam 条目无此键）。 */
+  readonly seam_role?: SeamRoleValue;
 }
 
 export interface PlanPermitFacts {
@@ -337,6 +396,17 @@ export interface VerificationPlanItem {
    * 以 scenario_ref 进 GRN note marker）。无场景条目无此键（legacy 零破坏）。
    */
   readonly scenario_ref?: string;
+  /**
+   * W5-FR10 业务 oracle（加性可选）：场景声明 expected_observation_oracle 时随
+   * 条目下传执行面（plan-runner 义务判定消费——v1 报告不得满足带 visible_via
+   * 义务的场景；seam 比较器按 oracle 归一）。无 oracle 条目无此键。
+   */
+  readonly scenario_oracle?: BusinessObservationOracle;
+  /**
+   * W5-FR09 seam 义务（加性可选）：场景声明 mock_real_seam 时随条目下传——
+   * resolved_bindings 按 seam_role 双腿展开；缺任一腿=seam 义务未满足。
+   */
+  readonly seam_obligation?: ScenarioSeamObligation;
   readonly evidence_requirement: string;
   readonly capability: PlanCapabilityWord;
   readonly method: string;
@@ -555,7 +625,77 @@ function validateAcceptanceScenarios(item: PlanAcceptanceItem, path: string): vo
         "plan-compiler 场景契约（W1-FR04）：true=本场景观察须运行时确认（消费归运行时证明类型链）",
       );
     }
+    validateScenarioOracle(scenario.expected_observation_oracle, `${scPath}.expected_observation_oracle`);
+    validateScenarioSeam(scenario.mock_real_seam, `${scPath}.mock_real_seam`);
   }
+}
+
+/** oracle 闭合词形校验（W5-FR10 契约 §1）：三键闭包、词表、键值词形，额外键拒绝。 */
+const ORACLE_CLOSURE_KEYS = ["visible_via", "filter_context", "mapping_fields"] as const;
+
+function validateScenarioOracle(value: unknown, path: string): void {
+  if (value === undefined) return;
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    throw schemaInvalid(
+      `${path} 须为对象（{visible_via, filter_context?, mapping_fields} 闭合词形）`,
+      "plan-compiler 场景契约（W5-FR10）：业务 oracle=「保存后何处可见」的机器可判声明（三类观察不可折叠）",
+    );
+  }
+  const row = value as Record<string, unknown>;
+  for (const key of Object.keys(row)) {
+    if (!(ORACLE_CLOSURE_KEYS as readonly string[]).includes(key)) {
+      throw schemaInvalid(
+        `${path}.${key} 不在 oracle 闭合词形（${ORACLE_CLOSURE_KEYS.join("/")}——额外键拒绝，fail-closed）`,
+        "plan-compiler 场景契约（W5-FR10）：oracle 词形闭包校验（可加细不得放宽——新义务键走契约修订）",
+      );
+    }
+  }
+  if (typeof row["visible_via"] !== "string" || !(OBSERVATION_CHANNEL_VALUES as readonly string[]).includes(row["visible_via"])) {
+    throw schemaInvalid(
+      `${path}.visible_via = ${String(row["visible_via"])} 不在观察通道词表（${OBSERVATION_CHANNEL_VALUES.join("/")}）`,
+      "plan-compiler 场景契约（W5-FR10）：可见性义务声明在哪条观察通道可见（词表三值闭包）",
+    );
+  }
+  const filterContext = row["filter_context"];
+  if (filterContext !== undefined) {
+    if (filterContext === null || typeof filterContext !== "object" || Array.isArray(filterContext)) {
+      throw schemaInvalid(
+        `${path}.filter_context 须为对象（键值均非空字符串的过滤上下文声明）`,
+        "plan-compiler 场景契约（W5-FR10）：filter_context 声明重读时的过滤上下文（project/actor/scope）",
+      );
+    }
+    for (const [key, entry] of Object.entries(filterContext as Record<string, unknown>)) {
+      if (key.trim().length === 0 || typeof entry !== "string" || entry.trim().length === 0) {
+        throw schemaInvalid(
+          `${path}.filter_context[${String(key)}] 键值均须非空字符串`,
+          "plan-compiler 场景契约（W5-FR10）：过滤上下文键值是重读对账的身份面（空值=不可对账缺口）",
+        );
+      }
+    }
+  }
+  requireStringArray(row["mapping_fields"] ?? null, `${path}.mapping_fields`);
+}
+
+/** seam 义务闭合词形校验（W5-FR09 契约 §4）：两键闭包 + operation_id 非空。 */
+function validateScenarioSeam(value: unknown, path: string): void {
+  if (value === undefined) return;
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    throw schemaInvalid(
+      `${path} 须为对象（{operation_id, contract_ref} 闭合词形）`,
+      "plan-compiler 场景契约（W5-FR09）：seam 义务绑定同一稳定 operation/contract/scenario 身份",
+    );
+  }
+  const row = value as Record<string, unknown>;
+  for (const key of Object.keys(row)) {
+    if (key !== "operation_id" && key !== "contract_ref") {
+      throw schemaInvalid(
+        `${path}.${key} 不在 seam 闭合词形（operation_id/contract_ref——额外键拒绝，fail-closed）`,
+        "plan-compiler 场景契约（W5-FR09）：seam 义务词形闭包校验",
+      );
+    }
+  }
+  requireNonEmptyString(row["operation_id"], `${path}.operation_id`);
+  requireStringOrNull(row["contract_ref"], `${path}.contract_ref`);
 }
 
 function validateChangeSurface(surface: PlanChangeSurface): Map<PlanChangeFaceKind, PlanChangeFace> {
@@ -616,6 +756,12 @@ function validateToolBindings(bindings: readonly PlanToolBinding[]): void {
       seen.add(bindingId);
       requireNonEmptyString(binding.gate, `${path}.gate`);
       requireNonEmptyString(binding.gate_def, `${path}.gate_def`);
+      if (binding.seam_role !== undefined && !(SEAM_ROLE_VALUES as readonly string[]).includes(binding.seam_role)) {
+        throw schemaInvalid(
+          `${path}.seam_role = ${String(binding.seam_role)} 不在 seam 腿角色词表（${SEAM_ROLE_VALUES.join("/")}）`,
+          "plan-compiler 场景契约（W5-FR09）：seam 双腿 binding 须显式声明 seam_role=mock/real",
+        );
+      }
     } else if (binding.gate !== undefined || binding.gate_def !== undefined) {
       throw schemaInvalid(`${path} gate/gate_def 必须与 binding_id 同时在场`, "plan-compiler 输入合同校验失败");
     } else {
@@ -639,9 +785,16 @@ function validateToolBindings(bindings: readonly PlanToolBinding[]): void {
   }
 }
 
+/**
+ * CONTROL_DATA_FLOW_RUNTIME gate 词形（seam 双腿展开适用面——mutation/visibility
+ * 语义比较只对运行时腿成立；静态 gate 无副作用语义不参与双腿展开）。
+ */
+const SEAM_EXPANSION_GATE = "CONTROL_DATA_FLOW_RUNTIME";
+
 function resolveBindingObligations(
   capability: PlanCapabilityWord,
   bindings: readonly PlanToolBinding[],
+  seam: ScenarioSeamObligation | null = null,
 ): VerificationPlanResolvedBinding[] {
   const selected: VerificationPlanResolvedBinding[] = [];
   for (const gate of PLAN_CAPABILITY_GATE_NAMES[capability]) {
@@ -657,6 +810,25 @@ function resolveBindingObligations(
         const right = b.binding_id as string;
         return left < right ? -1 : left > right ? 1 : 0;
       });
+    // W5-FR09 seam 双腿展开：seam 场景的 runtime gate 按 seam_role 各选一腿
+    // （每腿独立 obligation/GRN——缺腿=义务未满足，执行期 fail-closed；腿内选择
+    // 优先 available，码点序兜底与既有单腿纪律同源）。非 runtime gate 照旧单 binding。
+    if (seam !== null && gate === SEAM_EXPANSION_GATE) {
+      for (const role of SEAM_ROLE_VALUES) {
+        const pool = covering.filter((binding) => binding.seam_role === role);
+        const chosen = pool.find((candidate) => candidate.available) ?? pool[0];
+        if (chosen !== undefined) {
+          selected.push({
+            binding_id: chosen.binding_id as string,
+            tool: chosen.tool_id,
+            gate,
+            gate_def: chosen.gate_def as string,
+            seam_role: role,
+          });
+        }
+      }
+      continue;
+    }
     const binding = covering.find((candidate) => candidate.available) ?? covering[0];
     if (binding === undefined) continue;
     selected.push({
@@ -667,6 +839,20 @@ function resolveBindingObligations(
     });
   }
   return selected;
+}
+
+/**
+ * seam 双腿缺席缺口（W5-FR09：缺任一腿=seam 义务未满足——编译期 tool_gap 点名
+ * 缺席腿并带登记路标，执行期 plan-runner fail-closed 非绿）。
+ */
+function seamLegGap(
+  seam: ScenarioSeamObligation,
+  resolved: readonly VerificationPlanResolvedBinding[],
+): string | null {
+  const legs = resolved.filter((binding) => binding.seam_role !== undefined);
+  const missing = SEAM_ROLE_VALUES.filter((role) => !legs.some((leg) => leg.seam_role === role));
+  if (missing.length === 0) return null;
+  return `seam 义务（operation=${seam.operation_id}）${missing.join("/")} 腿绑定缺席——须在 .pomaster/tools/bindings.json 登记 seam_role=${missing.join("/")} 的 ${SEAM_EXPANSION_GATE} binding；缺腿场景执行期 seam 义务不满足（非绿）`;
 }
 
 function bindingObligationGap(
@@ -865,8 +1051,10 @@ export function compileVerificationPlan(input: VerificationPlanInput): Verificat
       }
       if (required.has(capability)) {
         const { resolved, gap } = resolveTool(capability, bindings);
-        const resolvedBindings = resolveBindingObligations(capability, bindings);
-        const obligationGap = bindingObligationGap(capability, bindings, resolvedBindings) ?? gap;
+        // W5-FR09：非 seam 场景复用 base 展开（行为字节不变）；seam 场景双腿展开
+        // per-scenario（binding 选择权威仍在 compiler——每腿独立 obligation/GRN）。
+        const baseResolvedBindings = resolveBindingObligations(capability, bindings);
+        const baseObligationGap = bindingObligationGap(capability, bindings, baseResolvedBindings) ?? gap;
         const faceKind = CAPABILITY_FACE[capability];
         const face = faceKind === undefined ? undefined : faceByKind.get(faceKind);
         const faceClause =
@@ -874,11 +1062,11 @@ export function compileVerificationPlan(input: VerificationPlanInput): Verificat
             ? `变更面命中 face ${faceKind}（${face.basis}）`
             : "验收显式申报、变更面闭包无对应 face（义务来自验收申报，照常成立）";
         const prerequisites: string[] =
-          resolved !== null && obligationGap === null
+          resolved !== null && baseObligationGap === null
             ? [
                 `tool ${resolved}（${bindings.find((binding) => binding.tool_id === resolved)?.version ?? "version unknown"}）可用`,
               ]
-            : [`工具缺口未解：${obligationGap ?? ""}`, "补齐工具绑定前该义务不可执行（执行态只能 NOT_RUN/BLOCKED）"];
+            : [`工具缺口未解：${baseObligationGap ?? ""}`, "补齐工具绑定前该义务不可执行（执行态只能 NOT_RUN/BLOCKED）"];
         if (environment === null) {
           prerequisites.push("environment 输入缺席（unknown 保留——不默认可执行）");
         } else if (environment.grounded) {
@@ -899,17 +1087,44 @@ export function compileVerificationPlan(input: VerificationPlanInput): Verificat
         const expansions: readonly (PlanAcceptanceScenario | undefined)[] =
           scenarioRows.length > 0 ? scenarioRows : [undefined];
         for (const scenario of expansions) {
+          const seam =
+            scenario === undefined ? null : scenario.mock_real_seam ?? null;
+          const resolvedBindings =
+            seam === null
+              ? baseResolvedBindings
+              : resolveBindingObligations(capability, bindings, seam);
+          const seamGap = seam === null ? null : seamLegGap(seam, resolvedBindings);
+          const scenarioBaseGap =
+            seam === null
+              ? baseObligationGap
+              : (bindingObligationGap(capability, bindings, resolvedBindings) ?? gap);
+          const obligationGap =
+            [scenarioBaseGap, seamGap].filter((row) => row !== null).join("；") || null;
           const scenarioClause =
             scenario === undefined
               ? ""
-              : `；场景义务 scenario=${scenario.scenario_ref}（precondition：${scenario.precondition}；interaction：${scenario.interaction}${scenario.runtime_confirmation_required ? "；须运行时确认" : ""}）`;
+              : `；场景义务 scenario=${scenario.scenario_ref}（precondition：${scenario.precondition}；interaction：${scenario.interaction}${scenario.runtime_confirmation_required ? "；须运行时确认" : ""}${scenario.mock_real_seam !== undefined ? `；seam 义务 operation=${scenario.mock_real_seam.operation_id}（mock/real 双腿各自独立 GRN，缺腿非绿）` : ""}）`;
+          const oracleClause =
+            scenario === undefined || scenario.expected_observation_oracle === undefined
+              ? ""
+              : `；oracle：保存后经 ${scenario.expected_observation_oracle.visible_via} 通道可见${scenario.expected_observation_oracle.mapping_fields.length > 0 ? `（须出现字段 ${scenario.expected_observation_oracle.mapping_fields.join("、")}）` : ""}`;
           const scenarioEvidence =
             scenario === undefined
               ? ""
-              : `；scenario=${scenario.scenario_ref} 预期观察：「${scenario.expected_observation}」`;
+              : `；scenario=${scenario.scenario_ref} 预期观察：「${scenario.expected_observation}」${oracleClause}`;
           items.push({
             acceptance_ref: item.ref,
-            ...(scenario === undefined ? {} : { scenario_ref: scenario.scenario_ref }),
+            ...(scenario === undefined
+              ? {}
+              : {
+                  scenario_ref: scenario.scenario_ref,
+                  ...(scenario.expected_observation_oracle !== undefined
+                    ? { scenario_oracle: scenario.expected_observation_oracle }
+                    : {}),
+                  ...(scenario.mock_real_seam !== undefined
+                    ? { seam_obligation: scenario.mock_real_seam }
+                    : {}),
+                }),
             evidence_requirement: CAPABILITY_EVIDENCE_REQUIREMENT[capability],
             capability,
             method: CAPABILITY_METHOD[capability],

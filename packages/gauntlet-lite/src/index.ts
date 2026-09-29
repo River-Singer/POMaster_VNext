@@ -369,8 +369,32 @@ export {
   CONTROL_DATA_FLOW_RUNTIME_PARSER_REF,
   CONTROL_DATA_FLOW_RUNTIME_TOOL_ID,
   CONTROL_DATA_FLOW_RUNTIME_TOOL_VERSION,
+  CONTROL_DATA_FLOW_RUNTIME_REPORT_V1,
+  CONTROL_DATA_FLOW_RUNTIME_REPORT_V2,
+  CONTROL_DATA_FLOW_TRACE_STAGES,
+  CONTROL_DATA_FLOW_OBSERVATION_KEYS,
+  FIXTURE_LAYER_KINDS,
   createControlDataFlowRuntimeAdapter,
   parseControlDataFlowRuntimeReport,
   assertSafeRuntimeProbeManifest,
 } from "./control-data-flow-runtime-adapter.js";
-export type { ControlDataFlowRuntimeReport, ControlDataFlowRuntimeProbeManifest } from "./control-data-flow-runtime-adapter.js";
+export type {
+  ControlDataFlowRuntimeReport,
+  ControlDataFlowRuntimeReportV1,
+  ControlDataFlowRuntimeReportV2,
+  ControlDataFlowTraceSegment,
+  ControlDataFlowTraceStage,
+  ControlDataFlowRuntimeProbeManifest,
+  FixtureLayerDeclaration,
+  FixtureLayerKind,
+} from "./control-data-flow-runtime-adapter.js";
+export {
+  SEAM_DIMENSIONS,
+} from "./seam-comparator.js";
+export type {
+  SeamLegObservation,
+  SeamShapeField,
+  SeamMutationObservation,
+  SeamDimension,
+  SeamDimensionOutcome,
+} from "./seam-comparator.js";

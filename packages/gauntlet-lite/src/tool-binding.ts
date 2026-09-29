@@ -136,6 +136,12 @@ export interface ToolBindingRecord {
   readonly gate_def: string;
   readonly metric_dialect: string;
   readonly capabilities: readonly string[];
+  /**
+   * seam 腿角色（W5-FR09 加性可选；schema 23 binding.seam_role 同批镜像）：mock/real
+   * 双腿 binding 的身份标记——seam 场景 runtime gate 双腿展开的选择面；缺席=非 seam
+   * binding（legacy 词形字节不变）。词形闭包 = kernel SEAM_ROLE_VALUES。
+   */
+  readonly seam_role?: "mock" | "real";
   readonly execution: ToolBindingExecution;
   readonly report_contract: ToolBindingReportContract;
   readonly evidence_targets?: readonly string[];
@@ -536,12 +542,29 @@ export function runBindingGate(
     declaredVerdict: null,
     isFixture: plan.subjectId !== null && plan.subjectId.startsWith("TEST."),
   });
+  // W5 契约 §5 fixture 分层呈现：manifest 声明 fixture_layer 时 scope.note 附
+  // fixture_layer=<kind>（报告消费端按声明呈现证明范围——Node 文件沙箱不得改名
+  // 冒充真实业务链；缺席=未申报诚实留白）。
+  const fixtureLayerNote =
+    runtimeManifest?.fixture_layer === undefined
+      ? null
+      : `fixture_layer=${runtimeManifest.fixture_layer.kind}`;
+  const layerStamped: GateResultRecord =
+    fixtureLayerNote === null
+      ? record
+      : {
+          ...record,
+          scopeNote:
+            record.scopeNote === undefined
+              ? fixtureLayerNote
+              : `${record.scopeNote}；${fixtureLayerNote}`,
+        };
   // SP-W1-f 过渡留痕：scope.note 尾附 binding_id=<id>（03 binding_ref 专位待 Owner 追认）。
   const annotation = `${BINDING_ANNOTATION_PREFIX}${binding.id}`;
   const stamped: GateResultRecord = {
-    ...record,
+    ...layerStamped,
     scopeNote:
-      record.scopeNote === undefined ? annotation : `${record.scopeNote}；${annotation}`,
+      layerStamped.scopeNote === undefined ? annotation : `${layerStamped.scopeNote}；${annotation}`,
   };
   return {
     binding_id: binding.id,

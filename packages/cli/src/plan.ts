@@ -176,6 +176,11 @@ function toolBindingsForPlan(rootDir: string): ToolBindingsForPlan {
         gate_def: byId.get(row.binding_id)!.gate_def,
         capabilities: (byId.get(row.binding_id)?.capabilities ??
           []) as PlanCapabilityWord[],
+        // W5-FR09：seam 腿角色透传（mock/real 双腿 binding 身份——compiler seam
+        // 双腿展开的选择面；legacy binding 缺席零破坏）。
+        ...(byId.get(row.binding_id)?.seam_role !== undefined
+          ? { seam_role: byId.get(row.binding_id)!.seam_role }
+          : {}),
         source_ref: `binding:${row.binding_id}（.pomaster/tools/bindings.json 统一注册面——SP-W1-e 提案待追认；binding_ref schema 专位 W2 落位）`,
         version: byId.get(row.binding_id)?.tool_version_anchor ?? null,
         available: row.available,

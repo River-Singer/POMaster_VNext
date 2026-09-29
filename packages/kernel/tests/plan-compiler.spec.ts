@@ -689,3 +689,213 @@ describe("reviewed scope 非授权计划输入", () => {
     expect(after.items).toEqual(before.items);
   });
 });
+
+// ============================================================
+// W5-FR09/FR10 oracle + seam 词形（契约 w5-probe-contract §1/§4；加性可选、legacy 零破坏）
+// ============================================================
+
+/** seam 场景输入底座：control_data_flow 义务 + unified runtime bindings（mock/real 双腿）。 */
+function seamInput(overrides?: {
+  scenarios?: unknown;
+  runtimeBindings?: PlanToolBinding[];
+}): VerificationPlanInput {
+  const base = c1Input();
+  const staticBinding: PlanToolBinding = {
+    binding_id: "project.cdf.static", tool_id: "gauntlet:control-data-flow",
+    gate: "CONTROL_DATA_FLOW", gate_def: "POLICY.GATE.CONTROL_DATA_FLOW@0.1.0",
+    capabilities: ["control_data_flow"],
+    source_ref: "binding:static", version: "0.1.0", available: true, availability_reason: "ok",
+  };
+  const runtimeLegs: PlanToolBinding[] = overrides?.runtimeBindings ?? [
+    {
+      binding_id: "project.cdf.runtime.mock", tool_id: "gauntlet:control-data-flow-runtime",
+      gate: "CONTROL_DATA_FLOW_RUNTIME", gate_def: "POLICY.GATE.CONTROL_DATA_FLOW_RUNTIME@0.1.0",
+      capabilities: ["control_data_flow"], seam_role: "mock",
+      source_ref: "binding:mock", version: "0.1.0", available: true, availability_reason: "ok",
+    },
+    {
+      binding_id: "project.cdf.runtime.real", tool_id: "gauntlet:control-data-flow-runtime",
+      gate: "CONTROL_DATA_FLOW_RUNTIME", gate_def: "POLICY.GATE.CONTROL_DATA_FLOW_RUNTIME@0.1.0",
+      capabilities: ["control_data_flow"], seam_role: "real",
+      source_ref: "binding:real", version: "0.1.0", available: true, availability_reason: "ok",
+    },
+  ];
+  const head = base.acceptance.value[0] as PlanAcceptanceItem;
+  return {
+    ...base,
+    acceptance: {
+      ...base.acceptance,
+      value: [
+        {
+          ...head,
+          requires: [...head.requires, "control_data_flow"],
+          scenarios:
+            overrides?.scenarios ??
+            [
+              {
+                scenario_ref: "import-persisted",
+                precondition: "导入入口在座",
+                interaction: "触发导入",
+                state_dimensions: ["imported=true"],
+                expected_observation: "导入结果重读可见",
+                runtime_confirmation_required: true,
+                expected_observation_oracle: {
+                  visible_via: "api_list",
+                  filter_context: { project_id: "p-1" },
+                  mapping_fields: ["imported_count"],
+                },
+                mock_real_seam: { operation_id: "import-records", contract_ref: "OAS.IMPORT@1" },
+              },
+            ] as unknown,
+        },
+        ...base.acceptance.value.slice(1),
+      ],
+    },
+    toolBindings: {
+      ...base.toolBindings,
+      // override 语义 = 完整替换 binding 清单（缺省 = 默认双腿 + static）。
+      value: overrides?.runtimeBindings !== undefined ? overrides.runtimeBindings : [...runtimeLegs, staticBinding],
+    },
+  };
+}
+
+describe("Acceptance 场景契约（W5-FR10 oracle 词形：fail-closed 闭包校验——可加细不得放宽）", () => {
+  it("合法 oracle 放行且随展开条目下传（scenario_oracle 键 + expected_evidence 携带 oracle 描述）", () => {
+    const plan = compileVerificationPlan(seamInput());
+    const runtime = plan.items.find(
+      (item) => item.scenario_ref === "import-persisted" && item.capability === "control_data_flow" && item.applicability === "REQUIRED",
+    );
+    expect(runtime?.scenario_oracle).toEqual({
+      visible_via: "api_list",
+      filter_context: { project_id: "p-1" },
+      mapping_fields: ["imported_count"],
+    });
+    expect(runtime?.expected_evidence).toContain("oracle：保存后经 api_list 通道可见");
+    expect(runtime?.expected_evidence).toContain("imported_count");
+  });
+
+  it("oracle 额外键拒绝（词形闭包 fail-closed——额外义务键走契约修订不自扩）", () => {
+    const scenarios = seamInput().acceptance.value[0] as PlanAcceptanceItem;
+    const rows = (scenarios.scenarios as Record<string, unknown>[]).map((row) => ({
+      ...row,
+      expected_observation_oracle: { ...(row.expected_observation_oracle as object), toast_visible: true },
+    }));
+    expect(() => compileVerificationPlan(seamInput({ scenarios: rows }))).toThrowError(/toast_visible 不在 oracle 闭合词形/);
+  });
+
+  it("visible_via 词表外拒绝（api_list/api_detail/ui_surface 三值闭包）", () => {
+    const scenarios = seamInput().acceptance.value[0] as PlanAcceptanceItem;
+    const rows = (scenarios.scenarios as Record<string, unknown>[]).map((row) => ({
+      ...row,
+      expected_observation_oracle: { ...(row.expected_observation_oracle as object), visible_via: "cli_stdout" },
+    }));
+    expect(() => compileVerificationPlan(seamInput({ scenarios: rows }))).toThrowError(/visible_via/);
+  });
+
+  it("filter_context 键值非空字符串；mapping_fields 须 string[]；oracle 非对象拒绝", () => {
+    const scenarios = seamInput().acceptance.value[0] as PlanAcceptanceItem;
+    const mutate = (patch: (row: Record<string, unknown>) => void): unknown[] => {
+      const rows = JSON.parse(JSON.stringify(scenarios.scenarios)) as Record<string, unknown>[];
+      patch(rows[0] as Record<string, unknown>);
+      return rows;
+    };
+    expect(() =>
+      compileVerificationPlan(seamInput({
+        scenarios: mutate((row) => { (row.expected_observation_oracle as Record<string, unknown>).filter_context = { "": "p-1" }; }),
+      })),
+    ).toThrowError(/filter_context/);
+    expect(() =>
+      compileVerificationPlan(seamInput({
+        scenarios: mutate((row) => { (row.expected_observation_oracle as Record<string, unknown>).mapping_fields = [42]; }),
+      })),
+    ).toThrowError(/mapping_fields/);
+    expect(() =>
+      compileVerificationPlan(seamInput({
+        scenarios: mutate((row) => { row.expected_observation_oracle = "api_list 可见"; }),
+      })),
+    ).toThrowError(/expected_observation_oracle 须为对象/);
+  });
+
+  it("oracle 参与 plan fingerprint（oracle 修订 → 旧证据重新判资格）", () => {
+    const base = compileVerificationPlan(seamInput());
+    const scenarios = seamInput().acceptance.value[0] as PlanAcceptanceItem;
+    const rows = JSON.parse(JSON.stringify(scenarios.scenarios)) as Record<string, unknown>[];
+    ((rows[0] as Record<string, unknown>)["expected_observation_oracle"] as Record<string, unknown>)["mapping_fields"] = ["imported_count", "failed_count"];
+    const revised = compileVerificationPlan(seamInput({ scenarios: rows }));
+    expect(revised.inputs_fingerprint).not.toBe(base.inputs_fingerprint);
+  });
+});
+
+describe("Acceptance 场景契约（W5-FR09 seam 词形：双腿展开 + 缺腿 tool_gap——compiler 保持 binding 选择权威）", () => {
+  it("合法 seam 声明放行且 runtime gate 双腿展开（每腿独立 resolved_binding 带 seam_role）", () => {
+    const plan = compileVerificationPlan(seamInput());
+    const runtime = plan.items.filter(
+      (item) => item.scenario_ref === "import-persisted" && item.capability === "control_data_flow" && item.applicability === "REQUIRED",
+    );
+    // runtime gate 单条目（per-scenario），resolved_bindings = 静态 1 + runtime 双腿 2。
+    expect(runtime).toHaveLength(1);
+    expect(runtime[0]?.seam_obligation).toEqual({ operation_id: "import-records", contract_ref: "OAS.IMPORT@1" });
+    expect(runtime[0]?.resolved_bindings).toHaveLength(3);
+    expect(runtime[0]?.resolved_bindings.filter((binding) => binding.gate === "CONTROL_DATA_FLOW_RUNTIME").map((binding) => [binding.binding_id, binding.seam_role])).toEqual([
+      ["project.cdf.runtime.mock", "mock"],
+      ["project.cdf.runtime.real", "real"],
+    ]);
+    // 静态 gate 照旧单 binding（seam 双腿只对 CONTROL_DATA_FLOW_RUNTIME 展开）。
+    const staticLegs = runtime[0]?.resolved_bindings.filter((binding) => binding.gate === "CONTROL_DATA_FLOW") ?? [];
+    expect(staticLegs).toHaveLength(1);
+    expect(staticLegs.every((binding) => binding.seam_role === undefined)).toBe(true);
+    expect(runtime[0]?.reason).toContain("seam 义务 operation=import-records");
+  });
+
+  it("缺任一腿 → tool_gap 点名缺席腿并带登记路标（义务保持 REQUIRED——缺腿非绿在执行期 fail-closed）", () => {
+    const bindings = seamInput().toolBindings.value as PlanToolBinding[];
+    const mockOnly = bindings.filter((binding) => binding.seam_role !== "real");
+    const plan = compileVerificationPlan(seamInput({ runtimeBindings: mockOnly }));
+    const runtime = plan.items.find(
+      (item) => item.scenario_ref === "import-persisted" && item.capability === "control_data_flow" && item.applicability === "REQUIRED",
+    );
+    expect(runtime?.resolved_bindings.filter((binding) => binding.gate === "CONTROL_DATA_FLOW_RUNTIME").map((binding) => binding.seam_role)).toEqual(["mock"]);
+    expect(runtime?.tool_gap).toContain("real 腿绑定缺席");
+    expect(runtime?.tool_gap).toContain("seam_role=real");
+  });
+
+  it("非 seam 场景 binding 选择行为字节不变（同 registry 下无 mock_real_seam 的条目仍单 binding 无 seam_role）", () => {
+    const plan = compileVerificationPlan(seamInput());
+    const legacyRender = plan.items.filter(
+      (item) => item.scenario_ref === undefined && item.capability === "unit_behavior" && item.applicability === "REQUIRED",
+    );
+    expect(legacyRender.every((item) => item.resolved_bindings.every((binding) => binding.seam_role === undefined))).toBe(true);
+    expect(legacyRender.every((item) => item.seam_obligation === undefined && item.scenario_oracle === undefined)).toBe(true);
+  });
+
+  it("seam 词形 fail-closed：额外键 / 空 operation_id / contract_ref 非法词形拒绝", () => {
+    const scenarios = seamInput().acceptance.value[0] as PlanAcceptanceItem;
+    const mutate = (patch: (row: Record<string, unknown>) => void): unknown[] => {
+      const rows = JSON.parse(JSON.stringify(scenarios.scenarios)) as Record<string, unknown>[];
+      patch(rows[0] as Record<string, unknown>);
+      return rows;
+    };
+    expect(() =>
+      compileVerificationPlan(seamInput({
+        scenarios: mutate((row) => { row.mock_real_seam = { ...(row.mock_real_seam as object), mode: "half" }; }),
+      })),
+    ).toThrowError(/mode 不在 seam 闭合词形/);
+    expect(() =>
+      compileVerificationPlan(seamInput({
+        scenarios: mutate((row) => { (row.mock_real_seam as Record<string, unknown>).operation_id = "  "; }),
+      })),
+    ).toThrowError(/operation_id/);
+    expect(() =>
+      compileVerificationPlan(seamInput({
+        scenarios: mutate((row) => { (row.mock_real_seam as Record<string, unknown>).contract_ref = 42; }),
+      })),
+    ).toThrowError(/contract_ref/);
+  });
+
+  it("seam_role 词表外 binding 输入拒绝（mock/real 两值闭包——冒领即 seam 对账失效）", () => {
+    const bindings = (seamInput().toolBindings.value as PlanToolBinding[]).map((binding) =>
+      binding.seam_role === "mock" ? { ...binding, seam_role: "shadow" as never } : binding,
+    );
+    expect(() => compileVerificationPlan(seamInput({ runtimeBindings: bindings }))).toThrowError(/seam_role = shadow 不在 seam 腿角色词表/);
+  });
+});

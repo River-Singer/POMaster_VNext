@@ -268,6 +268,11 @@
             }
           }
         },
+        "seam_role": {
+          "enum": ["mock", "real"],
+          "title": "seam 腿角色",
+          "description": "W5-FR09：mock/real 双腿 binding 的身份标记（seam 场景双腿展开的选择面；缺席=非 seam binding）。词形 = kernel SEAM_ROLE_VALUES 闭包（SP 提案待追认）。"
+        },
         "notes": {
           "type": "string",
           "minLength": 1,

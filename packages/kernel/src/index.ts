@@ -1200,6 +1200,8 @@ export {
   PLAN_CAPABILITY_WORDS,
   PLAN_CAPABILITY_GATE_NAMES,
   CAPABILITY_EVIDENCE_REQUIREMENT,
+  OBSERVATION_CHANNEL_VALUES,
+  SEAM_ROLE_VALUES,
   compileVerificationPlan,
 } from "./plan-compiler.js";
 export type {
@@ -1209,6 +1211,10 @@ export type {
   PlanInputSegment,
   PlanAcceptanceItem,
   PlanAcceptanceScenario,
+  ObservationChannelValue,
+  BusinessObservationOracle,
+  ScenarioSeamObligation,
+  SeamRoleValue,
   PlanChangeFace,
   PlanChangeSurface,
   PlanEnvironmentFacts,
