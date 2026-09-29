@@ -101,6 +101,7 @@ import type {
   Store,
 } from "@pomaster/kernel";
 import { KERNEL_TOOL } from "@pomaster/kernel";
+import { judgeProjectionFreshness } from "@pomaster/kernel";
 import { INIT_TOOL_ID } from "./digest.js";
 import {
   TRUTH_INDEX_RELATIVE,
@@ -663,21 +664,38 @@ export async function runContextCompile(
     );
     const existing = readExistingManifest(rootDir, fileName);
     const fingerprint = projection.inputsFingerprint;
+    // —— freshness 单点判卷（W3）：stale 比对收敛到 kernel judgeProjectionFreshness
+    // 单一比较器（禁第二比较器——readiness/handoff/reconciliation 等其他 generated
+    // 消费面共用同一四态合同；指纹算法本身仍归 kernel projection inputsFingerprint
+    // 单点，本函数只比较）。state 判定语义与原内联分支逐字等价；detail 保留本命令
+    // 既有呈现词形（既有测试锚词面不变）。
+    const freshnessJudgment = judgeProjectionFreshness({
+      artifact_present: existing.state === "present",
+      recorded_inputs_fingerprint:
+        existing.state === "present" ? existing.existing_inputs_fingerprint : null,
+      recomputed_inputs_fingerprint: fingerprint,
+    });
     let staleState: "absent" | "fresh" | "stale_grounding";
     let staleDetail: string;
-    if (existing.state === "absent") {
-      staleState = "absent";
-      staleDetail = "现盘无 context manifest（首编译落盘）";
-    } else if (existing.state === "stale_grounding") {
+    if (existing.state === "stale_grounding") {
+      // 现盘不可解析（手改/损坏）走本命令既有词面（损坏面判定不在指纹比较器职责内）。
       staleState = "stale_grounding";
       staleDetail = existing.detail;
-    } else if (existing.existing_inputs_fingerprint === fingerprint) {
-      staleState = "fresh";
-      staleDetail = "现盘 manifest 指纹一致（同输入重放字节稳定）";
     } else {
-      staleState = "stale_grounding";
+      // unjudgeable 在本调用点不可达（present ⇒ recorded 非 null、recomputed 恒非空）；
+      // 防御性映射到 stale_grounding（必然不 fresh 同语义）。
+      staleState =
+        freshnessJudgment.state === "fresh"
+          ? "fresh"
+          : freshnessJudgment.state === "absent"
+            ? "absent"
+            : "stale_grounding";
       staleDetail =
-        `STALE_GROUNDING：现盘 manifest inputs_fingerprint=${existing.existing_inputs_fingerprint} 与本次编译 ${fingerprint} 漂移（Truth/Policy/catalog/baseline grounding 已更新）——本次编译即为重编译，覆盖写同 id 文件；可用 context compile --check 随时复核`;
+        staleState === "absent"
+          ? "现盘无 context manifest（首编译落盘）"
+          : staleState === "fresh"
+            ? "现盘 manifest 指纹一致（同输入重放字节稳定）"
+            : `STALE_GROUNDING：现盘 manifest inputs_fingerprint=${existing.existing_inputs_fingerprint} 与本次编译 ${fingerprint} 漂移（Truth/Policy/catalog/baseline grounding 已更新）——本次编译即为重编译，覆盖写同 id 文件；可用 context compile --check 随时复核`;
     }
     const stale_check: ContextCompileResult["stale_check"] = {
       state: staleState,

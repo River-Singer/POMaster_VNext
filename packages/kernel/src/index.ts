@@ -2532,3 +2532,37 @@ export type {
   DerivedImpactUnresolvedRef,
   DerivedImpactResult,
 } from "./impact-derive.js";
+
+// —— W3 失效后果 + freshness 单点判卷 + Authority 冲突 + 稳定引用（FR-06/07/08/12） ——
+// 纯函数零 IO 零写入：自动失效 ≠ 自动决策（不改 Human Decision 字节、不自动 REBIND、
+// 不扩大 Permit）；freshness 只比较既有指纹（算法归 projection 单点、词形复用
+// STALE_GROUNDING）；Authority 冲突呈现与裁决分离（不按 mtime/文件名/自称 canonical
+// 选胜者）；稳定引用 semantic ID 承载机器关系、path/line 只导航。
+export {
+  INVALIDATION_CONSEQUENCE_VALUES,
+  PROJECTION_FRESHNESS_STATES,
+  FRESHNESS_ADAPTED_PRODUCERS,
+  FRESHNESS_UNADAPTED_PRODUCERS,
+  STABLE_REFERENCE_KINDS,
+  classifyConsequence,
+  deriveInvalidationRows,
+  judgeProjectionFreshness,
+  deriveAuthorityConflicts,
+  resolveStableReference,
+} from "./invalidation.js";
+export type {
+  InvalidationConsequenceValue,
+  InvalidationRow,
+  InvalidationChange,
+  DeriveInvalidationOptions,
+  DeriveInvalidationResult,
+  ProjectionFreshnessState,
+  ProjectionFreshnessInput,
+  ProjectionFreshnessJudgment,
+  AuthorityClaimInput,
+  AuthorityConflictClaimant,
+  AuthorityConflictRow,
+  AuthorityConflictReport,
+  StableReferenceKind,
+  StableReferenceResolution,
+} from "./invalidation.js";
