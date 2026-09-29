@@ -274,6 +274,11 @@ describe("Case B：Vue 按钮布局 Change 的 catalog applicability（PRD §16/
         change: null,
         capabilities: ["CAPABILITY.PRESENTATION"],
         change_class: "PRESENTATION_CHANGE",
+        // W4-FR02：spec 路由四请求键入 applicability 回显（缺席 = 请求未声明，非默认匹配）。
+        stage: null,
+        triggers: [],
+        stack: [],
+        spec_refs: [],
       });
     const explain = await runJson([
       "context", "explain",
