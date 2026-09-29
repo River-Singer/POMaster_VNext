@@ -603,6 +603,72 @@ describe("Acceptance 场景契约（W1-FR04：场景身份参与 plan fingerprin
   });
 });
 
+describe("Acceptance 场景编译展开（W1-FR04：acceptance×capability×scenario 义务分母；PR-W1.2）", () => {
+  const plan = compileVerificationPlan(withAcceptanceScenarios(CHECKBOX_SCENARIOS));
+
+  it("REQUIRED 条目按场景展开：每场景一条 item 带 scenario_ref，reason/expected_evidence 携带场景义务", () => {
+    const render = plan.items.filter(
+      (item) => item.acceptance_ref === A1_REF && item.capability === "ui_render",
+    );
+    expect(render).toHaveLength(3);
+    // 展开 per-scenario 且 (acceptance_ref, capability, scenario_ref) 码点序。
+    expect(render.map((item) => item.scenario_ref)).toEqual([
+      "selected-hover",
+      "selected-no-hover",
+      "unselected-hover",
+    ]);
+    for (const item of render) {
+      expect(item.applicability).toBe("REQUIRED");
+      expect(item.reason).toContain(`scenario=${item.scenario_ref as string}`);
+      expect(item.expected_evidence).toContain(`scenario=${item.scenario_ref as string}`);
+      expect(item.expected_evidence).toContain("悬浮提示");
+      expect(item.resolved_tool).toBe("vitest"); // 工具解析与场景正交（c1 fixture vitest 覆盖 ui_render）
+    }
+    const runtimeConfirmed = render.find((item) => item.scenario_ref === "unselected-hover");
+    expect(runtimeConfirmed?.reason).toContain("须运行时确认");
+    expect(runtimeConfirmed?.expected_evidence).toContain("未选中引导文案");
+  });
+
+  it("NOT_REQUIRED / NOT_APPLICABLE 不展开场景（零义务面无分母——单条保持无 scenario_ref 键）", () => {
+    const notApplicable = plan.items.filter(
+      (item) => item.acceptance_ref === A1_REF && item.capability === "migration_drill",
+    );
+    expect(notApplicable).toHaveLength(1);
+    expect(notApplicable[0]?.applicability).toBe("NOT_APPLICABLE");
+    expect(notApplicable[0]?.scenario_ref).toBeUndefined();
+  });
+
+  it("逐 Acceptance 分母：35 items（14+12+9）按 (acceptance_ref, capability, scenario_ref) 码点序零重复", () => {
+    expect(plan.items).toHaveLength(35);
+    const counts = { REQUIRED: 0, NOT_REQUIRED: 0, NOT_APPLICABLE: 0 } as Record<string, number>;
+    for (const item of plan.items) counts[item.applicability] = (counts[item.applicability] ?? 0) + 1;
+    expect(counts).toEqual({ REQUIRED: 10, NOT_REQUIRED: 1, NOT_APPLICABLE: 24 });
+
+    const keys = plan.items.map(
+      (item) => `${item.acceptance_ref}::${item.capability}::${item.scenario_ref ?? ""}`,
+    );
+    expect(keys).toEqual([...keys].sort());
+    expect(new Set(keys).size).toBe(35);
+  });
+
+  it("无场景 acceptance 保持单条 item（无 scenario_ref 键）——legacy 消费矩阵零破坏", () => {
+    const legacyUnit = plan.items.filter(
+      (item) => item.acceptance_ref === A3_REF && item.capability === "unit_behavior",
+    );
+    expect(legacyUnit).toHaveLength(1);
+    expect(legacyUnit[0]?.scenario_ref).toBeUndefined();
+    expect(legacyUnit[0]?.applicability).toBe("REQUIRED");
+
+    const legacy = compileVerificationPlan(c1Input());
+    expect(legacy.items.every((item) => item.scenario_ref === undefined)).toBe(true);
+  });
+
+  it("可重编译：场景化输入同输入 → 同输出（含 scenario_ref 字节稳定）", () => {
+    const replay = compileVerificationPlan(withAcceptanceScenarios(CHECKBOX_SCENARIOS));
+    expect(replay).toEqual(plan);
+  });
+});
+
 describe("reviewed scope 非授权计划输入", () => {
   it("进入输出和指纹，但不改变 item target/applicability/tool binding", () => {
     const base = c1Input();

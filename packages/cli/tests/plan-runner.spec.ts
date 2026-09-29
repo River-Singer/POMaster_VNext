@@ -205,6 +205,123 @@ async function adoptCurrentRealityScope(executionId: string): Promise<{ readonly
   return { blobPath };
 }
 
+// ============================================================
+// W1-FR04 场景化分母（acceptance×capability×scenario；Case C 复选框三态同源）
+// ============================================================
+
+const CHECKBOX_SCENARIOS = [
+  {
+    scenario_ref: "selected-no-hover",
+    precondition: "复选框处于选中态",
+    interaction: "指针不在复选框上（no-hover）",
+    state_dimensions: ["selected=true", "hover=false"],
+    expected_observation: "悬浮提示不显示；复选框保持选中呈现",
+    runtime_confirmation_required: false,
+  },
+  {
+    scenario_ref: "selected-hover",
+    precondition: "复选框处于选中态",
+    interaction: "指针悬停于复选框上",
+    state_dimensions: ["selected=true", "hover=true"],
+    expected_observation: "悬浮提示显示当前选中说明",
+    runtime_confirmation_required: false,
+  },
+  {
+    scenario_ref: "unselected-hover",
+    precondition: "复选框处于未选中态",
+    interaction: "指针悬停于复选框上",
+    state_dimensions: ["selected=false", "hover=true"],
+    expected_observation: "悬浮提示显示未选中引导文案",
+    runtime_confirmation_required: true,
+  },
+];
+
+/** 在 fixture 之上播种三态场景任务（TASK.STATIC.SCEN：static_analysis × 3 场景）。 */
+async function seedScenarioTask(): Promise<void> {
+  const store = await createStore(root);
+  await applyTransaction(store, { ops: [{ op: "upsert_object", envelope: {
+    id: "TASK.STATIC.SCEN", kind: "task_object", axisProfile: "task_default",
+    axes: { lifecycle: "CURRENT", confidence: "PROVISIONAL", evidence: "IMPLEMENTED", change: "STABLE" },
+    titleZh: "复选框三态场景任务", authority: { owner: "BOOTSTRAP_OWNER", delegates: [] }, origin: "natural",
+    payload: { intent: "三态场景分母执行", class_scan_result: { scope: "src/**", hits: 0, fixed_count: 0, regression_case_ref: "GRN-SCEN" }, acceptance: [{ criterion: "复选框三态交互均须正确呈现提示", claim: null, requires: ["static_analysis"], scenarios: CHECKBOX_SCENARIOS }] },
+  } as never }] });
+}
+
+function grnPath(grn: string): string {
+  return join(root, ".pomaster", "evidence", "runs", `${grn}.json`);
+}
+
+function grnNote(grn: string): string {
+  const doc = JSON.parse(readFileSync(grnPath(grn), "utf8")) as {
+    gate_result: { result: { scope: { note: string } } };
+  };
+  return doc.gate_result.result.scope.note;
+}
+
+describe("plan run（W1-FR04 场景化分母）", () => {
+  it("场景化 plan run：gates×场景全分母执行，rows/GRN note 逐场景对账", async () => {
+    const executionId = await fixture();
+    await seedScenarioTask();
+    const outcome = await runPlanRun(root, { taskRef: "TASK.STATIC.SCEN", executionId, changed: ["src/a.ts"], faces });
+    expect(outcome.ok).toBe(true);
+    expect(outcome.result).toMatchObject({ obligations_total: 6, recorded: 6, passed: 6 });
+    const typecheckRows = outcome.result.rows.filter((row) => row.gate === "TYPECHECK");
+    expect(typecheckRows.map((row) => row.scenario_ref)).toEqual([
+      "selected-hover",
+      "selected-no-hover",
+      "unselected-hover",
+    ]);
+    for (const row of outcome.result.rows) {
+      expect(row.scenario_ref).not.toBeNull();
+      expect(grnNote(row.grn)).toContain(`scenario_ref=${row.scenario_ref}`);
+    }
+  });
+
+  it("复用身份含场景：同场景同指纹复用；缺失场景不被同 gate 其他场景的 passed 覆盖（重跑补执行）", async () => {
+    const executionId = await fixture();
+    await seedScenarioTask();
+    const first = await runPlanRun(root, { taskRef: "TASK.STATIC.SCEN", executionId, changed: ["src/a.ts"], faces });
+    expect(first.ok).toBe(true);
+    const grnByKey = new Map(first.result.rows.map((row) => [`${row.gate}::${row.scenario_ref}`, row.grn]));
+    // 模拟 selected-hover 场景证据缺失（该场景两态证据丢失——同 gate 其余场景证据仍在）。
+    rmSync(grnPath(grnByKey.get("TYPECHECK::selected-hover") as string));
+    rmSync(grnPath(grnByKey.get("LINT::selected-hover") as string));
+
+    const second = await runPlanRun(root, { taskRef: "TASK.STATIC.SCEN", executionId, changed: ["src/a.ts"], faces });
+    expect(second.ok).toBe(true);
+    const secondByKey = new Map(second.result.rows.map((row) => [`${row.gate}::${row.scenario_ref}`, row.grn]));
+    // 未缺失场景复用原 GRN（同场景同指纹合法复用）。
+    expect(secondByKey.get("TYPECHECK::selected-no-hover")).toBe(grnByKey.get("TYPECHECK::selected-no-hover"));
+    expect(secondByKey.get("LINT::unselected-hover")).toBe(grnByKey.get("LINT::unselected-hover"));
+    // 缺失场景重新执行产生新 GRN（禁被 selected-no-hover 等 passed 顶替复用），note 场景 marker 正确。
+    const rebound = secondByKey.get("TYPECHECK::selected-hover") as string;
+    expect(rebound).not.toBe(grnByKey.get("TYPECHECK::selected-hover"));
+    expect(grnNote(rebound)).toContain("scenario_ref=selected-hover");
+    // 盘上 GRN = 首轮 6 − 删 2 + 重执行 2 = 6（append-only 序号继续增长；新序号证据在 rebound ≠ 旧值）。
+    expect(readdirSync(join(root, ".pomaster", "evidence", "runs")).filter((name) => /^GRN-/.test(name))).toHaveLength(6);
+  });
+
+  it("finalize cohort 键含场景：缺场景 GRN → VERIFY_BLOCKED（同 gate 多场景不互相覆盖）；补齐后恢复", async () => {
+    const executionId = await fixture();
+    await seedScenarioTask();
+    const first = await runPlanRun(root, { taskRef: "TASK.STATIC.SCEN", executionId, changed: ["src/a.ts"], faces });
+    expect(first.ok).toBe(true);
+    const grnByKey = new Map(first.result.rows.map((row) => [`${row.gate}::${row.scenario_ref}`, row.grn]));
+    // 单态证据丢失（unselected-hover 的 TYPECHECK 态）：整条 Acceptance 覆盖不充分。
+    rmSync(grnPath(grnByKey.get("TYPECHECK::unselected-hover") as string));
+
+    const status = await runFinalizeStatus(root, { taskRef: "TASK.STATIC.SCEN" });
+    expect(status.ok).toBe(true);
+    expect(status.result.stage).toBe("VERIFY_BLOCKED");
+
+    const rerun = await runPlanRun(root, { taskRef: "TASK.STATIC.SCEN", executionId, changed: ["src/a.ts"], faces });
+    expect(rerun.ok).toBe(true);
+    const statusAfter = await runFinalizeStatus(root, { taskRef: "TASK.STATIC.SCEN" });
+    expect(statusAfter.ok).toBe(true);
+    expect(statusAfter.result.stage).toBe("AWAITING_REPLAY_REVIEW");
+  });
+});
+
 describe("plan run", () => {
   it("finalize 在工具启动前拒绝 verification execution/主体与 claim 断言侧重合", async () => {
     const implementationExecutionId = await fixture();

@@ -175,6 +175,13 @@ function planFingerprintOf(row: Record<string, unknown>): string | null {
   return field?.slice("inputs_fingerprint=".length) ?? null;
 }
 
+/**
+ * 终验义务分母（W1-FR04 起含场景键）：acceptance 无场景 → key=`<accRef>\0<gate>`
+ * （legacy 字节不变）；acceptance 声明场景 → 逐场景展开 key=`<accRef>\0<scenario>\0<gate>`
+ * ——与 latestPlanCohort 的 cohort 键同构（两侧不同步则同 gate 多场景互相覆盖，
+ * research §3 明确警告）。scenarios 词形垃圾由 plan compile kernel fail-closed 拒绝，
+ * 此处坏行跳过（不进分母也不判假绿——缺键必然 allPassed=false）。
+ */
 async function requiredPlanKeys(rootDir: string, taskRef: string): Promise<Set<string>> {
   const required = new Set<string>();
   try {
@@ -187,10 +194,27 @@ async function requiredPlanKeys(rootDir: string, taskRef: string): Promise<Set<s
     const acceptance = Array.isArray(payload?.["acceptance"]) ? payload["acceptance"] : [];
     acceptance.forEach((raw, indexNumber) => {
       if (raw === null || typeof raw !== "object") return;
-      const capabilities = Array.isArray((raw as Record<string, unknown>)["requires"]) ? (raw as Record<string, unknown>)["requires"] as unknown[] : [];
+      const record = raw as Record<string, unknown>;
+      const capabilities = Array.isArray(record["requires"]) ? record["requires"] as unknown[] : [];
+      const scenarioRefs = Array.isArray(record["scenarios"])
+        ? (record["scenarios"] as unknown[]).flatMap((scenario) =>
+            scenario !== null && typeof scenario === "object" && typeof (scenario as Record<string, unknown>)["scenario_ref"] === "string"
+              ? [(scenario as Record<string, unknown>)["scenario_ref"] as string]
+              : [],
+          )
+        : [];
+      // key 词形：无场景（或缺席/空数组）→ `<accRef>\0<gate>`（legacy 字节不变）；
+      // 声明场景 → 逐场景 `<accRef>\0<scenario>\0<gate>`。
+      const scenarioKeys: readonly (string | null)[] = scenarioRefs.length === 0 ? [null] : scenarioRefs;
       for (const capability of capabilities) {
         if (typeof capability !== "string" || !(capability in PLAN_CAPABILITY_GATE_NAMES)) continue;
-        for (const gate of PLAN_CAPABILITY_GATE_NAMES[capability as keyof typeof PLAN_CAPABILITY_GATE_NAMES]) required.add(`${taskRef}#acceptance[${indexNumber}]\0${gate}`);
+        for (const gate of PLAN_CAPABILITY_GATE_NAMES[capability as keyof typeof PLAN_CAPABILITY_GATE_NAMES]) {
+          for (const scenarioKey of scenarioKeys) {
+            required.add(scenarioKey === null
+              ? `${taskRef}#acceptance[${indexNumber}]\0${gate}`
+              : `${taskRef}#acceptance[${indexNumber}]\0${scenarioKey}\0${gate}`);
+          }
+        }
       }
     });
   } catch { /* malformed task is handled by the existing status/preflight paths */ }
@@ -211,8 +235,15 @@ async function latestPlanCohort(rootDir: string, taskRef: string): Promise<{ fin
     const latestByObligation = new Map<string, typeof cohort[number]>();
     for (const entry of cohort) {
       const note = ((entry.result?.["scope"] as Record<string, unknown> | undefined)?.["note"]);
-      const acceptance = typeof note === "string" ? note.split("；").find((part) => part.startsWith("acceptance_ref="))?.slice("acceptance_ref=".length) : undefined;
-      const key = `${acceptance ?? ""}\0${String(entry.result?.["gate"] ?? "")}`;
+      const parts = typeof note === "string" ? note.split("；") : [];
+      const acceptance = parts.find((part) => part.startsWith("acceptance_ref="))?.slice("acceptance_ref=".length);
+      // W1-FR04：cohort 键含场景身份（与 requiredPlanKeys 同构：无场景 marker =
+      // 两段键 `<acc>\0<gate>`（legacy 字节不变）；带场景 = 三段键 `<acc>\0<scenario>\0<gate>`）
+      // ——同 gate 不同场景不得互相覆盖。
+      const scenario = parts.find((part) => part.startsWith("scenario_ref="))?.slice("scenario_ref=".length) ?? "";
+      const key = scenario === ""
+        ? `${acceptance ?? ""}\0${String(entry.result?.["gate"] ?? "")}`
+        : `${acceptance ?? ""}\0${scenario}\0${String(entry.result?.["gate"] ?? "")}`;
       if (!latestByObligation.has(key)) latestByObligation.set(key, entry);
     }
     const actual = new Set(latestByObligation.keys());

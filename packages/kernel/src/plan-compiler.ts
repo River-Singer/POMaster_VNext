@@ -331,6 +331,12 @@ export interface VerificationPlanInput {
 
 export interface VerificationPlanItem {
   readonly acceptance_ref: string;
+  /**
+   * W1-FR04 场景身份（加性可选）：acceptance 声明场景时 REQUIRED 条目按场景展开
+   * （acceptance×capability×scenario——每场景独立义务条目，run/复用/终验 cohort
+   * 以 scenario_ref 进 GRN note marker）。无场景条目无此键（legacy 零破坏）。
+   */
+  readonly scenario_ref?: string;
   readonly evidence_requirement: string;
   readonly capability: PlanCapabilityWord;
   readonly method: string;
@@ -885,24 +891,42 @@ export function compileVerificationPlan(input: VerificationPlanInput): Verificat
             ? "permit 引用缺席（执行前置——不默认授权）"
             : `permit ${permit.permit_ref ?? "(未引用)"}（scope ${permit.scope_subject_ids.length} 主体）`,
         );
-        items.push({
-          acceptance_ref: item.ref,
-          evidence_requirement: CAPABILITY_EVIDENCE_REQUIREMENT[capability],
-          capability,
-          method: CAPABILITY_METHOD[capability],
-          resolved_tool: resolved,
-          resolved_bindings: resolvedBindings,
-          tool_gap: obligationGap,
-          target: [...surface.changed_paths],
-          environment: environment?.ref ?? null,
-          applicability: "REQUIRED",
-          reason: `REQUIRED：验收 ${item.ref} 义务 ${capability}（${item.statement}）——${faceClause}；工具解析见 resolved_tool/tool_gap（缺工具不降级义务）`,
-          prerequisite: prerequisites,
-          expected_evidence: `${CAPABILITY_EVIDENCE_REQUIREMENT[capability]}——GRN 回执入证据链，claim 绑定 ${item.ref}`,
-          safety_requirement: null,
-          execution_dependency:
-            capability === "ui_interaction" ? ["after:environment_ground"] : ["parallel"],
-        });
+        // W1-FR04 场景展开：acceptance 声明场景时 REQUIRED 义务按场景展开为独立
+        // 条目（分母=场景×gate）；无场景条目单条（scenario_ref 键缺席，legacy 零破坏）。
+        // 工具解析/prerequisite 与场景正交（只算一次逐场景复用——场景改分母身份，
+        // 不改工具可用性判定）。
+        const scenarioRows: readonly PlanAcceptanceScenario[] = item.scenarios ?? [];
+        const expansions: readonly (PlanAcceptanceScenario | undefined)[] =
+          scenarioRows.length > 0 ? scenarioRows : [undefined];
+        for (const scenario of expansions) {
+          const scenarioClause =
+            scenario === undefined
+              ? ""
+              : `；场景义务 scenario=${scenario.scenario_ref}（precondition：${scenario.precondition}；interaction：${scenario.interaction}${scenario.runtime_confirmation_required ? "；须运行时确认" : ""}）`;
+          const scenarioEvidence =
+            scenario === undefined
+              ? ""
+              : `；scenario=${scenario.scenario_ref} 预期观察：「${scenario.expected_observation}」`;
+          items.push({
+            acceptance_ref: item.ref,
+            ...(scenario === undefined ? {} : { scenario_ref: scenario.scenario_ref }),
+            evidence_requirement: CAPABILITY_EVIDENCE_REQUIREMENT[capability],
+            capability,
+            method: CAPABILITY_METHOD[capability],
+            resolved_tool: resolved,
+            resolved_bindings: resolvedBindings,
+            tool_gap: obligationGap,
+            target: [...surface.changed_paths],
+            environment: environment?.ref ?? null,
+            applicability: "REQUIRED",
+            reason: `REQUIRED：验收 ${item.ref} 义务 ${capability}（${item.statement}）——${faceClause}；工具解析见 resolved_tool/tool_gap（缺工具不降级义务）${scenarioClause}`,
+            prerequisite: prerequisites,
+            expected_evidence: `${CAPABILITY_EVIDENCE_REQUIREMENT[capability]}——GRN 回执入证据链，claim 绑定 ${item.ref}${scenarioEvidence}`,
+            safety_requirement: null,
+            execution_dependency:
+              capability === "ui_interaction" ? ["after:environment_ground"] : ["parallel"],
+          });
+        }
         continue;
       }
       if (absentFaceCaps.includes(capability)) {
@@ -937,12 +961,15 @@ export function compileVerificationPlan(input: VerificationPlanInput): Verificat
     }
   }
 
-  // items 排序（(acceptance_ref, capability) 码点序——非 localeCompare，跨环境字节
-  // 稳定；canonicalJson/分母对账测试的 [...keys].sort() 同为码点序）保证字节稳定。
+  // items 排序（(acceptance_ref, capability, scenario_ref) 码点序——非 localeCompare，
+  // 跨环境字节稳定；canonicalJson/分母对账测试的 [...keys].sort() 同为码点序；
+  // W1-FR04 起第三轴=场景身份（无场景条目 scenario_ref 键缺席按空串排首位），
+  // 保证场景展开后同 (acceptance, capability) 内场景条目字节稳定。
   items.sort(
     (a, b) =>
       (a.acceptance_ref < b.acceptance_ref ? -1 : a.acceptance_ref > b.acceptance_ref ? 1 : 0) ||
-      (a.capability < b.capability ? -1 : a.capability > b.capability ? 1 : 0),
+      (a.capability < b.capability ? -1 : a.capability > b.capability ? 1 : 0) ||
+      ((a.scenario_ref ?? "") < (b.scenario_ref ?? "") ? -1 : (a.scenario_ref ?? "") > (b.scenario_ref ?? "") ? 1 : 0),
   );
 
   return {

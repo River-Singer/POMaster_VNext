@@ -46,6 +46,8 @@ export interface PlanRunInput extends Omit<PlanCompileInput, "inputFile"> {
 
 export interface PlanRunRow {
   readonly acceptance_ref: string;
+  /** W1-FR04 场景身份（场景化条目非 null；legacy 条目 null——消费矩阵零破坏）。 */
+  readonly scenario_ref: string | null;
   readonly capability: string;
   readonly binding_id: string;
   readonly gate: string;
@@ -171,11 +173,19 @@ function stampedAbsence(
   );
 }
 
-function findRecordedObligation(rootDir: string, executionId: string, taskRef: string, acceptanceRef: string, binding: ToolBindingRecord, fingerprint: string): { grn: string; verdict: "passed" } | null {
+/**
+ * 复用身份判定（W1-FR04 起含场景身份）：同 AGX + task + acceptance + scenario +
+ * plan fingerprint + binding id/fingerprint 且 verdict=passed（runtime gate 另核
+ * artifact 绑定）方可复用——场景 marker 缺席的历史 GRN 不满足带场景条目的 marker
+ * 集合（不会被借作场景证据），带场景条目也不会互相覆盖（同 gate 不同场景 marker
+ * 互斥）。
+ */
+function findRecordedObligation(rootDir: string, executionId: string, taskRef: string, acceptanceRef: string, scenarioRef: string | null, binding: ToolBindingRecord, fingerprint: string): { grn: string; verdict: "passed" } | null {
   try {
     const dir = runsDirPath(rootDir);
     const markers = [
       `acceptance_ref=${acceptanceRef}`,
+      ...(scenarioRef !== null ? [`scenario_ref=${scenarioRef}`] : []),
       `inputs_fingerprint=${fingerprint}`,
       `${BINDING_ANNOTATION_PREFIX}${binding.id}`,
       `binding_fingerprint=${bindingFingerprint(binding)}`,
@@ -306,9 +316,10 @@ export async function runPlanRun(
   for (const obligation of obligations) {
     const projection = obligation.binding;
     const binding = bindingById.get(projection.binding_id) as ToolBindingRecord;
-    const previous = findRecordedObligation(rootDir, input.executionId, input.taskRef, obligation.item.acceptance_ref, binding, compiled.result.inputs_fingerprint);
+    const scenarioRef = obligation.item.scenario_ref ?? null;
+    const previous = findRecordedObligation(rootDir, input.executionId, input.taskRef, obligation.item.acceptance_ref, scenarioRef, binding, compiled.result.inputs_fingerprint);
     if (previous !== null) {
-      rows.push({ acceptance_ref: obligation.item.acceptance_ref, capability: obligation.item.capability, binding_id: binding.id, gate: binding.gate, grn: previous.grn, verdict: previous.verdict, diagnosis: null });
+      rows.push({ acceptance_ref: obligation.item.acceptance_ref, scenario_ref: scenarioRef, capability: obligation.item.capability, binding_id: binding.id, gate: binding.gate, grn: previous.grn, verdict: previous.verdict, diagnosis: null });
       continue;
     }
     const grn = allocateEvidenceRef(runsDirPath(rootDir), "GRN");
@@ -352,7 +363,9 @@ export async function runPlanRun(
       }
     }
 
-    record = { ...record, scopeNote: `acceptance_ref=${obligation.item.acceptance_ref}；inputs_fingerprint=${compiled.result.inputs_fingerprint}；binding_fingerprint=${bindingFingerprint(binding)}；${record.scopeNote ?? ""}` };
+    // W1-FR04：场景身份以 scenario_ref=<局部键> 进 note marker（run 复用/终验 cohort
+    // 键共用锚）；无场景条目不带此段（legacy GRN note 字节不变）。
+    record = { ...record, scopeNote: `acceptance_ref=${obligation.item.acceptance_ref}${scenarioRef === null ? "" : `；scenario_ref=${scenarioRef}`}；inputs_fingerprint=${compiled.result.inputs_fingerprint}；binding_fingerprint=${bindingFingerprint(binding)}；${record.scopeNote ?? ""}` };
     if (record.gate !== binding.gate || record.gateDef !== binding.gate_def) {
       return fail(input, { ...result, recorded: rows.length, partial: rows.length > 0, rows }, {
         code: "PLAN_BINDING_DRIFT",
@@ -391,6 +404,7 @@ export async function runPlanRun(
     }
     rows.push({
       acceptance_ref: obligation.item.acceptance_ref,
+      scenario_ref: scenarioRef,
       capability: obligation.item.capability,
       binding_id: binding.id,
       gate: binding.gate,

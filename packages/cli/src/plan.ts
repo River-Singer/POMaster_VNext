@@ -32,6 +32,7 @@ import {
   buildStorePaths,
   GovernanceError,
   readTaskSteeringConstraints,
+  type PlanAcceptanceScenario,
   type PlanApplicability,
   type PlanChangeFace,
   type PlanCapabilityWord,
@@ -265,6 +266,8 @@ interface TaskAcceptanceRow {
   readonly oracle_ref: string | null;
   readonly requires: readonly PlanCapabilityWord[];
   readonly exclusions: readonly { readonly capability: PlanCapabilityWord; readonly basis: string }[];
+  /** W1-FR04 场景集合（加性可选）：原值透传 kernel fail-closed 校验（词形权威在编译核）。 */
+  readonly scenarios?: readonly PlanAcceptanceScenario[];
 }
 
 async function loadTaskAcceptance(
@@ -366,12 +369,16 @@ async function loadTaskAcceptance(
     const claim = entry.claim;
     const requires = Array.isArray(entry.requires) ? entry.requires : [];
     const exclusionEntries = Array.isArray(entry.exclusions) ? entry.exclusions : [];
+    // W1-FR04：scenarios 在场即透传原值（含词形垃圾——kernel fail-closed 显式拒绝，
+    // 禁 cli 侧静默丢成无场景造成分母漂移）；缺席保持 legacy 无键（语义字节不变）。
+    const scenarios = "scenarios" in entry ? entry.scenarios : undefined;
     rows.push({
       ref: `${taskRef}#acceptance[${index}]`,
       statement,
       oracle_ref: typeof claim === "string" && claim.trim().length > 0 ? claim : null,
       requires: requires as readonly PlanCapabilityWord[],
       exclusions: exclusionEntries as readonly { capability: PlanCapabilityWord; basis: string }[],
+      ...(scenarios === undefined ? {} : { scenarios: scenarios as readonly PlanAcceptanceScenario[] }),
     });
   }
   return { rows };
