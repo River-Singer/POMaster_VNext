@@ -454,6 +454,155 @@ describe("旧档位迁移清单指针登记（头注）", () => {
   });
 });
 
+// ============================================================
+// W1-FR04 Acceptance 场景契约（PR-W1.1：场景进证据分母——加性可选、legacy 零破坏）
+// ============================================================
+//
+// 设计权威：research/evidence-scenarios-and-boundaries.md §3/§8 方案 A——
+// 场景挂在 Acceptance 级（PlanAcceptanceItem.scenarios 可选加性集合）：
+// - 场景是验收的观察细化（precondition/interaction/state_dimensions/expected_
+//   observation 都是「这条验收在什么情形下应观察到什么」），领域上属 Acceptance；
+// - inputs_fingerprint 对整个 acceptance 输入段做 canonical 摘要——场景挂此层即
+//   自动参与指纹（场景定义变化 → plan fingerprint 变化 → 旧证据重新判资格）；
+// - 不新增 canonical TestCase entity；局部 scenario_ref 是 task 内稳定局部键
+//   （非 governed id——禁发明新词形轴）；无场景的 legacy acceptance 语义字节不变。
+
+/** 复选框三态场景（research §3 最小反例的 Case C 原型；W1.3 回放同源）。 */
+const CHECKBOX_SCENARIOS = [
+  {
+    scenario_ref: "selected-no-hover",
+    precondition: "复选框处于选中态",
+    interaction: "指针不在复选框上（no-hover）",
+    state_dimensions: ["selected=true", "hover=false"],
+    expected_observation: "悬浮提示不显示；复选框保持选中呈现",
+    runtime_confirmation_required: false,
+  },
+  {
+    scenario_ref: "selected-hover",
+    precondition: "复选框处于选中态",
+    interaction: "指针悬停于复选框上",
+    state_dimensions: ["selected=true", "hover=true"],
+    expected_observation: "悬浮提示显示当前选中说明",
+    runtime_confirmation_required: false,
+  },
+  {
+    scenario_ref: "unselected-hover",
+    precondition: "复选框处于未选中态",
+    interaction: "指针悬停于复选框上",
+    state_dimensions: ["selected=false", "hover=true"],
+    expected_observation: "悬浮提示显示未选中引导文案",
+    runtime_confirmation_required: true,
+  },
+] as unknown[];
+
+/** 把场景集合注入 c1Input 的 acceptance[0]（W1.1 契约校验/指纹钉测共用）。 */
+function withAcceptanceScenarios(
+  scenarios: unknown,
+  input: VerificationPlanInput = c1Input(),
+): VerificationPlanInput {
+  const head = input.acceptance.value[0] as PlanAcceptanceItem;
+  return {
+    ...input,
+    acceptance: {
+      ...input.acceptance,
+      value: [{ ...head, scenarios } as PlanAcceptanceItem, ...input.acceptance.value.slice(1)],
+    },
+  };
+}
+
+function scenarioScenario(
+  mutate: (scenario: Record<string, unknown>) => void,
+): unknown[] {
+  const rows = JSON.parse(JSON.stringify(CHECKBOX_SCENARIOS)) as Record<string, unknown>[];
+  mutate(rows[1] as Record<string, unknown>);
+  return rows;
+}
+
+describe("Acceptance 场景契约（W1-FR04：fail-closed 校验——显式缺口不吞分母）", () => {
+  it("合法场景集合放行（契约最小形态可用）", () => {
+    expect(() => compileVerificationPlan(withAcceptanceScenarios(CHECKBOX_SCENARIOS))).not.toThrow();
+  });
+
+  it("duplicate scenario_ref → SCHEMA_INVALID（重复项不缩分母）", () => {
+    const duplicated = [...CHECKBOX_SCENARIOS, CHECKBOX_SCENARIOS[0]];
+    expect(() => compileVerificationPlan(withAcceptanceScenarios(duplicated))).toThrowError(/scenario_ref 重复/);
+  });
+
+  it("空 expected_observation → SCHEMA_INVALID（空预期=显式缺口，禁静默当已观察）", () => {
+    expect(() =>
+      compileVerificationPlan(
+        withAcceptanceScenarios(scenarioScenario((row) => { row.expected_observation = "   "; })),
+      ),
+    ).toThrowError(/expected_observation/);
+  });
+
+  it("空 scenario_ref / 空 precondition / 空 interaction → SCHEMA_INVALID", () => {
+    expect(() =>
+      compileVerificationPlan(withAcceptanceScenarios(scenarioScenario((row) => { row.scenario_ref = ""; }))),
+    ).toThrowError(/scenario_ref/);
+    expect(() =>
+      compileVerificationPlan(withAcceptanceScenarios(scenarioScenario((row) => { row.precondition = "  "; }))),
+    ).toThrowError(/precondition/);
+    expect(() =>
+      compileVerificationPlan(withAcceptanceScenarios(scenarioScenario((row) => { row.interaction = ""; }))),
+    ).toThrowError(/interaction/);
+  });
+
+  it("runtime_confirmation_required 非 boolean → SCHEMA_INVALID（声明位须显式）", () => {
+    expect(() =>
+      compileVerificationPlan(
+        withAcceptanceScenarios(scenarioScenario((row) => { row.runtime_confirmation_required = "yes"; })),
+      ),
+    ).toThrowError(/runtime_confirmation_required/);
+  });
+
+  it("scenarios 非数组 / state_dimensions 非法词形 → SCHEMA_INVALID", () => {
+    expect(() =>
+      compileVerificationPlan(withAcceptanceScenarios("selected-hover")),
+    ).toThrowError(/scenarios 须为数组/);
+    expect(() =>
+      compileVerificationPlan(
+        withAcceptanceScenarios(scenarioScenario((row) => { row.state_dimensions = [42]; })),
+      ),
+    ).toThrowError(/state_dimensions/);
+  });
+
+  it("scenario_ref 携带 GRN note marker 保留字（；/换行）→ SCHEMA_INVALID（marker 语法卫生）", () => {
+    expect(() =>
+      compileVerificationPlan(
+        withAcceptanceScenarios(scenarioScenario((row) => { row.scenario_ref = "a；b"; })),
+      ),
+    ).toThrowError(/scenario_ref/);
+  });
+});
+
+describe("Acceptance 场景契约（W1-FR04：场景身份参与 plan fingerprint 与 legacy 零破坏）", () => {
+  it("场景集合参与 inputs_fingerprint：加场景变指纹；expected_observation 修订再变（场景定义变化 → 旧证据重新判资格的身份锚）", () => {
+    const legacy = compileVerificationPlan(c1Input());
+    const withScenarios = compileVerificationPlan(withAcceptanceScenarios(CHECKBOX_SCENARIOS));
+    expect(withScenarios.inputs_fingerprint).not.toBe(legacy.inputs_fingerprint);
+
+    const revised = withAcceptanceScenarios(
+      scenarioScenario((row) => { row.expected_observation = "toast 成功升级为重读可见"; }),
+    );
+    expect(compileVerificationPlan(revised).inputs_fingerprint).not.toBe(withScenarios.inputs_fingerprint);
+  });
+
+  it("legacy 零破坏：无 scenarios 输入与显式 undefined 等价；空数组=显式无场景（行为面零变化，空申报本身进指纹）", () => {
+    const legacy = compileVerificationPlan(c1Input());
+    const explicitUndefined = compileVerificationPlan(withAcceptanceScenarios(undefined));
+    expect(explicitUndefined.items).toEqual(legacy.items);
+    expect(explicitUndefined.unknowns).toEqual(legacy.unknowns);
+    expect(explicitUndefined.inputs_fingerprint).toBe(legacy.inputs_fingerprint);
+
+    const emptyDeclared = compileVerificationPlan(withAcceptanceScenarios([]));
+    expect(emptyDeclared.items).toEqual(legacy.items);
+    expect(emptyDeclared.unknowns).toEqual(legacy.unknowns);
+    // 「场景义务为零」的显式空申报是不同输入事实（canonical 摘要含 []）——行为面不变、指纹可辨。
+    expect(emptyDeclared.inputs_fingerprint).not.toBe(legacy.inputs_fingerprint);
+  });
+});
+
 describe("reviewed scope 非授权计划输入", () => {
   it("进入输出和指纹，但不改变 item target/applicability/tool binding", () => {
     const base = c1Input();

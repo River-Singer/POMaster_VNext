@@ -1181,6 +1181,7 @@ export type {
   PlanCapabilityWord,
   PlanInputSegment,
   PlanAcceptanceItem,
+  PlanAcceptanceScenario,
   PlanChangeFace,
   PlanChangeSurface,
   PlanEnvironmentFacts,

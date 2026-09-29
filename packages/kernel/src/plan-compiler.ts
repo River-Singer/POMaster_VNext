@@ -41,6 +41,19 @@
  * 证据复用重判（预期证据 ↔ 既有 GRN 对账后调 qualifyEvidence）留接口给后续切片，
  * 本编译器行为零改动。
  *
+ * ═══ W1-FR04 场景契约（MASTer 经验驱动优化战役 Wave 2）═══
+ * Acceptance 级可选场景集合（PlanAcceptanceItem.scenarios，research
+ * evidence-scenarios-and-boundaries.md §3/§8 方案 A）：场景要进入证据分母，而非只加
+ * 说明文字。挂 Acceptance 级的理由：场景是验收的观察细化；inputs_fingerprint 对整个
+ * acceptance 输入段做 canonical 摘要——场景挂此层即自动参与指纹（场景定义变化 →
+ * plan fingerprint 变化 → 旧证据重新判资格）。fail-closed 校验：duplicate scenario_ref
+ * / 空 expected_observation / 空 precondition/interaction / 非布尔
+ * runtime_confirmation_required / marker 保留字一律 SCHEMA_INVALID（显式缺口不吞
+ * 分母）。legacy 矩阵：无 scenarios 的旧任务语义字节不变（无矩阵义务——不存在
+ * 「空分母判绿」问题；带场景的新任务分母=场景×gate，禁默认空分母判绿）。
+ * REQUIRED 条目按场景展开（scenario_ref 进 item/reason/expected_evidence）与
+ * run/复用/终验 cohort 键接线见 VerificationPlanItem.scenario_ref（本切片同批）。
+ *
  * ═══ 旧档位迁移清单指针（兼容期 legacy 登记——W1 Out of Scope）═══
  * 旧 GateTier/triage 档位消费者迁移接缝表住
  * .trellis/tasks/09-10-brainstorm-long-horizon-control-loop/research/
@@ -207,6 +220,32 @@ export interface PlanAcceptanceItem {
     readonly capability: PlanCapabilityWord;
     readonly basis: string;
   }[];
+  /**
+   * W1-FR04 场景义务（加性可选）：本验收的场景化观察分母——场景要进入证据分母，
+   * 而非只加说明文字。缺省/undefined = legacy 无矩阵义务（语义字节不变）；空数组 =
+   * 显式「场景义务为零」申报（行为面同无字段，空申报本身是输入事实、参与指纹）。
+   * 场景挂在 Acceptance 级：inputs_fingerprint 对整个 acceptance 输入段做 canonical
+   * 摘要——场景定义变化即改变 plan fingerprint → 旧证据按新义务重新判资格；
+   * 不新增 canonical TestCase entity，局部 scenario_ref 是 task 内稳定局部键。
+   */
+  readonly scenarios?: readonly PlanAcceptanceScenario[];
+}
+
+/**
+ * Acceptance 场景义务（W1-FR04；research evidence-scenarios-and-boundaries §3 最小
+ * 结构）：task 内稳定局部键 + 观察四要素 + 运行时确认声明位。
+ * runtime_confirmation_required=true 表示本场景观察须运行时确认（消费归
+ * control_data_flow 等运行时证明类型链）——本编译器只承载声明、不裁决运行时义务。
+ * scenario_ref 禁携带 GRN note marker 保留字（；/换行）——场景身份以
+ * `scenario_ref=<局部键>` 形态进 GRN scope note（run/复用/终验 cohort 键的共用锚）。
+ */
+export interface PlanAcceptanceScenario {
+  readonly scenario_ref: string;
+  readonly precondition: string;
+  readonly interaction: string;
+  readonly state_dimensions: readonly string[];
+  readonly expected_observation: string;
+  readonly runtime_confirmation_required: boolean;
 }
 
 export interface PlanChangeFace {
@@ -462,6 +501,52 @@ function validateAcceptance(items: readonly PlanAcceptanceItem[]): void {
       throw schemaInvalid(
         `${path} requires∩exclusions 冲突：${conflict.join("/")}（同一能力同一条验收不得既申报又排除）`,
         "plan-compiler 判定语义：排除优先于申报；二者同现=输入矛盾，fail-closed",
+      );
+    }
+    validateAcceptanceScenarios(item, path);
+  }
+}
+
+/** scenario_ref 禁携带 GRN note marker 保留字（；/换行）——marker 语法卫生 fail-closed。 */
+const SCENARIO_REF_FORBIDDEN = /[；\r\n]/;
+
+function validateAcceptanceScenarios(item: PlanAcceptanceItem, path: string): void {
+  if (item.scenarios === undefined) return;
+  if (!Array.isArray(item.scenarios)) {
+    throw schemaInvalid(
+      `${path}.scenarios 须为数组（空数组=显式「场景义务为零」申报；缺席=legacy 无矩阵义务）`,
+      "plan-compiler 场景契约（W1-FR04）：scenarios 挂 Acceptance 级，局部 scenario_ref + 观察四要素 + 运行时确认声明位",
+    );
+  }
+  const seenRefs = new Set<string>();
+  for (let index = 0; index < item.scenarios.length; index += 1) {
+    const scenario = item.scenarios[index] as PlanAcceptanceScenario;
+    const scPath = `${path}.scenarios[${index}]`;
+    if (scenario === null || typeof scenario !== "object") {
+      throw schemaInvalid(`${scPath} 须为对象`, "plan-compiler 场景契约（W1-FR04）校验失败");
+    }
+    const scenarioRef = requireNonEmptyString(scenario.scenario_ref, `${scPath}.scenario_ref`);
+    if (SCENARIO_REF_FORBIDDEN.test(scenarioRef)) {
+      throw schemaInvalid(
+        `${scPath}.scenario_ref 携带保留字（；/换行）——场景身份以 scenario_ref=<局部键> 进 GRN note marker，保留字会破坏 marker 解析`,
+        "plan-compiler 场景契约（W1-FR04）：scenario_ref 是 task 内稳定局部键（marker 语法卫生）",
+      );
+    }
+    if (seenRefs.has(scenarioRef)) {
+      throw schemaInvalid(
+        `${scPath}.scenario_ref 重复：${scenarioRef}（重复项不吞分母——fail-closed 禁缩分母）`,
+        "plan-compiler 场景契约（W1-FR04）：同条验收内 scenario_ref 须唯一；显式缺口不静默合并",
+      );
+    }
+    seenRefs.add(scenarioRef);
+    requireNonEmptyString(scenario.precondition, `${scPath}.precondition`);
+    requireNonEmptyString(scenario.interaction, `${scPath}.interaction`);
+    requireStringArray(scenario.state_dimensions ?? null, `${scPath}.state_dimensions`);
+    requireNonEmptyString(scenario.expected_observation, `${scPath}.expected_observation`);
+    if (typeof scenario.runtime_confirmation_required !== "boolean") {
+      throw schemaInvalid(
+        `${scPath}.runtime_confirmation_required 须为 boolean（声明位须显式——禁缺省猜测）`,
+        "plan-compiler 场景契约（W1-FR04）：true=本场景观察须运行时确认（消费归运行时证明类型链）",
       );
     }
   }
