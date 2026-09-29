@@ -532,6 +532,12 @@ export function runBindingGate(
   const raw = adapter.run(plan, spawnFn);
   if (runtimeManifest !== null && raw.kind === "executed") {
     const report = parseControlDataFlowRuntimeReport(raw.stdout);
+    // W5 契约 §2 correlation 强对账：manifest 声明 correlation_id（编排启动时生成的
+    // 预期 ID）时 report 必须相等——不等=报告无效（GateAdapterError，编排层转
+    // not_run；非 warning 可容忍项）。legacy manifest 缺席声明时保持既有行为。
+    if (report !== null && runtimeManifest.correlation_id !== undefined && report.correlation_id !== runtimeManifest.correlation_id) {
+      throw new GateAdapterError("runner_not_ready", `runtime report correlation_id=${report.correlation_id} 与 manifest 预期=${runtimeManifest.correlation_id} 不一致——报告无效（非 warning）`, "修正 probe 的 correlation_id 与 manifest 同源；跨 correlation 的 trace 不入账");
+    }
     if (report !== null && (report.static_control_ref !== runtimeManifest.static_control_ref || report.side_effect !== runtimeManifest.side_effect || report.fixture.isolated !== runtimeManifest.fixture.isolated || report.fixture.ref !== runtimeManifest.fixture.ref)) {
       throw new GateAdapterError("runner_not_ready", "runtime report 与启动前 probe manifest 身份/副作用边界漂移", "修复 adapter 输出；漂移 trace 不入账");
     }
@@ -570,8 +576,11 @@ export function runBindingGate(
     binding_id: binding.id,
     plan,
     record: stamped,
-    ...(decl.ref === CONTROL_DATA_FLOW_RUNTIME_ADAPTER_REF && stamped.verdict !== "not_run"
-      ? { artifact: { bytes: Buffer.from(raw.stdout, "utf8"), media: "control_data_flow_runtime_trace" } }
+    // W5 契约 §3 static 交叉核验的分母来源：静态 CONTROL_DATA_FLOW report 也以
+    // artifact 内容寻址落盘（plan-runner runtime 义务判定读取对账——static_control_ref
+    // 须真实在静态分母内，读取失败/不在册=runtime 验证不可绿）。
+    ...((decl.ref === CONTROL_DATA_FLOW_RUNTIME_ADAPTER_REF || decl.ref === CONTROL_DATA_FLOW_ADAPTER_REF) && stamped.verdict !== "not_run"
+      ? { artifact: { bytes: Buffer.from(raw.stdout, "utf8"), media: decl.ref === CONTROL_DATA_FLOW_RUNTIME_ADAPTER_REF ? "control_data_flow_runtime_trace" : "control_data_flow_report" } }
       : {}),
   };
 }

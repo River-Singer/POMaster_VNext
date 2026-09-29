@@ -137,12 +137,79 @@ describe("CONTROL_DATA_FLOW_RUNTIME adapter", () => {
     expect(missingIdentity.verdict).toBe("not_run");
   });
 
-  it("v1 报告保持既有行为（无 trace 合法；额外 observation 键 legacy 兼容解析不拒绝）", () => {
-    // v1 额外键在词形层不拒绝（legacy 兼容——非 not_run；其计数影响=W5.2 normalize
-    // 硬化的对象：硬化后额外键不参与完整性与指标，本断言改为 passed）。
+  it("v1 报告保持既有行为（无 trace 合法；额外 observation 键不参与计数——W5.2 硬化后指定键全真即绿）", () => {
+    // v1 额外键在词形层不拒绝（legacy 兼容解析）；W5 契约 §3 硬化后完整性与指标
+    // 只由六个指定键计算——六键全真 + 额外 truthy 值 → passed（旧行为 warning+负
+    // violations 已修：额外值不可能补足或破坏指标）。
     const record = execute({ ...base, observations: { ...base.observations, extra_truthy: true } });
-    expect(record.verdict).toBe("warning");
-    expect(record.scopeNote).not.toContain("SCHEMA_INVALID");
+    expect(record.verdict).toBe("passed");
+    expect(record.counts).toMatchObject({ violations: 0 });
+    expect(record.blindspot).toMatchObject({ produced: 6, escapeRatio: 0 });
+  });
+
+  it("六键负例矩阵（契约 §3）：一假+额外真值不得补足判绿；非 boolean truthy 额外键同规", () => {
+    // 五真一假 + 额外 truthy 键：Object.values 计数=7 的旧缺陷路径——硬化后 complete
+    // 只看指定键（5/6）→ warning 非 passed，violations=1（非负）。
+    const oneFalsePlusExtra = execute({
+      ...base,
+      observations: { ...base.observations, feedback: false, extra_truthy: "yes" },
+    });
+    expect(oneFalsePlusExtra.verdict).toBe("warning");
+    expect(oneFalsePlusExtra.counts).toMatchObject({ violations: 1 });
+    expect(oneFalsePlusExtra.blindspot).toMatchObject({ produced: 5, escapeRatio: 1 / 6 });
+    // 非 boolean truthy 额外键（对象值）：同不参与计数。
+    const objectExtra = execute({
+      ...base,
+      observations: { ...base.observations, extra_object: { nested: true } },
+    });
+    expect(objectExtra.verdict).toBe("passed");
+    expect(objectExtra.counts).toMatchObject({ violations: 0 });
+  });
+
+  // ============================================================
+  // W5 契约 §2/§3 trace 段审计（身份对账/段序/digest——违者 failed 非绿）
+  // ============================================================
+
+  it("trace 段串线（scenario_ref/operation_id 跨段不一致 / control_ref 与报告不符）→ failed", () => {
+    const crossedScenario = execute({
+      ...v2Base,
+      trace: V2_TRACE.map((seg) => seg.stage === "visible" ? { ...seg, scenario_ref: "s2" } : seg),
+    });
+    expect(crossedScenario.verdict).toBe("failed");
+    expect(JSON.stringify(crossedScenario.items ?? [])).toContain("TRACE_IDENTITY_CROSSED");
+
+    const crossedOperation = execute({
+      ...v2Base,
+      trace: V2_TRACE.map((seg) => seg.stage === "persist" ? { ...seg, operation_id: "other-op" } : seg),
+    });
+    expect(crossedOperation.verdict).toBe("failed");
+
+    const wrongControl = execute({
+      ...v2Base,
+      trace: V2_TRACE.map((seg) => seg.stage === "re_read" ? { ...seg, control_ref: "react:src/Other.tsx:1:1:onClick" } : seg),
+    });
+    expect(wrongControl.verdict).toBe("failed");
+    expect(JSON.stringify(wrongControl.items ?? [])).toContain("TRACE_CONTROL_MISMATCH");
+  });
+
+  it("trace 段乱序/重复 → failed（词表序 request→persist→re_read→mapping→visible）", () => {
+    const reordered = execute({ ...v2Base, trace: [V2_TRACE[1]!, V2_TRACE[0]!, ...V2_TRACE.slice(2)] });
+    expect(reordered.verdict).toBe("failed");
+    expect(JSON.stringify(reordered.items ?? [])).toContain("TRACE_OUT_OF_ORDER");
+    const duplicated = execute({ ...v2Base, trace: [V2_TRACE[0]!, V2_TRACE[0]!, ...V2_TRACE.slice(1)] });
+    expect(duplicated.verdict).toBe("failed");
+  });
+
+  it("trace 段 digest 缺席（request→readback 对账断裂）→ failed；部分链合规不判罚（义务链完整性归编排层）", () => {
+    const missingDigest = execute({
+      ...v2Base,
+      trace: V2_TRACE.map((seg) => seg.stage === "persist" ? { ...seg, readback_digest: null } : seg),
+    });
+    expect(missingDigest.verdict).toBe("failed");
+    expect(JSON.stringify(missingDigest.items ?? [])).toContain("TRACE_DIGEST_MISSING");
+    // 部分 trace（只 request 段且摘要齐备）：词形/身份/段序无违规 → 不因段少判罚。
+    const partial = execute({ ...v2Base, trace: [V2_TRACE[0]!] });
+    expect(partial.verdict).toBe("passed");
   });
 
   // ============================================================
@@ -160,7 +227,8 @@ describe("CONTROL_DATA_FLOW_RUNTIME adapter", () => {
       fixture_layer: { kind: "node_http_service", proves: ["真实 socket+真实写盘"], does_not_prove: ["真实浏览器渲染"] },
     }));
     const binding = { id: "project.cdf.runtime.w5", source: "built_in", transport: "cli", adapter_ref: "builtin.gauntlet-lite.control-data-flow-runtime", tool: "gauntlet:control-data-flow-runtime", tool_version_anchor: "0.1.0", gate: "CONTROL_DATA_FLOW_RUNTIME", gate_def: "POLICY.GATE.CONTROL_DATA_FLOW_RUNTIME@0.1.0", metric_dialect: "ui:control_flow_runtime_trace", capabilities: ["control_data_flow"], execution: { command: "node probe.mjs", probe_manifest: "probe.json" }, report_contract: { format: "pomaster-control-data-flow-runtime-json", parser_ref: "builtin.gauntlet-lite.control-data-flow-runtime/json-v1", parser_version: "0.1.0" } } as const;
-    const v2Report = JSON.stringify({ ...v2Base, task_ref: "TASK.CDF.W5", static_control_ref: "control:1", correlation_id: "corr-w5-001" });
+    const w5Trace = V2_TRACE.map((seg) => ({ ...seg, control_ref: "control:1" }));
+    const v2Report = JSON.stringify({ ...v2Base, task_ref: "TASK.CDF.W5", static_control_ref: "control:1", correlation_id: "corr-w5-001", trace: w5Trace });
     const outcome = runBindingGate(binding, { projectRoot: root, grn: "GRN-5001", ranAtSeq: 1, subjectId: "TASK.CDF.W5" }, { executableProbe: () => "node", spawnFn: () => ({ status: 0, stdout: v2Report, stderr: "", error: null, externalMs: 1 }) });
     expect(outcome.record.verdict).toBe("passed");
     // fixture 分层呈现：报告消费端按声明呈现证明范围（scope.note 携带 kind）。

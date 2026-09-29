@@ -1,10 +1,10 @@
 import { performance } from "node:perf_hooks";
 import type { VerdictValue } from "@pomaster/schemas";
-import type { DetectionResult, DetectorFacts, GateAdapter, GatePlan, GatePolicy, GateResultRecord, GateScope, NormalizeContext, SpawnFn, ToolRunOutput } from "./adapter-types.js";
+import type { DetectionResult, DetectorFacts, GateAdapter, GatePlan, GatePolicy, GateResultItemInput, GateResultRecord, GateScope, NormalizeContext, SpawnFn, ToolRunOutput } from "./adapter-types.js";
 import { GateAdapterError, asGovernedId } from "./adapter-types.js";
 import { DEFAULT_RUN_TIMEOUT_MS, defaultSpawn } from "./build-adapter.js";
 import { platformDetectorFacts } from "./detectors.js";
-import { absenceRecord, assertCommonGates, toDenominatorRow } from "./normalize-common.js";
+import { absenceRecord, assertCommonGates, capItems, toDenominatorRow } from "./normalize-common.js";
 import type { SeamLegObservation } from "./seam-comparator.js";
 
 export const CONTROL_DATA_FLOW_RUNTIME_GATE_NAME = "CONTROL_DATA_FLOW_RUNTIME";
@@ -230,6 +230,60 @@ export function parseControlDataFlowRuntimeReport(stdout: string): ControlDataFl
   } catch { return null; }
 }
 
+/**
+ * trace 段审计（W5 契约 §2/§3；normalize 判定面）——身份对账/段序/digest 在场：
+ * - 段序：stage 词表序严格递增、无重复（乱序/重复=trace 乱序）；
+ * - 身份：全段 scenario_ref 一致、operation_id 一致、control_ref=report.static_control_ref
+ *   （不一致=串线/错 control）；
+ * - request→readback 对账：request 段 request_digest、persist 段 readback_digest、
+ *   re_read 段双 digest、mapping 段 readback_digest 在场；visible 段 visible_result 非 null
+ *   （缺段摘要=因果链断裂）。
+ * 部分链合法（段少但合规=词形与身份无违规；义务链完整性归编排层 oracle 义务判定）。
+ * 违规条目以 rule 明细返回（判 failed 的依据）。
+ */
+function auditTraceSegments(report: ControlDataFlowRuntimeReportV2): GateResultItemInput[] {
+  const issues: GateResultItemInput[] = [];
+  const segments = report.trace;
+  let lastOrder = -1;
+  let scenarioRef: string | null = null;
+  let operationId: string | null = null;
+  for (const segment of segments) {
+    const order = CONTROL_DATA_FLOW_TRACE_STAGES.indexOf(segment.stage);
+    if (order <= lastOrder) {
+      issues.push({ rule: "CDF_RT.TRACE_OUT_OF_ORDER", location: `trace[${segment.stage}]`, message: `trace 段序违规：${segment.stage} 乱序或重复（词表序 request→persist→re_read→mapping→visible）` });
+    }
+    lastOrder = order;
+    if (scenarioRef === null) scenarioRef = segment.scenario_ref;
+    else if (scenarioRef !== segment.scenario_ref) {
+      issues.push({ rule: "CDF_RT.TRACE_IDENTITY_CROSSED", location: `trace[${segment.stage}]`, message: `trace 段 scenario_ref 串线：${segment.scenario_ref} ≠ ${scenarioRef}` });
+    }
+    if (operationId === null) operationId = segment.operation_id;
+    else if (operationId !== segment.operation_id) {
+      issues.push({ rule: "CDF_RT.TRACE_IDENTITY_CROSSED", location: `trace[${segment.stage}]`, message: `trace 段 operation_id 串线：${segment.operation_id} ≠ ${operationId}` });
+    }
+    if (segment.control_ref !== report.static_control_ref) {
+      issues.push({ rule: "CDF_RT.TRACE_CONTROL_MISMATCH", location: `trace[${segment.stage}]`, message: `trace 段 control_ref=${segment.control_ref} 与报告 static_control_ref=${report.static_control_ref} 不一致（错 control）` });
+    }
+  }
+  const byStage = new Map(segments.map((segment) => [segment.stage, segment]));
+  const digestMissing = (stage: ControlDataFlowTraceStage, key: "request_digest" | "readback_digest"): void => {
+    const segment = byStage.get(stage);
+    if (segment !== undefined && (segment[key] === null || segment[key] === undefined)) {
+      issues.push({ rule: "CDF_RT.TRACE_DIGEST_MISSING", location: `trace[${stage}]`, message: `${stage} 段 ${key} 缺席（request→readback 因果链对账断裂）` });
+    }
+  };
+  digestMissing("request", "request_digest");
+  digestMissing("persist", "readback_digest");
+  digestMissing("re_read", "request_digest");
+  digestMissing("re_read", "readback_digest");
+  digestMissing("mapping", "readback_digest");
+  const visibleSegment = byStage.get("visible");
+  if (visibleSegment !== undefined && visibleSegment.visible_result === null) {
+    issues.push({ rule: "CDF_RT.TRACE_DIGEST_MISSING", location: "trace[visible]", message: "visible 段 visible_result=null（可见性观察缺席——不可判）" });
+  }
+  return issues;
+}
+
 export function createControlDataFlowRuntimeAdapter(): GateAdapter<DetectionResult, GatePlan, ToolRunOutput> {
   return {
     adapterId: "gauntlet-lite:control-data-flow-runtime",
@@ -267,18 +321,34 @@ export function createControlDataFlowRuntimeAdapter(): GateAdapter<DetectionResu
       if (raw.plan.subjectId !== report.task_ref) return absenceRecord(raw.plan, "blocked", `runtime report task_ref=${report.task_ref} 与 subject=${String(raw.plan.subjectId)} 不一致`, self, raw.externalMs);
       if (report.side_effect === "INTERACTIVE_REVERSIBLE" && (!report.fixture.isolated || !report.fixture.ref || !report.cleanup.required)) return absenceRecord(raw.plan, "blocked", "INTERACTIVE_REVERSIBLE 仅允许隔离 fixture 且必须声明 cleanup", self, raw.externalMs);
       if (report.cleanup.required && (!report.cleanup.attempted || !report.cleanup.succeeded)) return absenceRecord(raw.plan, "blocked", "runtime probe cleanup 未成功，禁止判绿", self, raw.externalMs);
-      const observed = Object.values(report.observations).filter(Boolean).length;
-      const complete = observed === 6;
-      const verdict: VerdictValue = complete && raw.exitCode === 0 ? "passed" : "warning";
+      // —— W5 契约 §3 观察判定硬化（修 research §5 计数缺陷）——
+      // 六个指定键逐一 === true 才 complete（Object.values 计数作废——额外真值不得
+      // 补足 6 判绿）；violations/ratio 只由指定键计算（额外值不可能产生负指标——
+      // v1 额外键 legacy 兼容解析但不参与任何计数）。
+      const specifiedKeys = CONTROL_DATA_FLOW_OBSERVATION_KEYS;
+      const specifiedTrue = specifiedKeys.filter((key) => report.observations[key] === true).length;
+      const complete = specifiedTrue === specifiedKeys.length;
+      const observed = specifiedTrue;
+      const observationViolations = specifiedKeys.length - specifiedTrue;
+      // —— W5 契约 §2/§3 trace 段审计（v2）：身份对账/段序/digest 在场——违者判
+      // failed（串线/乱序/缺摘要=因果链断裂，非 warning 可容忍项）。
+      const traceIssues = report.schema === CONTROL_DATA_FLOW_RUNTIME_REPORT_V2
+        ? auditTraceSegments(report)
+        : [];
+      const violations = observationViolations + traceIssues.length;
+      const verdict: VerdictValue = traceIssues.length > 0
+        ? "failed"
+        : complete && raw.exitCode === 0 ? "passed" : "warning";
       return {
         grn: raw.plan.grn, gate: raw.plan.gate, gateDef: raw.plan.gateDef, tool: raw.plan.tool, toolVersion: raw.plan.toolVersion, metricDialect: raw.plan.metricDialect, ranAtSeq: raw.plan.ranAtSeq, verdict,
         verdictCapReason: verdict === "warning" ? "runtime_trace_incomplete" : null,
         subjectId: raw.plan.subjectId === null ? null : asGovernedId(raw.plan.subjectId), isFixture: raw.plan.subjectId?.startsWith("TEST.") === true,
-        denominatorRefs: raw.plan.denominatorRefs.map(toDenominatorRow), counts: { scanned: 6, applicableScanned: 6, violations: complete ? 0 : 6 - observed, notApplicable: 0 },
-        blindspot: { scanned: 6, produced: observed, escapeRatio: (6 - observed) / 6 },
-        trust: { asserted: { value: { violations: complete ? 0 : 6 - observed }, claimedBy: { actorType: "tool", actor: `${raw.plan.tool}@${raw.plan.toolVersion}`, selfAttested: true } }, recomputed: { violations: complete ? 0 : 6 - observed, matchesAsserted: true } },
+        denominatorRefs: raw.plan.denominatorRefs.map(toDenominatorRow), counts: { scanned: 6, applicableScanned: 6, violations, notApplicable: 0 },
+        blindspot: { scanned: 6, produced: observed, escapeRatio: observationViolations / 6 },
+        trust: { asserted: { value: { violations }, claimedBy: { actorType: "tool", actor: `${raw.plan.tool}@${raw.plan.toolVersion}`, selfAttested: true } }, recomputed: { violations, matchesAsserted: true } },
         durationMs: { self, external: raw.externalMs },
         scopeNote: `runtime trace schema=${report.schema}；control_ref=${report.static_control_ref}；correlation_id=${report.correlation_id}；side_effect=${report.side_effect}；cleanup=${report.cleanup.succeeded ? "succeeded" : "not_required"}`,
+        ...(traceIssues.length > 0 ? { items: capItems(traceIssues).items } : {}),
       };
     },
   };

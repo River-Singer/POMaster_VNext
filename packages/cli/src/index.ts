@@ -1021,6 +1021,13 @@ export type {
 } from "./steering.js";
 export { runPlanCompile } from "./plan.js";
 export { runPlanRun } from "./plan-runner.js";
+export {
+  judgeRuntimeObligations,
+  loadStaticControlDenominatorFromDisk,
+  parseRuntimeReportArtifact,
+  parseStaticControlDenominator,
+} from "./plan-runtime-obligations.js";
+export type { ObligationCap, RuntimeObligationRow } from "./plan-runtime-obligations.js";
 export { runFinalize, runFinalizeReplayAdjudicate, runFinalizeStatus } from "./finalize.js";
 export type { FinalizeReplayAdjudicateInput, FinalizeReplayAdjudicateResult, FinalizeResult, FinalizeRunInput, FinalizeStatusInput, FinalizeStage } from "./finalize.js";
 export { analyzeControlDataFlow } from "@pomaster/gauntlet-lite";

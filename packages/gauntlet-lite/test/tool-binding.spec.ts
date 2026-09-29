@@ -267,6 +267,72 @@ describe("runBindingGate（绑定式执行——沿 §59 adapter 管线，bindin
   });
 });
 
+describe("runtime CDF correlation 强对账（W5 契约 §2：manifest 预期 ID ≠ report ID = 报告无效非 warning）", () => {
+  function cdfRuntimeFixture(manifestExtra: Record<string, unknown>): string {
+    const root = mkdtempSync(join(tmpdir(), "pomaster-tb-corr-"));
+    cleanupRoots.push(root);
+    writeFileSync(join(root, "package.json"), "{}");
+    writeFileSync(join(root, "probe.json"), JSON.stringify({
+      schema: "pomaster.control-data-flow-runtime-probe/v1",
+      task_ref: "TASK.CORR", static_control_ref: "control:1", side_effect: "READ_ONLY",
+      fixture: { isolated: false, ref: null }, cleanup_ref: null,
+      ...manifestExtra,
+    }));
+    return root;
+  }
+
+  const cdfRuntimeBinding: ToolBindingRecord = {
+    id: "project.cdf.runtime.corr",
+    source: "built_in",
+    transport: "cli",
+    adapter_ref: "builtin.gauntlet-lite.control-data-flow-runtime",
+    tool: "gauntlet:control-data-flow-runtime",
+    tool_version_anchor: "0.1.0",
+    gate: "CONTROL_DATA_FLOW_RUNTIME",
+    gate_def: "POLICY.GATE.CONTROL_DATA_FLOW_RUNTIME@0.1.0",
+    metric_dialect: "ui:control_flow_runtime_trace",
+    capabilities: ["control_data_flow"],
+    execution: { command: "node probe.mjs", probe_manifest: "probe.json" },
+    report_contract: {
+      format: "pomaster-control-data-flow-runtime-json",
+      parser_ref: "builtin.gauntlet-lite.control-data-flow-runtime/json-v1",
+      parser_version: "0.1.0",
+    },
+  } as ToolBindingRecord;
+
+  const V2_REPORT = (correlationId: string): string => JSON.stringify({
+    schema: "pomaster.control-data-flow-runtime/v2",
+    task_ref: "TASK.CORR", static_control_ref: "control:1", side_effect: "READ_ONLY",
+    fixture: { isolated: false, ref: null },
+    cleanup: { required: false, attempted: false, succeeded: false },
+    observations: { control: true, request_or_storage: true, response_or_ack: true, readback: true, feedback: true, error_recovery: true },
+    correlation_id: correlationId,
+    trace: [
+      { stage: "request", operation_id: "op", control_ref: "control:1", scenario_ref: "s", request_digest: "sha256:aa", readback_digest: null, visible_result: null },
+      { stage: "visible", operation_id: "op", control_ref: "control:1", scenario_ref: "s", request_digest: null, readback_digest: null, visible_result: true },
+    ],
+  });
+
+  it("correlation 相等（manifest 预期 = report 实际）→ 通过（同因果链）", () => {
+    const root = cdfRuntimeFixture({ correlation_id: "corr-expected-1" });
+    const outcome = runBindingGate(cdfRuntimeBinding, { projectRoot: root, grn: "GRN-0601", ranAtSeq: 1, subjectId: "TASK.CORR" }, { executableProbe: () => "node", spawnFn: () => ({ status: 0, stdout: V2_REPORT("corr-expected-1"), stderr: "", error: null, externalMs: 1 }) });
+    expect(outcome.record.verdict).toBe("passed");
+  });
+
+  it("correlation 不等（串线 trace）→ GateAdapterError 报告无效（编排层转 not_run，非 warning）", () => {
+    const root = cdfRuntimeFixture({ correlation_id: "corr-expected-1" });
+    let starts = 0;
+    expect(() => runBindingGate(cdfRuntimeBinding, { projectRoot: root, grn: "GRN-0602", ranAtSeq: 2, subjectId: "TASK.CORR" }, { executableProbe: () => "node", spawnFn: () => { starts += 1; return { status: 0, stdout: V2_REPORT("corr-other-trace"), stderr: "", error: null, externalMs: 1 }; } })).toThrow(/correlation_id=corr-other-trace 与 manifest 预期=corr-expected-1 不一致/);
+    expect(starts).toBe(1);
+  });
+
+  it("legacy manifest 无 correlation_id 声明 → 保持既有行为（不强求对账——兼容）", () => {
+    const root = cdfRuntimeFixture({});
+    const outcome = runBindingGate(cdfRuntimeBinding, { projectRoot: root, grn: "GRN-0603", ranAtSeq: 3, subjectId: "TASK.CORR" }, { executableProbe: () => "node", spawnFn: () => ({ status: 0, stdout: V2_REPORT("corr-legacy-any"), stderr: "", error: null, externalMs: 1 }) });
+    expect(outcome.record.verdict).toBe("passed");
+  });
+});
+
 describe("allowlistSpawn（SP-W1-h 环境白名单执行面——只在绑定通路生效，既有腿零行为变更）", () => {
   const WIN_MIN = ["SystemRoot", "ComSpec", "SystemDrive", "windir", "TEMP", "TMP"];
   it("白名单内变量透传给子进程，白名单外变量被滤除（真实子进程验证）", () => {

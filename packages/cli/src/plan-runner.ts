@@ -43,6 +43,11 @@ import { runRecordGateRunValue } from "./record.js";
 import { captureEvidenceSourceSnapshot } from "./source-snapshot.js";
 import { runsDirPath } from "./store-layout.js";
 import { computeBindingStates, loadToolBindingRegistry } from "./tools.js";
+import {
+  judgeRuntimeObligations,
+  loadStaticControlDenominatorFromDisk,
+  type RuntimeObligationRow,
+} from "./plan-runtime-obligations.js";
 
 export interface PlanRunInput extends Omit<PlanCompileInput, "inputFile"> {
   readonly taskRef: string;
@@ -378,6 +383,8 @@ export async function runPlanRun(
     readonly grn: string;
     readonly record: GateResultRecord;
     readonly artifactRefs: ReturnType<typeof persistEvidenceArtifact>[] | undefined;
+    /** W5：runtime/静态 CDF artifact 原始字节（义务判定消费；无 artifact 行 undefined）。 */
+    readonly artifactBytes: Uint8Array | undefined;
   }
   const needing: { index: number; item: (typeof obligations)[number]["item"]; binding: ToolBindingRecord }[] = [];
   for (let obligationIndex = 0; obligationIndex < obligations.length; obligationIndex += 1) {
@@ -406,6 +413,7 @@ export async function runPlanRun(
     const ranAtSeq = store.currentSeq ?? 0;
     let record: GateResultRecord;
     let artifactRefs: ReturnType<typeof persistEvidenceArtifact>[] | undefined;
+    let artifactBytes: Uint8Array | undefined;
     try {
       const state = stateById.get(binding.id);
       const executed = state?.available === true && state.selected === true
@@ -427,6 +435,7 @@ export async function runPlanRun(
       artifactRefs = executed?.artifact === undefined
         ? undefined
         : [persistEvidenceArtifact(buildStorePaths(rootDir).evidenceDir, executed.artifact)];
+      artifactBytes = executed?.artifact?.bytes;
     } catch (error) {
       if (error instanceof GateAdapterError) {
         record = stampedAbsence(binding, grn, ranAtSeq, input.taskRef, "not_run", error.message);
@@ -453,8 +462,43 @@ export async function runPlanRun(
       };
       break;
     }
-    pending.push({ index: entry.index, item: entry.item, binding, grn, record, artifactRefs });
+    pending.push({ index: entry.index, item: entry.item, binding, grn, record, artifactRefs, artifactBytes });
   }
+
+  // —— W5 runtime 场景义务判定（契约 §1-§4；pass 1b 后、入账前）——
+  // static 交叉核验 + oracle 声明链 + seam 双腿比较：义务未满足 = 编排层 cap 非绿
+  // （工具真实 verdict 保留留痕；cap 只降不升——已有非绿行仅追加缺口注记）。
+  const w5Rows: RuntimeObligationRow[] = pending
+    .filter((entry) => entry.binding.gate === "CONTROL_DATA_FLOW" || entry.binding.gate === "CONTROL_DATA_FLOW_RUNTIME")
+    .map((entry) => {
+      const projection = entry.item.resolved_bindings.find((row) => row.binding_id === entry.binding.id);
+      return {
+        grn: entry.grn,
+        gate: entry.binding.gate,
+        binding_id: entry.binding.id,
+        seam_role: projection?.seam_role ?? entry.binding.seam_role ?? null,
+        acceptance_ref: entry.item.acceptance_ref,
+        scenario_ref: entry.item.scenario_ref ?? null,
+        scenario_oracle: entry.item.scenario_oracle ?? null,
+        seam_obligation: entry.item.seam_obligation ?? null,
+        artifact_bytes: entry.artifactBytes ?? null,
+      };
+    });
+  const hasPendingStatic = w5Rows.some((row) => row.gate === "CONTROL_DATA_FLOW");
+  const diskDenominator = hasPendingStatic
+    ? null
+    : loadStaticControlDenominatorFromDisk(rootDir, input.executionId, input.taskRef);
+  const w5Caps = judgeRuntimeObligations({ rows: w5Rows, staticDenominatorFromDisk: diskDenominator });
+  const cappedPending = pending.map((entry) => {
+    const cap = w5Caps.get(entry.grn);
+    if (cap === undefined) return entry;
+    if (entry.record.verdict === "passed") {
+      return { ...entry, record: { ...entry.record, verdict: cap.verdict, verdictCapReason: cap.reason, scopeNote: `${entry.record.scopeNote ?? ""}；verdict_before_obligation_cap=passed；w5_obligation_cap=${cap.reason}；${cap.note}` } };
+    }
+    return { ...entry, record: { ...entry.record, scopeNote: `${entry.record.scopeNote ?? ""}；w5_obligation_cap=${cap.reason}；${cap.note}` } };
+  });
+  pending.length = 0;
+  pending.push(...cappedPending);
 
   // —— 运行窗口 after 捕获 + window 判定（覆盖全部工具执行；before/after 同一
   // sourceSurface——「执行后捕获同一面」；端点相等 ≠ 无 A→B→A，kernel 合同显式边界） ——

@@ -1030,3 +1030,204 @@ describe("Case D 回放（并行终验归属；PR-W2.3）", () => {
     }
   });
 });
+
+// ============================================================
+// W5 runtime 场景义务判定（FR-09/FR10；契约 w5-probe-contract §1-§4）
+// ============================================================
+//
+// adapter 判卷语义之上、GRN 入账之前的编排层义务面：
+// - static 交叉核验（§3）：runtime 报告的 static_control_ref 须真实在静态
+//   CONTROL_DATA_FLOW artifact 分母内（不在册=blocked，非绿）；
+// - oracle 义务（§1/§2）：v1 报告不得满足带 visible_via 义务的场景（诚实降级）；
+//   v2 声明链 request→persist→re_read→mapping→visible 全链 + visible=true；
+//   ui_surface 通道腿工具缺席=not_run 诚实呈现；
+// - seam 义务（§4）：mock/real 双腿各自独立 GRN；mutation 分歧（Case E 原型）→
+//   双腿行 cap warning（w5_seam_divergent）——工具真实 verdict 保留留痕。
+
+/** v2 runtime fake（参数化 preset：ok / no-visible / static-drift；--seam 携带双腿观察）。 */
+const W5_V2_FAKE = `const args = process.argv.slice(2);
+const opt = (name, fallback) => { const i = args.indexOf(name); return i < 0 ? fallback : args[i + 1]; };
+const taskRef = opt("--task-ref", "TASK.W5.JUDGE");
+const controlRef = opt("--control-ref", "react:src/App.tsx:1:1:onClick");
+const preset = opt("--preset", "ok");
+const seamPersisted = opt("--seam-persisted", null);
+const staticControlRef = preset === "static-drift" ? "react:src/Ghost.tsx:1:1:onClick" : controlRef;
+const seg = { operation_id: "op-1", control_ref: staticControlRef, scenario_ref: "s" };
+const trace = [
+  { stage: "request", ...seg, request_digest: "sha256:req", readback_digest: null, visible_result: null },
+  { stage: "persist", ...seg, request_digest: null, readback_digest: "sha256:pst", visible_result: null },
+  { stage: "re_read", ...seg, request_digest: "sha256:rrd", readback_digest: "sha256:rrb", visible_result: null },
+  { stage: "mapping", ...seg, request_digest: null, readback_digest: "sha256:map", visible_result: null },
+  { stage: "visible", ...seg, request_digest: null, readback_digest: null, visible_result: preset === "no-visible" ? false : true },
+];
+const report = {
+  schema: "pomaster.control-data-flow-runtime/v2",
+  task_ref: taskRef,
+  static_control_ref: staticControlRef,
+  side_effect: "READ_ONLY",
+  fixture: { isolated: false, ref: null },
+  cleanup: { required: false, attempted: false, succeeded: false },
+  observations: { control: true, request_or_storage: true, response_or_ack: true, readback: true, feedback: preset === "no-visible" ? false : true, error_recovery: true },
+  correlation_id: opt("--correlation-id", "w5-judge-trace"),
+  trace,
+};
+if (seamPersisted !== null) {
+  report.seam_observation = {
+    operation_id: "import-records", contract_ref: "OAS.IMPORT@1", scenario_ref: "import-seam",
+    shape_fields: [{ name: "imported_count", type: "integer", nullable: false }],
+    error_semantics: ["409_CONFLICT"],
+    mutation: { persisted: seamPersisted === "true", undoable: seamPersisted === "true" },
+    state_transition: "idle→imported",
+    visible: preset !== "no-visible",
+  };
+}
+process.stdout.write(JSON.stringify(report));`;
+
+/** W5 判定底座：fixture + v2 fake + W5 任务 + bindings 追加（static/runtime/seam 双腿）。 */
+async function w5Fixture(
+  runtimeCommands: Record<string, string>,
+  scenarios: unknown[],
+  manifestStaticRef = "react:src/App.tsx:1:1:onClick",
+): Promise<string> {
+  const executionId = await fixture();
+  writeFileSync(join(root, "cdf-runtime-v2-fake.mjs"), W5_V2_FAKE);
+  // v1 fake 的 task_ref/静态 ref 对齐 W5 任务（normalize 的 subject 对账与 manifest
+  // 对账都要求同源——fixture() 的 TASK.CDF.RUNNER 报文不适用本 describe）。
+  writeFileSync(join(root, "cdf-runtime-fake.mjs"), `process.stdout.write(JSON.stringify({schema:'pomaster.control-data-flow-runtime/v1',task_ref:'TASK.W5.JUDGE',static_control_ref:'react:src/App.tsx:1:1:onClick',side_effect:'READ_ONLY',fixture:{isolated:false,ref:null},cleanup:{required:false,attempted:false,succeeded:false},observations:{control:true,request_or_storage:true,response_or_ack:true,readback:true,feedback:true,error_recovery:true},correlation_id:'trace-1'}));`);
+  // probe manifest 与 W5 任务/静态引用对齐（spawn 前校验面：task_ref/静态 ref 须一致）。
+  writeFileSync(join(root, "cdf-runtime-probe.json"), JSON.stringify({
+    schema: "pomaster.control-data-flow-runtime-probe/v1",
+    task_ref: "TASK.W5.JUDGE", static_control_ref: manifestStaticRef,
+    side_effect: "READ_ONLY", fixture: { isolated: false, ref: null }, cleanup_ref: null,
+  }));
+  const registryPath = join(root, ".pomaster", "tools", "bindings.json");
+  const registry = JSON.parse(readFileSync(registryPath, "utf8")) as { bindings: ToolBindingRecord[] };
+  const runtimeBinding = (id: string, seamRole: "mock" | "real" | undefined, command: string): ToolBindingRecord => ({
+    id, source: "built_in", transport: "cli",
+    adapter_ref: "builtin.gauntlet-lite.control-data-flow-runtime",
+    tool: "gauntlet:control-data-flow-runtime", tool_version_anchor: "0.1.0",
+    gate: "CONTROL_DATA_FLOW_RUNTIME", gate_def: "POLICY.GATE.CONTROL_DATA_FLOW_RUNTIME@0.1.0",
+    metric_dialect: "ui:control_flow_runtime_trace", capabilities: ["control_data_flow"],
+    ...(seamRole !== undefined ? { seam_role: seamRole } : {}),
+    execution: { command, cwd: ".", probe_manifest: "cdf-runtime-probe.json" },
+    report_contract: { format: "pomaster-control-data-flow-runtime-json", parser_ref: "builtin.gauntlet-lite.control-data-flow-runtime/json-v1", parser_version: "0.1.0" },
+    environment: { requires: false },
+  });
+  // fixture() 自带的 runtime binding（TASK.CDF.RUNNER 词形）移除——非 seam 场景的
+  // 单腿选择按码点序取 available binding，旧 binding 在册会抢选（W5 场景用本 describe
+  // 的 leg binding 判定）。
+  registry.bindings = registry.bindings.filter((row) => row.id !== "project.ui.control-data-flow-runtime");
+  for (const [id, command] of Object.entries(runtimeCommands)) {
+    const seamRole = id.endsWith(".mock") ? "mock" : id.endsWith(".real") ? "real" : undefined;
+    registry.bindings = registry.bindings.filter((row) => row.id !== id);
+    registry.bindings.push(runtimeBinding(id, seamRole, command));
+  }
+  writeFileSync(registryPath, JSON.stringify(registry));
+  const store = await createStore(root);
+  await applyTransaction(store, { ops: [{ op: "upsert_object", envelope: {
+    id: "TASK.W5.JUDGE", kind: "task_object", axisProfile: "task_default",
+    axes: { lifecycle: "CURRENT", confidence: "PROVISIONAL", evidence: "IMPLEMENTED", change: "STABLE" },
+    titleZh: "W5 runtime 义务判定", authority: { owner: "BOOTSTRAP_OWNER", delegates: [] }, origin: "natural",
+    payload: { intent: "W5 runtime 场景义务判定", class_scan_result: { scope: "src/**", hits: 1, fixed_count: 1, regression_case_ref: "GRN-W5" }, acceptance: [{ criterion: "保存后重读可见 + seam 双腿语义一致", claim: null, requires: ["control_data_flow"], scenarios }] },
+  } as never }] });
+  return executionId;
+}
+
+const W5_ORACLE = { visible_via: "api_list", filter_context: { project_id: "p-1" }, mapping_fields: ["imported_count"] };
+
+describe("W5 runtime 场景义务判定（编排层 cap——工具真实 verdict 保留留痕）", () => {
+  it("oracle + v1 报告 → warning（w5_oracle_v1_trace_missing 诚实降级）；升级 v2 全链后绿", async () => {
+    // v1 fake（无 trace）+ oracle 场景：adapter 判 passed（六键全真），编排层 cap warning。
+    const executionId = await w5Fixture(
+      { "project.w5.runtime.leg": "node cdf-runtime-fake.mjs" },
+      [{ scenario_ref: "save-visible", precondition: "保存入口在座", interaction: "触发保存", state_dimensions: [], expected_observation: "列表重读可见", runtime_confirmation_required: true, expected_observation_oracle: W5_ORACLE }],
+    );
+    const first = await runPlanRun(root, { taskRef: "TASK.W5.JUDGE", executionId, changed: ["src/App.tsx"], faces });
+    expect(first.ok).toBe(false);
+    const runtimeRow = first.result.rows.find((row) => row.gate === "CONTROL_DATA_FLOW_RUNTIME");
+    expect(runtimeRow?.verdict).toBe("warning");
+    const runtimeGrn = JSON.parse(readFileSync(grnPath(runtimeRow?.grn as string), "utf8")) as { gate_result: { result: { scope: { note: string }; verdict: string } } };
+    // 工具真实 verdict 保留留痕 + cap 词形点名缺口。
+    expect(runtimeGrn.gate_result.result.scope.note).toContain("verdict_before_obligation_cap=passed");
+    expect(runtimeGrn.gate_result.result.scope.note).toContain("w5_oracle_v1_trace_missing");
+    expect(runtimeGrn.gate_result.result.scope.note).toContain("不得满足带 visible_via 义务的场景");
+
+    // 升级 v2 全链（trace 五段 + visible=true）：oracle 义务满足 → 行绿（静态复用）。
+    const registryPath = join(root, ".pomaster", "tools", "bindings.json");
+    const registry = JSON.parse(readFileSync(registryPath, "utf8")) as { bindings: ToolBindingRecord[] };
+    const leg = registry.bindings.find((row) => row.id === "project.w5.runtime.leg");
+    leg!.execution = { command: "node cdf-runtime-v2-fake.mjs --preset ok", cwd: ".", probe_manifest: "cdf-runtime-probe.json" };
+    writeFileSync(registryPath, JSON.stringify(registry));
+    const second = await runPlanRun(root, { taskRef: "TASK.W5.JUDGE", executionId, changed: ["src/App.tsx"], faces });
+    expect(second.ok).toBe(true);
+    const secondRuntime = second.result.rows.find((row) => row.gate === "CONTROL_DATA_FLOW_RUNTIME");
+    expect(secondRuntime?.verdict).toBe("passed");
+    expect(secondRuntime?.grn).not.toBe(runtimeRow?.grn);
+  });
+
+  it("static_control_ref 不在静态分母 → blocked（w5_static_control_not_in_denominator）", async () => {
+    // manifest 与报告同写 Ghost ref（tool-binding spawn 前对账通过）——失败注入落在
+    // 编排层静态分母对账（报告引用的控件不在 CONTROL_DATA_FLOW 分母）。
+    const executionId = await w5Fixture(
+      { "project.w5.runtime.leg": "node cdf-runtime-v2-fake.mjs --preset static-drift" },
+      [{ scenario_ref: "save-visible", precondition: "保存入口在座", interaction: "触发保存", state_dimensions: [], expected_observation: "列表重读可见", runtime_confirmation_required: true, expected_observation_oracle: W5_ORACLE }],
+      "react:src/Ghost.tsx:1:1:onClick",
+    );
+    const outcome = await runPlanRun(root, { taskRef: "TASK.W5.JUDGE", executionId, changed: ["src/App.tsx"], faces });
+    expect(outcome.ok).toBe(false);
+    const runtimeRow = outcome.result.rows.find((row) => row.gate === "CONTROL_DATA_FLOW_RUNTIME");
+    expect(runtimeRow?.verdict).toBe("blocked");
+    const note = grnNote(runtimeRow?.grn as string);
+    expect(note).toContain("w5_static_control_not_in_denominator");
+    expect(note).toContain("react:src/Ghost.tsx:1:1:onClick 不在静态 CONTROL_DATA_FLOW 分母内");
+  });
+
+  it("ui_surface oracle 通道：api 层腿不冒充 UI 可见 → not_run（诚实呈现）", async () => {
+    const executionId = await w5Fixture(
+      { "project.w5.runtime.leg": "node cdf-runtime-v2-fake.mjs --preset ok" },
+      [{ scenario_ref: "save-visible", precondition: "保存入口在座", interaction: "触发保存", state_dimensions: [], expected_observation: "界面呈现已保存项", runtime_confirmation_required: true, expected_observation_oracle: { ...W5_ORACLE, visible_via: "ui_surface" } }],
+    );
+    const outcome = await runPlanRun(root, { taskRef: "TASK.W5.JUDGE", executionId, changed: ["src/App.tsx"], faces });
+    expect(outcome.ok).toBe(false);
+    const runtimeRow = outcome.result.rows.find((row) => row.gate === "CONTROL_DATA_FLOW_RUNTIME");
+    expect(runtimeRow?.verdict).toBe("not_run");
+    expect(grnNote(runtimeRow?.grn as string)).toContain("w5_ui_surface_leg_not_run");
+    expect(grnNote(runtimeRow?.grn as string)).toContain("不以 api 层结果冒充 UI 可见");
+  });
+
+  it("Case E 原型：seam 双腿 mutation 分歧 → 双腿行 cap warning（w5_seam_divergent）；双腿语义一致后绿", async () => {
+    const executionId = await w5Fixture(
+      {
+        "project.w5.runtime.mock": "node cdf-runtime-v2-fake.mjs --preset ok --seam-persisted true",
+        "project.w5.runtime.real": "node cdf-runtime-v2-fake.mjs --preset ok --seam-persisted false",
+      },
+      [{ scenario_ref: "import-seam", precondition: "导入入口在座", interaction: "触发导入", state_dimensions: [], expected_observation: "导入结果重读可见", runtime_confirmation_required: true, expected_observation_oracle: W5_ORACLE, mock_real_seam: { operation_id: "import-records", contract_ref: "OAS.IMPORT@1" } }],
+    );
+    const injected = await runPlanRun(root, { taskRef: "TASK.W5.JUDGE", executionId, changed: ["src/App.tsx"], faces });
+    expect(injected.ok).toBe(false);
+    // 双腿各自独立 GRN；mock/real 两行都因 seam 分歧非绿（mutation_outcome 维度点名）。
+    const seamRows = injected.result.rows.filter((row) => row.gate === "CONTROL_DATA_FLOW_RUNTIME");
+    expect(seamRows.map((row) => row.binding_id).sort()).toEqual(["project.w5.runtime.mock", "project.w5.runtime.real"]);
+    for (const row of seamRows) {
+      expect(row.verdict).toBe("warning");
+      const note = grnNote(row.grn);
+      expect(note).toContain("w5_seam_divergent");
+      expect(note).toContain("mutation_outcome");
+      expect(note).toContain("persisted=true ≠ real persisted=false");
+      expect(note).toContain("verdict_before_obligation_cap=passed");
+    }
+
+    // 修复（real 腿落库语义对齐 mock）：双腿一致 → seam 义务满足，两行绿。
+    const registryPath = join(root, ".pomaster", "tools", "bindings.json");
+    const registry = JSON.parse(readFileSync(registryPath, "utf8")) as { bindings: ToolBindingRecord[] };
+    const realLeg = registry.bindings.find((row) => row.id === "project.w5.runtime.real");
+    realLeg!.execution = { command: "node cdf-runtime-v2-fake.mjs --preset ok --seam-persisted true", cwd: ".", probe_manifest: "cdf-runtime-probe.json" };
+    writeFileSync(registryPath, JSON.stringify(registry));
+    const repaired = await runPlanRun(root, { taskRef: "TASK.W5.JUDGE", executionId, changed: ["src/App.tsx"], faces });
+    expect(repaired.ok).toBe(true);
+    for (const row of repaired.result.rows.filter((row) => row.gate === "CONTROL_DATA_FLOW_RUNTIME")) {
+      expect(row.verdict).toBe("passed");
+      expect(grnNote(row.grn)).not.toContain("w5_seam_divergent");
+    }
+  });
+});

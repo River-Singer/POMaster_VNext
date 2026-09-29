@@ -390,6 +390,7 @@ export type {
 } from "./control-data-flow-runtime-adapter.js";
 export {
   SEAM_DIMENSIONS,
+  compareSeamObservations,
 } from "./seam-comparator.js";
 export type {
   SeamLegObservation,
@@ -397,4 +398,7 @@ export type {
   SeamMutationObservation,
   SeamDimension,
   SeamDimensionOutcome,
+  SeamDimensionVerdict,
+  SeamOracleInput,
+  SeamComparisonResult,
 } from "./seam-comparator.js";
