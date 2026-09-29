@@ -34,6 +34,8 @@ import {
   issuePermit,
 } from "@pomaster/kernel";
 import { runCloseout, runCheckGates, readBaselineConfirmation, buildBaselineDependencyDeclaration, BASELINE_CONFIRM_TARGETS, type CloseoutResult } from "@pomaster/cli";
+import { compareSourceSnapshots } from "@pomaster/kernel";
+import { captureEvidenceSourceSnapshot } from "../src/source-snapshot.js";
 import { CATALOG_GATE_RECIPES } from "@pomaster/gauntlet-lite";
 import { captureEvidenceBaselineInputs, readEvidenceQualificationRequirement, readRunQualificationView, readTaskBaselineDependencies } from "../src/evidence-qualification.js";
 
@@ -124,11 +126,14 @@ function runFixture(overrides: {
   readonly ranAtSeq?: number;
   readonly gateDef?: string;
   readonly executionId?: string;
+  /** FR-05 运行窗口源码双采样（W2-FR05；undefined = legacy 无主张）。 */
+  readonly sourceSnapshot?: unknown;
 }): Record<string, unknown> {
   const ranAtSeq = overrides.ranAtSeq ?? 3;
   const grn = "GRN-0001";
   return {
     record_type: "run",
+    ...(overrides.sourceSnapshot !== undefined ? { source_snapshot: overrides.sourceSnapshot } : {}),
     grn,
     ran_at_seq: ranAtSeq,
     trigger: { type: "pre_closeout" },
@@ -445,5 +450,82 @@ describe("closeout 证据绑定资格链（W1 R1-5）", () => {
     expect(outcome.ok).toBe(true);
     expect(outcome.errors).toEqual([]);
     expect((outcome.result as CloseoutResult).change).toBe("COMPLETED");
+  });
+});
+
+// ============================================================
+// 证据源码新鲜度（W2-FR05 PR-W2.2：closeout 消费闸；kernel 唯一比较核）
+// ============================================================
+//
+// 合同：主张了源码快照的 GRN 引用面，窗口 fresh 且产出时相关面与当前一致方可作为
+// VERIFIED 证据；stale/unjudgeable → DOD_CLAIM_EVIDENCE_UNQUALIFIED（source 未知不能
+// fresh）；legacy 无 snapshot 缺席诚实放行（不全局硬拒绝——本文件既有用例即 legacy 面）。
+
+describe("closeout 证据源码新鲜度（W2-FR05）", () => {
+  function writeSource(relative: string, content: string): void {
+    const absolute = join(root, ...relative.split("/"));
+    mkdirSync(dirname(absolute), { recursive: true });
+    writeFileSync(absolute, content, "utf8");
+  }
+
+  it("GRN source_snapshot fresh 且当前相关源码一致 → COMPLETED（资格链不误伤新增保证面）", async () => {
+    await initStore();
+    await seedTask();
+    writeSource("src/feature.ts", "export const feature = 1;\n");
+    const captured = captureEvidenceSourceSnapshot(root, { relevantPaths: ["src/feature.ts"], head: null });
+    seedClaim({});
+    seedRun({ sourceSnapshot: { before: captured, after: captured, window: compareSourceSnapshots(captured, captured) } });
+    seedAcceptReceipt();
+    const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
+    expect(outcome.ok).toBe(true);
+    expect(outcome.errors).toEqual([]);
+  });
+
+  it("GRN 产出后相关文件被改（after ≠ 当前）→ DOD_CLAIM_EVIDENCE_UNQUALIFIED（stale 点名路径，零写入）", async () => {
+    await initStore();
+    await seedTask();
+    writeSource("src/feature.ts", "export const feature = 1;\n");
+    const captured = captureEvidenceSourceSnapshot(root, { relevantPaths: ["src/feature.ts"], head: null });
+    const window = { before: captured, after: captured, window: compareSourceSnapshots(captured, captured) };
+    seedClaim({});
+    seedRun({ sourceSnapshot: window });
+    seedAcceptReceipt();
+    writeSource("src/feature.ts", "export const feature = 2;\n");
+    const before = snapshot();
+    const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors.map((error) => error.code)).toEqual(["DOD_CLAIM_EVIDENCE_UNQUALIFIED"]);
+    expect(outcome.errors[0]?.message).toContain("GRN-0001");
+    expect(outcome.errors[0]?.message).toContain("stale");
+    expect(outcome.errors[0]?.message).toContain("src/feature.ts");
+    expect(snapshot()).toEqual(before);
+  });
+
+  it("运行窗口漂移（before ≠ after）→ 拒（保留观察不证明稳定终态；端点回到当前也不洗白 A→B→A）", async () => {
+    await initStore();
+    await seedTask();
+    writeSource("src/feature.ts", "v1\n");
+    const beforeCapture = captureEvidenceSourceSnapshot(root, { relevantPaths: ["src/feature.ts"], head: null });
+    writeSource("src/feature.ts", "v2\n");
+    const afterCapture = captureEvidenceSourceSnapshot(root, { relevantPaths: ["src/feature.ts"], head: null });
+    seedClaim({});
+    seedRun({ sourceSnapshot: { before: beforeCapture, after: afterCapture, window: compareSourceSnapshots(beforeCapture, afterCapture) } });
+    seedAcceptReceipt();
+    // 当前内容 == after（端点对齐）——仍不得复用：窗口漂移证据不证明稳定终态。
+    const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors.map((error) => error.code)).toEqual(["DOD_CLAIM_EVIDENCE_UNQUALIFIED"]);
+    expect(outcome.errors[0]?.message).toContain("stale");
+  });
+
+  it("source_snapshot 畸形 → EVIDENCE_MALFORMED fail-closed（判卷分母内证据损坏禁静默跳过）", async () => {
+    await initStore();
+    await seedTask();
+    seedClaim({});
+    seedRun({ sourceSnapshot: { contract: "pomaster.source-snapshot/v1" } });
+    seedAcceptReceipt();
+    const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
+    expect(outcome.ok).toBe(false);
+    expect(outcome.errors.map((error) => error.code)).toEqual(["EVIDENCE_MALFORMED"]);
   });
 });

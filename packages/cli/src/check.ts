@@ -41,6 +41,7 @@ import type { Actor, Store } from "@pomaster/kernel";
 import {
   GovernanceError,
   applyTransaction,
+  compareSourceSnapshots,
   createStore,
   gateResultToSnake,
   normalizeGateResult,
@@ -59,6 +60,7 @@ import {
 import { allocateEvidenceRef } from "./evidence.js";
 import { captureEvidenceBaselineInputs } from "./evidence-qualification.js";
 import { newEntityKernelGateExecutor } from "./new-entity.js";
+import { captureEvidenceSourceSnapshot } from "./source-snapshot.js";
 import { TRUTH_INDEX_RELATIVE } from "./store-layout.js";
 import { runsDirPath } from "./store-layout.js";
 import { requireInitialized } from "./permit.js";
@@ -515,6 +517,11 @@ export interface CheckGatesDeps {
   >;
   /** 注入 store 句柄（测试）；缺省 = createStore(rootDir)。 */
   readonly store?: Store;
+  /**
+   * FR-05 source 相关面显式声明（W2.2；缺省 = 空面→不捕获不主张源码新鲜度——缺席
+   * 诚实，非静默放行；声明外变化零影响，共享依赖/配置由调用方并入本列表）。
+   */
+  readonly sourceSurface?: readonly string[];
 }
 
 function emptyGatesResult(): GatesCheckResult {
@@ -587,6 +594,14 @@ export async function runCheckGates(
   const ranAtSeq = store.currentSeq ?? initialized.seq;
 
   const baselineInputs = await captureEvidenceBaselineInputs(rootDir);
+
+  // —— W2-FR05 producer 前采样（plan-runner 同源）：相关源码面 before 捕获（工具启动
+  // 前）→ recipe 执行 → after 再捕获同一面 → window 判定落账。空面不捕获不主张
+  // （无 snapshot 的 GRN 走 legacy 语义；声明外变化零影响）。
+  const sourceSurface = [...new Set(deps?.sourceSurface ?? [])].sort();
+  const sourceBefore = sourceSurface.length > 0
+    ? captureEvidenceSourceSnapshot(rootDir, { relevantPaths: sourceSurface })
+    : undefined;
 
   // 派发执行（runner 纯计算；身份坏形 FATAL → SCHEMA_INVALID fail-closed）。
   // kernel-native gate（GATE.NEW_ENTITY.CHECKS）经 runGateRecipeAsync 直调 kernel
@@ -669,13 +684,28 @@ export async function runCheckGates(
     note: record.scopeNote ?? null,
   }));
 
+  // —— W2-FR05 窗口 after 捕获 + window 判定（recipe 执行完毕后对同一 sourceSurface
+  // 再捕获；before/after 双采样 + kernel 唯一比较核——端点相等 ≠ 无 A→B→A，合同显式） ——
+  const sourceAfter = sourceBefore !== undefined
+    ? captureEvidenceSourceSnapshot(rootDir, { relevantPaths: sourceSurface })
+    : undefined;
+  const runSourceSnapshot = sourceBefore !== undefined && sourceAfter !== undefined
+    ? { before: sourceBefore, after: sourceAfter, window: compareSourceSnapshots(sourceBefore, sourceAfter) }
+    : undefined;
+
   // 单事务入账：N 条 record_gate_run op 一次 applyTransaction（一次 seq 推进，原子）。
   // 入账的是 judged（判卷复算后形态），不是 adapter 自报原样——假绿封死边界在事务之前。
   try {
     const applied = await applyTransaction(store, {
       ops: judged.map((record) => ({
         op: "record_gate_run" as const,
-        run: { grn: record.grn, trigger, result: record, ...(baselineInputs !== undefined ? { baselineInputs } : {}) },
+        run: {
+          grn: record.grn,
+          trigger,
+          result: record,
+          ...(baselineInputs !== undefined ? { baselineInputs } : {}),
+          ...(runSourceSnapshot !== undefined ? { sourceSnapshot: runSourceSnapshot } : {}),
+        },
       })),
     });
     const passed = rows.filter((row) => row.verdict === "passed").length;

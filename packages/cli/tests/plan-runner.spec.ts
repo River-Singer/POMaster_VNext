@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -811,5 +812,137 @@ describe("plan run", () => {
       "passed",
       "not_run",
     ]);
+  });
+});
+
+// ============================================================
+// W2-FR05 source freshness（PR-W2.2：producer 前采样 + 复用资格 + 终验消费负例矩阵）
+// ============================================================
+//
+// 合同（research §4 + kernel source-snapshot.ts）：GRN 携带运行窗口双采样
+// （before/after/window）；相关面变了不直接复用旧绿；声明外变化零影响；
+// 窗口漂移的证据保留真实 verdict 但不证明稳定终态（终验不得复用该绿）。
+
+function grnDoc(grn: string): { source_snapshot?: Record<string, unknown>; gate_result: { result: { verdict: string } } } {
+  return JSON.parse(readFileSync(grnPath(grn), "utf8")) as never;
+}
+
+/** 在 fixture 上创建相关面真实文件（默认 digest 捕获需要内容在盘）。 */
+function writeSource(relative: string, content: string): void {
+  const absolute = join(root, ...relative.split("/"));
+  mkdirSync(join(absolute, ".."), { recursive: true });
+  writeFileSync(absolute, content, "utf8");
+}
+
+/** 窗口内改写相关源码的 typecheck fake（Case D 原型：worker 验证窗口 A→B）。 */
+const MUTATING_TSC_FAKE = [
+  "import { writeFileSync, mkdirSync } from 'node:fs';",
+  "mkdirSync('src', { recursive: true });",
+  // 单引号普通串 + \\n：写入 .mjs 的是换行转义序列（模板字面量会把 \n 变成真实换行，
+  // 落盘即 SyntaxError——工具 exit 1 被 adapter 判 not_run，不是窗口语义）。
+  "writeFileSync('src/a.ts', 'export const a = 2;\\n');",
+  "process.stdout.write('src/a.ts' + String.fromCharCode(10) + 'src/b.ts');",
+].join("\n");
+
+describe("plan run source freshness（W2-FR05 负例矩阵）", () => {
+  it("producer 前采样：GRN 携带 source_snapshot（before/after/window fresh；digest 与盘上内容同源）", async () => {
+    const executionId = await fixture();
+    writeSource("src/a.ts", "export const a = 1;\n");
+    const outcome = await runPlanRun(root, { taskRef: "TASK.STATIC.RUNNER", executionId, changed: ["src/a.ts"], faces });
+    expect(outcome.ok).toBe(true);
+    for (const row of outcome.result.rows) {
+      const snapshot = grnDoc(row.grn).source_snapshot;
+      expect(snapshot).toBeDefined();
+      const window = (snapshot as { window: { state: string } }).window;
+      expect(window.state).toBe("fresh");
+      const after = (snapshot as { after: { digests: Record<string, string> } }).after;
+      expect(Object.keys(after.digests)).toEqual(["src/a.ts"]);
+      expect(after.digests["src/a.ts"]).toBe(
+        `sha256:${createHash("sha256").update(readFileSync(join(root, "src", "a.ts"))).digest("hex")}`,
+      );
+    }
+  });
+
+  it("GRN 后改相关文件 → 旧 Evidence 不再满足 Acceptance：复用拒绝补执行，旧 GRN append-only 保留，补验后终验恢复", async () => {
+    const executionId = await fixture();
+    writeSource("src/a.ts", "export const a = 1;\n");
+    const first = await runPlanRun(root, { taskRef: "TASK.STATIC.RUNNER", executionId, changed: ["src/a.ts"], faces });
+    expect(first.ok).toBe(true);
+    const firstGrns = first.result.rows.map((row) => row.grn);
+
+    writeSource("src/a.ts", "export const a = 2;\n");
+    const second = await runPlanRun(root, { taskRef: "TASK.STATIC.RUNNER", executionId, changed: ["src/a.ts"], faces });
+    expect(second.ok).toBe(true);
+    // 相关面变了 → 复用拒绝（同 execution 同 fingerprint 同 binding 也不复用旧绿）。
+    for (const row of second.result.rows) expect(firstGrns).not.toContain(row.grn);
+    // 旧 GRN append-only 保留，verdict 不改写（不自动改判、不删除）。
+    for (const grn of firstGrns) {
+      expect(existsSync(grnPath(grn))).toBe(true);
+      expect(grnDoc(grn).gate_result.result.verdict).toBe("passed");
+    }
+    // 补验 GRN window fresh 且与当前一致 → 终验恢复 AWAITING_REPLAY_REVIEW。
+    for (const row of second.result.rows) {
+      expect((grnDoc(row.grn).source_snapshot as { window: { state: string } }).window.state).toBe("fresh");
+    }
+    const status = await runFinalizeStatus(root, { taskRef: "TASK.STATIC.RUNNER" });
+    expect(status.ok).toBe(true);
+    expect(status.result.stage).toBe("AWAITING_REPLAY_REVIEW");
+  });
+
+  it("改无关文件 → 不失效：同 GRN 复用照常（声明外变化零影响，不全局一刀切）", async () => {
+    const executionId = await fixture();
+    writeSource("src/a.ts", "export const a = 1;\n");
+    const first = await runPlanRun(root, { taskRef: "TASK.STATIC.RUNNER", executionId, changed: ["src/a.ts"], faces });
+    expect(first.ok).toBe(true);
+    writeSource("src/unrelated.ts", "export const noise = true;\n");
+    const second = await runPlanRun(root, { taskRef: "TASK.STATIC.RUNNER", executionId, changed: ["src/a.ts"], faces });
+    expect(second.ok).toBe(true);
+    expect(second.result.rows.map((row) => row.grn)).toEqual(first.result.rows.map((row) => row.grn));
+  });
+
+  it("共享配置变 → 计入（sharedSourcePaths 并入相关分母；变化后补执行）", async () => {
+    const executionId = await fixture();
+    writeSource("src/a.ts", "export const a = 1;\n");
+    writeSource("tsconfig.json", "{}\n");
+    const input = { taskRef: "TASK.STATIC.RUNNER", executionId, changed: ["src/a.ts"], sharedSourcePaths: ["tsconfig.json"], faces } as const;
+    const first = await runPlanRun(root, input);
+    expect(first.ok).toBe(true);
+    writeSource("tsconfig.json", "{\n  // 漂移\n}\n");
+    const second = await runPlanRun(root, input);
+    expect(second.ok).toBe(true);
+    for (const row of second.result.rows) expect(first.result.rows.map((r) => r.grn)).not.toContain(row.grn);
+  });
+
+  it("运行窗口内相关源码被改（A→B）→ window stale 落账、真实 verdict 不改写、终验拒绝复用该绿；稳定窗口重验后恢复", async () => {
+    const executionId = await fixture();
+    writeSource("src/a.ts", "export const a = 1;\n");
+    writeFileSync(join(root, "tsc-fake.mjs"), MUTATING_TSC_FAKE);
+    const drifted = await runPlanRun(root, { taskRef: "TASK.STATIC.RUNNER", executionId, changed: ["src/a.ts"], faces });
+    // 真实工具 verdict 保留（不得把不稳定窗口的绿改红，也不得冒充稳定终态）。
+    expect(drifted.ok).toBe(true);
+    for (const row of drifted.result.rows) {
+      expect(grnDoc(row.grn).gate_result.result.verdict).toBe("passed");
+      expect((grnDoc(row.grn).source_snapshot as { window: { state: string; drift: string[] } }).window.state).toBe("stale");
+    }
+    // 终验拒绝复用该绿（window stale ≠ 稳定终态证据）。
+    const status = await runFinalizeStatus(root, { taskRef: "TASK.STATIC.RUNNER" });
+    expect(status.ok).toBe(true);
+    expect(status.result.stage).toBe("VERIFY_BLOCKED");
+    expect(status.result.next_actions[0]?.reason).toContain("源码稳定性");
+
+    // 稳定窗口重验：候选 window stale 不复用 → 补执行 → fresh → 终验恢复。
+    writeFileSync(
+      join(root, "tsc-fake.mjs"),
+      "process.stdout.write('src/a.ts' + String.fromCharCode(10) + 'src/b.ts');",
+    );
+    const stable = await runPlanRun(root, { taskRef: "TASK.STATIC.RUNNER", executionId, changed: ["src/a.ts"], faces });
+    expect(stable.ok).toBe(true);
+    for (const row of stable.result.rows) {
+      expect(drifted.result.rows.map((r) => r.grn)).not.toContain(row.grn);
+      expect((grnDoc(row.grn).source_snapshot as { window: { state: string } }).window.state).toBe("fresh");
+    }
+    const statusAfter = await runFinalizeStatus(root, { taskRef: "TASK.STATIC.RUNNER" });
+    expect(statusAfter.ok).toBe(true);
+    expect(statusAfter.result.stage).toBe("AWAITING_REPLAY_REVIEW");
   });
 });

@@ -10,12 +10,15 @@ import {
   GovernanceError,
   PLAN_CAPABILITY_GATE_NAMES,
   assertExecutionAttachable,
+  assertRunSourceSnapshot,
   buildStorePaths,
+  compareSourceSnapshots,
   createStore,
   persistEvidenceArtifact,
   readExecutionRecordById,
   sha256OfCanonical,
   verifyEvidenceBinding,
+  type EvidenceSourceSnapshot,
   type VerificationPlanResolvedBinding,
 } from "@pomaster/kernel";
 import {
@@ -31,10 +34,12 @@ import { join } from "node:path";
 import type { CliError, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
 import { allocateEvidenceRef } from "./evidence.js";
+import { captureEvidenceBaselineInputs } from "./evidence-qualification.js";
 import { runDiagnose, type DiagnoseResult } from "./diagnose.js";
 import { runPlanCompile, type PlanCompileInput } from "./plan.js";
 import { governanceErrorToCliError } from "./permit.js";
 import { runRecordGateRunValue } from "./record.js";
+import { captureEvidenceSourceSnapshot } from "./source-snapshot.js";
 import { runsDirPath } from "./store-layout.js";
 import { computeBindingStates, loadToolBindingRegistry } from "./tools.js";
 
@@ -42,6 +47,12 @@ export interface PlanRunInput extends Omit<PlanCompileInput, "inputFile"> {
   readonly taskRef: string;
   readonly executionId: string;
   readonly diagnoseOnFailure?: boolean;
+  /**
+   * FR-05 共享依赖/配置面（W2.2）：除任务变更面（changed）外显式并入 source 相关分母的
+   * 共享路径（如 tsconfig/package.json/共享样式/SQL/后端源码——零扩展名白名单，声明即
+   * 进入分母）；声明外变化零影响。缺席 = 分母仅 changed。
+   */
+  readonly sharedSourcePaths?: readonly string[];
 }
 
 export interface PlanRunRow {
@@ -174,13 +185,20 @@ function stampedAbsence(
 }
 
 /**
- * 复用身份判定（W1-FR04 起含场景身份）：同 AGX + task + acceptance + scenario +
- * plan fingerprint + binding id/fingerprint 且 verdict=passed（runtime gate 另核
- * artifact 绑定）方可复用——场景 marker 缺席的历史 GRN 不满足带场景条目的 marker
- * 集合（不会被借作场景证据），带场景条目也不会互相覆盖（同 gate 不同场景 marker
- * 互斥）。
+ * 复用身份判定（W1-FR04 起含场景身份；W2-FR05 起含源码稳定性）：同 AGX + task +
+ * acceptance + scenario + plan fingerprint + binding id/fingerprint 且 verdict=passed
+ * （runtime gate 另核 artifact 绑定）方可复用——场景 marker 缺席的历史 GRN 不满足带
+ * 场景条目的 marker 集合（不会被借作场景证据），带场景条目也不会互相覆盖（同 gate
+ * 不同场景 marker 互斥）。
+ *
+ * W2-FR05 源码稳定性复用闸：候选 GRN 主张了 source_snapshot 时——窗口 fresh 且产出时
+ * 相关面与本次运行启动捕获一致（kernel 唯一比较核）方可复用，**相关面变了不直接复用
+ * 旧绿**（旧 GRN append-only 保留，重新执行产生新证据）；窗口漂移的候选同样不复用
+ * （不稳定窗口的绿不证明稳定终态）。快照损坏/畸形 → 视同不复用（重执行是保守结果，
+ * 且既有 GRN 不动）；候选无 snapshot（legacy）→ 缺席诚实走既有行为（不反填、不全局
+ * 硬拒绝）。反向（本次运行未声明分母而候选有 snapshot）亦不复用——无面可判不冒充对齐。
  */
-function findRecordedObligation(rootDir: string, executionId: string, taskRef: string, acceptanceRef: string, scenarioRef: string | null, binding: ToolBindingRecord, fingerprint: string): { grn: string; verdict: "passed" } | null {
+function findRecordedObligation(rootDir: string, executionId: string, taskRef: string, acceptanceRef: string, scenarioRef: string | null, binding: ToolBindingRecord, fingerprint: string, currentSource: EvidenceSourceSnapshot | undefined): { grn: string; verdict: "passed" } | null {
   try {
     const dir = runsDirPath(rootDir);
     const markers = [
@@ -202,6 +220,17 @@ function findRecordedObligation(rootDir: string, executionId: string, taskRef: s
         const paths = buildStorePaths(rootDir);
         const bindingOutcome = verifyEvidenceBinding({ runRecordPath: join(dir, file), evidenceDir: paths.evidenceDir });
         if (!bindingOutcome.bound) continue;
+      }
+      const snapshot = row["source_snapshot"];
+      if (snapshot !== undefined) {
+        if (currentSource === undefined) continue;
+        try {
+          assertRunSourceSnapshot(snapshot);
+          if (snapshot.window.state !== "fresh") continue;
+          if (compareSourceSnapshots(snapshot.after, currentSource).state !== "fresh") continue;
+        } catch {
+          continue; // 畸形/损坏快照 → 不复用（重执行保守；既有 GRN 不动，损伤呈报归资格链）
+        }
       }
       return { grn: file.slice(0, -5), verdict: "passed" };
     }
@@ -311,18 +340,60 @@ export async function runPlanRun(
     }).map((row) => [row.binding_id, row]),
   );
   const bindingById = new Map(loaded.registry.bindings.map((binding) => [binding.id, binding]));
-  const rows: PlanRunRow[] = [];
 
-  for (const obligation of obligations) {
-    const projection = obligation.binding;
-    const binding = bindingById.get(projection.binding_id) as ToolBindingRecord;
-    const scenarioRef = obligation.item.scenario_ref ?? null;
-    const previous = findRecordedObligation(rootDir, input.executionId, input.taskRef, obligation.item.acceptance_ref, scenarioRef, binding, compiled.result.inputs_fingerprint);
+  // 行序按 obligation 序保持（复用行与入账行交错时仍逐 obligation 对位——旧实现单循环
+  // 天然保序；W2.2 两段化后经 rowByIndex 同位回填）。
+  const rowByIndex = new Map<number, PlanRunRow>();
+  const rowsSoFar = (): PlanRunRow[] =>
+    obligations.flatMap((_, index) => {
+      const row = rowByIndex.get(index);
+      return row === undefined ? [] : [row];
+    });
+
+  // —— W2-FR05 producer 前采样（工具启动前；对照 check.ts --gates 同源路径）——
+  // baseline snapshot（captureEvidenceBaselineInputs 单源）+ 相关源码面 before 捕获。
+  // 分母 = 任务变更面（changed，plan fingerprint 的 changeSurface 同一面）+ 显式共享
+  // 依赖/配置（sharedSourcePaths）；空分母不捕获不主张（缺席诚实——无 snapshot 的 GRN
+  // 走 legacy 语义，非静默放行）。
+  const sourceSurface = [...new Set([...(input.changed ?? []), ...(input.sharedSourcePaths ?? [])])].sort();
+  const sourceBefore = sourceSurface.length > 0
+    ? captureEvidenceSourceSnapshot(rootDir, { relevantPaths: sourceSurface })
+    : undefined;
+  const baselineInputs = await captureEvidenceBaselineInputs(rootDir);
+
+  // —— pass 1a：复用判定（先于 GRN 分配——两段化后分配不再是逐条「落账即占号」，
+  // 须对需执行义务一次性分配连续号段，与 check.ts allocateGateRecipeGrns 同形）——
+  interface PendingObligation {
+    readonly index: number;
+    readonly item: (typeof obligations)[number]["item"];
+    readonly binding: ToolBindingRecord;
+    readonly grn: string;
+    readonly record: GateResultRecord;
+    readonly artifactRefs: ReturnType<typeof persistEvidenceArtifact>[] | undefined;
+  }
+  const needing: { index: number; item: (typeof obligations)[number]["item"]; binding: ToolBindingRecord }[] = [];
+  for (let obligationIndex = 0; obligationIndex < obligations.length; obligationIndex += 1) {
+    const obligation = obligations[obligationIndex] as (typeof obligations)[number];
+    const binding = bindingById.get(obligation.binding.binding_id) as ToolBindingRecord;
+    const previous = findRecordedObligation(rootDir, input.executionId, input.taskRef, obligation.item.acceptance_ref, obligation.item.scenario_ref ?? null, binding, compiled.result.inputs_fingerprint, sourceBefore);
     if (previous !== null) {
-      rows.push({ acceptance_ref: obligation.item.acceptance_ref, scenario_ref: scenarioRef, capability: obligation.item.capability, binding_id: binding.id, gate: binding.gate, grn: previous.grn, verdict: previous.verdict, diagnosis: null });
+      rowByIndex.set(obligationIndex, { acceptance_ref: obligation.item.acceptance_ref, scenario_ref: obligation.item.scenario_ref ?? null, capability: obligation.item.capability, binding_id: binding.id, gate: binding.gate, grn: previous.grn, verdict: previous.verdict, diagnosis: null });
       continue;
     }
-    const grn = allocateEvidenceRef(runsDirPath(rootDir), "GRN");
+    needing.push({ index: obligationIndex, item: obligation.item, binding });
+  }
+  const grnBase = allocateEvidenceRef(runsDirPath(rootDir), "GRN");
+  const grnBaseNumber = Number(grnBase.slice("GRN-".length));
+
+  // —— pass 1b：工具执行（不落账——窗口 after 捕获须覆盖全部工具执行的写入窗口，
+  // 单循环入账会把「执行后状态」劈成逐 GRN 端点，A→B 跨 GRN 漂移不可见） ——
+  const pending: PendingObligation[] = [];
+  let bindingDrift: CliError | null = null;
+
+  for (let needingIndex = 0; needingIndex < needing.length; needingIndex += 1) {
+    const entry = needing[needingIndex] as (typeof needing)[number];
+    const binding = entry.binding;
+    const grn = `GRN-${String(grnBaseNumber + needingIndex).padStart(4, "0")}`;
     const store = await createStore(rootDir);
     const ranAtSeq = store.currentSeq ?? 0;
     let record: GateResultRecord;
@@ -365,27 +436,46 @@ export async function runPlanRun(
 
     // W1-FR04：场景身份以 scenario_ref=<局部键> 进 note marker（run 复用/终验 cohort
     // 键共用锚）；无场景条目不带此段（legacy GRN note 字节不变）。
-    record = { ...record, scopeNote: `acceptance_ref=${obligation.item.acceptance_ref}${scenarioRef === null ? "" : `；scenario_ref=${scenarioRef}`}；inputs_fingerprint=${compiled.result.inputs_fingerprint}；binding_fingerprint=${bindingFingerprint(binding)}；${record.scopeNote ?? ""}` };
+    record = { ...record, scopeNote: `acceptance_ref=${entry.item.acceptance_ref}${entry.item.scenario_ref == null ? "" : `；scenario_ref=${entry.item.scenario_ref}`}；inputs_fingerprint=${compiled.result.inputs_fingerprint}；binding_fingerprint=${bindingFingerprint(binding)}；${record.scopeNote ?? ""}` };
     if (record.gate !== binding.gate || record.gateDef !== binding.gate_def) {
-      return fail(input, { ...result, recorded: rows.length, partial: rows.length > 0, rows }, {
+      bindingDrift = {
         code: "PLAN_BINDING_DRIFT",
         message: `adapter 结果身份漂移：binding=${binding.id} expected=${binding.gate}/${binding.gate_def} actual=${record.gate}/${record.gateDef}`,
         hint: "修复 trusted adapter 与 ToolBinding 的 gate/gate_def 合同；漂移结果不会入账。",
-      }, { phase: "gate_execution", kind: "runner_error" });
+      };
+      break;
     }
+    pending.push({ index: entry.index, item: entry.item, binding, grn, record, artifactRefs });
+  }
 
+  // —— 运行窗口 after 捕获 + window 判定（覆盖全部工具执行；before/after 同一
+  // sourceSurface——「执行后捕获同一面」；端点相等 ≠ 无 A→B→A，kernel 合同显式边界） ——
+  const sourceAfter = sourceBefore !== undefined
+    ? captureEvidenceSourceSnapshot(rootDir, { relevantPaths: sourceSurface })
+    : undefined;
+  const runSourceSnapshot = sourceBefore !== undefined && sourceAfter !== undefined
+    ? { before: sourceBefore, after: sourceAfter, window: compareSourceSnapshots(sourceBefore, sourceAfter) }
+    : undefined;
+
+  // —— pass 2：GRN 逐条入账（kernel record_gate_run 唯一写路径；遇首个入账失败即停
+  // ——partial 语义与既有行为一致）。baseline_inputs / source_snapshot 与 check.ts 既有
+  // producer 路径同源携带（W2.2 已知缺口修复：值通路贯穿，不再只序列化 gate_result/
+  // artifact_refs）。
+  for (const item of pending) {
     const recorded = await runRecordGateRunValue(rootDir, {
-      record,
-      ...(artifactRefs !== undefined ? { artifactRefs } : {}),
-      grn,
+      record: item.record,
+      ...(item.artifactRefs !== undefined ? { artifactRefs: item.artifactRefs } : {}),
+      grn: item.grn,
       trigger: "on_demand",
       executionId: input.executionId,
       subjects: [input.taskRef],
+      ...(baselineInputs !== undefined ? { baselineInputs } : {}),
+      ...(runSourceSnapshot !== undefined ? { sourceSnapshot: runSourceSnapshot } : {}),
     });
     if (!recorded.ok || recorded.result.grn === null || recorded.result.verdict === null) {
-      return fail(input, { ...result, recorded: rows.length, partial: rows.length > 0, rows }, recorded.errors[0] ?? {
+      return fail(input, { ...result, recorded: rowsSoFar().length, partial: rowsSoFar().length > 0, rows: rowsSoFar() }, recorded.errors[0] ?? {
         code: "PLAN_RUN_RECORD_FAILED",
-        message: `binding ${binding.id} 的 GRN 入账失败`,
+        message: `binding ${item.binding.id} 的 GRN 入账失败`,
         hint: "已入账 GRN 保持 append-only；修复 store/执行身份后重跑。",
       }, { phase: "gate_recording", kind: "runner_error" });
     }
@@ -394,7 +484,7 @@ export async function runPlanRun(
     let diagnosisError: CliError | null = null;
     if (recorded.result.verdict === "failed") {
       const diagnosed = await runDiagnose(rootDir, {
-        report: `Verification Plan obligation failed: ${obligation.item.acceptance_ref}/${obligation.item.capability}/${binding.gate}`,
+        report: `Verification Plan obligation failed: ${item.item.acceptance_ref}/${item.item.capability}/${item.binding.gate}`,
         symptom: null,
         domain: null,
         evidence: [recorded.result.grn],
@@ -402,12 +492,12 @@ export async function runPlanRun(
       if (diagnosed.ok) diagnosis = diagnosed.result;
       else diagnosisError = diagnosed.errors[0] ?? null;
     }
-    rows.push({
-      acceptance_ref: obligation.item.acceptance_ref,
-      scenario_ref: scenarioRef,
-      capability: obligation.item.capability,
-      binding_id: binding.id,
-      gate: binding.gate,
+    rowByIndex.set(item.index, {
+      acceptance_ref: item.item.acceptance_ref,
+      scenario_ref: item.item.scenario_ref ?? null,
+      capability: item.item.capability,
+      binding_id: item.binding.id,
+      gate: item.binding.gate,
       grn: recorded.result.grn,
       verdict: recorded.result.verdict,
       diagnosis,
@@ -416,14 +506,20 @@ export async function runPlanRun(
       result = { ...result, diagnostics: [...result.diagnostics, {
         contract: "pomaster.plan-diagnosis/v1",
         trigger: { phase: "gate_execution", kind: "gate_result" },
-        original: { error_code: null, verdict: recorded.result.verdict, evidence_ref: recorded.result.grn, binding_id: binding.id, gate: binding.gate },
+        original: { error_code: null, verdict: recorded.result.verdict, evidence_ref: recorded.result.grn, binding_id: item.binding.id, gate: item.binding.gate },
         condition: conditionOf(recorded.result.verdict), diagnosis, diagnosis_error: diagnosisError,
-        retry: { retryable: ["blocked", "not_run", "not_configured"].includes(recorded.result.verdict), after: record.scopeNote ?? null },
-        next_actions: [record.scopeNote ?? "检查 GRN 证据并修复对应前置条件"],
+        retry: { retryable: ["blocked", "not_run", "not_configured"].includes(recorded.result.verdict), after: item.record.scopeNote ?? null },
+        next_actions: [item.record.scopeNote ?? "检查 GRN 证据并修复对应前置条件"],
       }] };
     }
   }
 
+  // drift 中断在入账之后呈报（已执行 GRN 保留 append-only 落账——旧实现逐条入账同态）。
+  if (bindingDrift !== null) {
+    return fail(input, { ...result, recorded: rowsSoFar().length, partial: rowsSoFar().length > 0, rows: rowsSoFar() }, bindingDrift, { phase: "gate_execution", kind: "runner_error" });
+  }
+
+  const rows = rowsSoFar();
   const passed = rows.filter((row) => row.verdict === "passed").length;
   result = { ...result, recorded: rows.length, passed, partial: false, rows };
   const human = [

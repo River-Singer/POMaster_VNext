@@ -3,6 +3,7 @@ import { join } from "node:path";
 import {
   EXECUTION_ID_PATTERN,
   PLAN_CAPABILITY_GATE_NAMES,
+  assertRunSourceSnapshot,
   buildStorePaths,
   createStore,
   loadTruthIndex,
@@ -17,6 +18,7 @@ import { failOutcome, okOutcome } from "./envelope.js";
 import { runCloseout } from "./closeout.js";
 import { runPlanRun, type PlanDiagnosisEnvelope, type PlanRunInput } from "./plan-runner.js";
 import { parseActorArgv } from "./permit.js";
+import { judgeRunSourceStability } from "./source-snapshot.js";
 import { runViewReview } from "./view.js";
 
 export const FINALIZE_STAGES = ["PREFLIGHT", "VERIFYING", "VERIFY_BLOCKED", "AWAITING_REPLAY_REVIEW", "REPLAY_BLOCKED", "AWAITING_INDEPENDENT_VERIFICATION", "NEW_CLAIM_REQUIRED", "AWAITING_HUMAN_ACCEPT", "READY_FOR_CLOSEOUT", "CLOSEOUT_BLOCKED", "COMPLETED"] as const;
@@ -102,11 +104,20 @@ export async function runFinalizeStatus(rootDir: string, input: FinalizeStatusIn
   }
   const common = { ...base(input.taskRef), plan_fingerprint: cohort.fingerprint, verification_execution_id: cohort.executionId };
   if (!cohort.allPassed) {
-    // 分母缺失型失败显式点名缺失键（W1-FR04：场景义务未满足 ≠ 工具 verdict 失败
-    // ——禁把缺场景误报成「存在非 passed」；键词形 accRef / scenario / gate）。
-    const reason = cohort.missingKeys.length > 0
-      ? `当前 plan fingerprint 的 GRN 分母缺失（场景义务未满足）：${cohort.missingKeys.map((key) => key.split("\0").join(" / ")).join("；")}`
-      : "当前 plan fingerprint 的 GRN 存在非 passed。";
+    // 分母缺失/源码不稳定/worker-local 排除三型分流显式（W1-FR04：缺场景 ≠ 工具
+    // verdict 失败；W2-FR05：源码不稳定 ≠ 非 passed——verdict 照实保留不自动改判；
+    // W2-FR11 Case D：worker-local 保留在盘不入终验分母）。键词形 accRef / scenario / gate。
+    const reasons: string[] = [];
+    if (cohort.missingKeys.length > 0) {
+      reasons.push(`当前 plan fingerprint 的 GRN 分母缺失（场景义务未满足）：${cohort.missingKeys.map((key) => key.split("\0").join(" / ")).join("；")}`);
+    }
+    if (cohort.workerLocalExcluded > 0) {
+      reasons.push(`${cohort.workerLocalExcluded} 条 worker-local 证据保留在盘（append-only 不删除），不入终验分母——由编排器在稳定窗口终验后入列`);
+    }
+    if (cohort.sourceUnstableKeys.length > 0) {
+      reasons.push(`GRN 源码稳定性不合格（运行窗口漂移或证据产出后相关源码已变化；source 未知不能 fresh），终验不得复用该绿：${cohort.sourceUnstableKeys.map((key) => key.split("\0").join(" / ")).join("；")}`);
+    }
+    const reason = reasons.length > 0 ? reasons.join("；") : "当前 plan fingerprint 的 GRN 存在非 passed。";
     const result = { ...common, stage: "VERIFY_BLOCKED" as const, next_actions: [{ actor: "implementer" as const, command: `pomaster finalize run ${input.taskRef} --verification-execution-id ${cohort.executionId ?? "<AGX-*>"} --review-range <git-range>`, reason }] };
     return okOutcome("finalize status", result, [`finalize ${input.taskRef} → VERIFY_BLOCKED`]);
   }
@@ -226,7 +237,38 @@ async function requiredPlanKeys(rootDir: string, taskRef: string): Promise<Set<s
   return required;
 }
 
-async function latestPlanCohort(rootDir: string, taskRef: string): Promise<{ fingerprint: string; executionId: string | null; allPassed: boolean; missingKeys: readonly string[] } | null> {
+/** cohort 条目（键随行：W1-FR04 场景键 + W2-FR04 source 稳定性/用途呈报共用锚）。 */
+interface CohortEntry {
+  readonly key: string;
+  readonly row: Record<string, unknown>;
+  readonly result: Record<string, unknown>;
+  readonly name: string;
+}
+
+/**
+ * 终验 cohort 的源码稳定性判定（W2-FR05 消费闸；kernel 唯一比较核经
+ * judgeRunSourceStability 单点）：主张了 source_snapshot 的 cohort 条目——运行窗口
+ * fresh 且产出时相关面与当前捕获一致方可入列（相关源码已变化/窗口漂移/不可判的证据
+ * 不证明稳定终态，终验不得复用该绿；source 未知不能 fresh）。legacy 无 snapshot 缺席
+ * 诚实放行（不反填、不全局硬拒绝——既有资格行为零改动）。快照损坏按不稳定计
+ * （关键证据畸形禁静默当合格）。
+ */
+function cohortSourceUnstableKeys(rootDir: string, entries: readonly CohortEntry[]): string[] {
+  const unstable: string[] = [];
+  for (const entry of entries) {
+    const snapshot = entry.row["source_snapshot"];
+    if (snapshot === undefined) continue;
+    try {
+      assertRunSourceSnapshot(snapshot);
+      if (!judgeRunSourceStability(rootDir, snapshot).stable) unstable.push(entry.key);
+    } catch {
+      unstable.push(entry.key);
+    }
+  }
+  return unstable;
+}
+
+async function latestPlanCohort(rootDir: string, taskRef: string): Promise<{ fingerprint: string; executionId: string | null; allPassed: boolean; missingKeys: readonly string[]; sourceUnstableKeys: readonly string[]; workerLocalExcluded: number } | null> {
   try {
     const runsDir = buildStorePaths(rootDir).runsDir;
     const rows = readdirSync(runsDir).filter((name) => /^GRN-[0-9]+\.json$/.test(name)).map((name) => {
@@ -237,7 +279,8 @@ async function latestPlanCohort(rootDir: string, taskRef: string): Promise<{ fin
     const latest = rows[0];
     if (latest === undefined || latest.fingerprint === null) return null;
     const cohort = rows.filter((entry) => entry.fingerprint === latest.fingerprint && entry.row["execution_id"] === latest.row["execution_id"]);
-    const latestByObligation = new Map<string, typeof cohort[number]>();
+    const latestByObligation = new Map<string, CohortEntry>();
+    let workerLocalExcluded = 0;
     for (const entry of cohort) {
       const note = ((entry.result?.["scope"] as Record<string, unknown> | undefined)?.["note"]);
       const parts = typeof note === "string" ? note.split("；") : [];
@@ -249,7 +292,14 @@ async function latestPlanCohort(rootDir: string, taskRef: string): Promise<{ fin
       const key = scenario === ""
         ? `${acceptance ?? ""}\0${String(entry.result?.["gate"] ?? "")}`
         : `${acceptance ?? ""}\0${scenario}\0${String(entry.result?.["gate"] ?? "")}`;
-      if (!latestByObligation.has(key)) latestByObligation.set(key, entry);
+      // W2-FR11（Case D 归属）：worker-local 证据保留在盘（append-only 零删除）但不入
+      // 终验分母——终验只消费符合终验归属的证据；被排除的键由编排器在稳定窗口重新
+      // 机器验证补齐。未声明用途（legacy/历史 GRN）不排除（不全局硬拒绝）。
+      if (entry.row["evidence_purpose"] === "worker_local") {
+        workerLocalExcluded += 1;
+        continue;
+      }
+      if (!latestByObligation.has(key)) latestByObligation.set(key, { key, row: entry.row, result: entry.result ?? {}, name: entry.name });
     }
     const actual = new Set(latestByObligation.keys());
     const required = await requiredPlanKeys(rootDir, taskRef);
@@ -258,7 +308,17 @@ async function latestPlanCohort(rootDir: string, taskRef: string): Promise<{ fin
     // W1-FR04 回放可诊断：缺失义务键显式点名（分母缺失型 VERIFY_BLOCKED 与「存在
     // 非 passed」 verdict 型失败分流呈现——禁把缺场景误报成工具失败）。
     const missingKeys = [...required].filter((key) => !actual.has(key)).sort();
-    return { fingerprint: latest.fingerprint, executionId: typeof latest.row["execution_id"] === "string" ? latest.row["execution_id"] : null, allPassed: currentRows.length > 0 && passedAndBound && required.size > 0 && missingKeys.length === 0, missingKeys };
+    // W2-FR05 源码稳定性（Case D 资格闸）：窗口漂移/产出后相关源码变化/不可判 → 该键
+    // 的证据不满足终验（verdict 照实保留，不自动改判；重验由 plan run 补执行承担）。
+    const sourceUnstableKeys = cohortSourceUnstableKeys(rootDir, currentRows);
+    return {
+      fingerprint: latest.fingerprint,
+      executionId: typeof latest.row["execution_id"] === "string" ? latest.row["execution_id"] : null,
+      allPassed: currentRows.length > 0 && passedAndBound && required.size > 0 && missingKeys.length === 0 && sourceUnstableKeys.length === 0,
+      missingKeys,
+      sourceUnstableKeys,
+      workerLocalExcluded,
+    };
   } catch { return null; }
 }
 
