@@ -34,6 +34,7 @@ import {
   type ClaimRecordInput,
   type EvidenceArtifactRefInput,
   type EvidenceBaselineInputs,
+  type EvidencePurposeValue,
   type RunSourceSnapshot,
   assertEvidenceBaselineInputs,
   assertRunSourceSnapshot,
@@ -45,6 +46,7 @@ import {
   normalizeGateResult,
   parseGovernedId,
   sha256OfCanonical,
+  EVIDENCE_PURPOSE_VALUES,
 } from "@pomaster/kernel";
 import {
   ACTOR_TYPE_VALUES,
@@ -170,6 +172,11 @@ export interface ParsedRunFile {
    */
   readonly sourceSnapshot?: RunSourceSnapshot;
   /**
+   * 证据用途声明（W2-FR11 Case D 归属；外层信封 evidence_purpose 键；可选——缺席 =
+   * 键缺席存量兼容，未声明用途不冒充 worker-local/final-stable）。词表外 fail-closed。
+   */
+  readonly evidencePurpose?: EvidencePurposeValue;
+  /**
    * normalizeGateResult 消费的 CLAIMED 值：gate_result.result 内嵌（kernel canonical 07
    * 形态）或整个文件（pre-canonical 夹具 GateResult 直落顶层）——与 reconcile 的读取
    * 规则同一条线（设计 §4.4）。
@@ -227,6 +234,10 @@ export function parseRunFile(bytes: string): ParsedRunFile | ParseFailure {
   try {
     if (parsed.baseline_inputs !== undefined) assertEvidenceBaselineInputs(parsed.baseline_inputs);
     if (parsed.source_snapshot !== undefined) assertRunSourceSnapshot(parsed.source_snapshot);
+    if (parsed.evidence_purpose !== undefined &&
+        !(EVIDENCE_PURPOSE_VALUES as readonly string[]).includes(String(parsed.evidence_purpose))) {
+      return { error: `evidence_purpose "${String(parsed.evidence_purpose)}" 是词表外值（闭包：${EVIDENCE_PURPOSE_VALUES.join(" / ")}；扩值走词汇表 PR）` };
+    }
   } catch (err) {
     return { error: kernelDetail(err) };
   }
@@ -243,6 +254,7 @@ export function parseRunFile(bytes: string): ParsedRunFile | ParseFailure {
     rawValue,
     ...(parsed.baseline_inputs !== undefined ? { baselineInputs: parsed.baseline_inputs as EvidenceBaselineInputs } : {}),
     ...(parsed.source_snapshot !== undefined ? { sourceSnapshot: parsed.source_snapshot as RunSourceSnapshot } : {}),
+    ...(parsed.evidence_purpose !== undefined ? { evidencePurpose: parsed.evidence_purpose as EvidencePurposeValue } : {}),
     envelopeTriggerPresent: triggerRaw !== undefined && triggerRaw !== null,
     envelopeTriggerType: isRecord(triggerRaw) ? (triggerRaw as UnknownRecord).type : undefined,
     ranAtSeqRaw: pick(rawValue, "ran_at_seq", "ranAtSeq") ?? pick(parsed, "ran_at_seq"),
@@ -447,6 +459,7 @@ export function canonicalRunBytes(
   artifactRefs?: readonly EvidenceArtifactRefInput[],
   baselineInputs?: EvidenceBaselineInputs,
   sourceSnapshot?: RunSourceSnapshot,
+  evidencePurpose?: EvidencePurposeValue,
 ): string {
   const record: UnknownRecord = {
     record_type: "run",
@@ -456,6 +469,7 @@ export function canonicalRunBytes(
     ran_at_seq: result.ranAtSeq,
     trigger: { type: trigger },
     ...(executionId ? { execution_id: executionId } : {}),
+    ...(evidencePurpose !== undefined ? { evidence_purpose: evidencePurpose } : {}),
     ...(artifactRefs !== undefined && artifactRefs.length > 0
       ? { artifact_refs: artifactRefsToSnake(artifactRefs) }
       : {}),
@@ -621,7 +635,7 @@ export function planRunFile(input: {
     return { malformed: malformedOf(relPath, artifactRefsResolution.fail) };
   }
   const artifactRefs = artifactRefsResolution.refs;
-  const canonical = canonicalRunBytes(grn, resolved.context.trigger, result, executionId, artifactRefs, parsed.baselineInputs, parsed.sourceSnapshot);
+  const canonical = canonicalRunBytes(grn, resolved.context.trigger, result, executionId, artifactRefs, parsed.baselineInputs, parsed.sourceSnapshot, parsed.evidencePurpose);
   if (canonical === bytes) {
     // 快路径判卷补位（P20 红队发现 2）：携带身份键即校验档案在场（与 record 同判卷），
     // 手写 canonical 形态 + 未登记 AGX 不再借零 op 通路绕过 S1。
@@ -651,6 +665,7 @@ export function planRunFile(input: {
           result,
           ...(parsed.baselineInputs !== undefined ? { baselineInputs: parsed.baselineInputs } : {}),
           ...(parsed.sourceSnapshot !== undefined ? { sourceSnapshot: parsed.sourceSnapshot } : {}),
+          ...(parsed.evidencePurpose !== undefined ? { evidencePurpose: parsed.evidencePurpose } : {}),
           ...(executionId ? { executionId } : {}),
           ...(artifactRefs.length > 0 ? { artifactRefs } : {}),
         },
@@ -715,7 +730,7 @@ export function findCanonicalRunMatch(input: {
     } catch {
       continue;
     }
-    if (canonicalRunBytes(grn, resolved.context.trigger, result, executionId, artifactRefs, input.parsed.baselineInputs, input.parsed.sourceSnapshot) === bytes) return grn;
+    if (canonicalRunBytes(grn, resolved.context.trigger, result, executionId, artifactRefs, input.parsed.baselineInputs, input.parsed.sourceSnapshot, input.parsed.evidencePurpose) === bytes) return grn;
   }
   return null;
 }

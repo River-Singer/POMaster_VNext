@@ -72,7 +72,7 @@ import {
 import { KERNEL_TOOL, buildStorePaths, pathsOf, readCurrentSeq, readRawIndex, registerStore, type StorePaths } from "./paths.js";
 import { assertArtifactBlobsExist, assertArtifactRefs, artifactRefsToSnake } from "./evidence-artifacts.js";
 import { assertEvidenceBaselineInputs } from "./evidence-qualification.js";
-import { assertRunSourceSnapshot } from "./source-snapshot.js";
+import { EVIDENCE_PURPOSE_VALUES, assertRunSourceSnapshot } from "./source-snapshot.js";
 import { asGovernedId, normalizedKey } from "./id.js";
 import { validateTransition } from "./transitions.js";
 import { loadAuthorityMap } from "./permits.js";
@@ -2157,6 +2157,12 @@ function applyRecordGateRun(
   if (run.executionId !== undefined) {
     assertExecutionIdClaimed(paths, run.executionId, "record_gate_run.run.executionId");
   }
+  // 证据用途声明透传（W2-FR11 Case D；可选——缺席 = 键缺席存量兼容，携带即词表
+  // fail-closed 校验）。落盘键 evidence_purpose 在 execution_id 之后、artifact_refs
+  // 之前——与 cli canonicalRunBytes 逐键同构（R1 双写点）。
+  if (run.evidencePurpose !== undefined) {
+    assertVocabValue(run.evidencePurpose, EVIDENCE_PURPOSE_VALUES, "run.evidencePurpose", `证据用途词表：${EVIDENCE_PURPOSE_VALUES.join(" / ")}`);
+  }
   // artifact_refs 透传（P0.5-2 / PRD §7；裁决8③ D2/D3=A）：携带即 kernel 侧强制校验（锚：corpus/master/cutover/owner-adjudications.md#裁决8）
   // （词形 + 路径⇔身份派生一致 + blob 文件在场——先 persist 再 record，悬空引用
   // REF_INTEGRITY 拒收）；缺席 = 键缺席，存量 GRN 字节兼容。落盘键 artifact_refs 在
@@ -2185,6 +2191,7 @@ function applyRecordGateRun(
     ran_at_seq: result.ranAtSeq,
     trigger: { type: run.trigger },
     ...(run.executionId !== undefined ? { execution_id: run.executionId } : {}),
+    ...(run.evidencePurpose !== undefined ? { evidence_purpose: run.evidencePurpose } : {}),
     ...(artifactRefs !== undefined ? { artifact_refs: artifactRefsToSnake(artifactRefs) } : {}),
     gate_result: { mode: "inline", result: gateResultToSnake(result) },
   };

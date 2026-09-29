@@ -946,3 +946,87 @@ describe("plan run source freshness（W2-FR05 负例矩阵）", () => {
     expect(statusAfter.result.stage).toBe("AWAITING_REPLAY_REVIEW");
   });
 });
+
+// ============================================================
+// Case D 回放（并行终验归属；PR-W2.3 · W0 R2）
+// ============================================================
+//
+// 事故原型（MASTer 汇编 #8）：并行 worker 验证窗口内相关源码被改（A→B）——worker 绿
+// 保留（append-only），但 final cohort 拒绝复用（worker-local 不入终验分母 + 源码漂移
+// 资格失效）；编排器等待并行写入结束后在稳定窗口独立终验 → 绿。运行信封声明证据用途
+// （worker_local / final_stable），中间失败不冒充最终 Gate（verdict 不改写）。
+
+describe("Case D 回放（并行终验归属；PR-W2.3）", () => {
+  it("run 信封声明证据用途：worker_local / final_stable 落盘 evidence_purpose（词形闭包）", async () => {
+    const executionId = await fixture();
+    writeSource("src/a.ts", "export const a = 1;\n");
+    const worker = await runPlanRun(root, { taskRef: "TASK.STATIC.RUNNER", executionId, changed: ["src/a.ts"], faces, verificationPurpose: "worker_local" });
+    expect(worker.ok).toBe(true);
+    for (const row of worker.result.rows) {
+      expect((JSON.parse(readFileSync(grnPath(row.grn), "utf8")) as Record<string, unknown>)["evidence_purpose"]).toBe("worker_local");
+    }
+    const finalExecution = await beginExecution(await createStore(root), { role: "qa", runtime: "claude-code", identityKind: "interactive", taskId: "TASK.STATIC.RUNNER", startedAt: "2026-09-23T01:00:00.000Z" });
+    const finalRun = await runPlanRun(root, { taskRef: "TASK.STATIC.RUNNER", executionId: finalExecution.execution_id, changed: ["src/a.ts"], faces, verificationPurpose: "final_stable" });
+    expect(finalRun.ok).toBe(true);
+    for (const row of finalRun.result.rows) {
+      expect((JSON.parse(readFileSync(grnPath(row.grn), "utf8")) as Record<string, unknown>)["evidence_purpose"]).toBe("final_stable");
+    }
+  });
+
+  it("Case D：worker 窗口 A→B 绿保留、final cohort 拒绝复用（红）→ 稳定窗口独立终验后绿", async () => {
+    const workerExecutionId = await fixture();
+    writeSource("src/a.ts", "export const a = 1;\n");
+    writeFileSync(join(root, "tsc-fake.mjs"), MUTATING_TSC_FAKE);
+    // worker 本域验证（写入窗口内 A→B）：绿保留，用途声明 worker_local。
+    const worker = await runPlanRun(root, { taskRef: "TASK.STATIC.RUNNER", executionId: workerExecutionId, changed: ["src/a.ts"], faces, verificationPurpose: "worker_local" });
+    expect(worker.ok).toBe(true);
+    const workerGrns = worker.result.rows.map((row) => row.grn);
+    for (const grn of workerGrns) {
+      expect(grnDoc(grn).gate_result.result.verdict).toBe("passed");
+    }
+
+    // final cohort 拒绝复用：worker-local 不入终验分母（显式呈报）→ VERIFY_BLOCKED。
+    const status = await runFinalizeStatus(root, { taskRef: "TASK.STATIC.RUNNER" });
+    expect(status.ok).toBe(true);
+    expect(status.result.stage).toBe("VERIFY_BLOCKED");
+    expect(status.result.next_actions[0]?.reason).toContain("worker-local");
+
+    // 编排器在稳定窗口启动 final-stable cohort（独立 verification AGX；finalize 强制
+    // final_stable 用途）→ 机器验证绿。
+    const store = await createStore(root);
+    const verifierExecution = await beginExecution(store, { role: "qa", runtime: "claude-code", identityKind: "interactive", taskId: "TASK.STATIC.RUNNER", startedAt: "2026-09-23T02:00:00.000Z" });
+    writeFileSync(
+      join(root, "tsc-fake.mjs"),
+      "process.stdout.write('src/a.ts' + String.fromCharCode(10) + 'src/b.ts');",
+    );
+    const finalized = await runFinalize(root, { taskRef: "TASK.STATIC.RUNNER", executionId: verifierExecution.execution_id, reviewRange: "HEAD~1..HEAD", changed: ["src/a.ts"], faces });
+    expect(finalized.ok).toBe(false);
+    expect(finalized.result.stage).toBe("AWAITING_REPLAY_REVIEW");
+    const finalGrns = readdirSync(join(root, ".pomaster", "evidence", "runs")).filter((name) => /^GRN-/.test(name));
+    // 独立终验 GRN 声明 final_stable 且 window fresh（编排写入窗口语义可测试化）。
+    const finalPurposeRows = finalGrns
+      .map((name) => ({ grn: name.slice(0, -5), doc: JSON.parse(readFileSync(grnPath(name.slice(0, -5)), "utf8")) as Record<string, unknown> }))
+      .filter((entry) => entry.doc["execution_id"] === verifierExecution.execution_id);
+    expect(finalPurposeRows.length).toBeGreaterThan(0);
+    for (const entry of finalPurposeRows) {
+      expect(entry.doc["evidence_purpose"]).toBe("final_stable");
+      expect(((entry.doc.source_snapshot as { window: { state: string } }).window).state).toBe("fresh");
+    }
+
+    // 独立 replay 裁决 + receipt 回放 → 推进到 NEW_CLAIM_REQUIRED（机器验证链已过闸）。
+    const reviewerExecution = await beginExecution(store, { role: "qa", runtime: "claude-code", identityKind: "interactive", taskId: "TASK.STATIC.RUNNER", startedAt: "2026-09-23T03:00:00.000Z" });
+    const receipt = await runFinalizeReplayAdjudicate(root, { taskRef: "TASK.STATIC.RUNNER", executionId: reviewerExecution.execution_id, reviewRange: "HEAD~1..HEAD", planFingerprint: finalized.result.plan_fingerprint as string, reviewedBy: "agent:independent-reviewer", verdict: "allow-closeout" });
+    expect(receipt.ok).toBe(true);
+    const replayed = await runFinalize(root, { taskRef: "TASK.STATIC.RUNNER", executionId: verifierExecution.execution_id, reviewRange: "HEAD~1..HEAD", replayReceipt: receipt.result.receipt_ref as string, changed: ["src/a.ts"], faces });
+    expect(replayed.ok).toBe(false);
+    expect(replayed.result.stage).toBe("NEW_CLAIM_REQUIRED");
+
+    // Worker 本域证据 append-only 保留（不删除、verdict 不改写、用途不清洗）。
+    expect(readdirSync(join(root, ".pomaster", "evidence", "runs")).filter((name) => /^GRN-/.test(name))).toHaveLength(4);
+    for (const grn of workerGrns) {
+      const doc = JSON.parse(readFileSync(grnPath(grn), "utf8")) as Record<string, unknown>;
+      expect(doc["evidence_purpose"]).toBe("worker_local");
+      expect(((doc.gate_result as { result: { verdict: string } }).result).verdict).toBe("passed");
+    }
+  });
+});

@@ -18,6 +18,7 @@ import {
   readExecutionRecordById,
   sha256OfCanonical,
   verifyEvidenceBinding,
+  type EvidencePurposeValue,
   type EvidenceSourceSnapshot,
   type VerificationPlanResolvedBinding,
 } from "@pomaster/kernel";
@@ -53,6 +54,13 @@ export interface PlanRunInput extends Omit<PlanCompileInput, "inputFile"> {
    * 进入分母）；声明外变化零影响。缺席 = 分母仅 changed。
    */
   readonly sharedSourcePaths?: readonly string[];
+  /**
+   * 证据用途声明（W2-FR11 Case D 归属）：worker_local = worker 本域中间证据（GRN
+   * append-only 保留在盘，终验 cohort 不消费）；final_stable = 编排器稳定窗口终验证据。
+   * 缺席 = 未声明（legacy 兼容——不冒充任一用途，消费面沿既有行为）。runFinalize 强制
+   * final_stable（编排器语义），本入参显式声明供 worker/编排两侧区分归属。
+   */
+  readonly verificationPurpose?: EvidencePurposeValue;
 }
 
 export interface PlanRunRow {
@@ -471,6 +479,7 @@ export async function runPlanRun(
       subjects: [input.taskRef],
       ...(baselineInputs !== undefined ? { baselineInputs } : {}),
       ...(runSourceSnapshot !== undefined ? { sourceSnapshot: runSourceSnapshot } : {}),
+      ...(input.verificationPurpose !== undefined ? { evidencePurpose: input.verificationPurpose } : {}),
     });
     if (!recorded.ok || recorded.result.grn === null || recorded.result.verdict === null) {
       return fail(input, { ...result, recorded: rowsSoFar().length, partial: rowsSoFar().length > 0, rows: rowsSoFar() }, recorded.errors[0] ?? {

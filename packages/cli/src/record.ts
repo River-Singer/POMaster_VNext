@@ -36,6 +36,7 @@ import { existsSync, readFileSync } from "node:fs";
 import {
   type ClaimRecordInput,
   type EvidenceBaselineInputs,
+  type EvidencePurposeValue,
   type EvidenceQualificationEvidence,
   type GateResult,
   type GateRunContext,
@@ -129,6 +130,8 @@ export interface RecordGateRunValueInput extends Omit<RecordGateRunInput, "from"
    * kernel source-snapshot 合同）；缺席 = 键缺席存量兼容。
    */
   readonly sourceSnapshot?: RunSourceSnapshot;
+  /** 证据用途声明（W2-FR11 Case D；plan-runner 值通路携带；缺席 = 键缺席存量兼容）。 */
+  readonly evidencePurpose?: EvidencePurposeValue;
 }
 
 export interface RecordGateRunResult {
@@ -393,7 +396,7 @@ async function recordGateRunFromSource(
           { ...context, ranAtSeq: replayRanAtSeq },
           claimedBy.claimedBy,
         );
-        if (canonicalRunBytes(grn, context.trigger, replay, executionId, artifactRefs, parsed.baselineInputs, parsed.sourceSnapshot) === targetBytes) {
+        if (canonicalRunBytes(grn, context.trigger, replay, executionId, artifactRefs, parsed.baselineInputs, parsed.sourceSnapshot, parsed.evidencePurpose) === targetBytes) {
           skippedCanonical = true;
         }
       } catch {
@@ -481,6 +484,8 @@ async function recordGateRunFromSource(
         // FR-05 保真 import（W2）：--from 自报的 source_snapshot 原样透传（import 仅保留
         // 原 snapshot，不补写当下捕获冒充历史；畸形已被 parseRunFile fail-closed 拒收）。
         ...(parsed.sourceSnapshot !== undefined ? { sourceSnapshot: parsed.sourceSnapshot } : {}),
+        // 证据用途声明保真透传（W2-FR11；词表外已被 parseRunFile fail-closed 拒收）。
+        ...(parsed.evidencePurpose !== undefined ? { evidencePurpose: parsed.evidencePurpose } : {}),
         ...(executionId ? { executionId } : {}),
         ...(artifactRefs.length > 0 ? { artifactRefs } : {}),
       },
@@ -547,7 +552,7 @@ export async function runRecordGateRunValue(
   rootDir: string,
   input: RecordGateRunValueInput,
 ): Promise<CommandOutcome<RecordGateRunResult>> {
-  const { record, artifactRefs, baselineInputs, sourceSnapshot, ...options } = input;
+  const { record, artifactRefs, baselineInputs, sourceSnapshot, evidencePurpose, ...options } = input;
   return recordGateRunFromSource(
     rootDir,
     { ...options, from: "<memory:gate-result>" },
@@ -562,6 +567,7 @@ export async function runRecordGateRunValue(
         // gate_result/artifact_refs，plan-run 证据无 producer snapshot）。
         ...(baselineInputs !== undefined ? { baseline_inputs: baselineInputs } : {}),
         ...(sourceSnapshot !== undefined ? { source_snapshot: sourceSnapshot } : {}),
+        ...(evidencePurpose !== undefined ? { evidence_purpose: evidencePurpose } : {}),
       }),
     }),
   );

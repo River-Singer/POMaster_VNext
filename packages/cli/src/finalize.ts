@@ -443,7 +443,10 @@ export async function runFinalize(rootDir: string, input: FinalizeRunInput): Pro
       return failOutcome("finalize run", { ...base(input.taskRef), review_range: input.reviewRange, verification_execution_id: input.executionId, errors: [error] }, [error], [`finalize ${input.taskRef} → PREFLIGHT blocked`]);
     }
   }
-  const plan = await runPlanRun(rootDir, input);
+  // W2-FR11 Case D：finalize run 是编排器的 final-stable cohort 入口——其机器验证
+  // 证据强制声明 final_stable 用途（调用方显式传入的其他用途被编排器语义覆盖：
+  // 本命令的机器验证段就是「等待并行写入结束后的稳定窗口终验」，不属于 worker 本域）。
+  const plan = await runPlanRun(rootDir, { ...input, verificationPurpose: "final_stable" });
   const result: FinalizeResult = { ...base(input.taskRef), stage: "VERIFYING", review_range: input.reviewRange, verification_execution_id: input.executionId, plan_fingerprint: plan.result.inputs_fingerprint || null, diagnostics: plan.result.diagnostics, errors: plan.errors };
   if (!plan.ok) return failOutcome("finalize run", { ...result, stage: "VERIFY_BLOCKED", next_actions: [{ actor: "implementer", command: `pomaster plan run --task ${input.taskRef} --execution-id ${input.executionId}`, reason: "机器验证存在非绿或前检阻塞；按 diagnostics 修复后重放 finalize。" }] }, plan.errors, [`finalize ${input.taskRef} → blocked at machine verification`]);
   if (!input.replayReceipt) {

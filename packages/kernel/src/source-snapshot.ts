@@ -103,6 +103,16 @@ export interface RunSourceSnapshot {
   readonly window: SourceSnapshotComparison;
 }
 
+/**
+ * 证据用途词形闭包（W2-FR11 Case D 归属；kernel 局部词 TODO(vocab-pr)；SP 提案待追认）。
+ * run 信封 evidence_purpose 键声明该证据的验证用途：worker_local = worker 本域中间证据
+ * （append-only 保留在盘，终验 cohort 不消费——worker 中间态不冒充最终 Gate）；
+ * final_stable = 编排器等待并行写入结束后在稳定窗口启动的终验证据（终验消费面）。
+ * 缺席（legacy/未声明）不冒充任一用途——消费面沿既有行为，不全局硬拒绝。
+ */
+export const EVIDENCE_PURPOSE_VALUES = ["worker_local", "final_stable"] as const;
+export type EvidencePurposeValue = (typeof EVIDENCE_PURPOSE_VALUES)[number];
+
 // ============================================================
 // fail-closed 校验（SCHEMA_INVALID；禁畸形输入放行）
 // ============================================================

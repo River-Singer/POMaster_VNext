@@ -43,7 +43,7 @@ import type {
 } from "@pomaster/schemas";
 import type { EvidenceArtifactRefInput } from "./evidence-artifacts.js";
 import type { EvidenceBaselineInputs } from "./evidence-qualification.js";
-import type { RunSourceSnapshot } from "./source-snapshot.js";
+import type { EvidencePurposeValue, RunSourceSnapshot } from "./source-snapshot.js";
 import type { VerificationMethodValue } from "./store.js";
 
 // ============================================================
@@ -364,6 +364,13 @@ export interface GateRunRecordInput {
   readonly grn: string; // GRN-[0-9]+
   readonly result: GateResult;
   readonly trigger: RunTriggerValue;
+  /**
+   * 证据用途声明（W2-FR11 Case D 归属；可选——缺席 = 键缺席存量兼容，未声明用途的
+   * 证据不冒充 worker-local 也不冒充 final-stable，消费面沿既有行为；携带即词表
+   * fail-closed 校验）。worker_local = worker 本域中间证据（保留在盘、不入终验
+   * cohort 分母）；final_stable = 编排器稳定窗口终验证据（终验消费面）。
+   */
+  readonly evidencePurpose?: EvidencePurposeValue;
   /** 执行身份透传（P20 §25.4；可选——校验语义同 ClaimRecordInput.executionId）。 */
   readonly executionId?: string;
   /**
@@ -1297,6 +1304,7 @@ export {
   SOURCE_PATH_ABSENT_DIGEST,
   SOURCE_FRESHNESS_STATES,
   SOURCE_DRIFT_WORDS,
+  EVIDENCE_PURPOSE_VALUES,
   assertEvidenceSourceSnapshot,
   assertRunSourceSnapshot,
   compareSourceSnapshots,
@@ -1307,6 +1315,7 @@ export type {
   EvidenceSourceSnapshot,
   SourceSnapshotComparison,
   RunSourceSnapshot,
+  EvidencePurposeValue,
 } from "./source-snapshot.js";
 
 // ============================================================
