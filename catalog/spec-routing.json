@@ -1,0 +1,6 @@
+{
+  "schema": "pomaster.spec-routing/1",
+  "profile": "universal-seed",
+  "entries": [],
+  "x-w4-note": "协议路由目录（W4 切片；FR-02 Spec Catalog 路由；AC-09/10）：universal seed 零条目——MASTer 等项目特例协议只进项目 overlay（消费方注入自有 catalog 根时本文件随项目侧 entries 原位扩展），不为 77 份 Markdown 强加第二结构、不建第二索引真值、不复制协议正文。字段定稿：semantic_id=PROTOCOL.* 机器身份（supersession/reference/requires/conflicts 全以它承载——W3 stable-reference 预留）、path=内容导航（不进机器关系）、stage∈{plan,implement,verify,maintain}、triggers/stack=词级精确 token（stack 为 not_configured 轴：任务未声明 ≠ 默认匹配）、superseded_by=显式退役（禁 mtime/文件名推断）、source_sha256=编译时登记的来源指纹（sha256:<64hex>）。装载与路由判定：@pomaster/kernel loadSpecRoutingManifest / routeSpecs（纯读零治理事实；路由结果只进 catalogEntries 策展分区，不进 mustEntries 判卷输入）。"
+}

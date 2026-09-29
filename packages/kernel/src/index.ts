@@ -1587,6 +1587,26 @@ export type {
 } from "./catalog.js";
 
 // ============================================================
+// 协议目录路由（W4 切片；FR-02 Spec Catalog 路由；AC-09/10）
+// ============================================================
+// 外部协议库最小可路由字段（semantic_id/path/stage/triggers/stack/superseded_by/
+// requires/conflicts/source_sha256）编译进 catalog 根 spec-routing.json 单一真值
+// 的读取面 + 确定性路由核（W4.2 routeSpecs）；与 catalog 读取器相邻登记（§92.2
+// 同款边界：策展面只读零治理事实，路由结果只进 catalogEntries 不进 mustEntries）。
+export {
+  loadSpecRoutingManifest,
+  PROTOCOL_ID_PATTERN,
+  SPEC_ROUTING_MANIFEST_FILE,
+  SPEC_ROUTING_SCHEMA,
+  SPEC_ROUTING_STAGE_VALUES,
+} from "./spec-routing.js";
+export type {
+  SpecRoutingEntry,
+  SpecRoutingManifest,
+  SpecRoutingStageValue,
+} from "./spec-routing.js";
+
+// ============================================================
 // Trellis Spec Analyzer（P30 · PRD §96 第 8 步「只分析，不 Apply」+ §93.3/93.4/93.5/93.6）
 // ============================================================
 // 语义边界：纯分析引擎——输入 spec 目录（或文件内容集），输出迁移分类清单
