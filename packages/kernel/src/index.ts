@@ -43,6 +43,7 @@ import type {
 } from "@pomaster/schemas";
 import type { EvidenceArtifactRefInput } from "./evidence-artifacts.js";
 import type { EvidenceBaselineInputs } from "./evidence-qualification.js";
+import type { RunSourceSnapshot } from "./source-snapshot.js";
 import type { VerificationMethodValue } from "./store.js";
 
 // ============================================================
@@ -353,6 +354,13 @@ export interface ClaimRecordInput {
 /** evidence/runs/GRN-* 写入输入（run 信封 + 已归一 GateResult；A8：不入 truth-index）。 */
 export interface GateRunRecordInput {
   readonly baselineInputs?: EvidenceBaselineInputs;
+  /**
+   * FR-05 运行窗口源码双采样（W2；source-snapshot.ts 合同）：工具启动前/后对同一显式
+   * 相关面各捕获一次 + window 落账判定（重算全等强校验）。可选——缺席 = 键缺席存量
+   * 兼容（legacy 证据「未主张源码新鲜度」，不反填不硬拒绝）；携带即 kernel 侧
+   * fail-closed 校验（assertRunSourceSnapshot：合同词形/三态词形/窗口重算全等）。
+   */
+  readonly sourceSnapshot?: RunSourceSnapshot;
   readonly grn: string; // GRN-[0-9]+
   readonly result: GateResult;
   readonly trigger: RunTriggerValue;
@@ -1271,6 +1279,35 @@ export type {
   EvidenceQualificationFinding,
   EvidenceQualificationOutcome,
 } from "./evidence-qualification.js";
+
+// ============================================================
+// 源码证据新鲜度合同与唯一比较核（W2-FR05 · 09-27 PRD）
+// ============================================================
+// 语义边界（source-snapshot.ts 头注）：FR-05 相关源码面的可比基线合同——HEAD 出处锚 +
+// 显式 relevant_paths + 内容/存在性摘要 + 读取失败清单；运行窗口 before/after 双采样 +
+// window 落账判定（重算全等强校验）。比较核唯一（全消费链复用 compareSourceSnapshots，
+// 禁第二比较器）；三态复用 recon-scope-review fresh/stale/unjudgeable 词族，drift 三词
+// 形同族复用——零新词。与 baseline_inputs 平行不混用（{at_seq,digests} 覆盖 .pomaster
+// 确认资产 seq 锚定；本合同覆盖声明源码面内容锚定）。诚实边界：端点相等 ≠ 无 A→B→A
+// （final-stable 归稳定 checkout/编排写入窗口）；旧记录无 snapshot = 未主张源码新鲜度
+// （不反填、不全局硬拒绝）。消费者：plan-runner 复用资格 + finalize cohort + closeout
+// DOD + record verification 写侧（CLI 装配面）。
+export {
+  SOURCE_SNAPSHOT_CONTRACT,
+  SOURCE_PATH_ABSENT_DIGEST,
+  SOURCE_FRESHNESS_STATES,
+  SOURCE_DRIFT_WORDS,
+  assertEvidenceSourceSnapshot,
+  assertRunSourceSnapshot,
+  compareSourceSnapshots,
+} from "./source-snapshot.js";
+export type {
+  SourceFreshnessState,
+  SourceDriftWord,
+  EvidenceSourceSnapshot,
+  SourceSnapshotComparison,
+  RunSourceSnapshot,
+} from "./source-snapshot.js";
 
 // ============================================================
 // Test Weakening 检测核（W3-S1 · 09-12 W3 R3-3 / 09-10 PRD AC-08 + REQ-09）

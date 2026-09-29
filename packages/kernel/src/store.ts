@@ -72,6 +72,7 @@ import {
 import { KERNEL_TOOL, buildStorePaths, pathsOf, readCurrentSeq, readRawIndex, registerStore, type StorePaths } from "./paths.js";
 import { assertArtifactBlobsExist, assertArtifactRefs, artifactRefsToSnake } from "./evidence-artifacts.js";
 import { assertEvidenceBaselineInputs } from "./evidence-qualification.js";
+import { assertRunSourceSnapshot } from "./source-snapshot.js";
 import { asGovernedId, normalizedKey } from "./id.js";
 import { validateTransition } from "./transitions.js";
 import { loadAuthorityMap } from "./permits.js";
@@ -2140,6 +2141,10 @@ function applyRecordGateRun(
   const { paths } = workspace;
   const run = op.run;
   if (run.baselineInputs !== undefined) assertEvidenceBaselineInputs(run.baselineInputs);
+  // FR-05 运行窗口源码双采样透传（W2；可选——缺席 = 键缺席存量兼容；携带即 fail-closed
+  // 校验：合同词形/三态词形/窗口重算全等强校验，畸形零落账）。落盘键 source_snapshot 在
+  // baseline_inputs 之后、grn 之前——与 cli canonicalRunBytes 逐键同构（R1 双写点）。
+  if (run.sourceSnapshot !== undefined) assertRunSourceSnapshot(run.sourceSnapshot);
   const result = run.result;
   if (typeof run.grn !== "string" || !/^GRN-[0-9]+$/.test(run.grn)) {
     throw new GovernanceError("GRN_INVALID", `grn 词形非法（须 GRN-[0-9]+）：${String(run.grn)}`, "GRN id 由 GateRunner 分配（evidence/runs/GRN-*.json）", { grn: run.grn });
@@ -2175,6 +2180,7 @@ function applyRecordGateRun(
   const record: UnknownRecord = {
     record_type: "run",
     ...(run.baselineInputs !== undefined ? { baseline_inputs: run.baselineInputs } : {}),
+    ...(run.sourceSnapshot !== undefined ? { source_snapshot: run.sourceSnapshot } : {}),
     grn: run.grn,
     ran_at_seq: result.ranAtSeq,
     trigger: { type: run.trigger },

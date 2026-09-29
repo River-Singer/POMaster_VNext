@@ -379,7 +379,7 @@ async function recordGateRunFromSource(
           { ...context, ranAtSeq: replayRanAtSeq },
           claimedBy.claimedBy,
         );
-        if (canonicalRunBytes(grn, context.trigger, replay, executionId, artifactRefs, parsed.baselineInputs) === targetBytes) {
+        if (canonicalRunBytes(grn, context.trigger, replay, executionId, artifactRefs, parsed.baselineInputs, parsed.sourceSnapshot) === targetBytes) {
           skippedCanonical = true;
         }
       } catch {
@@ -464,6 +464,9 @@ async function recordGateRunFromSource(
         trigger: context.trigger,
         result: finalResult,
         ...(parsed.baselineInputs !== undefined ? { baselineInputs: parsed.baselineInputs } : {}),
+        // FR-05 保真 import（W2）：--from 自报的 source_snapshot 原样透传（import 仅保留
+        // 原 snapshot，不补写当下捕获冒充历史；畸形已被 parseRunFile fail-closed 拒收）。
+        ...(parsed.sourceSnapshot !== undefined ? { sourceSnapshot: parsed.sourceSnapshot } : {}),
         ...(executionId ? { executionId } : {}),
         ...(artifactRefs.length > 0 ? { artifactRefs } : {}),
       },

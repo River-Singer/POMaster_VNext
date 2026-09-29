@@ -818,6 +818,14 @@ export {
   normalizeGrnEvidenceRefs,
 } from "./evidence-qualification.js";
 export type { RunQualificationView } from "./evidence-qualification.js";
+// 源码证据新鲜度（W2-FR05）：相关面捕获（producer 前采样）+ 消费判定装配单点；
+// 判定核在 @pomaster/kernel source-snapshot（唯一比较核，禁第二比较器）。
+export {
+  captureEvidenceSourceSnapshot,
+  captureSourceHead,
+  judgeRunSourceStability,
+} from "./source-snapshot.js";
+export type { CaptureSourceSnapshotInput, RunSourceStabilityJudgment } from "./source-snapshot.js";
 export { runCatalogStatus, runCatalogExplain, runCatalogRelock } from "./catalog.js";
 export { runResolve, renderResolve } from "./resolve.js";
 export type { ResolveInput, ResolveResult } from "./resolve.js";

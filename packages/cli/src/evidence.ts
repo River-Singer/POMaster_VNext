@@ -34,7 +34,9 @@ import {
   type ClaimRecordInput,
   type EvidenceArtifactRefInput,
   type EvidenceBaselineInputs,
+  type RunSourceSnapshot,
   assertEvidenceBaselineInputs,
+  assertRunSourceSnapshot,
   type GateResult,
   type GateRunContext,
   type TransactionOp,
@@ -161,6 +163,13 @@ export function allocateEvidenceRef(dir: string, prefix: "GRN" | "CLM"): string 
 export interface ParsedRunFile {
   readonly baselineInputs?: EvidenceBaselineInputs;
   /**
+   * FR-05 运行窗口源码双采样（W2；kernel source-snapshot.ts 合同）。外层信封
+   * source_snapshot 键（可选——缺席 = 键缺席存量兼容，legacy 证据「未主张源码新鲜度」）。
+   * 词形/窗口重算全等由 assertRunSourceSnapshot fail-closed 校验（畸形 = 解析失败，
+   * 判卷分母内证据损坏禁静默跳过）。
+   */
+  readonly sourceSnapshot?: RunSourceSnapshot;
+  /**
    * normalizeGateResult 消费的 CLAIMED 值：gate_result.result 内嵌（kernel canonical 07
    * 形态）或整个文件（pre-canonical 夹具 GateResult 直落顶层）——与 reconcile 的读取
    * 规则同一条线（设计 §4.4）。
@@ -217,6 +226,7 @@ export function parseRunFile(bytes: string): ParsedRunFile | ParseFailure {
   if (!isRecord(parsed)) return { error: "run 记录不是 JSON 对象" };
   try {
     if (parsed.baseline_inputs !== undefined) assertEvidenceBaselineInputs(parsed.baseline_inputs);
+    if (parsed.source_snapshot !== undefined) assertRunSourceSnapshot(parsed.source_snapshot);
   } catch (err) {
     return { error: kernelDetail(err) };
   }
@@ -232,6 +242,7 @@ export function parseRunFile(bytes: string): ParsedRunFile | ParseFailure {
   return {
     rawValue,
     ...(parsed.baseline_inputs !== undefined ? { baselineInputs: parsed.baseline_inputs as EvidenceBaselineInputs } : {}),
+    ...(parsed.source_snapshot !== undefined ? { sourceSnapshot: parsed.source_snapshot as RunSourceSnapshot } : {}),
     envelopeTriggerPresent: triggerRaw !== undefined && triggerRaw !== null,
     envelopeTriggerType: isRecord(triggerRaw) ? (triggerRaw as UnknownRecord).type : undefined,
     ranAtSeqRaw: pick(rawValue, "ran_at_seq", "ranAtSeq") ?? pick(parsed, "ran_at_seq"),
@@ -420,11 +431,13 @@ export function normalizeIngestedRun(
 
 /**
  * canonical 07 run_record 组装（与 kernel store.applyRecordGateRun 逐键同构——
- * record_type / grn / ran_at_seq / trigger / [execution_id] / [artifact_refs] /
- * gate_result{mode, result}；形态由 kernel 决定）。execution_id 仅在携带时落键
- * （P20：缺席=键缺席存量兼容）；artifact_refs 仅在非空时落键（P0.5-2：缺席=键缺席，
- * 存量 GRN 字节兼容），键位在 execution_id 之后、gate_result 之前——与 kernel
- * store.applyRecordGateRun 同位（R1 双写点纪律，映射单源 artifactRefsToSnake）。
+ * record_type / [baseline_inputs] / [source_snapshot] / grn / ran_at_seq / trigger /
+ * [execution_id] / [artifact_refs] / gate_result{mode, result}；形态由 kernel 决定）。
+ * execution_id 仅在携带时落键（P20：缺席=键缺席存量兼容）；artifact_refs 仅在非空时落键
+ * （P0.5-2：缺席=键缺席，存量 GRN 字节兼容），键位在 execution_id 之后、gate_result 之前
+ * ——与 kernel store.applyRecordGateRun 同位（R1 双写点纪律，映射单源 artifactRefsToSnake）。
+ * source_snapshot 仅在携带时落键（W2-FR05：缺席=键缺席存量兼容），键位在 baseline_inputs
+ * 之后、grn 之前——与 kernel 同位（R1 双写点）。
  */
 export function canonicalRunBytes(
   grn: string,
@@ -433,10 +446,12 @@ export function canonicalRunBytes(
   executionId?: string | null,
   artifactRefs?: readonly EvidenceArtifactRefInput[],
   baselineInputs?: EvidenceBaselineInputs,
+  sourceSnapshot?: RunSourceSnapshot,
 ): string {
   const record: UnknownRecord = {
     record_type: "run",
     ...(baselineInputs !== undefined ? { baseline_inputs: baselineInputs } : {}),
+    ...(sourceSnapshot !== undefined ? { source_snapshot: sourceSnapshot } : {}),
     grn,
     ran_at_seq: result.ranAtSeq,
     trigger: { type: trigger },
@@ -606,7 +621,7 @@ export function planRunFile(input: {
     return { malformed: malformedOf(relPath, artifactRefsResolution.fail) };
   }
   const artifactRefs = artifactRefsResolution.refs;
-  const canonical = canonicalRunBytes(grn, resolved.context.trigger, result, executionId, artifactRefs, parsed.baselineInputs);
+  const canonical = canonicalRunBytes(grn, resolved.context.trigger, result, executionId, artifactRefs, parsed.baselineInputs, parsed.sourceSnapshot);
   if (canonical === bytes) {
     // 快路径判卷补位（P20 红队发现 2）：携带身份键即校验档案在场（与 record 同判卷），
     // 手写 canonical 形态 + 未登记 AGX 不再借零 op 通路绕过 S1。
@@ -635,6 +650,7 @@ export function planRunFile(input: {
           trigger: resolved.context.trigger,
           result,
           ...(parsed.baselineInputs !== undefined ? { baselineInputs: parsed.baselineInputs } : {}),
+          ...(parsed.sourceSnapshot !== undefined ? { sourceSnapshot: parsed.sourceSnapshot } : {}),
           ...(executionId ? { executionId } : {}),
           ...(artifactRefs.length > 0 ? { artifactRefs } : {}),
         },
@@ -699,7 +715,7 @@ export function findCanonicalRunMatch(input: {
     } catch {
       continue;
     }
-    if (canonicalRunBytes(grn, resolved.context.trigger, result, executionId, artifactRefs, input.parsed.baselineInputs) === bytes) return grn;
+    if (canonicalRunBytes(grn, resolved.context.trigger, result, executionId, artifactRefs, input.parsed.baselineInputs, input.parsed.sourceSnapshot) === bytes) return grn;
   }
   return null;
 }
