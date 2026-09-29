@@ -53,8 +53,10 @@ import { failOutcome, okOutcome } from "./envelope.js";
 import {
   GovernanceError,
   buildStorePaths,
+  deriveAuthorityConflicts,
   listChallenges,
   listSelfImprovementCandidates,
+  loadSourcesRegistry,
   readInboxEntries,
   readTaskNegativeHistory,
   type ChallengeRecord,
@@ -847,7 +849,9 @@ export async function runViewTask(
 
 /**
  * Attention 类型词闭包（x-vocab-source: vocab-lock presentation_axes.attention_kinds——PR-0009 收编；alerts ALERT_KINDS 同批先例）。
- * 六组 = R1 五类数据源（question-gate 凭证位并入 CONFLICT_REVIEW 组注记）；
+ * 七组 = R1 五类数据源（question-gate 凭证位并入 CONFLICT_REVIEW 组注记）+ W3 组 7
+ * （sources Authority 同 scope/dimension 双 canonical 冲突呈现——Case G；裁决是 Owner
+ * 权限，本投影只呈现不裁决、零阻断）；
  * §6.3 词形映射（ASK_HUMAN/Pending Approval/Conflict/Risk Acceptance/
  * Architecture Decision/Production Destructive Permit）见 markdown 头注记——
  * Production Destructive Permit 本批无派生数据源（工具权限/执行 scope 语义
@@ -860,6 +864,7 @@ export const ATTENTION_KINDS = [
   "PRODUCTION_CHALLENGE",
   "SELF_IMPROVEMENT_CANDIDATE",
   "EXCEPTION_BLOCKER",
+  "AUTHORITY_CONFLICT",
 ] as const;
 
 export type AttentionKind = (typeof ATTENTION_KINDS)[number];
@@ -867,12 +872,19 @@ export type AttentionKind = (typeof ATTENTION_KINDS)[number];
 /** 单条注意力项（ref + 事实陈述 + 下一步处置命令路标——escalation 纪律）。 */
 export interface AttentionItem {
   readonly kind: AttentionKind;
-  /** 条目引用（HM-/DECISION.*@pad/GRN-/PCH-/PSI-/EXC-——全部为既有平面编号词形）。 */
+  /** 条目引用（HM-/DECISION.*@pad/GRN-/PCH-/PSI-/EXC-/SOURCE.*——全部为既有平面编号词形）。 */
   readonly ref: string;
   /** 事实陈述（事实措辞，不臆造处置结论）。 */
   readonly detail: string;
   /** 下一步处置路标（复用既有命令面——零新语义）。 */
   readonly next: string;
+  /**
+   * 任务相关性锚（W3）：条目在既有平面上的对象/来源 id 锚（run.subject_id /
+   * decision affects / ledger object_ref / capability_ref）——--task 时与
+   * collectAffectedIds 范围求交判 relevance；无对象锚的条目（memory/PSI）空数组
+   * （不猜测相关性——保守呈 project）。
+   */
+  readonly anchors?: readonly string[];
 }
 
 /** 单组呈现（items 空 = 显式缺席——source_note 说明数据源与缺席语义，禁静默空组）。 */
@@ -884,10 +896,41 @@ export interface AttentionGroup {
   readonly items: readonly AttentionItem[];
 }
 
+/**
+ * Task relevance 三计数（W3 FR-12/AC-14）：project = 全项目（保留全项目可见性——
+ * 不因任务过滤丢投影）；relevant = 当前任务影响范围（collectAffectedIds 共享范围
+ * 计算——不另造第二套任务范围规则）；needs_human = relevant 中需 Human 现在处置
+ * （六组词面为 Human 裁决位的：escalate_owner/conflict review/production challenge/
+ * self-improvement/exception blocker——gate blocked 是 agent 重跑可消不计入）。
+ */
+export interface AttentionTaskRelevance {
+  readonly task: string;
+  readonly project: number;
+  readonly relevant: number;
+  readonly needs_human: number;
+  /** 逐条依据（relevant 条目可见性——「为什么相关」：锚命中 collectAffectedIds 范围）。 */
+  readonly basis: readonly {
+    readonly ref: string;
+    readonly kind: AttentionKind;
+    /** 命中锚（空 = ref 自身即任务范围 id）。 */
+    readonly via_anchor: string | null;
+  }[];
+  /**
+   * 范围外条目计数（project − relevant——含无对象锚的保守 project 条目）；
+   * unknown 相关性不伪装 no-impact（AC-14：无关 unknown 保留呈现不阻断）。
+   */
+  readonly out_of_scope: number;
+}
+
 export interface ViewAttentionResult {
   readonly view: "attention";
   readonly total: number;
   readonly groups: readonly AttentionGroup[];
+  /**
+   * Task relevance 投影（W3；--task 在场时非 null；缺席 = null 显式——不冒充已判）。
+   * 计数与 groups 逐条可对账（project = total）。
+   */
+  readonly task_relevance: AttentionTaskRelevance | null;
   /** 人读 markdown（机读走结构化 groups——§45 双输出）。 */
   readonly markdown: string;
 }
@@ -952,6 +995,14 @@ function scanConflictReviewItems(
       const decisionId = asString(node.decision_id) ?? "(missing decision_id)";
       const grounding = isRecord(node.grounding) ? node.grounding : {};
       const conflicts = Array.isArray(grounding.conflicts) ? grounding.conflicts : [];
+      // W3 任务相关性锚：decision affects + grounding 对象词形 refs（与 collectAffectedIds
+      // 范围求交——相关语义 unknown 不被过滤，AC-14）。
+      const anchors = [
+        ...(Array.isArray(node.affects) ? node.affects : []),
+        ...(["truth_refs", "contract_refs", "architecture_refs", "implementation_refs", "evidence_refs"] as const).flatMap(
+          (slot) => (Array.isArray(grounding[slot]) ? (grounding[slot] as unknown[]) : []),
+        ),
+      ].filter((value): value is string => typeof value === "string" && value.length > 0);
       if (conflicts.length === 0) continue;
       // 未决判据与 renderDecisionCard 同源（isRecord）：形态异按未决入队，不旁断已决。
       if (isRecord(node.resolution)) continue;
@@ -961,6 +1012,7 @@ function scanConflictReviewItems(
         ref: `${decisionId}@${dirent.name}`,
         detail: `${prompt}——已披露冲突 ${conflicts.length} 条未决（CONFLICT_REVIEW 素材；G5 禁自行挑答案）`,
         next: "Human 给外生 answer（resolveDecision 通路——系统无自动裁决）；链位置: pomaster brainstorm status",
+        ...(anchors.length > 0 ? { anchors } : {}),
       });
     }
   }
@@ -968,26 +1020,34 @@ function scanConflictReviewItems(
 }
 
 /**
- * view attention（§6.3 Human Attention Required 域 + 纠错 §19）：
+ * view attention（§6.3 Human Attention Required 域 + 纠错 §19 + W3 FR-12 Task relevance）：
  * ADR-lite（形态选择）：候选 a（独立 attention 命令组）/ b（view 面子命令——与
  * blueprint/task 同族纯读投影形态一致）中选 **b**：§6.3 将 Human Attention Required
  * 列为信息架构投影域（View not new database），投影命令面宿主就是 view 面（§91.1
  * 一个 State 多种 View）。
- * 首层投影「Human 审不可外包的判断」——五类既有对象数据源按 Attention 类型分组，
+ * 首层投影「Human 审不可外包的判断」——七组既有对象数据源按 Attention 类型分组，
  * 每条目给下一步处置命令路标；空队列显式「无可注意力项」（非空白假绿）；
  * View not new database：零新 store 对象、零写路径（纯读投影，测试锚字节不变）。
  * 缺席诚实：每组无条目时显式缺席行（数据源与缺席语义在 source_note 说明），
  * 不静默空组不伪装「检查过且干净」（alerts 分母披露纪律同源）。
+ * W3 Task relevance（FR-12/AC-14）：--task 在场时出 project/relevant/needs-human
+ * 三计数 + 逐条依据——范围计算共享 collectAffectedIds（不另造第二套任务范围规则）；
+ * 保留全项目可见性（groups/total 不过滤）；不把 Conflict/Drift 天然全局 Block
+ * （本投影零阻断语义不变）；无关 PROD unknown 不阻 UI 小改（范围外条目保守
+ * project 保留呈现）、相关语义 unknown 不被过滤（范围求交只加 relevant 不减组）。
  */
 export async function runViewAttention(
   rootDir: string,
+  input?: { readonly task?: string },
 ): Promise<CommandOutcome<ViewAttentionResult>> {
   const command = "view attention";
   const warnings: CliWarning[] = [];
+  const taskInput = input?.task?.trim() ?? "";
   const emptyResult: ViewAttentionResult = {
     view: "attention",
     total: 0,
     groups: [],
+    task_relevance: null,
     markdown: "",
   };
 
@@ -1014,6 +1074,8 @@ export async function runViewAttention(
           ref: entry.id,
           detail: `${memoryClass} 记忆呈报 Owner 裁决（batch=${entry.batch}${upgraded ? "；AUTHORITY_POLICY 升格申报" : ""}）——${title}（Case N：不自动成为 Truth）`,
           next: "Owner 裁决经 P11 maintain 面落对象（pomaster maintain <id> --ops）；台账检视: pomaster memory inspect / pomaster memory audit",
+          // memory 条目无对象锚——不猜测任务相关性（保守 project，AC-14）。
+          anchors: [] as readonly string[],
         };
       });
   } catch (err) {
@@ -1035,6 +1097,7 @@ export async function runViewAttention(
       ref: run.grn,
       detail: `gate=${run.gate ?? "?"} verdict=blocked（subject=${run.subject_id}）——前置未满足（许可缺失/上游 gate 未过）`,
       next: "前置处置后重跑 pomaster check --gates；许可面: pomaster permit list",
+      anchors: [run.subject_id],
     }));
 
   // —— 组 4/5：production challenges + self-improvement 候选 ——
@@ -1046,6 +1109,7 @@ export async function runViewAttention(
       ref: record.id,
       detail: `capability_ref=${record.capability_ref} 击穿质疑（band=${record.band_id}，breach=${record.breach_ref}）——${record.reason_short}`,
       next: "pomaster production diagnose <challenge-ref>（Agent Diagnosis 消费位）；修复/风险接受经治理面裁决",
+      anchors: record.capability_ref.length > 0 ? [record.capability_ref] : [],
     }));
     psiItems = listSelfImprovementCandidates(rootDir).map(
       (record: SelfImprovementCandidateRecord) => ({
@@ -1053,6 +1117,7 @@ export async function runViewAttention(
         ref: record.id,
         detail: `${record.signal_label}（signal=${record.signal}）——恒呈报态候选`,
         next: "Owner 显式裁决（POMASTER_SELF_IMPROVEMENT_CANDIDATE 无自动应用通路——PRD §90.4）；台账: pomaster production self-improvement list",
+        anchors: [] as readonly string[],
       }),
     );
   } catch (err) {
@@ -1068,12 +1133,55 @@ export async function runViewAttention(
       const classification = asString(entry.classification) ?? "";
       return (LEDGER_PROMINENT_CLASSES as readonly string[]).includes(classification);
     })
-    .map((entry) => ({
-      kind: "EXCEPTION_BLOCKER" as const,
-      ref: asString(entry.ledger_ref) ?? "EXC-?",
-      detail: `[${asString(entry.classification) ?? "?"}] ${asString(entry.statement) ?? "(missing statement)"}`,
-      next: "pomaster ledger list 复核；处置经 maintain 治理面（HARD_BLOCKER 升级走 09 blocker_triage 八问通路）",
-    }));
+    .map((entry) => {
+      const objectRef = asString(entry.object_ref);
+      const changeRef = asString(entry.change_ref);
+      return {
+        kind: "EXCEPTION_BLOCKER" as const,
+        ref: asString(entry.ledger_ref) ?? "EXC-?",
+        detail: `[${asString(entry.classification) ?? "?"}] ${asString(entry.statement) ?? "(missing statement)"}`,
+        next: "pomaster ledger list 复核；处置经 maintain 治理面（HARD_BLOCKER 升级走 09 blocker_triage 八问通路）",
+        anchors: [objectRef, changeRef].filter((anchor): anchor is string => anchor !== null),
+      };
+    });
+
+  // —— 组 7（W3）：sources Authority 同 scope/dimension 双 canonical 冲突（Case G） ——
+  // registry 缺席 = 合法空（sources 平面 opt-in）；superseded 已消歧不入队（呈现面
+  // 在 deriveAuthorityConflicts 结果，非 Human 待裁）；冲突条目只呈现 + Owner 裁决
+  // 路标——本投影零裁决零阻断（呈现与裁决分离）。
+  let authorityItems: readonly AttentionItem[] = [];
+  let authorityConflictNote = "sources registry 不在座（.pomaster/sources/index.yaml 缺席——opt-in 合法空）";
+  try {
+    const registry = loadSourcesRegistry(buildStorePaths(rootDir));
+    if (registry !== null) {
+      const report = deriveAuthorityConflicts(
+        registry.sources.map((source) => ({
+          source_id: source.id,
+          type: source.type,
+          location: source.location,
+          version: source.version,
+          authoritative_for: source.authoritative_for,
+          superseded_by: null,
+          owner_evidence: null,
+        })),
+      );
+      authorityConflictNote = `sources registry 在座（${String(registry.sources.length)} 条来源申报）；coexisting=${String(report.coexisting)}（不同维度合法并存不误报）`;
+      authorityItems = report.conflicts
+        .filter((conflict) => conflict.status === "conflicted")
+        .map((conflict) => ({
+          kind: "AUTHORITY_CONFLICT" as const,
+          ref: `SOURCE.DIM.${conflict.dimension}`,
+          detail: `${conflict.detail}（claimants: ${conflict.claimants
+            .map((claimant) => `${claimant.source_id}${claimant.version === null ? "" : `@${claimant.version}`} @ ${claimant.location}${claimant.owner_evidence === null ? "" : `；Owner 证据 ${claimant.owner_evidence}`}`)
+            .join(" | ")}——provenance 全呈现，禁按 mtime/文件名/自称 canonical 选胜者）`,
+          next: conflict.adjudication_route,
+          anchors: [],
+        }));
+    }
+  } catch (err) {
+    if (!(err instanceof GovernanceError)) throw err;
+    return failView(command, governanceErrorToCliError(err), emptyResult);
+  }
 
   // —— 组装（缺席组显式 source_note——禁静默空组） ——
   const groups: readonly AttentionGroup[] = [
@@ -1117,9 +1225,91 @@ export async function runViewAttention(
       source_note: `数据源: .pomaster/state/exception-ledger.json（§49.2 CONFLICT/HARD_BLOCKER；${ledger.note}）`,
       items: ledgerBlockerItems,
     },
+    {
+      kind: "AUTHORITY_CONFLICT",
+      label: "sources Authority 同 scope/dimension 双 canonical 冲突（§3A；W3 Case G）",
+      source_note: `数据源: .pomaster/sources/index.yaml（authoritative_for 维度聚类 + 显式 supersession 消歧）——${authorityConflictNote}。注记: 冲突呈现与 Human 裁决通路分离（裁决是 Owner 权限，本投影零阻断）`,
+      items: authorityItems,
+    },
   ];
 
   const total = groups.reduce((sum, group) => sum + group.items.length, 0);
+
+  // —— W3 Task relevance（--task 在场时；范围计算共享 collectAffectedIds） ——
+  let taskRelevance: AttentionTaskRelevance | null = null;
+  if (taskInput.length > 0) {
+    // 任务影响范围：复用 view task 同一 collectAffectedIds（不另造第二套范围规则）。
+    // 任务行缺席时保守按「仅任务自身」范围（不猜测扩大——无依赖证明≠证明无影响）。
+    const resolved = resolveRowTargetId(taskInput);
+    const affectedIds = new Set<string>([taskInput]);
+    if (!("error" in resolved)) {
+      const taskRow = findIndexRow(raw.index, resolved.target);
+      if (taskRow !== null) {
+        const taskBodyResult = await readBodyEnvelope(rootDir, taskRow);
+        const taskBody = "error" in taskBodyResult ? {} : taskBodyResult.body;
+        const taskPayload = isRecord(taskBody.payload) ? taskBody.payload : {};
+        const implementsChange = asString(taskPayload.implements_change);
+        let changeBody: UnknownRecord | null = null;
+        let changeRowId: string | null = null;
+        if (implementsChange !== null) {
+          const changeRow = findIndexRow(raw.index, implementsChange);
+          if (changeRow !== null) {
+            changeRowId = asString(changeRow.id);
+            const changeBodyResult = await readBodyEnvelope(rootDir, changeRow);
+            if (!("error" in changeBodyResult)) changeBody = changeBodyResult.body;
+          }
+        }
+        const permits = await readPermitFile(rootDir);
+        if (!("error" in permits)) {
+          for (const id of collectAffectedIds({
+            taskId: resolved.target,
+            taskRow,
+            taskBody,
+            changeBody,
+            changeRowId,
+            permits: permits.permits,
+          })) {
+            affectedIds.add(id);
+          }
+        }
+      }
+    }
+    const allItems = groups.flatMap((group) => group.items);
+    const basis: { ref: string; kind: AttentionKind; via_anchor: string | null }[] = [];
+    let relevant = 0;
+    // needs-human 词面（六组 Human 裁决位——gate blocked 是 agent 重跑可消，不计入）。
+    const HUMAN_ADJUDICATION_KINDS: readonly AttentionKind[] = [
+      "ESCALATE_OWNER_PENDING",
+      "ASK_HUMAN_CONFLICT_REVIEW",
+      "PRODUCTION_CHALLENGE",
+      "SELF_IMPROVEMENT_CANDIDATE",
+      "EXCEPTION_BLOCKER",
+      "AUTHORITY_CONFLICT",
+    ];
+    let needsHuman = 0;
+    for (const item of allItems) {
+      const anchors = item.anchors ?? [];
+      const directHit = affectedIds.has(item.ref);
+      const anchorHit = anchors.find((anchor) => affectedIds.has(anchor));
+      if (directHit || anchorHit !== undefined) {
+        relevant += 1;
+        if (HUMAN_ADJUDICATION_KINDS.includes(item.kind)) needsHuman += 1;
+        basis.push({
+          ref: item.ref,
+          kind: item.kind,
+          via_anchor: directHit && anchorHit === undefined ? null : (anchorHit ?? item.ref),
+        });
+      }
+    }
+    taskRelevance = {
+      task: taskInput,
+      project: total,
+      relevant,
+      needs_human: needsHuman,
+      basis,
+      out_of_scope: total - relevant,
+    };
+  }
 
   // —— 渲染 ——
   const lines: string[] = [];
@@ -1132,8 +1322,13 @@ export async function runViewAttention(
       ? `> attention: 无可注意力项（五类数据源全部显式空——诚实空队列，非空白假绿）`
       : `> attention: 共 ${total} 项待 Human 注意`,
   );
+  if (taskRelevance !== null) {
+    lines.push(
+      `> task relevance（W3）: task=${taskRelevance.task} project=${taskRelevance.project} relevant=${taskRelevance.relevant} needs_human=${taskRelevance.needs_human}（范围=collectAffectedIds 共享计算；全项目可见性保留——不因任务过滤丢投影；本投影零阻断）`,
+    );
+  }
   lines.push(
-    `> §6.3 词形映射: ASK_HUMAN/Conflict→组2；Pending Approval→组1/3/5；Conflict/Risk Acceptance→组4；Architecture Decision→组1（DECISION 记忆呈报）；Conflict→组6；Production Destructive Permit→本批无派生数据源（工具权限/执行 scope 语义 D16 延后）——显式缺席位。`,
+    `> §6.3 词形映射: ASK_HUMAN/Conflict→组2；Pending Approval→组1/3/5；Conflict/Risk Acceptance→组4；Architecture Decision→组1（DECISION 记忆呈报）；Conflict→组6；Production Destructive Permit→本批无派生数据源（工具权限/执行 scope 语义 D16 延后）——显式缺席位；组7=W3 sources Authority 冲突（§3A）。`,
   );
   lines.push("");
   for (const group of groups) {
@@ -1145,9 +1340,25 @@ export async function runViewAttention(
       lines.push("_（无——该数据源当前无注意力项；缺席显式呈现，不静默空组）_");
     } else {
       for (const item of group.items) {
-        lines.push(`- \`${item.ref}\` — ${item.detail}`);
+        const relevanceMark =
+          taskRelevance === null
+            ? ""
+            : taskRelevance.basis.some((entry) => entry.ref === item.ref)
+              ? "（relevant）"
+              : "（project——范围外保留可见）";
+        lines.push(`- \`${item.ref}\`${relevanceMark} — ${item.detail}`);
         lines.push(`  下一步: ${item.next}`);
       }
+    }
+    lines.push("");
+  }
+  if (taskRelevance !== null && taskRelevance.basis.length > 0) {
+    lines.push(`## Task relevance 依据（W3 AC-14：依据可见、计数可对账）`);
+    lines.push("");
+    for (const entry of taskRelevance.basis) {
+      lines.push(
+        `- \`${entry.ref}\`（${entry.kind}）——命中任务影响范围${entry.via_anchor === null ? "（ref 自身即范围 id）" : `（经锚 ${entry.via_anchor}）`}`,
+      );
     }
     lines.push("");
   }
@@ -1156,6 +1367,7 @@ export async function runViewAttention(
     view: "attention",
     total,
     groups,
+    task_relevance: taskRelevance,
     markdown: lines.join("\n"),
   };
   return okOutcome(command, result, result.markdown.split("\n"), warnings);

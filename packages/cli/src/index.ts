@@ -3543,11 +3543,15 @@ export function createProgram(
   view
     .command("attention")
     .description(
-      "Human Attention Queue（§6.3/纠错 §19；Batch 3 R1）：首层投影「Human Attention Required」——Human 审不可外包的判断；五类既有对象数据源按 Attention 类型分组（escalate_owner 呈报位/decision-graph CONFLICT_REVIEW 素材/gate blocked/production challenges+self-improvement/exception ledger 高显著度异常），每条目带下一步处置命令路标；缺席显式呈现不静默空组；空队列显式「无可注意力项」非空白假绿；View not new database（纯读零写入）",
+      "Human Attention Queue（§6.3/纠错 §19 + W3 FR-12）：首层投影「Human Attention Required」——Human 审不可外包的判断；七组既有对象数据源按 Attention 类型分组（escalate_owner 呈报位/decision-graph CONFLICT_REVIEW 素材/gate blocked/production challenges+self-improvement/exception ledger 高显著度异常/sources Authority 同 scope 双 canonical 冲突——W3 Case G），每条目带下一步处置命令路标；缺席显式呈现不静默空组；空队列显式「无可注意力项」非空白假绿；--task 出 project/relevant/needs-human 三计数+依据可见（范围=collectAffectedIds 共享计算，全项目可见性保留，本投影零阻断）；View not new database（纯读零写入）",
     )
     .option("--json", "machine-readable JSON output (§45)")
+    .option("--task <task-id>", "Task relevance 投影（W3）：对指定任务出三计数（project/relevant/needs-human）与逐条依据")
     .action(async (_opts, command) => {
-      const outcome = await runViewAttention(resolveDir(command));
+      const taskArg = command.opts().task as string | undefined;
+      const outcome = await runViewAttention(resolveDir(command), {
+        ...(taskArg !== undefined && taskArg.trim().length > 0 ? { task: taskArg } : {}),
+      });
       record({
         command: "view attention",
         outcome,

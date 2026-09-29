@@ -175,8 +175,10 @@ export function deriveInvalidationRows(
   const taskScope = options?.taskScope;
   const rows: InvalidationRow[] = closure.rows.map((row) => {
     const classified = classifyConsequence({ plane: row.plane, id: row.id }, { taskScope });
-    const requiresHuman =
-      classified.consequence === "review" || classified.consequence === "requalify";
+    // requires_human = 处置必须 Human 参与。只有 review（人工审阅）恒真——recompile/
+    // REBIND/requalify 是命令/申报/取证面（agent 或既有命令通路可执行，资格判卷归
+    // 既有消费闸）；no-current-task-impact 无处置。
+    const requiresHuman = classified.consequence === "review";
     const dispositionNote =
       classified.consequence === "review"
         ? "须 Human 重审后显式重开或确认（系统无自动裁决通路——不自动改 Human Decision 字节）"
