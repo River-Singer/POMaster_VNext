@@ -41,6 +41,13 @@
  * 消费方：status（P2 next_action 字段）/ session（P1 段③）/ alerts（P3 breadcrumb）
  * ——三通道共享同一张表，禁两套路由口径漂移。
  *
+ * W0-FR01（MASTer 经验驱动优化 W0 切片，2026-09-29）：⑤ VERIFY 主路由从
+ * check/check --fast 收正为既有 plan 链主入口（plan run——内部经 runPlanCompile
+ * 编译后串行执行全部 REQUIRED obligations 并逐项入账 GRN；空 acceptance 被编译器
+ * 拒绝「禁空计划假绿」；缺工具保持 REQUIRED + tool_gap 显式 not_run 非绿）。
+ * check --fast 保留局部自检语义（BUILD 腿快速诊断），不再充当 VERIFY 主入口——
+ * 快速检查绿不能满足未完成 obligation。在途 execution_id 由快照捕获供命令逐参渲染。
+ *
  * 新词形（cli 局部词纪律——批 D 先例：路由 id/拍位词形为本模块局部词，x-vocab-source
  * 待词汇表批扫收编）：NEXT_ACTION_ROUTE_IDS / EIGHT_BEAT_ENFORCEMENT_LINES。
  */
@@ -117,6 +124,8 @@ const ACTIVE_LIFECYCLE_VALUES: readonly string[] = ["PROPOSED", "CURRENT"];
  * confirm 属 0 BOOTSTRAP 拍（COMMAND_PANORAMA_LINES 同位：baseline set/confirm 在
  * # 0 BOOTSTRAP 段）；八拍①重定义为 Brainstorm/Question Gate（D-5，triage 判档位
  * 退役，owner-adjudications.md#裁决18），后续拍零重编号。
+ * W0-FR01（2026-09-29）：⑤ VERIFY 主命令收正为 plan 链主入口 plan run（COMMAND_
+ * PANORAMA_LINES ⑤ 段同位已列 plan compile/run）；check --fast 降局部自检。
  */
 export const EIGHT_BEAT_ENFORCEMENT_LINES: readonly {
   readonly beat: string;
@@ -128,7 +137,7 @@ export const EIGHT_BEAT_ENFORCEMENT_LINES: readonly {
   { beat: "②", name: "FRAMEWORK LOCK", enforcement: "pomaster permit issue" },
   { beat: "③", name: "PROJECTION", enforcement: "pomaster context compile" },
   { beat: "④", name: "EXECUTE", enforcement: "pomaster exec-guard --attempt <file|->" },
-  { beat: "⑤", name: "VERIFY", enforcement: "pomaster check" },
+  { beat: "⑤", name: "VERIFY", enforcement: "pomaster plan run --task <TASK.*> --execution-id <AGX-…>" },
   { beat: "⑥", name: "RECONCILE", enforcement: "pomaster reconcile --permit <PERMIT.*>" },
   { beat: "⑦", name: "COMPACT", enforcement: "pomaster compact" },
   { beat: "⑧", name: "CARRY", enforcement: "pomaster closeout <task-id>" },
@@ -200,6 +209,12 @@ export interface NextActionSnapshot {
    */
   readonly task_execution_active: boolean | null;
   /**
+   * 在途执行档案的 execution_id（W0-FR01：task_execution_active=true 时同 scan
+   * 捕获，供 ⑤ 主链命令 `plan run --execution-id` 逐参渲染——零二次 IO）；无在途/
+   * 不可判/记录缺 id = null（命令回退 <AGX-…> 占位，不臆造）。
+   */
+  readonly task_execution_id: string | null;
+  /**
    * baseline 确认态（T2 R5 · R_BASELINE_NOT_READY）：gate code 面复用
    * baselineGateErrors 单点（零第二套漂移检测算法）；unknowns 剩余 + 在途变更批
    * 引用复用 readBaselineConfirmationPresentation 呈现面。manifest 缺席/不可读
@@ -236,6 +251,7 @@ function emptySnapshot(initialized: boolean): NextActionSnapshot {
     dod_judgeable: false,
     task_scope_subjects: [],
     task_execution_active: false,
+    task_execution_id: null,
     baseline_gate_codes: [],
     baseline_unknowns_remaining: null,
     baseline_blocking_remaining: null,
@@ -447,9 +463,10 @@ export async function collectNextActionSnapshot(
   }
 
   // —— ④ EXECUTE 在途档案（T2 R3；kernel ExecutionRecord 平面只读扫描：task_id 命中
-  //    首活跃任务 且 ended_at=null = 在途。坏形/不可读 = null 诚实不可判（④⑤两行
-  //    跳过不乱指）；平面缺席 = false。零墙钟 A4——读档案文件非墙钟判定）。 ——
-  const taskExecutionActive = scanTaskExecutionActive(rootDir, firstTask?.id, warnings);
+  //    首活跃任务 且 ended_at=null = 在途，并同 scan 捕获 execution_id（W0-FR01）。
+  //    坏形/不可读 = null 诚实不可判（④⑤两行跳过不乱指）；平面缺席 = false。零墙钟
+  //    A4——读档案文件非墙钟判定）。 ——
+  const executionScan = scanTaskExecutionActive(rootDir, firstTask?.id, warnings);
 
   // —— baseline 确认态（T2 R5；gate code 复用 baselineGateErrors 单点判卷，呈现面
   //    复用 readBaselineConfirmationPresentation——两函数同根 readBaselineConfirmation，
@@ -472,7 +489,8 @@ export async function collectNextActionSnapshot(
     dod_ready_task_id: dodReadyTaskId,
     dod_judgeable: dodJudgeable,
     task_scope_subjects: taskScopeSubjects,
-    task_execution_active: taskExecutionActive,
+    task_execution_active: executionScan.active,
+    task_execution_id: executionScan.executionId,
     baseline_gate_codes: baselineGateCodeList,
     baseline_unknowns_remaining: baselinePresentation?.unknowns_remaining ?? null,
     baseline_blocking_remaining: baselinePresentation?.blocking_remaining ?? null,
@@ -498,18 +516,19 @@ const EXECUTION_FILE_PATTERN = /^AGX-[0-9]{4}-[0-9]+\.json$/;
 
 /**
  * ④ EXECUTE 在途扫描（T2 R3）：executions/AGX-*.json 中 task_id=taskId 且
- * ended_at=null 的行存在 = true；平面缺席/无命中 = false；任一行坏形（非对象/
- * task_id 非 string|null/ended_at 非 string|null）= null 诚实不可判（告警留痕，
- * 消费方 hook 契约恒 exit 0——降级只留痕不失败）。
+ * ended_at=null 的行存在 = active true，并同 scan 捕获该记录 execution_id（W0-FR01，
+ * ⑤ 主链命令渲染用；记录缺 id = executionId null）；平面缺席/无命中 = active false；
+ * 任一行坏形（非对象/task_id 非 string|null/ended_at 非 string|null）= active null
+ * 诚实不可判（告警留痕，消费方 hook 契约恒 exit 0——降级只留痕不失败）。
  */
 function scanTaskExecutionActive(
   rootDir: string,
   taskId: string | undefined,
   warnings: CliWarning[],
-): boolean | null {
-  if (taskId === undefined) return false;
+): { readonly active: boolean | null; readonly executionId: string | null } {
+  if (taskId === undefined) return { active: false, executionId: null };
   const dir = executionsDirPath(rootDir);
-  if (!existsSync(dir)) return false;
+  if (!existsSync(dir)) return { active: false, executionId: null };
   let names: readonly string[];
   try {
     names = readdirSync(dir);
@@ -519,7 +538,7 @@ function scanTaskExecutionActive(
       message: "executions 平面目录不可读，④ EXECUTE 感知行跳过",
       hint: "检查目录权限后重试；档案平面由 kernel execution begin/end 维护。",
     });
-    return null;
+    return { active: null, executionId: null };
   }
   for (const name of names) {
     if (!EXECUTION_FILE_PATTERN.test(name)) continue;
@@ -532,7 +551,7 @@ function scanTaskExecutionActive(
         message: `执行档案 ${name} 不可解析，④ EXECUTE 感知行跳过（诚实不可判）`,
         hint: "档案由 pomaster execution begin/end 维护；损坏文件从 git 恢复。",
       });
-      return null;
+      return { active: null, executionId: null };
     }
     if (!isRecord(parsed)) continue;
     const recordTaskId = parsed.task_id;
@@ -546,11 +565,16 @@ function scanTaskExecutionActive(
         message: `执行档案 ${name} 形态坏（task_id/ended_at 须 string|null），④ EXECUTE 感知行跳过（诚实不可判）`,
         hint: "档案形态权威见 kernel ExecutionRecord（闭形态）；损坏文件从 git 恢复。",
       });
-      return null;
+      return { active: null, executionId: null };
     }
-    if (recordTaskId === taskId && recordEndedAt === null) return true;
+    if (recordTaskId === taskId && recordEndedAt === null) {
+      return {
+        active: true,
+        executionId: typeof parsed.execution_id === "string" ? parsed.execution_id : null,
+      };
+    }
   }
-  return false;
+  return { active: false, executionId: null };
 }
 
 function findRowById(objects: readonly unknown[], id: string): UnknownRecord | null {
@@ -734,17 +758,20 @@ export const NEXT_ACTION_ROUTE_TABLE: readonly NextActionRouteRow[] = [
     }),
   },
   {
-    // T2 R3（⑤ VERIFY 入口）：在途执行档案在座 = ④ 已登记——VERIFY 内循环自检入口
-    //（拍序 ⑤ 先于 ⑥：执行期间自检优先于对账）。
+    // T2 R3（⑤ VERIFY 入口）+ W0-FR01（2026-09-29）：在途执行档案在座 = ④ 已登记——
+    // 主链入口 = plan run（内部 runPlanCompile 编译后串行执行全部 REQUIRED obligations
+    // 逐项入账 GRN；空 acceptance 编译器拒绝「禁空计划假绿」；缺工具 REQUIRED 保持 +
+    // tool_gap 显式 not_run 非绿）。check --fast 降为局部自检（BUILD 腿快速诊断），
+    // 快速绿不能满足未完成 obligation。execution_id 快照同 scan 捕获，缺席回退占位。
     id: "R_VERIFY_ENTRY",
     when: (s) => {
       if (s.task_execution_active === null) return null;
       return s.task_execution_active === true;
     },
-    render: () => ({
+    render: (s) => ({
       beat: "⑤",
-      command: "pomaster check --fast",
-      reason: "执行档案在途（④ EXECUTE 已登记）——VERIFY 内循环自检入口",
+      command: `pomaster plan run --task ${firstTaskOr(s, "<TASK.*>")} --execution-id ${s.task_execution_id ?? "<AGX-…>"}`,
+      reason: "执行档案在途（④ EXECUTE 已登记）——VERIFY 主链入口：编译并执行 Verification Plan 全部 REQUIRED obligations（工具缺席显式非绿）；check --fast 仅局部自检，不能满足未完成 obligation",
     }),
   },
   {
