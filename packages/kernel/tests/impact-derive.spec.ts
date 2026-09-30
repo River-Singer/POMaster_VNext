@@ -17,6 +17,7 @@ import {
   IMPACT_PLANE_VALUES,
   UNADAPTED_ASSET_INVENTORY,
   deriveImpactClosure,
+  impactClosure,
   type DeriveImpactInput,
   type RelationEntry,
 } from "@pomaster/kernel";
@@ -398,5 +399,116 @@ describe("deriveImpactClosure（纯派生查询；不落盘不建第二 store）
     const sameDepth = first.rows.filter((row) => row.depth === first.rows[0]?.depth);
     const keys = sameDepth.map((row) => `${row.plane}:${row.id}`);
     expect([...keys].sort()).toEqual(keys);
+  });
+});
+
+// ============================================================
+// 闭包漂移哨兵（裁定 2a=C；Owner 2026-09-30）：impactClosure（relations.ts 台账核）
+// 与 deriveImpactClosure（impact-derive.ts 同构镜像 BFS——PAYLOAD_SOURCE_REF 等四类
+// 适配腿共享同一遍历核）在**同一关系图**上的可达集/深度/边链/排序/截断语义逐面对账。
+// 两实现是刻意分离的（relations 合同冻结不扩端点文法——模块头注）；本哨兵锁「镜像
+// 语义不漂移」：未来任一实现改 BFS 语义（visited/排序/maxDepth 闸/截断披露）先红。
+// 对账形态：truth 平面 governed id 端点 fixture，台账边原样进两实现（derive 侧
+// objects 等派生源置空——派生边分母=台账边，两闭包的可比子集=全部分母）。
+// ============================================================
+
+/** 对账投影：impactClosure 节点 → {domain, id, depth, via_edge_id}（判定面最小集）。 */
+function impactSide(
+  entries: readonly RelationEntry[],
+  rootId: string,
+  maxDepth?: number,
+): { readonly affected: readonly { readonly key: string; readonly depth: number; readonly via: string }[]; readonly truncated: boolean } {
+  const closure = impactClosure(entries, { domain: "truth", id: rootId }, maxDepth === undefined ? undefined : { maxDepth });
+  return {
+    affected: closure.affected.map((node) => ({
+      key: `${node.endpoint.domain}:${node.endpoint.id}`,
+      depth: node.depth,
+      via: node.via_edge_id,
+    })),
+    truncated: closure.max_depth_reached,
+  };
+}
+
+/** 对账投影：deriveImpactClosure 行 → 同一最小集（plane≡domain 台账两域归一）。 */
+function deriveSide(
+  entries: readonly RelationEntry[],
+  rootId: string,
+  maxDepth?: number,
+): { readonly affected: readonly { readonly key: string; readonly depth: number; readonly via: string }[]; readonly truncated: boolean } {
+  const result = deriveImpactClosure(
+    { ...emptyInput(), relations: entries },
+    { plane: "truth", id: rootId },
+    maxDepth === undefined ? undefined : { maxDepth },
+  );
+  return {
+    affected: result.rows.map((row) => ({
+      key: `${row.plane}:${row.id}`,
+      depth: row.depth,
+      via: row.via_edge_id,
+    })),
+    truncated: result.max_depth_reached,
+  };
+}
+
+describe("闭包漂移哨兵（裁定 2a=C：impactClosure 与 deriveImpactClosure 同图对账）", () => {
+  it("可达集/深度/边链/排序逐面一致：菱形+深链混合图两实现逐位置对齐", () => {
+    // 菱形两路（PAGE.ALPHA / PAGE.GAMMA 各 d1）+ 深链（COMPONENT.BETA d2 → API_REQ.DELTA d3）。
+    const entries: RelationEntry[] = [
+      ledgerEdge("IMPLEMENTS", "PAGE.ALPHA", "CAPABILITY.ROOT", "EDGE-000000000001"),
+      ledgerEdge("IMPLEMENTS", "PAGE.GAMMA", "CAPABILITY.ROOT", "EDGE-000000000002"),
+      ledgerEdge("CONTAINS", "COMPONENT.BETA", "PAGE.ALPHA", "EDGE-000000000003"),
+      ledgerEdge("READS", "API_REQ.DELTA", "COMPONENT.BETA", "EDGE-000000000004"),
+    ];
+    const impact = impactSide(entries, "CAPABILITY.ROOT");
+    const derive = deriveSide(entries, "CAPABILITY.ROOT");
+    expect(impact.truncated).toBe(false);
+    expect(derive.truncated).toBe(false);
+    // 排序语义对账：两实现同 (depth, domain/plane, id) 键 → 逐位置相等（排序漂移即红）。
+    expect(impact.affected).toEqual(derive.affected);
+    // 可达集分母：d1 两行（菱形）+ d2 + d3 = 4 节点，深度语义逐面一致。
+    expect(impact.affected.map((row) => row.depth)).toEqual([1, 1, 2, 3]);
+  });
+
+  it("环不死循环且两实现一致：A→B→C→A 依赖环 visited 首达即定（root 不入行）", () => {
+    const entries: RelationEntry[] = [
+      ledgerEdge("IMPLEMENTS", "PAGE.ALPHA", "CAPABILITY.BETA", "EDGE-000000000011"),
+      ledgerEdge("CALLS", "COMPONENT.GAMMA", "PAGE.ALPHA", "EDGE-000000000012"),
+      ledgerEdge("CONTAINS", "CAPABILITY.BETA", "COMPONENT.GAMMA", "EDGE-000000000013"),
+    ];
+    const impact = impactSide(entries, "CAPABILITY.BETA");
+    const derive = deriveSide(entries, "CAPABILITY.BETA");
+    expect(impact.affected).toEqual(derive.affected);
+    // 环回到 root 自身被 visited 封死——root 不出现在任一侧闭包。
+    expect(impact.affected.map((row) => row.key)).not.toContain("truth:CAPABILITY.BETA");
+    expect(derive.affected.map((row) => row.key)).not.toContain("truth:CAPABILITY.BETA");
+  });
+
+  it("maxDepth 截断语义一致：深链 maxDepth=1 → 单行 + max_depth_reached=true 双侧同真", () => {
+    const entries: RelationEntry[] = [
+      ledgerEdge("IMPLEMENTS", "PAGE.ALPHA", "CAPABILITY.ROOT", "EDGE-000000000021"),
+      ledgerEdge("CONTAINS", "COMPONENT.BETA", "PAGE.ALPHA", "EDGE-000000000022"),
+    ];
+    const impact = impactSide(entries, "CAPABILITY.ROOT", 1);
+    const derive = deriveSide(entries, "CAPABILITY.ROOT", 1);
+    expect(impact.truncated).toBe(true);
+    expect(derive.truncated).toBe(true);
+    expect(impact.affected).toEqual(derive.affected);
+    expect(impact.affected).toHaveLength(1);
+    expect(impact.affected[0]?.depth).toBe(1);
+  });
+
+  it("maxDepth 边界对账：maxDepth=2 的同图下第三层双侧一致缺席（截断面逐深度同构）", () => {
+    const entries: RelationEntry[] = [
+      ledgerEdge("IMPLEMENTS", "PAGE.ALPHA", "CAPABILITY.ROOT", "EDGE-000000000031"),
+      ledgerEdge("CONTAINS", "COMPONENT.BETA", "PAGE.ALPHA", "EDGE-000000000032"),
+      ledgerEdge("READS", "API_REQ.DELTA", "COMPONENT.BETA", "EDGE-000000000033"),
+    ];
+    const impact = impactSide(entries, "CAPABILITY.ROOT", 2);
+    const derive = deriveSide(entries, "CAPABILITY.ROOT", 2);
+    expect(impact.truncated).toBe(true);
+    expect(derive.truncated).toBe(true);
+    expect(impact.affected).toEqual(derive.affected);
+    // 第三层（API_REQ.DELTA d3）双侧一致缺席——截断图不冒充完整图的同构呈现。
+    expect(impact.affected.map((row) => row.key)).not.toContain("truth:API_REQ.DELTA");
   });
 });
