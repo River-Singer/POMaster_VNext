@@ -116,6 +116,14 @@ esbuild.buildSync({
   define: {
     POMASTER_VERSION: JSON.stringify(POMASTER_VERSION),
   },
+  // v0.10.0 发布修复：jsonc-parser 的 CJS 形态是 UMD 工厂（factory(require,
+  // exports)）——esbuild 无法静态绑定工厂参数 require，bundle 内残留运行期
+  // `require("./impl/format")` 相对 bundle 解析即 MODULE_NOT_FOUND（直载冒烟
+  // 实测）。alias 钉到其 ESM 入口（全静态 import，可完整内联——bundle 保持
+  // 零 dependencies 自包含契约）。
+  alias: {
+    "jsonc-parser": p("packages", "cli", "node_modules", "jsonc-parser", "lib", "esm", "main.js"),
+  },
 });
 
 // ============================================================
