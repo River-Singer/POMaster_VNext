@@ -67,6 +67,7 @@ import { requireInitialized } from "./permit.js";
 import { governanceErrorToCliError } from "./permit.js";
 import type { CliError, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
+import { asString, isRecord, readBodyEnvelope, readRawIndexOrFail } from "./projection-common.js";
 
 export const FAST_CHECK_GATE = "BUILD";
 
@@ -90,6 +91,13 @@ export type FastCheckStatus = "READY" | "NOT_INSTALLED";
 
 export interface FastCheckResult {
   readonly gate: typeof FAST_CHECK_GATE;
+  /**
+   * 场景义务提示行（裁定 6C，2026-09-30）：活跃任务 payload.acceptance 含非空
+   * scenarios（W1 合同的矩阵义务）时在场——「check --fast 局部自检绿≠⑤主链完成，
+   * VERIFY 主链=pomaster plan run」。无场景/无任务/store 未初始化=字段缺席（输出
+   * 零变化——加性可选，机读面稳定）。
+   */
+  readonly verify_hint?: string;
   readonly status: FastCheckStatus;
   readonly verdict: VerdictValue;
   readonly counts: {
@@ -442,38 +450,96 @@ function buildOutcomeFromRecord(
  * （含 warning/not_run/not_configured/skipped_blindspot/blocked）→ ok=false——
  * 缺席显式且绝不静默通过。
  */
+/**
+ * 活跃任务场景义务判定（裁定 6C，纯读 best-effort）：truth-index 首个活跃任务
+ * （TASK.* × lifecycle∈{PROPOSED,CURRENT}）payload.acceptance 任一条目含非空
+ * scenarios（W1 矩阵义务）→ 提示行词形；否则 null（无场景/无任务/索引或正文
+ * 不可读=null——提示面缺席诚实，绝不让提示判定影响 fast 判卷本身）。
+ */
+async function resolveVerifyHint(rootDir: string): Promise<string | null> {
+  try {
+    const raw = await readRawIndexOrFail(rootDir);
+    if ("error" in raw) return null;
+    const objects = Array.isArray(raw.index.objects) ? raw.index.objects : [];
+    let taskId: string | null = null;
+    for (const row of objects) {
+      if (!isRecord(row)) continue;
+      const id = asString(row.id);
+      if (id === null || !id.startsWith("TASK.")) continue;
+      const axes = isRecord(row.axes) ? row.axes : {};
+      const lifecycle = asString(axes.lifecycle);
+      if (lifecycle !== "PROPOSED" && lifecycle !== "CURRENT") continue;
+      taskId = id;
+      break;
+    }
+    if (taskId === null) return null;
+    const taskRow = objects.find((row) => isRecord(row) && row.id === taskId) ?? null;
+    if (taskRow === null) return null;
+    const bodyResult = await readBodyEnvelope(rootDir, taskRow);
+    if ("error" in bodyResult) return null;
+    const payload = isRecord(bodyResult.body.payload) ? bodyResult.body.payload : {};
+    const acceptance = Array.isArray(payload.acceptance) ? payload.acceptance : [];
+    const hasScenarios = acceptance.some(
+      (item) => isRecord(item) && Array.isArray(item.scenarios) && item.scenarios.length > 0,
+    );
+    return hasScenarios
+      ? "check --fast 局部自检绿≠⑤主链完成：任务带场景义务，VERIFY 主链=pomaster plan run --task "
+          + `${taskId} --execution-id <AGX-…>`
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+/** 提示行后处理（裁定 6C）：human 尾部一行 + result.verify_hint 加性字段；null=零变化。 */
+function appendVerifyHint(
+  outcome: CommandOutcome<FastCheckResult>,
+  hint: string | null,
+): CommandOutcome<FastCheckResult> {
+  if (hint === null) return outcome;
+  return {
+    ...outcome,
+    result: { ...outcome.result, verify_hint: hint },
+    human: [...outcome.human, `  ${hint}`],
+  };
+}
+
 export async function runCheckFast(
   rootDir: string,
   deps?: CheckDeps,
 ): Promise<CommandOutcome<FastCheckResult>> {
+  const verifyHint = await resolveVerifyHint(rootDir);
   // 注入面（最小契约）优先：deps 显式给出（含 null）即按注入走。
   if (deps && "adapter" in deps) {
     const injected = deps.adapter;
     if (injected === null || injected === undefined) {
-      return notInstalledOutcome("adapter forced absent via deps (adapter=null)");
+      return appendVerifyHint(notInstalledOutcome("adapter forced absent via deps (adapter=null)"), verifyHint);
     }
     try {
       const run = await injected.run({ rootDir });
-      return buildOutcomeFromRecord(run, run.detail ?? null);
+      return appendVerifyHint(buildOutcomeFromRecord(run, run.detail ?? null), verifyHint);
     } catch (err) {
-      return adapterBlockedOutcome(`run raised: ${errText(err)}`);
+      return appendVerifyHint(adapterBlockedOutcome(`run raised: ${errText(err)}`), verifyHint);
     }
   }
 
   const detected = await detectAdapter();
   if (detected.kind === "absent") {
-    return notInstalledOutcome(
-      "gauntlet-lite has no buildAdapter export (scaffold or contract mismatch)",
+    return appendVerifyHint(
+      notInstalledOutcome(
+        "gauntlet-lite has no buildAdapter export (scaffold or contract mismatch)",
+      ),
+      verifyHint,
     );
   }
   if (detected.kind === "section59") {
-    return runSection59(rootDir, detected.adapter);
+    return appendVerifyHint(await runSection59(rootDir, detected.adapter), verifyHint);
   }
   try {
     const run = await detected.adapter.run({ rootDir });
-    return buildOutcomeFromRecord(run, run.detail ?? null);
+    return appendVerifyHint(buildOutcomeFromRecord(run, run.detail ?? null), verifyHint);
   } catch (err) {
-    return adapterBlockedOutcome(`run raised: ${errText(err)}`);
+    return appendVerifyHint(adapterBlockedOutcome(`run raised: ${errText(err)}`), verifyHint);
   }
 }
 

@@ -547,3 +547,84 @@ describe("check --gates：P12c 假绿封死对抗用例", () => {
     }
   });
 });
+
+// ============================================================
+// check --fast 场景义务提示行（裁定 6C，2026-09-30）：活跃任务带场景义务时
+// fast 尾部显式提示「局部自检绿≠⑤主链完成」——check --fast 保留局部自检语义
+// （裁定 6=A），主链导航归 plan run。纯读判定；无场景/无任务/无 store 零变化。
+// ============================================================
+
+const HINT_SCENARIO = {
+  scenario_ref: "selected-no-hover",
+  precondition: "复选框处于选中态",
+  interaction: "指针不在复选框上（no-hover）",
+  state_dimensions: ["selected=true", "hover=false"],
+  expected_observation: "悬浮提示不显示",
+  runtime_confirmation_required: false,
+};
+
+/** 播种单任务（acceptance 注入；等价 plan-runner.spec seedScenarioTask 的最小形态）。 */
+async function seedCheckTask(acceptance: unknown[]): Promise<string> {
+  const { mkdtempSync, rmSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const { applyTransaction, createStore } = await import("@pomaster/kernel");
+  const root = mkdtempSync(join(tmpdir(), "pomaster-cli-check-hint-"));
+  const store = await createStore(root);
+  // 幽灵 owner 防线（GHOST_AUTHORITY_OWNER FATAL）——播种前登记（next-action.spec 同款）。
+  const { readFileSync, writeFileSync } = await import("node:fs");
+  const authPath = join(root, ".pomaster", "state", "authority.json");
+  const auth = JSON.parse(readFileSync(authPath, "utf8")) as { authorities: Record<string, unknown> };
+  auth.authorities["BOOTSTRAP_OWNER"] = {};
+  writeFileSync(authPath, JSON.stringify(auth, null, 2), "utf8");
+  await applyTransaction(store, { ops: [{ op: "upsert_object", envelope: {
+    id: "TASK.CHECK.HINT", kind: "task_object", axisProfile: "task_default",
+    axes: { lifecycle: "CURRENT", confidence: "PROVISIONAL", evidence: "IMPLEMENTED", change: "STABLE" },
+    titleZh: "场景义务提示行 fixture", authority: { owner: "BOOTSTRAP_OWNER", delegates: [] }, origin: "natural",
+    payload: { intent: "裁定 6C 提示行", class_scan_result: { scope: "src/**", hits: 0, fixed_count: 0, regression_case_ref: "GRN-HINT" }, acceptance },
+  } as never }] });
+  return root;
+}
+
+describe("check --fast 场景义务提示行（裁定 6C）", () => {
+  it("活跃任务带场景义务 → 尾部提示行 + verify_hint 加性字段（点名词形指向 plan run 主链）", async () => {
+    const root = await seedCheckTask([
+      { criterion: "三态呈现正确", claim: null, requires: ["static_analysis"], scenarios: [HINT_SCENARIO] },
+    ]);
+    try {
+      const outcome = await runCheckFast(root, { adapter: adapterWith(async () => ({
+        verdict: "passed", counts: fullCounts(),
+      })) });
+      expect(outcome.ok).toBe(true);
+      expect(outcome.result.verify_hint).toBeDefined();
+      expect(outcome.result.verify_hint).toContain("pomaster plan run");
+      expect(outcome.human.join("\n")).toContain("plan run");
+    } finally {
+      const { rmSync } = await import("node:fs");
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("活跃任务无场景义务 → 输出零变化（无 verify_hint、无提示行）", async () => {
+    const root = await seedCheckTask([
+      { criterion: "无矩阵旧义务", claim: null, requires: ["static_analysis"] },
+    ]);
+    try {
+      const outcome = await runCheckFast(root, { adapter: adapterWith(async () => ({
+        verdict: "passed", counts: fullCounts(),
+      })) });
+      expect(outcome.ok).toBe(true);
+      expect(outcome.result.verify_hint).toBeUndefined();
+      expect(outcome.human.join("\n")).not.toContain("plan run");
+    } finally {
+      const { rmSync } = await import("node:fs");
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("store 未初始化 → 输出零变化（提示面 best-effort 缺席诚实）", async () => {
+    const outcome = await runCheckFast(process.cwd(), { adapter: null });
+    expect(outcome.result.verdict).toBe("not_run");
+    expect(outcome.result.verify_hint).toBeUndefined();
+  });
+});
