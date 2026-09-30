@@ -12,7 +12,10 @@
  *   字节相等（随机 ID/时间戳等不参与）。消费归 plan-runner seam 义务判定（编排层
  *   义务未满足=cap 非绿——adapter 判卷语义不动）。
  *
- * 词形纪律：本模块一切字段名/闭包 = SP 提案待追认；不新增工具注册面、不重造
+ * 词形纪律：本模块一切字段名/闭包 = SP 提案待追认（非战役词形维持——收编走词汇表 PR
+ * 逐批转正）；战役收编面（x-vocab-source: vocab-lock master_campaign_vocab，PR-0011，
+ * Owner 裁定 1=A 2026-09-30）：seam_role 两值 / oracle visible_via/mapping_fields 词族
+ * 已入锁。不新增工具注册面、不重造
  * runtime runner（比较核是编排层义务判定的纯函数件）。
  */
 

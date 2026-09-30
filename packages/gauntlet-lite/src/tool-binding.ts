@@ -26,7 +26,10 @@
  * SP-W1-f 提案的过渡形态——executed 态判定据此对 GRN 平面做 tool+gate+binding_id
  * 三键对账；03 schema binding_ref 专位待 Owner 追认后随 W2 修订落位。
  *
- * 词形纪律：本模块一切字段名/闭包/前缀 = SP 提案待追认；DetectionStatus 四态词表
+ * 词形纪律：本模块一切字段名/闭包/前缀 = SP 提案待追认（非战役词形维持——收编走
+ * 词汇表 PR 逐批转正）；战役收编面（x-vocab-source: vocab-lock master_campaign_vocab，
+ * PR-0011，Owner 裁定 1=A 2026-09-30）：seam_role 两值 / fixture_layer_kinds 三值已入锁。
+ * DetectionStatus 四态词表
  * 已锁（vocab-lock presentation_axes.tool_detection_status），本模块零扩值。
  */
 import { spawnSync } from "node:child_process";

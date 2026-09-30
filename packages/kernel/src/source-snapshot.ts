@@ -42,8 +42,9 @@
  * 反填、不全局硬拒绝（既有资格行为零改动）；旧 Evidence 不声称已获得新增源码保证。
  * 键缺席 = 存量字节兼容（execution_id/artifact_refs 同款惯例）。
  *
- * 词形闭包（kernel 局部词 TODO(vocab-pr)；SP 提案待追认）：contract 词形
- * pomaster.source-snapshot/v1（recon-import-snapshot/v1 同族）；三态复用
+ * 词形闭包（x-vocab-source: vocab-lock master_campaign_vocab.source_snapshot——PR-0011
+ * 收编，Owner 裁定 1=A 2026-09-30 词汇表批扫，原 TODO(vocab-pr) 待追认标记就此转正）：
+ * contract 词形 pomaster.source-snapshot/v1（recon-import-snapshot/v1 同族）；三态复用
  * recon-scope-review fresh/stale/unjudgeable；drift 三词形同族复用。
  */
 import { GovernanceError } from "./errors.js";
@@ -104,7 +105,9 @@ export interface RunSourceSnapshot {
 }
 
 /**
- * 证据用途词形闭包（W2-FR11 Case D 归属；kernel 局部词 TODO(vocab-pr)；SP 提案待追认）。
+ * 证据用途词形闭包（W2-FR11 Case D 归属；x-vocab-source: vocab-lock
+ * master_campaign_vocab.evidence_purpose——PR-0011 收编，Owner 裁定 1=A 2026-09-30
+ * 词汇表批扫，原 TODO(vocab-pr) 待追认标记就此转正）。
  * run 信封 evidence_purpose 键声明该证据的验证用途：worker_local = worker 本域中间证据
  * （append-only 保留在盘，终验 cohort 不消费——worker 中间态不冒充最终 Gate）；
  * final_stable = 编排器等待并行写入结束后在稳定窗口启动的终验证据（终验消费面）。

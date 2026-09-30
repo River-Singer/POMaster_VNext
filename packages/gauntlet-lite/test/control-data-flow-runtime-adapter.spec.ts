@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
-import { createControlDataFlowRuntimeAdapter, runBindingGate } from "../src/index.js";
+import { createControlDataFlowRuntimeAdapter, FIXTURE_LAYER_KINDS, runBindingGate } from "../src/index.js";
 
 const roots: string[] = [];
 afterEach(() => roots.splice(0).forEach((root) => rmSync(root, { recursive: true, force: true })));
@@ -257,5 +257,17 @@ describe("CONTROL_DATA_FLOW_RUNTIME adapter", () => {
     let starts = 0;
     expect(() => runBindingGate({ id: "project.cdf.runtime", source: "built_in", transport: "cli", adapter_ref: "builtin.gauntlet-lite.control-data-flow-runtime", tool: "gauntlet:control-data-flow-runtime", tool_version_anchor: "0.1.0", gate: "CONTROL_DATA_FLOW_RUNTIME", gate_def: "POLICY.GATE.CONTROL_DATA_FLOW_RUNTIME@0.1.0", metric_dialect: "ui:control_flow_runtime_trace", capabilities: ["control_data_flow"], execution: { command: "node probe.mjs", probe_manifest: "probe.json" }, report_contract: { format: "pomaster-control-data-flow-runtime-json", parser_ref: "builtin.gauntlet-lite.control-data-flow-runtime/json-v1", parser_version: "0.1.0" } }, { projectRoot: root, grn: "GRN-0001", ranAtSeq: 1, subjectId: "TASK.CDF" }, { executableProbe: () => "node", spawnFn: () => { starts += 1; return { status: 0, stdout: "{}", stderr: "", error: null, externalMs: 1 }; } })).toThrow(/隔离 fixture/);
     expect(starts).toBe(0);
+  });
+});
+
+// ============================================================
+// PR-0011 词汇表批扫对账哨兵（Owner 裁定 1=A 2026-09-30）：fixture_layer 三值收编
+// vocab-lock master_campaign_vocab.fixture_layer_kinds——schemas 镜像与本模块导出
+// 逐值对账（两份值漂移先红；登记零行为变化）。
+// ============================================================
+describe("PR-0011 收编对账（fixture_layer_kinds——vocab-lock master_campaign_vocab 镜像）", () => {
+  it("schemas 镜像值 ≡ 本模块 FIXTURE_LAYER_KINDS（收编零行为变化）", async () => {
+    const schemas = (await import("@pomaster/schemas")) as Record<string, unknown>;
+    expect(schemas["FIXTURE_LAYER_KINDS"]).toEqual([...FIXTURE_LAYER_KINDS]);
   });
 });

@@ -54,8 +54,9 @@ export type SpecRoutingStageValue = (typeof SPEC_ROUTING_STAGE_VALUES)[number];
 
 /**
  * PROTOCOL.* 点族词形（至少两段 SCREAMING_SNAKE；CATALOG_ARCHETYPE_ID_PATTERN 同法式）。
- * x-vocab-pr 注记（留痕形态——GATE. 先例，登记歧义不消歧）：PROTOCOL 非 governed
- * 前缀（governed 闭包 16 前缀无语义适配位；catalog 物料身份词形）。
+ * x-vocab-source: vocab-lock master_campaign_vocab.spec_routing_stage.semantic_id_note
+ * （PR-0011 收编，Owner 裁定 1=A 2026-09-30 词汇表批扫——原 x-vocab-pr 留痕注记转正）：
+ * PROTOCOL 非 governed 前缀（governed 闭包 16 前缀无语义适配位；catalog 物料身份词形）。
  */
 export const PROTOCOL_ID_PATTERN = /^PROTOCOL\.[A-Z0-9_]+(\.[A-Z0-9_]+)+$/;
 

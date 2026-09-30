@@ -87,7 +87,44 @@ import {
   VERIFICATION_VERDICT_VALUES,
   WORD_FORM_DOMAIN_VALUES,
   WRITE_POLICY_VALUES,
+  // —— PR-0011 收编词轴（MASTer 战役执行面；Owner 裁定 1=A 2026-09-30 词汇表批扫）——
+  ADAPTED_RELATION_KINDS,
+  AUTHORITY_CONFLICT_RULE,
+  BUSINESS_OBSERVATION_ORACLE_FIELDS,
+  EVIDENCE_PURPOSE_VALUES,
+  FIXTURE_LAYER_KINDS,
+  IMPACT_PLANE_VALUES,
+  OBSERVATION_CHANNEL_VALUES,
+  PLAN_ACCEPTANCE_SCENARIO_FIELDS,
+  SEAM_OBLIGATION_FIELDS,
+  SEAM_ROLE_VALUES,
+  SOURCE_DRIFT_WORDS,
+  SOURCE_FRESHNESS_STATES,
+  SOURCE_SNAPSHOT_ABSENT_PATH_WORDFORM,
+  SOURCE_SNAPSHOT_CONTRACT,
+  SPEC_ROUTING_STAGE_VALUES,
+  W5_OBLIGATION_CAP_REASON_VALUES,
+  W5_OBLIGATION_CAP_WORD,
 } from "../src/vocab.js";
+
+// —— PR-0011 对账锚（模块侧既有导出——收编零行为变化的双份值对账哨兵）——
+import { AUTHORITY_CONFLICT_RULE as AUTHORITY_CONFLICT_RULE_ANCHOR } from "../src/authority.js";
+import {
+  ADAPTED_RELATION_KINDS as ADAPTED_RELATION_KINDS_ANCHOR,
+  IMPACT_PLANE_VALUES as IMPACT_PLANE_VALUES_ANCHOR,
+} from "../src/impact-derive.js";
+import {
+  OBSERVATION_CHANNEL_VALUES as OBSERVATION_CHANNEL_VALUES_ANCHOR,
+  SEAM_ROLE_VALUES as SEAM_ROLE_VALUES_ANCHOR,
+} from "../src/plan-compiler.js";
+import {
+  EVIDENCE_PURPOSE_VALUES as EVIDENCE_PURPOSE_VALUES_ANCHOR,
+  SOURCE_DRIFT_WORDS as SOURCE_DRIFT_WORDS_ANCHOR,
+  SOURCE_FRESHNESS_STATES as SOURCE_FRESHNESS_STATES_ANCHOR,
+  SOURCE_PATH_ABSENT_DIGEST,
+  SOURCE_SNAPSHOT_CONTRACT as SOURCE_SNAPSHOT_CONTRACT_ANCHOR,
+} from "../src/source-snapshot.js";
+import { SPEC_ROUTING_STAGE_VALUES as SPEC_ROUTING_STAGE_VALUES_ANCHOR } from "../src/spec-routing.js";
 
 describe("vocab mirror（FROZEN 词表唯一镜像点）", () => {
   it("lifecycle 六值超集逐值相等", () => {
@@ -463,6 +500,79 @@ describe("vocab mirror（FROZEN 词表唯一镜像点）", () => {
       for (const prefix of ["GATE", "SENSOR", "ARCHETYPE", "STATE_ARCHETYPE", "DECISION"] as const) {
         expect(GOVERNED_ID_PREFIXES.includes(prefix as never)).toBe(false);
       }
+    });
+  });
+
+  // —— PR-0011 收编词轴（vocab-lock@v0.10-resolved；MASTer 战役执行面批扫）——
+  // 改词表须同 commit 改这里：以下断言逐值镜像 vocab-lock@v0.10-resolved 新段，
+  // 并与模块侧既有导出（收编锚）逐值对账——两份值漂移先红（零行为变化的登记形态）。
+  describe("PR-0011 收编词轴（MASTer 战役执行面——Owner 裁定 1=A 2026-09-30 词汇表批扫）", () => {
+    it("场景义务字段面 + oracle 词族（W1-FR04/W5-FR10——scenario_ref/PlanAcceptanceScenario/expected_observation_oracle/visible_via/filter_context/mapping_fields）", () => {
+      expect([...PLAN_ACCEPTANCE_SCENARIO_FIELDS]).toEqual([
+        "scenario_ref", "precondition", "interaction", "state_dimensions", "expected_observation",
+        "runtime_confirmation_required", "expected_observation_oracle", "mock_real_seam",
+      ]);
+      expect([...BUSINESS_OBSERVATION_ORACLE_FIELDS]).toEqual(["visible_via", "filter_context", "mapping_fields"]);
+      expect([...OBSERVATION_CHANNEL_VALUES]).toEqual(["api_list", "api_detail", "ui_surface"]);
+      // 对账：镜像值 ≡ kernel plan-compiler 模块锚值（收编零行为变化）。
+      expect(OBSERVATION_CHANNEL_VALUES).toEqual(OBSERVATION_CHANNEL_VALUES_ANCHOR);
+    });
+
+    it("seam 词族（W5-FR09——seam_role 两值 + mock_real_seam 义务键闭包）", () => {
+      expect([...SEAM_ROLE_VALUES]).toEqual(["mock", "real"]);
+      expect([...SEAM_OBLIGATION_FIELDS]).toEqual(["operation_id", "contract_ref"]);
+      expect(SEAM_ROLE_VALUES).toEqual(SEAM_ROLE_VALUES_ANCHOR);
+    });
+
+    it("SOURCE_* 词族（W2——快照合同词形/缺席摘要输入词形/新鲜度三态/漂移三词形）+ evidence_purpose 两值", () => {
+      expect(SOURCE_SNAPSHOT_CONTRACT).toBe("pomaster.source-snapshot/v1");
+      // absent digest 的词形本体是 canonical 输入串（digest 值是派生事实——词表收编词形）；
+      // kernel SOURCE_PATH_ABSENT_DIGEST 派生自该词形（sha256:<64hex> 同词形法式）。
+      expect(SOURCE_SNAPSHOT_ABSENT_PATH_WORDFORM).toBe("pomaster.source-snapshot/absent-path/v1");
+      expect(SOURCE_PATH_ABSENT_DIGEST).toMatch(/^sha256:[0-9a-f]{64}$/);
+      expect([...SOURCE_FRESHNESS_STATES]).toEqual(["fresh", "stale", "unjudgeable"]);
+      expect([...SOURCE_DRIFT_WORDS]).toEqual(["source_files_added", "source_files_removed", "source_content_changed"]);
+      expect([...EVIDENCE_PURPOSE_VALUES]).toEqual(["worker_local", "final_stable"]);
+      expect(SOURCE_SNAPSHOT_CONTRACT).toBe(SOURCE_SNAPSHOT_CONTRACT_ANCHOR);
+      expect(SOURCE_FRESHNESS_STATES).toEqual(SOURCE_FRESHNESS_STATES_ANCHOR);
+      expect(SOURCE_DRIFT_WORDS).toEqual(SOURCE_DRIFT_WORDS_ANCHOR);
+      expect(EVIDENCE_PURPOSE_VALUES).toEqual(EVIDENCE_PURPOSE_VALUES_ANCHOR);
+    });
+
+    it("W4 协议路由 stage 词轴 + W3 影响闭包两轴（PROTOCOL.* 词形住 spec-routing 模块常量；DXE- 词形住 impact-derive 模块常量）", () => {
+      expect([...SPEC_ROUTING_STAGE_VALUES]).toEqual(["plan", "implement", "verify", "maintain"]);
+      expect([...IMPACT_PLANE_VALUES]).toEqual(["truth", "catalog", "discovery", "generated", "source"]);
+      expect([...ADAPTED_RELATION_KINDS]).toEqual(["PAYLOAD_SOURCE_REF", "DECISION_DEPENDS_ON", "GENERATED_INPUT_REF", "CONTRACT_BASELINE_REF"]);
+      expect(SPEC_ROUTING_STAGE_VALUES).toEqual(SPEC_ROUTING_STAGE_VALUES_ANCHOR);
+      expect(IMPACT_PLANE_VALUES).toEqual(IMPACT_PLANE_VALUES_ANCHOR);
+      expect(ADAPTED_RELATION_KINDS).toEqual(ADAPTED_RELATION_KINDS_ANCHOR);
+    });
+
+    it("W5 fixture 分层三值 + w5_obligation_cap 呈现键 + cap reason 词族九值（verdictCapReason 词形）", () => {
+      expect([...FIXTURE_LAYER_KINDS]).toEqual(["node_file_sandbox", "node_http_service", "real_browser"]);
+      expect(W5_OBLIGATION_CAP_WORD).toBe("w5_obligation_cap");
+      expect([...W5_OBLIGATION_CAP_REASON_VALUES]).toEqual([
+        "w5_oracle_v1_trace_missing",
+        "w5_oracle_visible_chain_incomplete",
+        "w5_seam_divergent",
+        "w5_seam_leg_missing",
+        "w5_seam_observation_missing",
+        "w5_seam_undecidable",
+        "w5_static_control_not_in_denominator",
+        "w5_static_denominator_unavailable",
+        "w5_ui_surface_leg_not_run",
+      ]);
+    });
+
+    it("AUTHORITY_CONFLICT_RULE（§3B 同级冲突规则词形常量——对账 authority 模块锚）", () => {
+      expect(AUTHORITY_CONFLICT_RULE).toBe(AUTHORITY_CONFLICT_RULE_ANCHOR);
+      expect(typeof AUTHORITY_CONFLICT_RULE).toBe("string");
+      expect(AUTHORITY_CONFLICT_RULE.length).toBeGreaterThan(0);
+    });
+
+    it("governed 前缀闭包 PR-0011 零扩（PROTOCOL./DXE- 非 governed——PROTOCOL.* 住 spec-routing 模块词形、DXE- 住 impact-derive 模块词形，照 SENSOR./EDGE- 通路先例）", () => {
+      expect(GOVERNED_ID_PREFIXES).toHaveLength(16);
+      expect(GOVERNED_ID_PREFIXES.includes("PROTOCOL" as never)).toBe(false);
     });
   });
 });

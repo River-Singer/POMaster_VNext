@@ -18,7 +18,10 @@
  * cap 纪律：工具真实 verdict 保留（scopeNote 留痕 verdict_before_obligation_cap=
  * passed）；义务未满足时行级 verdict 降为非绿（verdictCapReason 加性词形）——
  * append-only 账本上非绿行不被复用（findRecordedObligation 只复用 passed），义务
- * 缺口在每次 run 持续呈现直至补齐。词形/义务面全部 = SP 提案待追认。
+ * 缺口在每次 run 持续呈现直至补齐。词形收编（x-vocab-source: vocab-lock
+ * master_campaign_vocab.w5_obligation_cap——PR-0011，Owner 裁定 1=A 2026-09-30 词汇表
+ * 批扫）：呈现键 w5_obligation_cap + cap reason 词族九值已入锁；义务判定语义词族
+ * （w5_* reason 词形）随本段登记，扩值走词汇表 PR。
  */
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";

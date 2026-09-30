@@ -266,8 +266,10 @@ export interface PlanAcceptanceScenario {
 }
 
 /**
- * 业务 oracle 观察通道词形（W5-FR10 契约 §1；SP 提案词形待追认 TODO(vocab-pr)：
- * observation_channel 轴）。三类观察不可折叠：HTTP 成功（请求被接受）≠ 持久化成功
+ * 业务 oracle 观察通道词形（W5-FR10 契约 §1；x-vocab-source: vocab-lock
+ * master_campaign_vocab.observation_channel（PR-0011 收编，Owner 裁定 1=A 2026-09-30
+ * 词汇表批扫）——原 TODO(vocab-pr) 待追认标记就此转正）：
+ * observation_channel 轴。三类观察不可折叠：HTTP 成功（请求被接受）≠ 持久化成功
  * （re-read 到位）≠ 用户可见（声明通道+过滤上下文下确实出现）。
  */
 export const OBSERVATION_CHANNEL_VALUES = ["api_list", "api_detail", "ui_surface"] as const;
