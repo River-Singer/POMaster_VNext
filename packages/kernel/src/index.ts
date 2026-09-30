@@ -43,6 +43,7 @@ import type {
 } from "@pomaster/schemas";
 import type { EvidenceArtifactRefInput } from "./evidence-artifacts.js";
 import type { EvidenceBaselineInputs } from "./evidence-qualification.js";
+import type { EvidencePurposeValue, RunSourceSnapshot } from "./source-snapshot.js";
 import type { VerificationMethodValue } from "./store.js";
 
 // ============================================================
@@ -353,9 +354,23 @@ export interface ClaimRecordInput {
 /** evidence/runs/GRN-* 写入输入（run 信封 + 已归一 GateResult；A8：不入 truth-index）。 */
 export interface GateRunRecordInput {
   readonly baselineInputs?: EvidenceBaselineInputs;
+  /**
+   * FR-05 运行窗口源码双采样（W2；source-snapshot.ts 合同）：工具启动前/后对同一显式
+   * 相关面各捕获一次 + window 落账判定（重算全等强校验）。可选——缺席 = 键缺席存量
+   * 兼容（legacy 证据「未主张源码新鲜度」，不反填不硬拒绝）；携带即 kernel 侧
+   * fail-closed 校验（assertRunSourceSnapshot：合同词形/三态词形/窗口重算全等）。
+   */
+  readonly sourceSnapshot?: RunSourceSnapshot;
   readonly grn: string; // GRN-[0-9]+
   readonly result: GateResult;
   readonly trigger: RunTriggerValue;
+  /**
+   * 证据用途声明（W2-FR11 Case D 归属；可选——缺席 = 键缺席存量兼容，未声明用途的
+   * 证据不冒充 worker-local 也不冒充 final-stable，消费面沿既有行为；携带即词表
+   * fail-closed 校验）。worker_local = worker 本域中间证据（保留在盘、不入终验
+   * cohort 分母）；final_stable = 编排器稳定窗口终验证据（终验消费面）。
+   */
+  readonly evidencePurpose?: EvidencePurposeValue;
   /** 执行身份透传（P20 §25.4；可选——校验语义同 ClaimRecordInput.executionId）。 */
   readonly executionId?: string;
   /**
@@ -995,6 +1010,18 @@ export interface ProjectionRequest {
    */
   readonly capabilities?: readonly string[];
   readonly changeClass?: string;
+  /**
+   * W4 协议路由输入（FR-02 Spec Catalog 路由；AC-09/10；全部 optional 既有调用零破坏）。
+   * 词形 fail-closed 校验（validateApplicabilityInputs 同款）：stage ∈
+   * SPEC_ROUTING_STAGE_VALUES / triggers·stack 词级 token 词形 / specRefs=PROTOCOL.*
+   * 词形。缺席语义逐轴显式：stage 缺席 → stage 过滤闸不参与；stack 缺席 → 声明了
+   * stack 的协议 not_configured 排除（未配置 ≠ 默认匹配，禁假绿）；协议路由只进
+   * catalogEntries 策展分区，绝不进 mustEntries 判卷输入（§92.2）。
+   */
+  readonly stage?: string;
+  readonly triggers?: readonly string[];
+  readonly stack?: readonly string[];
+  readonly specRefs?: readonly string[];
 }
 
 export interface ProjectionEntry {
@@ -1173,6 +1200,8 @@ export {
   PLAN_CAPABILITY_WORDS,
   PLAN_CAPABILITY_GATE_NAMES,
   CAPABILITY_EVIDENCE_REQUIREMENT,
+  OBSERVATION_CHANNEL_VALUES,
+  SEAM_ROLE_VALUES,
   compileVerificationPlan,
 } from "./plan-compiler.js";
 export type {
@@ -1181,6 +1210,11 @@ export type {
   PlanCapabilityWord,
   PlanInputSegment,
   PlanAcceptanceItem,
+  PlanAcceptanceScenario,
+  ObservationChannelValue,
+  BusinessObservationOracle,
+  ScenarioSeamObligation,
+  SeamRoleValue,
   PlanChangeFace,
   PlanChangeSurface,
   PlanEnvironmentFacts,
@@ -1188,6 +1222,7 @@ export type {
   VerificationPlanResolvedBinding,
   PlanPermitFacts,
   PlanInformationalFacts,
+  PlanReviewedScope,
   VerificationPlanInput,
   VerificationPlanItem,
   PlanUnknownKind,
@@ -1257,6 +1292,37 @@ export type {
   EvidenceQualificationFinding,
   EvidenceQualificationOutcome,
 } from "./evidence-qualification.js";
+
+// ============================================================
+// 源码证据新鲜度合同与唯一比较核（W2-FR05 · 09-27 PRD）
+// ============================================================
+// 语义边界（source-snapshot.ts 头注）：FR-05 相关源码面的可比基线合同——HEAD 出处锚 +
+// 显式 relevant_paths + 内容/存在性摘要 + 读取失败清单；运行窗口 before/after 双采样 +
+// window 落账判定（重算全等强校验）。比较核唯一（全消费链复用 compareSourceSnapshots，
+// 禁第二比较器）；三态复用 recon-scope-review fresh/stale/unjudgeable 词族，drift 三词
+// 形同族复用——零新词。与 baseline_inputs 平行不混用（{at_seq,digests} 覆盖 .pomaster
+// 确认资产 seq 锚定；本合同覆盖声明源码面内容锚定）。诚实边界：端点相等 ≠ 无 A→B→A
+// （final-stable 归稳定 checkout/编排写入窗口）；旧记录无 snapshot = 未主张源码新鲜度
+// （不反填、不全局硬拒绝）。消费者：plan-runner 复用资格 + finalize cohort + closeout
+// DOD + record verification 写侧（CLI 装配面）。
+export {
+  SOURCE_SNAPSHOT_CONTRACT,
+  SOURCE_PATH_ABSENT_DIGEST,
+  SOURCE_FRESHNESS_STATES,
+  SOURCE_DRIFT_WORDS,
+  EVIDENCE_PURPOSE_VALUES,
+  assertEvidenceSourceSnapshot,
+  assertRunSourceSnapshot,
+  compareSourceSnapshots,
+} from "./source-snapshot.js";
+export type {
+  SourceFreshnessState,
+  SourceDriftWord,
+  EvidenceSourceSnapshot,
+  SourceSnapshotComparison,
+  RunSourceSnapshot,
+  EvidencePurposeValue,
+} from "./source-snapshot.js";
 
 // ============================================================
 // Test Weakening 检测核（W3-S1 · 09-12 W3 R3-3 / 09-10 PRD AC-08 + REQ-09）
@@ -1583,6 +1649,35 @@ export type {
   SensorAvailabilitySurfaceValue,
   SensorSideEffectClassValue,
 } from "./catalog.js";
+
+// ============================================================
+// 协议目录路由（W4 切片；FR-02 Spec Catalog 路由；AC-09/10）
+// ============================================================
+// 外部协议库最小可路由字段（semantic_id/path/stage/triggers/stack/superseded_by/
+// requires/conflicts/source_sha256）编译进 catalog 根 spec-routing.json 单一真值
+// 的读取面 + 确定性路由核（W4.2 routeSpecs）；与 catalog 读取器相邻登记（§92.2
+// 同款边界：策展面只读零治理事实，路由结果只进 catalogEntries 不进 mustEntries）。
+export {
+  loadSpecRoutingManifest,
+  routeSpecs,
+  PROTOCOL_ID_PATTERN,
+  SPEC_ROUTING_MANIFEST_FILE,
+  SPEC_ROUTING_SCHEMA,
+  SPEC_ROUTING_STAGE_VALUES,
+  SPEC_ROUTING_CHANNEL_VALUES,
+  specRoutingIntegrityReasonSuffix,
+  verifySpecRoutingSource,
+} from "./spec-routing.js";
+export type {
+  SpecRoutingDecision,
+  SpecRoutingEntry,
+  SpecRoutingInput,
+  SpecRoutingManifest,
+  SpecRoutingStageValue,
+  SpecRoutingChannelValue,
+  SpecRoutingSourceIntegrity,
+  SpecRoutingSourceIntegrityState,
+} from "./spec-routing.js";
 
 // ============================================================
 // Trellis Spec Analyzer（P30 · PRD §96 第 8 步「只分析，不 Apply」+ §93.3/93.4/93.5/93.6）
@@ -2375,11 +2470,30 @@ export {
   IMPORT_EDGE_TYPE,
   RELATIVE_IMPORT_CANDIDATE_SUFFIXES,
   analyzeImportGraph,
+  deriveImportGraphScopeReview,
 } from "./analyzer-import-graph.js";
+export {
+  TASK_REALITY_SCOPE_REVIEWS_FIELD,
+  readTaskRealityScopeReviews,
+  appendTaskRealityScopeReview,
+} from "./reality-scope-review.js";
+export type {
+  RealityScopeDecisionStatus,
+  RealityScopeDecision,
+  RealityScopeReview,
+  AppendRealityScopeReviewInput,
+} from "./reality-scope-review.js";
 export type {
   ImportGraphFileInput,
+  ImportGraphPathAlias,
   ImportGraphInput,
   ImportGraphEdgeProposal,
+  ImportGraphPathCandidate,
+  ImportGraphPathUnresolvedRow,
+  ImportGraphScopeDirection,
+  ImportGraphScopeCandidate,
+  ImportGraphScopeReviewInput,
+  ImportGraphScopeReviewResult,
   ImportGraphUnmappedRow,
   ImportGraphResult,
 } from "./analyzer-import-graph.js";
@@ -2404,3 +2518,61 @@ export type {
   SubstrateLayerValue,
   CatalogKindValue,
 } from "@pomaster/schemas";
+
+// —— W3 跨平面关系适配与派生影响闭包（FR-06；Case A 分母） ——
+// 纯函数零 IO：四类 adapted 关系由各数据源只读构建派生边（不建第二 canonical graph /
+// ImpactGraph / 第二依赖 store）；闭包语义镜像 relations.ts impactClosure。
+export {
+  IMPACT_PLANE_VALUES,
+  ADAPTED_RELATION_KINDS,
+  UNADAPTED_ASSET_INVENTORY,
+  DERIVED_EDGE_ID_PATTERN,
+  deriveImpactClosure,
+} from "./impact-derive.js";
+export type {
+  ImpactPlaneValue,
+  AdaptedRelationKind,
+  ImpactNodeId,
+  ImpactObjectInput,
+  ImpactDecisionGraphInput,
+  ImpactGeneratedInput,
+  ImpactSourceInput,
+  DeriveImpactInput,
+  DerivedImpactRow,
+  DerivedImpactUnresolvedRef,
+  DerivedImpactResult,
+} from "./impact-derive.js";
+
+// —— W3 失效后果 + freshness 单点判卷 + Authority 冲突 + 稳定引用（FR-06/07/08/12） ——
+// 纯函数零 IO 零写入：自动失效 ≠ 自动决策（不改 Human Decision 字节、不自动 REBIND、
+// 不扩大 Permit）；freshness 只比较既有指纹（算法归 projection 单点、词形复用
+// STALE_GROUNDING）；Authority 冲突呈现与裁决分离（不按 mtime/文件名/自称 canonical
+// 选胜者）；稳定引用 semantic ID 承载机器关系、path/line 只导航。
+export {
+  INVALIDATION_CONSEQUENCE_VALUES,
+  PROJECTION_FRESHNESS_STATES,
+  FRESHNESS_ADAPTED_PRODUCERS,
+  FRESHNESS_UNADAPTED_PRODUCERS,
+  STABLE_REFERENCE_KINDS,
+  classifyConsequence,
+  deriveInvalidationRows,
+  judgeProjectionFreshness,
+  deriveAuthorityConflicts,
+  resolveStableReference,
+} from "./invalidation.js";
+export type {
+  InvalidationConsequenceValue,
+  InvalidationRow,
+  InvalidationChange,
+  DeriveInvalidationOptions,
+  DeriveInvalidationResult,
+  ProjectionFreshnessState,
+  ProjectionFreshnessInput,
+  ProjectionFreshnessJudgment,
+  AuthorityClaimInput,
+  AuthorityConflictClaimant,
+  AuthorityConflictRow,
+  AuthorityConflictReport,
+  StableReferenceKind,
+  StableReferenceResolution,
+} from "./invalidation.js";

@@ -23,11 +23,12 @@
  */
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { EvidenceBaselineInputs, EvidenceInvalidationEvent, EvidenceQualificationRequirement } from "@pomaster/kernel";
+import type { EvidenceBaselineInputs, EvidenceInvalidationEvent, EvidenceQualificationRequirement, RunSourceSnapshot } from "@pomaster/kernel";
 import {
   EVIDENCE_INVALIDATION_EVENT_TYPES,
   GovernanceError,
   assertEvidenceBaselineInputs,
+  assertRunSourceSnapshot,
   createStore,
   loadTruthIndex,
   buildStorePaths,
@@ -181,6 +182,8 @@ export async function readTaskBaselineDependencies(rootDir: string, subject: str
 
 export interface RunQualificationView {
   readonly baselineInputs?: EvidenceBaselineInputs;
+  /** FR-05 运行窗口源码双采样（W2-FR05；undefined = legacy 无主张——不反填不硬拒绝）。 */
+  readonly sourceSnapshot?: RunSourceSnapshot;
   readonly grn: string;
   readonly subject: string | null;
   readonly gate: string | null;
@@ -229,6 +232,7 @@ export async function readRunQualificationView(
   }
   try {
     if (parsed.baseline_inputs !== undefined) assertEvidenceBaselineInputs(parsed.baseline_inputs);
+    if (parsed.source_snapshot !== undefined) assertRunSourceSnapshot(parsed.source_snapshot);
   } catch (err) {
     return { damage: `evidence/runs/${grn}.json: ${String(err)}` };
   }
@@ -237,6 +241,7 @@ export async function readRunQualificationView(
   return {
     grn,
     ...(parsed.baseline_inputs !== undefined ? { baselineInputs: parsed.baseline_inputs as EvidenceBaselineInputs } : {}),
+    ...(parsed.source_snapshot !== undefined ? { sourceSnapshot: parsed.source_snapshot as RunSourceSnapshot } : {}),
     subject: asStringOrNull(subject),
     gate: asStringOrNull(qualificationFieldOf(parsed, "gate")),
     gateDef: asStringOrNull(qualificationFieldOf(parsed, "gate_def")),

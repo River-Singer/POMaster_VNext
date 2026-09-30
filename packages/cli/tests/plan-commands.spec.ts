@@ -279,6 +279,124 @@ describe("plan compile fail-closed（词形/来源/矛盾显式拒绝）", () =>
   });
 });
 
+describe("plan compile（W1-FR04 场景接线：payload.acceptance scenarios 进编译分母）", () => {
+  /** 三态场景（Case C 复选框原型；与 kernel tests CHECKBOX_SCENARIOS 同源）。 */
+  function checkboxScenarios(): unknown[] {
+    return [
+      {
+        scenario_ref: "selected-no-hover",
+        precondition: "复选框处于选中态",
+        interaction: "指针不在复选框上（no-hover）",
+        state_dimensions: ["selected=true", "hover=false"],
+        expected_observation: "悬浮提示不显示；复选框保持选中呈现",
+        runtime_confirmation_required: false,
+      },
+      {
+        scenario_ref: "selected-hover",
+        precondition: "复选框处于选中态",
+        interaction: "指针悬停于复选框上",
+        state_dimensions: ["selected=true", "hover=true"],
+        expected_observation: "悬浮提示显示当前选中说明",
+        runtime_confirmation_required: false,
+      },
+      {
+        scenario_ref: "unselected-hover",
+        precondition: "复选框处于未选中态",
+        interaction: "指针悬停于复选框上",
+        state_dimensions: ["selected=false", "hover=true"],
+        expected_observation: "悬浮提示显示未选中引导文案",
+        runtime_confirmation_required: true,
+      },
+    ];
+  }
+
+  /** seedTask 变体：acceptance[0] 带场景集合（覆盖 seedTask 的 TASK.PLAN）。 */
+  async function reseedTaskWithScenarios(scenarios: unknown): Promise<void> {
+    const { createStore } = await import("@pomaster/kernel");
+    const store = await createStore(root);
+    await applyTransaction(store, {
+      ops: [
+        {
+          op: "upsert_object",
+          envelope: {
+            id: "TASK.PLAN",
+            kind: "task_object",
+            axisProfile: "task_default",
+            axes: { lifecycle: "CURRENT", confidence: "PROVISIONAL", evidence: "IMPLEMENTED", change: "STABLE" },
+            titleZh: "plan compile 场景任务",
+            authority: { owner: "BOOTSTRAP_OWNER", delegates: [] },
+            origin: "natural",
+            payload: {
+              intent: "验证 plan compile 场景分母",
+              class_scan_result: { scope: "tasks/**", hits: 0, fixed_count: 0, regression_case_ref: "GRN-W1-FR04" },
+              acceptance: [
+                {
+                  criterion: "复选框三态交互均须正确呈现提示",
+                  claim: null,
+                  requires: ["ui_render"],
+                  scenarios,
+                },
+                {
+                  criterion: "既有 58 叶逐值对账保持（44 真值 + 14 UNKNOWN 占位）",
+                  claim: null,
+                  requires: ["unit_behavior"],
+                },
+              ],
+            },
+          } as never,
+        },
+      ],
+    });
+  }
+
+  it("acceptance 行 scenarios 进编译：REQUIRED 按场景展开（每场景一条带 scenario_ref），reason/expected_evidence 携带场景义务", async () => {
+    await seedTask();
+    await reseedTaskWithScenarios(checkboxScenarios());
+    const outcome = await runPlanCompile(root, { taskRef: "TASK.PLAN", faces: c1Faces() });
+    expect(outcome.ok).toBe(true);
+    const result = outcome.result as PlanCompileResult;
+    const expanded = result.items.filter(
+      (item) => item.acceptance_ref === "TASK.PLAN#acceptance[0]" && item.capability === "ui_render",
+    );
+    expect(expanded.map((item) => item.scenario_ref)).toEqual([
+      "selected-hover",
+      "selected-no-hover",
+      "unselected-hover",
+    ]);
+    for (const item of expanded) {
+      expect(item.applicability).toBe("REQUIRED");
+      expect(item.reason).toContain(`scenario=${item.scenario_ref as string}`);
+      expect(item.expected_evidence).toContain("悬浮提示");
+    }
+    // 无场景 acceptance（seedTask 的 acceptance[1]）保持单条——legacy 消费矩阵零破坏。
+    const legacyUnit = result.items.filter(
+      (item) => item.acceptance_ref === "TASK.PLAN#acceptance[1]" && item.capability === "unit_behavior",
+    );
+    expect(legacyUnit).toHaveLength(1);
+    expect(legacyUnit[0]?.scenario_ref).toBeUndefined();
+  });
+
+  it("duplicate scenario_ref / 空 expected_observation → compile SCHEMA_INVALID（cli 透传 kernel fail-closed）", async () => {
+    await seedTask();
+    const duplicated = [...checkboxScenarios(), checkboxScenarios()[0]];
+    await reseedTaskWithScenarios(duplicated);
+    const dupOutcome = await runPlanCompile(root, { taskRef: "TASK.PLAN", faces: c1Faces() });
+    expect(dupOutcome.ok).toBe(false);
+    expect(dupOutcome.errors[0]?.code).toBe("SCHEMA_INVALID");
+    expect(dupOutcome.errors[0]?.message).toContain("scenario_ref 重复");
+
+    await reseedTaskWithScenarios(
+      checkboxScenarios().map((row, index) =>
+        index === 1 ? { ...(row as Record<string, unknown>), expected_observation: "  " } : row,
+      ),
+    );
+    const emptyOutcome = await runPlanCompile(root, { taskRef: "TASK.PLAN", faces: c1Faces() });
+    expect(emptyOutcome.ok).toBe(false);
+    expect(emptyOutcome.errors[0]?.code).toBe("SCHEMA_INVALID");
+    expect(emptyOutcome.errors[0]?.message).toContain("expected_observation");
+  });
+});
+
 describe("plan compile（--input 契约直传通路）", () => {
   it("整契约直传：未初始化目录也可用；input_source=file；task_ref=null", async () => {
     const otherRoot = mkdtempSync(join(tmpdir(), "pomaster-cli-plan-file-"));

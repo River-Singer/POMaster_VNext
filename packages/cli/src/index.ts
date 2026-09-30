@@ -274,6 +274,8 @@ import { runPermitCheck, runPermitIssue, runPermitList, runPermitSteal } from ".
 import { runExecGuard } from "./exec-guard.js";
 import { runReconcile } from "./reconcile.js";
 import { runReconImportGraph, runReconMigrations, runReconSbom } from "./recon.js";
+import { runScopeReviewAdopt, runScopeReviewFreshness, runScopeReviewShow } from "./recon-scope-review.js";
+export { runScopeReviewAdopt, runScopeReviewFreshness, runScopeReviewShow, judgeScopeReviewFreshness } from "./recon-scope-review.js";
 import {
   runReconArchitectureSnapshot,
   runReconOpenApi,
@@ -285,6 +287,7 @@ import { runTestWeakeningAudit } from "./test-weakening.js";
 import { runCompact } from "./compact.js";
 import { runRecordClaim, runRecordGateRun, runRecordVerification } from "./record.js";
 import { runCloseout } from "./closeout.js";
+import { runFinalize, runFinalizeReplayAdjudicate, runFinalizeStatus } from "./finalize.js";
 import { runCatalogStatus, runCatalogExplain, runCatalogRelock } from "./catalog.js";
 import { runResolve } from "./resolve.js";
 import { runGraph } from "./graph.js";
@@ -815,6 +818,14 @@ export {
   normalizeGrnEvidenceRefs,
 } from "./evidence-qualification.js";
 export type { RunQualificationView } from "./evidence-qualification.js";
+// 源码证据新鲜度（W2-FR05）：相关面捕获（producer 前采样）+ 消费判定装配单点；
+// 判定核在 @pomaster/kernel source-snapshot（唯一比较核，禁第二比较器）。
+export {
+  captureEvidenceSourceSnapshot,
+  captureSourceHead,
+  judgeRunSourceStability,
+} from "./source-snapshot.js";
+export type { CaptureSourceSnapshotInput, RunSourceStabilityJudgment } from "./source-snapshot.js";
 export { runCatalogStatus, runCatalogExplain, runCatalogRelock } from "./catalog.js";
 export { runResolve, renderResolve } from "./resolve.js";
 export type { ResolveInput, ResolveResult } from "./resolve.js";
@@ -1010,6 +1021,17 @@ export type {
 } from "./steering.js";
 export { runPlanCompile } from "./plan.js";
 export { runPlanRun } from "./plan-runner.js";
+export {
+  judgeRuntimeObligations,
+  loadStaticControlDenominatorFromDisk,
+  parseRuntimeReportArtifact,
+  parseStaticControlDenominator,
+  scanBrowserLegGrnBacked,
+  BROWSER_LEG_TOOL_WORDS,
+} from "./plan-runtime-obligations.js";
+export type { ObligationCap, RuntimeObligationRow } from "./plan-runtime-obligations.js";
+export { runFinalize, runFinalizeReplayAdjudicate, runFinalizeStatus } from "./finalize.js";
+export type { FinalizeReplayAdjudicateInput, FinalizeReplayAdjudicateResult, FinalizeResult, FinalizeRunInput, FinalizeStatusInput, FinalizeStage } from "./finalize.js";
 export { analyzeControlDataFlow } from "@pomaster/gauntlet-lite";
 export type { PlanRunInput, PlanRunResult, PlanRunRow } from "./plan-runner.js";
 export type {
@@ -1632,6 +1654,10 @@ export function createProgram(
       [],
     )
     .option("--change-class <class>", "变更类目（∈ CATALOG_CHANGE_CLASS_VALUES，vocab-pr-0005 词轴）")
+    .option("--stage <stage>", "W4 协议路由：任务阶段（∈ plan/implement/verify/maintain）")
+    .option("--trigger <token>", "W4 协议路由：任务触发词（可重复；词级精确 token 命中）", collectValues, [])
+    .option("--stack <token>", "W4 协议路由：技术栈声明（可重复；未声明时协议 stack 轴 not_configured 不默认匹配）", collectValues, [])
+    .option("--spec-ref <id>", "W4 协议路由：显式 reference 点名（PROTOCOL.* semantic_id，可重复；绕过 stage/stack 闸）", collectValues, [])
     .option("--check", "纯读比对现盘 manifest 呈现 stale 状态（FRESH/STALE_GROUNDING/ABSENT），零写入")
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (opts, command) => {
@@ -1641,6 +1667,16 @@ export function createProgram(
           ? { capabilities: opts.capability as string[] }
           : {}),
         ...(opts.changeClass !== undefined ? { changeClass: opts.changeClass as string } : {}),
+        ...(opts.stage !== undefined ? { stage: opts.stage as string } : {}),
+        ...(opts.trigger !== undefined && (opts.trigger as string[]).length > 0
+          ? { triggers: opts.trigger as string[] }
+          : {}),
+        ...(opts.stack !== undefined && (opts.stack as string[]).length > 0
+          ? { stack: opts.stack as string[] }
+          : {}),
+        ...(opts.specRef !== undefined && (opts.specRef as string[]).length > 0
+          ? { specRefs: opts.specRef as string[] }
+          : {}),
       }, { check: opts.check === true });
       record({
         command: "context compile",
@@ -1665,6 +1701,10 @@ export function createProgram(
       [],
     )
     .option("--change-class <class>", "变更类目（∈ CATALOG_CHANGE_CLASS_VALUES，vocab-pr-0005 词轴）")
+    .option("--stage <stage>", "W4 协议路由：任务阶段（∈ plan/implement/verify/maintain）")
+    .option("--trigger <token>", "W4 协议路由：任务触发词（可重复）", collectValues, [])
+    .option("--stack <token>", "W4 协议路由：技术栈声明（可重复）", collectValues, [])
+    .option("--spec-ref <id>", "W4 协议路由：显式 reference 点名（PROTOCOL.*，可重复）", collectValues, [])
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (opts, command) => {
       const outcome = await runContextExplain(resolveDir(command), opts.role, undefined, {
@@ -1673,6 +1713,16 @@ export function createProgram(
           ? { capabilities: opts.capability as string[] }
           : {}),
         ...(opts.changeClass !== undefined ? { changeClass: opts.changeClass as string } : {}),
+        ...(opts.stage !== undefined ? { stage: opts.stage as string } : {}),
+        ...(opts.trigger !== undefined && (opts.trigger as string[]).length > 0
+          ? { triggers: opts.trigger as string[] }
+          : {}),
+        ...(opts.stack !== undefined && (opts.stack as string[]).length > 0
+          ? { stack: opts.stack as string[] }
+          : {}),
+        ...(opts.specRef !== undefined && (opts.specRef as string[]).length > 0
+          ? { specRefs: opts.specRef as string[] }
+          : {}),
       });
       record({
         command: "context explain",
@@ -2177,6 +2227,64 @@ export function createProgram(
         outcome,
         asJson: command.opts().json === true,
       });
+    });
+
+  const finalize = program
+    .command("finalize")
+    .description("可重入任务收口编排：自动推进机器验证，在 replay、独立 verification 与 Human ACCEPT 信任边界返回 pending；不伪造完成");
+  finalize
+    .command("status")
+    .argument("<task-id>", "TASK.*")
+    .option("--json", "machine-readable JSON output")
+    .action(async (taskId: string, _opts, command) => {
+      record({ command: "finalize status", outcome: await runFinalizeStatus(resolveDir(command), { taskRef: taskId }), asJson: command.optsWithGlobals().json === true });
+    });
+  finalize
+    .command("replay-adjudicate")
+    .description("由独立复盘主体签发内容寻址 replay 裁决；finalize run 只接受本入口返回的 sha256 artifact ref")
+    .argument("<task-id>", "TASK.*")
+    .requiredOption("--execution-id <agx-id>", "独立 replay reviewer 的已登记 AGX")
+    .requiredOption("--reviewed-by <actor>", "独立复盘主体 <agent|human|tool|kernel:name>")
+    .requiredOption("--review-range <git-range>", "本轮复核范围锚")
+    .requiredOption("--plan-fingerprint <sha256>", "finalize run/status 返回的当前 plan fingerprint")
+    .requiredOption("--verdict <verdict>", "allow-closeout | block-closeout")
+    .option("--note <text>", "复盘裁决注记")
+    .option("--json", "machine-readable JSON output")
+    .action(async (taskId: string, opts, command) => {
+      const verdict = opts.verdict as string;
+      if (verdict !== "allow-closeout" && verdict !== "block-closeout") command.error("--verdict 须为 allow-closeout 或 block-closeout");
+      record({ command: "finalize replay-adjudicate", outcome: await runFinalizeReplayAdjudicate(resolveDir(command), {
+        taskRef: taskId,
+        executionId: opts.executionId as string,
+        reviewedBy: opts.reviewedBy as string,
+        reviewRange: opts.reviewRange as string,
+        planFingerprint: opts.planFingerprint as string,
+        verdict: verdict as "allow-closeout" | "block-closeout",
+        note: opts.note as string | undefined,
+      }), asJson: command.optsWithGlobals().json === true });
+    });
+  finalize
+    .command("run")
+    .argument("<task-id>", "TASK.*")
+    .requiredOption("--verification-execution-id <agx-id>", "独立 verifier 的已登记 AGX")
+    .requiredOption("--review-range <git-range>", "本轮复核范围锚")
+    .option("--verifier <actor>", "verification 主体 <agent|human|tool|kernel:name>；存在 claim 时必填并须与 asserted_by 分离")
+    .option("--replay-receipt <sha256>", "finalize replay-adjudicate 签发的内容寻址 receipt ref")
+    .option("--changed <path>", "变更面直接对象（可重复）", collectValues)
+    .option("--consumer <ref>", "受影响消费者（可重复）", collectValues)
+    .option("--face <spec>", "变更面声明 kind=present|absent:<依据>（可重复）", collectValues)
+    .option("--json", "machine-readable JSON output")
+    .action(async (taskId: string, opts, command) => {
+      record({ command: "finalize run", outcome: await runFinalize(resolveDir(command), {
+        taskRef: taskId,
+        executionId: opts.verificationExecutionId as string,
+        reviewRange: opts.reviewRange as string,
+        verifier: opts.verifier as string | undefined,
+        replayReceipt: opts.replayReceipt as string | undefined,
+        changed: opts.changed as string[] | undefined,
+        consumers: opts.consumer as string[] | undefined,
+        faces: opts.face as string[] | undefined,
+      }), asJson: command.optsWithGlobals().json === true });
     });
 
   // —— Engineering Catalog 命令面（§44.10；P14 Catalog→运行时联结的查看面） ——
@@ -3444,11 +3552,15 @@ export function createProgram(
   view
     .command("attention")
     .description(
-      "Human Attention Queue（§6.3/纠错 §19；Batch 3 R1）：首层投影「Human Attention Required」——Human 审不可外包的判断；五类既有对象数据源按 Attention 类型分组（escalate_owner 呈报位/decision-graph CONFLICT_REVIEW 素材/gate blocked/production challenges+self-improvement/exception ledger 高显著度异常），每条目带下一步处置命令路标；缺席显式呈现不静默空组；空队列显式「无可注意力项」非空白假绿；View not new database（纯读零写入）",
+      "Human Attention Queue（§6.3/纠错 §19 + W3 FR-12）：首层投影「Human Attention Required」——Human 审不可外包的判断；七组既有对象数据源按 Attention 类型分组（escalate_owner 呈报位/decision-graph CONFLICT_REVIEW 素材/gate blocked/production challenges+self-improvement/exception ledger 高显著度异常/sources Authority 同 scope 双 canonical 冲突——W3 Case G），每条目带下一步处置命令路标；缺席显式呈现不静默空组；空队列显式「无可注意力项」非空白假绿；--task 出 project/relevant/needs-human 三计数+依据可见（范围=collectAffectedIds 共享计算，全项目可见性保留，本投影零阻断）；View not new database（纯读零写入）",
     )
     .option("--json", "machine-readable JSON output (§45)")
+    .option("--task <task-id>", "Task relevance 投影（W3）：对指定任务出三计数（project/relevant/needs-human）与逐条依据")
     .action(async (_opts, command) => {
-      const outcome = await runViewAttention(resolveDir(command));
+      const taskArg = command.opts().task as string | undefined;
+      const outcome = await runViewAttention(resolveDir(command), {
+        ...(taskArg !== undefined && taskArg.trim().length > 0 ? { task: taskArg } : {}),
+      });
       record({
         command: "view attention",
         outcome,
@@ -4299,10 +4411,16 @@ export function createProgram(
       "--execution-id <AGX-n>",
       "执行身份锚（AGX-<年份>-<序号>；OBS 回执 execution_id 必填——S1 禁自造身份，须为 executions/ 已登记档案，已封口执行允许事后补录）",
     )
+    .option("--root <repo-relative-path>", "任务范围审查源码根（可重复；必须命中本次扫描文件）", collectValues, [])
+    .option("--task <TASK.*>", "可选绑定在册 task_object（只读引用；不修改 Task/Permit/relation）")
+    .option("--max-depth <n>", "任务范围审查双向闭包最大深度（1..16；缺省 4）")
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (opts, command) => {
       const outcome = await runReconImportGraph(resolveDir(command), {
         executionId: opts.executionId as string,
+        roots: opts.root as string[],
+        task: opts.task as string | undefined,
+        maxDepth: opts.maxDepth === undefined ? undefined : Number(opts.maxDepth),
       });
       record({
         command: "recon import-graph",
@@ -4310,6 +4428,42 @@ export function createProgram(
         asJson: command.opts().json === true,
       });
     });
+  const scopeReview = recon
+    .command("scope-review")
+    .description("import-graph 范围候选的新鲜度判定、追加式审阅采纳与任务输入回读（reviewed_input_only）");
+  scopeReview
+    .command("freshness")
+    .argument("<OBS-n>", "范围审查 observation")
+    .option("--task <TASK.*>", "校验 OBS target_ref 与任务强绑定")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (observationRef: string, opts, command) => {
+      const outcome = await runScopeReviewFreshness(resolveDir(command), observationRef, opts.task as string | undefined);
+      record({ command: "recon scope-review freshness", outcome, asJson: command.opts().json === true });
+    });
+  scopeReview
+    .command("adopt")
+    .argument("<OBS-n>", "fresh 范围审查 observation")
+    .requiredOption("--task <TASK.*>", "写入 review 的在册 task_object")
+    .requiredOption("--review <file>", "逐候选 decisions JSON")
+    .requiredOption("--actor <type:name>", "自报审阅主体，例如 agent:codex")
+    .requiredOption("--source-ref <ref>", "审阅依据来源引用")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (observationRef: string, opts, command) => {
+      const outcome = await runScopeReviewAdopt(resolveDir(command), {
+        observationRef, taskRef: opts.task as string, reviewFile: opts.review as string,
+        actor: opts.actor as string, sourceRef: opts.sourceRef as string,
+      });
+      record({ command: "recon scope-review adopt", outcome, asJson: command.opts().json === true });
+    });
+  scopeReview
+    .command("show")
+    .requiredOption("--task <TASK.*>", "回读 task payload.reality_scope_reviews")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runScopeReviewShow(resolveDir(command), opts.task as string);
+      record({ command: "recon scope-review show", outcome, asJson: command.opts().json === true });
+    });
+
   recon
     .command("migrations")
     .description(

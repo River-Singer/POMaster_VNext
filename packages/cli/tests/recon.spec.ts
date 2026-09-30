@@ -62,7 +62,7 @@ import { basename, dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import Ajv from "ajv";
 import { allSchemas, perceptionReceiptsSchema } from "@pomaster/schemas";
-import { beginExecution, createStore, sha256OfBytes, type Store } from "@pomaster/kernel";
+import { applyTransaction, beginExecution, createStore, sha256OfBytes, storagePathOfSha256, type Store } from "@pomaster/kernel";
 import { stripQuotesFromPathEnv, type SpawnFn } from "@pomaster/gauntlet-lite";
 import {
   RECON_ARCH_BASELINE_FILE,
@@ -83,11 +83,15 @@ import {
   runReconSbom,
   runReconScripts,
   runReconTokenSources,
+  runScopeReviewAdopt,
+  runScopeReviewFreshness,
+  runScopeReviewShow,
   reconSbomSpawn,
   scanCssTokenVariables,
   type CliEnvelope,
   type ReconOpenApiFetchFn,
 } from "@pomaster/cli";
+import { loadLatestFreshReviewedScope } from "../src/recon-scope-review.js";
 
 let root: string;
 let store: Store;
@@ -95,6 +99,90 @@ let store: Store;
 beforeEach(async () => {
   root = mkdtempSync(join(tmpdir(), "pomaster-cli-recon-"));
   store = await createStore(root);
+});
+
+describe("recon scope-review freshness/adopt", () => {
+  it("show 对不存在任务 fail-closed，不把缺席伪装成空审阅", async () => {
+    const shown = await runScopeReviewShow(root, "TASK.MISSING");
+    expect(shown.ok).toBe(false);
+    expect(shown.errors[0]?.code).toBe("OBJECT_NOT_FOUND");
+  });
+
+  it("fresh 可追加 Task 输入；源码漂移后 stale 且拒绝二次采纳", async () => {
+    await seedScopeTask();
+    const { executionId } = await seedExecution();
+    writeHostFile("src/root.ts", 'import { child } from "./child"; export const root=child;\n');
+    writeHostFile("src/child.ts", "export const child=1;\n");
+    const scan = await runReconImportGraph(root, { executionId, roots:["src/root.ts"], task:"TASK.RECON_SCOPE", maxDepth:4 });
+    expect(scan.ok).toBe(true);
+    const obs = scan.result.observation_id as string;
+    const fresh = await runScopeReviewFreshness(root, obs, "TASK.RECON_SCOPE");
+    expect(fresh.result.state).toBe("fresh");
+    const mismatched = await runScopeReviewFreshness(root, obs, "TASK.OTHER");
+    expect(mismatched.result.state).toBe("unjudgeable");
+    const blobPath = join(root, ".pomaster", "evidence", ...(scan.result.report_blob?.storage_path ?? "").split("/"));
+    const report = JSON.parse(readFileSync(blobPath,"utf8")) as { scope_review:{machine_derived_candidates:Array<{path:string}>} };
+    const reviewPath=join(root,"review.json");
+    writeFileSync(reviewPath,JSON.stringify({decisions:report.scope_review.machine_derived_candidates.map((x)=>({path:x.path,status:"unknown",basis:"技术回放；非 Owner 裁决"}))}));
+    const adopted=await runScopeReviewAdopt(root,{observationRef:obs,taskRef:"TASK.RECON_SCOPE",reviewFile:reviewPath,actor:"agent:codex",sourceRef:"session:test"});
+    expect(adopted.ok).toBe(true);
+    const shown=await runScopeReviewShow(root,"TASK.RECON_SCOPE");
+    expect(shown.result.reviews).toHaveLength(1);
+    const receiptPath = join(root, ...(scan.result.receipt_path as string).split("/"));
+    const receipt = JSON.parse(readFileSync(receiptPath, "utf8")) as { artifact_refs: Array<{ blob: Record<string, unknown> }> };
+    const replacementReport = JSON.parse(readFileSync(blobPath, "utf8")) as Record<string, unknown>;
+    replacementReport.review_identity_probe = "different blob, same source snapshot";
+    const replacementBytes = Buffer.from(JSON.stringify(replacementReport), "utf8");
+    const replacementSha = sha256OfBytes(replacementBytes);
+    const replacementStorage = storagePathOfSha256(replacementSha);
+    const replacementPath = join(root, ".pomaster", "evidence", ...replacementStorage.split("/"));
+    mkdirSync(dirname(replacementPath), { recursive: true });
+    writeFileSync(replacementPath, replacementBytes);
+    receipt.artifact_refs[0]!.blob = { sha256: replacementSha, media: "json", byte_size: replacementBytes.length, storage_path: replacementStorage };
+    writeFileSync(receiptPath, JSON.stringify(receipt), "utf8");
+    expect(loadLatestFreshReviewedScope(root, "TASK.RECON_SCOPE").error).toMatchObject({
+      code: "REALITY_SCOPE_UNJUDGEABLE",
+    });
+    receipt.artifact_refs[0]!.blob = { sha256: scan.result.report_blob!.sha256, media: "json", byte_size: statSync(blobPath).size, storage_path: scan.result.report_blob!.storage_path };
+    writeFileSync(receiptPath, JSON.stringify(receipt), "utf8");
+    writeHostFile("src/child.ts","export const child=2;\n");
+    const stale=await runScopeReviewFreshness(root,obs,"TASK.RECON_SCOPE");
+    expect(stale.ok).toBe(false); expect(stale.result.state).toBe("stale"); expect(stale.result.drift).toContain("source_content_changed");
+    const rejected=await runScopeReviewAdopt(root,{observationRef:obs,taskRef:"TASK.RECON_SCOPE",reviewFile:reviewPath,actor:"agent:codex",sourceRef:"session:test2"});
+    expect(rejected.ok).toBe(false); expect(rejected.errors[0]?.code).toBe("REALITY_SCOPE_STALE");
+    writeHostFile("src/child.ts", "export const child=1;\n");
+    expect((await runScopeReviewFreshness(root,obs,"TASK.RECON_SCOPE")).result.state).toBe("fresh");
+    rmSync(join(root,"src","child.ts"));
+    const removed=await runScopeReviewFreshness(root,obs,"TASK.RECON_SCOPE");
+    expect(removed.result).toMatchObject({state:"stale"}); expect(removed.result.drift).toContain("source_files_removed");
+    writeHostFile("src/child.ts", "export const child=1;\n");
+    writeHostFile("src/new.ts", "export const added=true;\n");
+    const added=await runScopeReviewFreshness(root,obs,"TASK.RECON_SCOPE");
+    expect(added.result).toMatchObject({state:"stale"}); expect(added.result.drift).toContain("source_files_added");
+    rmSync(join(root,"src","new.ts"));
+    writeFileSync(join(root,"tsconfig.json"),JSON.stringify({compilerOptions:{baseUrl:".",paths:{"@/*":["src/*"]}}}));
+    const aliasChanged=await runScopeReviewFreshness(root,obs,"TASK.RECON_SCOPE");
+    expect(aliasChanged.result).toMatchObject({state:"stale"}); expect(aliasChanged.result.drift).toContain("alias_config_changed");
+    rmSync(join(root,"tsconfig.json"));
+    const coherentReport = JSON.parse(readFileSync(blobPath,"utf8")) as Record<string, unknown>;
+    (coherentReport.freshness_basis as Record<string, unknown>).source_files_sha = `sha256:${"0".repeat(64)}`;
+    const coherentBytes = Buffer.from(JSON.stringify(coherentReport), "utf8");
+    const coherentSha = sha256OfBytes(coherentBytes);
+    const coherentStorage = storagePathOfSha256(coherentSha);
+    const coherentPath = join(root, ".pomaster", "evidence", ...coherentStorage.split("/"));
+    mkdirSync(dirname(coherentPath), { recursive: true });
+    writeFileSync(coherentPath, coherentBytes);
+    receipt.artifact_refs[0]!.blob = { sha256: coherentSha, media: "json", byte_size: coherentBytes.length, storage_path: coherentStorage };
+    writeFileSync(receiptPath, JSON.stringify(receipt), "utf8");
+    const inconsistent=await runScopeReviewFreshness(root,obs,"TASK.RECON_SCOPE");
+    expect(inconsistent.result).toMatchObject({state:"unjudgeable"});
+    expect(inconsistent.result.reason).toContain("snapshot invariant");
+    receipt.artifact_refs[0]!.blob = { sha256: scan.result.report_blob!.sha256, media: "json", byte_size: statSync(blobPath).size, storage_path: scan.result.report_blob!.storage_path };
+    writeFileSync(receiptPath, JSON.stringify(receipt), "utf8");
+    writeFileSync(blobPath,"{damaged","utf8");
+    const damaged=await runScopeReviewFreshness(root,obs,"TASK.RECON_SCOPE");
+    expect(damaged.ok).toBe(false); expect(damaged.result.state).toBe("unjudgeable");
+  });
 });
 
 afterEach(() => {
@@ -161,6 +249,34 @@ async function seedExecution(): Promise<{ readonly executionId: string }> {
     startedAt: "2026-08-30T00:00:00.000Z",
   });
   return { executionId: execution.execution_id };
+}
+
+async function seedScopeTask(): Promise<void> {
+  const authorityPath = join(root, ".pomaster", "state", "authority.json");
+  const authority = JSON.parse(readFileSync(authorityPath, "utf8")) as { authorities: Record<string, unknown> };
+  authority.authorities.BUSINESS_OWNER = {};
+  writeFileSync(authorityPath, `${JSON.stringify(authority, null, 2)}\n`, "utf8");
+  await applyTransaction(store, {
+    ops: [
+      {
+        op: "upsert_object",
+        envelope: {
+          id: "TASK.RECON_SCOPE",
+          kind: "task_object",
+          axisProfile: "task_default",
+          axes: { lifecycle: "CURRENT", confidence: "PROVISIONAL", evidence: "IMPLEMENTED", change: "STABLE" },
+          titleZh: "recon 范围审查任务",
+          authority: { owner: "BUSINESS_OWNER", delegates: [] },
+          origin: "natural",
+          payload: {
+            intent: "审查 Brownfield 源码范围",
+            class_scan_result: { scope: "packages/**", hits: 0, fixed_count: 0, regression_case_ref: "GRN-RECON-SCOPE" },
+            acceptance: [],
+          },
+        } as never,
+      },
+    ],
+  });
 }
 
 function truthIndexSeq(): number {
@@ -269,7 +385,13 @@ describe("recon import-graph OBSERVED 主通路（B8 乙）", () => {
     expect(outcome.result.source_files).toBe(4);
     expect(outcome.result.objects_resolved).toBe(0);
     expect(outcome.result.external_imports).toBe(2);
+    expect(outcome.result.alias_imports).toBe(0);
+    expect(outcome.result.alias_resolved_imports).toBe(0);
+    expect(outcome.result.alias_unresolved_imports).toBe(0);
+    expect(outcome.result.alias_config_issue_count).toBe(0);
     expect(outcome.result.unmapped_count).toBe(5);
+    expect(outcome.result.path_candidate_count).toBe(4);
+    expect(outcome.result.path_unresolved_count).toBe(1);
     expect(outcome.result.confidence).toBe("probable");
     expect(outcome.result.captured_at_seq).toBe(truthIndexSeq());
     expect(outcome.result.receipt_path).toBe(".pomaster/evidence/observations/OBS-0001.json");
@@ -309,7 +431,13 @@ describe("recon import-graph OBSERVED 主通路（B8 乙）", () => {
     expect(facts).toContain("source_files: 4");
     expect(facts).toContain("objects_resolved: 0");
     expect(facts).toContain("external_imports: 2");
+    expect(facts).toContain("alias_imports: 0");
+    expect(facts).toContain("alias_resolved_imports: 0");
+    expect(facts).toContain("alias_unresolved_imports: 0");
+    expect(facts).toContain("alias_config_issues: 0");
     expect(facts).toContain("unmapped: 5");
+    expect(facts).toContain("path_candidates_not_registered: 4");
+    expect(facts).toContain("path_unresolved: 1");
     expect(facts).toContain("edge_proposals_not_registered: 0");
     expect(facts).toContain("confidence: probable");
   });
@@ -338,6 +466,19 @@ describe("recon import-graph OBSERVED 主通路（B8 乙）", () => {
     expect(report.confidence).toBe("probable");
     expect(report.source_sha).toMatch(/^sha256:[0-9a-f]{64}$/);
     expect(blob.external_imports).toBe(2);
+    expect(blob.alias_imports).toBe(0);
+    expect(blob.path_aliases).toEqual([]);
+    expect(blob.alias_config_files).toEqual([]);
+    expect(blob.alias_config_issues).toEqual([]);
+    expect(blob.path_candidates).toEqual([
+      { source: "src/app.ts", target: "shared/config.ts", specifier: "../shared/config" },
+      { source: "src/app.ts", target: "src/helper.ts", specifier: "./helper" },
+      { source: "src/helper.ts", target: "shared/config.ts", specifier: "../shared/config" },
+      { source: "src/widget.vue", target: "src/helper.ts", specifier: "./helper" },
+    ]);
+    expect(blob.path_unresolved).toEqual([
+      { source: "src/app.ts", specifier: "./late", reason: "target_not_found_in_scanned_files" },
+    ]);
     // unmapped 禁静默丢弃：结构化全量清单（fixture 逐条对账）。
     const unmapped = blob.unmapped as Array<{ source: string; specifier: string; reason: string }>;
     expect(unmapped).toHaveLength(5);
@@ -371,13 +512,187 @@ describe("recon import-graph OBSERVED 主通路（B8 乙）", () => {
     const outcome = await runReconImportGraph(root, { executionId });
     const human = outcome.human.join("\n");
     expect(human).toContain("mapping 命中（objects_resolved）: 0");
-    expect(human).toContain("externalImports（裸包名 import 计数）: 2");
+    expect(human).toContain("externalImports（未命中内部 alias 的裸包名 import）: 2");
+    expect(human).toContain("path alias: 0 已解析 / 0 未解析 / 0 总计");
     expect(human).toContain("unmapped: 5 条");
+    expect(human).toContain("源码路径候选: 4 条");
+    expect(human).toContain("源码路径未解析: 1 条");
     expect(human).toContain("- src/app.ts -> ./helper (target_unresolved)");
     expect(human).toContain("- src/widget.vue -> ./helper (target_unresolved)");
     expect(human).toContain("confidence probable");
     expect(human).toContain("CALLS 边提案 0 条零落盘");
     expect(human).toContain(".pomaster/evidence/observations/OBS-0001.json");
+  });
+
+  it("根 tsconfig JSONC paths 解析 alias；配置进入 source_sha，目标漂移后显式变为未解析", async () => {
+    seedHostSources();
+    writeHostFile("src/shared/config.ts", "export const config = 84;\n");
+    writeHostFile(
+      "src/alias-entry.ts",
+      'import { config } from "@/shared/config";\n',
+    );
+    writeHostFile(
+      "tsconfig.json",
+      [
+        "{",
+        "  // JSONC 注释和尾逗号必须可解析",
+        '  "compilerOptions": {',
+        '    "baseUrl": ".",',
+        '    "paths": { "@/*": ["src/*",], },',
+        "  },",
+        "}",
+      ].join("\n"),
+    );
+    const { executionId } = await seedExecution();
+    const first = await runReconImportGraph(root, { executionId });
+    expect(first.ok).toBe(true);
+    expect(first.result.external_imports).toBe(2);
+    expect(first.result.alias_imports).toBe(1);
+    expect(first.result.alias_resolved_imports).toBe(1);
+    expect(first.result.alias_unresolved_imports).toBe(0);
+    expect(first.result.path_candidate_count).toBe(5);
+    expect(first.result.path_unresolved_count).toBe(1);
+    const firstBlobPath = join(
+      root,
+      ".pomaster",
+      "evidence",
+      ...(first.result.report_blob?.storage_path ?? "").split("/"),
+    );
+    const firstBlob = JSON.parse(readFileSync(firstBlobPath, "utf8")) as Record<string, unknown>;
+    expect(firstBlob.path_aliases).toEqual([{ pattern: "@/*", targets: ["src/*"] }]);
+    expect(firstBlob.alias_config_files).toEqual(["tsconfig.json"]);
+    expect(firstBlob.alias_config_issues).toEqual([]);
+    expect(firstBlob.path_candidates).toContainEqual({
+      source: "src/alias-entry.ts",
+      target: "src/shared/config.ts",
+      specifier: "@/shared/config",
+    });
+
+    writeHostFile(
+      "tsconfig.json",
+      '{"compilerOptions":{"baseUrl":".","paths":{"@/*":["missing/*"]}}}\n',
+    );
+    const second = await runReconImportGraph(root, { executionId });
+    expect(second.ok).toBe(true);
+    expect(second.result.alias_resolved_imports).toBe(0);
+    expect(second.result.alias_unresolved_imports).toBe(1);
+    expect(second.result.path_candidate_count).toBe(4);
+    expect(second.result.path_unresolved_count).toBe(2);
+    const secondBlobPath = join(
+      root,
+      ".pomaster",
+      "evidence",
+      ...(second.result.report_blob?.storage_path ?? "").split("/"),
+    );
+    const secondBlob = JSON.parse(readFileSync(secondBlobPath, "utf8")) as Record<string, unknown>;
+    expect((secondBlob.report as Record<string, unknown>).source_sha).not.toBe(
+      (firstBlob.report as Record<string, unknown>).source_sha,
+    );
+    expect(secondBlob.path_unresolved).toContainEqual({
+      source: "src/alias-entry.ts",
+      specifier: "@/shared/config",
+      reason: "alias_target_not_found_in_scanned_files",
+    });
+  });
+
+  it("任务范围审查：合法 task + alias 链 + 双向闭包写入同一证据，重放确定且零 canonical relation", async () => {
+    seedHostSources();
+    writeHostFile(
+      "src/feature/root.ts",
+      'import { config } from "@/shared/config";\nimport "./missing";\nexport const root = config;\n',
+    );
+    writeHostFile("src/consumer.ts", 'import { root } from "./feature/root";\nexport const consumer = root;\n');
+    writeHostFile("src/shared/config.ts", "export const config = 84;\n");
+    writeHostFile("tsconfig.json", '{"compilerOptions":{"baseUrl":".","paths":{"@/*":["src/*"]}}}\n');
+    await seedScopeTask();
+    const { executionId } = await seedExecution();
+    const relationsPath = join(root, ".pomaster", "state", "relations.json");
+    const relationsBefore = existsSync(relationsPath) ? readFileSync(relationsPath) : null;
+
+    const first = await runReconImportGraph(root, {
+      executionId,
+      roots: ["./src/feature/root.ts", "src/feature/root.ts"],
+      task: "TASK.RECON_SCOPE",
+      maxDepth: 2,
+    });
+    expect(first.ok).toBe(true);
+    expect(first.result.scope_review_active).toBe(true);
+    expect(first.result.scope_task_ref).toBe("TASK.RECON_SCOPE");
+    expect(first.result.scope_root_count).toBe(1);
+    expect(first.result.scope_candidate_count).toBe(2);
+    expect(first.result.scope_truncated).toBe(false);
+    const firstBlobPath = join(root, ".pomaster", "evidence", ...(first.result.report_blob?.storage_path ?? "").split("/"));
+    const firstBlob = JSON.parse(readFileSync(firstBlobPath, "utf8")) as {
+      scope_review: Record<string, unknown>;
+      report: { source_sha: string };
+    };
+    expect(firstBlob.scope_review.declared_roots).toEqual(["src/feature/root.ts"]);
+    expect(firstBlob.scope_review.machine_derived_candidates).toEqual([
+      {
+        root: "src/feature/root.ts",
+        direction: "dependency",
+        path: "src/shared/config.ts",
+        depth: 1,
+        via: { source: "src/feature/root.ts", target: "src/shared/config.ts", specifier: "@/shared/config" },
+      },
+      {
+        root: "src/feature/root.ts",
+        direction: "consumer",
+        path: "src/consumer.ts",
+        depth: 1,
+        via: { source: "src/consumer.ts", target: "src/feature/root.ts", specifier: "./feature/root" },
+      },
+    ]);
+    expect(firstBlob.scope_review.unknowns).toEqual([
+      {
+        source: "src/feature/root.ts",
+        specifier: "./missing",
+        reason: "target_not_found_in_scanned_files",
+      },
+    ]);
+    expect(firstBlob.scope_review.note).toContain("Owner");
+    expect(readReceipt("OBS-0001").target_ref).toBe("TASK.RECON_SCOPE");
+
+    const second = await runReconImportGraph(root, {
+      executionId,
+      roots: ["src/feature/root.ts"],
+      task: "TASK.RECON_SCOPE",
+      maxDepth: 2,
+    });
+    expect(second.ok).toBe(true);
+    expect(second.result.report_blob?.sha256).toBe(first.result.report_blob?.sha256);
+    expect(existsSync(relationsPath) ? readFileSync(relationsPath).equals(relationsBefore ?? Buffer.alloc(0)) : relationsBefore === null).toBe(true);
+  });
+
+  it("范围审查错误输入 fail-closed：越界/缺失 root、非法深度、缺失 task 均零观察写入", async () => {
+    seedHostSources();
+    const { executionId } = await seedExecution();
+    const cases = [
+      { input: { executionId, roots: ["../outside.ts"] }, code: "SCHEMA_INVALID" },
+      { input: { executionId, roots: ["C:/outside.ts"] }, code: "SCHEMA_INVALID" },
+      { input: { executionId, roots: ["\\\\server\\share\\outside.ts"] }, code: "SCHEMA_INVALID" },
+      { input: { executionId, roots: ["src/missing.ts"] }, code: "RECON_ROOT_NOT_FOUND" },
+      { input: { executionId, roots: ["src/app.ts"], maxDepth: 0 }, code: "SCHEMA_INVALID" },
+      { input: { executionId, maxDepth: 4 }, code: "SCHEMA_INVALID" },
+      { input: { executionId, roots: ["src/app.ts"], task: "TASK.MISSING" }, code: "OBJECT_NOT_FOUND" },
+    ] as const;
+    for (const row of cases) {
+      const outcome = await runReconImportGraph(root, row.input);
+      expect(outcome.ok).toBe(false);
+      expect(outcome.errors[0]?.code).toBe(row.code);
+    }
+    expect(existsSync(observationsDir()) ? readdirSync(observationsDir()) : []).toEqual([]);
+  });
+
+  it("未传 --root 保持原报告与 result JSON 兼容：不增加任何 scope 字段", async () => {
+    seedHostSources();
+    const { executionId } = await seedExecution();
+    const outcome = await runReconImportGraph(root, { executionId });
+    expect(Object.keys(outcome.result).filter((key) => key.startsWith("scope_"))).toEqual([]);
+    const blobPath = join(root, ".pomaster", "evidence", ...(outcome.result.report_blob?.storage_path ?? "").split("/"));
+    const blob = JSON.parse(readFileSync(blobPath, "utf8")) as Record<string, unknown>;
+    expect("scope_review" in blob).toBe(false);
+    expect(readReceipt("OBS-0001").normalized_facts).not.toContain(expect.stringContaining("scope_review"));
   });
 
   it("append-only 观察事件：同快照重跑产 OBS-0002 新记录，既有回执字节不动", async () => {
@@ -455,6 +770,7 @@ describe("recon runCli 程序面", () => {
     expect(recon).toBeDefined();
     expect(recon?.commands.map((sub) => sub.name())).toEqual([
       "import-graph",
+      "scope-review",
       "migrations",
       "sbom",
       "architecture-snapshot",
@@ -481,6 +797,31 @@ describe("recon runCli 程序面", () => {
     expect(envelope.ok).toBe(true);
     expect(envelope.result.observation).toBe("OBSERVED");
     expect(envelope.result.observation_id).toBe("OBS-0001");
+  });
+
+  it("--root 可重复 + --task + --max-depth 经公开 CLI 到达范围审查", async () => {
+    seedHostSources();
+    await seedScopeTask();
+    const { executionId } = await seedExecution();
+    const lines: string[] = [];
+    const code = await runCli(
+      [
+        "--dir", root,
+        "recon", "import-graph",
+        "--execution-id", executionId,
+        "--root", "src/app.ts",
+        "--root", "src/helper.ts",
+        "--task", "TASK.RECON_SCOPE",
+        "--max-depth", "1",
+        "--json",
+      ],
+      { stdout: (line) => lines.push(line), stderr: (line) => lines.push(line) },
+    );
+    expect(code).toBe(0);
+    const envelope = JSON.parse(lines.join("\n")) as CliEnvelope<Record<string, unknown>>;
+    expect(envelope.result.scope_review_active).toBe(true);
+    expect(envelope.result.scope_root_count).toBe(2);
+    expect(envelope.result.scope_task_ref).toBe("TASK.RECON_SCOPE");
   });
 
   it("INCONCLUSIVE 分支 exit 1（fail-closed 退出码语义——零源文件不伪造绿）", async () => {

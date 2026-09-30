@@ -18,6 +18,7 @@ import {
   ANALYZER_IMPORT_GRAPH_ID,
   analyzeImportGraph,
   createStore,
+  deriveImportGraphScopeReview,
   pathsOf,
   readRelations,
   registerRelation,
@@ -76,7 +77,23 @@ describe("analyzeImportGraph（边提案 + §148 报告）", () => {
       },
     ]);
     expect(result.externalImports).toBe(1);
+    expect(result.aliasImports).toBe(0);
+    expect(result.aliasResolvedImports).toBe(0);
+    expect(result.aliasUnresolvedImports).toBe(0);
     expect(result.unmapped).toEqual([]);
+    expect(result.pathCandidates).toEqual([
+      {
+        source: "src/api/supplier/api.ts",
+        target: "src/api/supplier/extra.ts",
+        specifier: "./extra",
+      },
+      {
+        source: "src/pages/supplier/index.vue",
+        target: "src/api/supplier/api.ts",
+        specifier: "../../api/supplier/api",
+      },
+    ]);
+    expect(result.pathUnresolved).toEqual([]);
     expect(result.report.analyzer).toBe(ANALYZER_IMPORT_GRAPH_ID);
     expect(result.report.objects_resolved).toBe(3);
     expect(result.report.relations_resolved).toBe(2);
@@ -113,6 +130,80 @@ describe("analyzeImportGraph（边提案 + §148 报告）", () => {
       "src/pages/supplier/panel.vue -> ../shared/helper (target_unresolved)",
     ]);
     expect(result.report.objects_resolved).toBe(4);
+  });
+
+  it("Brownfield 路径候选独立于 governed mapping：可审查真实源码连接，缺物理目标显式披露", () => {
+    const result = analyzeImportGraph({
+      files: [
+        { path: "src/app.ts", content: 'import { helper } from "./helper";\nimport "./missing";\n' },
+        { path: "src/helper.ts", content: "export const helper = 1;\n" },
+      ],
+      mapping: {},
+      sourceSha: SOURCE_SHA,
+    });
+    expect(result.edges).toEqual([]);
+    expect(result.unmapped).toEqual([
+      { source: "src/app.ts", specifier: "./helper", reason: "target_unresolved" },
+      { source: "src/app.ts", specifier: "./missing", reason: "target_unresolved" },
+    ]);
+    expect(result.pathCandidates).toEqual([
+      { source: "src/app.ts", target: "src/helper.ts", specifier: "./helper" },
+    ]);
+    expect(result.pathUnresolved).toEqual([
+      {
+        source: "src/app.ts",
+        specifier: "./missing",
+        reason: "target_not_found_in_scanned_files",
+      },
+    ]);
+  });
+
+  it("tsconfig path alias 与 re-export 共用路径候选解析；外部包单独计数", () => {
+    const result = analyzeImportGraph({
+      files: [
+        {
+          path: "src/app.ts",
+          content: 'import { calc } from "@/shared/calc";\nimport { ref } from "vue";\n',
+        },
+        {
+          path: "src/shared/index.ts",
+          content: 'export { calc } from "./calc";\n',
+        },
+        { path: "src/shared/calc.ts", content: "export const calc = 1;\n" },
+      ],
+      mapping: {},
+      pathAliases: [{ pattern: "@/*", targets: ["src/*"] }],
+      sourceSha: SOURCE_SHA,
+    });
+    expect(result.externalImports).toBe(1);
+    expect(result.aliasImports).toBe(1);
+    expect(result.aliasResolvedImports).toBe(1);
+    expect(result.aliasUnresolvedImports).toBe(0);
+    expect(result.pathCandidates).toEqual([
+      { source: "src/app.ts", target: "src/shared/calc.ts", specifier: "@/shared/calc" },
+      { source: "src/shared/index.ts", target: "src/shared/calc.ts", specifier: "./calc" },
+    ]);
+    expect(result.pathUnresolved).toEqual([]);
+  });
+
+  it("命中 alias 但物理目标缺席时不冒充外部包，并显式进入 pathUnresolved", () => {
+    const result = analyzeImportGraph({
+      files: [{ path: "src/app.ts", content: 'import { missing } from "@/missing";\n' }],
+      mapping: {},
+      pathAliases: [{ pattern: "@/*", targets: ["src/*"] }],
+      sourceSha: SOURCE_SHA,
+    });
+    expect(result.externalImports).toBe(0);
+    expect(result.aliasImports).toBe(1);
+    expect(result.aliasResolvedImports).toBe(0);
+    expect(result.aliasUnresolvedImports).toBe(1);
+    expect(result.pathUnresolved).toEqual([
+      {
+        source: "src/app.ts",
+        specifier: "@/missing",
+        reason: "alias_target_not_found_in_scanned_files",
+      },
+    ]);
   });
 
   it("源文件未登记 mapping → 不产边不静默丢（reason=source_not_mapped）+ objects_resolved 差额披露", () => {
@@ -177,6 +268,115 @@ describe("analyzeImportGraph（边提案 + §148 报告）", () => {
     const first = JSON.stringify(analyzeImportGraph(input));
     const second = JSON.stringify(analyzeImportGraph(shuffled));
     expect(second).toBe(first);
+  });
+});
+
+describe("deriveImportGraphScopeReview 任务范围审查投影", () => {
+  const edges = [
+    { source: "src/root.ts", target: "src/a.ts", specifier: "./a" },
+    { source: "src/root.ts", target: "src/b.ts", specifier: "./b" },
+    { source: "src/a.ts", target: "src/shared.ts", specifier: "./shared" },
+    { source: "src/b.ts", target: "src/shared.ts", specifier: "./shared" },
+    { source: "src/shared.ts", target: "src/root.ts", specifier: "./root" },
+    { source: "src/consumer.ts", target: "src/root.ts", specifier: "./root" },
+    { source: "src/top.ts", target: "src/consumer.ts", specifier: "./consumer" },
+  ] as const;
+
+  it("环与菱形按最短路径收敛，双方向保留 root/depth/via", () => {
+    const result = deriveImportGraphScopeReview({ roots: ["src/root.ts"], pathCandidates: edges, maxDepth: 4 });
+    expect(result.truncated).toBe(false);
+    expect(result.candidates).toEqual([
+      { root: "src/root.ts", direction: "root", path: "src/root.ts", depth: 0, via: null },
+      {
+        root: "src/root.ts",
+        direction: "dependency",
+        path: "src/a.ts",
+        depth: 1,
+        via: edges[0],
+      },
+      {
+        root: "src/root.ts",
+        direction: "dependency",
+        path: "src/b.ts",
+        depth: 1,
+        via: edges[1],
+      },
+      {
+        root: "src/root.ts",
+        direction: "dependency",
+        path: "src/shared.ts",
+        depth: 2,
+        via: edges[2],
+      },
+      {
+        root: "src/root.ts",
+        direction: "consumer",
+        path: "src/consumer.ts",
+        depth: 1,
+        via: edges[5],
+      },
+      {
+        root: "src/root.ts",
+        direction: "consumer",
+        path: "src/shared.ts",
+        depth: 1,
+        via: edges[4],
+      },
+      {
+        root: "src/root.ts",
+        direction: "consumer",
+        path: "src/a.ts",
+        depth: 2,
+        via: edges[2],
+      },
+      {
+        root: "src/root.ts",
+        direction: "consumer",
+        path: "src/b.ts",
+        depth: 2,
+        via: edges[3],
+      },
+      {
+        root: "src/root.ts",
+        direction: "consumer",
+        path: "src/top.ts",
+        depth: 2,
+        via: edges[6],
+      },
+    ]);
+  });
+
+  it("重复多根与重复边去重；输入乱序重放确定", () => {
+    const first = deriveImportGraphScopeReview({
+      roots: ["src/root.ts", "src/a.ts", "src/root.ts"],
+      pathCandidates: [...edges, edges[0]],
+      maxDepth: 3,
+    });
+    const second = deriveImportGraphScopeReview({
+      roots: ["src/a.ts", "src/root.ts"],
+      pathCandidates: [...edges].reverse(),
+      maxDepth: 3,
+    });
+    expect(first.roots).toEqual(["src/a.ts", "src/root.ts"]);
+    expect(second).toEqual(first);
+  });
+
+  it("maxDepth 只在确有下一层未展开时标记 truncated", () => {
+    const truncated = deriveImportGraphScopeReview({ roots: ["src/root.ts"], pathCandidates: edges, maxDepth: 1 });
+    expect(truncated.truncated).toBe(true);
+    expect(truncated.candidates.some((row) => row.depth > 1)).toBe(false);
+
+    const complete = deriveImportGraphScopeReview({
+      roots: ["src/leaf.ts"],
+      pathCandidates: [{ source: "src/leaf.ts", target: "src/end.ts", specifier: "./end" }],
+      maxDepth: 1,
+    });
+    expect(complete.truncated).toBe(false);
+  });
+
+  it("maxDepth 非 1..16 整数时 fail-closed", () => {
+    expect(() => deriveImportGraphScopeReview({ roots: [], pathCandidates: [], maxDepth: 0 })).toThrow("1..16");
+    expect(() => deriveImportGraphScopeReview({ roots: [], pathCandidates: [], maxDepth: 1.5 })).toThrow("1..16");
   });
 });
 

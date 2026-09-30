@@ -176,6 +176,34 @@ function seedProductionEntries(): void {
   );
 }
 
+/** seed：sources Authority 同维度双 canonical（W3 组 7 / Case G 素材；20 schema 形态）。 */
+function seedAuthorityConflict(): void {
+  const sourcesDir = join(root, ".pomaster", "sources");
+  mkdirSync(sourcesDir, { recursive: true });
+  writeFileSync(
+    join(sourcesDir, "index.yaml"),
+    [
+      "sources:",
+      "  - id: bp-handbook-one",
+      "    type: bp_prototype",
+      "    location: docs/handbook-one.md",
+      "    version: \"2026-06\"",
+      "    authority:",
+      "      authoritative_for: [business_information]",
+      "      non_authoritative_for: [css, grid_library]",
+      "  - id: bp-handbook-two",
+      "    type: bp_prototype",
+      "    location: docs/handbook-two.md",
+      "    version: \"2026-08\"",
+      "    authority:",
+      "      authoritative_for: [business_information]",
+      "      non_authoritative_for: [framework]",
+      "",
+    ].join("\n"),
+    "utf8",
+  );
+}
+
 // ============================================================
 // view attention（§6.3 + 纠错 §19）
 // ============================================================
@@ -192,18 +220,28 @@ describe("view attention（Human Attention Queue §6.3/纠错 §19）", () => {
     }
   });
 
-  it("空队列显式「无可注意力项」+ 六组逐组显式缺席（非空白假绿、不静默空组）", async () => {
+  it("空队列显式「无可注意力项」+ 七组逐组显式缺席（非空白假绿、不静默空组）", async () => {
     const outcome = await runViewAttention(root);
     expect(outcome.ok).toBe(true);
     expect(outcome.result.total).toBe(0);
-    expect(outcome.result.groups).toHaveLength(6);
+    expect(outcome.result.groups).toHaveLength(7);
     expect(outcome.result.markdown).toContain("无可注意力项（五类数据源全部显式空");
     const absenceLines = outcome.result.markdown.split("\n").filter((line) =>
       line.startsWith("_（无——该数据源当前无注意力项"),
     );
-    expect(absenceLines).toHaveLength(6);
+    expect(absenceLines).toHaveLength(7);
     // §6.3 词形映射注记在位（Production Destructive Permit 显式缺席位）。
     expect(outcome.result.markdown).toContain("Production Destructive Permit→本批无派生数据源");
+    // W3：task_relevance 缺席显式 null（--task 未传——不冒充已判）。
+    expect(outcome.result.task_relevance).toBeNull();
+  });
+
+  it("W3 组 7 sources Authority：registry 缺席显式合法空（opt-in）；不静默当已查", async () => {
+    const outcome = await runViewAttention(root);
+    const group = outcome.result.groups.find((g) => g.kind === "AUTHORITY_CONFLICT");
+    expect(group).toBeDefined();
+    expect(group?.items).toHaveLength(0);
+    expect(group?.source_note).toContain("opt-in");
   });
 
   it("escalate_owner 呈报位接入：条目 + Owner 裁决路标（Case N 注记在位）", async () => {
@@ -301,9 +339,10 @@ describe("view attention（Human Attention Queue §6.3/纠错 §19）", () => {
       statement: "两份契约对同一字段语义冲突",
       actor: "human:owner",
     });
+    seedAuthorityConflict();
     const outcome = await runViewAttention(root);
     expect(outcome.ok).toBe(true);
-    expect(outcome.result.total).toBe(6);
+    expect(outcome.result.total).toBe(7);
     for (const group of outcome.result.groups) {
       expect(group.items.length, `${group.kind} 应有条目`).toBeGreaterThan(0);
       for (const item of group.items) {
@@ -396,6 +435,6 @@ describe("runCli 集成（view attention 程序面）", () => {
     expect(envelope.ok).toBe(true);
     expect(envelope.result.view).toBe("attention");
     expect(envelope.result.total).toBe(0);
-    expect(envelope.result.groups).toHaveLength(6);
+    expect(envelope.result.groups).toHaveLength(7);
   }, 30000);
 });

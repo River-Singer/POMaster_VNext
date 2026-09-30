@@ -114,7 +114,7 @@
 import { readdirSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { GovernedId, Store, TruthIndex } from "@pomaster/kernel";
+import type { GovernedId, RunSourceSnapshot, Store, TruthIndex } from "@pomaster/kernel";
 import type {
   EvidenceQualificationEvidence,
   EvidenceBaselineInputs,
@@ -159,6 +159,7 @@ import {
   requireInitialized,
 } from "./permit.js";
 import { POMASTER_DIR, claimsDirPath, discoveryScratchpadsDirPath, runsDirPath, toPosix } from "./store-layout.js";
+import { judgeRunSourceStability } from "./source-snapshot.js";
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -562,6 +563,7 @@ async function qualifyClaimEvidence(
       subject: typeof view.subject === "string" ? view.subject : null,
     },
   ];
+  const runsWithSourceSnapshot: { readonly ref: string; readonly snapshot: RunSourceSnapshot }[] = [];
   for (const grn of normalizeGrnEvidenceRefs(view.evidenceRefs)) {
     const run = await readRunQualificationView(runsDirPath(rootDir), grn);
     if (run === null) continue; // 悬空 GRN 引用——引用位存在性归既有防线，资格轴缺席诚实
@@ -574,6 +576,7 @@ async function qualifyClaimEvidence(
         },
       };
     }
+    if (run.sourceSnapshot !== undefined) runsWithSourceSnapshot.push({ ref: run.grn, snapshot: run.sourceSnapshot });
     faces.push({
       ref: run.grn,
       surface: "run",
@@ -587,7 +590,25 @@ async function qualifyClaimEvidence(
     });
   }
   try {
-    return { findings: qualifyEvidenceBatch(faces, requirement).findings };
+    const findings = qualifyEvidenceBatch(faces, requirement).findings;
+    // —— 源码新鲜度消费闸（W2-FR05；叠加非替换，kernel 资格轴闭包零改动——唯一比较
+    // 核在 kernel source-snapshot，经 judgeRunSourceStability 消费单点）：主张了源码
+    // 快照的 GRN 引用面，窗口 fresh 且产出时相关面与当前一致方可作为 VERIFIED 证据；
+    // stale/unjudgeable → DOD_CLAIM_EVIDENCE_UNQUALIFIED 同码位显式（source 未知不能
+    // fresh）。legacy 无 snapshot 缺席诚实放行（不反填、不全局硬拒绝）。
+    for (const run of runsWithSourceSnapshot) {
+      const judgment = judgeRunSourceStability(rootDir, run.snapshot);
+      if (!judgment.stable) {
+        return {
+          error: {
+            code: "DOD_CLAIM_EVIDENCE_UNQUALIFIED",
+            message: `${claimRef} 证据未通过源码新鲜度判定（W2-FR05）：${run.ref}（run 面）→ ${judgment.state}——${judgment.reason}`,
+            hint: "相关源码已变化（或运行窗口漂移/不可判）的证据不证明当前成果——在当前相关源码上重新产出证据（check/plan run），经独立验证流重新挂证（record verification）后重跑 closeout；source 未知不能 fresh。",
+          },
+        };
+      }
+    }
+    return { findings };
   } catch (err) {
     if (!(err instanceof GovernanceError)) throw err;
     return { error: governanceErrorToCliError(err) };

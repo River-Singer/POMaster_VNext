@@ -35,6 +35,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import {
   type ClaimRecordInput,
+  type EvidenceBaselineInputs,
+  type EvidencePurposeValue,
   type EvidenceQualificationEvidence,
   type GateResult,
   type GateRunContext,
@@ -42,12 +44,15 @@ import {
   type Transaction,
   type TruthIndex,
   type VerificationMethodValue,
+  type RunSourceSnapshot,
   GovernanceError,
   applyTransaction,
+  artifactRefsToSnake,
   createStore,
   gateResultToSnake,
   loadTruthIndex,
   qualifyEvidenceBatch,
+  type EvidenceArtifactRefInput,
 } from "@pomaster/kernel";
 import { CLM_FILE_PATTERN, GRN_FILE_PATTERN } from "./evidence.js";
 import { ADJUDICATED_VERIFICATION_VERDICTS, EVIDENCE_MALFORMED_CODE } from "./evidence.js";
@@ -76,10 +81,12 @@ import {
   captureEvidenceBaselineInputs,
   readTaskBaselineDependencies,
   readRunQualificationView,
+  type RunQualificationView,
 } from "./evidence-qualification.js";
 import type { CliError, CliWarning, CommandOutcome } from "./envelope.js";
 import { failOutcome, okOutcome } from "./envelope.js";
 import { governanceErrorToCliError, parseActorArgv, requireInitialized } from "./permit.js";
+import { judgeRunSourceStability } from "./source-snapshot.js";
 import { claimsDirPath, executionsDirPath, runsDirPath } from "./store-layout.js";
 
 // ============================================================
@@ -112,6 +119,19 @@ export interface RecordGateRunInput {
 
 export interface RecordGateRunValueInput extends Omit<RecordGateRunInput, "from"> {
   readonly record: GateResult;
+  readonly artifactRefs?: readonly EvidenceArtifactRefInput[];
+  /**
+   * baseline snapshot（W2.2 已知缺口修复）：plan-runner/check 的值通路与 check.ts 既有
+   * producer 路径同源携带（captureEvidenceBaselineInputs 前采样）；缺席 = 键缺席存量兼容。
+   */
+  readonly baselineInputs?: EvidenceBaselineInputs;
+  /**
+   * FR-05 运行窗口源码双采样（W2.2）：plan-runner 值通路携带（before/after/window，
+   * kernel source-snapshot 合同）；缺席 = 键缺席存量兼容。
+   */
+  readonly sourceSnapshot?: RunSourceSnapshot;
+  /** 证据用途声明（W2-FR11 Case D；plan-runner 值通路携带；缺席 = 键缺席存量兼容）。 */
+  readonly evidencePurpose?: EvidencePurposeValue;
 }
 
 export interface RecordGateRunResult {
@@ -376,7 +396,7 @@ async function recordGateRunFromSource(
           { ...context, ranAtSeq: replayRanAtSeq },
           claimedBy.claimedBy,
         );
-        if (canonicalRunBytes(grn, context.trigger, replay, executionId, artifactRefs, parsed.baselineInputs) === targetBytes) {
+        if (canonicalRunBytes(grn, context.trigger, replay, executionId, artifactRefs, parsed.baselineInputs, parsed.sourceSnapshot, parsed.evidencePurpose) === targetBytes) {
           skippedCanonical = true;
         }
       } catch {
@@ -461,6 +481,11 @@ async function recordGateRunFromSource(
         trigger: context.trigger,
         result: finalResult,
         ...(parsed.baselineInputs !== undefined ? { baselineInputs: parsed.baselineInputs } : {}),
+        // FR-05 保真 import（W2）：--from 自报的 source_snapshot 原样透传（import 仅保留
+        // 原 snapshot，不补写当下捕获冒充历史；畸形已被 parseRunFile fail-closed 拒收）。
+        ...(parsed.sourceSnapshot !== undefined ? { sourceSnapshot: parsed.sourceSnapshot } : {}),
+        // 证据用途声明保真透传（W2-FR11；词表外已被 parseRunFile fail-closed 拒收）。
+        ...(parsed.evidencePurpose !== undefined ? { evidencePurpose: parsed.evidencePurpose } : {}),
         ...(executionId ? { executionId } : {}),
         ...(artifactRefs.length > 0 ? { artifactRefs } : {}),
       },
@@ -527,11 +552,24 @@ export async function runRecordGateRunValue(
   rootDir: string,
   input: RecordGateRunValueInput,
 ): Promise<CommandOutcome<RecordGateRunResult>> {
-  const { record, ...options } = input;
+  const { record, artifactRefs, baselineInputs, sourceSnapshot, evidencePurpose, ...options } = input;
   return recordGateRunFromSource(
     rootDir,
     { ...options, from: "<memory:gate-result>" },
-    () => ({ bytes: JSON.stringify(gateResultToSnake(record)) }),
+    () => ({
+      bytes: JSON.stringify({
+        gate_result: { mode: "inline", result: gateResultToSnake(record) },
+        ...(artifactRefs !== undefined && artifactRefs.length > 0
+          ? { artifact_refs: artifactRefsToSnake(artifactRefs) }
+          : {}),
+        // W2.2 已知缺口修复：值通路与 --from 文件通路同源——baseline_inputs /
+        // source_snapshot 经信封进 parseRunFile，与入账 op 贯穿（此前只序列化
+        // gate_result/artifact_refs，plan-run 证据无 producer snapshot）。
+        ...(baselineInputs !== undefined ? { baseline_inputs: baselineInputs } : {}),
+        ...(sourceSnapshot !== undefined ? { source_snapshot: sourceSnapshot } : {}),
+        ...(evidencePurpose !== undefined ? { evidence_purpose: evidencePurpose } : {}),
+      }),
+    }),
   );
 }
 
@@ -1002,6 +1040,7 @@ export async function runRecordVerification(
       ...normalizeGrnEvidenceRefs(parsed.record["evidence_refs"]),
       ...normalizeGrnEvidenceRefs(addedRefs),
     ].filter((grn, index, all) => all.indexOf(grn) === index); // 跨既有/追加去重（kernel 批内 ref 唯一合同）
+    const verificationQualificationRuns: RunQualificationView[] = [];
     for (const grn of grnRefs) {
       const run = await readRunQualificationView(runsDirPath(rootDir), grn);
       if (run === null) continue; // 悬空 GRN 引用——kernel verify_claim 引用分型守卫自有语义
@@ -1012,6 +1051,7 @@ export async function runRecordVerification(
           hint: "判卷分母内证据损坏禁静默跳过（可能正是被藏起来的失败记录）；从 git 恢复或走 record/compact canonical 化修复。",
         });
       }
+      verificationQualificationRuns.push(run);
       verificationQualificationFaces.push({
         ref: run.grn,
         surface: "run",
@@ -1034,6 +1074,21 @@ export async function runRecordVerification(
           .join("；")}`,
         hint: "错 seq / 失效 Permit / 旧 gate_def 的证据不满足当前要求——由证据产出方在当前确认基线/有效许可/当前 gate_def 下重新产出证据后再验证回写；判定词形闭包=SP 提案待追认（kernel evidence-qualification）。",
       });
+    }
+    // —— 源码新鲜度消费闸（W2-FR05；读侧 closeout DOD 的互补位；kernel 唯一比较核） ——
+    // 主张了源码快照的证据 GRN：窗口 fresh 且产出时相关面与当前一致方可承载 VERIFIED
+    // 回写；stale/unjudgeable → 同码位拒绝零写入（source 未知不能 fresh）。legacy 无
+    // snapshot 缺席诚实放行（不反填、不全局硬拒绝）。
+    for (const run of verificationQualificationRuns) {
+      if (run.sourceSnapshot === undefined) continue;
+      const judgment = judgeRunSourceStability(rootDir, run.sourceSnapshot);
+      if (!judgment.stable) {
+        return verificationFail({
+          code: "VERIFICATION_EVIDENCE_UNQUALIFIED",
+          message: `${input.clm} 证据未通过源码新鲜度判定（W2-FR05）：${run.grn}（run 面）→ ${judgment.state}——${judgment.reason}`,
+          hint: "相关源码已变化（或运行窗口漂移/不可判）的证据不证明当前成果——在当前相关源码上重新产出证据（check/plan run）后再验证回写；source 未知不能 fresh。",
+        });
+      }
     }
   } catch (err) {
     if (!(err instanceof GovernanceError)) throw err;

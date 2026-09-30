@@ -737,7 +737,7 @@ describe("Golden Path 十条验收（GP-4~GP-10：Intent Chain 全链）", () =>
       expect(typeof nextAction["route_id"]).toBe("string");
       // 核心断言（T2 ④ Execute 感知转绿）：Context Ready 与 Verify 之间存在确定性
       // 执行感知过渡路由 R_EXECUTE_ENTRY（runs 留痕分母空 + 无在途执行档案），而不是
-      // 直跳 R_VERIFY_ENTRY（check --fast）。
+      // 直跳 R_VERIFY_ENTRY（⑤ 主链=plan run——W0-FR01 收正）。
       expect(
         nextAction["route_id"],
         `执行感知路由缺席——manifest fresh 且无执行留痕不应直跳 Verify（实得：${String(nextAction["route_id"])}）`,
@@ -753,12 +753,15 @@ describe("Golden Path 十条验收（GP-4~GP-10：Intent Chain 全链）", () =>
         `pomaster execution begin --role <role> --runtime <runtime> --identity-kind <kind> --task-id ${TASK_ID}`,
       );
       // 摘帽新信号（防退化为空转绿）：照做 execution begin → 在途档案在座 → 路由
-      // 前进到 R_VERIFY_ENTRY（执行感知 ④→⑤ 分叉在真实链上闭合）。
+      // 前进到 R_VERIFY_ENTRY（执行感知 ④→⑤ 分叉在真实链上闭合；W0-FR01：⑤ 主链
+      // 命令 = plan run，携真实在途 execution-id——快速自检绿不再冒充 VERIFY 主入口）。
       expect(records_.executionBegin.code, "execution begin 应 exit 0").toBe(0);
       const beginResult = (envelopeOf(records_.executionBegin).result ?? {}) as Record<string, unknown>;
       expect(String(beginResult["execution_id"])).toMatch(/^AGX-[0-9]{4}-[0-9]+$/);
       expect(nextActionOf(records_.routeAfterExecution)["route_id"]).toBe("R_VERIFY_ENTRY");
-      expect(nextActionOf(records_.routeAfterExecution)["command"]).toContain("pomaster check --fast");
+      expect(nextActionOf(records_.routeAfterExecution)["command"]).toBe(
+        `pomaster plan run --task ${TASK_ID} --execution-id ${String(beginResult["execution_id"])}`,
+      );
     },
   );
 

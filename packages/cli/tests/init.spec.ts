@@ -511,7 +511,9 @@ describe("init 人读输出与信封", () => {
     );
     // 前导空行分隔：横幅不与能力速览段粘连（D-1/D-5 裁决 18 后版式：…baseline→observation→preset→能力速览 → 横幅）。
     expect(text).toContain("\n\n  你现在可以做什么");
-    expect(text).toContain("（--view impact 出影响闭包）\n\nPOMaster · Governed");
+    expect(text).toContain(
+      "（执行 gate 并写入 GRN；CONTROL_DATA_FLOW 静态结论与运行时确认分层，非绿可自动进入失败诊断）\n\nPOMaster · Governed",
+    );
   });
 
   it("品牌横幅零进入机读信封原料（§45 单信封：result/warnings/errors 均无文案与 logo）", async () => {

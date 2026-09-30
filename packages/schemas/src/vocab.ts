@@ -17,7 +17,9 @@
  *   2026-09-05 PR-0009 增补裁定批 B 全量在用新词形收编（Owner 裁定 D4=(a) 2026-09-05
  *   ——十一新段 + catalog/presentation 两段扩轴 + Discovery 平面 state_plane_refs 注记；
  *   本文件原「待词汇表 PR 收编」各段就地转正为 vocab-lock 镜像段，词值零改动，
- *   v0.1~v0.7 词值零删改），逐值相等，禁止发明词表外值；
+ *   v0.1~v0.7 词值零删改），2026-09-30 PR-0011 增补 MASTer 战役执行面批扫
+ *   （Owner 裁定 1=A 2026-09-30——W1-W5 战役新词形收编入锁；登记零行为变化，
+ *   模块侧既有导出原样，kernel vocab.spec 逐值对账哨兵），逐值相等，禁止发明词表外值；
  * - 需要新值 → 走词汇表 PR（append-only），禁止就地添加；
  * - 每个数组都带 x-vocab-source 行，改 vocab-lock 时同 commit 同步本文件。
  */
@@ -1443,3 +1445,208 @@ export const CATALOG_KIND_VALUES = [
   "archetype",
 ] as const;
 export type CatalogKindValue = (typeof CATALOG_KIND_VALUES)[number];
+
+// ============================================================
+// master_campaign_vocab（x-vocab-source: vocab-lock master_campaign_vocab，PR-0011 收编；
+// MASTer 经验驱动优化战役 W1-W5 执行面词轴——Owner 裁定 1=A 2026-09-30 词汇表批扫）。
+// 登记形态=镜像对账：模块侧既有导出（kernel plan-compiler / source-snapshot /
+// spec-routing / impact-derive / authority、gauntlet-lite control-data-flow-runtime-adapter
+// / plan-runtime-obligations 字面量）原样不动（零行为变化），本段是词表唯一镜像点，
+// kernel vocab.spec PR-0011 describe 逐值对账——两份值漂移先红。扩值走词汇表 PR。
+// ============================================================
+
+/**
+ * W1-FR04 Acceptance 场景义务字段面（PlanAcceptanceScenario 词族；字段级词形注记——
+ * applicability_fields 先例，非值轴）。场景挂在 Acceptance 级、scenario_ref 是 task 内
+ * 稳定局部键（GRN scope note `scenario_ref=<局部键>` 共用锚——禁携带 ；/换行保留字）。
+ * x-vocab-source: 代码锚 packages/kernel/src/plan-compiler.ts PlanAcceptanceScenario。
+ */
+export const PLAN_ACCEPTANCE_SCENARIO_FIELDS = [
+  "scenario_ref",
+  "precondition",
+  "interaction",
+  "state_dimensions",
+  "expected_observation",
+  "runtime_confirmation_required",
+  "expected_observation_oracle",
+  "mock_real_seam",
+] as const;
+
+/**
+ * 业务 oracle 观察通道词轴（W5-FR10 契约 §1；visible_via 值域——三类观察不可折叠：
+ * HTTP 成功 ≠ 持久化成功 ≠ 用户可见）。
+ * x-vocab-source: 代码锚 packages/kernel/src/plan-compiler.ts OBSERVATION_CHANNEL_VALUES。
+ */
+export const OBSERVATION_CHANNEL_VALUES = [
+  "api_list",
+  "api_detail",
+  "ui_surface",
+] as const;
+export type ObservationChannelVocabValue = (typeof OBSERVATION_CHANNEL_VALUES)[number];
+
+/**
+ * 业务 oracle 闭合词形字段面（W5-FR10 契约 §1 三键闭包——三键之外不承认任何键，
+ * fail-closed；filter_context 键值均须非空字符串；mapping_fields 空数组=显式「无字段
+ * 映射义务」申报）。oracle_fields 注记与 observation_channel 值轴正交。
+ * x-vocab-source: 代码锚 packages/kernel/src/plan-compiler.ts BusinessObservationOracle。
+ */
+export const BUSINESS_OBSERVATION_ORACLE_FIELDS = [
+  "visible_via",
+  "filter_context",
+  "mapping_fields",
+] as const;
+
+/**
+ * seam 腿角色词轴（W5-FR09；binding.seam_role 值域两值闭包——冒领即 seam 对账失效；
+ * 与 REALIZATION_VALUES 的 mock/wired 正交：realization 管实现状态、本轴管 runtime 腿
+ * 身份，值域相交但轴不相交、按字段位判别）。
+ * x-vocab-source: 代码锚 packages/kernel/src/plan-compiler.ts SEAM_ROLE_VALUES。
+ */
+export const SEAM_ROLE_VALUES = ["mock", "real"] as const;
+export type SeamRoleVocabValue = (typeof SEAM_ROLE_VALUES)[number];
+
+/**
+ * mock_real_seam 义务声明字段面（W5-FR09 契约 §4 键闭包：operation_id/contract_ref
+ * 之外不承认键；contract_ref=null 显式申报无契约锚，不可缺省猜测）。
+ * x-vocab-source: 代码锚 packages/kernel/src/plan-compiler.ts ScenarioSeamObligation。
+ */
+export const SEAM_OBLIGATION_FIELDS = ["operation_id", "contract_ref"] as const;
+
+/**
+ * 证据用途词轴（W2-FR11 Case D 归属；run 信封 evidence_purpose 键值域）：worker_local =
+ * worker 本域中间证据（append-only 保留在盘，终验 cohort 不消费）；final_stable =
+ * 编排器等待并行写入结束后在稳定窗口启动的终验证据。缺席（legacy/未声明）不冒充任一
+ * 用途。x-vocab-source: 代码锚 packages/kernel/src/source-snapshot.ts EVIDENCE_PURPOSE_VALUES。
+ */
+export const EVIDENCE_PURPOSE_VALUES = ["worker_local", "final_stable"] as const;
+export type EvidencePurposeVocabValue = (typeof EVIDENCE_PURPOSE_VALUES)[number];
+
+/**
+ * source snapshot 合同词形（版本化合同面；消费方按 contract 字段拒绝不支持形态）。
+ * x-vocab-source: 代码锚 packages/kernel/src/source-snapshot.ts SOURCE_SNAPSHOT_CONTRACT。
+ */
+export const SOURCE_SNAPSHOT_CONTRACT = "pomaster.source-snapshot/v1" as const;
+
+/**
+ * 存在性摘要输入词形（SOURCE_PATH_ABSENT_DIGEST 的 canonical 输入串——digest 值是
+ * 派生事实非词形，词表收编词形本体；kernel 侧 sha256OfCanonical(本词形) 即缺席摘要
+ * 常量）。SOURCE_* 词族同段收编（freshness/drift 见下两轴）。
+ * x-vocab-source: 代码锚 packages/kernel/src/source-snapshot.ts SOURCE_PATH_ABSENT_DIGEST。
+ */
+export const SOURCE_SNAPSHOT_ABSENT_PATH_WORDFORM =
+  "pomaster.source-snapshot/absent-path/v1" as const;
+
+/**
+ * 源码新鲜度三态词轴（recon-scope-review 三态词族复用登记，零新词——收编即成文登记
+ * 既有复用）。fresh=逐路径摘要相等；stale=任一路径摘要变化/声明面增删；unjudgeable=
+ * 读失败显式（非绿不假绿）。
+ * x-vocab-source: 代码锚 packages/kernel/src/source-snapshot.ts SOURCE_FRESHNESS_STATES。
+ */
+export const SOURCE_FRESHNESS_STATES = ["fresh", "stale", "unjudgeable"] as const;
+export type SourceFreshnessVocabValue = (typeof SOURCE_FRESHNESS_STATES)[number];
+
+/**
+ * 漂移机器词形轴（recon-scope-review 同族词复用；reason 携带点名路径；fresh = 空数组；
+ * 出现序固定 added→removed→content 确定性）。
+ * x-vocab-source: 代码锚 packages/kernel/src/source-snapshot.ts SOURCE_DRIFT_WORDS。
+ */
+export const SOURCE_DRIFT_WORDS = [
+  "source_files_added",
+  "source_files_removed",
+  "source_content_changed",
+] as const;
+export type SourceDriftVocabWord = (typeof SOURCE_DRIFT_WORDS)[number];
+
+/**
+ * W4 协议路由 stage 词轴（协议规则作用阶段四值闭包；stage 过滤闸语义——候选=always ∪
+ * trigger ∪ 显式 reference，stage 只过滤非独立命中通道，Owner 裁定 4a=A）。
+ * PROTOCOL.* semantic_id 词形本体住代码锚 PROTOCOL_ID_PATTERN（catalog 物料身份——
+ * 非 governed 前缀，governed 闭包 16 前缀零扩，GATE./SENSOR. 留痕先例的正式锚转正）。
+ * x-vocab-source: 代码锚 packages/kernel/src/spec-routing.ts SPEC_ROUTING_STAGE_VALUES /
+ * PROTOCOL_ID_PATTERN。
+ */
+export const SPEC_ROUTING_STAGE_VALUES = [
+  "plan",
+  "implement",
+  "verify",
+  "maintain",
+] as const;
+export type SpecRoutingStageVocabValue = (typeof SPEC_ROUTING_STAGE_VALUES)[number];
+
+/**
+ * W3 派生影响闭包平面词轴（五值闭包：truth/catalog=台账边两域归一，discovery=DECISION.*
+ * Discovery 局部词形，generated=落盘产物 manifest 词形，source=来源 id 词形；开放扩值
+ * 走本闭包定稿禁调用侧私扩）。DXE-<12hex> 派生边 id 词形住代码锚 DERIVED_EDGE_ID_PATTERN
+ * （EDGE-<12hex> 台账边同族法式——台账边是登记事实、派生边是即时派生，两词形不可互换，
+ * 非 governed 前缀）。
+ * x-vocab-source: 代码锚 packages/kernel/src/impact-derive.ts IMPACT_PLANE_VALUES /
+ * DERIVED_EDGE_ID_PATTERN。
+ */
+export const IMPACT_PLANE_VALUES = [
+  "truth",
+  "catalog",
+  "discovery",
+  "generated",
+  "source",
+] as const;
+export type ImpactPlaneVocabValue = (typeof IMPACT_PLANE_VALUES)[number];
+
+/**
+ * W3 接入关系类型词轴（四类各有真实数据源；kind 词形是派生边元数据——EDGE- 台账边走
+ * relation_type 词轴，DXE- 派生边走本轴）。
+ * x-vocab-source: 代码锚 packages/kernel/src/impact-derive.ts ADAPTED_RELATION_KINDS。
+ */
+export const ADAPTED_RELATION_KINDS = [
+  "PAYLOAD_SOURCE_REF",
+  "DECISION_DEPENDS_ON",
+  "GENERATED_INPUT_REF",
+  "CONTRACT_BASELINE_REF",
+] as const;
+export type AdaptedRelationVocabKind = (typeof ADAPTED_RELATION_KINDS)[number];
+
+/**
+ * W5 契约 §5 fixture 分层 kind 词轴（Node 文件沙箱不得改名冒充真实业务链；声明闭合
+ * {kind, proves, does_not_prove} 三键——报告消费端按声明呈现证明范围）。
+ * x-vocab-source: 代码锚 packages/gauntlet-lite/src/control-data-flow-runtime-adapter.ts
+ * FIXTURE_LAYER_KINDS。
+ */
+export const FIXTURE_LAYER_KINDS = [
+  "node_file_sandbox",
+  "node_http_service",
+  "real_browser",
+] as const;
+export type FixtureLayerVocabKind = (typeof FIXTURE_LAYER_KINDS)[number];
+
+/**
+ * W5 义务 cap 呈现键词形（scopeNote `w5_obligation_cap=<reason>` 的机器键——cap 只降
+ * 不升、verdict_before_obligation_cap=passed 留痕纪律的呈现位）。
+ * x-vocab-source: 代码锚 packages/cli/src/plan-runtime-obligations.ts ObligationCap 消费链
+ * （plan-runner.ts cap 装配）。
+ */
+export const W5_OBLIGATION_CAP_WORD = "w5_obligation_cap" as const;
+
+/**
+ * W5 义务 cap reason 词族九值（verdictCapReason 词形闭包——w5_obligation_* 前缀族的
+ * reason 面；编排层义务判定只降不升、工具真实 verdict 保留留痕）。
+ * x-vocab-source: 代码锚 packages/cli/src/plan-runtime-obligations.ts judgeRuntimeObligations。
+ */
+export const W5_OBLIGATION_CAP_REASON_VALUES = [
+  "w5_oracle_v1_trace_missing",
+  "w5_oracle_visible_chain_incomplete",
+  "w5_seam_divergent",
+  "w5_seam_leg_missing",
+  "w5_seam_observation_missing",
+  "w5_seam_undecidable",
+  "w5_static_control_not_in_denominator",
+  "w5_static_denominator_unavailable",
+  "w5_ui_surface_leg_not_run",
+] as const;
+export type W5ObligationCapReasonValue = (typeof W5_OBLIGATION_CAP_REASON_VALUES)[number];
+
+/**
+ * §3B 同级冲突规则词形常量（纯数据文档位——规则原文承载，不新增判卷逻辑；机器判卷面
+ * 既有落点 decision-graph G5 CONFLICT_REVIEW）。
+ * x-vocab-source: 代码锚 packages/kernel/src/authority.ts AUTHORITY_CONFLICT_RULE。
+ */
+export const AUTHORITY_CONFLICT_RULE =
+  "两个同级 authoritative sources 冲突 → CONFLICT → 相关 development blocked → 由 Owner / declared authority 裁决；不得让 LLM 自行综合（机器面：G5 CONFLICT_REVIEW 禁自行挑答案）" as const;

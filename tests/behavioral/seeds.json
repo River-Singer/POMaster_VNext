@@ -1125,12 +1125,12 @@
     {
       "id": "L5-F-04-route-verify-entry-in-flight",
       "family": "F",
-      "title": "在途执行档案在座 → R_VERIFY_ENTRY（beat ⑤：VERIFY 内循环自检入口，拍序 ⑤ 先于 ⑥）",
+      "title": "在途执行档案在座 → R_VERIFY_ENTRY（beat ⑤：VERIFY 主链入口 = plan run——W0-FR01 收正，拍序 ⑤ 先于 ⑥）",
       "evaluator": "next_action",
       "provenance": {
         "corpus": "packages/cli/src/next-action.ts",
         "anchor": "#NEXT_ACTION_ROUTE_TABLE[R_VERIFY_ENTRY]",
-        "note_md": "⑤ 行（T2 R3）：executions/AGX-*.json 中 task_id 命中且 ended_at=null = 在途 → check --fast（执行期间自检优先于对账——拍序语义）。"
+        "note_md": "⑤ 行（T2 R3 + W0-FR01 2026-09-29）：executions/AGX-*.json 中 task_id 命中且 ended_at=null = 在途 → plan run 主链（编译并执行全部 REQUIRED obligations 逐项入账 GRN；check --fast 降局部自检，不能满足未完成 obligation）。"
       },
       "input": {
         "snapshot": {
@@ -1159,6 +1159,7 @@
           "dod_judgeable": true,
           "task_scope_subjects": [],
           "task_execution_active": true,
+          "task_execution_id": "AGX-2026-000007",
           "baseline_gate_codes": [],
           "baseline_unknowns_remaining": null,
           "baseline_blocking_remaining": null,
@@ -1169,7 +1170,8 @@
         "route_id": "R_VERIFY_ENTRY",
         "beat": "⑤",
         "commandContains": [
-          "check --fast"
+          "plan run --task TASK.T1",
+          "--execution-id AGX-2026-000007"
         ]
       },
       "design_expected": null,

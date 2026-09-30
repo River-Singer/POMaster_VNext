@@ -102,6 +102,50 @@
           "items": { "type": "string", "pattern": "^GRN-[0-9]+$" },
           "uniqueItems": true,
           "description": "可满足本条款的 gate run 资格清单（GRN 词形镜像 07；判定纪律同 claim_refs——资格外 run 不满足条款）。"
+        },
+        "scenarios": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/scenario_obligation" },
+          "description": "场景义务声明位（W1-FR04 原位加性演进；与 kernel PlanAcceptanceScenario 词形同构）：本条款的场景化观察分母。缺席/空数组 = 非矩阵条款（无场景义务——legacy 语义零破坏）。消费纪律：场景义务单一事实源 = 绑定 Acceptance 的 scenarios（Verification Plan 编译分母）；本位是要求面镜像声明——登记场景而 plan 链无对应 acceptance 场景时为显式漂移（禁只写 Spec 不进计划分母）；closeout 逐场景判卷归证据资格批次（本字段登记不参与现行 closeout 判卷，判定值仍只从 claims/runs 平面读取）。"
+        }
+      }
+    },
+    "scenario_obligation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scenario_ref", "precondition", "interaction", "state_dimensions", "expected_observation", "runtime_confirmation_required"],
+      "description": "场景义务（W1-FR04 最小结构；task 内稳定局部键 + 观察四要素 + 运行时确认声明位；不新增 canonical TestCase entity）。",
+      "properties": {
+        "scenario_ref": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[^；\\r\\n]+$",
+          "description": "task 内稳定局部键（非 governed id——禁发明新词形轴；禁 GRN note marker 保留字 ；与换行）。同一 requirement 内唯一（uniqueness 归装载消费侧核验——draft-07 无法表达数组内对象键唯一）。"
+        },
+        "precondition": {
+          "type": "string",
+          "minLength": 1,
+          "description": "场景前置状态（非空——显式缺口不吞分母，禁静默当已观察）。"
+        },
+        "interaction": {
+          "type": "string",
+          "minLength": 1,
+          "description": "场景触发的交互（非空）。"
+        },
+        "state_dimensions": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "场景覆盖的状态维度声明（如 selected=true/hover=false；可空数组=无显式状态轴——状态触发须来自可追溯需求，禁从 statement 猜测所有组合）。"
+        },
+        "expected_observation": {
+          "type": "string",
+          "minLength": 1,
+          "description": "预期观察（非空——空预期=显式缺口，装载拒绝）。"
+        },
+        "runtime_confirmation_required": {
+          "type": "boolean",
+          "description": "本场景观察是否须运行时确认（声明位须显式；true=消费归 control_data_flow 等运行时证明类型链——非判卷值，判卷值只存在于 Verification Result / Gate Result）。"
         }
       }
     }

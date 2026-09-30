@@ -101,6 +101,7 @@ import type {
   Store,
 } from "@pomaster/kernel";
 import { KERNEL_TOOL } from "@pomaster/kernel";
+import { judgeProjectionFreshness } from "@pomaster/kernel";
 import { INIT_TOOL_ID } from "./digest.js";
 import {
   TRUTH_INDEX_RELATIVE,
@@ -161,6 +162,16 @@ export interface ContextApplicabilityInputs {
   readonly capabilities?: readonly string[];
   /** ∈ CATALOG_CHANGE_CLASS_VALUES（kernel 侧 fail-closed 校验）。 */
   readonly changeClass?: string;
+  /**
+   * W4 协议路由输入（FR-02；全 optional——缺席字段零键禁 undefined 值键污染）。
+   * 词形 fail-closed 校验在 kernel validateApplicabilityInputs（stage 四值闭包 /
+   * triggers·stack 词级 token / specRefs=PROTOCOL.* 词形）；协议路由结果只进
+   * REUSE / CATALOG 策展分区（§92.2），不进判卷输入。
+   */
+  readonly stage?: string;
+  readonly triggers?: readonly string[];
+  readonly stack?: readonly string[];
+  readonly specRefs?: readonly string[];
 }
 
 /** applicability 输入 → ProjectionRequest 增量字段（缺席字段零键——禁 undefined 值键污染）。 */
@@ -174,6 +185,14 @@ function applicabilityRequestFields(
       ? { capabilities: inputs.capabilities }
       : {}),
     ...(inputs.changeClass !== undefined ? { changeClass: inputs.changeClass } : {}),
+    ...(inputs.stage !== undefined ? { stage: inputs.stage } : {}),
+    ...(inputs.triggers !== undefined && inputs.triggers.length > 0
+      ? { triggers: inputs.triggers }
+      : {}),
+    ...(inputs.stack !== undefined && inputs.stack.length > 0 ? { stack: inputs.stack } : {}),
+    ...(inputs.specRefs !== undefined && inputs.specRefs.length > 0
+      ? { specRefs: inputs.specRefs }
+      : {}),
   };
 }
 
@@ -182,6 +201,11 @@ export interface ApplicabilityInputsView {
   readonly change: string | null;
   readonly capabilities: readonly string[];
   readonly change_class: string | null;
+  /** W4 协议路由输入回显（缺席显式——判卷可重放：同输入同 fingerprint）。 */
+  readonly stage: string | null;
+  readonly triggers: readonly string[];
+  readonly stack: readonly string[];
+  readonly spec_refs: readonly string[];
 }
 
 function applicabilityViewOf(inputs?: ContextApplicabilityInputs): ApplicabilityInputsView {
@@ -189,6 +213,10 @@ function applicabilityViewOf(inputs?: ContextApplicabilityInputs): Applicability
     change: inputs?.change ?? null,
     capabilities: [...(inputs?.capabilities ?? [])],
     change_class: inputs?.changeClass ?? null,
+    stage: inputs?.stage ?? null,
+    triggers: [...(inputs?.triggers ?? [])],
+    stack: [...(inputs?.stack ?? [])],
+    spec_refs: [...(inputs?.specRefs ?? [])],
   };
 }
 
@@ -198,7 +226,11 @@ function hasAnyApplicabilityInput(inputs?: ContextApplicabilityInputs): boolean 
     inputs !== undefined &&
     (inputs.change !== undefined ||
       (inputs.capabilities !== undefined && inputs.capabilities.length > 0) ||
-      inputs.changeClass !== undefined)
+      inputs.changeClass !== undefined ||
+      inputs.stage !== undefined ||
+      (inputs.triggers !== undefined && inputs.triggers.length > 0) ||
+      (inputs.stack !== undefined && inputs.stack.length > 0) ||
+      (inputs.specRefs !== undefined && inputs.specRefs.length > 0))
   );
 }
 
@@ -211,6 +243,16 @@ function applicabilityInputsLine(inputs?: ContextApplicabilityInputs): string | 
     parts.push(`capabilities=${inputs.capabilities.join("/")}`);
   }
   if (inputs?.changeClass !== undefined) parts.push(`change_class=${inputs.changeClass}`);
+  if (inputs?.stage !== undefined) parts.push(`stage=${inputs.stage}`);
+  if (inputs?.triggers !== undefined && inputs.triggers.length > 0) {
+    parts.push(`triggers=${inputs.triggers.join("/")}`);
+  }
+  if (inputs?.stack !== undefined && inputs.stack.length > 0) {
+    parts.push(`stack=${inputs.stack.join("/")}`);
+  }
+  if (inputs?.specRefs !== undefined && inputs.specRefs.length > 0) {
+    parts.push(`spec_refs=${inputs.specRefs.join("/")}`);
+  }
   return `> applicability: ${parts.join("；")}`;
 }
 
@@ -622,21 +664,38 @@ export async function runContextCompile(
     );
     const existing = readExistingManifest(rootDir, fileName);
     const fingerprint = projection.inputsFingerprint;
+    // —— freshness 单点判卷（W3）：stale 比对收敛到 kernel judgeProjectionFreshness
+    // 单一比较器（禁第二比较器——readiness/handoff/reconciliation 等其他 generated
+    // 消费面共用同一四态合同；指纹算法本身仍归 kernel projection inputsFingerprint
+    // 单点，本函数只比较）。state 判定语义与原内联分支逐字等价；detail 保留本命令
+    // 既有呈现词形（既有测试锚词面不变）。
+    const freshnessJudgment = judgeProjectionFreshness({
+      artifact_present: existing.state === "present",
+      recorded_inputs_fingerprint:
+        existing.state === "present" ? existing.existing_inputs_fingerprint : null,
+      recomputed_inputs_fingerprint: fingerprint,
+    });
     let staleState: "absent" | "fresh" | "stale_grounding";
     let staleDetail: string;
-    if (existing.state === "absent") {
-      staleState = "absent";
-      staleDetail = "现盘无 context manifest（首编译落盘）";
-    } else if (existing.state === "stale_grounding") {
+    if (existing.state === "stale_grounding") {
+      // 现盘不可解析（手改/损坏）走本命令既有词面（损坏面判定不在指纹比较器职责内）。
       staleState = "stale_grounding";
       staleDetail = existing.detail;
-    } else if (existing.existing_inputs_fingerprint === fingerprint) {
-      staleState = "fresh";
-      staleDetail = "现盘 manifest 指纹一致（同输入重放字节稳定）";
     } else {
-      staleState = "stale_grounding";
+      // unjudgeable 在本调用点不可达（present ⇒ recorded 非 null、recomputed 恒非空）；
+      // 防御性映射到 stale_grounding（必然不 fresh 同语义）。
+      staleState =
+        freshnessJudgment.state === "fresh"
+          ? "fresh"
+          : freshnessJudgment.state === "absent"
+            ? "absent"
+            : "stale_grounding";
       staleDetail =
-        `STALE_GROUNDING：现盘 manifest inputs_fingerprint=${existing.existing_inputs_fingerprint} 与本次编译 ${fingerprint} 漂移（Truth/Policy/catalog/baseline grounding 已更新）——本次编译即为重编译，覆盖写同 id 文件；可用 context compile --check 随时复核`;
+        staleState === "absent"
+          ? "现盘无 context manifest（首编译落盘）"
+          : staleState === "fresh"
+            ? "现盘 manifest 指纹一致（同输入重放字节稳定）"
+            : `STALE_GROUNDING：现盘 manifest inputs_fingerprint=${existing.existing_inputs_fingerprint} 与本次编译 ${fingerprint} 漂移（Truth/Policy/catalog/baseline grounding 已更新）——本次编译即为重编译，覆盖写同 id 文件；可用 context compile --check 随时复核`;
     }
     const stale_check: ContextCompileResult["stale_check"] = {
       state: staleState,
@@ -835,6 +894,8 @@ export async function judgeTaskContextFreshness(
   }
   // applicability 输入恢复（缺席字段零键，与 applicabilityRequestFields 同形——
   // 空数组/null 与「未提供」在投影请求侧同义，重放输入逐字段相等）。
+  // W4 协议路由输入（stage/triggers/stack/spec_refs）同款恢复——缺恢复会让同输入
+  // 重放判卷在协议命中面漂移（fresh 误判 stale_grounding）。
   const applicability = isRecord(existing.parsed.applicability)
     ? existing.parsed.applicability
     : {};
@@ -843,6 +904,16 @@ export async function judgeTaskContextFreshness(
     : [];
   const changeClass =
     typeof applicability.change_class === "string" ? applicability.change_class : null;
+  const stage = typeof applicability.stage === "string" ? applicability.stage : null;
+  const triggers = Array.isArray(applicability.triggers)
+    ? applicability.triggers.filter((value): value is string => typeof value === "string")
+    : [];
+  const stack = Array.isArray(applicability.stack)
+    ? applicability.stack.filter((value): value is string => typeof value === "string")
+    : [];
+  const specRefs = Array.isArray(applicability.spec_refs)
+    ? applicability.spec_refs.filter((value): value is string => typeof value === "string")
+    : [];
   try {
     const outcome = await runContextCompile(
       rootDir,
@@ -857,6 +928,10 @@ export async function judgeTaskContextFreshness(
         change: taskRef,
         ...(capabilities.length > 0 ? { capabilities } : {}),
         ...(changeClass !== null ? { changeClass } : {}),
+        ...(stage !== null ? { stage } : {}),
+        ...(triggers.length > 0 ? { triggers } : {}),
+        ...(stack.length > 0 ? { stack } : {}),
+        ...(specRefs.length > 0 ? { specRefs } : {}),
       },
       { check: true },
     );

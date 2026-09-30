@@ -208,6 +208,7 @@ function snap(overrides: Partial<NextActionSnapshot>): NextActionSnapshot {
     dod_judgeable: true,
     task_scope_subjects: [],
     task_execution_active: false,
+    task_execution_id: null,
     baseline_gate_codes: [],
     baseline_unknowns_remaining: null,
     baseline_blocking_remaining: null,
@@ -225,7 +226,7 @@ describe("baseline attention alongside task suggestions (G08)", () => {
     [{ bound_refs: ["PERMIT.P1"] }, "pomaster context compile"],
     [{ bound_refs: ["PERMIT.P1"], task_manifest_present: true, task_manifest_freshness: "stale_grounding", task_manifest_role: "frontend" }, "pomaster context compile --role frontend"],
     [{ bound_refs: ["PERMIT.P1"], task_manifest_present: true, task_manifest_freshness: "fresh" }, "pomaster execution begin"],
-    [{ bound_refs: ["PERMIT.P1"], task_manifest_present: true, task_manifest_freshness: "fresh", task_execution_active: true }, "pomaster check --fast"],
+    [{ bound_refs: ["PERMIT.P1"], task_manifest_present: true, task_manifest_freshness: "fresh", task_execution_active: true }, "pomaster plan run"],
   ] satisfies readonly [Partial<NextActionSnapshot>, string][]) ("preserves attention and task prerequisite %j", (overrides, command) => {
     const snapshot = snap({
       active_tasks: [TASK],
@@ -342,6 +343,7 @@ const ROUTE_FIXTURES: readonly { readonly route: NextActionRouteId; readonly sna
       task_manifest_present: true,
       task_manifest_freshness: "fresh",
       task_execution_active: true,
+      task_execution_id: "AGX-2026-000007",
     }),
   },
   {
@@ -382,7 +384,7 @@ describe("next-action 路由表（P2 表驱动：每行 = 条件 + 建议）", (
     }
   });
 
-  it("建议命令锚词形：init/brainstorm/baseline/closeout/steal/issue/compile/execution begin/check/reconcile 各路由逐字（D-5 裁决 18：八拍①=brainstorm start）", () => {
+  it("建议命令锚词形：init/brainstorm/baseline/closeout/steal/issue/compile/execution begin/plan run/reconcile 各路由逐字（D-5 裁决 18：八拍①=brainstorm start；W0-FR01：⑤ 主链=plan run）", () => {
     const byRoute = new Map(
       ROUTE_FIXTURES.map((fixture) => [fixture.route, evaluateNextAction(fixture.snapshot).command ?? ""]),
     );
@@ -401,7 +403,9 @@ describe("next-action 路由表（P2 表驱动：每行 = 条件 + 建议）", (
     expect(byRoute.get("R_EXECUTE_ENTRY")).toBe(
       "pomaster execution begin --role <role> --runtime <runtime> --identity-kind <kind> --task-id TASK.T1",
     );
-    expect(byRoute.get("R_VERIFY_ENTRY")).toContain("pomaster check --fast");
+    expect(byRoute.get("R_VERIFY_ENTRY")).toBe(
+      "pomaster plan run --task TASK.T1 --execution-id AGX-2026-000007",
+    );
     expect(byRoute.get("R_RECONCILE")).toContain("pomaster reconcile --permit PERMIT.T1.1");
   });
 
@@ -493,6 +497,40 @@ describe("next-action 路由表（P2 表驱动：每行 = 条件 + 建议）", (
     expect(undetermined.route_id).toBe("R_UNDETERMINED");
     expect(undetermined.command).toBeNull();
     expect(undetermined.reason).toContain("R_EXECUTE_ENTRY");
+  });
+
+  it("R_VERIFY_ENTRY 主链语义（W0-FR01）：命令 = plan run 主链（携 execution-id），check --fast 不再是主命令只作 reason 内局部自检提示", () => {
+    const action = evaluateNextAction(
+      snap({
+        active_tasks: [TASK],
+        bound_refs: ["PERMIT.T1.1"],
+        active_bound_refs: ["PERMIT.T1.1"],
+        task_manifest_present: true,
+        task_manifest_freshness: "fresh",
+        task_execution_active: true,
+        task_execution_id: "AGX-2026-000007",
+      }),
+    );
+    expect(action.route_id).toBe("R_VERIFY_ENTRY");
+    expect(action.command).toContain("pomaster plan run --task TASK.T1 --execution-id AGX-2026-000007");
+    expect(action.command).not.toContain("check --fast");
+    // 快速诊断语义保留：reason 说明 check --fast 仅局部自检，不满足未完成 obligation。
+    expect(action.reason).toContain("check --fast");
+    expect(action.reason).toContain("obligation");
+  });
+
+  it("R_VERIFY_ENTRY execution-id 缺席回退占位词形（快照字段 null → <AGX-…>，不臆造 id）", () => {
+    const action = evaluateNextAction(
+      snap({
+        active_tasks: [TASK],
+        bound_refs: ["PERMIT.T1.1"],
+        active_bound_refs: ["PERMIT.T1.1"],
+        task_manifest_present: true,
+        task_manifest_freshness: "fresh",
+        task_execution_active: true,
+      }),
+    );
+    expect(action.command).toBe("pomaster plan run --task TASK.T1 --execution-id <AGX-…>");
   });
 
   it("首中即停：closeout 就绪优先于许可/投影行（⑧ 优先级高于 ②③）", () => {
@@ -768,7 +806,7 @@ describe("R-H 正向链（公开命令：status 提示 → 照做 → 合理推�
     expect(afterCompile.result.next_action.command).toContain("--task-id TASK.T1");
 
     // ⑥ 照做 execution begin（建议命令逐参对应）→ 在途执行档案在座 → 推进到 ⑤ VERIFY
-    //    （正问链每一步都发生合理推进）。
+    //    （正问链每一步都发生合理推进；W0-FR01：⑤ 主链入口 = plan run，携真实 execution-id）。
     const began = await runExecutionBegin(dir, {
       role: "implementer",
       runtime: "script",
@@ -779,7 +817,9 @@ describe("R-H 正向链（公开命令：status 提示 → 照做 → 合理推�
     expect(began.result.execution_id).toMatch(/^AGX-[0-9]{4}-[0-9]+$/);
     const afterBegin = await runStatus(dir);
     expect(afterBegin.result.next_action.route_id).toBe("R_VERIFY_ENTRY");
-    expect(afterBegin.result.next_action.command).toContain("pomaster check --fast");
+    expect(afterBegin.result.next_action.command).toBe(
+      `pomaster plan run --task TASK.T1 --execution-id ${began.result.execution_id}`,
+    );
   });
 });
 
@@ -959,9 +999,11 @@ describe("④ EXECUTE 感知（T2 R3：executions 档案平面扫描）", () => 
     // 本任务已封口 → false。
     writeExecution("AGX-2026-00002.json", { execution_id: "AGX-2026-00002", task_id: "TASK.T1", ended_at: "2026-01-01T00:00:00.000Z" });
     expect((await collectNextActionSnapshot(dir, warnings)).task_execution_active).toBe(false);
-    // 本任务在途 → true。
+    // 本任务在途 → true（W0-FR01：同scan捕获在途 execution_id 供⑤主链命令渲染）。
     writeExecution("AGX-2026-00003.json", { execution_id: "AGX-2026-00003", task_id: "TASK.T1", ended_at: null });
-    expect((await collectNextActionSnapshot(dir, warnings)).task_execution_active).toBe(true);
+    const inFlight = await collectNextActionSnapshot(dir, warnings);
+    expect(inFlight.task_execution_active).toBe(true);
+    expect(inFlight.task_execution_id).toBe("AGX-2026-00003");
   });
 
   it("档案坏形（JSON 不可解析/字段形态坏）→ task_execution_active=null 诚实不可判 + 告警留痕", async () => {

@@ -26,10 +26,14 @@
  * SP-W1-f 提案的过渡形态——executed 态判定据此对 GRN 平面做 tool+gate+binding_id
  * 三键对账；03 schema binding_ref 专位待 Owner 追认后随 W2 修订落位。
  *
- * 词形纪律：本模块一切字段名/闭包/前缀 = SP 提案待追认；DetectionStatus 四态词表
+ * 词形纪律：本模块一切字段名/闭包/前缀 = SP 提案待追认（非战役词形维持——收编走
+ * 词汇表 PR 逐批转正）；战役收编面（x-vocab-source: vocab-lock master_campaign_vocab，
+ * PR-0011，Owner 裁定 1=A 2026-09-30）：seam_role 两值 / fixture_layer_kinds 三值已入锁。
+ * DetectionStatus 四态词表
  * 已锁（vocab-lock presentation_axes.tool_detection_status），本模块零扩值。
  */
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { isAbsolute, join as pathJoin, resolve } from "node:path";
 import { performance } from "node:perf_hooks";
 import type {
@@ -75,6 +79,17 @@ import {
   CONTROL_DATA_FLOW_TOOL_ID,
   createControlDataFlowAdapter,
 } from "./control-data-flow-adapter.js";
+import {
+  CONTROL_DATA_FLOW_RUNTIME_ADAPTER_REF,
+  CONTROL_DATA_FLOW_RUNTIME_FORMAT,
+  CONTROL_DATA_FLOW_RUNTIME_METRIC_DIALECT,
+  CONTROL_DATA_FLOW_RUNTIME_PARSER_REF,
+  CONTROL_DATA_FLOW_RUNTIME_TOOL_ID,
+  assertSafeRuntimeProbeManifest,
+  parseControlDataFlowRuntimeReport,
+  type ControlDataFlowRuntimeProbeManifest,
+  createControlDataFlowRuntimeAdapter,
+} from "./control-data-flow-runtime-adapter.js";
 
 // ============================================================
 // 绑定记录面（schema 23 的 TS 运行时镜像；形状纪律见模块头注）
@@ -89,6 +104,7 @@ export interface ToolBindingExecution {
   readonly env_allowlist?: readonly string[];
   readonly output_roots?: readonly string[];
   readonly executable?: string;
+  readonly probe_manifest?: string;
 }
 
 /** 报告合同（validated 判定式对照面）。 */
@@ -123,6 +139,12 @@ export interface ToolBindingRecord {
   readonly gate_def: string;
   readonly metric_dialect: string;
   readonly capabilities: readonly string[];
+  /**
+   * seam 腿角色（W5-FR09 加性可选；schema 23 binding.seam_role 同批镜像）：mock/real
+   * 双腿 binding 的身份标记——seam 场景 runtime gate 双腿展开的选择面；缺席=非 seam
+   * binding（legacy 词形字节不变）。词形闭包 = kernel SEAM_ROLE_VALUES。
+   */
+  readonly seam_role?: "mock" | "real";
   readonly execution: ToolBindingExecution;
   readonly report_contract: ToolBindingReportContract;
   readonly evidence_targets?: readonly string[];
@@ -243,6 +265,20 @@ const CONTROL_DATA_FLOW_DECL: TrustedBindingAdapterDecl = {
     : null,
 };
 
+const CONTROL_DATA_FLOW_RUNTIME_DECL: TrustedBindingAdapterDecl = {
+  ref: CONTROL_DATA_FLOW_RUNTIME_ADAPTER_REF,
+  adapterKey: "control_data_flow_runtime",
+  createAdapter: () => createControlDataFlowRuntimeAdapter(),
+  capabilities: ["control_data_flow"],
+  accepted_formats: [CONTROL_DATA_FLOW_RUNTIME_FORMAT],
+  accepted_parser_refs: [CONTROL_DATA_FLOW_RUNTIME_PARSER_REF],
+  accepted_metric_dialects: [CONTROL_DATA_FLOW_RUNTIME_METRIC_DIALECT],
+  accepted_tool_ids: [CONTROL_DATA_FLOW_RUNTIME_TOOL_ID],
+  detectorFor: (toolId) => toolId === CONTROL_DATA_FLOW_RUNTIME_TOOL_ID
+    ? (facts) => createControlDataFlowRuntimeAdapter().detect(facts)
+    : null,
+};
+
 /**
  * 受信 adapter 注册表（adapter_ref → 声明）。增长通道 = 发行包代码 + schema 23
  * adapter_ref 枚举同批修订（SP-W1-e；禁绑定侧自造 ref）。W3-S2 起含 TS 族双
@@ -253,6 +289,7 @@ export const TRUSTED_BINDING_ADAPTERS: Readonly<Record<string, TrustedBindingAda
   [TYPECHECK_DECL.ref]: TYPECHECK_DECL,
   [LINT_DECL.ref]: LINT_DECL,
   [CONTROL_DATA_FLOW_DECL.ref]: CONTROL_DATA_FLOW_DECL,
+  [CONTROL_DATA_FLOW_RUNTIME_DECL.ref]: CONTROL_DATA_FLOW_RUNTIME_DECL,
 };
 
 /** adapter_ref 解析（未知 ref → null——调用方 fail-closed，禁静默当可执行）。 */
@@ -393,6 +430,8 @@ export interface BindingGateOutcome {
   readonly plan: GatePlan;
   /** 归一记录（含 scope.note 绑定留痕；GRN 入账归编排层 record gate-run 通路）。 */
   readonly record: GateResultRecord;
+  /** 受信 adapter 已完成领域语义校验的原始报告；编排层内容寻址后绑定 GRN。 */
+  readonly artifact?: { readonly bytes: Uint8Array; readonly media: string };
 }
 
 /** 绑定执行合同解析（command ∥ argv；两缺席 = schema anyOf 违例的热路径防线）。 */
@@ -483,19 +522,80 @@ export function runBindingGate(
     binding.execution.env_allowlist.length > 0
       ? allowlistSpawn(binding.execution.env_allowlist)
       : deps.spawnFn;
+  let runtimeManifest: ControlDataFlowRuntimeProbeManifest | null = null;
+  if (decl.ref === CONTROL_DATA_FLOW_RUNTIME_ADAPTER_REF) {
+    const manifest = binding.execution.probe_manifest;
+    if (manifest === undefined || manifest.trim().length === 0) throw new GateAdapterError("runner_not_ready", "runtime CDF binding 缺 probe_manifest，工具未启动", "登记 READ_ONLY 或隔离 fixture+cleanup 的 runtime probe manifest");
+    const manifestPath = isAbsolute(manifest) ? manifest : pathJoin(resolve(context.projectRoot), manifest);
+    let rawManifest: string;
+    try { rawManifest = readFileSync(manifestPath, "utf8"); }
+    catch (error) { throw new GateAdapterError("runner_not_ready", `runtime CDF probe manifest 不可读：${String(error)}`, "修复 execution.probe_manifest 后重试；工具尚未启动"); }
+    runtimeManifest = assertSafeRuntimeProbeManifest(rawManifest, context.subjectId ?? null);
+  }
   const raw = adapter.run(plan, spawnFn);
+  if (runtimeManifest !== null && raw.kind === "executed") {
+    const report = parseControlDataFlowRuntimeReport(raw.stdout);
+    // W5 契约 §2 correlation 强对账：manifest 声明 correlation_id（编排启动时生成的
+    // 预期 ID）时 report 必须相等——不等=报告无效（GateAdapterError，编排层转
+    // not_run；非 warning 可容忍项）。legacy manifest 缺席声明时保持既有行为。
+    if (report !== null && runtimeManifest.correlation_id !== undefined && report.correlation_id !== runtimeManifest.correlation_id) {
+      throw new GateAdapterError("runner_not_ready", `runtime report correlation_id=${report.correlation_id} 与 manifest 预期=${runtimeManifest.correlation_id} 不一致——报告无效（非 warning）`, "修正 probe 的 correlation_id 与 manifest 同源；跨 correlation 的 trace 不入账");
+    }
+    if (report !== null && (report.static_control_ref !== runtimeManifest.static_control_ref || report.side_effect !== runtimeManifest.side_effect || report.fixture.isolated !== runtimeManifest.fixture.isolated || report.fixture.ref !== runtimeManifest.fixture.ref)) {
+      throw new GateAdapterError("runner_not_ready", "runtime report 与启动前 probe manifest 身份/副作用边界漂移", "修复 adapter 输出；漂移 trace 不入账");
+    }
+    // 裁定 7=B fixture_layer manifest↔report 强对账：echo 在座时必须与 manifest 声明
+    // 同 kind（不符=报告无效）；manifest 未声明时 report 不得自带（无出生凭证的
+    // real_browser 自称=假绿通道封死——Node 沙箱报告不得改名冒充真实浏览器）。
+    // manifest 声明而 report 缺 echo = 过渡宽容（echo 属增量义务；ui_surface 满足链
+    // 在编排层义务判定仍强制 echo=real_browser——宽容不放大证明力）。
+    if (report !== null && report.schema === "pomaster.control-data-flow-runtime/v2" && runtimeManifest.fixture_layer !== undefined
+      && report.fixture_layer !== undefined && report.fixture_layer !== runtimeManifest.fixture_layer.kind) {
+      throw new GateAdapterError("runner_not_ready", `runtime report fixture_layer echo=${String(report.fixture_layer)} 与 manifest 声明=${runtimeManifest.fixture_layer.kind} 不一致——报告无效`, "修正 probe 输出的 fixture_layer echo 与 manifest 同源；跨层声明不入账");
+    }
+    if (report !== null && report.schema === "pomaster.control-data-flow-runtime/v2" && runtimeManifest.fixture_layer === undefined && report.fixture_layer !== undefined) {
+      throw new GateAdapterError("runner_not_ready", "runtime report 自带 fixture_layer 但 manifest 未申报——无出生凭证的分层声明无效", "fixture_layer 由 manifest 声明、report 只作 echo；补 manifest 声明或移除 report 自带字段");
+    }
+  }
   // Q3 双向耦合：subjectId 前缀 TEST.* ⇔ isFixture=true（browser-legs.ts:155 同款镜像——
   // 违者 assertCommonGates FATAL，与既有腿同一判卷纪律）。
   const record = adapter.normalize(raw, {
     declaredVerdict: null,
     isFixture: plan.subjectId !== null && plan.subjectId.startsWith("TEST."),
   });
+  // W5 契约 §5 fixture 分层呈现：manifest 声明 fixture_layer 时 scope.note 附
+  // fixture_layer=<kind>（报告消费端按声明呈现证明范围——Node 文件沙箱不得改名
+  // 冒充真实业务链；缺席=未申报诚实留白）。
+  const fixtureLayerNote =
+    runtimeManifest?.fixture_layer === undefined
+      ? null
+      : `fixture_layer=${runtimeManifest.fixture_layer.kind}`;
+  const layerStamped: GateResultRecord =
+    fixtureLayerNote === null
+      ? record
+      : {
+          ...record,
+          scopeNote:
+            record.scopeNote === undefined
+              ? fixtureLayerNote
+              : `${record.scopeNote}；${fixtureLayerNote}`,
+        };
   // SP-W1-f 过渡留痕：scope.note 尾附 binding_id=<id>（03 binding_ref 专位待 Owner 追认）。
   const annotation = `${BINDING_ANNOTATION_PREFIX}${binding.id}`;
   const stamped: GateResultRecord = {
-    ...record,
+    ...layerStamped,
     scopeNote:
-      record.scopeNote === undefined ? annotation : `${record.scopeNote}；${annotation}`,
+      layerStamped.scopeNote === undefined ? annotation : `${layerStamped.scopeNote}；${annotation}`,
   };
-  return { binding_id: binding.id, plan, record: stamped };
+  return {
+    binding_id: binding.id,
+    plan,
+    record: stamped,
+    // W5 契约 §3 static 交叉核验的分母来源：静态 CONTROL_DATA_FLOW report 也以
+    // artifact 内容寻址落盘（plan-runner runtime 义务判定读取对账——static_control_ref
+    // 须真实在静态分母内，读取失败/不在册=runtime 验证不可绿）。
+    ...((decl.ref === CONTROL_DATA_FLOW_RUNTIME_ADAPTER_REF || decl.ref === CONTROL_DATA_FLOW_ADAPTER_REF) && stamped.verdict !== "not_run"
+      ? { artifact: { bytes: Buffer.from(raw.stdout, "utf8"), media: decl.ref === CONTROL_DATA_FLOW_RUNTIME_ADAPTER_REF ? "control_data_flow_runtime_trace" : "control_data_flow_report" } }
+      : {}),
+  };
 }

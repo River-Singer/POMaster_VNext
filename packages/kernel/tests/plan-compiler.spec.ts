@@ -22,6 +22,7 @@ import {
   compileVerificationPlan,
   PLAN_APPLICABILITY_VALUES,
   PLAN_CAPABILITY_WORDS,
+  PLAN_CAPABILITY_GATE_NAMES,
   PLAN_CHANGE_FACE_KINDS,
   type PlanAcceptanceItem,
   type PlanChangeFace,
@@ -324,6 +325,7 @@ describe("词形闭包（SP 提案词形；TODO(vocab-pr)）", () => {
     expect(PLAN_CAPABILITY_WORDS).toHaveLength(14);
     expect(PLAN_CAPABILITY_WORDS).toContain("static_analysis");
     expect(PLAN_CAPABILITY_WORDS).toContain("control_data_flow");
+    expect(PLAN_CAPABILITY_GATE_NAMES.control_data_flow).toEqual(["CONTROL_DATA_FLOW", "CONTROL_DATA_FLOW_RUNTIME"]);
   });
 
   it("NOT_APPLICABLE 复用 baseline 既有词形（baselineGrounding 同源）", () => {
@@ -449,5 +451,451 @@ describe("旧档位迁移清单指针登记（头注）", () => {
     ]) {
       expect(source).toContain(word);
     }
+  });
+});
+
+// ============================================================
+// W1-FR04 Acceptance 场景契约（PR-W1.1：场景进证据分母——加性可选、legacy 零破坏）
+// ============================================================
+//
+// 设计权威：research/evidence-scenarios-and-boundaries.md §3/§8 方案 A——
+// 场景挂在 Acceptance 级（PlanAcceptanceItem.scenarios 可选加性集合）：
+// - 场景是验收的观察细化（precondition/interaction/state_dimensions/expected_
+//   observation 都是「这条验收在什么情形下应观察到什么」），领域上属 Acceptance；
+// - inputs_fingerprint 对整个 acceptance 输入段做 canonical 摘要——场景挂此层即
+//   自动参与指纹（场景定义变化 → plan fingerprint 变化 → 旧证据重新判资格）；
+// - 不新增 canonical TestCase entity；局部 scenario_ref 是 task 内稳定局部键
+//   （非 governed id——禁发明新词形轴）；无场景的 legacy acceptance 语义字节不变。
+
+/** 复选框三态场景（research §3 最小反例的 Case C 原型；W1.3 回放同源）。 */
+const CHECKBOX_SCENARIOS = [
+  {
+    scenario_ref: "selected-no-hover",
+    precondition: "复选框处于选中态",
+    interaction: "指针不在复选框上（no-hover）",
+    state_dimensions: ["selected=true", "hover=false"],
+    expected_observation: "悬浮提示不显示；复选框保持选中呈现",
+    runtime_confirmation_required: false,
+  },
+  {
+    scenario_ref: "selected-hover",
+    precondition: "复选框处于选中态",
+    interaction: "指针悬停于复选框上",
+    state_dimensions: ["selected=true", "hover=true"],
+    expected_observation: "悬浮提示显示当前选中说明",
+    runtime_confirmation_required: false,
+  },
+  {
+    scenario_ref: "unselected-hover",
+    precondition: "复选框处于未选中态",
+    interaction: "指针悬停于复选框上",
+    state_dimensions: ["selected=false", "hover=true"],
+    expected_observation: "悬浮提示显示未选中引导文案",
+    runtime_confirmation_required: true,
+  },
+] as unknown[];
+
+/** 把场景集合注入 c1Input 的 acceptance[0]（W1.1 契约校验/指纹钉测共用）。 */
+function withAcceptanceScenarios(
+  scenarios: unknown,
+  input: VerificationPlanInput = c1Input(),
+): VerificationPlanInput {
+  const head = input.acceptance.value[0] as PlanAcceptanceItem;
+  return {
+    ...input,
+    acceptance: {
+      ...input.acceptance,
+      value: [{ ...head, scenarios } as PlanAcceptanceItem, ...input.acceptance.value.slice(1)],
+    },
+  };
+}
+
+function scenarioScenario(
+  mutate: (scenario: Record<string, unknown>) => void,
+): unknown[] {
+  const rows = JSON.parse(JSON.stringify(CHECKBOX_SCENARIOS)) as Record<string, unknown>[];
+  mutate(rows[1] as Record<string, unknown>);
+  return rows;
+}
+
+describe("Acceptance 场景契约（W1-FR04：fail-closed 校验——显式缺口不吞分母）", () => {
+  it("合法场景集合放行（契约最小形态可用）", () => {
+    expect(() => compileVerificationPlan(withAcceptanceScenarios(CHECKBOX_SCENARIOS))).not.toThrow();
+  });
+
+  it("duplicate scenario_ref → SCHEMA_INVALID（重复项不缩分母）", () => {
+    const duplicated = [...CHECKBOX_SCENARIOS, CHECKBOX_SCENARIOS[0]];
+    expect(() => compileVerificationPlan(withAcceptanceScenarios(duplicated))).toThrowError(/scenario_ref 重复/);
+  });
+
+  it("空 expected_observation → SCHEMA_INVALID（空预期=显式缺口，禁静默当已观察）", () => {
+    expect(() =>
+      compileVerificationPlan(
+        withAcceptanceScenarios(scenarioScenario((row) => { row.expected_observation = "   "; })),
+      ),
+    ).toThrowError(/expected_observation/);
+  });
+
+  it("空 scenario_ref / 空 precondition / 空 interaction → SCHEMA_INVALID", () => {
+    expect(() =>
+      compileVerificationPlan(withAcceptanceScenarios(scenarioScenario((row) => { row.scenario_ref = ""; }))),
+    ).toThrowError(/scenario_ref/);
+    expect(() =>
+      compileVerificationPlan(withAcceptanceScenarios(scenarioScenario((row) => { row.precondition = "  "; }))),
+    ).toThrowError(/precondition/);
+    expect(() =>
+      compileVerificationPlan(withAcceptanceScenarios(scenarioScenario((row) => { row.interaction = ""; }))),
+    ).toThrowError(/interaction/);
+  });
+
+  it("runtime_confirmation_required 非 boolean → SCHEMA_INVALID（声明位须显式）", () => {
+    expect(() =>
+      compileVerificationPlan(
+        withAcceptanceScenarios(scenarioScenario((row) => { row.runtime_confirmation_required = "yes"; })),
+      ),
+    ).toThrowError(/runtime_confirmation_required/);
+  });
+
+  it("scenarios 非数组 / state_dimensions 非法词形 → SCHEMA_INVALID", () => {
+    expect(() =>
+      compileVerificationPlan(withAcceptanceScenarios("selected-hover")),
+    ).toThrowError(/scenarios 须为数组/);
+    expect(() =>
+      compileVerificationPlan(
+        withAcceptanceScenarios(scenarioScenario((row) => { row.state_dimensions = [42]; })),
+      ),
+    ).toThrowError(/state_dimensions/);
+  });
+
+  it("scenario_ref 携带 GRN note marker 保留字（；/换行）→ SCHEMA_INVALID（marker 语法卫生）", () => {
+    expect(() =>
+      compileVerificationPlan(
+        withAcceptanceScenarios(scenarioScenario((row) => { row.scenario_ref = "a；b"; })),
+      ),
+    ).toThrowError(/scenario_ref/);
+  });
+});
+
+describe("Acceptance 场景契约（W1-FR04：场景身份参与 plan fingerprint 与 legacy 零破坏）", () => {
+  it("场景集合参与 inputs_fingerprint：加场景变指纹；expected_observation 修订再变（场景定义变化 → 旧证据重新判资格的身份锚）", () => {
+    const legacy = compileVerificationPlan(c1Input());
+    const withScenarios = compileVerificationPlan(withAcceptanceScenarios(CHECKBOX_SCENARIOS));
+    expect(withScenarios.inputs_fingerprint).not.toBe(legacy.inputs_fingerprint);
+
+    const revised = withAcceptanceScenarios(
+      scenarioScenario((row) => { row.expected_observation = "toast 成功升级为重读可见"; }),
+    );
+    expect(compileVerificationPlan(revised).inputs_fingerprint).not.toBe(withScenarios.inputs_fingerprint);
+  });
+
+  it("legacy 零破坏：无 scenarios 输入与显式 undefined 等价；空数组=显式无场景（行为面零变化，空申报本身进指纹）", () => {
+    const legacy = compileVerificationPlan(c1Input());
+    const explicitUndefined = compileVerificationPlan(withAcceptanceScenarios(undefined));
+    expect(explicitUndefined.items).toEqual(legacy.items);
+    expect(explicitUndefined.unknowns).toEqual(legacy.unknowns);
+    expect(explicitUndefined.inputs_fingerprint).toBe(legacy.inputs_fingerprint);
+
+    const emptyDeclared = compileVerificationPlan(withAcceptanceScenarios([]));
+    expect(emptyDeclared.items).toEqual(legacy.items);
+    expect(emptyDeclared.unknowns).toEqual(legacy.unknowns);
+    // 「场景义务为零」的显式空申报是不同输入事实（canonical 摘要含 []）——行为面不变、指纹可辨。
+    expect(emptyDeclared.inputs_fingerprint).not.toBe(legacy.inputs_fingerprint);
+  });
+});
+
+describe("Acceptance 场景编译展开（W1-FR04：acceptance×capability×scenario 义务分母；PR-W1.2）", () => {
+  const plan = compileVerificationPlan(withAcceptanceScenarios(CHECKBOX_SCENARIOS));
+
+  it("REQUIRED 条目按场景展开：每场景一条 item 带 scenario_ref，reason/expected_evidence 携带场景义务", () => {
+    const render = plan.items.filter(
+      (item) => item.acceptance_ref === A1_REF && item.capability === "ui_render",
+    );
+    expect(render).toHaveLength(3);
+    // 展开 per-scenario 且 (acceptance_ref, capability, scenario_ref) 码点序。
+    expect(render.map((item) => item.scenario_ref)).toEqual([
+      "selected-hover",
+      "selected-no-hover",
+      "unselected-hover",
+    ]);
+    for (const item of render) {
+      expect(item.applicability).toBe("REQUIRED");
+      expect(item.reason).toContain(`scenario=${item.scenario_ref as string}`);
+      expect(item.expected_evidence).toContain(`scenario=${item.scenario_ref as string}`);
+      expect(item.expected_evidence).toContain("悬浮提示");
+      expect(item.resolved_tool).toBe("vitest"); // 工具解析与场景正交（c1 fixture vitest 覆盖 ui_render）
+    }
+    const runtimeConfirmed = render.find((item) => item.scenario_ref === "unselected-hover");
+    expect(runtimeConfirmed?.reason).toContain("须运行时确认");
+    expect(runtimeConfirmed?.expected_evidence).toContain("未选中引导文案");
+  });
+
+  it("NOT_REQUIRED / NOT_APPLICABLE 不展开场景（零义务面无分母——单条保持无 scenario_ref 键）", () => {
+    const notApplicable = plan.items.filter(
+      (item) => item.acceptance_ref === A1_REF && item.capability === "migration_drill",
+    );
+    expect(notApplicable).toHaveLength(1);
+    expect(notApplicable[0]?.applicability).toBe("NOT_APPLICABLE");
+    expect(notApplicable[0]?.scenario_ref).toBeUndefined();
+  });
+
+  it("逐 Acceptance 分母：35 items（14+12+9）按 (acceptance_ref, capability, scenario_ref) 码点序零重复", () => {
+    expect(plan.items).toHaveLength(35);
+    const counts = { REQUIRED: 0, NOT_REQUIRED: 0, NOT_APPLICABLE: 0 } as Record<string, number>;
+    for (const item of plan.items) counts[item.applicability] = (counts[item.applicability] ?? 0) + 1;
+    expect(counts).toEqual({ REQUIRED: 10, NOT_REQUIRED: 1, NOT_APPLICABLE: 24 });
+
+    const keys = plan.items.map(
+      (item) => `${item.acceptance_ref}::${item.capability}::${item.scenario_ref ?? ""}`,
+    );
+    expect(keys).toEqual([...keys].sort());
+    expect(new Set(keys).size).toBe(35);
+  });
+
+  it("无场景 acceptance 保持单条 item（无 scenario_ref 键）——legacy 消费矩阵零破坏", () => {
+    const legacyUnit = plan.items.filter(
+      (item) => item.acceptance_ref === A3_REF && item.capability === "unit_behavior",
+    );
+    expect(legacyUnit).toHaveLength(1);
+    expect(legacyUnit[0]?.scenario_ref).toBeUndefined();
+    expect(legacyUnit[0]?.applicability).toBe("REQUIRED");
+
+    const legacy = compileVerificationPlan(c1Input());
+    expect(legacy.items.every((item) => item.scenario_ref === undefined)).toBe(true);
+  });
+
+  it("可重编译：场景化输入同输入 → 同输出（含 scenario_ref 字节稳定）", () => {
+    const replay = compileVerificationPlan(withAcceptanceScenarios(CHECKBOX_SCENARIOS));
+    expect(replay).toEqual(plan);
+  });
+});
+
+describe("reviewed scope 非授权计划输入", () => {
+  it("进入输出和指纹，但不改变 item target/applicability/tool binding", () => {
+    const base = c1Input();
+    const before = compileVerificationPlan(base);
+    const after = compileVerificationPlan({
+      ...base,
+      reviewedScope: {
+        value: {
+          task_ref: "TASK.DESIGN-TOKENS-FILTER", review_ref: "TASK.DESIGN-TOKENS-FILTER#reality_scope_reviews[0]",
+          observation_ref: "OBS-0006", report_sha256: `sha256:${"1".repeat(64)}`, source_sha: `sha256:${"2".repeat(64)}`,
+          freshness: "fresh", declared_roots: ["src/root.ts"], accepted_paths: ["src/a.ts"], excluded_paths: [], unknown_paths: ["src/b.ts"],
+          unresolved_imports: [], truncated: true, authority: "reviewed_input_only",
+        }, source_ref: "store:TASK payload.reality_scope_reviews(latest)", version: "pomaster.import-scope-review/v1", unknowns: [],
+      },
+    });
+    expect(after.reviewed_scope?.authority).toBe("reviewed_input_only");
+    expect(after.inputs_fingerprint).not.toBe(before.inputs_fingerprint);
+    expect(after.items).toEqual(before.items);
+  });
+});
+
+// ============================================================
+// W5-FR09/FR10 oracle + seam 词形（契约 w5-probe-contract §1/§4；加性可选、legacy 零破坏）
+// ============================================================
+
+/** seam 场景输入底座：control_data_flow 义务 + unified runtime bindings（mock/real 双腿）。 */
+function seamInput(overrides?: {
+  scenarios?: unknown;
+  runtimeBindings?: PlanToolBinding[];
+}): VerificationPlanInput {
+  const base = c1Input();
+  const staticBinding: PlanToolBinding = {
+    binding_id: "project.cdf.static", tool_id: "gauntlet:control-data-flow",
+    gate: "CONTROL_DATA_FLOW", gate_def: "POLICY.GATE.CONTROL_DATA_FLOW@0.1.0",
+    capabilities: ["control_data_flow"],
+    source_ref: "binding:static", version: "0.1.0", available: true, availability_reason: "ok",
+  };
+  const runtimeLegs: PlanToolBinding[] = overrides?.runtimeBindings ?? [
+    {
+      binding_id: "project.cdf.runtime.mock", tool_id: "gauntlet:control-data-flow-runtime",
+      gate: "CONTROL_DATA_FLOW_RUNTIME", gate_def: "POLICY.GATE.CONTROL_DATA_FLOW_RUNTIME@0.1.0",
+      capabilities: ["control_data_flow"], seam_role: "mock",
+      source_ref: "binding:mock", version: "0.1.0", available: true, availability_reason: "ok",
+    },
+    {
+      binding_id: "project.cdf.runtime.real", tool_id: "gauntlet:control-data-flow-runtime",
+      gate: "CONTROL_DATA_FLOW_RUNTIME", gate_def: "POLICY.GATE.CONTROL_DATA_FLOW_RUNTIME@0.1.0",
+      capabilities: ["control_data_flow"], seam_role: "real",
+      source_ref: "binding:real", version: "0.1.0", available: true, availability_reason: "ok",
+    },
+  ];
+  const head = base.acceptance.value[0] as PlanAcceptanceItem;
+  return {
+    ...base,
+    acceptance: {
+      ...base.acceptance,
+      value: [
+        {
+          ...head,
+          requires: [...head.requires, "control_data_flow"],
+          scenarios:
+            overrides?.scenarios ??
+            [
+              {
+                scenario_ref: "import-persisted",
+                precondition: "导入入口在座",
+                interaction: "触发导入",
+                state_dimensions: ["imported=true"],
+                expected_observation: "导入结果重读可见",
+                runtime_confirmation_required: true,
+                expected_observation_oracle: {
+                  visible_via: "api_list",
+                  filter_context: { project_id: "p-1" },
+                  mapping_fields: ["imported_count"],
+                },
+                mock_real_seam: { operation_id: "import-records", contract_ref: "OAS.IMPORT@1" },
+              },
+            ] as unknown,
+        },
+        ...base.acceptance.value.slice(1),
+      ],
+    },
+    toolBindings: {
+      ...base.toolBindings,
+      // override 语义 = 完整替换 binding 清单（缺省 = 默认双腿 + static）。
+      value: overrides?.runtimeBindings !== undefined ? overrides.runtimeBindings : [...runtimeLegs, staticBinding],
+    },
+  };
+}
+
+describe("Acceptance 场景契约（W5-FR10 oracle 词形：fail-closed 闭包校验——可加细不得放宽）", () => {
+  it("合法 oracle 放行且随展开条目下传（scenario_oracle 键 + expected_evidence 携带 oracle 描述）", () => {
+    const plan = compileVerificationPlan(seamInput());
+    const runtime = plan.items.find(
+      (item) => item.scenario_ref === "import-persisted" && item.capability === "control_data_flow" && item.applicability === "REQUIRED",
+    );
+    expect(runtime?.scenario_oracle).toEqual({
+      visible_via: "api_list",
+      filter_context: { project_id: "p-1" },
+      mapping_fields: ["imported_count"],
+    });
+    expect(runtime?.expected_evidence).toContain("oracle：保存后经 api_list 通道可见");
+    expect(runtime?.expected_evidence).toContain("imported_count");
+  });
+
+  it("oracle 额外键拒绝（词形闭包 fail-closed——额外义务键走契约修订不自扩）", () => {
+    const scenarios = seamInput().acceptance.value[0] as PlanAcceptanceItem;
+    const rows = (scenarios.scenarios as Record<string, unknown>[]).map((row) => ({
+      ...row,
+      expected_observation_oracle: { ...(row.expected_observation_oracle as object), toast_visible: true },
+    }));
+    expect(() => compileVerificationPlan(seamInput({ scenarios: rows }))).toThrowError(/toast_visible 不在 oracle 闭合词形/);
+  });
+
+  it("visible_via 词表外拒绝（api_list/api_detail/ui_surface 三值闭包）", () => {
+    const scenarios = seamInput().acceptance.value[0] as PlanAcceptanceItem;
+    const rows = (scenarios.scenarios as Record<string, unknown>[]).map((row) => ({
+      ...row,
+      expected_observation_oracle: { ...(row.expected_observation_oracle as object), visible_via: "cli_stdout" },
+    }));
+    expect(() => compileVerificationPlan(seamInput({ scenarios: rows }))).toThrowError(/visible_via/);
+  });
+
+  it("filter_context 键值非空字符串；mapping_fields 须 string[]；oracle 非对象拒绝", () => {
+    const scenarios = seamInput().acceptance.value[0] as PlanAcceptanceItem;
+    const mutate = (patch: (row: Record<string, unknown>) => void): unknown[] => {
+      const rows = JSON.parse(JSON.stringify(scenarios.scenarios)) as Record<string, unknown>[];
+      patch(rows[0] as Record<string, unknown>);
+      return rows;
+    };
+    expect(() =>
+      compileVerificationPlan(seamInput({
+        scenarios: mutate((row) => { (row.expected_observation_oracle as Record<string, unknown>).filter_context = { "": "p-1" }; }),
+      })),
+    ).toThrowError(/filter_context/);
+    expect(() =>
+      compileVerificationPlan(seamInput({
+        scenarios: mutate((row) => { (row.expected_observation_oracle as Record<string, unknown>).mapping_fields = [42]; }),
+      })),
+    ).toThrowError(/mapping_fields/);
+    expect(() =>
+      compileVerificationPlan(seamInput({
+        scenarios: mutate((row) => { row.expected_observation_oracle = "api_list 可见"; }),
+      })),
+    ).toThrowError(/expected_observation_oracle 须为对象/);
+  });
+
+  it("oracle 参与 plan fingerprint（oracle 修订 → 旧证据重新判资格）", () => {
+    const base = compileVerificationPlan(seamInput());
+    const scenarios = seamInput().acceptance.value[0] as PlanAcceptanceItem;
+    const rows = JSON.parse(JSON.stringify(scenarios.scenarios)) as Record<string, unknown>[];
+    ((rows[0] as Record<string, unknown>)["expected_observation_oracle"] as Record<string, unknown>)["mapping_fields"] = ["imported_count", "failed_count"];
+    const revised = compileVerificationPlan(seamInput({ scenarios: rows }));
+    expect(revised.inputs_fingerprint).not.toBe(base.inputs_fingerprint);
+  });
+});
+
+describe("Acceptance 场景契约（W5-FR09 seam 词形：双腿展开 + 缺腿 tool_gap——compiler 保持 binding 选择权威）", () => {
+  it("合法 seam 声明放行且 runtime gate 双腿展开（每腿独立 resolved_binding 带 seam_role）", () => {
+    const plan = compileVerificationPlan(seamInput());
+    const runtime = plan.items.filter(
+      (item) => item.scenario_ref === "import-persisted" && item.capability === "control_data_flow" && item.applicability === "REQUIRED",
+    );
+    // runtime gate 单条目（per-scenario），resolved_bindings = 静态 1 + runtime 双腿 2。
+    expect(runtime).toHaveLength(1);
+    expect(runtime[0]?.seam_obligation).toEqual({ operation_id: "import-records", contract_ref: "OAS.IMPORT@1" });
+    expect(runtime[0]?.resolved_bindings).toHaveLength(3);
+    expect(runtime[0]?.resolved_bindings.filter((binding) => binding.gate === "CONTROL_DATA_FLOW_RUNTIME").map((binding) => [binding.binding_id, binding.seam_role])).toEqual([
+      ["project.cdf.runtime.mock", "mock"],
+      ["project.cdf.runtime.real", "real"],
+    ]);
+    // 静态 gate 照旧单 binding（seam 双腿只对 CONTROL_DATA_FLOW_RUNTIME 展开）。
+    const staticLegs = runtime[0]?.resolved_bindings.filter((binding) => binding.gate === "CONTROL_DATA_FLOW") ?? [];
+    expect(staticLegs).toHaveLength(1);
+    expect(staticLegs.every((binding) => binding.seam_role === undefined)).toBe(true);
+    expect(runtime[0]?.reason).toContain("seam 义务 operation=import-records");
+  });
+
+  it("缺任一腿 → tool_gap 点名缺席腿并带登记路标（义务保持 REQUIRED——缺腿非绿在执行期 fail-closed）", () => {
+    const bindings = seamInput().toolBindings.value as PlanToolBinding[];
+    const mockOnly = bindings.filter((binding) => binding.seam_role !== "real");
+    const plan = compileVerificationPlan(seamInput({ runtimeBindings: mockOnly }));
+    const runtime = plan.items.find(
+      (item) => item.scenario_ref === "import-persisted" && item.capability === "control_data_flow" && item.applicability === "REQUIRED",
+    );
+    expect(runtime?.resolved_bindings.filter((binding) => binding.gate === "CONTROL_DATA_FLOW_RUNTIME").map((binding) => binding.seam_role)).toEqual(["mock"]);
+    expect(runtime?.tool_gap).toContain("real 腿绑定缺席");
+    expect(runtime?.tool_gap).toContain("seam_role=real");
+  });
+
+  it("非 seam 场景 binding 选择行为字节不变（同 registry 下无 mock_real_seam 的条目仍单 binding 无 seam_role）", () => {
+    const plan = compileVerificationPlan(seamInput());
+    const legacyRender = plan.items.filter(
+      (item) => item.scenario_ref === undefined && item.capability === "unit_behavior" && item.applicability === "REQUIRED",
+    );
+    expect(legacyRender.every((item) => item.resolved_bindings.every((binding) => binding.seam_role === undefined))).toBe(true);
+    expect(legacyRender.every((item) => item.seam_obligation === undefined && item.scenario_oracle === undefined)).toBe(true);
+  });
+
+  it("seam 词形 fail-closed：额外键 / 空 operation_id / contract_ref 非法词形拒绝", () => {
+    const scenarios = seamInput().acceptance.value[0] as PlanAcceptanceItem;
+    const mutate = (patch: (row: Record<string, unknown>) => void): unknown[] => {
+      const rows = JSON.parse(JSON.stringify(scenarios.scenarios)) as Record<string, unknown>[];
+      patch(rows[0] as Record<string, unknown>);
+      return rows;
+    };
+    expect(() =>
+      compileVerificationPlan(seamInput({
+        scenarios: mutate((row) => { row.mock_real_seam = { ...(row.mock_real_seam as object), mode: "half" }; }),
+      })),
+    ).toThrowError(/mode 不在 seam 闭合词形/);
+    expect(() =>
+      compileVerificationPlan(seamInput({
+        scenarios: mutate((row) => { (row.mock_real_seam as Record<string, unknown>).operation_id = "  "; }),
+      })),
+    ).toThrowError(/operation_id/);
+    expect(() =>
+      compileVerificationPlan(seamInput({
+        scenarios: mutate((row) => { (row.mock_real_seam as Record<string, unknown>).contract_ref = 42; }),
+      })),
+    ).toThrowError(/contract_ref/);
+  });
+
+  it("seam_role 词表外 binding 输入拒绝（mock/real 两值闭包——冒领即 seam 对账失效）", () => {
+    const bindings = (seamInput().toolBindings.value as PlanToolBinding[]).map((binding) =>
+      binding.seam_role === "mock" ? { ...binding, seam_role: "shadow" as never } : binding,
+    );
+    expect(() => compileVerificationPlan(seamInput({ runtimeBindings: bindings }))).toThrowError(/seam_role = shadow 不在 seam 腿角色词表/);
   });
 });

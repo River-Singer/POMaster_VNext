@@ -25,9 +25,11 @@ import {
   applyTransaction,
   beginExecution,
   checkPermit,
+  compareSourceSnapshots,
   createStore,
   issuePermit,
 } from "@pomaster/kernel";
+import { captureEvidenceSourceSnapshot } from "../src/source-snapshot.js";
 import {
   runRecordClaim,
   runRecordGateRun,
@@ -608,5 +610,56 @@ describe("record verification 命令面", () => {
     expect(missingCode).toBe(1);
     const missingEnvelope = JSON.parse(errLines.join("\n")) as CliEnvelope<Record<string, unknown>>;
     expect(missingEnvelope.errors[0]?.code).toBe("CLAIM_NOT_FOUND");
+  });
+});
+
+// ============================================================
+// 证据源码新鲜度写侧闸（W2-FR05 PR-W2.2；读侧 closeout DOD 的互补位）
+// ============================================================
+//
+// 合同：主张了源码快照的证据 GRN，窗口 fresh 且产出时相关面与当前一致方可承载
+// VERIFIED 回写；产出后相关源码漂移 → VERIFICATION_EVIDENCE_UNQUALIFIED 零写入
+// （不合格 VERIFIED 不入 claims 平面）；内容恢复后判定照常可达（不全局硬拒绝）。
+
+describe("record verification 证据源码新鲜度（W2-FR05）", () => {
+  function writeSource(relative: string, content: string): void {
+    const absolute = join(root, ...relative.split("/"));
+    mkdirSync(dirname(absolute), { recursive: true });
+    writeFileSync(absolute, content, "utf8");
+  }
+
+  it("证据 GRN 产出后相关文件被改 → VERIFICATION_EVIDENCE_UNQUALIFIED 零写入；内容恢复后 APPLIED", async () => {
+    await seedStore();
+    await seedCapability();
+    writeSource("src/feature.ts", "v1\n");
+    const captured = captureEvidenceSourceSnapshot(root, { relevantPaths: ["src/feature.ts"], head: null });
+    const window = { before: captured, after: captured, window: compareSourceSnapshots(captured, captured) };
+    await runRecordGateRun(root, { from: writeInput({ ...gatePayload(), source_snapshot: window }) });
+    const clm = await seedClaimViaRecord({ evidenceRefs: ["GRN-0001"] });
+
+    writeSource("src/feature.ts", "v2\n");
+    const blocked = await runRecordVerification(root, {
+      clm,
+      verifier: "tool:verifier@0.1.0",
+      method: "recompute",
+      evidence: ["GRN-0001"],
+    });
+    expect(blocked.ok).toBe(false);
+    expect(blocked.errors[0]?.code).toBe("VERIFICATION_EVIDENCE_UNQUALIFIED");
+    expect(blocked.errors[0]?.message).toContain("GRN-0001");
+    expect(blocked.errors[0]?.message).toContain("stale");
+    // 零写入：不合格 VERIFIED 不入 claims 平面。
+    expect((readClaim(clm).verification as Record<string, unknown>).verdict).toBe("UNVERIFIED");
+
+    // 内容恢复（after 摘要与当前一致）→ 判定照常可达（不全局硬拒绝；GRN-0001 已在
+    // claim evidence_refs，重复追加会被 kernel 引用去重守卫拒收——本次不追加）。
+    writeSource("src/feature.ts", "v1\n");
+    const applied = await runRecordVerification(root, {
+      clm,
+      verifier: "tool:verifier@0.1.0",
+      method: "recompute",
+    });
+    expect(applied.ok).toBe(true);
+    expect(applied.result.verification).toBe("VERIFIED");
   });
 });
