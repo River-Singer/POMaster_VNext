@@ -413,7 +413,7 @@ describe("裁定 7=B：fixture_layer manifest↔report 对账", () => {
     return JSON.stringify(report);
   }
 
-  function runPair(manifestKind: string | undefined, reportKind: string | undefined): ReturnType<typeof runBindingGate> {
+  async function runPair(manifestKind: string | undefined, reportKind: string | undefined): Promise<ReturnType<typeof runBindingGate>> {
     const { mkdtempSync, writeFileSync } = await import("node:fs");
     const { tmpdir } = await import("node:os");
     const { join } = await import("node:path");
@@ -443,16 +443,16 @@ describe("裁定 7=B：fixture_layer manifest↔report 对账", () => {
     );
   }
 
-  it("manifest 声明 real_browser + report echo 同 kind → 对账通过（GRN 入账）", () => {
-    const outcome = runPair("real_browser", "real_browser");
+  it("manifest 声明 real_browser + report echo 同 kind → 对账通过（GRN 入账）", async () => {
+    const outcome = await runPair("real_browser", "real_browser");
     expect(outcome.record.verdict).toBe("passed");
   });
 
-  it("manifest 声明 node_http_service 而 report echo real_browser → 报告无效（GateAdapterError）", () => {
-    expect(() => runPair("node_http_service", "real_browser")).toThrow(/fixture_layer/);
+  it("manifest 声明 node_http_service 而 report echo real_browser → 报告无效（GateAdapterError）", async () => {
+    await expect(runPair("node_http_service", "real_browser")).rejects.toThrow(/fixture_layer/);
   });
 
-  it("manifest 未申报而 report 自带 fixture_layer → 报告无效（无出生凭证）", () => {
-    expect(() => runPair(undefined, "real_browser")).toThrow(/manifest 未申报/);
+  it("manifest 未申报而 report 自带 fixture_layer → 报告无效（无出生凭证）", async () => {
+    await expect(runPair(undefined, "real_browser")).rejects.toThrow(/manifest 未申报/);
   });
 });
