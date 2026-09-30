@@ -301,6 +301,7 @@ pomaster brainstorm start/question-gate/status/decide/promote
 pomaster permit issue/check/steal/list
 
 # ③ PROJECTION —— 最小充分上下文投影（消费 confirmed baseline/tokens：确认态三态 + 25 资产 digest 摘要 +
+# spec 路由：spec-routing.json 声明协议元数据，context compile --stage/--trigger/--stack/--spec-ref 按任务选择协议并给命中理由——不全量注入）+
 # design-tokens 九组三态进 AUTHORITATIVE/ADVISORY 分区；baseline 漂移/改型 → --check STALE_GROUNDING 呈现）
 pomaster context compile/explain
 
@@ -308,7 +309,7 @@ pomaster context compile/explain
 pomaster exec-guard --attempt <file|->
 pomaster maintain <change-or-task> --ops <tx>
 
-# ⑤ VERIFY —— Verification Plan 编译 / FAST gate / gate recipes 派发 / 证据入账
+# ⑤ VERIFY —— Verification Plan 编译 / FAST gate / gate recipes 派发 / 证据入账（next-action 主链入口 = plan run；check --fast 仅局部自检，不满足未完成 obligation）
 pomaster plan compile/run    # compile 纯读编译证据计划；run 用 --task TASK.* --execution-id AGX-* 同源重编译并按 resolved_bindings 串行执行全部 REQUIRED obligations，每项独立 GRN、task/execution 归因、append-only；仅全 passed 成功，可选 --diagnose-on-failure；不自动 claim/independent verification/closeout
 pomaster control-data-flow analyze [--report-only] # Vue SFC / React TSX 控件数据流静态审计：control→event→handler→state/effect→readback→feedback；动态/跨边界保持 unknown，静态 proven/passed 不代表真实 API、持久化或浏览器旅程成功
 pomaster finalize status/replay-adjudicate/run TASK.* # status = 纯读派生当前 VERIFY/REPLAY/CLAIM/ACCEPT/CLOSEOUT 阶段；replay-adjudicate = 独立复盘主体签发内容寻址回执（--execution-id AGX-* --reviewed-by agent:name --review-range <range> --plan-fingerprint sha256:* --verdict allow-closeout）；run = 可重入收口（--verification-execution-id AGX-* --verifier agent:name --review-range <range> [--replay-receipt sha256:*]），独立/人工边界显式 pending
@@ -442,6 +443,17 @@ pomaster doctor        # 工具/MCP 探测：缺什么提示装什么
 ```
 
 工具缺席 = 显式 NOT_RUN（非绿非红），绝不假绿。浏览器双眼分工：`chrome-devtools` MCP 是观测诊断面（页面慢/报错/卡住必须实测真实浏览器），`playwright` MCP 是确定性 E2E 验证面——两边产物都进证据链。
+
+### ⑥ MASTer 经验驱动的验证闭环（v0.6.0）
+
+从真实失败语料提炼的六件治理能力（失败 → 根因 → 已有能力 → 最小结构修复 → Evidence）：
+
+- **⑤ 主链导航**：next-action 的 VERIFY 入口收正为 `pomaster plan run`（携在途 execution-id）；`check --fast` 保留局部自检语义——任务带场景义务时 fast 输出尾部显式提示「局部绿≠主链完成」。
+- **场景分母**：acceptance 可声明 scenarios 矩阵（scenario_ref/precondition/interaction/state_dimensions/expected_observation + 业务 oracle）——REQUIRED 义务按 acceptance×capability×scenario 展开，每场景独立 GRN；单态证据不满足多态分母，复用身份与 finalize cohort 键逐场景互斥。
+- **协议路由**：catalog 根 `spec-routing.json` 声明协议元数据（semantic_id/stage/trigger/stack/supersession/来源指纹），路由核确定性选择并给命中理由——不全量注入；消费端按 path 重算 sha256 对账声明指纹（漂移=stale 显式）。
+- **证据来源快照**：GRN 信封携带 `source_snapshot` 双采样（before/after + 窗口重算全等强校验）；证据用途声明 `worker_local`/`final_stable`——终验 cohort 只消费 final_stable，worker 中间证据 append-only 保留不入终验分母。
+- **依赖失效与 Attention**：跨平面派生闭包（truth/catalog/discovery/generated/source 五平面，派生边零落盘）→ 后果五分类（recompile/REBIND/requalify/review/no-current-task-impact）逐行携 why 链；同 scope 双 canonical 呈现 Conflict+provenance（mtime 裁胜者被结构性地排除）；Attention 三计数 project/relevant/needs_human——相关 unknown 不被过滤，无关 unknown 不阻塞。
+- **ui_surface 真实浏览器腿**：业务 oracle 声明可见性通道（visible_via/filter_context/mapping_fields）；浏览器工具（playwright / chrome-devtools-mcp）在座即启用真实浏览器观察腿——报告的 fixture_layer=real_browser 声明必须与 manifest 同源且有执行账本浏览器 GRN 支撑（无出生凭证的自称=blocked）；工具缺席诚实 NOT_RUN。
 
 ## 运行机制：State Control Plane
 
