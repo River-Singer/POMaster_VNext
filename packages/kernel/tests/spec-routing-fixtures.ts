@@ -7,9 +7,20 @@
  */
 import type { SpecRoutingEntry, SpecRoutingManifest } from "@pomaster/kernel";
 
-/** sha256 词形 fixture 简写（tag 中非 hex 字符剥除——sha256 词形要求 64 hex）。 */
+import { sha256OfUtf8, type SpecRoutingEntry, type SpecRoutingManifest } from "@pomaster/kernel";
+
+/**
+ * fixture 正文（裁定 4b=C 对账 fixture 的正文同源面）：登记指纹 = sha256OfUtf8(正文)，
+ * 侧写盘正文与登记值天然相符（消费端对账 fresh 基线）——协议正文住消费项目（本仓
+ * 不持有正文），测试侧的「消费项目」即临时 catalog 根。
+ */
+export function fixtureProtocolBody(tag: string): string {
+  return `# protocol fixture ${tag}\n\n协议正文 fixture（对账口径：sha256OfUtf8 本文件字节）。\n`;
+}
+
+/** sha256 词形 fixture（= sha256OfUtf8(fixtureProtocolBody(tag))——登记与正文同源）。 */
 export function sha(tag: string): string {
-  return `sha256:${tag.replace(/[^0-9a-f]/g, "").padEnd(64, "0").slice(0, 64)}`;
+  return sha256OfUtf8(fixtureProtocolBody(tag));
 }
 
 /**

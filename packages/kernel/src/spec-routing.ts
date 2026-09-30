@@ -31,6 +31,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { GovernanceError } from "./errors.js";
+import { sha256OfUtf8 } from "./catalog.js";
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -548,4 +549,76 @@ export function routeSpecs(
     })
     .sort((a, b) => (a.semantic_id < b.semantic_id ? -1 : a.semantic_id > b.semantic_id ? 1 : 0));
   return decisions;
+}
+
+// ============================================================
+// 消费端来源指纹对账（裁定 4b=C；Owner 2026-09-30「A+C：维持 + 消费端 sha256 对账点」）
+// ============================================================
+
+/**
+ * 协议来源指纹对账三态（SOURCE_FRESHNESS_STATES 同词形复用——fresh/stale/unjudgeable，
+ * 零新词；词形面见 vocab-lock master_campaign_vocab.source_snapshot.freshness_states）。
+ */
+export type SpecRoutingSourceIntegrityState = "fresh" | "stale" | "unjudgeable";
+
+export interface SpecRoutingSourceIntegrity {
+  readonly state: SpecRoutingSourceIntegrityState;
+  /** stale/unjudgeable 的呈现层理由（fresh 恒 null——reason 面零行为变化）。 */
+  readonly reason: string | null;
+  /** 消费端重算的现盘指纹（读成功时携带；unjudgeable 恒 null——正文不可得不猜测）。 */
+  readonly actual_sha256: string | null;
+}
+
+/**
+ * 消费端对账核（裁定 4b=C：把 source_sha256「声明指纹」升级为「可验证声明」）：
+ * 按 path 读协议正文、以登记同口径（sha256OfUtf8——catalog lock 同一 producer 写入
+ * 函数）重算指纹并与声明对账。诚实边界：
+ * - **读到的正文即弃**——本函数返回指纹对账结论，不返回正文（不新增第二份正文副本，
+ *   「不复制协议正文」红线在消费端同样成立）；
+ * - path 不可达 / 读失败 / 逃逸 catalog 根 → unjudgeable 显式（非崩溃、非静默通过、
+ *   非 fresh 假绿）；
+ * - 纯读零写、零治理事实（与 routeSpecs 同一 §92.2 边界——对账结果只改呈现可信度，
+ *   不阻断注入、不进 mustEntries 判卷输入）。
+ */
+export function verifySpecRoutingSource(
+  catalogRoot: string,
+  decision: {
+    readonly semantic_id: string;
+    readonly path: string;
+    readonly source_sha256: string;
+  },
+): SpecRoutingSourceIntegrity {
+  const bodyPath = join(catalogRoot, decision.path);
+  // 逃逸 catalog 根 = 导航位损坏（path 相对词形契约被破坏）——按不可达处置（显式）。
+  if (!bodyPath.startsWith(catalogRoot)) {
+    return {
+      state: "unjudgeable",
+      reason: `对账=unjudgeable（semantic_id=${decision.semantic_id}；path 不可达：${decision.path} 逃逸 catalog 根——导航位损坏）；协议正文缺失，声明指纹无法验证（补回正文或重登记 spec-routing.json 后消除）`,
+      actual_sha256: null,
+    };
+  }
+  let text: string;
+  try {
+    text = readFileSync(bodyPath, "utf8");
+  } catch {
+    return {
+      state: "unjudgeable",
+      reason: `对账=unjudgeable（semantic_id=${decision.semantic_id}；path 不可达：${decision.path}——正文缺失或不可读）；协议正文缺失，声明指纹无法验证（补回正文或重登记 spec-routing.json 后消除）`,
+      actual_sha256: null,
+    };
+  }
+  const actual = sha256OfUtf8(text);
+  if (actual === decision.source_sha256) {
+    return { state: "fresh", reason: null, actual_sha256: actual };
+  }
+  return {
+    state: "stale",
+    reason: `对账=stale（semantic_id=${decision.semantic_id}；声明=${decision.source_sha256}；现盘=${actual}——正文漂移，声明指纹不可信；重登记 spec-routing.json 后消除）`,
+    actual_sha256: actual,
+  };
+}
+
+/** 对账结论 → reason 呈现后缀（fresh=空串字节不变；stale/unjudgeable=显式标记）。 */
+export function specRoutingIntegrityReasonSuffix(integrity: SpecRoutingSourceIntegrity): string {
+  return integrity.reason === null ? "" : `；${integrity.reason}`;
 }

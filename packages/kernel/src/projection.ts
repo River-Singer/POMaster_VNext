@@ -66,6 +66,8 @@ import {
   PROTOCOL_ID_PATTERN,
   SPEC_ROUTING_STAGE_VALUES,
   ROUTING_TOKEN_PATTERN,
+  specRoutingIntegrityReasonSuffix,
+  verifySpecRoutingSource,
 } from "./spec-routing.js";
 import {
   readKnowledgeLibrary,
@@ -511,14 +513,23 @@ function specRoutingEntries(
   });
   return decisions
     .filter((decision) => decision.included)
-    .map((decision) => ({
-      ref: decision.semantic_id,
-      reason:
-        `spec-routing: ${decision.path}（semantic_id=${decision.semantic_id}；` +
-        `命中通道=${decision.channels.join("/")}；source_sha256=${decision.source_sha256}）——` +
-        `${decision.why}；path 仅内容导航不复制正文，机器关系以 semantic_id 承载` +
-        `（W3 stable-reference 预留）——策展面非判卷输入（§92.2）`,
-    }));
+    .map((decision) => {
+      // 消费端 sha256 对账（裁定 4b=C，Owner 2026-09-30）：source_sha256 从「声明指纹」
+      // 升级为「可验证声明」——本点即真正按 path 读正文的消费点（正文即弃，不复制）；
+      // fresh 时后缀空串（reason 字节不变——零行为变化）；不符=stale / 不可达=
+      // unjudgeable 显式标记随 reason 呈现。对账失真同步经 reason 进 inputsFingerprint
+      // （协议正文漂移即 freshness 可见——与 catalog policies 同款通路）。
+      const integrity = verifySpecRoutingSource(catalogRoot, decision);
+      return {
+        ref: decision.semantic_id,
+        reason:
+          `spec-routing: ${decision.path}（semantic_id=${decision.semantic_id}；` +
+          `命中通道=${decision.channels.join("/")}；source_sha256=${decision.source_sha256}` +
+          `${specRoutingIntegrityReasonSuffix(integrity)}）——` +
+          `${decision.why}；path 仅内容导航不复制正文，机器关系以 semantic_id 承载` +
+          `（W3 stable-reference 预留）——策展面非判卷输入（§92.2）`,
+      };
+    });
 }
 
 /**

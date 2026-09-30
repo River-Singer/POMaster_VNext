@@ -1665,6 +1665,8 @@ export {
   SPEC_ROUTING_SCHEMA,
   SPEC_ROUTING_STAGE_VALUES,
   SPEC_ROUTING_CHANNEL_VALUES,
+  specRoutingIntegrityReasonSuffix,
+  verifySpecRoutingSource,
 } from "./spec-routing.js";
 export type {
   SpecRoutingDecision,
@@ -1673,6 +1675,8 @@ export type {
   SpecRoutingManifest,
   SpecRoutingStageValue,
   SpecRoutingChannelValue,
+  SpecRoutingSourceIntegrity,
+  SpecRoutingSourceIntegrityState,
 } from "./spec-routing.js";
 
 // ============================================================

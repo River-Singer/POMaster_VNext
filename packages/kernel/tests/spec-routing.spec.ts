@@ -18,7 +18,7 @@
  * MASTer 业务特例边界：AG Grid 等协议条目只以测试 fixture（project overlay 语义演示）
  * 存在，不进 repo universal seed（catalog/spec-routing.json 实物零条目）。
  */
-import { cpSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -32,9 +32,10 @@ import {
   loadSpecRoutingManifest,
   resolveCatalogRoot,
   routeSpecs,
+  verifySpecRoutingSource,
 } from "@pomaster/kernel";
 import { makeStore } from "./helpers.js";
-import { routingFixtureEntries, sha } from "./spec-routing-fixtures.js";
+import { fixtureProtocolBody, routingFixtureEntries, sha } from "./spec-routing-fixtures.js";
 
 const REPO_CATALOG = resolveCatalogRoot();
 
@@ -552,7 +553,25 @@ function specRoutingCatalogRoot(entries: Record<string, unknown>[] = routingFixt
     `${JSON.stringify({ schema: SPEC_ROUTING_SCHEMA, profile: "project-overlay", entries }, null, 2)}\n`,
     "utf8",
   );
+  // 裁定 4b=C 对账 fixture 基线：正文随条目落盘（协议正文住消费项目——测试侧的
+  // 「消费项目」即本临时根；fixtures sha() = sha256OfUtf8(正文) 同源，默认 fresh）。
+  for (const entry of entries) {
+    const path = entry["path"];
+    const digest = entry["source_sha256"];
+    if (typeof path !== "string" || typeof digest !== "string") continue;
+    const bodyPath = join(catalogRoot, path);
+    mkdirSync(dirname(bodyPath), { recursive: true });
+    writeFileSync(bodyPath, fixtureBodyForDigest(digest), "utf8");
+  }
   return catalogRoot;
+}
+
+/** 由登记指纹反查 fixture 正文（测试侧确定性映射——sha(tag) ≡ sha256OfUtf8(body(tag))）。 */
+function fixtureBodyForDigest(digest: string): string {
+  for (const tag of ["01", "02", "03", "30", "28", "14", "15", "20", "35", "be15", "30v1", "22"]) {
+    if (sha(tag) === digest) return fixtureProtocolBody(tag);
+  }
+  return `orphan body for ${digest}\n`;
 }
 
 describe("compileProjection spec-routing 接线（W4.2）", () => {
@@ -617,5 +636,104 @@ describe("compileProjection spec-routing 接线（W4.2）", () => {
     expect(
       explanation.decisions.filter((d) => d.ref.startsWith("PROTOCOL.")),
     ).toEqual([]);
+  });
+});
+
+// ============================================================
+// 4) 消费端 sha256 对账点（裁定 4b=C；Owner 2026-09-30）
+//    背景：W4 协议路由的 source_sha256 是声明指纹（装载时不重算——协议正文住消费
+//    项目，本仓不持有副本）。本面把它升级为「可验证声明」：context compile 消费协议
+//    时按 path 读正文重算 sha256 并与声明对账——fresh 零行为变化（reason 面字节不变）；
+//    不符=stale 显式标记；path 不可达=unjudgeable 显式（非静默通过、非崩溃）。
+//    诚实边界：读到的正文即弃（不新增第二份正文副本——红线）；对账只降呈现可信度，
+//    不阻断注入（策展面非判卷输入——§92.2 语义不变）。
+// ============================================================
+
+describe("消费端 sha256 对账点（裁定 4b=C：声明指纹 → 可验证声明）", () => {
+  const GRID_PATH = ".trellis/spec/frontend/30-data-grid-protocol.md";
+
+  it("对账核：声明与正文相符 → fresh（reason=null，actual=声明值——零行为变化基线）", () => {
+    const root = specRoutingCatalogRoot();
+    const declared = sha("30");
+    const integrity = verifySpecRoutingSource(root, {
+      semantic_id: "PROTOCOL.FRONTEND.DATA_GRID",
+      path: GRID_PATH,
+      source_sha256: declared,
+    });
+    expect(integrity.state).toBe("fresh");
+    expect(integrity.reason).toBe(null);
+    expect(integrity.actual_sha256).toBe(declared);
+  });
+
+  it("对账核：正文漂移 → stale（reason 携声明/现盘指纹——stale 显式非静默通过）", () => {
+    const root = specRoutingCatalogRoot();
+    const declared = sha("30");
+    writeFileSync(join(root, GRID_PATH), "drifted body\n", "utf8");
+    const integrity = verifySpecRoutingSource(root, {
+      semantic_id: "PROTOCOL.FRONTEND.DATA_GRID",
+      path: GRID_PATH,
+      source_sha256: declared,
+    });
+    expect(integrity.state).toBe("stale");
+    expect(integrity.reason).not.toBe(null);
+    expect(integrity.reason).toContain("stale");
+    expect(integrity.reason).toContain(declared);
+    expect(integrity.actual_sha256).not.toBe(declared);
+    expect(integrity.actual_sha256).toMatch(/^sha256:[0-9a-f]{64}$/);
+  });
+
+  it("对账核：path 不可达 → unjudgeable（显式缺席非崩溃；actual=null 不猜测）", () => {
+    const root = specRoutingCatalogRoot();
+    const integrity = verifySpecRoutingSource(root, {
+      semantic_id: "PROTOCOL.FRONTEND.DATA_GRID",
+      path: ".trellis/spec/frontend/vanished-protocol.md",
+      source_sha256: sha("30"),
+    });
+    expect(integrity.state).toBe("unjudgeable");
+    expect(integrity.reason).not.toBe(null);
+    expect(integrity.reason).toContain("unjudgeable");
+    expect(integrity.actual_sha256).toBe(null);
+  });
+
+  it("接线 fresh：正文在座且相符 → reason 无对账后缀（与既有形态字节一致）", async () => {
+    const { store } = await makeStore();
+    const projection = await compileProjection(
+      store,
+      { role: "frontend", stage: "implement", triggers: ["edit-save", "data-grid", "ag-grid"], stack: ["vue", "ag-grid"] },
+      { catalogRoot: specRoutingCatalogRoot() },
+    );
+    const grid = projection.manifest.catalogEntries.find((e) => e.ref === "PROTOCOL.FRONTEND.DATA_GRID")!;
+    expect(grid.reason).toContain("source_sha256=");
+    expect(grid.reason).not.toContain("对账=");
+  });
+
+  it("接线 stale：正文被改 → reason 含对账=stale + 现盘指纹（呈现层 stale 标记 + 理由）", async () => {
+    const root = specRoutingCatalogRoot();
+    writeFileSync(join(root, GRID_PATH), "drifted body\n", "utf8");
+    const { store } = await makeStore();
+    const projection = await compileProjection(
+      store,
+      { role: "frontend", stage: "implement", triggers: ["edit-save", "data-grid", "ag-grid"], stack: ["vue", "ag-grid"] },
+      { catalogRoot: root },
+    );
+    const grid = projection.manifest.catalogEntries.find((e) => e.ref === "PROTOCOL.FRONTEND.DATA_GRID")!;
+    expect(grid.reason).toContain("对账=stale");
+    expect(grid.reason).toContain("正文漂移");
+    expect(grid.reason).toContain("sha256:");
+  });
+
+  it("接线 unjudgeable：登记 path 无正文 → reason 含对账=unjudgeable（显式不可判）", async () => {
+    const root = specRoutingCatalogRoot();
+    rmSync(join(root, GRID_PATH));
+    const { store } = await makeStore();
+    const projection = await compileProjection(
+      store,
+      { role: "frontend", stage: "implement", triggers: ["edit-save", "data-grid", "ag-grid"], stack: ["vue", "ag-grid"] },
+      { catalogRoot: root },
+    );
+    const grid = projection.manifest.catalogEntries.find((e) => e.ref === "PROTOCOL.FRONTEND.DATA_GRID")!;
+    expect(grid).toBeDefined();
+    expect(grid.reason).toContain("对账=unjudgeable");
+    expect(grid.reason).toContain("不可达");
   });
 });
