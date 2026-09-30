@@ -565,7 +565,7 @@ const HINT_SCENARIO = {
 
 /** 播种单任务（acceptance 注入；等价 plan-runner.spec seedScenarioTask 的最小形态）。 */
 async function seedCheckTask(acceptance: unknown[]): Promise<string> {
-  const { mkdtempSync, rmSync } = await import("node:fs");
+  const { mkdtempSync } = await import("node:fs");
   const { tmpdir } = await import("node:os");
   const { join } = await import("node:path");
   const { applyTransaction, createStore } = await import("@pomaster/kernel");
