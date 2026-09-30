@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { applyTransaction, beginExecution, createStore } from "@pomaster/kernel";
 import type { ToolBindingRecord } from "@pomaster/gauntlet-lite";
 import {
+  judgeRuntimeObligations,
   runCli,
   runInit,
   runPlanRun,
@@ -14,6 +15,7 @@ import {
   runFinalizeStatus,
   runReconImportGraph,
   runScopeReviewAdopt,
+  scanBrowserLegGrnBacked,
 } from "@pomaster/cli";
 
 let root: string;
@@ -1229,5 +1231,72 @@ describe("W5 runtime 场景义务判定（编排层 cap——工具真实 verdic
       expect(row.verdict).toBe("passed");
       expect(grnNote(row.grn)).not.toContain("w5_seam_divergent");
     }
+  });
+});
+
+
+// ============================================================
+// 裁定 7=B：ui_surface 义务满足链判定矩阵（judge 纯函数直测）
+// ============================================================
+
+describe("裁定 7=B：ui_surface 义务满足链判定矩阵", () => {
+  const judge = (bytes: Uint8Array, opts: { toolPresent: boolean; backed: boolean }): Map<string, import("@pomaster/cli").ObligationCap> =>
+    judgeRuntimeObligations({
+      rows: [{
+        grn: "GRN-7100", gate: "CONTROL_DATA_FLOW_RUNTIME", binding_id: "b7",
+        seam_role: null, acceptance_ref: "ACC-1", scenario_ref: "ui-visible",
+        scenario_oracle: { visible_via: "ui_surface", filter_context: { project_id: "p-1" }, mapping_fields: ["title"] },
+        seam_obligation: null, artifact_bytes: bytes,
+      }],
+      staticDenominatorFromDisk: ["control:1"],
+      browserToolPresent: opts.toolPresent,
+      browserLegBacked: opts.backed,
+    });
+
+  const v2Bytes = (withChannel: boolean, withLayer: boolean): Uint8Array => Buffer.from(JSON.stringify({
+    schema: "pomaster.control-data-flow-runtime/v2",
+    task_ref: "TASK.7B.JUDGE", static_control_ref: "control:1", side_effect: "READ_ONLY",
+    fixture: { isolated: true, ref: "fx" },
+    cleanup: { required: true, attempted: true, succeeded: true },
+    observations: { control: true, request_or_storage: true, response_or_ack: true, readback: true, feedback: true, error_recovery: true },
+    correlation_id: "corr-judge",
+    ...(withLayer ? { fixture_layer: "real_browser" } : {}),
+    trace: [
+      { stage: "request", operation_id: "op", control_ref: "control:1", scenario_ref: "ui-visible", request_digest: "sha256:aa", readback_digest: null, visible_result: null },
+      { stage: "persist", operation_id: "op", control_ref: "control:1", scenario_ref: "ui-visible", request_digest: null, readback_digest: "sha256:bb", visible_result: null },
+      { stage: "re_read", operation_id: "op", control_ref: "control:1", scenario_ref: "ui-visible", request_digest: null, readback_digest: "sha256:cc", visible_result: null },
+      { stage: "mapping", operation_id: "op", control_ref: "control:1", scenario_ref: "ui-visible", request_digest: null, readback_digest: "sha256:dd", visible_result: null },
+      { stage: "visible", operation_id: "op", control_ref: "control:1", scenario_ref: "ui-visible", request_digest: null, readback_digest: null, visible_result: true, ...(withChannel ? { channel: "ui_surface" } : {}) },
+    ],
+  }), "utf8");
+
+  it("全链满足：channel=ui_surface + echo real_browser + 账本支撑 + 探测在座 → 无 cap（义务满足）", () => {
+    const caps = judge(v2Bytes(true, true), { toolPresent: true, backed: true });
+    expect(caps.size).toBe(0);
+  });
+
+  it("自称 real_browser 但账本无支撑 → blocked w5_ui_surface_claim_unbacked（假绿封死）", () => {
+    const caps = judge(v2Bytes(true, true), { toolPresent: true, backed: false });
+    const cap = caps.get("GRN-7100");
+    expect(cap?.verdict).toBe("blocked");
+    expect(cap?.reason).toBe("w5_ui_surface_claim_unbacked");
+  });
+
+  it("探测在座但报告未产出 ui_surface 观察腿 → not_run w5_ui_surface_leg_pending（重跑路标）", () => {
+    const caps = judge(v2Bytes(false, false), { toolPresent: true, backed: false });
+    const cap = caps.get("GRN-7100");
+    expect(cap?.verdict).toBe("not_run");
+    expect(cap?.reason).toBe("w5_ui_surface_leg_pending");
+  });
+
+  it("工具缺席 → not_run w5_ui_surface_leg_not_run（现状词形保持——诚实缺席）", () => {
+    const caps = judge(v2Bytes(false, false), { toolPresent: false, backed: false });
+    const cap = caps.get("GRN-7100");
+    expect(cap?.verdict).toBe("not_run");
+    expect(cap?.reason).toBe("w5_ui_surface_leg_not_run");
+  });
+
+  it("scanBrowserLegGrnBacked：平面缺席=无支撑（禁静默当有）", () => {
+    expect(scanBrowserLegGrnBacked(mkdtempSync(join(tmpdir(), "pomaster-7b-scan-")), "AGX-2026-1", "TASK.X")).toBe(false);
   });
 });

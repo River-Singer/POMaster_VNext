@@ -1026,6 +1026,8 @@ export {
   loadStaticControlDenominatorFromDisk,
   parseRuntimeReportArtifact,
   parseStaticControlDenominator,
+  scanBrowserLegGrnBacked,
+  BROWSER_LEG_TOOL_WORDS,
 } from "./plan-runtime-obligations.js";
 export type { ObligationCap, RuntimeObligationRow } from "./plan-runtime-obligations.js";
 export { runFinalize, runFinalizeReplayAdjudicate, runFinalizeStatus } from "./finalize.js";

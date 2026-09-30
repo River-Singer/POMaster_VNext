@@ -37,7 +37,7 @@ import { failOutcome, okOutcome } from "./envelope.js";
 import { allocateEvidenceRef } from "./evidence.js";
 import { captureEvidenceBaselineInputs } from "./evidence-qualification.js";
 import { runDiagnose, type DiagnoseResult } from "./diagnose.js";
-import { runPlanCompile, type PlanCompileInput } from "./plan.js";
+import { detectBrowserLegAvailable, runPlanCompile, type PlanCompileInput } from "./plan.js";
 import { governanceErrorToCliError } from "./permit.js";
 import { runRecordGateRunValue } from "./record.js";
 import { captureEvidenceSourceSnapshot } from "./source-snapshot.js";
@@ -45,6 +45,7 @@ import { runsDirPath } from "./store-layout.js";
 import { computeBindingStates, loadToolBindingRegistry } from "./tools.js";
 import {
   judgeRuntimeObligations,
+  scanBrowserLegGrnBacked,
   loadStaticControlDenominatorFromDisk,
   type RuntimeObligationRow,
 } from "./plan-runtime-obligations.js";
@@ -488,7 +489,12 @@ export async function runPlanRun(
   const diskDenominator = hasPendingStatic
     ? null
     : loadStaticControlDenominatorFromDisk(rootDir, input.executionId, input.taskRef);
-  const w5Caps = judgeRuntimeObligations({ rows: w5Rows, staticDenominatorFromDisk: diskDenominator });
+  const w5Caps = judgeRuntimeObligations({
+    rows: w5Rows,
+    staticDenominatorFromDisk: diskDenominator,
+    browserToolPresent: detectBrowserLegAvailable(rootDir),
+    browserLegBacked: scanBrowserLegGrnBacked(rootDir, input.executionId, input.taskRef),
+  });
   const cappedPending = pending.map((entry) => {
     const cap = w5Caps.get(entry.grn);
     if (cap === undefined) return entry;

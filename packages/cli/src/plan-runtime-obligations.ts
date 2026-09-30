@@ -131,6 +131,36 @@ export function loadStaticControlDenominatorFromDisk(
   return null;
 }
 
+/** 浏览器家族工具词形（裁定 7=B；browser-legs 双腿的 GRN tool 词形闭包）。 */
+export const BROWSER_LEG_TOOL_WORDS: readonly string[] = ["gauntlet:browser", "gauntlet:playwright"];
+
+/**
+ * 执行账本浏览器 GRN 支撑扫描（裁定 7=B）：同 execution+task 下存在浏览器家族工具
+ * 入账 GRN = fixture_layer=real_browser 声明的执行证据支撑（声明可验证化——与 4b
+ * 消费端 sha256 对账同款「声明→可验证声明」纪律）。
+ */
+export function scanBrowserLegGrnBacked(
+  rootDir: string,
+  executionId: string,
+  taskRef: string,
+): boolean {
+  try {
+    const dir = runsDirPath(rootDir);
+    for (const file of readdirSync(dir).filter((name) => /^GRN-[0-9]+\.json$/.test(name))) {
+      const row = JSON.parse(readFileSync(join(dir, file), "utf8")) as Record<string, unknown>;
+      if (row["execution_id"] !== executionId) continue;
+      const gateResult = row["gate_result"] as Record<string, unknown> | undefined;
+      const result = gateResult?.["result"] as Record<string, unknown> | undefined;
+      if (result?.["subject_id"] !== taskRef) continue;
+      const tool = result["tool"];
+      if (typeof tool === "string" && BROWSER_LEG_TOOL_WORDS.includes(tool)) return true;
+    }
+  } catch {
+    return false; // 平面不可读=无支撑（禁静默当有）
+  }
+  return false;
+}
+
 /** oracle 声明链（契约 §2 段序链——全段在场且 visible=true 才满足）。 */
 const ORACLE_DECLARED_CHAIN: readonly ControlDataFlowTraceStage[] = CONTROL_DATA_FLOW_TRACE_STAGES;
 
@@ -156,6 +186,10 @@ export function judgeRuntimeObligations(input: {
   readonly rows: readonly RuntimeObligationRow[];
   /** 盘上静态分母回退（pending 无静态行时消费；null=不可得）。 */
   readonly staticDenominatorFromDisk: readonly string[] | null;
+  /** 浏览器观察腿探测（裁定 7=B）：legacy 探测面 browser 家族任一在座。 */
+  readonly browserToolPresent: boolean;
+  /** 执行账本浏览器 GRN 支撑（裁定 7=B）：同 execution+task 下存在浏览器家族工具 GRN。 */
+  readonly browserLegBacked: boolean;
 }): Map<string, ObligationCap> {
   const caps = new Map<string, ObligationCap>();
   const runtimeRows = input.rows.filter((row) => row.gate === "CONTROL_DATA_FLOW_RUNTIME");
@@ -192,7 +226,28 @@ export function judgeRuntimeObligations(input: {
       const oracle = row.scenario_oracle;
       if (oracle !== null) {
         if (oracle.visible_via === "ui_surface") {
-          rowCaps.push({ verdict: "not_run", reason: "w5_ui_surface_leg_not_run", note: `oracle visible_via=ui_surface 的观察腿工具缺席——该场景可见性义务 NOT_RUN（诚实呈现，不以 api 层结果冒充 UI 可见）` });
+          // 裁定 7=B（2026-09-30）：ui_surface 义务满足链 = 报告 v2 visible 段
+          // channel=ui_surface + visible_result=true + fixture_layer=real_browser
+          // + 执行账本浏览器 GRN 支撑 + 探测在座。Node 沙箱报告自称 real_browser
+          // 而无账本支撑 → blocked（假绿通道封死）；探测在座而报告未产出观察腿 →
+          // not_run（pending 路标）；工具缺席 → not_run（现状词形保持）。
+          const reportV2 = report.schema === "pomaster.control-data-flow-runtime/v2"
+            ? (report as Extract<ControlDataFlowRuntimeReport, { schema: "pomaster.control-data-flow-runtime/v2" }>)
+            : null;
+          const visibleSegment = reportV2?.trace.find((segment) => segment.stage === "visible") ?? null;
+          const uiObserved = reportV2 !== null && visibleSegment !== null
+            && visibleSegment.channel === "ui_surface"
+            && visibleSegment.visible_result === true
+            && reportV2.fixture_layer === "real_browser";
+          if (uiObserved && input.browserLegBacked && input.browserToolPresent) {
+            // 义务满足——无 cap（行保持工具 verdict）。
+          } else if (uiObserved) {
+            rowCaps.push({ verdict: "blocked", reason: "w5_ui_surface_claim_unbacked", note: `报告声明 real_browser ui_surface 观察（visible_result=true），但${input.browserLegBacked ? "浏览器工具探测缺席" : "执行账本无浏览器家族 GRN（gauntlet:browser/gauntlet:playwright）支撑"}——声明未获执行证据支撑，不可绿（Node 沙箱报告不得自称 real_browser）` });
+          } else if (input.browserToolPresent) {
+            rowCaps.push({ verdict: "not_run", reason: "w5_ui_surface_leg_pending", note: "浏览器观察腿工具在座——报告未产出 ui_surface 观察（visible 段 channel=ui_surface + fixture_layer=real_browser）；以 real_browser fixture 经 browser adapter 重跑" });
+          } else {
+            rowCaps.push({ verdict: "not_run", reason: "w5_ui_surface_leg_not_run", note: `oracle visible_via=ui_surface 的观察腿工具缺席——该场景可见性义务 NOT_RUN（诚实呈现，不以 api 层结果冒充 UI 可见）` });
+          }
         } else if (report.schema === "pomaster.control-data-flow-runtime/v1") {
           rowCaps.push({ verdict: "warning", reason: "w5_oracle_v1_trace_missing", note: "v1 报告无 trace[]——不得满足带 visible_via 义务的场景（诚实降级；升级 probe 到 pomaster.control-data-flow-runtime/v2 后重跑）" });
         } else {

@@ -389,3 +389,70 @@ describe("allowlistSpawn（SP-W1-h 环境白名单执行面——只在绑定通
     }
   });
 });
+
+
+// ============================================================
+// 裁定 7=B：fixture_layer manifest↔report 强对账（声明可验证化）
+// ============================================================
+
+describe("裁定 7=B：fixture_layer manifest↔report 对账", () => {
+  function v2Report(reportKind: string | undefined): string {
+    const report: Record<string, unknown> = JSON.parse(JSON.stringify({
+      schema: "pomaster.control-data-flow-runtime/v2",
+      task_ref: "TASK.7B", static_control_ref: "control:1", side_effect: "READ_ONLY",
+      fixture: { isolated: false, ref: null },
+      cleanup: { required: false, attempted: false, succeeded: false },
+      observations: { control: true, request_or_storage: true, response_or_ack: true, readback: true, feedback: true, error_recovery: true },
+      correlation_id: "corr-7b",
+      trace: [
+        { stage: "request", operation_id: "op", control_ref: "control:1", scenario_ref: "s", request_digest: "sha256:aa", readback_digest: null, visible_result: null },
+        { stage: "visible", operation_id: "op", control_ref: "control:1", scenario_ref: "s", request_digest: null, readback_digest: null, visible_result: true, channel: "ui_surface" },
+      ],
+    }));
+    if (reportKind !== undefined) report["fixture_layer"] = reportKind;
+    return JSON.stringify(report);
+  }
+
+  function runPair(manifestKind: string | undefined, reportKind: string | undefined): ReturnType<typeof runBindingGate> {
+    const { mkdtempSync, writeFileSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+    const root = mkdtempSync(join(tmpdir(), "pomaster-tb-7b-"));
+    cleanupRoots.push(root);
+    writeFileSync(join(root, "package.json"), "{}");
+    const manifest: Record<string, unknown> = {
+      schema: "pomaster.control-data-flow-runtime-probe/v1",
+      task_ref: "TASK.7B", static_control_ref: "control:1", side_effect: "READ_ONLY",
+      fixture: { isolated: false, ref: null }, cleanup_ref: null,
+    };
+    if (manifestKind !== undefined) manifest["fixture_layer"] = { kind: manifestKind, proves: [], does_not_prove: [] };
+    writeFileSync(join(root, "probe.json"), JSON.stringify(manifest));
+    const binding = {
+      id: "project.cdf.runtime.7b", source: "built_in", transport: "cli",
+      adapter_ref: "builtin.gauntlet-lite.control-data-flow-runtime",
+      tool: "gauntlet:control-data-flow-runtime", tool_version_anchor: "0.1.0",
+      gate: "CONTROL_DATA_FLOW_RUNTIME", gate_def: "POLICY.GATE.CONTROL_DATA_FLOW_RUNTIME@0.1.0",
+      metric_dialect: "ui:control_flow_runtime_trace", capabilities: ["control_data_flow"],
+      execution: { command: "node probe.mjs", probe_manifest: "probe.json" },
+      report_contract: { format: "pomaster-control-data-flow-runtime-json", parser_ref: "builtin.gauntlet-lite.control-data-flow-runtime/json-v1", parser_version: "0.1.0" },
+    } as ToolBindingRecord;
+    return runBindingGate(
+      binding,
+      { projectRoot: root, grn: "GRN-7001", ranAtSeq: 3, subjectId: "TASK.7B" },
+      { executableProbe: () => "node", spawnFn: () => ({ status: 0, stdout: v2Report(reportKind), stderr: "", error: null, externalMs: 1 }) },
+    );
+  }
+
+  it("manifest 声明 real_browser + report echo 同 kind → 对账通过（GRN 入账）", () => {
+    const outcome = runPair("real_browser", "real_browser");
+    expect(outcome.record.verdict).toBe("passed");
+  });
+
+  it("manifest 声明 node_http_service 而 report echo real_browser → 报告无效（GateAdapterError）", () => {
+    expect(() => runPair("node_http_service", "real_browser")).toThrow(/fixture_layer/);
+  });
+
+  it("manifest 未申报而 report 自带 fixture_layer → 报告无效（无出生凭证）", () => {
+    expect(() => runPair(undefined, "real_browser")).toThrow(/manifest 未申报/);
+  });
+});

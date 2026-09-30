@@ -544,6 +544,18 @@ export function runBindingGate(
     if (report !== null && (report.static_control_ref !== runtimeManifest.static_control_ref || report.side_effect !== runtimeManifest.side_effect || report.fixture.isolated !== runtimeManifest.fixture.isolated || report.fixture.ref !== runtimeManifest.fixture.ref)) {
       throw new GateAdapterError("runner_not_ready", "runtime report 与启动前 probe manifest 身份/副作用边界漂移", "修复 adapter 输出；漂移 trace 不入账");
     }
+    // 裁定 7=B fixture_layer manifest↔report 强对账：echo 在座时必须与 manifest 声明
+    // 同 kind（不符=报告无效）；manifest 未声明时 report 不得自带（无出生凭证的
+    // real_browser 自称=假绿通道封死——Node 沙箱报告不得改名冒充真实浏览器）。
+    // manifest 声明而 report 缺 echo = 过渡宽容（echo 属增量义务；ui_surface 满足链
+    // 在编排层义务判定仍强制 echo=real_browser——宽容不放大证明力）。
+    if (report !== null && report.schema === "pomaster.control-data-flow-runtime/v2" && runtimeManifest.fixture_layer !== undefined
+      && report.fixture_layer !== undefined && report.fixture_layer !== runtimeManifest.fixture_layer.kind) {
+      throw new GateAdapterError("runner_not_ready", `runtime report fixture_layer echo=${String(report.fixture_layer)} 与 manifest 声明=${runtimeManifest.fixture_layer.kind} 不一致——报告无效`, "修正 probe 输出的 fixture_layer echo 与 manifest 同源；跨层声明不入账");
+    }
+    if (report !== null && report.schema === "pomaster.control-data-flow-runtime/v2" && runtimeManifest.fixture_layer === undefined && report.fixture_layer !== undefined) {
+      throw new GateAdapterError("runner_not_ready", "runtime report 自带 fixture_layer 但 manifest 未申报——无出生凭证的分层声明无效", "fixture_layer 由 manifest 声明、report 只作 echo；补 manifest 声明或移除 report 自带字段");
+    }
   }
   // Q3 双向耦合：subjectId 前缀 TEST.* ⇔ isFixture=true（browser-legs.ts:155 同款镜像——
   // 违者 assertCommonGates FATAL，与既有腿同一判卷纪律）。

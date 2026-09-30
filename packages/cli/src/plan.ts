@@ -88,6 +88,18 @@ function fail<T>(result: T, command: string, error: CliError): CommandOutcome<T>
 // 工具探测自动面（gauntlet-lite toolDetectors 形态的只读等价；R1-4 前接缝）
 // ============================================================
 
+/**
+ * 浏览器观察腿在座判定（裁定 7=B，2026-09-30）：legacy 探测面 browser 家族
+ * （playwright / chrome-devtools-mcp）任一 available。纯读零写入；probeToolBindings
+ * 同源（registry 面的浏览器绑定在座与否由执行账本 GRN 支撑位承担——账本有浏览器
+ * GRN 即更强证据）。
+ */
+export function detectBrowserLegAvailable(rootDir: string): boolean {
+  return probeToolBindings(rootDir).some(
+    (binding) => (binding.tool_id === "playwright" || binding.tool_id === "chrome-devtools-mcp") && binding.available,
+  );
+}
+
 function probeToolBindings(rootDir: string): PlanToolBinding[] {
   const bindings: PlanToolBinding[] = [];
   let deps: Record<string, string> = {};

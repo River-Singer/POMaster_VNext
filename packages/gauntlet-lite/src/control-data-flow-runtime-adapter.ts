@@ -2,6 +2,7 @@ import { performance } from "node:perf_hooks";
 import type { VerdictValue } from "@pomaster/schemas";
 import type { DetectionResult, DetectorFacts, GateAdapter, GatePlan, GatePolicy, GateResultItemInput, GateResultRecord, GateScope, NormalizeContext, SpawnFn, ToolRunOutput } from "./adapter-types.js";
 import { GateAdapterError, asGovernedId } from "./adapter-types.js";
+import { OBSERVATION_CHANNEL_VALUES } from "@pomaster/kernel";
 import { DEFAULT_RUN_TIMEOUT_MS, defaultSpawn } from "./build-adapter.js";
 import { platformDetectorFacts } from "./detectors.js";
 import { absenceRecord, assertCommonGates, capItems, toDenominatorRow } from "./normalize-common.js";
@@ -41,6 +42,13 @@ export interface ControlDataFlowTraceSegment {
   readonly request_digest: string | null;
   readonly readback_digest: string | null;
   readonly visible_result: boolean | null;
+  /**
+   * 观察通道（裁定 7=B，2026-09-30；visible 段专用加性可选）：该段可见性结果由哪条
+   * 通道观察（词表=kernel OBSERVATION_CHANNEL_VALUES api_list/api_detail/ui_surface）。
+   * ui_surface 通道的义务满足还须报告 fixture_layer=real_browser + 执行账本浏览器
+   * GRN 支撑（编排层义务判定消费——Node 沙箱报告不得自称 real_browser）。
+   */
+  readonly channel?: string;
 }
 
 export interface ControlDataFlowRuntimeReportV1 {
@@ -70,6 +78,11 @@ export interface ControlDataFlowRuntimeReportV2 extends Omit<ControlDataFlowRunt
   readonly schema: typeof CONTROL_DATA_FLOW_RUNTIME_REPORT_V2;
   readonly trace: readonly ControlDataFlowTraceSegment[];
   readonly seam_observation?: SeamLegObservation;
+  /**
+   * fixture 分层 echo（裁定 7=B；manifest 声明、report 只作 echo——tool-binding 强
+   * 对账：manifest 未声明时 report 不得自带，声明时必须同 kind）。
+   */
+  readonly fixture_layer?: FixtureLayerKind;
 }
 
 export type ControlDataFlowRuntimeReport = ControlDataFlowRuntimeReportV1 | ControlDataFlowRuntimeReportV2;
@@ -164,7 +177,7 @@ function detection(facts: DetectorFacts): DetectionResult {
 export const CONTROL_DATA_FLOW_OBSERVATION_KEYS = ["control", "request_or_storage", "response_or_ack", "readback", "feedback", "error_recovery"] as const;
 
 /** trace 段闭合键集（契约 §2 七键；之外拒绝——fail-closed）。 */
-const TRACE_SEGMENT_KEYS = ["stage", "operation_id", "control_ref", "scenario_ref", "request_digest", "readback_digest", "visible_result"] as const;
+const TRACE_SEGMENT_KEYS = ["stage", "operation_id", "control_ref", "scenario_ref", "request_digest", "readback_digest", "visible_result", "channel"] as const;
 
 /**
  * trace 段词形校验（v2；契约 §2 七键闭包 + stage 词表 + 摘要/可见词形）。段序/
@@ -186,6 +199,8 @@ function parseTraceSegments(value: unknown): ControlDataFlowTraceSegment[] | nul
     const digest = (raw: unknown): raw is string | null => raw === null || (typeof raw === "string" && raw.trim().length > 0);
     if (!digest(row["request_digest"]) || !digest(row["readback_digest"])) return null;
     if (row["visible_result"] !== null && typeof row["visible_result"] !== "boolean") return null;
+    // 观察通道（裁定 7=B）：加性可选，词表闭包（词表外=段词形非法）。
+    if (row["channel"] !== undefined && (typeof row["channel"] !== "string" || !(OBSERVATION_CHANNEL_VALUES as readonly string[]).includes(row["channel"]))) return null;
     segments.push(raw as unknown as ControlDataFlowTraceSegment);
   }
   return segments;
@@ -225,6 +240,9 @@ export function parseControlDataFlowRuntimeReport(stdout: string): ControlDataFl
       || typeof row["correlation_id"] !== "string" || row["correlation_id"].trim().length === 0
       || !fixture || typeof fixture["isolated"] !== "boolean" || !(fixture["ref"] === null || (typeof fixture["ref"] === "string" && fixture["ref"].trim().length > 0))
       || !cleanup || typeof cleanup["required"] !== "boolean" || typeof cleanup["attempted"] !== "boolean" || typeof cleanup["succeeded"] !== "boolean") return null;
+    // fixture_layer echo（裁定 7=B）：加性可选，kind 词表校验。
+    if (isV2 && row["fixture_layer"] !== undefined
+      && !(FIXTURE_LAYER_KINDS as readonly string[]).includes(String(row["fixture_layer"]))) return null;
     if (isV2) return { ...(value as object), trace } as unknown as ControlDataFlowRuntimeReportV2;
     return value as ControlDataFlowRuntimeReportV1;
   } catch { return null; }

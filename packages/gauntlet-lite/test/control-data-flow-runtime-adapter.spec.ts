@@ -271,3 +271,51 @@ describe("PR-0011 收编对账（fixture_layer_kinds——vocab-lock master_camp
     expect(schemas["FIXTURE_LAYER_KINDS"]).toEqual([...FIXTURE_LAYER_KINDS]);
   });
 });
+
+
+// ============================================================
+// 裁定 7=B：trace 段 channel 观察通道 + report fixture_layer echo（加性词形）
+// ============================================================
+
+describe("裁定 7=B：trace 段 channel 与 report fixture_layer echo", () => {
+  const V2_BASE = {
+    schema: "pomaster.control-data-flow-runtime/v2",
+    task_ref: "TASK.CH7", static_control_ref: "control:1", side_effect: "READ_ONLY",
+    fixture: { isolated: true, ref: "fx" },
+    cleanup: { required: true, attempted: true, succeeded: true },
+    observations: { control: true, request_or_storage: true, response_or_ack: true, readback: true, feedback: true, error_recovery: true },
+    correlation_id: "corr-7b",
+    trace: [
+      { stage: "request", operation_id: "op", control_ref: "control:1", scenario_ref: "s", request_digest: "sha256:aa", readback_digest: null, visible_result: null },
+      { stage: "persist", operation_id: "op", control_ref: "control:1", scenario_ref: "s", request_digest: null, readback_digest: "sha256:bb", visible_result: null },
+      { stage: "re_read", operation_id: "op", control_ref: "control:1", scenario_ref: "s", request_digest: null, readback_digest: "sha256:cc", visible_result: null },
+      { stage: "mapping", operation_id: "op", control_ref: "control:1", scenario_ref: "s", request_digest: null, readback_digest: "sha256:dd", visible_result: null },
+      { stage: "visible", operation_id: "op", control_ref: "control:1", scenario_ref: "s", request_digest: null, readback_digest: null, visible_result: true },
+    ],
+  };
+
+  it("visible 段 channel=ui_surface（词表内）→ 解析通过；词表外 → 段词形非法", async () => {
+    const mod = await import("../src/control-data-flow-runtime-adapter.js");
+    const withChannel = structuredClone(V2_BASE) as Record<string, unknown>;
+    const trace = (withChannel.trace as Record<string, unknown>[]).map((row) =>
+      row["stage"] === "visible" ? { ...row, channel: "ui_surface" } : row);
+    withChannel["trace"] = trace;
+    const parsed = mod.parseControlDataFlowRuntimeReport(JSON.stringify(withChannel));
+    expect(parsed).not.toBeNull();
+    const segments = (parsed as { trace: { channel?: string }[] }).trace;
+    expect(segments.find((s) => s["stage" as keyof typeof s] === "visible" || (s as unknown as Record<string, unknown>)["stage"] === "visible")).toBeDefined();
+    const bad = structuredClone(withChannel) as Record<string, unknown>;
+    ((bad["trace"] as Record<string, unknown>[])[4] as Record<string, unknown>)["channel"] = "browser-console";
+    expect(mod.parseControlDataFlowRuntimeReport(JSON.stringify(bad))).toBeNull();
+  });
+
+  it("report fixture_layer echo：词表内 accepted；词表外 → 解析 null", async () => {
+    const mod = await import("../src/control-data-flow-runtime-adapter.js");
+    const withLayer = { ...structuredClone(V2_BASE), fixture_layer: "real_browser" } as Record<string, unknown>;
+    const parsed = mod.parseControlDataFlowRuntimeReport(JSON.stringify(withLayer));
+    expect(parsed).not.toBeNull();
+    expect((parsed as { fixture_layer?: string }).fixture_layer).toBe("real_browser");
+    const bad = { ...structuredClone(V2_BASE), fixture_layer: "browser-simulator" } as Record<string, unknown>;
+    expect(mod.parseControlDataFlowRuntimeReport(JSON.stringify(bad))).toBeNull();
+  });
+});
