@@ -1,6 +1,12 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, sep } from "node:path";
-import { parse as parseJsonc, printParseErrorCode, type ParseError } from "jsonc-parser";
+// jsonc-parser 打包注记（v0.10.0 发布修复）：CJS 形态为 UMD 工厂（factory(require,
+// exports)）——esbuild 二次打包无法静态绑定工厂参数 require，运行期
+// `require("./impl/format")` 相对 bundle 解析即 MODULE_NOT_FOUND。解法在
+// build-npm-package.mjs 的 esbuild alias：jsonc-parser 钉到 lib/esm/main.js
+// （全静态 import 可完整内联）；本文件保持普通静态 import。
+import { parse as parseJsonc, printParseErrorCode } from "jsonc-parser";
+import type { ParseError } from "jsonc-parser";
 import { sha256OfCanonical, type ImportGraphPathAlias } from "@pomaster/kernel";
 
 export const RECON_IMPORT_SNAPSHOT_CONTRACT = "pomaster.recon-import-snapshot/v1" as const;
