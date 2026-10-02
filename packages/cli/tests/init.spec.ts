@@ -4,7 +4,7 @@
  * 适配器产出 / 幂等 / 交互解析）、重入口默认（D13 2026-09-03 修订 + B7 裁定
  * 2026-09-04：init 单一重入口——skills 双镜像 + hooks settings.json 合并 + 加厚 rules；
  * 历史模式旗标与轻入口形态已删除，存量旧版产物经标记/字节识别升级）、
- * skill 命令卡与 pomaster --help 单一事实源对账钉版（含 pomaster-context 五分区词形
+ * skill 分层库与 pomaster --help 单一事实源对账钉版（含 pomaster-context 五分区词形
  * 与 CONTEXT_PARTITION_TITLES 同源钉——D8 旧词形零残留）、init 预铺 .pomaster/ 目录骨架
  * （宪法 §2 全树不分形态：41 目录 README + layout.json——B7-THEME themes 替位 FE/BE 平铺位 + W4-S2 state/checkpoints 后
  * 口径；守卫细则见
@@ -62,7 +62,7 @@ function read(relative: string): string {
 
 /**
  * 重入口默认（claude 缺省）应产出的全部文件清单（骨架 4 + AGENTS/CLAUDE + settings +
- * 15×2 skills + 预铺 41 目录 README + layout.json + B6c-B6G+B7 播种 102 份 + R3 tokens 补位 103 份——预铺面
+ * 14×2 skills + 预铺 41 目录 README + layout.json + B6c-B6G+B7 播种 102 份 + R3 tokens 补位 103 份——预铺面
  * 清单单源 layout.ts 常量（Batch 2 D7/C9 增量 state/contexts + evidence/observations；
  * Batch 6 B6a 增量 baseline/specs 播种面两子树——目录登记含其中，播种文件面 B6c-B6G+B7
  * 各批在册）。
@@ -88,7 +88,7 @@ function heavyDefaultExpectedFiles(): string[] {
 }
 
 describe("init 首次创建（CREATED）", () => {
-  it("空目录 init（重入口默认）→ change=CREATED，骨架 + AGENTS/CLAUDE + settings + 15×2 skills + 预铺 41 README/layout.json 全部 created", async () => {
+  it("空目录 init（重入口默认）→ change=CREATED，骨架 + AGENTS/CLAUDE + settings + 14×2 skills + 预铺 41 README/layout.json 全部 created", async () => {
     const outcome = await runInit(dir);
     expect(outcome.ok).toBe(true);
     expect(outcome.result.change).toBe("CREATED");
@@ -1112,6 +1112,7 @@ describe("init 平台复选清单（F1 交互升级；ANSI 只在重绘帧、只
 describe("重入口 skills 双镜像", () => {
   it("双镜像逐字节一致；frontmatter name=目录名、description 承载触发语义、带生成标记", async () => {
     await runInit(dir);
+    const browserEyesSkills: string[] = [];
     for (const spec of SKILL_MANIFEST) {
       const universal = read(`.agents/skills/${spec.name}/SKILL.md`);
       const claude = read(`.claude/skills/${spec.name}/SKILL.md`);
@@ -1121,8 +1122,13 @@ describe("重入口 skills 双镜像", () => {
       expect(universal).toContain('description: "');
       expect(universal).toContain(GENERATED_MARKER);
       expect(universal).toContain("单一事实源");
-      expect(universal).toContain("Browser Eyes");
+      if (universal.includes("Browser Eyes")) browserEyesSkills.push(spec.name);
     }
+    expect(browserEyesSkills).toEqual([
+      "pomaster",
+      "pomaster-bootstrap",
+      "pomaster-verify",
+    ]);
   });
 
   it("钉版：每份 SKILL.md 的命令词形必须在 CLI 注册表中存在（顶层 + 子命令双层对账，防文档漂移）", async () => {
@@ -1165,6 +1171,76 @@ describe("重入口 skills 双镜像", () => {
     expect(checkedLines).toBeGreaterThan(30); // 分母自检：命令行解析为空 = 假绿
   });
 
+  it("高风险 workflow 卡的命令示例覆盖完整 CLI 签名，且不含 shell 管道歧义", async () => {
+    await runInit(dir);
+    const program = createProgram();
+    const workflowSkills = [
+      "pomaster-permit",
+      "pomaster-execute",
+      "pomaster-verify",
+      "pomaster-runtime",
+      "pomaster-closeout",
+    ] as const;
+    let checkedLines = 0;
+
+    for (const skillName of workflowSkills) {
+      const text = read(`.agents/skills/${skillName}/SKILL.md`);
+      expect(text, `${skillName} 的命令示例不能用 shell pipe 表示备选动作`).not.toContain(" | pomaster ");
+
+      for (const rawLine of text.split("\n")) {
+        if (!rawLine.startsWith("pomaster ")) continue;
+        const line = rawLine.replace(/\s+#.*$/, "").trim();
+        const tokens = line.split(/\s+/);
+        const topLevel = program.commands.find((candidate) => candidate.name() === tokens[1]);
+        expect(topLevel, `${skillName} 命令行「${line}」必须命中顶层命令`).toBeDefined();
+        if (topLevel === undefined) continue;
+
+        let command = topLevel;
+        let commandTokenCount = 2;
+        const subcommand = topLevel.commands.find((candidate) => candidate.name() === tokens[2]);
+        if (subcommand !== undefined) {
+          command = subcommand;
+          commandTokenCount = 3;
+        }
+
+        const documentedOptions = new Set(
+          [...line.matchAll(/--[a-z][a-z0-9-]*/g)].map((match) => match[0]),
+        );
+        const registeredOptions = new Set(
+          command.options.flatMap((option) => (option.long === undefined ? [] : [option.long])),
+        );
+        for (const option of documentedOptions) {
+          expect(
+            registeredOptions.has(option),
+            `${skillName} 命令行「${line}」中的 ${option} 必须在该命令 --help 中注册`,
+          ).toBe(true);
+        }
+        for (const option of command.options.filter((candidate) => candidate.mandatory)) {
+          expect(
+            option.long !== undefined && documentedOptions.has(option.long),
+            `${skillName} 命令行「${line}」必须写全必填选项 ${option.long ?? option.flags}`,
+          ).toBe(true);
+        }
+
+        const firstOptionIndex = tokens.findIndex(
+          (token, index) => index >= commandTokenCount && token.includes("--"),
+        );
+        const positionalTokens = tokens.slice(
+          commandTokenCount,
+          firstOptionIndex === -1 ? tokens.length : firstOptionIndex,
+        );
+        const requiredArguments = command.registeredArguments.filter((argument) => argument.required);
+        expect(
+          positionalTokens.length,
+          `${skillName} 命令行「${line}」必须写全 ${requiredArguments.length} 个必填位置参数`,
+        ).toBeGreaterThanOrEqual(requiredArguments.length);
+        checkedLines += 1;
+      }
+    }
+
+    expect(checkedLines).toBeGreaterThan(20); // 分母自检：未解析命令块时拒绝假绿
+  });
+
   it("钉版：pomaster-context 卡五分区词形与 CONTEXT_PARTITION_TITLES 同源（context.ts 唯一词源；D8 旧词形 LAZY TOOLS 零残留）", async () => {
     await runInit(dir);
     const text = read(".agents/skills/pomaster-context/SKILL.md");
@@ -1172,6 +1248,80 @@ describe("重入口 skills 双镜像", () => {
       expect(text.includes(title), `分区标题「${title}」必须在 pomaster-context 卡在座`).toBe(true);
     }
     expect(text).not.toContain("LAZY TOOLS");
+  });
+});
+
+describe("高风险 workflow skills 行为合同", () => {
+  beforeEach(async () => {
+    await runInit(dir);
+  });
+
+  function skillCard(name: string): string {
+    return read(`.agents/skills/${name}/SKILL.md`);
+  }
+
+  function expectSemantics(name: string, semantics: readonly string[]): void {
+    const text = skillCard(name);
+    for (const semantic of semantics) {
+      expect(
+        text.includes(semantic),
+        `${name} 必须解释「${semantic}」对应的输入、分支、结果或交接语义`,
+      ).toBe(true);
+    }
+  }
+
+  it("permit 说明授权输入、活性分支、scope 拒绝与 context 交接", () => {
+    expectSemantics("pomaster-permit", [
+      "change_ref",
+      "subject_ids",
+      "active",
+      "expired",
+      "stolen",
+      "PERMIT_SCOPE_DENIED",
+      "context/execute",
+    ]);
+  });
+
+  it("execute 区分判卷与事务，并解释允许、失效、幂等及 verify 交接", () => {
+    expectSemantics("pomaster-execute", [
+      "permit_ref",
+      "id",
+      "op",
+      "allowed",
+      "expired",
+      "unknown_permit",
+      "APPLIED",
+      "NO_CHANGE",
+      "pomaster-verify",
+    ]);
+  });
+
+  it("runtime 说明会话/执行身份来源、锁冲突与显式接管，而不把阻塞写成成功", () => {
+    expectSemantics("pomaster-runtime", [
+      "session_key",
+      "AGX",
+      "LOCK_BLOCKED",
+      "lock steal",
+      "execution end",
+    ]);
+  });
+
+  it("closeout 从验收、claim 与 gate 判卷，保留 Human ACCEPT/pending 边界", () => {
+    expectSemantics("pomaster-closeout", [
+      "acceptance",
+      "claim",
+      "gate",
+      "Human ACCEPT",
+      "pending",
+      "COMPLETED",
+      "verify/finalize",
+    ]);
+  });
+
+  it("router 只承担选卡，不暴露未追认研发提案", () => {
+    const text = skillCard("pomaster");
+    expect(text).not.toContain("W4-S2");
+    expect(text).not.toContain("SP 提案待追认");
   });
 });
 
@@ -1242,6 +1392,16 @@ describe("pomaster-discovery 方法论长卡（R1：Grill Strategy 主轴 / 对�
     const text = discoveryCard();
     expect(text).toContain("行为纪律 vs 机器闸");
     expect(text).toContain("fail-closed");
+  });
+
+  it("scoped decision 通过 decision_scope/--decision-root 收敛，并把落盘表述为可恢复检查点", async () => {
+    await runInit(dir);
+    const text = discoveryCard();
+    expect(text).toContain("decision_scope");
+    expect(text).toContain("--decision-root");
+    expect(text).toContain("可恢复检查点");
+    expect(text).not.toContain("直到无 OPEN");
+    expect(text).not.toContain("落盘即停");
   });
 
   it("卡体量与方法论级对齐（trellis-brainstorm 同量级下限钉：≥120 行正文），且不复制 --help 全文（零 pomaster 命令全景分节）", async () => {

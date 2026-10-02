@@ -264,8 +264,10 @@ export function looksLikePomasterExecGuardHook(text: string): boolean {
 export interface SkillSpec {
   readonly name: string;
   readonly description: string;
-  /** 正文（命令卡：何时用 + 命令词形；Browser Eyes 与单一事实源段由 renderSkillMd 统一追加）。 */
+  /** 正文按任务风险提供路由、输入、动作选择、结果判读与交接；命令签名仍以 --help 为准。 */
   readonly bodyLines: readonly string[];
+  /** 只有需要浏览器诊断或交互验证的卡片才注入 Browser Eyes。 */
+  readonly browserEyes?: boolean;
 }
 
 /** 双镜像目录（POSIX 相对路径）。.agents = 通用层（9+ agent 原生读取）；.claude = Claude Code 必需位。 */
@@ -301,7 +303,8 @@ export const COMMAND_PANORAMA_LINES: readonly string[] = [
   "pomaster plan run --task <TASK.*> --execution-id <AGX-n> [--diagnose-on-failure]",
   "pomaster control-data-flow analyze [--report-only]",
   "pomaster finalize status/run <TASK.*> # 自动推进机器步骤；独立 verification / replay / Human ACCEPT 边界显式 pending",
-  "pomaster check --fast/--gates",
+  "pomaster check --fast",
+  "pomaster check --gates",
   "pomaster record gate-run/claim",
   "",
   "# ⑥ RECONCILE —— delta 三方对账 / 投影视图 / 审计 / 例外台账",
@@ -335,11 +338,11 @@ export const COMMAND_PANORAMA_LINES: readonly string[] = [
   "pomaster lock acquire/heartbeat/release/steal/list",
   "pomaster execution begin/end/list/audit",
   "pomaster trace show/list",
-  "pomaster checkpoint save/show     # Checkpoint 恢复引用快照（W4-S2；SP 提案待追认）：save = 恢复所需引用集落盘（task/permit 对账判卷引用/execution 在途清单/negative_history·unknowns 引用/trace/workspace git 锚——每项都是引用，逐项存在性校验；state/checkpoints/ 分区档案面零 canonical kind）；show = 引用面纯读呈现；与 session attach --reconcile 分层组合（checkpoint=引用快照，reconcile=恢复时点新鲜度判定）",
-  "pomaster steering record/search   # Steering 事件（W4-S3；SP 提案待追认）：record = 有来源约束登记（--constraint/--source-ref 必填，--scope 申报受影响对象/能力词形；state/steering-log.json append-only 台账 + journal STEERING_RECORDED 词形——零 TransactionOp 零 canonical kind）；search 词级精确检索；申报面诚实（declared——机器不验证遵守）；受影响工作下次编译带上约束（context [ADVISORY] [STEERING] 词形 / plan changeSurface unknown——不进 gate 判卷输入）",
-  "pomaster provider capabilities   # Provider 能力映射（W4-S4；SP 提案待追认）：--runtime <名>（claude-code|codex|script）出声明式能力报告——原生 async/steering/取消/工具发现四维支持度如实报告（三值词形 native|absent|unknown——探针结果驱动禁猜，零 Provider 型号断言）+ absent/unknown 逐维声明式降级语义（同步步骤+持久记录 / 下一派发边界应用约束 / 明确状态+隔离冲突结果 / 预编译较小工具集）；未接入真实 Provider 时全部 unknown 是诚实缺省（report_source 显式区分 injected_probe/declarative_default）；不把某 Provider API 叙述当跨 Provider 保证；纯报告零 store 依赖零写入",
-  "pomaster telemetry task   # 任务级 reasoning/cost/Horizon 派生评估（W4-S5；SP 提案待追认）：<task-id>（TASK.* 在册 task_object）出六指标只读聚合（verified_transition_rate / rework_signal / steering_count / resume_reconcile_signals / horizon / cost_face——每指标带分母与可计算性 MEASURED|NOT_COMPUTABLE|NOT_MEASURABLE_YET：零分母显式不冒充数值、cost 面恒未计量不虚构）+ horizon 逐执行明细 + evidence census；诚实红线随报告恒在：无综合评分 / 不持久化私有思维链（输入面无思维链通道）/ 零阈值零阻断（预算不削弱证据/权限）/ 无跨 session 基线不输出提升百分比；纯读零写零落盘（inputs_fingerprint=快照等价物）",
-  'pomaster diagnose "<症状>"   # 通用诊断入口（W3-S3；SP 提案待追认）：症状申报（位置 <report> ∥ --symptom 二选一）+ --evidence GRN/OBS/AGX 证据关联（引用不存在 fail-closed 零写）→ 失败域六词闭包 + 置信基（evidence_chain|declaration_only——零百分比置信；冲突呈报非改判；证据缺席不虚构关联）+ 诊断计划建议（复用 plan-compiler 能力词位）；纯读零写不裁决不自动修复；与 production diagnose 共用同一判定核',
+  "pomaster checkpoint save/show     # 保存或查看恢复所需引用快照；恢复时再用 reconcile 判断新鲜度",
+  "pomaster steering record/search   # 登记有来源的约束或检索 steering 事件",
+  "pomaster provider capabilities   # 报告 runtime 能力与降级语义；纯读",
+  "pomaster telemetry task          # 聚合任务指标及可计算性；纯读、不输出综合评分",
+  'pomaster diagnose "<症状>"       # 关联已有证据生成诊断计划；纯读、不自动修复',
 ];
 
 // ============================================================
@@ -450,7 +453,7 @@ export function renderCapabilityMapMarkdownLines(): string[] {
   ];
 }
 
-/** Browser Eyes 统一引用段（每份命令卡尾部；与 AGENTS.md 同源口径）。 */
+/** Browser Eyes 按卡引用；与 AGENTS.md 同源口径。 */
 const SKILL_BROWSER_EYES_LINES: readonly string[] = [
   "## Browser Eyes（浏览器双眼）",
   "",
@@ -459,7 +462,7 @@ const SKILL_BROWSER_EYES_LINES: readonly string[] = [
   "- 可用性自检：`pomaster doctor --json` 的 chrome_devtools_mcp / playwright_mcp 探针行。",
 ];
 
-/** 单一事实源对账段（每份命令卡尾部；防文档漂移的钉版测试锚 + 双镜像重复发现缓解）。 */
+/** 单一事实源对账段（每份卡片保留；防文档漂移的钉版测试锚 + 双镜像重复发现缓解）。 */
 const SKILL_SOURCE_LINES: readonly string[] = [
   "## 单一事实源",
   "",
@@ -469,7 +472,7 @@ const SKILL_SOURCE_LINES: readonly string[] = [
   "<!-- pomaster:generated -->",
 ];
 
-/** 卡片装配：frontmatter（name=目录名 + 双引号 description）+ 空行 + 正文 + 统一段。双镜像共用同一字符串。 */
+/** 卡片装配：frontmatter + 分层正文 + 可选 Browser Eyes + 统一来源段。双镜像共用同一字符串。 */
 export function renderSkillMd(spec: SkillSpec): string {
   return [
     "---",
@@ -479,8 +482,7 @@ export function renderSkillMd(spec: SkillSpec): string {
     "",
     ...spec.bodyLines,
     "",
-    ...SKILL_BROWSER_EYES_LINES,
-    "",
+    ...(spec.browserEyes === true ? [...SKILL_BROWSER_EYES_LINES, ""] : []),
     ...SKILL_SOURCE_LINES,
     "",
   ].join("\n");
@@ -520,6 +522,7 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "- 会话开场速览：`pomaster session`（无子命令形态，SessionStart 注入源，尾部带首答确认协议）；每轮可行动项：`pomaster alerts`（UserPromptSubmit 源，可行动项过滤器 + workflow 路由段，恒 exit 0）。",
       "",
     ],
+    browserEyes: true,
   },
   {
     name: "pomaster-bootstrap",
@@ -533,8 +536,13 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "- 建立或修复治理基线（幂等，重复执行 NO_CHANGE）。",
       "- 会话开场要看治理状态、要确认工具链/MCP 是否就绪、要自更新 CLI 时。",
       "",
+      "先用 `status`/`session` 读取现状；未初始化或生成物缺失时再运行 `init`，环境探针失败时按 `doctor --json` 的 error/hint 修复后复测。`portability` 和 `update` 只在对应迁移或升级目标下执行。",
+      "",
+      "交付初始化/修复是否实际发生、doctor 尚缺的工具，以及下一张阶段卡；`NO_CHANGE` 表示幂等重放无需重复修复。",
+      "",
       ...commandBlock(COMMAND_PANORAMA_LINES.slice(1, 8)),
     ],
+    browserEyes: true,
   },
   {
     name: "pomaster-permit",
@@ -548,7 +556,24 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "- 写路径开工前签发许可（五件套：身份/Capability/契约引用/范围/验收形状）。",
       "- 判卷写尝试、接管过期许可（--reason 仪式）、审计许可台账。",
       "",
-      ...commandBlock(["pomaster permit issue/check/steal/list"]),
+      "## 开工输入",
+      "",
+      "从已确认的 TASK/CHANGE 与投影中取得 `change_ref`、受控 `subject_ids`、执行主体、Capability 与 acceptance shape。`permit issue` 的 `--subject` 至少一个；重复 issue 会递增新 PERMIT 引用，不是 NO_CHANGE。",
+      "",
+      "## 动作与结果",
+      "",
+      "- `issue` 签发许可；保存返回的 `permit_ref`、scope 与 seq 锚，交给 context/execute。",
+      "- `check` 判卷单次 subject/op，结果只有 `allowed | denied | expired | unknown_permit`；`PERMIT_SCOPE_DENIED` 表示目标越界，不能换引用绕过。过期检查会留下观察事件。",
+      "- `list` 用 change_ref 或 `active | expired | stolen` 找回台账；只有已过期许可才可 `steal`，且必须给出 reason。",
+      "",
+      "输入形状错误按 error/hint 修正；expired 可显式接管或重新签发，unknown 先查台账。许可通过只说明写尝试可判卷，不代表 context 已编译、变更已写入或验证已完成。",
+      "",
+      ...commandBlock([
+        "pomaster permit issue --subject <governed-id> --actor <type:name> [--change-ref <ref>] [--capability <governed-id>] [--acceptance-shape <json|@file>]",
+        "pomaster permit check --permit <PERMIT.*> --subject <governed-id> --op <upsert_object|transition_object|delete>",
+        "pomaster permit list [--change-ref <ref>] [--state <active|expired|stolen>]",
+        "pomaster permit steal --permit <PERMIT.*> --actor <type:name> --reason <text>",
+      ]),
     ],
   },
   {
@@ -563,7 +588,14 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       `- 为角色 lane 取最小充分上下文（${CONTEXT_PARTITION_TITLES.join(" · ")} 五分区——context compile markdown 同名标题，词形与 context.ts 同源闭包）。`,
       "- 需要解释 catalog 物料为何被纳入/排除时（决策面与 Agent Context 严格隔离）。",
       "",
-      ...commandBlock(["pomaster context compile/explain"]),
+      "准备 `--role`，并从 TASK/CHANGE、permit 与任务事实带入 change、capability、stage/trigger/stack；缺失的事实保持缺席，不猜默认。正常 compile 会写 context manifest，只有 `--check` 是纯读新鲜度检查。",
+      "",
+      "读取五分区、manifest path、inputs fingerprint 与 stale 状态；`STALE_GROUNDING` 先刷新上游依据后重编译。需要追问某条 catalog 选择时用 explain。把生成 manifest 与角色约束交给 implementer。",
+      "",
+      ...commandBlock([
+        "pomaster context compile --role <role> [--change <TASK|CHANGE>] [--capability <governed-id>] [--stage <stage>] [--check]",
+        "pomaster context explain --role <role> [--change <TASK|CHANGE>] [--capability <governed-id>]",
+      ]),
     ],
   },
   {
@@ -578,9 +610,21 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "- 写路径执行点判卷（严格判卷器非写入器；非 allow 一律拒绝）。",
       "- 受控变更经显式事务落库（kernel applyTransaction 唯一写入路径）。",
       "",
+      "## 开工输入",
+      "",
+      "从 permit 卡取得 `permit_ref`，从绑定/治理对象取得目标 `id`，并使用现有 op 词表。exec-guard attempt 是 JSON 对象，必填三键 `permit_ref`、`id`、`op`，可选 context 只回显不参与判卷。maintain 接收已准备好的 Transaction JSON 文件；事务结构与受支持 op 以当前 `pomaster maintain --help` 为准。",
+      "",
+      "## 选择与判读",
+      "",
+      "- 只判断一次落笔能否发生：运行 exec-guard。它内容盲、只判卷且不写目标文件；只有 `outcome=allowed` 才通过本次检查。",
+      "- 提交治理对象事务：运行 maintain。`APPLIED` 表示返回的对象确实变化；`NO_CHANGE` 是合法幂等出口，不要当失败重试。",
+      "- `ATTEMPT_MALFORMED` 修正 JSON；`expired` 回 FRAMEWORK LOCK 显式接管或重签；`unknown_permit` 先查台账；denied/`PERMIT_SCOPE_DENIED` 保留拒绝并回到既有授权流程，不换目标或直写 store。",
+      "",
+      "交付本次是许可判卷还是事务提交、JSON 结果、changed_object_ids/seq 或未变化原因。allowed/APPLIED 都不等于验收完成；实现结束后交给 pomaster-verify。",
+      "",
       ...commandBlock([
-        "pomaster exec-guard --attempt <file|->",
-        "pomaster maintain <change-or-task> --ops <tx>",
+        "pomaster exec-guard --attempt <file|-> --json",
+        "pomaster maintain <change-or-task> --ops <tx-file> [--execution-id <AGX-n>] --json",
       ]),
     ],
   },
@@ -597,16 +641,33 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "- `CONTROL_DATA_FLOW` 由受信静态 analyzer 产出；静态 unknown 与运行时确认候选必须分层呈现，禁止把候选冒充已验证。",
       "- 内循环自检（FAST gate，BUILD 腿，纯读）或全 gate recipes 派发；把 gate 运行结果 / claim 显式落账 evidence 平面（GRN/CLM 收据）。",
       "",
+      "## 开工输入",
+      "",
+      "从任务对象读取 TASK acceptance 与 requires/exclusions；从 runtime 卡取得已登记且绑定该任务的 AGX。显式申报 changed paths、consumers 与 `kind=present|absent:<依据>` faces，不能由复杂度猜 N/A。plan compile 在 `--task` 与 `--input` 间二选一且纯读；plan run 需要 TASK 和 AGX。",
+      "",
+      "## 执行与判读",
+      "",
+      "1. compile 检查每条 acceptance 的 applicability、resolved bindings 与 diagnostics；unknown 保留，缺工具不是 N/A。",
+      "2. run 只串行执行 REQUIRED obligations 并逐项写 GRN；只有全部 passed 才成功，且不会自动创建 claim、verification 或 closeout。工具缺席/未执行是显式 NOT_RUN（JSON `verdict=not_run`），不是绿色。",
+      "3. 前端交互变更用 control-data-flow 静态报告配合浏览器 runtime confirmation；静态 proven 不证明真实 API、持久化或回显。",
+      "4. `finalize status` 读取当前阶段；`finalize run` 可重入推进机器验证，但独立 replay、独立 verification 与 Human ACCEPT 缺失时返回 pending 和 next_actions，禁止代签。",
+      "",
+      "失败时按 diagnostics 修实现或绑定后重跑；保留 partial GRN，不能把 NOT_RUN 改成 passed。最终交付 plan fingerprint、每项 verdict、pending actor/command；机器验证稳定后转 pomaster-reconcile，满足独立证据后再 closeout。",
+      "",
       ...commandBlock([
         "pomaster plan compile --task <TASK.*>",
         "pomaster plan run --task <TASK.*> --execution-id <AGX-n> --diagnose-on-failure",
         "pomaster control-data-flow analyze [--report-only]",
         "pomaster finalize status <TASK.*>",
-        "pomaster finalize run <TASK.*> --verification-execution-id <AGX-*> --review-range <range>",
-        "pomaster check --fast/--gates",
-        "pomaster record gate-run/claim",
+        "pomaster finalize run <TASK.*> --verification-execution-id <AGX-*> --review-range <range> [--verifier <type:name>] [--replay-receipt <sha256>]",
+        "pomaster check --fast",
+        "pomaster check --gates",
+        "pomaster record gate-run --from <file> [--execution-id <AGX-n>]",
+        "pomaster record claim --from <file> [--execution-id <AGX-n>]",
+        "pomaster record verification --clm <CLM-n> --verifier <type:name> --evidence <ref> [--execution-id <AGX-n>]",
       ]),
     ],
+    browserEyes: true,
   },
   {
     name: "pomaster-reconcile",
@@ -619,6 +680,10 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "",
       "- 实现完成后按许可基线出 delta（changed/exceptions/samples）给人审。",
       "- 看叙事视图/审查视图/七字段审计/异常台账。",
+      "",
+      "从执行链取得 permit 引用并运行 reconcile。`clean=true` 是合法零差异；changed/exceptions 会返回 dirty 与审阅样本，保留结果供人工审查。dirty 不是扩权理由，按报告修复或登记有依据的 exception 后重跑。",
+      "",
+      "用 view 看叙事/审查投影，用 audit 查字段或测试削弱，用 ledger 记录已获授权的异常分类。交付 delta、exceptions、sample 与尚未裁定项后再进入 compact。",
       "",
       ...commandBlock([
         "pomaster reconcile --permit <PERMIT.*>",
@@ -640,6 +705,10 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "- episode 折叠：证据批量收编 + 显式事务合并为单次 applyTransaction（NO_CHANGE 合法出口）。",
       "- 经验入库（knowledge 生命周期）与 harness 记忆收割评审。",
       "",
+      "确认本轮 runs/claims 与可选事务文件属于同一 episode，再运行 compact；默认收编证据，只有明确需要时使用 `--no-ingest`。畸形证据以 warning 保留且不阻断其余折叠，必须在交付中列出，不能冒充已收编。",
+      "",
+      "`APPLIED` 表示单次 store 事务产生变化，`NO_CHANGE` 是合法出口。knowledge/memory 的 promote 只走各自命令与审查边界；折叠完成后把 seq、warnings 与未处理项交给 closeout。",
+      "",
       ...commandBlock([
         "pomaster compact",
         "pomaster knowledge search/inspect/record/review-candidates/promote/demote",
@@ -658,6 +727,16 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "",
       "- 任务收口：DoD 判卷（逐条 acceptance 映射 VERIFIED claim）+ 阻断施断。",
       "",
+      "## 开工输入",
+      "",
+      "使用 TASK governed id，并先确认 acceptance 非空、每条映射到当前 claim、必需 gate 与绑定 Evidence Spec 已满足，独立 verification 已入账且 Human ACCEPT 回执有效。输入来自 task、GRN/CLM evidence 与 finalize status，不手工改收据。",
+      "",
+      "## 判读与恢复",
+      "",
+      "`COMPLETED` 才表示施断成功；已完成任务重放保持完成。缺 claim、未 VERIFIED、gate 未通过、baseline 漂移、独立性冲突或 Human ACCEPT 缺失/损坏/过期都会 pending/阻断，并保留具体 error/hint。可选 gate 未过只在明确排除且非 required 时降为诊断提醒。",
+      "",
+      "按错误回 verify/finalize 生成新证据或等待对应独立主体/Owner；不得覆写旧 claim、把 NOT_RUN 改绿或由编排器代签。交付最终状态、阻断码与下一责任人。",
+      "",
       ...commandBlock(["pomaster closeout <task-id>"]),
     ],
   },
@@ -673,6 +752,8 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "- 检视单对象（正文+证据+谱系，纯读零写入）。",
       "- 对象图/影响闭包；需求词形先解析再决定是否新建（NO_MATCH 显式不臆造）。",
       "",
+      "先拿到 governed id；只有自然语言 need 时才用 resolve。对象不存在、NO_MATCH 或图边缺席都按返回结果保留，不以近似对象替代。把 inspect/graph 的引用与影响闭包交给后续阶段卡。",
+      "",
       ...commandBlock([
         "pomaster inspect <governed-id>",
         "pomaster graph <governed-id> [--view impact]",
@@ -683,7 +764,7 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
   {
     name: "pomaster-discovery",
     description:
-      "POMaster 八拍① DISCOVERY 与 Grounded Brainstorm 方法论（D-5，裁决 18：八拍①=Brainstorm/Question Gate 单入口）。当用户说需求讨论、想法澄清、brainstorm、怎么规划、新功能探索、拷问需求等自然语言时命中本卡：Grill Strategy 主轴（先 Ground 后 Grill／九类 Expose 拷问动作／Frontier 节奏／核心产物是 Decision Graph）+ 对话形式纪律 + 机器闸命令链（brainstorm start → question-gate → decide set/answer/ready → research request/handoff → promote --apply）+ 任务生命周期全图（discovery→research→八拍②-⑧→closeout）；兼 research artifact 判读（五级 Evidence）与行为评测入口。",
+      "用 Grounded Brainstorm 把含糊需求收敛为可晋升的 scoped Decision Graph。当用户要讨论需求、澄清想法、规划新功能、比较方案或补研究证据时使用；从 brainstorm start 进入，覆盖先 Ground 后 Grill、Question Gate、frontier、research 与 promote。",
     bodyLines: [
       "# pomaster-discovery —— 发现面（Grounded Brainstorm 方法论）",
       "",
@@ -727,6 +808,7 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "### Frontier 节奏：每轮只打当前 frontier",
       "",
       "每轮只处理当前 Frontier（prerequisites 已满足且有资格被处理的 Decision 集合，`decide --set/--answer` 输出实时呈现）——绝不一次甩 20 个待确认。上游决议后 frontier 自然推进；waiting 里的节点附未满足依赖明细。与一次一问天然相容。",
+      "`decision_scope` 由 `root_decision_ids` 与当前 `graph_fingerprint` 组成，范围包含根节点的传递依赖；scope 外独立 OPEN 节点继续可见但不阻塞本次 ready/promote。图变更后旧 scope 失效，必须基于新 fingerprint 重判。",
       "",
       "### Upstream Change Invalidation（上游改动 → 下游失效）",
       "",
@@ -778,7 +860,7 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "  research <topic> 骨架 → research request 发起 → research handoff 回填 → decide --ready 重判",
       "八拍（对 promote 出的 TASK/CHANGE 跑）",
       "  ② permit issue（--change-ref 绑定任务）→ ③ context compile → ④ exec-guard/maintain",
-      "  → ⑤ check + record → ⑥ reconcile → ⑦ compact → ⑧ closeout 终点（DoD 判卷施断）",
+      "  → ⑤ plan compile/run + finalize（独立验证与 Human ACCEPT 可显式 pending）→ ⑥ reconcile → ⑦ compact → ⑧ closeout",
       "```",
       "",
       "模型从本图应看到整条任务驱动链：讨论在 Discovery 平面收敛，promote 是「想法 → 治理对象」的唯一入口，八拍是「治理对象 → 证据化完成」的机器通路。",
@@ -798,7 +880,7 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
         "pomaster brainstorm decide <id> --answer <DECISION.*> --accept|--value <option>|--unknown --triage <key=bool>|--defer",
         "pomaster research request <id> --decision <DECISION.*> --proposition \"<text>\" --why \"<text>\" --evidence <级> --mode <模式>|--gap <类> --stop-when \"<text>\" --forbid \"<text>\"",
         "pomaster research handoff <id> --file <handoff.json>",
-        "pomaster brainstorm decide <id> --ready --goal <text> --scope <text> --acceptance <criterion>@<DECISION.*|ASSUMPTION:EXC-*> [--residual <分类>:<陈述>]",
+        "pomaster brainstorm decide <id> --ready [--decision-root <DECISION.*>] --goal <text> --scope <text> --acceptance <criterion>@<DECISION.*|ASSUMPTION:EXC-*> [--residual <分类>:<陈述>]",
         "pomaster brainstorm promote <id> --to TASK|CHANGE --basis msd_reached --apply",
       ]),
       "",
@@ -809,7 +891,7 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "3. `decide --set`：候选图载入（§5.2 十键节点）+ 全节点 grounding 判定呈现（G1-G8）+ frontier 呈现；图落 decision-graph.json；--retrieved 申报 G2 检索面、--route 申报缺失事实路由。",
       "4. `decide --answer`：逐决策应答（KNOWN 已含于 --accept/--value；UNKNOWN 六问重分类；--defer 显式延后）；仅 READY_FOR_DECISION 节点可答；同决议重放幂等。",
       "5. `research request` → `research handoff`：NEEDS_RESEARCH 缺口的公开消解——请求落档 index.yaml 并同步图侧标记；handoff 把 finding 挂回节点（RESOLVES_FACT 消解 missing_facts；CONTRADICTS_PREMISE 只披露不裁决）；消解方由 Owner 指定。",
-      "6. `decide --ready`：收敛判卷（MSD 三轴 + 合法残留）——全绿写 READY_TO_PROMOTE（promotion_basis=msd_reached），不足 fail-closed 列全部缺口且状态零变更。",
+      "6. `decide --ready`：缺省按全图判卷；只在增量收敛时用可重复的 `--decision-root` 声明 decision_scope，使判卷只要求该 scope 及其传递依赖满足 MSD 三轴与合法残留，scope 外节点继续可见。全绿写 READY_TO_PROMOTE，不足 fail-closed 列缺口且状态零变更。",
       "7. `promote --apply`：提升走 P11 maintain 面落库（Discovery 层不私造第二写入通道）——promote 即建 TASK.*/CHANGE.*，随后进八拍。",
       "",
       "### 横切检视（发现面）",
@@ -832,11 +914,11 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "拍 3 Set       decide --set 候选图 + --route FACT.X.Y=RESEARCHABLE → verdict=NEEDS_RESEARCH",
       "拍 4 Research  research request 发起 → 消解方（Owner 指定）取证 → research handoff 回填",
       "拍 5 Ask       重算 READY_FOR_DECISION 后一次一问：给 2-3 个带代价的选项 → --answer 录入",
-      "拍 6 Move      frontier 推进（上游 ACCEPT/CHANGE 后下游入场）→ 回到拍 1，直到无 OPEN",
-      "拍 7 Converge  decide --ready 三轴 + 合法残留 → 全绿 READY_TO_PROMOTE → promote --apply 建任务",
+      "拍 6 Move      frontier 推进（上游 ACCEPT/CHANGE 后下游入场）→ 回到拍 1，直到当前 decision_scope 收敛",
+      "拍 7 Converge  decide --ready（增量时追加 --decision-root）→ 全图或 scoped 判卷全绿 → promote --apply 建任务",
       "```",
       "",
-      "拍序纪律：拍与拍之间落盘即停（图/决议/请求都在 scratchpad 里，对话断了链不断）；任何一拍被机器拒了，修输入重跑，禁绕闸。",
+      "拍序纪律：每拍完成后把图、决议或请求落成可恢复检查点，并在同一轮继续推进当前 frontier；只有等待外部输入、授权或独立研究结果时才暂停。机器拒绝时按 error/hint 修输入后重跑，禁绕闸。",
       "",
     ],
   },
@@ -851,6 +933,8 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "",
       "- 查看 catalog 构成/解释条目；catalog-lock 漂移的恢复键是 relock。",
       "- Trellis spec 迁移先分析不落盘（analyze-only）。",
+      "",
+      "先用 status/explain 纯读定位条目或 lock drift；只有确认要接受当前 catalog 字节时才 relock。迁移命令保持 `--analyze`，将分类报告交给实际迁移任务。",
       "",
       ...commandBlock([
         "pomaster catalog status/explain/relock",
@@ -869,6 +953,8 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "",
       "- SLO 击穿闭环：band 定义 → evaluate 三态 → challenge → diagnose → metrics。",
       "",
+      "从已登记 band 与真实 observation 开始；evaluate 只判定观测，challenge/diagnose 记录后续治理事实，不能把告警直接改写成 Truth。按 JSON 状态与 error/hint 处理，缺 observation 时先补观测。",
+      "",
       ...commandBlock([
         "pomaster production band/evaluate/challenge/diagnose/metrics/self-improvement",
       ]),
@@ -885,14 +971,38 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "",
       "- 会话注册/心跳、三粒度互斥锁（acquire 永不自动抢占）、AGX 执行身份、封存 trace、运行时观测。",
       "",
+      "## 开工输入",
+      "",
+      "准备稳定的 `session_key` 与 harness；执行工作需要已登记的 TASK/CHANGE、角色、runtime、identity kind，必要时关联 permit。`execution begin` 返回的 AGX 是 plan run、record 与 audit 的身份来源，禁止自造。",
+      "",
+      "## 动作选择",
+      "",
+      "1. `session attach` 注册或恢复上下文；带 reconcile 时 dirty/缺基线仍可附着并显式 warning，且不会扩大 permit。活会话所有权冲突按错误处理。",
+      "2. 对并发写范围 `lock acquire`；`LOCK_BLOCKED` 保留持有者信息并等待/协调，acquire 永不自动抢占。只有显式确认接管时才 `lock steal <lock-id> --session-key ... --reason ...`。",
+      "3. `execution begin` 登记 AGX 后执行；结束时 `execution end <AGX>`。需要追溯时用 list/audit/trace，审计越界只呈报，不自动修复或扩权。",
+      "4. `agents status` 是观测面；当前 `run`/`handoff` 返回 `COMMAND_DEFERRED`，不能当作真实派发成功。由现有 harness 直接执行或形成可恢复交接记录。",
+      "",
+      "失败恢复以 error/hint 为准：SESSION_NOT_FOUND 先 attach，LOCK_BLOCKED 不重试抢占，身份不存在先 begin。交付 session_key、AGX、持锁/释放状态、审计或 trace 引用；verify 前保持 AGX 可追溯，完成后显式 end/release。",
+      "",
       ...commandBlock([
         "pomaster agents status",
-        "pomaster session attach/refresh/list",
-        "pomaster lock acquire/heartbeat/release/steal/list",
-        "pomaster execution begin/end/list/audit",
-        "pomaster trace show/list",
-        "pomaster run <task>",
-        "pomaster handoff <task> --to <role>",
+        "pomaster session attach --session-key <key> --harness <id> [--task <TASK.*>] [--reconcile <PERMIT.*>]",
+        "pomaster session refresh --session-key <key>",
+        "pomaster session list",
+        "pomaster lock acquire --kind <change|task> --session-key <key> --ref <ref> [--execution-id <AGX-n>]",
+        "pomaster lock acquire --kind unit --session-key <key> --object-key <key> [--execution-id <AGX-n>]",
+        "pomaster lock heartbeat --lock <lock-id> --session-key <key>",
+        "pomaster lock release --lock <lock-id> --session-key <key>",
+        "pomaster lock steal <lock-id> --session-key <key> --reason <text> [--execution-id <AGX-n>]",
+        "pomaster lock list",
+        "pomaster execution begin --role <role> --runtime <runtime> --identity-kind <kind> [--task-id <TASK.*>]",
+        "pomaster execution end <AGX-n>",
+        "pomaster execution list",
+        "pomaster execution audit --execution-id <AGX-n> --diff-base <git-ref>",
+        "pomaster trace show <AGX-n> [--seal --retention <EPHEMERAL|TASK_RETENTION|INCIDENT_RETENTION|AUDIT_RETENTION>]",
+        "pomaster trace list",
+        "pomaster run <task>   # 当前显式 COMMAND_DEFERRED",
+        "pomaster handoff <task> --to <role>   # 当前显式 COMMAND_DEFERRED",
       ]),
     ],
   },

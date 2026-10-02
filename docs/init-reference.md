@@ -126,22 +126,25 @@ canonical 正文层为 `.pomaster/truth/objects/`；legacy `.pomaster/objects/` 
 ## 重入口三件套（skills / hooks / 加厚 rules）
 
 init 缺省生成重入口全套（`--platforms none` 除外），让 Agent 一开会话就自动看到治理状态、
-按需自动触发命令卡：
+按需自动触发相应 skill：
 
-- **skills 命令卡库**：`/pomaster` 路由全景 + `pomaster-bootstrap` … `pomaster-runtime`
-  等 15 份命令卡，双镜像安装到 `.agents/skills/`（通用层——Codex / Cursor / Gemini CLI /
-  GitHub Copilot / VS Code / Amp / Warp / OpenCode / Droid 等原生读取）与
-  `.claude/skills/`（Claude Code 必需位），两份**逐字节一致**、同指 `pomaster --help`
-  单一事实源；其中 `pomaster-discovery` 是方法论长卡（Grounded Brainstorm：Grill
-  Strategy 主轴 + 对话形式纪律 + 机器闸命令链 + 任务生命周期全图——「走 pomaster
-  brainstorm」/需求讨论/拷问需求等自然语言命中）。
+- **skills 分层库**：共 14 份。`/pomaster` 是按用户目标和当前阶段选卡的 router；
+  `pomaster-discovery` 是 Grounded Brainstorm 方法论 skill（Grill Strategy 主轴 +
+  对话形式纪律 + 机器闸命令链 + 任务生命周期全图——「走 pomaster brainstorm」/
+  需求讨论/拷问需求等自然语言命中）；permit、execute、verify、runtime、closeout 等复杂
+  阶段卡按风险提供输入来源、动作分支、机器结果判读、拒绝恢复与下游交接；inspect、catalog
+  等窄查询卡保持比例适当的短参考。14 份均双镜像安装到 `.agents/skills/`（通用层——Codex /
+  Cursor / Gemini CLI / GitHub Copilot / VS Code / Amp / Warp / OpenCode / Droid 等原生读取）
+  与 `.claude/skills/`（Claude Code 必需位），两份**逐字节一致**，命令签名继续以
+  `pomaster --help` 为单一事实源。Browser Eyes 只进入 router、bootstrap 与 verify 三个
+  确有工具发现、浏览器诊断或验证职责的 skill；全局分工仍由 AGENTS.md 入口说明。
 - **hooks 注入（claude）**：`.claude/settings.json` 合并式注册
   SessionStart → `pomaster session`（治理速览投影，≤10,000 字符硬上限，尾部带
   **首答确认协议**——模型首轮回复必须可见确认注入并报告 Next-Action 路由）与
   UserPromptSubmit → `pomaster alerts`（可行动项过滤器 + workflow 路由段：无活跃 TASK
   给判档/讨论双入口，有活跃 TASK 给八拍位置与下一拍命令，恒 exit 0）；既有 hooks
   （人类/Trellis 条目）一律保留，坏 JSON fail-closed 不覆盖。
-- **cursor/qoder**：加厚版 rules（命令卡 + Browser Eyes 展开进
+- **cursor/qoder**：加厚版 rules（命令全景 + Browser Eyes 展开进
   `.cursor/rules/pomaster.mdc` / `.qoder/rules/pomaster.md`）。
 
 ## 多平台适配器
