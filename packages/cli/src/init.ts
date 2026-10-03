@@ -163,6 +163,17 @@ import {
   renderModeHumanLines,
   runBrownfieldRecon,
 } from "./init-mode.js";
+import {
+  architectureAnswers,
+  parseArchitectureId,
+  writeArchitectureProfile,
+  type ArchitectureId,
+  type ArchitectureProfile,
+} from "./architecture-profile.js";
+import {
+  ensureProjectIdentificationTask,
+  type ProjectIdentificationResult,
+} from "./project-identification.js";
 
 /** 失败信封的 presetDraft 占位（零生成——失败路径零草案写入）。 */
 const ZERO_PRESET_DRAFT: BaselinePresetDraftReport = {
@@ -286,6 +297,10 @@ export interface InitResult {
    * sidecar 全部复用既有机制。
    */
   readonly mode: InitModeResult | null;
+  /** Explicit architecture input and content-addressed generation fingerprint. */
+  readonly architecture_profile: ArchitectureProfile | null;
+  /** Brownfield identification task created through the canonical kernel ledger. */
+  readonly project_identification: ProjectIdentificationResult | null;
   /**
    * 能力速览（09-06 能力显性化 C1；Owner 裁定面位之一）：--json result.（锚：corpus/master/cutover/owner-adjudications.md#裁决16）
    * capability_overview 结构化数组——与完成横幅人读段同一内容源（heavy-entry.ts
@@ -309,6 +324,8 @@ export interface InitOptions {
    * undefined = 未携带：CLI 非交互路径缺省 claude（现行为）。
    */
   readonly platforms?: string | undefined;
+  /** Explicit greenfield architecture profile (vue or react). */
+  readonly architecture?: string | undefined;
   /**
    * 播种清单注入（vNext Batch 6 B6a）：undefined = 缺省装载包内种子清单
    * （seed-manifest.ts loadSeedManifestEntries——B6a 空表，B6b/B6c/B6d/B6e/B6f/B6G 起 160 份在册）。
@@ -577,6 +594,8 @@ export async function runInitInteractive(
     presetDraft: ZERO_PRESET_DRAFT,
     observation: ZERO_OBSERVATION,
     mode: null,
+    architecture_profile: null,
+    project_identification: null,
     capability_overview: CAPABILITY_OVERVIEW,
     bootstrap_harness: null,
   });
@@ -592,49 +611,44 @@ export async function runInitInteractive(
       ["init: FAILED — SCHEMA_INVALID", `  ${parse.error.message}`, `  hint: ${parse.error.hint}`],
     );
   }
-  // F-M3 R1 模式问句（问卷首题）：Brownfield 候选态呈现检测结果并显式确认；
-  // 中止（EOF）= INIT_INTERRUPTED 零写入（fail-closed 不猜缺省）。
-  const brownfieldChoice = await confirmBrownfieldPath(rootDir, {
-    write: interactive.write,
-    readLine: interactive.readLine,
-  });
-  if (brownfieldChoice === null) {
-    return failOutcome(
-      "init",
-      failResult(),
-      [
-        {
-          code: "INIT_INTERRUPTED",
-          message: "init 模式问句中断（EOF）；零写入",
-          hint: "重新运行 pomaster init 继续模式问句与技术栈问卷（已答键幂等不重复问）。",
-        },
-      ],
-      ["init: FAILED — INIT_INTERRUPTED", "  init 模式问句中断（EOF）；零写入。"],
-    );
-  }
-  // R-M：编号降级路径同样接技术栈问卷（与 raw 复选路径同构；EOF = 中止零写入）。
-  const quiz = await collectStackAnswers(rootDir, {
-    write: interactive.write,
-    readLine: interactive.readLine,
-  });
-  if (quiz === null) {
-    return failOutcome(
-      "init",
-      failResult(),
-      [
-        {
-          code: "INIT_INTERRUPTED",
-          message: "baseline 技术栈问卷中断（EOF）；零写入",
-          hint: "重新运行 pomaster init 继续问卷（已答键幂等不重复问）；或用 pomaster baseline set 非交互逐键后补。",
-        },
-      ],
-      ["init: FAILED — INIT_INTERRUPTED", "  baseline 技术栈问卷中断（EOF）；零写入。"],
-    );
+  const detection = detectInitMode(rootDir);
+  let brownfieldChoice: InitBrownfieldChoice | undefined;
+  let quiz: StackQuestionnaireOutcome | null = null;
+  if (detection.kind === "brownfield_candidate") {
+    // Brownfield is identified by the generated task.  Framework and stack
+    // answers are deliberately deferred until that task has evidence.
+    brownfieldChoice = { confirmed: true };
+  } else {
+    const choice = await confirmBrownfieldPath(rootDir, {
+      write: interactive.write,
+      readLine: interactive.readLine,
+    });
+    if (choice === null) {
+      return failOutcome(
+        "init",
+        failResult(),
+        [{ code: "INIT_INTERRUPTED", message: "init 模式问句中断（EOF）；零写入", hint: "重新运行 pomaster init。" }],
+        ["init: FAILED — INIT_INTERRUPTED", "  init 模式问句中断（EOF）；零写入。"],
+      );
+    }
+    brownfieldChoice = { confirmed: choice.confirmed };
+    quiz = await collectStackAnswers(rootDir, {
+      write: interactive.write,
+      readLine: interactive.readLine,
+    });
+    if (quiz === null) {
+      return failOutcome(
+        "init",
+        failResult(),
+        [{ code: "INIT_INTERRUPTED", message: "baseline 技术栈问卷中断（EOF）；零写入", hint: "重新运行 pomaster init。" }],
+        ["init: FAILED — INIT_INTERRUPTED", "  baseline 技术栈问卷中断（EOF）；零写入。"],
+      );
+    }
   }
   return runInit(rootDir, {
     platforms: parse.platforms.join(","),
-    stackQuestionnaire: quiz,
-    brownfield: { confirmed: brownfieldChoice.confirmed },
+    ...(quiz !== null ? { stackQuestionnaire: quiz } : {}),
+    brownfield: brownfieldChoice,
   });
 }
 
@@ -1178,6 +1192,8 @@ export async function runInit(
         presetDraft: ZERO_PRESET_DRAFT,
         observation: ZERO_OBSERVATION,
         mode: null,
+        architecture_profile: null,
+        project_identification: null,
         capability_overview: CAPABILITY_OVERVIEW,
         bootstrap_harness: null,
       },
@@ -1190,6 +1206,53 @@ export async function runInit(
     );
   }
   const selectedPlatforms = selection.platforms;
+  const architectureSelection =
+    options.architecture === undefined
+      ? { ok: true as const, id: null as ArchitectureId | null }
+      : (() => {
+          const parsed = parseArchitectureId(options.architecture);
+          return parsed.ok
+            ? { ok: true as const, id: parsed.id }
+            : { ok: false as const, error: parsed };
+        })();
+  if (!architectureSelection.ok) {
+    return failOutcome(
+      "init",
+      {
+        change: "NO_CHANGE",
+        tool: INIT_TOOL_ID,
+        files: [],
+        platforms: [],
+        specPreplant: null,
+        baseline: { asked: 0, answered: 0, skipped: "non_interactive" },
+        presetDraft: ZERO_PRESET_DRAFT,
+        observation: ZERO_OBSERVATION,
+        mode: null,
+        architecture_profile: null,
+        project_identification: null,
+        capability_overview: CAPABILITY_OVERVIEW,
+        bootstrap_harness: null,
+      },
+      [
+        {
+          code: "SCHEMA_INVALID",
+          message: architectureSelection.error.message,
+          hint: architectureSelection.error.hint,
+        },
+      ],
+      [
+        "init: FAILED — SCHEMA_INVALID",
+        `  ${architectureSelection.error.message}`,
+        `  hint: ${architectureSelection.error.hint}`,
+      ],
+    );
+  }
+  // Detect the project before selecting a generation profile.  A brownfield
+  // directory is governed by its identification task first; an optional
+  // --architecture value must never bypass that confirmation gate.
+  const modeDetection = detectInitMode(rootDir);
+  const selectedArchitecture =
+    modeDetection.kind === "brownfield_candidate" ? null : architectureSelection.id;
   // 重入口产物面 = 平台选择非空（none = 显式最小形态，零平台产物；B7 裁定 2026-09-04：（锚：corpus/master/cutover/owner-adjudications.md#裁决11⑧）
   // init 单一重入口，无模式旗标）。
   const heavy = selectedPlatforms.length > 0;
@@ -1200,8 +1263,6 @@ export async function runInit(
   //      候选态只进结果面与呈现行；编排（recon 三腿）只经 InitOptions.brownfield
   //      显式注入触发（TTY 交互问卷首题确认——禁静默分叉）。.pomaster 在座 =
   //      重入口行为不变；干净目录 = Greenfield 静默直入现状。
-  const modeDetection = detectInitMode(rootDir);
-
   // 1) 目录骨架：宪法 §2 Target Directory Tree 全量预铺（Owner 2026-09-04 裁定
   //    「把所有的目录全部建好，不分级别」——与入口形态/平台选择无关，恒同一棵树；
   //    激活由 AI 按 layout.json activation_hint 自行判断）。目录清单单源 =
@@ -1423,14 +1484,52 @@ export async function runInit(
   //      在座）、入口渲染之前。
   let baseline: BaselineQuizResult;
   if (options.stackQuestionnaire === undefined) {
-    baseline = { asked: 0, answered: 0, skipped: "non_interactive" };
+    if (selectedArchitecture === null) {
+      baseline = { asked: 0, answered: 0, skipped: "non_interactive" };
+    } else {
+      const profileAnswers = architectureAnswers(selectedArchitecture);
+      const answered = await applyStackAnswers(rootDir, profileAnswers, files, errors);
+      baseline = { asked: profileAnswers.length, answered, skipped: "non_interactive" };
+    }
   } else {
     const quiz = options.stackQuestionnaire;
+    const answers = selectedArchitecture === null
+      ? quiz.answers
+      : [
+          ...architectureAnswers(selectedArchitecture),
+          ...quiz.answers.filter(
+            (answer) =>
+              !architectureAnswers(selectedArchitecture).some(
+                (profileAnswer) =>
+                  profileAnswer.lane === answer.lane && profileAnswer.key === answer.key,
+              ),
+          ),
+        ];
     const answered =
-      quiz.answers.length > 0
-        ? await applyStackAnswers(rootDir, quiz.answers, files, errors)
+      answers.length > 0
+        ? await applyStackAnswers(rootDir, answers, files, errors)
         : 0;
-    baseline = { asked: quiz.asked, answered, skipped: quiz.skipped };
+    baseline = {
+      asked: quiz.asked + (selectedArchitecture === null ? 0 : architectureAnswers(selectedArchitecture).length),
+      answered,
+      skipped: quiz.skipped,
+    };
+  }
+
+  // Explicit architecture is a generation input. Persist it after baseline files
+  // exist so the profile and its human projection are visible to the same init run.
+  let architectureProfile: ArchitectureProfile | null = null;
+  if (selectedArchitecture !== null) {
+    const profileWrite = await writeArchitectureProfile(rootDir, selectedArchitecture, files);
+    if (!profileWrite.ok) {
+      errors.push({
+        code: profileWrite.code,
+        message: profileWrite.message,
+        hint: profileWrite.hint,
+      });
+    } else {
+      architectureProfile = profileWrite.profile;
+    }
   }
 
   // 4.9) baseline 栈预置草案生成（09-06 Step 1；G-B/G-C/G-D 裁定；baseline-preset.ts（历史裁定，锚缺失——G-B/G-C/G-D；未入 corpus 台账，T3-R3 如实标注）
@@ -1444,8 +1543,9 @@ export async function runInit(
   const presetDraft = await appendPresetDrafts(rootDir, files);
 
   // 4.95) Brownfield recon 编排（F-M3 init v2 R2/R3；init-mode.ts ADR-3/4/5）：
-  //       仅候选态且 Owner 显式确认（InitOptions.brownfield.confirmed=true——TTY
-  //       交互问卷首题产出）时触发：kernel beginExecution 登记执行身份（role/
+  //       非空目录默认自动进入识别链；旧注入 confirmed=false 仍作为兼容性的
+  //       显式拒绝出口。默认不再要求 Owner 先回答 Brownfield/Greenfield 问句：
+  //       kernel beginExecution 登记执行身份（role/
   //       runtime/identity_kind=script——CLI 进程诚实申报）→ recon 三腿串联
   //       （recon.ts 既有命令函数直调零第二实现）→ endExecution 封口。产物只落
   //       evidence/{blobs,observations}/ sidecar + executions/ 档案 + journal 事件
@@ -1455,10 +1555,10 @@ export async function runInit(
   let mode: InitModeResult;
   if (modeDetection.kind === "brownfield_candidate") {
     const brownfield = options.brownfield;
-    if (brownfield?.confirmed === true) {
+    if (brownfield?.confirmed !== false) {
       const recon = await runBrownfieldRecon(
         rootDir,
-        brownfield.sbomInject !== undefined ? { sbomInject: brownfield.sbomInject } : {},
+        brownfield?.sbomInject !== undefined ? { sbomInject: brownfield.sbomInject } : {},
         warnings,
       );
       mode = { detection: "brownfield_candidate", summary: modeDetection.summary, brownfield: "ran", recon };
@@ -1472,6 +1572,26 @@ export async function runInit(
     }
   } else {
     mode = { detection: modeDetection.kind, summary: null, brownfield: null, recon: null };
+  }
+
+  // The identification task is a canonical task object. Its payload keeps
+  // recon references and explicit unknowns so the first agent session can
+  // summarize the project before ordinary development routes become primary.
+  const projectIdentification = await ensureProjectIdentificationTask(
+    rootDir,
+    modeDetection,
+    mode.recon,
+    warnings,
+  );
+  if (projectIdentification.created) {
+    const refreshed = await readIfExists(ledgerPath);
+    if (refreshed !== null) {
+      try {
+        ledgerForRender = JSON.parse(refreshed) as Record<string, unknown>;
+      } catch {
+        // Task creation already reported its own result; keep the last readable summary.
+      }
+    }
   }
 
   // 5) 入口文件：AGENTS.md 恒生成（唯一事实源；平台选择非空 = 重入口正文 + heavy
@@ -1598,7 +1718,8 @@ export async function runInit(
     platforms.some((p) => p.action === "created") ||
     // 预植入账（planted>0 = store 新增治理事实）计入 CREATED 桶——账面诚实：
     // 对象被删后重跑 init 补植，change 不得假报 NO_CHANGE。
-    (specPreplant?.planted ?? 0) > 0;
+    (specPreplant?.planted ?? 0) > 0 ||
+    projectIdentification.created;
   const updated =
     files.some((f) => f.action === "updated") ||
     platforms.some((p) => p.action === "updated");
@@ -1618,6 +1739,8 @@ export async function runInit(
     presetDraft,
     observation,
     mode,
+    architecture_profile: architectureProfile,
+    project_identification: projectIdentification,
     capability_overview: CAPABILITY_OVERVIEW,
     bootstrap_harness: bootstrapHarness,
   };

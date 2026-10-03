@@ -93,6 +93,7 @@ type UnknownRecord = Record<string, unknown>;
 /** 路由行 id 词表（表驱动测试分母；顺序 = 首中优先级）。 */
 export const NEXT_ACTION_ROUTE_IDS = [
   "R_NOT_INITIALIZED",
+  "R_PROJECT_IDENTIFICATION",
   "R_NO_ACTIVE_TASK",
   "R_BASELINE_NOT_READY",
   "R_CLOSEOUT_READY",
@@ -152,6 +153,8 @@ export interface NextActionTaskRow {
   readonly id: string;
   readonly lifecycle: string | null;
   readonly evidence: string | null;
+  /** true while the init-created project identification task is pending. */
+  readonly project_identification?: boolean;
 }
 
 /** Next-Action 路由快照（全部字段缺席显式——诚实呈现禁伪造）。 */
@@ -314,6 +317,7 @@ export async function collectNextActionSnapshot(
   // —— 活跃任务行（id 前缀 + lifecycle + evidence 三筛；id 字典序确定化）。 ——
   const objects = Array.isArray(index.objects) ? index.objects : [];
   const activeTasks: NextActionTaskRow[] = [];
+  const activeRows: { readonly row: UnknownRecord; readonly id: string; readonly lifecycle: string; readonly evidence: string | null }[] = [];
   for (const row of objects) {
     if (!isRecord(row)) continue;
     const id = asString(row.id);
@@ -323,9 +327,34 @@ export async function collectNextActionSnapshot(
     if (lifecycle === null || !ACTIVE_LIFECYCLE_VALUES.includes(lifecycle)) continue;
     const evidence = asString(axes.evidence);
     if (evidence === "VERIFIED") continue;
-    activeTasks.push({ id, lifecycle, evidence });
+    activeRows.push({ row, id, lifecycle, evidence });
   }
-  activeTasks.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  for (const active of activeRows) {
+    let projectIdentification = false;
+    const bodyResult = await readBodyEnvelope(rootDir, active.row);
+    if (!("error" in bodyResult)) {
+      const payload = isRecord(bodyResult.body.payload) ? bodyResult.body.payload : {};
+      projectIdentification =
+        payload.init_task === "project_identification" &&
+        payload.identification_status !== "completed";
+    } else {
+      warnings.push({
+        code: NEXT_ACTION_SNAPSHOT_INCOMPLETE,
+        message: `任务 ${active.id} 正文不可读，项目识别标记按缺席处理：${bodyResult.error.message}`,
+        hint: bodyResult.error.hint,
+      });
+    }
+    activeTasks.push({
+      id: active.id,
+      lifecycle: active.lifecycle,
+      evidence: active.evidence,
+      project_identification: projectIdentification,
+    });
+  }
+  activeTasks.sort((a, b) => {
+    if (a.project_identification !== b.project_identification) return a.project_identification ? -1 : 1;
+    return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+  });
 
   const activeTaskIds = new Set(activeTasks.map((task) => task.id));
 
@@ -618,6 +647,20 @@ export const NEXT_ACTION_ROUTE_TABLE: readonly NextActionRouteRow[] = [
       command: "pomaster init",
       reason: `store 未初始化（${toPosix(TRUTH_INDEX_RELATIVE)} 缺席）——先建治理基线`,
     }),
+  },
+  {
+    id: "R_PROJECT_IDENTIFICATION",
+    when: (s) => s.active_tasks.some((task) => task.project_identification === true),
+    render: (s) => {
+      const task = s.active_tasks.find((row) => row.project_identification === true);
+      const taskId = task?.id ?? "<TASK.*>";
+      return {
+        beat: "①",
+        command: `pomaster project-identification report ${taskId} --purpose <text> --architecture <vue|react> --stack <item> --directory <item> --command <item> --evidence <repo-ref> [--unknown <item>]`,
+        reason:
+          `非空目录的项目识别 TASK ${taskId} 尚未完成——先总结项目用途、架构、入口、证据与 UNKNOWN，再确认治理 profile；识别完成前收窄普通开发入口`,
+      };
+    },
   },
   {
     // D-5（裁决 18，2026-09-08）：八拍① = Brainstorm/Question Gate——「只有一条公开

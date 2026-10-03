@@ -271,7 +271,11 @@ describe("init 首次创建（CREATED）", () => {
     async () => {
       await runInit(dir);
       const first = read(TRUTH_INDEX_RELATIVE);
-      rmSync(join(dir, ".pomaster"), { recursive: true, force: true });
+      // Rebuild from a genuinely empty directory. Deleting only `.pomaster`
+      // leaves generated entry files behind, which correctly classifies the
+      // directory as brownfield and creates the identification task first.
+      rmSync(dir, { recursive: true, force: true });
+      mkdirSync(dir, { recursive: true });
       await runInit(dir);
       expect(read(TRUTH_INDEX_RELATIVE)).toBe(first);
     },
@@ -571,7 +575,10 @@ describe("init authority 骨架（N7）", () => {
     await runInit(dir);
     const first = read(AUTHORITY_RELATIVE);
     expect(!/\d{4}-\d{2}-\d{2}T/.test(first)).toBe(true);
-    rmSync(join(dir, ".pomaster"), { recursive: true, force: true });
+    // Rebuild from a genuinely empty directory; generated entry files make a
+    // `.pomaster`-only deletion a brownfield fixture under the new init flow.
+    rmSync(dir, { recursive: true, force: true });
+    mkdirSync(dir, { recursive: true });
     await runInit(dir);
     expect(read(AUTHORITY_RELATIVE)).toBe(first);
   });
@@ -1545,44 +1552,47 @@ describe("预铺目录骨架与 layout.json", () => {
   });
 
   it("目录树与平台选择无关：缺省与 --platforms none 各自 init 的 .pomaster 目录集合逐目录相等（宪法 §2 全量）", async () => {
-    const other = join(dir, "sibling-none");
-    mkdirSync(other, { recursive: true });
-    await runInit(dir);
-    await runInit(other, { platforms: "none" });
-    // 只对比 .pomaster 子树（skills/hooks 注入层平台目录按定义随平台选择差异）。
-    const dirsOf = (root: string): string[] => {
-      const found: string[] = [];
-      const walk = (rel: string): void => {
-        for (const entry of readdirSync(join(root, ".pomaster", rel), { withFileTypes: true })) {
-          if (!entry.isDirectory()) continue;
-          const child = rel === "" ? entry.name : `${rel}/${entry.name}`;
-          found.push(child);
-          walk(child);
-        }
+    const other = mkdtempSync(join(tmpdir(), "pomaster-cli-init-none-"));
+    try {
+      await runInit(dir);
+      await runInit(other, { platforms: "none" });
+      // 只对比 .pomaster 子树（skills/hooks 注入层平台目录按定义随平台选择差异）。
+      const dirsOf = (root: string): string[] => {
+        const found: string[] = [];
+        const walk = (rel: string): void => {
+          for (const entry of readdirSync(join(root, ".pomaster", rel), { withFileTypes: true })) {
+            if (!entry.isDirectory()) continue;
+            const child = rel === "" ? entry.name : `${rel}/${entry.name}`;
+            found.push(child);
+            walk(child);
+          }
+        };
+        walk("");
+        return found.sort();
       };
-      walk("");
-      return found.sort();
-    };
-    expect(dirsOf(dir)).toEqual(dirsOf(other));
-    // 全树在册：宪法 §2 逐平面抽查（state/truth/evidence/executions/traces/runtime/
-    // discovery/memory/production）+ Batch 2 D7/C9 增量平面。
-    for (const plane of [
-      "state",
-      "state/contexts",
-      "state/checkpoints",
-      "truth/objects",
-      "evidence/blobs",
-      "evidence/observations",
-      "executions",
-      "traces",
-      "runtime/traces",
-      "discovery/scratchpads",
-      "memory/inbox",
-      "production/self-improvement",
-    ]) {
-      expect(existsSync(join(dir, ".pomaster", ...plane.split("/"))), plane).toBe(true);
+      expect(dirsOf(dir)).toEqual(dirsOf(other));
+      // 全树在册：宪法 §2 逐平面抽查（state/truth/evidence/executions/traces/runtime/
+      // discovery/memory/production）+ Batch 2 D7/C9 增量平面。
+      for (const plane of [
+        "state",
+        "state/contexts",
+        "state/checkpoints",
+        "truth/objects",
+        "evidence/blobs",
+        "evidence/observations",
+        "executions",
+        "traces",
+        "runtime/traces",
+        "discovery/scratchpads",
+        "memory/inbox",
+        "production/self-improvement",
+      ]) {
+        expect(existsSync(join(dir, ".pomaster", ...plane.split("/"))), plane).toBe(true);
+      }
+      expect(LAYOUT_DIRECTORIES.length).toBe(41);
+    } finally {
+      rmSync(other, { recursive: true, force: true });
     }
-    expect(LAYOUT_DIRECTORIES.length).toBe(41);
   });
 
   it("layout.json：全目录 status=wired 单状态 + activation_hint/constitution_source 在场（Owner 修订形态）", async () => {

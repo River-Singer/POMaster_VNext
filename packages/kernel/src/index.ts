@@ -1173,6 +1173,7 @@ export type {
 // 等价猜测）；未命中显式空不虚构（REQ-03「未命中保持未知」）。
 export {
   TASK_NEGATIVE_HISTORY_FIELD,
+  envelopeFromTaskBody,
   readTaskNegativeHistory,
   appendTaskNegativeEntry,
   searchTaskNegativeHistory,
