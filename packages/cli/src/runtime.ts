@@ -25,6 +25,7 @@
  */
 import {
   acquireLock,
+  appendImplementationHandoff,
   attachSession,
   beginExecution,
   countExecutionInflightReceipts,
@@ -53,6 +54,7 @@ import {
   RECONCILE_DIRTY_HINT,
 } from "./reconcile.js";
 import { governanceErrorToCliError, requireInitialized } from "./permit.js";
+import { captureEvidenceSourceSnapshot } from "./source-snapshot.js";
 
 // ============================================================
 // 共享骨架：kernel 失败翻译 / argv 形状解析
@@ -907,6 +909,103 @@ export async function runExecutionEnd(
     );
   } catch (err) {
     return kernelFail("execution end", err, EMPTY_EXECUTION_END);
+  }
+}
+
+export interface ExecutionHandoffInput {
+  readonly taskId: string;
+  readonly changedPaths: readonly string[];
+  readonly summary: string;
+  readonly localChecks?: readonly string[];
+  readonly knownGaps?: readonly string[];
+  readonly verificationRequests?: readonly string[];
+}
+
+export interface ExecutionHandoffResult {
+  readonly execution_id: string;
+  readonly task_id: string;
+  readonly handoff_id: string;
+  readonly change: "RECORDED" | "NO_CHANGE";
+  readonly source_state: "fresh" | "unjudgeable";
+  readonly changed_paths: readonly string[];
+}
+
+const EMPTY_EXECUTION_HANDOFF: ExecutionHandoffResult = {
+  execution_id: "",
+  task_id: "",
+  handoff_id: "",
+  change: "NO_CHANGE",
+  source_state: "unjudgeable",
+  changed_paths: [],
+};
+
+function normalizeHandoffPaths(paths: readonly string[]): string[] {
+  const normalized = [...new Set(paths.map((path) => path.trim().replace(/\\/g, "/")))].sort();
+  if (
+    normalized.length === 0 ||
+    normalized.some((path) =>
+      path.length === 0 ||
+      path.startsWith("/") ||
+      /^[A-Za-z]:/.test(path) ||
+      path.split("/").some((part) => part === ".." || part === "." || part.length === 0)
+    )
+  ) {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      "--changed 须为非空仓库相对路径；禁止绝对路径、UNC、空段、. 与 .. 越界",
+      "传入本次实现真实修改的 repo-relative path，可重复 --changed。",
+    );
+  }
+  return normalized;
+}
+
+/** `execution handoff <AGX>`：把实现者声明 append-only 写回既有执行档案。 */
+export async function runExecutionHandoff(
+  rootDir: string,
+  executionId: string,
+  input: ExecutionHandoffInput,
+): Promise<CommandOutcome<ExecutionHandoffResult>> {
+  const initialized = await requireInitialized(rootDir);
+  if ("error" in initialized) {
+    return notInitializedFail("execution handoff", initialized.error, EMPTY_EXECUTION_HANDOFF);
+  }
+  const wordForm = parseExecutionIdArgv(executionId);
+  if ("error" in wordForm) {
+    return notInitializedFail("execution handoff", wordForm.error, EMPTY_EXECUTION_HANDOFF);
+  }
+  try {
+    const changedPaths = normalizeHandoffPaths(input.changedPaths);
+    const sourceSnapshot = captureEvidenceSourceSnapshot(rootDir, { relevantPaths: changedPaths });
+    const appended = appendImplementationHandoff(await createStore(rootDir), executionId, {
+      taskId: input.taskId,
+      changedPaths,
+      summary: input.summary,
+      sourceSnapshot,
+      ...(input.localChecks !== undefined ? { localChecks: input.localChecks } : {}),
+      ...(input.knownGaps !== undefined ? { knownGaps: input.knownGaps } : {}),
+      ...(input.verificationRequests !== undefined ? { verificationRequests: input.verificationRequests } : {}),
+    });
+    const result: ExecutionHandoffResult = {
+      execution_id: executionId,
+      task_id: appended.handoff.task_id,
+      handoff_id: appended.handoff.handoff_id,
+      change: appended.changed ? "RECORDED" : "NO_CHANGE",
+      source_state: sourceSnapshot.read_failures.length === 0 ? "fresh" : "unjudgeable",
+      changed_paths: appended.handoff.changed_paths,
+    };
+    return okOutcome(
+      "execution handoff",
+      result,
+      [
+        `execution handoff → ${result.change} ${result.handoff_id}`,
+        `  task=${result.task_id} execution=${result.execution_id} source=${result.source_state}`,
+        result.source_state === "fresh"
+          ? "  实现交接已记录；它只打开 verify 入口，不代表验证通过或任务完成。"
+          : "  相关源码读取不可判；交接保留，但 verify 路由必须阻断并要求恢复。",
+      ],
+    );
+  } catch (err) {
+    return kernelFail("execution handoff", err, EMPTY_EXECUTION_HANDOFF);
   }
 }
 

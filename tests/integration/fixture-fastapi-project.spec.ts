@@ -51,11 +51,12 @@ let initReplay: StepRecord;
 
 beforeAll(async () => {
   root = mkdtempSync(join(tmpdir(), "pvnext-fixture-fastapi-"));
+  // Provision governance in an empty Greenfield workspace before creating source files.
+  initFirst = await runJsonStep(root, ["init"]);
   // —— 就地构造 FastAPI 最小工程（共享构造器单一来源；声明依赖但不安装） ——
   writeFastapiProjectFiles(root);
 
-  // 链前幂等窗口：state 零变化时的两次 init（A4 NO_CHANGE 的合法时点）。
-  initFirst = await runJsonStep(root, ["init"]);
+  // Source creation does not mutate governance state; replay remains idempotent.
   initReplay = await runJsonStep(root, ["init"]);
 
   chain = await runFixtureChain(root, {

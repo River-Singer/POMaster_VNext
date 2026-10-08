@@ -33,9 +33,11 @@ import {
   EIGHT_BEAT_ENFORCEMENT_LINES,
   collectNextActionSnapshot,
   evaluateNextAction,
+  projectWorkflowRoute,
   renderBreadcrumb,
   type NextAction,
   type NextActionSnapshot,
+  type WorkflowRouteProjection,
 } from "./next-action.js";
 import {
   PERMITS_RELATIVE,
@@ -91,6 +93,8 @@ export interface AlertsResult {
   readonly breadcrumb: string | null;
   /** P3 面包屑的结构化同源（command=null = 诚实无法判定；未初始化 = null 缺席显式）。 */
   readonly next_action: NextAction | null;
+  /** 加性阶段投影；保留 next_action 兼容字段。 */
+  readonly workflow_route: WorkflowRouteProjection | null;
   /**
    * 工作流路由段（R3 2026-09-06；hook 人读注入的恒在段——未初始化 = 空数组静默）：
    * 无活跃 TASK → 判档/讨论双入口；有 → 八拍位置 + 下一拍命令 + 分段卡名。≤3 行。
@@ -148,26 +152,26 @@ export function renderWorkflowRouting(
   nextAction: NextAction,
   snapshot: NextActionSnapshot,
 ): readonly string[] {
-  const task = snapshot.active_tasks[0];
-  if (task === undefined) {
-    if (nextAction.route_id === "R_NO_ACTIVE_TASK") {
-      return [
-        "POMaster workflow: 无活跃 TASK——建议: 八拍① Brainstorm（需求收敛走 pomaster-discovery 卡，promote 即建任务）",
-        "  入口: pomaster brainstorm start（--prompt 登记 raw prompt 原文）",
-      ];
-    }
-    return [`POMaster workflow: ${nextAction.reason}`];
+  const workflow = projectWorkflowRoute(nextAction, snapshot);
+  const skill = workflow.required_skill;
+  const skillPath = skill?.paths[0];
+  const blocker = workflow.blockers[0];
+  if (workflow.route_id === "R_NO_ACTIVE_TASK") {
+    return [
+      "POMaster workflow: 无活跃 TASK——建议: 八拍① Brainstorm（需求收敛走 pomaster-discovery 卡，promote 即建任务）",
+      `  required skill: 先加载完整 ${skill?.name ?? "pomaster-discovery"} SKILL.md${skillPath === undefined ? "" : `（${skillPath}）`}；required action: ${workflow.required_action?.command ?? "pomaster brainstorm start"}；完成后同一轮重取 next-action`,
+    ];
   }
-  const beatName =
-    EIGHT_BEAT_ENFORCEMENT_LINES.find((row) => row.beat === nextAction.beat)?.name ?? null;
-  const card = nextAction.beat !== null ? BEAT_CARD_NAMES[nextAction.beat] : undefined;
-  const head = `POMaster workflow: ${task.id} 当前八拍${nextAction.beat ?? "?"}${beatName !== null ? ` ${beatName}` : ""}`;
-  if (nextAction.command === null) {
-    return [`${head}（${nextAction.reason}）`];
-  }
+  const taskLabel = workflow.selected_task ?? workflow.prerequisite_task ?? "未选择 TASK";
+  const beatName = EIGHT_BEAT_ENFORCEMENT_LINES.find((row) => row.beat === nextAction.beat)?.name ?? null;
+  const head = `POMaster workflow: ${taskLabel} 当前八拍${nextAction.beat ?? "?"}${beatName === null ? "" : ` ${beatName}`}`;
+  const action = workflow.required_action?.command;
   return [
-    `${head} → 下一拍: ${nextAction.command}`,
-    `  分段卡: ${card ?? "（路由表无拍位卡名——见 pomaster 路由卡）"}（.agents/skills/ 与 .claude/skills/ 双镜像命令卡）`,
+    action === undefined ? `${head}（${workflow.reason}）` : `${head} → 下一拍: ${action}`,
+    skill === null
+      ? "  required skill: 无；按只读/阻断说明处理"
+      : `  required skill: 先加载完整 ${skill.name} SKILL.md${skillPath === undefined ? "" : `（${skillPath}）`}，再执行动作；完成后同一轮重取 next-action；卡名或公告不算加载证据`,
+    ...(blocker === undefined ? [] : [`  blocked: ${blocker.message}；恢复: ${blocker.recovery}`]),
   ];
 }
 
@@ -343,7 +347,10 @@ function renderAlertsHuman(
  * 原因单行）；未初始化 = 零输出 + NOT_INITIALIZED 告警留痕；降级走 warnings 不走 errors。
  * P3 breadcrumb 保留为机读字段（workflow_routing 是它的人读超集——同一路由表渲染）。
  */
-export async function runAlerts(rootDir: string): Promise<CommandOutcome<AlertsResult>> {
+export async function runAlerts(
+  rootDir: string,
+  selection: { readonly sessionKey?: string; readonly selectionError?: string } = {},
+): Promise<CommandOutcome<AlertsResult>> {
   const derivation = await deriveAlerts(rootDir);
   // —— P3 breadcrumb + R3 workflow 路由段（快照装配降级走 warnings，hook 契约恒
   // exit 0）。未初始化跳过快照装配：deriveAlerts 已留痕缺席告警（重复告警禁入信封），
@@ -351,11 +358,13 @@ export async function runAlerts(rootDir: string): Promise<CommandOutcome<AlertsR
   // 一致，路由段 = 空数组（零输出静默）。 ——
   let breadcrumb: string | null = null;
   let nextAction: NextAction | null = null;
+  let workflowRoute: WorkflowRouteProjection | null = null;
   let routing: readonly string[] = [];
   const breadcrumbWarnings: CliWarning[] = [];
   if (derivation.initialized) {
-    const snapshot = await collectNextActionSnapshot(rootDir, breadcrumbWarnings);
+    const snapshot = await collectNextActionSnapshot(rootDir, breadcrumbWarnings, selection);
     nextAction = evaluateNextAction(snapshot);
+    workflowRoute = projectWorkflowRoute(nextAction, snapshot);
     breadcrumb = renderBreadcrumb(nextAction, snapshot);
     routing = renderWorkflowRouting(nextAction, snapshot);
   }
@@ -367,6 +376,7 @@ export async function runAlerts(rootDir: string): Promise<CommandOutcome<AlertsR
     unsourced_categories: [...ALERT_UNSOURCED_CATEGORIES],
     breadcrumb,
     next_action: nextAction,
+    workflow_route: workflowRoute,
     workflow_routing: routing,
   };
   const warnings: CliWarning[] = [...derivation.warnings, ...breadcrumbWarnings];

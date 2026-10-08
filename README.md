@@ -353,7 +353,8 @@ pomaster run <task>
 pomaster handoff <task> --to <role>
 pomaster session attach/refresh/list
 pomaster lock acquire/heartbeat/release/steal/list
-pomaster execution begin/end/list/audit   # audit = 变更越界审计（--execution-id + --diff-base：git diff 起始锚变更集 → KEYBINDING 解析 → permit scope 判 in/out → OBS 回执 sidecar + 越界明细；越界 exit 1——Detection 半边，纯读零权威写口）
+pomaster execution begin/handoff/end/list/audit   # handoff = 追加实现交接与源码快照；audit = 变更越界审计（--execution-id + --diff-base：git diff 起始锚变更集 → KEYBINDING 解析 → permit scope 判 in/out → OBS 回执 sidecar + 越界明细；越界 exit 1——Detection 半边，纯读零权威写口）
+pomaster next-action [--task <TASK.*>] [--session-key <key>] --json   # 当前任务的必需 skill、动作、退出条件和阻断；多任务不默认取首项
 pomaster trace show/list
 pomaster checkpoint save/show   # Checkpoint 恢复引用快照（W4-S2；词形 SP 提案待追认）：save = 组装恢复所需引用集落盘（task 锚/--permit 对账判卷引用/--execution 在途清单/negative_history·unknowns 引用/封存 trace 引用/workspace git 锚——每项都是引用，引用逐项存在性校验 fail-closed；state/checkpoints/ 分区档案面，零新 canonical kind 零 journal 事件，不自动创建；--ckpt 同号重放同内容幂等零写入/异内容显式冲突；非 git 工区 anchor absent 显式申报）+ show = 引用面纯读呈现；与 session attach --reconcile 分层组合——checkpoint=引用快照（保存时点），reconcile=新鲜度判定（恢复时点）
 pomaster diagnose "<症状>"   # 通用 Diagnose 入口（W3-S3；C §26/§53-56 + Case H；SP 提案待追认）：症状申报（位置 <report> ∥ --symptom 二选一）+ 可选 --evidence GRN-*/OBS-*/AGX-* 逐条实读证据平面（引用不存在 fail-closed 零写）→ 失败域六词闭包（tool_environment/product_assertion/fixture_data/environment_instance/dependency_external/unknown_insufficient_evidence）+ confidence_basis=evidence_chain|declaration_only（零百分比置信——§21 守护栏；申报与信号冲突呈报非改判；证据缺席 declaration_only 不虚构关联）→ 诊断计划建议（复用 plan-compiler 能力词位，§54 安全/只读先行）；纯读零写不裁决不自动修复；与 production diagnose 共用同一判定核（BREACHED band 前置只是产线准入——单一判定事实源）
@@ -429,14 +430,17 @@ pomaster brainstorm decide idea-export-btn --ready \
 # —— 提升：promote 即建任务（自动 record claim 生成 CLM 绑入 acceptance） ——
 pomaster brainstorm promote idea-export-btn --to TASK --basis msd_reached --apply
 
-# —— 八拍推进：next-action 给主建议，并列全局关注与任务侧建议 ——
+# —— 八拍推进：next-action 给出当前任务必须加载的 skill 与动作 ——
 pomaster status                                   # R_PERMIT_MISSING（--subject 为 affected_objects 派生建议）
 pomaster permit issue --subject PAGE.USER_LIST --actor human:owner --change-ref TASK.IDEA_EXPORT_BTN
 pomaster baseline confirm                         # R_BASELINE_NOT_READY（阻塞集清零后的一次性收口账；确认态随后进 ③ 投影）
 pomaster context compile --role frontend --change TASK.IDEA_EXPORT_BTN   # ③ 投影（含 baseline grounding：指纹绑定确认态，漂移即 STALE_GROUNDING）
 pomaster execution begin --role implementer --runtime script --identity-kind script --task-id TASK.IDEA_EXPORT_BTN  # ④ 执行身份
 # ……在你的 Agent harness（Claude Code 等）里实现代码……
-pomaster check --fast                             # ⑤ FAST gate（BUILD 腿）
+pomaster check --fast                             # 实际局部检查，不代表终验完成
+pomaster execution handoff <AGX-*> --task TASK.IDEA_EXPORT_BTN --changed <实际修改路径> --summary <实现说明> --check <实际检查结果>
+pomaster next-action --task TASK.IDEA_EXPORT_BTN --json  # 同轮加载所指 skill 并推进终验，保持独立主体/人工接受边界
+# ……完成路由列出的验证、复核与接受要求后……
 pomaster closeout TASK.IDEA_EXPORT_BTN            # ⑧ DoD 判卷收口（对的是 promote 时刻的 acceptance）
 ```
 

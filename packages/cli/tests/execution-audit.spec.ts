@@ -611,11 +611,11 @@ describe("execution audit 字节快照钉（R4 零权威写口）", () => {
 // ============================================================
 
 describe("execution audit runCli 程序面", () => {
-  it("命令注册表：execution → [begin, end, list, audit]（README 命令面 B1 golden 分母同源）", () => {
+  it("命令注册表：execution → [begin, handoff, end, list, audit]（README 命令面 B1 golden 分母同源）", () => {
     const program = createProgram();
     const execution = program.commands.find((command) => command.name() === "execution");
     expect(execution).toBeDefined();
-    expect(execution?.commands.map((sub) => sub.name())).toEqual(["begin", "end", "list", "audit"]);
+    expect(execution?.commands.map((sub) => sub.name())).toEqual(["begin", "handoff", "end", "list", "audit"]);
   });
 
   it("--json 信封：command=execution audit + result 回读（in-only → exit 0）", async () => {

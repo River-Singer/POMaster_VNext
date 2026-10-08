@@ -270,6 +270,8 @@ export {
 import { runUpdate } from "./update.js";
 import { resolveCliVersion } from "./version.js";
 import { runStatus } from "./status.js";
+import { runNextAction } from "./next-action.js";
+import { readHookRouteInput } from "./hook-input.js";
 import { runAlerts } from "./alerts.js";
 import { runSessionOverview } from "./session.js";
 import { runInspect } from "./inspect.js";
@@ -367,6 +369,7 @@ import {
 import {
   runExecutionBegin,
   runExecutionEnd,
+  runExecutionHandoff,
   runExecutionList,
   runLockAcquire,
   runLockHeartbeat,
@@ -580,7 +583,9 @@ export type { SessionOverviewResult } from "./session.js";
 export {
   collectNextActionSnapshot,
   evaluateNextAction,
+  projectWorkflowRoute,
   renderBreadcrumb,
+  runNextAction,
   EIGHT_BEAT_ENFORCEMENT_LINES,
   NEXT_ACTION_ROUTE_IDS,
   NEXT_ACTION_ROUTE_TABLE,
@@ -588,9 +593,11 @@ export {
 } from "./next-action.js";
 export type {
   NextAction,
+  NextActionCommandResult,
   NextActionRouteId,
   NextActionSnapshot,
   NextActionTaskRow,
+  WorkflowRouteProjection,
 } from "./next-action.js";
 export {
   ENTRY_MODE_HEAVY_MARKER,
@@ -1091,6 +1098,7 @@ export {
   runLockList,
   runExecutionBegin,
   runExecutionEnd,
+  runExecutionHandoff,
   runExecutionList,
   parseExecutionIdArgv,
   LOCK_BLOCKED,
@@ -1110,6 +1118,8 @@ export type {
   ExecutionBeginInput,
   ExecutionBeginResult,
   ExecutionEndResult,
+  ExecutionHandoffInput,
+  ExecutionHandoffResult,
   ExecutionListResult,
   ExecutionInflightEvidenceView,
 } from "./runtime.js";
@@ -1416,7 +1426,7 @@ export function createProgram(
   program
     .command("init")
     .description(
-      "创建 .pomaster/ 最小骨架 + AGENTS.md 唯一事实源 + 平台适配器（F1：--platforms 逗号列表 claude,codex,cursor,qoder / none；幂等；重复执行 NO_CHANGE）；重入口默认（skills 库双镜像 + claude hooks 注册 + 加厚 rules）；TTY 交互在平台选择后接模式问句与技术栈逐键问卷（F-M3 模式分叉：干净目录 Greenfield 直入；检测到已有项目（worktree 非空且无 .pomaster）呈现检测摘要并经问卷首题显式确认 Brownfield——确认后自动 recon 三腿（import-graph/migrations/sbom）采集宿主事实，腿产物只落 evidence sidecar 平面、腿失败不阻塞 init；非交互通道不分支）；R-M 技术栈问卷 FE 9 + BE 5 必答，答答回填 baseline stack.yaml + unknowns 销账，观察候选 [Observed] 注记与 recon 摘要合并呈现——Owner 裁剪后走 baseline confirm 既有确认链",
+      "初始化架构驱动的治理工作区：空项目选择 Vue/React profile；非空项目先建立项目识别 TASK，经 evidence report 与 human Owner confirm 后生成治理。安装所选平台入口、skills 与会话 hooks；重复执行仅安全升级可证明未改动的生成内容，保留人工冲突。",
     )
     .option(
       "--platforms <platforms>",
@@ -1600,6 +1610,24 @@ export function createProgram(
       });
     });
 
+  program
+    .command("next-action")
+    .description("纯读投影当前会话 TASK 的阶段 skill、必做动作、退出条件与阻断（不改绑、不刷新 liveness）")
+    .option("--task <TASK.*>", "显式目标 TASK（优先于会话绑定；冲突时要求显式 attach/switch）")
+    .option("--session-key <session>", "已 attach 的宿主会话键；读取 kernel SessionRecord.current_task")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runNextAction(resolveDir(command), {
+        ...(opts.task !== undefined ? { taskId: opts.task as string } : {}),
+        ...(opts.sessionKey !== undefined ? { sessionKey: opts.sessionKey as string } : {}),
+      });
+      record({
+        command: "next-action",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
   // —— 可行动项过滤器 + workflow 路由段（重入口 UserPromptSubmit 源；hook 输出契约） ——
   // 恒 ok=true → 恒 exit 0（非零 + stdout 会被 harness 呈现为 hook 错误通知）；
   // 初始化后恒带 ≤3 行 workflow 路由段（干净=非空但极简）；纯文本不以 { 开头
@@ -1609,9 +1637,16 @@ export function createProgram(
     .description(
       "可行动项过滤器 + workflow 路由段（重入口 UserPromptSubmit 源）：permit 到期/CHALLENGED 对象（truth-index/permits 只读面派生）；初始化后恒带 ≤3 行 workflow 路由段（无活跃 TASK → 八拍① brainstorm start 单入口——D-5，裁决 18；有 → 八拍位置+下一拍命令+分段卡），干净=非空但极简；未初始化零输出；恒 exit 0（hook 契约）；降级走 warnings 不走 errors",
     )
+    .option("--session-key <session>", "显式宿主会话键；读取 kernel SessionRecord.current_task")
+    .option("--hook-input", "从宿主 hook stdin JSON 读取 session_id/sessionId")
     .option("--json", "machine-readable JSON output (§45)")
-    .action(async (_opts, command) => {
-      const outcome = await runAlerts(resolveDir(command));
+    .action(async (opts, command) => {
+      const hook = opts.hookInput === true ? await readHookRouteInput(resolveDir(command)) : undefined;
+      const sessionKey = hook?.sessionKey ?? (typeof opts.sessionKey === "string" ? opts.sessionKey : undefined);
+      const outcome = await runAlerts(hook?.rootDir ?? resolveDir(command), {
+        ...(sessionKey === undefined ? {} : { sessionKey }),
+        ...(hook?.selectionError === undefined ? {} : { selectionError: hook.selectionError }),
+      });
       record({
         command: "alerts",
         outcome,
@@ -3827,9 +3862,16 @@ export function createProgram(
     .description(
       "D 线地基①会话命令面（D 线 §1.2/§3.1）：注册/刷新 liveness + resumed_task 解析 + 清单并排呈现（runtime/sessions/ 侧车；首注册 journal SESSION_ATTACHED）；无子命令裸形态 = 治理速览投影（重入口 SessionStart 注入源：计数 + alerts 摘要 + 命令卡指针；≤10,000 字符硬上限，恒 exit 0）",
     )
+    .option("--session-key <session>", "显式宿主会话键；读取 kernel SessionRecord.current_task")
+    .option("--hook-input", "从宿主 hook stdin JSON 读取 session_id/sessionId")
     .option("--json", "machine-readable JSON output (§45)（裸速览形态）")
-    .action(async (_opts, command) => {
-      const outcome = await runSessionOverview(resolveDir(command));
+    .action(async (opts, command) => {
+      const hook = opts.hookInput === true ? await readHookRouteInput(resolveDir(command)) : undefined;
+      const sessionKey = hook?.sessionKey ?? (typeof opts.sessionKey === "string" ? opts.sessionKey : undefined);
+      const outcome = await runSessionOverview(hook?.rootDir ?? resolveDir(command), {
+        ...(sessionKey === undefined ? {} : { sessionKey }),
+        ...(hook?.selectionError === undefined ? {} : { selectionError: hook.selectionError }),
+      });
       record({
         command: "session",
         outcome,
@@ -4057,6 +4099,32 @@ export function createProgram(
       });
       record({
         command: "execution begin",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+  execution
+    .command("handoff")
+    .description("追加结构化实现交接（fresh handoff 只打开 VERIFY 入口，不代表验证通过或任务完成）")
+    .argument("<execution-id>", "implementer 执行身份（AGX-<年份>-<序号>）")
+    .requiredOption("--task <TASK.*>", "交接归属 TASK（须与 execution.task_id 全等）")
+    .requiredOption("--changed <path>", "本轮实际修改的仓库相对路径（可重复）", collectValues)
+    .requiredOption("--summary <text>", "本轮完成内容摘要")
+    .option("--check <text>", "已真实运行的局部检查（可重复；未运行不得写 passed）", collectValues)
+    .option("--known-gap <text>", "已知缺口（可重复）", collectValues)
+    .option("--verify <text>", "待验证事项（可重复）", collectValues)
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (executionId: string, opts, command) => {
+      const outcome = await runExecutionHandoff(resolveDir(command), executionId, {
+        taskId: opts.task as string,
+        changedPaths: opts.changed as string[],
+        summary: opts.summary as string,
+        ...(opts.check !== undefined ? { localChecks: opts.check as string[] } : {}),
+        ...(opts.knownGap !== undefined ? { knownGaps: opts.knownGap as string[] } : {}),
+        ...(opts.verify !== undefined ? { verificationRequests: opts.verify as string[] } : {}),
+      });
+      record({
+        command: "execution handoff",
         outcome,
         asJson: command.opts().json === true,
       });

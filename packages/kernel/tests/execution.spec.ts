@@ -21,6 +21,7 @@ import { dirname, join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   applyTransaction,
+  appendImplementationHandoff,
   assertExecutionAttachable,
   beginExecution,
   endExecution,
@@ -92,6 +93,7 @@ describe("beginExecution（§25.4 登记）", () => {
     expect(Object.keys(record).sort()).toEqual(
       [
         "change_id", "context_manifest_id", "ended_at", "execution_id", "harness",
+        "implementation_handoffs",
         "identity_kind", "model", "notes", "permit_ids", "policy_lock", "role",
         "runtime", "schema", "session_key", "started_at", "task_id",
       ].sort(),
@@ -99,6 +101,7 @@ describe("beginExecution（§25.4 登记）", () => {
     expect(record.schema).toBe("pomaster.execution/v1");
     expect(record.ended_at).toBeNull();
     expect(record.permit_ids).toEqual([]);
+    expect(record.implementation_handoffs).toEqual([]);
     // 档案落盘 executions/（D 线 §1.3 进 Git 平面）。
     const onDisk = JSON.parse(readFileSync(executionPath(record.execution_id), "utf8")) as ExecutionRecord;
     expect(onDisk.execution_id).toBe(record.execution_id);
@@ -192,6 +195,97 @@ describe("beginExecution（§25.4 登记）", () => {
     expect(begun?.execution_id).toBe(record.execution_id);
     expect(begun?.seq).toBe(0);
     expect(Object.keys(begun ?? {}).some((key) => key.endsWith("_at"))).toBe(false);
+  });
+});
+
+describe("implementation handoff（phase-driven routing）", () => {
+  const snapshot = {
+    contract: "pomaster.source-snapshot/v1" as const,
+    head: null,
+    relevant_paths: ["src/feature.ts"],
+    digests: { "src/feature.ts": `sha256:${"a".repeat(64)}` },
+    read_failures: [],
+  };
+
+  it("同输入幂等、修复轮次 append-only，journal 只记录真实新增", async () => {
+    const execution = await beginExecution(store, {
+      ...BASE,
+      role: "implementer",
+      taskId: "TASK.FEATURE",
+      permitIds: ["PERMIT.2", "PERMIT.1"],
+      startedAt: "2026-10-07T00:00:00.000Z",
+    });
+    const input = {
+      taskId: "TASK.FEATURE",
+      changedPaths: ["src/feature.ts"],
+      summary: "implement feature",
+      localChecks: ["typecheck passed"],
+      sourceSnapshot: snapshot,
+      recordedAt: "2026-10-07T01:00:00.000Z",
+    };
+    const first = appendImplementationHandoff(store, execution.execution_id, input);
+    const replay = appendImplementationHandoff(store, execution.execution_id, {
+      ...input,
+      recordedAt: "2026-10-07T02:00:00.000Z",
+    });
+    expect(first.changed).toBe(true);
+    expect(replay.changed).toBe(false);
+    expect(replay.handoff.handoff_id).toBe(first.handoff.handoff_id);
+    expect(replay.record.implementation_handoffs).toHaveLength(1);
+
+    const repaired = appendImplementationHandoff(store, execution.execution_id, {
+      ...input,
+      summary: "implement feature and fix review finding",
+      recordedAt: "2026-10-07T03:00:00.000Z",
+    });
+    expect(repaired.changed).toBe(true);
+    expect(repaired.record.implementation_handoffs).toHaveLength(2);
+    expect(journalEvents().filter((event) => event.type === "IMPLEMENTATION_HANDOFF_RECORDED")).toHaveLength(2);
+  });
+
+  it("跨 TASK、非 implementer 与 changed_paths/snapshot 分母漂移 fail-closed", async () => {
+    const implementer = await beginExecution(store, { ...BASE, role: "implementer", taskId: "TASK.A" });
+    const qa = await beginExecution(store, { ...BASE, role: "qa", taskId: "TASK.A" });
+    const baseInput = { taskId: "TASK.A", changedPaths: ["src/feature.ts"], summary: "done", sourceSnapshot: snapshot };
+    expect(() => appendImplementationHandoff(store, implementer.execution_id, { ...baseInput, taskId: "TASK.B" }))
+      .toThrow(expect.objectContaining({ code: "SCHEMA_INVALID" }));
+    expect(() => appendImplementationHandoff(store, qa.execution_id, baseInput))
+      .toThrow(expect.objectContaining({ code: "SCHEMA_INVALID" }));
+    expect(() => appendImplementationHandoff(store, implementer.execution_id, { ...baseInput, changedPaths: ["src/other.ts"] }))
+      .toThrow(expect.objectContaining({ code: "SCHEMA_INVALID" }));
+    const absoluteSnapshot = {
+      ...snapshot,
+      relevant_paths: ["C:/repo/src/feature.ts"],
+      digests: { "C:/repo/src/feature.ts": `sha256:${"a".repeat(64)}` },
+    };
+    expect(() => appendImplementationHandoff(store, implementer.execution_id, {
+      ...baseInput,
+      changedPaths: ["C:/repo/src/feature.ts"],
+      sourceSnapshot: absoluteSnapshot,
+    })).toThrow(expect.objectContaining({ code: "SCHEMA_INVALID" }));
+  });
+
+  it("legacy 档案缺 implementation_handoffs 仍可读且不反填", async () => {
+    const execution = await beginExecution(store, { ...BASE, role: "implementer", taskId: "TASK.LEGACY" });
+    const legacy = JSON.parse(readFileSync(executionPath(execution.execution_id), "utf8")) as Record<string, unknown>;
+    delete legacy.implementation_handoffs;
+    writeFileSync(executionPath(execution.execution_id), `${JSON.stringify(legacy, null, 2)}\n`, "utf8");
+    const read = readExecutionRecordById(pathsOf(store), execution.execution_id);
+    expect(read?.implementation_handoffs).toBeUndefined();
+  });
+
+  it("损坏的 implementation_handoffs fail-closed，不以 TypeError 或覆盖历史降级", async () => {
+    const execution = await beginExecution(store, { ...BASE, role: "implementer", taskId: "TASK.BAD" });
+    const damaged = JSON.parse(readFileSync(executionPath(execution.execution_id), "utf8")) as Record<string, unknown>;
+    damaged.implementation_handoffs = { handoff_id: "not-an-array" };
+    writeFileSync(executionPath(execution.execution_id), `${JSON.stringify(damaged, null, 2)}\n`, "utf8");
+    expect(() => appendImplementationHandoff(store, execution.execution_id, {
+      taskId: "TASK.BAD",
+      changedPaths: ["src/feature.ts"],
+      summary: "done",
+      sourceSnapshot: snapshot,
+    })).toThrow(expect.objectContaining({ code: "SCHEMA_INVALID" }));
+    expect(JSON.parse(readFileSync(executionPath(execution.execution_id), "utf8"))).toEqual(damaged);
   });
 });
 

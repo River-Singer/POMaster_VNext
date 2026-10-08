@@ -633,7 +633,7 @@ cases:
     evaluator: next_action
     provenance:
       corpus: packages/cli/src/next-action.ts
-      anchor: "#NEXT_ACTION_ROUTE_TABLE[R_NOT_INITIALIZED]"
+      anchor: '#NEXT_ACTION_ROUTE_TABLE[R_NOT_INITIALIZED]'
       note_md: >-
         路由表首行：initialized=false → R_NOT_INITIALIZED，beat=0（BOOTSTRAP 拍位——T2 check
         裁定项④收编随八拍重排定拍位入表，owner-adjudications.md#裁决18 注记链），command=pomaster init。
@@ -658,26 +658,37 @@ cases:
         baseline_unknowns_remaining: null
         baseline_blocking_remaining: null
         baseline_pending_change_ref: null
+        selected_task_id: null
+        prerequisite_task_id: null
+        task_selection_source: none
+        session_key: null
+        task_selection_blocker_code: null
+        task_selection_blocker: null
+        implementation_handoff_id: null
+        implementation_handoff_state: absent
+        implementation_handoff_reason: null
+        finalize_stage: null
+        finalize_next_actions: []
     design_expected: null
     expect_flip_when: null
     pendingReason: null
-    retired: null
     expected:
       route_id: R_NOT_INITIALIZED
-      beat: "0"
+      beat: '0'
       commandContains:
         - pomaster init
     flipped_from: null
+    retired: null
   - id: L5-E-02-route-no-active-task-brainstorm-entry
     family: E
     title: 无活跃 TASK → R_NO_ACTIVE_TASK（八拍① Brainstorm 单入口——D-5「只有一条公开通路」）
     evaluator: next_action
     provenance:
       corpus: packages/cli/src/next-action.ts
-      anchor: "#NEXT_ACTION_ROUTE_TABLE[R_NO_ACTIVE_TASK]"
+      anchor: '#NEXT_ACTION_ROUTE_TABLE[R_NO_ACTIVE_TASK]'
       note_md: >-
-        八拍① 路由行（裁决 18 D-5，owner-adjudications.md#裁决18）：triage 判档位退役后，「只有一条公开通路」——讨论驻留与新变更同走 brainstorm
-        start，promote 即建任务。command=pomaster brainstorm start。
+        八拍① 路由行（裁决 18 D-5，owner-adjudications.md#裁决18）：triage 判档位退役后，「只有一条公开通路」——讨论驻留与新变更同走 brainstorm start，promote
+        即建任务。command=pomaster brainstorm start。
     input:
       snapshot:
         initialized: true
@@ -699,27 +710,37 @@ cases:
         baseline_unknowns_remaining: null
         baseline_blocking_remaining: null
         baseline_pending_change_ref: null
+        selected_task_id: null
+        prerequisite_task_id: null
+        task_selection_source: none
+        session_key: null
+        task_selection_blocker_code: null
+        task_selection_blocker: null
+        implementation_handoff_id: null
+        implementation_handoff_state: absent
+        implementation_handoff_reason: null
+        finalize_stage: null
+        finalize_next_actions: []
     design_expected: null
     expect_flip_when: null
     pendingReason: null
-    retired: null
     expected:
       route_id: R_NO_ACTIVE_TASK
       beat: ①
       commandContains:
         - pomaster brainstorm start
     flipped_from: null
+    retired: null
   - id: L5-E-03-route-baseline-not-confirmed
     family: E
     title: baseline 未确认（阻塞集清零）→ R_BASELINE_NOT_READY（beat 0；closeout 判卷会被闸拒）
     evaluator: next_action
     provenance:
       corpus: packages/cli/src/next-action.ts
-      anchor: "#NEXT_ACTION_ROUTE_TABLE[R_BASELINE_NOT_READY]"
+      anchor: '#NEXT_ACTION_ROUTE_TABLE[R_BASELINE_NOT_READY]'
       note_md: >-
-        baseline 确认态路由行（T2 R5；P-C1 判据收窄）：baseline_gate_codes 含 BASELINE_NOT_CONFIRMED 且
-        blocking_remaining=0 → 裸 confirm 命令。阻塞键在册时不路由（诚实缺席——指 confirm 只会被 confirm
-        自身闸拒，见 E 族 fixtures 分界）；豁免登记行在册（总口径 unknowns>0 而阻塞 0）照常路由。
+        baseline 确认态路由行（T2 R5；P-C1 判据收窄）：baseline_gate_codes 含 BASELINE_NOT_CONFIRMED 且 blocking_remaining=0 → 裸 confirm
+        命令。阻塞键在册时不路由（诚实缺席——指 confirm 只会被 confirm 自身闸拒，见 E 族 fixtures 分界）；豁免登记行在册（总口径 unknowns>0 而阻塞 0）照常路由。
     input:
       snapshot:
         initialized: true
@@ -745,26 +766,35 @@ cases:
         baseline_unknowns_remaining: 0
         baseline_blocking_remaining: 0
         baseline_pending_change_ref: null
+        selected_task_id: TASK.T1
+        prerequisite_task_id: null
+        task_selection_source: unique
+        session_key: null
+        task_selection_blocker_code: null
+        task_selection_blocker: null
+        implementation_handoff_id: null
+        implementation_handoff_state: absent
+        implementation_handoff_reason: null
+        finalize_stage: null
+        finalize_next_actions: []
     design_expected: null
     expect_flip_when: null
     pendingReason: null
-    retired: null
     expected:
       route_id: R_BASELINE_NOT_READY
-      beat: "0"
+      beat: '0'
       commandContains:
         - baseline confirm
     flipped_from: null
+    retired: null
   - id: L5-E-04-route-baseline-drift-three-channel
     family: E
     title: baseline 确认后漂移 → R_BASELINE_NOT_READY 渲染重确认三通道命令（--ack-drifted）
     evaluator: next_action
     provenance:
       corpus: packages/cli/src/next-action.ts
-      anchor: "#NEXT_ACTION_ROUTE_TABLE[R_BASELINE_NOT_READY]（BASELINE_DRIFT 子态渲染）"
-      note_md: >-
-        漂移子态行：BASELINE_DRIFT 在场 → 裸重确认拒绝，命令携带 --ack-drifted（重确认三通道——N1+N2+N3
-        基线确认状态机，owner-adjudications.md#裁决17① 链）。
+      anchor: '#NEXT_ACTION_ROUTE_TABLE[R_BASELINE_NOT_READY]（BASELINE_DRIFT 子态渲染）'
+      note_md: 漂移子态行：BASELINE_DRIFT 在场 → 裸重确认拒绝，命令携带 --ack-drifted（重确认三通道——N1+N2+N3 基线确认状态机，owner-adjudications.md#裁决17① 链）。
     input:
       snapshot:
         initialized: true
@@ -790,27 +820,38 @@ cases:
         baseline_unknowns_remaining: 0
         baseline_blocking_remaining: 0
         baseline_pending_change_ref: null
+        selected_task_id: TASK.T1
+        prerequisite_task_id: null
+        task_selection_source: unique
+        session_key: null
+        task_selection_blocker_code: null
+        task_selection_blocker: null
+        implementation_handoff_id: null
+        implementation_handoff_state: absent
+        implementation_handoff_reason: null
+        finalize_stage: null
+        finalize_next_actions: []
     design_expected: null
     expect_flip_when: null
     pendingReason: null
-    retired: null
     expected:
       route_id: R_BASELINE_NOT_READY
-      beat: "0"
+      beat: '0'
       commandContains:
-        - "--ack-drifted"
+        - '--ack-drifted'
         - baseline confirm
     flipped_from: null
+    retired: null
   - id: L5-E-05-route-permit-expired-steal
     family: E
     title: 任务绑定许可过 seq 期限 → R_PERMIT_EXPIRED（beat ②：显式接管仪式，D2 必附 reason）
     evaluator: next_action
     provenance:
       corpus: packages/cli/src/next-action.ts
-      anchor: "#NEXT_ACTION_ROUTE_TABLE[R_PERMIT_EXPIRED]"
+      anchor: '#NEXT_ACTION_ROUTE_TABLE[R_PERMIT_EXPIRED]'
       note_md: >-
-        许可过期行：expired_bound_refs 非空 → permit steal 命令携具体 ref（过期/活性分类 = 台账 seq 判定 A4 零墙钟——current_seq >=
-        expires_at_seq；R-H 台账单一解析）。
+        许可过期行：expired_bound_refs 非空 → permit steal 命令携具体 ref（过期/活性分类 = 台账 seq 判定 A4 零墙钟——current_seq >= expires_at_seq；R-H
+        台账单一解析）。
     input:
       snapshot:
         initialized: true
@@ -837,10 +878,20 @@ cases:
         baseline_unknowns_remaining: null
         baseline_blocking_remaining: null
         baseline_pending_change_ref: null
+        selected_task_id: TASK.T1
+        prerequisite_task_id: null
+        task_selection_source: unique
+        session_key: null
+        task_selection_blocker_code: null
+        task_selection_blocker: null
+        implementation_handoff_id: null
+        implementation_handoff_state: absent
+        implementation_handoff_reason: null
+        finalize_stage: null
+        finalize_next_actions: []
     design_expected: null
     expect_flip_when: null
     pendingReason: null
-    retired: null
     expected:
       route_id: R_PERMIT_EXPIRED
       beat: ②
@@ -848,16 +899,17 @@ cases:
         - permit steal
         - PERMIT.T1.1
     flipped_from: null
+    retired: null
   - id: L5-E-06-route-permit-missing-scope-derived-subjects
     family: E
     title: 台账无绑定许可 → R_PERMIT_MISSING（beat ②）+ --subject 携 affected_objects 派生建议（T2 R2）
     evaluator: next_action
     provenance:
       corpus: packages/cli/src/next-action.ts
-      anchor: "#NEXT_ACTION_ROUTE_TABLE[R_PERMIT_MISSING]（task_scope_subjects 非空渲染分支）"
+      anchor: '#NEXT_ACTION_ROUTE_TABLE[R_PERMIT_MISSING]（task_scope_subjects 非空渲染分支）'
       note_md: >-
-        许可缺失行 + scope 派生建议（T2 R2）：任务 affected_objects 的 PAGE./CAPABILITY. 成员渲染为 --subject 派生建议（Bounded
-        Execution 范围面值），取代 subject=TASK 自身泛化形态。
+        许可缺失行 + scope 派生建议（T2 R2）：任务 affected_objects 的 PAGE./CAPABILITY. 成员渲染为 --subject 派生建议（Bounded Execution 范围面值），取代
+        subject=TASK 自身泛化形态。
     input:
       snapshot:
         initialized: true
@@ -884,29 +936,38 @@ cases:
         baseline_unknowns_remaining: null
         baseline_blocking_remaining: null
         baseline_pending_change_ref: null
+        selected_task_id: TASK.T1
+        prerequisite_task_id: null
+        task_selection_source: unique
+        session_key: null
+        task_selection_blocker_code: null
+        task_selection_blocker: null
+        implementation_handoff_id: null
+        implementation_handoff_state: absent
+        implementation_handoff_reason: null
+        finalize_stage: null
+        finalize_next_actions: []
     design_expected: null
     expect_flip_when: null
     pendingReason: null
-    retired: null
     expected:
       route_id: R_PERMIT_MISSING
       beat: ②
       commandContains:
         - permit issue
-        - "--subject CAPABILITY.GRID"
-        - "--subject PAGE.DASHBOARD"
-        - "--change-ref TASK.T1"
+        - '--subject CAPABILITY.GRID'
+        - '--subject PAGE.DASHBOARD'
+        - '--change-ref TASK.T1'
     flipped_from: null
+    retired: null
   - id: L5-F-01-route-manifest-missing
     family: F
     title: 任务级投影 manifest 缺席 → R_MANIFEST_MISSING（beat ③：先取最小充分上下文）
     evaluator: next_action
     provenance:
       corpus: packages/cli/src/next-action.ts
-      anchor: "#NEXT_ACTION_ROUTE_TABLE[R_MANIFEST_MISSING]"
-      note_md: >-
-        投影缺席行：contexts/<task-id>.context.json 精确词形缺席（role 级 manifest 不算任务投影在场）→ context compile --change
-        <task>。
+      anchor: '#NEXT_ACTION_ROUTE_TABLE[R_MANIFEST_MISSING]'
+      note_md: 投影缺席行：contexts/<task-id>.context.json 精确词形缺席（role 级 manifest 不算任务投影在场）→ context compile --change <task>。
     input:
       snapshot:
         initialized: true
@@ -933,28 +994,38 @@ cases:
         baseline_unknowns_remaining: null
         baseline_blocking_remaining: null
         baseline_pending_change_ref: null
+        selected_task_id: TASK.T1
+        prerequisite_task_id: null
+        task_selection_source: unique
+        session_key: null
+        task_selection_blocker_code: null
+        task_selection_blocker: null
+        implementation_handoff_id: null
+        implementation_handoff_state: absent
+        implementation_handoff_reason: null
+        finalize_stage: null
+        finalize_next_actions: []
     design_expected: null
     expect_flip_when: null
     pendingReason: null
-    retired: null
     expected:
       route_id: R_MANIFEST_MISSING
       beat: ③
       commandContains:
         - context compile
-        - "--change TASK.T1"
+        - '--change TASK.T1'
     flipped_from: null
+    retired: null
   - id: L5-F-02-route-manifest-stale-recompile-entry
     family: F
     title: manifest 指纹漂移 → R_MANIFEST_STALE 重编译入口（N5：stale 不再放行执行/验证）
     evaluator: next_action
     provenance:
       corpus: packages/cli/src/next-action.ts
-      anchor: "#NEXT_ACTION_ROUTE_TABLE[R_MANIFEST_STALE]"
+      anchor: '#NEXT_ACTION_ROUTE_TABLE[R_MANIFEST_STALE]'
       note_md: >-
-        stale 行（0.5.0 审计批 2 N5 修复，owner-adjudications.md#裁决17①：stale
-        给重编译入口而非引导验证）：task_manifest_freshness=stale_grounding → context compile --role <现盘 manifest
-        role>（判卷与 context compile --check 同源——judgeTaskContextFreshness 单点）。
+        stale 行（0.5.0 审计批 2 N5 修复，owner-adjudications.md#裁决17①：stale 给重编译入口而非引导验证）：task_manifest_freshness=stale_grounding
+        → context compile --role <现盘 manifest role>（判卷与 context compile --check 同源——judgeTaskContextFreshness 单点）。
     input:
       snapshot:
         initialized: true
@@ -981,25 +1052,36 @@ cases:
         baseline_unknowns_remaining: null
         baseline_blocking_remaining: null
         baseline_pending_change_ref: null
+        selected_task_id: TASK.T1
+        prerequisite_task_id: null
+        task_selection_source: unique
+        session_key: null
+        task_selection_blocker_code: null
+        task_selection_blocker: null
+        implementation_handoff_id: null
+        implementation_handoff_state: absent
+        implementation_handoff_reason: null
+        finalize_stage: null
+        finalize_next_actions: []
     design_expected: null
     expect_flip_when: null
     pendingReason: null
-    retired: null
     expected:
       route_id: R_MANIFEST_STALE
       beat: ③
       commandEquals: pomaster context compile --role frontend --change TASK.T1
     flipped_from: null
+    retired: null
   - id: L5-F-03-route-execute-entry-begin
     family: F
     title: manifest fresh + check 留痕分母空 + 无在途执行 → R_EXECUTE_ENTRY（beat ④：先登记执行身份）
     evaluator: next_action
     provenance:
       corpus: packages/cli/src/next-action.ts
-      anchor: "#NEXT_ACTION_ROUTE_TABLE[R_EXECUTE_ENTRY]"
+      anchor: '#NEXT_ACTION_ROUTE_TABLE[R_EXECUTE_ENTRY]'
       note_md: >-
-        ④ EXECUTE 感知行（T2 R3）：分母锚 runs 留痕（GRN）而非全证据面——claims 在座不等价于「执行/验证已发生」（R1 起 promote 自动生成 Expected
-        State claim）；无在途执行档案 → execution begin 登记执行身份。
+        ④ EXECUTE 感知行（T2 R3）：分母锚 runs 留痕（GRN）而非全证据面——claims 在座不等价于「执行/验证已发生」（R1 起 promote 自动生成 Expected State
+        claim）；无在途执行档案 → execution begin 登记执行身份。
     input:
       snapshot:
         initialized: true
@@ -1026,25 +1108,36 @@ cases:
         baseline_unknowns_remaining: null
         baseline_blocking_remaining: null
         baseline_pending_change_ref: null
+        selected_task_id: TASK.T1
+        prerequisite_task_id: null
+        task_selection_source: unique
+        session_key: null
+        task_selection_blocker_code: null
+        task_selection_blocker: null
+        implementation_handoff_id: null
+        implementation_handoff_state: absent
+        implementation_handoff_reason: null
+        finalize_stage: null
+        finalize_next_actions: []
     design_expected: null
     expect_flip_when: null
     pendingReason: null
-    retired: null
     expected:
       route_id: R_EXECUTE_ENTRY
       beat: ④
       commandContains:
         - execution begin
-        - "--task-id TASK.T1"
+        - '--task-id TASK.T1'
     flipped_from: null
+    retired: null
   - id: L5-F-04-route-verify-entry-in-flight
     family: F
-    title: 在途执行档案在座 → R_VERIFY_ENTRY（beat ⑤：VERIFY 主链入口 = plan run——W0-FR01 收正，拍序 ⑤ 先于 ⑥）
+    title: 新鲜实现交接 → R_VERIFY_ENTRY（独立验证身份，plan run 主链）
     evaluator: next_action
     provenance:
       corpus: packages/cli/src/next-action.ts
-      anchor: "#NEXT_ACTION_ROUTE_TABLE[R_VERIFY_ENTRY]"
-      note_md: ⑤ 行（T2 R3 + W0-FR01 2026-09-29）：executions/AGX-*.json 中 task_id 命中且 ended_at=null = 在途 → plan run 主链（编译并执行全部 REQUIRED obligations 逐项入账 GRN；check --fast 降局部自检，不能满足未完成 obligation）。
+      anchor: '#NEXT_ACTION_ROUTE_TABLE[R_VERIFY_ENTRY]'
+      note_md: 实现 AGX 的 fresh handoff 打开 VERIFY 入口；实现身份不冒充验证主体，必须登记合格 verification AGX。
     input:
       snapshot:
         initialized: true
@@ -1072,27 +1165,36 @@ cases:
         baseline_unknowns_remaining: null
         baseline_blocking_remaining: null
         baseline_pending_change_ref: null
+        selected_task_id: TASK.T1
+        prerequisite_task_id: null
+        task_selection_source: unique
+        session_key: null
+        task_selection_blocker_code: null
+        task_selection_blocker: null
+        implementation_handoff_id: sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        implementation_handoff_state: fresh
+        implementation_handoff_reason: null
+        finalize_stage: null
+        finalize_next_actions: []
     design_expected: null
     expect_flip_when: null
     pendingReason: null
-    retired: null
     expected:
       route_id: R_VERIFY_ENTRY
       beat: ⑤
       commandContains:
         - plan run --task TASK.T1
-        - "--execution-id AGX-2026-000007"
+        - '--execution-id <verification-AGX>'
     flipped_from: null
+    retired: null
   - id: L5-F-05-route-reconcile-evidence-present
     family: F
-    title: 证据在座 + 绑定许可在座 → R_RECONCILE（beat ⑥：delta 三方对账，clean=true 是合法出口）
+    title: GRN 与许可在座但没有实现交接或终验权威 → R_EXECUTE_ENTRY
     evaluator: next_action
     provenance:
       corpus: packages/cli/src/next-action.ts
-      anchor: "#NEXT_ACTION_ROUTE_TABLE[R_RECONCILE]"
-      note_md: >-
-        ⑥ 对账行：evidence_present && bound_refs 非空 → reconcile --permit（GRN 在座 = 验证活动已开始——runs_present
-        分母语义的下游行）。
+      anchor: '#NEXT_ACTION_ROUTE_TABLE[R_EXECUTE_ENTRY]'
+      note_md: runs_present 仅证明有检查留痕，不能冒充 final_stable cohort 或实现完成；缺交接继续 execute。
     input:
       snapshot:
         initialized: true
@@ -1119,23 +1221,35 @@ cases:
         baseline_unknowns_remaining: null
         baseline_blocking_remaining: null
         baseline_pending_change_ref: null
+        selected_task_id: TASK.T1
+        prerequisite_task_id: null
+        task_selection_source: unique
+        session_key: null
+        task_selection_blocker_code: null
+        task_selection_blocker: null
+        implementation_handoff_id: null
+        implementation_handoff_state: absent
+        implementation_handoff_reason: null
+        finalize_stage: null
+        finalize_next_actions: []
     design_expected: null
     expect_flip_when: null
     pendingReason: null
-    retired: null
     expected:
-      route_id: R_RECONCILE
-      beat: ⑥
+      route_id: R_EXECUTE_ENTRY
+      beat: ④
       commandContains:
-        - reconcile --permit PERMIT.T1.1
+        - execution begin
+        - '--task-id TASK.T1'
     flipped_from: null
+    retired: null
   - id: L5-G-01-route-closeout-ready-beats-permit-rows
     family: G
     title: DoD 就绪 → R_CLOSEOUT_READY（beat ⑧：表序首中即停——⑧ 行先于 ②③ 许可/投影行）
     evaluator: next_action
     provenance:
       corpus: packages/cli/src/next-action.ts
-      anchor: "#NEXT_ACTION_ROUTE_TABLE[R_CLOSEOUT_READY]"
+      anchor: '#NEXT_ACTION_ROUTE_TABLE[R_CLOSEOUT_READY]'
       note_md: >-
         收口就绪行（T2 R2/DoD claims 侧只读预览）：acceptance 全映射 VERIFIED claim → closeout <task-id>。零判卷复刻——closeout
         仍是唯一判卷权威，本路由只是「值得去收口」的路标。manifest 缺席（后续行条件）不影响首中。
@@ -1163,23 +1277,34 @@ cases:
         baseline_unknowns_remaining: null
         baseline_blocking_remaining: null
         baseline_pending_change_ref: null
+        selected_task_id: TASK.T1
+        prerequisite_task_id: null
+        task_selection_source: unique
+        session_key: null
+        task_selection_blocker_code: null
+        task_selection_blocker: null
+        implementation_handoff_id: null
+        implementation_handoff_state: absent
+        implementation_handoff_reason: null
+        finalize_stage: null
+        finalize_next_actions: []
     design_expected: null
     expect_flip_when: null
     pendingReason: null
-    retired: null
     expected:
       route_id: R_CLOSEOUT_READY
       beat: ⑧
       commandContains:
         - closeout TASK.T1
     flipped_from: null
+    retired: null
   - id: L5-G-02-route-undetermined-honest-absence
     family: G
     title: 全表未中（DoD 不可判 + 执行感知不可判）→ R_UNDETERMINED（command=null 诚实缺席非乱指）
     evaluator: next_action
     provenance:
       corpus: packages/cli/src/next-action.ts
-      anchor: "#evaluateNextAction（全表未中 → R_UNDETERMINED；null = 该行不可判跳过并记录原因）"
+      anchor: '#evaluateNextAction（全表未中 → R_UNDETERMINED；null = 该行不可判跳过并记录原因）'
       note_md: >-
         兜底缺省行：dod_judgeable=false（closeout 行 null 跳过）+ task_execution_active=null（④⑤ 两行 null 跳过）+ 其余行条件不成立 →
         R_UNDETERMINED，beat=null、command=null——诚实「无法判定」附首个不可判原因（R_EXECUTE_ENTRY 条件不可判）。缺席显式哲学在路由面的落点。
@@ -1209,25 +1334,34 @@ cases:
         baseline_unknowns_remaining: null
         baseline_blocking_remaining: null
         baseline_pending_change_ref: null
+        selected_task_id: TASK.T1
+        prerequisite_task_id: null
+        task_selection_source: unique
+        session_key: null
+        task_selection_blocker_code: null
+        task_selection_blocker: null
+        implementation_handoff_id: null
+        implementation_handoff_state: absent
+        implementation_handoff_reason: null
+        finalize_stage: null
+        finalize_next_actions: []
     design_expected: null
     expect_flip_when: null
     pendingReason: null
-    retired: null
     expected:
       route_id: R_UNDETERMINED
       beat: null
       commandEquals: null
     flipped_from: null
+    retired: null
   - id: L5-G-03-route-unjudgeable-freshness-not-masquerade-stale
     family: G
-    title: freshness 不可判 → stale 行跳过不乱指（不冒充 stale 也不冒充 fresh）——落证据对账行
+    title: freshness 不可判不冒充 stale；没有交接或终验权威时保持 EXECUTE 恢复入口
     evaluator: next_action
     provenance:
       corpus: packages/cli/src/next-action.ts
-      anchor: "#NEXT_ACTION_ROUTE_TABLE[R_MANIFEST_STALE]（when 仅 stale_grounding 为 true——unjudgeable=false 跳过）"
-      note_md: >-
-        N5 诚实降级面（裁决 17① 链）：task_manifest_freshness=unjudgeable 时 R_MANIFEST_STALE 行不命中（when=false 非
-        null）——不冒充 fresh 也不乱指 stale；runs 留痕在座 → 落 R_RECONCILE 可判行。条件不可判与条件不满足是两种状态。
+      anchor: '#NEXT_ACTION_ROUTE_TABLE[R_MANIFEST_STALE]（when 仅 stale_grounding 为 true——unjudgeable=false 跳过）'
+      note_md: 不可判 context 不制造 stale/fresh 事实；没有有效交接时不因 GRN 存在推定实现完成，实际执行仍须 context/permit 前置校验。
     input:
       snapshot:
         initialized: true
@@ -1254,26 +1388,38 @@ cases:
         baseline_unknowns_remaining: null
         baseline_blocking_remaining: null
         baseline_pending_change_ref: null
+        selected_task_id: TASK.T1
+        prerequisite_task_id: null
+        task_selection_source: unique
+        session_key: null
+        task_selection_blocker_code: null
+        task_selection_blocker: null
+        implementation_handoff_id: null
+        implementation_handoff_state: absent
+        implementation_handoff_reason: null
+        finalize_stage: null
+        finalize_next_actions: []
     design_expected: null
     expect_flip_when: null
     pendingReason: null
-    retired: null
     expected:
-      route_id: R_RECONCILE
-      beat: ⑥
+      route_id: R_EXECUTE_ENTRY
+      beat: ④
       commandContains:
-        - reconcile --permit
+        - execution begin
+        - '--task-id TASK.T1'
     flipped_from: null
+    retired: null
   - id: L5-G-04-route-first-hit-baseline-shadows-closeout
     family: G
     title: baseline 未确认与 DoD 就绪同真 → R_BASELINE_NOT_READY 首中（表序：确认仪式先于收口——先还账再收口）
     evaluator: next_action
     provenance:
       corpus: packages/cli/src/next-action.ts
-      anchor: "#NEXT_ACTION_ROUTE_TABLE（行序 = 首中优先级：R_BASELINE_NOT_READY 行位于 R_CLOSEOUT_READY 之前）"
+      anchor: '#NEXT_ACTION_ROUTE_TABLE（行序 = 首中优先级：R_BASELINE_NOT_READY 行位于 R_CLOSEOUT_READY 之前）'
       note_md: >-
-        首中即停不变量的多行同真面：baseline 未确认（beat 0 确认仪式）与 closeout 就绪（beat ⑧）同时成立 →
-        表序前一行命中。语义：任何任务内推进（含收口）都先还确认这笔账（T2 R5 行注——closeout 判卷会被 BASELINE_NOT_CONFIRMED 阻断）。
+        首中即停不变量的多行同真面：baseline 未确认（beat 0 确认仪式）与 closeout 就绪（beat ⑧）同时成立 → 表序前一行命中。语义：任何任务内推进（含收口）都先还确认这笔账（T2 R5
+        行注——closeout 判卷会被 BASELINE_NOT_CONFIRMED 阻断）。
     input:
       snapshot:
         initialized: true
@@ -1299,13 +1445,24 @@ cases:
         baseline_unknowns_remaining: 0
         baseline_blocking_remaining: 0
         baseline_pending_change_ref: null
+        selected_task_id: TASK.T1
+        prerequisite_task_id: null
+        task_selection_source: unique
+        session_key: null
+        task_selection_blocker_code: null
+        task_selection_blocker: null
+        implementation_handoff_id: null
+        implementation_handoff_state: absent
+        implementation_handoff_reason: null
+        finalize_stage: null
+        finalize_next_actions: []
     design_expected: null
     expect_flip_when: null
     pendingReason: null
-    retired: null
     expected:
       route_id: R_BASELINE_NOT_READY
-      beat: "0"
+      beat: '0'
       commandContains:
         - baseline confirm
     flipped_from: null
+    retired: null

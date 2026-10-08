@@ -303,6 +303,10 @@ describe("alerts workflow 路由段（R3）与 breadcrumb（P3 机读字段：�
     expect(outcome.result.breadcrumb).toBeNull();
     expect(outcome.result.next_action).not.toBeNull();
     expect(outcome.result.next_action?.route_id).toBe("R_NO_ACTIVE_TASK");
+    expect(outcome.result.workflow_route).toEqual(expect.objectContaining({
+      route_id: "R_NO_ACTIVE_TASK",
+      required_skill: expect.objectContaining({ name: "pomaster-discovery" }),
+    }));
     expect(outcome.human.length).toBe(2);
     expect(outcome.human[0]).toContain("无活跃 TASK");
     expect(outcome.human[0]).toContain("pomaster-discovery 卡");
@@ -316,6 +320,11 @@ describe("alerts workflow 路由段（R3）与 breadcrumb（P3 机读字段：�
     expect(outcome.ok).toBe(true);
     expect(outcome.result.alerts).toEqual([]);
     expect(outcome.result.next_action?.route_id).toBe("R_PERMIT_MISSING");
+    expect(outcome.result.workflow_route).toEqual(expect.objectContaining({
+      route_id: "R_PERMIT_MISSING",
+      selected_task: "TASK.T1",
+      required_skill: expect.objectContaining({ name: "pomaster-permit" }),
+    }));
     expect(outcome.result.breadcrumb).toBe(
       "POMaster breadcrumb: TASK.T1（八拍②）→ pomaster permit issue --subject TASK.T1 --actor <type>:<name> --change-ref TASK.T1",
     );
@@ -324,7 +333,8 @@ describe("alerts workflow 路由段（R3）与 breadcrumb（P3 机读字段：�
     expect(outcome.result.workflow_routing[0]).toBe(
       "POMaster workflow: TASK.T1 当前八拍② FRAMEWORK LOCK → 下一拍: pomaster permit issue --subject TASK.T1 --actor <type>:<name> --change-ref TASK.T1",
     );
-    expect(outcome.result.workflow_routing[1]).toContain("分段卡: pomaster-permit");
+    expect(outcome.result.workflow_routing[1]).toContain("required skill: 先加载完整 pomaster-permit SKILL.md");
+    expect(outcome.result.workflow_routing[1]).toContain("同一轮重取 next-action");
     expect(outcome.human).toEqual([...outcome.result.workflow_routing]);
     expect(outcome.human.length).toBeLessThanOrEqual(10);
   });

@@ -40,6 +40,8 @@ export const ENTRY_MODE_HEAVY_MARKER = "<!-- pomaster:entry-mode:heavy -->";
 
 /** claude 平台 hook 注册文件（项目级，可提交仓库——团队共享重入口是合法形态）。 */
 export const CLAUDE_SETTINGS_RELATIVE = ".claude/settings.json";
+/** Codex project hooks use the same matcher-group JSON shape as Claude settings. */
+export const CODEX_HOOKS_RELATIVE = ".codex/hooks.json";
 export const CLAUDE_EXEC_GUARD_MATCHER = "Edit|Write|NotebookEdit|Bash";
 export const CLAUDE_EXEC_GUARD_HOOK_RELATIVE = ".claude/hooks/exec-guard-hook.py";
 export const CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE = ".claude/hooks/pomaster-exec-guard.py";
@@ -48,12 +50,12 @@ export const CLAUDE_EXEC_GUARD_COMMAND =
 export const CLAUDE_EXEC_GUARD_ASSET_RELATIVE = "seeds/hooks/exec-guard-hook.py";
 
 // ============================================================
-// hooks 注册（claude 层）：shell form 无 args + 恒 exit 0 输出契约
+// hooks 注册（claude/codex 层）：shell form + hook stdin identity adapter + 恒 exit 0 输出契约
 // ============================================================
 
 /**
- * 本包 hook 注册清单（事件 → shell form 命令；无 args——Windows 走 Git Bash/
- * PowerShell 解析 npm shim；SessionStart matcher 省略 = startup/resume/clear/
+ * 本包 hook 注册清单（事件 → shell form 命令；--hook-input 消费宿主 stdin JSON，
+ * Windows 仍走 Git Bash/PowerShell 解析 npm shim；SessionStart matcher 省略 = startup/resume/clear/
  * compact/fork 全形态；UserPromptSubmit 无 matcher 支持、每轮必触发）。
  * 禁用 `if` 字段：非 tool-event hook 上设 if = 永不运行（官方 Hooks Reference）。
  */
@@ -62,14 +64,21 @@ export const POMASTER_HOOK_EVENT_COMMANDS: readonly {
   readonly command: string;
   readonly matcher?: string;
 }[] = [
-  { event: "SessionStart", command: "pomaster session" },
-  { event: "UserPromptSubmit", command: "pomaster alerts" },
+  { event: "SessionStart", command: "pomaster session --hook-input" },
+  { event: "UserPromptSubmit", command: "pomaster alerts --hook-input" },
   {
     event: "PreToolUse",
     matcher: CLAUDE_EXEC_GUARD_MATCHER,
     command: CLAUDE_EXEC_GUARD_COMMAND,
   },
 ];
+
+/** Codex has no POMaster write guard adapter; it receives the two context events. */
+export const POMASTER_CODEX_HOOK_EVENT_COMMANDS: readonly {
+  readonly event: string;
+  readonly command: string;
+  readonly matcher?: string;
+}[] = POMASTER_HOOK_EVENT_COMMANDS.filter((entry) => entry.event !== "PreToolUse");
 
 /** 本包 hook 命令词形闭包（幂等查重与卸载剥离的唯一识别依据）。 */
 export const POMASTER_HOOK_COMMANDS: readonly string[] =
@@ -102,7 +111,26 @@ export type HooksMergeOutcome =
  * ——跨文件去重由 Claude Code 处理，同文件去重是安装器的责任）；既有条目
  * （人类/Trellis hooks）一律原样保留；indent 2 + 尾换行写盘格式。
  */
-export function mergePomasterHooks(existingText: string | null): HooksMergeOutcome {
+function isManagedPomasterHook(event: string, command: unknown): boolean {
+  if (typeof command !== "string") return false;
+  const normalized = command.trim().replace(/\s+/g, " ");
+  if (event === "SessionStart") {
+    return /^(?:npx )?pomaster(?:\.cmd)? session(?: --hook-input)?(?: --json)?$/.test(normalized);
+  }
+  if (event === "UserPromptSubmit") {
+    return /^(?:npx )?pomaster(?:\.cmd)? alerts(?: --hook-input)?(?: --json)?$/.test(normalized);
+  }
+  return event === "PreToolUse" && (
+    normalized === CLAUDE_EXEC_GUARD_COMMAND ||
+    normalized === `python ${CLAUDE_EXEC_GUARD_HOOK_RELATIVE}` ||
+    normalized === `python "${CLAUDE_EXEC_GUARD_HOOK_RELATIVE}"`
+  );
+}
+
+function mergeManagedHooks(
+  existingText: string | null,
+  desired: typeof POMASTER_HOOK_EVENT_COMMANDS,
+): HooksMergeOutcome {
   let root: Record<string, unknown>;
   if (existingText === null) {
     root = {};
@@ -134,7 +162,7 @@ export function mergePomasterHooks(existingText: string | null): HooksMergeOutco
   }
 
   let changed = existingText === null;
-  for (const { event, command, matcher } of POMASTER_HOOK_EVENT_COMMANDS) {
+  for (const { event, command, matcher } of desired) {
     const raw = hooks[event];
     if (raw !== undefined && (raw === null || !Array.isArray(raw))) {
       return { status: "skipped", reason: `hooks.${event} 不是数组` };
@@ -149,7 +177,21 @@ export function mergePomasterHooks(existingText: string | null): HooksMergeOutco
         return { status: "skipped", reason: `hooks.${event} matcher-group 的 hooks 字段不是数组` };
       }
     }
-    const alreadyRegistered = groups.some((group) => {
+    let removedLegacy = false;
+    const migratedGroups = groups.map((group) => {
+      const record = group as Record<string, unknown>;
+      const handlers = ((record.hooks ?? []) as unknown[]).filter((handler) => {
+        if (handler === null || typeof handler !== "object") return true;
+        const owned = isManagedPomasterHook(event, (handler as Record<string, unknown>).command);
+        if (owned && (handler as Record<string, unknown>).command !== command) removedLegacy = true;
+        return !owned || (handler as Record<string, unknown>).command === command;
+      });
+      return handlers.length === ((record.hooks ?? []) as unknown[]).length
+        ? group
+        : { ...record, hooks: handlers };
+    });
+    if (removedLegacy) changed = true;
+    const alreadyRegistered = migratedGroups.some((group) => {
       const record = group as Record<string, unknown>;
       if (matcher !== undefined && record.matcher !== matcher) return false;
       if (matcher === undefined && record.matcher !== undefined) return false;
@@ -165,10 +207,10 @@ export function mergePomasterHooks(existingText: string | null): HooksMergeOutco
         matcher === undefined
           ? { hooks: [{ type: "command", command }] }
           : { matcher, hooks: [{ type: "command", command }] };
-      groups.push(group);
-      hooks[event] = groups;
+      migratedGroups.push(group);
       changed = true;
     }
+    hooks[event] = migratedGroups;
   }
 
   if (!changed) {
@@ -179,6 +221,14 @@ export function mergePomasterHooks(existingText: string | null): HooksMergeOutco
     status: existingText === null ? "created" : "updated",
     nextText: `${JSON.stringify(root, null, 2)}\n`,
   };
+}
+
+export function mergePomasterHooks(existingText: string | null): HooksMergeOutcome {
+  return mergeManagedHooks(existingText, POMASTER_HOOK_EVENT_COMMANDS);
+}
+
+export function mergePomasterCodexHooks(existingText: string | null): HooksMergeOutcome {
+  return mergeManagedHooks(existingText, POMASTER_CODEX_HOOK_EVENT_COMMANDS);
 }
 
 export function claudeExecGuardAssetCandidates(moduleUrl: string = import.meta.url): readonly string[] {
@@ -503,11 +553,14 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
   {
     name: "pomaster",
     description:
-      "POMaster vNext 命令全景与八拍 Change Loop 路由。一切 pomaster CLI 使用入口——定位八拍阶段（需求拷问/许可/投影/执行/验证/对账/折叠/收口）后进入对应 pomaster-* 分段 skill；含治理状态速览与 Browser Eyes 双眼引导。",
+      "POMaster 项目开发总路由。开始或继续实现、修复 bug、修改既有功能、检查影响、验证交付、恢复会话，或使用 pomaster CLI 时先加载；按当前任务与阶段进入完整 pomaster-* skill，无需用户点名 skill。",
     bodyLines: [
       "# pomaster —— 命令全景路由",
       "",
-      "一切 pomaster 使用的入口：先在本卡片定位八拍阶段，再进入对应分段 skill（pomaster-bootstrap / pomaster-discovery / pomaster-permit / pomaster-context / pomaster-execute / pomaster-verify / pomaster-reconcile / pomaster-compact / pomaster-closeout / pomaster-inspect / pomaster-catalog / pomaster-production / pomaster-runtime）。",
+      "在本项目做开发、检视、验证或恢复时先运行 `pomaster next-action --json`，读取 `workflow_route.required_skill.paths` 指向的完整 SKILL.md，再执行 required_action；不要只看卡名或凭模型记忆继续。若宿主没有动态 hooks，本条就是 agent-pull 入口。",
+      "已有会话身份时，每次主动读取和阶段刷新必须使用 `pomaster next-action --session-key <已登记的真实会话键> --json`；hook 返回的 workflow_route.session_key 可复用。宿主 native session_id 不一定等于该键；首次经 `session attach --session-key <key> --harness <host> --meta session_id=<native-id> --meta cwd=<absolute-workspace> --task <TASK.*>` 显式绑定（参数以 session attach --help 为准）。缺身份时使用已明确选定的 `--task <TASK.*>`，多任务必须先选择；不要在后续刷新丢掉身份改跑裸命令。",
+      "阶段完成后在同一轮主动重取 next-action、加载下一张完整 skill 并继续；实现交接后必须主动进入 pomaster-verify，不能只说“下一步可以验证”并等待用户再说继续。用户明确只规划、只查状态、暂停或存在真实 Owner/独立主体阻断时才停在授权边界。",
+      "用户要求修改既有功能、影响范围未知、恢复后上下文不明或验证失败原因不明时，在 execute/verify 前先完整加载 pomaster-inspect 做只读检视，再返回 workflow_route 指示的主阶段；inspect 是横切前置，不另造第九拍。",
       "",
       "## 命令全景",
       "",
@@ -520,6 +573,7 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "- 0 BOOTSTRAP → pomaster-bootstrap；① 需求拷问 → pomaster-discovery；② 许可 → pomaster-permit；③ 投影 → pomaster-context；④ 执行 → pomaster-execute；⑤ 验证 → pomaster-verify；⑥ 对账 → pomaster-reconcile；⑦ 折叠 → pomaster-compact；⑧ 收口 → pomaster-closeout。",
       "- 横切：检视/图/语义解析 → pomaster-inspect；发现面 → pomaster-discovery；策展物料 → pomaster-catalog；生产反馈 → pomaster-production；多 Agent/执行身份 → pomaster-runtime。",
       "- 会话开场速览：`pomaster session`（无子命令形态，SessionStart 注入源，尾部带首答确认协议）；每轮可行动项：`pomaster alerts`（UserPromptSubmit 源，可行动项过滤器 + workflow 路由段，恒 exit 0）。",
+      "- 产物与退出：保存本阶段真实命令结果、任务/AGX/证据引用和阻断；公告“正在使用某 skill”只作说明，不是正文已加载或阶段已完成的证据。",
       "",
     ],
     browserEyes: true,
@@ -601,37 +655,39 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
   {
     name: "pomaster-execute",
     description:
-      "POMaster 八拍④ EXECUTE——受控写路径。当需要机器判卷一次写尝试（exec-guard）或以显式事务落库受控变更（maintain）时使用；写路径判卷权威在 kernel，CLI 只编排呈现。",
+      "开始实现功能、修改项目代码、修复 bug 或验证失败后回修时使用 POMaster EXECUTE；先读取任务、适用 spec、context 与 permit，完成实现、自检和结构化交接，再在同一轮进入 verify。",
     bodyLines: [
       "# pomaster-execute —— 八拍④ EXECUTE",
       "",
       "## 何时用",
       "",
-      "- 写路径执行点判卷（严格判卷器非写入器；非 allow 一律拒绝）。",
-      "- 受控变更经显式事务落库（kernel applyTransaction 唯一写入路径）。",
+      "- 用户说“开始实现”“继续开发”“修复这个问题”或验证确认是产品缺陷时。",
+      "- 修改普通源码使用宿主编辑工具；exec-guard 只判受治理写尝试，maintain 只提交治理对象事务。",
       "",
       "## 开工输入",
       "",
-      "从 permit 卡取得 `permit_ref`，从绑定/治理对象取得目标 `id`，并使用现有 op 词表。exec-guard attempt 是 JSON 对象，必填三键 `permit_ref`、`id`、`op`，可选 context 只回显不参与判卷。maintain 接收已准备好的 Transaction JSON 文件；事务结构与受支持 op 以当前 `pomaster maintain --help` 为准。",
+      "输入包括当前 selected TASK、完整适用 spec、项目架构、context manifest、实现角色/AGX、permit scope、inspect 结果和验收条件。缺任务或上下文时按 workflow_route 的恢复动作处理，不从聊天猜测。exec-guard attempt 必填 `permit_ref`、`id`、`op`；maintain 只接收治理 Transaction JSON。",
       "",
       "## 选择与判读",
       "",
       "- 只判断一次落笔能否发生：运行 exec-guard。它内容盲、只判卷且不写目标文件；只有 `outcome=allowed` 才通过本次检查。",
       "- 提交治理对象事务：运行 maintain。`APPLIED` 表示返回的对象确实变化；`NO_CHANGE` 是合法幂等出口，不要当失败重试。",
       "- `ATTEMPT_MALFORMED` 修正 JSON；`expired` 回 FRAMEWORK LOCK 显式接管或重签；`unknown_permit` 先查台账；denied/`PERMIT_SCOPE_DENIED` 保留拒绝并回到既有授权流程，不换目标或直写 store。",
+      "- 实现代码后运行与改动风险相称的局部检查；未运行或失败如实记录。产品失败继续修复，环境/权限/独立性缺口保持阻断，不把 NOT_RUN 改写成通过。",
       "",
-      "交付本次是许可判卷还是事务提交、JSON 结果、changed_object_ids/seq 或未变化原因。allowed/APPLIED 都不等于验收完成；实现结束后交给 pomaster-verify。",
+      "产物包含代码改动、局部检查和 `execution handoff` 的 changed paths、summary、known gaps、verification requests。交接只是实现者声明，不等于 VERIFIED。交接成功后同一轮重取 next-action，完整加载 pomaster-verify 并执行验证；不得等待用户再发消息。",
       "",
       ...commandBlock([
         "pomaster exec-guard --attempt <file|-> --json",
         "pomaster maintain <change-or-task> --ops <tx-file> [--execution-id <AGX-n>] --json",
+        "pomaster execution handoff <AGX-*> --task <TASK.*> --changed <path> --summary <text> [--check <text>] [--known-gap <text>] [--verify <text>] --json",
       ]),
     ],
   },
   {
     name: "pomaster-verify",
     description:
-      "POMaster 八拍⑤ VERIFY——验证计划编译与真实执行、失败诊断、控件数据流审计和证据入账。当需要按任务选择 gate、执行 catalog tool binding、审计前端控件数据链，或把结果以 GRN/CLM 收据入账时使用；工具缺席=显式 NOT_RUN 非绿非红。",
+      "实现交接完成、用户要求检查/验收、交付前确认或修复后复测时使用 POMaster VERIFY；按任务编译并真实执行验证计划，判读失败与能力缺口，保留证据并按真实 finalize 阶段退出。",
     bodyLines: [
       "# pomaster-verify —— 八拍⑤ VERIFY",
       "",
@@ -640,10 +696,11 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "- 默认 N5 闭环：plan compile → 静态+runtime CDF 双 GRN与统一 diagnostics → finalize run → replay-against-spec/独立 verification/Human ACCEPT pending → closeout。",
       "- `CONTROL_DATA_FLOW` 由受信静态 analyzer 产出；静态 unknown 与运行时确认候选必须分层呈现，禁止把候选冒充已验证。",
       "- 内循环自检（FAST gate，BUILD 腿，纯读）或全 gate recipes 派发；把 gate 运行结果 / claim 显式落账 evidence 平面（GRN/CLM 收据）。",
+      "- execute 产生 fresh implementation handoff 后无需用户再提醒，本轮立即加载本 skill 并开始验证。",
       "",
       "## 开工输入",
       "",
-      "从任务对象读取 TASK acceptance 与 requires/exclusions；从 runtime 卡取得已登记且绑定该任务的 AGX。显式申报 changed paths、consumers 与 `kind=present|absent:<依据>` faces，不能由复杂度猜 N/A。plan compile 在 `--task` 与 `--input` 间二选一且纯读；plan run 需要 TASK 和 AGX。",
+      "从 workflow_route 取得 selected TASK、fresh implementation handoff、required actor/action；读取 TASK acceptance、完整适用 spec、架构/context、changed paths 与 known gaps。验证 AGX 必须绑定该任务并遵守独立性边界；不能拿 implementation AGX 冒充独立 verifier。",
       "",
       "## 执行与判读",
       "",
@@ -651,8 +708,9 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
       "2. run 只串行执行 REQUIRED obligations 并逐项写 GRN；只有全部 passed 才成功，且不会自动创建 claim、verification 或 closeout。工具缺席/未执行是显式 NOT_RUN（JSON `verdict=not_run`），不是绿色。",
       "3. 前端交互变更用 control-data-flow 静态报告配合浏览器 runtime confirmation；静态 proven 不证明真实 API、持久化或回显。",
       "4. `finalize status` 读取当前阶段；`finalize run` 可重入推进机器验证，但独立 replay、独立 verification 与 Human ACCEPT 缺失时返回 pending 和 next_actions，禁止代签。",
+      "5. 验证链满足后加载 pomaster-reconcile，按当前 permit 对账并判读漂移；再按路由进入 compact/closeout。reconcile 不能替代验证，也不能自行接受漂移。",
       "",
-      "失败时按 diagnostics 修实现或绑定后重跑；保留 partial GRN，不能把 NOT_RUN 改成 passed。最终交付 plan fingerprint、每项 verdict、pending actor/command；机器验证稳定后转 pomaster-reconcile，满足独立证据后再 closeout。",
+      "失败恢复按 diagnostics 分类：确认的产品缺陷转 pomaster-execute，工具/环境缺失修绑定或保持 NOT_RUN，输入漂移重新 inspect/context/handoff，权限与独立主体缺失保持 pending。只重跑受影响步骤，保留 partial GRN。产物包括 plan fingerprint、每项 verdict、证据引用和 pending actor/action；退出条件以 finalize 真实阶段为准，再主动重取 next-action 进入 reconcile/closeout 或准确停在人工边界。",
       "",
       ...commandBlock([
         "pomaster plan compile --task <TASK.*>",
@@ -743,16 +801,17 @@ export const SKILL_MANIFEST: readonly SkillSpec[] = [
   {
     name: "pomaster-inspect",
     description:
-      "POMaster 横切检视面——对象检视/图视图/语义解析。当需要检视单个对象的正文与证据谱系、查看对象依赖图与影响闭包、或把需求词形解析到既有对象与 archetype 标准件时使用。",
+      "修改既有功能前分析影响、不了解当前实现、验证失败需要归因、恢复后上下文不明，或需要检视对象/依赖图/语义解析时使用 POMaster INSPECT；纯读收集源码与治理证据后返回原阶段。",
     bodyLines: [
       "# pomaster-inspect —— 横切检视",
       "",
       "## 何时用",
       "",
-      "- 检视单对象（正文+证据+谱系，纯读零写入）。",
-      "- 对象图/影响闭包；需求词形先解析再决定是否新建（NO_MATCH 显式不臆造）。",
+      "- 修改已有功能前先定位实现、调用方、数据流、约束、测试与潜在影响；恢复后或错误归因不明时先检视。",
+      "- 检视单对象、对象图/影响闭包；需求词形先解析再决定是否新建（NO_MATCH 显式不臆造）。",
       "",
-      "先拿到 governed id；只有自然语言 need 时才用 resolve。对象不存在、NO_MATCH 或图边缺席都按返回结果保留，不以近似对象替代。把 inspect/graph 的引用与影响闭包交给后续阶段卡。",
+      "输入是 selected TASK、用户意图、已知 changed paths、项目架构与有效旧检视引用。先搜索实际源码和配置，再用 governed id 做 inspect/graph；只有自然语言 need 时才 resolve。结果必须区分 observed、inferred 与 unknown。对象不存在、NO_MATCH、动态图边或证据过期都如实保留。",
+      "失败时扩大只读证据面或回 context/discovery 请求缺失决定，禁止为了让路由前进而编造 governed id。产物是受影响文件/对象、依赖与风险、证据引用和 unknowns；若输入仍新鲜可复用。完成后返回原阶段，把结果传给 context/execute/verify，而不是把 inspect 当第九拍。",
       "",
       ...commandBlock([
         "pomaster inspect <governed-id>",

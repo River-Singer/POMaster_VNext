@@ -19,7 +19,7 @@
  * - 墙钟注入点不进 CLI 面（盖章语义——本套件对 liveness/stale 的确定性判定走
  *   kernel API，CLI 面只验信封结构与码位）。
  */
-import { rmSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
@@ -34,6 +34,7 @@ import {
 import {
   runExecutionBegin,
   runExecutionEnd,
+  runExecutionHandoff,
   runExecutionList,
   runLockAcquire,
   runLockHeartbeat,
@@ -505,6 +506,55 @@ describe("execution begin / end / list", () => {
     expect(listed.result.executions[1]).toMatchObject({
       status: "ended",
     });
+  });
+
+  it("handoff：公开入口捕获源码快照，同输入 NO_CHANGE，修复后 append-only", async () => {
+    mkdirSync(join(root, "src"), { recursive: true });
+    writeFileSync(join(root, "src", "feature.ts"), "export const value = 1;\n", "utf8");
+    const execution = await runExecutionBegin(root, {
+      role: "implementer",
+      runtime: "codex",
+      identityKind: "interactive",
+      taskId: "TASK.FEATURE",
+    });
+    const input = {
+      taskId: "TASK.FEATURE",
+      changedPaths: ["src/feature.ts"],
+      summary: "implement feature",
+      localChecks: ["typecheck passed"],
+    };
+    const first = await runExecutionHandoff(root, execution.result.execution_id, input);
+    const replay = await runExecutionHandoff(root, execution.result.execution_id, input);
+    expect(first.ok).toBe(true);
+    expect(first.result.change).toBe("RECORDED");
+    expect(first.result.source_state).toBe("fresh");
+    expect(replay.result).toMatchObject({ change: "NO_CHANGE", handoff_id: first.result.handoff_id });
+
+    writeFileSync(join(root, "src", "feature.ts"), "export const value = 2;\n", "utf8");
+    const repaired = await runExecutionHandoff(root, execution.result.execution_id, {
+      ...input,
+      summary: "implement feature after repair",
+    });
+    expect(repaired.result.change).toBe("RECORDED");
+    expect(readExecutionRecordById(pathsOf(store), execution.result.execution_id)?.implementation_handoffs).toHaveLength(2);
+  });
+
+  it("handoff：绝对/越界路径、跨 TASK 与非 implementer 均拒绝且零交接", async () => {
+    const implementer = await runExecutionBegin(root, { role: "implementer", runtime: "codex", identityKind: "interactive", taskId: "TASK.A" });
+    const qa = await runExecutionBegin(root, { role: "qa", runtime: "codex", identityKind: "interactive", taskId: "TASK.A" });
+    const invalidPath = await runExecutionHandoff(root, implementer.result.execution_id, {
+      taskId: "TASK.A", changedPaths: ["../outside.ts"], summary: "done",
+    });
+    expect(invalidPath.errors[0]?.code).toBe("SCHEMA_INVALID");
+    const crossTask = await runExecutionHandoff(root, implementer.result.execution_id, {
+      taskId: "TASK.B", changedPaths: ["src/a.ts"], summary: "done",
+    });
+    expect(crossTask.errors[0]?.code).toBe("SCHEMA_INVALID");
+    const wrongRole = await runExecutionHandoff(root, qa.result.execution_id, {
+      taskId: "TASK.A", changedPaths: ["src/a.ts"], summary: "done",
+    });
+    expect(wrongRole.errors[0]?.code).toBe("SCHEMA_INVALID");
+    expect(readExecutionRecordById(pathsOf(store), implementer.result.execution_id)?.implementation_handoffs).toEqual([]);
   });
 });
 

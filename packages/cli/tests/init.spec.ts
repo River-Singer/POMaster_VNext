@@ -46,6 +46,9 @@ import {
 } from "@pomaster/cli";
 import { CONTEXT_PARTITION_TITLES } from "../src/context.js";
 
+const CODEX_HOOKS_RELATIVE = ".codex/hooks.json";
+const V010_EXECUTE_SKILL = "---\nname: pomaster-execute\ndescription: \"POMaster 八拍④ EXECUTE——受控写路径。当需要机器判卷一次写尝试（exec-guard）或以显式事务落库受控变更（maintain）时使用；写路径判卷权威在 kernel，CLI 只编排呈现。\"\n---\n\n# pomaster-execute —— 八拍④ EXECUTE\n\n## 何时用\n\n- 写路径执行点判卷（严格判卷器非写入器；非 allow 一律拒绝）。\n- 受控变更经显式事务落库（kernel applyTransaction 唯一写入路径）。\n\n## 命令\n\n```text\npomaster exec-guard --attempt <file|->\npomaster maintain <change-or-task> --ops <tx>\n```\n\n\n## Browser Eyes（浏览器双眼）\n\n- chrome-devtools MCP = 观测眼：诊断「慢/报错/卡住」必须实测（performance trace / network / console），禁只看代码推断。\n- playwright MCP = 验证眼：E2E smoke / 交互验证用 playwright 确定性驱动。\n- 可用性自检：`pomaster doctor --json` 的 chrome_devtools_mcp / playwright_mcp 探针行。\n\n## 单一事实源\n\n本卡片与 `pomaster --help` 对账（init 钉版测试防漂移）；机读输出一律走 `--json` 信封（§45）。\n本文件由 `pomaster init` 生成（重入口 skills 库；重跑 init 即修复/重建）。\n\n<!-- pomaster:generated -->\n";
+
 let dir: string;
 
 beforeEach(() => {
@@ -405,7 +408,7 @@ describe("init 不覆盖人类文件", () => {
     );
   });
 
-  it("带标记被手改的 AGENTS.md → updated，change=UPDATED", async () => {
+  it("带标记但无法证明未被手改的 AGENTS.md → 显式冲突并保留原文", async () => {
     const { writeFileSync } = await import("node:fs");
     await runInit(dir);
     writeFileSync(
@@ -414,11 +417,12 @@ describe("init 不覆盖人类文件", () => {
       "utf8",
     );
     const outcome = await runInit(dir);
-    expect(outcome.result.change).toBe("UPDATED");
+    expect(outcome.result.change).toBe("NO_CHANGE");
     expect(
       outcome.result.files.find((f) => f.file === AGENTS_MD_RELATIVE)?.action,
-    ).toBe("updated");
-    expect(read(AGENTS_MD_RELATIVE)).toContain("## 常用命令");
+    ).toBe("skipped_conflict");
+    expect(read(AGENTS_MD_RELATIVE)).toBe(`${GENERATED_MARKER}\n手改内容\n`);
+    expect(outcome.warnings.map((row) => row.code)).toContain("GENERATED_FILE_CONFLICT");
   });
 
   it("已存在的 config.yaml 不被覆盖（人类可编辑物；存量 profile/triage 残留键 init 不读不删——D-1/D-5 裁决 18 退役）", async () => {
@@ -794,16 +798,15 @@ describe("init --platforms 合法组合（F1）", () => {
     ]);
   });
 
-  it("--platforms claude,codex → codex 零额外文件（covered：根 AGENTS.md 即原生入口）", async () => {
+  it("--platforms claude,codex → 两平台动态 hooks，AGENTS.md 仍为静态入口", async () => {
     const outcome = await runInit(dir, { platforms: "claude,codex" });
     expect(outcome.ok).toBe(true);
     expect(outcome.result.platforms).toEqual([
       { name: "claude", file: CLAUDE_MD_RELATIVE, action: "created" },
-      { name: "codex", file: AGENTS_MD_RELATIVE, action: "covered" },
+      { name: "codex", file: CODEX_HOOKS_RELATIVE, action: "created" },
     ]);
-    // 唯一落盘的入口文件仍只有 AGENTS.md + CLAUDE.md，无 codex 专属文件。
     expect(existsSync(join(dir, "AGENTS.md"))).toBe(true);
-    expect(existsSync(join(dir, "codex"))).toBe(false);
+    expect(existsSync(join(dir, CODEX_HOOKS_RELATIVE))).toBe(true);
   });
 
   it("--platforms none → 只建 AGENTS.md + 状态骨架：不建 CLAUDE.md，platforms 空数组", async () => {
@@ -840,12 +843,13 @@ describe("init --platforms 合法组合（F1）", () => {
     expect(read(AGENTS_MD_RELATIVE)).toBe(agentsBefore);
   });
 
-  it("人读平台段：逐平台一行 [name] action file（created/skipped-existing/covered）", async () => {
+  it("人读平台段：逐平台一行 [name] action file", async () => {
     const outcome = await runInit(dir, { platforms: "claude,codex" });
     const text = outcome.human.join("\n");
     expect(text).toContain("platforms:");
     expect(text).toContain("[claude] created");
-    expect(text).toContain("[codex] covered");
+    expect(text).toContain("[codex] created");
+    expect(text).toContain(CODEX_HOOKS_RELATIVE);
     // 平台段在能力速览段与横幅之前（§45 人读版式；--json 不受影响）。
     const platformIdx = text.indexOf("platforms:");
     const capIdx = text.indexOf("你现在可以做什么");
@@ -960,12 +964,12 @@ describe("runInitInteractive（F1 TTY 交互，io 注入零 TTY）", () => {
     expect(written.join("\n")).toContain("a=全选");
   });
 
-  it("编号输入 2,4 → codex（covered）+ qoder（created）", async () => {
+  it("编号输入 2,4 → codex hooks + qoder rules", async () => {
     const { io } = fakeIo("2,4");
     const outcome = await runInitInteractive(dir, io);
     expect(outcome.ok).toBe(true);
     expect(outcome.result.platforms).toEqual([
-      { name: "codex", file: AGENTS_MD_RELATIVE, action: "covered" },
+      { name: "codex", file: CODEX_HOOKS_RELATIVE, action: "created" },
       { name: "qoder", file: QODER_RULES_RELATIVE, action: "created" },
     ]);
     expect(existsSync(join(dir, QODER_RULES_RELATIVE))).toBe(true);
@@ -1030,7 +1034,7 @@ describe("init 平台复选清单（F1 交互升级；ANSI 只在重绘帧、只
     expect(first).toContain("? 启用哪些平台？（空格勾选 / ↑↓移动 / 回车确认）");
     expect(first).toContain("◉ claude   → CLAUDE.md");
     expect(first).toContain(
-      " ◯ codex    → AGENTS.md（codex 原生读根 AGENTS.md，选中=已覆盖）",
+      " ◯ codex    → .codex/hooks.json",
     );
     expect(first).toContain(" ◯ cursor   → .cursor/rules/pomaster.mdc");
     expect(first).toContain(" ◯ qoder    → .qoder/rules/pomaster.md");
@@ -1049,7 +1053,7 @@ describe("init 平台复选清单（F1 交互升级；ANSI 只在重绘帧、只
     });
     // 翻转帧：codex 行成为光标行（顶格）且 ◯→◉；claude 失焦但保持勾选（前导空格 ◉）。
     const flipped = chunks[chunks.length - 1] ?? "";
-    expect(flipped).toContain("\x1b[0K◉ codex    → AGENTS.md");
+    expect(flipped).toContain("\x1b[0K◉ codex    → .codex/hooks.json");
     expect(flipped).toContain(" ◉ claude   → CLAUDE.md");
   });
 
@@ -1300,6 +1304,47 @@ describe("高风险 workflow skills 行为合同", () => {
       "APPLIED",
       "NO_CHANGE",
       "pomaster-verify",
+      "execution handoff",
+      "同一轮重取 next-action",
+    ]);
+  });
+
+  it("日常开发意图能命中 execute/inspect/verify，三卡都有输入、恢复、产物和退出", () => {
+    expectSemantics("pomaster-execute", [
+      "开始实现",
+      "修改项目代码",
+      "修复 bug",
+      "完整适用 spec",
+      "失败",
+      "产物",
+      "同一轮",
+    ]);
+    expectSemantics("pomaster-inspect", [
+      "修改既有功能前",
+      "恢复后上下文不明",
+      "输入",
+      "失败",
+      "产物",
+      "返回原阶段",
+    ]);
+    expectSemantics("pomaster-verify", [
+      "实现交接完成",
+      "用户要求检查/验收",
+      "完整适用 spec",
+      "失败恢复",
+      "产物",
+      "退出条件",
+    ]);
+  });
+
+  it("根 skill 要求完整正文加载与同轮阶段推进，不把公告当证据", () => {
+    expectSemantics("pomaster", [
+      "开始或继续实现",
+      "workflow_route.required_skill.paths",
+      "完整 SKILL.md",
+      "同一轮主动重取 next-action",
+      "公告",
+      "agent-pull",
     ]);
   });
 
@@ -1435,12 +1480,12 @@ describe("重入口 hooks settings.json 合并（claude 层）", () => {
     const preToolGroups = settings.hooks.PreToolUse ?? [];
     const preTool = preToolGroups.find((group) => group.matcher === CLAUDE_EXEC_GUARD_MATCHER);
     const preToolHandlers = flatten(preTool === undefined ? [] : [preTool]);
-    expect(sessionHandlers).toContainEqual({ type: "command", command: "pomaster session" });
-    expect(promptHandlers).toContainEqual({ type: "command", command: "pomaster alerts" });
+    expect(sessionHandlers).toContainEqual({ type: "command", command: "pomaster session --hook-input" });
+    expect(promptHandlers).toContainEqual({ type: "command", command: "pomaster alerts --hook-input" });
     expect(preToolHandlers).toContainEqual({ type: "command", command: CLAUDE_EXEC_GUARD_COMMAND });
     expect(existsSync(join(dir, CLAUDE_EXEC_GUARD_HOOK_RELATIVE))).toBe(true);
     expect(existsSync(join(dir, CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE))).toBe(true);
-    // shell form 无 args（Windows 走 Git Bash/PowerShell 解析 npm shim）；非 tool-event
+    // shell form 只带受管 --hook-input（Windows 走 Git Bash/PowerShell 解析 npm shim）；非 tool-event
     // hook 禁 if 字段（设了永不运行）；PreToolUse 只靠 matcher-group。
     for (const handler of [...sessionHandlers, ...promptHandlers, ...preToolHandlers]) {
       expect(Object.keys(handler).sort()).toEqual(["command", "type"]);
@@ -1486,7 +1531,7 @@ describe("重入口 hooks settings.json 合并（claude 层）", () => {
     expect(settings.hooks.UserPromptSubmit).toHaveLength(2);
     expect(settings.hooks.SessionStart[1].hooks).toContainEqual({
       type: "command",
-      command: "pomaster session",
+      command: "pomaster session --hook-input",
     });
     expect(settings.hooks.PreToolUse[1]).toMatchObject({
       matcher: CLAUDE_EXEC_GUARD_MATCHER,
@@ -1515,6 +1560,88 @@ describe("重入口 hooks settings.json 合并（claude 层）", () => {
     expect(outcome.ok).toBe(true);
     expect(outcome.warnings.map((w) => w.code)).toContain("HOOKS_SETTINGS_SKIPPED");
     expect(read(CLAUDE_SETTINGS_RELATIVE)).toBe("{oops");
+  });
+});
+
+describe("Codex 项目 hooks 与 agent-pull", () => {
+  it("codex 平台生成真实 hooks.json，保留静态 agent-pull，且不安装 Claude 文件", async () => {
+    const outcome = await runInit(dir, { platforms: "codex" });
+    expect(outcome.ok).toBe(true);
+    const hooks = JSON.parse(read(CODEX_HOOKS_RELATIVE)) as {
+      hooks: Record<string, Array<{ hooks?: Array<Record<string, unknown>> }>>;
+    };
+    const commands = (event: string): unknown[] =>
+      (hooks.hooks[event] ?? []).flatMap((group) => group.hooks ?? []).map((row) => row.command);
+    expect(commands("SessionStart")).toContain("pomaster session --hook-input");
+    expect(commands("UserPromptSubmit")).toContain("pomaster alerts --hook-input");
+    expect(hooks.hooks.PreToolUse).toBeUndefined();
+    expect(existsSync(join(dir, CLAUDE_SETTINGS_RELATIVE))).toBe(false);
+    expect(existsSync(join(dir, CLAUDE_MD_RELATIVE))).toBe(false);
+    expect(read(AGENTS_MD_RELATIVE)).toContain("静态 agent-pull");
+    expect(read(AGENTS_MD_RELATIVE)).toContain("同一轮主动重取路由并进入 verify");
+    expect(outcome.result.platforms).toContainEqual({
+      name: "codex",
+      file: CODEX_HOOKS_RELATIVE,
+      action: "created",
+    });
+  });
+
+  it("迁移可识别旧 handler、保留外来 handler，重复 init 字节幂等", async () => {
+    mkdirSync(join(dir, ".codex"), { recursive: true });
+    writeFileSync(join(dir, CODEX_HOOKS_RELATIVE), `${JSON.stringify({
+      hooks: {
+        SessionStart: [{ hooks: [
+          { type: "command", command: "npx pomaster session --json" },
+          { type: "command", command: "python foreign-session.py" },
+        ] }],
+        UserPromptSubmit: [{ hooks: [{ type: "command", command: "npx pomaster alerts --json" }] }],
+      },
+    }, null, 2)}\n`, "utf8");
+    await runInit(dir, { platforms: "codex" });
+    const first = read(CODEX_HOOKS_RELATIVE);
+    expect(first).toContain("python foreign-session.py");
+    expect(first).not.toContain("npx pomaster");
+    expect(first.match(/pomaster session/g)).toHaveLength(1);
+    expect(first.match(/pomaster alerts/g)).toHaveLength(1);
+    const again = await runInit(dir, { platforms: "codex" });
+    expect(again.result.change).toBe("NO_CHANGE");
+    expect(read(CODEX_HOOKS_RELATIVE)).toBe(first);
+  });
+
+  it("坏 Codex hook JSON 零覆盖并降级到 agent-pull；platforms none 不安装 hooks", async () => {
+    mkdirSync(join(dir, ".codex"), { recursive: true });
+    writeFileSync(join(dir, CODEX_HOOKS_RELATIVE), "{oops", "utf8");
+    const outcome = await runInit(dir, { platforms: "codex" });
+    expect(outcome.warnings.map((row) => row.code)).toContain("CODEX_HOOKS_SKIPPED");
+    expect(read(CODEX_HOOKS_RELATIVE)).toBe("{oops");
+
+    const other = mkdtempSync(join(tmpdir(), "pomaster-init-none-hooks-"));
+    try {
+      await runInit(other, { platforms: "none" });
+      expect(existsSync(join(other, CODEX_HOOKS_RELATIVE))).toBe(false);
+      expect(existsSync(join(other, CLAUDE_SETTINGS_RELATIVE))).toBe(false);
+    } finally {
+      rmSync(other, { recursive: true, force: true });
+    }
+  });
+
+  it("v0.10.0 未改动 skill 可安全升级，双镜像获得摘要且重复 init 幂等", async () => {
+    await runInit(dir, { platforms: "claude,codex" });
+    const universal = ".agents/skills/pomaster-execute/SKILL.md";
+    const claude = ".claude/skills/pomaster-execute/SKILL.md";
+    writeFileSync(join(dir, universal), V010_EXECUTE_SKILL, "utf8");
+    writeFileSync(join(dir, claude), V010_EXECUTE_SKILL, "utf8");
+
+    const upgraded = await runInit(dir, { platforms: "claude,codex" });
+    expect(upgraded.result.files).toContainEqual({ file: universal, action: "updated" });
+    expect(upgraded.result.files).toContainEqual({ file: claude, action: "updated" });
+    expect(read(universal)).toBe(read(claude));
+    expect(read(universal)).toContain("开始实现功能");
+    expect(read(universal)).toMatch(/pomaster:managed-sha256:[0-9a-f]{64}/);
+
+    const again = await runInit(dir, { platforms: "claude,codex" });
+    expect(again.result.change).toBe("NO_CHANGE");
+    expect(read(universal)).toBe(read(claude));
   });
 });
 
@@ -1642,24 +1769,23 @@ describe("预铺目录骨架与 layout.json", () => {
     expect(read(CONFIG_RELATIVE)).toContain("objects: .pomaster/truth/objects/");
   });
 
-  it("存量旧版入口升级：历史形态标记的 AGENTS.md 重跑 init → 重写 heavy + skills created + hooks 合并（B7 迁移路）", async () => {
-    // 模拟旧版（B7 前历史形态）产物：生成标记 + 历史入口标记 + 轻正文。
+  it("未知历史 marker 入口不再猜测未修改：保留原文并报告冲突", async () => {
+    // marker 只证明来源，不足以证明后来没人编辑。
     mkdirSync(join(dir, ".pomaster"), { recursive: true });
+    const legacy = `${GENERATED_MARKER}\n<!-- pomaster:entry-mode:light -->\n# POMaster vNext — 旧版入口\n`;
     writeFileSync(
       join(dir, AGENTS_MD_RELATIVE),
-      `${GENERATED_MARKER}\n<!-- pomaster:entry-mode:light -->\n# POMaster vNext — 旧版入口\n`,
+      legacy,
       "utf8",
     );
     const upgrade = await runInit(dir);
     expect(upgrade.ok).toBe(true);
-    // 存量工程只预置了旧版 AGENTS.md——重跑 init 补建全树（created 优先于 updated，
-    // InitChange 判定序），AGENTS.md 本身是 updated 重写为 heavy 形态。
     expect(upgrade.result.change).toBe("CREATED");
     expect(
       upgrade.result.files.find((f) => f.file === AGENTS_MD_RELATIVE)?.action,
-    ).toBe("updated");
-    expect(read(AGENTS_MD_RELATIVE)).toContain("<!-- pomaster:entry-mode:heavy -->");
-    expect(read(AGENTS_MD_RELATIVE)).not.toContain("entry-mode:light");
+    ).toBe("skipped_conflict");
+    expect(read(AGENTS_MD_RELATIVE)).toBe(legacy);
+    expect(upgrade.warnings.map((row) => row.code)).toContain("GENERATED_FILE_CONFLICT");
     expect(existsSync(join(dir, CLAUDE_SETTINGS_RELATIVE))).toBe(true);
   });
 
