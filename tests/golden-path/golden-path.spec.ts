@@ -117,8 +117,10 @@ interface ChainRecords {
   readonly routeAfterCompile: StepRecord;
   /** execution begin（R_EXECUTE_ENTRY 建议照做——④ EXECUTE 感知闭环）。 */
   readonly executionBegin: StepRecord;
-  /** begin 后 status（R_VERIFY_ENTRY 时点——⑤ 执行中自检入口）。 */
+  /** begin 后 status（R_EXECUTE_ENTRY：身份登记不等于实现交接）。 */
   readonly routeAfterExecution: StepRecord;
+  readonly implementationHandoff: StepRecord;
+  readonly routeAfterHandoff: StepRecord;
   readonly gates: StepRecord;
   readonly claimRecord: StepRecord;
   /** record claim 分配的 CLM（GP-8 断言用；promote 自动生成 CLM-0001 后自适应编号）。 */
@@ -222,6 +224,18 @@ beforeAll(async () => {
     join(root, ".pomaster", "baseline", "frontend", "stack.yaml"),
     "utf8",
   );
+  const identification = await runJsonStep(root, ["next-action"]);
+  expect((envelopeOf(identification).result?.next_action as Record<string, unknown>).route_id).toBe("R_PROJECT_IDENTIFICATION");
+  const report = await runJsonStep(root, [
+    "project-identification", "report", "TASK.INIT_PROJECT_IDENTIFICATION",
+    "--purpose", "Vue3 dashboard fixture with a governed data table",
+    "--architecture", "vue", "--stack", "Vue3/Vite/Pinia",
+    "--directory", "src: dashboard source", "--command", "npm run build",
+    "--evidence", "package.json", "--unknown", "Production deployment is outside this fixture",
+  ]);
+  expect(report.code, report.stdout).toBe(0);
+  const confirmation = await runJsonStep(root, ["project-identification", "confirm", "TASK.INIT_PROJECT_IDENTIFICATION", "--actor", "human:fixture-owner"]);
+  expect(confirmation.code, confirmation.stdout).toBe(0);
   const start = await runJsonStep(root, [
     "brainstorm",
     "start",
@@ -392,7 +406,7 @@ beforeAll(async () => {
   ]);
   const routeAfterCompile = await runJsonStep(root, ["status"]);
 
-  // —— execution begin（T2 R3：④ EXECUTE 感知建议照做→⑤ VERIFY 入口）。 ——
+  // —— execution begin 只登记身份；结构化 handoff 才打开⑤ VERIFY。 ——
   const executionBegin = await runJsonStep(root, [
     "execution", "begin",
     "--role", "implementer",
@@ -401,6 +415,13 @@ beforeAll(async () => {
     "--task-id", TASK_ID,
   ]);
   const routeAfterExecution = await runJsonStep(root, ["status"]);
+  const implementationId = String(envelopeOf(executionBegin).result?.execution_id);
+  const implementationHandoff = await runJsonStep(root, [
+    "execution", "handoff", implementationId, "--task", TASK_ID,
+    "--changed", "src/App.vue", "--summary", "Fixture implementation ready for independent verification",
+    "--known-gap", "Dependencies are intentionally not installed in this fixture",
+  ]);
+  const routeAfterHandoff = await runJsonStep(root, ["status"]);
 
   // —— 证据链（GP-8）：check --gates GRN 入账 → record claim → record verification。 ——
   const gates = await runJsonStep(root, ["check", "--gates"]);
@@ -461,6 +482,8 @@ beforeAll(async () => {
     routeAfterCompile,
     executionBegin,
     routeAfterExecution,
+    implementationHandoff,
+    routeAfterHandoff,
     gates,
     claimRecord,
     claimRef,
@@ -724,7 +747,7 @@ describe("Golden Path 十条验收（GP-4~GP-10：Intent Chain 全链）", () =>
   });
 
   it(
-    "GP-7 [T2已摘帽] manifest fresh 与 Verify 之间存在执行感知过渡：compile 后 R_EXECUTE_ENTRY → execution begin → R_VERIFY_ENTRY",
+    "GP-7 [阶段交接] compile → EXECUTE；execution begin 不推进；fresh handoff → VERIFY",
     () => {
       const records_ = records();
       expect(records_.routeAfterCompile.code).toBe(0);
@@ -750,18 +773,18 @@ describe("Golden Path 十条验收（GP-4~GP-10：Intent Chain 全链）", () =>
         String(nextAction["command"]),
         "R_EXECUTE_ENTRY 建议应是 execution begin（携 --task-id）",
       ).toBe(
-        `pomaster execution begin --role <role> --runtime <runtime> --identity-kind <kind> --task-id ${TASK_ID}`,
+        `pomaster execution begin --role implementer --runtime <runtime> --identity-kind <kind> --task-id ${TASK_ID}`,
       );
-      // 摘帽新信号（防退化为空转绿）：照做 execution begin → 在途档案在座 → 路由
-      // 前进到 R_VERIFY_ENTRY（执行感知 ④→⑤ 分叉在真实链上闭合；W0-FR01：⑤ 主链
-      // 命令 = plan run，携真实在途 execution-id——快速自检绿不再冒充 VERIFY 主入口）。
+      // 登记身份仍处于实现；fresh handoff 后进入 plan 验证链，
+      // 验证建议不得复用 implementation AGX 冒充独立验证身份。
       expect(records_.executionBegin.code, "execution begin 应 exit 0").toBe(0);
       const beginResult = (envelopeOf(records_.executionBegin).result ?? {}) as Record<string, unknown>;
       expect(String(beginResult["execution_id"])).toMatch(/^AGX-[0-9]{4}-[0-9]+$/);
-      expect(nextActionOf(records_.routeAfterExecution)["route_id"]).toBe("R_VERIFY_ENTRY");
-      expect(nextActionOf(records_.routeAfterExecution)["command"]).toBe(
-        `pomaster plan run --task ${TASK_ID} --execution-id ${String(beginResult["execution_id"])}`,
-      );
+      expect(nextActionOf(records_.routeAfterExecution)["route_id"]).toBe("R_EXECUTE_ENTRY");
+      expect(records_.implementationHandoff.code, records_.implementationHandoff.stdout).toBe(0);
+      expect(nextActionOf(records_.routeAfterHandoff)["route_id"]).toBe("R_VERIFY_ENTRY");
+      expect(nextActionOf(records_.routeAfterHandoff)["command"]).toContain(`pomaster plan run --task ${TASK_ID}`);
+      expect(nextActionOf(records_.routeAfterHandoff)["command"]).not.toContain(String(beginResult["execution_id"]));
     },
   );
 

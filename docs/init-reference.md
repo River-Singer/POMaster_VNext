@@ -1,7 +1,7 @@
 # `pomaster init` 完整机制参考
 
 > 本文是 [`pomaster init`](../README.md) 的深度参考：产物清单、目录宪法全树、播种语义、
-> 重入口安装物、技术栈问卷、基线确认 gate、栈预置草案与 doctor 探针的全部机制细节。
+> 重入口安装物、架构选择与项目识别、基线确认 gate、栈预置草案与 doctor 探针的机制细节。
 > README 只保留上手路径；机制语义以本文与 `.pomaster/layout.json` 为准。
 
 ## 目录
@@ -17,7 +17,8 @@
 - [基线确认 gate（baseline confirm）](#基线确认-gatebaseline-confirm)
 - [baseline 栈预置草案](#baseline-栈预置草案)
 - [init 之后的消费面（session / status / alerts / doctor）](#init-之后的消费面session--status--alerts--doctor)
-- [config.yaml 与 profile 三档](#configyaml-与-profile-三档)
+- [阶段路由与安全升级](#阶段路由与安全升级)
+- [config.yaml](#configyaml)
 - [doctor 探针矩阵与 Browser Eyes](#doctor-探针矩阵与-browser-eyes)
 
 ## 总览：幂等语义
@@ -29,8 +30,10 @@ cd your-project
 pomaster init
 ```
 
-- 缺失的产物创建；在座且字节一致的动作记 `unchanged`；带生成标记且异字节的重写为
-  `updated`；**不带生成标记的人类文件一律跳过并显式告警**（绝不覆盖，绝不静默 merge）。
+- 缺失的产物创建；在座且字节一致的动作记 `unchanged`。受管 Markdown 只有内容摘要
+  校验通过，或精确匹配已知 0.10.0 生成模板时，才允许升级为 `updated`。
+  只有生成标记不足以证明可覆盖；摘要缺失或不符且不是已知旧模板时保留并报告冲突。
+  不带生成标记的人类文件同样保留，详见下文安全升级。
 - 播种面（`baseline/**`、`specs/**` 内容文件）与预植对象在座零触碰（动作记
   `preserved`，不计入任何 change 桶）——重跑全 preserved 即 NO_CHANGE。
 - `--json` 信封与人读输出单信封分离（人读横幅/logo 恒不进机读面）。
@@ -42,18 +45,18 @@ sidecar 全部复用既有机制（零新治理语义）：
 
 | 检测态 | 判据 | 行为 |
 |---|---|---|
-| Greenfield | 干净目录（worktree 全空） | 静默直入现状（零新增人读行） |
-| Brownfield 候选 | worktree 非空（git 在座 / 源码文件在座）且无 `.pomaster/` | 呈现检测摘要，TTY 问卷首题显式确认 |
+| Greenfield | 干净目录（worktree 全空） | 以 `--architecture vue\|react` 或交互架构选择生成对应治理 profile |
+| Brownfield | worktree 非空且无 `.pomaster/` | 自动 recon 并创建唯一项目识别 TASK，不要求用户逐项选择架构/技术栈 |
 | 已初始化 | `.pomaster/` 在座 | 重入口行为不变（零分叉零提问） |
 
 - **检测是呈现不是裁决**：摘要 = 源文件计数（`.ts/.tsx/.js/.jsx/.mjs/.cjs/.vue` 枚举闭包，
   跳过 node_modules/dist/.git/coverage/.pomaster）/ migration 五栈词形面命中
   （prisma/flyway/liquibase/alembic/django_style——词形盘点不是 stack 断言）/ SBOM
   工具（cdxgen）PATH 在位性。检测结果进 `--json` 信封 `result.mode` 与人读 `mode:` 行。
-- **显式确认制（禁静默分叉双向）**：Brownfield 编排只在 TTY 交互问句（平台选择后、
-  技术栈问卷前）得到 Owner 确认后触发；非交互通道（`--json`/CI）候选态显式
-  `skipped_non_interactive`（零 recon），Owner 拒绝 = `declined`（Greenfield 现状）。
-- **确认后自动 recon 三腿**（`recon` 命令组既有通路直调——产物语义与其 `--help` 一致）：
+- **识别先行**：Brownfield 在交互和非交互通道均进入识别任务。Agent 先读取仓库，提交
+  用途、架构候选、技术栈、目录、命令、证据与未知项；Owner 确认报告后才生成架构治理内容。
+  传入 `--architecture` 也不会跳过该确认。重复 init 复用原任务，不创建另一份识别任务。
+- **自动 recon 三腿**（`recon` 命令组既有通路直调——产物语义与其 `--help` 一致）：
   - `import-graph`：宿主源文件 import 图静态扫描 → 报告 blob + OBS 观察回执；
   - `migrations`：migration 目录五栈词形盘点（纯读盘零工具执行）→ ENVREC 回执；
   - `sbom`：依赖清单采集（cdxgen 腿）——工具缺席 `NOT_INSTALLED` 显式跳过不阻塞
@@ -67,9 +70,9 @@ sidecar 全部复用既有机制（零新治理语义）：
   NOT_INSTALLED）+ warning 显式呈现，**recon 失败不阻塞 init 主链**；产物只落
   `.pomaster/evidence/{blobs,observations}/` sidecar 平面——baseline 权威面零写口
   （字节快照测试钉）。
-- **差距报告合并呈现**：完成输出同时呈现 recon sidecar 摘要（三腿逐腿一行）与问卷
-  观察候选 `[Observed: package.json]` 注记——Owner 就地裁剪（答问卷 / `baseline set`
-  / 手编 manifest 豁免行）后走既有 `pomaster baseline confirm` 确认链（零新确认链）。
+- **报告与确认**：`pomaster project-identification report <TASK.*>` 保存仓库证据报告，
+  `pomaster project-identification confirm <TASK.*> --actor human:<name>` 确认并生成 profile。
+  profile 冲突时任务保持待确认，可修复后重试；这不替代完整工程基线的 `baseline confirm`。
 
 ## init 产物表
 
@@ -78,7 +81,7 @@ sidecar 全部复用既有机制（零新治理语义）：
 | `.pomaster/state/truth-index.json` | Canonical State 的唯一 root index（空账本起点；受其引用的 `truth/objects/**` 是 Canonical Truth 正文） | 否（存在即跳过；损坏显式报错，绝不静默重建） |
 | `.pomaster/state/authority.json` | Authority Map 骨架（默认登记 `BOOTSTRAP_OWNER`） | 否（人类加注的 owner 一律不动） |
 | `.pomaster/config.yaml` | 治理配置（人类可编辑） | 否（只在缺失时创建） |
-| `AGENTS.md` / `CLAUDE.md` | Agent 重入口（profile + 状态速览 + 常用命令 + 重入口安装物锚点） | 仅带生成标记的（`CLAUDE.md` 通过 `@AGENTS.md` 导入共享） |
+| `AGENTS.md` / `CLAUDE.md` | Agent 重入口（阶段路由 + 常用命令 + 安装物锚点） | 仅可验证的未修改生成物（`CLAUDE.md` 通过 `@AGENTS.md` 导入共享） |
 | `SPEC.*` 预植对象 ×19 | Evidence Spec Kit 的 store 对象面（PROPOSED 起步；项目经 maintain→CURRENT 采纳后进 closeout 判卷） | 否（在座零触碰，幂等；`--json` 信封可查） |
 
 ## 目录宪法全树预铺
@@ -126,30 +129,33 @@ canonical 正文层为 `.pomaster/truth/objects/`；legacy `.pomaster/objects/` 
 ## 重入口三件套（skills / hooks / 加厚 rules）
 
 init 缺省生成重入口全套（`--platforms none` 除外），让 Agent 一开会话就自动看到治理状态、
-按需自动触发命令卡：
+按需自动触发相应 skill：
 
-- **skills 命令卡库**：`/pomaster` 路由全景 + `pomaster-bootstrap` … `pomaster-runtime`
-  等 15 份命令卡，双镜像安装到 `.agents/skills/`（通用层——Codex / Cursor / Gemini CLI /
-  GitHub Copilot / VS Code / Amp / Warp / OpenCode / Droid 等原生读取）与
-  `.claude/skills/`（Claude Code 必需位），两份**逐字节一致**、同指 `pomaster --help`
-  单一事实源；其中 `pomaster-discovery` 是方法论长卡（Grounded Brainstorm：Grill
-  Strategy 主轴 + 对话形式纪律 + 机器闸命令链 + 任务生命周期全图——「走 pomaster
-  brainstorm」/需求讨论/拷问需求等自然语言命中）。
+- **skills 分层库**：共 14 份。`/pomaster` 是按用户目标和当前阶段选卡的 router；
+  `pomaster-discovery` 是 Grounded Brainstorm 方法论 skill（Grill Strategy 主轴 +
+  对话形式纪律 + 机器闸命令链 + 任务生命周期全图——「走 pomaster brainstorm」/
+  需求讨论/拷问需求等自然语言命中）；permit、execute、verify、runtime、closeout 等复杂
+  阶段卡按风险提供输入来源、动作分支、机器结果判读、拒绝恢复与下游交接；inspect、catalog
+  等窄查询卡保持比例适当的短参考。14 份均双镜像安装到 `.agents/skills/`（通用层——Codex /
+  Cursor / Gemini CLI / GitHub Copilot / VS Code / Amp / Warp / OpenCode / Droid 等原生读取）
+  与 `.claude/skills/`（Claude Code 必需位），两份**逐字节一致**，命令签名继续以
+  `pomaster --help` 为单一事实源。Browser Eyes 只进入 router、bootstrap 与 verify 三个
+  确有工具发现、浏览器诊断或验证职责的 skill；全局分工仍由 AGENTS.md 入口说明。
 - **hooks 注入（claude）**：`.claude/settings.json` 合并式注册
-  SessionStart → `pomaster session`（治理速览投影，≤10,000 字符硬上限，尾部带
+  SessionStart → `pomaster session --hook-input`（治理速览投影，≤10,000 字符硬上限，尾部带
   **首答确认协议**——模型首轮回复必须可见确认注入并报告 Next-Action 路由）与
-  UserPromptSubmit → `pomaster alerts`（可行动项过滤器 + workflow 路由段：无活跃 TASK
-  给判档/讨论双入口，有活跃 TASK 给八拍位置与下一拍命令，恒 exit 0）；既有 hooks
+  UserPromptSubmit → `pomaster alerts --hook-input`（可行动项过滤器 + workflow 路由段）；既有 hooks
   （人类/Trellis 条目）一律保留，坏 JSON fail-closed 不覆盖。
-- **cursor/qoder**：加厚版 rules（命令卡 + Browser Eyes 展开进
+- **cursor/qoder**：加厚版 rules（命令全景 + Browser Eyes 展开进
   `.cursor/rules/pomaster.mdc` / `.qoder/rules/pomaster.md`）。
 
 ## 多平台适配器
 
 - `AGENTS.md` 恒为唯一事实源；
 - `--platforms claude,codex,cursor,qoder` 追加各平台适配器（`CLAUDE.md` / 根 `AGENTS.md`
-  即 codex 原生入口 / `.cursor/rules/pomaster.mdc` / `.qoder/rules/pomaster.md`，本包
-  产物形态升级自动重写，人类异形内容一律不覆盖）；
+  即 codex 原生入口，另注册 `.codex/hooks.json` / `.cursor/rules/pomaster.mdc` /
+  `.qoder/rules/pomaster.md`）；Codex hooks 同样注册 SessionStart 与 UserPromptSubmit，
+  使用带 `--hook-input` 的命令。生成物升级须通过内容校验，人工修改不覆盖；
 - `--platforms none` 只建 AGENTS.md + 状态骨架（最小指针正文，无重入口安装物）；
 - TTY 交互终端直接 `pomaster init` 会出复选清单（◉/◯ 空格勾选 / ↑↓ 移动 / 回车确认；
   raw 模式不可用时降级为编号输入）；
@@ -157,10 +163,10 @@ init 缺省生成重入口全套（`--platforms none` 除外），让 Agent 一�
 
 ## 技术栈问卷与后补销账
 
-TTY 交互 init 在平台选择后接技术栈逐键问卷——**前端 9 键 + 后端 5 键逐项必答**（无缺省
-不预填，候选含实战栈与常见占位，末行可自由输入；中断 = 零写入），答完即把选型写回
-`.pomaster/baseline/<lane>/stack.yaml` 并在 `baseline/manifest.yaml` 的 unknowns 台账对
-已答键销账。
+新项目先选架构：`pomaster init --architecture vue` 与 `--architecture react` 会生成不同的
+framework/router/state 选型及 `.pomaster/baseline/frontend/architecture-profile.md`，
+同时写 `.pomaster/state/architecture-profile.json`。非空目录先完成项目识别，跳过架构和
+逐键技术栈问卷。完整工程基线仍有前端 9 键、后端 5 键，架构 profile 不会代填所有未知项。
 
 - 重跑 init 幂等——已答键不重复问，全销账则问卷整体跳过；
 - 非交互通道（`--json` / CI）问卷整体跳过、UNKNOWN 显式缺席，后补用
@@ -213,6 +219,40 @@ TTY 交互 init 在平台选择后接技术栈逐键问卷——**前端 9 键 +
   （hooks 注册态 + hook 命令 PATH 可达的生效自检 + 双镜像逐字节一致；未安装/不可达 →
   MISSING_CONFIGURATION 并给修复指引——重跑 init / 检查 PATH / 项目 hooks 信任审批
   前置说明）。
+
+## 阶段路由与安全升级
+
+Agent 在开工、恢复、阶段完成和交付前读取 `pomaster next-action --json`；已知任务或
+已绑定会话时分别传 `--task <TASK.*>`、`--session-key <key>`。返回的 `workflow_route`
+包含 selected/prerequisite task、required skill、required action、退出条件与阻断原因。
+Agent 必须读取所指向的完整 `SKILL.md` 并执行动作；仅说“将使用该 skill”不算加载或执行。
+多任务且没有有效选择时必须先选定任务，不能默认取第一个任务。识别任务作为开发前置呈现，
+不覆盖会话原本绑定的开发任务。
+
+实现结束后通过既有 execution 档案追加交接，随后在同一轮继续读取路由并进入验证：
+
+```bash
+pomaster execution handoff <AGX-*> --task <TASK.*> --changed src/example.ts --summary "实现说明" --check "实际运行的检查及结果"
+pomaster next-action --task <TASK.*> --json
+```
+
+`--changed` 可重复；还可重复提供 `--known-gap` 和 `--verify`。交接记录源码快照和真实本地
+检查，不能冒充终验通过；相关源码改变后需要重新交接。独立验证、许可范围与人工接受仍沿用
+原有判定。旧任务已完成或已进入有效终验后续阶段时，不因缺少新交接字段而重开实现。
+
+hooks 未配置、未受信任或宿主不支持时，根入口仍要求 Agent 主动读取上述路由。
+`doctor` 分开报告平台安装、配置、信任和实际送达状态：项目文件存在不证明宿主已执行，
+无法确认的状态显示 `unknown`。Codex CLI 测试也不等于桌面 App 或 VS Code 插件行为验收。
+
+旧项目在使用新 CLI 后重跑 `pomaster init --platforms claude,codex`，按所选平台同步入口、
+skills 与 hooks。受管 Markdown 带 `pomaster:managed-sha256` 摘要；已知 0.10.0 的未修改
+模板可迁移到该机制。未知旧模板或已被人工修改的文件保留并报告 `skipped_conflict`。
+恢复时先保存自己的修改，在隔离目录生成对应平台的新模板，人工核对并合并；不要通过删除
+摘要或伪造摘要强制覆盖。治理事实与业务代码不属于这次入口升级的覆盖范围。
+
+hooks 只迁移可识别的 POMaster 旧命令，保留外来 handlers；坏 JSON 保留并报错。
+升级后运行 `pomaster doctor`，再在真实宿主新会话中核对 skill 正文读取、动作与交接记录。
+不要把 init 成功、公告文本或配置探针通过当作实际自动调用已经生效。
 
 ## config.yaml
 

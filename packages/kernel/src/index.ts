@@ -1173,6 +1173,7 @@ export type {
 // 等价猜测）；未命中显式空不虚构（REQ-03「未命中保持未知」）。
 export {
   TASK_NEGATIVE_HISTORY_FIELD,
+  envelopeFromTaskBody,
   readTaskNegativeHistory,
   appendTaskNegativeEntry,
   searchTaskNegativeHistory,
@@ -1428,6 +1429,8 @@ export type {
 export type { LockKindValue } from "@pomaster/schemas";
 export {
   beginExecution,
+  appendImplementationHandoff,
+  assertImplementationHandoff,
   endExecution,
   readExecutionRecordById,
   listExecutionRecords,
@@ -1446,6 +1449,9 @@ export type {
   ExecutionRecord,
   ExecutionBeginInput,
   ExecutionEndInput,
+  ImplementationHandoff,
+  AppendImplementationHandoffInput,
+  AppendImplementationHandoffResult,
 } from "./execution.js";
 
 // DEF-GATEKEEPER 触发观测器（P20-Commands；D 线 §5「同一 execution 既提 proposal

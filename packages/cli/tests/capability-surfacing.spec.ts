@@ -189,7 +189,7 @@ describe("C2 · AGENTS.md 能力地图节", () => {
     expect(agents).toContain("`pomaster plan run`");
   });
 
-  it("开发 agent 的 VERIFY skill 显式给出验证计划与控件数据流执行链", async () => {
+  it("开发 agent 的 VERIFY skill 给出输入来源、执行分支、NOT_RUN/pending 语义与下游交接", async () => {
     await runInit(dir);
     const verifySkill = readFileSync(
       join(dir, ".agents", "skills", "pomaster-verify", "SKILL.md"),
@@ -200,6 +200,13 @@ describe("C2 · AGENTS.md 能力地图节", () => {
     expect(verifySkill).toContain("pomaster control-data-flow analyze");
     expect(verifySkill).toContain("replay-against-spec");
     expect(verifySkill).toContain("closeout");
+    expect(verifySkill).toContain("TASK.*");
+    expect(verifySkill).toContain("AGX");
+    expect(verifySkill).toContain("NOT_RUN");
+    expect(verifySkill).toContain("diagnostics");
+    expect(verifySkill).toContain("pending");
+    expect(verifySkill).toContain("Human ACCEPT");
+    expect(verifySkill).toContain("pomaster-reconcile");
   });
 
   it("与「重入口安装物」节分工不重复：两节各自在座、能力地图在前（内容不互相吞并）", async () => {

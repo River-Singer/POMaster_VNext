@@ -36,6 +36,11 @@ import { GovernanceError } from "./errors.js";
 import { appendLine, captureOriginal, ensureDir, executeWrites, readText } from "./io.js";
 import { pathsOf, readCurrentSeq, type StorePaths } from "./paths.js";
 import { OBSERVATION_RECORD_TYPES } from "./evidence-artifacts.js";
+import { sha256OfCanonical } from "./digest.js";
+import {
+  assertEvidenceSourceSnapshot,
+  type EvidenceSourceSnapshot,
+} from "./source-snapshot.js";
 import {
   EXECUTION_IDENTITY_KIND_VALUES,
   EXECUTION_ROLE_VALUES,
@@ -90,6 +95,67 @@ export interface ExecutionRecord {
   readonly ended_at: string | null;
   /** 人类散文注记（机器不得解析其内容做判卷，P9）。 */
   readonly notes: string | null;
+  /**
+   * 实现交接历史（append-only）。新档案显式 []；legacy 档案键缺席保持缺席，读取方
+   * 不得从 notes/ended_at 反填或推断已交接。
+   */
+  readonly implementation_handoffs?: readonly ImplementationHandoff[];
+}
+
+/** 实现者请求进入验证的结构化声明；不是 VERIFIED/GRN/ACCEPT 或完成证明。 */
+export interface ImplementationHandoff {
+  readonly handoff_id: `sha256:${string}`;
+  readonly task_id: string;
+  readonly execution_id: string;
+  readonly context_manifest_id: string | null;
+  readonly permit_ids: readonly string[];
+  readonly changed_paths: readonly string[];
+  readonly summary: string;
+  readonly local_checks: readonly string[];
+  readonly known_gaps: readonly string[];
+  readonly verification_requests: readonly string[];
+  readonly source_snapshot: EvidenceSourceSnapshot;
+  readonly recorded_at: string;
+}
+
+export interface AppendImplementationHandoffInput {
+  readonly taskId: string;
+  readonly changedPaths: readonly string[];
+  readonly summary: string;
+  readonly localChecks?: readonly string[];
+  readonly knownGaps?: readonly string[];
+  readonly verificationRequests?: readonly string[];
+  readonly sourceSnapshot: EvidenceSourceSnapshot;
+  /** 基础设施墙钟注入点；缺省当前时间，测试可固定。 */
+  readonly recordedAt?: string;
+}
+
+export interface AppendImplementationHandoffResult {
+  readonly record: ExecutionRecord;
+  readonly handoff: ImplementationHandoff;
+  readonly changed: boolean;
+}
+
+/** Validate persisted handoff content and attribution before either reuse or append. */
+export function assertImplementationHandoff(value: unknown, record: ExecutionRecord): asserts value is ImplementationHandoff {
+  const invalid = (): never => {
+    throw new GovernanceError("SCHEMA_INVALID", `implementation handoff 内容或归属损坏：${record.execution_id}`, "从 git 恢复档案；不得以损坏交接推进验证。", {});
+  };
+  if (value === null || typeof value !== "object" || Array.isArray(value)) invalid();
+  const row = value as ImplementationHandoff;
+  if (row.task_id !== record.task_id || row.execution_id !== record.execution_id ||
+      record.role !== "implementer" || row.context_manifest_id !== record.context_manifest_id ||
+      typeof row.summary !== "string" || row.summary.trim().length === 0 ||
+      typeof row.recorded_at !== "string" || !Number.isFinite(Date.parse(row.recorded_at))) invalid();
+  for (const field of [row.permit_ids, row.changed_paths, row.local_checks, row.known_gaps, row.verification_requests]) {
+    if (!Array.isArray(field) || field.some((item) => typeof item !== "string" || item.trim().length === 0)) invalid();
+  }
+  if (!Array.isArray(record.permit_ids) || JSON.stringify(row.permit_ids) !== JSON.stringify([...record.permit_ids].sort())) invalid();
+  assertRepositoryRelativePaths(row.changed_paths);
+  assertEvidenceSourceSnapshot(row.source_snapshot);
+  if (row.changed_paths.length === 0 || JSON.stringify(row.changed_paths) !== JSON.stringify(row.source_snapshot.relevant_paths)) invalid();
+  const identity = Object.fromEntries(Object.entries(row).filter(([key]) => key !== "handoff_id" && key !== "recorded_at"));
+  if (row.handoff_id !== sha256OfCanonical(identity)) invalid();
 }
 
 /** beginExecution 输入（camelCase 输入世界）。 */
@@ -355,6 +421,7 @@ export async function beginExecution(
     started_at: startedAt,
     ended_at: null,
     notes: input.notes?.trim() ? input.notes.trim() : null,
+    implementation_handoffs: [],
   };
   ensureDir(paths.executionsDir);
   // 落盘前存在性/世代复核（G2，A1 同族手法——store.ts assertCommitSeqUnchanged 同源）：
@@ -390,6 +457,164 @@ export async function beginExecution(
     identity_kind: record.identity_kind,
   });
   return record;
+}
+
+function normalizedNonEmptyStrings(
+  values: readonly string[] | undefined,
+  field: string,
+  allowEmpty: boolean,
+): string[] {
+  const normalized = [...new Set((values ?? []).map((value) => value.trim()))].sort();
+  if ((!allowEmpty && normalized.length === 0) || normalized.some((value) => value.length === 0)) {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      `${field} ${allowEmpty ? "不得包含空字符串" : "须至少包含一项非空字符串"}`,
+      "提供确定性的非空字符串列表；路径须为仓库相对路径并由 CLI source snapshot 捕获器校验。",
+      { field },
+    );
+  }
+  return normalized;
+}
+
+function assertRepositoryRelativePaths(paths: readonly string[]): void {
+  const invalid = paths.find((path) =>
+    path.includes("\\") ||
+    path.startsWith("/") ||
+    /^[A-Za-z]:/.test(path) ||
+    path.split("/").some((part) => part.length === 0 || part === "." || part === "..")
+  );
+  if (invalid !== undefined) {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      `changed_paths 含非规范仓库相对路径：${invalid}`,
+      "使用 / 分隔的 repo-relative path；禁止绝对路径、UNC、空段、. 与 ..。",
+      { field: "changed_paths", path: invalid },
+    );
+  }
+}
+
+/**
+ * 在既有 AGX 档案追加实现交接。身份由规范化内容（不含 recorded_at）寻址；同输入
+ * 重放 NO_CHANGE，修复轮次追加新锚，历史永不覆盖。
+ */
+export function appendImplementationHandoff(
+  store: Store,
+  executionId: string,
+  input: AppendImplementationHandoffInput,
+): AppendImplementationHandoffResult {
+  const paths = pathsOf(store);
+  const currentSeq = requireCurrentSeq(paths);
+  if (!EXECUTION_ID_PATTERN.test(executionId)) {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      `execution_id 词形非法（须 AGX-<4位年份>-<序号>）：${executionId}`,
+      "implementation handoff 只能附着到已登记 execution。",
+      { execution_id: executionId },
+    );
+  }
+  const record = readExecutionRecordById(paths, executionId);
+  if (record === null) {
+    throw new GovernanceError(
+      "EXECUTION_NOT_FOUND",
+      `execution_id 未登记：${executionId}`,
+      "先使用 execution begin 登记 implementer 身份。",
+      { execution_id: executionId },
+    );
+  }
+  const taskId = input.taskId.trim();
+  if (taskId.length === 0 || record.task_id !== taskId) {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      `implementation handoff TASK 与 execution 归属不一致：${taskId || "<empty>"}`,
+      "使用该 implementer AGX 登记时绑定的 --task-id；禁止跨任务借用交接。",
+      { execution_id: executionId, execution_task_id: record.task_id, task_id: taskId },
+    );
+  }
+  if (record.role !== "implementer") {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      `implementation handoff 只接受 role=implementer：${record.role}`,
+      "为真实实现工作登记 implementer execution；研究/QA/编排档案不能冒充实现交接。",
+      { execution_id: executionId, role: record.role },
+    );
+  }
+  assertEvidenceSourceSnapshot(input.sourceSnapshot);
+  const changedPaths = normalizedNonEmptyStrings(input.changedPaths, "changed_paths", false);
+  assertRepositoryRelativePaths(changedPaths);
+  if (
+    changedPaths.length !== input.sourceSnapshot.relevant_paths.length ||
+    changedPaths.some((value, index) => value !== input.sourceSnapshot.relevant_paths[index])
+  ) {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      "changed_paths 须与 source_snapshot.relevant_paths 升序全等",
+      "使用同一 changed path 集合捕获 source snapshot 后再提交交接。",
+      { execution_id: executionId },
+    );
+  }
+  const summary = input.summary.trim();
+  if (summary.length === 0) {
+    throw new GovernanceError("SCHEMA_INVALID", "implementation handoff summary 不得为空", "概述已完成实现，再提交交接。", {});
+  }
+  const identity = {
+    task_id: taskId,
+    execution_id: executionId,
+    context_manifest_id: record.context_manifest_id,
+    permit_ids: [...record.permit_ids].sort(),
+    changed_paths: changedPaths,
+    summary,
+    local_checks: normalizedNonEmptyStrings(input.localChecks, "local_checks", true),
+    known_gaps: normalizedNonEmptyStrings(input.knownGaps, "known_gaps", true),
+    verification_requests: normalizedNonEmptyStrings(input.verificationRequests, "verification_requests", true),
+    source_snapshot: input.sourceSnapshot,
+  };
+  const handoffId = sha256OfCanonical(identity) as `sha256:${string}`;
+  const storedHandoffs = record.implementation_handoffs;
+  if (storedHandoffs !== undefined && !Array.isArray(storedHandoffs)) {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      `执行档案 implementation_handoffs 形态非法：${executionId}`,
+      "从 git 恢复损坏档案；implementation_handoffs 只能由 execution handoff append-only 维护。",
+      { execution_id: executionId },
+    );
+  }
+  const priorHandoffs = storedHandoffs ?? [];
+  for (const prior of priorHandoffs) assertImplementationHandoff(prior, record);
+  if (priorHandoffs.some((row) =>
+    row === null ||
+    typeof row !== "object" ||
+    typeof row.handoff_id !== "string" ||
+    row.task_id !== taskId ||
+    row.execution_id !== executionId
+  )) {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      `执行档案含损坏或串 TASK/AGX 的 implementation handoff：${executionId}`,
+      "从 git 恢复损坏档案；不得覆盖、跳过或从 notes 重建历史交接。",
+      { execution_id: executionId },
+    );
+  }
+  const existing = priorHandoffs.find((row) => row.handoff_id === handoffId);
+  if (existing !== undefined) return { record, handoff: existing, changed: false };
+  const handoff: ImplementationHandoff = {
+    handoff_id: handoffId,
+    ...identity,
+    recorded_at: input.recordedAt ?? new Date().toISOString(),
+  };
+  const updated: ExecutionRecord = {
+    ...record,
+    implementation_handoffs: [...priorHandoffs, handoff],
+  };
+  const path = executionRecordPath(paths, executionId);
+  executeWrites([{ path, next: `${JSON.stringify(updated, null, 2)}\n`, original: captureOriginal(path) }]);
+  appendJournalLine(paths, {
+    type: "IMPLEMENTATION_HANDOFF_RECORDED",
+    seq: currentSeq,
+    execution_id: executionId,
+    task_id: taskId,
+    handoff_id: handoffId,
+  });
+  return { record: updated, handoff, changed: true };
 }
 
 /**

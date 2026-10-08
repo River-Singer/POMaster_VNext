@@ -31,8 +31,9 @@
  *   Minimum Sufficient Governance：只登记项目级 BOOTSTRAP_OWNER，细粒度 owner 划分等
  *   多人信号出现再演化）；存在但不可解析 / 结构不合 kernel 解析契约 → 显式报错
  *   INVALID_STATE，绝不静默覆盖；合法存在（含人类加注的 owner）→ 一律不动；
- * - AGENTS.md/CLAUDE.md/技能卡/settings.json 仅当缺失或带本包生成标记时重写
- *   （settings.json 另有结构校验：坏 JSON/结构不合 → fail-closed 跳过，绝不覆盖）。
+ * - AGENTS.md/CLAUDE.md/技能卡只有缺失、受管摘要仍匹配，或精确命中已知旧版生成字节
+ *   时重写；marker 只证明来源，摘要漂移按人工冲突保留。settings.json 另做结构校验，
+ *   坏 JSON/结构不合 → fail-closed 跳过，绝不覆盖。
  * - 播种件（包内种子清单，seed-manifest.ts；步骤 4.6，vNext Batch 6 B6a/B6b-I）：
  *   seed-once-missing-only
  *   三语义——缺席才写（action=seeded，marker-free）、在座恒零触碰（action=
@@ -57,7 +58,8 @@
  * F1 平台选择：Trellis 惯例——一次 init 覆盖多平台 AI 入口目录。AGENTS.md 恒为唯一
  * 事实源；平台适配器（--platforms 逗号列表）：
  * - claude → CLAUDE.md（@AGENTS.md 导入）+ `.claude/skills/` 镜像 + hooks 注册
- * - codex  → 根 AGENTS.md 即 codex 原生入口（零额外文件，呈现 covered）
+ * - codex  → 根 AGENTS.md + `.agents/skills/` 静态入口，并合并 `.codex/hooks.json`
+ *   的 SessionStart/UserPromptSubmit 动态提示；信任或送达不可判时仍按 agent-pull 工作
  * - cursor → .cursor/rules/pomaster.mdc（加厚版：命令卡/Browser Eyes 展开）
  * - qoder  → .qoder/rules/pomaster.md（加厚版）
  * `.agents/skills/` 通用层随任一非空平台选择生成（Codex/Cursor/Gemini CLI/Copilot/
@@ -91,6 +93,7 @@
  * Owner 就地裁剪后走既有 baseline confirm 确认链——零新治理语义。
  */
 
+import { createHash } from "node:crypto";
 import { readFile, stat, writeFile } from "node:fs/promises";
 import {
   AGENTS_MD_RELATIVE,
@@ -119,6 +122,7 @@ import {
 } from "./layout.js";
 import {
   CAPABILITY_OVERVIEW,
+  CODEX_HOOKS_RELATIVE,
   CLAUDE_EXEC_GUARD_HOOK_RELATIVE,
   CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE,
   CLAUDE_SETTINGS_RELATIVE,
@@ -128,6 +132,7 @@ import {
   SKILL_MIRROR_DIRS,
   looksLikePomasterExecGuardHook,
   mergePomasterHooks,
+  mergePomasterCodexHooks,
   readClaudeExecGuardHookAsset,
   renderCapabilityHumanLines,
   renderCapabilityMapMarkdownLines,
@@ -163,6 +168,17 @@ import {
   renderModeHumanLines,
   runBrownfieldRecon,
 } from "./init-mode.js";
+import {
+  architectureAnswers,
+  parseArchitectureId,
+  writeArchitectureProfile,
+  type ArchitectureId,
+  type ArchitectureProfile,
+} from "./architecture-profile.js";
+import {
+  ensureProjectIdentificationTask,
+  type ProjectIdentificationResult,
+} from "./project-identification.js";
 
 /** 失败信封的 presetDraft 占位（零生成——失败路径零草案写入）。 */
 const ZERO_PRESET_DRAFT: BaselinePresetDraftReport = {
@@ -189,6 +205,7 @@ export type InitFileAction =
   | "updated"
   | "unchanged"
   | "skipped_foreign"
+  | "skipped_conflict"
   // 播种面词形（vNext Batch 6 B6a）：seeded = 种子缺席本次写入（marker-free）；
   // preserved = 播种件在座零触碰（项目可编辑物，禁被判 foreign/重写——R3 红线）。
   | "seeded"
@@ -217,7 +234,7 @@ export type InitPlatformAction = "created" | "skipped-existing" | "updated" | "c
 
 export interface InitPlatformReport {
   readonly name: InitPlatform;
-  /** 产出/覆盖文件（POSIX 相对路径；codex = 根 AGENTS.md）。 */
+  /** 产出/覆盖文件（POSIX 相对路径；codex = .codex/hooks.json）。 */
   readonly file: string;
   readonly action: InitPlatformAction;
 }
@@ -286,6 +303,10 @@ export interface InitResult {
    * sidecar 全部复用既有机制。
    */
   readonly mode: InitModeResult | null;
+  /** Explicit architecture input and content-addressed generation fingerprint. */
+  readonly architecture_profile: ArchitectureProfile | null;
+  /** Brownfield identification task created through the canonical kernel ledger. */
+  readonly project_identification: ProjectIdentificationResult | null;
   /**
    * 能力速览（09-06 能力显性化 C1；Owner 裁定面位之一）：--json result.（锚：corpus/master/cutover/owner-adjudications.md#裁决16）
    * capability_overview 结构化数组——与完成横幅人读段同一内容源（heavy-entry.ts
@@ -309,6 +330,8 @@ export interface InitOptions {
    * undefined = 未携带：CLI 非交互路径缺省 claude（现行为）。
    */
   readonly platforms?: string | undefined;
+  /** Explicit greenfield architecture profile (vue or react). */
+  readonly architecture?: string | undefined;
   /**
    * 播种清单注入（vNext Batch 6 B6a）：undefined = 缺省装载包内种子清单
    * （seed-manifest.ts loadSeedManifestEntries——B6a 空表，B6b/B6c/B6d/B6e/B6f/B6G 起 160 份在册）。
@@ -398,8 +421,8 @@ const PLATFORM_ADAPTERS: readonly PlatformAdapterSpec[] = [
   },
   {
     name: "codex",
-    file: AGENTS_MD_RELATIVE,
-    coveredByAgentsMd: true,
+    file: CODEX_HOOKS_RELATIVE,
+    coveredByAgentsMd: false,
     render: () => "",
   },
   {
@@ -577,6 +600,8 @@ export async function runInitInteractive(
     presetDraft: ZERO_PRESET_DRAFT,
     observation: ZERO_OBSERVATION,
     mode: null,
+    architecture_profile: null,
+    project_identification: null,
     capability_overview: CAPABILITY_OVERVIEW,
     bootstrap_harness: null,
   });
@@ -592,49 +617,44 @@ export async function runInitInteractive(
       ["init: FAILED — SCHEMA_INVALID", `  ${parse.error.message}`, `  hint: ${parse.error.hint}`],
     );
   }
-  // F-M3 R1 模式问句（问卷首题）：Brownfield 候选态呈现检测结果并显式确认；
-  // 中止（EOF）= INIT_INTERRUPTED 零写入（fail-closed 不猜缺省）。
-  const brownfieldChoice = await confirmBrownfieldPath(rootDir, {
-    write: interactive.write,
-    readLine: interactive.readLine,
-  });
-  if (brownfieldChoice === null) {
-    return failOutcome(
-      "init",
-      failResult(),
-      [
-        {
-          code: "INIT_INTERRUPTED",
-          message: "init 模式问句中断（EOF）；零写入",
-          hint: "重新运行 pomaster init 继续模式问句与技术栈问卷（已答键幂等不重复问）。",
-        },
-      ],
-      ["init: FAILED — INIT_INTERRUPTED", "  init 模式问句中断（EOF）；零写入。"],
-    );
-  }
-  // R-M：编号降级路径同样接技术栈问卷（与 raw 复选路径同构；EOF = 中止零写入）。
-  const quiz = await collectStackAnswers(rootDir, {
-    write: interactive.write,
-    readLine: interactive.readLine,
-  });
-  if (quiz === null) {
-    return failOutcome(
-      "init",
-      failResult(),
-      [
-        {
-          code: "INIT_INTERRUPTED",
-          message: "baseline 技术栈问卷中断（EOF）；零写入",
-          hint: "重新运行 pomaster init 继续问卷（已答键幂等不重复问）；或用 pomaster baseline set 非交互逐键后补。",
-        },
-      ],
-      ["init: FAILED — INIT_INTERRUPTED", "  baseline 技术栈问卷中断（EOF）；零写入。"],
-    );
+  const detection = detectInitMode(rootDir);
+  let brownfieldChoice: InitBrownfieldChoice | undefined;
+  let quiz: StackQuestionnaireOutcome | null = null;
+  if (detection.kind === "brownfield_candidate") {
+    // Brownfield is identified by the generated task.  Framework and stack
+    // answers are deliberately deferred until that task has evidence.
+    brownfieldChoice = { confirmed: true };
+  } else {
+    const choice = await confirmBrownfieldPath(rootDir, {
+      write: interactive.write,
+      readLine: interactive.readLine,
+    });
+    if (choice === null) {
+      return failOutcome(
+        "init",
+        failResult(),
+        [{ code: "INIT_INTERRUPTED", message: "init 模式问句中断（EOF）；零写入", hint: "重新运行 pomaster init。" }],
+        ["init: FAILED — INIT_INTERRUPTED", "  init 模式问句中断（EOF）；零写入。"],
+      );
+    }
+    brownfieldChoice = { confirmed: choice.confirmed };
+    quiz = await collectStackAnswers(rootDir, {
+      write: interactive.write,
+      readLine: interactive.readLine,
+    });
+    if (quiz === null) {
+      return failOutcome(
+        "init",
+        failResult(),
+        [{ code: "INIT_INTERRUPTED", message: "baseline 技术栈问卷中断（EOF）；零写入", hint: "重新运行 pomaster init。" }],
+        ["init: FAILED — INIT_INTERRUPTED", "  baseline 技术栈问卷中断（EOF）；零写入。"],
+      );
+    }
   }
   return runInit(rootDir, {
     platforms: parse.platforms.join(","),
-    stackQuestionnaire: quiz,
-    brownfield: { confirmed: brownfieldChoice.confirmed },
+    ...(quiz !== null ? { stackQuestionnaire: quiz } : {}),
+    brownfield: brownfieldChoice,
   });
 }
 
@@ -822,6 +842,73 @@ function withHeavyMarker(content: string): string {
   return `${withMarker(ENTRY_MODE_HEAVY_MARKER)}\n${content}`;
 }
 
+const MANAGED_DIGEST_PREFIX = "<!-- pomaster:managed-sha256:";
+const MANAGED_DIGEST_RE = /<!-- pomaster:managed-sha256:([0-9a-f]{64}) -->\n?$/;
+
+/**
+ * v0.10.0 deterministic generated artifacts. An exact hash proves that a
+ * legacy card was not edited after generation. Both skill mirrors share the
+ * same bytes, so the Claude path is canonicalized to the universal path.
+ */
+const V010_GENERATED_SHA256: Readonly<Record<string, string>> = {
+  ".agents/skills/pomaster-bootstrap/SKILL.md": "66bd7fa42c29d441f4d16eea4d3f350ce84f8dddfed8ad202f786ee954da688d",
+  ".agents/skills/pomaster-catalog/SKILL.md": "0163f27923faeb650a4f1bbbe4b1fea1b39c0b985451593619cde491348cc8f7",
+  ".agents/skills/pomaster-closeout/SKILL.md": "426f51b3b5743a89a86f0826d530ee7fded3df26cf08638b9bae06ddedb04b95",
+  ".agents/skills/pomaster-compact/SKILL.md": "02df36c7ac05b1ee34256d9674ea25c4e66c62a70b0e7efd17df7735849604ce",
+  ".agents/skills/pomaster-context/SKILL.md": "26714f90a81bfff56ca14bc9ca86489e689583097a8b50c26c0d622201fdaf35",
+  ".agents/skills/pomaster-discovery/SKILL.md": "61ed378cc92df277ba6f6437b1b3b8dd0cd024426750fb72d289d90eed2a52d4",
+  ".agents/skills/pomaster-execute/SKILL.md": "688c35c9b6fe826833d04a631ae26ece9bc162204ddaf28e7c15b811051f94d3",
+  ".agents/skills/pomaster-inspect/SKILL.md": "3a5d0faac9eafb2305e8ed6dfa97fa9369094e7080212017f157f9121d7c6cf1",
+  ".agents/skills/pomaster-permit/SKILL.md": "9680e750c972cef5ec5afd0998494cf4b1b00a8c72a2fddf7e5537df1b1a907d",
+  ".agents/skills/pomaster-production/SKILL.md": "aa3c3a48c3e69aa4511d4ecfc5236a57400dc26db3ca426316ae4b84ad29e775",
+  ".agents/skills/pomaster-reconcile/SKILL.md": "e3a4471a5e4da5a8a0119ca2833b0c3bdc1e78b71b40113baca75cf4eee94b6c",
+  ".agents/skills/pomaster-runtime/SKILL.md": "daf026bf8aba1315a85f8ed78957b9b588970bb79c01f683f05baa9697249aa3",
+  ".agents/skills/pomaster-verify/SKILL.md": "fe16b0f47c2f0b5016547d3a39469a4f31a331c5f74d50643ba1fa32482bf725",
+  ".agents/skills/pomaster/SKILL.md": "6ed140c918847c8447ab56dd6241fb2eafe57ae99189606e958d18278d18fee3",
+  "CLAUDE.md": "f6944235180acd49e5b8f5a6a3f773e559630eb1d9f6571d0ed57547a62647df",
+};
+const V010_AGENTS_NORMALIZED_SHA256 = "f344603954d3d990cd79521183c771be2dcc1ce5d0cbf8f1e78ea47397eb1b97";
+
+function sha256Text(text: string): string {
+  return createHash("sha256").update(text, "utf8").digest("hex");
+}
+
+function isRoutingGeneratedFile(relative: string): boolean {
+  return relative === AGENTS_MD_RELATIVE ||
+    relative === CLAUDE_MD_RELATIVE ||
+    /^\.(?:agents|claude)\/skills\/pomaster(?:-[^/]+)?\/SKILL\.md$/.test(relative);
+}
+
+function canonicalLegacyPath(relative: string): string {
+  return relative.replace(/^\.claude\/skills\//, ".agents/skills/");
+}
+
+function normalizeLegacyAgents(text: string): string {
+  return text
+    .replace(/^- objects: \d+$/m, "- objects: <n>")
+    .replace(/^- denominators: \d+$/m, "- denominators: <n>")
+    .replace(/^- producers: \d+$/m, "- producers: <n>")
+    .replace(/^- generation\.seq: \d+$/m, "- generation.seq: <n>");
+}
+
+function isKnownUntouchedLegacy(relative: string, text: string): boolean {
+  if (relative === AGENTS_MD_RELATIVE) {
+    return sha256Text(normalizeLegacyAgents(text)) === V010_AGENTS_NORMALIZED_SHA256;
+  }
+  return sha256Text(text) === V010_GENERATED_SHA256[canonicalLegacyPath(relative)];
+}
+
+function stampManagedContent(content: string): string {
+  const base = content.endsWith("\n") ? content : `${content}\n`;
+  return `${base}${MANAGED_DIGEST_PREFIX}${sha256Text(base)} -->\n`;
+}
+
+function hasValidManagedDigest(text: string): boolean {
+  const match = MANAGED_DIGEST_RE.exec(text);
+  if (match === null || match.index === 0) return false;
+  return sha256Text(text.slice(0, match.index)) === match[1];
+}
+
 /**
  * 从 truth-index（磁盘 snake_case 形态）渲染状态速览计数。
  * 解析失败返回零值占位（调用方已另行告警）；渲染永远字节确定。
@@ -927,11 +1014,11 @@ ${MACHINE_OUTPUT_LINES.join("\n")}
 /** 重入口（重入口默认；skills/hooks 安装物的锚点说明 + 修复路标）。 */
 function renderHeavyEntryMarkdown(
   stateSummary: string,
-  opts: { readonly claudeSelected: boolean },
+  opts: { readonly claudeSelected: boolean; readonly codexSelected: boolean },
 ): string {
   const claudeBlock = opts.claudeSelected
     ? [
-        "- SessionStart 注入：`pomaster session`（治理速览投影，输出 ≤10,000 字符硬上限）——注册于 `.claude/settings.json`（合并式：既有 hooks（含人类/Trellis 条目）一律保留）。",
+        "- SessionStart 注入：`pomaster session --hook-input`（治理速览投影，输出 ≤10,000 字符硬上限）——注册于 `.claude/settings.json`（合并式：既有 hooks（含人类/Trellis 条目）一律保留）。",
         "- 每轮路由：`pomaster alerts`（可行动项过滤器 + workflow 路由段；干净=非空但极简，恒 exit 0）——同一文件注册。",
         "",
       ].join("\n")
@@ -939,6 +1026,9 @@ function renderHeavyEntryMarkdown(
   const mirrorNote = opts.claudeSelected
     ? "与 `.claude/skills/pomaster*/`（Claude Code 必需镜像）逐字节一致"
     : "（claude 平台未选中，未写 `.claude/skills/` 镜像）";
+  const codexBlock = opts.codexSelected
+    ? "- Codex 动态注入：`.codex/hooks.json` 注册 SessionStart=`pomaster session --hook-input`、UserPromptSubmit=`pomaster alerts --hook-input`；信任与真实执行仍须由宿主确认。\n"
+    : "";
   return `# POMaster vNext — Agent 重入口
 
 > 本文件由 \`${INIT_TOOL_ID}\` 的 \`pomaster init\` 生成（重入口为默认——skills 库 + hook 注入 + 每轮轻提醒）。
@@ -958,8 +1048,11 @@ ${renderCapabilityMapMarkdownLines().join("\n")}
 
 - skills 命令卡库：\`.agents/skills/pomaster/\` 等 ${SKILL_MANIFEST.length} 份（通用层——Codex/Cursor/Gemini CLI/GitHub Copilot/VS Code/Amp/Warp/OpenCode/Droid 等原生读取），${mirrorNote}。
 - 路由入口：\`/pomaster\`（命令全景 + 何时用哪个）；分段卡：pomaster-bootstrap / pomaster-discovery / pomaster-permit / pomaster-context / pomaster-execute / pomaster-verify / pomaster-reconcile / pomaster-compact / pomaster-closeout / pomaster-inspect / pomaster-catalog / pomaster-production / pomaster-runtime。
+- 开工、恢复、阶段完成与交付前必须运行 \`pomaster next-action --json\`，加载 \`workflow_route.required_skill.paths\` 指向的完整 SKILL.md，再执行 required_action。若 hooks 缺失、关闭、未信任或无法观察，本条静态 agent-pull 仍生效。
+- 每次刷新须保留已知身份：有已登记会话键时加 \`--session-key <key>\`（可复用 hook 的 \`workflow_route.session_key\`）；否则用已明确选定的 \`--task <TASK.*>\`。native session_id 不一定等于 kernel 会话键；首次通过公开 session attach 登记真实 session_id/cwd 元数据和任务，多候选或身份不可判时先恢复绑定，不要退回裸命令选其他任务。
+- 实现交接后在同一轮主动重取路由并进入 verify；不要等待用户补说“继续/检查”。skill 公告只作说明，不是加载或完成证据。
 - 组件画廊: https://river-singer.github.io/POMaster_VNext/（在线版）或 POMaster 仓库内 \`corepack pnpm studio:dev\`——按已确认 baseline 的技术栈选择性参考（有哪些组件、长什么样、该写什么）；baseline 未确认时不主动引导。
-${claudeBlock}- 修复/重建：重跑 \`pomaster init\`（幂等；缺失镜像重建、hooks 注册项按 command 词形合并，不动人类文件）。
+${claudeBlock}${codexBlock}- 修复/重建：重跑 \`pomaster init\`（幂等；缺失镜像重建、仅迁移可识别的 POMaster 旧 hooks，外来 handlers 原样保留）。
 
 ${BROWSER_EYES_LINES.join("\n")}
 
@@ -1018,9 +1111,9 @@ const INIT_BANNER_LINES: readonly string[] = [
 ];
 
 /**
- * 生成文件统一写盘（marker 生命周期）：缺失 → created；无标记 → skipped_foreign +
- * 告警（绝不覆盖人类文件）；同字节 → unchanged；带标记且异字节 → updated。
- * 入口文件 / skills 命令卡共用同一纪律（clobber 防线单实现）。
+ * 生成文件统一写盘。阶段路由入口与 skill 额外携带受管摘要：只有摘要仍匹配，或
+ * 字节精确命中已知 v0.10.0 生成物，才允许升级；marker 只能证明来源，不能证明
+ * 后续无人编辑。冲突显式报告并保留原文。其他历史生成物维持既有 marker 生命周期。
  */
 async function writeGeneratedFile(
   rootDir: string,
@@ -1031,10 +1124,12 @@ async function writeGeneratedFile(
   foreignWarningCode: string,
 ): Promise<void> {
   const absolute = `${rootDir}/${relative}`;
+  const protectedRoutingFile = isRoutingGeneratedFile(relative);
+  const desired = protectedRoutingFile ? stampManagedContent(content) : content;
   const existing = await readIfExists(absolute);
   if (existing === null) {
     await ensureParentDir(absolute);
-    await writeFile(absolute, content, "utf8");
+    await writeFile(absolute, desired, "utf8");
     files.push({ file: relative, action: "created" });
     return;
   }
@@ -1047,11 +1142,24 @@ async function writeGeneratedFile(
     files.push({ file: relative, action: "skipped_foreign" });
     return;
   }
-  if (existing === content) {
+  if (existing === desired) {
     files.push({ file: relative, action: "unchanged" });
     return;
   }
-  await writeFile(absolute, content, "utf8");
+  if (
+    protectedRoutingFile &&
+    !hasValidManagedDigest(existing) &&
+    !isKnownUntouchedLegacy(relative, existing)
+  ) {
+    warnings.push({
+      code: "GENERATED_FILE_CONFLICT",
+      message: `${relative} is POMaster-generated but its managed digest is missing or stale; left untouched`,
+      hint: "保留人工内容并手工合并新版路由；确认后删除冲突文件再重跑 pomaster init，或恢复到未修改的 v0.10.0 生成字节后升级。",
+    });
+    files.push({ file: relative, action: "skipped_conflict" });
+    return;
+  }
+  await writeFile(absolute, desired, "utf8");
   files.push({ file: relative, action: "updated" });
 }
 
@@ -1178,6 +1286,8 @@ export async function runInit(
         presetDraft: ZERO_PRESET_DRAFT,
         observation: ZERO_OBSERVATION,
         mode: null,
+        architecture_profile: null,
+        project_identification: null,
         capability_overview: CAPABILITY_OVERVIEW,
         bootstrap_harness: null,
       },
@@ -1190,18 +1300,64 @@ export async function runInit(
     );
   }
   const selectedPlatforms = selection.platforms;
+  const architectureSelection =
+    options.architecture === undefined
+      ? { ok: true as const, id: null as ArchitectureId | null }
+      : (() => {
+          const parsed = parseArchitectureId(options.architecture);
+          return parsed.ok
+            ? { ok: true as const, id: parsed.id }
+            : { ok: false as const, error: parsed };
+        })();
+  if (!architectureSelection.ok) {
+    return failOutcome(
+      "init",
+      {
+        change: "NO_CHANGE",
+        tool: INIT_TOOL_ID,
+        files: [],
+        platforms: [],
+        specPreplant: null,
+        baseline: { asked: 0, answered: 0, skipped: "non_interactive" },
+        presetDraft: ZERO_PRESET_DRAFT,
+        observation: ZERO_OBSERVATION,
+        mode: null,
+        architecture_profile: null,
+        project_identification: null,
+        capability_overview: CAPABILITY_OVERVIEW,
+        bootstrap_harness: null,
+      },
+      [
+        {
+          code: "SCHEMA_INVALID",
+          message: architectureSelection.error.message,
+          hint: architectureSelection.error.hint,
+        },
+      ],
+      [
+        "init: FAILED — SCHEMA_INVALID",
+        `  ${architectureSelection.error.message}`,
+        `  hint: ${architectureSelection.error.hint}`,
+      ],
+    );
+  }
+  // Detect the project before selecting a generation profile.  A brownfield
+  // directory is governed by its identification task first; an optional
+  // --architecture value must never bypass that confirmation gate.
+  const modeDetection = detectInitMode(rootDir);
+  const selectedArchitecture =
+    modeDetection.kind === "brownfield_candidate" ? null : architectureSelection.id;
   // 重入口产物面 = 平台选择非空（none = 显式最小形态，零平台产物；B7 裁定 2026-09-04：（锚：corpus/master/cutover/owner-adjudications.md#裁决11⑧）
   // init 单一重入口，无模式旗标）。
   const heavy = selectedPlatforms.length > 0;
   const claudeSelected = selectedPlatforms.includes("claude");
+  const codexSelected = selectedPlatforms.includes("codex");
 
   // 0.5) 模式检测（F-M3 init v2 R1；init-mode.ts ADR-1）：零写入纯读——三态闭包
   //      greenfield / brownfield_candidate / initialized。检测是呈现不是裁决：
   //      候选态只进结果面与呈现行；编排（recon 三腿）只经 InitOptions.brownfield
   //      显式注入触发（TTY 交互问卷首题确认——禁静默分叉）。.pomaster 在座 =
   //      重入口行为不变；干净目录 = Greenfield 静默直入现状。
-  const modeDetection = detectInitMode(rootDir);
-
   // 1) 目录骨架：宪法 §2 Target Directory Tree 全量预铺（Owner 2026-09-04 裁定
   //    「把所有的目录全部建好，不分级别」——与入口形态/平台选择无关，恒同一棵树；
   //    激活由 AI 按 layout.json activation_hint 自行判断）。目录清单单源 =
@@ -1423,14 +1579,52 @@ export async function runInit(
   //      在座）、入口渲染之前。
   let baseline: BaselineQuizResult;
   if (options.stackQuestionnaire === undefined) {
-    baseline = { asked: 0, answered: 0, skipped: "non_interactive" };
+    if (selectedArchitecture === null) {
+      baseline = { asked: 0, answered: 0, skipped: "non_interactive" };
+    } else {
+      const profileAnswers = architectureAnswers(selectedArchitecture);
+      const answered = await applyStackAnswers(rootDir, profileAnswers, files, errors);
+      baseline = { asked: profileAnswers.length, answered, skipped: "non_interactive" };
+    }
   } else {
     const quiz = options.stackQuestionnaire;
+    const answers = selectedArchitecture === null
+      ? quiz.answers
+      : [
+          ...architectureAnswers(selectedArchitecture),
+          ...quiz.answers.filter(
+            (answer) =>
+              !architectureAnswers(selectedArchitecture).some(
+                (profileAnswer) =>
+                  profileAnswer.lane === answer.lane && profileAnswer.key === answer.key,
+              ),
+          ),
+        ];
     const answered =
-      quiz.answers.length > 0
-        ? await applyStackAnswers(rootDir, quiz.answers, files, errors)
+      answers.length > 0
+        ? await applyStackAnswers(rootDir, answers, files, errors)
         : 0;
-    baseline = { asked: quiz.asked, answered, skipped: quiz.skipped };
+    baseline = {
+      asked: quiz.asked + (selectedArchitecture === null ? 0 : architectureAnswers(selectedArchitecture).length),
+      answered,
+      skipped: quiz.skipped,
+    };
+  }
+
+  // Explicit architecture is a generation input. Persist it after baseline files
+  // exist so the profile and its human projection are visible to the same init run.
+  let architectureProfile: ArchitectureProfile | null = null;
+  if (selectedArchitecture !== null) {
+    const profileWrite = await writeArchitectureProfile(rootDir, selectedArchitecture, files);
+    if (!profileWrite.ok) {
+      errors.push({
+        code: profileWrite.code,
+        message: profileWrite.message,
+        hint: profileWrite.hint,
+      });
+    } else {
+      architectureProfile = profileWrite.profile;
+    }
   }
 
   // 4.9) baseline 栈预置草案生成（09-06 Step 1；G-B/G-C/G-D 裁定；baseline-preset.ts（历史裁定，锚缺失——G-B/G-C/G-D；未入 corpus 台账，T3-R3 如实标注）
@@ -1444,8 +1638,9 @@ export async function runInit(
   const presetDraft = await appendPresetDrafts(rootDir, files);
 
   // 4.95) Brownfield recon 编排（F-M3 init v2 R2/R3；init-mode.ts ADR-3/4/5）：
-  //       仅候选态且 Owner 显式确认（InitOptions.brownfield.confirmed=true——TTY
-  //       交互问卷首题产出）时触发：kernel beginExecution 登记执行身份（role/
+  //       非空目录默认自动进入识别链；旧注入 confirmed=false 仍作为兼容性的
+  //       显式拒绝出口。默认不再要求 Owner 先回答 Brownfield/Greenfield 问句：
+  //       kernel beginExecution 登记执行身份（role/
   //       runtime/identity_kind=script——CLI 进程诚实申报）→ recon 三腿串联
   //       （recon.ts 既有命令函数直调零第二实现）→ endExecution 封口。产物只落
   //       evidence/{blobs,observations}/ sidecar + executions/ 档案 + journal 事件
@@ -1455,10 +1650,10 @@ export async function runInit(
   let mode: InitModeResult;
   if (modeDetection.kind === "brownfield_candidate") {
     const brownfield = options.brownfield;
-    if (brownfield?.confirmed === true) {
+    if (brownfield?.confirmed !== false) {
       const recon = await runBrownfieldRecon(
         rootDir,
-        brownfield.sbomInject !== undefined ? { sbomInject: brownfield.sbomInject } : {},
+        brownfield?.sbomInject !== undefined ? { sbomInject: brownfield.sbomInject } : {},
         warnings,
       );
       mode = { detection: "brownfield_candidate", summary: modeDetection.summary, brownfield: "ran", recon };
@@ -1474,12 +1669,33 @@ export async function runInit(
     mode = { detection: modeDetection.kind, summary: null, brownfield: null, recon: null };
   }
 
+  // The identification task is a canonical task object. Its payload keeps
+  // recon references and explicit unknowns so the first agent session can
+  // summarize the project before ordinary development routes become primary.
+  const projectIdentification = await ensureProjectIdentificationTask(
+    rootDir,
+    modeDetection,
+    mode.recon,
+    warnings,
+  );
+  if (projectIdentification.created) {
+    const refreshed = await readIfExists(ledgerPath);
+    if (refreshed !== null) {
+      try {
+        ledgerForRender = JSON.parse(refreshed) as Record<string, unknown>;
+      } catch {
+        // Task creation already reported its own result; keep the last readable summary.
+      }
+    }
+  }
+
   // 5) 入口文件：AGENTS.md 恒生成（唯一事实源；平台选择非空 = 重入口正文 + heavy
   //    安装标记；`--platforms none` = 最小指针正文，无重入口安装物可描述）。
   //    claude 平台适配器（CLAUDE.md，@AGENTS.md 导入）仅在选中 claude 时参与。
   const entryMarkdown = heavy
     ? renderHeavyEntryMarkdown(renderStateSummary(ledgerForRender), {
         claudeSelected,
+        codexSelected,
       })
     : renderMinimalEntryMarkdown(renderStateSummary(ledgerForRender));
   await writeGeneratedFile(
@@ -1501,8 +1717,8 @@ export async function runInit(
     );
   }
 
-  // 6) 平台段（F1）：registry 顺序逐平台归因。codex = AGENTS.md 原生入口（covered，
-  //    零落盘）；claude 的 CLAUDE.md 走步骤 5 既有生命周期，此处只做平台视角归因
+  // 6) 平台段（F1）：registry 顺序逐平台归因。codex 的 hooks 在步骤 7 合并，静态
+  //    AGENTS.md/skills 始终保留作 agent-pull；claude 的 CLAUDE.md 走步骤 5 生命周期
   //    （created 之外的文件动作 = 适配器先前已在座 → skipped-existing）；cursor/qoder
   //    适配器（加厚版）缺失时创建；在座文件先做归属判定——带本包生成标记、或字节
   //    等于本包渲染值（含历史细指针形态——旧版项目升级 init 时识别归本包并重写为
@@ -1520,6 +1736,15 @@ export async function runInit(
         name: "claude",
         file: CLAUDE_MD_RELATIVE,
         action: entry?.action === "created" ? "created" : "skipped-existing",
+      });
+      continue;
+    }
+    if (spec.name === "codex") {
+      // The actual file is merged in the hook installation phase below.
+      platforms.push({
+        name: "codex",
+        file: CODEX_HOOKS_RELATIVE,
+        action: "skipped-existing",
       });
       continue;
     }
@@ -1591,6 +1816,40 @@ export async function runInit(
         });
       }
     }
+    if (codexSelected) {
+      const hooksAbsolute = `${rootDir}/${CODEX_HOOKS_RELATIVE}`;
+      const existingText = await readIfExists(hooksAbsolute);
+      const merged = mergePomasterCodexHooks(existingText);
+      const reportIndex = platforms.findIndex((entry) => entry.name === "codex");
+      if (merged.status === "skipped") {
+        warnings.push({
+          code: "CODEX_HOOKS_SKIPPED",
+          message: `${CODEX_HOOKS_RELATIVE}: ${merged.reason}; hooks 未注册`,
+          hint: "修复 JSON/结构后重跑 pomaster init；静态 AGENTS.md agent-pull 仍生效，init 不覆盖坏配置。",
+        });
+      } else if (merged.status === "unchanged") {
+        files.push({ file: CODEX_HOOKS_RELATIVE, action: "unchanged" });
+      } else {
+        await ensureParentDir(hooksAbsolute);
+        await writeFile(hooksAbsolute, merged.nextText, "utf8");
+        files.push({
+          file: CODEX_HOOKS_RELATIVE,
+          action: merged.status === "created" ? "created" : "updated",
+        });
+      }
+      if (reportIndex >= 0) {
+        platforms[reportIndex] = {
+          name: "codex",
+          file: CODEX_HOOKS_RELATIVE,
+          action:
+            merged.status === "created"
+              ? "created"
+              : merged.status === "updated"
+                ? "updated"
+                : "skipped-existing",
+        };
+      }
+    }
   }
 
   const created =
@@ -1598,7 +1857,8 @@ export async function runInit(
     platforms.some((p) => p.action === "created") ||
     // 预植入账（planted>0 = store 新增治理事实）计入 CREATED 桶——账面诚实：
     // 对象被删后重跑 init 补植，change 不得假报 NO_CHANGE。
-    (specPreplant?.planted ?? 0) > 0;
+    (specPreplant?.planted ?? 0) > 0 ||
+    projectIdentification.created;
   const updated =
     files.some((f) => f.action === "updated") ||
     platforms.some((p) => p.action === "updated");
@@ -1618,6 +1878,8 @@ export async function runInit(
     presetDraft,
     observation,
     mode,
+    architecture_profile: architectureProfile,
+    project_identification: projectIdentification,
     capability_overview: CAPABILITY_OVERVIEW,
     bootstrap_harness: bootstrapHarness,
   };

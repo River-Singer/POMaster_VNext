@@ -48,6 +48,7 @@ import type { DetectionResult, DetectorFacts } from "@pomaster/gauntlet-lite";
 import { findExecutableOnPath, platformDetectorFacts } from "@pomaster/gauntlet-lite";
 import {
   AGENTS_MD_RELATIVE,
+  CLAUDE_MD_RELATIVE,
   GENERATED_MARKER,
   TRUTH_INDEX_RELATIVE,
   toPosix,
@@ -62,8 +63,10 @@ import {
   CLAUDE_EXEC_GUARD_HOOK_RELATIVE,
   CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE,
   CLAUDE_SETTINGS_RELATIVE,
+  CODEX_HOOKS_RELATIVE,
   ENTRY_MODE_HEAVY_MARKER,
   POMASTER_HOOK_EVENT_COMMANDS,
+  POMASTER_CODEX_HOOK_EVENT_COMMANDS,
   SKILL_MANIFEST,
   looksLikePomasterExecGuardHook,
   readClaudeExecGuardHookAsset,
@@ -108,6 +111,8 @@ export interface DoctorProbe {
 export interface DoctorResult {
   readonly ok: boolean;
   readonly probes: readonly DoctorProbe[];
+  /** Platform delivery layers stay separate; unknown trust/observation is never promoted to READY. */
+  readonly harness_integrations?: readonly HarnessIntegrationReport[];
   /**
    * P1-5 Sensor Capability 联结呈现（加法字段，不改 ok 语义：可用性事实由既有
    * 工具/MCP 探针行承载，本字段只呈现「catalog 能力 → 探针行」的声明式引用解析
@@ -146,6 +151,115 @@ export interface DoctorResult {
    * baseline/manifest.yaml 缺席/不可读 → 字段缺席（显式缺席）。
    */
   readonly baseline_confirmation?: BaselineConfirmationPresentation;
+}
+
+export interface HarnessIntegrationReport {
+  readonly platform: "claude" | "codex";
+  /** Project files cannot identify whether CLI, desktop App, or extension is the active host. */
+  readonly host: "unknown";
+  readonly config_file: string;
+  readonly installed: "installed" | "not_installed";
+  readonly configured: "configured" | "missing" | "defect";
+  readonly trusted: "unknown";
+  readonly observed: "unknown";
+  readonly mode: "hook-push" | "agent-pull";
+  readonly detail: string;
+}
+
+async function inspectHarnessIntegration(
+  rootDir: string,
+  platform: "claude" | "codex",
+): Promise<HarnessIntegrationReport> {
+  const file = platform === "claude" ? CLAUDE_SETTINGS_RELATIVE : CODEX_HOOKS_RELATIVE;
+  const desired = platform === "claude" ? POMASTER_HOOK_EVENT_COMMANDS : POMASTER_CODEX_HOOK_EVENT_COMMANDS;
+  const [entry, skill, platformEntry] = await Promise.all([
+    readTextOrNull(`${rootDir}/${AGENTS_MD_RELATIVE}`),
+    readTextOrNull(`${rootDir}/${platform === "claude" ? ".claude" : ".agents"}/skills/pomaster/SKILL.md`),
+    platform === "claude"
+      ? readTextOrNull(`${rootDir}/${CLAUDE_MD_RELATIVE}`)
+      : Promise.resolve("AGENTS.md"),
+  ]);
+  const installed = entry?.includes(ENTRY_MODE_HEAVY_MARKER) === true &&
+    skill !== null &&
+    platformEntry !== null
+    ? "installed"
+    : "not_installed";
+  const raw = await readTextOrNull(`${rootDir}/${file}`);
+  if (raw === null) {
+    return {
+      platform,
+      host: "unknown",
+      config_file: file,
+      installed,
+      configured: "missing",
+      trusted: "unknown",
+      observed: "unknown",
+      mode: "agent-pull",
+      detail: "动态 hook 文件缺失；使用 AGENTS.md 静态 agent-pull；当前宿主（CLI/App/扩展）未知",
+    };
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    return {
+      platform,
+      host: "unknown",
+      config_file: file,
+      installed,
+      configured: "defect",
+      trusted: "unknown",
+      observed: "unknown",
+      mode: "agent-pull",
+      detail: `hook JSON 不可解析：${(err as Error).message}`,
+    };
+  }
+  const hooks = parsed !== null && typeof parsed === "object" && !Array.isArray(parsed)
+    ? (parsed as Record<string, unknown>).hooks
+    : undefined;
+  if (hooks === null || typeof hooks !== "object" || Array.isArray(hooks)) {
+    return {
+      platform,
+      host: "unknown",
+      config_file: file,
+      installed,
+      configured: "defect",
+      trusted: "unknown",
+      observed: "unknown",
+      mode: "agent-pull",
+      detail: "hook JSON 缺少对象形态的 hooks",
+    };
+  }
+  const hookRecord = hooks as Record<string, unknown>;
+  const missing = desired.filter(({ event, command, matcher }) => {
+    const groups = hookRecord[event];
+    if (!Array.isArray(groups)) return true;
+    return !groups.some((group) => {
+      if (group === null || typeof group !== "object" || Array.isArray(group)) return false;
+      const record = group as Record<string, unknown>;
+      if (matcher !== undefined && record.matcher !== matcher) return false;
+      if (matcher === undefined && record.matcher !== undefined) return false;
+      return Array.isArray(record.hooks) && record.hooks.some((handler) =>
+        handler !== null &&
+        typeof handler === "object" &&
+        (handler as Record<string, unknown>).command === command
+      );
+    });
+  });
+  const configured = missing.length === 0 ? "configured" : "missing";
+  return {
+    platform,
+    host: "unknown",
+    config_file: file,
+    installed,
+    configured,
+    trusted: "unknown",
+    observed: "unknown",
+    mode: configured === "configured" ? "hook-push" : "agent-pull",
+    detail: configured === "configured"
+      ? "项目 hook 已配置；当前宿主（CLI/App/扩展）、宿主信任与实际事件送达无法由项目文件判定"
+      : `缺少 POMaster handlers: ${missing.map((row) => row.event).join(", ")}`,
+  };
 }
 
 /** P1-5 Sensor Capability 联结呈现形态（DoctorResult.sensors 条目）。 */
@@ -1077,9 +1191,14 @@ export async function runDoctor(
   } catch {
     baselineConfirmation = null;
   }
+  const harnessIntegrations = await Promise.all([
+    inspectHarnessIntegration(rootDir, "claude"),
+    inspectHarnessIntegration(rootDir, "codex"),
+  ]);
   const result: DoctorResult = {
     ok,
     probes,
+    harness_integrations: harnessIntegrations,
     ...(sensors !== undefined ? { sensors } : {}),
     observation_receipts: { count: observationCount },
     ...(seededAssets !== null ? { seeded_assets: seededAssets } : {}),
@@ -1098,6 +1217,10 @@ export async function runDoctor(
     legacySpecsHumanLine(legacySpecsPresent),
     ...(specPreplant !== null ? [specPreplantHumanLine(specPreplant)] : []),
     ...(baselineConfirmation !== null ? [baselineConfirmationHumanLine(baselineConfirmation)] : []),
+    ...harnessIntegrations.map(
+      (row) =>
+        `  ${row.platform} integration: host=${row.host}; installed=${row.installed}; configured=${row.configured}; trusted=${row.trusted}; observed=${row.observed}; mode=${row.mode} — ${row.detail}`,
+    ),
   ];
   return ok
     ? okOutcome("doctor", result, human)

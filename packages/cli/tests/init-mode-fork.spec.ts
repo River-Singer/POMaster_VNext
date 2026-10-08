@@ -7,24 +7,21 @@
  *   worktree 非空且无 .pomaster = Brownfield 候选（检测摘要逐值对账：源文件计数 /
  *   migration 词形面 / SBOM 工具在位性——检测是呈现不是裁决）；.pomaster 在座 =
  *   initialized（重入口行为不变，宿主文件在场也不分支）。
- * - **显式确认制（R1，禁静默分叉双向）**：候选态编排只经 InitOptions.brownfield
- *   显式注入触发——非交互通道 skipped_non_interactive / Owner 拒绝 declined 均
- *   零编排零落盘且人读单行显式呈现；TTY 交互（runInitInteractive 编号形态）在
- *   平台选择后、技术栈问卷前出模式问句（问卷首题），EOF 中止 = INIT_INTERRUPTED
- *   零写入（不猜缺省）；raw 单选帧版式钉（快照零 ANSI——§45）。
- * - **Brownfield 编排真跑（R2/R4）**：fixture 仓端到端——模式问句确认 → 14 键问卷 →
- *   recon 三腿 sidecar 落盘（import-graph OBSERVED 计数逐值对账 / migrations ENVREC /
+ * - **task-first（R1）**：候选态非交互与 TTY 都自动运行 recon、创建唯一的
+ *   `TASK.INIT_PROJECT_IDENTIFICATION`，不先询问 Brownfield/Greenfield 或技术栈；
+ *   init 保持架构未知，治理编译等待识别报告与 Owner 确认。`brownfield.confirmed=false`
+ *   仅保留为显式兼容入口；raw 模式问句 helper 继续钉住旧 API 的按键与版式契约。
+ * - **Brownfield 编排真跑（R2/R4）**：fixture 仓端到端——自动 recon 三腿 sidecar
+ *   落盘（import-graph OBSERVED 计数逐值对账 / migrations ENVREC /
  *   sbom NOT_INSTALLED 显式跳过带补采路标）→ 回执过 17 schema（ajv 组合装载）→
  *   execution 档案 begin/end 封口（role=script 诚实申报；已封口执行事后补录兼容
- *   recon 契约）→ 问卷回填 + unknowns 台账销账 → 既有确认链 runBaselineConfirm
- *   CONFIRMED（R3 Owner 裁剪后通路零新机制）。
+ *   recon 契约）→ 权威 task 写入；架构 profile 与 baseline 确认在识别任务完成前均不生成。
  * - **fail-closed（R2）**：腿失败（spawn 层故障 → RECON_SBOM_NOT_RUN）折算 warning
  *   显式呈现，init ok 恒不受 recon 影响——recon 失败不阻塞 init 主链。
  * - **字节快照零权威直写（R4 沿 recon 批形态）**：同构 fixture 双跑对账——Brownfield
  *   编排相对 Greenfield 骨架，权威面（stack.yaml×2 / manifest / design-tokens /
- *   sources index / truth-index / AGENTS.md / layout.json）逐字节不变；新增文件
- *   ⊆ evidence/{blobs,observations}/ + executions/；journal 仅 append-only 事件追加
- *   （EXECUTION_BEGUN/EXECUTION_ENDED——既有行逐字节不动）。
+ *   layout.json）逐字节不变；truth-index/journal 因权威 task 写入而合法变化，recon
+ *   额外产物只进入 evidence/{blobs,observations}/ + executions/。
  */
 import { spawnSync } from "node:child_process";
 import {
@@ -34,7 +31,6 @@ import {
   readdirSync,
   readFileSync,
   rmSync,
-  statSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -108,20 +104,6 @@ function seedBrownfieldHost(root: string): void {
   writeHostFile(root, "prisma/migrations/migration_lock.toml", 'provider = "postgresql"\n');
 }
 
-/** .pomaster 全树字节快照（posix 相对键 → 字节内容；recon.spec 同款形态）。 */
-function snapshotPomaster(root: string): Map<string, Buffer> {
-  const files = new Map<string, Buffer>();
-  const walk = (base: string, current: string): void => {
-    for (const name of readdirSync(current)) {
-      const full = join(current, name);
-      if (statSync(full).isDirectory()) walk(base, full);
-      else files.set(full.slice(base.length + 1).split("\\").join("/"), readFileSync(full));
-    }
-  };
-  walk(join(root, ".pomaster"), join(root, ".pomaster"));
-  return files;
-}
-
 function observationsDir(root: string): string {
   return join(root, ".pomaster", "evidence", "observations");
 }
@@ -172,11 +154,6 @@ function numberedIo(script: readonly (string | null)[]): {
       readLine: () => Promise.resolve(script[calls++] ?? null),
     },
   };
-}
-
-/** 编号形态全流程脚本：平台 claude → 模式问句 answer → 14 键问卷（首位候选）→ EOF。 */
-function fullScript(modeAnswer: string): readonly (string | null)[] {
-  return ["claude", modeAnswer, ..."1".repeat(14).split(""), null];
 }
 
 // ============================================================
@@ -247,20 +224,20 @@ describe("init 模式检测矩阵（F-M3 R1 三态）", () => {
 // R1：候选态禁静默分叉（显式确认制）
 // ============================================================
 
-describe("init 候选态禁静默分叉（R1 显式确认制）", () => {
-  it("非交互通道候选态 → skipped_non_interactive：零编排零落盘（无观察回执无 execution 档案）+ 人读单行显式呈现", async () => {
+describe("init 候选态 task-first 自动识别", () => {
+  it("非交互候选态自动 recon 并创建唯一识别 TASK，无需先选架构", async () => {
     seedBrownfieldHost(dir);
-    const outcome = await runInit(dir);
+    const outcome = await withPoisonedPath(() => runInit(dir));
     expect(outcome.ok).toBe(true);
     expect(outcome.result.mode?.detection).toBe("brownfield_candidate");
-    expect(outcome.result.mode?.brownfield).toBe("skipped_non_interactive");
-    expect(outcome.result.mode?.recon).toBeNull();
-    // 零编排零落盘：sidecar 平面零产物 + 零执行身份档案（禁静默分叉 → 禁静默 recon）。
-    expect(observationReceipts(dir)).toEqual([]);
-    expect(executionArchives(dir)).toEqual([]);
-    const human = outcome.human.join("\n");
-    expect(human).toContain("  mode: brownfield_candidate");
-    expect(human).toContain("非交互通道不分支（禁静默分叉）");
+    expect(outcome.result.mode?.brownfield).toBe("ran");
+    expect(outcome.result.project_identification).toMatchObject({
+      state: "created",
+      task_id: "TASK.INIT_PROJECT_IDENTIFICATION",
+    });
+    expect(observationReceipts(dir)).toEqual(["ENVREC-0001.json", "OBS-0001.json"]);
+    expect(executionArchives(dir)).toHaveLength(1);
+    expect(outcome.result.architecture_profile).toBeNull();
   });
 
   it("Owner 显式拒绝（brownfield.confirmed=false）→ declined：零编排零落盘 + 人读单行（Greenfield 现状路径）", async () => {
@@ -274,30 +251,25 @@ describe("init 候选态禁静默分叉（R1 显式确认制）", () => {
     expect(outcome.human.join("\n")).toContain("Owner 已选 Greenfield 路径（跳过 recon 直接初始化）");
   });
 
-  it("runInitInteractive 编号形态：候选态出模式问句（检测摘要在场、先于问卷）→ 答 2 拒绝 → Greenfield 路径零 recon（问卷照常）", async () => {
+  it("runInitInteractive 候选态跳过模式与栈问卷，直接建立识别任务", async () => {
     seedBrownfieldHost(dir);
-    const { written, io } = numberedIo(fullScript("2"));
-    const outcome = await runInitInteractive(dir, io);
+    const { written, io } = numberedIo(["claude"]);
+    const outcome = await withPoisonedPath(() => runInitInteractive(dir, io));
     expect(outcome.ok).toBe(true);
-    expect(outcome.result.mode?.brownfield).toBe("declined");
-    expect(outcome.result.baseline).toEqual({ asked: 14, answered: 14, skipped: null });
-    // 模式问句呈现：问句头行 + 检测摘要行（问卷首题——平台选择之后）。
+    expect(outcome.result.mode?.brownfield).toBe("ran");
+    expect(outcome.result.baseline).toEqual({ asked: 0, answered: 0, skipped: "non_interactive" });
+    expect(outcome.result.project_identification?.task_id).toBe("TASK.INIT_PROJECT_IDENTIFICATION");
     const text = written.join("\n");
-    expect(text).toContain("检测到已有项目（Brownfield 候选）");
-    expect(text).toContain("2 个源文件 / 1/5 migration 词形面");
-    expect(text).toContain("SBOM 工具 cdxgen");
-    // 零 recon：拒绝即 Greenfield 现状（sidecar 平面零产物）。
-    expect(observationReceipts(dir)).toEqual([]);
-    expect(executionArchives(dir)).toEqual([]);
+    expect(text).not.toContain("检测到已有项目（Brownfield 候选）——走哪条路径？");
+    expect(text).not.toContain("技术栈问卷");
   });
 
-  it("runInitInteractive 模式问句 EOF → INIT_INTERRUPTED 零写入（.pomaster 不落盘，不猜缺省）", async () => {
+  it("候选态不消费旧模式问句输入，平台选择后即可初始化", async () => {
     seedBrownfieldHost(dir);
     const { io } = numberedIo(["claude", null]);
-    const outcome = await runInitInteractive(dir, io);
-    expect(outcome.ok).toBe(false);
-    expect(outcome.errors[0]?.code).toBe("INIT_INTERRUPTED");
-    expect(existsSync(join(dir, ".pomaster"))).toBe(false);
+    const outcome = await withPoisonedPath(() => runInitInteractive(dir, io));
+    expect(outcome.ok).toBe(true);
+    expect(existsSync(join(dir, ".pomaster"))).toBe(true);
   });
 
   it("raw 帧：版式钉（问句头行 + 检测行 + 两选项 + 帧快照零 ANSI）与 raw 确认流（回车=Brownfield / ↓+回车=Greenfield / Ctrl+C 或 EOF=中止）；greenfield 静默零提问", async () => {
@@ -359,9 +331,9 @@ describe("init 候选态禁静默分叉（R1 显式确认制）", () => {
 // ============================================================
 
 describe("Brownfield 编排真跑（R2 fixture 仓端到端）", () => {
-  it("端到端：模式问句确认 Brownfield + 14 键问卷 → recon 三腿 sidecar 落盘 + 17 schema 全绿 + execution 封口 + 差距报告合并呈现 + 确认链 CONFIRMED", async () => {
+  it("端到端：自动 recon → sidecar + execution + 识别 TASK；架构与 baseline 等待报告确认", async () => {
     seedBrownfieldHost(dir);
-    const { io } = numberedIo(fullScript("1"));
+    const { io } = numberedIo(["claude"]);
     const outcome = await withPoisonedPath(() => runInitInteractive(dir, io));
     expect(outcome.ok).toBe(true);
     const mode = outcome.result.mode;
@@ -409,28 +381,25 @@ describe("Brownfield 编排真跑（R2 fixture 仓端到端）", () => {
     expect(sbomWarning?.message).toContain("工具缺席显式跳过，不阻塞 init");
     expect(sbomWarning?.message).toContain(`pomaster recon sbom --execution-id ${recon?.execution_id}`);
     expect(sbomWarning?.hint).toBe(RECON_SBOM_INSTALL_HINT);
-    // —— 问卷回填 + unknowns 台账销账（14 键全答） ——
-    expect(outcome.result.baseline).toEqual({ asked: 14, answered: 14, skipped: null });
+    // —— task-first：不在 init 阶段让用户猜架构或技术栈 ——
+    expect(outcome.result.baseline).toEqual({ asked: 0, answered: 0, skipped: "non_interactive" });
     const stackText = readFileSync(join(dir, ".pomaster", "baseline", "frontend", "stack.yaml"), "utf8");
-    expect(stackText).toContain("framework: vue3");
-    expect(stackText).toContain("testing: vitest");
+    expect(stackText).toContain("framework: UNKNOWN");
     const ledgerRows = readFileSync(join(dir, ".pomaster", "baseline", "manifest.yaml"), "utf8")
       .split("\n")
       .filter((line) => /^\s*-\s*baseline\//.test(line)).length;
-    expect(ledgerRows).toBe(0);
+    expect(ledgerRows).toBeGreaterThan(0);
     // —— 差距报告合并呈现（R3）：recon sidecar 摘要 + 问卷观察候选注记同输出 ——
     const human = outcome.human.join("\n");
     expect(human).toContain("brownfield recon: execution AGX-");
     expect(human).toContain("import-graph: OBSERVED — OBS-0001（2 源文件 / 2 externalImports / 1 unmapped）");
     expect(human).toContain("migrations: OBSERVED — ENVREC-0001（1/5 栈词形面在场）");
     expect(human).toContain("sbom: NOT_INSTALLED — cdxgen 不在 PATH");
-    expect(human).toContain("差距报告: recon sidecar 摘要 + 问卷观察候选 [Observed: package.json] 注记合并呈现");
     expect(human).toContain("观察候选登记 6 键");
-    // —— R3：Owner 裁剪后走既有确认链（零新确认链机制） ——
+    expect(outcome.result.project_identification?.task_id).toBe("TASK.INIT_PROJECT_IDENTIFICATION");
+    // baseline 未销账，不能绕过识别 TASK 直接确认。
     const confirm = await runBaselineConfirm(dir, {});
-    expect(confirm.ok).toBe(true);
-    expect(confirm.result.change).toBe("CONFIRMED");
-    expect(confirm.result.unknowns_remaining).toBe(0);
+    expect(confirm.ok).toBe(false);
   });
 
   it("sbom OBSERVED：注入 fake cdxgen 两段式（真实 spawnSync）→ 腿 OBSERVED 计数对账 + blob 原样字节落盘（消费方重算 sha256）", async () => {
@@ -554,9 +523,9 @@ describe("字节快照零权威直写（R4 沿 recon 批形态）", () => {
     try {
       seedBrownfieldHost(dirA);
       seedBrownfieldHost(dirB);
-      // A = 非交互候选态（skipped_non_interactive——零编排）；B = 确认 Brownfield
-      // （import-graph + migrations OBSERVED、sbom NOT_INSTALLED）。
-      const a = await runInit(dirA);
+      // A = 显式兼容入口跳过 recon；B = 自动 Brownfield recon
+      // （import-graph + migrations OBSERVED、sbom NOT_INSTALLED）。两边都必须写入识别 TASK。
+      const a = await runInit(dirA, { brownfield: { confirmed: false } });
       const b = await runInit(dirB, { brownfield: { confirmed: true, sbomInject: { executableProbe: () => null } } });
       expect(a.ok).toBe(true);
       expect(b.ok).toBe(true);
@@ -567,54 +536,27 @@ describe("字节快照零权威直写（R4 沿 recon 批形态）", () => {
         ".pomaster/baseline/backend/stack.yaml",
         ".pomaster/baseline/manifest.yaml",
         ".pomaster/baseline/frontend/design-tokens.yaml",
-        ".pomaster/state/truth-index.json",
         ".pomaster/layout.json",
-        "AGENTS.md",
       ];
       for (const relative of authorityTargets) {
         const aBytes = readFileSync(join(dirA, ...relative.split("/")));
         const bBytes = readFileSync(join(dirB, ...relative.split("/")));
         expect(bBytes.equals(aBytes), `${relative} 逐字节不变`).toBe(true);
       }
-      // 全树对账：既有文件零改写（journal 除外——append-only 事件追加）；
-      // 新增文件 ⊆ sidecar 两平面 + executions/。
-      const before = snapshotPomaster(dirA);
-      const after = snapshotPomaster(dirB);
-      for (const [relative, bytes] of before) {
-        const afterBytes = after.get(relative);
-        expect(afterBytes, `${relative} 不得被删除`).toBeDefined();
-        if (relative === "state/journal.jsonl") {
-          // journal：EXECUTION_BEGUN/EXECUTION_ENDED 事件 append-only——既有行逐字节不动。
-          // （utf8 串长切片——journal 载中文 note，Buffer 字节长 ≠ 串长。）
-          const beforeText = bytes.toString("utf8");
-          const afterText = afterBytes?.toString("utf8") ?? "";
-          expect(afterText.startsWith(beforeText), `${relative} 既有事件行逐字节不动`).toBe(true);
-          const added = afterText.slice(beforeText.length);
-          for (const line of added.split("\n").filter((l) => l.trim() !== "")) {
-            expect(JSON.parse(line)).toHaveProperty("type");
-            expect(["EXECUTION_BEGUN", "EXECUTION_ENDED"]).toContain(
-              (JSON.parse(line) as { type: string }).type,
-            );
-          }
-          continue;
-        }
-        expect(afterBytes?.equals(bytes), `${relative} 逐字节不变`).toBe(true);
-      }
-      const additions = [...after.keys()].filter((relative) => !before.has(relative));
-      expect(additions.length).toBeGreaterThan(0);
-      for (const relative of additions) {
-        expect(
-          relative.startsWith("evidence/blobs/") ||
-            relative.startsWith("evidence/observations/") ||
-            relative.startsWith("executions/AGX-"),
-          `新增文件越出 sidecar/executions 平面：${relative}`,
-        ).toBe(true);
-      }
-      // 编排产物恰有其物：两张回执（OBS + ENVREC）+ 一份 execution 档案。
-      expect(
-        additions.filter((relative) => relative.startsWith("evidence/observations/")).sort(),
-      ).toEqual(["evidence/observations/ENVREC-0001.json", "evidence/observations/OBS-0001.json"]);
-      expect(additions.filter((relative) => relative.startsWith("executions/"))).toHaveLength(1);
+      // 两条路径都只创建同一个 canonical 项目识别 TASK；recon 的差异只体现在
+      // evidence/execution 与对应 journal seq，不能再沿用旧的 truth-index 字节相等前提。
+      const taskIds = (root: string): string[] => {
+        const index = JSON.parse(readFileSync(join(root, ".pomaster", "state", "truth-index.json"), "utf8")) as {
+          objects: readonly { id: string }[];
+        };
+        return index.objects.map((row) => row.id).filter((id) => id === "TASK.INIT_PROJECT_IDENTIFICATION");
+      };
+      expect(taskIds(dirA)).toEqual(["TASK.INIT_PROJECT_IDENTIFICATION"]);
+      expect(taskIds(dirB)).toEqual(["TASK.INIT_PROJECT_IDENTIFICATION"]);
+      expect(observationReceipts(dirA)).toEqual([]);
+      expect(executionArchives(dirA)).toEqual([]);
+      expect(observationReceipts(dirB)).toEqual(["ENVREC-0001.json", "OBS-0001.json"]);
+      expect(executionArchives(dirB)).toHaveLength(1);
     } finally {
       rmSync(dirA, { recursive: true, force: true });
       rmSync(dirB, { recursive: true, force: true });

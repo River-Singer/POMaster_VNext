@@ -51,7 +51,9 @@ import {
   collectNextActionSnapshot,
   EIGHT_BEAT_ENFORCEMENT_LINES,
   evaluateNextAction,
+  projectWorkflowRoute,
   type NextAction,
+  type WorkflowRouteProjection,
 } from "./next-action.js";
 import { LEDGER_PROMINENT_CLASSES, asString, readLedgerEntries, readPermitFile } from "./projection-common.js";
 import { runtimeStorePaths } from "./runtime.js";
@@ -111,7 +113,28 @@ export const SESSION_FIRST_REPLY_LINES: readonly string[] = [
   "【首答确认协议】以下为对模型的指令（Human 无需操作）：注入后模型的首轮回复必须——",
   "- ① 给出一行可见确认：「POMaster 治理速览已注入」；",
   "- ② 报告 Next-Action 路由建议（把上方【Next-Action】段的建议命令与理由转述给用户）。",
+  "- ③ 开始动作前加载 workflow_route.required_skill.paths 指向的完整 SKILL.md；阶段完成后同一轮重取 next-action，不能等待 Human 再说继续。公告不算加载或完成证据。",
 ];
+
+function renderNextActionInstruction(
+  nextAction: NextAction,
+  workflow: WorkflowRouteProjection,
+): readonly string[] {
+  const skill = workflow.required_skill;
+  const path = skill?.paths[0];
+  return [
+    workflow.required_action === null
+      ? `- 无法判定: ${workflow.reason}`
+      : `- 建议: ${workflow.required_action.command}（八拍${nextAction.beat}——${workflow.reason}）`,
+    skill === null
+      ? `- required skill: 无（${workflow.reason}）`
+      : `- required skill: 先加载完整 ${skill.name}${path === undefined ? "" : `（${path}）`}`,
+    `- exit: ${workflow.exit_condition}；阶段完成后同一轮重取 next-action`,
+    ...workflow.blockers.map((blocker) =>
+      `- blocked: ${blocker.code} — ${blocker.message}；恢复: ${blocker.recovery}`
+    ),
+  ];
+}
 
 export interface SessionOverviewResult {
   readonly state_path: string;
@@ -127,6 +150,8 @@ export interface SessionOverviewResult {
   readonly truncated: boolean;
   /** Next-Action 路由（P2 同源；未初始化 = null 显式缺席）。 */
   readonly next_action: NextAction | null;
+  /** 与 next_action 加性并存的阶段 skill/动作投影。 */
+  readonly workflow_route: WorkflowRouteProjection | null;
   /** Compact Bootstrap Harness pointer; full context stays behind tools/doctor. */
   readonly bootstrap_harness: BootstrapHarnessPointer | null;
   /** 分段呈现自检（逐段字符数/截断位——预算纪律机器可审计）。 */
@@ -407,7 +432,10 @@ function renderSegments(
  * （SessionStart 每次会话注入，缺席说明是一次性引导而非噪声——与 alerts 的
  * 「未初始化=静默」相区分：速览被显式请求，告警通道必须自我克制）。
  */
-export async function runSessionOverview(rootDir: string): Promise<CommandOutcome<SessionOverviewResult>> {
+export async function runSessionOverview(
+  rootDir: string,
+  selection: { readonly sessionKey?: string; readonly selectionError?: string } = {},
+): Promise<CommandOutcome<SessionOverviewResult>> {
   const warnings: CliWarning[] = [];
   const counts = await readCounts(rootDir, warnings);
   const derivation = counts.initialized ? await deriveAlerts(rootDir) : null;
@@ -415,6 +443,7 @@ export async function runSessionOverview(rootDir: string): Promise<CommandOutcom
 
   let lines: readonly string[];
   let nextAction: NextAction | null = null;
+  let workflowRoute: WorkflowRouteProjection | null = null;
   let bootstrapHarness: BootstrapHarnessPointer | null = null;
   let metas: SessionOverviewResult["segments"] = [];
   let truncatedByBudget = false;
@@ -428,8 +457,9 @@ export async function runSessionOverview(rootDir: string): Promise<CommandOutcom
     ];
   } else {
     // —— Next-Action（P2 同一路由表；快照装配降级走 warnings）。 ——
-    const snapshot = await collectNextActionSnapshot(rootDir, warnings);
+    const snapshot = await collectNextActionSnapshot(rootDir, warnings, selection);
     nextAction = evaluateNextAction(snapshot);
+    workflowRoute = projectWorkflowRoute(nextAction, snapshot);
     bootstrapHarness = (await collectBootstrapHarnessSnapshot(rootDir)).pointer;
 
     // —— 分段装配（非空段才有标题；空段省略）。 ——
@@ -446,11 +476,7 @@ export async function runSessionOverview(rootDir: string): Promise<CommandOutcom
     if (runtime !== null) segments.push(runtime);
     segments.push({
       title: "Next-Action",
-      lines: [
-        nextAction.command === null
-          ? `- 无法判定: ${nextAction.reason}`
-          : `- 建议: ${nextAction.command}（八拍${nextAction.beat}——${nextAction.reason}）`,
-      ],
+      lines: renderNextActionInstruction(nextAction, workflowRoute),
       pointer: "详情跑 pomaster status",
     });
     const permitException = await permitExceptionSegment(rootDir, counts.seq, warnings);
@@ -498,6 +524,7 @@ export async function runSessionOverview(rootDir: string): Promise<CommandOutcom
     output_characters: capped.text.length,
     truncated: truncatedByBudget || capped.truncated || metas.some((meta) => meta.truncated),
     next_action: nextAction,
+    workflow_route: workflowRoute,
     bootstrap_harness: bootstrapHarness,
     segments: metas,
   };

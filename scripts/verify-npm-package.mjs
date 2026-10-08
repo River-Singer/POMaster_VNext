@@ -168,7 +168,7 @@ assert(presentForbidden.length === 0, "零 dependencies（四字段全缺席）"
 assert(stageManifest.private === undefined, "private 不设（缺省可发布）");
 // 版本断言与 build-npm-package.mjs 的 POMASTER_VERSION 单点真源同步维护
 // （发布 tag v<version> 以该常量为锚，publish.yml 版本闸强制）。
-assert(stageManifest.name === "pomaster" && stageManifest.version === "0.10.0", "name/version = pomaster@0.10.0");
+assert(stageManifest.name === "pomaster" && stageManifest.version === "0.11.0", "name/version = pomaster@0.11.0");
 assert(stageManifest.license === "PolyForm-Noncommercial-1.0.0", "license = PolyForm-Noncommercial-1.0.0");
 assert(stageManifest.bin?.pomaster === "dist/bin.js", "bin.pomaster = dist/bin.js");
 assert(stageManifest.engines?.node === ">=22", "engines.node = >=22");
@@ -377,7 +377,7 @@ assert(!evidenceSample.includes("GENERATED"), "播种件 marker-free 抽查（ev
 
 // SPEC.* 预植（裁定批 D D2 / Owner 2026-09-05 裁定 (a)：init 预植——init 从此写（历史裁定，锚缺失——裁定批 D，2026-09-05；未入 corpus 台账，T3-R3 如实标注）
 // store）：fresh init 后 truth-index 19 个 SPEC.* 对象在册（PROPOSED 起步），
-// seq=1（骨架 + 预植单事务）。
+// npm init/install 已使 smoke 目录非空：预植 seq=1，再创建识别 TASK 到 seq=2。
 const smokeTruthIndex = JSON.parse(
   readFileSync(join(SMOKE_DIR, ".pomaster", "state", "truth-index.json"), "utf8"),
 );
@@ -395,9 +395,36 @@ assert(
   "预植对象形态抽查（kind=business_rule + lifecycle=PROPOSED 起步）",
 );
 assert(
-  smokeTruthIndex.generation?.seq === 1,
-  "init 预植事务 seq=1（骨架 + 预植单事务，journal 正常前进）",
+  smokeTruthIndex.generation?.seq === 2,
+  "Brownfield init seq=2（预植事务 + 唯一项目识别 TASK 事务）",
   `实为 ${smokeTruthIndex.generation?.seq}`,
+);
+const identificationRows = (smokeTruthIndex.objects ?? []).filter((row) =>
+  String(row.id).startsWith("TASK."),
+);
+assert(
+  identificationRows.length === 1 && identificationRows[0]?.id === "TASK.INIT_PROJECT_IDENTIFICATION" &&
+    identificationRows[0]?.kind === "task_object",
+  "Brownfield init 创建且仅创建真实项目识别 TASK",
+);
+const identificationRow = identificationRows[0];
+if (typeof identificationRow?.body_ref === "string") {
+  const identificationBody = JSON.parse(readFileSync(join(SMOKE_DIR, ".pomaster", identificationRow.body_ref), "utf8"));
+  assert(
+    identificationBody.payload?.init_task === "project_identification" &&
+      identificationBody.payload?.identification_status === "pending",
+    "识别 TASK 正文保持 pending（未冒充报告或 Owner 确认）",
+  );
+} else {
+  assert(false, "识别 TASK 必须有可读正文引用");
+}
+const replayInit = smoke("npx pomaster init --json (replay)", "pomaster init --json", { expectExit: [0], json: true });
+assert(replayInit.ok === true && replayInit.result?.change === "NO_CHANGE", "Brownfield init 重放 NO_CHANGE");
+const replayTruthIndex = JSON.parse(readFileSync(join(SMOKE_DIR, ".pomaster", "state", "truth-index.json"), "utf8"));
+assert(
+  replayTruthIndex.generation?.seq === 2 &&
+    JSON.stringify(replayTruthIndex.objects) === JSON.stringify(smokeTruthIndex.objects),
+  "重放不新增 TASK、不推进 seq、不改对象索引",
 );
 
 // 2.3 `npx pomaster status`：播种分面计数呈现（B6e——B6a 未尽事项 1 接线冒烟）+
@@ -405,11 +432,17 @@ assert(
 smoke("npx pomaster status", "pomaster status", {
   expectExit: [0],
   expectWords: [
-    "status: .pomaster/state/truth-index.json (seq=1)",
+    "status: .pomaster/state/truth-index.json (seq=2)",
     "seeded assets: themes 21 / stacks 36 / evidence 20 / baseline 26",
     "spec preplant: 19/19 in place",
   ],
 });
+const smokeStatus = smoke("npx pomaster status --json", "pomaster status --json", { expectExit: [0], json: true });
+assert(
+  smokeStatus.ok === true && smokeStatus.result?.next_action?.route_id === "R_PROJECT_IDENTIFICATION" &&
+    smokeStatus.result?.next_action?.command?.includes("project-identification report TASK.INIT_PROJECT_IDENTIFICATION"),
+  "安装后 status 优先引导真实识别 TASK 的公开 report 流程",
+);
 
 // 2.4 `npx pomaster catalog status --json`（关键：包内资产候选命中 + 270 entries 0 drift）。
 const catalogEnvelope = smoke("npx pomaster catalog status --json", "pomaster catalog status --json", {

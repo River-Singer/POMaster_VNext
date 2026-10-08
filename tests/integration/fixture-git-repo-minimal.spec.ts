@@ -53,6 +53,8 @@ let initReplay: StepRecord;
 
 beforeAll(async () => {
   root = mkdtempSync(join(tmpdir(), "pvnext-fixture-git-"));
+  // Provision governance in an empty Greenfield workspace before creating source files.
+  initFirst = await runJsonStep(root, ["init"]);
   mkdirSync(join(root, "src"), { recursive: true });
   // —— 就地构造最小工程 ——
   writeFileSync(
@@ -91,8 +93,7 @@ beforeAll(async () => {
     `git init 失败（fixture 前提）：${git.stderr ?? String(git.error)}`,
   ).toBe(0);
 
-  // 链前幂等窗口：state 零变化时的两次 init（A4 NO_CHANGE 的合法时点）。
-  initFirst = await runJsonStep(root, ["init"]);
+  // Source creation does not mutate governance state; replay remains idempotent.
   initReplay = await runJsonStep(root, ["init"]);
 
   chain = await runFixtureChain(root, {

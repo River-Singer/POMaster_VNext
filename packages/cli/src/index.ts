@@ -255,13 +255,23 @@ import { CLI_NAME } from "./cli-info.js";
 import { toEnvelope, failOutcome, okOutcome, type CliEnvelope, type CommandOutcome } from "./envelope.js";
 import { runInit, runChecklistPrompt, runInitInteractive } from "./init.js";
 import type { ChecklistPromptResult, InitResult } from "./init.js";
-import { confirmBrownfieldPath } from "./init-mode.js";
+import { confirmBrownfieldPath, detectInitMode } from "./init-mode.js";
 import type { InitBrownfieldChoice } from "./init-mode.js";
 import { collectStackAnswers, runBaselineConfirm, runBaselineSet } from "./baseline.js";
 import type { StackQuestionnaireOutcome } from "./baseline.js";
+import {
+  runProjectIdentificationConfirm,
+  runProjectIdentificationReport,
+} from "./project-identification.js";
+export {
+  runProjectIdentificationConfirm,
+  runProjectIdentificationReport,
+} from "./project-identification.js";
 import { runUpdate } from "./update.js";
 import { resolveCliVersion } from "./version.js";
 import { runStatus } from "./status.js";
+import { runNextAction } from "./next-action.js";
+import { readHookRouteInput } from "./hook-input.js";
 import { runAlerts } from "./alerts.js";
 import { runSessionOverview } from "./session.js";
 import { runInspect } from "./inspect.js";
@@ -359,6 +369,7 @@ import {
 import {
   runExecutionBegin,
   runExecutionEnd,
+  runExecutionHandoff,
   runExecutionList,
   runLockAcquire,
   runLockHeartbeat,
@@ -572,7 +583,9 @@ export type { SessionOverviewResult } from "./session.js";
 export {
   collectNextActionSnapshot,
   evaluateNextAction,
+  projectWorkflowRoute,
   renderBreadcrumb,
+  runNextAction,
   EIGHT_BEAT_ENFORCEMENT_LINES,
   NEXT_ACTION_ROUTE_IDS,
   NEXT_ACTION_ROUTE_TABLE,
@@ -580,9 +593,11 @@ export {
 } from "./next-action.js";
 export type {
   NextAction,
+  NextActionCommandResult,
   NextActionRouteId,
   NextActionSnapshot,
   NextActionTaskRow,
+  WorkflowRouteProjection,
 } from "./next-action.js";
 export {
   ENTRY_MODE_HEAVY_MARKER,
@@ -1083,6 +1098,7 @@ export {
   runLockList,
   runExecutionBegin,
   runExecutionEnd,
+  runExecutionHandoff,
   runExecutionList,
   parseExecutionIdArgv,
   LOCK_BLOCKED,
@@ -1102,6 +1118,8 @@ export type {
   ExecutionBeginInput,
   ExecutionBeginResult,
   ExecutionEndResult,
+  ExecutionHandoffInput,
+  ExecutionHandoffResult,
   ExecutionListResult,
   ExecutionInflightEvidenceView,
 } from "./runtime.js";
@@ -1408,26 +1426,74 @@ export function createProgram(
   program
     .command("init")
     .description(
-      "创建 .pomaster/ 最小骨架 + AGENTS.md 唯一事实源 + 平台适配器（F1：--platforms 逗号列表 claude,codex,cursor,qoder / none；幂等；重复执行 NO_CHANGE）；重入口默认（skills 库双镜像 + claude hooks 注册 + 加厚 rules）；TTY 交互在平台选择后接模式问句与技术栈逐键问卷（F-M3 模式分叉：干净目录 Greenfield 直入；检测到已有项目（worktree 非空且无 .pomaster）呈现检测摘要并经问卷首题显式确认 Brownfield——确认后自动 recon 三腿（import-graph/migrations/sbom）采集宿主事实，腿产物只落 evidence sidecar 平面、腿失败不阻塞 init；非交互通道不分支）；R-M 技术栈问卷 FE 9 + BE 5 必答，答答回填 baseline stack.yaml + unknowns 销账，观察候选 [Observed] 注记与 recon 摘要合并呈现——Owner 裁剪后走 baseline confirm 既有确认链",
+      "初始化架构驱动的治理工作区：空项目选择 Vue/React profile；非空项目先建立项目识别 TASK，经 evidence report 与 human Owner confirm 后生成治理。安装所选平台入口、skills 与会话 hooks；重复执行仅安全升级可证明未改动的生成内容，保留人工冲突。",
     )
     .option(
       "--platforms <platforms>",
       "平台适配器逗号列表（claude|codex|cursor|qoder|none；缺省 claude；TTY 人读模式无旗标时出复选清单交互）",
     )
+    .option(
+      "--architecture <architecture>",
+      "显式前端架构 profile（vue|react）；写入 baseline 选型、profile 指纹和对应治理内容",
+    )
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (_opts, command) => {
       const platformsArg = command.opts().platforms as string | undefined;
+      const architectureArg = command.opts().architecture as string | undefined;
       const asJson = command.opts().json === true;
       // F1 TTY 交互面：仅人读模式 + 未带旗标时启用（--json / 显式旗标恒走确定性
       // 路径——机读通道禁交互阻塞）。内部带降级链：复选清单 raw 失败 → 编号输入。
       // R-M：两形态在平台选择后都接技术栈逐键问卷（TTY 必答 / 非交互跳过后补）。
       const outcome =
-        platformsArg === undefined && !asJson && process.stdin.isTTY === true
+        platformsArg === undefined && architectureArg === undefined && !asJson && process.stdin.isTTY === true
           ? await initInteractiveOutcome(resolveDir(command), io)
           : await runInit(resolveDir(command), {
               platforms: platformsArg,
+              ...(architectureArg !== undefined ? { architecture: architectureArg } : {}),
             });
       record({ command: "init", outcome, asJson });
+    });
+
+  const projectIdentification = program
+    .command("project-identification")
+    .description("Brownfield 项目识别 TASK：先提交证据化报告，再由 human Owner 确认并编译架构治理 profile");
+  projectIdentification
+    .command("report")
+    .description("提交项目用途、架构、技术栈、目录、命令、证据和 unknowns；本步不生成架构治理")
+    .argument("<task-id>", "init 返回的项目识别 TASK.*")
+    .requiredOption("--purpose <text>", "项目用途与主要用户/入口摘要")
+    .requiredOption("--architecture <vue|react>", "基于证据的架构候选")
+    .requiredOption("--stack <item>", "技术栈事实（可重复）", collectValues)
+    .requiredOption("--directory <item>", "关键目录及职责（可重复）", collectValues)
+    .requiredOption("--command <item>", "构建/测试/运行命令（可重复）", collectValues)
+    .requiredOption("--evidence <ref>", "仓库相对证据引用（可重复）", collectValues)
+    .option("--unknown <item>", "仍未确定的事实（可重复）", collectValues)
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (taskId: string, opts, command) => {
+      const outcome = await runProjectIdentificationReport(resolveDir(command), {
+        taskId,
+        purpose: opts.purpose as string,
+        architecture: opts.architecture as string,
+        stack: (opts.stack as string[] | undefined) ?? [],
+        directories: (opts.directory as string[] | undefined) ?? [],
+        commands: (opts.command as string[] | undefined) ?? [],
+        evidence: (opts.evidence as string[] | undefined) ?? [],
+        unknowns: (opts.unknown as string[] | undefined) ?? [],
+      });
+      record({ command: "project-identification report", outcome, asJson: command.opts().json === true });
+    });
+  projectIdentification
+    .command("confirm")
+    .description("human Owner 确认识别报告；确认成功后才编译并持久化架构治理 profile")
+    .argument("<task-id>", "已提交报告的项目识别 TASK.*")
+    .requiredOption("--actor <human:name>", "Owner 身份；只接受 human:<name>")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (taskId: string, opts, command) => {
+      const outcome = await runProjectIdentificationConfirm(resolveDir(command), {
+        taskId,
+        actor: opts.actor as string,
+      });
+      record({ command: "project-identification confirm", outcome, asJson: command.opts().json === true });
     });
 
   // —— baseline 后补销账 + 确认 gate 通路（R-M Step A / R-L Step B；0.5.0 审计修复批 1（历史裁定，锚缺失——R-M/R-L，2026-09-05 执行轮；未入 corpus 台账，T3-R3 如实标注）） ——
@@ -1544,6 +1610,24 @@ export function createProgram(
       });
     });
 
+  program
+    .command("next-action")
+    .description("纯读投影当前会话 TASK 的阶段 skill、必做动作、退出条件与阻断（不改绑、不刷新 liveness）")
+    .option("--task <TASK.*>", "显式目标 TASK（优先于会话绑定；冲突时要求显式 attach/switch）")
+    .option("--session-key <session>", "已 attach 的宿主会话键；读取 kernel SessionRecord.current_task")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runNextAction(resolveDir(command), {
+        ...(opts.task !== undefined ? { taskId: opts.task as string } : {}),
+        ...(opts.sessionKey !== undefined ? { sessionKey: opts.sessionKey as string } : {}),
+      });
+      record({
+        command: "next-action",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
   // —— 可行动项过滤器 + workflow 路由段（重入口 UserPromptSubmit 源；hook 输出契约） ——
   // 恒 ok=true → 恒 exit 0（非零 + stdout 会被 harness 呈现为 hook 错误通知）；
   // 初始化后恒带 ≤3 行 workflow 路由段（干净=非空但极简）；纯文本不以 { 开头
@@ -1553,9 +1637,16 @@ export function createProgram(
     .description(
       "可行动项过滤器 + workflow 路由段（重入口 UserPromptSubmit 源）：permit 到期/CHALLENGED 对象（truth-index/permits 只读面派生）；初始化后恒带 ≤3 行 workflow 路由段（无活跃 TASK → 八拍① brainstorm start 单入口——D-5，裁决 18；有 → 八拍位置+下一拍命令+分段卡），干净=非空但极简；未初始化零输出；恒 exit 0（hook 契约）；降级走 warnings 不走 errors",
     )
+    .option("--session-key <session>", "显式宿主会话键；读取 kernel SessionRecord.current_task")
+    .option("--hook-input", "从宿主 hook stdin JSON 读取 session_id/sessionId")
     .option("--json", "machine-readable JSON output (§45)")
-    .action(async (_opts, command) => {
-      const outcome = await runAlerts(resolveDir(command));
+    .action(async (opts, command) => {
+      const hook = opts.hookInput === true ? await readHookRouteInput(resolveDir(command)) : undefined;
+      const sessionKey = hook?.sessionKey ?? (typeof opts.sessionKey === "string" ? opts.sessionKey : undefined);
+      const outcome = await runAlerts(hook?.rootDir ?? resolveDir(command), {
+        ...(sessionKey === undefined ? {} : { sessionKey }),
+        ...(hook?.selectionError === undefined ? {} : { selectionError: hook.selectionError }),
+      });
       record({
         command: "alerts",
         outcome,
@@ -3771,9 +3862,16 @@ export function createProgram(
     .description(
       "D 线地基①会话命令面（D 线 §1.2/§3.1）：注册/刷新 liveness + resumed_task 解析 + 清单并排呈现（runtime/sessions/ 侧车；首注册 journal SESSION_ATTACHED）；无子命令裸形态 = 治理速览投影（重入口 SessionStart 注入源：计数 + alerts 摘要 + 命令卡指针；≤10,000 字符硬上限，恒 exit 0）",
     )
+    .option("--session-key <session>", "显式宿主会话键；读取 kernel SessionRecord.current_task")
+    .option("--hook-input", "从宿主 hook stdin JSON 读取 session_id/sessionId")
     .option("--json", "machine-readable JSON output (§45)（裸速览形态）")
-    .action(async (_opts, command) => {
-      const outcome = await runSessionOverview(resolveDir(command));
+    .action(async (opts, command) => {
+      const hook = opts.hookInput === true ? await readHookRouteInput(resolveDir(command)) : undefined;
+      const sessionKey = hook?.sessionKey ?? (typeof opts.sessionKey === "string" ? opts.sessionKey : undefined);
+      const outcome = await runSessionOverview(hook?.rootDir ?? resolveDir(command), {
+        ...(sessionKey === undefined ? {} : { sessionKey }),
+        ...(hook?.selectionError === undefined ? {} : { selectionError: hook.selectionError }),
+      });
       record({
         command: "session",
         outcome,
@@ -4001,6 +4099,32 @@ export function createProgram(
       });
       record({
         command: "execution begin",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+  execution
+    .command("handoff")
+    .description("追加结构化实现交接（fresh handoff 只打开 VERIFY 入口，不代表验证通过或任务完成）")
+    .argument("<execution-id>", "implementer 执行身份（AGX-<年份>-<序号>）")
+    .requiredOption("--task <TASK.*>", "交接归属 TASK（须与 execution.task_id 全等）")
+    .requiredOption("--changed <path>", "本轮实际修改的仓库相对路径（可重复）", collectValues)
+    .requiredOption("--summary <text>", "本轮完成内容摘要")
+    .option("--check <text>", "已真实运行的局部检查（可重复；未运行不得写 passed）", collectValues)
+    .option("--known-gap <text>", "已知缺口（可重复）", collectValues)
+    .option("--verify <text>", "待验证事项（可重复）", collectValues)
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (executionId: string, opts, command) => {
+      const outcome = await runExecutionHandoff(resolveDir(command), executionId, {
+        taskId: opts.task as string,
+        changedPaths: opts.changed as string[],
+        summary: opts.summary as string,
+        ...(opts.check !== undefined ? { localChecks: opts.check as string[] } : {}),
+        ...(opts.knownGap !== undefined ? { knownGaps: opts.knownGap as string[] } : {}),
+        ...(opts.verify !== undefined ? { verificationRequests: opts.verify as string[] } : {}),
+      });
+      record({
+        command: "execution handoff",
         outcome,
         asJson: command.opts().json === true,
       });
@@ -4720,36 +4844,38 @@ async function initInteractiveOutcome(
           pumpKeys: (handler) => pumpStdinKeys(handler),
         });
         if (result.kind === "confirmed") {
-          // F-M3 R1 模式问句（问卷首题）：Brownfield 候选态在技术栈问卷之前显式
-          // 确认（greenfield/initialized 静默跳过——零提问零分叉）。
-          const mode = await confirmBrownfieldPath(rootDir, {
-            write: (chunk) => process.stdout.write(chunk),
-            pumpKeys: (handler) => pumpStdinKeys(handler),
-          });
-          if (mode === null) {
-            restoreRaw();
-            process.exit(130);
+          if (detectInitMode(rootDir).kind === "brownfield_candidate") {
+            // A brownfield init is task-first. Do not ask the user to guess its
+            // architecture before the identification task has inspected it.
+            brownfield = { confirmed: true };
+          } else {
+            const mode = await confirmBrownfieldPath(rootDir, {
+              write: (chunk) => process.stdout.write(chunk),
+              pumpKeys: (handler) => pumpStdinKeys(handler),
+            });
+            if (mode === null) {
+              restoreRaw();
+              process.exit(130);
+            }
+            brownfield = { confirmed: mode.confirmed };
+            quiz = await collectStackAnswers(rootDir, {
+              write: (chunk) => process.stdout.write(chunk),
+              pumpKeys: (handler) => pumpStdinKeys(handler),
+            });
           }
-          brownfield = { confirmed: mode.confirmed };
-          // R-M：平台确认后接技术栈问卷（raw 单选帧；仍处 raw 模式，restoreRaw
-          // 统一在问卷之后执行）。
-          quiz = await collectStackAnswers(rootDir, {
-            write: (chunk) => process.stdout.write(chunk),
-            pumpKeys: (handler) => pumpStdinKeys(handler),
-          });
         }
       } catch (err) {
         restoreRaw();
         throw err;
       }
       restoreRaw();
-      if (result.kind === "aborted" || quiz === null) {
+      if (result.kind === "aborted" || (quiz === null && brownfield?.confirmed !== true)) {
         // 平台清单中止或问卷中止：零写入退出（SIGINT 惯例码）。
         process.exit(130);
       }
       return runInit(rootDir, {
         platforms: result.platforms.join(","),
-        stackQuestionnaire: quiz,
+        ...(quiz !== null ? { stackQuestionnaire: quiz } : {}),
         brownfield,
       });
     }

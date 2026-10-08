@@ -53,9 +53,9 @@ corepack pnpm studio:react:dev  # React sidecar（antd 对照浏览，端口 600
 - **promote 即建任务**：讨论收敛 → `promote --apply`，TASK.*/CHANGE.* 治理对象落库——想法进状态平面的唯一入口。
 - **八拍 Change Loop 机器判卷收口**：brainstorm 需求收敛（八拍①）→ permit 签发 → context 投影 → maintain 受控写 → check 判卷 → reconcile 对账 → compact 折叠 → closeout 收口。每一拍都有对应 CLI 命令、机器判卷、落账留痕。
 
-### ③ 基线：14 键问卷 → 预置草案 → confirm 烙印 → 漂移检出
+### ③ 基线：架构输入 / 项目识别 → 预置草案 → confirm 烙印 → 漂移检出
 
-- init 的**技术栈问卷** 14 键逐项必答（前端 9 + 后端 5），答完写回 `baseline/<lane>/stack.yaml`；
+- Greenfield 用 `pomaster init --architecture vue|react` 把显式架构写入 profile 指纹，并生成有差异的治理内容；Brownfield 自动创建项目识别 TASK，先报告用途、架构、技术栈、目录、命令、证据和 unknowns，再由 human Owner 确认并回填架构基线；
 - 选型落定后自动生成 **PRESET-DRAFT 预置草案**——逐条溯源到主题文档与 overlay，Owner 可改；业务实体/接口/数据模型零预置；
 - `pomaster baseline confirm` 以 **sha256 快照烙印**基线——快照分母 = 25 文件确认资产清单（2 stack.yaml + 22 份基线 md + design-tokens.yaml）；确认前提是**阻塞集清零**（未销账且未豁免的键才阻塞——Owner 可在 manifest unknowns 台账登记豁免行，登记行不阻塞；doctor/status 呈现阻塞余量）；
 - closeout 双重阻断：未确认 → `BASELINE_NOT_CONFIRMED`；确认后改动 → `BASELINE_DRIFT`（检出谁改了架构）。漂移的消解必须显式留痕——重确认三通道：`--change <CHANGE-id>` 治理通路 / `--ack-drifted --note "<理由>"` Owner 手改声明（AI 代跑须持 Owner 指示）/ 裸重确认显式拒绝。
@@ -287,6 +287,7 @@ POMaster 的全部能力收敛在一条 CLI（`pomaster`）——八拍 Change L
 ```text
 # 0 BOOTSTRAP —— 建基线 / 速览 / 可行动项 / 装眼睛 / 可移植性 / 自更新
 pomaster init
+pomaster project-identification report/confirm   # Brownfield task-first：report 提交证据化项目识别；confirm 仅接受 human:<name>，确认后才生成架构治理并回填 stack
 pomaster status
 pomaster alerts
 pomaster doctor
@@ -352,7 +353,8 @@ pomaster run <task>
 pomaster handoff <task> --to <role>
 pomaster session attach/refresh/list
 pomaster lock acquire/heartbeat/release/steal/list
-pomaster execution begin/end/list/audit   # audit = 变更越界审计（--execution-id + --diff-base：git diff 起始锚变更集 → KEYBINDING 解析 → permit scope 判 in/out → OBS 回执 sidecar + 越界明细；越界 exit 1——Detection 半边，纯读零权威写口）
+pomaster execution begin/handoff/end/list/audit   # handoff = 追加实现交接与源码快照；audit = 变更越界审计（--execution-id + --diff-base：git diff 起始锚变更集 → KEYBINDING 解析 → permit scope 判 in/out → OBS 回执 sidecar + 越界明细；越界 exit 1——Detection 半边，纯读零权威写口）
+pomaster next-action [--task <TASK.*>] [--session-key <key>] --json   # 当前任务的必需 skill、动作、退出条件和阻断；多任务不默认取首项
 pomaster trace show/list
 pomaster checkpoint save/show   # Checkpoint 恢复引用快照（W4-S2；词形 SP 提案待追认）：save = 组装恢复所需引用集落盘（task 锚/--permit 对账判卷引用/--execution 在途清单/negative_history·unknowns 引用/封存 trace 引用/workspace git 锚——每项都是引用，引用逐项存在性校验 fail-closed；state/checkpoints/ 分区档案面，零新 canonical kind 零 journal 事件，不自动创建；--ckpt 同号重放同内容幂等零写入/异内容显式冲突；非 git 工区 anchor absent 显式申报）+ show = 引用面纯读呈现；与 session attach --reconcile 分层组合——checkpoint=引用快照（保存时点），reconcile=新鲜度判定（恢复时点）
 pomaster diagnose "<症状>"   # 通用 Diagnose 入口（W3-S3；C §26/§53-56 + Case H；SP 提案待追认）：症状申报（位置 <report> ∥ --symptom 二选一）+ 可选 --evidence GRN-*/OBS-*/AGX-* 逐条实读证据平面（引用不存在 fail-closed 零写）→ 失败域六词闭包（tool_environment/product_assertion/fixture_data/environment_instance/dependency_external/unknown_insufficient_evidence）+ confidence_basis=evidence_chain|declaration_only（零百分比置信——§21 守护栏；申报与信号冲突呈报非改判；证据缺席 declaration_only 不虚构关联）→ 诊断计划建议（复用 plan-compiler 能力词位，§54 安全/只读先行）；纯读零写不裁决不自动修复；与 production diagnose 共用同一判定核（BREACHED band 前置只是产线准入——单一判定事实源）
@@ -374,12 +376,23 @@ npx pomaster --help
 
 ```bash
 cd your-project
+# 新项目：架构是治理编译输入
+pomaster init --architecture vue        # 或 react
+
+# 已有项目：init 自动创建唯一识别 TASK，首次 next-action 优先执行它
 pomaster init
+pomaster project-identification report TASK.INIT_PROJECT_IDENTIFICATION \
+  --purpose "<项目用途与主要入口>" --architecture vue \
+  --stack "<技术栈事实>" --directory "<关键目录及职责>" \
+  --command "<构建/测试/运行命令>" --evidence "<仓库相对证据>" \
+  --unknown "<仍未确定的事实>"
+pomaster project-identification confirm TASK.INIT_PROJECT_IDENTIFICATION \
+  --actor human:<owner>
 ```
 
-一条命令，幂等（重复执行 NO_CHANGE，人类文件一律不覆盖）：铺出 `.pomaster/` 治理目录树、登记 19 份 SPEC 预植对象、生成 `AGENTS.md` 重入口（14 份 skills 命令卡 + hooks 注入——Agent 开会话即自动看到治理状态）。init 还会**自动观察宿主 `package.json`**：框架/router/状态/Grid/UI 库/测试栈等可观察事实登记为**观察候选**（问卷题面标注 `[Observed: package.json]`）——候选只是题面参考注记，权威 stack.yaml 保持 UNKNOWN，直到 Owner 经问卷或 `pomaster baseline set` 逐键采纳；TTY 下技术栈问卷 14 键逐项必答（中断 = 零写入）。
+init 幂等（重复执行 NO_CHANGE，人类文件一律不覆盖）：铺出 `.pomaster/` 治理目录树、登记 19 份 SPEC 预植对象、生成 `AGENTS.md` 重入口（14 份 skills 命令卡 + hooks 注入——Agent 开会话即自动看到治理状态）。对于空目录，`--architecture vue|react` 会同时写入架构 profile、生成对应治理内容并回填 framework/router/state；选择值进入内容指纹，Vue 与 React 产物可验证地区分。
 
-**接手已有项目？init 自带 Brownfield 路径**：init 启动时检测宿主形态——干净目录（Greenfield）静默直入、已初始化重入口行为不变；检测到**已有项目**（worktree 非空且无 `.pomaster`）时呈现检测摘要（源文件数 / migration 词形面 / SBOM 工具在位性），并在 TTY 问卷首题**显式确认**是否走 Brownfield 路径（禁静默分叉；非交互通道不分支）。确认后 init 自动运行 **recon 三腿**采集宿主事实——`import-graph`（import 图静态扫描）/ `migrations`（五栈词形盘点）/ `sbom`（依赖清单，cdxgen 缺席时显式跳过）——产物落 `.pomaster/evidence/` 观察回执 sidecar（零权威写口；腿失败不阻塞 init），并在完成输出与问卷候选**合并呈现差距报告**：Owner 就地裁剪后照常走 `pomaster baseline confirm` 确认链。
+**接手已有项目？init 走 task-first Brownfield 路径**：检测到 worktree 非空且无 `.pomaster` 时，init 不要求用户先猜框架或逐项回答技术栈，而是自动运行 recon 三腿（`import-graph` / `migrations` / `sbom`）并创建唯一 `TASK.INIT_PROJECT_IDENTIFICATION`。SessionStart/next-action 把该 TASK 排在普通开发之前；Agent 用 `report` 提交项目用途、架构候选、技术栈、关键目录、命令、证据与 unknowns。只有 human Owner 执行 `confirm` 后才生成架构 profile、差异化治理内容并回填 stack；文件冲突时 TASK 保持 reported，修复后可重放，不会以完成态掩盖未生成治理。
 
 **组件画廊**：[river-singer.github.io/POMaster_VNext](https://river-singer.github.io/POMaster_VNext/)（在线版）· POMaster 仓库内 `corepack pnpm studio:dev`（Vue 主实例）/ `corepack pnpm studio:react:dev`（React sidecar 对照）——baseline 确认后按栈选择性参考（如 baseline.ui=ant-design-vue → antdv 组件真渲染对照）；未确认前仅作了解，不作为动手前置。
 
@@ -417,14 +430,17 @@ pomaster brainstorm decide idea-export-btn --ready \
 # —— 提升：promote 即建任务（自动 record claim 生成 CLM 绑入 acceptance） ——
 pomaster brainstorm promote idea-export-btn --to TASK --basis msd_reached --apply
 
-# —— 八拍推进：next-action 给主建议，并列全局关注与任务侧建议 ——
+# —— 八拍推进：next-action 给出当前任务必须加载的 skill 与动作 ——
 pomaster status                                   # R_PERMIT_MISSING（--subject 为 affected_objects 派生建议）
 pomaster permit issue --subject PAGE.USER_LIST --actor human:owner --change-ref TASK.IDEA_EXPORT_BTN
 pomaster baseline confirm                         # R_BASELINE_NOT_READY（阻塞集清零后的一次性收口账；确认态随后进 ③ 投影）
 pomaster context compile --role frontend --change TASK.IDEA_EXPORT_BTN   # ③ 投影（含 baseline grounding：指纹绑定确认态，漂移即 STALE_GROUNDING）
 pomaster execution begin --role implementer --runtime script --identity-kind script --task-id TASK.IDEA_EXPORT_BTN  # ④ 执行身份
 # ……在你的 Agent harness（Claude Code 等）里实现代码……
-pomaster check --fast                             # ⑤ FAST gate（BUILD 腿）
+pomaster check --fast                             # 实际局部检查，不代表终验完成
+pomaster execution handoff <AGX-*> --task TASK.IDEA_EXPORT_BTN --changed <实际修改路径> --summary <实现说明> --check <实际检查结果>
+pomaster next-action --task TASK.IDEA_EXPORT_BTN --json  # 同轮加载所指 skill 并推进终验，保持独立主体/人工接受边界
+# ……完成路由列出的验证、复核与接受要求后……
 pomaster closeout TASK.IDEA_EXPORT_BTN            # ⑧ DoD 判卷收口（对的是 promote 时刻的 acceptance）
 ```
 

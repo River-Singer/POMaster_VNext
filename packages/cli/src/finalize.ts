@@ -29,6 +29,8 @@ export interface FinalizeResult {
   readonly task: string;
   readonly stage: FinalizeStage;
   readonly completed: boolean;
+  /** Whether the current cohort contains evidence eligible for final verification (not worker_local). */
+  readonly final_evidence_present?: boolean;
   readonly review_range: string | null;
   readonly verification_execution_id: string | null;
   readonly plan_fingerprint: string | null;
@@ -102,7 +104,7 @@ export async function runFinalizeStatus(rootDir: string, input: FinalizeStatusIn
     const result = { ...base(input.taskRef), stage: "PREFLIGHT" as const, next_actions: [{ actor: "implementer" as const, command: `pomaster finalize run ${input.taskRef} --verification-execution-id <AGX-*> --review-range <git-range>`, reason: "尚无可绑定 plan fingerprint 的 GRN。" }] };
     return okOutcome("finalize status", result, [`finalize ${input.taskRef} → PREFLIGHT`]);
   }
-  const common = { ...base(input.taskRef), plan_fingerprint: cohort.fingerprint, verification_execution_id: cohort.executionId };
+  const common = { ...base(input.taskRef), final_evidence_present: cohort.finalEvidencePresent, plan_fingerprint: cohort.fingerprint, verification_execution_id: cohort.executionId };
   if (!cohort.allPassed) {
     // 分母缺失/源码不稳定/worker-local 排除三型分流显式（W1-FR04：缺场景 ≠ 工具
     // verdict 失败；W2-FR05：源码不稳定 ≠ 非 passed——verdict 照实保留不自动改判；
@@ -268,7 +270,7 @@ function cohortSourceUnstableKeys(rootDir: string, entries: readonly CohortEntry
   return unstable;
 }
 
-async function latestPlanCohort(rootDir: string, taskRef: string): Promise<{ fingerprint: string; executionId: string | null; allPassed: boolean; missingKeys: readonly string[]; sourceUnstableKeys: readonly string[]; workerLocalExcluded: number } | null> {
+async function latestPlanCohort(rootDir: string, taskRef: string): Promise<{ fingerprint: string; executionId: string | null; allPassed: boolean; missingKeys: readonly string[]; sourceUnstableKeys: readonly string[]; workerLocalExcluded: number; finalEvidencePresent: boolean } | null> {
   try {
     const runsDir = buildStorePaths(rootDir).runsDir;
     const rows = readdirSync(runsDir).filter((name) => /^GRN-[0-9]+\.json$/.test(name)).map((name) => {
@@ -318,6 +320,7 @@ async function latestPlanCohort(rootDir: string, taskRef: string): Promise<{ fin
       missingKeys,
       sourceUnstableKeys,
       workerLocalExcluded,
+      finalEvidencePresent: currentRows.length > 0,
     };
   } catch { return null; }
 }

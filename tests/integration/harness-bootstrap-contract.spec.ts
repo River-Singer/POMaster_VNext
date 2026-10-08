@@ -452,6 +452,21 @@ describe("brownfield external project harness bootstrap contract", () => {
     expect(existsSync(join(root, AGENTS_MD_RELATIVE))).toBe(true);
     expect(existsSync(join(root, "CLAUDE.md"))).toBe(true);
 
+    // Existing projects must complete the identification prerequisite before a
+    // normal development request can enter discovery. These are public commands
+    // with an explicit fixture Owner; recon itself never confirms architecture.
+    const pending = await runJsonStep(root, ["session"]);
+    expect((resultOf(pending).next_action as Record<string, unknown>).route_id).toBe("R_PROJECT_IDENTIFICATION");
+    const report = await runJsonStep(root, [
+      "project-identification", "report", "TASK.INIT_PROJECT_IDENTIFICATION",
+      "--purpose", "Existing React counter application", "--architecture", "react",
+      "--stack", "React/TypeScript/Vite", "--directory", "src: existing application",
+      "--command", "npm test", "--evidence", "package.json", "--evidence", "src/App.tsx",
+      "--unknown", "Tool bindings have not been configured",
+    ]);
+    expect(report.code, report.stdout).toBe(0);
+    const confirmed = await runJsonStep(root, ["project-identification", "confirm", "TASK.INIT_PROJECT_IDENTIFICATION", "--actor", "human:fixture-owner"]);
+    expect(confirmed.code, confirmed.stdout).toBe(0);
     const entryText = generatedAgentEntry();
     const session = await runJsonStep(root, ["session"]);
     expect(session.code).toBe(0);

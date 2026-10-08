@@ -48,6 +48,8 @@ let initReplay: StepRecord;
 
 beforeAll(async () => {
   root = mkdtempSync(join(tmpdir(), "pvnext-fixture-vue3-"));
+  // Provision governance in an empty Greenfield workspace before creating source files.
+  initFirst = await runJsonStep(root, ["init"]);
   mkdirSync(join(root, "src", "components"), { recursive: true });
   // —— 就地构造 Vue3 最小工程（声明依赖但不安装） ——
   writeFileSync(
@@ -97,8 +99,7 @@ beforeAll(async () => {
     "utf8",
   );
 
-  // 链前幂等窗口：state 零变化时的两次 init（A4 NO_CHANGE 的合法时点）。
-  initFirst = await runJsonStep(root, ["init"]);
+  // Source creation does not mutate governance state; replay remains idempotent.
   initReplay = await runJsonStep(root, ["init"]);
 
   chain = await runFixtureChain(root, {

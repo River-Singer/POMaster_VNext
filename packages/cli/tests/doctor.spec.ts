@@ -46,6 +46,8 @@ import {
   CLAUDE_SETTINGS_RELATIVE,
 } from "@pomaster/cli";
 
+const CODEX_HOOKS_RELATIVE = ".codex/hooks.json";
+
 /**
  * hook 命令可达 fake（R4 注入面：探测确定性不依赖宿主环境——CI/开发机上 `pomaster`
  * 是否全局安装不可假设；缺省 PATH 解析的真实形态另由注入 unreachable 的负向拍覆盖）。
@@ -505,6 +507,45 @@ describe("detectionToDoctorProbe 四态映射（gauntlet-lite → doctor 语义�
 // ============================================================
 
 describe("heavy_entry 探针（hooks 注册态 / 命令可达性 R4 / skills 双镜像一致态；重入口标记缺席即未安装）", () => {
+  it("doctor 分开报告 installed/configured/trusted/observed，未知不冒充成功", async () => {
+    await runInit(dir, { platforms: "claude,codex" });
+    const outcome = await runDoctor(dir, {
+      gauntletProbes: readyGauntletProbes(),
+      resolveHookExecutable: async () => reachableHookExecutable(),
+    });
+    const integrations = outcome.result.harness_integrations ?? [];
+    expect(integrations).toHaveLength(2);
+    for (const platform of ["claude", "codex"] as const) {
+      expect(integrations).toContainEqual(expect.objectContaining({
+        platform,
+        host: "unknown",
+        installed: "installed",
+        configured: "configured",
+        trusted: "unknown",
+        observed: "unknown",
+        mode: "hook-push",
+      }));
+    }
+    expect(readFileSync(join(dir, CODEX_HOOKS_RELATIVE), "utf8")).toContain("pomaster alerts");
+    expect(outcome.human.join("\n")).toContain("trusted=unknown");
+    expect(outcome.human.join("\n")).toContain("observed=unknown");
+    expect(outcome.human.join("\n")).toContain("host=unknown");
+  });
+
+  it("Codex hook 缺失时 doctor 明确 agent-pull，而不是动态注入 READY", async () => {
+    await runInit(dir, { platforms: "codex" });
+    rmSync(join(dir, CODEX_HOOKS_RELATIVE));
+    const outcome = await runDoctor(dir, { gauntletProbes: readyGauntletProbes() });
+    expect(outcome.result.harness_integrations).toContainEqual(expect.objectContaining({
+      platform: "codex",
+      host: "unknown",
+      installed: "installed",
+      configured: "missing",
+      trusted: "unknown",
+      observed: "unknown",
+      mode: "agent-pull",
+    }));
+  });
   it("未安装（无 AGENTS.md）→ 双探针 MISSING_CONFIGURATION + init 路标", async () => {
     const [hooks, skills] = await probeHeavyEntryInstall(dir, {
       resolveHookExecutable: reachableHookExecutable,

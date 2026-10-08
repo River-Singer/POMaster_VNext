@@ -686,7 +686,18 @@
           "baseline_gate_codes": [],
           "baseline_unknowns_remaining": null,
           "baseline_blocking_remaining": null,
-          "baseline_pending_change_ref": null
+          "baseline_pending_change_ref": null,
+          "selected_task_id": null,
+          "prerequisite_task_id": null,
+          "task_selection_source": "none",
+          "session_key": null,
+          "task_selection_blocker_code": null,
+          "task_selection_blocker": null,
+          "implementation_handoff_id": null,
+          "implementation_handoff_state": "absent",
+          "implementation_handoff_reason": null,
+          "finalize_stage": null,
+          "finalize_next_actions": []
         }
       },
       "expect": {
@@ -730,7 +741,18 @@
           "baseline_gate_codes": [],
           "baseline_unknowns_remaining": null,
           "baseline_blocking_remaining": null,
-          "baseline_pending_change_ref": null
+          "baseline_pending_change_ref": null,
+          "selected_task_id": null,
+          "prerequisite_task_id": null,
+          "task_selection_source": "none",
+          "session_key": null,
+          "task_selection_blocker_code": null,
+          "task_selection_blocker": null,
+          "implementation_handoff_id": null,
+          "implementation_handoff_state": "absent",
+          "implementation_handoff_reason": null,
+          "finalize_stage": null,
+          "finalize_next_actions": []
         }
       },
       "expect": {
@@ -782,7 +804,18 @@
           ],
           "baseline_unknowns_remaining": 0,
           "baseline_blocking_remaining": 0,
-          "baseline_pending_change_ref": null
+          "baseline_pending_change_ref": null,
+          "selected_task_id": "TASK.T1",
+          "prerequisite_task_id": null,
+          "task_selection_source": "unique",
+          "session_key": null,
+          "task_selection_blocker_code": null,
+          "task_selection_blocker": null,
+          "implementation_handoff_id": null,
+          "implementation_handoff_state": "absent",
+          "implementation_handoff_reason": null,
+          "finalize_stage": null,
+          "finalize_next_actions": []
         }
       },
       "expect": {
@@ -834,7 +867,18 @@
           ],
           "baseline_unknowns_remaining": 0,
           "baseline_blocking_remaining": 0,
-          "baseline_pending_change_ref": null
+          "baseline_pending_change_ref": null,
+          "selected_task_id": "TASK.T1",
+          "prerequisite_task_id": null,
+          "task_selection_source": "unique",
+          "session_key": null,
+          "task_selection_blocker_code": null,
+          "task_selection_blocker": null,
+          "implementation_handoff_id": null,
+          "implementation_handoff_state": "absent",
+          "implementation_handoff_reason": null,
+          "finalize_stage": null,
+          "finalize_next_actions": []
         }
       },
       "expect": {
@@ -889,7 +933,18 @@
           "baseline_gate_codes": [],
           "baseline_unknowns_remaining": null,
           "baseline_blocking_remaining": null,
-          "baseline_pending_change_ref": null
+          "baseline_pending_change_ref": null,
+          "selected_task_id": "TASK.T1",
+          "prerequisite_task_id": null,
+          "task_selection_source": "unique",
+          "session_key": null,
+          "task_selection_blocker_code": null,
+          "task_selection_blocker": null,
+          "implementation_handoff_id": null,
+          "implementation_handoff_state": "absent",
+          "implementation_handoff_reason": null,
+          "finalize_stage": null,
+          "finalize_next_actions": []
         }
       },
       "expect": {
@@ -943,7 +998,18 @@
           "baseline_gate_codes": [],
           "baseline_unknowns_remaining": null,
           "baseline_blocking_remaining": null,
-          "baseline_pending_change_ref": null
+          "baseline_pending_change_ref": null,
+          "selected_task_id": "TASK.T1",
+          "prerequisite_task_id": null,
+          "task_selection_source": "unique",
+          "session_key": null,
+          "task_selection_blocker_code": null,
+          "task_selection_blocker": null,
+          "implementation_handoff_id": null,
+          "implementation_handoff_state": "absent",
+          "implementation_handoff_reason": null,
+          "finalize_stage": null,
+          "finalize_next_actions": []
         }
       },
       "expect": {
@@ -1000,7 +1066,18 @@
           "baseline_gate_codes": [],
           "baseline_unknowns_remaining": null,
           "baseline_blocking_remaining": null,
-          "baseline_pending_change_ref": null
+          "baseline_pending_change_ref": null,
+          "selected_task_id": "TASK.T1",
+          "prerequisite_task_id": null,
+          "task_selection_source": "unique",
+          "session_key": null,
+          "task_selection_blocker_code": null,
+          "task_selection_blocker": null,
+          "implementation_handoff_id": null,
+          "implementation_handoff_state": "absent",
+          "implementation_handoff_reason": null,
+          "finalize_stage": null,
+          "finalize_next_actions": []
         }
       },
       "expect": {
@@ -1055,7 +1132,18 @@
           "baseline_gate_codes": [],
           "baseline_unknowns_remaining": null,
           "baseline_blocking_remaining": null,
-          "baseline_pending_change_ref": null
+          "baseline_pending_change_ref": null,
+          "selected_task_id": "TASK.T1",
+          "prerequisite_task_id": null,
+          "task_selection_source": "unique",
+          "session_key": null,
+          "task_selection_blocker_code": null,
+          "task_selection_blocker": null,
+          "implementation_handoff_id": null,
+          "implementation_handoff_state": "absent",
+          "implementation_handoff_reason": null,
+          "finalize_stage": null,
+          "finalize_next_actions": []
         }
       },
       "expect": {
@@ -1107,7 +1195,18 @@
           "baseline_gate_codes": [],
           "baseline_unknowns_remaining": null,
           "baseline_blocking_remaining": null,
-          "baseline_pending_change_ref": null
+          "baseline_pending_change_ref": null,
+          "selected_task_id": "TASK.T1",
+          "prerequisite_task_id": null,
+          "task_selection_source": "unique",
+          "session_key": null,
+          "task_selection_blocker_code": null,
+          "task_selection_blocker": null,
+          "implementation_handoff_id": null,
+          "implementation_handoff_state": "absent",
+          "implementation_handoff_reason": null,
+          "finalize_stage": null,
+          "finalize_next_actions": []
         }
       },
       "expect": {
@@ -1125,12 +1224,12 @@
     {
       "id": "L5-F-04-route-verify-entry-in-flight",
       "family": "F",
-      "title": "在途执行档案在座 → R_VERIFY_ENTRY（beat ⑤：VERIFY 主链入口 = plan run——W0-FR01 收正，拍序 ⑤ 先于 ⑥）",
+      "title": "新鲜实现交接 → R_VERIFY_ENTRY（独立验证身份，plan run 主链）",
       "evaluator": "next_action",
       "provenance": {
         "corpus": "packages/cli/src/next-action.ts",
         "anchor": "#NEXT_ACTION_ROUTE_TABLE[R_VERIFY_ENTRY]",
-        "note_md": "⑤ 行（T2 R3 + W0-FR01 2026-09-29）：executions/AGX-*.json 中 task_id 命中且 ended_at=null = 在途 → plan run 主链（编译并执行全部 REQUIRED obligations 逐项入账 GRN；check --fast 降局部自检，不能满足未完成 obligation）。"
+        "note_md": "实现 AGX 的 fresh handoff 打开 VERIFY 入口；实现身份不冒充验证主体，必须登记合格 verification AGX。"
       },
       "input": {
         "snapshot": {
@@ -1163,7 +1262,18 @@
           "baseline_gate_codes": [],
           "baseline_unknowns_remaining": null,
           "baseline_blocking_remaining": null,
-          "baseline_pending_change_ref": null
+          "baseline_pending_change_ref": null,
+          "selected_task_id": "TASK.T1",
+          "prerequisite_task_id": null,
+          "task_selection_source": "unique",
+          "session_key": null,
+          "task_selection_blocker_code": null,
+          "task_selection_blocker": null,
+          "implementation_handoff_id": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "implementation_handoff_state": "fresh",
+          "implementation_handoff_reason": null,
+          "finalize_stage": null,
+          "finalize_next_actions": []
         }
       },
       "expect": {
@@ -1171,7 +1281,7 @@
         "beat": "⑤",
         "commandContains": [
           "plan run --task TASK.T1",
-          "--execution-id AGX-2026-000007"
+          "--execution-id <verification-AGX>"
         ]
       },
       "design_expected": null,
@@ -1181,12 +1291,12 @@
     {
       "id": "L5-F-05-route-reconcile-evidence-present",
       "family": "F",
-      "title": "证据在座 + 绑定许可在座 → R_RECONCILE（beat ⑥：delta 三方对账，clean=true 是合法出口）",
+      "title": "GRN 与许可在座但没有实现交接或终验权威 → R_EXECUTE_ENTRY",
       "evaluator": "next_action",
       "provenance": {
         "corpus": "packages/cli/src/next-action.ts",
-        "anchor": "#NEXT_ACTION_ROUTE_TABLE[R_RECONCILE]",
-        "note_md": "⑥ 对账行：evidence_present && bound_refs 非空 → reconcile --permit（GRN 在座 = 验证活动已开始——runs_present 分母语义的下游行）。"
+        "anchor": "#NEXT_ACTION_ROUTE_TABLE[R_EXECUTE_ENTRY]",
+        "note_md": "runs_present 仅证明有检查留痕，不能冒充 final_stable cohort 或实现完成；缺交接继续 execute。"
       },
       "input": {
         "snapshot": {
@@ -1218,14 +1328,26 @@
           "baseline_gate_codes": [],
           "baseline_unknowns_remaining": null,
           "baseline_blocking_remaining": null,
-          "baseline_pending_change_ref": null
+          "baseline_pending_change_ref": null,
+          "selected_task_id": "TASK.T1",
+          "prerequisite_task_id": null,
+          "task_selection_source": "unique",
+          "session_key": null,
+          "task_selection_blocker_code": null,
+          "task_selection_blocker": null,
+          "implementation_handoff_id": null,
+          "implementation_handoff_state": "absent",
+          "implementation_handoff_reason": null,
+          "finalize_stage": null,
+          "finalize_next_actions": []
         }
       },
       "expect": {
-        "route_id": "R_RECONCILE",
-        "beat": "⑥",
+        "route_id": "R_EXECUTE_ENTRY",
+        "beat": "④",
         "commandContains": [
-          "reconcile --permit PERMIT.T1.1"
+          "execution begin",
+          "--task-id TASK.T1"
         ]
       },
       "design_expected": null,
@@ -1268,7 +1390,18 @@
           "baseline_gate_codes": [],
           "baseline_unknowns_remaining": null,
           "baseline_blocking_remaining": null,
-          "baseline_pending_change_ref": null
+          "baseline_pending_change_ref": null,
+          "selected_task_id": "TASK.T1",
+          "prerequisite_task_id": null,
+          "task_selection_source": "unique",
+          "session_key": null,
+          "task_selection_blocker_code": null,
+          "task_selection_blocker": null,
+          "implementation_handoff_id": null,
+          "implementation_handoff_state": "absent",
+          "implementation_handoff_reason": null,
+          "finalize_stage": null,
+          "finalize_next_actions": []
         }
       },
       "expect": {
@@ -1322,7 +1455,18 @@
           "baseline_gate_codes": [],
           "baseline_unknowns_remaining": null,
           "baseline_blocking_remaining": null,
-          "baseline_pending_change_ref": null
+          "baseline_pending_change_ref": null,
+          "selected_task_id": "TASK.T1",
+          "prerequisite_task_id": null,
+          "task_selection_source": "unique",
+          "session_key": null,
+          "task_selection_blocker_code": null,
+          "task_selection_blocker": null,
+          "implementation_handoff_id": null,
+          "implementation_handoff_state": "absent",
+          "implementation_handoff_reason": null,
+          "finalize_stage": null,
+          "finalize_next_actions": []
         }
       },
       "expect": {
@@ -1337,12 +1481,12 @@
     {
       "id": "L5-G-03-route-unjudgeable-freshness-not-masquerade-stale",
       "family": "G",
-      "title": "freshness 不可判 → stale 行跳过不乱指（不冒充 stale 也不冒充 fresh）——落证据对账行",
+      "title": "freshness 不可判不冒充 stale；没有交接或终验权威时保持 EXECUTE 恢复入口",
       "evaluator": "next_action",
       "provenance": {
         "corpus": "packages/cli/src/next-action.ts",
         "anchor": "#NEXT_ACTION_ROUTE_TABLE[R_MANIFEST_STALE]（when 仅 stale_grounding 为 true——unjudgeable=false 跳过）",
-        "note_md": "N5 诚实降级面（裁决 17① 链）：task_manifest_freshness=unjudgeable 时 R_MANIFEST_STALE 行不命中（when=false 非 null）——不冒充 fresh 也不乱指 stale；runs 留痕在座 → 落 R_RECONCILE 可判行。条件不可判与条件不满足是两种状态。"
+        "note_md": "不可判 context 不制造 stale/fresh 事实；没有有效交接时不因 GRN 存在推定实现完成，实际执行仍须 context/permit 前置校验。"
       },
       "input": {
         "snapshot": {
@@ -1374,14 +1518,26 @@
           "baseline_gate_codes": [],
           "baseline_unknowns_remaining": null,
           "baseline_blocking_remaining": null,
-          "baseline_pending_change_ref": null
+          "baseline_pending_change_ref": null,
+          "selected_task_id": "TASK.T1",
+          "prerequisite_task_id": null,
+          "task_selection_source": "unique",
+          "session_key": null,
+          "task_selection_blocker_code": null,
+          "task_selection_blocker": null,
+          "implementation_handoff_id": null,
+          "implementation_handoff_state": "absent",
+          "implementation_handoff_reason": null,
+          "finalize_stage": null,
+          "finalize_next_actions": []
         }
       },
       "expect": {
-        "route_id": "R_RECONCILE",
-        "beat": "⑥",
+        "route_id": "R_EXECUTE_ENTRY",
+        "beat": "④",
         "commandContains": [
-          "reconcile --permit"
+          "execution begin",
+          "--task-id TASK.T1"
         ]
       },
       "design_expected": null,
@@ -1426,7 +1582,18 @@
           ],
           "baseline_unknowns_remaining": 0,
           "baseline_blocking_remaining": 0,
-          "baseline_pending_change_ref": null
+          "baseline_pending_change_ref": null,
+          "selected_task_id": "TASK.T1",
+          "prerequisite_task_id": null,
+          "task_selection_source": "unique",
+          "session_key": null,
+          "task_selection_blocker_code": null,
+          "task_selection_blocker": null,
+          "implementation_handoff_id": null,
+          "implementation_handoff_state": "absent",
+          "implementation_handoff_reason": null,
+          "finalize_stage": null,
+          "finalize_next_actions": []
         }
       },
       "expect": {

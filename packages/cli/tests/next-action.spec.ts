@@ -17,7 +17,7 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { applyTransaction, createStore } from "@pomaster/kernel";
+import { applyTransaction, attachSession, createStore } from "@pomaster/kernel";
 import {
   BASELINE_MANIFEST_RELATIVE,
   collectNextActionSnapshot,
@@ -25,14 +25,21 @@ import {
   NEXT_ACTION_ROUTE_IDS,
   NEXT_ACTION_ROUTE_TABLE,
   NEXT_ACTION_SNAPSHOT_INCOMPLETE,
+  projectWorkflowRoute,
   renderBreadcrumb,
+  runNextAction,
+  runAlerts,
   runBaselineConfirm,
   runBaselineSet,
   runContextCompile,
   runExecutionBegin,
+  runExecutionHandoff,
   runInit,
   runPermitIssue,
+  runProjectIdentificationReport,
+  runProjectIdentificationConfirm,
   runStatus,
+  runSessionOverview,
   type NextActionRouteId,
   type NextActionSnapshot,
 } from "@pomaster/cli";
@@ -192,9 +199,15 @@ function writeClaim(ref: string, verdict: string | null): void {
 
 /** 空快照基座（路由表纯函数 fixtures 用；无磁盘依赖）。 */
 function snap(overrides: Partial<NextActionSnapshot>): NextActionSnapshot {
-  return {
+  const result: NextActionSnapshot = {
     initialized: true,
     active_tasks: [],
+    selected_task_id: null,
+    prerequisite_task_id: null,
+    task_selection_source: "none",
+    session_key: null,
+    task_selection_blocker_code: null,
+    task_selection_blocker: null,
     permit_ledger_ok: true,
     expired_bound_refs: [],
     active_bound_refs: [],
@@ -209,15 +222,57 @@ function snap(overrides: Partial<NextActionSnapshot>): NextActionSnapshot {
     task_scope_subjects: [],
     task_execution_active: false,
     task_execution_id: null,
+    implementation_handoff_id: null,
+    implementation_handoff_state: "absent",
+    implementation_handoff_reason: null,
+    finalize_stage: null,
+    finalize_next_actions: [],
     baseline_gate_codes: [],
     baseline_unknowns_remaining: null,
     baseline_blocking_remaining: null,
     baseline_pending_change_ref: null,
     ...overrides,
   };
+  if (overrides.selected_task_id === undefined && result.active_tasks.length === 1) {
+    return { ...result, selected_task_id: result.active_tasks[0]?.id ?? null, task_selection_source: "unique" };
+  }
+  return result;
 }
 
 const TASK = { id: "TASK.T1", lifecycle: "PROPOSED", evidence: "PLANNED" };
+
+describe("legacy snapshot additive compatibility", () => {
+  function legacy(overrides: Partial<NextActionSnapshot>): NextActionSnapshot {
+    const input = { ...snap(overrides) } as Partial<NextActionSnapshot>;
+    for (const key of ["selected_task_id", "prerequisite_task_id", "task_selection_source", "session_key", "task_selection_blocker_code", "task_selection_blocker", "implementation_handoff_id", "implementation_handoff_state", "implementation_handoff_reason", "finalize_stage", "finalize_next_actions"] as const) delete input[key];
+    return input as NextActionSnapshot;
+  }
+
+  it("missing additive fields are absent rather than a fabricated prerequisite or blocker", () => {
+    const input = legacy({ active_tasks: [TASK] });
+    const before = structuredClone(input);
+    expect(evaluateNextAction(input)).toMatchObject({ route_id: "R_PERMIT_MISSING", command: expect.stringContaining("TASK.T1") });
+    const action = evaluateNextAction(input);
+    expect(renderBreadcrumb(action, input)).toContain("TASK.T1");
+    expect(renderBreadcrumb(action, input)).not.toContain("undefined");
+    expect(projectWorkflowRoute(action, input)).toMatchObject({ selected_task: "TASK.T1", prerequisite_task: null, selection_source: "unique", blockers: [] });
+    expect(input).toEqual(before);
+    const empty = legacy({ active_tasks: [] });
+    expect(evaluateNextAction(empty).route_id).toBe("R_NO_ACTIVE_TASK");
+    expect(renderBreadcrumb(evaluateNextAction(empty), empty)).toBeNull();
+  });
+
+  it("legacy multiple candidates remain ambiguous and identification remains a prerequisite", () => {
+    expect(evaluateNextAction(legacy({ active_tasks: [TASK, { ...TASK, id: "TASK.T2" }] })).route_id).toBe("R_TASK_SELECTION_REQUIRED");
+    expect(evaluateNextAction(legacy({ active_tasks: [{ ...TASK, project_identification: true }] })).route_id).toBe("R_PROJECT_IDENTIFICATION");
+  });
+
+  it("an old active AGX does not synthesize handoff completion or bypass baseline", () => {
+    const input = legacy({ active_tasks: [TASK], bound_refs: ["PERMIT.T1.1"], task_manifest_present: true, task_manifest_freshness: "fresh", task_execution_active: true, task_execution_id: "AGX-2026-000007" });
+    expect(evaluateNextAction(input)).toMatchObject({ route_id: "R_EXECUTE_ENTRY", command: expect.stringContaining("execution handoff AGX-2026-000007") });
+    expect(evaluateNextAction({ ...input, baseline_gate_codes: ["BASELINE_DRIFT"], baseline_blocking_remaining: 0 }).route_id).toBe("R_BASELINE_NOT_READY");
+  });
+});
 
 describe("baseline attention alongside task suggestions (G08)", () => {
   it.each([
@@ -226,7 +281,7 @@ describe("baseline attention alongside task suggestions (G08)", () => {
     [{ bound_refs: ["PERMIT.P1"] }, "pomaster context compile"],
     [{ bound_refs: ["PERMIT.P1"], task_manifest_present: true, task_manifest_freshness: "stale_grounding", task_manifest_role: "frontend" }, "pomaster context compile --role frontend"],
     [{ bound_refs: ["PERMIT.P1"], task_manifest_present: true, task_manifest_freshness: "fresh" }, "pomaster execution begin"],
-    [{ bound_refs: ["PERMIT.P1"], task_manifest_present: true, task_manifest_freshness: "fresh", task_execution_active: true }, "pomaster plan run"],
+    [{ bound_refs: ["PERMIT.P1"], task_manifest_present: true, task_manifest_freshness: "fresh", task_execution_active: true }, "pomaster execution handoff"],
   ] satisfies readonly [Partial<NextActionSnapshot>, string][]) ("preserves attention and task prerequisite %j", (overrides, command) => {
     const snapshot = snap({
       active_tasks: [TASK],
@@ -269,6 +324,81 @@ describe("baseline attention alongside task suggestions (G08)", () => {
     }));
     expect(action.reason).toContain("任务侧下一步: 无法判定");
     expect(action.reason).not.toContain("pomaster execution begin");
+  });
+});
+
+describe("phase-driven workflow route projection", () => {
+  it("多个候选不按字母首项静默执行，并投影可解析 skill/action/blocker", () => {
+    const snapshot = snap({
+      active_tasks: [TASK, { ...TASK, id: "TASK.T2" }],
+      selected_task_id: null,
+      task_selection_source: "ambiguous",
+      task_selection_blocker: "存在多个可恢复 TASK：TASK.T1、TASK.T2",
+    });
+    const action = evaluateNextAction(snapshot);
+    expect(action.route_id).toBe("R_TASK_SELECTION_REQUIRED");
+    const projection = projectWorkflowRoute(action, snapshot);
+    expect(projection).toMatchObject({
+      schema: "pomaster.workflow-route/v1",
+      selected_task: null,
+      selection_source: "ambiguous",
+      required_skill: { name: "pomaster" },
+    });
+    expect(projection.required_skill?.paths).toEqual([
+      ".agents/skills/pomaster/SKILL.md",
+      ".claude/skills/pomaster/SKILL.md",
+    ]);
+    expect(projection.blockers[0]?.code).toBe("TASK_SELECTION_AMBIGUOUS");
+  });
+
+  it("识别任务作为 prerequisite 优先呈现但保留 selected task", () => {
+    const snapshot = snap({
+      active_tasks: [
+        { id: "TASK.IDENTIFY", lifecycle: "CURRENT", evidence: "PLANNED", project_identification: true },
+        TASK,
+      ],
+      selected_task_id: "TASK.T1",
+      prerequisite_task_id: "TASK.IDENTIFY",
+      task_selection_source: "session",
+      session_key: "codex_a",
+    });
+    const action = evaluateNextAction(snapshot);
+    const projection = projectWorkflowRoute(action, snapshot);
+    expect(action.route_id).toBe("R_PROJECT_IDENTIFICATION");
+    expect(projection).toMatchObject({
+      selected_task: "TASK.T1",
+      prerequisite_task: "TASK.IDENTIFY",
+      session_key: "codex_a",
+    });
+    expect(action.command).toContain("TASK.IDENTIFY");
+  });
+
+  it.each([
+    "VERIFYING",
+    "VERIFY_BLOCKED",
+    "AWAITING_REPLAY_REVIEW",
+    "REPLAY_BLOCKED",
+    "AWAITING_INDEPENDENT_VERIFICATION",
+    "NEW_CLAIM_REQUIRED",
+    "AWAITING_HUMAN_ACCEPT",
+    "CLOSEOUT_BLOCKED",
+  ] as const)("复用 finalize stage %s 及原 next_action，不复制终验判据", (stage) => {
+    const snapshot = snap({
+      active_tasks: [TASK],
+      finalize_stage: stage,
+      finalize_next_actions: [{
+        actor: "independent_verifier",
+        command: `pomaster finalize status TASK.T1 --from ${stage}`,
+        reason: `finalize reason ${stage}`,
+      }],
+    });
+    const action = evaluateNextAction(snapshot);
+    expect(action).toMatchObject({
+      route_id: "R_FINALIZE_CONTINUE",
+      command: `pomaster finalize status TASK.T1 --from ${stage}`,
+    });
+    expect(action.reason).toContain(`finalize reason ${stage}`);
+    expect(projectWorkflowRoute(action, snapshot).required_action?.actor).toBe("independent_verifier");
   });
 });
 
@@ -344,6 +474,8 @@ const ROUTE_FIXTURES: readonly { readonly route: NextActionRouteId; readonly sna
       task_manifest_freshness: "fresh",
       task_execution_active: true,
       task_execution_id: "AGX-2026-000007",
+      implementation_handoff_id: "sha256:handoff",
+      implementation_handoff_state: "fresh",
     }),
   },
   {
@@ -356,6 +488,7 @@ const ROUTE_FIXTURES: readonly { readonly route: NextActionRouteId; readonly sna
       task_manifest_freshness: "fresh",
       evidence_present: true,
       runs_present: true,
+      task_execution_active: null,
     }),
   },
 ];
@@ -401,10 +534,10 @@ describe("next-action 路由表（P2 表驱动：每行 = 条件 + 建议）", (
       "pomaster context compile --role frontend --change TASK.T1",
     );
     expect(byRoute.get("R_EXECUTE_ENTRY")).toBe(
-      "pomaster execution begin --role <role> --runtime <runtime> --identity-kind <kind> --task-id TASK.T1",
+      "pomaster execution begin --role implementer --runtime <runtime> --identity-kind <kind> --task-id TASK.T1",
     );
     expect(byRoute.get("R_VERIFY_ENTRY")).toBe(
-      "pomaster plan run --task TASK.T1 --execution-id AGX-2026-000007",
+      "pomaster plan run --task TASK.T1 --execution-id <verification-AGX>",
     );
     expect(byRoute.get("R_RECONCILE")).toContain("pomaster reconcile --permit PERMIT.T1.1");
   });
@@ -482,16 +615,16 @@ describe("next-action 路由表（P2 表驱动：每行 = 条件 + 建议）", (
     expect(
       evaluateNextAction(snap({ ...base, task_execution_active: false })).route_id,
     ).toBe("R_EXECUTE_ENTRY");
-    // 在途执行 → ⑤（拍序：执行期间自检先于对账）。
+    // 在途执行但无 handoff 仍停留 ④。
     expect(
       evaluateNextAction(snap({ ...base, task_execution_active: true })).route_id,
-    ).toBe("R_VERIFY_ENTRY");
-    // runs 留痕在座 + 无在途执行 → ⑥（GRN 在座 = 验证活动已开始）。
+    ).toBe("R_EXECUTE_ENTRY");
+    // fresh handoff 才进入 ⑤。
     expect(
       evaluateNextAction(
-        snap({ ...base, task_execution_active: false, runs_present: true, evidence_present: true }),
+        snap({ ...base, task_execution_active: false, implementation_handoff_state: "fresh", implementation_handoff_id: "sha256:handoff" }),
       ).route_id,
-    ).toBe("R_RECONCILE");
+    ).toBe("R_VERIFY_ENTRY");
     // 不可判（档案平面坏形）→ ④⑤ 均跳过 → 落 R_UNDETERMINED（诚实缺席，不乱指）。
     const undetermined = evaluateNextAction(snap({ ...base, task_execution_active: null }));
     expect(undetermined.route_id).toBe("R_UNDETERMINED");
@@ -509,14 +642,16 @@ describe("next-action 路由表（P2 表驱动：每行 = 条件 + 建议）", (
         task_manifest_freshness: "fresh",
         task_execution_active: true,
         task_execution_id: "AGX-2026-000007",
+        implementation_handoff_state: "fresh",
+        implementation_handoff_id: "sha256:handoff",
       }),
     );
     expect(action.route_id).toBe("R_VERIFY_ENTRY");
-    expect(action.command).toContain("pomaster plan run --task TASK.T1 --execution-id AGX-2026-000007");
+    expect(action.command).toContain("pomaster plan run --task TASK.T1 --execution-id <verification-AGX>");
     expect(action.command).not.toContain("check --fast");
     // 快速诊断语义保留：reason 说明 check --fast 仅局部自检，不满足未完成 obligation。
-    expect(action.reason).toContain("check --fast");
-    expect(action.reason).toContain("obligation");
+    expect(action.reason).toContain("fresh implementation handoff");
+    expect(action.reason).toContain("独立性");
   });
 
   it("R_VERIFY_ENTRY execution-id 缺席回退占位词形（快照字段 null → <AGX-…>，不臆造 id）", () => {
@@ -528,9 +663,11 @@ describe("next-action 路由表（P2 表驱动：每行 = 条件 + 建议）", (
         task_manifest_present: true,
         task_manifest_freshness: "fresh",
         task_execution_active: true,
+        implementation_handoff_state: "fresh",
+        implementation_handoff_id: "sha256:handoff",
       }),
     );
-    expect(action.command).toBe("pomaster plan run --task TASK.T1 --execution-id <AGX-…>");
+    expect(action.command).toBe("pomaster plan run --task TASK.T1 --execution-id <verification-AGX>");
   });
 
   it("首中即停：closeout 就绪优先于许可/投影行（⑧ 优先级高于 ②③）", () => {
@@ -816,9 +953,20 @@ describe("R-H 正向链（公开命令：status 提示 → 照做 → 合理推�
     expect(began.ok).toBe(true);
     expect(began.result.execution_id).toMatch(/^AGX-[0-9]{4}-[0-9]+$/);
     const afterBegin = await runStatus(dir);
-    expect(afterBegin.result.next_action.route_id).toBe("R_VERIFY_ENTRY");
-    expect(afterBegin.result.next_action.command).toBe(
-      `pomaster plan run --task TASK.T1 --execution-id ${began.result.execution_id}`,
+    expect(afterBegin.result.next_action.route_id).toBe("R_EXECUTE_ENTRY");
+    expect(afterBegin.result.next_action.command).toContain("pomaster execution handoff");
+    mkdirSync(join(dir, "src"), { recursive: true });
+    writeFileSync(join(dir, "src", "feature.ts"), "export const feature = true;\n", "utf8");
+    const handedOff = await runExecutionHandoff(dir, began.result.execution_id, {
+      taskId: "TASK.T1",
+      changedPaths: ["src/feature.ts"],
+      summary: "feature implemented",
+    });
+    expect(handedOff.ok).toBe(true);
+    const afterHandoff = await runStatus(dir);
+    expect(afterHandoff.result.next_action.route_id).toBe("R_VERIFY_ENTRY");
+    expect(afterHandoff.result.next_action.command).toBe(
+      "pomaster plan run --task TASK.T1 --execution-id <verification-AGX>",
     );
   });
 });
@@ -997,10 +1145,10 @@ describe("④ EXECUTE 感知（T2 R3：executions 档案平面扫描）", () => 
     writeExecution("AGX-2026-00001.json", { execution_id: "AGX-2026-00001", task_id: "TASK.OTHER", ended_at: null });
     expect((await collectNextActionSnapshot(dir, warnings)).task_execution_active).toBe(false);
     // 本任务已封口 → false。
-    writeExecution("AGX-2026-00002.json", { execution_id: "AGX-2026-00002", task_id: "TASK.T1", ended_at: "2026-01-01T00:00:00.000Z" });
+    writeExecution("AGX-2026-00002.json", { execution_id: "AGX-2026-00002", task_id: "TASK.T1", role: "implementer", ended_at: "2026-01-01T00:00:00.000Z" });
     expect((await collectNextActionSnapshot(dir, warnings)).task_execution_active).toBe(false);
     // 本任务在途 → true（W0-FR01：同scan捕获在途 execution_id 供⑤主链命令渲染）。
-    writeExecution("AGX-2026-00003.json", { execution_id: "AGX-2026-00003", task_id: "TASK.T1", ended_at: null });
+    writeExecution("AGX-2026-00003.json", { execution_id: "AGX-2026-00003", task_id: "TASK.T1", role: "implementer", ended_at: null });
     const inFlight = await collectNextActionSnapshot(dir, warnings);
     expect(inFlight.task_execution_active).toBe(true);
     expect(inFlight.task_execution_id).toBe("AGX-2026-00003");
@@ -1027,7 +1175,7 @@ describe("④ EXECUTE 感知（T2 R3：executions 档案平面扫描）", () => 
  * 合法 TASK 入库（init 已建 store；kernel 事务登记，authority owner 补登记）。
  * （P-C1 T13 与 T2 R5 集成两 describe 共用——提升到模块级。）
  */
-async function seedTaskInInitedStore(): Promise<void> {
+async function seedTaskInInitedStore(taskId = "TASK.T1"): Promise<void> {
   const authPath = join(dir, ".pomaster", "state", "authority.json");
   const auth = JSON.parse(readFileSync(authPath, "utf8")) as {
     authorities: Record<string, unknown>;
@@ -1040,7 +1188,7 @@ async function seedTaskInInitedStore(): Promise<void> {
       {
         op: "upsert_object",
         envelope: {
-          id: "TASK.T1",
+          id: taskId,
           kind: "task_object",
           axisProfile: "task_default",
           axes: {
@@ -1049,7 +1197,7 @@ async function seedTaskInInitedStore(): Promise<void> {
             evidence: "IMPLEMENTED",
             change: "STABLE",
           },
-          titleZh: "baseline 路由集成任务",
+          titleZh: `baseline 路由集成任务 ${taskId}`,
           authority: { owner: "BUSINESS_OWNER", delegates: [] },
           origin: "natural",
           payload: {
@@ -1067,6 +1215,138 @@ async function seedTaskInInitedStore(): Promise<void> {
     ],
   });
 }
+
+describe("session-aware task selection", () => {
+  it("confirmed identification leaves active candidates without hiding pending identification", async () => {
+    writeFileSync(join(dir, "package.json"), "{}");
+    await runInit(dir, { brownfield: { confirmed: false } });
+    const taskId = "TASK.INIT_PROJECT_IDENTIFICATION";
+    expect((await collectNextActionSnapshot(dir, [])).prerequisite_task_id).toBe(taskId);
+    expect((await runProjectIdentificationReport(dir, { taskId, purpose: "fixture", architecture: "vue", stack: ["vue"], directories: ["src"], commands: ["node --version"], evidence: ["package.json"], unknowns: [] })).ok).toBe(true);
+    expect((await collectNextActionSnapshot(dir, [])).prerequisite_task_id).toBe(taskId);
+    expect((await runProjectIdentificationConfirm(dir, { taskId, actor: "human:owner" })).ok).toBe(true);
+    expect(await collectNextActionSnapshot(dir, [])).toMatchObject({ active_tasks: [], prerequisite_task_id: null, selected_task_id: null });
+    await seedTaskInInitedStore("TASK.A");
+    expect(await collectNextActionSnapshot(dir, [])).toMatchObject({ active_tasks: [expect.objectContaining({ id: "TASK.A" })], selected_task_id: "TASK.A", task_selection_source: "unique" });
+  });
+
+  it("explicit COMPLETED task reports existing authority without reopening implementation", async () => {
+    await runInit(dir);
+    await seedTaskInInitedStore();
+    const bodyPath = join(dir, ".pomaster/truth/objects/task-object/task.t1.json");
+    const body = JSON.parse(readFileSync(bodyPath, "utf8"));
+    body.axes.evidence = "VERIFIED";
+    writeFileSync(bodyPath, JSON.stringify(body));
+    const indexPath = join(dir, ".pomaster/state/truth-index.json");
+    const index = JSON.parse(readFileSync(indexPath, "utf8"));
+    index.objects.find((row: { id: string }) => row.id === "TASK.T1").axes.evidence = "VERIFIED";
+    writeFileSync(indexPath, JSON.stringify(index));
+    expect((await collectNextActionSnapshot(dir, [])).active_tasks).toEqual([]);
+    const result = await runNextAction(dir, { taskId: "TASK.T1" });
+    expect(result.result.workflow_route).toMatchObject({ selected_task: "TASK.T1", selection_source: "explicit", route_id: "R_CLOSEOUT_READY" });
+    expect(result.result.next_action.reason).toContain("已完成");
+  });
+
+  it("new active implementer cannot reuse another AGX handoff; corrupt handoff hashes block reuse", { timeout: 60_000 }, async () => {
+    await runInit(dir);
+    await seedTaskInInitedStore("TASK.A");
+    writeFileSync(join(dir, "a.ts"), "export const a = 1;");
+    const first = await runExecutionBegin(dir, { role: "implementer", runtime: "codex", identityKind: "interactive", taskId: "TASK.A" });
+    await runExecutionHandoff(dir, first.result.execution_id, { taskId: "TASK.A", changedPaths: ["a.ts"], summary: "done" });
+    expect((await collectNextActionSnapshot(dir, [])).implementation_handoff_state).toBe("fresh");
+    const second = await runExecutionBegin(dir, { role: "implementer", runtime: "codex", identityKind: "interactive", taskId: "TASK.A" });
+    expect(await collectNextActionSnapshot(dir, [])).toMatchObject({ task_execution_id: second.result.execution_id, implementation_handoff_state: "absent" });
+    const path = join(dir, ".pomaster/executions", `${first.result.execution_id}.json`);
+    const record = JSON.parse(readFileSync(path, "utf8"));
+    record.implementation_handoffs[0].summary = "tampered";
+    writeFileSync(path, JSON.stringify(record));
+    expect((await collectNextActionSnapshot(dir, [])).implementation_handoff_state).toBe("unjudgeable");
+  });
+  it("两个并行 session 独立选择各自 TASK；无绑定多候选显式歧义；查询零业务写", { timeout: 60_000 }, async () => {
+    await runInit(dir);
+    await seedTaskInInitedStore("TASK.A");
+    await seedTaskInInitedStore("TASK.B");
+    const store = await createStore(dir);
+    await attachSession(store, { sessionKey: "codex_a", harness: "codex", currentTask: "TASK.A" });
+    await attachSession(store, { sessionKey: "codex_b", harness: "codex", currentTask: "TASK.B" });
+    mkdirSync(join(dir, "src"), { recursive: true });
+    writeFileSync(join(dir, "src", "a.ts"), "export const a = 1;\n", "utf8");
+    const execution = await runExecutionBegin(dir, {
+      role: "implementer",
+      runtime: "codex",
+      identityKind: "interactive",
+      taskId: "TASK.A",
+    });
+    await runExecutionHandoff(dir, execution.result.execution_id, {
+      taskId: "TASK.A",
+      changedPaths: ["src/a.ts"],
+      summary: "implement A",
+    });
+    const truthPath = join(dir, ".pomaster", "state", "truth-index.json");
+    const before = readFileSync(truthPath, "utf8");
+
+    const a = await collectNextActionSnapshot(dir, [], { sessionKey: "codex_a" });
+    const b = await collectNextActionSnapshot(dir, [], { sessionKey: "codex_b" });
+    const explicit = await collectNextActionSnapshot(dir, [], { taskId: "TASK.B", sessionKey: "codex_a" });
+    const ambiguous = await collectNextActionSnapshot(dir, []);
+
+    expect(a).toMatchObject({ selected_task_id: "TASK.A", task_selection_source: "session" });
+    expect(a.implementation_handoff_state).toBe("fresh");
+    expect(b).toMatchObject({
+      selected_task_id: "TASK.B",
+      task_selection_source: "session",
+      implementation_handoff_state: "absent",
+    });
+    expect(explicit).toMatchObject({
+      selected_task_id: "TASK.B",
+      task_selection_source: "explicit",
+      task_selection_blocker_code: "TASK_SELECTION_CONFLICT",
+    });
+    expect(evaluateNextAction(explicit).route_id).toBe("R_TASK_SELECTION_REQUIRED");
+    expect(ambiguous).toMatchObject({ selected_task_id: null, task_selection_source: "ambiguous" });
+    expect(evaluateNextAction(ambiguous).route_id).toBe("R_TASK_SELECTION_REQUIRED");
+    const command = await runNextAction(dir, { sessionKey: "codex_a" });
+    expect(command.result.workflow_route).toMatchObject({
+      schema: "pomaster.workflow-route/v1",
+      selected_task: "TASK.A",
+      selection_source: "session",
+    });
+    expect(command.human.join("\n")).toContain("required_skill=");
+    const hookAlert = await runAlerts(dir, { sessionKey: "codex_a" });
+    const hookSession = await runSessionOverview(dir, { sessionKey: "codex_b" });
+    expect(hookAlert.result.workflow_route).toMatchObject({
+      selected_task: "TASK.A",
+      selection_source: "session",
+    });
+    expect(hookSession.result.workflow_route).toMatchObject({
+      selected_task: "TASK.B",
+      selection_source: "session",
+    });
+    expect(readFileSync(truthPath, "utf8")).toBe(before);
+  });
+
+  it("显式指定已完成 TASK 不回退到其他任务，投影 OBJECT_NOT_FOUND 阻断", async () => {
+    const ledger = baseLedger(3);
+    ledger.objects = [taskRow({
+      axes: {
+        lifecycle: "CURRENT",
+        confidence: "PROVISIONAL",
+        evidence: "VERIFIED",
+        change: "STABLE",
+      },
+    })];
+    writeLedger(ledger);
+    const snapshot = await collectNextActionSnapshot(dir, [], { taskId: "TASK.T1" });
+    expect(snapshot).toMatchObject({
+      selected_task_id: null,
+      task_selection_source: "ambiguous",
+      task_selection_blocker_code: "OBJECT_NOT_FOUND",
+    });
+    const action = evaluateNextAction(snapshot);
+    expect(action.route_id).toBe("R_TASK_SELECTION_REQUIRED");
+    expect(projectWorkflowRoute(action, snapshot).blockers[0]?.code).toBe("OBJECT_NOT_FOUND");
+  });
+});
 
 describe("R_BASELINE_NOT_READY 集成（T2 R5：真实 init/baseline 面）", () => {
   it(
