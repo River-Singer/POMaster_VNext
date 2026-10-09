@@ -12,7 +12,7 @@
  */
 import { mkdtempSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, posix, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { runCompact, runPermitIssue, createProgram, applyStackAnswers, type StackAnswer, type CompactResult } from "@pomaster/cli";
 import {
@@ -43,6 +43,7 @@ import {
   type ChecklistIo,
   loadSeedManifestEntries,
   collectBootstrapHarnessSnapshot,
+  mergePomasterHooks,
 } from "@pomaster/cli";
 import { CONTEXT_PARTITION_TITLES } from "../src/context.js";
 
@@ -1551,6 +1552,92 @@ describe("重入口 hooks settings.json 合并（claude 层）", () => {
       second.result.files.find((f) => f.file === CLAUDE_SETTINGS_RELATIVE)?.action,
     ).toBe("unchanged");
     expect(read(CLAUDE_SETTINGS_RELATIVE)).toBe(before);
+  });
+
+  it("迁移当前项目内绝对 exec-guard 路径并去重，保留外部路径与自定义 wrapper", async () => {
+    const outerDir = dir;
+    dir = join(outerDir, "project with spaces");
+    mkdirSync(join(dir, ".claude"), { recursive: true });
+    const managedAbsolute = resolve(dir, CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE);
+    const legacyAbsolute = resolve(dir, CLAUDE_EXEC_GUARD_HOOK_RELATIVE);
+    const externalAbsolute = resolve(outerDir, "external hooks", "pomaster-exec-guard.py");
+    const settings = {
+      permissions: { allow: ["Bash(git status:*)"] },
+      hooks: {
+        PreToolUse: [{
+          matcher: CLAUDE_EXEC_GUARD_MATCHER,
+          hooks: [
+            { type: "command", command: `python "${managedAbsolute}"` },
+            { type: "command", command: `python '${legacyAbsolute}'` },
+            { type: "command", command: CLAUDE_EXEC_GUARD_COMMAND },
+            { type: "command", command: `python "${externalAbsolute}"` },
+            { type: "command", command: `python -u "${managedAbsolute}"` },
+          ],
+        }],
+      },
+    };
+    writeFileSync(
+      join(dir, CLAUDE_SETTINGS_RELATIVE),
+      `${JSON.stringify(settings, null, 2)}\n`,
+      "utf8",
+    );
+
+    try {
+      const first = await runInit(dir);
+      expect(first.ok).toBe(true);
+      const firstText = read(CLAUDE_SETTINGS_RELATIVE);
+      const migrated = JSON.parse(firstText) as typeof settings;
+      const commands = migrated.hooks.PreToolUse.flatMap((group) => group.hooks)
+        .map((handler) => handler.command);
+      expect(commands.filter((command) => command === CLAUDE_EXEC_GUARD_COMMAND)).toHaveLength(1);
+      expect(commands).not.toContain(`python "${managedAbsolute}"`);
+      expect(commands).not.toContain(`python '${legacyAbsolute}'`);
+      expect(commands).toContain(`python "${externalAbsolute}"`);
+      expect(commands).toContain(`python -u "${managedAbsolute}"`);
+      expect(migrated.permissions).toEqual(settings.permissions);
+
+      const second = await runInit(dir);
+      expect(second.result.change).toBe("NO_CHANGE");
+      expect(read(CLAUDE_SETTINGS_RELATIVE)).toBe(firstText);
+    } finally {
+      dir = outerDir;
+    }
+  });
+
+  it.each([
+    {
+      name: "Windows",
+      root: "C:\\Work  Space\\CLIENT",
+      managed: "c:/work  space/client/.claude/hooks/pomaster-exec-guard.py",
+      external: "D:\\Other Space\\pomaster-exec-guard.py",
+    },
+    {
+      name: "POSIX",
+      root: "/work space/client",
+      managed: posix.join("/work space/client", CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE),
+      external: "/work space/Client/.claude/hooks/pomaster-exec-guard.py",
+    },
+  ])("$name 绝对路径仅在精确落入目标 root 时视为受管", ({ root, managed, external }) => {
+    const existing = `${JSON.stringify({
+      hooks: {
+        PreToolUse: [{
+          matcher: CLAUDE_EXEC_GUARD_MATCHER,
+          hooks: [
+            { type: "command", command: `python "${managed}"` },
+            { type: "command", command: `python "${external}"` },
+          ],
+        }],
+      },
+    }, null, 2)}\n`;
+    const merged = mergePomasterHooks(existing, root);
+    expect(merged.status).toBe("updated");
+    if (merged.status === "skipped") throw new Error(merged.reason);
+    const commands = (JSON.parse(merged.nextText).hooks.PreToolUse as Array<{
+      hooks: Array<{ command: string }>;
+    }>).flatMap((group) => group.hooks).map((handler) => handler.command);
+    expect(commands).toContain(CLAUDE_EXEC_GUARD_COMMAND);
+    expect(commands).not.toContain(`python "${managed}"`);
+    expect(commands).toContain(`python "${external}"`);
   });
 
   it("坏 JSON fail-closed：不可解析的 settings.json → 跳过 + 告警，内容零改写", async () => {

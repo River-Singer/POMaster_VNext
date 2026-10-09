@@ -1798,7 +1798,7 @@ export async function runInit(
       await installClaudeExecGuardFiles(rootDir, files, warnings);
       const settingsAbsolute = `${rootDir}/${CLAUDE_SETTINGS_RELATIVE}`;
       const existingText = await readIfExists(settingsAbsolute);
-      const merged = mergePomasterHooks(existingText);
+      const merged = mergePomasterHooks(existingText, rootDir);
       if (merged.status === "skipped") {
         warnings.push({
           code: "HOOKS_SETTINGS_SKIPPED",
