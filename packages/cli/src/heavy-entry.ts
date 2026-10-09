@@ -23,7 +23,7 @@
  */
 
 import { existsSync, readFileSync } from "node:fs";
-import { basename } from "node:path";
+import { basename, posix, win32 } from "node:path";
 import { fileURLToPath } from "node:url";
 import { CONTEXT_PARTITION_TITLES } from "./context.js";
 import { GENERATED_MARKER } from "./store-layout.js";
@@ -111,25 +111,66 @@ export type HooksMergeOutcome =
  * ——跨文件去重由 Claude Code 处理，同文件去重是安装器的责任）；既有条目
  * （人类/Trellis hooks）一律原样保留；indent 2 + 尾换行写盘格式。
  */
-function isManagedPomasterHook(event: string, command: unknown): boolean {
+function isAbsoluteManagedExecGuardPath(scriptPath: string, rootDir: string | undefined): boolean {
+  if (rootDir === undefined) return false;
+
+  const isWindowsAbsolute = (value: string): boolean =>
+    /^[A-Za-z]:[\\/]/.test(value) || value.startsWith("\\\\");
+
+  if (isWindowsAbsolute(scriptPath)) {
+    if (!isWindowsAbsolute(rootDir) || !win32.isAbsolute(rootDir)) return false;
+    const candidate = win32.normalize(scriptPath).toLowerCase();
+    return [CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE, CLAUDE_EXEC_GUARD_HOOK_RELATIVE]
+      .map((relative) => win32.normalize(win32.join(rootDir, relative)).toLowerCase())
+      .includes(candidate);
+  }
+
+  if (posix.isAbsolute(scriptPath)) {
+    if (!posix.isAbsolute(rootDir)) return false;
+    const candidate = posix.normalize(scriptPath);
+    return [CLAUDE_EXEC_GUARD_LAUNCHER_RELATIVE, CLAUDE_EXEC_GUARD_HOOK_RELATIVE]
+      .map((relative) => posix.normalize(posix.join(rootDir, relative)))
+      .includes(candidate);
+  }
+
+  return false;
+}
+
+function isManagedPomasterHook(
+  event: string,
+  command: unknown,
+  rootDir?: string,
+): boolean {
   if (typeof command !== "string") return false;
-  const normalized = command.trim().replace(/\s+/g, " ");
+  const trimmed = command.trim();
+  const normalized = trimmed.replace(/\s+/g, " ");
   if (event === "SessionStart") {
     return /^(?:npx )?pomaster(?:\.cmd)? session(?: --hook-input)?(?: --json)?$/.test(normalized);
   }
   if (event === "UserPromptSubmit") {
     return /^(?:npx )?pomaster(?:\.cmd)? alerts(?: --hook-input)?(?: --json)?$/.test(normalized);
   }
-  return event === "PreToolUse" && (
+  if (event !== "PreToolUse") return false;
+  if (
     normalized === CLAUDE_EXEC_GUARD_COMMAND ||
     normalized === `python ${CLAUDE_EXEC_GUARD_HOOK_RELATIVE}` ||
     normalized === `python "${CLAUDE_EXEC_GUARD_HOOK_RELATIVE}"`
-  );
+  ) {
+    return true;
+  }
+
+  // Parse the original trimmed command so whitespace inside a quoted path is
+  // preserved. Normalizing the whole command would change valid paths such as
+  // `C:\\Work  Space\\...` before the exact managed-path comparison.
+  const pythonCommand = /^python(?:3(?:\.\d+)?)?\s+(?:"([^"]+)"|'([^']+)'|(\S+))$/.exec(trimmed);
+  const scriptPath = pythonCommand?.[1] ?? pythonCommand?.[2] ?? pythonCommand?.[3];
+  return scriptPath !== undefined && isAbsoluteManagedExecGuardPath(scriptPath, rootDir);
 }
 
 function mergeManagedHooks(
   existingText: string | null,
   desired: typeof POMASTER_HOOK_EVENT_COMMANDS,
+  rootDir?: string,
 ): HooksMergeOutcome {
   let root: Record<string, unknown>;
   if (existingText === null) {
@@ -178,13 +219,23 @@ function mergeManagedHooks(
       }
     }
     let removedLegacy = false;
+    let keptCanonical = false;
     const migratedGroups = groups.map((group) => {
       const record = group as Record<string, unknown>;
+      const matcherMatches = matcher === undefined
+        ? record.matcher === undefined
+        : record.matcher === matcher;
       const handlers = ((record.hooks ?? []) as unknown[]).filter((handler) => {
         if (handler === null || typeof handler !== "object") return true;
-        const owned = isManagedPomasterHook(event, (handler as Record<string, unknown>).command);
-        if (owned && (handler as Record<string, unknown>).command !== command) removedLegacy = true;
-        return !owned || (handler as Record<string, unknown>).command === command;
+        const handlerCommand = (handler as Record<string, unknown>).command;
+        const owned = isManagedPomasterHook(event, handlerCommand, rootDir);
+        if (!owned) return true;
+        if (handlerCommand === command && matcherMatches && !keptCanonical) {
+          keptCanonical = true;
+          return true;
+        }
+        removedLegacy = true;
+        return false;
       });
       return handlers.length === ((record.hooks ?? []) as unknown[]).length
         ? group
@@ -223,8 +274,11 @@ function mergeManagedHooks(
   };
 }
 
-export function mergePomasterHooks(existingText: string | null): HooksMergeOutcome {
-  return mergeManagedHooks(existingText, POMASTER_HOOK_EVENT_COMMANDS);
+export function mergePomasterHooks(
+  existingText: string | null,
+  rootDir?: string,
+): HooksMergeOutcome {
+  return mergeManagedHooks(existingText, POMASTER_HOOK_EVENT_COMMANDS, rootDir);
 }
 
 export function mergePomasterCodexHooks(existingText: string | null): HooksMergeOutcome {
