@@ -28,6 +28,9 @@
  *   「有来源事件」载体：STE-<n> append-only 流水 + affected_scope 申报面；exception
  *   ledger 同款 sidecar，不进 content_digest；constraint/affected_scope 是申报面，
  *   机器不判定遵守）
+ * - state/advances/ADV-<n>.json + state/retirements.json  合法推进台账（V1-4；advances.ts
+ *   读、store record_advance 唯一写入——ADVANCE 记录不可变、退役台账 append-only；不进
+ *   content_digest；路径由 advancesDirOf / retirementsPathOf 派生，平面缺席 = 空集合）
  *
  * D 线地基平面（P20；research/design-thread-D-solo-form.md §1.3 路径形态 逐字）：
  * - runtime/sessions/<session_key>.json  活跃会话注册（liveness + 当前任务指针；易变态）

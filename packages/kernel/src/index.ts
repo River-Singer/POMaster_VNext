@@ -43,6 +43,7 @@ import type {
 } from "@pomaster/schemas";
 import type { EvidenceArtifactRefInput } from "./evidence-artifacts.js";
 import type { EvidenceBaselineInputs } from "./evidence-qualification.js";
+import type { VnextAnchor } from "./legal-advance.js";
 import type { EvidencePurposeValue, RunSourceSnapshot } from "./source-snapshot.js";
 import type { VerificationMethodValue } from "./store.js";
 
@@ -455,7 +456,34 @@ export type TransactionOp =
        */
       readonly op: "verify_claim";
       readonly claim: VerifyClaimInput;
+    }
+  | {
+      /**
+       * record_advance：合法推进的唯一写入面（VNext 优化 V1-4；vnext-legal-advance §2）。
+       * 判卷 = validateAdvance（vnext lane）：显式 actor / reason、证据引用与摘要、复判
+       * PASS、新锚 = currentAnchor（调用方按现状重算；缺席信 new_anchor）、旧锚 = 同
+       * (kind, ref) 链尾 ADVANCE 的 new_anchor（首段无前驱）。可同批追加退役条目
+       * （validateRetirements；同 (kind, id) 已退役拒绝）。不合格 → SCHEMA_INVALID +
+       * details.reason_code（ADVANCE_INVALID / ADVANCE_REJUDGE_FAILED / RETIREMENT_INVALID），
+       * 整事务零落盘。落盘 state/advances/ADV-<n>.json（不可变）+ state/retirements.json
+       * （append-only），提交后 journal ADVANCE_RECORDED。
+       */
+      readonly op: "record_advance";
+      readonly record: AdvanceRecordInput;
     };
+
+/** record_advance 输入（vnext-legal-advance §3.2）。 */
+export interface AdvanceRecordInput {
+  /** ADVANCE 段（buildAdvance 产物）。 */
+  readonly advance: Readonly<Record<string, unknown>>;
+  /** 事件 actor：CLI 只取显式 --actor，不从会话身份自动填。 */
+  readonly actor: string;
+  readonly reason: string;
+  /** 调用方按现状重算的当前锚；缺席 = 以段内 new_anchor 为准。 */
+  readonly currentAnchor?: VnextAnchor;
+  /** 同批退役条目（vnext lane 五种）。 */
+  readonly retirements?: readonly Readonly<Record<string, unknown>>[];
+}
 
 export interface Transaction {
   readonly ops: readonly TransactionOp[];
@@ -1293,6 +1321,81 @@ export type {
   EvidenceQualificationFinding,
   EvidenceQualificationOutcome,
 } from "./evidence-qualification.js";
+
+// ============================================================
+// 合法推进判卷核（VNext 优化 V1-3 · vnext-legal-advance 契约）
+// ============================================================
+// 语义边界（legal-advance.ts 头注）：pomaster legal_advance.py 的 TS 移植——三分类
+// （TAMPER / LEGAL_CHANGE / UNDECIDABLE）、ADVANCE 段、按路径剥离的语义指纹、退役
+// 台账。纯函数，零 fs / store / 墙钟；Python lane 的返回值与错误文案逐字对拍
+// （tests/fixtures/legal-advance-parity.json，scripts/export-legal-advance-parity.py
+// 生成）。词形闭包 = kernel 局部词 TODO(vocab-pr)。本 PR 只落判卷核，写入面
+// （record_advance 事务 op）与 CLI 消费者随 Phase 2 接线。
+export {
+  ADVANCE_SCHEMA,
+  CHANGE_CLASSES,
+  ADVANCE_BASES,
+  BOUNDARY_KINDS,
+  ADVANCE_LANES,
+  FINGERPRINT_LAYERS,
+  DEFAULT_FINGERPRINT_VERSIONS,
+  ANCHOR_KINDS,
+  RETIREMENT_KINDS,
+  LANE_RETIREMENT_KINDS,
+  RETIREMENT_ANCHOR_KEYS,
+  REJUDGE_VERDICTS,
+  FIXED_MINIMAL_RULES,
+  PROFILES as SEMANTIC_FINGERPRINT_PROFILES,
+  LegalAdvanceError,
+  digestValue,
+  hexOf,
+  pyRepr,
+  stripPaths,
+  profilePatterns,
+  semanticFingerprint,
+  checkFingerprintVersions,
+  judgeBoundary,
+  judgeChange,
+  isDefaultActor,
+  buildRejudge,
+  buildAdvance,
+  anchorOf,
+  validateAdvance,
+  validateRetirements,
+} from "./legal-advance.js";
+export type {
+  ChangeClass,
+  AdvanceBasis,
+  BoundaryKind,
+  AdvanceLane,
+  FingerprintLayer,
+  AnchorKind,
+  RetirementKind,
+  RejudgeVerdict,
+  ChangeVerdict,
+  RejudgeGateInput,
+  VnextAnchor,
+  ValidateAdvanceContext,
+} from "./legal-advance.js";
+
+// 合法推进台账（V1-4）：state/advances/ADV-<n>.json（不可变）+ state/retirements.json
+// （append-only）。唯一写入面 = record_advance 事务 op；此处只导出读 API（StorePaths
+// 为参，pathsOf(store) 取）。ADV- 编号 / ADVANCE_RECORDED 事件 = kernel 局部词
+// TODO(vocab-pr)。
+export {
+  ADVANCE_RECORD_TYPE,
+  ADVANCE_RECORDED_EVENT,
+  ADVANCE_ID_RE,
+  RETIREMENT_LEDGER_VERSION,
+  advancesDirOf,
+  advancePathOf,
+  retirementsPathOf,
+  listAdvanceRecords,
+  latestAdvanceFor,
+  readRetirementLedger,
+  listRetirements,
+} from "./advances.js";
+export type { AdvanceRecord, AdvanceFilter, RetirementLedgerEntry, RetirementLedgerFile } from "./advances.js";
 
 // ============================================================
 // 源码证据新鲜度合同与唯一比较核（W2-FR05 · 09-27 PRD）

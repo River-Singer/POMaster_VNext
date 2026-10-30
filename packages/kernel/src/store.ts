@@ -79,6 +79,23 @@ import { loadAuthorityMap } from "./permits.js";
 import { assertExecutionAttachable } from "./execution.js";
 import { gateResultToSnake } from "./gate-result.js";
 import { readAuthorityFaces } from "./authority.js";
+import {
+  ADVANCE_RECORDED_EVENT,
+  ADVANCE_RECORD_TYPE,
+  RETIREMENT_LEDGER_VERSION,
+  advancePathOf,
+  advancesDirOf,
+  isRetired,
+  listAdvanceRecords,
+  nextAdvanceId,
+  parseAdvanceRecord,
+  parseRetirementLedger,
+  readRetirementLedger,
+  retirementsPathOf,
+  type AdvanceRecord,
+  type RetirementLedgerEntry,
+} from "./advances.js";
+import { validateAdvance, validateRetirements, type RetirementKind } from "./legal-advance.js";
 import { loadSourcesRegistry } from "./sources.js";
 import type {
   AxesBlock,
@@ -588,6 +605,8 @@ interface TxWorkspace {
   anyChange: boolean;
   /** 同事务内的正文覆盖层（upsert 后 transition 直接读改写）。 */
   readonly bodyOverlay: Map<string, UnknownRecord>;
+  /** TX_APPLIED 之后追加的 journal 行（ADVANCE_RECORDED 等 op 级事件；A2 同纪律）。 */
+  readonly journalTail: string[];
 }
 
 function rowBodyPath(paths: StorePaths, bodyRef: string): string {
@@ -901,6 +920,7 @@ export async function applyTransaction(
     nextSeq: curSeq + 1,
     anyChange: false,
     bodyOverlay: new Map(),
+    journalTail: [],
   };
 
   // —— D24 防篡改抽验（只读服务；失配 → WARN + auto-regen，永不阻断） ——
@@ -964,6 +984,8 @@ export async function applyTransaction(
       digest_warnings: workspace.digestWarnings.length,
     })}\n`,
   );
+  // op 级事件（ADVANCE_RECORDED）紧随 TX_APPLIED，同 seq；逐行原子追加。
+  for (const line of workspace.journalTail) appendLine(paths.journalPath, `${line}\n`);
 
   return {
     appliedSeq: workspace.nextSeq,
@@ -1057,6 +1079,9 @@ function applyOp(workspace: TxWorkspace, op: TransactionOp, tx: Transaction): vo
       break;
     case "verify_claim":
       applyVerifyClaim(workspace, op);
+      break;
+    case "record_advance":
+      applyRecordAdvance(workspace, op);
       break;
   }
 }
@@ -2212,6 +2237,132 @@ function applyRecordGateRun(
   workspace.files.set(
     `${paths.runsDir}/${run.grn}.json`,
     `${JSON.stringify(record, null, 2)}\n`,
+  );
+  workspace.anyChange = true;
+}
+
+// —— record_advance（V1-4；vnext-legal-advance §2 / §3.5） ——
+
+function advanceRejected(reasonCode: string, message: string, hint: string, details: UnknownRecord): GovernanceError {
+  return new GovernanceError("SCHEMA_INVALID", message, hint, { reason_code: reasonCode, ...details });
+}
+
+function isPlainRecord(value: unknown): value is UnknownRecord {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+/** 事务内已排队、尚未落盘的 ADVANCE 记录（同事务多段成链）。 */
+function pendingAdvanceRecords(workspace: TxWorkspace): AdvanceRecord[] {
+  const prefix = `${advancesDirOf(workspace.paths)}/`;
+  const records: AdvanceRecord[] = [];
+  for (const [path, text] of workspace.files) {
+    if (path.startsWith(prefix)) records.push(parseAdvanceRecord(path, text));
+  }
+  return records;
+}
+
+function applyRecordAdvance(
+  workspace: TxWorkspace,
+  op: Extract<TransactionOp, { op: "record_advance" }>,
+): void {
+  const { paths } = workspace;
+  const input = op.record;
+  const advance = input.advance as unknown;
+  const newAnchor = isPlainRecord(advance) && isPlainRecord(advance.new_anchor) ? advance.new_anchor : {};
+  const anchorKind = typeof newAnchor.kind === "string" ? newAnchor.kind : null;
+  const ref = typeof newAnchor.ref === "string" ? newAnchor.ref : null;
+
+  // 链尾：同 (kind, ref) 最近一次 ADVANCE（已落盘 + 本事务排队）。
+  const pending = pendingAdvanceRecords(workspace);
+  const chain =
+    anchorKind === null || ref === null
+      ? []
+      : [...listAdvanceRecords(paths), ...pending].filter((record) => {
+          const anchor = record.advance.new_anchor;
+          return isPlainRecord(anchor) && anchor.kind === anchorKind && anchor.ref === ref;
+        });
+  const tail = chain.length === 0 ? null : (chain[chain.length - 1] ?? null);
+  const previousAnchor = tail !== null && isPlainRecord(tail.advance.new_anchor) ? tail.advance.new_anchor : null;
+
+  const errors = validateAdvance(advance, {
+    lane: "vnext",
+    event: { actor: input.actor, reason: input.reason, after: input.currentAnchor ?? newAnchor },
+    previousAfter: previousAnchor,
+  });
+  if (errors.length > 0) {
+    const rejudgeOnly = errors.every((error) => error.startsWith("advance.rejudge"));
+    throw advanceRejected(
+      rejudgeOnly ? "ADVANCE_REJUDGE_FAILED" : "ADVANCE_INVALID",
+      `record_advance 判卷不通过（${errors.length} 项）：${errors.join("；")}`,
+      rejudgeOnly
+        ? "复判未通过的推进不能落账：先修复内容使受影响闸全部 PASS，再重写 ADVANCE（本事务零落盘）"
+        : `按逐项理由修正 ADVANCE 段：显式 --actor / 非占位 reason、证据引用 + 摘要、复判 PASS、新锚 = 现状重算值${
+            tail === null ? "" : `、旧锚 = 链尾 ${tail.adv} 的 new_anchor`
+          }（本事务零落盘）`,
+      { errors, previous_adv: tail?.adv ?? null },
+    );
+  }
+
+  const entries = input.retirements ?? [];
+  const retirementErrors = validateRetirements(entries, { lane: "vnext", actor: input.actor });
+  const ledgerPath = retirementsPathOf(paths);
+  const queuedLedger = workspace.files.get(ledgerPath);
+  const ledger = queuedLedger !== undefined ? parseRetirementLedger(ledgerPath, queuedLedger) : readRetirementLedger(paths);
+  entries.forEach((entry, index) => {
+    if (typeof entry.id === "string" && typeof entry.kind === "string" && isRetired(ledger.entries, entry.kind, entry.id)) {
+      retirementErrors.push(`retirements[${index}] ${entry.kind} ${entry.id} is already retired`);
+    }
+  });
+  if (retirementErrors.length > 0) {
+    throw advanceRejected(
+      "RETIREMENT_INVALID",
+      `record_advance 退役条目不合格（${retirementErrors.length} 项）：${retirementErrors.join("；")}`,
+      "退役条目须写明 id / kind（vnext lane 五种）/ 非占位 reason / 与事件一致的 actor / 种类要求的 last_anchor 键；已退役的同一条目不重复退役（本事务零落盘）",
+      { errors: retirementErrors },
+    );
+  }
+
+  const adv = nextAdvanceId(paths, pending.map((record) => record.adv));
+  const atSeq = workspace.nextSeq;
+  const retirementIds = entries.map((entry) => String(entry.id));
+  const record: AdvanceRecord = {
+    record_type: ADVANCE_RECORD_TYPE,
+    adv,
+    at_seq: atSeq,
+    actor: input.actor,
+    reason: input.reason,
+    advance: advance as UnknownRecord,
+    retirement_ids: retirementIds,
+  };
+  workspace.files.set(advancePathOf(paths, adv), `${JSON.stringify(record, null, 2)}\n`);
+  if (entries.length > 0) {
+    const appended: RetirementLedgerEntry[] = entries.map((entry) => ({
+      id: String(entry.id),
+      kind: entry.kind as RetirementKind,
+      reason: String(entry.reason),
+      actor: String(entry.actor),
+      replacement_id: typeof entry.replacement_id === "string" ? entry.replacement_id : null,
+      last_anchor: entry.last_anchor as UnknownRecord,
+      adv,
+      at_seq: atSeq,
+    }));
+    workspace.files.set(
+      ledgerPath,
+      `${JSON.stringify({ version: RETIREMENT_LEDGER_VERSION, entries: [...ledger.entries, ...appended] }, null, 2)}\n`,
+    );
+  }
+  const affected = (advance as UnknownRecord).affected_ids;
+  workspace.journalTail.push(
+    JSON.stringify({
+      type: ADVANCE_RECORDED_EVENT,
+      seq: atSeq,
+      adv,
+      anchor_kind: anchorKind,
+      ref,
+      affected_ids: Array.isArray(affected) ? affected : [],
+      retirement_ids: retirementIds,
+      actor: input.actor,
+    }),
   );
   workspace.anyChange = true;
 }

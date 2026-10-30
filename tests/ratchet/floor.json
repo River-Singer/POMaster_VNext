@@ -315,6 +315,10 @@
       "packages/gauntlet-lite/test/seed-mutant-library.spec.ts": {
         "layer": "L1"
       },
+      "packages/kernel/tests/advance-transaction.spec.ts": {
+        "layer": "L1",
+        "domain": "permit_evidence"
+      },
       "packages/kernel/tests/analyzer-import-graph.spec.ts": {
         "layer": "L1"
       },
@@ -426,6 +430,10 @@
         "domain": "state_machine_pairs"
       },
       "packages/kernel/tests/ledger.spec.ts": {
+        "layer": "L1",
+        "domain": "permit_evidence"
+      },
+      "packages/kernel/tests/legal-advance.spec.ts": {
         "layer": "L1",
         "domain": "permit_evidence"
       },
