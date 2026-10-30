@@ -186,6 +186,11 @@ framework/router/state 选型及 `.pomaster/baseline/frontend/architecture-profi
 - **closeout 聚合单点消费确认态**：
   - baseline 未确认 → `BASELINE_NOT_CONFIRMED` 阻断；
   - 确认后任一快照目标与现盘 digest 不符（检出谁改了架构）→ `BASELINE_DRIFT` 阻断；
+  - 只有字节形态变化（BOM、CRLF / LF、行尾空白、末尾空行）不计漂移：确认记录同时存原始
+    字节摘要（`digests`）与规范化文本摘要（`normalized`，V2-3），前者不等而后者相等只给
+    `BASELINE_BYTES_ONLY_CHANGE` warning；`normalized` 段缺席的旧记录按 BOM / 换行变体判同，
+    下一次真实确认时补写。重确认时只有字节变化的目标沿用旧摘要，任务的 baseline 依赖快照
+    不因此失效。git autocrlf 克隆的基线文件照常可读写（解析去 BOM 与行尾 `\r`，改写保持原换行）；
 - 确认后的修改走治理通路：`pomaster baseline set --change <CHANGE-id>`（CHANGE.* 对象
   须在册且 lifecycle 合法，kernel 校验）允许写入并使确认记录失效，重确认前 closeout
   恢复阻断；漂移后 `pomaster baseline confirm` 重新快照即治理通路终点；

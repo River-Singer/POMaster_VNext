@@ -91,7 +91,7 @@ import {
   type StackAnswer,
 } from "@pomaster/cli";
 import { seedsRootCandidates } from "../src/seed-manifest.js";
-import { observePackageStack, registerStackObservationCandidates, BASELINE_DESIGN_TOKENS_TARGET } from "../src/baseline.js";
+import { observePackageStack, registerStackObservationCandidates, BASELINE_DESIGN_TOKENS_TARGET, normalizeBaselineText } from "../src/baseline.js";
 import { readDesignTokens } from "../src/baseline-tokens.js";
 import { INTERACTIVE_BACKSPACE_KEY } from "../src/interactive-keys.js";
 import type { CliError } from "../src/envelope.js";
@@ -2328,6 +2328,151 @@ describe("P-C1 阻塞集确认契约（unknowns 台账双词形 + confirm 阻塞
     );
     const outcome = await runBaselineConfirm(dir);
     expect(outcome.ok).toBe(true);
+    expect(await baselineGateErrors(dir)).toEqual([]);
+  });
+});
+
+// ============================================================
+// baseline 摘要 v2：只有字节形态变化不计漂移（V2-3；VX-WRITE-06）
+// ============================================================
+
+describe("baseline 摘要 v2：BOM / 换行 / 行尾空白不计漂移（V2-3）", () => {
+  const ARCH = "baseline/frontend/architecture.md";
+  const STACK = "baseline/frontend/stack.yaml";
+  const archPath = (): string => join(dir, ".pomaster", ARCH);
+  const stackPath = (): string => join(dir, ".pomaster", STACK);
+  const rewrite = (path: string, transform: (text: string) => string): void => {
+    writeFileSync(path, transform(readFileSync(path, "utf8")), "utf8");
+  };
+  /** 去掉 confirmed 块里的 normalized 段，模拟 V2-3 之前写下的旧记录。 */
+  const stripNormalizedSection = (): void => {
+    const manifest = join(dir, BASELINE_MANIFEST_RELATIVE);
+    const lines = readFileSync(manifest, "utf8").split("\n");
+    const start = lines.indexOf("  normalized:");
+    expect(start).toBeGreaterThan(0);
+    let end = start + 1;
+    while (end < lines.length && /^\s{4}\S/.test(lines[end] ?? "")) end += 1;
+    writeFileSync(manifest, [...lines.slice(0, start), ...lines.slice(end)].join("\n"), "utf8");
+  };
+
+  it("normalizeBaselineText：去 BOM、CRLF / CR → LF、去行尾空白、末尾单换行", () => {
+    expect(normalizeBaselineText("\uFEFF# 标题  \r\n正文\t\r\n\r\n\r\n")).toBe("# 标题\n正文\n");
+    expect(normalizeBaselineText("a\rb")).toBe("a\nb\n");
+    expect(normalizeBaselineText("")).toBe("");
+    expect(normalizeBaselineText("\n\n")).toBe("");
+    expect(normalizeBaselineText("  缩进保留\n")).toBe("  缩进保留\n");
+  });
+
+  it("confirm 写入 normalized 段；autocrlf 克隆（LF → CRLF）不计漂移：confirmed + BASELINE_BYTES_ONLY_CHANGE warning，重确认 NO_CHANGE", async () => {
+    await buildConfirmedProject(dir);
+    expect(read(BASELINE_MANIFEST_RELATIVE)).toContain("  normalized:");
+    rewrite(archPath(), (text) => text.replace(/\n/g, "\r\n"));
+    rewrite(stackPath(), (text) => text.replace(/\n/g, "\r\n"));
+
+    const confirmation = await readBaselineConfirmation(dir);
+    expect(confirmation.kind).toBe("record-valid");
+    if (confirmation.kind !== "record-valid") return;
+    expect(confirmation.state).toBe("confirmed");
+    expect(confirmation.mismatches).toEqual([]);
+    expect([...confirmation.bytes_only].sort()).toEqual([ARCH, STACK].sort());
+
+    const gate = await baselineGateAssessment(dir);
+    expect(gate.errors).toEqual([]);
+    expect(gate.warnings).toEqual([expect.objectContaining({ code: "BASELINE_BYTES_ONLY_CHANGE" })]);
+
+    const manifestBefore = read(BASELINE_MANIFEST_RELATIVE);
+    const replay = await runBaselineConfirm(dir);
+    expect(replay.result.change).toBe("NO_CHANGE");
+    expect(replay.human.join("\n")).toContain("bytes-only");
+    expect(read(BASELINE_MANIFEST_RELATIVE)).toBe(manifestBefore);
+  });
+
+  it("加 BOM、改行尾空白、补末尾空行 → 不计漂移；改一个取值字符 → 照旧 BASELINE_DRIFT", async () => {
+    await buildConfirmedProject(dir);
+    rewrite(archPath(), (text) => `\uFEFF${text.replace(/\n/, "   \n")}\n\n`);
+    expect((await baselineGateErrors(dir))).toEqual([]);
+
+    rewrite(stackPath(), (text) => text.replace("framework-value", "framework-changed"));
+    const errors = await baselineGateErrors(dir);
+    expect(errors).toEqual([expect.objectContaining({ code: "BASELINE_DRIFT" })]);
+    expect(errors[0]?.message).toContain(STACK);
+    expect(errors[0]?.message).not.toContain(ARCH);
+  });
+
+  it("旧记录（无 normalized 段）：BOM / 换行变体仍判同；行尾空白变化需重确认后才豁免", async () => {
+    await buildConfirmedProject(dir);
+    stripNormalizedSection();
+    rewrite(archPath(), (text) => `\uFEFF${text.replace(/\n/g, "\r\n")}`);
+    const crlf = await readBaselineConfirmation(dir);
+    expect(crlf.kind === "record-valid" && crlf.state).toBe("confirmed");
+    expect(crlf.kind === "record-valid" && crlf.bytes_only).toEqual([ARCH]);
+
+    rewrite(stackPath(), (text) => text.replace(/\n/, "  \n"));
+    const trailing = await readBaselineConfirmation(dir);
+    expect(trailing.kind === "record-valid" && trailing.mismatches.map((m) => m.target)).toEqual([STACK]);
+  });
+
+  it("重确认：只有字节变化的目标沿用旧摘要（任务依赖快照不失效），真实变化的目标取新摘要", async () => {
+    await buildConfirmedProject(dir);
+    const before = await readBaselineConfirmation(dir);
+    if (before.kind !== "record-valid") throw new Error("expected confirmed record");
+    rewrite(archPath(), (text) => text.replace(/\n/g, "\r\n"));
+    rewrite(stackPath(), (text) => text.replace("framework-value", "framework-changed"));
+    const acked = await runBaselineConfirm(dir, { ackDrifted: true, note: "Owner 指示调整前端框架取值" });
+    expect(acked.ok).toBe(true);
+    expect(acked.result.ack?.files).toEqual([STACK]);
+    const after = await readBaselineConfirmation(dir);
+    if (after.kind !== "record-valid") throw new Error("expected confirmed record");
+    expect(after.state).toBe("confirmed");
+    expect(after.record.digests[ARCH]).toBe(before.record.digests[ARCH]);
+    expect(after.record.digests[STACK]).toBe(sha256OfUtf8(readFileSync(stackPath(), "utf8")));
+    expect(after.bytes_only).toEqual([ARCH]);
+  });
+
+  it("normalized 段缺目标 = 记录损坏（fail-closed，按无有效确认处理）", async () => {
+    await buildConfirmedProject(dir);
+    const manifest = join(dir, BASELINE_MANIFEST_RELATIVE);
+    const lines = readFileSync(manifest, "utf8").split("\n");
+    const start = lines.indexOf("  normalized:");
+    writeFileSync(manifest, [...lines.slice(0, start + 1), ...lines.slice(start + 2)].join("\n"), "utf8");
+    const read = await readBaselineConfirmation(dir);
+    expect(read.kind).toBe("record-invalid");
+    expect(read.kind === "record-invalid" && read.damage_detail).toContain("normalized 快照缺目标");
+  });
+});
+
+describe("autocrlf 克隆的基线照常可读写（V2-3；动态检查 #10）", () => {
+  const toCrlf = (relative: string): void => {
+    const path = join(dir, relative);
+    writeFileSync(path, readFileSync(path, "utf8").replace(/\r?\n/g, "\r\n"), "utf8");
+  };
+
+  it("manifest 与 stack.yaml 全部 CRLF（含 BOM）：确认态仍可解析、无漂移；set --change 改值保持 CRLF 不产出混合换行", async () => {
+    await buildConfirmedProject(dir);
+    for (const relative of [BASELINE_MANIFEST_RELATIVE, ".pomaster/baseline/frontend/stack.yaml", ".pomaster/baseline/backend/stack.yaml"]) {
+      toCrlf(relative);
+    }
+    const stackPath = join(dir, ".pomaster", "baseline", "frontend", "stack.yaml");
+    writeFileSync(stackPath, `﻿${readFileSync(stackPath, "utf8")}`, "utf8");
+
+    const confirmation = await readBaselineConfirmation(dir);
+    expect(confirmation.kind).toBe("record-valid");
+    expect(confirmation.kind === "record-valid" && confirmation.state).toBe("confirmed");
+    expect(await baselineGateErrors(dir)).toEqual([]);
+    expect((await runBaselineConfirm(dir)).result.change).toBe("NO_CHANGE");
+
+    await seedGovernedFixture("CHANGE.B0001");
+    const changed = await runBaselineSet(dir, { lane: "frontend", key: "framework", value: "react", change: "CHANGE.B0001" });
+    expect(changed.ok).toBe(true);
+    const stackText = readFileSync(stackPath, "utf8");
+    expect(stackText.startsWith("﻿")).toBe(true);
+    expect(stackText).toContain("framework: react\r\n");
+    expect(stackText.replace(/\r\n/g, "")).not.toContain("\n");
+    const reconfirm = await runBaselineConfirm(dir, { change: "CHANGE.B0001" });
+    expect(reconfirm.ok).toBe(true);
+    expect(reconfirm.result.change).toBe("CONFIRMED");
+    const manifestText = read(BASELINE_MANIFEST_RELATIVE);
+    expect(manifestText.replace(/\r\n/g, "")).not.toContain("\n");
     expect(await baselineGateErrors(dir)).toEqual([]);
   });
 });

@@ -406,6 +406,22 @@ function stripTrailingComment(rawValue: string): string {
 }
 
 /**
+ * 解析用行切分（V2-3）：去文件头 BOM、去每行行尾 \r——git autocrlf 克隆与编辑器加 BOM
+ * 的基线文件照常可解析。行号与原文 split("\n") 一一对应，写侧仍按原文行改写。
+ */
+function parseLines(text: string): string[] {
+  const body = text.startsWith("\uFEFF") ? text.slice(1) : text;
+  return body.split("\n").map((line) => (line.endsWith("\r") ? line.slice(0, -1) : line));
+}
+
+/** 写侧整行替换：保留原行的 \r 行尾与首行 BOM（不把 CRLF 文件改成混合换行）。 */
+function replaceLinePreservingEol(lines: string[], index: number, content: string): void {
+  const original = lines[index] ?? "";
+  const bom = index === 0 && original.startsWith("\uFEFF") ? "\uFEFF" : "";
+  lines[index] = `${bom}${content}${original.endsWith("\r") ? "\r" : ""}`;
+}
+
+/**
  * stack.yaml 行级解析（顶层 `key: value` 形态；禁块标量与重复键——解析即 fail-closed
  * 不猜测）。expectedKeys 全在座是合法基线文件的结构契约（B6d 键集）。
  */
@@ -413,7 +429,7 @@ function parseStackYaml(
   text: string,
   expectedKeys: readonly string[],
 ): StackYamlParse {
-  const lines = text.split("\n");
+  const lines = parseLines(text);
   const values = new Map<string, string>();
   const lineOf = new Map<string, number>();
   for (let i = 0; i < lines.length; i += 1) {
@@ -744,7 +760,7 @@ function leadingSpaces(line: string): number {
  * - confirmed 块区间零触碰（pending 批条目/ack 清单与台账同域——N3 区间排除沿用）。
  */
 function parseUnknownLedger(text: string): UnknownLedgerParse {
-  const lines = text.split("\n");
+  const lines = parseLines(text);
   const block = confirmedBlockRange(lines);
   const entries: BaselineUnknownLedgerEntry[] = [];
   let damage: string | null = null;
@@ -1336,7 +1352,7 @@ export async function applyStackAnswers(
     for (const answer of laneAnswers) {
       const lineIndex = parse.parsed.lineOf.get(answer.key);
       if (lineIndex === undefined) continue; // 键集闸在上游（问卷只产在册键）；防御性跳过
-      lines[lineIndex] = `${answer.key}: ${answer.value}`;
+      replaceLinePreservingEol(lines, lineIndex, `${answer.key}: ${answer.value}`);
       applied += 1;
       stackChanged = true;
     }
@@ -1577,7 +1593,7 @@ async function baselineSetAttempt(
         ),
       );
     }
-    lines[lineIndex] = `${input.key}: ${input.value}`;
+    replaceLinePreservingEol(lines, lineIndex, `${input.key}: ${input.value}`);
     nextStack = lines.join("\n");
     // —— 确认记录演进（ADR-16）：有效记录 + 异值授权写入 → 记 pending-change
     // （批内键集追加去重——同 ref 连改多键全程允许；记录保留不再移除）。upsert
@@ -1866,6 +1882,12 @@ export interface BaselineConfirmedRecord {
   readonly at_seq: number;
   /** 确认资产清单的 sha256 快照（sha256OfUtf8 同口径，词形 sha256:<hex>）。 */
   readonly digests: Readonly<Record<string, string>>;
+  /**
+   * 规范化文本摘要（V2-3，baseline-text/v2：去 BOM、CRLF→LF、去行尾空白、末尾单换行）。
+   * 原始字节摘要不等而规范化摘要相等 = 只有字节形态变了（autocrlf 克隆、编辑器加 BOM），
+   * 不计漂移。缺席 = 旧记录（下一次真实确认时补写）；旧记录按 BOM / 换行变体判同。
+   */
+  readonly normalized?: Readonly<Record<string, string>>;
   /** 手改声明标记（ADR-17 通道 2）：在座 = 上次确认为 Owner 手改声明（ack 通道）。 */
   readonly ack?: BaselineAckRecord;
   /** 在途变更批（ADR-16）：在座 = 确认记录持 pending-change（同 ref 连改批）。 */
@@ -1986,6 +2008,7 @@ const CONFIRMED_KEY_LINE = /^confirmed\s*:/;
 const TOP_LEVEL_KEY_LINE = /^[A-Za-z][A-Za-z0-9_-]*\s*:/;
 const AT_SEQ_LINE = /^\s+at_seq\s*:\s*([0-9]+)\s*$/;
 const DIGESTS_HEADER_LINE = /^\s+digests\s*:$/;
+const NORMALIZED_HEADER_LINE = /^\s+normalized\s*:$/;
 const DIGEST_LINE = /^\s+(\S+)\s*:\s*(sha256:[0-9a-f]{64})\s*$/;
 // —— ADR-16/17 扩展段（pending-change / ack 手改声明）——
 const PENDING_HEADER_LINE = /^\s+pending\s*:\s*$/;
@@ -2017,18 +2040,19 @@ function isKnownBatchEntry(wordForm: string): boolean {
  * 判卷面「无有效确认记录」。
  */
 function parseConfirmedBlock(text: string): ConfirmedBlockParse {
-  const lines = text.split("\n");
+  const lines = parseLines(text);
   const range = confirmedBlockRange(lines);
   if (range === null) return { kind: "absent" };
   const { start, end } = range;
   let atSeq: number | null = null;
   const digests = new Map<string, string>();
+  let normalized: Map<string, string> | null = null;
   let changeRef: string | null = null;
   let batch: string[] | null = null;
   let ackNote: string | null = null;
   let ackFiles: string[] | null = null;
   // 段位跟踪：root = 段头之间；pending/ack 子段与其列表位由 header 行切入。
-  let section: "root" | "ack" | "ack-files" | "pending" | "pending-batch" | "digests" = "root";
+  let section: "root" | "ack" | "ack-files" | "pending" | "pending-batch" | "digests" | "normalized" = "root";
   for (let i = start + 1; i < end; i += 1) {
     const line = lines[i] ?? "";
     if (line.trim() === "" || line.startsWith("#")) continue;
@@ -2055,6 +2079,12 @@ function parseConfirmedBlock(text: string): ConfirmedBlockParse {
     }
     if (DIGESTS_HEADER_LINE.test(line)) {
       section = "digests";
+      continue;
+    }
+    if (NORMALIZED_HEADER_LINE.test(line)) {
+      if (normalized !== null) return { kind: "damaged", detail: "normalized 段重复" };
+      normalized = new Map<string, string>();
+      section = "normalized";
       continue;
     }
     if (section === "ack" || section === "ack-files") {
@@ -2119,8 +2149,9 @@ function parseConfirmedBlock(text: string): ConfirmedBlockParse {
     const digestMatch = DIGEST_LINE.exec(line);
     if (digestMatch !== null) {
       const path = digestMatch[1] ?? "";
-      if (digests.has(path)) return { kind: "damaged", detail: `digest 条目重复：${path}` };
-      digests.set(path, digestMatch[2] ?? "");
+      const target = section === "normalized" ? (normalized as Map<string, string>) : digests;
+      if (target.has(path)) return { kind: "damaged", detail: `${section === "normalized" ? "normalized" : "digest"} 条目重复：${path}` };
+      target.set(path, digestMatch[2] ?? "");
       continue;
     }
     return { kind: "damaged", detail: `块内不可识别行：${line.trim()}` };
@@ -2129,6 +2160,12 @@ function parseConfirmedBlock(text: string): ConfirmedBlockParse {
   const missing = BASELINE_CONFIRM_TARGETS.filter((target) => !digests.has(target));
   if (missing.length > 0) {
     return { kind: "damaged", detail: `digest 快照缺目标：${missing.join(", ")}` };
+  }
+  if (normalized !== null) {
+    const normalizedMissing = BASELINE_CONFIRM_TARGETS.filter((target) => !(normalized as Map<string, string>).has(target));
+    if (normalizedMissing.length > 0) {
+      return { kind: "damaged", detail: `normalized 快照缺目标：${normalizedMissing.join(", ")}` };
+    }
   }
   // —— 子段完整性：出现即须完整（fail-closed 禁半截 pending/ack）——
   if (changeRef !== null || batch !== null) {
@@ -2142,6 +2179,9 @@ function parseConfirmedBlock(text: string): ConfirmedBlockParse {
   const record: BaselineConfirmedRecord = {
     at_seq: atSeq,
     digests: Object.fromEntries(BASELINE_CONFIRM_TARGETS.map((target) => [target, digests.get(target) as string])),
+    ...(normalized !== null
+      ? { normalized: Object.fromEntries(BASELINE_CONFIRM_TARGETS.map((target) => [target, (normalized as Map<string, string>).get(target) as string])) }
+      : {}),
     ...(changeRef !== null && batch !== null ? { pending: { change_ref: changeRef, batch } } : {}),
     ...(ackNote !== null && ackFiles !== null ? { ack: { note: ackNote, files: ackFiles } } : {}),
   };
@@ -2161,6 +2201,11 @@ function renderConfirmedBlock(record: BaselineConfirmedRecord): string {
   }
   lines.push("  digests:");
   lines.push(...BASELINE_CONFIRM_TARGETS.map((target) => `    ${target}: ${record.digests[target]}`));
+  if (record.normalized !== undefined) {
+    const normalized = record.normalized;
+    lines.push("  normalized:");
+    lines.push(...BASELINE_CONFIRM_TARGETS.map((target) => `    ${target}: ${normalized[target]}`));
+  }
   lines.push("");
   return lines.join("\n");
 }
@@ -2176,8 +2221,10 @@ function removeConfirmedBlock(text: string): string {
 /** confirmed 块 upsert（移除旧块后 EOF 追加新块；换行补齐——字节级最小改写）。 */
 function upsertConfirmedBlock(text: string, record: BaselineConfirmedRecord): string {
   const stripped = removeConfirmedBlock(text);
-  const block = renderConfirmedBlock(record);
-  return stripped.endsWith("\n") ? stripped + block : `${stripped}\n${block}`;
+  // CRLF manifest（autocrlf 克隆）按原换行渲染，不产出混合换行。
+  const eol = text.includes("\r\n") ? "\r\n" : "\n";
+  const block = renderConfirmedBlock(record).replace(/\n/g, eol);
+  return stripped.endsWith("\n") ? stripped + block : `${stripped}${eol}${block}`;
 }
 
 /** 确认时点锚（truth-index generation.seq 轻量读；缺席/不可解析 → 0 诚实缺席）。 */
@@ -2192,19 +2239,82 @@ async function readGenerationSeq(rootDir: string): Promise<number> {
   }
 }
 
-/** 确认资产清单（25 文件，ADR-20）的现盘 digest 快照；任一目标缺席/不可读 → NOT_CONFIGURED/INVALID_STATE 错误。 */
+/**
+ * baseline-text/v2 规范化（V2-3；vnext-legal-advance §3.3）：去 BOM、CRLF / CR → LF、
+ * 去行尾空白（空格 / 制表符）、去末尾空行并以单个换行结尾（空文本 → 空串）。
+ */
+export function normalizeBaselineText(text: string): string {
+  const body = (text.startsWith("\uFEFF") ? text.slice(1) : text).replace(/\r\n?/g, "\n");
+  const lines = body.split("\n").map((line) => line.replace(/[ \t]+$/, ""));
+  while (lines.length > 0 && lines[lines.length - 1] === "") lines.pop();
+  return lines.length === 0 ? "" : `${lines.join("\n")}\n`;
+}
+
+/** 旧记录（无 normalized 段）的字节变体：BOM 有 / 无 × LF / CRLF——autocrlf 克隆与编辑器加 BOM 的形态。 */
+function encodingVariants(text: string): string[] {
+  const bare = text.startsWith("\uFEFF") ? text.slice(1) : text;
+  const lf = bare.replace(/\r\n/g, "\n");
+  const crlf = lf.replace(/\n/g, "\r\n");
+  return [...new Set([bare, lf, crlf, `\uFEFF${bare}`, `\uFEFF${lf}`, `\uFEFF${crlf}`])];
+}
+
+/** 单目标判卷：字节相等 match；只有字节形态变了 bytes-only（不计漂移）；其余 drift。 */
+export type BaselineTargetJudgement = "match" | "bytes-only" | "drift";
+
+export function judgeBaselineTargetText(
+  record: BaselineConfirmedRecord,
+  target: string,
+  text: string,
+): BaselineTargetJudgement {
+  const stored = record.digests[target];
+  if (sha256OfUtf8(text) === stored) return "match";
+  const normalized = record.normalized?.[target];
+  if (normalized !== undefined) {
+    return sha256OfUtf8(normalizeBaselineText(text)) === normalized ? "bytes-only" : "drift";
+  }
+  return encodingVariants(text).some((variant) => sha256OfUtf8(variant) === stored) ? "bytes-only" : "drift";
+}
+
+interface ConfirmSnapshot {
+  readonly digests: Readonly<Record<string, string>>;
+  readonly normalized: Readonly<Record<string, string>>;
+  readonly texts: Readonly<Record<string, string>>;
+}
+
+/** 确认资产清单（25 文件，ADR-20）的现盘快照（原始字节 + 规范化摘要）；任一目标缺席/不可读 → NOT_CONFIGURED/INVALID_STATE 错误。 */
 async function computeConfirmDigests(
   rootDir: string,
-): Promise<{ readonly ok: true; readonly digests: Readonly<Record<string, string>> } | { readonly ok: false; readonly error: CliError }> {
+): Promise<({ readonly ok: true } & ConfirmSnapshot) | { readonly ok: false; readonly error: CliError }> {
   const digests: Record<string, string> = {};
+  const normalized: Record<string, string> = {};
+  const texts: Record<string, string> = {};
   for (const target of BASELINE_CONFIRM_TARGETS) {
     const file = await readTextFile(baselineConfirmTargetPath(rootDir, target));
     if (file.kind !== "ok") {
       return { ok: false, error: baselineFileError(target, file) };
     }
     digests[target] = sha256OfUtf8(file.text);
+    normalized[target] = sha256OfUtf8(normalizeBaselineText(file.text));
+    texts[target] = file.text;
   }
-  return { ok: true, digests };
+  return { ok: true, digests, normalized, texts };
+}
+
+/**
+ * 重确认写入的摘要：只有字节形态变化的目标沿用旧摘要（确认身份不因换行 / BOM 变化而变——
+ * 任务 baseline_dependencies 与证据基线快照里记的旧摘要继续有效）；其余目标取现盘快照。
+ */
+function reconfirmDigests(
+  previous: BaselineConfirmedRecord,
+  snapshot: ConfirmSnapshot,
+  bytesOnly: ReadonlySet<string>,
+): Pick<BaselineConfirmedRecord, "digests" | "normalized"> {
+  return {
+    digests: Object.fromEntries(
+      BASELINE_CONFIRM_TARGETS.map((target) => [target, bytesOnly.has(target) ? previous.digests[target] : snapshot.digests[target]]),
+    ) as Record<string, string>,
+    normalized: snapshot.normalized,
+  };
 }
 
 // ============================================================
@@ -2411,12 +2521,16 @@ export async function runBaselineConfirm(
     return writeConfirmedRecord(rootDir, manifestFile.text, {
       at_seq: await readGenerationSeq(rootDir),
       digests: snapshot.digests,
+      normalized: snapshot.normalized,
     }, snapshot.digests, unknownsRemaining, undefined);
   }
   const record = existing.record;
-  const mismatched = BASELINE_CONFIRM_TARGETS.filter(
-    (target) => record.digests[target] !== snapshot.digests[target],
+  const judgements = new Map(
+    BASELINE_CONFIRM_TARGETS.map((target) => [target, judgeBaselineTargetText(record, target, snapshot.texts[target] ?? "")]),
   );
+  const mismatched = BASELINE_CONFIRM_TARGETS.filter((target) => judgements.get(target) === "drift");
+  const bytesOnly = new Set(BASELINE_CONFIRM_TARGETS.filter((target) => judgements.get(target) === "bytes-only"));
+  const rewritten = reconfirmDigests(record, snapshot, bytesOnly);
   const pending = record.pending;
   const pendingBatchFiles = new Set(
     (pending?.batch ?? []).map((entry) => entry.split(":")[0] ?? entry),
@@ -2453,7 +2567,7 @@ export async function runBaselineConfirm(
       at_seq: record.at_seq,
       digests: BASELINE_CONFIRM_TARGETS.map((target) => ({
         file: target,
-        sha256: snapshot.digests[target] as string,
+        sha256: record.digests[target] as string,
       })),
       unknowns_remaining: unknownsRemaining,
       files: [{ file: BASELINE_MANIFEST_RELATIVE, action: "unchanged" }],
@@ -2461,6 +2575,9 @@ export async function runBaselineConfirm(
     return okOutcome("baseline confirm", result, [
       `baseline confirm: NO_CHANGE（已确认且 digest 无漂移——幂等零写入；at_seq=${record.at_seq}）`,
       `  unchanged ${BASELINE_MANIFEST_RELATIVE}（confirmed 记录在座）`,
+      ...(bytesOnly.size > 0
+        ? [`  bytes-only（只有 BOM / 换行 / 行尾空白变化，不计漂移）：${[...bytesOnly].join("、")}`]
+        : []),
       `  unknowns remaining: ${unknownsRemaining}`,
     ]);
   }
@@ -2496,8 +2613,8 @@ export async function runBaselineConfirm(
     // 消费变更批 → 全量重快照（pending/ack 清除——本次确认通道 = 治理通路）。
     return writeConfirmedRecord(rootDir, manifestFile.text, {
       at_seq: await readGenerationSeq(rootDir),
-      digests: snapshot.digests,
-    }, snapshot.digests, unknownsRemaining, undefined);
+      ...rewritten,
+    }, rewritten.digests, unknownsRemaining, undefined);
   }
   // —— state === "drifted"：三通道判卷（裸拒绝 / --change 覆盖 / --ack-drifted 声明）——
   if (input.change === undefined && input.ackDrifted !== true) {
@@ -2515,8 +2632,8 @@ export async function runBaselineConfirm(
     }
     return writeConfirmedRecord(rootDir, manifestFile.text, {
       at_seq: await readGenerationSeq(rootDir),
-      digests: snapshot.digests,
-    }, snapshot.digests, unknownsRemaining, undefined);
+      ...rewritten,
+    }, rewritten.digests, unknownsRemaining, undefined);
   }
   // —— 通道 2：Owner 手改声明（note 已过必配闸；journal 留痕先于 manifest 落盘）——
   const note = normalizeAckNote(input.note ?? "");
@@ -2539,9 +2656,9 @@ export async function runBaselineConfirm(
   }
   return writeConfirmedRecord(rootDir, manifestFile.text, {
     at_seq: atSeq,
-    digests: snapshot.digests,
+    ...rewritten,
     ack: { note, files: [...mismatched] },
-  }, snapshot.digests, unknownsRemaining, { note, files: [...mismatched] });
+  }, rewritten.digests, unknownsRemaining, { note, files: [...mismatched] });
 }
 
 /** confirmed 块落盘 + CONFIRMED 信封（初次确认/三通道重确认共用同一写通路）。 */
@@ -2600,6 +2717,8 @@ export type BaselineConfirmationRead =
       readonly unknowns_remaining: number;
       /** 漂移目标（结构化：缺席/不可读带注记词——呈现层渲染）。 */
       readonly mismatches: readonly { readonly target: string; readonly note: "缺席" | "不可读" | null }[];
+      /** 只有字节形态变化的目标（BOM / 换行 / 行尾空白；V2-3）——不计漂移，呈现为 warning。 */
+      readonly bytes_only: readonly string[];
       readonly state: "confirmed" | "pending-change" | "drifted";
     };
 
@@ -2629,15 +2748,16 @@ export async function readBaselineConfirmation(rootDir: string): Promise<Baselin
     };
   }
   const mismatches: { target: string; note: "缺席" | "不可读" | null }[] = [];
+  const bytesOnly: string[] = [];
   for (const target of BASELINE_CONFIRM_TARGETS) {
     const file = await readTextFile(baselineConfirmTargetPath(rootDir, target));
     if (file.kind !== "ok") {
       mismatches.push({ target, note: file.kind === "absent" ? "缺席" : "不可读" });
       continue;
     }
-    if (sha256OfUtf8(file.text) !== parsed.record.digests[target]) {
-      mismatches.push({ target, note: null });
-    }
+    const judgement = judgeBaselineTargetText(parsed.record, target, file.text);
+    if (judgement === "drift") mismatches.push({ target, note: null });
+    else if (judgement === "bytes-only") bytesOnly.push(target);
   }
   const pending = parsed.record.pending;
   const pendingBatchFiles = new Set(
@@ -2651,7 +2771,7 @@ export async function readBaselineConfirmation(rootDir: string): Promise<Baselin
       : mismatches.every((mismatch) => pendingBatchFiles.has(mismatch.target))
         ? "pending-change"
         : "drifted";
-  return { kind: "record-valid", record: parsed.record, unknowns_remaining: unknownsRemaining, mismatches, state };
+  return { kind: "record-valid", record: parsed.record, unknowns_remaining: unknownsRemaining, mismatches, bytes_only: bytesOnly, state };
 }
 
 /**
@@ -2737,6 +2857,16 @@ export async function baselineGateAssessment(
     };
   }
 
+  const bytesOnlyWarnings: CliWarning[] =
+    read.bytes_only.length > 0
+      ? [
+          {
+            code: "BASELINE_BYTES_ONLY_CHANGE",
+            message: `baseline 资产只有字节形态变化（BOM / 换行 / 行尾空白），不计漂移：${read.bytes_only.join("、")}`,
+            hint: "常见于 git autocrlf 克隆或编辑器保存；内容未变，无需重确认。",
+          },
+        ]
+      : [];
   if (dependency === undefined) {
     if (read.state === "pending-change") {
       return {
@@ -2762,15 +2892,15 @@ export async function baselineGateAssessment(
             hint: '重确认三通道取一：pomaster baseline confirm --change <CHANGE-id>（治理通路）或 --ack-drifted --note "<理由>"（Owner 手改声明；AI 代跑须持 Owner 指示）——裸重确认拒绝。',
           },
         ],
-        warnings: [],
+        warnings: bytesOnlyWarnings,
       };
     }
-    return { errors: [], warnings: [] };
+    return { errors: [], warnings: bytesOnlyWarnings };
   }
 
   const relevant = new Set(dependency.relevant_targets);
   const excluded = new Set(dependency.excluded_targets);
-  const warnings: CliWarning[] = [];
+  const warnings: CliWarning[] = [...bytesOnlyWarnings];
   const errors: CliError[] = [];
   const historicalRelated = BASELINE_CONFIRM_TARGETS.filter(
     (target) => relevant.has(target) && dependency.digests[target] !== read.record.digests[target],
