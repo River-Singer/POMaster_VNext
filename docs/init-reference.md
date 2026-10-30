@@ -180,8 +180,10 @@ framework/router/state 选型及 `.pomaster/baseline/frontend/architecture-profi
 
 `pomaster baseline confirm` 在 14 个 unknowns 全部销账后对基线做 Owner 确认施断：
 
-- `baseline/manifest.yaml` 写入 `confirmed` 确认记录（`at_seq` 时点锚 + 两个 `stack.yaml`
-  与两个 `architecture.md` 的 sha256 digest 快照）；
+- `baseline/manifest.yaml` 写入 `confirmed` 确认记录：`at_seq` 时点锚 + 全部 25 个确认资产
+  （两个 `stack.yaml`、22 份 lane md、`frontend/design-tokens.yaml`）的 sha256 digest 快照 +
+  `normalized` 规范化摘要 + `target_seq` 逐目标锚（V2-4：该目标内容最近一次在确认中变化的
+  seq；重确认只推进真实变化的目标，旧记录缺该段时全部按 `at_seq` 计）；
 - 已确认且 digest 无漂移时重复 confirm 幂等零写入（NO_CHANGE）；
 - **closeout 聚合单点消费确认态**：
   - baseline 未确认 → `BASELINE_NOT_CONFIRMED` 阻断；
@@ -192,8 +194,15 @@ framework/router/state 选型及 `.pomaster/baseline/frontend/architecture-profi
     下一次真实确认时补写。重确认时只有字节变化的目标沿用旧摘要，任务的 baseline 依赖快照
     不因此失效。git autocrlf 克隆的基线文件照常可读写（解析去 BOM 与行尾 `\r`，改写保持原换行）；
 - 确认后的修改走治理通路：`pomaster baseline set --change <CHANGE-id>`（CHANGE.* 对象
-  须在册且 lifecycle 合法，kernel 校验）允许写入并使确认记录失效，重确认前 closeout
-  恢复阻断；漂移后 `pomaster baseline confirm` 重新快照即治理通路终点；
+  须在册且 lifecycle 合法，kernel 校验）写入后记录转 pending-change，`pomaster baseline
+  confirm --change <同一 CHANGE-id>` 终结变更批；未经登记的手改出现漂移时，重确认须二选一：
+  `--change <CHANGE-id>`（治理通路）或 `--ack-drifted --note "<理由>"`（Owner 手改声明，journal
+  `BASELINE_ACK` 留痕）——裸重确认拒绝；
+- 任务的 baseline 依赖范围：`pomaster brainstorm decide <id> --ready … --lanes frontend[,backend,data,platform]`
+  按 lane 生成 `baseline_dependencies`（所选 lane 的确认资产为相关、其余为排除；platform 只在
+  显式列出时相关），或用 `--baseline-target` / `--baseline-exclude` 逐文件划分。声明了范围的
+  任务只在相关资产变化时证据失效；未声明范围的任务 `--ready` 给 `BASELINE_SCOPE_UNDECLARED`
+  warning，其证据以「任一资产内容最近一次变化」（max `target_seq`）为切点；
 - `pomaster doctor` / `pomaster status` 呈现确认态（未确认/已确认/已漂移）+ 未销账
   unknowns 计数 + 漂移文件清单（`--json` 字段 `baseline_confirmation`；纯读呈现不改
   ok 语义）。

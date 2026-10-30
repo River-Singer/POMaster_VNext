@@ -393,3 +393,25 @@ describe("evidence-qualification fail-closed 与批量", () => {
     expect(a.inputs_fingerprint).not.toBe(c.inputs_fingerprint);
   });
 });
+
+describe("seq 轴逐目标锚（V2-4；VX-WRITE-01）", () => {
+  const evidence = (capturedAt: number): EvidenceQualificationEvidence => evidenceFixture({ captured_at_seq: capturedAt });
+
+  it("未声明范围：切点 = max(target_seq)——确认 at_seq 推进而目标内容未变的证据仍合格", () => {
+    const requirement = requirementFixture({ baseline_at_seq: 9, baseline_target_seq: { "baseline/frontend/stack.yaml": 4, "baseline/platform/observability.md": 3 } });
+    expect(qualifyEvidence(evidence(5), requirement).verdict).toBe("QUALIFIED");
+    const stale = qualifyEvidence(evidence(3), requirement);
+    expect(stale.verdict).toBe("STALE_SEQ");
+    expect(stale.reason).toContain("目标最近一次内容变化 seq=4");
+  });
+
+  it("target_seq 缺席或为空：回落 baseline_at_seq（旧行为）", () => {
+    expect(qualifyEvidence(evidence(5), requirementFixture({ baseline_at_seq: 9 })).verdict).toBe("STALE_SEQ");
+    expect(qualifyEvidence(evidence(5), requirementFixture({ baseline_at_seq: 9, baseline_target_seq: {} })).verdict).toBe("STALE_SEQ");
+  });
+
+  it("target_seq 超前于 baseline_at_seq / 负数 → SCHEMA_INVALID", () => {
+    expect(() => qualifyEvidence(evidence(5), requirementFixture({ baseline_at_seq: 3, baseline_target_seq: { a: 4 } }))).toThrow(/ahead of baseline_at_seq/);
+    expect(() => qualifyEvidence(evidence(5), requirementFixture({ baseline_at_seq: 3, baseline_target_seq: { a: -1 } }))).toThrow(/baseline_target_seq/);
+  });
+});

@@ -12,7 +12,9 @@
  * - seq 轴（§5-1）：证据锚 captured_at_seq < baseline 确认态 at_seq → 否决（证据产生于
  *   当前确认基线之前）。双侧 seq 均在场才可比——任一侧 null = 轴诚实不适用（零新
  *   字段：锚就是既有 GRN.ran_at_seq / CLM.verification.at_seq 与 baseline confirmed
- *   at_seq）；boundary（captured == baseline）合格。
+ *   at_seq）；boundary（captured == baseline）合格。逐目标锚（VX-WRITE-01，2026-10
+ *   VNext 优化 V2-4）：要求面携 baseline_target_seq 时，未声明范围的证据以「任一目标
+ *   内容最近一次变化的 seq」（max target_seq）为切点——重确认只推进真实变化的目标。
  * - permit 轴（§5-4）：证据挂载执行（execution_id）命中 journal 失效事件 → 否决。
  *   时序切分（VX-WRITE-03，2026-10 VNext 优化 V2-1）：PERMIT_EXPIRED_OBSERVED /
  *   PERMIT_STOLEN 只否决「许可失效之后」产出的证据——切点 = 事件携带的 expired_at_seq
@@ -158,6 +160,11 @@ export interface EvidenceQualificationRequirement {
   readonly baseline_scope?: EvidenceBaselineScope;
   /** baseline 确认态 at_seq（readBaselineConfirmation 单源）；null = 无确认基线（seq 轴不适用）。 */
   readonly baseline_at_seq: number | null;
+  /**
+   * 逐目标确认锚（V2-4）：目标 → 该目标内容最近一次在确认中变化的 seq。在场时未声明范围的
+   * seq 轴切点 = max(值)（≤ baseline_at_seq）；缺席 = 切点 baseline_at_seq（旧行为）。
+   */
+  readonly baseline_target_seq?: Readonly<Record<string, number>>;
   /** journal 失效事件集（三词形 producer；空集 = permit 轴无否决输入）。 */
   readonly invalidated_events: readonly EvidenceInvalidationEvent[];
   /** execution_id → 挂载 permit refs（executions/AGX-*.json permit_ids 装配）。 */
@@ -197,6 +204,13 @@ export interface EvidenceQualificationOutcome {
 
 function schemaInvalid(message: string, hint: string): GovernanceError {
   return new GovernanceError("SCHEMA_INVALID", message, hint);
+}
+
+/** 未声明范围的 seq 轴切点：逐目标锚在场取 max(target_seq)，否则 baseline_at_seq（V2-4）。 */
+function unscopedBaselineCutoff(requirement: EvidenceQualificationRequirement): number | null {
+  if (requirement.baseline_at_seq === null) return null;
+  const values = requirement.baseline_target_seq === undefined ? [] : Object.values(requirement.baseline_target_seq);
+  return values.length === 0 ? requirement.baseline_at_seq : Math.max(...values);
 }
 
 function requireNonEmptyString(value: unknown, path: string): string {
@@ -256,6 +270,20 @@ function validateRequirement(requirement: EvidenceQualificationRequirement): voi
     throw schemaInvalid("requirement 须为对象", "evidence-qualification 输入合同校验失败");
   }
   requireSeqOrNull(requirement.baseline_at_seq, "requirement.baseline_at_seq");
+  if (requirement.baseline_target_seq !== undefined) {
+    const targetSeq = requirement.baseline_target_seq;
+    if (targetSeq === null || typeof targetSeq !== "object" || Array.isArray(targetSeq)) {
+      throw schemaInvalid("requirement.baseline_target_seq must be an object", "Pass the confirmed record's per-target sequence map.");
+    }
+    for (const [target, seq] of Object.entries(targetSeq)) {
+      requireNonEmptyString(target, "requirement.baseline_target_seq key");
+      if (seq === null) throw schemaInvalid("requirement.baseline_target_seq values must be sequences", "Restore the confirmed record.");
+      requireSeqOrNull(seq, `requirement.baseline_target_seq.${target}`);
+      if (requirement.baseline_at_seq !== null && seq > requirement.baseline_at_seq) {
+        throw schemaInvalid("requirement.baseline_target_seq is ahead of baseline_at_seq", "A target cannot change after the confirmation that records it.");
+      }
+    }
+  }
   if (requirement.baseline_scope !== undefined) {
     const scope = requirement.baseline_scope;
     if (scope === null || typeof scope !== "object" || !Array.isArray(scope.relevant_targets)) {
@@ -390,15 +418,18 @@ function judge(
       firstHit("STALE_SEQ", `baseline inputs are stale or unassessed: ${changed.join(", ") || "snapshot coverage/sequence"}`);
     }
   }
+  const unscopedCutoff = unscopedBaselineCutoff(requirement);
   if (
     !scoped &&
-    requirement.baseline_at_seq !== null &&
+    unscopedCutoff !== null &&
     evidence.captured_at_seq !== null &&
-    evidence.captured_at_seq < requirement.baseline_at_seq
+    evidence.captured_at_seq < unscopedCutoff
   ) {
     firstHit(
       "STALE_SEQ",
-      `seq 轴：证据锚 seq=${evidence.captured_at_seq} 早于 baseline 确认 at_seq=${requirement.baseline_at_seq}——证据产生于当前确认基线之前（§5-1 seq 比对）`,
+      unscopedCutoff === requirement.baseline_at_seq
+        ? `seq 轴：证据锚 seq=${evidence.captured_at_seq} 早于 baseline 确认 at_seq=${requirement.baseline_at_seq}——证据产生于当前确认基线之前（§5-1 seq 比对）`
+        : `seq 轴：证据锚 seq=${evidence.captured_at_seq} 早于 baseline 目标最近一次内容变化 seq=${unscopedCutoff}——证据产生于当前确认内容之前（§5-1 逐目标锚，V2-4）`,
     );
   }
 
@@ -455,9 +486,11 @@ function judge(
     return { ref: evidence.ref, surface: evidence.surface, qualified: false, verdict, reason: vetoes.join("；") };
   }
   const seqAxis =
-    scoped ? "scoped baseline inputs unchanged" : requirement.baseline_at_seq === null || evidence.captured_at_seq === null
+    scoped ? "scoped baseline inputs unchanged" : unscopedCutoff === null || evidence.captured_at_seq === null
       ? "不适用"
-      : `锚=${evidence.captured_at_seq} ≥ 确认=${requirement.baseline_at_seq}`;
+      : unscopedCutoff === requirement.baseline_at_seq
+        ? `锚=${evidence.captured_at_seq} ≥ 确认=${requirement.baseline_at_seq}`
+        : `锚=${evidence.captured_at_seq} ≥ 目标最近变化=${unscopedCutoff}`;
   const permitAxis =
     evidence.execution_id === null
       ? "不适用（无挂载执行）"

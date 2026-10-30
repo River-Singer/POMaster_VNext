@@ -1888,6 +1888,12 @@ export interface BaselineConfirmedRecord {
    * 不计漂移。缺席 = 旧记录（下一次真实确认时补写）；旧记录按 BOM / 换行变体判同。
    */
   readonly normalized?: Readonly<Record<string, string>>;
+  /**
+   * 逐目标确认锚（V2-4；台账 VX-WRITE-01）：该目标内容最近一次在确认中发生变化的 seq。
+   * 重确认只推进真实变化的目标，其余沿用——改 platform 不再把 frontend 的锚一起推到当前。
+   * 缺席 = 旧记录，全部目标按 at_seq 计（行为不变，直到下一次确认）。
+   */
+  readonly target_seq?: Readonly<Record<string, number>>;
   /** 手改声明标记（ADR-17 通道 2）：在座 = 上次确认为 Owner 手改声明（ack 通道）。 */
   readonly ack?: BaselineAckRecord;
   /** 在途变更批（ADR-16）：在座 = 确认记录持 pending-change（同 ref 连改批）。 */
@@ -2009,6 +2015,8 @@ const TOP_LEVEL_KEY_LINE = /^[A-Za-z][A-Za-z0-9_-]*\s*:/;
 const AT_SEQ_LINE = /^\s+at_seq\s*:\s*([0-9]+)\s*$/;
 const DIGESTS_HEADER_LINE = /^\s+digests\s*:$/;
 const NORMALIZED_HEADER_LINE = /^\s+normalized\s*:$/;
+const TARGET_SEQ_HEADER_LINE = /^\s+target_seq\s*:$/;
+const TARGET_SEQ_LINE = /^\s+(\S+)\s*:\s*([0-9]+)\s*$/;
 const DIGEST_LINE = /^\s+(\S+)\s*:\s*(sha256:[0-9a-f]{64})\s*$/;
 // —— ADR-16/17 扩展段（pending-change / ack 手改声明）——
 const PENDING_HEADER_LINE = /^\s+pending\s*:\s*$/;
@@ -2047,12 +2055,13 @@ function parseConfirmedBlock(text: string): ConfirmedBlockParse {
   let atSeq: number | null = null;
   const digests = new Map<string, string>();
   let normalized: Map<string, string> | null = null;
+  let targetSeq: Map<string, number> | null = null;
   let changeRef: string | null = null;
   let batch: string[] | null = null;
   let ackNote: string | null = null;
   let ackFiles: string[] | null = null;
   // 段位跟踪：root = 段头之间；pending/ack 子段与其列表位由 header 行切入。
-  let section: "root" | "ack" | "ack-files" | "pending" | "pending-batch" | "digests" | "normalized" = "root";
+  let section: "root" | "ack" | "ack-files" | "pending" | "pending-batch" | "digests" | "normalized" | "target_seq" = "root";
   for (let i = start + 1; i < end; i += 1) {
     const line = lines[i] ?? "";
     if (line.trim() === "" || line.startsWith("#")) continue;
@@ -2085,6 +2094,20 @@ function parseConfirmedBlock(text: string): ConfirmedBlockParse {
       if (normalized !== null) return { kind: "damaged", detail: "normalized 段重复" };
       normalized = new Map<string, string>();
       section = "normalized";
+      continue;
+    }
+    if (TARGET_SEQ_HEADER_LINE.test(line)) {
+      if (targetSeq !== null) return { kind: "damaged", detail: "target_seq 段重复" };
+      targetSeq = new Map<string, number>();
+      section = "target_seq";
+      continue;
+    }
+    if (section === "target_seq") {
+      const seqEntry = TARGET_SEQ_LINE.exec(line);
+      if (seqEntry === null) return { kind: "damaged", detail: `target_seq 段内不可识别行：${line.trim()}` };
+      const path = seqEntry[1] ?? "";
+      if ((targetSeq as Map<string, number>).has(path)) return { kind: "damaged", detail: `target_seq 条目重复：${path}` };
+      (targetSeq as Map<string, number>).set(path, Number.parseInt(seqEntry[2] ?? "", 10));
       continue;
     }
     if (section === "ack" || section === "ack-files") {
@@ -2167,6 +2190,13 @@ function parseConfirmedBlock(text: string): ConfirmedBlockParse {
       return { kind: "damaged", detail: `normalized 快照缺目标：${normalizedMissing.join(", ")}` };
     }
   }
+  if (targetSeq !== null) {
+    const seqMap = targetSeq as Map<string, number>;
+    const seqMissing = BASELINE_CONFIRM_TARGETS.filter((target) => !seqMap.has(target));
+    if (seqMissing.length > 0) return { kind: "damaged", detail: `target_seq 缺目标：${seqMissing.join(", ")}` };
+    const ahead = BASELINE_CONFIRM_TARGETS.filter((target) => (seqMap.get(target) as number) > atSeq);
+    if (ahead.length > 0) return { kind: "damaged", detail: `target_seq 超前于 at_seq：${ahead.join(", ")}` };
+  }
   // —— 子段完整性：出现即须完整（fail-closed 禁半截 pending/ack）——
   if (changeRef !== null || batch !== null) {
     if (changeRef === null) return { kind: "damaged", detail: "pending 段缺 change_ref" };
@@ -2181,6 +2211,9 @@ function parseConfirmedBlock(text: string): ConfirmedBlockParse {
     digests: Object.fromEntries(BASELINE_CONFIRM_TARGETS.map((target) => [target, digests.get(target) as string])),
     ...(normalized !== null
       ? { normalized: Object.fromEntries(BASELINE_CONFIRM_TARGETS.map((target) => [target, (normalized as Map<string, string>).get(target) as string])) }
+      : {}),
+    ...(targetSeq !== null
+      ? { target_seq: Object.fromEntries(BASELINE_CONFIRM_TARGETS.map((target) => [target, (targetSeq as Map<string, number>).get(target) as number])) }
       : {}),
     ...(changeRef !== null && batch !== null ? { pending: { change_ref: changeRef, batch } } : {}),
     ...(ackNote !== null && ackFiles !== null ? { ack: { note: ackNote, files: ackFiles } } : {}),
@@ -2205,6 +2238,11 @@ function renderConfirmedBlock(record: BaselineConfirmedRecord): string {
     const normalized = record.normalized;
     lines.push("  normalized:");
     lines.push(...BASELINE_CONFIRM_TARGETS.map((target) => `    ${target}: ${normalized[target]}`));
+  }
+  if (record.target_seq !== undefined) {
+    const targetSeq = record.target_seq;
+    lines.push("  target_seq:");
+    lines.push(...BASELINE_CONFIRM_TARGETS.map((target) => `    ${target}: ${targetSeq[target]}`));
   }
   lines.push("");
   return lines.join("\n");
@@ -2308,13 +2346,47 @@ function reconfirmDigests(
   previous: BaselineConfirmedRecord,
   snapshot: ConfirmSnapshot,
   bytesOnly: ReadonlySet<string>,
-): Pick<BaselineConfirmedRecord, "digests" | "normalized"> {
+  drifted: ReadonlySet<string>,
+  atSeq: number,
+): Pick<BaselineConfirmedRecord, "digests" | "normalized" | "target_seq"> {
+  const previousSeq = baselineTargetSeq(previous);
   return {
     digests: Object.fromEntries(
       BASELINE_CONFIRM_TARGETS.map((target) => [target, bytesOnly.has(target) ? previous.digests[target] : snapshot.digests[target]]),
     ) as Record<string, string>,
     normalized: snapshot.normalized,
+    // 逐目标锚（V2-4）：只推进内容真实变化（drift）的目标。
+    target_seq: Object.fromEntries(
+      BASELINE_CONFIRM_TARGETS.map((target) => [target, drifted.has(target) ? atSeq : Math.min(previousSeq[target] as number, atSeq)]),
+    ),
   };
+}
+
+/** 逐目标确认锚（V2-4）：记录缺 target_seq 段（旧记录）→ 全部目标按 at_seq。 */
+export function baselineTargetSeq(record: BaselineConfirmedRecord): Readonly<Record<string, number>> {
+  return Object.fromEntries(
+    BASELINE_CONFIRM_TARGETS.map((target) => [target, record.target_seq?.[target] ?? record.at_seq]),
+  );
+}
+
+/**
+ * 任务 baseline 范围的 lane 词形（V2-4；kernel 局部词 TODO(vocab-pr)）：确认目标按目录
+ * 归 lane（baseline/<lane>/…；design-tokens 在 frontend 目录下随 frontend）。platform 只在
+ * 显式列出时相关（O6）。
+ */
+export const BASELINE_SCOPE_LANES = ["frontend", "backend", "data", "platform"] as const;
+export type BaselineScopeLane = (typeof BASELINE_SCOPE_LANES)[number];
+
+/** lane 集 → 相关 / 排除确认目标（二者划分全部确认目标）。 */
+export function baselineTargetsForLanes(lanes: readonly BaselineScopeLane[]): {
+  readonly relevant: readonly string[];
+  readonly excluded: readonly string[];
+} {
+  const selected = new Set(lanes);
+  const relevant = BASELINE_CONFIRM_TARGETS.filter((target) =>
+    BASELINE_SCOPE_LANES.some((lane) => selected.has(lane) && target.startsWith(`baseline/${lane}/`)),
+  );
+  return { relevant, excluded: BASELINE_CONFIRM_TARGETS.filter((target) => !relevant.includes(target)) };
 }
 
 // ============================================================
@@ -2518,10 +2590,12 @@ export async function runBaselineConfirm(
         unknownsRemaining,
       );
     }
+    const initialSeq = await readGenerationSeq(rootDir);
     return writeConfirmedRecord(rootDir, manifestFile.text, {
-      at_seq: await readGenerationSeq(rootDir),
+      at_seq: initialSeq,
       digests: snapshot.digests,
       normalized: snapshot.normalized,
+      target_seq: Object.fromEntries(BASELINE_CONFIRM_TARGETS.map((target) => [target, initialSeq])),
     }, snapshot.digests, unknownsRemaining, undefined);
   }
   const record = existing.record;
@@ -2530,7 +2604,8 @@ export async function runBaselineConfirm(
   );
   const mismatched = BASELINE_CONFIRM_TARGETS.filter((target) => judgements.get(target) === "drift");
   const bytesOnly = new Set(BASELINE_CONFIRM_TARGETS.filter((target) => judgements.get(target) === "bytes-only"));
-  const rewritten = reconfirmDigests(record, snapshot, bytesOnly);
+  const reconfirmSeq = await readGenerationSeq(rootDir);
+  const rewritten = reconfirmDigests(record, snapshot, bytesOnly, new Set(mismatched), reconfirmSeq);
   const pending = record.pending;
   const pendingBatchFiles = new Set(
     (pending?.batch ?? []).map((entry) => entry.split(":")[0] ?? entry),
@@ -2612,7 +2687,7 @@ export async function runBaselineConfirm(
     }
     // 消费变更批 → 全量重快照（pending/ack 清除——本次确认通道 = 治理通路）。
     return writeConfirmedRecord(rootDir, manifestFile.text, {
-      at_seq: await readGenerationSeq(rootDir),
+      at_seq: reconfirmSeq,
       ...rewritten,
     }, rewritten.digests, unknownsRemaining, undefined);
   }
@@ -2631,7 +2706,7 @@ export async function runBaselineConfirm(
       return failBaselineConfirm(changeError.code, changeError.message, changeError.hint, unknownsRemaining);
     }
     return writeConfirmedRecord(rootDir, manifestFile.text, {
-      at_seq: await readGenerationSeq(rootDir),
+      at_seq: reconfirmSeq,
       ...rewritten,
     }, rewritten.digests, unknownsRemaining, undefined);
   }
@@ -2645,7 +2720,7 @@ export async function runBaselineConfirm(
       unknownsRemaining,
     );
   }
-  const atSeq = await readGenerationSeq(rootDir);
+  const atSeq = reconfirmSeq;
   const journalError = await appendBaselineAckJournalEvent(rootDir, {
     seq: atSeq,
     drifted_files: [...mismatched],

@@ -445,6 +445,10 @@ export {
   unknownsWordForm,
   renderBaselineQuizHumanLine,
   baselineGateAssessment,
+  baselineTargetSeq,
+  baselineTargetsForLanes,
+  BASELINE_SCOPE_LANES,
+  normalizeBaselineText,
   buildBaselineDependencyDeclaration,
   readBaselineConfirmation,
   validateBaselineDependencyDeclaration,
@@ -2730,6 +2734,7 @@ export function createProgram(
     .option("--decision-root <DECISION.*>", "当前增量的 Owner-confirmed Decision 根（可重复；按 depends_on 传递闭包判卷，图指纹变化后须重新确认）", collectValues)
     .option("--baseline-target <baseline/path>", "任务相关的 Owner-confirmed baseline 资产（可重复；须与 --baseline-exclude 共同覆盖全部确认资产）", collectValues)
     .option("--baseline-exclude <baseline/path>", "任务明确不相关的 baseline 资产（可重复；未列出的资产不会被静默视为无关）", collectValues)
+    .option("--lanes <lanes>", "按 lane 生成 baseline 依赖范围（frontend,backend,data,platform；逗号分隔或重复；platform 只在显式列出时相关；与 --baseline-target/--baseline-exclude 二选一）", collectValues)
     .option("--json", "machine-readable JSON output (§45)")
     .action(async (discoveryId: string, opts, command) => {
       const outcome = await runBrainstormDecide(resolveDir(command), {
@@ -2757,6 +2762,7 @@ export function createProgram(
         ...(opts.decisionRoot !== undefined ? { decisionRoots: opts.decisionRoot as string[] } : {}),
         ...(opts.baselineTarget !== undefined ? { baselineTargets: opts.baselineTarget as string[] } : {}),
         ...(opts.baselineExclude !== undefined ? { baselineExclusions: opts.baselineExclude as string[] } : {}),
+        ...(opts.lanes !== undefined ? { baselineLanes: opts.lanes as string[] } : {}),
       });
       record({
         command: "brainstorm decide",

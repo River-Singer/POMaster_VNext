@@ -91,7 +91,7 @@ import {
   type StackAnswer,
 } from "@pomaster/cli";
 import { seedsRootCandidates } from "../src/seed-manifest.js";
-import { observePackageStack, registerStackObservationCandidates, BASELINE_DESIGN_TOKENS_TARGET, normalizeBaselineText } from "../src/baseline.js";
+import { observePackageStack, registerStackObservationCandidates, BASELINE_DESIGN_TOKENS_TARGET, baselineTargetSeq, baselineTargetsForLanes, normalizeBaselineText } from "../src/baseline.js";
 import { readDesignTokens } from "../src/baseline-tokens.js";
 import { INTERACTIVE_BACKSPACE_KEY } from "../src/interactive-keys.js";
 import type { CliError } from "../src/envelope.js";
@@ -2474,5 +2474,72 @@ describe("autocrlf 克隆的基线照常可读写（V2-3；动态检查 #10）",
     const manifestText = read(BASELINE_MANIFEST_RELATIVE);
     expect(manifestText.replace(/\r\n/g, "")).not.toContain("\n");
     expect(await baselineGateErrors(dir)).toEqual([]);
+  });
+});
+
+// ============================================================
+// 逐目标确认锚 + lane 范围（V2-4；VX-WRITE-01 / VX-INIT-07）
+// ============================================================
+
+describe("逐目标确认锚 target_seq（V2-4）", () => {
+  const ARCH = "baseline/frontend/architecture.md";
+  const OBS = "baseline/platform/observability.md";
+  const seqOf = async (): Promise<Readonly<Record<string, number>>> => {
+    const read = await readBaselineConfirmation(dir);
+    if (read.kind !== "record-valid") throw new Error("expected a valid confirmation record");
+    return baselineTargetSeq(read.record);
+  };
+
+  it("初次确认：全部目标 target_seq = at_seq；ack 只推进真实变化的目标，其余沿用", async () => {
+    await buildConfirmedProject(dir);
+    const first = await readBaselineConfirmation(dir);
+    if (first.kind !== "record-valid") throw new Error("expected confirmed");
+    expect(read(BASELINE_MANIFEST_RELATIVE)).toContain("  target_seq:");
+    expect(Object.values(baselineTargetSeq(first.record)).every((seq) => seq === first.record.at_seq)).toBe(true);
+
+    await seedGovernedFixture("CHANGE.B0001"); // 推进 store seq（治理对象落库即事务）
+    const obsPath = join(dir, ".pomaster", OBS);
+    writeFileSync(obsPath, `${readFileSync(obsPath, "utf8")}\n- 新增告警阈值：p99 > 800ms\n`, "utf8");
+    const acked = await runBaselineConfirm(dir, { ackDrifted: true, note: "Owner 补充可观测性阈值" });
+    expect(acked.ok).toBe(true);
+    const after = await seqOf();
+    expect(acked.result.at_seq).toBeGreaterThan(first.record.at_seq);
+    expect(after[OBS]).toBe(acked.result.at_seq);
+    expect(after[ARCH]).toBe(first.record.at_seq);
+  });
+
+  it("旧记录（无 target_seq 段）按 at_seq 计；target_seq 缺目标 / 超前于 at_seq = 记录损坏", async () => {
+    await buildConfirmedProject(dir);
+    const manifest = join(dir, BASELINE_MANIFEST_RELATIVE);
+    const original = readFileSync(manifest, "utf8");
+    const lines = original.split("\n");
+    const start = lines.indexOf("  target_seq:");
+    let end = start + 1;
+    while (end < lines.length && /^\s{4}\S/.test(lines[end] ?? "")) end += 1;
+    writeFileSync(manifest, [...lines.slice(0, start), ...lines.slice(end)].join("\n"), "utf8");
+    const legacy = await readBaselineConfirmation(dir);
+    if (legacy.kind !== "record-valid") throw new Error("expected confirmed");
+    expect(legacy.record.target_seq).toBeUndefined();
+    expect(Object.values(baselineTargetSeq(legacy.record)).every((seq) => seq === legacy.record.at_seq)).toBe(true);
+
+    writeFileSync(manifest, [...lines.slice(0, start + 1), ...lines.slice(start + 2)].join("\n"), "utf8");
+    const missing = await readBaselineConfirmation(dir);
+    expect(missing.kind === "record-invalid" && missing.damage_detail).toContain("target_seq 缺目标");
+
+    const ahead = original.replace(new RegExp(`(    ${ARCH.replace(/[.]/g, "\\.")}: )([0-9]+)`), (_m, prefix: string) => `${prefix}999`);
+    writeFileSync(manifest, ahead, "utf8");
+    const aheadRead = await readBaselineConfirmation(dir);
+    expect(aheadRead.kind === "record-invalid" && aheadRead.damage_detail).toContain("target_seq 超前于 at_seq");
+  });
+
+  it("baselineTargetsForLanes：按目录归 lane，design-tokens 随 frontend，platform 只在列出时相关，划分覆盖全部目标", () => {
+    const frontend = baselineTargetsForLanes(["frontend"]);
+    expect(frontend.relevant).toContain("baseline/frontend/stack.yaml");
+    expect(frontend.relevant).toContain(BASELINE_DESIGN_TOKENS_TARGET);
+    expect(frontend.relevant.every((target) => target.startsWith("baseline/frontend/"))).toBe(true);
+    expect(frontend.excluded).toContain(OBS);
+    expect([...frontend.relevant, ...frontend.excluded].sort()).toEqual([...BASELINE_CONFIRM_TARGETS].sort());
+    expect(baselineTargetsForLanes(["platform"]).relevant).toContain(OBS);
+    expect(baselineTargetsForLanes([]).relevant).toEqual([]);
   });
 });

@@ -117,10 +117,13 @@ import {
 } from "./init.js";
 import {
   BASELINE_CONFIRM_TARGETS,
+  BASELINE_SCOPE_LANES,
+  baselineTargetsForLanes,
   buildBaselineDependencyDeclaration,
   readBaselineConfirmation,
   validateBaselineDependencyDeclaration,
   type BaselineDependencyDeclaration,
+  type BaselineScopeLane,
 } from "./baseline.js";
 import {
   DISCOVERY_ID_PATTERN,
@@ -1588,6 +1591,12 @@ export interface BrainstormDecideInput {
   /** --baseline-target / --baseline-exclude：complete Owner-confirmed baseline partition. */
   readonly baselineTargets?: readonly string[];
   readonly baselineExclusions?: readonly string[];
+  /**
+   * --lanes <frontend,backend,data,platform>（V2-4）：按 lane 生成 baseline 依赖范围——所选
+   * lane 的确认目标为相关、其余为排除（platform 只在显式列出时相关）。与
+   * --baseline-target / --baseline-exclude 二选一。
+   */
+  readonly baselineLanes?: readonly string[];
 }
 
 /** decision-graph.json + decision-inputs.json 装载结果（形态闸在装载层，畸形显式拒）。 */
@@ -2416,8 +2425,34 @@ export async function runBrainstormDecide(
   }
 
   let baselineDependencies: BaselineDependencyDeclaration | undefined;
-  const baselineTargets = input.baselineTargets ?? [];
-  const baselineExclusions = input.baselineExclusions ?? [];
+  let baselineTargets = input.baselineTargets ?? [];
+  let baselineExclusions = input.baselineExclusions ?? [];
+  const laneTokens = [...new Set((input.baselineLanes ?? []).flatMap((raw) => raw.split(",")).map((lane) => lane.trim()).filter((lane) => lane.length > 0))];
+  if (laneTokens.length > 0) {
+    const unknownLanes = laneTokens.filter((lane) => !(BASELINE_SCOPE_LANES as readonly string[]).includes(lane));
+    if (unknownLanes.length > 0 || baselineTargets.length > 0 || baselineExclusions.length > 0) {
+      return fail(
+        {
+          code: "SCHEMA_INVALID",
+          message: unknownLanes.length > 0
+            ? `--lanes 词表外：${unknownLanes.join(", ")}`
+            : "--lanes 与 --baseline-target / --baseline-exclude 二选一",
+          hint: `--lanes 取值 ${BASELINE_SCOPE_LANES.join(" | ")}（逗号分隔或重复给出）；逐文件精确划分改用 --baseline-target + --baseline-exclude。`,
+        },
+        ["brainstorm decide --ready: FAILED — SCHEMA_INVALID（--lanes）"],
+        { state: currentState, decisions_total: graph.decisions.length },
+      );
+    }
+    const partition = baselineTargetsForLanes(laneTokens as BaselineScopeLane[]);
+    baselineTargets = partition.relevant;
+    baselineExclusions = partition.excluded;
+  }
+  let baselineScopeWarning = false;
+  if (baselineTargets.length === 0 && baselineExclusions.length === 0) {
+    // 未声明范围：任何确认资产的变化都会让本任务的证据重新待评估（V2-4 提示，不阻断）。
+    const confirmation = await readBaselineConfirmation(rootDir);
+    baselineScopeWarning = confirmation.kind === "record-valid";
+  }
   if (baselineTargets.length > 0 || baselineExclusions.length > 0) {
     const confirmation = await readBaselineConfirmation(rootDir);
     if (confirmation.kind !== "record-valid" || confirmation.state !== "confirmed") {
@@ -2672,8 +2707,11 @@ export async function runBrainstormDecide(
       : []),
     ...(baselineDependencies !== undefined
       ? [
-          `  baseline 依赖范围已确认：相关 ${String(baselineDependencies.relevant_targets.length)} 个 / 明确排除 ${String(baselineDependencies.excluded_targets.length)} 个（快照 at_seq=${String(baselineDependencies.baseline_at_seq)}；未评估项不放行）`,
+          `  baseline 依赖范围已确认：相关 ${String(baselineDependencies.relevant_targets.length)} 个 / 明确排除 ${String(baselineDependencies.excluded_targets.length)} 个（快照 at_seq=${String(baselineDependencies.baseline_at_seq)}；未评估项不放行）${laneTokens.length > 0 ? `——按 lanes ${laneTokens.join(",")} 生成` : ""}`,
         ]
+      : []),
+    ...(baselineScopeWarning
+      ? ["  warning: 未声明 baseline 依赖范围——任何确认资产变化都会让本任务证据重新待评估；建议 --lanes <frontend,backend,data,platform>"]
       : []),
     "  下一步提升（走 P11 maintain 面）：",
     `    pomaster brainstorm promote ${input.discoveryId} --to TASK|CHANGE --basis msd_reached --apply`,
@@ -2693,5 +2731,14 @@ export async function runBrainstormDecide(
       graph_fingerprint: graph.graph_fingerprint,
     },
     human,
+    baselineScopeWarning
+      ? [
+          {
+            code: "BASELINE_SCOPE_UNDECLARED",
+            message: "Task Contract 未声明 baseline 依赖范围：任何确认资产变化都会让本任务证据重新待评估",
+            hint: "重跑 --ready 并加 --lanes <frontend,backend,data,platform>（platform 只在显式列出时相关），或用 --baseline-target / --baseline-exclude 逐文件划分。",
+          },
+        ]
+      : [],
   );
 }

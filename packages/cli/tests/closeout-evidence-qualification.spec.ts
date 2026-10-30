@@ -32,8 +32,9 @@ import {
   checkPermit,
   createStore,
   issuePermit,
+  qualifyEvidence,
 } from "@pomaster/kernel";
-import { runCloseout, runCheckGates, readBaselineConfirmation, buildBaselineDependencyDeclaration, BASELINE_CONFIRM_TARGETS, type CloseoutResult } from "@pomaster/cli";
+import { runCloseout, runCheckGates, readBaselineConfirmation, buildBaselineDependencyDeclaration, baselineTargetsForLanes, BASELINE_CONFIRM_TARGETS, type CloseoutResult } from "@pomaster/cli";
 import { compareSourceSnapshots } from "@pomaster/kernel";
 import { captureEvidenceSourceSnapshot } from "../src/source-snapshot.js";
 import { CATALOG_GATE_RECIPES } from "@pomaster/gauntlet-lite";
@@ -558,5 +559,69 @@ describe("closeout 证据源码新鲜度（W2-FR05）", () => {
     const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
     expect(outcome.ok).toBe(false);
     expect(outcome.errors.map((error) => error.code)).toEqual(["EVIDENCE_MALFORMED"]);
+  });
+});
+
+// ============================================================
+// V2-4（VX-WRITE-01 / 动态检查 #8）：lane 范围 + 逐目标锚的要求面装配
+// ============================================================
+
+describe("baseline 范围与逐目标锚（V2-4）", () => {
+  /** 以给定内容覆盖写 confirmed 块（at_seq + digests + target_seq），模拟一次只改了部分目标的重确认。 */
+  function writeConfirmed(atSeq: number, contents: Map<string, string>, targetSeq: Record<string, number>): void {
+    const entries = [...contents.entries()].map(([relative, content]) => [relative.replace(".pomaster/", ""), content] as const);
+    for (const [relative, content] of contents) writeFileSync(join(root, ...relative.split("/")), content);
+    const digestLines = entries.map(([target, content]) => `    ${target}: sha256:${createHash("sha256").update(content, "utf8").digest("hex")}`);
+    const seqLines = entries.map(([target]) => `    ${target}: ${targetSeq[target] ?? atSeq}`);
+    writeFileSync(
+      join(root, ".pomaster", "baseline", "manifest.yaml"),
+      `id: BASELINE.PROJECT\nschema_version: 1\nstatus: CURRENT\nunknowns: []\nconfirmed:\n  at_seq: ${atSeq}\n  digests:\n${digestLines.join("\n")}\n  target_seq:\n${seqLines.join("\n")}\n`,
+    );
+  }
+  const evidenceAt = (capturedAt: number, inputs: Awaited<ReturnType<typeof captureEvidenceBaselineInputs>>) => ({
+    ref: "GRN-0001",
+    surface: "run" as const,
+    captured_at_seq: capturedAt,
+    gate: null,
+    gate_def: null,
+    oracle_ref: null,
+    execution_id: null,
+    subject: null,
+    ...(inputs !== undefined ? { baseline_inputs: inputs } : {}),
+  });
+
+  it("--lanes frontend 的任务：platform 目标合法变更后证据仍合格；frontend 目标变更后任务范围失效（须重评估，不放行旧证据）", async () => {
+    await initStore();
+    seedBaseline(true, 2);
+    const confirmation = await readBaselineConfirmation(root);
+    if (confirmation.kind !== "record-valid") throw new Error("expected confirmed baseline");
+    const lanes = baselineTargetsForLanes(["frontend"]);
+    const declaration = buildBaselineDependencyDeclaration(confirmation.record, lanes.relevant, lanes.excluded);
+    if (!declaration.ok) throw new Error(declaration.details.join("; "));
+    const captured = await captureEvidenceBaselineInputs(root);
+
+    const contents = baselineFileContents();
+    contents.set(".pomaster/baseline/platform/observability.md", "# observability\n- p99 告警阈值 800ms\n");
+    writeConfirmed(5, contents, { "baseline/platform/observability.md": 5 });
+    const scoped = await readEvidenceQualificationRequirement(root, declaration.declaration);
+    expect(scoped.baseline_target_seq?.["baseline/platform/observability.md"]).toBe(5);
+    expect(qualifyEvidence(evidenceAt(3, captured), scoped).verdict).toBe("QUALIFIED");
+
+    contents.set(".pomaster/baseline/frontend/architecture.md", "# architecture\n## Layers\n- 改为四层\n");
+    writeConfirmed(7, contents, { "baseline/platform/observability.md": 5, "baseline/frontend/architecture.md": 7 });
+    await expect(readEvidenceQualificationRequirement(root, declaration.declaration)).rejects.toMatchObject({ code: "SCHEMA_INVALID" });
+  });
+
+  it("未声明范围的任务：切点 = 任一目标内容最近一次变化（max target_seq），而非确认 at_seq", async () => {
+    await initStore();
+    seedBaseline(true, 2);
+    writeConfirmed(6, baselineFileContents(), {});
+    const contents = baselineFileContents();
+    // 记录 at_seq=9，但所有目标的内容最近一次变化在 seq 6（例如之后的确认只是 bytes-only 收敛）。
+    writeConfirmed(9, contents, Object.fromEntries(BASELINE_CONFIRM_TARGETS.map((target) => [target, 6])));
+    const requirement = await readEvidenceQualificationRequirement(root);
+    expect(requirement.baseline_at_seq).toBe(9);
+    expect(qualifyEvidence(evidenceAt(7, undefined), requirement).verdict).toBe("QUALIFIED");
+    expect(qualifyEvidence(evidenceAt(5, undefined), requirement).verdict).toBe("STALE_SEQ");
   });
 });

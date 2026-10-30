@@ -36,7 +36,7 @@ import {
 } from "@pomaster/kernel";
 import { CURRENT_GATE_DEFS } from "@pomaster/gauntlet-lite";
 import { GRN_FILE_PATTERN } from "./evidence.js";
-import { baselineGateAssessment, readBaselineConfirmation, validateBaselineDependencyDeclaration } from "./baseline.js";
+import { baselineGateAssessment, baselineTargetSeq, readBaselineConfirmation, validateBaselineDependencyDeclaration } from "./baseline.js";
 import { journalFilePath, POMASTER_DIR, toPosix } from "./store-layout.js";
 
 type UnknownRecord = Record<string, unknown>;
@@ -150,6 +150,8 @@ export async function readEvidenceQualificationRequirement(
   }
   return {
     baseline_at_seq: baselineAtSeq,
+    // 逐目标确认锚（V2-4）：未声明范围的证据以「任一目标内容最近一次变化」为切点。
+    ...(confirmation.kind === "record-valid" ? { baseline_target_seq: baselineTargetSeq(confirmation.record) } : {}),
     ...(scope !== undefined ? { baseline_scope: scope } : {}),
     invalidated_events: invalidatedEvents,
     execution_permits: executionPermits,
