@@ -299,7 +299,7 @@ pomaster baseline set/confirm   # set = 单键销账（确认态在座改型须�
 pomaster brainstorm start/question-gate/status/decide/promote
 
 # ② FRAMEWORK —— 许可签发/判卷/显式接管/台账
-pomaster permit issue/check/steal/list
+pomaster permit issue/check/steal/renew/widen/list
 
 # ③ PROJECTION —— 最小充分上下文投影（消费 confirmed baseline/tokens：确认态三态 + 25 资产 digest 摘要 +
 # spec 路由：spec-routing.json 声明协议元数据，context compile --stage/--trigger/--stack/--spec-ref 按任务选择协议并给命中理由——不全量注入）+
@@ -353,7 +353,7 @@ pomaster run <task>
 pomaster handoff <task> --to <role>
 pomaster session attach/refresh/list
 pomaster lock acquire/heartbeat/release/steal/list
-pomaster execution begin/handoff/end/list/audit   # handoff = 追加实现交接与源码快照；audit = 变更越界审计（--execution-id + --diff-base：git diff 起始锚变更集 → KEYBINDING 解析 → permit scope 判 in/out → OBS 回执 sidecar + 越界明细；越界 exit 1——Detection 半边，纯读零权威写口）
+pomaster execution begin/attach-permit/handoff/end/list/audit   # attach-permit = 给在途执行追加许可；handoff = 追加实现交接与源码快照；audit = 变更越界审计（--execution-id + --diff-base：git diff 起始锚变更集 → KEYBINDING 解析 → permit scope 判 in/out → OBS 回执 sidecar + 越界明细；越界 exit 1——Detection 半边，纯读零权威写口）
 pomaster next-action [--task <TASK.*>] [--session-key <key>] --json   # 当前任务的必需 skill、动作、退出条件和阻断；多任务不默认取首项
 pomaster trace show/list
 pomaster checkpoint save/show   # Checkpoint 恢复引用快照（W4-S2；词形 SP 提案待追认）：save = 组装恢复所需引用集落盘（task 锚/--permit 对账判卷引用/--execution 在途清单/negative_history·unknowns 引用/封存 trace 引用/workspace git 锚——每项都是引用，引用逐项存在性校验 fail-closed；state/checkpoints/ 分区档案面，零新 canonical kind 零 journal 事件，不自动创建；--ckpt 同号重放同内容幂等零写入/异内容显式冲突；非 git 工区 anchor absent 显式申报）+ show = 引用面纯读呈现；与 session attach --reconcile 分层组合——checkpoint=引用快照（保存时点），reconcile=新鲜度判定（恢复时点）

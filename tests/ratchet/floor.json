@@ -373,6 +373,10 @@
         "layer": "L1",
         "domain": "permit_evidence"
       },
+      "packages/kernel/tests/execution-attach-permit.spec.ts": {
+        "layer": "L1",
+        "domain": "permit_evidence"
+      },
       "packages/kernel/tests/execution-inflight-receipts.spec.ts": {
         "layer": "L1",
         "domain": "permit_evidence"

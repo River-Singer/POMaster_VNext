@@ -1,11 +1,13 @@
 /**
- * permit.ts —— `pomaster permit issue / check / steal / list`：八拍② FRAMEWORK LOCK 命令面。
+ * permit.ts —— `pomaster permit issue / check / steal / renew / widen / list`：八拍② FRAMEWORK LOCK 命令面。
  *
  * 设计契约：docs/eight-beat-carriers-design.md §1（实施前已定稿）。判卷权威在
  * @pomaster/kernel（issuePermit / checkPermit / stealPermit / parseGovernedId），
  * 本文件只做编排与呈现：
  * - issue / steal = 事件写（kernel 唯一写通道；issue 无 NO_CHANGE 出口——重复签发
  *   就是 PERMIT.<BASE>.n 递增的两条台账记录，诚实语义不是缺陷，--help 明示）；
+ * - renew / widen = 在用许可的期限 / 范围变更（V2-2；kernel renewPermit / widenPermit，
+ *   到期后拒绝并指向 steal；widen 全部已在范围 → NO_CHANGE 零写入）；
  * - check = 判卷读，但对过期许可有 PERMIT_EXPIRED_OBSERVED journal 写副作用
  *   （kernel 契约行为「过期→事件，不静默」；人读输出固定披露，除该事件外零写入）；
  * - list = 纯读（直读 state/permits.json + state/journal.jsonl 仅限读呈现，§0 分层裁定；
@@ -31,8 +33,8 @@ import {
   GovernanceError,
   GovernedIdParseError,
 } from "@pomaster/kernel";
-import { checkPermit, createStore, issuePermit, parseGovernedId, stealPermit } from "@pomaster/kernel";
-import type { PermitCheckResult, StealResult, WriteAttempt } from "@pomaster/kernel";
+import { checkPermit, createStore, issuePermit, parseGovernedId, renewPermit, stealPermit, widenPermit } from "@pomaster/kernel";
+import type { PermitCheckResult, PermitRenewResult, PermitWidenResult, StealResult, WriteAttempt } from "@pomaster/kernel";
 import {
   JOURNAL_RELATIVE,
   PERMITS_RELATIVE,
@@ -731,7 +733,7 @@ function checkOutcome(
   } else if (verdict.outcome === "expired") {
     code = "PERMIT_EXPIRED";
     expiredAtSeq = verdict.expiredAtSeq;
-    hint = "TTL 已到期（seq 锚定）；显式接管走 permit steal --reason（D2），或回 FRAMEWORK LOCK 重新签发。";
+    hint = "TTL 已到期（seq 锚定）；显式接管走 permit steal --reason（D2），或回 FRAMEWORK LOCK 重新签发。到期前可 permit renew 续期。";
   } else {
     code = "PERMIT_UNKNOWN";
     hint = "用 permit list --json 查看该引用的事件链：stolen 与从未签发都呈现为 unknown_permit（物理存在不构成放行）。";
@@ -851,6 +853,134 @@ export async function runPermitSteal(
       `permit steal ${input.permit} → rejected_not_expired (expires_at_seq=${rejectedView.expires_at_seq}, current_seq=${rejectedView.current_seq})`,
     ],
   );
+}
+
+// ============================================================
+// permit renew / widen（V2-2）
+// ============================================================
+
+export interface PermitRenewInput {
+  readonly permit: string;
+  readonly actor: string;
+  readonly reason: string;
+  /** 续期拍数（正整数；缺省 168）。 */
+  readonly beats?: string;
+}
+
+export interface PermitRenewView {
+  readonly permit_ref: string;
+  readonly previous_expires_at_seq: number | null;
+  readonly expires_at_seq: number | null;
+  readonly event_seq: number | null;
+}
+
+export interface PermitWidenInput {
+  readonly permit: string;
+  readonly subjects: readonly string[];
+  readonly actor: string;
+  readonly reason: string;
+}
+
+export interface PermitWidenView {
+  readonly permit_ref: string;
+  readonly change: "WIDENED" | "NO_CHANGE" | null;
+  readonly added_subject_ids: readonly string[];
+  readonly subject_ids: readonly string[];
+  readonly event_seq: number | null;
+}
+
+function amendFail<TResult>(command: string, empty: TResult, error: CliError): CommandOutcome<TResult> {
+  return failOutcome<TResult>(command, empty, [error], [`${command}: FAILED — ${error.code}\n  hint: ${error.hint}`]);
+}
+
+function requireAmendReason(reason: string | undefined, verb: string): CliError | null {
+  if (typeof reason === "string" && reason.trim().length > 0) return null;
+  return {
+    code: "SCHEMA_INVALID",
+    message: `${verb} 必须带非空 --reason（许可期限 / 范围的每次变化都要可归属）`,
+    hint: "写清哪项工作超出了原期限 / 原范围。",
+  };
+}
+
+/** 在用许可续期：expires_at_seq += beats（到期后拒绝，提示 steal）。 */
+export async function runPermitRenew(
+  rootDir: string,
+  input: PermitRenewInput,
+): Promise<CommandOutcome<PermitRenewView>> {
+  const command = "permit renew";
+  const empty: PermitRenewView = { permit_ref: input.permit, previous_expires_at_seq: null, expires_at_seq: null, event_seq: null };
+  const actor = parseActorArgv(input.actor);
+  if ("error" in actor) return amendFail(command, empty, actor.error);
+  const reasonError = requireAmendReason(input.reason, "renew");
+  if (reasonError !== null) return amendFail(command, empty, reasonError);
+  const beats = parseTtlBeatsArgv(input.beats);
+  if ("error" in beats) {
+    return amendFail(command, empty, { ...beats.error, message: beats.error.message.replace("--ttl-beats", "--beats") });
+  }
+  const initialized = await requireInitialized(rootDir);
+  if ("error" in initialized) return amendFail(command, empty, initialized.error);
+  let result: PermitRenewResult;
+  try {
+    const store = await createStore(rootDir);
+    result = await renewPermit(store, input.permit, actor.actor, input.reason, beats.ttlBeats);
+  } catch (err) {
+    return kernelFail<PermitRenewView>(command, err, [`${command}: FAILED`]);
+  }
+  const view: PermitRenewView = {
+    permit_ref: result.permitRef,
+    previous_expires_at_seq: result.previousExpiresAtSeq,
+    expires_at_seq: result.expiresAtSeq,
+    event_seq: result.eventSeq,
+  };
+  return okOutcome(command, view, [
+    `permit renew ${result.permitRef} → expires_at_seq ${result.previousExpiresAtSeq} → ${result.expiresAtSeq} (event_seq=${result.eventSeq})`,
+  ]);
+}
+
+/** 在用许可扩权：scope 只追加（全部已在范围 → NO_CHANGE 零写入）。 */
+export async function runPermitWiden(
+  rootDir: string,
+  input: PermitWidenInput,
+): Promise<CommandOutcome<PermitWidenView>> {
+  const command = "permit widen";
+  const empty: PermitWidenView = { permit_ref: input.permit, change: null, added_subject_ids: [], subject_ids: [], event_seq: null };
+  const actor = parseActorArgv(input.actor);
+  if ("error" in actor) return amendFail(command, empty, actor.error);
+  const reasonError = requireAmendReason(input.reason, "widen");
+  if (reasonError !== null) return amendFail(command, empty, reasonError);
+  if (input.subjects.length === 0) {
+    return amendFail(command, empty, {
+      code: "SCHEMA_INVALID",
+      message: "widen 至少追加一个 --subject",
+      hint: "--subject <governed-id> 可重复；scope 只增不减。",
+    });
+  }
+  for (const subject of input.subjects) {
+    const parsed = parseIdArgv(subject);
+    if ("error" in parsed) return amendFail(command, empty, parsed.error);
+  }
+  const initialized = await requireInitialized(rootDir);
+  if ("error" in initialized) return amendFail(command, empty, initialized.error);
+  let result: PermitWidenResult;
+  try {
+    const store = await createStore(rootDir);
+    result = await widenPermit(store, input.permit, input.subjects, actor.actor, input.reason);
+  } catch (err) {
+    return kernelFail<PermitWidenView>(command, err, [`${command}: FAILED`]);
+  }
+  const changed = result.addedSubjectIds.length > 0;
+  const view: PermitWidenView = {
+    permit_ref: result.permitRef,
+    change: changed ? "WIDENED" : "NO_CHANGE",
+    added_subject_ids: [...result.addedSubjectIds],
+    subject_ids: [...result.subjectIds],
+    event_seq: result.eventSeq,
+  };
+  return okOutcome(command, view, [
+    changed
+      ? `permit widen ${result.permitRef} → +${result.addedSubjectIds.join(", +")} (event_seq=${String(result.eventSeq)})`
+      : `permit widen ${result.permitRef} → NO_CHANGE（对象已全部在范围内，零写入）`,
+  ]);
 }
 
 // ============================================================

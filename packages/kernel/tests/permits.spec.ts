@@ -11,7 +11,9 @@ import {
   applyTransaction,
   checkPermit,
   issuePermit,
+  renewPermit,
   stealPermit,
+  widenPermit,
   type Store,
 } from "@pomaster/kernel";
 import { AGENT, denominatorEntry, gid, HUMAN, makeStore, pageEnvelope } from "./helpers.js";
@@ -286,5 +288,122 @@ describe("issuePermit 台账扩展（capability_refs / acceptance_shape / baseli
         capabilityIds: ["NOT_A_PREFIX.X" as never],
       }),
     ).rejects.toMatchObject({ code: "FATAL_UNKNOWN_PREFIX" });
+  });
+});
+
+describe("renewPermit / widenPermit（V2-2；VX-WRITE-03 / VX-WRITE-07）", () => {
+  async function seed(ttlBeats = 3, subjects: readonly string[] = ["PAGE.DASHBOARD"]): Promise<string> {
+    const permit = await issuePermit(store, { subjectIds: subjects.map((id) => gid(id)), requestedBy: HUMAN, ttlBeats });
+    return permit.permitRef;
+  }
+  let version = 0;
+  async function tick(times: number): Promise<void> {
+    for (let i = 0; i < times; i += 1) {
+      version += 1;
+      await applyTransaction(store, { ops: [{ op: "append_denominator", entry: { ...denominatorEntry(), version } as never }] });
+    }
+  }
+  function events(type: string): Record<string, unknown>[] {
+    return journal()
+      .split("\n")
+      .filter((line) => line.includes(`"${type}"`))
+      .map((line) => JSON.parse(line) as Record<string, unknown>);
+  }
+
+  it("续期：expires_at_seq += beats，原本会到期的写尝试续期后 allowed；journal PERMIT_RENEWED 带 by / reason", async () => {
+    const ref = await seed(3);
+    await tick(2);
+    const renewed = await renewPermit(store, ref, HUMAN, "长任务未完成，延长 10 拍", 10);
+    expect(renewed).toEqual({ permitRef: ref, previousExpiresAtSeq: 3, expiresAtSeq: 13, eventSeq: 2 });
+    await tick(2);
+    expect(await checkPermit(store, ref, { id: gid("PAGE.DASHBOARD"), op: "upsert_object" })).toEqual({ outcome: "allowed" });
+    expect(permitsFile().permits[0]).toMatchObject({ expires_at_seq: 13 });
+    expect(events("PERMIT_RENEWED")).toEqual([
+      {
+        type: "PERMIT_RENEWED",
+        seq: 2,
+        permit_ref: ref,
+        previous_expires_at_seq: 3,
+        expires_at_seq: 13,
+        beats: 10,
+        by: { actor_type: "human", actor: "owner" },
+        reason: "长任务未完成，延长 10 拍",
+      },
+    ]);
+  });
+
+  it("续期缺省 168 拍；beats 非正整数 / reason 空 → SCHEMA_INVALID", async () => {
+    const ref = await seed(3);
+    expect((await renewPermit(store, ref, HUMAN, "缺省续期")).expiresAtSeq).toBe(171);
+    await expect(renewPermit(store, ref, HUMAN, "x", 0)).rejects.toMatchObject({ code: "SCHEMA_INVALID" });
+    await expect(renewPermit(store, ref, HUMAN, "  ", 5)).rejects.toMatchObject({ code: "SCHEMA_INVALID" });
+  });
+
+  it("到期后续期 / 扩权拒绝（PERMIT_EXPIRED + reason_code），提示走 steal；台账不变", async () => {
+    const ref = await seed(1);
+    await tick(1);
+    const before = JSON.stringify(permitsFile());
+    await expect(renewPermit(store, ref, HUMAN, "补续期", 5)).rejects.toMatchObject({
+      code: "PERMIT_EXPIRED",
+      details: { reason_code: "PERMIT_RENEW_EXPIRED", expires_at_seq: 1, current_seq: 1 },
+    });
+    await expect(widenPermit(store, ref, [gid("PAGE.SETTINGS")], HUMAN, "补扩权")).rejects.toMatchObject({
+      code: "PERMIT_EXPIRED",
+      details: { reason_code: "PERMIT_WIDEN_EXPIRED" },
+    });
+    expect(JSON.stringify(permitsFile())).toBe(before);
+    expect(events("PERMIT_RENEWED")).toEqual([]);
+  });
+
+  it("已接管 / 不存在的许可 → PERMIT_NOT_FOUND", async () => {
+    const ref = await seed(1);
+    await tick(1);
+    await stealPermit(store, ref, HUMAN, "原持有人会话已死");
+    await expect(renewPermit(store, ref, HUMAN, "续期", 5)).rejects.toMatchObject({ code: "PERMIT_NOT_FOUND" });
+    await expect(renewPermit(store, "PERMIT.NOPE.1", HUMAN, "续期", 5)).rejects.toMatchObject({ code: "PERMIT_NOT_FOUND" });
+  });
+
+  it("扩权：scope 只追加；新对象 allowed、旧对象照旧；新对象在扩权拍捕获基线（subject_at_seq）", async () => {
+    await applyTransaction(store, { ops: [{ op: "upsert_object", envelope: pageEnvelope() as never }] });
+    const ref = await seed(10, ["PAGE.SETTINGS"]);
+    await tick(1);
+    const result = await widenPermit(store, ref, [gid("PAGE.DASHBOARD"), gid("PAGE.SETTINGS")], HUMAN, "导出按钮落在仪表盘页");
+    expect(result).toEqual({
+      permitRef: ref,
+      addedSubjectIds: ["PAGE.DASHBOARD"],
+      subjectIds: ["PAGE.SETTINGS", "PAGE.DASHBOARD"],
+      eventSeq: 2,
+    });
+    expect(await checkPermit(store, ref, { id: gid("PAGE.DASHBOARD"), op: "upsert_object" })).toEqual({ outcome: "allowed" });
+    expect(await checkPermit(store, ref, { id: gid("PAGE.SETTINGS"), op: "upsert_object" })).toEqual({ outcome: "allowed" });
+    const record = permitsFile().permits[0] as {
+      scope: { subject_ids: string[] };
+      baseline: { at_seq: number; subjects: Record<string, unknown>; subject_at_seq: Record<string, number> };
+    };
+    expect(record.scope.subject_ids).toEqual(["PAGE.SETTINGS", "PAGE.DASHBOARD"]);
+    expect(record.baseline.at_seq).toBe(1);
+    expect(record.baseline.subject_at_seq).toEqual({ "PAGE.DASHBOARD": 2 });
+    expect((record.baseline.subjects["PAGE.DASHBOARD"] as Record<string, unknown>).rev).toBe(1);
+    expect(record.baseline.subjects["PAGE.SETTINGS"]).toBeNull();
+    expect(events("PERMIT_WIDENED")).toEqual([
+      {
+        type: "PERMIT_WIDENED",
+        seq: 2,
+        permit_ref: ref,
+        added_subject_ids: ["PAGE.DASHBOARD"],
+        by: { actor_type: "human", actor: "owner" },
+        reason: "导出按钮落在仪表盘页",
+      },
+    ]);
+  });
+
+  it("扩权：对象已全部在范围内 → 零变化零事件；空列表 / 非法 id → 拒绝", async () => {
+    const ref = await seed(10);
+    const before = JSON.stringify(permitsFile());
+    expect(await widenPermit(store, ref, [gid("PAGE.DASHBOARD")], HUMAN, "重复扩权")).toMatchObject({ addedSubjectIds: [], eventSeq: null });
+    expect(JSON.stringify(permitsFile())).toBe(before);
+    expect(events("PERMIT_WIDENED")).toEqual([]);
+    await expect(widenPermit(store, ref, [], HUMAN, "空")).rejects.toMatchObject({ code: "SCHEMA_INVALID" });
+    await expect(widenPermit(store, ref, ["FOO.BAR"], HUMAN, "坏前缀")).rejects.toMatchObject({ code: "FATAL_UNKNOWN_PREFIX" });
   });
 });

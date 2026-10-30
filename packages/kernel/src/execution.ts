@@ -31,12 +31,13 @@
  *   interrupted 结束」——locks.ts steal 路径消费）。
  */
 import { readdirSync } from "node:fs";
-import type { Store } from "./index.js";
+import type { Actor, Store } from "./index.js";
 import { GovernanceError } from "./errors.js";
 import { appendLine, captureOriginal, ensureDir, executeWrites, readText } from "./io.js";
 import { pathsOf, readCurrentSeq, type StorePaths } from "./paths.js";
 import { OBSERVATION_RECORD_TYPES } from "./evidence-artifacts.js";
 import { sha256OfCanonical } from "./digest.js";
+import { assertPermitLive } from "./permits.js";
 import {
   assertEvidenceSourceSnapshot,
   type EvidenceSourceSnapshot,
@@ -703,6 +704,95 @@ export function closeExecutionInternal(
     ended_at: endedAt,
   });
   return updated;
+}
+
+// ============================================================
+// 在途执行追加许可（V2-2；台账 VX-WRITE-07）
+// ============================================================
+
+export interface AttachPermitResult {
+  readonly record: ExecutionRecord;
+  /** false = 许可已在 permit_ids（零写入、零事件）。 */
+  readonly changed: boolean;
+  readonly eventSeq: number | null;
+}
+
+/**
+ * 给在途执行追加许可（permit_ids 只增）：执行须存在、未封口、尚无实现交接（交接把
+ * permit 集合写进了自身身份，事后追加会让既有交接失配）；许可须在用（存在、未接管、
+ * 未到期）。journal EXECUTION_PERMIT_ATTACHED（by / reason 留痕）。
+ */
+export async function attachPermit(
+  store: Store,
+  executionId: string,
+  permitRef: string,
+  by: Actor,
+  reason: string,
+): Promise<AttachPermitResult> {
+  const paths = pathsOf(store);
+  const currentSeq = requireCurrentSeq(paths);
+  if (typeof reason !== "string" || reason.trim().length === 0) {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      "attach-permit 必须带 reason（执行权限的每次变化都要可归属）",
+      "写清为何本次执行需要追加该许可",
+      {},
+    );
+  }
+  if (!EXECUTION_ID_PATTERN.test(executionId)) {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      `execution_id 词形非法（须 AGX-<4位年份>-<序号>）：${executionId}`,
+      "核对 AGX 引用（.pomaster/executions/）",
+      { execution_id: executionId },
+    );
+  }
+  const record = readExecutionRecordById(paths, executionId);
+  if (record === null) {
+    throw new GovernanceError(
+      "EXECUTION_NOT_FOUND",
+      `执行身份未登记：${executionId}`,
+      "核对 AGX 引用（.pomaster/executions/）；档案由 beginExecution 落盘",
+      { execution_id: executionId },
+    );
+  }
+  if (record.ended_at !== null) {
+    throw new GovernanceError(
+      "EXECUTION_ALREADY_ENDED",
+      `执行已封口（ended_at=${record.ended_at}），不能追加许可：${executionId}`,
+      "封口执行的权限集合已定型；新的工作请 execution begin 新身份并携带 --permit-id",
+      { execution_id: executionId },
+    );
+  }
+  if ((record.implementation_handoffs ?? []).length > 0) {
+    throw new GovernanceError(
+      "SCHEMA_INVALID",
+      `执行已有实现交接，不能追加许可：${executionId}`,
+      "实现交接已绑定当时的 permit 集合；需要新许可的后续工作请开新执行身份",
+      { execution_id: executionId, reason_code: "EXECUTION_HANDOFF_BINDS_PERMITS" },
+    );
+  }
+  assertPermitLive(paths, permitRef, currentSeq);
+  if (record.permit_ids.includes(permitRef)) {
+    return { record, changed: false, eventSeq: null };
+  }
+  const updated: ExecutionRecord = { ...record, permit_ids: [...record.permit_ids, permitRef] };
+  executeWrites([
+    {
+      path: executionRecordPath(paths, executionId),
+      next: `${JSON.stringify(updated, null, 2)}\n`,
+      original: captureOriginal(executionRecordPath(paths, executionId)),
+    },
+  ]);
+  appendJournalLine(paths, {
+    type: "EXECUTION_PERMIT_ATTACHED",
+    seq: currentSeq,
+    execution_id: executionId,
+    permit_ref: permitRef,
+    by: { actor_type: by.actorType, actor: by.actor },
+    reason,
+  });
+  return { record: updated, changed: true, eventSeq: currentSeq };
 }
 
 // ============================================================

@@ -280,7 +280,7 @@ import { runContextCompile, runContextExplain } from "./context.js";
 import { runDoctor } from "./doctor.js";
 import { runPortabilityBootstrap, runPortabilityCheck } from "./portability.js";
 import { runCheckFast, runCheckGates } from "./check.js";
-import { runPermitCheck, runPermitIssue, runPermitList, runPermitSteal } from "./permit.js";
+import { runPermitCheck, runPermitIssue, runPermitList, runPermitRenew, runPermitSteal, runPermitWiden } from "./permit.js";
 import { runExecGuard } from "./exec-guard.js";
 import { runReconcile } from "./reconcile.js";
 import { runReconImportGraph, runReconMigrations, runReconSbom } from "./recon.js";
@@ -367,6 +367,7 @@ import {
   runResearchStart,
 } from "./research.js";
 import {
+  runExecutionAttachPermit,
   runExecutionBegin,
   runExecutionEnd,
   runExecutionHandoff,
@@ -751,6 +752,8 @@ export {
   runPermitIssue,
   runPermitCheck,
   runPermitSteal,
+  runPermitRenew,
+  runPermitWiden,
   runPermitList,
   PERMIT_WRITE_OPS,
   PERMIT_LIST_STATES,
@@ -1100,6 +1103,7 @@ export {
   runExecutionEnd,
   runExecutionHandoff,
   runExecutionList,
+  runExecutionAttachPermit,
   parseExecutionIdArgv,
   LOCK_BLOCKED,
 } from "./runtime.js";
@@ -2038,6 +2042,54 @@ export function createProgram(
       });
       record({
         command: "permit steal",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  permit
+    .command("renew")
+    .description(
+      "续期在用许可：expires_at_seq += --beats（缺省 168）；到期 / 已接管的许可拒绝（PERMIT_EXPIRED / PERMIT_NOT_FOUND——到期后走 steal 再重签）；journal PERMIT_RENEWED",
+    )
+    .requiredOption("--permit <PERMIT.*>", "许可引用")
+    .requiredOption("--actor <type>:<name>", "续期主体（type ∈ agent/human/tool/kernel）")
+    .requiredOption("--reason <text>", "续期理由（非空必填）")
+    .option("--beats <n>", "续期拍数（正整数；缺省 168）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runPermitRenew(resolveDir(command), {
+        permit: opts.permit as string,
+        actor: opts.actor as string,
+        reason: opts.reason as string,
+        beats: opts.beats as string | undefined,
+      });
+      record({
+        command: "permit renew",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+
+  permit
+    .command("widen")
+    .description(
+      "扩权在用许可：scope 只追加对象（新对象在扩权拍捕获基线）；到期 / 已接管 / write_policy=NONE 拒绝；全部已在范围 → NO_CHANGE 零写入；journal PERMIT_WIDENED",
+    )
+    .requiredOption("--permit <PERMIT.*>", "许可引用")
+    .requiredOption("--subject <governed-id>", "追加对象（closed-world governed id；可重复，≥1）", collectValues, [])
+    .requiredOption("--actor <type>:<name>", "扩权主体（type ∈ agent/human/tool/kernel）")
+    .requiredOption("--reason <text>", "扩权理由（非空必填）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (opts, command) => {
+      const outcome = await runPermitWiden(resolveDir(command), {
+        permit: opts.permit as string,
+        subjects: opts.subject as string[],
+        actor: opts.actor as string,
+        reason: opts.reason as string,
+      });
+      record({
+        command: "permit widen",
         outcome,
         asJson: command.opts().json === true,
       });
@@ -4125,6 +4177,28 @@ export function createProgram(
       });
       record({
         command: "execution handoff",
+        outcome,
+        asJson: command.opts().json === true,
+      });
+    });
+  execution
+    .command("attach-permit")
+    .description(
+      "给在途执行追加许可（permit_ids 只增）：执行须未封口、尚无实现交接；许可须在用（未到期、未接管）；已挂载 → NO_CHANGE；journal EXECUTION_PERMIT_ATTACHED",
+    )
+    .argument("<execution-id>", "执行身份（AGX-<年份>-<序号>）")
+    .requiredOption("--permit <PERMIT.*>", "追加的许可引用")
+    .requiredOption("--actor <type>:<name>", "操作主体（type ∈ agent/human/tool/kernel）")
+    .requiredOption("--reason <text>", "追加理由（非空必填）")
+    .option("--json", "machine-readable JSON output (§45)")
+    .action(async (executionId: string, opts, command) => {
+      const outcome = await runExecutionAttachPermit(resolveDir(command), executionId, {
+        permit: opts.permit as string,
+        actor: opts.actor as string,
+        reason: opts.reason as string,
+      });
+      record({
+        command: "execution attach-permit",
         outcome,
         asJson: command.opts().json === true,
       });

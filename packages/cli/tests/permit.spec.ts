@@ -21,6 +21,8 @@ import {
   runPermitIssue,
   runPermitList,
   runPermitSteal,
+  runPermitRenew,
+  runPermitWiden,
   EXPIRED_OBSERVED_NOTE,
   type CliEnvelope,
 } from "@pomaster/cli";
@@ -730,5 +732,84 @@ describe("permit 命令面 runCli 集成（exit code + 信封）", () => {
     const code = await runCli(["--dir", root, "permit", "list", "--json"], io);
     expect(code).toBe(0);
     expect(parseEnvelope(out).command).toBe("permit list");
+  });
+});
+
+// ============================================================
+// permit renew / widen（V2-2；VX-WRITE-03 / VX-WRITE-07）
+// ============================================================
+
+describe("permit renew / widen", () => {
+  it("renew：到期前续期 → expires_at_seq 推后，原本到期的 check 变 allowed", async () => {
+    await seedStore();
+    const ref = await issueDashboard({ ttlBeats: "2" });
+    await advanceSeq(1);
+    const renewed = await runPermitRenew(root, { permit: ref, actor: "human:owner", reason: "长任务未完成", beats: "5" });
+    expect(renewed.ok).toBe(true);
+    expect(renewed.result).toEqual({ permit_ref: ref, previous_expires_at_seq: 2, expires_at_seq: 7, event_seq: 1 });
+    const store = await createStore(root);
+    for (const version of [10, 11]) {
+      await applyTransaction(store, { ops: [{ op: "append_denominator", entry: denominatorEntry(version) as never }] });
+    }
+    expect(JSON.parse(readFileSync(join(root, ".pomaster", "state", "truth-index.json"), "utf8")).generation.seq).toBe(3);
+    const check = await runPermitCheck(root, { permit: ref, subject: "PAGE.DASHBOARD", op: "upsert_object" });
+    expect(check.result.outcome).toBe("allowed");
+  });
+
+  it("renew：到期后 → PERMIT_EXPIRED（hint 指向 steal）；缺 reason / 坏 beats → SCHEMA_INVALID，零写入", async () => {
+    await seedStore();
+    const ref = await issueDashboard({ ttlBeats: "1" });
+    await advanceSeq(1);
+    const before = JSON.stringify(permitsFile());
+    const expired = await runPermitRenew(root, { permit: ref, actor: "human:owner", reason: "补续期" });
+    expect(expired.ok).toBe(false);
+    expect(expired.errors[0]?.code).toBe("PERMIT_EXPIRED");
+    expect(expired.errors[0]?.hint).toContain("permit steal");
+    const noReason = await runPermitRenew(root, { permit: ref, actor: "human:owner", reason: " " });
+    expect(noReason.errors[0]?.code).toBe("SCHEMA_INVALID");
+    const badBeats = await runPermitRenew(root, { permit: ref, actor: "human:owner", reason: "x", beats: "0" });
+    expect(badBeats.errors[0]?.code).toBe("SCHEMA_INVALID");
+    expect(badBeats.errors[0]?.message).toContain("--beats");
+    expect(JSON.stringify(permitsFile())).toBe(before);
+  });
+
+  it("widen：追加对象 → WIDENED，新对象 check allowed；重复 → NO_CHANGE 零写入", async () => {
+    await seedStore();
+    const ref = await issueDashboard();
+    const widened = await runPermitWiden(root, {
+      permit: ref,
+      subjects: ["PAGE.SETTINGS", "PAGE.DASHBOARD"],
+      actor: "human:owner",
+      reason: "导出按钮也落在设置页",
+    });
+    expect(widened.ok).toBe(true);
+    expect(widened.result).toEqual({
+      permit_ref: ref,
+      change: "WIDENED",
+      added_subject_ids: ["PAGE.SETTINGS"],
+      subject_ids: ["PAGE.DASHBOARD", "PAGE.SETTINGS"],
+      event_seq: 0,
+    });
+    const check = await runPermitCheck(root, { permit: ref, subject: "PAGE.SETTINGS", op: "upsert_object" });
+    expect(check.result.outcome).toBe("allowed");
+    const before = JSON.stringify(permitsFile());
+    const again = await runPermitWiden(root, { permit: ref, subjects: ["PAGE.SETTINGS"], actor: "human:owner", reason: "重复" });
+    expect(again.ok).toBe(true);
+    expect(again.result.change).toBe("NO_CHANGE");
+    expect(JSON.stringify(permitsFile())).toBe(before);
+  });
+
+  it("widen：非法 governed id → FATAL_UNKNOWN_PREFIX；runCli 注册 renew / widen 子命令", async () => {
+    await seedStore();
+    const ref = await issueDashboard();
+    const bad = await runPermitWiden(root, { permit: ref, subjects: ["FOO.BAR"], actor: "human:owner", reason: "x" });
+    expect(bad.errors[0]?.code).toBe("FATAL_UNKNOWN_PREFIX");
+    const { out, io } = capture();
+    const code = await runCli(
+      ["--dir", root, "permit", "renew", "--permit", ref, "--actor", "human:owner", "--reason", "续期", "--beats", "3", "--json"],
+      io,
+    );
+    expect(code).toBe(0);
+    expect((parseEnvelope(out).result as { expires_at_seq: number }).expires_at_seq).toBe(171);
   });
 });

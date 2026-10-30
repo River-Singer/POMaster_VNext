@@ -547,7 +547,20 @@ export async function reconcilePermit(
   }
 
   // —— N6：事务台账对账（drift_origin 机判；baseline 之后的事务才可能解释 delta） ——
-  const explainedIds = scanExplainedObjectIds(paths, baseline.at_seq);
+  // 扩权（V2-2）追加的对象以扩权拍为 since 锚（subject_at_seq）；其余以签发拍为锚。
+  // 签发拍的解释集先行扫描：journal 损坏须在此显式 SCHEMA_INVALID（禁因无 delta 跳过台账校验）。
+  const explainedBySince = new Map<number, ReadonlySet<string>>([
+    [baseline.at_seq, scanExplainedObjectIds(paths, baseline.at_seq)],
+  ]);
+  const explainedSince = (id: string): ReadonlySet<string> => {
+    const since = baseline.subject_at_seq?.[id] ?? baseline.at_seq;
+    let set = explainedBySince.get(since);
+    if (set === undefined) {
+      set = scanExplainedObjectIds(paths, since);
+      explainedBySince.set(since, set);
+    }
+    return set;
+  };
 
   // —— delta 比较：当前索引行走 loadTruthIndex（01 schema + vocab 指纹 + REF 基础项校验） ——
   const truth = await loadTruthIndex(store);
@@ -609,7 +622,7 @@ export async function reconcilePermit(
     // TX_APPLIED）→ transaction（合法事务 payload 变更）；否则 unexplained——含「rev 未动
     // 而内容变了」（sweep auto-regen 同步行锚的形态）与「rev 动了但台账无解释事务」，疑似
     // 越权静默漂移 → 原样升格入 exceptions 人审队列（clean 语义不变：changed_objects 已 fail）。
-    if (explainedIds.has(id)) {
+    if (explainedSince(id).has(id)) {
       changedObjects.push({
         id,
         kind: "content_drift",

@@ -978,6 +978,16 @@ export type StealResult =
  */
 export { stealPermit } from "./permits.js";
 
+/**
+ * 续期 / 扩权（V2-2；台账 VX-WRITE-03 / VX-WRITE-07）：仅在用许可（存在、未接管、
+ * 未到期——到期后 PERMIT_EXPIRED + details.reason_code，提示走 steal）。续期
+ * expires_at_seq += beats（journal PERMIT_RENEWED）；扩权 scope 只追加、新对象在扩权拍
+ * 捕获基线（journal PERMIT_WIDENED；write_policy=NONE 拒绝）。by / reason 必填留痕。
+ * PERMIT_RENEWED / PERMIT_WIDENED 为 kernel 局部词 TODO(vocab-pr)。
+ */
+export { renewPermit, widenPermit } from "./permits.js";
+export type { PermitRenewResult, PermitWidenResult } from "./permits.js";
+
 // ============================================================
 // Authority Precedence 机器面 + authority.json 读侧消费（09-04 Batch 1 R4/D3）
 // ============================================================
@@ -1535,6 +1545,7 @@ export {
   appendImplementationHandoff,
   assertImplementationHandoff,
   endExecution,
+  attachPermit,
   readExecutionRecordById,
   listExecutionRecords,
   allocateExecutionId,
@@ -1555,6 +1566,7 @@ export type {
   ImplementationHandoff,
   AppendImplementationHandoffInput,
   AppendImplementationHandoffResult,
+  AttachPermitResult,
 } from "./execution.js";
 
 // DEF-GATEKEEPER 触发观测器（P20-Commands；D 线 §5「同一 execution 既提 proposal

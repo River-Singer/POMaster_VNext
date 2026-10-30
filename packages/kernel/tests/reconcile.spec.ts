@@ -29,6 +29,7 @@ import {
   normalizeGateResult,
   reconcilePermit,
   stealPermit,
+  widenPermit,
   type ReconcileTamperEntry,
   type Store,
 } from "@pomaster/kernel";
@@ -390,6 +391,24 @@ describe("reconcilePermit（N6 drift_origin：content_drift 双义机判消解�
     // 升格 = 同一行原样入 exceptions（判别走字段位 drift_origin，不发明新例外 kind 词）。
     expect(report.exceptions).toEqual([report.changed_objects[0]]);
     expect(report.clean).toBe(false);
+  });
+
+  it("扩权对象以扩权拍为 since 锚（V2-2）：扩权前的事务不能解释扩权后的漂移", async () => {
+    await upsertObject();
+    const ref = await issue(["PAGE.SETTINGS"]);
+    await upsertObject({ payload: { surface: "V2" } }); // seq 2：扩权前的合法事务触及 PAGE.DASHBOARD
+    await widenPermit(store, ref, [gid("PAGE.DASHBOARD")], HUMAN, "导出按钮落在仪表盘页"); // 基线在 seq 2 捕获（rev 2）
+    bumpIndexRev("PAGE.DASHBOARD"); // 扩权后无事务的 rev 推进
+    const report = await reconcile(ref);
+    expect(report.changed_objects).toEqual([{
+      id: "PAGE.DASHBOARD",
+      kind: "content_drift",
+      axes: null,
+      content_drift: false,
+      rev: { from: 2, to: 3 },
+      drift_origin: "unexplained",
+    }]);
+    expect(report.exceptions).toEqual([report.changed_objects[0]]);
   });
 
   it("auto-regen 同步行锚（rev 未动而内容变了）→ unexplained 升格，且与 content_tamper 互补不双报；同输入重放字节全同（A4 不破）", async () => {

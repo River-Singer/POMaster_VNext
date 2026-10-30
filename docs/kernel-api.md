@@ -84,6 +84,7 @@ A6 rename-on-ingest 双向链：legacy→canonical（收编）与 canonical→le
 - **签发落五件套台账**（state/permits.json，内部状态文件；公共契约类型 `Permit` 不变）：除既有的 scope/requested_by/change_ref 外，同时落 `capability_refs`（capabilityIds）、`acceptance_shape`（五件套之五——契约面 `PermitRequest.acceptanceShape` 既有但实现此前从不持久化，本字段封死「验收形状静默丢失」坑）与 `baseline`（issue 瞬间的逐对象基线快照 `{at_seq, subjects: {[id]: {axes, rev, body_sha256?} | null}}`——journal 是事件流无 axes 历史，issue 瞬间是唯一能拿到该基线的时刻，closure；`null` = 签发时对象尚不存在（PROPOSED 新对象的合法基线态）；`body_sha256` 为 D24 读侧 identity/content_drift 判定用途，事务自动捕获，人永不计算）。`PERMIT_ISSUED` journal 事件携带 `capability_ids`。
 - `checkPermit` 显式四态：allowed / denied（outside_scope、policy_forbidden、delete_forbidden_supersede_only）/ expired / unknown_permit——禁止静默放行或静默拒绝。DENOMINATOR 的 delete 一律 denied。**写副作用披露**：outcome=expired 时追加 `PERMIT_EXPIRED_OBSERVED` journal 事件（「过期→事件，不静默」）；同一许可的同一到期点只记一次——journal 已有 `(permit_ref, expired_at_seq)` 观察事件即不再追加，判卷照常返回 expired（V2-1 去重：hook 每次 Edit 都会判卷）。判卷不改 `state/permits.json`。
 - `stealPermit`：D2——TTL 过期仅允许手动显式接管并记 journal 事件（actor/reason 留痕）；自动抢占被禁止；未过期 → `rejected_not_expired`；未知许可（含已 stolen）→ throw `PERMIT_NOT_FOUND`。
+- `renewPermit(store, permitRef, by, reason, beats = 168) => Promise<PermitRenewResult>` / `widenPermit(store, permitRef, addSubjectIds, by, reason) => Promise<PermitWidenResult>`（V2-2；台账 VX-WRITE-03 / VX-WRITE-07）：只作用于在用许可——未知或已接管 → `PERMIT_NOT_FOUND`；已到期 → `PERMIT_EXPIRED` + `details.reason_code`（`PERMIT_RENEW_EXPIRED` / `PERMIT_WIDEN_EXPIRED`），hint 指向 steal 后重签（到期之后的写入不能靠事后续期变合法）。续期 `expires_at_seq += beats`，journal `PERMIT_RENEWED {previous_expires_at_seq, expires_at_seq, beats, by, reason}`；扩权 scope 只追加、`write_policy=NONE` 拒绝（`PERMIT_SCOPE_DENIED` / `PERMIT_WIDEN_POLICY_NONE`），新增对象在扩权拍捕获基线（`baseline.subjects` + `baseline.subject_at_seq`——reconcile 以此为该对象的 since 锚），journal `PERMIT_WIDENED {added_subject_ids, by, reason}`；对象已全部在范围内 → 零变化零事件。续期不产生失效事件，已有证据资格不受影响。CLI：`pomaster permit renew / widen`。
 - scope expansion 拒绝静默放行 → 路由重审升级（D20，GOLDEN-L8-2）。
 - CLI 命令面：`pomaster permit issue / check / steal / list` 与 `pomaster exec-guard`（八拍④写路径执行点，纯判卷器）——编排与呈现契约见 `docs/eight-beat-carriers-design.md` §1/§2；list/事件链对 `state/permits.json` / `state/journal.jsonl` 的直读仅限读呈现，写通道唯一保留给 kernel（分层纪律）。
 
@@ -410,6 +411,13 @@ A6 rename-on-ingest 双向链：legacy→canonical（收编）与 canonical→le
   （`VOCAB_INVALID_VALUE`）；session_key 在场须已 attach 且与 harness 成对。
 - `endExecution(store, executionId, input?)` —— 封口置 ended_at + journal
   `EXECUTION_ENDED`；重复封口 `EXECUTION_ALREADY_ENDED`（显式拒绝）。
+- `attachPermit(store, executionId, permitRef, by, reason) => Promise<AttachPermitResult>`
+  （V2-2；台账 VX-WRITE-07）—— 给在途执行追加许可（permit_ids 只增，追加到末尾）+ journal
+  `EXECUTION_PERMIT_ATTACHED {execution_id, permit_ref, by, reason}`；已挂载 → 零写入
+  （`changed=false`）。拒绝：已封口 `EXECUTION_ALREADY_ENDED`；已有实现交接 `SCHEMA_INVALID`
+  （`EXECUTION_HANDOFF_BINDS_PERMITS`——交接身份含当时的 permit 集合）；许可缺席 / 已接管
+  `PERMIT_NOT_FOUND`；许可到期 `PERMIT_EXPIRED`（`PERMIT_ATTACH_EXPIRED`）。CLI：
+  `pomaster execution attach-permit <AGX> --permit <ref> --actor <type:name> --reason <text>`。
 - `assertExecutionAttachable(paths, executionId)` —— record 通路挂载校验：词形
   `SCHEMA_INVALID` + 档案存在性 `EXECUTION_NOT_FOUND`（S1 禁自造身份）；已封口执行
   允许事后补录（ended_at 如实在场，不伪造时间围栏）。
@@ -418,7 +426,7 @@ A6 rename-on-ingest 双向链：legacy→canonical（收编）与 canonical→le
   policy_lock、permit_ids、task_id/change_id、context_manifest_id（PRD §25.4
   context_hash 的 solo 降级，直连如实 null）、model、started_at/ended_at、notes）；
   缺席 = null 显式（C1）。
-- journal 事件族：`EXECUTION_BEGUN / EXECUTION_ENDED / EXECUTION_INTERRUPTED`。
+- journal 事件族：`EXECUTION_BEGUN / EXECUTION_ENDED / EXECUTION_INTERRUPTED / EXECUTION_PERMIT_ATTACHED`（末者 V2-2，kernel 局部词 TODO(vocab-pr)）。
 
 ### execution_id 贯穿证据链（record 通路透传；decisions 裁定）
 

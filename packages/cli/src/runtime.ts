@@ -26,6 +26,7 @@
 import {
   acquireLock,
   appendImplementationHandoff,
+  attachPermit,
   attachSession,
   beginExecution,
   countExecutionInflightReceipts,
@@ -53,7 +54,7 @@ import {
   reconcileDirtySummaryLine,
   RECONCILE_DIRTY_HINT,
 } from "./reconcile.js";
-import { governanceErrorToCliError, requireInitialized } from "./permit.js";
+import { governanceErrorToCliError, parseActorArgv, requireInitialized } from "./permit.js";
 import { captureEvidenceSourceSnapshot } from "./source-snapshot.js";
 
 // ============================================================
@@ -909,6 +910,67 @@ export async function runExecutionEnd(
     );
   } catch (err) {
     return kernelFail("execution end", err, EMPTY_EXECUTION_END);
+  }
+}
+
+export interface ExecutionAttachPermitInput {
+  readonly permit: string;
+  readonly actor: string;
+  readonly reason: string;
+}
+
+export interface ExecutionAttachPermitResult {
+  readonly execution_id: string;
+  readonly permit_ref: string;
+  readonly change: "ATTACHED" | "NO_CHANGE" | null;
+  readonly permit_ids: readonly string[];
+  readonly event_seq: number | null;
+}
+
+/** `execution attach-permit <AGX-id> --permit <ref>`：给在途执行追加许可（V2-2；VX-WRITE-07）。 */
+export async function runExecutionAttachPermit(
+  rootDir: string,
+  executionId: string,
+  input: ExecutionAttachPermitInput,
+): Promise<CommandOutcome<ExecutionAttachPermitResult>> {
+  const command = "execution attach-permit";
+  const empty: ExecutionAttachPermitResult = {
+    execution_id: executionId,
+    permit_ref: input.permit,
+    change: null,
+    permit_ids: [],
+    event_seq: null,
+  };
+  const initialized = await requireInitialized(rootDir);
+  if ("error" in initialized) return notInitializedFail(command, initialized.error, empty);
+  const wordForm = parseExecutionIdArgv(executionId);
+  if ("error" in wordForm) return notInitializedFail(command, wordForm.error, empty);
+  const actor = parseActorArgv(input.actor);
+  if ("error" in actor) return notInitializedFail(command, actor.error, empty);
+  if (typeof input.reason !== "string" || input.reason.trim().length === 0) {
+    return notInitializedFail(command, {
+      code: "SCHEMA_INVALID",
+      message: "attach-permit 必须带非空 --reason（执行权限的每次变化都要可归属）",
+      hint: "写清为何本次执行需要追加该许可。",
+    }, empty);
+  }
+  try {
+    const store = await createStore(rootDir);
+    const result = await attachPermit(store, executionId, input.permit, actor.actor, input.reason);
+    const view: ExecutionAttachPermitResult = {
+      execution_id: executionId,
+      permit_ref: input.permit,
+      change: result.changed ? "ATTACHED" : "NO_CHANGE",
+      permit_ids: [...result.record.permit_ids],
+      event_seq: result.eventSeq,
+    };
+    return okOutcome(command, view, [
+      result.changed
+        ? `execution attach-permit ${executionId} → +${input.permit} (event_seq=${String(result.eventSeq)})`
+        : `execution attach-permit ${executionId} → NO_CHANGE（${input.permit} 已在 permit_ids，零写入）`,
+    ]);
+  } catch (err) {
+    return kernelFail(command, err, empty);
   }
 }
 
