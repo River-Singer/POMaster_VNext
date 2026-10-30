@@ -92,8 +92,9 @@ describe("scoped baseline evidence", () => {
     expect(qualifyEvidence({ ...evidence, gate: "BUILD", gate_def: "old" }, {
       ...requirement, current_gate_defs: { BUILD: "new" },
     }).verdict).toBe("ORACLE_SUPERSEDED");
+    // V2-1：证据（锚 seq=3）须产生于许可失效切点之后才被 permit 轴否决——切点取 seq=2。
     expect(qualifyEvidence({ ...evidence, execution_id: "AGX-2026-1" }, {
-      ...requirement, invalidated_events: [eventFixture({ execution_id: "AGX-2026-1" })],
+      ...requirement, invalidated_events: [eventFixture({ execution_id: "AGX-2026-1", seq: 2 })],
     }).verdict).toBe("PERMIT_INVALIDATED");
   });
 
@@ -217,6 +218,64 @@ describe("evidence-qualification 逐轴判定", () => {
     );
     expect(noExecution.verdict).toBe("QUALIFIED");
     expect(unboundPermit.verdict).toBe("QUALIFIED");
+  });
+
+  // ——— VX-WRITE-03（V2-1）：permit 轴按时序切分，不追溯作废许可有效期内的证据 ———
+  describe("permit 轴时序切分（V2-1）", () => {
+    const bound = { "AGX-2026-00001": ["PERMIT.X.1"] };
+    const expired = (overrides: Partial<EvidenceInvalidationEvent> = {}) =>
+      eventFixture({ permit_ref: "PERMIT.X.1", seq: 12, expired_at_seq: 8, ...overrides });
+    const judgeAt = (captured: number | null, event: EvidenceInvalidationEvent) =>
+      qualifyEvidence(
+        evidenceFixture({ execution_id: "AGX-2026-00001", captured_at_seq: captured }),
+        requirementFixture({ invalidated_events: [event], execution_permits: bound }),
+      );
+
+    it("许可到期前产出的证据不因许可此后到期而作废（切点 = expired_at_seq）", () => {
+      const finding = judgeAt(7, expired());
+      expect(finding.verdict).toBe("QUALIFIED");
+      expect(finding.reason).toContain("切点");
+    });
+
+    it("到期拍及之后产出的证据仍判 PERMIT_INVALIDATED，reason 写明切点", () => {
+      for (const captured of [8, 11]) {
+        const finding = judgeAt(captured, expired());
+        expect(finding.verdict).toBe("PERMIT_INVALIDATED");
+        expect(finding.reason).toContain("切点 seq=8");
+      }
+    });
+
+    it("事件缺 expired_at_seq → 回落事件 seq 作切点（方向更严）", () => {
+      const event = expired({ expired_at_seq: undefined, seq: 12 });
+      expect(judgeAt(9, event).verdict).toBe("QUALIFIED");
+      expect(judgeAt(12, event).verdict).toBe("PERMIT_INVALIDATED");
+    });
+
+    it("PERMIT_STOLEN 同样按到期切点切分", () => {
+      const event = expired({ type: "PERMIT_STOLEN" });
+      expect(judgeAt(7, event).verdict).toBe("QUALIFIED");
+      expect(judgeAt(8, event).verdict).toBe("PERMIT_INVALIDATED");
+    });
+
+    it("证据锚缺席（null）无法证明早于切点 → 照旧否决", () => {
+      expect(judgeAt(null, expired()).verdict).toBe("PERMIT_INVALIDATED");
+    });
+
+    it("EXECUTION_INTERRUPTED 不切分：被打断执行的全部产出照旧否决", () => {
+      const finding = qualifyEvidence(
+        evidenceFixture({ execution_id: "AGX-2026-00001", captured_at_seq: 1 }),
+        requirementFixture({
+          invalidated_events: [
+            eventFixture({ type: "EXECUTION_INTERRUPTED", seq: 9, execution_id: "AGX-2026-00001", expired_at_seq: 20 }),
+          ],
+        }),
+      );
+      expect(finding.verdict).toBe("PERMIT_INVALIDATED");
+    });
+
+    it("expired_at_seq 形态非法 → SCHEMA_INVALID（输入合同 fail-closed）", () => {
+      expect(() => judgeAt(7, expired({ expired_at_seq: -1 }))).toThrowError(/expired_at_seq/);
+    });
   });
 
   it("ORACLE_SUPERSEDED 双通道：gate_def 被当前版本取代；oracle_ref 与当前要求不一致", () => {

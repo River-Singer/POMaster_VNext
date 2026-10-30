@@ -407,6 +407,37 @@ describe("closeout 证据绑定资格链（W1 R1-5）", () => {
     expect(error?.message).toContain(permit.permitRef);
   });
 
+  it("V2-1（VX-WRITE-03）：证据产生于许可到期之前 → 许可此后到期不追溯作废，closeout COMPLETED", async () => {
+    await initStore();
+    const store = await createStore(root);
+    const permit = await issuePermit(store, {
+      subjectIds: ["TASK.T0001"],
+      requestedBy: { actorType: "agent", actor: "demo-planner" },
+      ttlBeats: 1, // expires_at_seq = 1
+    });
+    const execution = await beginExecution(store, {
+      role: "implementer",
+      runtime: "claude-code",
+      identityKind: "interactive",
+      permitIds: [permit.permitRef],
+    });
+    seedRun({ executionId: execution.execution_id, ranAtSeq: 0 }); // 许可有效期内产出（0 < 1）
+    await seedTask(); // tx → seq 1 = expires_at_seq，许可此后过期
+    for (let i = 0; i < 3; i += 1) {
+      // hook 每次 Edit 都会判卷：过期观察事件只记一次（V2-1 去重），且不作废既有证据。
+      expect((await checkPermit(store, permit.permitRef, { op: "upsert_object", id: "TASK.T0001" })).outcome).toBe("expired");
+    }
+    const journalText = readFileSync(join(root, ".pomaster", "state", "journal.jsonl"), "utf8");
+    expect(journalText.split("\n").filter((line) => line.includes("\"PERMIT_EXPIRED_OBSERVED\""))).toHaveLength(1);
+    seedClaim({});
+    seedAcceptReceipt();
+
+    const outcome = await runCloseout(root, { taskId: "TASK.T0001" });
+    expect(outcome.errors).toEqual([]);
+    expect(outcome.ok).toBe(true);
+    expect((outcome.result as CloseoutResult).change).toBe("COMPLETED");
+  });
+
   it("AC-04-c 反例：证据 gate_def 版本已被当前版本取代 → ORACLE_SUPERSEDED 阻断", async () => {
     await initStore();
     await seedTask();

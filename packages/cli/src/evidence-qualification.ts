@@ -98,11 +98,17 @@ async function readInvalidationEvents(rootDir: string): Promise<EvidenceInvalida
         { line: index + 1, type },
       );
     }
+    // V2-1：permit 词形事件的 expired_at_seq（producer 既有字段）带入判定作时序切点；
+    // 形态非法的值不猜测——按缺席处理（判定回落事件 seq，方向更严）。
+    const expiredAtSeq = parsed.expired_at_seq;
     events.push({
       type: type as EvidenceInvalidationEvent["type"],
       seq,
       execution_id: asStringOrNull(parsed.execution_id),
       permit_ref: asStringOrNull(parsed.permit_ref),
+      ...(typeof expiredAtSeq === "number" && Number.isInteger(expiredAtSeq) && expiredAtSeq >= 0
+        ? { expired_at_seq: expiredAtSeq }
+        : {}),
     });
   }
   return events;

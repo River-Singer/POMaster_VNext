@@ -576,15 +576,25 @@ describe("permit list（台账纯读）", () => {
     expect(onlyExpired.result.permits.map((p) => p.status)).toEqual(["expired"]);
   });
 
-  it("事件链声明式折叠：两次过期 check → PERMIT_EXPIRED_OBSERVED {count:2, first_seq, last_seq}", async () => {
+  // 语义变更（V2-1，VX-WRITE-03 棘轮例外登记）：原断言「两次过期 check → count:2」——
+  // kernel 现按 (permit_ref, expired_at_seq) 去重，两次 check 只留一条；折叠规则本身不变，
+  // 改由存量 journal（去重前写下的重复行）覆盖。
+  it("事件链声明式折叠：两次过期 check 只记一条（V2-1 去重）；存量重复行仍折叠为 {count, first_seq, last_seq}", async () => {
     await seedStore();
     const ref = await issueDashboard({ ttlBeats: "1" });
     await advanceSeq(1);
     await runPermitCheck(root, { permit: ref, subject: "PAGE.DASHBOARD", op: "upsert_object" });
     await runPermitCheck(root, { permit: ref, subject: "PAGE.DASHBOARD", op: "upsert_object" });
-    const outcome = await runPermitList(root, {});
-    const entry = outcome.result.permits[0];
-    expect(entry?.events).toEqual([
+    const deduped = (await runPermitList(root, {})).result.permits[0];
+    expect(deduped?.events).toEqual([
+      { type: "PERMIT_ISSUED", seq: 0, count: 1 },
+      { type: "PERMIT_EXPIRED_OBSERVED", seq: 1, count: 1 },
+    ]);
+    const journalPath = join(root, ".pomaster", "state", "journal.jsonl");
+    const legacy = { type: "PERMIT_EXPIRED_OBSERVED", seq: 1, permit_ref: ref, expired_at_seq: 1 };
+    writeFileSync(journalPath, `${readFileSync(journalPath, "utf8")}${JSON.stringify(legacy)}\n`);
+    const folded = (await runPermitList(root, {})).result.permits[0];
+    expect(folded?.events).toEqual([
       { type: "PERMIT_ISSUED", seq: 0, count: 1 },
       { type: "PERMIT_EXPIRED_OBSERVED", count: 2, first_seq: 1, last_seq: 1 },
     ]);

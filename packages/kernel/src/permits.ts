@@ -14,7 +14,7 @@ import { CATALOG_CHANGE_CLASS_VALUES, CATALOG_GOVERNANCE_PROFILE_VALUES } from "
 import { GovernanceError, governanceCodeForParseError, GovernedIdParseError } from "./errors.js";
 import { parseGovernedId } from "./id.js";
 import { appendLine, captureOriginal, executeWrites, readText } from "./io.js";
-import { pathsOf, readCurrentSeq, readRawIndex, type StorePaths } from "./paths.js";
+import { pathsOf, readCurrentSeq, readJournalLines, readRawIndex, type StorePaths } from "./paths.js";
 
 /** 缺省 TTL：168 拍（C9 TTL 168h 的拍数映射；A4 禁墙钟，只按 seq 判定）。 */
 export const DEFAULT_TTL_BEATS = 168 as const;
@@ -366,12 +366,24 @@ function findPermit(
   return file.permits.find((permit) => permit.permit_ref === permitRef) ?? null;
 }
 
+/** journal 是否已有该许可、该到期点的 PERMIT_EXPIRED_OBSERVED（V2-1 去重判据）。 */
+function expiryAlreadyObserved(paths: StorePaths, permitRef: string, expiredAtSeq: number): boolean {
+  return readJournalLines(paths).some(
+    (event) =>
+      event.type === "PERMIT_EXPIRED_OBSERVED" &&
+      event.permit_ref === permitRef &&
+      event.expired_at_seq === expiredAtSeq,
+  );
+}
+
 /**
  * 校验写尝试是否在许可范围内。显式四态（docs/kernel-api.md §4）：
  * allowed / denied（outside_scope、policy_forbidden、delete_forbidden_supersede_only）/
  * expired / unknown_permit——禁止静默放行或静默拒绝。
  * 过期判定：currentSeq >= expiresAtSeq 即过期（边界拍不再有效）；过期时追加
- * PERMIT_EXPIRED_OBSERVED journal 事件（「过期→EXPIRED 事件，不静默」）。
+ * PERMIT_EXPIRED_OBSERVED journal 事件（「过期→EXPIRED 事件，不静默」）——同一许可的同一
+ * 到期点只记一次（V2-1 去重：journal 已有 (permit_ref, expired_at_seq) 观察事件即不再追加；
+ * 判卷器仍只写 journal，不改台账）。
  * delete 对 DENOMINATOR 一律 denied（delete_forbidden_supersede_only，C2/GAP-POM-001 免疫）。
  */
 export async function checkPermit(
@@ -396,12 +408,17 @@ export async function checkPermit(
     return { outcome: "unknown_permit" };
   }
   if (currentSeq >= permit.expires_at_seq) {
-    appendJournalLine(paths, {
-      type: "PERMIT_EXPIRED_OBSERVED",
-      seq: currentSeq,
-      permit_ref: permitRef,
-      expired_at_seq: permit.expires_at_seq,
-    });
+    // V2-1 去重：hook 每次 Edit 都会判卷，原实现每次都追加一行，journal 被刷屏。去重键 =
+    // (permit_ref, expired_at_seq)——续期（V2-2）后再次到期是新的到期点，照常记一次。
+    // 判卷器只写 journal（exec-guard「journal 之外零变化」契约不变）；已观察过 → 照旧返回 expired。
+    if (!expiryAlreadyObserved(paths, permitRef, permit.expires_at_seq)) {
+      appendJournalLine(paths, {
+        type: "PERMIT_EXPIRED_OBSERVED",
+        seq: currentSeq,
+        permit_ref: permitRef,
+        expired_at_seq: permit.expires_at_seq,
+      });
+    }
     return { outcome: "expired", expiredAtSeq: permit.expires_at_seq };
   }
   if (attempt.op === "delete") {

@@ -146,6 +146,25 @@ describe("checkPermit（显式四态，禁止静默）", () => {
     expect(journal()).toContain("PERMIT_EXPIRED_OBSERVED");
   });
 
+  it("V2-1 去重：同一过期许可反复判卷只记一条 PERMIT_EXPIRED_OBSERVED；判卷不改台账", async () => {
+    const ref = await seedPermit(2);
+    await applyTransaction(store, { ops: [{ op: "append_denominator", entry: { ...denominatorEntry(), version: 1 } as never }] });
+    await applyTransaction(store, { ops: [{ op: "append_denominator", entry: { ...denominatorEntry(), version: 2 } as never }] });
+    const ledgerBefore = JSON.stringify(permitsFile());
+    for (let i = 0; i < 5; i += 1) {
+      expect(await checkPermit(store, ref, { id: gid("PAGE.DASHBOARD"), op: "upsert_object" })).toEqual({
+        outcome: "expired",
+        expiredAtSeq: 2,
+      });
+    }
+    const observed = journal()
+      .split("\n")
+      .filter((line) => line.includes("\"PERMIT_EXPIRED_OBSERVED\""));
+    expect(observed).toHaveLength(1);
+    expect(JSON.parse(observed[0] as string)).toMatchObject({ permit_ref: ref, expired_at_seq: 2, seq: 2 });
+    expect(JSON.stringify(permitsFile())).toBe(ledgerBefore);
+  });
+
   it("边界拍：currentSeq == expiresAtSeq-1 仍 allowed（边界拍前有效）", async () => {
     const ref = await seedPermit(1);
     expect(await checkPermit(store, ref, { id: gid("PAGE.DASHBOARD"), op: "transition_object" })).toEqual({
